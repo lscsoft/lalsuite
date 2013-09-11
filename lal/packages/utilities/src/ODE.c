@@ -205,7 +205,7 @@
  * ### Algorithm ###
  *
  * These routines are based on the methods presented in Numerical Recipes
- * [\ref ptvf1992].
+ * \cite ptvf1992.
  *
  */
 

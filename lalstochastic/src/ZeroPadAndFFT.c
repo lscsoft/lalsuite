@@ -95,7 +95,7 @@
  * t\f$ times the discrete Fourier transform.</li>
  *
  * <li> The Fourier transform of a series of \f$M\f$ points is calculated
- * with the FFTW [\ref fj_1998] (via the interfaces in
+ * with the FFTW \cite fj_1998 (via the interfaces in
  * the \c fft package), which is efficient for products of small
  * primes, so \f$M\f$ should be chosen to have this property.  The minimum
  * value, \f$2N-1\f$, is odd and can thus be at best a power of 3.

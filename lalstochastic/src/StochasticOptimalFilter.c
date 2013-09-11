@@ -24,11 +24,11 @@
  * \brief Calculates the values of the optimal filter function for the standard cross-correlation statistic.
  *
  * As described in
- * \ref Allen1997, \ref Allen1999, \ref Finn2001,
+ * \cite Allen1997, \cite Allen1999, \cite Finn2001,
  * the optimal filter \f$\widetilde{Q}^{\mathrm{C}}(f)\f$ which maximizes the ratio of the
  * mean \f$\mu=\langle Y\rangle\f$ to the standard deviation
  * \f$\sigma=\sqrt{\langle (Y-\mu)^2\rangle}\f$ of the cross-correlation
- * statistic\eqref{stochastic_e_ymax} is
+ * statistic \eqref{stochastic_e_ymax} is
  *
  * \f{equation}{
  * \widetilde{Q}^{\mathrm{C}}(f)=\lambda\,
@@ -79,15 +79,13 @@
  * \widetilde{\bar{h}}{}_{2}(f)
  * \f}
  * where the "uncalibrated optimal filter" is
- * \anchor stochastic_e_QW \f{eqnarray}{
- * \tag{stochastic_e_QW}
+ * \f{eqnarray}{
+ * \label{stochastic_e_QW}
  * \widetilde{Q}(f)
  * &=&\frac{\widetilde{Q}^{\mathrm{C}}(f)}{\widetilde{R}_1(f)^*\widetilde{R}_2(f)}
  * =\lambda\,\left(\frac{1}{\widetilde{R}_1(f)^*P^{\mathrm{C}}_1(f)}\right)
  * \frac{\gamma(f)\,\Omega_{\mathrm{GW}}(f)}
- * {|f|^3}\left(\frac{1}{\widetilde{R}_2(f)P^{\mathrm{C}}_2(f)}\right)
- * \nonumber
- * \\
+ * {|f|^3}\left(\frac{1}{\widetilde{R}_2(f)P^{\mathrm{C}}_2(f)}\right) \\
  * &=&\lambda\,
  * \frac{\gamma(f)\,\Omega_{\mathrm{GW}}(f)}
  * {|f|^3\,P^{\mathrm{HC}}_1(f)^*\,P^{\mathrm{HC}}_2(f)}
@@ -133,7 +131,7 @@
  * assumes a large observation time continuum-limit approximation.  In
  * this limit, the Dirichlet kernels (which appear in an exact
  * expression for the standard cross-correlation statistic, when
- * evaluated in discrete time [\ref Finn2001]; see also
+ * evaluated in discrete time \cite Finn2001; see also
  * the documentation for the module Dirichlet.c in the utilities package)
  * may be replaced by Dirac delta functions.</li>
  * <li> Although \f$Q^{\mathrm{C}}(f)\f$ is real by construction, the uncalibrated optimal

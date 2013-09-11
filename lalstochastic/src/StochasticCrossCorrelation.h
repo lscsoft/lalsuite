@@ -30,12 +30,11 @@
  * segments, along with appropriate representations of the detector
  * transfer function and the (uncalibrated) power spectral density of the
  * noise in each detector.  The relationship among these modules is
- * illustrated in Fig.\figref{stochastic_CrossCorrFlowchart}.
+ * illustrated in \figref{stochastic_CrossCorrFlowchart}.
  *
- * \image html stochastic_CrossCorrFlowchart.png "Fig. [stochastic_CrossCorrFlowchart]: Relationship between the modules in StochasticCrossCorrelation.h"
- * \image latex stochastic_CrossCorrFlowchart.pdf "Relationship between the modules in StochasticCrossCorrelation.h"
+ * \figure{stochastic_CrossCorrFlowchart,pdf,0.6,Relationship between the modules in StochasticCrossCorrelation.h}
  *
- * Figure \figref{stochastic_CrossCorrFlowchart} illustrates the relationship among the modules
+ * \figref{stochastic_CrossCorrFlowchart} illustrates the relationship among the modules
  * dependent on \ref StochasticCrossCorrelation_h, which are used to calculate the cross-correlation
  * statistic \f$Y\f$ and its theoretical variance per unit time \f$\sigma^2/T\f$ from (uncalibrated)
  * stretches of data \f$h_1(t)\f$, \f$h_2(t)\f$, from two detectors, using metadata on the power

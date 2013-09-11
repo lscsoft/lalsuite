@@ -44,20 +44,20 @@
  * \right)^{1/3}\f}
  * The individual masses may be calculated as follows.  We have
  *
- * \anchor mass1 \f{equation}{
+ * \f{equation}{
+ * \label{mass1}
  * m = m_{1} + m_{2}
- * \tag{mass1}
  * \f}
  * and
- * \anchor eta1 \f{equation}{
+ * \f{equation}{
+ * \label{eta1}
  * \eta = \frac{m_{1} m_{2}}{(m_{1} + m_{2})^{2}}
- * \tag{eta1}
  * \f}
- * From Eq.\eqref{mass1} we may eliminate either \f$m_{1}\f$ or \f$m_{2}\f$,
+ * From \eqref{mass1} we may eliminate either \f$m_{1}\f$ or \f$m_{2}\f$,
  * \f{equation}{
  * m_{1} = m - m_{2}
  * \f}
- * This may be substituted into Eq.\eqref{eta1} to give
+ * This may be substituted into \eqref{eta1} to give
  * \f{equation}{
  * \eta = \frac{(m - m_{2}) m_{2}}{\left[ (m - m{2}) + m_{2} \right]^{2}}
  * \f}

@@ -73,13 +73,11 @@
  * density).  The canonical (demodulated) time coordinate for this phase
  * function is \f$\tau=\phi/2\pi f_c\f$.  The demodulation routines require
  * quadratic fits to the function \f$\tau-t\f$ at various times \f$t_0\f$:
- * \anchor eq_polyco-formulae
  * \f{eqnarray}{
- * \tau - t & = & \frac{(\Delta f/f_c)}{2\pi f_m}\sin(2\pi f_m t_0)
- * \nonumber\\
- * & + & (\Delta f/f_c)\cos(2\pi f_m t_0)(t-t_0) \nonumber\\
+ * \label{eq_polyco-formulae}
+ * \tau - t & = & \frac{(\Delta f/f_c)}{2\pi f_m}\sin(2\pi f_m t_0) \\
+ * & + & (\Delta f/f_c)\cos(2\pi f_m t_0)(t-t_0)\\
  * & - & \pi f_m (\Delta f/f_c)\sin(2\pi f_m t_0)(t-t_0)^2 \; ,
- * \tag{eq_polyco-formulae}
  * \f}
  * with residuals less than \f$(2/3)\pi^2 f_m^2(\Delta f/f_c)(t-t_0)^3\f$.
  * We require this residual to be always less than one sample interval
@@ -88,7 +86,6 @@
  * \f{equation}{
  * \Delta t_0 \lesssim \sqrt[3]{\frac{12f_c\Delta t}{\pi^2f_m^2\Delta f}}
  * \; ,
- * \tag{eq_polyco-interval}
  * \f}
  * noting that each piecewise fit is good for a time interval
  * \f$t_0\pm\Delta t_0/2\f$ about each central time \f$t_0\f$.
@@ -96,7 +93,7 @@
  * Thus to create a piecewise-polynomial fit defined by
  * \c PolycoStruc, this program simply define a set of fitting times
  * <tt>t0[</tt>\f$k\f$<tt>]</tt>\f$=(2k+1)\Delta t_0/2\f$, and computes the
- * appropriate components of \c polyco from Eq.\eqref{eq_polyco-formulae}, above.
+ * appropriate components of \c polyco from \eqref{eq_polyco-formulae}, above.
  *
  * \par Uses
  * \code

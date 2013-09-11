@@ -55,7 +55,7 @@ extern "C" {
  * \f}
  * where \f$f\f$ is the central frequency of the ringdown waveform, \f$Q\f$ is
  * the quality factor, and \f$\phi_0\f$ is the initial phase of the waveform.
- * Note that Ref. [\ref JDECreighton99] adopted the
+ * Note that Ref. \cite JDECreighton99 adopted the
  * normalization convention \f$q(t)=(2\pi)^{1/2}r(t)\f$.
  *
  * For a black hole ringdown, the gravitational waveform produced, averaged
@@ -65,7 +65,7 @@ extern "C" {
  * \f}
  * where the central frequency and quality of the ringdown are determined from
  * the mass and spin of the black holes.  An analytic approximation
- * yields [\ref EWLeaver85,\ref FEcheverria89]
+ * yields \cite EWLeaver85,\cite FEcheverria89
  * \f{equation}{
  * f \simeq 32\,\textrm{kHz}\times[1-0.63(1-{\hat{a}})^{3/10}](M_\odot/M)
  * \f}
@@ -79,7 +79,7 @@ extern "C" {
  * Schwarzschild black hole) and unity (for an extreme Kerr black hole).
  * The amplitude of the waveform depends on these quantities as well as the
  * distance \f$r\f$ to the source and the fractional mass loss \f$\epsilon\f$ radiated
- * in gravitational waves [\ref JDECreighton99]:
+ * in gravitational waves \cite JDECreighton99:
  * \f{equation}{
  * A_q = 2.415\times10^{-21}Q^{-1/2}[1-0.63(1-{\hat{a}})^{3/10}]^{-1/2}
  * \left(\frac{\textrm{Mpc}}{r}\right)
@@ -91,7 +91,7 @@ extern "C" {
  *
  * The mismatch between two nearby templates is given by \f$ds^2\f$, which can be
  * thought of as the line interval for a mismatch-based metric on the \f$(f,Q)\f$
- * parameter space [\ref Owen_96,\ref JDECreighton99]:
+ * parameter space \cite Owen_96,\cite JDECreighton99:
  * \f{equation}{
  * ds^2 = \frac{1}{8} \biggl\{ \frac{3+16Q^4}{Q^2(1+4Q^2)^2}\,dQ^2
  * - 2\frac{3+4Q^2}{fQ(1+4Q^2)}\,dQ\,df + \frac{3+8Q^2}{f^2}\,df^2 \biggr\}.

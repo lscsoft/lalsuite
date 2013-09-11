@@ -42,7 +42,7 @@
  * \author Reinhard Prix, Karl Wette
  * \ingroup UniversalDopplerMetric_h
  * \brief Function to compute the full F-statistic metric, including
- * antenna-pattern functions from multi-detector, as derived in \ref Prix07.
+ * antenna-pattern functions from multi-detector, as derived in \cite Prix07.
  *
  */
 
@@ -1058,7 +1058,7 @@ XLALDopplerPhaseMetric ( const DopplerMetricParams *metricParams,  	/**< input p
 
 /**
  * Calculate the general (single-segment coherent, or multi-segment semi-coherent) phase-metric,
- * the *full* (multi-IFO) Fstat-metrix and the Fisher-matrix derived in \ref Prix07.
+ * the *full* (multi-IFO) Fstat-metrix and the Fisher-matrix derived in \cite Prix07.
  *
  * The semi-coherent metrics \f$g_{ij}\f$ over \f$N\f$ segments are computed according to
  *
@@ -1143,7 +1143,7 @@ XLALDopplerFstatMetric ( const DopplerMetricParams *metricParams,  	/**< input p
 
 /**
  * Calculate the *coherent* (single-segment) phase-metric, the *full* (multi-IFO) Fstat-metrix
- * and the Fisher-matrix derived in \ref Prix07.
+ * and the Fisher-matrix derived in \cite Prix07.
  *
  * Note: The returned DopplerMetric struct contains the matrices
  * g_ij (the phase metric), gF_ij (the F-metric), gFav_ij (the average F-metric),
@@ -1913,12 +1913,12 @@ XLALComputeFmetricFromAtoms ( const FmetricAtoms_t *atoms, REAL8 cosi, REAL8 psi
 	  a_b_i_j = gsl_matrix_get ( atoms->a_b_i_j, i, j );
 	  b_b_i_j = gsl_matrix_get ( atoms->b_b_i_j, i, j );
 
-	  /* trivial assignments, see Eq.(76) in \ref Prix07 */
+	  /* trivial assignments, see Eq.(76) in \cite Prix07 */
 	  P1_ij = a_a_i_j;
 	  P2_ij = b_b_i_j;
 	  P3_ij = a_b_i_j;
 
-	  /* bit more involved, see Eq.(80)-(82) in \ref Prix07 [includes *explicit* index-symmetrization!!] */
+	  /* bit more involved, see Eq.(80)-(82) in \cite Prix07 [includes *explicit* index-symmetrization!!] */
 	  Q1_ij = A * a_b_i * a_b_j + B * a_a_i * a_a_j - C * ( a_a_i * a_b_j + a_a_j * a_b_i );	/* (80) symmetrized */
 	  Q1_ij /= D;
 

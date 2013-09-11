@@ -52,7 +52,7 @@ typedef enum {
                          * of time; outputs a time-domain wave.
                          */
    TaylorF1,		/**< The stationary phase approximation that correctly represents, in the Fourier domain,
-                         * the waveform given by \c TaylorT1 approximant (see [\ref dis2000] for details);
+                         * the waveform given by \c TaylorT1 approximant (see \cite dis2000 for details);
                          * Outputs a frequency-domain wave. */
    TaylorF2,		/**< The standard stationary phase approximation; Outputs a frequency-domain wave. */
    TaylorR2F4,		/**< A frequency domain model closely related to TaylorT4 */
@@ -61,8 +61,8 @@ typedef enum {
    PadeT1,		/**< Time-domain P-approximant; Outputs a time-domain wave. */
    PadeF1,		/**< Frequency-domain P-approximant (not yet implemented). */
    EOB,			/**< Effective one-body waveform; Outputs a time-domain wave. */
-   BCV,			/**< Detection template family of Buonanno, Chen and Vallisneri [\ref BCV03]; Outputs a frequency-domain wave. */
-   BCVSpin,		/**< Detection template family of Buonanno, Chen and Vallisneri including  spin effects [\ref BCV03b]; Outputs a frequency-domain wave. */
+   BCV,			/**< Detection template family of Buonanno, Chen and Vallisneri \cite BCV03; Outputs a frequency-domain wave. */
+   BCVSpin,		/**< Detection template family of Buonanno, Chen and Vallisneri including  spin effects \cite BCV03b; Outputs a frequency-domain wave. */
    SpinTaylorT1,	/**< Spinning case T1 models */
    SpinTaylorT2,	/**< Spinning case T2 models */
    SpinTaylorT3,	/**< Spinning case T3 models */
@@ -207,6 +207,16 @@ COMPLEX16TimeSeries* XLALSphHarmTimeSeriesGetMode(
 				UINT4 l, 
 				INT4 m 
 );
+
+SphHarmTimeSeries *XLALResizeSphHarmTimeSeries(
+        SphHarmTimeSeries *ts,
+        int first,
+        size_t length
+        );
+
+SphHarmFrequencySeries *XLALSphHarmFrequencySeriesFromSphHarmTimeSeries(
+        SphHarmTimeSeries *hlms_TD
+        );
 
 /* 
  * Create a SphHarmFrequencySeries. If appended is not NULL, this will prepend a new
@@ -1802,7 +1812,7 @@ int XLALSimInspiralTaylorEtPNRestricted(
 
 /**
  * Computes the stationary phase approximation to the Fourier transform of
- * a chirp waveform with phase given by Eq.\eqref{eq_InspiralFourierPhase_f2}
+ * a chirp waveform with phase given by \eqref{eq_InspiralFourierPhase_f2}
  * and amplitude given by expanding \f$1/\sqrt{\dot{F}}\f$. If the PN order is
  * set to -1, then the highest implemented order is used.
  */

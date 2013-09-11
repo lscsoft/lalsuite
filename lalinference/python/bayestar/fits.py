@@ -272,7 +272,7 @@ def write_sky_map(filename, prob, objid=None, url=None, instruments=None,
 
 
 def read_sky_map(filename):
-    prob, header = hp.read_map(filename, h=True)
+    prob, header = hp.read_map(filename, h=True, verbose=False)
     header = dict(header)
 
     metadata = {}

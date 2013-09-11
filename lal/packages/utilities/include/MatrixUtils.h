@@ -40,7 +40,7 @@ extern "C" {
  *
  * This header covers routines to solve linear systems of equations and
  * eigensystems, using algorithms adapted from Chapters~2 and~11 of
- * Numerical Recipes [\ref ptvf1992].  The only routines at present are
+ * Numerical Recipes \cite ptvf1992.  The only routines at present are
  * for computing eigenvalues and eigenvectors of real symmetric matrices.
  * Routines for inverting or computing the determinant of arbitrary
  * square matrices will likely follow.

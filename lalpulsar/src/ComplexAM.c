@@ -54,7 +54,7 @@
 
 /**
  * Compute the 'amplitude coefficients' \f$a(t)\sin\zeta\f$,
- * \f$b(t)\sin\zeta\f$ as defined in \ref JKS98 for a series of
+ * \f$b(t)\sin\zeta\f$ as defined in \cite JKS98 for a series of
  * timestamps.
  *
  * The input consists of the DetectorState-timeseries, which contains

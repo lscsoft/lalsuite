@@ -54,23 +54,22 @@ extern "C" {
  * over the parameter space, the routines under this header only treat
  * \f$\mathsf{g}_{ab}\f$ as constant over distances \f$\lesssim m_\mathrm{thresh}\f$.
  *
- * \image html pulsar_tiling.png "Fig. [fig_tiling]: Mesh placement using parallelogram tiling. (a) The left and right sides of a tile are required to be vertical; the top and bottom sides can tilt to maximize the tile area. (b) Tiles can be stacked in fixed-width columns, even as the elliptical contours change.  (c) Extra overlapping tiles are sometimes required at the corners of columns."
- * \image latex pulsar_tiling.pdf "Mesh placement using parallelogram tiling. (a) The left and right sides of a tile are required to be vertical; the top and bottom sides can tilt to maximize the tile area. (b) Tiles can be stacked in fixed-width columns, even as the elliptical contours change.  (c) Extra overlapping tiles are sometimes required at the corners of columns." width=\textwidth
+ * \figure{pulsar_tiling,eps,,Mesh placement using parallelogram tiling. (a) The left and right sides of a tile are required to be vertical; the top and bottom sides can tilt to maximize the tile area. (b) Tiles can be stacked in fixed-width columns\, even as the elliptical contours change.  (c) Extra overlapping tiles are sometimes required at the corners of columns.}
  *
  * Since the metric is treated as constant over distances \f$\lesssim
  * m_\mathrm{thresh}\f$, this distance defines an elliptical contour around
  * any mesh point.  We define a ``tile'' as a parallelogram inscribed
  * within the ellipse, with its left and right sides aligned with the \f$y\f$
- * axis.  This is shown in Fig.\figref{fig_tiling} (a), above.  A ``column''
+ * axis.  This is shown in \figref{pulsar_tiling} (a), above.  A ``column''
  * is a set of tiles of constant horizontal width stacked one on top of
- * the other, as shown in Fig.\figref{fig_tiling} (b).  As the metric
+ * the other, as shown in \figref{pulsar_tiling} (b).  As the metric
  * changes over space, the vertical height and tilt of the tiles in a
  * column may change, so long as their width remains fixed; we note that
  * if the tilt changes, the tiles will overlap slightly to ensure
  * complete coverage.  Finally, the boundary of the parameter space may
  * extend outside the ``corners'' of the column, crossing the end of a
  * tile between its centre and its edge, as shown in
- * Fig.\figref{fig_tiling} (c).  These triangular corners can be covered
+ * \figref{pulsar_tiling} (c).  These triangular corners can be covered
  * with one or more extra overlapping tiles of reduced width.
  *
  * In a parameter space with constant metric, the tile area is maximized
@@ -160,7 +159,7 @@ typedef struct tagTwoDMeshParamStruc
                          */
   REAL4 widthMaxFac;	/**<  The minimum ratio of mismatch ellipse width (projected onto the horizontal axis) to column width
                          * that must be maintained throughout the column: if an ellipse falls
-                         * below this ratio due to shrinkage or rotation, as in Fig.\figref{fig_tiling} (b), the
+                         * below this ratio due to shrinkage or rotation, as in \figref{pulsar_tiling} (b), the
                          * code will try a narrower column; if set to \f$\leq1\f$, the default value
                          * \c TWODMESHINTERNALC_WMAXFAC=\f$\sqrt[4]{2}\f$ will be used.
                          */

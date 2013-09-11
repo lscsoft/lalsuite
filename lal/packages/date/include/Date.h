@@ -53,7 +53,7 @@ extern "C"
  * \endcode
  *
  * This header covers routines for manipulating date and time
- * information.  The various time systems are discussed in [\ref esaa1992].
+ * information.  The various time systems are discussed in \cite esaa1992.
  *
  */
 /*@{*/

@@ -104,13 +104,12 @@ extern "C" {
  * marked for any possible \f$\nu -F_0\f$ value. Since we work on a discrete space these <tt>lut</tt> are
  * valid for many \f$F_0\f$ values.
  *
- * \image html LUTstereo.png "Fig. [fig_stereo]: Stereographic projection. [Credit to: D.Hilbert, S.Cohn-Vossen, P. Nemenyi, ``Geometry and Imagination'', Chelsea Publishing Company, New York 1952.]"
- * \image latex LUTstereo.eps "Stereographic projection. [Credit to: D.Hilbert, S.Cohn-Vossen, P. Nemenyi, ``Geometry and Imagination'', Chelsea Publishing Company, New York 1952.]"
+ * \figure{LUTstereo,eps,0.6,Stereographic projection. [Credit to: D.Hilbert\, S.Cohn-Vossen\, P. Nemenyi\, ``Geometry and Imagination''\, Chelsea Publishing Company\, New York 1952.]}
  *
  * At this point we have already chosen a sky tiling to produce the Hough map  efficiently.
  * It consists of changing coordinates so that the center of the   patch is located at
  * \f$(0,-\pi/2)\f$ in (\f$\alpha-\delta\f$) (or in any other coordinate system), then we make use
- * of the stereographic projection (see Fig.\figref{fig_stereo}) and we take horizontal and vertical lines on
+ * of the stereographic projection (see \figref{LUTstereo}) and we take horizontal and vertical lines on
  * the projected plane at constant space separation.
  * This projection is advantageous because it avoids distortions, i.e. the
  * pixel size is almost constant independently of the sky location, and makes the

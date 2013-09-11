@@ -45,11 +45,11 @@
  * General relativistic time delay, \f$t_\textrm{Einstein}\f$ is the special
  * relativistic time delay, and \f$t_\textrm{Abberation}\f$ is the delay caused by the
  * pulsars' rotation. There are several models of the binary systems, described
- * in [\ref TaylorWeisberg1989], of which the four most common are so far
+ * in \cite TaylorWeisberg1989, of which the four most common are so far
  * implemented. The four models are the Blandford-Teukolsky model (BT)
- * [\ref BlandfordTeukolsky1976], the low ellipticity model (ELL1)
- * [\ref ChLangeetal2001], Damour-Deruelle model (DD) [\ref DamourDeruelle1985],
- * and the main sequence system model (MSS) [\ref Wex1998].
+ * \cite BlandfordTeukolsky1976, the low ellipticity model (ELL1)
+ * \cite ChLangeetal2001, Damour-Deruelle model (DD) \cite DamourDeruelle1985,
+ * and the main sequence system model (MSS) \cite Wex1998.
  * These four models all use the five main binary parameters: the longitude of
  * periastron \f$\omega_0\f$, the eccentricity of the orbit \f$e\f$, the orbital period
  * \f$P\f$, the time of periastron/or the time of ascension of the first node

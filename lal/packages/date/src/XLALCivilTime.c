@@ -235,7 +235,7 @@ struct tm * XLALGPSToUTC(
  * Returns the Julian Day (JD) corresponding to the date given in a broken
  * down time structure.
  *
- * See \ref esaa1992 and \ref green1985 for details.  First, some
+ * See \cite esaa1992 and \cite green1985 for details.  First, some
  * definitions:
  *
  * Mean Julian Year = 365.25 days
@@ -253,9 +253,9 @@ struct tm * XLALGPSToUTC(
  * Julian Epoch = J2000.0 + (JD - 2451545) / 365.25, i.e., number of years
  * elapsed since J2000.0.
  *
- * One algorithm for computing the Julian Day is from \ref vfp1979 based
- * on a formula in \ref esaa1992 where the algorithm is due to
- * \ref fvf1968 and ``compactified'' by P. M. Muller and R. N. Wimberly.
+ * One algorithm for computing the Julian Day is from \cite vfp1979 based
+ * on a formula in \cite esaa1992 where the algorithm is due to
+ * \cite fvf1968 and ``compactified'' by P. M. Muller and R. N. Wimberly.
  * The formula is
  *
  * \f[

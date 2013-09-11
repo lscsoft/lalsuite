@@ -71,7 +71,7 @@
  * ### Algorithm ###
  *
  * This is an implementation of the random number generators \c ran1 and
- * \c gasdev described in Numerical Recipes [\ref ptvf1992].
+ * \c gasdev described in Numerical Recipes \cite ptvf1992.
  *
  */
 /*@{*/

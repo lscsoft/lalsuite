@@ -52,7 +52,7 @@
  * ### Algorithm ###
  *
  * The algorithm for complex division is described in
- * Sec. 5.4 of Ref. [\ref ptvf1992].  The formula used is:
+ * Sec. 5.4 of Ref. \cite ptvf1992.  The formula used is:
  * \f[
  * \frac{a + ib}{c + id} = \left\{
  * \begin{array}{ll}

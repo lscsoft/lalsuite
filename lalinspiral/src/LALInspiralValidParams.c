@@ -56,20 +56,20 @@
  * \right)^{5}\f}
  *
  * The individual masses may be calculated as follows.  We have
- * \anchor eq_mass \f{equation}{
+ * \f{equation}{
+ * \label{eq_mass}
  * m = m_{1} + m_{2}
- * \tag{eq_mass}
  * \f}
  * and
- * \anchor eq_eta \f{equation}{
+ * \f{equation}{
+ * \label{eq_eta}
  * \eta = \frac{m_{1} m_{2}}{(m_{1} + m_{2})^{2}}
- * \tag{eq_eta}
  * \f}
- * From Eq.\eqref{eq_mass} we may eliminate either \f$m_{1}\f$ or \f$m_{2}\f$,
+ * From \eqref{eq_mass} we may eliminate either \f$m_{1}\f$ or \f$m_{2}\f$,
  * \f{equation}{
  * m_{1} = m - m_{2}
  * \f}
- * This may be substituted into Eq.\eqref{eq_eta} to give
+ * This may be substituted into \eqref{eq_eta} to give
  * \f{equation}{
  * \eta = \frac{(m - m_{2}) m_{2}}{\left[ (m - m_{2}) + m_{2} \right]^{2}}
  * = \frac{(m - m_{2}) m_{2}}{m^{2}}

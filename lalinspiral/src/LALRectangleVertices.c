@@ -34,16 +34,16 @@
  * the vertices of a rectangle in a \e diagonal coordinate
  * system are given by
  * \f{eqnarray}{
- * x_1 & = & x_0 - dx, \quad y_1 = y_0 - dy, \nonumber \\
- * x_2 & = & x_0 + dx, \quad y_2 = y_0 - dy, \nonumber \\
- * x_3 & = & x_0 + dx, \quad y_3 = y_0 + dy, \nonumber \\
- * x_4 & = & x_0 - dx, \quad y_4 = y_0 + dy. \nonumber
+ * x_1 & = & x_0 - dx, \quad y_1 = y_0 - dy, \\
+ * x_2 & = & x_0 + dx, \quad y_2 = y_0 - dy, \\
+ * x_3 & = & x_0 + dx, \quad y_3 = y_0 + dy, \\
+ * x_4 & = & x_0 - dx, \quad y_4 = y_0 + dy.
  * \f}
  * The coordinates of a rectangle oriented at an angle \f$\theta\f$ is
  * found by using the formulas
  * \f{eqnarray}{
- * x' = x \cos(\theta) - y \sin(\theta),\nonumber \\
- * y' = y \cos(\theta) + x \sin(\theta).\nonumber
+ * x' = x \cos(\theta) - y \sin(\theta), \\
+ * y' = y \cos(\theta) + x \sin(\theta).
  * \f}
  * The function returns five coordinate points (1,2,3,4,1),
  * and not just the four verticies, to help

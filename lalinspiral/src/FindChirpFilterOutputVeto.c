@@ -48,21 +48,14 @@
  * (\f$\rho^*\f$(<em>t\f$_j\f$</em>), (\f$^*\f$ denoting the threshold), and a threshold on the
  * consistency of the template chirp waveform with the data (\f$r^{2*}\f$). At a given instant
  * in time, <em>t\f$_j\f$</em>. \f$r^2\f$(<em>t\f$_j\f$</em>) is defined as:
- * \\
  * \f{equation}{
  * {r^2(t_j)} = \frac{\chi^2(t_j)}{p}
  * \f}
- * \\
  * where:
- * \\
- * \\
  * p = number of \f$\chi^2\f$ bins
- * \\
- * \\
  * The search code calculates
  * \f$\rho\f$(<em>t\f$_j\f$</em>) and \f$r^2\f$(<em>t\f$_j\f$</em>) for a given segment of data and looks
  * for:
- * \\
  * \f{equation}{
  * \rho (t_j) > \rho^*(t_j)
  * \f}
@@ -70,15 +63,11 @@
  * \f{equation}{
  * r^2(t_j) < r^{2*}(t_j) * (1 + \frac{\rho^2(t_j)  \delta^2}{p})
  * \f}
- * \\
  * where:
- * \\
  * \f$^*\f$ = threshold used in the search\\
  * \f$\rho\f$ = signal to noise ratio\\
  * \f$\delta\f$ = mismatch between your data and template waveform\\
  * p = number of \f$\chi^2\f$ bins
- * \\
- * \\
  * If both these criteria are met at a given <em>t\f$_j\f$</em>, an inspiral "trigger" is
  * recorded.
  *

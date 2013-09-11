@@ -43,9 +43,9 @@
  *
  * LALInspiralWave2() generates #TaylorT2 approximant wherein
  * the phase of the waveform is given as an implicit function of time
- * as in Equation.\eqref{eq_InspiralWavePhase2}. A template is required
+ * as in \eqref{eq_InspiralWavePhase2}. A template is required
  * to be sampled at equal intervals of time. Thus, first of the equations
- * in Equation.\eqref{eq_InspiralWavePhase2} is solved for \f$v\f$ at equally
+ * in \eqref{eq_InspiralWavePhase2} is solved for \f$v\f$ at equally
  * spaced values of the time steps
  * \f$t_k\f$ and the resulting value of \f$v_k\f$ is used in the second equation to
  * obtain the phase \f$\phi_k\f$.

@@ -63,13 +63,13 @@
  * between \f$f_{low}\f$ and \f$f_{final}\f$.
  * Next we calculate 5 moments which are required to construct the template:
  * \f{eqnarray}{
- * I &=& 4 \int_{0}^{\infty} f^{-7/3} \frac{df} {S_{n} (f) } \nonumber\\
+ * I &=& 4 \int_{0}^{\infty} f^{-7/3} \frac{df} {S_{n} (f) }\\
  * J &=& 4 \int_{0}^{\infty} f^{-7/3} \cos ( \beta f^{-2/3})
- * \frac{df} {S_{n} (f) } \nonumber\\
+ * \frac{df} {S_{n} (f) }\\
  * K &=& 4 \int_{0}^{\infty} f^{-7/3} \sin ( \beta f^{-2/3})
- * \frac{df} {S_{n} (f) } \nonumber\\
+ * \frac{df} {S_{n} (f) }\\
  * L &=& 2 \int_{0}^{\infty} f^{-7/3} \sin (2\beta f^{-2/3})
- * \frac{df} {S_{n} (f) } \nonumber\\
+ * \frac{df} {S_{n} (f) }\\
  * M &=& 2 \int_{0}^{\infty} f^{-7/3} \cos (2\beta f^{-2/3})
  * \frac{df} {S_{n} (f) }
  * \f}
@@ -80,7 +80,6 @@
  * orthonormalised amplitude vectors:
  * \f{eqnarray}{
  * \mathcal{\widehat{A}}_1(f)   =  \frac { f^{-7/6} }  { I^{1/2}}
- * \nonumber
  * \f}
  *
  * \f{eqnarray}{
@@ -88,7 +87,6 @@
  * [ \cos(\beta f^{-2/3}) - \frac{J}{I} \bigg ] I^{1/2} }
  * { \bigg[ IM + \frac{I^{2}}{2}
  * - J^{2} \bigg] ^{1/2} }
- * \nonumber
  * \f}
  *
  * \f{eqnarray}{

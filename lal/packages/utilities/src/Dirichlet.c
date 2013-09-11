@@ -24,7 +24,7 @@
 
 
 /**
- * \brief Calculates the values of the Dirichlet kernel [\ref pw93].
+ * \brief Calculates the values of the Dirichlet kernel \cite pw93.
  * \f[
  * {\cal D}_N(x):=
  * \left\{

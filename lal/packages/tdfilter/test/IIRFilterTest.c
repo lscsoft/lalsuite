@@ -100,8 +100,7 @@
  *
  * ### Algorithm ###
  *
- * \image html tdfilter_iirfiltertest.png "Fig.[fig_iirfiltertest]: Impulse response functions in the frequency domain (computed as a windowed FFT) for various filtering routines, run using the <tt>-r 5</tt> option."
- * \image latex tdfilter_iirfiltertest.pdf "Impulse response functions in the frequency domain (computed as a windowed FFT) for various filtering routines, run using the <tt>-r 5</tt> option." width=0.55\textwidth
+ * \figure{tdfilter_iirfiltertest,eps,0.55,Impulse response functions in the frequency domain (computed as a windowed FFT) for various filtering routines\, run using the <tt>-r 5</tt> option.}
  *
  * A third-order Butterworth low-pass filter is defined by the following
  * power response function:
@@ -169,7 +168,7 @@
  * Running the same command with the <tt>-t</tt> flag replaced with
  * <tt>-o</tt> generates files containing the impulse response of the
  * filters.  The frequency-domain impulse response is shown in
- * Fig.\figref{fig_iirfiltertest}.  This shows the steady improvement in
+ * \figref{tdfilter_iirfiltertest}.  This shows the steady improvement in
  * truncation error from single- to mixed- to double-precision filtering.
  *
  */

@@ -31,7 +31,7 @@
  * to a <em>template list</em>.
  *
  * The \f$dx_i\f$ returned by this function gives the spacing for a
- * square lattice (e.g., \f$dx_i\f$ as given in [\ref Owen_96].
+ * square lattice (e.g., \f$dx_i\f$ as given in \cite Owen_96.
  *
  * ### Algorithm ###
  *

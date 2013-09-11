@@ -91,11 +91,11 @@
  * \f{eqnarray}{
  * \frac{\partial t_c(t)}{\partial t} & = &
  * \frac{\partial t_2(t_1)}{\partial t_1}
- * \frac{\partial t_1(t)}{\partial t} \; , \nonumber\\
+ * \frac{\partial t_1(t)}{\partial t} \; ,\\
  * \frac{\partial t_c(t)}{\partial\lambda^i} & = &
  * \frac{\partial t_2(t_1)}{\partial t_1}
  * \frac{\partial t_1(t)}{\partial\lambda_{(1)}^i} \; ,
- * \quad i=1,\ldots,n \; . \nonumber
+ * \quad i=1,\ldots,n \; .
  * \f}
  * For the remaining parameters,
  * \f[

@@ -56,7 +56,7 @@ extern "C"
  *
  * ### Algorithm ###
  *
- * TBA. See Anderson, <em>et al.</em> [\ref ABCF2000] in the mean time.
+ * TBA. See Anderson, <em>et al.</em> \cite ABCCRW_2001 in the mean time.
  *
  * Note that GPS time is passed with both the detectors.  The GPS time of the
  * second detector is \e ignored, and the GPS time for the first detector

@@ -32,7 +32,7 @@ extern "C" {
  * \author Reinhard Prix, Karl Wette
  *
  * Function to compute the full F-statistic metric, including
- * antenna-pattern functions from multi-detector, derived in \ref Prix07.
+ * antenna-pattern functions from multi-detector, derived in \cite Prix07.
  *
  */
 /*@{*/
@@ -189,7 +189,7 @@ typedef struct tagDopplerMetricParams
  * Struct to hold the 'atoms', ie weighted phase-derivative averages like \f$\langle a^2 \partial_i \phi \partial_j \phi\rangle>\f$
  * from which the F-metric is computed, but also the full Fisher-matrix. The noise-weighted average is defined as
  * \f$\langle Q\rangle \equiv \frac{1}{T} \, \sum_X w^X\, \int_0^T Q\, dt \f$, where \f$w^X\f$ is the noise-weight for detector X,
- * and \f$T\f$ is the observation time, see \ref Prix07 for details.
+ * and \f$T\f$ is the observation time, see \cite Prix07 for details.
  */
 typedef struct tagFmetricAtoms_t
 {
@@ -220,7 +220,7 @@ typedef struct tagDopplerMetric
   gsl_matrix *g_ij;			/**< symmetric matrix holding the usual Phase-metric */
   double maxrelerr_gPh;			/**< estimate for largest relative error in phase-metric component integrations */
 
-  gsl_matrix *gF_ij;			/**< full F-statistic metric gF_ij, including antenna-pattern effects (see \ref Prix07) */
+  gsl_matrix *gF_ij;			/**< full F-statistic metric gF_ij, including antenna-pattern effects (see \cite Prix07) */
   gsl_matrix *gFav_ij;			/**< 'average' Fstat-metric */
   gsl_matrix *m1_ij, *m2_ij, *m3_ij;	/**< Fstat-metric sub components */
 

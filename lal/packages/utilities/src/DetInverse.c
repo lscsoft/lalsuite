@@ -58,8 +58,8 @@
  * ### Algorithm ###
  *
  * A linear system of equations is written in matrix terms as:
- * \anchor eq_linear_system \f{equation}{
- * \tag{eq_linear_system}
+ * \f{equation}{
+ * \label{eq_linear_system}
  * \mathsf{M}^a{}_b \mathsf{x}^b = \mathsf{v}^a \;,
  * \f}
  * where \f$\mathsf{M}^a{}_b\f$ is a known matrix, \f$\mathsf{v}^a\f$ a known
@@ -141,7 +141,7 @@
  * \f{eqnarray}{
  * |\mathsf{M}^a{}_b| & = & \sum_{j=1}^N (-1)^{i+j} M^i{}_j
  * |(\mathsf{C}^i{}_j){}^a{}_b| \quad\mbox{for any }i\in[1,N]
- * \;,\nonumber\\
+ * \;,\\
  * & = & \sum_{i=1}^N (-1)^{i+j} M^i{}_j
  * |(\mathsf{C}^i{}_j){}^a{}_b| \quad\mbox{for any }j\in[1,N] \;,
  * \f}
@@ -168,7 +168,7 @@
  * \f{eqnarray}{
  * E\left(|\mathsf{M}^a{}_b|\right) & = & \sqrt{\sum_{i,j=1}^N
  * \left[ \frac{\partial|\mathsf{M}^a{}_b|}{\partial M^i{}_j}
- * E\left(M^i{}_j\right)\right]^2 } \nonumber\\
+ * E\left(M^i{}_j\right)\right]^2 }\\
  * & = & \sqrt{\sum_{i,j=1}^N \left[ |(\mathsf{C}^i{}_j){}^a{}_b|
  * E\left(M^i{}_j\right)\right]^2 } \;.\\
  * \f}

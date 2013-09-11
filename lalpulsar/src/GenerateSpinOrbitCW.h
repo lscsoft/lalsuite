@@ -52,13 +52,13 @@ extern "C" {
  * simply Doppler-modulate a polynomial frequency function.
  *
  * The frequency and phase of the wave in the source's rest frame are
- * given by Eqs.\eqref{eq_taylorcw-freq} and\eqref{eq_taylorcw-phi} of
+ * given by \eqref{eq_taylorcw-freq} and \eqref{eq_taylorcw-phi} of
  * \ref GenerateTaylorCW_h, where \f$t\f$ is the proper time in this rest
  * frame.  The frequency and phase of the wave fronts crossing a
  * reference point in an inertial frame (e.g.\ the Solar system
  * barycentre) are simply \f$f[t(t_r)]\f$ and \f$\phi[t(t_r)]\f$, where
- * \anchor eq_spinorbit-tr \f{equation}{
- * \tag{eq_spinorbit-tr}
+ * \f{equation}{
+ * \label{eq_spinorbit-tr}
  * t_r = t + R(t)/c
  * \f}
  * is the (retarded) time measured at the inertial reference point a
@@ -66,7 +66,7 @@ extern "C" {
  *
  * The generation of the waveform thus consists of computing the radial
  * component \f$R(t)\f$ of the orbital motion of the source in the binary
- * centre-of-mass frame, inverting Eq.\eqref{eq_spinorbit-tr} to find
+ * centre-of-mass frame, inverting \eqref{eq_spinorbit-tr} to find
  * the "emission time" \f$t\f$ for a given "detector time" \f$t_r\f$, and
  * plugging this into the Taylor expansions to generate the instantaneous
  * frequency and phase.  The received frequency is also multiplied by the
@@ -83,10 +83,9 @@ extern "C" {
  *
  * ### Orbital motion ###
  *
- * \image html  inject_binary.png "Fig.[fig_binary_orbit]: Binary orbit orientation parameters"
- * \image latex inject_binary.pdf "Binary orbit orientation parameters" width=0.47\textwidth
+ * \figure{inject_binary,eps,0.47,Binary orbit orientation parameters}
  *
- * Fig.\figref{fig_binary_orbit} illustrates the notation conventions
+ * \figref{inject_binary} illustrates the notation conventions
  * defining a binary orbit.  We define a radial axis \f$R\f$ directed
  * \e from the observer (Earth) \e to the source, as shown.  The
  * horizontal plane is thus the plane of the sky, and the direction
@@ -131,11 +130,11 @@ extern "C" {
  * second law
  * \f$r^2\dot{\upsilon}=r_p^2\dot{\upsilon}_p=\mathrm{constant}\f$, where
  * \f$\dot{\upsilon}_p\f$ is the angular speed at periapsis, to get:
- * \anchor eq_orbit-r \anchor eq_orbit-rdot \f{eqnarray}{
- * \tag{eq_orbit-r}
+ * \f{eqnarray}{
+ * \label{eq_orbit-r}
  * R & = & R_0 + \frac{(1+e) r_p\sin i}{1+e\cos\upsilon}
  * \sin(\omega+\upsilon) \;,\\
- * \tag{eq_orbit-rdot}
+ * \label{eq_orbit-rdot}
  * \dot{R} & = & \dot{R}_0 + \frac{\dot{\upsilon}_p r_p\sin i}{1+e}
  * \left[ \cos(\omega+\upsilon) + e\cos\omega \right] \;.
  * \f}
@@ -165,8 +164,8 @@ extern "C" {
  * terms of an intermediate variable \f$E\f$ (called the <em>eccentric
  * anomaly</em> for elliptic orbits, unnamed for open orbits).  The formulae
  * are:
- * \anchor eq_spinorbit-t \f{equation}{
- * \tag{eq_spinorbit-t}
+ * \f{equation}{
+ * \label{eq_spinorbit-t}
  * t - t_p = \left\{ \begin{array}{l@{\qquad}c}
  * \frac{1}{\dot{\upsilon}_p} \sqrt{\frac{1+e}{(1-e)^3}}
  * \left( E - e\sin E \right) & 0 \leq e < 1 \\ & \\
@@ -176,8 +175,8 @@ extern "C" {
  * \left( e\sinh E - E \right) & e > 1
  * \end{array} \right.
  * \f}
- * \anchor eq_spinorbit-upsilon \f{equation}{
- * \tag{eq_spinorbit-upsilon}
+ * \f{equation}{
+ * \label{eq_spinorbit-upsilon}
  * \begin{array}{c} \tan\left(\frac{\upsilon}{2}\right) \end{array}
  * = \left\{ \begin{array}{l@{\qquad}c}
  * \sqrt{\frac{1+e}{1-e}}\tan\left(\frac{E}{2}\right)
@@ -191,7 +190,7 @@ extern "C" {
  * \f$t-t_p\f$ numerically or by series expansion, finds the corresponding
  * \f$E\f$, and then plugs this into the expression for \f$\upsilon\f$.  However,
  * in our case we would then need to do another numerical inversion to
- * find the retarded time \f$t_r\f$ from Eq.\eqref{eq_spinorbit-tr}.  A more
+ * find the retarded time \f$t_r\f$ from \eqref{eq_spinorbit-tr}.  A more
  * efficient approach is thus to take an initial guess for \f$E\f$, compute
  * both \f$t\f$, \f$\upsilon\f$, and hence \f$t_r\f$, and then refine directly on
  * \f$E\f$.
@@ -205,10 +204,10 @@ extern "C" {
  * speed of the orbit with the angular speed at periapsis
  * \f$\dot{\upsilon}_p\f$ rather than with the period \f$P\f$.  These parameters
  * are related by:
- * \anchor eq_spinorbit-a \anchor eq_spinorbit-p \f{eqnarray}{
- * \tag{eq_spinorbit-a}
+ * \f{eqnarray}{
+ * \label{eq_spinorbit-a}
  * a & = & \frac{r_p}{1-e} \;,\\
- * \tag{eq_spinorbit-p}
+ * \label{eq_spinorbit-p}
  * P & = & \frac{2\pi}{\dot{\upsilon}_p} \sqrt{\frac{1+e}{(1-e)^3}} \;.
  * \f}
  * Furthermore, for improved numerical precision when dealing with
@@ -267,7 +266,7 @@ typedef struct tagSpinOrbitCWParamStruc {
   REAL4 aPlus, aCross;    /**< The polarization amplitudes \f$A_+\f$, \f$A_\times\f$, in dimensionless strain units */
   REAL8 phi0;             /**< The phase of the wave emitted at time \f$t_\mathrm{ref}\f$, in radians */
   REAL8 f0;               /**< The frequency of the wave emitted at time \f$t_\mathrm{ref}\f$ (and incorporating any Doppler shift due to \f$\dot{R}_0\f$), in Hz */
-  REAL8Vector *f;         /**< The spin-normalized Taylor parameters \f$f_k\f$, as defined in Eq.\eqref{eq_taylorcw-freq} of \ref GenerateTaylorCW_h.
+  REAL8Vector *f;         /**< The spin-normalized Taylor parameters \f$f_k\f$, as defined in \eqref{eq_taylorcw-freq} of \ref GenerateTaylorCW_h.
                            * If \c f=\c NULL, the (proper) spin of the source is assumed to be constant */
   REAL8 omega;            /**< The argument of the periapsis, \f$\omega\f$, in radians */
   REAL8 rPeriNorm;        /**< The projected, speed-of-light-normalized periapsis separation of the orbit, \f$(r_p/c)\sin i\f$, in s */

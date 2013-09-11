@@ -50,16 +50,15 @@
  * and given also the distance between templates in our preferred coordinates
  * \f$(D\tau_0^{(n)},D\tau_3^{(n)}),\f$
  * consider lines \f$\tau_0 = \tau_0^{(n)} + D\tau_0^{(n)}\f$
- * (\f$QA\f$ of Fig.\figref{fig_equal_mass_algo}) and
+ * (\f$QA\f$ of \figref{LALInspiralBankHequalmass}) and
  * \f$\tau_3 = \tau_3^{(n)} + D\tau_3^{(n)}\f$
- * (\f$PB\f$ of Fig.\figref{fig_equal_mass_algo}).
+ * (\f$PB\f$ of \figref{LALInspiralBankHequalmass}).
  *
- * \image html  LALInspiralBankHequalmass.png "Fig.[fig_equal_mass_algo]: Algorithm sketching the placement of templates along eta=1/4 curve"
- * \image latex LALInspiralBankHequalmass.pdf "Algorithm sketching the placement of templates along eta=1/4 curve" width=4.0in
+ * \figure{LALInspiralBankHequalmass,pdf,0.6,Algorithm sketching the placement of templates along eta=1/4 curve}
  *
  * The template next to
  * \f$(\tau_0^{(n)},\tau_3^{(n)}),\f$ on the equal mass curve, must lie
- * either along \f$PB\f$ or along \f$QA\f$ (cf. Fig.\figref{fig_equal_mass_algo} in order
+ * either along \f$PB\f$ or along \f$QA\f$ (cf. \figref{LALInspiralBankHequalmass} in order
  * that all the signals that may lie on \f$OAB\f$
  * are spanned by at least one of the two templates.  Clearly, if we were
  * to place the \f$(n+1)\f$\ th template at \f$B,\f$ some of the signals won't
@@ -72,8 +71,7 @@
  * compute the following pairs of coordinates:
  * \f{eqnarray}{
  * \tau_0^{(n+1)} = \tau_0^{(n)} + D\tau_0^{(n)}, \ \
- * \tau_3^{(n+1)} =  4A_3 \left ( \frac{\tau_0^{(n+1)}}{4A_0} \right )^{2/5}
- * \nonumber \\
+ * \tau_3^{(n+1)} =  4A_3 \left ( \frac{\tau_0^{(n+1)}}{4A_0} \right )^{2/5} \\
  * \tau_3^{(n+1)} = \tau_3^{(n)} + D\tau_3^{(n)}, \ \
  * \tau_0^{(n+1)} =  4A_0 \left ( \frac{\tau_3^{(n+1)}}{4A_3} \right )^{5/2},
  * \f}
@@ -97,11 +95,10 @@
  * \f$(\tau_0^\mathrm{min}, \tau_3^\mathrm{max})\f$.
  * The implementation of the algorithm along the equal mass curve and
  * in a rectangular lattice in the rest of the parameter space is shown
- * plotted in Fig.\figref{fig_coarse}, where the templates
+ * plotted in \figref{LALInspiralBankHCoarse2}, where the templates
  * chosen are represented as points.
  *
- * \image html  LALInspiralBankHCoarse2.png "Fig.[fig_coarse]: Algorithm sketching the construction of a rectangular lattice of templates"
- * \image latex LALInspiralBankHCoarse2.pdf "Algorithm sketching the construction of a rectangular lattice of templates" width=4.5in
+ * \figure{LALInspiralBankHCoarse2,pdf,0.6,Algorithm sketching the construction of a rectangular lattice of templates}
  *
  * ### Algorithm ###
  *

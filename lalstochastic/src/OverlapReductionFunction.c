@@ -26,20 +26,20 @@
  *
  * <tt>LALOverlapReductionFunction()</tt> calculates the values of the overlap reduction:
  *
- * \anchor stochastic_e_gamma \f{equation}{
+ * \f{equation}{
+ * \label{stochastic_e_gamma}
  * \gamma(f):=\frac{5}{8\pi}\sum_A\int_{S^2}d\hat\Omega\
  * e^{i2\pi f\hat\Omega\cdot\Delta \vec x/c}\
  * F_1^A(\hat\Omega)F_2^A(\hat\Omega)\ ,
- * \tag{stochastic_e_gamma}
  * \f}
  *
  * where \f$\hat \Omega\f$ is a unit vector specifying a direction on the
  * two-sphere, \f$\Delta\vec x:=\vec x_1-\vec x_2\f$ is the separation vector
  * between the two detectors, and
  *
- * \anchor stochastic_e_F_i \f{equation}{
+ * \f{equation}{
+ * \label{stochastic_e_F_i}
  * F_i^A(\hat\Omega):=e_{ab}^A(\hat\Omega)\ d_i^{ab}
- * \tag{stochastic_e_F_i}
  * \f}
  *
  * is the response of the \f$i\f$th detector \f$(i=1,2)\f$ to the \f$A=+,\times\f$
@@ -83,22 +83,23 @@
  *
  * ### Algorithm ###
  *
- * As shown in Appendix B of [\ref Flanagan1993] and Sec.~III.B of
- * [\ref Allen1999], the overlap reduction function can be written in
+ * As shown in Appendix B of \cite Flanagan1993 and Sec.~III.B of
+ * \cite Allen1999, the overlap reduction function can be written in
  * closed form in terms of the traceless response tensor
  * \f$D_{ab}=d_{ab}-\delta_{ab} d^c_c/3\f$
  * as sum of three spherical Bessel functions:
  *
- * \anchor stochastic_e_closed1 \f{equation}{
+ * \f{equation}{
+ * \label{stochastic_e_closed1}
  * \gamma(f)=\rho_1(\alpha)\ D_1^{ab}D_{2ab}
  * +\rho_2(\alpha)\ D_1^{ab}D_{2a}{}^c s_b s_c
  * +\rho_3(\alpha)\ D_1^{ab}D_2^{cd}s_a s_b s_c s_d\ ,
- * \tag{stochastic_e_closed1}
  * \f}
  *
  * where
  *
- * \anchor stochastic_e_closed2 \f{equation}{
+ * \f{equation}{
+ * \label{stochastic_e_closed2}
  * \left[
  * \begin{array}{c}
  * \rho_1\\
@@ -122,12 +123,11 @@
  * j_2
  * \end{array}
  * \right]\ ,
- * \tag{stochastic_e_closed2}
  * \f}
  *
  * \f$j_0\f$, \f$j_1\f$, and \f$j_2\f$ are the standard spherical Bessel functions:
  *
- * \f{eqnarray*}{
+ * \f{eqnarray}{
  * j_0(\alpha)&=&\frac{\sin\alpha}{\alpha} ,\\
  * j_1(\alpha)&=&\frac{\sin\alpha}{\alpha^2}-\frac{\cos\alpha}{\alpha}\ ,\\
  * j_2(\alpha)&=&3\ \frac{\sin\alpha}{\alpha^3}-3\ \frac{\cos\alpha}{\alpha^2} -\frac{\sin\alpha}{\alpha}\ ,
@@ -151,7 +151,7 @@
  * <li> Calculates the frequency-independent coëfficients
  * \f$D_1^{ab}D_{2ab}\f$, \f$D_1^{ab}D_{2a}{}^c s_b s_c\f$, and
  * \f$D_1^{ab}D_2^{cd}s_a s_b s_c s_d\f$ that appear in
- * Eq.\eqref{stochastic_e_closed1}.</li>
+ * \eqref{stochastic_e_closed1}.</li>
  *
  * <li> Calculates \f$\gamma(f)\f$ at each discrete frequency
  * \f$f_i:=f_0+i\Delta f\f$, \f$i=0,1,\cdots N-1\f$, using the power series
@@ -187,10 +187,10 @@
  * <ul>
  *
  * <li> The \f$\gamma(f)\f$ here is related to the unnormalized \f$\Gamma(f)\f$
- * defined by Maggiore[\ref Maggiore2000a,\ref Maggiore2000b] by
+ * defined by Maggiore\cite Maggiore2000a,\cite Maggiore2000b by
  * \f$\gamma(f) = \frac{5}{2}\Gamma(f)\f$.  This normalization, which
  * agrees with the literature
- * [\ref Flanagan1993,\ref Allen1997,\ref Allen1999]
+ * \cite Flanagan1993,\cite Allen1997,\cite Allen1999
  * on interferometers, is chosen so that \f$\gamma(f)\equiv 1\f$ for a pair
  * of coïncident, coäligned interferometers with perpendicular
  * arms.  It means that, for combinations other than a pair of
@@ -198,7 +198,7 @@
  * generalization of \f$\gamma(f)\f$ defined by Maggiore, whose
  * relationship to \f$\Gamma(f)\f$ depends on the type of detector.
  * Defining \f$\gamma(f)\f$ as we do allows us to use the formulae from,
- * e.g., [\ref Allen1999], irrespective of the detector
+ * e.g., \cite Allen1999, irrespective of the detector
  * type in question.</li>
  *
  * <li> While \f$\gamma(f)\f$ is usually considered to be dimensionless,

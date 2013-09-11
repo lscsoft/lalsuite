@@ -21,7 +21,7 @@
 
 /*
  * Functions to calculate the so-called F-statistic for a given point in parameter-space,
- * following the equations in \ref JKS98.
+ * following the equations in \cite JKS98.
  *
  * This code is partly a descendant of an earlier implementation found in
  * LALDemod.[ch] by Jolien Creighton, Maria Alessandra Papa, Reinhard Prix, Steve Berukoff, Xavier Siemens, Bruce Allen
@@ -2141,7 +2141,7 @@ XLALDestroyMultiFstatAtomVector ( MultiFstatAtomVector *multiFstatAtoms )
 /**
  * Convert amplitude-params from 'physical' coordinates {h0, cosi, psi, phi0} into
  * 'canonical' coordinates A^mu = {A1, A2, A3, A4}. The equations are found in
- * \ref JKS98 or \ref Prix07 Eq.(2).
+ * \cite JKS98 or \cite Prix07 Eq.(2).
  *
  */
 int

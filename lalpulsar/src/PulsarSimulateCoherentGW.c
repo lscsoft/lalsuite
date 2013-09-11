@@ -186,7 +186,7 @@ XLALPulsarSimulateCoherentGW ( REAL4TimeSeries  *output,	///< [in/out] output ti
  * the transfer function is multiplied with \f$A_1\f$ and \f$A_2\f$, and the
  * phase of the transfer function is added to \f$\phi\f$,</li>
  * <li> The plus and cross contributions \f$o_+\f$, \f$o_\times\f$ to the
- * detector output are computed as in Eqs.\eqref{eq_quasiperiodic_hpluscross}
+ * detector output are computed as in \eqref{eq_quasiperiodic_hpluscross}
  * of \ref PulsarSimulateCoherentGW_h, but
  * using the response-adjusted amplitudes and phase.</li>
  * <li> The final detector response \f$o\f$ is computed as
@@ -203,14 +203,14 @@ XLALPulsarSimulateCoherentGW ( REAL4TimeSeries  *output,	///< [in/out] output ti
  * want to resample at new (output) time intervals \f$t_k = t_0 + k\Delta
  * t\f$.  We first precompute the following quantities:
  * \f{eqnarray}{
- * t_\mathrm{off} & = & \frac{t_0-t_A}{\Delta t_A}  \; , \nonumber \\
- * dt & = & \frac{\Delta t}{\Delta t_A} \; . \nonumber
+ * t_\mathrm{off} & = & \frac{t_0-t_A}{\Delta t_A}  \; , \\
+ * dt & = & \frac{\Delta t}{\Delta t_A} \; .
  * \f}
  * Then, for each output sample time \f$t_k\f$, we compute:
  * \f{eqnarray}{
- * t & = & t_\mathrm{off} + k \times dt \; , \nonumber \\
- * j & = & \lfloor t \rfloor            \; , \nonumber \\
- * f & = & t - j                        \; , \nonumber
+ * t & = & t_\mathrm{off} + k \times dt \; , \\
+ * j & = & \lfloor t \rfloor            \; , \\
+ * f & = & t - j                        \; ,
  * \f}
  * where \f$\lfloor x\rfloor\f$ is the "floor" function; i.e.\ the largest
  * integer \f$\leq x\f$.  The time series sampled at the new time is then:
@@ -222,7 +222,7 @@ XLALPulsarSimulateCoherentGW ( REAL4TimeSeries  *output,	///< [in/out] output ti
  *
  * The major computational hit in this routine comes from computing the
  * sine and cosine of the phase angle in
- * Eqs.\eqref{eq_quasiperiodic_hpluscross} of
+ * \eqref{eq_quasiperiodic_hpluscross} of
  * \ref PulsarSimulateCoherentGW_h.  For better online performance, these can
  * be replaced by other (approximate) trig functions.  Presently the code
  * uses the native \c libm functions by default, or the function

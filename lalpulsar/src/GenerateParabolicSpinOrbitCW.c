@@ -52,11 +52,11 @@
  *
  * ### Algorithm ###
  *
- * For parabolic orbits, we combine Eqs.\eqref{eq_spinorbit-tr},
- * \eqref{eq_spinorbit-t}, and\eqref{eq_spinorbit-upsilon} to get \f$t_r\f$
+ * For parabolic orbits, we combine \eqref{eq_spinorbit-tr},
+ * \eqref{eq_spinorbit-t}, and \eqref{eq_spinorbit-upsilon} to get \f$t_r\f$
  * directly as a function of \f$E\f$:
- * \anchor eq_cubic-e \f{equation}{
- * \tag{eq_cubic-e}
+ * \f{equation}{
+ * \label{eq_cubic-e}
  * t_r = t_p + \frac{r_p\sin i}{c} \left[ \cos\omega +
  * \left(\frac{1}{v_p} + \cos\omega\right)E -
  * \frac{\sin\omega}{4}E^2 + \frac{1}{12v_p}E^3\right] \;,
@@ -65,20 +65,20 @@
  * periapsis.  Following the prescription for the general analytic
  * solution to the real cubic equation, we substitute
  * \f$E=x+3v_p\sin\omega\f$ to obtain:
- * \anchor eq_cubic-x \f{equation}{
- * \tag{eq_cubic-x}
+ * \f{equation}{
+ * \label{eq_cubic-x}
  * x^3 + px = q \;,
  * \f}
  * where:
- * \anchor eq_cubic-p \anchor eq_cubic-q \f{eqnarray}{
- * \tag{eq_cubic-p}
+ * \f{eqnarray}{
+ * \label{eq_cubic-p}
  * p & = & 12 + 12v_p\cos\omega - 3v_p^2\sin^2\omega \;, \\
- * \tag{eq_cubic-q}
+ * \label{eq_cubic-q}
  * q & = & 12v_p^2\sin\omega\cos\omega - 24v_p\sin\omega +
  * 2v_p^3\sin^3\omega + 12\dot{\upsilon}_p(t_r-t_p) \;.
  * \f}
  * We note that \f$p>0\f$ is guaranteed as long as \f$v_p<1\f$, so the right-hand
- * side of Eq.\eqref{eq_cubic-x} is monotonic in \f$x\f$ and has exactly one
+ * side of \eqref{eq_cubic-x} is monotonic in \f$x\f$ and has exactly one
  * root.  However, \f$p\rightarrow0\f$ in the limit \f$v_p\rightarrow1\f$ and
  * \f$\omega=\pi\f$.  This may cause some loss of precision in subsequent
  * calculations.  But \f$v_p\sim1\f$ means that our solution will be
@@ -104,20 +104,19 @@
  * the step size in the (output) time series in \f$t_r\f$.  Thus at any
  * timestep \f$i\f$, we obtain \f$C\f$ and hence \f$E\f$ via:
  * \f{eqnarray}{
- * C & = & C_0 + i\Delta C \;, \nonumber\\
+ * C & = & C_0 + i\Delta C \;,\\
  * E & = & E_0 + \Delta E\times\left\{\begin{array}{l@{\qquad}c}
  * \sinh\left[\frac{1}{3}\ln\left(
- * C + \sqrt{C^2+1} \right) \right]\;, & C\geq0 \;,\\
- * \\
+ * C + \sqrt{C^2+1} \right) \right]\;, & C\geq0 \;,\\ \\
  * \sinh\left[-\frac{1}{3}\ln\left(
  * -C + \sqrt{C^2+1} \right) \right]\;, & C\leq0 \;,\\
- * \end{array}\right. \nonumber
+ * \end{array}\right.
  * \f}
  * where we have explicitly written \f$\sinh^{-1}\f$ in terms of functions in
  * \c math.h.  Once \f$E\f$ is found, we can compute
  * \f$t=E(12+E^2)/(12\dot{\upsilon}_p)\f$ (where again \f$1/12\dot{\upsilon}_p\f$
  * can be precomputed), and hence \f$f\f$ and \f$\phi\f$ via
- * Eqs.\eqref{eq_taylorcw-freq} and\eqref{eq_taylorcw-phi}.  The
+ * \eqref{eq_taylorcw-freq} and \eqref{eq_taylorcw-phi}.  The
  * frequency \f$f\f$ must then be divided by the Doppler factor:
  * \f[
  * 1 + \frac{\dot{R}}{c} = 1 + \frac{v_p}{4+E^2}\left(
@@ -127,7 +126,7 @@
  *
  * This routine does not account for relativistic timing variations, and
  * issues warnings or errors based on the criterea of
- * Eq.\eqref{eq_relativistic-orbit} in GenerateEllipticSpinOrbitCW().
+ * \eqref{eq_relativistic-orbit} in GenerateEllipticSpinOrbitCW().
  * The routine will also warn if
  * it seems likely that \c REAL8 precision may not be sufficient to
  * track the orbit accurately.  We estimate that numerical errors could

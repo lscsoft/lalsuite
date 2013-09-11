@@ -79,7 +79,7 @@
  *
  * ### Algorithm ###
  *
- * These routines follow the formulae in Sec. 5.1 of [\ref Lang_K1999],
+ * These routines follow the formulae in Sec. 5.1 of \cite Lang_K1999,
  * which we reproduce below.
  *
  * \par Geographic coordinates:
@@ -88,8 +88,8 @@
  * a direction in space is the same as its declination \f$\delta\f$, and
  * longitude \f$\lambda\f$ and right ascension \f$\alpha\f$ differ only through
  * the rotation of the Earth:
- * \anchor eq_lambda_geographic \f{equation}{
- * \tag{eq_lambda_geographic}
+ * \f{equation}{
+ * \label{eq_lambda_geographic}
  * \lambda = \alpha - \left(\frac{2\pi\,\mathrm{radians}}
  * {24\,\mathrm{hours}}\right)\times\mathrm{GMST} \; ,
  * \f}
@@ -101,16 +101,16 @@
  *
  * \par Horizon coordinates:
  * We correct a typographical
- * error on the second line of Eq. 5.45 of [\ref Lang_K1999], (it should
+ * error on the second line of Eq. 5.45 of \cite Lang_K1999, (it should
  * have \f$\cos A\f$, not \f$\sin A\f$).  We also note that while our latitudinal
  * coordinate is just the altitude \f$a\f$ in this system, our longitudinal
  * coordinate increases counterclockwise, and thus corresponds to the
- * \e negative of the azimuth \f$A\f$ as defined by [\ref Lang_K1999].
+ * \e negative of the azimuth \f$A\f$ as defined by \cite Lang_K1999.
  * So we have:
- * \anchor eq_altitude_horizon \anchor eq_azimuth_horizon \f{eqnarray}{
- * \tag{eq_altitude_horizon}
+ * \f{eqnarray}{
+ * \label{eq_altitude_horizon}
  * a & = & \arcsin(\sin\delta\sin\phi + \cos\delta\cos\phi\cos h) \; , \\
- * \tag{eq_azimuth_horizon}
+ * \label{eq_azimuth_horizon}
  * -A & = & \arctan\!2(\cos\delta\sin h, \sin\delta\cos\phi -
  * \cos\delta\sin\phi\cos h) \; ,
  * \f}
@@ -120,27 +120,26 @@
  * \f$h\f$ is the <em>hour angle</em> of the direction being transformed.  This
  * is defined as:
  * \f{eqnarray}{
- * h & = & \lambda_\mathrm{zenith} - \lambda \nonumber\\
- * & = & \mathrm{LMST} - \alpha \nonumber
+ * h & = & \lambda_\mathrm{zenith} - \lambda\\
+ * & = & \mathrm{LMST} - \alpha
  * \f}
  * where LMST is the local mean sidereal time at the point of
  * observation.  The inverse transformation is:
- * \anchor eq_delta_horizon \anchor eq_h_horizon \f{eqnarray}{
- * \tag{eq_delta_horizon}
+ * \f{eqnarray}{
+ * \label{eq_delta_horizon}
  * \delta & = & \arcsin(\sin a\sin\phi + \cos a\cos A\cos\phi) \; , \\
- * \tag{eq_h_horizon}
+ * \label{eq_h_horizon}
  * h & = & \arctan\!2[\cos a\sin(-A), \sin a\cos\phi -
  * \cos a\cos A\sin\phi] \; .
  * \f}
  * As explained in \ref CelestialCoordinates_c, the function
  * \f$\arctan\!2(y,x)\f$ returns the argument of the complex number \f$x+iy\f$.
  *
- * \image html  inject_geodetic.png "Fig. [fig_geodetic]: The difference between geodetic and geocentric latitude."
- * \image latex inject_geodetic.eps "The difference between geodetic and geocentric latitude." width=0.3\textwidth
+ * \figure{inject_geodetic,eps,0.3,The difference between geodetic and geocentric latitude.}
  *
  * \par Geocentric coordinates:
  * As shown in
- * Fig.\figref{fig_geodetic}, the ellipticity of the Earth means that the
+ * \figref{inject_geodetic}, the ellipticity of the Earth means that the
  * vertical axis of a point on the Earth's surface does not pass through
  * the geometric centre of the Earth.  This means that the geodetic
  * latitude of a location (defined as the latitude angle
@@ -195,7 +194,7 @@
  * Earth.
  *
  * The inverse transformation is somewhat trickier.  Eq. 5.29
- * of [\ref Lang_K1999] conveniently gives the transformation in terms
+ * of \cite Lang_K1999 conveniently gives the transformation in terms
  * of a sequence of intermediate variables, but unfortunately these
  * variables are not particularly computer-friendly, in that they are
  * prone to underflow or overflow errors.  The following equations
@@ -208,25 +207,25 @@
  * \f$z=r\sin\phi_\mathrm{geocentric}\f$, one computes the following:
  * \f{eqnarray}{
  * \varpi & = & \sqrt{ \left(\frac{x}{r_e}\right)^2
- * + \left(\frac{y}{r_e}\right)^2 } \;,\nonumber\\
- * E & = & (1-f)\left|\frac{z}{r_e}\right| - f(2-f) \;,\nonumber\\
- * F & = & (1-f)\left|\frac{z}{r_e}\right| + f(2-f) \;,\nonumber\\
+ * + \left(\frac{y}{r_e}\right)^2 } \;,\\
+ * E & = & (1-f)\left|\frac{z}{r_e}\right| - f(2-f) \;,\\
+ * F & = & (1-f)\left|\frac{z}{r_e}\right| + f(2-f) \;,\\
  * P & = & \frac{4}{3}\left( EF + \varpi^2 \right) \quad = \quad
  * \frac{4}{3}\left[ \varpi^2 + (1-f)^2\left(\frac{z}{r_e}\right)^2
- * - f^2(2-f)^2 \right] \;,\nonumber\\
+ * - f^2(2-f)^2 \right] \;,\\
  * Q & = & 2\varpi(F^2 - E^2) \quad = \quad
- * 8\varpi f(1-f)(2-f)\left|\frac{z}{r_e}\right| \;,\nonumber\\
- * D & = & P^3 + Q^2 \;,\nonumber\\
+ * 8\varpi f(1-f)(2-f)\left|\frac{z}{r_e}\right| \;,\\
+ * D & = & P^3 + Q^2 \;,\\
  * v & = & \left\{\begin{array}{lr}
  * \left(\sqrt{D}+Q\right)^{1/3}
  * - \left(\sqrt{D}-Q\right)^{1/3} &
  * D\geq0 \\
  * 2\sqrt{-P}\cos\left(\frac{1}{3}
  * \arccos\left[\frac{Q}{-P\sqrt{-P}}\right]\right) &
- * D\leq0 \end{array}\right.\nonumber\\
- * W & = & \sqrt{E^2 + \varpi v} \nonumber\\
- * G & = & \frac{1}{2}\left(E+W\right)\;,\nonumber\\
- * t & = & \sqrt{G^2+\frac{\varpi^2 F - \varpi vG}{W}}-G \;.\nonumber
+ * D\leq0 \end{array}\right.\\
+ * W & = & \sqrt{E^2 + \varpi v}\\
+ * G & = & \frac{1}{2}\left(E+W\right)\;,\\
+ * t & = & \sqrt{G^2+\frac{\varpi^2 F - \varpi vG}{W}}-G \;.
  * \f}
  * Once we have \f$t\f$ and \f$\varpi\f$, we can compute the geodetic longitude
  * \f$\lambda\f$, latitude \f$\phi\f$, and elevation \f$h\f$:
@@ -238,8 +237,7 @@
  * + [z-\mathrm{sgn}({z})r_e(1-f)]\sin\phi \; .
  * \f}
  *
- * \image html  inject_geodeticsing.png "Fig. [fig_geodeticsing]: Singular surfaces in the geodetic coordinate system.  The ellipticity of this spheroid has been exaggerated compared with the Earth"
- * \image latex inject_geodeticsing.eps "Singular surfaces in the geodetic coordinate system. The ellipticity of this spheroid has been exaggerated compared with the Earth." width=0.47\textwidth
+ * \figure{inject_geodeticsing,eps,0.47,Singular surfaces in the geodetic coordinate system. The ellipticity of this spheroid has been exaggerated compared with the Earth.}
  *
  * These formulae still leave certain areas where coordinate
  * singularities or numerical cancelations can occur.  Some of these have
@@ -254,7 +252,7 @@
  *
  * <li> There is another coordinate singularity when \f$D\leq0\f$, where
  * lines of constant geodetic latitude will cross each other, as shown in
- * Fig.\figref{fig_geodeticsing}.  That is, a given point within this
+ * \figref{inject_geodeticsing}.  That is, a given point within this
  * region can be assigned a range of geodetic latitudes.  The
  * multi-valued region lies within an inner ellipsoid \f$P\leq0\f$, which in
  * the case of the Earth has equatorial radius \f$r_0=r_ef(2-f)=42.6977\f$km
@@ -309,7 +307,7 @@
  *
  * <li> The only remaining known numerical singularities are at the
  * poles of the inner ellipsoid, shown as red dots in
- * Fig.\figref{fig_geodeticsing}.  These points stubbornly resist
+ * \figref{inject_geodeticsing}.  These points stubbornly resist
  * high-precision calculation.  However, they are extremely unlikely to
  * come up in practice.</li>
  * </ul>

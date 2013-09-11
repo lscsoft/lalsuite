@@ -47,7 +47,7 @@ extern "C" {
  * demodulation.
  *
  * The method for determining the parameter metric is discussed in detail
- * in Sec.\ II of \ref Brady_P2000; we present the key results here in
+ * in Sec.\ II of \cite Brady_P2000; we present the key results here in
  * brief.  We assume that a model waveform in our search is described by
  * an overall frequency scale \f$f_0\f$, and by some modulation about that
  * frequency described by ``shape'' parameters
@@ -77,9 +77,8 @@ extern "C" {
  * then the metric components are given simply by the covariances of
  * the phase derivatives \f$\partial\phi/\partial\lambda^\alpha\f$ over the
  * time interval:
- * \anchor eq_gab_phi
- * \f{equation}
- * \tag{eq_gab_phi}
+ * \f{equation}{
+ * \label{eq_gab_phi}
  * g_{\alpha\beta}(\mathbf{\lambda}) =
  * \left\langle
  * \frac{\partial\phi[t;\mathbf{\lambda}]}{\partial\lambda^\alpha}
@@ -108,9 +107,8 @@ extern "C" {
  * reduced by mismatch in the remaining ``shape'' parameters
  * \f$\vec{\lambda}\f$.  This is given by the the \em projected metric
  * \f$\gamma_{ij}(\vec{\lambda})\f$, where \f$i\f$ and \f$j\f$ run from 1 to \f$n\f$:
- * \anchor eq_gij_gab
- * \f{equation}
- * \tag{eq_gij_gab}
+ * \f{equation}{
+ * \label{eq_gij_gab}
  * \gamma_{ij}(\vec{\lambda}) = \left[g_{ij}-\frac{g_{0i}g_{0j}}{g_{00}}
  * \right]_{\lambda^0=f_\mathrm{max}} \; .
  * \f}

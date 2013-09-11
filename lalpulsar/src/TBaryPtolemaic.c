@@ -66,12 +66,11 @@
  * toward the vernal equinox and \f$\mathbf{\hat{e}}_z\f$ toward celestial
  * North, the components of \f$\mathbf{\hat{n}}(\alpha,\delta)\f$ can be
  * written as:
- * \anchor eq_n-alphadelta
  * \f{eqnarray}{
- * n_x & = & \cos\alpha\cos\delta \; , \nonumber\\
- * n_y & = & \sin\alpha\cos\delta \; , \nonumber\\
+ * \label{eq_n-alphadelta}
+ * n_x & = & \cos\alpha\cos\delta \; ,\\
+ * n_y & = & \sin\alpha\cos\delta \; ,\\
  * n_z & = & \sin\delta           \; .
- * \tag{eq_n-alphadelta}
  * \f}
  *
  * In a first-order Ptolemaic model of the solar system, the rotation of
@@ -96,11 +95,11 @@
  * then the detector position is:
  * \f{eqnarray}{
  * x & = & R\cos\theta_\mathrm{rev} +
- * r\cos(\theta_\mathrm{rot}+l)\cos\lambda \; , \nonumber\\
+ * r\cos(\theta_\mathrm{rot}+l)\cos\lambda \; ,\\
  * y & = & R\sin\theta_\mathrm{rev}\cos i +
- * r\sin(\theta_\mathrm{rot}+l)\cos\lambda \; , \nonumber\\
+ * r\sin(\theta_\mathrm{rot}+l)\cos\lambda \; ,\\
  * z & = & R\sin\theta_\mathrm{rev}\sin i +
- * r\sin\lambda \; , \nonumber
+ * r\sin\lambda \; ,
  * \f}
  * where \f$R\f$ is the Earth-Sun distance and \f$r\f$ is the Earth's radius.
  * The time dependence of \f$\mathbf{x}\f$ is implicit in the time dependence
@@ -115,10 +114,10 @@
  * where:
  * \f{eqnarray}{
  * v_x & = & -V\sin\theta_\mathrm{rev} -
- * v\sin(\theta_\mathrm{rot}+l)\cos\lambda \; , \nonumber\\
+ * v\sin(\theta_\mathrm{rot}+l)\cos\lambda \; ,\\
  * v_y & = & V\cos\theta_\mathrm{rev}\cos i +
- * v\cos(\theta_\mathrm{rot}+l)\cos\lambda \; , \nonumber\\
- * v_z & = & V\cos\theta_\mathrm{rev}\sin i \; , \nonumber
+ * v\cos(\theta_\mathrm{rot}+l)\cos\lambda \; ,\\
+ * v_z & = & V\cos\theta_\mathrm{rev}\sin i \; ,
  * \f}
  * \f$V=2\pi R/P_\mathrm{rev}\f$ is the Earth's orbital velocity, and \f$v=2\pi
  * r/P_\mathrm{rot}\f$ is the Earth's equatorial rotational velocity.
@@ -131,7 +130,7 @@
  * {\partial\alpha} \; ,
  * \f]
  * where \f$\partial\mathbf{n}/\partial\alpha\f$ is easily obtained from
- * Eqs.\eqref{eq_n-alphadelta}.  Similarly for \f$\delta\f$.
+ * \eqref{eq_n-alphadelta}.  Similarly for \f$\delta\f$.
  *
  * ### Uses ###
  *

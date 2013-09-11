@@ -50,13 +50,13 @@
  *
  * ### Algorithm ###
  *
- * The routine implements the analytical result of Eq.\eqref{DeFT_algo}.  It thus
+ * The routine implements the analytical result of \eqref{DeFT_algo}.  It thus
  * uses a nested-loop structure, which computes \f$F\f$ for all the template frequencies.
  *
  * The outer most loop is over the search frequencies.   The next loop is over
  * \f$\alpha\f$, which identifies the SFTs.
- * The value of  \f$k^*\f$ is then computed using the second of Eq.\eqref{DeFT_defs},
- * and thus the summation over \f$k\f$ of Eq.\eqref{DeFT_algo} is carried out, with a
+ * The value of  \f$k^*\f$ is then computed using the second of \eqref{DeFT_defs},
+ * and thus the summation over \f$k\f$ of \eqref{DeFT_algo} is carried out, with a
  * loop over Dterms.  In this loop the product \f$\tilde{x}_{\alpha k}P_{\alpha k}\f$
  * is calculated.  Once this loop completes,
  * \f$e^{iy_\alpha}\f$ is computed, the summation over \f$\alpha\f$ performed and,

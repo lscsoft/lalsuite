@@ -32,7 +32,7 @@
  * ### Description ###
  *
  * This package provides a (X)LAL-style interface with the FFTW fast Fourier
- * transform package [\ref fj_1998].
+ * transform package \cite fj_1998.
  *
  * The routines LALCreateForwardComplexFFTPlan() and
  * LALCreateReverseComplexFFTPlan() create plans for computing the
@@ -87,7 +87,7 @@
  *
  * ### Algorithm ###
  *
- * The FFTW [\ref fj_1998] is used.
+ * The FFTW \cite fj_1998 is used.
  *
  * ### Uses ###
  *
@@ -96,8 +96,8 @@
  *
  * <ol>
  * <li> The sign convention used here is the opposite of the definition in
- * <em>Numerical Recipes</em> [\ref ptvf1992], but agrees with the one used
- * by FFTW [\ref fj_1998] and the other LIGO software components.
+ * <em>Numerical Recipes</em> \cite ptvf1992, but agrees with the one used
+ * by FFTW \cite fj_1998 and the other LIGO software components.
  * </li><li> The result of the inverse FFT must be multiplied by \f$1/n\f$ to recover
  * the original vector.  This is different from the \c datacondAPI where
  * the factor is applied by default.
@@ -105,7 +105,7 @@
  * performance is \f$O(n\log n)\f$.  However, better performance is obtained if \f$n\f$
  * is the product of powers of 2, 3, 5, 7, and zero or one power of either 11
  * or 13.  Transforms when \f$n\f$ is a power of 2 are especially fast.  See
- * Ref. [\ref fj_1998].
+ * Ref. \cite fj_1998.
  * </li><li> LALMalloc() is used by all the fftw routines.
  * </li><li> The input and output vectors for LALCOMPLEX8VectorFFT() must
  * be distinct.

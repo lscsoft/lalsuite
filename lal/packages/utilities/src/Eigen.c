@@ -57,8 +57,8 @@
  * A square matrix \f$\mathsf{M}^a{}_b\f$ is said to have an eigenvalue
  * \f$\lambda\f$ and associated eigenvector \f$\mathsf{x}^a\f$ if the following
  * equation holds:
- * \anchor eq_eigenvalue \f{equation}{
- * \tag{eq_eigenvalue}
+ * \f{equation}{
+ * \label{eq_eigenvalue}
  * \mathsf{M}^a{}_b \mathsf{x}^b = \lambda\mathsf{x}^a
  * \f}
  * Generically an \f$N\times N\f$ matrix has \f$N\f$ distinct eigenvalues each
@@ -89,7 +89,7 @@
  * the orthonormal eigenvectors \f$X^i{}_j={x_{(j)}}^i\f$, then it is clear
  * (from the orthonormality of \f${\mathsf{x}_{(j)}}^a\f$) that
  * \f$\mathsf{X}^a{}_b\f$ is orthogonal.  Furtthermore, the eigenvalue
- * equation.\eqref{eq_eigenvalue} gives:
+ * \eqref{eq_eigenvalue} gives:
  * \f{equation}{
  * {(\mathsf{X}^{-1}){}^a{}_b}\mathsf{M}^b{}_c\mathsf{X}^c{}_d =
  * \left[\begin{array}{cccc}
@@ -118,7 +118,7 @@
  * diagonal or immediately adjacent to it); this transformation
  * \e can be accomplished deterministically in a finite number of
  * steps.  This is the approach advocated in Chapter 11
- * of [\ref ptvf1992], and taken in this module.
+ * of \cite ptvf1992, and taken in this module.
  *
  * The routines in \ref Eigen_c simply call the routines in
  * \ref EigenInternal_c, first to reduce the matrix to tridiagonal

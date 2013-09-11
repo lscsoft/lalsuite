@@ -32,12 +32,12 @@
 
 /**
  * An implementation of the detector response formulae in Anderson et al
- * PRD 63 042003 (2001) [\ref ABCF2001].
+ * PRD 63 042003 (2001) \cite ABCF2001.
  *
  * Computes F+ and Fx for a source at a specified sky position,
  * polarization angle, and sidereal time.  Also requires the detector's
  * response matrix which is defined by Eq. (B6) of [ABCF] using either
- * Table 1 of [\ref ABCF2001] or Eqs. (B11)--(B17) to compute the arm
+ * Table 1 of \cite ABCF2001 or Eqs. (B11)--(B17) to compute the arm
  * direction unit vectors.
  */
 void XLALComputeDetAMResponse(
@@ -95,9 +95,9 @@ void XLALComputeDetAMResponse(
  *
  * An implementation of the detector response for all six tensor, vector and
  * scalar polarisation modes of general metric theories of gravity. We follow
- * the convention of [\ref Blaut2012] (this is also equivalent to the
- * Equations in [\ref ABCF2001] and  [\ref Nishizawa2009] in albeit with a
- * rotated set of coordinates), but with [\ref Blaut2012]'s \f$\theta = \pi/2 -
+ * the convention of \cite Blaut2012 (this is also equivalent to the
+ * Equations in \cite ABCF2001 and  \cite Nishizawa2009 in albeit with a
+ * rotated set of coordinates), but with \cite Blaut2012's \f$\theta = \pi/2 -
  * dec\f$ and \f$\phi = ra-GMST\f$ rather than the gha = gmst - ra used here.
  *
  * The values computed are the tensor mode response, F+ and Fx ("cross"), the
@@ -105,7 +105,7 @@ void XLALComputeDetAMResponse(
  * "y" modes, Fx ("x") and Fy, for a source at a specified sky position,
  * polarization angle, and sidereal time.  Also requires the detector's
  * response matrix which is defined by Eq. (B6) of [ABCF] using either
- * Table 1 of [\ref ABCF2001] or Eqs. (B11)--(B17) to compute the arm
+ * Table 1 of \cite ABCF2001 or Eqs. (B11)--(B17) to compute the arm
  * direction unit vectors.
  */
 void XLALComputeDetAMResponseExtraModes(
