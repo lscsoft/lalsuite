@@ -156,7 +156,8 @@ def gps_to_str(gps_time, form=None):
 
     @returns a string with the given format.
     """
-    gps_time = LIGOTimeGPS(gps_time)
+    if not isinstance(gps_time, LIGOTimeGPS):
+        gps_time = LIGOTimeGPS(float(gps_time))
     nano = gps_time.gpsNanoSeconds
     utc = _datetime.datetime(*_gps_to_utc(int(gps_time))[:6])
     utc += _datetime.timedelta(microseconds=nano/1000.0)
@@ -192,10 +193,12 @@ def tconvert(arg=None):
     @returns the LIGOTimeGPS of the given time string, OR, string
     representing the given GPS time
     """
-    if isinstance(arg, Real):
-        return gps_to_str(arg)
-    else:
+    try:
+        float(arg)
+    except ValueError:
         return str_to_gps(arg)
+    else:
+        return gps_to_str(arg)
 
 
 ##@}
