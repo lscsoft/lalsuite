@@ -15,6 +15,7 @@ my $spindownswitch = 0;
 my $ifo = '';
 my $fmin = '';
 my $h0min = '';
+my $h0val = '';
 my $skylocations = 0;
 my $timestampsfile = '';
 my $injskyra = '';
@@ -22,7 +23,10 @@ my $injskydec = '';
 my $ihsfactor = 5;
 my $seedstart = 42;
 my $scox1switch = 0;
-GetOptions('dir=s' => \$directory, 'jobs=i' => \$jobs, 'realnoise' => \$noiseswitch, 'gaps' => \$gapsswitch, 'randpol' => \$randpolswitch, 'linpol' => \$linpolswitch, 'eccOrbit' => \$eccentricityswitch, 'spindown' => \$spindownswitch, 'ifo=s' => \$ifo, 'fmin=f' => \$fmin, 'h0min=f' => \$h0min, 'skylocations:i' => \$skylocations, 'timestampsfile:s' => \$timestampsfile, 'injskyra:f' => \$injskyra, 'injskydec:f' => \$injskydec, 'ihsfactor:i' => \$ihsfactor, 'seed:i' => \$seedstart, 'scox1' => \$scox1switch);
+GetOptions('dir=s' => \$directory, 'jobs=i' => \$jobs, 'realnoise' => \$noiseswitch, 'gaps' => \$gapsswitch, 'randpol' => \$randpolswitch, 'linpol' => \$linpolswitch, 'eccOrbit' => \$eccentricityswitch, 'spindown' => \$spindownswitch, 'ifo=s' => \$ifo, 'fmin=f' => \$fmin, 'h0min:f' => \$h0min, 'h0val:f' => \$h0val, 'skylocations:i' => \$skylocations, 'timestampsfile:s' => \$timestampsfile, 'injskyra:f' => \$injskyra, 'injskydec:f' => \$injskydec, 'ihsfactor:i' => \$ihsfactor, 'seed:i' => \$seedstart, 'scox1' => \$scox1switch);
+
+die "Must set only one of randpolswitch, linpolswitch, or circpolswitch" if ($randpolswitch==1 && $linpolswitch==1);
+die "Must specify one of --h0min or --h0val" if (($h0min ne "" && $h0val ne "") || ($h0min eq "" && $h0val eq ""));
 
 system("mkdir $directory/out");
 die "mkdir failed: $?" if $?;
@@ -53,7 +57,12 @@ request_memory=2500
 notification=Never
 EOF
 
-print CONDORFILE "arguments=\"--dir=$directory --jobnum=\$(JOBNUM) --ifo=H1 --fmin=$fmin --h0min=$h0min";
+print CONDORFILE "arguments=\"--dir=$directory --jobnum=\$(JOBNUM) --ifo=H1 --fmin=$fmin";
+if ($h0min ne "") {
+   print CONDORFILE " --h0min=$h0min";
+} else {
+   print CONDORFILE " --h0val=$h0val";
+}
 if ($noiseswitch!=0) {
    print CONDORFILE " --realnoise";
 }
