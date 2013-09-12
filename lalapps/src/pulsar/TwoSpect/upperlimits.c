@@ -214,7 +214,7 @@ void skypoint95UL(UpperLimit *ul, inputParamsStruct *params, ffdataStruct *ffdat
          //Sum across multiple frequency bins scaling noise each time with average noise floor
          REAL8 totalnoise = 0.0;
          for (kk=0; kk<ii; kk++) totalnoise += fbinavgs->data[jj+kk];
-         totalnoise = noise*totalnoise/(REAL8)ii;
+         totalnoise = noise*totalnoise;
          
          REAL8 ihsminusnoise = ihsmaxima->maxima->data[locationinmaximavector] - totalnoise;    //IHS value minus noise
          
