@@ -614,14 +614,16 @@ void sumIHSSequenceFAR(ihsfarStruct *outputfar, REAL4VectorSequence *ihsvectorse
             //When the user has not specified using faster chisq inversion, use the GSL function
             if (!params->fastchisqinv && sampledtempihsvals->data[jj]!=0.0) {
                averageval += 1.0;
-               farave += gsl_cdf_chisq_Qinv(params->ihsfar, 0.5*sampledtempihsvals->data[jj]) + 0.5*sampledtempihsvals->data[jj];
+               //farave += gsl_cdf_chisq_Qinv(params->ihsfar, 0.5*sampledtempihsvals->data[jj]) + 0.5*sampledtempihsvals->data[jj];
+               farave += 0.5*gsl_cdf_chisq_Qinv(params->ihsfar, sampledtempihsvals->data[jj]);
                if (xlalErrno!=0) {
                   fprintf(stderr, "%s: gsl_cdf_chisq_Qinv() failed.\n", __func__);
                   XLAL_ERROR_VOID(XLAL_EFUNC);
                }
             } else if (params->fastchisqinv && sampledtempihsvals->data[jj]!=0.0) {
                averageval += 1.0;
-               farave += cdf_chisq_Qinv(params->ihsfar, 0.5*sampledtempihsvals->data[jj]) + 0.5*sampledtempihsvals->data[jj];
+               //farave += cdf_chisq_Qinv(params->ihsfar, 0.5*sampledtempihsvals->data[jj]) + 0.5*sampledtempihsvals->data[jj];
+               farave += 0.5*cdf_chisq_Qinv(params->ihsfar, sampledtempihsvals->data[jj]);
                if (xlalErrno!=0) {
                   fprintf(stderr, "%s: cdf_chisq_Qinv() failed.\n", __func__);
                   XLAL_ERROR_VOID(XLAL_EFUNC);
@@ -629,6 +631,7 @@ void sumIHSSequenceFAR(ihsfarStruct *outputfar, REAL4VectorSequence *ihsvectorse
             } //fastchisqinv?
          } //for jj=0 --> sampledtempihsval->length
          outputfar->ihsfar->data[ii-2] = farave/averageval;
+         //fprintf(stderr, "%d %g\n", ii, outputfar->ihsfar->data[ii-2]);
       } //if params->ihsfar != 1.0
 
       XLALDestroyREAL4Vector(sampledtempihsvals);
