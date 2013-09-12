@@ -17,6 +17,7 @@ my $spindownswitch = 0;
 my $ifo = '';
 my $fmin = '';
 my $h0min = '';
+my $h0val = '';
 my $skylocations = 0;
 my $timestampsfile = '';
 my $injskyra = '';
@@ -25,9 +26,10 @@ my $ihsfactor = 5;
 my $seedstart = 42;
 my $scox1switch = 0;
 my $directory = '';
-GetOptions('dir=s' => \$directory, 'jobnum=i' => \$jobnum, 'realnoise' => \$noiseswitch, 'gaps' => \$gapsswitch, 'randpol' => \$randpolswitch, 'linpol' => \$linpolswitch, 'eccOrbit' => \$eccentricityswitch, 'spindown' => \$spindownswitch, 'ifo=s' => \$ifo, 'fmin=f' => \$fmin, 'h0min=f' => \$h0min, 'skylocations:i' => \$skylocations, 'timestampsfile:s' => \$timestampsfile, 'injskyra:f' => \$injskyra, 'injskydec:f' => \$injskydec, 'ihsfactor:i' => \$ihsfactor, 'seed:i' => \$seedstart, 'scox1' => \$scox1switch);
+GetOptions('dir=s' => \$directory, 'jobnum=i' => \$jobnum, 'realnoise' => \$noiseswitch, 'gaps' => \$gapsswitch, 'randpol' => \$randpolswitch, 'linpol' => \$linpolswitch, 'eccOrbit' => \$eccentricityswitch, 'spindown' => \$spindownswitch, 'ifo=s' => \$ifo, 'fmin=f' => \$fmin, 'h0min:f' => \$h0min, 'h0val:f' => \$h0val, 'skylocations:i' => \$skylocations, 'timestampsfile:s' => \$timestampsfile, 'injskyra:f' => \$injskyra, 'injskydec:f' => \$injskydec, 'ihsfactor:i' => \$ihsfactor, 'seed:i' => \$seedstart, 'scox1' => \$scox1switch);
 
-die "Must set only one of randpolswitch, linpolswitch, or circpolswitch" if ($randpolswitch==1 && $linpolswitch==1); 
+die "Must set only one of randpolswitch, linpolswitch, or circpolswitch" if ($randpolswitch==1 && $linpolswitch==1);
+die "Must specify one of --h0min or --h0val" if (($h0min ne "" && $h0val ne "") || ($h0min eq "" && $h0val eq ""));
 
 srand($seedstart+$jobnum);
 
@@ -50,7 +52,7 @@ if ($ifo eq "LHO" || $ifo eq "H1") {
    $ifokey = "V1";
 }
 
-my $lowestFneeded = ($fmin+0.25) - 0.1 - 0.1 - 4e-3;
+my $lowestFneeded = $fmin - 0.1 - 0.1 - 4e-3;
 my $lowestFinteger = int(floor($lowestFneeded - fmod($lowestFneeded, 2.0) + 0.5)) + 1;
 if ($lowestFinteger>$lowestFneeded) {
    $lowestFinteger -= 2;
@@ -76,7 +78,12 @@ if ($skylocations>=1) {
 my $Tsft = 1800.0;
 my $dur = 40551300.0;
 for(my $ii=0; $ii<10; $ii++) {
-   my $h0 = sprintf("%.6e",10**(1.5*rand())*$h0min);
+   my $h0 = 0.0;
+   if ($h0min ne "") {
+      $h0 = sprintf("%.6e",10**(1.5*rand())*$h0min);
+   } else {
+      $h0 = $h0val;
+   }
    my $psi = sprintf("%.6f",0.5*pi*rand()-0.25*pi);
    my $phi0 = sprintf("%.6f",2.0*pi*rand());
    my $alpha = 0.0;
