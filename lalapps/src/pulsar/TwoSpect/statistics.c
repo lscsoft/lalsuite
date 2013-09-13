@@ -1062,6 +1062,33 @@ REAL4 calcMean_ignoreZeros(REAL4Vector *vector)
 } /* calcMean_ignoreZeros() */
 
 
+REAL4 calcHarmonicMean(REAL4Vector *vector, INT4 numfbins, INT4 numffts)
+{
+
+   INT4 ii, values;
+   REAL4 harmonicMean = 0.0;
+   REAL4Vector *tempvect = XLALCreateREAL4Vector(numfbins);
+   if (tempvect==NULL) {
+      fprintf(stderr, "%s: XLALCreateREAL4Vector(%d) failed.\n", __func__, numfbins);
+      XLAL_ERROR_REAL4(XLAL_EFUNC);
+   }
+
+   for (ii=0; ii<numffts; ii++) {
+      if (vector->data[ii*numfbins]!=0.0) {
+         memcpy(tempvect->data, &(vector->data[ii*numfbins]), sizeof(REAL4)*numfbins);
+         harmonicMean += 1.0/calcMean(tempvect);
+         values++;
+      }
+   }
+   if (values>0) harmonicMean = (REAL4)values/harmonicMean;
+
+   XLALDestroyREAL4Vector(tempvect);
+
+   return harmonicMean;
+
+}
+
+
 //////////////////////////////////////////////////////////////
 // Compute the standard deviation of a vector of values
 REAL4 calcStddev(REAL4Vector *vector)
