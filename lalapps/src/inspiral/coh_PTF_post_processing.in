@@ -69,7 +69,8 @@ def init_job(exe, universe, tag, subdir, logdir, cp, memory=None):
 # =============================================================================
 
 def trig_combiner_setup(job, category, ifotag, usertag, grb, onoffcache,\
-                        grbdir, numtrials, outdir, timeslidecache=None):
+                        grbdir, numtrials, outdir, timeslidecache=None,\
+                        slidetag = None):
 
   # setup node
   node = pipeline.CondorDAGNode(job)
@@ -77,9 +78,12 @@ def trig_combiner_setup(job, category, ifotag, usertag, grb, onoffcache,\
 
   node.add_var_opt('ifo-tag', ifotag)
   node.add_var_opt('user-tag', usertag)
+  if slidetag:
+    node.add_var_opt('slide-tag',slidetag)
   node.add_var_opt('grb-name', grb)
   node.add_var_opt('segment-dir', os.path.abspath(grbdir))
-  node.add_var_opt('cache', os.path.abspath(onoffcache))
+  if onoffcache:
+    node.add_var_opt('cache', os.path.abspath(onoffcache))
   node.add_var_opt('num-trials', numtrials)
   node.add_var_opt('output-dir', os.path.abspath(outdir))
   if timeslidecache:
@@ -435,12 +439,35 @@ def main(rundir, outdir, ifotag, grb, inifile, injfile, verbose=False,\
   onoffcache = '%s/onoff/' % grbdir
   onoffcache += '%s-INSPIRAL_HIPE_GRB%s_ZERO_LAG_CATEGORY_1-%s-%s.cache'\
                 % (ifotag, grb, datastart, dataduration)
+  # Get the appropriate tag
+  zlCache = lal.Cache.fromfile(open(onoffcache, 'r'))
+  zlCache = zlCache.sieve(description=usertag)
+  fileDescription = zlCache[0].description.split('_')
+  grbIndex = fileDescription.index('GRB%s' %(grb)) + 1
+  zlString = '_'.join(fileDescription[grbIndex:])
 
   if timeSlides:
     timeSlidesCache = '%s/timeslides/' % grbdir
     timeSlidesCache += \
                 '%s-INSPIRAL_HIPE_GRB%s_TIME_SLIDES_CATEGORY_1-%s-%s.cache'\
                 % (ifotag, grb, datastart, dataduration)
+    # Count and store how many long slides they are, and their names
+
+    # Open cache and remove the TMPLTBANK file
+    slideCache = lal.Cache.fromfile(open(timeSlidesCache, 'r'))
+    slideCache = slideCache.sieve(description=usertag)
+
+    # Identify and store unique desciriptions
+    slideStrings = []
+    for entry in slideCache:
+      fileDescription = entry.description.split('_')
+      # Remove user tag and split bank number
+      grbIndex = fileDescription.index('GRB%s' %(grb)) + 1
+      redDescription = '_'.join(fileDescription[grbIndex:])
+      if redDescription not in slideStrings:
+        slideStrings.append(redDescription)
+    numLongSlides = len(slideStrings)
+ 
   else:
     timeSlidesCache = None
 
@@ -462,8 +489,12 @@ def main(rundir, outdir, ifotag, grb, inifile, injfile, verbose=False,\
        not os.path.samefile(executable, executable2):
       shutil.copy(executable, executable2)
     cp.set('condor', job, executable2)
+ 
+  dirsList = ['trig_combiner','efficiency','injection-efficiency']
+  if timeSlides:
+    dirsList.append('trig_combiner_part2')
 
-  for dir in ['trig_combiner','efficiency','injection-efficiency']:
+  for dir in dirsList:
     cp.set(dir,'pad-data',cp.get('data','pad-data'))
     cp.set(dir,'segment-length',cp.get('data','segment-length'))
 
@@ -510,15 +541,30 @@ def main(rundir, outdir, ifotag, grb, inifile, injfile, verbose=False,\
     dag = init_subDAG(tag, outdir, logdir, cp)
     job = init_job(exe, universe, tag, outdir, logdir, cp, minmemory)
 
-    # setup single node
-    node = trig_combiner_setup(job, tag, ifotag, usertag, grb, onoffcache,\
-                               grbdir, numtrials, outdir,\
-                               timeslidecache=timeSlidesCache)
+    # setup onoff node
+    if timeSlides:
+      node = trig_combiner_setup(job, tag, ifotag, usertag, grb, None,\
+                                 grbdir, numtrials, outdir,slidetag=zlString,\
+                                 timeslidecache=onoffcache)
+    else:
+      node = trig_combiner_setup(job, tag, ifotag, usertag, grb, onoffcache,\
+                                 grbdir, numtrials, outdir)
+
     dag.add_node(node)
+
+    if timeSlides:
+      # setup long slide nodes
+      for slideTag in slideStrings:
+        node = trig_combiner_setup(job, tag, ifotag, usertag, grb, None,\
+                                   grbdir, numtrials, outdir,slidetag=slideTag,\
+                                   timeslidecache=timeSlidesCache,)
+        dag.add_node(node)
   
     # finalise DAG
     DAGManNode[tag] = finalise_DAG(dag)
     uberdag.add_node(DAGManNode[tag])
+
+  slideStrings.append(zlString)
   
   # ============
   # trig_cluster
@@ -535,11 +581,17 @@ def main(rundir, outdir, ifotag, grb, inifile, injfile, verbose=False,\
   if timeSlides:
     trigslidefile = {}
     clstslidefile = {}
+    fileList = {}
     for timetype in timeSlideTags:
-      trigslidefile[timetype] = '%s-%s_TIMESLIDES_GRB%s_%s-%s-%s.xml.gz'\
-                               % (ifotag,usertag,grb,timetype,start,duration)
-      clstslidefile[timetype] = trigslidefile[timetype].replace(timetype,\
-                                                    '%s_CLUSTERED' % timetype)
+      fileList[timetype] = []
+      for slideString in slideStrings:
+        trigslidefile[timetype+slideString] = \
+            '%s-%s_TIMESLIDES_GRB%s_%s_%s-%s-%s.xml.gz'\
+            % (ifotag,usertag,grb,slideString,timetype,start,duration)
+        clstslidefile[timetype+slideString] = \
+            trigslidefile[timetype+slideString].replace(\
+            timetype,'%s_CLUSTERED' % timetype)
+        fileList[timetype].append(clstslidefile[timetype+slideString])
 
   if run_clustering:
 
@@ -557,14 +609,57 @@ def main(rundir, outdir, ifotag, grb, inifile, injfile, verbose=False,\
 
     if timeSlides:
       for timetype in timeSlideTags:
-        node = trig_cluster_setup(job, tag, trigslidefile[timetype], outdir)
-        dag.add_node(node)
+        for slideString in slideStrings:
+          node = trig_cluster_setup(job, tag,\
+              trigslidefile[timetype+slideString], outdir)
+          dag.add_node(node)
 
     # finalise DAG
     parents = []
     if run_combiner: parents.append(DAGManNode['trig_combiner'])
     DAGManNode[tag] = finalise_DAG(dag, parents)
     uberdag.add_node(DAGManNode[tag])
+
+  # =========
+  # trigcombiner (part 2)
+  # =========
+
+  # Only needed if doing time slides and output files are split up at this point
+  # This only combines clustered triggers, as there are too many unclustered
+
+  if timeSlides:
+    tag    = 'trig_combiner_part2'
+    exe    = cp.get('condor', 'trig_combiner')
+  
+    # generate job
+    dag = init_subDAG(tag, outdir, logdir, cp)
+    job = init_job(exe, universe, tag, outdir, logdir, cp, minmemory)
+
+    for timetype in timeSlideTags:
+      # Create cache file
+      currTag = 'COMBINED_CLUSTERED_COHPTF_%s' %(usertag)
+      cache_fname = '%s-%s_GRB%s_%s-%s-%s.cache'\
+          % (ifotag,currTag,grb,timetype,start,duration)
+      output_data_cache = lal.Cache.from_urls(fileList[timetype])
+      output_data_cache.tofile(open(cache_fname, "w"))
+
+      clstslidefile[timetype] = \
+            '%s-%s_TIMESLIDES_GRB%s_%s-%s-%s.xml.gz'\
+            % (ifotag,usertag,grb,timetype,\
+               start,duration)
+
+      node = trig_combiner_setup(job, tag, ifotag, usertag, grb, None,\
+                                 grbdir, numtrials, outdir,\
+                                 timeslidecache=cache_fname)
+  
+      dag.add_node(node)
+
+    # finalise DAG
+    parents = []
+    if run_combiner: parents.append(DAGManNode['trig_cluster'])
+    DAGManNode[tag] = finalise_DAG(dag,parents)
+    uberdag.add_node(DAGManNode[tag])
+
 
   # =========
   # injfinder
@@ -700,11 +795,6 @@ def main(rundir, outdir, ifotag, grb, inifile, injfile, verbose=False,\
 
     if timeSlides:
       for timetype in timeSlideTags:
-        # setup SBV plotting job
-        sbvoutpath = '%s/%s/%s_slides/plots' % (outdir, plotdir, timetype)
-        node = sbv_setup(job, tag, trigslidefile[timetype], grb, sbvoutpath,\
-                         grbdir,vetodir=rundir)
-        dag.add_node(node)
         # setup SBV clustered plotting job
         sbvoutpath = '%s/%s/%s_slides/plots_clustered'\
                      % (outdir, plotdir, timetype)
@@ -714,21 +804,14 @@ def main(rundir, outdir, ifotag, grb, inifile, injfile, verbose=False,\
 
     # Make the injection plot with whatever background is available
     if timeSlides:
-      injtrigfile = trigslidefile['OFFSOURCE']
       injclstfile = clstslidefile['OFFSOURCE']
     else:
-      injtrigfile = trigfile['OFFSOURCE']
       injclstfile = clstfile['OFFSOURCE']
     
     for injrun in filteredInjRuns: 
-      # setup SBV injection plots
+      # setup SBV clusterd injection plots
       injfile = '%s/%s-INJECTION_GRB%s_%s_FOUND-%d-%d.xml'\
                 % (outdir, ifotag, grb, injrun, start, duration)
-      sbvoutpath = '%s/%s/%s/plots' % (outdir, plotdir, injrun)
-      node = sbv_setup(job, tag, injtrigfile, grb, sbvoutpath, grbdir,\
-                       vetodir=rundir,injfile=injfile)
-      dag.add_node(node)
-      # setup SBV clusterd injection plots
       sbvoutpath = '%s/%s/%s/plots_clustered' % (outdir, plotdir, injrun)
       node = sbv_setup(job, tag, injclstfile, grb, sbvoutpath, grbdir,\
                        vetodir=rundir,injfile=injfile)
@@ -738,6 +821,7 @@ def main(rundir, outdir, ifotag, grb, inifile, injfile, verbose=False,\
     parents = []
     if run_clustering: parents.append(DAGManNode['trig_cluster'])
     if run_injcombiner:    parents.append(DAGManNode['injcombiner'])
+    if timeSlides: parents.append(DAGManNode['trig_combiner_part2'])
     DAGManNode[tag] = finalise_DAG(dag, parents)
     uberdag.add_node(DAGManNode[tag])
  
@@ -797,6 +881,7 @@ def main(rundir, outdir, ifotag, grb, inifile, injfile, verbose=False,\
     parents = []
     if run_clustering: parents.append(DAGManNode['trig_cluster'])
     if run_injcombiner:    parents.append(DAGManNode['injcombiner'])
+    if timeSlides: parents.append(DAGManNode['trig_combiner_part2'])
     DAGManNode[tag] = finalise_DAG(dag, parents)
     uberdag.add_node(DAGManNode[tag])
 
