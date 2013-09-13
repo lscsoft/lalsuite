@@ -115,6 +115,8 @@ typedef struct {
 
   BOOLEAN computeLV;	/**< Also compute LineVeto-statistic */
   REAL8 LVrho;		/**< prior rho_max_line for LineVeto-statistic */
+  LALStringVector* LVlX; /**< Line-to-gauss prior ratios lX for LineVeto statistic */
+
   INT4 numDraws;	/**< number of random 'draws' to simulate for F-stat and B-stat */
 
   CHAR *outputStats;	/**< output file to write numDraw resulting statistics into */
@@ -148,6 +150,9 @@ typedef struct {
 
   gsl_rng *rng;			/**< gsl random-number generator */
   CHAR *logString;		/**< logstring for file-output, containing cmdline-options + code VCS version info */
+
+  REAL8 LVlogRhoTerm;		/**< For LineVeto statistic: extra term coming from prior normalization: log(rho_max_line^4/70) */
+  REAL8Vector *LVloglX;		/**< For LineVeto statistic: vector of logs of line prior ratios lX per detector */
 
 } ConfigVariables;
 
@@ -222,6 +227,11 @@ int main(int argc,char *argv[])
     XLAL_ERROR ( XLAL_EFUNC );
   }
 
+  REAL8 *loglX = NULL;
+  if ( cfg.LVloglX ) {
+    loglX = cfg.LVloglX->data;
+  }
+
   /* ----- prepare stats output ----- */
   FILE *fpStats = NULL;
   if ( uvar.outputStats )
@@ -291,16 +301,9 @@ int main(int argc,char *argv[])
         XLAL_ERROR ( XLAL_EFUNC );
       }
 
-      REAL8Vector *linepriorX;
-      if ( (linepriorX = XLALCreateREAL8Vector ( numDetectors )) == NULL ) {
-        XLALPrintError ("%s: failed to XLALCreateREAL8Vector( %d )\n", __func__, numDetectors );
-        XLAL_ERROR ( XLAL_EFUNC );
-      }
-
       /* compute F and LV statistics from atoms */
       UINT4 X;
       for ( X=0; X < numDetectors; X++ )    {
-        linepriorX->data[X] = 0.5;
         lvstats.TwoFX->data[X] = 2.0*XLALComputeFstatFromAtoms ( multiAtoms, X );
         if ( xlalErrno != 0 ) {
           XLALPrintError ("\nError in function %s, line %d : Failed call to XLALComputeFstatFromAtoms().\n\n", __func__, __LINE__);
@@ -316,7 +319,7 @@ int main(int argc,char *argv[])
 
       if ( uvar.computeLV ) {
         BOOLEAN useAllTerms = TRUE;
-        lvstats.LV = XLALComputeLineVeto ( (REAL4)lvstats.TwoF, (REAL4Vector*)lvstats.TwoFX, uvar.LVrho, linepriorX, useAllTerms );
+        lvstats.LV = XLALComputeLineVetoArray ( (REAL4)lvstats.TwoF, numDetectors, (REAL4*)lvstats.TwoFX->data, cfg.LVlogRhoTerm, loglX, useAllTerms );
         if ( xlalErrno != 0 ) {
           XLALPrintError ("\nError in function %s, line %d : Failed call to XLALComputeLineVeto().\n\n", __func__, __LINE__);
           XLAL_ERROR ( XLAL_EFUNC );
@@ -363,7 +366,6 @@ int main(int argc,char *argv[])
 
       /* ----- free Memory */
       XLALDestroyREAL4Vector ( lvstats.TwoFX );
-      XLALDestroyREAL8Vector ( linepriorX );
       XLALDestroyMultiFstatAtomVector ( multiAtoms );
       XLALDestroyMultiAMCoeffs ( multiAMBuffer.multiAM );
 
@@ -384,6 +386,8 @@ int main(int argc,char *argv[])
 
   if ( cfg.logString ) XLALFree ( cfg.logString );
   gsl_rng_free ( cfg.rng );
+
+  XLALDestroyREAL8Vector ( cfg.LVloglX );
 
   XLALDestroyUserVars();
 
@@ -422,6 +426,7 @@ XLALInitUserVars ( UserInput_t *uvar )
 
   uvar->computeLV = 0;
   uvar->LVrho = 0.0;
+  uvar->LVlX = NULL;
   uvar->useFReg = 0;
 
   uvar->fixedh0Nat = -1;
@@ -464,7 +469,8 @@ XLALInitUserVars ( UserInput_t *uvar )
 
   /* misc params */
   XLALregBOOLUserStruct ( computeLV,		 0, UVAR_OPTIONAL, "Also compute LineVeto-statistic");
-  XLALregREALUserStruct ( LVrho,		 0, UVAR_OPTIONAL, "prior rho_max_line for LineVeto-statistic");
+  XLALregREALUserStruct ( LVrho,		 0, UVAR_OPTIONAL, "LineVeto: prior rho_max_line for LineVeto-statistic");
+  XLALregLISTUserStruct ( LVlX,			 0, UVAR_OPTIONAL, "LineVeto: line-to-gauss prior ratios lX for different detectors X, length must be numDetectors. Defaults to lX=1,1,..");
 
   XLALregINTUserStruct  ( numDraws,		'N', UVAR_OPTIONAL,"Number of random 'draws' to simulate");
   XLALregINTUserStruct  ( randSeed,		 0, UVAR_OPTIONAL, "GSL random-number generator seed value to use");
@@ -555,14 +561,13 @@ XLALInitCode ( ConfigVariables *cfg, const UserInput_t *uvar )
   }
 
   UINT4 numDetectors = uvar->IFOs->length;
-  UINT4 X;
   MultiLALDetector *multiDet;
   if ( (multiDet = XLALCreateMultiLALDetector ( numDetectors )) == NULL ) {
     XLALPrintError ("%s: XLALCreateMultiLALDetector(1) failed with errno=%d\n", __func__, xlalErrno );
     XLAL_ERROR ( XLAL_EFUNC );
   }
   LALDetector *site = NULL;
-  for ( X=0; X < numDetectors; X++ )    {
+  for ( UINT4 X=0; X < numDetectors; X++ )    {
     if ( (site = XLALGetSiteInfo ( uvar->IFOs->data[X] )) == NULL ) {
       XLALPrintError ("%s: Failed to get site-info for detector '%s'\n", __func__, uvar->IFOs->data[X] );
       XLAL_ERROR ( XLAL_EFUNC );
@@ -578,7 +583,7 @@ XLALInitCode ( ConfigVariables *cfg, const UserInput_t *uvar )
      XLALPrintError ("%s: XLALCreateMultiLIGOTimeGPSVector(%d) failed.\n", __func__, numDetectors );
   }
 
-  for ( X=0; X < numDetectors; X++ )    {
+  for ( UINT4 X=0; X < numDetectors; X++ )    {
     if ( (multiTS->data[X] = XLALCreateTimestampVector (numSteps)) == NULL ) {
       XLALPrintError ("%s: XLALCreateTimestampVector(%d) failed.\n", __func__, numSteps );
     }
@@ -597,6 +602,55 @@ XLALInitCode ( ConfigVariables *cfg, const UserInput_t *uvar )
     XLALPrintError ( "%s: XLALGetMultiDetectorStates() failed.\n", __func__ );
     XLAL_ERROR ( XLAL_EFUNC );
   }
+
+  /* process LV user vars */
+  if ( uvar->LVrho < 0.0 ) {
+    fprintf(stderr, "Invalid LV prior rho (given rho=%f, need rho>=0)!\n", uvar->LVrho);
+    return( XLAL_EINVAL );
+  }
+  else if ( uvar->LVrho > 0.0 ) {
+    cfg->LVlogRhoTerm = 4.0 * log(uvar->LVrho) - log(70.0);
+  }
+  else { /* if uvar_LVrho == 0.0, logRhoTerm should become irrelevant in summation */
+    cfg->LVlogRhoTerm = - LAL_REAL4_MAX;
+  }
+
+  /* set up line prior ratios: either given by user, then convert from string to REAL4 vector; else, pass NULL, which is interpreted as lX=1.0 for all X */
+  cfg->LVloglX = NULL;
+
+  if ( uvar->computeLV && uvar->LVlX ) {
+
+    if (  uvar->LVlX->length != numDetectors ) {
+      fprintf(stderr, "Length of LV prior ratio vector does not match number of detectors! (%d != %d)\n", uvar->LVlX->length, numDetectors);
+      XLAL_ERROR ( XLAL_EINVAL );
+    }
+
+    if ( (cfg->LVloglX = XLALCreateREAL8Vector ( numDetectors )) == NULL ) {
+      fprintf(stderr, "Failed call to XLALCreateREAL8Vector( %d )\n", numDetectors );
+      XLAL_ERROR ( XLAL_EFUNC );
+    }
+
+    for (UINT4 X = 0; X < numDetectors; X++) {
+
+      if ( 1 != sscanf ( uvar->LVlX->data[X], "%" LAL_REAL8_FORMAT, &cfg->LVloglX->data[X] ) ) {
+        fprintf(stderr, "Illegal REAL8 commandline argument to --LVlX[%d]: '%s'\n", X, uvar->LVlX->data[X]);
+        XLAL_ERROR ( XLAL_EINVAL );
+      }
+
+      if ( cfg->LVloglX->data[X] < 0.0 ) {
+        fprintf(stderr, "Negative input prior-ratio for detector X=%d lX[X]=%f\n", X, cfg->LVloglX->data[X] );
+        XLAL_ERROR ( XLAL_EINVAL );
+      }
+      else if ( cfg->LVloglX->data[X] > 0.0 ) {
+        cfg->LVloglX->data[X] = log(cfg->LVloglX->data[X]);
+      }
+      else { /* if zero prior ratio, approximate log(0)=-inf by -LAL_REA4_MAX to avoid raising underflow exceptions */
+        cfg->LVloglX->data[X] = - LAL_REAL8_MAX;
+      }
+
+    } /* for X < numDetectors */
+
+  } /* if ( uvar->computeLV && uvar->LVlX ) */
 
   /* get rid of all temporary memory allocated for this step */
   XLALDestroyMultiLALDetector ( multiDet );
