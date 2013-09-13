@@ -71,7 +71,7 @@ if opts.group_by == 'far':
     log10_min_far = int(np.ceil(np.log10(np.min(combined))))
     log10_max_far = int(np.ceil(np.log10(np.max(combined))))
     log10_far = np.arange(log10_min_far, log10_max_far + 1)
-    bin_edges = 10**log10_far
+    bin_edges = 10.**log10_far
     bin_names = ['far_1e{0}'.format(e) for e in log10_far]
     bin_titles = [r'$\mathrm{{FAR}} \leq 10^{{{0}}}$ Hz'.format(e) for e in log10_far]
 elif opts.group_by == 'snr':
