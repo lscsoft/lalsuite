@@ -395,10 +395,28 @@ int main(int argc, char *argv[])
          XLAL_ERROR(XLAL_EFUNC);
       }
       for (ii=0; ii<(INT4)multiTimestamps->length; ii++) multiTimestamps->data[ii]->deltaT = inputParams->Tcoh;
-      PulsarParamsVector *injectionSources =  XLALPulsarParamsFromUserInput ( args_info.injectionSources_arg );
-      if (injectionSources==NULL) {
-         fprintf(stderr, "%s: XLALPulsarParamsFromUserInput() failed.\n", __func__);
-         XLAL_ERROR(XLAL_EFUNC);
+      PulsarParamsVector *injectionSources = NULL;
+      if (args_info.injectionSources_given) {
+         injectionSources = XLALPulsarParamsFromUserInput ( args_info.injectionSources_arg );
+         if (injectionSources==NULL) {
+            fprintf(stderr, "%s: XLALPulsarParamsFromUserInput() failed.\n", __func__);
+            XLAL_ERROR(XLAL_EFUNC);
+         }
+      } else {
+         injectionSources = XLALCreatePulsarParamsVector(1);
+         if (injectionSources == NULL) {
+            fprintf(stderr, "%s: XLALCreatePulsarParamsVector(%d) failed\n", __func__, 1);
+            XLAL_ERROR(XLAL_EFUNC);
+         }
+         injectionSources->data[0].Amp.h0 = 0.0;
+         injectionSources->data[0].Amp.cosi = 0.0;
+         injectionSources->data[0].Amp.psi = 0.0;
+         injectionSources->data[0].Amp.phi0 = 0.0;
+         injectionSources->data[0].Amp.cosi = 0.0;
+         injectionSources->data[0].Doppler.refTime = (LIGOTimeGPS){1000000000,0};
+         injectionSources->data[0].Doppler.Alpha = 0.0;
+         injectionSources->data[0].Doppler.Delta = 0.0;
+         injectionSources->data[0].Doppler.fkdot[0] = 1.0;
       }
       CWMFDataParams DataParams;
       DataParams.fMin = round(inputParams->fmin*inputParams->Tcoh - inputParams->dfmax*inputParams->Tcoh - 0.5*(inputParams->blksize-1) - (REAL8)(inputParams->maxbinshift) - 6.0)/inputParams->Tcoh;
@@ -435,10 +453,28 @@ int main(int argc, char *argv[])
          fprintf(stderr, "%s: XLALMakeMultiTimestamps() failed.\n", __func__);
          XLAL_ERROR(XLAL_EFUNC);
       }
-      PulsarParamsVector *injectionSources =  XLALPulsarParamsFromUserInput ( args_info.injectionSources_arg );
-      if (injectionSources==NULL) {
-         fprintf(stderr, "%s: XLALPulsarParamsFromUserInput() failed.\n", __func__);
-         XLAL_ERROR(XLAL_EFUNC);
+      PulsarParamsVector *injectionSources = NULL;
+      if (args_info.injectionSources_given) {
+         injectionSources = XLALPulsarParamsFromUserInput ( args_info.injectionSources_arg );
+         if (injectionSources==NULL) {
+            fprintf(stderr, "%s: XLALPulsarParamsFromUserInput() failed.\n", __func__);
+            XLAL_ERROR(XLAL_EFUNC);
+         }
+      } else {
+         injectionSources = XLALCreatePulsarParamsVector(1);
+         if (injectionSources == NULL) {
+            fprintf(stderr, "%s: XLALCreatePulsarParamsVector(%d) failed\n", __func__, 1);
+            XLAL_ERROR(XLAL_EFUNC);
+         }
+         injectionSources->data[0].Amp.h0 = 0.0;
+         injectionSources->data[0].Amp.cosi = 0.0;
+         injectionSources->data[0].Amp.psi = 0.0;
+         injectionSources->data[0].Amp.phi0 = 0.0;
+         injectionSources->data[0].Amp.cosi = 0.0;
+         injectionSources->data[0].Doppler.refTime = (LIGOTimeGPS){1000000000,0};
+         injectionSources->data[0].Doppler.Alpha = 0.0;
+         injectionSources->data[0].Doppler.Delta = 0.0;
+         injectionSources->data[0].Doppler.fkdot[0] = 1.0;
       }
       CWMFDataParams DataParams;
       DataParams.fMin = round(inputParams->fmin*inputParams->Tcoh - inputParams->dfmax*inputParams->Tcoh - 0.5*(inputParams->blksize-1) - (REAL8)(inputParams->maxbinshift) - 6.0)/inputParams->Tcoh;
@@ -465,7 +501,7 @@ int main(int argc, char *argv[])
       XLALDestroyPulsarParamsVector(injectionSources);
       XLALDestroyMultiSFTVector(sftvector);
       if (inputParams->signalOnly) args_info.avesqrtSh_arg = 1.0;
-    }
+   }
    
    //Print SFT times, if requested by user
    if (args_info.printSFTtimes_given) {
@@ -558,7 +594,8 @@ int main(int argc, char *argv[])
    
    //I wrote this to compensate for a bad input of the expected noise floor
    REAL8 backgroundmeannormfactor = 0.0;
-   if (inputParams->signalOnly==0) backgroundmeannormfactor = 1.0/calcMedian_ignoreZeros(background);
+   //if (inputParams->signalOnly==0) backgroundmeannormfactor = 1.0/calcMedian_ignoreZeros(background);
+   if (inputParams->signalOnly==0) backgroundmeannormfactor = calcHarmonicMean(background, ffdata->numfbins + 2*inputParams->maxbinshift, ffdata->numffts);
    else backgroundmeannormfactor = 1.0;
    ffdata->tfnormalization *= backgroundmeannormfactor;
    fprintf(LOG, "done\n");
@@ -898,6 +935,10 @@ int main(int argc, char *argv[])
          fprintf(stderr, "%s: makeSecondFFT() failed.\n", __func__);
          XLAL_ERROR(XLAL_EFUNC);
       }
+      //Normalize according to LAL PSD spec (also done in ffPlaneNoise() so this doesn't change anything)
+      //There is a secret divide by numffts in the weighting of the TF data (sumofweights), so we don't need to do it here;
+      //the numffts divisor gets squared when taking the PSD, so it is not applied here
+      for (ii=0; ii<(INT4)ffdata->ffdata->length; ii++) ffdata->ffdata->data[ii] *= inputParams->Tobs;
       
       REAL4 secFFTmean = 0.0, secFFTsigma = 0.0;
       secFFTmean = calcMean(ffdata->ffdata);
@@ -1695,7 +1736,8 @@ REAL4Vector * readInSFTs(inputParamsStruct *input, REAL8 *normalization)
          }
          
       } else {
-         for (jj=0; jj<sftlength; jj++) tfdata->data[ii*sftlength + jj] = 0.0;   //Set values to be zero
+         //for (jj=0; jj<sftlength; jj++) tfdata->data[ii*sftlength + jj] = 0.0;   //Set values to be zero
+         memset(&(tfdata->data[ii*sftlength]), 0, sizeof(REAL4)*sftlength);
          nonexistantsft++;    //increment the nonexistantsft counter
       }
       
@@ -1874,7 +1916,8 @@ void tfRngMeans(REAL4Vector *output, REAL4Vector *tfdata, INT4 numffts, INT4 num
          XLAL_ERROR_VOID(XLAL_EFUNC);
       }
    } else  bias = LAL_LN2;
-   REAL8 invbias = 1.0/(bias*1.0099993480677538);  //StackSlide normalization for 101 bins
+   //REAL8 invbias = 1.0/(bias*1.0099993480677538);  //StackSlide normalization for 101 bins
+   REAL8 invbias = 1.0/bias;
    
    //Allocate for a single SFT data and the medians out of each SFT
    REAL4Vector *inpsd = XLALCreateREAL4Vector(totalfbins);
@@ -2569,7 +2612,6 @@ void makeSecondFFT(ffdataStruct *output, REAL4Vector *tfdata, REAL4FFTPlan *plan
    
    INT4 ii, jj;
    REAL8 winFactor = 8.0/3.0;
-   REAL8 psdfactor = winFactor;
    
    //Do the second FFT
    REAL4Vector *x = XLALCreateREAL4Vector(output->numffts);
@@ -2616,7 +2658,7 @@ void makeSecondFFT(ffdataStruct *output, REAL4Vector *tfdata, REAL4FFTPlan *plan
       //It is possible that when dealing with very loud signals, lines, injections, etc. (e.g., far above the background)
       //then the output power here can be "rounded" because of the cast to nearby integer values.
       //For high (but not too high) power values, this may not be noticed because the cast can round to nearby decimal values.
-      for (jj=0; jj<(INT4)psd->length; jj++) output->ffdata->data[psd->length*ii + jj] = (REAL4)(psd->data[jj]*psdfactor*output->ffnormalization);
+      for (jj=0; jj<(INT4)psd->length; jj++) output->ffdata->data[psd->length*ii + jj] = (REAL4)(psd->data[jj]*winFactor*output->ffnormalization);
       
    } /* for ii < numfbins */
    
@@ -2737,6 +2779,7 @@ void ffPlaneNoise(REAL4Vector *aveNoise, inputParamsStruct *input, INT4Vector *s
          XLAL_ERROR_VOID(XLAL_EFUNC);
       }
       REAL4 winFactor = 8.0/3.0;
+      REAL8 dutyfactor = 0.0, dutyfactorincrement = 1.0/(REAL8)numffts;
 
       //Average each SFT across the frequency band, also compute normalization factor
       REAL4Vector *aveNoiseInTime = XLALCreateREAL4Vector(numffts);
@@ -2762,6 +2805,8 @@ void ffPlaneNoise(REAL4Vector *aveNoise, inputParamsStruct *input, INT4Vector *s
 
             if (input->noiseWeightOff==0) sumofweights += (antweights->data[ii]*antweights->data[ii])/(aveNoiseInTime->data[ii]*aveNoiseInTime->data[ii]);
             else sumofweights += (antweights->data[ii]*antweights->data[ii]);
+
+            dutyfactor += dutyfactorincrement;
          }
       } /* for ii < aveNoiseInTime->length */
       invsumofweights = 1.0/sumofweights;
@@ -2777,7 +2822,7 @@ void ffPlaneNoise(REAL4Vector *aveNoise, inputParamsStruct *input, INT4Vector *s
          XLAL_ERROR_VOID(XLAL_EFUNC);
       }
       memset(multiplicativeFactor->data, 0, sizeof(REAL4)*multiplicativeFactor->length);
-      REAL4 psdfactor = winFactor;
+      REAL4 psdfactor = winFactor*input->Tobs;  //Only multiply by Tobs instead of Tobs/numffts^2 because of the weighting normalization
    
       for (ii=0; ii<(INT4)x->length; ii++) {
          if (aveNoiseInTime->data[ii] != 0.0) {
@@ -2858,7 +2903,8 @@ void ffPlaneNoise(REAL4Vector *aveNoise, inputParamsStruct *input, INT4Vector *s
       } /* for ii < 4000 */
 
       //Average and rescale
-      REAL4 averageRescaleFactor = 2.5e-4*psdfactor*(1.0+2.0*corrfactorsquared);
+      //REAL4 averageRescaleFactor = 2.5e-4*psdfactor*(1.0+2.0*corrfactorsquared);
+      REAL4 averageRescaleFactor = 2.5e-4*psdfactor; //*(1.0+2.0*corrfactorsquared);
       if (input->useSSE) {
          sseScaleREAL4Vector(aveNoise, aveNoise, averageRescaleFactor);
          if (xlalErrno!=0) {
@@ -2876,20 +2922,18 @@ void ffPlaneNoise(REAL4Vector *aveNoise, inputParamsStruct *input, INT4Vector *s
          aveNoise->data[0] *= 2.0;
       }
    
-      //comment this out
-      //FILE *BACKGRND = fopen("./output/background.dat","w");
-   
       //Compute normalization
       *(normalization) = 1.0/(calcMean(aveNoise));
-      for (ii=0; ii<(INT4)aveNoise->length; ii++) {
-         aveNoise->data[ii] *= *(normalization);
-         //fprintf(BACKGRND,"%.6f\n",aveNoise->data[ii]);
-      }
+      for (ii=0; ii<(INT4)aveNoise->length; ii++) aveNoise->data[ii] *= *(normalization);
    
-      //Extra factor for normalization to 1.0 (empirically determined)
-      *normalization /= 1.08;
-   
-      //fclose(BACKGRND);
+      //Extra factor for normalization to 1.0 (empirically determined) (Old method)
+      //*normalization /= 1.08;
+
+      //Extra factor for normalization to 1.0
+      //duty factor because there are zero-valued SFTs (fourth root term)
+      //square root term because the uncertainty on the background improves with the size of the running median block
+      //correlation term because neighboring sfts are correlated
+      *normalization /= (1.0+pow(dutyfactor,0.25)/sqrt((REAL8)input->blksize))*sqrt(1.0+2.0*corrfactorsquared);
    
       //Destroy stuff
       XLALDestroyREAL4Vector(x);
