@@ -61,6 +61,7 @@ if opts.output is not None:
 
 import numpy as np
 import matplotlib.pyplot as plt
+from matplotlib import rcParams
 import healpy as hp
 from lalinference.bayestar import fits
 from lalinference.bayestar import plot
@@ -92,7 +93,8 @@ if opts.contour:
     region = np.empty(skymap.shape)
     region[indices] = 100 * np.cumsum(skymap[indices])
     cs = plot.healpix_contour(region, colors='k', linewidths=0.5, levels=opts.contour)
-    plt.clabel(cs, fmt='%g%%', fontsize=6, inline=True)
+    fmt = r'%g\%%' if rcParams['text.usetex'] else '%g%%'
+    plt.clabel(cs, fmt=fmt, fontsize=6, inline=True)
 
 # Add markers (e.g., for injections or external triggers).
 for ra, dec in np.deg2rad(opts.radec):
