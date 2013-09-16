@@ -230,10 +230,21 @@ class InspiralJob(InspiralAnalysisJob):
     exec_name = 'inspiral'
     sections = ['data','inspiral']
     extension = 'xml'
+
+    have_pycbc = False
+    if cp.has_option('inspiral', 'pycbc'):
+         have_pycbc=True
+         cp.set('condor', 'universe', 'vanilla')
+         cp.remove_option('inspiral', 'pycbc')
+
     InspiralAnalysisJob.__init__(self,cp,sections,exec_name,extension,dax)
     self.add_condor_cmd('environment',"KMP_LIBRARY=serial;MKL_SERIAL=yes")
     self.add_condor_cmd('Requirements', 'Memory >= 1000')
     self.add_condor_cmd('request_memory', '1024')
+
+    if have_pycbc:
+        self.add_condor_cmd('getenv', 'True')
+
 
     if self.get_use_gpus():
       # make sure the vanilla universe is being used
