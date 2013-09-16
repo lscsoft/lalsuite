@@ -25,13 +25,16 @@ __author__ = "Leo Singer <leo.singer@ligo.org>"
 
 from optparse import Option, OptionParser
 from lalinference.bayestar import command
+from matplotlib import cm
+colormap_choices = sorted(cm.cmap_d.keys())
 parser = OptionParser(
     description = __doc__,
     usage = "%prog [options] [INPUT]",
     option_list = [
         Option("-o", "--output", metavar="FILE.{pdf,png}",
             help="name of output file [default: plot to screen]"),
-        Option("--colormap", default="jet",
+        Option("--colormap", default="jet", choices=colormap_choices,
+            metavar='|'.join(colormap_choices),
             help="name of matplotlib colormap [default: %default]"),
         Option("--figure-width", metavar="INCHES", type=float, default=8.,
             help="width of figure in inches [default: %default]"),
