@@ -557,10 +557,10 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
       sa.sa_sigaction=catch_alarm;
       sa.sa_flags=SA_SIGINFO;
       sigretcode=sigaction(SIGVTALRM,&sa,NULL);
-      if(sigretcode!=0) printf("WARNING: Cannot establish checkpoint timer!\n");
+      if(sigretcode!=0) fprintf(stderr,"WARNING: Cannot establish checkpoint timer!\n");
       /* Condor sends SIGUSR2 to checkpoint and continue */
       sigretcode=sigaction(SIGUSR2,&sa,NULL);
-      if(sigretcode!=0) printf("WARNING: Cannot establish checkpoint on SIGUSR2.\n");
+      if(sigretcode!=0) fprintf(stderr,"WARNING: Cannot establish checkpoint on SIGUSR2.\n");
       checkpoint_timer.it_interval.tv_sec=4*3600; /* Default timer 4 hours */
       checkpoint_timer.it_interval.tv_usec=0;
       checkpoint_timer.it_value=checkpoint_timer.it_interval;
@@ -568,10 +568,10 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
       /* Install the handler for the condor interrupt signal */
       sa.sa_sigaction=catch_interrupt;
       sigretcode=sigaction(SIGINT,&sa,NULL);
-      if(sigretcode!=0) printf("WARNING: Cannot establish checkpoint on SIGINT.\n");
+      if(sigretcode!=0) fprintf(stderr,"WARNING: Cannot establish checkpoint on SIGINT.\n");
       /* Condor sends SIGTERM to vanilla universe jobs to evict them */
       sigretcode=sigaction(SIGTERM,&sa,NULL);
-      if(sigretcode!=0) printf("WARNING: Cannot establish checkpoint on SIGTERM.\n");
+      if(sigretcode!=0) fprintf(stderr,"WARNING: Cannot establish checkpoint on SIGTERM.\n");
       /* Condor sends SIGTSTP to standard universe jobs to evict them.
        *I think condor handles this, so didn't add a handler CHECK */
   }
@@ -982,7 +982,7 @@ LALInferenceVariables *LALInferenceComputeAutoCorrelation(LALInferenceRunState *
     LALInferenceVariables *cache=*cache_ptr;
     UINT4 Nnew=max_iterations/(UINT4)(max/thinning);
     INT4 stride=max/thinning;
-    if(LALInferenceCheckVariable(runState->algorithmParams,"verbose")) printf("Caching %i samples\n",Nnew);
+    if(LALInferenceCheckVariable(runState->algorithmParams,"verbose")) fprintf(stderr,"Caching %i samples\n",Nnew);
 
     /* Copy independent samples */
     REAL8 oldLogL=-DBL_MAX;
@@ -991,7 +991,7 @@ LALInferenceVariables *LALInferenceComputeAutoCorrelation(LALInferenceRunState *
       REAL8 newlogL=*(REAL8 *)LALInferenceGetVariable(&(variables_array[i]),"logL");
       if(newlogL==oldLogL) {j--; continue;}
       cache=realloc(cache,(j+1)*sizeof(LALInferenceVariables) );
-      if(!cache) printf("ERROR!!! Could not resize cache to %i!\n",j+1);
+      if(!cache) fprintf(stderr,"ERROR!!! Could not resize cache to %i!\n",j+1);
       memset(&(cache[j]),0,sizeof(LALInferenceVariables));
       LALInferenceCopyVariables(&(variables_array[i]),&(cache[j]));
       oldLogL=newlogL;
@@ -1135,7 +1135,7 @@ void LALInferenceNestedSamplingCachedSampler(LALInferenceRunState *runState)
 {
   if(!LALInferenceCheckVariable(runState->algorithmParams,"proposalcache") || !LALInferenceCheckVariable(runState->algorithmParams,"proposalcachesize"))
   {
-    printf("Adding cache variables in the sampler\n");
+    fprintf(stderr,"Adding cache variables in the sampler\n");
     /* Add space for the proposal cache */
     LALInferenceVariables *cache=NULL;
     INT4 newNcache=0;
@@ -1545,7 +1545,7 @@ static int WriteNSCheckPoint(CHAR *filename, LALInferenceRunState *runState, NSi
     UINT4 Nlive=*(UINT4 *)LALInferenceGetVariable(runState->algorithmParams,"Nlive");
     int retcode= _saveNSintegralState(progfile,s);
     if(retcode) {
-        printf("Unable to write nested sampling state - will not be able to resume!\n");
+        fprintf(stderr,"Unable to write nested sampling state - will not be able to resume!\n");
         fclose(progfile);
         return 1;
     }
@@ -1568,7 +1568,7 @@ static int ReadNSCheckPoint(CHAR *filename, LALInferenceRunState *runState, NSin
     UINT4 Nlive=*(UINT4 *)LALInferenceGetVariable(runState->algorithmParams,"Nlive");
     int retcode=_loadNSintegralState(progfile,s);
     if(retcode){
-        printf("Unable to read nested sampling state - unable to resume!\n");
+        fprintf(stderr,"Unable to read nested sampling state - unable to resume!\n");
         fclose(progfile);
         return 1;
     }
