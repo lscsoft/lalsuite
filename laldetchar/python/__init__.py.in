@@ -14,5 +14,6 @@ detector charaterisation purposes.
 #\author Duncan Macleod (<duncan.macleod@ligo.org>), Chris Pankow (<chris.pankow@ligo.org>)
 #@{
 #	\defgroup pkg_py_laldetchar_triggers	Triggers
+#	\defgroup pkg_py_laldetchar_hveto	hveto utility modules
 #@}
 #
