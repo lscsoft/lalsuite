@@ -2625,14 +2625,13 @@ int LALInferenceWriteVariablesBinary(FILE *file, LALInferenceVariables *vars)
 
 LALInferenceVariables *LALInferenceReadVariablesBinary(FILE *stream)
 {
-  //UINT4 i=0;
   UINT4 j;
   UINT4 dim;
   LALInferenceVariables *vars=XLALCalloc(1,sizeof(LALInferenceVariables));
-  //LALInferenceVariableItem **item=NULL;
+
   /* Number of variables to read */
   fread(&dim, sizeof(vars->dimension), 1, stream);
-  //item=&(vars->head);
+
   /* Now read them in */
   for(;dim>0;dim--)
   {
@@ -2641,12 +2640,8 @@ LALInferenceVariables *LALInferenceReadVariablesBinary(FILE *stream)
     LALInferenceParamVaryType vary;
     fgets(name,sizeof(name),stream);
     
-    //*item=LALCalloc(1,sizeof(LALInferenceVariableItem));
-    //fgets((*item)->name, sizeof((*item)->name), stream);
-    j=sizeof(name);
-    while(j>1 && name[j-1]!='\n') name[--j]='\0';
-    if(j>1) name[j-1]='\0';
-    else
+    for(j=0;j<sizeof(name);j++) if(name[j]=='\n') {name[j]='\0'; break;}
+    if(j==sizeof(name))
     {
       fprintf(stderr,"ERROR reading saved variable!");
       return(NULL);
@@ -2663,16 +2658,14 @@ LALInferenceVariables *LALInferenceReadVariablesBinary(FILE *stream)
 	gsl_matrix *matrix=gsl_matrix_alloc(size1,size2);
 	gsl_matrix_fread(stream,matrix);
 	LALInferenceAddVariable(vars,name,&matrix,type,vary);
-	//(*item)->value=XLALCalloc(1,sizeof(gsl_matrix *));
-	//memcpy((*item)->value,matrix,sizeof(matrix));
+
 	break;
       }
       case LALINFERENCE_REAL8Vector_t:
       {
 	REAL8Vector *v=REAL8Vector_fread(stream);
 	LALInferenceAddVariable(vars,name,&v,type,vary);
-//	(*item)->value=XLALCalloc(1,sizeof(REAL8Vector *));
-//	memcpy((*item)->value,v,sizeof(v));
+
 	break;
       }
       default:
@@ -2684,9 +2677,7 @@ LALInferenceVariables *LALInferenceReadVariablesBinary(FILE *stream)
 	LALInferenceAddVariable(vars,name,value,type,vary);
       }
     }
-    //item=&( (*item)->next);
   }
-  //*item=NULL;
   return vars;
 }
 

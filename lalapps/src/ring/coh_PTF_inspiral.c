@@ -892,7 +892,7 @@ UINT4 coh_PTF_statistic(
    * equates to analyse the whole segment.
    */
 
-  if ( params->injectFile )
+  if ( params->injectFile && params->analyzeInjSegsOnly )
   {
     findInjectionSegment(&segStartPoint, &segEndPoint, &cohSNR->epoch, params);
   }
