@@ -61,7 +61,7 @@
  * addition prints to \c stdout the difference measured at each
  * point.  Level 2 prints the elevation of the point, followed by the
  * difference, both in metres (this is to facilitate shaded diagrams such
- * as Fig.\figref{fig_geodetictest}.  Level 3 prints the \f$x\f$, \f$y\f$, and \f$z\f$
+ * as \figref{inject_geodetictest}.  Level 3 prints the \f$x\f$, \f$y\f$, and \f$z\f$
  * coordinates of each point followed by the difference measured at that
  * point (all in metres).  Level 4 prints the geocentric Cartesian
  * coordinates, above, folowed by the geodetic elevation, latitude and
@@ -77,8 +77,7 @@
  *
  * ### Algorithm ###
  *
- * \image html  inject_geodetictest.png "Fig.[fig_geodetictest]: Precision of geocentric-geodetic conversion algorithm.  Shaded ellipse is the reference ellipsoid.  The wedges of (comparatively) lower precision occur near the equator, where the series expansion in B is required."
- * \image latex inject_geodetictest.eps "Precision of geocentric-geodetic conversion algorithm.  Shaded ellipse is the reference ellipsoid.  The wedges of (comparatively) lower precision occur near the equator, where the series expansion in B is required." width=0.55\textwidth
+ * \figure{inject_geodetictest,eps,0.55,Precision of geocentric-geodetic conversion algorithm.  Shaded ellipse is the reference ellipsoid.  The wedges of (comparatively) lower precision occur near the equator\, where the series expansion in B is required.}
  *
  * See \ref TerrestrialCoordinates_c for documentation about the
  * geocentric/geodetic conversion algorithm.  Since
@@ -87,7 +86,7 @@
  * <tt>LALGeocentricToGeodetic()</tt> algorithm.
  *
  * Running with verbosity level 2 gives error data that can be used to
- * generate figures such as Fig.\figref{fig_geodetictest}.  First we note
+ * generate figures such as \figref{inject_geodetictest}.  First we note
  * that for points near the surface of the Earth, the position error is
  * never greater than a micron, or about one part in \f$10^{12}\f$ --- a
  * reasonable expectation for double-precision arithmetic.  The largest

@@ -39,10 +39,10 @@
  * following can also be found in the <tt>ComputeSky()</tt> documentation.  Recall that a demodulated
  * Fourier Transform (DeFT) is given by
  *
- * \anchor eqB_demod_FT \f{equation}{
+ * \f{equation}{
+ * \label{eqB_demod_FT}
  * \hat{x}_b({\vec{\lambda}})=
  * \sum_{\alpha =0}^{M-1}\sum_{k=0}^{N-1}\tilde{x}_{\alpha k}\left[\frac{1}{N}\sum_{j=0}^{N-1}e^{-2\pi i(\Phi_{\alpha jb}(\vec{\lambda})-\frac{jk}{N})}\right]
- * \tag{eqB_demod_FT}
  * \f}
  *
  * The index \f$b\f$ defines the DeFT frequency bin, the index \f$\alpha\f$ loops through
@@ -59,15 +59,16 @@
  * The Taylor expansion of \f$\Phi (t)\f$ about the temporal midpoint
  * \f$t_{\alpha,1/2}\f$ is
  *
- * \anchor eqB_taylor2 \f{equation}{
- * \Phi_{\alpha}(t) = \Phi(t_{\alpha,1/2})+\left[t-t_{\alpha,1/2}\right]\frac{d\Phi}{dt}(t_{\alpha,1/2})\tag{eqB_taylor2} \\
+ * \f{equation}{
+ * \label{eqB_taylor2}
+ * \Phi_{\alpha}(t) = \Phi(t_{\alpha,1/2})+\left[t-t_{\alpha,1/2}\right]\frac{d\Phi}{dt}(t_{\alpha,1/2}) \\
  * \f}
  *
  * For each value of \f$\alpha\f$, this expression consists of either constant or linear terms in time.
  * With the particular time discretization chosen in this code, \f$t=t_{0}+(N\alpha+j)\ T_{obs}/NM\f$, we have
  *
- * \anchor eqB_time \f{equation}{
- * \tag{eqB_time}
+ * \f{equation}{
+ * \label{eqB_time}
  * \left[t-t_{\alpha,1/2}\right]=\frac{\ T_{obs}}{M}\left(\frac{j}{N}-\frac{1}{2}\right)=\mathcal{T}_{s}\left(\frac{j}{N}-\frac{1}{2}\right),
  * \f}
  *
@@ -77,16 +78,18 @@
  * be at rest in this reference frame.  If we now adopt the notation \f$\Delta
  * t^{\prime}_{\alpha}\equiv\left[t^{\prime}(T(t_{\alpha,1/2}))-
  * t^{\prime}(T(t_{0}))\right]\f$ and \f$\dot{t^{\prime}}_{\alpha}\equiv dt^{\prime}/dt({\alpha,1/2})\f$,
- * the phase terms described in Eq.\eqref{eqB_taylor2} become (neglecting constants)
+ * the phase terms described in \eqref{eqB_taylor2} become (neglecting constants)
  *
- * \anchor eqB_phi \anchor eqB_dphi \f{eqnarray}{
+ * \f{eqnarray}{
+ * \label{eqB_phi}
  * \Phi(t_{\alpha,1/2})   & = & f_{0}(\Delta t^{\prime}_{\alpha})+\frac{1}{2}f_{1}(\Delta t^{\prime}_{\alpha})^{2}
  * +\frac{1}{3}f_{2}(\Delta t^{\prime}_{\alpha})^{3}+\frac{1}{4}f_{3}(\Delta t^{\prime}_{\alpha})^{4}+\frac{1}{5}f_{4}(\Delta t^{\prime}_{\alpha})^{5}
- * +\frac{1}{6}f_{5}(\Delta t^{\prime}_{\alpha})^{6}, \nonumber\tag{eqB_phi} \\
+ * +\frac{1}{6}f_{5}(\Delta t^{\prime}_{\alpha})^{6}, \\
  * &   & \\
+ * \label{eqB_dphi}
  * \frac{d\Phi}{dt}(t_{\alpha,1/2})         & = & \dot{t^{\prime}}_{\alpha}\left(f_{0}+ f_{1}(\Delta t^{\prime}_{\alpha})
  * +f_{2}(\Delta t^{\prime}_{\alpha})^{2}+f_{3}(\Delta t^{\prime}_{\alpha})^{3}
- * +f_{4}(\Delta t^{\prime}_{\alpha})^{4}+f_{5}(\Delta t^{\prime}_{\alpha})^{5}\right). \tag{eqB_dphi}
+ * +f_{4}(\Delta t^{\prime}_{\alpha})^{4}+f_{5}(\Delta t^{\prime}_{\alpha})^{5}\right).
  * \f}
  *
  * Note that the polynomial phase function is expressed as a function of the retarded time \f$t^{\prime}\f$ and subsequently
@@ -98,16 +101,17 @@
  * can be found.  For a given set of orbital input parameters we obtain the eccentric anomoly \f$E\f$ by
  * numerically solving
  *
- * \anchor eqB_bintime \f{eqnarray}{\tag{eqB_bintime}
+ * \f{eqnarray}{
+ * \label{eqB_bintime}
  * T(t_{\alpha})-T_{p}&=&\frac{P}{2\pi}\left[E+\left(p\sin{E}+q\left(\cos{E}-1\right)\right)\right].
  * \f}
  *
  * where the quantities \f$p\f$ and \f$q\f$, dependent only on the orbital parameters
  * of the source system, are given by
  *
- * \anchor eqB_pq \f{eqnarray}{
- * \tag{eqB_pq}
- * p&=&\frac{2\pi}{P}\frac{a}{c}\sin{i}\sqrt{1-e^{2}}\cos{\omega}-e \nonumber \\
+ * \f{eqnarray}{
+ * \label{eqB_pq}
+ * p&=&\frac{2\pi}{P}\frac{a}{c}\sin{i}\sqrt{1-e^{2}}\cos{\omega}-e \\
  * q&=&\frac{2\pi}{P}\frac{a}{c}\sin{i}\sin{\omega}.
  * \f}
  *
@@ -118,31 +122,33 @@
  * (where the source is in it`s orbit) at a given detector time \f$t_{\alpha}\f$ we can calculate the derivitive
  * of the retarded source time \f$\prime{t}\f$ with respect to the SSB time \f$T\f$.  This is given by
  *
- * \anchor eqB_binderiv \f{equation}{\tag{eqB_binderiv}
+ * \f{equation}{
+ * \label{eqB_binderiv}
  * \frac{dt^{\prime}}{dT}=\frac{[1-e\cos{E}]}{\left[1+pcos{E}-q\sin{E}\right]}.
  * \f}
  *
  * The quantity \f$\dot{t^{\prime}}_{\alpha}\f$ can now be expressed as
  *
- * \anchor eqB_binderivtwo \f{equation}{\tag{eqB_binderivtwo}
+ * \f{equation}{
+ * \label{eqB_binderivtwo}
  * \dot{t^{\prime}}_{\alpha}=\frac{dT}{dt}\frac{dt^{\prime}}{dT},
  * \f}
  *
  * where \f$dT/dt\f$ is returned via a call to <tt>LALBarycenter()</tt>.
  *
- * We can now rewrite Eq.\eqref{eqB_taylor2} and by grouping together the terms in \f$j\f$ (linear
+ * We can now rewrite \eqref{eqB_taylor2} and by grouping together the terms in \f$j\f$ (linear
  * in \f$t\f$) in order to save computations, we have
  *
- * \anchor eqB_phasecalc \f{equation}{
+ * \f{equation}{
+ * \label{eqB_phasecalc}
  * \Phi_{\alpha}(t)=\sum_{s=0}^{n_{spin}}f_{s}A_{s\alpha}+\frac{j}{N}\sum_{s=0}^{n_{spin}}f_{s}B_{s\alpha},
- * \tag{eqB_phasecalc}
  * \f}
  *
  * where \f$n_{spin}\f$ is the maximum order of spindown parameter.
  *
  * Thus, for a given sky position and set of orbital parameters, the quantities \f$\dot{t^{\prime}}_{\alpha}\f$ and
  * \f$\Delta t^{\prime}_{\alpha}\f$ are calculated only once, just as in <tt>ComputeSky()</tt>.  The analytical constants
- * defined in Eq.\eqref{eqB_phasecalc} now become
+ * defined in \eqref{eqB_phasecalc} now become
  *
  * \f{equation}{
  * A_{s \alpha}=\frac{1}{s+1}\Delta (t^{\prime}_{\alpha})^{s+1}-\frac{1}{2}\mathcal{T}_{SFT}\dot{t^{\prime}}_{\alpha}\Delta (t^{\prime}_{\alpha})^{s}

@@ -41,7 +41,7 @@ extern "C" {
  * \endcode
  *
  * Perform complex-to-complex fast Fourier transforms of vectors using the
- * package FFTW [\ref fj_1998].
+ * package FFTW \cite fj_1998.
  *
  */
 /*@{*/

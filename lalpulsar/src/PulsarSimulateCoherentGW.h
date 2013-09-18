@@ -75,8 +75,7 @@ extern "C" {
  * + B_{+,\times}(t)\sin\phi(t) \; ,
  * \f]
  *
- * \image html inject_phase_diagram.png "Fig. [fig_phase_diagram]: Polarization phase diagram for a quasiperiodic gravitational wave. The phase point p(t) traces out the indicated ellipse in the h_+,h_x plane; the parameters A1, A2 and Phi remain roughly constant over many cycles in phi."
- * \image latex inject_phase_diagram.eps "Polarization phase diagram for a quasiperiodic gravitational wave. The phase point p(t) traces out the indicated ellipse in the h_+,h_x plane; the parameters A1, A2 and Phi remain roughly constant over many cycles in phi." width=0.42\textwidth
+ * \figure{inject_phase_diagram,eps,0.42,Polarization phase diagram for a quasiperiodic gravitational wave. The phase point p(t) traces out the indicated ellipse in the h_+\,h_x plane; the parameters A1\, A2 and Phi remain roughly constant over many cycles in phi.}
  *
  * where \f$\phi(t)=2\pi\int f(t)\,dt\f$, and the <em>evolution timescale</em>
  * \f$\tau=\min\{A/\dot{A},B/\dot{B},f/\dot{f}\}\f$ is much greater than
@@ -98,14 +97,14 @@ extern "C" {
  * instantaneous frequency.  We therefore write the waveforms in terms of
  * two polarization amplitudes \f$A_1(t)\f$ and \f$A_2(t)\f$, a single phase
  * function \f$\phi(t)\f$, and a polarization shift \f$\Phi(t)\f$:
- * \anchor eq_quasiperiodic_hpluscross \f{eqnarray}{
- * \tag{eq_quasiperiodic_hpluscross}
+ * \f{eqnarray}{
+ * \label{eq_quasiperiodic_hpluscross}
  * h_+(t) & = & A_1(t)\cos\Phi(t)\cos\phi(t)
  * - A_2(t)\sin\Phi(t)\sin\phi(t) \; , \\
  * h_\times(t) & = & A_1(t)\sin\Phi(t)\cos\phi(t)
  * + A_2(t)\cos\Phi(t)\sin\phi(t) \; .
  * \f}
- * The physical meaning of these functions is shown in Fig.\figref{fig_phase_diagram}.
+ * The physical meaning of these functions is shown in \figref{inject_phase_diagram}.
  *
  * There is a close relationship between the polarization shift \f$\Phi\f$
  * and the orientation of the \f$x\f$-\f$y\f$ coordinates used to define our
@@ -130,7 +129,7 @@ extern "C" {
  *
  * The following coordinate conventions are assumed:
  * <ol>
- * <li> Fig. 7 of [\ref Will_C_1996] defines standard coordinate
+ * <li> Fig. 7 of \cite Will_C_1996 defines standard coordinate
  * conventions for nonprecessing binaries, and by extension, for any
  * fixed-axis rotating source: If \f$\mathbf{\hat{z}}\f$ points in the direction
  * of wave propagation (away from the source), and \f$\mathbf{\hat{l}}\f$ points
@@ -147,7 +146,7 @@ extern "C" {
  * \f$\mathbf{\hat{y}}\f$ become ambiguous, but they \e must be fixed; the
  * relations for \f$A_1\f$, \f$A_2\f$, and \f$\Phi\f$ will no longer be maintained.</li>
  *
- * <li> Appendix B of [\ref Anderson_W2000] defines a convention for
+ * <li> Appendix B of \cite ABCF2001 defines a convention for
  * the overal polarization angle \f$\psi\f$: Let \f$\mathbf{\hat{N}}\f$ be the
  * direction of the Earth's north celestial pole, and define the
  * direction of the <em>ascending node</em>
@@ -270,7 +269,7 @@ extern "C" {
  */
 typedef struct tagPulsarCoherentGW {
   SkyPosition position;     /**< The location of the source in the sky; this should be in equatorial celestial coordinates, but routines may be able to do the conversion */
-  REAL4 psi;                /**< The polarization angle \f$\psi\f$, in radians, as defined in Appendix B of [\ref Anderson_W2000] */
+  REAL4 psi;                /**< The polarization angle \f$\psi\f$, in radians, as defined in Appendix B of \cite ABCF2001 */
   REAL4TimeVectorSeries *h; /**< A time-sampled two-dimensional vector storing the waveforms \f$h_+(t)\f$ and \f$h_\times(t)\f$, in dimensionless strain */
   REAL4TimeVectorSeries *a; /**< A time-sampled two-dimensional vector storing the amplitudes \f$A_1(t)\f$ and \f$A_2(t)\f$, in dimensionless strain */
   REAL4TimeSeries *f;       /**< A time-sampled sequence storing the instantaneous frequency \f$f(t)\f$, in Hz. */

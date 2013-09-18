@@ -117,3 +117,4 @@ LALCosmologicalParametersAndRate *XLALCreateCosmologicalParametersAndRate(void);
 void XLALDestroyCosmologicalParametersAndRate(LALCosmologicalParametersAndRate *p);
 void XLALSetCosmologicalRateParametersDefaultValue(LALCosmologicalRateParameters *params);
 #endif
+

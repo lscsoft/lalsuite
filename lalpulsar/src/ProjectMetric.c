@@ -49,7 +49,7 @@
  *
  * ### Algorithm ###
  *
- * The function simply implements Eq.\eqref{eq_gij_gab} in
+ * The function simply implements \eqref{eq_gij_gab} in
  * \ref StackMetric_h.  The formula used to convert uncertainties
  * \f$s_{\alpha\beta}\f$ in the metric components \f$g_{\alpha\beta}\f$ into
  * uncertainties \f$\sigma_{ij}\f$ in \f$\gamma_{ij}\f$ is:

@@ -91,7 +91,7 @@
  * </ul>
  *
  * It then verifies that the correct optimal filter is generated
- * (checking the normalization by verifying that\eqref{stochastic_e_mu}
+ * (checking the normalization by verifying that \eqref{stochastic_e_mu}
  * is satisfied) for each of the following simple test cases (with
  * \f$f_0=0\f$, \f$f_{\mathrm{R}}=1\f$, \f$\delta f=1\f$ and \f$N=8\f$):
  * <ol>

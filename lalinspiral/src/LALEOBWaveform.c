@@ -52,8 +52,8 @@
  * ### Description ###
  *
  * By solving four coupled ordinary differential equations in
- * Eq.\eqref{eq_3_28}-\eqref{eq_3_31} this module computes the
- * waveform in Eq.\eqref{eq_4_1} (see discussion in sec_EOB
+ * \eqref{eq_3_28}--\eqref{eq_3_31} this module computes the
+ * waveform in \eqref{eq_4_1} (see discussion in sec_EOB
  * for details on how the initial conditions are chosen, when the
  * waveform is terminated and so on).
  * No quasi-normal mode oscillations are added to the plunge signal

@@ -52,7 +52,7 @@ typedef enum {
                          * of time; outputs a time-domain wave.
                          */
    TaylorF1,		/**< The stationary phase approximation that correctly represents, in the Fourier domain,
-                         * the waveform given by \c TaylorT1 approximant (see [\ref dis2000] for details);
+                         * the waveform given by \c TaylorT1 approximant (see \cite dis2000 for details);
                          * Outputs a frequency-domain wave. */
    TaylorF2,		/**< The standard stationary phase approximation; Outputs a frequency-domain wave. */
    TaylorR2F4,		/**< A frequency domain model closely related to TaylorT4 */
@@ -61,8 +61,8 @@ typedef enum {
    PadeT1,		/**< Time-domain P-approximant; Outputs a time-domain wave. */
    PadeF1,		/**< Frequency-domain P-approximant (not yet implemented). */
    EOB,			/**< Effective one-body waveform; Outputs a time-domain wave. */
-   BCV,			/**< Detection template family of Buonanno, Chen and Vallisneri [\ref BCV03]; Outputs a frequency-domain wave. */
-   BCVSpin,		/**< Detection template family of Buonanno, Chen and Vallisneri including  spin effects [\ref BCV03b]; Outputs a frequency-domain wave. */
+   BCV,			/**< Detection template family of Buonanno, Chen and Vallisneri \cite BCV03; Outputs a frequency-domain wave. */
+   BCVSpin,		/**< Detection template family of Buonanno, Chen and Vallisneri including  spin effects \cite BCV03b; Outputs a frequency-domain wave. */
    SpinTaylorT1,	/**< Spinning case T1 models */
    SpinTaylorT2,	/**< Spinning case T2 models */
    SpinTaylorT3,	/**< Spinning case T3 models */
@@ -167,6 +167,23 @@ SphHarmTimeSeries* XLALSphHarmTimeSeriesAddMode(
 );
 
 /* 
+ * Set the tdata pointer to a REAL8Sequence for all members of the 
+ * SphHarmTimeSeries linked list. This is mainly intended for use with
+ * unevenly sampled time series data
+ */
+void XLALSphHarmTimeSeriesSetTData( 
+		SphHarmTimeSeries *ts,  /**< List structure to set tdata */
+		REAL8Sequence* fdata  /**< sequence of timestamps */
+);
+
+/* 
+ * Get the tdata pointer.
+ */
+REAL8Sequence* XLALSphHarmTimeSeriesGetTData( 
+		SphHarmTimeSeries *ts  /**< List structure to get tdata */
+);
+
+/* 
  * Destroy a SphHarmTimeSeries. Note that this will destroy any 
  * COMPLEX16TimeSeries which it has references to.
  */
@@ -191,6 +208,16 @@ COMPLEX16TimeSeries* XLALSphHarmTimeSeriesGetMode(
 				INT4 m 
 );
 
+SphHarmTimeSeries *XLALResizeSphHarmTimeSeries(
+        SphHarmTimeSeries *ts,
+        int first,
+        size_t length
+        );
+
+SphHarmFrequencySeries *XLALSphHarmFrequencySeriesFromSphHarmTimeSeries(
+        SphHarmTimeSeries *hlms_TD
+        );
+
 /* 
  * Create a SphHarmFrequencySeries. If appended is not NULL, this will prepend a new
  * structure to the list by duplicating the mode inmode, mode numbers l, and m, 
@@ -201,6 +228,23 @@ SphHarmFrequencySeries* XLALSphHarmFrequencySeriesAddMode(
 		const COMPLEX16FrequencySeries* inmode,  /**< mode series to contain */
 		UINT4 l, /**< major mode number */
 		INT4 m  /**< minor mode number */
+);
+
+/* 
+ * Set the tdata pointer to a REAL8Sequence for all members of the 
+ * SphHarmFrequencySeries linked list. This is mainly intended for use with
+ * unevenly sampled time series data
+ */
+void XLALSphHarmFrequencySeriesSetFData( 
+		SphHarmFrequencySeries *ts,  /**< List structure to add tdata */
+		REAL8Sequence* tdata  /**< sequence of timestamps */
+);
+
+/* 
+ * Get the fdata pointer.
+ */
+REAL8Sequence* XLALSphHarmFrequencySeriesGetFData( 
+		SphHarmFrequencySeries *ts  /**< List structure to get fdata */
 );
 
 /* 
@@ -1768,7 +1812,7 @@ int XLALSimInspiralTaylorEtPNRestricted(
 
 /**
  * Computes the stationary phase approximation to the Fourier transform of
- * a chirp waveform with phase given by Eq.\eqref{eq_InspiralFourierPhase_f2}
+ * a chirp waveform with phase given by \eqref{eq_InspiralFourierPhase_f2}
  * and amplitude given by expanding \f$1/\sqrt{\dot{F}}\f$. If the PN order is
  * set to -1, then the highest implemented order is used.
  */

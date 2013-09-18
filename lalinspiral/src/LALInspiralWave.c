@@ -66,12 +66,12 @@
  * defined as follows: For all \c Taylor approximants at orders 0PN, 1PN and 1.5PN
  * \f$v_\textrm{lso}^2=1/6,\f$ and at 2PN, 2.5PN, 3PN and 3.5PN
  * \f$v_\textrm{lso}^2 = x^\textrm{lso}_{T_4},\f$ where \f$x^\textrm{lso}_{T_4}\f$ is
- * defined in Table.\tableref{table_energy}.  In the case of \c Pade approximant
+ * defined in \tableref{table_energy}.  In the case of \c Pade approximant
  * at 1.5PN order \f$v_\textrm{lso}^2=1/6,\f$ and at orders 2PN, 2.5PN, 3PN and 3.5PN
  * \f$v_\textrm{lso}^2 = x^\textrm{lso}_{P_4},\f$ where \f$x^\textrm{lso}_{P_4}\f$ is
- * defined in Table.\tableref{table_energy}. In the case of #EOB approximant,
+ * defined in \tableref{table_energy}. In the case of #EOB approximant,
  * defined only at orders greater than 2PN, the plunge waveform is
- * terminated at the light-ring orbit defined by Equation.\eqref{eq_LightRing}.
+ * terminated at the light-ring orbit defined by \eqref{eq_LightRing}.
  *
  * In the case of LALInspiralWaveTemplates() <tt>*signalvec1</tt>
  * contains the `0-phase' inspiral template and <tt>*signalvec2</tt> contains

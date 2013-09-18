@@ -34,12 +34,12 @@
  * These are the energy and flux functions which are used in the gravitational wave phasing formula, which is
  * defined as
  *
- * \anchor phasing formula \f{eqnarray}{
+ * \f{eqnarray}{
+ * \label{phasing formula}
  * t(v) & = & t_\textrm{ref} + m \int_v^{v_\textrm{ref}} \,
- * \frac{E'(v)}{{\cal F}(v)} \, dv, \nonumber \\
+ * \frac{E'(v)}{{\cal F}(v)} \, dv, \\
  * \phi (v) & = & \phi_\textrm{ref} + 2 \int_v^{v_\textrm{ref}}  v^3 \,
  * \frac{E'(v)}{{\cal F}(v)} \, dv,
- * \tag{phasing formula}
  * \f}
  *
  * where \f$v=(\pi m F)^{1/3}\f$ is an invariantly defined velocity, \f$F\f$ is the instantaneous GW frequency, and

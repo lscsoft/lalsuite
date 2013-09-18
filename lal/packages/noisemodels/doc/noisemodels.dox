@@ -24,8 +24,7 @@
  * outputs the amplitude spectrum in units \f$\mathrm{Hz}^{-1/2}\f$ The figure
  * below shows the output of the test  code.
  *
- * \image html NoisePSDTest.png ""
- * \image latex NoisePSDTest.pdf "" width=4truein
+ * \figure{NoisePSDTest,pdf,0.6,}
  *
  * \par RandomSignal
  * This test code makes three
@@ -36,8 +35,7 @@
  * cases (1) and (3) but arbitrary in the case of (2). The resulting
  * correlations are shown in the diagram below:
  *
- * \image html  RandomSignal.png "" width=4truein
- * \image latex RandomSignal.pdf "" width=4truein
+ * \figure{RandomSignal,pdf,0.6,}
  *
  * \par FilterTest
  * This test code generates

@@ -33,7 +33,7 @@
  * detector time \f$t\f$ and some canonical time \f$\tau(t)\f$, where \f$\Delta t\f$
  * is the sampling interval in \f$t\f$.  The timing difference function is
  * computed from the piecewise-polynomial fit stored in <tt>*polyco</tt>,
- * via Eq.\eqref{eq_delta-tau}.
+ * via \eqref{eq_delta-tau}.
  *
  * ### Algorithm ###
  *

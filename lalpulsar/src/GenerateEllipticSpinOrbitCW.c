@@ -66,12 +66,12 @@ static REAL8 gsl_E_solver(REAL8 e, void *p) {
  *
  * ### Algorithm ###
  *
- * For elliptical orbits, we combine Eqs.\eqref{eq_spinorbit-tr},
- * \eqref{eq_spinorbit-t}, and\eqref{eq_spinorbit-upsilon} to get \f$t_r\f$
+ * For elliptical orbits, we combine \eqref{eq_spinorbit-tr},
+ * \eqref{eq_spinorbit-t}, and \eqref{eq_spinorbit-upsilon} to get \f$t_r\f$
  * directly as a function of the eccentric anomaly \f$E\f$:
- * \anchor eq_tr-e1 \f{eqnarray}{
- * t_r = t_p & + & \left(\frac{r_p \sin i}{c}\right)\sin\omega \nonumber\\
- * \tag{eq_tr-e1}
+ * \f{eqnarray}{
+ * \label{eq_tr-e1}
+ * t_r = t_p & + & \left(\frac{r_p \sin i}{c}\right)\sin\omega\\
  * & + & \left(\frac{P}{2\pi}\right) \left( E +
  * \left[v_p(1-e)\cos\omega - e\right]\sin E
  * + \left[v_p\sqrt{\frac{1-e}{1+e}}\sin\omega\right]
@@ -80,13 +80,12 @@ static REAL8 gsl_E_solver(REAL8 e, void *p) {
  * where \f$v_p=r_p\dot{\upsilon}_p\sin i/c\f$ is a normalized velocity at
  * periapsis and \f$P=2\pi\sqrt{(1+e)/(1-e)^3}/\dot{\upsilon}_p\f$ is the
  * period of the orbit.  For simplicity we write this as:
- * \anchor eq_tr-e2 \f{equation}{
- * \tag{eq_tr-e2}
+ * \f{equation}{
+ * \label{eq_tr-e2}
  * t_r = T_p + \frac{1}{n}\left( E + A\sin E + B[\cos E - 1] \right) \;,
  * \f}
  *
- * \image html  inject_eanomaly.png "Fig. [fig_binary_orbit_ell]: Function to be inverted to find eccentric anomaly"
- * \image latex inject_eanomaly.pdf "Function to be inverted to find eccentric anomaly" width=0.23\textwidth
+ * \figure{inject_eanomaly,eps,0.23,Function to be inverted to find eccentric anomaly}
  *
  * where \f$T_p\f$ is the \e observed time of periapsis passage and
  * \f$n=2\pi/P\f$ is the mean angular speed around the orbit.  Thus the key
@@ -127,12 +126,12 @@ static REAL8 gsl_E_solver(REAL8 e, void *p) {
  * additional tests would probably slow down the algorithm overall.
  *
  * Once a value of \f$E\f$ is found for a given timestep in the output
- * series, we compute the system time \f$t\f$ via Eq.\eqref{eq_spinorbit-t},
+ * series, we compute the system time \f$t\f$ via \eqref{eq_spinorbit-t},
  * and use it to determine the wave phase and (non-Doppler-shifted)
- * frequency via Eqs.\eqref{eq_taylorcw-freq}
- * and\eqref{eq_taylorcw-phi}.  The Doppler shift on the frequency is
- * then computed using Eqs.\eqref{eq_spinorbit-upsilon}
- * and\eqref{eq_orbit-rdot}.  We use \f$\upsilon\f$ as an intermediate in
+ * frequency via \eqref{eq_taylorcw-freq}
+ * and \eqref{eq_taylorcw-phi}.  The Doppler shift on the frequency is
+ * then computed using \eqref{eq_spinorbit-upsilon}
+ * and \eqref{eq_orbit-rdot}.  We use \f$\upsilon\f$ as an intermediate in
  * the Doppler shift calculations, since expressing \f$\dot{R}\f$ directly in
  * terms of \f$E\f$ results in expression of the form \f$(1-e)/(1-e\cos E)\f$,
  * which are difficult to simplify and face precision losses when
@@ -155,8 +154,8 @@ static REAL8 gsl_E_solver(REAL8 e, void *p) {
  * significant by noting that \f$v/c\gtrsim v_p\f$ but
  * \f$\Delta(r_p/r)\lesssim 2e/(1+e)\f$; we take these approximations as
  * equalities and require that \f$\Delta\phi\lesssim\pi\f$, giving:
- * \anchor eq_relativistic-orbit \f{equation}{
- * \tag{eq_relativistic-orbit}
+ * \f{equation}{
+ * \label{eq_relativistic-orbit}
  * f_0Tv_p^2\frac{4e}{1+e}\lesssim1 \;.
  * \f}
  * When this critereon is violated, a warning is generated.  Furthermore,

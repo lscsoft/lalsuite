@@ -10,7 +10,7 @@
  * frequency and its harmonics.
  *
  * The technique used  is the so-called coherent line removal
- * (\c clr) [\ref Sintes1998,\ref Sintes2000].
+ * (\c clr) \cite Sintes1998,\cite Sintes2000.
  * \c clr is an algorithm able to remove interference present in the
  * data while preserving the stochastic detector noise.  \c clr
  * works when the interference is present in many harmonics, as long as

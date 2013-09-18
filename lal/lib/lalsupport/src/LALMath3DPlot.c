@@ -33,10 +33,9 @@
  *
  * The notebook renders the templates as
  * points in a three dimensional lattice.  The plot is animated so the user
- * can see the template bank from different perspectives.  See Fig.\figref{LALMathematicaHplot}.
+ * can see the template bank from different perspectives.  See \figref{LALMathematicaHplot1}.
  *
- * \image html  LALMathematicaHplot1.png "Fig. [LALMathematicaHplot]: an example template bank produced by running InspiralSpinBankTest.c to generate roughly 5000 templates"
- * \image latex LALMathematicaHplot1.pdf "An example template bank produced by running InspiralSpinBankTest.c to generate roughly 5000 templates"
+ * \figure{LALMathematicaHplot1,eps,0.6,An example template bank produced by running InspiralSpinBankTest.c to generate roughly 5000 templates}
  *
  * Currently the plot doesn't show the contour of the templates; it renders them as
  * spheres.  In the case of metrics with disimilar scales along the

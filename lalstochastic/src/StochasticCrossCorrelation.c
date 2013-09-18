@@ -33,17 +33,16 @@
  * data, calculates the value of the standard optimally-filtered
  * cross-correlation statistic
  *
- * \anchor stochastic_e_ymax
  * \f{eqnarray}{
+ * \label{stochastic_e_ymax}
  * Y
  * &:=&\int_{t_0}^{t_0+T} dt_1\int_{t_0}^{t_0+T} dt_2\,
- * w_1(t_1)\, h_1(t_1)\, Q(t_1-t_2)\, w_2(t_2)\, h_2(t_2) \nonumber \\
+ * w_1(t_1)\, h_1(t_1)\, Q(t_1-t_2)\, w_2(t_2)\, h_2(t_2) \\
  * &\approx& \sum_{j=0}^{N-1}\delta t\sum_{k=0}^{N-1}\delta t\,
- * w_1[j]\, h_1[j]\, Q[j-k]\, w_2[j]\, h_2[k] \nonumber \\
+ * w_1[j]\, h_1[j]\, Q[j-k]\, w_2[j]\, h_2[k] \\
  * &=& \sum_{\ell=0}^{M-1} \delta f\,
  * \widetilde{\bar{h}}_{1}[\ell]^* \,\widetilde{Q}[\ell]\,
  * \widetilde{\bar{h}}_{2}[\ell],
- * \tag{stochastic_e_ymax}
  * \f}
  *
  * where the sampling period is \f$\delta t=T/N\f$, the frequency spacing is
@@ -80,8 +79,8 @@
  * in the frequency series) with the elements corresponding to negative
  * frequencies determined by complex conjugation.  This allows \f$Y\f$ to be
  * computed as
- * \anchor stochastic_e_shortcut
  * \f{equation}{
+ * \label{stochastic_e_shortcut}
  * Y=\
  * \delta f\
  * \left(
@@ -95,7 +94,6 @@
  * \widetilde{\bar{h}}_{2}[\ell]
  * \right\}
  * \right)\ .
- * \tag{stochastic_e_shortcut}
  * \f}
  *
  * The routine <tt>LALStochasticCrossCorrelationStatistic()</tt> is
@@ -115,8 +113,8 @@
  * the Nyquist frequency, something is wrong.
  * ]
  *
- * \anchor stochastic_e_bandlimited
  * \f{eqnarray}{
+ * \label{stochastic_e_bandlimited}
  * Y&=&\
  * \delta f\
  * 2\sum_{\ell=0}^{P-1}\
@@ -124,14 +122,12 @@
  * \widetilde{\bar{h}}_{1}[\ell]^* \
  * \widetilde{Q}[\ell]\
  * \widetilde{\bar{h}}_{2}[\ell]
- * \right\} \nonumber
- * \\
+ * \right\} \\
  * &\approx&
  * \int_{-f_0-P\delta f}^{-f_0} df\
  * \widetilde{h}_1(f)^*\ \widetilde{Q}(f)\ \widetilde{h}_2(f)
  * + \int_{f_0}^{f_0+P\delta f} df\
  * \widetilde{h}_1(f)^*\ \widetilde{Q}(f)\ \widetilde{h}_2(f)
- * \tag{stochastic_e_bandlimited}
  * \f}
  *
  * The frequency sampling parameters (start frequency, frequency spacing,
@@ -153,31 +149,29 @@
  *
  * In the case of heterodyned data, one wishes to calculate
  *
- * \anchor stochastic_e_ymaxhet
  * \f{eqnarray}{
+ * \label{stochastic_e_ymaxhet}
  * Y
  * &:=&\int_{t_0}^{t_0+T} dt_1\int_{t_0}^{t_0+T} dt_2\,
- * w_1(t_1)\, h_1(t_1)^*\, Q(t_1-t_2)\, w_2(t_2)\, h_2(t_2) \nonumber \\
+ * w_1(t_1)\, h_1(t_1)^*\, Q(t_1-t_2)\, w_2(t_2)\, h_2(t_2) \\
  * &\approx& \sum_{j=0}^{N-1}\delta t\sum_{k=0}^{N-1}\delta t\,
- * w_1[k]\, h_1[j]^*\, Q[j-k]\, w_2[k]\, h_2[k] \nonumber \\
+ * w_1[k]\, h_1[j]^*\, Q[j-k]\, w_2[k]\, h_2[k] \\
  * &=& \sum_{\ell=0}^{M-1} \delta f\,
  * \widetilde{\bar{h}}_{1}[\ell]^* \,\widetilde{Q}[\ell]\,
  * \widetilde{\bar{h}}_{2}[\ell],
- * \tag{stochastic_e_ymaxhet}
  * \f}
  *
  * In this case, the Fourier transforms of the zero-padded data streams
  * have \f$M\f$ independent elements, which must all be included in the sum,
  * which is calculated as
- * \anchor stochastic_e_heterodyned
  * \f{equation}{
+ * \label{stochastic_e_heterodyned}
  * Y=\
  * \sum_{\ell=0}^{M-1}\
  * \widetilde{\bar{h}}_{1}[\ell]^* \
  * \widetilde{Q}[\ell]\
  * \widetilde{\bar{h}}_{2}[\ell]
  * \ .
- * \tag{stochastic_e_heterodyned}
  * \f}
  * While the mean value of the cross-correlation statistic for
  * heterodyned data should be real (assuming both series were heterodyned
@@ -187,10 +181,9 @@
  * ### <tt>LALStochasticCrossCorrelationSpectrum()</tt> ###
  *
  * For diagnostic purposes, this function calculates the integrand of
- * \eqref{stochastic_e_ymax} or\eqref{stochastic_e_ymaxhet}, i.e.
- * \anchor stochastic_e_ccspec
+ * \eqref{stochastic_e_ymax} or \eqref{stochastic_e_ymaxhet}, i.e.
  * \f{equation}{
- * \tag{stochastic_e_ccspec}
+ * \label{stochastic_e_ccspec}
  * Y(f)=
  * \widetilde{\bar{h}}_{1}(f)^* \
  * \widetilde{Q}(f)\
@@ -205,7 +198,7 @@
  * ### Algorithm ###
  *
  * The function <tt>LALStochasticCrossCorrelationSpectrum()</tt>
- * calculates the integrand\eqref{stochastic_e_ccspec} as follows: First
+ * calculates the integrand \eqref{stochastic_e_ccspec} as follows: First
  * it calculates \f$\widetilde{\bar{h}}_{1}[\ell]^* \,
  * \widetilde{\bar{h}}_{2}[\ell]\f$ with
  * <tt>LALCCVectorMultiplyConjugate()</tt> and matches the resolution of
@@ -221,7 +214,7 @@
  * call \\
  * <tt>LALStochasticCrossCorrelationSpectrum()</tt> and then
  * integrate over all frequencies to  calculate
- * \eqref{stochastic_e_shortcut} or\eqref{stochastic_e_heterodyned},
+ * \eqref{stochastic_e_shortcut} or \eqref{stochastic_e_heterodyned},
  * respectively.
  *
  * ### Uses ###

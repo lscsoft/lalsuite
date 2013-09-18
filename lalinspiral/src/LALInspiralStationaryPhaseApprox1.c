@@ -23,7 +23,7 @@
  * \ingroup LALInspiral_h
  *
  * \brief This module computes the stationary phase approximation to the
- * Fourier transform of a chirp waveform by integrating Eq.\eqref{eq_InspiralFourierPhase}.
+ * Fourier transform of a chirp waveform by integrating \eqref{eq_InspiralFourierPhase}.
  *
  * ### Prototypes ###
  *
@@ -38,7 +38,7 @@
  * This module generates the Fourier domain waveform that is analogous of
  * the time-domain approximant <tt>TaylorT1.</tt> Instead of re-expanding the
  * the energy and flux functions they are kept in tact and the integral
- * in Eq.\eqref{eq_InspiralFourierPhase} is solved numerically.
+ * in \eqref{eq_InspiralFourierPhase} is solved numerically.
  * The code returns the Fourier transform packed in the same way as fftw
  * would for the Fourier transform of a real vector.  For a signal vector
  * of length <tt>n=signalvec->length</tt> (\c n even):
@@ -53,7 +53,7 @@
  * ### Algorithm ###
  *
  * The lal code \c XLALREAL8RombergIntegrate() is used to solve the
- * integral in Eq.\eqref{eq_InspiralFourierPhase}.
+ * integral in \eqref{eq_InspiralFourierPhase}.
  * The reference points are chosen so that on inverse Fourier transforming
  * the time-domain waveform will
  * <ul>

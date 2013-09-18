@@ -99,7 +99,7 @@
  * [calculating the normalization with
  * <tt>LALStochasticOptimalFilterNormalization()</tt> as described in
  * \ref StochasticOptimalFilterNormalization_c, and
- * checking the normalization by verifying that\eqref{stochastic_e_mu}
+ * checking the normalization by verifying that \eqref{stochastic_e_mu}
  * is satisfied] for each of the following simple test cases:
  * <ol>
  * <li> \f$\gamma(f) = h_{100}^2\Omega_{\mathrm{GW}}(f) = P^{\mathrm{C}}_1(f)

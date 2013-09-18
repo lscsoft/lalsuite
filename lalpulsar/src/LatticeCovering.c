@@ -86,7 +86,7 @@ static BOOLEAN isSymmetric (const gsl_matrix *Sij);
  *
  * For optimal covering, use latticeType=0, namely the An* lattice,
  * which is the best known covering-lattice up to dimension 23,
- * see \ref CS99 "[CS99]"
+ * see \cite CS99 "[CS99]"
  *
  * ### Algorithm: ###
  *
@@ -786,7 +786,7 @@ XLALReduceGenerator2FullRank (gsl_matrix **outmatrix, 	/**< [out] full-rank squa
 /**
  * Return a (not necessarily quadratic) n-dimensional generating matrix
  * for one of several possible lattices (currently possible: cubic or \f$A_n^*\f$).
- * See \ref CS99 "[CS99]" for the definition and properties of these lattices.
+ * See \cite CS99 "[CS99]" for the definition and properties of these lattices.
  *
  * ### Note1: ###
  *
@@ -872,7 +872,7 @@ XLALGetLatticeGenerator (gsl_matrix **outmatrix,	/**< [out] generating matrix */
 
 	} /* for row < dim */
 
-      /* covering Radius of An* is R = sqrt( n*(n+2) / (12*(n+1)) ), see \ref CS99 */
+      /* covering Radius of An* is R = sqrt( n*(n+2) / (12*(n+1)) ), see \cite CS99 */
       coveringRadius = sqrt ( 1.0 * dimension * (dimension + 2.0) / (12.0 * (dimension + 1) ));
 
       break;

@@ -67,16 +67,16 @@ extern "C" {
  * be written as \f$o(t_k)=n(t_k)+s(t_k)\f$, where \f$n\f$ is the contribution
  * due to noise, \f$s\f$ is the contribution due to signal, and \f$t_k=k\Delta
  * t\f$ are the discrete time samples, then:
- * \anchor eq_SimulateInspiralH_characteristic_amplitude \f{equation}{
- * \tag{eq_SimulateInspiralH_characteristic_amplitude}
+ * \f{equation}{
+ * \label{eq_SimulateInspiralH_characteristic_amplitude}
  * A_c \equiv \sqrt{\sum_{k=-\infty}^\infty |s(t_k)|^2} \;.
  * \f}
  * If \f$T(f)\f$ is the detector transfer function (such that a gravitational
  * have signal \f$\tilde{h}(f)\f$ in the frequency domain produces an output
  * \f$\tilde{o}(f)=\tilde{n}(f)+T(f)\tilde{h}(f)\f$), the characteristic
  * detection amplitude has the not-so-obvious relation that:
- * \anchor eq_SimulateInspiralH_characteristic_gw_amplitude \f{equation}{
- * \tag{eq_SimulateInspiralH_characteristic_gw_amplitude}
+ * \f{equation}{
+ * \label{eq_SimulateInspiralH_characteristic_gw_amplitude}
  * A_c^2 = \int_{-\infty}^\infty \frac{df}{\Delta t}
  * |T(f)\tilde{h}(f)|^2 \;.
  * \f}
@@ -87,13 +87,11 @@ extern "C" {
  * noise output is uncorrelated noise with a mean of zero and a variance
  * of \f$\sigma_n^2=S_o/2\Delta t\f$.  The intrinsic signal-to-noise power is
  * then given by the simple relation:
- * \anchor eq_SimulateInspiralH_instrinsic_snr_power \f{eqnarray}{
- * (h|h) & = & 2\int_{-\infty}^\infty df\,\frac{|\tilde{h}(f)|^2}{S_h(f)}
- * \nonumber\\
- * & = & 2\int_{-\infty}^\infty df\,\frac{|T(f)\tilde{h}(f)|^2}{S_o}
- * \nonumber\\
+ * \f{eqnarray}{
+ * \label{eq_SimulateInspiralH_instrinsic_snr_power}
+ * (h|h) & = & 2\int_{-\infty}^\infty df\,\frac{|\tilde{h}(f)|^2}{S_h(f)} \\
+ * & = & 2\int_{-\infty}^\infty df\,\frac{|T(f)\tilde{h}(f)|^2}{S_o} \\
  * & = & \frac{A_c^2}{\sigma_n^2} \;.
- * \tag{eq_SimulateInspiralH_instrinsic_snr_power}
  * \f}
  * Thus to simulate a signal with an intrinsic signal-to-noise amplitude
  * \f$\sqrt{(h|h)}\f$, simply fill a data vector with uncorrelated noise with
@@ -114,16 +112,16 @@ extern "C" {
  *
  * We first reiterate the standard definitions (given in the
  * \ref pkg_findchirp) of the Fourier transform pair:
- * \anchor eq_SimulateInspiralH_fourier_transforms \f{equation}{
- * \tag{eq_SimulateInspiralH_fourier_transforms}
+ * \f{equation}{
+ * \label{eq_SimulateInspiralH_fourier_transforms}
  * \tilde{a}(f) = \int_{-\infty}^\infty dt\,a(t)e^{-2\pi ift}
  * \qquad\rightleftharpoons\qquad
  * a(t) = \int_{-\infty}^\infty df\,\tilde{a}(f)e^{2\pi ift} \;,
  * \f}
  * of the power spectral density \f$S_n(f)\f$ of a stationary random process
  * (noise) \f$n(t)\f$:
- * \anchor eq_SimulateInspiralH_noise_psd \f{equation}{
- * \tag{eq_SimulateInspiralH_noise_psd}
+ * \f{equation}{
+ * \label{eq_SimulateInspiralH_noise_psd}
  * \langle\tilde{n}(f)\tilde{n}^*(f')\rangle
  * = \frac{1}{2}S_n(f)\delta(f-f')
  * \f}
@@ -131,16 +129,16 @@ extern "C" {
  * instantiations of the random process), and finally of the
  * noise-weighted inner product \f$(a|b)\f$ of two time series \f$a(t)\f$ and
  * \f$b(t)\f$:
- * \anchor eq_SimulateInspiralH_inner_product \f{equation}{
- * \tag{eq_SimulateInspiralH_inner_product}
+ * \f{equation}{
+ * \label{eq_SimulateInspiralH_inner_product}
  * (a|b) = \int_{-\infty}^\infty df\,\frac{\tilde{a}(f)\tilde{b}(f)^*
  * + \tilde{a}(f)^*\tilde{b}(f)}{S_n(f)} \;.
  * \f}
  * In the case where the time series are all real and the noise has zero
  * mean \f$\langle n(t)\rangle=0\f$, the weighting on the inner product leads
  * to the property that:
- * \anchor eq_SimulateInspiralH_inner_product_normalisation \f{equation}{
- * \tag{eq_SimulateInspiralH_inner_product_normalisation}
+ * \f{equation}{
+ * \label{eq_SimulateInspiralH_inner_product_normalisation}
  * \langle(n|s)^2\rangle = (s|s) \;.
  * \f}
  * We call this quantity the <em>intrinsic signal-to-noise power</em> of
@@ -153,7 +151,7 @@ extern "C" {
  * \f$r=(o|a)/\sqrt{(a|a)}\f$ with the property that \f$\langle
  * r\rangle=\sqrt{(s|s)}\f$ and \f$\sigma_r=\sqrt{\langle r^2\rangle-\langle
  * r\rangle^2}=1\f$ (these follow from
- * Eq.\eqref{eq_SimulateInspiralH_inner_product_normalisation} and
+ * \eqref{eq_SimulateInspiralH_inner_product_normalisation} and
  * \f$\langle n\rangle=0\f$).  This is the justification for calling
  * \f$\sqrt{(s|s)}\f$ a signal-to-noise ratio.
  *
@@ -165,15 +163,15 @@ extern "C" {
  * sine and cosine quadratures) that are \f$90^\circ\f$ out of phase.  As
  * described in the
  * \ref FindChirp_h, the optimal statistic in this case is:
- * \anchor eq_SimulateInspiralH_rhosq \f{equation}{
- * \tag{eq_SimulateInspiralH_rhosq}
+ * \f{equation}{
+ * \label{eq_SimulateInspiralH_rhosq}
  * \rho^2 = \frac{(o|a_s)^2}{(a_s|a_s)} + \frac{(o|a_c)^2}{(a_c|a_c)}
  * \f}
  * (where we have implicitly already maximised over any filter
  * parameters, including time-of-arrival).  This statistic no longer has
  * unit variance, but instead has the property that:
- * \anchor eq_SimulateInspiralH_rhosq_expectation \f{equation}{
- * \tag{eq_SimulateInspiralH_rhosq_expectation}
+ * \f{equation}{
+ * \label{eq_SimulateInspiralH_rhosq_expectation}
  * \langle\rho^2\rangle = 2 + (s|s)\;.
  * \f}
  * By comparison, for the perfectly-matched filter one has \f$\langle
@@ -191,14 +189,14 @@ extern "C" {
  * \f$S_n(f)\f$ is independent of \f$f\f$.  This property allows inner products
  * to be expressed equivalently in the time domain as well as in the
  * frequency domain:
- * \anchor eq_SimulateInspiralH_inner_product_time \f{equation}{
- * \tag{eq_SimulateInspiralH_inner_product_time}
+ * \f{equation}{
+ * \label{eq_SimulateInspiralH_inner_product_time}
  * (a|b) = \int_{-\infty}^\infty dt\,\frac{a(t)b(t)^* + a(t)^*b(t)}{S_n} \;.
  * \f}
  * If the white noise process \f$n(t)\f$ is discretely sampled at intervals
  * \f$\Delta t\f$, we find that different time samples are uncorrelated:
- * \anchor eq_SimulateInspiralH_noise_correlation \f{equation}{
- * \tag{eq_SimulateInspiralH_noise_correlation}
+ * \f{equation}{
+ * \label{eq_SimulateInspiralH_noise_correlation}
  * \langle n(t_j)n(t_{j'})^*\rangle = \sigma_n^2 \delta_{jj'} \;,
  * \f}
  * where \f$\sigma_n^2\f$ is the variance in the sampled noise.  This can be
@@ -208,14 +206,11 @@ extern "C" {
  * \f{eqnarray}{
  * \langle n(t_j)n(t_{j'})^*\rangle
  * & = & \frac{1}{N^2}\sum_{k=0}^{N-1}\sum_{k'=0}^{N-1}
- * e^{2\pi i(jk-j'k')/N} \langle\tilde{n}_k\tilde{n}_{k'}\rangle
- * \nonumber\\
+ * e^{2\pi i(jk-j'k')/N} \langle\tilde{n}_k\tilde{n}_{k'}\rangle \\
  * & = & \frac{1}{N^2}\sum_{k=0}^{N-1}\sum_{k'=0}^{N-1}
- * e^{2\pi i(jk-j'k')/N} \frac{N}{2\Delta t}S_n\delta_{kk'}
- * \nonumber\\
- * & = & \frac{S_n}{2N\Delta t}\sum_{k=0}^{N-1} e^{2\pi i(j-j')k/N}
- * \nonumber\\
- * & = & \frac{S_n}{2\Delta t}\delta_{jj'} \;,\nonumber
+ * e^{2\pi i(jk-j'k')/N} \frac{N}{2\Delta t}S_n\delta_{kk'} \\
+ * & = & \frac{S_n}{2N\Delta t}\sum_{k=0}^{N-1} e^{2\pi i(j-j')k/N} \\
+ * & = & \frac{S_n}{2\Delta t}\delta_{jj'} \;,
  * \f}
  * whence we have \f$\sigma_n^2=S_n/2\Delta t\f$.  We note that the
  * divergence as \f$\Delta t\rightarrow0\f$ reflects the fact that the
@@ -225,17 +220,17 @@ extern "C" {
  * subsequent measurements are inevitable.
  *
  * Reexpressing the inner product in
- * Eq.\eqref{eq_SimulateInspiralH_inner_product_time} for
+ * \eqref{eq_SimulateInspiralH_inner_product_time} for
  * discretely-sampled time series, we have:
- * \anchor eq_SimulateInspiralH_inner_product_sampled \f{equation}{
- * \tag{eq_SimulateInspiralH_inner_product_sampled}
+ * \f{equation}{
+ * \label{eq_SimulateInspiralH_inner_product_sampled}
  * (a|b) = \sum_k \Delta t\,\frac{a(t_k)b(t_k)^* + a(t_k)^*b(t_k)}{S_n}
  * = \frac{\mathrm{Re}\left[\sum_k
  * a(t_k)b(t_k)^*\right]}{\sigma_n^2} \;.
  * \f}
  * The intrinsic signal-to-noise amplitude also takes an intuitive form:
- * \anchor eq_SimulateInspiralH_snr_sampled \f{equation}{
- * \tag{eq_SimulateInspiralH_snr_sampled}
+ * \f{equation}{
+ * \label{eq_SimulateInspiralH_snr_sampled}
  * \sqrt{(s|s)} = \frac{\sqrt{\sum_k |s(t_k)|^2}}{\sigma_n}
  * \f}
  * This, then, is the key formula that we will use to determine the
@@ -245,8 +240,8 @@ extern "C" {
  * concerned with white Gaussian noise, where the differential
  * probability of a noise sample \f$n(t_k)\f$ lying in an infinitesimal range
  * \f$(n,n+dn)\f$ is:
- * \anchor eq_SimulateInspiralH_gaussian_pdf \f{equation}{
- * \tag{eq_SimulateInspiralH_gaussian_pdf}
+ * \f{equation}{
+ * \label{eq_SimulateInspiralH_gaussian_pdf}
  * \frac{dP[n(t_k)\in(n,n+dn)]}{dn} = \frac{1}{\sqrt{2\pi\sigma_n^2}}
  * e^{-n^2/2\sigma_n^2} \;.
  * \f}

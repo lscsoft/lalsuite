@@ -39,7 +39,7 @@ extern "C" {
  * \endcode
  *
  * According to the common frame format specification
- * [\ref LIGOVIRGO_2000] the geometry of an interferometric
+ * \cite LIGOVIRGO_2000 the geometry of an interferometric
  * detector will be stored in a \c FrDetector structure, specifying
  * the location of the detector vertex and the orientation of its arms in
  * geodetic coördinates suited to geographical surveying.  Resonant
@@ -82,7 +82,7 @@ extern "C" {
  * from \f$-\pi/2\f$ to \f$\pi/2\f$.  The \e elevation \f$h\f$ is the
  * signed distance along this ray from the reference ellipsoid to the
  * point in question.  This coördinate system is described in more
- * detail in [\ref Althouse_1999].
+ * detail in \cite Althouse_1999.
  *
  * ### Altitude and Azimuth Angles ###
  *
@@ -106,26 +106,26 @@ extern "C" {
  * longitude on the equator, and an \f$x^3\f$ axis which pierces the Earth's
  * surface at the North Pole.  The coördinates \f$x^1\f$, \f$x^2\f$, \f$x^3\f$
  * correspond to the Earth-fixed coördinates \f$X_E\f$, \f$Y_E\f$, \f$Z_E\f$
- * defined in [\ref Althouse_1999], respectively.
+ * defined in \cite Althouse_1999, respectively.
  *
  * The relationship between geodetic and Cartesian coördinates is
  * given by
- * \anchor tools_e_cart1
- * \anchor tools_e_cart2
- * \anchor tools_e_cart3
  * \f{align}{
+ * \label{tools_e_cart1}
  * x^1 &=\left(
  * \frac{a^2}{\sqrt{a^2\cos^2\beta+b^2\sin^2\beta}}
  * + h
- * \right) \cos\beta\cos\lambda             \tag{tools_e_cart1}\\
+ * \right) \cos\beta\cos\lambda \\
+ * \label{tools_e_cart2}
  * x^2 &=\left(
  * \frac{a^2}{\sqrt{a^2\cos^2\beta+b^2\sin^2\beta}}
  * + h
- * \right) \cos\beta\sin\lambda             \tag{tools_e_cart2}\\
+ * \right) \cos\beta\sin\lambda \\
+ * \label{tools_e_cart3}
  * x^3 &=\left(
  * \frac{b^2}{\sqrt{a^2\cos^2\beta+b^2\sin^2\beta}}
  * + h
- * \right) \sin\beta  \tag{tools_e_cart3} \\
+ * \right) \sin\beta \\
  * \f}
  *
  * ### Cached Detectors ###
@@ -281,9 +281,9 @@ void LALCreateDetector( LALStatus *status, LALDetector *output, const LALFrDetec
  * <ul>
  * <li> Data for the resonant mass detectors is taken from:
  * http://igec.lnl.infn.it/cgi-bin/browser.pl?Level=0,3,1
- * and [\ref FinnLazzarini_2001]
+ * and \cite FinnLazzarini_2001
  *
- * <li> Data for LIGO detectors is taken from [\ref Althouse_1999]
+ * <li> Data for LIGO detectors is taken from \cite Althouse_1999
  *
  * <li> Data for the VIRGO detector is provided by Benoit Mours.
  *
@@ -293,13 +293,13 @@ void LALCreateDetector( LALStatus *status, LALDetector *output, const LALFrDetec
  *
  * <li> Data for the TAMA detector is provided by Masa-Katsu Fujimoto
  *
- * <li> Data for the Caltech detector is taken from [\ref Allen_1996]
+ * <li> Data for the Caltech detector is taken from \cite Allen_1996
  * </ul>
  *
- * See the technical document [\ref ABCCRW_2001] for details.
+ * See the technical document \cite ABCCRW_2001 for details.
  *
  * Data in this file (e.g., angle conventions etc.) is intended
- * to conform to the conventions of the Frame format specification [\ref LIGOVIRGO_2000]
+ * to conform to the conventions of the Frame format specification \cite LIGOVIRGO_2000
  *
  */
 /*@{*/

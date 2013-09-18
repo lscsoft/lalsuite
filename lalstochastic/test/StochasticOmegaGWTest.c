@@ -83,14 +83,13 @@
  *
  * If the \c filename argument is present, it also calculates a
  * spectrum based on user-specified data.
- * Figure\figref{stochastic_quadOmega} illustrates the output of the
+ * \figref{stochasticOmegaGWQuadratic} illustrates the output of the
  * command with the following arguments:
  * \code
  * StochasticOmegaGWTest -e 1 -n 1000 -F 100 -O 1e-6 -a 2 -o OmegaGW.dat
  * \endcode
  *
- * \image html  stochasticOmegaGWQuadratic.png "Fig. [stochastic_quadOmega]: A quadratic stochastic gravitational-wave background spectrum."
- * \image latex stochasticOmegaGWQuadratic.pdf "A quadratic stochastic gravitational-wave background spectrum."  width=4in
+ * \figure{stochasticOmegaGWQuadratic,eps,0.6,A quadratic stochastic gravitational-wave background spectrum.}
  *
  * ### Uses ###
  *

@@ -53,12 +53,12 @@
  *
  * ### Algorithm ###
  *
- * For hyperbolic orbits, we combine Eqs.\eqref{eq_spinorbit-tr},
- * \eqref{eq_spinorbit-t}, and\eqref{eq_spinorbit-upsilon} to get \f$t_r\f$
+ * For hyperbolic orbits, we combine \eqref{eq_spinorbit-tr},
+ * \eqref{eq_spinorbit-t}, and \eqref{eq_spinorbit-upsilon} to get \f$t_r\f$
  * directly as a function of \f$E\f$:
- * \anchor eq_tr-e3 \f{eqnarray}{
- * t_r = t_p & + & \left(\frac{r_p \sin i}{c}\right)\sin\omega \nonumber\\
- * \tag{eq_tr-e3}
+ * \f{eqnarray}{
+ * \label{eq_tr-e3}
+ * t_r = t_p & + & \left(\frac{r_p \sin i}{c}\right)\sin\omega\\
  * & + & \frac{1}{n} \left( -E +
  * \left[v_p(e-1)\cos\omega + e\right]\sinh E
  * - \left[v_p\sqrt{\frac{e-1}{e+1}}\sin\omega\right]
@@ -68,13 +68,12 @@
  * periapsis and \f$n=\dot{\upsilon}_p\sqrt{(1-e)^3/(1+e)}\f$ is a normalized
  * angular speed for the orbit (the hyperbolic analogue of the mean
  * angular speed for closed orbits).  For simplicity we write this as:
- * \anchor eq_tr-e4 \f{equation}{
- * \tag{eq_tr-e4}
+ * \f{equation}{
+ * \label{eq_tr-e4}
  * t_r = T_p + \frac{1}{n}\left( E + A\sinh E + B[\cosh E - 1] \right) \;,
  * \f}
  *
- * \image html  inject_hanomaly.png "Fig. [fig_binary_orbit_hyp]: Function to be inverted to find eccentric anomaly"
- * \image latex inject_hanomaly.pdf "Function to be inverted to find eccentric anomaly" width=0.23\textwidth
+ * \figure{inject_hanomaly,eps,0.23,Function to be inverted to find eccentric anomaly}
  *
  * where \f$T_p\f$ is the \e observed time of periapsis passage.  Thus
  * the key numerical procedure in this routine is to invert the
@@ -124,12 +123,12 @@
  * timesteps are much smaller than \f$1/n\f$.
  *
  * Once a value of \f$E\f$ is found for a given timestep in the output
- * series, we compute the system time \f$t\f$ via Eq.\eqref{eq_spinorbit-t},
+ * series, we compute the system time \f$t\f$ via \eqref{eq_spinorbit-t},
  * and use it to determine the wave phase and (non-Doppler-shifted)
- * frequency via Eqs.\eqref{eq_taylorcw-freq}
- * and\eqref{eq_taylorcw-phi}.  The Doppler shift on the frequency is
- * then computed using Eqs.\eqref{eq_spinorbit-upsilon}
- * and\eqref{eq_orbit-rdot}.  We use \f$\upsilon\f$ as an intermediate in
+ * frequency via \eqref{eq_taylorcw-freq}
+ * and \eqref{eq_taylorcw-phi}.  The Doppler shift on the frequency is
+ * then computed using \eqref{eq_spinorbit-upsilon}
+ * and \eqref{eq_orbit-rdot}.  We use \f$\upsilon\f$ as an intermediate in
  * the Doppler shift calculations, since expressing \f$\dot{R}\f$ directly in
  * terms of \f$E\f$ results in expression of the form \f$(e-1)/(e\cosh E-1)\f$,
  * which are difficult to simplify and face precision losses when
@@ -139,7 +138,7 @@
  *
  * This routine does not account for relativistic timing variations, and
  * issues warnings or errors based on the criterea of
- * Eq.\eqref{eq_relativistic-orbit} in \ref LALGenerateEllipticSpinOrbitCW().
+ * \eqref{eq_relativistic-orbit} in \ref LALGenerateEllipticSpinOrbitCW().
  */
 void
 LALGenerateHyperbolicSpinOrbitCW( LALStatus             *stat,

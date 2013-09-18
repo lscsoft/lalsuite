@@ -1,9 +1,11 @@
 DOXY_HTML_FILES = \
 	doxy-html-config.cfg \
+	doxy-html-mathjax.js \
 	doxy-html-layout.xml
 
 DOXY_PDF_FILES = \
 	doxy-pdf-config.cfg  \
+	doxy-pdf-extra.sty \
 	doxy-pdf-layout.xml
 
 EXTRA_DIST = \
@@ -59,7 +61,6 @@ html: $(DOXY_HTML_FILES)
 		if test -f html/_formulas.log; then \
 			$(LN_S) html/_formulas.log doxy-html-eqns.log; \
 		fi; \
-		 exit 0; \
 	fi
 	@echo "===== OK: done building doxygen HTML ====="
 

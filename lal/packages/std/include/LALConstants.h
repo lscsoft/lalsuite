@@ -91,8 +91,8 @@ extern "C" {
 /**
  * \name Exact physical constants
  * The following physical constants are defined to have exact values.
- * The values of \f$c\f$ and \f$g\f$ are taken from \ref Barnet_1996,
- * \f$p_\mathrm{atm}\f$ is from \ref Lang_1992, while \f$\epsilon_0\f$ and
+ * The values of \f$c\f$ and \f$g\f$ are taken from \cite Barnet_1996,
+ * \f$p_\mathrm{atm}\f$ is from \cite Lang_1992, while \f$\epsilon_0\f$ and
  * \f$\mu_0\f$ are computed from \f$c\f$ using exact formulae.  The use
  * of a Julian year (365.25 days) as standard is specified by the IAU.
  * They are given in the SI units shown.
@@ -110,7 +110,7 @@ extern "C" {
 /**
  * \name Physical constants
  * The following are measured fundamental physical constants, with values
- * given in \ref Barnet_1996.  When not dimensionless, they are given
+ * given in \cite Barnet_1996.  When not dimensionless, they are given
  * in the SI units shown.
  */
 /*@{*/
@@ -140,9 +140,9 @@ extern "C" {
 /**
  * \name Astrophysical parameters
  * The following parameters are derived from measured properties of the
- * Earth and Sun.  The values are taken from \ref Barnet_1996, except
+ * Earth and Sun.  The values are taken from \cite Barnet_1996, except
  * for the obliquity of the ecliptic plane and the eccentricity of
- * Earth's orbit, which are taken from \ref Lang_1992.  All values are
+ * Earth's orbit, which are taken from \cite Lang_1992.  All values are
  * given in the SI units shown.  Note that the ``year'' and
  * ``light-year'' have exactly defined values, and appear under
  * ``Exact physical constants''.
@@ -172,7 +172,7 @@ extern "C" {
  * \name Cosmological parameters
  * The following cosmological parameters are derived from measurements of
  * the Hubble expansion rate and of the cosmic background radiation
- * (CBR).  Data are taken from \ref Barnet_1996.  In what follows, the
+ * (CBR).  Data are taken from \cite Barnet_1996.  In what follows, the
  * normalized Hubble constant \f$h_0\f$ is equal to the actual Hubble
  * constant \f$H_0\f$ divided by \f$\langle H
  * \rangle=100\,\mathrm{km}\,\mathrm{s}^{-1}\mathrm{Mpc}^{-1}\f$.  Thus the

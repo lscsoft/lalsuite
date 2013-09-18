@@ -30,14 +30,14 @@
  * <ul>
  * <li> \c phase: Output, the phase of the wave at the current epoch.</li>
  * <li> \c td: Input, the PN expansion coefficients of phase \f$\phi^t_k\f$ as a function
- * of time (cf. Table.\tableref{table_flux}.</li>
+ * of time (cf. \tableref{table_flux}.</li>
  * <li> \c ak: Input containing PN expansion coefficients.</li>
  * </ul>
  *
  * ### Description ###
  *
  * The phase of the inspiral wave corresponding to the \c Approximant \c TaylorT2
- * as in Equation.\eqref{eq_InspiralWavePhase3}.
+ * as in \eqref{eq_InspiralWavePhase3}.
  *
  * ### Algorithm ###
  *

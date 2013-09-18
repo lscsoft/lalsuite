@@ -55,8 +55,8 @@ extern "C" {
  *
  * where
  *
- * \anchor eq_e1 \f{eqnarray}{
- * \tag{eq_e1}
+ * \f{eqnarray}{
+ * \label{eq_e1}
  * \hat{F_{\hat{a}}}=\sum_{a=0}^{NM-1} x_{a} \hat{a} e^{-2{\pi}i{\Phi}_{ab}(\vec{\lambda})} \\
  * \hat{F_{\hat{b}}}=\sum_{a=0}^{NM-1} x_{a} \hat{b} e^{-2{\pi}i{\Phi}_{ab}(\vec{\lambda})}
  * \f}
@@ -73,35 +73,35 @@ extern "C" {
  * of \f$M\f$ chunks, each of \f$N\f$ samples.  If we introduce a short-time index \f$0\leq j<N-1\f$
  * and a short time-series index \f$0\leq \alpha <M-1\f$, so that \f$a=N\alpha+j\f$, we can rewrite the
  * above sum as
- * \anchor eq_e2 \f{equation}{
+ * \f{equation}{
+ * \label{eq_e2}
  * \hat{F_{\hat{a}}}({\vec{\lambda}})=\sum_{\alpha=0}^{M-1}\sum_{j=0}^{N-1}x_{\alpha j}a_{\alpha j}e^{-2{\pi}i{\Phi}_{ab}(\vec{\lambda})}
- * \tag{eq_e2}
  * \f}
  * Note that \f$\hat{a}(t)\f$ is a periodic function with period equal to one sidereal day.  Since the
  * sum over \f$N\f$ is on a timescale much shorter than that (say, 1 hour), then \f$\hat{a}(t)\f$ won't
  * change significantly, and thus can be taken outside of that summation, and then is evaluated at the
  * midpoint of each SFT time.  Now, If \f$\tilde{x}_{\alpha k}\f$ is the matrix of FTs formed along the
  * short time index \f$j\f$
- * \anchor eq_e3 \f{equation}{
+ * \f{equation}{
+ * \label{eq_e3}
  * x_{\alpha j}=\frac{1}{N}\sum_{k=0}^{N-1}\tilde{x}_{\alpha k}e^{2\pi{i}\frac{jk}{N}},
- * \tag{eq_e3}
  * \f}
- * making the appropriate substitutions, Eq.\eqref{eq_e1} becomes
- * \anchor eq_e4 \f{equation}{
+ * making the appropriate substitutions, \eqref{eq_e1} becomes
+ * \f{equation}{
+ * \label{eq_e4}
  * \hat{F_{\hat{a}}}({\vec{\lambda}})=\sum_{\alpha=0}^{M-1}\hat{a}_{\alpha}\sum_{k=0}^{N-1}\tilde{x}_{\alpha k}\left[\frac{1}{N}\sum_{j=0}^{N-1}e^{-2\pi i(\Phi_{\alpha jb}(\vec{\lambda})-\frac{jk}{N})}\right]
- * \tag{eq_e4}
  * \f}
  * We assume that the phase evolution can be described as linear in \f$t\f$ during the time duration
  * \f$T_{SFT}\f$; thus we can Taylor-expand \f$\Phi\f$ around the temporal midpoint of every SFT time
- * data chunk.  For large values of \f$N\f$, the summation over \f$j\f$ in Eq.\eqref{eq_e4} can be
- * expressed in closed form, thus saving computations, and Eq.\eqref{eq_e4} can be rewritten as
- * \anchor DeFT2 \f{equation}{
+ * data chunk.  For large values of \f$N\f$, the summation over \f$j\f$ in \eqref{eq_e4} can be
+ * expressed in closed form, thus saving computations, and \eqref{eq_e4} can be rewritten as
+ * \f{equation}{
+ * \label{DeFT2}
  * \hat{F_{\hat{a}}}=\sum_{\alpha=0}^{M-1}\hat{a}_{\alpha}e^{i y_\alpha}\sum_{k=0}^{N-1}\tilde{x}_{\alpha\beta} P_{\alpha k}(b,\vec{\lambda}),
- * \tag{DeFT2}
  * \f}
  * with
- * \anchor DeFT_defs \f{eqnarray}{
- * \tag{DeFT_defs}
+ * \f{eqnarray}{
+ * \label{DeFT_defs}
  * P_{\alpha k}(b,\vec{\lambda})= \frac{\sin{x'}}{x'}-i \frac{1-\cos{x'}}{x'}\\
  * x'=\sum_{s} f_s B_{s\alpha} - k\\
  * y_\alpha=\sum_{s} f_s A_{s\alpha}.
@@ -115,11 +115,11 @@ extern "C" {
  * calculated by the ComputeSky() routine, also in this package.  Incidentally, in the code,
  * these are the values contained in the variable \c skyConst.
  * Note that the function \f$P_{\alpha k}\f$ is peaked around \f$x'=0\f$.  Thus in the summation
- * over \f$k\f$ in Eq.\eqref{DeFT2} one only needs to consider a few values (NTERMS) of \f$k\f$ around
+ * over \f$k\f$ in \eqref{DeFT2} one only needs to consider a few values (NTERMS) of \f$k\f$ around
  * \f$k^*\f$ such that \f$x'(k^*)\approx 0\f$.  This approximation again saves
- * computations. Eq.\eqref{DeFT2} can then be rewritten as
- * \anchor DeFT_algo \f{equation}{
- * \tag{DeFT_algo}
+ * computations. \eqref{DeFT2} can then be rewritten as
+ * \f{equation}{
+ * \label{DeFT_algo}
  * \hat{F_{\hat{a}}}=\sum_{\alpha=0}^{M-1}\hat{a}_{\alpha}e^{i y_\alpha}\sum_{k=k^*\pm NTERMS} \tilde x_{\alpha\beta}
  * P_{\alpha k}(b,\vec{\lambda}).
  * \f}
@@ -128,7 +128,7 @@ extern "C" {
  * Now, computing \f$\hat{F_{\hat{a}}}\f$ and \f$\hat{F_{\hat{b}}}\f$ can be done in parallel; given
  * the approximations we have made, for each iteration of the \f$\alpha\f$ loop, one computes first
  * \f$P_{\alpha k}\f$ (through the k-loop), multiplies by \f$\tilde{x}_{\alpha k}\f$, and then forms
- * the statistics of\eqref{eq_e1} at the same time.  After all the iterations of the \f$\alpha\f$ loop
+ * the statistics of \eqref{eq_e1} at the same time.  After all the iterations of the \f$\alpha\f$ loop
  * are complete, that is, when all SFTs have been exhausted, the final statistic is computed.
  *
  * ### Types ###

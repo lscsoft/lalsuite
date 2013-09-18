@@ -186,29 +186,29 @@ tagFindChirpSegment
   REAL4Vector                  *segNorm;		/**< The quantity segment dependent
                                                          * normalization quantity \f$\mathcal{S}_k\f$; The vector is of length \f$N/2+1\f$;
                                                          * For stationary phase templates the segment dependent normalization is
-                                                         * \anchor eq_spsegnorm \f{equation}{
+                                                         * \f{equation}{
+                                                         * \label{eq_spsegnorm}
                                                          * \mathcal{S}_k = \sum_{k^\prime=1}^{k}
                                                          * \frac{\left(\frac{k^\prime}{N}\right)^{-\frac{7}{3}}}{d^2|R|^2S_v\left(\left|f_{k^\prime}\right|\right)} \quad\quad 1 \le k \le N/2
-                                                         * \tag{eq_spsegnorm}
                                                          * \f}
                                                          * and can be computed once per data segment and re-used for each template;  For
                                                          * time domain templates, the segment dependent normalization is
-                                                         * \anchor eq_tdsegnorm \f{equation}{
+                                                         * \f{equation}{
+                                                         * \label{eq_tdsegnorm}
                                                          * \mathcal{S}_k = \sum_{k^\prime=1}^{k}
                                                          * \frac{\tilde{h}_{k^\prime}}{d^2|R|^2S_v\left(\left|f_{k^\prime}\right|\right)} \quad\quad 1 \le k \le N/2
-                                                         * \tag{eq_tdsegnorm}
                                                          * \f}
                                                          * and it must be recomputed for each template \f$\tilde{h}_k\f$
                                                          */
   REAL4Vector                  *tmpltPowerVec;		/**< %Vector of length \f$N/2+1\f$ containing
                                                          * the weighted power in the template; For frequency domain templates, this is
-                                                         * the summand in equation\eqref{eq_spsegnorm}
+                                                         * the summand in \eqref{eq_spsegnorm}
                                                          * \f{equation}{
                                                          * \mathtt{templtPowerVec->data[k]} =
                                                          * \frac{\left(\frac{k}{N}\right)^{-\frac{7}{3}}}{d^2|R|^2S_v\left(\left|f_k\right|\right)}
                                                          * \f}
                                                          * and can be computed once then re-used for all templates;  For time domain
-                                                         * templates, this is the summand in equation\eqref{eq_spsegnorm}
+                                                         * templates, this is the summand in \eqref{eq_spsegnorm}
                                                          * \f{equation}{
                                                          * \mathtt{templtPowerVec->data[k]} =
                                                          * \frac{\tilde{h}_{k}}{d^2|R|^2S_v\left(\left|f_k\right|\right)}

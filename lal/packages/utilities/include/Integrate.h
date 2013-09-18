@@ -96,7 +96,7 @@ extern "C" {
  * ### Algorithm ###
  *
  * This is an implementation of the Romberg integrating function \c qromb in
- * Numerical Recipes [\ref ptvf1992].
+ * Numerical Recipes \cite ptvf1992.
  *
  */
 /*@{*/

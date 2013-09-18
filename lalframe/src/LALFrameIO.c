@@ -461,7 +461,7 @@ static LIGOTimeGPS *XLALFrameQueryGTime(LIGOTimeGPS * start,
 				series->epoch.gpsNanoSeconds, \
 				frameStart.gpsSeconds, \
 				frameStart.gpsNanoSeconds); \
-		channel = XLALFrameUFrAdcChanAlloc(series->name, LAL_FRAMEU_FR_VECT_ ## vectype, series->data->length); \
+		channel = XLALFrameUFr ## chantype ## ChanAlloc(series->name, LAL_FRAMEU_FR_VECT_ ## vectype, series->data->length); \
 		if (!channel) \
 			goto failure; \
 		data = XLALFrameUFrChanVectorQueryData(channel); \

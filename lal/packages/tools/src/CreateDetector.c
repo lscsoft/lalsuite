@@ -114,8 +114,9 @@
  * To express \f$\hat{u}\f$ in the Cartesian basis, we need
  * \f$\hat{u}\cdot\hat{e}_1\f$, \f$\hat{u}\cdot\hat{e}_2\f$, and
  * \f$\hat{u}\cdot\hat{e}_3\f$.  We first observe that
- * \anchor tools_e_eE \f{align}{
- * \hat{u}\cdot\hat{e}_{\scriptstyle\textrm{E}} &= \cos{\mathcal{A}}\,\sin\zeta \tag{tools_e_eE}\\
+ * \f{align}{
+ * \label{tools_e_eE}
+ * \hat{u}\cdot\hat{e}_{\scriptstyle\textrm{E}} &= \cos{\mathcal{A}}\,\sin\zeta \\
  * \hat{u}\cdot\hat{e}_{\scriptstyle\textrm{N}} &= \cos{\mathcal{A}}\,\cos\zeta \\
  * \hat{u}\cdot\hat{e}_{\scriptstyle\textrm{U}} &= \sin{\mathcal{A}}
  * \f}
@@ -136,7 +137,8 @@
  * +(\hat{u}\cdot\hat{e}_{\scriptstyle\textrm{U}}) \sin\beta
  * \f}
  * and finally that
- * \anchor tools_e_e3ez \f{align}{
+ * \f{align}{
+ * \label{tools_e_e3ez}
  * \hat{u}\cdot\hat{e}_1 &= (\hat{u}\cdot\hat{e}_\rho)
  * (\hat{e}_\rho\cdot\hat{e}_1)
  * + (\hat{u}\cdot\hat{e}_\lambda)
@@ -150,7 +152,6 @@
  * = (\hat{u}\cdot\hat{e}_\rho) \sin\lambda
  * +(\hat{u}\cdot\hat{e}_\lambda) \cos\lambda \\
  * \hat{u}\cdot\hat{e}_3 &= \hat{u}\cdot\hat{e}_z
- * \tag{tools_e_e3ez}
  * \f}
  *
  * ### Cached Detectors ###
@@ -159,7 +160,7 @@
  * response tensor of known detectors, the constant array
  * <tt>lalCachedDetectors[]</tt> contains the site geometry and
  * response tensors of the most commonly used detectors.  These are
- * defined in this file and listed in Table.\tableref{tools_tab_cached}.
+ * defined in this file and listed in \tableref{tools_tab_cached}.
  *
  * ### Algorithm ###
  *
@@ -170,7 +171,7 @@
  * constant detector (not just a pointer to the constant).
  *
  * If not, it calculates the Cartesian coördinates \f$\{x^1,x^2,x^3\}\f$
- * of the detector location defined by\eqref{tools_e_cart1}-\eqref{tools_e_cart3};
+ * of the detector location defined by \eqref{tools_e_cart1}--\eqref{tools_e_cart3};
  * in
  * particular, it calculates the denominator
  * \f$\sqrt{a^2\cos^2\beta+b^2\sin^2\beta}\f$ and the distance from the axis
@@ -183,7 +184,7 @@
  * It then calculates the Cartesian components of the unit vectors
  * \f$\hat{u}_X\f$ and \f$\hat{u}_Y\f$ in the arm directions from the altitude
  * and azimuth angles by use of a \c static function which
- * implements\eqref{tools_e_eE}-\eqref{tools_e_e3ez}.  (Depending on the detector
+ * implements \eqref{tools_e_eE}--\eqref{tools_e_e3ez}.  (Depending on the detector
  * type specified, only the unit vector(s) which are actually needed are
  * calculated.)  Using this components it constructs \f$d^{ab}\f$ according
  * to the formula appropriate to the detector type.
@@ -195,7 +196,7 @@
  *
  * <ul>
  * <li> The conventions in the \c LALFrDetector structure are based
- * on version 6 of the frame specification [\ref LIGOVIRGO_2000].</li>
+ * on version 6 of the frame specification \cite LIGOVIRGO_2000.</li>
  * <li> If the location and response tensor information for a
  * \c ::LALDetector are filled in by hand (e.g., for testing
  * purposes), the \c type field should be set to
@@ -203,20 +204,20 @@
  * <li> The range of \c ::LALDetectorType could be expanded to
  * include the  monopole and five quadrupole modes for a spherical
  * resonant detector
- * [\ref Maggiore_2000b, \ref Zhou_1995, \ref Bianchi_1998, \ref Maggiore_2000a].</li>
+ * \cite Maggiore2000b, \cite Zhou_1995, \cite Bianchi_1998, \cite Maggiore2000a.</li>
  * </ul>
  *
  * <b>Table tools_tab_cached:</b> Selected redefined gravitational wave detectors, contained in the ::lalCachedDetectors array.
  * Not shown in the table are the LHO 2km detector (H2) and the bar detectors ALLEGRO, AURIGA, EXPLORER, NIOBE and NAUTILUS.
- * The LIGO site data come directly from [\ref Althouse_1999], including the Cartesian position vectors \f$x^a\f$ and the response tensor
+ * The LIGO site data come directly from \cite Althouse_1999, including the Cartesian position vectors \f$x^a\f$ and the response tensor
  * \f$d^{ab}\f$, which was dermined from the quoted components of the detector frame basis vectors \f$\hat{x}_G\equiv\hat{u}_X\f$ and
- * \f$\hat{y}_G\equiv\hat{u}_Y\f$.  The data on the other detectors comes from [\ref Anderson_2000].
+ * \f$\hat{y}_G\equiv\hat{u}_Y\f$.  The data on the other detectors comes from \cite ABCCRW_2001.
  * \anchor tools_tab_cached
  * <table>
  * <tr><th>index</th><th>\c LAL_LHO_4K_DETECTOR</th><th>\c LAL_LLO_4K_DETECTOR</th></tr>
  * <tr><td>      prefix</td><td>\c H1                 </td><td>\c L1 </td></tr>
  * <tr><td>   \f$x^a\f$</td><td>
- * \f$
+ * \f[
  * \left(
  * \begin{array}{c}
  * -2.1614149 \times 10^6 \\
@@ -224,9 +225,9 @@
  * 4.6003502 \times 10^6 \\
  * \end{array}
  * \right)
- * \f$
+ * \f]
  * </td><td>
- * \f$
+ * \f[
  * \left(
  * \begin{array}{c}
  * -74276.044\\
@@ -234,11 +235,11 @@
  * 3.224257018\times 10^6\\
  * \end{array}
  * \right)
- * \f$
+ * \f]
  * </td></tr>
  * <tr><td>  \f$d^{ab}\f$
  * </td><td>
- * \f$
+ * \f[
  * \left(
  * \begin{array}{ccc}
  * v          -0.3926141  & -0.0776130  & -0.2473886 \\
@@ -246,9 +247,9 @@
  * -0.2473886  &  0.2279981  &  0.0730903 \\
  * \end{array}
  * \right)
- * \f$
+ * \f]
  * </td><td>
- * \f$
+ * \f[
  * \left(
  * \begin{array}{ccc}
  * 0.4112809  &  0.1402097  &  0.2472943 \\
@@ -256,7 +257,7 @@
  * 0.2472943  & -0.1816157  & -0.3022755 \\
  * \end{array}
  * \right)
- * \f$
+ * \f]
  * </td></tr>
  * <tr><td>     type</td><td>\c LALDETECTORTYPE_IFODIFF</td><td>\c LALDETECTORTYPE_IFODIFF</td></tr>
  * <tr><td>     name</td><td>LHO_4k</td><td>LLO_4k</td></tr>
@@ -280,7 +281,7 @@
  * <tr><th> index</th><th>\c LAL_VIRGO_DETECTOR </th><th>\c LAL_GEO_600_DETECTOR</th></tr>
  * <tr><td>      \f$x^a\f$
  * </td><td>
- * \f$
+ * \f[
  * \left(
  * \begin{array}{c}
  * 4.54637409863 \times 10^6 \\
@@ -288,9 +289,9 @@
  * 4.37857696275\times 10^6 \\
  * \end{array}
  * \right)
- * \f$
+ * \f]
  * </td><td>
- * \f$
+ * \f[
  * \left(
  * \begin{array}{c}
  * 3.85630994953 \times 10^6 \\
@@ -298,11 +299,11 @@
  * 5.01964141692 \times 10^6 \\
  * \end{array}
  * \right)
- * \f$
+ * \f]
  * </td></tr>
  * <tr><td>      \f$d^{ab}\f$
  * </td><td>
- * \f$
+ * \f[
  * \left(
  * \begin{array}{ccc}
  * 0.2438740  & -0.0990838  & -0.2325762 \\
@@ -310,9 +311,9 @@
  * -0.2325762 & 0.1878331   & 0.2039518  \\
  * \end{array}
  * \right)
- * \f$
+ * \f]
  * </td><td>
- * \f$
+ * \f[
  * \left(
  * \begin{array}{ccc}
  * -0.0968250  & -0.3657823  &  0.1221373  \\
@@ -320,7 +321,7 @@
  * 0.1221373  &  0.2497174  & -0.1261431	\\
  * \end{array}
  * \right)
- * \f$
+ * \f]
  * </td></tr>
  * <tr><td>     type</td><td>\c LALDETECTORTYPE_IFODIFF</td><td>\c LALDETECTORTYPE_IFODIFF </td></tr>
  * <tr><td>     name</td><td>VIRGO</td><td>GEO_600 </td></tr>
@@ -344,7 +345,7 @@
  * <tr><th>index</th><th>\c LAL_TAMA_300_DETECTOR </th><th>\c LAL_CIT_40_DETECTOR </th></tr>
  * <tr><td>      \f$x^a\f$
  * </td><td>
- * \f$
+ * \f[
  * \left(
  * \begin{array}{c}
  * -3.94640898771 \times 10^6 \\
@@ -352,9 +353,9 @@
  * 3.69915069189 \times 10^6 \\
  * \end{array}
  * \right)
- * \f$
+ * \f]
  * </td><td>
- * \f$
+ * \f[
  * \left(
  * \begin{array}{c}
  * -2.49064958399 \times 10^6 \\
@@ -362,11 +363,11 @@
  * 3.56206411337 \times 10^6 \\
  * \end{array}
  * \right)
- * \f$
+ * \f]
  * </td></tr>
  * <tr><td>      \f$d^{ab}\f$
  * </td><td>
- * \f$
+ * \f[
  * \left(
  * \begin{array}{ccc}
  * 0.1121397  & 0.3308421  & -0.1802193 \\
@@ -374,9 +375,9 @@
  * -0.1802193  & 0.1537258  & -0.3299337 \\
  * \end{array}
  * \right)
- * \f$
+ * \f]
  * </td><td>
- * \f$
+ * \f[
  * \left(
  * \begin{array}{ccc}
  * -0.3537959  & 0.2734713  & 0.1095458  \\
@@ -384,7 +385,7 @@
  * 0.1095458   & 0.2049027  & 0.3422745  \\
  * \end{array}
  * \right)
- * \f$
+ * \f]
  * </td></tr>
  * <tr><td>     type</td><td>\c LALDETECTORTYPE_IFODIFF</td><td>\c LALDETECTORTYPE_IFODIFF </td></tr>
  * <tr><td>     name</td><td>TAMA_300</td><td>CIT_40 </td></tr>

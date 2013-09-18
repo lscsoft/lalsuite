@@ -53,7 +53,7 @@
  * ### Algorithm ###
  *
  * This code uses a fourth-order Runge-Kutta algorithm to solve the ODEs
- * in Equation\eqref{eq_ode2}.
+ * in \eqref{eq_ode2}.
  *
  * ### Uses ###
  *

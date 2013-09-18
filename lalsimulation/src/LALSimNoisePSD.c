@@ -459,7 +459,7 @@ double XLALSimNoisePSDVirgo(double f /**< frequency (Hz) */)
 
 /**
  * Provides a GEO noise power spectrum based on that from Table IV of
- * \ref dis2001.
+ * \cite dis2001.
  *
  * The comes from the deprecated function LALGEOPsd in the lal noisemodels
  * package.
@@ -479,7 +479,7 @@ double XLALSimNoisePSDGEO(double f /**< frequency (Hz) */)
 
 /**
  * Provides a GEO-HF noise power spectrum based on a fit to Figure 6
- * from \ref Grote2010.
+ * from \cite Grote2010.
  *
  * The fit is good between 50Hz to 8kHz and errors between the analytic
  * fit given and the <a href="https://intranet.aei.uni-hannover.de/geo600/geohflogbook.nsf/7e8722dffa24dea0c1256de900406c84/4837a612ac990060c12575ce004e70fd?OpenDocument">estimated curve</a> are less than 1%.
@@ -494,7 +494,7 @@ double XLALSimNoisePSDGEOHF(double f /**< frequency (Hz) */)
 
 /**
  * Provides a TAMA300 noise power spectrum based on that from Table IV of
- * \ref dis2001.
+ * \cite dis2001.
  *
  * The comes from the deprecated function LALTAMAPsd in the lal noisemodels
  * package.
@@ -913,7 +913,7 @@ double XLALSimNoisePSDaLIGOHighFrequency(double f /**< frequency (Hz) */)
 
 /**
  * Provides the noise power spectrum for KAGRA based on that from Eqn 5 of
- * \ref md2012. This is a phenomenological fit to the KAGRA spectrum from
+ * \cite md2012. This is a phenomenological fit to the KAGRA spectrum from
  * http://gwcenter.icrr.u-tokyo.ac.jp/en/researcher/parameter
  */
 double XLALSimNoisePSDKAGRA(double f /**< frequency (Hz) */)
@@ -935,7 +935,7 @@ double XLALSimNoisePSDKAGRA(double f /**< frequency (Hz) */)
 
 /**
  * Provides the noise power spectrum for AdvVirgo based on that from Eqn 6 of
- * \ref md2012. This is a phenomenological fit to the AdvVirgo spectrum from
+ * \cite md2012. This is a phenomenological fit to the AdvVirgo spectrum from
  * http://wwwcascina.virgo.infin.it/advirgo.
  */
 double XLALSimNoisePSDAdvVirgo(double f /**< frequency (Hz) */)

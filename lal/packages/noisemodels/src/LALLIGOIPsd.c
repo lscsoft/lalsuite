@@ -34,7 +34,7 @@
  * frequency.  The input is frequency in Hz, and the return value is the
  * noise spectral density, \f$S_{h}(f)\f$, for that frequency.
  *
- * The noise PSD is based on data provided by K. Blackburn (see \ref dis2001) and
+ * The noise PSD is based on data provided by K. Blackburn (see \cite dis2001) and
  * is approximated by the following:
  *
  * \f[

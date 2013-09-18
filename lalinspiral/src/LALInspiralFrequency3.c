@@ -31,7 +31,7 @@
  * <tt>LALInspiralFrequency3()</tt>
  * <ul>
  * <li> \c frequency: Output containing the inspiral waveform.</li>
- * <li> \c td: Input containing PN expansion coefficients \f$F_k\f$ (cf. Table\tableref{table_flux})
+ * <li> \c td: Input containing PN expansion coefficients \f$F_k\f$ (cf. \tableref{table_flux})
  * of frequency as a function of time.</li>
  * <li> \c ak: Input containing all PN expansion coefficients.</li>
  * </ul>
@@ -43,7 +43,7 @@
  * F(t) = F_N(\theta) \sum F_k \theta^k,
  * \f}
  * where the expansion coefficients \f$F_k,\f$ Newtonian value \f$F_N\f$ and the
- * time-variable \f$\theta\f$ are defined in Table\tableref{table_flux}.
+ * time-variable \f$\theta\f$ are defined in \tableref{table_flux}.
  *
  * ### Algorithm ###
  *

@@ -89,8 +89,7 @@ void XLALSQTPNDestroyCoherentGW(CoherentGW *wave);
  * <li>level of accuracy in including spin and quadrupole contributions, see LALSQTPNSpinInteraction </li>
  * </ul><br />
  * <em>The calculated parameters:</em>
- * \f{center}{
- * \begin{gather}
+ * \f{gather}{
  * \displaystyle M_{in}=m_1+m_2,\quad
  * \mu=\frac{m_1m_2}{M_{in}},\quad
  * \eta=\frac{\mu}{M_{in}},\\
@@ -98,7 +97,6 @@ void XLALSQTPNDestroyCoherentGW(CoherentGW *wave);
  * \hat{\chi}_{ij}=\dfrac{\chi_{ij}}{\chi_i},\\
  * f_s=t_s^{-1}\\
  * A=\frac{4\cdot\eta M_{in}M_\odot\displaystyle\frac{G}{c^2}}{d\cdot3.0856775807\cdot10^{16}\cdot10^6}
- * \end{gather}
  * \f}
  * and the initial phase \f$\phi=0\f$
  * Assuming that:

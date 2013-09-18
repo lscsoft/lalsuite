@@ -98,7 +98,7 @@ extern "C" {
  * \end{array}\right.
  * \f}
  * The detection of signals of known form in noise is a classic problem of signal
- * processing [\ref WeinZub62] and can be answered by the construction of a
+ * processing \cite WeinZub62 and can be answered by the construction of a
  * <em>detection statistic</em> and a test to see if the statistic is above some
  * pre-assigned threshold. The construction of the various detection
  * statistics used for each the three types of search are described in the modules

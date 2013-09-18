@@ -151,8 +151,7 @@ extern "C" {
  * One can show that the Discrete Fourier Transform (DFT) of \f$h_j\f$ above is:
  * \f[
  * \tilde{h}_k = e^{i\Phi_0}  \frac{1}{2} ( F_{+ 1/2} A_+ - i F_{\times 1/2} A_\times)
- * \frac{ 1 - e^{2\pi i (\kappa - k)}}{1 - e^{2\pi i (\kappa - k)/N} }
- * \\
+ * \frac{ 1 - e^{2\pi i (\kappa - k)}}{1 - e^{2\pi i (\kappa - k)/N} } \\
  * + e^{-i\Phi_0}  \frac{1}{2} ( F_{+ 1/2} A_+ + i F_{\times 1/2} A_\times)
  * \frac{ 1 - e^{-2\pi i (\kappa + k)}}{ 1 - e^{-2\pi i (\kappa + k)/N} }
  * \f]

@@ -113,7 +113,7 @@ typedef struct tagAMCoeffsParams
 /**
  * Struct holding the "antenna-pattern" matrix \f$\mathcal{M}_{\mu\nu} \equiv \left( \mathbf{h}_\mu|\mathbf{h}_\nu\right)\f$,
  * in terms of the multi-detector scalar product. This matrix can be shown to be expressible as
- * \f{equation}
+ * \f{equation}{
  * \mathcal{M}_{\mu\nu} = \mathcal{S}^{-1}\,T_\mathrm{SFT}\,\left( \begin{array}{c c c c}
  * \widehat{A} & \widehat{C} & 0 & 0 \\
  * \widehat{C} & \widehat{B} & 0 & 0 \\
@@ -123,7 +123,7 @@ typedef struct tagAMCoeffsParams
  * \f}
  * where (here) \f$\mathcal{S} \equiv \frac{1}{N_\mathrm{SFT}}\sum_{X,\alpha} S_{X\alpha}\f$ characterizes the (single-sided!)
  * multi-detector noise-floor, and
- * \f{equation}
+ * \f{equation}{
  * \widehat{A} \equiv \sum_{X,\alpha} \widehat{a}^2_{X\alpha} \,,\quad
  * \widehat{B} \equiv \sum_{X,\alpha} \widehat{b}^2_{X\alpha} \,,\quad
  * \widehat{C} \equiv \sum_{X,\alpha} \widehat{a}_{X\alpha} \widehat{b}_{X\alpha} \,,

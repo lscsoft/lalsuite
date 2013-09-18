@@ -26,7 +26,7 @@
  * \file
  * \brief
  * Functions to calculate the so-called F-statistic for a given point in parameter-space,
- * following the equations in \ref JKS98.
+ * following the equations in \cite JKS98.
  *
  * This code is partly a descendant of an earlier implementation found in
  * LALDemod.[ch] by Jolien Creighton, Maria Alessandra Papa, Reinhard Prix, Steve Berukoff, Xavier Siemens, Bruce Allen

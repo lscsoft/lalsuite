@@ -29,9 +29,9 @@
  * It does this using the following equation, which is one of the pair which constitute the gravitational wave
  * phasing formula,
  *
- * \anchor phiofv \f{equation}{
+ * \f{equation}{
+ * \label{phiofv}
  * \phi(v) =  \phi_{0} - 2 \int_{v_{0}}^{v} v^{3} \frac{E'(v)}{{\cal F}(v)} \, dv \,\,.
- * \tag{phiofv}
  * \f}
  *
  * \c LALInspiralPhase calculates \f$\phi(v)\f$, given \f$\phi_{0}\f$, \f$v_{0}\f$,  \f$v\f$, \f$E^{\prime}(v)\f$ and

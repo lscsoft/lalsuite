@@ -68,7 +68,7 @@
  * \f{eqnarray}{
  * \tau_{0} = \frac{5}{256 \eta m^{5/3} (\pi f_{a})^{8/3}}, \ \ \
  * \tau_{2} = \frac{(3715 + 4620 \eta)}{64512 \eta m (\pi f_{a})^{2}}, \ \ \
- * \tau_{3} = \frac{\pi}{8 \eta m^{2/3} (\pi f_{a})^{5/3}}\nonumber \\
+ * \tau_{3} = \frac{\pi}{8 \eta m^{2/3} (\pi f_{a})^{5/3}} \\
  * \tau_{4} = \frac{5}{128 \eta m^{1/3} (\pi f_{a})^{4/3}} \left[ \frac{3058673}{1016064} +
  * \frac{5429}{1008} \eta + \frac{617}{144} \eta^{2} \right],\ \ \
  * \tau_5 = \frac {5}{256\eta f_a}  \left (\frac {7729}{252} + \eta \right ).

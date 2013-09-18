@@ -1,5 +1,5 @@
 EXTRA_DIST = \
-	bibliography.dox \
+	bibliography.bib \
 	lalspec.dox \
 	mainpage.dox \
 	merger.eps \

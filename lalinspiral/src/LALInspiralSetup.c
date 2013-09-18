@@ -41,7 +41,7 @@
  * These are used to solve the gravitational wave phasing formula.
  * The coefficients are used by the function \c LALInspiralChooseModel to define
  * the energy and flux functions by accessing the structure \c ak and are tabulated
- * in the two Tables\tableref{table_energy} and\tableref{table_flux}.
+ * in \tableref{table_energy} and \tableref{table_flux}.
  *
  * ### Algorithm ###
  *

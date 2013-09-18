@@ -28,7 +28,7 @@
  * \ingroup pulsarApps
  * \brief
  * Calculate the F-statistic for a given parameter-space of pulsar GW signals.
- * Implements the so-called "F-statistic" as introduced in \ref JKS98.
+ * Implements the so-called "F-statistic" as introduced in \cite JKS98.
  *
  */
 #include "config.h"

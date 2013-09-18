@@ -14,8 +14,8 @@
  * <li> A wrapper for the SLOPE algorithm.</li>
  *
  * <li> A set of functions to implement the excess power search technique which was suggested in
- * Ref.\ [\ref fh1998] and later independently invented in Ref.\ [\ref acdhp1999].  The implementation here
- * is described in detail in Ref.\ [\ref ABCF2000].
+ * Ref.\ \cite fh1998 and later independently invented in Ref.\ \cite acdhp1999.  The implementation here
+ * is described in detail in Ref.\ \cite ABCF2001.
  * </li>
  * </ul>
  *

@@ -47,9 +47,9 @@
  * We first calculate the following functions in the frequency domain:
  * \f{eqnarray}{
  * \text{qtilde}         & = & \frac {\mathcal{\widehat{A}}_1(f)
- * e^{i \psi_{NM} (f)} s^* (f)} {S_h (f)} \nonumber\\
+ * e^{i \psi_{NM} (f)} s^* (f)} {S_h (f)}\\
  * \text{qtildeBCVSpin1} & = & \frac {\mathcal{\widehat{A}}_2(f)
- * e^{i \psi_{NM} (f)} s^* (f)} {S_h (f)} \nonumber\\
+ * e^{i \psi_{NM} (f)} s^* (f)} {S_h (f)}\\
  * \text{qtildeBCVSpin2} & = & \frac {\mathcal{\widehat{A}}_3(f)
  * e^{i \psi_{NM} (f)} s^* (f)} {S_h (f)}
  * \f}
@@ -67,7 +67,7 @@
  * \rho(t)^2 & = & \mathtt{q.re}^2
  * + \mathtt{q.im}^2
  * + \mathtt{qBCVSpin1.re}^2
- * + \mathtt{qBCVSpin1.im}^2 + \nonumber\\
+ * + \mathtt{qBCVSpin1.im}^2 +\\
  * &   & \mathtt{qBCVSpin2.re}^2
  * + \mathtt{qBCVSpin2.im}^2.
  * \f}
@@ -85,11 +85,11 @@
  * contribution of the \c q, \c qBCVSpin1 and \c qBCVSpin2 functions
  * to the overall signal-to-noise ratio. These are simply calculated as
  * \f{eqnarray}{
- * \alpha_1 & = & \mathtt{q.re} / \rho \nonumber \\
- * \alpha_2 & = & \mathtt{qBCVSpin1.re} / \rho \nonumber \\
- * \alpha_3 & = & \mathtt{qBCVSpin2.re} / \rho \nonumber \\
- * \alpha_4 & = & \mathtt{q.im} / \rho \nonumber \\
- * \alpha_5 & = & \mathtt{qBCVSpin1.im} / \rho \nonumber \\
+ * \alpha_1 & = & \mathtt{q.re} / \rho \\
+ * \alpha_2 & = & \mathtt{qBCVSpin1.re} / \rho \\
+ * \alpha_3 & = & \mathtt{qBCVSpin2.re} / \rho \\
+ * \alpha_4 & = & \mathtt{q.im} / \rho \\
+ * \alpha_5 & = & \mathtt{qBCVSpin1.im} / \rho \\
  * \alpha_6 & = & \mathtt{qBCVSpin2.im} / \rho.
  * \f}
  * These obey \f$\sum_{i=1}^6 \alpha_i = 1\f$ and might prove useful in future

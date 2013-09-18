@@ -130,8 +130,8 @@
  * If \f$x_1=0\f$ and \f$x_2\neq0\f$, then the domain is \f$[0,x_2]\f$, and the
  * boundary functions are:
  * \f{eqnarray}{
- * y_a(x) & = & y_2x/x_2 \nonumber\\
- * y_b(x) & = & y_1 + y_2x/x_2 \nonumber
+ * y_a(x) & = & y_2x/x_2\\
+ * y_b(x) & = & y_1 + y_2x/x_2
  * \f}
  *
  * If \f$x_2=0\f$ and \f$x_1\neq0\f$, then the domain is \f$[x_1,0]\f$, and the above
@@ -144,11 +144,11 @@
  * y_a(x) & = & \left\{\begin{array}{c@{\qquad}c}
  * y_1x/x_1             & x\mathrm{~between~}0\mathrm{~and~}x_1 \\
  * y_1 + y_2(x-x_1)/x_2 & x\mathrm{~between~}x_1\mathrm{~and~}x_1+x_2
- * \end{array}\right.\nonumber\\
+ * \end{array}\right.\\
  * y_b(x) & = & \left\{\begin{array}{c@{\qquad}c}
  * y_2x/x_2             & x\mathrm{~between~}0\mathrm{~and~}x_2 \\
  * y_2 + y_1(x-x_2)/x_1 & x\mathrm{~between~}x_2\mathrm{~and~}x_1+x_2
- * \end{array}\right.\nonumber
+ * \end{array}\right.
  * \f}
  *
  * If \f$x_1\f$ and \f$x_2\f$ have opposite sign, the domain is \f$[x_1,x_2]\f$ if
@@ -157,11 +157,11 @@
  * y_a(x) & = & \left\{\begin{array}{c@{\qquad}c}
  * y_1x/x_1 & x\mathrm{~between~}0\mathrm{~and~}x_1 \\
  * y_2x/x_2 & x\mathrm{~between~}0\mathrm{~and~}x_2
- * \end{array}\right.\nonumber\\
+ * \end{array}\right.\\
  * y_b(x) & = & \left\{\begin{array}{c@{\qquad}c}
  * y_1 + y_2(x-x_1)/x_2 & x\mathrm{~between~}x_1\mathrm{~and~}x_1+x_2 \\
  * y_2 + y1(x-x_2)/x_1  & x\mathrm{~between~}x_2\mathrm{~and~}x_1+x_2
- * \end{array}\right.\nonumber
+ * \end{array}\right.
  * \f}
  *
  * The main program sorts the input parameters so that \f$x_1\leq x_2\f$,
@@ -185,10 +185,10 @@
  * the corresponding metric are \f$\lambda_1=m_\mathrm{thresh}/a^2\f$ and
  * \f$\lambda_2=m_\mathrm{thresh}/b^2\f$.  The metric components are thus:
  * \f{eqnarray}{
- * g_{xx} & = & \lambda_1\cos^2(c) + \lambda_2\sin^2(c) \;,\nonumber\\
- * g_{yy} & = & \lambda_1\sin^2(c) + \lambda_2\cos^2(c) \;,\nonumber\\
+ * g_{xx} & = & \lambda_1\cos^2(c) + \lambda_2\sin^2(c) \;,\\
+ * g_{yy} & = & \lambda_1\sin^2(c) + \lambda_2\cos^2(c) \;,\\
  * g_{xy} \quad = \quad g_{yx} & = & (\lambda_1-\lambda_2)\cos(c)\sin(c)
- * \;.\nonumber
+ * \;.
  * \f}
  * The routine assumes that the values of \f$a\f$, \f$b\f$, and \f$c\f$ refer to an
  * \f$m_\mathrm{thresh}=1\f$ mismatch ellipse.  It computes and returns

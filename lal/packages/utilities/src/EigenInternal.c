@@ -75,7 +75,7 @@ fabs( a )*sqrt( 1.0 + ((b)/(a))*((b)/(a)) ) :                        \
  * ### Algorithm ###
  *
  * The tri-diagonalizing routines follow the Householder reduction method
- * described in Sec. 11.2 of [\ref ptvf1992]; they are essentially
+ * described in Sec. 11.2 of \cite ptvf1992; they are essentially
  * re-implementations of the Numerical Recipes routine <tt>tred2()</tt>.
  * For large \f$N\f$, their operation count is approximately \f$4N^3/3\f$, or
  * \f$2N^3/3\f$ for the routines that ignore eigenvectors.  These routines
@@ -83,14 +83,14 @@ fabs( a )*sqrt( 1.0 + ((b)/(a))*((b)/(a)) ) :                        \
  * the matrix as input.
  *
  * The diagonalizing routines follow the QL algorithm with implicit
- * shifts described in Sec. 11.3 of [\ref ptvf1992]; they are
+ * shifts described in Sec. 11.3 of \cite ptvf1992; they are
  * essentially re-implementations of the Numerical Recipes routine
  * <tt>tqli()</tt>.  Depending on the number of iterations required, their
  * operation count is roughly \f$\sim30N^2\f$, plus \f$\sim3N^3\f$ if
  * eigenvectors are also being computed.
  *
  * The diagonalizing routines can fail if they fail to converge rapidly
- * enough.  The discussion in [\ref ptvf1992] does not go into much
+ * enough.  The discussion in \cite ptvf1992 does not go into much
  * detail about when this is likely to occur, except to note that
  * degenerate eigenvalues converge more slowly.  If the routines fail in
  * this way, \c diag, \c matrix, and \c offDiag will all be
