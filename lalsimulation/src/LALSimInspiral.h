@@ -230,6 +230,13 @@ SphHarmFrequencySeries* XLALSphHarmFrequencySeriesAddMode(
 		INT4 m  /**< minor mode number */
 );
 
+SphHarmTimeSeries *XLALSphHarmTimeSeriesFromSphHarmFrequencySeriesDataAndPSD(
+                                                                             SphHarmFrequencySeries *hlms, 
+                                                                             COMPLEX16FrequencySeries* data,
+                                                                             COMPLEX16FrequencySeries* psd
+                                                                             );
+
+
 /* 
  * Set the tdata pointer to a REAL8Sequence for all members of the 
  * SphHarmFrequencySeries linked list. This is mainly intended for use with

@@ -469,6 +469,44 @@ SphHarmFrequencySeries *XLALSphHarmFrequencySeriesFromSphHarmTimeSeries(
 
 }
 
+SphHarmTimeSeries *XLALSphHarmTimeSeriesFromSphHarmFrequencySeriesDataAndPSD(
+                                                                             SphHarmFrequencySeries *hlms, 
+                                                                             COMPLEX16FrequencySeries* data,
+                                                                             COMPLEX16FrequencySeries* psd
+        )
+{
+  UINT4 l, Lmax, length,i;
+    int m;
+    COMPLEX16TimeSeries *rhoT;
+    COMPLEX16FrequencySeries *hf;
+    SphHarmTimeSeries *rhoTlm = NULL;
+    REAL8 deltaF;
+    if( !hlms ) // Check head of linked list is valid
+        XLAL_ERROR_NULL(XLAL_EINVAL);
+
+    Lmax = XLALSphHarmFrequencySeriesGetMaxL(hlms);
+    length = hlms->mode->data->length; // N.B. Assuming all hlms same length
+    deltaF = hlms->mode->deltaF;
+    COMPLEX16FFTPlan *revplan = XLALCreateReverseCOMPLEX16FFTPlan(length, 0);
+    rhoT = XLALCreateCOMPLEX16TimeSeries( "rhoTD", &hlms->mode->epoch,
+            0., deltaF, &lalDimensionlessUnit, length);
+    // Loop over TD modes, FFT, add to SphHarmFrequencySeries
+    for(l = 2; l <= Lmax; l++) {
+        for(m = -l; m <= (int) l; m++) {
+            hf = XLALSphHarmFrequencySeriesGetMode(hlms, l, m);
+            if( hf ) {
+              for (i =0; i<=length; i++) {
+                hf->data->data[i] = conj(hf->data->data[i])* data->data->data[i]/psd->data->data[i];
+              }
+              XLALCOMPLEX16FreqTimeFFT(rhoT, hf, revplan);
+              rhoTlm = XLALSphHarmTimeSeriesAddMode(rhoTlm, rhoT, l, m);
+            }
+        }
+    }
+    return rhoTlm;
+}
+
+
 /**
  * Prepend a node to a linked list of SphHarmFrequencySeries, or create a new head
  */
