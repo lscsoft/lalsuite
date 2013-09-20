@@ -478,9 +478,10 @@ SphHarmTimeSeries *XLALSphHarmTimeSeriesFromSphHarmFrequencySeriesDataAndPSD(
   UINT4 l, Lmax, length,i;
     int m;
     COMPLEX16TimeSeries *rhoT;
-    COMPLEX16FrequencySeries *hf;
+    COMPLEX16FrequencySeries *hf,*hfBuffer;
     SphHarmTimeSeries *rhoTlm = NULL;
     REAL8 deltaF;
+    COMPLEX16 wt;
     if( !hlms ) // Check head of linked list is valid
         XLAL_ERROR_NULL(XLAL_EINVAL);
 
@@ -488,17 +489,27 @@ SphHarmTimeSeries *XLALSphHarmTimeSeriesFromSphHarmFrequencySeriesDataAndPSD(
     length = hlms->mode->data->length; // N.B. Assuming all hlms same length
     deltaF = hlms->mode->deltaF;
     COMPLEX16FFTPlan *revplan = XLALCreateReverseCOMPLEX16FFTPlan(length, 0);
+    // Output working buffer : should be copied
     rhoT = XLALCreateCOMPLEX16TimeSeries( "rhoTD", &hlms->mode->epoch,
             0., deltaF, &lalDimensionlessUnit, length);
+    hfBuffer = XLALCreateCOMPLEX16FrequencySeries( "FD Mode", &hlms->mode->epoch,
+            0., deltaF, &lalHertzUnit, length);
     // Loop over TD modes, FFT, add to SphHarmFrequencySeries
     for(l = 2; l <= Lmax; l++) {
         for(m = -l; m <= (int) l; m++) {
             hf = XLALSphHarmFrequencySeriesGetMode(hlms, l, m);
             if( hf ) {
-              for (i =0; i<=length; i++) {
-                hf->data->data[i] = conj(hf->data->data[i])* data->data->data[i]/psd->data->data[i];
+              hfBuffer->epoch = hf->epoch;
+              hfBuffer->deltaF = hf->deltaF;
+              for (i =0; i<length; i++) {
+                if (psd->data->data[i]) {
+                  wt = 1./psd->data->data[i];
+                } else {
+                  wt = 0;
+                    }
+                hfBuffer->data->data[i] = conj(hf->data->data[i])* data->data->data[i]*wt;
               }
-              XLALCOMPLEX16FreqTimeFFT(rhoT, hf, revplan);
+              XLALCOMPLEX16FreqTimeFFT(rhoT, hfBuffer, revplan);
               rhoTlm = XLALSphHarmTimeSeriesAddMode(rhoTlm, rhoT, l, m);
             }
         }

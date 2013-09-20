@@ -2,7 +2,6 @@
 #include <stdio.h>
 #include <string.h>
 #include <zlib.h>
-#include <unistd.h>
 #include <lal/LALStdlib.h>
 #include <lal/AVFactories.h>
 #include <lal/StringInput.h>
