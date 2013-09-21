@@ -1191,13 +1191,23 @@ LALInferenceVariables *LALInferenceInitCBCVariables(LALInferenceRunState *state)
       }
     }
   
-  ppt=LALInferenceGetProcParamVal(commandLine,"--fixTime");
-  if(ppt){
-    LALInferenceRegisterUniformVariableREAL8(state, currentParams, "time", timeParam, timeMin, timeMax, LALINFERENCE_PARAM_FIXED);
-    if(lalDebugLevel>0) fprintf(stdout,"time fixed and set to %f\n",timeParam);
-  }else{
-    LALInferenceRegisterUniformVariableREAL8(state, currentParams, "time", timeParam, timeMin, timeMax, LALINFERENCE_PARAM_LINEAR);
-  }
+    if(!LALInferenceGetProcParamVal(commandLine,"--margtime")){
+      ppt=LALInferenceGetProcParamVal(commandLine,"--fixTime");
+      if(ppt){
+        LALInferenceRegisterUniformVariableREAL8(state, currentParams, "time", timeParam, timeMin, timeMax, LALINFERENCE_PARAM_FIXED);
+        if(lalDebugLevel>0) fprintf(stdout,"time fixed and set to %f\n",timeParam);
+      }else{
+        LALInferenceRegisterUniformVariableREAL8(state, currentParams, "time", timeParam, timeMin, timeMax, LALINFERENCE_PARAM_LINEAR);
+      }
+    } else {
+        //LALInferenceRegisterUniformVariableREAL8(state, currentParams, "time", timeParam, timeMin, timeMax, LALINFERENCE_PARAM_FIXED);
+        LALInferenceIFOData *ifo = state->data;
+        while(ifo) {
+            ifo->timeLow = timeMin;
+            ifo->timeHigh = timeMax;
+            ifo=ifo->next;
+        }
+    }
 
   if(!LALInferenceGetProcParamVal(commandLine,"--margphi")){
     ppt=LALInferenceGetProcParamVal(commandLine,"--fixPhi");
