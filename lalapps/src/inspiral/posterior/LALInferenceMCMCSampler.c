@@ -439,22 +439,11 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
     exit(1);
   }
 
-  // initialize starting likelihood value:
-  runState->currentLikelihood = runState->likelihood(runState->currentParams, runState->data, runState->templt);
-  LALInferenceIFOData *headData = runState->data;
-  while (headData != NULL) {
-    headData->acceptedloglikelihood = headData->loglikelihood;
-    headData = headData->next;
-  }
-  runState->currentPrior = runState->prior(runState, runState->currentParams);
-
   LALInferenceAddVariable(runState->algorithmParams, "nChain", &nChain,  LALINFERENCE_INT4_t, LALINFERENCE_PARAM_FIXED);
   LALInferenceAddVariable(runState->algorithmParams, "nPar", &nPar,  LALINFERENCE_INT4_t, LALINFERENCE_PARAM_FIXED);
   LALInferenceAddVariable(runState->proposalArgs, "parameter",&parameter, LALINFERENCE_INT4_t, LALINFERENCE_PARAM_LINEAR);
   LALInferenceAddVariable(runState->proposalArgs, "nullLikelihood", &nullLikelihood, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
   LALInferenceAddVariable(runState->proposalArgs, "acceptanceCount", &acceptanceCount,  LALINFERENCE_INT4_t, LALINFERENCE_PARAM_LINEAR);
-  REAL8 logLAtAdaptStart = runState->currentLikelihood;
-  LALInferenceSetVariable(runState->proposalArgs, "logLAtAdaptStart", &(logLAtAdaptStart));
 
   /* Construct temperature ladder */
   if(nChain > 1){
@@ -489,27 +478,7 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
   LALInferenceAddVariable(runState->proposalArgs, "temperature", &temp,  LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR);
   LALInferenceAddVariable(runState->proposalArgs, "hotChain", &hotChain, LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_OUTPUT);
 
-  if (MPIrank == 0){
-    printf("\nTemperature ladder:\n");
-    for (t=0; t<nChain; ++t) {
-      printf(" ladder[%d]=%f\n",t,ladder[t]);
-    }
-  }
-
-  /* Add parallel swaps to proposal tracking structure */
-  if (propStats && MPIrank < nChain-1) {
-    if(!LALInferenceCheckVariable(propStats, parallelSwapProposalName)) {
-        LALInferenceProposalStatistics newPropStat = {
-        .weight = 0,
-        .proposed = 0,
-        .accepted = 0};
-      LALInferenceAddVariable(propStats, parallelSwapProposalName, (void *)&newPropStat, LALINFERENCE_void_ptr_t, LALINFERENCE_PARAM_LINEAR);
-    }
-  }
-
-
   FILE * chainoutput = NULL;
-
   FILE *statfile = NULL;
   FILE *propstatfile = NULL;
   FILE *swapfile = NULL;
@@ -550,10 +519,41 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
     propstatfile = fopen(propstatfilename, "w");
   }
 
-  chainoutput = LALInferencePrintPTMCMCHeader(runState);
+  chainoutput = LALInferencePrintPTMCMCHeaderOrResume(runState);
   if (MPIrank == 0) {
     LALInferencePrintPTMCMCInjectionSample(runState);
   }
+
+  // initialize starting likelihood value:
+  runState->currentLikelihood = runState->likelihood(runState->currentParams, runState->data, runState->templt);
+  LALInferenceIFOData *headData = runState->data;
+  while (headData != NULL) {
+    headData->acceptedloglikelihood = headData->loglikelihood;
+    headData = headData->next;
+  }
+  runState->currentPrior = runState->prior(runState, runState->currentParams);
+
+  REAL8 logLAtAdaptStart = runState->currentLikelihood;
+  LALInferenceSetVariable(runState->proposalArgs, "logLAtAdaptStart", &(logLAtAdaptStart));
+
+  if (MPIrank == 0){
+    printf("\nTemperature ladder:\n");
+    for (t=0; t<nChain; ++t) {
+      printf(" ladder[%d]=%f\n",t,ladder[t]);
+    }
+  }
+
+  /* Add parallel swaps to proposal tracking structure */
+  if (propStats && MPIrank < nChain-1) {
+    if(!LALInferenceCheckVariable(propStats, parallelSwapProposalName)) {
+        LALInferenceProposalStatistics newPropStat = {
+        .weight = 0,
+        .proposed = 0,
+        .accepted = 0};
+      LALInferenceAddVariable(propStats, parallelSwapProposalName, (void *)&newPropStat, LALINFERENCE_void_ptr_t, LALINFERENCE_PARAM_LINEAR);
+    }
+  }
+
 
   if (benchmark)
     timestamp_epoch = *((REAL8 *)LALInferenceGetVariable(runState->algorithmParams, "timestamp_epoch"));
@@ -1417,7 +1417,7 @@ void LALInferenceAdaptationEnvelope(LALInferenceRunState *runState, INT4 cycle)
 //-----------------------------------------
 // file output routines:
 //-----------------------------------------
-FILE *LALInferencePrintPTMCMCHeader(LALInferenceRunState *runState) {
+FILE *LALInferencePrintPTMCMCHeaderOrResume(LALInferenceRunState *runState) {
   ProcessParamsTable *ppt;
   char *outFileName = NULL;
   FILE *chainoutput = NULL;
@@ -1434,16 +1434,32 @@ FILE *LALInferencePrintPTMCMCHeader(LALInferenceRunState *runState) {
     sprintf(outFileName,"PTMCMC.output.%u.%2.2d",randomseed,MPIrank);
   }
 
-  chainoutput = fopen(outFileName,"w");
-  if(chainoutput == NULL){
-    XLALErrorHandler = XLALExitErrorHandler;
-    XLALPrintError("Output file error. Please check that the specified path exists. (in %s, line %d)\n",__FILE__, __LINE__);
-    XLAL_ERROR_NULL(XLAL_EIO);
-  }
-  
-  LALInferencePrintPTMCMCHeaderFile(runState, chainoutput);
+  if (LALInferenceGetProcParamVal(runState->commandLine, "--resume") && access(outFileName, R_OK) == 0) {
+    /* Then file already exists for reading, and we're going to resume
+       from it, so don't write the header. */
 
-  fclose(chainoutput);
+    chainoutput = fopen(outFileName, "r");
+    if (chainoutput == NULL) {
+      XLALErrorHandler = XLALExitErrorHandler;
+      XLALPrintError("Error reading resume file (in %s, line %d)\n", __FILE__, __LINE__);
+      XLAL_ERROR_NULL(XLAL_EIO);
+    }
+    
+    LALInferenceMCMCResumeRead(runState, chainoutput);
+
+    fclose(chainoutput);
+  } else {
+    chainoutput = fopen(outFileName,"w");
+    if(chainoutput == NULL){
+      XLALErrorHandler = XLALExitErrorHandler;
+      XLALPrintError("Output file error. Please check that the specified path exists. (in %s, line %d)\n",__FILE__, __LINE__);
+      XLAL_ERROR_NULL(XLAL_EIO);
+    }
+    
+    LALInferencePrintPTMCMCHeaderFile(runState, chainoutput);
+
+    fclose(chainoutput);
+  }
 
   chainoutput = fopen(outFileName, "a");
   if (chainoutput == NULL) {
@@ -1451,7 +1467,7 @@ FILE *LALInferencePrintPTMCMCHeader(LALInferenceRunState *runState) {
     XLALPrintError("Output file error. Please check that the specified path exists. (in %s, line %d)\n",__FILE__, __LINE__);
     XLAL_ERROR_NULL(XLAL_EIO);
   }
-
+  
   XLALFree(outFileName);
 
   return chainoutput;
@@ -1787,4 +1803,39 @@ void LALInferenceDataDump(LALInferenceRunState *runState){
     headData = headData->next;
   }
 
+}
+
+void LALInferenceMCMCResumeRead(LALInferenceRunState *runState, FILE *resumeFile) {
+  /* Hope that the line is shorter than 16K! */
+  const long len = 16384;
+  char linebuf[len];
+  char *last_line = NULL;
+  long flen, line_length;
+  int cycle;
+  float logl, logp;  
+
+  fseek(resumeFile, 0L, SEEK_END);
+  flen = ftell(resumeFile);
+
+  if (flen < len) {
+    fseek(resumeFile, 0L, SEEK_SET);
+    fread(linebuf, flen, 1, resumeFile);
+    linebuf[flen-1] = '\0'; /* Strip off trailing newline. */
+  } else {
+    fseek(resumeFile, -len, SEEK_END);
+    fread(linebuf, len, 1, resumeFile);
+    linebuf[len-1] = '\0'; /* Strip off trailing newline.... */
+  }
+
+  last_line = strrchr(linebuf, '\n'); /* Last occurence of '\n' */
+  last_line += 1;
+
+  line_length = strlen(last_line);
+
+  /* Go to the beginning of the last line. */
+  fseek(resumeFile, -line_length, SEEK_END);
+
+  fscanf(resumeFile, "%d %f %f", &cycle, &logl, &logp);
+
+  LALInferenceReadSampleNonFixed(resumeFile, runState->currentParams);
 }

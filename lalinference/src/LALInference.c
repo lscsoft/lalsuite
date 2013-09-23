@@ -644,6 +644,38 @@ void LALInferencePrintSampleNonFixed(FILE *fp,LALInferenceVariables *sample){
 	return;
 }
 
+void LALInferenceReadSampleNonFixed(FILE *fp, LALInferenceVariables *p) {
+  if (p == NULL || fp == NULL) return;
+  LALInferenceVariableItem *item = p->head;
+  while (item != NULL) {
+    if (item->vary != LALINFERENCE_PARAM_FIXED) {
+      switch (item->type) {
+      case LALINFERENCE_INT4_t:
+	fscanf(fp, "%"LAL_INT4_FORMAT, (INT4 *)item->value);
+	break;
+      case LALINFERENCE_INT8_t:
+	fscanf(fp, "%"LAL_INT8_FORMAT, (INT8 *)item->value);
+	break;
+      case LALINFERENCE_UINT4_t:
+	fscanf(fp, "%"LAL_UINT4_FORMAT, (UINT4 *)item->value);
+	break;
+      case LALINFERENCE_REAL4_t:
+	fscanf(fp, "%"LAL_REAL4_FORMAT, (REAL4 *)item->value);
+	break;
+      case LALINFERENCE_REAL8_t:
+	fscanf(fp, "%"LAL_REAL8_FORMAT, (REAL8 *)item->value);
+	break;
+      default:
+	/* Pass on reading */
+	XLAL_ERROR_VOID(XLAL_EINVAL, "cannot read data type into LALINferenceVariables");
+	break;
+      }
+    }
+
+    item = item->next;
+  }
+}
+
 int LALInferencePrintProposalStatsHeader(FILE *fp,LALInferenceVariables *propStats) {
   LALInferenceVariableItem *head = propStats->head;
   while (head != NULL) {

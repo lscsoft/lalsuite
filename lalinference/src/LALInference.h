@@ -512,6 +512,11 @@ void LALInferencePrintSample(FILE *fp,LALInferenceVariables *sample);
 /** Output only non-fixed parameters */
 void LALInferencePrintSampleNonFixed(FILE *fp,LALInferenceVariables *sample);
 
+/** Read in the non-fixed parameters from the given file (position in
+    the file must be arranged properly before calling this
+    function). */
+void LALInferenceReadSampleNonFixed(FILE *fp, LALInferenceVariables *sample);
+
 /** Output proposal statistics header to file *fp */
 int LALInferencePrintProposalStatsHeader(FILE *fp,LALInferenceVariables *propStats);
 

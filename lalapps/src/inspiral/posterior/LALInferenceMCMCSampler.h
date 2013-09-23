@@ -77,7 +77,11 @@ void LALInferenceFlushPTswap(void);
 void LALInferenceLadderUpdate(LALInferenceRunState *runState, INT4 sourceChainFlag, INT4 cycle);
 
 /* Data IO routines */
-FILE* LALInferencePrintPTMCMCHeader(LALInferenceRunState *runState);
+FILE* LALInferencePrintPTMCMCHeaderOrResume(LALInferenceRunState *runState);
 void LALInferencePrintPTMCMCHeaderFile(LALInferenceRunState *runState, FILE *file);
 void LALInferencePrintPTMCMCInjectionSample(LALInferenceRunState *runState);
 void LALInferenceDataDump(LALInferenceRunState *runState);
+
+/** Reads final parameter values from the given output file, and
+    stores them in the current params to try to continue the run. */
+void LALInferenceMCMCResumeRead(LALInferenceRunState *runState, FILE *resumeFile);
