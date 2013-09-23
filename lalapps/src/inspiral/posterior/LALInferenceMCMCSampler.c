@@ -287,7 +287,7 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 
   UINT4 diffEvo = 1; // Differential evolution
   if (LALInferenceGetProcParamVal(runState->commandLine, "--noDifferentialEvolution") || LALInferenceGetProcParamVal(runState->commandLine, "--nodifferentialevolution")) {
-    diffEvo = 1;
+    diffEvo = 0;
   }
 
   UINT4 adapting = 0;
