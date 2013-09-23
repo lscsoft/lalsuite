@@ -739,6 +739,18 @@ int LALInferenceWriteVariablesArrayBinary(FILE *file, LALInferenceVariables **va
  */
 int LALInferenceReadVariablesArrayBinary(FILE *file, LALInferenceVariables **vars, UINT4 N);
 
+/**
+ * Write the LALInferenceVariables contents of runState to a file in binary format
+ */
+int LALInferenceWriteRunStateBinary(FILE *file, LALInferenceRunState *state);
+
+/**
+ * Reads the file and populates LALInferenceVariables in the runState that
+ * were saved with LALInferenceReadVariablesArrayBinary()
+ */
+int LALInferenceReadRunStateBinary(FILE *file, LALInferenceRunState *state);
+
+
 /*@}*/
 
 #endif
