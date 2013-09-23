@@ -267,18 +267,18 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
   REAL8 timestamp,timestamp_epoch;
   struct timeval tv;
 
+  LALInferenceMCMCRunPhase *runPhase_p = XLALCalloc(sizeof(LALInferenceMCMCRunPhase), 1);
+  *runPhase_p = LALINFERENCE_ONLY_PT;
+  LALInferenceAddVariable(runState->algorithmParams, "runPhase", &runPhase_p,  LALINFERENCE_MCMCrunphase_ptr_t, LALINFERENCE_PARAM_FIXED);
+
   //
   /* Command line flags (avoid repeated checks of runState->commandLine) */
   //
-  LALInferenceMCMCRunPhase runPhase = LALINFERENCE_ONLY_PT;
   UINT4 annealingOn = 0; // Chains will be annealed
   if (LALInferenceGetProcParamVal(runState->commandLine, "--anneal")) {
     annealingOn = 1;
-    runPhase = LALINFERENCE_TEMP_PT;
+    *runPhase_p = LALINFERENCE_TEMP_PT;
   }
-
-  LALInferenceMCMCRunPhase *runPhase_p = &runPhase;
-  LALInferenceAddVariable(runState->algorithmParams, "runPhase", &runPhase_p,  LALINFERENCE_MCMCrunphase_ptr_t, LALINFERENCE_PARAM_FIXED);
 
   /* Setup non-blocking recieve that will allow other chains to update the runPhase */
   acknowledgePhase(runState);
@@ -601,7 +601,7 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
     /* Increment iteration counter */
     i++;
 
-    if (runPhase == LALINFERENCE_LADDER_UPDATE)
+    if (*runPhase_p == LALINFERENCE_LADDER_UPDATE)
       LALInferenceLadderUpdate(runState, 0, i);
 
     LALInferenceSetVariable(runState->proposalArgs, "acceptanceCount", &(acceptanceCount));
@@ -610,7 +610,7 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
       LALInferenceAdaptation(runState, i);
 
     // Parallel tempering phase
-    if (runPhase == LALINFERENCE_ONLY_PT || runPhase == LALINFERENCE_TEMP_PT) {
+    if (*runPhase_p == LALINFERENCE_ONLY_PT || *runPhase_p == LALINFERENCE_TEMP_PT) {
 
       //ACL calculation during parallel tempering
       if (i % (100*Nskip) == 0 && MPIrank == 0) {
@@ -629,7 +629,7 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
             iEff = (i - iEffStart)/acl;
 
             /* Periodically recalculate ACL */
-            if (runPhase != LALINFERENCE_SINGLE_CHAIN && iEff > floor((REAL8)(aclCheckCounter*endOfPhase)/(REAL8)numACLchecks)) {
+            if (*runPhase_p != LALINFERENCE_SINGLE_CHAIN && iEff > floor((REAL8)(aclCheckCounter*endOfPhase)/(REAL8)numACLchecks)) {
               updateMaxAutoCorrLen(runState, i);
               acl = *(INT4*) LALInferenceGetVariable(runState->algorithmParams, "acl");
               iEff = (i - iEffStart)/acl;
@@ -641,14 +641,14 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 
       if (MPIrank==0) {
         if (aclCheckCounter > numACLchecks) {
-          if (runPhase==LALINFERENCE_ONLY_PT) {
+          if (*runPhase_p==LALINFERENCE_ONLY_PT) {
             fprintf(stdout,"Chain %i has %i effective samples. Stopping...\n", MPIrank, iEff);
             runComplete = 1;          // Sampling is done!
-          } else if (runPhase==LALINFERENCE_TEMP_PT) {
+          } else if (*runPhase_p==LALINFERENCE_TEMP_PT) {
             /* Broadcast new run phase to other chains */
-            runPhase=LALINFERENCE_ANNEALING;
+            *runPhase_p=LALINFERENCE_ANNEALING;
             for (c=1; c<nChain; c++) {
-              MPI_Send(&runPhase, 1, MPI_INT, c, RUN_PHASE_COM, MPI_COMM_WORLD);
+              MPI_Send(&*runPhase_p, 1, MPI_INT, c, RUN_PHASE_COM, MPI_COMM_WORLD);
             }
           }
         }
@@ -656,7 +656,7 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
     }
 
     // Annealing phase
-    if (runPhase==LALINFERENCE_ANNEALING) {
+    if (*runPhase_p==LALINFERENCE_ANNEALING) {
       if (*phaseAcknowledged!=LALINFERENCE_ANNEALING) {
         acknowledgePhase(runState);
 
@@ -693,8 +693,8 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
           LALInferenceSetVariable(runState->proposalArgs, "temperature", &(ladder[MPIrank]));
         }
       } else {
-        runPhase = LALINFERENCE_SINGLE_CHAIN;
-        *phaseAcknowledged=runPhase;
+        *runPhase_p = LALINFERENCE_SINGLE_CHAIN;
+        *phaseAcknowledged=*runPhase_p;
         if (MPIrank==0)
           printf(" Single-chain sampling starting at iteration %i.\n", i);
       }
@@ -702,7 +702,7 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 
 
     //Post-annealing single-chain sampling
-    if (runPhase==LALINFERENCE_SINGLE_CHAIN) {
+    if (*runPhase_p==LALINFERENCE_SINGLE_CHAIN) {
       adapting = *((INT4 *)LALInferenceGetVariable(runState->proposalArgs, "adapting"));
       adaptStart = *(INT4*) LALInferenceGetVariable(runState->proposalArgs, "adaptStart");
       iEffStart = adaptStart+adaptLength;
@@ -719,7 +719,7 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
           }
         }
       }
-    } //if (runPhase==SINGLE_CHAIN)
+    } //if (*runPhase_p==SINGLE_CHAIN)
 
     runState->evolve(runState); //evolve the chain at temperature ladder[t]
     acceptanceCount = *(INT4*) LALInferenceGetVariable(runState->proposalArgs, "acceptanceCount");
@@ -794,7 +794,7 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
     }
 
     /* Excute swap proposal. */
-    if (runPhase == LALINFERENCE_ONLY_PT || runPhase == LALINFERENCE_TEMP_PT) {
+    if (*runPhase_p == LALINFERENCE_ONLY_PT || *runPhase_p == LALINFERENCE_TEMP_PT) {
       swapReturn = parallelSwap(runState, ladder, i, swapfile); 
       if (propStats) {
         if (swapReturn != NO_SWAP_PROPOSED) {
