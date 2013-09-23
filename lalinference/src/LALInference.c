@@ -2569,6 +2569,13 @@ static void REAL8Vector_fwrite(FILE *f, REAL8Vector *vec)
   fwrite(vec->data,sizeof(REAL8),vec->length,f);
 }
 
+static void UINT4Vector_fwrite(FILE *f, UINT4Vector *vec);
+static void UINT4Vector_fwrite(FILE *f, UINT4Vector *vec) 
+{
+  fwrite(&(vec->length),sizeof(vec->length),1,f);
+  fwrite(vec->data,sizeof(vec->data[0]),vec->length,f);
+}
+
 static REAL8Vector * REAL8Vector_fread(FILE *f);
 static REAL8Vector * REAL8Vector_fread(FILE *f)
 {
@@ -2578,6 +2585,18 @@ static REAL8Vector * REAL8Vector_fread(FILE *f)
   out=XLALCreateREAL8Vector(size);
   fread(out->data,sizeof(REAL8),size,f);
   return out;
+}
+
+static UINT4Vector * UINT4Vector_fread(FILE *f);
+static UINT4Vector * UINT4Vector_fread(FILE *f)
+{
+  UINT4 size = 0;
+  UINT4Vector *vec = NULL;
+
+  fread(&size,sizeof(size),1,f);
+  vec = XLALCreateUINT4Vector(size);
+  fread(vec->data, sizeof(UINT4), size, f);
+  return vec;
 }
 
 int LALInferenceWriteVariablesBinary(FILE *file, LALInferenceVariables *vars)
@@ -2610,6 +2629,28 @@ int LALInferenceWriteVariablesBinary(FILE *file, LALInferenceVariables *vars)
       {
 	REAL8Vector *vec=*(REAL8Vector **)item->value;
 	REAL8Vector_fwrite(file,vec);
+	break;
+      }
+    case LALINFERENCE_UINT4Vector_t:
+      {
+	UINT4Vector *vec = *(UINT4Vector **)item->value;
+	UINT4Vector_fwrite(file, vec);
+	break;
+      }
+    case LALINFERENCE_string_t:
+      {
+	char *value = *((char **)item->value);
+	size_t len = strlen(value);
+	fwrite(&len, sizeof(size_t),1, file);
+	fwrite(value, sizeof(char), len, file);
+	break;
+      }
+    case LALINFERENCE_void_ptr_t:
+      {
+	/* Write void_ptr as NULL, so fails if used without
+	   initialization on restart. */
+	void *out = NULL;
+	fwrite(&out,sizeof(void*),1,file);
 	break;
       }
       default:
@@ -2666,6 +2707,29 @@ LALInferenceVariables *LALInferenceReadVariablesBinary(FILE *stream)
 	REAL8Vector *v=REAL8Vector_fread(stream);
 	LALInferenceAddVariable(vars,name,&v,type,vary);
 
+	break;
+      }
+    case LALINFERENCE_UINT4Vector_t:
+      {
+	UINT4Vector *vec = UINT4Vector_fread(stream);
+	LALInferenceAddVariable(vars,name,&vec,type,vary);
+	break;
+      }
+    case LALINFERENCE_string_t:
+      {
+	size_t len = 0;
+	char *string = NULL;
+
+	fread(&len, sizeof(size_t), 1, stream);
+	string = XLALCalloc(sizeof(char), len+1); /* One extra character: '\0' */
+	fread(string, sizeof(char), len, stream);
+	LALInferenceAddVariable(vars,name,&string,type,vary);
+      }
+    case LALINFERENCE_void_ptr_t:
+      {
+	void *ptr = NULL;
+	fread(&ptr,sizeof(void *), 1, stream);
+	LALInferenceAddVariable(vars,name,&ptr,type,vary);
 	break;
       }
       default:
