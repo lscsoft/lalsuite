@@ -503,7 +503,7 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
         .weight = 0,
         .proposed = 0,
         .accepted = 0};
-      LALInferenceAddVariable(propStats, parallelSwapProposalName, (void *)&newPropStat, LALINFERENCE_MCMCrunphase_ptr_t, LALINFERENCE_PARAM_LINEAR);
+      LALInferenceAddVariable(propStats, parallelSwapProposalName, (void *)&newPropStat, LALINFERENCE_void_ptr_t, LALINFERENCE_PARAM_LINEAR);
     }
   }
 
