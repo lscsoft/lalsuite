@@ -2761,3 +2761,41 @@ int LALInferenceReadVariablesArrayBinary(FILE *file, LALInferenceVariables **var
   return N;
 }
 
+int LALInferenceWriteRunStateBinary(FILE *file, LALInferenceRunState *runState)
+{
+  int flag=0;
+  fwrite(&(runState->differentialPointsLength),sizeof(runState->differentialPointsLength),1,file);
+  fwrite(&(runState->differentialPointsSize),sizeof(runState->differentialPointsSize),1,file);
+  fwrite(&(runState->currentLikelihood),sizeof(runState->currentLikelihood),1,file);
+  fwrite(&(runState->currentPrior),sizeof(runState->currentPrior),1,file);
+  flag|=gsl_rng_fwrite (file , runState->GSLrandom);
+  flag|=LALInferenceWriteVariablesBinary(file, runState->currentParams);
+  flag|=LALInferenceWriteVariablesBinary(file, runState->priorArgs);
+  flag|=LALInferenceWriteVariablesBinary(file, runState->proposalArgs);
+  flag|=LALInferenceWriteVariablesBinary(file, runState->proposalStats);
+  flag|=LALInferenceWriteVariablesBinary(file, runState->algorithmParams);
+  // Currently live points are the same as differential points buffer
+  //flag|=LALInferenceWriteVariablesArrayBinary(file, state->livePoints, state->differentialPointsLength);
+  flag|=LALInferenceWriteVariablesArrayBinary(file, runState->differentialPoints, runState->differentialPointsLength);
+  return flag;
+}
+
+int LALInferenceReadRunStateBinary(FILE *file, LALInferenceRunState *runState)
+{
+  fread(&(runState->differentialPointsLength),sizeof(runState->differentialPointsLength),1,file);
+  fread(&(runState->differentialPointsSize),sizeof(runState->differentialPointsSize),1,file);
+  runState->differentialPoints=XLALCalloc(runState->differentialPointsSize,sizeof(LALInferenceVariables *));
+  fread(&(runState->currentLikelihood),sizeof(runState->currentLikelihood),1,file);
+  fread(&(runState->currentPrior),sizeof(runState->currentPrior),1,file);
+  
+  gsl_rng_fread(file, runState->GSLrandom);
+  runState->currentParams=LALInferenceReadVariablesBinary(file);
+  runState->priorArgs=LALInferenceReadVariablesBinary(file);
+  runState->proposalArgs=LALInferenceReadVariablesBinary(file);
+  runState->proposalStats=LALInferenceReadVariablesBinary(file);
+  runState->algorithmParams=LALInferenceReadVariablesBinary(file);
+  LALInferenceReadVariablesArrayBinary(file, runState->differentialPoints,runState->differentialPointsLength);
+  runState->livePoints=runState->differentialPoints;
+  
+  return 0;
+}
