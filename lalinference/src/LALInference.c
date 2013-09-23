@@ -43,7 +43,7 @@
 #define UNUSED
 #endif
 
-size_t LALInferenceTypeSize[12] = {sizeof(INT4),
+size_t LALInferenceTypeSize[13] = {sizeof(INT4),
                                    sizeof(INT8),
                                    sizeof(UINT4),
                                    sizeof(REAL4),
@@ -54,6 +54,7 @@ size_t LALInferenceTypeSize[12] = {sizeof(INT4),
                                    sizeof(REAL8Vector *),
                                    sizeof(UINT4Vector *),
                                    sizeof(CHAR *),
+				   sizeof(LALInferenceMCMCRunPhase *),
                                    sizeof(void *)
 };
 
@@ -2645,6 +2646,12 @@ int LALInferenceWriteVariablesBinary(FILE *file, LALInferenceVariables *vars)
 	fwrite(value, sizeof(char), len, file);
 	break;
       }
+    case LALINFERENCE_MCMCrunphase_ptr_t:
+      {
+	LALInferenceMCMCRunPhase *ph = *((LALInferenceMCMCRunPhase **)item->value);
+	fwrite(ph, sizeof(LALInferenceMCMCRunPhase), 1, file);
+	break;
+      }
     case LALINFERENCE_void_ptr_t:
       {
 	/* Write void_ptr as NULL, so fails if used without
@@ -2724,6 +2731,13 @@ LALInferenceVariables *LALInferenceReadVariablesBinary(FILE *stream)
 	string = XLALCalloc(sizeof(char), len+1); /* One extra character: '\0' */
 	fread(string, sizeof(char), len, stream);
 	LALInferenceAddVariable(vars,name,&string,type,vary);
+      }
+    case LALINFERENCE_MCMCrunphase_ptr_t:
+      {
+	LALInferenceMCMCRunPhase *ph = XLALCalloc(sizeof(LALInferenceMCMCRunPhase),1);
+	fread(ph, sizeof(LALInferenceMCMCRunPhase), 1, stream);
+	LALInferenceAddVariable(vars,name,&ph,type,vary);
+	break;
       }
     case LALINFERENCE_void_ptr_t:
       {

@@ -104,6 +104,7 @@ typedef enum {
   LALINFERENCE_REAL8Vector_t,
   LALINFERENCE_UINT4Vector_t,
   LALINFERENCE_string_t,
+  LALINFERENCE_MCMCrunphase_ptr_t,
   LALINFERENCE_void_ptr_t
 } LALInferenceVariableType;
 
@@ -142,7 +143,7 @@ typedef enum
   LALINFERENCE_FRAME_SYSTEM
 } LALInferenceFrame;
 
-extern size_t LALInferenceTypeSize[12];
+extern size_t LALInferenceTypeSize[13];
 
 /**
  * The LALInferenceVariableItem list node structure
@@ -171,6 +172,18 @@ tagLALInferenceVariables
   LALInferenceVariableItem	*head;
   INT4 				dimension;
 } LALInferenceVariables;
+
+/** 
+ * Phase of MCMC run (depending on burn-in status, different actions
+ * are performed during the run, and this tag controls the activity).
+ */
+typedef enum {
+	LALINFERENCE_ONLY_PT,          /** Run only parallel tempers. */
+	LALINFERENCE_TEMP_PT,          /** In the parallel tempering phase of an annealed run */
+	LALINFERENCE_ANNEALING,        /** In the annealing phase of an annealed run */
+	LALINFERENCE_SINGLE_CHAIN,     /** In the single-chain sampling phase of an annealed run */
+	LALINFERENCE_LADDER_UPDATE     /** Move all temperature chains to cold chains location (helpful for burnin) */
+} LALInferenceMCMCRunPhase;
 
 /** Returns an array of header strings (terminated by NULL) from a common-format output file */
 char **LALInferenceGetHeaderLine(FILE *inp);
