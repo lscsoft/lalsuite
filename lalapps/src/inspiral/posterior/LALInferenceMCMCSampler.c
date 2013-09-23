@@ -278,7 +278,7 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
   }
 
   LALInferenceMCMCRunPhase *runPhase_p = &runPhase;
-  LALInferenceAddVariable(runState->algorithmParams, "runPhase", &runPhase_p,  LALINFERENCE_void_ptr_t, LALINFERENCE_PARAM_FIXED);
+  LALInferenceAddVariable(runState->algorithmParams, "runPhase", &runPhase_p,  LALINFERENCE_MCMCrunphase_ptr_t, LALINFERENCE_PARAM_FIXED);
 
   /* Setup non-blocking recieve that will allow other chains to update the runPhase */
   acknowledgePhase(runState);
@@ -503,7 +503,7 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
         .weight = 0,
         .proposed = 0,
         .accepted = 0};
-      LALInferenceAddVariable(propStats, parallelSwapProposalName, (void *)&newPropStat, LALINFERENCE_void_ptr_t, LALINFERENCE_PARAM_LINEAR);
+      LALInferenceAddVariable(propStats, parallelSwapProposalName, (void *)&newPropStat, LALINFERENCE_MCMCrunphase_ptr_t, LALINFERENCE_PARAM_LINEAR);
     }
   }
 
@@ -848,7 +848,7 @@ void acknowledgePhase(LALInferenceRunState *runState)
   if (!LALInferenceCheckVariable(runState->algorithmParams, "acknowledgedRunPhase")) {
     LALInferenceMCMCRunPhase acknowledgedRunPhase = *runPhase;
     LALInferenceMCMCRunPhase *acknowledgedRunPhase_p = &acknowledgedRunPhase;
-    LALInferenceAddVariable(runState->algorithmParams, "acknowledgedRunPhase", &acknowledgedRunPhase_p,  LALINFERENCE_void_ptr_t, LALINFERENCE_PARAM_FIXED);
+    LALInferenceAddVariable(runState->algorithmParams, "acknowledgedRunPhase", &acknowledgedRunPhase_p,  LALINFERENCE_MCMCrunphase_ptr_t, LALINFERENCE_PARAM_FIXED);
   } else {
     LALInferenceMCMCRunPhase *acknowledgedRunPhase = *(LALInferenceMCMCRunPhase **) LALInferenceGetVariable(runState->algorithmParams, "acknowledgedRunPhase");
     *acknowledgedRunPhase = *runPhase;
