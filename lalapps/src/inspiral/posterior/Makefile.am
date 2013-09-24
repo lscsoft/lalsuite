@@ -41,9 +41,10 @@ lalapps_followupMcmc_SOURCES = \
 
 endif
 endif
+ 
+bayesline_SOURCES = BayesLine.c
 
-
-bin_PROGRAMS = $(metaio_progs) $(frame_progs) $(pulsar_progs) $(mpi_progs)
+bin_PROGRAMS = bayesline $(metaio_progs) $(frame_progs) $(pulsar_progs) $(mpi_progs)
 
 noinst_PROGRAMS = $(td_test_progs)
 
