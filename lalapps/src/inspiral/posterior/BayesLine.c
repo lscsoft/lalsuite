@@ -125,10 +125,8 @@ typedef struct
 
 }psdParams;
 
-void KILL(char* Message);
-
 int opt_parse(bayesline_opt *opts, int argc, char **argv );
-int bayesline_usage( const char *program );
+int bayesline_usage();
 
 double loglike           (double *respow, double *Snf, int ncut);
 double loglike_fit_spline(double *respow, double *Snf, int ncut);
@@ -162,7 +160,7 @@ void destroy_splineParams(splineParams *spline);
 void create_psdParams(psdParams *psd, int size);
 void destroy_psdParams(psdParams *psd);
 
-void gnuplot_full_spectrum(int n, double *f, double *p, double *Sn, FILE *pipe);
+void gnuplot_full_spectrum(int n, double *f, double *p, double *Sn, FILE *pipe2gnuplot);
 
 int main(int argc, char *argv[])
 {
@@ -196,7 +194,7 @@ int main(int argc, char *argv[])
 
   char filename[100];
   char burnrows[1000];
-  FILE *pipe;
+  FILE *pipe2gnuplot=NULL;
   FILE *infile;
 	FILE *outfile;
 
@@ -280,8 +278,8 @@ int main(int argc, char *argv[])
 
   if(opts.gnuplot)
   {
-    pipe = popen("gnuplot -persist","w");
-    fprintf(pipe, "set logscale y\n");
+    pipe2gnuplot = popen("gnuplot -persist","w");
+    fprintf(pipe2gnuplot, "set logscale y\n");
   }
 
   /******************************************************************************/
@@ -293,6 +291,7 @@ int main(int argc, char *argv[])
   // loop over the frequency segments
   data->flow = data->fmin;
   printf("\nLorentzSplineFit() loop over frequency segments...\n");
+  sm=0;
   do
   {
     data->fhigh = data->flow + data->fstep;
@@ -365,8 +364,8 @@ int main(int argc, char *argv[])
     }
     if(opts.gnuplot)
     {
-      fprintf(pipe, "plot 'model_final.dat' using 1:2 title 'data' with lines, 'model_final.dat' using 1:3 title 'model' with lines lt 3, 'model_final.dat' using 1:4 title 'base' with lines lt 2\n");
-      fflush(pipe);
+      fprintf(pipe2gnuplot, "plot 'model_final.dat' using 1:2 title 'data' with lines, 'model_final.dat' using 1:3 title 'model' with lines lt 3, 'model_final.dat' using 1:4 title 'base' with lines lt 2\n");
+      fflush(pipe2gnuplot);
     }
     free(y);
     free(Sbase);
@@ -473,8 +472,8 @@ int main(int argc, char *argv[])
 
   if(opts.gnuplot)
   {
-    fprintf(pipe, "plot 'spec.dat' using 1:(exp($2)) title 'raw fit' with lines, 'spec_fit.dat' using 1:(exp($2)) title 'smooth fit' with lines lt 3\n");
-    fflush(pipe);
+    fprintf(pipe2gnuplot, "plot 'spec.dat' using 1:(exp($2)) title 'raw fit' with lines, 'spec_fit.dat' using 1:(exp($2)) title 'smooth fit' with lines lt 3\n");
+    fflush(pipe2gnuplot);
   }
 
 
@@ -525,17 +524,17 @@ int main(int argc, char *argv[])
   }
 
   LorentzSplineMCMC(opts, 20000, data, sfreq, spow, lines_full, spline, spline_x, Snf, 0, &dan, r);
-  if(opts.gnuplot) gnuplot_full_spectrum(data->ncut, sfreq, spow, Snf, pipe);
+  if(opts.gnuplot) gnuplot_full_spectrum(data->ncut, sfreq, spow, Snf, pipe2gnuplot);
 
   //alternate between targeting outliers and MCMCing full solution until outliers are gone or max iterations are reached
   j = 0;
   do
   {
     LorentzSplineMCMC(opts, 5000, data, sfreq, spow, lines_full, spline, spline_x, Snf, 1, &dan, r);
-    if(opts.gnuplot) gnuplot_full_spectrum(data->ncut, sfreq, spow, Snf, pipe);
+    if(opts.gnuplot) gnuplot_full_spectrum(data->ncut, sfreq, spow, Snf, pipe2gnuplot);
 
     LorentzSplineMCMC(opts, 5000, data, sfreq, spow, lines_full, spline, spline_x, Snf, 0, &dan, r);
-    if(opts.gnuplot) gnuplot_full_spectrum(data->ncut, sfreq, spow, Snf, pipe);
+    if(opts.gnuplot) gnuplot_full_spectrum(data->ncut, sfreq, spow, Snf, pipe2gnuplot);
 
     j++;
 
@@ -544,7 +543,7 @@ int main(int argc, char *argv[])
   //final full-model MCMC
   LorentzSplineMCMC(opts, 20000, data, sfreq, spow, lines_full, spline, spline_x, Snf, 0, &dan, r);
 
-  if(opts.gnuplot) gnuplot_full_spectrum(data->ncut, sfreq, spow, Snf, pipe);
+  if(opts.gnuplot) gnuplot_full_spectrum(data->ncut, sfreq, spow, Snf, pipe2gnuplot);
 
   /******************************************************************************/
   /*                                                                            */
@@ -577,16 +576,6 @@ int main(int argc, char *argv[])
   free(Snf);
 
   return 0;
-}
-
-void KILL(char* Message)
-{
-  fprintf(stderr,"\a\n");
-  fprintf(stderr,"%s",Message);
-  fprintf(stderr,"Terminating the program.\n\n\n");
-  exit(1);
-
-  return;
 }
 
 double sample(double *fprop, double pmax, dataParams *data, gsl_rng *r)
@@ -666,12 +655,12 @@ void LorentzSplineFit(bayesline_opt opts, int steps, dataParams *data, lorentzia
   int spass, passes, psmax;
   double logLx, logLy, logH;
   int i, j, k, ki, ii, jj, mc;
-  int check;
+  int check=0;
   double alpha, heat;
   double SAmaxx, SAminn, lSAmax, lSAmin;
   double lQmin, lQmax, QQ;
   double Aminn, Amaxx, lAmin, lAmax;
-  int ac0, ac1, cnt;
+  int ac0, ac1;
   int cc0, cc1, cc2;
   double *Sn, *Sbase;
   double e1, e2, e3, e4;
@@ -680,7 +669,9 @@ void LorentzSplineFit(bayesline_opt opts, int steps, dataParams *data, lorentzia
   int typ;
   double xsm, pmax, y, z;
   double mdn, baseav;
-  double logpx, logpy, x, beta;
+  double logpx = 0.0;
+  double logpy = 0.0;
+  double x, beta;
   double *fprop;
 
   int ncut     = data->ncut;
@@ -775,12 +766,11 @@ void LorentzSplineFit(bayesline_opt opts, int steps, dataParams *data, lorentzia
   if(!opts.zerologL) logLx = loglike(spow, Sn, ncut);
   else               logLx = 1.0;
 
-  cnt = 0;
   passes = 0;
   spass = steps/4;
 
   psmax = 2;
-
+  ki = 0;
   do
   {
     ac0 = 0;
@@ -1145,7 +1135,9 @@ void LorentzSplineMCMC(bayesline_opt opts, int steps, dataParams *data, double *
   fprintf(stdout,"\nLorentzSplineMCMC( focus=%i )\n",focus);
   int skip;
   int nsy, nsx;
-  double logLx, logLy, logH;
+  double logLx = 0.0;
+  double logLy = 0.0;
+  double logH  = 0.0;
   int ilowx, ihighx, ilowy, ihighy;
   int i, j, k, ki, ii, jj, mc;
   int check;
@@ -1159,11 +1151,13 @@ void LorentzSplineMCMC(bayesline_opt opts, int steps, dataParams *data, double *
   double *xint;
   double e1, e2, e3, e4;
   double x2, x3, x4;
-  double s1, s2, s3, s4;
+  double s2, s3, s4;
   int typ;
   double xsm, pmax, fcl, fch, dff;
   double baseav;
-  double logpx, logpy, x, y, z, beta;
+  double logpx = 0.0;
+  double logpy = 0.0;
+  double x, y, z, beta;
   double Ac;
   double *fprop;
   double *sdatay;
@@ -1223,9 +1217,6 @@ void LorentzSplineMCMC(bayesline_opt opts, int steps, dataParams *data, double *
 
   dff = 0.01;  // half-width of frequency focus region (used if focus == 1)
 
-  // this is the fractional error estimate on the noise level
-  s1 = 1.0/sqrt((double)(ncut));
-
   s2 = 0.01;
   s3 = 0.5;
   s4 = 0.5;
@@ -1259,7 +1250,8 @@ void LorentzSplineMCMC(bayesline_opt opts, int steps, dataParams *data, double *
   else              logLx = 1.0;
 
   // set up proposal for frequency jumps
-  xsm =0.0;
+  k    = 0;
+  xsm  = 0.0;
   pmax = -1.0;
   for(i=0; i< ncut; i++)
 	{
@@ -1308,7 +1300,6 @@ void LorentzSplineMCMC(bayesline_opt opts, int steps, dataParams *data, double *
   cc0 = 1;
   cc1 = 1;
   cc2 = 1;
-
 
   for(mc=0; mc < steps; mc++)
   {
@@ -2215,7 +2206,10 @@ void SpecFitSpline(bayesline_opt opts, int steps, double *freq, double *power, s
     if(sdatax[i] > lSAmax || sdatax[i] < lSAmin)
     {
       printf("%i: %lg < %lg < %lg ?\n",i, exp(lSAmin), exp(sdatax[i]), exp(lSAmax));
-      KILL("spectrum priors not wide enough\n");
+      fprintf(stderr,"\a\n");
+      fprintf(stderr,"spectrum priors not wide enough\n");
+      fprintf(stderr,"Terminating the program.\n\n\n");
+      exit(1);
     }
   }
 
@@ -2512,15 +2506,15 @@ void destroy_psdParams(psdParams *psd)
   free(psd);
 }
 
-void gnuplot_full_spectrum(int n, double *f, double *p, double *Sn, FILE *pipe)
+void gnuplot_full_spectrum(int n, double *f, double *p, double *Sn, FILE *pipe2gnuplot)
 {
   int i;
   FILE *outfile = fopen("fullspectrum_final.dat","w");
   for(i=0; i<n; i++) fprintf(outfile,"%f %e %e %e\n", f[i], p[i], Sn[i], p[i]/Sn[i]);
   fclose(outfile);
 
-  fprintf(pipe, "plot 'fullspectrum_final.dat' using 1:4 title 'whitened' with lines\n");
-  fflush(pipe);
+  fprintf(pipe2gnuplot, "plot 'fullspectrum_final.dat' using 1:4 title 'whitened' with lines\n");
+  fflush(pipe2gnuplot);
 }
 
 
@@ -2543,11 +2537,10 @@ int opt_parse( bayesline_opt *opts, int argc, char **argv )
   };
 
   char args[] = "ghi:lo:v";
-  char *program = argv[0];
 
   if(argc==1)
   {
-    bayesline_usage(program);
+    bayesline_usage();
     exit(0);
   }
 
@@ -2581,7 +2574,7 @@ int opt_parse( bayesline_opt *opts, int argc, char **argv )
         cmd_param.verbose = 1;
         break;
       case 'h': // help
-        bayesline_usage(program);
+        bayesline_usage();
         exit(0);
       case 'i': // in-file
         sprintf(cmd_param.ifile,"%s",optarg);
@@ -2614,7 +2607,7 @@ int opt_parse( bayesline_opt *opts, int argc, char **argv )
   if(!cmd_param.ifile[0])
   {
     fprintf(stderr,"ERROR: required option '--infile=filename', must specify input data file\n");
-    bayesline_usage(program);
+    bayesline_usage();
     exit(0);
   }
   if(!cmd_param.ofile[0]) sprintf(cmd_param.ofile,"ssd_%s",cmd_param.ifile);
@@ -2624,7 +2617,7 @@ int opt_parse( bayesline_opt *opts, int argc, char **argv )
   return 0;
 }
 
-int bayesline_usage( const char *program)
+int bayesline_usage()
 {
   fprintf( stdout,"\n");
   fprintf( stdout, "REQUIRED:\n");
