@@ -126,7 +126,7 @@ typedef struct
 }psdParams;
 
 int opt_parse(bayesline_opt *opts, int argc, char **argv );
-int bayesline_usage();
+int bayesline_usage(void);
 
 double loglike           (double *respow, double *Snf, int ncut);
 double loglike_fit_spline(double *respow, double *Snf, int ncut);
