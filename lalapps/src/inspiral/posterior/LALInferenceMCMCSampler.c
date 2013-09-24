@@ -943,7 +943,7 @@ UINT4 LALInferencePTswap(LALInferenceRunState *runState, REAL8 *ladder, INT4 i, 
   INT4 readyToSwap = 0;
   UINT4 swapProposed=0;
   INT4 swapAccepted=0;
-  LALInferenceMPIcomm swapReturn;
+  LALInferenceMPIswapAcceptance swapReturn;
 
   REAL8Vector * parameters = NULL;
   REAL8Vector * adjParameters = NULL;
