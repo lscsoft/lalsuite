@@ -30,16 +30,17 @@
 
 #include <ctype.h>
 #include <getopt.h>
+#include <math.h>
 //#include <lalapps.h>
 #include <lal/Date.h>
 #include <lal/LIGOMetadataTables.h>
 #include <lal/LALConstants.h>
-#include <lal/LIGOMetadataInspiralUtils.h>
+//#include <lal/LIGOMetadataInspiralUtils.h>
 //#include <lal/LIGOLwXMLInspiralRead.h>
 #include <lal/LIGOLwXML.h>
 #include <lal/Random.h>
 #include <lal/AVFactories.h>
-#include <lal/InspiralInjectionParams.h>
+//#include <lal/InspiralInjectionParams.h>
 #include <lal/LALDetectors.h>
 #include <lal/LALSimulation.h>
 //#include <processtable.h>
@@ -54,9 +55,9 @@ int main( int argc, char *argv[] )
   UINT4 Ninj=0, i=0;
 	SimInspiralTable *injTable=NULL;
   REAL8 a_spin1, a_spin2, theta_spin1, theta_spin2, phi_spin1, phi_spin2;
-  double GPSdouble, gmst, ra, psi, q;
+  double GPSdouble, gmst, ra, psi, q, iota;
   LIGOTimeGPS GPSlal;
-
+  
   
   Ninj=SimInspiralTableFromLIGOLw(&injTable,argv[1],0,0);
   
@@ -76,6 +77,7 @@ int main( int argc, char *argv[] )
     phi_spin1 = 0.0;
   }else{
     theta_spin1 = acos(injTable->spin1z / a_spin1);
+    //phi_spin1 = acos(injTable->spin1x / (a_spin1 * sin(theta_spin1)));
     phi_spin1 = atan2(injTable->spin1y,injTable->spin1x);
     if (phi_spin1 < 0.0) phi_spin1+=2*LAL_PI;
   }
@@ -84,8 +86,10 @@ int main( int argc, char *argv[] )
     phi_spin2 = 0.0;
   }else{
     theta_spin2 = acos(injTable->spin2z / a_spin2);
+    //phi_spin2 = acos(injTable->spin2x / (a_spin2 * sin(theta_spin2)));
     phi_spin2 = atan2(injTable->spin2y,injTable->spin2x);
     if (phi_spin2 < 0.0) phi_spin2+=2*LAL_PI;
+    
   }
   
   if(injTable->polarization>=LAL_PI){
@@ -93,6 +97,12 @@ int main( int argc, char *argv[] )
   }else{
     psi = injTable->polarization;
   }
-  printf("--phi2 %.12lf --theta2 %.12lf --a2 %.12lf --phi1 %.12lf --theta1 %.12lf --a1 %.12lf --iota %.12lf --psi %.12lf --dec %.12lf --ra %.12lf --dist %.12lf --phi %.12lf --time %.12lf --q %.12lf --mc %.12lf\n", phi_spin2, theta_spin2, a_spin2, phi_spin1, theta_spin1, a_spin1, injTable->inclination, psi, injTable->latitude, injTable->longitude, injTable->distance, injTable->coa_phase, XLALGPSGetREAL8(&(injTable->geocent_end_time)) , q, injTable->mchirp);
-
+  if(injTable->inclination == 0.0){
+    iota = 0.000000000001;
+  }else{
+    iota = injTable->inclination;
+  }
+  
+  printf("--phi_spin2 %.12lf --theta_spin2 %.12lf --a_spin2 %.12lf --phi_spin1 %.12lf --theta_spin1 %.12lf --a_spin1 %.12lf --inclination %.12lf --polarisation %.12lf --declination %.12lf --rightascension %.12lf --distance %.12lf --phase %.12lf --time %.12lf --asym_massratio %.12lf --chirpmass %.12lf\n", phi_spin2, theta_spin2, a_spin2, phi_spin1, theta_spin1, a_spin1, iota, psi, injTable->latitude, injTable->longitude, injTable->distance, injTable->coa_phase, XLALGPSGetREAL8(&(injTable->geocent_end_time)) , q, injTable->mchirp);
+  
 }
