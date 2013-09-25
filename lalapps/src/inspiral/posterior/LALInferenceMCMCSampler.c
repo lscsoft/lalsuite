@@ -418,12 +418,21 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
       runState->likelihood==&LALInferenceFreqDomainLogLikelihood ||
       runState->likelihood==&LALInferenceNoiseOnlyLogLikelihood){
     nullLikelihood = LALInferenceNullLogLikelihood(runState->data);
-  } else if (runState->likelihood==&LALInferenceFreqDomainStudentTLogLikelihood) {
+  } else if (runState->likelihood==&LALInferenceFreqDomainStudentTLogLikelihood || 
+	     runState->likelihood==&LALInferenceMarginalisedTimeLogLikelihood) {
+    LALInferenceIFOData *headData = runState->data;
     REAL8 d = *(REAL8 *)LALInferenceGetVariable(runState->currentParams, "distance");
     REAL8 bigD = 1.0 / 0.0;
 
     LALInferenceSetVariable(runState->currentParams, "distance", &bigD);
+
     nullLikelihood = runState->likelihood(runState->currentParams, runState->data, runState->templt);
+
+    while (headData != NULL) {
+      headData->nullloglikelihood = headData->loglikelihood;
+      headData = headData->next;
+    }
+
     LALInferenceSetVariable(runState->currentParams, "distance", &d);
   } else {
     nullLikelihood = 0.0;
@@ -1659,10 +1668,7 @@ void LALInferencePrintPTMCMCInjectionSample(LALInferenceRunState *runState) {
     UINT4 added_time_param = 0;
     if (!LALInferenceCheckVariable(runState->currentParams, "time")) {
         added_time_param = 1;
-        REAL8 timeMin = runState->data->timeLow;
-        REAL8 timeMax = runState->data->timeHigh;
         LALInferenceAddVariable(runState->currentParams, "time", &injGPSTime, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
-        LALInferenceAddMinMaxPrior(runState->priorArgs, "time", &timeMin, &timeMax, LALINFERENCE_REAL8_t);
     } else {
         LALInferenceSetVariable(runState->currentParams, "time", &injGPSTime);
     }
@@ -1697,7 +1703,7 @@ void LALInferencePrintPTMCMCInjectionSample(LALInferenceRunState *runState) {
     setIFOAcceptedLikelihoods(runState);
     LALInferencePrintPTMCMCHeaderFile(runState, out);
     fclose(out);
-    
+
     if (added_time_param) {
         LALInferenceRemoveVariable(runState->currentParams, "time");
         LALInferenceRemoveMinMaxPrior(runState->priorArgs, "time");

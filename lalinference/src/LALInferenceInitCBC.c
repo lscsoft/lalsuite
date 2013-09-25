@@ -1199,14 +1199,6 @@ LALInferenceVariables *LALInferenceInitCBCVariables(LALInferenceRunState *state)
       }else{
         LALInferenceRegisterUniformVariableREAL8(state, currentParams, "time", timeParam, timeMin, timeMax, LALINFERENCE_PARAM_LINEAR);
       }
-    } else {
-        //LALInferenceRegisterUniformVariableREAL8(state, currentParams, "time", timeParam, timeMin, timeMax, LALINFERENCE_PARAM_FIXED);
-        LALInferenceIFOData *ifo = state->data;
-        while(ifo) {
-            ifo->timeLow = timeMin;
-            ifo->timeHigh = timeMax;
-            ifo=ifo->next;
-        }
     }
 
   if(!LALInferenceGetProcParamVal(commandLine,"--margphi")){

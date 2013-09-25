@@ -35,7 +35,8 @@
 #include <lal/TimeFreqFFT.h>
 
 #include <gsl/gsl_sf_bessel.h>
-#include <gsl/gsl_interp.h>
+#include <gsl/gsl_sf_dawson.h>
+#include <gsl/gsl_sf_erf.h>
 
 #include <lal/LALInferenceTemplate.h>
 
@@ -872,6 +873,7 @@ REAL8 LALInferenceFreqDomainStudentTLogLikelihood(LALInferenceVariables *current
       re = newRe;
       im = newIm;
     }
+
     dataPtr = dataPtr->next;
   }
   loglikeli = -1.0 * chisquared; /* note (again): the log-likelihood is unnormalised! */
@@ -1890,68 +1892,54 @@ static double logaddexp(double x, double y) {
   }
 }
 
-/* Integrates y(x) using spline interpolation on log(y(x)).  The log
-   of the integral is returned, and has an estimated error (in the
-   log) of eps. */
-static double integrate_interpolated_log(double *xs, double *log_ys, size_t n, double x0, double x1, double eps) {
-  double h = x1-x0;
-  size_t nh = 1;
-  double log_int = -INFINITY;
-  double old_log_int = -INFINITY;
-  gsl_interp *interp = gsl_interp_alloc(gsl_interp_cspline, n);
-  gsl_interp_accel *accel = gsl_interp_accel_alloc();
+static double log_quadratic_integral_log(double h, double lx0, double lx1, double lx2) {
+  double a = (lx0 - 2.0*lx1 + lx2)/(2.0*h*h);
+  double b = -(3.0*lx0 - 4.0*lx1 + lx2)/(2.0*h);
+  double c = lx0;
 
-  if (interp == NULL || accel == NULL) {
-    gsl_interp_accel_free(accel);
-    gsl_interp_free(interp);
-    XLAL_ERROR_REAL8(XLAL_ENOMEM, "out of memory in integrate_interpolated_log, %s: line %d", __FILE__, __LINE__);
-  }
+  if (lx0 == lx1 && lx1 == lx2) return log(2.0) + log(h) + lx0;
 
-  gsl_interp_init(interp, xs, log_ys, n);
-
-  log_int = log(h) - log(2.0) + logaddexp(gsl_interp_eval(interp, xs, log_ys, x0, accel),
-					  gsl_interp_eval(interp, xs, log_ys, x1, accel));
-
-  do {
-    size_t i;
-    double log_increment = -INFINITY;
-
-    old_log_int = log_int;
-    h /= 2.0;
-    nh *= 2;
-
-    for (i = 1; i < nh; i += 2) {
-      double log_y;
-      double x = x0 + i*h;
-
-      log_y = gsl_interp_eval(interp, xs, log_ys, x, accel);
-
-      log_increment = logaddexp(log_increment, log_y);
+  if (a > 0.0) {
+    if (b + 2.0*a*h > 0.0) {
+      double log_norm = c - 0.5*log(a) + 2.0*h*(b + 2.0*a*h);
+      double other_term = gsl_sf_dawson((b+4.0*a*h)/(2.0*sqrt(a))) - exp(-2.0*h*(b+2.0*a*h))*gsl_sf_dawson(b/(2.0*sqrt(a)));
+      return log_norm + log(other_term);
+    } else {
+      double log_norm = c - 0.5*log(a);
+      double other_term = exp(2.0*h*(b + 2.0*a*h))*gsl_sf_dawson((b + 4.0*a*h)/(2.0*sqrt(a))) - gsl_sf_dawson(b/(2.0*sqrt(a)));
+      return log_norm + log(other_term);
     }
-
-    log_increment += log(h);
-    log_int -= log(2.0);
-
-    log_int = logaddexp(log_increment, log_int);
-
-  } while (fabs(log_int - old_log_int) >= eps);
-
-  gsl_interp_accel_free(accel);
-  gsl_interp_free(interp);
-
-  return log_int;
-}
-
-static void reverse_array(double *xs, size_t n) {
-  size_t i;
-
-  for (i = 0; i < n - 1 - i; i++) {
-    double tmp = xs[i];
-    xs[i] = xs[n-1-i];
-    xs[n-1-i] = tmp;
+  } else if (a < 0.0) {
+    double A = -a;
+    return c + b*b/(4.0*A) + log(sqrt(M_PI/A)/2.0) + log(gsl_sf_erf(b/(2.0*sqrt(A))) + gsl_sf_erf((4.0*A*h-b)/(2.0*sqrt(A))));
+  } else {
+    if (b > 0) {
+      return c - log(b) + 2.0*b*h + log(1.0 - exp(-2.0*b*h));
+    } else {
+      double B = -b;
+      return c - log(B) + log1p(-exp(-2.0*B*h));
+    }
   }
 }
 
+static double integrate_interpolated_log(double h, double *log_ys, size_t n) {
+  size_t i;
+  double log_integral = -INFINITY;
+  
+  for (i = 0; i < n-2; i++) {
+    double l0, l1, l2;
+
+    l0 = log_ys[i];
+    l1 = log_ys[i+1];
+    l2 = log_ys[i+2];
+    
+    log_integral = logaddexp(log_integral, log_quadratic_integral_log(h, l0, l1, l2));
+  }
+
+  log_integral = logaddexp(log_integral, log_quadratic_integral_log(h, log_ys[n-2], log_ys[n-1], log_ys[0]));
+
+  return log_integral - log(2.0);
+}
 
 REAL8 LALInferenceMarginalisedTimeLogLikelihood(LALInferenceVariables *currentParams, LALInferenceIFOData * data, 
                               LALInferenceTemplateFunction templt)
@@ -1969,14 +1957,15 @@ REAL8 LALInferenceMarginalisedTimeLogLikelihood(LALInferenceVariables *currentPa
   double Fplus, Fcross;
   double FplusScaled, FcrossScaled;
   double dataReal, dataImag;
-  REAL8 templateReal, templateImag;
-  int i, j, lower, upper, ifo;
+  REAL8 templateReal, templateImag, plainTemplateReal, plainTemplateImag;
+  UINT4 i, j, lower, upper, ifo;
   LALInferenceIFOData *dataPtr;
   double ra, dec, psi, distMpc, gmst;
   LIGOTimeGPS GPSlal;
   double chisquared;
   double loglike;
   double deltaT, TwoDeltaToverN, deltaF;
+  double timedelay, timeshift, twopitimeshift;
   int different;
 	double mc;
 	UINT4 logDistFlag=0;
@@ -1994,10 +1983,10 @@ REAL8 LALInferenceMarginalisedTimeLogLikelihood(LALInferenceVariables *currentPa
   gsl_matrix *psdBandsMin  = NULL;//pointer to matrix holding min frequencies for psd model
   gsl_matrix *psdBandsMax = NULL;//pointer to matrix holding max frequencies for psd model
 
-  int Nblock = 1;            //number of frequency blocks per IFO
-  int Nlines = 1;            //number of lines to be removed
-  int psdFlag = 0;           //flag for including psd fitting
-  int lineFlag = 0;          //flag for excluding lines from integration
+  UINT4 Nblock = 1;            //number of frequency blocks per IFO
+  UINT4 Nlines = 1;            //number of lines to be removed
+  UINT4 psdFlag = 0;           //flag for including psd fitting
+  UINT4 lineFlag = 0;          //flag for excluding lines from integration
 
   //line removal parameters
   if(LALInferenceCheckVariable(currentParams, "removeLinesFlag"))
@@ -2049,16 +2038,23 @@ REAL8 LALInferenceMarginalisedTimeLogLikelihood(LALInferenceVariables *currentPa
   /* loop over data (different interferometers): */
   dataPtr = data;
 
-  /* figure out GMST: */
-
   /* Setup times to integrate over */
-  REAL8 time_prior_low = dataPtr->timeLow;
-  REAL8 time_prior_high = dataPtr->timeHigh;
-  REAL8 time_prior_cen = time_prior_low + (time_prior_high - time_prior_low)/2;
-  REAL8 logprior_norm = -log(time_prior_high - time_prior_low);
+  UINT4 freq_length = dataPtr->freqData->data->length;
+  UINT4 time_length = 2*(freq_length-1);
+  REAL8 approx_tc = XLALGPSGetREAL8(&(dataPtr->freqData->epoch)) + time_length*deltaT - 2.0;
+  COMPLEX16Vector * dh_S_tilde = XLALCreateCOMPLEX16Vector(freq_length);
+  REAL8Vector * dh_S = XLALCreateREAL8Vector(time_length);
+
+  if (dh_S_tilde ==NULL || dh_S == NULL)
+    XLAL_ERROR_REAL8(XLAL_ENOMEM, "Out of memory in LALInferenceMarginalisedTimeLogLikelihood.");
+
+  for (i = 0; i < freq_length; i++) {
+    dh_S_tilde->data[i].real_FIXME = 0.0;
+    dh_S_tilde->data[i].imag_FIXME = 0.0;
+  }
 
   /* Calculate gmst at upper bound of prior for antenna pattern calculation */
-  XLALGPSSetREAL8(&GPSlal, time_prior_cen);
+  XLALGPSSetREAL8(&GPSlal, approx_tc);
   gmst=XLALGreenwichMeanSiderealTime(&GPSlal);
 
   intrinsicParams = LALInferenceGetInstrinsicParams(currentParams);
@@ -2068,6 +2064,8 @@ REAL8 LALInferenceMarginalisedTimeLogLikelihood(LALInferenceVariables *currentPa
   ifo=0;
 
   while (dataPtr != NULL) {
+    REAL8 reshift, imshift, dreshift, dimshift, newReshift, newImshift;
+
     /* The parameters the Likelihood function can handle by itself   */
     /* (and which shouldn't affect the template function) are        */
     /* sky location (ra, dec), polarisation and signal arrival time. */
@@ -2075,7 +2073,9 @@ REAL8 LALInferenceMarginalisedTimeLogLikelihood(LALInferenceVariables *currentPa
 	/* t_c corresponds to the "time" parameter in                    */
 	/* IFOdata->modelParams (set, e.g., from the trigger value).     */
     
-    /* Reset log-likelihood */
+    /* Reset log-likelihood.  Marginalization over time ruins the
+       relationship that log(L) = sum_i log(L_i), so just set detector
+       log(L) to 0.0 */
     dataPtr->loglikelihood = 0.0;
     chisquared = 0.0;
 
@@ -2085,7 +2085,7 @@ REAL8 LALInferenceMarginalisedTimeLogLikelihood(LALInferenceVariables *currentPa
 
     if (different) { /* template needs to be re-computed: */
       LALInferenceCopyVariables(&intrinsicParams, dataPtr->modelParams);
-      LALInferenceAddVariable(dataPtr->modelParams, "time", &time_prior_cen, LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_LINEAR);
+      LALInferenceAddVariable(dataPtr->modelParams, "time", &approx_tc, LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_LINEAR);
       templt(dataPtr);
       if(XLALGetBaseErrno()==XLAL_FAILURE) /* Template generation failed in a known way, set -Inf likelihood */
           return(-DBL_MAX);
@@ -2094,10 +2094,15 @@ REAL8 LALInferenceMarginalisedTimeLogLikelihood(LALInferenceVariables *currentPa
         /* TD --> FD. */
         LALInferenceExecuteFT(dataPtr);
       }
-      LALInferenceRemoveVariable(dataPtr->modelParams, "time");
     }
 
     /* Template is now in dataPtr->timeFreqModelhPlus and hCross */
+
+    /* Time between arrival at geocenter and arrival at detector */
+    timedelay = XLALTimeDelayFromEarthCenter(dataPtr->detector->location,
+                                             ra, dec, &GPSlal);
+    timeshift = approx_tc - *(REAL8 *)LALInferenceGetVariable(dataPtr->modelParams, "time") + timedelay;
+    twopitimeshift = 2.0*M_PI*timeshift;
 
     /* determine beam pattern response (F_plus and F_cross) for given Ifo: */
     XLALComputeDetAMResponse(&Fplus, &Fcross, (const REAL4(*)[3])dataPtr->detector->response, ra, dec, psi, gmst);
@@ -2124,6 +2129,21 @@ REAL8 LALInferenceMarginalisedTimeLogLikelihood(LALInferenceVariables *currentPa
     upper = (UINT4)floor(dataPtr->fHigh / deltaF);
     TwoDeltaToverN = 2.0 * deltaT / ((double) dataPtr->timeData->data->length);
     
+    /* Employ a trick here for avoiding cos(...) and sin(...) in time
+       shifting.  We need to multiply each template frequency bin by
+       exp(-J*twopit*deltaF*i) = exp(-J*twopit*deltaF*(i-1)) +
+       exp(-J*twopit*deltaF*(i-1))*(exp(-J*twopit*deltaF) - 1) .  This
+       recurrance relation has the advantage that the error growth is
+       O(sqrt(N)) for N repetitions. */
+    
+    /* Values for the first iteration: */
+    reshift = cos(twopitimeshift*deltaF*lower);
+    imshift = -sin(twopitimeshift*deltaF*lower);
+
+    /* Incremental values, using cos(theta) - 1 = -2*sin(theta/2)^2 */
+    dimshift = -sin(twopitimeshift*deltaF);
+    dreshift = -2.0*sin(0.5*twopitimeshift*deltaF)*sin(0.5*twopitimeshift*deltaF);
+
     //Set up noise PSD meta parameters
     for(i=0; i<Nblock; i++)
     {
@@ -2158,29 +2178,6 @@ REAL8 LALInferenceMarginalisedTimeLogLikelihood(LALInferenceVariables *currentPa
       }
     }
 
-    /* Time marginalization */
-
-    /* Construct d* h/S(f) */
-    UINT4 freq_length = dataPtr->freqData->data->length;
-    UINT4 time_length = 2*(freq_length-1);
-
-    //REAL8FFTPlan *fft_plan = XLALCreateREAL8FFTPlan(time_length, 0, 1);
-
-    //if (fft_plan == NULL)
-        //XLAL_ERROR_REAL8(XLAL_ENOMEM, "Out of memory in LALInferenceMarginalisedTimeLogLikelihood.");
-
-    COMPLEX16Vector * dh_S_tilde = XLALCreateCOMPLEX16Vector(freq_length);
-    REAL8Vector * dh_S = XLALCreateREAL8Vector(time_length);
-    REAL8Vector * times = XLALCreateREAL8Vector(time_length);
-
-    if (dh_S_tilde ==NULL || dh_S == NULL || times == NULL)
-        XLAL_ERROR_REAL8(XLAL_ENOMEM, "Out of memory in LALInferenceMarginalisedTimeLogLikelihood.");
-
-    REAL8 epoch = XLALGPSGetREAL8(&(dataPtr->timeData->epoch));
-
-    for (i=0; i< (INT4)time_length; i++)
-        times->data[i] = epoch + i * deltaT;
-
     for (i=lower; i<=upper; ++i){
       if(LALInferenceLineSwitch(lineFlag, Nlines, lines_array, widths_array, i)) {
           REAL8 alph, lnalph;
@@ -2197,68 +2194,59 @@ REAL8 LALInferenceMarginalisedTimeLogLikelihood(LALInferenceVariables *currentPa
               lnalph = 0.;
           }
 
-          templateReal = FplusScaled * creal(dataPtr->freqModelhPlus->data->data[i])  
-                              +  FcrossScaled * creal(dataPtr->freqModelhCross->data->data[i]);
-          templateImag = FplusScaled * cimag(dataPtr->freqModelhPlus->data->data[i])  
+          plainTemplateReal = FplusScaled * creal(dataPtr->freqModelhPlus->data->data[i])  
+	    +  FcrossScaled * creal(dataPtr->freqModelhCross->data->data[i]);
+          plainTemplateImag = FplusScaled * cimag(dataPtr->freqModelhPlus->data->data[i])  
                               +  FcrossScaled * cimag(dataPtr->freqModelhCross->data->data[i]);
 
-          templateReal /= deltaT;
-          templateImag /= deltaT;
+          plainTemplateReal /= deltaT;
+          plainTemplateImag /= deltaT;
+
+	  templateReal = reshift*plainTemplateReal - imshift*plainTemplateImag;
+	  templateImag = imshift*plainTemplateReal + reshift*plainTemplateImag;
 
           dataReal     = creal(dataPtr->freqData->data->data[i]) / deltaT;
           dataImag     = cimag(dataPtr->freqData->data->data[i]) / deltaT;
 
-          COMPLEX16 cdata = dataPtr->freqData->data->data[i];
           REAL8 dh_S_re, dh_S_im;
 
-          dh_S_re = creal(cdata) * templateReal + cimag(cdata) * templateImag;
-          dh_S_im = creal(cdata) * templateImag - cimag(cdata) * templateReal;
+	  /* Terms in conj(d)*h */
+          dh_S_re = dataReal * templateReal + dataImag * templateImag;
+          dh_S_im = dataReal * templateImag - dataImag * templateReal;
 
-          dh_S_tilde->data[i].real_FIXME =  dh_S_re * TwoDeltaToverN / (alph * dataPtr->oneSidedNoisePowerSpectrum->data->data[i]);
-          dh_S_tilde->data[i].imag_FIXME =  dh_S_im * TwoDeltaToverN / (alph * dataPtr->oneSidedNoisePowerSpectrum->data->data[i]);
+          dh_S_tilde->data[i].real_FIXME += dh_S_re * TwoDeltaToverN / (alph * dataPtr->oneSidedNoisePowerSpectrum->data->data[i]);
+          dh_S_tilde->data[i].imag_FIXME += dh_S_im * TwoDeltaToverN / (alph * dataPtr->oneSidedNoisePowerSpectrum->data->data[i]);
 
           chisquared += 2.0 * TwoDeltaToverN * (templateReal*templateReal + templateImag*templateImag 
                                                 + dataReal*dataReal + dataImag*dataImag)
                         / (alph * dataPtr->oneSidedNoisePowerSpectrum->data->data[i]);
           chisquared += lnalph;
 
-      } else {
-          dh_S_tilde->data[i].real_FIXME = 0.;
-          dh_S_tilde->data[i].imag_FIXME = 0.;
       }
+
+      newReshift = reshift + reshift*dreshift - imshift*dimshift;
+      newImshift = imshift + reshift*dimshift + imshift*dreshift;
+
+      reshift = newReshift;
+      imshift = newImshift;
     }
 
-    /* LALSuite only performs complex->real reverse-FFTs. We reverse the array to effectively
-     *  perform a complex->real forward-FFT. */
-
-    dh_S_tilde->data[0].imag_FIXME = 0.;
-    XLALREAL8ReverseFFT(dh_S, dh_S_tilde, dataPtr->freqToTimeFFTPlan);
-    reverse_array(dh_S->data, time_length);
-
-    /* Integrate over the resulting FFT to perform the marginalization */
-    const REAL8 eps = 1e-3;
-    //FILE *f1 = fopen("dh_S.dat","w");
-    //for (i=0; i<(INT4)time_length; ++i)
-    //    fprintf(f1, "%f\t%f\n", times->data[i], dh_S->data[i]);
-    //fclose(f1);
-    //
-    //FILE *f2 = fopen("dh_S_tilde.dat","w");
-    //for (i=0; i<(INT4)freq_length; ++i)
-    //    fprintf(f2, "%f\t%f\n", creal(dh_S_tilde->data[i]), cimag(dh_S_tilde->data[i]));
-    //fclose(f2);
- 
-    chisquared -= 2 * (integrate_interpolated_log(times->data, dh_S->data, time_length, time_prior_low, time_prior_high, eps) + logprior_norm);
-
-    dataPtr->loglikelihood = -0.5 * chisquared;
     loglike -= 0.5 * chisquared;
-
-    XLALDestroyCOMPLEX16Vector(dh_S_tilde);
-    XLALDestroyREAL8Vector(dh_S);
-    XLALDestroyREAL8Vector(times);
 
     ifo++; //increment IFO counter for noise parameters
     dataPtr = dataPtr->next;
   }
+
+  /* LALSuite only performs complex->real reverse-FFTs. We reverse the
+   *  array to effectively perform a complex->real forward-FFT.  This
+   *  is the reason for the "-i*deltaT" above.  */
+  dh_S_tilde->data[0].imag_FIXME = 0.;
+  XLALREAL8ReverseFFT(dh_S, dh_S_tilde, data->freqToTimeFFTPlan);
+
+  loglike += integrate_interpolated_log(deltaT, dh_S->data, time_length) - log(time_length*deltaT);
+
+  XLALDestroyCOMPLEX16Vector(dh_S_tilde);
+  XLALDestroyREAL8Vector(dh_S);
 
   LALInferenceClearVariables(&intrinsicParams);
   return(loglike);

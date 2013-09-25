@@ -445,7 +445,6 @@ tagLALInferenceIFOData
   REAL8Window               *window;        /** A window */
   REAL8FFTPlan              *timeToFreqFFTPlan, *freqToTimeFFTPlan; /** Pre-calculated FFT plans for forward and reverse FFTs */
   REAL8                     fLow, fHigh;	/** integration limits for overlap integral in F-domain */
-  REAL8                     timeLow, timeHigh;	/** integration limits for analytic time marginalization */
   LALDetector               *detector;          /** LALDetector structure for where this data came from */
   BarycenterInput           *bary;              /** Barycenter information */
   EphemerisData             *ephem;             /** Ephemeris data */
