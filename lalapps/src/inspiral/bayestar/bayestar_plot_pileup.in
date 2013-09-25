@@ -36,6 +36,8 @@ parser = OptionParser(
             help="width of figure in inches [default: %default]"),
         Option("--figure-height", metavar="INCHES", type=float, default=6.,
             help="height of figure in inches [default: %default]"),
+        Option("--dpi", metavar="PIXELS", type=int, default=300,
+            help="resolution of figure in dots per inch [default: %default]"),
         Option("--contour", metavar="PERCENT", type=float, default=90,
             help="plot contour enclosing this percentage of"
             + " probability mass [default: %default]"),
@@ -120,4 +122,4 @@ ax.set_alpha(0.)
 if opts.output is None:
     plt.show()
 else:
-    plt.savefig(opts.output)
+    plt.savefig(opts.output, dpi=opts.dpi)
