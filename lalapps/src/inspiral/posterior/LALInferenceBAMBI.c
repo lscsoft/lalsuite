@@ -551,7 +551,7 @@ void initializeMN(LALInferenceRunState *runState)
                (--eff e)                        Target efficiency (0.1)\n\
                (--tol tol)                      Tolerance on evidence calculation (0.5)\n\
                (--multimodal maxModes)          Enables multimodal sampling with specified maximum number of modes\n\
-                                                  (default is turned off with 1 mode)
+                                                  (default is turned off with 1 mode)\
                (--progress)                     Produce progress information.\n\
                (--noresume)                     Do not resume on previous run.\n\
                (--BAMBI)                        Use BAMBI instead of just MultiNest\n\
