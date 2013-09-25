@@ -1964,7 +1964,7 @@ REAL8 LALInferenceMarginalisedTimeLogLikelihood(LALInferenceVariables *currentPa
   LIGOTimeGPS GPSlal;
   double chisquared;
   double loglike;
-  double deltaT, TwoDeltaToverN, deltaF;
+  double deltaT=0.0, TwoDeltaToverN, deltaF;
   double timedelay, timeshift, twopitimeshift;
   int different;
 	double mc;
@@ -2180,7 +2180,7 @@ REAL8 LALInferenceMarginalisedTimeLogLikelihood(LALInferenceVariables *currentPa
 
     for (i=lower; i<=upper; ++i){
       if(LALInferenceLineSwitch(lineFlag, Nlines, lines_array, widths_array, i)) {
-          REAL8 alph, lnalph;
+          REAL8 alph=0.0, lnalph=0.0;
 
           if (psdFlag) {
               for (j=0; j<Nblock; j++) {
