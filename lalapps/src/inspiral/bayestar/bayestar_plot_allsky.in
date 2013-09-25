@@ -107,6 +107,10 @@ for ra, dec in np.deg2rad(opts.radec):
         ra = plot.wrapped_angle(ra)
     ax.plot(ra, dec, '*', markerfacecolor='white', markeredgecolor='black', markersize=10)
 
+# If we are using a new enough version of matplotlib, then
+# add a white outline to all text to make it stand out from the background.
+plot.outline_text(ax)
+
 fig.patch.set_alpha(0.)
 ax.patch.set_alpha(0.)
 ax.set_alpha(0.)
