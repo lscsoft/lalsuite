@@ -202,6 +202,13 @@ REAL8 LALInferenceRosenbrockLogLikelihood(LALInferenceVariables *currentParams,
 REAL8 LALInferenceMarginalisedPhaseLogLikelihood(LALInferenceVariables *currentParams, LALInferenceIFOData * data,LALInferenceTemplateFunction templt);
 
 /**
+ * Returns the log-likelihood marginalised over the time dimension.
+ * The boundaries of the time marginalization are the data segment;
+ * any prior on time is ignored.
+ */
+REAL8 LALInferenceMarginalisedTimeLogLikelihood(LALInferenceVariables *currentParams, LALInferenceIFOData *data, LALInferenceTemplateFunction templt);
+
+/**
  * Initialisation function which reads runState->commaneLine and sets up the
  * likelihood function accordingly. Can choose between Gaussian, Student-t, marginalised
  * phase likelihoods

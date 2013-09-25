@@ -418,25 +418,24 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
       runState->likelihood==&LALInferenceFreqDomainLogLikelihood ||
       runState->likelihood==&LALInferenceNoiseOnlyLogLikelihood){
     nullLikelihood = LALInferenceNullLogLikelihood(runState->data);
-  } else if (runState->likelihood==&LALInferenceFreqDomainStudentTLogLikelihood) {
+  } else if (runState->likelihood==&LALInferenceFreqDomainStudentTLogLikelihood || 
+	     runState->likelihood==&LALInferenceMarginalisedTimeLogLikelihood) {
+    LALInferenceIFOData *headData = runState->data;
     REAL8 d = *(REAL8 *)LALInferenceGetVariable(runState->currentParams, "distance");
     REAL8 bigD = 1.0 / 0.0;
 
     LALInferenceSetVariable(runState->currentParams, "distance", &bigD);
+
     nullLikelihood = runState->likelihood(runState->currentParams, runState->data, runState->templt);
+
+    while (headData != NULL) {
+      headData->nullloglikelihood = headData->loglikelihood;
+      headData = headData->next;
+    }
+
     LALInferenceSetVariable(runState->currentParams, "distance", &d);
-  } else if (runState->likelihood==&LALInferenceZeroLogLikelihood) {
-    nullLikelihood = 0.0;
-  } else if (runState->likelihood==&LALInferenceCorrelatedAnalyticLogLikelihood) {
-    nullLikelihood = 0.0;
-  } else if (runState->likelihood==&LALInferenceBimodalCorrelatedAnalyticLogLikelihood) {
-    nullLikelihood = 0.0;
-  } else if (runState->likelihood==&LALInferenceRosenbrockLogLikelihood) {
-    nullLikelihood = 0.0;
   } else {
-    fprintf(stderr, "Unrecognized log(L) function (in %s, line %d)\n",
-        __FILE__, __LINE__);
-    exit(1);
+    nullLikelihood = 0.0;
   }
 
   LALInferenceAddVariable(runState->algorithmParams, "nChain", &nChain,  LALINFERENCE_INT4_t, LALINFERENCE_PARAM_FIXED);
@@ -1681,7 +1680,15 @@ void LALInferencePrintPTMCMCInjectionSample(LALInferenceRunState *runState) {
       XLALFree(saveParams);
       XLAL_ERROR_VOID(XLAL_EINVAL, "unknown mass ratio parameter name (allowed are 'massratio' or 'asym_massratio')");
     }
-    LALInferenceSetVariable(runState->currentParams, "time", &injGPSTime);
+
+    UINT4 added_time_param = 0;
+    if (!LALInferenceCheckVariable(runState->currentParams, "time")) {
+        added_time_param = 1;
+        LALInferenceAddVariable(runState->currentParams, "time", &injGPSTime, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
+    } else {
+        LALInferenceSetVariable(runState->currentParams, "time", &injGPSTime);
+    }
+
     LALInferenceSetVariable(runState->currentParams, "distance", &dist);
     LALInferenceSetVariable(runState->currentParams, "inclination", &inclination);
     LALInferenceSetVariable(runState->currentParams, "polarisation", &(psi));
@@ -1712,7 +1719,12 @@ void LALInferencePrintPTMCMCInjectionSample(LALInferenceRunState *runState) {
     setIFOAcceptedLikelihoods(runState);
     LALInferencePrintPTMCMCHeaderFile(runState, out);
     fclose(out);
-    
+
+    if (added_time_param) {
+        LALInferenceRemoveVariable(runState->currentParams, "time");
+        LALInferenceRemoveMinMaxPrior(runState->priorArgs, "time");
+    }
+
     LALInferenceCopyVariables(saveParams, runState->currentParams);
     runState->currentLikelihood = runState->likelihood(runState->currentParams, runState->data, runState->templt);
     runState->currentPrior = runState->prior(runState, runState->currentParams);
