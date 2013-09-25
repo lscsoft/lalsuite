@@ -1,6 +1,6 @@
 # lalapps.m4 - lalapps specific autoconf macros
 #
-# serial 11
+# serial 12
 
 AC_DEFUN([LALAPPS_WITH_EXTRA_CPPFLAGS],
 [AC_ARG_WITH(
@@ -236,4 +236,5 @@ AC_DEFUN([LALAPPS_CHECK_BAMBI],[
       hbf=true
     ])
   ])
+  AS_IF([test "$hbf" = "false"],[bambimpi=false])
 ])

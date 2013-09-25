@@ -152,9 +152,19 @@ AS_IF([test "$bambi" = "true"], [
 # check for required compilers
 LALSUITE_PROG_COMPILERS
 
-# check for MPI compiler
+# check for MPI compilers
+bambimpi=false
 if test "x$mpi" = "xtrue"; then
   AX_MPI([mpi=true],[mpi=false])
+  AS_IF([test "$bambi" = "true"], [
+    MPILIBS_SAVE="${MPILIBS}"
+    AC_LANG([C++])
+    AX_MPI([bambimpi=true],[])
+    AC_LANG([Fortran])
+    AX_MPI([],[bambimpi=false])
+    AC_LANG([C])
+    MPILIBS="${MPILIBS_SAVE}"
+  ])
 fi
 LALSUITE_ENABLE_MODULE([MPI],[mpi])
 
@@ -406,6 +416,7 @@ if test "$bambi" = "true"; then
   LALAPPS_CHECK_BAMBI
 fi
 AM_CONDITIONAL([HAVE_BAMBI],[${hbf}])
+AM_CONDITIONAL([HAVE_BAMBI_MPI],[${bambimpi}])
 
 # use c++ mode for boinc build
 if test "${boinc}" = "true" ; then
