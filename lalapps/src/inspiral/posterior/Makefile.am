@@ -19,7 +19,7 @@ lalapps_inspnest_SOURCES = \
 	nest_calc.h \
 	LALInspiralMCMC.h \
 	LALInspiralMCMCUser.h
-endif
+endif # metaio
 
 if LALPULSAR
 if LALINFERENCE
@@ -31,19 +31,18 @@ if HAVE_BAMBI
 pulsar_progs += lalinference_bambi
 lalinference_bambi_SOURCES = LALInferenceBAMBI.c
 lalinference_bambi_LDADD = ${BAMBI_LIBS}
-endif
+endif # bambi
 
-endif
-
-endif
+endif # lalinference
+endif # lalpulsar
 
 frame_progs = \
 	lalapps_followupMcmc
 lalapps_followupMcmc_SOURCES = \
 	followupMcmc.c
 
-endif
-endif
+endif # lalframe
+endif # lalinspiral
 
 bayesline_SOURCES = \
 	BayesLine.c
