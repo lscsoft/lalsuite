@@ -294,34 +294,31 @@ if (swiglal_release_parent(PTR)) {
 
     // Create an empty struct to represent the opaque struct,
     // so that SWIG has something to attach the destructor to.
+    // No constructors are generated, since it is assumed that
+    // the struct will be created internally by some function
+    // and returned.
     struct TAGNAME {
     };
 
   #else
 
-    // If there is no XLAL destructor function, this is taken to mean
-    // this struct can be validly constructed using XLALCalloc(), i.e.
-    // it contains no pointers which must also be initialised.
-    #if #DTORFUNC == ""
-      %extend TAGNAME {
-        TAGNAME() {
-          NAME* self = %reinterpret_cast(XLALCalloc(1, sizeof(NAME)), NAME*);
-          return self;
-        }
-        TAGNAME(NAME* src) {
-          NAME* self = %reinterpret_cast(XLALCalloc(1, sizeof(NAME)), NAME*);
-          memcpy(self, src, sizeof(NAME));
-          return self;
-        }
+    // Generate constructors, using XLALCalloc() to allocate memory.
+    %extend TAGNAME {
+      TAGNAME() {
+        NAME* self = %reinterpret_cast(XLALCalloc(1, sizeof(NAME)), NAME*);
+        return self;
       }
-    #endif
+      TAGNAME(NAME* src) {
+        NAME* self = %reinterpret_cast(XLALCalloc(1, sizeof(NAME)), NAME*);
+        memcpy(self, src, sizeof(NAME));
+        return self;
+      }
+    }
 
   #endif
 
-  // If there is no XLAL destructor function, this is taken to mean
-  // this struct can be validly destroyed using XLALFree(), i.e.
-  // it contains no pointers which must first be destroyed. Otherwise,
-  // use the XLAL destructor function.
+  // Generate destructor, using either the destructor function DTORFUNC,
+  // or else XLALFree() if DTORFUNC is undefined, to destroy memory.
   #if #DTORFUNC == ""
     %extend TAGNAME {
       ~TAGNAME() {
