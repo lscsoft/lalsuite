@@ -93,6 +93,8 @@ fitsfilenames = tuple(command.chainglob(args))
 
 progress.max = len(fitsfilenames)
 
+matplotlib.rc('path', simplify=True, simplify_threshold=1)
+
 for count_records, fitsfilename in enumerate(fitsfilenames):
     progress.update(count_records, fitsfilename)
     skymap, metadata = fits.read_sky_map(fitsfilename)
@@ -106,6 +108,10 @@ for count_records, fitsfilename in enumerate(fitsfilenames):
         levels=[opts.contour], alpha=opts.alpha)
 
 progress.update(-1, 'saving figure')
+
+# If we are using a new enough version of matplotlib, then
+# add a white outline to all text to make it stand out from the background.
+plot.outline_text(ax)
 
 fig.patch.set_alpha(0.)
 ax.patch.set_alpha(0.)
