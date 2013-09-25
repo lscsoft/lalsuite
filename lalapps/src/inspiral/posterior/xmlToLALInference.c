@@ -21,6 +21,8 @@
  *  MA  02111-1307  USA
  *
  **********************************************************************
+ * Compile with:
+ *     gcc -g -O0 -o xmlToLALInference xmlToLALInference.c `pkg-config --cflags --libs lalinspiral`
  *
  * Usage:
  *     ./xmlToLALInference <xml file> <injection number (0 is first)>
