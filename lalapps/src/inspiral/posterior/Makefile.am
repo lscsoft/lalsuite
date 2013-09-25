@@ -1,6 +1,9 @@
-SUBDIRS = SPINspiral mpi
+SUBDIRS = \
+	SPINspiral \
+	mpi
 
 LDADD = $(top_builddir)/src/lalapps/liblalapps.la
+AM_CPPFLAGS = -I$(top_srcdir)/src -I$(top_srcdir)/src/lalapps -I$(top_builddir)/src/lalapps -DPKG_DATA_DIR='"$(pkgdatadir)/"'
 
 if LALINSPIRAL
 if LALFRAME
@@ -41,14 +44,19 @@ lalapps_followupMcmc_SOURCES = \
 
 endif
 endif
- 
-bayesline_SOURCES = BayesLine.c
 
-bin_PROGRAMS = bayesline $(metaio_progs) $(frame_progs) $(pulsar_progs) $(mpi_progs)
+bayesline_SOURCES = \
+	BayesLine.c
 
-noinst_PROGRAMS = $(td_test_progs)
+bin_PROGRAMS = \
+	bayesline \
+	$(metaio_progs) \
+	$(frame_progs) \
+	$(pulsar_progs) \
+	$(mpi_progs)
 
-AM_CPPFLAGS = -I$(top_srcdir)/src -I$(top_srcdir)/src/lalapps -I$(top_builddir)/src/lalapps -DPKG_DATA_DIR='"$(pkgdatadir)/"'
+noinst_PROGRAMS = \
+	$(td_test_progs)
 
 if HAVE_PYTHON
 bin_SCRIPTS = \
