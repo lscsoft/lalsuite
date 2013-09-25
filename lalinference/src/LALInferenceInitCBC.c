@@ -1191,7 +1191,7 @@ LALInferenceVariables *LALInferenceInitCBCVariables(LALInferenceRunState *state)
       }
     }
   
-    if(!LALInferenceGetProcParamVal(commandLine,"--margtime")){
+    if(!LALInferenceGetProcParamVal(commandLine,"--margtime") && !LALInferenceGetProcParamVal(commandLine, "--margtimephi")){
       ppt=LALInferenceGetProcParamVal(commandLine,"--fixTime");
       if(ppt){
         LALInferenceRegisterUniformVariableREAL8(state, currentParams, "time", timeParam, timeMin, timeMax, LALINFERENCE_PARAM_FIXED);
@@ -1201,15 +1201,15 @@ LALInferenceVariables *LALInferenceInitCBCVariables(LALInferenceRunState *state)
       }
     }
 
-  if(!LALInferenceGetProcParamVal(commandLine,"--margphi")){
-    ppt=LALInferenceGetProcParamVal(commandLine,"--fixPhi");
-    if(ppt){
-      LALInferenceRegisterUniformVariableREAL8(state, currentParams, "phase", start_phase, phiMin, phiMax, LALINFERENCE_PARAM_FIXED);
-      if(lalDebugLevel>0) fprintf(stdout,"phase fixed and set to %f\n",start_phase);
-    }else{
-      LALInferenceRegisterUniformVariableREAL8(state, currentParams, "phase", start_phase, phiMin, phiMax, LALINFERENCE_PARAM_CIRCULAR);
+    if(!LALInferenceGetProcParamVal(commandLine,"--margphi") && !LALInferenceGetProcParamVal(commandLine, "--margtimephi")){
+      ppt=LALInferenceGetProcParamVal(commandLine,"--fixPhi");
+      if(ppt){
+	LALInferenceRegisterUniformVariableREAL8(state, currentParams, "phase", start_phase, phiMin, phiMax, LALINFERENCE_PARAM_FIXED);
+	if(lalDebugLevel>0) fprintf(stdout,"phase fixed and set to %f\n",start_phase);
+      }else{
+	LALInferenceRegisterUniformVariableREAL8(state, currentParams, "phase", start_phase, phiMin, phiMax, LALINFERENCE_PARAM_CIRCULAR);
+      }
     }
-  }
   
   if(LALInferenceGetProcParamVal(commandLine,"--use-logdistance")){
     LALInferenceRegisterUniformVariableREAL8(state, currentParams, "distance", log(start_dist), log(Dmin), log(Dmax), LALInferenceGetProcParamVal(commandLine,"--fixDist")?LALINFERENCE_PARAM_FIXED:LALINFERENCE_PARAM_LINEAR);

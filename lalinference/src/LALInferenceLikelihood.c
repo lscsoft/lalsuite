@@ -56,7 +56,8 @@ void LALInferenceInitLikelihood(LALInferenceRunState *runState)
                  (--rosenbrockLikelihood)         Use analytic, Rosenbrock banana for Likelihood.\n\
                  (--noiseonly)                    Using noise-only likelihood.\n\
                  (--margphi)                      Using marginalised phase likelihood.\n\
-                 (--margtime)                     Using marginalised time likelihood.\n";
+                 (--margtime)                     Using marginalised time likelihood.\n\
+                 (--margtimephi)                  Using marginalised in time and phase likelihood\n";
 
     ProcessParamsTable *commandLine=runState->commandLine;
     LALInferenceIFOData *ifo=runState->data;
@@ -100,6 +101,11 @@ void LALInferenceInitLikelihood(LALInferenceRunState *runState)
    } else if (LALInferenceGetProcParamVal(commandLine, "--margtime")) {
     fprintf(stderr, "Using marginalised time likelihood.\n");
     runState->likelihood=&LALInferenceMarginalisedTimeLogLikelihood;
+   } else if (LALInferenceGetProcParamVal(commandLine, "--margtimephi")) {
+     UINT4 margphi = 1;
+     fprintf(stderr, "Using marginalised in time and phase likelihood.\n");
+     runState->likelihood=&LALInferenceMarginalisedTimeLogLikelihood;
+     LALInferenceAddVariable(runState->currentParams, "margtimephi", &margphi, LALINFERENCE_UINT4_t,LALINFERENCE_PARAM_FIXED);
    } else {
     runState->likelihood=&LALInferenceUndecomposedFreqDomainLogLikelihood;
    }
@@ -1972,6 +1978,7 @@ REAL8 LALInferenceMarginalisedTimeLogLikelihood(LALInferenceVariables *currentPa
   LALStatus status;
   memset(&status,0,sizeof(status));
   LALInferenceVariables intrinsicParams;
+  int margphi;
 
   if(data==NULL) {XLAL_ERROR_REAL8(XLAL_EINVAL,"ERROR: Encountered NULL data pointer in likelihood\n");}
 
@@ -2020,6 +2027,12 @@ REAL8 LALInferenceMarginalisedTimeLogLikelihood(LALInferenceVariables *currentPa
   double psdBandsMin_array[Nblock];
   double psdBandsMax_array[Nblock];
 
+  if (LALInferenceCheckVariable(currentParams, "margtimephi")) {
+    margphi = *(INT4 *)LALInferenceGetVariable(currentParams, "margtimephi");
+  } else {
+    margphi = 0;
+  }
+
   logDistFlag=LALInferenceCheckVariable(currentParams, "logdistance");
   if(LALInferenceCheckVariable(currentParams,"logmc")){
     mc=exp(*(REAL8 *)LALInferenceGetVariable(currentParams,"logmc"));
@@ -2043,7 +2056,21 @@ REAL8 LALInferenceMarginalisedTimeLogLikelihood(LALInferenceVariables *currentPa
   UINT4 time_length = 2*(freq_length-1);
   REAL8 approx_tc = XLALGPSGetREAL8(&(dataPtr->freqData->epoch)) + time_length*deltaT - 2.0;
   COMPLEX16Vector * dh_S_tilde = XLALCreateCOMPLEX16Vector(freq_length);
+  COMPLEX16Vector * dh_S_tilde_im = NULL;
   REAL8Vector * dh_S = XLALCreateREAL8Vector(time_length);
+  REAL8Vector * dh_S_im = NULL;
+
+  if (margphi) {
+    dh_S_tilde_im = XLALCreateCOMPLEX16Vector(freq_length);
+    dh_S_im = XLALCreateREAL8Vector(time_length);
+    if (dh_S_tilde_im == NULL || dh_S_im == NULL) {
+      XLAL_ERROR_REAL8(XLAL_ENOMEM, "Out of memory in LALInferenceMarginalisedTimeLogLikelihood.");
+    }
+    for (i = 0; i < freq_length; i++) {
+      dh_S_tilde_im->data[i].real_FIXME = 0.0;
+      dh_S_tilde_im->data[i].imag_FIXME = 0.0;
+    }
+  }
 
   if (dh_S_tilde ==NULL || dh_S == NULL)
     XLAL_ERROR_REAL8(XLAL_ENOMEM, "Out of memory in LALInferenceMarginalisedTimeLogLikelihood.");
@@ -2086,6 +2113,10 @@ REAL8 LALInferenceMarginalisedTimeLogLikelihood(LALInferenceVariables *currentPa
     if (different) { /* template needs to be re-computed: */
       LALInferenceCopyVariables(&intrinsicParams, dataPtr->modelParams);
       LALInferenceAddVariable(dataPtr->modelParams, "time", &approx_tc, LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_LINEAR);
+      if (margphi) {
+	double pi2 = M_PI / 2.0;
+	LALInferenceAddVariable(dataPtr->modelParams, "phase", &pi2, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR);
+      }
       templt(dataPtr);
       if(XLALGetBaseErrno()==XLAL_FAILURE) /* Template generation failed in a known way, set -Inf likelihood */
           return(-DBL_MAX);
@@ -2208,14 +2239,19 @@ REAL8 LALInferenceMarginalisedTimeLogLikelihood(LALInferenceVariables *currentPa
           dataReal     = creal(dataPtr->freqData->data->data[i]) / deltaT;
           dataImag     = cimag(dataPtr->freqData->data->data[i]) / deltaT;
 
-          REAL8 dh_S_re, dh_S_im;
+          REAL8 dh_S_real, dh_S_imag;
 
 	  /* Terms in conj(d)*h */
-          dh_S_re = dataReal * templateReal + dataImag * templateImag;
-          dh_S_im = dataReal * templateImag - dataImag * templateReal;
+          dh_S_real = dataReal * templateReal + dataImag * templateImag;
+          dh_S_imag = dataReal * templateImag - dataImag * templateReal;
 
-          dh_S_tilde->data[i].real_FIXME += dh_S_re * TwoDeltaToverN / (alph * dataPtr->oneSidedNoisePowerSpectrum->data->data[i]);
-          dh_S_tilde->data[i].imag_FIXME += dh_S_im * TwoDeltaToverN / (alph * dataPtr->oneSidedNoisePowerSpectrum->data->data[i]);
+	  if (margphi) {
+	    dh_S_tilde->data[i].real_FIXME += dh_S_real * TwoDeltaToverN / (alph * dataPtr->oneSidedNoisePowerSpectrum->data->data[i]);
+	    dh_S_tilde_im->data[i].imag_FIXME += dh_S_imag * TwoDeltaToverN / (alph * dataPtr->oneSidedNoisePowerSpectrum->data->data[i]);
+	  } else {
+	    dh_S_tilde->data[i].real_FIXME += dh_S_real * TwoDeltaToverN / (alph * dataPtr->oneSidedNoisePowerSpectrum->data->data[i]);
+	    dh_S_tilde->data[i].imag_FIXME += dh_S_imag * TwoDeltaToverN / (alph * dataPtr->oneSidedNoisePowerSpectrum->data->data[i]);
+	  }
 
           chisquared += 2.0 * TwoDeltaToverN * (templateReal*templateReal + templateImag*templateImag 
                                                 + dataReal*dataReal + dataImag*dataImag)
@@ -2243,10 +2279,28 @@ REAL8 LALInferenceMarginalisedTimeLogLikelihood(LALInferenceVariables *currentPa
   dh_S_tilde->data[0].imag_FIXME = 0.;
   XLALREAL8ReverseFFT(dh_S, dh_S_tilde, data->freqToTimeFFTPlan);
 
+  if (margphi) {
+    dh_S_tilde_im->data[0].imag_FIXME = 0.0;
+    XLALREAL8ReverseFFT(dh_S_im, dh_S_tilde_im, data->freqToTimeFFTPlan);
+  }
+
+  if (margphi) {
+    /* We've got the real and imaginary parts of the FFT in the two
+       arrays.  Now combine them into one Bessel function. */
+    for (i = 0; i < time_length; i++) {
+      double x = sqrt(dh_S->data[i]*dh_S->data[i] + dh_S_im->data[i]*dh_S_im->data[i]);
+      dh_S->data[i] = log(gsl_sf_bessel_I0_scaled(x)) + fabs(x);
+    }
+  }     
+
   loglike += integrate_interpolated_log(deltaT, dh_S->data, time_length) - log(time_length*deltaT);
 
   XLALDestroyCOMPLEX16Vector(dh_S_tilde);
   XLALDestroyREAL8Vector(dh_S);
+  if (margphi) {
+    XLALDestroyCOMPLEX16Vector(dh_S_tilde_im);
+    XLALDestroyREAL8Vector(dh_S_im);
+  }
 
   LALInferenceClearVariables(&intrinsicParams);
   return(loglike);
