@@ -1689,10 +1689,17 @@ void LALInferencePrintPTMCMCInjectionSample(LALInferenceRunState *runState) {
         LALInferenceSetVariable(runState->currentParams, "time", &injGPSTime);
     }
 
+    UINT4 added_phase_param = 0;
+    if (!LALInferenceCheckVariable(runState->currentParams, "phase")) {
+      added_phase_param = 1;
+      LALInferenceAddVariable(runState->currentParams, "phase", &phase, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
+    } else {
+      LALInferenceSetVariable(runState->currentParams, "phase", &phase);
+    }
+
     LALInferenceSetVariable(runState->currentParams, "distance", &dist);
     LALInferenceSetVariable(runState->currentParams, "inclination", &inclination);
     LALInferenceSetVariable(runState->currentParams, "polarisation", &(psi));
-    LALInferenceSetVariable(runState->currentParams, "phase", &phase);
     LALInferenceSetVariable(runState->currentParams, "declination", &dec);
     LALInferenceSetVariable(runState->currentParams, "rightascension", &ra);
     if (LALInferenceCheckVariable(runState->currentParams, "a_spin1")) {
@@ -1723,6 +1730,11 @@ void LALInferencePrintPTMCMCInjectionSample(LALInferenceRunState *runState) {
     if (added_time_param) {
         LALInferenceRemoveVariable(runState->currentParams, "time");
         LALInferenceRemoveMinMaxPrior(runState->priorArgs, "time");
+    }
+
+    if (added_phase_param) {
+      LALInferenceRemoveVariable(runState->currentParams, "phase");
+      LALInferenceRemoveMinMaxPrior(runState->priorArgs, "phase");
     }
 
     LALInferenceCopyVariables(saveParams, runState->currentParams);
