@@ -2295,18 +2295,12 @@ REAL8 LALInferenceMarginalisedTimeLogLikelihood(LALInferenceVariables *currentPa
     XLALREAL8ReverseFFT(dh_S_im, dh_S_tilde_im, data->freqToTimeFFTPlan);
   }
 
-  if (margphi) {
-    /* We've got the real and imaginary parts of the FFT in the two
-       arrays.  Now combine them into one Bessel function. */
-    for (i = 0; i < time_length; i++) {
-      double x = sqrt(dh_S->data[i]*dh_S->data[i] + dh_S_im->data[i]*dh_S_im->data[i]);
-      dh_S->data[i] = log(gsl_sf_bessel_I0_scaled(x)) + fabs(x);
-    }
-  }     
-
   /* The time series comes out reversed, so we have to reverse it
      ourselves. */
   reverse_array(dh_S->data, dh_S->length);
+  if (margphi) {
+    reverse_array(dh_S_im->data, dh_S_im->length);
+  }
 
   REAL8 time_low = *(REAL8 *)LALInferenceGetVariable(currentParams, "time_prior_low");
   REAL8 time_high = *(REAL8 *)LALInferenceGetVariable(currentParams, "time_prior_high");
@@ -2314,6 +2308,15 @@ REAL8 LALInferenceMarginalisedTimeLogLikelihood(LALInferenceVariables *currentPa
   UINT4 istart = (UINT4)round((time_low - t0)/deltaT);
   UINT4 iend = (UINT4)round((time_high - t0)/deltaT);
   UINT4 n = iend - istart;
+
+  if (margphi) {
+    /* We've got the real and imaginary parts of the FFT in the two
+       arrays.  Now combine them into one Bessel function. */
+    for (i = istart; i < iend; i++) {
+      double x = sqrt(dh_S->data[i]*dh_S->data[i] + dh_S_im->data[i]*dh_S_im->data[i]);
+      dh_S->data[i] = log(gsl_sf_bessel_I0_scaled(x)) + fabs(x);
+    }
+  }     
 
   loglike += integrate_interpolated_log(deltaT, dh_S->data + istart, n) - log(n*deltaT);
 
