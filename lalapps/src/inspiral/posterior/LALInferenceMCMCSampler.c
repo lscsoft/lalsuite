@@ -70,6 +70,7 @@ thinDifferentialEvolutionPoints(LALInferenceRunState *runState) {
   /* Copy the odd points into the first part of the array. */
   for (i = 1; i < runState->differentialPointsLength; i += 2) {
     runState->differentialPoints[i/2] = runState->differentialPoints[i];
+    runState->differentialPoints[i] = NULL;
   }
 
   newSize = runState->differentialPointsLength / 2;
@@ -100,6 +101,22 @@ accumulateDifferentialEvolutionSample(LALInferenceRunState *runState) {
   runState->differentialPoints[runState->differentialPointsLength] = XLALCalloc(1, sizeof(LALInferenceVariables));
   LALInferenceCopyVariables(runState->currentParams, runState->differentialPoints[runState->differentialPointsLength]);
   runState->differentialPointsLength += 1;
+}
+
+static void
+resetDifferentialEvolutionBuffer(LALInferenceRunState *runState) {
+  size_t i;
+
+  for (i = 0; i < runState->differentialPointsLength; i++) {
+    LALInferenceClearVariables(runState->differentialPoints[i]);
+    XLALFree(runState->differentialPoints[i]);
+    runState->differentialPoints[i] = NULL;
+  }
+
+  runState->differentialPoints = XLALRealloc(runState->differentialPoints, 1*sizeof(LALInferenceVariables *));
+  runState->differentialPointsLength = 0;
+  runState->differentialPointsSize = 1;
+  runState->differentialPointsSkip = 1;
 }
 
 static void
@@ -1410,9 +1427,8 @@ void LALInferenceAdaptationRestart(LALInferenceRunState *runState, INT4 cycle)
     }
   }
 
-  /* Move hotter chains to this location.  Stagger when chains can start peforming such an update. */
-  //if (runPhase != LADDER_UPDATE && MPIrank != nChain-1 && cycle > MPIrank*1000)
-  //    LALInferenceLadderUpdate(runState, 1, cycle);
+  /* Also clear differential buffer when adaptation restarts. */
+  resetDifferentialEvolutionBuffer(runState);
 
   LALInferenceSetVariable(runState->proposalArgs, "adapting", &adapting);
   LALInferenceSetVariable(runState->proposalArgs, "adaptStart", &cycle);
