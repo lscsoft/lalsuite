@@ -569,11 +569,6 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
     propstatfile = fopen(propstatfilename, "w");
   }
 
-  chainoutput = LALInferencePrintPTMCMCHeaderOrResume(runState);
-  if (MPIrank == 0) {
-    LALInferencePrintPTMCMCInjectionSample(runState);
-  }
-
   // initialize starting likelihood value:
   runState->currentLikelihood = runState->likelihood(runState->currentParams, runState->data, runState->templt);
   LALInferenceIFOData *headData = runState->data;
@@ -585,6 +580,11 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 
   REAL8 logLAtAdaptStart = runState->currentLikelihood;
   LALInferenceSetVariable(runState->proposalArgs, "logLAtAdaptStart", &(logLAtAdaptStart));
+
+  chainoutput = LALInferencePrintPTMCMCHeaderOrResume(runState);
+  if (MPIrank == 0) {
+    LALInferencePrintPTMCMCInjectionSample(runState);
+  }
 
   if (MPIrank == 0){
     printf("\nTemperature ladder:\n");
