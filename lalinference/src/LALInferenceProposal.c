@@ -909,6 +909,7 @@ void LALInferenceDifferentialEvolutionNames(LALInferenceRunState *runState,
   LALInferenceCopyVariables(runState->currentParams, proposedParams);
 
   if (dePts == NULL || nPts <= 1) {
+    LALInferenceSetLogProposalRatio(runState, 0.0);
     return; /* Quit now, since we don't have any points to use. */
   }
 
@@ -921,15 +922,10 @@ void LALInferenceDifferentialEvolutionNames(LALInferenceRunState *runState,
 
   LALInferenceVariables *ptI = dePts[i];
   LALInferenceVariables *ptJ = dePts[j];
-  REAL8 scale;
 
-  /* Some small fraction of the time, we do a "mode hopping" jump,
-     where we jump exactly along the difference vector. */
-  if (gsl_rng_uniform(runState->GSLrandom) < modeHoppingFrac) {
-    scale = 1.0;
-  } else {  
-    scale = 2.38 * gsl_ran_ugaussian(runState->GSLrandom) / sqrt(2.0*Ndim);
-  }
+  /* Scale is chosen uniform in log between 0.1 and 10 times the
+     desired jump size. */
+  REAL8 scale = 2.38/sqrt(Ndim) * exp(log(0.1) + log(100.0)*gsl_rng_uniform(runState->GSLrandom));
 
   for (i = 0; names[i] != NULL; i++) {
     if (!LALInferenceCheckVariable(proposedParams, names[i]) || !LALInferenceCheckVariable(ptJ, names[i]) || !LALInferenceCheckVariable(ptI, names[i])) {
