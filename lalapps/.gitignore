@@ -66,6 +66,7 @@ src/inspiral/bayestar/bayestar_localize_gracedb
 src/inspiral/bayestar/bayestar_localize_lvalert
 src/inspiral/bayestar/bayestar_plot_allsky
 src/inspiral/bayestar/bayestar_plot_found_injections
+src/inspiral/bayestar/bayestar_plot_pileup
 src/inspiral/bayestar/bayestar_prune_neighborhood_tmpltbank
 src/inspiral/bayestar/bayestar_realize_coincs
 src/inspiral/bayestar/bayestar_sim_to_tmpltbank
