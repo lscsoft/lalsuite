@@ -1199,6 +1199,9 @@ LALInferenceVariables *LALInferenceInitCBCVariables(LALInferenceRunState *state)
       }else{
         LALInferenceRegisterUniformVariableREAL8(state, currentParams, "time", timeParam, timeMin, timeMax, LALINFERENCE_PARAM_LINEAR);
       }
+    } else {
+      LALInferenceAddVariable(currentParams, "time_prior_low", &timeMin, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
+      LALInferenceAddVariable(currentParams, "time_prior_high", &timeMax, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
     }
 
     if(!LALInferenceGetProcParamVal(commandLine,"--margphi") && !LALInferenceGetProcParamVal(commandLine, "--margtimephi")){
