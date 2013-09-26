@@ -65,24 +65,6 @@ from lalinference.bayestar import plot
 import pylal.progress
 
 
-def _healpix_lookup(map, lon, lat, dlon):
-    """Look up the value of a HEALPix map in the pixel containing the point
-    with the specified longitude and latitude."""
-    nside = hp.npix2nside(len(map))
-    return map[hp.ang2pix(nside, 0.5 * np.pi - lat, lon - dlon)]
-
-
-def healpix_contour(map, *args, **kwargs):
-    """Produce a contour plot from a HEALPix map."""
-    if 'dlon' in kwargs:
-        dlon = kwargs['dlon']
-        del kwargs['dlon']
-    else:
-        dlon = 0
-    return plot.contour(functools.partial(_healpix_lookup, map, dlon=dlon),
-        *args, **kwargs)
-
-
 fig = plt.figure(figsize=(opts.figure_width, opts.figure_height), frameon=False)
 ax = plt.subplot(111, projection='mollweide')
 ax.cla()
@@ -106,7 +88,7 @@ for count_records, fitsfilename in enumerate(fitsfilenames):
     indices = np.argsort(-skymap)
     region = np.empty(skymap.shape)
     region[indices] = 100 * np.cumsum(skymap[indices])
-    healpix_contour(region, dlon=-gmst, colors='k', linewidths=0.5,
+    plot.healpix_contour(region, dlon=-gmst, colors='k', linewidths=0.5,
         levels=[opts.contour], alpha=opts.alpha)
 
 progress.update(-1, 'saving figure')

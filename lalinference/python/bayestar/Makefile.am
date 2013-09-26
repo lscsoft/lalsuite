@@ -20,6 +20,9 @@ bayestar_PYTHON = \
 	plot.py \
 	timing.py
 
+bayestar_DATA = \
+	ne_simplified_coastline.json
+
 if HAVE_CHEALPIX
 if SWIG_BUILD_PYTHON
 bayestar_LTLIBRARIES = sky_map.la
