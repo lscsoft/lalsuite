@@ -265,9 +265,12 @@ void LALInferenceMultiNestAlgorithm(LALInferenceRunState *runState)
         Ntrain=50;
 
     REAL8 tmin,tmax,tmid;
-    LALInferenceGetMinMaxPrior(runState->priorArgs, "time", (void *)&tmin, (void *)&tmax);
-    tmid=(tmax+tmin)/2.0;
-    LALInferenceAddVariable(runState->priorArgs,"trigtime",&tmid,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_FIXED);
+    if (LALInferenceCheckVariable(runState->priorArgs,"time"))
+    {
+        LALInferenceGetMinMaxPrior(runState->priorArgs, "time", (void *)&tmin, (void *)&tmax);
+        tmid=(tmax+tmin)/2.0;
+        LALInferenceAddVariable(runState->priorArgs,"trigtime",&tmid,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_FIXED);
+    }
 
     runStateGlobal = runState;
 
