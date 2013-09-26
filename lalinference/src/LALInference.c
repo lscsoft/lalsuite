@@ -2451,6 +2451,7 @@ INT4 LALInferenceSanityCheck(LALInferenceRunState *state)
         return(1);
   }
   while(data){
+    retcode=0;
     fprintf(stderr,"Checking %s:\n",data->name);
     if(data->timeData) {
       fprintf(stderr,"Checking timeData: ");
