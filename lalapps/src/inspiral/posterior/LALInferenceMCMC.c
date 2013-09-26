@@ -369,6 +369,8 @@ void initializeMCMC(LALInferenceRunState *runState)
                                                   around vector connecting any two IFOs in network.\n\
                (--noProposalCorrPsiPhi)           Disable the proponal that jumps along psi-phi \n\
                                                   correlation\n\
+               (--noDifferentialEvolution)      Disable the differential-evolution proposal\n\
+               (--differential-buffer-limit)    Limit the number of stored differential-evolution points\n\
                \n\
                ---------------------------------------------------------------------------------------------------\n\
                --- Parallel Tempering Algorithm Parameters -------------------------------------------------------\n\
@@ -579,11 +581,13 @@ void initializeMCMC(LALInferenceRunState *runState)
     runState->differentialPoints = XLALCalloc(1, sizeof(LALInferenceVariables *));
     runState->differentialPointsLength = 0;
     runState->differentialPointsSize = 1;
+    runState->differentialPointsSkip = 1;
   } else {
     fprintf(stderr, "Differential evolution disabled (--noDifferentialEvolution).\n");
     runState->differentialPoints = NULL;
     runState->differentialPointsLength = 0;
     runState->differentialPointsSize = 0;
+    runState->differentialPointsSkip = 0;
   }
   
   INT4 Neff = 0;
