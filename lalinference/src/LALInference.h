@@ -417,6 +417,15 @@ tagLALInferenceRunState
   size_t differentialPointsSize;                     /** Size of the differentialPoints memory block 
                                                          (must be >= length of differential points).  
                                                          Can also be removed. */
+  size_t differentialPointsSkip;                     /** When the DE
+							 buffer gets
+							 too long,
+							 start storing
+							 only every
+							 n-th output
+							 point; this
+							 counter
+							 stores n */
   REAL8			currentLikelihood;  /** This should be removed, can be given as an algorithmParams or proposalParams entry */
   REAL8                 currentPrior;       /** This should be removed, can be given as an algorithmParams entry */
   gsl_rng               *GSLrandom;         /** A pointer to a GSL random number generator */

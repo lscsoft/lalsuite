@@ -56,11 +56,45 @@
 const char *const parallelSwapProposalName = "ParallelSwap";
 
 static void
+thinDifferentialEvolutionPoints(LALInferenceRunState *runState) {
+  size_t i;
+  size_t newSize;
+  
+  /* Delete all the even-index points. */
+  for (i = 0; i < runState->differentialPointsLength; i += 2) {
+    LALInferenceClearVariables(runState->differentialPoints[i]);
+    XLALFree(runState->differentialPoints[i]);
+    runState->differentialPoints[i] = NULL;
+  }
+  
+  /* Copy the odd points into the first part of the array. */
+  for (i = 1; i < runState->differentialPointsLength; i += 2) {
+    runState->differentialPoints[i/2] = runState->differentialPoints[i];
+  }
+
+  newSize = runState->differentialPointsLength / 2;
+
+  /* Now shrink the buffer down. */
+  runState->differentialPoints = XLALRealloc(runState->differentialPoints, 2*newSize*sizeof(LALInferenceVariables *));
+  runState->differentialPointsSize = 2*newSize;
+  runState->differentialPointsLength = newSize;
+  runState->differentialPointsSkip *= 2;
+}
+
+static void
 accumulateDifferentialEvolutionSample(LALInferenceRunState *runState) {
   if (runState->differentialPointsSize == runState->differentialPointsLength) {
     size_t newSize = runState->differentialPointsSize*2;
-    runState->differentialPoints = XLALRealloc(runState->differentialPoints, newSize*sizeof(LALInferenceVariables *));
-    runState->differentialPointsSize = newSize;
+    ProcessParamsTable *ppt = LALInferenceGetProcParamVal(runState->commandLine, "--differential-buffer-limit");
+
+    if (ppt && (size_t)atoi(ppt->value) < newSize) {
+      /* Then thin, and record sample. */
+      thinDifferentialEvolutionPoints(runState);
+      return accumulateDifferentialEvolutionSample(runState);
+    } else {
+      runState->differentialPoints = XLALRealloc(runState->differentialPoints, newSize*sizeof(LALInferenceVariables *));
+      runState->differentialPointsSize = newSize;
+    }
   }
 
   runState->differentialPoints[runState->differentialPointsLength] = XLALCalloc(1, sizeof(LALInferenceVariables));
@@ -731,7 +765,8 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 
     if ((i % Nskip) == 0) {
       if (diffEvo) {
-        accumulateDifferentialEvolutionSample(runState);
+	if (i % (Nskip*runState->differentialPointsSkip) == 0) 
+	  accumulateDifferentialEvolutionSample(runState);
       }
 
       if (LALInferenceGetProcParamVal(runState->commandLine, "--kDTree") || LALInferenceGetProcParamVal(runState->commandLine, "--kdtree")) {
