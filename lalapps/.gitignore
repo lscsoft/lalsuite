@@ -62,7 +62,6 @@ src/inspiral/bayestar/bayestar_aggregate_found_injections
 src/inspiral/bayestar/bayestar_lattice_tmpltbank
 src/inspiral/bayestar/bayestar_littlehope
 src/inspiral/bayestar/bayestar_localize_coincs
-src/inspiral/bayestar/bayestar_localize_gracedb
 src/inspiral/bayestar/bayestar_localize_lvalert
 src/inspiral/bayestar/bayestar_plot_allsky
 src/inspiral/bayestar/bayestar_plot_found_injections

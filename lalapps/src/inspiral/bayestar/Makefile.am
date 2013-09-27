@@ -5,7 +5,6 @@ bin_SCRIPTS = \
 	bayestar_aggregate_found_injections \
 	bayestar_lattice_tmpltbank \
 	bayestar_localize_coincs \
-	bayestar_localize_gracedb \
 	bayestar_localize_lvalert \
 	bayestar_plot_allsky \
 	bayestar_plot_found_injections \
@@ -28,9 +27,6 @@ bayestar_lattice_tmpltbank: bayestar_lattice_tmpltbank.in python_config.sed
 	$(AM_V_GEN)sed -f python_config.sed $< > $@
 
 bayestar_localize_coincs: bayestar_localize_coincs.in python_config.sed
-	$(AM_V_GEN)sed -f python_config.sed $< > $@
-
-bayestar_localize_gracedb: bayestar_localize_gracedb.in python_config.sed
 	$(AM_V_GEN)sed -f python_config.sed $< > $@
 
 bayestar_localize_lvalert: bayestar_localize_lvalert.in python_config.sed
@@ -61,7 +57,6 @@ EXTRA_DIST = \
 	bayestar_aggregate_found_injections.in \
 	bayestar_lattice_tmpltbank.in \
 	bayestar_localize_coincs.in \
-	bayestar_localize_gracedb.in \
 	bayestar_localize_lvalert.in \
 	bayestar_plot_allsky.in \
 	bayestar_plot_found_injections.in \
