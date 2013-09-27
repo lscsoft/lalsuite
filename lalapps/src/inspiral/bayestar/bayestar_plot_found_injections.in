@@ -149,16 +149,17 @@ for i, (bin_edge, subdir, title) in enumerate(zip(bin_edges, bin_names, bin_titl
 
     # Plot a histogram from each dataset onto each of the 5 figures.
     for (data, label) in zip(datasets, labels):
-        plt.figure(1)
-        plt.plot(np.sort(data['searched_prob']), np.linspace(0, 1, len(data['searched_prob'])), label=label)
-        plt.figure(2)
-        plt.hist(data['searched_prob'], histtype='step', label=label, bins=np.linspace(0, 1, 20), cumulative=opts.cumulative)
-        plt.figure(3)
-        plt.hist(data['searched_area'], histtype='step', label=label, bins=np.logspace(np.log10(min_searched_area), np.log10(max_searched_area), 20), cumulative=opts.cumulative)
-        plt.figure(4)
-        plt.hist(data['offset'], histtype='step', label=label, bins=np.logspace(np.log10(min_offset), np.log10(max_offset), 20), cumulative=opts.cumulative)
-        plt.figure(5)
-        plt.hist(data['runtime'], histtype='step', bins=np.logspace(np.log10(min_runtime), np.log10(max_runtime), 20), cumulative=opts.cumulative)
+        if len(data): # Skip if data is empty
+            plt.figure(1)
+            plt.plot(np.sort(data['searched_prob']), np.linspace(0, 1, len(data['searched_prob'])), label=label)
+            plt.figure(2)
+            plt.hist(data['searched_prob'], histtype='step', label=label, bins=np.linspace(0, 1, 20), cumulative=opts.cumulative)
+            plt.figure(3)
+            plt.hist(data['searched_area'], histtype='step', label=label, bins=np.logspace(np.log10(min_searched_area), np.log10(max_searched_area), 20), cumulative=opts.cumulative)
+            plt.figure(4)
+            plt.hist(data['offset'], histtype='step', label=label, bins=np.logspace(np.log10(min_offset), np.log10(max_offset), 20), cumulative=opts.cumulative)
+            plt.figure(5)
+            plt.hist(data['runtime'], histtype='step', bins=np.logspace(np.log10(min_runtime), np.log10(max_runtime), 20), cumulative=opts.cumulative)
 
     # Finish and save plot 1.
     pb.update(i * 5)
