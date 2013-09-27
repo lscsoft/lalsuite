@@ -2302,8 +2302,10 @@ REAL8 LALInferenceMarginalisedTimeLogLikelihood(LALInferenceVariables *currentPa
     reverse_array(dh_S_im->data, dh_S_im->length);
   }
 
-  REAL8 time_low = *(REAL8 *)LALInferenceGetVariable(currentParams, "time_prior_low");
-  REAL8 time_high = *(REAL8 *)LALInferenceGetVariable(currentParams, "time_prior_high");
+  REAL8 time_low,time_high;
+  LALInferenceGetMinMaxPrior(currentParams,"time",&time_low,&time_high);
+//  REAL8 time_low = *(REAL8 *)LALInferenceGetVariable(currentParams, "time_prior_low");
+//  REAL8 time_high = *(REAL8 *)LALInferenceGetVariable(currentParams, "time_prior_high");
   REAL8 t0 = XLALGPSGetREAL8(&(data->freqData->epoch));
   UINT4 istart = (UINT4)round((time_low - t0)/deltaT);
   UINT4 iend = (UINT4)round((time_high - t0)/deltaT);
