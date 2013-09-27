@@ -20,10 +20,7 @@ bayestar_PYTHON = \
 	plot.py \
 	timing.py
 
-bayestar_DATA = \
-	ne_simplified_coastline.json
-
-EXTRA_DIST = \
+dist_bayestar_DATA = \
 	ne_simplified_coastline.json
 
 if HAVE_CHEALPIX
