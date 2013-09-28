@@ -45,7 +45,7 @@ REAL8 LALInferenceInspiralPrior(LALInferenceRunState *runState, LALInferenceVari
 
   LALInferenceVariableItem *item=params->head;
   LALInferenceVariables *priorParams=runState->priorArgs;
-  REAL8 min, max;
+  REAL8 min=-INFINITY, max=INFINITY;
   REAL8 logmc=0.0;
   REAL8 m1=0.0,m2=0.0,q=0.0,eta=0.0;
   //REAL8 tmp=0.;
@@ -153,7 +153,7 @@ REAL8 LALInferenceInspiralPrior(LALInferenceRunState *runState, LALInferenceVari
 /* Convert the hypercube parameter to physical parameters, for the non-spinning inspiral signal case */
 UINT4 LALInferenceInspiralCubeToPrior(LALInferenceRunState *runState, LALInferenceVariables *params, double *Cube, void *context)
 {
-    REAL8 min, max, logPrior=0.;
+    REAL8 min=-INFINITY, max=INFINITY, logPrior=0.;
     LALInferenceVariableItem *item;
 
     char **info = (char **)context;
@@ -660,7 +660,7 @@ REAL8 LALInferenceInspiralSkyLocPrior(LALInferenceRunState *runState, LALInferen
   (void)runState;
   LALInferenceVariableItem *item=params->head;
   LALInferenceVariables *priorParams=runState->priorArgs;
-  REAL8 min, max;
+  REAL8 min=-INFINITY, max=INFINITY;
   REAL8 logmc=0.0,mc=0.0;
   REAL8 m1=0.0,m2=0.0,q=0.0,eta=0.0;
 
@@ -830,7 +830,7 @@ UINT4 LALInferenceInspiralSkyLocCubeToPrior(LALInferenceRunState *runState, LALI
     char *header = &info[1][0];
     strcpy(header,"");
     char *timeID = &info[2][0];
-    REAL8 min, max, logPrior=0.;
+    REAL8 min=-INFINITY, max=INFINITY, logPrior=0.;
     int i = 0;
 
     // latitude
@@ -1266,7 +1266,7 @@ REAL8 LALInferenceInspiralPriorNormalised(LALInferenceRunState *runState, LALInf
 (void)runState;
 LALInferenceVariableItem *item=params->head;
     LALInferenceVariables *priorParams=runState->priorArgs;
-    REAL8 min, max;
+    REAL8 min=-INFINITY, max=INFINITY;
     REAL8 mc=0.0;
   REAL8 eta=0.0;
     REAL8 m1,m2;
@@ -1629,7 +1629,7 @@ UINT4 LALInferenceInspiralPriorNormalisedCubeToPrior(LALInferenceRunState *runSt
     char *header = &info[1][0];
     strcpy(header,"");
     char *timeID = &info[2][0];
-    REAL8 min, max, logPrior=0.;
+    REAL8 min=-INFINITY, max=INFINITY, logPrior=0.;
     int i = 0;
 
     // latitude
@@ -2511,7 +2511,7 @@ REAL8 LALInferenceAnalyticNullPrior(LALInferenceRunState UNUSED *runState, LALIn
 
 UINT4 LALInferenceAnalyticCubeToPrior(LALInferenceRunState *runState, LALInferenceVariables *params, double *Cube, void *context) {
     int i = 0;
-    REAL8 logPrior=0.,min,max;
+    REAL8 logPrior=0.,min=-INFINITY,max=INFINITY;
     REAL8 m1=1.,m2=1.,mc,eta,m;
     LALInferenceVariableItem *item;
 
