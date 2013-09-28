@@ -1928,10 +1928,17 @@ static double log_quadratic_integral_log(double h, double lx0, double lx1, doubl
   }
 }
 
-static double integrate_interpolated_log(double h, double *log_ys, size_t n) {
+/** Integrate interpolated log, returns the mean index in *imax if it is not a NULL pointer
+ * Stores the mean index in *imean (can be fractional)
+ */
+static double integrate_interpolated_log(double h, double *log_ys, size_t n, double *imean, size_t *imax) {
   size_t i;
   double log_integral = -INFINITY;
-  
+  double max=-INFINITY;
+  size_t imax_l=0;
+  double log_imean_l=-INFINITY;
+  double thislogL;
+
   for (i = 0; i < n-2; i++) {
     double l0, l1, l2;
 
@@ -1939,24 +1946,34 @@ static double integrate_interpolated_log(double h, double *log_ys, size_t n) {
     l1 = log_ys[i+1];
     l2 = log_ys[i+2];
     
-    log_integral = logaddexp(log_integral, log_quadratic_integral_log(h, l0, l1, l2));
+    thislogL=log_quadratic_integral_log(h, l0, l1, l2);
+    if (thislogL>max)
+    {
+        max=thislogL;
+        imax_l=i;
+    }
+    log_imean_l=logaddexp(log_imean_l, log((double)i)+thislogL);
+
+    log_integral = logaddexp(log_integral, thislogL);
+
   }
-
-  log_integral = logaddexp(log_integral, log_quadratic_integral_log(h, log_ys[n-2], log_ys[n-1], log_ys[0]));
-
-  return log_integral - log(2.0);
-}
-
-static void reverse_array(double *xs, INT4 n) {
-  INT4 i;
-
-  for (i = 0; i < n - i - 1; i++) {
-    double temp = xs[i];
-    xs[i] = xs[n-1-i];
-    xs[n-1-i] = temp;
+  thislogL = log_quadratic_integral_log(h, log_ys[n-2], log_ys[n-1], log_ys[0]);
+  log_integral = logaddexp(log_integral, thislogL);
+  if (thislogL>max)
+  {
+      max=thislogL;
+      imax_l=i;
   }
-}
+  log_imean_l=logaddexp(log_imean_l, log((double)i)+thislogL);
 
+  log_integral-=log(2.0);
+
+  log_imean_l-=log_integral+log(2.0);
+  if(imean) *imean=exp(log_imean_l);
+  if(imax) *imax=imax_l;
+
+  return log_integral;
+}
 REAL8 LALInferenceMarginalisedTimeLogLikelihood(LALInferenceVariables *currentParams, LALInferenceIFOData * data, 
                               LALInferenceTemplateFunction templt)
 /***************************************************************/
@@ -2260,10 +2277,10 @@ REAL8 LALInferenceMarginalisedTimeLogLikelihood(LALInferenceVariables *currentPa
 
 	  if (margphi) {
 	    dh_S_tilde->data[i].real_FIXME += dh_S_real * TwoDeltaToverN / (alph * dataPtr->oneSidedNoisePowerSpectrum->data->data[i]);
-	    dh_S_tilde_im->data[i].imag_FIXME += dh_S_imag * TwoDeltaToverN / (alph * dataPtr->oneSidedNoisePowerSpectrum->data->data[i]);
+	    dh_S_tilde_im->data[i].imag_FIXME -= dh_S_imag * TwoDeltaToverN / (alph * dataPtr->oneSidedNoisePowerSpectrum->data->data[i]);
 	  } else {
 	    dh_S_tilde->data[i].real_FIXME += dh_S_real * TwoDeltaToverN / (alph * dataPtr->oneSidedNoisePowerSpectrum->data->data[i]);
-	    dh_S_tilde->data[i].imag_FIXME += dh_S_imag * TwoDeltaToverN / (alph * dataPtr->oneSidedNoisePowerSpectrum->data->data[i]);
+	    dh_S_tilde->data[i].imag_FIXME -= dh_S_imag * TwoDeltaToverN / (alph * dataPtr->oneSidedNoisePowerSpectrum->data->data[i]);
 	  }
 
           chisquared += 2.0 * TwoDeltaToverN * (templateReal*templateReal + templateImag*templateImag 
@@ -2295,32 +2312,25 @@ REAL8 LALInferenceMarginalisedTimeLogLikelihood(LALInferenceVariables *currentPa
     XLALREAL8ReverseFFT(dh_S_im, dh_S_tilde_im, data->freqToTimeFFTPlan);
   }
 
-  /* The time series comes out reversed, so we have to reverse it
-     ourselves. */
-  reverse_array(dh_S->data, dh_S->length);
-  if (margphi) {
-    reverse_array(dh_S_im->data, dh_S_im->length);
-  }
 
   REAL8 time_low,time_high;
   LALInferenceGetMinMaxPrior(currentParams,"time",&time_low,&time_high);
-//  REAL8 time_low = *(REAL8 *)LALInferenceGetVariable(currentParams, "time_prior_low");
-//  REAL8 time_high = *(REAL8 *)LALInferenceGetVariable(currentParams, "time_prior_high");
   REAL8 t0 = XLALGPSGetREAL8(&(data->freqData->epoch));
   UINT4 istart = (UINT4)round((time_low - t0)/deltaT);
   UINT4 iend = (UINT4)round((time_high - t0)/deltaT);
   UINT4 n = iend - istart;
-
   if (margphi) {
     /* We've got the real and imaginary parts of the FFT in the two
        arrays.  Now combine them into one Bessel function. */
     for (i = istart; i < iend; i++) {
+
       double x = sqrt(dh_S->data[i]*dh_S->data[i] + dh_S_im->data[i]*dh_S_im->data[i]);
       dh_S->data[i] = log(gsl_sf_bessel_I0_scaled(x)) + fabs(x);
     }
   }     
-
-  loglike += integrate_interpolated_log(deltaT, dh_S->data + istart, n) - log(n*deltaT);
+  size_t imax;
+  REAL8 imean;
+  loglike += integrate_interpolated_log(deltaT, dh_S->data + istart, n, &imean, &imax) - log(n*deltaT);
 
   XLALDestroyCOMPLEX16Vector(dh_S_tilde);
   XLALDestroyREAL8Vector(dh_S);
@@ -2328,7 +2338,12 @@ REAL8 LALInferenceMarginalisedTimeLogLikelihood(LALInferenceVariables *currentPa
     XLALDestroyCOMPLEX16Vector(dh_S_tilde_im);
     XLALDestroyREAL8Vector(dh_S_im);
   }
+  REAL8 max_time=t0+((REAL8) imax + istart)*deltaT;
+  REAL8 mean_time=t0+(imean+(double)istart)*deltaT;
+  LALInferenceAddVariable(currentParams,"time_maxl",&max_time,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
+  LALInferenceAddVariable(currentParams,"time_mean",&mean_time,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
 
   LALInferenceClearVariables(&intrinsicParams);
   return(loglike);
 }
+
