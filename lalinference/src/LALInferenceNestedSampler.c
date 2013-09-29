@@ -584,8 +584,11 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
     LALInferenceSetVariable(runState->algorithmParams,"logLmin",&dblmax);
     for(i=0;i<Nlive;i++) {
 	runState->currentParams=runState->livePoints[i];
-	runState->evolve(runState);
-	logLikelihoods[i]=runState->likelihood(runState->livePoints[i],runState->data,runState->templt);
+	do
+    {
+        runState->evolve(runState);
+    	logLikelihoods[i]=runState->likelihood(runState->livePoints[i],runState->data,runState->templt);
+    }while(isnan(logLikelihoods[i]));
 	if(XLALPrintProgressBar((double)i/(double)Nlive)) fprintf(stderr,"\n");
     }
     fpout=fopen(outfile,"w");
@@ -609,7 +612,7 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
     LALInferenceAddVariable(runState->livePoints[i],"logw",&logw,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
     logLtmp=logLikelihoods[i];
     logLmax=logLtmp>logLmax? logLtmp : logLmax;
-    if(isnan(logLikelihoods[i]) || isinf(logLikelihoods[i])) {
+    if(isnan(logLikelihoods[i])) {
       fprintf(stderr,"Detected logL[%i]=%lf! Sanity checking...\n",i,logLikelihoods[i]);
       if(LALInferenceSanityCheck(runState))
 	exit(1);
