@@ -350,7 +350,7 @@ void LALInferenceMultiNestAlgorithm(LALInferenceRunState *runState)
 
     /* Read injection XML file for parameters if specified */
     /* Used to print injection likelihood and prior */
-    ppt=LALInferenceGetProcParamVal(runState->commandLine,"--inj");
+    /*ppt=LALInferenceGetProcParamVal(runState->commandLine,"--inj");
     if(ppt){
       SimInspiralTable *injTable=NULL;
       SimInspiralTableFromLIGOLw(&injTable,ppt->value,0,0);
@@ -362,9 +362,9 @@ void LALInferenceMultiNestAlgorithm(LALInferenceRunState *runState)
       if(ppt){
         int event= atoi(ppt->value);
         int i=0;
-        while(i<event) {i++; injTable=injTable->next;} /* select event */
+        while(i<event) {i++; injTable=injTable->next;} // select event
        LALInferenceVariables tempParams;
-    //memset(&tempParams,0,sizeof(tempParams));
+    memset(&tempParams,0,sizeof(tempParams));
     LALInferenceInjectionToVariables(injTable,&tempParams);
     LALInferenceVariableItem *node=NULL;
     item=runState->currentParams->head;
@@ -372,10 +372,6 @@ void LALInferenceMultiNestAlgorithm(LALInferenceRunState *runState)
       node=LALInferenceGetItem(&tempParams,item->name);
       if(node) {
         LALInferenceSetVariable(runState->currentParams,node->name,node->value);
-        /*if(strstr(node->name,"LAL")==NULL)
-        fprintf(stdout,"Injection variable %s = %g\n",node->name,*(double *)(node->value));
-        else
-        fprintf(stdout,"Injection variable %s = %d\n",node->name,*(int *)(node->value));*/
       }
     }
     double linj,pinj,lz;
@@ -392,7 +388,7 @@ void LALInferenceMultiNestAlgorithm(LALInferenceRunState *runState)
     fprintf(finj,"Noise log-evidence value = %g\n",lz);
     fclose(finj);
       }
-    }
+    }*/
 
     BAMBIRun(mmodal, ceff, nlive, mntol, efr, ndims, nPar, nClsPar, maxModes, updInt, Ztol, root, rseed, pWrap, fb,
     bresume, outfile, initMPI, logZero, maxiter, LogLike, dumper, bambi, context);
