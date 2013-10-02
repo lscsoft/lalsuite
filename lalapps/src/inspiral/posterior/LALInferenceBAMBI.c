@@ -171,7 +171,7 @@ void dumper(UNUSED int *nSamples, UNUSED int *nlive, UNUSED int *nPar, UNUSED do
     sprintf(outfile,"%srunstats.txt",root2);
     fileout=fopen(outfile,"w");
     fprintf(fileout,"IFO templates likelihoods\n");
-    for(LALInferenceIFOData *p=runState->data;p;p=p->next)
+    for(LALInferenceIFOData *p=runStateGlobal->data;p;p=p->next)
         fprintf(fileout,"%s: %u %u\n",p->name,p->templa_counter,p->likeli_counter);
     fclose(fileout);
 }
