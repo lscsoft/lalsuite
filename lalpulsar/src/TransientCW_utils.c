@@ -198,8 +198,9 @@ XLALApplyTransientWindow ( REAL4TimeSeries *series,		/**< input timeseries to ap
       for ( i = 0; i < ts_length; i ++ )
         {
           UINT4 ti = (UINT4) ( ts_t0 + i * ts_dt + 0.5 );	// integer round: floor(x+0.5)
-          REAL8 win = XLALGetRectangularTransientWindowValue ( ti, t0, t1 );
-          series->data->data[i] *= win;
+          if ( ti < t0 || ti > t1 ) { // outside rectangular window: set to zero
+            series->data->data[i] = 0;
+          } // otherwise do nothing
         } /* for i < length */
       break;
 
