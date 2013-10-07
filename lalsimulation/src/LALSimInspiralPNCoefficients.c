@@ -67,6 +67,21 @@ XLALSimInspiralPNEnergy_6PNCoeff(
 }
 
 static REAL8 UNUSED
+XLALSimInspiralPNEnergy_8PNCoeff(
+        REAL8 eta)
+{
+        return (-39.69/1.28 + (-123.671/5.76 + 9.037/1.536 *LAL_PI*LAL_PI+ 1792./15.*log(2)+89.6/1.5*LAL_GAMMA)* eta + (-498.449/3.456 +31.57/5.76*LAL_PI*LAL_PI)*eta*eta + 3.01/17.28 *eta*eta*eta + 7.7/3110.4*eta*eta*eta*eta);
+        /*see arXiv:1305.4884, or eq.(26) of arXiv:1309.3474*/
+}
+
+static REAL8 UNUSED
+XLALSimInspiralPNEnergy_8PNLogCoeff(
+        REAL8 eta)
+{
+	return 448./15.*eta;
+}
+
+static REAL8 UNUSED
 XLALSimInspiralPNEnergy_3PNSOCoeff(
 	REAL8 mByM)
 {
