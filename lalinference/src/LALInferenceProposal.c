@@ -491,6 +491,7 @@ SetupDefaultProposal(LALInferenceRunState *runState, LALInferenceVariables *prop
   }
 
   LALInferenceRandomizeProposalCycle(runState);
+  LALInferenceZeroProposalStats(runState);
 }
 
 static void
@@ -2358,12 +2359,42 @@ void LALInferenceSetupAdaptiveProposals(LALInferenceRunState *state)
         return;
 }
 
+
+/** Update proposal statistics if tracking */
+void LALInferenceTrackProposalAcceptance(LALInferenceRunState *runState, INT4 accepted){
+    const char *currentProposalName;
+    LALInferenceProposalStatistics *propStat;
+
+    /* Update proposal statistics */
+    if (runState->proposalStats){
+        currentProposalName = *((const char **)LALInferenceGetVariable(runState->proposalArgs, LALInferenceCurrentProposalName));
+        propStat = ((LALInferenceProposalStatistics *)LALInferenceGetVariable(runState->proposalStats, currentProposalName));
+        propStat->proposed++;
+        if (accepted == 1){
+            propStat->accepted++;
+        }
+    }
+    return;
+}
+
+/* Zero out proposal statistics counters */
+void LALInferenceZeroProposalStats(LALInferenceRunState *runState){
+    LALInferenceVariables *propStats = runState->proposalStats;
+    if(propStats==NULL) return;
+
+    LALInferenceVariableItem *ptr=propStats->head;
+    while(ptr!=NULL) {
+      ((LALInferenceProposalStatistics *) ptr->value)->proposed = 0;
+      ((LALInferenceProposalStatistics *) ptr->value)->accepted = 0;
+      ptr=ptr->next;
+    }
+    return;
+}
+
 /** Update the adaptive proposal. Whether or not a jump was accepted is passed with accepted */
 void LALInferenceUpdateAdaptiveJumps(LALInferenceRunState *runState, INT4 accepted, REAL8 targetAcceptance){
-        const char *currentProposalName;
         INT4 *adaptableStep = NULL;
         INT4 *adapting = NULL;
-        LALInferenceProposalStatistics *propStat;
 
         if( LALInferenceCheckVariable(runState->proposalArgs, "adaptableStep" ) && 
                         LALInferenceCheckVariable(runState->proposalArgs, "adapting" ) ){
@@ -2387,16 +2418,6 @@ void LALInferenceUpdateAdaptiveJumps(LALInferenceRunState *runState, INT4 accept
                         *accept+=1;
                 }
         }
-        /* Update proposal statistics */
-        if (runState->proposalStats){
-                currentProposalName = *((const char **)LALInferenceGetVariable(runState->proposalArgs, LALInferenceCurrentProposalName));
-                propStat = ((LALInferenceProposalStatistics *)LALInferenceGetVariable(runState->proposalStats, currentProposalName));
-                propStat->proposed++;
-                if (accepted == 1){
-                        propStat->accepted++;
-                }
-        }
-
         /* Adapt if desired. */
         if (LALInferenceCheckVariable(runState->proposalArgs, "proposedVariableName") &&
             LALInferenceCheckVariable(runState->proposalArgs, "s_gamma") &&

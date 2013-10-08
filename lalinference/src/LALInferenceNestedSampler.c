@@ -140,22 +140,6 @@ static void printAdaptiveJumpSizes(FILE *file, LALInferenceRunState *runState)
     }
 
 }
-static void UpdateProposalStats(LALInferenceRunState *runState, INT4 accepted);
-static void UpdateProposalStats(LALInferenceRunState *runState, INT4 accepted)
-{
-  const char *currentProposalName;
-  
-  LALInferenceProposalStatistics *propStat;
-  /* Update proposal statistics */
-  if (runState->proposalStats){
-    currentProposalName = *((const char **)LALInferenceGetVariable(runState->proposalArgs, LALInferenceCurrentProposalName));
-    propStat = ((LALInferenceProposalStatistics *)LALInferenceGetVariable(runState->proposalStats, currentProposalName));
-    propStat->proposed++;
-    if (accepted == 1){
-      propStat->accepted++;
-    }
-  }
-}
 
 static void resetProposalStats(LALInferenceRunState *runState);
 static void resetProposalStats(LALInferenceRunState *runState)
@@ -1090,7 +1074,7 @@ UINT4 LALInferenceMCMCSamplePrior(LALInferenceRunState *runState)
 
     }
     
-    UpdateProposalStats(runState,accepted);
+    LALInferenceTrackProposalAcceptance(runState, accepted);
     
     return(accepted);
 }

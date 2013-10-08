@@ -983,6 +983,7 @@ void PTMCMCOneStep(LALInferenceRunState *runState)
     else              gsl_matrix_memcpy(ny,nx);
   }
 
+  LALInferenceTrackProposalAcceptance(runState, accepted);
   LALInferenceUpdateAdaptiveJumps(runState, accepted, targetAcceptance);
   LALInferenceClearVariables(&proposedParams);
 }

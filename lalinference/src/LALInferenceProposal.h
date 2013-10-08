@@ -255,6 +255,12 @@ void LALInferenceKDNeighborhoodProposal(LALInferenceRunState *runState, LALInfer
  */
 void LALInferenceExtrinsicParamProposal(LALInferenceRunState *runState, LALInferenceVariables *proposedParams);
 
+/* Zero out proposal statistics */
+void LALInferenceZeroProposalStats(LALInferenceRunState *runState);
+
+/** Function for updating proposal acceptance rates if tracking. */
+void LALInferenceTrackProposalAcceptance(LALInferenceRunState *runState, INT4 accepted);
+
 /** Helper function to update the adaptive steps after each jump. Set accepted=1 if accepted, 0 otherwise */
 void LALInferenceUpdateAdaptiveJumps(LALInferenceRunState *runState, INT4 accepted, REAL8 targetAcceptance);
 /** Helper function to setup the adaptive step proposals before the run */
