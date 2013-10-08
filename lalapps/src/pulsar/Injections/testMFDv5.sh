@@ -92,6 +92,9 @@ s3_Delta=1.2
 s3_Freq=300.00
 s3_f1dot=-1e-9
 s3_f2dot=-2e-19
+s3_transientWindowType=rect
+s3_transientStartTime=701230229
+s3_transientTauDays=0.5
 # --------------------
 
 injString="Alpha=${s1_Alpha};Delta=${s1_Delta};refTime=${s1_refTime};Freq=${s1_Freq};f1dot=${s1_f1dot};f2dot=${s1_f2dot};h0=${s1_h0};cosi=${s1_cosi};psi=${s1_psi};phi0=${s1_phi0};"
@@ -135,6 +138,9 @@ echo "h0 = ${s3_h0}" >> ${injFile2}
 echo "cosi = ${s3_cosi}" >> ${injFile2}
 echo "psi = ${s3_psi}" >> ${injFile2}
 echo "phi0 = ${s3_phi0}" >> ${injFile2}
+echo "transientWindowType = ${s3_transientWindowType}"  >> ${injFile2}
+echo "transientStartTime = ${s3_transientStartTime}"  >> ${injFile2}
+echo "transientTauDays = ${s3_transientTauDays}"  >> ${injFile2}
 echo >> ${injFile2}
 
 
@@ -193,7 +199,8 @@ if ! eval $cmdline; then
     exit 1
 fi
 echo "---------- mfdv4: inject third signal on top ----------"
-sig2="--refTime=${s3_refTime} --h0=${s3_h0} --cosi=${s3_cosi} --psi=${s3_psi} --phi0=${s3_phi0} --Freq=${s3_Freq} --Alpha=${s3_Alpha} --Delta=${s3_Delta} --f1dot=${s3_f1dot} --f2dot=${s3_f2dot}"
+sig2="--refTime=${s3_refTime} --h0=${s3_h0} --cosi=${s3_cosi} --psi=${s3_psi} --phi0=${s3_phi0} --Freq=${s3_Freq} --Alpha=${s3_Alpha} --Delta=${s3_Delta} --f1dot=${s3_f1dot} --f2dot=${s3_f2dot} --transientWindowType=${s3_transientWindowType} --transientStartTime=${s3_transientStartTime} --transientTauDays=${s3_transientTauDays}"
+
 ##----- first IFO
 out_IFO1="--IFO=${IFO1} --noiseSFTs=${sftsv4_1} --window=None --outSFTbname=${sftsv4_1}"
 cmdline="$mfdv4_CL ${sig2} ${out_IFO1}"

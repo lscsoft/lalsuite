@@ -765,11 +765,10 @@ XLALReadPulsarParams ( PulsarParams *pulsarParams,	///< [out] pulsar parameters 
   REAL8 transientTauDays = 0; BOOLEAN have_transientTauDays;
   XLAL_CHECK ( XLALReadConfigREAL8Variable ( &transientTauDays, cfgdata, secName, "transientTauDays", &have_transientTauDays ) == XLAL_SUCCESS, XLAL_EFUNC );
 
-  transientWindowType_t type = TRANSIENT_NONE;	/* default: no transient signal window */
   if ( ! have_transientWindowType || !strcmp ( transientWindowType, "none") )
     {
-      XLAL_CHECK ( (type == TRANSIENT_NONE) && !have_transientStartTime && !have_transientTauDays, XLAL_EINVAL );
-      pulsarParams->Transient.type = type;
+      XLAL_CHECK ( !have_transientStartTime && !have_transientTauDays, XLAL_EINVAL );
+      pulsarParams->Transient.type = TRANSIENT_NONE;	/* default: no transient signal window */
     }
   else
     {
@@ -782,7 +781,7 @@ XLALReadPulsarParams ( PulsarParams *pulsarParams,	///< [out] pulsar parameters 
       else {
         XLAL_ERROR ( XLAL_EINVAL, "Illegal transient window '%s' specified: valid are {'none', 'rect' or 'exp'}\n", transientWindowType );
       }
-      XLAL_CHECK ( (type != TRANSIENT_NONE) && (have_transientStartTime && have_transientTauDays), XLAL_EINVAL );
+      XLAL_CHECK ( (pulsarParams->Transient.type != TRANSIENT_NONE) && (have_transientStartTime && have_transientTauDays), XLAL_EINVAL );
 
       XLAL_CHECK ( transientStartTime >= 0, XLAL_EDOM );
       XLAL_CHECK ( transientTauDays > 0, XLAL_EDOM );
