@@ -493,7 +493,7 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
   if(runState->likelihood==&LALInferenceMarginalisedTimeLogLikelihood &&
      (LALInferenceGetProcParamVal(runState->commandLine,"--psdFit") ||
       LALInferenceGetProcParamVal(runState->commandLine,"--glitchFit") ) )
-    nullLikelhood = 0.0;
+    nullLikelihood = 0.0;
 
   LALInferenceAddVariable(runState->algorithmParams, "nChain", &nChain,  LALINFERENCE_INT4_t, LALINFERENCE_PARAM_FIXED);
   LALInferenceAddVariable(runState->algorithmParams, "nPar", &nPar,  LALINFERENCE_INT4_t, LALINFERENCE_PARAM_FIXED);
