@@ -1817,6 +1817,30 @@ int XLALSimInspiralTaylorEtPNRestricted(
 	       	int O                     /**< twice post-Newtonian phase order */
 		);
 
+
+/**
+ * Structure for passing around PN phasing coefficients.
+ * For use with the TaylorF2 waveform.
+ */
+#define PN_PHASING_SERIES_MAX_ORDER 12
+typedef struct tagPNPhasingSeries
+{
+    REAL8 v[PN_PHASING_SERIES_MAX_ORDER+1];        /**< */ 
+    REAL8 vlogv[PN_PHASING_SERIES_MAX_ORDER+1];
+    REAL8 vlogvsq[PN_PHASING_SERIES_MAX_ORDER+1];
+}
+PNPhasingSeries;
+
+int XLALSimInspiralTaylorF2Phasing(
+	PNPhasingSeries **pfa,
+	const REAL8 m1,
+	const REAL8 m2,
+	const REAL8 chi1L,
+	const REAL8 chi2L,
+	const LALSimInspiralSpinOrder spinO
+	);
+
+
 /**
  * Computes the stationary phase approximation to the Fourier transform of
  * a chirp waveform with phase given by \eqref{eq_InspiralFourierPhase_f2}

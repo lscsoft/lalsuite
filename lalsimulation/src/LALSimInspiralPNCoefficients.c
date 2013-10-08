@@ -270,6 +270,114 @@ XLALSimInspiralPNFlux_12PNTidalCoeff(
 	return (-70.4 - 180.3*chi2 + 450.1*chi2*chi2 - 217.0*chi2*chi2*chi2)/2.8 * chi2*chi2*chi2*chi2 * lambda2;
 }
 
+static void UNUSED
+XLALSimInspiralPNPhasing_F2WithSO(
+	PNPhasingSeries *pfa,
+	const REAL8 m1,
+	const REAL8 m2,
+	const REAL8 chi1L,
+	const REAL8 chi2L,
+	const LALSimInspiralSpinOrder spinO
+	)
+{
+    const REAL8 mtot = m1 + m2;
+    const REAL8 d = (m1 - m2) / (m1 + m2);
+    const REAL8 eta = m1*m2/mtot/mtot;
+    const REAL8 m1M = m1/mtot;
+    const REAL8 m2M = m2/mtot;
+    const REAL8 xs = 0.5L * (chi1L + chi2L);
+    const REAL8 xa = 0.5L * (chi1L - chi2L);
+
+    const REAL8 pfaN = 3.L/(128.L * eta);
+
+    memset(pfa, 0, sizeof(PNPhasingSeries));
+
+    pfa->v[0] = 1.L;
+    pfa->v[2] = 5.L*(743.L/84.L + 11.L * eta)/9.L; 
+    pfa->v[3] = -16.L*LAL_PI;
+    pfa->v[4] = 5.L*(3058.673L/7.056L + 5429.L/7.L * eta
+                     + 617.L * eta*eta)/72.L;
+    pfa->v[5] = 5.L/9.L * (7729.L/84.L - 13.L * eta) * LAL_PI;
+    pfa->vlogv[5] = 5.L/3.L * (7729.L/84.L - 13.L * eta) * LAL_PI;
+    pfa->v[6] = (11583.231236531L/4.694215680L
+                     - 640.L/3.L * LAL_PI * LAL_PI - 6848.L/21.L*LAL_GAMMA)
+                 + eta * (-15737.765635L/3.048192L
+                     + 2255./12. * LAL_PI * LAL_PI)
+                 + eta*eta * 76055.L/1728.L
+                 - eta*eta*eta * 127825.L/1296.L;
+    pfa->vlogv[6] = -6848.L/21.L;
+    pfa->v[7] = LAL_PI * 5.L/756.L * ( 15419335.L/336.L
+                     + 75703.L/2.L * eta - 14809.L * eta*eta);
+
+    /* Spin-orbit terms */
+    const REAL8 pn_gamma = (732985.L/2268.L - 24260.L/81.L * eta - 340.L/9.L * eta * eta ) * xs + (732985.L/2268.L +140.L/9.0L * eta) * xa * d;
+
+    switch( spinO )
+    {
+        case LAL_SIM_INSPIRAL_SPIN_ORDER_ALL:
+        case LAL_SIM_INSPIRAL_SPIN_ORDER_35PN:
+            pfa->v[7] += (m1M * (-8980424995.L/762048.L + 6586595.L*eta/756.L - 305.L*eta*eta/36.L) + d * (170978035.L/48384.L - 2876425.L*eta/672.L - 4735.L*eta*eta/144.L) ) * m1M * chi1L;
+            pfa->v[7] += (m2M * (-8980424995.L/762048.L + 6586595.L*eta/756.L - 305.L*eta*eta/36.L) - d * (170978035.L/48384.L - 2876425.L*eta/672.L - 4735.L*eta*eta/144.L) ) * m2M * chi2L;
+        case LAL_SIM_INSPIRAL_SPIN_ORDER_3PN:
+            pfa->v[6] += LAL_PI * (260.L*m1M + 1490.L/3.L) * m1M * chi1L;
+            pfa->v[6] += LAL_PI * (260.L*m2M + 1490.L/3.L) * m2M * chi2L;
+        case LAL_SIM_INSPIRAL_SPIN_ORDER_25PN:
+            pfa->v[5] += -1.L * pn_gamma;
+            pfa->vlogv[5] += -3.L * pn_gamma;
+        case LAL_SIM_INSPIRAL_SPIN_ORDER_2PN:
+            /* At least for now, handle spin-spin term elsewhere */
+        case LAL_SIM_INSPIRAL_SPIN_ORDER_15PN:
+            pfa->v[3] += 4.L * ( (113.L/12.L- 19.L/3.L * eta) * xs + 113.L/12.L * d * xa);
+        case LAL_SIM_INSPIRAL_SPIN_ORDER_1PN:
+        case LAL_SIM_INSPIRAL_SPIN_ORDER_05PN:
+        case LAL_SIM_INSPIRAL_SPIN_ORDER_0PN:
+            break;
+        default:
+            XLALPrintError("XLAL Error - %s: Invalid spin PN order %s\n",
+                    __func__, spinO );
+            XLAL_ERROR_VOID(XLAL_EINVAL);
+            break;
+    }
+
+    /* At the very end, multiply everything in the series by pfaN */
+    for(int ii = 0; ii <= PN_PHASING_SERIES_MAX_ORDER; ii++)
+    {
+        pfa->v[ii] *= pfaN;
+        pfa->vlogv[ii] *= pfaN;
+        pfa->vlogvsq[ii] *= pfaN;
+    }
+}
+
+static void UNUSED
+XLALSimInspiralPNPhasing_F2AddSS(
+	PNPhasingSeries *pfa,
+	const REAL8 m1,
+	const REAL8 m2,
+	const REAL8 chi1L,
+	const REAL8 chi2L,
+	const REAL8 chi1sq,
+	const REAL8 chi2sq,
+        const REAL8 chi1dotchi2,
+        const REAL8 qm_def1,
+        const REAL8 qm_def2
+	)
+{
+    const REAL8 mtot = m1 + m2;
+    const REAL8 eta = m1*m2/mtot/mtot;
+    const REAL8 m1Msq = m1*m1/mtot/mtot;
+    const REAL8 m2Msq = m2*m2/mtot/mtot;
+
+    const REAL8 pfaN = 3.L/(128.L * eta);
+
+    REAL8 pn_sigma;
+    pn_sigma = eta * (721.L/48.L *chi1L*chi2L-247.L/48.L*chi1dotchi2);
+    pn_sigma += (720.L*qm_def1 - 1.L)/96.0L * m1Msq * chi1L * chi1L;
+    pn_sigma += (720.L*qm_def2 - 1.L)/96.0L * m2Msq * chi2L * chi2L;
+    pn_sigma -= (240.L*qm_def1 - 7.L)/96.0L * m1Msq * chi1sq;
+    pn_sigma -= (240.L*qm_def2 - 7.L)/96.0L * m2Msq * chi2sq;
+
+    pfa->v[4] += -10.L * pfaN * pn_sigma;
+}
 
 /**
  * Computes the PN Coefficients for using in the TaylorT2 phasing equation.
