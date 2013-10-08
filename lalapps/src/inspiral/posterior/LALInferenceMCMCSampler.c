@@ -489,6 +489,12 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
     nullLikelihood = 0.0;
   }
 
+  //null log likelihood logic doesn't work with noise parameters
+  if(runState->likelihood==&LALInferenceMarginalisedTimeLogLikelihood &&
+     (LALInferenceGetProcParamVal(runState->commandLine,"--psdFit") ||
+      LALInferenceGetProcParamVal(runState->commandLine,"--glitchFit") ) )
+    nullLikelhood = 0.0;
+
   LALInferenceAddVariable(runState->algorithmParams, "nChain", &nChain,  LALINFERENCE_INT4_t, LALINFERENCE_PARAM_FIXED);
   LALInferenceAddVariable(runState->algorithmParams, "nPar", &nPar,  LALINFERENCE_INT4_t, LALINFERENCE_PARAM_FIXED);
   LALInferenceAddVariable(runState->proposalArgs, "parameter",&parameter, LALINFERENCE_INT4_t, LALINFERENCE_PARAM_LINEAR);
