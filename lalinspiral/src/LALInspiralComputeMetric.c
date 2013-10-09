@@ -408,9 +408,9 @@ XLALInspiralComputeMetric (
       UINT4 k, l;
       g[m][n] = 0.L;
 
-      for ( k = 0 ; k < PNorder; k++ )
+      for ( k = 0 ; k <= PNorder; k++ )
       {
-        for ( l = 0; l < PNorder; l++ )
+        for ( l = 0; l <= PNorder; l++ )
         {
           g[m][n] += Psi[m][k] * Psi[n][l] * (
               moments->j[17-k-l] - moments->j[12-k] * moments->j[12-l]
