@@ -485,9 +485,14 @@ tagLALInferenceIFOData
 typedef struct
 tagLALInferenceROQData
 {
+  gsl_vector_complex *data; /** user provided data (temporary) */
   gsl_vector_complex *weights; /** weights for the likelihood */
-  gsl_vector         *frequencyNodes; /** frequencies for the likelihood */
-  
+  gsl_vector_complex *hplus; /** waveform at frequency nodes */
+  gsl_vector         *frequencyNodes; /** empirical frequency nodes for the likelihood */
+  gsl_vector *psd_at_nodes; /** psd at empirical frequency nodes */ 
+  double *int_f_7_over_3; /** /int_{fmin}^{fmax} df f^(-7/3)/psd...for <h|h> part of the likelihood */
+  double *h_dot_h; /** <h|h> */
+  double *numNodes; /*Number of empirical interpolation nodes (temporary)*/
 } LALInferenceROQData;
 
 /** Returns the element of the process params table with "name" */
