@@ -260,7 +260,9 @@ void LALZDestroyArraySequence ( LALStatus *status,
 /** \name REAL4 prototypes (default name) */
 /*@{*/
 REAL4VectorSequence * XLALCreateVectorSequence ( UINT4 length, UINT4 veclen );
+#ifndef SWIG   // exclude from SWIG interface
 void XLALDestroyVectorSequence ( REAL4VectorSequence * vecseq );
+#endif   // SWIG
 
 
 void LALCreateVectorSequence(LALStatus *, REAL4VectorSequence **,

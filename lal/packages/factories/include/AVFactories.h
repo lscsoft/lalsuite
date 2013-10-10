@@ -311,7 +311,9 @@ REAL4Array * XLALCreateArray ( UINT4Vector * );
 REAL4Array * XLALResizeArrayL ( REAL4Array *, UINT4, ... );
 REAL4Array * XLALResizeArrayV ( REAL4Array *, UINT4, UINT4 * );
 REAL4Array * XLALResizeArray ( REAL4Array *, UINT4Vector * );
+#ifndef SWIG   // exclude from SWIG interface
 void XLALDestroyArray ( REAL4Array * );
+#endif   // SWIG
 void LALCreateArray ( LALStatus *, REAL4Array **, UINT4Vector * );
 void LALResizeArray ( LALStatus *, REAL4Array **, UINT4Vector * );
 void LALDestroyArray ( LALStatus *, REAL4Array ** );
@@ -466,7 +468,9 @@ void LALSDestroyVector ( LALStatus *, REAL4Vector ** );
 /*@{*/
 REAL4Vector * XLALCreateVector ( UINT4 length );
 REAL4Vector * XLALResizeVector ( REAL4Vector * vector, UINT4 length );
+#ifndef SWIG   // exclude from SWIG interface
 void XLALDestroyVector ( REAL4Vector * vector );
+#endif   // SWIG
 void LALCreateVector ( LALStatus *, REAL4Vector **, UINT4 );
 void LALResizeVector ( LALStatus *, REAL4Vector **, UINT4 );
 void LALDestroyVector ( LALStatus *, REAL4Vector ** );

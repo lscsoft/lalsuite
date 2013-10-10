@@ -108,30 +108,42 @@ LALPlaygroundDataMask;
  */
 
 ProcessTable *XLALCreateProcessTableRow(void);
+#ifndef SWIG   // exclude from SWIG interface
 void XLALDestroyProcessTableRow(ProcessTable *);
+#endif   // SWIG
 void XLALDestroyProcessTable(ProcessTable *);
 long XLALProcessTableGetNextID(ProcessTable *);
 
 ProcessParamsTable *XLALCreateProcessParamsTableRow(const ProcessTable *);
+#ifndef SWIG   // exclude from SWIG interface
 void XLALDestroyProcessParamsTableRow(ProcessParamsTable *);
+#endif   // SWIG
 void XLALDestroyProcessParamsTable(ProcessParamsTable *);
 
 TimeSlide *XLALCreateTimeSlide(void);
+#ifndef SWIG   // exclude from SWIG interface
 void XLALDestroyTimeSlide(TimeSlide *);
+#endif   // SWIG
 void XLALDestroyTimeSlideTable(TimeSlide *);
 const TimeSlide *XLALTimeSlideConstGetByIDAndInstrument(const TimeSlide *, long, const char *);
 TimeSlide *XLALTimeSlideGetByIDAndInstrument(TimeSlide *, long, const char *);
 
 SearchSummaryTable *XLALCreateSearchSummaryTableRow(const ProcessTable *);
+#ifndef SWIG   // exclude from SWIG interface
 void XLALDestroySearchSummaryTableRow(SearchSummaryTable *);
+#endif   // SWIG
 void XLALDestroySearchSummaryTable(SearchSummaryTable *);
 
 SegmentTable *XLALCreateSegmentTableRow(const ProcessTable *process);
+#ifndef SWIG   // exclude from SWIG interface
 void XLALDestroySegmentTableRow(SegmentTable *row);
+#endif   // SWIG
 void XLALDestroySegmentTable(SegmentTable *head);
 
 TimeSlideSegmentMapTable *XLALCreateTimeSlideSegmentMapTableRow(void);
+#ifndef SWIG   // exclude from SWIG interface
 void XLALDestroyTimeSlideSegmentMapTableRow(TimeSlideSegmentMapTable *row);
+#endif   // SWIG
 void XLALDestroyTimeSlideSegmentMapTable(TimeSlideSegmentMapTable *head);
 
 int
