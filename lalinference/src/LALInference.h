@@ -475,9 +475,20 @@ tagLALInferenceIFOData
   LIGOTimeGPS		    epoch;              /** The epoch of this observation (the time of the first sample) */
   REAL8                     SNR;                /** IF INJECTION ONLY, E(SNR) of the injection in the detector.*/
   REAL8                     STDOF;              /** Degrees of freedom for IFO to be used in Student-T Likelihood. */
+  struct tagLALInferenceROQData       *roqData; /** ROQ data */
 
   struct tagLALInferenceIFOData      *next;     /** A pointer to the next set of data for linked list */
 } LALInferenceIFOData;
+/**
+ * Structure to contain Reduced Order Quadrature quantities
+ */
+typedef struct
+tagLALInferenceROQData
+{
+  gsl_vector_complex *weights; /** weights for the likelihood */
+  gsl_vector         *frequencyNodes; /** frequencies for the likelihood */
+  
+} LALInferenceROQData;
 
 /** Returns the element of the process params table with "name" */
 ProcessParamsTable *LALInferenceGetProcParamVal(ProcessParamsTable *procparams,const char *name);
