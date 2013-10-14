@@ -308,7 +308,7 @@ fi
 
 # check for boinc
 if test "${boinc}" = "true" ; then
-  if test -n "$BOINC_PREFIX}" ; then
+  if test -n "${BOINC_PREFIX}" ; then
     # do compilation checks with c++
     AC_LANG_PUSH([C++])
 
