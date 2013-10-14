@@ -206,12 +206,12 @@ static REAL8TimeSeries *readTseries(CHAR *cachefile, CHAR *channel, LIGOTimeGPS 
  * It is necessary to use this method instead of the old method for the pipeline to work in DAX mode. Warning: do not mix options between
  * the old and new style.
  */
-static INT4 getDataOptionsByDetectors(ProcessParamsTable *commandLine, char ***ifos, char ***caches, char ***channels, char ***flows , char ***fhighs, char ***timeslides, UINT4 *N)
+static INT4 getDataOptionsByDetectors(ProcessParamsTable *commandLine, char ***ifos, char ***caches, char ***channels, char ***flows , char ***fhighs, char ***timeslides, char ***roqnodes, char ***roqweights, UINT4 *N)
 {
     /* Check that the input has no lists with [ifo,ifo] */
     ProcessParamsTable *this=commandLine;
     UINT4 i=0;
-    *caches=*ifos=*channels=*flows=*fhighs=*timeslides=NULL;
+    *caches=*ifos=*channels=*flows=*fhighs=*timeslides=*roqnodes=*roqweights=NULL;
     *N=0;
     char tmp[128];
     if(!this) {fprintf(stderr,"No command line arguments given!\n"); exit(1);}
@@ -241,6 +241,8 @@ static INT4 getDataOptionsByDetectors(ProcessParamsTable *commandLine, char ***i
     *flows=XLALCalloc(*N,sizeof(REAL8));
     *fhighs=XLALCalloc(*N,sizeof(REAL8));
     *timeslides=XLALCalloc(*N,sizeof(REAL8));
+    *roqnodes=XLALCalloc(*N,sizeof(char *));
+    *roqweights=XLALCalloc(*N,sizeof(char *));
     /* For each IFO, fetch the other options if available */
     for(i=0;i<*N;i++)
     {
@@ -269,6 +271,16 @@ static INT4 getDataOptionsByDetectors(ProcessParamsTable *commandLine, char ***i
         sprintf(tmp,"--%s-timeslide",(*ifos)[i]);
         this=LALInferenceGetProcParamVal(commandLine,tmp);
         (*timeslides)[i]=XLALStringDuplicate(this?this->value:"0.0");
+      
+        /* ROQ nodes */
+        sprintf(tmp,"--%s-roqnodes",(*ifos)[i]);
+        this=LALInferenceGetProcParamVal(commandLine,tmp);
+        (*roqnodes)[i]=this?XLALStringDuplicate(this->value):NULL;
+      
+        /* ROQ weights */
+        sprintf(tmp,"--%s-roqweights",(*ifos)[i]);
+        this=LALInferenceGetProcParamVal(commandLine,tmp);
+        (*roqweights)[i]=this?XLALStringDuplicate(this->value):NULL;
     }
     return(1);
 }
@@ -329,6 +341,7 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
     char **IFOnames=NULL;
     char **fLows=NULL,**fHighs=NULL;
     char **timeslides=NULL;
+    char **roqnodes=NULL,**roqweights=NULL;
     UINT4 Ntimeslides=0;
     LIGOTimeGPS GPSstart,GPStrig,segStart;
     REAL8 PSDdatalength=0;
@@ -342,7 +355,7 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
     int interpFlag=0;
 
     /* Check if the new style command line arguments are used */
-    INT4 dataOpts=getDataOptionsByDetectors(commandLine, &IFOnames, &caches, &channels, &fLows , &fHighs, &timeslides, &Nifo);
+    INT4 dataOpts=getDataOptionsByDetectors(commandLine, &IFOnames, &caches, &channels, &fLows , &fHighs, &timeslides, &roqnodes, &roqweights, &Nifo);
     /* Check for options if not given in the new style */
     if(!dataOpts){
         if(!LALInferenceGetProcParamVal(commandLine,"--cache")||!(LALInferenceGetProcParamVal(commandLine,"--IFO")||LALInferenceGetProcParamVal(commandLine,"--ifo")))
@@ -1175,6 +1188,40 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
     for (i=0;i<Nifo;i++) IFOdata[i].SNR=0.0; //SNR of the injection ONLY IF INJECTION. Set to 0.0 by default.
 
     for (i=0;i<Nifo-1;i++) IFOdata[i].next=&(IFOdata[i+1]);
+  
+    for (i=0;i<Nifo;i++) {
+      unsigned int M_rows, N_cols, K_rows, L_cols;
+      double weights_re, weights_im;
+      gsl_complex z;
+      FILE *wf, *nf;
+      N_cols = 2; //NOTE: This is generally true as weights only have real and imag components
+      L_cols = 2; //ditto
+      M_rows = 107;
+      K_rows = 769;
+      
+      if (roqnodes) {
+        IFOdata[i].roqData->frequencyNodes = gsl_vector_calloc(M_rows);
+        
+        nf = fopen(roqnodes[i], "rb");
+        gsl_vector_fread(nf, IFOdata[i].roqData->frequencyNodes);
+      }
+      if (roqweights) {
+        gsl_matrix *weights_matrix = gsl_matrix_calloc(M_rows, N_cols);
+        IFOdata[i].roqData->weights = gsl_vector_complex_calloc(M_rows);
+      
+        wf = fopen(roqweights[i], "rb");
+        gsl_matrix_fread(wf, weights_matrix);
+        gsl_vector_view weights_col1 = gsl_matrix_column (weights_matrix, 0);
+        gsl_vector_view weights_col2 = gsl_matrix_column (weights_matrix, 1);
+      
+        for (unsigned int kf = 0; kf < M_rows; kf++) {
+          weights_re = gsl_vector_get(&weights_col1.vector, kf);
+          weights_im = gsl_vector_get(&weights_col2.vector, kf);
+          GSL_SET_COMPLEX(&z, weights_re, weights_im);
+          gsl_vector_complex_set(IFOdata[i].roqData->weights, kf, z);
+        }
+      }
+    }
 
     for(i=0;i<Nifo;i++) {
         if(channels) if(channels[i]) XLALFree(channels[i]);
@@ -1182,12 +1229,16 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
         if(IFOnames) if(IFOnames[i]) XLALFree(IFOnames[i]);
         if(fLows) if(fLows[i]) XLALFree(fLows[i]);
         if(fHighs) if(fHighs[i]) XLALFree(fHighs[i]);
+        if(roqnodes) if(roqnodes[i]) XLALFree(roqnodes[i]);
+        if(roqweights) if(roqweights[i]) XLALFree(roqweights[i]);
     }
     if(channels) XLALFree(channels);
     if(caches) XLALFree(caches);
     if(IFOnames) XLALFree(IFOnames);
     if(fLows) XLALFree(fLows);
     if(fHighs) XLALFree(fHighs);
+    if(roqnodes) XLALFree(roqnodes);
+    if(roqweights) XLALFree(roqweights);
 
     return headIFO;
 }
