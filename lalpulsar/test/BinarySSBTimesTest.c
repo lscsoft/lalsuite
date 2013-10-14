@@ -32,6 +32,7 @@
 #include <lal/ComputeFstat.h>
 #include <lal/LALInitBarycenter.h>
 #include <lal/FindRoot.h>
+#include <lal/UserInput.h>
 
 /**
  * \author Reinhard Prix
@@ -52,12 +53,17 @@
 
 // ----- macros
 #define GPS2REAL8(gps) (1.0 * (gps).gpsSeconds + 1.e-9 * (gps).gpsNanoSeconds )
+#define INIT_MEM(x) memset(&(x), 0, sizeof((x)))
 
 // ----- global variables
 static REAL8 p,q,r;          /* binary time delay coefficients (need to be global so that the LAL root finding procedure can see them) */
 
-// initializers
-LALStatus empty_LALStatus;
+// local types
+typedef struct
+{
+  BOOLEAN help;		/**< Print this help/usage message */
+  INT4 randSeed;	/**< allow user to specify random-number seed for reproducible noise-realizations */
+} UserInput_t;
 
 /* ----- internal prototypes ---------- */
 static void LALGetBinarytimes (LALStatus *, SSBtimes *tBinary, const SSBtimes *tSSB, const DetectorStateSeries *DetectorStates, const BinaryOrbitParams *binaryparams, LIGOTimeGPS refTime);
@@ -72,19 +78,25 @@ int XLALCompareMultiSSBtimes ( REAL8 *err_DeltaT, REAL8 *err_Tdot, const MultiSS
 int
 main ( int argc, char *argv[] )
 {
-  LALStatus status = empty_LALStatus;
+  LALStatus status;
+  UserInput_t uvar_s;
+  UserInput_t *uvar = &uvar_s;
 
-  /* read user input */
-  int opt;
-  while ((opt = getopt( argc, argv, "v:" )) != -1) {
-    switch (opt) {
-    case 'v': /* set lalDebugLevel */
-      break;
-    default:
-      XLAL_ERROR ( XLAL_EINVAL, "Invalid commandline-option '%c'\n", opt );
-      break;
-    } // switch
+  INIT_MEM ( status );
+  INIT_MEM ( uvar_s );
+
+  uvar->randSeed = 1;
+  // ---------- register all our user-variable ----------
+  XLALregBOOLUserStruct (  help,                'h', UVAR_HELP    , "Print this help/usage message");
+  XLALregINTUserStruct (   randSeed,             's', UVAR_OPTIONAL, "Specify random-number seed for reproducible noise.");
+
+  /* read cmdline & cfgfile  */
+  XLAL_CHECK ( XLALUserVarReadAllInput ( argc, argv ) == XLAL_SUCCESS, XLAL_EFUNC );
+  if ( uvar->help ) {	/* if help was requested, we're done */
+    exit (0);
   }
+
+  srand ( uvar->randSeed );
 
   REAL8 startTimeREAL8 	= 714180733;
   REAL8 duration 	= 180000;	/* 50 hours */
@@ -97,12 +109,6 @@ main ( int argc, char *argv[] )
   LIGOTimeGPS startTime, refTime;
   XLALGPSSetREAL8 ( &startTime, startTimeREAL8 );
   refTime = startTime;
-
-  // init random-generator
-  struct tms buf;
-  UINT4 seed = times(&buf);
-  srand ( seed );
-  XLALPrintInfo ("seed used = %d\n", seed );
 
   // pick skyposition at random ----- */
   SkyPosition skypos;
@@ -183,6 +189,7 @@ main ( int argc, char *argv[] )
   XLAL_CHECK ( err_Tdot   < tolerance, XLAL_ETOL, "error(Tdot) = %g exceeds tolerance of %g\n", err_Tdot, tolerance );
 
   // ---- step 4: clean-up memory
+  XLALDestroyUserVars();
   XLALDestroyEphemerisData ( edat );
   XLALDestroyMultiSSBtimes ( multiBinary_test );
   XLALDestroyMultiSSBtimes ( multiBinary_ref );
