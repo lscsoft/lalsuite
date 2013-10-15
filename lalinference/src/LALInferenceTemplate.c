@@ -213,7 +213,7 @@ void LALInferenceTemplateROQ(LALInferenceIFOData *IFOdata)
 /*  Returns htilde(f) at discrete empirical interpolation nodes ONLY.                      */
 /*  Do not call this to generate a regular waveform, it will not do what you think it will.*/
 /*******************************************************************************************/
-}
+{
 
     gsl_complex zplus;
 	
