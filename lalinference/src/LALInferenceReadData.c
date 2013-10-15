@@ -1203,7 +1203,7 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
       FILE *wf, *nf, *pf;
       N_cols = 2; //NOTE: This is generally true as weights only have real and imag components
       L_cols = 2; //ditto
-      M_rows = 107;
+      M_rows = 107;//TODO: have it read from file or from command line.
       
       if (roqnodes) {
         IFOdata[i].roqData->frequencyNodes = gsl_vector_calloc(M_rows);
