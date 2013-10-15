@@ -1210,6 +1210,8 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
         
         nf = fopen(roqnodes[i], "rb");
         gsl_vector_fread(nf, IFOdata[i].roqData->frequencyNodes);
+        
+        IFOData[i].roqData->hplus = gsl_vector_complex_calloc(M_rows);
       }
       if (roqweights) {
         gsl_matrix *weights_matrix = gsl_matrix_calloc(M_rows, N_cols);
