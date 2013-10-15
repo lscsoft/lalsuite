@@ -69,6 +69,9 @@
 REAL8 LALInferenceUndecomposedFreqDomainLogLikelihood(LALInferenceVariables *currentParams, LALInferenceIFOData *data, 
                               LALInferenceTemplateFunction templt);
 
+REAL8 LALInferenceROQLogLikelihood(LALInferenceVariables *currentParams, LALInferenceIFOData * data,
+                              LALInferenceTemplateFunction templt);
+
 REAL8 LALInferenceNoiseOnlyLogLikelihood(LALInferenceVariables *currentParams, LALInferenceIFOData *data, LALInferenceTemplateFunction templt);
 
 /**

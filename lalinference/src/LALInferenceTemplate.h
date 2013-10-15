@@ -178,7 +178,7 @@ void LALInferenceTemplate3525TD(LALInferenceIFOData *IFOdata);
  * - \c "amplitude"  (REAL8, amplitude \f$ a \f$)
  */
 
-void LALInferenceROQLogLikelihood(LALInferenceIFOData *IFOdata);
+void LALInferenceTemplateROQ(LALInferenceIFOData *IFOdata);
 
 
 void LALInferenceTemplateSineGaussian(LALInferenceIFOData *IFOdata);
