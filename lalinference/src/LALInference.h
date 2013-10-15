@@ -491,7 +491,6 @@ tagLALInferenceROQData
   gsl_vector *psd_at_nodes; /** psd at empirical frequency nodes. NOTE: needs to be stored from data read from command line */ 
   //double *int_f_7_over_3; /** /int_{fmin}^{fmax} df f^(-7/3)/psd...for <h|h> part of the likelihood */
   //double *h_dot_h; /** <h|h> */
-  double *numNodes; /*Number of empirical interpolation nodes (temporary). NOTE: needs to be stored from data read from command line*/
 } LALInferenceROQData;
 
 /** Returns the element of the process params table with "name" */

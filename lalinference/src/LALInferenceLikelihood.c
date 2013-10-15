@@ -374,6 +374,9 @@ REAL8 LALInferenceROQLogLikelihood(LALInferenceVariables *currentParams, LALInfe
 {
 
   double logL;
+ 
+  templt(data);
+ 
 
   return logL;
 
