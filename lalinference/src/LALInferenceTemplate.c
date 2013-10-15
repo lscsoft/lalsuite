@@ -272,7 +272,7 @@ void LALInferenceTemplateROQ(LALInferenceIFOData *IFOdata)
     amp0 = -4. * m1 * m2 / r * LAL_MRSUN_SI * LAL_MTSUN_SI * sqrt(LAL_PI/12.L);
     shft = LAL_TWOPI * (tc);
 
-    IFOdata->roqData->h_dot_h = IFOdata->roqData->int_f_7_over_3 * amp0 * amp0; /** compute <h|h> */
+    //IFOdata->roqData->h_dot_h = IFOdata->roqData->int_f_7_over_3 * amp0 * amp0; /** compute <h|h> */
 
     const REAL8 log4=log(4.0);
     const REAL8 logv0=log(v0);
@@ -313,9 +313,7 @@ void LALInferenceTemplateROQ(LALInferenceIFOData *IFOdata)
         phasing += shft * f - 2.*phic;
         amp = amp0 * sqrt(-dEnergy/flux) * v;
         GSL_SET_COMPLEX(&zplus, amp * cos(phasing - LAL_PI_4), -amp * sin(phasing - LAL_PI_4));
-        GSL_SET_COMPLEX(&zcross, amp * sin(phasing - LAL_PI_4), amp * cos(phasing - LAL_PI_4));
         
-        zplus = gsl_complex_mul_real(zplus, plus_coeff);
         gsl_vector_complex_set(IFOdata->roqData->hplus, i, zplus);
                          	       				
         }
