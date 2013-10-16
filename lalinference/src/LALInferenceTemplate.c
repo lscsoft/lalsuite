@@ -39,7 +39,7 @@
 #include <lal/XLALError.h>
 #include <lal/LIGOMetadataRingdownUtils.h>
 #include <lal/LALSimInspiral.h>
-
+#include "../../lalsimulation/src/LALSimInspiralPNCoefficients.c"
 #include <lal/LALInferenceTemplate.h>
 
 #define PROGRAM_NAME "LALInferenceTemplate.c"
@@ -58,6 +58,11 @@
 /* Max amplitude orders found in LALSimulation (not accessible from outside of LALSim) */
 #define MAX_NONPRECESSING_AMP_PN_ORDER 6
 #define MAX_PRECESSING_AMP_PN_ORDER 3
+
+#define Pi_p2 9.8696044010893586188344909998761511
+#define Pi_p2by3 2.1450293971110256000774441009412356
+#define log4 1.3862943611198906188344642429163531
+
 
 extern int newswitch; //temporay global variable to use the new LALSTPN
 static void destroyCoherentGW( CoherentGW *waveform );
@@ -208,118 +213,107 @@ void LALInferenceTemplateNullFreqdomain(LALInferenceIFOData *IFOdata)
   return;
 }
 
+
 void LALInferenceTemplateROQ(LALInferenceIFOData *IFOdata)
-/*******************************************************************************************/
-/*  Returns htilde(f) at discrete empirical interpolation nodes ONLY.                      */
-/*  Do not call this to generate a regular waveform, it will not do what you think it will.*/
-/*******************************************************************************************/
 {
 
-    gsl_complex zplus;
-	
-    const REAL8 lambda = -1987./3080.;
-    const REAL8 theta = -11831./9240.;
 
     /* external: SI; internal: solar masses */
     const REAL8 m1 = *(REAL8*) LALInferenceGetVariable(IFOdata->modelParams, "m1"); //m1_SI / LAL_MSUN_SI;
     const REAL8 m2 = *(REAL8*) LALInferenceGetVariable(IFOdata->modelParams, "m2");//m2_SI / LAL_MSUN_SI;
+    /* external: SI; internal: solar masses */
+    const REAL8 phic = *(REAL8*) LALInferenceGetVariable(IFOdata->modelParams, "phase");
     const REAL8 m = m1 + m2;
     const REAL8 m_sec = m * LAL_MTSUN_SI;  /* total mass in seconds */
     const REAL8 eta = m1 * m2 / (m * m);
+    const REAL8 etap2 = eta * eta;
+    const REAL8 etap3 = etap2 * eta;
     const REAL8 piM = LAL_PI * m_sec;
-    const REAL8 v0 = cbrt(piM * fStart);
-    double phic  = *(REAL8*) LALInferenceGetVariable(IFOdata->modelParams, "phase");
-    double tc = *(REAL8*) LALInferenceGetVariable(IFOdata->modelParams, "times");
-    REAL8 shft, amp0;
+    const REAL8 mSevenBySix = -7./6.;
+    //const REAL8 vISCO = 1. / sqrt(6.);
+    const REAL8 r = 10e6*LAL_PC_SI;
+    REAL8 v0 = cbrt(piM * IFOdata->fLow);
+    REAL8 logv0 = log(v0);
+    REAL8 shft, amp0;//, f_max;
+    REAL8 psiNewt, psi2, psi3, psi4, psi5, psi6, psi6L, psi7, psi3S, psi4S, psi5S;
+    REAL8 alpha2, alpha3, alpha4, alpha5, alpha6, alpha6L, alpha7, alpha3S, alpha4S, alpha5S;
+    REAL8 eta_fac = -113. + 76. * eta;
+    REAL8 chi=0; //NOTE: chi isn't used here yet, so we just set it to zero
+    gsl_complex h_i;
+    //LIGOTimeGPS tStart = {0, 0};
 
-    /* phasing coefficients */
-    const REAL8 pfaN = 3.L/(128.L * eta);
-    const REAL8 pfa2 = 5.L*(743.L/84.L + 11.L * eta)/9.L;
-    const REAL8 pfa3 = -16.L*LAL_PI;
-    const REAL8 pfa4 = 5.L*(3058.673L/7.056L + 5429.L/7.L * eta
-                     + 617.L * eta*eta)/72.L;
-    const REAL8 pfa5 = 5.L/9.L * (7729.L/84.L - 13.L * eta) * LAL_PI;
-    const REAL8 pfl5 = 5.L/3.L * (7729.L/84.L - 13.L * eta) * LAL_PI;
-    const REAL8 pfa6 = (11583.231236531L/4.694215680L
-                     - 640.L/3.L * LAL_PI * LAL_PI - 6848.L/21.L*LAL_GAMMA)
-                     + eta * (-15335.597827L/3.048192L
-                     + 2255./12. * LAL_PI * LAL_PI
-                     - 1760./3.*theta +12320./9.*lambda)
-                     + eta*eta * 76055.L/1728.L - eta*eta*eta * 127825.L/1296.L;
-    const REAL8 pfl6 = -6848.L/21.L;
-    const REAL8 pfa7 = LAL_PI * 5.L/756.L * ( 15419335.L/336.L
-                     + 75703.L/2.L * eta - 14809.L * eta*eta);
+    //XLALGPSAdd(&tStart, -1 / deltaF);  /* coalesce at t=0 */
 
-    /* flux coefficients */
-    const REAL8 FTaN = XLALSimInspiralPNFlux_0PNCoeff(eta);
-    const REAL8 FTa2 = XLALSimInspiralPNFlux_2PNCoeff(eta);
-    const REAL8 FTa3 = XLALSimInspiralPNFlux_3PNCoeff(eta);
-    const REAL8 FTa4 = XLALSimInspiralPNFlux_4PNCoeff(eta);
-    const REAL8 FTa5 = XLALSimInspiralPNFlux_5PNCoeff(eta);
-    const REAL8 FTl6 = XLALSimInspiralPNFlux_6PNLogCoeff(eta);
-    const REAL8 FTa6 = XLALSimInspiralPNFlux_6PNCoeff(eta);
-    const REAL8 FTa7 = XLALSimInspiralPNFlux_7PNCoeff(eta);
-
-    /* energy coefficients */
-    const REAL8 dETaN = 2. * XLALSimInspiralPNEnergy_0PNCoeff(eta);
-    const REAL8 dETa1 = 2. * XLALSimInspiralPNEnergy_2PNCoeff(eta);
-    const REAL8 dETa2 = 3. * XLALSimInspiralPNEnergy_4PNCoeff(eta);
-    const REAL8 dETa3 = 4. * XLALSimInspiralPNEnergy_6PNCoeff(eta);
-
-
-        
     /* extrinsic parameters */
-    amp0 = -4. * m1 * m2 / r * LAL_MRSUN_SI * LAL_MTSUN_SI * sqrt(LAL_PI/12.L);
-    shft = LAL_TWOPI * (tc);
+    amp0 = -pow(m_sec, 5./6.) * sqrt(5.*eta / 24.) / (Pi_p2by3 * r / LAL_C_SI);
+    shft = 0;//LAL_TWOPI * (tStart.gpsSeconds + 1e-9 * tStart.gpsNanoSeconds);
 
-    //IFOdata->roqData->h_dot_h = IFOdata->roqData->int_f_7_over_3 * amp0 * amp0; /** compute <h|h> */
+    /* spin terms in the amplitude and phase (in terms of the reduced
+     * spin parameter */
+    psi3S = 113.*chi/3.;
+    psi4S = 63845.*(-81. + 4.*eta)*chi*chi/(8. * eta_fac * eta_fac);
+    psi5S = -565.*(-146597. + 135856.*eta + 17136.*etap2)*chi/(2268.*eta_fac);
 
-    const REAL8 log4=log(4.0);
-    const REAL8 logv0=log(v0);
-    
-    for (unsigned int i = 0; i < IFOdata->roqData->hplus->size; i++) {
+    alpha3S = (113.*chi)/24.;
+    alpha4S = (12769.*chi*chi*(-81. + 4.*eta))/(32. * eta_fac * eta_fac);
+    alpha5S = (-113.*chi*(502429. - 591368.*eta + 1680*etap2))/(16128.*eta_fac);
+
+    /* coefficients of the phase at PN orders from 0 to 3.5PN */
+    psiNewt = 3./(128.*eta);
+    psi2 = 3715./756. + 55.*eta/9.;
+    psi3 = psi3S - 16.*LAL_PI;
+    psi4 = 15293365./508032. + 27145.*eta/504. + 3085.*eta*eta/72. + psi4S;
+    psi5 = (38645.*LAL_PI/756. - 65.*LAL_PI*eta/9. + psi5S);
+    psi6 = 11583231236531./4694215680. - (640.*Pi_p2)/3. - (6848.*LAL_GAMMA)/21.
+             + (-5162.983708047263 + 2255.*Pi_p2/12.)*eta
+             + (76055.*etap2)/1728. - (127825.*etap3)/1296.;
+    psi6L = -6848./21.;
+    psi7 = (77096675.*LAL_PI)/254016. + (378515.*LAL_PI*eta)/1512.
+             - (74045.*LAL_PI*eta*eta)/756.;
+
+    /* amplitude coefficients */
+    alpha2 = 1.1056547619047619 + (11*eta)/8.;
+    alpha3 = -LAL_TWOPI + alpha3S;
+    alpha4 = 0.8939214212884228 + (18913*eta)/16128. + (1379*etap2)/1152. + alpha4S;
+    alpha5 = (-4757*LAL_PI)/1344. + (57*eta*LAL_PI)/16. + alpha5S;
+    alpha6 = -58.601030974347324 + (3526813753*eta)/2.7869184e7 -
+                (1041557*etap2)/258048. + (67999*etap3)/82944. +
+                (10*Pi_p2)/3. - (451*eta*Pi_p2)/96.;
+    alpha6L = 856/105.;
+    alpha7 = (-5111593*LAL_PI)/2.709504e6 - (72221*eta*LAL_PI)/24192. -
+                (1349*etap2*LAL_PI)/24192.;
+
+    for (unsigned int i = 0; i < IFOdata->roqData->frequencyNodes->size; i++) {
+        /* fourier frequency corresponding to this bin */
         const REAL8 f = gsl_vector_get(IFOdata->roqData->frequencyNodes, i);
-        const REAL8 v = cbrt(piM*f);
-	const REAL8 logv = log(v);
-        const REAL8 v2 = v * v;
-        const REAL8 v3 = v * v2;
-        const REAL8 v4 = v * v3;
-        const REAL8 v5 = v * v4;
-        const REAL8 v6 = v * v5;
-        const REAL8 v7 = v * v6;
-        const REAL8 v8 = v * v7;
-        const REAL8 v9 = v * v8;
-        const REAL8 v10 = v * v9;
-        REAL8 phasing = 0.;
-        REAL8 dEnergy = 0.;
-        REAL8 flux = 0.;
-        REAL8 amp;
+        const REAL8 v3 = piM*f;
 
-        phasing += pfa7 * v7;
-        phasing += (pfa6 + pfl6 * (log4+logv)) * v6;
-        phasing += (pfa5 + pfl5 * (logv-logv0)) * v5;
-        phasing += pfa4 * v4;
-        phasing += pfa3 * v3;
-        phasing += pfa2 * v2;
-        phasing += 1.;
+        /* PN expansion parameter */
+        REAL8 v, v2, v4, v5, v6, v7, logv, Psi, amp;
+        v = cbrt(v3);
+        v2 = v*v; v4 = v3*v; v5 = v4*v; v6 = v3*v3; v7 = v6*v;
+        logv = log(v);
 
-        flux += 1.;
-        dEnergy += 1.;
-	
-        phasing *= pfaN / v5;
-        flux *= FTaN * v10;
-        dEnergy *= dETaN * v;
-        // Note the factor of 2 b/c phic is orbital phase
-        phasing += shft * f - 2.*phic;
-        amp = amp0 * sqrt(-dEnergy/flux) * v;
-        GSL_SET_COMPLEX(&zplus, amp * cos(phasing - LAL_PI_4), -amp * sin(phasing - LAL_PI_4));
-        
-        gsl_vector_complex_set(IFOdata->roqData->hplus, i, zplus);
-                         	       				
-        }
+        /* compute the phase and amplitude */
+        Psi = psiNewt / v5 * (1.
+            + psi2 * v2 + psi3 * v3 + psi4 * v4
+            + psi5 * v5 * (1. + 3. * (logv - logv0))
+            + (psi6 + psi6L * (log4 + logv)) * v6 + psi7 * v7);
 
-	return;
+        amp = amp0 * pow(f, mSevenBySix) * (1.
+            + alpha2 * v2 + alpha3 * v3 + alpha4 * v4 + alpha5 * v5
+            + (alpha6 + alpha6L * (LAL_GAMMA + log4 + logv)) * v6
+            + alpha7 * v7);
+
+        GSL_SET_COMPLEX(&h_i, amp * cos(Psi + shft * f - 2.*phic - LAL_PI_4), amp * sin(Psi + shft * f - 2.*phic - LAL_PI_4));
+
+        gsl_vector_complex_set(IFOdata->roqData->hplus, i, h_i);     
+   
+   }
+
+    return;
 }
+
 
 void LALInferenceTemplateNullTimedomain(LALInferenceIFOData *IFOdata)
 /*********************************************/
