@@ -65,7 +65,6 @@ import os
 
 # LIGO-LW XML imports.
 from glue.ligolw import ligolw
-from pylal import llwapp as ligolw_app
 from glue.ligolw.utils import process as ligolw_process
 from glue.ligolw.utils import search_summary as ligolw_search_summary
 from glue.ligolw import table as ligolw_table
@@ -113,7 +112,9 @@ out_xmldoc.childNodes[0].appendChild(sngl_inspiral_table)
 sngl_inspiral_table.set_next_id(lsctables.SnglInspiralID(0))
 
 # Create a time slide entry.  Needed for coinc_event rows.
-time_slide_id = ligolw_app.get_time_slide_id(out_xmldoc,
+time_slide_table = lsctables.New(lsctables.TimeSlideTable)
+out_xmldoc.childNodes[0].appendChild(time_slide_table)
+time_slide_id = time_slide_table.get_time_slide_id(
     dict((ifo, 0) for ifo in opts.detector), create_new=process)
 
 # Create a CoincDef table and record a CoincDef row for
