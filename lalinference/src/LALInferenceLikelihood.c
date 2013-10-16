@@ -385,7 +385,8 @@ REAL8 LALInferenceROQLogLikelihood(LALInferenceVariables *currentParams, LALInfe
   double timeTmp;
   int different;
   double mc;
-  gsl_complex *complexL;
+  gsl_complex complexL;
+  
   gsl_complex exp_i_pi;
   gsl_complex cross_factor;
   gsl_complex total_scale_factor;
@@ -493,9 +494,9 @@ REAL8 LALInferenceROQLogLikelihood(LALInferenceVariables *currentParams, LALInfe
 
     }
     
-    gsl_blas_zdotc(data->roqData->weights, data->roqData->hplus, complexL);
+    gsl_blas_zdotc(data->roqData->weights, data->roqData->hplus, &complexL);
 
-  //loglikeli = GSL_REAL(complexL);
+  loglikeli = GSL_REAL(complexL);
 
   LALInferenceClearVariables(&intrinsicParams);
   return(loglikeli);
