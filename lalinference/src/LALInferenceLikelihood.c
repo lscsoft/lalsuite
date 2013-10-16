@@ -501,22 +501,7 @@ REAL8 LALInferenceROQLogLikelihood(LALInferenceVariables *currentParams, LALInfe
   LALInferenceClearVariables(&intrinsicParams);
   return(loglikeli);
 }
-/*
-{
 
-  double logL;
- 
-  LALInferenceIFOData *dataPtr;
- 
-  dataPtr = data;
-
-  templt(data);
- 
-
-  return logL;
-
-}
-*/
 REAL8 LALInferenceUndecomposedFreqDomainLogLikelihood(LALInferenceVariables *currentParams, LALInferenceIFOData * data, 
                               LALInferenceTemplateFunction templt)
 /***************************************************************/
