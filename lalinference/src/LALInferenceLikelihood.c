@@ -494,7 +494,7 @@ REAL8 LALInferenceROQLogLikelihood(LALInferenceVariables *currentParams, LALInfe
 
     }
     
-    gsl_blas_zdotc(data->roqData->weights, data->roqData->hplus, &complexL);
+    gsl_blas_zdotc(dataPtr->roqData->weights, dataPtr->roqData->hplus, &complexL);
 
   loglikeli = GSL_REAL(complexL);
 
