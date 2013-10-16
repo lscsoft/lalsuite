@@ -236,7 +236,6 @@ void LALInferenceTemplateROQ(LALInferenceIFOData *IFOdata)
     REAL8 logv0 = log(v0);
     REAL8 shft, amp0;//, f_max;
     REAL8 psiNewt, psi2, psi3, psi4, psi5, psi6, psi6L, psi7, psi3S, psi4S, psi5S;
-    REAL8 alpha2, alpha3, alpha4, alpha5, alpha6, alpha6L, alpha7, alpha3S, alpha4S, alpha5S;
     REAL8 eta_fac = -113. + 76. * eta;
     REAL8 chi=0; //NOTE: chi isn't used here yet, so we just set it to zero
     gsl_complex h_i;
@@ -254,10 +253,6 @@ void LALInferenceTemplateROQ(LALInferenceIFOData *IFOdata)
     psi4S = 63845.*(-81. + 4.*eta)*chi*chi/(8. * eta_fac * eta_fac);
     psi5S = -565.*(-146597. + 135856.*eta + 17136.*etap2)*chi/(2268.*eta_fac);
 
-    alpha3S = (113.*chi)/24.;
-    alpha4S = (12769.*chi*chi*(-81. + 4.*eta))/(32. * eta_fac * eta_fac);
-    alpha5S = (-113.*chi*(502429. - 591368.*eta + 1680*etap2))/(16128.*eta_fac);
-
     /* coefficients of the phase at PN orders from 0 to 3.5PN */
     psiNewt = 3./(128.*eta);
     psi2 = 3715./756. + 55.*eta/9.;
@@ -270,18 +265,6 @@ void LALInferenceTemplateROQ(LALInferenceIFOData *IFOdata)
     psi6L = -6848./21.;
     psi7 = (77096675.*LAL_PI)/254016. + (378515.*LAL_PI*eta)/1512.
              - (74045.*LAL_PI*eta*eta)/756.;
-
-    /* amplitude coefficients */
-    alpha2 = 1.1056547619047619 + (11*eta)/8.;
-    alpha3 = -LAL_TWOPI + alpha3S;
-    alpha4 = 0.8939214212884228 + (18913*eta)/16128. + (1379*etap2)/1152. + alpha4S;
-    alpha5 = (-4757*LAL_PI)/1344. + (57*eta*LAL_PI)/16. + alpha5S;
-    alpha6 = -58.601030974347324 + (3526813753*eta)/2.7869184e7 -
-                (1041557*etap2)/258048. + (67999*etap3)/82944. +
-                (10*Pi_p2)/3. - (451*eta*Pi_p2)/96.;
-    alpha6L = 856/105.;
-    alpha7 = (-5111593*LAL_PI)/2.709504e6 - (72221*eta*LAL_PI)/24192. -
-                (1349*etap2*LAL_PI)/24192.;
 
     for (unsigned int i = 0; i < IFOdata->roqData->frequencyNodes->size; i++) {
         /* fourier frequency corresponding to this bin */
@@ -300,10 +283,7 @@ void LALInferenceTemplateROQ(LALInferenceIFOData *IFOdata)
             + psi5 * v5 * (1. + 3. * (logv - logv0))
             + (psi6 + psi6L * (log4 + logv)) * v6 + psi7 * v7);
 
-        amp = amp0 * pow(f, mSevenBySix) * (1.
-            + alpha2 * v2 + alpha3 * v3 + alpha4 * v4 + alpha5 * v5
-            + (alpha6 + alpha6L * (LAL_GAMMA + log4 + logv)) * v6
-            + alpha7 * v7);
+        amp = amp0 * pow(f, mSevenBySix);
 
         GSL_SET_COMPLEX(&h_i, amp * cos(Psi + shft * f - 2.*phic - LAL_PI_4), amp * sin(Psi + shft * f - 2.*phic - LAL_PI_4));
 
