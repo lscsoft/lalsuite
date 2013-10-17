@@ -985,7 +985,7 @@ int XLALSimInspiralPNPolarizationWaveforms(
             /* case LAL_PNORDER_THREE_POINT_FIVE: */
             case 7:
                 XLALPrintError("XLAL Error - %s: Amp. corrections not known "
-                        "to PN order %s\n", __func__, ampO );
+                        "to PN order %d\n", __func__, ampO );
                 XLAL_ERROR(XLAL_EINVAL);
                 break;
             case -1: // Highest known PN order - move if higher terms added!
