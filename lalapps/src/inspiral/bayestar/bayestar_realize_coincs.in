@@ -61,7 +61,7 @@ parser = OptionParser(
         Option("--min-triggers", type=int, default=3,
             help="Emit coincidences only when at least this many triggers are found [default: %default]"),
         Option("--measurement-error", choices=measurement_error_choices,
-            default=measurement_error_choices[0], metavar='|'.join(measurement_error_choices)
+            default=measurement_error_choices[0], metavar='|'.join(measurement_error_choices),
             help="How to compute the measurement error [default: %default]")
     ]
 )
