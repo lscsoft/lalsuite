@@ -106,6 +106,9 @@ void LALInferenceInitLikelihood(LALInferenceRunState *runState)
      fprintf(stderr, "Using marginalised in time and phase likelihood.\n");
      runState->likelihood=&LALInferenceMarginalisedTimeLogLikelihood;
      LALInferenceAddVariable(runState->currentParams, "margtimephi", &margphi, LALINFERENCE_UINT4_t,LALINFERENCE_PARAM_FIXED);
+   } else if (LALInferenceGetProcParamVal(commandLine, "--roq")) {
+     fprintf(stderr, "Using ROQ likelihood.\n");
+     runState->likelihood=&LALInferenceROQLogLikelihood;
    } else {
     runState->likelihood=&LALInferenceUndecomposedFreqDomainLogLikelihood;
    }

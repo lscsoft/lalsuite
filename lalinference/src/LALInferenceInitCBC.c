@@ -85,6 +85,9 @@ void LALInferenceInitCBCTemplate(LALInferenceRunState *runState)
                     --template LALGenerateInspiral (for time-domain templates)\n\
                     --template LAL (for frequency-domain templates)\n");
   }
+  else if(LALInferenceGetProcParamVal(commandLine,"--roq")){
+  runState->templt=&LALInferenceTemplateROQ;
+  }
   else {
     fprintf(stdout,"Template function called is \"LALInferenceTemplateXLALSimInspiralChooseWaveform\"\n");
   }
