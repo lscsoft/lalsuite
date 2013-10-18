@@ -120,11 +120,11 @@ def ligolw_sky_map(sngl_inspirals, approximant, amplitude_order, phase_order, f_
     # Time and run sky localization.
     start_time = time.time()
     if method == "toa":
-        prob = sky_map.tdoa(gmst, toas, w_toas, locations, nside=nside)
+        prob = sky_map.toa(gmst, toas, w_toas, locations, nside=nside)
     elif method == "toa_snr":
-        prob = sky_map.tdoa_snr(gmst, toas, snrs, w_toas, responses, locations, horizons, min_distance, max_distance, prior_distance_power, nside=nside)
+        prob = sky_map.toa_snr(gmst, toas, snrs, w_toas, responses, locations, horizons, min_distance, max_distance, prior_distance_power, nside=nside)
     elif method == "toa_phoa_snr":
-        prob = sky_map.tdoa_phoa_snr(gmst, toas, phoas, snrs, w_toas, w1s, w2s, responses, locations, horizons, min_distance, max_distance, prior_distance_power, nside=nside)
+        prob = sky_map.toa_phoa_snr(gmst, toas, phoas, snrs, w_toas, w1s, w2s, responses, locations, horizons, min_distance, max_distance, prior_distance_power, nside=nside)
     elif method == "toa_snr_mcmc":
         import emcee
 
@@ -135,7 +135,7 @@ def ligolw_sky_map(sngl_inspirals, approximant, amplitude_order, phase_order, f_
             ntemps=ntemps,
             nwalkers=nwalkers,
             dim=ndim,
-            logl=(lambda args: sky_map.log_posterior_tdoa_snr(*args,
+            logl=(lambda args: sky_map.log_posterior_toa_snr(*args,
                 gmst=gmst,
                 toas=toas,
                 snrs=snrs,

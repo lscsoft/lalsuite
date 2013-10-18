@@ -157,7 +157,7 @@ static double toa_error(
 
 
 /* Perform sky localization based on TDOAs alone. Returns log probability; not normalized. */
-static double bayestar_log_posterior_tdoa(
+static double bayestar_log_posterior_toa(
     double theta,
     double phi,
     double gmst,
@@ -179,7 +179,7 @@ static double bayestar_log_posterior_tdoa(
 
 
 /* Perform sky localization based on TDOAs alone. Returns log probability; not normalized. */
-static int bayestar_sky_map_tdoa_not_normalized_log(
+static int bayestar_sky_map_toa_not_normalized_log(
     long npix, /* Input: number of HEALPix pixels. */
     double *P, /* Output: pre-allocated array of length npix to store posterior map. */
     double gmst, /* Greenwich mean sidereal time in radians. */
@@ -204,7 +204,7 @@ static int bayestar_sky_map_tdoa_not_normalized_log(
         pix2ang_ring(nside, i, &theta, &phi);
 
         /* Evaluate the (un-normalized) Gaussian log likelihood. */
-        P[i] = bayestar_log_posterior_tdoa(theta, phi, gmst, nifos, locs, toas, w_toas);
+        P[i] = bayestar_log_posterior_toa(theta, phi, gmst, nifos, locs, toas, w_toas);
     }
 
     /* Done! */
@@ -217,7 +217,7 @@ static const long autoresolution_count_pix = 3072;
 
 
 /* Perform sky localization based on TDOAs alone. */
-static double *bayestar_sky_map_tdoa_adapt_resolution(
+static double *bayestar_sky_map_toa_adapt_resolution(
     gsl_permutation **pix_perm,
     long *maxpix,
     long *npix, /* In/out: number of HEALPix pixels. */
@@ -245,7 +245,7 @@ static double *bayestar_sky_map_tdoa_adapt_resolution(
             P = malloc(my_npix * sizeof(double));
             if (!P)
                 GSL_ERROR_NULL("failed to allocate output array", GSL_ENOMEM);
-            ret = bayestar_sky_map_tdoa_not_normalized_log(my_npix, P, gmst, nifos, locs, toas, w_toas);
+            ret = bayestar_sky_map_toa_not_normalized_log(my_npix, P, gmst, nifos, locs, toas, w_toas);
             if (ret != GSL_SUCCESS)
             {
                 free(P);
@@ -267,7 +267,7 @@ static double *bayestar_sky_map_tdoa_adapt_resolution(
         P = malloc(my_npix * sizeof(double));
         if (!P)
             GSL_ERROR_NULL("failed to allocate output array", GSL_ENOMEM);
-        ret = bayestar_sky_map_tdoa_not_normalized_log(my_npix, P, gmst, nifos, locs, toas, w_toas);
+        ret = bayestar_sky_map_toa_not_normalized_log(my_npix, P, gmst, nifos, locs, toas, w_toas);
         if (ret != GSL_SUCCESS)
         {
             free(P);
@@ -293,7 +293,7 @@ fail:
 
 
 /* Perform sky localization based on TDOAs alone. */
-double *bayestar_sky_map_tdoa(
+double *bayestar_sky_map_toa(
     long *npix, /* In/out: number of HEALPix pixels. */
     double gmst, /* Greenwich mean sidereal time in radians. */
     int nifos, /* Input: number of detectors. */
@@ -303,7 +303,7 @@ double *bayestar_sky_map_tdoa(
 ) {
     long maxpix;
     gsl_permutation *pix_perm = NULL;
-    double *ret = bayestar_sky_map_tdoa_adapt_resolution(&pix_perm, &maxpix, npix, gmst, nifos, locs, toas, w_toas);
+    double *ret = bayestar_sky_map_toa_adapt_resolution(&pix_perm, &maxpix, npix, gmst, nifos, locs, toas, w_toas);
     gsl_permutation_free(pix_perm);
     return ret;
 }
@@ -348,7 +348,7 @@ static double cabs2(double complex z) {
 }
 
 
-double *bayestar_sky_map_tdoa_snr(
+double *bayestar_sky_map_toa_snr(
     long *npix, /* Input: number of HEALPix pixels. */
     double gmst, /* Greenwich mean sidereal time in radians. */
     int nifos, /* Input: number of detectors. */
@@ -402,7 +402,7 @@ double *bayestar_sky_map_tdoa_snr(
     }
 
     /* Evaluate posterior term only first. */
-    P = bayestar_sky_map_tdoa_adapt_resolution(&pix_perm, &maxpix, npix, gmst, nifos, locations, toas, w_toas);
+    P = bayestar_sky_map_toa_adapt_resolution(&pix_perm, &maxpix, npix, gmst, nifos, locations, toas, w_toas);
     if (!P)
         return NULL;
 
@@ -622,7 +622,7 @@ double *bayestar_sky_map_tdoa_snr(
 }
 
 
-double *bayestar_sky_map_tdoa_phoa_snr(
+double *bayestar_sky_map_toa_phoa_snr(
     long *npix, /* Input: number of HEALPix pixels. */
     double gmst, /* Greenwich mean sidereal time in radians. */
     int nifos, /* Input: number of detectors. */
@@ -688,7 +688,7 @@ double *bayestar_sky_map_tdoa_phoa_snr(
         exp_i_phoas[i] = exp_i(phoas[i]);
 
     /* Evaluate posterior term only first. */
-    P = bayestar_sky_map_tdoa_adapt_resolution(&pix_perm, &maxpix, npix, gmst, nifos, locations, toas, w_toas);
+    P = bayestar_sky_map_toa_adapt_resolution(&pix_perm, &maxpix, npix, gmst, nifos, locations, toas, w_toas);
     if (!P)
         return NULL;
 
@@ -928,7 +928,7 @@ double *bayestar_sky_map_tdoa_phoa_snr(
 }
 
 
-double bayestar_log_posterior_tdoa_snr(
+double bayestar_log_posterior_toa_snr(
     double ra,
     double sin_dec,
     double distance,
@@ -951,7 +951,7 @@ double bayestar_log_posterior_tdoa_snr(
     const double costwopsi = cos(twopsi);
     const double sintwopsi = sin(twopsi);
 
-    double logp = bayestar_log_posterior_tdoa(M_PI_2 - dec, ra, gmst, nifos, locations, toas, w_toas);
+    double logp = bayestar_log_posterior_toa(M_PI_2 - dec, ra, gmst, nifos, locations, toas, w_toas);
 
     /* Loop over detectors */
     for (iifo = 0; iifo < nifos; iifo++)

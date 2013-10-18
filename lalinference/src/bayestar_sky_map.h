@@ -70,7 +70,7 @@
 
 
 /* Perform sky localization based on TDOAs alone. */
-double *bayestar_sky_map_tdoa(
+double *bayestar_sky_map_toa(
     long *npix, /* In/out: number of HEALPix pixels. */
     double gmst, /* Greenwich mean sidereal time in radians. */
     int nifos, /* Input: number of detectors. */
@@ -79,7 +79,7 @@ double *bayestar_sky_map_tdoa(
     const double *w_toas /* Input: sum-of-squares weights, (1/TOA variance)^2. */
 );
 
-double bayestar_log_posterior_tdoa_snr(
+double bayestar_log_posterior_toa_snr(
     double ra,
     double sin_dec,
     double distance,
@@ -97,7 +97,7 @@ double bayestar_log_posterior_tdoa_snr(
 );
 
 /* Perform sky localization based on TDOAs and amplitude. */
-double *bayestar_sky_map_tdoa_snr(
+double *bayestar_sky_map_toa_snr(
     long *npix, /* In/out: number of HEALPix pixels. */
     double gmst, /* Greenwich mean sidereal time in radians. */
     int nifos, /* Input: number of detectors. */
@@ -113,7 +113,7 @@ double *bayestar_sky_map_tdoa_snr(
 );
 
 /* Perform sky localization based on TDOAs, PHOAs, and amplitude. */
-double *bayestar_sky_map_tdoa_phoa_snr(
+double *bayestar_sky_map_toa_phoa_snr(
     long *npix, /* In/out: number of HEALPix pixels. */
     double gmst, /* Greenwich mean sidereal time in radians. */
     int nifos, /* Input: number of detectors. */

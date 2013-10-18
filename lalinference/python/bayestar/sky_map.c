@@ -86,7 +86,7 @@ my_gsl_error (const char * reason, const char * file, int line, int gsl_errno)
 }
 
 
-static PyObject *sky_map_tdoa(PyObject *module, PyObject *args, PyObject *kwargs)
+static PyObject *sky_map_toa(PyObject *module, PyObject *args, PyObject *kwargs)
 {
     long i;
     Py_ssize_t n;
@@ -184,7 +184,7 @@ static PyObject *sky_map_tdoa(PyObject *module, PyObject *args, PyObject *kwargs
     }
 
     old_handler = gsl_set_error_handler(my_gsl_error);
-    P = bayestar_sky_map_tdoa(&npix, gmst, nifos, locations, toas, w_toas);
+    P = bayestar_sky_map_toa(&npix, gmst, nifos, locations, toas, w_toas);
     gsl_set_error_handler(old_handler);
 
     if (!P)
@@ -222,7 +222,7 @@ fail:
 };
 
 
-static PyObject *sky_map_tdoa_snr(PyObject *module, PyObject *args, PyObject *kwargs)
+static PyObject *sky_map_toa_snr(PyObject *module, PyObject *args, PyObject *kwargs)
 {
     long i;
     Py_ssize_t n;
@@ -384,7 +384,7 @@ static PyObject *sky_map_tdoa_snr(PyObject *module, PyObject *args, PyObject *kw
     horizons = PyArray_DATA(horizons_npy);
 
     old_handler = gsl_set_error_handler(my_gsl_error);
-    P = bayestar_sky_map_tdoa_snr(&npix, gmst, nifos, responses, locations, toas, snrs, w_toas, horizons, min_distance, max_distance, prior_distance_power);
+    P = bayestar_sky_map_toa_snr(&npix, gmst, nifos, responses, locations, toas, snrs, w_toas, horizons, min_distance, max_distance, prior_distance_power);
     gsl_set_error_handler(old_handler);
 
     if (!P)
@@ -429,7 +429,7 @@ fail:
 };
 
 
-static PyObject *sky_map_tdoa_phoa_snr(PyObject *module, PyObject *args, PyObject *kwargs)
+static PyObject *sky_map_toa_phoa_snr(PyObject *module, PyObject *args, PyObject *kwargs)
 {
     long i;
     Py_ssize_t n;
@@ -623,7 +623,7 @@ static PyObject *sky_map_tdoa_phoa_snr(PyObject *module, PyObject *args, PyObjec
     horizons = PyArray_DATA(horizons_npy);
 
     old_handler = gsl_set_error_handler(my_gsl_error);
-    P = bayestar_sky_map_tdoa_phoa_snr(&npix, gmst, nifos, responses, locations, toas, phoas, snrs, w_toas, w1s, w2s, horizons, min_distance, max_distance, prior_distance_power);
+    P = bayestar_sky_map_toa_phoa_snr(&npix, gmst, nifos, responses, locations, toas, phoas, snrs, w_toas, w1s, w2s, horizons, min_distance, max_distance, prior_distance_power);
     gsl_set_error_handler(old_handler);
 
     if (!P)
@@ -671,7 +671,7 @@ fail:
 };
 
 
-static PyObject *log_posterior_tdoa_snr(PyObject *module, PyObject *args, PyObject *kwargs)
+static PyObject *log_posterior_toa_snr(PyObject *module, PyObject *args, PyObject *kwargs)
 {
     long i;
     Py_ssize_t n;
@@ -816,7 +816,7 @@ static PyObject *log_posterior_tdoa_snr(PyObject *module, PyObject *args, PyObje
     horizons = PyArray_DATA(horizons_npy);
 
     old_handler = gsl_set_error_handler(my_gsl_error);
-    P = bayestar_log_posterior_tdoa_snr(ra, sin_dec, distance, u, twopsi, gmst, nifos, responses, locations, toas, snrs, w_toas, horizons, prior_distance_power);
+    P = bayestar_log_posterior_toa_snr(ra, sin_dec, distance, u, twopsi, gmst, nifos, responses, locations, toas, snrs, w_toas, horizons, prior_distance_power);
     gsl_set_error_handler(old_handler);
 
     if (P == GSL_NAN)
@@ -843,10 +843,10 @@ fail:
 
 
 static PyMethodDef methods[] = {
-    {"tdoa", (PyCFunction)sky_map_tdoa, METH_VARARGS | METH_KEYWORDS, "fill me in"},
-    {"tdoa_snr", (PyCFunction)sky_map_tdoa_snr, METH_VARARGS | METH_KEYWORDS, "fill me in"},
-    {"tdoa_phoa_snr", (PyCFunction)sky_map_tdoa_phoa_snr, METH_VARARGS | METH_KEYWORDS, "fill me in"},
-    {"log_posterior_tdoa_snr", (PyCFunction)log_posterior_tdoa_snr, METH_VARARGS | METH_KEYWORDS, "fill me in"},
+    {"toa", (PyCFunction)sky_map_toa, METH_VARARGS | METH_KEYWORDS, "fill me in"},
+    {"toa_snr", (PyCFunction)sky_map_toa_snr, METH_VARARGS | METH_KEYWORDS, "fill me in"},
+    {"toa_phoa_snr", (PyCFunction)sky_map_toa_phoa_snr, METH_VARARGS | METH_KEYWORDS, "fill me in"},
+    {"log_posterior_toa_snr", (PyCFunction)log_posterior_toa_snr, METH_VARARGS | METH_KEYWORDS, "fill me in"},
     {NULL, NULL, 0, NULL}
 };
 
