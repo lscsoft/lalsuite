@@ -1,6 +1,6 @@
 # lalsuite_build.m4 - top level build macros
 #
-# serial 68
+# serial 69
 
 AC_DEFUN([LALSUITE_CHECK_GIT_REPO],[
   # check for git
@@ -601,7 +601,7 @@ AS_IF([test "x${osx_version_check}" = "xtrue"],[
       AC_MSG_RESULT([$MACOSX_VERSION])])
     AS_CASE(["$MACOSX_VERSION"],
       [10.0*|10.1*|10.2*|10.3*],AC_MSG_ERROR([This version of Mac OS X is not supported]),
-      [10.4*|10.5*|10.6*|10.7*|10.8*],,
+      [10.4*|10.5*|10.6*|10.7*|10.8*|10.9*],,
       AC_MSG_WARN([Unknown Mac OS X version]))
 ])])])
 
