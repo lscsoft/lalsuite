@@ -1206,6 +1206,7 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
       M_rows = 107;//TODO: have it read from file or from command line.
       
       if (roqnodes) {
+        IFOdata[i].roqData = XLALCalloc(1, sizeof(LALInferenceROQData));
         IFOdata[i].roqData->frequencyNodes = gsl_vector_calloc(M_rows);
         
         nf = fopen(roqnodes[i], "rb");
