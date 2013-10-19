@@ -1237,7 +1237,7 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
         gsl_vector_fread(pf, IFOdata[i].roqData->psd_at_nodes);
       }
     }
-
+  
     for(i=0;i<Nifo;i++) {
         if(channels) if(channels[i]) XLALFree(channels[i]);
         if(caches) if(caches[i]) XLALFree(caches[i]);
