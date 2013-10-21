@@ -109,6 +109,7 @@ extern const char *const polarizationPhaseJumpName;
 extern const char *const distanceQuasiGibbsProposalName;
 extern const char *const extrinsicParamProposalName;
 extern const char *const KDNeighborhoodProposalName;
+extern const char *const frequencyBinJumpName;
 
 /**
  * The name of the variable that will store the name of the current
@@ -254,6 +255,13 @@ void LALInferenceKDNeighborhoodProposal(LALInferenceRunState *runState, LALInfer
  * See Vivien's thesis for the details of the equations implemented.
  */
 void LALInferenceExtrinsicParamProposal(LALInferenceRunState *runState, LALInferenceVariables *proposedParams);
+
+/**
+ * Proposal to jump in frequency by one frequency bin. The frequency bin size \c df must be
+ * given as a (fixed) variable in the \c proposedParams. The frequency parameter is
+ * presumed to have the variable name \c f0.
+ */
+void LALInferenceFrequencyBinJump(LALInferenceRunState *runState, LALInferenceVariables *proposedParams);
 
 /* Zero out proposal statistics */
 void LALInferenceZeroProposalStats(LALInferenceRunState *runState);
