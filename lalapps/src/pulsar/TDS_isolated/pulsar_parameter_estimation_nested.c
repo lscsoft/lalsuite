@@ -205,19 +205,22 @@ LALStringVector *corlist = NULL;
 " --randomseed        seed for random number generator\n"\
 "\n"\
 " MCMC proposal parameters:\n"\
-" --covariance        (REAL8) relative weigth of using covariance matrix\n\
+" --covariance        (UINT4) relative weigth of using covariance matrix\n\
                      of the live points as the proposal (DEFAULT = 14,\n\
                      e.g. 70%%)\n"\
 " --temperature       (REAL8) temperature for covariance proposal\n\
                      distribution (DEFAULT = 0.1)\n"\
-" --kDTree            (REAL8) relative weigth of using a k-D tree of the live\n\
+" --kDTree            (UINT4) relative weigth of using a k-D tree of the live\n\
                      points to use as a proposal (DEFAULT = 3, e.g. 15%%)\n"\
 " --kDNCell           (INT4) maximum number of samples in a k-D tree cell\n"\
 " --kDUpdateFactor    (REAL8) how often the k-D tree gets updated as a\n\
                      factor of the number of live points\n"\
-" --diffev            (REAL8) relative weight of using differential evolution\n\
+" --diffev            (UINT4) relative weight of using differential evolution\n\
                      of the live points as the proposal (DEFAULT = 3, e.g.\n\
                      15%%)\n"\
+" --freqBinJump       (UINT4) relative weight of using jumps to adjacent\n\
+                     frequency bins as a proposal (DEFAULT = 0, e.g. this is\n\
+                     not required unless searching over frequency)\n"\
 "\n"\
 " Signal injection parameters:\n"\
 " --inject-file       a pulsar parameter (par) file containing the parameters\n\
@@ -1232,6 +1235,7 @@ void setupFromParFile( LALInferenceRunState *runState )
   ProcessParamsTable *ppt = NULL;
   UINT4 mmfactor = 0;
   REAL8 mm = 0;
+  REAL8 DeltaT = 0.; /* maximum data time span */
 
   ppt = LALInferenceGetProcParamVal( runState->commandLine, "--par-file" );
   if( ppt == NULL ) { fprintf(stderr,"Must specify --par-file!\n"); exit(1); }
@@ -1265,6 +1269,10 @@ void setupFromParFile( LALInferenceRunState *runState )
   while( data ){
     REAL8Vector *freqFactors = NULL;
     UINT4 j = 0;
+    REAL8 dt = XLALGPSGetREAL8( &data->dataTimes->data[data->dataTimes->length-1] ) -
+      XLALGPSGetREAL8( &data->dataTimes->data[0] );
+
+    if ( dt > DeltaT ){ DeltaT = dt; }
 
     freqFactors = *(REAL8Vector **)LALInferenceGetVariable( data->dataParams,
                                                             "freqfactors" );
@@ -1328,6 +1336,10 @@ void setupFromParFile( LALInferenceRunState *runState )
       data = data->next;
     }
   }
+
+  /* set frequency bin step from longest data time span */
+  REAL8 df = 1./(2.*DeltaT);
+  LALInferenceAddVariable( runState->currentParams, "df", &df, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED );
 
   return;
 }
@@ -2001,7 +2013,7 @@ void initialisePrior( LALInferenceRunState *runState )
  */
 void initialiseProposal( LALInferenceRunState *runState ){
   ProcessParamsTable *ppt = NULL;
-  UINT4 covfrac = 0, defrac = 0, kdfrac = 0;
+  UINT4 covfrac = 0, defrac = 0, kdfrac = 0, freqfrac = 0;
   REAL8 temperature = 0.;
   const CHAR *defaultPropName = NULL;
   defaultPropName = XLALStringDuplicate( "none" );
@@ -2017,6 +2029,9 @@ void initialiseProposal( LALInferenceRunState *runState ){
   ppt = LALInferenceGetProcParamVal( runState->commandLine, "--kDTree" );
   if( ppt ) { kdfrac = atoi( ppt->value ); }
   else { kdfrac = 3; } /* default value */
+
+  ppt = LALInferenceGetProcParamVal( runState->commandLine, "--freqBinJump" );
+  if( ppt ) { freqfrac = atoi( ppt->value ); }
 
   if( !covfrac && !defrac && !kdfrac ){
     XLALPrintError("All proposal weights are zero!\n");
@@ -2050,6 +2065,10 @@ void initialiseProposal( LALInferenceRunState *runState ){
     LALInferenceAddProposalToCycle( runState, KDNeighborhoodProposalName, &LALInferenceKDNeighborhoodProposal, kdfrac );
 
     LALInferenceSetupkDTreeNSLivePoints( runState );
+  }
+
+  if ( freqfrac ){
+    LALInferenceAddProposalToCycle( runState, frequencyBinJumpName, &LALInferenceFrequencyBinJump, freqfrac );
   }
 
   LALInferenceRandomizeProposalCycle( runState );
