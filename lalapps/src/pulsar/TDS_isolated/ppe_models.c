@@ -269,7 +269,7 @@ void pulsar_model( BinaryPulsarParams params, LALInferenceIFOData *data ){
 
             dphit = -fmod(dphi->data[i] - data->timeData->data->data[i], 1.);
 
-            expp = cexp( dphit );
+            expp = cexp( LAL_TWOPI * I * dphit );
 
             M = data->compModelData->data->data[i];
 
