@@ -115,7 +115,7 @@ void XLALComputeDetAMResponseExtraModes(
 	double *fl,		/**< Returned value of Fl (scalar longitudinal */
 	double *fx,		/**< Returned value of Fx ("x" vector mode) */
 	double *fy,		/**< Returned value of Fy (y vector mode) */
-	REAL4 D[3][3],		/**< Detector response 3x3 matrix */
+	const REAL4 D[3][3],		/**< Detector response 3x3 matrix */
 	const double ra,	/**< Right ascention of source (radians) */
 	const double dec,	/**< Declination of source (radians) */
 	const double psi,	/**< Polarization angle of source (radians) */
@@ -252,7 +252,7 @@ int XLALComputeDetAMResponseSeries(REAL4TimeSeries ** fplus, REAL4TimeSeries ** 
  * metric theory of gravity response amplitudes.
  * \see XLALComputeDetAMResponseExtraModes() for more details.
  */
-int XLALComputeDetAMResponseExtraModesSeries(REAL4TimeSeries ** fplus, REAL4TimeSeries ** fcross, REAL4TimeSeries ** fb, REAL4TimeSeries ** fl, REAL4TimeSeries ** fx, REAL4TimeSeries ** fy, REAL4 D[3][3], const double ra, const double dec, const double psi, const LIGOTimeGPS * start, const double deltaT, const int n)
+int XLALComputeDetAMResponseExtraModesSeries(REAL4TimeSeries ** fplus, REAL4TimeSeries ** fcross, REAL4TimeSeries ** fb, REAL4TimeSeries ** fl, REAL4TimeSeries ** fx, REAL4TimeSeries ** fy, const REAL4 D[3][3], const double ra, const double dec, const double psi, const LIGOTimeGPS * start, const double deltaT, const int n)
 {
 	LIGOTimeGPS t;
 	double gmst;
