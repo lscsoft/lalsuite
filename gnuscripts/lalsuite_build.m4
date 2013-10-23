@@ -1,6 +1,6 @@
 # lalsuite_build.m4 - top level build macros
 #
-# serial 70
+# serial 71
 
 AC_DEFUN([LALSUITE_ADD_CFLAGS],[
   # all flags are appended to CPPFLAGS/CFLAGS
@@ -114,15 +114,13 @@ AC_DEFUN([LALSUITE_WITH_CFLAGS_LIBS],[
       CPPFLAGS=
       CFLAGS=
       LALSUITE_ADD_CFLAGS(${with_cflags})
-    ]),
-    []
+    ])
   )
   AC_ARG_WITH([extra_cflags],
     AC_HELP_STRING([--with-extra-cflags=CFLAGS],[extra C preprocessor/compiler flags]),
     AS_IF([test "x${with_extra_cflags}" != x],[
       LALSUITE_ADD_CFLAGS(${with_extra_cflags})
-    ]),
-    []
+    ])
   )
   AC_ARG_WITH([libs],
     AC_HELP_STRING([--with-libs=LIBS],[linker flags]),
@@ -130,15 +128,13 @@ AC_DEFUN([LALSUITE_WITH_CFLAGS_LIBS],[
       LDFLAGS=
       LIBS=
       LALSUITE_ADD_LIBS(${with_libs})
-    ]),
-    []
+    ])
   )
   AC_ARG_WITH([extra_libs],
     AC_HELP_STRING([--with-extra-libs=LIBS],[extra linker flags]),
     AS_IF([test "x${with_extra_libs}" != x],[
       LALSUITE_ADD_LIBS(${with_extra_libs})
-    ]),
-    []
+    ])
   )
 ])
 
