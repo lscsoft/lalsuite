@@ -25,6 +25,7 @@ AC_CANONICAL_HOST
 
 LALSUITE_ARG_VAR
 LALSUITE_DISTCHECK_CONFIGURE_FLAGS
+LALSUITE_WITH_CFLAGS_LIBS
 
 # set library api info
 # 1. start with version information of "0:0:0" for each libtool library
@@ -114,8 +115,8 @@ AC_CHECK_LIB([z],[compress],,[AC_MSG_ERROR([could not find the zlib library])])
 
 # metaio
 PKG_CHECK_MODULES([METAIO],[libmetaio],[true],[false])
-CPPFLAGS="$CPPFLAGS $METAIO_CFLAGS"
-LIBS="$LIBS $METAIO_LIBS"
+LALSUITE_ADD_CFLAGS(${METAIO_CFLAGS})
+LALSUITE_ADD_LIBS(${METAIO_LIBS})
 AC_CHECK_LIB([metaio],[MetaioOpen],,[AC_MSG_ERROR([could not find the metaio library])])
 
 # check for libmetaio headers
@@ -135,6 +136,10 @@ LALSUITE_ADD_GCC_FLAGS
 # pure-python library code from being split across lib and lib64 on
 # RedHat-derived systems.
 AC_SUBST([pkgpythondir], ["\${pkgpyexecdir}"])
+
+# ensure CPPFLAGS/CFLAGS and LDFLAGS/LIBS are in correct order
+LALSUITE_ADD_CFLAGS()
+LALSUITE_ADD_LIBS()
 
 # output
 LAL_HEADER_LINK=${ac_aux_dir}/header-link.mk

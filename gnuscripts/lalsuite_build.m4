@@ -1,6 +1,146 @@
 # lalsuite_build.m4 - top level build macros
 #
-# serial 69
+# serial 70
+
+AC_DEFUN([LALSUITE_ADD_CFLAGS],[
+  # all flags are appended to CPPFLAGS/CFLAGS
+  lalsuite_append="$1"
+  # print diagnostics to config.log
+  $as_echo "$as_me:${as_lineno-$LINENO}: [LALSUITE_ADD_CFLAGS]: before: CPPFLAGS=${CPPFLAGS}" >&AS_MESSAGE_LOG_FD
+  $as_echo "$as_me:${as_lineno-$LINENO}: [LALSUITE_ADD_CFLAGS]: before: CFLAGS=${CFLAGS}" >&AS_MESSAGE_LOG_FD
+  $as_echo "$as_me:${as_lineno-$LINENO}: [LALSUITE_ADD_CFLAGS]: append: ${lalsuite_append}" >&AS_MESSAGE_LOG_FD
+  # CPPFLAGS gets -I and -D, CFLAGS gets everything else
+  # only save unique -I flags in CPPFLAGS; first instance takes precedence
+  # order non-system -I before system -I in CPPFLAGS
+  lalsuite_nonsysI=""
+  lalsuite_sysI=""
+  lalsuite_cppflags=""
+  lalsuite_cflags=""
+  for arg in ${CPPFLAGS} ${CFLAGS} ${lalsuite_append}; do
+    AS_CASE([${arg}],
+      [-I/usr/*|-I/opt/*],[
+        AS_CASE([" ${lalsuite_sysI} "],
+          [*" ${arg} "*],[:],
+          [lalsuite_sysI="${lalsuite_sysI} ${arg}"]
+        )
+      ],
+      [-I*],[
+        AS_CASE([" ${lalsuite_nonsysI} "],
+          [*" ${arg} "*],[:],
+          [lalsuite_nonsysI="${lalsuite_nonsysI} ${arg}"]
+        )
+      ],
+      [-D*],[lalsuite_cppflags="${lalsuite_cppflags} ${arg}"],
+      [lalsuite_cflags="${lalsuite_cflags} ${arg}"]
+    )
+  done
+  CPPFLAGS="${lalsuite_nonsysI} ${lalsuite_sysI} ${lalsuite_cppflags}"
+  CFLAGS="${lalsuite_cflags}"
+  # print diagnostics to config.log
+  $as_echo "$as_me:${as_lineno-$LINENO}: [LALSUITE_ADD_CFLAGS]: after: lalsuite_nonsysI=${lalsuite_nonsysI}" >&AS_MESSAGE_LOG_FD
+  $as_echo "$as_me:${as_lineno-$LINENO}: [LALSUITE_ADD_CFLAGS]: after: lalsuite_sysI=${lalsuite_sysI}" >&AS_MESSAGE_LOG_FD
+  $as_echo "$as_me:${as_lineno-$LINENO}: [LALSUITE_ADD_CFLAGS]: after: lalsuite_cppflags=${lalsuite_cppflags}" >&AS_MESSAGE_LOG_FD
+  $as_echo "$as_me:${as_lineno-$LINENO}: [LALSUITE_ADD_CFLAGS]: after: lalsuite_cflags=${lalsuite_cflags}" >&AS_MESSAGE_LOG_FD
+  $as_echo "$as_me:${as_lineno-$LINENO}: [LALSUITE_ADD_CFLAGS]: after: CPPFLAGS=${CPPFLAGS}" >&AS_MESSAGE_LOG_FD
+  $as_echo "$as_me:${as_lineno-$LINENO}: [LALSUITE_ADD_CFLAGS]: after: CFLAGS=${CFLAGS}" >&AS_MESSAGE_LOG_FD
+])
+
+AC_DEFUN([LALSUITE_ADD_LIBS],[
+  # -l flags and non-flags are prepended to LIBS
+  # all other flags are appended to LDFLAGS
+  lalsuite_prepend=""
+  lalsuite_append=""
+  for arg in $1; do
+    AS_CASE([${arg}],
+      [-l*],[lalsuite_prepend="${lalsuite_prepend} ${arg}"],
+      [-*],[lalsuite_append="${lalsuite_append} ${arg}"],
+      [lalsuite_prepend="${lalsuite_prepend} ${arg}"]
+    )
+  done
+  # print diagnostics to config.log
+  $as_echo "$as_me:${as_lineno-$LINENO}: [LALSUITE_ADD_LIBS]: before: LDFLAGS=${LDFLAGS}" >&AS_MESSAGE_LOG_FD
+  $as_echo "$as_me:${as_lineno-$LINENO}: [LALSUITE_ADD_LIBS]: before: LIBS=${LIBS}" >&AS_MESSAGE_LOG_FD
+  $as_echo "$as_me:${as_lineno-$LINENO}: [LALSUITE_ADD_LIBS]: prepend: ${lalsuite_prepend}" >&AS_MESSAGE_LOG_FD
+  $as_echo "$as_me:${as_lineno-$LINENO}: [LALSUITE_ADD_LIBS]: append: ${lalsuite_append}" >&AS_MESSAGE_LOG_FD
+  # LDFLAGS gets -L and other flags, LIBS gets -l and non-flags
+  # only save unique -L flags in LDFLAGS; first instance takes precedence
+  # order non-system -L before system -L in LDFLAGS
+  # only save unique -l flags in LIBS; last instance takes precedence
+  lalsuite_nonsysL=""
+  lalsuite_sysL=""
+  lalsuite_ldflags=""
+  lalsuite_libs_rev=""
+  for arg in ${lalsuite_prepend} ${LDFLAGS} ${LIBS} ${lalsuite_append}; do
+    AS_CASE([${arg}],
+      [-L/usr/*|-L/opt/*],[
+        AS_CASE([" ${lalsuite_sysL} "],
+          [*" ${arg} "*],[:],
+          [lalsuite_sysL="${lalsuite_sysL} ${arg}"]
+        )
+      ],
+      [-L*],[
+        AS_CASE([" ${lalsuite_nonsysL} "],
+          [*" ${arg} "*],[:],
+          [lalsuite_nonsysL="${lalsuite_nonsysL} ${arg}"]
+        )
+      ],
+      [-l*],[lalsuite_libs_rev="${arg} ${lalsuite_libs_rev}"],
+      [-*],[lalsuite_ldflags="${lalsuite_ldflags} ${arg}"],
+      [lalsuite_libs_rev="${arg} ${lalsuite_libs_rev}"]
+    )
+  done
+  lalsuite_libs=""
+  for arg in ${lalsuite_libs_rev}; do
+    AS_CASE([" ${lalsuite_libs} "],
+      [*" ${arg} "*],[:],
+      [lalsuite_libs="${arg} ${lalsuite_libs}"]
+    )
+  done
+  LDFLAGS="${lalsuite_nonsysL} ${lalsuite_sysL} ${lalsuite_ldflags}"
+  LIBS="${lalsuite_libs}"
+  # print diagnostics to config.log
+  $as_echo "$as_me:${as_lineno-$LINENO}: [LALSUITE_ADD_LIBS]: after: lalsuite_nonsysL=${lalsuite_nonsysL}" >&AS_MESSAGE_LOG_FD
+  $as_echo "$as_me:${as_lineno-$LINENO}: [LALSUITE_ADD_LIBS]: after: lalsuite_sysL=${lalsuite_sysL}" >&AS_MESSAGE_LOG_FD
+  $as_echo "$as_me:${as_lineno-$LINENO}: [LALSUITE_ADD_LIBS]: after: lalsuite_ldflags=${lalsuite_ldflags}" >&AS_MESSAGE_LOG_FD
+  $as_echo "$as_me:${as_lineno-$LINENO}: [LALSUITE_ADD_LIBS]: after: lalsuite_libs=${lalsuite_libs}" >&AS_MESSAGE_LOG_FD
+  $as_echo "$as_me:${as_lineno-$LINENO}: [LALSUITE_ADD_LIBS]: after: LDFLAGS=${LDFLAGS}" >&AS_MESSAGE_LOG_FD
+  $as_echo "$as_me:${as_lineno-$LINENO}: [LALSUITE_ADD_LIBS]: after: LIBS=${LIBS}" >&AS_MESSAGE_LOG_FD
+])
+
+AC_DEFUN([LALSUITE_WITH_CFLAGS_LIBS],[
+  AC_ARG_WITH([cflags],
+    AC_HELP_STRING([--with-cflags=CFLAGS],[C preprocessor/compiler flags]),
+    AS_IF([test "x${with_cflags}" != x],[
+      CPPFLAGS=
+      CFLAGS=
+      LALSUITE_ADD_CFLAGS(${with_cflags})
+    ]),
+    []
+  )
+  AC_ARG_WITH([extra_cflags],
+    AC_HELP_STRING([--with-extra-cflags=CFLAGS],[extra C preprocessor/compiler flags]),
+    AS_IF([test "x${with_extra_cflags}" != x],[
+      LALSUITE_ADD_CFLAGS(${with_extra_cflags})
+    ]),
+    []
+  )
+  AC_ARG_WITH([libs],
+    AC_HELP_STRING([--with-libs=LIBS],[linker flags]),
+    AS_IF([test "x${with_libs}" != x],[
+      LDFLAGS=
+      LIBS=
+      LALSUITE_ADD_LIBS(${with_libs})
+    ]),
+    []
+  )
+  AC_ARG_WITH([extra_libs],
+    AC_HELP_STRING([--with-extra-libs=LIBS],[extra linker flags]),
+    AS_IF([test "x${with_extra_libs}" != x],[
+      LALSUITE_ADD_LIBS(${with_extra_libs})
+    ]),
+    []
+  )
+])
 
 AC_DEFUN([LALSUITE_CHECK_GIT_REPO],[
   # check for git
@@ -174,13 +314,8 @@ PKG_CHECK_MODULES(uppercase,[lowercase >= $2],[lowercase="true"
   fi
 ],[lowercase="false"])
 if test "$lowercase" = "true"; then
-  CPPFLAGS="$CPPFLAGS $[]uppercase[]_CFLAGS"
-  for arg in $[]uppercase[]_LIBS; do
-    case $arg in
-      -L*) LDFLAGS="$LDFLAGS $arg";;
-      *)   LIBS="$LIBS $arg";;
-    esac
-  done
+  LALSUITE_ADD_CFLAGS(${uppercase[]_CFLAGS})
+  LALSUITE_ADD_LIBS(${uppercase[]_LIBS})
   LALSUITE_CHECKED_LIBS="${LALSUITE_CHECKED_LIBS} lowercase"
   if test "$LALSUITE_BUILD" = "true"; then
     AC_DEFINE([HAVE_LIB]uppercase,[1],[Define to 1 if you have the $1 library])
@@ -213,13 +348,8 @@ if test "$lowercase" = "true"; then
     fi
   ],[lowercase="false"])
   if test "$lowercase" = "true"; then
-    CPPFLAGS="$CPPFLAGS $[]uppercase[]_CFLAGS"
-    for arg in $[]uppercase[]_LIBS; do
-      case $arg in
-        -L*) LDFLAGS="$LDFLAGS $arg";;
-        *)   LIBS="$LIBS $arg";;
-      esac
-    done
+    LALSUITE_ADD_CFLAGS(${uppercase[]_CFLAGS})
+    LALSUITE_ADD_LIBS(${uppercase[]_LIBS})
     LALSUITE_CHECKED_LIBS="${LALSUITE_CHECKED_LIBS} lowercase"
     if test "$LALSUITE_BUILD" = "true"; then
       AC_DEFINE([HAVE_LIB]uppercase,[1],[Define to 1 if you have the $1 library])
@@ -561,8 +691,8 @@ AC_ARG_WITH(
     )
     CUDA_LIBS="-L${cuda_path}/${cuda_libdir} -Wl,-rpath -Wl,${cuda_path}/${cuda_libdir} -lcufft -lcudart"
     CUDA_CPPFLAGS="-I${with_cuda}/include"
-    LIBS="$LIBS $CUDA_LIBS"
-    CPPFLAGS="$CPPFLAGS $CUDA_CPPFLAGS"
+    LALSUITE_ADD_LIBS(${CUDA_LIBS})
+    LALSUITE_ADD_CFLAGS(${CUDA_CPPFLAGS})
     AC_SUBST(CUDA_LIBS)
     AC_SUBST(CUDA_CPPFLAGS)
     AC_PATH_PROGS(NVCC,[nvcc],[],[${cuda_path}/bin:${PATH}])

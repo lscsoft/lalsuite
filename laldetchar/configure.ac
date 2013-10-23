@@ -29,6 +29,7 @@ AC_CANONICAL_HOST
 
 LALSUITE_ARG_VAR
 LALSUITE_DISTCHECK_CONFIGURE_FLAGS
+LALSUITE_WITH_CFLAGS_LIBS
 
 # set library api info
 # 1. start with version information of "0:0:0" for each libtool library
@@ -119,8 +120,8 @@ AC_CHECK_LIB([m],[main],,[AC_MSG_ERROR([could not find the math library])])
 
 # check for gsl
 PKG_CHECK_MODULES([GSL],[gsl],[true],[false])
-CPPFLAGS="$CPPFLAGS $GSL_CFLAGS"
-LIBS="$GSL_LIBS $LIBS"
+LALSUITE_ADD_CFLAGS(${GSL_CFLAGS})
+LALSUITE_ADD_LIBS(${GSL_LIBS})
 AC_CHECK_LIB([gslcblas],[main],,[AC_MSG_ERROR([could not find the gsl library])])
 AC_CHECK_LIB([gsl],[gsl_version],,[AC_MSG_ERROR([could not find the gsl library])])
 LALSUITE_ENABLE_FAST_GSL
@@ -130,8 +131,8 @@ AC_CHECK_HEADERS([gsl/gsl_errno.h],,[AC_MSG_ERROR([could not find the gsl/gsl_er
 
 # check for glib
 PKG_CHECK_MODULES([GLIB],[glib-2.0],[true],[false])
-CPPFLAGS="$CPPFLAGS $GLIB_CFLAGS"
-LIBS="$GLIB_LIBS $LIBS"
+LALSUITE_ADD_CFLAGS(${GLIB_CFLAGS})
+LALSUITE_ADD_LIBS(${GLIB_LIBS})
 AC_CHECK_LIB([glib-2.0],[g_sequence_new],,[AC_MSG_ERROR([could not find the glib library])])
 AC_CHECK_HEADERS([glib.h],,[AC_MSG_ERROR([could not find the glib.h header])])
 
@@ -151,6 +152,10 @@ LALSUITE_ADD_GCC_FLAGS
 # pure-python library code from being split across lib and lib64 on
 # RedHat-derived systems.
 AC_SUBST([pkgpythondir], ["\${pkgpyexecdir}"])
+
+# ensure CPPFLAGS/CFLAGS and LDFLAGS/LIBS are in correct order
+LALSUITE_ADD_CFLAGS()
+LALSUITE_ADD_LIBS()
 
 # output
 LAL_HEADER_LINK=${ac_aux_dir}/header-link.mk

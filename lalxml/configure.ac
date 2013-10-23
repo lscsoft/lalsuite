@@ -26,6 +26,7 @@ AC_CANONICAL_HOST
 
 LALSUITE_ARG_VAR
 LALSUITE_DISTCHECK_CONFIGURE_FLAGS
+LALSUITE_WITH_CFLAGS_LIBS
 
 # set library api info
 # 1. start with version information of "0:0:0" for each libtool library
@@ -113,8 +114,8 @@ AC_CHECK_LIB([m],[main],,[AC_MSG_ERROR([could not find the math library])])
 
 # check for libxml2
 PKG_CHECK_MODULES([LIBXML2],[libxml-2.0 >= 2.6],[true],[false])
-CPPFLAGS="$CPPFLAGS $LIBXML2_CFLAGS"
-LIBS="$LIBS $LIBXML2_LIBS"
+LALSUITE_ADD_CFLAGS(${LIBXML2_CFLAGS})
+LALSUITE_ADD_LIBS(${LIBXML2_LIBS})
 AC_CHECK_LIB([xml2],[xmlInitParser],,[AC_MSG_ERROR([cannot find the xml2 library])])
 
 # check for libxml2 headers
@@ -122,8 +123,8 @@ AC_CHECK_HEADERS([libxml/tree.h],,[AC_MSG_ERROR([could not find the libxml/tree.
 
 # check for gsl
 PKG_CHECK_MODULES([GSL],[gsl],[true],[false])
-CPPFLAGS="$CPPFLAGS $GSL_CFLAGS"
-LIBS="$LIBS $GSL_LIBS"
+LALSUITE_ADD_CFLAGS(${GSL_CFLAGS})
+LALSUITE_ADD_LIBS(${GSL_LIBS})
 AC_CHECK_LIB([gslcblas],[main],,[AC_MSG_ERROR([could not find the gsl library])])
 AC_CHECK_LIB([gsl],[gsl_strerror],,[AC_MSG_ERROR([could not find the gsl library])])
 LALSUITE_ENABLE_FAST_GSL
@@ -145,6 +146,10 @@ LALSUITE_ADD_GCC_FLAGS
 # pure-python library code from being split across lib and lib64 on
 # RedHat-derived systems.
 AC_SUBST([pkgpythondir], ["\${pkgpyexecdir}"])
+
+# ensure CPPFLAGS/CFLAGS and LDFLAGS/LIBS are in correct order
+LALSUITE_ADD_CFLAGS()
+LALSUITE_ADD_LIBS()
 
 # output
 LAL_HEADER_LINK=${ac_aux_dir}/header-link.mk

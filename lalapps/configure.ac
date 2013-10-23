@@ -64,17 +64,10 @@ AC_CANONICAL_HOST
 
 LALSUITE_ARG_VAR
 LALSUITE_DISTCHECK_CONFIGURE_FLAGS
+LALSUITE_WITH_CFLAGS_LIBS
 
 # check for git repo
 LALSUITE_CHECK_GIT_REPO
-
-LALAPPS_WITH_CC
-
-LALAPPS_WITH_LAL_PREFIX
-LALAPPS_WITH_EXTRA_CPPFLAGS
-LALAPPS_WITH_EXTRA_CFLAGS
-LALAPPS_WITH_EXTRA_LDFLAGS
-LALAPPS_WITH_EXTRA_LIBS
 
 LALSUITE_ENABLE_DEBUG
 
@@ -230,8 +223,8 @@ if test "${boinc}" = "true" ; then
     LALSUITE_CHECK_BOINC
 
     # point to boinc headers and libraries
-    CPPFLAGS="$CPPFLAGS -I$BOINC_PREFIX/include"
-    LDFLAGS="$LDFLAGS -L$BOINC_PREFIX/lib"
+    LALSUITE_ADD_CFLAGS(-I${BOINC_PREFIX}/include)
+    LALSUITE_ADD_LIBS(-L${BOINC_PREFIX}/lib)
 
     # check for boinc libraries
     AC_CHECK_LIB([boinc],[boinc_fopen],[true],[boinc=false])
@@ -248,8 +241,8 @@ BOINC_ENABLE_VAL="`eval test x$boinc = xtrue && echo "ENABLED" || echo "DISABLED
 
 # check for gsl
 PKG_CHECK_MODULES([GSL],[gsl],[true],[false])
-CPPFLAGS="$CPPFLAGS $GSL_CFLAGS"
-LIBS="$GSL_LIBS $LIBS"
+LALSUITE_ADD_CFLAGS(${GSL_CFLAGS})
+LALSUITE_ADD_LIBS(${GSL_LIBS})
 AC_CHECK_LIB([gslcblas],[main],,[AC_MSG_ERROR([could not find the gsl library])])
 AC_CHECK_LIB([gsl],[gsl_version],,[AC_MSG_ERROR([could not find the gsl library])])
 LALSUITE_ENABLE_FAST_GSL
@@ -260,8 +253,8 @@ AC_CHECK_HEADERS([gsl/gsl_errno.h],,[AC_MSG_ERROR([could not find the gsl/gsl_er
 # check for fftw libraries
 if test "${fftw}" = "true"; then
   PKG_CHECK_MODULES([FFTW3],[fftw3 fftw3f],[true],[false])
-  CPPFLAGS="$CPPFLAGS $FFTW3_CFLAGS"
-  LIBS="$LIBS $FFTW3_LIBS"
+  LALSUITE_ADD_CFLAGS(${FFTW3_CFLAGS})
+  LALSUITE_ADD_LIBS(${FFTW3_LIBS})
   AC_CHECK_LIB([fftw3f],[fftwf_execute_dft],,[AC_MSG_WARN([could not find the fftw3f library])],[-lm])
   AC_CHECK_LIB([fftw3],[fftw_execute_dft],,[AC_MSG_WARN([could not find the fftw3 library])],[-lm])
 fi
@@ -284,7 +277,7 @@ LALSUITE_ENABLE_MODULE([GDS],[gds])
 if test "${frame}" = "true"; then
   PKG_CHECK_MODULES([FRAME],[libframe],[true],[false])
   lal_pre_frame_LIBS="$LIBS"
-  LIBS="$LIBS $FRAME_LIBS"
+  LALSUITE_ADD_LIBS(${FRAME_LIBS})
   AC_SEARCH_LIBS([FrLibIni],[Frame],,
                  [AC_MSG_WARN([could not find the frame library])]
                  [frame="false"]
@@ -295,7 +288,7 @@ fi
 # check for libFrame headers
 if test "${frame}" = "true"; then
   lal_pre_frame_CPPFLAGS="$CPPFLAGS"
-  CPPFLAGS="$CPPFLAGS $FRAME_CFLAGS"
+  LALSUITE_ADD_CFLAGS(${FRAME_CFLAGS})
   AC_CHECK_HEADERS([FrameL.h],,
                    [AC_MSG_WARN([could not find the FrameL.h header])]
                    [frame="false"]
@@ -308,7 +301,7 @@ LALSUITE_ENABLE_MODULE([FRAME],[frame])
 if test "${metaio}" = "true"; then
   PKG_CHECK_MODULES([METAIO],[libmetaio],[true],[false])
   lal_pre_metaio_LIBS="$LIBS"
-  LIBS="$LIBS $METAIO_LIBS"
+  LALSUITE_ADD_LIBS(${METAIO_LIBS})
   AC_SEARCH_LIBS([MetaioOpen],[metaio],,
                  [AC_MSG_WARN([could not find the metaio library])]
                  [metaio="false"]
@@ -319,7 +312,7 @@ fi
 # check for libmetaio headers
 if test "${metaio}" = "true"; then
   lal_pre_metaio_CPPFLAGS="$CPPFLAGS"
-  CPPFLAGS="$CPPFLAGS $METAIO_CFLAGS"
+  LALSUITE_ADD_CFLAGS(${METAIO_CFLAGS})
   AC_CHECK_HEADERS([metaio.h],,
                    [AC_MSG_WARN([could not find the metaio.h header])]
                    [metaio="false"]
@@ -332,7 +325,7 @@ LALSUITE_ENABLE_MODULE([METAIO],[metaio])
 if test "$lalxml" = "true"; then
   PKG_CHECK_MODULES([LIBXML2],[libxml-2.0 >= 2.6],[true],[false])
   lal_pre_libxml2_LIBS="$LIBS"
-  LIBS="$LIBS $LIBXML2_LIBS"
+  LALSUITE_ADD_LIBS(${LIBXML2_LIBS})
   AC_SEARCH_LIBS([xmlInitParser],[xml2],,
                  [AC_MSG_WARN([cannot find the xml2 library])]
                  [lalxml="false"]
@@ -342,7 +335,7 @@ fi
 # check for libxml2 headers
 if test "$lalxml" = "true"; then
   lal_pre_libxml2_CPPFLAGS="$CPPFLAGS"
-  CPPFLAGS="$CPPFLAGS $LIBXML2_CFLAGS"
+  LALSUITE_ADD_CFLAGS(${LIBXML2_CFLAGS})
   AC_CHECK_HEADERS([libxml/tree.h],,
                    [AC_MSG_WARN([could not the libxml/tree.h header])]
                    [lalxml="false"]
@@ -353,7 +346,7 @@ fi
 if test "${cfitsio}" = "true"; then
   PKG_CHECK_MODULES([CFITSIO],[cfitsio],[true],[false])
   lal_pre_cfitsio_libs="$LIBS"
-  LIBS="$CFITSIO_LIBS $LIBS"
+  LALSUITE_ADD_LIBS(${CFITSIO_LIBS})
   AC_SEARCH_LIBS([ffopen],[cfitsio],,
                  [cfitsio="false"]
                  [LIBS="$lal_pre_cfitsio_LIBS"])
@@ -362,7 +355,7 @@ fi
 # check for libcfitsio headers
 if test "${cfitsio}" = "true"; then
   lal_pre_cfitsio_CPPFLAGS="$CPPFLAGS"
-  CPPFLAGS="$CPPFLAGS $CFITSIO_CFLAGS"
+  LALSUITE_ADD_CFLAGS(${CFITSIO_CFLAGS})
   AC_CHECK_HEADERS([fitsio.h],,
                    [cfitsio="false"]
                    [CPPFLAGS="$lal_pre_cfitsio_CPPFLAGS"])
@@ -373,7 +366,7 @@ LALSUITE_ENABLE_MODULE([CFITSIO],[cfitsio])
 if test "${pss}" = "true"; then
   PKG_CHECK_MODULES([PSS],[pss],[true],[false])
   lal_pre_pss_LIBS="$LIBS"
-  LIBS="$PSS_LIBS $LIBS"
+  LALSUITE_ADD_LIBS(${PSS_LIBS})
   AC_SEARCH_LIBS([crea_sfdbheader],[psssfdb],,
                  [pss="false"]
                  [LIBS="$lal_pre_pss_LIBS"])
@@ -392,7 +385,7 @@ fi
 # check for pss headers
 if test "${pss}" = "true"; then
   lal_pre_pss_CPPFLAGS="$CPPFLAGS"
-  CPPFLAGS="$PSS_CFLAGS $CPPFLAGS"
+  LALSUITE_ADD_CFLAGS(${PSS_CFLAGS})
   AC_CHECK_HEADERS([pss_sfdb.h],,
                    [pss="false"]
                    [CPPFLAGS="$lal_pre_pss_CPPFLAGS"])
@@ -489,6 +482,10 @@ fi
 # pure-python library code from being split across lib and lib64 on
 # RedHat-derived systems.
 AC_SUBST([pkgpythondir], ["\${pkgpyexecdir}"])
+
+# ensure CPPFLAGS/CFLAGS and LDFLAGS/LIBS are in correct order
+LALSUITE_ADD_CFLAGS()
+LALSUITE_ADD_LIBS()
 
 AC_OUTPUT
 echo "

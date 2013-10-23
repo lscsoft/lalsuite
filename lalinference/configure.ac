@@ -27,6 +27,7 @@ AC_CANONICAL_HOST
 
 LALSUITE_ARG_VAR
 LALSUITE_DISTCHECK_CONFIGURE_FLAGS
+LALSUITE_WITH_CFLAGS_LIBS
 
 # set library api info
 # 1. start with version information of "0:0:0" for each libtool library
@@ -150,15 +151,15 @@ AS_IF([test "x$OPENMP_CFLAGS" != "x"],
 
 # check for HEALPix
 PKG_CHECK_MODULES([CHEALPIX],[chealpix],[true],[false])
-CPPFLAGS="$CPPFLAGS $CHEALPIX_CFLAGS"
-LIBS="$LIBS $CHEALPIX_LIBS"
+LALSUITE_ADD_CFLAGS(${CHEALPIX_CFLAGS})
+LALSUITE_ADD_LIBS(${CHEALPIX_LIBS})
 AC_CHECK_LIB([chealpix],[nside2npix],[HEALPIX_ENABLE_VAL=ENABLED],[HEALPIX_ENABLE_VAL=DISABLED])
 AM_CONDITIONAL([HAVE_CHEALPIX],[test "x$HEALPIX_ENABLE_VAL" = "xENABLED"])
 
 # check for gsl
 PKG_CHECK_MODULES([GSL],[gsl],[true],[false])
-CPPFLAGS="$CPPFLAGS $GSL_CFLAGS"
-LIBS="$LIBS $GSL_LIBS"
+LALSUITE_ADD_CFLAGS(${GSL_CFLAGS})
+LALSUITE_ADD_LIBS(${GSL_LIBS})
 AC_CHECK_LIB([gslcblas],[main],,[AC_MSG_ERROR([could not find the gsl library])])
 AC_CHECK_LIB([gsl],[gsl_strerror],,[AC_MSG_ERROR([could not find the gsl library])])
 LALSUITE_ENABLE_FAST_GSL
@@ -168,8 +169,8 @@ AC_CHECK_HEADERS([gsl/gsl_errno.h],,[AC_MSG_ERROR([could not find the gsl/gsl_er
 
 # metaio
 PKG_CHECK_MODULES([METAIO],[libmetaio],[true],[false])
-CPPFLAGS="$CPPFLAGS $METAIO_CFLAGS"
-LIBS="$LIBS $METAIO_LIBS"
+LALSUITE_ADD_CFLAGS(${METAIO_CFLAGS})
+LALSUITE_ADD_LIBS(${METAIO_LIBS})
 AC_CHECK_LIB([metaio],[MetaioOpen],,[AC_MSG_ERROR([could not find the metaio library])])
 
 # check for libmetaio headers
@@ -178,8 +179,8 @@ AC_CHECK_HEADERS([metaio.h],,[AC_MSG_ERROR([could not find the metaio.h header])
 if test "$lalxml" = "true"; then
   # check for libxml2
   PKG_CHECK_MODULES([LIBXML2],[libxml-2.0 >= 2.6],[true],[false])
-  CPPFLAGS="$CPPFLAGS $LIBXML2_CFLAGS"
-  LIBS="$LIBS $LIBXML2_LIBS"
+  LALSUITE_ADD_CFLAGS(${LIBXML2_CFLAGS})
+  LALSUITE_ADD_LIBS(${LIBXML2_LIBS})
   AC_CHECK_LIB([xml2],[xmlInitParser],,[AC_MSG_WARN([cannot find the xml2 library])])
 fi
 
@@ -212,11 +213,11 @@ AS_IF(
   [test "x$OPENMP_CFLAGS" = "x"],
   [
     OPENMP_ENABLE_VAL="DISABLED"
-    CFLAGS="$CFLAGS -Wno-unknown-pragmas"
+    LALSUITE_ADD_CFLAGS(-Wno-unknown-pragmas)
   ],
   [
     OPENMP_ENABLE_VAL="ENABLED"
-    CFLAGS="$CFLAGS $OPENMP_CFLAGS"
+    LALSUITE_ADD_CFLAGS(${OPENMP_CFLAGS})
   ]
 )
 
@@ -224,6 +225,10 @@ AS_IF(
 # pure-python library code from being split across lib and lib64 on
 # RedHat-derived systems.
 AC_SUBST([pkgpythondir], ["\${pkgpyexecdir}"])
+
+# ensure CPPFLAGS/CFLAGS and LDFLAGS/LIBS are in correct order
+LALSUITE_ADD_CFLAGS()
+LALSUITE_ADD_LIBS()
 
 # output
 LAL_HEADER_LINK=${ac_aux_dir}/header-link.mk

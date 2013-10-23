@@ -102,6 +102,7 @@ AC_CANONICAL_HOST
 
 LALSUITE_ARG_VAR
 LALSUITE_DISTCHECK_CONFIGURE_FLAGS
+LALSUITE_WITH_CFLAGS_LIBS
 
 # set library api info - liblal
 # 1. start with version information of "0:0:0" for each libtool library
@@ -143,13 +144,6 @@ AC_SUBST([LIBVERSION_SUPPORT],[${LIBCURRENT_SUPPORT}:${LIBREVISION_SUPPORT}:${LI
 
 # check for git repo
 LALSUITE_CHECK_GIT_REPO
-
-LAL_WITH_CC
-LAL_WITH_CFLAGS
-LAL_WITH_EXTRA_CFLAGS
-LAL_WITH_EXTRA_CPPFLAGS
-LAL_WITH_EXTRA_LDFLAGS
-LAL_WITH_EXTRA_LIBS
 
 LAL_ENABLE_INTELFFT
 
@@ -197,8 +191,8 @@ lal_pthread_available="yes"
 AX_PTHREAD(,[lal_pthread_available="no"])
 if test "$lal_pthread_lock" = "true" ; then
   if test "$lal_pthread_available" = "yes" ; then
-    LIBS="$PTHREAD_LIBS $LIBS"
-    CFLAGS="$CFLAGS $PTHREAD_CFLAGS"
+    LALSUITE_ADD_LIBS(${PTHREAD_LIBS})
+    LALSUITE_ADD_CFLAGS(${PTHREAD_CFLAGS})
     CC="$PTHREAD_CC"
   else
     AC_MSG_ERROR([do not know how to compile posix threads])
@@ -222,7 +216,7 @@ LALSUITE_USE_LIBTOOL
 # set additional compiler flags
 AC_MSG_CHECKING([for additional compiler flags])
 case "${host_os}" in
-  solaris*) CFLAGS="$CFLAGS -D_POSIX_C_SOURCE=200112L"
+  solaris*) LALSUITE_ADD_CFLAGS(-D_POSIX_C_SOURCE=200112L)
   AC_MSG_RESULT([-D_POSIX_C_SOURCE=200112L]);;
   *) AC_MSG_RESULT([none]);;
 esac
@@ -262,8 +256,8 @@ esac
 
 # check for gsl
 PKG_CHECK_MODULES([GSL],[gsl],[true],[false])
-CPPFLAGS="$CPPFLAGS $GSL_CFLAGS"
-LIBS="$LIBS $GSL_LIBS"
+LALSUITE_ADD_CFLAGS(${GSL_CFLAGS})
+LALSUITE_ADD_LIBS(${GSL_LIBS})
 AC_CHECK_LIB([gslcblas],[main])
 AC_CHECK_LIB([gsl],[gsl_strerror],,[AC_MSG_ERROR([could not find the gsl library])])
 LAL_CHECK_GSL_VERSION([1.9])
@@ -276,8 +270,8 @@ AC_CHECK_HEADERS([gsl/gsl_errno.h],,[AC_MSG_ERROR([could not find the gsl/gsl_er
 if test "${intelfft}" = "false" ; then
   fftw3="true"
   PKG_CHECK_MODULES([FFTW3],[fftw3 fftw3f],[true],[false])
-  CPPFLAGS="$CPPFLAGS $FFTW3_CFLAGS"
-  LIBS="$LIBS $FFTW3_LIBS"
+  LALSUITE_ADD_CFLAGS(${FFTW3_CFLAGS})
+  LALSUITE_ADD_LIBS(${FFTW3_LIBS})
   AC_CHECK_LIB([fftw3f],[fftwf_execute_dft],,[AC_MSG_ERROR([could not find the fftw3f library])],[-lm])
   AC_CHECK_LIB([fftw3],[fftw_execute_dft],,[AC_MSG_ERROR([could not find the fftw3 library])],[-lm])
 else
@@ -313,10 +307,10 @@ if test "${boinc}" = "true" ; then
     AC_LANG_PUSH([C++])
 
     # set boinc flags
-    BOINC_CFLAGS="-I$BOINC_PREFIX/include"
-    BOINC_LIBS="-L$BOINC_PREFIX/lib -lboinc_api -lboinc"
-    CPPFLAGS="$CPPFLAGS $BOINC_CFLAGS"
-    LIBS="$LIBS $BOINC_LIBS"
+    BOINC_CFLAGS="-I${BOINC_PREFIX}/include"
+    BOINC_LIBS="-L${BOINC_PREFIX}/lib -lboinc_api -lboinc"
+    LALSUITE_ADD_CFLAGS(${BOINC_CFLAGS})
+    LALSUITE_ADD_LIBS(${BOINC_LIBS})
 
     # check for boinc libraries
     AC_CHECK_LIB([boinc],[boinc_fopen],[true],[boinc=false])
@@ -380,6 +374,10 @@ LALSUITE_ADD_GCC_FLAGS
 # pure-python library code from being split across lib and lib64 on
 # RedHat-derived systems.
 AC_SUBST([pkgpythondir], ["\${pkgpyexecdir}"])
+
+# ensure CPPFLAGS/CFLAGS and LDFLAGS/LIBS are in correct order
+LALSUITE_ADD_CFLAGS()
+LALSUITE_ADD_LIBS()
 
 INCLUDEMKFILE=$srcdir/gnuscripts/include.mk
 AC_SUBST_FILE([INCLUDEMKFILE])
