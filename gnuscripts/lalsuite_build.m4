@@ -95,6 +95,13 @@ AC_DEFUN([LALSUITE_PROG_COMPILERS],[
   ])
 ])
 
+AC_DEFUN([LALSUITE_PROG_INSTALL],[
+  # check for installer
+  AC_REQUIRE([AC_PROG_INSTALL])
+  # add -C to preserve timestamps
+  INSTALL="${INSTALL} -C"
+])
+
 AC_DEFUN([LALSUITE_USE_LIBTOOL],
 [## $0: Generate a libtool script for use in configure tests
 AC_REQUIRE([LT_INIT])

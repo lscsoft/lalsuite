@@ -12,11 +12,17 @@ EXTRA_DIST = \
 	$(DOXY_HTML_FILES) \
 	$(DOXY_PDF_FILES)
 
-SUBDIRS = src
+SUBDIRS = \
+	gnuscripts \
+	src
 
 .PHONY: html pdf
 
-DOXYINPUT = \
+override lalsuite_top_srcdir = $(abs_srcdir)/..
+
+override doxy_inputdirs = \
+	$(abs_srcdir)/src \
+	$(addprefix $(lalsuite_top_srcdir)/, \
 	lal \
 	lalburst \
 	laldetchar \
@@ -28,18 +34,16 @@ DOXYINPUT = \
 	lalsimulation \
 	lalstochastic \
 	lalxml \
-	lalapps
-
-override doxy_inputdirs = $(abs_srcdir)/src \
-	$(addprefix $(abs_top_srcdir)/,$(DOXYINPUT))
+	lalapps \
+	)
 
 override lalsuite_version = $(shell \
 	version="$(PACKAGE_VERSION)"; \
 	if test "x$(GIT)" != x; then \
-		hash=`cd $(abs_top_srcdir) && $(GIT) rev-parse --quiet HEAD 2>/dev/null`; \
+		hash=`cd $(lalsuite_top_srcdir) && $(GIT) rev-parse --quiet HEAD 2>/dev/null`; \
 		if test "x$${hash}" != x; then \
-			taghash=`cd $(abs_top_srcdir) && $(GIT) rev-parse lalsuite-v${PACKAGE_VERSION}^{commit} 2>/dev/null`; \
-			unclean=`cd $(abs_top_srcdir) && ( $(GIT) diff --quiet HEAD || printf %s -UNCLEAN )`; \
+			taghash=`cd $(lalsuite_top_srcdir) && $(GIT) rev-parse lalsuite-v${PACKAGE_VERSION}^{commit} 2>/dev/null`; \
+			unclean=`cd $(lalsuite_top_srcdir) && ( $(GIT) diff --quiet HEAD || printf %s -UNCLEAN )`; \
 			if test "x$${hash}" != "x$${taghash}" || test "x$${unclean}" != x; then \
 				version="$${version}-$${hash}$${unclean}"; \
 			fi; \
@@ -50,7 +54,7 @@ override lalsuite_version = $(shell \
 override TEXINPUTS = .:$(abs_srcdir):
 override pool_size = 4000000
 
-export abs_top_srcdir abs_srcdir abs_builddir
+export lalsuite_top_srcdir abs_srcdir abs_builddir
 export doxy_inputdirs lalsuite_version TEXINPUTS pool_size
 
 html: $(DOXY_HTML_FILES)

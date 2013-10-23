@@ -1,7 +1,7 @@
 # SWIG configuration
 # Author: Karl Wette, 2011, 2012
 #
-# serial 41
+# serial 42
 
 # enable SWIG wrapping modules
 AC_DEFUN([LALSUITE_ENABLE_SWIG],[
@@ -228,17 +228,19 @@ AC_DEFUN([LALSUITE_USE_SWIG],[
     ])
 
     # dynamic linker search path for pre-installed LAL libraries
-    AC_SUBST(SWIG_LD_LIBRARY_PATH,[])
-    for arg in ${swig_save_LIBS} ${SWIG_LIBS}; do
-      SWIG_LD_LIBRARY_PATH=["${SWIG_LD_LIBRARY_PATH} "`echo ${arg} | ${SED} -n 's|/liblal[^.]*\.la|/'"${objdir}"'|p'`]
-    done
-    SWIG_LD_LIBRARY_PATH=[`echo ${SWIG_LD_LIBRARY_PATH} | ${SED} 's|(top_builddir)|(abs_top_builddir)|g;s|  *|:|g'`]
-    AS_IF([test "${build_vendor}" = apple],[
-      SWIG_LD_LIBPATH_NAME=DYLD_LIBRARY_PATH
-    ],[
-      SWIG_LD_LIBPATH_NAME=LD_LIBRARY_PATH
+    AS_IF([test "x${LALSUITE_BUILD}" = xtrue],[
+      AC_SUBST(SWIG_LD_LIBRARY_PATH,[])
+      for arg in ${swig_save_LIBS} ${SWIG_LIBS}; do
+        SWIG_LD_LIBRARY_PATH=["${SWIG_LD_LIBRARY_PATH} "`echo ${arg} | ${SED} -n 's|/liblal[^.]*\.la|/'"${objdir}"'|p'`]
+      done
+      SWIG_LD_LIBRARY_PATH=[`echo ${SWIG_LD_LIBRARY_PATH} | ${SED} 's|(top_builddir)|(abs_top_builddir)|g;s|  *|:|g'`]
+      AS_IF([test "${build_vendor}" = apple],[
+        SWIG_LD_LIBPATH_NAME=DYLD_LIBRARY_PATH
+      ],[
+        SWIG_LD_LIBPATH_NAME=LD_LIBRARY_PATH
+      ])
+      AC_SUBST(SWIG_LD_LIBPATH_NAME)
     ])
-    AC_SUBST(SWIG_LD_LIBPATH_NAME)
 
     # list of other LAL SWIG modules that this module depends on
     AC_MSG_CHECKING([for SWIG module dependencies])
@@ -386,6 +388,9 @@ AC_DEFUN([LALSUITE_USE_SWIG_OCTAVE],[
     AC_MSG_RESULT([${octexecdir}])
     AC_SUBST(octexecdir)
 
+    # save Octave path to search for dependent SWIG modules
+    AC_ARG_VAR(OCTAVE_PATH,[Octave path to search for dependent SWIG modules])
+
   ])
 ])
 
@@ -473,5 +478,9 @@ EOD`]
     ])
     CPPFLAGS=
     AC_LANG_POP([C])
+
+    # save Python path to search for dependent SWIG modules
+    AC_ARG_VAR(PYTHONPATH,[Python path to search for dependent SWIG modules])
+
   ])
 ])

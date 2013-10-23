@@ -103,7 +103,7 @@ AX_PTHREAD([lalframe_pthread=true],[lalframe_pthread=false])
 AM_CONDITIONAL([PTHREAD],[test x$lalframe_pthread = xtrue])
 
 # checks for programs
-AC_PROG_INSTALL
+LALSUITE_PROG_INSTALL
 AC_PROG_LN_S
 AC_PROG_AWK
 AC_PROG_SED

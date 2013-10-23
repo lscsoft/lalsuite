@@ -206,7 +206,7 @@ if test "$lal_pthread_lock" = "true" ; then
 fi
 
 # check for programs
-AC_PROG_INSTALL
+LALSUITE_PROG_INSTALL
 AC_PROG_LN_S
 AC_PROG_AWK
 AC_PROG_SED

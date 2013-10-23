@@ -3,19 +3,134 @@ AC_INIT([lalsuite],[6.20.1],[lal-discuss@ligo.org])
 AC_CONFIG_SRCDIR([configure.ac])
 AC_CONFIG_AUX_DIR([gnuscripts])
 AC_CONFIG_MACRO_DIR([gnuscripts])
-AC_CONFIG_FILES([
-  Makefile \
-  gnuscripts/Makefile \
-  doxygen/Makefile \
-  doxygen/src/Makefile
-])
+AC_PREFIX_DEFAULT(["${PWD}/_inst"])
+AC_DISABLE_OPTION_CHECKING
+
 AM_INIT_AUTOMAKE([1.11 foreign color-tests parallel-tests])
 
-LALSUITE_DISTCHECK_CONFIGURE_FLAGS
+AC_ARG_WITH(
+  [build-script],
+  AC_HELP_STRING(
+    [--with-build-script],
+    [use top-level build script instead of Makefile]
+  ),[
+    AS_CASE([${withval}],
+      [no],[build_script=false],
+      [yes],[build_script=true],
+      AC_MSG_ERROR([bad value for --with-build-script: ${withval}])
+    )
+  ],[
+    build_script=false
+  ]
+)
 
-# for building doxygen
-LALSUITE_CHECK_GIT_REPO
-AC_PROG_LN_S
+AS_IF([test "${build_script}" = true],[
+
+##### using top-level build script #####
+
+rm -f ./Makefile
+AC_CONFIG_FILES([build],[chmod +x build])
+
+# substitute these variables
+AC_SUBST([configure_args])
+AC_SUBST([subdirs])
+
+# ensure ./configure arguments include a prefix
+configure_args="${ac_configure_args}"
+AS_IF([test "x${prefix}" = xNONE],[
+  configure_args="'--prefix=${ac_default_prefix}' ${configure_args}"
+])
+
+# check for required programs
+AC_PROG_MKDIR_P
+
+# provide LAL library enable/disable options
+LALSUITE_ENABLE_ALL_LAL
+doxygen=true
+lal=true
+LALSUITE_ENABLE_LALFRAME
+LALSUITE_ENABLE_LALMETAIO
+LALSUITE_ENABLE_LALXML
+LALSUITE_ENABLE_LALSIMULATION
+LALSUITE_ENABLE_LALBURST
+LALSUITE_ENABLE_LALDETCHAR
+LALSUITE_ENABLE_LALINSPIRAL
+LALSUITE_ENABLE_LALSTOCHASTIC
+LALSUITE_ENABLE_LALPULSAR
+LALSUITE_ENABLE_LALINFERENCE
+LALSUITE_ENABLE_LALAPPS
+
+# determine subdirectories to configure/build
+subdirs=""
+AC_DEFUN([lalsuite_config_subdir],[
+  m4_pushdef([lowercase],translit([[$1]], [A-Z], [a-z]))
+  m4_pushdef([uppercase],translit([[$1]], [a-z], [A-Z]))
+
+  # if subdirectory is enabled
+  AS_IF([test "x${lowercase}" = xtrue],[
+
+    # add to list of subdirectories
+    subdirs="${subdirs} lowercase"
+
+    # ensure subdirectory is properly configured
+    rm -f "lowercase/config.status"
+
+    # set enable/disable string
+    uppercase[]_ENABLE_VAL=ENABLED
+  ],[
+    uppercase[]_ENABLE_VAL=DISABLED
+  ])
+
+  m4_popdef([lowercase])
+  m4_popdef([uppercase])
+])
+lalsuite_config_subdir([doxygen])
+lalsuite_config_subdir([lal])
+lalsuite_config_subdir([lalframe])
+lalsuite_config_subdir([lalmetaio])
+lalsuite_config_subdir([lalxml])
+lalsuite_config_subdir([lalsimulation])
+lalsuite_config_subdir([lalburst])
+lalsuite_config_subdir([laldetchar])
+lalsuite_config_subdir([lalinspiral])
+lalsuite_config_subdir([lalstochastic])
+lalsuite_config_subdir([lalpulsar])
+lalsuite_config_subdir([lalinference])
+lalsuite_config_subdir([lalapps])
+
+AC_OUTPUT
+echo "
+==================================================
+LALSuite has now been successfully configured:
+
+* LALFrame library support is $LALFRAME_ENABLE_VAL
+* LALMetaIO library support is $LALMETAIO_ENABLE_VAL
+* LALXML library support is $LALXML_ENABLE_VAL
+* LALSimulation library support is $LALSIMULATION_ENABLE_VAL
+* LALBurst library support is $LALBURST_ENABLE_VAL
+* LALDetChar library support is $LALDETCHAR_ENABLE_VAL
+* LALInspiral library support is $LALINSPIRAL_ENABLE_VAL
+* LALStochastic library support is $LALSTOCHASTIC_ENABLE_VAL
+* LALPulsar library support is $LALPULSAR_ENABLE_VAL
+* LALInference library support is $LALINFERENCE_ENABLE_VAL
+* LALApps library support is $LALAPPS_ENABLE_VAL
+
+and will be installed under the directory:
+
+${prefix}
+
+Now run './build' to build and install LALSuite.
+==================================================
+"
+
+],[ dnl test "${build_script}" = true
+
+##### using top-level Makefile #####
+
+rm -f ./build
+AC_CONFIG_FILES([Makefile gnuscripts/Makefile])
+
+LALSUITE_DISTCHECK_CONFIGURE_FLAGS
 
 LALSUITE_ENABLE_ALL_LAL
 LALSUITE_ENABLE_LALFRAME
@@ -116,6 +231,8 @@ if test "$lalinference" = "true"; then
   export LALINFERENCE_LIBS LALINFERENCE_CFLAGS LALINFERENCE_DATADIR
 fi
 
+AC_CONFIG_SUBDIRS([doxygen])
+
 AC_CONFIG_SUBDIRS([lal])
 
 if test "$lalframe" = "true"; then
@@ -164,3 +281,5 @@ fi
 
 AC_SUBST([ac_configure_args])
 AC_OUTPUT
+
+]) dnl test "${build_script}" = true
