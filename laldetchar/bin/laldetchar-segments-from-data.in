@@ -133,7 +133,8 @@ for channel, opthresholds in channel_cond.iteritems():
 	#
 	min_threshold, max_threshold, equals = None, None, None 
 	for op, value in opthresholds:
-		print channel, op, value
+		if opts.verbose:
+			print channel, op, value
 		if op == "<":
 			max_threshold = value
 		elif op == ">":
