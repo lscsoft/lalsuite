@@ -146,7 +146,7 @@ for channel, opthresholds in channel_cond.iteritems():
 	# Are we looking outside the range rather than inside?
 	#
 	if min_threshold is not None and max_threshold is not None:
-		invert = min_threshold > max_threshold
+		invert = min_threshold >= max_threshold
 	else:
 		invert = False
 	if opts.verbose:
