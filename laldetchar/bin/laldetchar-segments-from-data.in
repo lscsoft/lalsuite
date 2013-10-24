@@ -162,9 +162,9 @@ for channel, opthresholds in channel_cond.iteritems():
 		# Apply conditions and transform samples to segments
 		#
 		if equals is not None:
-			seglist.extend(veto.equality_data_to_seglist(data, start, dt, equality=equals))
+			seglist.extend(dqsegs.equality_data_to_seglist(data, start, dt, equality=equals))
 		else:
-			seglist.extend(veto.threshold_data_to_seglist(data, start, dt, min_threshold=min_threshold, max_threshold=max_threshold, invert=invert))
+			seglist.extend(dqsegs.threshold_data_to_seglist(data, start, dt, min_threshold=min_threshold, max_threshold=max_threshold, invert=invert))
 
 	seglist.coalesce()
 	all_segs["%s: %s" % (channel, str(opthresholds))] = seglist
