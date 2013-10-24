@@ -29,7 +29,7 @@ trap cleanup 1 2 13 15
 
 # function to run a command, or print an error message
 run() {
-    msg "running ($1) in ${PWD}"
+    msg "running (cd ${PWD} && $1)"
     eval "( $1 ) ${mute_redirect}" || { cleanup; fail "($1) failed"; }
 }
 
