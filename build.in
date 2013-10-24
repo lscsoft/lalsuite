@@ -30,7 +30,7 @@ trap cleanup 1 2 13 15
 # function to run a command, or print an error message
 run() {
     msg "running (cd ${PWD} && $1)"
-    eval "( $1 ) ${mute_redirect}" || { cleanup; fail "($1) failed"; }
+    eval "( $1 ) ${mute_redirect}" || { cleanup; fail "(cd ${PWD} && $1) failed"; }
 }
 
 # function to check whether $1 is out of date relative to $2
