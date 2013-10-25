@@ -283,7 +283,7 @@ double m1,m2,mc,eta,q;
     //const REAL8 vISCO = 1. / sqrt(6.);
     const REAL8 r = 10e6*LAL_PC_SI;
     REAL8 v0 = cbrt(piM * IFOdata->fLow);
-    REAL8 logv0 = log(v0);
+    REAL8 logv0 = log(1.); //the standard tf2 definition is log(v0), but I've changed it to reflect Scott's convention
     REAL8 shft, amp0;//, f_max;
     REAL8 psiNewt, psi2, psi3, psi4, psi5, psi6, psi6L, psi7, psi3S, psi4S, psi5S;
     REAL8 eta_fac = -113. + 76. * eta;
