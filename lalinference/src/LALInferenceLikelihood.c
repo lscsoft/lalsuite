@@ -450,7 +450,7 @@ REAL8 LALInferenceROQLogLikelihood(LALInferenceVariables *currentParams, LALInfe
     //different = LALInferenceCompareVariables(dataPtr->modelParams, &intrinsicParams);
 
     //if (different) { /* template needs to be re-computed: */
-    //  LALInferenceCopyVariables(&intrinsicParams, dataPtr->modelParams);
+      LALInferenceCopyVariables(&intrinsicParams, dataPtr->modelParams);
     //  LALInferenceAddVariable(dataPtr->modelParams, "time", &timeTmp, LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_LINEAR);
       templt(dataPtr);
     //  if(XLALGetBaseErrno()==XLAL_FAILURE) /* Template generation failed in a known way, set -Inf likelihood */
