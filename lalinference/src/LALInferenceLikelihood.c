@@ -380,15 +380,13 @@ REAL8 LALInferenceROQLogLikelihood(LALInferenceVariables *currentParams, LALInfe
   REAL8 loglikeli;
   int ifo;
   LALInferenceIFOData *dataPtr;
-  double ra, dec, psi, distMpc, gmst;
-  double GPSdouble;
-  LIGOTimeGPS GPSlal;
+  double distMpc;
   //double timedelay;  /* time delay b/w iterferometer & geocenter w.r.t. sky location */
   //double timeshift;  /* time shift (not necessarily same as above)                   */
   //double timeTmp;
   //int different;
   double mc;
-  gsl_complex complexL;
+  gsl_complex complexL, z;
   
   gsl_complex exp_i_pi;
   gsl_complex cross_factor;
@@ -397,6 +395,9 @@ REAL8 LALInferenceROQLogLikelihood(LALInferenceVariables *currentParams, LALInfe
   LALStatus status;
   memset(&status,0,sizeof(status));
   LALInferenceVariables intrinsicParams;
+
+  double tmp_whitened_re;
+  double tmp_whitened_im;
 
   if(data==NULL) {XLAL_ERROR_REAL8(XLAL_EINVAL,"ERROR: Encountered NULL data pointer in likelihood\n");}
 
@@ -407,18 +408,10 @@ REAL8 LALInferenceROQLogLikelihood(LALInferenceVariables *currentParams, LALInfe
   }
 
   /* determine source's sky location & orientation parameters: */
-  ra        = *(REAL8*) LALInferenceGetVariable(currentParams, "rightascension"); /* radian      */
-  dec       = *(REAL8*) LALInferenceGetVariable(currentParams, "declination");    /* radian      */
-  psi       = *(REAL8*) LALInferenceGetVariable(currentParams, "polarisation");   /* radian      */
-  GPSdouble = *(REAL8*) LALInferenceGetVariable(currentParams, "time");           /* GPS seconds */
   if(logDistFlag)
     distMpc = exp(*(REAL8*)LALInferenceGetVariable(currentParams,"logdistance"));
   else
     distMpc = *(REAL8*) LALInferenceGetVariable(currentParams, "distance");       /* Mpc         */
-
-  /* figure out GMST: */
-  XLALGPSSetREAL8(&GPSlal, GPSdouble);
-  gmst=XLALGreenwichMeanSiderealTime(&GPSlal);
 
   intrinsicParams = LALInferenceGetInstrinsicParams(currentParams);
 
@@ -426,61 +419,20 @@ REAL8 LALInferenceROQLogLikelihood(LALInferenceVariables *currentParams, LALInfe
   dataPtr = data;
   ifo=0;
 
-  while (dataPtr != NULL) {
-    /* The parameters the Likelihood function can handle by itself   */
-    /* (and which shouldn't affect the template function) are        */
-    /* sky location (ra, dec), polarisation and signal arrival time. */
-    /* Note that the template function shifts the waveform to so that*/
-	/* t_c corresponds to the "time" parameter in                    */
-	/* IFOdata->modelParams (set, e.g., from the trigger value).     */
+  
     
     /* Reset log-likelihood */
     dataPtr->loglikelihood = 0.0;
 
-    /* Compare parameter values with parameter values corresponding  */
-    /* to currently stored template; ignore "time" variable:         */
-    //if (LALInferenceCheckVariable(dataPtr->modelParams, "time")) {
-    //  timeTmp = *(REAL8 *) LALInferenceGetVariable(dataPtr->modelParams, "time");
-    //  LALInferenceRemoveVariable(dataPtr->modelParams, "time");
-    //}
-    //else timeTmp = GPSdouble;
-
-    /* "different" now may also mean that "dataPtr->modelParams" */
-    /* wasn't allocated yet (as in the very 1st iteration).      */
-    //different = LALInferenceCompareVariables(dataPtr->modelParams, &intrinsicParams);
-
-    //if (different) { /* template needs to be re-computed: */
       LALInferenceCopyVariables(&intrinsicParams, dataPtr->modelParams);
-    //  LALInferenceAddVariable(dataPtr->modelParams, "time", &timeTmp, LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_LINEAR);
       templt(dataPtr);
-    //  if(XLALGetBaseErrno()==XLAL_FAILURE) /* Template generation failed in a known way, set -Inf likelihood */
-    //      return(-DBL_MAX);
-      
-    //}
-    //else { /* no re-computation necessary. Return back "time" value, do nothing else: */
-    ////  LALInferenceAddVariable(dataPtr->modelParams, "time", &timeTmp, LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_LINEAR);
-    //}
-
-    }
-    /* Template is now in dataPtr->timeFreqModelhPlus and hCross */
-
-    /* determine beam pattern response (F_plus and F_cross) for given Ifo: */
-    //XLALComputeDetAMResponse(&Fplus, &Fcross, (const REAL4(*)[3])dataPtr->detector->response, ra, dec, psi, gmst);
-
-    /* signal arrival time (relative to geocenter); */
-    //timedelay = XLALTimeDelayFromEarthCenter(dataPtr->detector->location, ra, dec, &GPSlal);
-    /* (negative timedelay means signal arrives earlier at Ifo than at geocenter, etc.) */
-    /* amount by which to time-shift template (not necessarily same as above "timedelay"): */
-    //timeshift =  (GPSdouble - (*(REAL8*) LALInferenceGetVariable(dataPtr->modelParams, "time"))) + timedelay;
-
     /* include distance (overall amplitude) effect in Fplus/Fcross: */
-    FplusScaled  = 1;//Fplus  / distMpc;
-    FcrossScaled = 0;//Fcross / distMpc;
+    FplusScaled  = 1. / distMpc;//Fplus  / distMpc;
+    FcrossScaled = 0 / distMpc;//Fcross / distMpc;
 
 
     dataPtr->fPlus = FplusScaled;
     dataPtr->fCross = FcrossScaled;
-    //dataPtr->timeshift = timeshift;
 
     exp_i_pi = gsl_complex_polar (1, M_PI);
     cross_factor = gsl_complex_mul_real(exp_i_pi, FcrossScaled);
@@ -492,8 +444,12 @@ REAL8 LALInferenceROQLogLikelihood(LALInferenceVariables *currentParams, LALInfe
 
     for(unsigned int i=0; i < data->roqData->hplus->size; i++){
 
-	GSL_REAL(gsl_vector_complex_get(data->roqData->hplus, i)) /= sqrt(gsl_vector_get(data->roqData->psd_at_nodes, i));
-        GSL_IMAG(gsl_vector_complex_get(data->roqData->hplus, i)) /= sqrt(gsl_vector_get(data->roqData->psd_at_nodes, i));
+	tmp_whitened_re = GSL_REAL(gsl_vector_complex_get(data->roqData->hplus, i)) / sqrt(gsl_vector_get(data->roqData->psd_at_nodes, i));
+        tmp_whitened_im = GSL_IMAG(gsl_vector_complex_get(data->roqData->hplus, i)) / sqrt(gsl_vector_get(data->roqData->psd_at_nodes, i));
+
+	GSL_SET_COMPLEX(&z, tmp_whitened_re, tmp_whitened_im);
+
+        gsl_vector_complex_set(data->roqData->hplus, i, z);
 
     }
     

@@ -338,7 +338,6 @@ double m1,m2,mc,eta,q;
         GSL_SET_COMPLEX(&h_i, amp * cos(Psi + shft * f - 2.*phic - LAL_PI_4), amp * sin(Psi + shft * f - 2.*phic - LAL_PI_4));
 
         gsl_vector_complex_set(IFOdata->roqData->hplus, i, h_i);     
-   
    }
 
     return;

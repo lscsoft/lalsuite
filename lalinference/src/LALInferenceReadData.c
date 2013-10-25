@@ -1215,11 +1215,7 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
         IFOdata[i].roqData->hplus = gsl_vector_complex_calloc(M_rows);
       }
    
-      for(unsigned int k = 0; k < IFOdata[i].roqData->frequencyNodes->size; k++){
-
-	fprintf(stderr, "%f\n", gsl_vector_get(IFOdata[i].roqData->frequencyNodes, k));
-
-      }
+      
 
       if (roqweights) {
         gsl_matrix *weights_matrix = gsl_matrix_calloc(M_rows, N_cols);
@@ -1238,11 +1234,7 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
         }
       }
 
-      for(unsigned int k = 0; k < IFOdata[i].roqData->weights->size; k++){
-
-	fprintf(stderr, "%f %f\n", GSL_REAL(gsl_vector_complex_get(IFOdata[i].roqData->weights, k)), GSL_IMAG(gsl_vector_complex_get(IFOdata[i].roqData->weights, k)));
-
-      }
+      
 
       if (roqpsd_at_nodes) {
         IFOdata[i].roqData->psd_at_nodes = gsl_vector_calloc(M_rows);
@@ -1250,11 +1242,7 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
         pf = fopen(roqpsd_at_nodes[i], "rb");
         gsl_vector_fread(pf, IFOdata[i].roqData->psd_at_nodes);
 
-        for(unsigned int k = 0; k < IFOdata[i].roqData->psd_at_nodes->size; k++){
-
-		fprintf(stderr, "%e\n", gsl_vector_get(IFOdata[i].roqData->psd_at_nodes, k));
-	
-         }
+        
       }
     
     }
