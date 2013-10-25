@@ -1259,7 +1259,6 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
     
     }
 
-
     for(i=0;i<Nifo;i++) {
         if(channels) if(channels[i]) XLALFree(channels[i]);
         if(caches) if(caches[i]) XLALFree(caches[i]);
