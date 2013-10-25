@@ -101,7 +101,11 @@ for inst, channel_name, op, threshold in conditions:
 #
 # Read the datas and such
 #
+ifos = list(set([c[:2] for c in channel_cond.keys()]))
 cache = Cache.fromfile(open(opts.frame_cache))
+seg = cache.to_segmentlistdict()[ifos[0][0]][0]
+if opts.verbose:
+	print "Loaded %s, total coverage time: %f" % (opts.frame_cache, abs(seg))
 
 #
 # Set up the XML document
@@ -172,6 +176,9 @@ for channel, opthresholds in channel_cond.iteritems():
 
 	if opts.verbose:
 		print "Summary of segments for %s %s %s %s" % (inst, channel_name, op, str(threshold))
+		int_time = reduce(float.__add__, [float(abs(seg & s)) for s in seglist], 0.0)
+		print "Total time covered from cache: %f" % int_time
+
 	for i, seg in enumerate(seglist):
 		#
 		# Segments are expected in LIGOTimeGPS format
@@ -207,7 +214,6 @@ elif opts.union:
 #
 lwsegs.finalize(procrow)
 
-ifos = list(set([c[:2] for c in channel_cond.keys()]))
 # FIXME: Determine the true extent of the cache
 seg = cache.to_segmentlistdict()[ifos[0][0]][0]
 utils.write_filename(xmldoc, "%s-%s-%d-%d.xml.gz" % ("".join(ifos), opts.output_tag, seg[0], abs(seg)), gz = True, verbose=opts.verbose)
