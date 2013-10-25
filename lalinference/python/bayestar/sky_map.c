@@ -851,8 +851,8 @@ static PyMethodDef methods[] = {
 };
 
 
-PyMODINIT_FUNC
-initsky_map(void) {
+PyMODINIT_FUNC initsky_map(void); /* Silence -Wmissing-prototypes */
+PyMODINIT_FUNC initsky_map(void) {
     premalloced_type.tp_new = PyType_GenericNew;
     if (PyType_Ready(&premalloced_type) < 0)
         return;
