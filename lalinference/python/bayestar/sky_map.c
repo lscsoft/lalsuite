@@ -652,8 +652,8 @@ fail:
     Py_XDECREF(phoas_npy);
     Py_XDECREF(snrs_npy);
     Py_XDECREF(w_toas_npy);
-    Py_XDECREF(w1s);
-    Py_XDECREF(w2s);
+    Py_XDECREF(w1s_npy);
+    Py_XDECREF(w2s_npy);
     if (responses_npy)
         for (i = 0; i < nifos; i ++)
             Py_XDECREF(responses_npy[i]);
