@@ -213,19 +213,69 @@ void LALInferenceTemplateNullFreqdomain(LALInferenceIFOData *IFOdata)
   return;
 }
 
+static void mc2masses(double mc, double eta, double *m1, double *m2);
+
+static void mc2masses(double mc, double eta, double *m1, double *m2)
+/*  Compute individual companion masses (m1, m2)   */
+/*  for given chirp mass (m_c) & mass ratio (eta)  */
+/*  (note: m1 >= m2).                              */
+{
+  double root = sqrt(0.25-eta);
+  double fraction = (0.5+root) / (0.5-root);
+  *m2 = mc * (pow(1+fraction,0.2) / pow(fraction,0.6));
+  *m1 = mc * (pow(1+1.0/fraction,0.2) / pow(1.0/fraction,0.6));
+  return;
+}
+
+static void q2eta(double q, double *eta)
+/* Compute symmetric mass ratio (eta) for a given  */
+/* asymmetric mass ratio (q).                       */
+/* (note: q = m2/m1, where m1 >= m2)               */
+{
+  *eta = q/pow(1+q,2.0);
+  return;
+}
+
+static void q2masses(double mc, double q, double *m1, double *m2)
+/*  Compute individual companion masses (m1, m2)   */
+/*  for given chirp mass (m_c) & asymmetric mass   */
+/*  ratio (q).  note: q = m2/m1, where m1 >= m2    */
+{
+  *m1 = mc * pow(q, -3.0/5.0) * pow(q+1, 1.0/5.0);
+  *m2 = (*m1) * q;
+  return;
+}
 
 void LALInferenceTemplateROQ(LALInferenceIFOData *IFOdata)
 {
-
-
+double m1,m2,mc,eta,q;
+/* Prefer m1 and m2 if available (i.e. for injection template) */
+ if(LALInferenceCheckVariable(IFOdata->modelParams,"mass1")&&LALInferenceCheckVariable(IFOdata->modelParams,"mass2"))
+    {
+      m1=*(REAL8 *)LALInferenceGetVariable(IFOdata->modelParams,"mass1");
+      m2=*(REAL8 *)LALInferenceGetVariable(IFOdata->modelParams,"mass2");
+      eta=m1*m2/((m1+m2)*(m1+m2));
+      mc=pow(eta , 0.6)*(m1+m2);
+    }
+  else
+    {
+      if (LALInferenceCheckVariable(IFOdata->modelParams,"asym_massratio")) {
+        q = *(REAL8 *)LALInferenceGetVariable(IFOdata->modelParams,"asym_massratio");
+        q2eta(q, &eta);
+      }
+      else
+        eta = *(REAL8*) LALInferenceGetVariable(IFOdata->modelParams, "massratio");
+        mc       = *(REAL8*) LALInferenceGetVariable(IFOdata->modelParams, "chirpmass");
+      mc2masses(mc, eta, &m1, &m2);
+    } 
     /* external: SI; internal: solar masses */
-    const REAL8 m1 = *(REAL8*) LALInferenceGetVariable(IFOdata->modelParams, "m1"); //m1_SI / LAL_MSUN_SI;
-    const REAL8 m2 = *(REAL8*) LALInferenceGetVariable(IFOdata->modelParams, "m2");//m2_SI / LAL_MSUN_SI;
+    //const REAL8 m1 = *(REAL8*) LALInferenceGetVariable(IFOdata->modelParams, "mass1"); //m1_SI / LAL_MSUN_SI;
+    //const REAL8 m2 = *(REAL8*) LALInferenceGetVariable(IFOdata->modelParams, "mass2");//m2_SI / LAL_MSUN_SI;
     /* external: SI; internal: solar masses */
     const REAL8 phic = *(REAL8*) LALInferenceGetVariable(IFOdata->modelParams, "phase");
     const REAL8 m = m1 + m2;
     const REAL8 m_sec = m * LAL_MTSUN_SI;  /* total mass in seconds */
-    const REAL8 eta = m1 * m2 / (m * m);
+    //const REAL8 eta = m1 * m2 / (m * m);
     const REAL8 etap2 = eta * eta;
     const REAL8 etap3 = etap2 * eta;
     const REAL8 piM = LAL_PI * m_sec;
@@ -318,39 +368,6 @@ void LALInferenceTemplateNullTimedomain(LALInferenceIFOData *IFOdata)
 
 /* ============ LAL template wrapper function: ========== */
 
-
-static void mc2masses(double mc, double eta, double *m1, double *m2);
-
-static void mc2masses(double mc, double eta, double *m1, double *m2)
-/*  Compute individual companion masses (m1, m2)   */
-/*  for given chirp mass (m_c) & mass ratio (eta)  */
-/*  (note: m1 >= m2).                              */
-{
-  double root = sqrt(0.25-eta);
-  double fraction = (0.5+root) / (0.5-root);
-  *m2 = mc * (pow(1+fraction,0.2) / pow(fraction,0.6));
-  *m1 = mc * (pow(1+1.0/fraction,0.2) / pow(1.0/fraction,0.6));
-  return;
-}
-
-static void q2eta(double q, double *eta)
-/* Compute symmetric mass ratio (eta) for a given  */
-/* asymmetric mass ratio (q).                       */
-/* (note: q = m2/m1, where m1 >= m2)               */
-{
-  *eta = q/pow(1+q,2.0);
-  return;
-}
-
-static void q2masses(double mc, double q, double *m1, double *m2)
-/*  Compute individual companion masses (m1, m2)   */
-/*  for given chirp mass (m_c) & asymmetric mass   */
-/*  ratio (q).  note: q = m2/m1, where m1 >= m2    */
-{
-  *m1 = mc * pow(q, -3.0/5.0) * pow(q+1, 1.0/5.0);
-  *m2 = (*m1) * q;
-  return;
-}
 
 REAL8 fLow2fStart(REAL8 fLow, INT4 ampOrder, INT4 approximant)
 /*  Compute the minimum frequency for waveform generation */
