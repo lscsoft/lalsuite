@@ -272,7 +272,6 @@ double m1,m2,mc,eta,q;
     //const REAL8 m1 = *(REAL8*) LALInferenceGetVariable(IFOdata->modelParams, "mass1"); //m1_SI / LAL_MSUN_SI;
     //const REAL8 m2 = *(REAL8*) LALInferenceGetVariable(IFOdata->modelParams, "mass2");//m2_SI / LAL_MSUN_SI;
     /* external: SI; internal: solar masses */
-    const REAL8 phic = *(REAL8*) LALInferenceGetVariable(IFOdata->modelParams, "phase");
     const REAL8 m = m1 + m2;
     const REAL8 m_sec = m * LAL_MTSUN_SI;  /* total mass in seconds */
     //const REAL8 eta = m1 * m2 / (m * m);
@@ -280,9 +279,10 @@ double m1,m2,mc,eta,q;
     const REAL8 etap3 = etap2 * eta;
     const REAL8 piM = LAL_PI * m_sec;
     const REAL8 mSevenBySix = -7./6.;
+    const REAL8 phic = 0;
     //const REAL8 vISCO = 1. / sqrt(6.);
     const REAL8 r = 10e6*LAL_PC_SI;
-    REAL8 v0 = cbrt(piM * IFOdata->fLow);
+    //REAL8 v0 = cbrt(piM * IFOdata->fLow);
     REAL8 logv0 = log(1.); //the standard tf2 definition is log(v0), but I've changed it to reflect Scott's convention
     REAL8 shft, amp0;//, f_max;
     REAL8 psiNewt, psi2, psi3, psi4, psi5, psi6, psi6L, psi7, psi3S, psi4S, psi5S;
@@ -294,7 +294,7 @@ double m1,m2,mc,eta,q;
     //XLALGPSAdd(&tStart, -1 / deltaF);  /* coalesce at t=0 */
 
     /* extrinsic parameters */
-    amp0 = -pow(m_sec, 5./6.) * sqrt(5.*eta / 24.) / (Pi_p2by3 * r / LAL_C_SI);
+    amp0 = pow(m_sec, 5./6.) * sqrt(5.*eta / 24.) / (Pi_p2by3 * r / LAL_C_SI);
     shft = 0;//LAL_TWOPI * (tStart.gpsSeconds + 1e-9 * tStart.gpsNanoSeconds);
 
     /* spin terms in the amplitude and phase (in terms of the reduced

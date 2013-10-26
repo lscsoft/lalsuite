@@ -434,10 +434,10 @@ REAL8 LALInferenceROQLogLikelihood(LALInferenceVariables *currentParams, LALInfe
     dataPtr->fPlus = FplusScaled;
     dataPtr->fCross = FcrossScaled;
 
-    exp_i_pi = gsl_complex_polar (1, M_PI);
+    exp_i_pi = gsl_complex_polar (0, M_PI);
     cross_factor = gsl_complex_mul_real(exp_i_pi, FcrossScaled);
      
-    total_scale_factor = gsl_complex_add_real (cross_factor, FplusScaled);
+    total_scale_factor =gsl_complex_add_real (cross_factor, FplusScaled);
 
     // scale the waveform by total_scale_factor = fPlus + exp^{pi}*fCross) 
     gsl_blas_zscal (total_scale_factor, data->roqData->hplus);
@@ -453,7 +453,7 @@ REAL8 LALInferenceROQLogLikelihood(LALInferenceVariables *currentParams, LALInfe
 
     }
     
-    gsl_blas_zdotc(dataPtr->roqData->weights, dataPtr->roqData->hplus, &complexL);
+    gsl_blas_zdotc(dataPtr->roqData->weights, data->roqData->hplus, &complexL);
 
   loglikeli = GSL_REAL(complexL);
   //fprintf(stderr, "%f\n", loglikeli);
