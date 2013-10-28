@@ -1122,7 +1122,216 @@ int XLALSimNoisePSDaLIGOHighFrequencyGWINC(
 	return XLALSimNoisePSDFromFile(psd, flow, T0900288 "High_Freq.txt");
 }
 
+/* prefix for noise psd files provided by LIGO-T0900288 */
+#define P1200087 "LIGO-P1200087-v18-"
 
+/**
+ * Returns a frequency series psd with low frequency cutoff flow corresponding
+ * to the aLIGO 2015 low-sensitivity scenario in LIGO-P1200087.
+ */
+int XLALSimNoisePSDaLIGOEarlyLowSensitivityP1200087(
+	REAL8FrequencySeries *psd,	/**< frequency series to be computed */
+	double flow 			/**< low frequency cutoff (Hz) */
+)
+{
+	return XLALSimNoisePSDFromFile(psd, flow,
+		P1200087 "aLIGO_EARLY_LOW.txt");
+}
+
+/**
+ * Returns a frequency series psd with low frequency cutoff flow corresponding
+ * to the aLIGO 2015 high-sensitivity scenario in LIGO-P1200087.
+ */
+int XLALSimNoisePSDaLIGOEarlyHighSensitivityP1200087(
+	REAL8FrequencySeries *psd,	/**< frequency series to be computed */
+	double flow 			/**< low frequency cutoff (Hz) */
+)
+{
+	return XLALSimNoisePSDFromFile(psd, flow,
+		P1200087 "aLIGO_EARLY_HIGH.txt");
+}
+
+/**
+ * Returns a frequency series psd with low frequency cutoff flow corresponding
+ * to the aLIGO 2016-2017 low-sensitivity scenario in LIGO-P1200087.
+ */
+int XLALSimNoisePSDaLIGOMidLowSensitivityP1200087(
+	REAL8FrequencySeries *psd,	/**< frequency series to be computed */
+	double flow 			/**< low frequency cutoff (Hz) */
+)
+{
+	return XLALSimNoisePSDFromFile(psd, flow,
+		P1200087 "aLIGO_MID_LOW.txt");
+}
+
+/**
+ * Returns a frequency series psd with low frequency cutoff flow corresponding
+ * to the aLIGO 2016-2017 high-sensitivity scenario in LIGO-P1200087.
+ */
+int XLALSimNoisePSDaLIGOMidHighSensitivityP1200087(
+	REAL8FrequencySeries *psd,	/**< frequency series to be computed */
+	double flow 			/**< low frequency cutoff (Hz) */
+)
+{
+	return XLALSimNoisePSDFromFile(psd, flow,
+		P1200087 "aLIGO_MID_HIGH.txt");
+}
+
+/**
+ * Returns a frequency series psd with low frequency cutoff flow corresponding
+ * to the aLIGO 2017-2018 low-sensitivity scenario in LIGO-P1200087.
+ */
+int XLALSimNoisePSDaLIGOLateLowSensitivityP1200087(
+	REAL8FrequencySeries *psd,	/**< frequency series to be computed */
+	double flow 			/**< low frequency cutoff (Hz) */
+)
+{
+	return XLALSimNoisePSDFromFile(psd, flow,
+		P1200087 "aLIGO_LATE_LOW.txt");
+}
+
+/**
+ * Returns a frequency series psd with low frequency cutoff flow corresponding
+ * to the aLIGO 2017-2018 high-sensitivity scenario in LIGO-P1200087.
+ */
+int XLALSimNoisePSDaLIGOLateHighSensitivityP1200087(
+	REAL8FrequencySeries *psd,	/**< frequency series to be computed */
+	double flow 			/**< low frequency cutoff (Hz) */
+)
+{
+	return XLALSimNoisePSDFromFile(psd, flow,
+		P1200087 "aLIGO_LATE_HIGH.txt");
+}
+
+/**
+ * Returns a frequency series psd with low frequency cutoff flow corresponding
+ * to the aLIGO 2019 design sensitivity scenario in LIGO-P1200087.
+ */
+int XLALSimNoisePSDaLIGODesignSensitivityP1200087(
+	REAL8FrequencySeries *psd,	/**< frequency series to be computed */
+	double flow 			/**< low frequency cutoff (Hz) */
+)
+{
+	return XLALSimNoisePSDFromFile(psd, flow,
+		P1200087 "aLIGO_DESIGN.txt");
+}
+
+/**
+ * Returns a frequency series psd with low frequency cutoff flow corresponding
+ * to the aLIGO BNS-optimized sensitivity scenario in LIGO-P1200087.
+ */
+int XLALSimNoisePSDaLIGOBNSOptimizedSensitivityP1200087(
+	REAL8FrequencySeries *psd,	/**< frequency series to be computed */
+	double flow 			/**< low frequency cutoff (Hz) */
+)
+{
+	return XLALSimNoisePSDFromFile(psd, flow,
+		P1200087 "aLIGO_BNS_OPTIMIZED.txt");
+}
+
+/**
+ * Returns a frequency series psd with low frequency cutoff flow corresponding
+ * to the AdV 2016-2017 low-sensitivity scenario in LIGO-P1200087.
+ */
+int XLALSimNoisePSDAdVEarlyLowSensitivityP1200087(
+	REAL8FrequencySeries *psd,	/**< frequency series to be computed */
+	double flow 			/**< low frequency cutoff (Hz) */
+)
+{
+	return XLALSimNoisePSDFromFile(psd, flow,
+		P1200087 "AdV_EARLY_LOW.txt");
+}
+
+/**
+ * Returns a frequency series psd with low frequency cutoff flow corresponding
+ * to the AdV 2016-2017 high-sensitivity scenario in LIGO-P1200087.
+ */
+int XLALSimNoisePSDAdVEarlyHighSensitivityP1200087(
+	REAL8FrequencySeries *psd,	/**< frequency series to be computed */
+	double flow 			/**< low frequency cutoff (Hz) */
+)
+{
+	return XLALSimNoisePSDFromFile(psd, flow,
+		P1200087 "AdV_EARLY_HIGH.txt");
+}
+
+/**
+ * Returns a frequency series psd with low frequency cutoff flow corresponding
+ * to the AdV 2017-2018 low-sensitivity scenario in LIGO-P1200087.
+ */
+int XLALSimNoisePSDAdVMidLowSensitivityP1200087(
+	REAL8FrequencySeries *psd,	/**< frequency series to be computed */
+	double flow 			/**< low frequency cutoff (Hz) */
+)
+{
+	return XLALSimNoisePSDFromFile(psd, flow,
+		P1200087 "AdV_MID_LOW.txt");
+}
+
+/**
+ * Returns a frequency series psd with low frequency cutoff flow corresponding
+ * to the AdV 2017-2018 high-sensitivity scenario in LIGO-P1200087.
+ */
+int XLALSimNoisePSDAdVMidHighSensitivityP1200087(
+	REAL8FrequencySeries *psd,	/**< frequency series to be computed */
+	double flow 			/**< low frequency cutoff (Hz) */
+)
+{
+	return XLALSimNoisePSDFromFile(psd, flow,
+		P1200087 "AdV_MID_HIGH.txt");
+}
+
+/**
+ * Returns a frequency series psd with low frequency cutoff flow corresponding
+ * to the AdV 2018-2020 low-sensitivity scenario in LIGO-P1200087.
+ */
+int XLALSimNoisePSDAdVLateLowSensitivityP1200087(
+	REAL8FrequencySeries *psd,	/**< frequency series to be computed */
+	double flow 			/**< low frequency cutoff (Hz) */
+)
+{
+	return XLALSimNoisePSDFromFile(psd, flow,
+		P1200087 "AdV_LATE_LOW.txt");
+}
+
+/**
+ * Returns a frequency series psd with low frequency cutoff flow corresponding
+ * to the AdV 2018-2020 high-sensitivity scenario in LIGO-P1200087.
+ */
+int XLALSimNoisePSDAdVLateHighSensitivityP1200087(
+	REAL8FrequencySeries *psd,	/**< frequency series to be computed */
+	double flow 			/**< low frequency cutoff (Hz) */
+)
+{
+	return XLALSimNoisePSDFromFile(psd, flow,
+		P1200087 "AdV_LATE_HIGH.txt");
+}
+
+/**
+ * Returns a frequency series psd with low frequency cutoff flow corresponding
+ * to the AdV 2021 design sensitivity scenario in LIGO-P1200087.
+ */
+int XLALSimNoisePSDAdVDesignSensitivityP1200087(
+	REAL8FrequencySeries *psd,	/**< frequency series to be computed */
+	double flow 			/**< low frequency cutoff (Hz) */
+)
+{
+	return XLALSimNoisePSDFromFile(psd, flow,
+		P1200087 "AdV_DESIGN.txt");
+}
+
+/**
+ * Returns a frequency series psd with low frequency cutoff flow corresponding
+ * to the AdV BNS-optimized sensitivity scenario in LIGO-P1200087.
+ */
+int XLALSimNoisePSDAdVBNSOptimizedSensitivityP1200087(
+	REAL8FrequencySeries *psd,	/**< frequency series to be computed */
+	double flow 			/**< low frequency cutoff (Hz) */
+)
+{
+	return XLALSimNoisePSDFromFile(psd, flow,
+		P1200087 "AdV_BNS_OPTIMIZED.txt");
+}
 
 /*
  *

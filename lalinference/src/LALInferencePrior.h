@@ -215,6 +215,8 @@ REAL8 LALInferenceComputePriorMassNorm(const double MMin, const double MMax, con
  */
 REAL8 LALInferenceFlatBoundedPrior(LALInferenceRunState *runState, LALInferenceVariables *params);
 
+UINT4 LALInferenceCubeToPSDScaleParams(LALInferenceVariables *priorParams, LALInferenceVariables *params, INT4 *idx, double *Cube, void *context);
+
 /**
  * Prior that converts from a Cube parameter in [0,1] to the flat prior bounded by x1 and x2.
  */
@@ -229,6 +231,11 @@ REAL8 LALInferenceCubeToLogFlatPrior(double r, double x1, double x2);
  * Prior that converts from a Cube parameter in [0,1] to the power prior bounded by x1 and x2 with power p.
  */
 REAL8 LALInferenceCubeToPowerPrior(double p, double r, double x1, double x2);
+
+/**
+ * Prior that converts from a Cube parameter in [0,1] to the Gaussian prior with given mean and standard deviation.
+ */
+REAL8 LALInferenceCubeToGaussianPrior(double r, double mean, double sigma);
 
 /*@}*/
 

@@ -23,6 +23,7 @@
 #include <lal/LALInferencePrior.h>
 #include <math.h>
 #include <gsl/gsl_integration.h>
+#include <gsl/gsl_cdf.h>
 
 #ifdef __GNUC__
 #define UNUSED __attribute__ ((unused))
@@ -488,6 +489,8 @@ UINT4 LALInferenceInspiralCubeToPrior(LALInferenceRunState *runState, LALInferen
 
     }
 
+    LALInferenceVariables *priorParams=runState->priorArgs;
+    INT4 ScaleTest = LALInferenceCubeToPSDScaleParams(priorParams, params, &i, Cube, context);
 
     Cube[i] = m1; i++; strcat(header,"m1 ");
     Cube[i] = m2; i++; strcat(header,"m2 ");
@@ -497,14 +500,14 @@ UINT4 LALInferenceInspiralCubeToPrior(LALInferenceRunState *runState, LALInferen
     strcat(header,"logl");
 
     /* Check boundaries */
+    if (ScaleTest==0) return 0;
     item=params->head;
-    LALInferenceVariables *priorParams=runState->priorArgs;
     for(;item;item=item->next)
     {
         // if(item->vary!=PARAM_LINEAR || item->vary!=PARAM_CIRCULAR)
         if(item->vary==LALINFERENCE_PARAM_FIXED || item->vary==LALINFERENCE_PARAM_OUTPUT)
                         continue;
-        else
+        else if (item->type != LALINFERENCE_gslMatrix_t)
         {
             LALInferenceGetMinMaxPrior(priorParams, item->name, (void *)&min, (void *)&max);
             if(*(REAL8 *) item->value < min || *(REAL8 *)item->value > max) return 0 ;
@@ -1164,6 +1167,7 @@ UINT4 LALInferenceInspiralSkyLocCubeToPrior(LALInferenceRunState *runState, LALI
 
     }
 
+    INT4 ScaleTest = LALInferenceCubeToPSDScaleParams(priorParams, params, &i, Cube, context);
 
     Cube[i] = m1; i++; strcat(header,"m1 ");
     Cube[i] = m2; i++; strcat(header,"m2 ");
@@ -1173,6 +1177,7 @@ UINT4 LALInferenceInspiralSkyLocCubeToPrior(LALInferenceRunState *runState, LALI
     strcat(header,"logl");
 
     /* Check boundaries */
+    if (ScaleTest==0) return 0;
     item=params->head;
     for(;item;item=item->next)
     {
@@ -1963,6 +1968,7 @@ UINT4 LALInferenceInspiralPriorNormalisedCubeToPrior(LALInferenceRunState *runSt
 
     }
 
+    INT4 ScaleTest = LALInferenceCubeToPSDScaleParams(priorParams, params, &i, Cube, context);
 
     Cube[i] = m1; i++; strcat(header,"m1 ");
     Cube[i] = m2; i++; strcat(header,"m2 ");
@@ -1972,6 +1978,7 @@ UINT4 LALInferenceInspiralPriorNormalisedCubeToPrior(LALInferenceRunState *runSt
     strcat(header,"logl");
 
     /* Check boundaries */
+    if (ScaleTest==0) return 0;
     item=params->head;
     for(;item;item=item->next)
     {
@@ -2781,6 +2788,9 @@ UINT4 LALInferenceAnalyticCubeToPrior(LALInferenceRunState *runState, LALInferen
         }
     }
 
+    LALInferenceVariables *priorParams=runState->priorArgs;
+    INT4 ScaleTest = LALInferenceCubeToPSDScaleParams(priorParams, params, &i, Cube, context);
+
     Cube[i] = mc; i++; strcat(header,"mchirp ");
     Cube[i] = eta; i++; strcat(header,"eta ");
     Cube[i] = LALInferenceAnalyticNullPrior(runState,params);
@@ -2788,7 +2798,8 @@ UINT4 LALInferenceAnalyticCubeToPrior(LALInferenceRunState *runState, LALInferen
 
     strcat(header,"logl");
 
-    return 1;
+    if (ScaleTest==0) return 0;
+    else return 1;
 }
 
 REAL8 LALInferenceFlatBoundedPrior(LALInferenceRunState *runState, LALInferenceVariables *params)
@@ -2811,6 +2822,63 @@ REAL8 LALInferenceFlatBoundedPrior(LALInferenceRunState *runState, LALInferenceV
 
 REAL8 LALInferenceNullPrior(LALInferenceRunState UNUSED *runState, LALInferenceVariables UNUSED *params) {
   return 0.0;
+}
+
+UINT4 LALInferenceCubeToPSDScaleParams(LALInferenceVariables *priorParams, LALInferenceVariables *params, INT4 *idx, double *Cube, void *context)
+{
+  char **info = (char **)context;
+  char *header = &info[1][0];
+  char tempstr[50];
+
+  //PSD priors are Gaussian
+  if(LALInferenceCheckVariable(params, "psdscale"))
+  {
+    UINT4 i;
+    UINT4 j;
+
+    REAL8 val,min,max;
+    REAL8 mean = 1.0;
+    UINT4 psdGaussianPrior;
+
+    REAL8Vector *sigma = *((REAL8Vector **)LALInferenceGetVariable(priorParams, "psdsigma"));
+    gsl_matrix *nparams = *((gsl_matrix **)LALInferenceGetVariable(params,"psdscale"));
+
+    min=0.1;//*(REAL8 *)LALInferenceGetVariable(priorParams,"psdscale_min");
+    max=10.0;//*(REAL8 *)LALInferenceGetVariable(priorParams,"psdscale_max");
+
+    psdGaussianPrior = *(UINT4 *)LALInferenceGetVariable(priorParams,"psdGaussianPrior");
+
+    for(i=0; i<(UINT4)nparams->size1; i++)
+    {
+      for(j=0; j<(UINT4)nparams->size2; j++)
+      {
+        // calculate value
+        if (psdGaussianPrior)
+            val = LALInferenceCubeToGaussianPrior(Cube[(*idx)],mean,sigma->data[j]);
+        else
+            val = LALInferenceCubeToFlatPrior(Cube[(*idx)],min,max);
+
+        // set value
+        gsl_matrix_set(nparams,i,j,val);
+        Cube[(*idx)] = val;
+        (*idx)++;
+        sprintf(tempstr,"psdscale_%d_%d ",i,j);
+        strcat(header,tempstr);
+      }
+    }
+
+    for(i=0; i<(UINT4)nparams->size1; i++)
+    {
+      for(j=0; j<(UINT4)nparams->size2; j++)
+      {
+        //reject prior
+        val = gsl_matrix_get(nparams,i,j);
+        if(val < min || val > max) return 0;
+      }
+    }
+  }
+
+  return 1;
 }
 
 /**
@@ -2842,4 +2910,13 @@ REAL8 LALInferenceCubeToPowerPrior(double p, double r, double x1, double x2)
 {
     double pp = p + 1.0;
     return pow(r * pow(x2, pp) + (1.0 - r) * pow(x1, pp), 1.0 / pp);
+}
+
+/**
+ * Prior that converts from a Cube parameter in [0,1] to the Gaussian prior with given
+ * mean and standard deviation.
+ */
+REAL8 LALInferenceCubeToGaussianPrior(double r, double mean, double sigma)
+{
+    return gsl_cdf_gaussian_Pinv(r,sigma) + mean;
 }

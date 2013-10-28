@@ -184,6 +184,12 @@ int main(int argc, char *argv[]){
     XLAL_ERROR( XLAL_EFUNC );
   }
 
+ /* Call XLALWeightMultiAMCoffs, replace AM-coeffs by weighted AM-coeffs*/
+  if ( ( XLALWeightMultiAMCoeffs (multiCoeffs, multiWeights ))!= XLAL_SUCCESS){ 
+    LogPrintf ( LOG_CRITICAL, "%s: XLALWeightMultiAMCoeffs() failed with errno=%d\n", __func__, xlalErrno );
+    XLAL_ERROR( XLAL_EFUNC );
+  }
+
   /* Construct the flat list of SFTs (this sort of replicates the
      catalog, but there's not an obvious way to get the information
      back) */

@@ -79,6 +79,9 @@ void get_pulsar_model( LALInferenceIFOData *data ){
   pars.f4 = rescale_parameter( data, "f4" );
   pars.f5 = rescale_parameter( data, "f5" );
 
+  /* speed of GWs as a fraction of speed of light LAL_C_SI */
+  pars.cgw = rescale_parameter( data, "cgw" );
+
   /* check if there are binary parameters */
   if( LALInferenceCheckVariable(data->modelParams, "model") ){
     /* binary system model - NOT pulsar model */
@@ -269,7 +272,7 @@ void pulsar_model( BinaryPulsarParams params, LALInferenceIFOData *data ){
 
             dphit = -fmod(dphi->data[i] - data->timeData->data->data[i], 1.);
 
-            expp = cexp( dphit );
+            expp = cexp( LAL_TWOPI * I * dphit );
 
             M = data->compModelData->data->data[i];
 
@@ -360,14 +363,16 @@ REAL8Vector *get_phase_model( BinaryPulsarParams params, LALInferenceIFOData *da
   }
 
   for( i=0; i<length; i++){
-    REAL8 realT = XLALGPSGetREAL8( &data->dataTimes->data[i] );/*time of data*/
+    REAL8 realT = XLALGPSGetREAL8( &data->dataTimes->data[i] ); /*time of data*/
 
-    T0 = params.pepoch;/*time of ephem info*/
+    T0 = params.pepoch; /*time of ephem info*/
 
-    DT = realT - T0;/*time diff between data and ephem info*/
+    DT = realT - T0; /*time diff between data and ephem info*/
 
     if ( params.model != NULL ) { deltat = DT + dts->data[i] + bdts->data[i]; }
     else { deltat = DT + dts->data[i]; }
+
+    deltat /= (1.-params.cgw); /* correct for speed of GW compared to speed of light */
 
     /* work out phase */
     deltat2 = deltat*deltat;

@@ -13,11 +13,5 @@ $(top_builddir)/config.status: $(top_srcdir)/configure $(CONFIG_STATUS_DEPENDENC
 	$(SHELL) $(top_srcdir)/configure $(ac_configure_args)
 
 SUBDIRS = \
-	doxygen \
 	gnuscripts \
 	@subdirs@
-
-if HAVE_GIT_REPO
-vcs-clean: maintainer-clean
-	-cd $(top_srcdir) && $(GIT) clean -Xdf
-endif

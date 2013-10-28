@@ -1415,7 +1415,7 @@ void LALInferenceAdaptationRestart(LALInferenceRunState *runState, INT4 cycle)
   MPI_Comm_rank(MPI_COMM_WORLD, &MPIrank);
 
   for(LALInferenceVariableItem *item=runState->currentParams->head;item;item=item->next){
-    if (item->vary != LALINFERENCE_PARAM_FIXED) {
+    if (item->vary != LALINFERENCE_PARAM_FIXED && item->vary != LALINFERENCE_PARAM_OUTPUT) {
       char tmpname[MAX_STRLEN]="";
 
       sprintf(tmpname,"%s_%s",item->name,ACCEPTSUFFIX);

@@ -7,12 +7,19 @@ laldetchar-hveto: $(srcdir)/laldetchar-hveto.in python_config.sed
 	$(AM_V_GEN)sed -f python_config.sed $(srcdir)/laldetchar-hveto.in > laldetchar-hveto
 	@chmod +x laldetchar-hveto
 
+laldetchar-segments-from-data: $(srcdir)/laldetchar-segments-from-data.in python_config.sed
+	$(AM_V_GEN)sed -f python_config.sed $(srcdir)/laldetchar-segments-from-data.in > laldetchar-segments-from-data
+	@chmod +x laldetchar-segments-from-data
+
 bin_SCRIPTS = \
-	laldetchar-hveto
+	laldetchar-hveto \
+	laldetchar-segments-from-data
 
 EXTRA_DIST = \
-	laldetchar-hveto.in
+	laldetchar-hveto.in \
+	laldetchar-segments-from-data.in
 
 CLEANFILES = \
 	laldetchar-hveto \
+	laldetchar-segments-from-data \
 	python_config.sed

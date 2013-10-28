@@ -300,6 +300,9 @@ tagBinaryPulsarParams
   /* timing noise fitting parameters */
   REAL8 wave_omErr;
 
+  REAL8 cgw; /**< The speed of gravitational waves as (1-fraction of the speed of light <tt>LAL_C_SI</tt>) */
+  REAL8 cgwErr;
+
   CHAR *units; /**< The time system used e.g. TDB */
   CHAR *ephem; /**< The JPL solar system ephemeris used e.g. DE405 */
 }BinaryPulsarParams;
