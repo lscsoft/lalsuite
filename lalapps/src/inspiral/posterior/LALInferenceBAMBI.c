@@ -279,7 +279,17 @@ void LALInferenceMultiNestAlgorithm(LALInferenceRunState *runState)
     LALInferenceVariableItem *item=runState->currentParams->head;
     for(;item;item=item->next)
     {
-        if(item->vary==LALINFERENCE_PARAM_LINEAR || item->vary==LALINFERENCE_PARAM_CIRCULAR) ND++;
+        if(item->vary==LALINFERENCE_PARAM_LINEAR || item->vary==LALINFERENCE_PARAM_CIRCULAR)
+        {
+            if (item->type == LALINFERENCE_gslMatrix_t)
+            {
+                gsl_matrix *nparams = *((gsl_matrix **)item->value);
+                INT4 numdims = nparams->size1 * nparams->size2;
+                ND += numdims;
+            }
+            else
+                ND++;
+        }
     }
 
     if( ND==0 )
@@ -316,11 +326,36 @@ void LALInferenceMultiNestAlgorithm(LALInferenceRunState *runState)
     {
         if(item->vary==LALINFERENCE_PARAM_LINEAR || item->vary==LALINFERENCE_PARAM_CIRCULAR)
         {
-            k++;
-            if(item->vary==LALINFERENCE_PARAM_CIRCULAR)
-                pWrap[k] = 1;
+            if (item->type == LALINFERENCE_gslMatrix_t)
+            {
+                gsl_matrix *nparams = *((gsl_matrix **)item->value);
+                INT4 numdims = nparams->size1 * nparams->size2;
+                INT4 kk;
+                if (item->vary==LALINFERENCE_PARAM_CIRCULAR)
+                {
+                    for (kk=0;kk<numdims;kk++)
+                    {
+                        k++;
+                        pWrap[k] = 1;
+                    }
+                }
+                else
+                {
+                    for (kk=0;kk<numdims;kk++)
+                    {
+                        k++;
+                        pWrap[k] = 0;
+                    }
+                }
+            }
             else
-                pWrap[k] = 0;
+            {
+                k++;
+                if(item->vary==LALINFERENCE_PARAM_CIRCULAR)
+                    pWrap[k] = 1;
+                else
+                    pWrap[k] = 0;
+            }
         }
     }
     root=(char *)malloc(BAMBI_STRLEN*sizeof(char));
