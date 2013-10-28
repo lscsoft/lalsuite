@@ -398,7 +398,7 @@ int XLALREAL4ReverseFFT( REAL4Vector *output, const COMPLEX8Vector *input,
  * - [\c XLAL_ENOMEM] Insufficient storage space is available.
  * .
  */
-int XLALREAL4VectorFFT( REAL4Vector * restrict output, const REAL4Vector * restrict input,
+int XLALREAL4VectorFFT( REAL4Vector * RESTRICT output, const REAL4Vector * RESTRICT input,
     const REAL4FFTPlan *plan );
 
 /**
