@@ -5,14 +5,14 @@
 include $(top_srcdir)/swig/swiglal_common.am
 
 # set SWIG language and options
-swig_langflags = -octave -globals $(PACKAGE_NAME)cvar
+swig_langflags = -octave -globals $(PACKAGE)cvar
 
 # add Octave compilation flags
 swig_lt_cppflags += $(OCTAVE_CPPFLAGS)
 swig_lt_cxxflags += $(OCTAVE_CXXFLAGS)
 
 # SWIG Octave wrapping module source file
-swig_modl_src = @PACKAGE_NAME@swig_octave.cpp
+swig_modl_src = @PACKAGE@swig_octave.cpp
 
 # set SWIG Octave wrapping module extension
 swig_lt_ldflags += -shrext .oct

@@ -8,17 +8,17 @@ am__depfiles_maybe = depfiles
 SUBDIRS = . octave python
 
 # SWIG interface file
-swig_iface = @PACKAGE_NAME@swig.i
+swig_iface = @PACKAGE@swig.i
 
 # SWIG interface header list
-swig_iface_headers = $(top_builddir)/swig/@PACKAGE_NAME@swig_headers.list
+swig_iface_headers = $(top_builddir)/swig/@PACKAGE@swig_headers.list
 
 # SWIG preprocessing interface
-swig_iface_preproc = @PACKAGE_NAME@swig_preproc.i
-swig_iface_preproc_xml = @PACKAGE_NAME@swig_preproc.xml
+swig_iface_preproc = @PACKAGE@swig_preproc.i
+swig_iface_preproc_xml = @PACKAGE@swig_preproc.xml
 
 # SWIG preprocessing interface dependencies file
-swig_iface_preproc_deps = ./$(DEPDIR)/@PACKAGE_NAME@swig_preproc.deps
+swig_iface_preproc_deps = ./$(DEPDIR)/@PACKAGE@swig_preproc.deps
 
 # SWIG preprocessing interface flags
 swig_preprocflags = -xml -xmllite -includeall -ignoremissing -w201,302
@@ -68,7 +68,7 @@ $(swig_iface_preproc) : $(swig_iface_headers) Makefile
 	done
 
 # include SWIG preprocessing interface dependencies file
-@am__include@ @am__quote@./$(DEPDIR)/@PACKAGE_NAME@swig_preproc.deps@am__quote@
+@am__include@ @am__quote@./$(DEPDIR)/@PACKAGE@swig_preproc.deps@am__quote@
 
 # generate SWIG parse tree of preprocessing interface file
 $(swig_iface_preproc_xml) : $(swig_iface_preproc)
@@ -76,7 +76,7 @@ $(swig_iface_preproc_xml) : $(swig_iface_preproc)
 
 # generate SWIG interface file
 $(swig_iface) : $(swig_iface_preproc_xml) $(swig_generate_iface)
-	$(AM_V_GEN)$(PYTHON) $(swig_generate_iface) -n "$(PACKAGE_NAME)" -d "$(SWIG_MODULE_DEPENDS)" -s "$(SWIG_SYMBOL_PREFIXES)" -p "$(swig_iface_preproc)" -x "$(swig_iface_preproc_xml)" -i "$(swig_iface)" || $(rm_targets)
+	$(AM_V_GEN)$(PYTHON) $(swig_generate_iface) -n "$(PACKAGE)" -d "$(SWIG_MODULE_DEPENDS)" -s "$(SWIG_SYMBOL_PREFIXES)" -p "$(swig_iface_preproc)" -x "$(swig_iface_preproc_xml)" -i "$(swig_iface)" || $(rm_targets)
 	@$(MKDIR_P) $(builddir)/lal && ( test -r "$(builddir)/lal/$@" || $(LN_S) ../$@ $(builddir)/lal/$@ )
 
 endif

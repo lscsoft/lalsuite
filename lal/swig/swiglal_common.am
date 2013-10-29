@@ -5,13 +5,13 @@
 am__depfiles_maybe = depfiles
 
 # SWIG interface file
-swig_iface = @PACKAGE_NAME@swig.i
+swig_iface = @PACKAGE@swig.i
 
 # SWIG interface dependencies file
-swig_iface_deps = ./$(DEPDIR)/@PACKAGE_NAME@swig.deps
+swig_iface_deps = ./$(DEPDIR)/@PACKAGE@swig.deps
 
 # test script for the SWIG wrapping module
-swig_modl_check = check_@PACKAGE_NAME@swig
+swig_modl_check = check_@PACKAGE@swig
 
 # automake libtool variables for SWIG wrapping module
 swig_lt_nodist_sources = $(swig_modl_src)
@@ -50,7 +50,7 @@ rm_targets = { rm -f $@; exit 1; }
 	@cd .. && $(MAKE) $(swig_iface)
 
 # include SWIG interface dependencies file
-@am__include@ @am__quote@./$(DEPDIR)/@PACKAGE_NAME@swig.deps@am__quote@
+@am__include@ @am__quote@./$(DEPDIR)/@PACKAGE@swig.deps@am__quote@
 
 # generate SWIG wrapping module source
 $(swig_modl_src) : ../$(swig_iface)
