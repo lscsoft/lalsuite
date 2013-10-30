@@ -76,7 +76,7 @@ endif
 ## There are three possible ways in which we can build the E@H application
 ## BOINC_GRAPHICS = 0: completely non-graphical (USE_GRAPHICS=false)
 
-eah_cppflags += -DNO_BOINC_GRAPHICS -DBOINC_GRAPHICS=0 @CUDA_CPPFLAGS@
+eah_cppflags += -DNO_BOINC_GRAPHICS -DBOINC_GRAPHICS=0 @CUDA_CFLAGS@
 eah_ldadd += @CUDA_LIBS@
 
 bin_PROGRAMS = cfsBOINC

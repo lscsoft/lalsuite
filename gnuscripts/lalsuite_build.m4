@@ -1,6 +1,6 @@
 # lalsuite_build.m4 - top level build macros
 #
-# serial 71
+# serial 72
 
 AC_DEFUN([LALSUITE_ADD_CFLAGS],[
   # all flags are appended to CPPFLAGS/CFLAGS
@@ -686,11 +686,11 @@ AC_ARG_WITH(
       [cuda_libdir=lib]
     )
     CUDA_LIBS="-L${cuda_path}/${cuda_libdir} -Wl,-rpath -Wl,${cuda_path}/${cuda_libdir} -lcufft -lcudart"
-    CUDA_CPPFLAGS="-I${with_cuda}/include"
+    CUDA_CFLAGS="-I${with_cuda}/include"
     LALSUITE_ADD_LIBS(${CUDA_LIBS})
-    LALSUITE_ADD_CFLAGS(${CUDA_CPPFLAGS})
+    LALSUITE_ADD_CFLAGS(${CUDA_CFLAGS})
     AC_SUBST(CUDA_LIBS)
-    AC_SUBST(CUDA_CPPFLAGS)
+    AC_SUBST(CUDA_CFLAGS)
     AC_PATH_PROGS(NVCC,[nvcc],[],[${cuda_path}/bin:${PATH}])
     AS_IF([test "x${NVCC}" = x],[
       AC_MSG_ERROR([could not find 'nvcc' in path])
