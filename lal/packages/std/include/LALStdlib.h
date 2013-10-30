@@ -60,14 +60,13 @@
 #include <stdarg.h>
 #include <lal/LALMalloc.h>
 
-/* Redefine the restict keyword when compiling with C++ */
-#ifdef  __cplusplus
-#undef restrict
-#ifdef __GNUC__
-#define restrict __restrict__
+/* macro for restrict keyword */
+#if __STDC_VERSION__ >= 199901L
+# define RESTRICT restrict
+#elif defined __GNUC__
+# define RESTRICT __restrict__
 #else
-#define restrict
-#endif
+# define RESTRICT
 #endif
 
 #endif /* _LALSTDLIB_H */

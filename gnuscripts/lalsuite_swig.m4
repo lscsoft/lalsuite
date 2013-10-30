@@ -1,7 +1,7 @@
 # SWIG configuration
 # Author: Karl Wette, 2011, 2012
 #
-# serial 42
+# serial 43
 
 # enable SWIG wrapping modules
 AC_DEFUN([LALSUITE_ENABLE_SWIG],[
@@ -99,7 +99,7 @@ AC_DEFUN([LALSUITE_USE_SWIG],[
   AC_REQUIRE([AC_PROG_SED])
 
   # if we are wrapping the LAL library (instead of one of the LAL* libraries)
-  AS_IF([test "x${PACKAGE_NAME}" = xlal],[
+  AS_IF([test "x${PACKAGE}" = xlal],[
     lalswig=true
   ],[
     lalswig=false
@@ -224,7 +224,7 @@ AC_DEFUN([LALSUITE_USE_SWIG],[
     AS_IF([test ${lalswig} = true],[
       SWIG_LIBS="\$(abs_top_builddir)/lib/lalsupport/src/liblalsupport.la \$(abs_top_builddir)/lib/lal/liblal.la"
     ],[
-      SWIG_LIBS="\$(abs_top_builddir)/src/lib${PACKAGE_NAME}.la"
+      SWIG_LIBS="\$(abs_top_builddir)/src/lib${PACKAGE}.la"
     ])
 
     # dynamic linker search path for pre-installed LAL libraries
