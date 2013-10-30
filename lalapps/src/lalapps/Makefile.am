@@ -101,14 +101,14 @@ lalapps_pythonpath =
 endif
 
 lalapps-user-env.shell: Makefile $(srcdir)/generate_user_env.awk
-	@echo "# generic user environment script" >$@
+	@echo "# source this file to access $(PACKAGE_NAME)" >$@
 	@echo "prepend PATH $(bindir)" >>$@
 	@echo "prepend MANPATH $(mandir)" >>$@
 	@echo "prepend PYTHONPATH $(lalapps_pythonpath)" >>$@
 	@echo "prepend LAL_DATA_PATH $(pkgdatadir)" >>$@
 
 lalapps-user-env.csh lalapps-user-env.sh: lalapps-user-env.shell $(srcdir)/generate_user_env.awk
-	$(AM_V_GEN)$(AWK) -f $(srcdir)/generate_user_env.awk -v SED=$(SED) -v package=$(PACKAGE_NAME) -v output=$@ $< || { rm -f $@; exit 1; }
+	$(AM_V_GEN)$(AWK) -f $(srcdir)/generate_user_env.awk -v SED="$(SED)" -v output="$@" $<
 
 if HAVE_GIT_REPO
 BUILT_SOURCES += LALAppsVCSInfo.h

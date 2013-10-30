@@ -156,7 +156,7 @@ BUILT_SOURCES = \
 	lalsimulation-user-env.csh
 
 lalsimulation-user-env.shell: Makefile $(srcdir)/generate_user_env.awk
-	@echo "# generic user environment script" >$@
+	@echo "# source this file to access $(PACKAGE_NAME)" >$@
 	@echo "set LALSIMULATION_PREFIX $(prefix)" >>$@
 	@echo "prepend PATH $(bindir)" >>$@
 	@echo "prepend MANPATH $(mandir)" >>$@
@@ -166,7 +166,7 @@ lalsimulation-user-env.shell: Makefile $(srcdir)/generate_user_env.awk
 	@echo "prepend OCTAVE_PATH $(octexecdir)" >>$@
 
 lalsimulation-user-env.csh lalsimulation-user-env.sh: lalsimulation-user-env.shell $(srcdir)/generate_user_env.awk
-	$(AM_V_GEN)$(AWK) -f $(srcdir)/generate_user_env.awk -v SED=$(SED) -v package=$(PACKAGE_NAME) -v output=$@ $< || { rm -f $@; exit 1; }
+	$(AM_V_GEN)$(AWK) -f $(srcdir)/generate_user_env.awk -v SED="$(SED)" -v output="$@" $<
 
 EXTRA_DIST = \
 	config.h.in \
