@@ -95,7 +95,9 @@ extern const MultiNoiseWeights empty_MultiNoiseWeights;
 
 
 // ---------- obsolete LAL-API was moved into external file
+#ifndef SWIG /* exclude from SWIG interface */
 #include "SFTutils-LAL.h"
+#endif
 // ------------------------------
 
 /*---------- exported prototypes [API] ----------*/
