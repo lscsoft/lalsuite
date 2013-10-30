@@ -9,6 +9,7 @@ Makefile.in
 aclocal.m4
 autom4te.cache/
 bin/laldetchar-hveto
+bin/laldetchar-segments-from-data
 bin/python_config.sed
 config.log
 config.lt
