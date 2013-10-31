@@ -146,6 +146,7 @@ bin_SCRIPTS = \
 	lalapps_generate_upper_limits \
 	lalapps_followup0_page \
 	lalapps_cbc_pipedown \
+	lalapps_cbc_pipedown_ssipe \
 	lalapps_glitch_probe \
 	lalapps_cohPTF_hipe \
 	lalapps_coh_PTF_post_processing \
@@ -265,6 +266,10 @@ lalapps_followup0_page: $(srcdir)/followup0_page.in python_config.sed
 lalapps_cbc_pipedown: $(srcdir)/cbc_pipedown.in python_config.sed
 	$(AM_V_GEN)sed -f python_config.sed $(srcdir)/cbc_pipedown.in > lalapps_cbc_pipedown
 	@chmod +x lalapps_cbc_pipedown
+
+lalapps_cbc_pipedown_ssipe: $(srcdir)/cbc_pipedown_ssipe.in python_config.sed
+	$(AM_V_GEN)sed -f python_config.sed $(srcdir)/cbc_pipedown_ssipe.in > lalapps_cbc_pipedown_ssipe
+	@chmod +x lalapps_cbc_pipedown_ssipe
 
 lalapps_coh_PTF_post_processing: $(srcdir)/coh_PTF_post_processing.in python_config.sed
 	$(AM_V_GEN)sed -f python_config.sed $(srcdir)/coh_PTF_post_processing.in > lalapps_coh_PTF_post_processing
@@ -390,6 +395,7 @@ EXTRA_DIST = \
 	generate_upper_limits.in \
 	followup0_page.in \
 	cbc_pipedown.in \
+	cbc_pipedown_ssipe.in \
 	ihope_daily_page.in \
 	check_flag.in \
 	flag_triggers.in \
