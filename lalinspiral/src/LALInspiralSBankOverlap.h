@@ -1,5 +1,5 @@
 #include <stdlib.h>
-#include <complex.h>
+#include <lal/LALAtomicDatatypes.h>
 #include <lal/ComplexFFT.h>
 #include <lal/FrequencySeries.h>
 #include <sys/types.h>

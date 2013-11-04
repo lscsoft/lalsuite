@@ -19,7 +19,6 @@
  * Copyright (C) 2012 Leo Singer
  */
 
-#include <complex.h>
 #include <lal/LALAtomicDatatypes.h>
 
 #ifndef _TRIGGERINTERPOLATION_H
