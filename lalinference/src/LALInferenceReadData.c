@@ -2534,7 +2534,13 @@ void LALInferencePrintInjectionSample(LALInferenceRunState *runState)
     }
     REAL8 injPrior = runState->prior(runState,runState->currentParams);
     LALInferenceAddVariable(runState->currentParams,"logPrior",&injPrior,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
-    REAL8 injL = runState->likelihood(runState->currentParams, runState->data, runState->templt);
+    int errnum=0;
+    REAL8 injL=0.;
+    XLAL_TRY(injL = runState->likelihood(runState->currentParams, runState->data, runState->templt), errnum);
+    if(errnum){
+        fprintf(stderr,"ERROR: Cannot print injection sample. Received error code %s\n",XLALErrorString(errnum));
+    }
+
     LALInferenceAddVariable(runState->currentParams,"logL",(void *)&injL,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
     if(LALInferenceCheckVariable(runState->algorithmParams,"logZnoise")){
         REAL8 tmp=injL-*(REAL8 *)LALInferenceGetVariable(runState->algorithmParams,"logZnoise");
