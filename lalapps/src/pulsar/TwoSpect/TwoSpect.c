@@ -1041,7 +1041,8 @@ int main(int argc, char *argv[])
          }
       
          //Run the IHS algorithm on the data
-         runIHS(ihsmaxima, ffdata, ihsfarstruct, inputParams, maxrows, aveTFnoisePerFbinRatio);
+         //runIHS(ihsmaxima, ffdata, ihsfarstruct, inputParams, maxrows, aveTFnoisePerFbinRatio);
+         runIHS(ihsmaxima, ffdata, ihsfarstruct, inputParams, maxrows, aveNoise, aveTFnoisePerFbinRatio);
          if (xlalErrno!=0) {
             fprintf(stderr, "%s: runIHS() failed.\n", __func__);
             XLAL_ERROR(XLAL_EFUNC);
@@ -1066,6 +1067,16 @@ int main(int argc, char *argv[])
                fprintf(stderr,"%s: keepMostSignificantCandidates() failed.\n", __func__);
                XLAL_ERROR(XLAL_EFUNC);
             }
+
+            //Put ihsCandidates_reduced back into a reset ihsCandidates
+            ihsCandidates->numofcandidates = 0;
+            for (ii=0; ii<(INT4)ihsCandidates_reduced->numofcandidates; ii++) {
+               loadCandidateData(&(ihsCandidates->data[ii]), ihsCandidates_reduced->data[ii].fsig, ihsCandidates_reduced->data[ii].period, ihsCandidates_reduced->data[ii].moddepth, dopplerpos.Alpha, dopplerpos.Delta, ihsCandidates_reduced->data[ii].stat, ihsCandidates_reduced->data[ii].h0, ihsCandidates_reduced->data[ii].prob, 0, ihsCandidates_reduced->data[ii].normalization);
+               (ihsCandidates->numofcandidates)++;
+            }
+
+            free_candidateVector(ihsCandidates_reduced);
+
             //for (ii=0; ii<(INT4)ihsCandidates_reduced->numofcandidates; ii++) fprintf(stderr, "%d %g %g %g %g\n", ii, ihsCandidates_reduced->data[ii].fsig, ihsCandidates_reduced->data[ii].period, ihsCandidates_reduced->data[ii].moddepth, ihsCandidates_reduced->data[ii].prob);  //comment this
          }
       }
@@ -1074,70 +1085,36 @@ int main(int argc, char *argv[])
 ////////Start of the Gaussian template search!
       //First check to see if the IHSonly or templateTest or templateSearch was given
       if (args_info.IHSonly_given && !args_info.templateTest_given && !args_info.templateSearch_given) {
-         //If we keep only the top X IHS candidates and the number of candidates is greater than X, we need to use the pruned list (ihsCandidates_reduced)
-         if (args_info.keepOnlyTopNumIHS_given && (INT4)ihsCandidates->numofcandidates > args_info.keepOnlyTopNumIHS_arg) {
-            //If the exactCandidates2 vector is not large enough for the number of new candidates to put in, we have to resize the vector
-            if (exactCandidates2->length < exactCandidates2->numofcandidates+ihsCandidates_reduced->numofcandidates) {
-               exactCandidates2 = resize_candidateVector(exactCandidates2, exactCandidates2->numofcandidates+ihsCandidates_reduced->numofcandidates);
-               if (exactCandidates2->data==NULL) {
-                  fprintf(stderr,"%s: resize_candidateVector(%d) failed.\n", __func__, ihsCandidates_reduced->numofcandidates);
-                  XLAL_ERROR(XLAL_EFUNC);
-               }
+         //Check the length of the exactCandidates2 vector is large enough and resize if necessary
+         if (exactCandidates2->length < exactCandidates2->numofcandidates+ihsCandidates->numofcandidates) {
+            exactCandidates2 = resize_candidateVector(exactCandidates2, exactCandidates2->numofcandidates+ihsCandidates->numofcandidates);
+            if (exactCandidates2->data==NULL) {
+               fprintf(stderr,"%s: resize_candidateVector(%d) failed.\n", __func__, ihsCandidates->numofcandidates);
+               XLAL_ERROR(XLAL_EFUNC);
             }
-            
-            //Use the reduced list
-            INT4 numofcandidatesalready = exactCandidates2->numofcandidates;
-            for (ii=0; ii<(INT4)ihsCandidates_reduced->numofcandidates; ii++) {
-               loadCandidateData(&(exactCandidates2->data[ii+numofcandidatesalready]), ihsCandidates_reduced->data[ii].fsig, ihsCandidates_reduced->data[ii].period, ihsCandidates_reduced->data[ii].moddepth, dopplerpos.Alpha, dopplerpos.Delta, ihsCandidates_reduced->data[ii].stat, ihsCandidates_reduced->data[ii].h0, ihsCandidates_reduced->data[ii].prob, 0, ihsCandidates_reduced->data[ii].normalization);
-               exactCandidates2->data[ii+numofcandidatesalready].h0 /= sqrt(ffdata->tfnormalization)*pow(frac_tobs_complete*ffdata->ffnormalization/skypointffnormalization,0.25); //Scaling here
-               (exactCandidates2->numofcandidates)++;
-            }
-            
-         } else {
-            //We don't need to use the pruned list
-            //Check the length of the exactCandidates2 vector is large enough and resize if necessary
-            if (exactCandidates2->length < exactCandidates2->numofcandidates+ihsCandidates->numofcandidates) {
-               exactCandidates2 = resize_candidateVector(exactCandidates2, exactCandidates2->numofcandidates+ihsCandidates->numofcandidates);
-               if (exactCandidates2->data==NULL) {
-                  fprintf(stderr,"%s: resize_candidateVector(%d) failed.\n", __func__, ihsCandidates->numofcandidates);
-                  XLAL_ERROR(XLAL_EFUNC);
-               }
-            }
+         }
 
-            //Use the typical list
-            INT4 numofcandidatesalready = exactCandidates2->numofcandidates;
-            for (ii=0; ii<(INT4)ihsCandidates->numofcandidates; ii++) {
-               loadCandidateData(&(exactCandidates2->data[ii+numofcandidatesalready]), ihsCandidates->data[ii].fsig, ihsCandidates->data[ii].period, ihsCandidates->data[ii].moddepth, dopplerpos.Alpha, dopplerpos.Delta, ihsCandidates->data[ii].stat, ihsCandidates->data[ii].h0, ihsCandidates->data[ii].prob, 0, ihsCandidates->data[ii].normalization);
-               exactCandidates2->data[ii+numofcandidatesalready].h0 /= sqrt(ffdata->tfnormalization)*pow(frac_tobs_complete*ffdata->ffnormalization/skypointffnormalization,0.25); //Scaling here
-               (exactCandidates2->numofcandidates)++;
-            }
-            
+         //Use the typical list
+         INT4 numofcandidatesalready = exactCandidates2->numofcandidates;
+         for (ii=0; ii<(INT4)ihsCandidates->numofcandidates; ii++) {
+            loadCandidateData(&(exactCandidates2->data[ii+numofcandidatesalready]), ihsCandidates->data[ii].fsig, ihsCandidates->data[ii].period, ihsCandidates->data[ii].moddepth, dopplerpos.Alpha, dopplerpos.Delta, ihsCandidates->data[ii].stat, ihsCandidates->data[ii].h0, ihsCandidates->data[ii].prob, 0, ihsCandidates->data[ii].normalization);
+            exactCandidates2->data[ii+numofcandidatesalready].h0 /= sqrt(ffdata->tfnormalization)*pow(frac_tobs_complete*ffdata->ffnormalization/skypointffnormalization,0.25); //Scaling here
+            (exactCandidates2->numofcandidates)++;
          }
          
       } else if (!args_info.templateTest_given && !args_info.templateSearch_given && (!args_info.simpleBandRejection_given || (args_info.simpleBandRejection_given && secFFTsigma<args_info.simpleBandRejection_arg))) {
-         
-         if (args_info.keepOnlyTopNumIHS_given && (INT4)ihsCandidates->numofcandidates>args_info.keepOnlyTopNumIHS_arg) {
-            //Test the IHS candidates against Gaussian templates in this function
-            if ( testIHScandidates(gaussCandidates1, ihsCandidates_reduced, ffdata, aveNoise, aveTFnoisePerFbinRatio, (REAL4)dopplerpos.Alpha, (REAL4)dopplerpos.Delta, inputParams) != 0 ) {
-               fprintf(stderr, "%s: testIHScandidates() failed.\n", __func__);
-               XLAL_ERROR(XLAL_EFUNC);
-            }
-         } else {
-            //Test the IHS candidates against Gaussian templates in this function
-            if ( testIHScandidates(gaussCandidates1, ihsCandidates, ffdata, aveNoise, aveTFnoisePerFbinRatio, (REAL4)dopplerpos.Alpha, (REAL4)dopplerpos.Delta, inputParams) != 0 ) {
-               fprintf(stderr, "%s: testIHScandidates() failed.\n", __func__);
-               XLAL_ERROR(XLAL_EFUNC);
-            }
+
+         //Test the IHS candidates against Gaussian templates in this function
+         if ( testIHScandidates(gaussCandidates1, ihsCandidates, ffdata, aveNoise, aveTFnoisePerFbinRatio, (REAL4)dopplerpos.Alpha, (REAL4)dopplerpos.Delta, inputParams) != 0 ) {
+           fprintf(stderr, "%s: testIHScandidates() failed.\n", __func__);
+           XLAL_ERROR(XLAL_EFUNC);
          }
-         
+
          fprintf(LOG,"Initial stage done with candidates = %d\n",gaussCandidates1->numofcandidates);
          fprintf(stderr,"Initial stage done with candidates = %d\n",gaussCandidates1->numofcandidates);
          
          for (ii=0; ii<(INT4)gaussCandidates1->numofcandidates; ii++) fprintf(stderr, "Candidate %d: f0=%g, P=%g, df=%g\n", ii, gaussCandidates1->data[ii].fsig, gaussCandidates1->data[ii].period, gaussCandidates1->data[ii].moddepth);
       } /* if IHSonly is not given && templateTest not given and templateSearch not given */
-      
-      if (!args_info.templateTest_given && !args_info.templateSearch_given && args_info.keepOnlyTopNumIHS_given && (INT4)ihsCandidates->numofcandidates>args_info.keepOnlyTopNumIHS_arg) free_candidateVector(ihsCandidates_reduced);
-      
 ////////End of the Gaussian template search
 
       //Reset IHS candidates, but keep length the same (doesn't reset actual values in the vector)
@@ -1161,7 +1138,6 @@ int main(int argc, char *argv[])
          gaussCandidates1->numofcandidates = 0;
          
 ////////Start detailed Gaussian template search!
-         //REAL4 tcohfactor = 1.49e-3*inputParams->Tcoh + 1.76;
          for (ii=0; ii<(INT4)gaussCandidates2->numofcandidates; ii++) {
             
             if (gaussCandidates3->numofcandidates == gaussCandidates3->length-1) {
@@ -3020,6 +2996,7 @@ INT4 readTwoSpectInputParams(inputParamsStruct *params, struct gengetopt_args_in
    params->harmonicNumToSearch = args_info.harmonicNumToSearch_arg;              //Search the number of harmonics specified by the Pmin-->Pmax range (default = 1 meaning search only the range of Pmin-->Pmax)
    params->ULsolver = args_info.ULsolver_arg;                                    //Solver function for UL calculation (default = 0)
    params->signalOnly = args_info.signalOnly_given;                              //SFTs contain only signal, no noise (default = 0)
+   params->weightedIHS = args_info.weightedIHS_given;
 
    //Parameters without default arguments but are required
    //gengetopt has already checked to see they are present and would have failed

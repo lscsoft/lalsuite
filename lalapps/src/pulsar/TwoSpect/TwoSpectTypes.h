@@ -83,6 +83,7 @@ typedef struct
    INT4 randSeed;
    INT4 ULsolver;
    INT4 signalOnly;
+   INT4 weightedIHS;
    gsl_rng *rng;
 } inputParamsStruct;
 

@@ -97,7 +97,7 @@ void free_ihsMaxima(ihsMaximaStruct *data)
 
 //////////////////////////////////////////////////////////////
 // Run the IHS algorithm
-void runIHS(ihsMaximaStruct *output, ffdataStruct *input, ihsfarStruct *ihsfarinput, inputParamsStruct *params, INT4 rows, REAL4Vector *FbinMean)
+void runIHS(ihsMaximaStruct *output, ffdataStruct *input, ihsfarStruct *ihsfarinput, inputParamsStruct *params, INT4 rows, REAL4Vector *aveNoise, REAL4Vector *FbinMean)
 {
    
    INT4 ii, jj;
@@ -160,7 +160,8 @@ void runIHS(ihsMaximaStruct *output, ffdataStruct *input, ihsfarStruct *ihsfarin
       if (!params->noNotchHarmonics) for (jj=0; jj<(INT4)row->length; jj++) if (markedharmonics->data[jj]==1) row->data[jj] = 0.0;
       
       //Run the IHS algorithm on the row
-      incHarmSumVector(ihsvector, row, params->ihsfactor);
+      if (!params->weightedIHS) incHarmSumVector(ihsvector, row, params->ihsfactor);
+      else incHarmSumVectorWeighted(ihsvector, row, aveNoise, params->ihsfactor);
       if (xlalErrno!=0) {
          fprintf(stderr, "%s: incHarmSumVector() failed.\n", __func__);
          XLAL_ERROR_VOID(XLAL_EFUNC);
@@ -268,6 +269,29 @@ void incHarmSumVector(REAL4Vector *output, REAL4Vector *input, INT4 ihsfactor)
    } /* for ii=5 --> highval */
 
 } /* incHarmSumVector() */
+
+
+void incHarmSumVectorWeighted(REAL4Vector *output, REAL4Vector *input, REAL4Vector *aveNoise, INT4 ihsfactor)
+{
+
+   INT4 ii, jj, highval = (INT4)floor((1.0/(REAL8)ihsfactor)*input->length);
+
+   //From 5 up to the highval
+   for (ii=5; ii<highval; ii++) {
+      output->data[ii-5] = 0.0;  //first set the value to zero
+      for (jj=1; jj<=ihsfactor; jj++) {
+         REAL4 weight = 1.0/(aveNoise->data[ii*jj]*aveNoise->data[ii*jj]);
+         output->data[ii-5] += input->data[ii*jj]*weight;
+      }
+
+      //check that we're not going outside of the allowed limits
+      if (ihsfactor*(ii-1)>(INT4)input->length-1) {
+         fprintf(stderr, "%s: final point exceeds the allowed limits!\n", __func__);
+         XLAL_ERROR_VOID(XLAL_EBADLEN);
+      } /* check within limits */
+   } /* for ii=5 --> highval */
+
+} /* incHarmSumVectorWeighted() */
 
 
 //////////////////////////////////////////////////////////////
@@ -399,7 +423,8 @@ void genIhsFar(ihsfarStruct *output, inputParamsStruct *params, INT4 rows, REAL4
    //Do the expected IHS values from the expected background here
    memcpy(noise->data, aveNoise->data, sizeof(REAL4)*aveNoise->length);
    for (ii=0; ii<(INT4)aveNoise->length; ii++) if (markedharmonics->data[ii]==1) noise->data[ii] = 0.0;
-   incHarmSumVector(output->expectedIHSVector, noise, params->ihsfactor);
+   if (!params->weightedIHS) incHarmSumVector(output->expectedIHSVector, noise, params->ihsfactor);
+   else incHarmSumVectorWeighted(output->expectedIHSVector, noise, aveNoise, params->ihsfactor);
    //for (ii=0; ii<(INT4)output->expectedIHSVector->length; ii++) fprintf(stderr, "%g\n", output->expectedIHSVector->data[ii]);
    
    //Now do a number of trials
@@ -427,7 +452,8 @@ void genIhsFar(ihsfarStruct *output, inputParamsStruct *params, INT4 rows, REAL4
       } else for (jj=0; jj<(INT4)noise->length; jj++) noise->data[jj] *= randval;
 
       //Compute IHS value on exponential noise
-      incHarmSumVector(ihsvector, noise, params->ihsfactor);
+      if (!params->weightedIHS) incHarmSumVector(ihsvector, noise, params->ihsfactor);
+      else incHarmSumVectorWeighted(ihsvector, noise, aveNoise, params->ihsfactor);
       if (xlalErrno!=0) {
          fprintf(stderr, "%s: incHarmSumVector() failed.\n", __func__);
          XLAL_ERROR_VOID(XLAL_EFUNC);
@@ -632,6 +658,13 @@ void sumIHSSequenceFAR(ihsfarStruct *outputfar, REAL4VectorSequence *ihsvectorse
          } //for jj=0 --> sampledtempihsval->length
          outputfar->ihsfar->data[ii-2] = farave/(REAL8)numvals;
       } //if params->ihsfar != 1.0
+
+      //Comment this out
+      /* if (ii==360) {
+         FILE *IHSOUTPUT = fopen("./output/ihs2rows.dat","w");
+         for (jj=0; jj<(INT4)sampledtempihsvals->length; jj++) fprintf(IHSOUTPUT, "%g\n", sampledtempihsvals->data[jj]);
+         fclose(IHSOUTPUT);
+         } */
 
       XLALDestroyREAL4Vector(sampledtempihsvals);
          
@@ -838,6 +871,12 @@ void sumIHSSequence(ihsMaximaStruct *output, ihsfarStruct *inputfar, REAL4Vector
             memcpy(rowsequencelocs->data, &(ihslocations->data[jj]), sizeof(INT4)*ii);
             output->foms->data[(ii-2)*ihsvalues->length-endloc+jj] = ihsFOM(rowsequencelocs, (INT4)inputfar->expectedIHSVector->length);
          } /* for jj< ihsvectorsequence->length - (ii-1) */
+
+         /* if (ii==360) {
+            FILE *IHSOUTPUT = fopen("./output/ihs2rows_real.dat","w");
+            for (jj=0; jj<(INT4)tworows->vectorLength*(ihsvectorsequence->length-(ii-1)); jj++) fprintf(IHSOUTPUT, "%g\n", tworows->data[jj]);
+            fclose(IHSOUTPUT);
+            } */
 
          XLALDestroyINT4Vector(rowsequencelocs);
          rowsequencelocs = NULL;

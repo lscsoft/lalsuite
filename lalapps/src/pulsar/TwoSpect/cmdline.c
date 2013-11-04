@@ -97,6 +97,7 @@ const char *gengetopt_args_info_full_help[] = {
   "      --injectionSources=@path/filename\n                                File containing sources to inject with a \n                                  required preceding @ symbol",
   "      --injRandSeed=INT         Random seed value for reproducable noise \n                                  (conflicts with --sftDir/--sftFile options)  \n                                  (default=`0')",
   "\nHidden options:",
+  "      --weightedIHS             Use the noise-weighted IHS scheme  \n                                  (default=off)",
   "      --signalOnly              SFTs contain only signal, no noise  \n                                  (default=off)",
   "      --templateTest            Test the doubly-Fourier transformed data \n                                  against a single, exact template  \n                                  (default=off)",
   "      --templateTestF=DOUBLE    The template test frequency; templateTest flag \n                                  is required",
@@ -304,6 +305,7 @@ void clear_given (struct gengetopt_args_info *args_info)
   args_info->timestampsFile_given = 0 ;
   args_info->injectionSources_given = 0 ;
   args_info->injRandSeed_given = 0 ;
+  args_info->weightedIHS_given = 0 ;
   args_info->signalOnly_given = 0 ;
   args_info->templateTest_given = 0 ;
   args_info->templateTestF_given = 0 ;
@@ -408,6 +410,7 @@ void clear_args (struct gengetopt_args_info *args_info)
   args_info->injectionSources_orig = NULL;
   args_info->injRandSeed_arg = 0;
   args_info->injRandSeed_orig = NULL;
+  args_info->weightedIHS_flag = 0;
   args_info->signalOnly_flag = 0;
   args_info->templateTest_flag = 0;
   args_info->templateTestF_orig = NULL;
@@ -497,27 +500,28 @@ void init_args_info(struct gengetopt_args_info *args_info)
   args_info->timestampsFile_help = gengetopt_args_info_full_help[61] ;
   args_info->injectionSources_help = gengetopt_args_info_full_help[62] ;
   args_info->injRandSeed_help = gengetopt_args_info_full_help[63] ;
-  args_info->signalOnly_help = gengetopt_args_info_full_help[65] ;
-  args_info->templateTest_help = gengetopt_args_info_full_help[66] ;
-  args_info->templateTestF_help = gengetopt_args_info_full_help[67] ;
-  args_info->templateTestP_help = gengetopt_args_info_full_help[68] ;
-  args_info->templateTestDf_help = gengetopt_args_info_full_help[69] ;
-  args_info->ULsolver_help = gengetopt_args_info_full_help[70] ;
-  args_info->dopplerMultiplier_help = gengetopt_args_info_full_help[71] ;
-  args_info->IHSonly_help = gengetopt_args_info_full_help[72] ;
-  args_info->noNotchHarmonics_help = gengetopt_args_info_full_help[73] ;
-  args_info->calcRthreshold_help = gengetopt_args_info_full_help[74] ;
-  args_info->BrentsMethod_help = gengetopt_args_info_full_help[75] ;
-  args_info->antennaOff_help = gengetopt_args_info_full_help[76] ;
-  args_info->noiseWeightOff_help = gengetopt_args_info_full_help[77] ;
-  args_info->gaussTemplatesOnly_help = gengetopt_args_info_full_help[78] ;
-  args_info->ULoff_help = gengetopt_args_info_full_help[79] ;
-  args_info->printSFTtimes_help = gengetopt_args_info_full_help[80] ;
-  args_info->printUsedSFTtimes_help = gengetopt_args_info_full_help[81] ;
-  args_info->printData_help = gengetopt_args_info_full_help[82] ;
-  args_info->printUninitialized_help = gengetopt_args_info_full_help[83] ;
-  args_info->randSeed_help = gengetopt_args_info_full_help[84] ;
-  args_info->chooseSeed_help = gengetopt_args_info_full_help[85] ;
+  args_info->weightedIHS_help = gengetopt_args_info_full_help[65] ;
+  args_info->signalOnly_help = gengetopt_args_info_full_help[66] ;
+  args_info->templateTest_help = gengetopt_args_info_full_help[67] ;
+  args_info->templateTestF_help = gengetopt_args_info_full_help[68] ;
+  args_info->templateTestP_help = gengetopt_args_info_full_help[69] ;
+  args_info->templateTestDf_help = gengetopt_args_info_full_help[70] ;
+  args_info->ULsolver_help = gengetopt_args_info_full_help[71] ;
+  args_info->dopplerMultiplier_help = gengetopt_args_info_full_help[72] ;
+  args_info->IHSonly_help = gengetopt_args_info_full_help[73] ;
+  args_info->noNotchHarmonics_help = gengetopt_args_info_full_help[74] ;
+  args_info->calcRthreshold_help = gengetopt_args_info_full_help[75] ;
+  args_info->BrentsMethod_help = gengetopt_args_info_full_help[76] ;
+  args_info->antennaOff_help = gengetopt_args_info_full_help[77] ;
+  args_info->noiseWeightOff_help = gengetopt_args_info_full_help[78] ;
+  args_info->gaussTemplatesOnly_help = gengetopt_args_info_full_help[79] ;
+  args_info->ULoff_help = gengetopt_args_info_full_help[80] ;
+  args_info->printSFTtimes_help = gengetopt_args_info_full_help[81] ;
+  args_info->printUsedSFTtimes_help = gengetopt_args_info_full_help[82] ;
+  args_info->printData_help = gengetopt_args_info_full_help[83] ;
+  args_info->printUninitialized_help = gengetopt_args_info_full_help[84] ;
+  args_info->randSeed_help = gengetopt_args_info_full_help[85] ;
+  args_info->chooseSeed_help = gengetopt_args_info_full_help[86] ;
   
 }
 
@@ -619,7 +623,7 @@ struct generic_list
 };
 
 /**
- * @brief add a node at the head of the list
+ * @brief add a node at the head of the list 
  */
 static void add_node(struct generic_list **list) {
   struct generic_list *new_node = (struct generic_list *) malloc (sizeof (struct generic_list));
@@ -912,6 +916,8 @@ cmdline_parser_dump(FILE *outfile, struct gengetopt_args_info *args_info)
     write_into_file(outfile, "injectionSources", args_info->injectionSources_orig, 0);
   if (args_info->injRandSeed_given)
     write_into_file(outfile, "injRandSeed", args_info->injRandSeed_orig, 0);
+  if (args_info->weightedIHS_given)
+    write_into_file(outfile, "weightedIHS", 0, 0 );
   if (args_info->signalOnly_given)
     write_into_file(outfile, "signalOnly", 0, 0 );
   if (args_info->templateTest_given)
@@ -1680,6 +1686,7 @@ cmdline_parser_internal (
         { "timestampsFile",	1, NULL, 0 },
         { "injectionSources",	1, NULL, 0 },
         { "injRandSeed",	1, NULL, 0 },
+        { "weightedIHS",	0, NULL, 0 },
         { "signalOnly",	0, NULL, 0 },
         { "templateTest",	0, NULL, 0 },
         { "templateTestF",	1, NULL, 0 },
@@ -2449,6 +2456,18 @@ cmdline_parser_internal (
                 &(local_args_info.injRandSeed_given), optarg, 0, "0", ARG_INT,
                 check_ambiguity, override, 0, 0,
                 "injRandSeed", '-',
+                additional_error))
+              goto failure;
+          
+          }
+          /* Use the noise-weighted IHS scheme.  */
+          else if (strcmp (long_options[option_index].name, "weightedIHS") == 0)
+          {
+          
+          
+            if (update_arg((void *)&(args_info->weightedIHS_flag), 0, &(args_info->weightedIHS_given),
+                &(local_args_info.weightedIHS_given), optarg, 0, 0, ARG_FLAG,
+                check_ambiguity, override, 1, 0, "weightedIHS", '-',
                 additional_error))
               goto failure;
           

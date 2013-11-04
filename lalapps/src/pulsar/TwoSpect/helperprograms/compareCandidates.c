@@ -35,10 +35,16 @@ double fdiff(double index, void *params) {
 }
  
 int main(void) {
-  /* FILE *H1CANDS, *L1CANDS;
-   H1CANDS = fopen("/Users/evgoet/Documents/MATLAB/pulsar/S6/50-350HzH1candidates.dat","r");
+   FILE *H1CANDS, *L1CANDS;
+   char *infile1 = "/Users/evgoet/Documents/MATLAB/pulsar/S6/400-501HzH1Candidates.dat";
+   char *infile2 = "/Users/evgoet/Documents/MATLAB/pulsar/S6/400-501HzL1Candidates.dat";
+   char *outfile1 = "/Users/evgoet/Documents/MATLAB/pulsar/S6/400-501HzCandidates.dat";
+   char *outfile2 = "/Users/evgoet/Documents/MATLAB/pulsar/S6/400-501HzCandidates2.dat";
+   char *outfile3 = "/Users/evgoet/Documents/MATLAB/pulsar/S6/400-501HzCandidates2_reduced.dat";
+
+   H1CANDS = fopen(infile1,"r");
    if (H1CANDS == NULL) {
-      fprintf(stderr, "%s: %s does not exist\n", __func__, "/Users/evgoet/Documents/MATLAB/pulsar/S6/50-350HzH1candidates.dat");
+      fprintf(stderr, "%s: %s does not exist\n", __func__, infile1);
       exit(1);
    }
 
@@ -49,9 +55,9 @@ int main(void) {
       if (ch == '\n') h1count++;
    } while (ch != EOF);
 
-   L1CANDS = fopen("/Users/evgoet/Documents/MATLAB/pulsar/S6/50-350HzL1candidates.dat","r");
+   L1CANDS = fopen(infile2,"r");
    if (L1CANDS == NULL) {
-      fprintf(stderr, "%s: %s does not exist\n", __func__, "/Users/evgoet/Documents/MATLAB/pulsar/S6/50-350HzL1candidates.dat");
+      fprintf(stderr, "%s: %s does not exist\n", __func__, infile2);
       exit(1);
    }
 
@@ -112,7 +118,11 @@ int main(void) {
    fclose(L1CANDS);
 
    //Open a file to save the output data
-   FILE *CANDS = fopen("/Users/evgoet/Documents/MATLAB/pulsar/S6/50-350HzCandidates.dat","w");
+   FILE *CANDS = fopen(outfile1,"w");
+   if (CANDS == NULL) {
+      fprintf(stderr, "%s: cannot open %s\n", __func__, outfile1);
+      exit(1);
+   }
 
    //Setup and allocate the solver
    int status;
@@ -148,8 +158,8 @@ int main(void) {
          if (status == GSL_SUCCESS && iter < max_iter) {
             jj = (int)round(foundIndex);   //start at the index of the L1 candidate found in the root finding
 
-            int bestmatch = -1;
-            double bestmatchprob = 0.0;
+            //int bestmatch = -1;
+            //double bestmatchprob = 0.0;
 
             //Step backwards in L1 candidates until we are definitely below the H1 candidate in frequency (or at the start of the L1 list)
             while (jj>0 && (allh1cands_sorted[ii*9]-alll1cands_sorted[jj*9])<1.05*fdiff_allowed) jj--;
@@ -188,8 +198,8 @@ int main(void) {
 //         }
          } //end successful search
       } else if ((alll1cands_sorted[0]-allh1cands_sorted[ii*9])<=fdiff_allowed && (alll1cands_sorted[0]-allh1cands_sorted[ii*9])>=0.0) {
-         int bestmatch = -1;
-         double bestmatchprob = 0.0;
+         //int bestmatch = -1;
+         //double bestmatchprob = 0.0;
 
          for (jj=0; jj<l1count; jj++) {
             if (allh1cands_sorted[ii*9]-alll1cands_sorted[jj*9]<-1.05*fdiff_allowed) break;
@@ -218,8 +228,8 @@ int main(void) {
          //fprintf(CANDS, "%f %f %f %f %f %f %g %f %g %d %f %f %f %f %f %f %g %f %g %d\n",  (float)allh1cands_sorted[ii*9], (float)allh1cands_sorted[ii*9+1], (float)allh1cands_sorted[ii*9+2], (float)allh1cands_sorted[ii*9+3], (float)allh1cands_sorted[ii*9+4], (float)allh1cands_sorted[ii*9+5], allh1cands_sorted[ii*9+6], (float)allh1cands_sorted[ii*9+7], allh1cands_sorted[ii*9+8], allh1cands_job_sorted[ii], (float)alll1cands_sorted[bestmatch*9], (float)alll1cands_sorted[bestmatch*9+1], (float)alll1cands_sorted[bestmatch*9+2], (float)alll1cands_sorted[bestmatch*9+3], (float)alll1cands_sorted[bestmatch*9+4], (float)alll1cands_sorted[bestmatch*9+5], alll1cands_sorted[bestmatch*9+6], (float)alll1cands_sorted[bestmatch*9+7], alll1cands_sorted[bestmatch*9+8], alll1cands_job_sorted[bestmatch]);
          //}
       } else if ((allh1cands_sorted[ii*9]-alll1cands_sorted[(l1count-1)*9])<=fdiff_allowed && (allh1cands_sorted[ii*9]-alll1cands_sorted[(l1count-1)*9])>=0.0) {
-         int bestmatch = -1;
-         double bestmatchprob = 0.0;
+        //int bestmatch = -1;
+        //double bestmatchprob = 0.0;
 
          jj = l1count-1;
          while (l1count>0 && (allh1cands_sorted[ii*9]-alll1cands_sorted[jj*9])<1.05*fdiff_allowed) jj--;
@@ -261,20 +271,23 @@ int main(void) {
    free(allh1cands_sorted);
    free(alll1cands_sorted);
    free(allh1cands_job_sorted);
-   free(alll1cands_job_sorted); */
+   free(alll1cands_job_sorted);
+
 
 
    /// PART TWO: ///
 
    //open list for reading
-   FILE *CANDS = fopen("/Users/evgoet/Documents/MATLAB/pulsar/S6/50-350HzCandidates.dat","r");
+   //FILE *CANDS = fopen("/Users/evgoet/Documents/MATLAB/pulsar/S6/50-252HzCandidates.dat","r");
+   CANDS = fopen(outfile1,"r");
    if (CANDS == NULL) {
-      fprintf(stderr, "%s: %s does not exist\n", __func__, "/Users/evgoet/Documents/MATLAB/pulsar/S6/50-350HzCandidates.dat");
+      fprintf(stderr, "%s: %s does not exist\n", __func__, outfile1);
       exit(1);
    }
 
    //Determines number of candidates in the file
-   int count = 0, ch, ii, jj;
+   //int count = 0, ch, ii, jj;
+   int count = 0;
    do {
       ch = fgetc(CANDS);
       if (ch == '\n') count++;
@@ -295,7 +308,11 @@ int main(void) {
    fclose(CANDS);
 
    //Open a file to save the output data
-   FILE *NEWCANDS = fopen("/Users/evgoet/Documents/MATLAB/pulsar/S6/50-350HzCandidates_reduced.dat","w");
+   FILE *NEWCANDS = fopen(outfile2,"w");
+   if (NEWCANDS == NULL) {
+      fprintf(stderr, "%s: cannot open %s\n", __func__, outfile2);
+      exit(1);
+   }
 
    for (ii=0; ii<count; ii++) {
       if (allcands[ii*18]!=0.0) {
@@ -354,28 +371,6 @@ int main(void) {
       }
    }
 
-   /* for (ii=0; ii<count-1; ii++) {
-      if (allcands[ii*18] != 0.0) {
-         int bestcand = ii;
-         double bestcandprob = allcands[ii*18+16];
-         for (jj=ii+1; jj<count; jj++) {
-            if (allcands[jj*18] == allcands[ii*18] && allcands[jj*18+1] == allcands[ii*18+1] && allcands[jj*18+2] == allcands[ii*18+2]) {
-               if (allcands[jj*18+16]<bestcandprob) {
-                  bestcandprob = allcands[jj*18+16];
-                  bestcand = jj;
-               } else {
-                  allcands[jj*18] = 0.0;
-               }
-            }
-         }
-         fprintf(NEWCANDS, "%f %f %f %f %f %f %g %f %g %d %f %f %f %f %f %f %g %f %g %d\n",  (float)allcands[bestcand*18], (float)allcands[bestcand*18+1], (float)allcands[bestcand*18+2], (float)allcands[bestcand*18+3], (float)allcands[bestcand*18+4], (float)allcands[bestcand*18+5], allcands[bestcand*18+6], (float)allcands[bestcand*18+7], allcands[bestcand*18+8], allcands_job[bestcand*2], (float)allcands[bestcand*18+9], (float)allcands[bestcand*18+10], (float)allcands[bestcand*18+11], (float)allcands[bestcand*18+12], (float)allcands[bestcand*18+13], (float)allcands[bestcand*18+14], allcands[bestcand*18+15], (float)allcands[bestcand*18+16], allcands[bestcand*18+17], allcands_job[bestcand*2+1]);
-         allcands[bestcand*18] = 0.0;
-      }
-   }
-   if (allcands[(count-1)*18] != 0.0) {
-      fprintf(NEWCANDS, "%f %f %f %f %f %f %g %f %g %d %f %f %f %f %f %f %g %f %g %d\n",  (float)allcands[(count-1)*18], (float)allcands[(count-1)*18+1], (float)allcands[(count-1)*18+2], (float)allcands[(count-1)*18+3], (float)allcands[(count-1)*18+4], (float)allcands[(count-1)*18+5], allcands[(count-1)*18+6], (float)allcands[(count-1)*18+7], allcands[(count-1)*18+8], allcands_job[(count-1)*2], (float)allcands[(count-1)*18+9], (float)allcands[(count-1)*18+10], (float)allcands[(count-1)*18+11], (float)allcands[(count-1)*18+12], (float)allcands[(count-1)*18+13], (float)allcands[(count-1)*18+14], allcands[(count-1)*18+15], (float)allcands[(count-1)*18+16], allcands[(count-1)*18+17], allcands_job[(count-1)*2+1]);
-      } */
-
    fclose(NEWCANDS);
    NEWCANDS = NULL;
 
@@ -385,9 +380,9 @@ int main(void) {
    /// PART THREE: ///
 
    //open list for reading
-   CANDS = fopen("/Users/evgoet/Documents/MATLAB/pulsar/S6/50-350HzCandidates2_reduced.dat","r");
+   CANDS = fopen(outfile2,"r");
    if (CANDS == NULL) {
-      fprintf(stderr, "%s: %s does not exist\n", __func__, "/Users/evgoet/Documents/MATLAB/pulsar/S6/50-350HzCandidates_reduced.dat");
+      fprintf(stderr, "%s: %s does not exist\n", __func__, outfile2);
       exit(1);
    }
 
@@ -413,7 +408,11 @@ int main(void) {
    fclose(CANDS);
 
    //Open a file to save the output data
-   NEWCANDS = fopen("/Users/evgoet/Documents/MATLAB/pulsar/S6/50-350HzCandidates2_reduced2.dat","w");
+   NEWCANDS = fopen(outfile3,"w");
+   if (NEWCANDS == NULL) {
+      fprintf(stderr, "%s: cannot open %s\n", __func__, outfile3);
+      exit(1);
+   }
 
    for (ii=0; ii<count; ii++) {
       if (allcands[ii*18]!=0.0) {
@@ -471,28 +470,6 @@ int main(void) {
          allcands[bestcand*18] = 0.0;
       }
    }
-
-   /* for (ii=0; ii<count-1; ii++) {
-      if (allcands[ii*18] != 0.0) {
-         int bestcand = ii;
-         double bestcandprob = allcands[ii*18+7];
-         for (jj=ii+1; jj<count; jj++) {
-            if (allcands[jj*18+9] == allcands[ii*18+9] && allcands[jj*18+10] == allcands[ii*18+10] && allcands[jj*18+11] == allcands[ii*18+11]) {
-               if (allcands[jj*18+7]<bestcandprob) {
-                  bestcandprob = allcands[jj*18+7];
-                  bestcand = jj;
-               } else {
-                  allcands[jj*18] = 0.0;
-               }
-            }
-         }
-         fprintf(NEWCANDS, "%f %f %f %f %f %f %g %f %g %d %f %f %f %f %f %f %g %f %g %d\n",  (float)allcands[bestcand*18], (float)allcands[bestcand*18+1], (float)allcands[bestcand*18+2], (float)allcands[bestcand*18+3], (float)allcands[bestcand*18+4], (float)allcands[bestcand*18+5], allcands[bestcand*18+6], (float)allcands[bestcand*18+7], allcands[bestcand*18+8], allcands_job[bestcand*2], (float)allcands[bestcand*18+9], (float)allcands[bestcand*18+10], (float)allcands[bestcand*18+11], (float)allcands[bestcand*18+12], (float)allcands[bestcand*18+13], (float)allcands[bestcand*18+14], allcands[bestcand*18+15], (float)allcands[bestcand*18+16], allcands[bestcand*18+17], allcands_job[bestcand*2+1]);
-         allcands[bestcand*18] = 0.0;
-      }
-   }
-   if (allcands[(count-1)*18] != 0.0) {
-      fprintf(NEWCANDS, "%f %f %f %f %f %f %g %f %g %d %f %f %f %f %f %f %g %f %g %d\n",  (float)allcands[(count-1)*18], (float)allcands[(count-1)*18+1], (float)allcands[(count-1)*18+2], (float)allcands[(count-1)*18+3], (float)allcands[(count-1)*18+4], (float)allcands[(count-1)*18+5], allcands[(count-1)*18+6], (float)allcands[(count-1)*18+7], allcands[(count-1)*18+8], allcands_job[(count-1)*2], (float)allcands[(count-1)*18+9], (float)allcands[(count-1)*18+10], (float)allcands[(count-1)*18+11], (float)allcands[(count-1)*18+12], (float)allcands[(count-1)*18+13], (float)allcands[(count-1)*18+14], allcands[(count-1)*18+15], (float)allcands[(count-1)*18+16], allcands[(count-1)*18+17], allcands_job[(count-1)*2+1]);
-      } */
 
    fclose(NEWCANDS);
 

@@ -1,5 +1,5 @@
 package "lalapps_TwoSpect"
-version "1.1.29"
+version "1.1.30"
 purpose "TwoSpect analysis program"
 
 args "--string-parser --conf-parser --show-required=[required]"
@@ -75,6 +75,7 @@ option "injectionSources"  - "File containing sources to inject with a required 
 option "injRandSeed"       - "Random seed value for reproducable noise (conflicts with --sftDir/--sftFile options)" int default="0" optional
 
 section "Hidden options"
+option "weightedIHS"   - "Use the noise-weighted IHS scheme" flag off hidden
 option "signalOnly"    - "SFTs contain only signal, no noise" flag off hidden
 option "templateTest"  - "Test the doubly-Fourier transformed data against a single, exact template" flag off hidden
 option "templateTestF" - "The template test frequency; templateTest flag is required" double dependon="templateTest" optional hidden
