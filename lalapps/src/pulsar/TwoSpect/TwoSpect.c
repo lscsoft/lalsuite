@@ -1041,7 +1041,6 @@ int main(int argc, char *argv[])
          }
       
          //Run the IHS algorithm on the data
-         //runIHS(ihsmaxima, ffdata, ihsfarstruct, inputParams, maxrows, aveTFnoisePerFbinRatio);
          runIHS(ihsmaxima, ffdata, ihsfarstruct, inputParams, maxrows, aveNoise, aveTFnoisePerFbinRatio);
          if (xlalErrno!=0) {
             fprintf(stderr, "%s: runIHS() failed.\n", __func__);
