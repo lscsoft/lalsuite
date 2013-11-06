@@ -208,6 +208,14 @@ int LALInferenceFprintParameterHeaders(FILE *out, LALInferenceVariables *params)
  */
 INT4 LALInferenceFprintParameterNonFixedHeaders(FILE *out, LALInferenceVariables *params);
 
+/**
+ * Print the parameters which do not vary to a file as a tab-separated ASCII line, adding the given suffix
+ * \param out [in] pointer to output file
+ * \param params [in] LALInferenceVaraibles structure to print
+ * \param suffix [in] Suffix string to add to each parameter name
+ */
+INT4 LALInferenceFprintParameterNonFixedHeadersWithSuffix(FILE *out, LALInferenceVariables *params, const char *suffix);
+
 /** Prints a variable item to a string (must be pre-allocated!) */
 void LALInferencePrintVariableItem(char *out, LALInferenceVariableItem *ptr);
 
@@ -408,7 +416,9 @@ tagLALInferenceRunState
     *priorArgs,                                      /** Any special arguments for the prior function */
     *proposalArgs,                                   /** Any special arguments for the proposal function */
     *proposalStats,                                  /** Set of structs containing statistics for each proposal*/
-    *algorithmParams;                                /** Parameters which control the running of the algorithm*/
+    *algorithmParams,                                /** Parameters which control the running of the algorithm*/
+    *preProposalParams,                              /** Current location going into jump proposal */
+    *proposedParams;                                 /** Parameters proposed */
   LALInferenceVariables				**livePoints; /** Array of live points for Nested Sampling */
   LALInferenceVariables **differentialPoints;        /** Array of points for differential evolution */
   size_t differentialPointsLength;                   /** Length of the current differential points stored in 

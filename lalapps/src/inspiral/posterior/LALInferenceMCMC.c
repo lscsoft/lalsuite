@@ -392,6 +392,7 @@ void initializeMCMC(LALInferenceRunState *runState)
                (--adaptVerbose)                 Output parameter jump sizes and acceptance rate stats to file.\n\
                (--tempVerbose)                  Output temperature swapping stats to file.\n\
                (--propVerbose)                  Output proposal stats to file.\n\
+               (--propTrack)                    Output useful info for track proposal behavior.\n\
                (--outfile file)                 Write output files <file>.<chain_number> (PTMCMC.output.<random_seed>.<chain_number>).\n";
 
   /* Print command line arguments if runState was not allocated */

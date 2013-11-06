@@ -304,6 +304,7 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
   LALInferenceMPIswapAcceptance swapReturn;
   LALInferenceVariables *propStats = runState->proposalStats; // Print proposal acceptance rates to file
   LALInferenceProposalStatistics *propStat;
+  UINT4 propTrack = 0;
   UINT4 (*parallelSwap)(LALInferenceRunState *, REAL8 *, INT4, FILE *);
   INT4 nPar = LALInferenceGetVariableDimensionNonFixed(runState->currentParams);
   INT4 Niter = *(INT4*) LALInferenceGetVariable(runState->algorithmParams, "Niter");
@@ -531,9 +532,11 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
   FILE * chainoutput = NULL;
   FILE *statfile = NULL;
   FILE *propstatfile = NULL;
+  FILE *proptrackfile = NULL;
   FILE *swapfile = NULL;
   char statfilename[256];
   char propstatfilename[256];
+  char proptrackfilename[256];
   char swapfilename[256];
   if (tempVerbose && MPIrank > 0) {
     sprintf(swapfilename,"PTMCMC.tempswaps.%u.%2.2d",randomseed,MPIrank);
@@ -567,6 +570,17 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
   if (propStats) {
     sprintf(propstatfilename,"PTMCMC.propstats.%u.%2.2d",randomseed,MPIrank);
     propstatfile = fopen(propstatfilename, "w");
+  }
+
+  if (LALInferenceGetProcParamVal(runState->commandLine, "--propTrack")){
+    propTrack=1;
+    runState->preProposalParams = XLALCalloc(1, sizeof(LALInferenceVariableItem));
+    runState->proposedParams = XLALCalloc(1, sizeof(LALInferenceVariableItem));
+
+    UINT4 a=0;
+    LALInferenceAddVariable(runState->proposalArgs, "accepted", &a, LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_OUTPUT);
+    sprintf(proptrackfilename,"PTMCMC.proptrack.%u.%2.2d",randomseed,MPIrank);
+    proptrackfile = fopen(proptrackfilename, "w");
   }
 
   // initialize starting likelihood value:
@@ -774,10 +788,18 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
     runState->evolve(runState); //evolve the chain at temperature ladder[t]
     acceptanceCount = *(INT4*) LALInferenceGetVariable(runState->proposalArgs, "acceptanceCount");
 
-    if (i==1 && propStats){
-      fprintf(propstatfile, "cycle\t");
-      LALInferencePrintProposalStatsHeader(propstatfile, runState->proposalStats);
-      fflush(propstatfile);
+    if (i==1){
+      if (propStats) {
+          fprintf(propstatfile, "cycle\t");
+          LALInferencePrintProposalStatsHeader(propstatfile, runState->proposalStats);
+          fflush(propstatfile);
+      }
+
+      if (propTrack) {
+          fprintf(proptrackfile, "cycle\t");
+          LALInferencePrintProposalTrackingHeader(proptrackfile, runState->currentParams);
+          fflush(proptrackfile);
+      }
     }
 
     if ((i % Nskip) == 0) {
@@ -842,6 +864,11 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
         LALInferencePrintProposalStats(propstatfile,runState->proposalStats);
         fflush(propstatfile);
       }
+
+      if (propTrack) {
+        fprintf(proptrackfile, "%d\t", i);
+        LALInferencePrintProposalTracking(proptrackfile, runState->proposalArgs, runState->preProposalParams, runState->proposedParams);
+      }
     }
 
     /* Excute swap proposal. */
@@ -882,6 +909,9 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
     }
     if (propStats) {
       fclose(propstatfile);
+    }
+    if (propTrack) {
+      fclose(proptrackfile);
     }
   }
 
@@ -947,6 +977,12 @@ void PTMCMCOneStep(LALInferenceRunState *runState)
   else
     logLikelihoodProposed = -DBL_MAX;
 
+  if (runState->preProposalParams != NULL)
+    LALInferenceCopyVariables(runState->currentParams, runState->preProposalParams);
+
+  if (runState->proposedParams != NULL)
+    LALInferenceCopyVariables(&proposedParams, runState->proposedParams);
+
   //REAL8 nullLikelihood = *(REAL8*) LALInferenceGetVariable(runState->proposalArgs, "nullLikelihood");
   //printf("%10.10f\t%10.10f\t%10.10f\n", logPriorProposed-logPriorCurrent, logLikelihoodProposed-nullLikelihood, logProposalRatio);
   //LALInferencePrintVariables(&proposedParams);
@@ -972,6 +1008,9 @@ void PTMCMCOneStep(LALInferenceRunState *runState)
     LALInferenceSetVariable(runState->proposalArgs, "acceptanceCount", &acceptanceCount);
 
   }
+
+  if (LALInferenceCheckVariable(runState->proposalArgs, "accepted"))
+    LALInferenceSetVariable(runState->proposalArgs, "accepted", &accepted);
 
   /* special (clumsy) treatment for noise parameters */
   //???: Is there a better way to deal with accept/reject of noise parameters?

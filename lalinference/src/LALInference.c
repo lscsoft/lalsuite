@@ -835,6 +835,33 @@ int LALInferenceFprintParameterNonFixedHeaders(FILE *out, LALInferenceVariables 
   return 0;
 }
 
+INT4 LALInferenceFprintParameterNonFixedHeadersWithSuffix(FILE *out, LALInferenceVariables *params, const char *suffix) {
+  LALInferenceVariableItem *head = params->head;
+
+  INT4 i,j;
+  gsl_matrix *matrix = NULL;
+
+  while (head != NULL) {
+    if (head->vary != LALINFERENCE_PARAM_FIXED) {
+      if(head->type==LALINFERENCE_gslMatrix_t)
+      {
+        matrix = *((gsl_matrix **)head->value);
+        for(i=0; i<(int)matrix->size1; i++)
+        {
+          for(j=0; j<(int)matrix->size2; j++)
+          {
+            fprintf(out, "%s_%s%i%i\t", LALInferenceTranslateInternalToExternalParamName(head->name),suffix,i,j);
+          }
+        }
+      }
+      else fprintf(out, "%s_%s\t", LALInferenceTranslateInternalToExternalParamName(head->name), suffix);
+    }
+    head = head->next;
+  }
+
+  return 0;
+}
+
 int LALInferenceCompareVariables(LALInferenceVariables *var1, LALInferenceVariables *var2)
 /*  Compare contents of "var1" and "var2".                       */
 /*  Returns zero for equal entries, and one if difference found. */

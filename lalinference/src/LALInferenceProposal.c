@@ -2778,3 +2778,27 @@ void parametersSetFIM(LALInferenceRunState *runState, FIMParams *params)
     return;
 }
 
+
+INT4 LALInferencePrintProposalTrackingHeader(FILE *fp,LALInferenceVariables *params) {
+      fprintf(fp, "proposal\t");
+      LALInferenceFprintParameterNonFixedHeaders(fp, params);
+      LALInferenceFprintParameterNonFixedHeadersWithSuffix(fp, params, "p");
+      fprintf(fp, "prop_ratio\taccepted\t");
+      fprintf(fp, "\n");
+      return 0;
+}
+
+void LALInferencePrintProposalTracking(FILE *fp, LALInferenceVariables *propArgs, LALInferenceVariables *theta, LALInferenceVariables *theta_prime){
+  const char *currentProposalName;
+  currentProposalName = *((const char **)LALInferenceGetVariable(propArgs, LALInferenceCurrentProposalName));
+  REAL8 logProposalRatio = *(REAL8*) LALInferenceGetVariable(propArgs, "logProposalRatio");
+  UINT4 accepted = *(UINT4 *) LALInferenceGetVariable(propArgs, "accepted");
+
+  fprintf(fp, "%s\t", currentProposalName);
+  LALInferencePrintSampleNonFixed(fp, theta);
+  LALInferencePrintSampleNonFixed(fp, theta_prime);
+  fprintf(fp, "%9.5f\t", exp(logProposalRatio));
+  fprintf(fp, "%d\t", accepted);
+  fprintf(fp, "\n");
+  return;
+}

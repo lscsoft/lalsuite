@@ -332,6 +332,12 @@ void drawFisherMatrix(LALInferenceRunState *runState);
 
 void parametersSetFIM(LALInferenceRunState *runState, FIMParams *params);
 
+/** Output proposal tracking header to file *fp */
+int LALInferencePrintProposalTrackingHeader(FILE *fp,LALInferenceVariables *params);
+
+/** Output proposal tracking information to file *fp */
+void LALInferencePrintProposalTracking(FILE *fp, LALInferenceVariables *propArgs, LALInferenceVariables *theta, LALInferenceVariables *theta_prime);
+
 /*@}*/
 
 #endif
