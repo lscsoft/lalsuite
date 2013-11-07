@@ -266,6 +266,7 @@ src/pulsar/hough/src2/lalapps_HoughValidateAM
 src/pulsar/hough/src2/lalapps_RecalcHSCandidates
 src/pulsar/lalapps_Calibrate1800SFTs
 src/pulsar/lalapps_Calibrate60sSFTs
+src/pulsar/lalapps_ComputeAntennaPattern
 src/pulsar/lalapps_ComputePSD
 src/pulsar/lalapps_ComputeWeightedMultiAMCoeffs
 src/pulsar/lalapps_FreqAverager
