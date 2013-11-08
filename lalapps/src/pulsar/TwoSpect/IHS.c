@@ -498,7 +498,7 @@ void sumIHSSequenceFAR(ihsfarStruct *outputfar, REAL4VectorSequence *ihsvectorse
    INT4 ii, jj;
 
    //The minimum and maximum index to search in the IHS vector
-   INT4 maxIndexForIHS = (INT4)ceil(fmin(params->Tobs/7200.0, params->Tobs/params->Pmin)) - 5;
+   INT4 maxIndexForIHS = (INT4)ceil(fmin(params->Tobs/params->Pmin, fmin(params->Tobs/minPeriod(0.5*(ii-1)/params->Tcoh, params->Tcoh), params->Tobs/7200.0))) - 5;
    INT4 minIndexForIHS = (INT4)floor(fmax(5.0, params->Tobs/params->Pmax)) - 5;
 
    //Allocate a vector sequence that holds the summed values of at least two nearest neighbor rows
@@ -746,7 +746,7 @@ void sumIHSSequence(ihsMaximaStruct *output, ihsfarStruct *inputfar, REAL4Vector
    }
    
    //The minimum and maximum index to search in the IHS vector
-   INT4 maxIndexForIHS = (INT4)ceil(fmin(params->Tobs/7200.0, params->Tobs/params->Pmin)) - 5;
+   INT4 maxIndexForIHS = (INT4)ceil(fmin(params->Tobs/params->Pmin, fmin(params->Tobs/minPeriod(0.5*(ii-1)/params->Tcoh, params->Tcoh), params->Tobs/7200.0))) - 5;
    INT4 minIndexForIHS = (INT4)floor(fmax(5.0, params->Tobs/params->Pmax)) - 5;
    
    //Finding the maximum for each IHS vector and the location using SSE or not
@@ -803,7 +803,6 @@ void sumIHSSequence(ihsMaximaStruct *output, ihsfarStruct *inputfar, REAL4Vector
          }
          
          //The maximum index to search in the IHS vector
-         //maxIndexForIHS = (INT4)ceil(fmin(2.0*params->Tobs/minPeriod(0.5*(ii-1)/params->Tcoh, params->Tcoh), 2.0*params->Tobs/7200.0)) - 5;
          maxIndexForIHS = (INT4)ceil(fmin(params->Tobs/params->Pmin, fmin(params->Tobs/minPeriod(0.5*(ii-1)/params->Tcoh, params->Tcoh), params->Tobs/7200.0))) - 5;
          
          REAL4 sumofnoise = 0.0;    //To scale the expected IHS background
