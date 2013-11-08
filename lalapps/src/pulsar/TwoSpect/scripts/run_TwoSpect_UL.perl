@@ -25,8 +25,9 @@ my $injskydec = '';
 my $ihsfactor = 5;
 my $seedstart = 42;
 my $scox1switch = 0;
+my $weightedIHS = 0;
 my $directory = '';
-GetOptions('dir=s' => \$directory, 'jobnum=i' => \$jobnum, 'realnoise' => \$noiseswitch, 'gaps' => \$gapsswitch, 'randpol' => \$randpolswitch, 'linpol' => \$linpolswitch, 'eccOrbit' => \$eccentricityswitch, 'spindown' => \$spindownswitch, 'ifo=s' => \$ifo, 'fmin=f' => \$fmin, 'h0min:f' => \$h0min, 'h0val:f' => \$h0val, 'skylocations:i' => \$skylocations, 'timestampsfile:s' => \$timestampsfile, 'injskyra:f' => \$injskyra, 'injskydec:f' => \$injskydec, 'ihsfactor:i' => \$ihsfactor, 'seed:i' => \$seedstart, 'scox1' => \$scox1switch);
+GetOptions('dir=s' => \$directory, 'jobnum=i' => \$jobnum, 'realnoise' => \$noiseswitch, 'gaps' => \$gapsswitch, 'randpol' => \$randpolswitch, 'linpol' => \$linpolswitch, 'eccOrbit' => \$eccentricityswitch, 'spindown' => \$spindownswitch, 'ifo=s' => \$ifo, 'fmin=f' => \$fmin, 'h0min:f' => \$h0min, 'h0val:f' => \$h0val, 'skylocations:i' => \$skylocations, 'timestampsfile:s' => \$timestampsfile, 'injskyra:f' => \$injskyra, 'injskydec:f' => \$injskydec, 'ihsfactor:i' => \$ihsfactor, 'seed:i' => \$seedstart, 'scox1' => \$scox1switch, 'weightedIHS' => \$weightedIHS);
 
 die "Must set only one of randpolswitch, linpolswitch, or circpolswitch" if ($randpolswitch==1 && $linpolswitch==1);
 die "Must specify one of --h0min or --h0val" if (($h0min ne "" && $h0val ne "") || ($h0min eq "" && $h0val eq ""));
@@ -238,6 +239,10 @@ EOF
       close(SKYFILE2);
    } else {
       die "Need 1 or more sky locations (though 0 is exact sky location)";
+   }
+
+   if ($weightedIHS!=0) {
+      print TWOSPECTCONFIG "weightedIHS\n";
    }
 
    close(TWOSPECTCONFIG);

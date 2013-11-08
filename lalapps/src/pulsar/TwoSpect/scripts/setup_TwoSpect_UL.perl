@@ -23,7 +23,8 @@ my $injskydec = '';
 my $ihsfactor = 5;
 my $seedstart = 42;
 my $scox1switch = 0;
-GetOptions('dir=s' => \$directory, 'jobs=i' => \$jobs, 'realnoise' => \$noiseswitch, 'gaps' => \$gapsswitch, 'randpol' => \$randpolswitch, 'linpol' => \$linpolswitch, 'eccOrbit' => \$eccentricityswitch, 'spindown' => \$spindownswitch, 'ifo=s' => \$ifo, 'fmin=f' => \$fmin, 'h0min:f' => \$h0min, 'h0val:f' => \$h0val, 'skylocations:i' => \$skylocations, 'timestampsfile:s' => \$timestampsfile, 'injskyra:f' => \$injskyra, 'injskydec:f' => \$injskydec, 'ihsfactor:i' => \$ihsfactor, 'seed:i' => \$seedstart, 'scox1' => \$scox1switch);
+my $weightedIHS = 0;
+GetOptions('dir=s' => \$directory, 'jobs=i' => \$jobs, 'realnoise' => \$noiseswitch, 'gaps' => \$gapsswitch, 'randpol' => \$randpolswitch, 'linpol' => \$linpolswitch, 'eccOrbit' => \$eccentricityswitch, 'spindown' => \$spindownswitch, 'ifo=s' => \$ifo, 'fmin=f' => \$fmin, 'h0min:f' => \$h0min, 'h0val:f' => \$h0val, 'skylocations:i' => \$skylocations, 'timestampsfile:s' => \$timestampsfile, 'injskyra:f' => \$injskyra, 'injskydec:f' => \$injskydec, 'ihsfactor:i' => \$ihsfactor, 'seed:i' => \$seedstart, 'scox1' => \$scox1switch, 'weightedIHS' => \$weihgtedIHS);
 
 die "Must set only one of randpolswitch, linpolswitch, or circpolswitch" if ($randpolswitch==1 && $linpolswitch==1);
 die "Must specify one of --h0min or --h0val" if (($h0min ne "" && $h0val ne "") || ($h0min eq "" && $h0val eq ""));
@@ -98,6 +99,9 @@ if ($seedstart!=42) {
 }
 if ($scox1switch!=0) {
    print CONDORFILE " --scox1";
+}
+if ($weightedIHS!=0) {
+   print CONDORFILE " --weightedIHS";
 }
 print CONDORFILE "\"\n";
 
