@@ -94,8 +94,8 @@ MOSTLYCLEANFILES = \
 	OutHistogram.asc \
 	OutHough.asc \
 	outputsft*.sft \
-	testFstat_v3-LFT.sft \
-	testFstat_v3-timeseries.dat
+	testLFTandTSutils-LFT.sft \
+	testLFTandTSutils-timeseries.dat
 
 pkgdata_DATA = \
 	circularEphem.dat \

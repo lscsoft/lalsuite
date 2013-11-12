@@ -1,7 +1,6 @@
 ## Process this file with automake to produce Makefile.in
 
 CFSsrc = $(top_srcdir)/src/pulsar/FDS_isolated
-OPTsrc = $(top_srcdir)/src/pulsar/FDS_isolated/OptimizedCFS
 EAHsrc = $(top_srcdir)/src/pulsar/hough/src2/EinsteinAtHome
 
 # for using lalapps-defines + functions
@@ -10,7 +9,7 @@ LDADD = $(top_builddir)/src/lalapps/liblalapps.la
 
 bin_PROGRAMS = lalapps_HierarchSearchGCT
 check_PROGRAMS = testLineVeto
-EXTRA_PROGRAMS = eah_HierarchSearchGCT lalapps_HierarchSearchGCT_cuda lalapps_HierarchSearchGCT_VFStat \
+EXTRA_PROGRAMS = eah_HierarchSearchGCT \
 	         lalapps_HierarchSearchGCT_SSE2 lalapps_HierarchSearchGCT_SSE2_NONC
 
 EAHSources = $(EAHsrc)/hs_boinc_extras.c $(EAHsrc)/hs_boinc_options.cpp $(EAHsrc)/win_lib.cpp
@@ -25,13 +24,6 @@ lalapps_HierarchSearchGCT_SOURCES = $(HSGCTSources)
 testLineVeto_SOURCES = testLineVeto.c \
                    $(CFSsrc)/HeapToplist.c $(CFSsrc)/HeapToplist.h \
                    LineVeto.c LineVeto.h
-
-lalapps_HierarchSearchGCT_cuda_SOURCES = $(HSGCTSources) $(OPTsrc)/ComputeFstatREAL4.c $(OPTsrc)/ComputeFstatREAL4CUDA.c $(OPTsrc)/FStatCUDA.cu
-lalapps_HierarchSearchGCT_cuda_CPPFLAGS = $(AM_CPPFLAGS) -DUSE_CUDA
-lalapps_HierarchSearchGCT_cuda_LDADD = $(LDADD) -lcudart
-
-lalapps_HierarchSearchGCT_VFStat_SOURCES = $(HSGCTSources)
-lalapps_HierarchSearchGCT_VFStat_CPPFLAGS = $(AM_CPPFLAGS) -DHS_OPTIMIZATION -DHIERARCHSEARCHGCT
 
 lalapps_HierarchSearchGCT_SSE2_SOURCES = $(HSGCTSources)
 lalapps_HierarchSearchGCT_SSE2_CPPFLAGS = $(AM_CPPFLAGS) -DHS_OPTIMIZATION -DHIERARCHSEARCHGCT -DGC_SSE2_OPT
