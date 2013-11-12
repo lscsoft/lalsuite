@@ -342,10 +342,8 @@ iface_file.write('#endif\n')
 
 # include interface headers in wrapping code
 iface_file.write('%header %{\n')
-iface_file.write('#ifdef __cplusplus\nextern "C" {\n#endif\n')
 for header in header_files:
     iface_file.write('#include <%s>\n' % header)
-iface_file.write('#ifdef __cplusplus\n}\n#endif\n')
 iface_file.write('%}\n')
 
 # process interface symbols, with renaming
