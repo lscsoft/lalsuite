@@ -106,7 +106,7 @@ LALPlaceAndGPS;
 
 /* ---------- Function prototypes : see respective source.c files for doxygen documentation ---------- */
 
-#ifndef SWIG // exclude from SWIG interface
+#ifndef SWIG /* exclude from SWIG interface */
 
 /* Converts GPS time to nano seconds stored as an INT8. */
 INT8 XLALGPSToINT8NS( const LIGOTimeGPS *epoch );
@@ -156,16 +156,16 @@ int XLALStrToGPS(LIGOTimeGPS *t, const char *nptr, char **endptr);
 /* Return a string containing the ASCII base 10 representation of a LIGOTimeGPS. */
 char *XLALGPSToStr(char *, const LIGOTimeGPS *t);
 
-#endif // !SWIG
+#endif /* !SWIG */
 
-#ifdef SWIG // SWIG interface directives
+#ifdef SWIG /* SWIG interface directives */
 SWIGLAL(NEW_EMPTY_ARGUMENT(LIGOTimeGPS*, gpstime));
 #endif
 
 /* This function returns the current GPS time according to the system clock */
 LIGOTimeGPS* XLALGPSTimeNow( LIGOTimeGPS *gpstime );
 
-#ifdef SWIG // SWIG interface directives
+#ifdef SWIG /* SWIG interface directives */
 SWIGLAL_CLEAR(NEW_EMPTY_ARGUMENT(LIGOTimeGPS*, gpstime));
 #endif
 
@@ -181,7 +181,7 @@ int XLALLeapSecondsUTC( const struct tm *utc );
 /* Returns the GPS seconds since the GPS epoch for a specified UTC time structure. */
 INT4 XLALUTCToGPS( const struct tm *utc );
 
-#ifdef SWIG // SWIG interface directives
+#ifdef SWIG /* SWIG interface directives */
 SWIGLAL(EMPTY_ARGUMENT(struct tm*, utc));
 #endif
 
@@ -189,7 +189,7 @@ SWIGLAL(EMPTY_ARGUMENT(struct tm*, utc));
  * specified in seconds since the GPS epoch.  */
 struct tm* XLALGPSToUTC( struct tm *utc, INT4 gpssec );
 
-#ifdef SWIG // SWIG interface directives
+#ifdef SWIG /* SWIG interface directives */
 SWIGLAL_CLEAR(EMPTY_ARGUMENT(struct tm*, utc));
 #endif
 

@@ -60,10 +60,4 @@
 #include <stdarg.h>
 #include <lal/LALMalloc.h>
 
-/* remove 'restrict' keyword when compiling in C89/C++ */
-#if (__STDC_VERSION__ < 199901L) || defined(__cplusplus)
-# undef restrict
-# define restrict
-#endif
-
 #endif /* _LALSTDLIB_H */

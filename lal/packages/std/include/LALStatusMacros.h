@@ -17,7 +17,7 @@
 *  MA  02111-1307  USA
 */
 
-// ---------- SEE LALStatusMacros.dox for doxygen documentation ----------
+/* ---------- SEE LALStatusMacros.dox for doxygen documentation ---------- */
 
 #ifndef _LALSTATUSMACROS_H
 #define _LALSTATUSMACROS_H

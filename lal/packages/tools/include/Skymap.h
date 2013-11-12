@@ -26,34 +26,34 @@ extern "C" {
 
 #include <lal/LALDetectors.h>
 
-// Manipulate log-represented values without overflowing
+/* Manipulate log-represented values without overflowing */
 
 double XLALSkymapLogSumExp(double a, double b);
 double XLALSkymapLogTotalExp(double* begin, double* end);
 
-// Lightweight coordinate transformations
+/* Lightweight coordinate transformations */
 
 void XLALSkymapCartesianFromSpherical(double a[3], double b[2]);
 void XLALSkymapSphericalFromCartesian(double a[2], double b[3]);
 
-// Cubic interpolation
+/* Cubic interpolation */
 
 double XLALSkymapInterpolate(double t, double* x);
 
-// Largest network of interest (needed to allocate storage)
+/* Largest network of interest (needed to allocate storage) */
 
 #define XLALSKYMAP_N 5
 
-// Use detector names from lal/packages/tools/include/LALDetectors.h :
-//	LAL_TAMA_300_DETECTOR	=	0
-//	LAL_VIRGO_DETECTOR      =	1
-//	LAL_GEO_600_DETECTOR	=	2
-//	LAL_LHO_2K_DETECTOR     =	3
-//	LAL_LHO_4K_DETECTOR     =	4
-//	LAL_LLO_4K_DETECTOR     =	5
+/* Use detector names from lal/packages/tools/include/LALDetectors.h : */
+/*	LAL_TAMA_300_DETECTOR	=	0 */
+/*	LAL_VIRGO_DETECTOR      =	1 */
+/*	LAL_GEO_600_DETECTOR	=	2 */
+/*	LAL_LHO_2K_DETECTOR     =	3 */
+/*	LAL_LHO_4K_DETECTOR     =	4 */
+/*	LAL_LLO_4K_DETECTOR     =	5 */
 
-// Struct to store basic properties of the analysis: the sample rate, and
-// the detectors involved (described by their LAL ID numbers)
+/* Struct to store basic properties of the analysis: the sample rate, and */
+/* the detectors involved (described by their LAL ID numbers) */
 
 typedef struct tagXLALSkymapPlanType
 {
@@ -69,8 +69,8 @@ void XLALSkymapPlanConstruct(
     XLALSkymapPlanType* plan
     );
 
-// Struct to store reuseable pre-computed quantities for a specific
-// direction, set of detectors, and sample rate
+/* Struct to store reuseable pre-computed quantities for a specific */
+/* direction, set of detectors, and sample rate */
 
 typedef struct tagXLALSkymapDirectionPropertiesType
 {
@@ -84,8 +84,8 @@ void XLALSkymapDirectionPropertiesConstruct(
     XLALSkymapDirectionPropertiesType* properties
     );
 
-// Struct to store reuseable pre-computed kernel for a specific direction,
-// power spectra, and sample rate
+/* Struct to store reuseable pre-computed kernel for a specific direction, */
+/* power spectra, and sample rate */
 
 typedef struct tagXLALSkymapKernelType
 {
@@ -108,7 +108,7 @@ void XLALSkymapUncertainKernelConstruct(
     XLALSkymapKernelType* kernel
     );
 
-// Compute the Bayesian marginalization integral for the specified system
+/* Compute the Bayesian marginalization integral for the specified system */
 
 void XLALSkymapApply(
     XLALSkymapPlanType* plan,
@@ -123,5 +123,5 @@ void XLALSkymapApply(
 }
 #endif
 
-#endif // SKYMAP_H
+#endif /* SKYMAP_H */
 

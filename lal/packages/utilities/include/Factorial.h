@@ -51,7 +51,7 @@
  */
 /*@{*/
 
-#ifndef SWIG // exclude from SWIG wrappings
+#ifndef SWIG /* exclude from SWIG wrappings */
 
 #define LAL_FACT_MAX 20
 
@@ -240,7 +240,7 @@ static const REAL8 LAL_FACT2_LOG[] = { \
   43.2922520225417196595260757880648636 \
 };
 
-#endif // SWIG
+#endif /* SWIG */
 
 /*@}*/
 

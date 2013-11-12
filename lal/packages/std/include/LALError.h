@@ -39,7 +39,7 @@ extern "C" {
 extern int (*lalRaiseHook) (int, const char *, ...);
 extern void (*lalAbortHook) (const char *, ...);
 
-/** \addtogroup LALError_h *//*@{ */
+/** \addtogroup LALError_h */ /*@{ */
 
 int LALPrintError(const char *fmt, ...);
 

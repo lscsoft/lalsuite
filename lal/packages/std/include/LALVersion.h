@@ -56,7 +56,7 @@ extern "C" {
  */
 /*@{*/
 
-/**\name Error Codes *//*@{ */
+/**\name Error Codes */ /*@{ */
 #define LALVERSIONH_ENULL 1     /**< Null string pointer */
 #define LALVERSIONH_ESIZE 2     /**< Zero string size */
 #define LALVERSIONH_ESPRN 4     /**< Error in snprintf */

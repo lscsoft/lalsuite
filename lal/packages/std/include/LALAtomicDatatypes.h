@@ -17,7 +17,7 @@
 *  MA  02111-1307  USA
 */
 
-// ---------- SEE LALDatatypes.dox for doxygen documentation ----------
+/* ---------- SEE LALDatatypes.dox for doxygen documentation ---------- */
 
 #ifndef _LALATOMICDATATYPES_H
 #define _LALATOMICDATATYPES_H
@@ -33,6 +33,18 @@
 #endif /* LAL_USE_OLD_COMPLEX_STRUCTS */
 
 #include <lal/LALConfig.h>
+
+/* macros for certain keywords */
+#if __STDC_VERSION__ >= 199901L
+# define _LAL_RESTRICT_ restrict
+# define _LAL_INLINE_ inline
+#elif defined __GNUC__
+# define _LAL_RESTRICT_ __restrict__
+# define _LAL_INLINE_ __inline__
+#else
+# define _LAL_RESTRICT_
+# define _LAL_INLINE_
+#endif
 
 #if defined(__cplusplus)
 extern "C" {
