@@ -213,7 +213,8 @@ static int bayestar_sky_map_toa_not_normalized_log(
 
 
 static const double autoresolution_confidence_level = 0.9999;
-static const long autoresolution_count_pix = 3072;
+static const long autoresolution_count_pix_toa_snr = 3072;
+static const long autoresolution_count_pix_toa_phoa_snr = 12288;
 
 
 /* Perform sky localization based on TDOAs alone. */
@@ -225,7 +226,8 @@ static double *bayestar_sky_map_toa_adapt_resolution(
     int nifos, /* Input: number of detectors. */
     const double **locs, /* Input: array of detector positions. */
     const double *toas, /* Input: array of times of arrival. */
-    const double *w_toas /* Input: sum-of-squares weights, (1/TOA variance)^2. */
+    const double *w_toas, /* Input: sum-of-squares weights, (1/TOA variance)^2. */
+	long autoresolution_count_pix
 ) {
     int ret;
     double *P = NULL;
@@ -303,7 +305,7 @@ double *bayestar_sky_map_toa(
 ) {
     long maxpix;
     gsl_permutation *pix_perm = NULL;
-    double *ret = bayestar_sky_map_toa_adapt_resolution(&pix_perm, &maxpix, npix, gmst, nifos, locs, toas, w_toas);
+    double *ret = bayestar_sky_map_toa_adapt_resolution(&pix_perm, &maxpix, npix, gmst, nifos, locs, toas, w_toas, autoresolution_count_pix_toa_snr);
     gsl_permutation_free(pix_perm);
     return ret;
 }
@@ -402,7 +404,7 @@ double *bayestar_sky_map_toa_snr(
     }
 
     /* Evaluate posterior term only first. */
-    P = bayestar_sky_map_toa_adapt_resolution(&pix_perm, &maxpix, npix, gmst, nifos, locations, toas, w_toas);
+    P = bayestar_sky_map_toa_adapt_resolution(&pix_perm, &maxpix, npix, gmst, nifos, locations, toas, w_toas, autoresolution_count_pix_toa_snr);
     if (!P)
         return NULL;
 
@@ -688,7 +690,7 @@ double *bayestar_sky_map_toa_phoa_snr(
         exp_i_phoas[i] = exp_i(phoas[i]);
 
     /* Evaluate posterior term only first. */
-    P = bayestar_sky_map_toa_adapt_resolution(&pix_perm, &maxpix, npix, gmst, nifos, locations, toas, w_toas);
+    P = bayestar_sky_map_toa_adapt_resolution(&pix_perm, &maxpix, npix, gmst, nifos, locations, toas, w_toas, autoresolution_count_pix_toa_phoa_snr);
     if (!P)
         return NULL;
 
