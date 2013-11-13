@@ -84,7 +84,7 @@ def utc_to_gps(utc_time):
 
     @returns a LIGOTimeGPS
     """
-    if isinstance(utc_time, _datetime.date):
+    if not isinstance(utc_time, _datetime.datetime):
         utc_time = _datetime.datetime.combine(utc_time, _datetime.time())
     _check_utc(utc_time)
     return LIGOTimeGPS(_utc_to_gps(utc_time.utctimetuple()))
