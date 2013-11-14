@@ -9,14 +9,7 @@
 .deps
 .dvi-dep
 .libs
-Makefile
-Makefile.in
-aclocal.m4
-autom4te.cache/
-config.log
 config.lt
-config.status
-configure
 doc/README.install
 doc/autodoc/*.eps
 doc/autodoc/*.pdf

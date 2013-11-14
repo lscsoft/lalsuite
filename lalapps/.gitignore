@@ -5,14 +5,7 @@
 *.o
 .deps
 .libs
-Makefile
-Makefile.in
-aclocal.m4
-autom4te.cache/
-config.log
 config.lt
-config.status
-configure
 doc/AUTHORS.tex
 doc/hello.c
 doc/lalapps.bbl
