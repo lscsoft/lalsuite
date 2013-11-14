@@ -1732,16 +1732,6 @@ int read_commandline_and_file(LALStatus* status, int argc,char *argv[]) {
     exit(1);
   }
 
-  /* check that ephemeris files exist and can be read... */
-  if (!(fp=fopen(earthdata, "r")) || fclose(fp)) {
-    syserror("Unable to read ephemeris file %s\n", earthdata);
-    exit(1);
-  }
-  if (!(fp=fopen(sundata, "r")) || fclose(fp)) {
-    syserror("Unable to read ephemeris file %s\n", sundata);
-    exit(1);
-  }
-
   /* Open input data file */
   if (!(fp=fopen(inDataFilename,"r"))) {
     syserror("Unable to find the inDataFilename file %s\n",inDataFilename);
