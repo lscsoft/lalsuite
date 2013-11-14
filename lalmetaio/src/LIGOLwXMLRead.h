@@ -80,9 +80,6 @@ extern "C" {
 #define LIGOLWXMLREADH_MSGETNOP "Table not begun for writing"
 /*@}*/
 
-
-
-
 /**
  * This structure allows for the association of entries in a MetaDataTable
  * with columns in an xml file.
@@ -105,14 +102,6 @@ tagMetaTableDirectory
 }
 MetaTableDirectory;
 
-
-
-
-
-
-
-
-
 MetaTableDirectory* XLALCreateMetaTableDir(
     const MetaioParseEnv    env,
     MetadataTableType       table
@@ -125,12 +114,6 @@ LALCreateMetaTableDir(
     const MetaioParseEnv    env,
     MetadataTableType       table
     );
-
-
-
-
-
-
 
 int
 XLALLIGOLwFindColumn(
