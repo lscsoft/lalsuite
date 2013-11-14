@@ -79,7 +79,7 @@
 #endif
 
 MetaTableDirectory* XLALCreateMetaTableDir(
-    const MetaioParseEnv    env,
+    struct MetaioParseEnvironment *const env,
     MetadataTableType       table
     )
 
@@ -348,7 +348,7 @@ void
 LALCreateMetaTableDir(
     LALStatus              *status,
     MetaTableDirectory    **tableDir,
-    const MetaioParseEnv    UNUSED env,
+    struct MetaioParseEnvironment *const env UNUSED,
     MetadataTableType       table
     )
 

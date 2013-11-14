@@ -81,7 +81,6 @@ extern "C" {
 
 /* Forward declarations of MetaIO types */
 struct MetaioParseEnvironment;
-typedef struct MetaioParseEnvironment* MetaioParseEnv;
 
 /**
  * This structure allows for the association of entries in a MetaDataTable
@@ -106,7 +105,7 @@ tagMetaTableDirectory
 MetaTableDirectory;
 
 MetaTableDirectory* XLALCreateMetaTableDir(
-    const MetaioParseEnv    env,
+    struct MetaioParseEnvironment *const env,
     MetadataTableType       table
     );
 
@@ -114,7 +113,7 @@ void
 LALCreateMetaTableDir(
     LALStatus              *status,
     MetaTableDirectory    **tableDir,
-    const MetaioParseEnv    env,
+    struct MetaioParseEnvironment *const env,
     MetadataTableType       table
     );
 
