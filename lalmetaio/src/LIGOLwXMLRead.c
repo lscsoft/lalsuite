@@ -93,8 +93,11 @@
  *
  */
 
-
+#include <stdlib.h>
+#include <stdio.h>
 #include <string.h>
+#include <metaio.h>
+
 #include <lal/LALStdio.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALConstants.h>
@@ -179,7 +182,7 @@ int XLALLIGOLwHasTable(const char *filename, const char *table_name)
 int XLALLIGOLwFindColumn(
 	struct MetaioParseEnvironment *env,
 	const char *name,
-	enum METAIO_Type type,
+	unsigned int type,
 	int required
 )
 {

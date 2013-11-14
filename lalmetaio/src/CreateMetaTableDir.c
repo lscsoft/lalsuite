@@ -61,6 +61,11 @@
  *
  */
 
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
+#include <metaio.h>
+
 #include <lal/LALStdio.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALConstants.h>

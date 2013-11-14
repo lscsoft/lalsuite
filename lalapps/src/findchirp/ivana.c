@@ -35,7 +35,7 @@ ivana ../data/H2_ASQ_triple_c5.xml \
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include "metaio.h"
+#include <metaio.h>
 
 #define RINGBUFSIZE 16384
 #define MAXTIMERANGES 4096
