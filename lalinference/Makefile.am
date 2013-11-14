@@ -8,10 +8,8 @@ $(ACLOCAL_M4): $(am__aclocal_m4_deps)
 
 EXTRA_DIST = \
 	COPYING \
-	lalinference.pc.in \
-	lalinference.spec.in \
 	lalinference.spec \
-	aclocal.m4
+	$(DATA)
 
 SUBDIRS = \
 	gnuscripts \

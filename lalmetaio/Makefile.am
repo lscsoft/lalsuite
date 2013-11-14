@@ -8,10 +8,8 @@ $(ACLOCAL_M4): $(am__aclocal_m4_deps)
 
 EXTRA_DIST = \
 	COPYING \
-	lalmetaio.pc.in \
-	lalmetaio.spec.in \
 	lalmetaio.spec \
-	aclocal.m4
+	$(DATA)
 
 SUBDIRS = \
 	gnuscripts \

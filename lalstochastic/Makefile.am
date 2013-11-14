@@ -9,10 +9,8 @@ $(ACLOCAL_M4): $(am__aclocal_m4_deps)
 EXTRA_DIST = \
 	COPYING \
 	doc \
-	lalstochastic.pc.in \
-	lalstochastic.spec.in \
 	lalstochastic.spec \
-	aclocal.m4
+	$(DATA)
 
 SUBDIRS = \
 	gnuscripts \

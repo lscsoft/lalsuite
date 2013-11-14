@@ -11,11 +11,8 @@ EXTRA_DIST = \
 	README.bugs \
 	README.contrib \
 	README.install \
-	lal.pc.in \
-	lalsupport.pc.in \
-	aclocal.m4 \
-	lal.spec.in \
-	lal.spec
+	lal.spec \
+	$(DATA)
 
 SUBDIRS = \
 	debian \
