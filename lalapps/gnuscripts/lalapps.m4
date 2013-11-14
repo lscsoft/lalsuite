@@ -1,6 +1,6 @@
 # lalapps.m4 - lalapps specific autoconf macros
 #
-# serial 13
+# serial 14
 
 AC_DEFUN([LALAPPS_ENABLE_CONDOR],
 [AC_ARG_ENABLE(
@@ -167,10 +167,22 @@ AC_DEFUN([LALAPPS_ENABLE_BAMBI],
 
 AC_DEFUN([LALAPPS_CHECK_BAMBI],[
   PKG_CHECK_MODULES([BAMBI],[bambi],[
-    AX_LAPACK([
-      BAMBI_LIBS="$BAMBI_LIBS $LAPACK_LIBS $BLAS_LIBS $FLIBS"
-      BAMBI_ENABLE_VAL="ENABLED"
-      hbf=true
+    AC_LANG([C])
+    AX_CBLAS([
+      BAMBI_LIBS="$CBLAS_LIBS $BAMBI_LIBS"
+      AC_CHECK_HEADERS([cblas.h],[
+        AX_LAPACK([
+          BAMBI_LIBS="$BAMBI_LIBS $LAPACK_LIBS $BLAS_LIBS $FLIBS"
+          BAMBI_ENABLE_VAL="ENABLED"
+          hbf=true
+        ],[
+          AC_MSG_WARN([could not find LAPACK library])
+        ])
+      ],[
+        AC_MSG_WARN([could not find the cblas.h header])
+      ])
+    ],[
+      AC_MSG_WARN([could not find CBLAS library])
     ])
   ])
   AS_IF([test "$hbf" = "false"],[bambimpi=false])
