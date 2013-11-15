@@ -2,6 +2,7 @@
 *.trs
 *~
 .DS_Store
+.dirstamp
 /_inst/
 /lalsuite-*.tar.gz
 Makefile

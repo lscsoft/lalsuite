@@ -18,11 +18,12 @@ AC_CONFIG_FILES([ \
   swig/python/Makefile \
   test/Makefile
 ])
-AM_INIT_AUTOMAKE([1.11 foreign color-tests parallel-tests])
+AM_INIT_AUTOMAKE([1.11 foreign subdir-objects color-tests parallel-tests])
 
 AC_CANONICAL_HOST
 
 LALSUITE_ARG_VAR
+LALSUITE_CHECK_GIT_REPO
 LALSUITE_DISTCHECK_CONFIGURE_FLAGS
 LALSUITE_WITH_CFLAGS_LIBS
 
@@ -44,9 +45,6 @@ AC_SUBST([LIBCURRENT],[2])
 AC_SUBST([LIBREVISION],[5])
 AC_SUBST([LIBAGE],[2])
 AC_SUBST([LIBVERSION],[${LIBCURRENT}:${LIBREVISION}:${LIBAGE}])
-
-# check for git repo
-LALSUITE_CHECK_GIT_REPO
 
 # nightly build
 LALSUITE_ENABLE_NIGHTLY
@@ -142,7 +140,6 @@ LALSUITE_ADD_LIBS()
 # output
 LAL_HEADER_LINK=${ac_aux_dir}/header-link.mk
 AC_SUBST_FILE([LAL_HEADER_LINK])
-AC_PROG_MAKE_SET
 AC_OUTPUT
 echo "
 ==================================================

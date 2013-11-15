@@ -21,11 +21,12 @@ AC_CONFIG_FILES([ \
   swig/python/Makefile \
   test/Makefile
 ])
-AM_INIT_AUTOMAKE([1.11 foreign color-tests parallel-tests])
+AM_INIT_AUTOMAKE([1.11 foreign subdir-objects color-tests parallel-tests])
 
 AC_CANONICAL_HOST
 
 LALSUITE_ARG_VAR
+LALSUITE_CHECK_GIT_REPO
 LALSUITE_DISTCHECK_CONFIGURE_FLAGS
 LALSUITE_WITH_CFLAGS_LIBS
 
@@ -47,9 +48,6 @@ AC_SUBST([LIBCURRENT],[7])
 AC_SUBST([LIBREVISION],[0])
 AC_SUBST([LIBAGE],[0])
 AC_SUBST([LIBVERSION],[${LIBCURRENT}:${LIBREVISION}:${LIBAGE}])
-
-# check for git repo
-LALSUITE_CHECK_GIT_REPO
 
 # nightly build
 LALSUITE_ENABLE_NIGHTLY

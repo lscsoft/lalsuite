@@ -1,7 +1,5 @@
 /* only include this file if LALXML's config.h has not been included */
-
-#ifndef _LALXMLCONFIG_H
-#define _LALXMLCONFIG_H
+#ifndef LALXML_VERSION
 
 /* LALXML Version */
 #undef LALXML_VERSION
@@ -24,4 +22,4 @@
 /* LALXML Configure Date */
 #undef LALXML_CONFIGURE_DATE
 
-#endif /* _LALXMLCONFIG_H */
+#endif /* LALXML_VERSION */

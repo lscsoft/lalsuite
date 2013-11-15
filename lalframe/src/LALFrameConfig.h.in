@@ -1,7 +1,5 @@
 /* only include this file if LALFrame's config.h has not been included */
-
-#ifndef _LALFRAMECONFIG_H
-#define _LALFRAMECONFIG_H
+#ifndef LALFRAME_VERSION
 
 /* LALFrame Version */
 #undef LALFRAME_VERSION
@@ -33,4 +31,4 @@
 /* Define to use FrameL */
 #undef USE_FRAMEL
 
-#endif /* _LALFRAMECONFIG_H */
+#endif /* LALFRAME_VERSION */

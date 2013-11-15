@@ -53,21 +53,13 @@ AC_CONFIG_FILES([\
 # subdir-objects in automake-1.14+. this will be the default, and only,
 # behaviour in automake-2.0+ so this is only a temporary measure
 AM_INIT_AUTOMAKE([1.11 foreign color-tests parallel-tests -Wno-unsupported])
-AH_TOP([
-#ifndef CONFIG_H
-#define CONFIG_H])
-AH_BOTTOM([
-#endif /* CONFIG_H */
-])
 
 AC_CANONICAL_HOST
 
 LALSUITE_ARG_VAR
-LALSUITE_DISTCHECK_CONFIGURE_FLAGS
 LALSUITE_WITH_CFLAGS_LIBS
-
-# check for git repo
 LALSUITE_CHECK_GIT_REPO
+LALSUITE_DISTCHECK_CONFIGURE_FLAGS
 
 LALSUITE_ENABLE_DEBUG
 
@@ -166,6 +158,8 @@ LALSUITE_PROG_INSTALL
 AC_PROG_LN_S
 AC_PROG_AWK
 AC_PROG_SED
+AM_PATH_PYTHON([2.6],,[:])
+AM_CONDITIONAL([HAVE_PYTHON],[test "$PYTHON" != :])
 
 # check for condor_compile
 AC_ENABLE_SHARED
@@ -188,13 +182,10 @@ CONDOR_ENABLE_VAL="`eval test x$condor = xtrue && echo "ENABLED" || echo "DISABL
 AM_CONDITIONAL([CONDOR_ENABLED],[test "$CONDOR_ENABLE_VAL" = "ENABLED"])
 
 # further program checks
-LT_INIT
 AC_CHECK_PROGS([LATEX],[pdflatex latex],[echo])
 AC_CHECK_PROGS([MKIND],[makeindex],[echo])
 AC_CHECK_PROGS([DVIPS],[dvips],[echo])
 AC_CHECK_PROGS([BIBTEX],[bibtex],[echo])
-AM_PATH_PYTHON([2.6],,[:])
-AM_CONDITIONAL([HAVE_PYTHON],[test "$PYTHON" != :])
 
 # check for supported mac os x version
 LALSUITE_OSX_VERSION_CHECK

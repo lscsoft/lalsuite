@@ -89,18 +89,12 @@ AC_CONFIG_FILES([ \
   packages/noisemodels/src/Makefile \
   packages/noisemodels/test/Makefile
 ])
-AM_INIT_AUTOMAKE([1.11 foreign color-tests parallel-tests])
-AH_TOP([
-#ifndef CONFIG_H__LAL
-#define CONFIG_H__LAL
-])
-AH_BOTTOM([
-#endif /* CONFIG_H__LAL */
-])
+AM_INIT_AUTOMAKE([1.11 foreign subdir-objects color-tests parallel-tests])
 
 AC_CANONICAL_HOST
 
 LALSUITE_ARG_VAR
+LALSUITE_CHECK_GIT_REPO
 LALSUITE_DISTCHECK_CONFIGURE_FLAGS
 LALSUITE_WITH_CFLAGS_LIBS
 
@@ -141,9 +135,6 @@ AC_SUBST([LIBCURRENT_SUPPORT],[4])
 AC_SUBST([LIBREVISION_SUPPORT],[0])
 AC_SUBST([LIBAGE_SUPPORT],[0])
 AC_SUBST([LIBVERSION_SUPPORT],[${LIBCURRENT_SUPPORT}:${LIBREVISION_SUPPORT}:${LIBAGE_SUPPORT}])
-
-# check for git repo
-LALSUITE_CHECK_GIT_REPO
 
 LAL_ENABLE_INTELFFT
 
@@ -205,7 +196,6 @@ AC_PROG_LN_S
 AC_PROG_AWK
 AC_PROG_SED
 AM_PATH_PYTHON([2.6],,[AC_MSG_ERROR([Python-2.6, or higher, is required])])
-AC_CHECK_PROGS([M4],[gm4 m4], m4)
 
 # check for supported mac os x version
 LALSUITE_OSX_VERSION_CHECK
