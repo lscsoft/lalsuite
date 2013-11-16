@@ -492,7 +492,8 @@ Initialisation arguments:\n\
                 return(irs);
         }
     else
-    {
+    {   
+        LALInferenceCheckOptionsConsistency(commandLine);
         fprintf(stdout, " readData(): started.\n");
             irs->data = LALInferenceReadData(commandLine);
     }

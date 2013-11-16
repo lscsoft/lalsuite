@@ -1626,3 +1626,82 @@ static void print_flags_orders_warning(SimInspiralTable *injt, ProcessParamsTabl
        XLALPrintWarning("WARNING: You did not set the tidal order. Injection and template will use default values (%i). You change that using --inj-tidalOrder (set injection value) and --tidalOrder (set template value).\n",default_tideO); 
     return;    
 }
+
+void LALInferenceCheckOptionsConsistency(ProcessParamsTable *commandLine)
+{ /*
+  Go through options and check for possible errors and inconsistencies (e.g. seglen < 0 )
+  
+  */
+  
+  ProcessParamsTable *ppt=NULL,*ppt2=NULL;
+  REAL8 tmp=0.0;
+  INT4 itmp=0;
+  
+  // Check PSDlength > 0
+  ppt=LALInferenceGetProcParamVal(commandLine,"--psdlength");
+  if(!ppt) ppt=LALInferenceGetProcParamVal(commandLine,"--PSDlength");
+  tmp=atof(ppt->value);
+  if (tmp<0.0){
+    fprintf(stderr,"ERROR: PSD length must be positive. Exiting...\n");
+    exit(1);
+  }
+  // Check seglen > 0
+  ppt=LALInferenceGetProcParamVal(commandLine,"--seglen");
+  tmp=atof(ppt->value);
+  if (tmp<0.0){
+    fprintf(stderr,"ERROR: seglen must be positive. Exiting...\n");
+    exit(1);
+  }
+
+  
+  /* Flags consistency */
+  ppt=LALInferenceGetProcParamVal(commandLine,"--disable-spin");
+  ppt2=LALInferenceGetProcParamVal(commandLine,"--noSpin");
+  if (ppt || ppt2){
+    ppt2=LALInferenceGetProcParamVal(commandLine,"--system-frame");
+    if (ppt2){
+      fprintf(stderr,"--system-frame and --disable-spin are incompatible options. If you do not want to use a spinning template remove --system-frame. Exiting\n");
+    }
+    ppt2=LALInferenceGetProcParamVal(commandLine,"--spinO");
+    if (ppt2){
+      itmp=atoi(ppt2->value);
+      if (itmp>0 || itmp==-1)
+        XLALPrintWarning("--spinO > 0 or -1 will be ignored due to --disable-spin. If you want to include spin terms in the template, remove --disable-spin\n");
+        exit(1);
+      }
+    if (!ppt2){
+      XLALPrintWarning("--spinO defaulted to -1. This will be ignored due to --disable-spin. If you want to include spin terms in the template, remove --disable-spin\n");
+      }
+  }
+  
+  /* lalinference_nest only checks */
+  // Check live points
+  ppt=LALInferenceGetProcParamVal(commandLine,"--nlive");
+  if (ppt){
+    itmp=atoi(ppt->value);
+    if (itmp<0){
+      fprintf(stderr,"ERROR: nlive must be positive. Exiting...\n");
+      exit(1);
+    }
+    if (itmp<100){
+      XLALPrintWarning("WARNING: Using %d live points. This is very little and may lead to unreliable results. Consider increasing.\n",itmp);
+    }
+    if (itmp>5000){
+      XLALPrintWarning("WARNING: Using %d live points. This is a very large number and may lead to very long runs. Consider decreasing.\n",itmp);
+    }
+  }
+  // Check nmcmc points
+  ppt=LALInferenceGetProcParamVal(commandLine,"--nmcmc");
+  if (ppt){
+    itmp=atoi(ppt->value);
+    if (itmp<0){
+      fprintf(stderr,"ERROR: nmcmc must be positive (or omitted). Exiting...\n");
+      exit(1);
+    }
+    if (itmp<100){
+      XLALPrintWarning("WARNING: Using %d nmcmc. This is very little and may lead to unreliable results. Consider increasing.\n",itmp);
+    }
+  }
+  
+  return;
+}
