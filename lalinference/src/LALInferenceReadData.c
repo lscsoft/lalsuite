@@ -750,7 +750,10 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
                         (--dataseed 0 uses a non-reproducible number from the system clock, and no parallel run is then possible.)\n" );
                 exit(-1);
             }
-            datarandparam=XLALCreateRandomParams(dataseed?dataseed+(int)i:dataseed);
+            /* Offset the seed in a way that depends uniquely on the IFO name */
+            int ifo_salt=0;
+            ifo_salt+=(int)IFOnames[i][0]+(int)IFOnames[i][1];
+            datarandparam=XLALCreateRandomParams(dataseed?dataseed+(int)ifo_salt:dataseed);
             if(!datarandparam) XLAL_ERROR_NULL(XLAL_EFUNC);
             IFOdata[i].oneSidedNoisePowerSpectrum=(REAL8FrequencySeries *)
                 XLALCreateREAL8FrequencySeries("spectrum",&GPSstart,0.0,
