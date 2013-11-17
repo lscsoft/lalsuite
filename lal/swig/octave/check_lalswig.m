@@ -4,12 +4,14 @@
 expected_exception = 0;
 
 ## check module load
+disp("checking module load ...");
 lal;
 assert(exist("lal", "var"));
 assert(exist("lalcvar", "var"));
-disp("passed module load");
+disp("PASSED module load");
 
 ## check memory allocation
+disp("checking memory allocation ...");
 if lalcvar.swig_debug
   CheckMemoryLeaks();
   mem1 = new_Detector();
@@ -23,14 +25,15 @@ if lalcvar.swig_debug
   end_try_catch
   assert(!expected_exception);
   disp("*** above should be an error message from CheckMemoryLeaks() ***");
-  clear mem1 mem2 mem3 mem4;
+  clear ans mem1 mem2 mem3 mem4;
   CheckMemoryLeaks();
-  disp("passed memory allocation");
+  disp("PASSED memory allocation");
 else
   disp("skipped memory allocation");
 endif
 
 ## check string conversions
+disp("checking string conversions ...");
 strs = {"a"; "bc"; "def"};
 sv = CreateStringVector(strs{:});
 assert(sv.length == 3);
@@ -43,11 +46,12 @@ assert(sv.length == 4);
 for i = 1:4
   assert(strcmp(sv.data{i}, strs{i}));
 endfor
-clear sv;
+clear ans sv;
 CheckMemoryLeaks();
-disp("passed string conversions");
+disp("PASSED string conversions");
 
 ## check static vector/matrix conversions
+disp("checking static vector/matrix conversions ...");
 lalcvar.lalswig_test_struct_vector{1} = lalcvar.lalswig_test_struct_const;
 assert(lalcvar.lalswig_test_struct_vector{1}.n == lalcvar.lalswig_test_struct_const.n);
 assert(lalcvar.lalswig_test_struct_vector{1}.i == lalcvar.lalswig_test_struct_const.i);
@@ -77,7 +81,7 @@ for i = 1:3
   sts.evec(i) = 2*i + 3;
   assert(sts.evec(i) == (2*i + 3));
 endfor
-clear sts;
+clear ans sts;
 assert(!any(lalcvar.lalswig_test_enum_vector));
 assert(!any(lalcvar.lalswig_test_enum_matrix(:)));
 assert(length(lalcvar.lalswig_test_empty_INT4_vector) == 0);
@@ -110,9 +114,10 @@ lalcvar.lalswig_test_COMPLEX8_vector(1) = complex(3.5, 4.75);
 assert(lalcvar.lalswig_test_COMPLEX8_vector(1) == complex(3.5, 4.75));
 lalcvar.lalswig_test_COMPLEX8_matrix(1, 1) = complex(5.5, 6.25);
 assert(lalcvar.lalswig_test_COMPLEX8_matrix(1, 1) == complex(5.5, 6.25));
-disp("passed static vector/matrix conversions");
+disp("PASSED static vector/matrix conversions");
 
 ## check dynamic vector/matrix conversions
+disp("checking dynamic vector/matrix conversions ...");
 function check_dynamic_vector_matrix(iv, ivl, rv, rvl, cm, cms1, cms2)
   expected_exception = 0;
   iv.data = zeros(ivl, 1);
@@ -166,29 +171,30 @@ rv = CreateREAL8Vector(5);
 cm = CreateCOMPLEX8VectorSequence(4, 6);
 check_dynamic_vector_matrix(iv, iv.length, rv, rv.length,
                             cm, cm.length, cm.vectorLength);
-clear iv rv cm;
+clear ans iv rv cm;
 rv0 = CreateREAL8Vector(0);
 assert(rv0.length == 0);
 assert(length(rv0.data) == 0);
-clear rv0;
+clear ans rv0;
 rv1 = CreateREAL8Vector(1);
 rv1.data(1) = 1;
-clear rv1;
+clear ans rv1;
 CheckMemoryLeaks();
-disp("passed dynamic vector/matrix conversions (LAL)");
+disp("PASSED dynamic vector/matrix conversions (LAL)");
 ## check GSL vectors and matrices
 iv = new_gsl_vector_int(5);
 rv = new_gsl_vector(5);
 cm = new_gsl_matrix_complex_float(4, 6);
 check_dynamic_vector_matrix(iv, iv.size, rv, rv.size,
                             cm, cm.size1, cm.size2);
-clear iv rv cm;
+clear ans iv rv cm;
 rv1 = new_gsl_vector(1);
 rv1.data(1) = 1;
-clear rv1;
-disp("passed dynamic vector/matrix conversions (GSL)");
+clear ans rv1;
+disp("PASSED dynamic vector/matrix conversions (GSL)");
 
 ## check dynamic array of pointers access
+disp("checking dynamic array of pointers access ...");
 ap = lalswig_test_Create_arrayofptrs(3);
 assert(ap.length == 3);
 for i = 1:ap.length
@@ -197,11 +203,12 @@ for i = 1:ap.length
     assert(ap.data{i}.data(j) == 42*ap.length*(i-1) + (j-1));
   endfor
 endfor
-clear ap;
+clear ans ap;
 CheckMemoryLeaks();
-disp("passed dynamic array of pointers access");
+disp("PASSED dynamic array of pointers access");
 
 ## check 'tm' struct conversions
+disp("checking 'tm' struct conversions ...");
 gps = 989168284;
 utc = [2011, 5, 11, 16, 57, 49, 4, 131, 0];
 assert(all(GPSToUTC(gps) == utc));
@@ -219,9 +226,10 @@ for i = 0:9
   assert(utcd(7) == weekday(datenum(utcd(1:6))));
 endfor
 CheckMemoryLeaks();
-disp("passed 'tm' struct conversions");
+disp("PASSED 'tm' struct conversions");
 
 ## check LIGOTimeGPS operations
+disp("checking LIGOTimeGPS operations ...");
 t0 = new_LIGOTimeGPS();
 assert(t0 == 0 && strcmp(swig_type(t0), "LIGOTimeGPS"));
 t1 = new_LIGOTimeGPS(10.5);
@@ -270,17 +278,18 @@ end_try_catch
 assert(!expected_exception);
 endif # lalcvar.swig_version >= hex2dec("020010")
 assert(lalswig_test_noptrgps(LIGOTimeGPS(1234.5)) == lalswig_test_noptrgps(1234.5))
-clear t0 t1 t2 t3 t4struct t5;
+clear ans t0 t1 t2 t3 t4struct t5;
 CheckMemoryLeaks();
-disp("passed LIGOTimeGPS operations");
+disp("PASSED LIGOTimeGPS operations");
 
-# check object parent tracking
+## check object parent tracking
+disp("checking object parent tracking ...");
 a = lal.new_gsl_vector(3);
 a.data = [1.1; 2.2; 3.3];
 b = a.data;
 assert(strcmp(typeinfo(b), "swiglal_oct_array_view_double"));
 assert(all(b == [1.1; 2.2; 3.3]));
-clear a;
+clear ans a;
 assert(all(b == [1.1; 2.2; 3.3]));
 ts = lal.CreateREAL8TimeSeries("test", lal.LIGOTimeGPS(0), 0, 0.1, lalcvar.lalDimensionlessUnit, 10);
 ts.data.data = (1:10)';
@@ -288,11 +297,11 @@ for i = 1:7
   v = ts.data;
 endfor
 assert(v.data == (1:10)');
-clear ts;
+clear ans ts;
 assert(v.data == (1:10)');
-clear v;
+clear ans v;
 CheckMemoryLeaks();
-disp("passed object parent tracking");
+disp("PASSED object parent tracking");
 
 ## passed all tests!
 disp("PASSED all tests");

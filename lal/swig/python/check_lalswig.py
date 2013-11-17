@@ -6,11 +6,13 @@ import numpy
 expected_exception = False
 
 # check module load
+print("checking module load ...")
 import lal
 from lal import cvar as lalcvar
-print("passed module load")
+print("PASSED module load")
 
 # check memory allocation
+print("checking memory allocation ...")
 if lal.cvar.swig_debug:
     lal.CheckMemoryLeaks()
     mem1 = lal.Detector()
@@ -27,11 +29,12 @@ if lal.cvar.swig_debug:
     print("*** above should be an error message from CheckMemoryLeaks() ***")
     del mem1, mem2, mem3, mem4
     lal.CheckMemoryLeaks()
-    print("passed memory allocation")
+    print("PASSED memory allocation")
 else:
     print("skipped memory allocation")
 
 # check string conversions
+print("checking string conversions ...")
 strs = ["a", "bc", "def"]
 sv = lal.CreateStringVector(*strs)
 assert(sv.length == 3)
@@ -45,7 +48,7 @@ for i in range(0, 4):
     assert(sv.data[i] == strs[i])
 del sv
 lal.CheckMemoryLeaks()
-print("passed string conversions")
+print("PASSED string conversions")
 
 ## check static vector/matrix conversions
 lalcvar.lalswig_test_struct_vector[0] = lalcvar.lalswig_test_struct_const
@@ -111,9 +114,10 @@ lalcvar.lalswig_test_COMPLEX8_vector[0] = complex(3.5, 4.75)
 assert(lalcvar.lalswig_test_COMPLEX8_vector[0] == complex(3.5, 4.75))
 lalcvar.lalswig_test_COMPLEX8_matrix[0, 0] = complex(5.5, 6.25)
 assert(lalcvar.lalswig_test_COMPLEX8_matrix[0, 0] == complex(5.5, 6.25))
-print("passed static vector/matrix conversions")
+print("PASSED static vector/matrix conversions")
 
 # check dynamic vector/matrix conversions
+print("checking dynamic vector/matrix conversions ...")
 def check_dynamic_vector_matrix(iv, ivl, rv, rvl, cm, cms1, cms2):
     expected_exception = False
     iv.data = numpy.zeros(ivl, dtype=iv.data.dtype)
@@ -179,7 +183,7 @@ rv1 = lal.CreateREAL8Vector(1)
 rv1.data[0] = 1
 del rv1
 lal.CheckMemoryLeaks()
-print("passed dynamic vector/matrix conversions (LAL)")
+print("PASSED dynamic vector/matrix conversions (LAL)")
 # check GSL vectors and matrices
 iv = lal.gsl_vector_int(5)
 rv = lal.gsl_vector(5)
@@ -190,7 +194,7 @@ del iv, rv, cm
 rv1 = lal.gsl_vector(1)
 rv1.data[0] = 1
 del rv1
-print("passed dynamic vector/matrix conversions (GSL)")
+print("PASSED dynamic vector/matrix conversions (GSL)")
 
 ## check dynamic array of pointers access
 ap = lal.lalswig_test_Create_arrayofptrs(3)
@@ -201,9 +205,10 @@ for i in range(0, ap.length):
         assert(ap.data[i].data[j] == 42*ap.length*i + j)
 del ap
 lal.CheckMemoryLeaks()
-print("passed dynamic array of pointers access")
+print("PASSED dynamic array of pointers access")
 
 # check 'tm' struct conversions
+print("checking 'tm' struct conversions ...")
 gps = 989168284
 utc = [2011, 5, 11, 16, 57, 49, 2, 131, 0]
 assert(lal.GPSToUTC(gps) == utc)
@@ -220,9 +225,10 @@ for i in range(0, 10):
     dt = datetime.datetime(*utcd[0:6])
     assert(utcd[6] == dt.weekday())
 lal.CheckMemoryLeaks()
-print("passed 'tm' struct conversions")
+print("PASSED 'tm' struct conversions")
 
 # check LIGOTimeGPS operations
+print("checking LIGOTimeGPS operations ...")
 from lal import LIGOTimeGPS
 t0 = LIGOTimeGPS()
 assert(t0 == 0 and isinstance(t0, LIGOTimeGPS))
@@ -278,9 +284,10 @@ assert(not expected_exception)
 assert(lal.lalswig_test_noptrgps(LIGOTimeGPS(1234.5)) == lal.lalswig_test_noptrgps(1234.5))
 del t0, t1, t2, t3, t4struct, t5
 lal.CheckMemoryLeaks()
-print("passed LIGOTimeGPS operations")
+print("PASSED LIGOTimeGPS operations")
 
 # check object parent tracking
+print("checking object parent tracking ...")
 a = lal.gsl_vector(3)
 a.data = [1.1, 2.2, 3.3]
 b = a.data
@@ -297,7 +304,7 @@ del ts
 assert((v.data == range(0, 10)).all())
 del v
 lal.CheckMemoryLeaks()
-print("passed object parent tracking")
+print("PASSED object parent tracking")
 
 # passed all tests!
 print("PASSED all tests")
