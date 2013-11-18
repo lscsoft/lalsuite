@@ -32,6 +32,34 @@ else
   disp("skipped memory allocation");
 endif
 
+## check equal return/first argument type handling
+disp("checking equal return/first argument type handling");
+sv = CreateStringVector("1");
+assert(sv.length == 1);
+AppendString2Vector(sv, "2");
+assert(sv.length == 2);
+sv = AppendString2Vector(sv, "3");
+assert(sv.length == 3);
+sv2 = AppendString2Vector(sv, "4");
+assert(sv.length == 4);
+assert(sv2.length == 4);
+assert(swig_this(sv) == swig_this(sv2));
+clear ans sv sv2;
+CheckMemoryLeaks();
+ts = CreateREAL8TimeSeries("ts", 800000000, 100, 0.1, lalcvar.lalHertzUnit, 10);
+assert(ts.data.length == 10)
+ResizeREAL8TimeSeries(ts, 0, 20);
+assert(ts.data.length == 20)
+ts = ResizeREAL8TimeSeries(ts, 0, 30);
+assert(ts.data.length == 30)
+ts2 = ResizeREAL8TimeSeries(ts, 0, 40);
+assert(ts.data.length == 40);
+assert(ts2.data.length == 40);
+assert(swig_this(ts) == swig_this(ts2));
+clear ans ts ts2;
+CheckMemoryLeaks();
+disp("PASSED equal return/first argument type handling");
+
 ## check string conversions
 disp("checking string conversions ...");
 strs = {"a"; "bc"; "def"};

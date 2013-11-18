@@ -58,6 +58,11 @@
 #define swiglal_1starg()  (args.length() > 0 ? args(0) : octave_value())
 %}
 
+// Return a reference to the supplied octave_value; since Octave handles reference counting, just return it.
+%header %{
+#define swiglal_get_reference(v) (v)
+%}
+
 // Append an argument to the output argument list of an Octave SWIG-wrapped function, if the list is empty.
 %header %{
 #define swiglal_append_output_if_empty(v) \

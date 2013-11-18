@@ -33,6 +33,34 @@ if lal.cvar.swig_debug:
 else:
     print("skipped memory allocation")
 
+## check equal return/first argument type handling
+print("checking equal return/first argument type handling")
+sv = lal.CreateStringVector("1")
+assert(sv.length == 1)
+lal.AppendString2Vector(sv, "2")
+assert(sv.length == 2)
+sv = lal.AppendString2Vector(sv, "3")
+assert(sv.length == 3)
+sv2 = lal.AppendString2Vector(sv, "4")
+assert(sv.length == 4)
+assert(sv2.length == 4)
+assert(sv == sv2)
+del sv, sv2
+lal.CheckMemoryLeaks()
+ts = lal.CreateREAL8TimeSeries("ts", 800000000, 100, 0.1, lal.lalHertzUnit, 10)
+assert(ts.data.length == 10)
+lal.ResizeREAL8TimeSeries(ts, 0, 20)
+assert(ts.data.length == 20)
+ts = lal.ResizeREAL8TimeSeries(ts, 0, 30)
+assert(ts.data.length == 30)
+ts2 = lal.ResizeREAL8TimeSeries(ts, 0, 40)
+assert(ts.data.length == 40)
+assert(ts2.data.length == 40)
+assert(ts == ts2)
+del ts, ts2
+lal.CheckMemoryLeaks()
+print("PASSED equal return/first argument type handling")
+
 # check string conversions
 print("checking string conversions ...")
 strs = ["a", "bc", "def"]
