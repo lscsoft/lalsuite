@@ -1,7 +1,7 @@
 # SWIG configuration
 # Author: Karl Wette, 2011, 2012
 #
-# serial 44
+# serial 45
 
 # enable SWIG wrapping modules
 AC_DEFUN([LALSUITE_ENABLE_SWIG],[
@@ -156,12 +156,6 @@ AC_DEFUN([LALSUITE_USE_SWIG],[
     AS_IF([test "x${enable_debug}" = xno],[
       SWIG_SWIGFLAGS="${SWIG_SWIGFLAGS} -DNDEBUG"
       SWIG_CPPFLAGS="${SWIG_CPPFLAGS} -DNDEBUG"
-    ])
-
-    # is GSL available?
-    AS_IF([test "x${GSL_LIBS}" != x],[
-      SWIG_SWIGFLAGS="${SWIG_SWIGFLAGS} -DHAVE_LIBGSL"
-      SWIG_CPPFLAGS="${SWIG_CPPFLAGS} -DHAVE_LIBGSL"
     ])
 
     # flags for compiling SWIG wrapping module sources

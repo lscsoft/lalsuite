@@ -37,7 +37,8 @@
 %include <octcomplex.swg>
 
 // Include Octave headers.
-%header %{extern "C++" {
+%header %{
+extern "C++" {
 #include <octave/ov-cell.h>
 #include <octave/ov-int-traits.h>
 #include <octave/ov-flt-re-mat.h>
@@ -45,7 +46,8 @@
 #include <octave/ov-flt-cx-mat.h>
 #include <octave/ov-cx-mat.h>
 #include <octave/toplev.h>
-}%}
+}
+%}
 
 // Name of octave_value containing the SWIG wrapping of the struct whose members are being accessed.
 %header %{

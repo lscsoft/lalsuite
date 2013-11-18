@@ -154,6 +154,26 @@ MACRO(A, B, C, X);
 #endif
 %}
 
+// Remove LAL macros for certain keywords.
+#define _LAL_INLINE_
+#define _LAL_RESTRICT_
+
+// If necessary, redefine 'restrict' keyword for C++ code.
+%header %{
+#ifdef __cplusplus
+# ifndef restrict
+#  if defined __GNUC__
+#   define restrict __restrict__
+#  else
+#   define restrict
+#  endif
+# endif
+#endif
+%}
+
+// Include configuration header.
+%include <config.h>
+
 // Include LAL headers.
 %header %{
 #include <lal/LALDatatypes.h>
@@ -175,12 +195,12 @@ MACRO(A, B, C, X);
 // Constructors for GSL complex numbers, if required.
 #ifdef HAVE_LIBGSL
 %header %{
-  #include <gsl/gsl_complex_math.h>   // provides gsl_complex_rect()
-  SWIGINTERNINLINE gsl_complex_float gsl_complex_float_rect(float x, float y) {
-    gsl_complex_float z;
-    GSL_SET_COMPLEX(&z, x, y);
-    return z;
-  }
+#include <gsl/gsl_complex_math.h>   // provides gsl_complex_rect()
+SWIGINTERNINLINE gsl_complex_float gsl_complex_float_rect(float x, float y) {
+  gsl_complex_float z;
+  GSL_SET_COMPLEX(&z, x, y);
+  return z;
+}
 %}
 #endif
 
