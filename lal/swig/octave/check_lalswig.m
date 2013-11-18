@@ -12,7 +12,7 @@ disp("PASSED module load");
 
 ## check memory allocation
 disp("checking memory allocation ...");
-if lalcvar.swig_debug
+if lal.swig_debug
   CheckMemoryLeaks();
   mem1 = new_Detector();
   mem2 = CreateCOMPLEX8Vector(5);
@@ -293,7 +293,7 @@ t4struct.t = 1234.5;
 assert(t4struct.t == 1234.5);
 t5 = LIGOTimeGPS("1000");
 assert(t5 == 1000);
-if lalcvar.swig_version >= hex2dec("020010")
+if lal.swig_version >= hex2dec("020010")
 try
   t5 = LIGOTimeGPS("abc1000");
   expected_exception = 1;
@@ -304,7 +304,7 @@ try
   expected_exception = 1;
 end_try_catch
 assert(!expected_exception);
-endif # lalcvar.swig_version >= hex2dec("020010")
+endif # lal.swig_version >= hex2dec("020010")
 assert(lalswig_test_noptrgps(LIGOTimeGPS(1234.5)) == lalswig_test_noptrgps(1234.5))
 clear ans t0 t1 t2 t3 t4struct t5;
 CheckMemoryLeaks();

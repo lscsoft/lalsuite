@@ -13,12 +13,12 @@ print("PASSED module load")
 
 # check memory allocation
 print("checking memory allocation ...")
-if lal.cvar.swig_debug:
+if lal.swig_debug:
     lal.CheckMemoryLeaks()
     mem1 = lal.Detector()
     mem2 = lal.CreateCOMPLEX8Vector(5)
     mem3 = lal.CreateREAL8Vector(3)
-    mem4 = lal.CreateREAL4TimeSeries("test", lal.LIGOTimeGPS(0), 100, 0.1, lalcvar.lalDimensionlessUnit, 10)
+    mem4 = lal.CreateREAL4TimeSeries("test", lal.LIGOTimeGPS(0), 100, 0.1, lal.lalDimensionlessUnit, 10)
     print("*** below should be an error message from CheckMemoryLeaks() ***")
     try:
         lal.CheckMemoryLeaks()
@@ -323,7 +323,7 @@ assert(not b.flags['OWNDATA'])
 assert((b == [1.1, 2.2, 3.3]).all())
 del a
 assert((b == [1.1, 2.2, 3.3]).all())
-ts = lal.CreateREAL8TimeSeries("test", lal.LIGOTimeGPS(0), 0, 0.1, lalcvar.lalDimensionlessUnit, 10)
+ts = lal.CreateREAL8TimeSeries("test", lal.LIGOTimeGPS(0), 0, 0.1, lal.lalDimensionlessUnit, 10)
 ts.data.data = range(0, 10)
 for i in range(0, 7):
     v = ts.data

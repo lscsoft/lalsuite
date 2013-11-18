@@ -163,13 +163,13 @@ MACRO(A, B, C, X);
 %}
 
 // Version of SWIG used to generate wrapping code.
-%inline %{const int swig_version = SWIG_VERSION;%}
+%constant int swig_version = SWIG_VERSION;
 
 // Whether wrapping code was generated in debug mode.
 #ifdef NDEBUG
-%inline %{const bool swig_debug = false;%}
+%constant bool swig_debug = false;
 #else
-%inline %{const bool swig_debug = true;%}
+%constant bool swig_debug = true;
 #endif
 
 // Constructors for GSL complex numbers, if required.
