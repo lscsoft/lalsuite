@@ -1172,7 +1172,7 @@ XLALInitMakefakedata ( ConfigVars_t *cfg, UserVariables_t *uvar )
 	  GPSfloat = XLALTTMJDtoGPS(uvar->orbitTpSSBMJD);
 	  XLALGPSSetREAL8(&(orbit->tp),GPSfloat);
 	}
-      else if ((set5 && set6) && !set7)
+      else if ( set5 && !set7 )
 	{
 	  orbit->tp.gpsSeconds = uvar->orbitTpSSBsec;
 	  orbit->tp.gpsNanoSeconds = uvar->orbitTpSSBnan;
