@@ -358,7 +358,7 @@ if test -z "$rebuild" && pkg-config --exists gsl; then
     log_and_show "using existing gsl source"
 elif test -z "$noupdate"; then
     log_and_show "retrieving $gsl"
-    download http://www.aei.mpg.de/~repr/EaH_packages $gsl.tar.gz
+    download http://www.aei.mpg.de/~bema $gsl.tar.gz
     log_and_do tar xzf "$gsl.tar.gz"
 fi
 
