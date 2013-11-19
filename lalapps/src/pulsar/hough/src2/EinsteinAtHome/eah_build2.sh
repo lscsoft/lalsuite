@@ -34,7 +34,9 @@ log_and_dont_fail() {
 }
 
 download() {
-    echo `date '+[%Y-%m-%d %H:%M:%S]'` curl "$1/$2 > $2" >> "$LOGFILE"
+    echo `date '+[%Y-%m-%d %H:%M:%S]'` wget "$1/$2" >> "$LOGFILE" &&
+    wget "$1/$2" 2>> "$LOGFILE" ||
+    echo `date '+[%Y-%m-%d %H:%M:%S]'` curl "$1/$2 > $2" >> "$LOGFILE" &&
     curl "$1/$2" > "$2" 2>> "$LOGFILE"
 }
 
