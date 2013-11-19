@@ -1637,6 +1637,10 @@ void LALInferenceCheckOptionsConsistency(ProcessParamsTable *commandLine)
   REAL8 tmp=0.0;
   INT4 itmp=0;
   
+  ppt=LALInferenceGetProcParamVal(commandLine,"--help");
+  if (ppt)
+    return;
+    
   // Check PSDlength > 0
   ppt=LALInferenceGetProcParamVal(commandLine,"--psdlength");
   if(!ppt) ppt=LALInferenceGetProcParamVal(commandLine,"--PSDlength");
@@ -1647,6 +1651,10 @@ void LALInferenceCheckOptionsConsistency(ProcessParamsTable *commandLine)
   }
   // Check seglen > 0
   ppt=LALInferenceGetProcParamVal(commandLine,"--seglen");
+  if (!ppt){
+    XLALPrintError("Must provide segment length with --seglen. Exiting...");
+    exit(1);
+  }
   tmp=atof(ppt->value);
   if (tmp<0.0){
     fprintf(stderr,"ERROR: seglen must be positive. Exiting...\n");
