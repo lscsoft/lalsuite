@@ -1131,8 +1131,6 @@ void LALInferenceParseCharacterOptionString(char *input, char **strings[], UINT4
   }
 }
 
-
-
 ProcessParamsTable *LALInferenceParseCommandLine(int argc, char *argv[])
 /* parse command line and set up & fill in 'ProcessParamsTable' linked list.          */
 /* If no command line arguments are supplied, the 'ProcessParamsTable' still contains */
@@ -1198,6 +1196,10 @@ sizeof(CHAR)*LIGOMETA_PROGRAM_MAX);
   return head;
 }
 
+ProcessParamsTable *LALInferenceParseCommandLineStringVector(LALStringVector* args){
+  /* Version of the below function which can be easily exposed to Python via SWIG. */
+  return LALInferenceParseCommandLine(args->length,args->data);
+}
 
 char* LALInferencePrintCommandLine(ProcessParamsTable *procparams)
 {

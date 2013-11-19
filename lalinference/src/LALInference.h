@@ -508,6 +508,9 @@ void LALInferenceParseCharacterOptionString(char *input, char **strings[], UINT4
 /** Return a ProcessParamsTable from the command line arguments */
 ProcessParamsTable *LALInferenceParseCommandLine(int argc, char *argv[]);
 
+/** Return a ProcessParamsTable from the command line arguments (SWIG version) */
+ProcessParamsTable *LALInferenceParseCommandLineStringVector(LALStringVector *args);
+
 /** Output the command line based on the ProcessParamsTable \param procparams */
 char* LALInferencePrintCommandLine(ProcessParamsTable *procparams);
 
