@@ -788,7 +788,78 @@ int LALInferenceWriteRunStateBinary(FILE *file, LALInferenceRunState *state);
 int LALInferenceReadRunStateBinary(FILE *file, LALInferenceRunState *state);
 
 
+void LALInferenceAddINT4Variable(LALInferenceVariables * vars, const char * name, INT4 value, LALInferenceParamVaryType vary);
+
+INT4 LALInferenceGetINT4Variable(LALInferenceVariables * vars, const char * name);
+
+void LALInferenceSetINT4Variable(LALInferenceVariables* vars,const char* name,INT4 value);
+
+void LALInferenceAddINT8Variable(LALInferenceVariables * vars, const char * name, INT8 value, LALInferenceParamVaryType vary);
+
+INT8 LALInferenceGetINT8Variable(LALInferenceVariables * vars, const char * name);
+
+void LALInferenceSetINT8Variable(LALInferenceVariables* vars,const char* name,INT8 value);
+
+void LALInferenceAddUINT4Variable(LALInferenceVariables * vars, const char * name, UINT4 value, LALInferenceParamVaryType vary);
+
+UINT4 LALInferenceGetUINT4Variable(LALInferenceVariables * vars, const char * name);
+
+void LALInferenceSetUINT4Variable(LALInferenceVariables* vars,const char* name,UINT4 value);
+
+void LALInferenceAddREAL4Variable(LALInferenceVariables * vars, const char * name, REAL4 value, LALInferenceParamVaryType vary);
+
+REAL4 LALInferenceGetREAL4Variable(LALInferenceVariables * vars, const char * name);
+
+void LALInferenceSetREAL4Variable(LALInferenceVariables* vars,const char* name,REAL4 value);
+
+void LALInferenceAddREAL8Variable(LALInferenceVariables * vars, const char * name, REAL8 value, LALInferenceParamVaryType vary);
+
+REAL8 LALInferenceGetREAL8Variable(LALInferenceVariables * vars, const char * name);
+
+void LALInferenceSetREAL8Variable(LALInferenceVariables* vars,const char* name,REAL8 value);
+
+void LALInferenceAddCOMPLEX8Variable(LALInferenceVariables * vars, const char * name, COMPLEX8 value, LALInferenceParamVaryType vary);
+
+COMPLEX8 LALInferenceGetCOMPLEX8Variable(LALInferenceVariables * vars, const char * name);
+
+void LALInferenceSetCOMPLEX8Variable(LALInferenceVariables* vars,const char* name,COMPLEX8 value);
+
+void LALInferenceAddCOMPLEX16Variable(LALInferenceVariables * vars, const char * name, COMPLEX16 value, LALInferenceParamVaryType vary);
+
+COMPLEX16 LALInferenceGetCOMPLEX16Variable(LALInferenceVariables * vars, const char * name);
+
+void LALInferenceSetCOMPLEX16Variable(LALInferenceVariables* vars,const char* name,COMPLEX16 value);
+
+void LALInferenceAddgslMatrixVariable(LALInferenceVariables * vars, const char * name, gsl_matrix* value, LALInferenceParamVaryType vary);
+
+gsl_matrix* LALInferenceGetgslMatrixVariable(LALInferenceVariables * vars, const char * name);
+
+void LALInferenceSetgslMatrixVariable(LALInferenceVariables* vars,const char* name,gsl_matrix* value);
+
+void LALInferenceAddREAL8VectorVariable(LALInferenceVariables * vars, const char * name, REAL8Vector* value, LALInferenceParamVaryType vary);
+
+REAL8Vector* LALInferenceGetREAL8VectorVariable(LALInferenceVariables * vars, const char * name);
+
+void LALInferenceSetREAL8VectorVariable(LALInferenceVariables* vars,const char* name,REAL8Vector* value);
+
+void LALInferenceAddUINT4VectorVariable(LALInferenceVariables * vars, const char * name, UINT4Vector* value, LALInferenceParamVaryType vary);
+
+UINT4Vector* LALInferenceGetUINT4VectorVariable(LALInferenceVariables * vars, const char * name);
+
+void LALInferenceSetUINT4VectorVariable(LALInferenceVariables* vars,const char* name,UINT4Vector* value);
+
+void LALInferenceAddMCMCrunphase_ptrVariable(LALInferenceVariables * vars, const char * name, LALInferenceMCMCRunPhase* value, LALInferenceParamVaryType vary);
+
+LALInferenceMCMCRunPhase* LALInferenceGetMCMCrunphase_ptrVariable(LALInferenceVariables * vars, const char * name);
+
+void LALInferenceSetMCMCrunphase_ptrVariable(LALInferenceVariables* vars,const char* name,LALInferenceMCMCRunPhase* value);
+
+void LALInferenceAddstringVariable(LALInferenceVariables * vars, const char * name, CHAR* value, LALInferenceParamVaryType vary);
+
+CHAR* LALInferenceGetstringVariable(LALInferenceVariables * vars, const char * name);
+
+void LALInferenceSetstringVariable(LALInferenceVariables* vars,const char* name,CHAR* value);
+
 /*@}*/
 
 #endif
-
