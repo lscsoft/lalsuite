@@ -103,8 +103,6 @@ for i; do
 	    rebuild="" ;;
         --noupdate)
             noupdate=true ;;
-        --nohough)
-	    nohough=true ;;
 	--gc-opt)
 	    CPPFLAGS="-DGC_SSE2_OPT $CPPFLAGS" ;;
 	--64)
@@ -143,7 +141,6 @@ for i; do
 	    cuda=true
 	    acc="_cuda" ;;
 	--panther)
-	    nohough=true
 	    export MACOSX_DEPLOYMENT_TARGET=10.3
 	    export SDKROOT="/Developer/SDKs/MacOSX10.3.9.sdk"
 	    pflags="-arch ppc -D_NONSTD_SOURCE -isystem $SDKROOT"
@@ -188,7 +185,7 @@ for i; do
 	    build_zlib=true
 	    zlib_shared="--shared";;
 	--help)
-	    echo "$0 builds Einstein@home Applications of LALApps HierarchicalSearch codes"
+	    echo "$0 builds Einstein@home Applications of LALApps HierarchSearchGCT code"
 	    echo "  --win32           cros-compile a Win32 App (requires MinGW, target i586-mingw32msvc-gcc)"
 	    echo "  --32              build 32Bit (add -m32 to  CPPFLAGS, CXXFLAGS, CFLAGS and LDFLAGS)"
 	    echo "  --64              build 64Bit (add -m64 to  CPPFLAGS, CXXFLAGS, CFLAGS and LDFLAGS)"
@@ -214,7 +211,6 @@ for i; do
 	    echo "  --appversion=N.NN set an application version (only used in --release builds, defaults to 0.00)"
 	    echo "  --norebuild       disables --rebuild on --release. DANGEROUS! Use only for testing the build script"
 	    echo "  --noupdate        use previously retrieved (possibly locally modified) sources, doesn't need internet"
-	    echo "  --nohough         don't build HierarchicalSearch from pulsar/hough/src2, just build HierarchSearchGCT"
 	    echo "  --check           test the newly built HierarchSearchGC App"
 	    echo "  --check-only      only test the already built HierarchSearchGC App"
 	    echo "  --check-app=<app> only test the app specified, not necessarily the one just built"
@@ -651,18 +647,6 @@ if [ ".$MACOSX_DEPLOYMENT_TARGET" = ".10.3" ] ; then
     log_and_do ar cru liblalapps.la lalapps.o LALAppsVCSInfo.o
 else
     log_and_do make LALAppsVCSInfo.h liblalapps.la
-fi
-
-if test -z "$nohough" ; then
-    log_and_do cd "$BUILD/lalapps/src/pulsar/hough/src2"
-    log_and_dont_fail make gitID
-    if [ ".$cuda" = ".true" ] ; then
-	log_and_do make "eah_HierarchicalSearch$acc$ext"
-	log_and_do cp "eah_HierarchicalSearch$acc$ext" "$EAH/eah_HierarchicalSearch$acc$ext"
-    else
-	log_and_do make "eah_HierarchicalSearch$ext"
-	log_and_do cp "eah_HierarchicalSearch$ext" "$EAH/eah_HierarchicalSearch$acc$ext"
-    fi
 fi
 
 log_and_do cd "$BUILD/lalapps/src/pulsar/GCT"
