@@ -326,12 +326,15 @@ typedef enum {
 	LALINFERENCEFIM_TIME
 } LALInferenceFIMParameters;
 
-void waveformDerivative(FIMParams *params, LALInferenceRunState *runState, double *h, COMPLEX16FrequencySeries ***outputDerivs);
-
-void drawFisherMatrix(LALInferenceRunState *runState);
-
-void parametersSetFIM(LALInferenceRunState *runState, FIMParams *params);
-
+/** TODO: Tyson, are these the obsolete functions?
+ *
+ * void waveformDerivative(FIMParams *params, LALInferenceRunState *runState, double *h, COMPLEX16FrequencySeries ***outputDerivs);
+ *
+ * void drawFisherMatrix(LALInferenceRunState *runState);
+ *
+ * void parametersSetFIM(LALInferenceRunState *runState, FIMParams *params);
+*/
+ 
 /** Output proposal tracking header to file *fp */
 int LALInferencePrintProposalTrackingHeader(FILE *fp,LALInferenceVariables *params);
 
