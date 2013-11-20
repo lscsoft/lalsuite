@@ -458,7 +458,7 @@ def main(rundir, outdir, ifotag, grb, inifile, injfile, verbose=False,\
     slideCache = slideCache.sieve(description=usertag)
 
     # Identify and store unique desciriptions
-    slideStrings = []
+    slideStrings = [zlString]
     for entry in slideCache:
       fileDescription = entry.description.split('_')
       # Remove user tag and split bank number
@@ -564,8 +564,6 @@ def main(rundir, outdir, ifotag, grb, inifile, injfile, verbose=False,\
     DAGManNode[tag] = finalise_DAG(dag)
     uberdag.add_node(DAGManNode[tag])
 
-  slideStrings.append(zlString)
-  
   # ============
   # trig_cluster
   # ============
