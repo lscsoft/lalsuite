@@ -68,6 +68,9 @@ const char *const skyLocWanderJumpName = "SkyLocWander";
 const char *const differentialEvolutionFullName = "DifferentialEvolutionFull";
 const char *const differentialEvolutionIntrinsicName = "DifferentialEvolutionIntrinsic";
 const char *const differentialEvolutionExtrinsicName = "DifferentialEvolutionExtrinsic";
+const char *const ensembleStretchFullName = "EnsembleStretchFull";
+const char *const ensembleStretchIntrinsicName = "EnsembleStretchIntrinsic";
+const char *const ensembleStretchExtrinsicName = "EnsembleStretchExtrinsic";
 const char *const drawApproxPriorName = "DrawApproxPrior";
 const char *const skyReflectDetPlaneName = "SkyReflectDetPlane";
 const char *const skyRingProposalName = "SkyRingProposal";
@@ -310,7 +313,15 @@ void LALInferenceSetupDefaultNSProposal(LALInferenceRunState *runState, LALInfer
 
   if(!LALInferenceGetProcParamVal(runState->commandLine,"--margphi") && !LALInferenceGetProcParamVal(runState->commandLine,"--proposal-no-psiphi") && !LALInferenceGetProcParamVal(runState->commandLine, "--margtimephi"))
     LALInferenceAddProposalToCycle(runState, polarizationPhaseJumpName, &LALInferencePolarizationPhaseJump, TINYWEIGHT);
-
+  
+  if (nDet >= 2 && !LALInferenceGetProcParamVal(runState->commandLine,"--noProposalSkyRing") && !LALInferenceGetProcParamVal(runState->commandLine,"--margtime") && !LALInferenceGetProcParamVal(runState->commandLine, "--margtimephi")) {
+    LALInferenceAddProposalToCycle(runState, skyRingProposalName, &LALInferenceSkyRingProposal, SMALLWEIGHT);
+  }
+  
+  if (!LALInferenceGetProcParamVal(runState->commandLine,"--noProposalCorrPsiPhi") && !LALInferenceGetProcParamVal(runState->commandLine, "--margphi") && !LALInferenceGetProcParamVal(runState->commandLine, "--margtimephi")) {
+    LALInferenceAddProposalToCycle(runState, polarizationCorrPhaseJumpName, &LALInferenceCorrPolarizationPhaseJump, SMALLWEIGHT);
+  }
+  
   LALInferenceFrame frame=LALINFERENCE_FRAME_RADIATION;
   if (LALInferenceCheckVariable(runState->currentParams, "LALINFERENCE_FRAME"))
     frame = *(LALInferenceFrame*) LALInferenceGetVariable(runState->currentParams, "LALINFERENCE_FRAME");
@@ -350,10 +361,12 @@ void LALInferenceSetupDefaultNSProposal(LALInferenceRunState *runState, LALInfer
   		|| LALInferenceGetVariableVaryType(proposedParams,"theta_spin1")==LALINFERENCE_PARAM_LINEAR )
 	    LALInferenceAddProposalToCycle(runState, rotateSpinsName, &LALInferenceRotateSpins, SMALLWEIGHT);
   }
-
-  /* Always use the covariance method */
+  
+  if (!LALInferenceGetProcParamVal(runState->commandLine,"--proposal-no-eigenvectors"))
+  {
+  /* I don't recommend turning off the covariance method! */
     LALInferenceAddProposalToCycle(runState, covarianceEigenvectorJumpName, &LALInferenceCovarianceEigenvectorJump, BIGWEIGHT);
-
+  }
   /* Use differential evolution unless turned off */
   if (!LALInferenceGetProcParamVal(runState->commandLine,"--proposal-no-differentialevolution")) {
     LALInferenceAddProposalToCycle(runState, differentialEvolutionFullName, &LALInferenceDifferentialEvolutionFull, BIGWEIGHT);
@@ -361,6 +374,14 @@ void LALInferenceSetupDefaultNSProposal(LALInferenceRunState *runState, LALInfer
     LALInferenceAddProposalToCycle(runState, differentialEvolutionExtrinsicName, &LALInferenceDifferentialEvolutionExtrinsic, SMALLWEIGHT);
   }
 
+  /* Use ensemble moves unless turned off */
+  if (!LALInferenceGetProcParamVal(runState->commandLine,"--proposal-no-ensemble")) {
+    LALInferenceAddProposalToCycle(runState, ensembleStretchFullName, &LALInferenceEnsembleStretchFull, BIGWEIGHT);
+    LALInferenceAddProposalToCycle(runState, ensembleStretchIntrinsicName, &LALInferenceEnsembleStretchIntrinsic, SMALLWEIGHT);
+    LALInferenceAddProposalToCycle(runState, ensembleStretchExtrinsicName, &LALInferenceEnsembleStretchExtrinsic, SMALLWEIGHT);
+  }
+  
+  
   //Add LALInferencePSDFitJump to the cycle
   if(LALInferenceGetProcParamVal(runState->commandLine, "--psdFit"))
   {
@@ -880,6 +901,120 @@ void LALInferenceDifferentialEvolutionFull(LALInferenceRunState *runState, LALIn
   LALInferenceDifferentialEvolutionNames(runState, proposedParams, NULL);
 }
 
+void LALInferenceEnsembleStretchFull(LALInferenceRunState *runState, LALInferenceVariables *proposedParams)
+{
+  const char *propName = ensembleStretchFullName;
+  LALInferenceSetVariable(runState->proposalArgs, LALInferenceCurrentProposalName, &propName);
+  LALInferenceEnsembleStretchNames(runState, proposedParams, NULL);
+}
+
+
+void LALInferenceEnsembleStretchIntrinsic(LALInferenceRunState *runState, LALInferenceVariables *pp) {
+  const char *propName = ensembleStretchIntrinsicName;
+  LALInferenceSetVariable(runState->proposalArgs, LALInferenceCurrentProposalName, &propName);
+  const char *names[] = {"chirpmass", "asym_massratio", "massratio", "m1", "m2", "a_spin1", "a_spin2",
+    "tilt_spin1", "tilt_spin2", "phi12", "phi_spin1", "phi_spin2", "theta_spin1", "theta_spin2", NULL};
+    LALInferenceEnsembleStretchNames(runState, pp, names);
+}
+
+void LALInferenceEnsembleStretchExtrinsic(LALInferenceRunState *runState, LALInferenceVariables *pp) {
+  const char *propName = ensembleStretchExtrinsicName;
+  LALInferenceSetVariable(runState->proposalArgs, LALInferenceCurrentProposalName, &propName);
+  
+  const char *names[] = {"rightascension", "declination", "polarisation", "inclination", "distance", "phase", "time", "theta_JN", NULL};
+  const char *marg_time_names[] = {"rightascension", "declination", "polarisation", "inclination", "distance", "phase", "theta_JN", NULL};
+  const char *marg_time_phase_names[] = {"rightascension", "declination", "polarisation", "inclination", "distance", "theta_JN",  NULL};
+  
+  if (LALInferenceGetProcParamVal(runState->commandLine, "--margtimephi"))
+    LALInferenceEnsembleStretchNames(runState, pp, marg_time_phase_names);
+  else if (LALInferenceGetProcParamVal(runState->commandLine, "--margtime"))
+    LALInferenceEnsembleStretchNames(runState, pp, marg_time_names);
+  else
+    LALInferenceEnsembleStretchNames(runState, pp, names);
+}
+
+/* This jump uses the current sample 'A' and another randomly
+ * drawn 'B' from the ensemble of live points, and proposes
+ * C = B+Z(A-B) where Z is a scale factor */
+void LALInferenceEnsembleStretchNames(LALInferenceRunState *runState,
+				 LALInferenceVariables *proposedParams,
+				 const char **names) {
+   size_t i;
+   
+   if (names == NULL) {
+    size_t N = LALInferenceGetVariableDimension(runState->currentParams) + 1; /* More names than we need. */
+    names = alloca(N*sizeof(char *)); /* Hope we have alloca---saves
+    having to deallocate after
+    proposal. */
+    
+    LALInferenceVariableItem *item = runState->currentParams->head;
+    i = 0;
+    while (item != NULL) {
+      if (item->vary != LALINFERENCE_PARAM_FIXED && item->vary != LALINFERENCE_PARAM_OUTPUT && item->type==LALINFERENCE_REAL8_t ) {
+	names[i] = item->name;
+	i++;
+      }
+      item = item->next;
+    }
+    names[i]=NULL; /* Terminate */
+  }
+
+  size_t Ndim = 0;
+  for(Ndim=0,i=0; names[i] != NULL; i++ ) {
+    if(LALInferenceCheckVariableNonFixed(proposedParams,names[i]))
+      Ndim++;
+  }
+  
+  LALInferenceVariables **dePts = runState->differentialPoints;
+  size_t nPts = runState->differentialPointsLength;
+  
+  LALInferenceCopyVariables(runState->currentParams, proposedParams);
+  
+  if (dePts == NULL || nPts <= 1) {
+    LALInferenceSetLogProposalRatio(runState, 0.0);
+    return; /* Quit now, since we don't have any points to use. */
+  }
+  
+
+  
+  i = gsl_rng_uniform_int(runState->GSLrandom, nPts);
+  
+  /* Choose a different sample */
+    do {
+    i = gsl_rng_uniform_int(runState->GSLrandom, nPts);
+  } while (!LALInferenceCompareVariables(proposedParams,dePts[i]));
+  
+  
+  LALInferenceVariables *ptI = dePts[i];
+  
+  /* Scale z is chosen according to be symmetric under z -> 1/z */
+  /* so p(x) \propto 1/z between 1/a and a */
+  
+  /* TUNABLE PARAMETER (a), must be >1. Larger value -> smaller acceptance */
+  REAL8 maxScale=3.0;
+  
+  /* Draw sample between 1/max and max */
+  REAL8 Y=gsl_rng_uniform(runState->GSLrandom);
+  REAL8 logmax=log(maxScale);
+  REAL8 X=2.0*logmax*Y - logmax;
+  REAL8 scale=exp(X);
+  
+  for (i = 0; names[i] != NULL; i++) { 
+    /* Ignore variable if it's not in each of the params. */
+    if (LALInferenceCheckVariableNonFixed(proposedParams, names[i]) && LALInferenceCheckVariableNonFixed(ptI, names[i])) {
+      REAL8 cur=*((REAL8 *)LALInferenceGetVariable(proposedParams, names[i]));
+      REAL8 other=*((REAL8 *) LALInferenceGetVariable(ptI, names[i]));
+      REAL8 x = other + scale*(cur-other);
+      LALInferenceSetVariable(proposedParams, names[i], &x);
+    }
+  }
+  if(scale<maxScale && scale>(1.0/maxScale))
+    LALInferenceSetLogProposalRatio(runState, log(scale)*((REAL8)Ndim) );
+  else
+    LALInferenceSetLogProposalRatio(runState, -DBL_MAX );
+  
+  
+}
 
 void LALInferenceDifferentialEvolutionNames(LALInferenceRunState *runState,
                                             LALInferenceVariables *proposedParams,
@@ -3147,3 +3282,4 @@ void LALInferencePrintProposalTracking(FILE *fp, LALInferenceVariables *propArgs
   fprintf(fp, "\n");
   return;
 }
+

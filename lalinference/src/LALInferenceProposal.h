@@ -285,6 +285,13 @@ int LALInferencePrintProposalTrackingHeader(FILE *fp,LALInferenceVariables *para
 /** Output proposal tracking information to file *fp */
 void LALInferencePrintProposalTracking(FILE *fp, LALInferenceVariables *propArgs, LALInferenceVariables *theta, LALInferenceVariables *theta_prime);
 
+/** Ensemble stretch moves - see http://dx.doi.org/10.2140/camcos.2010.5.65 */
+void LALInferenceEnsembleStretchFull(LALInferenceRunState *runState, LALInferenceVariables *proposedParams);
+void LALInferenceEnsembleStretchIntrinsic(LALInferenceRunState *runState, LALInferenceVariables *pp);
+void LALInferenceEnsembleStretchExtrinsic(LALInferenceRunState *runState, LALInferenceVariables *pp);
+void LALInferenceEnsembleStretchNames(LALInferenceRunState *runState, LALInferenceVariables *ppi, const char **names);
+
+
 /*@}*/
 
 #endif
