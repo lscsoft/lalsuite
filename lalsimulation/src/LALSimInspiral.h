@@ -2408,6 +2408,20 @@ void XLALSimInspiralTaylorF2RedSpinMchirpEtaChiFromChirpTimes(
     double fLow     /**< low-frequency cutoff (Hz) */
 );
 
+typedef enum {
+
+   LAL_SIM_INSPIRAL_SPINLESS, /** These approximants cannot include spin terms */
+   LAL_SIM_INSPIRAL_SINGLESPIN, /** These approximants support a signle spin (by default that is the object 1)*/
+   LAL_SIM_INSPIRAL_ALIGNEDSPIN, /** These approximants can include spins aligned with L_N */
+   LAL_SIM_INSPIRAL_PRECESSINGSPIN, /** These approximant support fully precessing spins */
+   LAL_SIM_INSPIRAL_NUMSPINSUPPORT	/**< Number of elements in enum, useful for checking bounds */
+
+ } SpinSupport;
+
+/* check if the given approximant supports precessing spins */
+
+int XLALSimInspiralGetSpinSupportFromApproximant(Approximant approx);
+
 #if 0
 { /* so that editors will match succeeding brace */
 #elif defined(__cplusplus)

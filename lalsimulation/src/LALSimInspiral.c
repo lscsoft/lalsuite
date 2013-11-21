@@ -2121,7 +2121,7 @@ int XLALSimInspiralChooseTDWaveform(
                     phaseO, amplitudeO);
             break;
 
-        /* spinning inspiral-merger-ringdown models */
+        /* spin aligned inspiral-merger-ringdown models */
         case IMRPhenomB:
             /* Waveform-specific sanity checks */
             if( !XLALSimInspiralWaveformFlagsIsDefault(waveFlags) )
@@ -3290,4 +3290,56 @@ int XLALGetHigherModesFromString(const CHAR *inString)
     XLALPrintError(" Error: invalid value %s for mode choice\n",inString);
     return 0;
   }
+}
+
+int XLALSimInspiralGetSpinSupportFromApproximant(Approximant approx){
+
+  SpinSupport spin_support=LAL_SIM_INSPIRAL_NUMSPINSUPPORT;
+  switch (approx)
+  {
+    case SpinTaylor:
+    case SpinTaylorFrameless:
+    case SpinTaylorT4:
+    case SpinTaylorT2:
+    case PhenSpinTaylor:
+    case PhenSpinTaylorRD:
+    case SpinTaylorT3:
+      spin_support=LAL_SIM_INSPIRAL_PRECESSINGSPIN;
+      break;
+    case SpinTaylorF2:
+    case FindChirpPTF:
+      spin_support=LAL_SIM_INSPIRAL_SINGLESPIN;
+      break;
+    case TaylorF2:
+    case TaylorF2RedSpin:
+    case TaylorF2RedSpinTidal:
+    case IMRPhenomB:
+    case IMRPhenomC:
+    case SEOBNRv1:
+    case TaylorR2F4:
+    case IMRPhenomFB:
+    case FindChirpSP:
+      spin_support=LAL_SIM_INSPIRAL_ALIGNEDSPIN;
+      break;
+    case TaylorEt:
+    case TaylorT1:
+    case TaylorT2:
+    case TaylorT3:
+    case TaylorT4:
+    case IMRPhenomA:
+    case EOBNRv2HM:
+    case EOBNRv2:
+    case EOBNR:
+    case EOB:
+    case IMRPhenomFA:
+    case GeneratePPN:
+      spin_support=LAL_SIM_INSPIRAL_SPINLESS;
+      break;
+    default:
+      XLALPrintError("Approximant not supported by lalsimuation TD/FD routines \n");
+      XLAL_ERROR(XLAL_EINVAL);
+    }
+
+    return spin_support;
+
 }
