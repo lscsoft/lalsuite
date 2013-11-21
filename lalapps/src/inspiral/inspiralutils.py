@@ -1144,32 +1144,6 @@ def zeroSlidePlots(dag, plotDir, config, logPath, zerolagSuffix, slideSuffix,
     for thisDag in parentDags: 
       plotNode.add_parent(thisDag)
 
-  # second stage (require DQ) 
-  for cat in vetoCat:
-    vetoString = "_CAT_" + str(cat) + "_VETO"
-    plotcp = copy.deepcopy(config)
-    plotcp.add_section("plot-arguments")
-    plotcp.set("plot-arguments","plotinspiral","")
-    plotcp.set("plot-arguments","plotthinca","")
-    plotcp.set("plot-arguments","write-script","")
-    if zerolagSuffix == "PLAYGROUND" and slideSuffix == "FULL_DATA":
-      plotcp.set("plotthinca","zero-lag-playground","")
-    plotVetoNode = plot_setup(plotDir, plotcp, logPath, "second", \
-        "", zerolagSuffix + vetoString, slideSuffix + vetoString, \
-        slideSuffix + vetoString, cacheFile, "", \
-        tag=vetoString[1:], ifos=ifos, cat=cat)
-    if doDagCategories:
-      plotVetoNode.set_category('plotting')
-    dag.add_node(plotVetoNode)
-    if parentDags:
-      for thisDag in parentDags: 
-        plotVetoNode.add_parent(thisDag)
-    if vetoParentDags:
-      for thisDag in vetoParentDags:
-        plotVetoNode.add_parent(thisDag[cat])
-    if not doDagCategories:
-      plotVetoNode.add_parent(plotNode)
-
   return dag
 
 ##############################################################################
@@ -1209,36 +1183,6 @@ def injZeroSlidePlots(dag, plotDir, config, logPath, injectionSuffix,
   if parentDags:
     for thisDag in parentDags:
       injPlotNode.add_parent(thisDag)
-
-  # second stage
-  for cat in vetoCat:
-    vetoString = "_CAT_" + str(cat) + "_VETO"
-    plotcp = copy.deepcopy(config)
-    plotcp.add_section("plot-arguments")
-    plotcp.set("plot-arguments","plotinspinj","")
-    plotcp.set("plot-arguments","plotsnrchi","")
-    plotcp.set("plot-arguments","plotethinca","")
-    plotcp.set("plot-arguments","plotinspmissed","")
-    plotcp.set("plot-arguments","ploteffdistcut","")
-    plotcp.set("plot-arguments","write-script","")
-    injPlotVetoNode = plot_setup( plotDir, \
-        plotcp, logPath, "second", injectionSuffix + vetoString, \
-        zerolagSuffix + vetoString, slideSuffix + vetoString, \
-        injectionSuffix + vetoString, cacheFile, injectionSuffix, \
-        tag=vetoString[1:], ifos=ifos, cat=cat)
-    if doDagCategories:
-      injPlotVetoNode.set_category('plotting')
-    dag.add_node(injPlotVetoNode)
- 
-    if parentDags:
-      for thisDag in parentDags:
-        injPlotVetoNode.add_parent(thisDag)
-    if vetoParentDags:
-      for thisDag in vetoParentDags:
-        injPlotVetoNode.add_parent(thisDag)
-
-    if not doDagCategories:
-      injPlotVetoNode.add_parent(injPlotNode)
 
   return dag
 
@@ -1325,7 +1269,7 @@ def followup_setup(followupDir, config, opts, hipeDir):
   followupcp.set("hipe-cache", "science-run", "S5")
 
   for path in ["tmpltbank-path", "trigbank-path", "first-inspiral-path", \
-      "second-inspiral-path", "first-coinc-path", "second-coinc-path"]:
+       "first-coinc-path"]:
     followupcp.set("hipe-cache", path, "../" + hipeDir)
 
   # set the xml-glob
