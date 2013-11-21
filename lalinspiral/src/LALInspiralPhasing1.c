@@ -71,7 +71,7 @@ LALInspiralPhasing1 (
    void      *params
    )
 {
-   XLALPrintDeprecationWarning("LALInspiralPhasing1", "XLALInspiralPhasing1");
+   XLAL_PRINT_DEPRECATION_WARNING("XLALInspiralPhasing1");
 
    INITSTATUS(status);
    ATTATCHSTATUSPTR (status);

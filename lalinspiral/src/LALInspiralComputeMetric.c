@@ -69,7 +69,7 @@ LALInspiralComputeMetric (
 {
   INITSTATUS(status);
 
-  XLALPrintDeprecationWarning("LALInspiralComputeMetric", "XLALInspiralComputeMetric");
+  XLAL_PRINT_DEPRECATION_WARNING("XLALInspiralComputeMetric");
 
   if (XLALInspiralComputeMetric(metric, moments, params->fLower, params->order, params->t0, params->t3) == XLAL_FAILURE){
     ABORTXLAL( status );

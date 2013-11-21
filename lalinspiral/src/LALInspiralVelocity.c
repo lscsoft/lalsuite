@@ -63,7 +63,7 @@ LALInspiralVelocity(
    TofVIn    *ak
    )
 {
-  XLALPrintDeprecationWarning("LALInspiralVelocity", "XLALInspiralVelocity");
+  XLAL_PRINT_DEPRECATION_WARNING("XLALInspiralVelocity");
 
   INITSTATUS(status);
   ATTATCHSTATUSPTR(status);

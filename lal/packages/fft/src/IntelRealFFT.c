@@ -76,7 +76,7 @@ LALCreateForwardRealFFTPlan(
 #endif
 
   INITSTATUS(status);
-  XLALPrintDeprecationWarning("LALCreateForwardRealFFTPlan", "XLALCreateForwardRealFFTPlan");
+  XLAL_PRINT_DEPRECATION_WARNING("XLALCreateForwardRealFFTPlan");
 
   ASSERT( plan, status, REALFFTH_ENULL, REALFFTH_MSGENULL );
   ASSERT( ! *plan, status, REALFFTH_ENNUL, REALFFTH_MSGENNUL );
@@ -138,7 +138,7 @@ LALCreateReverseRealFFTPlan(
 #endif
 
   INITSTATUS(status);
-  XLALPrintDeprecationWarning("LALCreateReverseRealFFTPlan", "XLALCreateReverseRealFFTPlan");
+  XLAL_PRINT_DEPRECATION_WARNING("XLALCreateReverseRealFFTPlan");
 
   ASSERT( plan, status, REALFFTH_ENULL, REALFFTH_MSGENULL );
   ASSERT( ! *plan, status, REALFFTH_ENNUL, REALFFTH_MSGENNUL );
@@ -198,7 +198,7 @@ LALDestroyRealFFTPlan(
 #endif
 
   INITSTATUS(status);
-  XLALPrintDeprecationWarning("LALDestroyRealFFTPlan", "XLALDestroyRealFFTPlan");
+  XLAL_PRINT_DEPRECATION_WARNING("XLALDestroyRealFFTPlan");
 
   ASSERT( plan, status, REALFFTH_ENULL, REALFFTH_MSGENULL );
   ASSERT( *plan, status, REALFFTH_ENULL, REALFFTH_MSGENULL );
@@ -233,7 +233,7 @@ LALForwardRealFFT(
 #endif
 
   INITSTATUS(status);
-  XLALPrintDeprecationWarning("LALForwardRealFFT", "XLALForwardRealFFT");
+  XLAL_PRINT_DEPRECATION_WARNING("XLALForwardRealFFT");
   ASSERT( output, status, REALFFTH_ENULL, REALFFTH_MSGENULL );
   ASSERT( input, status, REALFFTH_ENULL, REALFFTH_MSGENULL );
   ASSERT( plan, status, REALFFTH_ENULL, REALFFTH_MSGENULL );
@@ -294,7 +294,7 @@ LALReverseRealFFT(
 #endif
 
   INITSTATUS(status);
-  XLALPrintDeprecationWarning("LALReverseRealFFT", "XLALReverseRealFFT");
+  XLAL_PRINT_DEPRECATION_WARNING("XLALReverseRealFFT");
 
   ASSERT( output, status, REALFFTH_ENULL, REALFFTH_MSGENULL );
   ASSERT( input, status, REALFFTH_ENULL, REALFFTH_MSGENULL );
@@ -358,7 +358,7 @@ LALRealPowerSpectrum (
 #endif
 
   INITSTATUS(status);
-  XLALPrintDeprecationWarning("LALRealPowerSpectrum", "XLALREAL4PowerSpectrum");
+  XLAL_PRINT_DEPRECATION_WARNING("XLALREAL4PowerSpectrum");
 
   ASSERT( spec, status, REALFFTH_ENULL, REALFFTH_MSGENULL );
   ASSERT( data, status, REALFFTH_ENULL, REALFFTH_MSGENULL );
@@ -414,7 +414,7 @@ LALREAL4VectorFFT(
 #endif
 
   INITSTATUS(status);
-  XLALPrintDeprecationWarning("LALREAL4VectorFFT", "XLALREAL4VectorFFT");
+  XLAL_PRINT_DEPRECATION_WARNING("XLALREAL4VectorFFT");
 
   ASSERT( output, status, REALFFTH_ENULL, REALFFTH_MSGENULL );
   ASSERT( input, status, REALFFTH_ENULL, REALFFTH_MSGENULL );

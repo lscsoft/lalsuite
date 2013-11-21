@@ -133,8 +133,7 @@ LALRungeKutta4(
 
    INITSTATUS(status);
 
-   // FIXME: uncomment when transitioned
-   //XLALPrintDeprecationWarning( "LALRungeKutta4", "XLALRungeKutta4" );
+   XLAL_PRINT_DEPRECATION_WARNING("XLALRungeKutta4");
 
    if ( XLALRungeKutta4( yout, integrator, params ) == XLAL_FAILURE )
      ABORTXLAL( status );

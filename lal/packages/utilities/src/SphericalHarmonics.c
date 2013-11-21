@@ -480,7 +480,7 @@ INT4 XLALSphHarm ( COMPLEX16 *out, /**< output */
                    )
 {
 
-  XLALPrintDeprecationWarning( "XLALSphHarm", "XLALSpinWeightedSphericalHarmonic" );
+  XLAL_PRINT_DEPRECATION_WARNING("XLALSpinWeightedSphericalHarmonic");
 
   *out = XLALSpinWeightedSphericalHarmonic( theta, phi, -2, L, M );
   if ( xlalErrno )

@@ -63,7 +63,7 @@ LALInspiralTiming2_0PN (
    void      *params
    )
 {
-  XLALPrintDeprecationWarning("LALInspiralTiming2_0PN", "XLALInspiralTiming2_0PN");
+  XLAL_PRINT_DEPRECATION_WARNING("XLALInspiralTiming2_0PN");
 
   INITSTATUS(status);
   ATTATCHSTATUSPTR(status);
@@ -116,7 +116,7 @@ LALInspiralTiming2_2PN (
    void      *params
    )
 {
-  XLALPrintDeprecationWarning("LALInspiralTiming2_2PN", "XLALInspiralTiming2_2PN");
+  XLAL_PRINT_DEPRECATION_WARNING("XLALInspiralTiming2_2PN");
 
   INITSTATUS(status);
   ATTATCHSTATUSPTR(status);
@@ -171,7 +171,7 @@ LALInspiralTiming2_3PN (
    void      *params
    )
 {
-  XLALPrintDeprecationWarning("LALInspiralTiming2_3PN", "XLALInspiralTiming2_3PN");
+  XLAL_PRINT_DEPRECATION_WARNING("XLALInspiralTiming2_3PN");
 
   INITSTATUS(status);
   ATTATCHSTATUSPTR(status);
@@ -228,7 +228,7 @@ LALInspiralTiming2_4PN (
    void      *params
    )
 {
-  XLALPrintDeprecationWarning("LALInspiralTiming2_4PN", "XLALInspiralTiming2_4PN");
+  XLAL_PRINT_DEPRECATION_WARNING("XLALInspiralTiming2_4PN");
 
   INITSTATUS(status);
   ATTATCHSTATUSPTR(status);
@@ -287,7 +287,7 @@ LALInspiralTiming2_5PN (
    void      *params
    )
 {
-  XLALPrintDeprecationWarning("LALInspiralTiming2_5PN", "XLALInspiralTiming2_5PN");
+  XLAL_PRINT_DEPRECATION_WARNING("XLALInspiralTiming2_5PN");
 
   INITSTATUS(status);
   ATTATCHSTATUSPTR(status);
@@ -348,7 +348,7 @@ LALInspiralTiming2_6PN (
    void      *params
    )
 {
-  XLALPrintDeprecationWarning("LALInspiralTiming2_6PN", "XLALInspiralTiming2_6PN");
+  XLAL_PRINT_DEPRECATION_WARNING("XLALInspiralTiming2_6PN");
 
   INITSTATUS(status);
   ATTATCHSTATUSPTR(status);
@@ -412,7 +412,7 @@ LALInspiralTiming2_7PN (
    void      *params
    )
 {
-  XLALPrintDeprecationWarning("LALInspiralTiming2_7PN", "XLALInspiralTiming2_7PN");
+  XLAL_PRINT_DEPRECATION_WARNING("XLALInspiralTiming2_7PN");
 
   INITSTATUS(status);
   ATTATCHSTATUSPTR(status);

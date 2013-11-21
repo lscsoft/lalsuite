@@ -1846,8 +1846,7 @@ int XLALSimInspiralChooseWaveform(
     Approximant approximant                     /**< post-Newtonian approximant to use for waveform production */
     )
 {
-    XLALPrintDeprecationWarning("XLALSimInspiralChooseWaveform", 
-            "XLALSimInspiralChooseTDWaveform");
+    XLAL_PRINT_DEPRECATION_WARNING("XLALSimInspiralChooseTDWaveform");
 
     return XLALSimInspiralChooseTDWaveform(hplus, hcross, phiRef, deltaT, m1,
         m2, S1x, S1y, S1z, S2x, S2y, S2z, f_min, f_ref, r, i, lambda1, lambda2,

@@ -978,7 +978,7 @@ LALEOBWaveform (
 
    INITSTATUS(status);
 
-   XLALPrintDeprecationWarning( "LALEOBWaveform", "XLALEOBWaveform" );
+   XLAL_PRINT_DEPRECATION_WARNING("XLALEOBWaveform");
 
    if ( XLALEOBWaveform( signalvec, params ) == XLAL_FAILURE )
    {
@@ -1066,7 +1066,7 @@ LALEOBWaveformTemplates (
 
    INITSTATUS(status);
 
-   XLALPrintDeprecationWarning( "LALEOBWaveformTemplates", "XLALEOBWaveformTemplates" );
+   XLAL_PRINT_DEPRECATION_WARNING("XLALEOBWaveformTemplates");
 
    if ( XLALEOBWaveformTemplates( signalvec1, signalvec2, params ) == XLAL_FAILURE )
    {
@@ -1170,7 +1170,7 @@ LALEOBWaveformForInjection (
 
   INITSTATUS(status);
 
-  XLALPrintDeprecationWarning( "LALEOBWaveformForInjection", "XLALEOBWaveformForInjection" );
+  XLAL_PRINT_DEPRECATION_WARNING("XLALEOBWaveformForInjection");
 
   if ( XLALEOBWaveformForInjection( waveform, params, ppnParams ) == XLAL_FAILURE )
   {

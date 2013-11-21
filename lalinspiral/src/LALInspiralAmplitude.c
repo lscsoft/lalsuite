@@ -57,7 +57,7 @@ void
 LALInspiralRestrictedAmplitude (LALStatus        *status,
 				InspiralTemplate *params )
 {
-  XLALPrintDeprecationWarning("LALInspiralRestrictedAmplitude", "XLALInspiralRestrictedAmplitude");
+  XLAL_PRINT_DEPRECATION_WARNING("XLALInspiralRestrictedAmplitude");
 
   INITSTATUS(status);
   ATTATCHSTATUSPTR(status);

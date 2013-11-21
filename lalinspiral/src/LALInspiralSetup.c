@@ -71,7 +71,7 @@ LALInspiralSetup (
    InspiralTemplate *params
    )
 {
-   XLALPrintDeprecationWarning("LALInspiralSetup", "XLALInspiralSetup");
+   XLAL_PRINT_DEPRECATION_WARNING("XLALInspiralSetup");
 
    INITSTATUS(status);
    ATTATCHSTATUSPTR(status);

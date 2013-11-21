@@ -31,7 +31,7 @@ LALFrCacheOpen(LALStatus * status, LALFrStream ** output, LALCache * cache)
 {
     LALFrStream *stream;
 
-    XLALPrintDeprecationWarning(__func__, "XLALFrStreamCacheOpen");
+    XLAL_PRINT_DEPRECATION_WARNING("XLALFrStreamCacheOpen");
     INITSTATUS(status);
     ASSERT(cache, status, FRAMESTREAMH_ENULL, FRAMESTREAMH_MSGENULL);
     ASSERT(output, status, FRAMESTREAMH_ENULL, FRAMESTREAMH_MSGENULL);
@@ -58,7 +58,7 @@ void
 LALFrOpen(LALStatus * status,
     LALFrStream ** stream, const CHAR * dirname, const CHAR * pattern)
 {
-    XLALPrintDeprecationWarning(__func__, "XLALFrStreamOpen");
+    XLAL_PRINT_DEPRECATION_WARNING("XLALFrStreamOpen");
     INITSTATUS(status);
     ATTATCHSTATUSPTR(status);
     ASSERT(stream, status, FRAMESTREAMH_ENULL, FRAMESTREAMH_MSGENULL);
@@ -72,7 +72,7 @@ LALFrOpen(LALStatus * status,
 
 void LALFrClose(LALStatus * status, LALFrStream ** stream)
 {
-    XLALPrintDeprecationWarning(__func__, "XLALFrStreamClose");
+    XLAL_PRINT_DEPRECATION_WARNING("XLALFrStreamClose");
     INITSTATUS(status);
     ASSERT(stream, status, FRAMESTREAMH_ENULL, FRAMESTREAMH_MSGENULL);
     ASSERT(*stream, status, FRAMESTREAMH_ENULL, FRAMESTREAMH_MSGENULL);
@@ -83,7 +83,7 @@ void LALFrClose(LALStatus * status, LALFrStream ** stream)
 
 void LALFrSetMode(LALStatus * status, INT4 mode, LALFrStream * stream)
 {
-    XLALPrintDeprecationWarning(__func__, "XLALFrStreamSetMode");
+    XLAL_PRINT_DEPRECATION_WARNING("XLALFrStreamSetMode");
     INITSTATUS(status);
     ASSERT(stream, status, FRAMESTREAMH_ENULL, FRAMESTREAMH_MSGENULL);
     stream->mode = mode;
@@ -92,7 +92,7 @@ void LALFrSetMode(LALStatus * status, INT4 mode, LALFrStream * stream)
 
 void LALFrEnd(LALStatus * status, INT4 * end, LALFrStream * stream)
 {
-    XLALPrintDeprecationWarning(__func__, "XLALFrStreamEnd");
+    XLAL_PRINT_DEPRECATION_WARNING("XLALFrStreamEnd");
     INITSTATUS(status);
     ASSERT(stream, status, FRAMESTREAMH_ENULL, FRAMESTREAMH_MSGENULL);
     ASSERT(end, status, FRAMESTREAMH_ENULL, FRAMESTREAMH_MSGENULL);
@@ -102,7 +102,7 @@ void LALFrEnd(LALStatus * status, INT4 * end, LALFrStream * stream)
 
 void LALFrRewind(LALStatus * status, LALFrStream * stream)
 {
-    XLALPrintDeprecationWarning(__func__, "XLALFrStreamRewind");
+    XLAL_PRINT_DEPRECATION_WARNING("XLALFrStreamRewind");
     INITSTATUS(status);
     ASSERT(stream, status, FRAMESTREAMH_ENULL, FRAMESTREAMH_MSGENULL);
     if (XLALFrStreamRewind(stream)) {
@@ -122,7 +122,7 @@ void LALFrNext(LALStatus * status, LALFrStream * stream)
     CHAR frErrMsg[1024];
     int code;
 
-    XLALPrintDeprecationWarning(__func__, "XLALFrStreamNext");
+    XLAL_PRINT_DEPRECATION_WARNING("XLALFrStreamNext");
     INITSTATUS(status);
     ASSERT(stream, status, FRAMESTREAMH_ENULL, FRAMESTREAMH_MSGENULL);
 
@@ -166,7 +166,7 @@ void LALFrSeek(LALStatus * status, const LIGOTimeGPS * epoch,
     CHAR frErrMsg[1024];
     int code;
 
-    XLALPrintDeprecationWarning(__func__, "XLALFrStreamSeek");
+    XLAL_PRINT_DEPRECATION_WARNING("XLALFrStreamSeek");
     INITSTATUS(status);
     ASSERT(stream, status, FRAMESTREAMH_ENULL, FRAMESTREAMH_MSGENULL);
     ASSERT(epoch, status, FRAMESTREAMH_ENULL, FRAMESTREAMH_MSGENULL);
@@ -203,7 +203,7 @@ void LALFrSeek(LALStatus * status, const LIGOTimeGPS * epoch,
 
 void LALFrTell(LALStatus * status, LIGOTimeGPS * epoch, LALFrStream * stream)
 {
-    XLALPrintDeprecationWarning(__func__, "XLALFrStreamTell");
+    XLAL_PRINT_DEPRECATION_WARNING("XLALFrStreamTell");
     INITSTATUS(status);
     ASSERT(stream, status, FRAMESTREAMH_ENULL, FRAMESTREAMH_MSGENULL);
     ASSERT(epoch, status, FRAMESTREAMH_ENULL, FRAMESTREAMH_MSGENULL);
@@ -218,7 +218,7 @@ void
 LALFrGetPos(LALStatus * status, LALFrStreamPos * position,
     LALFrStream * stream)
 {
-    XLALPrintDeprecationWarning(__func__, "XLALFrStreamGetpos");
+    XLAL_PRINT_DEPRECATION_WARNING("XLALFrStreamGetpos");
     INITSTATUS(status);
     ASSERT(position, status, FRAMESTREAMH_ENULL, FRAMESTREAMH_MSGENULL);
     ASSERT(stream, status, FRAMESTREAMH_ENULL, FRAMESTREAMH_MSGENULL);
@@ -233,7 +233,7 @@ void
 LALFrSetPos(LALStatus * status, LALFrStreamPos * position,
     LALFrStream * stream)
 {
-    XLALPrintDeprecationWarning(__func__, "XLALFrStreamSetpos");
+    XLAL_PRINT_DEPRECATION_WARNING("XLALFrStreamSetpos");
     INITSTATUS(status);
     ASSERT(position, status, FRAMESTREAMH_ENULL, FRAMESTREAMH_MSGENULL);
     ASSERT(stream, status, FRAMESTREAMH_ENULL, FRAMESTREAMH_MSGENULL);
@@ -257,7 +257,7 @@ LALFrSetPos(LALStatus * status, LALFrStreamPos * position,
 void LALFrGetTimeSeriesType(LALStatus * status, LALTYPECODE * output,
     FrChanIn * chanin, LALFrStream * stream)
 {
-    XLALPrintDeprecationWarning(__func__, "XLALFrStreamGetTimeSeriesType");
+    XLAL_PRINT_DEPRECATION_WARNING("XLALFrStreamGetTimeSeriesType");
     INITSTATUS(status);
     *output = XLALFrStreamGetTimeSeriesType(chanin->name, stream);
     RETURN(status);
@@ -270,7 +270,7 @@ void LALFrGetTimeSeriesType(LALStatus * status, LALTYPECODE * output,
     { \
         int errnum; \
         int code; \
-        XLALPrintDeprecationWarning(__func__, "XLALFrStreamGet" #laltype "TimeSeries"); \
+        XLAL_PRINT_DEPRECATION_WARNING("XLALFrStreamGet" #laltype "TimeSeries"); \
         INITSTATUS(status); \
         strcpy(series->name, chanin->name); \
         XLAL_TRY(code = XLALFrStreamGet ## laltype ## TimeSeries(series, stream), errnum); \
@@ -287,7 +287,7 @@ void LALFrGetTimeSeriesType(LALStatus * status, LALTYPECODE * output,
     void LALFrGet ## laltype ## TimeSeriesMetadata(LALStatus *status, laltype ## TimeSeries *series, FrChanIn *chanin, LALFrStream *stream) \
     { \
         int code; \
-        XLALPrintDeprecationWarning(__func__, "XLALFrStreamGet" #laltype "TimeSeriesMetadata"); \
+        XLAL_PRINT_DEPRECATION_WARNING("XLALFrStreamGet" #laltype "TimeSeriesMetadata"); \
         INITSTATUS(status); \
         strcpy(series->name, chanin->name); \
         code = XLALFrStreamGet ## laltype ## TimeSeriesMetadata(series, stream); \
@@ -301,7 +301,7 @@ void LALFrGetTimeSeriesType(LALStatus * status, LALTYPECODE * output,
     void LALFrGet ## laltype ## FrequencySeries(LALStatus *status, laltype ## FrequencySeries *series, FrChanIn *chanin, LALFrStream *stream) \
     { \
         int code; \
-        XLALPrintDeprecationWarning(__func__, "XLALFrStreamGet" #laltype "FrequencySeries"); \
+        XLAL_PRINT_DEPRECATION_WARNING("XLALFrStreamGet" #laltype "FrequencySeries"); \
         INITSTATUS(status); \
         strcpy(series->name, chanin->name); \
         code = XLALFrStreamGet ## laltype ## FrequencySeries(series, stream); \
@@ -344,7 +344,7 @@ DEFINE_LAL_GET_FS_FUNCTION(COMPLEX16)
         char fname[FILENAME_MAX]; \
         double duration; \
         int t0, dt; \
-        XLALPrintDeprecationWarning(__func__, "XLALFrWrite" #laltype "TimeSeries"); \
+        XLAL_PRINT_DEPRECATION_WARNING("XLALFrWrite" #laltype "TimeSeries"); \
         INITSTATUS(status); \
         duration = series->deltaT * series->data->length; \
         t0 = series->epoch.gpsSeconds; \
@@ -367,7 +367,7 @@ DEFINE_LAL_GET_FS_FUNCTION(COMPLEX16)
         char fname[FILENAME_MAX]; \
         double duration; \
         int t0, dt; \
-        XLALPrintDeprecationWarning(__func__, "XLALFrWrite" #laltype "FrequencySeries"); \
+        XLAL_PRINT_DEPRECATION_WARNING("XLALFrWrite" #laltype "FrequencySeries"); \
         INITSTATUS(status); \
         duration = series->deltaF ? 1.0 / series->deltaF : 1.0; \
         t0 = series->epoch.gpsSeconds; \
