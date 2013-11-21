@@ -282,3 +282,43 @@ int XLALCalculateAveCurlyGAmpUnshifted
   (*G_alpha) = ret;
   return XLAL_SUCCESS;
 }
+
+
+
+int XLALCalculateWeightedFactors
+  ( 
+   REAL8             *TSquaWeightedAve, /*Output: weighted factors*/
+   REAL8             *SinSquaWeightedAve,  
+   REAL8Vector       *G_alpha,       /* Input: vector of sigma_alpha values */ 
+   SFTPairIndexList  *pairIndexList, /* Input: list of SFT pairs */
+   SFTIndexList      *indexList,     /* Input: list of SFTs */   
+   MultiSFTVector    *sfts,          /* Input: set of per-detector SFT vectors */
+   REAL8             pOrb           /* Input: orbit period in second*/
+   )
+{
+  UINT8 sftNum1;
+  UINT8 sftNum2;
+  UINT8 j,numalpha;
+  LIGOTimeGPS T1,T2;
+  REAL8 T;
+  REAL8 denom=0;
+  REAL8 sinSquare=0;
+  REAL8 tSquare=0;
+ 
+    numalpha = G_alpha->length;
+
+  for (j=0; j < numalpha; j++) {
+    sftNum1 = pairIndexList->data[j].sftNum[0];
+    sftNum2 = pairIndexList->data[j].sftNum[1];
+    T1 = sfts->data[indexList->data[sftNum1].detInd]->data[indexList->data[sftNum1].sftInd].epoch;
+    T2 = sfts->data[indexList->data[sftNum2].detInd]->data[indexList->data[sftNum2].sftInd].epoch;
+    T = XLALGPSDiff( &T1, &T2 ); 
+    sinSquare +=SQUARE( G_alpha->data[j]*sin(LAL_PI*T/pOrb));/*(G_alpha)^2*(sin(\pi*T/T_orbit))^2*/
+    tSquare += SQUARE( G_alpha->data[j]*T);    /*(\curlyg_alpha*)^2*T^2*/
+    denom +=SQUARE(G_alpha->data[j]);
+  }
+     
+  *TSquaWeightedAve =(tSquare/denom);
+  *SinSquaWeightedAve =(sinSquare/denom);
+  return XLAL_SUCCESS;
+}

@@ -105,6 +105,8 @@ int main(int argc, char *argv[]){
   REAL8 deltaF; /* frequency resolution associated with time baseline of SFTs */
 
   REAL8Vector *curlyGUnshifted = NULL;
+  REAL8 tSqAvg=0;/*weightedfactors*/
+  REAL8 sinSqAvg=0;
 
   /* initialize and register user variables */
   if ( XLALInitUserVars( &uvar ) != XLAL_SUCCESS ) {
@@ -214,6 +216,12 @@ int main(int argc, char *argv[]){
     XLAL_ERROR( XLAL_EFUNC );
   }
 
+ 
+
+  if ( (XLALCalculateWeightedFactors( &tSqAvg,&sinSqAvg,curlyGUnshifted,sftPairs,sftIndices,inputSFTs,uvar.orbitPSec)  != XLAL_SUCCESS ) ) {
+    LogPrintf ( LOG_CRITICAL, "%s: XLALCalculateWeightedFactors() failed with errno=%d\n", __func__, xlalErrno );
+    XLAL_ERROR( XLAL_EFUNC );
+  }
   /* /\* get SFT parameters so that we can initialise search frequency resolutions *\/ */
   /* /\* calculate deltaF_SFT *\/ */
   /* deltaF_SFT = catalog->data[0].header.deltaF;  /\* frequency resolution *\/ */
@@ -416,4 +424,5 @@ int XLALInitializeConfigVars (ConfigVariables *config, const UserInput_t *uvar)
   
   return XLAL_SUCCESS;
 
-} /* XLALInitializeConfigVars() */
+}
+/* XLALInitializeConfigVars() */
