@@ -1657,18 +1657,18 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveform(LALInferenceIFOData *IFOd
 /*                                                                                                                       */
 /*   ORIENTATION AND SPIN PARAMETERS                                                                                     */
 /*   - "phi0"               reference phase as per LALSimulation convention; REAL8                                       */
-/*   - if LALINFERENCE_FRAME == LALINFERENCE_FRAME_RADIATION (default)                                                   */
-/*      - "inclination"	    inclination angle L.N in radians;                            REAL8                           */
-/*      - "theta_spin1"     polar angle of spin 1, default to the spin aligned case;     REAL8 OPTIONAL (inclination)    */
-/*      - "phi_spin1"       azimuthal angle of spin 1, default to the spin aligned case; REAL8  OPTIONAL (0.0)           */
-/*      - "theta_spin2"     polar angle of spin 2, default to the spin aligned case;     REAL8 OPTIONAL (inclination)    */
-/*      - "phi_spin2"       azimuthal angle of spin 1, default to the spin aligned case; REAL8  OPTIONAL (0.0)           */
-/*   - else if LALINFERENCE_FRAME == LALINFERENCE_FRAME_SYSTEM                                                           */
+/*   - if LALINFERENCE_FRAME == LALINFERENCE_FRAME_SYSTEM  (default)                                                          */
 /*      - "theta_JN");      zenith angle between J and N in radians;            REAL8                                    */
 /*      - "phi_JL");        azimuthal angle of L_N on its cone about J radians; REAL8                                    */
 /*      - "tilt_spin1");    zenith angle between S1 and LNhat in radians;       REAL8                                    */
 /*      - "tilt_spin2");    zenith angle between S2 and LNhat in radians;       REAL8                                    */
 /*      - "phi12");         difference in azimuthal angle between S1, S2 in radians;   REAL8                             */
+/*   - else if LALINFERENCE_FRAME == LALINFERENCE_FRAME_RADIATION                                                        */
+/*      - "inclination"	    inclination angle L.N in radians;                            REAL8                           */
+/*      - "theta_spin1"     polar angle of spin 1, default to the spin aligned case;     REAL8 OPTIONAL (inclination)    */
+/*      - "phi_spin1"       azimuthal angle of spin 1, default to the spin aligned case; REAL8  OPTIONAL (0.0)           */
+/*      - "theta_spin2"     polar angle of spin 2, default to the spin aligned case;     REAL8 OPTIONAL (inclination)    */
+/*      - "phi_spin2"       azimuthal angle of spin 1, default to the spin aligned case; REAL8  OPTIONAL (0.0)           */
 /*   - "a_spin1"            magnitude of spin 1 in general configuration, 0<a_spin1<1; REAL8 OPTIONAL (0.0)              */
 /*   - "a_spin2"            magnitude of spin 2 in general configuration, 0<a_spin1<1; REAL8 OPTIONAL (0.0)              */
 /*   - "spin1"              magnitude of spin 1 in aligned configuration, -1<spin1<1;  REAL8 OPTIONAL (0.0)              */
@@ -1695,11 +1695,11 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveform(LALInferenceIFOData *IFOd
 /*      - IFOdata->timeModelhCross                                                                                       */
 /*************************************************************************************************************************/
 {
-	
+
   Approximant approximant = (Approximant) 0;
   INT4 order=-1;
   INT4 amporder;
-  LALInferenceFrame frame=LALINFERENCE_FRAME_RADIATION;
+  LALInferenceFrame frame=LALINFERENCE_FRAME_SYSTEM;
 
   unsigned long	i;
   static int sizeWarning = 0;
@@ -1744,7 +1744,7 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveform(LALInferenceIFOData *IFOd
   if (LALInferenceCheckVariable(IFOdata->modelParams, "LALINFERENCE_FRAME"))
     frame = *(LALInferenceFrame*) LALInferenceGetVariable(IFOdata->modelParams, "LALINFERENCE_FRAME");
 
-  REAL8 fRef = 0.0;
+  REAL8 fRef = 100.0;
   if (LALInferenceCheckVariable(IFOdata->modelParams, "fRef")) fRef = *(REAL8 *)LALInferenceGetVariable(IFOdata->modelParams, "fRef");
 
   REAL8 fTemp = fRef;
@@ -1787,8 +1787,37 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveform(LALInferenceIFOData *IFOd
 
   f_start = fLow2fStart(f_low, amporder, approximant);
   f_max = 0.0; /* for freq domain waveforms this will stop at ISCO. Previously found using IFOdata->fHigh causes NaNs in waveform (see redmine issue #750)*/
-  
-  if(frame==LALINFERENCE_FRAME_RADIATION){
+
+  REAL8 phiJL=0.0;
+  REAL8 tilt1=0.0;
+  REAL8 tilt2=0.0;
+  REAL8 phi12=0.0;
+
+  if(frame==LALINFERENCE_FRAME_SYSTEM) {
+     REAL8 thetaJN = *(REAL8*) LALInferenceGetVariable(IFOdata->modelParams, "theta_JN");     /* zenith angle between J and N in radians */
+     if(LALInferenceCheckVariable(IFOdata->modelParams, "phi_JL"))
+         phiJL = *(REAL8*) LALInferenceGetVariable(IFOdata->modelParams, "phi_JL");     /* azimuthal angle of L_N on its cone about J radians */
+     if(LALInferenceCheckVariable(IFOdata->modelParams, "tilt_spin1"))
+         tilt1 = *(REAL8*) LALInferenceGetVariable(IFOdata->modelParams, "tilt_spin1");     /* zenith angle between S1 and LNhat in radians */
+     if(LALInferenceCheckVariable(IFOdata->modelParams, "tilt_spin2"))
+         tilt2 = *(REAL8*) LALInferenceGetVariable(IFOdata->modelParams, "tilt_spin2");     /* zenith angle between S2 and LNhat in radians */
+     if(LALInferenceCheckVariable(IFOdata->modelParams, "phi12"))
+         phi12 = *(REAL8*) LALInferenceGetVariable(IFOdata->modelParams, "phi12");      /* difference in azimuthal angle btwn S1, S2 in radians */
+
+    /* The transformation function doesn't know fLow, so fRef==0 isn't interpretted as a request to use the starting frequency for reference. */
+    if(fTemp==0.0)
+      fTemp = f_start;
+
+    XLAL_TRY(ret=XLALSimInspiralTransformPrecessingInitialConditions(
+          &inclination, &spin1x, &spin1y, &spin1z, &spin2x, &spin2y, &spin2z,
+          thetaJN, phiJL, tilt1, tilt2, phi12, a_spin1, a_spin2, m1*LAL_MSUN_SI, m2*LAL_MSUN_SI, fTemp), errnum);
+    if (ret == XLAL_FAILURE)
+    {
+      XLALPrintError(" ERROR in XLALSimInspiralTransformPrecessingInitialConditions(): error converting angles. errnum=%d\n",errnum );
+      return;
+    }
+  }
+  else if(frame==LALINFERENCE_FRAME_RADIATION){
     inclination	= *(REAL8*) LALInferenceGetVariable(IFOdata->modelParams, "inclination");	    /* inclination in radian */
     REAL8 theta_spin1	= inclination; //default to spin aligned case if no angles are provided for the spins. 
     if(LALInferenceCheckVariable(IFOdata->modelParams, "theta_spin1"))	theta_spin1	= *(REAL8*) LALInferenceGetVariable(IFOdata->modelParams, "theta_spin1");
@@ -1808,28 +1837,11 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveform(LALInferenceIFOData *IFOd
     spin2y = (a_spin2 * sin(theta_spin2) * sin(phi_spin2));
     spin2z = (a_spin2 * cos(theta_spin2));
 
-  } else if(frame==LALINFERENCE_FRAME_SYSTEM) {
-    REAL8 thetaJN = *(REAL8*) LALInferenceGetVariable(IFOdata->modelParams, "theta_JN");     /* zenith angle between J and N in radians */
-    REAL8 phiJL = *(REAL8*) LALInferenceGetVariable(IFOdata->modelParams, "phi_JL");     /* azimuthal angle of L_N on its cone about J radians */
-    REAL8 tilt1 = *(REAL8*) LALInferenceGetVariable(IFOdata->modelParams, "tilt_spin1");     /* zenith angle between S1 and LNhat in radians */
-    REAL8 tilt2 = *(REAL8*) LALInferenceGetVariable(IFOdata->modelParams, "tilt_spin2");     /* zenith angle between S2 and LNhat in radians */
-    REAL8 phi12 = *(REAL8*) LALInferenceGetVariable(IFOdata->modelParams, "phi12");      /* difference in azimuthal angle btwn S1, S2 in radians */
- 
-    /* The transformation function doesn't know fLow, so fRef==0 isn't interpretted as a request to use the starting frequency for reference. */
-    if(fTemp==0.0)
-      fTemp = f_start;
- 
-    XLAL_TRY(ret=XLALSimInspiralTransformPrecessingInitialConditions(
-          &inclination, &spin1x, &spin1y, &spin1z, &spin2x, &spin2y, &spin2z,
-          thetaJN, phiJL, tilt1, tilt2, phi12, a_spin1, a_spin2, m1*LAL_MSUN_SI, m2*LAL_MSUN_SI, fTemp), errnum);
- 
-    if (ret == XLAL_FAILURE)
-    {
-      XLALPrintError(" ERROR in XLALSimInspiralTransformPrecessingInitialConditions(): error converting angles. errnum=%d\n",errnum );
-      return;
-    }
   }
-
+  else {
+      XLALPrintError("Error: unknown frame %i\n",frame);
+      XLAL_ERROR_VOID(XLAL_EFAULT);
+  }
   if(LALInferenceCheckVariable(IFOdata->modelParams, "spin1"))		spin1z		= *(REAL8*) LALInferenceGetVariable(IFOdata->modelParams, "spin1");
   if(LALInferenceCheckVariable(IFOdata->modelParams, "spin2"))		spin2z		= *(REAL8*) LALInferenceGetVariable(IFOdata->modelParams, "spin2");
   

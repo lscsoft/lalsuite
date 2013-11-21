@@ -273,9 +273,9 @@ LALInferenceVariables *LALInferenceInitCBCVariables(LALInferenceRunState *state)
   LALPNOrder PhaseOrder=-1;
   LALPNOrder AmpOrder=-1;
   Approximant approx=NumApproximants;
-  REAL8 fRef = 0.0;
+  REAL8 fRef = 100.0;
   LALInferenceApplyTaper bookends = LALINFERENCE_TAPER_NONE;
-  LALInferenceFrame frame = LALINFERENCE_FRAME_RADIATION;
+  LALInferenceFrame frame = LALINFERENCE_FRAME_SYSTEM;
   UINT4 analytic=0;
   LALInferenceIFOData *dataPtr;
   LALSimulationDomain modelDomain;
@@ -749,9 +749,9 @@ LALInferenceVariables *LALInferenceInitCBCVariables(LALInferenceRunState *state)
     LALInferenceAddVariable(currentParams, "newswitch", &newswitch, LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_FIXED);
   }
 
-  ppt=LALInferenceGetProcParamVal(commandLine, "--system-frame");
+  ppt=LALInferenceGetProcParamVal(commandLine, "--radiation-frame");
   if(ppt){
-    frame = LALINFERENCE_FRAME_SYSTEM;
+    frame = LALINFERENCE_FRAME_RADIATION;
   }
   LALInferenceAddVariable(currentParams, "LALINFERENCE_FRAME", &frame, LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_FIXED);
 
@@ -1227,17 +1227,6 @@ LALInferenceVariables *LALInferenceInitCBCVariables(LALInferenceRunState *state)
   
   LALInferenceRegisterUniformVariableREAL8(state, currentParams, "polarisation", start_psi, psiMin, psiMax, LALInferenceGetProcParamVal(commandLine,"--fixPsi")?LALINFERENCE_PARAM_FIXED:LALINFERENCE_PARAM_LINEAR);
   
-  if(frame==LALINFERENCE_FRAME_RADIATION){
-    LALInferenceRegisterUniformVariableREAL8(state, currentParams, "inclination", start_iota, iotaMin, iotaMax, LALInferenceGetProcParamVal(commandLine,"--fixIota")?LALINFERENCE_PARAM_FIXED:LALINFERENCE_PARAM_LINEAR);
-    
-  } else if(frame==LALINFERENCE_FRAME_SYSTEM){
-    
-    LALInferenceRegisterUniformVariableREAL8(state, currentParams, "theta_JN", start_theta_JN, thetaJNmin, thetaJNmax, LALInferenceGetProcParamVal(commandLine,"--fixThetaJN")?LALINFERENCE_PARAM_FIXED:LALINFERENCE_PARAM_LINEAR);
-
-    LALInferenceRegisterUniformVariableREAL8(state, currentParams, "phi_JL", start_phi_JL, phiJLmin, phiJLmax, LALInferenceGetProcParamVal(commandLine,"--fixPhiJL")?LALINFERENCE_PARAM_FIXED:LALINFERENCE_PARAM_CIRCULAR);
-
-  }
-
   /* Check for spin disabled */
   ppt=LALInferenceGetProcParamVal(commandLine, "--noSpin");
   if (!ppt) ppt=LALInferenceGetProcParamVal(commandLine,"--disable-spin");
@@ -1246,22 +1235,86 @@ LALInferenceVariables *LALInferenceInitCBCVariables(LALInferenceRunState *state)
   /* Check for aligned spin */
   ppt=LALInferenceGetProcParamVal(commandLine, "--spinAligned");
   if (!ppt) ppt=LALInferenceGetProcParamVal(commandLine,"--aligned-spin");
-  if(ppt) spinAligned=1;
+  if(ppt){
+    spinAligned=1;
+    if(lalDebugLevel>0) fprintf(stdout,"Running with spin1 and spin2 aligned to the orbital angular momentum.\n");
+  }
   
   /* Check for single spin */
   ppt=LALInferenceGetProcParamVal(commandLine,"--singleSpin");
-  if(ppt) singleSpin=1;
+  if(ppt){
+    singleSpin=1;
+    fprintf(stdout,"Running with second spin set to 0\n");
+  }
   
-  if((approx==SpinTaylor || approx==SpinTaylorFrameless || approx==PhenSpinTaylorRD || approx==SpinTaylorT4 || approx==SpinTaylorF2) && !noSpin){
-    if(frame==LALINFERENCE_FRAME_RADIATION) {
+  if(frame==LALINFERENCE_FRAME_SYSTEM){
+
+    LALInferenceRegisterUniformVariableREAL8(state, currentParams, "theta_JN", start_theta_JN, thetaJNmin, thetaJNmax, LALInferenceGetProcParamVal(commandLine,"--fixThetaJN")?LALINFERENCE_PARAM_FIXED:LALINFERENCE_PARAM_LINEAR);
+    if (XLALSimInspiralGetSpinSupportFromApproximant(approx)==LAL_SIM_INSPIRAL_PRECESSINGSPIN && !(noSpin || spinAligned))
+      LALInferenceRegisterUniformVariableREAL8(state, currentParams, "phi_JL", start_phi_JL, phiJLmin, phiJLmax, LALInferenceGetProcParamVal(commandLine,"--fixPhiJL")?LALINFERENCE_PARAM_FIXED:LALINFERENCE_PARAM_CIRCULAR);
+
+  }
+  else if(frame==LALINFERENCE_FRAME_RADIATION){
+    LALInferenceRegisterUniformVariableREAL8(state, currentParams, "inclination", start_iota, iotaMin, iotaMax, LALInferenceGetProcParamVal(commandLine,"--fixIota")?LALINFERENCE_PARAM_FIXED:LALINFERENCE_PARAM_LINEAR);
+  }
+
+  if(XLALSimInspiralGetSpinSupportFromApproximant(approx)==LAL_SIM_INSPIRAL_PRECESSINGSPIN && !noSpin){
+    if (frame==LALINFERENCE_FRAME_SYSTEM) {
+
+      if(spinAligned && !(LALInferenceGetProcParamVal(commandLine,"--a-min"))) a1min=-1.0;
+
+      LALInferenceRegisterUniformVariableREAL8(state, currentParams, "a_spin1", start_a_spin1, a1min, a1max,\
+      LALInferenceGetProcParamVal(commandLine,"--fixA1")? LALINFERENCE_PARAM_FIXED: LALINFERENCE_PARAM_LINEAR);
+
+      LALInferenceParamVaryType spin2vary=LALInferenceGetProcParamVal(commandLine,"--fixA2")? LALINFERENCE_PARAM_FIXED: LALINFERENCE_PARAM_LINEAR;
+      if (singleSpin){
+        /* If single spin is used, spin2 magnitude and angles must be pinned to 0. Set magnitude=0 here*/
+        start_a_spin2=0.0;
+        spin2vary=LALINFERENCE_PARAM_FIXED;
+      }
+      else if(spinAligned){
+        /* If spin aligned, the spin range goes between [-1 and 1]*/
+        a2min=-1.0;
+      }
+
+      LALInferenceRegisterUniformVariableREAL8(state, currentParams, "a_spin2", start_a_spin2, a2min, a2max,spin2vary);
+
+      LALInferenceParamVaryType tilt1Vary=LALINFERENCE_PARAM_LINEAR;
+      LALInferenceParamVaryType tilt2Vary=LALINFERENCE_PARAM_LINEAR;
+      LALInferenceParamVaryType phi12Vary=LALINFERENCE_PARAM_LINEAR;
+
+      /* Check if only spin1 is being used and/or if spins are aligned*/
+      if(singleSpin || spinAligned){
+        /* Both casees requires tilt2 and phi12 to be pinned */
+        tilt2Vary=LALINFERENCE_PARAM_FIXED;
+        phi12Vary=LALINFERENCE_PARAM_FIXED;
+        start_tilt_spin2 = 0.0;
+        start_phi_12 = 0.0;
+        if (spinAligned){
+          /* spinAligned also require tilt1 to be pinned*/
+          tilt1Vary=LALINFERENCE_PARAM_FIXED;
+          start_tilt_spin1 = 0.0;
+          }
+        }
+
+      LALInferenceRegisterUniformVariableREAL8(state, currentParams, "tilt_spin1", start_tilt_spin1, tilt1min,\
+	  tilt1max, LALInferenceGetProcParamVal(commandLine,"--fixTilt1")?LALINFERENCE_PARAM_FIXED: tilt1Vary);
+
+      LALInferenceRegisterUniformVariableREAL8(state, currentParams, "phi12", start_phi_12, phi12min,\
+	  phi12max, LALInferenceGetProcParamVal(commandLine,"--fixPhi12")?LALINFERENCE_PARAM_FIXED: phi12Vary);
+
+      LALInferenceRegisterUniformVariableREAL8(state, currentParams, "tilt_spin2", start_tilt_spin2, tilt2min,\
+	  tilt2max, LALInferenceGetProcParamVal(commandLine,"--fixTilt2")?LALINFERENCE_PARAM_FIXED: tilt2Vary);
+
+    }
+    else if(frame==LALINFERENCE_FRAME_RADIATION) {
       if(spinAligned && !(LALInferenceGetProcParamVal(commandLine,"--a-min"))) a1min=-1.0;
      LALInferenceRegisterUniformVariableREAL8(state, currentParams, "a_spin1", start_a_spin1, a1min, a1max, LALInferenceGetProcParamVal(commandLine,"--fixA1")?LALINFERENCE_PARAM_FIXED:LALINFERENCE_PARAM_LINEAR);
      
       if(spinAligned) fprintf(stdout,"Running with spin1 aligned to the orbital angular momentum.\n");
       else {
-	LALInferenceRegisterUniformVariableREAL8(state,currentParams,"theta_spin1", start_theta_spin1, theta1min, theta1max, LALInferenceGetProcParamVal(commandLine,"--fixTheta1")? LALINFERENCE_PARAM_FIXED:LALINFERENCE_PARAM_LINEAR);
-
-	LALInferenceRegisterUniformVariableREAL8(state,currentParams,"phi_spin1", start_phi_spin1, phi1min, phi1max, LALInferenceGetProcParamVal(commandLine,"--fixPhi1")?LALINFERENCE_PARAM_FIXED:LALINFERENCE_PARAM_LINEAR);
+        LALInferenceRegisterUniformVariableREAL8(state,currentParams,"theta_spin1", start_theta_spin1, theta1min, theta1max, LALInferenceGetProcParamVal(commandLine,"--fixTheta1")? LALINFERENCE_PARAM_FIXED:LALINFERENCE_PARAM_LINEAR);
+        LALInferenceRegisterUniformVariableREAL8(state,currentParams,"phi_spin1", start_phi_spin1, phi1min, phi1max, LALInferenceGetProcParamVal(commandLine,"--fixPhi1")?LALINFERENCE_PARAM_FIXED:LALINFERENCE_PARAM_LINEAR);
  
       }
       if(singleSpin) fprintf(stdout,"Running with first spin set to 0\n");
@@ -1279,48 +1332,14 @@ LALInferenceVariables *LALInferenceInitCBCVariables(LALInferenceRunState *state)
         }
       }
     }
-    else if (frame==LALINFERENCE_FRAME_SYSTEM) {
-     
-      if(spinAligned && !(LALInferenceGetProcParamVal(commandLine,"--a-min"))) a1min=-1.0;
-     
-      LALInferenceRegisterUniformVariableREAL8(state, currentParams, "a_spin1", start_a_spin1, a1min, a1max,\
-      LALInferenceGetProcParamVal(commandLine,"--fixA1")? LALINFERENCE_PARAM_FIXED: LALINFERENCE_PARAM_LINEAR);
-
-      if(LALInferenceGetProcParamVal(commandLine, "--singleSpin")) {
-	fprintf(stdout,"Running with second spin set to 0\n");
-      }
-      else {
-        if(spinAligned) a2min=-1.0;
-	LALInferenceRegisterUniformVariableREAL8(state, currentParams, "a_spin2", start_a_spin2, a2min, a2max,\
-	    LALInferenceGetProcParamVal(commandLine,"--fixA2")? LALINFERENCE_PARAM_FIXED: LALINFERENCE_PARAM_LINEAR);
-      }
-      
-      LALInferenceParamVaryType tiltVary=LALINFERENCE_PARAM_LINEAR;
-      if(spinAligned){
-        if(lalDebugLevel>0) fprintf(stdout,"Running with spin1 and spin2 aligned to the orbital angular momentum.\n");
-	tiltVary=LALINFERENCE_PARAM_FIXED;
-        start_tilt_spin1 = 0.0;
-        start_tilt_spin2 = 0.0;
-        start_phi_12 = 0.0;
-      }
-      
-      LALInferenceRegisterUniformVariableREAL8(state, currentParams, "tilt_spin1", start_tilt_spin1, tilt1min,\
-	  tilt1max, LALInferenceGetProcParamVal(commandLine,"--fixTilt1")?LALINFERENCE_PARAM_FIXED: tiltVary);
-      
-      LALInferenceRegisterUniformVariableREAL8(state, currentParams, "phi12", start_phi_12, phi12min,\
-	  phi12max, LALInferenceGetProcParamVal(commandLine,"--fixPhi12")?LALINFERENCE_PARAM_FIXED: tiltVary);
-      
-      LALInferenceRegisterUniformVariableREAL8(state, currentParams, "tilt_spin2", start_tilt_spin2, tilt2min,\
-	  tilt2max, LALInferenceGetProcParamVal(commandLine,"--fixTilt2")?LALINFERENCE_PARAM_FIXED: tiltVary);
-      
-    } else {
+     else {
       XLALPrintError("Error: unknown frame %i\n",frame);
       XLAL_ERROR_NULL(XLAL_EINVAL);
     }
   }
 
   /* Spin-aligned-only templates */
-  if((approx==TaylorF2 || approx==TaylorF2RedSpin || approx==TaylorF2RedSpinTidal || approx==IMRPhenomB || approx==SEOBNRv1) && spinAligned){
+  if(XLALSimInspiralGetSpinSupportFromApproximant(approx)==LAL_SIM_INSPIRAL_ALIGNEDSPIN && spinAligned){
 
     if(!(ppt=LALInferenceGetProcParamVal(commandLine,"--a-min"))) a2min=a1min=-1.0;
     else a2min=a1min=atof(ppt->value);
@@ -1628,6 +1647,7 @@ static void print_flags_orders_warning(SimInspiralTable *injt, ProcessParamsTabl
 }
 
 void LALInferenceCheckOptionsConsistency(ProcessParamsTable *commandLine)
+
 { /*
   Go through options and check for possible errors and inconsistencies (e.g. seglen < 0 )
   
