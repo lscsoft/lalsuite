@@ -371,7 +371,7 @@ INT4 testIHScandidates(candidateVector *output, candidateVector *ihsCandidates, 
    //R probability calculator errorcode
    INT4 proberrcode = 0;
    
-   INT4 ii, jj;
+   INT4 ii, jj, kk;
    
    //Allocate memory for FAR struct
    farStruct *farval = new_farStruct();
@@ -460,156 +460,87 @@ INT4 testIHScandidates(candidateVector *output, candidateVector *ihsCandidates, 
                   bestPeriod = ihsCandidates->data[ii].period;
                } /* if prob<log10templatefar || R > farval->far */
             } // if within moddepth/period range
-            
-            //Shift by harmonics
-            for (jj=2; jj<6; jj++) {
-	       //Check that the shifted value is valid before testing with a template
-               if (ihsCandidates->data[ii].period/jj>=fmax(inputParams->Pmin, minPeriod(ihsCandidates->data[ii].moddepth, inputParams->Tcoh)) && ihsCandidates->data[ii].period/jj<=inputParams->Pmax) {
-                  ihsCandidates->data[ii].period /= (REAL8)jj;
-                  makeTemplateGaussians(template, ihsCandidates->data[ii], inputParams, ffdata->numfbins, ffdata->numfprbins);
-                  if (xlalErrno!=0) {
-                     fprintf(stderr,"%s: makeTemplateGaussians() failed.\n", __func__);
-                     XLAL_ERROR(XLAL_EFUNC);
-                  }
-                  R = calculateR(ffdata->ffdata, template, aveNoise, aveTFnoisePerFbinRatio);
-                  if (XLAL_IS_REAL8_FAIL_NAN(R)) {
-                     fprintf(stderr,"%s: calculateR() failed.\n", __func__);
-                     XLAL_ERROR(XLAL_EFUNC);
-                  }
-                  prob = probR(template, aveNoise, aveTFnoisePerFbinRatio, R, inputParams, &proberrcode);
-                  if (XLAL_IS_REAL8_FAIL_NAN(prob)) {
-                     fprintf(stderr,"%s: probR() failed.\n", __func__);
-                     XLAL_ERROR(XLAL_EFUNC);
-                  }
-                  if (inputParams->calcRthreshold && bestProb==0.0) {
-                     numericFAR(farval, template, inputParams->templatefar, aveNoise, aveTFnoisePerFbinRatio, inputParams, inputParams->rootFindingMethod);
+
+            // longer or shorter
+            REAL8 periodfact = 0.0;
+            for (jj=0; jj<=1; jj++) {
+               //Shift by harmonics
+               for (kk=1; kk<=inputParams->periodHarmToCheck; kk++) {
+                  if (jj==0) periodfact = 1.0/(REAL8)kk;
+                  else periodfact = (REAL8)kk;
+                  if (ihsCandidates->data[ii].period*periodfact>=fmax(inputParams->Pmin, minPeriod(ihsCandidates->data[ii].moddepth, inputParams->Tcoh)) && ihsCandidates->data[ii].period*periodfact<=fmin(inputParams->Pmax, inputParams->Tobs*0.2)) {
+                     ihsCandidates->data[ii].period *= periodfact;
+                     makeTemplateGaussians(template, ihsCandidates->data[ii], inputParams, ffdata->numfbins, ffdata->numfprbins);
                      if (xlalErrno!=0) {
-                        fprintf(stderr,"%s: numericFAR() failed.\n", __func__);
+                        fprintf(stderr,"%s: makeTemplateGaussians() failed.\n", __func__);
                         XLAL_ERROR(XLAL_EFUNC);
                      }
-                  }
-                  if ((bestProb!=0.0 && prob<bestProb) || (bestProb==0.0 && !inputParams->calcRthreshold && prob<log10templatefar) || (bestProb==0.0 && inputParams->calcRthreshold && R>farval->far)) {
-                     bestPeriod = ihsCandidates->data[ii].period;
-                     bestR = R;
-                     bestProb = prob;
-                     bestproberrcode = proberrcode;
-                  }
-                  ihsCandidates->data[ii].period *= (REAL8)jj;  //reset the period back to the original value
-               } // shorter period harmonics
-               //Check again that the longer period is within bounds before testing with a template
-               if (ihsCandidates->data[ii].period*jj>=fmax(inputParams->Pmin, minPeriod(ihsCandidates->data[ii].moddepth, inputParams->Tcoh)) && ihsCandidates->data[ii].period*jj<=inputParams->Pmax) {
-                  ihsCandidates->data[ii].period *= (REAL8)jj;
-                  makeTemplateGaussians(template, ihsCandidates->data[ii], inputParams, ffdata->numfbins, ffdata->numfprbins);
-                  if (xlalErrno!=0) {
-                     fprintf(stderr,"%s: makeTemplateGaussians() failed.\n", __func__);
-                     XLAL_ERROR(XLAL_EFUNC);
-                  }
-                  R = calculateR(ffdata->ffdata, template, aveNoise, aveTFnoisePerFbinRatio);
-                  if (XLAL_IS_REAL8_FAIL_NAN(R)) {
-                     fprintf(stderr,"%s: calculateR() failed.\n", __func__);
-                     XLAL_ERROR(XLAL_EFUNC);
-                  }
-                  prob = probR(template, aveNoise, aveTFnoisePerFbinRatio, R, inputParams, &proberrcode);
-                  if (XLAL_IS_REAL8_FAIL_NAN(prob)) {
-                     fprintf(stderr,"%s: probR() failed.\n", __func__);
-                     XLAL_ERROR(XLAL_EFUNC);
-                  }
-                  if (inputParams->calcRthreshold && bestProb==0.0) {
-                     numericFAR(farval, template, inputParams->templatefar, aveNoise, aveTFnoisePerFbinRatio, inputParams, inputParams->rootFindingMethod);
-                     if (xlalErrno!=0) {
-                        fprintf(stderr,"%s: numericFAR() failed.\n", __func__);
+                     R = calculateR(ffdata->ffdata, template, aveNoise, aveTFnoisePerFbinRatio);
+                     if (XLAL_IS_REAL8_FAIL_NAN(R)) {
+                        fprintf(stderr,"%s: calculateR() failed.\n", __func__);
                         XLAL_ERROR(XLAL_EFUNC);
                      }
-                  }
-                  if ((bestProb!=0.0 && prob<bestProb) || (bestProb==0.0 && !inputParams->calcRthreshold && prob<log10templatefar) || (bestProb==0.0 && inputParams->calcRthreshold && R>farval->far)) {
-                     bestPeriod = ihsCandidates->data[ii].period;
-                     bestR = R;
-                     bestProb = prob;
-                     bestproberrcode = proberrcode;
-                  }
-                  ihsCandidates->data[ii].period /= (REAL8)jj;  //Again, reset the period back to the original value
-               } // longer period harmonics
-            } // shift by harmonics for jj < 6 (harmonics)
-            
-            //Shift by fractions
-            for (jj=1; jj<4; jj++) {
-               REAL8 periodfact = (jj+1.0)/(jj+2.0);
-               //Check within bounds, as before
-               if (ihsCandidates->data[ii].period*periodfact>=fmax(inputParams->Pmin, minPeriod(ihsCandidates->data[ii].moddepth, inputParams->Tcoh)) && ihsCandidates->data[ii].period*periodfact<=inputParams->Pmax) {
-                  
-                  ihsCandidates->data[ii].period *= periodfact;   //Shift period
-                  
-                  //Make a template
-                  makeTemplateGaussians(template, ihsCandidates->data[ii], inputParams, ffdata->numfbins, ffdata->numfprbins);
-                  if (xlalErrno!=0) {
-                     fprintf(stderr,"%s: makeTemplateGaussians() failed.\n", __func__);
-                     XLAL_ERROR(XLAL_EFUNC);
-                  }
-                  //Calculate R and FAP
-                  R = calculateR(ffdata->ffdata, template, aveNoise, aveTFnoisePerFbinRatio);
-                  if (XLAL_IS_REAL8_FAIL_NAN(R)) {
-                     fprintf(stderr,"%s: calculateR() failed.\n", __func__);
-                     XLAL_ERROR(XLAL_EFUNC);
-                  }
-                  prob = probR(template, aveNoise, aveTFnoisePerFbinRatio, R, inputParams, &proberrcode);
-                  if (XLAL_IS_REAL8_FAIL_NAN(prob)) {
-                     fprintf(stderr,"%s: probR() failed.\n", __func__);
-                     XLAL_ERROR(XLAL_EFUNC);
-                  }
-                  //Calculate FAR if bestProb=0
-                  if (inputParams->calcRthreshold && bestProb==0.0) {
-                     numericFAR(farval, template, inputParams->templatefar, aveNoise, aveTFnoisePerFbinRatio, inputParams, inputParams->rootFindingMethod);
-                     if (xlalErrno!=0) {
-                        fprintf(stderr,"%s: numericFAR() failed.\n", __func__);
+                     prob = probR(template, aveNoise, aveTFnoisePerFbinRatio, R, inputParams, &proberrcode);
+                     if (XLAL_IS_REAL8_FAIL_NAN(prob)) {
+                        fprintf(stderr,"%s: probR() failed.\n", __func__);
                         XLAL_ERROR(XLAL_EFUNC);
                      }
-                  }
-                  //Log candidate if more significant or exceeding the FAR for the first time
-                  if ((bestProb!=0.0 && prob<bestProb) || (bestProb==0.0 && !inputParams->calcRthreshold && prob<log10templatefar) || (bestProb==0.0 && inputParams->calcRthreshold && R>farval->far)) {
-                     bestPeriod = ihsCandidates->data[ii].period;
-                     bestR = R;
-                     bestProb = prob;
-                     bestproberrcode = proberrcode;
-                  }
-                  ihsCandidates->data[ii].period /= periodfact;  //Reset period
-               } // shift shorter period
-               periodfact = 1.0/periodfact;  //Take the inverse of the mutliplicative factor
-               //Again, check the new period value before testing with a template 
-               if (ihsCandidates->data[ii].period*periodfact>=fmax(inputParams->Pmin, minPeriod(ihsCandidates->data[ii].moddepth, inputParams->Tcoh)) && ihsCandidates->data[ii].period*periodfact<=inputParams->Pmax) {
-                  ihsCandidates->data[ii].period *= periodfact;
-                  makeTemplateGaussians(template, ihsCandidates->data[ii], inputParams, ffdata->numfbins, ffdata->numfprbins);
-                  if (xlalErrno!=0) {
-                     fprintf(stderr,"%s: makeTemplateGaussians() failed.\n", __func__);
-                     XLAL_ERROR(XLAL_EFUNC);
-                  }
-                  R = calculateR(ffdata->ffdata, template, aveNoise, aveTFnoisePerFbinRatio);
-                  if (XLAL_IS_REAL8_FAIL_NAN(R)) {
-                     fprintf(stderr,"%s: calculateR() failed.\n", __func__);
-                     XLAL_ERROR(XLAL_EFUNC);
-                  }
-                  prob = probR(template, aveNoise, aveTFnoisePerFbinRatio, R, inputParams, &proberrcode);
-                  if (XLAL_IS_REAL8_FAIL_NAN(prob)) {
-                     fprintf(stderr,"%s: probR() failed.\n", __func__);
-                     XLAL_ERROR(XLAL_EFUNC);
-                  }
-                  if (inputParams->calcRthreshold && bestProb==0.0) {
-                     numericFAR(farval, template, inputParams->templatefar, aveNoise, aveTFnoisePerFbinRatio, inputParams, inputParams->rootFindingMethod);
+                     if (inputParams->calcRthreshold && bestProb==0.0) {
+                        numericFAR(farval, template, inputParams->templatefar, aveNoise, aveTFnoisePerFbinRatio, inputParams, inputParams->rootFindingMethod);
+                        if (xlalErrno!=0) {
+                           fprintf(stderr,"%s: numericFAR() failed.\n", __func__);
+                           XLAL_ERROR(XLAL_EFUNC);
+                        }
+                     }
+                     if ((bestProb!=0.0 && prob<bestProb) || (bestProb==0.0 && !inputParams->calcRthreshold && prob<log10templatefar) || (bestProb==0.0 && inputParams->calcRthreshold && R>farval->far)) {
+                        bestPeriod = ihsCandidates->data[ii].period;
+                        bestR = R;
+                        bestProb = prob;
+                        bestproberrcode = proberrcode;
+                     }
+                     ihsCandidates->data[ii].period /= periodfact;  //reset the period back to the original value
+                  } // in range?
+               } // shift by harmonics for kk <= inputParams->periodHarmToCheck (harmonics)
+
+               //shift by fractions
+               for (kk=1; kk<=inputParams->periodFracToCheck; kk++) {
+                  if (jj==0) periodfact = (kk+1.0)/(kk+2.0);
+                  else periodfact = (kk+2.0)/(kk+1.0);
+                  if (ihsCandidates->data[ii].period*periodfact>=fmax(inputParams->Pmin, minPeriod(ihsCandidates->data[ii].moddepth, inputParams->Tcoh)) && ihsCandidates->data[ii].period*periodfact<=fmin(inputParams->Pmax, inputParams->Tobs*0.2)) {
+                     ihsCandidates->data[ii].period *= periodfact;
+                     makeTemplateGaussians(template, ihsCandidates->data[ii], inputParams, ffdata->numfbins, ffdata->numfprbins);
                      if (xlalErrno!=0) {
-                        fprintf(stderr,"%s: numericFAR() failed.\n", __func__);
+                        fprintf(stderr,"%s: makeTemplateGaussians() failed.\n", __func__);
                         XLAL_ERROR(XLAL_EFUNC);
                      }
-                  }
-                  if ((bestProb!=0.0 && prob<bestProb) || (bestProb==0.0 && !inputParams->calcRthreshold && prob<log10templatefar) || (bestProb==0.0 && inputParams->calcRthreshold && R>farval->far)) {
-                     bestPeriod = ihsCandidates->data[ii].period;
-                     bestR = R;
-                     bestProb = prob;
-                     bestproberrcode = proberrcode;
-                  }
-                  ihsCandidates->data[ii].period /= periodfact;  //Reset the period parameter
-               } // shift longer period
-            } // for jj < 5 (fractions of period)
-            
-            
+                     R = calculateR(ffdata->ffdata, template, aveNoise, aveTFnoisePerFbinRatio);
+                     if (XLAL_IS_REAL8_FAIL_NAN(R)) {
+                        fprintf(stderr,"%s: calculateR() failed.\n", __func__);
+                        XLAL_ERROR(XLAL_EFUNC);
+                     }
+                     prob = probR(template, aveNoise, aveTFnoisePerFbinRatio, R, inputParams, &proberrcode);
+                     if (XLAL_IS_REAL8_FAIL_NAN(prob)) {
+                        fprintf(stderr,"%s: probR() failed.\n", __func__);
+                        XLAL_ERROR(XLAL_EFUNC);
+                     }
+                     if (inputParams->calcRthreshold && bestProb==0.0) {
+                        numericFAR(farval, template, inputParams->templatefar, aveNoise, aveTFnoisePerFbinRatio, inputParams, inputParams->rootFindingMethod);
+                        if (xlalErrno!=0) {
+                           fprintf(stderr,"%s: numericFAR() failed.\n", __func__);
+                           XLAL_ERROR(XLAL_EFUNC);
+                        }
+                     }
+                     if ((bestProb!=0.0 && prob<bestProb) || (bestProb==0.0 && !inputParams->calcRthreshold && prob<log10templatefar) || (bestProb==0.0 && inputParams->calcRthreshold && R>farval->far)) {
+                        bestPeriod = ihsCandidates->data[ii].period;
+                        bestR = R;
+                        bestProb = prob;
+                        bestproberrcode = proberrcode;
+                     }
+                     ihsCandidates->data[ii].period /= periodfact;  //reset the period back to the original value
+                  } // in range?
+               } // shift by fractions kk <= inputParams->periodFracToCheck
+            } // longer or shorter
+
             if (bestProb != 0.0) {
                REAL8 h0 = 0.0;
                if (bestR > 0.0) h0 = 2.7426*sqrt(sqrt(bestR/(inputParams->Tcoh*inputParams->Tobs)));  //Now compute the h0 value

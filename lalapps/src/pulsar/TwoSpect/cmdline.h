@@ -230,6 +230,12 @@ struct gengetopt_args_info
   const char *noiseWeightOff_help; /**< @brief Turn off noise weighting if this flag is used help description.  */
   int gaussTemplatesOnly_flag;	/**< @brief Gaussian templates only throughout the pipeline if this flag is used (default=off).  */
   const char *gaussTemplatesOnly_help; /**< @brief Gaussian templates only throughout the pipeline if this flag is used help description.  */
+  int periodHarmToCheck_arg;	/**< @brief Number of harmonics/sub-harmonics of the IHS candidates to test (default='5').  */
+  char * periodHarmToCheck_orig;	/**< @brief Number of harmonics/sub-harmonics of the IHS candidates to test original value given at command line.  */
+  const char *periodHarmToCheck_help; /**< @brief Number of harmonics/sub-harmonics of the IHS candidates to test help description.  */
+  int periodFracToCheck_arg;	/**< @brief Number of fractional periods to check in the sense of [(1...N)+1]/[(1...N)+2] (default='3').  */
+  char * periodFracToCheck_orig;	/**< @brief Number of fractional periods to check in the sense of [(1...N)+1]/[(1...N)+2] original value given at command line.  */
+  const char *periodFracToCheck_help; /**< @brief Number of fractional periods to check in the sense of [(1...N)+1]/[(1...N)+2] help description.  */
   int ULoff_flag;	/**< @brief Turn off upper limits computation (default=off).  */
   const char *ULoff_help; /**< @brief Turn off upper limits computation help description.  */
   int printSFTtimes_flag;	/**< @brief Output a list <GPS sec> <GPS nanosec> of SFT start times of input SFTs (default=off).  */
@@ -241,6 +247,8 @@ struct gengetopt_args_info
   int printUninitialized_arg;	/**< @brief Print uninitialized values in TFdata_weighted and TSofPowers vectors at n-th sky location specified by option (if not enough sky locations exist, then these vectors don't get printed!).  */
   char * printUninitialized_orig;	/**< @brief Print uninitialized values in TFdata_weighted and TSofPowers vectors at n-th sky location specified by option (if not enough sky locations exist, then these vectors don't get printed!) original value given at command line.  */
   const char *printUninitialized_help; /**< @brief Print uninitialized values in TFdata_weighted and TSofPowers vectors at n-th sky location specified by option (if not enough sky locations exist, then these vectors don't get printed!) help description.  */
+  int printSignalData_flag;	/**< @brief Print f0 and h0 per SFT of the signal, used only with --injectionSources option (default=off).  */
+  const char *printSignalData_help; /**< @brief Print f0 and h0 per SFT of the signal, used only with --injectionSources option help description.  */
   int randSeed_arg;	/**< @brief Random seed value.  */
   char * randSeed_orig;	/**< @brief Random seed value original value given at command line.  */
   const char *randSeed_help; /**< @brief Random seed value help description.  */
@@ -318,11 +326,14 @@ struct gengetopt_args_info
   unsigned int antennaOff_given ;	/**< @brief Whether antennaOff was given.  */
   unsigned int noiseWeightOff_given ;	/**< @brief Whether noiseWeightOff was given.  */
   unsigned int gaussTemplatesOnly_given ;	/**< @brief Whether gaussTemplatesOnly was given.  */
+  unsigned int periodHarmToCheck_given ;	/**< @brief Whether periodHarmToCheck was given.  */
+  unsigned int periodFracToCheck_given ;	/**< @brief Whether periodFracToCheck was given.  */
   unsigned int ULoff_given ;	/**< @brief Whether ULoff was given.  */
   unsigned int printSFTtimes_given ;	/**< @brief Whether printSFTtimes was given.  */
   unsigned int printUsedSFTtimes_given ;	/**< @brief Whether printUsedSFTtimes was given.  */
   unsigned int printData_given ;	/**< @brief Whether printData was given.  */
   unsigned int printUninitialized_given ;	/**< @brief Whether printUninitialized was given.  */
+  unsigned int printSignalData_given ;	/**< @brief Whether printSignalData was given.  */
   unsigned int randSeed_given ;	/**< @brief Whether randSeed was given.  */
   unsigned int chooseSeed_given ;	/**< @brief Whether chooseSeed was given.  */
 

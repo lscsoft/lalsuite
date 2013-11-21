@@ -112,11 +112,14 @@ const char *gengetopt_args_info_full_help[] = {
   "      --antennaOff              Antenna pattern weights are /NOT/ used if this \n                                  flag is used  (default=off)",
   "      --noiseWeightOff          Turn off noise weighting if this flag is used  \n                                  (default=off)",
   "      --gaussTemplatesOnly      Gaussian templates only throughout the pipeline \n                                  if this flag is used  (default=off)",
+  "      --periodHarmToCheck=INT   Number of harmonics/sub-harmonics of the IHS \n                                  candidates to test  (default=`5')",
+  "      --periodFracToCheck=INT   Number of fractional periods to check in the \n                                  sense of [(1...N)+1]/[(1...N)+2]  \n                                  (default=`3')",
   "      --ULoff                   Turn off upper limits computation  \n                                  (default=off)",
   "      --printSFTtimes           Output a list <GPS sec> <GPS nanosec> of SFT \n                                  start times of input SFTs  (default=off)",
   "      --printUsedSFTtimes       Output a list <GPS sec> <GPS nanosec> of SFT \n                                  start times of the SFTs passing tests  \n                                  (default=off)",
   "      --printData               Print to ASCII files the data values  \n                                  (default=off)",
   "      --printUninitialized=INT  Print uninitialized values in TFdata_weighted \n                                  and TSofPowers vectors at n-th sky location \n                                  specified by option (if not enough sky \n                                  locations exist, then these vectors don't get \n                                  printed!)",
+  "      --printSignalData         Print f0 and h0 per SFT of the signal, used \n                                  only with --injectionSources option  \n                                  (default=off)",
   "      --randSeed=INT            Random seed value",
   "      --chooseSeed              The random seed value is chosen based on the \n                                  input search parameters  (default=off)",
     0
@@ -320,11 +323,14 @@ void clear_given (struct gengetopt_args_info *args_info)
   args_info->antennaOff_given = 0 ;
   args_info->noiseWeightOff_given = 0 ;
   args_info->gaussTemplatesOnly_given = 0 ;
+  args_info->periodHarmToCheck_given = 0 ;
+  args_info->periodFracToCheck_given = 0 ;
   args_info->ULoff_given = 0 ;
   args_info->printSFTtimes_given = 0 ;
   args_info->printUsedSFTtimes_given = 0 ;
   args_info->printData_given = 0 ;
   args_info->printUninitialized_given = 0 ;
+  args_info->printSignalData_given = 0 ;
   args_info->randSeed_given = 0 ;
   args_info->chooseSeed_given = 0 ;
 }
@@ -427,11 +433,16 @@ void clear_args (struct gengetopt_args_info *args_info)
   args_info->antennaOff_flag = 0;
   args_info->noiseWeightOff_flag = 0;
   args_info->gaussTemplatesOnly_flag = 0;
+  args_info->periodHarmToCheck_arg = 5;
+  args_info->periodHarmToCheck_orig = NULL;
+  args_info->periodFracToCheck_arg = 3;
+  args_info->periodFracToCheck_orig = NULL;
   args_info->ULoff_flag = 0;
   args_info->printSFTtimes_flag = 0;
   args_info->printUsedSFTtimes_flag = 0;
   args_info->printData_flag = 0;
   args_info->printUninitialized_orig = NULL;
+  args_info->printSignalData_flag = 0;
   args_info->randSeed_orig = NULL;
   args_info->chooseSeed_flag = 0;
   
@@ -515,13 +526,16 @@ void init_args_info(struct gengetopt_args_info *args_info)
   args_info->antennaOff_help = gengetopt_args_info_full_help[77] ;
   args_info->noiseWeightOff_help = gengetopt_args_info_full_help[78] ;
   args_info->gaussTemplatesOnly_help = gengetopt_args_info_full_help[79] ;
-  args_info->ULoff_help = gengetopt_args_info_full_help[80] ;
-  args_info->printSFTtimes_help = gengetopt_args_info_full_help[81] ;
-  args_info->printUsedSFTtimes_help = gengetopt_args_info_full_help[82] ;
-  args_info->printData_help = gengetopt_args_info_full_help[83] ;
-  args_info->printUninitialized_help = gengetopt_args_info_full_help[84] ;
-  args_info->randSeed_help = gengetopt_args_info_full_help[85] ;
-  args_info->chooseSeed_help = gengetopt_args_info_full_help[86] ;
+  args_info->periodHarmToCheck_help = gengetopt_args_info_full_help[80] ;
+  args_info->periodFracToCheck_help = gengetopt_args_info_full_help[81] ;
+  args_info->ULoff_help = gengetopt_args_info_full_help[82] ;
+  args_info->printSFTtimes_help = gengetopt_args_info_full_help[83] ;
+  args_info->printUsedSFTtimes_help = gengetopt_args_info_full_help[84] ;
+  args_info->printData_help = gengetopt_args_info_full_help[85] ;
+  args_info->printUninitialized_help = gengetopt_args_info_full_help[86] ;
+  args_info->printSignalData_help = gengetopt_args_info_full_help[87] ;
+  args_info->randSeed_help = gengetopt_args_info_full_help[88] ;
+  args_info->chooseSeed_help = gengetopt_args_info_full_help[89] ;
   
 }
 
@@ -724,6 +738,8 @@ cmdline_parser_release (struct gengetopt_args_info *args_info)
   free_string_field (&(args_info->templateTestDf_orig));
   free_string_field (&(args_info->ULsolver_orig));
   free_string_field (&(args_info->dopplerMultiplier_orig));
+  free_string_field (&(args_info->periodHarmToCheck_orig));
+  free_string_field (&(args_info->periodFracToCheck_orig));
   free_string_field (&(args_info->printUninitialized_orig));
   free_string_field (&(args_info->randSeed_orig));
   
@@ -946,6 +962,10 @@ cmdline_parser_dump(FILE *outfile, struct gengetopt_args_info *args_info)
     write_into_file(outfile, "noiseWeightOff", 0, 0 );
   if (args_info->gaussTemplatesOnly_given)
     write_into_file(outfile, "gaussTemplatesOnly", 0, 0 );
+  if (args_info->periodHarmToCheck_given)
+    write_into_file(outfile, "periodHarmToCheck", args_info->periodHarmToCheck_orig, 0);
+  if (args_info->periodFracToCheck_given)
+    write_into_file(outfile, "periodFracToCheck", args_info->periodFracToCheck_orig, 0);
   if (args_info->ULoff_given)
     write_into_file(outfile, "ULoff", 0, 0 );
   if (args_info->printSFTtimes_given)
@@ -956,6 +976,8 @@ cmdline_parser_dump(FILE *outfile, struct gengetopt_args_info *args_info)
     write_into_file(outfile, "printData", 0, 0 );
   if (args_info->printUninitialized_given)
     write_into_file(outfile, "printUninitialized", args_info->printUninitialized_orig, 0);
+  if (args_info->printSignalData_given)
+    write_into_file(outfile, "printSignalData", 0, 0 );
   if (args_info->randSeed_given)
     write_into_file(outfile, "randSeed", args_info->randSeed_orig, 0);
   if (args_info->chooseSeed_given)
@@ -1313,6 +1335,11 @@ cmdline_parser_required2 (struct gengetopt_args_info *args_info, const char *pro
   if (args_info->templateTestDf_given && ! args_info->templateTest_given)
     {
       fprintf (stderr, "%s: '--templateTestDf' option depends on option 'templateTest'%s\n", prog_name, (additional_error ? additional_error : ""));
+      error = 1;
+    }
+  if (args_info->printSignalData_given && ! args_info->injectionSources_given)
+    {
+      fprintf (stderr, "%s: '--printSignalData' option depends on option 'injectionSources'%s\n", prog_name, (additional_error ? additional_error : ""));
       error = 1;
     }
 
@@ -1701,11 +1728,14 @@ cmdline_parser_internal (
         { "antennaOff",	0, NULL, 0 },
         { "noiseWeightOff",	0, NULL, 0 },
         { "gaussTemplatesOnly",	0, NULL, 0 },
+        { "periodHarmToCheck",	1, NULL, 0 },
+        { "periodFracToCheck",	1, NULL, 0 },
         { "ULoff",	0, NULL, 0 },
         { "printSFTtimes",	0, NULL, 0 },
         { "printUsedSFTtimes",	0, NULL, 0 },
         { "printData",	0, NULL, 0 },
         { "printUninitialized",	1, NULL, 0 },
+        { "printSignalData",	0, NULL, 0 },
         { "randSeed",	1, NULL, 0 },
         { "chooseSeed",	0, NULL, 0 },
         { 0,  0, 0, 0 }
@@ -2650,6 +2680,34 @@ cmdline_parser_internal (
               goto failure;
           
           }
+          /* Number of harmonics/sub-harmonics of the IHS candidates to test.  */
+          else if (strcmp (long_options[option_index].name, "periodHarmToCheck") == 0)
+          {
+          
+          
+            if (update_arg( (void *)&(args_info->periodHarmToCheck_arg), 
+                 &(args_info->periodHarmToCheck_orig), &(args_info->periodHarmToCheck_given),
+                &(local_args_info.periodHarmToCheck_given), optarg, 0, "5", ARG_INT,
+                check_ambiguity, override, 0, 0,
+                "periodHarmToCheck", '-',
+                additional_error))
+              goto failure;
+          
+          }
+          /* Number of fractional periods to check in the sense of [(1...N)+1]/[(1...N)+2].  */
+          else if (strcmp (long_options[option_index].name, "periodFracToCheck") == 0)
+          {
+          
+          
+            if (update_arg( (void *)&(args_info->periodFracToCheck_arg), 
+                 &(args_info->periodFracToCheck_orig), &(args_info->periodFracToCheck_given),
+                &(local_args_info.periodFracToCheck_given), optarg, 0, "3", ARG_INT,
+                check_ambiguity, override, 0, 0,
+                "periodFracToCheck", '-',
+                additional_error))
+              goto failure;
+          
+          }
           /* Turn off upper limits computation.  */
           else if (strcmp (long_options[option_index].name, "ULoff") == 0)
           {
@@ -2708,6 +2766,18 @@ cmdline_parser_internal (
                 &(local_args_info.printUninitialized_given), optarg, 0, 0, ARG_INT,
                 check_ambiguity, override, 0, 0,
                 "printUninitialized", '-',
+                additional_error))
+              goto failure;
+          
+          }
+          /* Print f0 and h0 per SFT of the signal, used only with --injectionSources option.  */
+          else if (strcmp (long_options[option_index].name, "printSignalData") == 0)
+          {
+          
+          
+            if (update_arg((void *)&(args_info->printSignalData_flag), 0, &(args_info->printSignalData_given),
+                &(local_args_info.printSignalData_given), optarg, 0, 0, ARG_FLAG,
+                check_ambiguity, override, 1, 0, "printSignalData", '-',
                 additional_error))
               goto failure;
           

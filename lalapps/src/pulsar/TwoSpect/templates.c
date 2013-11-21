@@ -1142,7 +1142,7 @@ void analyzeOneTemplate(candidate *output, candidate *input, ffdataStruct *ffdat
 
 
 //A brute force template search to find the most significant template around a candidate
-void bruteForceTemplateSearch(candidate *output, candidate input, REAL8 fminimum, REAL8 fmaximum, INT4 numfsteps, INT4 numperiods, REAL8 dfmin, REAL8 dfmax, INT4 numdfsteps, inputParamsStruct *params, REAL4Vector *ffdata, INT4Vector *sftexist, REAL4Vector *aveNoise, REAL4Vector *aveTFnoisePerFbinRatio, REAL4FFTPlan *secondFFTplan, INT4 useExactTemplates)
+void bruteForceTemplateSearch(candidate *output, candidate input, REAL8 fminimum, REAL8 fmaximum, INT4 numfsteps, INT4 numperiodslonger, INT4 numperiodsshorter, REAL8 dfmin, REAL8 dfmax, INT4 numdfsteps, inputParamsStruct *params, REAL4Vector *ffdata, INT4Vector *sftexist, REAL4Vector *aveNoise, REAL4Vector *aveTFnoisePerFbinRatio, REAL4FFTPlan *secondFFTplan, INT4 useExactTemplates)
 {
    
    INT4 ii, jj, kk;
@@ -1173,9 +1173,9 @@ void bruteForceTemplateSearch(candidate *output, candidate input, REAL8 fminimum
    for (ii=0; ii<numfsteps; ii++) trialf->data[ii] = fminimum + fstepsize*ii;
    
    //Search over numperiods different periods
-   trialp = XLALCreateREAL8Vector(numperiods);
+   trialp = XLALCreateREAL8Vector(numperiodslonger+numperiodsshorter+1);
    if (trialp==NULL) {
-      fprintf(stderr,"%s: XLALCreateREAL8Vector(%d) failed.\n", __func__, numperiods);
+      fprintf(stderr,"%s: XLALCreateREAL8Vector(%d) failed.\n", __func__, numperiodslonger+numperiodsshorter+1);
       XLAL_ERROR_VOID(XLAL_EFUNC);
    }
    
@@ -1198,7 +1198,7 @@ void bruteForceTemplateSearch(candidate *output, candidate input, REAL8 fminimum
       }
    }
    
-   INT4 midposition = (INT4)roundf((numperiods-1)*0.5), proberrcode = 0;
+   INT4 startposition = numperiodsshorter, proberrcode = 0;
    //Search over frequency
    for (ii=0; ii<(INT4)trialf->length; ii++) {
       //Search over modulation depth
@@ -1207,12 +1207,14 @@ void bruteForceTemplateSearch(candidate *output, candidate input, REAL8 fminimum
          //modulation depth amplitude to find the other period guesses. These parameters 
          //are determined from simulation to scale the N.N. distance w.r.t. mod. depth with
          //20% mismatch parameter
-         trialp->data[midposition] = input.period;
-         for (kk=0; kk<midposition; kk++) {
-            REAL8 nnp = trialp->data[midposition+kk]*trialp->data[midposition+kk]*(1+trialp->data[midposition+kk]/tcohfactor/params->Tobs)/tcohfactor/params->Tobs*sqrt(3.6e-3/trialb->data[jj]);
-            trialp->data[midposition+(kk+1)] = trialp->data[midposition+kk] + nnp;
-            nnp = trialp->data[midposition-kk]*trialp->data[midposition-kk]*(1+trialp->data[midposition-kk]/tcohfactor/params->Tobs)/tcohfactor/params->Tobs*sqrt(3.6e-3/trialb->data[jj]);
-            trialp->data[midposition-(kk+1)] = trialp->data[midposition-kk] - nnp;
+         trialp->data[startposition] = input.period;
+         for (kk=0; kk<numperiodsshorter; kk++) {
+            REAL8 nnp = trialp->data[startposition-kk]*trialp->data[startposition-kk]*(1+trialp->data[startposition-kk]/tcohfactor/params->Tobs)/tcohfactor/params->Tobs*sqrt(3.6e-3/trialb->data[jj]);
+            trialp->data[startposition-(kk+1)] = trialp->data[startposition-kk] - nnp;
+         }
+         for (kk=0; kk<numperiodslonger; kk++) {
+            REAL8 nnp = trialp->data[startposition+kk]*trialp->data[startposition+kk]*(1+trialp->data[startposition+kk]/tcohfactor/params->Tobs)/tcohfactor/params->Tobs*sqrt(3.6e-3/trialb->data[jj]);
+            trialp->data[startposition+(kk+1)] = trialp->data[startposition+kk] + nnp;
          }
          
          //Search over period

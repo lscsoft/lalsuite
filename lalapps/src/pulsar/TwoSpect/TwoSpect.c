@@ -371,6 +371,41 @@ int main(int argc, char *argv[])
          fprintf(stderr, "%s: XLALMultiSFTVectorAdd() failed.\n", __func__);
          XLAL_ERROR(XLAL_EFUNC);
       }
+      if (args_info.printSignalData_given) {
+         FILE *SIGNALOUT = fopen("./output/signals.dat", "w");
+         PulsarParamsVector *oneSignal = XLALCreatePulsarParamsVector(1);
+         if (oneSignal==NULL) {
+            fprintf(stderr, "%s: XLALCWMakeFakeMultiData() failed.\n", __func__);
+            XLAL_ERROR(XLAL_EFUNC);
+         }
+         for (ii=0; ii<(INT4)injectionSources->length; ii++) {
+            memcpy(oneSignal->data, &(injectionSources->data[ii]), sizeof(injectionSources->data[0]));
+            MultiSFTVector *oneSignalSFTs = NULL;
+            if (XLALCWMakeFakeMultiData(&oneSignalSFTs, NULL, oneSignal, &DataParams, edat) != 0) {
+               fprintf(stderr, "%s: XLALCWMakeFakeMultiData() failed.\n", __func__);
+               XLAL_ERROR(XLAL_EFUNC);
+            }
+            REAL8Vector *oneSFTpowers = XLALCreateREAL8Vector(oneSignalSFTs->data[0]->data->data->length);
+            if (oneSFTpowers==NULL) {
+               fprintf(stderr, "%s: XLALCreateREAL8Vector(%d) failed.\n", __func__, oneSignalSFTs->data[0]->data->data->length);
+               XLAL_ERROR(XLAL_EFUNC);
+            }
+            for (jj=0; jj<(INT4)oneSignalSFTs->data[0]->length; jj++) {
+               INT4 kk = 0;
+               SFTtype *sft = &(oneSignalSFTs->data[0]->data[jj]);
+               for (kk=0; kk<(INT4)oneSFTpowers->length; kk++) {
+                  oneSFTpowers->data[kk] = (2.0*(creal(sft->data->data[kk])*creal(sft->data->data[kk]) + cimag(sft->data->data[kk])*cimag(sft->data->data[kk]))/inputParams->Tcoh);
+               }
+               INT4 indexValOfMax = max_index_double(oneSFTpowers);
+               fprintf(SIGNALOUT,"%g %g\n", DataParams.fMin+indexValOfMax/inputParams->Tcoh, oneSFTpowers->data[indexValOfMax]);
+            }
+            XLALDestroyREAL8Vector(oneSFTpowers);
+            XLALDestroyMultiSFTVector(oneSignalSFTs);
+         }
+         memset(oneSignal->data, 0, sizeof(injectionSources->data[0]));
+         XLALDestroyPulsarParamsVector(oneSignal);
+         fclose(SIGNALOUT);
+      }
       XLALDestroyMultiSFTCatalogView(catalogView);
       XLALDestroyMultiTimestamps(multiTimestamps);
       XLALDestroyPulsarParamsVector(injectionSources);
@@ -433,6 +468,41 @@ int main(int argc, char *argv[])
          fprintf(stderr, "%s: XLALCWMakeFakeMultiData() failed.\n", __func__);
          XLAL_ERROR(XLAL_EFUNC);
       }
+      if (args_info.printSignalData_given) {
+         DataParams.detInfo.sqrtSn[0] = 0.0;
+         FILE *SIGNALOUT = fopen("./output/signals.dat", "w");
+         for (ii=0; ii<(INT4)injectionSources->length; ii++) {
+            PulsarParamsVector *oneSignal = XLALCreatePulsarParamsVector(1);
+            if (oneSignal==NULL) {
+               fprintf(stderr, "%s: XLALCWMakeFakeMultiData() failed.\n", __func__);
+               XLAL_ERROR(XLAL_EFUNC);
+            }
+            memcpy(oneSignal->data, &(injectionSources->data[ii]), sizeof(injectionSources->data[0]));
+            MultiSFTVector *oneSignalSFTs = NULL;
+            if (XLALCWMakeFakeMultiData(&oneSignalSFTs, NULL, oneSignal, &DataParams, edat) != 0) {
+               fprintf(stderr, "%s: XLALCWMakeFakeMultiData() failed.\n", __func__);
+               XLAL_ERROR(XLAL_EFUNC);
+            }
+            REAL4Vector *oneSFTpowers = XLALCreateREAL4Vector(oneSignalSFTs->data[0]->data->data->length);
+            if (oneSFTpowers==NULL) {
+               fprintf(stderr, "%s: XLALCreateREAL4Vector(%d) failed.\n", __func__, oneSignalSFTs->data[0]->data->data->length);
+               XLAL_ERROR(XLAL_EFUNC);
+            }
+            for (jj=0; jj<(INT4)oneSignalSFTs->data[0]->length; jj++) {
+               INT4 kk = 0;
+               SFTtype *sft = &(oneSignalSFTs->data[0]->data[jj]);
+               for (kk=0; kk<(INT4)oneSFTpowers->length; kk++) {
+                  oneSFTpowers->data[kk] = (REAL4)(2.0*(crealf(sft->data->data[kk])*crealf(sft->data->data[kk]) + cimagf(sft->data->data[kk])*cimagf(sft->data->data[kk]))/inputParams->Tcoh);
+               }
+               INT4 indexValOfMax = max_index(oneSFTpowers);
+               fprintf(SIGNALOUT,"%g %g", DataParams.fMin+indexValOfMax/inputParams->Tcoh, oneSFTpowers->data[indexValOfMax]);
+            }
+            XLALDestroyREAL4Vector(oneSFTpowers);
+            XLALDestroyMultiSFTVector(oneSignalSFTs);
+            XLALDestroyPulsarParamsVector(oneSignal);
+         }
+         fclose(SIGNALOUT);
+      }
       if (inputParams->signalOnly) tfdata = convertSFTdataToPowers(sftvector, inputParams, 1.0);
       else tfdata = convertSFTdataToPowers(sftvector, inputParams, ffdata->tfnormalization);
       if (tfdata==NULL) {
@@ -490,6 +560,41 @@ int main(int argc, char *argv[])
       if (XLALCWMakeFakeMultiData(&sftvector, NULL, injectionSources, &DataParams, edat) != 0) {
          fprintf(stderr, "%s: XLALCWMakeFakeMultiData() failed.\n", __func__);
          XLAL_ERROR(XLAL_EFUNC);
+      }
+      if (args_info.printSignalData_given) {
+         DataParams.detInfo.sqrtSn[0] = 0.0;
+         FILE *SIGNALOUT = fopen("./output/signals.dat", "w");
+         for (ii=0; ii<(INT4)injectionSources->length; ii++) {
+            PulsarParamsVector *oneSignal = XLALCreatePulsarParamsVector(1);
+            if (oneSignal==NULL) {
+               fprintf(stderr, "%s: XLALCWMakeFakeMultiData() failed.\n", __func__);
+               XLAL_ERROR(XLAL_EFUNC);
+            }
+            memcpy(oneSignal->data, &(injectionSources->data[ii]), sizeof(injectionSources->data[0]));
+            MultiSFTVector *oneSignalSFTs = NULL;
+            if (XLALCWMakeFakeMultiData(&oneSignalSFTs, NULL, oneSignal, &DataParams, edat) != 0) {
+               fprintf(stderr, "%s: XLALCWMakeFakeMultiData() failed.\n", __func__);
+               XLAL_ERROR(XLAL_EFUNC);
+            }
+            REAL4Vector *oneSFTpowers = XLALCreateREAL4Vector(oneSignalSFTs->data[0]->data->data->length);
+            if (oneSFTpowers==NULL) {
+               fprintf(stderr, "%s: XLALCreateREAL4Vector(%d) failed.\n", __func__, oneSignalSFTs->data[0]->data->data->length);
+               XLAL_ERROR(XLAL_EFUNC);
+            }
+            for (jj=0; jj<(INT4)oneSignalSFTs->data[0]->length; jj++) {
+               INT4 kk = 0;
+               SFTtype *sft = &(oneSignalSFTs->data[0]->data[jj]);
+               for (kk=0; kk<(INT4)oneSFTpowers->length; kk++) {
+                  oneSFTpowers->data[kk] = (REAL4)(2.0*(crealf(sft->data->data[kk])*crealf(sft->data->data[kk]) + cimagf(sft->data->data[kk])*cimagf(sft->data->data[kk]))/inputParams->Tcoh);
+               }
+               INT4 indexValOfMax = max_index(oneSFTpowers);
+               fprintf(SIGNALOUT,"%g %g", DataParams.fMin+indexValOfMax/inputParams->Tcoh, oneSFTpowers->data[indexValOfMax]);
+            }
+            XLALDestroyREAL4Vector(oneSFTpowers);
+            XLALDestroyMultiSFTVector(oneSignalSFTs);
+            XLALDestroyPulsarParamsVector(oneSignal);
+         }
+         fclose(SIGNALOUT);
       }
       if (inputParams->signalOnly) tfdata = convertSFTdataToPowers(sftvector, inputParams, 1.0);
       else tfdata = convertSFTdataToPowers(sftvector, inputParams, ffdata->tfnormalization);
@@ -1153,7 +1258,8 @@ int main(int argc, char *argv[])
                                      gaussCandidates2->data[ii].fsig-1.0/inputParams->Tcoh,  //Minimum frequency
                                      gaussCandidates2->data[ii].fsig+1.0/inputParams->Tcoh,  //Maximum frequency
                                      5,                                                      //Number of frequencies to search in range
-                                     5,                                                      //Number of periods to search
+                                     2,                                                      //Number of longer periods to search
+                                     2,                                                      //Number of shorter periods to search
                                      gaussCandidates2->data[ii].moddepth-1.0/inputParams->Tcoh, //Minimum modulation depth
                                      gaussCandidates2->data[ii].moddepth+1.0/inputParams->Tcoh, //Maximum modulation depth
                                      5,                                                      //Number of modulation depths to search in range
@@ -1281,7 +1387,8 @@ int main(int argc, char *argv[])
                                         exactCandidates1->data[ii].fsig-0.5/inputParams->Tcoh,
                                         exactCandidates1->data[ii].fsig+0.5/inputParams->Tcoh,
                                         3,
-                                        3,
+                                        1,
+                                        1,
                                         exactCandidates1->data[ii].moddepth-0.5/inputParams->Tcoh,
                                         exactCandidates1->data[ii].moddepth+0.5/inputParams->Tcoh,
                                         3,
@@ -1298,7 +1405,8 @@ int main(int argc, char *argv[])
                                         exactCandidates1->data[ii].fsig-0.5/inputParams->Tcoh,
                                         exactCandidates1->data[ii].fsig+0.5/inputParams->Tcoh,
                                         3,
-                                        3,
+                                        1,
+                                        1,
                                         exactCandidates1->data[ii].moddepth-0.5/inputParams->Tcoh,
                                         exactCandidates1->data[ii].moddepth+0.5/inputParams->Tcoh,
                                         3,
