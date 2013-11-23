@@ -2198,7 +2198,7 @@ void LALInferenceExtrinsicParamProposal(LALInferenceRunState *runState, LALInfer
     iota = *(REAL8 *)LALInferenceGetVariable(proposedParams, "inclination");
   else if(LALInferenceCheckVariable(proposedParams,"theta_JN"))
   {
-    iota = *(REAL8 *)LALInferenceGetVariable(proposedParams, "inclination");
+    iota = *(REAL8 *)LALInferenceGetVariable(proposedParams, "theta_JN");
     USES_THETA_JN=1;
   }
   else fprintf(stderr,"LALInferenceExtrinsicParamProposal: No inclination or theta_JN parameter!\n");
