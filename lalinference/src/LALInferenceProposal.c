@@ -1546,7 +1546,7 @@ void LALInferenceSkyRingProposal(LALInferenceRunState *runState, LALInferenceVar
   REAL8 pForward, pReverse;
   pForward = cos(newDec);
   pReverse = cos(dec);
-
+  gsl_matrix_free(IFO);
   LALInferenceSetLogProposalRatio(runState, log(pReverse/pForward));
 
 }
