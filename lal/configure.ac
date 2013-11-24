@@ -344,6 +344,12 @@ AC_TYPE_SIZE_T
 AC_HEADER_TIME
 
 # checks for library functions
+AC_CHECK_FUNC([gmtime_r],[:],[
+  AC_CHECK_FUNCS([gmtime_s],[:],[AC_MSG_ERROR([could not find either gmtime_r() or gmtime_s() functions])])
+])
+AC_CHECK_FUNC([localtime_r],[:],[
+  AC_CHECK_FUNCS([localtime_s],[:],[AC_MSG_ERROR([could not find either localtime_r() or localtime_s() functions])])
+])
 AC_CHECK_FUNCS([stat],,[AC_MSG_ERROR([could not find the stat() function])])
 AC_CHECK_FUNCS([getopt],,[AC_MSG_ERROR([could not find the getopt() function])])
 AC_CHECK_FUNCS([getopt_long],,[AC_MSG_ERROR([could not find the getopt_long() function])])

@@ -129,6 +129,14 @@ AC_DEFINE([HAVE_GETHOSTNAME_PROTOTYPE],[1],
 # check for required libraries
 AC_CHECK_LIB([m],[main],,[AC_MSG_ERROR([could not find the math library])])
 
+# checks for library functions
+AC_CHECK_FUNC([gmtime_r],[:],[
+  AC_CHECK_FUNCS([gmtime_s],[:],[AC_MSG_ERROR([could not find either gmtime_r() or gmtime_s() functions])])
+])
+AC_CHECK_FUNC([localtime_r],[:],[
+  AC_CHECK_FUNCS([localtime_s],[:],[AC_MSG_ERROR([could not find either localtime_r() or localtime_s() functions])])
+])
+
 # check for framec or libframe libraries and headers
 PKG_PROG_PKG_CONFIG
 AS_IF([test "${framec}" = "true"],[

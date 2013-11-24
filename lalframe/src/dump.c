@@ -130,7 +130,7 @@ int dumpdetector(LALFrameUFrFile * frfile, size_t det)
      */
 
     indent;
-    printf("FrDetector %zu %s (%s): localtime = %d\n", det, name, prefix,
+    printf("FrDetector %zu %s (%s): local time = %d\n", det, name, prefix,
         loctime);
 
     XLALFrameUFrTOCFree(toc);

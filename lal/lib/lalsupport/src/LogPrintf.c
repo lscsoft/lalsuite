@@ -23,6 +23,12 @@
 
 /* Windows version fixed by Bernd Machenschalk */
 
+#include <config.h>
+
+#ifdef HAVE_LOCALTIME_S
+#define localtime_r(t, tm) localtime_s(tm, t)
+#endif
+
 /*---------- INCLUDES ----------*/
 #include <stdio.h>
 #include <string.h>
@@ -152,7 +158,8 @@ LogTimeToString ( double t )
   static char buf[100];
   char finer[16];
   time_t x = (time_t)t;
-  struct tm* tm = localtime(&x);
+  struct tm tm;
+  localtime_r(&x, &tm);
 
   int hundreds_of_microseconds=(int)(10000*(t-(int)t));
 
@@ -162,7 +169,7 @@ LogTimeToString ( double t )
     t+=1.0;
   }
 
-  strftime(buf, sizeof(buf)-1, "%Y-%m-%d %H:%M:%S", tm);
+  strftime(buf, sizeof(buf), "%Y-%m-%d %H:%M:%S", &tm);
   sprintf(finer, ".%04d", hundreds_of_microseconds);
   strcat(buf, finer);
 
