@@ -38,6 +38,7 @@
 #include <lal/Date.h>
 #include <lal/AVFactories.h>
 #include <lal/LogPrintf.h>
+#include <lal/LALString.h>
 
 #include <lal/ProbabilityDensity.h>
 #include <lal/TransientCW_utils.h>
@@ -67,8 +68,47 @@ static gsl_vector *expLUT = NULL; 	/**< module-global lookup-table for negative 
 
 static int XLALCreateExpLUT ( void );	/* only ever used internally, destructor is in exported API */
 
+static const char *transientWindowNames[TRANSIENT_LAST] =
+  {
+    [TRANSIENT_NONE]	 	= "none",
+    [TRANSIENT_RECTANGULAR]	= "rect",
+    [TRANSIENT_EXPONENTIAL]	= "exp"
+  };
 
 /* ==================== function definitions ==================== */
+/// Parse a transient window name string into the corresponding transientWindowType
+int
+XLALParseTransientWindowName ( const char *windowName )
+{
+  XLAL_CHECK ( windowName != NULL, XLAL_EINVAL );
+
+  // convert input window-name into lower-case first
+  char windowNameLC [ strlen(windowName) + 1 ];
+  strcpy ( windowNameLC, windowName );
+  XLALStringToLowerCase ( windowNameLC );
+
+  int winType = -1;
+  for ( UINT4 j=0; j < TRANSIENT_LAST; j ++ )
+    {
+      if ( !strcmp ( windowNameLC, transientWindowNames[j] ) ) {
+        winType = j;
+        break;
+      }
+    } // j < TRANSIENT_LAST
+
+  if ( winType == -1 )
+    {
+      XLALPrintError ("Invalid transient Window-name '%s', allowed are (case-insensitive): [%s", windowName, transientWindowNames[0] );
+      for ( UINT4 j = 1; j < TRANSIENT_LAST; j ++ ) {
+        XLALPrintError (", %s", transientWindowNames[j] );
+      }
+      XLALPrintError ("]\n");
+      XLAL_ERROR ( XLAL_EINVAL );
+    } // if windowName not valid
+
+  return winType;
+
+} // XLALParseTransientWindowName()
 
 /**
  * Helper-function to determine the total timespan of
