@@ -1838,17 +1838,11 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg, const UserInput_t *uvar )
 
 
   /* ----- transient-window related parameters ----- */
-  if ( !XLALUserVarWasSet ( &uvar->transient_WindowType ) || !strcmp ( uvar->transient_WindowType, "none") )
-    cfg->transientWindowRange.type = TRANSIENT_NONE;		/* default: no transient signal window */
-  else if ( !strcmp ( uvar->transient_WindowType, "rect" ) )
-    cfg->transientWindowRange.type = TRANSIENT_RECTANGULAR;		/* rectangular window [t0, t0+tau] */
-  else if ( !strcmp ( uvar->transient_WindowType, "exp" ) )
-    cfg->transientWindowRange.type = TRANSIENT_EXPONENTIAL;		/* exponential window starting at t0, charact. time tau */
-  else
-    {
-      XLALPrintError ("%s: Illegal transient window '%s' specified: valid are 'none', 'rect' or 'exp'\n", __func__, uvar->transient_WindowType);
-      ABORT (status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
-    }
+  int twtype;
+  if ( (twtype = XLALParseTransientWindowName ( uvar->transient_WindowType )) < 0 ) {
+    ABORT (status, COMPUTEFSTATISTIC_EXLAL, COMPUTEFSTATISTIC_MSGEXLAL );
+  }
+  cfg->transientWindowRange.type = twtype;
 
   /* make sure user doesn't set window=none but sets window-parameters => indicates she didn't mean 'none' */
   if ( cfg->transientWindowRange.type == TRANSIENT_NONE )

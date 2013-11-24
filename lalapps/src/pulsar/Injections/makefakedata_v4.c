@@ -1287,27 +1287,12 @@ XLALInitMakefakedata ( ConfigVars_t *cfg, UserVariables_t *uvar )
   XLALFree ( channelName );
 
   /* ----- handle transient-signal window if given ----- */
-  if ( !XLALUserVarWasSet ( &uvar->transientWindowType ) || !strcmp ( uvar->transientWindowType, "none") )
-    cfg->transientWindow.type = TRANSIENT_NONE;                /* default: no transient signal window */
-  else
-    {
-      if ( !strcmp ( uvar->transientWindowType, "rect" ) )
-       {
-         cfg->transientWindow.type = TRANSIENT_RECTANGULAR;              /* rectangular window [t0, t0+tau] */
-       }
-      else if ( !strcmp ( uvar->transientWindowType, "exp" ) )
-        {
-          cfg->transientWindow.type = TRANSIENT_EXPONENTIAL;            /* exponential decay window e^[-(t-t0)/tau for t>t0, 0 otherwise */
-        }
-      else
-        {
-          XLAL_ERROR ( XLAL_EINVAL, "Illegal transient window '%s' specified: valid are 'none', 'rect' or 'exp'\n", uvar->transientWindowType );
-        }
+  int twtype;
+  XLAL_CHECK ( (twtype = XLALParseTransientWindowName ( uvar->transientWindowType )) >= 0, XLAL_EFUNC );
+  cfg->transientWindow.type = twtype;
 
-      cfg->transientWindow.t0   = uvar->transientStartTime;
-      cfg->transientWindow.tau  = uvar->transientTauDays * LAL_DAYSID_SI;
-
-    } /* if transient window != none */
+  cfg->transientWindow.t0   = uvar->transientStartTime;
+  cfg->transientWindow.tau  = uvar->transientTauDays * LAL_DAYSID_SI;
 
   return XLAL_SUCCESS;
 

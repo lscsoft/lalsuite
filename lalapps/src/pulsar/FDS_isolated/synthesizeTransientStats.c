@@ -743,24 +743,18 @@ XLALInitCode ( ConfigVariables *cfg, const UserInput_t *uvar )
 
   /* ---------- initialize transient window ranges, for injection ... ---------- */
   transientWindowRange_t InjectRange = empty_transientWindowRange;
-  if ( !uvar->injectWindow_type || !strcmp ( uvar->injectWindow_type, "none") )
-    InjectRange.type = TRANSIENT_NONE;			/* default: no transient signal window */
-  else if ( !strcmp ( uvar->injectWindow_type, "rect" ) )
-    InjectRange.type = TRANSIENT_RECTANGULAR;		/* rectangular window [t0, t0+tau] */
-  else if ( !strcmp ( uvar->injectWindow_type, "exp" ) )
-    InjectRange.type = TRANSIENT_EXPONENTIAL;		/* exponential window starting at t0, charact. time tau */
-  else
-    {
-      XLALPrintError ("%s: Illegal transient inject window '%s' specified: valid are 'none', 'rect' or 'exp'\n", __func__, uvar->injectWindow_type);
-      XLAL_ERROR ( XLAL_EINVAL );
-    }
+  int twtype;
+  XLAL_CHECK ( (twtype = XLALParseTransientWindowName ( uvar->injectWindow_type )) >= 0, XLAL_EFUNC );
+  InjectRange.type = twtype;
+
   /* make sure user doesn't set window=none but sets window-parameters => indicates she didn't mean 'none' */
-  if ( InjectRange.type == TRANSIENT_NONE )
+  if ( InjectRange.type == TRANSIENT_NONE ) {
     if ( XLALUserVarWasSet ( &uvar->injectWindow_t0Days ) || XLALUserVarWasSet ( &uvar->injectWindow_t0DaysBand ) ||
          XLALUserVarWasSet ( &uvar->injectWindow_tauDays ) || XLALUserVarWasSet ( &uvar->injectWindow_tauDaysBand ) ) {
       XLALPrintError ("%s: ERROR: injectWindow_type == NONE, but window-parameters were set! Use a different window-type!\n", __func__ );
       XLAL_ERROR ( XLAL_EINVAL );
     }
+  }
 
   if ( uvar->injectWindow_t0DaysBand < 0 || uvar->injectWindow_tauDaysBand < 0 ) {
     XLALPrintError ("%s: only positive t0/tau window injection bands allowed (%d, %f)\n", __func__, uvar->injectWindow_t0DaysBand, uvar->injectWindow_tauDaysBand );
@@ -783,17 +777,8 @@ XLALInitCode ( ConfigVariables *cfg, const UserInput_t *uvar )
 
   /* ---------- ... and for search -------------------- */
   transientWindowRange_t SearchRange = empty_transientWindowRange;
-  if ( !uvar->searchWindow_type || !strcmp ( uvar->searchWindow_type, "none") )
-    SearchRange.type = TRANSIENT_NONE;			/* default: no transient signal window */
-  else if ( !strcmp ( uvar->searchWindow_type, "rect" ) )
-    SearchRange.type = TRANSIENT_RECTANGULAR;		/* rectangular window [t0, t0+tau] */
-  else if ( !strcmp ( uvar->searchWindow_type, "exp" ) )
-    SearchRange.type = TRANSIENT_EXPONENTIAL;		/* exponential window starting at t0, charact. time tau */
-  else
-    {
-      XLALPrintError ("%s: Illegal transient search window '%s' specified: valid are 'none', 'rect' or 'exp'\n", __func__, uvar->searchWindow_type);
-      XLAL_ERROR ( XLAL_EINVAL );
-    }
+  XLAL_CHECK ( (twtype = XLALParseTransientWindowName ( uvar->searchWindow_type )) >= 0, XLAL_EFUNC );
+  SearchRange.type = twtype;
 
   /* apply correct defaults if unset: use inect window */
   if ( !XLALUserVarWasSet ( &uvar->searchWindow_type ) )

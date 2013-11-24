@@ -765,34 +765,26 @@ XLALReadPulsarParams ( PulsarParams *pulsarParams,	///< [out] pulsar parameters 
   REAL8 transientTauDays = 0; BOOLEAN have_transientTauDays;
   XLAL_CHECK ( XLALReadConfigREAL8Variable ( &transientTauDays, cfgdata, secName, "transientTauDays", &have_transientTauDays ) == XLAL_SUCCESS, XLAL_EFUNC );
 
-  if ( ! have_transientWindowType || !strcmp ( transientWindowType, "none") )
-    {
-      XLAL_CHECK ( !have_transientStartTime && !have_transientTauDays, XLAL_EINVAL );
-      pulsarParams->Transient.type = TRANSIENT_NONE;	/* default: no transient signal window */
-    }
-  else
-    {
-      if ( !strcmp ( transientWindowType, "rect" ) ) {
-        pulsarParams->Transient.type = TRANSIENT_RECTANGULAR;              /* rectangular window [t0, t0+tau] */
-      }
-      else if ( !strcmp ( transientWindowType, "exp" ) ) {
-        pulsarParams->Transient.type = TRANSIENT_EXPONENTIAL;            /* exponential decay window e^[-(t-t0)/tau for t>t0, 0 otherwise */
-      }
-      else {
-        XLAL_ERROR ( XLAL_EINVAL, "Illegal transient window '%s' specified: valid are {'none', 'rect' or 'exp'}\n", transientWindowType );
-      }
-      XLAL_CHECK ( (pulsarParams->Transient.type != TRANSIENT_NONE) && (have_transientStartTime && have_transientTauDays), XLAL_EINVAL );
+  int twtype = TRANSIENT_NONE;
+  if ( have_transientWindowType ) {
+    XLAL_CHECK ( (twtype = XLALParseTransientWindowName ( transientWindowType )) >= 0, XLAL_EFUNC );
+    XLALFree ( transientWindowType );
+  }
+  pulsarParams->Transient.type = twtype;
 
+  if ( pulsarParams->Transient.type != TRANSIENT_NONE )
+    {
+      XLAL_CHECK ( have_transientStartTime && have_transientTauDays, XLAL_EINVAL );
       XLAL_CHECK ( transientStartTime >= 0, XLAL_EDOM );
       XLAL_CHECK ( transientTauDays > 0, XLAL_EDOM );
 
       pulsarParams->Transient.t0   = (UINT4) transientStartTime;
       pulsarParams->Transient.tau  = (UINT4) ( transientTauDays * LAL_DAYSID_SI );
     } /* if transient window != none */
-
-  if ( have_transientWindowType ) {
-    XLALFree ( transientWindowType );
-  }
+  else
+    {
+      XLAL_CHECK ( !(have_transientStartTime || have_transientTauDays), XLAL_EINVAL );
+    }
 
   return XLAL_SUCCESS;
 } // XLALParsePulsarParams()
