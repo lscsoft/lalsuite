@@ -251,9 +251,10 @@ int main(int argc, char *argv[])
       CWMFDataParams DataParams;
       DataParams.fMin = round(inputParams->fmin*inputParams->Tcoh - inputParams->dfmax*inputParams->Tcoh - 0.5*(inputParams->blksize-1) - (REAL8)(inputParams->maxbinshift) - 6.0)/inputParams->Tcoh;
       DataParams.Band = round(inputParams->fspan*inputParams->Tcoh + 2.0*inputParams->dfmax*inputParams->Tcoh + (inputParams->blksize-1) + (REAL8)(2.0*inputParams->maxbinshift) + 12.0)/inputParams->Tcoh;
-      DataParams.detInfo.length = 1;
-      DataParams.detInfo.sites[0] = *(inputParams->det);
-      DataParams.detInfo.sqrtSn[0] = 0.0;
+      DataParams.multiIFO.length = 1;
+      DataParams.multiIFO.sites[0] = *(inputParams->det);
+      DataParams.multiNoiseFloor.length = 1;
+      DataParams.multiNoiseFloor.sqrtSn[0] = args_info.avesqrtSh_arg;
       DataParams.multiTimestamps = *multiTimestamps;
       DataParams.randSeed = args_info.injRandSeed_arg;
       DataParams.SFTWindowType = "Hann";
@@ -272,7 +273,7 @@ int main(int argc, char *argv[])
       //If not signal only, create sfts that include noise or extract a band from real data
       if (!inputParams->signalOnly) {
          if (args_info.gaussNoiseWithSFTgaps_given || args_info.timestampsFile_given || args_info.segmentFile_given || !(args_info.sftDir_given || args_info.sftFile_given)) {
-            DataParams.detInfo.sqrtSn[0] = args_info.avesqrtSh_arg;
+            DataParams.multiNoiseFloor.sqrtSn[0] = args_info.avesqrtSh_arg;
             XLAL_CHECK( XLALCWMakeFakeMultiData(&sftvector, NULL, NULL, &DataParams, edat) == XLAL_SUCCESS, XLAL_EFUNC );
          } else {
             SFTConstraints constraints = empty_constraints;
@@ -296,7 +297,7 @@ int main(int argc, char *argv[])
 
       //If printing the data outputs, then do that here
       if ((args_info.printSignalData_given || args_info.printMarginalizedSignalData_given) && args_info.injectionSources_given) {
-         DataParams.detInfo.sqrtSn[0] = 0.0;
+         DataParams.multiNoiseFloor.sqrtSn[0] = 0.0;
          PulsarParamsVector *oneSignal = NULL;
          XLAL_CHECK( (oneSignal = XLALCreatePulsarParamsVector(1)) != NULL, XLAL_EFUNC );
 

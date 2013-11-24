@@ -317,19 +317,11 @@ XLALInitCode ( ConfigVariables *cfg, const UserVariables_t *uvar, const char *ap
   cfg->averageABCD = uvar->averageABCD;
 
   /* convert detector names into site-info */
-  MultiLALDetector *multiDet;
-  XLAL_CHECK ( (multiDet = XLALCreateMultiLALDetector ( numDetectors )) != NULL, XLAL_EFUNC, "XLALCreateMultiLALDetector(1) failed." );
-  LALDetector *site = NULL;
-  for ( UINT4 X=0; X < numDetectors; X++ ) {
-    XLAL_CHECK ( (site = XLALGetSiteInfo ( uvar->IFOs->data[X] )) != NULL, XLAL_EFUNC, "Failed to get site-info for detector '%s'.", uvar->IFOs->data[X] );
-    multiDet->data[X] = (*site); 	/* copy! */
-    XLALFree ( site );
-  }
+  MultiLALDetector multiDet;
+  XLAL_CHECK ( XLALParseMultiLALDetector ( &multiDet, uvar->IFOs ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   /* get detector states */
-  XLAL_CHECK ( (cfg->multiDetStates = XLALGetMultiDetectorStates ( cfg->multiTimestamps, multiDet, cfg->edat, 0.5 * uvar->Tsft )) != NULL, XLAL_EFUNC, "XLALGetDetectorStates() failed." );
-
-  XLALDestroyMultiLALDetector ( multiDet );
+  XLAL_CHECK ( (cfg->multiDetStates = XLALGetMultiDetectorStates ( cfg->multiTimestamps, &multiDet, cfg->edat, 0.5 * uvar->Tsft )) != NULL, XLAL_EFUNC, "XLALGetDetectorStates() failed." );
 
   cfg->multiWeights =  NULL; // FIXME: noise weights not supported (yet)
 

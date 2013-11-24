@@ -121,7 +121,8 @@ typedef struct
   EphemerisData *edat;			/**< ephemeris data (from XLALInitBarycenter()) */
   LALSegList segmentList;		/**< segment list contains start- and end-times of all segments */
   PulsarParams signalParams;		/**< GW signal parameters: Amplitudes + doppler */
-  MultiDetectorInfo detInfo;		/**< (multi-)detector info */
+  MultiLALDetector multiIFO;		/**< (multi-)detector info */
+  MultiNoiseFloor multiNoiseFloor;	/**< ... and corresponding noise-floors to be used as weights */
   DopplerCoordinateSystem coordSys; 	/**< array of enums describing Doppler-coordinates to compute metric in */
   ResultHistory_t *history;		/**< history trail leading up to and including this application */
 } ConfigVariables;
@@ -262,7 +263,8 @@ main(int argc, char *argv[])
   metricParams.segmentList   = config.segmentList;
   metricParams.coordSys      = config.coordSys;
   metricParams.metricType    = uvar.metricType;
-  metricParams.detInfo       = config.detInfo;
+  metricParams.multiIFO      = config.multiIFO;
+  metricParams.multiNoiseFloor = config.multiNoiseFloor;
   metricParams.signalParams  = config.signalParams;
   metricParams.projectCoord  = uvar.projection - 1;	/* user-input counts from 1, but interally we count 0=1st coord. (-1==no projection) */
   metricParams.approxPhase   = uvar.approxPhase;
@@ -472,7 +474,14 @@ XLALInitCode ( ConfigVariables *cfg, const UserVariables_t *uvar, const char *ap
   }
 
   /* ----- initialize IFOs and (Multi-)DetectorStateSeries  ----- */
-  XLAL_CHECK ( XLALParseMultiDetectorInfo ( &cfg->detInfo, uvar->IFOs, uvar->sqrtSX ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK ( XLALParseMultiLALDetector ( &cfg->multiIFO, uvar->IFOs ) == XLAL_SUCCESS, XLAL_EFUNC );
+  UINT4 numDet = cfg->multiIFO.length;
+  XLAL_CHECK ( numDet >= 1, XLAL_EINVAL );
+
+  if ( uvar->IFOs ) {
+    XLAL_CHECK ( XLALParseMultiNoiseFloor ( &cfg->multiNoiseFloor, uvar->IFOs ) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK ( numDet == cfg->multiNoiseFloor.length, XLAL_EINVAL );
+  }
 
   /* ---------- translate coordinate system into internal representation ---------- */
   if ( XLALDopplerCoordinateNames2System ( &cfg->coordSys, uvar->coords ) ) {
@@ -607,17 +616,17 @@ XLALOutputDopplerMetric ( FILE *fp, const DopplerMetric *metric, const ResultHis
   fprintf ( fp, "Tspan     = %.1f;\n", Tspan );
   fprintf ( fp, "Nseg      = %d;\n", Nseg );
   fprintf ( fp, "detectors = {");
-  for ( i=0; i < meta->detInfo.length; i ++ )
+  for ( i=0; i < meta->multiIFO.length; i ++ )
     {
       if ( i > 0 ) fprintf ( fp, ", ");
-      fprintf ( fp, "\"%s\"", meta->detInfo.sites[i].frDetector.name );
+      fprintf ( fp, "\"%s\"", meta->multiIFO.sites[i].frDetector.name );
     }
   fprintf ( fp, "};\n");
   fprintf ( fp, "detectorWeights = [");
-  for ( i=0; i < meta->detInfo.length; i ++ )
+  for ( i=0; i < meta->multiNoiseFloor.length; i ++ )
     {
       if ( i > 0 ) fprintf ( fp, ", ");
-      fprintf ( fp, "%f", meta->detInfo.detWeights[i] );
+      fprintf ( fp, "%f", meta->multiNoiseFloor.sqrtSn[i] );
     }
   fprintf ( fp, "];\n");
 

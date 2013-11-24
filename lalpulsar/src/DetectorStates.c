@@ -39,7 +39,6 @@
 /*---------- internal types ----------*/
 
 /*---------- empty initializers ---------- */
-const MultiDetectorInfo empty_MultiDetectorInfo;
 
 /*---------- Global variables ----------*/
 
@@ -47,7 +46,6 @@ const MultiDetectorInfo empty_MultiDetectorInfo;
 int XLALFillDetectorTensor (DetectorState *detState, const LALDetector *detector );	/* no need to export this ... */
 
 /*==================== FUNCTION DEFINITIONS ====================*/
-
 
 /**
  * \deprecated Use XLALGetDetectorStates() instead
@@ -332,15 +330,15 @@ LALGetMultiDetectorStates( LALStatus *status,				/**< pointer to LALStatus struc
    * instead of a multi-SFT vector. We therefore need to extract this info from the
    * multi-SFT vector first
    */
-  MultiLALDetector *multiIFO;
-  if ( ( multiIFO = XLALExtractMultiLALDetectorFromSFTs ( multiSFTs )) == NULL ) {
-    XLALPrintError ("%s: XLALExtractMultiLALDetectorFromSFTs() failed with code %d\n", __func__, xlalErrno );
+  MultiLALDetector multiIFO;
+  if ( XLALMultiLALDetectorFromMultiSFTs ( &multiIFO, multiSFTs ) != XLAL_SUCCESS ) {
+    XLALPrintError ("%s: XLALMultiLALDetectorFromMultiSFTs() failed with code %d\n", __func__, xlalErrno );
     ABORT ( status, DETECTORSTATES_EXLAL, DETECTORSTATES_MSGEXLAL );
   }
+
   MultiLIGOTimeGPSVector *multiTS;
   if ( ( multiTS = XLALExtractMultiTimestampsFromSFTs ( multiSFTs )) == NULL ) {
     XLALPrintError ("%s: XLALExtractMultiTimestampsFromSFTs() failed with code %d\n", __func__, xlalErrno );
-    XLALDestroyMultiLALDetector ( multiIFO );
     ABORT ( status, DETECTORSTATES_EXLAL, DETECTORSTATES_MSGEXLAL );
   }
 
@@ -349,16 +347,14 @@ LALGetMultiDetectorStates( LALStatus *status,				/**< pointer to LALStatus struc
   /* the API of this LAL interface specifies a hardcoded shift by Tsft/2 of all timestamps */
   REAL8 Tsft = 1.0 / multiSFTs->data[0]->data[0].deltaF;
   REAL8 tOffset = 0.5 * Tsft;
-  if ( ( ret = XLALGetMultiDetectorStates( multiTS, multiIFO, edat, tOffset )) == NULL ) {
+  if ( ( ret = XLALGetMultiDetectorStates( multiTS, &multiIFO, edat, tOffset )) == NULL ) {
     XLALPrintError ("%s: XLALGetMultiDetectorStates() failed with code %d\n", __func__, xlalErrno );
-    XLALDestroyMultiLALDetector ( multiIFO );
     XLALDestroyMultiTimestamps ( multiTS );
     ABORT ( status, DETECTORSTATES_EXLAL, DETECTORSTATES_MSGEXLAL );
   }
 
   /* free temporary mem */
   XLALDestroyMultiTimestamps ( multiTS );
-  XLALDestroyMultiLALDetector ( multiIFO );
 
   (*mdetStates) = ret;
 
@@ -527,93 +523,6 @@ void LALGetMultiDetectorVelTimePos(LALStatus                *status,
   /* normal exit */
   RETURN (status);
 }
-/**
- * Simple creator function for MultiLALDetector with numDetectors entries
- */
-MultiLALDetector *
-XLALCreateMultiLALDetector ( UINT4 numDetectors )
-{
-  MultiLALDetector *ret;
-
-  if ( (ret = XLALMalloc ( sizeof(*ret) )) == NULL ) {
-    XLALPrintError ("%s: XLALMalloc(%d) failed.\n", __func__, sizeof(*ret) );
-    XLAL_ERROR_NULL ( XLAL_ENOMEM );
-  }
-
-  ret->length = numDetectors;
-  if ( (ret->data = XLALCalloc ( numDetectors, sizeof(*ret->data) )) == NULL ) {
-    XLALPrintError ("%s: XLALCalloc(%d, %d) failed.\n", __func__, numDetectors, sizeof(*ret->data) );
-    XLALFree ( ret );
-    XLAL_ERROR_NULL ( XLAL_ENOMEM );
-  }
-
-  return ret;
-
-} /* XLALCreateMultiLALDetector() */
-
-/**
- * Corresponding destructor function for MultiLALDetector.
- * As usual this allows NULL input.
- */
-void
-XLALDestroyMultiLALDetector ( MultiLALDetector *multiIFO )
-{
-  if ( !multiIFO )
-    return;
-
-  if ( multiIFO->data )
-    XLALFree ( multiIFO->data );
-
-  XLALFree ( multiIFO );
-
-  return;
-
-} /* XLALDestroyMultiLALDetector() */
-
-
-/**
- * Given a multi-SFT vector, return a MultiLALDetector vector holding the multi-IFO detector infos
- */
-MultiLALDetector *
-XLALExtractMultiLALDetectorFromSFTs ( const MultiSFTVector *multiSFTs )
-{
-  /* check input consistency */
-  if ( !multiSFTs ) {
-    XLALPrintError ("%s: invalid NULL input 'multiSFTs'\n", __func__ );
-    XLAL_ERROR_NULL ( XLAL_EINVAL );
-  }
-
-  UINT4 numDetectors = multiSFTs->length;
-
-  /* create output vector */
-  MultiLALDetector *multiIFO;
-  if ( ( multiIFO = XLALCreateMultiLALDetector ( numDetectors ) ) == NULL ) {
-    XLALPrintError ("%s: XLALCreateMultiLALDetector(%d) failed.\n", __func__, numDetectors );
-    XLAL_ERROR_NULL ( XLAL_EFUNC );
-  }
-
-  /* step through multi-IFO vector and extract detector-info */
-  UINT4 X;
-  for ( X=0; X < numDetectors; X ++ )
-    {
-      LALDetector *det = NULL;
-
-      /* get LALDetector struct for this detector */
-      if ( (det = XLALGetSiteInfo ( multiSFTs->data[X]->data[0].name )) == NULL ) {
-        XLALPrintError ("%s: call to XLALGetSiteInfo(%s) has failed with code %s.\n", __func__, multiSFTs->data[X]->data[0].name, xlalErrno );
-        XLALDestroyMultiLALDetector ( multiIFO );
-        XLAL_ERROR_NULL ( XLAL_EFUNC );
-      }
-      multiIFO->data[X] = (*det);
-      XLALFree ( det );
-
-    } /* for X < numDetectors */
-
-  /* return result */
-  return multiIFO;
-
-} /* XLALExtractMultiLALDetectorFromSFTs() */
-
 
 /** Create a DetectorStateSeries with length entries */
 DetectorStateSeries*
@@ -761,7 +670,7 @@ XLALGetDetectorStates ( const LIGOTimeGPSVector *timestamps,	/**< array of GPS t
  */
 MultiDetectorStateSeries *
 XLALGetMultiDetectorStates( const MultiLIGOTimeGPSVector *multiTS, /**< [in] multi-IFO timestamps */
-                            const MultiLALDetector *multiIFO,     /**< [in] multi-IFO array holding detector info */
+                            const MultiLALDetector *multiIFO, 	   /**< [in] multi-IFO array holding detector info */
                             const EphemerisData *edat,		   /**< [in] ephemeris data */
                             REAL8 tOffset			   /**< [in] shift all timestamps by this amount */
                             )
@@ -801,7 +710,7 @@ XLALGetMultiDetectorStates( const MultiLIGOTimeGPSVector *multiTS, /**< [in] mul
   for ( X=0; X < numDetectors; X ++ )
     {
       LIGOTimeGPSVector *tsX = multiTS->data[X];
-      LALDetector *detX = &multiIFO->data[X];
+      const LALDetector *detX = &(multiIFO->sites[X]);
 
       if ( !tsX || !detX ) {
         XLALPrintError ("%s: invalid NULL data-vector tsX[%d] = %p, detX[%d] = %p\n", __func__, X, tsX, X, detX );
@@ -838,42 +747,62 @@ XLALGetMultiDetectorStates( const MultiLIGOTimeGPSVector *multiTS, /**< [in] mul
 
 } /* XLALGetMultiDetectorStates() */
 
+/**
+ * Parse string-vectors (typically input by user) of N detector noise-floors \f$\sqrt{S_X}\f$
+ * for detectors \f$X=1\ldots N\f$, where here we assume equal number of SFTs per detector
+ * such that \f$S^{-1} = \frac{1}{N}\sum_{X=0}^{N-1} S_X^{-1}\f$.
+ *
+ * returns MultiNoiseFloor struct 'multiNoiseFloor'.
+ */
+int
+XLALParseMultiNoiseFloor ( MultiNoiseFloor *multiNoiseFloor,	/**< [out] parsed multi-IFO noise floor info */
+                           const LALStringVector *sqrtSX	/**< [in] string-list of \f$\sqrt{S_X}\f$ for detectors \f$X\f$ */
+                           )
+{
+  XLAL_CHECK ( multiNoiseFloor != NULL, XLAL_EINVAL );
+  XLAL_CHECK ( sqrtSX != NULL, XLAL_EINVAL );
+  UINT4 numDet = sqrtSX->length;
+  XLAL_CHECK ( (numDet > 0) && (numDet <= PULSAR_MAX_DETECTORS), XLAL_EINVAL );
+
+  /* initialize empty return struct */
+  multiNoiseFloor->length = numDet;
+
+  /* parse input strings and fill multiNoiseFloor */
+  REAL8 calSInvNdet = 0;
+  for ( UINT4 X = 0; X < numDet; X ++ )
+    {
+      const char *sqrtSnStr = sqrtSX->data[X];
+      REAL8 sqrtSn;
+      XLAL_CHECK ( sscanf ( sqrtSnStr , "%lf", &sqrtSn ) == 1, XLAL_EINVAL, "Failed to parse '%s' into REAL8\n", sqrtSnStr );
+      XLAL_CHECK ( sqrtSn >= 0, XLAL_EDOM );
+      multiNoiseFloor->sqrtSn[X] = sqrtSn;
+      calSInvNdet += 1 / SQUARE ( sqrtSn );
+    } /* for X < numDet */
+
+  multiNoiseFloor->sqrtSnTotal = sqrt ( numDet / calSInvNdet );	// SnTotal = harmonicMean{S_X} assuming equal number of SFT per detector
+
+  return XLAL_SUCCESS;
+
+} /* XLALParseMultiNoiseFloor() */
+
 
 /**
  * Parse string-vectors (typically input by user) of N detector-names
- * and N noise-power \f$\sqrt{S_X}\f$ for detectors \f$X=1\ldots N\f$,
- * returns a MultiDetectorInfo struct with normalized detector "weights".
- *
- * NOTE: you can pass sqrtSX == NULL, corresponding to zero-noise, equal-sensitivity detectors,
- * ie. this is interpreted as \f$S_X=0\f$, and all noise-weights will be equal: \f$w_X=1\f$
- *
- * NOTE2: the derived noise-weights 'detWeights' are defined according to the conventions in
- * CFSv2_Notes.pdf [LIGO-T0900149-v3] at https://dcc.ligo.org/cgi-bin/DocDB/ShowDocument?docid=1665, namely
- * \f$w_X \equiv \frac{S_X^{-1}}{\mathcal{S}^{-1}}\f$, where
- * the normalization constant \f$\mathcal{S}\f$ is defined as the harmonic mean
- * \f$\mathcal{S}^{-1} \equiv \frac{1}{N}\sum_{X=1}^{N} S_X^{-1}\f$,
- * such that \f$\sum_{X=1}^N w_X = N\f$.
+ * for detectors \f$X=1\ldots N\f$, returns a MultiLALDetector struct
  *
  */
 int
-XLALParseMultiDetectorInfo ( MultiDetectorInfo *detInfo,        /**< [out] parsed detector-info struct */
-                             const LALStringVector *detNames,   /**< [in] list of detector names */
-                             const LALStringVector *sqrtSX      /**< [in] string-list of \f$\sqrt{S_X}\f$ for detectors \f$X\f$ (can be NULL) */
-                             )
+XLALParseMultiLALDetector ( MultiLALDetector *detInfo,        /**< [out] parsed detector-info struct */
+                            const LALStringVector *detNames   /**< [in] list of detector names */
+                            )
 {
   XLAL_CHECK ( detInfo != NULL, XLAL_EINVAL );
   XLAL_CHECK ( detNames != NULL, XLAL_EINVAL );
-  XLAL_CHECK ( detNames->length > 0, XLAL_EINVAL );
   UINT4 numDet = detNames->length;
+  XLAL_CHECK ( (numDet > 0) && (numDet <= PULSAR_MAX_DETECTORS), XLAL_EINVAL );
 
-  XLAL_CHECK ( (sqrtSX == NULL) || (sqrtSX->length == numDet ), XLAL_EINVAL,
-               "Number of noise-floors sqrtSX (if given) must agree with number of detectors, %d != %d\n", sqrtSX->length, numDet );
-
-  /* initialize empty return struct */
-  (*detInfo) = empty_MultiDetectorInfo;
   detInfo->length = numDet;
 
-  REAL8 calSinv = 0;	// normalization constant \mathcal{S}^{-1}
   /* parse input strings and fill detInfo */
   for ( UINT4 X = 0; X < numDet; X ++ )
     {
@@ -883,74 +812,67 @@ XLALParseMultiDetectorInfo ( MultiDetectorInfo *detInfo,        /**< [out] parse
       detInfo->sites[X] = (*ifo);	// struct copy
       XLALFree ( ifo );
 
-      /* parse noise PSDs if given */
-      if ( sqrtSX )
-	{
-          const char *sqrtSnStr = sqrtSX->data[X];
-          REAL8 sqrtSn;
-	  XLAL_CHECK ( sscanf ( sqrtSnStr , "%lf", &sqrtSn ) == 1, XLAL_EINVAL, "Failed to parse '%s' into REAL8\n", sqrtSnStr );
-          XLAL_CHECK ( sqrtSn >= 0, XLAL_EDOM );
-          detInfo->sqrtSn[X] = sqrtSn;
-          if ( sqrtSn > 0 )
-            {
-              detInfo->sqrtSn[X] = sqrtSn;
-              detInfo->detWeights[X] = 1.0 / SQUARE( sqrtSn );
-              calSinv += detInfo->detWeights[X];
-            }
-	} /* if sqrtSX given */
-      else
-        {
-          detInfo->sqrtSn[X] = 0;
-          detInfo->detWeights[X] = 1;
-        }
-
     } /* for X < numDet */
-
-  calSinv /= numDet;	// =harmonic *mean* of noise-PSDs
-
-  /* normalize noise-weights by caS^{-1}, such that weights sum to  N */
-  if ( calSinv > 0 )
-    {
-      detInfo->calS = 1.0 / calSinv;
-      for ( UINT4 X = 0; X < numDet; X ++ )
-        {
-          detInfo->detWeights[X] /= calSinv;
-        } // for X < numDet
-    } // if calSinv > 0
 
   return XLAL_SUCCESS;
 
-} /* XLALParseMultiDetectorInfo() */
+} /* XLALParseMultiLALDetector() */
+
 
 /**
- * Extract multi detector-info from a given multi SFTCatalog view,
- * only number of IFOs and LALDetector site information is filled in,
- * other fields will be initialized to 0 (ie no noise sqrtSX, or weights)
- */
+ * Extract multi detector-info from a given multi SFTCatalog view
+*/
 int
-XLALMultiDetectorInfoFromMultiSFTCatalogView ( MultiDetectorInfo *multiDetInfo,		//!< [out] list of detectors found in catalog
-                                               const MultiSFTCatalogView *multiView	//!< [in] multi-IFO view of SFT catalog
-                                               )
+XLALMultiLALDetectorFromMultiSFTCatalogView ( MultiLALDetector *multiIFO,		//!< [out] list of detectors found in catalog
+                                              const MultiSFTCatalogView *multiView	//!< [in] multi-IFO view of SFT catalog
+                                              )
 {
   // check input consistency
-  XLAL_CHECK ( multiDetInfo != NULL, XLAL_EINVAL );
+  XLAL_CHECK ( multiIFO != NULL, XLAL_EINVAL );
   XLAL_CHECK ( multiView != NULL, XLAL_EINVAL );
-  XLAL_CHECK ( multiView->length > 0, XLAL_EINVAL );
-
   UINT4 numIFOs = multiView->length;
+  XLAL_CHECK ( (numIFOs > 0) && (numIFOs <= PULSAR_MAX_DETECTORS), XLAL_EINVAL );
 
-  INIT_MEM ( (*multiDetInfo) );
 
-  multiDetInfo->length = numIFOs;
+
+  multiIFO->length = numIFOs;
   for ( UINT4 X=0; X < numIFOs; X ++ )
     {
       LALDetector *site;
       XLAL_CHECK ( (site = XLALGetSiteInfo ( multiView->data[X].data->header.name )) != NULL, XLAL_EFUNC );
-      multiDetInfo->sites[X] = (*site);	 // struct-copy
+      multiIFO->sites[X] = (*site);	 // struct-copy
       XLALFree ( site );
     } /* for X < numIFOs */
 
   return XLAL_SUCCESS;
 
-} /* XLALMultiDetectorInfoFromMultiSFTCatalogView() */
+} /* XLALMultiLALDetectorFromMultiSFTCatalogView() */
 
+
+/**
+ * Extract multi detector-info from a given multi SFTCatalog view
+ */
+int
+XLALMultiLALDetectorFromMultiSFTs ( MultiLALDetector *multiIFO,	//!< [out] list of detectors found in catalog
+                                    const MultiSFTVector *multiSFTs	//!< [in] multi-IFO SFT vector
+                                    )
+{
+  // check input consistency
+  XLAL_CHECK ( multiIFO != NULL, XLAL_EINVAL );
+  XLAL_CHECK ( multiSFTs != NULL, XLAL_EINVAL );
+  XLAL_CHECK ( multiSFTs->length > 0, XLAL_EINVAL );
+
+  UINT4 numIFOs = multiSFTs->length;
+
+  multiIFO->length = numIFOs;
+  for ( UINT4 X=0; X < numIFOs; X ++ )
+    {
+      LALDetector *site;
+      XLAL_CHECK ( (site = XLALGetSiteInfo ( multiSFTs->data[X]->data[0].name )) != NULL, XLAL_EFUNC );
+      multiIFO->sites[X] = (*site);	 // struct-copy
+      XLALFree ( site );
+    } /* for X < numIFOs */
+
+  return XLAL_SUCCESS;
+
+} /* XLALMultiLALDetectorFromMultiSFTVector() */

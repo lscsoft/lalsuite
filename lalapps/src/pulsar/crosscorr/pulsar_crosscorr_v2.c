@@ -35,6 +35,7 @@
 #include <lal/SFTutils.h>
 #include <lal/LogPrintf.h>
 #include <lal/DopplerScan.h>
+#include <lal/DetectorStates.h>
 #include <lal/ExtrapolatePulsarSpins.h>
 #include <lal/LALInitBarycenter.h>
 #include <lal/NormalizeSFTRngMed.h>
@@ -106,7 +107,7 @@ int main(int argc, char *argv[]){
   MultiPSDVector *multiPSDs = NULL;
   MultiNoiseWeights *multiWeights = NULL;
   MultiLIGOTimeGPSVector *multiTimes = NULL;
-  MultiLALDetector *multiDetectors = NULL;
+  MultiLALDetector multiDetectors;
   MultiDetectorStateSeries *multiStates = NULL;
   MultiAMCoeffs *multiCoeffs = NULL;
   SFTIndexList *sftIndices = NULL;
@@ -259,13 +260,13 @@ int main(int argc, char *argv[]){
   }
 
   /* read the detector information from the SFTs */
-  if ((multiDetectors = XLALExtractMultiLALDetectorFromSFTs ( inputSFTs )) == NULL){
-    LogPrintf ( LOG_CRITICAL, "%s: XLALExtractMultiLALDetectorFromSFTs() failed with errno=%d\n", __func__, xlalErrno );
+  if ( XLALMultiLALDetectorFromMultiSFTs ( &multiDetectors, inputSFTs ) != XLAL_SUCCESS){
+    LogPrintf ( LOG_CRITICAL, "%s: XLALMultiLALDetectorFromMultiSFTs() failed with errno=%d\n", __func__, xlalErrno );
     XLAL_ERROR( XLAL_EFUNC );
   }
 
   /* Find the detector state for each SFT */
-  if ((multiStates = XLALGetMultiDetectorStates ( multiTimes, multiDetectors, config.edat, 0.0 )) == NULL){
+  if ((multiStates = XLALGetMultiDetectorStates ( multiTimes, &multiDetectors, config.edat, 0.0 )) == NULL){
     LogPrintf ( LOG_CRITICAL, "%s: XLALGetMultiDetectorStates() failed with errno=%d\n", __func__, xlalErrno );
     XLAL_ERROR( XLAL_EFUNC );
   }
@@ -459,7 +460,6 @@ int main(int argc, char *argv[]){
   XLALDestroySFTIndexList( sftIndices );
   XLALDestroyMultiAMCoeffs ( multiCoeffs );
   XLALDestroyMultiDetectorStateSeries ( multiStates );
-  XLALDestroyMultiLALDetector( multiDetectors );
   XLALDestroyMultiTimestamps ( multiTimes );
   XLALDestroyMultiNoiseWeights ( multiWeights );
   XLALDestroyMultiPSDVector ( multiPSDs );

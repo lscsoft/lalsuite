@@ -143,14 +143,13 @@ main ( int argc, char *argv[] )
   const char *sites[3] = { "H1", "L1", "V1" };
   UINT4 numDetectors = sizeof( sites ) / sizeof ( sites[0] );
 
-  MultiLALDetector *multiIFO = XLALCreateMultiLALDetector ( numDetectors );
-  XLAL_CHECK ( multiIFO != NULL, XLAL_EFUNC, "XLALCreateMultiLALDetector(%d) failed.\n", numDetectors );
-
+  MultiLALDetector multiIFO;
+  multiIFO.length = numDetectors;
   for ( UINT4 X = 0; X < numDetectors; X ++ )
     {
       LALDetector *det = XLALGetSiteInfo ( sites[X] );
       XLAL_CHECK ( det != NULL, XLAL_EFUNC, "XLALGetSiteInfo ('%s') failed for detector X=%d\n", sites[X], X );
-      multiIFO->data[X] = (*det);	 // struct copy
+      multiIFO.sites[X] = (*det);	 // struct copy
       XLALFree ( det );
     }
 
@@ -172,7 +171,7 @@ main ( int argc, char *argv[] )
     } /* for X < numIFOs */
 
   // generate detector-states
-  MultiDetectorStateSeries *multiDetStates = XLALGetMultiDetectorStates ( multiTS, multiIFO, edat, 0 );
+  MultiDetectorStateSeries *multiDetStates = XLALGetMultiDetectorStates ( multiTS, &multiIFO, edat, 0 );
   XLAL_CHECK ( multiDetStates != NULL, XLAL_EFUNC, "XLALGetMultiDetectorStates() failed.\n");
 
   // generate isolated-NS SSB times
@@ -214,7 +213,6 @@ main ( int argc, char *argv[] )
   XLALDestroyMultiSSBtimes ( multiSSBIn );
   XLALDestroyMultiTimestamps ( multiTS );
   XLALDestroyMultiDetectorStateSeries ( multiDetStates );
-  XLALDestroyMultiLALDetector ( multiIFO );
 
   // check for memory-leaks
   LALCheckMemoryLeaks();

@@ -80,9 +80,10 @@ XLALCWMakeFakeMultiData ( MultiSFTVector **multiSFTs,			///< [out] pointer to op
   const MultiLIGOTimeGPSVector *multiTimestamps = &(dataParams->multiTimestamps);
 
   // check multi-detector input
-  XLAL_CHECK ( dataParams->detInfo.length >= 1, XLAL_EINVAL );
-  UINT4 numDet = dataParams->detInfo.length;
+  XLAL_CHECK ( dataParams->multiIFO.length >= 1, XLAL_EINVAL );
+  UINT4 numDet = dataParams->multiIFO.length;
   XLAL_CHECK ( multiTimestamps->length == numDet, XLAL_EINVAL, "Inconsistent number of IFOs: detInfo says '%d', multiTimestamps says '%d'\n", numDet, multiTimestamps->length );
+  XLAL_CHECK ( dataParams->multiNoiseFloor.length == numDet, XLAL_EINVAL );
 
   // check Tsft, consistent over detectors
   REAL8 Tsft = multiTimestamps->data[0]->deltaT;
@@ -111,9 +112,10 @@ XLALCWMakeFakeMultiData ( MultiSFTVector **multiSFTs,			///< [out] pointer to op
     {
       /* detector params */
       CWMFDataParams dataParamsX = (*dataParams); // struct-copy for general settings
-      dataParamsX.detInfo.length = 1;
-      dataParamsX.detInfo.sites[0] = dataParams->detInfo.sites[X];
-      dataParamsX.detInfo.sqrtSn[0] = dataParams->detInfo.sqrtSn[X];
+      dataParamsX.multiIFO.length = 1;
+      dataParamsX.multiIFO.sites[0] = dataParams->multiIFO.sites[X];
+      dataParamsX.multiNoiseFloor.length = 1;
+      dataParamsX.multiNoiseFloor.sqrtSn[0] = dataParams->multiNoiseFloor.sqrtSn[X];
       MultiLIGOTimeGPSVector mTimestamps = empty_MultiLIGOTimeGPSVector;
       mTimestamps.length = 1;
       mTimestamps.data = &(multiTimestamps->data[X]); // such that pointer mTimestamps.data[0] = multiTimestamps->data[X]
@@ -164,7 +166,8 @@ XLALCWMakeFakeData ( SFTVector **SFTvect,
 
   XLAL_CHECK ( dataParams != NULL, XLAL_EINVAL );
   XLAL_CHECK ( edat != NULL, XLAL_EINVAL );
-  XLAL_CHECK ( dataParams->detInfo.length ==1, XLAL_EINVAL );
+  XLAL_CHECK ( dataParams->multiIFO.length == 1, XLAL_EINVAL );
+  XLAL_CHECK ( dataParams->multiNoiseFloor.length == 1, XLAL_EINVAL );
   XLAL_CHECK ( dataParams->multiTimestamps.length == 1, XLAL_EINVAL );
   XLAL_CHECK ( dataParams->multiTimestamps.data[0] != NULL, XLAL_EINVAL );
 
@@ -174,7 +177,7 @@ XLALCWMakeFakeData ( SFTVector **SFTvect,
   REAL8 fSamp = 2.0 * fBand;
 
   const LIGOTimeGPSVector *timestamps = dataParams->multiTimestamps.data[0];
-  const LALDetector *site = &dataParams->detInfo.sites[0];
+  const LALDetector *site = &dataParams->multiIFO.sites[0];
   REAL8 Tsft = timestamps->deltaT;
 
   // if SFT output requested: need *effective* fMin and Band consistent with SFT bins
@@ -276,10 +279,10 @@ XLALCWMakeFakeData ( SFTVector **SFTvect,
           XLAL_CHECK ( (Tseries_sum = XLALAddREAL4TimeSeries ( Tseries_sum, Tseries_i )) != NULL, XLAL_EFUNC );
           XLALDestroyREAL4TimeSeries ( Tseries_i );
         }
-    } // for iInj = 1 ... (numPulsars-1)
+    } // for iInj < numSources
 
-  // add Gaussian noise if requested
-  REAL8 sqrtSn = dataParams->detInfo.sqrtSn[0];
+  /* add Gaussian noise if requested */
+  REAL8 sqrtSn = dataParams->multiNoiseFloor.sqrtSn[0];
   if ( sqrtSn > 0)
     {
       REAL8 noiseSigma = sqrtSn * sqrt ( fBand );

@@ -48,6 +48,7 @@
  */
 
 /*---------- SCALING FACTORS ----------*/
+#define INIT_MEM(x) memset(&(x), 0, sizeof((x)))
 
 /** shortcuts for integer powers */
 #define POW2(a)  ( (a) * (a) )
@@ -235,7 +236,7 @@ double CW_am1_am2_Phi_i_Phi_j ( double tt, void *params );
 double CWPhaseDeriv_i ( double tt, void *params );
 
 double XLALAverage_am1_am2_Phi_i_Phi_j ( const intparams_t *params, double *relerr_max );
-double CWPhase_cov_Phi_ij ( const MultiDetectorInfo *detInfo, const intparams_t *params, double *relerr_max );
+double CWPhase_cov_Phi_ij ( const MultiLALDetector *multiIFO, const MultiNoiseFloor *multiNoiseFloor, const intparams_t *params, double *relerr_max );
 
 UINT4 findHighestGCSpinOrder ( const DopplerCoordinateSystem *coordSys );
 
@@ -785,11 +786,26 @@ XLALPtolemaicPosVel ( PosVel3D_t *posvel,		/**< [out] instantaneous position and
 
 /**
  * Compute a pure phase-deriv covariance \f$[\phi_i, \phi_j] = \langle phi_i phi_j\rangle - \langle phi_i\rangle\langle phi_j\rangle\f$
- * which gives a component of the "phase metric"
+ * which gives a component of the "phase metric".
+ *
+ * NOTE: for passing unit noise-weights, set MultiNoiseFloor->length=0 (but multiNoiseFloor==NULL is invalid)
  */
 double
-CWPhase_cov_Phi_ij ( const MultiDetectorInfo *detInfo, const intparams_t *params, double* relerr_max )
+CWPhase_cov_Phi_ij ( const MultiLALDetector *multiIFO,		//!< [in] detectors to use
+                     const MultiNoiseFloor *multiNoiseFloor,	//!< [in] corresponding noise floors for weights, NULL means unit-weights
+                     const intparams_t *params,			//!< [in] integration parameters
+                     double* relerr_max				//!< [in] maximal error for integration
+                     )
 {
+  XLAL_CHECK_REAL8 ( multiIFO != NULL, XLAL_EINVAL );
+  UINT4 numDet = multiIFO->length;
+  XLAL_CHECK_REAL8 ( numDet > 0, XLAL_EINVAL );
+
+  // either no noise-weights given (multiNoiseFloor->length=0) or same number of detectors
+  XLAL_CHECK_REAL8 ( multiNoiseFloor != NULL, XLAL_EINVAL );
+  BOOLEAN haveNoiseWeights = (multiNoiseFloor->length > 0);
+  XLAL_CHECK_REAL8 ( !haveNoiseWeights || (multiNoiseFloor->length == numDet), XLAL_EINVAL );
+
   gsl_function integrand;
 
   intparams_t par = (*params);	/* struct-copy, as the 'deriv' field has to be changeable */
@@ -806,7 +822,6 @@ CWPhase_cov_Phi_ij ( const MultiDetectorInfo *detInfo, const intparams_t *params
 
   REAL8 Tseg = params->Tseg;
   UINT4 Nseg = (UINT4) ceil ( params->Tspan / Tseg );
-  UINT4 n;
   REAL8 dT = 1.0 / Nseg;
 
   double epsrel = params->epsrel;
@@ -827,16 +842,16 @@ CWPhase_cov_Phi_ij ( const MultiDetectorInfo *detInfo, const intparams_t *params
 
   // loop over detectors
   REAL8 total_weight = 0;
-  for (UINT4 det = 0; det < detInfo->length; ++det) {
+  for (UINT4 X = 0; X < numDet; X ++) {
 
     // set detector for phase integrals
-    par.site = &detInfo->sites[det];
+    par.site = &multiIFO->sites[X];
 
     // accumulate detector weights
-    const REAL8 weight = detInfo->detWeights[det];
+    const REAL8 weight = haveNoiseWeights ? multiNoiseFloor->sqrtSn[X] : 1.0;
     total_weight += weight;
 
-    for (n=0; n < Nseg; n ++ ) {
+    for (UINT4 n=0; n < Nseg; n ++ ) {
 
       REAL8 ti = 1.0 * n * dT;
       REAL8 tf = MYMIN( (n+1.0) * dT, 1.0 );
@@ -885,12 +900,10 @@ CWPhase_cov_Phi_ij ( const MultiDetectorInfo *detInfo, const intparams_t *params
 
     } /* for i < Nseg */
 
-  } // for det < detInfo->length
+  } // for X < numDet
 
   // raise error if no detector weights were given
-  if (total_weight == 0) {
-    XLAL_ERROR( XLAL_EDOM, "Detectors weights are all zero!" );
-  }
+  XLAL_CHECK_REAL8 (total_weight > 0, XLAL_EDOM, "Detectors noise-floors given but all zero!" );
 
   // normalise by total weight
   const REAL8 inv_total_weight = 1.0 / total_weight;
@@ -1041,7 +1054,7 @@ XLALDopplerPhaseMetric ( const DopplerMetricParams *metricParams,  	/**< input p
         /* g_ij */
         intparams.deriv1 = coordSys->coordIDs[i];
         intparams.deriv2 = coordSys->coordIDs[j];
-        REAL8 gg = CWPhase_cov_Phi_ij ( &metricParams->detInfo, &intparams, &err );	/* [Phi_i, Phi_j] */
+        REAL8 gg = CWPhase_cov_Phi_ij ( &metricParams->multiIFO, &metricParams->multiNoiseFloor, &intparams, &err );	/* [Phi_i, Phi_j] */
         maxrelerr = MYMAX ( maxrelerr, err );
         if ( xlalErrno ) {
           XLALPrintError ("\n%s: Integration of g_ij (i=%d, j=%d) failed. errno = %d\n", __func__, i, j, xlalErrno );
@@ -1328,6 +1341,8 @@ XLALDopplerFstatMetricCoh ( const DopplerMetricParams *metricParams,  	/**< inpu
 
 /**
  * Function to the compute the FmetricAtoms_t, from which the F-metric and Fisher-matrix can be computed.
+ *
+ * NOTE: if MultiNoiseFloor.length=0, unit noise weights are assumed.
  */
 FmetricAtoms_t*
 XLALComputeAtomsForFmetric ( const DopplerMetricParams *metricParams,  	/**< input parameters determining the metric calculation */
@@ -1337,7 +1352,7 @@ XLALComputeAtomsForFmetric ( const DopplerMetricParams *metricParams,  	/**< inp
   FmetricAtoms_t *ret;		/* return struct */
   intparams_t intparams = empty_intparams;
 
-  UINT4 dim, numDet, i=-1, j=-1, X;		/* index counters */
+  UINT4 dim, i=-1, j=-1, X;		/* index counters */
   REAL8 A, B, C;			/* antenna-pattern coefficients (gsl-integrated) */
 
   const DopplerCoordinateSystem *coordSys;
@@ -1350,9 +1365,14 @@ XLALComputeAtomsForFmetric ( const DopplerMetricParams *metricParams,  	/**< inp
     XLALPrintError ("\n%s: Illegal NULL pointer passed!\n\n", __func__);
     XLAL_ERROR_NULL( XLAL_EINVAL );
   }
+  UINT4 numDet = metricParams->multiIFO.length;
+  XLAL_CHECK_NULL ( numDet >= 1, XLAL_EINVAL );
   XLAL_CHECK_NULL ( XLALSegListIsInitialized ( &(metricParams->segmentList) ), XLAL_EINVAL, "Passed un-initialzied segment list 'metricParams->segmentList'\n");
   UINT4 Nseg = metricParams->segmentList.length;
   XLAL_CHECK_NULL ( Nseg == 1, XLAL_EINVAL, "Segment list must only contain Nseg=1 segments, got Nseg=%d", Nseg );
+
+  BOOLEAN haveNoiseWeights = (metricParams->multiNoiseFloor.length > 0);
+  XLAL_CHECK_NULL ( !haveNoiseWeights || metricParams->multiNoiseFloor.length == numDet, XLAL_EINVAL );
 
   LIGOTimeGPS *startTime = &(metricParams->segmentList.segs[0].start);
   LIGOTimeGPS *endTime   = &(metricParams->segmentList.segs[0].end);
@@ -1361,7 +1381,6 @@ XLALComputeAtomsForFmetric ( const DopplerMetricParams *metricParams,  	/**< inp
   const LIGOTimeGPS *refTime   = &(metricParams->signalParams.Doppler.refTime);
 
   dim = metricParams->coordSys.dim;	/* shorthand: number of Doppler dimensions */
-  numDet = metricParams->detInfo.length;
   coordSys = &(metricParams->coordSys);
 
   /* ----- create output structure ---------- */
@@ -1406,10 +1425,10 @@ XLALComputeAtomsForFmetric ( const DopplerMetricParams *metricParams,  	/**< inp
   A = B = C = 0;
   for ( X = 0; X < numDet; X ++ )
     {
-      REAL8 weight = metricParams->detInfo.detWeights[X];
+      REAL8 weight = haveNoiseWeights ? metricParams->multiNoiseFloor.sqrtSn[X] : 1.0;
       sum_weights += weight;
       REAL8 av, relerr;
-      intparams.site = &(metricParams->detInfo.sites[X]);
+      intparams.site = &(metricParams->multiIFO.sites[X]);
 
       intparams.deriv1 = DOPPLERCOORD_NONE;
       intparams.deriv2 = DOPPLERCOORD_NONE;
@@ -1465,9 +1484,9 @@ XLALComputeAtomsForFmetric ( const DopplerMetricParams *metricParams,  	/**< inp
 
 	  for ( X = 0; X < numDet; X ++ )
 	    {
-	      REAL8 weight = metricParams->detInfo.detWeights[X];
+	      REAL8 weight = haveNoiseWeights ? metricParams->multiNoiseFloor.sqrtSn[X] : 1.0;
 	      REAL8 av, relerr;
-	      intparams.site = &(metricParams->detInfo.sites[X]);
+	      intparams.site = &(metricParams->multiIFO.sites[X]);
 
 	      /* ------------------------------ */
 	      intparams.deriv1 = coordSys->coordIDs[i];
@@ -2483,7 +2502,7 @@ gsl_matrix* XLALNaturalizeMetric(
     case DOPPLERCOORD_N3OX_ECL:
     case DOPPLERCOORD_N3OY_ECL:
       {
-        REAL8 cosdD = cos ( metricParams->detInfo.sites[0].frDetector.vertexLatitudeRadians );
+        REAL8 cosdD = cos ( metricParams->multiIFO.sites[0].frDetector.vertexLatitudeRadians );
         scale = LAL_TWOPI * Freq * rEarth_c * cosdD;
       }
       break;

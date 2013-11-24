@@ -72,7 +72,8 @@ typedef struct tagCWMFDataParams
 {
   REAL8 fMin;					//!< smallest frequency guaranteed to be generated [returned fMin can be smaller]
   REAL8 Band;					//!< smallest frequency band guaranteed to be generated [returned Band can be larger]
-  MultiDetectorInfo detInfo;			//!< detectors and noise-floors (for Gaussian noise) to generate data for
+  MultiLALDetector multiIFO;			//!< detectors to generate data for
+  MultiNoiseFloor multiNoiseFloor;		//!< ... and corresponding noise-floors to generate Gaussian white noise for
   MultiLIGOTimeGPSVector multiTimestamps;	//!< timestamps to generate SFTs for
   const char *SFTWindowType;			//!< window to apply to the SFT timeseries
   REAL8 SFTWindowBeta;				//!< 'beta' parameter required for *some* windows [otherwise must be 0]
