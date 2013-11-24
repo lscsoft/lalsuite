@@ -22,9 +22,6 @@
 /* LAL Configure Date */
 #undef LAL_CONFIGURE_DATE
 
-/* Suppress debugging code */
-#undef LAL_NDEBUG
-
 /* Use functions rather than macros */
 #undef NOLALMACROS
 
