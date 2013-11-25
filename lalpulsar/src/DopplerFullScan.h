@@ -42,8 +42,7 @@ extern "C" {
 #include <lal/LALBarycenter.h>
 #include <lal/PulsarDataTypes.h>
 #include <lal/ComputeFstat.h>
-
-#include "DopplerScan.h"
+#include <lal/DopplerScan.h>
 
 /*---------- DEFINES ----------*/
 

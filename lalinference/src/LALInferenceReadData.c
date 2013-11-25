@@ -750,7 +750,10 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
                         (--dataseed 0 uses a non-reproducible number from the system clock, and no parallel run is then possible.)\n" );
                 exit(-1);
             }
-            datarandparam=XLALCreateRandomParams(dataseed?dataseed+(int)i:dataseed);
+            /* Offset the seed in a way that depends uniquely on the IFO name */
+            int ifo_salt=0;
+            ifo_salt+=(int)IFOnames[i][0]+(int)IFOnames[i][1];
+            datarandparam=XLALCreateRandomParams(dataseed?dataseed+(int)ifo_salt:dataseed);
             if(!datarandparam) XLAL_ERROR_NULL(XLAL_EFUNC);
             IFOdata[i].oneSidedNoisePowerSpectrum=(REAL8FrequencySeries *)
                 XLALCreateREAL8FrequencySeries("spectrum",&GPSstart,0.0,
@@ -1484,7 +1487,7 @@ void LALInferenceInjectInspiralSignal(LALInferenceIFOData *IFOdata, ProcessParam
         fprintf(stdout,"lambda2 set to %f\n",lambda2);
       }
 
-      REAL8 fref = 0.;
+      REAL8 fref = 100.;
       if(LALInferenceGetProcParamVal(commandLine,"--inj-fref")) {
         fref = atoi(LALInferenceGetProcParamVal(commandLine,"--inj-fref")->value);
       }
@@ -1535,7 +1538,7 @@ void LALInferenceInjectInspiralSignal(LALInferenceIFOData *IFOdata, ProcessParam
       for(i=0;i<signalvecREAL8->data->length;i++){
         if(isnan(signalvecREAL8->data->data[i])) signalvecREAL8->data->data[i]=0.0;
       }
-      
+
       if(signalvecREAL8->data->length > thisData->timeData->data->length-(UINT4)ceil((2.0*padding+2.0)/thisData->timeData->deltaT)){
         fprintf(stderr, "WARNING: waveform length = %u is longer than thisData->timeData->data->length = %d minus the window width = %d and the 2.0 seconds after tc (total of %d points available).\n", signalvecREAL8->data->length, thisData->timeData->data->length, (INT4)ceil((2.0*padding)/thisData->timeData->deltaT) , thisData->timeData->data->length-(INT4)ceil((2.0*padding+2.0)/thisData->timeData->deltaT));
         fprintf(stderr, "The waveform injected is %f seconds long. Consider increasing the %f seconds segment length (--seglen) to be greater than %f. (in %s, line %d)\n",signalvecREAL8->data->length * thisData->timeData->deltaT , thisData->timeData->data->length * thisData->timeData->deltaT, signalvecREAL8->data->length * thisData->timeData->deltaT + 2.0*padding + 2.0, __FILE__, __LINE__);
@@ -2136,10 +2139,10 @@ void InjectTaylorF2(LALInferenceIFOData *IFOdata, SimInspiralTable *inj_table, P
     REAL8 latitude=0.0;
     REAL8 polarization=0.0;
     REAL8 injtime=0.0;
-   
+    LALInferenceFrame frame = LALINFERENCE_FRAME_SYSTEM;
     
     tmpdata->modelParams=XLALCalloc(1,sizeof(LALInferenceVariables));
-	modelParams=tmpdata->modelParams;
+    modelParams=tmpdata->modelParams;
     memset(modelParams,0,sizeof(LALInferenceVariables));
 
     enforce_m1_larger_m2(inj_table);
@@ -2160,13 +2163,21 @@ void InjectTaylorF2(LALInferenceIFOData *IFOdata, SimInspiralTable *inj_table, P
     LALInferenceAddVariable(tmpdata->modelParams, "declination",&latitude,LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_CIRCULAR);  
     LALInferenceAddVariable(tmpdata->modelParams, "polarisation",&polarization,LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_CIRCULAR);  
     LALInferenceAddVariable(tmpdata->modelParams, "time",&injtime,LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR);
-    LALInferenceAddVariable(tmpdata->modelParams, "inclination",&inclination,LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR);
     LALInferenceAddVariable(tmpdata->modelParams, "massratio",&eta,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_LINEAR);
     LALInferenceAddVariable(tmpdata->modelParams, "distance",&distance,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_LINEAR);
     LALInferenceAddVariable(tmpdata->modelParams, "LAL_APPROXIMANT",&injapprox,LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_FIXED);
     LALInferenceAddVariable(tmpdata->modelParams, "LAL_PNORDER",&phase_order,LALINFERENCE_INT4_t, LALINFERENCE_PARAM_FIXED);
     LALInferenceAddVariable(tmpdata->modelParams, "LAL_AMPORDER",&amp_order,LALINFERENCE_INT4_t, LALINFERENCE_PARAM_FIXED);
-
+    if (LALInferenceGetProcParamVal(commandLine,"--radiation-frame")){
+      frame = LALINFERENCE_FRAME_RADIATION;
+      LALInferenceAddVariable(tmpdata->modelParams, "LALINFERENCE_FRAME", &frame, LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_FIXED);
+      LALInferenceAddVariable(tmpdata->modelParams, "inclination",&inclination,LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR);
+    }
+    else{
+      frame = LALINFERENCE_FRAME_SYSTEM;
+      LALInferenceAddVariable(tmpdata->modelParams, "LALINFERENCE_FRAME", &frame, LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_FIXED);
+      LALInferenceAddVariable(tmpdata->modelParams, "theta_JN",&inclination,LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR);
+    }
       REAL8 lambda1 = 0.;
       if(LALInferenceGetProcParamVal(commandLine,"--inj-lambda1")) {
         lambda1= atof(LALInferenceGetProcParamVal(commandLine,"--inj-lambda1")->value);
@@ -2466,6 +2477,7 @@ void LALInferenceInjectionToVariables(SimInspiralTable *theEventTable, LALInfere
     LALInferenceAddVariable(vars, "time", &injGPSTime, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
     LALInferenceAddVariable(vars, "distance", &dist, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
     LALInferenceAddVariable(vars, "inclination", &inclination, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
+    LALInferenceAddVariable(vars, "theta_JN", &inclination, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
     LALInferenceAddVariable(vars, "polarisation", &(psi), LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
     LALInferenceAddVariable(vars, "phase", &phase, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
     LALInferenceAddVariable(vars, "declination", &dec, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);

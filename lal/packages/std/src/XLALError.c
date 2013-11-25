@@ -185,19 +185,6 @@ int XLALPrintProgressBar(double fraction)
 }
 
 /*
- * Prints a deprecation warning at the "warning" verbosity level.
- */
-
-int XLALPrintDeprecationWarning(const char *old, const char *replacement)
-{
-    return
-        XLALPrintWarning
-        ("DEPRECATION WARNING:  program has invoked obsolete function %s().  Please see %s() for information about a replacement.\n",
-         old, replacement);
-}
-
-
-/*
  *
  * Implementation of xlalErrno and XLALErrorHandler.
  * If code must be POSIX thread safe then the code is somewhat more complicated.

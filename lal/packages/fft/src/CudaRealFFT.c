@@ -668,7 +668,7 @@ LALCreateForwardREAL4FFTPlan(
     )
 {
   INITSTATUS(status);
-  XLALPrintDeprecationWarning("LALCreateForwardREAL4FFTPlan", "XLALCreateForwardREAL4FFTPlan");
+  XLAL_PRINT_DEPRECATION_WARNING("XLALCreateForwardREAL4FFTPlan");
 
   ASSERT( plan, status, REALFFTH_ENULL, REALFFTH_MSGENULL );
   ASSERT( ! *plan, status, REALFFTH_ENNUL, REALFFTH_MSGENNUL );
@@ -706,7 +706,7 @@ LALCreateReverseREAL4FFTPlan(
     )
 {
   INITSTATUS(status);
-  XLALPrintDeprecationWarning("LALCreateReverseREAL4FFTPlan", "XLALCreateReverseREAL4FFTPlan");
+  XLAL_PRINT_DEPRECATION_WARNING("XLALCreateReverseREAL4FFTPlan");
 
   ASSERT( plan, status, REALFFTH_ENULL, REALFFTH_MSGENULL );
   ASSERT( ! *plan, status, REALFFTH_ENNUL, REALFFTH_MSGENNUL );
@@ -742,7 +742,7 @@ LALDestroyREAL4FFTPlan(
     )
 {
   INITSTATUS(status);
-  XLALPrintDeprecationWarning("LALDestroyREAL4FFTPlan", "XLALDestroyREAL4FFTPlan");
+  XLAL_PRINT_DEPRECATION_WARNING("XLALDestroyREAL4FFTPlan");
   ASSERT( plan, status, REALFFTH_ENULL, REALFFTH_MSGENULL );
   ASSERT( *plan, status, REALFFTH_ENULL, REALFFTH_MSGENULL );
   XLALDestroyREAL4FFTPlan( *plan );
@@ -775,7 +775,7 @@ LALForwardREAL4FFT(
   int code;
   UINT4 n;
   INITSTATUS(status);
-  XLALPrintDeprecationWarning("LALForwardREAL4FFT", "XLALForwardREAL4FFT");
+  XLAL_PRINT_DEPRECATION_WARNING("XLALForwardREAL4FFT");
 
   ASSERT( output, status, REALFFTH_ENULL, REALFFTH_MSGENULL );
   ASSERT( input, status, REALFFTH_ENULL, REALFFTH_MSGENULL );
@@ -840,7 +840,7 @@ LALReverseREAL4FFT(
   int code;
   UINT4 n;
   INITSTATUS(status);
-  XLALPrintDeprecationWarning("LALReverseREAL4FFT", "XLALReverseREAL4FFT");
+  XLAL_PRINT_DEPRECATION_WARNING("XLALReverseREAL4FFT");
 
   ASSERT( output, status, REALFFTH_ENULL, REALFFTH_MSGENULL );
   ASSERT( input, status, REALFFTH_ENULL, REALFFTH_MSGENULL );
@@ -911,7 +911,7 @@ LALREAL4PowerSpectrum (
   UINT4 n;
 
   INITSTATUS(status);
-  XLALPrintDeprecationWarning("LALREAL4PowerSpectrum", "XLALREAL4PowerSpectrum");
+  XLAL_PRINT_DEPRECATION_WARNING("XLALREAL4PowerSpectrum");
 
   ASSERT( spec, status, REALFFTH_ENULL, REALFFTH_MSGENULL );
   ASSERT( data, status, REALFFTH_ENULL, REALFFTH_MSGENULL );
@@ -968,7 +968,7 @@ LALREAL4VectorFFT(
 {
   int code;
   INITSTATUS(status);
-  XLALPrintDeprecationWarning("LALREAL4VectorFFT", "XLALREAL4VectorFFT");
+  XLAL_PRINT_DEPRECATION_WARNING("XLALREAL4VectorFFT");
 
   ASSERT( output, status, REALFFTH_ENULL, REALFFTH_MSGENULL );
   ASSERT( input, status, REALFFTH_ENULL, REALFFTH_MSGENULL );
@@ -1038,7 +1038,7 @@ LALCreateForwardREAL8FFTPlan(
     )
 {
   INITSTATUS(status);
-  XLALPrintDeprecationWarning("LALCreateForwardREAL8FFTPlan", "XLALCreateForwardREAL8FFTPlan");
+  XLAL_PRINT_DEPRECATION_WARNING("XLALCreateForwardREAL8FFTPlan");
 
   ASSERT( plan, status, REALFFTH_ENULL, REALFFTH_MSGENULL );
   ASSERT( ! *plan, status, REALFFTH_ENNUL, REALFFTH_MSGENNUL );
@@ -1075,7 +1075,7 @@ LALCreateReverseREAL8FFTPlan(
     )
 {
   INITSTATUS(status);
-  XLALPrintDeprecationWarning("LALCreateReverseREAL8FFTPlan", "XLALCreateReverseREAL8FFTPlan");
+  XLAL_PRINT_DEPRECATION_WARNING("XLALCreateReverseREAL8FFTPlan");
 
   ASSERT( plan, status, REALFFTH_ENULL, REALFFTH_MSGENULL );
   ASSERT( ! *plan, status, REALFFTH_ENNUL, REALFFTH_MSGENNUL );
@@ -1110,7 +1110,7 @@ LALDestroyREAL8FFTPlan(
     )
 {
     INITSTATUS(status);
-  XLALPrintDeprecationWarning("LALDestroyREAL8FFTPlan", "XLALDestroyREAL8FFTPlan");
+  XLAL_PRINT_DEPRECATION_WARNING("XLALDestroyREAL8FFTPlan");
   ASSERT( plan, status, REALFFTH_ENULL, REALFFTH_MSGENULL );
   ASSERT( *plan, status, REALFFTH_ENULL, REALFFTH_MSGENULL );
   XLALDestroyREAL8FFTPlan( *plan );
@@ -1143,7 +1143,7 @@ LALForwardREAL8FFT(
   int code;
   UINT4 n;
   INITSTATUS(status);
-  XLALPrintDeprecationWarning("LALForwardREAL8FFT", "XLALForwardREAL8FFT");
+  XLAL_PRINT_DEPRECATION_WARNING("XLALForwardREAL8FFT");
 
   ASSERT( output, status, REALFFTH_ENULL, REALFFTH_MSGENULL );
   ASSERT( input, status, REALFFTH_ENULL, REALFFTH_MSGENULL );
@@ -1207,7 +1207,7 @@ LALReverseREAL8FFT(
   int code;
   UINT4 n;
   INITSTATUS(status);
-  XLALPrintDeprecationWarning("LALReverseREAL8FFT", "XLALReverseREAL8FFT");
+  XLAL_PRINT_DEPRECATION_WARNING("XLALReverseREAL8FFT");
 
   ASSERT( output, status, REALFFTH_ENULL, REALFFTH_MSGENULL );
   ASSERT( input, status, REALFFTH_ENULL, REALFFTH_MSGENULL );
@@ -1277,7 +1277,7 @@ LALREAL8PowerSpectrum (
   UINT4 n;
 
   INITSTATUS(status);
-  XLALPrintDeprecationWarning("LALREAL8PowerSpectrum", "XLALREAL8PowerSpectrum");
+  XLAL_PRINT_DEPRECATION_WARNING("XLALREAL8PowerSpectrum");
 
   ASSERT( spec, status, REALFFTH_ENULL, REALFFTH_MSGENULL );
   ASSERT( data, status, REALFFTH_ENULL, REALFFTH_MSGENULL );
@@ -1333,7 +1333,7 @@ LALREAL8VectorFFT(
 {
   int code;
   INITSTATUS(status);
-  XLALPrintDeprecationWarning("LALREAL8VectorFFT", "XLALREAL8VectorFFT");
+  XLAL_PRINT_DEPRECATION_WARNING("XLALREAL8VectorFFT");
 
   ASSERT( output, status, REALFFTH_ENULL, REALFFTH_MSGENULL );
   ASSERT( input, status, REALFFTH_ENULL, REALFFTH_MSGENULL );

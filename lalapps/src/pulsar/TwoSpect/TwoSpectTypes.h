@@ -84,6 +84,8 @@ typedef struct
    INT4 ULsolver;
    INT4 signalOnly;
    INT4 weightedIHS;
+   INT4 periodHarmToCheck;
+   INT4 periodFracToCheck;
    gsl_rng *rng;
 } inputParamsStruct;
 

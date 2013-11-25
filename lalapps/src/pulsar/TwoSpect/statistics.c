@@ -1065,7 +1065,7 @@ REAL4 calcMean_ignoreZeros(REAL4Vector *vector)
 REAL4 calcHarmonicMean(REAL4Vector *vector, INT4 numfbins, INT4 numffts)
 {
 
-   INT4 ii, values;
+   INT4 ii, values = 0;
    REAL4 harmonicMean = 0.0;
    REAL4Vector *tempvect = XLALCreateREAL4Vector(numfbins);
    if (tempvect==NULL) {

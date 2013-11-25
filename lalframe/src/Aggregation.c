@@ -809,8 +809,7 @@ UINT4 XLALAggregationDQGap(INT4TimeSeries * series, INT4 dq_bitmask)
         XLAL_ERROR(XLAL_EFAULT);
 
     /* deprecation warning */
-    XLALPrintDeprecationWarning("XLALAggregationDQGap",
-        "XLALAggregationDQGapEnd");
+    XLAL_PRINT_DEPRECATION_WARNING("XLALAggregationDQGapEnd");
 
     /* get end of data gap */
     gap = XLALAggregationDQGapEnd(series, dq_bitmask);

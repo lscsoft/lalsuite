@@ -71,5 +71,11 @@ LALInferenceVariables *LALInferenceInitVariablesReviewEvidence(LALInferenceRunSt
 LALInferenceVariables *LALInferenceInitVariablesReviewEvidence_bimod(LALInferenceRunState *state);
 LALInferenceVariables *LALInferenceInitVariablesReviewEvidence_banana(LALInferenceRunState *state);
 
+/**
+ * Check options consistency 
+ **/
+void LALInferenceCheckOptionsConsistency(ProcessParamsTable *commandLine);
+
+
 #endif
 

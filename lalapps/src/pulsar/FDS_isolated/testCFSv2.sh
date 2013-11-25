@@ -129,7 +129,7 @@ fi
 
 cmdline="$mfd_code $mfd_CL --randSeed=1"
 echo $cmdline;
-if ! eval "$cmdline &> /dev/null"; then
+if ! eval "$cmdline 2> /dev/null"; then
     echo "Error.. something failed when running '$mfd_code' ..."
     exit 1
 fi
@@ -160,7 +160,7 @@ fi
 cmdline="$cfs_code $cfs_CL  --outputFstat=$outfile_v1 --expLALDemod=0 --Fthreshold=0 --FreqBand=$cfs_FreqBand_v1"
 echo $cmdline;
 
-if ! eval "$cmdline &> /dev/null"; then
+if ! eval "$cmdline 2> /dev/null"; then
     echo "Error.. something failed when running '$cfs_code' ..."
     exit 1
 fi
@@ -173,7 +173,7 @@ echo
 outfile_v2NWon="Fstat_v2NWon.dat";
 cmdlineNoiseWeightsOn="$cfsv2_code $cfs_CL --outputFstat=$outfile_v2NWon --TwoFthreshold=0 --FreqBand=$cfs_FreqBand --UseNoiseWeights=true"
 echo $cmdlineNoiseWeightsOn;
-if ! eval "$cmdlineNoiseWeightsOn &> /dev/null"; then
+if ! eval "$cmdlineNoiseWeightsOn 2> /dev/null"; then
     echo "Error.. something failed when running '$cfs_code' ..."
     exit 1;
 fi
@@ -181,7 +181,7 @@ fi
 outfile_v2NWoff="Fstat_v2NWoff.dat";
 cmdlineNoiseWeightsOff="$cfsv2_code $cfs_CL --outputFstat=$outfile_v2NWoff --TwoFthreshold=0 --FreqBand=$cfs_FreqBand --UseNoiseWeights=false"
 echo $cmdlineNoiseWeightsOff;
-if ! eval "$cmdlineNoiseWeightsOff &> /dev/null"; then
+if ! eval "$cmdlineNoiseWeightsOff 2> /dev/null"; then
     echo "Error.. something failed when running '$cfs_code' ..."
     exit 1;
 fi

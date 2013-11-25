@@ -65,7 +65,7 @@ LALInspiralPhasing2_0PN (
    expnCoeffs *ak
    )
 {
-  XLALPrintDeprecationWarning("LALInspiralPhasing2_0PN", "XLALInspiralPhasing2_0PN");
+  XLAL_PRINT_DEPRECATION_WARNING("XLALInspiralPhasing2_0PN");
 
   INITSTATUS(status);
   ATTATCHSTATUSPTR(status);
@@ -112,7 +112,7 @@ LALInspiralPhasing2_2PN (
    expnCoeffs *ak
    )
 {
-  XLALPrintDeprecationWarning("LALInspiralPhasing2_2PN", "XLALInspiralPhasing2_2PN");
+  XLAL_PRINT_DEPRECATION_WARNING("XLALInspiralPhasing2_2PN");
 
   INITSTATUS(status);
   ATTATCHSTATUSPTR(status);
@@ -161,7 +161,7 @@ LALInspiralPhasing2_3PN (
    expnCoeffs *ak
    )
 {
-  XLALPrintDeprecationWarning("LALInspiralPhasing2_3PN", "XLALInspiralPhasing2_3PN");
+  XLAL_PRINT_DEPRECATION_WARNING("XLALInspiralPhasing2_3PN");
 
   INITSTATUS(status);
   ATTATCHSTATUSPTR(status);
@@ -212,7 +212,7 @@ LALInspiralPhasing2_4PN (
    expnCoeffs *ak
    )
 {
-  XLALPrintDeprecationWarning("LALInspiralPhasing2_4PN", "XLALInspiralPhasing2_4PN");
+  XLAL_PRINT_DEPRECATION_WARNING("XLALInspiralPhasing2_4PN");
 
   INITSTATUS(status);
   ATTATCHSTATUSPTR(status);
@@ -264,7 +264,7 @@ LALInspiralPhasing2_5PN (
    expnCoeffs *ak
    )
 {
-  XLALPrintDeprecationWarning("LALInspiralPhasing2_5PN", "XLALInspiralPhasing2_5PN");
+  XLAL_PRINT_DEPRECATION_WARNING("XLALInspiralPhasing2_5PN");
 
   INITSTATUS(status);
   ATTATCHSTATUSPTR(status);
@@ -317,7 +317,7 @@ LALInspiralPhasing2_6PN (
    expnCoeffs *ak
    )
 {
-  XLALPrintDeprecationWarning("LALInspiralPhasing2_6PN", "XLALInspiralPhasing2_6PN");
+  XLAL_PRINT_DEPRECATION_WARNING("XLALInspiralPhasing2_6PN");
 
   INITSTATUS(status);
   ATTATCHSTATUSPTR(status);
@@ -372,7 +372,7 @@ LALInspiralPhasing2_7PN (
    expnCoeffs *ak
    )
 {
-  XLALPrintDeprecationWarning("LALInspiralPhasing2_7PN", "XLALInspiralPhasing2_7PN");
+  XLAL_PRINT_DEPRECATION_WARNING("XLALInspiralPhasing2_7PN");
 
   INITSTATUS(status);
   ATTATCHSTATUSPTR(status);

@@ -28,9 +28,10 @@
  */
 
 #include <math.h>
-#include <stdio.h>
 #include <stdlib.h>
+#include <stdio.h>
 #include <string.h>
+#include <metaio.h>
 #include <getopt.h>
 #include <sys/types.h>
 #include <sys/stat.h>

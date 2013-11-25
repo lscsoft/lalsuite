@@ -17,6 +17,12 @@
 *  MA  02111-1307  USA
 */
 
+#include <config.h>
+
+#ifdef HAVE_LOCALTIME_S
+#define localtime_r(t, tm) localtime_s(tm, t)
+#endif
+
 #include <ctype.h>
 #include <math.h>
 #include <stdio.h>
@@ -366,7 +372,7 @@ static int XLALLocalTime(char site, int gpssec)
     setenv("TZ", zone, 1);
     tzset();
 
-    loc = *localtime(&tutc);
+    localtime_r(&tutc, &loc);
     tloc = XLALSecondsSinceUnixEpoch(&loc);
 
     if (orig) {

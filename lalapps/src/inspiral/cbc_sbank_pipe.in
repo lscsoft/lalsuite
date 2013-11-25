@@ -352,6 +352,8 @@ else:
     coarse_sbank_node = SBankNode(sbankJob, dag, "COARSE")
     coarse_mm = cp.get("coarse-sbank", "match-min")
     coarse_sbank_node.add_var_opt("match-min", coarse_mm)
+    coarse_thresh = cp.get("coarse-sbank", "convergence-threshold")
+    coarse_sbank_node.add_var_arg("--convergence-threshold %s" % coarse_thresh)
     xmlCoarse, = coarse_sbank_node.get_output_files()
     pnode = [coarse_sbank_node]
 
@@ -395,7 +397,7 @@ for inj_run in cp.options("injections"):
     # the inspinj section sets options that are common to all injection runs
     for opt in cp.options(inj_run):
         # override default inspinj options with those given in the inj_run section
-        if not opt == 'waveform': cp.set('inspinj',opt,cp.get(inj_run,opt))
+        cp.set('inspinj',opt,cp.get(inj_run,opt))
 
     # set random seed
     seed = int(cp.get("injections",inj_run))

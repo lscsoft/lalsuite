@@ -21,11 +21,12 @@ AC_CONFIG_FILES([ \
   swig/python/Makefile \
   test/Makefile
 ])
-AM_INIT_AUTOMAKE([1.11 foreign color-tests parallel-tests])
+AM_INIT_AUTOMAKE([1.11 foreign subdir-objects color-tests parallel-tests])
 
 AC_CANONICAL_HOST
 
 LALSUITE_ARG_VAR
+LALSUITE_CHECK_GIT_REPO
 LALSUITE_DISTCHECK_CONFIGURE_FLAGS
 LALSUITE_WITH_CFLAGS_LIBS
 
@@ -47,9 +48,6 @@ AC_SUBST([LIBCURRENT],[7])
 AC_SUBST([LIBREVISION],[0])
 AC_SUBST([LIBAGE],[0])
 AC_SUBST([LIBVERSION],[${LIBCURRENT}:${LIBREVISION}:${LIBAGE}])
-
-# check for git repo
-LALSUITE_CHECK_GIT_REPO
 
 # nightly build
 LALSUITE_ENABLE_NIGHTLY
@@ -130,6 +128,14 @@ AC_DEFINE([HAVE_GETHOSTNAME_PROTOTYPE],[1],
 
 # check for required libraries
 AC_CHECK_LIB([m],[main],,[AC_MSG_ERROR([could not find the math library])])
+
+# checks for library functions
+AC_CHECK_FUNC([gmtime_r],[:],[
+  AC_CHECK_FUNCS([gmtime_s],[:],[AC_MSG_ERROR([could not find either gmtime_r() or gmtime_s() functions])])
+])
+AC_CHECK_FUNC([localtime_r],[:],[
+  AC_CHECK_FUNCS([localtime_s],[:],[AC_MSG_ERROR([could not find either localtime_r() or localtime_s() functions])])
+])
 
 # check for framec or libframe libraries and headers
 PKG_PROG_PKG_CONFIG

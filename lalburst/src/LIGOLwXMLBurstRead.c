@@ -17,6 +17,11 @@
  * 02111-1307  USA
  */
 
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
+#include <metaio.h>
+
 #include <lal/LIGOMetadataTables.h>
 #include <lal/LIGOMetadataBurstUtils.h>
 #include <lal/LIGOLwXMLBurstRead.h>

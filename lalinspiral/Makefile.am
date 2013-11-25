@@ -8,11 +8,9 @@ $(ACLOCAL_M4): $(am__aclocal_m4_deps)
 
 EXTRA_DIST = \
 	COPYING \
-	lalinspiral.pc.in \
-	lalinspiral.spec.in \
 	lalinspiral.spec \
-	aclocal.m4 \
-	doc
+	doc \
+	$(DATA)
 
 SUBDIRS = \
 	gnuscripts \

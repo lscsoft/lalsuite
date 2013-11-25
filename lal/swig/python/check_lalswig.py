@@ -6,17 +6,19 @@ import numpy
 expected_exception = False
 
 # check module load
+print("checking module load ...")
 import lal
 from lal import cvar as lalcvar
-print("passed module load")
+print("PASSED module load")
 
 # check memory allocation
-if lal.cvar.swig_debug:
+print("checking memory allocation ...")
+if lal.swig_debug:
     lal.CheckMemoryLeaks()
     mem1 = lal.Detector()
     mem2 = lal.CreateCOMPLEX8Vector(5)
     mem3 = lal.CreateREAL8Vector(3)
-    mem4 = lal.CreateREAL4TimeSeries("test", lal.LIGOTimeGPS(0), 100, 0.1, lalcvar.lalDimensionlessUnit, 10)
+    mem4 = lal.CreateREAL4TimeSeries("test", lal.LIGOTimeGPS(0), 100, 0.1, lal.lalDimensionlessUnit, 10)
     print("*** below should be an error message from CheckMemoryLeaks() ***")
     try:
         lal.CheckMemoryLeaks()
@@ -27,11 +29,40 @@ if lal.cvar.swig_debug:
     print("*** above should be an error message from CheckMemoryLeaks() ***")
     del mem1, mem2, mem3, mem4
     lal.CheckMemoryLeaks()
-    print("passed memory allocation")
+    print("PASSED memory allocation")
 else:
     print("skipped memory allocation")
 
+## check equal return/first argument type handling
+print("checking equal return/first argument type handling")
+sv = lal.CreateStringVector("1")
+assert(sv.length == 1)
+lal.AppendString2Vector(sv, "2")
+assert(sv.length == 2)
+sv = lal.AppendString2Vector(sv, "3")
+assert(sv.length == 3)
+sv2 = lal.AppendString2Vector(sv, "4")
+assert(sv.length == 4)
+assert(sv2.length == 4)
+assert(sv == sv2)
+del sv, sv2
+lal.CheckMemoryLeaks()
+ts = lal.CreateREAL8TimeSeries("ts", 800000000, 100, 0.1, lal.lalHertzUnit, 10)
+assert(ts.data.length == 10)
+lal.ResizeREAL8TimeSeries(ts, 0, 20)
+assert(ts.data.length == 20)
+ts = lal.ResizeREAL8TimeSeries(ts, 0, 30)
+assert(ts.data.length == 30)
+ts2 = lal.ResizeREAL8TimeSeries(ts, 0, 40)
+assert(ts.data.length == 40)
+assert(ts2.data.length == 40)
+assert(ts == ts2)
+del ts, ts2
+lal.CheckMemoryLeaks()
+print("PASSED equal return/first argument type handling")
+
 # check string conversions
+print("checking string conversions ...")
 strs = ["a", "bc", "def"]
 sv = lal.CreateStringVector(*strs)
 assert(sv.length == 3)
@@ -45,7 +76,7 @@ for i in range(0, 4):
     assert(sv.data[i] == strs[i])
 del sv
 lal.CheckMemoryLeaks()
-print("passed string conversions")
+print("PASSED string conversions")
 
 ## check static vector/matrix conversions
 lalcvar.lalswig_test_struct_vector[0] = lalcvar.lalswig_test_struct_const
@@ -111,9 +142,10 @@ lalcvar.lalswig_test_COMPLEX8_vector[0] = complex(3.5, 4.75)
 assert(lalcvar.lalswig_test_COMPLEX8_vector[0] == complex(3.5, 4.75))
 lalcvar.lalswig_test_COMPLEX8_matrix[0, 0] = complex(5.5, 6.25)
 assert(lalcvar.lalswig_test_COMPLEX8_matrix[0, 0] == complex(5.5, 6.25))
-print("passed static vector/matrix conversions")
+print("PASSED static vector/matrix conversions")
 
 # check dynamic vector/matrix conversions
+print("checking dynamic vector/matrix conversions ...")
 def check_dynamic_vector_matrix(iv, ivl, rv, rvl, cm, cms1, cms2):
     expected_exception = False
     iv.data = numpy.zeros(ivl, dtype=iv.data.dtype)
@@ -179,7 +211,7 @@ rv1 = lal.CreateREAL8Vector(1)
 rv1.data[0] = 1
 del rv1
 lal.CheckMemoryLeaks()
-print("passed dynamic vector/matrix conversions (LAL)")
+print("PASSED dynamic vector/matrix conversions (LAL)")
 # check GSL vectors and matrices
 iv = lal.gsl_vector_int(5)
 rv = lal.gsl_vector(5)
@@ -190,7 +222,7 @@ del iv, rv, cm
 rv1 = lal.gsl_vector(1)
 rv1.data[0] = 1
 del rv1
-print("passed dynamic vector/matrix conversions (GSL)")
+print("PASSED dynamic vector/matrix conversions (GSL)")
 
 ## check dynamic array of pointers access
 ap = lal.lalswig_test_Create_arrayofptrs(3)
@@ -201,9 +233,10 @@ for i in range(0, ap.length):
         assert(ap.data[i].data[j] == 42*ap.length*i + j)
 del ap
 lal.CheckMemoryLeaks()
-print("passed dynamic array of pointers access")
+print("PASSED dynamic array of pointers access")
 
 # check 'tm' struct conversions
+print("checking 'tm' struct conversions ...")
 gps = 989168284
 utc = [2011, 5, 11, 16, 57, 49, 2, 131, 0]
 assert(lal.GPSToUTC(gps) == utc)
@@ -220,9 +253,10 @@ for i in range(0, 10):
     dt = datetime.datetime(*utcd[0:6])
     assert(utcd[6] == dt.weekday())
 lal.CheckMemoryLeaks()
-print("passed 'tm' struct conversions")
+print("PASSED 'tm' struct conversions")
 
 # check LIGOTimeGPS operations
+print("checking LIGOTimeGPS operations ...")
 from lal import LIGOTimeGPS
 t0 = LIGOTimeGPS()
 assert(t0 == 0 and isinstance(t0, LIGOTimeGPS))
@@ -278,9 +312,10 @@ assert(not expected_exception)
 assert(lal.lalswig_test_noptrgps(LIGOTimeGPS(1234.5)) == lal.lalswig_test_noptrgps(1234.5))
 del t0, t1, t2, t3, t4struct, t5
 lal.CheckMemoryLeaks()
-print("passed LIGOTimeGPS operations")
+print("PASSED LIGOTimeGPS operations")
 
 # check object parent tracking
+print("checking object parent tracking ...")
 a = lal.gsl_vector(3)
 a.data = [1.1, 2.2, 3.3]
 b = a.data
@@ -288,7 +323,7 @@ assert(not b.flags['OWNDATA'])
 assert((b == [1.1, 2.2, 3.3]).all())
 del a
 assert((b == [1.1, 2.2, 3.3]).all())
-ts = lal.CreateREAL8TimeSeries("test", lal.LIGOTimeGPS(0), 0, 0.1, lalcvar.lalDimensionlessUnit, 10)
+ts = lal.CreateREAL8TimeSeries("test", lal.LIGOTimeGPS(0), 0, 0.1, lal.lalDimensionlessUnit, 10)
 ts.data.data = range(0, 10)
 for i in range(0, 7):
     v = ts.data
@@ -297,7 +332,7 @@ del ts
 assert((v.data == range(0, 10)).all())
 del v
 lal.CheckMemoryLeaks()
-print("passed object parent tracking")
+print("PASSED object parent tracking")
 
 # passed all tests!
 print("PASSED all tests")

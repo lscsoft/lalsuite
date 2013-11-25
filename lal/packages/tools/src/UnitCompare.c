@@ -149,7 +149,7 @@ LALUnitCompare (LALStatus *status, BOOLEAN *output, const LALUnitPair *input)
   ASSERT( input != NULL, status, UNITSH_ENULLPIN, UNITSH_MSGENULLPIN );
 
   ASSERT( output != NULL, status, UNITSH_ENULLPOUT, UNITSH_MSGENULLPOUT );
-  XLALPrintDeprecationWarning( "LALUnitCompare", "XLALUnitCompare" );
+  XLAL_PRINT_DEPRECATION_WARNING("XLALUnitCompare");
 
   code = XLALUnitCompare( input->unitOne, input->unitTwo );
   if ( code < 0 )

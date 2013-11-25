@@ -90,10 +90,13 @@ option "BrentsMethod"  - "Use Brent's method in the root finding algorithm." fla
 option "antennaOff"  - "Antenna pattern weights are /NOT/ used if this flag is used" flag off hidden
 option "noiseWeightOff"     - "Turn off noise weighting if this flag is used" flag off hidden
 option "gaussTemplatesOnly" - "Gaussian templates only throughout the pipeline if this flag is used" flag off hidden
+option "periodHarmToCheck"  - "Number of harmonics/sub-harmonics of the IHS candidates to test" int default="5" optional hidden
+option "periodFracToCheck"  - "Number of fractional periods to check in the sense of [(1...N)+1]/[(1...N)+2]" int default="3" optional hidden
 option "ULoff"    - "Turn off upper limits computation" flag off hidden
 option "printSFTtimes" - "Output a list <GPS sec> <GPS nanosec> of SFT start times of input SFTs" flag off hidden
 option "printUsedSFTtimes"  - "Output a list <GPS sec> <GPS nanosec> of SFT start times of the SFTs passing tests" flag off hidden
 option "printData"     - "Print to ASCII files the data values" flag off hidden
 option "printUninitialized" - "Print uninitialized values in TFdata_weighted and TSofPowers vectors at n-th sky location specified by option (if not enough sky locations exist, then these vectors don't get printed!)" int optional hidden
+option "printSignalData"    - "Print f0 and h0 per SFT of the signal, used only with --injectionSources option" dependon="injectionSources" flag off hidden
 option "randSeed" - "Random seed value" int optional hidden
 option "chooseSeed"    - "The random seed value is chosen based on the input search parameters" flag off hidden

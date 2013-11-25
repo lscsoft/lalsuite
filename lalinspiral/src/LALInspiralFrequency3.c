@@ -72,7 +72,7 @@ LALInspiralFrequency3_0PN (
    expnCoeffs *ak
    )
 {
-  XLALPrintDeprecationWarning("LALInspiralFrequency3_0PN", "XLALInspiralFrequency3_0PN");
+  XLAL_PRINT_DEPRECATION_WARNING("XLALInspiralFrequency3_0PN");
 
   INITSTATUS(status);
   ATTATCHSTATUSPTR(status);
@@ -119,7 +119,7 @@ LALInspiralFrequency3_2PN (
    expnCoeffs *ak
    )
 {
-  XLALPrintDeprecationWarning("LALInspiralFrequency3_2PN", "XLALInspiralFrequency3_2PN");
+  XLAL_PRINT_DEPRECATION_WARNING("XLALInspiralFrequency3_2PN");
 
   INITSTATUS(status);
   ATTATCHSTATUSPTR(status);
@@ -168,7 +168,7 @@ LALInspiralFrequency3_3PN (
    expnCoeffs *ak
    )
 {
-  XLALPrintDeprecationWarning("LALInspiralFrequency3_3PN", "XLALInspiralFrequency3_3PN");
+  XLAL_PRINT_DEPRECATION_WARNING("XLALInspiralFrequency3_3PN");
 
   INITSTATUS(status);
   ATTATCHSTATUSPTR(status);
@@ -218,7 +218,7 @@ LALInspiralFrequency3_4PN (
    expnCoeffs *ak
    )
 {
-  XLALPrintDeprecationWarning("LALInspiralFrequency3_4PN", "XLALInspiralFrequency3_4PN");
+  XLAL_PRINT_DEPRECATION_WARNING("XLALInspiralFrequency3_4PN");
 
   INITSTATUS(status);
   ATTATCHSTATUSPTR(status);
@@ -270,7 +270,7 @@ LALInspiralFrequency3_5PN (
    expnCoeffs *ak
    )
 {
-  XLALPrintDeprecationWarning("LALInspiralFrequency3_5PN", "XLALInspiralFrequency3_5PN");
+  XLAL_PRINT_DEPRECATION_WARNING("XLALInspiralFrequency3_5PN");
 
   INITSTATUS(status);
   ATTATCHSTATUSPTR(status);
@@ -324,7 +324,7 @@ LALInspiralFrequency3_6PN (
    expnCoeffs *ak
    )
 {
-  XLALPrintDeprecationWarning("LALInspiralFrequency3_6PN", "XLALInspiralFrequency3_6PN");
+  XLAL_PRINT_DEPRECATION_WARNING("XLALInspiralFrequency3_6PN");
 
   INITSTATUS(status);
   ATTATCHSTATUSPTR(status);
@@ -380,7 +380,7 @@ LALInspiralFrequency3_7PN (
    expnCoeffs *ak
    )
 {
-  XLALPrintDeprecationWarning("LALInspiralFrequency3_7PN", "XLALInspiralFrequency3_7PN");
+  XLAL_PRINT_DEPRECATION_WARNING("XLALInspiralFrequency3_7PN");
 
   INITSTATUS(status);
   ATTATCHSTATUSPTR(status);

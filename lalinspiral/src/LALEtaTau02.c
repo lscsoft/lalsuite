@@ -69,7 +69,7 @@ LALEtaTau02(
    void      *p
    )
 {
-   XLALPrintDeprecationWarning("LALEtaTau02", "XLALEtaTau02");
+   XLAL_PRINT_DEPRECATION_WARNING("XLALEtaTau02");
 
    INITSTATUS(status);
    ATTATCHSTATUSPTR(status);

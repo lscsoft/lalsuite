@@ -489,6 +489,81 @@ UINT4 LALInferenceInspiralCubeToPrior(LALInferenceRunState *runState, LALInferen
 
     }
 
+    // theta_JN for system-frame parameters
+    if(LALInferenceCheckVariable(params,"theta_JN"))
+    {
+        item = LALInferenceGetItem(params, "theta_JN");
+        if(item->vary != LALINFERENCE_PARAM_FIXED)
+        {
+            LALInferenceGetMinMaxPrior(runState->priorArgs, "theta_JN", (void *)&min, (void *)&max);
+            double theta_JN = LALInferenceCubeToSinPrior(Cube[i], min, max);
+            LALInferenceSetVariable(params, "theta_JN", &theta_JN);
+            Cube[i] = theta_JN;
+            i++;
+            strcat(header,"theta_JN ");
+        }
+    }
+
+    // phi_JL for system-frame parameters
+    if(LALInferenceCheckVariable(params,"phi_JL"))
+    {
+        item = LALInferenceGetItem(params, "phi_JL");
+        if(item->vary != LALINFERENCE_PARAM_FIXED)
+        {
+            LALInferenceGetMinMaxPrior(runState->priorArgs, "phi_JL", (void *)&min, (void *)&max);
+            double phi_JL = LALInferenceCubeToFlatPrior(Cube[i], min, max);
+            LALInferenceSetVariable(params, "phi_JL", &phi_JL);
+            Cube[i] = phi_JL;
+            i++;
+            strcat(header,"phi_JL ");
+        }
+    }
+
+    // tilt of spin 1 for system-frame parameters
+    if(LALInferenceCheckVariable(params,"tilt_spin1"))
+    {
+        item = LALInferenceGetItem(params, "tilt_spin1");
+        if(item->vary != LALINFERENCE_PARAM_FIXED)
+        {
+            LALInferenceGetMinMaxPrior(runState->priorArgs, "tilt_spin1", (void *)&min, (void *)&max);
+            double tilt_spin1 = LALInferenceCubeToSinPrior(Cube[i], min, max);
+            LALInferenceSetVariable(params, "tilt_spin1", &tilt_spin1);
+            Cube[i] = tilt_spin1;
+            i++;
+            strcat(header,"tilt_spin1 ");
+        }
+    }
+
+    // tilt of spin 2 for system-frame parameters
+    if(LALInferenceCheckVariable(params,"tilt_spin2"))
+    {
+        item = LALInferenceGetItem(params, "tilt_spin2");
+        if(item->vary != LALINFERENCE_PARAM_FIXED)
+        {
+            LALInferenceGetMinMaxPrior(runState->priorArgs, "tilt_spin2", (void *)&min, (void *)&max);
+            double tilt_spin2 = LALInferenceCubeToSinPrior(Cube[i], min, max);
+            LALInferenceSetVariable(params, "tilt_spin2", &tilt_spin2);
+            Cube[i] = tilt_spin2;
+            i++;
+            strcat(header,"tilt_spin2 ");
+        }
+    }
+
+    // phi12 for system-frame parameters
+    if(LALInferenceCheckVariable(params,"phi12"))
+    {
+        item = LALInferenceGetItem(params, "phi12");
+        if(item->vary != LALINFERENCE_PARAM_FIXED)
+        {
+            LALInferenceGetMinMaxPrior(runState->priorArgs, "phi12", (void *)&min, (void *)&max);
+            double phi12 = LALInferenceCubeToFlatPrior(Cube[i], min, max);
+            LALInferenceSetVariable(params, "phi12", &phi12);
+            Cube[i] = phi12;
+            i++;
+            strcat(header,"phi12 ");
+        }
+    }
+
     LALInferenceVariables *priorParams=runState->priorArgs;
     INT4 ScaleTest = LALInferenceCubeToPSDScaleParams(priorParams, params, &i, Cube, context);
 
@@ -496,6 +571,14 @@ UINT4 LALInferenceInspiralCubeToPrior(LALInferenceRunState *runState, LALInferen
     Cube[i] = m2; i++; strcat(header,"m2 ");
     Cube[i] = LALInferenceInspiralPrior(runState,params);
     i++; strcat(header,"logprior ");
+
+    // fRef for system-frame parameters
+    if(LALInferenceCheckVariable(params,"fRef"))
+    {
+        Cube[i] = *(REAL8 *)LALInferenceGetVariable(params,"fRef");
+        i++;
+        strcat(header,"f_ref ");
+    }
 
     strcat(header,"logl");
 
@@ -1167,12 +1250,95 @@ UINT4 LALInferenceInspiralSkyLocCubeToPrior(LALInferenceRunState *runState, LALI
 
     }
 
+    // theta_JN for system-frame parameters
+    if(LALInferenceCheckVariable(params,"theta_JN"))
+    {
+        item = LALInferenceGetItem(params, "theta_JN");
+        if(item->vary != LALINFERENCE_PARAM_FIXED)
+        {
+            LALInferenceGetMinMaxPrior(runState->priorArgs, "theta_JN", (void *)&min, (void *)&max);
+            double theta_JN = LALInferenceCubeToSinPrior(Cube[i], min, max);
+            LALInferenceSetVariable(params, "theta_JN", &theta_JN);
+            Cube[i] = theta_JN;
+            i++;
+            strcat(header,"theta_JN ");
+        }
+    }
+
+    // phi_JL for system-frame parameters
+    if(LALInferenceCheckVariable(params,"phi_JL"))
+    {
+        item = LALInferenceGetItem(params, "phi_JL");
+        if(item->vary != LALINFERENCE_PARAM_FIXED)
+        {
+            LALInferenceGetMinMaxPrior(runState->priorArgs, "phi_JL", (void *)&min, (void *)&max);
+            double phi_JL = LALInferenceCubeToFlatPrior(Cube[i], min, max);
+            LALInferenceSetVariable(params, "phi_JL", &phi_JL);
+            Cube[i] = phi_JL;
+            i++;
+            strcat(header,"phi_JL ");
+        }
+    }
+
+    // tilt of spin 1 for system-frame parameters
+    if(LALInferenceCheckVariable(params,"tilt_spin1"))
+    {
+        item = LALInferenceGetItem(params, "tilt_spin1");
+        if(item->vary != LALINFERENCE_PARAM_FIXED)
+        {
+            LALInferenceGetMinMaxPrior(runState->priorArgs, "tilt_spin1", (void *)&min, (void *)&max);
+            double tilt_spin1 = LALInferenceCubeToSinPrior(Cube[i], min, max);
+            LALInferenceSetVariable(params, "tilt_spin1", &tilt_spin1);
+            Cube[i] = tilt_spin1;
+            i++;
+            strcat(header,"tilt_spin1 ");
+        }
+    }
+
+    // tilt of spin 2 for system-frame parameters
+    if(LALInferenceCheckVariable(params,"tilt_spin2"))
+    {
+        item = LALInferenceGetItem(params, "tilt_spin2");
+        if(item->vary != LALINFERENCE_PARAM_FIXED)
+        {
+            LALInferenceGetMinMaxPrior(runState->priorArgs, "tilt_spin2", (void *)&min, (void *)&max);
+            double tilt_spin2 = LALInferenceCubeToSinPrior(Cube[i], min, max);
+            LALInferenceSetVariable(params, "tilt_spin2", &tilt_spin2);
+            Cube[i] = tilt_spin2;
+            i++;
+            strcat(header,"tilt_spin2 ");
+        }
+    }
+
+    // phi12 for system-frame parameters
+    if(LALInferenceCheckVariable(params,"phi12"))
+    {
+        item = LALInferenceGetItem(params, "phi12");
+        if(item->vary != LALINFERENCE_PARAM_FIXED)
+        {
+            LALInferenceGetMinMaxPrior(runState->priorArgs, "phi12", (void *)&min, (void *)&max);
+            double phi12 = LALInferenceCubeToFlatPrior(Cube[i], min, max);
+            LALInferenceSetVariable(params, "phi12", &phi12);
+            Cube[i] = phi12;
+            i++;
+            strcat(header,"phi12 ");
+        }
+    }
+
     INT4 ScaleTest = LALInferenceCubeToPSDScaleParams(priorParams, params, &i, Cube, context);
 
     Cube[i] = m1; i++; strcat(header,"m1 ");
     Cube[i] = m2; i++; strcat(header,"m2 ");
     Cube[i] = LALInferenceInspiralSkyLocPrior(runState,params);
     i++; strcat(header,"logprior ");
+
+    // fRef for system-frame parameters
+    if(LALInferenceCheckVariable(params,"fRef"))
+    {
+        Cube[i] = *(REAL8 *)LALInferenceGetVariable(params,"fRef");
+        i++;
+        strcat(header,"f_ref ");
+    }
 
     strcat(header,"logl");
 
@@ -1957,7 +2123,81 @@ UINT4 LALInferenceInspiralPriorNormalisedCubeToPrior(LALInferenceRunState *runSt
             i++;
             strcat(header,"phi2 ");
         }
+    }
 
+    // theta_JN for system-frame parameters
+    if(LALInferenceCheckVariable(params,"theta_JN"))
+    {
+        item = LALInferenceGetItem(params, "theta_JN");
+        if(item->vary != LALINFERENCE_PARAM_FIXED)
+        {
+            LALInferenceGetMinMaxPrior(runState->priorArgs, "theta_JN", (void *)&min, (void *)&max);
+            double theta_JN = LALInferenceCubeToSinPrior(Cube[i], min, max);
+            LALInferenceSetVariable(params, "theta_JN", &theta_JN);
+            Cube[i] = theta_JN;
+            i++;
+            strcat(header,"theta_JN ");
+        }
+    }
+
+    // phi_JL for system-frame parameters
+    if(LALInferenceCheckVariable(params,"phi_JL"))
+    {
+        item = LALInferenceGetItem(params, "phi_JL");
+        if(item->vary != LALINFERENCE_PARAM_FIXED)
+        {
+            LALInferenceGetMinMaxPrior(runState->priorArgs, "phi_JL", (void *)&min, (void *)&max);
+            double phi_JL = LALInferenceCubeToFlatPrior(Cube[i], min, max);
+            LALInferenceSetVariable(params, "phi_JL", &phi_JL);
+            Cube[i] = phi_JL;
+            i++;
+            strcat(header,"phi_JL ");
+        }
+    }
+
+    // tilt of spin 1 for system-frame parameters
+    if(LALInferenceCheckVariable(params,"tilt_spin1"))
+    {
+        item = LALInferenceGetItem(params, "tilt_spin1");
+        if(item->vary != LALINFERENCE_PARAM_FIXED)
+        {
+            LALInferenceGetMinMaxPrior(runState->priorArgs, "tilt_spin1", (void *)&min, (void *)&max);
+            double tilt_spin1 = LALInferenceCubeToSinPrior(Cube[i], min, max);
+            LALInferenceSetVariable(params, "tilt_spin1", &tilt_spin1);
+            Cube[i] = tilt_spin1;
+            i++;
+            strcat(header,"tilt_spin1 ");
+        }
+    }
+
+    // tilt of spin 2 for system-frame parameters
+    if(LALInferenceCheckVariable(params,"tilt_spin2"))
+    {
+        item = LALInferenceGetItem(params, "tilt_spin2");
+        if(item->vary != LALINFERENCE_PARAM_FIXED)
+        {
+            LALInferenceGetMinMaxPrior(runState->priorArgs, "tilt_spin2", (void *)&min, (void *)&max);
+            double tilt_spin2 = LALInferenceCubeToSinPrior(Cube[i], min, max);
+            LALInferenceSetVariable(params, "tilt_spin2", &tilt_spin2);
+            Cube[i] = tilt_spin2;
+            i++;
+            strcat(header,"tilt_spin2 ");
+        }
+    }
+
+    // phi12 for system-frame parameters
+    if(LALInferenceCheckVariable(params,"phi12"))
+    {
+        item = LALInferenceGetItem(params, "phi12");
+        if(item->vary != LALINFERENCE_PARAM_FIXED)
+        {
+            LALInferenceGetMinMaxPrior(runState->priorArgs, "phi12", (void *)&min, (void *)&max);
+            double phi12 = LALInferenceCubeToFlatPrior(Cube[i], min, max);
+            LALInferenceSetVariable(params, "phi12", &phi12);
+            Cube[i] = phi12;
+            i++;
+            strcat(header,"phi12 ");
+        }
     }
 
     INT4 ScaleTest = LALInferenceCubeToPSDScaleParams(priorParams, params, &i, Cube, context);
@@ -1966,6 +2206,14 @@ UINT4 LALInferenceInspiralPriorNormalisedCubeToPrior(LALInferenceRunState *runSt
     Cube[i] = m2; i++; strcat(header,"m2 ");
     Cube[i] = LALInferenceInspiralPriorNormalised(runState,params);
     i++; strcat(header,"logprior ");
+
+    // fRef for system-frame parameters
+    if(LALInferenceCheckVariable(params,"fRef"))
+    {
+        Cube[i] = *(REAL8 *)LALInferenceGetVariable(params,"fRef");
+        i++;
+        strcat(header,"f_ref ");
+    }
 
     strcat(header,"logl");
 
@@ -2911,4 +3159,13 @@ REAL8 LALInferenceCubeToPowerPrior(double p, double r, double x1, double x2)
 REAL8 LALInferenceCubeToGaussianPrior(double r, double mean, double sigma)
 {
     return gsl_cdf_gaussian_Pinv(r,sigma) + mean;
+}
+
+/**
+ * Prior that converts from a Cube parameter in [0,1] to the sine prior with given
+ * min (x1) and max (x2) values
+ */
+REAL8 LALInferenceCubeToSinPrior(double r, double x1, double x2)
+{
+    return acos((1.0-r)*cos(x1)+cos(x2));
 }

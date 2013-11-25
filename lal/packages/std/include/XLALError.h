@@ -226,7 +226,17 @@ void XLALVPrintInfoMessage(const char *func, const char *file, int line,
 int XLALPrintProgressBar(double);
 
 /** Prints a deprecation warning at the "warning" verbosity level. */
-int XLALPrintDeprecationWarning(const char *old, const char *replacement);
+#define XLAL_PRINT_DEPRECATION_WARNING(replacement) \
+  do { \
+    static int _xlal_print_deprecation_warning_ = 1; \
+    if (_xlal_print_deprecation_warning_) { \
+      XLALPrintWarning( \
+        "\nDEPRECATION WARNING: program has invoked obsolete function %s(). " \
+        "Please see %s() for information about a replacement.\n", \
+        __func__, replacement); \
+      _xlal_print_deprecation_warning_ = 0; \
+    } \
+  } while(0)
 
 
 /*

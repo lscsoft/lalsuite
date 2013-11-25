@@ -490,7 +490,7 @@ LALInspiralChooseModel(
    InspiralTemplate *params
    )
 {
-   XLALPrintDeprecationWarning("LALInspiralChooseModel", "XLALInspiralChooseModel");
+   XLAL_PRINT_DEPRECATION_WARNING("XLALInspiralChooseModel");
 
    INITSTATUS(status);
    ATTATCHSTATUSPTR(status);

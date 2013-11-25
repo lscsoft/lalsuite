@@ -154,6 +154,26 @@ MACRO(A, B, C, X);
 #endif
 %}
 
+// Remove LAL macros for certain keywords.
+#define _LAL_INLINE_
+#define _LAL_RESTRICT_
+
+// If necessary, redefine 'restrict' keyword for C++ code.
+%header %{
+#ifdef __cplusplus
+# ifndef restrict
+#  if defined __GNUC__
+#   define restrict __restrict__
+#  else
+#   define restrict
+#  endif
+# endif
+#endif
+%}
+
+// Include configuration header.
+%include <config.h>
+
 // Include LAL headers.
 %header %{
 #include <lal/LALDatatypes.h>
@@ -163,24 +183,24 @@ MACRO(A, B, C, X);
 %}
 
 // Version of SWIG used to generate wrapping code.
-%inline %{const int swig_version = SWIG_VERSION;%}
+%constant int swig_version = SWIG_VERSION;
 
 // Whether wrapping code was generated in debug mode.
 #ifdef NDEBUG
-%inline %{const bool swig_debug = false;%}
+%constant bool swig_debug = false;
 #else
-%inline %{const bool swig_debug = true;%}
+%constant bool swig_debug = true;
 #endif
 
 // Constructors for GSL complex numbers, if required.
 #ifdef HAVE_LIBGSL
 %header %{
-  #include <gsl/gsl_complex_math.h>   // provides gsl_complex_rect()
-  SWIGINTERNINLINE gsl_complex_float gsl_complex_float_rect(float x, float y) {
-    gsl_complex_float z;
-    GSL_SET_COMPLEX(&z, x, y);
-    return z;
-  }
+#include <gsl/gsl_complex_math.h>   // provides gsl_complex_rect()
+SWIGINTERNINLINE gsl_complex_float gsl_complex_float_rect(float x, float y) {
+  gsl_complex_float z;
+  GSL_SET_COMPLEX(&z, x, y);
+  return z;
+}
 %}
 #endif
 
@@ -257,13 +277,13 @@ static const LALStatus swiglal_empty_LALStatus = {0, NULL, NULL, NULL, NULL, 0, 
 
 // Process an interface function NAME: rename it to RENAME, and set it to
 // always return SWIG-owned wrapping objects (unless the function is being
-// ignored). If DISOWN is true, disown the function's first argument.
-%define %swiglal_process_function(NAME, RENAME, DISOWN)
+// ignored). If RETN_1STARG is true, define 'swiglal_return_1starg_##NAME'.
+%define %swiglal_process_function(NAME, RENAME, RETN_1STARG)
 %rename(#RENAME) NAME;
 #if #RENAME != "$ignore"
 %feature("new", "1") NAME;
-#if DISOWN
-%feature("del", "1") NAME;
+#if RETN_1STARG
+%header {#define swiglal_return_1starg_##NAME}
 #endif
 #endif
 %enddef
@@ -874,7 +894,9 @@ if (swiglal_release_parent(PTR)) {
 // scripting language is required, and an empty struct needs to be supplied to
 // the C function. The SWIGLAL(EMPTY_ARGUMENT(TYPE, ...)) macro applies the typemap which
 // supplies a static struct, while the SWIGLAL(NEW_EMPTY_ARGUMENT(TYPE, ...)) macro
-// applies the typemap which supplies a dynamically-allocated struct.
+// applies the typemap which supplies a dynamically-allocated struct. These typemaps
+// may cause there to be no SWIG-wrapped object for the first argument; if so,
+// 'swiglal_no_1starg' is defined for the duration of the wrapping function.
 %define %swiglal_public_EMPTY_ARGUMENT(TYPE, ...)
 %swiglal_map_ab(%swiglal_apply, SWIGTYPE* SWIGLAL_EMPTY_ARGUMENT, TYPE, __VA_ARGS__);
 %enddef
@@ -884,8 +906,13 @@ if (swiglal_release_parent(PTR)) {
 %typemap(in, noblock=1, numinputs=0) SWIGTYPE* SWIGLAL_EMPTY_ARGUMENT ($*ltype emptyarg) {
   memset(&emptyarg, 0, sizeof($*type));
   $1 = &emptyarg;
+%#if $argnum == 1
+%#define swiglal_no_1starg
+%#endif
 }
-%typemap(freearg) SWIGTYPE* SWIGLAL_EMPTY_ARGUMENT "";
+%typemap(freearg, noblock=1) SWIGTYPE* SWIGLAL_EMPTY_ARGUMENT {
+%#undef swiglal_no_1starg
+}
 %define %swiglal_public_NEW_EMPTY_ARGUMENT(TYPE, ...)
 %swiglal_map_ab(%swiglal_apply, SWIGTYPE* SWIGLAL_NEW_EMPTY_ARGUMENT, TYPE, __VA_ARGS__);
 %enddef
@@ -894,8 +921,13 @@ if (swiglal_release_parent(PTR)) {
 %enddef
 %typemap(in, noblock=1, numinputs=0) SWIGTYPE* SWIGLAL_NEW_EMPTY_ARGUMENT {
   $1 = %swiglal_new_instance($*type);
+%#if $argnum == 1
+%#define swiglal_no_1starg
+%#endif
 }
-%typemap(freearg) SWIGTYPE* SWIGLAL_NEW_EMPTY_ARGUMENT "";
+%typemap(freearg, noblock=1) SWIGTYPE* SWIGLAL_NEW_EMPTY_ARGUMENT {
+%#undef swiglal_no_1starg
+}
 
 // SWIG conversion functions for C99 integer types.
 // These are mapped to the corresponding basic C types,
@@ -1043,14 +1075,15 @@ if (swiglal_release_parent(PTR)) {
 }
 %typemap(freearg) const SWIGTYPE * "";
 
-// Typemap for output SWIGTYPEs. This typemaps will match either the SWIG-wrapped
+// Typemaps for output SWIGTYPEs. This typemaps will match either the SWIG-wrapped
 // return argument from functions (which will have the SWIG_POINTER_OWN bit set
 // in $owner) or return a member of a struct through a 'get' functions (in which
-// case SWIG_POINTER_OWN will not be set). If it is the latter case, the function
-// swiglal_store_parent() is called to store a reference to the struct containing
-// the member being accessed, in order to prevent it from being destroyed as long
-// as the SWIG-wrapped member object is in scope. The return object is then always
-// created with SWIG_POINTER_OWN, so that its destructor will always be called.
+// case SWIG_POINTER_OWN will not be set). They require the following macros:
+//
+// The macro %swiglal_store_parent() is called to store a reference to the struct
+// containing the member being accessed, in order to prevent it from being destroyed
+// as long as the SWIG-wrapped member object is in scope. The return object is then
+// always created with SWIG_POINTER_OWN, so that its destructor will always be called.
 %define %swiglal_store_parent(PTR, OWNER, SELF)
 %#if !(OWNER & SWIG_POINTER_OWN)
   if (%as_voidptr(PTR) != NULL) {
@@ -1058,16 +1091,42 @@ if (swiglal_release_parent(PTR)) {
   }
 %#endif
 %enddef
+//
+// The macro %swiglal_set_output() sets the output of the wrapping function. If the
+// (pointer) return type of the function is the same as its first argument, then
+// 'swiglal_return_1starg_##NAME' is defined. Unless 'swiglal_no_1starg' is defined
+// (in which case the first argument is being handled by e.g. the EMPTY_ARGUMENT
+// typemap), the macro compares the pointer of the return value (result) to that of
+// the first argument (arg1). If they're equal, the SWIG-wrapped function will return
+// a *reference* to the SWIG object wrapping the first argument, i.e. the same object
+// with its reference count incremented. That way, if the return value is assigned to
+// a different scripting-language variable than the first argument, the underlying
+// C struct will not be destroyed until both scripting-language variables are cleared.
+// If the pointers are not equal, or one pointer is NULL, the macro return a SWIG
+// object wrapping the new C struct.
+%define %swiglal_set_output(NAME, OBJ)
+%#if defined(swiglal_return_1starg_##NAME) && !defined(swiglal_no_1starg)
+  if (result != NULL && result == arg1) {
+    %set_output(swiglal_get_reference(swiglal_1starg()));
+  } else {
+    %set_output(OBJ);
+  }
+%#else
+  %set_output(OBJ);
+%#endif
+%enddef
+//
+// Typemaps:
 %typemap(out,noblock=1) SWIGTYPE *, SWIGTYPE &, SWIGTYPE[] {
   %swiglal_store_parent($1, $owner, swiglal_self());
-  %set_output(SWIG_NewPointerObj(%as_voidptr($1), $descriptor, ($owner | %newpointer_flags) | SWIG_POINTER_OWN));
+  %swiglal_set_output($1_name, SWIG_NewPointerObj(%as_voidptr($1), $descriptor, ($owner | %newpointer_flags) | SWIG_POINTER_OWN));
 }
 %typemap(out,noblock=1) const SWIGTYPE *, const SWIGTYPE &, const SWIGTYPE[] {
   %set_output(SWIG_NewPointerObj(%as_voidptr($1), $descriptor, ($owner | %newpointer_flags) & ~SWIG_POINTER_OWN));
 }
 %typemap(out, noblock=1) SWIGTYPE *const& {
   %swiglal_store_parent(*$1, $owner, swiglal_self());
-  %set_output(SWIG_NewPointerObj(%as_voidptr(*$1), $*descriptor, ($owner | %newpointer_flags) | SWIG_POINTER_OWN));
+  %swiglal_set_output($1_name, SWIG_NewPointerObj(%as_voidptr(*$1), $*descriptor, ($owner | %newpointer_flags) | SWIG_POINTER_OWN));
 }
 %typemap(out, noblock=1) const SWIGTYPE *const& {
   %set_output(SWIG_NewPointerObj(%as_voidptr(*$1), $*descriptor, ($owner | %newpointer_flags) & ~SWIG_POINTER_OWN));
@@ -1100,7 +1159,9 @@ if (swiglal_release_parent(PTR)) {
 %swiglal_map_a(%swiglal_clear, TYPE, __VA_ARGS__);
 %enddef
 %typemap(out,noblock=1) SWIGTYPE* SWIGLAL_RETURNS_PROPERTY {
+%#ifndef swiglal_no_1starg
   %swiglal_store_parent($1, 0, swiglal_1starg());
+%#endif
   %set_output(SWIG_NewPointerObj(%as_voidptr($1), $descriptor, ($owner | %newpointer_flags) | SWIG_POINTER_OWN));
 }
 

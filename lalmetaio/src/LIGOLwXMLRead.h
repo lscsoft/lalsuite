@@ -45,7 +45,6 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <metaio.h>
 #include <lal/LALDatatypes.h>
 #include <lal/LALConstants.h>
 #include <lal/LIGOMetadataTables.h>
@@ -80,8 +79,8 @@ extern "C" {
 #define LIGOLWXMLREADH_MSGETNOP "Table not begun for writing"
 /*@}*/
 
-
-
+/* Forward declarations of MetaIO types */
+struct MetaioParseEnvironment;
 
 /**
  * This structure allows for the association of entries in a MetaDataTable
@@ -105,16 +104,8 @@ tagMetaTableDirectory
 }
 MetaTableDirectory;
 
-
-
-
-
-
-
-
-
 MetaTableDirectory* XLALCreateMetaTableDir(
-    const MetaioParseEnv    env,
+    struct MetaioParseEnvironment *const env,
     MetadataTableType       table
     );
 
@@ -122,21 +113,15 @@ void
 LALCreateMetaTableDir(
     LALStatus              *status,
     MetaTableDirectory    **tableDir,
-    const MetaioParseEnv    env,
+    struct MetaioParseEnvironment *const env,
     MetadataTableType       table
     );
-
-
-
-
-
-
 
 int
 XLALLIGOLwFindColumn(
     struct MetaioParseEnvironment *env,
     const char *name,
-    enum METAIO_Type type,
+    unsigned int type,
     int required
 );
 

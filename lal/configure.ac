@@ -89,18 +89,12 @@ AC_CONFIG_FILES([ \
   packages/noisemodels/src/Makefile \
   packages/noisemodels/test/Makefile
 ])
-AM_INIT_AUTOMAKE([1.11 foreign color-tests parallel-tests])
-AH_TOP([
-#ifndef CONFIG_H__LAL
-#define CONFIG_H__LAL
-])
-AH_BOTTOM([
-#endif /* CONFIG_H__LAL */
-])
+AM_INIT_AUTOMAKE([1.11 foreign subdir-objects color-tests parallel-tests])
 
 AC_CANONICAL_HOST
 
 LALSUITE_ARG_VAR
+LALSUITE_CHECK_GIT_REPO
 LALSUITE_DISTCHECK_CONFIGURE_FLAGS
 LALSUITE_WITH_CFLAGS_LIBS
 
@@ -141,9 +135,6 @@ AC_SUBST([LIBCURRENT_SUPPORT],[4])
 AC_SUBST([LIBREVISION_SUPPORT],[0])
 AC_SUBST([LIBAGE_SUPPORT],[0])
 AC_SUBST([LIBVERSION_SUPPORT],[${LIBCURRENT_SUPPORT}:${LIBREVISION_SUPPORT}:${LIBAGE_SUPPORT}])
-
-# check for git repo
-LALSUITE_CHECK_GIT_REPO
 
 LAL_ENABLE_INTELFFT
 
@@ -205,7 +196,6 @@ AC_PROG_LN_S
 AC_PROG_AWK
 AC_PROG_SED
 AM_PATH_PYTHON([2.6],,[AC_MSG_ERROR([Python-2.6, or higher, is required])])
-AC_CHECK_PROGS([M4],[gm4 m4], m4)
 
 # check for supported mac os x version
 LALSUITE_OSX_VERSION_CHECK
@@ -354,6 +344,12 @@ AC_TYPE_SIZE_T
 AC_HEADER_TIME
 
 # checks for library functions
+AC_CHECK_FUNC([gmtime_r],[:],[
+  AC_CHECK_FUNCS([gmtime_s],[:],[AC_MSG_ERROR([could not find either gmtime_r() or gmtime_s() functions])])
+])
+AC_CHECK_FUNC([localtime_r],[:],[
+  AC_CHECK_FUNCS([localtime_s],[:],[AC_MSG_ERROR([could not find either localtime_r() or localtime_s() functions])])
+])
 AC_CHECK_FUNCS([stat],,[AC_MSG_ERROR([could not find the stat() function])])
 AC_CHECK_FUNCS([getopt],,[AC_MSG_ERROR([could not find the getopt() function])])
 AC_CHECK_FUNCS([getopt_long],,[AC_MSG_ERROR([could not find the getopt_long() function])])

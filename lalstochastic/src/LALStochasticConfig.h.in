@@ -1,7 +1,5 @@
 /* only include this file if LALStochastic's config.h has not been included */
-
-#ifndef _LALSTOCHASTICCONFIG_H
-#define _LALSTOCHASTICCONFIG_H
+#ifndef LALSTOCHASTIC_VERSION
 
 /* LALStochastic Version */
 #undef LALSTOCHASTIC_VERSION
@@ -24,4 +22,4 @@
 /* LALStochastic Configure Date */
 #undef LALSTOCHASTIC_CONFIGURE_DATE
 
-#endif /* _LALSTOCHASTICCONFIG_H */
+#endif /* LALSTOCHASTIC_VERSION */

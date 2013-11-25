@@ -39,8 +39,10 @@ static int test(struct tm *t, int correct_gps, int line)
 
   if (lalDebugLevel > 0)
     {
+      char buf[64];
+      strftime(buf, sizeof(buf), "%Y-%m-%d %H:%M:%S", t);
       fprintf(stderr, "Input = %s\tOutput =   %d\n\tExpected = %d\n",
-      asctime(t), gps, correct_gps);
+      buf, gps, correct_gps);
     }
 
   if (gps != correct_gps)

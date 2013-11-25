@@ -166,6 +166,14 @@ void dumper(UNUSED int *nSamples, UNUSED int *nlive, UNUSED int *nPar, UNUSED do
         fprintf(fileout,"%s\n",header);
         fclose(fileout);
     }
+
+    /* Prints stats file with template and likelihood evaluation counts */
+    sprintf(outfile,"%srunstats.txt",root2);
+    fileout=fopen(outfile,"w");
+    fprintf(fileout,"IFO templates likelihoods\n");
+    for(LALInferenceIFOData *p=runStateGlobal->data;p;p=p->next)
+        fprintf(fileout,"%s: %u %u\n",p->name,p->templa_counter,p->likeli_counter);
+    fclose(fileout);
 }
 
 void getphysparams(double *Cube, UNUSED int *ndim, UNUSED int *nPar, void *context)
@@ -316,6 +324,7 @@ void LALInferenceMultiNestAlgorithm(LALInferenceRunState *runState)
     double mntol = MNTol;
     int ndims = ND;
     int nPar = ndims + 3;
+    if (LALInferenceCheckVariable(runState->currentParams,"fRef")) nPar++;  // add space for fRef
     int nClsPar = fmin(2,ND);
     int updInt = Ntrain;
     double Ztol = -1.e90;
@@ -491,7 +500,8 @@ Initialisation arguments:\n\
                 return(irs);
         }
     else
-    {
+    {   
+        LALInferenceCheckOptionsConsistency(commandLine);
         fprintf(stdout, " readData(): started.\n");
             irs->data = LALInferenceReadData(commandLine);
     }

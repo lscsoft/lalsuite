@@ -46,7 +46,6 @@ extern "C" {
 #endif
 #include <time.h>
 #include <errno.h>
-
 #include <lal/AVFactories.h>
 #include <lal/Date.h>
 #include <lal/DetectorSite.h>
@@ -57,6 +56,7 @@ extern "C" {
 #include <lal/Velocity.h>
 #include <lal/Statistics.h>
 #include <lal/ComputeFstat.h>
+#include <lal/LALConstants.h>
 #include <lal/UserInput.h>
 #include <lal/SFTfileIO.h>
 #include <lal/NormalizeSFTRngMed.h>
@@ -140,7 +140,7 @@ int XLALCalculateCrossCorrSigmaUnshifted
    REAL8              freq,
    REAL8              Tsft
   )
-;
+  ;
 
 int XLALCalculateAveCurlyGAmpUnshifted
   (
@@ -149,8 +149,19 @@ int XLALCalculateAveCurlyGAmpUnshifted
    SFTIndexList      *indexList,
    MultiAMCoeffs     *multiCoeffs
   )
-;
+ ;
 
+int XLALCalculateWeightedFactors
+  ( 
+   REAL8             *TSquaWeightedAve, 
+   REAL8             *SinSquaWeightedAve,  
+   REAL8Vector       *G_alpha,       
+   SFTPairIndexList  *pairIndexList, 
+   SFTIndexList      *indexList,       
+   MultiSFTVector    *sfts,          
+   REAL8             pOrb          
+   )
+  ;
 /*@}*/
 
 #ifdef  __cplusplus

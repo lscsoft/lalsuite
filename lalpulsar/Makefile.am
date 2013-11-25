@@ -9,10 +9,8 @@ $(ACLOCAL_M4): $(am__aclocal_m4_deps)
 EXTRA_DIST = \
 	COPYING \
 	doc \
-	lalpulsar.pc.in \
-	lalpulsar.spec.in \
 	lalpulsar.spec \
-	aclocal.m4
+	$(DATA)
 
 SUBDIRS = \
 	gnuscripts \

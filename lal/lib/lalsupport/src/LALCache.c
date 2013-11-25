@@ -46,6 +46,11 @@
 #define UNUSED
 #endif
 
+/* for e.g. MinGW */
+#ifndef NAME_MAX
+#define NAME_MAX FILENAME_MAX
+#endif
+
 static int XLALCacheFileReadRow(char *s, size_t len, LALFILE * fp,
                                 int *line)
 {

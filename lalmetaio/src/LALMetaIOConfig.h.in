@@ -1,7 +1,5 @@
 /* only include this file if LALMetaIO's config.h has not been included */
-
-#ifndef _LALMETAIOCONFIG_H
-#define _LALMETAIOCONFIG_H
+#ifndef LALMETAIO_VERSION
 
 /* LALMetaIO Version */
 #undef LALMETAIO_VERSION
@@ -24,4 +22,4 @@
 /* LALMetaIO Configure Date */
 #undef LALMETAIO_CONFIGURE_DATE
 
-#endif /* _LALMETAIOCONFIG_H */
+#endif /* LALMETAIO_VERSION */

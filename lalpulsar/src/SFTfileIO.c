@@ -1859,7 +1859,7 @@ LALReadTimestampsFile (LALStatus* status, LIGOTimeGPSVector **timestamps, const 
   ASSERT (timestamps, status, SFTFILEIO_ENULL,  SFTFILEIO_MSGENULL);
   ASSERT (*timestamps == NULL, status, SFTFILEIO_ENONULL,  SFTFILEIO_MSGENONULL);
 
-  XLALPrintDeprecationWarning("LALReadTimestampsFile()", "XLALReadTimestampsFile()");
+  XLAL_PRINT_DEPRECATION_WARNING("XLALReadTimestampsFile()");
 
   if ( (fp = LALFopen( fname, "r")) == NULL) {
     XLALPrintError("\nUnable to open timestampsname file %s\n\n", fname);
@@ -2063,7 +2063,7 @@ LALWriteSFT2file (LALStatus *status,			/**< pointer to LALStatus structure */
 		  const CHAR *fname,		/**< filename */
 		  const CHAR *SFTcomment)	/**< optional comment (for v2 only) */
 {
-  XLALPrintDeprecationWarning("LALWriteSFT2file", "XLALWriteSFT2file");
+  XLAL_PRINT_DEPRECATION_WARNING("XLALWriteSFT2file");
   INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
   if ( XLALWriteSFT2file( sft, fname, SFTcomment ) != XLAL_SUCCESS ) {
@@ -2127,7 +2127,7 @@ LALWriteSFTVector2Dir (LALStatus *status,			/**< pointer to LALStatus structure 
 		       const CHAR *SFTcomment,		/**< optional comment (for v2 only) */
 		       const CHAR *description)         /**< optional sft description to go in the filename */
 {
-  XLALPrintDeprecationWarning("LALWriteSFTVector2Dir", "XLALWriteSFTVector2Dir");
+  XLAL_PRINT_DEPRECATION_WARNING("XLALWriteSFTVector2Dir");
   INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
   if ( XLALWriteSFTVector2Dir( sftVect, dirname, SFTcomment, description ) != XLAL_SUCCESS ) {

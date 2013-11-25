@@ -61,6 +61,11 @@
  *
  */
 
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
+#include <metaio.h>
+
 #include <lal/LALStdio.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALConstants.h>
@@ -74,7 +79,7 @@
 #endif
 
 MetaTableDirectory* XLALCreateMetaTableDir(
-    const MetaioParseEnv    env,
+    struct MetaioParseEnvironment *const env,
     MetadataTableType       table
     )
 
@@ -343,7 +348,7 @@ void
 LALCreateMetaTableDir(
     LALStatus              *status,
     MetaTableDirectory    **tableDir,
-    const MetaioParseEnv    UNUSED env,
+    struct MetaioParseEnvironment *const env UNUSED,
     MetadataTableType       table
     )
 

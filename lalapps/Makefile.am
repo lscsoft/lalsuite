@@ -11,8 +11,8 @@ EXTRA_DIST = \
 	README \
 	README.bugs \
 	README.contrib \
-	lalapps.spec.in \
-	lalapps.spec
+	lalapps.spec \
+	$(DATA)
 
 SUBDIRS = \
 	debian \

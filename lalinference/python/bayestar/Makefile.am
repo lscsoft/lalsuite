@@ -5,7 +5,6 @@ AM_CPPFLAGS = -I$(top_builddir)/include
 # as errors) flag, for just targets declared in this file.
 CFLAGS += -Wno-error
 
-if HAVE_PYTHON
 bayestardir = $(pkgpythondir)/bayestar
 
 bayestar_PYTHON = \
@@ -31,6 +30,4 @@ sky_map_la_CFLAGS = $(AM_CFLAGS) $(PYTHON_CFLAGS)
 sky_map_la_LDFLAGS = $(AM_LDFLAGS) -shared -module -avoid-version
 sky_map_la_LIBADD = $(LALSUPPORT_LIBS) $(top_builddir)/src/liblalinference.la
 endif
-endif
-
 endif

@@ -123,7 +123,7 @@ LALOpenDataFile( const char *fname )
   char *datapath;	/* locally allocated copy of env-var LAL_DATA_PATH */
   const char *p0;       /* pointer to current sub-path of datapath*/
   char *p1;		/* pointer to next sub-path */
-  char  fdata[265];
+  char  fdata[32768];
   int   n;
 
   if ( (fname==NULL) || ( strlen(fname)==0) ) {
@@ -412,12 +412,12 @@ int XLALFilePuts( const char * s, LALFILE *file )
 
 int XLALFileVPrintf( LALFILE *file, const char *fmt, va_list ap )
 {
-  char buf[LAL_PRINTF_BUFSIZE];
+  char buf[32768];
   int len;
   int c;
   if ( ! file )
     XLAL_ERROR( XLAL_EFAULT );
-  len = vsnprintf( buf, LAL_PRINTF_BUFSIZE, fmt, ap );
+  len = vsnprintf( buf, sizeof(buf), fmt, ap );
   if ( len < 0 )
     XLAL_ERROR( XLAL_EFAILED );
   if ( len >= (int)sizeof(buf) ) { /* buffer is too small */

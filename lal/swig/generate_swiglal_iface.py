@@ -300,28 +300,15 @@ for function_name in functions:
     # remove destructor function from interface
     functions[function_name]['feature_ignore'] = '1'
 
-# determine whether a function should disown its first argument
-func_arg_types_regexp = re.compile(r'^f\((.*)\)\.(p\.)*$')
+# indicate if the return type of a function is a pointer type, and matches the
+# type of its first argument; many LAL functions return their first argument
+# after performing some operation on it, but we want to prevent two different
+# SWIG wrapping objects from owning the same LAL memory
+func_retn_1starg_regexp = re.compile(r'^f\(((?:p\.)+[^,]+?)(?:,[^,]+)*\)\.\1$')
 for function_name in functions:
-
-    # get function argument and return types
-    func_decl = functions[function_name]['decl']
-    func_arg_types_match = func_arg_types_regexp.match(func_decl)
-    if func_arg_types_match is None:
-        fail("could not match function declaration '%s'" % func_decl)
-    func_arg_types = func_arg_types_match.group(1).split(',')
-    func_retn_type = functions[function_name]['type']
-    if not func_arg_types_match.group(2) is None:
-        func_retn_type = func_arg_types_match.group(2) + func_retn_type
-
-    # if first argument of function is a pointer type and matches the return type,
-    # disown the first argument, since many LAL functions return their first argument
-    # after performing some operation on it, but we want to prevent two different
-    # SWIG wrapping objects from owning the same LAL memory
-    disown_first_arg = (func_retn_type.startswith('p.') and func_retn_type == func_arg_types[0])
-
-    # add disown flag as extra argument to swiglal_process_function() macro
-    functions[function_name]['extra_process_args'].append('%d' % disown_first_arg)
+    func_decl_type = functions[function_name]['decl'] + functions[function_name]['type']
+    retn_1starg = (not func_retn_1starg_regexp.match(func_decl_type) is None)
+    functions[function_name]['extra_process_args'].append('%d' % retn_1starg)
 
 # open SWIG interface file
 iface_file = open(iface_filename, 'w')

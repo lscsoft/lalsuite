@@ -34,7 +34,9 @@ log_and_dont_fail() {
 }
 
 download() {
-    echo `date '+[%Y-%m-%d %H:%M:%S]'` curl "$1/$2 > $2" >> "$LOGFILE"
+    echo `date '+[%Y-%m-%d %H:%M:%S]'` wget "$1/$2" >> "$LOGFILE" &&
+    wget --passive-ftp "$1/$2" 2>> "$LOGFILE" ||
+    echo `date '+[%Y-%m-%d %H:%M:%S]'` curl "$1/$2 > $2" >> "$LOGFILE" &&
     curl "$1/$2" > "$2" 2>> "$LOGFILE"
 }
 
@@ -330,7 +332,7 @@ echo RELEASE_DEPS="\"$RELEASE_DEPS\"" >> "$LOGFILE"
 echo RELEASE_LDADD="\"$RELEASE_LDADD\"" >> "$LOGFILE"
 echo BUILD_INFO="\"$BUILD_INFO\"" >> "$LOGFILE"
 
-gsl=gsl-1.9
+gsl=gsl-1.15
 fftw=fftw-3.2.2
 zlib=zlib-1.2.8
 binutils=binutils-2.19
@@ -358,7 +360,7 @@ if test -z "$rebuild" && pkg-config --exists gsl; then
     log_and_show "using existing gsl source"
 elif test -z "$noupdate"; then
     log_and_show "retrieving $gsl"
-    download http://www.aei.mpg.de/~repr/EaH_packages $gsl.tar.gz
+    download http://www.aei.mpg.de/~bema $gsl.tar.gz
     log_and_do tar xzf "$gsl.tar.gz"
 fi
 
@@ -366,7 +368,7 @@ if test -z "$rebuild" && pkg-config --exists fftw3 fftw3f; then
     log_and_show "using existing fftw source"
 elif test -z "$noupdate"; then
     log_and_show "retrieving $fftw"
-    download ftp://ftp.fftw.org/pub/fftw $fftw.tar.gz
+    download http://www.aei.mpg.de/~bema $fftw.tar.gz
     log_and_do tar xzf "$fftw.tar.gz"
 fi
 
@@ -562,7 +564,7 @@ else
     fi
 fi
 
-lalsuite_copts="--disable-gcc-flags --disable-debug --disable-frame --disable-metaio --enable-boinc --disable-silent-rules $shared_copt $cross_copt --prefix=$INSTALL"
+lalsuite_copts="--disable-gcc-flags --disable-debug --disable-frame --disable-metaio --disable-lalsimulation --enable-boinc --disable-silent-rules $shared_copt $cross_copt --prefix=$INSTALL"
 test ".$MACOSX_DEPLOYMENT_TARGET" = ".10.3" &&
     lalsuite_copts="--disable-osx-version-check $lalsuite_copts"
 if test -z "$rebuild_lal" && pkg-config --exists lal; then

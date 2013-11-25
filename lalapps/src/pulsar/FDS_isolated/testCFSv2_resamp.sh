@@ -152,7 +152,7 @@ outfile_RS="Fstat_RS.dat";
 
 cmdline="$cfs_code $cfs_CL  --outputFstat=$outfile_RS --useResamp=1"
 echo $cmdline;
-if ! eval "$cmdline &> /dev/null"; then
+if ! eval "$cmdline 2> /dev/null"; then
     echo "Error.. something failed when running '$cfs_code' ..."
     exit 1;
 fi

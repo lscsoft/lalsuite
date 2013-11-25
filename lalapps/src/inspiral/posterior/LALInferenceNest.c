@@ -75,8 +75,6 @@ Initialisation arguments:\n\
 	FILE *devrandom;
 	
 	irs = XLALCalloc(1, sizeof(LALInferenceRunState));
-	/* read data from files: */
-	fprintf(stdout, " readData(): started.\n");
 	irs->commandLine=commandLine;
 	
 	/* Initialise parameters structure */
@@ -112,7 +110,9 @@ Initialisation arguments:\n\
 	  LALInferenceAddVariable(irs->algorithmParams,"verbose", &verbose , LALINFERENCE_INT4_t,
 				  LALINFERENCE_PARAM_FIXED);		
 	}
-	
+	LALInferenceCheckOptionsConsistency(commandLine);
+  /* read data from files: */
+	fprintf(stdout, " readData(): started.\n");
 	irs->data = LALInferenceReadData(commandLine);
 	/* (this will already initialise each LALIFOData's following elements:  */
         ppt=LALInferenceGetProcParamVal(commandLine,"--help");

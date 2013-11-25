@@ -736,7 +736,7 @@ void LALInferenceSingleProposal(LALInferenceRunState *runState, LALInferenceVari
       sigma = 0.6;
     } else if (!strcmp(param->name, "polarisation")) {
       sigma = 0.6;
-    } else if (!strcmp(param->name, "inclination")) {
+    } else if (!strcmp(param->name, "inclination")||!strcmp(param->name,"theta_JN")) {
       sigma = 0.3;
     } else if (!strcmp(param->name, "a_spin1")) {
       sigma = 0.1;
@@ -758,7 +758,7 @@ void LALInferenceSingleProposal(LALInferenceRunState *runState, LALInferenceVari
   } else {
     if (!strcmp(param->name,"massratio") || !strcmp(param->name,"asym_massratio") || !strcmp(param->name,"time") || !strcmp(param->name,"a_spin2") || !strcmp(param->name,"a_spin1")){
       *(REAL8 *)param->value += gsl_ran_ugaussian(GSLrandom)*big_sigma*sigma*0.001;
-    } else if (!strcmp(param->name,"polarisation") || !strcmp(param->name,"phase") || !strcmp(param->name,"inclination")){
+    } else if (!strcmp(param->name,"polarisation") || !strcmp(param->name,"phase") || !strcmp(param->name,"inclination") ||!strcmp(param->name,"theta_JN")){
       *(REAL8 *)param->value += gsl_ran_ugaussian(GSLrandom)*big_sigma*sigma*0.1;
     } else {
       *(REAL8 *)param->value += gsl_ran_ugaussian(GSLrandom)*big_sigma*sigma*0.01;
@@ -875,11 +875,13 @@ void LALInferenceDifferentialEvolutionFull(LALInferenceRunState *runState, LALIn
   LALInferenceDifferentialEvolutionNames(runState, proposedParams, NULL);
 }
 
+
 void LALInferenceDifferentialEvolutionNames(LALInferenceRunState *runState,
                                             LALInferenceVariables *proposedParams,
                                             const char **names) {
+  size_t i,j;
   if (names == NULL) {
-    size_t i;
+
     size_t N = LALInferenceGetVariableDimension(runState->currentParams) + 1; /* More names than we need. */
     names = alloca(N*sizeof(char *)); /* Hope we have alloca---saves
                                          having to deallocate after
@@ -898,13 +900,13 @@ void LALInferenceDifferentialEvolutionNames(LALInferenceRunState *runState,
     names[i]=NULL; /* Terminate */
   }
 
+
   size_t Ndim = 0;
   const char *name = names[0];
-  while (name != NULL) {
-    Ndim++;
-    name = names[Ndim];
+  for(Ndim=0,i=0; names[i] != NULL; i++ ) {
+    if(LALInferenceCheckVariableNonFixed(proposedParams,name))
+      Ndim++;
   }
-
   LALInferenceVariables **dePts = runState->differentialPoints;
   size_t nPts = runState->differentialPointsLength;
 
@@ -914,8 +916,6 @@ void LALInferenceDifferentialEvolutionNames(LALInferenceRunState *runState,
     LALInferenceSetLogProposalRatio(runState, 0.0);
     return; /* Quit now, since we don't have any points to use. */
   }
-
-  size_t i,j;
 
   i = gsl_rng_uniform_int(runState->GSLrandom, nPts);
   do {
@@ -956,9 +956,9 @@ void LALInferenceDifferentialEvolutionExtrinsic(LALInferenceRunState *runState, 
   const char *propName = differentialEvolutionExtrinsicName;
   LALInferenceSetVariable(runState->proposalArgs, LALInferenceCurrentProposalName, &propName);
 
-  const char *names[] = {"rightascension", "declination", "polarisation", "inclination", "distance", "phase", "time", NULL};
-  const char *marg_time_names[] = {"rightascension", "declination", "polarisation", "inclination", "distance", "phase", NULL};
-  const char *marg_time_phase_names[] = {"rightascension", "declination", "polarisation", "inclination", "distance", NULL};
+  const char *names[] = {"rightascension", "declination", "polarisation", "inclination", "distance", "phase", "time", "theta_JN", NULL};
+  const char *marg_time_names[] = {"rightascension", "declination", "polarisation", "inclination", "distance", "phase", "theta_JN", NULL};
+  const char *marg_time_phase_names[] = {"rightascension", "declination", "polarisation", "inclination", "distance", "theta_JN", NULL};
 
   if (LALInferenceGetProcParamVal(runState->commandLine, "--margtimephi"))
     LALInferenceDifferentialEvolutionNames(runState, pp, marg_time_phase_names);
@@ -1546,7 +1546,7 @@ void LALInferenceSkyRingProposal(LALInferenceRunState *runState, LALInferenceVar
   REAL8 pForward, pReverse;
   pForward = cos(newDec);
   pReverse = cos(dec);
-
+  gsl_matrix_free(IFO);
   LALInferenceSetLogProposalRatio(runState, log(pReverse/pForward));
 
 }
@@ -2160,7 +2160,7 @@ void LALInferenceExtrinsicParamProposal(LALInferenceRunState *runState, LALInfer
   const char *propName = extrinsicParamProposalName;
   LALInferenceSetVariable(runState->proposalArgs, LALInferenceCurrentProposalName, &propName);
   LALInferenceCopyVariables(runState->currentParams, proposedParams);
-
+  int USES_THETA_JN=0;
   /* Find the number of distinct-position detectors. */
   /* Exit with same parameters (with a warning the first time) if
    there are not EXACTLY three unique detector locations. */
@@ -2192,7 +2192,17 @@ void LALInferenceExtrinsicParamProposal(LALInferenceRunState *runState, LALInfer
   REAL8 ra = *(REAL8 *)LALInferenceGetVariable(proposedParams, "rightascension");
   REAL8 dec = *(REAL8 *)LALInferenceGetVariable(proposedParams, "declination");
   REAL8 baryTime = *(REAL8 *)LALInferenceGetVariable(proposedParams, "time");
-  REAL8 iota = *(REAL8 *)LALInferenceGetVariable(proposedParams, "inclination");
+  REAL8 iota=0.;
+  
+  if(LALInferenceCheckVariable(proposedParams,"inclination"))
+    iota = *(REAL8 *)LALInferenceGetVariable(proposedParams, "inclination");
+  else if(LALInferenceCheckVariable(proposedParams,"theta_JN"))
+  {
+    iota = *(REAL8 *)LALInferenceGetVariable(proposedParams, "theta_JN");
+    USES_THETA_JN=1;
+  }
+  else fprintf(stderr,"LALInferenceExtrinsicParamProposal: No inclination or theta_JN parameter!\n");
+  
   REAL8 psi = *(REAL8 *)LALInferenceGetVariable(proposedParams, "polarisation");
   REAL8 dist;
   if (distParam == USES_DISTANCE_VARIABLE) {
@@ -2254,7 +2264,8 @@ void LALInferenceExtrinsicParamProposal(LALInferenceRunState *runState, LALInfer
     REAL8 logNewDist = log(newDist);
     LALInferenceSetVariable(proposedParams, "logdistance", &logNewDist);
   }
-  LALInferenceSetVariable(proposedParams, "inclination", &newIota);
+  if(USES_THETA_JN) LALInferenceSetVariable(proposedParams,"theta_JN",&newIota);
+  else LALInferenceSetVariable(proposedParams, "inclination", &newIota);
   LALInferenceSetVariable(proposedParams, "polarisation", &newPsi);
 
   LALInferenceSetLogProposalRatio(runState, pReverse-pForward);
@@ -2329,7 +2340,7 @@ void LALInferenceSetupAdaptiveProposals(LALInferenceRunState *state)
                 REAL8 sigma=0.01;
                 if (!strcmp(name,"massratio") || !strcmp(name,"asym_massratio") || !strcmp(name,"time") || !strcmp(name,"a_spin2") || !strcmp(name,"a_spin1")){
                         sigma = 0.001;
-                } else if (!strcmp(name,"polarisation") || !strcmp(name,"phase") || !strcmp(name,"inclination")){
+                } else if (!strcmp(name,"polarisation") || !strcmp(name,"phase") || !strcmp(name,"inclination")||!strcmp(name,"theta_JN")){
                         sigma = 0.1;
                 }
                 /* Set up variables to store current sigma, proposed and accepted */

@@ -64,8 +64,6 @@ REAL8 XLALLIGOIPsd(REAL8 f)
  */
 void LALLIGOIPsd(LALStatus UNUSED *status, REAL8 *psd, REAL8 f)
 {
-	/* Deprecation warning temporarily commented out to make life
-	 * easier for the nightly build --- please update calling code */
-	/*XLALPrintDeprecationWarning("LALLIGOIPsd", "XLALLIGOIPsd");*/
+	XLAL_PRINT_DEPRECATION_WARNING("XLALLIGOIPsd");
 	*psd = XLALLIGOIPsd(f) / 9e-46;
 }

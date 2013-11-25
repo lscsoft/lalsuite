@@ -31,12 +31,8 @@
 #define FALSE (1==0)
 
 /*----- Macros ----- */
-/** convert GPS-time to REAL8 */
-#define GPS2REAL8(gps) (1.0 * (gps).gpsSeconds + 1.e-9 * (gps).gpsNanoSeconds )
-
-#define MYMAX(x,y) ( (x) > (y) ? (x) : (y) )
-#define MYMIN(x,y) ( (x) < (y) ? (x) : (y) )
 #define SQUARE(x) ((x) * (x))
+#define INIT_MEM(x) memset(&(x), 0, sizeof((x)))
 
 /*----- SWITCHES -----*/
 
@@ -929,8 +925,8 @@ XLALParseMultiDetectorInfo ( MultiDetectorInfo *detInfo,        /**< [out] parse
 
 /**
  * Extract multi detector-info from a given multi SFTCatalog view,
- * only number of IFOs and LALDetector site information is filled in.
- * (ie no noise sqrtSX, or weights)
+ * only number of IFOs and LALDetector site information is filled in,
+ * other fields will be initialized to 0 (ie no noise sqrtSX, or weights)
  */
 int
 XLALMultiDetectorInfoFromMultiSFTCatalogView ( MultiDetectorInfo *multiDetInfo,		//!< [out] list of detectors found in catalog
@@ -943,6 +939,8 @@ XLALMultiDetectorInfoFromMultiSFTCatalogView ( MultiDetectorInfo *multiDetInfo,	
   XLAL_CHECK ( multiView->length > 0, XLAL_EINVAL );
 
   UINT4 numIFOs = multiView->length;
+
+  INIT_MEM ( (*multiDetInfo) );
 
   multiDetInfo->length = numIFOs;
   for ( UINT4 X=0; X < numIFOs; X ++ )

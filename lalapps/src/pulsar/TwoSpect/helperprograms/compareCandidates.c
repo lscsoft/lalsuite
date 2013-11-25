@@ -39,8 +39,8 @@ int main(void) {
    char *infile1 = "/Users/evgoet/Documents/MATLAB/pulsar/S6/400-501HzH1Candidates.dat";
    char *infile2 = "/Users/evgoet/Documents/MATLAB/pulsar/S6/400-501HzL1Candidates.dat";
    char *outfile1 = "/Users/evgoet/Documents/MATLAB/pulsar/S6/400-501HzCandidates.dat";
-   char *outfile2 = "/Users/evgoet/Documents/MATLAB/pulsar/S6/400-501HzCandidates2.dat";
-   char *outfile3 = "/Users/evgoet/Documents/MATLAB/pulsar/S6/400-501HzCandidates2_reduced.dat";
+   char *outfile2 = "/Users/evgoet/Documents/MATLAB/pulsar/S6/400-501HzCandidates_reduced.dat";
+   char *outfile3 = "/Users/evgoet/Documents/MATLAB/pulsar/S6/400-501HzCandidates_reduced2.dat";
 
    H1CANDS = fopen(infile1,"r");
    if (H1CANDS == NULL) {
