@@ -58,7 +58,7 @@
 int main( void )
 {
   static LALStatus status;
-  char msg[2048];
+  char msg[16384];
   int verbose = 1;
 
 
