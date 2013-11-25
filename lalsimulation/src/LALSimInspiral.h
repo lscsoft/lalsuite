@@ -23,6 +23,7 @@
 #include <lal/LALDatatypes.h>
 #include <lal/LALSimInspiralWaveformFlags.h>
 #include <lal/LALSimInspiralTestGRParams.h>
+#include <lal/LALSimInspiralSphHarmSeries.h>
 #include <lal/TimeSeries.h>
 #include <gsl/gsl_matrix.h>
 
@@ -143,141 +144,6 @@ int XLALSimInspiralREAL8WaveTaper(
 		REAL8Vector              *signalvec,	/**< pointer to waveform vector */
 		LALSimInspiralApplyTaper  bookends	/**< taper type enumerator */
 		);
-
-/* 
- * Structure to carry a collection of spherical harmonic modes in COMPLEX16 
- * time series. Contains convenience getter and setter functions, as well as
- * a convienence "maximum l mode" function. Implemented as a singly forward
- * linked list.
- */
-typedef struct tagSphHarmTimeSeries SphHarmTimeSeries;
-
-typedef struct tagSphHarmFrequencySeries SphHarmFrequencySeries;
-
-/* 
- * Create a SphHarmTimeSeries. If appended is not NULL, this will prepend a new
- * structure to the list by duplicating the mode inmode, mode numbers l, and m, 
- * and then set the next pointer to the appended structure.
- */
-SphHarmTimeSeries* XLALSphHarmTimeSeriesAddMode( 
-		SphHarmTimeSeries *appended,  /**< List structure to prepend to */
-		const COMPLEX16TimeSeries* inmode,  /**< mode series to contain */
-		UINT4 l, /**< major mode number */
-		INT4 m  /**< minor mode number */
-);
-
-/* 
- * Set the tdata pointer to a REAL8Sequence for all members of the 
- * SphHarmTimeSeries linked list. This is mainly intended for use with
- * unevenly sampled time series data
- */
-void XLALSphHarmTimeSeriesSetTData( 
-		SphHarmTimeSeries *ts,  /**< List structure to set tdata */
-		REAL8Sequence* fdata  /**< sequence of timestamps */
-);
-
-/* 
- * Get the tdata pointer.
- */
-REAL8Sequence* XLALSphHarmTimeSeriesGetTData( 
-		SphHarmTimeSeries *ts  /**< List structure to get tdata */
-);
-
-/* 
- * Destroy a SphHarmTimeSeries. Note that this will destroy any 
- * COMPLEX16TimeSeries which it has references to.
- */
-void XLALDestroySphHarmTimeSeries( SphHarmTimeSeries* ts );
-
-/* 
- * Destroy a SphHarmTimeSeries. Note that this will destroy any 
- * COMPLEX16TimeSeries which it has references to.
- */
-UINT4 XLALSphHarmTimeSeriesGetMaxL( SphHarmTimeSeries* ts );
-
-#ifdef SWIG   // SWIG interface directives
-SWIGLAL(RETURNS_PROPERTY(COMPLEX16TimeSeries*, XLALSphHarmTimeSeriesGetMode));
-#endif
-
-/* 
- * Get the mode-decomposed time series corresponding to l,m.
- */
-COMPLEX16TimeSeries* XLALSphHarmTimeSeriesGetMode( 
-				SphHarmTimeSeries *ts, 
-				UINT4 l, 
-				INT4 m 
-);
-
-SphHarmTimeSeries *XLALResizeSphHarmTimeSeries(
-        SphHarmTimeSeries *ts,
-        int first,
-        size_t length
-        );
-
-SphHarmFrequencySeries *XLALSphHarmFrequencySeriesFromSphHarmTimeSeries(
-        SphHarmTimeSeries *hlms_TD
-        );
-
-/* 
- * Create a SphHarmFrequencySeries. If appended is not NULL, this will prepend a new
- * structure to the list by duplicating the mode inmode, mode numbers l, and m, 
- * and then set the next pointer to the appended structure.
- */
-SphHarmFrequencySeries* XLALSphHarmFrequencySeriesAddMode( 
-		SphHarmFrequencySeries *appended,  /**< List structure to prepend to */
-		const COMPLEX16FrequencySeries* inmode,  /**< mode series to contain */
-		UINT4 l, /**< major mode number */
-		INT4 m  /**< minor mode number */
-);
-
-SphHarmTimeSeries *XLALSphHarmTimeSeriesFromSphHarmFrequencySeriesDataAndPSD(
-                                                                             SphHarmFrequencySeries *hlms, 
-                                                                             COMPLEX16FrequencySeries* data,
-                                                                             COMPLEX16FrequencySeries* psd
-                                                                             );
-
-
-/* 
- * Set the tdata pointer to a REAL8Sequence for all members of the 
- * SphHarmFrequencySeries linked list. This is mainly intended for use with
- * unevenly sampled time series data
- */
-void XLALSphHarmFrequencySeriesSetFData( 
-		SphHarmFrequencySeries *ts,  /**< List structure to add tdata */
-		REAL8Sequence* tdata  /**< sequence of timestamps */
-);
-
-/* 
- * Get the fdata pointer.
- */
-REAL8Sequence* XLALSphHarmFrequencySeriesGetFData( 
-		SphHarmFrequencySeries *ts  /**< List structure to get fdata */
-);
-
-/* 
- * Destroy a SphHarmFrequencySeries. Note that this will destroy any 
- * COMPLEX16TimeSeries which it has references to.
- */
-void XLALDestroySphHarmFrequencySeries( SphHarmFrequencySeries* ts );
-
-/* 
- * Destroy a SphHarmFrequencySeries. Note that this will destroy any 
- * COMPLEX16FrequencySeries which it has references to.
- */
-UINT4 XLALSphHarmFrequencySeriesGetMaxL( SphHarmFrequencySeries* ts );
-
-#ifdef SWIG   // SWIG interface directives
-SWIGLAL(RETURNS_PROPERTY(COMPLEX16FrequencySeries*, XLALSphHarmFrequencySeriesGetMode));
-#endif
-
-/* 
- * Get the mode-decomposed frequency series corresponding to l,m.
- */
-COMPLEX16FrequencySeries* XLALSphHarmFrequencySeriesGetMode( 
-				SphHarmFrequencySeries *ts, 
-				UINT4 l, 
-				INT4 m 
-);
 
 /**
  * Compute the polarizations from all the -2 spin-weighted spherical harmonic
