@@ -171,9 +171,6 @@ MACRO(A, B, C, X);
 #endif
 %}
 
-// Include configuration header.
-%include <config.h>
-
 // Include LAL headers.
 %header %{
 #include <lal/LALDatatypes.h>
