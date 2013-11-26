@@ -239,7 +239,7 @@ class TaylorF2RedSpinTemplate(Template):
 
         wf = lalsim.SimInspiralTaylorF2ReducedSpin(
             0, df, self.m1 * LAL_MSUN_SI, self.m2 * LAL_MSUN_SI, self.chi,
-            self.bank.flow, 0, 1000000 * LAL_PC_SI, 7, 3)
+            self.bank.flow, 0, 1000000 * LAL_PC_SI, 7, 7)
         # have to resize wf to next pow 2 for FFT plan caching
         wf = lal.ResizeCOMPLEX16FrequencySeries( wf, 0, ceil_pow_2(wf.data.length) )
         return wf
