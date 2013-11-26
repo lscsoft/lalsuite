@@ -597,7 +597,7 @@ class SpinTaylorT4Template(Template):
             7, # twice PN spin order
             0, # twice PN tidal order
             7, # twice PN phase order
-            3 # twice PN amplitude order
+            0 # twice PN amplitude order
         )
 
         # project onto detector
