@@ -63,6 +63,7 @@ for i; do
 	--rebuild-boinc)
 	    rebuild_boinc=true ;;
 	--rebuild-zlib)
+	    build_zlib=true
 	    rebuild_zlib=true ;;
 	--rebuild-binutils)
 	    rebuild_binutils=true ;;
