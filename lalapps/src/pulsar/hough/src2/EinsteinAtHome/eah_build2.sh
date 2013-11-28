@@ -333,7 +333,7 @@ echo RELEASE_LDADD="\"$RELEASE_LDADD\"" >> "$LOGFILE"
 echo BUILD_INFO="\"$BUILD_INFO\"" >> "$LOGFILE"
 
 gsl=gsl-1.15
-fftw=fftw-3.2.2
+fftw=fftw-3.3.3
 zlib=zlib-1.2.8
 binutils=binutils-2.19
 
