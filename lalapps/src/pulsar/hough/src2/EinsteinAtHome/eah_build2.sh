@@ -34,10 +34,17 @@ log_and_dont_fail() {
 }
 
 download() {
-    echo `date '+[%Y-%m-%d %H:%M:%S]'` wget "$1/$2" >> "$LOGFILE" &&
-    wget --passive-ftp "$1/$2" 2>> "$LOGFILE" ||
-    echo `date '+[%Y-%m-%d %H:%M:%S]'` curl "$1/$2 > $2" >> "$LOGFILE" &&
-    curl "$1/$2" > "$2" 2>> "$LOGFILE"
+    if [ ".$2" = "." ]; then
+      u="http://www.aei.mpg.de/~bema"
+      f="$1"
+    else
+      u="$1"
+      f="$2"
+    fi
+    echo `date '+[%Y-%m-%d %H:%M:%S]'` wget "$u/$f" >> "$LOGFILE" &&
+    wget --passive-ftp "$u/$f" 2>> "$LOGFILE" ||
+    echo `date '+[%Y-%m-%d %H:%M:%S]'` curl "$u/$f > $f" >> "$LOGFILE" &&
+    curl "$u/$f" > "$f" 2>> "$LOGFILE"
 }
 
 eah_build2_loc="`echo $PWD/$0 | sed 's%/[^/]*$%%'`"
