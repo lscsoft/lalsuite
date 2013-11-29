@@ -62,10 +62,11 @@ S2-H1segments.txt \
 S2-H2segments.txt \
 S2-L1segments.txt \
 testComputePSD.sh \
+testComputeAntennaPattern.sh \
 psd_ref.dat
 
 
-TESTS = testComputePSD.sh
+TESTS = testComputePSD.sh testComputeAntennaPattern.sh
 
 TESTS_ENVIRONMENT = LAL_DEBUG_LEVEL=memdbg LALPULSAR_DATADIR="$(LALPULSAR_DATADIR)"
 
