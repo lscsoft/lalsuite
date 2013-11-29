@@ -44,6 +44,7 @@
 /*---------- local defines ---------- */
 
 /* ----- Macros ----- */
+#define SQ(x) ( (x) * (x) )
 
 /* ---------- local types ---------- */
 
@@ -64,8 +65,9 @@ typedef struct
   REAL8 sinzeta;			/**< detector-arm angle correction (needed for GEO) */
   REAL8Vector *Alpha;			/**< skyposition Alpha: radians, equatorial coords */
   REAL8Vector *Delta;			/**< skyposition Delta: radians, equatorial coords */
+  UINT4 numTimeStamps;			/**< length of timestamps vector */
   UINT4 numSkyPoints;			/**< common length of Alpha and Delta vectors */
-  UINT4 numData;			/**< total number of data points, timestamps->length*numSkyPoints */
+  UINT4 numData;			/**< total number of data points, numTimeStamps*numSkyPoints */
 } ConfigVariables;
 
 
@@ -158,12 +160,14 @@ main(int argc, char *argv[])
     skypos.latitude  = config.Delta->data[n];
 
     /* do the actual computation of the antenna pattern functions */
-    for (UINT4 t = 0; t < config.timestamps->length; t++) {
-      if ( XLALComputeAntennaPatternCoeffs ( &a0->data[n*config.timestamps->length+t], &b0->data[n*config.timestamps->length+t], &skypos, &config.timestamps->data[t], config.det, config.edat ) != XLAL_SUCCESS ) {
+    for (UINT4 t = 0; t < config.numTimeStamps; t++) {
+      if ( XLALComputeAntennaPatternCoeffs ( &a0->data[n*config.numTimeStamps+t], &b0->data[n*config.numTimeStamps+t], &skypos, &config.timestamps->data[t], config.det, config.edat ) != XLAL_SUCCESS ) {
         XLALPrintError ("%s: XLALComputeAntennaPatternCoeffs() failed.\n", __func__ );
         XLAL_ERROR ( XLAL_EFUNC );
       }
-    } // for (UINT4 t = 0; t < config.timestamps->length; t++)
+      a0->data[n*config.numTimeStamps+t] /= config.sinzeta;
+      b0->data[n*config.numTimeStamps+t] /= config.sinzeta;
+    } // for (UINT4 t = 0; t < config.numTimeStamps; t++)
 
   } // for (UINT4 n = 0; n < config.numSkyPoints; n++)
 
@@ -195,35 +199,45 @@ main(int argc, char *argv[])
       if ( config.mthopTimeStamps == MATH_OP_ARITHMETIC_SINGLE ) {
         fprintf(fpOut, "     tGPS");
       }
-      fprintf(fpOut, "       a(t)         b(t)\n");
+      fprintf(fpOut, "       a(t)         b(t)         A            B            C            D\n");
 
       /* write the actual data */
       for (UINT4 n = 0; n < config.numSkyPoints; n++) {
 
        if ( config.mthopTimeStamps == MATH_OP_ARITHMETIC_SINGLE ) { // in this case, just output all antenna pattern function values at each timestamp
-         for (UINT4 t = 0; t < config.timestamps->length; t++) {
-           fprintf (fpOut, "%.7f %.7f %d %12.8f %12.8f\n", config.Alpha->data[n], config.Delta->data[n], config.timestamps->data[t].gpsSeconds, a0->data[n*config.timestamps->length+t]/config.sinzeta, b0->data[n*config.timestamps->length+t]/config.sinzeta );
+         for (UINT4 t = 0; t < config.numTimeStamps; t++) {
+           REAL8 A = SQ(a0->data[n*config.numTimeStamps+t]);
+           REAL8 B = SQ(b0->data[n*config.numTimeStamps+t]);
+           REAL8 C = a0->data[n*config.numTimeStamps+t]*b0->data[n*config.numTimeStamps+t];
+           REAL8 D = A*B-SQ(C);
+           fprintf (fpOut, "%.7f %.7f %d %12.8f %12.8f %12.8f %12.8f %12.8f %12.8f\n", config.Alpha->data[n], config.Delta->data[n], config.timestamps->data[t].gpsSeconds, a0->data[n*config.numTimeStamps+t], b0->data[n*config.numTimeStamps+t], A, B, C, D );
          }
        } // if ( config.mthopTimeStamps == MATH_OP_ARITHMETIC_SINGLE )
 
        else { // in all other cases, output a single antenna pattern function value per sky point computed over all timestamps
          REAL8 atotn = 0;
          REAL8 btotn = 0;
-         if ( config.mthopTimeStamps == MATH_OP_ARITHMETIC_SUM ) {
-           for (UINT4 t = 0; t < config.timestamps->length; t++) {
-             atotn += a0->data[n*config.timestamps->length+t];
-             btotn += b0->data[n*config.timestamps->length+t];
+         REAL8 A = 0;
+         REAL8 B = 0;
+         REAL8 C = 0;
+         if ( ( config.mthopTimeStamps == MATH_OP_ARITHMETIC_SUM ) || ( config.mthopTimeStamps == MATH_OP_ARITHMETIC_MEAN ) ) {
+           for (UINT4 t = 0; t < config.numTimeStamps; t++) {
+             atotn += a0->data[n*config.numTimeStamps+t];
+             btotn += b0->data[n*config.numTimeStamps+t];
+             A += SQ(a0->data[n*config.numTimeStamps+t]);
+             B += SQ(b0->data[n*config.numTimeStamps+t]);
+             C += a0->data[n*config.numTimeStamps+t]*b0->data[n*config.numTimeStamps+t];
            }
          }
-         else if ( config.mthopTimeStamps == MATH_OP_ARITHMETIC_MEAN ) {
-           for (UINT4 t = 0; t < config.timestamps->length; t++) {
-             atotn += a0->data[n*config.timestamps->length+t];
-             btotn += b0->data[n*config.timestamps->length+t];
-           }
-           atotn /= config.timestamps->length;
-           btotn /= config.timestamps->length;
+         if ( config.mthopTimeStamps == MATH_OP_ARITHMETIC_MEAN ) {
+           atotn /= config.numTimeStamps;
+           btotn /= config.numTimeStamps;
+           A /= config.numTimeStamps;
+           B /= config.numTimeStamps;
+           C /= config.numTimeStamps;
          }
-         fprintf (fpOut, "%.7f %.7f %12.8f %12.8f\n", config.Alpha->data[n], config.Delta->data[n], atotn/config.sinzeta, btotn/config.sinzeta );
+         REAL8 D = A*B-SQ(C);
+         fprintf (fpOut, "%.7f %.7f %12.8f %12.8f %12.8f %12.8f %12.8f %12.8f\n", config.Alpha->data[n], config.Delta->data[n], atotn, btotn, A, B, C, D );
        } // !if ( mthopTimeStamps == MATH_OP_ARITHMETIC_SINGLE )
 
       } // for (UINT4 n = 0; n < config.numSkyPoints; n++)
@@ -352,6 +366,7 @@ XLALInitCode ( ConfigVariables *cfg, const UserVariables_t *uvar, const char *ap
 
   } // timestamps from timeGPS
 
+  cfg->numTimeStamps = cfg->timestamps->length;
   cfg->mthopTimeStamps = uvar->mthopTimeStamps;
 
   /* convert detector name into site-info */

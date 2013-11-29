@@ -12,6 +12,8 @@ if [ -z "${srcdir}" ]; then
 fi
 
 builddir="./";
+injectdir="./Injections/"
+fdsdir="./FDS_isolated/"
 
 ## check for LALPulsar data directory
 if [ -z "${LALPULSAR_DATADIR}" ]; then
@@ -24,6 +26,8 @@ fi
 ##---------- names of codes
 cap_code="${builddir}lalapps_ComputeAntennaPattern"
 pds_code="${builddir}lalapps_PrintDetectorState"
+mfd_code="${injectdir}lalapps_Makefakedata_v4 -E ${LALPULSAR_DATADIR}"
+pfs_code="${fdsdir}lalapps_PredictFStat"
 
 tolerance=1e-3
 Tsft=1800
@@ -281,7 +285,59 @@ if [ "$fail_asum" -o "$fail_bsum" -o "$fail_amean" -o "$fail_bmean" ]; then
     retstatus=1
 else
     echo "==> OK at tolerance=$tolerance"
+fi
+
+echo "----------------------------------------------------------------------------------------------------"
+echo "ComputeAntennaPattern Test4: comparing A,B,C,D with PredictFStat";
+echo "----------------------------------------------------------------------------------------------------"
+
+A_cap=$(awk '{print $5}' $outCAP)
+B_cap=$(awk '{print $6}' $outCAP)
+C_cap=$(awk '{print $7}' $outCAP)
+D_cap=$(awk '{print $8}' $outCAP)
+
+sftfile=./H1_test.sft
+outPFS=./pfs_test.dat
+
+mfd_cmdline="${mfd_code} --IFO=$IFO --outSingleSFT --outSFTbname=$sftfile --fmin=59.95 --Band=0.1 --timestampsFile=$timestampsfile"
+echo $mfd_cmdline;
+if ! eval $mfd_cmdline; then
+    echo "Error.. something failed when running '$mfd_code' ..."
+    exit 1
+fi
+
+pfs_cmdline="${pfs_code} --IFO=$IFO --h0=1e-24 --cosi=0 --psi=0 --phi0=0 --Freq=60 --Alpha=$alpha --Delta=$delta --DataFiles=$sftfile --outputFstat=$outPFS --SignalOnly --printFstat=0"
+echo $pfs_cmdline;
+if ! eval $pfs_cmdline; then
+    echo "Error.. something failed when running '$pfs_code' ..."
+    exit 1
+fi
+
+A_pfs=$(grep 'A =' ${outPFS} | tr -d 'A =;')
+B_pfs=$(grep 'B =' ${outPFS} | tr -d 'B =;')
+C_pfs=$(grep 'C =' ${outPFS} | tr -d 'C =;')
+D_pfs=$(grep 'D =' ${outPFS} | tr -d 'D =;')
+
+echo "==> lalapps_ComputeAntennaPattern:   A=$A_cap, B=$B_cap, C=$C_cap, D=$D_cap"
+echo "    lalapps_PredictFStat:            A=$A_pfs,   B=$B_pfs,   C=$C_pfs,   D=$D_pfs"
+
+reldev_A=$(echo $A_cap $A_pfs | awk "$awk_reldev")
+fail_A=$(echo $reldev_A $tolerance | awk "$awk_isgtr")
+reldev_B=$(echo $B_cap $B_pfs | awk "$awk_reldev")
+fail_B=$(echo $reldev_B $tolerance | awk "$awk_isgtr")
+reldev_C=$(echo $C_cap $C_pfs | awk "$awk_reldev")
+fail_C=$(echo $reldev_C $tolerance | awk "$awk_isgtr")
+reldev_D=$(echo $D_cap $D_pfs | awk "$awk_reldev")
+fail_D=$(echo $reldev_D $tolerance | awk "$awk_isgtr")
+
+if [ "$fail_A" -o "$fail_B" -o "$fail_C" -o "$fail_D" ]; then
+    echo "==> FAILED at tolerance=$tolerance"
+    retstatus=1
+else
+    echo "==> OK at tolerance=$tolerance"
+    echo
     echo "========== OK. All ComputeAntennaPattern tests PASSED. =========="
+    echo
 fi
 
 ## clean up files
@@ -290,6 +346,8 @@ if [ -z "$NOCLEANUP" ]; then
     rm $outPDS
     rm $skygrid
     rm $timestampsfile
+    rm $sftfile
+    rm $outPFS
     echo "Cleaned up."
 fi
 
