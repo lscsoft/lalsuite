@@ -87,6 +87,7 @@ typedef struct
   LALStringVector* timeGPS;	/**< GPS timestamps to compute detector state for (REAL8 format) */
   CHAR  *timeStampsFile;	/**< alternative: read in timestamps from a file (expect same format) */
   INT4 mthopTimeStamps; 	/**< math operation over timestamps */
+  INT4 timeStampOffset;		/**< offset to timestamps, needed when comparing to CFS_v2, PFS etc */
 
   CHAR *outputFile;	/**< output file to write antenna pattern functions into */
 
@@ -279,6 +280,7 @@ XLALInitUserVars ( UserVariables_t *uvar )
   uvar->timeGPS = NULL;
   uvar->timeStampsFile = NULL;
   uvar->mthopTimeStamps = MATH_OP_ARITHMETIC_SINGLE;
+  uvar->timeStampOffset = 0;
 
   uvar->outputFile = NULL;
 
@@ -294,6 +296,7 @@ XLALInitUserVars ( UserVariables_t *uvar )
   XLALregLISTUserStruct( 	timeGPS,        't', UVAR_OPTIONAL, 	"GPS time at which to compute detector state (separate multiple timestamps by commata)");
   XLALregSTRINGUserStruct(	timeStampsFile, 'T', UVAR_OPTIONAL,	"Alternative: time-stamps file");
   XLALregINTUserStruct(		mthopTimeStamps,'m', UVAR_OPTIONAL,	"type of math. operation over timestamps: 0=individual values, 1=arith-sum, 2=arith-mean");
+  XLALregINTUserStruct(		timeStampOffset,'O', UVAR_OPTIONAL,	"Compute at offset from given timestamps - usually Tsft/2 when comparing to F-stat based codes");
 
   XLALregSTRINGUserStruct(	ephemDir, 	'E', UVAR_OPTIONAL,     "Directory where Ephemeris files are located");
   XLALregSTRINGUserStruct(	ephemYear, 	'y', UVAR_OPTIONAL,     "Year (or range of years) of ephemeris files to be used");
@@ -368,6 +371,12 @@ XLALInitCode ( ConfigVariables *cfg, const UserVariables_t *uvar, const char *ap
 
   cfg->numTimeStamps = cfg->timestamps->length;
   cfg->mthopTimeStamps = uvar->mthopTimeStamps;
+
+  if ( uvar->timeStampOffset > 0 ) { // apply an offset, e.g. Tsft/2, to all timestamps
+    for (UINT4 t = 0; t < cfg->numTimeStamps; t++) {
+      XLALGPSAdd ( &cfg->timestamps->data[t], uvar->timeStampOffset );
+    }
+  }
 
   /* convert detector name into site-info */
   if ( ( cfg->det = XLALGetSiteInfo ( uvar->detector )) == NULL )

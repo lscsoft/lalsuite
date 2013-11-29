@@ -291,6 +291,14 @@ echo "--------------------------------------------------------------------------
 echo "ComputeAntennaPattern Test4: comparing A,B,C,D with PredictFStat";
 echo "----------------------------------------------------------------------------------------------------"
 
+## here, need offset of Tsft/2=900 for comparison with PredictFStat, which internally computes a,b,A,B,C,D at SFT midpoints
+cap_cmdline="${cap_code} --detector=$IFO --timeStampsFile=$timestampsfile --outputFile=$outCAP --Alpha=$alpha --Delta=$delta --mthopTimeStamps=2 --timeStampOffset=900"
+echo $cap_cmdline;
+if ! eval $cap_cmdline; then
+    echo "Error.. something failed when running '$cap_code' ..."
+    exit 1
+fi
+eval $(sed -i '/^\%\%/d' $outCAP)
 A_cap=$(awk '{print $5}' $outCAP)
 B_cap=$(awk '{print $6}' $outCAP)
 C_cap=$(awk '{print $7}' $outCAP)
