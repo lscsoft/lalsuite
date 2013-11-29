@@ -51,17 +51,22 @@ void get_pulsar_model( LALInferenceIFOData *data ){
   //  pars.phi0 = rescale_parameter( data, "phi0" );
   //}
 
-  /*pinned superfluid parameters*/
-  //pars.I21 = rescale_parameter( data, "I21" );
-  //pars.I31 = rescale_parameter( data, "I31" );
-  //pars.r = rescale_parameter( data, "r" );
-  //pars.lambda = rescale_parameter( data, "lambda" );
-  //pars.costheta = rescale_parameter( data, "costheta" );
+  if( LALInferenceCheckVariable( data->dataParams, "jones-model" ) ){
+    /* use parameterisation from Ian Jones's original model */
+    pars.I21 = rescale_parameter( data, "I21" );
+    pars.I31 = rescale_parameter( data, "I31" );
+    pars.lambda = rescale_parameter( data, "lambda" );
+    pars.costheta = rescale_parameter( data, "costheta" );
+    pars.phi0 = rescale_parameter( data, "phi0" );
 
-  pars.C21 = rescale_parameter( data, "C21" );
-  pars.C22 = rescale_parameter( data, "C22" );
-  pars.phi21 = rescale_parameter( data, "phi21" );
-  pars.phi22 = rescale_parameter( data, "phi22" );
+    invert_source_params( &pars );
+  }
+  else{
+    pars.C21 = rescale_parameter( data, "C21" );
+    pars.C22 = rescale_parameter( data, "C22" );
+    pars.phi21 = rescale_parameter( data, "phi21" );
+    pars.phi22 = rescale_parameter( data, "phi22" );
+  }
 
   /* set the potentially variable parameters */
   pars.pepoch = rescale_parameter( data, "pepoch" );
@@ -921,7 +926,7 @@ void get_amplitude_model( BinaryPulsarParams pars, LALInferenceIFOData *data ){
       /* the l=2, m=1 harmonic at the rotation frequency */
       expPhi = cexp( I * pars.phi21 );
       Cplus = -0.25 * pars.C21 * siniota * pars.cosiota * expPhi;
-      Ccross = -0.25 * I * pars.C21 * siniota * expPhi;
+      Ccross = 0.25 * I * pars.C21 * siniota * expPhi;
     }
     else if( freqFactors->data[j] == 2. ){
       /* the l=2, m=2 harmonic at twice the rotation frequency */
@@ -1278,43 +1283,37 @@ void inverse_phi0_psi_transform( REAL8 phi0prime, REAL8 psiprime, REAL8 *phi0, R
  * 76-79 of LIGO T1200265-v3.
  */
 void invert_source_params( BinaryPulsarParams *params ){
-  /* if h0 is defined then we have a triaxial source (l=m=2) emitting just at twice the rotation frequency */
-  if ( !params->C22 && !params->phi22 ){
-    params->C22 = params->h0 / 2.;
-    params->phi22 = params->phi0 - LAL_PI;
-  }
-  /* otherwise we have a more general source model that can include m=1,2 emission */
-  else if ( !params->C22 && !params->C21 && !params->phi22 && !params->phi21 ) {
-    REAL8 sinlambda, coslambda, sinlambda2, coslambda2, sin2lambda;
-    REAL8 sintheta, costheta, costheta2, sintheta2, sin2theta;
+  REAL8 sinlambda, coslambda, sinlambda2, coslambda2, sin2lambda;
+  REAL8 theta, sintheta, costheta, costheta2, sintheta2, sin2theta;
+  REAL8 phi0 = params->phi0;
 
-    sinlambda = sin( params->lambda );
-    coslambda = cos( params->lambda );
-    sin2lambda = sin( 2. * params->lambda );
-    sinlambda2 = SQUARE( sinlambda );
-    coslambda2 = SQUARE( coslambda );
+  sinlambda = sin( params->lambda );
+  coslambda = cos( params->lambda );
+  sin2lambda = sin( 2. * params->lambda );
+  sinlambda2 = SQUARE( sinlambda );
+  coslambda2 = SQUARE( coslambda );
 
-    sintheta = sin( acos( params->costheta ) );
-    costheta = params->costheta;
-    sin2theta = sin( 2. * acos( params->costheta ) );
-    sintheta2 = SQUARE( sintheta );
-    costheta2 = SQUARE( costheta );
+  theta = acos( params->costheta );
+  sintheta = sin( theta );
+  costheta = params->costheta;
+  sin2theta = sin( 2. * theta );
+  sintheta2 = SQUARE( sintheta );
+  costheta2 = SQUARE( costheta );
 
-    REAL8 A22 = params->I21 * ( sinlambda2 - coslambda2 * costheta2 ) - params->I31 * sintheta2;
-    REAL8 B22 = params->I21 * sin2lambda * costheta;
-    REAL8 A222 = SQUARE( A22 );
-    REAL8 B222 = SQUARE( B22 );
+  REAL8 A22 = params->I21 * ( sinlambda2 - coslambda2 * costheta2 ) - params->I31 * sintheta2;
+  REAL8 B22 = params->I21 * sin2lambda * costheta;
+  REAL8 A222 = SQUARE( A22 );
+  REAL8 B222 = SQUARE( B22 );
 
-    REAL8 A21 = params->I21 * sin2lambda * sintheta;
-    REAL8 B21 = sin2theta * ( params->I21 * coslambda2 - params->I31 );
-    REAL8 A212 = SQUARE( A21 );
-    REAL8 B212 = SQUARE( B21 );
+  REAL8 A21 = params->I21 * sin2lambda * sintheta;
+  REAL8 B21 = sin2theta * ( params->I21 * coslambda2 - params->I31 );
+  REAL8 A212 = SQUARE( A21 );
+  REAL8 B212 = SQUARE( B21 );
 
-    params->C22 = 2.*sqrt( A222 + B222 );
-    params->C21 = 2.*sqrt( A212 + B212 );
+  params->C22 = 2.*sqrt( A222 + B222 );
+  params->C21 = 2.*sqrt( A212 + B212 );
 
-    params->phi22 = atan2( B22, A22 );
-    params->phi21 = atan2( B21, A21 );
-  }
+  params->phi22 = fmod( phi0 - atan2( B22, A22 ), LAL_TWOPI );
+  params->phi21 = fmod( ( phi0/2. ) - atan2( B21, A21 ), LAL_TWOPI );
 }
 
