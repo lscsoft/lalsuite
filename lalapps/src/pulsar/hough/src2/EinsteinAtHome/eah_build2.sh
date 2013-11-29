@@ -47,6 +47,7 @@ test ".$appversion" = "." && appversion=0.00
 boinc_repo="git://gitmaster.atlas.aei.uni-hannover.de/einsteinathome/boinc.git"
 boinc_rev=current_gw_apps
 #previous:-r22844 -r22825 -r22804 -r22794 -r22784 -r22561 -r22503 -r22363 -r21777 -r'{2008-12-01}'
+git_retries=1
 
 for i; do
     case "$i" in
@@ -166,6 +167,8 @@ for i; do
 	    boinc_rev="`echo $i | sed 's/^.*=//'`";;
 	--boinc-commit=*)
 	    boinc_rev="`echo $i | sed 's/^.*=//'`";;
+	--git_retries=*)
+	    git_retries="`echo $i | sed 's/^.*=//'`";;
 	--help)
 	    echo "$0 builds Einstein@home Applications of LALApps HierarchicalSearch codes"
 	    echo "  --win32           cros-compile a Win32 App (requires MinGW, target i586-mingw32msvc-gcc)"
@@ -401,7 +404,13 @@ else
     else
         log_and_do cd "$SOURCE"
         log_and_do rm -rf boinc
-        log_and_do git clone "$boinc_repo"
+        trial=1
+        while ! log_and_dont_fail git clone "$boinc_repo" ; do
+            trial=`expr $trial + 1`
+            test $trial -gt $git_retries && log_and_show "failed" && fail
+            sleep 30
+            log_and_do rm -rf boinc
+        done
         log_and_do cd boinc
     fi
     # if "$boinc_rev" is a tag that already exists locally,
