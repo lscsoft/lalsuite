@@ -277,7 +277,7 @@ XLALComputeFaFb ( Fcomponents *FaFb,		      	/* [out] Fa,Fb (and possibly atoms)
        * We choose the value sin[ 2pi(Dphi_alpha - kstar) ] because it is the
        * closest to zero and will pose no numerical difficulties !
        */
-      XLALSinCos2PiLUT ( &s_alpha, &c_alpha, kappa_star );
+      XLAL_CHECK( XLALSinCos2PiLUT ( &s_alpha, &c_alpha, kappa_star ) == XLAL_SUCCESS, XLAL_EFUNC );
       c_alpha -= 1.0f;
 
       /* ---------- calculate the (truncated to Dterms) sum over k ---------- */
@@ -541,7 +541,7 @@ XLALComputeFaFbCmplx ( Fcomponents *FaFb,		/* [out] Fa,Fb (and possibly atoms) r
        * We choose the value sin[ 2pi(Dphi_alpha - kstar) ] because it is the
        * closest to zero and will pose no numerical difficulties !
        */
-      XLALSinCos2PiLUT ( &s_alpha, &c_alpha, kappa_star );
+      XLAL_CHECK( XLALSinCos2PiLUT ( &s_alpha, &c_alpha, kappa_star ) == XLAL_SUCCESS, XLAL_EFUNC );
       c_alpha -= 1.0f;
 
       /* ---------- calculate the (truncated to Dterms) sum over k ---------- */

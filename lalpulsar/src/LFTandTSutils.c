@@ -228,7 +228,7 @@ XLALSFTVectorToLFT ( const SFTVector *sfts,	/**< input SFT vector */
 
       hetCycles = fmod ( fHet * offsetEff, 1);	/* required heterodyning phase-correction for this SFT */
 
-      XLALSinCos2PiLUT (&hetCorr_im, &hetCorr_re, -hetCycles );
+      XLAL_CHECK_NULL( XLALSinCos2PiLUT (&hetCorr_im, &hetCorr_re, -hetCycles ) == XLAL_SUCCESS, XLAL_EFUNC );
 
       /* apply all phase- and normalizing factors */
       fact_re = norm * hetCorr_re;
@@ -466,7 +466,7 @@ XLALSFTVectorToCOMPLEX8TimeSeries ( SFTVector *sfts,                /**< [in/out
     
       {
         REAL4 hetCorrection_re, hetCorrection_im;
-        XLALSinCos2PiLUT( &hetCorrection_im, &hetCorrection_re, -hetCycles );
+        XLAL_CHECK_NULL( XLALSinCos2PiLUT( &hetCorrection_im, &hetCorrection_re, -hetCycles ) == XLAL_SUCCESS, XLAL_EFUNC );
         hetCorrection = crectf( hetCorrection_re, hetCorrection_im );
       }
      
@@ -681,7 +681,7 @@ XLALTimeShiftSFT ( SFTtype *sft,	/**< [in/out] SFT to time-shift */
       REAL4 fact_re, fact_im;			/* complex phase-shift factor e^(-2pi f tau) */
       REAL4 yRe, yIm;
 
-      XLALSinCos2PiLUT ( &fact_im, &fact_re, shiftCyles );
+      XLAL_CHECK( XLALSinCos2PiLUT ( &fact_im, &fact_re, shiftCyles ) == XLAL_SUCCESS, XLAL_EFUNC );
 
       yRe = fact_re * crealf(sft->data->data[k]) - fact_im * cimagf(sft->data->data[k]);
       yIm = fact_re * cimagf(sft->data->data[k]) + fact_im * crealf(sft->data->data[k]);
@@ -1219,7 +1219,7 @@ int XLALBarycentricResampleCOMPLEX8TimeSeries ( COMPLEX8TimeSeries **Faoft_RS,  
       REAL4 cosphase,sinphase;                                                                           /* the real and imaginary parts of the phase correction */
 
       /* use a look-up-table for speed to compute real and imaginary phase */
-      XLALSinCos2PiLUT ( &sinphase, &cosphase, -cycles );
+      XLAL_CHECK( XLALSinCos2PiLUT ( &sinphase, &cosphase, -cycles ) == XLAL_SUCCESS, XLAL_EFUNC );
 
       /* printf("j = %d t = %6.12f tb = %6.12f tDiff = %6.12f\n",j,detectortimes->data[k],start_SSB + idx*deltaT_SSB,tDiff); */
       (*Faoft_RS)->data->data[idx] = crectf( out_FaFb[0]->data[k]*cosphase - out_FaFb[1]->data[k]*sinphase, out_FaFb[1]->data[k]*cosphase + out_FaFb[0]->data[k]*sinphase );
@@ -1409,7 +1409,7 @@ XLALFrequencyShiftCOMPLEX8TimeSeries ( COMPLEX8TimeSeries **x,	        /**< [in/
       REAL4 yRe, yIm;
 
       /* use a sin/cos look-up-table for speed */
-      XLALSinCos2PiLUT ( &fact_im, &fact_re, shiftCycles );
+      XLAL_CHECK( XLALSinCos2PiLUT ( &fact_im, &fact_re, shiftCycles ) == XLAL_SUCCESS, XLAL_EFUNC );
 
       /* apply the phase shift */
       yRe = fact_re * crealf((*x)->data->data[k]) - fact_im * cimagf((*x)->data->data[k]);
@@ -1506,7 +1506,7 @@ XLALSpinDownCorrectionMultiFaFb ( MultiCOMPLEX8TimeSeries **Fa,	                
       REAL4 cosphase, sinphase;
 
       /* use look-up-table for speed to compute real and imaginary phase */
-      XLALSinCos2PiLUT (&sinphase, &cosphase, -cycles );
+      XLAL_CHECK( XLALSinCos2PiLUT (&sinphase, &cosphase, -cycles ) == XLAL_SUCCESS, XLAL_EFUNC );
 
       /* loop over detectors */
       for (i=0;i<numDetectors;i++) {

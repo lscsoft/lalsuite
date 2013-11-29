@@ -127,7 +127,7 @@ XLALFillDetectorTensor (DetectorState *detState,	/**< [out,in]: detector state: 
       REAL4 sinG, cosG, sinGcosG, sinGsinG, cosGcosG;
       SymmTensor3 *detT = &(detState->detT);
 
-      XLALSinCosLUT ( &sinG, &cosG, detState->earthState.gmstRad );
+      XLAL_CHECK( XLALSinCosLUT ( &sinG, &cosG, detState->earthState.gmstRad ) == XLAL_SUCCESS, XLAL_EFUNC );
       sinGsinG = sinG * sinG;
       sinGcosG = sinG * cosG;
       cosGcosG = cosG * cosG;

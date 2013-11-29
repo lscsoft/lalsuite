@@ -1164,7 +1164,7 @@ REAL8 create_likelihood_grid(DataStructure data, REAL8 ****logLike,
 
     vars.phi0 = mesh.minVals.phi0 + (REAL8)i*mesh.delta.phi0;
 
-    XLALSinCosLUT( &sinphi, &cosphi, vars.phi0 );
+    XLAL_CHECK( XLALSinCosLUT( &sinphi, &cosphi, vars.phi0 ) == XLAL_SUCCESS, XLAL_EFUNC );
 
     for( j = 0 ; j < mesh.ciotaSteps ; j++ ){
       vars.ci = mesh.minVals.ci + (REAL8)j*mesh.delta.ci;
@@ -1295,7 +1295,7 @@ REAL8 log_likelihood( REAL8 *likeArray, DataStructure data,
         REAL4 cphi=0., sphi=0.;
 
         /* create the signal model */
-        XLALSinCos2PiLUT( &sphi, &cphi, -dphi->data[j] );
+        XLAL_CHECK( XLALSinCos2PiLUT( &sphi, &cphi, -dphi->data[j] ) == XLAL_SUCCESS, XLAL_EFUNC );
 
         model = ((plus*vars.Xpcosphi_2 + cross*vars.Xcsinphi_2)*cphi +
           (cross*vars.Xccosphi_2 - plus*vars.Xpsinphi_2)*sphi) +
@@ -2562,14 +2562,14 @@ paramData ) ) == NULL ){
     /* set combined parameters */
     varsNew.Xplus = 0.5*(1.+varsNew.ci*varsNew.ci);
     varsNew.Xcross = varsNew.ci;
-    XLALSinCosLUT( &sp, &cp, varsNew.phi0 );
+    XLAL_CHECK_VOID( XLALSinCosLUT( &sp, &cp, varsNew.phi0 ) == XLAL_SUCCESS, XLAL_EFUNC );
     varsNew.Xpsinphi_2 = 0.5*varsNew.Xplus*sp;
     varsNew.Xcsinphi_2 = 0.5*varsNew.Xcross*sp;
     varsNew.Xpcosphi_2 = 0.5*varsNew.Xplus*cp;
     varsNew.Xccosphi_2 = 0.5*varsNew.Xcross*cp;
 
     for( j = 0 ; j < nGlitches ; j++ ){
-      XLALSinCosLUT( &sp, &cp, extraVarsNew[j].phi0 );
+      XLAL_CHECK_VOID( XLALSinCosLUT( &sp, &cp, extraVarsNew[j].phi0 ) == XLAL_SUCCESS, XLAL_EFUNC );
       extraVarsNew[j].h0 = varsNew.h0;
       extraVarsNew[j].Xpsinphi_2 = 0.5*varsNew.Xplus * sp;
       extraVarsNew[j].Xcsinphi_2 = 0.5*varsNew.Xcross * sp;
