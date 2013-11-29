@@ -65,7 +65,14 @@ void get_pulsar_model( LALInferenceIFOData *data ){
     pars.C21 = rescale_parameter( data, "C21" );
     pars.C22 = rescale_parameter( data, "C22" );
     pars.phi21 = rescale_parameter( data, "phi21" );
-    pars.phi22 = rescale_parameter( data, "phi22" );
+
+    if( LALInferenceCheckVariable( data->dataParams, "biaxial" ) ){
+      /* use complex amplitude parameterisation, but set up for a biaxial star */
+      pars.phi22 = 2.*pars.phi21;
+    }
+    else{
+      pars.phi22 = rescale_parameter( data, "phi22" );
+    }
   }
 
   /* set the potentially variable parameters */

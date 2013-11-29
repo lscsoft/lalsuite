@@ -195,9 +195,6 @@ LALStringVector *corlist = NULL;
                      the 'triaxial' model for which you use 2 (the default\n\
                      value) or 1,2 for a model with emission at both the rotation\n\
                      frequency and twice the rotation frequency.\n"\
-" --jones-model       If using both 1 and 2 multiples of the frequency set this\n\
-                     to use the original signal model parameters from Jones, \n\
-                     MNRAS, 402 (2010).\n"\
 "\n"\
 " Nested sampling parameters:\n"\
 " --Nlive             (INT4) no. of live points for nested sampling\n"\
@@ -208,12 +205,12 @@ LALStringVector *corlist = NULL;
 " --randomseed        seed for random number generator\n"\
 "\n"\
 " MCMC proposal parameters:\n"\
-" --covariance        (UINT4) relative weigth of using covariance matrix\n\
+" --covariance        (UINT4) relative weight of using covariance matrix\n\
                      of the live points as the proposal (DEFAULT = 14,\n\
                      e.g. 70%%)\n"\
 " --temperature       (REAL8) temperature for covariance proposal\n\
                      distribution (DEFAULT = 0.1)\n"\
-" --kDTree            (UINT4) relative weigth of using a k-D tree of the live\n\
+" --kDTree            (UINT4) relative weight of using a k-D tree of the live\n\
                      points to use as a proposal (DEFAULT = 3, e.g. 15%%)\n"\
 " --kDNCell           (INT4) maximum number of samples in a k-D tree cell\n"\
 " --kDUpdateFactor    (REAL8) how often the k-D tree gets updated as a\n\
@@ -286,6 +283,9 @@ LALStringVector *corlist = NULL;
 " --oldChunks        Set if using fixed chunk sizes for dividing the data as\n\
                     in the old code, rather than the calculating chunks\n\
                     using the change point method.\n"\
+" --jones-model      Set if using both 1 and 2 multiples of the frequency and\n\
+                    requiring the use of the original signal model parameters\n\
+                    from Jones, MNRAS, 402 (2010).\n"\
 "\n"
 
 INT4 main( INT4 argc, CHAR *argv[] ){
@@ -1908,13 +1908,30 @@ void initialisePrior( LALInferenceRunState *runState )
     }
   }
 
-  /* if using Jones (2010) model then remove superfluous parameters */
-  if( freqFactors->length == 2 && LALInferenceGetProcParamVal( runState->commandLine, "--jones-model" ){
-    remove_variable_and_prior( runState, data, "h0" );
-    remove_variable_and_prior( runState, data, "C22" );
-    remove_variable_and_prior( runState, data, "C21" );
-    remove_variable_and_prior( runState, data, "phi22" );
-    remove_variable_and_prior( runState, data, "phi21" );
+  if( freqFactors->length == 2 ){
+    if( LALInferenceGetProcParamVal( runState->commandLine, "--jones-model" ) ){
+      /* if using Jones (2010) model then remove superfluous parameters */
+      remove_variable_and_prior( runState, data, "h0" );
+      remove_variable_and_prior( runState, data, "C22" );
+      remove_variable_and_prior( runState, data, "C21" );
+      remove_variable_and_prior( runState, data, "phi22" );
+      remove_variable_and_prior( runState, data, "phi21" );
+    }
+    else if( LALInferenceGetVariableVaryType( runState->currentParams, "phi22" ) == LALINFERENCE_PARAM_FIXED &&
+      ( LALInferenceGetVariableVaryType( runState->currentParams, "phi21" ) == LALINFERENCE_PARAM_CIRCULAR ||
+        LALInferenceGetVariableVaryType( runState->currentParams, "phi21" ) == LALINFERENCE_PARAM_LINEAR ) ){
+      /* check if using a prior range that corresponds to a biaxial star */
+      remove_variable_and_prior( runState, data, "phi22" );
+
+      /* add biaxial variable */
+      LALInferenceIFOData *datatemp = data;
+      while( datatemp ){
+        UINT4 biaxial = 1;
+        LALInferenceAddVariable( datatemp->dataParams, "biaxial", &biaxial, LALINFERENCE_UINT4_t,
+                                 LALINFERENCE_PARAM_FIXED );
+        datatemp = datatemp->next;
+      }
+    }
   }
 
   /* now check for a parameter correlation coefficient matrix file */
