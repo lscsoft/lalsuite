@@ -52,6 +52,7 @@ src/frametools/lalapps_frview
 src/hwinjection/lalapps_psinject
 src/hwinjection/online_psinject
 src/inspiral/bayestar/bayestar_aggregate_found_injections
+src/inspiral/bayestar/bayestar_bin_samples
 src/inspiral/bayestar/bayestar_lattice_tmpltbank
 src/inspiral/bayestar/bayestar_littlehope
 src/inspiral/bayestar/bayestar_localize_coincs
