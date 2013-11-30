@@ -11,6 +11,10 @@ export LAL_DEBUG_LEVEL="${LAL_DEBUG_LEVEL},memdbg"
 LC_ALL_old=$LC_ALL
 export LC_ALL=C
 
+if [ -n "$DEBUG" -a -z "$LAL_DEBUG_LEVEL" ]; then
+    export LAL_DEBUG_LEVEL=1
+fi
+
 # The only thing where 'dirsep' can and should be used is in paths of the SFT files,
 # as in fact SFTfileIO is the only code that requires it to be set properly. Other
 # file references should be handled by the shell (or wine) and converted if necessary.
