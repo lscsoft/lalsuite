@@ -290,28 +290,32 @@ if test "${intelfft}" = "false" ; then
 fi
 
 # check for boinc
-if test "${boinc}" = "true" ; then
-  if test -n "${BOINC_PREFIX}" ; then
-    # do compilation checks with c++
-    AC_LANG_PUSH([C++])
+if test "x${boinc}" = xtrue; then
+  # do compilation checks with c++
+  AC_LANG_PUSH([C++])
 
-    # set boinc flags
-    BOINC_CFLAGS="-I${BOINC_PREFIX}/include"
-    BOINC_LIBS="-L${BOINC_PREFIX}/lib -lboinc_api -lboinc"
-    LALSUITE_ADD_FLAGS([C],[${BOINC_CFLAGS}],[${BOINC_LIBS}])
-
-    # check for boinc libraries
-    AC_CHECK_LIB([boinc],[boinc_fopen],[true],[boinc=false])
-    AC_CHECK_LIB([boinc_api],[boinc_finish],[true],[boinc=false],[-lboinc])
-
-    # check for boinc headers
-    AC_CHECK_HEADERS([boinc/boinc_api.h],,[boinc=false])
-
-    # go back to c
-    AC_LANG_POP([C++])
+  # set boinc flags
+  AC_ARG_VAR([BOINC_PREFIX],[BOINC installation directory (optional)])
+  AC_ARG_VAR([BOINC_EXTRA_CFLAGS],[extra BOINC compiler flags (optional)])
+  AC_ARG_VAR([BOINC_EXTRA_LIBS],[extra BOINC libraries (optional)])
+  AC_SUBST(BOINC_CFLAGS,"${BOINC_EXTRA_CFLAGS}")
+  AC_SUBST(BOINC_LIBS,"-lboinc_api -lboinc ${BOINC_EXTRA_LIBS}")
+  if test "x${BOINC_PREFIX}" != x; then
+    BOINC_CFLAGS="-I${BOINC_PREFIX}/include ${BOINC_CFLAGS}"
+    BOINC_LIBS="-L${BOINC_PREFIX}/lib ${BOINC_LIBS}"
   fi
+  LALSUITE_ADD_FLAGS([C],[${BOINC_CFLAGS}],[${BOINC_LIBS}])
+
+  # check for boinc libraries
+  AC_CHECK_LIB([boinc],[boinc_fopen],[:],[AC_MSG_ERROR([could not find the boinc library])])
+  AC_CHECK_LIB([boinc_api],[boinc_finish],[:],[AC_MSG_ERROR([could not find the boinc_api library])])
+
+  # check for boinc headers
+  AC_CHECK_HEADERS([boinc/boinc_api.h],[:],[AC_MSG_ERROR([could not find the boinc_api.h header])])
+
+  # go back to c
+  AC_LANG_POP([C++])
 fi
-LALSUITE_ENABLE_MODULE([BOINC])
 
 # define what is being enabled
 if test "${cuda}" = "true"; then

@@ -140,21 +140,19 @@ fi
 # check for lal libraries and headers
 LALSUITE_CHECK_LIB([LAL],[6.11.0],[LALVersion],[lal/LALStdio.h])
 
-# check that lal has been buil with boinc support, for boinc build
-if test "${boinc}" = "true" ; then
-  LALSUITE_CHECK_BOINC
-fi
+# check that lal was built with BOINC support, if required
+LALSUITE_CHECK_BOINC
 
 # check for lalsupport, needed for test suite
 LALSUITE_CHECK_LIB([LALSupport],[6.11.0],[LALOpenDataFile],[lal/FileIO.h])
+
+# check for lalxml
+LALSUITE_CHECK_OPT_LIB([LALXML],[1.1.5],[XLALXMLFilePrintElements],[lal/LALXML.h])
 
 # back to c mode
 if test "${boinc}" = "true" ; then
   AC_LANG_POP([C++])
 fi
-
-# check for lalxml
-LALSUITE_CHECK_OPT_LIB([LALXML],[1.1.5],[XLALXMLFilePrintElements],[lal/LALXML.h])
 
 # configure SWIG wrapping modules
 LALSUITE_USE_SWIG([XLAL LAL])
@@ -177,6 +175,7 @@ echo "
 LALPulsar has now been successfully configured:
 
 * LALXML library support is $LALXML_ENABLE_VAL
+* BOINC support is $BOINC_ENABLE_VAL
 * SWIG wrapping module for Octave is $SWIG_OCTAVE_ENABLE_VAL
 * SWIG wrapping module for Python is $SWIG_PYTHON_ENABLE_VAL
 

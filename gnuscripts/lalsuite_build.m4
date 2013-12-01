@@ -1,7 +1,7 @@
 # -*- mode: autoconf; -*-
 # lalsuite_build.m4 - top level build macros
 #
-# serial 74
+# serial 75
 
 # not present in older versions of pkg.m4
 m4_pattern_allow([^PKG_CONFIG(_(PATH|LIBDIR|SYSROOT_DIR|ALLOW_SYSTEM_(CFLAGS|LIBS)))?$])
@@ -236,6 +236,10 @@ AC_DEFUN([LALSUITE_PROG_COMPILERS],[
       [AS_IF([test "`$CXX -v 2>&1 | grep -c 'clang'`" != "0"],[CLANG_CXX=1])],
       [CLANG_CXX=])
     AC_SUBST(CLANG_CXX)
+
+    # define C99 constant and limit macros for C++ sources
+    LALSUITE_ADD_FLAGS([CXX],[-D__STDC_CONSTANT_MACROS -D__STDC_LIMIT_MACROS],[])
+
   ],[
     CXX=
     CXXCPP=
@@ -454,6 +458,34 @@ library. Check config.log for details.
     AC_MSG_WARN([cross compiling: not checking])
   ]
 )
+])
+
+AC_DEFUN([LALSUITE_CHECK_LIBRARY_FOR_SUPPORT],[
+  # $0: check if library $1 supports $2
+  m4_pushdef([uppercase],m4_translit([[$1]], [a-z], [A-Z]))
+  LALSUITE_PUSH_UVARS
+  # because library may be uninstalled, remove everything but -I flags
+  save_CPPFLAGS="${CPPFLAGS}"
+  LALSUITE_CLEAR_UVARS
+  CPPFLAGS="${save_CPPFLAGS}"
+  AC_MSG_CHECKING([whether $1 has been compiled with $2 support])
+  AC_COMPILE_IFELSE([
+    AC_LANG_SOURCE([[
+#include <lal/$1Config.h>
+#ifndef ]uppercase[_$2_ENABLED
+#error ]uppercase[_$2_ENABLED is not defined
+#endif
+    ]])
+  ],[
+    AC_MSG_RESULT([yes])
+    m4_default([$3],[:])
+  ],[
+    AC_MSG_RESULT([no])
+    m4_default([$4],[:])
+  ])
+  LALSUITE_POP_UVARS
+  m4_popdef([uppercase])
+  # end $0
 ])
 
 AC_DEFUN([LALSUITE_ENABLE_NIGHTLY],
@@ -683,36 +715,31 @@ AC_DEFUN([LALSUITE_ENABLE_LALAPPS],[
   )
 ])
 
-AC_DEFUN([LALSUITE_ENABLE_BOINC],
-[AC_ARG_ENABLE(
-  [boinc],
-  AC_HELP_STRING([--enable-boinc],[enable BOINC support [default=no]]),
-  [ case "${enableval}" in
-      yes) boinc=true;;
-      no) boinc=false;;
-      *) AC_MSG_ERROR(bad value ${enableval} for --enable-boinc);;
-    esac
-  ], [ boinc=false ] )
+AC_DEFUN([LALSUITE_ENABLE_BOINC],[
+  # $0: enable/disable BOINC
+  AC_ARG_ENABLE(
+    [boinc],
+    AC_HELP_STRING([--enable-boinc],[enable BOINC support [default=no]]),
+    AS_CASE([${enableval}],
+      [yes],[boinc=true],
+      [no],[boinc=false],
+      AC_MSG_ERROR([bad value '${enableval}' for --enable-boinc])
+    ),
+    [boinc=false]
+  )
+  LALSUITE_ENABLE_MODULE([BOINC])
   AS_IF([test "${boinc}" = true],[LALSUITE_REQUIRE_CXX])
-  AC_ARG_VAR([BOINC_PREFIX],[BOINC installation directory (optional)])
+  # end $0
 ])
 
-AC_DEFUN([LALSUITE_CHECK_BOINC],
-[AC_MSG_CHECKING([whether LAL has been compiled with BOINC support])
-AC_TRY_RUN([
-#include <lal/LALConfig.h>
-#ifdef LAL_BOINC_ENABLED
-int main( void ) { return 0; }
-#else
-int main( void ) { return 1; }
-#endif
-],
-AC_MSG_RESULT([yes])
-[boinc=true],
-AC_MSG_RESULT([no])
-[boinc=false],
-AC_MSG_RESULT([unknown])
-[boinc=false])
+AC_DEFUN([LALSUITE_CHECK_BOINC],[
+  # $0: check for BOINC support
+  AS_IF([test "${boinc}" = "true"],[
+    LALSUITE_CHECK_LIBRARY_FOR_SUPPORT([LAL],[BOINC],[:],[
+      AC_MSG_ERROR([BOINC was enabled but LAL was not compiler with BOINC support])
+    ])
+  ])
+  # end $0
 ])
 
 AC_DEFUN([LALSUITE_WITH_CUDA],[
