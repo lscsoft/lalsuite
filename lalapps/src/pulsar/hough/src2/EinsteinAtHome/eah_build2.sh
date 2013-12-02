@@ -218,6 +218,7 @@ SOURCE="$EAH/source"
 BUILD="$EAH/build$acc"
 INSTALL="$EAH/install$acc"
 
+missing_wine_warning=false
 if [ ."$build_win32" = ."true" ] ; then
     BUILD="${BUILD}_win32"
     INSTALL="${INSTALL}_win32"
@@ -237,7 +238,7 @@ if [ ."$build_win32" = ."true" ] ; then
     platform=windows_intelx86
     wine=`which wine`
     if [ ".$wine" = "." -a ".$check" = ".true" ]; then
-        log_and_show "WARNING: 'wine' not found, disabling check as it won't work"
+        missing_wine_warning=true
         check=false
     fi
     if [ ".$cuda" = ".true" ] ; then
@@ -306,8 +307,10 @@ fi
 if [ ".$BUILD_INFO" = "." ]; then
   test ".$BUILD_TAG" = "." || BUILD_INFO="Build $BUILD_TAG"
   test ".$NODE_NAME" = "." || BUILD_INFO="$BUILD_INFO on $NODE_NAME"
+  test ".$BUILD_ID" = "."  || BUILD_INFO="$BUILD_INFO at $BUILD_ID"
 fi
 if [ -n "$BUILD_INFO" ]; then
+  LOGFILE="$EAH/${appname}_`echo build_$BUILD_INFO | sed 's%/%_%g;s/ on /./;s/  */_/g'`.log"
   CPPFLAGS="$CPPFLAGS -DHAVE_BUILD_INFO_H"
 fi
 
@@ -342,6 +345,11 @@ echo BOINC_PREFIX="\"$BOINC_PREFIX\"" >> "$LOGFILE"
 echo RELEASE_DEPS="\"$RELEASE_DEPS\"" >> "$LOGFILE"
 echo RELEASE_LDADD="\"$RELEASE_LDADD\"" >> "$LOGFILE"
 echo BUILD_INFO="\"$BUILD_INFO\"" >> "$LOGFILE"
+
+# warning message delaeyed until log file was known
+if [ ."$missing_wine_warning" = ."true" ] ; then
+    log_and_show "WARNING: 'wine' not found, disabling check as it won't work"
+fi
 
 gsl=gsl-1.15
 fftw=fftw-3.3.3
