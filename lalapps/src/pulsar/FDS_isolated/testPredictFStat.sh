@@ -24,13 +24,6 @@ if [ -n "${LALPULSAR_DATADIR}" ]; then
     mfd_path="${mfd_path} -E ${LALPULSAR_DATADIR}"
     saf_path="${saf_path} -E ${LALPULSAR_DATADIR}"
     pfs_path="${pfs_path} -E ${LALPULSAR_DATADIR}"
-else
-    echo
-    echo "Need environment-variable LALPULSAR_DATADIR to be set to"
-    echo "your ephemeris-directory (e.g. /usr/local/share/lalpulsar)"
-    echo "This might indicate an incomplete LAL+LALPULSAR installation"
-    echo
-    exit 1
 fi
 
 # ---------- fixed parameter of our test-signal

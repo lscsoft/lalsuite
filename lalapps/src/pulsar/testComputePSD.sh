@@ -14,17 +14,12 @@ fi
 builddir="./";
 injectdir="./Injections/"
 
-## check for LALPulsar data directory
-if [ -z "${LALPULSAR_DATADIR}" ]; then
-    echo "Need environment-variable LALPULSAR_DATADIR to be set to"
-    echo "your ephemeris-directory (e.g. /usr/local/share/lalpulsar)"
-    echo "This might indicate an incomplete LAL+LALPULSAR installation"
-    exit 1
-fi
-
 ##---------- names of codes and input/output files
 psd_code="${builddir}lalapps_ComputePSD"
-mfd_code="${injectdir}lalapps_Makefakedata_v4 -E ${LALPULSAR_DATADIR}"
+mfd_code="${injectdir}lalapps_Makefakedata_v4"
+if [ -n "${LALPULSAR_DATADIR}" ]; then
+    mfd_code="${mfd_code} -E ${LALPULSAR_DATADIR}"
+fi
 SFTdir="$srcdir"
 
 tolerance=1e-5

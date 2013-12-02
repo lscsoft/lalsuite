@@ -43,13 +43,6 @@ fi
 
 if [ -n "${LALPULSAR_DATADIR}" ]; then
     export LAL_DATA_PATH=${LAL_DATA_PATH}:${LALPULSAR_DATADIR}
-else
-    echo
-    echo "Need environment-variable LALPULSAR_DATADIR to be set to"
-    echo "your ephemeris-directory (e.g. /usr/local/share/lalpulsar)"
-    echo "This might indicate an incomplete LAL+LALPULSAR installation"
-    echo
-    exit 1
 fi
 
 testDirBase="testHS_dir"

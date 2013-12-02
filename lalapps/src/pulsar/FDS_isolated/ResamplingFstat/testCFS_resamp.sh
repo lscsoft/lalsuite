@@ -23,13 +23,6 @@ if [ -n "${LALPULSAR_DATADIR}" ]; then
     saf_code="${saf_code} -E ${LALPULSAR_DATADIR}"
     cfs2_code="${cfs2_code} -E ${LALPULSAR_DATADIR}"
     cfs_resamp_code="${cfs_resamp_code} -E ${LALPULSAR_DATADIR}"
-else
-    echo
-    echo "Need environment-variable LALPULSAR_DATADIR to be set to"
-    echo "your ephemeris-directory (e.g. /usr/local/share/lalpulsar)"
-    echo "This might indicate an incomplete LAL+LALPULSAR installation"
-    echo
-    exit 1
 fi
 
 Ftolerance=0.05

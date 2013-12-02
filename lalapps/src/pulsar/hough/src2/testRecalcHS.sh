@@ -31,13 +31,6 @@ if [ -n "${LALPULSAR_DATADIR}" ]; then
     code_MFD="${code_MFD} -E ${LALPULSAR_DATADIR}"
     code_HS="${code_HS} --ephemE=${EEPHEM} --ephemS=${SEPHEM}"
     code_RC="${code_RC} --ephemE=${EEPHEM} --ephemS=${SEPHEM}"
-else
-    echo
-    echo "Need environment-variable LALPULSAR_DATADIR to be set to"
-    echo "your ephemeris-directory (e.g. /usr/local/share/lalpulsar)"
-    echo "This might indicate an incomplete LAL+LALPULSAR installation"
-    echo
-    exit 1
 fi
 
 ## ----- parameters
