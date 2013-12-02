@@ -35,7 +35,7 @@
 /**
  * \author Sintes, A.M., Krishnan, B.
  *
- * ### \ref SFTbin.c ###
+ * ### SFTbin.c ###
  *
  * Routines for reading SFT binary files
  *

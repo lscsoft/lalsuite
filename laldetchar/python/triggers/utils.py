@@ -262,6 +262,7 @@ def from_ascii(filepath, etg, columns=None, start=None, end=None, **kwargs):
         minimum GPS time for returned triggers
     @param end
         maximum GPS time for returned triggers
+    @param kwargs UNDOCUMENTED
 
     @returns a LIGO_LW table containing the triggers
     """
@@ -294,6 +295,7 @@ def from_root(filepath, etg, columns=None, start=None, end=None, **kwargs):
         minimum GPS time for returned triggers
     @param end
         maximum GPS time for returned triggers
+    @param kwargs UNDOCUMENTED
 
     @returns a `LIGO_LW` table containing the triggers
     """
@@ -312,4 +314,4 @@ def from_root(filepath, etg, columns=None, start=None, end=None, **kwargs):
     return out
 
 # close doxygen
-#@}
+##@}

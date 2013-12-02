@@ -22,7 +22,7 @@
  * \file
  * \ingroup FoldAmplitudes_h
  *
- * ### Program \ref FoldAmplitudesTest.c ###
+ * ### Program FoldAmplitudesTest.c ###
  *
  * %[One-line description of test program]
  *
@@ -34,12 +34,6 @@
  * \code
  * FoldAmplitudesTest
  * \endcode
- *
- * ### Description ###
- *
- *
- * ### Exit codes ###
- *
  *
  * ### Uses ###
  *

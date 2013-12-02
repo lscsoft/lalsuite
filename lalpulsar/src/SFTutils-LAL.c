@@ -180,7 +180,7 @@ LALDestroyMultiSFTVector (LALStatus *status,		/**< pointer to LALStatus structur
 } /* LALDestroyMultiSFTVector() */
 
 /**
- * \deprecate Use XLALDestroyMultiPSDVector() instead.
+ * \deprecated Use XLALDestroyMultiPSDVector() instead.
  */
 void
 LALDestroyMultiPSDVector (LALStatus *status,		/**< pointer to LALStatus structure */

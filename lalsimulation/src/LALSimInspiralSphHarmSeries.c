@@ -133,7 +133,7 @@ void XLALDestroySphHarmTimeSeries(
  * SphHarmTimeSeries linked list. Returns a pointer to its COMPLEX16TimeSeries
  */
 COMPLEX16TimeSeries* XLALSphHarmTimeSeriesGetMode(
-            SphHarmTimeSeries *ts, /** linked list to extract mode from */
+            SphHarmTimeSeries *ts, /**< linked list to extract mode from */
             UINT4 l, /**< l index of h_lm mode to get */
             INT4 m /**< m index of h_lm mode to get */
             )
@@ -375,7 +375,7 @@ void XLALDestroySphHarmFrequencySeries(
  * SphHarmFrequencySeries linked list. Returns a pointer to its COMPLEX16FrequencySeries
  */
 COMPLEX16FrequencySeries* XLALSphHarmFrequencySeriesGetMode(
-            SphHarmFrequencySeries *ts, /** linked list to extract mode from */
+            SphHarmFrequencySeries *ts, /**< linked list to extract mode from */
             UINT4 l, /**< l index of h_lm mode to get */
             INT4 m /**< m index of h_lm mode to get */
             )

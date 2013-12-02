@@ -109,6 +109,7 @@ def from_files(filelist, etg, columns=None, start=None, end=None,
         minimum GPS time for returned triggers
     @param end
         maximum GPS time for returned triggers
+    @param verbose UNDOCUMENTED
     @param kwargs
         other keyword arguments passed to the relevant trigger reader
         for this ETG

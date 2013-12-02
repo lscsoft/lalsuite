@@ -150,7 +150,7 @@ int XLALSimInspiralREAL8WaveTaper(
  * modes stored in 'hlms'. Be sure that 'hlms' is the head of the linked list!
  *
  * The computation done is:
- * hp(t) - i hc(t) = \sum_l \sum_m h_lm(t) -2Y_lm(iota,psi)
+ * \f$hp(t) - i hc(t) = \sum_l \sum_m h_lm(t) -2Y_lm(iota,psi)\f$
  *
  * iota and psi are the inclination and polarization angle of the observer
  * relative to the source of GWs.

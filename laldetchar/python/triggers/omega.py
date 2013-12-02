@@ -172,7 +172,6 @@ def ascii_trigger(line, columns=OMEGA_COLUMNS):
         t.amplitude = amplitude
 
     return t
-    ## \endcond
 
 
 def from_ascii(filename, columns=None, start=None, end=None,
@@ -269,6 +268,7 @@ def find_online_cache(start, end, ifo, mask='DOWNSELECT',
         description tag of Omega ASCII to search
     @param check_files
         check that the returned files can be read on disk, default False
+    @param kwargs UNDOCUMENTED
     """
     out = Cache()
 
@@ -338,6 +338,7 @@ def find_dmt_cache(start, end, ifo, check_files=False, **kwargs):
         observatory for search
     @param check_files
         check that the returned files can be read on disk, default False
+    @param kwargs UNDOCUMENTED
     """
     out = Cache()
 

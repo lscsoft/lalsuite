@@ -464,8 +464,9 @@ def findSegmentsToAnalyze(config, ifo, veto_categories, generate_segments=True,\
   """
   generate segments for the given ifo
 
-  @param ifo         : name of the ifo
   @param config      : the configParser object with analysis details
+  @param ifo         : name of the ifo
+  @param veto_categories UNDOCUMENTED
   @param generate_segments: whether the segment files should be generated
   @param use_available_data: restrict segments to data which actually available
   @param data_quality_vetoes: generate the cat2,3,4 DQ veto segments

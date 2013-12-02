@@ -160,6 +160,7 @@ def ts_from_cache(cache, channel, start=None, duration=None, datatype=None,
     @param datatype
         datatype, either an integer from the LALTYPECODE, a string
         matchine the corresponding type, or a numpy dtype
+    @param verbose UNDOCUMENTED
 
     @returns a TimeSeries of the imported data
     """
@@ -284,8 +285,6 @@ def get_stream_duration(stream):
 
     @param stream
         XLALFrStream() of data to measure
-    @param channel
-        string name of channel to measure
 
     @returns the float duration (seconds) of the data for this channel
     """

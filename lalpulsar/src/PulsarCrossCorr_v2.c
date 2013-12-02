@@ -201,11 +201,11 @@ int XLALCreateSFTPairIndexList
    care of these factors */
 int XLALCalculateCrossCorrSigmaUnshifted
   (
-   REAL8Vector      **sigma_alpha,    /* Output: vector of sigma_alpha values */
-   SFTPairIndexList  *pairIndexList,  /* Input: list of SFT pairs */
-   SFTIndexList      *indexList,      /* Input: list of SFTs */
-   MultiPSDVector    *psds,           /* Input: PSD estimate (Sn*Tsft/2) for each SFT */
-   REAL8              freq,           /* Frequency to extract from PSD */
+   REAL8Vector      **sigma_alpha,    /**< Output: vector of sigma_alpha values */
+   SFTPairIndexList  *pairIndexList,  /**< Input: list of SFT pairs */
+   SFTIndexList      *indexList,      /**< Input: list of SFTs */
+   MultiPSDVector    *psds,           /**< Input: PSD estimate (Sn*Tsft/2) for each SFT */
+   REAL8              freq,           /**< Frequency to extract from PSD */
    REAL8              Tsft            /**< SFT duration */
   )
 {

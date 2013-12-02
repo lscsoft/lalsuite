@@ -310,7 +310,8 @@ def urand_tau0tau3_generator(flow, **constraints):
     distributed in (tau0, tau3) space, subject to the constraints given in
     the inputs.
 
-    @constraints: must specify a mass1 range; mtotal, q, and tau0
+    @param flow UNDOCUMENTED
+    @param constraints: must specify a mass1 range; mtotal, q, and tau0
     ranges are optional. The arguments for each of these keywords should be a
     tuple of (min, max). E.g., mtotal = (50, 100) constrains
     50 <= mtotal < 100.
@@ -353,7 +354,8 @@ def IMRPhenomBC_param_generator(flow, **kwargs):
     restrictions on q and chi based on IMRPhenomB's range of believability.
     Ref: http://arxiv.org/pdf/0908.2090
 
-    @kwargs: must specify a component_mass range; mtotal, q, chi, and tau0
+    @param flow UNDOCUMENTED
+    @param kwargs: must specify a component_mass range; mtotal, q, chi, and tau0
     ranges are optional. If no chi is specified, the IMRPhenomB limits will be used.
     See urand_tau0tau3_generator for more usage help.
     """

@@ -135,7 +135,7 @@ static int XLALSimInspiralSpinTaylorDriver(REAL8TimeSeries **hplus,
 
 
 static int XLALSimInspiralSpinTaylorT2Setup(
-    XLALSimInspiralSpinTaylorTxCoeffs *params,
+    XLALSimInspiralSpinTaylorTxCoeffs *params, /**< UNDOCUMENTED */
     REAL8 m1,                       /**< mass of body 1 (kg) */
     REAL8 m2,                       /**< mass of body 2 (kg) */
     REAL8 fStart,                   /**< Starting GW freq. (Hz) */
@@ -343,7 +343,7 @@ static int XLALSimInspiralSpinTaylorT2Setup(
 }
 
 static int XLALSimInspiralSpinTaylorT4Setup(
-    XLALSimInspiralSpinTaylorTxCoeffs *params,
+    XLALSimInspiralSpinTaylorTxCoeffs *params, /**< UNDOCUMENTED */
     REAL8 m1,                       /**< mass of body 1 (kg) */
     REAL8 m2,                       /**< mass of body 2 (kg) */
     REAL8 fStart,                   /**< Starting GW freq. (Hz) */

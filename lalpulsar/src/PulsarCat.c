@@ -22,7 +22,7 @@
  * \file
  * \ingroup pulsarTODO
  *
- * ### Module \ref PulsarCat.c ###
+ * ### Module PulsarCat.c ###
  *
  * Manipulates a catalogue of pulsar data.
  *

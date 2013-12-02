@@ -925,6 +925,7 @@ class MkdirNode(pipeline.CondorDAGNode):
   def __init__(self,job,dir):
     """
     @param job: A CondorDAGJob that can run an instance of ligolw_add
+    @param dir UNDOCUMENTED
     """
     pipeline.CondorDAGNode.__init__(self,job)
     self.set_name('mkdir_'+dir.replace(' ',''))

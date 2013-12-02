@@ -39,7 +39,7 @@
  * \file
  * \ingroup PHMD_h
  *
- * ### Program \ref TestPeak2PHMD.c ###
+ * ### Program TestPeak2PHMD.c ###
  *
  * \brief Tests the construction of Partial-Hough-Map-Derivatives (\c phmd)
  *

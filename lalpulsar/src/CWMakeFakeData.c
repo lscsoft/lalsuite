@@ -319,10 +319,10 @@ REAL4TimeSeries *
 XLALGenerateCWSignalTS ( const PulsarParams *pulsarParams,	///< input CW pulsar-signal parameters
                          const LALDetector *site,		///< detector
                          LIGOTimeGPS startTime,			///< time-series start-time GPS
-                         REAL8 duration,
-                         REAL8 fSamp,
-                         REAL8 fHet,
-                         const EphemerisData *edat
+                         REAL8 duration,			///< time-series duration to generate
+                         REAL8 fSamp,				///< sampling frequency
+                         REAL8 fHet,				///< heterodyning frequency
+                         const EphemerisData *edat		///< ephemeris data
                          )
 {
   XLAL_CHECK_NULL ( pulsarParams != NULL, XLAL_EINVAL );

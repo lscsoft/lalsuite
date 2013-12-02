@@ -22,7 +22,7 @@
  * \file
  * \ingroup pulsarTODO
  *
- * ### Program \ref HeterodynePulsarTest.c ###
+ * ### Program HeterodynePulsarTest.c ###
  *
  * This program demonstrates the usage of the functions <tt>LALCoarseHeterodyne()</tt>
  * and <tt>LALFineHeterodyneToPulsar()</tt>.

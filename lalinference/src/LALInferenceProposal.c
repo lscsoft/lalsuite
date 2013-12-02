@@ -2574,8 +2574,8 @@ void drawFisherMatrix(LALInferenceRunState *runState)
     }*/
 }
 
-void waveformDerivative(FIMParams *params, /**< \theta_0 params where you compute the FIM */
-                        LALInferenceRunState *runState,
+void waveformDerivative(FIMParams *params, /**< \f$\theta_0\f$ params where you compute the FIM */
+                        LALInferenceRunState *runState, /**< UNDOCUMENTED */
                         double *h,       /**< derivative step sizes for finite difference */
 					    COMPLEX16FrequencySeries ***outputDerivs) /**< array of complex series, each element
 					                                                is a derivative at parameter i*/
@@ -2700,9 +2700,9 @@ void waveformDerivative(FIMParams *params, /**< \theta_0 params where you comput
 	XLALFree(paramsNp1);
 }
 
-void computeFisherMatrix(void *fisherMatrix, /**GSL Matrix to store FIM values*/
-						 LALInferenceRunState *runState,
-                         COMPLEX16FrequencySeries ***outputDerivs) /**derivative table from waveformDerivative*/
+void computeFisherMatrix(void *fisherMatrix, /**< GSL Matrix to store FIM values*/
+						 LALInferenceRunState *runState, /**< UNDOCUMENTED */
+                         COMPLEX16FrequencySeries ***outputDerivs) /**< derivative table from waveformDerivative*/
 {
 	int i,j,det=0;
 	long k;

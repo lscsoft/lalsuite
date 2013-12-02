@@ -25,7 +25,7 @@
  * History:   Created by Sintes May 21, 2003
  * Modified by Krishnan Oct, 2005
  *
- * ### \ref PeakSelect.c ###
+ * ### PeakSelect.c ###
  *
  * Routines for reading SFT binary files
  *

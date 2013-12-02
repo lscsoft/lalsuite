@@ -20,7 +20,7 @@
 /**
  * \author Pitkin, M. D.
  *
- * ### Header \ref HeterodyneCrabPulsar.h ###
+ * ### Header HeterodyneCrabPulsar.h ###
  *
  * Calculates and heterodynes the timing noise component of the Crab pulsar
  * phase.

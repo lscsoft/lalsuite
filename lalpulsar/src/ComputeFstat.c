@@ -1395,7 +1395,7 @@ XLALAddBinaryTimes ( SSBtimes **tSSBOut,			/**< [out] SSB timings tSSBIn with bi
  *
  */
 int
-XLALAddMultiBinaryTimes ( MultiSSBtimes **multiSSBOut,
+XLALAddMultiBinaryTimes ( MultiSSBtimes **multiSSBOut,		/**< [out] output SSB times */
                           const MultiSSBtimes *multiSSBIn,	/**< [in] SSB-timings for all input detector-state series */
                           const BinaryOrbitParams *binaryparams	/**< [in] source binary orbit parameters, NULL = isolated system */
                           )

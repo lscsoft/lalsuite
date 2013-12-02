@@ -14,12 +14,12 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-## \addtogroup pkg_py_laldetchar_hveto_glib_utils
+## addtogroup pkg_py_laldetchar_hveto
 """Convenience utitilies for accessing the SWIG wrapped glib functions.
 
 Potential developers, please note: this package should eventually be supplanted by the gobject bindings for glib if they ever become available. """
 #
-# \heading{Synopsis}
+# Synopsis
 # ~~~
 # from laldetchar.hveto import glib_utils
 # ~~~
@@ -49,7 +49,7 @@ __author__ = "Chris Pankow <chris.pankow@ligo.org>"
 __version__ = git_version.id
 __date__ = git_version.date
 
-## \addtogroup pkg_py_laldetchar_hveto_glib_utils
+## addtogroup pkg_py_laldetchar_hveto_glib_utils
 #@{
 
 # Functions to convert various SWIG wrapped LAL functions to and from their
@@ -158,4 +158,4 @@ def get_chan_list( gseq ):
 	# converts its keys into a proper set.
 	return set(ghash_to_dict( laldetchar.GetChannelList(gseq) ).keys())
 
-#@}
+##@}

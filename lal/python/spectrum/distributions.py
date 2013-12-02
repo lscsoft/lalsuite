@@ -98,4 +98,4 @@ def rayleigh(series, segment_length, segment_overlap, window=None, plan=None,
     spectrum.data.data = std / mean
     return spectrum
 
-#@}
+##@}

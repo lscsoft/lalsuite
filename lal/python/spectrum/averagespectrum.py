@@ -125,8 +125,6 @@ def bartlett(series, segment_length, window=None,
         input TimeSeries
     @param segment_length
         number of samples for single Fourier transform
-    @param segment_overlap
-        number of samples between successive Fourier transforms
     @param window
         time-domain window to apply to the data (default: 24-point Kaiser)
     @param plan
@@ -139,7 +137,7 @@ def bartlett(series, segment_length, window=None,
     return _psd('welch', series, segment_length, 0,
                 window=window, plan=plan, unit=unit)
 
-#@}
+##@}
 
 def _psd(method, series, segment_length, segment_overlap, window=None,
          plan=None, unit=lal.lalStrainUnit):

@@ -2700,8 +2700,8 @@ UINT4Vector *chop_data( COMPLEX16Vector *data, INT4 chunkMin ){
  * points at which the statistics of the data change. It is based on calculating evidence, or odds, ratios. The
  * function first computes the marginal likelihood (or evidence) that the whole of the data is described by a single
  * Gaussian (with mean of zero). This comes from taking a Gaussian likelihood function and analytically marginalising
- * over the standard deviation (using a prior on the standard deviation of \f$1/\sigma\f$), giving (see [\ref
- * DupuisWoan2005]) a Students-t distribution (see
+ * over the standard deviation (using a prior on the standard deviation of \f$1/\sigma\f$), giving (see
+ * [\cite DupuisWoan2005]) a Students-t distribution (see
  * <a href="https://wiki.ligo.org/foswiki/pub/CW/PulsarParameterEstimationNestedSampling/studentst.pdf">here</a>).
  * Following this the data is split into two segments (with lengths greater than, or equal to the minimum chunk length)
  * for all possible combinations, and the joint evidence for each of the two segments consisting of independent

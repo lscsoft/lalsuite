@@ -35,7 +35,7 @@ def lalcache_from_gluecache(cache):
 
     @param cache
         LAL cache object from GLUE to convert
-    @type cache glue.lal.Cache
+        type cache glue.lal.Cache
 
     @returns a lal.Cache object representing the same data
     """

@@ -23,7 +23,7 @@
  * \ingroup PtoleMetric_h
  * \brief Tests the LALPtoleMetric() function.
  *
- * ### Program \c PtoleMetricTest ###
+ * ### Program PtoleMetricTest ###
  *
  *
  * ### Usage ###

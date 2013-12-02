@@ -40,7 +40,7 @@
  * \ingroup LALHough_h
  * \brief Tests the construction
  *
- * ### Program \ref TestDriveNDHough.c ###
+ * ### Program TestDriveNDHough.c ###
  *
  *
  * ### Usage ###

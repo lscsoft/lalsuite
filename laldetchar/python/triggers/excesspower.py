@@ -54,11 +54,12 @@ def find_online_cache(start, end, channel, **kwargs):
         GPS start time for search
     @param end
         GPS end time for search
-    @param ifo
-        observatory for search
-    @param clustering
+    @param channel UNDOCUMENTED
+    @param kwargs UNDOCUMENTED
+    'ifo' observatory for search
+    'clustering'
         tag for clustering stage to search, default: unclustered
-    @param check_files
+    'check_files'
         check that the returned files can be read on disk, default False
     """
     out = Cache()
@@ -96,4 +97,4 @@ def find_online_cache(start, end, channel, **kwargs):
     out.sort(key=lambda e: e.segment[0])
     return out
 
-#@}
+##@}

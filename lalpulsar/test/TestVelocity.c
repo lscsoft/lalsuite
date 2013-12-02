@@ -40,7 +40,7 @@
  * \ingroup Velocity_h
  * \brief Tests the calculation of the averaged velocity of a given detector.
  *
- * ### Program \ref TestVelocity.c ###
+ * ### Program TestVelocity.c ###
  *
  *
  * ### Usage ###

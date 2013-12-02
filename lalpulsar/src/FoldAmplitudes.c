@@ -21,7 +21,7 @@
  * \author Mendell, Greg A.
  * \ingroup FoldAmplitudes_h
  *
- * ### Module \ref FoldAmplitudes.c ###
+ * ### Module FoldAmplitudes.c ###
  *
  *
  * ### Description ###

@@ -30,7 +30,7 @@
  * Time-Frequency toolbox for Matlab \cite tftb.
  *
  * Four different TFRs are currently available (see
- * [\ref flandrin99_tf_ts] for a detailed description of what the
+ * [\cite flandrin99_tf_ts] for a detailed description of what the
  * following designations stand for) :
  * <ol>
  * <li> the spectrogram (function:
@@ -243,33 +243,25 @@
  * assigned by the functions.</li>
  * <li>  \c signal is the input signal</li>
  * <li> \c tfrIn is the time-frequency input structure (for memory
- * allocation).
- * \begin{itemize}</li>
+ * allocation).</li>
  * <li> \c type is the type of the chosen TFR (see \tableref{tfr_tablea}.</li>
  * <li> \c fRow is the number of frequency bins.</li>
  * <li> \c tCol is the number of time bins.</li>
  * <li> \c wlengthT is the (time-smoothing) window length (for Sp,
  * Rsp and Pswv).</li>
  * <li> \c wlengthF is the (frequency-smoothing) window length (for Pswv).</li>
- * </ul>
- * \item \c tfr is the time-frequency representation structure.
- * <ul>
+ * <li> \c tfr is the time-frequency representation structure.</li>
  * <li> \c type is the type of the chosen TFR (see \tableref{tfr_tablea}.</li>
  * <li> \c fRow is the number of frequency bins.</li>
  * <li> \c tCol is the number of time bins.</li>
  * <li> \c freqBin defines the centers of each frequency bins.</li>
  * <li> \c timeInstant defines the centers of each time bins.</li>
  * <li> \c map is the TFR matrix.</li>
- * </ul>
- * \item \c param is the time-frequency parameter structure.
- * <ul>
+ * <li> \c param is the time-frequency parameter structure.</li>
  * <li> \c type is the type of the chosen TFR (see \tableref{tfr_tablea}.</li>
- * <li> \c windowT is the (time-smoothing) window (for Sp,
- * Rsp and Pswv).</li>
- * <li> \c windowF is the (frequency-smoothing) window length (for
- * Pswv).</li>
+ * <li> \c windowT is the (time-smoothing) window (for Sp, Rsp and Pswv).</li>
+ * <li> \c windowF is the (frequency-smoothing) window length (for Pswv).</li>
  * </ul>
- * \end{itemize}
  *
  * ### Error conditions ###
  *

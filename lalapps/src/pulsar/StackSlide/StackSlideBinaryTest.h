@@ -24,7 +24,7 @@
 /**
  * \author  Landry, M., and Mendell, G.
  *
- * ### Header \ref ComputeSky.h ###
+ * ### Header ComputeSky.h ###
  *
  * Computes phase coefficients necessary for a correct demodulation.
  *

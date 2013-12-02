@@ -21,7 +21,7 @@
  * \author Jolien D. E. Creighton
  * \file
  *
- * ### Module \ref LALFrStream.c ###
+ * ### Module LALFrStream.c ###
  *
  * These are the low-level functions for manipulating a frame stream.
  *

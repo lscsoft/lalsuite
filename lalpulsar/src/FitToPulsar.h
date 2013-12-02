@@ -47,13 +47,7 @@
  *
  * More documentation soon.
  *
- * ### Error conditions ###
- *
- *
- * ### Structures ###
- *
- *
- * ### Structure \c CoarseFitInput ###
+ * ### Structure CoarseFitInput ###
  *
  * This structure stores locked data to be fitted by model.
  * <dl>
@@ -62,7 +56,7 @@
  * <dt><tt>LIGOTimeGPS *t</tt></dt><dd> time stamp for each data point (not necessarily with equal time steps)</dd>
  * </dl>
  *
- * ### Structure \c CoarseFitOutput ###
+ * ### Structure CoarseFitOutput ###
  *
  * This structure stores the results from the coarse fit of parameters.
  * <dl>
@@ -75,7 +69,7 @@
  * <dt><tt>REAL8Vector *mChiSquare</tt></dt><dd> matrix with chi square values</dd>
  * </dl>
  *
- * ### Structure \c CoarseFitParams ###
+ * ### Structure CoarseFitParams ###
  *
  * This structure stores the parameters for the coarse fit.
  * <dl>
@@ -93,7 +87,7 @@
 #define _FITTOPULSAR_H
 
 #include <lal/LALStdlib.h>
-/******* INCLUDE ANY OTHER LAL HEADERS needed for header (NOT module) ****/
+/* ****** INCLUDE ANY OTHER LAL HEADERS needed for header (NOT module) ****/
 
 #include <lal/AVFactories.h>
 #include <lal/SeqFactories.h>
@@ -134,9 +128,9 @@ extern "C" {
 
 /*@}*/
 
-/****** DEFINE OTHER GLOBAL CONSTANTS OR MACROS ************/
+/* ***** DEFINE OTHER GLOBAL CONSTANTS OR MACROS ************/
 
-/****** DEFINE NEW STRUCTURES AND TYPES ************/
+/* ***** DEFINE NEW STRUCTURES AND TYPES ************/
 typedef struct
 tagCoarseFitInput
 {
@@ -169,7 +163,7 @@ tagCoarseFitParams
   LALDetector detector;   /* detector */
 } CoarseFitParams;
 
-/****** INCLUDE EXTERNAL GLOBAL VARIABLES ************/
+/* ***** INCLUDE EXTERNAL GLOBAL VARIABLES ************/
 
 void
 LALCoarseFitToPulsar	(	LALStatus                       *status,

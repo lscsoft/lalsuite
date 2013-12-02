@@ -562,8 +562,8 @@ REAL8Vector *get_bsb_delay( BinaryPulsarParams pars, LIGOTimeGPSVector *datatime
 /**
  * \brief The amplitude model of a complex heterodyned triaxial neutron star
  *
- * This function calculates the complex heterodyned time series model for a triaxial neutron star (see [\ref
- * DupuisWoan2005]). It is defined as:
+ * This function calculates the complex heterodyned time series model for a triaxial neutron star (see
+ * [\cite DupuisWoan2005]). It is defined as:
  * \f{eqnarray}{
  * y(t) & = & \frac{h_0}{2} \left( \frac{1}{2}F_+(t,\psi)
  * (1+\cos^2\iota)\exp{i\phi_0} - iF_{\times}(t,\psi)\cos{\iota}\exp{i\phi_0}
@@ -994,7 +994,7 @@ void get_amplitude_model( BinaryPulsarParams pars, LALInferenceIFOData *data ){
  * The evidence is obtained from the joint likelihood given in \c pulsar_log_likelihood with the model term \f$y\f$ set
  * to zero.
  *
- * \param runData [in] The algorithm run state
+ * \param runState [in] The algorithm run state
  *
  * \return The natural logarithm of the noise only evidence
  */

@@ -88,8 +88,8 @@ def create_condor_file(configcp):
 def create_bank(configcp, arguments):
   """
   create the template bank independantly 
-  @param param: the user ini file
-  @param param: the arguments of lalapps_BankEfficiency
+  @param configcp: the user ini file
+  @param arguments: the arguments of lalapps_BankEfficiency
   """
   # for the bank generation, we simply need to add these arguments
   arguments = arguments + ' --n 1 --check --print-bank --xml-output'

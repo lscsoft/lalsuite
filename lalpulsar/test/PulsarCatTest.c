@@ -22,7 +22,7 @@
  * \file
  * \ingroup pulsarTODO
  *
- * ### Program \ref PulsarCatTest.c ###
+ * ### Program PulsarCatTest.c ###
  *
  * Tests routines to manipulate pulsar data.
  *

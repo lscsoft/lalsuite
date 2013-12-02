@@ -59,7 +59,7 @@
 
 /**
  *
- * ### Module \ref StackSlide.c ###
+ * ### Module StackSlide.c ###
  *
  * Computes frequency model, slide stacks accordingly, and sum them.
  *

@@ -55,7 +55,7 @@ def histng(xdata,ydata,xedges):
   histogram xdata with edges specified xedges and yedges.  
   Can rescale the entries by lum_weight
   @param xdata:  array of data for parameter x
-  @param xdata:  array of data for parameter y
+  @param ydata:  array of data for parameter y
   @param xedges: bin boundaries for parameter x
   """
   ng_x = zeros(len(xedges),'d')
