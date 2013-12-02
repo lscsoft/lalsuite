@@ -175,6 +175,13 @@ python_config.sed: Makefile
 	@echo "s+@PYTHONLIBDIR@+@pkgpythondir@+g" > python_config.sed
 	@echo "s+@PYTHONPROG@+@PYTHON@+g" >> python_config.sed
 
+ssipe_config.sed: Makefile
+	@-rm -f ssipe_config.sed
+	@echo "s+@LALAPPSDIR@+@bindir@+g" > ssipe_config.sed
+
+ihope_ssipe.ini: $(srcdir)/ihope_ssipe.ini.in ssipe_config.sed
+	$(AM_V_GEN)sed -f ssipe_config.sed $(srcdir)/ihope_ssipe.ini.in > ihope_ssipe.ini
+
 lalapps_inspiral_pipe: $(srcdir)/inspiral_pipe.in python_config.sed
 	$(AM_V_GEN)sed -f python_config.sed $(srcdir)/inspiral_pipe.in > lalapps_inspiral_pipe
 	@chmod +x lalapps_inspiral_pipe
@@ -306,6 +313,7 @@ lalapps_cbc_sbank_sim: $(srcdir)/cbc_sbank_sim.in python_config.sed
 pkgdata_DATA = \
 	BNSMasses.dat \
 	inspsrcs100Mpc.errors \
+	ihope_ssipe.ini \
 	inspiral_pipe.ini \
 	inspiral_hipe.ini \
 	online.ini \
