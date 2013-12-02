@@ -56,6 +56,13 @@ boinc_rev=current_gw_apps
 #previous:-r22844 -r22825 -r22804 -r22794 -r22784 -r22561 -r22503 -r22363 -r21777 -r'{2008-12-01}'
 git_retries=1
 
+gsl=gsl-1.15
+fftw=fftw-3.3.3
+zlib=zlib-1.2.8
+binutils=binutils-2.19
+
+zlib_shared="--static"
+
 for i; do
     case "$i" in
 	--win32)
@@ -71,7 +78,6 @@ for i; do
 	--rebuild-boinc)
 	    rebuild_boinc=true ;;
 	--rebuild-zlib)
-	    build_zlib=true
 	    rebuild_zlib=true ;;
 	--rebuild-binutils)
 	    rebuild_binutils=true ;;
@@ -176,6 +182,11 @@ for i; do
 	    boinc_rev="`echo $i | sed 's/^.*=//'`";;
 	--git_retries=*)
 	    git_retries="`echo $i | sed 's/^.*=//'`";;
+	--zlib-shared*)
+	    echo "$i" | fgrep = >/dev/null &&
+	        zlib="zlib-`echo $i | sed 's/^.*=//'`"
+	    build_zlib=true
+	    zlib_shared="--shared";;
 	--help)
 	    echo "$0 builds Einstein@home Applications of LALApps HierarchicalSearch codes"
 	    echo "  --win32           cros-compile a Win32 App (requires MinGW, target i586-mingw32msvc-gcc)"
@@ -193,6 +204,7 @@ for i; do
 	    echo "  --static          try to link statically (configure with --disable-shared)"
 	    echo "  --rebuild         build FFTW, gsl, BOINC and LAL from source even if they are found by pkg-config"
 	    echo "  --rebuild-zlib    rebuild zlib"
+	    echo "  --zlib-shared[=<v>] EXPERIMENTAL: build a local, shard version of zlib"
 	    echo "  --rebuild-binutils rebuild binutils"
 	    echo "  --rebuild-lal     rebuild lal & lalpulsar"
 	    echo "  --rebuild-boinc   rebuild BOINC"
@@ -353,11 +365,6 @@ if [ ."$missing_wine_warning" = ."true" ] ; then
     log_and_show "WARNING: 'wine' not found, disabling check as it won't work"
 fi
 
-gsl=gsl-1.15
-fftw=fftw-3.3.3
-zlib=zlib-1.2.8
-binutils=binutils-2.19
-
 if ! [ .$check_only = .true ]; then
 
 log_and_do rm -rf "$BUILD"
@@ -451,10 +458,11 @@ if test ."$build_zlib" = ."true"; then
     else
         log_and_show "compiling zlib"
         log_and_do cd "$SOURCE/$zlib"
-        log_and_do "./configure" --static --prefix="$INSTALL"
-        # log_and_dont_fail make clean
-        # 'make uninstall' deletes files in the source tree if the required directories in PREFIX don't exist (yet)
-        # log_and_dont_fail make uninstall
+        if [ "$zlib_shared" = "--shared" -a "$zlib" = "zlib-1.2.3" ] && echo "$CFLAGS" | grep -w -e -m64 >/dev/null; then
+            CC="gcc -m64" log_and_do "./configure" $zlib_shared --prefix="$INSTALL"
+        else
+            log_and_do "./configure" $zlib_shared --prefix="$INSTALL"
+        fi
         log_and_do make
         log_and_do make install
     fi
