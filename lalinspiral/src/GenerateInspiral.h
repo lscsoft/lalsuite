@@ -147,15 +147,15 @@ LALGenerateInspiral(
 
 int
 XLALGenerateInspiralPopulatePPN(
-    PPNParamStruc    * restrict ppnParams,
-    SimInspiralTable * restrict thisEvent
+    PPNParamStruc    * _LAL_RESTRICT_ ppnParams,
+    SimInspiralTable * _LAL_RESTRICT_ thisEvent
     );
 
 int
 XLALGenerateInspiralPopulateInspiral(
-    InspiralTemplate * restrict inspiralParams,
-    SimInspiralTable * restrict thisEvent,
-    PPNParamStruc    * restrict ppnParams
+    InspiralTemplate * _LAL_RESTRICT_ inspiralParams,
+    SimInspiralTable * _LAL_RESTRICT_ thisEvent,
+    PPNParamStruc    * _LAL_RESTRICT_ ppnParams
     );
 
 /*@}*/
