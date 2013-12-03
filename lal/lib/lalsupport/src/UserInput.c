@@ -458,6 +458,7 @@ XLALUserVarReadCmdline ( int argc, char *argv[] )
     {
       XLALPrintError ( "\nGot non-option ARGV-elements: [ ");
       while (optind < argc) {
+        if ( argv[optind][0] == '@' ) { optind ++; continue; }	// don't list config-file entries here
         XLALPrintError ("%s ", argv[optind++]);
       }
       XLALPrintError(" ]\n");
