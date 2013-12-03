@@ -260,13 +260,15 @@ else
 	Darwin)
             if [ ".$MACOSX_DEPLOYMENT_TARGET" = ".10.3" -o ".$acc" = "._altivec" ] ; then
                 platform=powerpc-apple-darwin
+	    elif echo "$LDFLAGS" | grep -w -e -m64 >/dev/null; then
+		platform=x86_64-apple-darwin
 	    else
 		platform=i686-apple-darwin
 	    fi
 	    LDFLAGS="-framework Carbon -framework AppKit -framework IOKit -framework CoreFoundation $LDFLAGS" ;;
 	Linux)
 	    LDFLAGS="-lpthread $LDFLAGS"
-	    if echo "$LDFLAGS" | grep -e -m64 >/dev/null; then
+	    if echo "$LDFLAGS" | grep -w -e -m64 >/dev/null; then
 	        platform=x86_64-pc-linux-gnu
 	    else
 	        platform=i686-pc-linux-gnu
