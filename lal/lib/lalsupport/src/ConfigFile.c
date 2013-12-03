@@ -312,7 +312,7 @@ XLALReadConfigVariable ( void *varp,                      /**< [out] result gets
       XLAL_ERROR ( XLAL_EINVAL );
     }
 
-  if (cfgdata->wasRead == NULL)
+  if ( (cfgdata->lines->nTokens > 0) && (cfgdata->wasRead == NULL) )
     {
       XLALPrintError ( "%s:" CONFIGFILEH_MSGENULL, __func__ );
       XLAL_ERROR ( XLAL_EINVAL );
@@ -710,7 +710,7 @@ XLALCheckConfigReadComplete (const LALParsedDataFile *cfgdata,  /**< [in] config
       XLALPrintError ("%s:" CONFIGFILEH_MSGENULL, __func__ );
       XLAL_ERROR ( XLAL_EINVAL );
     }
-  if (cfgdata->wasRead == NULL)
+  if ( (cfgdata->lines->nTokens > 0) && (cfgdata->wasRead == NULL) )
     {
       XLALPrintError ("%s:" CONFIGFILEH_MSGENULL, __func__ );
       XLAL_ERROR ( XLAL_EINVAL );
