@@ -287,6 +287,11 @@ XLALSetupFstat_Demod(
   );
 
 ///
+/// Records which optimised version of the demodulation hotloop was actually used.
+///
+extern const char* OptimisedHotloopSource;
+
+///
 /// Number of Dirichlet kernel terms used by optimised versions of the demodulation hotloop.
 ///
 extern const UINT4 OptimisedHotloopDterms;

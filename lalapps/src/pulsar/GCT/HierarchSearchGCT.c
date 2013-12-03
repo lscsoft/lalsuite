@@ -491,6 +491,7 @@ int MAIN( int argc, char *argv[]) {
   }
 
   LogPrintfVerbatim( LOG_DEBUG, "Code-version: %s\n", VCSInfoString );
+  LogPrintfVerbatim( LOG_DEBUG, "CFS Hotloop variant: %s\n", OptimisedHotloopSource );
 
   if ( uvar_version )
     {

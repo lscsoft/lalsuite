@@ -56,6 +56,22 @@ static int firstcall = 1; /* for sin/cos lookup table initialization */
 #define DTERMS 8
 const UINT4 OptimisedHotloopDterms = DTERMS;
 
+/* select optimized hotloop variant to be included and used in LocalXLALComputeFaFb() */
+#ifdef AUTOVECT_HOTLOOP
+#define OPT_DEMOD_SOURCE "ComputeFstat_Demod_autovect.i"
+#elif __ALTIVEC__
+#define OPT_DEMOD_SOURCE "ComputeFstat_Demod_altivec.i"
+#elif __SSE__ && defined(_MSC_VER)
+#define OPT_DEMOD_SOURCE "ComputeFstat_Demod_sse_msc.i"
+#elif __SSE__ && defined(__OPTIMIZE__)
+#define OPT_DEMOD_SOURCE "ComputeFstat_Demod_precalc.i"
+#else
+#define OPT_DEMOD_SOURCE "ComputeFstat_Demod_generic.i"
+#endif
+
+/* record which optimized hotloop variant was selected for use in LocalXLALComputeFaFb() */
+const char* OptimisedHotloopSource = OPT_DEMOD_SOURCE;
+
 #define COMPUTEFSTATC_ENULL 		1
 #define COMPUTEFSTATC_ENONULL 		2
 #define COMPUTEFSTATC_EINPUT   		3
@@ -1333,17 +1349,7 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
           {
           /* WARNING: all current optimized loops rely on current implementation of COMPLEX8 and DTERMS == 8 */
 
-#ifdef AUTOVECT_HOTLOOP
-#include "ComputeFstat_Demod_autovect.i"
-#elif __ALTIVEC__
-#include "ComputeFstat_Demod_altivec.i"
-#elif __SSE__ && defined(_MSC_VER)
-#include "ComputeFstat_Demod_sse_msc.i"
-#elif __SSE__ && defined(__OPTIMIZE__)
-#include "ComputeFstat_Demod_precalc.i"
-#else
-#include "ComputeFstat_Demod_generic.i"
-#endif
+#include OPT_DEMOD_SOURCE
 
           } /* if |remainder| > LD_SMALL4 */
         else
