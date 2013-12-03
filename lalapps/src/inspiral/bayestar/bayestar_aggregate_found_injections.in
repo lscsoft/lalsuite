@@ -88,7 +88,7 @@ def process(fitsfilename):
     try:
         runtime = metadata['runtime']
     except KeyError:
-        runtime = None
+        runtime = float('nan')
 
     simulation_id, true_ra, true_dec, far, snr = db.execute("""
         SELECT DISTINCT sim.simulation_id AS simulation_id, sim.longitude AS ra, sim.latitude AS dec,

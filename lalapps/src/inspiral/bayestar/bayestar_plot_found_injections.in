@@ -64,8 +64,9 @@ combined = np.concatenate([dataset['offset'] for dataset in datasets_])
 min_offset = np.min(combined)
 max_offset = np.max(combined)
 combined = np.concatenate([dataset['runtime'] for dataset in datasets_])
-min_runtime = np.min(combined)
-max_runtime = np.max(combined)
+if np.any(np.isfinite(combined)):
+    min_runtime = np.min(combined)
+    max_runtime = np.max(combined)
 if opts.group_by == 'far':
     combined = np.concatenate([dataset['far'] for dataset in datasets_])
     log10_min_far = int(np.ceil(np.log10(np.min(combined))))
@@ -159,7 +160,8 @@ for i, (bin_edge, subdir, title) in enumerate(zip(bin_edges, bin_names, bin_titl
             plt.figure(4)
             plt.hist(data['offset'], histtype='step', label=label, bins=np.logspace(np.log10(min_offset), np.log10(max_offset), 20), cumulative=opts.cumulative)
             plt.figure(5)
-            plt.hist(data['runtime'], histtype='step', bins=np.logspace(np.log10(min_runtime), np.log10(max_runtime), 20), cumulative=opts.cumulative)
+            if np.any(np.isfinite(data['runtime'])):
+                plt.hist(data['runtime'], histtype='step', bins=np.logspace(np.log10(min_runtime), np.log10(max_runtime), 20), cumulative=opts.cumulative)
 
     # Finish and save plot 1.
     pb.update(i * 5)
