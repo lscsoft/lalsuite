@@ -57,6 +57,8 @@ $(swig_iface_preproc) : $(swig_iface_headers) Makefile
 	echo "%module $(SWIG_IFACE_NAME)_preproc;" >> $@; \
 	echo "%warnfilter(SWIGWARN_PARSE_REDUNDANT) __swiglal__;" >> $@; \
 	echo "%warnfilter(SWIGWARN_PARSE_REDUNDANT) __swiglal_clear__;" >> $@; \
+	echo "#define _LAL_INLINE_" >> $@; \
+	echo "#define _LAL_RESTRICT_" >> $@; \
 	echo "#define SWIGLAL(...) const char __swiglal__[] = #__VA_ARGS__" >> $@; \
 	echo "#define SWIGLAL_CLEAR(...) const char __swiglal_clear__[] = #__VA_ARGS__" >> $@; \
 	headers=`cat $(swig_iface_headers) | $(SED) 's|^.*:||'`; \
