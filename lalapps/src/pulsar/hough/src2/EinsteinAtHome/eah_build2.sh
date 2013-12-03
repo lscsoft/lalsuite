@@ -35,16 +35,26 @@ log_and_dont_fail() {
 
 download() {
     if [ ".$2" = "." ]; then
-      u="http://www.aei.mpg.de/~bema"
+      u='http://www.aei.mpg.de/~bema'
       f="$1"
     else
       u="$1"
       f="$2"
     fi
-    echo `date '+[%Y-%m-%d %H:%M:%S]'` wget "$u/$f" >> "$LOGFILE" &&
-    wget --passive-ftp "$u/$f" 2>> "$LOGFILE" ||
-    echo `date '+[%Y-%m-%d %H:%M:%S]'` curl "$u/$f > $f" >> "$LOGFILE" &&
-    curl "$u/$f" > "$f" 2>> "$LOGFILE"
+    trial=1
+    while ! {
+        log_and_do rm -f "$f" &&
+        echo "`date '+[%Y-%m-%d %H:%M:%S]'` wget --no-check-certificate --passive-ftp --no-continue $u/$f" >> "$LOGFILE" &&
+        wget --no-check-certificate --passive-ftp --tries=1 "$u/$f" >> "$LOGFILE" 2>&1 ||
+        echo "wget exited with error $? - falling back to curl" >> "$LOGFILE" &&
+        log_and_do rm -f "$f" &&
+        echo "`date '+[%Y-%m-%d %H:%M:%S]'` curl -o $f $u/$f" >> "$LOGFILE" &&
+        curl -o "$f" "$u/$f" >> "$LOGFILE" 2>&1
+    } ; do
+        trial=`expr $trial + 1`
+        test $trial -gt $retries && log_and_show "failed" && fail
+        sleep 30
+    done
 }
 
 eah_build2_loc="`echo $PWD/$0 | sed 's%/[^/]*$%%'`"
@@ -54,7 +64,7 @@ test ".$appversion" = "." && appversion=0.00
 boinc_repo="git://gitmaster.atlas.aei.uni-hannover.de/einsteinathome/boinc.git"
 boinc_rev=current_gw_apps
 #previous:-r22844 -r22825 -r22804 -r22794 -r22784 -r22561 -r22503 -r22363 -r21777 -r'{2008-12-01}'
-git_retries=1
+retries=1
 
 gsl=gsl-1.15
 fftw=fftw-3.3.3
@@ -167,8 +177,8 @@ for i; do
 	    boinc_rev="`echo $i | sed 's/^.*=//'`";;
 	--boinc-commit=*)
 	    boinc_rev="`echo $i | sed 's/^.*=//'`";;
-	--git_retries=*)
-	    git_retries="`echo $i | sed 's/^.*=//'`";;
+	--retries=*)
+	    retries="`echo $i | sed 's/^.*=//'`";;
 	--zlib-shared*)
 	    echo "$i" | fgrep = >/dev/null &&
 	        zlib="zlib-`echo $i | sed 's/^.*=//'`"
@@ -200,6 +210,7 @@ for i; do
 	    echo "  --appversion=N.NN set an application version (only used in --release builds, defaults to 0.00)"
 	    echo "  --norebuild       disables --rebuild on --release. DANGEROUS! Use only for testing the build script"
 	    echo "  --noupdate        use previously retrieved (possibly locally modified) sources, doesn't need internet"
+	    echo "  --retries=<n>     try downloads (curl, git) this many times (defaults to 1)"
 	    echo "  --check           test the newly built HierarchSearchGC App"
 	    echo "  --check-only      only test the already built HierarchSearchGC App"
 	    echo "  --check-app=<app> only test the app specified, not necessarily the one just built"
@@ -366,7 +377,7 @@ if test -z "$rebuild" && pkg-config --exists gsl; then
     log_and_show "using existing gsl source"
 elif test -z "$noupdate"; then
     log_and_show "retrieving $gsl"
-    download http://www.aei.mpg.de/~bema $gsl.tar.gz
+    download $gsl.tar.gz
     log_and_do tar xzf "$gsl.tar.gz"
 fi
 
@@ -374,7 +385,7 @@ if test -z "$rebuild" && pkg-config --exists fftw3 fftw3f; then
     log_and_show "using existing fftw source"
 elif test -z "$noupdate"; then
     log_and_show "retrieving $fftw"
-    download http://www.aei.mpg.de/~bema $fftw.tar.gz
+    download $fftw.tar.gz
     log_and_do tar xzf "$fftw.tar.gz"
 fi
 
@@ -383,18 +394,19 @@ if test ."$build_zlib" = ."true"; then
         log_and_show "using existing zlib source"
     elif test -z "$noupdate"; then
         log_and_show "retrieving $zlib"
-        download http://zlib.net $zlib.tar.gz
+        download $zlib.tar.gz
         log_and_do tar xzf "$zlib.tar.gz"
     fi
 fi
 
 if test -n "$build_binutils" -a -n "$rebuild_binutils" -a -z "$noupdate"; then
     log_and_show "retrieving $binutils"
-    download http://www.aei.mpg.de/~bema $binutils.tar.gz
+# alternative locations:
+#    download https://atlas3.atlas.aei.uni-hannover.de/~bema/tarballs $binutils.tar.gz
+#    download http://mirrors.usc.edu/pub/gnu/binutils $binutils.tar.gz
+    download $binutils.tar.gz
     log_and_do rm -rf "$binutils"
     log_and_do tar xzf "$binutils.tar.gz"
-#    log_and_do sh -c "grep -v '^ *SUBDIRS *=' $binutils/bfd/Makefile.am > $binutils/bfd/Makefile.tmp"
-#    log_and_do mv $binutils/bfd/Makefile.tmp $binutils/bfd/Makefile.am
 fi
 
 if test -n "$noupdate" -o -z "$rebuild_boinc" -a -d "$SOURCE/boinc"; then
@@ -403,22 +415,23 @@ else
     log_and_show "retrieving boinc"
     if test -d "$SOURCE/boinc" -a -d "$SOURCE/boinc/.git" ; then
         log_and_do cd "$SOURCE/boinc"
+        # if "$boinc_rev" is a tag that already exists locally,
+        # delete it locally first in order to get updated from remote. Praise git !!
+        if git tag | fgrep -x "$boinc_rev" >/dev/null ; then
+            log_and_dont_fail git tag -d "$boinc_rev"
+        fi
+        log_and_do git fetch
     else
         log_and_do cd "$SOURCE"
         log_and_do rm -rf boinc
         trial=1
         while ! log_and_dont_fail git clone "$boinc_repo" ; do
             trial=`expr $trial + 1`
-            test $trial -gt $git_retries && log_and_show "failed" && fail
+            test $trial -gt $retries && log_and_show "failed" && fail
             sleep 30
             log_and_do rm -rf boinc
         done
         log_and_do cd boinc
-    fi
-    # if "$boinc_rev" is a tag that already exists locally,
-    # delete it locally first in order to get updated from remote. Praise git !!
-    if git tag | fgrep -x "$boinc_rev" >/dev/null ; then
-        log_and_dont_fail git tag -d "$boinc_rev"
     fi
     log_and_do git fetch --tags
     log_and_do git checkout "$boinc_rev"
