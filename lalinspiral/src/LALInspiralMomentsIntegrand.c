@@ -21,7 +21,8 @@
 #include <lal/LALInspiralBank.h>
 
 
-/** \ingroup LALInspiralBank_h
+/**
+ * \ingroup LALInspiralBank_h
  * \brief NO BRIEF DESCRIPTION
  * \author Brown, D. A., and Sathyaprakash, B. S.
  *

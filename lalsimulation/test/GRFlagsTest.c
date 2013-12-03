@@ -4,7 +4,6 @@
 int main(int argc , char *argv[])
 {
     /* Set lalDebugLevel to print all info, warnings, errors */
-    lalDebugLevel = 7;
 
     (void) argc;
     (void) argv;

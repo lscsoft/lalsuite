@@ -1,83 +1,83 @@
 // -*- mode: c -*-
 
 /**
-  \addtogroup pkg_pulsarFold
-  \brief Contains function LALFoldAmplitudes: folds amplitudes into phase bins.
-
-Periodic sources of gravitational radiation will produce measured
-strains of the following form:
-\f[
-c[i] = A(t_i,\vec{\lambda}) \sin[\Phi(t_i,\vec{\lambda})] + n(t_i)
-\f]
-In this equation \f$c[i]\f$ is the discrete time series output of the
-detector (perhaps after some data conditioning, such as being
-resampled, narrow banded, or with instrument line noise removed). The
-amplitude, \f$A(t_i,\vec{\lambda})\f$, is assumed roughly constant at the
-gravity wave source, but is modulated by variation in the detector's
-response due to the Earth's motion.  The phase, \f$\Phi(t_i,\vec{\lambda})\f$,
-is modulated by both the intrinsic spin down of the source, and the
-changes in relative motion between the source and the detector.  This
-can be calculated for known pulsars.  The vector \f$\vec{\lambda}\f$ is a
-vector of parameters that describe the sky position, etc., of the
-source and location, etc., of the detector. Finally, \f$n(t_i)\f$ is the
-noise, which also includes any other signals that are not coherent
-with the phase \f$\Phi(t_i,\vec{\lambda})\f$.
-
-The folded amplitude is given by
-\f[
-c_{\rm F} [j] = \sum_{i'}
-\left \{ A(t_i,\vec{\lambda})\sin[\Phi(t_i,\vec{\lambda})] + n(t_i) \right \} ,
-\f]
-where the sum over \f$i'\f$ means sum over all \f$i\f$'s with \f$\Phi\f$ in phase bin \f$j\f$.
-If the bin sizes are sufficiently small, then \f$c_{\rm F} [j]\f$ can be approximated as
-\f[
-c_{\rm F} [j] = \sin\Phi_j\sum_{i'} A(t_i,\vec{\lambda}) + \sum_{i'} n(t_i) ,
-\f]
-where \f$\Phi_j\f$ is representive of the phase for bin \f$j\f$ (e.g., the
-phase corresponding to the midpoint of the bin). However, because of
-amplitude modulation, the amplitudes that are added to a phase bin are
-not guaranteed to enter with the same sign.  Thus, some sort of
-amplitude demodulation should be done.
-
-If we demodulate \f$A(t_i,\vec{\lambda})\f$ (for example, in a minimum way
-such as multiplying by the sign of the response function) we multiply
-each element of the vector \f$c[i]\f$ by an amplitude demodulation factor
-\f$D(t_i)\f$
-\f[
-c_{\rm D\, , F} [j] = \sin\Phi_j \sum_{i'} D(t_i) A(t_i,\vec{\lambda}) + \sum_{i'} D(t_i) n(t_i) ,
-\f]
-If the average value of \f$D(t_i)\f$ is zero, and is not correlated with the noise, then
-\f[
-\sum_{i'} D(t_i) n(t_i) \approx 0
-\f]
-However, the average value of \f$D(t_i)\f$ is probably not zero.
-The following is a very preliminary suggestion of how to further reduce the noise.
-Consider folding the measured strains, \f$c[i]\f$, again, but this time
-shifting the phase bins by \f$\pi\f$.  Define this phase shifted folded
-amplitude as:
-\f[
-c_{\pi, \, \rm D\, , F} [j] = \sin(\Phi_j + \pi) \sum_{i''} D(t_i) A(t_i,\vec{\lambda}) + \sum_{i''} D(t_i) n(t_i) ,
-\f]
-where the sum over \f$i''\f$ means sum over all \f$i\f$'s with \f$\Phi + \pi\f$ in
-phase bin \f$j\f$. This will reverse the sign of the sum of the amplitudes
-that enter into each phase bin, but the sum of the noise contributions
-into each bin should be roughly the same. If the signal we are
-searching for is present, then amplitudes, \f$A(t_i,\vec{\lambda})\f$ are
-correlated with \f$D(t_i)\f$ such that
-\f[
-\sum_{i'} D(t_i) A(t_i,\vec{\lambda}) \approx \bar{A} = {\rm constant}
-\f]
-Thus,
-\f[
-c_{\rm D\, , F} [j] - c_{\pi, \, \rm D\, , F} [j] \approx 2 \bar{A}\sin\Phi_j ,
-\f]
-plus residual noise.  In practice, one needs to fold the amplitudes
-only once, and then make the replacement
-\f[
-c_{\rm D\, , F} [j] \rightarrow c_{\rm D\, , F} [j] - c_{\rm D\, , F} [(j + N/2) \, \% \, j] ,
-\f]
-where \f$N\f$ is the number of phase bins.  We can then statistically
-analyze the hypothesis that the demodulated folded amplitudes
-correspond to a sinusoid.
-
-*/
+ * \addtogroup pkg_pulsarFold
+ * \brief Contains function LALFoldAmplitudes: folds amplitudes into phase bins.
+ *
+ * Periodic sources of gravitational radiation will produce measured
+ * strains of the following form:
+ * \f[
+ * c[i] = A(t_i,\vec{\lambda}) \sin[\Phi(t_i,\vec{\lambda})] + n(t_i)
+ * \f]
+ * In this equation \f$c[i]\f$ is the discrete time series output of the
+ * detector (perhaps after some data conditioning, such as being
+ * resampled, narrow banded, or with instrument line noise removed). The
+ * amplitude, \f$A(t_i,\vec{\lambda})\f$, is assumed roughly constant at the
+ * gravity wave source, but is modulated by variation in the detector's
+ * response due to the Earth's motion.  The phase, \f$\Phi(t_i,\vec{\lambda})\f$,
+ * is modulated by both the intrinsic spin down of the source, and the
+ * changes in relative motion between the source and the detector.  This
+ * can be calculated for known pulsars.  The vector \f$\vec{\lambda}\f$ is a
+ * vector of parameters that describe the sky position, etc., of the
+ * source and location, etc., of the detector. Finally, \f$n(t_i)\f$ is the
+ * noise, which also includes any other signals that are not coherent
+ * with the phase \f$\Phi(t_i,\vec{\lambda})\f$.
+ *
+ * The folded amplitude is given by
+ * \f[
+ * c_{\rm F} [j] = \sum_{i'}
+ * \left \{ A(t_i,\vec{\lambda})\sin[\Phi(t_i,\vec{\lambda})] + n(t_i) \right \} ,
+ * \f]
+ * where the sum over \f$i'\f$ means sum over all \f$i\f$'s with \f$\Phi\f$ in phase bin \f$j\f$.
+ * If the bin sizes are sufficiently small, then \f$c_{\rm F} [j]\f$ can be approximated as
+ * \f[
+ * c_{\rm F} [j] = \sin\Phi_j\sum_{i'} A(t_i,\vec{\lambda}) + \sum_{i'} n(t_i) ,
+ * \f]
+ * where \f$\Phi_j\f$ is representive of the phase for bin \f$j\f$ (e.g., the
+ * phase corresponding to the midpoint of the bin). However, because of
+ * amplitude modulation, the amplitudes that are added to a phase bin are
+ * not guaranteed to enter with the same sign.  Thus, some sort of
+ * amplitude demodulation should be done.
+ *
+ * If we demodulate \f$A(t_i,\vec{\lambda})\f$ (for example, in a minimum way
+ * such as multiplying by the sign of the response function) we multiply
+ * each element of the vector \f$c[i]\f$ by an amplitude demodulation factor
+ * \f$D(t_i)\f$
+ * \f[
+ * c_{\rm D\, , F} [j] = \sin\Phi_j \sum_{i'} D(t_i) A(t_i,\vec{\lambda}) + \sum_{i'} D(t_i) n(t_i) ,
+ * \f]
+ * If the average value of \f$D(t_i)\f$ is zero, and is not correlated with the noise, then
+ * \f[
+ * \sum_{i'} D(t_i) n(t_i) \approx 0
+ * \f]
+ * However, the average value of \f$D(t_i)\f$ is probably not zero.
+ * The following is a very preliminary suggestion of how to further reduce the noise.
+ * Consider folding the measured strains, \f$c[i]\f$, again, but this time
+ * shifting the phase bins by \f$\pi\f$.  Define this phase shifted folded
+ * amplitude as:
+ * \f[
+ * c_{\pi, \, \rm D\, , F} [j] = \sin(\Phi_j + \pi) \sum_{i''} D(t_i) A(t_i,\vec{\lambda}) + \sum_{i''} D(t_i) n(t_i) ,
+ * \f]
+ * where the sum over \f$i''\f$ means sum over all \f$i\f$'s with \f$\Phi + \pi\f$ in
+ * phase bin \f$j\f$. This will reverse the sign of the sum of the amplitudes
+ * that enter into each phase bin, but the sum of the noise contributions
+ * into each bin should be roughly the same. If the signal we are
+ * searching for is present, then amplitudes, \f$A(t_i,\vec{\lambda})\f$ are
+ * correlated with \f$D(t_i)\f$ such that
+ * \f[
+ * \sum_{i'} D(t_i) A(t_i,\vec{\lambda}) \approx \bar{A} = {\rm constant}
+ * \f]
+ * Thus,
+ * \f[
+ * c_{\rm D\, , F} [j] - c_{\pi, \, \rm D\, , F} [j] \approx 2 \bar{A}\sin\Phi_j ,
+ * \f]
+ * plus residual noise.  In practice, one needs to fold the amplitudes
+ * only once, and then make the replacement
+ * \f[
+ * c_{\rm D\, , F} [j] \rightarrow c_{\rm D\, , F} [j] - c_{\rm D\, , F} [(j + N/2) \, \% \, j] ,
+ * \f]
+ * where \f$N\f$ is the number of phase bins.  We can then statistically
+ * analyze the hypothesis that the demodulated folded amplitudes
+ * correspond to a sinusoid.
+ *
+ */

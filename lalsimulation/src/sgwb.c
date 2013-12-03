@@ -54,7 +54,6 @@ int main(int argc, char *argv[])
 	LIGOTimeGPS epoch;
 	gsl_rng *rng;
 
-	lalDebugLevel = 7;
 	XLALSetErrorHandler(XLALAbortErrorHandler);
 
 	parseargs(argc, argv);

@@ -99,13 +99,11 @@ main(int argc, char *argv[])
   UINT4 diffs = 0;
   UINT4 nlines1, nlines2;
 
-  lalDebugLevel = 0;
 
   /* set LAL error-handler */
   lal_errhandler = LAL_ERR_EXIT;	/* exit with returned status-code on error */
 
   /* register all user-variables */
-  LAL_CALL (LALGetDebugLevel (&status, argc, argv, 'v'), &status);
   LAL_CALL (initUserVars (&status), &status);
 
   /* read cmdline & cfgfile  */
@@ -176,7 +174,8 @@ initUserVars (LALStatus *status)
 } /* initUserVars() */
 
 
-/** comparison specific to cluster-output files (7 entries )
+/**
+ * comparison specific to cluster-output files (7 entries )
  */
 void
 compareClusterFiles (LALStatus *status, UINT4 *diff, LALParsedDataFile *f1, LALParsedDataFile *f2 )
@@ -270,7 +269,8 @@ compareClusterFiles (LALStatus *status, UINT4 *diff, LALParsedDataFile *f1, LALP
 } /* compareClusterFiles() */
 
 
-/** comparison specific to pure Fstat-output files (5 entries )
+/**
+ * comparison specific to pure Fstat-output files (5 entries )
  */
 void
 compareFstatFiles (LALStatus *status, UINT4 *diff, LALParsedDataFile *f1, LALParsedDataFile *f2, REAL8 Ftol)

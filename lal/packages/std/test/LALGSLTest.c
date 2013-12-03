@@ -21,12 +21,12 @@
  * \file
  * \ingroup LALGSL_h
  * \author Creighton, J. D. E.
-
- This program tests the LAL macros for GSL function calls.  It makes sure
- that a nominal status is returned if the GSL function succeeds, and that
- an error code is returned if the GSL function fails.
-
-*/
+ *
+ * This program tests the LAL macros for GSL function calls.  It makes sure
+ * that a nominal status is returned if the GSL function succeeds, and that
+ * an error code is returned if the GSL function fails.
+ *
+ */
 
 /** \cond DONT_DOXYGEN */
 
@@ -168,7 +168,6 @@ int main( void )
   double y;
 
   original_handler = gsl_error_handler;
-  /* lalDebugLevel = LALTRACE | LALERROR; */
 
   /* these are simple tests of a LAL routine that calls a GSL function */
 

@@ -23,9 +23,6 @@
 #include <lal/LALStdlib.h>
 #include <lal/LALConstants.h>
 
-extern int lalDebugLevel;
-
-
 #define MAX_FRACTIONAL_ERROR 1e-15
 
 #if defined(NDEBUG) || defined(LAL_NDEBUG) /* debugging is turned off */
@@ -51,8 +48,6 @@ static int compare_within_fraction(double a, double b, double max_fractional_dif
 
 int main( void )
 {
-	lalDebugLevel = LALMEMDBG;
-
 	if(lalNoDebug) /* library was not compiled with debugging */
 		return 77; /* don't do any testing */
 

@@ -96,7 +96,6 @@ static void print_usage(char *program)
   fprintf(stderr,     "  [--help]                      display this message\n"                                 );
   fprintf(stderr,     "  [--verbose]                   print progress information\n"                           );
   fprintf(stderr,     "  [--version]                   print version information and exit\n"                   );
-  fprintf(stderr,     "  [--debug-level]   level       set the LAL debug level to LEVEL\n"                     );
   fprintf(stderr,     "  [--user-tag]      usertag     set the process_params usertag\n"                       );
   fprintf(stderr,     "  [--ifo-tag]       ifotag      set the ifo-tag - for file naming\n"                    );
   fprintf(stderr,     "  [--comment]       string      set the process table comment to STRING\n"              );
@@ -107,6 +106,12 @@ static void print_usage(char *program)
   fprintf(stderr,     "  [--check-times]                    Check that all times were analyzed\n"              );
   fprintf(stderr,     "  [--multi-ifo-coinc]                Look for triple/quadruple ifo coincidence\n"       );
   fprintf(stderr,     "  [--maximization-interval]  max_dt  set length of maximization interval in ms\n"       );
+  fprintf(stderr,     "                                     If not specified or set to zero, no\n"             );
+  fprintf(stderr,     "                                     clustering over the template bank\n"               );
+  fprintf(stderr,     "                                     will be performed. Must be greater\n"              );
+  fprintf(stderr,     "                                     than or equal to 0 sec and less than\n"            );
+  fprintf(stderr,     "                                     1 sec (1000 ms). Also, (1000ms)/max_dt\n"          );
+  fprintf(stderr,     "                                     must be an integer number of ms.\n"                );
   fprintf(stderr,     "\n"                                                                                     );
   fprintf(stderr,     "  [--h1-slide]      h1_slide    Slide H1 data by multiples of h1_slide\n"               );
   fprintf(stderr,     "  [--h2-slide]      h2_slide    Slide H2 data by multiples of h2_slide\n"               );
@@ -241,7 +246,7 @@ int main( int argc, char *argv[] )
   InterferometerNumber  ifoNumber = LAL_UNKNOWN_IFO;
   InterferometerNumber  ifoTwo    = LAL_UNKNOWN_IFO;
   INT4                  i;
-  INT8                  maximizationInterval = 0;
+  REAL4                 maximizationInterval = 0;
 
   REAL4                 h1snrCut = 0;
 
@@ -302,7 +307,6 @@ int main( int argc, char *argv[] )
     {"userTag",             required_argument, 0,                    'Z'},
     {"ifo-tag",             required_argument, 0,                    'i'},
     {"help",                no_argument,       0,                    'h'}, 
-    {"debug-level",         required_argument, 0,                    'z'},
     {"version",             no_argument,       0,                    'V'},
     {"high-mass",           required_argument, 0,                    '&'},
     {"h1-snr-cut",          required_argument, 0,                    '*'},
@@ -322,7 +326,6 @@ int main( int argc, char *argv[] )
    */
 
   lal_errhandler = LAL_ERR_EXIT;
-  set_debug_level( "33" );
   setvbuf( stdout, NULL, _IONBF, 0 );
 
   /* create the process and process params tables */
@@ -365,7 +368,7 @@ int main( int argc, char *argv[] )
 
     c = getopt_long_only( argc, argv, 
         "B:C:D:E:F:G:H:I:J:K:N:O:P:T:V:Z:"
-        "a:c:d:e:h:i:k:n:o:p:s:t:x:z:"
+        "a:c:d:e:h:i:k:n:o:p:s:t:x:"
         "@:&:(:):}", 
         long_options, &option_index );
 
@@ -685,11 +688,6 @@ int main( int argc, char *argv[] )
         exit( 1 );
         break;
 
-      case 'z':
-        set_debug_level( optarg );
-        ADD_PROCESS_PARAM( "string", "%s", optarg );
-        break;
-
       case 'Z':
         /* create storage for the usertag */
         optarg_len = strlen(optarg) + 1;
@@ -730,16 +728,33 @@ int main( int argc, char *argv[] )
 
       case '@':
         /* set the maximization window */
-        maximizationInterval = atoi( optarg );
+        maximizationInterval = atof( optarg );
         if ( maximizationInterval < 0 )
         {
           fprintf( stderr, "invalid argument to --%s:\n"
               "maximization interval must be positive:\n "
-              "(%" LAL_INT8_FORMAT " ms specified)\n",
+              "(%" LAL_REAL4_FORMAT " ms specified)\n",
               long_options[option_index].name, maximizationInterval );
           exit( 1 );
         }
-        ADD_PROCESS_PARAM( "int", "%" LAL_INT8_FORMAT,  maximizationInterval );
+        if ( maximizationInterval >= 1000 )
+        {
+          fprintf( stderr, "invalid argument to --%s:\n"
+              "maximization interval must be less than 1 second:\n "
+              "(%" LAL_REAL4_FORMAT " ms specified)\n",
+              long_options[option_index].name, maximizationInterval );
+          exit( 1 );
+        }
+        if ( maximizationInterval > 0 &&
+                ( (INT8) (1000/maximizationInterval) - 1000/maximizationInterval ) != 0 )
+        {
+          fprintf( stderr, "invalid argument to --%s:\n"
+              "1000ms/(maximization interval) must be an integer:\n "
+              "(%" LAL_REAL4_FORMAT " ms specified)\n",
+              long_options[option_index].name, maximizationInterval );
+          exit( 1 );
+        }
+        ADD_PROCESS_PARAM( "int", "%" LAL_REAL4_FORMAT,  maximizationInterval );
         break;
 
       case '*':
@@ -884,7 +899,7 @@ if ( vrbflg)
     else
     {
        fprintf( stdout, 
-           "Finding all double/triple coincidences in %d IFO time.\n",
+           "Finding all double/triple/quadruple coincidences in %d IFO time.\n",
            numIFO);
     }
   }
@@ -898,6 +913,11 @@ if ( vrbflg)
   {
     snprintf( ifos, LIGOMETA_IFOS_MAX, "%s%s%s", ifoName[0], ifoName[1], 
         ifoName[2] );
+  }
+  else if ( numIFO == 4 )
+  {
+    snprintf( ifos, LIGOMETA_IFOS_MAX, "%s%s%s%s", ifoName[0], ifoName[1], 
+        ifoName[2],ifoName[3] );
   }
 
   /* if numSlides is set, check that the slide times are different for
@@ -1071,11 +1091,13 @@ if ( vrbflg)
       {
         if (vrbflg)
         {
-          fprintf( stdout, "Clustering triggers for over %" LAL_INT8_FORMAT " ms window\n",
+          fprintf( stdout, "Clustering triggers for over %" LAL_REAL4_FORMAT " ms window\n",
               maximizationInterval);
         }
+        /* XLALMaxSnglRingdownOverIntervals requires maximizationInterval in nanoseconds. */
+        /* Thus, we convert from milliseconds to nanoseconds in the argument. */
         XLALMaxSnglRingdownOverIntervals( &ringdownFileList,
-            (1.0e6 * maximizationInterval) );
+            (INT8) round(1.0e6 * maximizationInterval) );
         numFileTriggers = XLALCountSnglRingdown( ringdownFileList );
       }
       

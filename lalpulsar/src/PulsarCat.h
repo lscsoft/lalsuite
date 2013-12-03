@@ -18,64 +18,66 @@
 */
 
 /**
-\author Creighton, T. D.
-\file
-\ingroup pulsarTODO
-
-\brief Provides structures and routines to store and manipulate pulsar properties.
-
-\heading{Synopsis}
-\code
-#include <lal/PulsarCat.h>
-\endcode
-
-This header covers structures to store pulsar properties in
-a standard format, and routines to manipulate and update these
-properties.  The set of properties stored in the catalogue is based on
-radio pulsar catalogues, with some additions and subtractions specific
-to gravitational wave observations.  The list of properties can be
-expanded in future by adding more fields to the structure.
-
-All properties are those that would be measured by an observer at the
-solar system barycentre.  For properties that depend on time
-(e.g.\ time-varying position, periods, etc.), an epoch is specified.
-The properties are then those that would be observed at the specified
-instant of time at the solar system barycentre; i.e.\ when the wave
-fronts carrying that information pass the solar system barycentre.
-
-\heading{A note on companion orbits:} Several known pulsars exist in
-multiple systems, and radio-pulsar catalogues include detailed models
-of the companion orbits, as determined from the pulsar timing.  See
-\ref GenerateSpinOrbitCW.h in the \c inject package for a
-discussion of the parameters defining the orientation of a companion
-orbit.
-
-Radio-pulsar observations rarely determine the inclination \f$i\f$ of the
-orbit to the sky plane, and thus cannot resolve the longitude of the
-ascending node \f$\Omega\f$ and the argument of the periapsis \f$\omega\f$ as
-independent parameters.  Instead, they list the longitude of the
-periapsis \f$w\f$, which is the angle in the plane of the sky from the
-North direction towards the West direction, to the ray from the system
-barycentre to the periapsis projected onto the plane of the sky.  If
-any three of \f$i\f$, \f$\Omega\f$, \f$\omega\f$, and \f$w\f$ are known, the fourth
-can be determined from the relation:
-\f[
-w - \Omega = \arctan\;2(\sin\omega\cos i,\cos\omega) \;,
-\f]
-or equivalently:
-\f[
-\omega = \arctan\;2(\cos[w-\Omega],\sin[w-\Omega]/\cos i) \;.
-\f]
-
-In addition to these Keplerian orbital parameters, some radio-pulsar
-systems have measured post-Keplerian relativistic orbital parameters.
-Some of these are obvious: \f$\dot{w}\f$ and \f$\dot{P}\f$ are the rate of
-change in \f$w\f$ (periapsis precession) and the orbital period \f$P\f$ (due
-to gravitational radiation reaction).  The catalogue also lists
-post-Keplerian parameters \"sin\" and \"r\", whose meanings I don't
-know.
-
-*/
+ * \author Creighton, T. D.
+ * \file
+ * \ingroup pulsarTODO
+ *
+ * \brief Provides structures and routines to store and manipulate pulsar properties.
+ *
+ * ### Synopsis ###
+ *
+ * \code
+ * #include <lal/PulsarCat.h>
+ * \endcode
+ *
+ * This header covers structures to store pulsar properties in
+ * a standard format, and routines to manipulate and update these
+ * properties.  The set of properties stored in the catalogue is based on
+ * radio pulsar catalogues, with some additions and subtractions specific
+ * to gravitational wave observations.  The list of properties can be
+ * expanded in future by adding more fields to the structure.
+ *
+ * All properties are those that would be measured by an observer at the
+ * solar system barycentre.  For properties that depend on time
+ * (e.g.\ time-varying position, periods, etc.), an epoch is specified.
+ * The properties are then those that would be observed at the specified
+ * instant of time at the solar system barycentre; i.e.\ when the wave
+ * fronts carrying that information pass the solar system barycentre.
+ *
+ * \par A note on companion orbits:
+ * Several known pulsars exist in
+ * multiple systems, and radio-pulsar catalogues include detailed models
+ * of the companion orbits, as determined from the pulsar timing.  See
+ * \ref GenerateSpinOrbitCW.h in the \c inject package for a
+ * discussion of the parameters defining the orientation of a companion
+ * orbit.
+ *
+ * Radio-pulsar observations rarely determine the inclination \f$i\f$ of the
+ * orbit to the sky plane, and thus cannot resolve the longitude of the
+ * ascending node \f$\Omega\f$ and the argument of the periapsis \f$\omega\f$ as
+ * independent parameters.  Instead, they list the longitude of the
+ * periapsis \f$w\f$, which is the angle in the plane of the sky from the
+ * North direction towards the West direction, to the ray from the system
+ * barycentre to the periapsis projected onto the plane of the sky.  If
+ * any three of \f$i\f$, \f$\Omega\f$, \f$\omega\f$, and \f$w\f$ are known, the fourth
+ * can be determined from the relation:
+ * \f[
+ * w - \Omega = \arctan\;2(\sin\omega\cos i,\cos\omega) \;,
+ * \f]
+ * or equivalently:
+ * \f[
+ * \omega = \arctan\;2(\cos[w-\Omega],\sin[w-\Omega]/\cos i) \;.
+ * \f]
+ *
+ * In addition to these Keplerian orbital parameters, some radio-pulsar
+ * systems have measured post-Keplerian relativistic orbital parameters.
+ * Some of these are obvious: \f$\dot{w}\f$ and \f$\dot{P}\f$ are the rate of
+ * change in \f$w\f$ (periapsis precession) and the orbital period \f$P\f$ (due
+ * to gravitational radiation reaction).  The catalogue also lists
+ * post-Keplerian parameters \"sin\" and \"r\", whose meanings I don't
+ * know.
+ *
+ */
 
 #ifndef _PULSARCAT_H
 #define _PULSARCAT_H
@@ -104,7 +106,8 @@ extern "C" {
 /*@}*/
 
 
-/** This structure stores the orbital parameters of a companion
+/**
+ * This structure stores the orbital parameters of a companion
  * to a pulsar in a multiple system.  If there is more than one
  * companion, these structures form a linked list.
  */
@@ -122,7 +125,8 @@ typedef struct tagCompanionNode{
   struct tagCompanionNode *next; /**< Pointer to next companion's data; \c NULL if there are no further companions in the system. */
 } CompanionNode;
 
-/** This structure represents a single node in a linked list of
+/**
+ * This structure represents a single node in a linked list of
  * pulsar data, storing data for a single pulsar.
  */
 typedef struct tagPulsarCatNode {
@@ -162,28 +166,29 @@ typedef struct tagPulsarCatNode {
   struct tagPulsarCatNode *next; /**< Next pulsar in the catalogue's linked list; \c NULL if this is the last (or only) pulsar in the list */
 } PulsarCatNode;
 
-/** This enumerated type is used to give a default ordering to
-the fields in the pulsar catalogue.  This is used, for instance, when
-reading pulsar catalogue data from a file.  The values are of the form
-\c PULSARCATINDEX_\f$\langle\mathrm{label}\rangle\f$, where the
-(currently) allowed values of \f$\langle\mathrm{label}\rangle\f$ are:
-
-<table>
-<tr><th>NAME</th><th>pulsar name</th><th></th><th></th></tr>
-<tr><td>\c RAJ</td><td>J2000 right ascension</td><td>\c RAJERR</td><td>its uncertainty</td></tr>
-<tr><td>\c DECJ</td><td>J2000 declination</td><td>\c DECJERR</td><td>its uncertainty</td></tr>
-<tr><td>\c PMRA</td><td>right ascension proper motion</td><td>\c PMRAERR</td><td>its uncertainty</td></tr>
-<tr><td>\c PMDEC</td><td>declination proper motion</td><td>\c PMDECERR</td><td>its uncertainty</td></tr>
-<tr><td>\c POSEPOCH</td><td>position measurement epoch</td><td></td><td></td></tr>
-<tr><td>\c F</td><td>spin frequency</td><td>\c FERR</td><td>its uncertainty</td></tr>
-<tr><td>\c F1</td><td>spin frequency derivative</td><td>\c F1ERR</td><td>its uncertainty</td></tr>
-<tr><td>\c F1</td><td>spin frequency second derivative</td><td>\c F2ERR</td><td>its uncertainty</td></tr>
-<tr><td>\c PEPOCH</td><td>spin measurement epoch</td><td></td><td></td></tr>
-<tr><td>\c Dist</td><td>distance</td><td></td><td></td></tr>
-<tr><td>\c NUM</td><td>number of enum values</td><td></td><td></td></tr>
-</table>
-
-*/
+/**
+ * This enumerated type is used to give a default ordering to
+ * the fields in the pulsar catalogue.  This is used, for instance, when
+ * reading pulsar catalogue data from a file.  The values are of the form
+ * \c PULSARCATINDEX_\f$\langle\mathrm{label}\rangle\f$, where the
+ * (currently) allowed values of \f$\langle\mathrm{label}\rangle\f$ are:
+ *
+ * <table>
+ * <tr><th>NAME</th><th>pulsar name</th><th></th><th></th></tr>
+ * <tr><td>\c RAJ</td><td>J2000 right ascension</td><td>\c RAJERR</td><td>its uncertainty</td></tr>
+ * <tr><td>\c DECJ</td><td>J2000 declination</td><td>\c DECJERR</td><td>its uncertainty</td></tr>
+ * <tr><td>\c PMRA</td><td>right ascension proper motion</td><td>\c PMRAERR</td><td>its uncertainty</td></tr>
+ * <tr><td>\c PMDEC</td><td>declination proper motion</td><td>\c PMDECERR</td><td>its uncertainty</td></tr>
+ * <tr><td>\c POSEPOCH</td><td>position measurement epoch</td><td></td><td></td></tr>
+ * <tr><td>\c F</td><td>spin frequency</td><td>\c FERR</td><td>its uncertainty</td></tr>
+ * <tr><td>\c F1</td><td>spin frequency derivative</td><td>\c F1ERR</td><td>its uncertainty</td></tr>
+ * <tr><td>\c F1</td><td>spin frequency second derivative</td><td>\c F2ERR</td><td>its uncertainty</td></tr>
+ * <tr><td>\c PEPOCH</td><td>spin measurement epoch</td><td></td><td></td></tr>
+ * <tr><td>\c Dist</td><td>distance</td><td></td><td></td></tr>
+ * <tr><td>\c NUM</td><td>number of enum values</td><td></td><td></td></tr>
+ * </table>
+ *
+ */
 typedef enum {
   PULSARCATINDEX_NAME,
   PULSARCATINDEX_RAJ,   PULSARCATINDEX_RAJERR,

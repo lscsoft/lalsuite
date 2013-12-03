@@ -27,8 +27,8 @@
  */
 
 
-/** \file
- *
+/**
+ * \file
  * \ingroup LIGOLwXMLArray
  * \author Kipp Cannon
  *
@@ -63,11 +63,9 @@
  * 	return 0;
  * }
  *
- *
  */
 
 
-#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <stdarg.h>
 #include <stdio.h>
 #include <lal/Date.h>
@@ -227,8 +225,8 @@ static int WriteLIGOLwXMLArrayCOMPLEX8Stream(
 	error |= fprintf(stream, "%s<Stream Type=\"Local\" Delimiter=\",\">\n", indent) < 0;
 	if(length) {
 		for(i = 0; i < length - 1; i++)
-			error |= fprintf(stream, "%s\t%.16g,%.8g,%.8g,\n", indent, i * delta, (double) data[i].re, (double) data[i].im) < 0;
-		error |= fprintf(stream, "%s\t%.16g,%.8g,%.8g\n", indent, i * delta, (double) data[i].re, (double) data[i].im) < 0;
+			error |= fprintf(stream, "%s\t%.16g,%.8g,%.8g,\n", indent, i * delta, (double) crealf(data[i]), (double) cimagf(data[i])) < 0;
+		error |= fprintf(stream, "%s\t%.16g,%.8g,%.8g\n", indent, i * delta, (double) crealf(data[i]), (double) cimagf(data[i])) < 0;
 	}
 	error |= fprintf(stream, "%s</Stream>\n", indent) < 0;
 
@@ -250,8 +248,8 @@ static int WriteLIGOLwXMLArrayCOMPLEX16Stream(
 	error |= fprintf(stream, "%s<Stream Type=\"Local\" Delimiter=\",\">\n", indent) < 0;
 	if(length) {
 		for(i = 0; i < length - 1; i++)
-			error |= fprintf(stream, "%s\t%.16g,%.16g,%.16g,\n", indent, i * delta, data[i].re, data[i].im) < 0;
-		error |= fprintf(stream, "%s\t%.16g,%.16g,%.16g\n", indent, i * delta, data[i].re, data[i].im) < 0;
+			error |= fprintf(stream, "%s\t%.16g,%.16g,%.16g,\n", indent, i * delta, creal(data[i]), cimag(data[i])) < 0;
+		error |= fprintf(stream, "%s\t%.16g,%.16g,%.16g\n", indent, i * delta, creal(data[i]), cimag(data[i])) < 0;
 	}
 	error |= fprintf(stream, "%s</Stream>\n", indent) < 0;
 
@@ -316,7 +314,8 @@ static int WriteLIGOLwXMLArray(
  */
 
 
-/** Write a \c REAL4TimeSeries to a \c LIGOLwXMLStream.  Returns 0 on
+/**
+ * Write a \c REAL4TimeSeries to a \c LIGOLwXMLStream.  Returns 0 on
  * success, less than 0 on failure.  If \a comment is not NULL, it will be
  * added to the output as the string in a Comment element.
  */
@@ -334,7 +333,8 @@ int XLALWriteLIGOLwXMLArrayREAL4TimeSeries(
 }
 
 
-/** Write a \c REAL8TimeSeries to a \c LIGOLwXMLStream.  Returns 0 on
+/**
+ * Write a \c REAL8TimeSeries to a \c LIGOLwXMLStream.  Returns 0 on
  * success, less than 0 on failure.  If \a comment is not NULL, it will be
  * added to the output as the string in a Comment element.
  */
@@ -352,7 +352,8 @@ int XLALWriteLIGOLwXMLArrayREAL8TimeSeries(
 }
 
 
-/** Write a \c REAL4FrequencySeries to a \c LIGOLwXMLStream.  Returns 0 on
+/**
+ * Write a \c REAL4FrequencySeries to a \c LIGOLwXMLStream.  Returns 0 on
  * success, less than 0 on failure.  If \a comment is not NULL, it will be
  * added to the output as the string in a Comment element.
  */
@@ -370,7 +371,8 @@ int XLALWriteLIGOLwXMLArrayREAL4FrequencySeries(
 }
 
 
-/** Write a \c REAL8FrequencySeries to a \c LIGOLwXMLStream.  Returns 0 on
+/**
+ * Write a \c REAL8FrequencySeries to a \c LIGOLwXMLStream.  Returns 0 on
  * success, less than 0 on failure.  If \a comment is not NULL, it will be
  * added to the output as the string in a Comment element.
  */
@@ -388,7 +390,8 @@ int XLALWriteLIGOLwXMLArrayREAL8FrequencySeries(
 }
 
 
-/** Write a \c COMPLEX8FrequencySeries to a \c LIGOLwXMLStream.  Returns 0
+/**
+ * Write a \c COMPLEX8FrequencySeries to a \c LIGOLwXMLStream.  Returns 0
  * on success, less than 0 on failure.  If \a comment is not NULL, it will
  * be added to the output as the string in a Comment element.
  */
@@ -406,7 +409,8 @@ int XLALWriteLIGOLwXMLArrayCOMPLEX8FrequencySeries(
 }
 
 
-/** Write a \c COMPLEX16FrequencySeries to a \c LIGOLwXMLStream.  Returns 0
+/**
+ * Write a \c COMPLEX16FrequencySeries to a \c LIGOLwXMLStream.  Returns 0
  * on success, less than 0 on failure.  If \a comment is not NULL, it will
  * be added to the output as the string in a Comment element.
  */

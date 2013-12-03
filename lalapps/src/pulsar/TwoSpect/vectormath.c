@@ -1096,11 +1096,12 @@ void sse_exp_REAL8Vector(REAL8Vector *output, REAL8Vector *input)
    __m128d cephes_q3 = _mm_set1_pd(2.00000000000000000009e0);
    
    for (ii=0; ii<roundedvectorlength; ii++) {
-      *x = _mm_max_pd(*x, minexp);
-      *x = _mm_min_pd(*x, maxexp);
+      __m128d y = *x;
+      y = _mm_max_pd(y, minexp);
+      y = _mm_min_pd(y, maxexp);
       
       //Compute x*ln(2)
-      __m128d log2etimesx = _mm_mul_pd(log2e, *x);
+      __m128d log2etimesx = _mm_mul_pd(log2e, y);
       
       //Round
       //__m128d log2etimesxsubhalf = _mm_sub_pd(log2etimesx, onehalf);
@@ -1112,15 +1113,16 @@ void sse_exp_REAL8Vector(REAL8Vector *output, REAL8Vector *input)
       __m128d mask = _mm_cmpgt_pd(log2etimesx_rounded, log2etimesxplushalf);
       mask = _mm_and_pd(mask, one);
       log2etimesx_rounded = _mm_sub_pd(log2etimesx_rounded, mask);
+      log2etimesx_rounded_i = _mm_cvttpd_epi32(log2etimesx_rounded);
       
       //multiply and subtract as in the cephes code
       __m128d log2etimesx_rounded_times_c1 = _mm_mul_pd(log2etimesx_rounded, cephes_c1);
       __m128d log2etimesx_rounded_times_c2 = _mm_mul_pd(log2etimesx_rounded, cephes_c2);
-      *x = _mm_sub_pd(*x, log2etimesx_rounded_times_c1);
-      *x = _mm_sub_pd(*x, log2etimesx_rounded_times_c2);
+      y = _mm_sub_pd(y, log2etimesx_rounded_times_c1);
+      y = _mm_sub_pd(y, log2etimesx_rounded_times_c2);
       
       //x**2
-      __m128d xsq = _mm_mul_pd(*x, *x);
+      __m128d xsq = _mm_mul_pd(y, y);
       
       //Pade approximation with polynomials
       //Now the polynomial part 1
@@ -1129,7 +1131,7 @@ void sse_exp_REAL8Vector(REAL8Vector *output, REAL8Vector *input)
       polevlresult = _mm_add_pd(polevlresult, cephes_p1);
       polevlresult = _mm_mul_pd(polevlresult, xsq);
       polevlresult = _mm_add_pd(polevlresult, cephes_p2);
-      __m128d xtimespolresult = _mm_mul_pd(*x, polevlresult);
+      __m128d xtimespolresult = _mm_mul_pd(y, polevlresult);
       
       //And polynomial part 2
       polevlresult = cephes_q0;
@@ -1140,11 +1142,11 @@ void sse_exp_REAL8Vector(REAL8Vector *output, REAL8Vector *input)
       polevlresult = _mm_mul_pd(polevlresult, xsq);
       polevlresult = _mm_add_pd(polevlresult, cephes_q3);
       __m128d polevlresult_minus_xtimespolresult = _mm_sub_pd(polevlresult, xtimespolresult);
-      *x = _mm_div_pd(xtimespolresult, polevlresult_minus_xtimespolresult);
+      y = _mm_div_pd(xtimespolresult, polevlresult_minus_xtimespolresult);
       
       //Finishing the pade approximation
-      *x = _mm_mul_pd(*x, two);
-      *x = _mm_add_pd(*x, one);
+      y = _mm_mul_pd(y, two);
+      y = _mm_add_pd(y, one);
       
       //Need to get the integer to a 64 bit format for below even though we don't need that much
       //Note that this is still limited to an INT4 size
@@ -1161,7 +1163,7 @@ void sse_exp_REAL8Vector(REAL8Vector *output, REAL8Vector *input)
       __m128d pow2n = _mm_castsi128_pd(log2etimesx_rounded_i_with_offset);
       
       //And multiply
-      *result = _mm_mul_pd(*x, pow2n);
+      *result = _mm_mul_pd(y, pow2n);
       
       x++;
       result++;
@@ -1249,11 +1251,12 @@ void sse_exp_REAL4Vector(REAL4Vector *output, REAL4Vector *input)
    __m128 cephes_q3 = _mm_set1_ps(2.00000000000000000009e0f);
    
    for (ii=0; ii<roundedvectorlength; ii++) {
-      *x = _mm_max_ps(*x, minexp);
-      *x = _mm_min_ps(*x, maxexp);
+      __m128 y = *x;
+      y = _mm_max_ps(y, minexp);
+      y = _mm_min_ps(y, maxexp);
       
       //Compute x*ln(2)
-      __m128 log2etimesx = _mm_mul_ps(log2e, *x);
+      __m128 log2etimesx = _mm_mul_ps(log2e, y);
       
       //Round
       //__m128 log2etimesxsubhalf = _mm_sub_ps(log2etimesx, onehalf);
@@ -1265,15 +1268,16 @@ void sse_exp_REAL4Vector(REAL4Vector *output, REAL4Vector *input)
       __m128 mask = _mm_cmpgt_ps(log2etimesx_rounded, log2etimesxplushalf);
       mask = _mm_and_ps(mask, one);
       log2etimesx_rounded = _mm_sub_ps(log2etimesx_rounded, mask);
+      log2etimesx_rounded_i = _mm_cvttps_epi32(log2etimesx_rounded);
       
       //multiply and subtract as in the cephes code
       __m128 log2etimesx_rounded_times_c1 = _mm_mul_ps(log2etimesx_rounded, cephes_c1);
       __m128 log2etimesx_rounded_times_c2 = _mm_mul_ps(log2etimesx_rounded, cephes_c2);
-      *x = _mm_sub_ps(*x, log2etimesx_rounded_times_c1);
-      *x = _mm_sub_ps(*x, log2etimesx_rounded_times_c2);
+      y = _mm_sub_ps(y, log2etimesx_rounded_times_c1);
+      y = _mm_sub_ps(y, log2etimesx_rounded_times_c2);
       
       //x**2
-      __m128 xsq = _mm_mul_ps(*x, *x);
+      __m128 xsq = _mm_mul_ps(y, y);
       
       //Pade approximation with polynomials
       //Now the polynomial part 1
@@ -1282,7 +1286,7 @@ void sse_exp_REAL4Vector(REAL4Vector *output, REAL4Vector *input)
       polevlresult = _mm_add_ps(polevlresult, cephes_p1);
       polevlresult = _mm_mul_ps(polevlresult, xsq);
       polevlresult = _mm_add_ps(polevlresult, cephes_p2);
-      __m128 xtimespolresult = _mm_mul_ps(*x, polevlresult);
+      __m128 xtimespolresult = _mm_mul_ps(y, polevlresult);
       
       //And polynomial part 2
       polevlresult = cephes_q0;
@@ -1293,11 +1297,11 @@ void sse_exp_REAL4Vector(REAL4Vector *output, REAL4Vector *input)
       polevlresult = _mm_mul_ps(polevlresult, xsq);
       polevlresult = _mm_add_ps(polevlresult, cephes_q3);
       __m128 polevlresult_minus_xtimespolresult = _mm_sub_ps(polevlresult, xtimespolresult);
-      *x = _mm_div_ps(xtimespolresult, polevlresult_minus_xtimespolresult);
+      y = _mm_div_ps(xtimespolresult, polevlresult_minus_xtimespolresult);
       
       //Finishing the pade approximation
-      *x = _mm_mul_ps(*x, two);
-      *x = _mm_add_ps(*x, one);
+      y = _mm_mul_ps(y, two);
+      y = _mm_add_ps(y, one);
       
       //Now construct 2**n
       __m128i log2etimesx_rounded_i_with_offset = _mm_add_epi32(log2etimesx_rounded_i, expoffset);
@@ -1305,7 +1309,7 @@ void sse_exp_REAL4Vector(REAL4Vector *output, REAL4Vector *input)
       __m128 pow2n = _mm_castsi128_ps(log2etimesx_rounded_i_with_offset);
       
       //And multiply
-      *result = _mm_mul_ps(*x, pow2n);
+      *result = _mm_mul_ps(y, pow2n);
       
       x++;
       result++;

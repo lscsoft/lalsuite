@@ -18,50 +18,51 @@
 */
 
 /**
-   \file
-   \ingroup StreamInput_h
-   \author Creighton, T. D.
-
-   \brief Reads a time or frequency series from a file, and writes it to another file.
-
-\heading{Usage}
-\code
-StreamSeriesInputTest [-o outfile] [-i infile stype dtype] [-d debuglevel]
-\endcode
-
-\heading{Description}
-
-This test program parses data from an input file or from \c stdin,
-using the routines in \ref StreamSeriesInput.c, and possibly
-generating output using the routines in \ref StreamSeriesOutput.c.
-The following option flags are accepted:
-<ul>
-<li>[<tt>-o</tt>] Writes the output to \c outfile.  If
-\c outfile is given as \c stdout, the data is written to
-standard output (\e not to a file named \c stdout).  If the
-<tt>-o</tt> flag is not given, the input routines are exercised, but no
-output is written.</li>
-<li>[<tt>-i</tt>] Specifies the input file name \c infile, series
-type \c stype, and base datatype \c dtype.  Series type is a
-single character: either \c t (time series), \c v (time vector
-series), \c a (time array series), or \c f (frequency series).
-Base datatype may be \c i2 (\c INT2), \c i4 (\c INT4),
-\c i8 (\c INT8), \c u2 (\c UINT2), \c u4
-(\c UINT4), \c u8 (\c UINT8), \c s (\c REAL4),
-\c d (\c REAL8), \c c (\c COMPLEX8), or \c z
-(\c COMPLEX16).  If the <tt>-i</tt> flag is not given,
-<tt>-i StreamSeriesInput.dat f s</tt> is assumed (this file is provided
-with the distribution so that running the code with no arguments, \'a
-la <tt>make check</tt>, will perform a nontrivial test of the
-algorithm).</li>
-<li>[<tt>-d</tt>] Sets the debug level to \c debuglevel; if
-absent, <tt>-d 0</tt> is assumed.</li>
-</ul>
-
-See the documentation in \ref StreamSeriesInput_c and
-\ref StreamSeriesOutput_c for discussion of the input and output
-data file formats.
-*/
+ * \file
+ * \ingroup StreamInput_h
+ * \author Creighton, T. D.
+ *
+ * \brief Reads a time or frequency series from a file, and writes it to another file.
+ *
+ * ### Usage ###
+ *
+ * \code
+ * StreamSeriesInputTest [-o outfile] [-i infile stype dtype] [-d debuglevel]
+ * \endcode
+ *
+ * ### Description ###
+ *
+ * This test program parses data from an input file or from \c stdin,
+ * using the routines in \ref StreamSeriesInput.c, and possibly
+ * generating output using the routines in \ref StreamSeriesOutput.c.
+ * The following option flags are accepted:
+ * <ul>
+ * <li>[<tt>-o</tt>] Writes the output to \c outfile.  If
+ * \c outfile is given as \c stdout, the data is written to
+ * standard output (\e not to a file named \c stdout).  If the
+ * <tt>-o</tt> flag is not given, the input routines are exercised, but no
+ * output is written.</li>
+ * <li>[<tt>-i</tt>] Specifies the input file name \c infile, series
+ * type \c stype, and base datatype \c dtype.  Series type is a
+ * single character: either \c t (time series), \c v (time vector
+ * series), \c a (time array series), or \c f (frequency series).
+ * Base datatype may be \c i2 (\c INT2), \c i4 (\c INT4),
+ * \c i8 (\c INT8), \c u2 (\c UINT2), \c u4
+ * (\c UINT4), \c u8 (\c UINT8), \c s (\c REAL4),
+ * \c d (\c REAL8), \c c (\c COMPLEX8), or \c z
+ * (\c COMPLEX16).  If the <tt>-i</tt> flag is not given,
+ * <tt>-i StreamSeriesInput.dat f s</tt> is assumed (this file is provided
+ * with the distribution so that running the code with no arguments, \'a
+ * la <tt>make check</tt>, will perform a nontrivial test of the
+ * algorithm).</li>
+ * <li>[<tt>-d</tt>] Sets the debug level to \c debuglevel; if
+ * absent, <tt>-d 0</tt> is assumed.</li>
+ * </ul>
+ *
+ * See the documentation in \ref StreamSeriesInput_c and
+ * \ref StreamSeriesOutput_c for discussion of the input and output
+ * data file formats.
+ */
 
 /** \name Error Codes */ /*@{*/
 #define STREAMSERIESINPUTTESTC_ENORM 0  /**< Normal exit */
@@ -87,8 +88,7 @@ data file formats.
 #include <lal/StreamOutput.h>
 
 /* Default parameter settings. */
-extern int lalDebugLevel;
-#define INFILE DATADIR "StreamSeriesInput.data"
+#define INFILE TEST_DATA_DIR "StreamSeriesInput.data"
 
 /* Usage format string. */
 #define USAGE "Usage: %s [-o outfile] [-d debuglevel]\n"        \
@@ -140,7 +140,6 @@ main(int argc, char **argv)
   FILE *fpIn = NULL;           /* input file pointer */
   FILE *fpOut = NULL;          /* output file pointer */
 
-  lalDebugLevel = 0;
 
   /* Parse argument list.  arg stores the current position. */
   arg = 1;
@@ -175,7 +174,6 @@ main(int argc, char **argv)
     else if ( !strcmp( argv[arg], "-d" ) ) {
       if ( argc > arg + 1 ) {
 	arg++;
-	lalDebugLevel = atoi( argv[arg++] );
       } else {
 	ERROR( STREAMSERIESINPUTTESTC_EARG,
 	       STREAMSERIESINPUTTESTC_MSGEARG, 0 );

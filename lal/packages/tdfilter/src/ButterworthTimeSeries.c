@@ -25,171 +25,168 @@
 #include <lal/IIRFilter.h>
 #include <lal/BandPassTimeSeries.h>
 
-extern INT4 lalDebugLevel;
-
-
 /**
- \defgroup ButterworthTimeSeries_c Module ButterworthTimeSeries.c
- \ingroup BandPassTimeSeries_h
-
- \author Creighton, T. D.
-
- \brief Applies a low- or high-pass Butterworth filter to a time series.
-
-\heading{Description}
-
-These routines perform an in-place time-domain band-pass filtering of
-a data sequence <tt>*series</tt>, using a Butterworth filter generated
-from parameters <tt>*params</tt>.  The routines construct a filter with
-the square root of the desired amplitude response, which it then
-applied to the data once forward and once in reverse.  This gives the
-full amplitude response with little or no frequency-dependent phase
-shift.
-
-The routine <tt>LALDButterworthREAL4TimeSeries()</tt> applies a
-double-precision filter to single-precision data, using
-<tt>LALDIIRFilterREAL4Vector()</tt> and
-<tt>LALDIIRFilterREAL4VectorR()</tt>.
-
-\heading{Algorithm}
-
-The frequency response of a Butterworth low-pass filter is easiest to
-express in terms of the transformed frequency variable \f$w=\tan(\pi
-f\Delta t)\f$, where \f$\Delta t\f$ is the sampling interval (i.e.
-<tt>series-\>deltaT</tt>).  In this parameter, then, the \e power
-response (attenuation) of the filter is:
-\f[
-|R|^2 = \sqrt{a} = \frac{1}{1+(w/w_c)^{2n}} \; ,
-\f]
-where \f$n\f$ is the filter order and \f$w_c\f$ is the characteristic
-frequency.  We have written the attenuation as \f$\sqrt{a}\f$ to emphasize
-that the full attenuation \f$a\f$ is achieved only after filtering twice
-(once forward, once in reverse).  Similarly, a Butterworth high-pass
-filter is given by
-\f[
-|R|^2 = \sqrt{a} = \frac{1}{1+(w_c/w)^{2n}} \; .
-\f]
-If one is given a filter order \f$n\f$, then the characteristic frequency
-can be determined from the attenuation at some any given frequency.
-Alternatively, \f$n\f$ and \f$w_c\f$ can both be computed given attenuations
-at two different frequencies.
-
-Frequencies in <tt>*params</tt> are assumed to be real frequencies \f$f\f$
-given in the inverse of the units used for the sampling interval
-<tt>series-\>deltaT</tt>.  In order to be used, the pass band parameters
-must lie in the ranges given below; if a parameter lies outside of its
-range, then it is ignored and the filter is calculated from the
-remaining parameters.  If too many parameters are missing, the routine
-will fail.  The acceptable parameter ranges are:
-
-<dl>
-<dt>params-\>nMax</dt><dd>   = 1, 2, \f$\ldots\f$</dd>
-<dt>params-\>f1, f2</dt><dd> \f$\in(0,\{2\times<tt>series-\>deltaT</tt>\}^{-1}) \f$</dd>
-<dt>params-\>a1, a2</dt><dd> \f$\in (0,1) \f$</dd>
-</dl>
-
-If both pairs of frequencies and amplitudes are given, then \c a1,
-\c a2 specify the minimal requirements on the attenuation of the
-filter at frequencies \c f1, \c f2.  Whether the filter is a
-low- or high-pass filter is determined from the relative sizes of
-these parameters.  In this case the \c nMax parameter is optional;
-if given, it specifies an upper limit on the filter order.  If the
-desired attenuations would require a higher order, then the routine
-will sacrifice performance in the stop band in order to remain within
-the specified \c nMax.
-
-If one of the frequency/attenuation pairs is missing, then the filter
-is computed using the remaining pair and \c nMax (which must be
-given).  The filter is taken to be a low-pass filter if \c f1,
-\c a1 are given, and high-pass if \c f2, \c a2 are given.
-If only one frequency and no corresponding attenuation is specified,
-then it is taken to be the characteristic frequency (i.e. the
-corresponding attenuation is assumed to be \f$\sqrt{a}=1/2\f$).  If none
-of these conditions are met, the routine will return an error.
-
-The following table summarizes the decision algorithm.  A \f$\bullet\f$
-symbol indicates that the parameter is specified in the range given
-above.  A \f$\circ\f$ symbol indicates that the parameter is <i>not given</i>, i.e. not specified in the valid range.
-
-<table>
-<tr><th>nMax</th><th>f1</th><th>a1</th><th>f2</th><th>a2</th><th>Procedure</th></tr>
-<tr><td>\f$\circ\f$</td><td>\f$\bullet\f$</td><td>\f$\bullet\f$</td><td>\f$\bullet\f$</td><td>\f$\bullet\f$</td><td>
-	Type of filter (low- or high-pass), \f$w_c\f$, and \f$n\f$ are
-	computed from all four transition-band parameters.</td></tr>
-<tr><td>\f$\bullet\f$</td><td>\f$\bullet\f$</td><td>\f$\bullet\f$</td><td>\f$\bullet\f$</td><td>\f$\bullet\f$</td><td>
-	Ditto, but if the resulting \f$n>\f$ \c nMax, \f$w_c\f$ is
-	computed from \c nMax and the (\c f,\c a)
-	pair with the \e larger \c a.</td></tr>
-<tr><td>\f$\bullet\f$</td><td>\f$\bullet\f$</td><td>\f$\bullet\f$</td><td>\f$\circ\f$</td><td>\f$\circ\f$</td><td>
-	Low-pass filter; \f$w_c\f$ is computed from \c nMax,
-	\c f1, and \c a1.</td></tr>
-<tr><td>\f$\bullet\f$</td><td>\f$\bullet\f$</td><td>\f$\bullet\f$</td><td>\f$\circ\f$</td><td>\f$\bullet\f$</td><td>
-	Ditto; \c a2 is ignored.</td></tr>
-<tr><td>\f$\bullet\f$</td><td>\f$\bullet\f$</td><td>\f$\bullet\f$</td><td>\f$\bullet\f$</td><td>\f$\circ\f$</td><td>
-	Ditto; \c f2 is ignored.</td></tr>
-<tr><td>\f$\bullet\f$</td><td>\f$\bullet\f$</td><td>\f$\circ\f$</td><td>\f$\circ\f$</td><td>\f$\circ\f$</td><td>
-	Low-pass filter; \f$w_c\f$ is computed as above with \c a1
-	treated as 1/4.</td></tr>
-<tr><td>\f$\bullet\f$</td><td>\f$\bullet\f$</td><td>\f$\circ\f$</td><td>\f$\circ\f$</td><td>\f$\bullet\f$</td><td>
-	Ditto; \c a2 is ignored.</td></tr>
-<tr><td>\f$\bullet\f$</td><td>\f$\circ\f$</td><td>\f$\circ\f$</td><td>\f$\bullet\f$</td><td>\f$\bullet\f$</td><td>
-	High-pass filter; \f$w_c\f$ is computed from \c nMax,
-	\c f2, and \c a2.</td></tr>
-<tr><td>\f$\bullet\f$</td><td>\f$\circ\f$</td><td>\f$\bullet\f$</td><td>\f$\bullet\f$</td><td>\f$\bullet\f$</td><td>
-	Ditto; \c a1 is ignored.</td></tr>
-<tr><td>\f$\bullet\f$</td><td>\f$\bullet\f$</td><td>\f$\circ\f$</td><td>\f$\bullet\f$</td><td>\f$\bullet\f$</td><td>
-	Ditto; \c f1 is ignored.</td></tr>
-<tr><td>\f$\bullet\f$</td><td>\f$\circ\f$</td><td>\f$\circ\f$</td><td>\f$\bullet\f$</td><td>\f$\circ\f$</td><td>
-	High-pass filter; \f$w_c\f$ is computed as above with \c a2
-	treated as 1/4.</td></tr>
-<tr><td>\f$\bullet\f$</td><td>\f$\circ\f$</td><td>\f$\bullet\f$</td><td>\f$\bullet\f$</td><td>\f$\circ\f$</td><td>
-	Ditto; \c a1 is ignored.</td></tr>
-<tr><td colspan=5>Other</td><td>Subroutine returns an error.</td></tr>
-</table>
-
-Once an order \f$n\f$ and characteristic frequency \f$w_c\f$ are known, the
-zeros and poles of a ZPG filter are readily determined.  A stable,
-physically realizable Butterworth filter will have \f$n\f$ poles evenly
-spaced on the upper half of a circle of radius \f$w_c\f$; that is,
-\f[
-R = \frac{(-iw_c)^n}{\prod_{k=0}^{n-1}(w - w_c e^{2\pi i(k+1/2)/n})}
-\f]
-for a low-pass filter, and
-\f[
-R = \frac{w^n}{\prod_{k=0}^{n-1}(w - w_c e^{2\pi i(k+1/2)/n})}
-\f]
-for a high-pass filter.  By choosing only poles on the upper-half
-plane, one ensures that after transforming to \f$z\f$ the poles will have
-\f$|z|<1\f$.  Furthermore, the phase factor \f$(-i)^n\f$ in the numerator of
-the low-pass filter is chosen so that the DC response is purely real;
-this ensures that the response function in the \f$z\f$-plane will have a
-real gain factor, and the resulting IIR filter will be physically
-realizable.  The high-pass filter has a purely real response at
-Nyquist (\f$w\rightarrow\infty\f$), which similarly gives a physical IIR
-filter.
-
-Although higher orders \f$n\f$ would appear to produce better (i.e.
-sharper) filter responses, one rapidly runs into numerical errors, as
-one ends up adding and subtracting \f$n\f$ large numbers to obtain small
-filter responses.  One way around this is to break the filter up into
-several lower-order filters.  The routines in this module do just
-that.  Poles are paired up across the imaginary axis, (and combined
-with pairs of zeros at \f$w=0\f$ for high-pass filters,) to form \f$[n/2]\f$
-second-order filters.  If \f$n\f$ is odd, there will be an additional
-first-order filter, with one pole at \f$w=iw_c\f$ (and one zero at \f$w=0\f$
-for a high-pass filter).
-
-Each ZPG filter in the \f$w\f$-plane is first transformed to the \f$z\f$-plane
-by a bilinear transformation, and is then used to construct a
-time-domain IIR filter.  Each filter is then applied to the time
-series.  As mentioned in the description above, the filters are
-designed to give an overall amplitude response that is the square root
-of the desired attenuation; however, each time-domain filter is
-applied to the data stream twice: once in the normal sense, and once
-in the time-reversed sense.  This gives the full attenuation with very
-little frequency-dependent phase shift.
-
-*/
+ * \defgroup ButterworthTimeSeries_c Module ButterworthTimeSeries.c
+ * \ingroup BandPassTimeSeries_h
+ *
+ * \author Creighton, T. D.
+ *
+ * \brief Applies a low- or high-pass Butterworth filter to a time series.
+ *
+ * ### Description ###
+ *
+ * These routines perform an in-place time-domain band-pass filtering of
+ * a data sequence <tt>*series</tt>, using a Butterworth filter generated
+ * from parameters <tt>*params</tt>.  The routines construct a filter with
+ * the square root of the desired amplitude response, which it then
+ * applied to the data once forward and once in reverse.  This gives the
+ * full amplitude response with little or no frequency-dependent phase
+ * shift.
+ *
+ * The routine <tt>LALDButterworthREAL4TimeSeries()</tt> applies a
+ * double-precision filter to single-precision data, using
+ * <tt>LALDIIRFilterREAL4Vector()</tt> and
+ * <tt>LALDIIRFilterREAL4VectorR()</tt>.
+ *
+ * ### Algorithm ###
+ *
+ * The frequency response of a Butterworth low-pass filter is easiest to
+ * express in terms of the transformed frequency variable \f$w=\tan(\pi
+ * f\Delta t)\f$, where \f$\Delta t\f$ is the sampling interval (i.e.
+ * <tt>series-\>deltaT</tt>).  In this parameter, then, the \e power
+ * response (attenuation) of the filter is:
+ * \f[
+ * |R|^2 = \sqrt{a} = \frac{1}{1+(w/w_c)^{2n}} \; ,
+ * \f]
+ * where \f$n\f$ is the filter order and \f$w_c\f$ is the characteristic
+ * frequency.  We have written the attenuation as \f$\sqrt{a}\f$ to emphasize
+ * that the full attenuation \f$a\f$ is achieved only after filtering twice
+ * (once forward, once in reverse).  Similarly, a Butterworth high-pass
+ * filter is given by
+ * \f[
+ * |R|^2 = \sqrt{a} = \frac{1}{1+(w_c/w)^{2n}} \; .
+ * \f]
+ * If one is given a filter order \f$n\f$, then the characteristic frequency
+ * can be determined from the attenuation at some any given frequency.
+ * Alternatively, \f$n\f$ and \f$w_c\f$ can both be computed given attenuations
+ * at two different frequencies.
+ *
+ * Frequencies in <tt>*params</tt> are assumed to be real frequencies \f$f\f$
+ * given in the inverse of the units used for the sampling interval
+ * <tt>series-\>deltaT</tt>.  In order to be used, the pass band parameters
+ * must lie in the ranges given below; if a parameter lies outside of its
+ * range, then it is ignored and the filter is calculated from the
+ * remaining parameters.  If too many parameters are missing, the routine
+ * will fail.  The acceptable parameter ranges are:
+ *
+ * <dl>
+ * <dt>params-\>nMax</dt><dd>   = 1, 2, \f$\ldots\f$</dd>
+ * <dt>params-\>f1, f2</dt><dd> \f$\in(0,\{2\times<tt>series-\>deltaT</tt>\}^{-1}) \f$</dd>
+ * <dt>params-\>a1, a2</dt><dd> \f$\in (0,1) \f$</dd>
+ * </dl>
+ *
+ * If both pairs of frequencies and amplitudes are given, then \c a1,
+ * \c a2 specify the minimal requirements on the attenuation of the
+ * filter at frequencies \c f1, \c f2.  Whether the filter is a
+ * low- or high-pass filter is determined from the relative sizes of
+ * these parameters.  In this case the \c nMax parameter is optional;
+ * if given, it specifies an upper limit on the filter order.  If the
+ * desired attenuations would require a higher order, then the routine
+ * will sacrifice performance in the stop band in order to remain within
+ * the specified \c nMax.
+ *
+ * If one of the frequency/attenuation pairs is missing, then the filter
+ * is computed using the remaining pair and \c nMax (which must be
+ * given).  The filter is taken to be a low-pass filter if \c f1,
+ * \c a1 are given, and high-pass if \c f2, \c a2 are given.
+ * If only one frequency and no corresponding attenuation is specified,
+ * then it is taken to be the characteristic frequency (i.e. the
+ * corresponding attenuation is assumed to be \f$\sqrt{a}=1/2\f$).  If none
+ * of these conditions are met, the routine will return an error.
+ *
+ * The following table summarizes the decision algorithm.  A \f$\bullet\f$
+ * symbol indicates that the parameter is specified in the range given
+ * above.  A \f$\circ\f$ symbol indicates that the parameter is <i>not given</i>, i.e. not specified in the valid range.
+ *
+ * <table>
+ * <tr><th>nMax</th><th>f1</th><th>a1</th><th>f2</th><th>a2</th><th>Procedure</th></tr>
+ * <tr><td>\f$\circ\f$</td><td>\f$\bullet\f$</td><td>\f$\bullet\f$</td><td>\f$\bullet\f$</td><td>\f$\bullet\f$</td><td>
+ * Type of filter (low- or high-pass), \f$w_c\f$, and \f$n\f$ are
+ * computed from all four transition-band parameters.</td></tr>
+ * <tr><td>\f$\bullet\f$</td><td>\f$\bullet\f$</td><td>\f$\bullet\f$</td><td>\f$\bullet\f$</td><td>\f$\bullet\f$</td><td>
+ * Ditto, but if the resulting \f$n>\f$ \c nMax, \f$w_c\f$ is
+ * computed from \c nMax and the (\c f,\c a)
+ * pair with the \e larger \c a.</td></tr>
+ * <tr><td>\f$\bullet\f$</td><td>\f$\bullet\f$</td><td>\f$\bullet\f$</td><td>\f$\circ\f$</td><td>\f$\circ\f$</td><td>
+ * Low-pass filter; \f$w_c\f$ is computed from \c nMax,
+ * \c f1, and \c a1.</td></tr>
+ * <tr><td>\f$\bullet\f$</td><td>\f$\bullet\f$</td><td>\f$\bullet\f$</td><td>\f$\circ\f$</td><td>\f$\bullet\f$</td><td>
+ * Ditto; \c a2 is ignored.</td></tr>
+ * <tr><td>\f$\bullet\f$</td><td>\f$\bullet\f$</td><td>\f$\bullet\f$</td><td>\f$\bullet\f$</td><td>\f$\circ\f$</td><td>
+ * Ditto; \c f2 is ignored.</td></tr>
+ * <tr><td>\f$\bullet\f$</td><td>\f$\bullet\f$</td><td>\f$\circ\f$</td><td>\f$\circ\f$</td><td>\f$\circ\f$</td><td>
+ * Low-pass filter; \f$w_c\f$ is computed as above with \c a1
+ * treated as 1/4.</td></tr>
+ * <tr><td>\f$\bullet\f$</td><td>\f$\bullet\f$</td><td>\f$\circ\f$</td><td>\f$\circ\f$</td><td>\f$\bullet\f$</td><td>
+ * Ditto; \c a2 is ignored.</td></tr>
+ * <tr><td>\f$\bullet\f$</td><td>\f$\circ\f$</td><td>\f$\circ\f$</td><td>\f$\bullet\f$</td><td>\f$\bullet\f$</td><td>
+ * High-pass filter; \f$w_c\f$ is computed from \c nMax,
+ * \c f2, and \c a2.</td></tr>
+ * <tr><td>\f$\bullet\f$</td><td>\f$\circ\f$</td><td>\f$\bullet\f$</td><td>\f$\bullet\f$</td><td>\f$\bullet\f$</td><td>
+ * Ditto; \c a1 is ignored.</td></tr>
+ * <tr><td>\f$\bullet\f$</td><td>\f$\bullet\f$</td><td>\f$\circ\f$</td><td>\f$\bullet\f$</td><td>\f$\bullet\f$</td><td>
+ * Ditto; \c f1 is ignored.</td></tr>
+ * <tr><td>\f$\bullet\f$</td><td>\f$\circ\f$</td><td>\f$\circ\f$</td><td>\f$\bullet\f$</td><td>\f$\circ\f$</td><td>
+ * High-pass filter; \f$w_c\f$ is computed as above with \c a2
+ * treated as 1/4.</td></tr>
+ * <tr><td>\f$\bullet\f$</td><td>\f$\circ\f$</td><td>\f$\bullet\f$</td><td>\f$\bullet\f$</td><td>\f$\circ\f$</td><td>
+ * Ditto; \c a1 is ignored.</td></tr>
+ * <tr><td colspan=5>Other</td><td>Subroutine returns an error.</td></tr>
+ * </table>
+ *
+ * Once an order \f$n\f$ and characteristic frequency \f$w_c\f$ are known, the
+ * zeros and poles of a ZPG filter are readily determined.  A stable,
+ * physically realizable Butterworth filter will have \f$n\f$ poles evenly
+ * spaced on the upper half of a circle of radius \f$w_c\f$; that is,
+ * \f[
+ * R = \frac{(-iw_c)^n}{\prod_{k=0}^{n-1}(w - w_c e^{2\pi i(k+1/2)/n})}
+ * \f]
+ * for a low-pass filter, and
+ * \f[
+ * R = \frac{w^n}{\prod_{k=0}^{n-1}(w - w_c e^{2\pi i(k+1/2)/n})}
+ * \f]
+ * for a high-pass filter.  By choosing only poles on the upper-half
+ * plane, one ensures that after transforming to \f$z\f$ the poles will have
+ * \f$|z|<1\f$.  Furthermore, the phase factor \f$(-i)^n\f$ in the numerator of
+ * the low-pass filter is chosen so that the DC response is purely real;
+ * this ensures that the response function in the \f$z\f$-plane will have a
+ * real gain factor, and the resulting IIR filter will be physically
+ * realizable.  The high-pass filter has a purely real response at
+ * Nyquist (\f$w\rightarrow\infty\f$), which similarly gives a physical IIR
+ * filter.
+ *
+ * Although higher orders \f$n\f$ would appear to produce better (i.e.
+ * sharper) filter responses, one rapidly runs into numerical errors, as
+ * one ends up adding and subtracting \f$n\f$ large numbers to obtain small
+ * filter responses.  One way around this is to break the filter up into
+ * several lower-order filters.  The routines in this module do just
+ * that.  Poles are paired up across the imaginary axis, (and combined
+ * with pairs of zeros at \f$w=0\f$ for high-pass filters,) to form \f$[n/2]\f$
+ * second-order filters.  If \f$n\f$ is odd, there will be an additional
+ * first-order filter, with one pole at \f$w=iw_c\f$ (and one zero at \f$w=0\f$
+ * for a high-pass filter).
+ *
+ * Each ZPG filter in the \f$w\f$-plane is first transformed to the \f$z\f$-plane
+ * by a bilinear transformation, and is then used to construct a
+ * time-domain IIR filter.  Each filter is then applied to the time
+ * series.  As mentioned in the description above, the filters are
+ * designed to give an overall amplitude response that is the square root
+ * of the desired attenuation; however, each time-domain filter is
+ * applied to the data stream twice: once in the normal sense, and once
+ * in the time-reversed sense.  This gives the full attenuation with very
+ * little frequency-dependent phase shift.
+ *
+ */
 /*@{*/
 
 /* Prototype for a local input parsing routine. */
@@ -521,7 +518,8 @@ int XLALHighPassREAL8TimeSeries( REAL8TimeSeries *series,
   return 0;
 }
 
-/** Deprecated.
+/**
+ * Deprecated.
  * \deprecated Use XLALButterworthREAL4TimeSeries() instead.
  */
 void
@@ -674,7 +672,8 @@ LALButterworthREAL4TimeSeries( LALStatus          *stat,
 }
 
 
-/** Deprecated.
+/**
+ * Deprecated.
  * \deprecated Use XLALButterworthREAL8TimeSeries() instead.
  */
 void
@@ -701,7 +700,8 @@ LALButterworthREAL8TimeSeries( LALStatus          *stat,
   RETURN(stat);
 }
 
-/** Deprecated.
+/**
+ * Deprecated.
  * \deprecated
  */
 void

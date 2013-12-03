@@ -44,58 +44,36 @@
 #include <lalapps.h>
 #include <lal/AVFactories.h>
 #include <lal/SeqFactories.h>
+#include <lal/FrequencySeries.h>
 #include <lal/LALInitBarycenter.h>
-#include <lal/Random.h>
 #include <gsl/gsl_math.h>
 
+#include <lal/LALString.h>
 #include <lal/UserInput.h>
 #include <lal/SFTfileIO.h>
 #include <lal/GeneratePulsarSignal.h>
+#include <lal/SimulatePulsarSignal.h>
 #include <lal/TimeSeries.h>
 #include <lal/BinaryPulsarTiming.h>
 #include <lal/Window.h>
+
+#ifdef HAVE_LIBLALFRAME
+#include <lal/LALFrameIO.h>
+#endif
 
 #include <lal/TransientCW_utils.h>
 
 #include <lalapps.h>
 
-/* Error codes and messages */
-/**\name Error Codes */ /*@{*/
-#define MAKEFAKEDATAC_ENORM 	0
-#define MAKEFAKEDATAC_ESUB  	1
-#define MAKEFAKEDATAC_EARG  	2
-#define MAKEFAKEDATAC_EBAD  	3
-#define MAKEFAKEDATAC_EFILE 	4
-#define MAKEFAKEDATAC_ENOARG 	5
-#define MAKEFAKEDATAC_EMEM 	6
-#define MAKEFAKEDATAC_EBINARYOUT 7
-#define MAKEFAKEDATAC_EREADFILE 8
-
-#define MAKEFAKEDATAC_MSGENORM "Normal exit"
-#define MAKEFAKEDATAC_MSGESUB  "Subroutine failed"
-#define MAKEFAKEDATAC_MSGEARG  "Error parsing arguments"
-#define MAKEFAKEDATAC_MSGEBAD  "Bad argument values"
-#define MAKEFAKEDATAC_MSGEFILE "File IO error"
-#define MAKEFAKEDATAC_MSGENOARG "Missing argument"
-#define MAKEFAKEDATAC_MSGEMEM 	"Out of memory..."
-#define MAKEFAKEDATAC_MSGEBINARYOUT "Error in writing binary-data to stdout"
-#define MAKEFAKEDATAC_MSGEREADFILE "Error reading in file"
-/*@}*/
-
 /***************************************************/
-#define TRUE (1==1)
-#define FALSE (1==0)
-
-#define myMax(x,y) ( (x) > (y) ? (x) : (y) )
 #define SQ(x) ( (x) * (x) )
-#define GPS2REAL(gps) (gps.gpsSeconds + 1e-9 * gps.gpsNanoSeconds )
 
 /*----------------------------------------------------------------------*/
 /** configuration-variables derived from user-variables */
 typedef struct
 {
   PulsarParams pulsar;		/**< pulsar signal-parameters (amplitude + doppler */
-  EphemerisData edat;		/**< ephemeris-data */
+  EphemerisData *edat;		/**< ephemeris-data */
   LALDetector site;  		/**< detector-site info */
 
   LIGOTimeGPS startTimeGPS;	/**< start-time of observation */
@@ -120,57 +98,6 @@ typedef struct
   CHAR *VCSInfoString;          /**< LAL + LALapps Git version string */
 } ConfigVars_t;
 
-
-/** Default year-span of ephemeris-files to be used */
-#define EPHEM_YEARS  "00-04"
-
-/* ---------- local prototypes ---------- */
-void FreeMem (LALStatus *, ConfigVars_t *cfg);
-void InitUserVars (LALStatus *);
-void InitMakefakedata (LALStatus *, ConfigVars_t *cfg, int argc, char *argv[]);
-void AddGaussianNoise (LALStatus *, REAL4TimeSeries *inSeries, REAL4 sigma, INT4 seed);
-/* void GetOrbitalParams (LALStatus *, BinaryOrbitParams *orbit); */
-void WriteMFDlog (LALStatus *, const char *logfile, const ConfigVars_t *cfg);
-
-
-void LoadTransferFunctionFromActuation(LALStatus *,
-				       COMPLEX8FrequencySeries **transfer,
-				       REAL8 actuationScale,
-				       const CHAR *fname);
-
-void LALExtractSFTBand ( LALStatus *, SFTVector **outSFTs, const SFTVector *inSFTs, REAL8 f_min, REAL8 Band );
-
-void LALGenerateLineFeature ( LALStatus *status, REAL4TimeSeries **Tseries, const PulsarSignalParams *params );
-
-extern void write_timeSeriesR4 (FILE *fp, const REAL4TimeSeries *series);
-extern void write_timeSeriesR8 (FILE *fp, const REAL8TimeSeries *series);
-BOOLEAN is_directory ( const CHAR *fname );
-
-/*----------------------------------------------------------------------*/
-static const ConfigVars_t empty_GV;
-static const LALUnit empty_LALUnit;
-/*----------------------------------------------------------------------*/
-/* User variables */
-/*----------------------------------------------------------------------*/
-BOOLEAN uvar_help;		/**< Print this help/usage message */
-
-/* output */
-CHAR *uvar_outSFTbname;		/**< Path and basefilename of output SFT files */
-BOOLEAN uvar_outSFTv1;		/**< use v1-spec for output-SFTs */
-BOOLEAN uvar_outSingleSFT;	/**< use to output a single concatenated SFT */
-
-CHAR *uvar_TDDfile;		/**< Filename for ASCII output time-series */
-BOOLEAN uvar_hardwareTDD;	/**< Binary output timeseries in chunks of Tsft for hardware injections. */
-
-CHAR *uvar_logfile;		/**< name of logfile */
-
-/* specify start + duration */
-CHAR *uvar_timestampsFile;	/**< Timestamps file */
-INT4 uvar_startTime;		/**< Start-time of requested signal in detector-frame (GPS seconds) */
-INT4 uvar_duration;		/**< Duration of requested signal in seconds */
-
-/* generation mode of timer-series: all-at-once or per-sft */
-INT4 uvar_generationMode;	/**< How to generate the timeseries: all-at-once or per-sft */
 typedef enum
   {
     GENERATE_ALL_AT_ONCE = 0,	/**< generate whole time-series at once before turning into SFTs */
@@ -178,83 +105,125 @@ typedef enum
     GENERATE_LAST		/**< end-marker */
   } GenerationMode;
 
-/* time-series sampling + heterodyning frequencies */
-REAL8 uvar_fmin;		/**< Lowest frequency in output SFT (= heterodyning frequency) */
-REAL8 uvar_Band;		/**< bandwidth of output SFT in Hz (= 1/2 sampling frequency) */
+// ----- User variables
+typedef struct
+{
+  BOOLEAN help;		/**< Print this help/usage message */
 
-/* SFT params */
-REAL8 uvar_Tsft;		/**< SFT time baseline Tsft */
-REAL8 uvar_SFToverlap;		/**< overlap SFTs by this many seconds */
+  /* output */
+  CHAR *outSFTbname;		/**< Path and basefilename of output SFT files */
+  BOOLEAN outSFTv1;		/**< use v1-spec for output-SFTs */
+  BOOLEAN outSingleSFT;	/**< use to output a single concatenated SFT */
 
-/* noise to add [OPTIONAL] */
-CHAR *uvar_noiseSFTs;		/**< Glob-like pattern specifying noise-SFTs to be added to signal */
-REAL8 uvar_noiseSigma;		/**< Gaussian noise with standard-deviation sigma */
-REAL8 uvar_noiseSqrtSh;		/**< ALTERNATIVE: single-sided sqrt(Sh) for Gaussian noise */
+  CHAR *TDDfile;		/**< Filename for ASCII output time-series */
+  CHAR *TDDframedir;		/**< directory for frame file output time-series */
+  CHAR *frameDesc;           	/**< description field entry in the frame filename */
 
-/* Window function [OPTIONAL] */
-CHAR *uvar_window;		/**< Windowing function for the time series */
-REAL8 uvar_tukeyBeta;          /**< Hann fraction of Tukey window (0.0=rect; 1,0=han; 0.5=default */
+  BOOLEAN hardwareTDD;	/**< Binary output timeseries in chunks of Tsft for hardware injections. */
 
-/* Detector and ephemeris */
-CHAR *uvar_IFO;			/**< Detector: H1, L1, H2, V1, ... */
-CHAR *uvar_detector;		/**< [DEPRECATED] Detector: LHO, LLO, VIRGO, GEO, TAMA, CIT, ROME */
+  CHAR *logfile;		/**< name of logfile */
 
-CHAR *uvar_actuation;		/**< filename containg detector actuation function */
-REAL8 uvar_actuationScale;	/**< Scale-factor to be applied to actuation-function */
-CHAR *uvar_ephemDir;		/**< Directory path for ephemeris files (optional), use LAL_DATA_PATH if unset. */
-CHAR *uvar_ephemYear;		/**< Year (or range of years) of ephemeris files to be used */
+  /* specify start + duration */
+  CHAR *timestampsFile;	/**< Timestamps file */
+  INT4 startTime;		/**< Start-time of requested signal in detector-frame (GPS seconds) */
+  INT4 duration;		/**< Duration of requested signal in seconds */
 
-/* pulsar parameters [REQUIRED] */
-REAL8 uvar_refTime;		/**< Pulsar reference time tRef in SSB ('0' means: use startTime converted to SSB) */
-REAL8 uvar_refTimeMJD;          /**< Pulsar reference time tRef in MJD ('0' means: use startTime converted to SSB) */
+  /* generation mode of timer-series: all-at-once or per-sft */
+  INT4 generationMode;	/**< How to generate the timeseries: all-at-once or per-sft */
 
-REAL8 uvar_h0;			/**< overall signal amplitude h0 */
-REAL8 uvar_cosi;		/**< cos(iota) of inclination angle iota */
-REAL8 uvar_aPlus;		/**< ALTERNATIVE to {h0,cosi}: Plus polarization amplitude aPlus */
-REAL8 uvar_aCross;		/**< ALTERNATIVE to {h0,cosi}: Cross polarization amplitude aCross */
-REAL8 uvar_psi;			/**< Polarization angle psi */
-REAL8 uvar_phi0;		/**< Initial phase phi */
+  /* time-series sampling + heterodyning frequencies */
+  REAL8 fmin;		/**< Lowest frequency in output SFT (= heterodyning frequency) */
+  REAL8 Band;		/**< bandwidth of output SFT in Hz (= 1/2 sampling frequency) */
 
-REAL8 uvar_Alpha;		/**< Right ascension [radians] alpha of pulsar */
-REAL8 uvar_Delta;		/**< Declination [radians] delta of pulsar */
-CHAR *uvar_RA;		        /**< Right ascension [hh:mm:ss.ssss] alpha of pulsar */
-CHAR *uvar_Dec;	         	/**< Declination [dd:mm:ss.ssss] delta of pulsar */
-REAL8 uvar_longitude;		/**< [DEPRECATED] Right ascension [radians] alpha of pulsar */
-REAL8 uvar_latitude;		/**< [DEPRECATED] Declination [radians] delta of pulsar */
+  /* SFT params */
+  REAL8 Tsft;		/**< SFT time baseline Tsft */
+  REAL8 SFToverlap;		/**< overlap SFTs by this many seconds */
 
-REAL8 uvar_Freq;
-REAL8 uvar_f0;			/**< [DEPRECATED] Gravitational wave-frequency f0 at refTime */
+  /* noise to add [OPTIONAL] */
+  CHAR *noiseSFTs;		/**< Glob-like pattern specifying noise-SFTs to be added to signal */
+  REAL8 noiseSqrtSh;		/**< single-sided sqrt(Sh) for Gaussian noise */
+  REAL8 noiseSigma;		/**< [DEPRECATED] Alternative: Gaussian noise with standard-deviation sigma */
 
-REAL8 uvar_f1dot;		/**< First spindown parameter f' */
-REAL8 uvar_f2dot;		/**< Second spindown parameter f'' */
-REAL8 uvar_f3dot;		/**< Third spindown parameter f''' */
+  /* Window function [OPTIONAL] */
+  CHAR *window;		/**< Windowing function for the time series */
+  REAL8 tukeyBeta;          /**< Hann fraction of Tukey window (0.0=rect; 1,0=han; 0.5=default */
 
-/* orbital parameters [OPTIONAL] */
+  /* Detector and ephemeris */
+  CHAR *IFO;			/**< Detector: H1, L1, H2, V1, ... */
+  CHAR *detector;		/**< [DEPRECATED] Detector: LHO, LLO, VIRGO, GEO, TAMA, CIT, ROME */
 
-REAL8 uvar_orbitasini;	        /**< Projected orbital semi-major axis in seconds (a/c) */
-REAL8 uvar_orbitEcc;	        /**< Orbital eccentricity */
-INT4  uvar_orbitTpSSBsec;	/**< 'observed' (SSB) time of periapsis passage. Seconds. */
-INT4  uvar_orbitTpSSBnan;	/**< 'observed' (SSB) time of periapsis passage. Nanoseconds. */
-REAL8 uvar_orbitTpSSBMJD;       /**< 'observed' (SSB) time of periapsis passage. MJD. */
-REAL8 uvar_orbitPeriod;		/**< Orbital period (seconds) */
-REAL8 uvar_orbitArgp;	        /**< Argument of periapsis (radians) */
+  CHAR *actuation;		/**< filename containg detector actuation function */
+  REAL8 actuationScale;	/**< Scale-factor to be applied to actuation-function */
+  CHAR *ephemDir;		/**< Directory path for ephemeris files (optional), use LAL_DATA_PATH if unset. */
+  CHAR *ephemYear;		/**< Year (or range of years) of ephemeris files to be used */
 
-/* precision-level of signal-generation */
-BOOLEAN uvar_exactSignal;	/**< generate signal timeseries as exactly as possible (slow) */
-BOOLEAN uvar_lineFeature;	/**< generate a monochromatic line instead of a pulsar-signal */
+  /* pulsar parameters [REQUIRED] */
+  REAL8 refTime;		/**< Pulsar reference time tRef in SSB ('0' means: use startTime converted to SSB) */
+  REAL8 refTimeMJD;          /**< Pulsar reference time tRef in MJD ('0' means: use startTime converted to SSB) */
 
-BOOLEAN uvar_version;		/**< output version information */
+  REAL8 h0;			/**< overall signal amplitude h0 */
+  REAL8 cosi;		/**< cos(iota) of inclination angle iota */
+  REAL8 aPlus;		/**< ALTERNATIVE to {h0,cosi}: Plus polarization amplitude aPlus */
+  REAL8 aCross;		/**< ALTERNATIVE to {h0,cosi}: Cross polarization amplitude aCross */
+  REAL8 psi;			/**< Polarization angle psi */
+  REAL8 phi0;		/**< Initial phase phi */
 
-INT4 uvar_randSeed;		/**< allow user to specify random-number seed for reproducible noise-realizations */
+  REAL8 Alpha;		/**< Right ascension [radians] alpha of pulsar */
+  REAL8 Delta;		/**< Declination [radians] delta of pulsar */
+  CHAR *RA;		        /**< Right ascension [hh:mm:ss.ssss] alpha of pulsar */
+  CHAR *Dec;	         	/**< Declination [dd:mm:ss.ssss] delta of pulsar */
+  REAL8 longitude;		/**< [DEPRECATED] Right ascension [radians] alpha of pulsar */
+  REAL8 latitude;		/**< [DEPRECATED] Declination [radians] delta of pulsar */
 
-CHAR *uvar_parfile;             /** option .par file path */
-CHAR *uvar_transientWindowType;	/**< name of transient window ('rect', 'exp',...) */
-REAL8 uvar_transientStartTime;	/**< GPS start-time of transient window */
-REAL8 uvar_transientTauDays;	/**< time-scale in days of transient window */
+  REAL8 Freq;
+  REAL8 f0;			/**< [DEPRECATED] Gravitational wave-frequency f0 at refTime */
 
-/*----------------------------------------------------------------------*/
+  REAL8 f1dot;		/**< First spindown parameter f' */
+  REAL8 f2dot;		/**< Second spindown parameter f'' */
+  REAL8 f3dot;		/**< Third spindown parameter f''' */
 
-extern int vrbflg;
+  /* orbital parameters [OPTIONAL] */
+
+  REAL8 orbitasini;	        /**< Projected orbital semi-major axis in seconds (a/c) */
+  REAL8 orbitEcc;	        /**< Orbital eccentricity */
+  INT4  orbitTpSSBsec;	/**< 'observed' (SSB) time of periapsis passage. Seconds. */
+  INT4  orbitTpSSBnan;	/**< 'observed' (SSB) time of periapsis passage. Nanoseconds. */
+  REAL8 orbitTpSSBMJD;       /**< 'observed' (SSB) time of periapsis passage. MJD. */
+  REAL8 orbitPeriod;		/**< Orbital period (seconds) */
+  REAL8 orbitArgp;	        /**< Argument of periapsis (radians) */
+
+  /* precision-level of signal-generation */
+  BOOLEAN exactSignal;	/**< generate signal timeseries as exactly as possible (slow) */
+  BOOLEAN lineFeature;	/**< generate a monochromatic line instead of a pulsar-signal */
+
+  BOOLEAN version;		/**< output version information */
+
+  INT4 randSeed;		/**< allow user to specify random-number seed for reproducible noise-realizations */
+
+  CHAR *parfile;             /** option .par file path */
+  CHAR *transientWindowType;	/**< name of transient window ('rect', 'exp',...) */
+  REAL8 transientStartTime;	/**< GPS start-time of transient window */
+  REAL8 transientTauDays;	/**< time-scale in days of transient window */
+} UserVariables_t;
+
+// ----- global variables ----------
+
+// ----- empty structs for initializations
+static const UserVariables_t empty_UserVariables;
+static const ConfigVars_t empty_GV;
+static const LALUnit empty_LALUnit;
+
+// ---------- local prototypes ----------
+int XLALInitUserVars ( UserVariables_t *uvar, int argc, char *argv[] );
+int XLALInitMakefakedata ( ConfigVars_t *cfg, UserVariables_t *uvar );
+int XLALWriteMFDlog ( const char *logfile, const ConfigVars_t *cfg );
+COMPLEX8FrequencySeries *XLALLoadTransferFunctionFromActuation ( REAL8 actuationScale, const CHAR *fname );
+int XLALFreeMem ( ConfigVars_t *cfg );
+
+extern void write_timeSeriesR4 (FILE *fp, const REAL4TimeSeries *series);
+extern void write_timeSeriesR8 (FILE *fp, const REAL8TimeSeries *series);
+BOOLEAN is_directory ( const CHAR *fname );
+int XLALIsValidDescriptionField ( const char *desc );
 
 /*----------------------------------------------------------------------
  * main function
@@ -262,28 +231,21 @@ extern int vrbflg;
 int
 main(int argc, char *argv[])
 {
-  LALStatus status = blank_status;	/* initialize status */
   ConfigVars_t GV = empty_GV;
   PulsarSignalParams params = empty_PulsarSignalParams;
-  SFTVector *SFTs = NULL;
   REAL4TimeSeries *Tseries = NULL;
   UINT4 i_chunk, numchunks;
   FILE *fpSingleSFT = NULL;
+  size_t len;
+  UserVariables_t uvar = empty_UserVariables;
 
-  UINT4 i;
-
-  lalDebugLevel = 0;	/* default value */
-  vrbflg = 1;		/* verbose error-messages */
-
-  /* set LAL error-handler */
-  lal_errhandler = LAL_ERR_EXIT;	/* exit with returned status-code on error */
 
   /* ------------------------------
    * read user-input and set up shop
    *------------------------------*/
-  LAL_CALL (LALGetDebugLevel(&status, argc, argv, 'v'), &status);
+  XLAL_CHECK ( XLALInitUserVars ( &uvar, argc, argv ) == XLAL_SUCCESS, XLAL_EFUNC );
 
-  LAL_CALL (InitMakefakedata(&status, &GV, argc, argv), &status);
+  XLAL_CHECK ( XLALInitMakefakedata ( &GV, &uvar ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   /*----------------------------------------
    * fill the PulsarSignalParams struct
@@ -309,55 +271,49 @@ main(int argc, char *argv[])
   /* detector params */
   params.transfer = GV.transfer;	/* detector transfer function (NULL if not used) */
   params.site = &(GV.site);
-  params.ephemerides = &(GV.edat);
+  params.ephemerides = GV.edat;
 
   /* characterize the output time-series */
-  if ( ! uvar_exactSignal )	/* GeneratePulsarSignal() uses 'idealized heterodyning' */
+  if ( ! uvar.exactSignal )	/* GeneratePulsarSignal() uses 'idealized heterodyning' */
     {
       params.samplingRate 	= 2.0 * GV.fBand_eff;	/* sampling rate of time-series (=2*frequency-Band) */
       params.fHeterodyne  	= GV.fmin_eff;		/* heterodyning frequency for output time-series */
     }
   else	/* in the exact-signal case: don't do heterodyning, sample at least twice highest frequency */
     {
-      params.samplingRate 	= myMax( 2.0 * (params.pulsar.f0 + 2 ), 2*(GV.fmin_eff + GV.fBand_eff ) );
+      params.samplingRate 	= fmax ( 2.0 * (params.pulsar.f0 + 2 ), 2*(GV.fmin_eff + GV.fBand_eff ) );
       params.fHeterodyne 	= 0;
     }
 
   /* set-up main-loop according to 'generation-mode' (all-at-once' or 'per-sft') */
-  switch ( uvar_generationMode )
+  switch ( uvar.generationMode )
     {
     case GENERATE_ALL_AT_ONCE:
       params.duration     = GV.duration;
       numchunks = 1;
       break;
     case GENERATE_PER_SFT:
-      params.duration = (UINT4) ceil(uvar_Tsft);
+      params.duration = (UINT4) ceil(uvar.Tsft);
       numchunks = GV.timestamps->length;
       break;
     default:
-      printf ("\nIllegal value for generationMode %d\n\n", uvar_generationMode);
-      return MAKEFAKEDATAC_EARG;
+      XLAL_ERROR ( XLAL_EINVAL, "Illegal value for generationMode %d\n\n", uvar.generationMode );
       break;
     } /* switch generationMode */
 
   /* if user requesting single concatenated SFT */
-  if ( uvar_outSingleSFT ) {
+  if ( uvar.outSingleSFT )
+    {
+      /* check that user isn't giving a directory */
+      if ( is_directory ( uvar.outSFTbname ) ) {
+        XLAL_ERROR ( XLAL_ETYPE, "'%s' is a directory, but --outSingleSFT expects a filename!\n", uvar.outSFTbname);
+      }
 
-    /* check that user isn't giving a directory */
-    if ( is_directory ( uvar_outSFTbname ) ) {
-      XLALPrintError("\nERROR: '%s' is a directory, but --outSingleSFT expects a filename!\n",
-                     uvar_outSFTbname);
-      return MAKEFAKEDATAC_EBAD;
-    }
-
-    /* open concatenated SFT file for writing */
-    if ( (fpSingleSFT = LALFopen ( uvar_outSFTbname, "wb" )) == NULL )
-      {
-        XLALPrintError ("\nERROR: Failed to open file '%s' for writing: %s\n\n", uvar_outSFTbname, strerror(errno));
-        return MAKEFAKEDATAC_EFILE;
-    }
-
-  }
+      /* open concatenated SFT file for writing */
+      if ( (fpSingleSFT = LALFopen ( uvar.outSFTbname, "wb" )) == NULL ) {
+        XLAL_ERROR ( XLAL_EIO, "Failed to open file '%s' for writing: %s\n\n", uvar.outSFTbname, strerror(errno));
+      }
+    } // if outSingleSFT
 
   /* ----------
    * Main loop: produce time-series and turn it into SFTs,
@@ -370,69 +326,108 @@ main(int argc, char *argv[])
       /*----------------------------------------
        * generate the signal time-series
        *----------------------------------------*/
-      if ( uvar_exactSignal )
+      if ( uvar.exactSignal )
 	{
-	  LAL_CALL ( LALSimulateExactPulsarSignal (&status, &Tseries, &params), &status );
+          XLAL_CHECK ( (Tseries = XLALSimulateExactPulsarSignal ( &params )) != NULL, XLAL_EFUNC );
 	}
-      else if ( uvar_lineFeature )
+      else if ( uvar.lineFeature )
 	{
-	  LAL_CALL ( LALGenerateLineFeature ( &status, &Tseries, &params ), &status );
+          XLAL_CHECK ( (Tseries = XLALGenerateLineFeature (  &params )) != NULL, XLAL_EFUNC );
 	}
       else
 	{
-	  LAL_CALL ( LALGeneratePulsarSignal(&status, &Tseries, &params), &status );
+	  XLAL_CHECK ( (Tseries = XLALGeneratePulsarSignal ( &params )) != NULL, XLAL_EFUNC );
 	}
 
-
-      if ( XLALApplyTransientWindow ( Tseries, GV.transientWindow ) ) {
-	XLALPrintError ("XLALApplyTransientWindow() failed!\n");
-	exit ( MAKEFAKEDATAC_ESUB );
-      }
-
+      XLAL_CHECK ( XLALApplyTransientWindow ( Tseries, GV.transientWindow ) == XLAL_SUCCESS, XLAL_EFUNC );
 
       /* for HARDWARE-INJECTION:
        * before the first chunk we send magic number and chunk-length to stdout
        */
-      if ( uvar_hardwareTDD && (i_chunk == 0) )
+      if ( uvar.hardwareTDD && (i_chunk == 0) )
 	{
 	  REAL4 magic = 1234.5;
 	  UINT4 length = Tseries->data->length;
-	  if ( (1 != fwrite ( &magic, sizeof(magic), 1, stdout ))
-	       || (1 != fwrite(&length, sizeof(INT4), 1, stdout)) )
+	  if ( (1 != fwrite ( &magic, sizeof(magic), 1, stdout )) || (1 != fwrite(&length, sizeof(INT4), 1, stdout)) )
 	    {
 	      perror ("Failed to write to stdout");
-	      exit (MAKEFAKEDATAC_EFILE);
+	      XLAL_ERROR ( XLAL_EIO );
 	    }
 	} /* if hardware-injection and doing first chunk */
 
 
       /* add Gaussian noise if requested */
       if ( GV.noiseSigma > 0) {
-	LAL_CALL ( AddGaussianNoise(&status, Tseries, (REAL4)(GV.noiseSigma), GV.randSeed + i_chunk ), &status);
+	XLAL_CHECK ( XLALAddGaussianNoise ( Tseries, GV.noiseSigma, GV.randSeed + i_chunk ) == XLAL_SUCCESS, XLAL_EFUNC );
       }
 
       /* output ASCII time-series if requested */
-      if ( uvar_TDDfile )
+      if ( uvar.TDDfile )
 	{
 	  FILE *fp;
-	  CHAR *fname = LALCalloc (1, strlen(uvar_TDDfile) + 10 );
-	  sprintf (fname, "%s.%02d", uvar_TDDfile, i_chunk);
+	  CHAR *fname = XLALCalloc (1, len = strlen(uvar.TDDfile) + 10 );
+          XLAL_CHECK ( fname != NULL, XLAL_ENOMEM, "XLALCalloc(1,%d) failed\n", len );
+	  sprintf (fname, "%s.%02d", uvar.TDDfile, i_chunk);
 
 	  if ( (fp = fopen (fname, "w")) == NULL)
 	    {
 	      perror ("Error opening outTDDfile for writing");
-	      printf ("TDDfile = %s\n", fname );
-	      exit ( MAKEFAKEDATAC_EFILE );
+              XLAL_ERROR ( XLAL_EIO, "Failed to fopen TDDfile = '%s' for writing\n", fname );
 	    }
 
 	  write_timeSeriesR4(fp, Tseries);
 	  fclose(fp);
-	  LALFree (fname);
+	  XLALFree (fname);
 	} /* if outputting ASCII time-series */
+
+      /* output time-series to frames if requested */
+      if ( uvar.TDDframedir )
+	{
+#ifndef HAVE_LIBLALFRAME
+          XLAL_ERROR ( XLAL_EINVAL, "--TDDframedir option not supported, code has to be compiled with lalframe\n" );
+#else
+	  /* use standard frame output filename format */
+          XLAL_CHECK ( XLALCheckValidDescriptionField ( uvar.frameDesc ) == XLAL_SUCCESS, XLAL_EFUNC );
+          len = strlen(uvar.TDDframedir) + strlen(uvar.frameDesc) + 100;
+	  char *fname;
+          char IFO[2] = { Tseries->name[0], Tseries->name[1] };
+          XLAL_CHECK ( (fname = LALCalloc (1, len )) != NULL, XLAL_ENOMEM );
+          size_t written = snprintf ( fname, len, "%s/%c-%c%c_%s-%d-%d.gwf",
+                                      uvar.TDDframedir, IFO[0], IFO[0], IFO[1], uvar.frameDesc, params.startTimeGPS.gpsSeconds, (int)params.duration );
+          XLAL_CHECK ( written < len, XLAL_ESIZE, "Frame-filename exceeds expected maximal length (%d): '%s'\n", len, fname );
+
+	  /* define the output frame */
+	  LALFrameH *outFrame;
+	  XLAL_CHECK ( (outFrame = XLALFrameNew( &(params.startTimeGPS), params.duration, uvar.frameDesc, 1, 0, 0 )) != NULL, XLAL_EFUNC );
+
+	  /* add timeseries to the frame - make sure to change the timeseries name since this is used as the channel name */
+          char buffer[LALNameLength];
+	  written = snprintf ( buffer, LALNameLength, "%s:%s", Tseries->name, uvar.frameDesc );
+          XLAL_CHECK ( written < LALNameLength, XLAL_ESIZE, "Updated frame name exceeds max length (%d): '%s'\n", LALNameLength, buffer );
+          strcpy ( Tseries->name, buffer );
+
+	  XLAL_CHECK ( (XLALFrameAddREAL4TimeSeriesProcData ( outFrame, Tseries ) == XLAL_SUCCESS ) , XLAL_EFUNC );
+
+	  /* Here's where we add extra information into the frame - first we add the command line args used to generate it */
+	  char *hist = XLALUserVarGetLog (UVAR_LOGFMT_CMDLINE);
+          XLALFrameAddFrHistory ( outFrame, __FILE__, hist );
+
+	  /* then we add the version string */
+	  XLALFrameAddFrHistory ( outFrame, __FILE__, GV.VCSInfoString );
+
+	  /* output the frame to file - compression level 1 (higher values make no difference) */
+	  XLAL_CHECK ( (XLALFrameWrite(outFrame, fname) == 0) , XLAL_EFUNC );
+
+	  /* free the frame, frame file name and history memory */
+	  XLALFrameFree ( outFrame );
+	  LALFree ( fname );
+          LALFree ( hist );
+#endif
+	} /* if outputting time-series to frames */
 
 
       /* if hardware injection: send timeseries in binary-format to stdout */
-      if ( uvar_hardwareTDD )
+      if ( uvar.hardwareTDD )
 	{
 	  UINT4  length = Tseries->data->length;
 	  REAL4 *datap = Tseries->data->data;
@@ -440,7 +435,7 @@ main(int argc, char *argv[])
 	  if ( length != fwrite (datap, sizeof(datap[0]), length, stdout) )
 	    {
 	      perror( "Fatal error in writing binary data to stdout\n");
-	      exit (MAKEFAKEDATAC_EBINARYOUT);
+	      XLAL_ERROR ( XLAL_EIO, "fwrite() failed\n");
 	    }
 	  fflush (stdout);
 
@@ -450,15 +445,16 @@ main(int argc, char *argv[])
        * last step: turn this timeseries into SFTs
        * and output them to disk
        *----------------------------------------*/
-      if (uvar_outSFTbname)
+      SFTVector *SFTs = NULL;
+      if (uvar.outSFTbname)
 	{
 	  SFTParams sftParams = empty_SFTParams;
 	  LIGOTimeGPSVector ts;
 	  SFTVector noise;
 
-	  sftParams.Tsft = uvar_Tsft;
+	  sftParams.Tsft = uvar.Tsft;
 
-	  switch (uvar_generationMode)
+	  switch (uvar.generationMode)
 	    {
 	    case GENERATE_ALL_AT_ONCE:
 	      sftParams.timestamps = GV.timestamps;
@@ -480,8 +476,7 @@ main(int argc, char *argv[])
 	      break;
 
 	    default:
-	      printf ("\ninvalid Value for --generationMode\n\n");
-	      return MAKEFAKEDATAC_EBAD;
+	      XLAL_ERROR ( XLAL_EINVAL, "Invalid Value --generationMode=%d\n", uvar.generationMode );
 	      break;
 	    }
 
@@ -489,96 +484,96 @@ main(int argc, char *argv[])
 	  sftParams.window = GV.window;
 
 	  /* get SFTs from timeseries */
-	  LAL_CALL ( LALSignalToSFTs(&status, &SFTs, Tseries, &sftParams), &status);
+          XLAL_CHECK ( (SFTs = XLALSignalToSFTs (Tseries, &sftParams)) != NULL, XLAL_EFUNC );
 
 	  /* extract requested band if necessary (eg in the exact-signal case) */
-	  if ( uvar_exactSignal )
+	  if ( uvar.exactSignal )
 	    {
-	      SFTVector *outSFTs = NULL;
-	      LAL_CALL ( LALExtractSFTBand ( &status, &outSFTs, SFTs, GV.fmin_eff, GV.fBand_eff ), &status );
-	      LAL_CALL ( LALDestroySFTVector ( &status, &SFTs ), &status );
+	      SFTVector *outSFTs;
+              XLAL_CHECK ( (outSFTs = XLALExtractBandFromSFTVector ( SFTs, GV.fmin_eff, GV.fBand_eff )) != NULL, XLAL_EFUNC );
+	      XLALDestroySFTVector ( SFTs );
 	      SFTs = outSFTs;
 	    }
 
-	  if ( uvar_outSFTv1 ) 		/* write output-SFTs using the SFT-v1 format */
+	  if ( uvar.outSFTv1 ) 		/* write output-SFTs using the SFT-v1 format */
 	    {
-	      CHAR *fname = LALCalloc (1, strlen (uvar_outSFTbname) + 10);
+	      CHAR *fname = XLALCalloc (1, len = strlen (uvar.outSFTbname) + 10 );
+              XLAL_CHECK ( fname != NULL, XLAL_ENOMEM, "XLALCalloc(1,%d) failed.\n", len );
 
-	      for (i=0; i < SFTs->length; i++)
+              LALStatus status = blank_status;
+	      for (UINT4 i=0; i < SFTs->length; i++)
 		{
-		  sprintf (fname, "%s.%05d", uvar_outSFTbname, i_chunk*SFTs->length + i);
-		  LAL_CALL ( LALWrite_v2SFT_to_v1file ( &status, &(SFTs->data[i]), fname ), &status );
+		  sprintf (fname, "%s.%05d", uvar.outSFTbname, i_chunk*SFTs->length + i);
+		  LALWrite_v2SFT_to_v1file ( &status, &(SFTs->data[i]), fname );
+                  XLAL_CHECK ( status.statusCode == 0, XLAL_EFAILED, "LALWrite_v2SFT_to_v1file('%s') failed with status=%d : '%s'\n",
+                               fname, status.statusCode, status.statusDescription );
 		}
-	      LALFree (fname);
+	      XLALFree (fname);
 	    } /* if outSFTv1 */
 	  else
 	    {	/* write standard v2-SFTs */
-	      CHAR *comment = NULL;
-	      CHAR *logstr = NULL;
 
-	      /* generate comment string */
-	      LAL_CALL ( LALUserVarGetLog ( &status, &logstr,  UVAR_LOGFMT_CMDLINE ), &status );
-	      comment = LALCalloc ( 1, strlen ( logstr ) + strlen(GV.VCSInfoString) + 512 );
-	      sprintf ( comment, "Generated by:\n%s\n%s\n", logstr, GV.VCSInfoString );
+              /* generate comment string */
+              CHAR *logstr;
+              XLAL_CHECK ( (logstr = XLALUserVarGetLog ( UVAR_LOGFMT_CMDLINE )) != NULL, XLAL_EFUNC );
+              char *comment = XLALCalloc ( 1, len = strlen ( logstr ) + strlen(GV.VCSInfoString) + 512 );
+              XLAL_CHECK ( comment != NULL, XLAL_ENOMEM, "XLALCalloc(1,%d) failed.\n", len );
+              sprintf ( comment, "Generated by:\n%s\n%s\n", logstr, GV.VCSInfoString );
 
-	      /* if user requesting single concatenated SFT */
-	      if ( uvar_outSingleSFT ) {
+              /* if user requesting single concatenated SFT */
+              if ( uvar.outSingleSFT )
+                {
+                  /* write all SFTs to concatenated file */
+                  for ( UINT4 k = 0; k < SFTs->length; k++ )
+                    {
+                      int ret = XLALWriteSFT2fp ( &(SFTs->data[k]), fpSingleSFT, comment );
+                      XLAL_CHECK ( ret == XLAL_SUCCESS, XLAL_EFUNC, "XLALWriteSFT2fp() failed to write SFT %d / %d to '%s'!\n", k+1, SFTs->length, uvar.outSFTbname );
+                    } // for k < numSFTs
+                } // if outSingleSFT
+              else
+                {
+                  /* check that user didn't follow v1-habits and tried to give us a base filename */
+                  if ( ! is_directory ( uvar.outSFTbname ) )
+                    {
+                      fprintf (stderr, "\nERROR: the --outSFTbname '%s' is not a directory!\n", uvar.outSFTbname);
+                      fprintf (stderr, "------------------------------------------------------------\n");
+                      fprintf (stderr, "NOTE: v2-SFTs are written using the SFTv2 filename-convention!\n");
+                      fprintf (stderr, "==> therefore, only an (existing) directory-name may be given to --outSFTbname, but no basename!\n");
+                      fprintf (stderr, "------------------------------------------------------------\n\n");
+                      XLAL_ERROR ( XLAL_EINVAL );
+                    }
+                  XLAL_CHECK ( XLALWriteSFTVector2Dir( SFTs, uvar.outSFTbname, comment, "mfdv4" ) == XLAL_SUCCESS, XLAL_EFUNC );
+                }
+              XLALFree ( logstr );
+              XLALFree ( comment );
 
-                /* write all SFTs to concatenated file */
-                for ( UINT4 k = 0; k < SFTs->length; k++ ) {
-                  if ( XLAL_SUCCESS != XLALWriteSFT2fp( &(SFTs->data[k]), fpSingleSFT, comment ) ) {
-                    XLALPrintError("\nXLALWriteSFT2fp() failed to write SFT to '%s'!\n",
-                                   uvar_outSFTbname);
-                    return MAKEFAKEDATAC_ESUB;
-                  }
-		}
-
-	      }
-	      else {
-
-		/* check that user didn't follow v1-habits and tried to give us a base filename */
-		if ( ! is_directory ( uvar_outSFTbname ) )
-		  {
-		    fprintf (stderr, "\nERROR: the --outSFTbname '%s' is not a directory!\n", uvar_outSFTbname);
-		    fprintf (stderr, "------------------------------------------------------------\n");
-		    fprintf (stderr, "NOTE: v2-SFTs are written using the SFTv2 filename-convention!\n");
-		    fprintf (stderr, "==> therefore, only an (existing) directory-name may be given to --outSFTbname, but no basename!\n");
-		    fprintf (stderr, "------------------------------------------------------------\n\n");
-		    return MAKEFAKEDATAC_EBAD;
-		  }
-		LAL_CALL ( LALWriteSFTVector2Dir (&status, SFTs, uvar_outSFTbname, comment, "mfdv4" ), &status );
-
-	      }
-	      LALFree ( logstr );
-	      LALFree ( comment );
-	    } /* if outSingleSFT */
-	} /* if outSFTbname */
+            } // if v2-SFTs
+        } /* if outSFTbname */
 
       /* free memory */
       if (Tseries)
 	{
-	  LAL_CALL (LALDestroyVector(&status, &(Tseries->data)), &status);
-	  LALFree (Tseries);
+	  XLALDestroyREAL4TimeSeries ( Tseries );
 	  Tseries = NULL;
 	}
 
       if (SFTs)
 	{
-	  LAL_CALL (LALDestroySFTVector(&status, &SFTs), &status);
+	  XLALDestroySFTVector ( SFTs );
 	  SFTs = NULL;
 	}
 
     } /* for i_chunk < numchunks */
 
   /* if user requesting single concatenated SFT */
-  if ( uvar_outSingleSFT ) {
+  if ( uvar.outSingleSFT ) {
 
     /* close concatenated SFT */
     LALFclose( fpSingleSFT );
 
   }
 
-  LAL_CALL (FreeMem(&status, &GV), &status);	/* free the rest */
+  XLALFreeMem ( &GV );	/* free the config-struct */
 
   LALCheckMemoryLeaks();
 
@@ -586,95 +581,78 @@ main(int argc, char *argv[])
 } /* main */
 
 /**
- *  Handle user-input and set up shop accordingly, and do all
+ * Handle user-input and set up shop accordingly, and do all
  * consistency-checks on user-input.
  */
-void
-InitMakefakedata (LALStatus *status, ConfigVars_t *cfg, int argc, char *argv[])
+int
+XLALInitMakefakedata ( ConfigVars_t *cfg, UserVariables_t *uvar )
 {
-  static const char *fn = __func__;
+  int len;
+  XLAL_CHECK ( cfg != NULL, XLAL_EINVAL, "Invalid NULL input 'cfg'\n" );
+  XLAL_CHECK ( uvar != NULL, XLAL_EINVAL, "Invalid NULL input 'uvar'\n");
 
-  CHAR *channelName = NULL;
-  BinaryPulsarParams pulparams;
+  cfg->VCSInfoString = XLALGetVersionString(0);
+  XLAL_CHECK ( cfg->VCSInfoString != NULL, XLAL_EFUNC, "XLALGetVersionString(0) failed.\n" );
 
-  INITSTATUS(status);
-  ATTATCHSTATUSPTR (status);
-
-  /* register all user-variables */
-  TRY (InitUserVars(status->statusPtr), status);
-
-  /* read cmdline & cfgfile  */
-  TRY (LALUserVarReadAllInput(status->statusPtr, argc,argv), status);
-
-  BOOLEAN have_parfile = LALUserVarWasSet (&uvar_parfile);
-
-  if (uvar_help) 	/* if help was requested, we're done */
-    exit (0);
-
-  if ( (cfg->VCSInfoString = XLALGetVersionString(0)) == NULL ) {
-    XLALPrintError("XLALGetVersionString(0) failed.\n");
-    exit(1);
-  }
-
-  if ( uvar_version )
+  // version info was requested: output then exit
+  if ( uvar->version )
     {
       printf ("%s\n", cfg->VCSInfoString );
       exit (0);
     }
 
+  BOOLEAN have_parfile = XLALUserVarWasSet (&uvar->parfile);
+  BinaryPulsarParams pulparams;
+
   /* read in par file parameters if given */
-   if (have_parfile){
-      XLALReadTEMPOParFile( &pulparams, uvar_parfile);
-      if (pulparams.f0 == 0){
-          printf ( "\nError with .par file! Need f0!\n\n");
-          ABORT (status,  MAKEFAKEDATAC_EBAD,  MAKEFAKEDATAC_MSGEBAD);
-          }
-      if(pulparams.pepoch == 0 && pulparams.posepoch ==0 ){
-          printf ( "\nNo epoch given in .par file! Need PEPOCH or POSEPOCH!\n\n");
-          ABORT (status,  MAKEFAKEDATAC_EBAD,  MAKEFAKEDATAC_MSGEBAD);
-          }
-    }
+   if (have_parfile)
+     {
+       XLALReadTEMPOParFile( &pulparams, uvar->parfile);
+       XLAL_CHECK ( xlalErrno == XLAL_SUCCESS, XLAL_EFUNC, "XLALReadTEMPOParFile() failed for parfile = '%s', xlalErrno = %d\n", uvar->parfile, xlalErrno );
+       XLAL_CHECK ( pulparams.f0 > 0, XLAL_EINVAL, "Invalid .par file values, need f0 > 0!\n" );
+       XLAL_CHECK ( (pulparams.pepoch > 0) || (pulparams.posepoch > 0), XLAL_EINVAL, "Invalid .par file values, need PEPOCH or POSEPOCH!\n");
+     }
 
   /* if requested, log all user-input and code-versions */
-  if ( uvar_logfile ) {
-    TRY ( WriteMFDlog(status->statusPtr, uvar_logfile, cfg), status);
+  if ( uvar->logfile ) {
+    XLAL_CHECK ( XLALWriteMFDlog ( uvar->logfile, cfg ) == XLAL_SUCCESS, XLAL_EFUNC, "XLALWriteMFDlog() failed with xlalErrno = %d\n", xlalErrno );
   }
 
   { /* ========== translate user-input into 'PulsarParams' struct ========== */
-    BOOLEAN have_h0     = LALUserVarWasSet ( &uvar_h0 );
-    BOOLEAN have_cosi   = LALUserVarWasSet ( &uvar_cosi );
-    BOOLEAN have_aPlus  = LALUserVarWasSet ( &uvar_aPlus );
-    BOOLEAN have_aCross = LALUserVarWasSet ( &uvar_aCross );
-    BOOLEAN have_Freq   = LALUserVarWasSet ( &uvar_Freq );
-    BOOLEAN have_f0     = LALUserVarWasSet ( &uvar_f0 );
-    BOOLEAN have_longitude = LALUserVarWasSet ( &uvar_longitude );
-    BOOLEAN have_latitude  = LALUserVarWasSet ( &uvar_latitude );
-    BOOLEAN have_Alpha  = LALUserVarWasSet ( &uvar_Alpha );
-    BOOLEAN have_Delta  = LALUserVarWasSet ( &uvar_Delta );
-    BOOLEAN have_RA = LALUserVarWasSet ( &uvar_RA );
-    BOOLEAN have_Dec = LALUserVarWasSet ( &uvar_Dec );
+    BOOLEAN have_h0     = XLALUserVarWasSet ( &uvar->h0 );
+    BOOLEAN have_cosi   = XLALUserVarWasSet ( &uvar->cosi );
+    BOOLEAN have_aPlus  = XLALUserVarWasSet ( &uvar->aPlus );
+    BOOLEAN have_aCross = XLALUserVarWasSet ( &uvar->aCross );
+    BOOLEAN have_Freq   = XLALUserVarWasSet ( &uvar->Freq );
+    BOOLEAN have_f0     = XLALUserVarWasSet ( &uvar->f0 );
+    BOOLEAN have_longitude = XLALUserVarWasSet ( &uvar->longitude );
+    BOOLEAN have_latitude  = XLALUserVarWasSet ( &uvar->latitude );
+    BOOLEAN have_Alpha  = XLALUserVarWasSet ( &uvar->Alpha );
+    BOOLEAN have_Delta  = XLALUserVarWasSet ( &uvar->Delta );
+    BOOLEAN have_RA = XLALUserVarWasSet ( &uvar->RA );
+    BOOLEAN have_Dec = XLALUserVarWasSet ( &uvar->Dec );
 
     /*check .par file for gw parameters*/
     if (have_parfile){
       if (pulparams.h0 != 0){
-	uvar_h0 = pulparams.h0;
-	uvar_cosi = pulparams.cosiota;
-	uvar_phi0 = pulparams.phi0;
-	uvar_psi = pulparams.psi;
-	have_h0 = 1; /*Set to TRUE as uvar_h0 not declared on command line -- same for rest*/
+	uvar->h0 = pulparams.h0;
+	uvar->cosi = pulparams.cosiota;
+	uvar->phi0 = pulparams.phi0;
+	uvar->psi = pulparams.psi;
+	have_h0 = 1; /*Set to TRUE as uvar->h0 not declared on command line -- same for rest*/
 	have_cosi = 1;
       }
       else{
-	uvar_aPlus = pulparams.Aplus;
-	uvar_aCross = pulparams.Across;
-	uvar_phi0 = pulparams.phi0;
-	uvar_psi = pulparams.psi;
+	uvar->aPlus = pulparams.Aplus;
+	uvar->aCross = pulparams.Across;
+	uvar->phi0 = pulparams.phi0;
+	uvar->psi = pulparams.psi;
 	have_aPlus = 1;
 	have_aCross = 1;
       }
-      uvar_Freq = 2.*pulparams.f0;
-      uvar_Alpha = pulparams.ra;
-      uvar_Delta = pulparams.dec;
+      uvar->Freq = 2.*pulparams.f0;
+      uvar->Alpha = pulparams.ra;
+      uvar->Delta = pulparams.dec;
       have_Freq = 1;
       have_Alpha = 1;
       have_Delta = 1;
@@ -682,34 +660,29 @@ InitMakefakedata (LALStatus *status, ConfigVars_t *cfg, int argc, char *argv[])
 
     /* ----- {h0,cosi} or {aPlus,aCross} ----- */
     if ( (have_aPlus || have_aCross) && ( have_h0 || have_cosi ) ) {
-      printf ( "\nSpecify EITHER {h0,cosi} OR {aPlus, aCross}!\n\n");
-      ABORT (status,  MAKEFAKEDATAC_EBAD,  MAKEFAKEDATAC_MSGEBAD);
+      XLAL_ERROR ( XLAL_EINVAL, "Need to specify EITHER {h0,cosi} OR {aPlus, aCross}!\n\n");
     }
     if ( (have_h0 ^ have_cosi) ) {
-      printf ( "\nNeed both --h0 and --cosi!\n\n");
-      ABORT (status,  MAKEFAKEDATAC_EBAD,  MAKEFAKEDATAC_MSGEBAD);
+      XLAL_ERROR ( XLAL_EINVAL, "Need BOTH --h0 and --cosi!\n\n");
     }
     if ( (have_aPlus ^ have_aCross) ) {
-      printf ( "\nNeed both --aPlus and --aCross !\n\n");
-      ABORT (status,  MAKEFAKEDATAC_EBAD,  MAKEFAKEDATAC_MSGEBAD);
+      XLAL_ERROR ( XLAL_EINVAL, "Need BOTH --aPlus and --aCross !\n\n");
     }
     if ( have_h0 && have_cosi )
       {
-	cfg->pulsar.Amp.h0 = uvar_h0;
-	cfg->pulsar.Amp.cosi = uvar_cosi;
+	cfg->pulsar.Amp.h0 = uvar->h0;
+	cfg->pulsar.Amp.cosi = uvar->cosi;
       }
     else if ( have_aPlus && have_aCross )
       {  /* translate A_{+,x} into {h_0, cosi} */
 	REAL8 disc;
-	if ( fabs(uvar_aCross) > uvar_aPlus )
-	  {
-	    printf ( "\nInvalid input parameters: aCross must smaller or equal aPlus !\n\n");
-	    ABORT (status,  MAKEFAKEDATAC_EBAD,  MAKEFAKEDATAC_MSGEBAD);
-	  }
-	disc = sqrt ( SQ(uvar_aPlus) - SQ(uvar_aCross) );
-	cfg->pulsar.Amp.h0   = uvar_aPlus + disc;
+	if ( fabs(uvar->aCross) > uvar->aPlus ) {
+          XLAL_ERROR ( XLAL_EINVAL, "Invalid input parameters: |aCross| = %g must be <= than aPlus = %g.\n", fabs(uvar->aCross), uvar->aPlus );
+        }
+	disc = sqrt ( SQ(uvar->aPlus) - SQ(uvar->aCross) );
+	cfg->pulsar.Amp.h0   = uvar->aPlus + disc;
         if ( cfg->pulsar.Amp.h0 > 0 )
-          cfg->pulsar.Amp.cosi = uvar_aCross / cfg->pulsar.Amp.h0;	// avoid division by 0!
+          cfg->pulsar.Amp.cosi = uvar->aCross / cfg->pulsar.Amp.h0;	// avoid division by 0!
         else
           cfg->pulsar.Amp.cosi = 0;
       }
@@ -717,52 +690,47 @@ InitMakefakedata (LALStatus *status, ConfigVars_t *cfg, int argc, char *argv[])
       cfg->pulsar.Amp.h0 = 0.0;
       cfg->pulsar.Amp.cosi = 0.0;
     }
-    cfg->pulsar.Amp.phi0 = uvar_phi0;
-    cfg->pulsar.Amp.psi  = uvar_psi;
+    cfg->pulsar.Amp.phi0 = uvar->phi0;
+    cfg->pulsar.Amp.psi  = uvar->psi;
 
     /* ----- signal Frequency ----- */
     if ( have_f0 && have_Freq ) {
-      printf ( "\nSpecify signal-frequency using EITHER --Freq [preferred] OR --f0 [deprecated]!\n\n");
-      ABORT (status,  MAKEFAKEDATAC_EBAD,  MAKEFAKEDATAC_MSGEBAD);
+      XLAL_ERROR ( XLAL_EINVAL, "Specify signal-frequency using EITHER --Freq [preferred] OR --f0 [deprecated]!\n\n");
     }
     if ( have_Freq )
-      cfg->pulsar.Doppler.fkdot[0] = uvar_Freq;
+      cfg->pulsar.Doppler.fkdot[0] = uvar->Freq;
     else if ( have_f0 )
-      cfg->pulsar.Doppler.fkdot[0] = uvar_f0;
+      cfg->pulsar.Doppler.fkdot[0] = uvar->f0;
     else
       cfg->pulsar.Doppler.fkdot[0] = 0.0;
 
     /* ----- skypos ----- */
     if ( (have_Alpha || have_Delta) && ( have_longitude || have_latitude ) && (have_RA || have_Dec) ) {
-      printf ( "\nUse EITHER {Alpha, Delta} [preferred] OR {RA, Dec} [preferred] OR {longitude,latitude} [deprecated]\n\n");
-      ABORT (status,  MAKEFAKEDATAC_EBAD,  MAKEFAKEDATAC_MSGEBAD);
+      XLAL_ERROR ( XLAL_EINVAL, "Use EITHER {Alpha, Delta} [preferred] OR {RA, Dec} [preferred] OR {longitude,latitude} [deprecated]\n\n");
     }
     if ( (have_Alpha && !have_Delta) || ( !have_Alpha && have_Delta ) ) {
-      printf ( "\nSpecify skyposition: need BOTH --Alpha and --Delta!\n\n");
-      ABORT (status,  MAKEFAKEDATAC_EBAD,  MAKEFAKEDATAC_MSGEBAD);
+      XLAL_ERROR ( XLAL_EINVAL, "\nSpecify skyposition: need BOTH --Alpha and --Delta!\n\n");
     }
     if ( (have_longitude && !have_latitude) || ( !have_longitude && have_latitude ) ) {
-      printf ( "\nSpecify skyposition: need BOTH --longitude and --latitude!\n\n");
-      ABORT (status,  MAKEFAKEDATAC_EBAD,  MAKEFAKEDATAC_MSGEBAD);
+      XLAL_ERROR ( XLAL_EINVAL, "\nSpecify skyposition: need BOTH --longitude and --latitude!\n\n");
     }
     if ( (have_RA && !have_Dec) || ( !have_RA && have_Dec ) ) {
-      printf ( "\nSpecify skyposition: need BOTH --RA and --Dec!\n\n");
-      ABORT (status,  MAKEFAKEDATAC_EBAD,  MAKEFAKEDATAC_MSGEBAD);
+      XLAL_ERROR ( XLAL_EINVAL, "\nSpecify skyposition: need BOTH --RA and --Dec!\n\n");
     }
     if ( have_Alpha )
       {
-	cfg->pulsar.Doppler.Alpha = uvar_Alpha;
-	cfg->pulsar.Doppler.Delta = uvar_Delta;
+	cfg->pulsar.Doppler.Alpha = uvar->Alpha;
+	cfg->pulsar.Doppler.Delta = uvar->Delta;
       }
     else if ( have_RA )
       {
-	cfg->pulsar.Doppler.Alpha = LALDegsToRads(uvar_RA,"alpha");
-	cfg->pulsar.Doppler.Delta = LALDegsToRads(uvar_Dec,"delta");
+	cfg->pulsar.Doppler.Alpha = XLALhmsToRads(uvar->RA);
+	cfg->pulsar.Doppler.Delta = XLALdmsToRads(uvar->Dec);
       }
     else
       {
-	cfg->pulsar.Doppler.Alpha = uvar_longitude;
-	cfg->pulsar.Doppler.Delta = uvar_latitude;
+	cfg->pulsar.Doppler.Alpha = uvar->longitude;
+	cfg->pulsar.Doppler.Delta = uvar->latitude;
       }
 
   } /* Pulsar signal parameters */
@@ -772,103 +740,95 @@ InitMakefakedata (LALStatus *status, ConfigVars_t *cfg, int argc, char *argv[])
     UINT4 msp = 0;	/* number of spindown-parameters */
     if ( have_parfile )
       {
-	uvar_f1dot = 2.*pulparams.f1;
-	uvar_f2dot = 2.*pulparams.f2;
-	uvar_f3dot = 2.*pulparams.f3;
+	uvar->f1dot = 2.*pulparams.f1;
+	uvar->f2dot = 2.*pulparams.f2;
+	uvar->f3dot = 2.*pulparams.f3;
       }
-    cfg->pulsar.Doppler.fkdot[1] = uvar_f1dot;
-    cfg->pulsar.Doppler.fkdot[2] = uvar_f2dot;
-    cfg->pulsar.Doppler.fkdot[3] = uvar_f3dot;
+    cfg->pulsar.Doppler.fkdot[1] = uvar->f1dot;
+    cfg->pulsar.Doppler.fkdot[2] = uvar->f2dot;
+    cfg->pulsar.Doppler.fkdot[3] = uvar->f3dot;
 
-    if (uvar_f3dot != 0) 	msp = 3;	/* counter number of spindowns */
-    else if (uvar_f2dot != 0)	msp = 2;
-    else if (uvar_f1dot != 0)	msp = 1;
+    if (uvar->f3dot != 0) 	msp = 3;	/* counter number of spindowns */
+    else if (uvar->f2dot != 0)	msp = 2;
+    else if (uvar->f1dot != 0)	msp = 1;
     else 			msp = 0;
-    if (msp) {
-      /* memory not initialized, but ALL alloc'ed entries will be set below! */
-      TRY (LALDCreateVector(status->statusPtr, &(cfg->spindown), msp), status);
-    }
+    if (msp)
+      {
+        /* memory not initialized, but ALL alloc'ed entries will be set below! */
+        cfg->spindown = XLALCreateREAL8Vector ( msp );
+        XLAL_CHECK ( cfg->spindown != NULL, XLAL_EFUNC, "XLALCreateREAL8Vector ( %d ) failed.\n", msp );
+      }
     switch (msp)
       {
       case 3:
-	cfg->spindown->data[2] = uvar_f3dot;
+	cfg->spindown->data[2] = uvar->f3dot;
       case 2:
-	cfg->spindown->data[1] = uvar_f2dot;
+	cfg->spindown->data[1] = uvar->f2dot;
       case 1:
-	cfg->spindown->data[0] = uvar_f1dot;
+	cfg->spindown->data[0] = uvar->f1dot;
 	break;
       case 0:
 	break;
       default:
-	printf ("\nmsp = %d makes no sense to me...\n\n", msp);
-	ABORT (status,  MAKEFAKEDATAC_EBAD,  MAKEFAKEDATAC_MSGEBAD);
+	XLAL_ERROR ( XLAL_EINVAL, "\nmsp = %d makes no sense to me...\n\n", msp);
       } /* switch(msp) */
 
   } /* END: prepare spindown parameters */
 
+  CHAR *channelName = NULL;
   /* ---------- prepare detector ---------- */
   {
     LALDetector *site;
-    BOOLEAN have_detector = LALUserVarWasSet ( &uvar_detector );
-    BOOLEAN have_IFO = LALUserVarWasSet ( &uvar_IFO );
+    BOOLEAN have_detector = XLALUserVarWasSet ( &uvar->detector );
+    BOOLEAN have_IFO = XLALUserVarWasSet ( &uvar->IFO );
     if ( !have_detector && !have_IFO ) {
-      printf ( "\nNeed detector input --IFO!\n\n");
-      ABORT (status, MAKEFAKEDATAC_EBAD, MAKEFAKEDATAC_MSGEBAD);
+      XLAL_ERROR ( XLAL_EINVAL, "Need detector input --IFO!\n\n");
     }
     if ( have_detector && have_IFO ) {
-      printf ( "\nUse EITHER --IFO [preferred] OR --detector [deprecated]!\n\n");
-      ABORT (status, MAKEFAKEDATAC_EBAD, MAKEFAKEDATAC_MSGEBAD);
+      XLAL_ERROR ( XLAL_EINVAL, "\nUse EITHER --IFO [preferred] OR --detector [deprecated]!\n\n");
     }
 
     if ( have_detector )
       {
-	site = XLALGetSiteInfo ( uvar_detector );
-	channelName = XLALGetChannelPrefix ( uvar_detector );
+	site = XLALGetSiteInfo ( uvar->detector );
+	channelName = XLALGetChannelPrefix ( uvar->detector );
       }
     else
       {
-	site = XLALGetSiteInfo ( uvar_IFO );
-	channelName = XLALGetChannelPrefix ( uvar_IFO );
+	site = XLALGetSiteInfo ( uvar->IFO );
+        XLAL_CHECK ( site != NULL, XLAL_EFUNC, "XLALGetSiteInfo('%s') failed\n", uvar->IFO );
+	channelName = XLALGetChannelPrefix ( uvar->IFO );
+        XLAL_CHECK ( channelName != NULL, XLAL_EFUNC, "XLALGetChannelPrefix('%s') failed.\n", uvar->IFO );
       }
-    if ( site == NULL ) {
-      ABORT (status, MAKEFAKEDATAC_EBAD, MAKEFAKEDATAC_MSGEBAD);
-    }
+
     cfg->site = (*site);
-    LALFree ( site );
+    XLALFree ( site );
   }
 
    /* check for negative fmin and Band, which would break the fmin_eff, fBand_eff calculation below */
-   if ( uvar_fmin < 0.0 )
-     {
-       printf ( "\nNegative frequency fmin=%f!\n\n", uvar_fmin);
-       ABORT (status,  MAKEFAKEDATAC_EBAD,  MAKEFAKEDATAC_MSGEBAD);
-     }
-   if ( uvar_Band < 0.0 )
-     {
-       printf ( "\nNegative frequency band Band=%f!\n\n", uvar_Band);
-       ABORT (status,  MAKEFAKEDATAC_EBAD,  MAKEFAKEDATAC_MSGEBAD);
-     }
+  XLAL_CHECK ( uvar->fmin >= 0, XLAL_EDOM, "Invalid negative frequency fmin=%f!\n\n", uvar->fmin );
+  XLAL_CHECK ( uvar->Band >= 0, XLAL_EDOM, "Invalid negative frequency band Band=%f!\n\n", uvar->Band );
 
   /* ---------- for SFT output: calculate effective fmin and Band ---------- */
-  if ( LALUserVarWasSet( &uvar_outSFTbname ) )
+  if ( XLALUserVarWasSet( &uvar->outSFTbname ) )
     {
       UINT4 imin, imax;
-      volatile REAL8 dFreq = 1.0 / uvar_Tsft;
+      volatile REAL8 dFreq = 1.0 / uvar->Tsft;
       volatile REAL8 tmp;
       REAL8 fMax, fMin_eff;
 
-      /* calculate "effective" fmin from uvar_fmin: following makefakedata_v2, we
+      /* calculate "effective" fmin from uvar->fmin: following makefakedata_v2, we
        * make sure that fmin_eff * Tsft = integer, such that freqBinIndex corresponds
        * to a frequency-index of the non-heterodyned signal.
        */
-      tmp = uvar_fmin / dFreq;	/* NOTE: don't "simplify" this: we try to make sure
+      tmp = uvar->fmin / dFreq;	/* NOTE: don't "simplify" this: we try to make sure
 				 * the result of this will be guaranteed to be IEEE-compliant,
 				 * and identical to other locations, such as in SFT-IO
 				 */
       imin = (UINT4) floor( tmp );
       fMin_eff = (REAL8)imin * dFreq;
 
-      fMax = uvar_fmin + uvar_Band;
+      fMax = uvar->fmin + uvar->Band;
       tmp = fMax / dFreq;
       imax = (UINT4) ceil (tmp);
 
@@ -878,8 +838,8 @@ InitMakefakedata (LALStatus *status, ConfigVars_t *cfg, int argc, char *argv[])
 
       if ( lalDebugLevel )
 	{
-	  if ( abs(cfg->fmin_eff - uvar_fmin)> LAL_REAL8_EPS
-	       || abs(cfg->fBand_eff - uvar_Band) > LAL_REAL8_EPS )
+	  if ( abs(cfg->fmin_eff - uvar->fmin)> LAL_REAL8_EPS
+	       || abs(cfg->fBand_eff - uvar->Band) > LAL_REAL8_EPS )
 	    printf("\nWARNING: for SFT-creation we had to adjust (fmin,Band) to"
 		   " fmin_eff=%.20g and Band_eff=%.20g\n\n", cfg->fmin_eff, cfg->fBand_eff);
 	}
@@ -887,78 +847,63 @@ InitMakefakedata (LALStatus *status, ConfigVars_t *cfg, int argc, char *argv[])
     } /* END: SFT-specific corrections to fmin and Band */
   else
     { /* producing pure time-series output ==> no adjustments necessary */
-      cfg->fmin_eff = uvar_fmin;
-      cfg->fBand_eff = uvar_Band;
+      cfg->fmin_eff = uvar->fmin;
+      cfg->fBand_eff = uvar->Band;
     }
 
 
   /* ---------- determine timestamps to produce signal for  ---------- */
   {
-    /* check input consistency: *uvar_timestampsFile, uvar_startTime, uvar_duration */
+    /* check input consistency: *uvar->timestampsFile, uvar->startTime, uvar->duration */
     BOOLEAN haveStart, haveDuration, haveTimestampsFile, haveOverlap;
 
-    haveStart = LALUserVarWasSet(&uvar_startTime);
-    haveDuration = LALUserVarWasSet(&uvar_duration);
-    haveTimestampsFile = ( uvar_timestampsFile != NULL );
-    haveOverlap = ( uvar_SFToverlap > 0 );
+    haveStart = XLALUserVarWasSet(&uvar->startTime);
+    haveDuration = XLALUserVarWasSet(&uvar->duration);
+    haveTimestampsFile = ( uvar->timestampsFile != NULL );
+    haveOverlap = ( uvar->SFToverlap > 0 );
 
-    if ( ( haveDuration && !haveStart) || ( !haveDuration && haveStart ) )
-      {
-	printf ( "\nNeed BOTH --startTime AND --duration if you give one of them !\n\n");
-	ABORT (status,  MAKEFAKEDATAC_EBAD,  MAKEFAKEDATAC_MSGEBAD);
-      }
+    if ( ( haveDuration && !haveStart) || ( !haveDuration && haveStart ) ) {
+      XLAL_ERROR ( XLAL_EINVAL, "Need BOTH --startTime AND --duration if you give one of them !\n\n");
+    }
 
     /* don't allow using --SFToverlap with anything other than pure (--startTime,--duration) */
-    if ( haveOverlap && ( uvar_noiseSFTs || haveTimestampsFile ) )
-      {
-        XLALPrintError ("\nERROR: I can't combine --SFToverlap with --noiseSFTs or --timestampsFile, only use with (--startTime, --duration)!\n\n");
-        ABORT (status,  MAKEFAKEDATAC_EBAD,  MAKEFAKEDATAC_MSGEBAD);
-      }
+    if ( haveOverlap && ( uvar->noiseSFTs || haveTimestampsFile ) ) {
+      XLAL_ERROR ( XLAL_EINVAL, "I can't combine --SFToverlap with --noiseSFTs or --timestampsFile, only use with (--startTime, --duration)!\n\n");
+    }
+
     /* don't allow --SFToverlap with generationMode==1 (one timeseries per SFT), as this would
      * result in independent noise realizations in the overlapping regions
      */
-    if ( haveOverlap && (uvar_generationMode != 0) )
-      {
-        XLALPrintError ("\nERROR: --SFToverlap can only be used with --generationMode=0, otherwise we'll get overlapping independent noise!\n\n");
-        ABORT (status,  MAKEFAKEDATAC_EBAD,  MAKEFAKEDATAC_MSGEBAD);
-      }
+    if ( haveOverlap && (uvar->generationMode != 0) ) {
+      XLAL_ERROR ( XLAL_EINVAL, "--SFToverlap can only be used with --generationMode=0, otherwise we'll get overlapping independent noise!\n\n");
+    }
 
     /*-------------------- check special case: Hardware injection ---------- */
     /* don't allow timestamps-file, noise-SFTs or SFT-output */
-    if ( uvar_hardwareTDD )
+    if ( uvar->hardwareTDD )
       {
-	if (haveTimestampsFile || uvar_noiseSFTs )
-	  {
-	    printf ("\nHardware injection: don't specify --timestampsFile or --noiseSFTs\n\n");
-	    ABORT (status,  MAKEFAKEDATAC_EBAD,  MAKEFAKEDATAC_MSGEBAD);
-	  }
-	if ( !haveStart || !haveDuration )
-	  {
-	    printf ("\nHardware injection: need to specify --startTime and --duration!\n\n");
-	    ABORT (status,  MAKEFAKEDATAC_EBAD,  MAKEFAKEDATAC_MSGEBAD);
-	  }
-	if ( LALUserVarWasSet( &uvar_outSFTbname ) )
-	  {
-	    printf ("\nHardware injection mode is incompatible with producing SFTs\n\n");
-	    ABORT (status,  MAKEFAKEDATAC_EBAD,  MAKEFAKEDATAC_MSGEBAD);
-	  }
+	if (haveTimestampsFile || uvar->noiseSFTs ) {
+          XLAL_ERROR ( XLAL_EINVAL, "\nHardware injection: don't specify --timestampsFile or --noiseSFTs\n\n");
+        }
+	if ( !haveStart || !haveDuration ) {
+          XLAL_ERROR ( XLAL_EINVAL, "Hardware injection: need to specify --startTime and --duration!\n\n");
+        }
+	if ( XLALUserVarWasSet( &uvar->outSFTbname ) ) {
+          XLAL_ERROR ( XLAL_EINVAL, "Hardware injection mode is incompatible with producing SFTs\n\n");
+        }
       } /* if hardware-injection */
 
     /* ----- load timestamps from file if given  */
     if ( haveTimestampsFile )
       {
-	if ( haveStart || haveDuration || haveOverlap )
-	  {
-	    printf ( "\nUsing --timestampsFile is incompatible with either of --startTime, --duration or --SFToverlap\n\n");
-	    ABORT (status,  MAKEFAKEDATAC_EBAD,  MAKEFAKEDATAC_MSGEBAD);
-	  }
-	if ( ( cfg->timestamps = XLALReadTimestampsFile ( uvar_timestampsFile )) == NULL ) {
-          XLALPrintError ("%s: failed to read timestamps from file '%s'\n", fn, uvar_timestampsFile );
-          ABORT (status,  MAKEFAKEDATAC_EBAD,  MAKEFAKEDATAC_MSGEBAD);
+	if ( haveStart || haveDuration || haveOverlap ) {
+          XLAL_ERROR ( XLAL_EINVAL, "Using --timestampsFile is incompatible with either of --startTime, --duration or --SFToverlap\n\n");
+        }
+	if ( ( cfg->timestamps = XLALReadTimestampsFile ( uvar->timestampsFile )) == NULL ) {
+          XLAL_ERROR ( XLAL_EFUNC, "XLALReadTimestampsFile() failed to read timestamps file '%s'\n", uvar->timestampsFile );
         }
 	if ( ( cfg->timestamps->length == 0 ) || ( cfg->timestamps->data == NULL ) ) {
-          XLALPrintError ("%s: XLALReadTimestampsFile returned empty timestamps from file '%s'\n", fn, uvar_timestampsFile );
-          ABORT (status,  MAKEFAKEDATAC_EBAD,  MAKEFAKEDATAC_MSGEBAD);
+          XLAL_ERROR ( XLAL_EINVAL, "Got empty timestamps-list from file '%s'\n", uvar->timestampsFile );
         }
 
       } /* if haveTimestampsFile */
@@ -966,102 +911,78 @@ InitMakefakedata (LALStatus *status, ConfigVars_t *cfg, int argc, char *argv[])
     /* ----- if real noise-SFTs given: load them now using EITHER (start,start+duration) OR timestamps
      * as constraints if given, otherwise load all of them. Also require window option to be given
      */
-    if ( uvar_noiseSFTs )
+    if ( uvar->noiseSFTs )
       {
 	REAL8 fMin, fMax;
-	SFTCatalog *catalog = NULL;
 	SFTConstraints constraints = empty_SFTConstraints;
 	LIGOTimeGPS minStartTime, maxEndTime;
-        BOOLEAN have_window = LALUserVarWasSet ( &uvar_window );
+        BOOLEAN have_window = XLALUserVarWasSet ( &uvar->window );
 
         /* user must specify the window function used for the noiseSFTs */
-        if ( !have_window )
-          {
-            XLALPrintError ("%s: require window option to be given when specifying noiseSFTs.\n", fn);
-            ABORT (status,  MAKEFAKEDATAC_EBAD,  MAKEFAKEDATAC_MSGEBAD);;
-          }
+        if ( !have_window ) {
+          XLAL_ERROR ( XLAL_EINVAL, "Require window option to be given when specifying noiseSFTs.\n" );
+        }
 
-	if ( lalDebugLevel )
-	  printf ( "\nWARNING: only SFTs corresponding to the noiseSFT-timestamps will be produced!\n" );
+        XLALPrintWarning ( "\nWARNING: only SFTs corresponding to the noiseSFT-timestamps will be produced!\n" );
 
 	/* use all additional constraints user might have given */
 	if ( haveStart && haveDuration )
 	  {
-	    XLALGPSSetREAL8 ( &minStartTime, uvar_startTime );
+	    XLALGPSSetREAL8 ( &minStartTime, uvar->startTime );
 	    constraints.startTime = &minStartTime;
-	    XLALGPSSetREAL8 ( &maxEndTime, uvar_startTime + uvar_duration );
+	    XLALGPSSetREAL8 ( &maxEndTime, uvar->startTime + uvar->duration );
 	    constraints.endTime = &maxEndTime;
-	    if ( lalDebugLevel )
-	      printf ( "\nWARNING: only noise-SFTs between GPS [%d, %d] will be used!\n",
-		       uvar_startTime, uvar_startTime + uvar_duration );
+            XLALPrintWarning ( "\nWARNING: only noise-SFTs between GPS [%d, %d] will be used!\n", uvar->startTime, uvar->startTime + uvar->duration );
 	  } /* if start+duration given */
 	if ( cfg->timestamps )
 	  {
 	    constraints.timestamps = cfg->timestamps;
-	    if ( lalDebugLevel )
-	      printf ( "\nWARNING: only noise-SFTs corresponding to given timestamps '%s' will be used!\n",
-		       uvar_timestampsFile );
+            XLALPrintWarning ( "\nWARNING: only noise-SFTs corresponding to given timestamps '%s' will be used!\n", uvar->timestampsFile );
 	  } /* if we have timestamps already */
 
 	/* use detector-constraint */
 	constraints.detector = channelName ;
 
-	TRY ( LALSFTdataFind( status->statusPtr, &catalog, uvar_noiseSFTs, &constraints ), status );
+	SFTCatalog *catalog = NULL;
+	XLAL_CHECK ( (catalog = XLALSFTdataFind ( uvar->noiseSFTs, &constraints )) != NULL, XLAL_EFUNC );
 
 	/* check if anything matched */
-	if ( catalog->length == 0 )
-	  {
-	    XLALPrintError ("%s: No noise-SFTs matching the constraints (IFO, start+duration, timestamps) were found!\n", fn);
-	    ABORT (status,  MAKEFAKEDATAC_EBAD,  MAKEFAKEDATAC_MSGEBAD);
-	  }
+	if ( catalog->length == 0 ) {
+          XLAL_ERROR ( XLAL_EFAILED, "No noise-SFTs matching the constraints (IFO, start+duration, timestamps) were found!\n" );
+        }
 
 	/* load effective frequency-band from noise-SFTs */
 	fMin = cfg->fmin_eff;
 	fMax = fMin + cfg->fBand_eff;
-	TRY ( LALLoadSFTs( status->statusPtr, &(cfg->noiseSFTs), catalog, fMin, fMax ), status );
-	TRY ( LALDestroySFTCatalog ( status->statusPtr, &catalog ), status );
+
+        cfg->noiseSFTs = XLALLoadSFTs ( catalog, fMin, fMax );
+        XLAL_CHECK ( cfg->noiseSFTs != NULL, XLAL_EFUNC, "XLALLoadSFTs() failed\n" );
+
+        XLALDestroySFTCatalog ( catalog );
 
 	/* get timestamps from the loaded noise SFTs */
-        if ( cfg->timestamps )
+        if ( cfg->timestamps ) {
           XLALDestroyTimestampVector ( cfg->timestamps );
-	if ( ( cfg->timestamps = XLALExtractTimestampsFromSFTs ( cfg->noiseSFTs )) == NULL ) {
-          XLALPrintError ("%s: XLALExtractTimestampsFromSFTs() failed to obtain timestamps from SFTvector.\n", fn );
-          ABORT (status,  MAKEFAKEDATAC_EBAD,  MAKEFAKEDATAC_MSGEBAD);
         }
+        cfg->timestamps = XLALExtractTimestampsFromSFTs ( cfg->noiseSFTs );
+	XLAL_CHECK ( cfg->timestamps != NULL, XLAL_EFUNC, "XLALExtractTimestampsFromSFTs() failed\n" );
 
-      } /* if uvar_noiseSFTs */
+      } /* if uvar->noiseSFTs */
 
     /* have we got our timestamps yet?: If not, we must get them from (start, duration) user-input */
     if ( ! cfg->timestamps )
       {
-	REAL8 tStep = uvar_Tsft - uvar_SFToverlap;
+	if ( !haveStart || !haveDuration ) {
+          XLAL_ERROR ( XLAL_EINVAL, "Need to have either --timestampsFile OR (--startTime,--duration) OR --noiseSFTs\n\n");
+        }
+	if ( uvar->SFToverlap > uvar->Tsft ) {
+          XLAL_ERROR ( XLAL_EINVAL, "--SFToverlap cannot be larger than --Tsft!\n\n");
+        }
+
 	LIGOTimeGPS tStart;
-	REAL8 t0, tLast;
-	if ( !haveStart || !haveDuration )
-	  {
-	    printf ( "\nI need to have either --timestampsFile OR (--startTime,--duration) OR --noiseSFTs\n\n");
-	    ABORT (status,  MAKEFAKEDATAC_EBAD,  MAKEFAKEDATAC_MSGEBAD);
-	  }
-	if ( uvar_SFToverlap > uvar_Tsft )
-	  {
-	    printf ("\nERROR: --SFToverlap cannot be larger than --Tsft!\n\n");
-	    ABORT (status,  MAKEFAKEDATAC_EBAD,  MAKEFAKEDATAC_MSGEBAD);
-	  }
 	/* internally always use timestamps, so we generate them  */
-	XLALGPSSetREAL8 ( &tStart, uvar_startTime );
-	TRY( LALMakeTimestamps ( status->statusPtr, &(cfg->timestamps), tStart, uvar_duration, tStep ), status);
-
-
-	/* "prune" last timestamp(s) if the one before-last also covers the end
-	 * (this happens for overlapping SFTs with LALMakeTimestamps() as used above
-	 */
-	t0 = XLALGPSGetREAL8( &(cfg->timestamps->data[0]) );
-	tLast = XLALGPSGetREAL8 ( &(cfg->timestamps->data[cfg->timestamps->length - 1 ]) );
-	while ( tLast - t0  + uvar_Tsft > uvar_duration + 1e-6)
-	  {
-	    cfg->timestamps->length --;
-	    tLast = XLALGPSGetREAL8 ( &(cfg->timestamps->data[cfg->timestamps->length - 1 ]) );
-	  }
+	XLALGPSSetREAL8 ( &tStart, uvar->startTime );
+        XLAL_CHECK ( ( cfg->timestamps = XLALMakeTimestamps ( tStart, uvar->duration, uvar->Tsft, uvar->SFToverlap )) != NULL, XLAL_EFUNC );
 
       } /* if !cfg->timestamps */
 
@@ -1074,25 +995,20 @@ InitMakefakedata (LALStatus *status, ConfigVars_t *cfg, int argc, char *argv[])
       t1 = cfg->timestamps->data[cfg->timestamps->length - 1 ];
 
       duration = XLALGPSDiff(&t1, &t0);
-      duration += uvar_Tsft;
+      duration += uvar->Tsft;
 
       cfg->startTimeGPS = cfg->timestamps->data[0];
       cfg->duration = (UINT4)ceil ( duration );	/* round up to seconds */
     }
 
-    if ( cfg->duration < uvar_Tsft )
-      {
-	printf ("\nERROR: requested duration of %d sec is less than minimal "
-		       "chunk-size of Tsft =%.0f sec.\n\n",
-		       uvar_duration, uvar_Tsft);
-	ABORT (status,  MAKEFAKEDATAC_EBAD,  MAKEFAKEDATAC_MSGEBAD);
-      }
-
+    if ( cfg->duration < uvar->Tsft ) {
+      XLAL_ERROR ( XLAL_EINVAL, "Requested duration of %d sec is less than minimal chunk-size of Tsft =%.0f sec.\n\n", uvar->duration, uvar->Tsft);
+    }
 
   } /* END: setup signal start + duration */
 
   /*----------------------------------------------------------------------*/
-  /* currently there are only two modes: [uvar_generationMode]
+  /* currently there are only two modes: [uvar->generationMode]
    * 1) produce the whole timeseries at once [default],
    *       [GENERATE_ALL_AT_ONCE]
    * 2) produce timeseries for each SFT,
@@ -1104,111 +1020,96 @@ InitMakefakedata (LALStatus *status, ConfigVars_t *cfg, int argc, char *argv[])
    * case with specified timestamps (allowing for gaps) would be
    * a bit more tricky ==> this is left for future extensions if found useful
    */
-  if ( (uvar_generationMode < 0) || (uvar_generationMode >= GENERATE_LAST) )
-    {
-      printf ("\nIllegal input for 'generationMode': must lie within [0, %d]\n\n",
-		     GENERATE_LAST -1);
-      ABORT (status,  MAKEFAKEDATAC_EBAD,  MAKEFAKEDATAC_MSGEBAD);
-    }
+  if ( (uvar->generationMode < 0) || (uvar->generationMode >= GENERATE_LAST) ) {
+    XLAL_ERROR ( XLAL_EINVAL, "Illegal input for 'generationMode': must lie within [0, %d]\n\n", GENERATE_LAST -1);
+  }
 
   /* this is a violation of the UserInput-paradigm that no user-variables
    * should by modified by the code, but this is the easiest way to do
    * this here, and the log-output of user-variables will not be changed
    * by this [it's already been written], so in this case it should be safe..
    */
-  if ( uvar_hardwareTDD )
-    uvar_generationMode = GENERATE_PER_SFT;
+  if ( uvar->hardwareTDD )
+    uvar->generationMode = GENERATE_PER_SFT;
 
   /*--------------------- Prepare windowing of time series ---------------------*/
   cfg->window = NULL;
 
-  if ( uvar_window )
+  if ( uvar->window )
     {
-      XLALLowerCaseString ( uvar_window );	// get rid of case
+      XLALStringToLowerCase ( uvar->window );	// get rid of case
 
-      if ( LALUserVarWasSet( &uvar_tukeyBeta ) && strcmp ( uvar_window, "tukey" ) )
-	{
-	  XLALPrintError ("%s: Tukey beta value '%f' was specified with window %s; only relevant if Tukey windowing specified.\n\n", fn, uvar_tukeyBeta, uvar_window );
-	  ABORT (status,  MAKEFAKEDATAC_EBAD,  MAKEFAKEDATAC_MSGEBAD);
-	}
+      if ( XLALUserVarWasSet( &uvar->tukeyBeta ) && strcmp ( uvar->window, "tukey" ) ) {
+        XLAL_ERROR ( XLAL_EINVAL, "Tukey beta value '%f' was specified with window %s; only allowed for Tukey windowing.\n\n", uvar->tukeyBeta, uvar->window );
+      }
 
       /* NOTE: a timeseries of length N*dT has no timestep at N*dT !! (convention) */
-      UINT4 lengthOfTimeSeries = (UINT4)round(uvar_Tsft * 2 * cfg->fBand_eff);
+      UINT4 lengthOfTimeSeries = (UINT4)round(uvar->Tsft * 2 * cfg->fBand_eff);
 
-      if ( !strcmp ( uvar_window, "hann" ) || !strcmp ( uvar_window, "hanning" ) )
+      if ( !strcmp ( uvar->window, "hann" ) || !strcmp ( uvar->window, "hanning" ) )
         {
           REAL4Window *win = XLALCreateHannREAL4Window( lengthOfTimeSeries );
           cfg->window = win;
         }
-      else if ( !strcmp ( uvar_window, "tukey" ) )
+      else if ( !strcmp ( uvar->window, "tukey" ) )
 	{
-	  if ( !LALUserVarWasSet( &uvar_tukeyBeta ) )
+	  if ( !XLALUserVarWasSet( &uvar->tukeyBeta ) )
 	    {
-	      uvar_tukeyBeta = 0.5;   /* If Tukey window specified, default transition fraction is 1/2 */
+	      uvar->tukeyBeta = 0.5;   /* If Tukey window specified, default transition fraction is 1/2 */
 	    }
-	  else if ( uvar_tukeyBeta < 0.0 || uvar_tukeyBeta > 1.0 )
-	    {
-	      XLALPrintError ("%s: Tukey beta value '%f' was specified; must be between 0 and 1.\n\n", fn, uvar_tukeyBeta );
-	      ABORT (status,  MAKEFAKEDATAC_EBAD,  MAKEFAKEDATAC_MSGEBAD);
-	    }
-	    REAL4Window *win = XLALCreateTukeyREAL4Window( lengthOfTimeSeries, (REAL4) uvar_tukeyBeta );
-          cfg->window = win;
+	  else if ( uvar->tukeyBeta < 0.0 || uvar->tukeyBeta > 1.0 ) {
+            XLAL_ERROR ( XLAL_EINVAL, "Tukey beta value '%f' was specified; must be between 0 and 1.\n\n", uvar->tukeyBeta );
+          }
+          cfg->window = XLALCreateTukeyREAL4Window( lengthOfTimeSeries, uvar->tukeyBeta );
+          XLAL_CHECK ( cfg->window != NULL, XLAL_EFUNC, "XLALCreateTukeyREAL4Window(%d, %g) failed\n", lengthOfTimeSeries, uvar->tukeyBeta );
 	}
-      else if ( !strcmp ( uvar_window, "none" ) || !strcmp ( uvar_window, "rectangular" ) || !strcmp ( uvar_window, "boxcar" ) || !strcmp ( uvar_window, "tophat" ) )
+      else if ( !strcmp ( uvar->window, "none" ) || !strcmp ( uvar->window, "rectangular" ) || !strcmp ( uvar->window, "boxcar" ) || !strcmp ( uvar->window, "tophat" ) ) {
         cfg->window = NULL;
+      }
       else
         {
-          XLALPrintError ("%s: Window function '%s' was entered, currently only None, Hann, or Tukey windowing is supported.\n\n", fn, uvar_window );
-          ABORT (status,  MAKEFAKEDATAC_EBAD,  MAKEFAKEDATAC_MSGEBAD);
+          XLAL_ERROR ( XLAL_EINVAL, "Invalid window function '%s', allowed are ['None', 'Hann', or 'Tukey'].\n\n", uvar->window );
         }
     }
   else
     {
-      if ( LALUserVarWasSet( &uvar_tukeyBeta ) )
-	{
-	  XLALPrintError ("%s: Tukey beta value '%f' was specified; only relevant if Tukey windowing specified.\n\n", fn, uvar_tukeyBeta );
-	  ABORT (status,  MAKEFAKEDATAC_EBAD,  MAKEFAKEDATAC_MSGEBAD);
-	}
-    } /* if uvar_window */
+      if ( XLALUserVarWasSet( &uvar->tukeyBeta ) ) {
+        XLAL_ERROR ( XLAL_EINVAL, "Tukey beta value '%f' was specified; only relevant if Tukey windowing specified.\n\n", uvar->tukeyBeta );
+      }
+    } /* if uvar->window */
 
   /* -------------------- Prepare quantities for barycentering -------------------- */
   {
-    UINT4 len;
-    EphemerisData edat = empty_EphemerisData;
     CHAR *earthdata, *sundata;
 
-    len = strlen(uvar_ephemYear) + 20;
+    len = strlen(uvar->ephemYear) + 20;
 
-    if (LALUserVarWasSet(&uvar_ephemDir) )
-      len += strlen (uvar_ephemDir);
+    if (XLALUserVarWasSet(&uvar->ephemDir) )
+      len += strlen (uvar->ephemDir);
 
-    if ( (earthdata = LALCalloc(1, len)) == NULL) {
-      ABORT (status, MAKEFAKEDATAC_EMEM, MAKEFAKEDATAC_MSGEMEM );
+    if ( (earthdata = XLALCalloc(1, len)) == NULL) {
+      XLAL_ERROR ( XLAL_ENOMEM, "earthdata = XLALCalloc(1, %d) failed.\n", len );
     }
-    if ( (sundata = LALCalloc(1, len)) == NULL) {
-      ABORT (status, MAKEFAKEDATAC_EMEM, MAKEFAKEDATAC_MSGEMEM );
+    if ( (sundata = XLALCalloc(1, len)) == NULL) {
+      XLAL_ERROR ( XLAL_ENOMEM, "sundata = XLALCalloc(1, %d) failed.\n", len );
     }
 
-    if (LALUserVarWasSet(&uvar_ephemDir) )
+    if (XLALUserVarWasSet(&uvar->ephemDir) )
       {
-	sprintf(earthdata, "%s/earth%s.dat", uvar_ephemDir, uvar_ephemYear);
-	sprintf(sundata, "%s/sun%s.dat", uvar_ephemDir, uvar_ephemYear);
+	sprintf ( earthdata, "%s/earth%s.dat", uvar->ephemDir, uvar->ephemYear);
+	sprintf ( sundata, "%s/sun%s.dat", uvar->ephemDir, uvar->ephemYear);
       }
     else
       {
-	sprintf(earthdata, "earth%s.dat", uvar_ephemYear);
-	sprintf(sundata, "sun%s.dat",  uvar_ephemYear);
+	sprintf ( earthdata, "earth%s.dat", uvar->ephemYear);
+	sprintf ( sundata, "sun%s.dat",  uvar->ephemYear);
       }
 
-    edat.ephiles.earthEphemeris = earthdata;
-    edat.ephiles.sunEphemeris   = sundata;
-
     /* Init ephemerides */
-    TRY( LALInitBarycenter(status->statusPtr, &edat), status);
-    LALFree(earthdata);
-    LALFree(sundata);
-
-    cfg->edat = edat;	/* struct-copy */
+    cfg->edat = XLALInitBarycenter ( earthdata, sundata );
+    XLAL_CHECK ( cfg->edat != NULL, XLAL_EFUNC, "XLALInitBarycenter() failed.\n" );
+    XLALFree(earthdata);
+    XLALFree(sundata);
 
   } /* END: prepare barycentering routines */
 
@@ -1218,79 +1119,74 @@ InitMakefakedata (LALStatus *status, ConfigVars_t *cfg, int argc, char *argv[])
   {
     if (have_parfile){
       if (pulparams.model != NULL) {
-	uvar_orbitasini = pulparams.x;
-	uvar_orbitPeriod = pulparams.Pb*86400;
+	uvar->orbitasini = pulparams.x;
+	uvar->orbitPeriod = pulparams.Pb*86400;
 	if (strstr(pulparams.model,"ELL1") != NULL) {
 	  REAL8 w,e,eps1,eps2;
 	  eps1 = pulparams.eps1;
 	  eps2 = pulparams.eps2;
 	  w = atan2(eps1,eps2);
 	  e = sqrt(eps1*eps1+eps2*eps2);
-	  uvar_orbitArgp = w;
-	  uvar_orbitEcc = e;
+	  uvar->orbitArgp = w;
+	  uvar->orbitEcc = e;
 	}
 	else {
-	  uvar_orbitArgp = pulparams.w0;
-	  uvar_orbitEcc = pulparams.e;
+	  uvar->orbitArgp = pulparams.w0;
+	  uvar->orbitEcc = pulparams.e;
 	}
 	if (strstr(pulparams.model,"ELL1") != NULL) {
 	  REAL8 fe, uasc,Dt;
-	  fe = sqrt((1.0-uvar_orbitEcc)/(1.0+uvar_orbitEcc));
-	  uasc = 2.0*atan(fe*tan(uvar_orbitArgp/2.0));
-	  Dt = (uvar_orbitPeriod/LAL_TWOPI)*(uasc-uvar_orbitEcc*sin(uasc));
+	  fe = sqrt((1.0-uvar->orbitEcc)/(1.0+uvar->orbitEcc));
+	  uasc = 2.0*atan(fe*tan(uvar->orbitArgp/2.0));
+	  Dt = (uvar->orbitPeriod/LAL_TWOPI)*(uasc-uvar->orbitEcc*sin(uasc));
 	  pulparams.T0 = pulparams.Tasc + Dt;
 	}
-	uvar_orbitTpSSBsec = (UINT4)floor(pulparams.T0);
-	uvar_orbitTpSSBnan = (UINT4)floor((pulparams.T0 - uvar_orbitTpSSBsec)*1e9);
+	uvar->orbitTpSSBsec = (UINT4)floor(pulparams.T0);
+	uvar->orbitTpSSBnan = (UINT4)floor((pulparams.T0 - uvar->orbitTpSSBsec)*1e9);
       }
     }
-    BOOLEAN set1 = LALUserVarWasSet(&uvar_orbitasini);
-    BOOLEAN set2 = LALUserVarWasSet(&uvar_orbitEcc);
-    BOOLEAN set3 = LALUserVarWasSet(&uvar_orbitPeriod);
-    BOOLEAN set4 = LALUserVarWasSet(&uvar_orbitArgp);
-    BOOLEAN set5 = LALUserVarWasSet(&uvar_orbitTpSSBsec);
-    BOOLEAN set6 = LALUserVarWasSet(&uvar_orbitTpSSBnan);
-    BOOLEAN set7 = LALUserVarWasSet(&uvar_orbitTpSSBMJD);
+    BOOLEAN set1 = XLALUserVarWasSet(&uvar->orbitasini);
+    BOOLEAN set2 = XLALUserVarWasSet(&uvar->orbitEcc);
+    BOOLEAN set3 = XLALUserVarWasSet(&uvar->orbitPeriod);
+    BOOLEAN set4 = XLALUserVarWasSet(&uvar->orbitArgp);
+    BOOLEAN set5 = XLALUserVarWasSet(&uvar->orbitTpSSBsec);
+    BOOLEAN set6 = XLALUserVarWasSet(&uvar->orbitTpSSBnan);
+    BOOLEAN set7 = XLALUserVarWasSet(&uvar->orbitTpSSBMJD);
     BinaryOrbitParams *orbit = NULL;
 
     if (set1 || set2 || set3 || set4 || set5 || set6 || set7)
     {
-      if ( (uvar_orbitasini > 0) && !(set1 && set2 && set3 && set4 && (set5 || set7)) )
-	{
-	  printf("\nPlease either specify  ALL orbital parameters or NONE!\n\n");
-	  ABORT (status, MAKEFAKEDATAC_EBAD, MAKEFAKEDATAC_MSGEBAD);
-	}
-      if ( (uvar_orbitEcc < 0) || (uvar_orbitEcc > 1) )
-	{
-	  printf ("\nEccentricity has to lie within [0, 1]\n\n");
-	  ABORT (status, MAKEFAKEDATAC_EBAD, MAKEFAKEDATAC_MSGEBAD);
-	}
-      if ( (orbit = LALCalloc ( 1, sizeof(BinaryOrbitParams) )) == NULL ){
-	ABORT (status, MAKEFAKEDATAC_EMEM, MAKEFAKEDATAC_MSGEMEM);
+      if ( (uvar->orbitasini > 0) && !(set1 && set2 && set3 && set4 && (set5 || set7)) ) {
+        XLAL_ERROR ( XLAL_EINVAL, "\nPlease either specify  ALL orbital parameters or NONE!\n\n");
       }
-      if (set7 && (!set5 && !set6))
+      if ( (uvar->orbitEcc < 0) || (uvar->orbitEcc > 1) ) {
+        XLAL_ERROR ( XLAL_EINVAL, "\nEccentricity = %g has to lie within [0, 1]\n\n", uvar->orbitEcc );
+      }
+      orbit = XLALCalloc ( 1, len = sizeof(BinaryOrbitParams) );
+      XLAL_CHECK ( orbit != NULL, XLAL_ENOMEM, "XLALCalloc (1, %d) failed.\n", len );
+
+      if ( set7 && (!set5 && !set6) )
 	{
 	  /* convert MJD peripase to GPS using Matt Pitkins code found at lal/packages/pulsar/src/BinaryPulsarTimeing.c */
 	  REAL8 GPSfloat;
-	  GPSfloat = LALTTMJDtoGPS(uvar_orbitTpSSBMJD);
+	  GPSfloat = XLALTTMJDtoGPS(uvar->orbitTpSSBMJD);
 	  XLALGPSSetREAL8(&(orbit->tp),GPSfloat);
 	}
-      else if ((set5 && set6) && !set7)
+      else if ( set5 && !set7 )
 	{
-	  orbit->tp.gpsSeconds = uvar_orbitTpSSBsec;
-	  orbit->tp.gpsNanoSeconds = uvar_orbitTpSSBnan;
+	  orbit->tp.gpsSeconds = uvar->orbitTpSSBsec;
+	  orbit->tp.gpsNanoSeconds = uvar->orbitTpSSBnan;
 	}
       else if ((set7 && set5) || (set7 && set6))
 	{
-	  printf("\nPlease either specify time of periapse in GPS OR MJD, not both!\n\n");
-	  ABORT (status, MAKEFAKEDATAC_EBAD, MAKEFAKEDATAC_MSGEBAD);
+	  XLAL_ERROR ( XLAL_EINVAL, "\nPlease either specify time of periapse in GPS OR MJD, not both!\n\n");
 	}
 
       /* fill in orbital parameter structure */
-      orbit->period = uvar_orbitPeriod;
-      orbit->asini = uvar_orbitasini;
-      orbit->argp = uvar_orbitArgp;
-      orbit->ecc = uvar_orbitEcc;
+      orbit->period = uvar->orbitPeriod;
+      orbit->asini = uvar->orbitasini;
+      orbit->argp = uvar->orbitArgp;
+      orbit->ecc = uvar->orbitEcc;
 
       cfg->pulsar.Doppler.orbit = orbit;     /* struct copy */
     } /* if one or more orbital parameters were set */
@@ -1301,29 +1197,27 @@ InitMakefakedata (LALStatus *status, ConfigVars_t *cfg, int argc, char *argv[])
 
   /* -------------------- handle NOISE params -------------------- */
   {
-    if ( LALUserVarWasSet ( &uvar_noiseSigma ) && LALUserVarWasSet ( &uvar_noiseSqrtSh ) )
+    if ( XLALUserVarWasSet ( &uvar->noiseSigma ) && XLALUserVarWasSet ( &uvar->noiseSqrtSh ) )
       {
-	printf ( "\nUse only one of '--noiseSigma' and '--noiseSqrtSh' to specify Gaussian noise!\n\n");
-	ABORT ( status,  MAKEFAKEDATAC_EBAD,  MAKEFAKEDATAC_MSGEBAD );
+	XLAL_ERROR ( XLAL_EINVAL, "Use only one of '--noiseSigma' and '--noiseSqrtSh' to specify Gaussian noise!\n\n");
       }
-    if ( LALUserVarWasSet ( &uvar_noiseSigma ) )
-      cfg->noiseSigma = uvar_noiseSigma;
-    else if ( LALUserVarWasSet ( &uvar_noiseSqrtSh ) )	/* convert Sh -> sigma */
-      cfg->noiseSigma = uvar_noiseSqrtSh * sqrt ( cfg->fBand_eff );
+    if ( XLALUserVarWasSet ( &uvar->noiseSigma ) )
+      cfg->noiseSigma = uvar->noiseSigma;
+    else if ( XLALUserVarWasSet ( &uvar->noiseSqrtSh ) )	/* convert Sh -> sigma */
+      cfg->noiseSigma = uvar->noiseSqrtSh * sqrt ( cfg->fBand_eff );
     else
       cfg->noiseSigma = 0;
 
     /* set random-number generator seed: either taken from user or from /dev/urandom */
-    if ( LALUserVarWasSet ( &uvar_randSeed ) )
+    if ( XLALUserVarWasSet ( &uvar->randSeed ) )
       {
-        if ( uvar_randSeed == 0 ) {
+        if ( uvar->randSeed == 0 ) {
           XLALPrintError ("WARNING: setting randSeed==0 results in the system clock being used as a random seed!\n");
         }
-        cfg->randSeed = uvar_randSeed;
+        cfg->randSeed = uvar->randSeed;
       }
     else
       {
-	FILE *devrandom;
 	/*
 	 * Modified so as to not create random number parameters with seed
 	 * drawn from clock.  Seconds don't change fast enough and sft's
@@ -1331,43 +1225,39 @@ InitMakefakedata (LALStatus *status, ConfigVars_t *cfg, int argc, char *argv[])
 	 * it and use that as our seed.  Note: /dev/random is slow after the
 	 * first, few accesses.
 	 */
-	if ( (devrandom = fopen("/dev/urandom","r")) == NULL )
+	FILE *devrandom = fopen ( "/dev/urandom", "r" );
+        XLAL_CHECK ( devrandom != NULL, XLAL_EIO, "fopen() failed to open '/dev/urandom' for reading\n\n");
+
+	if ( fread( (void*)&(cfg->randSeed), sizeof(INT4), 1, devrandom) != 1 )
 	  {
-	    printf ("\nCould not open '/dev/urandom'\n\n");
-	    ABORT (status, MAKEFAKEDATAC_EFILE, MAKEFAKEDATAC_MSGEFILE);
+	    fclose ( devrandom );
+	    XLAL_ERROR ( XLAL_EIO, "Failed to read from '/dev/urandom'\n\n");
 	  }
-	if ( fread( (void*)&(cfg->randSeed), sizeof(INT4), 1, devrandom) != 1)
-	  {
-	    printf("\nCould not read from '/dev/urandom'\n\n");
-	    fclose(devrandom);
-	    ABORT (status, MAKEFAKEDATAC_EFILE, MAKEFAKEDATAC_MSGEFILE);
-	  }
-	fclose(devrandom);
+	fclose ( devrandom );
       }
 
   } /* END: Noise params */
 
 
   /* ----- set "pulsar reference time", i.e. SSB-time at which pulsar params are defined ---------- */
-  if (LALUserVarWasSet (&uvar_parfile)) {
-    uvar_refTime = pulparams.pepoch; /*XLALReadTEMPOParFile already converted pepoch to GPS*/
-    XLALGPSSetREAL8(&(cfg->pulsar.Doppler.refTime),uvar_refTime);
+  if (XLALUserVarWasSet (&uvar->parfile)) {
+    uvar->refTime = pulparams.pepoch; /*XLALReadTEMPOParFile already converted pepoch to GPS*/
+    XLALGPSSetREAL8(&(cfg->pulsar.Doppler.refTime),uvar->refTime);
   }
-  else if (LALUserVarWasSet(&uvar_refTime) && LALUserVarWasSet(&uvar_refTimeMJD))
+  else if (XLALUserVarWasSet(&uvar->refTime) && XLALUserVarWasSet(&uvar->refTimeMJD))
     {
-      printf ( "\nUse only one of '--refTime' and '--refTimeMJD' to specify SSB reference time!\n\n");
-      ABORT ( status,  MAKEFAKEDATAC_EBAD,  MAKEFAKEDATAC_MSGEBAD );
+      XLAL_ERROR ( XLAL_EINVAL, "\nUse only one of '--refTime' and '--refTimeMJD' to specify SSB reference time!\n\n");
     }
-  else if (LALUserVarWasSet(&uvar_refTime))
+  else if (XLALUserVarWasSet(&uvar->refTime))
     {
-      XLALGPSSetREAL8(&(cfg->pulsar.Doppler.refTime), uvar_refTime);
+      XLALGPSSetREAL8(&(cfg->pulsar.Doppler.refTime), uvar->refTime);
     }
-  else if (LALUserVarWasSet(&uvar_refTimeMJD))
+  else if (XLALUserVarWasSet(&uvar->refTimeMJD))
     {
 
       /* convert MJD to GPS using Matt Pitkins code found at lal/packages/pulsar/src/BinaryPulsarTimeing.c */
       REAL8 GPSfloat;
-      GPSfloat = LALTTMJDtoGPS(uvar_refTimeMJD);
+      GPSfloat = XLALTTMJDtoGPS(uvar->refTimeMJD);
       XLALGPSSetREAL8(&(cfg->pulsar.Doppler.refTime),GPSfloat);
     }
   else
@@ -1375,482 +1265,334 @@ InitMakefakedata (LALStatus *status, ConfigVars_t *cfg, int argc, char *argv[])
 
 
   /* ---------- has the user specified an actuation-function file ? ---------- */
-  if ( uvar_actuation )
+  if ( uvar->actuation )
     {
       /* currently we only allow using a transfer-function for hardware-injections */
-      if (!uvar_hardwareTDD )
+      if (!uvar->hardwareTDD )
 	{
-	  printf ("\nError: use of an actuation/transfer function "
-			 "restricted to hardare-injections\n\n");
-	  ABORT (status,  MAKEFAKEDATAC_EBAD,  MAKEFAKEDATAC_MSGEBAD);
+	  XLAL_ERROR ( XLAL_EINVAL, "Error: use of an actuation/transfer function restricted to hardare-injections\n\n");
 	}
-      else {
-	TRY ( LoadTransferFunctionFromActuation( status->statusPtr, &(cfg->transfer),
-						 uvar_actuationScale, uvar_actuation), status);
-      }
+      else
+        {
+          cfg->transfer = XLALLoadTransferFunctionFromActuation( uvar->actuationScale, uvar->actuation );
+          XLAL_CHECK ( cfg->transfer != NULL, XLAL_EFUNC );
+        }
 
-    } /* if uvar_actuation */
+    } /* if uvar->actuation */
 
-  if ( !uvar_actuation && LALUserVarWasSet(&uvar_actuationScale) )
-    {
-      printf ("\nActuation-scale was specified without actuation-function file!\n\n");
-      ABORT (status,  MAKEFAKEDATAC_EBAD,  MAKEFAKEDATAC_MSGEBAD);
-    }
+  if ( !uvar->actuation && XLALUserVarWasSet(&uvar->actuationScale) ) {
+    XLAL_ERROR ( XLAL_EINVAL, "Actuation-scale was specified without actuation-function file!\n\n");
+  }
 
-  LALFree ( channelName );
+  XLALFree ( channelName );
 
   /* ----- handle transient-signal window if given ----- */
-  if ( !LALUserVarWasSet ( &uvar_transientWindowType ) || !strcmp ( uvar_transientWindowType, "none") )
+  if ( !XLALUserVarWasSet ( &uvar->transientWindowType ) || !strcmp ( uvar->transientWindowType, "none") )
     cfg->transientWindow.type = TRANSIENT_NONE;                /* default: no transient signal window */
   else
     {
-      if ( !strcmp ( uvar_transientWindowType, "rect" ) )
+      if ( !strcmp ( uvar->transientWindowType, "rect" ) )
        {
          cfg->transientWindow.type = TRANSIENT_RECTANGULAR;              /* rectangular window [t0, t0+tau] */
        }
-      else if ( !strcmp ( uvar_transientWindowType, "exp" ) )
+      else if ( !strcmp ( uvar->transientWindowType, "exp" ) )
         {
           cfg->transientWindow.type = TRANSIENT_EXPONENTIAL;            /* exponential decay window e^[-(t-t0)/tau for t>t0, 0 otherwise */
         }
       else
         {
-          XLALPrintError ("Illegal transient window '%s' specified: valid are 'none', 'rect' or 'exp'\n", uvar_transientWindowType);
-          ABORT (status,  MAKEFAKEDATAC_EBAD,  MAKEFAKEDATAC_MSGEBAD);
+          XLAL_ERROR ( XLAL_EINVAL, "Illegal transient window '%s' specified: valid are 'none', 'rect' or 'exp'\n", uvar->transientWindowType );
         }
 
-      cfg->transientWindow.t0   = uvar_transientStartTime;
-      cfg->transientWindow.tau  = uvar_transientTauDays * LAL_DAYSID_SI;
+      cfg->transientWindow.t0   = uvar->transientStartTime;
+      cfg->transientWindow.tau  = uvar->transientTauDays * LAL_DAYSID_SI;
 
     } /* if transient window != none */
 
-  DETATCHSTATUSPTR (status);
-  RETURN (status);
+  return XLAL_SUCCESS;
 
-} /* InitMakefakedata() */
-
+} /* XLALInitMakefakedata() */
 
 
 /**
- * register all our "user-variables"
+ * Register all "user-variables", and initialized them from command-line and config-files
  */
-void
-InitUserVars (LALStatus *status)
+int
+XLALInitUserVars ( UserVariables_t *uvar, int argc, char *argv[] )
 {
-  INITSTATUS(status);
-  ATTATCHSTATUSPTR (status);
+  int ret, len;
 
-  /* ---------- set a few defaults ----------  */
-  uvar_ephemYear = LALCalloc(1, strlen(EPHEM_YEARS)+1);
-  strcpy (uvar_ephemYear, EPHEM_YEARS);
+  XLAL_CHECK ( uvar != NULL, XLAL_EINVAL, "Invalid NULL input 'uvar'\n");
+  XLAL_CHECK ( argv != NULL, XLAL_EINVAL, "Invalid NULL input 'argv'\n");
+
+  // ---------- set a few defaults ----------
+#define EPHEM_YEARS  "00-19-DE405"
+  uvar->ephemYear = XLALCalloc ( 1, len = strlen(EPHEM_YEARS)+1 );
+  XLAL_CHECK ( uvar->ephemYear != NULL, XLAL_ENOMEM, "XLALCalloc ( 1, %d ) failed.\n", len );
+  strcpy ( uvar->ephemYear, EPHEM_YEARS );
 
 #define DEFAULT_EPHEMDIR "env LAL_DATA_PATH"
-  uvar_ephemDir = LALCalloc(1, strlen(DEFAULT_EPHEMDIR)+1);
-  strcpy (uvar_ephemDir, DEFAULT_EPHEMDIR);
+  uvar->ephemDir = XLALCalloc ( 1, len = strlen(DEFAULT_EPHEMDIR)+1 );
+  XLAL_CHECK ( uvar->ephemDir != NULL, XLAL_ENOMEM, "XLALCalloc ( 1, %d ) failed.\n", len );
+  strcpy (uvar->ephemDir, DEFAULT_EPHEMDIR );
 
-  uvar_help = FALSE;
-  uvar_Tsft = 1800;
-  uvar_f1dot = 0.0;
-  uvar_f2dot = 0.0;
-  uvar_f3dot = 0.0;
+  uvar->Tsft = 1800;
+  uvar->fmin = 0;	/* no heterodyning by default */
+  uvar->Band = 8192;	/* 1/2 LIGO sampling rate by default */
 
-  uvar_noiseSigma = 0;
-  uvar_noiseSqrtSh = 0;
-  uvar_noiseSFTs = NULL;
+  // per default we now generate a timeseries per SFT: slower, but avoids potential confusion about sft-"nudging"
+  uvar->generationMode = GENERATE_PER_SFT;
 
-  uvar_hardwareTDD = FALSE;
+  uvar->actuationScale = - 1.0;	/* seems to be the LIGO-default */
 
-  uvar_fmin = 0;	/* no heterodyning by default */
-  uvar_Band = 8192;	/* 1/2 LIGO sampling rate by default */
-
-  uvar_psi = 0;
-  uvar_phi0 = 0;
-  uvar_cosi = 0;
-
-  uvar_TDDfile = NULL;
-
-  uvar_logfile = NULL;
-
-  /* per default we now generate a timeseries per SFT: slower, but avoids potential confusion about sft-"nudging" */
-  uvar_generationMode = GENERATE_PER_SFT;
-
-  uvar_window = NULL;	   /* By default, use rectangular window */
-
-  uvar_refTime = 0.0;
-  uvar_refTimeMJD = 0.0;
-
-  uvar_actuation = NULL;
-  uvar_actuationScale = - 1.0;	/* seems to be the LIGO-default */
-
-  uvar_exactSignal = FALSE;
-
-  uvar_outSFTv1 = FALSE;
-  uvar_outSingleSFT = FALSE;
-
-  uvar_randSeed = 0;
 #define DEFAULT_TRANSIENT "none"
-  uvar_transientWindowType = LALMalloc(strlen(DEFAULT_TRANSIENT)+1);
-  strcpy ( uvar_transientWindowType, DEFAULT_TRANSIENT );
+  uvar->transientWindowType = XLALCalloc ( 1, len = strlen(DEFAULT_TRANSIENT)+1 );
+  XLAL_CHECK ( uvar->transientWindowType != NULL, XLAL_ENOMEM, "XLALCalloc ( 1, %d ) failed.\n", len );
+  strcpy ( uvar->transientWindowType, DEFAULT_TRANSIENT );
 
-  /* ---------- register all our user-variable ---------- */
-  LALregBOOLUserVar(status,   help,		'h', UVAR_HELP    , "Print this help/usage message");
+  // ---------- register all our user-variable ----------
+  XLALregBOOLUserStruct (  help,                'h', UVAR_HELP    , "Print this help/usage message");
 
   /* output options */
-  LALregBOOLUserVar(status,   outSingleSFT, 	's', UVAR_OPTIONAL, "Write a single concatenated SFT (name given by --outSFTbname)" );
-  LALregSTRINGUserVar(status, outSFTbname,	'n', UVAR_OPTIONAL, "Output SFTs: target Directory (if --outSingleSFT=false) or filename (if --outSingleSFT=true)");
+  XLALregBOOLUserStruct (   outSingleSFT,       's', UVAR_OPTIONAL, "Write a single concatenated SFT (name given by --outSFTbname)" );
+  XLALregSTRINGUserStruct ( outSFTbname,        'n', UVAR_OPTIONAL, "Output SFTs: target Directory (if --outSingleSFT=false) or filename (if --outSingleSFT=true)");
 
-  LALregSTRINGUserVar(status, TDDfile,		't', UVAR_OPTIONAL, "Filename to output time-series into");
+  XLALregSTRINGUserStruct( TDDfile,		't', UVAR_OPTIONAL, "Basename for output of ASCII time-series");
+  XLALregSTRINGUserStruct( TDDframedir,		'F', UVAR_OPTIONAL, "Directory to output frame time-series into");
+  XLALregSTRINGUserStruct( frameDesc,	 	 0,  UVAR_OPTIONAL,  "Description-field entry in frame filename");
 
-  LALregSTRINGUserVar(status, logfile,		'l', UVAR_OPTIONAL, "Filename for log-output");
+  XLALregSTRINGUserStruct ( logfile,            'l', UVAR_OPTIONAL, "Filename for log-output");
 
   /* detector and ephemeris */
-  LALregSTRINGUserVar(status, IFO,  		'I', UVAR_OPTIONAL, "Detector: one of 'G1','L1','H1,'H2','V1', ...");
+  XLALregSTRINGUserStruct ( IFO,                'I', UVAR_OPTIONAL, "Detector: one of 'G1','L1','H1,'H2','V1', ...");
 
-  LALregSTRINGUserVar(status, ephemDir,		'E', UVAR_OPTIONAL, "Directory path for ephemeris files (use LAL_DATA_PATH if unspecified)");
-  LALregSTRINGUserVar(status, ephemYear, 	'y', UVAR_OPTIONAL, "Year-range string of ephemeris files to be used");
+  XLALregSTRINGUserStruct ( ephemDir,           'E', UVAR_OPTIONAL, "Directory path for ephemeris files (use LAL_DATA_PATH if unspecified)");
+  XLALregSTRINGUserStruct ( ephemYear,          'y', UVAR_OPTIONAL, "Year-range string of ephemeris files to be used");
 
   /* start + duration of timeseries */
-  LALregINTUserVar(status,   startTime,		'G', UVAR_OPTIONAL, "Start-time of requested signal in detector-frame (GPS seconds)");
-  LALregINTUserVar(status,   duration,	 	 0,  UVAR_OPTIONAL, "Duration of requested signal in seconds");
-  LALregSTRINGUserVar(status,timestampsFile,	 0,  UVAR_OPTIONAL, "ALTERNATIVE: File to read timestamps from (file-format: lines with <seconds> <nanoseconds>)");
+  XLALregINTUserStruct (  startTime,            'G', UVAR_OPTIONAL, "Start-time of requested signal in detector-frame (GPS seconds)");
+  XLALregINTUserStruct (  duration,              0,  UVAR_OPTIONAL, "Duration of requested signal in seconds");
+  XLALregSTRINGUserStruct ( timestampsFile,      0,  UVAR_OPTIONAL, "ALTERNATIVE: File to read timestamps from (file-format: lines with <seconds> <nanoseconds>)");
 
   /* sampling and heterodyning frequencies */
-  LALregREALUserVar(status,   fmin,	 	 0, UVAR_OPTIONAL, "Lowest frequency in output SFT (= heterodyning frequency)");
-  LALregREALUserVar(status,   Band,	 	 0, UVAR_OPTIONAL, "Bandwidth of output SFT in Hz (= 1/2 sampling frequency)");
+  XLALregREALUserStruct (  fmin,                 0, UVAR_OPTIONAL, "Lowest frequency in output SFT (= heterodyning frequency)");
+  XLALregREALUserStruct (  Band,                 0, UVAR_OPTIONAL, "Bandwidth of output SFT in Hz (= 1/2 sampling frequency)");
 
   /* SFT properties */
-  LALregREALUserVar(status,   Tsft, 	 	 0, UVAR_OPTIONAL, "Time baseline of one SFT in seconds");
-  LALregREALUserVar(status,   SFToverlap,	 0, UVAR_OPTIONAL, "Overlap between successive SFTs in seconds (conflicts with --noiseSFTs or --timestampsFile)");
-  LALregSTRINGUserVar(status, window,		 0, UVAR_OPTIONAL, "Window function to be applied to the SFTs; required when using --noiseSFTs ('None', 'Hann', or 'Tukey'; when --noiseSFTs is not given, default is 'None')");
-  LALregREALUserVar(status,   tukeyBeta,	 0, UVAR_OPTIONAL, "Fraction of Tukey window which is transition (0.0=rect, 1.0=Hann)");
+  XLALregREALUserStruct (  Tsft,                 0, UVAR_OPTIONAL, "Time baseline of one SFT in seconds");
+  XLALregREALUserStruct (  SFToverlap,           0, UVAR_OPTIONAL, "Overlap between successive SFTs in seconds (conflicts with --noiseSFTs or --timestampsFile)");
+  XLALregSTRINGUserStruct (window,               0, UVAR_OPTIONAL, "Window function to be applied to the SFTs; required when using --noiseSFTs ('None', 'Hann', or 'Tukey'; when --noiseSFTs is not given, default is 'None')");
+  XLALregREALUserStruct (  tukeyBeta,            0, UVAR_OPTIONAL, "Fraction of Tukey window which is transition (0.0=rect, 1.0=Hann)");
 
   /* pulsar params */
-  LALregREALUserVar(status,   refTime, 		'S', UVAR_OPTIONAL, "Pulsar SSB reference time in GPS seconds (if 0: use startTime)");
-  LALregREALUserVar(status,   refTimeMJD, 	 0 , UVAR_OPTIONAL, "ALTERNATIVE: Pulsar SSB reference time in MJD (if 0: use startTime)");
+  XLALregREALUserStruct (  refTime,             'S', UVAR_OPTIONAL, "Pulsar SSB reference time in GPS seconds (default: use startTime)");
+  XLALregREALUserStruct (  refTimeMJD,           0 , UVAR_OPTIONAL, "ALTERNATIVE: Pulsar SSB reference time in MJD (default: use startTime)");
 
-  LALregREALUserVar(status,   Alpha,	 	 0, UVAR_OPTIONAL, "Right-ascension/longitude of pulsar in radians");
-  LALregSTRINGUserVar(status, RA,	 	 0, UVAR_OPTIONAL, "ALTERNATIVE: Righ-ascension/longitude of pulsar in HMS 'hh:mm:ss.ssss'");
+  XLALregREALUserStruct (  Alpha,                0, UVAR_OPTIONAL, "Right-ascension/longitude of pulsar in radians");
+  XLALregSTRINGUserStruct (RA,                   0, UVAR_OPTIONAL, "ALTERNATIVE: Righ-ascension/longitude of pulsar in HMS 'hh:mm:ss.ssss'");
 
-  LALregREALUserVar(status,   Delta, 	 	 0, UVAR_OPTIONAL, "Declination/latitude of pulsar in radians");
-  LALregSTRINGUserVar(status, Dec, 	 	 0, UVAR_OPTIONAL, "ALTERNATIVE: Declination/latitude of pulsar in DMS 'dd:mm:ss.ssss'");
+  XLALregREALUserStruct (  Delta,                0, UVAR_OPTIONAL, "Declination/latitude of pulsar in radians");
+  XLALregSTRINGUserStruct (Dec,                  0, UVAR_OPTIONAL, "ALTERNATIVE: Declination/latitude of pulsar in DMS 'dd:mm:ss.ssss'");
 
-  LALregREALUserVar(status,   h0,	 	 0, UVAR_OPTIONAL, "Overall signal-amplitude h0");
-  LALregREALUserVar(status,   cosi, 	 	 0, UVAR_OPTIONAL, "cos(iota) of inclination-angle iota");
-  LALregREALUserVar(status,   aPlus,	 	 0, UVAR_OPTIONAL, "ALTERNATIVE to {--h0,--cosi}: A_+ amplitude");
-  LALregREALUserVar(status,   aCross, 	 	 0, UVAR_OPTIONAL, "ALTERNATIVE to {--h0,--cosi}: A_x amplitude");
+  XLALregREALUserStruct (  h0,                   0, UVAR_OPTIONAL, "Overall signal-amplitude h0");
+  XLALregREALUserStruct (  cosi,                 0, UVAR_OPTIONAL, "cos(iota) of inclination-angle iota");
+  XLALregREALUserStruct (  aPlus,                0, UVAR_OPTIONAL, "ALTERNATIVE to {--h0,--cosi}: A_+ amplitude");
+  XLALregREALUserStruct (  aCross,               0, UVAR_OPTIONAL, "ALTERNATIVE to {--h0,--cosi}: A_x amplitude");
 
-  LALregREALUserVar(status,   psi,  	 	 0, UVAR_OPTIONAL, "Polarization angle psi");
-  LALregREALUserVar(status,   phi0,	 	 0, UVAR_OPTIONAL, "Initial GW phase phi");
-  LALregREALUserVar(status,   Freq,  	 	 0, UVAR_OPTIONAL, "Intrinsic GW-frequency at refTime");
+  XLALregREALUserStruct (  psi,                  0, UVAR_OPTIONAL, "Polarization angle psi");
+  XLALregREALUserStruct (  phi0,                 0, UVAR_OPTIONAL, "Initial GW phase phi");
+  XLALregREALUserStruct (  Freq,                 0, UVAR_OPTIONAL, "Intrinsic GW-frequency at refTime");
 
-  LALregREALUserVar(status,   f1dot,  	 	 0, UVAR_OPTIONAL, "First spindown parameter f' at refTime");
-  LALregREALUserVar(status,   f2dot,  	 	 0, UVAR_OPTIONAL, "Second spindown parameter f'' at refTime");
-  LALregREALUserVar(status,   f3dot,  	 	 0, UVAR_OPTIONAL, "Third spindown parameter f''' at refTime");
+  XLALregREALUserStruct (  f1dot,                0, UVAR_OPTIONAL, "First spindown parameter f' at refTime");
+  XLALregREALUserStruct (  f2dot,                0, UVAR_OPTIONAL, "Second spindown parameter f'' at refTime");
+  XLALregREALUserStruct (  f3dot,                0, UVAR_OPTIONAL, "Third spindown parameter f''' at refTime");
 
   /* binary-system orbital parameters */
-  LALregREALUserVar(status,   orbitasini,        0, UVAR_OPTIONAL, "Projected orbital semi-major axis in seconds (a/c)");
-  LALregREALUserVar(status,   orbitEcc,          0, UVAR_OPTIONAL, "Orbital eccentricity");
-  LALregINTUserVar(status,    orbitTpSSBsec,     0, UVAR_OPTIONAL, "'true' (SSB) time of periapsis passage. Seconds.");
-  LALregINTUserVar(status,    orbitTpSSBnan,     0, UVAR_OPTIONAL, "'true' (SSB) time of periapsis passage. Nanoseconds.");
-  LALregREALUserVar(status,   orbitTpSSBMJD,     0, UVAR_OPTIONAL, "'true' (SSB) time of periapsis passage. MJD.");
-  LALregREALUserVar(status,   orbitPeriod,       0, UVAR_OPTIONAL, "Orbital period (seconds)");
-  LALregREALUserVar(status,   orbitArgp,         0, UVAR_OPTIONAL, "Argument of periapsis (radians)");
+  XLALregREALUserStruct (  orbitasini,           0, UVAR_OPTIONAL, "Projected orbital semi-major axis in seconds (a/c)");
+  XLALregREALUserStruct (  orbitEcc,             0, UVAR_OPTIONAL, "Orbital eccentricity");
+  XLALregINTUserStruct (   orbitTpSSBsec,        0, UVAR_OPTIONAL, "'true' (SSB) time of periapsis passage. Seconds.");
+  XLALregINTUserStruct (   orbitTpSSBnan,        0, UVAR_OPTIONAL, "'true' (SSB) time of periapsis passage. Nanoseconds.");
+  XLALregREALUserStruct (  orbitTpSSBMJD,        0, UVAR_OPTIONAL, "'true' (SSB) time of periapsis passage. MJD.");
+  XLALregREALUserStruct (  orbitPeriod,          0, UVAR_OPTIONAL, "Orbital period (seconds)");
+  XLALregREALUserStruct (  orbitArgp,            0, UVAR_OPTIONAL, "Argument of periapsis (radians)");
 
   /* noise */
-  LALregSTRINGUserVar(status, noiseSFTs,	'D', UVAR_OPTIONAL, "Noise-SFTs to be added to signal (Uses ONLY SFTs falling within (--startTime,--duration) or the set given in --timstampsFile)");
-  LALregREALUserVar(status,   noiseSigma,	 0, UVAR_OPTIONAL,  "Gaussian noise with standard-deviation sigma");
-  LALregREALUserVar(status,   noiseSqrtSh,	 0, UVAR_OPTIONAL,  "ALTERNATIVE: Gaussian noise with single-sided PSD sqrt(Sh)");
+  XLALregSTRINGUserStruct ( noiseSFTs,          'D', UVAR_OPTIONAL, "Noise-SFTs to be added to signal (Uses ONLY SFTs falling within (--startTime,--duration) or the set given in --timstampsFile)");
+  XLALregREALUserStruct (  noiseSqrtSh,          0, UVAR_OPTIONAL,  "Gaussian noise with single-sided PSD sqrt(Sh)");
 
-  LALregBOOLUserVar(status,   lineFeature,	 0, UVAR_OPTIONAL, "Generate a monochromatic 'line' of amplitude h0 and frequency 'Freq'}");
+  XLALregBOOLUserStruct (  lineFeature,          0, UVAR_OPTIONAL, "Generate a monochromatic 'line' of amplitude h0 and frequency 'Freq'}");
 
-  LALregBOOLUserVar(status,   version,	         'V', UVAR_SPECIAL, "Output version information");
+  XLALregBOOLUserStruct (  version,             'V', UVAR_SPECIAL, "Output version information");
 
-  LALregSTRINGUserVar(status, parfile,           'p', UVAR_OPTIONAL, "Directory path for optional .par files");            /*registers .par file in mfd*/
+  XLALregSTRINGUserStruct (parfile,             'p', UVAR_OPTIONAL, "Directory path for optional .par files");            /*registers .par file in mfd*/
 
   /* transient signal window properties (name, start, duration) */
-  LALregSTRINGUserVar(status, transientWindowType, 0, UVAR_OPTIONAL, "Type of transient signal window to use. ('none', 'rect', 'exp').");
-  LALregREALUserVar(status,   transientStartTime,  0, UVAR_OPTIONAL, "GPS start-time 't0' of transient signal window.");
-  LALregREALUserVar(status,   transientTauDays,    0, UVAR_OPTIONAL, "Timescale 'tau' of transient signal window in days.");
+  XLALregSTRINGUserStruct (transientWindowType,  0, UVAR_OPTIONAL, "Type of transient signal window to use. ('none', 'rect', 'exp').");
+  XLALregREALUserStruct (  transientStartTime,   0, UVAR_OPTIONAL, "GPS start-time 't0' of transient signal window.");
+  XLALregREALUserStruct (  transientTauDays,     0, UVAR_OPTIONAL, "Timescale 'tau' of transient signal window in days.");
 
   /* ----- 'expert-user/developer' and deprecated options ----- */
-  LALregINTUserVar(status,   generationMode, 	 0,  UVAR_DEVELOPER, "How to generate timeseries: 0=all-at-once (faster), 1=per-sft (slower)");
+  XLALregINTUserStruct (   generationMode,       0,  UVAR_DEVELOPER, "How to generate timeseries: 0=all-at-once (faster), 1=per-sft (slower)");
 
-  LALregBOOLUserVar(status,   hardwareTDD,	'b', UVAR_DEVELOPER, "Hardware injection: output TDD in binary format (implies generationMode=1)");
-  LALregSTRINGUserVar(status, actuation,   	 0,  UVAR_DEVELOPER, "Filname containing actuation function of this detector");
-  LALregREALUserVar(status,   actuationScale, 	 0,  UVAR_DEVELOPER,  "(Signed) scale-factor to apply to the actuation-function.");
+  XLALregBOOLUserStruct (  hardwareTDD,         'b', UVAR_DEVELOPER, "Hardware injection: output TDD in binary format (implies generationMode=1)");
+  XLALregSTRINGUserStruct (actuation,            0,  UVAR_DEVELOPER, "Filname containing actuation function of this detector");
+  XLALregREALUserStruct (  actuationScale,       0,  UVAR_DEVELOPER,  "(Signed) scale-factor to apply to the actuation-function.");
 
-  LALregBOOLUserVar(status,   exactSignal,	  0, UVAR_DEVELOPER, "Generate signal time-series as exactly as possible (slow).");
-  LALregINTUserVar(status,    randSeed,           0, UVAR_DEVELOPER, "Specify random-number seed for reproducible noise (use /dev/urandom otherwise).");
+  XLALregBOOLUserStruct (  exactSignal,          0, UVAR_DEVELOPER, "Generate signal time-series as exactly as possible (slow).");
+  XLALregINTUserStruct (   randSeed,             0, UVAR_DEVELOPER, "Specify random-number seed for reproducible noise (use /dev/urandom otherwise).");
 
-  LALregREALUserVar(status,   longitude,	 0, UVAR_DEVELOPER, "[DEPRECATED] Use --Alpha instead!");
-  LALregREALUserVar(status,   latitude, 	 0, UVAR_DEVELOPER, "[DEPRECATED] Use --Delta instead!");
-  LALregREALUserVar(status,   f0,  	 	 0, UVAR_DEVELOPER, "[DEPRECATED] Use --Freq instead!");
-  LALregSTRINGUserVar(status, detector,  	 0,  UVAR_DEVELOPER, "[DEPRECATED] Detector: use --IFO instead!.");
-  LALregBOOLUserVar(status,   outSFTv1,	 	  0, UVAR_DEVELOPER, "[DEPRECATED]Write output-SFTs in obsolete SFT-v1 format." );
+  XLALregREALUserStruct (  longitude,            0, UVAR_DEVELOPER, "[DEPRECATED] Use --Alpha instead!");
+  XLALregREALUserStruct (  latitude,             0, UVAR_DEVELOPER, "[DEPRECATED] Use --Delta instead!");
+  XLALregREALUserStruct (  f0,                   0, UVAR_DEVELOPER, "[DEPRECATED] Use --Freq instead!");
+  XLALregSTRINGUserStruct (detector,             0, UVAR_DEVELOPER, "[DEPRECATED] Detector: use --IFO instead!.");
+  XLALregBOOLUserStruct( outSFTv1,	 	 0, UVAR_DEVELOPER, "[DEPRECATED]Write output-SFTs in obsolete SFT-v1 format." );
+  XLALregREALUserStruct (  noiseSigma,           0, UVAR_DEVELOPER, "[DEPRECATED] Alternative: Gaussian noise with standard-deviation sigma");
 
-  DETATCHSTATUSPTR (status);
-  RETURN (status);
+  /* read cmdline & cfgfile  */
+  ret = XLALUserVarReadAllInput ( argc, argv );
+  XLAL_CHECK ( ret == XLAL_SUCCESS, XLAL_EFUNC, "Failed to parse user-input\n");
 
-} /* InitUserVars() */
+  if ( uvar->help ) 	/* if help was requested, we're done */
+    exit (0);
+
+  return XLAL_SUCCESS;
+
+} /* XLALInitUserVars() */
 
 
 /**
  * This routine frees up all the memory.
  */
-void FreeMem (LALStatus* status, ConfigVars_t *cfg)
+int
+XLALFreeMem ( ConfigVars_t *cfg )
 {
-
-  INITSTATUS(status);
-  ATTATCHSTATUSPTR (status);
-
+  XLAL_CHECK ( cfg != NULL, XLAL_EINVAL );
 
   /* Free config-Variables and userInput stuff */
-  TRY (LALDestroyUserVars(status->statusPtr), status);
+  XLALDestroyUserVars();
 
   /* free timestamps if any */
-  if (cfg->timestamps){
-    TRY (LALDestroyTimestampVector(status->statusPtr, &(cfg->timestamps)), status);
-  }
+  XLALDestroyTimestampVector ( cfg->timestamps );
 
   /* free window if any */
-  if (cfg->window){
-    TRY (XLALDestroyREAL4Window(cfg->window), status);
-  }
+  XLALDestroyREAL4Window ( cfg->window );
 
   /* free spindown-vector (REAL8) */
-  if (cfg->spindown) {
-    TRY (LALDDestroyVector(status->statusPtr, &(cfg->spindown)), status);
-  }
+  XLALDestroyREAL8Vector ( cfg->spindown );
 
-  if ( cfg->pulsar.Doppler.orbit )
-    LALFree ( cfg->pulsar.Doppler.orbit );
+  XLALFree ( cfg->pulsar.Doppler.orbit );
 
   /* free noise-SFTs */
-  if (cfg->noiseSFTs) {
-    TRY (LALDestroySFTVector(status->statusPtr, &(cfg->noiseSFTs)), status);
-  }
+  XLALDestroySFTVector( cfg->noiseSFTs );
 
   /* free transfer-function if we have one.. */
-  if ( cfg->transfer ) {
-    TRY ( LALCDestroyVector(status->statusPtr, &(cfg->transfer->data)), status);
-    LALFree (cfg->transfer);
-  }
+  XLALDestroyCOMPLEX8FrequencySeries ( cfg->transfer );
 
-  if ( cfg->VCSInfoString )
-    XLALFree ( cfg->VCSInfoString );
+  XLALFree ( cfg->VCSInfoString );
 
   /* Clean up earth/sun Ephemeris tables */
-  LALFree(cfg->edat.ephemE);
-  LALFree(cfg->edat.ephemS);
+  XLALDestroyEphemerisData ( cfg->edat );
 
-  DETATCHSTATUSPTR (status);
-  RETURN (status);
+  return XLAL_SUCCESS;
 
-} /* FreeMem() */
+} /* XLALFreeMem() */
 
 /**
- * Generate Gaussian noise with standard-deviation sigma, add it to inSeries.
- *
- * NOTE2: if seed==0, then time(NULL) is used as random-seed!
- *
- */
-void
-AddGaussianNoise (LALStatus* status, REAL4TimeSeries *inSeries, REAL4 sigma, INT4 seed)
-{
-
-  REAL4Vector    *v1 = NULL;
-  RandomParams   *randpar = NULL;
-  UINT4          numPoints, i;
-
-  INITSTATUS(status);
-  ATTATCHSTATUSPTR (status);
-
-  ASSERT ( inSeries, status, MAKEFAKEDATAC_EBAD, MAKEFAKEDATAC_MSGEBAD);
-
-  numPoints = inSeries->data->length;
-
-  TRY (LALCreateVector(status->statusPtr, &v1, numPoints), status);
-
-  TRY (LALCreateRandomParams(status->statusPtr, &randpar, seed), status);
-
-  TRY (LALNormalDeviates(status->statusPtr, v1, randpar), status);
-
-  for (i = 0; i < numPoints; i++)
-    inSeries->data->data[i] += sigma * v1->data[i];
-
-  /* destroy randpar*/
-  TRY (LALDestroyRandomParams(status->statusPtr, &randpar), status);
-
-  /*   destroy v1 */
-  TRY (LALDestroyVector(status->statusPtr, &v1), status);
-
-
-  DETATCHSTATUSPTR (status);
-  RETURN (status);
-
-} /* AddGaussianNoise() */
-
-
-/**
- *
- * For signals from NS in binary orbits: "Translate" our input parameters
- * into those required by LALGenerateSpinOrbitCW() (see LAL doc for equations)
- *
- */
-/* void */
-/* GetOrbitalParams (LALStatus *status, BinaryOrbitParams *orbit) */
-/* { */
-/*   REAL8 OneMEcc; */
-/*   REAL8 OnePEcc; */
-/*   REAL8 correction; */
-/*   LIGOTimeGPS TperiTrue; */
-/*   LIGOTimeGPS TperiSSB; */
-
-/*   INITSTATUS(status); */
-/*   ATTATCHSTATUSPTR (status); */
-
-/*   OneMEcc = 1.0 - uvar_orbitEccentricity; */
-/*   OnePEcc = 1.0 + uvar_orbitEccentricity; */
-
-/*   /\* we need to convert the observed time of periapse passage to the "true" time of periapse passage *\/ */
-/*   /\* this correction is due to the light travel time from binary barycenter to the source at periapse *\/ */
-/*   /\* it is what Teviets codes require *\/ */
-/*   TperiSSB.gpsSeconds = uvar_orbitTperiSSBsec; */
-/*   TperiSSB.gpsNanoSeconds = uvar_orbitTperiSSBns; */
-/*   correction = uvar_orbitSemiMajorAxis * OneMEcc * sin(uvar_orbitArgPeriapse); */
-
-/*   TRY (LALAddFloatToGPS(status->statusPtr, &TperiTrue, &TperiSSB, -correction), status); */
-
-/*   orbit->orbitEpoch = TperiTrue; */
-/*   orbit->omega = uvar_orbitArgPeriapse; */
-/*   orbit->rPeriNorm = uvar_orbitSemiMajorAxis * OneMEcc; */
-/*   orbit->oneMinusEcc = OneMEcc; */
-/*   orbit->angularSpeed = (LAL_TWOPI/uvar_orbitPeriod) * sqrt(OnePEcc/(OneMEcc*OneMEcc*OneMEcc)); */
-
-/*   DETATCHSTATUSPTR (status); */
-/*   RETURN(status); */
-
-/* } /\* GetOrbitalParams() *\/ */
-
-
-/***********************************************************************/
-/** Log the all relevant parameters of this run into a log-file.
+ * Log the all relevant parameters of this run into a log-file.
  * The name of the log-file used is uvar_logfile
  * <em>NOTE:</em> Currently this function only logs the user-input and code-versions.
  */
-void
-WriteMFDlog (LALStatus *status, const char *logfile, const ConfigVars_t *cfg )
+int
+XLALWriteMFDlog ( const char *logfile, const ConfigVars_t *cfg )
 {
-    CHAR *logstr = NULL;
-    FILE *fplog;
+  XLAL_CHECK ( logfile != NULL, XLAL_EINVAL, "Invalid NULL input 'logfile'\n" );
+  XLAL_CHECK ( cfg != NULL, XLAL_EINVAL, "Invalid NULL input 'cfg'\n");
 
-    INITSTATUS(status);
-    ATTATCHSTATUSPTR (status);
+  FILE *fplog = fopen ( logfile, "wb" );
+  XLAL_CHECK ( fplog != NULL, XLAL_EIO, "Failed to fopen log-file '%s' for writing ('wb').\n", logfile );
 
-    if ( logfile == NULL )
-      {
-	printf ("\nERROR: WriteMFDlog() called with NULL logfile-name\n\n");
-	ABORT( status, MAKEFAKEDATAC_EBAD, MAKEFAKEDATAC_MSGEBAD);
-      }
+  /* write out a log describing the complete user-input (in cfg-file format) */
+  CHAR *logstr = XLALUserVarGetLog ( UVAR_LOGFMT_CFGFILE );
+  XLAL_CHECK ( logstr != NULL, XLAL_EFUNC, "XLALUserVarGetLog(UVAR_LOGFMT_CFGFILE) failed.\n" );
 
-    if ( (fplog = fopen(uvar_logfile, "wb" )) == NULL) {
-      printf ("\nFailed to open log-file '%s' for writing.\n\n", uvar_logfile);
-      ABORT (status, MAKEFAKEDATAC_EFILE, MAKEFAKEDATAC_MSGEFILE);
-    }
+  fprintf ( fplog, "## LOG-FILE of Makefakedata run\n\n");
+  fprintf ( fplog, "# User-input: [formatted as config-file]\n");
+  fprintf ( fplog, "# ----------------------------------------------------------------------\n\n");
+  fprintf ( fplog, "%s", logstr);
+  XLALFree ( logstr );
 
-    /* write out a log describing the complete user-input (in cfg-file format) */
-    TRY (LALUserVarGetLog(status->statusPtr, &logstr,  UVAR_LOGFMT_CFGFILE), status);
-    fprintf (fplog, "## LOG-FILE of Makefakedata run\n\n");
-    fprintf (fplog, "# User-input: [formatted as config-file]\n");
-    fprintf (fplog, "# ----------------------------------------------------------------------\n\n");
-    fprintf (fplog, "%s", logstr);
-    LALFree (logstr);
-    logstr = NULL;
+  /* write out a log describing the complete user-input (in commandline format) */
+  logstr = XLALUserVarGetLog ( UVAR_LOGFMT_CMDLINE );
+  XLAL_CHECK ( logstr != NULL, XLAL_EFUNC, "XLALUserVarGetLog(UVAR_LOGFMT_CMDLINE) failed.\n" );
 
-    /* write out a log describing the complete user-input (in commandline format) */
-    TRY (LALUserVarGetLog(status->statusPtr, &logstr,  UVAR_LOGFMT_CMDLINE), status);
-    fprintf (fplog, "\n\n# User-input: [formatted as commandline]\n");
-    fprintf (fplog, "# ----------------------------------------------------------------------\n\n");
-    fprintf (fplog, "%s", logstr);
-    LALFree (logstr);
+  fprintf ( fplog, "\n\n# User-input: [formatted as commandline]\n");
+  fprintf ( fplog, "# ----------------------------------------------------------------------\n\n");
+  fprintf ( fplog, "%s", logstr );
+  XLALFree ( logstr );
 
-    /* append an VCS-version string of the code used */
-    fprintf (fplog, "\n\n# VCS-versions of executable:\n");
-    fprintf (fplog, "# ----------------------------------------------------------------------\n");
-    fprintf (fplog, "\n%s\n", cfg->VCSInfoString );
-    fclose (fplog);
+  /* append an VCS-version string of the code used */
+  fprintf ( fplog, "\n\n# VCS-versions of executable:\n");
+  fprintf ( fplog, "# ----------------------------------------------------------------------\n");
+  fprintf ( fplog, "\n%s\n", cfg->VCSInfoString );
+  fclose ( fplog );
 
-    DETATCHSTATUSPTR (status);
-    RETURN(status);
+  return XLAL_SUCCESS;
 
-} /* WriteMFDLog() */
+} /* XLALWriteMFDLog() */
 
 /**
  * Reads an actuation-function in format (r,phi) from file 'fname',
  * and returns the associated transfer-function as a COMPLEX8FrequencySeries (Re,Im)
  * The transfer-function T is simply the inverse of the actuation A, so T=A^-1.
  */
-void
-LoadTransferFunctionFromActuation(LALStatus *status,		/**< pointer to LALStatus structure */
-				  COMPLEX8FrequencySeries **transfer, /**< [out] transfer-function */
-				  REAL8 actuationScale, 	/**< overall scale-factor to actuation*/
-				  const CHAR *fname)		/**< file containing actuation-function*/
+COMPLEX8FrequencySeries *
+XLALLoadTransferFunctionFromActuation ( REAL8 actuationScale, /**< overall scale-factor to actuation */
+                                        const CHAR *fname     /**< file containing actuation-function */
+                                        )
 {
+  int len;
+
+  XLAL_CHECK_NULL ( fname != NULL, XLAL_EINVAL, "Invalid NULL input 'fname'\n" );
+
   LALParsedDataFile *fileContents = NULL;
-  CHAR *thisline;
-  UINT4 i, startline;
-  COMPLEX8Vector *data = NULL;
-  COMPLEX8FrequencySeries *ret = NULL;
-  const CHAR *readfmt = "%" LAL_REAL8_FORMAT "%" LAL_REAL8_FORMAT "%" LAL_REAL8_FORMAT;
-  REAL8 amp, phi;
-  REAL8 f0, f1;
+  XLAL_CHECK_NULL ( XLALParseDataFile ( &fileContents, fname ) == XLAL_SUCCESS, XLAL_EFUNC );
 
-  INITSTATUS(status);
-  ATTATCHSTATUSPTR (status);
 
-  ASSERT (transfer, status, MAKEFAKEDATAC_EBAD, MAKEFAKEDATAC_MSGEBAD);
-  ASSERT (*transfer == NULL, status, MAKEFAKEDATAC_EBAD, MAKEFAKEDATAC_MSGEBAD);
-  ASSERT (fname != NULL, status, MAKEFAKEDATAC_EBAD, MAKEFAKEDATAC_MSGEBAD);
-
-  TRY ( LALParseDataFile (status->statusPtr, &fileContents, fname), status);
   /* skip first line if containing NaN's ... */
-  startline = 0;
-  if ( strstr(fileContents->lines->tokens[startline], "NaN" ) != NULL )
+  UINT4 startline = 0;
+  if ( strstr ( fileContents->lines->tokens[startline], "NaN" ) != NULL ) {
     startline ++;
+  }
 
-  LALCCreateVector (status->statusPtr, &data, fileContents->lines->nTokens - startline);
-  BEGINFAIL(status)
-    TRY ( LALDestroyParsedDataFile(status->statusPtr, &fileContents), status);
-  ENDFAIL(status);
+  UINT4 numLines = fileContents->lines->nTokens - startline;
+  COMPLEX8Vector *data = XLALCreateCOMPLEX8Vector ( numLines );
+  XLAL_CHECK_NULL ( data != NULL, XLAL_EFUNC, "XLALCreateCOMPLEX8Vector(%d) failed\n", numLines );
 
-  if ( (ret = LALCalloc(1, sizeof(COMPLEX8FrequencySeries))) == NULL)
-    {
-      LALDestroyParsedDataFile(status->statusPtr, &fileContents);
-      LALFree (data);
-      ABORT (status, MAKEFAKEDATAC_EMEM, MAKEFAKEDATAC_MSGEMEM);
-    }
+  COMPLEX8FrequencySeries *ret = XLALCalloc (1, len = sizeof(*ret) );
+  XLAL_CHECK_NULL ( ret != NULL, XLAL_ENOMEM, "Failed to XLALCalloc (1, %d)\n", len );
 
   snprintf ( ret->name, LALNameLength-1, "Transfer-function from: %s", fname );
   ret->name[LALNameLength-1]=0;
 
   /* initialize loop */
-  f0 = f1 = 0;
+  REAL8 f0 = 0;
+  REAL8 f1 = 0;
 
-  for (i=startline; i < fileContents->lines->nTokens; i++)
+  const CHAR *readfmt = "%" LAL_REAL8_FORMAT "%" LAL_REAL8_FORMAT "%" LAL_REAL8_FORMAT;
+
+  for ( UINT4 i = startline; i < fileContents->lines->nTokens; i++ )
     {
-      thisline = fileContents->lines->tokens[i];
+      CHAR *thisline = fileContents->lines->tokens[i];
+      REAL8 amp, phi;
 
       f0 = f1;
-      if ( 3 != sscanf (thisline, readfmt, &f1, &amp, &phi) )
-	{
-	  printf ("\nFailed to read 3 floats from line %d of file %s\n\n", i, fname);
-	  goto failed;
-	}
+      if ( 3 != sscanf (thisline, readfmt, &f1, &amp, &phi) ) {
+        XLAL_ERROR_NULL ( XLAL_EIO, "Failed to read 3 floats from line %d of file %s\n\n", i, fname );
+      }
 
-      if ( !gsl_finite(amp) || !gsl_finite(phi) )
-	{
-	  printf ("\nERROR: non-finite number encountered in actuation-function at f!=0. Line=%d\n\n", i);
-	  goto failed;
-	}
+      if ( !gsl_finite ( amp ) || !gsl_finite ( phi ) ) {
+        XLAL_ERROR_NULL ( XLAL_EINVAL, "ERROR: non-finite number encountered in actuation-function at f!=0. Line=%d\n\n", i);
+      }
 
       /* first line: set f0 */
       if ( i == startline )
@@ -1861,100 +1603,23 @@ LoadTransferFunctionFromActuation(LALStatus *status,		/**< pointer to LALStatus 
 	ret->deltaF = f1 - ret->f0;
 
       /* check constancy of frequency-step */
-      if ( (f1 - f0 != ret->deltaF) && (i > startline) )
-	{
-	  printf ("\nIllegal frequency-step %f != %f in line %d of file %s\n\n",
-			 (f1-f0), ret->deltaF, i, fname);
-	  goto failed;
-	}
+      if ( (f1 - f0 != ret->deltaF) && (i > startline) ) {
+        XLAL_ERROR_NULL ( XLAL_EINVAL, "Illegal frequency-step %f != %f in line %d of file %s\n\n", (f1-f0), ret->deltaF, i, fname );
+      }
 
       /* now convert into transfer-function and (Re,Im): T = A^-1 */
-      data->data[i-startline].re = (REAL4)( cos(phi) / ( amp * actuationScale) );
-      data->data[i-startline].im = (REAL4)(-sin(phi) / ( amp * actuationScale) );
+      data->data[i-startline].realf_FIXME =  cos(phi) / ( amp * actuationScale );
+      data->data[i-startline].imagf_FIXME = -sin(phi) / ( amp * actuationScale );
 
     } /* for i < numlines */
 
-  goto success;
- failed:
-  LALDestroyParsedDataFile(status->statusPtr, &fileContents);
-  LALFree (data);
-  LALFree (ret);
-  ABORT (status, MAKEFAKEDATAC_EREADFILE, MAKEFAKEDATAC_MSGEREADFILE);
-
- success:
-
-  TRY ( LALDestroyParsedDataFile(status->statusPtr, &fileContents), status);
+  XLALDestroyParsedDataFile ( fileContents);
 
   ret->data = data;
-  (*transfer) = ret;
 
+  return ret;
 
-  DETATCHSTATUSPTR (status);
-  RETURN(status);
-
-} /* ReadActuationFunction() */
-
-/** Return a vector of SFTs containg only the bins in [fmin, fmin+Band].
- */
-void
-LALExtractSFTBand ( LALStatus *status, SFTVector **outSFTs, const SFTVector *inSFTs, REAL8 f_min, REAL8 Band )
-{
-  UINT4 firstBin, numBins, numSFTs;
-  UINT4 i;
-  REAL8 SFTf0, SFTBand, df;
-  SFTVector *ret = NULL;
-
-  INITSTATUS(status);
-  ATTATCHSTATUSPTR (status);
-
-  ASSERT ( inSFTs, status,  MAKEFAKEDATAC_EBAD,  MAKEFAKEDATAC_MSGEBAD );
-  ASSERT ( inSFTs->data[0].data , status,  MAKEFAKEDATAC_EBAD,  MAKEFAKEDATAC_MSGEBAD );
-
-  ASSERT ( outSFTs, status,  MAKEFAKEDATAC_EBAD,  MAKEFAKEDATAC_MSGEBAD );
-  ASSERT ( *outSFTs == NULL, status,  MAKEFAKEDATAC_EBAD,  MAKEFAKEDATAC_MSGEBAD );
-
-  numSFTs = inSFTs->length;
-  SFTf0 = inSFTs->data[0].f0;
-  df = inSFTs->data[0].deltaF;
-  SFTBand = df * inSFTs->data[0].data->length;
-
-
-  if ( (f_min < SFTf0) || ( f_min + Band > SFTf0 + SFTBand ) )
-    {
-      printf ( "\nERROR: requested frequency-band is not contained in the given SFTs.\n\n");
-      ABORT ( status,  MAKEFAKEDATAC_EBAD,  MAKEFAKEDATAC_MSGEBAD );
-    }
-
-  firstBin = floor ( f_min / df + 0.5 );
-  numBins =  floor ( Band / df + 0.5 ) + 1;
-
-  TRY ( LALCreateSFTVector ( status->statusPtr, &ret, numSFTs, numBins ), status );
-
-  for (i=0; i < numSFTs; i ++ )
-    {
-      SFTtype *dest = &(ret->data[i]);
-      SFTtype *src =  &(inSFTs->data[i]);
-      COMPLEX8Vector *ptr = dest->data;
-
-      /* copy complete header first */
-      memcpy ( dest, src, sizeof(*dest) );
-      /* restore data-pointer */
-      dest->data = ptr;
-      /* set correct f_min */
-      dest->f0 = firstBin * df ;
-
-      /* copy the relevant part of the data */
-      memcpy ( dest->data->data, src->data->data + firstBin, numBins * sizeof( dest->data->data[0] ) );
-
-    } /* for i < numSFTs */
-
-  /* return final SFT-vector */
-  (*outSFTs) = ret;
-
-  DETATCHSTATUSPTR ( status );
-  RETURN ( status );
-
-} /* LALExtractSFTBand() */
+} /* XLALLoadTransferFunctionFromActuation() */
 
 /* determine if the given filepath is an existing directory or not */
 BOOLEAN
@@ -1963,65 +1628,11 @@ is_directory ( const CHAR *fname )
   struct stat stat_buf;
 
   if ( stat (fname, &stat_buf) )
-    return FALSE;
+    return 0;
 
   if ( ! S_ISDIR (stat_buf.st_mode) )
-    return FALSE;
+    return 0;
   else
-    return TRUE;
+    return 1;
 
 } /* is_directory() */
-
-void
-LALGenerateLineFeature ( LALStatus *status, REAL4TimeSeries **Tseries, const PulsarSignalParams *params )
-{
-  REAL4TimeSeries *ret = NULL;
-  CHAR *name, name0[100];
-  LALUnit units = empty_LALUnit;
-  UINT4 i, length;
-  REAL8 deltaT;
-  REAL8 omH;
-  REAL8 h0;
-  REAL8 ti, tStart;
-
-  INITSTATUS(status);
-  ATTATCHSTATUSPTR (status);
-
-  ASSERT ( params, status, MAKEFAKEDATAC_EBAD, MAKEFAKEDATAC_MSGEBAD );
-  ASSERT ( Tseries, status, MAKEFAKEDATAC_EBAD, MAKEFAKEDATAC_MSGEBAD );
-  ASSERT ( *Tseries == NULL, status, MAKEFAKEDATAC_EBAD, MAKEFAKEDATAC_MSGEBAD );
-
-
-  /* set 'name'-field of timeseries to contain the right "channel prefix" for the detector */
-  if ( (name = XLALGetChannelPrefix ( params->site->frDetector.name )) == NULL ) {
-    ABORT (status, MAKEFAKEDATAC_EBAD, MAKEFAKEDATAC_MSGEBAD );
-  }
-  strcpy ( name0, name );
-  LALFree ( name );
-
-  /* NOTE: a timeseries of length N*dT has no timestep at N*dT !! (convention) */
-  length = (UINT4) ceil( params->samplingRate * params->duration);
-  deltaT = 1.0 / params->samplingRate;
-  tStart = GPS2REAL( params->startTimeGPS );
-
-  if ( (ret = XLALCreateREAL4TimeSeries (name0, &(params->startTimeGPS), params->fHeterodyne, deltaT, &units, length)) == NULL ) {
-    ABORT ( status, MAKEFAKEDATAC_EMEM, MAKEFAKEDATAC_MSGEMEM );
-  }
-
-  h0 = params->pulsar.aPlus + sqrt ( pow(params->pulsar.aPlus,2) - pow(params->pulsar.aCross,2) );
-  omH = LAL_TWOPI * ( params->pulsar.f0 - params->fHeterodyne );
-
-  for ( i=0; i < length; i++ )
-    {
-      ti = tStart + i * deltaT;
-      ret->data->data[i] = h0 * sin( omH * ti  + params->pulsar.phi0 );
-    }
-
-  /* return final timeseries */
-  (*Tseries) = ret;
-
-
-  DETATCHSTATUSPTR ( status );
-  RETURN ( status );
-
-} /* LALGenerateLineFeature() */

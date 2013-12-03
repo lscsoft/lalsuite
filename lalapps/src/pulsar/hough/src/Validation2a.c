@@ -20,13 +20,13 @@
 /**
  * \file
  * \ingroup pulsarApps
- * \author Badri Krishnan, Alicia Sintes 
+ * \author Badri Krishnan, Alicia Sintes
  *
  * History:   Created by Sintes June 16, 2003
- *    to test part of the Hough-Driver code.
- *    Case: Non demodulated. Search with no spin-down, source frequency as the 
- *          first search frequency.
- *    No input from SFT data yet implemented here.
+ * to test part of the Hough-Driver code.
+ * Case: Non demodulated. Search with no spin-down, source frequency as the
+ * first search frequency.
+ * No input from SFT data yet implemented here.
  */
 
 
@@ -43,7 +43,6 @@
  * Constant Declarations.  Default parameters.
  */
 
-INT4 lalDebugLevel=0;
 #define EARTHEPHEMERIS "/afs/aeiw/grawave/Linux/lal/lal/packages/pulsar/test/earth03.dat"
 #define SUNEPHEMERIS "/afs/aeiw/grawave/Linux/lal/lal/packages/pulsar/test/sun03.dat"
 
@@ -195,7 +194,6 @@ int main(int argc, char *argv[]){
     if ( !strcmp( argv[arg], "-d" ) ) {
       if ( argc > arg + 1 ) {
         arg++;
-        lalDebugLevel = atoi( argv[arg++] );
       } else {
         ERROR( VALIDATION1_EARG, VALIDATION1_MSGEARG, 0 );
         XLALPrintError( USAGE, *argv );

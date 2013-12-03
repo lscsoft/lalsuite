@@ -52,7 +52,7 @@
 #include <lal/FindChirpBCVSpin.h>
 #include <lal/FindChirpChisq.h>
 #include <lal/FrameCalibration.h>
-#include <lal/FrameStream.h>
+#include <lal/LALFrStream.h>
 #include <lal/FrequencySeries.h>
 #include <lal/GenerateBurst.h>
 #include <lal/Inject.h>
@@ -313,7 +313,6 @@ static void print_usage(const char *program)
 "	[--calibration-cache <cache file name>]\n" \
 "	 --channel-name <name>\n" \
 "	 --confidence-threshold <confidence>\n" \
-"	[--debug-level info|warn|error|off]\n" \
 "	[--dump-diagnostics <XML file name>]\n" \
 "	 --filter-corruption <samples>\n" \
 "	 --frame-cache <cache file name>\n" \
@@ -464,62 +463,7 @@ static ProcessParamsTable **add_process_param(ProcessParamsTable **proc_param, c
 
 
 /*
- * Parse the --debug-level command line argument.
- */
-
-
-static int parse_command_line_debug(int argc, char *argv[])
-{
-	char msg[240];
-	int args_are_bad = 0;
-	int c;
-	int option_index;
-	struct option long_options[] = {
-		{"debug-level", required_argument, NULL, 'D'},
-		{NULL, 0, NULL, 0}
-	};
-
-	/*
-	 * Default == print only error messages.
-	 */
-
-	lalDebugLevel = LALERROR | LALNMEMDBG | LALNMEMPAD | LALNMEMTRK;
-
-	/*
-	 * Find and parse only the debug level command line options.  Must
-	 * jump through this hoop because we cannot edit lalDebugLevel
-	 * after any calls to XLALMalloc() and friends.
-	 */
-
-	opterr = 0;		/* silence error messages */
-	optind = 0;		/* start scanning from argv[0] */
-	do switch(c = getopt_long(argc, argv, "-", long_options, &option_index)) {
-	case 'D':
-		if(!strcmp(optarg, "info"))
-			lalDebugLevel = LALINFO | LALWARNING | LALERROR | LALNMEMDBG | LALNMEMPAD | LALNMEMTRK;
-		else if(!strcmp(optarg, "warn"))
-			lalDebugLevel = LALWARNING | LALERROR | LALNMEMDBG | LALNMEMPAD | LALNMEMTRK;
-		else if(!strcmp(optarg, "error"))
-			lalDebugLevel = LALERROR | LALNMEMDBG | LALNMEMPAD | LALNMEMTRK;
-		else if(!strcmp(optarg, "off"))
-			lalDebugLevel = LALNMEMDBG | LALNMEMPAD | LALNMEMTRK;
-		else {
-			sprintf(msg, "must be one of \"info\", \"warn\", \"error\", or \"off\"");
-			print_bad_argument(argv[0], long_options[option_index].name, msg);
-			args_are_bad = 1;
-		}
-		break;
-
-	default:
-		break;
-	} while(c != -1);
-
-	return args_are_bad ? -1 : 0;
-}
-
-
-/*
- * Parse all the other command line arguments.
+ * Parse the command line arguments.
  */
 
 
@@ -536,7 +480,6 @@ static struct options *parse_command_line(int argc, char *argv[], const ProcessT
 		{"calibration-cache", required_argument, NULL, 'B'},
 		{"channel-name", required_argument, NULL, 'C'},
 		{"confidence-threshold", required_argument, NULL, 'g'},
-		{"debug-level", required_argument, NULL, 'D'},
 		{"dump-diagnostics", required_argument, NULL, 'X'},
 		{"filter-corruption", required_argument, NULL, 'j'},
 		{"frame-cache", required_argument, NULL, 'G'},
@@ -595,11 +538,6 @@ static struct options *parse_command_line(int argc, char *argv[], const ProcessT
 	case 'C':
 		options->channel_name = optarg;
 		memcpy(options->ifo, optarg, sizeof(options->ifo) - 1);
-		ADD_PROCESS_PARAM(process, "string");
-		break;
-
-	case 'D':
-		/* only add --debug-level to params table in this pass */
 		ADD_PROCESS_PARAM(process, "string");
 		break;
 
@@ -939,8 +877,8 @@ static struct options *parse_command_line(int argc, char *argv[], const ProcessT
 static REAL8TimeSeries *get_time_series(const char *cachefilename, const char *chname, LIGOTimeGPS start, LIGOTimeGPS end, size_t lengthlimit)
 {
 	double duration = XLALGPSDiff(&end, &start);
-	FrCache *cache;
-	FrStream *stream;
+	LALCache *cache;
+	LALFrStream *stream;
 	LALTYPECODE series_type;
 	REAL8TimeSeries *series;
 
@@ -951,11 +889,11 @@ static REAL8TimeSeries *get_time_series(const char *cachefilename, const char *c
 	 * Open frame stream.
 	 */
 
-	cache = XLALFrImportCache(cachefilename);
+	cache = XLALCacheImport(cachefilename);
 	if(!cache)
 		XLAL_ERROR_NULL(XLAL_EFUNC);
-	stream = XLALFrCacheOpen(cache);
-	XLALFrDestroyCache(cache);
+	stream = XLALFrStreamCacheOpen(cache);
+	XLALDestroyCache(cache);
 	if(!stream)
 		XLAL_ERROR_NULL(XLAL_EFUNC);
 
@@ -963,15 +901,15 @@ static REAL8TimeSeries *get_time_series(const char *cachefilename, const char *c
 	 * Turn on checking for missing data.
 	 */
 
-	XLALFrSetMode(stream, LAL_FR_VERBOSE_MODE);
+	XLALFrStreamSetMode(stream, LAL_FR_STREAM_VERBOSE_MODE);
 
 	/*
 	 * Get the data.
 	 */
 
-	series_type = XLALFrGetTimeSeriesType(chname, stream);
+	series_type = XLALFrStreamGetTimeSeriesType(chname, stream);
 	if((int) series_type < 0) {
-		XLALFrClose(stream);
+		XLALFrStreamClose(stream);
 		XLAL_ERROR_NULL(XLAL_EFUNC);
 	}
 
@@ -981,16 +919,16 @@ static REAL8TimeSeries *get_time_series(const char *cachefilename, const char *c
 		 * Read data as single-precision and convert to double.
 		 */
 
-		REAL4TimeSeries *tmp = XLALFrReadREAL4TimeSeries(stream, chname, &start, duration, lengthlimit);
+		REAL4TimeSeries *tmp = XLALFrStreamReadREAL4TimeSeries(stream, chname, &start, duration, lengthlimit);
 		unsigned i;
 		if(!tmp) {
-			XLALFrClose(stream);
+			XLALFrStreamClose(stream);
 			XLAL_ERROR_NULL(XLAL_EFUNC);
 		}
 		series = XLALCreateREAL8TimeSeries(tmp->name, &tmp->epoch, tmp->f0, tmp->deltaT, &tmp->sampleUnits, tmp->data->length);
 		if(!series) {
 			XLALDestroyREAL4TimeSeries(tmp);
-			XLALFrClose(stream);
+			XLALFrStreamClose(stream);
 			XLAL_ERROR_NULL(XLAL_EFUNC);
 		}
 		for(i = 0; i < tmp->data->length; i++)
@@ -1000,16 +938,16 @@ static REAL8TimeSeries *get_time_series(const char *cachefilename, const char *c
 	}
 
 	case LAL_D_TYPE_CODE:
-		series = XLALFrReadREAL8TimeSeries(stream, chname, &start, duration, lengthlimit);
+		series = XLALFrStreamReadREAL8TimeSeries(stream, chname, &start, duration, lengthlimit);
 		if(!series) {
-			XLALFrClose(stream);
+			XLALFrStreamClose(stream);
 			XLAL_ERROR_NULL(XLAL_EFUNC);
 		}
 		break;
 
 	default:
 		XLALPrintError("get_time_series(): error: invalid channel data type %d\n", series_type);
-		XLALFrClose(stream);
+		XLALFrStreamClose(stream);
 		XLAL_ERROR_NULL(XLAL_EINVAL);
 	}
 
@@ -1017,7 +955,7 @@ static REAL8TimeSeries *get_time_series(const char *cachefilename, const char *c
 	 * Check for missing data.
 	 */
 
-	if(stream->state & LAL_FR_GAP) {
+	if(stream->state & LAL_FR_STREAM_GAP) {
 		XLALPrintError("get_time_series(): error: gap in data detected between GPS times %d.%09u s and %d.%09u s\n", start.gpsSeconds, start.gpsNanoSeconds, end.gpsSeconds, end.gpsNanoSeconds);
 		XLALDestroyREAL8TimeSeries(series);
 		XLAL_ERROR_NULL(XLAL_EDATA);
@@ -1027,7 +965,7 @@ static REAL8TimeSeries *get_time_series(const char *cachefilename, const char *c
 	 * Close stream.
 	 */
 
-	XLALFrClose(stream);
+	XLALFrStreamClose(stream);
 
 	/*
 	 * Verbosity.
@@ -1160,18 +1098,7 @@ static COMPLEX8FrequencySeries *generate_response(const char *cachefile, const c
 
 		return response;
 	} else {
-		FrCache *cache = XLALFrImportCache(cachefile);
-		if(cache) {
-			LALCalData *caldata = XLALFrCacheGetCalData(&epoch, channel_name, cache);
-			XLALFrDestroyCache(cache);
-			if(caldata) {
-				response = XLALCreateCOMPLEX8Response(&epoch, duration, deltaf, n, caldata);
-				XLALDestroyCalData(caldata);
-				if(response)
-					return response;
-			}
-		}
-		XLAL_ERROR_NULL(XLAL_EFUNC);
+                XLAL_ERROR_NULL(XLAL_EERR, "Calibration frames no longer supported");
 	}
 }
 
@@ -1532,8 +1459,6 @@ int main(int argc, char *argv[])
 	 */
 
 	lal_errhandler = LAL_ERR_EXIT;
-	if(parse_command_line_debug(argc, argv) < 0)
-		exit(1);
 
 	/*
 	 * Create the process and process params tables.

@@ -23,7 +23,6 @@
 #include <lal/AVFactories.h>
 #include <lal/Date.h>
 
-INT4 lalDebugLevel = 2;
 
 /*int main(int argc, char *argv[])*/
 int main(void)
@@ -60,7 +59,6 @@ int main(void)
     }
 
     testid        = atoi(argv[1]);
-    lalDebugLevel = atoi(argv[2]);
 
     LALCHARCreateVector(&status, &datestamp, (UINT4)64);
 

@@ -27,7 +27,8 @@ extern "C" {
 #include <lal/GeneratePPNInspiral.h>
 
 
-/** \defgroup LIGOMetadataInspiralUtils_h Header LIGOMetadataInspiralUtils.h
+/**
+ * \defgroup LIGOMetadataInspiralUtils_h Header LIGOMetadataInspiralUtils.h
  * \ingroup pkg_CBC_NEW
  * \brief unknown
  */
@@ -36,9 +37,10 @@ extern "C" {
 
 /* ---------- inspiral specific structures ---------- */
 
-/** The \c SnglInspiralParameterTest contains an enum type for each of the
-    tests of mass parameters which are used.
-*/
+/**
+ * The \c SnglInspiralParameterTest contains an enum type for each of the
+ * tests of mass parameters which are used.
+ */
 typedef enum
 {
   unspecified_test,
@@ -51,14 +53,15 @@ typedef enum
 }
 SnglInspiralParameterTest;
 
-/** The \c SnglInspiralAccuracy structure contains parameters used for
-testing coincidence between two or more single inspiral tables.  These include
-a timing accuracy \c dt, five mass accuracies \c dm (used for
-testing \c mass1 and \c mass2), \c deta, \c dmchirp,
-\c dpsi0 and \c dpsi3.  It also includes the parameters
-\c kappa and \c epsilon which are used for testing consistency of
-effective distance.
-*/
+/**
+ * The \c SnglInspiralAccuracy structure contains parameters used for
+ * testing coincidence between two or more single inspiral tables.  These include
+ * a timing accuracy \c dt, five mass accuracies \c dm (used for
+ * testing \c mass1 and \c mass2), \c deta, \c dmchirp,
+ * \c dpsi0 and \c dpsi3.  It also includes the parameters
+ * \c kappa and \c epsilon which are used for testing consistency of
+ * effective distance.
+ */
 typedef struct
 tagSnglInspiralAccuracy
 {
@@ -80,14 +83,15 @@ tagSnglInspiralAccuracy
 }
 SnglInspiralAccuracy;
 
-/** The \c InspiralAccuracyList structure contains parameter accuracies for
-    each of the six global interferometers.  These are stored in the
-    ::SnglInspiralAccuracy structure.  The accuracies stored should be the
-    accuracy with which each instrument can determine the given parameter.  It also
-    contains a \c match which is set to 1 to signify that coincidence
-    criteria are satisfied and 0 otherwise.  Finally, the
-    ::SnglInspiralParameterTest must be specified.
-*/
+/**
+ * The \c InspiralAccuracyList structure contains parameter accuracies for
+ * each of the six global interferometers.  These are stored in the
+ * ::SnglInspiralAccuracy structure.  The accuracies stored should be the
+ * accuracy with which each instrument can determine the given parameter.  It also
+ * contains a \c match which is set to 1 to signify that coincidence
+ * criteria are satisfied and 0 otherwise.  Finally, the
+ * ::SnglInspiralParameterTest must be specified.
+ */
 typedef struct
 tagInspiralAccuracyList
 {
@@ -103,10 +107,11 @@ tagInspiralAccuracyList
 InspiralAccuracyList;
 
 
-/** The \c CoincInspiralStatParams structure contains the bitten L parameter for
-    each of the six global interferometers.  These are stored in the
-    \c param_a and \c param_b structure.
-*/
+/**
+ * The \c CoincInspiralStatParams structure contains the bitten L parameter for
+ * each of the six global interferometers.  These are stored in the
+ * \c param_a and \c param_b structure.
+ */
 typedef struct
 tagCoincInspiralStatParams
 {
@@ -118,13 +123,14 @@ tagCoincInspiralStatParams
 CoincInspiralStatParams;
 
 
-/** The \c SnglInspiralClusterChoice provides three choices for clustering
-a single inspiral table.  The\c snr clustering returns the trigger
-with the greatest signal to noise ratio; \c snr_and_chisq replaces
-the existing trigger if the new trigger has \e both a greater snr and
-a smaller chi squared value; \c snrsq_over_chisq selects the trigger
-with the largest value of snr squared divided by the chi squared.
-*/
+/**
+ * The \c SnglInspiralClusterChoice provides three choices for clustering
+ * a single inspiral table.  The\c snr clustering returns the trigger
+ * with the greatest signal to noise ratio; \c snr_and_chisq replaces
+ * the existing trigger if the new trigger has \e both a greater snr and
+ * a smaller chi squared value; \c snrsq_over_chisq selects the trigger
+ * with the largest value of snr squared divided by the chi squared.
+ */
 typedef enum
 {
   none,
@@ -135,15 +141,16 @@ typedef enum
 SnglInspiralClusterChoice;
 
 
-/** The \c CoincInspiralStatistic provides two choices for clustering
-    a single inspiral table.  The\c snrsq clustering returns the trigger
-    with the greatest summed snr\f$^{2}\f$ from all instruments.  The
-    \c snr_chi_stat replaces selects the trigger
-    with the largest value of the snr and chisq statistic and the \c bitten_l
-    returns the minimum among the summed snr\f$^{2}\f$ from all instruments and the
-    \f$a\times snr_i - b\f$ in each detector. The parameters  \f$a\f$ and \f$b\f$ must be
-    provided by the user.
-*/
+/**
+ * The \c CoincInspiralStatistic provides two choices for clustering
+ * a single inspiral table.  The\c snrsq clustering returns the trigger
+ * with the greatest summed snr\f$^{2}\f$ from all instruments.  The
+ * \c snr_chi_stat replaces selects the trigger
+ * with the largest value of the snr and chisq statistic and the \c bitten_l
+ * returns the minimum among the summed snr\f$^{2}\f$ from all instruments and the
+ * \f$a\times snr_i - b\f$ in each detector. The parameters  \f$a\f$ and \f$b\f$ must be
+ * provided by the user.
+ */
 typedef enum
 {
   no_stat,
@@ -157,11 +164,12 @@ typedef enum
 }
 CoincInspiralStatistic;
 
-/** The \c MultiInspiralClusterChoice provides choices for clustering
-    a multi inspiral table.  The \c cohsnr clustering returns the trigger
-    with the greatest coherent signal to noise ratio; the \c nullstat
-    clustering returns the trigger with the smallest null-statistic value.
-*/
+/**
+ * The \c MultiInspiralClusterChoice provides choices for clustering
+ * a multi inspiral table.  The \c cohsnr clustering returns the trigger
+ * with the greatest coherent signal to noise ratio; the \c nullstat
+ * clustering returns the trigger with the smallest null-statistic value.
+ */
 typedef enum
 {
   no_statistic,
@@ -177,10 +185,11 @@ typedef enum
 MultiInspiralClusterChoice;
 
 
-/** The \c CohbankRunType provides choices for constructing a
-    multi-detector template bank from either the output of the coincidence
-    analysis (cohbank) or the outputs of multiple single-ifo filtering.
-*/
+/**
+ * The \c CohbankRunType provides choices for constructing a
+ * multi-detector template bank from either the output of the coincidence
+ * analysis (cohbank) or the outputs of multiple single-ifo filtering.
+ */
 typedef enum
 {
   cohbank,
@@ -188,11 +197,12 @@ typedef enum
 }
 CohbankRunType;
 
-/** The \c SnglInspiralBCVCalphafCut provides entries for cutting
-    single IFO triggers generated with the BCVC code. For each LSC IFO
-    there is a field \c lo and \c hi which corresponds to the area
-    allowing triggers.
-*/
+/**
+ * The \c SnglInspiralBCVCalphafCut provides entries for cutting
+ * single IFO triggers generated with the BCVC code. For each LSC IFO
+ * there is a field \c lo and \c hi which corresponds to the area
+ * allowing triggers.
+ */
 typedef struct
 tagSnglInspiralBCVCalphafCut
 {
@@ -206,10 +216,11 @@ tagSnglInspiralBCVCalphafCut
 }
 SnglInspiralBCVCalphafCut;
 
-/** The \c CDataNode is a structure that saves the names of the
-    time-series of matched-filter outputs that are written into
-    a frame file by the inspiral code.
-*/
+/**
+ * The \c CDataNode is a structure that saves the names of the
+ * time-series of matched-filter outputs that are written into
+ * a frame file by the inspiral code.
+ */
 typedef struct
 tagCDataNode
 {
@@ -667,6 +678,12 @@ XLALCompareCoincInspiralByTime (
 
 int
 XLALCompareCoincInspiralByEffectiveSnr (
+    const void *a,
+    const void *b
+    );
+
+int
+XLALCompareCoincInspiralByStat (
     const void *a,
     const void *b
     );

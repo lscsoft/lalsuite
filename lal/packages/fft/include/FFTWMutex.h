@@ -26,14 +26,15 @@
 extern "C" {
 #endif
 
+void XLALFFTWWisdomLock(void);
+void XLALFFTWWisdomUnlock(void);
+
 #if defined(LAL_PTHREAD_LOCK) && defined(LAL_FFTW3_ENABLED)
-# include <pthread.h>
-  extern pthread_mutex_t lalFFTWMutex;
-# define LAL_FFTW_PTHREAD_MUTEX_LOCK pthread_mutex_lock( &lalFFTWMutex )
-# define LAL_FFTW_PTHREAD_MUTEX_UNLOCK pthread_mutex_unlock( &lalFFTWMutex )
+# define LAL_FFTW_WISDOM_LOCK XLALFFTWWisdomLock()
+# define LAL_FFTW_WISDOM_UNLOCK XLALFFTWWisdomUnlock()
 #else
-# define LAL_FFTW_PTHREAD_MUTEX_LOCK
-# define LAL_FFTW_PTHREAD_MUTEX_UNLOCK
+# define LAL_FFTW_WISDOM_LOCK
+# define LAL_FFTW_WISDOM_UNLOCK
 #endif
 
 #ifdef  __cplusplus

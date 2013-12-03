@@ -34,6 +34,9 @@ from pylal.xlal.datatypes.snglinspiraltable import SnglInspiralTable
 def compute_mchirp(m1, m2):
     return (m1 * m1 * m1 * m2 * m2 * m2 / (m1 + m2))**0.2
 
+def ceil_pow_2( number ):
+    return int(2**(np.ceil(np.log2( number ))))
+
 #
 # Represent template waveforms
 #
@@ -165,6 +168,7 @@ class Template(object):
             # whiten
             arr_view[:] /= ASD[:wf.data.length]
             arr_view[:int(self.bank.flow / df)] = 0.
+            arr_view[int(self._f_final/df) : wf.data.length] = 0.
 
             # normalize
             self.sigmasq = compute_sigmasq(arr_view, df)
@@ -188,17 +192,19 @@ class TaylorF2RedSpinTemplate(Template):
     param_names = ("m1", "m2", "chi")
     param_formats = ("%.5f", "%.5f", "%+.4f")
 
-    __slots__ = ("m1", "m2", "chi", "bank", "_f_final", "_dur", "_mchirp", "_eta", "_theta0", "_theta3", "_theta3s")
+    __slots__ = ("m1", "m2", "spin1z", "spin2z", "bank", "chi", "_f_final", "_dur", "_mchirp", "_eta", "_theta0", "_theta3", "_theta3s")
 
-    def __init__(self, m1, m2, chi, bank):
+    def __init__(self, m1, m2, spin1z, spin2z, bank):
         Template.__init__(self)
         # don't want numpy scalars; arithmetic with them costs a whole lot of overhead
         m1 = float(m1)
         m2 = float(m2)
-        chi = float(chi)
+        chi = lalsim.SimInspiralTaylorF2ReducedSpinComputeChi(m1, m2, spin1z, spin2z)
 
         self.m1 = m1
         self.m2 = m2
+        self.spin1z = spin1z
+        self.spin2z = spin2z
         self.chi = chi
         self.bank = bank
 
@@ -215,7 +221,7 @@ class TaylorF2RedSpinTemplate(Template):
 
         df, PSD = get_neighborhood_PSD([self], self.bank.flow, self.bank.noise_model)
 
-        if df not in self.bank._moments or len(PSD) > self.bank._moments[df][0].length:
+        if df not in self.bank._moments or len(PSD) - self.bank.flow // df > self.bank._moments[df][0].length:
             real8vector_psd = CreateREAL8Vector(len(PSD))
             real8vector_psd.data[:] = PSD
             self.bank._moments[df] = create_moments(df, self.bank.flow, len(PSD))
@@ -230,9 +236,13 @@ class TaylorF2RedSpinTemplate(Template):
         return self.m1, self.m2, self.chi
 
     def _compute_waveform(self, df, f_final):
-        return lalsim.SimInspiralTaylorF2ReducedSpin(
+
+        wf = lalsim.SimInspiralTaylorF2ReducedSpin(
             0, df, self.m1 * LAL_MSUN_SI, self.m2 * LAL_MSUN_SI, self.chi,
-            self.bank.flow, 1000000 * LAL_PC_SI, 7, 3)
+            self.bank.flow, 0, 1000000 * LAL_PC_SI, 7, 7)
+        # have to resize wf to next pow 2 for FFT plan caching
+        wf = lal.ResizeCOMPLEX16FrequencySeries( wf, 0, ceil_pow_2(wf.data.length) )
+        return wf
 
     def metric_match(self, other, df, **kwargs):
         g00, g01, g02, g11, g12, g22 = self._metric
@@ -252,12 +262,11 @@ class TaylorF2RedSpinTemplate(Template):
 
     @classmethod
     def from_sim(cls, sim, bank):
-        chi = lalsim.SimInspiralTaylorF2ReducedSpinComputeChi(sim.mass1, sim.mass2, sim.spin1z, sim.spin2z)
-        return cls(sim.mass1, sim.mass2, chi, bank)
+        return cls(sim.mass1, sim.mass2, sim.spin1z, sim.spin2z, bank)
 
     @classmethod
     def from_sngl(cls, sngl, bank):
-        return cls(sngl.mass1, sngl.mass2, sngl.chi, bank)
+        return cls(sngl.mass1, sngl.mass2, sngl.spin1z, sngl.spin2z, bank)
 
     def to_sngl(self):
         # note that we use the C version; this causes all numerical values to be initiated
@@ -271,7 +280,8 @@ class TaylorF2RedSpinTemplate(Template):
         row.tau0, row.tau3 = m1m2_to_tau0tau3(self.m1, self.m2, self.bank.flow)
         row.f_final = self._f_final
         row.template_duration = self._dur
-        row.chi = self.chi
+        row.spin1z = self.spin1z
+        row.spin2z = self.spin2z
         row.sigmasq = self.sigmasq
 
         return row
@@ -281,12 +291,15 @@ class IMRPhenomBTemplate(Template):
     param_names = ("m1", "m2", "chi")
     param_formats = ("%.2f", "%.2f", "%+.2f")
 
-    __slots__ = ("m1", "m2", "chi", "bank", "_f_final", "_dur", "_mchirp")
+    __slots__ = ("m1", "m2", "spin1z", "spin2z", "bank", "chi", "_f_final", "_dur", "_mchirp")
 
-    def __init__(self, m1, m2, chi, bank):
+    def __init__(self, m1, m2, spin1z, spin2z, bank):
         Template.__init__(self)
         self.m1 = m1
         self.m2 = m2
+        self.spin1z = spin1z
+        self.spin2z = spin2z
+        chi = lalsim.SimIMRPhenomBComputeChi( self.m1, self.m2, self.spin1z, self.spin2z )
         self.chi = chi
         self.bank = bank
 
@@ -315,12 +328,11 @@ class IMRPhenomBTemplate(Template):
 
     @classmethod
     def from_sim(cls, sim, bank):
-        chi = lalsim.SimIMRPhenomBComputeChi(sim.mass1, sim.mass2, sim.spin1z, sim.spin2z)
-        return cls(sim.mass1, sim.mass2, chi, bank)
+        return cls(sim.mass1, sim.mass2, sim.spin1z, sim.spin2z, bank)
 
     @classmethod
     def from_sngl(cls, sngl, bank):
-        return cls(sngl.mass1, sngl.mass2, sngl.chi, bank)
+        return cls(sngl.mass1, sngl.mass2, sngl.spin1z, sngl.spin2z, bank)
 
     def to_sngl(self):
         # note that we use the C version; this causes all numerical values to be initiated
@@ -334,10 +346,19 @@ class IMRPhenomBTemplate(Template):
         row.tau0, row.tau3 = m1m2_to_tau0tau3(self.m1, self.m2, self.bank.flow)
         row.f_final = self._f_final
         row.template_duration = self._dur
-        row.chi = self.chi
+        row.spin1z = self.spin1z
+        row.spin2z = self.spin2z
         row.sigmasq = self.sigmasq
 
         return row
+
+
+class IMRPhenomCTemplate(IMRPhenomBTemplate):
+
+    def _compute_waveform(self, df, f_final):
+        return lalsim.SimIMRPhenomCGenerateFD(0, df,
+            self.m1 * LAL_MSUN_SI, self.m2 * LAL_MSUN_SI,
+            self.chi, self.bank.flow, f_final, 1000000 * LAL_PC_SI)
 
 
 class SEOBNRv1Template(Template):
@@ -379,7 +400,7 @@ class SEOBNRv1Template(Template):
             self.bank.flow, 1e6*LAL_PC_SI, 0., self.spin1z, self.spin2z)
         # zero-pad up to 1/df
         N = int(sample_rate / df)
-        lal.ResizeREAL8TimeSeries(hplus, 0, N)
+        hplus = lal.ResizeREAL8TimeSeries(hplus, 0, N)
         # taper
         lalsim.SimInspiralREAL8WaveTaper(hplus.data, lalsim.LAL_SIM_INSPIRAL_TAPER_START)
 
@@ -424,7 +445,6 @@ class SEOBNRv1Template(Template):
         # FIXME: change storing spins in alpha when sngl_inspiral table is updated
         row.alpha1 = self.spin1z
         row.alpha2 = self.spin2z
-        row.chi = self._chi
         row.sigmasq = self.sigmasq
 
         return row
@@ -466,7 +486,7 @@ class EOBNRv2Template(Template):
             self.bank.flow, 1e6*LAL_PC_SI, 0.)
         # zero-pad up to 1/df
         N = int(sample_rate / df)
-        lal.ResizeREAL8TimeSeries(hplus, 0, N)
+        hplus = lal.ResizeREAL8TimeSeries(hplus, 0, N)
         # taper
         lalsim.SimInspiralREAL8WaveTaper(hplus.data, lalsim.LAL_SIM_INSPIRAL_TAPER_START)
 
@@ -572,17 +592,20 @@ class SpinTaylorT4Template(Template):
             -np.sin(self.inclination),	# initial value of E1z
             0,				# tidal deformability of mass 1
             0,				# tidal deformability of mass 2
-            lalsim.LAL_SIM_INSPIRAL_INTERACTION_ALL_SPIN, # flags to control spin effects
-            7,				# twice PN phase order
-            0
+            1, # phenom. parameter describing induced quad. moment of body 1 (=1 for BHs, ~2-12 for NSs)
+            1, # phenom. parameter describing induced quad. moment of body 2 (=1 for BHs, ~2-12 for NSs)
+            7, # twice PN spin order
+            0, # twice PN tidal order
+            7, # twice PN phase order
+            0 # twice PN amplitude order
         )
 
         # project onto detector
         hoft = project_hplus_hcross(hplus, hcross, self.theta, self.phi, self.psi)
 
         # zero-pad up to 1/df
-        N = int(sample_rate / df)
-        lal.ResizeREAL8TimeSeries(hoft, 0, N)
+        N = ceil_pow_2(int(sample_rate / df))
+        hoft = lal.ResizeREAL8TimeSeries(hoft, 0, N)
 
         # taper
         lalsim.SimInspiralREAL8WaveTaper(hoft.data, lalsim.LAL_SIM_INSPIRAL_TAPER_STARTEND)
@@ -663,7 +686,7 @@ class SpinTaylorT5Template(Template):
 
         # zero-pad up to 1/df
         N = int(sample_rate / df)
-        lal.ResizeREAL8TimeSeries(hoft, 0, N)
+        hoft = lal.ResizeREAL8TimeSeries(hoft, 0, N)
 
         # taper
         lalsim.SimInspiralREAL8WaveTaper(hoft.data, lalsim.LAL_SIM_INSPIRAL_TAPER_STARTEND)
@@ -687,6 +710,7 @@ class SpinTaylorT5Template(Template):
 waveforms = {
     "TaylorF2RedSpin": TaylorF2RedSpinTemplate,
     "IMRPhenomB": IMRPhenomBTemplate,
+    "IMRPhenomC": IMRPhenomCTemplate,
     "SEOBNRv1": SEOBNRv1Template,
     "EOBNRv2": EOBNRv2Template,
     "SpinTaylorT4": SpinTaylorT4Template,

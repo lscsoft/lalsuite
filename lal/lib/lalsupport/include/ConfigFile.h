@@ -28,83 +28,82 @@
 extern "C" {
 #endif
 
-/** \addtogroup ConfigFile_h
+/**
+ * \addtogroup ConfigFile_h
  * \author Reinhard Prix
  * \brief Module for general parsing of simple ASCII-based config-files.
-
- \heading{Description}
-
-This module provides routines for reading formatted
-config-files containing definitions of the form <tt>variable = value</tt>.
-The general syntax is somewhat similar to the one provided by the
-perl-module <tt>ConfigParser</tt> (cf.
-http://www.python.org/doc/current/lib/module-ConfigParser.html)
-
-Comments are allowed using either '<tt>\#</tt>', '<tt>;</tt>' or <tt>\%</tt>.
-You can also use line-continuation  using a '<tt>\\</tt>' at the end of the line.
-Also note that comment-signs '<tt>\#;\%</tt>' within double-quotes &quot;...&quot;
-are <em>not</em> treated as comment-characters.  The general syntax is best illustrated
-using a simple example:
-\code
-# comment line
-var1 = 1.0    ; you can also comment using semi-colons
-somevar = some text.\
-        You can also use\
-        line-continuation
-   var3 = 4      # whatever that means
-note = "this is also possible, and # here does nothing"
-a_switch = true  #possible values: 0,1,true,false,yes,no, case insensitive
-...
-\endcode
-
-Note that TABS generally get replaced by a single space, which can be
-useful in the case of line-continuation (see example). All leading and
-trailing spaces in are ignore (except within double-quotes).
-
-The general approach of reading from such a config-file, is to first
-call XLALParseDataFile() which loads and pre-parses the contents of the
-config-file into the structure LALParsedDataFile. Then one can read in
-config-variables either using one of the type-strict custom-wrappers
-<tt>XLALReadConfig<TYPE>Variable()</tt> or the general-purpose reading function
-XLALReadConfigVariable().
-
-
-A boolean variable read by XLALReadConfigBOOLVariable() can have any of the values
-<tt>{1, 0, yes, no, true, false}</tt>, where the comparison is done
-<em>case-insensitively</em>, i.e. you can also use 'True' or 'FALSE'....
-
-
-If one wishes a tight sytnax for the config-file, one can check
-that there are no illegal entries in the config-file. This is done
-by checking at the end that all config-file entries have been
-successfully parsed, using:
-XLALCheckConfigReadComplete(), where \a strictness is either
-CONFIGFILE_WARN or CONFIGFILE_ERROR.
-In the first case only a warning is issued, while in the second it is
-treated as a LAL-error if some config-file entries have not been
-read-in. (The use of this function is optional).
-
-
-The configfile-data should be freed at the end using
-XLALDestroyParsedDataFile().
-
-\par Notes
-
-XLALReadConfigSTRINGVariable() and XLALReadConfigSTRINGVariable() are not
-the same as using <tt>%quot;\%s&quot;</tt> as a format string, as they read the
-<em>rest</em> of the logical line (excluding comments) as a string.
-
-
-In the case of XLALReadConfigSTRINGVariable(), the required
-memory is allocated and has to be freed by the caller, while for
-XLALReadConfigSTRINGVariable() the caller has to provide a
-CHARVector of length N, which defines the maximum length of
-string to be read.
-
-\note instead of using these functions directly, it might be
-more convenient to use the \ref UserInput_h.
-
-*/
+ *
+ * ### Description ###
+ *
+ * This module provides routines for reading formatted
+ * config-files containing definitions of the form <tt>variable = value</tt>.
+ * The general syntax is somewhat similar to the one provided by the
+ * perl-module <tt>ConfigParser</tt> (cf.
+ * http://www.python.org/doc/current/lib/module-ConfigParser.html)
+ *
+ * Comments are allowed using either '<tt>\#</tt>' or <tt>\%</tt>.
+ * You can also use line-continuation  using a '<tt>\\</tt>' at the end of the line.
+ * Also note that comment-signs '<tt>\#\%</tt>' within double-quotes &quot;...&quot;
+ * are <em>not</em> treated as comment-characters.
+ * Semi-colons <tt>;</tt> are ignored, but can be used to separate several assignments on the same line.
+ * The general syntax is best illustrated
+ * using a simple example:
+ * \code
+ * # comment line
+ * var1 = 1.0; var2 = 3.1;   ## several assignments on a line, separated by ';'
+ * somevar = some text.\
+ * You can also use\
+ * line-continuation
+ * var3 = 4      # whatever that means
+ * note = "this is also possible, and # here does nothing"
+ * a_switch = true  #possible values: 0,1,true,false,yes,no, case insensitive
+ * ...
+ * \endcode
+ *
+ * Note that TABS generally get replaced by a single space, which can be
+ * useful in the case of line-continuation (see example). All leading and
+ * trailing spaces in are ignore (except within double-quotes).
+ *
+ * The general approach of reading from such a config-file, is to first
+ * call XLALParseDataFile() which loads and pre-parses the contents of the
+ * config-file into the structure LALParsedDataFile. Then one can read in
+ * config-variables either using one of the type-strict custom-wrappers
+ * <tt>XLALReadConfig<TYPE>Variable()</tt> or the general-purpose reading function
+ * XLALReadConfigVariable().
+ *
+ * A boolean variable read by XLALReadConfigBOOLVariable() can have any of the values
+ * <tt>{1, 0, yes, no, true, false}</tt>, where the comparison is done
+ * <em>case-insensitively</em>, i.e. you can also use 'True' or 'FALSE'....
+ *
+ * If one wishes a tight sytnax for the config-file, one can check
+ * that there are no illegal entries in the config-file. This is done
+ * by checking at the end that all config-file entries have been
+ * successfully parsed, using:
+ * XLALCheckConfigReadComplete(), where \a strictness is either
+ * CONFIGFILE_WARN or CONFIGFILE_ERROR.
+ * In the first case only a warning is issued, while in the second it is
+ * treated as a LAL-error if some config-file entries have not been
+ * read-in. (The use of this function is optional).
+ *
+ * The configfile-data should be freed at the end using
+ * XLALDestroyParsedDataFile().
+ *
+ * \par Notes
+ *
+ * XLALReadConfigSTRINGVariable() and XLALReadConfigSTRINGVariable() are not
+ * the same as using <tt>%quot;\%s&quot;</tt> as a format string, as they read the
+ * <em>rest</em> of the logical line (excluding comments) as a string.
+ *
+ * In the case of XLALReadConfigSTRINGVariable(), the required
+ * memory is allocated and has to be freed by the caller, while for
+ * XLALReadConfigSTRINGVariable() the caller has to provide a
+ * CHARVector of length N, which defines the maximum length of
+ * string to be read.
+ *
+ * \note instead of using these functions directly, it might be
+ * more convenient to use the \ref UserInput_h.
+ *
+ */
 /*@{*/
 
 /** Levels of strictness for config-file parsing. */
@@ -116,12 +115,12 @@ typedef enum {
 } ConfigStrictness;
 
 
-/** This structure defines a config-variable to be read in using the
- * general-purpose reading function LALReadConfigVariable(). */
+/**
+ * This structure defines a config-variable to be read in using the
+ * general-purpose reading function LALReadConfigVariable().
+ */
 #ifdef SWIG /* SWIG interface directives */
-%warnfilter(SWIGWARN_TYPEMAP_CHARLEAK) tagLALConfigVar::secName;
-%warnfilter(SWIGWARN_TYPEMAP_CHARLEAK) tagLALConfigVar::varName;
-%warnfilter(SWIGWARN_TYPEMAP_CHARLEAK) tagLALConfigVar::fmt;
+SWIGLAL(IMMUTABLE_MEMBERS(tagLALConfigVar, secName, varName, fmt));
 #endif /* SWIG */
 typedef struct tagLALConfigVar {
   const CHAR *secName;          /**< Section name within which to find varName.  May be NULL */
@@ -131,8 +130,9 @@ typedef struct tagLALConfigVar {
 } LALConfigVar;
 
 
-/** This structure is returned by LALParseDataFile() and holds the contents of an
- * ASCII data-file in a pre-parsed form, namely stripped from all comments ('\#', ';'),
+/**
+ * This structure is returned by LALParseDataFile() and holds the contents of an
+ * ASCII data-file in a pre-parsed form, namely stripped from all comments ('\#', '\%'),
  * spurious whitespaces, and separated into lines (taking into account line-continuation
  * by '\\' at the end of lines).
  * This is used as the input structure in the config-variable reading routines.
@@ -145,9 +145,12 @@ typedef struct tagLALParsedDataFile {
 
 /* Function prototypes */
 int XLALParseDataFile (LALParsedDataFile **cfgdata, const CHAR *fname);
+int XLALParseDataFileContent (LALParsedDataFile **cfgdata, const CHAR *string );
+
 void XLALDestroyParsedDataFile (LALParsedDataFile *cfgdata);
 
 int XLALConfigSectionExists(const LALParsedDataFile *, const CHAR *);
+LALStringVector *XLALListConfigFileSections ( const LALParsedDataFile *cfgdata );
 
 int
 XLALReadConfigBOOLVariable (BOOLEAN *varp,
@@ -190,7 +193,6 @@ XLALReadConfigVariable (void *varp,
                        BOOLEAN *wasRead);
 
 int XLALCheckConfigReadComplete (const LALParsedDataFile *cfgdata, ConfigStrictness strict);
-int XLALLowerCaseString (CHAR *string);
 
 /* ========== DEPRECATED LAL INTERFACE FUNCTIONS, which have been replaced by XLAL functions,
  * These functions are just wrappers around the XLAL functions
@@ -226,9 +228,11 @@ int XLALLowerCaseString (CHAR *string);
 #define CONFIGFILEH_MSGEXLAL		"Failure in XLAL function"
 /** \endcond */
 
-/** \name Deprecated LAL-interface
+/**
+ * \name Deprecated LAL-interface
  * These functions are deprecated, and you should user their XLAL-equivalents instead.
- */ /*@{*/
+ */
+/*@{*/
 void LALParseDataFile (LALStatus *, LALParsedDataFile **cfgdata, const CHAR *fname);
 void LALDestroyParsedDataFile (LALStatus *, LALParsedDataFile **cfgdata);
 

@@ -91,7 +91,6 @@ main (INT4 argc, CHAR **argv )
   /* --- Some initialization --- */
   gsl_histogram_set_ranges_uniform (histogramNoise, 0.,20.);
   lal_errhandler = LAL_ERR_EXIT;
-  lalDebugLevel = 0;
   templateBank.snglInspiralTable = NULL;
   memset( &templateBank, 0, sizeof( MetadataTable ) );
   memset( &randIn, 0, sizeof( RandomInspiralSignalIn ) );
@@ -1668,7 +1667,9 @@ void BankEfficiencyPrintResultsXml(
     LAL_CALL( LALEndLIGOLwXMLTable ( &status, &xmlStream ), &status );
 
     /* finally write sngl inspiral table column's names */
-    xml_status = PRINT_LIGOLW_XML_BANKEFFICIENCY(xmlStream.fp->fp);
+#define fputs XLALFilePuts
+    xml_status = PRINT_LIGOLW_XML_BANKEFFICIENCY(xmlStream.fp);
+#undef fputs
   }
   else
   {
@@ -1677,7 +1678,7 @@ void BankEfficiencyPrintResultsXml(
   }
 
   /* --- print the results of one simulation into the xml file --- */
-  fprintf(xmlStream.fp->fp,BANKEFFICIENCY_PARAMS_ROW,
+  XLALFilePrintf(xmlStream.fp,BANKEFFICIENCY_PARAMS_ROW,
     trigger.mass1_trigger,
     trigger.mass2_trigger,
     randIn.param.psi0,
@@ -1710,14 +1711,16 @@ void BankEfficiencyPrintResultsXml(
   /* --- if we reached the last simulations, we close the file --- */
   if (trigger.ntrial == (UINT4)userParam.ntrials)
   {
-    xml_status = PRINT_LIGOLW_XML_TABLE_FOOTER(xmlStream.fp->fp);
-    PRINT_LIGOLW_XML_FOOTER(xmlStream.fp->fp);
+#define fputs XLALFilePuts
+    xml_status = PRINT_LIGOLW_XML_TABLE_FOOTER(xmlStream.fp);
+    PRINT_LIGOLW_XML_FOOTER(xmlStream.fp);
+#undef fputs
     XLALFileClose(xmlStream.fp);
     xmlStream.fp = NULL;
   }
   else
   {
-    fprintf(xmlStream.fp->fp, ",\n");
+    XLALFilePrintf(xmlStream.fp, ",\n");
     XLALFileClose(xmlStream.fp);
     xmlStream.fp = NULL;
   }
@@ -1801,8 +1804,8 @@ BankEfficiencyPrintProtoXml(
 
   /* finally write sngl inspiral table */
 
-  fclose( xmlStream.fp->fp );
-  xmlStream.fp->fp = NULL;
+  XLALFileClose( xmlStream.fp );
+  xmlStream.fp = NULL;
 
 #undef MAXIFO
   exit( 1 );
@@ -2746,9 +2749,6 @@ void BankEfficiencyParseParameters(
     else if (!strcmp(argv[i],   "--bank-psi3-range")) {
       BankEfficiencyParseGetDouble2(argv, &i,
           &(coarseBankIn->psi3Min), &(coarseBankIn->psi3Max));
-    }
-    else if (!strcmp(argv[i],"--debug")) {
-      BankEfficiencyParseGetInt(argv, &i, &(lalDebugLevel));
     }
     else if (!strcmp(argv[i],"--bank-eccentricity-range")){
       BankEfficiencyParseGetDouble2(argv, &i,
@@ -3753,6 +3753,12 @@ void BankEfficiencyAscii2Xml(void)
           inputData->Gamma[7],
           inputData->Gamma[8],
           inputData->Gamma[9],
+          inputData->spin1x,
+          inputData->spin1y,
+          inputData->spin1z,
+          inputData->spin2x,
+          inputData->spin2y,
+          inputData->spin2z,
           id);
       inputData = inputData->next;
       fprintf(output, "\n");

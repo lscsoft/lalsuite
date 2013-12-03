@@ -27,36 +27,35 @@
  */
 
 /**
-
-\author Brown D. A.
-\file
-\ingroup FindChirp_h
-
-\brief This module provides the core of the matched filter for binary inspiral chirps.
-
-\section sec_fcf_match Matched Filtering Using Post-Newtonian Templates
-
-The gravitational wave strain induced in an interferometer by a binary
-inspiral may be written as
-\anchor eq_rootwaveform \f{equation}{
-h(t) = \frac{A(t)}{\mathcal{D}} \cos\left( 2 \phi(t) - \theta \right),
-\label{eq_rootwaveform}
-\f}
-where
-\f{equation}{
-A(t) = - \frac{2G\mu}{c^4} \left[ \pi GM f(t) \right]^\frac{2}{3}
-\f}
-and \f$\mathcal{D}\f$ is the <em>effective distance</em>, given by
-\f{equation}{
-\mathcal{D} = \frac{r}{\sqrt{F_+^2 (1 + \cos^2 \iota)^2 + F_\times^2 4 \cos^2 \iota}}.
-\f}
-The phase angle \f$\theta\f$ is
-\f{equation}{
-\tan \theta = \frac{F_\times 2\cos \iota}{F_+(1 + \cos^2 \iota)}
-\f}
-and \f$\phi(t)\f$ is the phase evolution of the inspiral waveform.
-
-*/
+ * \author Brown D. A.
+ * \file
+ * \ingroup FindChirp_h
+ *
+ * \brief This module provides the core of the matched filter for binary inspiral chirps.
+ *
+ * \section sec_fcf_match Matched Filtering Using Post-Newtonian Templates
+ *
+ * The gravitational wave strain induced in an interferometer by a binary
+ * inspiral may be written as
+ * \f{equation}{
+ * \label{eq_rootwaveform}
+ * h(t) = \frac{A(t)}{\mathcal{D}} \cos\left( 2 \phi(t) - \theta \right),
+ * \f}
+ * where
+ * \f{equation}{
+ * A(t) = - \frac{2G\mu}{c^4} \left[ \pi GM f(t) \right]^\frac{2}{3}
+ * \f}
+ * and \f$\mathcal{D}\f$ is the <em>effective distance</em>, given by
+ * \f{equation}{
+ * \mathcal{D} = \frac{r}{\sqrt{F_+^2 (1 + \cos^2 \iota)^2 + F_\times^2 4 \cos^2 \iota}}.
+ * \f}
+ * The phase angle \f$\theta\f$ is
+ * \f{equation}{
+ * \tan \theta = \frac{F_\times 2\cos \iota}{F_+(1 + \cos^2 \iota)}
+ * \f}
+ * and \f$\phi(t)\f$ is the phase evolution of the inspiral waveform.
+ *
+ */
 
 #define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <math.h>
@@ -291,13 +290,13 @@ LALFindChirpFilterSegment (
   /* qtilde positive frequency, not DC or nyquist */
   for ( k = 1; k < kmax; ++k )
   {
-    REAL4 r = inputData[k].re;
-    REAL4 s = inputData[k].im;
-    REAL4 x = tmpltSignal[k].re;
-    REAL4 y = 0 - tmpltSignal[k].im;       /* note complex conjugate */
+    REAL4 r = crealf(inputData[k]);
+    REAL4 s = cimagf(inputData[k]);
+    REAL4 x = crealf(tmpltSignal[k]);
+    REAL4 y = 0 - cimagf(tmpltSignal[k]);       /* note complex conjugate */
 
-    qtilde[k].re = r*x - s*y;
-    qtilde[k].im = r*y + s*x;
+    qtilde[k].realf_FIXME = r*x - s*y;
+    qtilde[k].imagf_FIXME = r*y + s*x;
   }
 
 
@@ -339,7 +338,7 @@ LALFindChirpFilterSegment (
 
     for ( j = 0; j < numPoints; ++j )
     {
-      REAL4 modqsq = q[j].re * q[j].re + q[j].im * q[j].im;
+      REAL4 modqsq = crealf(q[j]) * crealf(q[j]) + cimagf(q[j]) * cimagf(q[j]);
       params->rhosqVec->data->data[j] = norm * modqsq;
     }
   }
@@ -354,8 +353,8 @@ LALFindChirpFilterSegment (
 
     for ( j = 0; j < numPoints; ++j )
     {
-      params->cVec->data->data[j].re = sqrt(norm) * q[j].re;
-      params->cVec->data->data[j].im = sqrt(norm) * q[j].im;
+      params->cVec->data->data[j].realf_FIXME = sqrt(norm) * crealf(q[j]);
+      params->cVec->data->data[j].imagf_FIXME = sqrt(norm) * cimagf(q[j]);
     }
   }
 

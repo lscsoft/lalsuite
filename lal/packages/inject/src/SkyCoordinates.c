@@ -27,46 +27,44 @@
 #define LAL_LGAL     (0.576)
 
 /**
-   \author Creighton, T. D.
-   \addtogroup SkyCoordinates_c
-   \brief Automatically converts among sky coordinate systems.
-
-The function <tt>LALConvertSkyCoordinates()</tt> transforms the contents
-of <tt>*input</tt> to the system
-specified in <tt>*params</tt>, storing the result in <tt>*output</tt>
-(which may point to the same object as <tt>*input</tt> for an in-place
-transformation).  The routine makes calls to the functions in
-\ref CelestialCoordinates.c and \ref TerrestrialCoordinates.c as
-required; the <tt>*params</tt> object must store any data fields
-required by these functions, or an error will occur.
-
-
-The function <tt>LALNormalizeSkyPosition()</tt> "normalizes" any given
-(spherical) sky-position (in radians), which means it projects the
-angles into \f$[0, 2\pi) \times [-\pi/2, \pi/2]\f$ if they lie outside.
-
-\heading{Algorithm}
-
-<tt>LALConvertSkyCoordinates()</tt> is structured as a simple loop over
-transformations, each
-of which moves the output sky position one step closer to the desired
-final coordinates system.  The usual "flow" of the algorithm is:
-
-\image html  SkyCoordinates_conversions.png
-\image latex SkyCoordinates_conversions.eps
-
-although one can also convert directly between equatorial and horizon
-coordinate systems if <tt>params->zenith</tt> is given in equatorial
-coordinates (i.e.\ if its longitudinal coordinate is the local mean
-sidereal time rather than the geographic longitude of the observer).
-This leads to the only error checking done within this function: when
-transforming to horizon coordinates, it checks that
-<tt>params->zenith</tt> is either in sky-fixed equatorial or Earth-fixed
-geographic coordinates.  Other than this, error checking is left to
-the secondary function call; if a parameter is absent or poorly
-formatted, the called function will return an error.
-
-*/
+ * \author Creighton, T. D.
+ * \addtogroup SkyCoordinates_c
+ * \brief Automatically converts among sky coordinate systems.
+ *
+ * The function <tt>LALConvertSkyCoordinates()</tt> transforms the contents
+ * of <tt>*input</tt> to the system
+ * specified in <tt>*params</tt>, storing the result in <tt>*output</tt>
+ * (which may point to the same object as <tt>*input</tt> for an in-place
+ * transformation).  The routine makes calls to the functions in
+ * \ref CelestialCoordinates.c and \ref TerrestrialCoordinates.c as
+ * required; the <tt>*params</tt> object must store any data fields
+ * required by these functions, or an error will occur.
+ *
+ * The function <tt>LALNormalizeSkyPosition()</tt> "normalizes" any given
+ * (spherical) sky-position (in radians), which means it projects the
+ * angles into \f$[0, 2\pi) \times [-\pi/2, \pi/2]\f$ if they lie outside.
+ *
+ * ### Algorithm ###
+ *
+ * <tt>LALConvertSkyCoordinates()</tt> is structured as a simple loop over
+ * transformations, each
+ * of which moves the output sky position one step closer to the desired
+ * final coordinates system.  The usual "flow" of the algorithm is:
+ *
+ * \figure{SkyCoordinates_conversions,eps,0.6,}
+ *
+ * although one can also convert directly between equatorial and horizon
+ * coordinate systems if <tt>params->zenith</tt> is given in equatorial
+ * coordinates (i.e.\ if its longitudinal coordinate is the local mean
+ * sidereal time rather than the geographic longitude of the observer).
+ * This leads to the only error checking done within this function: when
+ * transforming to horizon coordinates, it checks that
+ * <tt>params->zenith</tt> is either in sky-fixed equatorial or Earth-fixed
+ * geographic coordinates.  Other than this, error checking is left to
+ * the secondary function call; if a parameter is absent or poorly
+ * formatted, the called function will return an error.
+ *
+ */
 /*@{*/
 
 /** \see See documentation in \ref SkyCoordinates_c */
@@ -160,7 +158,8 @@ LALConvertSkyCoordinates( LALStatus        *stat,
 
 
 
-/** \deprecated Use XLALNormalizeSkyPosition() instead.
+/**
+ * \deprecated Use XLALNormalizeSkyPosition() instead.
  */
 void
 LALNormalizeSkyPosition (LALStatus *stat,		/**< pointer to LALStatus structure */
@@ -185,7 +184,8 @@ LALNormalizeSkyPosition (LALStatus *stat,		/**< pointer to LALStatus structure *
 } /* LALNormalizeSkyPosition() */
 
 
-/** If sky-position is not in the canonical range
+/**
+ * If sky-position is not in the canonical range
  * \f$(\alpha,\delta)\in [0,2\pi]\times[-\pi/2, \pi/2]\f$, normalize it
  * by mapping it into this coordinate-interval.
  * Based on Alicia's function with some additional "unwinding" added.

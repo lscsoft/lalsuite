@@ -232,10 +232,16 @@ void sumseries_eg(REAL8 *computedprob, REAL8 P, REAL8 C, REAL8 E, INT8 counter, 
 
          if (pplus<=*(computedprob)*err || counterint<0) return;
 
-         Pint *= counterint*oneoverhalfdelta;
+         counterint--;
+         Pint *= (counterint+1)*oneoverhalfdelta;
+         Eint *= (halfdof + counterint+1)*oneoverhalfx;
+         Cint += Eint;
+
+         //This part below is wrong!
+         /* Pint *= (counterint)*oneoverhalfdelta;
          Eint *= (halfdof + counterint)*oneoverhalfx;
          Cint += Eint;
-         counterint--;
+         counterint--; */
       }
    } else {
       while (counterint!=-1) {
@@ -244,10 +250,16 @@ void sumseries_eg(REAL8 *computedprob, REAL8 P, REAL8 C, REAL8 E, INT8 counter, 
 
          if (pplus<=*(computedprob)*err) return;
 
+         counterint++;
          Pint *= halfdelta/counterint;
+         Eint *= halfx/(halfdof+counterint-1);
+         Cint -= Eint;
+
+         //This part below is wrong!
+         /* Pint *= halfdelta/counterint;
          Eint *= halfx/(halfdof+counterint);
          Cint -= Eint;
-         counterint++;
+         counterint++; */
       }
    }
 
@@ -626,10 +638,12 @@ REAL8 ncx2inv(REAL8 p, REAL8 dof, REAL8 delta)
 {
 
    //Fail if bad input
-   if (XLAL_IS_REAL8_FAIL_NAN(p) || XLAL_IS_REAL8_FAIL_NAN(dof) || XLAL_IS_REAL8_FAIL_NAN(delta)) {
+   if (XLAL_IS_REAL8_FAIL_NAN(p) || XLAL_IS_REAL8_FAIL_NAN(dof) || XLAL_IS_REAL8_FAIL_NAN(delta) || delta<0.0) {
       fprintf(stderr,"%s: Invalid arguments p=%f, dof=%f, delta=%f.\n", __func__, p, dof, delta);
       XLAL_ERROR_REAL8(XLAL_EINVAL);
    }
+
+   if (delta==0.0) return gsl_cdf_chisq_Pinv(p, dof);
 
    REAL8 pk = p;
    INT4 count_limit = 100;
@@ -679,7 +693,7 @@ REAL8 ncx2inv(REAL8 p, REAL8 dof, REAL8 delta)
       F = newF;
    }
 
-   fprintf(stderr, "%s: Warning! ncx2inv() failed to converge!\n", __func__);
+   fprintf(stderr, "%s: Warning! ncx2inv(%g, %g, %g) failed to converge!\n", __func__, p, dof, delta);
    return xk;
 
 }
@@ -690,10 +704,12 @@ REAL4 ncx2inv_float(REAL8 p, REAL8 dof, REAL8 delta)
 {
 
    //Fail if bad input
-   if (XLAL_IS_REAL8_FAIL_NAN(p) || XLAL_IS_REAL8_FAIL_NAN(dof) || XLAL_IS_REAL8_FAIL_NAN(delta)) {
+   if (XLAL_IS_REAL8_FAIL_NAN(p) || XLAL_IS_REAL8_FAIL_NAN(dof) || XLAL_IS_REAL8_FAIL_NAN(delta) || delta<0.0) {
       fprintf(stderr,"%s: Invalid arguments p=%f, dof=%f, delta=%f.\n", __func__, p, dof, delta);
       XLAL_ERROR_REAL8(XLAL_EINVAL);
    }
+
+   if (delta==0.0) return (REAL4)gsl_cdf_chisq_Pinv(p, dof);
    
    REAL8 pk = p;
    INT4 count_limit = 100;
@@ -801,8 +817,9 @@ REAL8 ks_test_exp(REAL4Vector *vector)
    REAL8 ksvalue = 0.0, testval1, testval2, testval;
    REAL8 oneoverlength = 1.0/tempvect->length;
    for (ii=0; ii<(INT4)tempvect->length; ii++) {
-      testval1 = fabs((1.0+ii)*oneoverlength - gsl_cdf_exponential_P(tempvect->data[ii], vector_mean));
-      testval2 = fabs(ii*oneoverlength - gsl_cdf_exponential_P(tempvect->data[ii], vector_mean));
+      REAL8 pval = gsl_cdf_exponential_P(tempvect->data[ii], vector_mean);
+      testval1 = fabs((1.0+ii)*oneoverlength - pval);
+      testval2 = fabs(ii*oneoverlength - pval);
       testval = fmax(testval1, testval2);
       if (testval>ksvalue) ksvalue = testval;
    }
@@ -847,17 +864,30 @@ REAL8 kuipers_test_exp(REAL4Vector *vector)
    //Now the Kuiper's test calculation is made
    REAL8 loval = 0.0, hival = 0.0;
    REAL8 oneoverlength = 1.0/tempvect->length;
-   for (ii=0; ii<(INT4)tempvect->length; ii++) {
-      REAL8 testval1 = (1.0+ii)*oneoverlength - gsl_cdf_exponential_P(tempvect->data[ii], vector_mean);
-      REAL8 testval2 = ii*oneoverlength - gsl_cdf_exponential_P(tempvect->data[ii], vector_mean);
+   /* for (ii=0; ii<(INT4)tempvect->length; ii++) {
+      REAL8 pval = gsl_cdf_exponential_P(tempvect->data[ii], vector_mean);
+      REAL8 testval1 = (1.0+ii)*oneoverlength - pval;
+      REAL8 testval2 = ii*oneoverlength - pval;
       if (hival<testval1) hival = testval1;
       if (loval<testval2) loval = testval2;
    }
-   REAL8 kuiperval = hival + loval;
+   REAL8 kuiperval1 = hival + loval; */
+
+   loval = -1.0, hival = -1.0;
+   for (ii=0; ii<(INT4)tempvect->length; ii++) {
+      REAL8 pval = gsl_cdf_exponential_P(tempvect->data[ii], vector_mean);
+      REAL8 testval1 = (1.0+ii)*oneoverlength - pval;
+      REAL8 testval2 = ii*oneoverlength - pval;
+      if (hival<testval1) hival = testval1;
+      if (hival<testval2) hival = testval2;
+      if (loval<-testval1) loval = -testval1;
+      if (loval<-testval2) loval = -testval2;
+   }
+   REAL8 kuiperval2 = hival + loval;
    
    XLALDestroyREAL4Vector(tempvect);
    
-   return kuiperval;
+   return kuiperval2;
    
 }
 
@@ -1030,6 +1060,33 @@ REAL4 calcMean_ignoreZeros(REAL4Vector *vector)
    return (REAL4)(meanval/values);
 
 } /* calcMean_ignoreZeros() */
+
+
+REAL4 calcHarmonicMean(REAL4Vector *vector, INT4 numfbins, INT4 numffts)
+{
+
+   INT4 ii, values = 0;
+   REAL4 harmonicMean = 0.0;
+   REAL4Vector *tempvect = XLALCreateREAL4Vector(numfbins);
+   if (tempvect==NULL) {
+      fprintf(stderr, "%s: XLALCreateREAL4Vector(%d) failed.\n", __func__, numfbins);
+      XLAL_ERROR_REAL4(XLAL_EFUNC);
+   }
+
+   for (ii=0; ii<numffts; ii++) {
+      if (vector->data[ii*numfbins]!=0.0) {
+         memcpy(tempvect->data, &(vector->data[ii*numfbins]), sizeof(REAL4)*numfbins);
+         harmonicMean += 1.0/calcMean(tempvect);
+         values++;
+      }
+   }
+   if (values>0) harmonicMean = (REAL4)values/harmonicMean;
+
+   XLALDestroyREAL4Vector(tempvect);
+
+   return harmonicMean;
+
+}
 
 
 //////////////////////////////////////////////////////////////

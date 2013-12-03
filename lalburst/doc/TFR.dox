@@ -1,325 +1,314 @@
 /**
-
-  \addtogroup pkg_TFR
-
-  \brief Compute a time-frequency representation (TFR) of a given signal.
-
-  Four types of TFRs are currently available. The algorithms are inspired by
-  the Time-Frequency toolbox for Matlab [\ref tftb].
-
-\heading{Synopsis}
-
-\code
-#include "TimeFreq.h"
-
-void LALCreateTimeFreqRep (Status*, TimeFreqRep**, CreateTimeFreqIn*);
-void LALCreateTimeFreqParam (Status*, TimeFreqParam**, CreateTimeFreqIn*);
-void LALDestroyTimeFreqRep (Status*, TimeFreqRep**);
-void LALDestroyTimeFreqParam (Status*, TimeFreqParam**);
-void LALTfrSp (Status*, REAL4Vector*, TimeFreqRep*, TimeFreqParam*);
-void LALTfrWv (Status*, REAL4Vector*, TimeFreqRep*, TimeFreqParam*);
-void LALTfrPswv (Status*, REAL4Vector*, TimeFreqRep*, TimeFreqParam*);
-void LALTfrRsp (Status*, REAL4Vector*, TimeFreqRep*, TimeFreqParam*);
-void LALDwindow (Status*, REAL4Vector*, REAL4Vector*);
-\endcode
-
-\heading{Description}
-This package is part of the so-called "Signal Track Algorithm" which
-is a time-frequency based detector of unmodeled gravitational wave
-sources. It provides a LAL-style C version of some functions of the
-Time-Frequency toolbox for Matlab [\ref tftb].
-
-Four different TFRs are currently available (see
-[\ref flandrin99_tf_ts] for a detailed description of what the
-following designations stand for) :
-<ol>
-<li> the spectrogram (function:
-  <tt>TfrSp()</tt>, type: \c Spectrogram)
-  \f$S_x^h(t,f)=|F_x^h(t,f)|^2\f$ is defined as the
-  square modulus of the short-time Fourier transform :
-\anchor sp \f{equation}{
-\label{sp}
-F_x^h(t,f)=\int{x(s)h(t-s)e^{-2i\pi sf}\,ds}.
-\f}</li>
-<li> the Wigner-Ville distribution (function: <tt>TfrWv()</tt>, type:
-\c WignerVille) is defined as :
-\anchor wv \f{equation}{
-\label{wv}
-W_x(t,f)=\int{x(t+s/2)x(t-s/2)e^{-2i\pi sf}\,ds}.
-\f}</li>
-<li> the pseudo smoothed Wigner-Ville distribution (function:
-<tt>TfrPswv()</tt>, type: \c PSWignerVille) is a smoothed
-version of the previous TFR. Its definition reads :
-\anchor pswv \f{equation}{
-\label{pswv}
-PSW_x^{h,g}(t,f)=\int{h(\tau)\int{g(s-t)x(t+s/2)x(t-s/2)\,ds}\:e^{-2i\pi \tau
-f}\,d\tau}.
-\f}</li>
-<li> the reassigned spectrogram (function: <tt>TfrRsp()</tt>, type:
-\c RSpectrogram) is modified version of the spectrogram (see
-above) by the reassignment method through the following transformation
-operation :
-\anchor rsp \f{equation}{
-\label{rsp}
-\check{S}_x^h(t,f)=\int{\!\!\!\int{S_x^{h}(s,\xi)\delta(t-\hat{t}(s,\xi),f-\hat{f}(s,\xi))\,dsd\xi}},
-\f}
-where the reassignment operators can be written for the time operator as :
-\f{equation}{
-\hat{t}_x^{h}(t,f)=t+\Re\left\{\frac{F_x^{{\cal T}h}(t,f)}{F_x^h(t,f)}\right\},
-\f}
-and for the frequency operator as :
-\f{equation}{
-\hat{f}_x^{h}(t,f)=f-\Im\left\{\frac{F_x^{{\cal D}h}(t,f)}{F_x^h(t,f)}\right\}.
-\f}
-
-These two operators require the computation of the short-time Fourier
-transforms with the two following windows :\f${\cal T}h(t)=t
-h(t)\f$ and \f${\cal D}h(t)=dh/dt\f$.</li>
-</ol>
-
-The first three algorithms are inspired by a C translation of the
-Time-Frequency toolbox for Matlab by M. Davy (IRCyN, Ecole Centrale de
-Nantes) and E. Leroy which is currently under development.
-
-\heading{Memory allocation}
-A TFR and its associated parameters are thought as a distinct data
-entities. Specific structures have been designed in that purpose. In
-order to create and allocate memory space to these structures, it is
-mandatory to first define and fill the \c CreateTimeFreqIn input
-structure:
-\code
-typedef struct tagCreateTimeFreqIn {
-  TimeFreqRepType type;             /* type of the TFR*/
-  INT4 fRow;                        /* number of freq bins in the TFR matrix */
-  INT4 tCol;                        /* number of time bins in the TFR matrix */
-  INT4 wlengthT;                    /* (Sp, Pswv and Rsp) Window length */
-  INT4 wlengthF;                    /* (Pswv) Window */
-} CreateTimeFreqIn;
-\endcode
-
-and then run the following routines CreateTimeFreqRep() and
-CreateTimeFreqParam() to create and allocate space for the
-time-frequency representation structure:
-\code
-typedef struct tagTimeFreqRep {
-  TimeFreqRepType type;             /* type of the TFR */
-  INT4 fRow;                        /* number of freq bins in the TFR matrix */
-  INT4 tCol;                        /* number of time_bins in the TFR matrix */
-  INT4 *timeInstant;                /* time instant for each column of the TFR */
-  REAL4 *freqBin;                   /* freqs for each row of the matrix */
-  REAL4 **map;                      /* TFR */
-} TimeFreqRep;
-\endcode
-
-and its associated parameters:
-\code
-typedef struct tagTimeFreqParam {
-  TimeFreqRepType type;                   /* type of the TFR */
-  REAL4Vector *windowT;                   /* (Sp, Rsp and Pswv) Window */
-  REAL4Vector *windowF;                   /* (Pswv) Window */
-} TimeFreqParam;
-\endcode
-
-*/
-
-/**
-
-Notes:
-<ol>
-<li> The number of frequency bins \c fRow must be a power of 2.</li>
-<li> The (time-smoothing) window length \c wlengthT
-(frequency-smoothing) window length \c wlengthF must be odd
-integers (so that the window time center is on the time grid).</li>
-</ol>
-
-\heading{TFR computation}
-Next, the user needs to specify in \c timeInstant the time
-instants at which the TFR will be computed and the window(s)
-(\c windowT and \c windowF) if required.
-
-The routines <tt>TfrSp()</tt>, <tt>TfrWv()</tt>, <tt>TfrPswv()</tt>
-and <tt>TfrRsp()</tt> perform the computation of the chosen TFR at the
-time-frequency points \f$(time,freq)\f$, where \f$time\f$ describes the
-\c tCol given time locations and \f$freq=k/\mathtt{fRow}\f$, \f$k = 0
-\ldots\mathtt{fRow}/2\f$ scans the <tt>fRow/2</tt> frequency bins
-spanning from \f$0\f$ to \f$1/2\f$ (sampling frequency assumed to be \f$1\f$).
-
-The result is stored in the structure \c TimeFreqRep under the
-label \c map: <tt>map[column][row]</tt> is a matrix with
-\c tCol columns and \c fRow rows.
-
-We summarize the memory allocation and the intput and output of the
-computation stage in Table.\tableref{tfr_tablea}.
-
-
-Notes:
-<ol>
-<li> An additional routine <tt>Dwindow()</tt> is used internally in
-<tt>TfrRsp()</tt> to compute numerically the derivative of the
-spectrogram window.</li>
-</ol>
-
-\heading{Memory desallocation}
-The memory can be finally freed using the following routines :
-<tt>DestroyTimeFreqRep()</tt> and <tt>DestroyTimeFreqParam()</tt>.
-
-
-
-\anchor tfr_tablea
-<table>
-<caption align="top" style="text-align: left; font-weight: normal;">Table: This table lists what need to be specified in the \c TimeFreqIn, \c TimeFreqRep and \c TimeFreqParam
-structures for the memory allocation, before starting the computation (input)  and what results after the computation (output).</caption>
-<tr><th>Function</th><th>Memory allocation</th><th>Input</th><th>Output</th></tr>
-<tr><td><tt>TfrSp()</tt></td><td></td><td></td><td></td></tr>
-<tr><td></td><td>\f$\bullet\f$ In \c TimeFreqIn:</td><td>\f$\bullet\f$ In \c TimeFreqRep:</td><td>\f$\bullet\f$ In \c TimeFreqRep:</td></tr>
-<tr><td></td><td><tt>type = Spectrogram</tt></td><td><tt>timeInstant*</tt></td><td><tt>map**</tt></td></tr>
-<tr><td></td><td>\c tCol</td><td></td><td><tt>freqBin*</tt></td></tr>
-<tr><td></td><td>\c fRow</td><td>\f$\bullet\f$ In \c TimeFreqParam:</td><td></td></tr>
-<tr><td></td><td>\c wlengthT</td><td><tt>windowT*</tt> \f$\equiv h(t)\f$ in eq.\eqref{sp}</td><td></td></tr>
-<tr><td><tt>TfrWv()</tt></td><td></td><td></td><td></td></tr>
-<tr><td></td><td>\f$\bullet\f$ In \c TimeFreqIn:</td><td>\f$\bullet\f$ In \c TimeFreqRep:</td><td>\f$\bullet\f$ In \c TimeFreqRep:</td></tr>
-<tr><td></td><td><tt>type = WignerVille</tt></td><td><tt>timeInstant*</tt></td><td><tt>map**</tt></td></tr>
-<tr><td></td><td>\c tCol</td><td></td><td><tt>freqBin*</tt></td></tr>
-<tr><td></td><td>\c fRow</td><td>\f$\bullet\f$ In \c TimeFreqParam:</td><td></td></tr>
-<tr><td><tt>TfrPswv()</tt></td><td></td><td></td><td></td></tr>
-<tr><td></td><td>\f$\bullet\f$ In \c TimeFreqIn:</td><td>\f$\bullet\f$ In \c TimeFreqRep:</td><td>\f$\bullet\f$ In \c TimeFreqRep:</td></tr>
-<tr><td></td><td><tt>type = PSWignerVille</tt></td><td><tt>timeInstant*</tt></td><td><tt>map**</tt></td></tr>
-<tr><td></td><td>\c tCol</td><td></td><td><tt>freqBin*</tt></td></tr>
-<tr><td></td><td>\c fRow</td><td>\f$\bullet\f$ In \c TimeFreqParam:</td><td></td></tr>
-<tr><td></td><td>\c wlengthT</td><td><tt>windowT*</tt> \f$\equiv g(t)\f$ in eq.\eqref{pswv}</td><td></td></tr>
-<tr><td></td><td>\c wlengthF</td><td><tt>windowF*</tt> \f$\equiv h(t)\f$ in eq.\eqref{pswv}</td><td></td></tr>
-<tr><td><tt>TfrRsp()</tt></td><td></td><td></td><td></td></tr>
-<tr><td></td><td>\f$\bullet\f$ In \c TimeFreqIn:</td><td>\f$\bullet\f$ In \c TimeFreqRep:</td><td>\f$\bullet\f$ In \c TimeFreqRep:</td></tr>
-<tr><td></td><td><tt>type = RSpectrogram</tt></td><td><tt>timeInstant*</tt></td><td><tt>map**</tt></td></tr>
-<tr><td></td><td>\c tCol</td><td></td><td><tt>freqBin*</tt></td></tr>
-<tr><td></td><td>\c fRow</td><td>\f$\bullet\f$ In \c TimeFreqParam:</td><td></td></tr>
-<tr><td></td><td>\c wlengthT</td><td><tt>windowT*</tt>\f$ \equiv h(t)\f$ in eq.\eqref{rsp}</td><td></td></tr>
-</table>
-
-\heading{Operating Instructions}
-
-\code
-const INT4 Nsignal=16;
-const INT4 NwindowT=3;
-const INT4 NwindowF=5;
-const INT4 Nfft=8;
-
-static Status status;
-
-REAL4Vector*  signal = NULL;
-CreateTimeFreqRepIn tfrIn;
-TimeFreqRep*tfr = NULL;
-TimeFreqParam *param = NULL;
-
-INT4 column;
-INT4 row;
-
-tfrIn.type=Spectrogram; /* for ex. the spectrogram*/
-tfrIn.fRow=Nfft;
-tfrIn.tCol=Nsignal;
-tfrIn.wlengthT=NwindowT;
-tfrIn.wlengthF=NwindowF;
-
-SCreateVector(&status, &signal, Nsignal);
-CreateTimeFreqRep(&status, &tfr, &tfrIn);
-CreateTimeFreqParam(&status, &param, &tfrIn);
-
-/* assign data ... */
-
-/* perform TFR */
-
-TfrSp(&status,signal,tfr,param);
-
-/* TfrWv(&status,signal,tfr,param); */
-/* TfrPswv(&status,signal,tfr,param); */
-/* TfrRsp(&status,signal,tfr,param); */
-
-/* destroy input vectors, TimeFreqRep and TimeFreqParam structures */
-SDestroyVector(&status,&signal);
-DestroyTimeFreqRep(&status,&tfr);
-DestroyTimeFreqParam(&status,&param);
-\endcode
-
-\heading{Arguments}
-
-<ul>
-<li> \c status is a universal status structure. Its contents are
-assigned by the functions.</li>
-<li>  \c signal is the input signal</li>
-<li> \c tfrIn is the time-frequency input structure (for memory
-allocation).
-\begin{itemize}</li>
-<li> \c type is the type of the chosen TFR (see Table.\tableref{tfr_tablea}.</li>
-<li> \c fRow is the number of frequency bins.</li>
-<li> \c tCol is the number of time bins.</li>
-<li> \c wlengthT is the (time-smoothing) window length (for Sp,
-Rsp and Pswv).</li>
-<li> \c wlengthF is the (frequency-smoothing) window length (for Pswv).</li>
-</ul>
-\item \c tfr is the time-frequency representation structure.
-<ul>
-<li> \c type is the type of the chosen TFR (see Table.\tableref{tfr_tablea}.</li>
-<li> \c fRow is the number of frequency bins.</li>
-<li> \c tCol is the number of time bins.</li>
-<li> \c freqBin defines the centers of each frequency bins.</li>
-<li> \c timeInstant defines the centers of each time bins.</li>
-<li> \c map is the TFR matrix.</li>
-</ul>
-\item \c param is the time-frequency parameter structure.
-<ul>
-<li> \c type is the type of the chosen TFR (see Table.\tableref{tfr_tablea}.</li>
-<li> \c windowT is the (time-smoothing) window (for Sp,
-Rsp and Pswv).</li>
-<li> \c windowF is the (frequency-smoothing) window length (for
-Pswv).</li>
-</ul>
-\end{itemize}
-
-\heading{Error conditions}
-
-These functions all set the universal status structure on return.
-Error conditions are described in the tables.\tableref{tfr_tableb} and
-\tableref{tfr_tablec}.
-
-\anchor tfr_tableb
-<table>
-<caption align="top" style="text-align: left; font-weight: normal;">Table: Error conditions for memory allocation functions of the TFR package</caption>
-<tr><th>status</th><th>status</th><th>Description</th></tr>
-<tr><td>code</td><td>description</td><td></td></tr>
-<tr><td>CREATETFR_ENULL 1</td><td>Null pointer</td><td>an argument is NULL or contains a NULL pointer</td></tr>
-<tr><td>CREATETFR_ENNUL 2</td><td>Non-null pointer</td><td>trying to create a TFR structure that already exists</td></tr>
-<tr><td>CREATETFR_EFROW 4</td><td>Illegal number of freq bins</td><td>the number of frequency bins is not a power of 2</td></tr>
-<tr><td>CREATETFR_ETCOL 8</td><td>Illegal number of time instants</td><td>the number of time bins is not a positive integer</td></tr>
-<tr><td>CREATETFR_EMALL 16</td><td>Malloc failure</td><td>Malloc refuses to allocate memory space</td></tr>
-<tr><td>DESTROYTFR_ENULL 1</td><td>Null pointer</td><td>an argument is NULL or contains a NULL pointer</td></tr>
-<tr><td>CREATETFP_ENULL 1</td><td>Null pointer</td><td>an argument is NULL or contains a NULL pointer</td></tr>
-<tr><td>CREATETFP_ENNUL 2</td><td>Non-null pointer</td><td>trying to create a TFR parameter structure that already exists</td></tr>
-<tr><td>CREATETFP_ETYPE 4</td><td>Unknown TFR type</td><td>the chosen TFR type is available</td></tr>
-<tr><td>CREATETFP_EWSIZ 8</td><td>Invalid window size</td><td>the window length is not a positive odd integer</td></tr>
-<tr><td>CREATETFP_EMALL 16</td><td>Malloc failure</td><td>Malloc refuses to allocate memory space</td></tr>
-<tr><td>DESTROYTFP_ENULL 1</td><td>Null pointer</td><td>an argument is NULL or contains a NULL pointer</td></tr>
-<tr><td>DESTROYTFP_ETYPE 2</td><td>Unknown TFR type</td><td>the chosen TFR type is not available</td></tr>
-</table>
-
-
-\anchor tfr_tablec
-<table>
-<caption align="top" style="text-align: left; font-weight: normal;">Table: Error conditions for computation functions of the TFR package</caption>
-<tr><th>status</th><th>status</th><th>Description</th></tr>
-<tr><td>code</td><td>description</td><td></td></tr>
-<tr><td>TFR_ENULL 1</td><td>Null pointer</td><td>an argument is NULL or contains a NULL pointer</td></tr>
-<tr><td>TFR_ENAME 2</td><td>TFR type mismatched</td><td>the function does not compute this TFR type</td></tr>
-<tr><td>TFR_EFROW 4</td><td>Invalid number of freq bins</td><td>the number of frequency bins is not a power of 2</td></tr>
-<tr><td>TFR_EWSIZ 8</td><td>Invalid window length</td><td>the window length is not a positive odd integer</td></tr>
-<tr><td>TFR_ESAME 16</td><td>Input/Output data vectors are the same</td><td>input and output vectors need to be distinct</td></tr>
-<tr><td>TFR_EBADT 32</td><td>Invalid time instant</td><td>request of a computation at a time instantwhen the signal does not exist</td></tr>
-</table>
-
-\heading{Algorithms}
-The algorithm are taken from the Time-Frequency toolbox for Matlab [\ref tftb].
-
-\heading{Tests}
-The test files provide the TFR of a random signal (16 time samples).
-The resulting TFRs are identical to the ones given by the Time-Frequency Toolbox.
-
-*/
+ * \addtogroup pkg_TFR
+ *
+ * \brief Compute a time-frequency representation (TFR) of a given signal.
+ *
+ * Four types of TFRs are currently available. The algorithms are inspired by
+ * the Time-Frequency toolbox for Matlab \cite tftb.
+ *
+ * ### Synopsis ###
+ *
+ * \code
+ * #include "TimeFreq.h"
+ *
+ * void LALCreateTimeFreqRep (Status*, TimeFreqRep**, CreateTimeFreqIn*);
+ * void LALCreateTimeFreqParam (Status*, TimeFreqParam**, CreateTimeFreqIn*);
+ * void LALDestroyTimeFreqRep (Status*, TimeFreqRep**);
+ * void LALDestroyTimeFreqParam (Status*, TimeFreqParam**);
+ * void LALTfrSp (Status*, REAL4Vector*, TimeFreqRep*, TimeFreqParam*);
+ * void LALTfrWv (Status*, REAL4Vector*, TimeFreqRep*, TimeFreqParam*);
+ * void LALTfrPswv (Status*, REAL4Vector*, TimeFreqRep*, TimeFreqParam*);
+ * void LALTfrRsp (Status*, REAL4Vector*, TimeFreqRep*, TimeFreqParam*);
+ * void LALDwindow (Status*, REAL4Vector*, REAL4Vector*);
+ * \endcode
+ *
+ * ### Description ###
+ *
+ * This package is part of the so-called "Signal Track Algorithm" which
+ * is a time-frequency based detector of unmodeled gravitational wave
+ * sources. It provides a LAL-style C version of some functions of the
+ * Time-Frequency toolbox for Matlab \cite tftb.
+ *
+ * Four different TFRs are currently available (see
+ * [\cite flandrin99_tf_ts] for a detailed description of what the
+ * following designations stand for) :
+ * <ol>
+ * <li> the spectrogram (function:
+ * <tt>TfrSp()</tt>, type: \c Spectrogram)
+ * \f$S_x^h(t,f)=|F_x^h(t,f)|^2\f$ is defined as the
+ * square modulus of the short-time Fourier transform :
+ * \f{equation}{
+ * \label{sp}
+ * F_x^h(t,f)=\int{x(s)h(t-s)e^{-2i\pi sf}\,ds}.
+ * \f}</li>
+ * <li> the Wigner-Ville distribution (function: <tt>TfrWv()</tt>, type:
+ * \c WignerVille) is defined as :
+ * \f{equation}{
+ * \label{wv}
+ * W_x(t,f)=\int{x(t+s/2)x(t-s/2)e^{-2i\pi sf}\,ds}.
+ * \f}</li>
+ * <li> the pseudo smoothed Wigner-Ville distribution (function:
+ * <tt>TfrPswv()</tt>, type: \c PSWignerVille) is a smoothed
+ * version of the previous TFR. Its definition reads :
+ * \f{equation}{
+ * \label{pswv}
+ * PSW_x^{h,g}(t,f)=\int{h(\tau)\int{g(s-t)x(t+s/2)x(t-s/2)\,ds}\:e^{-2i\pi \tau
+ * f}\,d\tau}.
+ * \f}</li>
+ * <li> the reassigned spectrogram (function: <tt>TfrRsp()</tt>, type:
+ * \c RSpectrogram) is modified version of the spectrogram (see
+ * above) by the reassignment method through the following transformation
+ * operation :
+ * \f{equation}{
+ * \label{rsp}
+ * \check{S}_x^h(t,f)=\int{\!\!\!\int{S_x^{h}(s,\xi)\delta(t-\hat{t}(s,\xi),f-\hat{f}(s,\xi))\,dsd\xi}},
+ * \f}
+ * where the reassignment operators can be written for the time operator as :
+ * \f{equation}{
+ * \hat{t}_x^{h}(t,f)=t+\Re\left\{\frac{F_x^{{\cal T}h}(t,f)}{F_x^h(t,f)}\right\},
+ * \f}
+ * and for the frequency operator as :
+ * \f{equation}{
+ * \hat{f}_x^{h}(t,f)=f-\Im\left\{\frac{F_x^{{\cal D}h}(t,f)}{F_x^h(t,f)}\right\}.
+ * \f}
+ *
+ * These two operators require the computation of the short-time Fourier
+ * transforms with the two following windows :\f${\cal T}h(t)=t
+ * h(t)\f$ and \f${\cal D}h(t)=dh/dt\f$.</li>
+ * </ol>
+ *
+ * The first three algorithms are inspired by a C translation of the
+ * Time-Frequency toolbox for Matlab by M. Davy (IRCyN, Ecole Centrale de
+ * Nantes) and E. Leroy which is currently under development.
+ *
+ * ### Memory allocation ###
+ *
+ * A TFR and its associated parameters are thought as a distinct data
+ * entities. Specific structures have been designed in that purpose. In
+ * order to create and allocate memory space to these structures, it is
+ * mandatory to first define and fill the \c CreateTimeFreqIn input
+ * structure:
+ * \code
+ * typedef struct tagCreateTimeFreqIn {
+ *   TimeFreqRepType type;             // type of the TFR
+ *   INT4 fRow;                        // number of freq bins in the TFR matrix
+ *   INT4 tCol;                        // number of time bins in the TFR matrix
+ *   INT4 wlengthT;                    // (Sp, Pswv and Rsp) Window length
+ *   INT4 wlengthF;                    // (Pswv) Window
+ * } CreateTimeFreqIn;
+ * \endcode
+ *
+ * and then run the following routines CreateTimeFreqRep() and
+ * CreateTimeFreqParam() to create and allocate space for the
+ * time-frequency representation structure:
+ * \code
+ * typedef struct tagTimeFreqRep {
+ *   TimeFreqRepType type;             // type of the TFR
+ *   INT4 fRow;                        // number of freq bins in the TFR matrix
+ *   INT4 tCol;                        // number of time_bins in the TFR matrix
+ *   INT4 *timeInstant;                // time instant for each column of the TFR
+ *   REAL4 *freqBin;                   // freqs for each row of the matrix
+ *   REAL4 **map;                      // TFR
+ * } TimeFreqRep;
+ * \endcode
+ *
+ * and its associated parameters:
+ * \code
+ * typedef struct tagTimeFreqParam {
+ *   TimeFreqRepType type;                   // type of the TFR
+ *   REAL4Vector *windowT;                   // (Sp, Rsp and Pswv) Window
+ *   REAL4Vector *windowF;                   // (Pswv) Window
+ * } TimeFreqParam;
+ * \endcode
+ *
+ * Notes:
+ * <ol>
+ * <li> The number of frequency bins \c fRow must be a power of 2.</li>
+ * <li> The (time-smoothing) window length \c wlengthT
+ * (frequency-smoothing) window length \c wlengthF must be odd
+ * integers (so that the window time center is on the time grid).</li>
+ * </ol>
+ *
+ * ### TFR computation ###
+ *
+ * Next, the user needs to specify in \c timeInstant the time
+ * instants at which the TFR will be computed and the window(s)
+ * (\c windowT and \c windowF) if required.
+ *
+ * The routines <tt>TfrSp()</tt>, <tt>TfrWv()</tt>, <tt>TfrPswv()</tt>
+ * and <tt>TfrRsp()</tt> perform the computation of the chosen TFR at the
+ * time-frequency points \f$(time,freq)\f$, where \f$time\f$ describes the
+ * \c tCol given time locations and \f$freq=k/\mathtt{fRow}\f$, \f$k = 0
+ * \ldots\mathtt{fRow}/2\f$ scans the <tt>fRow/2</tt> frequency bins
+ * spanning from \f$0\f$ to \f$1/2\f$ (sampling frequency assumed to be \f$1\f$).
+ *
+ * The result is stored in the structure \c TimeFreqRep under the
+ * label \c map: <tt>map[column][row]</tt> is a matrix with
+ * \c tCol columns and \c fRow rows.
+ *
+ * We summarize the memory allocation and the intput and output of the
+ * computation stage in \tableref{tfr_tablea}.
+ *
+ * Notes:
+ * <ol>
+ * <li> An additional routine <tt>Dwindow()</tt> is used internally in
+ * <tt>TfrRsp()</tt> to compute numerically the derivative of the
+ * spectrogram window.</li>
+ * </ol>
+ *
+ * ### Memory desallocation ###
+ *
+ * The memory can be finally freed using the following routines :
+ * <tt>DestroyTimeFreqRep()</tt> and <tt>DestroyTimeFreqParam()</tt>.
+ *
+ * \anchor tfr_tablea
+ * <table>
+ * <caption align="top" style="text-align: left; font-weight: normal;">Table: This table lists what need to be specified in the \c TimeFreqIn, \c TimeFreqRep and \c TimeFreqParam
+ * structures for the memory allocation, before starting the computation (input)  and what results after the computation (output).</caption>
+ * <tr><th>Function</th><th>Memory allocation</th><th>Input</th><th>Output</th></tr>
+ * <tr><td><tt>TfrSp()</tt></td><td></td><td></td><td></td></tr>
+ * <tr><td></td><td>\f$\bullet\f$ In \c TimeFreqIn:</td><td>\f$\bullet\f$ In \c TimeFreqRep:</td><td>\f$\bullet\f$ In \c TimeFreqRep:</td></tr>
+ * <tr><td></td><td><tt>type = Spectrogram</tt></td><td><tt>timeInstant*</tt></td><td><tt>map**</tt></td></tr>
+ * <tr><td></td><td>\c tCol</td><td></td><td><tt>freqBin*</tt></td></tr>
+ * <tr><td></td><td>\c fRow</td><td>\f$\bullet\f$ In \c TimeFreqParam:</td><td></td></tr>
+ * <tr><td></td><td>\c wlengthT</td><td><tt>windowT*</tt> \f$\equiv h(t)\f$ in \eqref{sp}</td><td></td></tr>
+ * <tr><td><tt>TfrWv()</tt></td><td></td><td></td><td></td></tr>
+ * <tr><td></td><td>\f$\bullet\f$ In \c TimeFreqIn:</td><td>\f$\bullet\f$ In \c TimeFreqRep:</td><td>\f$\bullet\f$ In \c TimeFreqRep:</td></tr>
+ * <tr><td></td><td><tt>type = WignerVille</tt></td><td><tt>timeInstant*</tt></td><td><tt>map**</tt></td></tr>
+ * <tr><td></td><td>\c tCol</td><td></td><td><tt>freqBin*</tt></td></tr>
+ * <tr><td></td><td>\c fRow</td><td>\f$\bullet\f$ In \c TimeFreqParam:</td><td></td></tr>
+ * <tr><td><tt>TfrPswv()</tt></td><td></td><td></td><td></td></tr>
+ * <tr><td></td><td>\f$\bullet\f$ In \c TimeFreqIn:</td><td>\f$\bullet\f$ In \c TimeFreqRep:</td><td>\f$\bullet\f$ In \c TimeFreqRep:</td></tr>
+ * <tr><td></td><td><tt>type = PSWignerVille</tt></td><td><tt>timeInstant*</tt></td><td><tt>map**</tt></td></tr>
+ * <tr><td></td><td>\c tCol</td><td></td><td><tt>freqBin*</tt></td></tr>
+ * <tr><td></td><td>\c fRow</td><td>\f$\bullet\f$ In \c TimeFreqParam:</td><td></td></tr>
+ * <tr><td></td><td>\c wlengthT</td><td><tt>windowT*</tt> \f$\equiv g(t)\f$ in \eqref{pswv}</td><td></td></tr>
+ * <tr><td></td><td>\c wlengthF</td><td><tt>windowF*</tt> \f$\equiv h(t)\f$ in \eqref{pswv}</td><td></td></tr>
+ * <tr><td><tt>TfrRsp()</tt></td><td></td><td></td><td></td></tr>
+ * <tr><td></td><td>\f$\bullet\f$ In \c TimeFreqIn:</td><td>\f$\bullet\f$ In \c TimeFreqRep:</td><td>\f$\bullet\f$ In \c TimeFreqRep:</td></tr>
+ * <tr><td></td><td><tt>type = RSpectrogram</tt></td><td><tt>timeInstant*</tt></td><td><tt>map**</tt></td></tr>
+ * <tr><td></td><td>\c tCol</td><td></td><td><tt>freqBin*</tt></td></tr>
+ * <tr><td></td><td>\c fRow</td><td>\f$\bullet\f$ In \c TimeFreqParam:</td><td></td></tr>
+ * <tr><td></td><td>\c wlengthT</td><td><tt>windowT*</tt>\f$ \equiv h(t)\f$ in \eqref{rsp}</td><td></td></tr>
+ * </table>
+ *
+ * ### Operating Instructions ###
+ *
+ * \code
+ * const INT4 Nsignal=16;
+ * const INT4 NwindowT=3;
+ * const INT4 NwindowF=5;
+ * const INT4 Nfft=8;
+ *
+ * static Status status;
+ *
+ * REAL4Vector*  signal = NULL;
+ * CreateTimeFreqRepIn tfrIn;
+ * TimeFreqRep*tfr = NULL;
+ * TimeFreqParam *param = NULL;
+ *
+ * INT4 column;
+ * INT4 row;
+ *
+ * tfrIn.type=Spectrogram; // for ex. the spectrogram
+ * tfrIn.fRow=Nfft;
+ * tfrIn.tCol=Nsignal;
+ * tfrIn.wlengthT=NwindowT;
+ * tfrIn.wlengthF=NwindowF;
+ *
+ * SCreateVector(&status, &signal, Nsignal);
+ * CreateTimeFreqRep(&status, &tfr, &tfrIn);
+ * CreateTimeFreqParam(&status, &param, &tfrIn);
+ *
+ * // assign data ...
+ *
+ * // perform TFR
+ *
+ * TfrSp(&status,signal,tfr,param);
+ *
+ * // TfrWv(&status,signal,tfr,param);
+ * // TfrPswv(&status,signal,tfr,param);
+ * // TfrRsp(&status,signal,tfr,param);
+ *
+ * // destroy input vectors, TimeFreqRep and TimeFreqParam structures
+ * SDestroyVector(&status,&signal);
+ * DestroyTimeFreqRep(&status,&tfr);
+ * DestroyTimeFreqParam(&status,&param);
+ * \endcode
+ *
+ * ### Arguments ###
+ *
+ * <ul>
+ * <li> \c status is a universal status structure. Its contents are
+ * assigned by the functions.</li>
+ * <li>  \c signal is the input signal</li>
+ * <li> \c tfrIn is the time-frequency input structure (for memory
+ * allocation).</li>
+ * <li> \c type is the type of the chosen TFR (see \tableref{tfr_tablea}.</li>
+ * <li> \c fRow is the number of frequency bins.</li>
+ * <li> \c tCol is the number of time bins.</li>
+ * <li> \c wlengthT is the (time-smoothing) window length (for Sp,
+ * Rsp and Pswv).</li>
+ * <li> \c wlengthF is the (frequency-smoothing) window length (for Pswv).</li>
+ * <li> \c tfr is the time-frequency representation structure.</li>
+ * <li> \c type is the type of the chosen TFR (see \tableref{tfr_tablea}.</li>
+ * <li> \c fRow is the number of frequency bins.</li>
+ * <li> \c tCol is the number of time bins.</li>
+ * <li> \c freqBin defines the centers of each frequency bins.</li>
+ * <li> \c timeInstant defines the centers of each time bins.</li>
+ * <li> \c map is the TFR matrix.</li>
+ * <li> \c param is the time-frequency parameter structure.</li>
+ * <li> \c type is the type of the chosen TFR (see \tableref{tfr_tablea}.</li>
+ * <li> \c windowT is the (time-smoothing) window (for Sp, Rsp and Pswv).</li>
+ * <li> \c windowF is the (frequency-smoothing) window length (for Pswv).</li>
+ * </ul>
+ *
+ * ### Error conditions ###
+ *
+ * These functions all set the universal status structure on return.
+ * Error conditions are described in the \tableref{tfr_tableb} and
+ * \tableref{tfr_tablec}.
+ *
+ * \anchor tfr_tableb
+ * <table>
+ * <caption align="top" style="text-align: left; font-weight: normal;">Table: Error conditions for memory allocation functions of the TFR package</caption>
+ * <tr><th>status</th><th>status</th><th>Description</th></tr>
+ * <tr><td>code</td><td>description</td><td></td></tr>
+ * <tr><td>CREATETFR_ENULL 1</td><td>Null pointer</td><td>an argument is NULL or contains a NULL pointer</td></tr>
+ * <tr><td>CREATETFR_ENNUL 2</td><td>Non-null pointer</td><td>trying to create a TFR structure that already exists</td></tr>
+ * <tr><td>CREATETFR_EFROW 4</td><td>Illegal number of freq bins</td><td>the number of frequency bins is not a power of 2</td></tr>
+ * <tr><td>CREATETFR_ETCOL 8</td><td>Illegal number of time instants</td><td>the number of time bins is not a positive integer</td></tr>
+ * <tr><td>CREATETFR_EMALL 16</td><td>Malloc failure</td><td>Malloc refuses to allocate memory space</td></tr>
+ * <tr><td>DESTROYTFR_ENULL 1</td><td>Null pointer</td><td>an argument is NULL or contains a NULL pointer</td></tr>
+ * <tr><td>CREATETFP_ENULL 1</td><td>Null pointer</td><td>an argument is NULL or contains a NULL pointer</td></tr>
+ * <tr><td>CREATETFP_ENNUL 2</td><td>Non-null pointer</td><td>trying to create a TFR parameter structure that already exists</td></tr>
+ * <tr><td>CREATETFP_ETYPE 4</td><td>Unknown TFR type</td><td>the chosen TFR type is available</td></tr>
+ * <tr><td>CREATETFP_EWSIZ 8</td><td>Invalid window size</td><td>the window length is not a positive odd integer</td></tr>
+ * <tr><td>CREATETFP_EMALL 16</td><td>Malloc failure</td><td>Malloc refuses to allocate memory space</td></tr>
+ * <tr><td>DESTROYTFP_ENULL 1</td><td>Null pointer</td><td>an argument is NULL or contains a NULL pointer</td></tr>
+ * <tr><td>DESTROYTFP_ETYPE 2</td><td>Unknown TFR type</td><td>the chosen TFR type is not available</td></tr>
+ * </table>
+ *
+ * \anchor tfr_tablec
+ * <table>
+ * <caption align="top" style="text-align: left; font-weight: normal;">Table: Error conditions for computation functions of the TFR package</caption>
+ * <tr><th>status</th><th>status</th><th>Description</th></tr>
+ * <tr><td>code</td><td>description</td><td></td></tr>
+ * <tr><td>TFR_ENULL 1</td><td>Null pointer</td><td>an argument is NULL or contains a NULL pointer</td></tr>
+ * <tr><td>TFR_ENAME 2</td><td>TFR type mismatched</td><td>the function does not compute this TFR type</td></tr>
+ * <tr><td>TFR_EFROW 4</td><td>Invalid number of freq bins</td><td>the number of frequency bins is not a power of 2</td></tr>
+ * <tr><td>TFR_EWSIZ 8</td><td>Invalid window length</td><td>the window length is not a positive odd integer</td></tr>
+ * <tr><td>TFR_ESAME 16</td><td>Input/Output data vectors are the same</td><td>input and output vectors need to be distinct</td></tr>
+ * <tr><td>TFR_EBADT 32</td><td>Invalid time instant</td><td>request of a computation at a time instantwhen the signal does not exist</td></tr>
+ * </table>
+ *
+ * ### Algorithms ###
+ *
+ * The algorithm are taken from the Time-Frequency toolbox for Matlab \cite tftb.
+ *
+ * ### Tests ###
+ *
+ * The test files provide the TFR of a random signal (16 time samples).
+ * The resulting TFRs are identical to the ones given by the Time-Frequency Toolbox.
+ *
+ */

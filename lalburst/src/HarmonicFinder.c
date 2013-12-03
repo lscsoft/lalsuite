@@ -61,56 +61,57 @@
 #endif
 
 /**
-\author Sintes, A. M.
-
-\brief  Given certain harmonic indices \f$\{ k\} \f$  finds the frequency interval
-   location (in bins) of the interference (around \f$k\times f_0\f$).
-
-\heading{Description}
-This routine determines the lower and upper frequency limit (in bins)
-of each harmonic line considered, \f$(\nu_{ik}, \nu_{fk})\f$, from the power
-spectrum.
-
-The harmonic indices  are given as an input <tt>*in1</tt>.
-<dl>
-<dt><tt>in1->length</tt></dt><dd> Number of harmonics.</dd>
-<dt><tt>in1->data</tt></dt><dd>   List of harmonics to consider, e.g., \f$\{ k \} =  \{ 3, 5, 9, 11 \ldots\}\f$</dd>
-</dl>
-
-The power spectrum, \f$\vert\tilde x(\nu)\vert^2\f$, together with the approximate
-frequency \f$f_0\f$ (in Hz) of the interference fundamental harmonic and the
-frequency resolution are also given as an input  <tt>*in2</tt>.
-<dl>
-<dt><tt>in2->length</tt></dt><dd> The number of elements in <tt>in2->data</tt>.</dd>
-<dt><tt>in2->data</tt></dt><dd>   The spectrum,  \f$\vert\tilde x(\nu)\vert^2\f$.</dd>
-<dt><tt>in2->deltaF</tt></dt><dd> The \f$\Delta\f$F offset between samples (in Hz).</dd>
-<dt><tt>in2->fLine</tt></dt><dd>  The interference fundamental frequency \f$f_0\f$ (in Hz), e.g., 60 Hz.</dd>
-</dl>
-
-The  output  <tt>*out</tt> is a vector whose length is
-<tt>out->length</tt> = \f$3\times\f$~<tt>in1->length</tt>,
- and contains  for each considered harmonic, in the following order,
- its index \f$k\f$ and the bin location of \f$\nu_{ik}\f$ and  \f$\nu_{fk}\f$.
-<dl>
-<dt><tt>out->length</tt></dt><dd> The number of elements in <tt>out->data</tt>.</dd>
-<dt><tt>out->data</tt></dt><dd>    \f$\{ k,\nu_{ik}, \nu_{fk} \} \f$,       e.g.,  \f$\{3, 9868, 9894, 5, 16449, 16487, 9, 29607, 29675 \ldots\}\f$.</dd>
-</dl>
-
-\heading{Algorithm}
-
-It looks for the location of interference harmonics assuming that
-the fundamental harmonic is located somewhere in the interval
-<tt>in2->fLine</tt> - 0.7 Hz and <tt>in2->fLine</tt> + 0.7 Hz.
-First, the power spectrum is smoothed by averaging neighboring bins.
-Then, the corresponding frequency  intervals
-of the harmonics considered are reduced by finding the central
-bin position of the lines and their standard deviation. This is done
-using the smooth power spectrum as a probability density distribution.
-The limits of the lines are set initially  at 1 or 2 sigma from the
-central bin location and, later, they are moved until they hit a local
- minimum in a selected interval.
-See the code for details.
-*/
+ * \author Sintes, A. M.
+ *
+ * \brief  Given certain harmonic indices \f$\{ k\} \f$  finds the frequency interval
+ * location (in bins) of the interference (around \f$k\times f_0\f$).
+ *
+ * ### Description ###
+ *
+ * This routine determines the lower and upper frequency limit (in bins)
+ * of each harmonic line considered, \f$(\nu_{ik}, \nu_{fk})\f$, from the power
+ * spectrum.
+ *
+ * The harmonic indices  are given as an input <tt>*in1</tt>.
+ * <dl>
+ * <dt><tt>in1->length</tt></dt><dd> Number of harmonics.</dd>
+ * <dt><tt>in1->data</tt></dt><dd>   List of harmonics to consider, e.g., \f$\{ k \} =  \{ 3, 5, 9, 11 \ldots\}\f$</dd>
+ * </dl>
+ *
+ * The power spectrum, \f$\vert\tilde x(\nu)\vert^2\f$, together with the approximate
+ * frequency \f$f_0\f$ (in Hz) of the interference fundamental harmonic and the
+ * frequency resolution are also given as an input  <tt>*in2</tt>.
+ * <dl>
+ * <dt><tt>in2->length</tt></dt><dd> The number of elements in <tt>in2->data</tt>.</dd>
+ * <dt><tt>in2->data</tt></dt><dd>   The spectrum,  \f$\vert\tilde x(\nu)\vert^2\f$.</dd>
+ * <dt><tt>in2->deltaF</tt></dt><dd> The \f$\Delta\f$F offset between samples (in Hz).</dd>
+ * <dt><tt>in2->fLine</tt></dt><dd>  The interference fundamental frequency \f$f_0\f$ (in Hz), e.g., 60 Hz.</dd>
+ * </dl>
+ *
+ * The  output  <tt>*out</tt> is a vector whose length is
+ * <tt>out->length</tt> = \f$3\times\f$~<tt>in1->length</tt>,
+ * and contains  for each considered harmonic, in the following order,
+ * its index \f$k\f$ and the bin location of \f$\nu_{ik}\f$ and  \f$\nu_{fk}\f$.
+ * <dl>
+ * <dt><tt>out->length</tt></dt><dd> The number of elements in <tt>out->data</tt>.</dd>
+ * <dt><tt>out->data</tt></dt><dd>    \f$\{ k,\nu_{ik}, \nu_{fk} \} \f$,       e.g.,  \f$\{3, 9868, 9894, 5, 16449, 16487, 9, 29607, 29675 \ldots\}\f$.</dd>
+ * </dl>
+ *
+ * ### Algorithm ###
+ *
+ * It looks for the location of interference harmonics assuming that
+ * the fundamental harmonic is located somewhere in the interval
+ * <tt>in2->fLine</tt> - 0.7 Hz and <tt>in2->fLine</tt> + 0.7 Hz.
+ * First, the power spectrum is smoothed by averaging neighboring bins.
+ * Then, the corresponding frequency  intervals
+ * of the harmonics considered are reduced by finding the central
+ * bin position of the lines and their standard deviation. This is done
+ * using the smooth power spectrum as a probability density distribution.
+ * The limits of the lines are set initially  at 1 or 2 sigma from the
+ * central bin location and, later, they are moved until they hit a local
+ * minimum in a selected interval.
+ * See the code for details.
+ */
 void LALHarmonicFinder (LALStatus  *status,	/**< LAL status structure */
          INT4Vector         *out,   /**< harmonic index and location, size 3*l */
          REAL4FVectorCLR    *in2,   /**< |x(f)|^2, data + information */

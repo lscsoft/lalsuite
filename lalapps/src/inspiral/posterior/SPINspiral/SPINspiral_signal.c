@@ -465,7 +465,7 @@ double logLikelihood_nine(struct parSet *par, int waveformVersion, int injection
 // ****************************************************************************************************************************************************  
 /**
  * \brief Compute the Fisher matrix for a network of IFOs.
- * 
+ *
  * Use computeFisherMatrixIFO() to compute the elements per IFO
  */
 // ****************************************************************************************************************************************************  

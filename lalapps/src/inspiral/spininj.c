@@ -18,11 +18,11 @@
 */
 
 /**
- * Author : 
- * 
+ * Author :
+ *
  * Purpose : generate xml file for binary injections (spinning case)
  *
- * */
+ */
 #include <stdio.h>
 #include <stdlib.h>
 #include <config.h>
@@ -232,7 +232,6 @@ int main( int argc, char *argv[] )
 
     /* set up inital debugging values */
   lal_errhandler = LAL_ERR_EXIT;
-  set_debug_level( "1" );
   
   LAL_CALL( LALParserInspiralInjection(&status, argc, argv, &paramsIn), 
            &status);

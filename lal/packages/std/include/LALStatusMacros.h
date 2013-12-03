@@ -17,7 +17,7 @@
 *  MA  02111-1307  USA
 */
 
-// ---------- SEE LALStatusMacros.dox for doxygen documentation ----------
+/* ---------- SEE LALStatusMacros.dox for doxygen documentation ---------- */
 
 #ifndef _LALSTATUSMACROS_H
 #define _LALSTATUSMACROS_H
@@ -32,15 +32,17 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <lal/LALDebugLevel.h>
 #include <lal/LALMalloc.h>
 #include <lal/LALDatatypes.h>
 #include <lal/LALError.h>
 
 #ifdef  __cplusplus
 extern "C" {
+#elif 0
+}       /* so that editors will match preceding brace */
 #endif
 
-extern int lalDebugLevel;	/**< Global LAL debug level, see \ref ss_lalDebugLevel for more details */
 extern const int lalNoDebug;
 
 #define LAL_EXLAL     16384
@@ -261,8 +263,9 @@ do {                                                                          \
     (statusptr)->statusCode = (code) )
 
 
-#ifdef  __cplusplus
+#if 0
+{       /* so that editors will match succeeding brace */
+#elif defined(__cplusplus)
 }
 #endif
-
 #endif /* _LALSTATUSMACROS_H */

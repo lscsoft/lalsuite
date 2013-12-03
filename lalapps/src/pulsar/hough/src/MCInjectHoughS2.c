@@ -23,7 +23,7 @@
  * \author Alicia Sintes, Badri Krishnan
  * \brief
  * Monte Carlo signal injections for several h_0 values and
- *  compute the Hough transform for only one point in parameter space each time
+ * compute the Hough transform for only one point in parameter space each time
  */
 
 /* 
@@ -58,7 +58,6 @@ Input shoud be from
 #include "./MCInjectHoughS2.h" /* proper path*/
 
 
-extern int lalDebugLevel;
 
 #define EARTHEPHEMERIS "./earth00-04.dat"
 #define SUNEPHEMERIS "./sun00-04.dat"
@@ -181,9 +180,6 @@ int main(int argc, char *argv[]){
 #endif
 
   /*  set up the default parameters  */
-  lalDebugLevel = 0;
-  /* LALDebugLevel must be called before anything else */
-  LAL_CALL( LALGetDebugLevel( &status, argc, argv, 'd'), &status);
 
   uvar_help = FALSE;
   uvar_AllSkyFlag = 1;
@@ -787,8 +783,8 @@ int main(int argc, char *argv[]){
 	for (i=0; (UINT4)i < sftlength; i++)  {
 	  /* sumSFT->re = noise1SFT->re + h0scale *signal1SFT->re; */
 	  /* sumSFT->im = noise1SFT->im + h0scale *signal1SFT->im; */
-	  sumSFT->re = noise1SFT->re + h0scale *signal1SFT->re;
-	  sumSFT->im = noise1SFT->im + h0scale *signal1SFT->im;
+	  sumSFT->realf_FIXME = crealf(*noise1SFT) + h0scale *crealf(*signal1SFT);
+	  sumSFT->imagf_FIXME = cimagf(*noise1SFT) + h0scale *cimagf(*signal1SFT);
 	  ++noise1SFT;
 	  ++signal1SFT;
 	  ++sumSFT;

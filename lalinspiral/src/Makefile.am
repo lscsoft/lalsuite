@@ -1,10 +1,11 @@
-AM_CPPFLAGS = -I$(top_builddir)/include
+AM_CPPFLAGS = -I$(top_builddir)/include -DPKG_DATA_DIR='"$(pkgdatadir)/"'
 
 lalinspiralincludedir = $(includedir)/lal
 lalinspiralinclude_HEADERS = \
 	BBHPhenomCoeffs.h \
 	Chisq_CPU.h \
 	Chisq_GPU.h \
+	LALInspiralPyCBCTemplate.h \
 	CoherentInspiral.h \
 	CoincInspiralEllipsoid.h \
 	FindChirp.h \
@@ -47,12 +48,14 @@ lalinspiralinclude_HEADERS = \
 	RingUtils.h \
 	SimulateInspiral.h \
 	TemplateBankGeneration.h \
-	TrigScanEThincaCommon.h
+	TrigScanEThincaCommon.h \
+	lalinspiralswig_test.i
 
 lib_LTLIBRARIES = liblalinspiral.la
 liblalinspiral_la_SOURCES = \
 	BandPassInspiralTemplate.c \
 	Chisq_CPU.c \
+	LALInspiralPyCBCTemplate.c \
 	CoherentInspiralFilter.c \
 	CoherentInspiralInput.c \
 	CoincInspiralEllipsoid.c \
@@ -202,6 +205,7 @@ liblalinspiral_la_SOURCES = \
 	NDTemplateBank.c \
 	NRWaveIO.c \
 	NRWaveInject.c \
+	Playground.c \
 	RingUtils.c \
 	SimInspiralUtils.c \
 	SimRingdownUtils.c \
@@ -244,21 +248,22 @@ BUILT_SOURCES = \
 	lalinspiral-user-env.csh
 
 lalinspiral-user-env.shell: Makefile $(srcdir)/generate_user_env.awk
-	@echo "# generic user environment script" >$@
+	@echo "# source this file to access $(PACKAGE_NAME)" >$@
 	@echo "set LALINSPIRAL_PREFIX $(prefix)" >>$@
 	@echo "prepend PATH $(bindir)" >>$@
 	@echo "prepend MANPATH $(mandir)" >>$@
 	@echo "prepend PKG_CONFIG_PATH $(libdir)/pkgconfig" >>$@
 	@echo "prepend PYTHONPATH $(pyexecdir)" >>$@
 	@echo "prepend LAL_DATA_PATH $(pkgdatadir)" >>$@
-	@printf "$(SWIG_USER_ENV)" >>$@
+	@echo "prepend OCTAVE_PATH $(octexecdir)" >>$@
 
 lalinspiral-user-env.csh lalinspiral-user-env.sh: lalinspiral-user-env.shell $(srcdir)/generate_user_env.awk
-	$(AM_V_GEN)$(AWK) -f $(srcdir)/generate_user_env.awk -v SED=$(SED) -v package=$(PACKAGE_NAME) -v output=$@ $< || { rm -f $@; exit 1; }
+	$(AM_V_GEN)$(AWK) -f $(srcdir)/generate_user_env.awk -v SED="$(SED)" -v output="$@" $<
 
 EXTRA_DIST = \
 	Chisq_GPU.cu \
 	LALInspiralConfig.h.in \
+	config.h.in \
 	generate_user_env.awk
 
 if HAVE_GIT_REPO
@@ -266,8 +271,10 @@ BUILT_SOURCES += LALInspiralVCSInfo.h
 MOSTLYCLEANFILES += LALInspiralVCSInfo.h
 LALInspiralVCSInfo.h .PHONY : gen-LALInspiralVCSInfo.h
 gen-LALInspiralVCSInfo.h :
-	$(GENERATE_VCS_INFO) LALInspiralVCSInfo.h $(srcdir)/LALInspiralVCSInfo.h.git
+	$(AM_V_at)$(GENERATE_VCS_INFO) LALInspiralVCSInfo.h $(srcdir)/LALInspiralVCSInfo.h.git
 endif
+
+DISTCLEANFILES = config.h
 
 @LAL_HEADER_LINK@
 

@@ -1,5 +1,8 @@
 #!/bin/bash
 
+## run all LALApps programs with memory debugging
+export LAL_DEBUG_LEVEL="${LAL_DEBUG_LEVEL},memdbg"
+
 ## make sure we work in 'C' locale here to avoid awk sillyness
 LC_ALL_old=$LC_ALL
 export LC_ALL=C
@@ -33,13 +36,6 @@ if [ -n "${LALPULSAR_DATADIR}" ]; then
     saf_code="${saf_code} -E ${LALPULSAR_DATADIR}"
     cfs_code="${cfs_code} -E ${LALPULSAR_DATADIR}"
     cfsv2_code="${cfsv2_code} -E ${LALPULSAR_DATADIR}"
-else
-    echo
-    echo "Need environment-variable LALPULSAR_DATADIR to be set to"
-    echo "your ephemeris-directory (e.g. /usr/local/share/lalpulsar)"
-    echo "This might indicate an incomplete LAL+LALPULSAR installation"
-    echo
-    exit 1
 fi
 
 ## without noise-weights, CFSv1 and CFSv2 should agree extremely well,
@@ -119,21 +115,21 @@ fi
 # this part of the command-line is compatible with SemiAnalyticF:
 saf_CL=" --Alpha=$Alpha --Delta=$Delta --IFO=$IFO --Tsft=$Tsft --startTime=$startTime --duration=$duration --h0=$h0 --cosi=$cosi --psi=$psi --phi0=$phi0"
 # concatenate this with the mfd-specific switches:
-mfd_CL="${saf_CL} --fmin=$mfd_fmin --Band=$mfd_FreqBand --Freq=$Freq --outSFTbname=$SFTdir/testSFT --f1dot=$f1dot --outSFTv1 -v${debug}"
+mfd_CL="${saf_CL} --fmin=$mfd_fmin --Band=$mfd_FreqBand --Freq=$Freq --outSFTbname=$SFTdir/testSFT --f1dot=$f1dot --outSFTv1"
 if [ "$haveNoise" = true ]; then
     mfd_CL="$mfd_CL --noiseSqrtSh=$sqrtSh";
 fi
 
 cmdline="$mfd_code $mfd_CL --randSeed=1"
 echo $cmdline;
-if ! eval "$cmdline &> /dev/null"; then
+if ! eval "$cmdline 2> /dev/null"; then
     echo "Error.. something failed when running '$mfd_code' ..."
     exit 1
 fi
 
 echo
 echo -n "Running '$saf_code' ... "
-cmdline="$saf_code $saf_CL --sqrtSh=$sqrtSh -v${debug}"
+cmdline="$saf_code $saf_CL --sqrtSh=$sqrtSh"
 echo $cmdline
 if ! resF=`eval "$cmdline  2> /dev/null"`; then
     echo "Error ... something failed running '$saf_code' ..."
@@ -149,7 +145,7 @@ echo "----------------------------------------------------------------------"
 echo
 outfile_v1="Fstat_v1.dat";
 ## common cmdline-options for v1 and v2
-cfs_CL="--IFO=$IFO --Alpha=$Alpha --Delta=$Delta --Freq=$cfs_Freq --dFreq=$cfs_dFreq --f1dot=$cfs_f1dot --f1dotBand=$cfs_f1dotBand --df1dot=$cfs_df1dot --DataFiles='$SFTdir/testSFT*' --Dterms=${Dterms} --NumCandidatesToKeep=${cfs_nCands} -v${debug}"
+cfs_CL="--IFO=$IFO --Alpha=$Alpha --Delta=$Delta --Freq=$cfs_Freq --dFreq=$cfs_dFreq --f1dot=$cfs_f1dot --f1dotBand=$cfs_f1dotBand --df1dot=$cfs_df1dot --DataFiles='$SFTdir/testSFT*' --Dterms=${Dterms} --NumCandidatesToKeep=${cfs_nCands}"
 if [ "$haveNoise" = false ]; then
     cfs_CL="$cfs_CL --SignalOnly"
 fi
@@ -157,7 +153,7 @@ fi
 cmdline="$cfs_code $cfs_CL  --outputFstat=$outfile_v1 --expLALDemod=0 --Fthreshold=0 --FreqBand=$cfs_FreqBand_v1"
 echo $cmdline;
 
-if ! eval "$cmdline &> /dev/null"; then
+if ! eval "$cmdline 2> /dev/null"; then
     echo "Error.. something failed when running '$cfs_code' ..."
     exit 1
 fi
@@ -170,7 +166,7 @@ echo
 outfile_v2NWon="Fstat_v2NWon.dat";
 cmdlineNoiseWeightsOn="$cfsv2_code $cfs_CL --outputFstat=$outfile_v2NWon --TwoFthreshold=0 --FreqBand=$cfs_FreqBand --UseNoiseWeights=true"
 echo $cmdlineNoiseWeightsOn;
-if ! eval "$cmdlineNoiseWeightsOn &> /dev/null"; then
+if ! eval "$cmdlineNoiseWeightsOn 2> /dev/null"; then
     echo "Error.. something failed when running '$cfs_code' ..."
     exit 1;
 fi
@@ -178,7 +174,7 @@ fi
 outfile_v2NWoff="Fstat_v2NWoff.dat";
 cmdlineNoiseWeightsOff="$cfsv2_code $cfs_CL --outputFstat=$outfile_v2NWoff --TwoFthreshold=0 --FreqBand=$cfs_FreqBand --UseNoiseWeights=false"
 echo $cmdlineNoiseWeightsOff;
-if ! eval "$cmdlineNoiseWeightsOff &> /dev/null"; then
+if ! eval "$cmdlineNoiseWeightsOff 2> /dev/null"; then
     echo "Error.. something failed when running '$cfs_code' ..."
     exit 1;
 fi
@@ -195,7 +191,7 @@ sort $outfile_v2NWoff > __tmp_sorted && mv __tmp_sorted $outfile_v2NWoff
 sort $outfile_v2NWon > __tmp_sorted && mv __tmp_sorted $outfile_v2NWon
 
 echo
-cmdline="$cmp_code -1 ./$outfile_v1 -2 ./$outfile_v2NWoff --clusterFiles=0 --Ftolerance=$Ftolerance_NWoff -v${debug}"
+cmdline="$cmp_code -1 ./$outfile_v1 -2 ./$outfile_v2NWoff --clusterFiles=0 --Ftolerance=$Ftolerance_NWoff"
 echo -n $cmdline
 if ! eval $cmdline; then
     echo "==> OUCH... files differ. Something might be wrong..."
@@ -204,7 +200,7 @@ else
     echo "	==> OK."
 fi
 
-cmdline="$cmp_code -1 ./$outfile_v1 -2 ./$outfile_v2NWon --clusterFiles=0 --Ftolerance=$Ftolerance_NWon -v${debug}"
+cmdline="$cmp_code -1 ./$outfile_v1 -2 ./$outfile_v2NWon --clusterFiles=0 --Ftolerance=$Ftolerance_NWon"
 echo -n $cmdline
 if ! eval $cmdline; then
     echo "==> OUCH... files differ. Something might be wrong..."

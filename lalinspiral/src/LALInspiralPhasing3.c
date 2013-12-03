@@ -18,40 +18,40 @@
 */
 
 /**
-\author Sathyaprakash, B. S.
-\file
-\ingroup LALInspiral_h
-
-\brief The code \ref LALInspiralPhasing3.c calculates the phase the waveform
-from an inspiralling binary system as a function of time up to second post-Nowtonian
-order.
-
-<tt>LALInspiralPhasing3()</tt>
-<ul>
-<li> \c phase: Output, the phase of the wave at the current epoch.</li>
-<li> \c td: Input, the PN expansion coefficients of phase \f$\phi^t_k\f$ as a function
-of time (cf. Table.\tableref{table_flux}.</li>
-<li> \c ak: Input containing PN expansion coefficients.</li>
-</ul>
-
-
-\heading{Description}
-The phase of the inspiral wave corresponding to the \c Approximant \c TaylorT2
-as in Equation.\eqref{eq_InspiralWavePhase3}.
-
-\heading{Algorithm}
-None.
-
-
-\heading{Uses}
-None.
-
-\heading{Notes}
-None.
-
-
-
-*/
+ * \author Sathyaprakash, B. S.
+ * \file
+ * \ingroup LALInspiral_h
+ *
+ * \brief The code \ref LALInspiralPhasing3.c calculates the phase the waveform
+ * from an inspiralling binary system as a function of time up to second post-Nowtonian
+ * order.
+ *
+ * <tt>LALInspiralPhasing3()</tt>
+ * <ul>
+ * <li> \c phase: Output, the phase of the wave at the current epoch.</li>
+ * <li> \c td: Input, the PN expansion coefficients of phase \f$\phi^t_k\f$ as a function
+ * of time (cf. \tableref{table_flux}.</li>
+ * <li> \c ak: Input containing PN expansion coefficients.</li>
+ * </ul>
+ *
+ * ### Description ###
+ *
+ * The phase of the inspiral wave corresponding to the \c Approximant \c TaylorT2
+ * as in \eqref{eq_InspiralWavePhase3}.
+ *
+ * ### Algorithm ###
+ *
+ * None.
+ *
+ * ### Uses ###
+ *
+ * None.
+ *
+ * ### Notes ###
+ *
+ * None.
+ *
+ */
 
 #include <lal/LALStdlib.h>
 #include <lal/LALInspiral.h>
@@ -64,7 +64,7 @@ LALInspiralPhasing3_0PN (
    expnCoeffs *ak
    )
 {
-  XLALPrintDeprecationWarning("LALInspiralPhasing3_0PN", "XLALInspiralPhasing3_0PN");
+  XLAL_PRINT_DEPRECATION_WARNING("XLALInspiralPhasing3_0PN");
 
   INITSTATUS(status);
   ATTATCHSTATUSPTR(status);
@@ -109,7 +109,7 @@ LALInspiralPhasing3_2PN (
    expnCoeffs *ak
    )
 {
-  XLALPrintDeprecationWarning("LALInspiralPhasing3_2PN", "XLALInspiralPhasing3_2PN");
+  XLAL_PRINT_DEPRECATION_WARNING("XLALInspiralPhasing3_2PN");
 
   INITSTATUS(status);
   ATTATCHSTATUSPTR(status);
@@ -158,7 +158,7 @@ LALInspiralPhasing3_3PN (
    expnCoeffs *ak
    )
 {
-  XLALPrintDeprecationWarning("LALInspiralPhasing3_3PN", "XLALInspiralPhasing3_3PN");
+  XLAL_PRINT_DEPRECATION_WARNING("XLALInspiralPhasing3_3PN");
 
   INITSTATUS(status);
   ATTATCHSTATUSPTR(status);
@@ -209,7 +209,7 @@ LALInspiralPhasing3_4PN (
    expnCoeffs *ak
    )
 {
-  XLALPrintDeprecationWarning("LALInspiralPhasing3_4PN", "XLALInspiralPhasing3_4PN");
+  XLAL_PRINT_DEPRECATION_WARNING("XLALInspiralPhasing3_4PN");
 
   INITSTATUS(status);
   ATTATCHSTATUSPTR(status);
@@ -262,7 +262,7 @@ LALInspiralPhasing3_5PN (
    expnCoeffs *ak
    )
 {
-  XLALPrintDeprecationWarning("LALInspiralPhasing3_5PN", "XLALInspiralPhasing3_5PN");
+  XLAL_PRINT_DEPRECATION_WARNING("XLALInspiralPhasing3_5PN");
 
   INITSTATUS(status);
   ATTATCHSTATUSPTR(status);
@@ -316,7 +316,7 @@ LALInspiralPhasing3_6PN (
    expnCoeffs *ak
    )
 {
-  XLALPrintDeprecationWarning("LALInspiralPhasing3_6PN", "XLALInspiralPhasing3_6PN");
+  XLAL_PRINT_DEPRECATION_WARNING("XLALInspiralPhasing3_6PN");
 
   INITSTATUS(status);
   ATTATCHSTATUSPTR(status);
@@ -372,7 +372,7 @@ LALInspiralPhasing3_7PN (
    expnCoeffs *ak
    )
 {
-  XLALPrintDeprecationWarning("LALInspiralPhasing3_7PN", "XLALInspiralPhasing3_7PN");
+  XLAL_PRINT_DEPRECATION_WARNING("XLALInspiralPhasing3_7PN");
 
   INITSTATUS(status);
   ATTATCHSTATUSPTR(status);

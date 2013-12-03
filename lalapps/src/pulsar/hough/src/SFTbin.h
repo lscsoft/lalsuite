@@ -31,16 +31,18 @@
  */
  
 /**
-\author A.M. Sintes
-
-\heading{Header \ref SFTbin.h}
-Routines for reading SFT binary files
-
-\heading{Synopsis}
-\code
-#include <lal/SFTbin.h>
-\endcode
-*/
+ * \author A.M. Sintes
+ *
+ * ### Header SFTbin.h ###
+ *
+ * Routines for reading SFT binary files
+ *
+ * ### Synopsis ###
+ *
+ * \code
+ * #include <lal/SFTbin.h>
+ * \endcode
+ */
 
 /*
  * 4.  Protection against double inclusion (include-loop protection)

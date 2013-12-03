@@ -28,38 +28,39 @@
  *
  * \brief Tests the routines in \ref SegmentsIO.c.
  *
-\heading{Usage}
-\code
-SegmentsIOTest [ lalDebugLevel ]
-\endcode
-
-The default value of \c lalDebugLevel is 4.
-
-If the \c lalDebugLevel argument is omitted, the test program sets it
-to 4 to turn on info messages only.
-Note that this default value does not enable LAL/XLAL error messages,
-since many of the tests intentionally create error conditions and verify that
-the proper error codes are generated.  If you want to turn on the LAL/XLAL
-error and warning messages, specify a \c lalDebugLevel value of 7,
-or 23 if you also want informational messages related to memory checking.
-If you specify 0, then no messages will be printed under any circumstances.
-However, in all cases, the return status of the program will be 0 if all
-tests passed, 1 if one or more tests failed.
-
-\note This test program does not currently do an exhaustive test of
-functionality and failure modes; it is more like a starting point for
-spot-checking by modifying, recompiling and running this test program
-and inspecting the output.
-
-\heading{Exit codes}
-
-<ul>
-<li>0 if all tests passed.</li>
-
-<li>1 if one or more tests failed.</li>
-</ul>
-
-*/
+ * ### Usage ###
+ *
+ * \code
+ * SegmentsIOTest [ lalDebugLevel ]
+ * \endcode
+ *
+ * The default value of \c lalDebugLevel is 4.
+ *
+ * If the \c lalDebugLevel argument is omitted, the test program sets it
+ * to 4 to turn on info messages only.
+ * Note that this default value does not enable LAL/XLAL error messages,
+ * since many of the tests intentionally create error conditions and verify that
+ * the proper error codes are generated.  If you want to turn on the LAL/XLAL
+ * error and warning messages, specify a \c lalDebugLevel value of 7,
+ * or 23 if you also want informational messages related to memory checking.
+ * If you specify 0, then no messages will be printed under any circumstances.
+ * However, in all cases, the return status of the program will be 0 if all
+ * tests passed, 1 if one or more tests failed.
+ *
+ * \note This test program does not currently do an exhaustive test of
+ * functionality and failure modes; it is more like a starting point for
+ * spot-checking by modifying, recompiling and running this test program
+ * and inspecting the output.
+ *
+ * ### Exit codes ###
+ *
+ * <ul>
+ * <li>0 if all tests passed.</li>
+ *
+ * <li>1 if one or more tests failed.</li>
+ * </ul>
+ *
+ */
 
 /** \cond DONT_DOXYGEN */
 
@@ -81,13 +82,12 @@ and inspecting the output.
 
 /*-- Default debug level includes info messages (4), but not
      memory checking (16), error messages (1), or warning messages (2) --*/
-extern int lalDebugLevel;
 
 /*===========================================================================*/
 
 
 /*===========================================================================*/
-int main( int argc, char *argv[] )
+int main(void)
 {
   INT4 nfailures = 0;
   static LALStatus status;
@@ -99,16 +99,6 @@ int main( int argc, char *argv[] )
 
   /*-- Default debug level includes info messages (4), but not
      memory checking (16), error messages (1), or warning messages (2) --*/
-  lalDebugLevel = 4;
-
-  /*------ Parse input line. ------*/
-  if ( argc == 2 )
-    lalDebugLevel = atoi( argv[1] );
-  else if ( argc != 1 )
-    {
-      fprintf( stderr, "Usage: %s [ lalDebugLevel ]\n", argv[0] );
-      return 0; /* so that test script won't fail */
-    }
 
   /*-------------------------------------------------------------------------*/
   XLALPrintInfo("\n========== Initial setup \n");
@@ -140,7 +130,7 @@ int main( int argc, char *argv[] )
   XLALPrintInfo("\n========== LALSegListRead tests \n");
   /*-------------------------------------------------------------------------*/
 
-  LALSegListRead( &status, &seglist1, DATADIR "SegmentsInput1.data", "" );
+  LALSegListRead( &status, &seglist1, TEST_DATA_DIR "SegmentsInput1.data", "" );
   if ( status.statusCode ) {
     RETFAIL( "LALSegListRead with standard segment list file",
 	     status.statusCode );

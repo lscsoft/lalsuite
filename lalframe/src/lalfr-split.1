@@ -1,0 +1,41 @@
+.TH LALFR-SPLIT 1 "10 June 2013" LALFrame LALFrame
+.SH NAME
+lalfr-split -- split a frame file into component frames
+
+.SH SYNOPSIS
+.B lalfr-split
+[\fIfile\fP [\fIname\fP]]
+
+.SH DESCRIPTION
+.PP
+The \fBlalfr-split\fP utility reads the given \fIfile\fP containing multiple
+frames and breaks it up into files each containing one frame.
+If \fIfile\fP is a single dash (`\fB-\fP') or absent, \fBlalfr-split\fP reads
+from the standard input.
+
+If additional arguments are specified, the first is used as the name of the
+input file which is to be split.  If a second additional argument is specified,
+it is used as a prefix for the names of the files into which the file is split.
+In this case, each file into which the file is split is named by the prefix
+followed by a lexically ordered suffix using two characters in the range
+``a-z'' followed by the extension ``.gwf''.
+
+If the \fIname\fP argument is not specified, the file is split into lexically
+ordered files named with the prefix ``x'' and with suffixes as above.
+
+.SH EXAMPLES
+.PP
+If \fIfile.gwf\fP contains three frames then the command:
+.PP
+.RS
+lalfr-split file.gwf
+.RE
+.PP
+produces three files, ``xaa.gwf'', ``xab.gwf'', and ``xac.gwf'', each
+containing one of the three frames.
+
+.SH SEE ALSO
+lalfr-cat(1)
+
+.SH AUTHOR
+Jolien Creighton

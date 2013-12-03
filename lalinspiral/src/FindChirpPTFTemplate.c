@@ -27,26 +27,24 @@
  */
 
 /**
+ * \author Brown, D. A., and Fazi, D.
+ * \ingroup FindChirpPTF_h
+ * \file
+ *
+ * \brief Provides functions to create physical template family templates in a
+ * form that can be used by the <tt>FindChirpPTFFilter()</tt> function.
+ *
+ * ### Prototypes ###
+ *
+ * The function <tt>LALFindChirpPTFTemplate()</tt> creates a physical template
+ * family template as described by the algorithm below.
+ *
+ * ### Algorithm ###
+ *
+ * Blah.
+ *
+ */
 
-\author Brown, D. A., and Fazi, D.
-\ingroup FindChirpPTF_h
-\file
-
-\brief Provides functions to create physical template family templates in a
-form that can be used by the <tt>FindChirpPTFFilter()</tt> function.
-
-\heading{Prototypes}
-
-The function <tt>LALFindChirpPTFTemplate()</tt> creates a physical template
-family template as described by the algorithm below.
-
-\heading{Algorithm}
-
-Blah.
-
-*/
-
-#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/LALStdlib.h>
 #include <lal/AVFactories.h>
 #include <lal/LALInspiral.h>
@@ -274,11 +272,11 @@ LALFindChirpPTFNormalize(
     {
       for ( k = kmin; k < kmax ; ++k )
       {
-        PTFB[5 * i + j] += (PTFQtilde[k + i * len].re *
-                            PTFQtilde[k + j * len].re +
-                            PTFQtilde[k + i * len].im *
-                            PTFQtilde[k + j * len].im )
-                            * wtilde[k].re ;
+        PTFB[5 * i + j] += (crealf(PTFQtilde[k + i * len]) *
+                            crealf(PTFQtilde[k + j * len]) +
+                            cimagf(PTFQtilde[k + i * len]) *
+                            cimagf(PTFQtilde[k + j * len]) )
+                            * crealf(wtilde[k]) ;
       }
       PTFB[5 * i + j] *= 4.0 * deltaF ;
       /* Use the symmetry of B */

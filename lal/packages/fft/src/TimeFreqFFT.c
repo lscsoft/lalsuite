@@ -459,7 +459,7 @@ LALTimeFreqRealFFT(
     )
 {
   INITSTATUS(status);
-  XLALPrintDeprecationWarning("LALTimeFreqRealFFT", "XLALREAL4TimeFreqFFT");
+  XLAL_PRINT_DEPRECATION_WARNING("XLALREAL4TimeFreqFFT");
 
   ASSERT( plan, status, TIMEFREQFFTH_ENULL, TIMEFREQFFTH_MSGENULL );
   ASSERT( freq, status, TIMEFREQFFTH_ENULL, TIMEFREQFFTH_MSGENULL );
@@ -490,7 +490,7 @@ LALFreqTimeRealFFT(
     )
 {
   INITSTATUS(status);
-  XLALPrintDeprecationWarning("LALFreqTimeRealFFT", "XLALREAL4FreqTimeFFT");
+  XLAL_PRINT_DEPRECATION_WARNING("XLALREAL4FreqTimeFFT");
   ATTATCHSTATUSPTR( status );
 
   ASSERT( plan, status, TIMEFREQFFTH_ENULL, TIMEFREQFFTH_MSGENULL );
@@ -613,7 +613,7 @@ LALREAL4AverageSpectrum (
   /* RAT4                  negRootTwo = { -1, 1 }; */
 
   INITSTATUS(status);
-  XLALPrintDeprecationWarning("LALREAL4AverageSpectrum", "XLALREAL4AverageSpectrumWelch");
+  XLAL_PRINT_DEPRECATION_WARNING("XLALREAL4AverageSpectrumWelch");
   ATTATCHSTATUSPTR (status);
 
   /* check the input and output data pointers are non-null */
@@ -838,7 +838,7 @@ LALCOMPLEX8AverageSpectrum (
   /* RAT4                  negRootTwo = { -1, 1 }; */
 
   INITSTATUS(status);
-  XLALPrintDeprecationWarning("LALCOMPLEX8AverageSpectrum", "XLALREAL8AverageSpectrumWelch");
+  XLAL_PRINT_DEPRECATION_WARNING("XLALREAL8AverageSpectrumWelch");
   ATTATCHSTATUSPTR (status);
 
   /* check the input and output data pointers are non-null */
@@ -996,7 +996,7 @@ LALTimeFreqComplexFFT(
     )
 {
   INITSTATUS(status);
-  XLALPrintDeprecationWarning("LALTimeFreqComplexFFT", "XLALCOMPLEX8TimeFreqFFT");
+  XLAL_PRINT_DEPRECATION_WARNING("XLALCOMPLEX8TimeFreqFFT");
 
   ASSERT( plan, status, TIMEFREQFFTH_ENULL, TIMEFREQFFTH_MSGENULL );
   ASSERT( freq, status, TIMEFREQFFTH_ENULL, TIMEFREQFFTH_MSGENULL );
@@ -1026,7 +1026,7 @@ LALFreqTimeComplexFFT(
     )
 {
   INITSTATUS(status);
-  XLALPrintDeprecationWarning("LALFreqTimeComplexFFT", "XLALCOMPLEX8FreqTimeFFT");
+  XLAL_PRINT_DEPRECATION_WARNING("XLALCOMPLEX8FreqTimeFFT");
 
   ASSERT( plan, status, TIMEFREQFFTH_ENULL, TIMEFREQFFTH_MSGENULL );
   ASSERT( time, status, TIMEFREQFFTH_ENULL, TIMEFREQFFTH_MSGENULL );

@@ -108,45 +108,45 @@ INT4 XLALOverlappedSegmentsCommensurate(
  * parameter.
  *
  * Input:
- * 	window_length:
- * 		number of samples in a window used for the time-frequency
- * 		plane
+ * window_length:
+ * number of samples in a window used for the time-frequency
+ * plane
  *
- * 	max_tile_length:
- * 		number of samples in the tile of longest duration
+ * max_tile_length:
+ * number of samples in the tile of longest duration
  *
- * 	fractional_tile_shift:
- * 		number of samples by which the start of the longest tile is
- * 		shifted from the start of the tile preceding it, as a
- * 		fraction of its length
+ * fractional_tile_shift:
+ * number of samples by which the start of the longest tile is
+ * shifted from the start of the tile preceding it, as a
+ * fraction of its length
  *
- * 	psd_length (optional, required for psd_shift):
- * 		user's desired number of samples to use in computing a PSD
- * 		estimate
+ * psd_length (optional, required for psd_shift):
+ * user's desired number of samples to use in computing a PSD
+ * estimate
  *
  * Output:
- * 	psd_length (optional):
- * 		actual number of samples to use in computing a PSD estimate
- * 		(rounded down to be comensurate with the windowing)
+ * psd_length (optional):
+ * actual number of samples to use in computing a PSD estimate
+ * (rounded down to be comensurate with the windowing)
  *
- *	psd_shift (optional):
- *		number of samples by which the start of a PSD is to be
- *		shifted from the start of the PSD that preceded it in order
- *		that the tiling pattern continue smoothly across the
- *		boundary
+ * psd_shift (optional):
+ * number of samples by which the start of a PSD is to be
+ * shifted from the start of the PSD that preceded it in order
+ * that the tiling pattern continue smoothly across the
+ * boundary
  *
- *	window_shift (optional):
- *		number of samples by which the start of a time-frequency
- *		plane window is shifted from the window preceding it in
- *		order that the tiling pattern continue smoothly across the
- *		boundary
+ * window_shift (optional):
+ * number of samples by which the start of a time-frequency
+ * plane window is shifted from the window preceding it in
+ * order that the tiling pattern continue smoothly across the
+ * boundary
  *
- *	window_pad (optional):
- *		how many samples at the start and end of each window are
- *		treated as padding, and will not be covered by the tiling
+ * window_pad (optional):
+ * how many samples at the start and end of each window are
+ * treated as padding, and will not be covered by the tiling
  *
- *	tiling_length (optional):
- *		how many samples will be covered by the tiling
+ * tiling_length (optional):
+ * how many samples will be covered by the tiling
  *
  * NOTE:  this function is wrapped in the pyLAL package to teach the
  * Python-based DAG construction scripts how the search code's internal
@@ -297,7 +297,7 @@ INT4 XLALEPGetTimingParameters(
  * function \f$w_{j}\f$ then it is no longer stationary and the components of its
  * Fourier transform are no longer independent.  Their correlations are
  *
- *	\f[\langle X_{k} X*_{k'}\rangle\f]
+ * \f[\langle X_{k} X*_{k'}\rangle\f]
  *
  * and depend only on \f$|k - k'|\f$.
  *
@@ -759,7 +759,7 @@ LALExcessPowerFilterBank *XLALCreateExcessPowerFilterBank(
 )
 {
 	LALExcessPowerFilterBank *new;
-	struct ExcessPowerFilter *basis_filters;
+	ExcessPowerFilter *basis_filters;
 	REAL8Sequence *twice_channel_overlap;
 	REAL8Sequence *unwhitened_cross;
 	int i;

@@ -39,7 +39,6 @@
 #include <sys/stat.h>
 
 /* LAL stuff */
-#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/LALStdlib.h>
 #include <lal/AVFactories.h>
 #include <lal/PrintFTSeries.h>
@@ -100,7 +99,6 @@
 
 
 /* debug level for LAL */
-INT4 lalDebugLevel = LALERROR | LALWARNING | LALINFO | LALNMEMDBG;
 
 /* Header that defines the GEO SFT Data Format */
 struct headertag {
@@ -493,12 +491,15 @@ int main(int argc,char *argv[]){
   exit(0);
 #endif
 
+  printf("%%CAUTION: This program has been superceded by lalapps/src/pulsar/MakeSFTs/MakeSFTs.c\n\n");
+
   printf("%%Normal startup\n");
   fflush(stdout);
 
   /* check command syntax */
   if (argc !=5 || (jobnum=atoi(argv[1]))<0 || jobnum>99999){
     int a;
+    pout("CAUTION: This program has been superceded by lalapps/src/pulsar/MakeSFTs/MakeSFTs.c\n");
     pout("Syntax:\n\t%s N DIR1 DIR2 DETECTOR\nwhere 0<=N<=99999.\n",argv[0]);
     pout("Files used are jobdata.N, jobtimes.N, where N has five digits\n");
     pout("Input files are taken from DIR1\n");
@@ -974,14 +975,14 @@ int main(int argc,char *argv[]){
 	int errorcode1,errorcode2;
 
 	if (doubledata){
-	  REAL8 rpw=fvec->data[k+firstbin].re;
-	  REAL8 ipw=fvec->data[k+firstbin].im;
+	  REAL8 rpw=crealf(fvec->data[k+firstbin]);
+	  REAL8 ipw=cimagf(fvec->data[k+firstbin]);
 	  errorcode1=fwrite((void*)&rpw, sizeof(REAL8),1,fpsft);
 	  errorcode2=fwrite((void*)&ipw, sizeof(REAL8),1,fpsft);
 	}
 	else {
-	  REAL4 rpw=fvec->data[k+firstbin].re;
-	  REAL4 ipw=fvec->data[k+firstbin].im;
+	  REAL4 rpw=crealf(fvec->data[k+firstbin]);
+	  REAL4 ipw=cimagf(fvec->data[k+firstbin]);
 	  errorcode1=fwrite((void*)&rpw, sizeof(REAL4),1,fpsft);
 	  errorcode2=fwrite((void*)&ipw, sizeof(REAL4),1,fpsft);
 	}

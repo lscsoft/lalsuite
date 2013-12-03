@@ -65,7 +65,6 @@
 "  --help                    display this message\n"\
 "  --version                 print version information and exit\n"\
 "  --machine                 prints space delimeted output\n"\
-"  --debug-level LEVEL       set the LAL debug level to LEVEL\n"\
 "  --m1 m1                   mass of 1st binary element in Msun\n"\
 "  --m2 m2                   mass of 2nd binary element in Msun\n"\
 "  --flow fstart             low frequency cutoff\n"\
@@ -115,7 +114,6 @@ int main ( int argc, char *argv[] )
     {"chisq-bins",              required_argument, 0,                'p' },
     {"wavefile",                required_argument, 0,                'q'},
     {"help",                    no_argument,       0,                'h'}, 
-    {"debug-level",             required_argument, 0,                'z'},
     {"version",                 no_argument,       0,                'V'},
     {0, 0, 0, 0}
   };
@@ -129,7 +127,6 @@ int main ( int argc, char *argv[] )
    */
 
   lal_errhandler = LAL_ERR_EXIT;
-  set_debug_level( "1" );
   setvbuf( stdout, NULL, _IONBF, 0 );
 
   /* parse the arguments */
@@ -140,7 +137,7 @@ int main ( int argc, char *argv[] )
     int optarg_len = 0;
 
     c = getopt_long_only( argc, argv, 
-        "f:m:n:o:p:hz:V", long_options, 
+        "f:m:n:o:p:hV", long_options, 
 	&option_index );
 
     /* detect the end of the options */
@@ -203,10 +200,6 @@ int main ( int argc, char *argv[] )
         /* help message */
         fprintf( stderr, USAGE , argv[0]);
         exit( 1 );
-        break;
-
-      case 'z':
-        set_debug_level( optarg );
         break;
 
       case 'V':

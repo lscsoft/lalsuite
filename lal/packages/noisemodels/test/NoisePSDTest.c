@@ -18,35 +18,35 @@
 */
 
 /**
-\author Sathyaprakash, B. S.
-\ingroup LALNoiseModels_h
-\file
-
-\brief This program can be used generate expected noise
-NoiseSpectralDensity in various interferometers.
-See the beginning of the NoiseModels module to see details on how
-this test program works.
-
-\heading{Uses}
-\code
-LALDCreateVector
-LALNoiseSpectralDensity
-LALGEOPsd
-LALLIGOIPsd
-LALTAMAPsd
-LALVIRGOPsd
-LALAdvLIGOPsd
-LALDDestroyVector
-LALCheckMemoryLeaks
-\endcode
-
-*/
+ * \author Sathyaprakash, B. S.
+ * \ingroup LALNoiseModels_h
+ * \file
+ *
+ * \brief This program can be used generate expected noise
+ * NoiseSpectralDensity in various interferometers.
+ * See the beginning of the NoiseModels module to see details on how
+ * this test program works.
+ *
+ * ### Uses ###
+ *
+ * \code
+ * LALDCreateVector
+ * LALNoiseSpectralDensity
+ * LALGEOPsd
+ * LALLIGOIPsd
+ * LALTAMAPsd
+ * LALVIRGOPsd
+ * LALAdvLIGOPsd
+ * LALDDestroyVector
+ * LALCheckMemoryLeaks
+ * \endcode
+ *
+ */
 #include <lal/AVFactories.h>
 #include <lal/LALNoiseModels.h>
 
 /** \cond DONT_DOXYGEN */
 
-INT4 lalDebugLevel=1;
 /** \endcond */
 
 int main ( void )

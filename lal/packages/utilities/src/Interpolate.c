@@ -121,7 +121,7 @@ LALDPolynomialInterpolation (
 {
   INITSTATUS(status);
 
-  XLALPrintDeprecationWarning("LALDPolynomialInterpolation", "XLALDPolynomialInterpolation");
+  XLAL_PRINT_DEPRECATION_WARNING("XLALDPolynomialInterpolation");
 
   ASSERT (output, status, INTERPOLATEH_ENULL, INTERPOLATEH_MSGENULL);
   ASSERT (params, status, INTERPOLATEH_ENULL, INTERPOLATEH_MSGENULL);
@@ -222,4 +222,97 @@ XLALREAL8PolynomialInterpolation (
   LALFree (dn);
   LALFree (up);
   return dy;
+}
+
+int
+XLALREAL8Interpolation (
+    REAL8Sequence *x_in, // Assumed to be in ascending order
+    REAL8Sequence *y_in,
+    REAL8Sequence *x_out,
+    REAL8Sequence *y_out, // Modified in place
+    UINT4 n_data_points,
+    const gsl_interp_type *itrp_type // Can be NULL -- default it to cubic spline
+    )
+{
+	size_t i=0;
+	REAL8 x_min, x_max;
+
+	gsl_interp_accel *i_acc = gsl_interp_accel_alloc();
+
+	/*
+ 	 * What type of interpolation do want? Default is cubic spline
+ 	 * Other types can be found at
+ 	 * http://www.gnu.org/software/gsl/manual/html_node/Interpolation-Types.html
+ 	 */
+	gsl_spline *spline;
+	if (!itrp_type) {
+		spline = gsl_spline_alloc(gsl_interp_cspline, n_data_points);
+	} else {
+		spline = gsl_spline_alloc(itrp_type, n_data_points);
+	}
+	gsl_spline_init(spline, x_in->data, y_in->data, n_data_points);
+
+	/*
+	 * Do the interpolation.
+	 */
+	x_min = x_in->data[0];
+	x_max = x_in->data[x_in->length-1];
+	for(; i<x_out->length; i++) {
+		/*
+		 * The gsl interpolator is known to do funny and sometimes
+		 * inconsistent things outside the boundaries of the input,
+		 * so we check for and bail if we don't meet that criteria
+		 */
+		if (x_out->data[i] < x_min || x_out->data[i] > x_max ) {
+			XLALPrintError("XLAL Error - %s: %g is outside the bounds of the interpolant.\n", __func__, x_out->data[i]);
+    			XLAL_ERROR_VAL(0, XLAL_EINVAL);
+		}
+		y_out->data[i] = gsl_spline_eval(spline, x_out->data[i], i_acc);
+	}
+
+	/*
+	 * Clean up.
+	 */
+	gsl_spline_free(spline);
+	gsl_interp_accel_free(i_acc);
+	return 0;
+}
+
+int
+XLALREAL8TimeSeriesInterpolation (
+    REAL8TimeSeries *ts_in,
+    REAL8Sequence *y_in,
+    REAL8Sequence *t_in,
+    REAL8Sequence *t_out, // If NULL, interpolate from dt and epoch of ts_in
+    UINT4 n_data_points,
+    const gsl_interp_type *itrp_type
+    )
+{
+	/*
+ 	 * If the user doesn't provide a sampling series to interpolate to,
+ 	 * we'll infer it from the epoch and sample rate.
+ 	 */
+	int length = ts_in->data->length;
+	int destroy_t_out = 0;
+	if (!t_out) {
+		if (ts_in->deltaT < 0.0) {
+			XLALPrintError("XLAL Error - %s: Not enough information in the time series to infer sampling values. Supply proper epoch and deltaT.", __func__);
+    			XLAL_ERROR_VAL(0, XLAL_EINVAL);
+		}
+		REAL8 start = XLALGPSGetREAL8(&ts_in->epoch);
+		destroy_t_out = 1;
+		t_out = XLALCreateREAL8Sequence(length);
+		length--;
+		for (; length>=0; length--){
+			t_out->data[length] = length*ts_in->deltaT + start;
+		}
+	}
+	XLALREAL8Interpolation(t_in, y_in, t_out, ts_in->data, n_data_points, itrp_type);
+	/*
+ 	 * We created it, so we'll clean it up too.
+ 	 */
+	if (destroy_t_out) {
+		XLALDestroyREAL8Sequence(t_out);
+	}
+	return 0;
 }

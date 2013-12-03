@@ -21,12 +21,12 @@
 /**
  * \file
  * \ingroup pulsarApps
- * \author Badri Krishnan, Alicia Sintes 
+ * \author Badri Krishnan, Alicia Sintes
  * \brief Driver code for performing Hough transform search on non-demodulated
-   data using SFTs from possible multiple IFOs
-
-   History: Created by Sancho de la Jordana, Sintes and Krishnan December 15, 2006
-*/
+ * data using SFTs from possible multiple IFOs
+ *
+ * History: Created by Sancho de la Jordana, Sintes and Krishnan December 15, 2006
+ */
 
 
 #include "./DriveHoughColor.h"
@@ -35,7 +35,6 @@
 /* globals, constants and defaults */
 
 
-extern int lalDebugLevel;
 
 /* boolean global variables for controlling output */
 BOOLEAN uvar_printEvents, uvar_printTemplates, uvar_printMaps, uvar_printStats, uvar_printSigma;
@@ -165,8 +164,6 @@ int main(int argc, char *argv[]){
 
 
   /* Set up the default parameters */  
-  lalDebugLevel = 0;  /* LALDebugLevel must be called before anything else */
-  LAL_CALL( LALGetDebugLevel( &status, argc, argv, 'd'), &status);
 
   /* LAL error-handler */
   lal_errhandler = LAL_ERR_EXIT;

@@ -1,7 +1,7 @@
 # SWIG configuration
 # Author: Karl Wette, 2011, 2012
 #
-# serial 29
+# serial 49
 
 # enable SWIG wrapping modules
 AC_DEFUN([LALSUITE_ENABLE_SWIG],[
@@ -25,30 +25,14 @@ AC_DEFUN([LALSUITE_ENABLE_SWIG],[
 
   # options to enable/disable languages
   swig_build_any=false
-  LALSUITE_ENABLE_SWIG_LANGUAGE([Octave],[false],[LALSUITE_REQUIRE_CXX])
-  LALSUITE_ENABLE_SWIG_LANGUAGE([Python],[false])
-
-  # option to use specific SWIG binary
-  AC_ARG_WITH(
-    [swig],
-    AC_HELP_STRING(
-      [--with-swig],
-      [specify SWIG binary (default: search $PATH)]
-    ),[
-      AS_IF([test -f "${withval}"],[
-        SWIG="${withval}"
-      ],[
-        AC_MSG_ERROR([file "${withval}" not found])
-      ])
-    ],[
-      SWIG=
-    ]
-  )
+  swig_min_version=0.0
+  LALSUITE_ENABLE_SWIG_LANGUAGE([Octave],[false],[2.0.7],[LALSUITE_REQUIRE_CXX])
+  LALSUITE_ENABLE_SWIG_LANGUAGE([Python],[false],[2.0.7])
 
 ])
 
 # options to enable/disable languages
-# args: $1=language, $2=default enabled?, [$3=action if enabled]
+# args: $1=language, $2=default enabled?, $3=SWIG version required, [$4=action if enabled]
 AC_DEFUN([LALSUITE_ENABLE_SWIG_LANGUAGE],[
   m4_pushdef([lowercase],translit([$1],[A-Z],[a-z]))
 
@@ -69,13 +53,28 @@ AC_DEFUN([LALSUITE_ENABLE_SWIG_LANGUAGE],[
     ]
   )
 
-  # if $1 is enabled
+  # if $1 is enabled, set minimum SWIG version and perform other actions
   AS_IF([test "${swig_build_]lowercase[}" = true],[:
     swig_build_any=true
-    $3
+    AS_VERSION_COMPARE([${swig_min_version}],[$3],[swig_min_version=$3])
+    $4
   ])
 
   m4_popdef([lowercase])
+])
+
+# check the version of ${SWIG}, and store it in ${swig_version}
+# return swig_version=0.0 if ${SWIG} is not an executable
+AC_DEFUN([_LALSUITE_CHECK_SWIG_VERSION],[
+  swig_version=0.0
+  swig_version_output=[`${SWIG} -version 2>/dev/null`]
+  AS_IF([test $? -eq 0],[
+    swig_version_regex=['s|^ *SWIG [Vv]ersion \([0-9.][0-9.]*\)|\1|p;d']
+    swig_version=[`echo "${swig_version_output}" | ${SED} "${swig_version_regex}"`]
+    AS_IF([test "x${swig_version}" = x],[
+      AC_MSG_ERROR([could not determine version of ${SWIG}])
+    ])
+  ])
 ])
 
 # configure SWIG wrapping modules
@@ -100,57 +99,58 @@ AC_DEFUN([LALSUITE_USE_SWIG],[
   AC_REQUIRE([AC_PROG_SED])
 
   # if we are wrapping the LAL library (instead of one of the LAL* libraries)
-  AS_IF([test "x${PACKAGE_NAME}" = xlal],[
+  AS_IF([test "x${PACKAGE}" = xlal],[
     lalswig=true
   ],[
     lalswig=false
-  ])
-
-  # common SWIG interfaces (with LAL only)
-  AS_IF([test ${lalswig} = true],[
-    AC_SUBST([SWIG_IFACES],["swiglal_common.i"])
   ])
 
   # if any language was configured
   AM_CONDITIONAL(SWIG_BUILD,[test "${swig_build_any}" = true])
   AM_COND_IF(SWIG_BUILD,[
 
-    # check for SWIG binary
-    AS_IF([test "x${SWIG}" = x],[
-      AC_PATH_PROGS(SWIG,[swig2.0 swig],[])
-      AS_IF([test "x${SWIG}" = x],[
-        AC_MSG_ERROR([could not find "swig" in path])
+    # check for SWIG binary with version >= ${swig_min_version}; use
+    ## value of ${SWIG} if set, otherwise check common SWIG binary names
+    AS_IF([test "x${SWIG}" != x],[
+      AC_MSG_CHECKING([${SWIG} version])
+      _LALSUITE_CHECK_SWIG_VERSION
+      AS_VERSION_COMPARE([${swig_version}],[${swig_min_version}],[
+        AC_MSG_ERROR([require ${SWIG} version >= ${swig_min_version}])
       ])
+      AC_MSG_RESULT([${swig_version}])
+    ],[
+      AC_MSG_CHECKING([for SWIG with version >= ${swig_min_version}])
+      for SWIG in swig swig2.0; do
+        _LALSUITE_CHECK_SWIG_VERSION
+        AS_VERSION_COMPARE([${swig_version}],[${swig_min_version}],[],[break],[break])
+        SWIG=
+      done
+      AS_IF([test "x${SWIG}" = x],[
+        AC_MSG_ERROR([could not find SWIG with version >= ${swig_min_version}])
+      ])
+      AC_MSG_RESULT([${SWIG} (version ${swig_version})])
     ])
 
-    # check SWIG version
-    swig_min_version=2.0.7
-    AC_MSG_CHECKING([${SWIG} version])
-    swig_regex=['s|^ *SWIG [Vv]ersion \([0-9.][0-9.]*\) *$|\1|p;d']
-    swig_version=[`${SWIG} -version | ${SED} "${swig_regex}"`]
-    AS_IF([test "x${swig_version}" = x],[
-      AC_MSG_ERROR([could not determine SWIG version])
-    ])
-    AC_MSG_RESULT([${swig_version}])
-    AS_VERSION_COMPARE([${swig_min_version}],[${swig_version}],[],[],[
-      AC_MSG_ERROR([require SWIG version >= ${swig_min_version}])
-    ])
+    # get full path of SWIG binary
+    AC_PATH_PROG(SWIG,["${SWIG}"])
 
     # symbol prefixes for this LAL library
     AC_SUBST(SWIG_SYMBOL_PREFIXES,["$1"])
 
-    # flags for generating SWIG wrapping module sources
-    AC_SUBST(SWIG_SWIGFLAGS,["-Wextra -Werror"])
+    # flags for preprocessing/generating SWIG wrapping module sources
+    AC_SUBST(SWIG_SWIGFLAGS,["-Wextra -Werror -I\$(abs_top_builddir)/include"])
 
-    # look here for interfaces and LAL headers
-    SWIG_SWIGFLAGS="${SWIG_SWIGFLAGS} -I\$(abs_top_builddir)/include"
+    # add -MP option if SWIG is greater than version 2.0.9
+    AS_VERSION_COMPARE([${swig_version}],[2.0.9],[],[],[
+      SWIG_SWIGFLAGS="${SWIG_SWIGFLAGS} -MP"
+    ])
 
     # send language-specific SWIG output files to libtool directory
     AC_SUBST(SWIG_OUTDIR,["\$(abs_builddir)/${objdir}"])
     SWIG_SWIGFLAGS="${SWIG_SWIGFLAGS} -outdir \$(SWIG_OUTDIR)"
 
     # flags for generating/compiling SWIG wrapping module sources
-    AC_SUBST(SWIG_CPPFLAGS,["${swig_save_CPPFLAGS}"])
+    AC_SUBST(SWIG_CPPFLAGS,["-I\$(abs_top_builddir)/include -I\$(abs_top_builddir)/src ${swig_save_CPPFLAGS} -I/usr/include"])
 
     # are we (not) in debugging mode?
     AS_IF([test "x${enable_debug}" = xno],[
@@ -163,9 +163,6 @@ AC_DEFUN([LALSUITE_USE_SWIG],[
       SWIG_SWIGFLAGS="${SWIG_SWIGFLAGS} -DHAVE_LIBGSL"
       SWIG_CPPFLAGS="${SWIG_CPPFLAGS} -DHAVE_LIBGSL"
     ])
-
-    # look here for interfaces and LAL headers (but not for preprocessing)
-    SWIG_CPPFLAGS="${SWIG_CPPFLAGS} -I/usr/include"
 
     # flags for compiling SWIG wrapping module sources
     AC_SUBST(SWIG_CFLAGS,[])
@@ -220,36 +217,51 @@ AC_DEFUN([LALSUITE_USE_SWIG],[
     AS_IF([test ${lalswig} = true],[
       SWIG_LIBS="\$(abs_top_builddir)/lib/lalsupport/src/liblalsupport.la \$(abs_top_builddir)/lib/lal/liblal.la"
     ],[
-      SWIG_LIBS="\$(abs_top_builddir)/src/lib${PACKAGE_NAME}.la"
+      SWIG_LIBS="\$(abs_top_builddir)/src/lib${PACKAGE}.la"
     ])
 
     # dynamic linker search path for pre-installed LAL libraries
-    AC_SUBST(SWIG_LD_LIBRARY_PATH,[])
-    for arg in ${swig_save_LIBS} ${SWIG_LIBS}; do
-      SWIG_LD_LIBRARY_PATH=["${SWIG_LD_LIBRARY_PATH} "`echo ${arg} | ${SED} -n 's|/liblal[^.]*\.la|/'"${objdir}"'|p'`]
-    done
-    SWIG_LD_LIBRARY_PATH=[`echo ${SWIG_LD_LIBRARY_PATH} | ${SED} 's|(top_builddir)|(abs_top_builddir)|g;s|  *|:|g'`]
-    AS_IF([test "${build_vendor}" = apple],[
-      SWIG_LD_LIBPATH_NAME=DYLD_LIBRARY_PATH
-    ],[
-      SWIG_LD_LIBPATH_NAME=LD_LIBRARY_PATH
+    AS_IF([test "x${LALSUITE_BUILD}" = xtrue],[
+      AC_SUBST(SWIG_LD_LIBRARY_PATH,[])
+      for arg in ${swig_save_LIBS} ${SWIG_LIBS}; do
+        SWIG_LD_LIBRARY_PATH=["${SWIG_LD_LIBRARY_PATH} "`echo ${arg} | ${SED} -n 's|/liblal[^.]*\.la|/'"${objdir}"'|p'`]
+      done
+      SWIG_LD_LIBRARY_PATH=[`echo ${SWIG_LD_LIBRARY_PATH} | ${SED} 's|(top_builddir)|(abs_top_builddir)|g;s|  *|:|g'`]
+      AS_IF([test "${build_vendor}" = apple],[
+        SWIG_LD_LIBPATH_NAME=DYLD_LIBRARY_PATH
+      ],[
+        SWIG_LD_LIBPATH_NAME=LD_LIBRARY_PATH
+      ])
+      AC_SUBST(SWIG_LD_LIBPATH_NAME)
     ])
-    AC_SUBST(SWIG_LD_LIBPATH_NAME)
+
+    # list of other LAL SWIG modules that this module depends on
+    AC_MSG_CHECKING([for SWIG module dependencies])
+    AC_SUBST(SWIG_MODULE_DEPENDS,[""])
+    for arg in ${LALSUITE_CHECKED_LIBS}; do
+      AS_IF([test "x`echo ${arg} | ${SED} -n '/^lalsupport$/d;/^lal/p'`" != x],[
+        SWIG_MODULE_DEPENDS="${SWIG_MODULE_DEPENDS} ${arg}"
+      ])
+    done
+    AS_IF([test "x${SWIG_MODULE_DEPENDS}" = x],[
+      AC_MSG_RESULT([none])
+    ],[
+      AC_MSG_RESULT([${SWIG_MODULE_DEPENDS}])
+    ])
+
+    # scripting-language path to search for pre-installed SWIG modules
+    AC_SUBST(SWIG_PREINST_PATH,["\$(SWIG_OUTDIR)"])
+    AS_IF([test "x${LALSUITE_BUILD}" = xtrue],[
+      for dir in ${LALSUITE_SUBDIRS}; do
+        SWIG_PREINST_PATH="${SWIG_PREINST_PATH}:\$(abs_top_builddir)/../${dir}/\$(subdir)/${objdir}"
+      done
+    ])
 
   ])
-
-  # string to add to user environment setup scripts
-  AC_SUBST(SWIG_USER_ENV,[""])
 
   # configure SWIG languages
   LALSUITE_USE_SWIG_OCTAVE
   LALSUITE_USE_SWIG_PYTHON
-
-  # list of other LAL libraries SWIG wrapping module depends on
-  AC_SUBST(SWIG_MODULE_DEPENDS,[""])
-
-  # scripting-language path to search for pre-installed SWIG modules
-  AC_SUBST(SWIG_PREINST_PATH,["\$(SWIG_OUTDIR)"])
 
   # restore global compiler/linker variables
   CPPFLAGS=${swig_save_CPPFLAGS}
@@ -260,31 +272,11 @@ AC_DEFUN([LALSUITE_USE_SWIG],[
 
 ])
 
-# add to list of other LAL libraries SWIG wrapping module depends on
-# args: $1=LAL library, $2=enable dependency?
-AC_DEFUN([LALSUITE_SWIG_DEPENDS],[
-  AS_IF([test "x$2" = xtrue],[
-    SWIG_MODULE_DEPENDS="${SWIG_MODULE_DEPENDS} $1"
-
-    # add to scripting-language path to search for pre-installed SWIG modules
-    AS_IF([test "x${LALSUITE_BUILD}" = xtrue],[
-      SWIG_PREINST_PATH="${SWIG_PREINST_PATH}:\$(abs_top_builddir)/../$1/\$(subdir)/${objdir}"
-    ])
-
-  ])
-])
-
 # configure SWIG language wrapping module
 # args: $1=language, $2=actions if enabled
 AC_DEFUN([LALSUITE_USE_SWIG_LANGUAGE],[
   m4_pushdef([uppercase],translit([$1],[a-z],[A-Z]))
   m4_pushdef([lowercase],translit([$1],[A-Z],[a-z]))
-
-  # common and language-specific SWIG interfaces (with LAL only)
-  AS_IF([test ${lalswig} = true],[
-    SWIG_]uppercase[_IFACES="swiglal_]lowercase[.i"
-    AC_SUBST(SWIG_]uppercase[_IFACES)
-  ])
 
   # check whether to configure $1
   AM_CONDITIONAL(SWIG_BUILD_[]uppercase,[test ${swig_build_]lowercase[} = true])
@@ -389,8 +381,8 @@ AC_DEFUN([LALSUITE_USE_SWIG_OCTAVE],[
     AC_MSG_RESULT([${octexecdir}])
     AC_SUBST(octexecdir)
 
-    # string to add to user environment setup scripts
-    SWIG_USER_ENV="${SWIG_USER_ENV}"'prepend OCTAVE_PATH $(octexecdir)\n'
+    # save Octave path to search for dependent SWIG modules
+    AC_ARG_VAR(OCTAVE_PATH,[Octave path to search for dependent SWIG modules])
 
   ])
 ])
@@ -479,5 +471,9 @@ EOD`]
     ])
     CPPFLAGS=
     AC_LANG_POP([C])
+
+    # save Python path to search for dependent SWIG modules
+    AC_ARG_VAR(PYTHONPATH,[Python path to search for dependent SWIG modules])
+
   ])
 ])

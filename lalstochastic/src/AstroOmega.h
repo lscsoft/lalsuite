@@ -18,69 +18,72 @@
 */
 
 /**
-\author Regimbau Tania
-\addtogroup AstroOmega_h
-
-\brief Compute the energy density spectrum of stochastic backgrounds produced
-by cosmological population of astrophysical sources.
-
-\heading{Synopsis}
-\code
-#include <lal/AstroOmega.h>
-\endcode
-
-\heading{Error conditions}
-the errors that may occur in this module are integration errors already defined in Integrate.h
-
-\heading{Structures}
-These are function pointers corresponding to the spectral energy density of a single source.
-\code
-typedef void (REAL8LALSDensity) (REAL8 *output, REAL8 input);
-\endcode
-These are input structures corresponding to the model parameters (the cosmological model parameters and the source model parameters)
-
-cosmological model parameters:
-
-\code
-typedef struct
-tagAstroOmegaCosmoParams
- {
-   REAL8   ho; Hubble parameter
-   REAL8   density_matter; density parameter of matter
-   REAL8   density_vacuum; density parameter of vacuum
-   REAL8   density_k; density parameter of curvature
- }
-AstroOmegaCosmoParams;
-\endcode
-
-source parameters
-
-\code
-typedef struct
-tagAstroOmegaSourceParams
- {
-   REAL8LALSDensity   *SDensitySource; single spectral energy density
-   REAL8              numax; frequency cutoff in the source frame
-   REAL8              lambda; mass fraction of source progenitors expressed in inverse solar masses.
- }
-AstroOmegaSourceParams;
-\endcode
-
-model parameters (cosmological + source)
-
-\code
-typedef struct
-tagAstroOmegaParams
- {
-   AstroOmegaCosmoParams          cosmoparams;
-   AstroOmegaSourceParams         sourceparams;
-   void                           *extraparams;
- }
-AstroOmegaParams;
-\endcode
-
-@{
-*/
+ * \author Regimbau Tania
+ * \addtogroup AstroOmega_h
+ *
+ * \brief Compute the energy density spectrum of stochastic backgrounds produced
+ * by cosmological population of astrophysical sources.
+ *
+ * ### Synopsis ###
+ *
+ * \code
+ * #include <lal/AstroOmega.h>
+ * \endcode
+ *
+ * ### Error conditions ###
+ *
+ * the errors that may occur in this module are integration errors already defined in Integrate.h
+ *
+ * ### Structures ###
+ *
+ * These are function pointers corresponding to the spectral energy density of a single source.
+ * \code
+ * typedef void (REAL8LALSDensity) (REAL8 *output, REAL8 input);
+ * \endcode
+ * These are input structures corresponding to the model parameters (the cosmological model parameters and the source model parameters)
+ *
+ * cosmological model parameters:
+ *
+ * \code
+ * typedef struct
+ * tagAstroOmegaCosmoParams
+ * {
+ * REAL8   ho; Hubble parameter
+ * REAL8   density_matter; density parameter of matter
+ * REAL8   density_vacuum; density parameter of vacuum
+ * REAL8   density_k; density parameter of curvature
+ * }
+ * AstroOmegaCosmoParams;
+ * \endcode
+ *
+ * source parameters
+ *
+ * \code
+ * typedef struct
+ * tagAstroOmegaSourceParams
+ * {
+ * REAL8LALSDensity   *SDensitySource; single spectral energy density
+ * REAL8              numax; frequency cutoff in the source frame
+ * REAL8              lambda; mass fraction of source progenitors expressed in inverse solar masses.
+ * }
+ * AstroOmegaSourceParams;
+ * \endcode
+ *
+ * model parameters (cosmological + source)
+ *
+ * \code
+ * typedef struct
+ * tagAstroOmegaParams
+ * {
+ * AstroOmegaCosmoParams          cosmoparams;
+ * AstroOmegaSourceParams         sourceparams;
+ * void                           *extraparams;
+ * }
+ * AstroOmegaParams;
+ * \endcode
+ *
+ * @{
+ */
 
 #ifndef _ASTROOMEGA_H
 #define _ASTROOMEGA_H

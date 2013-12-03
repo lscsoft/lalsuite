@@ -1,17 +1,20 @@
 package "skygridsetup"
-version "1.0.1"
+version "1.0.2"
 purpose "Helper program to output the skygrid"
 
-args "--file-name=cmdline_skygridsetup --string-parser --conf-parser"
+args "--file-name=cmdline_skygridsetup --conf-parser --show-required=[required]"
 
 option "config"   - "Configuration file in gengetopt format for passing parameters" string optional
 option "Tcoh"  - "SFT coherence time" double default="1800" optional
-option "fmin"  - "Minimum frequency of band" double optional
-option "fspan" - "Frequency span of band" double optional
-option "IFO"   - "Interferometer of whose data is being analyzed" string default="H1" optional
-option "outfilename"    - "Output file name" string default="logfile.txt" optional
+option "SFToverlap"    - "SFT overlap in seconds, usually Tcoh/2" double default="900" optional
+option "t0"    - "Start time of the search, needed only if --v2 is specified (in GPS seconds)" double optional
+option "Tobs"  - "Total observation time, needed only if --v2 is specified (in seconds)" double optional
+option "fmin"  - "Minimum frequency of band" double required
+option "fspan" - "Frequency span of band" double required
+option "IFO"   - "Interferometer of whose data is being analyzed" string typestr="IFO code" values="H1","L1","V1" required
+option "outfilename"   - "Output file name" string default="skygrid.dat" optional
 option "ephemDir"      - "Path to ephemeris files" string default="/opt/lscsoft/lalpulsar/share/lalpulsar" optional
 option "ephemYear"     - "Year or year range (e.g. 08-11) of ephemeris files" string default="08-11" optional
-option "skyRegion"      - "Region of the sky to search (e.g. (ra1,dec1),(ra2,dec2),(ra3,dec3)...) or allsky" string default="allsky" optional
-option "SFToverlap"    - "SFT overlap in seconds, usually Tcoh/2" double default="900" optional
+option "skyRegion"     - "Region of the sky to search (e.g. (ra1,dec1),(ra2,dec2),(ra3,dec3)...) or allsky" string default="allsky" optional
+option "v2"    - "Flag to use the newer style of CompDetectorVmax input arguments (always specify this unless you know what you are doing!)" flag off
 

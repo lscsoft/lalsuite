@@ -11,7 +11,6 @@
 [\option{--help}]\newline \hspace*{0.5in}   
 [\option{--verbose}]\newline \hspace*{0.5in}                   
 [\option{--version}]\newline \hspace*{0.5in}    
-[\option{--debug-level}~\parm{level}]\newline \hspace*{0.5in}    
 [\option{--user-tag}~\parm{usertag}]\newline \hspace*{0.5in}      
 [\option{--comment}~\parm{comment}]\newline \hspace*{0.5in}  
 \option{--gps-start-time}~\parm{gps\_start}\newline \hspace*{0.5in} 
@@ -96,13 +95,6 @@ Read data from interferometer channel \parm{channel}.
 
 \item[\option{--comment} \parm{comment}] 
 Set the process table comment to \parm{comment}.
-
-\item[\option{--debug-level} \parm{level}] 
-Sets the LAL debug level to \parm{level}.  
-1 and 33 are the commonest choices for this code.  Debug level 1 is used for 
-developing code because it enables memory and error checking.  Since memory 
-checking is slow the correct choice for production code is 33.  
-See the LAL documentation for more information.  
 
 \item[\option{--disable-high-pass}] 
 Turn off the IIR highpass filter.  This is an optimistc option. Someday the data will be so good we won't need high pass filtering!  
@@ -278,7 +270,7 @@ lalapps_tmpltbank \
 --minimal-match 9.700000e-01 --calibration-cache  \
 /ldas_outgoing/calibration/cache_files/L1-CAL-V03-729273600-734367600.cache \
 --space Tau0Tau3 --approximant TaylorT1 --order twoPN \
---channel-name L1:LSC-AS_Q --debug-level 33
+--channel-name L1:LSC-AS_Q 
 
 \end{verbatim}
 

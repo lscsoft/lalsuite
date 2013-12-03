@@ -1,4 +1,5 @@
-#!/usr/bin/env /usr/bin/python
+#!@PYTHONPROG@
+
 """
 noise_comp_pipe - standalone noise comparison pipeline driver script
 

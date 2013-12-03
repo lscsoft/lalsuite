@@ -54,8 +54,10 @@ typedef struct {
   REAL4 s[16];   // HARDCODED VALUE
 } PulsarSpins16;
 
-/** Memory buffer structures to group logically the buffers on the host and
- * memory objects on the device */
+/**
+ * Memory buffer structures to group logically the buffers on the host and
+ * memory objects on the device
+ */
 typedef struct tagUINT4MemBuffer {
   UINT4 length;
   UINT4 *data;
@@ -86,8 +88,9 @@ typedef struct tagREAL44MemBuffer {
   cl_mem memobj;
 } REAL44MemBuffer;
 
-/** Struct to store OpenCL context: platform, queue, kernel etc.
- * It can be declared in a main rouine of an application, i.e. HierarchicalSearch, 
+/**
+ * Struct to store OpenCL context: platform, queue, kernel etc.
+ * It can be declared in a main rouine of an application, i.e. HierarchicalSearch,
  * and then filled in in top-level function XLALComputeFStatFreqBandVector()
  */
 typedef struct {

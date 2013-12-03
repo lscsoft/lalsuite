@@ -30,48 +30,49 @@
 #include <lal/LALStdlib.h>
 
 /**
-\author Brown, D. A.
-\file
-\ingroup lalmetaio
-
-\brief This header provides provides <tt>\#define</tt>s for the common elements of LIGO light weight XML files.
-
-\heading{Synopsis}
-\code
-#include <lal/LIGOLwXMLHeaders.h>
-\endcode
-
-It provides the XML header and footer, as well as table definitions for the various metadata tables.
-It will need to be kept up to date with changes in the LIGO database table definitions.  The quantities which are
-defined in this file are
-
-<ul>
-<li> LIGOLW_XML_HEADER</li>
-<li> LIGOLW_XML_FOOTER</li>
-<li> LIGOLW_XML_TABLE_FOOTER</li>
-<li> LIGOLW_XML_PROCESS</li>
-<li> PROCESS_ROW</li>
-<li> LIGOLW_XML_PROCESS_PARAMS</li>
-<li> PROCESS_PARAMS_ROW</li>
-<li> LIGOLW_XML_SEARCH_SUMMARY</li>
-<li> SEARCH_SUMMARY_ROW</li>
-<li> LIGOLW_XML_SEARCH_SUMMVARS</li>
-<li> SEARCH_SUMMVARS_ROW</li>
-<li> LIGOLW_XML_SIM_RINGDOWN</li>
-<li> SIM_RINGDOWN_ROW</li>
-<li> LIGOLW_XML_SUMM_VALUE</li>
-<li> SUMM_VALUE_ROW</li>
-<li> LIGOLW_XML_SIM_INST_PARAMS</li>
-<li> SIM_INST_PARAMS_ROW</li>
-<li> LIGOLW_XML_STOCHASTIC</li>
-<li> STOCHASTIC_ROW</li>
-<li> LIGOLW_XML_STOCH_SUMM</li>
-<li> STOCH_SUMM_ROW</li>
-<li> LIGOLW_XML_EXT_TRIGGERS</li>
-<li> EXT_TRIGGERS_ROW</li>
-</ul>
-
-*/
+ * \author Brown, D. A.
+ * \file
+ * \ingroup lalmetaio
+ *
+ * \brief This header provides provides <tt>\#define</tt>s for the common elements of LIGO light weight XML files.
+ *
+ * ### Synopsis ###
+ *
+ * \code
+ * #include <lal/LIGOLwXMLHeaders.h>
+ * \endcode
+ *
+ * It provides the XML header and footer, as well as table definitions for the various metadata tables.
+ * It will need to be kept up to date with changes in the LIGO database table definitions.  The quantities which are
+ * defined in this file are
+ *
+ * <ul>
+ * <li> LIGOLW_XML_HEADER</li>
+ * <li> LIGOLW_XML_FOOTER</li>
+ * <li> LIGOLW_XML_TABLE_FOOTER</li>
+ * <li> LIGOLW_XML_PROCESS</li>
+ * <li> PROCESS_ROW</li>
+ * <li> LIGOLW_XML_PROCESS_PARAMS</li>
+ * <li> PROCESS_PARAMS_ROW</li>
+ * <li> LIGOLW_XML_SEARCH_SUMMARY</li>
+ * <li> SEARCH_SUMMARY_ROW</li>
+ * <li> LIGOLW_XML_SEARCH_SUMMVARS</li>
+ * <li> SEARCH_SUMMVARS_ROW</li>
+ * <li> LIGOLW_XML_SIM_RINGDOWN</li>
+ * <li> SIM_RINGDOWN_ROW</li>
+ * <li> LIGOLW_XML_SUMM_VALUE</li>
+ * <li> SUMM_VALUE_ROW</li>
+ * <li> LIGOLW_XML_SIM_INST_PARAMS</li>
+ * <li> SIM_INST_PARAMS_ROW</li>
+ * <li> LIGOLW_XML_STOCHASTIC</li>
+ * <li> STOCHASTIC_ROW</li>
+ * <li> LIGOLW_XML_STOCH_SUMM</li>
+ * <li> STOCH_SUMM_ROW</li>
+ * <li> LIGOLW_XML_EXT_TRIGGERS</li>
+ * <li> EXT_TRIGGERS_ROW</li>
+ * </ul>
+ *
+ */
 
 #ifndef _LIGOLWXMLHEADERS_H
 #define _LIGOLWXMLHEADERS_H
@@ -182,7 +183,10 @@ fputs( "      <Column Name=\"sngl_ringdowngroup:sngl_ringdown:epsilon\" Type=\"r
 fputs( "      <Column Name=\"sngl_ringdowngroup:sngl_ringdown:num_clust_trigs\" Type=\"int_4s\"/>\n" , fp ) == EOF || \
 fputs( "      <Column Name=\"sngl_ringdowngroup:sngl_ringdown:ds2_H1H2\" Type=\"real_4\"/>\n" , fp ) == EOF || \
 fputs( "      <Column Name=\"sngl_ringdowngroup:sngl_ringdown:ds2_H1L1\" Type=\"real_4\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"sngl_ringdowngroup:sngl_ringdown:ds2_H1V1\" Type=\"real_4\"/>\n" , fp ) == EOF || \
 fputs( "      <Column Name=\"sngl_ringdowngroup:sngl_ringdown:ds2_H2L1\" Type=\"real_4\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"sngl_ringdowngroup:sngl_ringdown:ds2_H2V1\" Type=\"real_4\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"sngl_ringdowngroup:sngl_ringdown:ds2_L1V1\" Type=\"real_4\"/>\n" , fp ) == EOF || \
 fputs( "      <Column Name=\"sngl_ringdowngroup:sngl_ringdown:amplitude\" Type=\"real_4\"/>\n" , fp ) == EOF || \
 fputs( "      <Column Name=\"sngl_ringdowngroup:sngl_ringdown:snr\" Type=\"real_4\"/>\n" , fp ) == EOF || \
 fputs( "      <Column Name=\"sngl_ringdowngroup:sngl_ringdown:eff_dist\" Type=\"real_4\"/>\n" , fp ) == EOF || \
@@ -191,7 +195,7 @@ fputs( "      <Column Name=\"sngl_ringdowngroup:sngl_ringdown:event_id\" Type=\"
 fputs( "      <Stream Name=\"sngl_ringdowngroup:sngl_ringdown:table\" Type=\"Local\" Delimiter=\",\">\n", fp ) == EOF )
 
 #define SNGL_RINGDOWN_ROW \
-"         \"process:process_id:0\",\"%s\",\"%s\",%d,%d,%22.16e,%e,%e,%e,%e,%e,%e,%d,%e,%e,%e,%e,%e,%e,%22.16e,\"sngl_ringdown:event_id:%" LAL_UINT8_FORMAT "\""
+"         \"process:process_id:0\",\"%s\",\"%s\",%d,%d,%22.16e,%e,%e,%e,%e,%e,%e,%d,%e,%e,%e,%e,%e,%e,%e,%e,%e,%22.16e,\"sngl_ringdown:event_id:%" LAL_UINT8_FORMAT "\""
 
 #define PRINT_LIGOLW_XML_SIM_RINGDOWN(fp) ( \
 fputs( "   <Table Name=\"sim_ringdowngroup:sim_ringdown:table\">\n" , fp ) == EOF || \

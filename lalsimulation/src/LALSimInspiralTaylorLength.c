@@ -18,25 +18,26 @@
 */
 
 /**
-\author Sathyaprakash, B. S.
-\file
-\ingroup LALSimInspiraldEnergyFlux_c
-
-\brief NONE
-
-This module outputs
-\f{equation}{
- tofv = t - t_0 + m \int_{v_0}^{v} \frac{E'(v)}{{\cal F}(v)} \, dv\,.
-\f}
-where the constants \f$t,\f$ \f$t_0,\f$ \f$v_0,\f$ and functions in the integrand
-\f$E'(v)\f$ and \f${\cal F}(v)\f$ are defined in the \c void structure <tt>params.</tt>
-
-\heading{Uses}
-\code
-XLALDRombergIntegrate()
-\endcode
-
-*/
+ * \author Sathyaprakash, B. S.
+ * \file
+ * \ingroup LALSimInspiraldEnergyFlux_c
+ *
+ * \brief NONE
+ *
+ * This module outputs
+ * \f{equation}{
+ * tofv = t - t_0 + m \int_{v_0}^{v} \frac{E'(v)}{{\cal F}(v)} \, dv\,.
+ * \f}
+ * where the constants \f$t,\f$ \f$t_0,\f$ \f$v_0,\f$ and functions in the integrand
+ * \f$E'(v)\f$ and \f${\cal F}(v)\f$ are defined in the \c void structure <tt>params.</tt>
+ *
+ * ### Uses ###
+ *
+ * \code
+ * XLALDRombergIntegrate()
+ * \endcode
+ *
+ */
 
 #include <math.h>
 #include <lal/LALStdlib.h>
@@ -155,14 +156,14 @@ XLALSimInspiralTaylorLength(
     akEF.dETa3 = 4.0 * XLALSimInspiralPNEnergy_6PNCoeff(eta);
 
 /* Taylor coefficients of flux. */
-    akEF.FTaN = XLALSimInspiralTaylorT1Flux_0PNCoeff(eta);
-    akEF.FTa2 = XLALSimInspiralTaylorT1Flux_2PNCoeff(eta);
-    akEF.FTa3 = XLALSimInspiralTaylorT1Flux_3PNCoeff(eta);
-    akEF.FTa4 = XLALSimInspiralTaylorT1Flux_4PNCoeff(eta);
-    akEF.FTa5 = XLALSimInspiralTaylorT1Flux_5PNCoeff(eta);
-    akEF.FTa6 = XLALSimInspiralTaylorT1Flux_6PNCoeff(eta);
-    akEF.FTl6 = XLALSimInspiralTaylorT1Flux_6PNLogCoeff(eta);
-    akEF.FTa7 = XLALSimInspiralTaylorT1Flux_7PNCoeff(eta);
+    akEF.FTaN = XLALSimInspiralPNFlux_0PNCoeff(eta);
+    akEF.FTa2 = XLALSimInspiralPNFlux_2PNCoeff(eta);
+    akEF.FTa3 = XLALSimInspiralPNFlux_3PNCoeff(eta);
+    akEF.FTa4 = XLALSimInspiralPNFlux_4PNCoeff(eta);
+    akEF.FTa5 = XLALSimInspiralPNFlux_5PNCoeff(eta);
+    akEF.FTa6 = XLALSimInspiralPNFlux_6PNCoeff(eta);
+    akEF.FTl6 = XLALSimInspiralPNFlux_6PNLogCoeff(eta);
+    akEF.FTa7 = XLALSimInspiralPNFlux_7PNCoeff(eta);
     akEF.FTa8 = - 117.5043907226773;
     akEF.FTl8 =   52.74308390022676;
 

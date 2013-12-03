@@ -115,14 +115,12 @@ main(int argc, char *argv[])
   ConfigVariables config = empty_ConfigVariables;
   UserInput uvar = empty_UserInput;
 
-  lalDebugLevel = 0;  
   vrbflg = 1;	/* verbose error-messages */
 
   /* set LAL error-handler */
   lal_errhandler = LAL_ERR_EXIT;
 
   /* register user-variables */
-  LAL_CALL (LALGetDebugLevel (&status, argc, argv, 'v'), &status);
   LAL_CALL (initUserVars (&status, &uvar, argc, argv), &status);	  
 
   if (uvar.help) 	/* help requested: we're done */
@@ -168,7 +166,7 @@ initUserVars (LALStatus *status, UserInput *uvar, int argc, char *argv[])
   uvar->help = FALSE;
   uvar->IFO = NULL;
 
-#define EPHEM_YEARS  "00-04"
+#define EPHEM_YEARS  "00-19-DE405"
   uvar->ephemYear = (CHAR*)LALCalloc (1, strlen(EPHEM_YEARS)+1);
   strcpy (uvar->ephemYear, EPHEM_YEARS);
 
@@ -221,7 +219,8 @@ initUserVars (LALStatus *status, UserInput *uvar, int argc, char *argv[])
 } /* initUserVars() */
 
 /*----------------------------------------------------------------------*/
-/** do some general initializations, 
+/**
+ * do some general initializations,
  * e.g. load ephemeris-files (if required), setup detector etc
  */
 void
@@ -265,7 +264,8 @@ initGeneral (LALStatus *status, ConfigVariables *cfg, const UserInput *uvar)
 
 } /* initGeneral() */
 
-/** Call LALPulsarMetric(), which is in {f, alpha, delta, f1dot, ...} coordinates
+/**
+ * Call LALPulsarMetric(), which is in {f, alpha, delta, f1dot, ...} coordinates
  * and has non-constant coefficients.
  */
 void

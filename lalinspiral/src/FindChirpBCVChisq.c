@@ -27,37 +27,35 @@
  */
 
 /**
+ * \author Anderson, W. G., and Brown D. A., BCV-Modifications: Messaritaki E.
+ * \file
+ * \ingroup FindChirpBCV_h
+ *
+ * \brief Module to implement the \f$\chi^2\f$ veto for the BCV templates.
+ *
+ * ### Description ###
+ *
+ * The function <tt>LALFindChirpBCVChisqVeto()</tt> perfoms a \f$\chi^2\f$ veto on an
+ * entire data segment using the corresponding algorithm for the BCV templates,
+ * described below. On exit the vector \c chisqVec contains the value
+ * \f$\chi^2(t_j)\f$ for the data segment.
+ *
+ * ### Algorithm ###
+ *
+ * chisq algorithm here
+ *
+ * ### Uses ###
+ *
+ * \code
+ * LALCreateReverseComplexFFTPlan()
+ * LALDestroyComplexFFTPlan()
+ * LALCCreateVector()
+ * LALCDestroyVector()
+ * LALCOMPLEX8VectorFFT()
+ * \endcode
+ *
+ */
 
-\author Anderson, W. G., and Brown D. A., BCV-Modifications: Messaritaki E.
-\file
-\ingroup FindChirpBCV_h
-
-\brief Module to implement the \f$\chi^2\f$ veto for the BCV templates.
-
-\heading{Description}
-
-The function <tt>LALFindChirpBCVChisqVeto()</tt> perfoms a \f$\chi^2\f$ veto on an
-entire data segment using the corresponding algorithm for the BCV templates,
-described below. On exit the vector \c chisqVec contains the value
-\f$\chi^2(t_j)\f$ for the data segment.
-
-
-\heading{Algorithm}
-
-chisq algorithm here
-
-\heading{Uses}
-\code
-LALCreateReverseComplexFFTPlan()
-LALDestroyComplexFFTPlan()
-LALCCreateVector()
-LALCDestroyVector()
-LALCOMPLEX8VectorFFT()
-\endcode
-
-*/
-
-#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <stdio.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALConstants.h>
@@ -239,13 +237,13 @@ LALFindChirpBCVChisqVeto (
   {
     for ( l = 0; l < numChisqBins; ++l )
     {
-      REAL4 X1 = params->qBinVecPtr[l]->data[j].re;
-      REAL4 Y1 = params->qBinVecPtr[l]->data[j].im;
+      REAL4 X1 = crealf(params->qBinVecPtr[l]->data[j]);
+      REAL4 Y1 = cimagf(params->qBinVecPtr[l]->data[j]);
 
-      REAL4 mod1 = ( ( X1 - q[j].re / (REAL4) (numChisqBins) ) *
-          ( X1 - q[j].re / (REAL4) (numChisqBins) ) +
-          ( Y1 - q[j].im / (REAL4) (numChisqBins) ) *
-          ( Y1 - q[j].im / (REAL4) (numChisqBins) ) );
+      REAL4 mod1 = ( ( X1 - crealf(q[j]) / (REAL4) (numChisqBins) ) *
+          ( X1 - crealf(q[j]) / (REAL4) (numChisqBins) ) +
+          ( Y1 - cimagf(q[j]) / (REAL4) (numChisqBins) ) *
+          ( Y1 - cimagf(q[j]) / (REAL4) (numChisqBins) ) );
 
       chisq[j] += chisqNorm * mod1 ;
     }
@@ -256,13 +254,13 @@ LALFindChirpBCVChisqVeto (
     for ( l = 0; l < numChisqBins; ++l )
     {
 
-      REAL4 X2 = params->qBinVecPtrBCV[l]->data[j].re;
-      REAL4 Y2 = params->qBinVecPtrBCV[l]->data[j].im;
+      REAL4 X2 = crealf(params->qBinVecPtrBCV[l]->data[j]);
+      REAL4 Y2 = cimagf(params->qBinVecPtrBCV[l]->data[j]);
 
-      REAL4 mod2 = ( ( X2 - qBCV[j].re / (REAL4) (numChisqBins) ) *
-          ( X2 - qBCV[j].re / (REAL4) (numChisqBins) ) +
-          ( Y2 - qBCV[j].im / (REAL4) (numChisqBins) ) *
-          ( Y2 - qBCV[j].im / (REAL4) (numChisqBins) ) );
+      REAL4 mod2 = ( ( X2 - crealf(qBCV[j]) / (REAL4) (numChisqBins) ) *
+          ( X2 - crealf(qBCV[j]) / (REAL4) (numChisqBins) ) +
+          ( Y2 - cimagf(qBCV[j]) / (REAL4) (numChisqBins) ) *
+          ( Y2 - cimagf(qBCV[j]) / (REAL4) (numChisqBins) ) );
 
       chisq[j] += chisqNorm * mod2;
 

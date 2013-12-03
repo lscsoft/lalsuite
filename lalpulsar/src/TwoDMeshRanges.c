@@ -18,49 +18,50 @@
 */
 
 /**
-\author Creighton, T. D.
-\file
-\ingroup TwoDMesh_h
-\brief Some range computation routines suitable for use in LALCreateTwoDMesh()
-
-\heading{Description}
-
-This module contains range computation routines suitable for passing
-into LALCreateTwoDMesh() via the <tt>params->getRange</tt>
-function parameter.
-
-The routine LALInterpolateRangePolygon() takes as its parameter
-a <tt>(void *)</tt> pointer to a \c REAL4VectorSequence structure,
-containing a list of 2-dimensional vectors \f$(x,y)\f$ giving the
-locations of points on the boundary of a polygonal region.  The
-function returns in \c range the points where a vertical line at
-the specified \f$x\f$-value crosses the edge of the polygon, in ascending
-order.  If no intersections are found, then both range values are set
-equal to (one of) the nearest point(s) on the boundary.
-
-The routine LALInterpolateRangeGrid() takes as its parameter a
-<tt>(void *)</tt> pointer to a \c REAL4Grid structure with physical
-dimension 1 and data dimension 2: for each point \f$x\f$ along the
-physical dimension, the grid stores a vector of length 2, giving the
-lower and upper range values \f$y_1(x)\f$ and \f$y_2(x)\f$.  The routine
-linearly interpolates these two sampled functions to compute the range
-interval for any specified \f$x\f$.  If the specified \f$x\f$ is outside the
-grid, then both range values are set equal to the average of the range
-points at the nearest endpoint of the grid.
-
-\heading{Algorithm}
-
-The LALInterpolateRangePolygon() function is just a stub at
-present; it returns [0,1] as its range regardless of inputs.
-
-\heading{Uses}
-\code
-lalDebugLevel
-\endcode
-
-\heading{Notes}
-
-*/
+ * \author Creighton, T. D.
+ * \file
+ * \ingroup TwoDMesh_h
+ * \brief Some range computation routines suitable for use in LALCreateTwoDMesh()
+ *
+ * ### Description ###
+ *
+ * This module contains range computation routines suitable for passing
+ * into LALCreateTwoDMesh() via the <tt>params->getRange</tt>
+ * function parameter.
+ *
+ * The routine LALInterpolateRangePolygon() takes as its parameter
+ * a <tt>(void *)</tt> pointer to a \c REAL4VectorSequence structure,
+ * containing a list of 2-dimensional vectors \f$(x,y)\f$ giving the
+ * locations of points on the boundary of a polygonal region.  The
+ * function returns in \c range the points where a vertical line at
+ * the specified \f$x\f$-value crosses the edge of the polygon, in ascending
+ * order.  If no intersections are found, then both range values are set
+ * equal to (one of) the nearest point(s) on the boundary.
+ *
+ * The routine LALInterpolateRangeGrid() takes as its parameter a
+ * <tt>(void *)</tt> pointer to a \c REAL4Grid structure with physical
+ * dimension 1 and data dimension 2: for each point \f$x\f$ along the
+ * physical dimension, the grid stores a vector of length 2, giving the
+ * lower and upper range values \f$y_1(x)\f$ and \f$y_2(x)\f$.  The routine
+ * linearly interpolates these two sampled functions to compute the range
+ * interval for any specified \f$x\f$.  If the specified \f$x\f$ is outside the
+ * grid, then both range values are set equal to the average of the range
+ * points at the nearest endpoint of the grid.
+ *
+ * ### Algorithm ###
+ *
+ * The LALInterpolateRangePolygon() function is just a stub at
+ * present; it returns [0,1] as its range regardless of inputs.
+ *
+ * ### Uses ###
+ *
+ * \code
+ * lalDebugLevel
+ * \endcode
+ *
+ * ### Notes ###
+ *
+ */
 
 #include <lal/LALStdlib.h>
 #include <lal/Grid.h>

@@ -18,26 +18,30 @@
 */
 
 /**
-\author B.S. Sathyaprakash
-\file
-
-\brief Creates a template mesh for BCV (or, alternatively, for SPA but
-assuing a constant metric) using the mismatch metric.
-
-\heading{Usage}
-
-\heading{Description}
-
-\heading{Algorithm}
-
-\heading{Uses}
-\code
-lalDebugLevel
-\endcode
-
-\heading{Notes}
-
-*/
+ * \author B.S. Sathyaprakash
+ * \file
+ *
+ * \brief Creates a template mesh for BCV (or, alternatively, for SPA but
+ * assuing a constant metric) using the mismatch metric.
+ *
+ * ### Usage ###
+ *
+ *
+ * ### Description ###
+ *
+ *
+ * ### Algorithm ###
+ *
+ *
+ * ### Uses ###
+ *
+ * \code
+ * lalDebugLevel
+ * \endcode
+ *
+ * ### Notes ###
+ *
+ */
 
 #include <math.h>
 #include <stdlib.h>
@@ -46,7 +50,6 @@ lalDebugLevel
 #include <lal/SeqFactories.h>
 
 /* Default parameter settings. */
-extern int lalDebugLevel;
 
 /*static void PSItoMasses (LALStatus *status, InspiralTemplate *params, UINT4 *valid, REAL4 psi0, REAL4 psi3);*/
 void  LALInspiralCreateFlatBank(LALStatus *status, REAL4VectorSequence *list, InspiralBankParams *bankParams);
@@ -76,7 +79,6 @@ main(void)
   INT4 valid;
   FILE *fpr;
 
-  lalDebugLevel = 0;
 
   fpr = fopen("PNTemplates.out", "w");
 
@@ -278,7 +280,6 @@ GetInspiralMoments (
 	   in.ndx = (REAL8) k /3.L;
 	   LALInspiralMoments(status->statusPtr,&moments->j[k],in);
 	   CHECKSTATUSPTR(status);
-	   if (lalDebugLevel==1) fprintf(stderr, "j%1i=%e\n", k,moments->j[k]);
    }
    in.shf->deltaF *= params->fLower;
    in.shf->f0 *= params->fLower;

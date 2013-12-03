@@ -29,7 +29,6 @@
 #include <gsl/gsl_vector.h>
 #include <gsl/gsl_matrix.h>
 
-#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/LALStdio.h>
 #include <lal/LogPrintf.h>
 #include <lal/LALXML.h>
@@ -79,7 +78,6 @@ int main(void)
     int result = LALXMLC_ENOM;
 
     /* set debug level*/
-    lalDebugLevel = LALMSGLVL3;
 
     printf( "======================================================================\n");
     printf( "1: Test LIGOTimeGPS (de)serialization\n");
@@ -457,7 +455,7 @@ int testTable ( void )
   REAL4 DeltaIn[IN_ROWS]  = { -1.234, -0.5, 1.234 };
   const CHAR *NameIn[IN_ROWS]   = { "Pulsar 1", "another pulsar", "PSR J0537-6910" };
   INT4  IndexIn[IN_ROWS]  = { 5, 7, 99 };
-  COMPLEX8 FaIn[IN_ROWS]  = { { 1, 2 }, {3, 4}, {5, 6} };
+  COMPLEX8 FaIn[IN_ROWS]  = { crectf(1, 2), crectf(3, 4), crectf(5, 6) };
 
   printf ("--> Input table values ... \n");
   printf ("FreqIn  = ");
@@ -471,7 +469,7 @@ int testTable ( void )
   printf ("IndexIn = ");
   for ( j=0; j < IN_ROWS; j ++ ) printf ("%d%s", IndexIn[j], j<IN_ROWS-1? ", " : "\n" );
   printf ("FaIn    = ");
-  for ( j=0; j < IN_ROWS; j ++ ) printf ("%f %f%s", FaIn[j].re, FaIn[j].im, j<IN_ROWS-1? ", " : "\n" );
+  for ( j=0; j < IN_ROWS; j ++ ) printf ("%f %f%s", crealf(FaIn[j]), cimagf(FaIn[j]), j<IN_ROWS-1? ", " : "\n" );
 
 
   /* ---------- create FIELDS */
@@ -672,7 +670,7 @@ int testTable ( void )
   printf ("IndexOut = ");
   for ( j=0; j < numRows; j ++ ) printf ("%d%s", IndexOut[j], j<numRows-1? ", " : "\n" );
   printf ("FaOut    = ");
-  for ( j=0; j < numRows; j ++ ) printf ("%f %f%s", FaOut[j].re, FaOut[j].im, j<numRows-1? ", " : "\n" );
+  for ( j=0; j < numRows; j ++ ) printf ("%f %f%s", crealf(FaOut[j]), cimagf(FaOut[j]), j<numRows-1? ", " : "\n" );
 
   /* compare input- and output-values */
   printf ("--> Comparing input values and those parsed back ... ");
@@ -698,9 +696,9 @@ int testTable ( void )
         XLALPrintError ("Input Index '%d' differs from parsed '%d' in row %d\n", IndexIn[j], IndexOut[j], j );
         return LALXMLC_EFUN;
       }
-      if ( gsl_fcmp (FaIn[j].re, FaOut[j].re, REAL4TOL ) || gsl_fcmp (FaIn[j].im, FaOut[j].im, REAL4TOL ) ) {
+      if ( gsl_fcmp (crealf(FaIn[j]), crealf(FaOut[j]), REAL4TOL ) || gsl_fcmp (cimagf(FaIn[j]), cimagf(FaOut[j]), REAL4TOL ) ) {
         XLALPrintError ("Input Fa {%.6f,%.6f} and parsed {%.6f,%.6f} in row %d differ by more than eps=%g\n",
-                        FaIn[j].re, FaIn[j].im, FaOut[j].re, FaOut[j].im, j, REAL4TOL);
+                        crealf(FaIn[j]), cimagf(FaIn[j]), crealf(FaOut[j]), cimagf(FaOut[j]), j, REAL4TOL);
         return LALXMLC_EFUN;
       }
 
@@ -731,7 +729,7 @@ int testTable ( void )
 int validateDocument(const xmlDocPtr xmlDocument)
 {
     /* set up local variables */
-    char schemaUrl[] = "file://" DATADIR "VOTable-1.1.xsd";
+    char schemaUrl[] = "file://" TEST_DATA_DIR "VOTable-1.1.xsd";
     int result;
 
     /* validate document */

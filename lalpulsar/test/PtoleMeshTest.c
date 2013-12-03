@@ -18,77 +18,79 @@
 */
 
 /**
-\author Owen, B. J.,   Jones, D. I.
-\file
-\ingroup PtoleMetric_h
-\brief Tests and showcases the combination of \ref PtoleMetric_h and \ref TwoDMesh_h modules.
-
-\heading{Program \c PtoleMeshTest}
-\latexonly\label{ss_PtoleMeshTest}\endlatexonly
-
-\heading{Usage}
-\code
-PtoleMeshTest
-\endcode
-
-\heading{Description}
-
-The <tt>-b</tt> option sets the beginning time of integration to the option
-argument. (Default is \f$0\f$ seconds)
-
-The <tt>-c</tt> option determins the center of the patch. (Default is the
-center of the globular cluster 47 Tuc.) This option is hardcoded to use
-equatorial coordinates and the argument should be given in hh:mm:ss:dd:mm:ss
-format.
-
-The <tt>-e</tt> option sets \c lalDebugLevel to the option argument.
-(Default is 1.)
-
-The <tt>-f</tt> option sets the maximum frequency of integration (in Hz) to the
-option argument. (The default value is 1000.)
-
-The <tt>-i</tt> option does not function at this time.
-
-The <tt>-m</tt> option sets the maximum mismatch of the mesh to the option
-argument. (Default is 0.02.)
-
-The <tt>-n</tt> option sets the maximum number of nodes in the mesh to the
-option argument. (Default is \f$10^6\f$.)
-
-The texttt{-p} option causes the coordinates of the nodes to be written to
-a file <tt>mesh.dat</tt>, for the benifit of users who don't have
-\c xmgrace installed.  The format is one node per line, (RA, DEC),
-with the angles in degrees.
-
-The <tt>-r</tt> option sets the radius (in arcminutes) of the circular
-sky patch. (The default value is set for the globular cluster 47 Tuc.)
-At the moment there is no option for another patch shape, but if you
-specify radius zero you will get a search over a rectangular region
-whose limits in RA and dec are specified in the code.
-
-The <tt>-t</tt> option sets the duration of integration, in seconds. (The
-default is \f$10^5\f$ seconds, which is of order one day but is not an integer
-multiple of anything astronomically important.)
-
-The <tt>-x</tt> option makes a plot of the mesh points on the sky patch using a
-system call to \c xmgrace. If \c xmgrace is not installed on your
-system, this option will not work. The plot goes to a file <tt>mesh.agr</tt>.
-
-\heading{Algorithm}
-
-\heading{Uses}
-
-\code
-lalDebugLevel
-LALCheckMemoryLeaks()
-LALProjectMetric()
-LALPtoleMetric()
-LALXMGRPlotMesh()
-\endcode
-
-\heading{Notes}
-
-*/
+ * \author Owen, B. J.,   Jones, D. I.
+ * \file
+ * \ingroup PtoleMetric_h
+ * \brief Tests and showcases the combination of \ref PtoleMetric_h and \ref TwoDMesh_h modules.
+ *
+ * ### Program PtoleMeshTest ###
+ *
+ *
+ * ### Usage ###
+ *
+ * \code
+ * PtoleMeshTest
+ * \endcode
+ *
+ * ### Description ###
+ *
+ * The <tt>-b</tt> option sets the beginning time of integration to the option
+ * argument. (Default is \f$0\f$ seconds)
+ *
+ * The <tt>-c</tt> option determins the center of the patch. (Default is the
+ * center of the globular cluster 47 Tuc.) This option is hardcoded to use
+ * equatorial coordinates and the argument should be given in hh:mm:ss:dd:mm:ss
+ * format.
+ *
+ * The <tt>-e</tt> option sets \c lalDebugLevel to the option argument.
+ * (Default is 1.)
+ *
+ * The <tt>-f</tt> option sets the maximum frequency of integration (in Hz) to the
+ * option argument. (The default value is 1000.)
+ *
+ * The <tt>-i</tt> option does not function at this time.
+ *
+ * The <tt>-m</tt> option sets the maximum mismatch of the mesh to the option
+ * argument. (Default is 0.02.)
+ *
+ * The <tt>-n</tt> option sets the maximum number of nodes in the mesh to the
+ * option argument. (Default is \f$10^6\f$.)
+ *
+ * The texttt{-p} option causes the coordinates of the nodes to be written to
+ * a file <tt>mesh.dat</tt>, for the benifit of users who don't have
+ * \c xmgrace installed.  The format is one node per line, (RA, DEC),
+ * with the angles in degrees.
+ *
+ * The <tt>-r</tt> option sets the radius (in arcminutes) of the circular
+ * sky patch. (The default value is set for the globular cluster 47 Tuc.)
+ * At the moment there is no option for another patch shape, but if you
+ * specify radius zero you will get a search over a rectangular region
+ * whose limits in RA and dec are specified in the code.
+ *
+ * The <tt>-t</tt> option sets the duration of integration, in seconds. (The
+ * default is \f$10^5\f$ seconds, which is of order one day but is not an integer
+ * multiple of anything astronomically important.)
+ *
+ * The <tt>-x</tt> option makes a plot of the mesh points on the sky patch using a
+ * system call to \c xmgrace. If \c xmgrace is not installed on your
+ * system, this option will not work. The plot goes to a file <tt>mesh.agr</tt>.
+ *
+ * ### Algorithm ###
+ *
+ *
+ * ### Uses ###
+ *
+ * \code
+ * lalDebugLevel
+ * LALCheckMemoryLeaks()
+ * LALProjectMetric()
+ * LALPtoleMetric()
+ * LALXMGRPlotMesh()
+ * \endcode
+ *
+ * ### Notes ###
+ *
+ */
 
 /** \name Error Codes */ /*@{*/
 #define PTOLEMESHTESTC_EMEM 1
@@ -140,7 +142,6 @@ LALXMGRPlotMesh()
 
 
 extern char *optarg;     /* option argument for getopt() */
-int  lalDebugLevel = 1;  /* default value */
 
 void getRange( LALStatus *, REAL4 [2], REAL4, void * );
 void getMetric( LALStatus *, REAL4 [3], REAL4 [2], void * );
@@ -202,7 +203,6 @@ int main( int argc, char **argv )
       center.latitude = (d+e/60+f/3600)*LAL_PI_180;
       break;
     case 'e':
-      lalDebugLevel = atof( optarg );
       break;
     case 'f':
       fMax = atof( optarg );

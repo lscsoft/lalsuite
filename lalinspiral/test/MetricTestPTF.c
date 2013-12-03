@@ -18,26 +18,29 @@
 */
 
 /**
-
-\author Duncan Brown, Yi Pan
-\file
-
-\brief Creates the PTF metric for a single point in the parameter space.
-
-\heading{Usage}
-
-\heading{Description}
-
-\heading{Algorithm}
-
-\heading{Uses}
-\code
-lalDebugLevel
-\endcode
-
-\heading{Notes}
-
-*/
+ * \author Duncan Brown, Yi Pan
+ * \file
+ *
+ * \brief Creates the PTF metric for a single point in the parameter space.
+ *
+ * ### Usage ###
+ *
+ *
+ * ### Description ###
+ *
+ *
+ * ### Algorithm ###
+ *
+ *
+ * ### Uses ###
+ *
+ * \code
+ * lalDebugLevel
+ * \endcode
+ *
+ * ### Notes ###
+ *
+ */
 
 #include <math.h>
 #include <stdlib.h>
@@ -47,7 +50,6 @@ lalDebugLevel
 #include <lal/AVFactories.h>
 #include <lal/SeqFactories.h>
 
-extern int lalDebugLevel;
 
 int main( void )
 {
@@ -64,7 +66,6 @@ int main( void )
   UINT4 N = 16384;
   REAL8 deltaF = 1.0/((REAL8)N * deltaT);
 
-  lalDebugLevel = 1;
 
   fullmetric = XLALCreateREAL8Vector( 45 );
 

@@ -18,23 +18,26 @@
 */
 
 /**
-\author Cokelaer Thomas
-\file
-\brief NONE
-
-\heading{Description}
-
-\heading{Algorithm}
-
-\heading{Uses}
-\code
-LALInspiralParameterCalc()
-LALInspiralComputeMetric()
-\endcode
-
-\heading{Notes}
-
-*/
+ * \author Cokelaer Thomas
+ * \file
+ * \brief NONE
+ *
+ * ### Description ###
+ *
+ *
+ * ### Algorithm ###
+ *
+ *
+ * ### Uses ###
+ *
+ * \code
+ * LALInspiralParameterCalc()
+ * LALInspiralComputeMetric()
+ * \endcode
+ *
+ * ### Notes ###
+ *
+ */
 
 #include <stdio.h>
 #include <lal/LALInspiralBank.h>
@@ -956,7 +959,7 @@ LALFindPosition(LALStatus       *status,
   /* given t0, t3 we get the totalMass and eta.
      We do not need to call ParameterCalc again and again here. */
   totalMass     = A0 * paramsIn->t3/(A3 * paramsIn->t0);
-  eta           = A0/(paramsIn->t0 * pow(totalMass, fiveby3));
+  eta           = A0/(paramsIn->t0 * pow(totalMass, (5./3.)));
 
   /* be sure eta is inside the space if it is suppose to be */
   if (eta > oneby4) {

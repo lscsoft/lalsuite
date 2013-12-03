@@ -18,7 +18,8 @@
  *  MA  02111-1307  USA
  */
 
-/** \author Anton Obukhov
+/**
+ * \author Anton Obukhov
  * \ingroup pulsarCoherent
  * \file
  * \brief

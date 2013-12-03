@@ -248,9 +248,9 @@ double XLALSimNoisePSDeLIGOModel(double f /**< frequency (Hz) */);
  * phenomenological fit (from the Virgo webiste) that can be approximated by the
  * following:
  * \f{equation}{
- *  S_h(f) =
- *  s_0 \left ( \frac {7.87f}{f_0} \right )^{-4.8} + \frac{6}{17} \frac{f_0}{f}
- *  + \left [1 + \left (\frac {f}{f_0} \right)^2 \right ],
+ * S_h(f) =
+ * s_0 \left ( \frac {7.87f}{f_0} \right )^{-4.8} + \frac{6}{17} \frac{f_0}{f}
+ * + \left [1 + \left (\frac {f}{f_0} \right)^2 \right ],
  * \f}
  * where \f$s_0=10.2e-46\f$.
  *
@@ -260,16 +260,27 @@ double XLALSimNoisePSDeLIGOModel(double f /**< frequency (Hz) */);
  */
 double XLALSimNoisePSDVirgo(double f /**< frequency (Hz) */);
 
-/** Provides a GEO noise power spectrum based on that from Table IV of
- * \ref dis2001.
+/**
+ * Provides a GEO noise power spectrum based on that from Table IV of
+ * \cite dis2001.
  *
  * The comes from the deprecated function LALGEOPsd in the lal noisemodels
  * package.
  */
 double XLALSimNoisePSDGEO(double f /**< frequency (Hz) */);
 
-/** Provides a TAMA300 noise power spectrum based on that from Table IV of
- * \ref dis2001.
+/**
+ * Provides a GEO-HF noise power spectrum based on a fit to Figure 6
+ * from \cite Grote2010.
+ *
+ * The fit is good between 50Hz to 8kHz and errors between the analytic
+ * fit given and the <a href="https://intranet.aei.uni-hannover.de/geo600/geohflogbook.nsf/7e8722dffa24dea0c1256de900406c84/4837a612ac990060c12575ce004e70fd?OpenDocument">estimated curve</a> are less than 1%.
+ */
+double XLALSimNoisePSDGEOHF(double f /**< frequency (Hz) */);
+
+/**
+ * Provides a TAMA300 noise power spectrum based on that from Table IV of
+ * \cite dis2001.
  *
  * The comes from the deprecated function LALTAMAPsd in the lal noisemodels
  * package.
@@ -404,7 +415,7 @@ double XLALSimNoisePSDaLIGOZeroDetLowPower(double f /**< frequency (Hz) */);
 double XLALSimNoisePSDaLIGOZeroDetHighPower(double f /**< frequency (Hz) */);
 
 /**
- * Provides the noise power spectrum for aLIGO under the 
+ * Provides the noise power spectrum for aLIGO under the
  * configuration tuned to optimize sensitivity to NS-NS inspirals.
  *
  * See: LIGO-T0900288-v3 and LIGO-T070247-01.
@@ -416,7 +427,7 @@ double XLALSimNoisePSDaLIGOZeroDetHighPower(double f /**< frequency (Hz) */);
 double XLALSimNoisePSDaLIGONSNSOpt(double f /**< frequency (Hz) */);
 
 /**
- * Provides the noise power spectrum for aLIGO under the 
+ * Provides the noise power spectrum for aLIGO under the
  * configuration tuned to optimize sensitivity to 30+30 solar mass binary
  * black holes with fixed signal recycling cavity detuning of 20 degrees.
  *
@@ -429,7 +440,7 @@ double XLALSimNoisePSDaLIGONSNSOpt(double f /**< frequency (Hz) */);
 double XLALSimNoisePSDaLIGOBHBH20Deg(double f /**< frequency (Hz) */);
 
 /**
- * Provides the noise power spectrum for aLIGO under the 
+ * Provides the noise power spectrum for aLIGO under the
  * configuration tuned to narrow-band high-frequency sensitivity around
  * 1 kHz.
  *
@@ -441,14 +452,16 @@ double XLALSimNoisePSDaLIGOBHBH20Deg(double f /**< frequency (Hz) */);
  */
 double XLALSimNoisePSDaLIGOHighFrequency(double f /**< frequency (Hz) */);
 
-/** Provides the noise power spectrum for KAGRA based on that from Eqn 5 of
- * \ref md2012. This is a phenomenological fit to the KAGRA spectrum from
+/**
+ * Provides the noise power spectrum for KAGRA based on that from Eqn 5 of
+ * \cite md2012. This is a phenomenological fit to the KAGRA spectrum from
  * http://gwcenter.icrr.u-tokyo.ac.jp/en/researcher/parameter.
  */
 double XLALSimNoisePSDKAGRA(double f /**< frequency (Hz) */);
 
-/** Provides the noise power spectrum for AdvVirgo based on that from Eqn 6 of
- * \ref md2012. This is a phenomenological fit to the AdvVirgo spectrum from
+/**
+ * Provides the noise power spectrum for AdvVirgo based on that from Eqn 6 of
+ * \cite md2012. This is a phenomenological fit to the AdvVirgo spectrum from
  * http://wwwcascina.virgo.infin.it/advirgo.
  */
 double XLALSimNoisePSDAdvVirgo(double f /**< frequency (Hz) */);
@@ -535,6 +548,151 @@ int XLALSimNoisePSDaLIGOHighFrequencyGWINC(
 	double flow 			/**< low frequency cutoff (Hz) */
 );
 
+/**
+ * Returns a frequency series psd with low frequency cutoff flow corresponding
+ * to the aLIGO 2015 low-sensitivity scenario in LIGO-P1200087.
+ */
+int XLALSimNoisePSDaLIGOEarlyLowSensitivityP1200087(
+	REAL8FrequencySeries *psd,	/**< frequency series to be computed */
+	double flow 			/**< low frequency cutoff (Hz) */
+);
+
+/**
+ * Returns a frequency series psd with low frequency cutoff flow corresponding
+ * to the aLIGO 2015 high-sensitivity scenario in LIGO-P1200087.
+ */
+int XLALSimNoisePSDaLIGOEarlyHighSensitivityP1200087(
+	REAL8FrequencySeries *psd,	/**< frequency series to be computed */
+	double flow 			/**< low frequency cutoff (Hz) */
+);
+
+/**
+ * Returns a frequency series psd with low frequency cutoff flow corresponding
+ * to the aLIGO 2016-2017 low-sensitivity scenario in LIGO-P1200087.
+ */
+int XLALSimNoisePSDaLIGOMidLowSensitivityP1200087(
+	REAL8FrequencySeries *psd,	/**< frequency series to be computed */
+	double flow 			/**< low frequency cutoff (Hz) */
+);
+
+/**
+ * Returns a frequency series psd with low frequency cutoff flow corresponding
+ * to the aLIGO 2016-2017 high-sensitivity scenario in LIGO-P1200087.
+ */
+int XLALSimNoisePSDaLIGOMidHighSensitivityP1200087(
+	REAL8FrequencySeries *psd,	/**< frequency series to be computed */
+	double flow 			/**< low frequency cutoff (Hz) */
+);
+
+/**
+ * Returns a frequency series psd with low frequency cutoff flow corresponding
+ * to the aLIGO 2017-2018 low-sensitivity scenario in LIGO-P1200087.
+ */
+int XLALSimNoisePSDaLIGOLateLowSensitivityP1200087(
+	REAL8FrequencySeries *psd,	/**< frequency series to be computed */
+	double flow 			/**< low frequency cutoff (Hz) */
+);
+
+/**
+ * Returns a frequency series psd with low frequency cutoff flow corresponding
+ * to the aLIGO 2017-2018 high-sensitivity scenario in LIGO-P1200087.
+ */
+int XLALSimNoisePSDaLIGOLateHighSensitivityP1200087(
+	REAL8FrequencySeries *psd,	/**< frequency series to be computed */
+	double flow 			/**< low frequency cutoff (Hz) */
+);
+
+/**
+ * Returns a frequency series psd with low frequency cutoff flow corresponding
+ * to the aLIGO 2019 design sensitivity scenario in LIGO-P1200087.
+ */
+int XLALSimNoisePSDaLIGODesignSensitivityP1200087(
+	REAL8FrequencySeries *psd,	/**< frequency series to be computed */
+	double flow 			/**< low frequency cutoff (Hz) */
+);
+
+/**
+ * Returns a frequency series psd with low frequency cutoff flow corresponding
+ * to the aLIGO BNS-optimized sensitivity scenario in LIGO-P1200087.
+ */
+int XLALSimNoisePSDaLIGOBNSOptimizedSensitivityP1200087(
+	REAL8FrequencySeries *psd,	/**< frequency series to be computed */
+	double flow 			/**< low frequency cutoff (Hz) */
+);
+
+/**
+ * Returns a frequency series psd with low frequency cutoff flow corresponding
+ * to the AdV 2016-2017 low-sensitivity scenario in LIGO-P1200087.
+ */
+int XLALSimNoisePSDAdVEarlyLowSensitivityP1200087(
+	REAL8FrequencySeries *psd,	/**< frequency series to be computed */
+	double flow 			/**< low frequency cutoff (Hz) */
+);
+
+/**
+ * Returns a frequency series psd with low frequency cutoff flow corresponding
+ * to the AdV 2016-2017 high-sensitivity scenario in LIGO-P1200087.
+ */
+int XLALSimNoisePSDAdVEarlyHighSensitivityP1200087(
+	REAL8FrequencySeries *psd,	/**< frequency series to be computed */
+	double flow 			/**< low frequency cutoff (Hz) */
+);
+
+/**
+ * Returns a frequency series psd with low frequency cutoff flow corresponding
+ * to the AdV 2017-2018 low-sensitivity scenario in LIGO-P1200087.
+ */
+int XLALSimNoisePSDAdVMidLowSensitivityP1200087(
+	REAL8FrequencySeries *psd,	/**< frequency series to be computed */
+	double flow 			/**< low frequency cutoff (Hz) */
+);
+
+/**
+ * Returns a frequency series psd with low frequency cutoff flow corresponding
+ * to the AdV 2017-2018 high-sensitivity scenario in LIGO-P1200087.
+ */
+int XLALSimNoisePSDAdVMidHighSensitivityP1200087(
+	REAL8FrequencySeries *psd,	/**< frequency series to be computed */
+	double flow 			/**< low frequency cutoff (Hz) */
+);
+
+/**
+ * Returns a frequency series psd with low frequency cutoff flow corresponding
+ * to the AdV 2018-2020 low-sensitivity scenario in LIGO-P1200087.
+ */
+int XLALSimNoisePSDAdVLateLowSensitivityP1200087(
+	REAL8FrequencySeries *psd,	/**< frequency series to be computed */
+	double flow 			/**< low frequency cutoff (Hz) */
+);
+
+/**
+ * Returns a frequency series psd with low frequency cutoff flow corresponding
+ * to the AdV 2018-2020 high-sensitivity scenario in LIGO-P1200087.
+ */
+int XLALSimNoisePSDAdVLateHighSensitivityP1200087(
+	REAL8FrequencySeries *psd,	/**< frequency series to be computed */
+	double flow 			/**< low frequency cutoff (Hz) */
+);
+
+/**
+ * Returns a frequency series psd with low frequency cutoff flow corresponding
+ * to the AdV 2021 design sensitivity scenario in LIGO-P1200087.
+ */
+int XLALSimNoisePSDAdVDesignSensitivityP1200087(
+	REAL8FrequencySeries *psd,	/**< frequency series to be computed */
+	double flow 			/**< low frequency cutoff (Hz) */
+);
+
+/**
+ * Returns a frequency series psd with low frequency cutoff flow corresponding
+ * to the AdV BNS-optimized sensitivity scenario in LIGO-P1200087.
+ */
+int XLALSimNoisePSDAdVBNSOptimizedSensitivityP1200087(
+	REAL8FrequencySeries *psd,	/**< frequency series to be computed */
+	double flow 			/**< low frequency cutoff (Hz) */
+);
+
+
 /*
  *
  * NOISE GENERATION ROUTINES
@@ -595,13 +753,13 @@ int XLALSimNoisePSDaLIGOHighFrequencyGWINC(
  *
  * Note:
  *
- *	- If stride = 0, initialize h by generating one (periodic)
- *	realization of noise; subsequent calls should have non-zero
- *	stride.
+ * - If stride = 0, initialize h by generating one (periodic)
+ * realization of noise; subsequent calls should have non-zero
+ * stride.
  *
- *	- If stride = h->data->length then generate one segment of
- *	non-periodic noise by generating two different realizations
- *	and feathering them together.
+ * - If stride = h->data->length then generate one segment of
+ * non-periodic noise by generating two different realizations
+ * and feathering them together.
  *
  * Warning: only the first stride points are valid.
  */

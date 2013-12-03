@@ -59,14 +59,14 @@ COMPLEX8FFTPlan * XLALCreateCOMPLEX8FFTPlan( UINT4 size, int fwdflg, int measure
   }
 
   /* create the plan */
-  /* LAL_FFTW_PTHREAD_MUTEX_LOCK; */
+  /* LAL_FFTW_WISDOM_LOCK; */
   /*
    * Change the size to avoid CUDA bug with FFT of size 1
    */
   if( size == 1 ) createSize = 2;
   else createSize = size;
   cufftPlan1d( &plan->plan, createSize, CUFFT_C2C, 1 );
-  /* LAL_FFTW_PTHREAD_MUTEX_UNLOCK; */
+  /* LAL_FFTW_WISDOM_UNLOCK; */
 
   /* "Plan=0" Bugfix by Wiesner, K.: plan->plan is an integer handle not a pointer and 0 is a valid handle
       So checking against 0 and occasionaly destroy the plan is a bug.
@@ -115,11 +115,11 @@ void XLALDestroyCOMPLEX8FFTPlan( COMPLEX8FFTPlan *plan )
    if ( ! plan->plan )
       XLAL_ERROR_VOID( XLAL_EINVAL );
   */
-  //LAL_FFTW_PTHREAD_MUTEX_LOCK;
+  //LAL_FFTW_WISDOM_LOCK;
   cufftDestroy( plan->plan );
   XLALCudaFree(plan->d_input);
   XLALCudaFree(plan->d_output);
-  //LAL_FFTW_PTHREAD_MUTEX_UNLOCK;
+  //LAL_FFTW_WISDOM_UNLOCK;
   memset( plan, 0, sizeof( *plan ) );
   XLALFree( plan );
   return;
@@ -144,8 +144,8 @@ int XLALCOMPLEX8VectorFFT( COMPLEX8Vector *output, COMPLEX8Vector *input,
   /* do the fft */
   if( plan->size == 1 )
   {
-    output->data[0].re = input->data[0].re;
-    output->data[0].im = input->data[0].im;
+    output->data[0].realf_FIXME = crealf(input->data[0]);
+    output->data[0].imagf_FIXME = cimagf(input->data[0]);
   }
   else
     cudafft_execute_c2c( plan->plan,
@@ -205,11 +205,11 @@ COMPLEX16FFTPlan * XLALCreateCOMPLEX16FFTPlan( UINT4 size, int fwdflg, int measu
   }
 
   /* create the plan */
-  LAL_FFTW_PTHREAD_MUTEX_LOCK;
+  LAL_FFTW_WISDOM_LOCK;
   plan->plan = fftw_plan_dft_1d( size,
       (fftw_complex *)tmp1, (fftw_complex *)tmp2,
       fwdflg ? FFTW_FORWARD : FFTW_BACKWARD, flags );
-  LAL_FFTW_PTHREAD_MUTEX_UNLOCK;
+  LAL_FFTW_WISDOM_UNLOCK;
 
   /* free temporary arrays */
   XLALFree( tmp2 );
@@ -259,9 +259,9 @@ void XLALDestroyCOMPLEX16FFTPlan( COMPLEX16FFTPlan *plan )
     if ( ! plan->plan )
      XLAL_ERROR_VOID( XLAL_EINVAL );
   */
-  LAL_FFTW_PTHREAD_MUTEX_LOCK;
+  LAL_FFTW_WISDOM_LOCK;
   fftw_destroy_plan( plan->plan );
-  LAL_FFTW_PTHREAD_MUTEX_UNLOCK;
+  LAL_FFTW_WISDOM_UNLOCK;
   memset( plan, 0, sizeof( *plan ) );
   XLALFree( plan );
   return;
@@ -311,7 +311,7 @@ LALCreateForwardCOMPLEX8FFTPlan(
     )
 {
   INITSTATUS(status);
-  XLALPrintDeprecationWarning("LALCreateForwardCOMPLEX8FFTPlan", "XLALCreateForwardCOMPLEX8FFTPlan");
+  XLAL_PRINT_DEPRECATION_WARNING("XLALCreateForwardCOMPLEX8FFTPlan");
 
   ASSERT( plan, status, COMPLEXFFTH_ENULL, COMPLEXFFTH_MSGENULL );
   ASSERT( ! *plan, status, COMPLEXFFTH_ENNUL, COMPLEXFFTH_MSGENNUL );
@@ -349,7 +349,7 @@ LALCreateReverseCOMPLEX8FFTPlan(
     )
 {
   INITSTATUS(status);
-  XLALPrintDeprecationWarning("LALCreateReverseCOMPLEX8FFTPlan", "XLALCreateReverseCOMPLEX8FFTPlan");
+  XLAL_PRINT_DEPRECATION_WARNING("XLALCreateReverseCOMPLEX8FFTPlan");
 
   ASSERT( plan, status, COMPLEXFFTH_ENULL, COMPLEXFFTH_MSGENULL );
   ASSERT( ! *plan, status, COMPLEXFFTH_ENNUL, COMPLEXFFTH_MSGENNUL );
@@ -385,7 +385,7 @@ LALDestroyCOMPLEX8FFTPlan (
     )
 {
   INITSTATUS(status);
-  XLALPrintDeprecationWarning("LALDestroyCOMPLEX8FFTPlan", "XLALDestroyCOMPLEX8FFTPlan");
+  XLAL_PRINT_DEPRECATION_WARNING("XLALDestroyCOMPLEX8FFTPlan");
   ASSERT( plan, status, COMPLEXFFTH_ENULL, COMPLEXFFTH_MSGENULL );
   ASSERT( *plan, status, COMPLEXFFTH_ENULL, COMPLEXFFTH_MSGENULL );
   XLALDestroyCOMPLEX8FFTPlan( *plan );
@@ -416,7 +416,7 @@ LALCOMPLEX8VectorFFT (
 {
   int code;
   INITSTATUS(status);
-  XLALPrintDeprecationWarning("LALCOMPLEX8VectorFFT", "XLALCOMPLEX8VectorFFT");
+  XLAL_PRINT_DEPRECATION_WARNING("XLALCOMPLEX8VectorFFT");
 
   ASSERT( output, status, COMPLEXFFTH_ENULL, COMPLEXFFTH_MSGENULL );
   ASSERT( input, status, COMPLEXFFTH_ENULL, COMPLEXFFTH_MSGENULL );
@@ -484,7 +484,7 @@ LALCreateForwardCOMPLEX16FFTPlan(
     )
 {
   INITSTATUS(status);
-  XLALPrintDeprecationWarning("LALCreateForwardCOMPLEX16FFTPlan", "XLALCreateForwardCOMPLEX16FFTPlan");
+  XLAL_PRINT_DEPRECATION_WARNING("XLALCreateForwardCOMPLEX16FFTPlan");
 
   ASSERT( plan, status, COMPLEXFFTH_ENULL, COMPLEXFFTH_MSGENULL );
   ASSERT( ! *plan, status, COMPLEXFFTH_ENNUL, COMPLEXFFTH_MSGENNUL );
@@ -522,7 +522,7 @@ LALCreateReverseCOMPLEX16FFTPlan(
     )
 {
   INITSTATUS(status);
-  XLALPrintDeprecationWarning("LALCreateReverseCOMPLEX16FFTPlan", "XLALCreateReverseCOMPLEX16FFTPlan");
+  XLAL_PRINT_DEPRECATION_WARNING("XLALCreateReverseCOMPLEX16FFTPlan");
 
   ASSERT( plan, status, COMPLEXFFTH_ENULL, COMPLEXFFTH_MSGENULL );
   ASSERT( ! *plan, status, COMPLEXFFTH_ENNUL, COMPLEXFFTH_MSGENNUL );
@@ -557,7 +557,7 @@ LALDestroyCOMPLEX16FFTPlan (
     )
 {
   INITSTATUS(status);
-  XLALPrintDeprecationWarning("LALDestroyCOMPLEX16FFTPlan", "XLALDestroyCOMPLEX16FFTPlan");
+  XLAL_PRINT_DEPRECATION_WARNING("XLALDestroyCOMPLEX16FFTPlan");
   ASSERT( plan, status, COMPLEXFFTH_ENULL, COMPLEXFFTH_MSGENULL );
   ASSERT( *plan, status, COMPLEXFFTH_ENULL, COMPLEXFFTH_MSGENULL );
   XLALDestroyCOMPLEX16FFTPlan( *plan );
@@ -588,7 +588,7 @@ LALCOMPLEX16VectorFFT (
 {
   int code;
   INITSTATUS(status);
-  XLALPrintDeprecationWarning("LALCOMPLEX16VectorFFT", "XLALCOMPLEX16VectorFFT");
+  XLAL_PRINT_DEPRECATION_WARNING("XLALCOMPLEX16VectorFFT");
 
   ASSERT( output, status, COMPLEXFFTH_ENULL, COMPLEXFFTH_MSGENULL );
   ASSERT( input, status, COMPLEXFFTH_ENULL, COMPLEXFFTH_MSGENULL );

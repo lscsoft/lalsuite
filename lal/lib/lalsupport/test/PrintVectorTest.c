@@ -18,30 +18,32 @@
 */
 
 /**
-   \file
-   \ingroup PrintVector_h
-
-   \brief Tests the routines in \ref PrintVector.c.
-
-   \heading{Usage}
-   \code
-PrintVectorTest
-   \endcode
-
-   \heading{Description}
-
-This program generates and prints a sequence of
-   <tt>\<datatype\></tt>Vectors; the program itself always
-returns success, so the testing function is actually served by
-examinaton of the output files.
-
-\heading{Exit codes}
-<table>
-<tr><th>Code</th><th>Explanation</th></tr>
-<tr><td>0</td><td>Always returned.</td></tr>
-/table>
-
-*/
+ * \file
+ * \ingroup PrintVector_h
+ *
+ * \brief Tests the routines in \ref PrintVector.c.
+ *
+ * ### Usage ###
+ *
+ * \code
+ * PrintVectorTest
+ * \endcode
+ *
+ * ### Description ###
+ *
+ * This program generates and prints a sequence of
+ * <tt>\<datatype\></tt>Vectors; the program itself always
+ * returns success, so the testing function is actually served by
+ * examinaton of the output files.
+ *
+ * ### Exit codes ###
+ *
+ * <table>
+ * <tr><th>Code</th><th>Explanation</th></tr>
+ * <tr><td>0</td><td>Always returned.</td></tr>
+ * /table>
+ *
+ */
 /** \cond DONT_DOXYGEN */
 
 #define LAL_USE_OLD_COMPLEX_STRUCTS
@@ -74,7 +76,6 @@ examinaton of the output files.
 #endif
 #endif
 
-INT4 lalDebugLevel = 3;
 
 int main( void )
 {
@@ -109,8 +110,8 @@ int main( void )
 
   LALZCreateVector( &status, &zVector, 8 );
   for ( n=zVector->length, z=zVector->data; n > 0 ; --n, ++z ) {
-    z->re = sinh(90.0*(4-n));
-    z->im = - 1 / (1e-300 + z->re);
+    z->real_FIXME = sinh(90.0*(4-n));
+    z->imag_FIXME = - 1 / (1e-300 + creal(*z));
   }
   LALZPrintVector(zVector);
 
@@ -118,8 +119,8 @@ int main( void )
 
   LALCCreateVector( &status, &cVector, 8 );
   for ( n=cVector->length, c=cVector->data; n > 0 ; --n, ++c ) {
-    c->re = sinh(9.0*(4-n));
-    c->im = - 1 / (1e-30 + c->re);
+    c->realf_FIXME = sinh(9.0*(4-n));
+    c->imagf_FIXME = - 1 / (1e-30 + crealf(*c));
   }
   LALCPrintVector(cVector);
 

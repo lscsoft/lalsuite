@@ -18,66 +18,69 @@
 */
 
 /**
-\file
-\ingroup MatrixUtils_h
-\author Creighton, T. D.
-
-\brief Computes the inverse and determinant of a matrix.
-
-\heading{Usage}
-\code
-DetInverseTest [-n size | -i infile] [-o outfile] [-v] [-t] [-s] [-d debuglevel]
-\endcode
-
-\heading{Description}
-
-This program computes the inverse and determinant of a square real
-matrix using the routines in \ref DetInverse_c and
-\ref DetInverseInternal_c.  The following option flags are accepted:
-<ul>
-<li>[<tt>-n</tt>] Generates a random symmetric
-\c size\f$\times\f$\c size metric.  If this option is not given,
-<tt>-n 3</tt> is assumed.  This option (or its default) is
-\e overridden by the <tt>-i</tt> option, below.</li>
-<li>[<tt>-i</tt>] Reads a matrix from an input file \c infile
-using the function <tt>LALSReadVector()</tt>.  If the input file is
-specified as \c stdin, the data is read from standard input (not a
-file named \c stdin).</li>
-<li>[<tt>-o</tt>] Writes the determinant and inverse matrix to an
-output file \c outfile.  If the output file is specified as
-\c stdout or \c stderr, the data is written to standard output
-or standard error (not to files named \c stdout or \c stderr).</li>
-<li>[<tt>-v</tt>] Specifies that the inverse matrix is to be computed
-as well the determinant.</li>
-<li>[<tt>-t</tt>] Specifies that the computation is to be timed;
-timing information is written to \c stderr.</li>
-<li>[<tt>-s</tt>] Specifies that the calculations are to be done to
-single-precision (\c REAL4) rather than double-precision
-(\c REAL8).</li>
-<li>[<tt>-d</tt>] Sets the debug level to \c debuglevel.  If not
-specified, level 0 is assumed.</li>
-</ul>
-
-\heading{Input format:} If an input file or stream is specified, it
-should consist of \f$N\f$ consecutive lines of \f$N\f$ whitespace-separated
-numbers, that will be parsed using <tt>LALDReadVector()</tt>, or
-<tt>LALSReadVector()</tt> if the <tt>-s</tt> option was given.  The data
-block may be preceded by blank or comment lines (lines containing no
-parseable numbers), but once a parseable number is found, the rest
-should follow in a contiguous block.  If the lines contain different
-numbers of data columns, or if there are fewer lines than columns,
-then an error is returned; if there are \e more lines than
-columns, then the extra lines are ignored.
-
-\heading{Output format:} If an output file or stream is specified,
-the input matrix is first written as \f$N\f$ consecutive lines of \f$N\f$
-whitespace-separated numbers.  This will be followed with a blank
-line, then a single number representing the determinant.  If the
-<tt>-v</tt> option is specified, then another blank line will be
-appended to the output, followed by the inverse matrix written as \f$N\f$
-lines of \f$N\f$ whitespace-separated numbers.
-
-*/
+ * \file
+ * \ingroup MatrixUtils_h
+ * \author Creighton, T. D.
+ *
+ * \brief Computes the inverse and determinant of a matrix.
+ *
+ * ### Usage ###
+ *
+ * \code
+ * DetInverseTest [-n size | -i infile] [-o outfile] [-v] [-t] [-s] [-d debuglevel]
+ * \endcode
+ *
+ * ### Description ###
+ *
+ * This program computes the inverse and determinant of a square real
+ * matrix using the routines in \ref DetInverse_c and
+ * \ref DetInverseInternal_c.  The following option flags are accepted:
+ * <ul>
+ * <li>[<tt>-n</tt>] Generates a random symmetric
+ * \c size\f$\times\f$\c size metric.  If this option is not given,
+ * <tt>-n 3</tt> is assumed.  This option (or its default) is
+ * \e overridden by the <tt>-i</tt> option, below.</li>
+ * <li>[<tt>-i</tt>] Reads a matrix from an input file \c infile
+ * using the function <tt>LALSReadVector()</tt>.  If the input file is
+ * specified as \c stdin, the data is read from standard input (not a
+ * file named \c stdin).</li>
+ * <li>[<tt>-o</tt>] Writes the determinant and inverse matrix to an
+ * output file \c outfile.  If the output file is specified as
+ * \c stdout or \c stderr, the data is written to standard output
+ * or standard error (not to files named \c stdout or \c stderr).</li>
+ * <li>[<tt>-v</tt>] Specifies that the inverse matrix is to be computed
+ * as well the determinant.</li>
+ * <li>[<tt>-t</tt>] Specifies that the computation is to be timed;
+ * timing information is written to \c stderr.</li>
+ * <li>[<tt>-s</tt>] Specifies that the calculations are to be done to
+ * single-precision (\c REAL4) rather than double-precision
+ * (\c REAL8).</li>
+ * <li>[<tt>-d</tt>] Sets the debug level to \c debuglevel.  If not
+ * specified, level 0 is assumed.</li>
+ * </ul>
+ *
+ * \par Input format:
+ * If an input file or stream is specified, it
+ * should consist of \f$N\f$ consecutive lines of \f$N\f$ whitespace-separated
+ * numbers, that will be parsed using <tt>LALDReadVector()</tt>, or
+ * <tt>LALSReadVector()</tt> if the <tt>-s</tt> option was given.  The data
+ * block may be preceded by blank or comment lines (lines containing no
+ * parseable numbers), but once a parseable number is found, the rest
+ * should follow in a contiguous block.  If the lines contain different
+ * numbers of data columns, or if there are fewer lines than columns,
+ * then an error is returned; if there are \e more lines than
+ * columns, then the extra lines are ignored.
+ *
+ * \par Output format:
+ * If an output file or stream is specified,
+ * the input matrix is first written as \f$N\f$ consecutive lines of \f$N\f$
+ * whitespace-separated numbers.  This will be followed with a blank
+ * line, then a single number representing the determinant.  If the
+ * <tt>-v</tt> option is specified, then another blank line will be
+ * appended to the output, followed by the inverse matrix written as \f$N\f$
+ * lines of \f$N\f$ whitespace-separated numbers.
+ *
+ */
 
 /** \name Error Codes */
 /*@{*/
@@ -112,7 +115,6 @@ lines of \f$N\f$ whitespace-separated numbers.
 #include <lal/MatrixUtils.h>
 
 /* Default parameter settings. */
-extern int lalDebugLevel;
 #define SIZE 3
 
 /* Usage format string. */
@@ -189,7 +191,6 @@ main( int argc, char **argv )
   clock_t start = 0, stop = 0; /* start and stop times for timing */
   FILE *fp = NULL;             /* input/output file pointer */
 
-  lalDebugLevel = 0;
 
   /*******************************************************************
    * PARSE ARGUMENTS (arg stores the current position)               *
@@ -252,7 +253,6 @@ main( int argc, char **argv )
     else if ( !strcmp( argv[arg], "-d" ) ) {
       if ( argc > arg + 1 ) {
 	arg++;
-	lalDebugLevel = atoi( argv[arg++] );
       }else{
 	ERROR( DETINVERSETESTC_EARG, DETINVERSETESTC_MSGEARG, 0 );
         LALPrintError( USAGE, *argv );

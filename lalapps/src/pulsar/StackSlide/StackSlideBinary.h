@@ -18,8 +18,8 @@
 */
 
 /**
-\author  Virginia Re
-*/
+ * \author  Virginia Re
+ */
 
 /* Revisions: */
 /* 04/12/05 gam; Add StackSlideSearchParams *params to StackSlideBinary. Need to include "DriveStackSlide.h" */

@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!@PYTHONPROG@
 
 import sys 
 from optparse import *

@@ -1,38 +1,36 @@
 /**
  * @file LALSQTPNWaveformTest.c
- *		The user interface for the SpinQuadTaylor program.
+ * The user interface for the SpinQuadTaylor program.
  * This file is an example howto use the SpinQuadTaylor program.
  * The input parameters are:<br/>
  * <em>Waveform parameters:</em>(note:\f$i=1,2\f$ and \f$j=x,y,z\f$)
- *	<ul>
- *	<li>masses of the BHs (or NSs) \f$m_i\f$ in \f$M_\odot\f$</li>
- *	<li>the spin components \f$\chi_{ij}\f$, the values of \f$\sqrt{\sum_j\chi_{ij}}\f$, are between 0 and 1</li>
- *	<li>the quadrupole parameters \f$w_i\in(4,8)\f$ for NSs [1] and \f$w_i=1\f$ for BHs[2] are 1 (default 1)</li>
- *	<li>the inclination (angle between the line of sight and Newtonian orbital angular momentum) \f$\iota\f$ in \f$rad\f$</li>
- *	<li>the initial frequency \f$f_L\f$ in \f$Hz\f$</li>
- *	<li>the distance \f$d\f$ in \f$Mpc\f$</li>
- *	<li>the sampling time \f$t_s\f$ in \f$s\f$</li>
- *	</ul>
- *<em>Program parameters:</em>
- *	<ul>
- *	<li>the name of the output file (default out.dat)</li>
- *	<li>the PN order (newtonian, oneHalfPN, onePN, onePointFivePN, twoPN, twoPointFivePN, threePN, threePointFivePN(default))</li>
- *	<li>level of accuracy in including spin and quadrupole contributions
- *	(NO, SO, SS, SELF, QM, ALL(default))</li>
- *	</ul>
- *	The output file contains three coloums: elapsed time, \f$h_+\f$, \f$h_\times\f$.
- *	\f{center}
- *	\begin{gather*}
- *		h_+=a_1\cos\left(2\alpha\right)\cos\left(2\Phi\right)-a_2\sin\left(2\alpha\right)\sin\left(2\Phi\right),\\
- *		h_\times=a_1\sin\left(2\alpha\right)\cos\left(2\Phi\right)+a_2\cos\left(2\alpha\right)\sin\left(2\Phi\right)
- *		\end{gather*}
- *	\f}
- *	with \f$a_i\f$ amplitudes, \f$\alpha\f$ polarization shift, \f$\Phi\f$ phase (Eq. (4.28)-(4.30) of [3] up to leading order (The \f$\Phi\f$ is shifted by \f$\pi\f$ with respect to [3]). We note that \f$\Theta=0\f$ in leading order because we use radiation frame).<br />
- *	\f$a_1\f$, \f$a_2\f$ are defined in LALSQTPNGenerator() function, \f$\alpha\f$ and \f$\Phi\f$ phase is defined in LALSQTPNDerivator() function.<br />
- *	<b>References</b><br />
- *	[1] E. Poisson, Phys.Rev. D57 5287 (1998)<br />
- *	[2] K. S. Thorne, Rev.Mod.Phys. 52 299 (1980)<br />
- *	[3] L. E. Kidder, Phys.Rev.D 52, 821 (1995)<br />
+ * <ul>
+ * <li>masses of the BHs (or NSs) \f$m_i\f$ in \f$M_\odot\f$</li>
+ * <li>the spin components \f$\chi_{ij}\f$, the values of \f$\sqrt{\sum_j\chi_{ij}}\f$, are between 0 and 1</li>
+ * <li>the quadrupole parameters \f$w_i\in(4,8)\f$ for NSs [1] and \f$w_i=1\f$ for BHs[2] are 1 (default 1)</li>
+ * <li>the inclination (angle between the line of sight and Newtonian orbital angular momentum) \f$\iota\f$ in \f$rad\f$</li>
+ * <li>the initial frequency \f$f_L\f$ in \f$Hz\f$</li>
+ * <li>the distance \f$d\f$ in \f$Mpc\f$</li>
+ * <li>the sampling time \f$t_s\f$ in \f$s\f$</li>
+ * </ul>
+ * <em>Program parameters:</em>
+ * <ul>
+ * <li>the name of the output file (default out.dat)</li>
+ * <li>the PN order (newtonian, oneHalfPN, onePN, onePointFivePN, twoPN, twoPointFivePN, threePN, threePointFivePN(default))</li>
+ * <li>level of accuracy in including spin and quadrupole contributions
+ * (NO, SO, SS, SELF, QM, ALL(default))</li>
+ * </ul>
+ * The output file contains three coloums: elapsed time, \f$h_+\f$, \f$h_\times\f$.
+ * \f{gather}{
+ * h_+=a_1\cos\left(2\alpha\right)\cos\left(2\Phi\right)-a_2\sin\left(2\alpha\right)\sin\left(2\Phi\right),\\
+ * h_\times=a_1\sin\left(2\alpha\right)\cos\left(2\Phi\right)+a_2\cos\left(2\alpha\right)\sin\left(2\Phi\right)
+ * \f}
+ * with \f$a_i\f$ amplitudes, \f$\alpha\f$ polarization shift, \f$\Phi\f$ phase (Eq. (4.28)-(4.30) of [3] up to leading order (The \f$\Phi\f$ is shifted by \f$\pi\f$ with respect to [3]). We note that \f$\Theta=0\f$ in leading order because we use radiation frame).<br />
+ * \f$a_1\f$, \f$a_2\f$ are defined in LALSQTPNGenerator() function, \f$\alpha\f$ and \f$\Phi\f$ phase is defined in LALSQTPNDerivator() function.<br />
+ * <b>References</b><br />
+ * [1] E. Poisson, Phys.Rev. D57 5287 (1998)<br />
+ * [2] K. S. Thorne, Rev.Mod.Phys. 52 299 (1980)<br />
+ * [3] L. E. Kidder, Phys.Rev.D 52, 821 (1995)<br />
  * @author László Veréb
  * @date 2010.06.27.
  */
@@ -43,9 +41,9 @@
 #include <lal/GeneratePPNInspiral.h>
 #include <lal/LALSQTPNWaveformInterface.h>
 
-int lalDebugLevel = 0;	///< the debug level
 
-/** The main program.
+/**
+ * The main program.
  */
 int main(int argc, char *argv[]) {
 

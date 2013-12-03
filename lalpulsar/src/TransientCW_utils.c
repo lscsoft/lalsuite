@@ -19,13 +19,14 @@
  */
 
 /*********************************************************************************/
-/** \author R. Prix, S. Giampanis
+/**
+ * \author R. Prix, S. Giampanis
  * \file
  * \brief
  * Some helper functions useful for "transient CWs", mostly applying transient window
  * functions.
  *
- *********************************************************************************/
+ */
 #include "config.h"
 
 /* System includes */
@@ -55,7 +56,8 @@ const transientFstatMap_t empty_transientFstatMap;
 
 /* ----- module-local fast lookup-table handling of negative exponentials ----- */
 
-/** Lookup-table for negative exponentials e^(-x)
+/**
+ * Lookup-table for negative exponentials e^(-x)
  * Holds an array 'data' of 'length' for values e^(-x) for x in the range [0, xmax]
  */
 #define EXPLUT_XMAX 	20.0	// LUT down to e^(-20) = 2.0612e-09
@@ -68,7 +70,8 @@ static int XLALCreateExpLUT ( void );	/* only ever used internally, destructor i
 
 /* ==================== function definitions ==================== */
 
-/** Helper-function to determine the total timespan of
+/**
+ * Helper-function to determine the total timespan of
  * a transient CW window, ie. the earliest and latest timestamps
  * of non-zero window function.
  */
@@ -118,7 +121,8 @@ XLALGetTransientWindowTimespan ( UINT4 *t0,				/**< [out] window start-time */
 } /* XLALGetTransientWindowTimespan() */
 
 
-/** apply a "transient CW window" described by TransientWindowParams to the given
+/**
+ * apply a "transient CW window" described by TransientWindowParams to the given
  * timeseries
  */
 int
@@ -181,7 +185,8 @@ XLALApplyTransientWindow ( REAL4TimeSeries *series,		/**< input timeseries to ap
 } /* XLALApplyTransientWindow() */
 
 
-/** apply transient window to give multi noise-weights, associated with given
+/**
+ * apply transient window to give multi noise-weights, associated with given
  * multi timestamps
  */
 int
@@ -265,7 +270,8 @@ XLALApplyTransientWindow2NoiseWeights ( MultiNoiseWeights *multiNoiseWeights,	/*
 } /* XLALApplyTransientWindow2NoiseWeights() */
 
 
-/** Turn pulsar doppler-params into a single string that can be used for filenames
+/**
+ * Turn pulsar doppler-params into a single string that can be used for filenames
  * The format is
  * tRefNNNNNN_RAXXXXX_DECXXXXXX_FreqXXXXX[_f1dotXXXXX][_f2dotXXXXx][_f3dotXXXXX]
  */
@@ -328,7 +334,8 @@ XLALPulsarDopplerParams2String ( const PulsarDopplerParams *par )
 } /* PulsarDopplerParams2String() */
 
 
-/** Compute transient-CW Bayes-factor B_SG = P(x|HypS)/P(x|HypG)  (where HypG = Gaussian noise hypothesis),
+/**
+ * Compute transient-CW Bayes-factor B_SG = P(x|HypS)/P(x|HypG)  (where HypG = Gaussian noise hypothesis),
  * marginalized over start-time and timescale of transient CW signal, using given type and parameters
  * of transient window range.
  *
@@ -396,7 +403,8 @@ XLALComputeTransientBstat ( transientWindowRange_t windowRange,		/**< [in] type 
 
 } /* XLALComputeTransientBstat() */
 
-/** Compute transient-CW posterior (normalized) on start-time t0, using given type and parameters
+/**
+ * Compute transient-CW posterior (normalized) on start-time t0, using given type and parameters
  * of transient window range.
  *
  * NOTE: the returned pdf has a number of sample-points N_t0Range given by the size
@@ -486,7 +494,8 @@ XLALComputeTransientPosterior_t0 ( transientWindowRange_t windowRange,		/**< [in
 
 } /* XLALComputeTransientPosterior_t0() */
 
-/** Compute transient-CW posterior (normalized) on timescale tau, using given type and parameters
+/**
+ * Compute transient-CW posterior (normalized) on timescale tau, using given type and parameters
  * of transient window range.
  *
  * NOTE: the returned pdf has a number of sample-points N_tauRange given by the size
@@ -578,8 +587,8 @@ XLALComputeTransientPosterior_tau ( transientWindowRange_t windowRange,		/**< [i
 
 
 
-/** Function to compute transient-window "F-statistic map" over start-time and timescale {t0, tau}.
- *
+/**
+ * Function to compute transient-window "F-statistic map" over start-time and timescale {t0, tau}.
  * Returns a 2D matrix F_mn, with m = index over start-times t0, and n = index over timescales tau,
  * in steps of dt0 in [t0, t0+t0Band], and dtau in [tau, tau+tauBand] as defined in transientWindowRange
  *
@@ -738,11 +747,11 @@ XLALComputeTransientFstatMap ( const MultiFstatAtomVector *multiFstatAtoms, 	/**
                   Bd += thisAtom_i->b2_alpha;
                   Cd += thisAtom_i->ab_alpha;
 
-                  Fa_re += thisAtom_i->Fa_alpha.re;
-                  Fa_im += thisAtom_i->Fa_alpha.im;
+                  Fa_re += crealf(thisAtom_i->Fa_alpha);
+                  Fa_im += cimagf(thisAtom_i->Fa_alpha);
 
-                  Fb_re += thisAtom_i->Fb_alpha.re;
-                  Fb_im += thisAtom_i->Fb_alpha.im;
+                  Fb_re += crealf(thisAtom_i->Fb_alpha);
+                  Fb_im += cimagf(thisAtom_i->Fb_alpha);
 
                 } /* for i = i_t1_last : i_t1 */
 
@@ -768,11 +777,11 @@ XLALComputeTransientFstatMap ( const MultiFstatAtomVector *multiFstatAtoms, 	/**
                   Bd += thisAtom_i->b2_alpha * win2_i;
                   Cd += thisAtom_i->ab_alpha * win2_i;
 
-                  Fa_re += thisAtom_i->Fa_alpha.re * win_i;
-                  Fa_im += thisAtom_i->Fa_alpha.im * win_i;
+                  Fa_re += crealf(thisAtom_i->Fa_alpha) * win_i;
+                  Fa_im += cimagf(thisAtom_i->Fa_alpha) * win_i;
 
-                  Fb_re += thisAtom_i->Fb_alpha.re * win_i;
-                  Fb_im += thisAtom_i->Fb_alpha.im * win_i;
+                  Fb_re += crealf(thisAtom_i->Fb_alpha) * win_i;
+                  Fb_im += cimagf(thisAtom_i->Fb_alpha) * win_i;
 
                 } /* for i in [i_t0, i_t1] */
               break;
@@ -822,7 +831,8 @@ XLALComputeTransientFstatMap ( const MultiFstatAtomVector *multiFstatAtoms, 	/**
 
 
 
-/** Combine N Fstat-atoms vectors into a single 'canonical' binned and ordered atoms-vector.
+/**
+ * Combine N Fstat-atoms vectors into a single 'canonical' binned and ordered atoms-vector.
  * The function pre-sums all atoms on a regular 'grid' of timestep bins deltaT covering the full data-span.
  * Atoms with timestamps falling into the bin i : [t_i, t_{i+1} ) are pre-summed and returned as atoms[i],
  * where t_i = t_0 + i * deltaT.
@@ -900,10 +910,10 @@ XLALmergeMultiFstatAtomsBinned ( const MultiFstatAtomVector *multiAtoms, UINT4 d
           destAtom->a2_alpha += atom_X_i->a2_alpha;
           destAtom->b2_alpha += atom_X_i->b2_alpha;
           destAtom->ab_alpha += atom_X_i->ab_alpha;
-          destAtom->Fa_alpha.re += atom_X_i->Fa_alpha.re;
-          destAtom->Fa_alpha.im += atom_X_i->Fa_alpha.im;
-          destAtom->Fb_alpha.re += atom_X_i->Fb_alpha.re;
-          destAtom->Fb_alpha.im += atom_X_i->Fb_alpha.im;
+          destAtom->Fa_alpha.realf_FIXME += crealf(atom_X_i->Fa_alpha);
+          destAtom->Fa_alpha.imagf_FIXME += cimagf(atom_X_i->Fa_alpha);
+          destAtom->Fb_alpha.realf_FIXME += crealf(atom_X_i->Fb_alpha);
+          destAtom->Fb_alpha.imagf_FIXME += cimagf(atom_X_i->Fb_alpha);
 
         } /* for i < numAtomsX */
     } /* for X < numDet */
@@ -912,7 +922,8 @@ XLALmergeMultiFstatAtomsBinned ( const MultiFstatAtomVector *multiAtoms, UINT4 d
 
 } /* XLALmergeMultiFstatAtomsBinned() */
 
-/** Write one line for given transient CW candidate into output file.
+/**
+ * Write one line for given transient CW candidate into output file.
  *
  * NOTE: if input thisCand == NULL, we write a header comment-line explaining the fields
  *
@@ -958,7 +969,8 @@ write_transientCandidate_to_fp ( FILE *fp, const transientCandidate_t *thisCand 
 } /* write_TransCandidate_to_fp() */
 
 
-/** Write multi-IFO F-stat atoms 'multiAtoms' into output stream 'fstat'.
+/**
+ * Write multi-IFO F-stat atoms 'multiAtoms' into output stream 'fstat'.
  */
 int
 write_MultiFstatAtoms_to_fp ( FILE *fp, const MultiFstatAtomVector *multiAtoms )
@@ -983,8 +995,8 @@ write_MultiFstatAtoms_to_fp ( FILE *fp, const MultiFstatAtomVector *multiAtoms )
 		    thisAtom->a2_alpha,
 		    thisAtom->b2_alpha,
 		    thisAtom->ab_alpha,
-		    thisAtom->Fa_alpha.re, thisAtom->Fa_alpha.im,
-		    thisAtom->Fb_alpha.re, thisAtom->Fb_alpha.im
+		    crealf(thisAtom->Fa_alpha), cimagf(thisAtom->Fa_alpha),
+		    crealf(thisAtom->Fb_alpha), cimagf(thisAtom->Fb_alpha)
 		    );
 	} /* for alpha < numSFTs */
     } /* for X < numDet */
@@ -994,7 +1006,8 @@ write_MultiFstatAtoms_to_fp ( FILE *fp, const MultiFstatAtomVector *multiAtoms )
 } /* write_MultiFstatAtoms_to_fp() */
 
 
-/** Generate an exponential lookup-table expLUT for e^(-x)
+/**
+ * Generate an exponential lookup-table expLUT for e^(-x)
  * over the interval x in [0, xmax], using 'length' points.
  */
 int
@@ -1025,7 +1038,8 @@ XLALCreateExpLUT ( void )
 
 } /* XLALCreateExpLUT() */
 
-/** Destructor function for expLUT_t lookup table
+/**
+ * Destructor function for expLUT_t lookup table
  */
 void
 XLALDestroyExpLUT ( void )
@@ -1041,7 +1055,8 @@ XLALDestroyExpLUT ( void )
 
 } /* XLALDestroyExpLUT() */
 
-/** Fast exponential function e^-x using lookup-table (LUT).
+/**
+ * Fast exponential function e^-x using lookup-table (LUT).
  * We need to compute exp(-x) for x >= 0, typically in a B-stat
  * integral of the form int e^-x dx: this means that small values e^(-x)
  * will not contribute much to the integral and are less important than
@@ -1072,7 +1087,8 @@ XLALFastNegExp ( REAL8 mx )
 
 } /* XLALFastNegExp() */
 
-/** Standard destructor for transientFstatMap_t
+/**
+ * Standard destructor for transientFstatMap_t
  * Fully NULL-robust as usual.
  */
 void
@@ -1090,7 +1106,8 @@ XLALDestroyTransientFstatMap ( transientFstatMap_t *FstatMap )
 
 } /* XLALDestroyTransientFstatMap() */
 
-/** Standard destructor for transientCandidate_t
+/**
+ * Standard destructor for transientCandidate_t
  * Fully NULL-robust as usual.
  */
 void

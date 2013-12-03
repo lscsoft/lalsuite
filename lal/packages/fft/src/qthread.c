@@ -34,7 +34,6 @@
 #include <bits/local_lim.h>
 
 /* lal debug flag for verbosity level */
-extern int lalDebugLevel;
 
 /* dummy symbol to ensure that we link this to the fft routines */
 int dummy_have_qthread;

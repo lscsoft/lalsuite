@@ -28,7 +28,7 @@
  */
 
 #include <lal/LALDatatypes.h>
-#include <lal/FrameCache.h>
+#include <lal/LALCache.h>
 
 
 /* routine read a response function or construct an impulse response function */
@@ -67,22 +67,22 @@ COMPLEX8FrequencySeries * get_frame_response(
 
 
 /* routine to read the reference response function from a frame file cache */
-COMPLEX8FrequencySeries * get_reference_response_function( FrCache *calCache,
+COMPLEX8FrequencySeries * get_reference_response_function( LALCache *calCache,
     const char *ifoName );
 
 
 /* routine to read the reference sensing function from a frame file cache */
-COMPLEX8FrequencySeries * get_reference_sensing_function( FrCache *calCache,
+COMPLEX8FrequencySeries * get_reference_sensing_function( LALCache *calCache,
     const char *ifoName );
 
 
 /* routine to read one cavity gain factor from a frame file cache */
-COMPLEX8TimeSeries * get_cavity_gain_factor( FrCache *calCache,
+COMPLEX8TimeSeries * get_cavity_gain_factor( LALCache *calCache,
     LIGOTimeGPS *epoch, const char *ifoName );
 
 
 /* routine to read one open loop gain factor from a frame file cache */
-COMPLEX8TimeSeries * get_open_loop_gain_factor( FrCache *calCache,
+COMPLEX8TimeSeries * get_open_loop_gain_factor( LALCache *calCache,
     LIGOTimeGPS *epoch, const char *ifoName );
 
 #endif /* GETRESP_H */

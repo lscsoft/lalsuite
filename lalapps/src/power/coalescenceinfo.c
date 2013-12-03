@@ -29,7 +29,7 @@
 #include <lal/LIGOLwXMLRead.h>
 #include <lal/LIGOMetadataTables.h>
 #include <lal/LIGOMetadataUtils.h>
-#include <lal/FrameCache.h>
+#include <lal/LALCache.h>
 #include <lal/LALInspiral.h>
 #include <lalapps.h>
 
@@ -214,8 +214,6 @@ int main(int argc, char **argv)
 
 	set_option_defaults(&options);
 	parse_command_line(argc, argv, &options);
-
-	set_debug_level("1");
 
 	params.mass1 = options.mass1;
 	params.mass2 = options.mass2;

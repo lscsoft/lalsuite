@@ -155,7 +155,6 @@ int compareCPfa(const void *ip, const void *jp);
 int FineCoincidenceTest(CandidateList c1, CandidateList c2, struct PolkaCommandLineArgsTag CLA);
 int OutputCoincidences(struct PolkaCommandLineArgsTag CLA);
 
-extern INT4 lalDebugLevel;
 
 CandidateList *SortedC1,*SortedC2;
 CoincidentPairs *CP;
@@ -184,7 +183,6 @@ int main(int argc,char *argv[])
   REAL8 local_fraction_done;
 #endif
 
-  lalDebugLevel = 0;
 
   /* Reads command line arguments */
   if (ReadCommandLine(argc,argv,&PolkaCommandLineArgs)) {

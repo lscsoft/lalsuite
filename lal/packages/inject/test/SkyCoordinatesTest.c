@@ -18,65 +18,66 @@
 */
 
 /**
-\author Creighton, T. D.
-\ingroup SkyCoordinates_h
-\file
-\brief Transforms coordinates among various systems.
-
-\heading{Usage}
-\code
-SkyCoordinatesTest [-i system lat lon] [-o system] [-z lat lon]
-                   [-a altitude] [-c lat lon rad] [-t sec nsec] [-d debuglevel]
-\endcode
-
-\heading{Description}
-
-This program converts between any two celestial coordinate systems, or
-between geocentric and geodetic terrestrial coordinates, using the
-routines in \ref SkyCoordinates_h.  The following option flags are
-accepted:
-<ul>
-<li><tt>-i</tt> Sets the input coordinate system and coordinate
-values for a celestial coordinate trasformation: \c system may be
-one of \c horizon, \c geographic, \c equatorial,
-\c ecliptic, or \c galactic; \c lat and \c lon are the
-latitude and longitude coordinates in that system (in degrees).  If
-the <tt>-i</tt> option is not given, then no celestial coordinate
-transformation will be performed (although a terrestrial coordinate
-transformation may still occur; see below).</li>
-<li><tt>-o</tt> Sets the output coordinate system for a cellestial
-coodinate transformation: \c system may be any of the above.  If the
-<tt>-o</tt> option is not given, then no celestial coordinate
-transformation will be performed (although a terrestrial coordinate
-transformation may still occur; see below).</li>
-<li><tt>-z</tt> Sets the \e geodetic latitude and longitude of
-the observer to \c lat and \c lon, respectively (in degrees).
-Either this or the <tt>-c</tt> option (below) is required for a
-celestial coordinate transformation involving the horizon system.</li>
-<li><tt>-a</tt> Sets the elevation of the observer above the
-Earth's reference ellipsoid to \c altitude (in metres).  If given
-along with the <tt>-z</tt> option, above, the program will compute and
-print out the geocentric coordinates of the observer as well.</li>
-<li><tt>-c</tt> Sets the \e geocentric latitude and longitude
-of the observer to \c lat and \c lon, respectively (in
-degrees), and the distance from the geocentre to \c rad (in
-metres).  The program will convert and print out the geodetic
-coordinates of the observer.  Either this or the <tt>-z</tt> option
-(below) is required for a celestial coordinate transformation
-involving the horizon system; if both are given, this option is
-ignored.</li>
-<li><tt>-t</tt> Sets the GPS time of the conversion to \c sec
-seconds plus \c nsec nanoseconds.  The time will be printed in
-various other formats.  This option is required for any transformation
-between Earth-fixed and sky-fixed coordinate systems.</li>
-<li><tt>-d</tt> Sets the debug level to \c debuglevel.  If not
-specified, level 0 is assumed.</li>
-</ul>
-If no option flags are specified at all, then the routine will
-randomly generate a sky position in Galactic coordinates, convert it
-to ecliptic coordinates and back again, and return an error if the
-result disagrees by more than a milliradian.
-*/
+ * \author Creighton, T. D.
+ * \ingroup SkyCoordinates_h
+ * \file
+ * \brief Transforms coordinates among various systems.
+ *
+ * ### Usage ###
+ *
+ * \code
+ * SkyCoordinatesTest [-i system lat lon] [-o system] [-z lat lon]
+ * [-a altitude] [-c lat lon rad] [-t sec nsec] [-d debuglevel]
+ * \endcode
+ *
+ * ### Description ###
+ *
+ * This program converts between any two celestial coordinate systems, or
+ * between geocentric and geodetic terrestrial coordinates, using the
+ * routines in \ref SkyCoordinates_h.  The following option flags are
+ * accepted:
+ * <ul>
+ * <li><tt>-i</tt> Sets the input coordinate system and coordinate
+ * values for a celestial coordinate trasformation: \c system may be
+ * one of \c horizon, \c geographic, \c equatorial,
+ * \c ecliptic, or \c galactic; \c lat and \c lon are the
+ * latitude and longitude coordinates in that system (in degrees).  If
+ * the <tt>-i</tt> option is not given, then no celestial coordinate
+ * transformation will be performed (although a terrestrial coordinate
+ * transformation may still occur; see below).</li>
+ * <li><tt>-o</tt> Sets the output coordinate system for a cellestial
+ * coodinate transformation: \c system may be any of the above.  If the
+ * <tt>-o</tt> option is not given, then no celestial coordinate
+ * transformation will be performed (although a terrestrial coordinate
+ * transformation may still occur; see below).</li>
+ * <li><tt>-z</tt> Sets the \e geodetic latitude and longitude of
+ * the observer to \c lat and \c lon, respectively (in degrees).
+ * Either this or the <tt>-c</tt> option (below) is required for a
+ * celestial coordinate transformation involving the horizon system.</li>
+ * <li><tt>-a</tt> Sets the elevation of the observer above the
+ * Earth's reference ellipsoid to \c altitude (in metres).  If given
+ * along with the <tt>-z</tt> option, above, the program will compute and
+ * print out the geocentric coordinates of the observer as well.</li>
+ * <li><tt>-c</tt> Sets the \e geocentric latitude and longitude
+ * of the observer to \c lat and \c lon, respectively (in
+ * degrees), and the distance from the geocentre to \c rad (in
+ * metres).  The program will convert and print out the geodetic
+ * coordinates of the observer.  Either this or the <tt>-z</tt> option
+ * (below) is required for a celestial coordinate transformation
+ * involving the horizon system; if both are given, this option is
+ * ignored.</li>
+ * <li><tt>-t</tt> Sets the GPS time of the conversion to \c sec
+ * seconds plus \c nsec nanoseconds.  The time will be printed in
+ * various other formats.  This option is required for any transformation
+ * between Earth-fixed and sky-fixed coordinate systems.</li>
+ * <li><tt>-d</tt> Sets the debug level to \c debuglevel.  If not
+ * specified, level 0 is assumed.</li>
+ * </ul>
+ * If no option flags are specified at all, then the routine will
+ * randomly generate a sky position in Galactic coordinates, convert it
+ * to ecliptic coordinates and back again, and return an error if the
+ * result disagrees by more than a milliradian.
+ */
 /** \name Error Codes */
 /*@{*/
 #define SKYCOORDINATESTESTC_ENORM 0	/**< Normal exit */
@@ -105,7 +106,6 @@ result disagrees by more than a milliradian.
 #include <lal/SkyCoordinates.h>
 
 /* Default parameter settings. */
-extern int lalDebugLevel;
 
 /* Usage format string. */
 #define USAGE "Usage: %s [-i system lat lon] [-o system] [-z lat lon]\n" \
@@ -172,7 +172,6 @@ main( int argc, char **argv )
   EarthPosition earth;     /* terrestrial coordinates */
   ConvertSkyParams params; /* additional parameters for conversion */
 
-  lalDebugLevel = 0;
 
   memset( &params, 0, sizeof(ConvertSkyParams ) );
 
@@ -303,7 +302,6 @@ main( int argc, char **argv )
     else if ( !strcmp( argv[arg], "-d" ) ) {
       if ( argc > arg + 1 ) {
 	arg++;
-	lalDebugLevel = atoi( argv[arg++] );
       }else{
 	ERROR( SKYCOORDINATESTESTC_EARG, SKYCOORDINATESTESTC_MSGEARG, 0 );
         LALPrintError( USAGE, *argv );

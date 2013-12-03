@@ -22,22 +22,22 @@
 #include <lal/ZPGFilter.h>
 
 /**
-   \addtogroup CreateZPGFilter_c
-   \author Creighton, T. D.
-
-   \brief Creates ZPG filter objects.
-
-\heading{Description}
-
-These functions create an object <tt>**output</tt>, of type
-\c COMPLEX8ZPGFilter or \c COMPLEX16ZPGFilter, having
-\c numZeros zeros and \c numPoles poles.  The values of those
-zeros and poles are not set by these routines (in general they will
-start out as garbage).  The handle passed into the functions must be a
-valid handle (ie \c output\f$\neq\f$\c NULL), but must not
-point to an existing object (ie <tt>*output</tt>=\c NULL).
-
-*/
+ * \addtogroup CreateZPGFilter_c
+ * \author Creighton, T. D.
+ *
+ * \brief Creates ZPG filter objects.
+ *
+ * ### Description ###
+ *
+ * These functions create an object <tt>**output</tt>, of type
+ * \c COMPLEX8ZPGFilter or \c COMPLEX16ZPGFilter, having
+ * \c numZeros zeros and \c numPoles poles.  The values of those
+ * zeros and poles are not set by these routines (in general they will
+ * start out as garbage).  The handle passed into the functions must be a
+ * valid handle (ie \c output\f$\neq\f$\c NULL), but must not
+ * point to an existing object (ie <tt>*output</tt>=\c NULL).
+ *
+ */
 /*@{*/
 
 /** \see See \ref CreateZPGFilter_c for documentation */

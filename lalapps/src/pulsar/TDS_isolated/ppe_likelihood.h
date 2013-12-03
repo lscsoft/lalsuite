@@ -33,7 +33,7 @@ extern "C" {
 /* likelihood function */
 REAL8 pulsar_log_likelihood( LALInferenceVariables *vars, 
                              LALInferenceIFOData *data,
-                             LALInferenceTemplateFunction *get_pulsar_model );
+                             LALInferenceTemplateFunction get_pulsar_model );
 
 /* prior function */
 REAL8 priorFunction( LALInferenceRunState *runState, 

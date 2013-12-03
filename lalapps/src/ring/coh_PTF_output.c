@@ -80,15 +80,19 @@ ProcessParamsTable * create_process_params( int argc, char **argv,
 int coh_PTF_output_events_xml( 
     char               *outputFile,
     MultiInspiralTable  *events,
+    SnglInspiralTable *snglEvents,
     SimInspiralTable *injections,
     ProcessParamsTable *processParamsTable,
     TimeSlide          *time_slide_head,
+    TimeSlideSegmentMapTable *time_slide_map_head,
+    SegmentTable       *segment_table_head,
     struct coh_PTF_params *params
     )
 {
   LALStatus status = blank_status;
   MetadataTable   siminspiral;
   MetadataTable   ringEvents;
+  MetadataTable snglEventTab;
   LIGOLwXMLStream *results;
 
   verbose( "output events to LIGOLw XML file %s\n", outputFile );
@@ -98,6 +102,7 @@ int coh_PTF_output_events_xml(
   /* create process table and search summary tables */
   siminspiral.simInspiralTable = injections;
   ringEvents.multiInspiralTable = events;
+  snglEventTab.snglInspiralTable = snglEvents;
 
   /* open results xml file */
   results = XLALOpenLIGOLwXMLFile(outputFile);
@@ -128,10 +133,25 @@ int coh_PTF_output_events_xml(
   /* output time slide table */
   XLALWriteLIGOLwXMLTimeSlideTable( results, time_slide_head);
 
+  /* output time slide map table */
+  XLALWriteLIGOLwXMLTimeSlideSegmentMapTable( results, time_slide_map_head);
+
+  /* output segment list */
+  XLALWriteLIGOLwXMLSegmentTable( results, segment_table_head);
+
   /* output the events */
-  LAL_CALL( LALBeginLIGOLwXMLTable( &status, results, multi_inspiral_table ), &status );
-  LAL_CALL( LALWriteLIGOLwXMLTable( &status, results, ringEvents,multi_inspiral_table ), &status );
-  LAL_CALL( LALEndLIGOLwXMLTable( &status, results ), &status );
+  if (! params->writeSnglInspiralTable)
+  {
+    LAL_CALL( LALBeginLIGOLwXMLTable( &status, results, multi_inspiral_table ), &status );
+    LAL_CALL( LALWriteLIGOLwXMLTable( &status, results, ringEvents,multi_inspiral_table ), &status );
+    LAL_CALL( LALEndLIGOLwXMLTable( &status, results ), &status );
+  }
+  else
+  {
+    LAL_CALL( LALBeginLIGOLwXMLTable( &status, results, sngl_inspiral_table ), &status );
+    LAL_CALL( LALWriteLIGOLwXMLTable( &status, results, snglEventTab,sngl_inspiral_table ), &status );
+    LAL_CALL( LALEndLIGOLwXMLTable( &status, results ), &status );
+  }
 
   /* close the xml file */
   XLALCloseLIGOLwXMLFile(results);
@@ -266,9 +286,10 @@ SearchSummaryTable *coh_PTF_create_search_summary( struct coh_PTF_params *params
 
   /* compute the start and end times of data analyzed */
   outStartTimeNS  = epoch_to_ns( &params->startTime ) 
-    + sec_to_ns( 0.5 * params->strideDuration );
-  outEndTimeNS    = outStartTimeNS 
-    + sec_to_ns( params->strideDuration * params->numOverlapSegments );
+    + sec_to_ns( params->analStartPoint / (REAL4)params->sampleRate );
+  outEndTimeNS    = epoch_to_ns( &params->endTime )
+    - sec_to_ns( (params->numTimePoints - params->analEndPoint)
+                 / (REAL4)params->sampleRate );
   if( params->trigStartTimeNS && (params->trigStartTimeNS > outStartTimeNS))
     outStartTimeNS = (outEndTimeNS < params->trigStartTimeNS) ?
       outEndTimeNS : params->trigStartTimeNS;

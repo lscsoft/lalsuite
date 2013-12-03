@@ -1,3 +1,22 @@
+/*
+*  Copyright (C) 2013 Jolien Creighton
+*
+*  This program is free software; you can redistribute it and/or modify
+*  it under the terms of the GNU General Public License as published by
+*  the Free Software Foundation; either version 2 of the License, or
+*  (at your option) any later version.
+*
+*  This program is distributed in the hope that it will be useful,
+*  but WITHOUT ANY WARRANTY; without even the implied warranty of
+*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+*  GNU General Public License for more details.
+*
+*  You should have received a copy of the GNU General Public License
+*  along with with program; see the file COPYING. If not, write to the
+*  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
+*  MA  02111-1307  USA
+*/
+
 #include <stdlib.h>
 #include <string.h>
 #include <lal/LALFrameU.h>
@@ -89,13 +108,17 @@ int copydetector(LALFrameUFrameH * frame, LALFrameUFrDetector * detector)
     altitudey = XLALFrameUFrDetectorQueryArmYAltitude(detector);
     midpointy = XLALFrameUFrDetectorQueryArmYMidpoint(detector);
 
-    detectorcopy = XLALFrameUFrDetectorAlloc(name, prefix, latitude, longitude, elevation, azimuthx, azimuthy, altitudex, altitudey, midpointx, midpointy, loctime);
+    detectorcopy =
+        XLALFrameUFrDetectorAlloc(name, prefix, latitude, longitude,
+        elevation, azimuthx, azimuthy, altitudex, altitudey, midpointx,
+        midpointy, loctime);
     XLALFrameUFrameHFrDetectorAdd(frame, detectorcopy);
     XLALFrameUFrDetectorFree(detectorcopy);
     return 0;
 }
 
-int copychannels(LALFrameUFrameH * frame, LALFrameUFrFile * frfile, size_t pos, const char *match)
+int copychannels(LALFrameUFrameH * frame, LALFrameUFrFile * frfile,
+    size_t pos, const char *match)
 {
     LALFrameUFrTOC *toc;
     size_t nadc, adc;
@@ -146,7 +169,8 @@ int copychannels(LALFrameUFrameH * frame, LALFrameUFrFile * frfile, size_t pos, 
     return 0;
 }
 
-int copychannel(LALFrameUFrameH * frame, LALFrameUFrChan * channel, int chantype)
+int copychannel(LALFrameUFrameH * frame, LALFrameUFrChan * channel,
+    int chantype)
 {
     const char *channame;
     const char *vectname;
@@ -157,6 +181,7 @@ int copychannel(LALFrameUFrameH * frame, LALFrameUFrChan * channel, int chantype
     void *datacopy;
     const char *unity;
     const char *unitx;
+    double toffset;
     double x0;
     double dx;
     LALFrameUFrChan *chancopy;
@@ -166,6 +191,7 @@ int copychannel(LALFrameUFrameH * frame, LALFrameUFrChan * channel, int chantype
 
     channame = XLALFrameUFrChanQueryName(channel);
     vectname = XLALFrameUFrChanVectorQueryName(channel);
+    toffset = XLALFrameUFrChanQueryTimeOffset(channel);
 
     XLALFrameUFrChanVectorExpand(channel);
     dtype = XLALFrameUFrChanVectorQueryType(channel);
@@ -182,7 +208,10 @@ int copychannel(LALFrameUFrameH * frame, LALFrameUFrChan * channel, int chantype
         chancopy = XLALFrameUFrAdcChanAlloc(channame, dtype, ndata);
         break;
     case PROC_CHAN_TYPE:
-        chancopy = XLALFrameUFrProcChanAlloc(channame, LAL_FRAMEU_FR_PROC_TYPE_TIME_SERIES, LAL_FRAMEU_FR_PROC_SUB_TYPE_UNKNOWN, dtype, ndata);
+        chancopy =
+            XLALFrameUFrProcChanAlloc(channame,
+            LAL_FRAMEU_FR_PROC_TYPE_TIME_SERIES,
+            LAL_FRAMEU_FR_PROC_SUB_TYPE_UNKNOWN, dtype, ndata);
         break;
     case SIM_CHAN_TYPE:
         chancopy = XLALFrameUFrSimChanAlloc(channame, dtype, ndata);
@@ -190,6 +219,8 @@ int copychannel(LALFrameUFrameH * frame, LALFrameUFrChan * channel, int chantype
     default:
         abort();
     }
+
+    XLALFrameUFrChanSetTimeOffset(chancopy, toffset);
 
     XLALFrameUFrChanVectorAlloc(chancopy, dtype, ndata);
     XLALFrameUFrChanVectorSetName(chancopy, vectname);

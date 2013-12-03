@@ -19,22 +19,24 @@
 
 
 /**
-\author Regimbau Tania
-\file
-\ingroup AstroOmega_h
-
-\brief This programs verifies that the routine LALAstroOmega() gives the expected results (computed separetly with mathematica) for a set of input parameters.
-
-\heading{Exit codes}
-returns 0 on success, otherwise returns 1.
-
-\heading{Uses}
-\code
-lalDebugLevel
-LALAstroOmega()
-\endcode
-
-*/
+ * \author Regimbau Tania
+ * \file
+ * \ingroup AstroOmega_h
+ *
+ * \brief This programs verifies that the routine LALAstroOmega() gives the expected results (computed separetly with mathematica) for a set of input parameters.
+ *
+ * ### Exit codes ###
+ *
+ * returns 0 on success, otherwise returns 1.
+ *
+ * ### Uses ###
+ *
+ * \code
+ * lalDebugLevel
+ * LALAstroOmega()
+ * \endcode
+ *
+ */
 
 #include <stdio.h>
 #include <math.h>
@@ -49,7 +51,6 @@ static void SDensity (REAL8 *dEgw, REAL8 nu)
   return;
  }
 
-extern int lalDebugLevel;
 int main ( void )
  {
   static LALStatus status;
@@ -58,7 +59,6 @@ int main ( void )
   AstroOmegaCosmoParams cosmop;
   REAL8 nu, test;
 
-  lalDebugLevel = 0;
 
   cosmop.ho = 0.65;
   cosmop.density_matter = 0.3;

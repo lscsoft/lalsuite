@@ -23,16 +23,17 @@
  *
  * \brief Tests the routines in \ref RealFFT.h.
  *
- * \heading{Usage}
+ * ### Usage ###
+ *
  * \code
  * RealFFTTest [options]
  * Options:
- *   -h         print this message
- *   -q         quiet: run silently
- *   -v         verbose: print extra information
- *   -d level   set lalDebugLevel to level
- *   -m trials  set number of random trials
- *   -n size    set size of FFTs
+ * -h         print this message
+ * -q         quiet: run silently
+ * -v         verbose: print extra information
+ * -d level   set lalDebugLevel to level
+ * -m trials  set number of random trials
+ * -n size    set size of FFTs
  * \endcode
  *
  * Use the <tt>-n</tt> option to specify the size of the test transform and
@@ -40,16 +41,19 @@
  * (Default is to test transforms of size 1 to 128 in unit steps and then
  * powers of two up to 65536.)
  *
- * \heading{Exit codes}
+ * ### Exit codes ###
+ *
  * <table><tr><th>Code</th><th>Explanation</th></tr>
  * <tr><td>0</td><td>Success, normal exit.</td></tr>
  * <tr><td>1</td><td>Subroutine failed.</td></tr>
  * </table>
  *
- * \heading{Uses}
- * \heading{Notes}
+ * ### Uses ###
  *
-*/
+ *
+ * ### Notes ###
+ *
+ */
 
 /** \cond DONT_DOXYGEN */
 #include <config.h>
@@ -80,7 +84,6 @@
 extern char *optarg;
 extern int   optind;
 
-extern int lalDebugLevel;
 int verbose       = 0;
 UINT4 m_ = 1; /* number of random trials */
 UINT4 n_ = 0; /* size of each transform  */
@@ -134,7 +137,6 @@ int main( int argc, char *argv[] )
 
   FILE *fp;
 
-  lalDebugLevel = 0;
 
   ParseOptions( argc, argv );
   m = m_;
@@ -420,7 +422,6 @@ ParseOptions( int argc, char *argv[] )
         break;
 
       case 'd': /* set debug level */
-        lalDebugLevel = atoi( optarg );
         break;
 
       case 'v': /* verbose */

@@ -1,12 +1,16 @@
 ACLOCAL_AMFLAGS = -I gnuscripts
 
+# Override automake's default rule for rebuilding aclocal.m4, to ensure that
+# ./configure is successfully recreated after certain build system changes which
+# require other autotools (e.g. autoheader) to be re-run. See Redmine issue #728.
+$(ACLOCAL_M4): $(am__aclocal_m4_deps)
+	$(am__cd) $(srcdir) && $(SHELL) ./00boot
+
 EXTRA_DIST = \
 	COPYING \
-	lalinspiral.pc.in \
-	lalinspiral.spec.in \
 	lalinspiral.spec \
-	aclocal.m4 \
-	doc
+	doc \
+	$(DATA)
 
 SUBDIRS = \
 	gnuscripts \

@@ -18,29 +18,31 @@
 */
 
 /**
-   \file
-   \ingroup VectorOps_h
-
-   \brief Tests the routines in \ref VectorOps.h.  Exercises some of the error
-   conditions and makes sure that they work.
-
-   \heading{Usage}
-   \code
-   VectorOpsTest [options]
-   Options:
-   -h         print help
-   -q         quiet: run silently
-   -v         verbose: print extra information
-   -d level   set lalDebugLevel to level
-   \endcode
-
-   \heading{Exit codes}
-   <table><tr><th>Code</th><th>Explanation</th></tr>
-   <tr><td>0</td><td>Success, normal exit.</td></tr>
-   <tr><td>1</td><td>Subroutine failed.</td></tr>
-   </table>
-
-*/
+ * \file
+ * \ingroup VectorOps_h
+ *
+ * \brief Tests the routines in \ref VectorOps.h.  Exercises some of the error
+ * conditions and makes sure that they work.
+ *
+ * ### Usage ###
+ *
+ * \code
+ * VectorOpsTest [options]
+ * Options:
+ * -h         print help
+ * -q         quiet: run silently
+ * -v         verbose: print extra information
+ * -d level   set lalDebugLevel to level
+ * \endcode
+ *
+ * ### Exit codes ###
+ *
+ * <table><tr><th>Code</th><th>Explanation</th></tr>
+ * <tr><td>0</td><td>Success, normal exit.</td></tr>
+ * <tr><td>1</td><td>Subroutine failed.</td></tr>
+ * </table>
+ *
+ */
 
 /** \cond DONT_DOXYGEN */
 
@@ -69,7 +71,6 @@
 extern char *optarg;
 extern int   optind;
 
-extern int lalDebugLevel;
 int verbose    = 0;
 
 static void
@@ -97,7 +98,6 @@ main ( int argc, char *argv[] )
   static LALStatus   status;
   INT4            i;
 
-  lalDebugLevel = 0;
 
   ParseOptions( argc, argv );
 
@@ -415,7 +415,6 @@ ParseOptions( int argc, char *argv[] )
     switch ( c )
     {
       case 'd': /* set debug level */
-        lalDebugLevel = atoi( optarg );
         break;
 
       case 'v': /* verbose */

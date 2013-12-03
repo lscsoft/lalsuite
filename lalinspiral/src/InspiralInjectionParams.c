@@ -16,13 +16,13 @@
  *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
  *  MA  02111-1307  USA
  */
-/** \file InspiralInjectionParams.c
- *  \ingroup InspiralInjectionParams
- *  \author D. Brown, J. Creighton, S. Fairhurst, G. Jones, E. Messaritaki
+/**
+ * \file InspiralInjectionParams.c
+ * \ingroup InspiralInjectionParams
+ * \author D. Brown, J. Creighton, S. Fairhurst, G. Jones, E. Messaritaki
  *
- *  \brief Functions for generating random distributions of inspiral parameters
- *  for injection purposes
- *
+ * \brief Functions for generating random distributions of inspiral parameters
+ * for injection purposes
  *
  */
 
@@ -43,8 +43,10 @@
 #include <lal/InspiralInjectionParams.h>
 #include <lal/VectorOps.h>
 
-/** Generates the geocent_end_time for an inspiral injection, based on the
- * given startTime and timeWindow */
+/**
+ * Generates the geocent_end_time for an inspiral injection, based on the
+ * given startTime and timeWindow
+ */
 SimInspiralTable* XLALRandomInspiralTime(
     SimInspiralTable *inj,   /**< injection for which time will be set */
     RandomParams *randParams,/**< random parameter details*/
@@ -61,12 +63,14 @@ SimInspiralTable* XLALRandomInspiralTime(
   return ( inj );
 }
 
-/** Generates the distance for an inspiral injection, based on the requested
- * distribution and max/min distances */
+/**
+ * Generates the distance for an inspiral injection, based on the requested
+ * distribution and max/min distances
+ */
 SimInspiralTable* XLALRandomInspiralDistance(
     SimInspiralTable *inj,     /**< injection for which distance will be set */
     RandomParams *randParams,  /**< random parameter details*/
-    DistanceDistribution dDist,/**< requested distance distribution */
+    LoudnessDistribution dDist,/**< requested distance distribution */
     REAL4  distMin,            /**< minimum distance (Mpc) */
     REAL4  distMax             /**< maximum distance (Mpc) */
     )
@@ -87,7 +91,7 @@ SimInspiralTable* XLALRandomInspiralDistance(
     exponent = lmin + deltaL * XLALUniformDeviate( randParams );
     inj->distance = pow(10.0,(REAL4) exponent);
   }
-  else if (dDist == uniformVolume )
+  else if ( dDist == uniformVolume )
   {
     /* uniform volume distribution */
     REAL4 d3min = distMin * distMin * distMin;
@@ -97,7 +101,7 @@ SimInspiralTable* XLALRandomInspiralDistance(
     d3 = d3min + deltad3 * XLALUniformDeviate( randParams );
     inj->distance = cbrt( d3 );
   }
-  else if (dDist == uniformDistanceSquared)
+  else if ( dDist == uniformDistanceSquared )
   {
     /* uniform distance^2 distribution */
     REAL4 d2min = distMin * distMin ;
@@ -107,12 +111,15 @@ SimInspiralTable* XLALRandomInspiralDistance(
     d2 = d2min + deltad2 * XLALUniformDeviate( randParams );
     inj->distance = sqrt( d2 );
   }
+
   return ( inj );
 }
 
 
-/** Generates a random sky location (right ascension=longitude,
-     delta=latitude) for an inspiral injection */
+/**
+ * Generates a random sky location (right ascension=longitude,
+ * delta=latitude) for an inspiral injection
+ */
 SimInspiralTable* XLALRandomInspiralSkyLocation(
     SimInspiralTable *inj,  /**< injection for which sky location will be set*/
     RandomParams *randParams/**< random parameter details*/
@@ -120,11 +127,14 @@ SimInspiralTable* XLALRandomInspiralSkyLocation(
 {
   inj->latitude = asin( 2.0 * XLALUniformDeviate( randParams ) - 1.0 ) ;
   inj->longitude = LAL_TWOPI * XLALUniformDeviate( randParams ) ;
+
   return ( inj );
 }
 
-/** Generates a location within the Milky Way
-     for an inspiral injection */
+/**
+ * Generates a location within the Milky Way
+ * for an inspiral injection
+ */
 void XLALRandomInspiralMilkywayLocation(
     REAL8 *rightAscension,  /**< right ascension of the milky-way source */
     REAL8 *declination,     /**< declination of the milky-way source */
@@ -170,12 +180,13 @@ void XLALRandomInspiralMilkywayLocation(
   *declination    = equatorialPos.latitude;
   *rightAscension = equatorialPos.longitude;
   *distance       = dist/1000.0; /* convert to Mpc */
-
 }
 
-/** Generates a random orientation (polarization, inclination, coa_phase)
+/**
+ * Generates a random orientation (polarization, inclination, coa_phase)
  * for an inspiral injection.  If inclinationPeak is non-zero, then peak the
- * inclination around o with width inclinationPeak */
+ * inclination around o with width inclinationPeak
+ */
 SimInspiralTable* XLALRandomInspiralOrientation(
     SimInspiralTable *inj,   /**< injection for which orientation will be set*/
     RandomParams *randParams,/**< random parameter details*/
@@ -309,8 +320,10 @@ SimInspiralTable* XLALRandomInspiralMasses(
   return ( inj );
 }
 
-/** Generates masses for an inspiral injection. Masses are Gaussian distributed
- * with the requested mean and standard deviation. */
+/**
+ * Generates masses for an inspiral injection. Masses are Gaussian distributed
+ * with the requested mean and standard deviation.
+ */
 SimInspiralTable* XLALGaussianInspiralMasses(
     SimInspiralTable *inj,   /**< injection for which masses will be set*/
     RandomParams *randParams,/**< random parameter details*/
@@ -346,8 +359,10 @@ SimInspiralTable* XLALGaussianInspiralMasses(
   return ( inj );
 }
 
-/** Generates masses for an inspiral injection. Total mass and mass ratio
- * are uniformly distributed */
+/**
+ * Generates masses for an inspiral injection. Total mass and mass ratio
+ * are uniformly distributed
+ */
 SimInspiralTable* XLALRandomInspiralTotalMassRatio(
     SimInspiralTable *inj,   /**< injection for which masses will be set */
     RandomParams *randParams,/**< random parameter details */
@@ -386,8 +401,10 @@ SimInspiralTable* XLALRandomInspiralTotalMassRatio(
   return ( inj );
 }
 
-/** Generates masses for an inspiral injection. Total mass and mass fraction
- * m1 / M are uniformly distributed */
+/**
+ * Generates masses for an inspiral injection. Total mass and mass fraction
+ * m1 / M are uniformly distributed
+ */
 SimInspiralTable* XLALRandomInspiralTotalMassFraction(
     SimInspiralTable *inj,   /**< injection for which masses will be set */
     RandomParams *randParams,/**< random parameter details */
@@ -423,16 +440,17 @@ SimInspiralTable* XLALRandomInspiralTotalMassFraction(
   return ( inj );
 }
 
-/** Generates spins for an inspiral injection.
+/**
+ * Generates spins for an inspiral injection.
  * Spin magnitudes lie between the specified max and min values.
  *
  * The parameter alignInj controls whether spins are aligned with the orbital
  * angular momentum according to two separate coordinate conventions (along z-axis
  * as for IMRPhenom, or in x-z plane as for SpinTaylor).
  *
- * For single-spin-like systems as treated in the 'PTF' paper (Pan, Buonanno, Chen and 
+ * For single-spin-like systems as treated in the 'PTF' paper (Pan, Buonanno, Chen and
  * Vallisneri, gr-qc/03100034) the component of spin1 along the direction of orbital
- * angular momentum (where m1>m2) is specified by the kappa1 bounds. 
+ * angular momentum (where m1>m2) is specified by the kappa1 bounds.
  *
  * Otherwise, orientations for spin1 and spin2 are random.
  */
@@ -447,7 +465,12 @@ SimInspiralTable* XLALRandomInspiralSpins(
     REAL4  kappa1Max,		/**< maximum value of spin1 . L_N */
     REAL4  abskappa1Min,	/**< minimum absolute value of spin1 . L_N */
     REAL4  abskappa1Max,	/**< maximum absolute value of spin1 . L_N */
-    AlignmentType alignInj	/**< choice of convention for aligned spins */
+    AlignmentType alignInj,	/**< choice of convention for aligned spins */
+    SpinDistribution distribution,	/**< the spin magnitude distribution to use */
+    REAL4  spin1Mean,		/**< mean value for |spin1| gaussian */
+    REAL4  spin1Std,		/**< standard deviation for |spin1| */
+    REAL4  spin2Mean,		/**< mean value for |spin2| gaussian */
+    REAL4  spin2Std 		/**< standard deviation for |spin2| */
     )
 {
   REAL4 spin1Mag;
@@ -471,8 +494,20 @@ SimInspiralTable* XLALRandomInspiralSpins(
   kappa    = -2.0;
 
   /* spin1Mag */
-  spin1Mag =  spin1Min + XLALUniformDeviate( randParams ) *
-    (spin1Max - spin1Min);
+  switch (distribution)
+  {
+	case uniformSpinDist:  spin1Mag =  spin1Min + XLALUniformDeviate( randParams ) *(spin1Max - spin1Min);
+	break;
+	case gaussianSpinDist:  
+	  do spin1Mag = spin1Mean + spin1Std*XLALNormalDeviate(randParams);
+      while ( spin1Mag > spin1Max || spin1Mag < spin1Min );
+    break;
+    default: {
+      fprintf( stderr,"Spin magnitude distribution not known.\n" );
+      XLAL_ERROR_NULL(XLAL_EDOM);
+    }
+
+  }
 
   /* Check if initial spin orientation is specified by user */
   if ( (kappa1Min > -1.0) || (kappa1Max < 1.0) )
@@ -546,8 +581,20 @@ SimInspiralTable* XLALRandomInspiralSpins(
   }
 
   /* spin2Mag */
-  spin2Mag =  spin2Min + XLALUniformDeviate( randParams ) *
-	  (spin2Max - spin2Min);
+  switch (distribution)
+  {
+	case uniformSpinDist:  spin2Mag =  spin2Min + XLALUniformDeviate( randParams ) *(spin2Max - spin2Min);
+	break;
+	case gaussianSpinDist:  
+	  do spin2Mag = spin2Mean + spin2Std*XLALNormalDeviate(randParams);
+      while ( spin2Mag > spin2Max || spin2Mag < spin2Min );
+    break;
+    default: {
+      fprintf( stderr,"Spin magnitude distribution not known.\n" );
+      XLAL_ERROR_NULL(XLAL_EDOM);
+    }
+
+  }
 
   /* aligned case */
   if (alignInj==inxzPlane)
@@ -583,6 +630,7 @@ SimInspiralTable* XLALRandomInspiralSpins(
 
   return ( inj );
 }
+
 
 /** Generates random masses for an inspiral injection. */
 SimInspiralTable* XLALRandomNRInjectTotalMass(
@@ -621,7 +669,6 @@ SimInspiralTable* XLALRandomNRInjectTotalMass(
   return ( inj );
 }
 
-
 /** Set end time and effective distance of an injection for a detector */
 SimInspiralTable *XLALInspiralSiteTimeAndDist(
     SimInspiralTable  *inj, /**< the injection details */
@@ -630,7 +677,6 @@ SimInspiralTable *XLALInspiralSiteTimeAndDist(
     REAL4             *effDist   /**< the effective distance to populate */
     )
 {
-
   REAL8                 tDelay, fplus, fcross;
   REAL4                 splus, scross, cosiota;
 
@@ -646,9 +692,8 @@ SimInspiralTable *XLALInspiralSiteTimeAndDist(
   splus = -( 1.0 + cosiota * cosiota );
   scross = -2.0 * cosiota;
 
-
   /* calculate the detector response */
-  XLALComputeDetAMResponse(&fplus, &fcross, detector->response, inj->longitude,
+  XLALComputeDetAMResponse(&fplus, &fcross, (const REAL4(*)[3])detector->response, inj->longitude,
       inj->latitude, inj->polarization, inj->end_time_gmst);
 
   /* compute the effective distance */
@@ -658,8 +703,10 @@ SimInspiralTable *XLALInspiralSiteTimeAndDist(
   return ( inj );
 }
 
-/** Set the end time and effective distance for all detectors for this
- * injection */
+/**
+ * Set the end time and effective distance for all detectors for this
+ * injection
+ */
 SimInspiralTable *XLALPopulateSimInspiralSiteInfo(
     SimInspiralTable           *inj /**< the injection */
     )
@@ -699,11 +746,12 @@ SimInspiralTable *XLALPopulateSimInspiralSiteInfo(
   inj = XLALInspiralSiteTimeAndDist(inj, &detector, end_time, eff_dist);
 
   return ( inj );
-
 }
 
-/** Populate a frequency series with the actuation response.  Here, we just use
- * the pendulum part of the actuation function */
+/**
+ * Populate a frequency series with the actuation response.  Here, we just use
+ * the pendulum part of the actuation function
+ */
 COMPLEX8FrequencySeries *generateActuation(
     COMPLEX8FrequencySeries *resp, /* the frequency series to be populated */
     REAL4                    ETMcal,/* the ETM calibration */
@@ -729,15 +777,14 @@ COMPLEX8FrequencySeries *generateActuation(
   for ( k = 0; k < resp->data->length; k++ )
   {
     fNorm = k * resp->deltaF / pendF;
-    denom->data[k].re = ( 1 - fNorm * fNorm );
-    denom->data[k].im = - fNorm / pendQ;
-    num->data[k].re = -1.0 * ETMcal;
-    num->data[k].im = 0.0;
+    denom->data[k].realf_FIXME = ( 1 - fNorm * fNorm );
+    denom->data[k].imagf_FIXME = - fNorm / pendQ;
+    num->data[k].realf_FIXME = -1.0 * ETMcal;
+    num->data[k].imagf_FIXME = 0.0;
   }
 
   XLALCCVectorDivide( resp->data, num, denom);
   XLALDestroyCOMPLEX8Vector( num );
   XLALDestroyCOMPLEX8Vector( denom );
   return( resp );
-
 }

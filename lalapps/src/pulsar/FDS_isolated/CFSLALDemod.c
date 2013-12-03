@@ -153,10 +153,10 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
   /* Loop over frequencies to be demodulated */
   for(i=0 ; i< params->imax  ; i++ )
   {
-    Fa.re =0.0;
-    Fa.im =0.0;
-    Fb.re =0.0;
-    Fb.im =0.0;
+    Fa.real_FIXME =0.0;
+    Fa.imag_FIXME =0.0;
+    Fb.real_FIXME =0.0;
+    Fb.imag_FIXME =0.0;
 
     f=params->f0+i*params->df;
 
@@ -294,18 +294,18 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
                 /* If x is small we need correct x->0 limit of Dirichlet kernel */
                 if( fabs(x) <  SMALL) 
                   {
-                    realXP += Xalpha_k.re;
-                    imagXP += Xalpha_k.im;
+                    realXP += crealf(Xalpha_k);
+                    imagXP += cimagf(Xalpha_k);
                   }      
                 else
                   {
                     realP = tsin / x;
                     imagP = tcos / x;
                     /* these four lines compute P*xtilde */
-                    realXP += Xalpha_k.re * realP;
-                    realXP -= Xalpha_k.im * imagP;
-                    imagXP += Xalpha_k.re * imagP;
-                    imagXP += Xalpha_k.im * realP;
+                    realXP += crealf(Xalpha_k) * realP;
+                    realXP -= cimagf(Xalpha_k) * imagP;
+                    imagXP += crealf(Xalpha_k) * imagP;
+                    imagXP += cimagf(Xalpha_k) * realP;
                   }
                 
                 tempFreq1 --;
@@ -350,8 +350,8 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
                 realP = tsin * xinv;
                 imagP = tcos * xinv;
                 /* these lines compute P*xtilde */
-                realXP += Xa.re * realP - Xa.im * imagP;
-                imagXP += Xa.re * imagP + Xa.im * realP;
+                realXP += crealf(Xa) * realP - cimagf(Xa) * imagP;
+                imagXP += crealf(Xa) * imagP + cimagf(Xa) * realP;
 
               } /* for k < klim */
 
@@ -370,16 +370,16 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
         {
           REAL8 realQXP = realXP*realQ-imagXP*imagQ;
           REAL8 imagQXP = realXP*imagQ+imagXP*realQ;
-          Fa.re += a*realQXP;
-          Fa.im += a*imagQXP;
-          Fb.re += b*realQXP;
-          Fb.im += b*imagQXP;
+          Fa.real_FIXME += a*realQXP;
+          Fa.imag_FIXME += a*imagQXP;
+          Fb.real_FIXME += b*realQXP;
+          Fb.imag_FIXME += b*imagQXP;
         }
       }      
 
-    FaSq = Fa.re*Fa.re+Fa.im*Fa.im;
-    FbSq = Fb.re*Fb.re+Fb.im*Fb.im;
-    FaFb = Fa.re*Fb.re+Fa.im*Fb.im;
+    FaSq = creal(Fa)*creal(Fa)+cimag(Fa)*cimag(Fa);
+    FbSq = creal(Fb)*creal(Fb)+cimag(Fb)*cimag(Fb);
+    FaFb = creal(Fa)*creal(Fb)+cimag(Fa)*cimag(Fb);
                         
     Fs->F[i] = (4.0/(M*D))*(B*FaSq + A*FbSq - 2.0*C*FaFb);
     if (params->returnFaFb)

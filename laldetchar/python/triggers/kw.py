@@ -11,10 +11,21 @@
 # Public License for more details.
 #
 # You should have received a copy of the GNU General Public License along
-# with this program; if not, write to the Free Software Foundation, 
+# with this program; if not, write to the Free Software Foundation,
 
-"""Utilites for manipulating the output of the KleineWelle algorithm
+## \addtogroup pkg_py_laldetchar_triggers_kleinewelle
+"""Read KleineWelle events from `ASCII` files
+
+The module provides a method to import triggers from `ASCII` into a
+`SnglBurstTable`. Eventually, writing to `ASCII` will be supported also.
 """
+#
+# ### Synopsis ###
+#
+# ~~~
+# from laldetchar.triggers import kw
+# ~~~
+# \author Duncan Macleod (<duncan.macleod@ligo.org>)
 
 from __future__ import division
 
@@ -26,7 +37,7 @@ import re
 import bisect
 
 from socket import getfqdn
-from lal import (LIGOTimeGPS, lalStrainUnit)
+from lal.lal import LIGOTimeGPS
 
 from glue import segments
 from glue.lal import (Cache, CacheEntry)
@@ -34,46 +45,48 @@ from glue.ligolw import lsctables
 
 from laldetchar import git_version
 
-__author__  = "Duncan M. Macleod <duncan.macleod@ligo.org>"
+__author__  = "Duncan Macleod <duncan.macleod@ligo.org>"
 __version__ = git_version.id
 __date__    = git_version.date
 
 # set global variables
 _comment = re.compile('[#%]')
 _delim   = re.compile('[\t\,\s]+')
-_xml = re.compile("(xml|xml.gz)\Z")
+
+KLEINEWELLE_COLUMNS = ["search", "peak_time", "peak_time_ns", "start_time",
+                       "start_time_ns", "stop_time", "stop_time_ns",
+                       "duration", "central_freq", "peak_frequency",
+                       "bandwidth", "snr", "amplitude", "confidence"]
 
 
-#
-# =============================================================================
-#
-# Event reading
-#
-# =============================================================================
-#
+## \addtogroup pkg_py_laldetchar_triggers_kleinewelle
+#@{
 
-# convert ascii line to omega trigger
-def trigger(line, columns=lsctables.SnglBurst.__slots__, channel=None):
-    """Read a SnglBurst event from a line of KW-format ASCII
+
+def ascii_trigger(line, columns=KLEINEWELLE_COLUMNS):
+    """Parse a line of `ASCII` text into a `SnglBurst` object
 
     @param line
-        string of ASCII to process, or list of attributes in ASCII order
+        single line of `ASCII` text from a KleineWelle file
     @param columns
-        list of valid columns to load, defaults to ALL for SnglBurst
+        a list of valid `LIGO_LW` column names to load (defaults to all)
 
-    @returns a glue.lsctables.SnglBurst object representing this event
+    @returns a `SnglBurst` built from the `ASCII` data
     """
-    if isinstance(line, str):
-        dat = _delim.split(line.rstrip())
+    t = lsctables.SnglBurst()
+    t.search = u"kleinewelle"
 
+    dat = line.rstrip().split()
     if len(dat) == 9:
-        c = re.sub("_", ":", dat.pop(-1), 1)
-        if re.search("_\d+_\d+\Z", c):
-            c = c.rsplit("_", 2)[0]
-        if channel and channel not in c:
-            return
-        elif not channel:
-            channel = c
+        channel = re.sub("_", ":", dat.pop(-1), 1)
+        if re.search("_\d+_\d+\Z", channel):
+            channel = channel.rsplit("_", 2)[0]
+        if 'channel' in columns:
+            t.channel = channel
+        if 'ifo' in columns and re.match("[A-Z]\d:", channel):
+            t.ifo = channel[:2]
+        elif 'ifo' in columns:
+            t.ifo = None
     if len(dat) == 8:
         (start, stop, peak, freq, energy,
          amplitude, n_pix, sig) = list(map(float, dat))
@@ -84,11 +97,8 @@ def trigger(line, columns=lsctables.SnglBurst.__slots__, channel=None):
         snr = (amplitude-n_pix)**(1/2)
         band = 0
     else:
-        raise ValueError("Wrong number of columns in ASCII line. Cannot read.")
-    
-    # set object
-    t = lsctables.SnglBurst()
-    t.channel = channel
+        raise ValueError("Wrong number of columns in ASCII line. "
+                         "Cannot read.")
 
     # set times
     if 'start_time' in columns:
@@ -103,13 +113,13 @@ def trigger(line, columns=lsctables.SnglBurst.__slots__, channel=None):
         t.stop_time = stop.gpsSeconds
     if 'stop_time_ns' in columns:
         t.stop_time_ns  = stop.gpsNanoSeconds
- 
+
     # set ms times
     if 'ms_start_time' in columns:
         t.ms_start_time = start.gpsSeconds
     if 'ms_start_time_ns' in columns:
         t.ms_start_time_ns = start.gpsNanoSeconds
-    if 'ms_stop_time' in columns: 
+    if 'ms_stop_time' in columns:
         t.ms_stop_time = stop.gpsSeconds
     if 'ms_stop_time_ns' in columns:
         t.ms_stop_time_ns = stop.gpsNanoSeconds
@@ -122,9 +132,9 @@ def trigger(line, columns=lsctables.SnglBurst.__slots__, channel=None):
 
     # set frequencies
     if 'central_freq' in columns:
-        t.central_freq = freq 
+        t.central_freq = freq
     if 'peak_frequency' in columns:
-        t.peak_frequency = freq 
+        t.peak_frequency = freq
     if 'peak_frequency_eror' in columns:
         t.peak_frequency_error = 0
     if 'bandwidth' in columns:
@@ -169,175 +179,85 @@ def trigger(line, columns=lsctables.SnglBurst.__slots__, channel=None):
     return t
 
 
-# read triggers from file
-def from_file(fobj, start=None, end=None, ifo=None, channel=None,
-              columns=None):
-    """Read a SnglBurstTable from KW-format ASCII file
+def from_ascii(filename, columns=None, start=None, end=None,
+               channel=None):
+    """Read KleineWelle triggers from an `ASCII` file
 
-    @param fobj
-        file object from which to read the data
-    @param start
-        GPS start time after which to restrict returned events
-    @param end
-        GPS end time before which to restrict returned
-    @param ifo
-        observatory that produced the given data
-    @param channel
-        source channel that produced the given data
+    Lines in the file are parsed one-by-one, excluding obvious comments
+    with each converted to an `KleineWelleTrigger` (a sub-class of
+    `SnglBurst`).
+
+    @param filename
+        path to the `ASCII` file
     @param columns
-        set of valid SnglBurst columns to read from data
+        a list of valid `LIGO_LW` column names to load (defaults to all)
+    @param start
+        minimum GPS time for returned triggers
+    @param end
+        maximum GPS time for returned triggers
+    @param channel
+        name of the source data channel for these events.
 
-    @returns a glue.lsctables.SnglBurstTable object representing the data
+    @returns a `LIGO_LW` table containing the triggers
     """
-    # set columns
-    if columns is None:
-        columns = lsctables.SnglBurst.__slots__
-        usercolumns = False
+    if isinstance(channel, basestring):
+        channels = [channel]
+    elif channel is None:
+        channels = [None]
     else:
-        usercolumns = True
-    columns = set(columns)
+        channels = channel
 
-    if start or end:
-        if start is None:
-            start = -numpy.inf
-        if end is None:
-            end = numpy.inf
+    if not columns:
+        columns = KLEINEWELLE_COLUMNS
+    if columns:
+        if channel:
+            columns.append('channel')
+            columns.append('ifo')
+        columns = set(columns)
+        if 'peak_time' not in columns and (start or end):
+            columns.add("peak_time")
+            columns.add("peak_time_ns")
+        if 'snr' in columns:
+            columns.add('amplitude')
+        if channel:
+            columns.update(['ifo', 'channel'])
+    if (start or end):
+        start = start or segments.NegInfinity
+        end = end or segments.PosInfinity
         span = segments.segment(start, end)
-        columns.update(["peak_time", "peak_time_ns"])
         check_time = True
     else:
         check_time = False
 
-    # record amplitude if recording SNR
-    if 'snr' in columns:
-        columns.add("amplitude")
+    out = dict()
 
-    # generate table
-    if not channel or isinstance(channel, str):
-        channels = [channel]
-        return_dict = False
-    else:
-        return_dict = True
-        channels = channel
-
-    out = dict((c, lsctables.New(lsctables.SnglBurstTable, columns=columns)) for
-               c in channels)
-
-    # remove unused names and types
-    if usercolumns:
-        for key,tab in out.iteritems():
-            for c in out[key].columnnames:
-                if c.lower() not in columns:
-                    idx = out[key].columnnames.index(c)
-                    out[key].columnnames.pop(idx)
-                    out[key].columntypes.pop(idx)
+    for ch in channels:
+        # generate table
+        out[ch] = lsctables.New(lsctables.SnglBurstTable, columns=columns)
+        columns = out[ch].columnnames
 
     # read file and generate triggers
-    if _xml.search(fobj.name):
-        pass
-    else:
-        for i,line in enumerate(fobj):
+    append = dict((ch, out[ch].append) for ch in channels)
+    next_id = out[ch].get_next_id
+    with open(filename, 'r') as f:
+        for line in f:
             if _comment.match(line):
+               continue
+            t = ascii_trigger(line, columns=columns)
+            if channel and t.channel not in channels:
                 continue
-            t = trigger(line, columns=columns)
-            t.ifo = ifo
-            t.search = "KleineWelle"
-            if (t and t.channel in channels and (not check_time or
-                       (check_time and float(t.get_peak()) in span))):
-                if not channel:
-                    out[channel].append(t)
-                else:
-                    out[t.channel].append(t)
+            t.event_id = next_id()
+            if not check_time or (float(t.get_peak()) in span):
+                append[t.channel](t)
 
-    if return_dict:
-        return out
-    else:
-        return out[channels[0]]    
-
-
-# read triggers from a list of files 
-def from_files(filelist, start=None, end=None, ifo=None, channel=None,
-               columns=None, verbose=False):
-    """Read a SnglBurstTable from a list of KW-format ASCII files
-
-    @param filelist
-        list of filepaths from which to read the data
-    @param start
-        GPS start time after which to restrict returned events
-    @param end
-        GPS end time before which to restrict returned
-    @param ifo
-        observatory that produced the given data
-    @param channel
-        source channel that produced the given data
-    @param columns
-        set of valid SnglBurst columns to read from data
-    @param verbose
-        print verbose progress, default False
-
-    @returns a glue.lsctables.SnglBurstTable object representing the data
-    """
-    if verbose:
-        sys.stdout.write("Extracting KW triggers from %d files...     \r"
-                         % len(filelist))
-        sys.stdout.flush()
-        num = len(filelist)
-
-    # generate table for multi channel read
-    if not channel or isinstance(channel, str):
-        channels = [channel]
-        return_dict = False
-    else:
-        channels = channel
-        return_dict = True
-    out = dict((c, lsctables.New(lsctables.SnglBurstTable, columns=columns)) for
-               c in channels)
-
-    # load results
-    for i,fp in enumerate(filelist):
-        with open(fp, "r") as f:
-            new_trigs = from_file(f, start=start, end=end, columns=columns,\
-                                  ifo=ifo, channel=channels)
-            for channel in channels:
-                out[channel].extend(new_trigs[channel])
-        if verbose:
-            progress = int((i+1)/num*100)
-            sys.stdout.write("Extracting KW triggers from %d files... "
-                             "%.2d%%\r" % (num, progress))
-            sys.stdout.flush()
-    if verbose:
-        sys.stdout.write("Extracting KW triggers from %d files... "
-                         "100%%\n" % (num))
-        sys.stdout.flush()
-
-    if return_dict:
-        return out
-    else:
+    if isinstance(channel, basestring) or channel is None:
         return out[channel]
+    else:
+        return out
 
-def from_lal_cache(cache, start=None, end=None, ifo=None, channel=None,
-                   columns=None, verbose=False):
-    """Read a SnglBurstTable from a Cache of KW-format ASCII files
-    
-    @param cache
-        glue.lal.Cache of filepaths from which to read the data
-    @param start
-        GPS start time after which to restrict returned events
-    @param end
-        GPS end time before which to restrict returned
-    @param ifo
-        observatory that produced the given data
-    @param channel
-        source channel that produced the given data
-    @param columns
-        set of valid SnglBurst columns to read from data
-    @param verbose
-        print verbose progress, default False
 
-    @returns a glue.lsctables.SnglBurstTable object representing the data
-    """
-    return from_files(cache.pfnlist(), start=start, end=end, ifo=ifo,
-                      channel=channel, columns=columns, verbose=verbose)
+# TODO: remove following lines when a good trigfind method is in place
+##@}
 
 #
 # =============================================================================
@@ -362,9 +282,10 @@ def find_online_cache(start, end, ifo, mask='DOWNSELECT',
         description tag of KW ASCII to search
     @param check_files
         check that the returned files can be read on disk, default False
+    @param kwargs UNDOCUMENTED
     """
     out = Cache()
-    
+
     # verify host
     host = { 'G1':'atlas', 'H1':'ligo-wa', 'H2':'ligo-wa', 'L1':'ligo-la'}
     if (not kwargs.has_key('directory') and not
@@ -420,7 +341,8 @@ def find_online_cache(start, end, ifo, mask='DOWNSELECT',
 
 
 # find files from aLIGO DMTKW
-def find_dmt_cache(start, end, ifo, format="xml", check_files=False, **kwargs):
+def find_dmt_cache(start, end, ifo, extension="xml", check_files=False,
+                   **kwargs):
     """Find DMT KW files for the given GPS period.
 
     @param start
@@ -429,11 +351,13 @@ def find_dmt_cache(start, end, ifo, format="xml", check_files=False, **kwargs):
         GPS end time for search
     @param ifo
         observatory for search
+    @param extension UNDOCUMENTED
     @param check_files
         check that the returned files can be read on disk, default False
+    @param kwargs UNDOCUMENTED
     """
     out = Cache()
-    
+
     # verify host
     host = { 'G1':'atlas', 'H1':'ligo-wa', 'H2':'ligo-wa', 'L1':'ligo-la'}
     if (not kwargs.has_key('directory') and not
@@ -449,16 +373,18 @@ def find_dmt_cache(start, end, ifo, format="xml", check_files=False, **kwargs):
     known_epochs = [1026263104]
 
     # get parameters
-    dt = kwargs.pop("duration", 64)
+    dt = int(kwargs.pop("duration", 64))
     epoch = kwargs.pop("epoch", known_epochs)
+    filetag = kwargs.pop("filetag", "KW_TRIGGERS")
+    dirtag = filetag.endswith("_TRENDS") and filetag[:-7] or filetag
     try:
         iter(epoch)
     except TypeError:
-        epoch = [epoch]
-    overlap = kwargs.pop("overlap", 0)
+        epoch = [int(epoch)]
+    overlap = int(kwargs.pop("overlap", 0))
     directory = kwargs.pop("duration",
-                           "/gds-%s/dmt/triggers/%s-KW_TRIGGERS"
-                           % (ifo.lower(), ifo[0].upper()))
+                           "/gds-%s/dmt/triggers/%s-%s"
+                           % (ifo.lower(), ifo[0].upper(), dirtag))
 
     # optimise
     append = out.append
@@ -474,15 +400,15 @@ def find_dmt_cache(start, end, ifo, format="xml", check_files=False, **kwargs):
     start_time = int(start-numpy.mod(start-epoch[epoch_idx], dt-overlap))
     t = start_time
 
-    def _omega_file(gps, ifo):
-        return ("%s/%s-KW_TRIGGERS-%.5s/"
-                "%s-KW_TRIGGERS-%.10d-%d.%s"
-                % (directory, ifo.upper()[0], gps, ifo.upper()[0], gps, dt,
-                   format))
+    def _kw_file(gps, ifo):
+        return ("%s/%s-%s-%.5s/"
+                "%s-%s-%.10d-%d.%s"
+                % (directory, ifo.upper()[0], dirtag, gps,
+                   ifo.upper()[0], filetag, gps, dt, extension))
 
     # loop over time segments constructing file paths
     while t<end:
-        fp = _omega_file(t, ifo)
+        fp = _kw_file(t, ifo)
         if (intersects(segment(t, t+dt)) and
                (not check_files or isfile(fp))):
             append(from_T050017(fp))
@@ -494,3 +420,5 @@ def find_dmt_cache(start, end, ifo, format="xml", check_files=False, **kwargs):
     out.sort(key=lambda e: e.path)
 
     return out
+
+#@}

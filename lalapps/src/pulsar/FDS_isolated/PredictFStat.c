@@ -18,16 +18,17 @@
  */
 
 /*********************************************************************************/
-/** \author I. Gholami, R. Prix
+/**
+ * \author I. Gholami, R. Prix
  * \file
  * \ingroup pulsarApps
  * \brief
  * Calculate the *expected* (multi-IFO) F-statistic for pulsar GW signals, without actually
- * performing a search. The "F-statistic" was introduced in \ref JKS98 and Cutler-Schutz 2005.
+ * performing a search. The "F-statistic" was introduced in \cite JKS98 and Cutler-Schutz 2005.
  * Contrary to SemiAnalyticF this code can use (multi-IFO) SFTs to specify the startTime,
  * duration, detectors and noise-floors to use in the estimation.
  *
- *********************************************************************************/
+ */
 #include "config.h"
 
 /* System includes */
@@ -57,7 +58,7 @@
 
 #define MAXFILENAMELENGTH 256   /* Maximum # of characters of a SFT filename */
 
-#define EPHEM_YEARS  "00-04"	/**< default range: override with --ephemYear */
+#define EPHEM_YEARS  "00-19-DE405"	/**< default range: override with --ephemYear */
 
 #define TRUE (1==1)
 #define FALSE (1==0)
@@ -87,7 +88,8 @@
 
 #define LAL_INT4_MAX 2147483647
 
-/** Configuration settings required for and defining a coherent pulsar search.
+/**
+ * Configuration settings required for and defining a coherent pulsar search.
  * These are 'pre-processed' settings, which have been derived from the user-input.
  */
 typedef struct {
@@ -131,9 +133,9 @@ typedef struct {
   INT4 minStartTime;	/**< limit start-time of input SFTs to use */
   INT4 maxEndTime;	/**< limit end-time of input SFTs to use */
 
-  CHAR *transient_Name;	/**< name of transient window ('rect', 'exp',...) */
-  REAL8 transient_t0;	/**< GPS start-time of transient window */
-  REAL8 transient_tau;	/**< time-scale of transient window */
+  CHAR *transientWindowType;	/**< name of transient window ('rect', 'exp',...) */
+  REAL8 transientStartTime;	/**< GPS start-time of transient window */
+  REAL8 transientTauDays;	/**< time-scale in days of transient window */
 
   REAL8 cosiota;	/* DEPRECATED in favor of cosi */
 
@@ -168,14 +170,12 @@ int main(int argc,char *argv[])
   UserInput_t uvar = empty_UserInput;
   CHAR *VCSInfoString;          /**< LAL + LALapps Git version string */
 
-  lalDebugLevel = 0;
   vrbflg = 1;	/* verbose error-messages */
 
   /* set LAL error-handler */
   lal_errhandler = LAL_ERR_EXIT;
 
   /* register all user-variable */
-  LAL_CALL (LALGetDebugLevel(&status, argc, argv, 'v'), &status);
   LAL_CALL (initUserVars(&status, &uvar), &status);
 
   /* do ALL cmdline and cfgfile handling */
@@ -300,8 +300,8 @@ initUserVars (LALStatus *status, UserInput_t *uvar )
   uvar->phi0 = 0;
 
 #define DEFAULT_TRANSIENT "none"
-  uvar->transient_Name = LALMalloc(strlen(DEFAULT_TRANSIENT)+1);
-  strcpy ( uvar->transient_Name, DEFAULT_TRANSIENT );
+  uvar->transientWindowType = LALMalloc(strlen(DEFAULT_TRANSIENT)+1);
+  strcpy ( uvar->transientWindowType, DEFAULT_TRANSIENT );
 
   /* register all our user-variables */
   LALregBOOLUserStruct(status,	help, 		'h', UVAR_HELP,     "Print this message");
@@ -336,9 +336,9 @@ initUserVars (LALStatus *status, UserInput_t *uvar )
   LALregREALUserStruct(status,	cosiota,	 0 , UVAR_DEVELOPER, "[DEPRECATED] Use --cosi instead!");
 
   /* transient signal window properties (name, start, duration) */
-  LALregSTRINGUserStruct(status, transient_Name,  0, UVAR_OPTIONAL, "Name of transient signal window to use. ('none', 'rect', 'exp').");
-  LALregREALUserStruct(status,   transient_t0,    0, UVAR_OPTIONAL, "GPS start-time 't0' of transient signal window.");
-  LALregREALUserStruct(status,   transient_tau,   0, UVAR_OPTIONAL, "Timescale 'tau' of transient signal window in seconds.");
+  LALregSTRINGUserStruct(status, transientWindowType,  0, UVAR_OPTIONAL, "Name of transient signal window to use. ('none', 'rect', 'exp').");
+  LALregREALUserStruct(status,   transientStartTime,    0, UVAR_OPTIONAL, "GPS start-time 't0' of transient signal window.");
+  LALregREALUserStruct(status,   transientTauDays,   0, UVAR_OPTIONAL, "Timescale 'tau' of transient signal window in seconds.");
 
   DETATCHSTATUSPTR (status);
   RETURN (status);
@@ -543,27 +543,27 @@ InitPFS ( LALStatus *status, ConfigVariables *cfg, const UserInput_t *uvar )
     }
 
   /* ----- handle transient-signal window if given ----- */
-  if ( LALUserVarWasSet ( &uvar->transient_Name ) && strcmp ( uvar->transient_Name, "none") )
+  if ( LALUserVarWasSet ( &uvar->transientWindowType ) && strcmp ( uvar->transientWindowType, "none") )
     {
       transientWindow_t transientWindow;	/**< properties of transient-signal window */
       MultiLIGOTimeGPSVector *mTS;
 
-      if ( !strcmp ( uvar->transient_Name, "rect" ) )
+      if ( !strcmp ( uvar->transientWindowType, "rect" ) )
         transientWindow.type = TRANSIENT_RECTANGULAR;		/* rectangular window [t0, t0+tau] */
-      else if ( !strcmp ( uvar->transient_Name, "exp" ) )
+      else if ( !strcmp ( uvar->transientWindowType, "exp" ) )
         transientWindow.type = TRANSIENT_EXPONENTIAL;		/* exponential decay window e^[-(t-t0)/tau for t>t0, 0 otherwise */
       else
 	{
-	  XLALPrintError ("Illegal transient window '%s' specified: valid are 'none', 'rect' or 'exp'\n", uvar->transient_Name);
+	  XLALPrintError ("Illegal transient window '%s' specified: valid are 'none', 'rect' or 'exp'\n", uvar->transientWindowType);
           ABORT ( status, PREDICTFSTAT_EINPUT, PREDICTFSTAT_MSGEINPUT );
 	}
 
-      if ( LALUserVarWasSet ( &uvar->transient_t0 ) )
-        transientWindow.t0 = uvar->transient_t0;
+      if ( LALUserVarWasSet ( &uvar->transientStartTime ) )
+        transientWindow.t0 = uvar->transientStartTime;
       else
         transientWindow.t0 = XLALGPSGetREAL8( &startTime ); /* if not set, default window startTime == startTime here */
 
-      transientWindow.tau  = uvar->transient_tau;
+      transientWindow.tau  = uvar->transientTauDays;
 
       if ( (mTS = XLALExtractMultiTimestampsFromSFTs ( multiSFTs )) == NULL ) {
         XLALPrintError ("%s: failed to XLALExtractMultiTimestampsFromSFTs() from SFTs. xlalErrno = %d.\n", fn, xlalErrno );
@@ -593,7 +593,7 @@ InitPFS ( LALStatus *status, ConfigVariables *cfg, const UserInput_t *uvar )
   /* noise-weighting of Antenna-patterns and compute A,B,C */
   if ( XLALWeightMultiAMCoeffs ( multiAMcoef, multiNoiseWeights ) != XLAL_SUCCESS ) {
     LogPrintf (LOG_CRITICAL, "XLALWeightMultiAMCoeffs() failed with error = %d\n\n", xlalErrno );
-    ABORT ( status, COMPUTEFSTATC_EXLAL, COMPUTEFSTATC_MSGEXLAL );
+    ABORT ( status, PREDICTFSTAT_EXLAL, PREDICTFSTAT_MSGEXLAL );
   }
 
   /* OK: we only need the antenna-pattern matrix M_mu_nu */

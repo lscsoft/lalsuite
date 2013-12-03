@@ -30,7 +30,8 @@
 #include <lal/PtoleMetric.h>
 #include <lal/UniversalDopplerMetric.h>
 
-/** \author Reinhard Prix
+/**
+ * \author Reinhard Prix
  * \file
  * \ingroup UniversalDopplerMetric_h
  * \brief Tests for exported functions in UniversalDopplerMetric
@@ -51,7 +52,6 @@
 #define MULT_VECT(v,lam) do{ (v)[0] *= (lam); (v)[1] *= (lam); (v)[2] *= (lam); } while(0)
 
 // ---------- global variables --------------------
-extern int lalDebugLevel;
 
 static LALStatus empty_LALStatus;
 static PtoleMetricIn empty_PtoleMetricIn;
@@ -66,12 +66,12 @@ static gsl_matrix *convert_old_metric_2_new ( const REAL8Vector *m0, REAL8 Freq 
 DopplerMetric *XLALOldDopplerFstatMetric ( const DopplerMetricParams *metricParams, const EphemerisData *edat );
 
 // ---------- function definitions --------------------
-/** MAIN function: calls a number of unit-tests
+/**
+ * MAIN function: calls a number of unit-tests
  */
 int main( void )
 {
   INT4 ret;
-  lalDebugLevel = 3;
 
   ret = test_XLALDopplerFstatMetric();
   XLAL_CHECK ( ret == XLAL_SUCCESS, XLAL_EFUNC, "test_XLALDopplerFstatMetric() failed with status = %d.\n", ret );
@@ -105,8 +105,8 @@ test_XLALDopplerFstatMetric ( void )
   REAL8 tolPh = 0.01;	// 1% tolerance on phase metrics [taken from testMetricCodes.py]
 
   // ----- load ephemeris
-  char earthEphem[] = DATADIR "earth00-19-DE200.dat.gz";
-  char sunEphem[]   = DATADIR "sun00-19-DE200.dat.gz";
+  char earthEphem[] = TEST_DATA_DIR "earth00-19-DE200.dat.gz";
+  char sunEphem[]   = TEST_DATA_DIR "sun00-19-DE200.dat.gz";
   EphemerisData *edat = XLALInitBarycenter ( earthEphem, sunEphem );
   XLAL_CHECK ( edat != NULL, XLAL_EFUNC, "XLALInitBarycenter('%s','%s') failed with xlalErrno = %d\n", earthEphem, sunEphem, xlalErrno );
 
@@ -119,12 +119,12 @@ test_XLALDopplerFstatMetric ( void )
   REAL8 Freq  = 100;
   REAL8 f1dot = 0;// -1e-8;
 
-  LALStringVector *detNames   = XLALCreateStringVector ( "H1", "L1", "V1",  NULL );
-  LALStringVector *detWeights = XLALCreateStringVector ( "1.0", "0.5", "1.5", NULL );
+  LALStringVector *detNames = XLALCreateStringVector ( "H1", "L1", "V1",  NULL );
+  LALStringVector *sqrtSX   = XLALCreateStringVector ( "1.0", "0.5", "1.5", NULL );
   MultiDetectorInfo detInfo;
-  XLAL_CHECK ( XLALParseMultiDetectorInfo ( &detInfo, detNames, detWeights ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK ( XLALParseMultiDetectorInfo ( &detInfo, detNames, sqrtSX ) == XLAL_SUCCESS, XLAL_EFUNC );
   XLALDestroyStringVector ( detNames );
-  XLALDestroyStringVector ( detWeights );
+  XLALDestroyStringVector ( sqrtSX );
 
   // prepare metric parameters for modern XLALDopplerFstatMetric() and mid-old XLALOldDopplerFstatMetric()
   DopplerCoordinateSystem coordSys = { 4, { DOPPLERCOORD_FREQ, DOPPLERCOORD_ALPHA, DOPPLERCOORD_DELTA, DOPPLERCOORD_F1DOT } };
@@ -145,7 +145,7 @@ test_XLALDopplerFstatMetric ( void )
   DopplerMetricParams pars2 = empty_DopplerMetricParams;
 
   pars2.coordSys      		= coordSys;
-  pars2.detMotionType 		= DETMOTION_SPIN_ORBIT;
+  pars2.detMotionType 		= DETMOTION_SPIN | DETMOTION_ORBIT;
   pars2.segmentList   		= segList;
   pars2.detInfo 		= detInfo;
   pars2.signalParams.Amp     	= Amp;
@@ -211,7 +211,7 @@ test_XLALDopplerFstatMetric ( void )
   XLALPrintWarning("\n---------- ROUND 2: Ptolemaic-based (single-IFO) phase-metrics ----------\n");
 
   pars0.metricType    = LAL_PMETRIC_COH_PTOLE_ANALYTIC;
-  pars2.detMotionType = DETMOTION_SPIN_PTOLEORBIT;
+  pars2.detMotionType = DETMOTION_SPIN | DETMOTION_PTOLEORBIT;
 
   // 0) compute metric using ancient LALPulsarMetric() function (used in lalapps_getMetric)
   LALPulsarMetric ( &status, &metric0, &pars0 );
@@ -239,7 +239,7 @@ test_XLALDopplerFstatMetric ( void )
 
   XLALPrintWarning("\n---------- ROUND 3: (ephemeris-base) *full* (multi-IF) F-stat metrics ----------\n");
 
-  pars2.detMotionType = DETMOTION_SPIN_ORBIT;
+  pars2.detMotionType = DETMOTION_SPIN | DETMOTION_ORBIT;
   pars2.metricType    = METRIC_TYPE_FSTAT;
   pars2.detInfo       = detInfo;	// 3 IFOs
 
@@ -260,7 +260,7 @@ test_XLALDopplerFstatMetric ( void )
 
   XLALPrintWarning("\n---------- ROUND 4: compare analytic {f,f1dot,f2dot,f3dot} phase-metric vs  XLALDopplerFstatMetric() ----------\n");
   pars2.detInfo.length  = 1;	// truncate to 1st detector
-  pars2.detMotionType   = DETMOTION_SPIN_ORBIT;
+  pars2.detMotionType   = DETMOTION_SPIN | DETMOTION_ORBIT;
   pars2.metricType      = METRIC_TYPE_PHASE;
   pars2.approxPhase     = 1;	// use same phase-approximation as in analytic solution to improve comparison
 
@@ -396,15 +396,16 @@ compare_metrics ( const gsl_matrix *g1_ij, const gsl_matrix *g2_ij )
 } /* compare_metrics() */
 
 
-/** Unit test function for XLALComputeOrbitalDerivatives()
+/**
+ * Unit test function for XLALComputeOrbitalDerivatives()
  */
 static int
 test_XLALComputeOrbitalDerivatives ( void )
 {
   // ----- load an example ephemeris, describing a pure cicular 2D
   // orbit w period of one year
-  CHAR earthEphem[] = DATADIR "circularEphem.dat";
-  CHAR sunEphem[]   = DATADIR "sun00-04.dat";
+  CHAR earthEphem[] = TEST_DATA_DIR "circularEphem.dat";
+  CHAR sunEphem[]   = TEST_DATA_DIR "sun00-19-DE405.dat";
 
   EphemerisData *edat = XLALInitBarycenter ( earthEphem, sunEphem );
   XLAL_CHECK ( edat != NULL, XLAL_EFUNC, "XLALInitBarycenter('%s','%s') failed with xlalErrno = %d\n", earthEphem, sunEphem, xlalErrno );

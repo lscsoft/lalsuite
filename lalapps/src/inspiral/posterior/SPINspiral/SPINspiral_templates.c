@@ -42,7 +42,7 @@
 // ****************************************************************************************************************************************************  
 /**
  * \brief Compute an inspiral waveform
- * 
+ *
  * Compute an inspiral waveform template.
  * waveformVersion determines the template to use.
  * injectionWF indicates whether this is an injection waveform (1) or not (0).
@@ -123,7 +123,7 @@ void waveformTemplate(struct parSet *par, struct interferometer *ifo[], int ifon
 // ****************************************************************************************************************************************************  
 /**
  * \brief Compute an Apostolatos, 12-parameter, single spin, simple-precession waveform
- * 
+ *
  * Compute a spinning, 'simple-precession' template in restricted 1.5PN order with 1 spin (Apostolatos et al., 1994, PhRvD..49.6274A).
  * The output vector ifo[ifonr]->FTin is of length ifo[ifonr]->samplesize,  starting at 'tstart'(?) and with resolution ifo[ifonr]->samplerate.
  */
@@ -444,10 +444,10 @@ void templateApostolatos(struct parSet *par, struct interferometer *ifo[], int i
 // ****************************************************************************************************************************************************  
 /**
  * \brief Calculate the local parameters from the global parameters
- * 
+ *
  * Calculate the local (i.e. in the detector frame) parameters from the global parameters.
- *    par   :  pointer to parameter set (struct)
- *    ifo   :  pointer to interferometer data (struct)
+ * par   :  pointer to parameter set (struct)
+ * ifo   :  pointer to interferometer data (struct)
  */
 // ****************************************************************************************************************************************************  
 void localPar(struct parSet *par, struct interferometer *ifo[], int networkSize, int injectionWF, struct runPar run)

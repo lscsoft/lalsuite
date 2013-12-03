@@ -1,4 +1,5 @@
 EXTRA_DIST = \
+	compile \
 	config.guess \
 	config.sub \
 	cuda.common \

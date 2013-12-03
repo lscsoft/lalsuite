@@ -28,76 +28,77 @@ extern "C" {
 
 
 /**
-   \addtogroup Integrate_h
-
-   \brief Integrates a function.
-
-   \heading{Synopsis}
-   \code
-   #include <lal/Integrate.h>
-   \endcode
-
-   This header covers the routines for integrating a function.
-
-\heading{Description}
-
-The routine \c LALSRombergIntegrate() performs the integral specified by the
-structure \c input and the result is returned as \c result.  Any
-additional parameters (other than the integration variable \f$x\f$) can be passed
-as \c params.  The routine \c LALSRombergIntegrate() does not use
-\c params but just passes it to the integrand.  The routine
-\c LALDRombergIntegrate() is the same but for double precision.
-
-\heading{Operating Instructions}
-
-The following program performs the integral \f$\int_0^2F(x)dx\f$ where
-\f$F(x)=x^4\log(x+\sqrt{x^2+1})\f$.
-
-\code
-#include <math.h>
-#include <lal/LALStdlib.h>
-#include <lal/Integrate.h>
-
-static void F( LALStatus *s, REAL4 *y, REAL4 x, void *p )
-{
-  REAL4 x2 = x*x;
-  REAL4 x4 = x2*x2;
-  INITSTATUS(s);
-  ASSERT( !p, s, 1, "Non-null pointer" );
-  *y = x4 * log( x + sqrt( x2 + 1 ) );
-  RETURN( s );
-}
-
-int main ()
-{
-  const REAL4       epsilon = 1e-6;
-  const long double expect  = 8.153364119811650205L;
-  static LALStatus  status;
-  SIntegrateIn      intinp;
-  REAL4             result;
-
-  intinp.function = F;
-  intinp.xmin     = 0;
-  intinp.xmax     = 2;
-  intinp.type     = ClosedInterval;
-
-  LALSRombergIntegrate( &status, &result, &intinp, NULL );
-  if ( fabs( result - expect ) > epsilon * fabs( expect ) )
-  {
-    // integration did not achieve desired accuracy --- exit failure
-    return 1;
-  }
-
-  return 0;
-}
-\endcode
-
-\heading{Algorithm}
-
-This is an implementation of the Romberg integrating function \c qromb in
-Numerical Recipes [\ref ptvf1992].
-
-*/
+ * \addtogroup Integrate_h
+ *
+ * \brief Integrates a function.
+ *
+ * ### Synopsis ###
+ *
+ * \code
+ * #include <lal/Integrate.h>
+ * \endcode
+ *
+ * This header covers the routines for integrating a function.
+ *
+ * ### Description ###
+ *
+ * The routine \c LALSRombergIntegrate() performs the integral specified by the
+ * structure \c input and the result is returned as \c result.  Any
+ * additional parameters (other than the integration variable \f$x\f$) can be passed
+ * as \c params.  The routine \c LALSRombergIntegrate() does not use
+ * \c params but just passes it to the integrand.  The routine
+ * \c LALDRombergIntegrate() is the same but for double precision.
+ *
+ * ### Operating Instructions ###
+ *
+ * The following program performs the integral \f$\int_0^2F(x)dx\f$ where
+ * \f$F(x)=x^4\log(x+\sqrt{x^2+1})\f$.
+ *
+ * \code
+ * #include <math.h>
+ * #include <lal/LALStdlib.h>
+ * #include <lal/Integrate.h>
+ *
+ * static void F( LALStatus *s, REAL4 *y, REAL4 x, void *p )
+ * {
+ * REAL4 x2 = x*x;
+ * REAL4 x4 = x2*x2;
+ * INITSTATUS(s);
+ * ASSERT( !p, s, 1, "Non-null pointer" );
+ * y = x4 * log( x + sqrt( x2 + 1 ) );
+ * RETURN( s );
+ * }
+ *
+ * int main ()
+ * {
+ * const REAL4       epsilon = 1e-6;
+ * const long double expect  = 8.153364119811650205L;
+ * static LALStatus  status;
+ * SIntegrateIn      intinp;
+ * REAL4             result;
+ *
+ * intinp.function = F;
+ * intinp.xmin     = 0;
+ * intinp.xmax     = 2;
+ * intinp.type     = ClosedInterval;
+ *
+ * LALSRombergIntegrate( &status, &result, &intinp, NULL );
+ * if ( fabs( result - expect ) > epsilon * fabs( expect ) )
+ * {
+ * // integration did not achieve desired accuracy --- exit failure
+ * return 1;
+ * }
+ *
+ * return 0;
+ * }
+ * \endcode
+ *
+ * ### Algorithm ###
+ *
+ * This is an implementation of the Romberg integrating function \c qromb in
+ * Numerical Recipes \cite ptvf1992.
+ *
+ */
 /*@{*/
 
 /** \name Error Codes */
@@ -115,34 +116,35 @@ Numerical Recipes [\ref ptvf1992].
 #define INTEGRATEH_MSGEMXIT "Maximum iterations exceeded"
 /** \endcond */
 
-/** Type of integral.
-  The types of integration are the following:
-
-  I. \c #ClosedInterval
-  indicates that the integral should be computed on equal-spaced domain
-  intervals including the boundary.
-
-  II. \c #OpenInterval indicates that
-  the integral should be computed on intervals of the domain not including the
-  boundary.
-
-  III. \c #SingularLowerLimit indicates that the integral
-  should be evaluated on an open interval with a transformation so that a
-  inverse-square-root singularity at the lower limit can be integrated.
-
-  IV. \c #SingularUpperLimit is the same as above but for a singularity at the
-  upper limit.
-
-  V. \c #InfiniteDomainPow indicates that the integral
-  should be evaluated over an semi-infinite domain---appropriate when both
-  limits have the same sign (though one is very large) and when the integrand
-  vanishes faster than \f$x^{-1}\f$ at infinity.
-
-  VI. \c #InfiniteDomainExp
-  indicates that the integral should be evaluated over an infinite domain
-  starting at \c xmin and going to infinity (\c xmax is ignored)---the
-  integrand should vanish exponentially for large \f$x\f$.
-*/
+/**
+ * Type of integral.
+ * The types of integration are the following:
+ *
+ * I. \c #ClosedInterval
+ * indicates that the integral should be computed on equal-spaced domain
+ * intervals including the boundary.
+ *
+ * II. \c #OpenInterval indicates that
+ * the integral should be computed on intervals of the domain not including the
+ * boundary.
+ *
+ * III. \c #SingularLowerLimit indicates that the integral
+ * should be evaluated on an open interval with a transformation so that a
+ * inverse-square-root singularity at the lower limit can be integrated.
+ *
+ * IV. \c #SingularUpperLimit is the same as above but for a singularity at the
+ * upper limit.
+ *
+ * V. \c #InfiniteDomainPow indicates that the integral
+ * should be evaluated over an semi-infinite domain---appropriate when both
+ * limits have the same sign (though one is very large) and when the integrand
+ * vanishes faster than \f$x^{-1}\f$ at infinity.
+ *
+ * VI. \c #InfiniteDomainExp
+ * indicates that the integral should be evaluated over an infinite domain
+ * starting at \c xmin and going to infinity (\c xmax is ignored)---the
+ * integrand should vanish exponentially for large \f$x\f$.
+ */
 typedef enum
 {
   ClosedInterval,     /**< evaluate integral on a closed interval             */

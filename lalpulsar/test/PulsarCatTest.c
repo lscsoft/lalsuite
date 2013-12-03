@@ -18,120 +18,120 @@
 */
 
 /**
-\author Creighton, T. D.
-\file
-\ingroup pulsarTODO
-
-\heading{Program \ref PulsarCatTest.c}
-\latexonly\label{ss_PulsarCatTest_c}\endlatexonly
-
-Tests routines to manipulate pulsar data.
-
-\heading{Usage}
-\code
-PulsarCatTest [-p posepoch ra dec pmra pmdec] [-l site earthfile sunfile] [-h]
-              [-t newepoch] [-i infile] [-o outfile] [-d debuglevel]
-              [fepoch f0 [f1 ...]]
-\endcode
-
-\heading{Description}
-
-This program reads in or randomly generates pulsar parameters, stores
-them in a pulsar catalogue structure, and manipulates them based on
-command-line arguments.  The following option flags are accepted (in
-any order):
-<ul>
-<li>[<tt>-p</tt>] The pulsar position at time \c posepoch is set
-to \c ra radians right ascension and \c dec radians
-declination, with proper motions of \c pmra and \c pmdec
-radians per second, respectively.  See below for parsing formats for
-\c posepoch.  If the <tt>-p</tt> option is not specified, a random
-source position is generated.</li>
-<li>[<tt>-l</tt>] Sets the detector location.  \c site must be
-one of the following character strings: \c LHO, \c LLO,
-\c VIRGO, \c GEO600, \c TAMA300, or \c CIT40.
-\c earthfile and \c sunfile are ephemeris files of the format
-expected by <tt>LALInitBarycenter()</tt>.  If the <tt>-l</tt> option is
-not specified, the detector is placed at the solar system barycentre.</li>
-<li>[<tt>-h</tt>] Prints usage information and then exits.</li>
-<li>[<tt>-t</tt>] Sets the new epoch to which the pulsar data will be
-updated.  See below for parsing formats for \c newepoch.  If the
-<tt>-t</tt> option is not given, <tt>-t J2000.0</tt> is assumed.</li>
-<li>[<tt>-i</tt>] Reads the pulsar data from the file \c infile,
-whose format is described below.  This overrides the position and spin
-information read from the command line.  If the name \c stdin is
-given, it will read from standard input, \e not from a file named
-\c stdin.</li>
-<li>[<tt>-o</tt>] Writes the pulsar data to the file \c outfile.
-If the name \c stdout or \c stderr is given, it will write to
-standard output or standard error (respectively), \e not to a file
-named \c stdout or \c stderr.  If the <tt>-o</tt> option is not
-given, the routines are exercised, but no output is written.</li>
-<li>[<tt>-d</tt>] Sets the debug level to \c debuglevel.  If
-absent, level 0 is assumed.</li>
-</ul>
-
-Once all valid options are read, the remaining command-line arguments
-are taken to be the epoch \c fepoch at which the pulsar spin
-frequency \c f (in Hz) was measured, plus zero or more frequency
-derivatives \c f1\f$\ldots\f$ (in Hz\f${}^{k+1}\f$ for the \f$k^\mathrm{th}\f$
-derivative).  If no additional arguments are given, spin timing
-information will be omitted.
-
-Meaurement epoch \c posepoch, \c newepoch, and \c fepoch
-may be specified either as a \c REAL8 Julian epoch preceded by a
-\c J character (e.g.\ <tt>JD2000.0</tt>), a \c REAL8 number of
-Julian days preceded by \c JD (e.g.\ <tt>JD2451545.0</tt>), or as an
-\c INT8 number of GPS nanoseconds with no prefix (e.g.\
-\c 630763213000000000).  Note that the preceding examples all
-refer to noon UTC, January 1, 2000.  Also, note that each Julian epoch
-is assumed to be exactly 365.25 Julian days, so J2001.0 corresponds to
-18:00 UTC, January 1, 2001.
-
-If an input file is specified, it should consist of a header line
-that, when tokenized, can be parsed by <tt>LALReadPulsarCatHead()</tt>,
-followed by one or more lines of pulsar data parseable (when
-tokenized) by <tt>LALReadPulsarCatLine()</tt>.  Blank lines (with no
-tokens) or divider lines (with only one token) will be skipped.
-
-
-\heading{Algorithm}
-
-This routine simply parses the input arguments, stuffs the data into a
-\c PulsarCatNode structure, and then calls
-<tt>LAUpdatePulsarCatNode()</tt> to update it to the new epoch.
-
-If the <tt>-i</tt> option is given, the corresponding file is opened and
-read by <tt>LALCHARReadVectorSequence()</tt>, then each line is
-tokenized by <tt>LALCreateTokenList()</tt>.
-
-Output via the <tt>-o</tt> option is in a custom human-readable format,
-which should be easy to figure out.
-
-\heading{Uses}
-\code
-lalDebugLevel
-LALPrintError()                 LALCheckMemoryLeaks()
-LALMalloc()                     LALFree()
-LALDCreateVector()              LALDDestroyVector()
-LALCreateRandomParams()         LALDestroyRandomParams()
-LALUniformDeviate()             LALInitBarycenter()
-LALCHARReadVectorSequence()     LALCHARDestroyVectorSequence()
-LALCreateTokenList()            LALDestroyTokenList()
-LALReadPulsarCatHead()          LALReadPulsarCatLine()
-LALStringToD()                  LALStringToI8()
-XLALGPSLeapSeconds()            LALUpdatePulsarCat()
-snprintf()
-\endcode
-
-\heading{Notes}
-
-At present the routine is kludged up to ignore pulsar position and
-frequency information from the command line, using hardwired
-parameters for PSR\ J0034-0534 instead.  It can still override
-this with the <tt>-i</tt> option.
-
-*/
+ * \author Creighton, T. D.
+ * \file
+ * \ingroup pulsarTODO
+ *
+ * ### Program PulsarCatTest.c ###
+ *
+ * Tests routines to manipulate pulsar data.
+ *
+ * ### Usage ###
+ *
+ * \code
+ * PulsarCatTest [-p posepoch ra dec pmra pmdec] [-l site earthfile sunfile] [-h]
+ * [-t newepoch] [-i infile] [-o outfile] [-d debuglevel]
+ * [fepoch f0 [f1 ...]]
+ * \endcode
+ *
+ * ### Description ###
+ *
+ * This program reads in or randomly generates pulsar parameters, stores
+ * them in a pulsar catalogue structure, and manipulates them based on
+ * command-line arguments.  The following option flags are accepted (in
+ * any order):
+ * <ul>
+ * <li>[<tt>-p</tt>] The pulsar position at time \c posepoch is set
+ * to \c ra radians right ascension and \c dec radians
+ * declination, with proper motions of \c pmra and \c pmdec
+ * radians per second, respectively.  See below for parsing formats for
+ * \c posepoch.  If the <tt>-p</tt> option is not specified, a random
+ * source position is generated.</li>
+ * <li>[<tt>-l</tt>] Sets the detector location.  \c site must be
+ * one of the following character strings: \c LHO, \c LLO,
+ * \c VIRGO, \c GEO600, \c TAMA300, or \c CIT40.
+ * \c earthfile and \c sunfile are ephemeris files of the format
+ * expected by <tt>LALInitBarycenter()</tt>.  If the <tt>-l</tt> option is
+ * not specified, the detector is placed at the solar system barycentre.</li>
+ * <li>[<tt>-h</tt>] Prints usage information and then exits.</li>
+ * <li>[<tt>-t</tt>] Sets the new epoch to which the pulsar data will be
+ * updated.  See below for parsing formats for \c newepoch.  If the
+ * <tt>-t</tt> option is not given, <tt>-t J2000.0</tt> is assumed.</li>
+ * <li>[<tt>-i</tt>] Reads the pulsar data from the file \c infile,
+ * whose format is described below.  This overrides the position and spin
+ * information read from the command line.  If the name \c stdin is
+ * given, it will read from standard input, \e not from a file named
+ * \c stdin.</li>
+ * <li>[<tt>-o</tt>] Writes the pulsar data to the file \c outfile.
+ * If the name \c stdout or \c stderr is given, it will write to
+ * standard output or standard error (respectively), \e not to a file
+ * named \c stdout or \c stderr.  If the <tt>-o</tt> option is not
+ * given, the routines are exercised, but no output is written.</li>
+ * <li>[<tt>-d</tt>] Sets the debug level to \c debuglevel.  If
+ * absent, level 0 is assumed.</li>
+ * </ul>
+ *
+ * Once all valid options are read, the remaining command-line arguments
+ * are taken to be the epoch \c fepoch at which the pulsar spin
+ * frequency \c f (in Hz) was measured, plus zero or more frequency
+ * derivatives \c f1\f$\ldots\f$ (in Hz\f${}^{k+1}\f$ for the \f$k^\mathrm{th}\f$
+ * derivative).  If no additional arguments are given, spin timing
+ * information will be omitted.
+ *
+ * Meaurement epoch \c posepoch, \c newepoch, and \c fepoch
+ * may be specified either as a \c REAL8 Julian epoch preceded by a
+ * \c J character (e.g.\ <tt>JD2000.0</tt>), a \c REAL8 number of
+ * Julian days preceded by \c JD (e.g.\ <tt>JD2451545.0</tt>), or as an
+ * \c INT8 number of GPS nanoseconds with no prefix (e.g.\
+ * \c 630763213000000000).  Note that the preceding examples all
+ * refer to noon UTC, January 1, 2000.  Also, note that each Julian epoch
+ * is assumed to be exactly 365.25 Julian days, so J2001.0 corresponds to
+ * 18:00 UTC, January 1, 2001.
+ *
+ * If an input file is specified, it should consist of a header line
+ * that, when tokenized, can be parsed by <tt>LALReadPulsarCatHead()</tt>,
+ * followed by one or more lines of pulsar data parseable (when
+ * tokenized) by <tt>LALReadPulsarCatLine()</tt>.  Blank lines (with no
+ * tokens) or divider lines (with only one token) will be skipped.
+ *
+ * ### Algorithm ###
+ *
+ * This routine simply parses the input arguments, stuffs the data into a
+ * \c PulsarCatNode structure, and then calls
+ * <tt>LAUpdatePulsarCatNode()</tt> to update it to the new epoch.
+ *
+ * If the <tt>-i</tt> option is given, the corresponding file is opened and
+ * read by <tt>LALCHARReadVectorSequence()</tt>, then each line is
+ * tokenized by <tt>LALCreateTokenList()</tt>.
+ *
+ * Output via the <tt>-o</tt> option is in a custom human-readable format,
+ * which should be easy to figure out.
+ *
+ * ### Uses ###
+ *
+ * \code
+ * lalDebugLevel
+ * LALPrintError()                 LALCheckMemoryLeaks()
+ * LALMalloc()                     LALFree()
+ * LALDCreateVector()              LALDDestroyVector()
+ * LALCreateRandomParams()         LALDestroyRandomParams()
+ * LALUniformDeviate()             LALInitBarycenter()
+ * LALCHARReadVectorSequence()     LALCHARDestroyVectorSequence()
+ * LALCreateTokenList()            LALDestroyTokenList()
+ * LALReadPulsarCatHead()          LALReadPulsarCatLine()
+ * LALStringToD()                  LALStringToI8()
+ * XLALGPSLeapSeconds()            LALUpdatePulsarCat()
+ * snprintf()
+ * \endcode
+ *
+ * ### Notes ###
+ *
+ * At present the routine is kludged up to ignore pulsar position and
+ * frequency information from the command line, using hardwired
+ * parameters for PSR\ J0034-0534 instead.  It can still override
+ * this with the <tt>-i</tt> option.
+ *
+ */
 
 /** \name Error Codes */ /*@{*/
 #define PULSARCATTESTC_ENORM 0
@@ -165,7 +165,6 @@ this with the <tt>-i</tt> option.
 #include <lal/PulsarCat.h>
 
 /* Default parameter settings. */
-extern int lalDebugLevel;
 #define J2000GPS 630763213 /* J2000.0 epoch in GPS seconds */
 #define J2000JD    2451545 /* J2000.0 epoch in Julian days */
 
@@ -272,7 +271,6 @@ main(int argc, char **argv)
   LALPlaceAndGPS detectorTime; /* epoch and detector site */
   EphemerisData *edat = NULL;  /* detector ephemerides */
 
-  lalDebugLevel = 0;
 
   /* First set up some defaults. */
   memset( &node, 0, sizeof(PulsarCatNode) );
@@ -357,7 +355,6 @@ main(int argc, char **argv)
     else if ( !strcmp( argv[arg], "-d" ) ) {
       if ( argc > arg + 1 ) {
 	arg++;
-	lalDebugLevel = atoi( argv[arg++] );
       } else {
 	ERROR( PULSARCATTESTC_EARG, PULSARCATTESTC_MSGEARG, 0 );
         XLALPrintError( USAGE, *argv );
@@ -452,6 +449,7 @@ main(int argc, char **argv)
     SUB( ParseEpoch( &stat, &(node.fepoch), "JD2449550.0" ), &stat ); */
   }
 
+  LALDetector *lsite = NULL;
   /* If the detector was specified, set up the detector position. */
   if ( site ) {
     UINT4 i; /* site index */
@@ -474,13 +472,13 @@ main(int argc, char **argv)
 	XLALPrintError( "%s", site );
       return PULSARCATTESTC_EVAL;
     }
-    detectorTime.p_detector =
-      (LALDetector *)LALMalloc( sizeof(LALDetector) );
-    if ( !(detectorTime.p_detector) ) {
+    lsite = (LALDetector *)LALMalloc( sizeof(LALDetector) );
+    if ( !(lsite) ) {
       ERROR( PULSARCATTESTC_EMEM, PULSARCATTESTC_MSGEMEM, 0 );
       return PULSARCATTESTC_EMEM;
     }
-    *(detectorTime.p_detector) = lalCachedDetectors[i];
+    *(lsite) = lalCachedDetectors[i];
+    detectorTime.p_detector = lsite;
 
     /* Read ephemerides. */
     edat = (EphemerisData *)LALMalloc( sizeof(EphemerisData) );
@@ -709,8 +707,8 @@ main(int argc, char **argv)
       LALFree( edat->ephemS );
     LALFree( edat );
   }
-  if ( detectorTime.p_detector )
-    LALFree( detectorTime.p_detector );
+  if ( lsite )
+    LALFree( lsite );
 
   /* Done! */
   LALCheckMemoryLeaks();

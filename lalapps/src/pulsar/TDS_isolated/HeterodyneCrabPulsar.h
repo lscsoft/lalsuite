@@ -18,23 +18,24 @@
 */
 
 /**
-	 \author Pitkin, M. D.
-
-	 \heading{Header \ref HeterodyneCrabPulsar.h}
-
-	 Calculates and heterodynes the timing noise component of the Crab pulsar
-	 phase.
-
-	 \heading{Synopsis}
-	 \code
-	 #include <lal/HeterodyneCrabPulsar.h>
-	 \endcode
-
-	 This header covers routines for reading in the Crab pulsar
-	 ephemeris, calculating the spline interpolation of the phase between
-	 ephemeris points and heterodyning data to remove the phase difference caused
-	 by timing noise.
-*/
+ * \author Pitkin, M. D.
+ *
+ * ### Header HeterodyneCrabPulsar.h ###
+ *
+ * Calculates and heterodynes the timing noise component of the Crab pulsar
+ * phase.
+ *
+ * ### Synopsis ###
+ *
+ * \code
+ * #include <lal/HeterodyneCrabPulsar.h>
+ * \endcode
+ *
+ * This header covers routines for reading in the Crab pulsar
+ * ephemeris, calculating the spline interpolation of the phase between
+ * ephemeris points and heterodyning data to remove the phase difference caused
+ * by timing noise.
+ */
 	 
 /* Matt Pitkin 10/03/04 - TNHeterodyne struct changed */
 
@@ -83,56 +84,57 @@ extern "C" {
 /*@}*/
 
 /**
-	 \heading{Structures}
-
-	 \code
-	 typedef struct tagGetCrabEphemerisInput GetCrabEphemerisInput;
-	 \endcode
-
-	 This structure contains the file name of the Crab ephemeris, nominally
-	 <tt>crab_ephemeris.txt</tt>.
-
-	 \code
-	 typedef struct tagCrabSpindownParamsInput CrabSpindownParamsInput;
-	 \endcode
-
-	 This structure contains vectors of the values of time of arrival, \f$f_0\f$ (Hz)
-	 and \f$\dot{f_0} (10^{-10}\,\mathrm{Hz}^2)\f$ extracted from the Crab ephemeris
-	 file.
-
-	 \code
-	 typedef struct tagCrabSpindownParamsOutput CrabSpindownParamsOutput;
-	 \endcode
-
-	 This structure contains vectors of the values of time of arrival, \f$f_0\f$ (Hz)
-	 and \f$\dot{f_0} (\mathrm{Hz}^2)\f$ from the ephemeris file and values
-	 of \f$f\f$ time derivatives up to fourth order interpolated from the ephemeris
-	 values.
-
-	 \code
-	 typedef struct tagParamsForHeterodyne ParamsForHeterodyne;
-	 \endcode
-
-	 This structure contains the single values of \f$f\f$ and its time derivative up
-	 to fourth order and their epoch.
-
-	 \code
-	 typedef struct tagTNHeterodyneInput TNHeterodyneInput;
-	 \endcode
-
-	 This structure contains values of \f$f\f$, \f$\dot{f}\f$ and \f$\ddot{f}\f$ used in the
-	 initial Crab heterodyne, the complex heterodyned data point, the epoch of the
-	 intial heterodyne parameters \f$t_0\f$, and the \c LIGOTimeGPS time of the
-	 data point.
-
-	 \code
-	 typedef struct tagTNHeterodyneOutput TNHeterodyneOutput;
-	 \endcode
-
-	 This structure contains the final complex heterodyned output and the phase
-	 difference between the initial heterodyne and the timing noise heterodyne.
-
-*/
+ *
+ * ### Structures ###
+ *
+ * \code
+ * typedef struct tagGetCrabEphemerisInput GetCrabEphemerisInput;
+ * \endcode
+ *
+ * This structure contains the file name of the Crab ephemeris, nominally
+ * <tt>crab_ephemeris.txt</tt>.
+ *
+ * \code
+ * typedef struct tagCrabSpindownParamsInput CrabSpindownParamsInput;
+ * \endcode
+ *
+ * This structure contains vectors of the values of time of arrival, \f$f_0\f$ (Hz)
+ * and \f$\dot{f_0} (10^{-10}\,\mathrm{Hz}^2)\f$ extracted from the Crab ephemeris
+ * file.
+ *
+ * \code
+ * typedef struct tagCrabSpindownParamsOutput CrabSpindownParamsOutput;
+ * \endcode
+ *
+ * This structure contains vectors of the values of time of arrival, \f$f_0\f$ (Hz)
+ * and \f$\dot{f_0} (\mathrm{Hz}^2)\f$ from the ephemeris file and values
+ * of \f$f\f$ time derivatives up to fourth order interpolated from the ephemeris
+ * values.
+ *
+ * \code
+ * typedef struct tagParamsForHeterodyne ParamsForHeterodyne;
+ * \endcode
+ *
+ * This structure contains the single values of \f$f\f$ and its time derivative up
+ * to fourth order and their epoch.
+ *
+ * \code
+ * typedef struct tagTNHeterodyneInput TNHeterodyneInput;
+ * \endcode
+ *
+ * This structure contains values of \f$f\f$, \f$\dot{f}\f$ and \f$\ddot{f}\f$ used in the
+ * initial Crab heterodyne, the complex heterodyned data point, the epoch of the
+ * intial heterodyne parameters \f$t_0\f$, and the \c LIGOTimeGPS time of the
+ * data point.
+ *
+ * \code
+ * typedef struct tagTNHeterodyneOutput TNHeterodyneOutput;
+ * \endcode
+ *
+ * This structure contains the final complex heterodyned output and the phase
+ * difference between the initial heterodyne and the timing noise heterodyne.
+ *
+ */
 
 /* define new structures and type for crab ephemeris reading - to be put in header file later */
 typedef struct

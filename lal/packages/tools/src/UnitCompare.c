@@ -24,11 +24,12 @@
 #include <lal/Units.h>
 #include <lal/XLALError.h>
 
-/** \addtogroup UnitCompare_c
-    \author J. T. Whelan <john.whelan@ligo.org>
-
-    \brief Function to compare two \c LALUnit structures.
-*/
+/**
+ * \addtogroup UnitCompare_c
+ * \author J. T. Whelan <john.whelan@ligo.org>
+ *
+ * \brief Function to compare two \c LALUnit structures.
+ */
 /*@{*/
 
 /** Return 1 if a unit is dimensionless, 0 otherwise */
@@ -82,7 +83,7 @@ REAL8 XLALUnitRatio(const LALUnit *unit1, const LALUnit *unit2)
  * Example:
  * \code
  * if(XLALUnitCompare(&unit1, &unit2)) {
- * 	units_are_not_equal();
+ *   units_are_not_equal();
  * }
  * \endcode
  */
@@ -116,20 +117,22 @@ int XLALUnitCompare( const LALUnit *unit1, const LALUnit *unit2 )
   return 0;
 }
 
-/** Compare two units structures, returning true if they are equivalent, false otherwise.
+/**
+ * Compare two units structures, returning true if they are equivalent, false otherwise.
  * This function determines whether the units represented by
  * <tt>*(input->unitOne)</tt> and <tt>*(input->unitTwo)</tt> are the same (both
  * dimensionally and in the power-of-ten prefactor).  In this way,
  * programs and programmers can verify that quantities have the expected
  * units.
  *
- * \heading{Algorithm}
+ * ### Algorithm ###
  *
  * The function first uses <tt>LALUnitNormalize()</tt> to bring both unit
  * structures into standard form, then compares the powers of ten and the
  * numerator and denominator of each exponent of a fundamental unit in
  * turn.
- * \heading{Uses}
+ *
+ * ### Uses ###
  *
  * <tt>LALUnitNormalize()</tt>
  *
@@ -146,7 +149,7 @@ LALUnitCompare (LALStatus *status, BOOLEAN *output, const LALUnitPair *input)
   ASSERT( input != NULL, status, UNITSH_ENULLPIN, UNITSH_MSGENULLPIN );
 
   ASSERT( output != NULL, status, UNITSH_ENULLPOUT, UNITSH_MSGENULLPOUT );
-  XLALPrintDeprecationWarning( "LALUnitCompare", "XLALUnitCompare" );
+  XLAL_PRINT_DEPRECATION_WARNING("XLALUnitCompare");
 
   code = XLALUnitCompare( input->unitOne, input->unitTwo );
   if ( code < 0 )

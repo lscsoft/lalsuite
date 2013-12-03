@@ -107,7 +107,6 @@ main (INT4 argc, CHAR **argv )
   /* --- Some initialization --- */
 
   lal_errhandler = LAL_ERR_EXIT;
-  lalDebugLevel = 0;
 
   templateBank.snglInspiralTable = NULL;
 
@@ -2731,9 +2730,9 @@ LALCreateRealPsd(LALStatus *status,
 
 
   /* frame input data */
-  FrCache      *frInCache = NULL;
-  FrCache      *calCache = NULL;
-  FrStream     *frStream = NULL;
+  LALCache     *frInCache = NULL;
+  LALCache     *calCache = NULL;
+  LALFrStream     *frStream = NULL;
   FrChanIn      frChan;
   CHAR tmpChName[LALNameLength];
 
@@ -2911,15 +2910,14 @@ LALCreateRealPsd(LALStatus *status,
     fprintf( stdout,  "reading frame file locations from cache file: %s\n", frInCacheName );
 
   /* read a frame cache from the specified file */
-  LAL_CALL( LALFrCacheImport( status->statusPtr, &frInCache,
-			      frInCacheName), status->statusPtr );
+  frInCache = XLALCacheImport(frInCacheName);
 
 
   /* open the input data frame stream from the frame cache */
   LAL_CALL( LALFrCacheOpen( status->statusPtr, &frStream,frInCache ), status->statusPtr );
 
   /* set the mode of the frame stream to fail on gaps or time errors */
-  frStream->mode = LAL_FR_VERBOSE_MODE;
+  frStream->mode = LAL_FR_STREAM_VERBOSE_MODE;
 
   /* seek to required epoch and set chan name */
   LAL_CALL( LALFrSeek( status->statusPtr, &(chan.epoch), frStream ), status->statusPtr );
@@ -3064,7 +3062,7 @@ LALCreateRealPsd(LALStatus *status,
   LAL_CALL( LALFrClose( status->statusPtr, &frStream ), status->statusPtr );
 
 
-  LAL_CALL( LALDestroyFrCache( status->statusPtr, &frInCache ), status->statusPtr );
+  XLALDestroyCache( frInCache );
 
 
   if ( vrbflg ) fprintf( stdout, "read channel %s from frame stream\n"
@@ -3212,7 +3210,7 @@ LALCreateRealPsd(LALStatus *status,
     LAL_CALL( LALExtractFrameResponse( status->statusPtr, &resp, calCache,
 				       &calfacts), status->statusPtr );
 
-    LAL_CALL( LALDestroyFrCache( status->statusPtr, &calCache), status->statusPtr );
+    XLALDestroyCache(calCache);
     if ( vrbflg ) fprintf( stdout,
 			   "for calibration of data, alpha = %f and alphabeta = %f\n",
 			   (REAL4) calfacts.alpha.re, (REAL4) calfacts.alphabeta.re);
@@ -3329,7 +3327,7 @@ LALCreateRealPsd(LALStatus *status,
                 &inj_calfacts ), status->statusPtr );
 
 
-	  LAL_CALL( LALDestroyFrCache( status->statusPtr, &calCache), status->statusPtr );
+	  XLALDestroyCache(calCache);
 
 
           injRespPtr = &injResp;

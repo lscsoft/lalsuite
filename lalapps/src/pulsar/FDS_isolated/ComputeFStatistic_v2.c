@@ -23,19 +23,19 @@
  */
 
 /*********************************************************************************/
-/** \author R. Prix, I. Gholami, Y. Ioth, Papa, X. Siemens, C. Messenger, K. Wette
+/**
+ * \author R. Prix, I. Gholami, Y. Ioth, Papa, X. Siemens, C. Messenger, K. Wette
  * \file
  * \ingroup pulsarApps
  * \brief
  * Calculate the F-statistic for a given parameter-space of pulsar GW signals.
- * Implements the so-called "F-statistic" as introduced in \ref JKS98.
+ * Implements the so-called "F-statistic" as introduced in \cite JKS98.
  *
  * This code is a descendant of an earlier implementation 'ComputeFStatistic.[ch]'
  * by Bruce Allen, Bernd Machenschalk, David Hammer, Jolien Creighton, Maria Alessandra Papa,
  * Reinhard Prix, Xavier Siemens, Scott Koranda, Yousuke Itoh
  *
- *
- *********************************************************************************/
+ */
 #include "config.h"
 
 /* System includes */
@@ -82,7 +82,7 @@ int finite(double);
 
 #define MAXFILENAMELENGTH 256   /* Maximum # of characters of a SFT filename */
 
-#define EPHEM_YEARS  "00-04"	/**< default range: override with --ephemYear */
+#define EPHEM_YEARS  "00-19-DE405"	/**< default range: override with --ephemYear */
 
 #define TRUE (1==1)
 #define FALSE (1==0)
@@ -128,7 +128,8 @@ typedef struct {
   REAL4 LVstat;				/**< Line Veto statistic */
 } FstatCandidate;
 
-/** moving 'Scanline window' of candidates on the scan-line,
+/**
+ * moving 'Scanline window' of candidates on the scan-line,
  * which is used to find local 1D maxima.
  */
 typedef struct
@@ -138,7 +139,8 @@ typedef struct
   FstatCandidate *center;		/**< pointer to middle candidate in window */
 } scanlineWindow_t;
 
-/** Struct holding various timing measurements and relevant search parameters.
+/**
+ * Struct holding various timing measurements and relevant search parameters.
  * This is used to fit timing-models with measured times to predict search run-times
  */
 typedef struct
@@ -157,7 +159,8 @@ typedef struct
   REAL8 tauTransMarg;		/**< time to marginalize the Fstat-map to compute transient-search Bayes [s] */
 } timingInfo_t;
 
-/** Enum for which statistic is used to "rank" significance of candidates
+/**
+ * Enum for which statistic is used to "rank" significance of candidates
  */
 typedef enum {
   RANKBY_F  = 0, 	/**< rank candidates by F-statistic */
@@ -166,7 +169,8 @@ typedef enum {
 } RankingStat_t;
 
 
-/** Configuration settings required for and defining a coherent pulsar search.
+/**
+ * Configuration settings required for and defining a coherent pulsar search.
  * These are 'pre-processed' settings, which have been derived from the user-input.
  */
 typedef struct {
@@ -188,8 +192,8 @@ typedef struct {
   CHAR *VCSInfoString;                      /**< LAL + LALapps Git version string */
   CHAR *logstring;                          /**< log containing max-info on the whole search setup */
   transientWindowRange_t transientWindowRange; /**< search range parameters for transient window */
-  REAL4 LVlogRhoTerm;                       /**< log(rho^4/70) of LV line-prior amplitude 'rho' */
-  REAL4Vector *LVloglX;                     /**< vector of line-prior ratios per detector {l1, l2, ... } */
+  REAL8 LVlogRhoTerm;                       /**< log(rho^4/70) of LV line-prior amplitude 'rho' */
+  REAL8Vector *LVloglX;                     /**< vector of line-prior ratios per detector {l1, l2, ... } */
   RankingStat_t RankingStatistic;           /**< rank candidates according to F or LV */
 } ConfigVariables;
 
@@ -294,6 +298,7 @@ typedef struct {
 
   CHAR *outputFstatAtoms;	/**< output per-SFT, per-IFO 'atoms', ie quantities required to compute F-stat */
 
+  BOOLEAN outputSingleFstats;	/**< in multi-detector case, also output single-detector F-stats */
   BOOLEAN computeLV;		/**< get single-IFO F-stats and compute Line Veto stat */
   CHAR *RankingStatistic;	/**< rank candidates according to F or LV */
   BOOLEAN LVuseAllTerms;	/**< Use only leading term or all terms in Line Veto computation */
@@ -405,14 +410,12 @@ int main(int argc,char *argv[])
   UserInput_t uvar = empty_UserInput;
   ConfigVariables GV = empty_ConfigVariables;		/**< global container for various derived configuration settings */
 
-  lalDebugLevel = LALERROR;	/* only output error-messages by default */
   vrbflg = 1;	/* verbose error-messages */
 
   /* set LAL error-handler */
   lal_errhandler = LAL_ERR_EXIT;
 
   /* register all user-variable */
-  LAL_CALL (LALGetDebugLevel(&status, argc, argv, 'v'), &status);
   LAL_CALL (initUserVars(&status, &uvar), &status);
 
   if ( (GV.VCSInfoString = XLALGetVersionString(0)) == NULL ) {
@@ -542,7 +545,7 @@ int main(int argc,char *argv[])
 	{
 	  /* convert MJD peripase to GPS using Matt Pitkins code found at lal/packages/pulsar/src/BinaryPulsarTimeing.c */
 	  REAL8 GPSfloat;
-	  GPSfloat = LALTTMJDtoGPS(uvar.orbitTpSSBMJD);
+	  GPSfloat = XLALTTMJDtoGPS(uvar.orbitTpSSBMJD);
 	  XLALGPSSetREAL8(&(orbitalParams->tp),GPSfloat);
 	}
       else
@@ -584,8 +587,13 @@ int main(int argc,char *argv[])
       numFreqBins_FBand = (UINT4) ( 1 + floor ( GV.searchRegion.fkdotBand[0] / dFreqResamp ) );
       if ( ( fstatVector = XLALCalloc ( 1, sizeof ( *fstatVector ) )) == NULL )
         XLAL_ERROR ( XLAL_EFAILED, "Failed to XLALCalloc ( 1, %d )\n", sizeof ( *fstatVector ) );
-      if ( (fstatVector->data = XLALCreateREAL4Vector ( numFreqBins_FBand )) == NULL )
-        XLAL_ERROR ( XLAL_EFAILED, "XLALCreateREAL4Vector(%d) failed.\n", numFreqBins_FBand );
+      if (GV.CFparams.returnSingleF) { // for outputsingleFstats we need data from multiple detectors
+        if ( (fstatVector->data = XLALCreateREAL4Vector ( (GV.multiSFTs->length + 1)*numFreqBins_FBand )) == NULL )
+          XLAL_ERROR ( XLAL_EFAILED, "XLALCreateREAL4Vector(%d) failed.\n", (GV.multiSFTs->length + 1)*numFreqBins_FBand );
+      } else { //just one data set
+        if ( (fstatVector->data = XLALCreateREAL4Vector ( numFreqBins_FBand )) == NULL )
+          XLAL_ERROR ( XLAL_EFAILED, "XLALCreateREAL4Vector(%d) failed.\n", numFreqBins_FBand );
+      }
     }
 
   /* skip search if user supplied --countTemplates */
@@ -654,14 +662,21 @@ int main(int argc,char *argv[])
       // in the non-resampling case, this loop iterates only once, so nothing is changed ...
       for ( UINT4 iFreq = 0; iFreq < numFreqBins_FBand; iFreq ++ )
       {
-        if ( uvar.useResamp )
+        if ( uvar.useResamp ) {
           Fstat.F = fstatVector->data->data[iFreq];
+          Fstat.numDetectors = GV.multiSFTs->length;
+          if (GV.CFparams.returnSingleF) {
+            for (UINT4 ND = 0; ND < Fstat.numDetectors; ND ++ ) {
+              Fstat.FX[ND] = fstatVector->data->data[(ND+1)*numFreqBins_FBand + iFreq];
+            }
+          }
+        }
 
       /* sanity check on the result */
       if ( !finite(Fstat.F) )
 	{
 	  LogPrintf(LOG_CRITICAL, "non-finite F = %.16g, Fa=(%.16g,%.16g), Fb=(%.16g,%.16g)\n",
-		    Fstat.F, Fstat.Fa.re, Fstat.Fa.im, Fstat.Fb.re, Fstat.Fb.im );
+		    Fstat.F, creal(Fstat.Fa), cimag(Fstat.Fa), creal(Fstat.Fb), cimag(Fstat.Fb) );
 	  LogPrintf (LOG_CRITICAL, "[Alpha,Delta] = [%.16g,%.16g],\nfkdot=[%.16g,%.16g,%.16g,%16.g]\n",
 		     dopplerpos.Alpha, dopplerpos.Delta,
 		     dopplerpos.fkdot[0], dopplerpos.fkdot[1], dopplerpos.fkdot[2], dopplerpos.fkdot[3] );
@@ -712,8 +727,8 @@ int main(int argc,char *argv[])
       if ( uvar.SignalOnly )
 	{
 	  REAL8 norm = 1.0 / sqrt( 0.5 * GV.Tsft );
-	  Fstat.Fa.re *= norm;  Fstat.Fa.im *= norm;
-	  Fstat.Fb.re *= norm;  Fstat.Fb.im *= norm;
+	  Fstat.Fa.real_FIXME *= norm;  Fstat.Fa.imag_FIXME *= norm;
+	  Fstat.Fb.real_FIXME *= norm;  Fstat.Fb.imag_FIXME *= norm;
 	  Fstat.F *= norm * norm;
 	  Fstat.F += 2;		/* compute E[2F]:= 4 + SNR^2 */
 	  UINT4 X, numDet = Fstat.numDetectors;
@@ -732,10 +747,10 @@ int main(int argc,char *argv[])
 		  FstatAtomVector *thisAtomList = Fstat.multiFstatAtoms->data[X];
 		  for ( alpha=0; alpha < thisAtomList->length; alpha ++ )
 		    {
-		      thisAtomList->data[alpha].Fa_alpha.re *= norm;
-		      thisAtomList->data[alpha].Fa_alpha.im *= norm;
-		      thisAtomList->data[alpha].Fb_alpha.re *= norm;
-		      thisAtomList->data[alpha].Fb_alpha.im *= norm;
+		      thisAtomList->data[alpha].Fa_alpha.realf_FIXME *= norm;
+		      thisAtomList->data[alpha].Fa_alpha.imagf_FIXME *= norm;
+		      thisAtomList->data[alpha].Fb_alpha.realf_FIXME *= norm;
+		      thisAtomList->data[alpha].Fb_alpha.imagf_FIXME *= norm;
 		    } /* for alpha < numSFTs */
 		} /* for X < numDet */
 	    } /* if outputFstatAtoms */
@@ -747,7 +762,7 @@ int main(int argc,char *argv[])
           REAL4 TwoFX[Fstat.numDetectors];
           for ( UINT4 X=0; X < Fstat.numDetectors; X++ )
             TwoFX[X] = 2.0*Fstat.FX[X];
-          REAL4* LVlogLX = NULL;
+          REAL8* LVlogLX = NULL;
           if ( GV.LVloglX ) LVlogLX = GV.LVloglX->data;
           thisFCand.LVstat = XLALComputeLineVetoArray ( 2.0*Fstat.F, Fstat.numDetectors, TwoFX, GV.LVlogRhoTerm, LVlogLX, uvar.LVuseAllTerms );
           if ( xlalErrno ) {
@@ -1227,6 +1242,7 @@ initUserVars (LALStatus *status, UserInput_t *uvar)
   uvar->GPUready = 0;
   uvar->useResamp = FALSE;
 
+  uvar->outputSingleFstats = FALSE;
   uvar->computeLV = FALSE;
   #define DEFAULT_RANKINGSTATISTIC "F"
   uvar->RankingStatistic = LALCalloc (1, strlen(DEFAULT_RANKINGSTATISTIC)+1);
@@ -1234,7 +1250,7 @@ initUserVars (LALStatus *status, UserInput_t *uvar)
   uvar->LVuseAllTerms = TRUE;
   uvar->LVrho = 0.0;
   uvar->LVlX = NULL;       /* NULL is intepreted as LVlX[X] = 1.0 for all X by XLALComputeLineVeto(Array) */
-  uvar->LVthreshold = 0.0;
+  uvar->LVthreshold = - LAL_REAL8_MAX;
 
 #define DEFAULT_TRANSIENT "none"
   uvar->transient_WindowType = LALMalloc(strlen(DEFAULT_TRANSIENT)+1);
@@ -1308,6 +1324,7 @@ initUserVars (LALStatus *status, UserInput_t *uvar)
   LALregINTUserStruct ( status, maxEndTime, 	 0,  UVAR_OPTIONAL, "Latest SFT-timestamps to include");
 
   LALregSTRINGUserStruct(status,outputFstatAtoms,0,  UVAR_OPTIONAL, "Output filename *base* for F-statistic 'atoms' {a,b,Fa,Fb}_alpha. One file per doppler-point.");
+  LALregBOOLUserStruct(status,  outputSingleFstats,0,  UVAR_OPTIONAL, "In multi-detector case, also output single-detector F-stats?");
   LALregBOOLUserStruct(status,  computeLV,	0,  UVAR_OPTIONAL, "Get single-detector F-stats and compute Line Veto statistic.");
   LALregSTRINGUserStruct(status,RankingStatistic,0,  UVAR_DEVELOPER, "Rank toplist candidates according to 'F' or 'LV' statistic");
   LALregREALUserStruct(status,  LVrho,		0,  UVAR_OPTIONAL, "LineVeto: Prior rho_max_line, must be >=0");
@@ -1417,7 +1434,8 @@ InitEphemeris (LALStatus * status,	/**< pointer to LALStatus structure */
 
 
 
-/** Initialized Fstat-code: handle user-input and set everything up.
+/**
+ * Initialized Fstat-code: handle user-input and set everything up.
  * NOTE: the logical *order* of things in here is very important, so be careful
  */
 void
@@ -1500,7 +1518,7 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg, const UserInput_t *uvar )
     {
       /* convert MJD peripase to GPS using Matt Pitkins code found at lal/packages/pulsar/src/BinaryPulsarTimeing.c */
       REAL8 GPSfloat;
-      GPSfloat = LALTDBMJDtoGPS(uvar->refTimeMJD);
+      GPSfloat = XLALTDBMJDtoGPS(uvar->refTimeMJD);
       XLALGPSSetREAL8 ( &refTime, GPSfloat );
     }
   else
@@ -1510,13 +1528,13 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg, const UserInput_t *uvar )
   if (LALUserVarWasSet(&uvar->RA))
     {
       /* use Matt Pitkins conversion code found in lal/packages/pulsar/src/BinaryPulsarTiming.c */
-      cfg->Alpha = LALDegsToRads(uvar->RA, "alpha");
+      cfg->Alpha = XLALhmsToRads(uvar->RA);
     }
   else cfg->Alpha = uvar->Alpha;
   if (LALUserVarWasSet(&uvar->Dec))
     {
       /* use Matt Pitkins conversion code found in lal/packages/pulsar/src/BinaryPulsarTiming.c */
-      cfg->Delta = LALDegsToRads(uvar->Dec, "delta");
+      cfg->Delta = XLALdmsToRads(uvar->Dec);
     }
   else cfg->Delta = uvar->Delta;
 
@@ -1867,6 +1885,10 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg, const UserInput_t *uvar )
   cfg->CFparams.returnAtoms = ( uvar->outputFstatAtoms != NULL ) || ( uvar->outputTransientStats != NULL );
 
   /* return single-IFO Fstat values for Line-veto statistic */
+  if ( uvar->outputSingleFstats ) {
+    cfg->CFparams.returnSingleF = TRUE;
+  }
+
   if ( uvar->computeLV )
     {
       cfg->CFparams.returnSingleF = TRUE;
@@ -1884,7 +1906,7 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg, const UserInput_t *uvar )
   else if ( uvar->LVrho > 0.0 )
     cfg->LVlogRhoTerm = 4.0 * log(uvar->LVrho) - log(70.0);
   else /* if uvar.LVrho == 0.0, logRhoTerm should become irrelevant in summation */
-    cfg->LVlogRhoTerm = - LAL_REAL4_MAX;
+    cfg->LVlogRhoTerm = - LAL_REAL8_MAX;
   UINT4 numDetectors = cfg->multiSFTs->length;
 
   if ( uvar->computeLV && uvar->LVlX )
@@ -1893,8 +1915,8 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg, const UserInput_t *uvar )
         XLALPrintError( "Length of LV prior ratio vector does not match number of detectors! (%d != %d)\n", uvar->LVlX->length, numDetectors);
         ABORT (status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
       }
-      if ( (cfg->LVloglX = XLALCreateREAL4Vector ( numDetectors )) == NULL ) {
-        XLALPrintError ("Failed to XLALCreateREAL4Vector ( %d )\n", numDetectors );
+      if ( (cfg->LVloglX = XLALCreateREAL8Vector ( numDetectors )) == NULL ) {
+        XLALPrintError ("Failed to XLALCreateREAL8Vector ( %d )\n", numDetectors );
         ABORT (status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
       }
       for (UINT4 X = 0; X < numDetectors; X++)
@@ -1911,7 +1933,7 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg, const UserInput_t *uvar )
           else if ( LVlX > 0.0 )
             cfg->LVloglX->data[X] = log ( LVlX );
           else /* if zero prior ratio, approximate log(0)=-inf by -LAL_REA4_MAX to avoid raising underflow exceptions */
-            cfg->LVloglX->data[X] = - LAL_REAL4_MAX;
+            cfg->LVloglX->data[X] = - LAL_REAL8_MAX;
         } /* for X < numDetectors */
     } /* if ( uvar.computeLV && uvar.LVlX ) */
 
@@ -1938,7 +1960,8 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg, const UserInput_t *uvar )
 
 } /* InitFStat() */
 
-/** Produce a log-string describing the present run-setup
+/**
+ * Produce a log-string describing the present run-setup
  */
 void
 getLogString ( LALStatus *status, CHAR **logstr, const ConfigVariables *cfg )
@@ -2012,7 +2035,8 @@ getLogString ( LALStatus *status, CHAR **logstr, const ConfigVariables *cfg )
 
 
 /***********************************************************************/
-/** Log the all relevant parameters of the present search-run to a log-file.
+/**
+ * Log the all relevant parameters of the present search-run to a log-file.
  * The name of the log-file is log_fname
  * <em>NOTE:</em> Currently this function only logs the user-input and code-versions.
  */
@@ -2085,7 +2109,7 @@ Freemem(LALStatus *status,  ConfigVariables *cfg)
     LALFree ( cfg->logstring );
 
   if ( cfg->LVloglX )
-    XLALDestroyREAL4Vector ( cfg->LVloglX );
+    XLALDestroyREAL8Vector ( cfg->LVloglX );
 
   DETATCHSTATUSPTR (status);
   RETURN (status);
@@ -2094,7 +2118,8 @@ Freemem(LALStatus *status,  ConfigVariables *cfg)
 
 
 /*----------------------------------------------------------------------*/
-/** Some general consistency-checks on user-input.
+/**
+ * Some general consistency-checks on user-input.
  * Throws an error plus prints error-message if problems are found.
  */
 void
@@ -2340,7 +2365,8 @@ outputBeamTS( const CHAR *fname, const AMCoeffs *amcoe, const DetectorStateSerie
   return 0;
 } /* outputBeamTS() */
 
-/** write full 'PulsarCandidate' (i.e. Doppler params + Amplitude params + error-bars + Fa,Fb, F, + A,B,C,D
+/**
+ * write full 'PulsarCandidate' (i.e. Doppler params + Amplitude params + error-bars + Fa,Fb, F, + A,B,C,D
  * RETURN 0 = OK, -1 = ERROR
  */
 int
@@ -2397,8 +2423,8 @@ write_PulsarCandidate_to_fp ( FILE *fp,  const PulsarCandidate *pulsarParams, co
   fprintf (fp, "\n");
 
   /* Fstat-values */
-  fprintf (fp, "Fa       = % .6g  %+.6gi;\n", Fcand->Fstat.Fa.re, Fcand->Fstat.Fa.im );
-  fprintf (fp, "Fb       = % .6g  %+.6gi;\n", Fcand->Fstat.Fb.re, Fcand->Fstat.Fb.im );
+  fprintf (fp, "Fa       = % .6g  %+.6gi;\n", creal(Fcand->Fstat.Fa), cimag(Fcand->Fstat.Fa) );
+  fprintf (fp, "Fb       = % .6g  %+.6gi;\n", creal(Fcand->Fstat.Fb), cimag(Fcand->Fstat.Fb) );
   fprintf (fp, "twoF     = % .6g;\n", 2.0 * Fcand->Fstat.F );
   /* single-IFO Fstat-values, if present */
   UINT4 X, numDet = Fcand->Fstat.numDetectors;
@@ -2445,7 +2471,8 @@ compareFstatCandidates_LV ( const void *candA, const void *candB )
 
 } /* compareFstatCandidates_LV() */
 
-/** write one 'FstatCandidate' (i.e. only Doppler-params + Fstat) into file 'fp'.
+/**
+ * write one 'FstatCandidate' (i.e. only Doppler-params + Fstat) into file 'fp'.
  * Return: 0 = OK, -1 = ERROR
  */
 int
@@ -2490,7 +2517,8 @@ write_FstatCandidate_to_fp ( FILE *fp, const FstatCandidate *thisFCand )
  *
  * --------------------------------------------------------------------------------*/
 
-/** Create a scanline window, with given windowWings >= 0.
+/**
+ * Create a scanline window, with given windowWings >= 0.
  * Note: the actual window-size is 1 + 2 * windowWings
  */
 scanlineWindow_t *
@@ -2531,7 +2559,8 @@ XLALDestroyScanlineWindow ( scanlineWindow_t *scanlineWindow )
 
 } /* XLALDestroyScanlineWindow() */
 
-/** Advance by pushing a new candidate into the scanline-window
+/**
+ * Advance by pushing a new candidate into the scanline-window
  */
 int
 XLALAdvanceScanlineWindow ( const FstatCandidate *nextCand, scanlineWindow_t *scanWindow )
@@ -2551,7 +2580,8 @@ XLALAdvanceScanlineWindow ( const FstatCandidate *nextCand, scanlineWindow_t *sc
 
 } /* XLALAdvanceScanlineWindow() */
 
-/** check wether central candidate in Scanline-window is a local maximum
+/**
+ * check wether central candidate in Scanline-window is a local maximum
  */
 BOOLEAN
 XLALCenterIsLocalMax ( const scanlineWindow_t *scanWindow, const UINT4 rankingStatistic )
@@ -2591,7 +2621,8 @@ XLALCenterIsLocalMax ( const scanlineWindow_t *scanWindow, const UINT4 rankingSt
 
 } /* XLALCenterIsLocalMax() */
 
-/** Mini helper-function: append string 'str2' to string 'str1',
+/**
+ * Mini helper-function: append string 'str2' to string 'str1',
  * returns pointer to new concatenated string
  */
 CHAR *append_string ( CHAR *str1, const CHAR *str2 )
@@ -2620,7 +2651,8 @@ CHAR *append_string ( CHAR *str1, const CHAR *str2 )
 
 } /* append_string() */
 
-/** Function to append one timing-info line to open output file.
+/**
+ * Function to append one timing-info line to open output file.
  *
  * NOTE: called with NULL timing pointer writes header-comment line.
  */
@@ -2650,7 +2682,8 @@ write_TimingInfo_to_fp ( FILE * fp, const timingInfo_t *ti )
 } /* write_TimingInfo_to_fp() */
 
 #ifdef HIGHRES_TIMING
-/** Return process User CPU time used.
+/**
+ * Return process User CPU time used.
  */
 REAL8
 XLALGetUserCPUTime ( void )

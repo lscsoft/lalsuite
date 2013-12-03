@@ -28,68 +28,69 @@ extern "C" {
 
 
 /**
-   \addtogroup FindRoot_h
-
-   \brief Root finding routines.
-
-\heading{Synopsis}
-\code
-#include <lal/FindRoot.h>
-\endcode
-
-This header covers the routines for root finding.
-
-\heading{Description}
-
-The routine <tt>LALSBracketRoot()</tt> expands the specified domain until a root
-is contained.  The routine <tt>LALDBracketRoot()</tt> is the same but for a
-double-precision function.
-
-The routine <tt>LALSBisectionFindRoot()</tt> bisects the domain (which must contain one
-root) until the root is found with the desired accuracy.  The routine
-<tt>LALDBisectionFindRoot()</tt> is the same but for a double-precision function.
-
-\heading{Operating Instructions}
-
-Suppose we want to find the root of the function \f$y = F(x;y_0) = y_0 + x^2\f$.
-Define the function:
-\code
-static void F( LALStatus *status, REAL4 *y, REAL4 x, void *y0 )
-{
-  INITSTATUS(status);
-  ASSERT( y0, status, 1, "Null pointer" );
-  *y = *(REAL4 *)y0 + x*x;
-  RETURN( status );
-}
-\endcode
-
-Then use the following code to bracket and find the root \f$x_0=1\f$ where
-\f$F(x_0;y_0=-1)=0\f$:
-\code
-static LALStatus status;
-SFindRootIn      input;
-REAL4            y0;
-REAL4            x0;
-
-y0             = -1;
-input.function = F;
-input.xmin     = 0.1;
-input.xmax     = 0.2;
-input.xacc     = 1e-5;
-
-/\* expand domain until a root is bracketed *\/
-LALSBracketRoot( &status, &input, &y0 );
-
-/\* bisect domain until root is found *\/
-LALSBisectionFindRoot( &status, &x0, &input, &y0 );
-\endcode
-
-\heading{Algorithm}
-
-This is an implementation of the root bracketing and bisection finding
-routines \c zbrac and \c rtbis in Numerical Recipes [\ref ptvf1992].
-
-*/
+ * \addtogroup FindRoot_h
+ *
+ * \brief Root finding routines.
+ *
+ * ### Synopsis ###
+ *
+ * \code
+ * #include <lal/FindRoot.h>
+ * \endcode
+ *
+ * This header covers the routines for root finding.
+ *
+ * ### Description ###
+ *
+ * The routine <tt>LALSBracketRoot()</tt> expands the specified domain until a root
+ * is contained.  The routine <tt>LALDBracketRoot()</tt> is the same but for a
+ * double-precision function.
+ *
+ * The routine <tt>LALSBisectionFindRoot()</tt> bisects the domain (which must contain one
+ * root) until the root is found with the desired accuracy.  The routine
+ * <tt>LALDBisectionFindRoot()</tt> is the same but for a double-precision function.
+ *
+ * ### Operating Instructions ###
+ *
+ * Suppose we want to find the root of the function \f$y = F(x;y_0) = y_0 + x^2\f$.
+ * Define the function:
+ * \code
+ * static void F( LALStatus *status, REAL4 *y, REAL4 x, void *y0 )
+ * {
+ * INITSTATUS(status);
+ * ASSERT( y0, status, 1, "Null pointer" );
+ * y = *(REAL4 *)y0 + x*x;
+ * RETURN( status );
+ * }
+ * \endcode
+ *
+ * Then use the following code to bracket and find the root \f$x_0=1\f$ where
+ * \f$F(x_0;y_0=-1)=0\f$:
+ * \code
+ * static LALStatus status;
+ * SFindRootIn      input;
+ * REAL4            y0;
+ * REAL4            x0;
+ *
+ * y0             = -1;
+ * input.function = F;
+ * input.xmin     = 0.1;
+ * input.xmax     = 0.2;
+ * input.xacc     = 1e-5;
+ *
+ * /\* expand domain until a root is bracketed *\/
+ * LALSBracketRoot( &status, &input, &y0 );
+ *
+ * /\* bisect domain until root is found *\/
+ * LALSBisectionFindRoot( &status, &x0, &input, &y0 );
+ * \endcode
+ *
+ * ### Algorithm ###
+ *
+ * This is an implementation of the root bracketing and bisection finding
+ * routines \c zbrac and \c rtbis in Numerical Recipes \cite ptvf1992.
+ *
+ */
 /*@{*/
 
 /** \name Error Codes */
@@ -107,7 +108,8 @@ routines \c zbrac and \c rtbis in Numerical Recipes [\ref ptvf1992].
 #define FINDROOTH_MSGEBRKT "Root not bracketed"
 /** \endcond */
 
-/** These are function pointers to functions that map REAL4 numbers to REAL4 numbers.
+/**
+ * These are function pointers to functions that map REAL4 numbers to REAL4 numbers.
  */
 typedef struct
 tagSFindRootIn
@@ -119,7 +121,8 @@ tagSFindRootIn
 }
 SFindRootIn;
 
-/** These are function pointers to functions that map REAL8 numbers to REAL8 numbers.
+/**
+ * These are function pointers to functions that map REAL8 numbers to REAL8 numbers.
  */
 typedef struct
 tagDFindRootIn

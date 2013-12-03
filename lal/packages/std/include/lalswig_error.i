@@ -31,23 +31,23 @@
   #include <signal.h>
 
   // Print the supplied error message, then raise an XLAL error.
-  int lalswig_LALRaise(int sig, const char *fmt, ...) {
+  static int lalswig_LALRaise(int sig, const char *fmt, ...) {
     va_list ap;
     va_start(ap, fmt);
     (void) vfprintf(stderr, fmt, ap);
     va_end(ap);
     (void) fprintf(stderr, "LALRaise: %s\n", strsignal(sig));
-    swiglal_XLAL_error();
+    XLALSetErrno(XLAL_EFAILED);
     return 0;
   }
 
   // Print the supplied error message, then raise an XLAL error.
-  void lalswig_LALAbort(const char *fmt, ...) {
+  static void lalswig_LALAbort(const char *fmt, ...) {
     va_list ap;
     va_start(ap, fmt);
     (void) vfprintf(stderr, fmt, ap);
     va_end(ap);
-    swiglal_XLAL_error();
+    XLALSetErrno(XLAL_EFAILED);
   }
 
 %}

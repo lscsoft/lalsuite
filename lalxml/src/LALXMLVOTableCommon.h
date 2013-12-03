@@ -91,7 +91,8 @@ typedef enum {
 } VOTABLE_ATTRIBUTE;
 
 
-/** List of supported VOTable "leaf" elements
+/**
+ * List of supported VOTable "leaf" elements
  *
  */
 typedef enum {
@@ -125,7 +126,8 @@ typedef enum {
 
 /* ---------- exported API datatypes ---------- */
 
-/** Type holding the attributes of one FIELD node
+/**
+ * Type holding the attributes of one FIELD node
  * Note: currently this only holds the FIELD attributes that are actually used,
  * but this can further extended as needed. See
  * http://www.ivoa.net/Documents/REC/VOTable/VOTable-20040811.pdf
@@ -139,7 +141,8 @@ typedef struct tagVOTField {
   xmlChar *arraysize;		/**< arraysize attribute [optional] */
 } VOTField;
 
-/** A standard vector of VOTFields
+/**
+ * A standard vector of VOTFields
  */
 typedef struct tagVOTFieldVector {
   UINT4 length;		/**< number of VOTFields */

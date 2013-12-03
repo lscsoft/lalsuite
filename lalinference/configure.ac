@@ -1,6 +1,6 @@
 AC_PREREQ([2.63])
-AC_INIT([lalinference],[1.0.1.1],[lal-discuss@gravity.phys.uwm.edu])
-AC_CONFIG_HEADERS([include/config.h src/LALInferenceConfig.h])
+AC_INIT([lalinference],[1.2.1.1],[lal-discuss@ligo.org])
+AC_CONFIG_HEADERS([src/config.h src/LALInferenceConfig.h])
 AC_CONFIG_SRCDIR([src/LALInference.h])
 AC_CONFIG_AUX_DIR([gnuscripts])
 AC_CONFIG_MACRO_DIR([gnuscripts])
@@ -13,14 +13,22 @@ AC_CONFIG_FILES([ \
   include/Makefile \
   include/lal/Makefile \
   src/Makefile \
+  python/Makefile \
+  python/__init__.py \
+  python/bayestar/Makefile \
+  swig/Makefile \
+  swig/octave/Makefile \
+  swig/python/Makefile \
   test/Makefile
 ])
-AM_INIT_AUTOMAKE([1.11 foreign color-tests parallel-tests])
+AM_INIT_AUTOMAKE([1.11 foreign subdir-objects color-tests parallel-tests])
 
 AC_CANONICAL_HOST
 
 LALSUITE_ARG_VAR
+LALSUITE_CHECK_GIT_REPO
 LALSUITE_DISTCHECK_CONFIGURE_FLAGS
+LALSUITE_WITH_CFLAGS_LIBS
 
 # set library api info
 # 1. start with version information of "0:0:0" for each libtool library
@@ -36,13 +44,10 @@ LALSUITE_DISTCHECK_CONFIGURE_FLAGS
 #    then increment age.
 # 6. if any interfaces have been removed since the last public release,
 #    then set age to 0.
-AC_SUBST([LIBCURRENT],[4])
-AC_SUBST([LIBREVISION],[1])
-AC_SUBST([LIBAGE],[1])
+AC_SUBST([LIBCURRENT],[6])
+AC_SUBST([LIBREVISION],[0])
+AC_SUBST([LIBAGE],[0])
 AC_SUBST([LIBVERSION],[${LIBCURRENT}:${LIBREVISION}:${LIBAGE}])
-
-# check for git repo
-LALSUITE_CHECK_GIT_REPO
 
 # nightly build
 LALSUITE_ENABLE_NIGHTLY
@@ -59,6 +64,9 @@ LALSUITE_ENABLE_LALMETAIO
 LALSUITE_ENABLE_LALINSPIRAL
 LALSUITE_ENABLE_LALPULSAR
 LALSUITE_ENABLE_LALXML
+
+# enable SWIG wrapping modules
+LALSUITE_ENABLE_SWIG
 
 # put version/configure info in config header
 lalinference_version_major=`echo "$VERSION" | cut -d. -f1`
@@ -88,11 +96,11 @@ LALSUITE_MULTILIB_LIBTOOL_HACK
 # use silent build rules
 AM_SILENT_RULES([yes])
 
-# check for C/C++ compilers
-LALSUITE_PROG_CC_CXX
+# check for required compilers
+LALSUITE_PROG_COMPILERS
 
 # checks for programs
-AC_PROG_INSTALL
+LALSUITE_PROG_INSTALL
 AC_PROG_LN_S
 AC_PROG_AWK
 AC_PROG_SED
@@ -110,10 +118,45 @@ AC_HEADER_STDC
 # check for required libraries
 AC_CHECK_LIB([m],[main],,[AC_MSG_ERROR([could not find the math library])])
 
+# check for OpenMP
+AC_OPENMP
+
+# check that compiler supports C99 variable length arrays in OpenMP for loops.
+# Apple's llvm-gcc-4.2 is buggy and does not.
+AS_IF([test "x$OPENMP_CFLAGS" != "x"],
+  [
+    AC_MSG_CHECKING([if compiler supports C99 VLAs in OpenMP for loops])
+    save_CFLAGS=$CFLAGS
+    CFLAGS="$CFLAGS $OPENMP_CFLAGS"
+    AC_LINK_IFELSE([
+        AC_LANG_PROGRAM(, [
+          int i, n = 10;
+          #pragma omp parallel for
+          for (i = 0; i < 10; i ++)
+          { int a@<:@n@:>@; }
+        ])
+      ],
+      [AC_MSG_RESULT([yes])],
+      [
+        AC_MSG_RESULT([no, disabling OpenMP])
+        OPENMP_CFLAGS=
+      ]
+    )
+    CFLAGS=$save_CFLAGS
+  ]
+)
+
+# check for HEALPix
+PKG_CHECK_MODULES([CHEALPIX],[chealpix],[true],[false])
+LALSUITE_ADD_CFLAGS(${CHEALPIX_CFLAGS})
+LALSUITE_ADD_LIBS(${CHEALPIX_LIBS})
+AC_CHECK_LIB([chealpix],[nside2npix],[HEALPIX_ENABLE_VAL=ENABLED],[HEALPIX_ENABLE_VAL=DISABLED])
+AM_CONDITIONAL([HAVE_CHEALPIX],[test "x$HEALPIX_ENABLE_VAL" = "xENABLED"])
+
 # check for gsl
 PKG_CHECK_MODULES([GSL],[gsl],[true],[false])
-CPPFLAGS="$CPPFLAGS $GSL_CFLAGS"
-LIBS="$LIBS $GSL_LIBS"
+LALSUITE_ADD_CFLAGS(${GSL_CFLAGS})
+LALSUITE_ADD_LIBS(${GSL_LIBS})
 AC_CHECK_LIB([gslcblas],[main],,[AC_MSG_ERROR([could not find the gsl library])])
 AC_CHECK_LIB([gsl],[gsl_strerror],,[AC_MSG_ERROR([could not find the gsl library])])
 LALSUITE_ENABLE_FAST_GSL
@@ -123,8 +166,8 @@ AC_CHECK_HEADERS([gsl/gsl_errno.h],,[AC_MSG_ERROR([could not find the gsl/gsl_er
 
 # metaio
 PKG_CHECK_MODULES([METAIO],[libmetaio],[true],[false])
-CPPFLAGS="$CPPFLAGS $METAIO_CFLAGS"
-LIBS="$LIBS $METAIO_LIBS"
+LALSUITE_ADD_CFLAGS(${METAIO_CFLAGS})
+LALSUITE_ADD_LIBS(${METAIO_LIBS})
 AC_CHECK_LIB([metaio],[MetaioOpen],,[AC_MSG_ERROR([could not find the metaio library])])
 
 # check for libmetaio headers
@@ -133,36 +176,70 @@ AC_CHECK_HEADERS([metaio.h],,[AC_MSG_ERROR([could not find the metaio.h header])
 if test "$lalxml" = "true"; then
   # check for libxml2
   PKG_CHECK_MODULES([LIBXML2],[libxml-2.0 >= 2.6],[true],[false])
-  CPPFLAGS="$CPPFLAGS $LIBXML2_CFLAGS"
-  LIBS="$LIBS $LIBXML2_LIBS"
+  LALSUITE_ADD_CFLAGS(${LIBXML2_CFLAGS})
+  LALSUITE_ADD_LIBS(${LIBXML2_LIBS})
   AC_CHECK_LIB([xml2],[xmlInitParser],,[AC_MSG_WARN([cannot find the xml2 library])])
 fi
 
 # check for lal libraries and headers
-LALSUITE_CHECK_LIB([LAL],[6.9.0],[LALVersion],[lal/LALStdio.h])
-LALSUITE_CHECK_LIB([LALSupport],[6.9.0],[LALOpenDataFile],[lal/FileIO.h])
-LALSUITE_CHECK_LIB([LALMetaIO],[1.0.5],[XLALCreateMetaTableDir],[lal/LIGOLwXMLRead.h])
-LALSUITE_CHECK_LIB([LALFrame],[1.0.7],[LALFrOpen],[lal/LALFrameL.h])
-LALSUITE_CHECK_LIB([LALSimulation],[0.6.0],[XLALSimDetectorStrainREAL8TimeSeries],[lal/LALSimulation.h])
-LALSUITE_CHECK_LIB([LALInspiral],[1.4.1],[LALInspiralParameterCalc],[lal/LALInspiral.h])
-LALSUITE_CHECK_LIB([LALPulsar],[1.6.0],[XLALComputeFaFb],[lal/ComputeFstat.h])
+LALSUITE_CHECK_LIB([LAL],[6.11.0],[LALVersion],[lal/LALStdio.h])
+LALSUITE_CHECK_LIB([LALSupport],[6.11.0],[LALOpenDataFile],[lal/FileIO.h])
+LALSUITE_CHECK_LIB([LALMetaIO],[1.1.0],[XLALCreateMetaTableDir],[lal/LIGOLwXMLRead.h])
+LALSUITE_CHECK_LIB([LALFrame],[1.1.0],[LALFrOpen],[lal/LALFrameL.h])
+LALSUITE_CHECK_LIB([LALSimulation],[1.0.0],[XLALSimDetectorStrainREAL8TimeSeries],[lal/LALSimulation.h])
+LALSUITE_CHECK_LIB([LALInspiral],[1.5.0],[LALInspiralParameterCalc],[lal/LALInspiral.h])
+LALSUITE_CHECK_LIB([LALPulsar],[1.8.0],[XLALComputeFaFb],[lal/ComputeFstat.h])
 
 # check for lalxml
 LALSUITE_CHECK_OPT_LIB([LALXML],[1.1.5],[XLALXMLFilePrintElements],[lal/LALXML.h])
 
+# configure SWIG wrapping modules
+LALSUITE_USE_SWIG([XLALInference LALInference XLAL LAL])
+
 # add gcc specific flags
 LALSUITE_ADD_GCC_FLAGS
+
+# Disable OpenMP by default.
+# FIXME: OpenMP should be on by default, but it breaks condor_compiling lalapps.
+AS_IF(
+  [test "x$enable_openmp" = "x"],
+  [OPENMP_CFLAGS=]
+)
+# add compiler flags for OpenMP
+AS_IF(
+  [test "x$OPENMP_CFLAGS" = "x"],
+  [
+    OPENMP_ENABLE_VAL="DISABLED"
+    LALSUITE_ADD_CFLAGS(-Wno-unknown-pragmas)
+  ],
+  [
+    OPENMP_ENABLE_VAL="ENABLED"
+    LALSUITE_ADD_CFLAGS(${OPENMP_CFLAGS})
+  ]
+)
+
+# force all python modules into the exec dir to prevent mixed C and
+# pure-python library code from being split across lib and lib64 on
+# RedHat-derived systems.
+AC_SUBST([pkgpythondir], ["\${pkgpyexecdir}"])
+
+# ensure CPPFLAGS/CFLAGS and LDFLAGS/LIBS are in correct order
+LALSUITE_ADD_CFLAGS()
+LALSUITE_ADD_LIBS()
 
 # output
 LAL_HEADER_LINK=${ac_aux_dir}/header-link.mk
 AC_SUBST_FILE([LAL_HEADER_LINK])
-AC_PROG_MAKE_SET
 AC_OUTPUT
 echo "
 ==================================================
 LALInference has now been successfully configured:
 
 * LALXML library support is $LALXML_ENABLE_VAL
+* SWIG wrapping module for Octave is $SWIG_OCTAVE_ENABLE_VAL
+* SWIG wrapping module for Python is $SWIG_PYTHON_ENABLE_VAL
+* HEALPix is $HEALPIX_ENABLE_VAL
+* OpenMP acceleration is $OPENMP_ENABLE_VAL
 
 and will be installed under the directory:
 

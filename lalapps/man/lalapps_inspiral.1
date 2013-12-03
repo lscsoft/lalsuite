@@ -29,10 +29,6 @@ The following options are recognized by lalapps_inspiral:
  print version information and exit
 
 .TP
-  --debug-level LEVEL         
- set the LAL debug level to LEVEL  
-
-.TP
   --user-tag STRING           
  set the process_params usertag to STRING
 
@@ -451,7 +447,7 @@ lalapps_inspiral --approximant TaylorT1 --trig-end-time 0 --cluster-method templ
 --dynamic-range-exponent 69.0 --disable-rsq-veto --bank-file H1-TMPLTBANK_mytest-865543915-2048.xml 
 --high-pass-order 8 --strain-high-pass-order 8 --ifo-tag FIRST  --gps-end-time 865545963 
 --calibrated-data real_8 --channel-name H1:LSC-STRAIN --snr-threshold 4.25 --number-of-segments 15 
---trig-start-time 865545773 --enable-high-pass 30.0 --debug-level 33 --gps-start-time 865543915 
+--trig-start-time 865545773 --enable-high-pass 30.0 --gps-start-time 865543915 
 --enable-filter-inj-only --high-pass-attenuation 0.1 --chisq-bins 0 --inverse-spec-length 16 
 --segment-length 1048576 --low-frequency-cutoff 40.0 --pad-data 8 --sample-rate 4096 --chisq-threshold 
 10.0 --resample-filter ldas --strain-high-pass-atten 0.1 --strain-high-pass-freq 30.0 --bank-simulation 

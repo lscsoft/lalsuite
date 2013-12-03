@@ -48,6 +48,11 @@ typedef struct tagLALSimInspiralTestGRParam
  * Function that creates the head node of the test GR parameters linked list.
  * It is initialized with a single parameter with given name and value
  */
+ 
+#ifdef SWIG   // SWIG interface directives
+SWIGLAL(INOUT_STRUCTS(LALSimInspiralTestGRParam**, parameter));
+#endif 
+
 LALSimInspiralTestGRParam *XLALSimInspiralCreateTestGRParam(
         const char *name, /**< Name of first parameter in new linked list */
         double value 	 /**< Value of first parameter in new linked list */

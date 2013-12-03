@@ -71,38 +71,41 @@
 
 
 /**
-\author Sintes, A. M.
-\file
-\ingroup CLR_h
+ * \author Sintes, A. M.
+ * \file
+ * \ingroup CLR_h
+ *
+ * \brief Test for CLR  operations.
+ *
+ * ### Usage ###
+ *
+ * \code
+ * CLRTest
+ * \endcode
+ *
+ * ### Description ###
+ *
+ * This program is just an example of the usage of the different prototypes.
+ *
+ * The program reads some data from the file
+ * <tt>CLRindata.asc</tt>, finds
+ * the position of several harmonics, builds a reference signal,
+ * cleans the initial data of all interference harmonics and
+ * writes the clean data into the file
+ * <tt>CLRoutdata.asc</tt>.
+ *
+ * ### Exit codes ###
+ *
+ *
+ * ### Notes ###
+ *
+ * Take this program just as an example,  build
+ * your own one  and feed it  with the data of your interest.
+ * The CLR functions work on stretches of data from a few seconds up to a
+ * couple of minutes.
+ */
 
-\brief Test for CLR  operations.
 
-\heading{Usage}
-\code
-CLRTest
-\endcode
-
-\heading{Description}
-This program is just an example of the usage of the different prototypes.
-
- The program reads some data from the file
-<tt>CLRindata.asc</tt>, finds
-the position of several harmonics, builds a reference signal,
-cleans the initial data of all interference harmonics and
-writes the clean data into the file
-<tt>CLRoutdata.asc</tt>.
-
-\heading{Exit codes}
-
-\heading{Notes}
-Take this program just as an example,  build
-your own one  and feed it  with the data of your interest.
-The CLR functions work on stretches of data from a few seconds up to a
-couple of minutes.
-*/
-
-
-INT4  lalDebugLevel = 2;
 
 int main ( void )
 {
@@ -181,7 +184,7 @@ int main ( void )
   /* read data  x(t) */
   /* insert here your own data from a given file/frame */
 
-  in_file = fopen(DATADIR "CLRindata.asc", "r");
+  in_file = fopen(TEST_DATA_DIR "CLRindata.asc", "r");
   for (i = 0; i < (int)n; ++i) {
     number = fscanf(in_file, "%f\n", &dummy );
     x->data[i] = dummy;

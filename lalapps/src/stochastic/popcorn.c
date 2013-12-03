@@ -58,8 +58,8 @@
 #include <lal/PrintVector.h>
 #include <lal/VectorOps.h>
 #include <lal/FileIO.h> 
-#include <lal/FrameCache.h>
-#include <lal/FrameStream.h>
+#include <lal/LALCache.h>
+#include <lal/LALFrStream.h>
 #include <lal/ResampleTimeSeries.h>
 
 
@@ -163,8 +163,8 @@ INT4 main (INT4 argc, CHAR *argv[])
   REAL4TimeSeries n1Temp, n2Temp;
 
   /* frame variables */
-  FrCache *frCache1,*frCache2;
-  FrStream *frStream1,*frStream2;
+  LALCache *frCache1,*frCache2;
+  LALFrStream *frStream1,*frStream2;
   FrChanIn frChanIn1, frChanIn2;
   LIGOTimeGPS gpsStartTime;
   ResampleTSParams resampleParams;
@@ -250,13 +250,13 @@ INT4 main (INT4 argc, CHAR *argv[])
    if(verbose_flag){
 	fprintf(stdout,"Opening first frame cache...\n");}
    frCache1=NULL;frStream1=NULL;
-   LALFrCacheImport(&lalstatus, &frCache1, frameCache1);
+   frCache1 = XLALCacheImport( frameCache1 );
    LALFrCacheOpen( &lalstatus, &frStream1, frCache1);
 
    if(verbose_flag){
 	fprintf(stdout, "Opening second frame cache...\n");}
    frCache2=NULL;frStream2=NULL;
-   LALFrCacheImport( &lalstatus, &frCache2, frameCache2);
+   frCache2 = XLALCacheImport( frameCache2 );
    LALFrCacheOpen( &lalstatus, &frStream2, frCache2);
   }
   

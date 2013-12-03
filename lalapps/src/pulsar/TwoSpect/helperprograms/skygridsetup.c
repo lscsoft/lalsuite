@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2011 Evan Goetz
+ *  Copyright (C) 2011, 2013 Evan Goetz
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -26,6 +26,8 @@
 #include "cmdline_skygridsetup.h"
 #include "../antenna.h"
 
+static const LALStatus empty_status;
+
 //Main program
 int main(int argc, char *argv[])
 {
@@ -36,22 +38,33 @@ int main(int argc, char *argv[])
    FILE *OUTPUT;
    char s[20000];
    LALDetector det;
-   LALStatus status;          //LALStatus structure
-   status.statusPtr = NULL;   //Set statuspointer to NULL
+   LALStatus status = empty_status;  //LALStatus structure
    
    struct gengetopt_args_info args_info;
    struct cmdline_parser_params *configparams;
    configparams = cmdline_parser_params_create();
-   configparams->initialize = 0;
-   if ( cmdline_parser(argc, argv, &args_info) ) {
-      fprintf(stderr, "%s: cmdline_parser() failed.\n", fn);
-      return -1;
+   configparams->check_required = 0;  //don't check for required values at the step
+   if ( cmdline_parser_ext(argc, argv, &args_info, configparams) ) {
+       fprintf(stderr, "%s: cmdline_parser_ext() failed.\n", __func__);
+       XLAL_ERROR(XLAL_FAILURE);
    }
-   if ( args_info.config_given ) {
-      if ( cmdline_parser_config_file(args_info.config_arg, &args_info, configparams) ) {
-         fprintf(stderr, "%s: cmdline_parser_config_file() failed.\n", fn);
-         return -1;
-      }
+   configparams->initialize = 0;  //don't reinitialize the parameters structure
+   if ( args_info.config_given && cmdline_parser_config_file(args_info.config_arg, &args_info, configparams) ) {
+      fprintf(stderr, "%s: cmdline_parser_config_file() failed.\n", __func__);
+      XLAL_ERROR(XLAL_FAILURE);
+   }
+   //Check required
+   if ( cmdline_parser_required(&args_info, argv[0]) ) {
+      fprintf(stderr, "%s: cmdline_parser_required() failed.\n", __func__);
+      XLAL_ERROR(XLAL_FAILURE);
+   }
+   if (args_info.v2_given && !args_info.Tobs_given) {
+      fprintf(stderr, "%s: Tobs must be specified.\n", __func__);
+      XLAL_ERROR(XLAL_FAILURE);
+   }
+   if (args_info.v2_given && !args_info.t0_given) {
+      fprintf(stderr, "%s: Tobs must be specified.\n", __func__);
+      XLAL_ERROR(XLAL_FAILURE);
    }
    
    snprintf(s, 20000, "%s", args_info.outfilename_arg);
@@ -62,14 +75,14 @@ int main(int argc, char *argv[])
    }
    
    //Allocate memory for files
-   earth_ephemeris = XLALCalloc(strlen(args_info.ephemDir_arg)+25, sizeof(*earth_ephemeris));
-   sun_ephemeris = XLALCalloc(strlen(args_info.ephemDir_arg)+25, sizeof(*sun_ephemeris));
+   earth_ephemeris = XLALCalloc(strlen(args_info.ephemDir_arg)+strlen(args_info.ephemYear_arg)+12, sizeof(*earth_ephemeris));
+   sun_ephemeris = XLALCalloc(strlen(args_info.ephemDir_arg)+strlen(args_info.ephemYear_arg)+12, sizeof(*sun_ephemeris));
    if (earth_ephemeris==NULL) {
-      fprintf(stderr, "%s: XLALCalloc(%zu) failed.\n", fn, sizeof(*earth_ephemeris));
-      return -1;
+      fprintf(stderr, "%s: XLALCalloc(%zu) failed.\n", __func__, sizeof(*earth_ephemeris));
+      XLAL_ERROR(XLAL_ENOMEM);
    } else if (sun_ephemeris==NULL) {
-      fprintf(stderr, "%s: XLALCalloc(%zu) failed.\n", fn, sizeof(*sun_ephemeris));
-      return -1;
+      fprintf(stderr, "%s: XLALCalloc(%zu) failed.\n", __func__, sizeof(*sun_ephemeris));
+      XLAL_ERROR(XLAL_ENOMEM);
    }
    sprintf(earth_ephemeris, "%s/earth%s.dat", args_info.ephemDir_arg, args_info.ephemYear_arg);
    sprintf(sun_ephemeris, "%s/sun%s.dat", args_info.ephemDir_arg, args_info.ephemYear_arg);
@@ -83,12 +96,15 @@ int main(int argc, char *argv[])
    sprintf(IFO, "%s", args_info.IFO_arg);
    if (strcmp("L1", IFO)==0) {
       fprintf(stderr,"IFO = %s\n", IFO);
-      det = lalCachedDetectors[LALDetectorIndexLLODIFF]; //L1
+      det = lalCachedDetectors[LAL_LLO_4K_DETECTOR]; //L1
    } else if (strcmp("H1", IFO)==0) {
       fprintf(stderr,"IFO = %s\n", IFO);
-      det = lalCachedDetectors[LALDetectorIndexLHODIFF]; //H1
+      det = lalCachedDetectors[LAL_LHO_4K_DETECTOR]; //H1
+   } else if (strcmp("V1", IFO)==0) {
+      fprintf(stderr,"IFO = %s\n", IFO);
+      det = lalCachedDetectors[LAL_VIRGO_DETECTOR]; //V1
    } else {
-      fprintf(stderr, "%s: Not using valid interferometer! Expected 'H1' or 'L1' not %s.\n", fn, IFO);
+      fprintf(stderr, "%s: Not using valid interferometer! Expected 'H1', 'L1', or 'V1' not %s.\n", fn, IFO);
       return -1;
    }
    XLALFree((CHAR*)IFO);
@@ -117,7 +133,9 @@ int main(int argc, char *argv[])
    }
    
    //Maximum orbital earth speed in units of c from start of S6 TwoSpect data for 104 weeks total time
-   REAL4 detectorVmax = CompDetectorVmax(931081500.0+args_info.SFToverlap_arg, args_info.Tcoh_arg, args_info.SFToverlap_arg, 62899200.0-args_info.SFToverlap_arg, det, edat);
+   REAL4 detectorVmax = 0.0;
+   if (!args_info.v2_given) detectorVmax = CompDetectorVmax(931081500.0+args_info.SFToverlap_arg, args_info.Tcoh_arg, args_info.SFToverlap_arg, 62899200.0-args_info.SFToverlap_arg, det, edat);
+   else detectorVmax = CompDetectorVmax(args_info.t0_arg-args_info.Tcoh_arg, args_info.Tcoh_arg, args_info.SFToverlap_arg, args_info.Tobs_arg+2.0*args_info.Tcoh_arg, det, edat);
    if (xlalErrno!=0) {
       fprintf(stderr, "%s: CompDetectorVmax() failed.\n", fn);
       return -1;

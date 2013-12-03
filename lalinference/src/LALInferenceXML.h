@@ -18,7 +18,7 @@
 */
 /* Double-include protection */
 #ifndef _LALXMLVOTABLESERIALIZERLALINFERENCE_H
-#define _LALXMLVOTABLESERIALIZERSLALINFERENCE_H
+#define _LALXMLVOTABLESERIALIZERLALINFERENCE_H
 
 /* C++ protection */
 #ifdef __cplusplus
@@ -47,9 +47,9 @@ xmlNodePtr XLALInferenceVariablesArray2VOTTable(const LALInferenceVariables *var
 
 xmlNodePtr XLALInferenceVariables2VOTParamNode(const LALInferenceVariables *const vars);
 
-INT4 XLALVOTDoc2LALInferenceVariablesByName(const xmlDocPtr xmlDocument, const char *name, LALInferenceVariables *bop);
+/* INT4 XLALVOTDoc2LALInferenceVariablesByName(const xmlDocPtr xmlDocument, const char *name, LALInferenceVariables *bop); */
 
-xmlNodePtr LALInferenceVariables2VOTParamNodes(LALInferenceVariables *vars);
+/* xmlNodePtr LALInferenceVariables2VOTParamNodes(LALInferenceVariables *vars); */
 
 xmlNodePtr LALInferenceVariableItem2VOTParamNode(LALInferenceVariableItem *varitem);
 

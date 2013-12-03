@@ -25,7 +25,8 @@
 
 #include <gsl/gsl_sf.h>
 
-#include <lal/LALDetCharGlib.h>
+#include <lal/LALString.h>
+#include <lal/LALDetCharGlibTypes.h>
 #include <lal/LIGOLwXMLBurstRead.h>
 #include <lal/LIGOMetadataTables.h>
 #include <lal/LIGOMetadataBurstUtils.h>
@@ -36,11 +37,11 @@
 extern "C" {
 #endif
 
-void XLALDetCharScanTrigs( GHashTable *chancount, GHashTable *chantable, GSequence* trig_sequence, const char* chan, double twind, int coinctype );
-double XLALDetCharVetoRound( char* winner, GHashTable* chancount, GHashTable* chanhist, const char* chan, double t_ratio );
-void XLALDetCharPruneTrigs( GSequence* trig_sequence, const LALSegList* onsource );
-GSequence* XLALDetCharRemoveTrigs( GSequence* trig_sequence, const LALSeg veto, const char* vchan );
-void XLALDetCharTrigsToVetoList( LALSegList* vetoes, GSequence* trig_sequence, const LALSeg veto, const char* vchan );
+void XLALDetCharScanTrigs( LALGHashTable *chancount, LALGHashTable *chantable, LALGSequence* trig_sequence, const char* chan, double twind, int coinctype );
+double XLALDetCharVetoRound( char** winner, LALGHashTable* chancount, LALGHashTable* chanhist, const char* chan, double t_ratio );
+void XLALDetCharPruneTrigs( LALGSequence* trig_sequence, const LALSegList* onsource, double snr_thresh, const char* refchan );
+void XLALDetCharRemoveTrigs( LALGSequence* trig_sequence, LALGSequence** tbd, const LALSeg veto, const char* vchan, const char* refchan, double snr_thresh );
+void XLALDetCharTrigsToVetoList( LALSegList* vetoes, LALGSequence* trig_sequence, const LALSeg veto, const char* vchan );
 double XLALDetCharHvetoSignificance( double mu, int k );
 
 #ifdef  __cplusplus

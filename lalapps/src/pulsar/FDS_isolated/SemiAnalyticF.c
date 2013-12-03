@@ -128,14 +128,10 @@ int main(int argc,char *argv[])
 {
   LALStatus status = blank_status;	/* initialize status */
 
-  lalDebugLevel = 0;	/* default value */
   vrbflg = 1;		/* verbose error-messages */
 
   /* set LAL error-handler */
   lal_errhandler = LAL_ERR_EXIT;	/* exit with returned status-code on error */
-
-  /*----------  read user-input and set up shop ----------*/
-  LAL_CALL (LALGetDebugLevel(&status, argc, argv, 'v'), &status);
 
   /* register all user-variables */
   LAL_CALL (InitUserVars(&status, &CommandLineArgs), &status);	  
@@ -208,8 +204,8 @@ ComputeF( LALStatus *status, struct CommandLineArgsTag CLA)
 } /* ComputeF() */
 
 
-/** 
- * register all our "user-variables" 
+/**
+ * register all our "user-variables"
  */
 void
 InitUserVars (LALStatus *status, struct CommandLineArgsTag *CLA)
@@ -227,7 +223,7 @@ InitUserVars (LALStatus *status, struct CommandLineArgsTag *CLA)
   CLA->sqrtSh=1.0;
   
   /** Default year-span of ephemeris-files to be used */
-#define EPHEM_YEARS  "00-04"
+#define EPHEM_YEARS  "00-19-DE405"
   CLA->ephemYear = LALCalloc(1, strlen(EPHEM_YEARS)+1);
   strcpy (CLA->ephemYear, EPHEM_YEARS);
   
@@ -315,9 +311,9 @@ InitUserVars (LALStatus *status, struct CommandLineArgsTag *CLA)
   RETURN(status);
 } /* InitUserVars() */
   
-/** 
- * Handle user-input and check its validity. 
- * Load ephemeris and calculate AM-coefficients (stored globally) 
+/**
+ * Handle user-input and check its validity.
+ * Load ephemeris and calculate AM-coefficients (stored globally)
  */
 void
 Initialize (LALStatus *status, struct CommandLineArgsTag *CLA)
@@ -477,7 +473,7 @@ Initialize (LALStatus *status, struct CommandLineArgsTag *CLA)
 } /* ParseUserInput() */
 
 
-/** 
+/**
  * Check validity of user-input
  */
 void

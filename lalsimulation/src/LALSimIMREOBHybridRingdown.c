@@ -18,21 +18,20 @@
 */
 
 /**
-
-\author Yi Pan, Craig Robinson
-\file
-
-\brief Module to compute the ring-down waveform as linear combination
-of quasi-normal-modes decaying waveforms, which can be attached to
-the inspiral part of the compat binary coalescing waveform.
-The method is describe in Sec. II C of Pan et al. PRD 84, 124052 (2011), 
-specifically Eqs. 30 - 32.
-Eqs. 30 and 31 are written in explicity linear equation systems in 
-DCC document T1100433.
-This method is currently used for EOBNRv2 and SEOBNRv1 models. The only difference
-between the two models in ring-down waveform is the pseudo-QNM introduced 
-in the latter (see Taracchini et al. PRD 86, 024011 (2012) for more details).
-*/
+ * \author Yi Pan, Craig Robinson
+ * \file
+ *
+ * \brief Module to compute the ring-down waveform as linear combination
+ * of quasi-normal-modes decaying waveforms, which can be attached to
+ * the inspiral part of the compat binary coalescing waveform.
+ * The method is describe in Sec. II C of Pan et al. PRD 84, 124052 (2011),
+ * specifically Eqs. 30 - 32.
+ * Eqs. 30 and 31 are written in explicity linear equation systems in
+ * DCC document T1100433.
+ * This method is currently used for EOBNRv2 and SEOBNRv1 models. The only difference
+ * between the two models in ring-down waveform is the pseudo-QNM introduced
+ * in the latter (see Taracchini et al. PRD 86, 024011 (2012) for more details).
+ */
 
 #include <complex.h>
 #include <stdlib.h>
@@ -58,14 +57,14 @@ in the latter (see Taracchini et al. PRD 86, 024011 (2012) for more details).
 
 /**
  * Generates the ringdown wave associated with the given real
- * and imaginary parts of the inspiral waveform. The parameters of 
+ * and imaginary parts of the inspiral waveform. The parameters of
  * the ringdown, such as amplitude and phase offsets, are determined
  * by solving the linear equations defined in the DCC document T1100433.
- * In the linear equations Ax=y, 
+ * In the linear equations Ax=y,
  * A is a 16-by-16 matrix depending on QNM (complex) frequencies,
  * x is a 16-d vector of the 8 unknown complex QNM amplitudes,
  * y is a 16-d vector depending on inspiral-plunge waveforms and their derivatives near merger.
- */ 
+ */
 static INT4 XLALSimIMREOBHybridRingdownWave(
   REAL8Vector          *rdwave1,   /**<< OUTPUT, Real part of ringdown waveform */
   REAL8Vector          *rdwave2,   /**<< OUTPUT, Imag part of ringdown waveform */
@@ -385,14 +384,14 @@ static INT4 XLALGenerateHybridWaveDerivatives (
 
 /**
  * The main workhorse function for performing the ringdown attachment for EOB
- * models EOBNRv2 and SEOBNRv1. This is the function which gets called by the 
+ * models EOBNRv2 and SEOBNRv1. This is the function which gets called by the
  * code generating the full IMR waveform once generation of the inspiral part
  * has been completed.
- * The ringdown is attached using the hybrid comb matching detailed in 
- * The method is describe in Sec. II C of Pan et al. PRD 84, 124052 (2011), 
+ * The ringdown is attached using the hybrid comb matching detailed in
+ * The method is describe in Sec. II C of Pan et al. PRD 84, 124052 (2011),
  * specifically Eqs. 30 - 32.. Further details of the
  * implementation of the found in the DCC document T1100433.
- * In SEOBNRv1, the last physical overtone is replace by a pseudoQNM. See 
+ * In SEOBNRv1, the last physical overtone is replace by a pseudoQNM. See
  * Taracchini et al. PRD 86, 024011 (2012) for details.
  * STEP 1) Get mass and spin of the final black hole and the complex ringdown frequencies
  * STEP 2) Based on least-damped-mode decay time, allocate memory for rigndown waveform
@@ -441,7 +440,7 @@ static INT4 XLALSimIMREOBHybridAttachRingdown(
       mTot  = (mass1 + mass2) * LAL_MTSUN_SI;
       eta       = mass1 * mass2 / ( (mass1 + mass2) * (mass1 + mass2) );
 
-      /**
+      /*
        * STEP 1) Get mass and spin of the final black hole and the complex ringdown frequencies
        */
 
@@ -494,7 +493,7 @@ static INT4 XLALSimIMREOBHybridAttachRingdown(
         XLAL_ERROR( XLAL_EFAILED );
       }
 
-      /**
+      /*
        * STEP 2) Based on least-damped-mode decay time, allocate memory for rigndown waveform
        */
 
@@ -526,7 +525,7 @@ static INT4 XLALSimIMREOBHybridAttachRingdown(
       memset( rdwave1->data, 0, rdwave1->length * sizeof( REAL8 ) );
       memset( rdwave2->data, 0, rdwave2->length * sizeof( REAL8 ) );
 
-      /**
+      /*
        * STEP 3) Get values and derivatives of inspiral waveforms at matching comb points
        */
 
@@ -574,7 +573,7 @@ static INT4 XLALSimIMREOBHybridAttachRingdown(
       }
 
 
-      /**
+      /*
        * STEP 4) Solve QNM coefficients and generate ringdown waveforms
        */
 
@@ -593,7 +592,7 @@ static INT4 XLALSimIMREOBHybridAttachRingdown(
         XLAL_ERROR( XLAL_EFUNC );
       }
 
-      /**
+      /*
        * STEP 5) Stitch inspiral and ringdown waveoforms
        */
 

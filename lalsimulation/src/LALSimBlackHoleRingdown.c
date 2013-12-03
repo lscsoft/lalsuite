@@ -524,7 +524,7 @@ COMPLEX16 XLALSimBlackHoleRingdownSpheroidalWaveFunctionLeaver(
 /**
  * Computes the frequency and quality factor of a specified quasinormal
  * mode (l,m) of spin weight s perturbations (s=-2 for gravitational
- * perturbations) of a black hole of a specified mass and spin. 
+ * perturbations) of a black hole of a specified mass and spin.
  *
  * Uses the method of Leaver (1985):
  * E. W. Leaver "An analyitic representation for the quasi-normal
@@ -820,7 +820,6 @@ int leaver_table_3(void)
 
 int main(void)
 {
-	lalDebugLevel = 7;
 	XLALSetErrorHandler(XLALAbortErrorHandler);
 	leaver_table_2();
 	leaver_table_3();
@@ -834,12 +833,12 @@ int main(void)
 
 
 /**
- * Computes the final mass and spin of the black hole resulting from merger. 
+ * Computes the final mass and spin of the black hole resulting from merger.
  * They are given by fittings of NR simulations results. Specifically,
  * for EOBNR, Table I of Buonanno et al. PRD76, 104049;
  * for EOBNRv2 and EOBNRv2HM, Eqs. 29a and 29b of Pan et al. PRD84, 124052;
- * for SEOBNRv1, Eq. 8 of Tichy and Marronetti PRD78, 081501 and 
- *               Eqs. 1 and 3 of Barausse and Rezzolla ApJ704, L40.
+ * for SEOBNRv1, Eq. 8 of Tichy and Marronetti PRD78, 081501 and
+ * Eqs. 1 and 3 of Barausse and Rezzolla ApJ704, L40.
  */
 INT4 XLALSimIMREOBFinalMassSpin(
 	REAL8    *finalMass,  /**<< OUTPUT, the final mass (scaled by original total mass) */
@@ -917,10 +916,10 @@ INT4 XLALSimIMREOBFinalMassSpin(
  * This function generates the quasinormal mode frequencies for a black
  * hole ringdown. At present, this function works for the 22, 21, 33, 44
  * and 55 modes, and includes 8 overtones. The final frequencies are
- * computed by interpolating the data found on the webpage of 
+ * computed by interpolating the data found on the webpage of
  * Vitor Cardoso, http://centra.ist.utl.pt/~vitor/?page=ringdown
  * In this page, frequecy data are given for positive final spins only.
- * For a negative final spin chi<0 case, the (l,m) mode frequency is given by 
+ * For a negative final spin chi<0 case, the (l,m) mode frequency is given by
  * the (l,-m) mode frequency of the positive final spin -chi case.
  */
 INT4 XLALSimIMREOBGenerateQNMFreqV2(

@@ -24,7 +24,7 @@
  *
  * \brief Tests InpsiralSpinBank().
  *
- * \heading{Usage}
+ * ### Usage ###
  *
  * \code
  * InspiralSpinBankTest
@@ -37,7 +37,8 @@
  * read the template bank from an XML file instead of generating it. (This
  * only works if LAL is compiled with metaio.)
  *
- * \heading{Command line options}
+ * ### Command line options ###
+ *
  * <dl>
  * <dt>-b</dt><dd>
  * Specifies the XML file to read template bank from. (Only with metaio.)
@@ -53,7 +54,7 @@
  * "Math3DNotebook.nb".
  * </dd></dl>
  *
- * \heading{Notes}
+ * ### Notes ###
  *
  * <ul>
  *
@@ -69,8 +70,7 @@
  *
  * </li></ul>
  *
- *
-*/
+ */
 
 
 #include <math.h>
@@ -133,7 +133,6 @@ int main( int argc, char *argv[] )
   REAL4 noiseMin = 1;
   BOOLEAN haveXML = 0;
 
-  lalDebugLevel = 33;
 
   if( (list = (Math3DPointList *) LALCalloc( 1, sizeof( Math3DPointList )))
       == NULL )

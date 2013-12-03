@@ -1,7 +1,5 @@
 /* only include this file if LALBurst's config.h has not been included */
-
-#ifndef _LALBURSTCONFIG_H
-#define _LALBURSTCONFIG_H
+#ifndef LALBURST_VERSION
 
 /* LALBurst Version */
 #undef LALBURST_VERSION
@@ -24,4 +22,4 @@
 /* LALBurst Configure Date */
 #undef LALBURST_CONFIGURE_DATE
 
-#endif /* _LALBURSTCONFIG_H */
+#endif /* LALBURST_VERSION */

@@ -30,7 +30,6 @@
 
 /* Default parameters. */
 
-INT4 lalDebugLevel=0;
 
 
 #define MAXFILENAMELENGTH 512
@@ -68,7 +67,6 @@ int main(int argc, char *argv[]){
     if ( !strcmp( argv[arg], "-d" ) ) {
       if ( argc > arg + 1 ) {
         arg++;
-        lalDebugLevel = atoi( argv[arg++] );
       }
     }  
     /* parse first sft filename */

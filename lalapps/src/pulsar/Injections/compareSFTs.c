@@ -27,8 +27,10 @@
 #define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lalapps.h>
 
+#include <lal/Date.h>
 #include <lal/UserInput.h>
 #include <lal/SFTfileIO.h>
+#include <lal/SFTutils.h>
 
 /* Error codes and messages */
 /**\name Error Codes */ /*@{*/
@@ -95,14 +97,12 @@ main(int argc, char *argv[])
   UINT4 i;
   REAL8 maxd = 0;
 
-  lalDebugLevel = 0;
   vrbflg = 1;		/* verbose error-messages */
 
   /* set LAL error-handler */
   lal_errhandler = LAL_ERR_EXIT;	/* exit with returned status-code on error */
 
   /* register all user-variables */
-  LAL_CALL (LALGetDebugLevel (&status, argc, argv, 'd'), &status);
   LAL_CALL (initUserVars (&status), &status);
 
   /* read cmdline & cfgfile  */
@@ -137,7 +137,7 @@ main(int argc, char *argv[])
 
       if( strcmp( sft1->name, sft2->name ) )
 	{
-	  if ( lalDebugLevel ) XLALPrintError("WARNING SFT %d: detector-prefix differ! '%s' != '%s'\n", sft1->name, sft2->name );
+	  if ( lalDebugLevel ) XLALPrintError("WARNING SFT %d: detector-prefix differ! '%s' != '%s'\n", i, sft1->name, sft2->name );
 	  /* exit (1); */  /* can't be too strict here, as we also allow v1-SFTs, which don't have detector-name */
 	}
 
@@ -286,10 +286,10 @@ getMaxErrSFT (const SFTtype *sft1, const SFTtype *sft2)
     {
       REAL8 diff, A1, A2, Ampl;
       REAL8 re1, re2, im1, im2;
-      re1 = sft1->data->data[i].re;
-      im1 = sft1->data->data[i].im;
-      re2 = sft2->data->data[i].re;
-      im2 = sft2->data->data[i].im;
+      re1 = crealf(sft1->data->data[i]);
+      im1 = cimagf(sft1->data->data[i]);
+      re2 = crealf(sft2->data->data[i]);
+      im2 = cimagf(sft2->data->data[i]);
 
       diff = (re1 - re2)*(re1 - re2) + (im1 - im2)*(im1 - im2);
       A1 = re1*re1 + im1*im1;
@@ -350,10 +350,10 @@ scalarProductSFT (LALStatus *stat, REAL4 *scalar, const SFTtype *sft1, const SFT
   for (i=0; i < sft1->data->length; i++)
     {
       REAL8 xre, xim, yre, yim;
-      xre = (REAL8)sft1->data->data[i].re;
-      xim = (REAL8)sft1->data->data[i].im;
-      yre = (REAL8)sft2->data->data[i].re;
-      yim = (REAL8)sft2->data->data[i].im;
+      xre = (REAL8)crealf(sft1->data->data[i]);
+      xim = (REAL8)cimagf(sft1->data->data[i]);
+      yre = (REAL8)crealf(sft2->data->data[i]);
+      yim = (REAL8)cimagf(sft2->data->data[i]);
 
       prod +=  xre * yre + xim * yim;
 
@@ -432,8 +432,8 @@ subtractSFTVectors (LALStatus *stat, SFTVector **ret, const SFTVector *sftvect1,
     {
       for (j=0; j < N; j++)
 	{
-	  vect->data[alpha].data->data[j].re = sftvect1->data[alpha].data->data[j].re - sftvect2->data[alpha].data->data[j].re;
-	  vect->data[alpha].data->data[j].im = sftvect1->data[alpha].data->data[j].im - sftvect2->data[alpha].data->data[j].im;
+	  vect->data[alpha].data->data[j].realf_FIXME = crealf(sftvect1->data[alpha].data->data[j]) - crealf(sftvect2->data[alpha].data->data[j]);
+	  vect->data[alpha].data->data[j].imagf_FIXME = cimagf(sftvect1->data[alpha].data->data[j]) - cimagf(sftvect2->data[alpha].data->data[j]);
 	} /* for j < N */
 
     } /* for alpha < M */

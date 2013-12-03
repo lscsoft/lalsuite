@@ -27,7 +27,6 @@ SFTConstraints empty_constraints;
 
 /*---------- Global variables ----------*/
 
-INT4 lalDebugLevel = 1;
 SFTVector *sft_vect = NULL;
 REAL8 *sinVal,*cosVal;
 
@@ -158,8 +157,8 @@ int CSFTs(fftw_complex *L,REAL8 Fmin,REAL8 Fmax,int number,int startindex,REAL8 
   /* Loop over frequencies to be demodulated */
   for(m = 0 ; m <= number*(if1-if0)  ; m++ )
   {
-    llSFT.re =0.0;
-    llSFT.im =0.0;
+    llSFT.real_FIXME =0.0;
+    llSFT.imag_FIXME =0.0;
 
     f=if0*deltaF+m*deltaF/number;
 
@@ -209,10 +208,10 @@ int CSFTs(fftw_complex *L,REAL8 Fmin,REAL8 Fmax,int number,int startindex,REAL8 
 	    /* these four lines compute P*xtilde */
 	    Xalpha_k = Xalpha[sftIndex];
 	    /*fprintf(stderr,"%d\n",sftIndex); */
-	    realXP += Xalpha_k.re*realP;
-	    realXP -= Xalpha_k.im*imagP;
-	    imagXP += Xalpha_k.re*imagP;
-	    imagXP += Xalpha_k.im*realP;
+	    realXP += crealf(Xalpha_k)*realP;
+	    realXP -= cimagf(Xalpha_k)*imagP;
+	    imagXP += crealf(Xalpha_k)*imagP;
+	    imagXP += cimagf(Xalpha_k)*realP;
 	  }
 	/* double time = GPS2REAL(sft_vect->data[alpha+startindex].epoch) - t0; */
 	/* y = -LAL_TWOPI*(time/sTsft)*(if0+(REAL8)m/(REAL8)number); */
@@ -227,14 +226,14 @@ int CSFTs(fftw_complex *L,REAL8 Fmin,REAL8 Fmax,int number,int startindex,REAL8 
 	{
 	  REAL8 realQXP = realXP*realQ-imagXP*imagQ;
 	  REAL8 imagQXP = realXP*imagQ+imagXP*realQ;
-	  llSFT.re += realQXP;
-	  llSFT.im += imagQXP;
+	  llSFT.real_FIXME += realQXP;
+	  llSFT.imag_FIXME += imagQXP;
 	}
       }      
 
 
-    L[m][0] = llSFT.re; 
-    L[m][1] = llSFT.im; 
+    L[m][0] = creal(llSFT); 
+    L[m][1] = cimag(llSFT); 
     
     
   }
@@ -495,8 +494,8 @@ int main(int argc, char **argv)
 	{
 	  for(j=0;j<N;j++)
 	    {
-	      L[j][0] = sft_vect->data[i].data->data[j+Dterms].re;
-	      L[j][1] = sft_vect->data[i].data->data[j+Dterms].im;
+	      L[j][0] = crealf(sft_vect->data[i].data->data[j+Dterms]);
+	      L[j][1] = cimagf(sft_vect->data[i].data->data[j+Dterms]);
 	    }
 	  
 	}

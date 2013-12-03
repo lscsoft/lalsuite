@@ -237,7 +237,7 @@ class ppeNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
     self.__ephem_earth = None
     self.__ephem_sun = None
     self.__ephem_time = None
-    self.__model_type = None
+    self.__harmonics = None
     
     self.__Nlive = None
     self.__Nmcmc = None
@@ -350,12 +350,12 @@ class ppeNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
   def set_ephem_time(self,et):
     # set time correction ephemeris file
     self.add_var_opt('ephem-time',et)
-    self_ephem_time = et
+    self.__ephem_time = et
   
-  def set_model_type(self,mt):
-    # set the pulsar model type
-    self.add_var_opt('model-type',mt)
-    self.__model_type = mt
+  def set_harmonics(self,h):
+    # set model frequency harmonics
+    self.add_var_opt('harmonics',h)
+    self.__harmonics = h
     
   def set_Nlive(self,nl):
     # set number of live points
@@ -486,3 +486,210 @@ class ppeNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
     # use the old data segmentation routine i.e. 30 min segments
     self.add_var_opt('oldChunks', '')
     self.__oldChunks = True
+    
+  
+class createresultspageJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
+  """
+  A job to create an individual pulsar results page
+  """
+  def __init__(self,execu,logpath):
+    self.__executable = execu
+    self.__universe  = 'vanilla'
+    pipeline.CondorDAGJob.__init__(self, self.__universe, self.__executable)
+    pipeline.AnalysisJob.__init__(self, None)
+    
+    self.add_condor_cmd('getenv','True')
+
+    self.set_stdout_file(logpath+'/create_results_page-$(cluster).out')
+    self.set_stderr_file(logpath+'/create_results_page-$(cluster).err')
+    self.set_sub_file('create_results_page.sub')
+ 
+    # additional required args
+    self.add_arg('$(macrom)') # macro for MCMC directories
+    self.add_arg('$(macrobk)') # macro for Bk (fine heterodyne file) directories
+    self.add_arg('$(macroi)') # macro for IFOs
+ 
+class createresultspageNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
+  """
+    A createresultspage node to run as part of a condor DAG.
+  """
+  def __init__(self,job):
+    """
+    job = A CondorDAGJob that can run the segment list finding script
+    """
+    pipeline.CondorDAGNode.__init__(self,job)
+    pipeline.AnalysisNode.__init__(self)
+    
+    # initilise job variables
+    self.__outpath = None
+    self.__mcmcdirs = []
+    self.__parfile = None
+    self.__Bkfiles = []
+    self.__priorfile = None
+    self.__ifos = []
+    self.__histbins = None
+    self.__epsout = False
+    self.__swinj = False
+    self.__hwinj = False
+    
+  def set_outpath(self,val):
+    # set the detector
+    self.add_var_opt('o', val, short=True)
+    self.__outpath = val
+  def set_mcmcdir(self,val):
+    # set the MCMC file directories
+    macroval = ''
+    for f in val:
+      macroval = '%s-m %s ' % (macroval, f)
+    
+    self.add_macro('macrom', macroval)
+    self.__mcmcdirs = val
+  def set_parfile(self,val):
+    # set the pulsar parameter file
+    self.add_var_opt('p', val, short=True)
+    self.__parfile = val
+  def set_bkfiles(self,val):
+    # set the fine heterodyned data files
+    macroval = ''
+    for f in val:
+      macroval = '%s-b %s ' % (macroval, f)
+      
+    self.add_macro('macrobk', macroval)
+    self.__Bkfiles = val
+  def set_priordir(self,val):
+    # set the prior file directory
+    self.add_var_opt('r', val, short=True)
+    self.__priordir = None
+  def set_ifos(self,val):
+    # set the IFOs to analyse
+    macroval = ''
+    for f in val:
+      macroval = '%s-i %s ' % (macroval, f)
+    
+    self.add_macro('macroi', macroval)
+    self.__ifos = val
+  def set_histbins(self,val):
+    # set the number of histogram bins
+    self.add_var_opt('n', val, short=True)
+    self.__histbins = val
+  def set_epsout(self):
+    # set to output eps figs
+    self.add_var_opt('e', '', short=True)
+    self.__epsout = True
+  def set_swinj(self):
+    # set to say that analysing software injection
+    self.add_var_opt('s', '', short=True)
+    self.__swinj = True
+  def set_swinj(self):
+    # set to say that analysing hardware injection
+    self.add_var_opt('w', '', short=True)
+    self.__hwinj = True
+ 
+ 
+class collateresultsJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
+  """
+  A job to collate all the individual pulsar results pages
+  """
+  def __init__(self,execu,logpath):
+    self.__executable = execu
+    self.__universe  = 'vanilla'
+    pipeline.CondorDAGJob.__init__(self, self.__universe, self.__executable)
+    pipeline.AnalysisJob.__init__(self, None)
+    
+    self.add_condor_cmd('getenv','True')
+
+    self.set_stdout_file(logpath+'/collate_results-$(cluster).out')
+    self.set_stderr_file(logpath+'/collate_results-$(cluster).err')
+    self.set_sub_file('collate_results.sub')
+    
+    # some required argument macros
+    self.add_arg('$(macroifo)') # for IFOs
+    #self.add_arg('$(macrou)') # for output upper limits
+    #self.add_arg('$(macron)') # for output pulsar values
+    
+class collateresultsNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
+  """
+    A collateresults node to run as part of a condor DAG.
+  """
+  def __init__(self,job):
+    """
+    job = A CondorDAGJob that can run the segment list finding script
+    """
+    pipeline.CondorDAGNode.__init__(self,job)
+    pipeline.AnalysisNode.__init__(self)
+    
+    # initilise job variables
+    self.__outpath = None
+    self.__inpath = None
+    self.__parfile = None
+    self.__compilelatex = False
+    self.__sorttype = None
+    self.__ifos = []
+    self.__outputlims = []
+    self.__outputvals = []
+    self.__outputhist = False
+    self.__outputulplot = False
+    self.__withprior = False
+    self.__epsout = False
+    
+  def set_outpath(self,val):
+    # set the detector
+    self.add_var_opt('o', val, short=True)
+    self.__outpath = val
+  def set_inpath(self,val):
+    # set the input path
+    self.add_var_opt('z', val, short=True)
+    self.__inpath = val
+  def set_parfile(self,val):
+    # set the pulsar parameter file directory
+    self.add_var_opt('p', val, short=True)
+    self.__parfile = val
+  def set_compilelatex(self):
+    # set to compile LaTeX results table
+    self.add_var_opt('l', '', short=True)
+    self.__compilelatex = True
+  def set_sorttype(self,val):
+    # set the sorting order of the output results
+    self.add_var_opt('s', val, short=True)
+    self.__sorttype = val
+  def set_ifos(self,val):
+    # set the list if IFOs to output results for
+    macroval = ''
+    for f in val:
+      macroval = '%s-i %s ' % (macroval, f)
+    
+    self.add_macro('macroifo', macroval)
+    self.__ifos = val
+  def set_outputlims(self,val):
+    # set the upper limit results to output
+    macroval = ''
+    for f in val:
+      macroval = '%s-u %s ' % (macroval, f)
+    
+    self.add_macro('macrou', macroval)
+    self.__outputlims = val
+  def set_outputvals(self,val):
+    # set the pulsar parameter values to output
+    macroval = ''
+    for f in val:
+      macroval = '%s-n %s ' % (macroval, f)
+    
+    self.add_macro('macron', macroval)
+    self.__outputvals = val
+  def set_outputhist(self):
+    # set to output histograms of the results
+    self.add_var_opt('k', '', short=True)
+    self.__outputhist = True
+  def set_outputulplot(self):
+    # set to output a plot of the ULs
+    self.add_var_opt('t', '', short=True)
+    self.__outputulplot = True
+  def set_withprior(self):
+    # set to output prior values with the hist and UL plots
+    self.add_var_opt('w', '', short=True)
+    self.__withprior = True
+  def set_epsout(self):
+    # set to output plots in eps format as well as png
+    self.add_var_opt('e', '', short=True)
+    self.__epsout = True
+    

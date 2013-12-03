@@ -17,6 +17,8 @@
  *  MA  02111-1307  USA
  */
 
+/** \cond DONT_DOXYGEN */
+
 /* Use more efficient trig routines for solaris, if available and
    requested. */
 #include <config.h>
@@ -37,10 +39,27 @@
 #include <lal/Date.h>
 #include <lal/Units.h>
 #include <lal/TimeDelay.h>
-#include <lal/LALBarycenter.h>
 #include <lal/VectorOps.h>
 #include <lal/SimulateCoherentGW.h>
 #include <lal/SkyCoordinates.h>
+
+/* \name Error Codes */
+#define SIMULATECOHERENTGWH_ENUL  1	/*< Unexpected null pointer in arguments */
+#define SIMULATECOHERENTGWH_EBAD  2	/*< A sampling interval is (effectively) zero */
+#define SIMULATECOHERENTGWH_ESIG  3	/*< Input signal must specify amplitude and phase functions */
+#define SIMULATECOHERENTGWH_EDIM  4	/*< Amplitude must be a 2-dimensional vector */
+#define SIMULATECOHERENTGWH_EMEM  5	/*< Memory allocation error */
+#define SIMULATECOHERENTGWH_EUNIT 6	/*< Bad input units */
+
+#define SIMULATECOHERENTGWH_MSGENUL  "Unexpected null pointer in arguments"
+#define SIMULATECOHERENTGWH_MSGEBAD  "A sampling interval is (effectively) zero"
+#define SIMULATECOHERENTGWH_MSGESIG  "Input signal must specify amplitude and phase functions"
+#define SIMULATECOHERENTGWH_MSGEDIM  "Amplitude must be a 2-dimensional vector"
+#define SIMULATECOHERENTGWH_MSGEMEM  "Memory allocation error"
+#define SIMULATECOHERENTGWH_MSGEUNIT "Bad input units"
+
+
+
 
 /* A macro that takes a detector time (in units of output->deltaT from
    output->epoch) and adds the propagation time interpolated from the
@@ -59,133 +78,135 @@
     + (1.0-indexFrac)*delayData[intIndex]                               \
     )
 
+
 /**
-   \author Creighton, T. D.
-
-   \brief Computes the response of a detector to a coherent gravitational wave.
-
-   This function takes a quasiperiodic gravitational waveform given in
-   <tt>*signal</tt>, and estimates the corresponding response of the
-   detector whose position, orientation, and transfer function are
-   specified in <tt>*detector</tt>.  The result is stored in
-   <tt>*output</tt>.
-
-   The fields <tt>output-\>epoch</tt>, <tt>output->deltaT</tt>, and
-   <tt>output-\>data</tt> must already be set, in order to specify the time
-   period and sampling rate for which the response is required.  If
-   <tt>output-\>f0</tt> is nonzero, idealized heterodyning is performed (an
-   amount \f$2\pi f_0(t-t_0)\f$ is subtracted from the phase before computing
-   the sinusoid, where \f$t_0\f$ is the heterodyning epoch defined in
-   \c detector).  For the input signal, <tt>signal-\>h</tt> is ignored,
-   and the signal is treated as zero at any time for which either
-   <tt>signal-\>a</tt> or <tt>signal-\>phi</tt> is not defined.
-
-   This routine will convert <tt>signal-\>position</tt> to equatorial
-   coordinates, if necessary.
-
-   \heading{Algorithm}
-
-   The routine first accounts for the time delay between the detector and
-   the solar system barycentre, based on the detector position
-   information stored in <tt>*detector</tt> and the propagation direction
-   specified in <tt>*signal</tt>.  Values of the propagation delay are
-   precomuted at fixed intervals and stored in a table, with the
-   intervals \f$\Delta T_\mathrm{delay}\f$ chosen such that the value
-   interpolated from adjacent table entries will never differ from the
-   true value by more than some timing error \f$\sigma_T\f$.  This implies
-   that:
-   \f[
-   \Delta T_\mathrm{delay} \leq \sqrt{
-   \frac{8\sigma_T}{\max\{a/c\}} } \; ,
-   \f]
-   where \f$\max\{a/c\}=1.32\times10^{-10}\mathrm{s}^{-1}\f$ is the maximum
-   acceleration of an Earth-based detector in the barycentric frame.  The
-   total propagation delay also includes Einstein and Shapiro delay, but
-   these are more slowly varying and thus do not constrain the table
-   spacing.  At present, a 400s table spacing is hardwired into the code,
-   implying \f$\sigma_T\approx3\mu\f$s, comparable to the stated accuracy of
-   <tt>LALBarycenter()</tt>.
-
-   Next, the polarization response functions of the detector
-   \f$F_{+,\times}(\alpha,\delta)\f$ are computed for every 10 minutes of the
-   signal's duration, using the position of the source in <tt>*signal</tt>,
-   the detector information in <tt>*detector</tt>, and the function
-   <tt>LALComputeDetAMResponseSeries()</tt>.  Subsequently, the
-   polarization functions are estimated for each output sample by
-   interpolating these precomputed values.  This guarantees that the
-   interpolated value is accurate to \f$\sim0.1\%\f$.
-
-   Next, the frequency response of the detector is estimated in the
-   quasiperiodic limit as follows:
-   <ul>
-   <li> At each sample point in <tt>*output</tt>, the propagation delay is
-   computed and added to the sample time, and the instantaneous
-   amplitudes \f$A_1\f$, \f$A_2\f$, frequency \f$f\f$, phase \f$\phi\f$, and polarization
-   shift \f$\Phi\f$ are found by interpolating the nearest values in
-   <tt>signal-\>a</tt>, <tt>signal-\>f</tt>, <tt>signal-\>phi</tt>, and
-   <tt>signal-\>shift</tt>, respectively.  If <tt>signal-\>f</tt> is not
-   defined at that point in time, then \f$f\f$ is estimated by differencing
-   the two nearest values of \f$\phi\f$, as \f$f\approx\Delta\phi/2\pi\Delta
-   t\f$.  If <tt>signal-\>shift</tt> is not defined, then \f$\Phi\f$ is treated as
-   zero.</li>
-   <li> The complex transfer function of the detector the frequency \f$f\f$
-   is found by interpolating <tt>detector-\>transfer</tt>.  The amplitude of
-   the transfer function is multiplied with \f$A_1\f$ and \f$A_2\f$, and the
-   phase of the transfer function is added to \f$\phi\f$,</li>
-   <li> The plus and cross contributions \f$o_+\f$, \f$o_\times\f$ to the
-   detector output are computed as in Eqs.\eqref{eq_quasiperiodic_hpluscross}
-   of \ref SimulateCoherentGW_h, but
-   using the response-adjusted amplitudes and phase.</li>
-   <li> The final detector response \f$o\f$ is computed as
-   \f$o=(o_+F_+)+(o_\times F_\times)\f$.</li>
-   </ul>
-
-   \heading{A note on interpolation:}
-   Much of the computational work in this routine involves interpolating
-   various time series to find their values at specific output times.
-   The algorithm is summarized below.
-
-   Let \f$A_j = A( t_A + j\Delta t_A )\f$ be a sampled time series, which we
-   want to resample at new (output) time intervals \f$t_k = t_0 + k\Delta
-   t\f$.  We first precompute the following quantities:
-   \f{eqnarray}{
-   t_\mathrm{off} & = & \frac{t_0-t_A}{\Delta t_A}  \; , \nonumber \\
-   dt & = & \frac{\Delta t}{\Delta t_A} \; . \nonumber
-   \f}
-   Then, for each output sample time \f$t_k\f$, we compute:
-   \f{eqnarray}{
-   t & = & t_\mathrm{off} + k \times dt \; , \nonumber \\
-   j & = & \lfloor t \rfloor            \; , \nonumber \\
-   f & = & t - j                        \; , \nonumber
-   \f}
-   where \f$\lfloor x\rfloor\f$ is the "floor" function; i.e.\ the largest
-   integer \f$\leq x\f$.  The time series sampled at the new time is then:
-   \f[
-   A(t_k) = f \times A_{j+1} + (1-f) \times A_j \; .
-   \f]
-
-   \heading{Notes}
-
-   The major computational hit in this routine comes from computing the
-   sine and cosine of the phase angle in
-   Eqs.\eqref{eq_quasiperiodic_hpluscross} of
-   \ref SimulateCoherentGW_h.  For better online performance, these can
-   be replaced by other (approximate) trig functions.  Presently the code
-   uses the native \c libm functions by default, or the function
-   <tt>sincosp()</tt> in \c libsunmath \e if this function is
-   available \e and the constant \c ONLINE is defined.
-   Differences at the level of 0.01 begin to appear only for phase
-   arguments greater than \f$10^{14}\f$ or so (corresponding to over 500
-   years between phase epoch and observation time for frequencies of
-   around 1kHz).
-
-   To activate this feature, be sure that \ref sunmath.h and
-   \c libsunmath are on your system, and add <tt>-DONLINE</tt> to the
-   <tt>--with-extra-cppflags</tt> configuration argument.  In future this
-   flag may be used to turn on other efficient trig algorithms on other
-   (non-Solaris) platforms.
-
-*/
+ * \author Creighton, T. D.
+ *
+ * \brief Computes the response of a detector to a coherent gravitational wave.
+ *
+ * This function takes a quasiperiodic gravitational waveform given in
+ * <tt>*signal</tt>, and estimates the corresponding response of the
+ * detector whose position, orientation, and transfer function are
+ * specified in <tt>*detector</tt>.  The result is stored in
+ * <tt>*output</tt>.
+ *
+ * The fields <tt>output-\>epoch</tt>, <tt>output->deltaT</tt>, and
+ * <tt>output-\>data</tt> must already be set, in order to specify the time
+ * period and sampling rate for which the response is required.  If
+ * <tt>output-\>f0</tt> is nonzero, idealized heterodyning is performed (an
+ * amount \f$2\pi f_0(t-t_0)\f$ is subtracted from the phase before computing
+ * the sinusoid, where \f$t_0\f$ is the heterodyning epoch defined in
+ * \c detector).  For the input signal, <tt>signal-\>h</tt> is ignored,
+ * and the signal is treated as zero at any time for which either
+ * <tt>signal-\>a</tt> or <tt>signal-\>phi</tt> is not defined.
+ *
+ * This routine will convert <tt>signal-\>position</tt> to equatorial
+ * coordinates, if necessary.
+ *
+ * ### Algorithm ###
+ *
+ * The routine first accounts for the time delay between the detector and
+ * the solar system barycentre, based on the detector position
+ * information stored in <tt>*detector</tt> and the propagation direction
+ * specified in <tt>*signal</tt>.  Values of the propagation delay are
+ * precomuted at fixed intervals and stored in a table, with the
+ * intervals \f$\Delta T_\mathrm{delay}\f$ chosen such that the value
+ * interpolated from adjacent table entries will never differ from the
+ * true value by more than some timing error \f$\sigma_T\f$.  This implies
+ * that:
+ * \f[
+ * \Delta T_\mathrm{delay} \leq \sqrt{
+ * \frac{8\sigma_T}{\max\{a/c\}} } \; ,
+ * \f]
+ * where \f$\max\{a/c\}=1.32\times10^{-10}\mathrm{s}^{-1}\f$ is the maximum
+ * acceleration of an Earth-based detector in the barycentric frame.  The
+ * total propagation delay also includes Einstein and Shapiro delay, but
+ * these are more slowly varying and thus do not constrain the table
+ * spacing.  At present, a 400s table spacing is hardwired into the code,
+ * implying \f$\sigma_T\approx3\mu\f$s, comparable to the stated accuracy of
+ * <tt>LALBarycenter()</tt>.
+ *
+ * Next, the polarization response functions of the detector
+ * \f$F_{+,\times}(\alpha,\delta)\f$ are computed for every 10 minutes of the
+ * signal's duration, using the position of the source in <tt>*signal</tt>,
+ * the detector information in <tt>*detector</tt>, and the function
+ * <tt>LALComputeDetAMResponseSeries()</tt>.  Subsequently, the
+ * polarization functions are estimated for each output sample by
+ * interpolating these precomputed values.  This guarantees that the
+ * interpolated value is accurate to \f$\sim0.1\%\f$.
+ *
+ * Next, the frequency response of the detector is estimated in the
+ * quasiperiodic limit as follows:
+ * <ul>
+ * <li> At each sample point in <tt>*output</tt>, the propagation delay is
+ * computed and added to the sample time, and the instantaneous
+ * amplitudes \f$A_1\f$, \f$A_2\f$, frequency \f$f\f$, phase \f$\phi\f$, and polarization
+ * shift \f$\Phi\f$ are found by interpolating the nearest values in
+ * <tt>signal-\>a</tt>, <tt>signal-\>f</tt>, <tt>signal-\>phi</tt>, and
+ * <tt>signal-\>shift</tt>, respectively.  If <tt>signal-\>f</tt> is not
+ * defined at that point in time, then \f$f\f$ is estimated by differencing
+ * the two nearest values of \f$\phi\f$, as \f$f\approx\Delta\phi/2\pi\Delta
+ * t\f$.  If <tt>signal-\>shift</tt> is not defined, then \f$\Phi\f$ is treated as
+ * zero.</li>
+ * <li> The complex transfer function of the detector the frequency \f$f\f$
+ * is found by interpolating <tt>detector-\>transfer</tt>.  The amplitude of
+ * the transfer function is multiplied with \f$A_1\f$ and \f$A_2\f$, and the
+ * phase of the transfer function is added to \f$\phi\f$,</li>
+ * <li> The plus and cross contributions \f$o_+\f$, \f$o_\times\f$ to the
+ * detector output are computed as in \eqref{eq_quasiperiodic_hpluscross}
+ * of \ref SimulateCoherentGW_h, but
+ * using the response-adjusted amplitudes and phase.</li>
+ * <li> The final detector response \f$o\f$ is computed as
+ * \f$o=(o_+F_+)+(o_\times F_\times)\f$.</li>
+ * </ul>
+ *
+ * ### A note on interpolation: ###
+ *
+ * Much of the computational work in this routine involves interpolating
+ * various time series to find their values at specific output times.
+ * The algorithm is summarized below.
+ *
+ * Let \f$A_j = A( t_A + j\Delta t_A )\f$ be a sampled time series, which we
+ * want to resample at new (output) time intervals \f$t_k = t_0 + k\Delta
+ * t\f$.  We first precompute the following quantities:
+ * \f{eqnarray}{
+ * t_\mathrm{off} & = & \frac{t_0-t_A}{\Delta t_A}  \; , \\
+ * dt & = & \frac{\Delta t}{\Delta t_A} \; .
+ * \f}
+ * Then, for each output sample time \f$t_k\f$, we compute:
+ * \f{eqnarray}{
+ * t & = & t_\mathrm{off} + k \times dt \; , \\
+ * j & = & \lfloor t \rfloor            \; , \\
+ * f & = & t - j                        \; ,
+ * \f}
+ * where \f$\lfloor x\rfloor\f$ is the "floor" function; i.e.\ the largest
+ * integer \f$\leq x\f$.  The time series sampled at the new time is then:
+ * \f[
+ * A(t_k) = f \times A_{j+1} + (1-f) \times A_j \; .
+ * \f]
+ *
+ * ### Notes ###
+ *
+ * The major computational hit in this routine comes from computing the
+ * sine and cosine of the phase angle in
+ * \eqref{eq_quasiperiodic_hpluscross} of
+ * \ref SimulateCoherentGW_h.  For better online performance, these can
+ * be replaced by other (approximate) trig functions.  Presently the code
+ * uses the native \c libm functions by default, or the function
+ * <tt>sincosp()</tt> in \c libsunmath \e if this function is
+ * available \e and the constant \c ONLINE is defined.
+ * Differences at the level of 0.01 begin to appear only for phase
+ * arguments greater than \f$10^{14}\f$ or so (corresponding to over 500
+ * years between phase epoch and observation time for frequencies of
+ * around 1kHz).
+ *
+ * To activate this feature, be sure that \ref sunmath.h and
+ * \c libsunmath are on your system, and add <tt>-DONLINE</tt> to the
+ * <tt>--with-extra-cppflags</tt> configuration argument.  In future this
+ * flag may be used to turn on other efficient trig algorithms on other
+ * (non-Solaris) platforms.
+ *
+ */
 void
 LALSimulateCoherentGW( LALStatus        *stat,
                        REAL4TimeSeries  *output,
@@ -418,54 +439,9 @@ LALSimulateCoherentGW( LALStatus        *stat,
   TRY( LALDCreateVector( stat->statusPtr, &delay, nMax ), stat );
   delayData = delay->data;
 
-  /* Compute delay from solar system barycentre. */
-  if ( detector->site && detector->ephemerides ) {
-    LIGOTimeGPS gpsTime;   /* detector time when we compute delay */
-    EarthState state;      /* Earth position info at that time */
-    BarycenterInput input; /* input structure to LALBarycenter() */
-    EmissionTime emit;     /* output structure from LALBarycenter() */
-
-    /* Arrange nested pointers, and set initial values. */
-    gpsTime = input.tgps = output->epoch;
-    gpsTime.gpsSeconds -= dtDelayBy2;
-    input.tgps.gpsSeconds -= dtDelayBy2;
-    input.site = *(detector->site);
-    for ( i = 0; i < 3; i++ )
-      input.site.location[i] /= LAL_C_SI;
-    input.alpha = source.longitude;
-    input.delta = source.latitude;
-    input.dInv = 0.0;
-    delayMin = delayMax = 1.1*LAL_AU_SI/( LAL_C_SI*output->deltaT );
-    delayMax *= -1;
-
-    /* Compute table. */
-    for ( i = 0; i < nMax; i++ ) {
-      REAL8 tDelay; /* propagation time */
-      LALBarycenterEarth( stat->statusPtr, &state, &gpsTime,
-                          detector->ephemerides );
-      BEGINFAIL( stat )
-        TRY( LALDDestroyVector( stat->statusPtr, &delay ), stat );
-      ENDFAIL( stat );
-      LALBarycenter( stat->statusPtr, &emit, &input, &state );
-      BEGINFAIL( stat )
-        TRY( LALDDestroyVector( stat->statusPtr, &delay ), stat );
-      ENDFAIL( stat );
-      delayData[i] = tDelay = emit.deltaT/output->deltaT;
-      if ( tDelay < delayMin )
-        delayMin = tDelay;
-      if ( tDelay > delayMax )
-        delayMax = tDelay;
-      gpsTime.gpsSeconds += 2*dtDelayBy2;
-      input.tgps.gpsSeconds += 2*dtDelayBy2;
-    }
-  }
-
   /* Compute delay from Earth centre. */
-  else if ( detector->site ) {
+  if ( detector->site ) {
     LIGOTimeGPS gpsTime;     /* detector time when we compute delay */
-
-    LALInfo( stat, "Ephemeris field absent; computing propagation"
-             " delays from Earth centre" );
 
     /* Arrange nested pointers, and set initial values. */
     gpsTime = output->epoch;
@@ -968,3 +944,5 @@ LALSimulateCoherentGW( LALStatus        *stat,
   RETURN( stat );
 
 } /* LALSimulateCoherentGW() */
+
+/** \endcond */

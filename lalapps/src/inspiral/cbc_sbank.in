@@ -18,6 +18,7 @@
 from __future__ import division
 
 from time import strftime
+from collections import deque
 import numpy as np
 import sys
 
@@ -41,40 +42,130 @@ from lalinspiral.sbank.waveforms import waveforms
 from pylal.xlal.constants import LAL_PI, LAL_MTSUN_SI
 
 import lal
-lal.cvar.lalDebugLevel = 33
 
-# allow command line configuration of the bank generation
+usage = """
+
+lalapps_cbc_sbank: This program generates a template bank for compact
+binary searches covering a given region of mass and spin parameter
+space. The program supports a number of waveform approximants and is
+extensible to other waveform approximants as they become available.
+
+Example command lines:
+
+** Generate a template bank of positively aligned-spin
+inspiral-merger-ringdown binary black hole waveforms for use in an
+aLIGO search.
+
+lalapps_cbc_sbank --approximant IMRPhenomC --aligned-spin \\
+        --mass1-min 15.0 --mass1-max 25.0 \\
+        --spin1-min 0.0 --spin1-max 0.5 \\
+        --match-min 0.97 --flow 20.0 --noise-model aLIGOZeroDetHighPower \\
+        --instrument H1 --gps-start-time 961545543  --gps-end-time 962150343 \\
+        --user-tag BBH-IMRPhenomC-aLIGOZeroDetHighPower --verbose
+
+
+** Generate a template bank of mildly spinning neutron stars and
+highly spinning black holes using inspiral-only waveforms for use in
+an aLIGO search. Approximate the match calculation using the
+semi-analytic expression for the overlap metric.
+
+lalapps_cbc_sbank --approximant TaylorF2RedSpin --aligned-spin --use-metric \\
+        --mass1-min 1.0 --mass1-max 2.0 \\
+        --mass2-min 5.0 --mass1-max 10.0 \\
+        --spin1-min 0.0 --spin1-max 0.05 \\
+        --spin2-min 0.0 --spin2-max 0.5 \\
+        --match-min 0.97 --flow 20.0 --noise-model aLIGOZeroDetHighPower \\
+        --instrument H1 --gps-start-time 961545543  --gps-end-time 962150343 \\
+        --user-tag NSBH-TaylorF2RedSpin-aLIGOZeroDetHighPower --verbose
+
+
+** Generate a template bank of mildly spinning binary neutron star
+inspiral-only waveforms for use in an aLIGO search. Approximate the
+match calculation using the semi-analytic expression for the overlap
+metric.
+
+lalapps_cbc_sbank --approximant TaylorF2RedSpin --aligned-spin --use-metric \\
+        --mass1-min 1.0 --mass1-max 2.0 \\
+        --spin1-min 0.0 --spin1-max 0.05 \\
+        --match-min 0.97 --flow 20.0 --noise-model aLIGOZeroDetHighPower \\
+        --instrument H1 --gps-start-time 961545543  --gps-end-time 962150343 \\
+        --user-tag BNS-TaylorF2RedSpin-aLIGOZeroDetHighPower --verbose
+
+
+For large parameter spaces with many templates, it is recommended that
+you split the space into smaller sub-regions and ligolw_add the
+resulting banks. One can also seed the template placement process with
+a pre-generated bank, produced for instance by lalapps_tmpltbank, and
+SBank will fill in whichever gaps remain.
+"""
+
+
 def parse_command_line():
-    #parser = OptionParser(version=git_version.verbose_msg) FIXME
-    parser = OptionParser()
-    parser.add_option("--seed",help="Set the seed for the random number generator used by ligolw_cbc_sbank.", metavar="INT", default=1729, type="int")
-    parser.add_option("--bank-seed",help="Initialize the bank with specified template bank.", metavar="FILE")
-    parser.add_option("--mchirp-boundaries-file", metavar="FILE", help="file containing chirp mass bin boundaries")
-    parser.add_option("--mchirp-boundaries-index", metavar="INDEX", type="int", help="integer index into --mchirp-boundaries-file line number such that boundaries[INDEX] is taken as --mchirp-min and boundaries[INDEX + 1] is taken as --mchirp-max")
-    parser.add_option("--approximant", choices=waveforms.keys(), default="IMRPhenomB", help="Set the approximant to use for waveform generation.")
+
+    parser = OptionParser(usage = usage)
+
+    #
+    # waveform options
+    #
+    parser.add_option("--approximant", choices=waveforms.keys(), metavar='|'.join(waveforms.keys()), default=None, help="Required. Specify the approximant to use for waveform generation.")
     parser.add_option("--use-metric", action="store_true", default=False, help="Use analytic approximation to the numerical match calculation (if available).")
-    parser.add_option("--noise-model", choices=noise_models.keys(), default="aLIGOZeroDetHighPower", help="Choose a noise model for the PSD from a set of available analytical model")
-    parser.add_option("--reference-psd", help="Read PSD from xml instead of using analytical noise model.")
-    parser.add_option("--instrument", metavar="IFO", help="Specify the instrument for which to generate a template bank.")
-    parser.add_option("--flow", type="float", help="Set the low-frequency cutoff to use for the match caluclation.")
-    parser.add_option("--gps-start-time", type="int", default=0, help="GPS time of start.")
-    parser.add_option("--gps-end-time", type="int", default=999999999, help="GPS time of end.")
-    parser.add_option("--match-min",help="Set minimum match of the bank.", type="float")
-    parser.add_option("--mass1-min",help="Set minimum mass of the first component", type="float")
-    parser.add_option("--mass1-max",help="Set maximum mass of the first component", type="float")
-    parser.add_option("--mass2-min",help="Set minimum mass of the second component", type="float")
-    parser.add_option("--mass2-max",help="Set maximum mass of the second component", type="float")
-    parser.add_option("--mtotal-min", help="Set minimum total mass of the system", type="float")
-    parser.add_option("--mtotal-max", help="Set maximum total mass of the system",  type="float")
-    parser.add_option("--mchirp-min", help="Set minimum chirp-mass of the system (in solar masses)", type="float")
-    parser.add_option("--mchirp-max", help="Set maximum chirp-mass of the system (in solar masses)", type="float")
-    parser.add_option("--mratio-min", dest="qmin", help="Set minimum allowed mass ratio of the system (convention is that q=m1/m2)", metavar="MAXQ", type="float")
-    parser.add_option("--mratio-max", dest="qmax", help="Set maximum allowed mass ratio of the system (convention is that q=m1/m2)", metavar="MAXQ", type="float")
-    parser.add_option("--spin-min", help="Set minimum allowed value for the spin parameter chi", type="float")
-    parser.add_option("--spin-max", help="Set maximum allowed value for the spin parameter chi", type="float")
+
+    #
+    # mass parameter options
+    #
+    parser.add_option("--mass1-min",help="Required. Set minimum mass of the first component.", type="float", metavar="MASS")
+    parser.add_option("--mass1-max",help="Required. Set maximum mass of the first component.", type="float", metavar="MASS")
+    parser.add_option("--mass2-min",help="Set minimum mass of the second component. If not specified, the mass limits provided on the first component will be assumed for the second component.", type="float", metavar="MASS")
+    parser.add_option("--mass2-max",help="Set maximum mass of the second component. If not specified, the mass limits provided on the first component will be assumed for the second component.", type="float", metavar="MASS")
+    parser.add_option("--mtotal-min", help="Set minimum total mass of the system.", type="float", metavar="MASS")
+    parser.add_option("--mtotal-max", help="Set maximum total mass of the system.",  type="float", metavar="MASS")
+    parser.add_option("--mratio-min", dest="qmin", help="Set minimum allowed mass ratio of the system (convention is that q=m1/m2).", metavar="RATIO", type="float", default=1.0)
+    parser.add_option("--mratio-max", dest="qmax", help="Set maximum allowed mass ratio of the system (convention is that q=m1/m2).", metavar="RATIO", type="float")
+
+    #
+    # spin parameter options
+    #
+    parser.add_option("--spin1-min", help="Set minimum allowed value for the spin of the first component. If spins are aligned, this parameter is interpreted as the projection of the spin vector along the orbital angualr momentum and can be positive or negative. If the spins are not aligned, this parameter is interpreted as the magnitude of the spin vector and must be positive.", type="float", default = -1.0, metavar="SPIN")
+    parser.add_option("--spin1-max", help="Set maximum allowed value for the spin of the first component.", type="float", default = 1.0, metavar="SPIN")
+    parser.add_option("--spin2-min", help="Set minimum allowed value for the spin of the second component. If not specified, the spin2 limits will equal the spin1 limits.", type="float", default = None, metavar="SPIN")
+    parser.add_option("--spin2-max", help="Set maximum allowed value for the spin of the second component.", type="float", default = None, metavar="SPIN")
     parser.add_option("--aligned-spin", action="store_true", default=False, help="Only generate templates whose spins are parallel to the orbital angular momentum.")
-    parser.add_option("--user-tag", default="sbank", help="base for output filename")
+
+    #
+    # initial condition options
+    #
+    parser.add_option("--seed", help="Set the seed for the random number generator used by SBank for waveform parameter (masss, spins, ...) generation.", metavar="INT", default=1729, type="int")
+    parser.add_option("--bank-seed",help="Initialize the bank with specified template bank. For instance, one might generate a template bank by geomtretic/lattice placement methods and use SBank to \"complete\" the bank.", metavar="FILE")
+
+    #
+    # noise model options
+    #
+    parser.add_option("--noise-model", choices=noise_models.keys(), metavar='|'.join(noise_models.keys()), default="aLIGOZeroDetHighPower", help="Choose a noise model for the PSD from a set of available analytical model.")
+    parser.add_option("--reference-psd", help="Read PSD from an xml file instead of using analytical noise model.", metavar="FILE")
+
+    #
+    # match calculation options
+    #
+    parser.add_option("--flow", type="float", help="Required. Set the low-frequency cutoff to use for the match caluclation.")
+    parser.add_option("--match-min",help="Set minimum match of the bank. Note that since this is a stochastic process, the requested minimal match may not be strictly guaranteed but should be fulfilled on a statistical basis. Default: 0.95.", type="float", default=0.95)
+    parser.add_option("--convergence-threshold", metavar="N", help="Set the criterion for convergence of the stochastic bank. The code terminates when there are N rejected proposals for each accepted proposal, averaged over the last ten acceptances. Default 1000.", type="int", default=1000)
+
+    #
+    # output options
+    #
+    parser.add_option("--instrument", metavar="IFO", help="Specify the instrument for which to generate a template bank. This option is used for naming of the output file but also for reading in PSDs or template bank seeds from file.")
+    parser.add_option("--gps-start-time", type="int", default=0, help="GPS time of start. Used only for naming of output file.", metavar="INT")
+    parser.add_option("--gps-end-time", type="int", default=999999999, help="GPS time of end. Used only for naming of output file", metavar="INT")
+    parser.add_option("--user-tag", default=None, help="Apply descriptive tag to output filename.")
     parser.add_option("--verbose", default=False,action="store_true", help="Be verbose and write diagnostic information out to file.")
+
+    #
+    # deprecated options
+    #
+    parser.add_option("--mchirp-boundaries-file", metavar="FILE", help="Deprecated. File containing chirp mass bin boundaries")
+    parser.add_option("--mchirp-boundaries-index", metavar="INDEX", type="int", help="Deprecated. Integer index into --mchirp-boundaries-file line number such that boundaries[INDEX] is taken as --mchirp-min and boundaries[INDEX + 1] is taken as --mchirp-max")
+    parser.add_option("--mchirp-min", help="Deprecated. Set minimum chirp-mass of the system (in solar masses)", type="float")
+    parser.add_option("--mchirp-max", help="Deprecated. Set maximum chirp-mass of the system (in solar masses)", type="float")
 
     opts, args = parser.parse_args()
 
@@ -88,6 +179,21 @@ def parse_command_line():
     #
     # check for argument consistency
     #
+    if opts.qmin < 1:
+        parser.error("Mass ratio is assumed to be >= 1.")
+
+    if not opts.spin2_min:
+        opts.spin2_min = opts.spin1_min
+
+    if not opts.spin2_max:
+        opts.spin2_max = opts.spin1_max
+
+    if not -1 <= opts.spin1_min <= opts.spin1_max <=1:
+        raise ValueError("unphysical spin bounds: [%.2f, %.2f]" % (opts.spin1_min, opts.spin1_max))
+
+    if not -1 <= opts.spin2_min <= opts.spin2_max <=1:
+        raise ValueError("unphysical spin bounds: [%.2f, %.2f]" % (opts.spin2_min, opts.spin2_max))
+
     if opts.approximant in ["TaylorF2RedSpin", "IMRPhenomB","SEOBNRv1"] and not opts.aligned_spin:
         parser.error("--aligned-spin is required for the %s approximant" % opts.approximant)
 
@@ -99,10 +205,13 @@ def parse_command_line():
 
     if opts.mchirp_boundaries_file:
         boundaries = [float(line) for line in open(opts.mchirp_boundaries_file)]
-        if opts.mchirp_boundaries_index + 1 >= len(boundaries):
+        if opts.mchirp_boundaries_index + 1 > len(boundaries):
             raise ValueError("mchirp boundaries file not long enough for requested index")
-        opts.mchirp_min = float(boundaries[opts.mchirp_boundaries_index])
-        opts.mchirp_max = float(boundaries[opts.mchirp_boundaries_index + 1])
+
+        if opts.mchirp_boundaries_index > 0:
+            opts.mchirp_min = float(boundaries[opts.mchirp_boundaries_index])
+        if opts.mchirp_boundaries_index + 1 < len(boundaries):
+            opts.mchirp_max = float(boundaries[opts.mchirp_boundaries_index + 1])
 
     return opts, args
 
@@ -169,23 +278,22 @@ params = {'mass1': (opts.mass1_min, opts.mass1_max),
           'mass2': (opts.mass2_min, opts.mass2_max),
           'mtotal': (opts.mtotal_min, opts.mtotal_max),
           'mratio': (opts.qmin, opts.qmax),
-          'mchirp': (opts.mchirp_min, opts.mchirp_max)
-        }
-# update with waveform dependent parameters
-if opts.spin_min is not None or opts.spin_max is not None:
-    params.update({'chi': (opts.spin_min, opts.spin_max)})
+          'mchirp': (opts.mchirp_min, opts.mchirp_max),
+	  'spin1': (opts.spin1_min, opts.spin1_max),
+	  'spin2': (opts.spin2_min, opts.spin2_max)
+	  }
 
 # get the correct generator
 proposal = proposals[opts.approximant](opts.flow, **params)
 
-# To be 99.99% sure that an injection won't fall between the cracks,
-# require 10000 consecutive covered simulations.
-kmax = 10000
+# For robust convergence, ensure that an average of kmax/len(ks) of
+# the last len(ks) proposals have been rejected by SBank.
+ks = deque(10*[0], maxlen=10)
 
 k = 0 # k is nprop per iteration
 nprop = 1  # count total number of proposed templates
 status_format = "bank size: %d\tproposed: %d\t" + "\t".join("%s: %s" % name_format for name_format in zip(waveform.param_names, waveform.param_formats))
-while k < kmax:
+while (k + float(sum(ks)))/len(ks) < opts.convergence_threshold:
     tmplt = waveform(*proposal.next(), bank=bank)
     k += 1
     nprop += 1
@@ -193,6 +301,7 @@ while k < kmax:
         bank.insort(tmplt)
         if opts.verbose:
             print >>sys.stdout, status_format % ((len(bank), k) + tmplt.params)
+        ks.append(k)
         k = 0
 
 print "total number of proposed templates: %d" % nprop
@@ -220,4 +329,11 @@ for template in bank:
 
 # write out the document
 ligolw_process.set_process_end_time(process)
-utils.write_filename(xmldoc, "%s.xml" % opts.user_tag)
+
+# FIXME output naming conventions to match IHOPE/tmpltbank break sbank_pipe
+if opts.user_tag:
+    fout = "%s-SBANK_%s-%d-%d.xml.gz" % (opts.instrument, opts.user_tag, opts.gps_start_time, opts.gps_end_time-opts.gps_start_time)
+else:
+    fout = "%s-SBANK-%d-%d.xml.gz" % (opts.instrument, opts.gps_start_time, opts.gps_end_time-opts.gps_start_time)
+
+utils.write_filename(xmldoc, fout,  gz=fout.endswith("gz"))

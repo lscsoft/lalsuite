@@ -20,7 +20,6 @@
 /*Test code for stackslide binary. It uses fake hard-coded Fourier transforms */
 #include <StackSlideBinaryTest.h>
 
-INT4 lalDebugLevel=7;
 
               /******************/
 

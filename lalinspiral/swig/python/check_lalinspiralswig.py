@@ -2,14 +2,15 @@
 # Author: Karl Wette, 2011, 2012
 
 # check module load
+print("checking module load ...")
 import lal
 import lalinspiral
 from lalinspiral import cvar as lalinspiralcvar
 from lal import cvar as lalcvar
-lalcvar.lalDebugLevel = 1
-print("passed module load")
+print("PASSED module load")
 
 # check object parent tracking
+print("checking object parent tracking ...")
 a = lalinspiral.lalinspiralswig_test_parent_map_struct()
 for i in range(0, 7):
     b = a.s
@@ -17,7 +18,7 @@ for i in range(0, 7):
     lalinspiralcvar.lalinspiralswig_test_parent_map.s = lalcvar.lalswig_test_struct_const
 del a, b, c
 lal.CheckMemoryLeaks()
-print("passed object parent tracking")
+print("PASSED object parent tracking")
 
 # passed all tests!
 print("PASSED all tests")

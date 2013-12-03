@@ -17,40 +17,42 @@
 *  MA  02111-1307  USA
 */
 
-/** \defgroup LALInspiralMoments_c Module LALInspiralMoments.c
+/**
+ * \defgroup LALInspiralMoments_c Module LALInspiralMoments.c
  * \ingroup LALInspiralBank_h
  * \brief Functions to calculate the moment of the noise power spectral density.
  * \author Brown, D. A., Cokelaer, T. and  Sathyaprakash, B. S.
-
-The moments of the noise curve are defined as
-\f{equation}{
-I(q)  \equiv S_{h}(f_{0}) \int^{f_{c}/f_{0}}_{f_{s}/f_{0}}
-\frac{x^{-q}}{S_{h}(x)} \, dx \,.
-\f}
-Because in practice we will always divide one of these moments by another, we
-do not need to include the \f$S_{h}(f_{0})\f$ term, which always cancels.
-This function calculates the integral
-\f{equation}{
-I = \int^{f_{c}/f_{0}}_{f_{s}/f_{0}} \frac{x^{-q}}{S_{h}(x)} \, dx \,.
-\f}
-It then divides this quantity by a normalisation constant which has been
-passed to the function. In the case of calculating the components of the
-metric for the signal manifold for the purpose of generating a template bank,
-this constant is given by \f$I(7)\f$, because of the definition of the quantity
-\f{equation}{
-J(q) \equiv \frac{I(q)}{I(7/3)} \,.
-\f}
-
-\heading{Algorithm}
-Given the exponent <tt>pars.ndx</tt> and limits of integration
-<tt>pars.xmin</tt> and <tt>pars.xmax</tt> this function returns the moment of
-the power spectral density specified by the frequency series
-<tt>pars.shf</tt> according to
-\f{equation}{
-\mathtt{moment} = \int_{\mathtt{xmin}}^{\mathtt{xmax}}
-\frac{x^{-\mathtt{ndx}}}{S_h(x)}\, dx \, .
-\f}
-*/
+ *
+ * The moments of the noise curve are defined as
+ * \f{equation}{
+ * I(q)  \equiv S_{h}(f_{0}) \int^{f_{c}/f_{0}}_{f_{s}/f_{0}}
+ * \frac{x^{-q}}{S_{h}(x)} \, dx \,.
+ * \f}
+ * Because in practice we will always divide one of these moments by another, we
+ * do not need to include the \f$S_{h}(f_{0})\f$ term, which always cancels.
+ * This function calculates the integral
+ * \f{equation}{
+ * I = \int^{f_{c}/f_{0}}_{f_{s}/f_{0}} \frac{x^{-q}}{S_{h}(x)} \, dx \,.
+ * \f}
+ * It then divides this quantity by a normalisation constant which has been
+ * passed to the function. In the case of calculating the components of the
+ * metric for the signal manifold for the purpose of generating a template bank,
+ * this constant is given by \f$I(7)\f$, because of the definition of the quantity
+ * \f{equation}{
+ * J(q) \equiv \frac{I(q)}{I(7/3)} \,.
+ * \f}
+ *
+ * ### Algorithm ###
+ *
+ * Given the exponent <tt>pars.ndx</tt> and limits of integration
+ * <tt>pars.xmin</tt> and <tt>pars.xmax</tt> this function returns the moment of
+ * the power spectral density specified by the frequency series
+ * <tt>pars.shf</tt> according to
+ * \f{equation}{
+ * \mathtt{moment} = \int_{\mathtt{xmin}}^{\mathtt{xmax}}
+ * \frac{x^{-\mathtt{ndx}}}{S_h(x)}\, dx \, .
+ * \f}
+ */
 
 /*@{*/
 
@@ -71,7 +73,7 @@ LALGetInspiralMoments (
 {
   INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
-  XLALPrintDeprecationWarning("LALGetInspiralMoments", "XLALGetInspiralMoments");
+  XLAL_PRINT_DEPRECATION_WARNING("XLALGetInspiralMoments");
 
   if (XLALGetInspiralMoments(moments, params->fLower, params->fCutoff, psd)!= XLAL_SUCCESS){
      ABORTXLAL( status );
@@ -279,7 +281,7 @@ LALInspiralMoments(
 
 {
   INITSTATUS(status);
-  XLALPrintDeprecationWarning("LALInspiralMoments", "XLALInspiralMoments");
+  XLAL_PRINT_DEPRECATION_WARNING("XLALInspiralMoments");
 
   *moment = XLALInspiralMoments(pars.xmin, pars.xmax, pars.ndx, pars.norm, pars.shf);
   if (XLAL_IS_REAL8_FAIL_NAN(*moment)){

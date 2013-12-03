@@ -56,7 +56,7 @@
 #include <lal/LALDatatypes.h>
 #include <lal/AVFactories.h>
 #include <lal/LALConstants.h>
-#include <lal/FrameStream.h>
+#include <lal/LALFrStream.h>
 #include <lal/LIGOMetadataTables.h>
 #include <lal/LIGOMetadataUtils.h>
 #include <lal/LIGOLwXML.h>
@@ -141,7 +141,7 @@ int main( int argc, char *argv[] )
   /* FrChanIn      frChan; */
 
   /* frame data */
-  FrStream       *frStream   = NULL;
+  LALFrStream       *frStream   = NULL;
   struct FrFile  *frOutFile  = NULL;
   struct FrameH  *outFrame   = NULL;
 
@@ -184,7 +184,7 @@ int main( int argc, char *argv[] )
   INT4   numCoincs       = 0;
   INT4   numEvents       = 0;
 
-  FrCache              *frInCache        = NULL;
+  LALCache             *frInCache        = NULL;
 
   SnglInspiralTable    *currentTrigger   = NULL;
   SnglInspiralTable    *currentTrigH1    = NULL;
@@ -216,8 +216,6 @@ int main( int argc, char *argv[] )
   ChanNames  *cDataChanNames ; 
 
   if ( vrbflg ) fprintf( stdout, "%d.\n", LAL_NUM_IFO );
-
-  set_debug_level( "1" ); /* change with parse option */
 
   /* create the process and process params tables */
   proctable.processTable = (ProcessTable *) LALCalloc(1, sizeof(ProcessTable) );
@@ -260,7 +258,7 @@ int main( int argc, char *argv[] )
     {
       if ( ifoframefile[k] )
       { 
-        frStream = XLALFrOpen( NULL, ifoframefile[k]); 
+        frStream = XLALFrStreamOpen( NULL, ifoframefile[k]); 
         if (!frStream)
         {
           fprintf(stdout,"The file %s does not exist - exiting.\n", 
@@ -506,7 +504,7 @@ int main( int argc, char *argv[] )
         if ( (j == LAL_IFO_H1) || (j == LAL_IFO_H2) ) 
         { 
           if (vrbflg) fprintf(stdout, " j = %d \n", j );
-          frStream = XLALFrOpen( NULL, ifoframefile[j] ); 
+          frStream = XLALFrStreamOpen( NULL, ifoframefile[j] ); 
           if ( vrbflg ) fprintf( stdout, 
                  "Getting the c-data time series for %s.\n",
                  thisCoinc->snglInspiral[j]->ifo );
@@ -543,7 +541,7 @@ int main( int argc, char *argv[] )
           }
 
           if ( vrbflg ) fprintf( stdout, "error");
-          XLALFrGetCOMPLEX8TimeSeries( CVec->cData[j], frStream );
+          XLALFrStreamGetCOMPLEX8TimeSeries( CVec->cData[j], frStream );
           if ( vrbflg ) fprintf( stdout, "error");
 
           /* Need to worry about WRAPPING of time-slides             */
@@ -552,7 +550,7 @@ int main( int argc, char *argv[] )
                          CVec->cData[j]->epoch.gpsNanoSeconds * 1e-9;
           if ( vrbflg ) fprintf( stdout,"tempTime = %f\n", tempTime[j] );
  
-          XLALFrClose( frStream );
+          XLALFrStreamClose( frStream );
  
           if (j == 2) j = LAL_NUM_IFO+1;
         }
@@ -732,7 +730,7 @@ int main( int argc, char *argv[] )
   cleanexit:
 
   /* free the frame cache */
-  if( frInCache ) LAL_CALL( LALDestroyFrCache( &status, &frInCache ), &status );
+  if( frInCache ) XLALDestroyCache( frInCache );
   if ( frInType ) free( frInType );
 
   if ( vrbflg ) fprintf( stdout, "Checking memory leaks and exiting.\n" );
@@ -760,7 +758,6 @@ this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
 "  --help                      display this message\n"\
 "  --verbose                   print progress information\n"\
 "  --version                   print version information and exit\n"\
-"  --debug-level LEVEL         set the LAL debug level to LEVEL\n"\
 "  --ifo-tag STRING            set STRING to the ifo-tag of the bank file\n"\
 "  --user-tag STRING           set STRING to tag the file names\n"\
 "\n"
@@ -790,7 +787,6 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
      {"verbose",                no_argument,       &vrbflg,            1 },
      {"help",                   no_argument,       0,                 'h'},
      {"version",                no_argument,       0,                 'v'},
-     {"debug-level",            required_argument, 0,                 'd'},
      {"ifo-tag",                required_argument, 0,                 'I'},
      {"user-tag",               required_argument, 0,                 'B'},
      {"cohbank-file",           required_argument, 0,                 'u'},
@@ -819,7 +815,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
      int option_index = 0;
      size_t optarg_len;
 
-     c = getopt_long_only( argc, argv, "A:B:S:I:l:e:W:X:P:Z:d:h:r:u:v:a:b:",
+     c = getopt_long_only( argc, argv, "A:B:S:I:l:e:W:X:P:Z:h:r:u:v:a:b:",
          long_options, &option_index );
 
      if ( c == -1 )
@@ -881,11 +877,6 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
          optarg_len = strlen( optarg ) + 1;
          frInType = (CHAR *) calloc( optarg_len, sizeof(CHAR) );
          memcpy( frInType, optarg, optarg_len );
-         ADD_PROCESS_PARAM( "string", "%s", optarg );
-         break;
-
-       case 'd': /* set debuglevel */
-         set_debug_level( optarg );
          ADD_PROCESS_PARAM( "string", "%s", optarg );
          break;
 

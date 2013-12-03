@@ -13,7 +13,6 @@ for(my $ii=0; $ii<100; $ii++) {
    print DAGFILE<<EOF;
 JOB A$ii /home/egoetz/TwoSpect/UL_randPolarizations/condor
 VARS A$ii JOBNUM="$ii"
-RETRY A$ii 5
 EOF
    
    system("mkdir $ii");

@@ -1,4 +1,4 @@
-#!/usr/bin/env @PYTHONPROG@
+#!@PYTHONPROG@
 """
 ihope.in - weekly automate pipeline driver script
 
@@ -13,7 +13,7 @@ __version__ = '$Revision$'
 
 ##############################################################################
 # import standard modules and append the lalapps prefix to the python path
-import os, sys, copy, shutil
+import os, sys, copy, shutil, re
 import ConfigParser
 import optparse
 import tempfile
@@ -166,6 +166,9 @@ parser.add_option("-W","--skip-hardware-injections",action="store_false",\
 parser.add_option("-w","--skip-omega-scans",action="store_false",\
     default=True,dest="do_omega_scans", help="Skip the omega scan setup.")
 
+parser.add_option("-M","--run-mvsc",action="store_true",\
+    default=False,dest="run_mvsc", help="Run the multivariate statisical classifier in pipedown")
+
 parser.add_option("-x", "--dax",action="store_true",\
     default=False, help="Delete the ligo_data_find jobs and populate frame LFNs in the DAX")
 
@@ -243,8 +246,10 @@ def check_grid_proxy(path):
   try:
     proxy.get_ext("proxyCertInfo")
   except LookupError:
-    msg = "Proxy %s is not RFC compliant" % path
-    raise RuntimeError, msg
+    subject = proxy.get_subject().as_text()
+    if re.search(r'.+CN=proxy$', subject):
+      msg = "Proxy %s is not RFC compliant" % path
+      raise RuntimeError, msg
 
   try:
     expireASN1 = proxy.get_not_after().__str__()
@@ -297,10 +302,9 @@ except:
   print >> sys.stderr, """
 Error: Could not find a valid grid proxy. Please run 
 
-   unset X509_USER_PROXY
-   grid-proxy-init -rfc -hours 72
+   ligo-proxy-init albert.einstein
 
-to generate a new grid proxy certificate.
+with your LIGO.ORG username to generate a new grid proxy certificate.
 
 You may need to log out and do this on your home machine if your .globus
 directory is not present on the machine where you are running ihope.
@@ -718,7 +722,7 @@ if opts.complete_cache:
           print>>sys.stderr, "does not exist! This might cause later failures."
 
 
-			      
+            
     if opts.run_injections:
       if opts.run_data_quality:
         print "Running inspiral hipe for injections with vetoes"
@@ -850,7 +854,7 @@ if opts.run_pipedown:
 
   print "Running lalapps_pipedown"
   dag = inspiralutils.pipedownSetup(dag,cp,opts.log_path,"pipedown",\
-                            "../" + cachefilename,parentNodes,playgroundOnly)
+                            "../" + cachefilename,parentNodes,playgroundOnly,opts.run_mvsc)
 
 ##############################################################################
 # Set up the directories for plotting and run lalapps_plot
@@ -1188,8 +1192,11 @@ export X509_USER_PROXY
 export _CONDOR_DAGMAN_LOG_ON_NFS_IS_ERROR=FALSE
 export _CONDOR_DAGMAN_COPY_TO_SPOOL=False
 
+# increase the JAVA heap size for processing large workflows
+export JAVA_HEAPMAX=4096
+
 if [ -f ${TMP_EXEC_DIR}/${UEBER_CONCRETE_DAG} ] ; then
-  pegasus-run --conf ${IHOPE_RUN_DIR}/pegasus.properties --nodatabase ${TMP_EXEC_DIR}/.
+  pegasus-run --conf ${IHOPE_RUN_DIR}/pegasus.properties ${TMP_EXEC_DIR}/.
 else
   pegasus-plan --conf ${IHOPE_RUN_DIR}/pegasus.properties \\
                --dax %s \\
@@ -1259,11 +1266,8 @@ print >> pegprop_fh, """
 pegasus.catalog.replica=File
 pegasus.catalog.replica.file=%s
 
-pegasus.catalog.site=XML3
-
 pegasus.transfer.force=true
 pegasus.transfer.links=true
-pegasus.transfer.refiner=Bundle
 
 dagman.retry=3
 dagman.maxpre=1
@@ -1280,18 +1284,12 @@ pegasus.dir.submit.logs=%s
 pegasus.catalog.site.file=%s/site-local.xml
 """ % (os.path.join(os.getcwd(),peg_frame_cache),opts.log_path,os.getcwd())
 
-if opts.dax:
+if opts.data_checkpoint:
   print >> pegprop_fh, """\
 
-# pegasus 4.x variables
+# pegasus 4.x variable for data checkpointing
 pegasus.data.configuration=condorio
 """
-else:
-  print >> pegprop_fh, """\
-
-# pegasus 3.x variables
-pegasus.gridstart.kickstart.stat=false
-pegasus.transfer.symlink.impl=Symlink"""
 
 pegprop_fh.close()
 

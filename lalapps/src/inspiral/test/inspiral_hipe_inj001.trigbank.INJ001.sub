@@ -1,6 +1,6 @@
 universe = standard
 executable = executables/lalapps_trigbank
-arguments = --output-ifo $(macrooutputifo) --input-ifo $(macroinputifo) --user-tag INJ001 --debug-level 33 --ifo-tag $(macroifotag) --gps-start-time $(macrogpsstarttime) --write-compress --gps-end-time $(macrogpsendtime) --parameter-test m1_and_m2 --data-type all_data $(macroarguments)
+arguments = --output-ifo $(macrooutputifo) --input-ifo $(macroinputifo) --user-tag INJ001 --ifo-tag $(macroifotag) --gps-start-time $(macrogpsstarttime) --write-compress --gps-end-time $(macrogpsendtime) --parameter-test m1_and_m2 --data-type all_data $(macroarguments)
 environment = KMP_LIBRARY=serial;MKL_SERIAL=yes
 log = /people/jclayton/logs/RmpMoimny
 error = logs/trigbank-$(macrogpsstarttime)-$(macrogpsendtime)-$(cluster)-$(process).err

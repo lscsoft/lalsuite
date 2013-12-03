@@ -51,8 +51,8 @@
 #include <lal/LALStdio.h>
 #include <lal/FileIO.h>
 #include <lal/AVFactories.h>
-#include <lal/FrameCache.h>
-#include <lal/FrameStream.h>
+#include <lal/LALCache.h>
+#include <lal/LALFrStream.h>
 #include <lal/Window.h>
 #include <lal/LALConstants.h>
 #include <lal/BandPassTimeSeries.h>
@@ -211,7 +211,6 @@ int main(int argc,char *argv[])
   REAL8FFTPlan *rplan;        /* fft plan */
   REAL8FrequencySeries *Spec; /* average spectrum */
 
-  lalDebugLevel = LALINFO | LALWARNING | LALERROR | LALNMEMDBG | LALNMEMPAD | LALNMEMTRK;
 
   /* create the process and process params tables */
   procparams.processParamsTable = NULL;
@@ -991,26 +990,26 @@ REAL8TimeSeries *ReadData(struct CommandLineArgsTag CLA){
       ht->data->data[p] = gsl_ran_gaussian(rng, 1.0);
     gsl_rng_free(rng);
   } else {
-    FrCache *cache;
-    FrStream *stream;
+    LALCache *cache;
+    LALFrStream *stream;
     LALTYPECODE series_type;
 
     /* create Frame cache, open frame stream and delete frame cache */
-    cache = XLALFrImportCache(CLA.FrCacheFile);
+    cache = XLALCacheImport(CLA.FrCacheFile);
     if(!cache)
       XLAL_ERROR_NULL(XLAL_EFUNC);
-    stream = XLALFrCacheOpen(cache);
-    XLALFrDestroyCache(cache);
+    stream = XLALFrStreamCacheOpen(cache);
+    XLALDestroyCache(cache);
     if(!stream)
       XLAL_ERROR_NULL(XLAL_EFUNC);
 
     /* turn on checking for missing data */
-    XLALFrSetMode(stream, LAL_FR_VERBOSE_MODE);
+    XLALFrStreamSetMode(stream, LAL_FR_STREAM_VERBOSE_MODE);
 
     /* get the data type */
-    series_type = XLALFrGetTimeSeriesType(CLA.ChannelName, stream);
+    series_type = XLALFrStreamGetTimeSeriesType(CLA.ChannelName, stream);
     if((int) series_type < 0) {
-      XLALFrClose(stream);
+      XLALFrStreamClose(stream);
       XLAL_ERROR_NULL(XLAL_EFUNC);
     }
 
@@ -1018,9 +1017,9 @@ REAL8TimeSeries *ReadData(struct CommandLineArgsTag CLA){
     switch(series_type) {
     case LAL_S_TYPE_CODE: {
       /* read single-precision data */
-      REAL4TimeSeries *ht_V = XLALFrReadREAL4TimeSeries(stream, CLA.ChannelName, &CLA.GPSStart, XLALGPSDiff(&CLA.GPSEnd, &CLA.GPSStart), 0);
+      REAL4TimeSeries *ht_V = XLALFrStreamReadREAL4TimeSeries(stream, CLA.ChannelName, &CLA.GPSStart, XLALGPSDiff(&CLA.GPSEnd, &CLA.GPSStart), 0);
       if(!ht_V) {
-        XLALFrClose(stream);
+        XLALFrStreamClose(stream);
         XLAL_ERROR_NULL(XLAL_EFUNC);
       }
 
@@ -1036,20 +1035,20 @@ REAL8TimeSeries *ReadData(struct CommandLineArgsTag CLA){
 
     case LAL_D_TYPE_CODE:
       /* read double-precision data */
-      ht = XLALFrReadREAL8TimeSeries(stream, CLA.ChannelName, &CLA.GPSStart, XLALGPSDiff(&CLA.GPSEnd, &CLA.GPSStart), 0);
+      ht = XLALFrStreamReadREAL8TimeSeries(stream, CLA.ChannelName, &CLA.GPSStart, XLALGPSDiff(&CLA.GPSEnd, &CLA.GPSStart), 0);
       if(!ht) {
-        XLALFrClose(stream);
+        XLALFrStreamClose(stream);
         XLAL_ERROR_NULL(XLAL_EFUNC);
       }
       break;
 
     default:
-      XLALFrClose(stream);
+      XLALFrStreamClose(stream);
       XLAL_ERROR_NULL(XLAL_EINVAL);
     }
 
     /* close */
-    XLALFrClose(stream);
+    XLALFrStreamClose(stream);
 
     /* FIXME:  ARGH!!!  frame files cannot be trusted to provide units for
      * their contents! */

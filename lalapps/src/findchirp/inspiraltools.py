@@ -29,7 +29,7 @@ def GetChirpMassEtaFromMasses(mass1, mass2):
   """
   Converts the individual masses into chirp mass and eta parameters
   
-  @status: mature
+  status: mature
   @param mass1: the first mass of the system
   @param mass2: the second mass of the system
   @return: the chirpMass and eta parameters
@@ -46,14 +46,14 @@ def GetChirpMassEtaFromTaus(tau0, tau3, fl):
   Converts the tau parameters intpo chirp mass and eta parameters. Requires the
   lower cut-off frequency.
    
-  @status: mature
+  status: mature
   @param tau0: the tau0 parameter in seconds
   @param tau3: the tau3 parameter in seconds
   @param fl: the lower cut off frequency in Hz
   @return the chirpMass and eta parameters.
-  @type tau3: double
-  @type tau0: double
-  @type fl: double
+  type tau3: double
+  type tau0: double
+  type fl: double
   @author: Thomas Cokelaer
   """
   m1, m2, M, eta, dummy = GetMassesFromTaus(tau0, tau3, fl)
@@ -66,14 +66,14 @@ def GetMassesFromTaus(tau0, tau3, fl):
   Converts the tau parameters into components masses. Requires the lower 
   cut-off frequency.
   
-  @status: mature
+  status: mature
   @param tau0: the tau0 parameter in seconds
   @param tau3: the tau3 parameter in seconds
   @param fl: the lower cut off frequency in Hz
   @return the mass1 and mass2 , total mass and eta
-  @type tau3: double
-  @type tau0: double
-  @type fl: double
+  type tau3: double
+  type tau0: double
+  type fl: double
   @author: Thomas Cokelaer
   """
   epsilon = 0.01
@@ -105,14 +105,14 @@ def GetTausFromMasses(m1,m2,fl):
   Converts the mass parameters into components masses. Requires the lower 
   cut-off frequency.
   
-  @status: mature
+  status: mature
   @param m1: the individual mass1
   @param m2: the individual mass2
   @param fl: the lower cut off frequency in Hz
   @return the tau parameters
-  @type m1: double
-  @type m2: double
-  @type fl: double
+  type m1: double
+  type m2: double
+  type fl: double
   @author: Thomas Cokelaer
   
   """
@@ -170,6 +170,7 @@ class ReadXMLFiles:
     tool to read an XML file and return the corresponding data 
     @param filename: the name of the input file.
     @param table: the table to read
+    @param type UNDOCUMENTED
     @author: Thomas Cokelaer
     """
         
@@ -383,9 +384,12 @@ class Plotting:
     @param ydata: a y vector
     @param zdata; a z vector
     @param markersize: size of the marker
-    @type markersize: integer
+    type markersize: integer
     @param alpha: the transparency
-    @type alpha: float
+    type alpha: float
+    @param vmin UNDOCUMENTED
+    @param vmax UNDOCUMENTED
+    @param type UNDOCUMENTED
     @author: Thomas Cokelaer
     """
     fig = self.setfigure()
@@ -425,13 +429,13 @@ class Plotting:
     @param xdata: an x vector
     @param ydata: a y vector
     @param marker: symbol and color of the data 
-    @type marker: combinaison such as 'ro' for red circles.
+    type marker: combinaison such as 'ro' for red circles.
     @param markersize: size of the marker
-    @type markersize: integer
+    type markersize: integer
     @param alpha: the transparency
-    @type alpha: float
+    type alpha: float
     @param linewidth: the transparency
-    @type linewidth: float
+    type linewidth: float
     @author: Thomas Cokelaer
     """
     
@@ -509,8 +513,7 @@ class Plotting:
     """
      function to call contour plot
      the vmin option is harcoded for the time being using [0.5 0.8 0.9 0.95 and 1]
-     @param nbin
-     @param colormap: a list to set the colormap
+     colormap: a list to set the colormap
     """
     fig = self.setfigure() 
     handle = None
@@ -549,14 +552,7 @@ class Plotting:
     
     @param xdata: an x vector
     @param ydata: a y vector
-    @param marker: symbol and color of the data 
-    @type marker: combinaison such as 'ro' for red circles.
-    @param markersize: size of the marker
-    @type markersize: integer
-    @param alpha: the transparency
-    @type alpha: float
-    @param linewidth: the transparency
-    @type linewidth: float
+    @param N UNDOCUMENTED
     @author: Thomas Cokelaer
     """
     fig = self.setfigure()

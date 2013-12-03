@@ -29,9 +29,9 @@ extern "C" {
 /**
  * \defgroup ExtrapolatePulsarSpins_h Header ExtrapolatePulsarSpins.h
  * \ingroup pkg_pulsarCommon
- *  \author Reinhard Prix
- *  \brief  Extrapolate the Pulsar spin-paramters
- *  \f$\{f^{(k)}\}\equiv\{f, \stackrel{.}{f},\ddot{f},...\}\f$, and "spin-ranges"
+ * \author Reinhard Prix
+ * \brief  Extrapolate the Pulsar spin-paramters
+ * \f$\{f^{(k)}\}\equiv\{f, \stackrel{.}{f},\ddot{f},...\}\f$, and "spin-ranges"
  * \f$\{ f^{(k)}, \Delta f^{(k)} \}\f$ from one SSB epoch to another.
  *
  * The central function of this module is LALExtrapolatePulsarSpinRange(), which extrapolates
@@ -39,11 +39,10 @@ extern "C" {
  * A "spin-range" contains an epoch, and \em two vectors, \f$f^{(k)}\f$ and \f$\Delta f^{(k)}\f$
  * (where "canonical" ordering refers to \f$\Delta f^{(k)} >= 0\f$ for all k.
  *
- *
  * The extrapolation is defined by the pulsar spindown-model:
  * \f[ f(\tau_1) = f(\tau_0) + \frac{\stackrel{.}{f}(\tau_0)}{1!} \,\Delta\tau
- *     + \frac{\ddot{f}(\tau_0)}{2!} \,\Delta\tau^2 + ...
- *  = \sum_{k=0}^s \frac{f^{(k)}(\tau_0)}{k!}\, \Delta\tau^k\,,
+ * + \frac{\ddot{f}(\tau_0)}{2!} \,\Delta\tau^2 + ...
+ * = \sum_{k=0}^s \frac{f^{(k)}(\tau_0)}{k!}\, \Delta\tau^k\,,
  * \f]
  * where \f[\Delta\tau \equiv \tau_1 - \tau_0\f]
  * and therefore generally
@@ -63,7 +62,6 @@ extern "C" {
  * \f]
  *
  * This ensures that the range will be correctly extrapolated even if \f$\tau_1 < \tau_0\f$, i.e. \f$\Delta\tau < 0\f$.
- *
  *
  * The initial-phase extrapolation in LALExtrapolatePulsarPhase() proceeds in the other direction, extrapolating
  * \f$\phi(\tau_0)\f$ to \f$\phi(\tau_1)\f$, where the spins are given at \f$\tau_1\f$, i.e. \f$f^{(k)}(\tau_1)\f$.

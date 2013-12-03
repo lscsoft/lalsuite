@@ -26,7 +26,6 @@
 #include <lal/Date.h>
 #include <lal/AVFactories.h>
 
-INT4 lalDebugLevel = 0;
 
 static int test(struct tm *t, int correct_gps, int line)
 {
@@ -40,8 +39,10 @@ static int test(struct tm *t, int correct_gps, int line)
 
   if (lalDebugLevel > 0)
     {
+      char buf[64];
+      strftime(buf, sizeof(buf), "%Y-%m-%d %H:%M:%S", t);
       fprintf(stderr, "Input = %s\tOutput =   %d\n\tExpected = %d\n",
-      asctime(t), gps, correct_gps);
+      buf, gps, correct_gps);
     }
 
   if (gps != correct_gps)
@@ -57,13 +58,10 @@ static int test(struct tm *t, int correct_gps, int line)
 #define TEST(t, correct_gps) test(t, correct_gps, __LINE__)
 
 
-int main(int argc, char *argv[])
+int main(void)
 {
   struct tm utcDate;
   time_t sec;
-
-  if (argc > 1)
-    lalDebugLevel = atoi(argv[1]);
 
   utcDate.tm_year = 80;
   utcDate.tm_yday =  5;

@@ -36,28 +36,27 @@
 #include <gsl/gsl_linalg.h>
 
 /**
-
-\author Craig Robinson
-\file
-\ingroup CoincInspiralEllipsoid_h
-
-\brief Blah.
-
-\heading{Description}
-
-<tt>XLALGetErrorMatrixFromSnglInspiral()</tt> takes in a
-\c SnglInspiralTable, and a value for the e-thinca parameter. It returns
-a \c gsl_matrix containing the the metric scaled appropriately for the
-given e-thinca parameter.
-
-<tt>XLALGetPositionFromSnglInspiral()</tt> takes in a
-\c SnglInspiralTable, and returns the position vector associated with
-the trigger in \f$(t_C, \tau_0, \tau_3)\f$ space.
-
-<tt>XLALSetTimeInPositionVector()</tt> sets the time co-ordinate in the given
-position vector to \c time. It returns zero upon successful completion.
-
-*/
+ * \author Craig Robinson
+ * \file
+ * \ingroup CoincInspiralEllipsoid_h
+ *
+ * \brief Blah.
+ *
+ * ### Description ###
+ *
+ * <tt>XLALGetErrorMatrixFromSnglInspiral()</tt> takes in a
+ * \c SnglInspiralTable, and a value for the e-thinca parameter. It returns
+ * a \c gsl_matrix containing the the metric scaled appropriately for the
+ * given e-thinca parameter.
+ *
+ * <tt>XLALGetPositionFromSnglInspiral()</tt> takes in a
+ * \c SnglInspiralTable, and returns the position vector associated with
+ * the trigger in \f$(t_C, \tau_0, \tau_3)\f$ space.
+ *
+ * <tt>XLALSetTimeInPositionVector()</tt> sets the time co-ordinate in the given
+ * position vector to \c time. It returns zero upon successful completion.
+ *
+ */
 
 
 /* Function for getting the error matrix from the metric in

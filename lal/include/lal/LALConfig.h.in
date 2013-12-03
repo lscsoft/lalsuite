@@ -1,8 +1,5 @@
 /* only include this file if LAL's config.h has not been included */
-#ifndef CONFIG_H__LAL
-
-#ifndef _LALCONFIG_H
-#define _LALCONFIG_H
+#ifndef LAL_VERSION
 
 /* LAL Version */
 #undef LAL_VERSION
@@ -46,6 +43,4 @@
 /* Define if using qthread library */
 #undef LAL_QTHREAD
 
-#endif /* _LALCONFIG_H */
-
-#endif /* CONFIG_H__LAL */
+#endif /* LAL_VERSION */

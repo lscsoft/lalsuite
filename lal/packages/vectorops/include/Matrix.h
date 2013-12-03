@@ -36,7 +36,8 @@ extern "C" {
  *
  * \brief Matlab Routines to handle Matrices \& Vectors.
  *
- * \heading{Synopsis}
+ * ### Synopsis ###
+ *
  * \code
  * #include <lal/Matrix.h>
  * \endcode
@@ -47,7 +48,7 @@ extern "C" {
  * \defgroup MatrixPower_c Module MatrixPower.c
  * \defgroup MiscMatlab_c Module MiscMatlab.c
  *
-*/
+ */
 
 /**\name Error Codes */
 /*@{*/
@@ -80,51 +81,51 @@ extern "C" {
 
 /* ---------- Function prototypes ---------- */
 /**
-\addtogroup MatrixMultiply_c
-\author Tibbits, M. M.
-
-\brief This file is dedicated to reproducing the matlab function ".*" .
-
-This file has several declarations of the same function taking all forms of available
-input.  This being said, I have yet to script the complex actions and their
-counterparts.
-
-\heading{Description}
-
-This file is to help make the conversion from Matlab to c much earier.
-In this file, we have created all of the versions of .* that we plan on
-using.
-
-\heading{Algorithms}
-
-The algorithm is the same as it is in matlab.  The dot in front of an operator
-in matlab signifies that if either or both of the operands are vectors, then
-the operation will be carried out member by member.  For instance
-
-\code
-vector a[25];
-vector b[25];
-vector c[25];
-
-c = a .* b;
-
-The result of this is:
-
-c[0] =	a[0] *	b[0];
-c[1] =	a[1] *	b[1];
-.	.	.
-.	.	.
-.	.	.
-
-etc.
-\endcode
-
-\heading{Notes}
-
-At the current time none of the operations have been specified for neither the
-complex datatypes nor the unsigned datatypes.
-
-*/
+ * \addtogroup MatrixMultiply_c
+ * \author Tibbits, M. M.
+ *
+ * \brief This file is dedicated to reproducing the matlab function ".*" .
+ *
+ * This file has several declarations of the same function taking all forms of available
+ * input.  This being said, I have yet to script the complex actions and their
+ * counterparts.
+ *
+ * ### Description ###
+ *
+ * This file is to help make the conversion from Matlab to c much earier.
+ * In this file, we have created all of the versions of .* that we plan on
+ * using.
+ *
+ * ### Algorithms ###
+ *
+ * The algorithm is the same as it is in matlab.  The dot in front of an operator
+ * in matlab signifies that if either or both of the operands are vectors, then
+ * the operation will be carried out member by member.  For instance
+ *
+ * \code
+ * vector a[25];
+ * vector b[25];
+ * vector c[25];
+ *
+ * c = a .* b;
+ *
+ * The result of this is:
+ *
+ * c[0] =	a[0] *	b[0];
+ * c[1] =	a[1] *	b[1];
+ * .	.	.
+ * .	.	.
+ * .	.	.
+ *
+ * etc.
+ * \endcode
+ *
+ * ### Notes ###
+ *
+ * At the current time none of the operations have been specified for neither the
+ * complex datatypes nor the unsigned datatypes.
+ *
+ */
 /*@{*/
 void LALDDotStarDVector (
         LALStatus		*status,
@@ -548,51 +549,51 @@ void LALI8ArrayDotStarI8Array (
 /*@}*/ /* end: MatrixMultiply_c */
 
 /**
-\addtogroup MatrixDivide_c
-\author Tibbits, M. M.
-
-\brief This file is dedicated to reproducing the matlab function "./" .
-
-This file has several declarations of the same function taking all forms of available
-input.  This being said, I have yet to script the complex actions and their
-counterparts.
-
-\heading{Description}
-
-This file is to help make the conversion from Matlab to c much earier.
-In this file, we have created all of the versions of ./ that we plan on
-using.
-
-\heading{Algorithms}
-
-The algorithm is the same as it is in matlab.  The dot in front of an operator
-in matlab signifies that if either or both of the operands are vectors, then
-the operation will be carried out member by member.  For instance
-
-\code
-vector a[25];
-vector b[25];
-vector c[25];
-
-c = a ./ b;
-
-The result of this is:
-
-c[0] =	a[0] /	b[0];
-c[1] =	a[1] /	b[1];
-.	.	.
-.	.	.
-.	.	.
-
-etc.
-\endcode
-
-\heading{Notes}
-
-At the current time none of the operations have been specified for neither the
-complex datatypes nor the unsigned datatypes.
-
-*/
+ * \addtogroup MatrixDivide_c
+ * \author Tibbits, M. M.
+ *
+ * \brief This file is dedicated to reproducing the matlab function "./" .
+ *
+ * This file has several declarations of the same function taking all forms of available
+ * input.  This being said, I have yet to script the complex actions and their
+ * counterparts.
+ *
+ * ### Description ###
+ *
+ * This file is to help make the conversion from Matlab to c much earier.
+ * In this file, we have created all of the versions of ./ that we plan on
+ * using.
+ *
+ * ### Algorithms ###
+ *
+ * The algorithm is the same as it is in matlab.  The dot in front of an operator
+ * in matlab signifies that if either or both of the operands are vectors, then
+ * the operation will be carried out member by member.  For instance
+ *
+ * \code
+ * vector a[25];
+ * vector b[25];
+ * vector c[25];
+ *
+ * c = a ./ b;
+ *
+ * The result of this is:
+ *
+ * c[0] =	a[0] /	b[0];
+ * c[1] =	a[1] /	b[1];
+ * .	.	.
+ * .	.	.
+ * .	.	.
+ *
+ * etc.
+ * \endcode
+ *
+ * ### Notes ###
+ *
+ * At the current time none of the operations have been specified for neither the
+ * complex datatypes nor the unsigned datatypes.
+ *
+ */
 /*@{*/
 void LALDDotSlashDVector (
         LALStatus		*status,
@@ -1227,51 +1228,51 @@ void LALI8ArrayDotSlashI8Array (
 /*@}*/ /* end: MatrixDivide_c */
 
 /**
-\addtogroup MatrixPower_c
-\author Tibbits, M. M.
-
-\brief This file is dedicated to reproducing the matlab function ".^" .
-
-This file has several declarations of the same function taking all forms of available
-input.  This being said, I have yet to script the complex actions and their
-counterparts.
-
-\heading{Description}
-
-This file is to help make the conversion from Matlab to c much earier.
-In this file, we have created all of the versions of .^ that we plan on
-using.
-
-\heading{Algorithms}
-
-The algorithm is the same as it is in matlab.  The dot in front of an operator
-in matlab signifies that if either or both of the operands are vectors, then
-the operation will be carried out member by member.  For instance
-
-\code
-vector a[25];
-vector b[25];
-vector c[25];
-
-c = a .^ b;
-
-The result of this is:
-
-\(c[0] =	a[0]^(b[0]);
-\(c[1] =	a[1]^(b[1]);
-.	.	.
-.	.	.
-.	.	.
-
-etc.
-\endcode
-
-\heading{Notes}
-
-At the current time none of the operations have been specified for neither the
-complex datatypes nor the unsigned datatypes.
-
-*/
+ * \addtogroup MatrixPower_c
+ * \author Tibbits, M. M.
+ *
+ * \brief This file is dedicated to reproducing the matlab function ".^" .
+ *
+ * This file has several declarations of the same function taking all forms of available
+ * input.  This being said, I have yet to script the complex actions and their
+ * counterparts.
+ *
+ * ### Description ###
+ *
+ * This file is to help make the conversion from Matlab to c much earier.
+ * In this file, we have created all of the versions of .^ that we plan on
+ * using.
+ *
+ * ### Algorithms ###
+ *
+ * The algorithm is the same as it is in matlab.  The dot in front of an operator
+ * in matlab signifies that if either or both of the operands are vectors, then
+ * the operation will be carried out member by member.  For instance
+ *
+ * \code
+ * vector a[25];
+ * vector b[25];
+ * vector c[25];
+ *
+ * c = a .^ b;
+ *
+ * The result of this is:
+ *
+ * \(c[0] =	a[0]^(b[0]);
+ * \(c[1] =	a[1]^(b[1]);
+ * .	.	.
+ * .	.	.
+ * .	.	.
+ *
+ * etc.
+ * \endcode
+ *
+ * ### Notes ###
+ *
+ * At the current time none of the operations have been specified for neither the
+ * complex datatypes nor the unsigned datatypes.
+ *
+ */
 /*@{*/
 void LALDDotPowerDVector (
         LALStatus		*status,
@@ -1906,48 +1907,48 @@ void LALI8ArrayDotPowerI8Array (
 
 
 /**
-\addtogroup MiscMatlab_c
-\author Tibbits, M. M.
-
-\brief This file reproduces the last few matlab functions that we needed for our purposes.
-
-It creates useable forms of cumsum, sum, max, and finally an implemenation of the
-array addressing in matlab.  Matlab has an easy of inverting a vector, (end: -1: 1)
-and the final function, FlipVector returns a result vector that has been flipped in
-that same manner.
-
-\heading{Description}
-
-This file reproduces the last few matlab functions that we needed for our purposes.
-It creates useable forms of cumsum, sum, max, and finally an implemenation of the
-array addressing in matlab.  Matlab has an easy of inverting a vector, (end: -1: 1)
-and the final function, FlipVector returns a result vector that has been flipped in
-that same manner.
-
-\heading{Algorithms}
-
-The algorithms are the same as in matlab.  Flip vector was discussed above.  Sum
-takes the sum of all of the elements in a vector.  Cum sum takes an input vector:
-\code
-vector input[25];
-vector output[25];
-
-output[0] = input[0];
-output[1] = input[0] + input[1];
-output[2] = input[0] + input[1] + input[2];
-
-etc
-\endcode
-
-\heading{Notes}
-
-At the current time none of the operations have been specified for neither the
-complex datatypes nor the unsigned datatypes.
-
-Also, the prototypes are out of order as I have used m4 to create all of the
-functions from one codebase.
-
-*/
+ * \addtogroup MiscMatlab_c
+ * \author Tibbits, M. M.
+ *
+ * \brief This file reproduces the last few matlab functions that we needed for our purposes.
+ *
+ * It creates useable forms of cumsum, sum, max, and finally an implemenation of the
+ * array addressing in matlab.  Matlab has an easy of inverting a vector, (end: -1: 1)
+ * and the final function, FlipVector returns a result vector that has been flipped in
+ * that same manner.
+ *
+ * ### Description ###
+ *
+ * This file reproduces the last few matlab functions that we needed for our purposes.
+ * It creates useable forms of cumsum, sum, max, and finally an implemenation of the
+ * array addressing in matlab.  Matlab has an easy of inverting a vector, (end: -1: 1)
+ * and the final function, FlipVector returns a result vector that has been flipped in
+ * that same manner.
+ *
+ * ### Algorithms ###
+ *
+ * The algorithms are the same as in matlab.  Flip vector was discussed above.  Sum
+ * takes the sum of all of the elements in a vector.  Cum sum takes an input vector:
+ * \code
+ * vector input[25];
+ * vector output[25];
+ *
+ * output[0] = input[0];
+ * output[1] = input[0] + input[1];
+ * output[2] = input[0] + input[1] + input[2];
+ *
+ * etc
+ * \endcode
+ *
+ * ### Notes ###
+ *
+ * At the current time none of the operations have been specified for neither the
+ * complex datatypes nor the unsigned datatypes.
+ *
+ * Also, the prototypes are out of order as I have used m4 to create all of the
+ * functions from one codebase.
+ *
+ */
 /*@{*/
 void LALDCumSum (
 	LALStatus		*status,

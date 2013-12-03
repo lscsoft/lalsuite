@@ -32,7 +32,7 @@
  * \author Ilya Mandel, Vivien Raymond, Christian Roever, Marc van der Sluys, John Veitch, and Will M. Farr.
  * \date 2011
  *
- * \brief Jump proposals for exploring the GW signal parameter space. 
+ * \brief Jump proposals for exploring the GW signal parameter space.
  *
  * For exploring the parameter space of GW signals, it is convenient
  * to use many different types of jumps.  For example, we supply in
@@ -88,43 +88,45 @@
 #define ACCEPTSUFFIX "accepted"
 #define PROPOSEDSUFFIX "proposed"
 
-extern const char *cycleArrayName;
-extern const char *cycleArrayLengthName;
-extern const char *cycleArrayCounterName;
+extern const char *const cycleArrayName;
+extern const char *const cycleArrayLengthName;
+extern const char *const cycleArrayCounterName;
 
 
 /* Proposal Names */
-extern const char *singleAdaptProposalName;
-extern const char *singleProposalName;
-extern const char *orbitalPhaseJumpName;
-extern const char *inclinationDistanceName;
-extern const char *covarianceEigenvectorJumpName;
-extern const char *skyLocWanderJumpName;
-extern const char *differentialEvolutionFullName;
-extern const char *differentialEvolutionMassesName;
-extern const char *differentialEvolutionSpinsName;
-extern const char *differentialEvolutionExtrinsicName;
-extern const char *drawApproxPriorName;
-extern const char *skyReflectDetPlaneName;
-extern const char *rotateSpinsName;
-extern const char *polarizationPhaseJumpName;
-extern const char *distanceQuasiGibbsProposalName;
-extern const char *orbitalPhaseQuasiGibbsProposalName;
-extern const char *extrinsicParamProposalName;
-extern const char *KDNeighborhoodProposalName;
+extern const char *const singleAdaptProposalName;
+extern const char *const singleProposalName;
+extern const char *const orbitalPhaseJumpName;
+extern const char *const covarianceEigenvectorJumpName;
+extern const char *const skyLocWanderJumpName;
+extern const char *const differentialEvolutionFullName;
+extern const char *const differentialEvolutionIntrinsicName;
+extern const char *const differentialEvolutionExtrinsicName;
+extern const char *const drawApproxPriorName;
+extern const char *const skyReflectDetPlaneName;
+extern const char *const rotateSpinsName;
+extern const char *const polarizationPhaseJumpName;
+extern const char *const distanceQuasiGibbsProposalName;
+extern const char *const extrinsicParamProposalName;
+extern const char *const KDNeighborhoodProposalName;
+extern const char *const frequencyBinJumpName;
 
-/** The name of the variable that will store the name of the current
-    proposal function. */
-extern const char *LALInferenceCurrentProposalName;
+/**
+ * The name of the variable that will store the name of the current
+ * proposal function.
+ */
+extern const char *const LALInferenceCurrentProposalName;
 
-/** Adds \a weight copies of the proposal \a prop to the end of the
-    proposal cycle. 
-
-    After adding all desired sub-proposals, call
-    LALInferenceRandomizeProposalCycle() to randomize the order of
-    sub-proposal application. */
+/**
+ * Adds \a weight copies of the proposal \a prop to the end of the
+ * proposal cycle.
+ *
+ * After adding all desired sub-proposals, call
+ * LALInferenceRandomizeProposalCycle() to randomize the order of
+ * sub-proposal application.
+ */
 void
-LALInferenceAddProposalToCycle(LALInferenceRunState *runState, const char *propName, LALInferenceProposalFunction *prop, UINT4 weight);
+LALInferenceAddProposalToCycle(LALInferenceRunState *runState, const char *propName, LALInferenceProposalFunction prop, UINT4 weight);
 
 /** Randomizes the order of the proposals in the proposal cycle. */
 void 
@@ -138,33 +140,32 @@ LALInferenceCyclicProposal(LALInferenceRunState *runState, LALInferenceVariables
 void
 LALInferenceDeleteProposalCycle(LALInferenceRunState *runState);
 
-/** A reasonable default proposal.  Uses adaptation if the --adapt
-    command-line flag active. */
+/**
+ * A reasonable default proposal.  Uses adaptation if the --adapt
+ * command-line flag active.
+ */
 void LALInferenceDefaultProposal(LALInferenceRunState *runState, LALInferenceVariables *proposedParams);
-void LALInferencetempProposal(LALInferenceRunState *runState, LALInferenceVariables *proposedParams);
 
-/** Proposal for rapid sky localization.  Used when --rapidSkyLoc
-    is specified. */
+/**
+ * Proposal for rapid sky localization.  Used when --rapidSkyLoc
+ * is specified.
+ */
 void LALInferenceRapidSkyLocProposal(LALInferenceRunState *runState, LALInferenceVariables *proposedParams);
-
-/** Proposal for finding max temperature for PTMCMC. */
-void LALInferencePTTempTestProposal(LALInferenceRunState *runState, LALInferenceVariables *proposedParams);
 
 /** Proposal for after annealing is over. */
 void LALInferencePostPTProposal(LALInferenceRunState *runState, LALInferenceVariables *proposedParams);
 
-/** Non-adaptive, sigle-variable update proposal with reasonable
-    widths in each dimension. */
+/**
+ * Non-adaptive, sigle-variable update proposal with reasonable
+ * widths in each dimension.
+ */
 void LALInferenceSingleProposal(LALInferenceRunState *runState, LALInferenceVariables *proposedParams);
 
-/** Like LALInferenceSingleProposal() but will use adaptation if the
-    --adapt command-line flag given. */
+/**
+ * Like LALInferenceSingleProposal() but will use adaptation if the
+ * --adapt command-line flag given.
+ */
 void LALInferenceSingleAdaptProposal(LALInferenceRunState *runState, LALInferenceVariables *proposedParams);
-
-/** Chooses a detector at random, and keeps the amplitude coefficient
-    in that detector, A = (fPlus*iPlus + fCross*iCross)/d, constant
-    while choosing a different inclination and distance. */
-void LALInferenceInclinationDistance(LALInferenceRunState *runState, LALInferenceVariables *proposedParams);
 
 /** Increments the orbital phase by pi. */
 void LALInferenceOrbitalPhaseJump(LALInferenceRunState *runState, LALInferenceVariables *proposedParams);
@@ -172,77 +173,101 @@ void LALInferenceOrbitalPhaseJump(LALInferenceRunState *runState, LALInferenceVa
 /** Polarization-phase exact degeneracy. */
 void LALInferencePolarizationPhaseJump(LALInferenceRunState *runState, LALInferenceVariables *proposedParams);
 
+/** Polarization-phase correlation jump */
+void LALInferenceCorrPolarizationPhaseJump(LALInferenceRunState *runState, LALInferenceVariables *proposedParams);
+
 /** Choose a random covariance matrix eigenvector to jump along. */
 void LALInferenceCovarianceEigenvectorJump(LALInferenceRunState *runState, LALInferenceVariables *proposedParams);
 
 /** Jump around by 0.01 radians in angle on the sky */
 void LALInferenceSkyLocWanderJump(LALInferenceRunState *runState, LALInferenceVariables *proposedParams);
 
-void LALInferenceAdaptationProposal(LALInferenceRunState *runState, LALInferenceVariables *proposedParams);
-void LALInferenceAdaptationSingleProposal(LALInferenceRunState *runState, LALInferenceVariables *proposedParams);
+/* void LALInferenceAdaptationProposal(LALInferenceRunState *runState, LALInferenceVariables *proposedParams); */
+/* void LALInferenceAdaptationSingleProposal(LALInferenceRunState *runState, LALInferenceVariables *proposedParams); */
 
 /** Differential evolution, on all non-fixed, non-output parameters. */
 void LALInferenceDifferentialEvolutionFull(LALInferenceRunState *state, LALInferenceVariables *proposedParams);
 
-/** Perform differential evolution on the parameters of the given
-    names (the names array should be terminated by a NULL pointer).
-    If names == NULL, then perform a
-    LALInferenceDifferentialEvolutionFull() step.*/
+/**
+ * Perform differential evolution on the parameters of the given
+ * names (the names array should be terminated by a NULL pointer).
+ * If names == NULL, then perform a
+ * LALInferenceDifferentialEvolutionFull() step.
+ */
 void LALInferenceDifferentialEvolutionNames(LALInferenceRunState *state, LALInferenceVariables *proposedParams, const char *names[]);
 
-/** Perform differential evolution on only the mass parameters. */
-void LALInferenceDifferentialEvolutionMasses(LALInferenceRunState *state, LALInferenceVariables *proposedParams);
+/** Perform differential evolution on only the intrinsic parameters. */
+void LALInferenceDifferentialEvolutionIntrinsic(LALInferenceRunState *state, LALInferenceVariables *proposedParams);
 
-/** Perform a differential evolution step on only the extrinsic
-    parameters. */
+/**
+ * Perform a differential evolution step on only the extrinsic
+ * parameters.
+ */
 void LALInferenceDifferentialEvolutionExtrinsic(LALInferenceRunState *state, LALInferenceVariables *proposedParams);
 
-/** Perform a differential evolution step on only the spin variables. */
-void LALInferenceDifferentialEvolutionSpins(LALInferenceRunState *state, LALInferenceVariables *proposedParams);
-
-/** Draws from an approximation to the true prior.  Flat in all
-    variables except for: Mc^(-11/6), flat in cos(co-latitudes), flat
-    in sin(dec), dist^2.
-    WARNING: This seems to break detailed balance for the LALInferenceProposalTest */
+/**
+ * Draws from an approximation to the true prior.  Flat in all
+ * variables except for: Mc^(-11/6), flat in cos(co-latitudes), flat
+ * in sin(dec), dist^2.
+ * WARNING: This seems to break detailed balance for the LALInferenceProposalTest
+ */
 void LALInferenceDrawApproxPrior(LALInferenceRunState *runState, LALInferenceVariables *proposedParams);
 
-/** Reflects the sky location through the plane formed by three
-    detectors.  Should only be used when there are exactly three
-    different locations for detectors. */
+/**
+ * Reflects the sky location through the plane formed by three
+ * detectors.  Should only be used when there are exactly three
+ * different locations for detectors.
+ */
 void LALInferenceSkyReflectDetPlane(LALInferenceRunState *runState, LALInferenceVariables *proposedParams);
+
+void LALInferenceSkyRingProposal(LALInferenceRunState *runState, LALInferenceVariables *proposedParams);;
 
 /* Nested sampling wrappers. */
 void NSFillMCMCVariables(LALInferenceVariables *proposedParams, LALInferenceVariables *priorArgs);
 void NSWrapMCMCLALProposal(LALInferenceRunState *runState, LALInferenceVariables *proposedParams);
 
+void LALInferencePSDFitJump(LALInferenceRunState *runState, LALInferenceVariables *proposedParams);
+
 /** Rotate each spin by random angles about L. */
 void LALInferenceRotateSpins(LALInferenceRunState *runState, LALInferenceVariables *proposedParams);
 
-/** Samples from the analytic likelihood distribution on u = 1/d with
-    all other variables fixed.  This behaves similarly to a Gibbs
-    sampler for distance (though a Gibbs sampler would sample from the
-    *posterior* in d, not the likelihood in u = 1/d). */
+/**
+ * Samples from the analytic likelihood distribution on u = 1/d with
+ * all other variables fixed.  This behaves similarly to a Gibbs
+ * sampler for distance (though a Gibbs sampler would sample from the
+ * posterior* in d, not the likelihood in u = 1/d).
+ */
 void LALInferenceDistanceQuasiGibbsProposal(LALInferenceRunState *runState, LALInferenceVariables *proposedParams);
 
-/** Samples from the analytic likelihood distribution in orbital phase
-    (log(L) ~ <d|d> + 2*Re(<d|h>)*cos(delta-phi) -
-    2*Im(<d|h>)*sin(delta-phi) + <h|h>, where delta-phi is the orbital
-    phase shift relative to the reference used for h.  This is
-    effectively a Gibbs sampler for the phase coordinate. */
-void LALInferenceOrbitalPhaseQuasiGibbsProposal(LALInferenceRunState *runState, LALInferenceVariables *proposedParams);
-
-/** Uses a kD tree containing the previously-output points to propose
-    the next sample.  The proposal chooses a stored point at random,
-    finds the kD cell that contains this point and about 64 others,
-    and then chooses the proposed point uniformly within the bounding
-    box of the points contained in this sell. */
+/**
+ * Uses a kD tree containing the previously-output points to propose
+ * the next sample.  The proposal chooses a stored point at random,
+ * finds the kD cell that contains this point and about 64 others,
+ * and then chooses the proposed point uniformly within the bounding
+ * box of the points contained in this sell.
+ */
 void LALInferenceKDNeighborhoodProposal(LALInferenceRunState *runState, LALInferenceVariables *proposedParams);
 
-/** Proposal for the extrinsic parameters. Uses the sky reflection for 3
- independent detector locations, then computes the corresponding values
- of polarisation, inclination and distance for the proposed sky location.
- See Vivien's thesis for the details of the equations implemented.*/
+/**
+ * Proposal for the extrinsic parameters. Uses the sky reflection for 3
+ * independent detector locations, then computes the corresponding values
+ * of polarisation, inclination and distance for the proposed sky location.
+ * See Vivien's thesis for the details of the equations implemented.
+ */
 void LALInferenceExtrinsicParamProposal(LALInferenceRunState *runState, LALInferenceVariables *proposedParams);
+
+/**
+ * Proposal to jump in frequency by one frequency bin. The frequency bin size \c df must be
+ * given as a (fixed) variable in the \c proposedParams. The frequency parameter is
+ * presumed to have the variable name \c f0.
+ */
+void LALInferenceFrequencyBinJump(LALInferenceRunState *runState, LALInferenceVariables *proposedParams);
+
+/* Zero out proposal statistics */
+void LALInferenceZeroProposalStats(LALInferenceRunState *runState);
+
+/** Function for updating proposal acceptance rates if tracking. */
+void LALInferenceTrackProposalAcceptance(LALInferenceRunState *runState, INT4 accepted);
 
 /** Helper function to update the adaptive steps after each jump. Set accepted=1 if accepted, 0 otherwise */
 void LALInferenceUpdateAdaptiveJumps(LALInferenceRunState *runState, INT4 accepted, REAL8 targetAcceptance);
@@ -250,6 +275,68 @@ void LALInferenceUpdateAdaptiveJumps(LALInferenceRunState *runState, INT4 accept
 void LALInferenceSetupAdaptiveProposals(LALInferenceRunState *state);
 
 void LALInferenceSetupDefaultNSProposal(LALInferenceRunState *runState, LALInferenceVariables *proposedParams);
+
+void computeFisherMatrix(void *fisherMatrix, LALInferenceRunState *runState, COMPLEX16FrequencySeries ***outputDerivs);
+
+/*struct to hold waveform params, stolen from Evan's LALSimulation test folder*/
+typedef struct tagFIMParams {
+    Approximant approximant;  /**< waveform family or "approximant" */
+    LALSimulationDomain domain; /**< flag for time or frequency domain waveform */
+    int phaseO;               /**< twice PN order of the phase */
+    int ampO;                 /**< twice PN order of the amplitude */
+    REAL8 phiRef;             /**< phase at fRef */
+    REAL8 fRef;               /**< reference frequency */
+    REAL8 deltaT;             /**< sampling interval */
+    REAL8 deltaF;             /**< frequency resolution */
+    REAL8 m1;                 /**< mass of companion 1 */
+    REAL8 m2;                 /**< mass of companion 2 */
+    REAL8 f_min;              /**< start frequency */
+    REAL8 f_max;              /**< end frequency */
+    REAL8 distance;           /**< distance of source */
+    REAL8 inclination;        /**< inclination of L relative to line of sight */
+    REAL8 s1x;                /**< (x,y,z) components of spin of m1 body */
+    REAL8 s1y;                /**< z-axis along line of sight, L in x-z plane */
+    REAL8 s1z;                /**< dimensionless spin, Kerr bound: |s1| <= 1 */
+    REAL8 s2x;                /**< (x,y,z) component ofs spin of m2 body */
+    REAL8 s2y;                /**< z-axis along line of sight, L in x-z plane */
+    REAL8 s2z;                /**< dimensionless spin, Kerr bound: |s2| <= 1 */
+    REAL8 lambda1;            /**< (tidal deformability of mass 1) / (total mass)^5 (dimensionless) */
+    REAL8 lambda2;            /**< (tidal deformability of mass 2) / (total mass)^5 (dimensionless) */
+	REAL8 ra;                 /**< right ascension of source */
+	REAL8 dec;                 /**< declination of source */
+	REAL8 psi;                 /**< polarization of source */
+	REAL8 gmst;                 /**< greenwhich mean sideal time of coalescence */
+    LALSimInspiralWaveformFlags *waveFlags; /**< Set of flags to control special behavior of some waveform families */
+    LALSimInspiralTestGRParam *nonGRparams; /**< Linked list of non-GR parameters. Pass in NULL for standard GR waveforms */
+    int axisChoice;           /**< flag to choose reference frame for spin coordinates */
+    int inspiralOnly;         /**< flag to choose if generating only the the inspiral 1 or also merger and ring-down*/
+    int ampPhase;
+    int verbose;
+} FIMParams;
+
+typedef enum {    
+    LALINFERENCEFIM_MC,
+	LALINFERENCEFIM_Q,
+	LALINFERENCEFIM_PHIREF,
+	LALINFERENCEFIM_DIST,
+	LALINFERENCEFIM_INCL,
+	LALINFERENCEFIM_RA,
+	LALINFERENCEFIM_DEC,
+	LALINFERENCEFIM_PSI,
+	LALINFERENCEFIM_TIME
+} LALInferenceFIMParameters;
+
+void waveformDerivative(FIMParams *params, LALInferenceRunState *runState, double *h, COMPLEX16FrequencySeries ***outputDerivs);
+
+void drawFisherMatrix(LALInferenceRunState *runState);
+
+void parametersSetFIM(LALInferenceRunState *runState, FIMParams *params);
+
+/** Output proposal tracking header to file *fp */
+int LALInferencePrintProposalTrackingHeader(FILE *fp,LALInferenceVariables *params);
+
+/** Output proposal tracking information to file *fp */
+void LALInferencePrintProposalTracking(FILE *fp, LALInferenceVariables *propArgs, LALInferenceVariables *theta, LALInferenceVariables *theta_prime);
 
 /*@}*/
 

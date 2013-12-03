@@ -28,15 +28,11 @@
 #include <lal/Units.h>
 #include <lal/XLALError.h>
 
-static size_t NextPow2(const size_t n) {
-  return 1 << (size_t) ceil(log2(n));
-}
-
 /**
-Generate the "reduced-spin templates" proposed in http://arxiv.org/abs/1107.1267
-Add the tidal phase terms from http://arxiv.org/abs/1101.1673 (Eqs. 3.9, 3.10)
-The chi parameter should be determined from XLALSimInspiralTaylorF2ReducedSpinComputeChi.
-*/
+ * Generate the "reduced-spin templates" proposed in http://arxiv.org/abs/1107.1267
+ * Add the tidal phase terms from http://arxiv.org/abs/1101.1673 (Eqs. 3.9, 3.10)
+ * The chi parameter should be determined from XLALSimInspiralTaylorF2ReducedSpinComputeChi.
+ */
 int XLALSimInspiralTaylorF2ReducedSpinTidal(
     COMPLEX16FrequencySeries **htilde,   /**< FD waveform */
     const REAL8 phic,                /**< orbital coalescence phase (rad) */
@@ -47,6 +43,7 @@ int XLALSimInspiralTaylorF2ReducedSpinTidal(
     const REAL8 lam1,                /**< (tidal deformability of mass 1) / (mass of body 1)^5 (dimensionless) */
     const REAL8 lam2,                /**< (tidal deformability of mass 2) / (mass of body 2)^5 (dimensionless) */
     const REAL8 fStart,              /**< start GW frequency (Hz) */
+    const REAL8 fEnd,                /**< highest GW frequency (Hz) of waveform generation - if 0, end at Schwarzschild ISCO */
     const REAL8 r,                   /**< distance of source (m) */
     const INT4 phaseO,               /**< twice PN phase order */
     const INT4 ampO                  /**< twice PN amplitude order */
@@ -67,7 +64,7 @@ int XLALSimInspiralTaylorF2ReducedSpinTidal(
     REAL8 shft, amp0, f_max;
     REAL8 psiNewt, psi2, psi3, psi4, psi5, psi6, psi6L, psi7, psi3S, psi4S, psi5S, psi10T1, psi10T2, psi10, psi12T1, psi12T2, psi12;
     REAL8 alpha2, alpha3, alpha4, alpha5, alpha6, alpha6L, alpha7, alpha3S, alpha4S, alpha5S;
-    size_t i, n, iStart, iISCO;
+    size_t i, n, iStart;
     COMPLEX16 *data = NULL;
     LIGOTimeGPS tStart = {0, 0};
 
@@ -82,8 +79,11 @@ int XLALSimInspiralTaylorF2ReducedSpinTidal(
     if (phaseO > 7) XLAL_ERROR(XLAL_EDOM); /* only implemented to pN 3.5 */
 
     /* allocate htilde */
-    f_max = NextPow2(fISCO);
-    n = f_max / deltaF + 1;
+    if ( fEnd == 0. ) // End at ISCO
+        f_max = fISCO;
+    else // End at user-specified freq.
+        f_max = fEnd;
+    n = (size_t) (f_max / deltaF + 1);
     XLALGPSAdd(&tStart, -1 / deltaF);  /* coalesce at t=0 */
     *htilde = XLALCreateCOMPLEX16FrequencySeries("htilde: FD waveform", &tStart, 0.0, deltaF, &lalStrainUnit, n);
     if (!(*htilde)) XLAL_ERROR(XLAL_EFUNC);
@@ -91,8 +91,8 @@ int XLALSimInspiralTaylorF2ReducedSpinTidal(
     XLALUnitDivide(&((*htilde)->sampleUnits), &((*htilde)->sampleUnits), &lalSecondUnit);
 
     /* extrinsic parameters */
-    amp0 = pow(m_sec, 5./6.) * sqrt(5. * eta / 24.) / (cbrt(LAL_PI * LAL_PI) * r / LAL_C_SI);
-    shft = -LAL_TWOPI * (tStart.gpsSeconds + 1e-9 * tStart.gpsNanoSeconds);
+    amp0 = -pow(m_sec, 5./6.) * sqrt(5. * eta / 24.) / (cbrt(LAL_PI * LAL_PI) * r / LAL_C_SI);
+    shft = LAL_TWOPI * (tStart.gpsSeconds + 1e-9 * tStart.gpsNanoSeconds);
 
     /* spin terms in the amplitude and phase (in terms of the reduced
      * spin parameter */
@@ -176,34 +176,42 @@ int XLALSimInspiralTaylorF2ReducedSpinTidal(
             break;
     }
 
+    /* Fill with non-zero vals from fStart to lesser of fEnd, fISCO */
     iStart = (size_t) ceil(fStart / deltaF);
-    iISCO = (size_t) (fISCO / deltaF);
-    iISCO = (iISCO < n) ? iISCO : n;  /* overflow protection; should we warn? */
     data = (*htilde)->data->data;
-    for (i = iStart; i < iISCO; i++) {
+    const REAL8 logv0=log(v0);
+    const REAL8 log4=log(4.0);
+    
+    for (i = iStart; i < n; i++) {
         /* fourier frequency corresponding to this bin */
         const REAL8 f = i * deltaF;
         const REAL8 v3 = piM*f;
 
         /* PN expansion parameter */
-        REAL8 v, v2, v4, v5, v6, v7, v10, v12, Psi, amp;
-        v = cbrt(v3);
-        v2 = v*v; v4 = v3*v; v5 = v4*v; v6 = v3*v3; v7 = v6*v;
-        v10 = v5*v5; v12 = v6*v6;
+        REAL8 Psi, amp;
+        const REAL8 v = cbrt(v3);
+	const REAL8 logv=log(v);
+        const REAL8 v2 = v*v;
+	const REAL8 v4 = v3*v;
+	const REAL8 v5 = v4*v;
+	const REAL8 v6 = v3*v3;
+	const REAL8 v7 = v6*v;
+        const REAL8 v10 = v5*v5;
+	const REAL8 v12 = v6*v6;
 
         /* compute the phase and amplitude */
         Psi = psiNewt / v5 * (1.
             + psi2 * v2 + psi3 * v3 + psi4 * v4
-            + psi5 * v5 * (1. + 3. * log(v / v0))
-            + (psi6 + psi6L * log(4. * v)) * v6 + psi7 * v7)
+            + psi5 * v5 * (1. + 3. * (logv - logv0))
+            + (psi6 + psi6L * (log4 + logv)) * v6 + psi7 * v7)
             + psi10 * v10 + psi12 * v12;
 
         amp = amp0 * pow(f, mSevenBySix) * (1.
             + alpha2 * v2 + alpha3 * v3 + alpha4 * v4 + alpha5 * v5
-            + (alpha6 + alpha6L * (LAL_GAMMA + log(4. * v))) * v6
+            + (alpha6 + alpha6L * (LAL_GAMMA + (log4 + logv))) * v6
             + alpha7 * v7);
 
-        data[i] = amp * cos(Psi + shft * f - 2.*phic + LAL_PI_4) - I * (amp * sin(Psi + shft * f - 2.*phic + LAL_PI_4));
+        data[i] = amp * cos(Psi + shft * f - 2.*phic - LAL_PI_4) - I * (amp * sin(Psi + shft * f - 2.*phic - LAL_PI_4));
     }
 
     return XLAL_SUCCESS;

@@ -42,18 +42,19 @@ extern "C" {
 #endif
 
 /**
-   \addtogroup FindChirpTD_h
- \author Brown, D. A., and Creighton, J. D. E.
-
-\brief Provides structures and functions to condition interferometer data
-and generate binary inspiral chirps using time domain waveforms.
-
-\heading{Synopsis}
-\code
-#include <lal/FindChirpTD.h>
-\endcode
-
-*/
+ * \addtogroup FindChirpTD_h
+ * \author Brown, D. A., and Creighton, J. D. E.
+ *
+ * \brief Provides structures and functions to condition interferometer data
+ * and generate binary inspiral chirps using time domain waveforms.
+ *
+ * ### Synopsis ###
+ *
+ * \code
+ * #include <lal/FindChirpTD.h>
+ * \endcode
+ *
+ */
 /*@{*/
 
 /**\name Error Codes */

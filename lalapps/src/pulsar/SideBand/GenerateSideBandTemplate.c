@@ -18,13 +18,14 @@
  */
 
 /*********************************************************************************/
-/** \author C. Messenger
- * \file 
+/**
+ * \author C. Messenger
+ * \file
  * \ingroup pulsarApps
  * \brief
  * Generate a frequency domain template for a binary signal as recieved at the SSB.
- *                                                                          
- *********************************************************************************/
+ *
+ */
 
 /* System includes */
 #include <stdio.h>
@@ -33,7 +34,6 @@
 #endif
 
 /* LAL-includes */
-#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/AVFactories.h>
 #include <lal/UserInput.h>
 
@@ -105,9 +105,9 @@ void checkUserInputConsistency (LALStatus *);
 /* Function definitions start here */
 /*----------------------------------------------------------------------*/
 
-/** 
+/**
  * MAIN function of GenerateBinaryFDTemplate code.
- * Compute the waveform of binary signal in the frequency domain as recieved at the SSB 
+ * Compute the waveform of binary signal in the frequency domain as recieved at the SSB
  */
 int main(int argc,char *argv[]) 
 {
@@ -130,14 +130,12 @@ int main(int argc,char *argv[])
   REAL8 df;
   EmissionTime emit;
 
-  lalDebugLevel = 8;  
   vrbflg = 1;	/* verbose error-messages */
   
   /* set LAL error-handler */
   lal_errhandler = LAL_ERR_EXIT;
 
   /* register all user-variable */
-  LAL_CALL (LALGetDebugLevel(&status, argc, argv, 'v'), &status);
   LAL_CALL (initUserVars(&status), &status); 	
 
   /* do ALL cmdline and cfgfile handling */
@@ -320,8 +318,8 @@ int main(int argc,char *argv[])
   for (i=0;i<(INT4)Nbins;i++) {
     fprintf(fp,"%16.12f %6.9f %6.9f\n",
 	    TParams->freqsamples->data[i],
-	    Template->fourier->data[i].re,
-	    Template->fourier->data[i].im);
+	    creal(Template->fourier->data[i]),
+	    cimag(Template->fourier->data[i]));
   }
   fclose(fp);
     
@@ -354,7 +352,7 @@ int main(int argc,char *argv[])
 } /* main() */
 
 
-/** 
+/**
  * Register all our "user-variables" that can be specified from cmd-line and/or config-file.
  * Here we set defaults for some user-variables and register them with the UserInput module.
  */
@@ -439,7 +437,8 @@ initUserVars (LALStatus *status)
 
 
 /*----------------------------------------------------------------------*/
-/** Some general consistency-checks on user-input.
+/**
+ * Some general consistency-checks on user-input.
  * Throws an error plus prints error-message if problems are found.
  */
 void

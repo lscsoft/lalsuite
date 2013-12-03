@@ -23,7 +23,8 @@ extern "C" {
  */
 /*@{*/
 
-/** The structure contains the integration method and its settings.
+/**
+ * The structure contains the integration method and its settings.
  */
 typedef struct tagLALSQTPNIntegratorSystem{
 	const gsl_odeiv_step_type* type;
@@ -33,7 +34,8 @@ typedef struct tagLALSQTPNIntegratorSystem{
 	gsl_odeiv_system system;
 } LALSQTPNIntegratorSystem;
 
-/**		The function initialize the integration method.
+/**
+ * The function initialize the integration method.
  * @param[out]	integrator	: the structure containing the integration method
  * @param[in]		num		: the number of the dynamic variables
  * @param[in]		params	: the parameters used in the derivative function
@@ -42,13 +44,15 @@ typedef struct tagLALSQTPNIntegratorSystem{
 int XLALSQTPNIntegratorInit(LALSQTPNIntegratorSystem *integrator, INT2 num, void *params,
 		int(*derivator)(REAL8, const REAL8[], REAL8[], void *));
 
-/**		The function deallocates the memory allocated for the integrator
+/**
+ * The function deallocates the memory allocated for the integrator
  * function.
  * @param[in]	integrator	: the structure containing the integration method
  */
 void XLALSQTPNIntegratorFree(LALSQTPNIntegratorSystem *integrator);
 
-/**		The function evolves the system with the given time-step.
+/**
+ * The function evolves the system with the given time-step.
  * @param[in,out]	values	: as input parameters the system's actual position,
  * as ouput the system's next position.
  * @param[in]	integrator	: the integration method

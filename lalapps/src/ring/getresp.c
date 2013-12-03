@@ -24,9 +24,9 @@
 #include <lal/LALStdlib.h>
 #include <lal/LALStdio.h>
 #include <lal/AVFactories.h>
-#include <lal/FrameCache.h>
+#include <lal/LALCache.h>
 #include <lal/FrequencySeries.h>
-#include <lal/FrameStream.h>
+#include <lal/LALFrStream.h>
 #include <lal/Calibration.h>
 #include <lal/Units.h>
 #include <lal/LIGOMetadataRingdownUtils.h>
@@ -38,7 +38,6 @@
 
 /* a few useful constants */
 static LALUnit      strainPerCount = {0,{0,0,0,0,0,1,-1},{0,0,0,0,0,0,0}};
-static FrCacheSieve blank_sieve;
 
 
 /* routine read a response function or construct an impulse response function */
@@ -96,8 +95,8 @@ COMPLEX8FrequencySeries * get_impulse_response(
   /* uniform response function */
   for ( k = 0; k < response->data->length; ++k )
   {
-    response->data->data[k].re = responseScale;
-    response->data->data[k].im = 0.0;
+    response->data->data[k].realf_FIXME = responseScale;
+    response->data->data[k].imagf_FIXME = 0.0;
   }
 
   return response;
@@ -116,7 +115,7 @@ COMPLEX8FrequencySeries * get_frame_response(
     )
 {
   LALStatus                status   = blank_status;
-  FrCache                 *cache    = NULL;
+  LALCache                *cache    = NULL;
   COMPLEX8FrequencySeries *response;
   COMPLEX8FrequencySeries *refResponse;
   COMPLEX8FrequencySeries *refSensing;
@@ -142,7 +141,7 @@ COMPLEX8FrequencySeries * get_frame_response(
   verbose("obtaining calibration information from cache file %s\n", cacheName);
 
   /* create cache from cachefile name */
-  cache = XLALFrImportCache( cacheName );
+  cache = XLALCacheImport( cacheName );
 
   /* get reference functions and factors */
   refResponse = get_reference_response_function( cache, ifoName );
@@ -151,7 +150,7 @@ COMPLEX8FrequencySeries * get_frame_response(
   alphabeta   = get_open_loop_gain_factor( cache, epoch, ifoName );
 
   /* done with cache... get rid of it */
-  XLALFrDestroyCache( cache );
+  XLALDestroyCache( cache );
 
   /* the ifo is two characters long */
   strncpy( ifo, ifoName, 2 );
@@ -174,8 +173,8 @@ COMPLEX8FrequencySeries * get_frame_response(
   LAL_CALL( LALUpdateCalibration( &status, &calfuncs, &calfuncs, &calfacts ),
       &status );
   /* these are the values of alpha and alphabeta that were used */
-  verbose( "calibrating with alpha=%g and alphabeta=%g\n", calfacts.alpha.re,
-      calfacts.alphabeta.re );
+  verbose( "calibrating with alpha=%g and alphabeta=%g\n", crealf(calfacts.alpha),
+      crealf(calfacts.alphabeta) );
 
   /* convert response so that it has the correct resolution */
   LAL_CALL( LALResponseConvert( &status, response, refResponse ), &status );
@@ -183,8 +182,8 @@ COMPLEX8FrequencySeries * get_frame_response(
   /* scale response function */
   for ( k = 0; k < response->data->length; ++k )
   {
-    response->data->data[k].re *= responseScale;
-    response->data->data[k].im *= responseScale;
+    response->data->data[k].realf_FIXME *= responseScale;
+    response->data->data[k].imagf_FIXME *= responseScale;
   }
 
   /* cleanup memory in reference functions */
@@ -202,13 +201,12 @@ COMPLEX8FrequencySeries * get_frame_response(
 
 
 /* routine to read the reference response function from a frame file cache */
-COMPLEX8FrequencySeries * get_reference_response_function( FrCache *calCache,
+COMPLEX8FrequencySeries * get_reference_response_function( LALCache *calCache,
     const char *ifoName )
 {
   COMPLEX8FrequencySeries *refResponse;
-  FrCache                 *refCache = NULL;
-  FrCacheSieve             sieve    = blank_sieve;
-  FrStream                *stream   = NULL;
+  LALCache                *refCache = NULL;
+  LALFrStream                *stream   = NULL;
 
   /* create frequency series */
   refResponse = LALCalloc( 1, sizeof( *refResponse ) );
@@ -219,30 +217,29 @@ COMPLEX8FrequencySeries * get_reference_response_function( FrCache *calCache,
       "%s:CAL-RESPONSE", ifoName );
 
   /* make a new cache with only the CAL_REF frames and open a frame stream */
-  sieve.dscRegEx = "CAL_REF";
-  refCache = XLALFrSieveCache( calCache, &sieve );
-  stream = XLALFrCacheOpen( refCache );
+  refCache = XLALCacheDuplicate( calCache );
+  XLALCacheSieve( refCache, 0, 0, NULL, "CAL_REF", NULL );
+  stream = XLALFrStreamCacheOpen( refCache );
 
   /* get the frequency series from the frame stream and correct units */
-  XLALFrGetCOMPLEX8FrequencySeries( refResponse, stream );
+  XLALFrStreamGetCOMPLEX8FrequencySeries( refResponse, stream );
   refResponse->sampleUnits = strainPerCount;
 
   /* close stream and destroy cache */
-  XLALFrClose( stream );
-  XLALFrDestroyCache( refCache );
+  XLALFrStreamClose( stream );
+  XLALDestroyCache( refCache );
 
   return refResponse;
 }
 
 
 /* routine to read the reference sensing function from a frame file cache */
-COMPLEX8FrequencySeries * get_reference_sensing_function( FrCache *calCache,
+COMPLEX8FrequencySeries * get_reference_sensing_function( LALCache *calCache,
     const char *ifoName )
 {
   COMPLEX8FrequencySeries *refSensing;
-  FrCache                 *refCache = NULL;
-  FrCacheSieve             sieve    = blank_sieve;
-  FrStream                *stream   = NULL;
+  LALCache                *refCache = NULL;
+  LALFrStream                *stream   = NULL;
 
   /* create frequency series */
   refSensing = LALCalloc( 1, sizeof( *refSensing ) );
@@ -253,30 +250,29 @@ COMPLEX8FrequencySeries * get_reference_sensing_function( FrCache *calCache,
       "%s:CAL-CAV_GAIN", ifoName );
 
   /* make a new cache with only the CAL_REF frames and open a frame stream */
-  sieve.dscRegEx = "CAL_REF";
-  refCache = XLALFrSieveCache( calCache, &sieve );
-  stream = XLALFrCacheOpen( refCache );
+  refCache = XLALCacheDuplicate( calCache );
+  XLALCacheSieve( refCache, 0, 0, NULL, "CAL_REF", NULL );
+  stream = XLALFrStreamCacheOpen( refCache );
 
   /* get the frequency series from the frame stream and correct units */
-  XLALFrGetCOMPLEX8FrequencySeries( refSensing, stream );
+  XLALFrStreamGetCOMPLEX8FrequencySeries( refSensing, stream );
   refSensing->sampleUnits = lalDimensionlessUnit;
 
   /* close stream and destroy cache */
-  XLALFrClose( stream ); 
-  XLALFrDestroyCache( refCache );
+  XLALFrStreamClose( stream ); 
+  XLALDestroyCache( refCache );
 
   return refSensing;
 }
 
 
 /* routine to read one cavity gain factor from a frame file cache */
-COMPLEX8TimeSeries * get_cavity_gain_factor( FrCache *calCache,
+COMPLEX8TimeSeries * get_cavity_gain_factor( LALCache *calCache,
     LIGOTimeGPS *epoch, const char *ifoName )
 {
   COMPLEX8TimeSeries *alpha;
-  FrCache        *facCache = NULL;
-  FrCacheSieve    sieve    = blank_sieve;
-  FrStream       *stream   = NULL;
+  LALCache       *facCache = NULL;
+  LALFrStream       *stream   = NULL;
 
   /* create time series with one data point */
   alpha       = LALCalloc( 1, sizeof( *alpha ) );
@@ -285,33 +281,32 @@ COMPLEX8TimeSeries * get_cavity_gain_factor( FrCache *calCache,
   snprintf( alpha->name, sizeof( alpha->name ), "%s:CAL-CAV_FAC", ifoName );
 
   /* make a new cache with only the CAL_FAC frames and open a frame stream */
-  sieve.dscRegEx = "CAL_FAC";
-  facCache = XLALFrSieveCache( calCache, &sieve );
-  stream = XLALFrCacheOpen( facCache );
+  facCache = XLALCacheDuplicate( calCache );
+  XLALCacheSieve( facCache, 0, 0, NULL, "CAL_FAC", NULL );
+  stream = XLALFrStreamCacheOpen( facCache );
 
   /* read the first point *after* the specified epoch from the frame stream
    * and correct the units */
   /* FIXME: should the point be *after* the specified epoch??? */
-  XLALFrSeek( stream, epoch );
-  XLALFrGetCOMPLEX8TimeSeries( alpha, stream );
+  XLALFrStreamSeek( stream, epoch );
+  XLALFrStreamGetCOMPLEX8TimeSeries( alpha, stream );
   alpha->sampleUnits = lalDimensionlessUnit;
 
   /* close stream and destroy cache */
-  XLALFrClose( stream );
-  XLALFrDestroyCache( facCache );
+  XLALFrStreamClose( stream );
+  XLALDestroyCache( facCache );
 
   return alpha;
 }
 
 
 /* routine to read one open loop gain factor from a frame file cache */
-COMPLEX8TimeSeries * get_open_loop_gain_factor( FrCache *calCache,
+COMPLEX8TimeSeries * get_open_loop_gain_factor( LALCache *calCache,
     LIGOTimeGPS *epoch, const char *ifoName )
 {
   COMPLEX8TimeSeries *alphabeta;
-  FrCache        *facCache = NULL;
-  FrCacheSieve    sieve    = blank_sieve;
-  FrStream       *stream   = NULL;
+  LALCache       *facCache = NULL;
+  LALFrStream       *stream   = NULL;
 
   /* create time series with one data point */
   alphabeta = LALCalloc( 1, sizeof( *alphabeta ) );
@@ -321,20 +316,20 @@ COMPLEX8TimeSeries * get_open_loop_gain_factor( FrCache *calCache,
       "%s:CAL-OLOOP_FAC", ifoName );
 
   /* make a new cache with only the CAL_FAC frames and open a frame stream */
-  sieve.dscRegEx = "CAL_FAC";
-  facCache = XLALFrSieveCache( calCache, &sieve );
-  stream = XLALFrCacheOpen( facCache );
+  facCache = XLALCacheDuplicate( calCache );
+  XLALCacheSieve( facCache, 0, 0, NULL, "CAL_FAC", NULL );
+  stream = XLALFrStreamCacheOpen( facCache );
 
   /* read the first point *after* the specified epoch from the frame stream
    * and correct the units */
   /* FIXME: should the point be *after* the specified epoch??? */
-  XLALFrSeek( stream, epoch );
-  XLALFrGetCOMPLEX8TimeSeries( alphabeta, stream );
+  XLALFrStreamSeek( stream, epoch );
+  XLALFrStreamGetCOMPLEX8TimeSeries( alphabeta, stream );
   alphabeta->sampleUnits = lalDimensionlessUnit;
 
   /* close stream and destroy cache */
-  XLALFrClose( stream );
-  XLALFrDestroyCache( facCache );
+  XLALFrStreamClose( stream );
+  XLALDestroyCache( facCache );
 
   return alphabeta;
 }

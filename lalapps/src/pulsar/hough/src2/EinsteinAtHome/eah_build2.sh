@@ -34,8 +34,17 @@ log_and_dont_fail() {
 }
 
 download() {
-    echo `date '+[%Y-%m-%d %H:%M:%S]'` curl "$1/$2 > $2" >> "$LOGFILE"
-    curl "$1/$2" > "$2" 2>> "$LOGFILE"
+    if [ ".$2" = "." ]; then
+      u="http://www.aei.mpg.de/~bema"
+      f="$1"
+    else
+      u="$1"
+      f="$2"
+    fi
+    echo `date '+[%Y-%m-%d %H:%M:%S]'` wget "$u/$f" >> "$LOGFILE" &&
+    wget --passive-ftp "$u/$f" 2>> "$LOGFILE" ||
+    echo `date '+[%Y-%m-%d %H:%M:%S]'` curl "$u/$f > $f" >> "$LOGFILE" &&
+    curl "$u/$f" > "$f" 2>> "$LOGFILE"
 }
 
 eah_build2_loc="`echo $PWD/$0 | sed 's%/[^/]*$%%'`"
@@ -45,6 +54,7 @@ test ".$appversion" = "." && appversion=0.00
 boinc_repo="git://gitmaster.atlas.aei.uni-hannover.de/einsteinathome/boinc.git"
 boinc_rev=current_gw_apps
 #previous:-r22844 -r22825 -r22804 -r22794 -r22784 -r22561 -r22503 -r22363 -r21777 -r'{2008-12-01}'
+git_retries=1
 
 for i; do
     case "$i" in
@@ -61,6 +71,7 @@ for i; do
 	--rebuild-boinc)
 	    rebuild_boinc=true ;;
 	--rebuild-zlib)
+	    build_zlib=true
 	    rebuild_zlib=true ;;
 	--rebuild-binutils)
 	    rebuild_binutils=true ;;
@@ -163,6 +174,8 @@ for i; do
 	    boinc_rev="`echo $i | sed 's/^.*=//'`";;
 	--boinc-commit=*)
 	    boinc_rev="`echo $i | sed 's/^.*=//'`";;
+	--git_retries=*)
+	    git_retries="`echo $i | sed 's/^.*=//'`";;
 	--help)
 	    echo "$0 builds Einstein@home Applications of LALApps HierarchicalSearch codes"
 	    echo "  --win32           cros-compile a Win32 App (requires MinGW, target i586-mingw32msvc-gcc)"
@@ -299,7 +312,7 @@ if [ -n "$BUILD_INFO" ]; then
 fi
 
 # export environment variables
-export CPPFLAGS="-DGCTTOP_MAX_IFOS=2 -DUSEXLALLOADSFTS -DBOINC_APIV6 -D__NO_CTYPE -DUSE_BOINC -DEAH_BOINC -I$INSTALL/include $CPPFLAGS"
+export CPPFLAGS="-DPULSAR_MAX_DETECTORS=2 -DUSEXLALLOADSFTS -DBOINC_APIV6 -D__NO_CTYPE -DUSE_BOINC -DEAH_BOINC -I$INSTALL/include $CPPFLAGS"
 export LDFLAGS
 export LD_LIBRARY_PATH="$INSTALL/lib:$LD_LIBRARY_PATH"
 export DYLD_LIBRARY_PATH="$INSTALL/lib:$DYLD_LIBRARY_PATH"
@@ -330,9 +343,9 @@ echo RELEASE_DEPS="\"$RELEASE_DEPS\"" >> "$LOGFILE"
 echo RELEASE_LDADD="\"$RELEASE_LDADD\"" >> "$LOGFILE"
 echo BUILD_INFO="\"$BUILD_INFO\"" >> "$LOGFILE"
 
-gsl=gsl-1.9
-fftw=fftw-3.2.2
-zlib=zlib-1.2.7
+gsl=gsl-1.15
+fftw=fftw-3.3.3
+zlib=zlib-1.2.8
 binutils=binutils-2.19
 
 if ! [ .$check_only = .true ]; then
@@ -358,7 +371,7 @@ if test -z "$rebuild" && pkg-config --exists gsl; then
     log_and_show "using existing gsl source"
 elif test -z "$noupdate"; then
     log_and_show "retrieving $gsl"
-    download http://www.aei.mpg.de/~repr/EaH_packages $gsl.tar.gz
+    download http://www.aei.mpg.de/~bema $gsl.tar.gz
     log_and_do tar xzf "$gsl.tar.gz"
 fi
 
@@ -366,7 +379,7 @@ if test -z "$rebuild" && pkg-config --exists fftw3 fftw3f; then
     log_and_show "using existing fftw source"
 elif test -z "$noupdate"; then
     log_and_show "retrieving $fftw"
-    download ftp://ftp.fftw.org/pub/fftw $fftw.tar.gz
+    download http://www.aei.mpg.de/~bema $fftw.tar.gz
     log_and_do tar xzf "$fftw.tar.gz"
 fi
 
@@ -398,7 +411,13 @@ else
     else
         log_and_do cd "$SOURCE"
         log_and_do rm -rf boinc
-        log_and_do git clone "$boinc_repo"
+        trial=1
+        while ! log_and_dont_fail git clone "$boinc_repo" ; do
+            trial=`expr $trial + 1`
+            test $trial -gt $git_retries && log_and_show "failed" && fail
+            sleep 30
+            log_and_do rm -rf boinc
+        done
         log_and_do cd boinc
     fi
     # if "$boinc_rev" is a tag that already exists locally,
@@ -562,7 +581,7 @@ else
     fi
 fi
 
-lalsuite_copts="--disable-gcc-flags --disable-debug --disable-frame --disable-metaio --enable-boinc --disable-silent-rules $shared_copt $cross_copt --prefix=$INSTALL"
+lalsuite_copts="--disable-gcc-flags --disable-debug --disable-frame --disable-metaio --disable-lalsimulation --enable-boinc --disable-silent-rules $shared_copt $cross_copt --prefix=$INSTALL"
 test ".$MACOSX_DEPLOYMENT_TARGET" = ".10.3" &&
     lalsuite_copts="--disable-osx-version-check $lalsuite_copts"
 if test -z "$rebuild_lal" && pkg-config --exists lal; then
@@ -668,8 +687,7 @@ if [ .$check = .true ]; then
     log_and_do cp ../eah_Makefakedata_v4$ext lalapps_Makefakedata_v4
     log_and_do cp ../eah_PredictFStat$ext lalapps_PredictFStat
     log_and_do cp ../eah_ComputeFStatistic_v2$ext lalapps_ComputeFStatistic_v2
-    log_and_do cp "$INSTALL"/share/lalpulsar/*05-09.dat .
-    NOCLEANUP=1 PATH="$PWD:$PATH" \
+    LALPULSAR_DATADIR="$INSTALL/share/lalpulsar" NOCLEANUP=1 PATH="$PWD:$PATH" \
 	log_and_do ../source/lalsuite/lalapps/src/pulsar/GCT/testHS.sh $wine "$check_app" --Dterms=8
     log_and_show "==========================================="
     log_and_show "Test passed"

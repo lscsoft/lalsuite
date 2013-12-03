@@ -77,7 +77,8 @@ XLALArrivalTimeDiff(
 }
 
 
-/** Compute difference in arrival time of the same signal at detector and at center of Earth-fixed frame.
+/**
+ * Compute difference in arrival time of the same signal at detector and at center of Earth-fixed frame.
  */
 double XLALTimeDelayFromEarthCenter(
 	const double detector_earthfixed_xyz_metres[3],
@@ -97,7 +98,8 @@ double XLALTimeDelayFromEarthCenter(
 }
 
 
-/** Compute the light travel time between two detectors and returns the answer in \c INT8 nanoseconds.
+/**
+ * Compute the light travel time between two detectors and returns the answer in \c INT8 nanoseconds.
  */
 INT8
 XLALLightTravelTime(

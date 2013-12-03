@@ -33,7 +33,7 @@
 
 #include <lal/AVFactories.h>
 #include <lal/Date.h>
-#include <lal/FrameStream.h>
+#include <lal/LALFrStream.h>
 #include <lal/LALFrameL.h>
 #include <lal/LALStdio.h>
 #include <lal/FrequencySeries.h>

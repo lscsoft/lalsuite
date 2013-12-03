@@ -18,41 +18,42 @@
 */
 
 /**
-  \author  Cokelaer, T.
-  \file
-  \ingroup LALInspiral_h
-
-  \brief Module to work with the ::InspiralTemplate Structure.
-
-\heading{Description}
-This module is a set of functions to play with the ::InspiralTemplate structure of the
-inspiral package. It allows to set default values to the inspiral strcuture, to parse
-parameters from the inspiral strcuture and to print the inspiral structure.
-
-Has to check and finalized...
-
-<ul>
-<li>  The \c LALInspiralITStructureParseParameters() function allows
-the user to parse string with respect to that structure. Each variable in the
-inspiralTemplate structure might be parse with a string like "--(name of the variable)+(value)"
- i.e. <em>--approximant TaylorT1</em>. Each argument starts with a double dash character
-followed by a key word which is exactly as written in the InspiralTemplate Structure such as
- --order, --mass1, --mass2, --fCutoff ...
-
-Once the string is parsed, the checking function is called.</li>
-
-<li> The \c LALInspiralITStructurePrint() function will print on the stdout the value
-of the InspiralTemplate structure.</li>
-<li> The \c LALInspiralITStructureSetDefault() set default values to the variables.
-Those values are written in the C-code.</li>
-<li> \c LALInspiralITStructureHelp()</li>
-</ul>
-
-
-\heading{Algorithm}
-None
-
-*/
+ * \author  Cokelaer, T.
+ * \file
+ * \ingroup LALInspiral_h
+ *
+ * \brief Module to work with the ::InspiralTemplate Structure.
+ *
+ * ### Description ###
+ *
+ * This module is a set of functions to play with the ::InspiralTemplate structure of the
+ * inspiral package. It allows to set default values to the inspiral strcuture, to parse
+ * parameters from the inspiral strcuture and to print the inspiral structure.
+ *
+ * Has to check and finalized...
+ *
+ * <ul>
+ * <li>  The \c LALInspiralITStructureParseParameters() function allows
+ * the user to parse string with respect to that structure. Each variable in the
+ * inspiralTemplate structure might be parse with a string like "--(name of the variable)+(value)"
+ * i.e. <em>--approximant TaylorT1</em>. Each argument starts with a double dash character
+ * followed by a key word which is exactly as written in the InspiralTemplate Structure such as
+ * --order, --mass1, --mass2, --fCutoff ...
+ *
+ * Once the string is parsed, the checking function is called.</li>
+ *
+ * <li> The \c LALInspiralITStructurePrint() function will print on the stdout the value
+ * of the InspiralTemplate structure.</li>
+ * <li> The \c LALInspiralITStructureSetDefault() set default values to the variables.
+ * Those values are written in the C-code.</li>
+ * <li> \c LALInspiralITStructureHelp()</li>
+ * </ul>
+ *
+ * ### Algorithm ###
+ *
+ * None
+ *
+ */
 
 #include <lal/LALInspiral.h>
 #include <lal/StringInput.h>
@@ -179,8 +180,6 @@ void LALInspiralITStructureParseParameters(LALStatus *status,
 	    params->approximant = SpinTaylorT4; }
 	  else if (strcmp(argv[i],"SpinQuadTaylor")==0){
 	    params->approximant = SpinQuadTaylor;}
-	  else if (strcmp(argv[i],"PhenSpinTaylorRDF")==0){
-	    params->approximant = PhenSpinTaylorRDF;}
 	  else if (strcmp(argv[i],"PhenSpinTaylorRD")==0){
 	    params->approximant = PhenSpinTaylorRD;}
 	  else if (strcmp(argv[i],"FindChirpSP")==0){
@@ -496,7 +495,7 @@ void LALInspiralITStructureHelp()
   fprintf(stderr,"--approximant (TaylorT1, TaylorT2, TaylorT3, TaylorT4,\n");
   fprintf(stderr,"\t\tTaylorF1, TaylorF2, TaylorF2RedSpin, PadeT1, PadeF1, BCV, BCVSpin\n");
   fprintf(stderr,"\t\tBCVC, SpinTaylorT3, SpinTaylorFrameless, SpinTaylor,\n");
-  fprintf(stderr,"\t\tSpinQuadTaylor, PhenSpinTaylorRD, PhenSpinTaylorRDF,\n");
+  fprintf(stderr,"\t\tSpinQuadTaylor, PhenSpinTaylorRD,\n");
   fprintf(stderr,"\t\tFindChirpSP, FindChirpPTF, GeneratePPN, AmpCorPPN,\n");
   fprintf(stderr,"\t\tFrameFile, NumRel, Eccentricity, EOB, EOBNR,\n");
   fprintf(stderr,"\t\tIMRPhenomA, IMRPhenomB, IMRPhenomFA, IMRPhenomFB,\n");
@@ -563,4 +562,30 @@ void LALInspiralITStructureHelp()
   fprintf(stderr,"              other - attach ringdown for IMR waveform (default)\n");
 
 
+}
+
+/**
+ * XLAL function to determine adaptive integration flag from a string.  Returns
+ * 1 if string contains 'fixedStep', otherwise returns 0 to signal
+ * adaptive integration should be used.
+ */
+int XLALGetAdaptiveIntFromString(const CHAR *inString)
+{
+  if (strstr(inString, "fixedStep"))
+    return 1;
+  else
+    return 0;
+}
+
+/**
+ * XLAL function to determine inspiral-only flag from a string.  Returns
+ * 1 if string contains 'inspiralOnly', otherwise returns 0 to signal
+ * full inspiral-merger-ringdown waveform should be generated.
+ */
+int XLALGetInspiralOnlyFromString(const CHAR *inString)
+{
+  if (strstr(inString, "inspiralOnly"))
+    return 1;
+  else
+    return 0;
 }

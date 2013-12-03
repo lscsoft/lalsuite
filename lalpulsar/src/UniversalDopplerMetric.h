@@ -32,7 +32,7 @@ extern "C" {
  * \author Reinhard Prix, Karl Wette
  *
  * Function to compute the full F-statistic metric, including
- * antenna-pattern functions from multi-detector, derived in \ref Prix07.
+ * antenna-pattern functions from multi-detector, derived in \cite Prix07.
  *
  */
 /*@{*/
@@ -65,12 +65,18 @@ typedef REAL8 mat33_t[3][3];
 
 /** variable-length list of 2D-vectors */
 typedef struct tagvect2Dlist_t {
+#ifdef SWIG   // SWIG interface directives
+  SWIGLAL(ARRAY_2D_FIXED(vect2Dlist_t, REAL8, vect2D_t, data, UINT4, length));
+#endif   // SWIG
   UINT4 length;			/**< number of elements */
   vect2D_t *data;		/**< array of 2D vectors */
 } vect2Dlist_t;
 
 /** variable-length list of 3D vectors */
 typedef struct tagvect3Dlist_t {
+#ifdef SWIG   // SWIG interface directives
+  SWIGLAL(ARRAY_2D_FIXED(vect3Dlist_t, REAL8, vect3D_t, data, UINT4, length));
+#endif   // SWIG
   UINT4 length;			/**< number of elements */
   vect3D_t *data;		/**< array of 3D vectors */
 } vect3Dlist_t;
@@ -83,22 +89,16 @@ typedef struct tagPosVel3D_t {
 } PosVel3D_t;
 
 
-/** Different types of detector-motion to use in order to compute the Doppler-metric,
- * the most 'realistic' obviously being DETMOTION_EPHEMORBIT_SPIN, which includes
- * both orbital and spin motion, and uses the Earth-ephemeris.
- */
+/** Bitfield of different types of detector-motion to use in order to compute the Doppler-metric */
 typedef enum {
-  DETMOTION_SPIN_ORBIT,		/**< full ephemeris-based detector motion (orbit+spin) */
-  DETMOTION_ORBIT,		/**< ephemeris-based, purely orbital detector-motion, no Earth spin */
-  DETMOTION_SPIN,		/**< purely Earth-spin detector motion (no orbit) */
+  DETMOTION_SPIN       = 0x01,   /**< Full spin motion */
+  DETMOTION_SPINZ      = 0x02,   /**< Ecliptic-Z component of spin motion only */
+  DETMOTION_SPINXY     = 0x03,   /**< Ecliptic-X+Y components of spin motion only */
+  DETMOTION_MASKSPIN   = 0x0F,   /**< Mask for spin motion bits */
 
-  DETMOTION_SPIN_PTOLEORBIT,	/**< ptole-orbital motion (on a circle) + Earth spin */
-  DETMOTION_PTOLEORBIT,		/**< pure "Ptolemaic" orbital motion, no Earth spin */
-
-  DETMOTION_ORBIT_SPINZ,	/**< orbital motion plus *only* z-component of Earth spin-motion wrt to ecliptic plane */
-  DETMOTION_ORBIT_SPINXY,	/**< orbital motion plus *only* x+y component of Earth spin-motion in the ecliptic */
-
-  DETMOTION_LAST
+  DETMOTION_ORBIT      = 0x10,   /**< Ephemeris-based orbital motion */
+  DETMOTION_PTOLEORBIT = 0x20,   /**< Ptolemaic (circular) orbital motion */
+  DETMOTION_MASKORBIT  = 0xF0,   /**< Mask for orbital motion bits */
 } DetectorMotionType;
 
 
@@ -110,7 +110,8 @@ typedef enum {
 } MetricType_t;
 
 
-/** enum listing symbolic 'names' for all Doppler Coordinates
+/**
+ * enum listing symbolic 'names' for all Doppler Coordinates
  * supported by the metric codes in FstatMetric
  */
 typedef enum {
@@ -146,14 +147,16 @@ typedef enum {
   DOPPLERCOORD_N3SX_EQU,	/**< X spin-component of unconstrained super-sky position in equatorial coordinates [Units: none]. */
   DOPPLERCOORD_N3SY_EQU,	/**< Y spin-component of unconstrained super-sky position in equatorial coordinates [Units: none]. */
 
-  DOPPLERCOORD_N3OX_ECL,	/**< X orbit-component of unconstrained super-sky position in equatorial coordinates [Units: none]. */
-  DOPPLERCOORD_N3OY_ECL,	/**< Y orbit-component of unconstrained super-sky position in equatorial coordinates [Units: none]. */
+  DOPPLERCOORD_N3OX_ECL,	/**< X orbit-component of unconstrained super-sky position in ecliptic coordinates [Units: none]. */
+  DOPPLERCOORD_N3OY_ECL,	/**< Y orbit-component of unconstrained super-sky position in ecliptic coordinates [Units: none]. */
+  DOPPLERCOORD_N3OZ_ECL,	/**< Z orbit-component of unconstrained super-sky position in ecliptic coordinates [Units: none]. */
 
   DOPPLERCOORD_LAST
 } DopplerCoordinateID;
 
 #define DOPPLERMETRIC_MAX_DIM 60	/**< should be large enough for a long time ... */
-/** type describing a Doppler coordinate system:
+/**
+ * type describing a Doppler coordinate system:
  * lists the number of dimensions and the symbolic names of the coordinates.
  */
 typedef struct tagDopplerCoordinateSystem
@@ -162,18 +165,8 @@ typedef struct tagDopplerCoordinateSystem
   DopplerCoordinateID coordIDs[DOPPLERMETRIC_MAX_DIM];	/**< coordinate 'names' */
 } DopplerCoordinateSystem;
 
-#define DOPPLERMETRIC_MAX_DETECTORS 60	/**< should be way large enough forever */
-/** type describing a set of detectors and their relative noise-weights
- * This is only used for full multi-IFO Fstatistic-metrics
- */
-typedef struct tagMultiDetectorInfo
-{
-  UINT4 length;						/**< number N of detectors */
-  LALDetector sites[DOPPLERMETRIC_MAX_DETECTORS]; 	/**< array of N detectors */
-  REAL8 detWeights[DOPPLERMETRIC_MAX_DETECTORS];	/**< array of N detector noise-weights: must satisfy \f$\sum_{i=1}^N w_i = 1\f$ */
-} MultiDetectorInfo;
-
-/** meta-info specifying a Doppler-metric
+/**
+ * meta-info specifying a Doppler-metric
  */
 typedef struct tagDopplerMetricParams
 {
@@ -192,10 +185,11 @@ typedef struct tagDopplerMetricParams
 
 
 
-/** Struct to hold the 'atoms', ie weighted phase-derivative averages like \f$\langle a^2 \partial_i \phi \partial_j \phi\rangle>\f$
- *  from which the F-metric is computed, but also the full Fisher-matrix. The noise-weighted average is defined as
+/**
+ * Struct to hold the 'atoms', ie weighted phase-derivative averages like \f$\langle a^2 \partial_i \phi \partial_j \phi\rangle>\f$
+ * from which the F-metric is computed, but also the full Fisher-matrix. The noise-weighted average is defined as
  * \f$\langle Q\rangle \equiv \frac{1}{T} \, \sum_X w^X\, \int_0^T Q\, dt \f$, where \f$w^X\f$ is the noise-weight for detector X,
- * and \f$T\f$ is the observation time, see \ref Prix07 for details.
+ * and \f$T\f$ is the observation time, see \cite Prix07 for details.
  */
 typedef struct tagFmetricAtoms_t
 {
@@ -215,7 +209,8 @@ typedef struct tagFmetricAtoms_t
 } FmetricAtoms_t;
 
 
-/** struct to hold a DopplerMetric, including meta-info on the number of
+/**
+ * struct to hold a DopplerMetric, including meta-info on the number of
  * dimensions, the coordinate-system and type of metric.
  */
 typedef struct tagDopplerMetric
@@ -225,7 +220,7 @@ typedef struct tagDopplerMetric
   gsl_matrix *g_ij;			/**< symmetric matrix holding the usual Phase-metric */
   double maxrelerr_gPh;			/**< estimate for largest relative error in phase-metric component integrations */
 
-  gsl_matrix *gF_ij;			/**< full F-statistic metric gF_ij, including antenna-pattern effects (see \ref Prix07) */
+  gsl_matrix *gF_ij;			/**< full F-statistic metric gF_ij, including antenna-pattern effects (see \cite Prix07) */
   gsl_matrix *gFav_ij;			/**< 'average' Fstat-metric */
   gsl_matrix *m1_ij, *m2_ij, *m3_ij;	/**< Fstat-metric sub components */
 
@@ -299,7 +294,6 @@ const CHAR *XLALDetectorMotionName ( DetectorMotionType detType );
 const CHAR *XLALDopplerCoordinateName ( DopplerCoordinateID coordID );
 const CHAR *XLALDopplerCoordinateHelp ( DopplerCoordinateID coordID );
 CHAR *XLALDopplerCoordinateHelpAll ( void );
-int XLALParseMultiDetectorInfo ( MultiDetectorInfo *detInfo, const LALStringVector *detNames, const LALStringVector *detWeights );
 
 gsl_matrix* XLALNaturalizeMetric( const gsl_matrix* g_ij, const DopplerMetricParams *metricParams );
 

@@ -27,88 +27,86 @@
  */
 
 /**
-
-\author Brown, D. A., Spinning BCV-Modifications: Jones, G.
-\file
-\ingroup FindChirpBCVSpin_h
-
-\brief Provides functions to filter data for spinning BCV templates.
-
-\heading{Prototypes}
-
-The function <tt>LALFindChirpBCVSpinFilterSegment()</tt> filters data for
-spinning BCV templates as described by the algorithm below.
-
-\heading{Algorithm}
-
-Using the quantities calculated in <tt>LALFindChirpBCVSpinTemplate()</tt> we
-construct a template and filter our data producing a clustered
-signal-to-noise ratio time series.
-We filter our data in 256 second data segments.
-We first calculate the following functions in the frequency domain:
-\f{eqnarray}{
-\text{qtilde}         & = & \frac {\mathcal{\widehat{A}}_1(f)
-e^{i \psi_{NM} (f)} s^* (f)} {S_h (f)} \nonumber\\
-\text{qtildeBCVSpin1} & = & \frac {\mathcal{\widehat{A}}_2(f)
-e^{i \psi_{NM} (f)} s^* (f)} {S_h (f)} \nonumber\\
-\text{qtildeBCVSpin2} & = & \frac {\mathcal{\widehat{A}}_3(f)
-e^{i \psi_{NM} (f)} s^* (f)} {S_h (f)}
-\f}
-where \f$\mathcal{\widehat{A}}_1(f)\f$, \f$\mathcal{\widehat{A}}_2(f)\f$
-and \f$\mathcal{\widehat{A}}_3(f)\f$ are the orthonormal amplitude functions
-and \f$\psi_{NM} (f)\f$ is the non-modulational phase of our template. These
-quantitites were calculated in <tt>LALFindChirpBCVSpinTemplate()</tt>. \f$s^*\f$
-is the complex conjugate of our (detector) data in the frequency domain
-and \f$S_h (f)\f$ is our estimate of the power spectral density of the detector
-data estimated over a 2048 second "blocks".
-Using inverse FFTs we construct the complex time domain quantities
-\c q, \c qBCVSpin1 and \c qBCVSpin2.
-We then calculate signal-to-noise ratio as
-\f{eqnarray}{
-\rho(t)^2 & = & \mathtt{q.re}^2
-           + \mathtt{q.im}^2
-           + \mathtt{qBCVSpin1.re}^2
-           + \mathtt{qBCVSpin1.im}^2 + \nonumber\\
-       &   & \mathtt{qBCVSpin2.re}^2
-           + \mathtt{qBCVSpin2.im}^2.
-\f}
-We then look for values of \f$\rho(t)\f$ above our threshold - note that the
-\f$\beta = 0\f$ threshold is currently hardcoded. We do not calculate
-signal-to-noise ratio for the 64 second stretch at the beginning and end
-of each data segment to avoid edge-effects. These times are picked up by
-overlapping our 256 second data segments.
-For times for which signal-to-noise ratio is calculated we have the option
-of clustering our output using the <tt>--cluster-method window</tt> option in
-\c lalapps_inspiral with an appropriate choice of cluster length.
-For events that pass the signal-to-noise ratio threshold and survive
-clustering we store the template parameters \f$\psi_0\f$, \f$\psi_3\f$, \f$\beta\f$
-and \f$f_{final}\f$ as well as 6 \f$\alpha\f$ values which encode the relative
-contribution of the \c q, \c qBCVSpin1 and \c qBCVSpin2 functions
-to the overall signal-to-noise ratio. These are simply calculated as
-\f{eqnarray}{
-\alpha_1 & = & \mathtt{q.re} / \rho \nonumber \\
-\alpha_2 & = & \mathtt{qBCVSpin1.re} / \rho \nonumber \\
-\alpha_3 & = & \mathtt{qBCVSpin2.re} / \rho \nonumber \\
-\alpha_4 & = & \mathtt{q.im} / \rho \nonumber \\
-\alpha_5 & = & \mathtt{qBCVSpin1.im} / \rho \nonumber \\
-\alpha_6 & = & \mathtt{qBCVSpin2.im} / \rho.
-\f}
-These obey \f$\sum_{i=1}^6 \alpha_i = 1\f$ and might prove useful in future
-signal based vetoe studies.
-
-\heading{Uses}
-\code
-LALCalloc()
-LALFree()
-LALCreateVector()
-LALDestroyVector()
-\endcode
-
-\heading{Notes}
-
-
-
-*/
+ * \author Brown, D. A., Spinning BCV-Modifications: Jones, G.
+ * \file
+ * \ingroup FindChirpBCVSpin_h
+ *
+ * \brief Provides functions to filter data for spinning BCV templates.
+ *
+ * ### Prototypes ###
+ *
+ * The function <tt>LALFindChirpBCVSpinFilterSegment()</tt> filters data for
+ * spinning BCV templates as described by the algorithm below.
+ *
+ * ### Algorithm ###
+ *
+ * Using the quantities calculated in <tt>LALFindChirpBCVSpinTemplate()</tt> we
+ * construct a template and filter our data producing a clustered
+ * signal-to-noise ratio time series.
+ * We filter our data in 256 second data segments.
+ * We first calculate the following functions in the frequency domain:
+ * \f{eqnarray}{
+ * \text{qtilde}         & = & \frac {\mathcal{\widehat{A}}_1(f)
+ * e^{i \psi_{NM} (f)} s^* (f)} {S_h (f)}\\
+ * \text{qtildeBCVSpin1} & = & \frac {\mathcal{\widehat{A}}_2(f)
+ * e^{i \psi_{NM} (f)} s^* (f)} {S_h (f)}\\
+ * \text{qtildeBCVSpin2} & = & \frac {\mathcal{\widehat{A}}_3(f)
+ * e^{i \psi_{NM} (f)} s^* (f)} {S_h (f)}
+ * \f}
+ * where \f$\mathcal{\widehat{A}}_1(f)\f$, \f$\mathcal{\widehat{A}}_2(f)\f$
+ * and \f$\mathcal{\widehat{A}}_3(f)\f$ are the orthonormal amplitude functions
+ * and \f$\psi_{NM} (f)\f$ is the non-modulational phase of our template. These
+ * quantitites were calculated in <tt>LALFindChirpBCVSpinTemplate()</tt>. \f$s^*\f$
+ * is the complex conjugate of our (detector) data in the frequency domain
+ * and \f$S_h (f)\f$ is our estimate of the power spectral density of the detector
+ * data estimated over a 2048 second "blocks".
+ * Using inverse FFTs we construct the complex time domain quantities
+ * \c q, \c qBCVSpin1 and \c qBCVSpin2.
+ * We then calculate signal-to-noise ratio as
+ * \f{eqnarray}{
+ * \rho(t)^2 & = & \mathtt{q.re}^2
+ * + \mathtt{q.im}^2
+ * + \mathtt{qBCVSpin1.re}^2
+ * + \mathtt{qBCVSpin1.im}^2 +\\
+ * &   & \mathtt{qBCVSpin2.re}^2
+ * + \mathtt{qBCVSpin2.im}^2.
+ * \f}
+ * We then look for values of \f$\rho(t)\f$ above our threshold - note that the
+ * \f$\beta = 0\f$ threshold is currently hardcoded. We do not calculate
+ * signal-to-noise ratio for the 64 second stretch at the beginning and end
+ * of each data segment to avoid edge-effects. These times are picked up by
+ * overlapping our 256 second data segments.
+ * For times for which signal-to-noise ratio is calculated we have the option
+ * of clustering our output using the <tt>--cluster-method window</tt> option in
+ * \c lalapps_inspiral with an appropriate choice of cluster length.
+ * For events that pass the signal-to-noise ratio threshold and survive
+ * clustering we store the template parameters \f$\psi_0\f$, \f$\psi_3\f$, \f$\beta\f$
+ * and \f$f_{final}\f$ as well as 6 \f$\alpha\f$ values which encode the relative
+ * contribution of the \c q, \c qBCVSpin1 and \c qBCVSpin2 functions
+ * to the overall signal-to-noise ratio. These are simply calculated as
+ * \f{eqnarray}{
+ * \alpha_1 & = & \mathtt{q.re} / \rho \\
+ * \alpha_2 & = & \mathtt{qBCVSpin1.re} / \rho \\
+ * \alpha_3 & = & \mathtt{qBCVSpin2.re} / \rho \\
+ * \alpha_4 & = & \mathtt{q.im} / \rho \\
+ * \alpha_5 & = & \mathtt{qBCVSpin1.im} / \rho \\
+ * \alpha_6 & = & \mathtt{qBCVSpin2.im} / \rho.
+ * \f}
+ * These obey \f$\sum_{i=1}^6 \alpha_i = 1\f$ and might prove useful in future
+ * signal based vetoe studies.
+ *
+ * ### Uses ###
+ *
+ * \code
+ * LALCalloc()
+ * LALFree()
+ * LALCreateVector()
+ * LALDestroyVector()
+ * \endcode
+ *
+ * ### Notes ###
+ *
+ */
 
 #define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <math.h>
@@ -344,9 +342,9 @@ LALFindChirpBCVSpinFilterSegment (
 
   	for (k = 0; k < (numPoints/2)+1; ++k )
   	{
-  		normData += ((inputData1[k].re * inputData1[k].re)
- 		 	+ (inputData1[k].im * inputData1[k].im))
-             	 	* wtilde[k].re;
+  		normData += ((crealf(inputData1[k]) * crealf(inputData1[k]))
+ 		 	+ (cimagf(inputData1[k]) * cimagf(inputData1[k])))
+             	 	* crealf(wtilde[k]);
   	}
 
   	normData *= deltaT * normFac;
@@ -382,14 +380,14 @@ LALFindChirpBCVSpinFilterSegment (
   /* qtilde positive frequency, not DC or nyquist */
   for ( k = 1; k < numPoints/2; ++k )
   {
-  	REAL4 r        =   inputData1[k].re;
-    	REAL4 s        =   inputData1[k].im;
+  	REAL4 r        =   crealf(inputData1[k]);
+    	REAL4 s        =   cimagf(inputData1[k]);
 
-    	REAL4 x =  tmpltSignal[k].re;
-    	REAL4 y =  0. - tmpltSignal[k].im;
+    	REAL4 x =  crealf(tmpltSignal[k]);
+    	REAL4 y =  0. - cimagf(tmpltSignal[k]);
 
-    	qtilde[k].re        = r * x - s * y ;
-    	qtilde[k].im        = s * x + r * y ;
+    	qtilde[k].realf_FIXME        = r * x - s * y ;
+    	qtilde[k].imagf_FIXME        = s * x + r * y ;
 
 /*      	qtilde[k].re *= wtilde[k].re;
       	qtilde[k].im *= wtilde[k].re; */
@@ -399,15 +397,15 @@ LALFindChirpBCVSpinFilterSegment (
 
     	/* real parts */
 
-     	qtilde[k].re         *= A1Vec[k];
-     	qtildeBCVSpin1[k].re *= A2Vec[k];
-     	qtildeBCVSpin2[k].re *= A3Vec[k];
+     	qtilde[k].realf_FIXME         *= A1Vec[k];
+     	qtildeBCVSpin1[k].realf_FIXME *= A2Vec[k];
+     	qtildeBCVSpin2[k].realf_FIXME *= A3Vec[k];
 
     	/* imaginary parts */
 
-     	qtilde[k].im         *= A1Vec[k];
-     	qtildeBCVSpin1[k].im *= A2Vec[k];
-     	qtildeBCVSpin2[k].im *= A3Vec[k];
+     	qtilde[k].imagf_FIXME         *= A1Vec[k];
+     	qtildeBCVSpin1[k].imagf_FIXME *= A2Vec[k];
+     	qtildeBCVSpin2[k].imagf_FIXME *= A3Vec[k];
   }
 
 
@@ -454,11 +452,11 @@ LALFindChirpBCVSpinFilterSegment (
 	{
 
 		REAL4 	rhoSq =
-			( ( q[j].re * q[j].re + q[j].im * q[j].im ) +
-   	                ( qBCVSpin1[j].re * qBCVSpin1[j].re
-			+ qBCVSpin1[j].im * qBCVSpin1[j].im ) +
-   	                ( qBCVSpin2[j].re * qBCVSpin2[j].re
-			+ qBCVSpin2[j].im * qBCVSpin2[j].im ) )
+			( ( crealf(q[j]) * crealf(q[j]) + cimagf(q[j]) * cimagf(q[j]) ) +
+   	                ( crealf(qBCVSpin1[j]) * crealf(qBCVSpin1[j])
+			+ cimagf(qBCVSpin1[j]) * cimagf(qBCVSpin1[j]) ) +
+   	                ( crealf(qBCVSpin2[j]) * crealf(qBCVSpin2[j])
+			+ cimagf(qBCVSpin2[j]) * cimagf(qBCVSpin2[j]) ) )
                         * normFacSq;
 
 		params->rhosqVec->data->data[j] = rhoSq;
@@ -530,12 +528,12 @@ LALFindChirpBCVSpinFilterSegment (
   for ( j = ignoreIndex; j < numPoints - ignoreIndex; ++j )
   {
          REAL4 rhoSq = (
-		  ( q[j].re * q[j].re ) +
-		  ( q[j].im * q[j].im ) +
-                  ( qBCVSpin1[j].re * qBCVSpin1[j].re ) +
-		  ( qBCVSpin1[j].im * qBCVSpin1[j].im ) +
-                  ( qBCVSpin2[j].re * qBCVSpin2[j].re ) +
-		  ( qBCVSpin2[j].im * qBCVSpin2[j].im ) )
+		  ( crealf(q[j]) * crealf(q[j]) ) +
+		  ( cimagf(q[j]) * cimagf(q[j]) ) +
+                  ( crealf(qBCVSpin1[j]) * crealf(qBCVSpin1[j]) ) +
+		  ( cimagf(qBCVSpin1[j]) * cimagf(qBCVSpin1[j]) ) +
+                  ( crealf(qBCVSpin2[j]) * crealf(qBCVSpin2[j]) ) +
+		  ( cimagf(qBCVSpin2[j]) * cimagf(qBCVSpin2[j]) ) )
                   * normFacSq;
 
 	rho    = pow(rhoSq, 0.5);
@@ -580,12 +578,12 @@ LALFindChirpBCVSpinFilterSegment (
           		thisEvent->end_time.gpsSeconds = j;
           		thisEvent->snr = rho;
 
-			alpha1hat = q[j].re * invRho * normFac;
- 	 	 	alpha4hat = q[j].im * invRho * normFac;
-			alpha2hat = qBCVSpin1[j].re * invRho * normFac;
-			alpha5hat = qBCVSpin1[j].im * invRho * normFac;
-			alpha3hat = qBCVSpin2[j].re * invRho * normFac;
-			alpha6hat = qBCVSpin2[j].im * invRho * normFac;
+			alpha1hat = crealf(q[j]) * invRho * normFac;
+ 	 	 	alpha4hat = cimagf(q[j]) * invRho * normFac;
+			alpha2hat = crealf(qBCVSpin1[j]) * invRho * normFac;
+			alpha5hat = cimagf(qBCVSpin1[j]) * invRho * normFac;
+			alpha3hat = crealf(qBCVSpin2[j]) * invRho * normFac;
+			alpha6hat = cimagf(qBCVSpin2[j]) * invRho * normFac;
 		/*													                           		     fprintf (stdout, "alpha1hat = %e\n", alpha1hat);
 		        fprintf (stdout, "alpha2hat = %e\n", alpha2hat);
 			fprintf (stdout, "alpha3hat = %e\n", alpha3hat);
@@ -613,12 +611,12 @@ LALFindChirpBCVSpinFilterSegment (
           		thisEvent->end_time.gpsSeconds = j;
           		thisEvent->snr = rho;
 
-                         alpha1hat = q[j].re * invRho * normFac;
-			 alpha4hat = q[j].im * invRho * normFac;
-			 alpha2hat = qBCVSpin1[j].re * invRho * normFac;
-			 alpha5hat = qBCVSpin1[j].im * invRho * normFac;
-			 alpha3hat = qBCVSpin2[j].re * invRho * normFac;
-			 alpha6hat = qBCVSpin2[j].im * invRho * normFac;
+                         alpha1hat = crealf(q[j]) * invRho * normFac;
+			 alpha4hat = cimagf(q[j]) * invRho * normFac;
+			 alpha2hat = crealf(qBCVSpin1[j]) * invRho * normFac;
+			 alpha5hat = cimagf(qBCVSpin1[j]) * invRho * normFac;
+			 alpha3hat = crealf(qBCVSpin2[j]) * invRho * normFac;
+			 alpha6hat = cimagf(qBCVSpin2[j]) * invRho * normFac;
 			                                                                                                                                          /*    fprintf (stdout, "alpha1hat = %e\n", alpha1hat);
 			 fprintf (stdout, "alpha2hat = %e\n", alpha2hat);
 			 fprintf (stdout, "alpha3hat = %e\n", alpha3hat);
@@ -714,12 +712,12 @@ LALFindChirpBCVSpinFilterSegment (
           		thisEvent->end_time.gpsSeconds = j;
           		thisEvent->snr = rho;
 
-  			alpha1hat = q[j].re * invRho * normFac;
-                        alpha4hat = q[j].im * invRho * normFac;
-			alpha2hat = qBCVSpin1[j].re * invRho * normFac;
-			alpha5hat = qBCVSpin1[j].im * invRho * normFac;
-			alpha3hat = qBCVSpin2[j].re * invRho * normFac;
-			alpha6hat = qBCVSpin2[j].im * invRho * normFac;
+  			alpha1hat = crealf(q[j]) * invRho * normFac;
+                        alpha4hat = cimagf(q[j]) * invRho * normFac;
+			alpha2hat = crealf(qBCVSpin1[j]) * invRho * normFac;
+			alpha5hat = cimagf(qBCVSpin1[j]) * invRho * normFac;
+			alpha3hat = crealf(qBCVSpin2[j]) * invRho * normFac;
+			alpha6hat = cimagf(qBCVSpin2[j]) * invRho * normFac;
 															                  /*                         fprintf (stdout, "alpha1hat = %e\n", alpha1hat);
 			fprintf (stdout, "alpha2hat = %e\n", alpha2hat);
 			fprintf (stdout, "alpha3hat = %e\n", alpha3hat);

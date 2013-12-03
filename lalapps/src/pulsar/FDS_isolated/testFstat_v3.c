@@ -18,12 +18,13 @@
  */
 
 /*********************************************************************************/
-/** \author R. Prix
+/**
+ * \author R. Prix
  * \file
  * \brief
- *  unit-test for Fstat_v3 module
+ * unit-test for Fstat_v3 module
  *
- *********************************************************************************/
+ */
 #include "config.h"
 
 /* System includes */
@@ -82,7 +83,6 @@ void write_timeSeriesR4 (FILE *fp, const REAL4TimeSeries *series);
 static LALUnit empty_LALUnit;
 static LALStatus empty_LALStatus;
 
-extern int lalDebugLevel;
 
 /*----------------------------------------------------------------------*/
 /* Main Function starts here */
@@ -94,7 +94,6 @@ int main(void)
 {
   int res1;
 
-  lalDebugLevel = 1;
 
   LogPrintf (LOG_DEBUG, "%s: Now testing XLALSFTVectorToCOMPLEX8TimeSeries() ... ", __func__);
   if ( (res1 = test_XLALSFTVectorToCOMPLEX8TimeSeries()) != TEST_PASSED )
@@ -113,9 +112,10 @@ int main(void)
 
 } /* main() */
 
-/** Unit-Test for function XLALSFTVectorToCOMPLEX8TimeSeries().
- *  Generates random data (timeseries + SFTs), feeds the SFTs into XLALSFTVectorToCOMPLEX8TimeSeries()
- *  and checks correctness of output timeseries.
+/**
+ * Unit-Test for function XLALSFTVectorToCOMPLEX8TimeSeries().
+ * Generates random data (timeseries + SFTs), feeds the SFTs into XLALSFTVectorToCOMPLEX8TimeSeries()
+ * and checks correctness of output timeseries.
  *
  * returns TEST_PASSED, TEST_FAILED or TEST_ABORTED
  */

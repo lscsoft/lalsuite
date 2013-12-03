@@ -51,7 +51,6 @@
  *-----------------------------------------------------------------------
  */
 
-#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/TimeFreq.h>
 
 #define MIN(A, B)       ((A) < (B) ? (A) : (B))
@@ -204,7 +203,7 @@ void LALTfrPswv (LALStatus *stat, REAL4Vector* sig, TimeFreqRep *tfr, TimeFreqPa
      LALForwardRealFFT (stat->statusPtr, vtmp, lacf, plan);
 
      for (row = 0; row < tfr->fRow/2+1 ; row++)
-       tfr->map[column][row]= vtmp->data[row].re;
+       tfr->map[column][row]= crealf(vtmp->data[row]);
 
     }
 

@@ -18,53 +18,55 @@
 */
 
 /**
-\author Cokelaer Thomas.
-\file
-
-\brief Module to find the vertices of an hexagon inscribed in an ellipse
-given its centre, half side-lengths and orientation angle.
-
-\heading{Prototypes}
-
-<tt>LALHexagonVertices()</tt>
-<ul>
-   <li> <tt>out,</tt> Output.
-   </li><li> <tt>in,</tt> Input.</li>
-</ul>
-
-\heading{Description}
-
-This code computes the vertices of an hexagon for plotting
-a grid of templates with xmgr, useful when looking at the
-minimal-match-Hexagons around mesh points in a template bank.
-Used by SpaceCovering in the test directory.
-
-\heading{Algorithm}
-Given the centre \f$(x_0,y_0)\f$ and half-sides \f$(dx,dy),\f$
-the vertices of a Hexagon in a \e diagonal coordinate
-system are given by
-\f{eqnarray}{
-x_1 & = & x_0 - dx, \quad y_1 = y_0 - dy, \nonumber \\
-x_2 & = & x_0 + dx, \quad y_2 = y_0 - dy, \nonumber \\
-x_3 & = & x_0 + dx, \quad y_3 = y_0 + dy, \nonumber \\
-x_4 & = & x_0 - dx, \quad y_4 = y_0 + dy. \nonumber
-\f}
-The coordinates of a Hexagon oriented at an angle \f$\theta\f$ is
-found by using the formulas
-\f{eqnarray}{
-x' = x \cos(\theta) - y \sin(\theta),\nonumber \\
-y' = y \cos(\theta) + x \sin(\theta).\nonumber
-\f}
-The function returns 7 coordinate points (1,2,3,4,5,6,1),
-and not just the 6 verticies, to help a plotting programme
-to complete the Hexagon.
-
-\heading{Uses}
-None.
-
-\heading{Notes}
-
-*/
+ * \author Cokelaer Thomas.
+ * \file
+ *
+ * \brief Module to find the vertices of an hexagon inscribed in an ellipse
+ * given its centre, half side-lengths and orientation angle.
+ *
+ * ### Prototypes ###
+ *
+ * <tt>LALHexagonVertices()</tt>
+ * <ul>
+ * <li> <tt>out,</tt> Output.
+ * </li><li> <tt>in,</tt> Input.</li>
+ * </ul>
+ *
+ * ### Description ###
+ *
+ * This code computes the vertices of an hexagon for plotting
+ * a grid of templates with xmgr, useful when looking at the
+ * minimal-match-Hexagons around mesh points in a template bank.
+ * Used by SpaceCovering in the test directory.
+ *
+ * ### Algorithm ###
+ *
+ * Given the centre \f$(x_0,y_0)\f$ and half-sides \f$(dx,dy),\f$
+ * the vertices of a Hexagon in a \e diagonal coordinate
+ * system are given by
+ * \f{eqnarray}{
+ * x_1 & = & x_0 - dx, \quad y_1 = y_0 - dy, \\
+ * x_2 & = & x_0 + dx, \quad y_2 = y_0 - dy, \\
+ * x_3 & = & x_0 + dx, \quad y_3 = y_0 + dy, \\
+ * x_4 & = & x_0 - dx, \quad y_4 = y_0 + dy.
+ * \f}
+ * The coordinates of a Hexagon oriented at an angle \f$\theta\f$ is
+ * found by using the formulas
+ * \f{eqnarray}{
+ * x' = x \cos(\theta) - y \sin(\theta), \\
+ * y' = y \cos(\theta) + x \sin(\theta).
+ * \f}
+ * The function returns 7 coordinate points (1,2,3,4,5,6,1),
+ * and not just the 6 verticies, to help a plotting programme
+ * to complete the Hexagon.
+ *
+ * ### Uses ###
+ *
+ * None.
+ *
+ * ### Notes ###
+ *
+ */
 
 #include <lal/LALInspiralBank.h>
 

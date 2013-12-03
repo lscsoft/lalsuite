@@ -36,7 +36,6 @@ int main (int argc, char *argv[])
   spin1[2] = 0.;
   spin2[2] = 0.;*/
 
-  lalDebugLevel = 7;
 
   UNUSED(argc);
   UNUSED(argv);

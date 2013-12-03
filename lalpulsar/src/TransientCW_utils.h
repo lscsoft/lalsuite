@@ -18,13 +18,14 @@
  */
 
 /*********************************************************************************/
-/** \author R. Prix
+/**
+ * \author R. Prix
  * \file
  * \brief
  * Some helper functions useful for "transient CWs", mostly applying transient window
  * functions.
  *
- *********************************************************************************/
+ */
 
 #ifndef _TRANSIENTCW_UTILS_H
 #define _TRANSIENTCW_UTILS_H
@@ -45,41 +46,18 @@ extern "C" {
 #include <lal/AVFactories.h>
 #include <lal/LogPrintf.h>
 #include <lal/SFTutils.h>
-
+#include <lal/PulsarDataTypes.h>
 #include <lal/ComputeFstat.h>
 
 /* ---------- exported API defines ---------- */
 
 #define DAY24 (24 * 3600)	/* standard 24h day = 86400 seconds ==> this is what's used in the definition of 'tauDays' */
 
-/** Struct to define parameters of a 'transient window' to be applied to obtain transient signals */
-typedef enum {
-  TRANSIENT_NONE = 0,		/**< Note: in this case the window-parameters will be ignored, and treated as rect={data},
-                                 * i.e. a simple rectangular window covering all the data => this should always reproduce the
-                                 * standard F-statistic computation.
-                                 */
-
-  TRANSIENT_RECTANGULAR = 1,	/**< standard rectangular window covering [t0, t0+tau] */
-
-  TRANSIENT_EXPONENTIAL,	/**< exponentially decaying window e^{-t0/tau} starting at t0.
-                                 * Note: we'll truncate this at some small (eg 3x) e-folding TRANSIENT_EXP_EFOLDING
-                                 */
-  TRANSIENT_LAST
-} transientWindowType_t;
-
 #define TRANSIENT_EXP_EFOLDING	3.0      /**< e-folding parameter for exponential window, after which we truncate
                                           * the window for efficiency. 3 e-foldings means we lose only
                                           * about e^(-2x3) ~1e-8 of signal power! */
 
 /* ---------- exported API types ---------- */
-
-/** Struct defining one transient window instance */
-typedef struct tagtransientWindow_t
-{
-  transientWindowType_t type;	/**< window-type: none, rectangular, exponential, .... */
-  UINT4 t0;			/**< GPS start-time 't0' */
-  UINT4 tau;			/**< transient timescale tau in seconds */
-} transientWindow_t;
 
 /** Struct defining a range of transient windows */
 typedef struct tagtransientWindowRange_t
@@ -93,7 +71,8 @@ typedef struct tagtransientWindowRange_t
   UINT4 dtau;			/**< stepsize to search tau-range with, in seconds */
 } transientWindowRange_t;
 
-/** Struct holding a transient-window "F-statistic map" over start-time and timescale {t0, tau}.
+/**
+ * Struct holding a transient-window "F-statistic map" over start-time and timescale {t0, tau}.
  * This contains a 2D matrix F_mn, with m = index over start-times t0, and n = index over timescales tau,
  * in steps of dt0 in [t0, t0+t0Band], and dtau in [tau, tau+tauBand] as defined in transientWindowRange.
  *
@@ -162,8 +141,8 @@ FstatAtomVector *XLALmergeMultiFstatAtomsBinned ( const MultiFstatAtomVector *mu
 
 /* ---------- INLINE function definitions ---------- */
 
-/** Function to compute the value of a rectangular transient-window at a given timestamp.
- *
+/**
+ * Function to compute the value of a rectangular transient-window at a given timestamp.
  * This is the central function defining the rectangular window properties.
  */
 static inline REAL8
@@ -179,7 +158,8 @@ XLALGetRectangularTransientWindowValue ( UINT4 timestamp,	/**< timestamp for whi
 
 } /* XLALGetRectangularTransientWindowValue() */
 
-/** Function to compute the value of an exponential transient-window at a given timestamp.
+/**
+ * Function to compute the value of an exponential transient-window at a given timestamp.
  *
  * This is the central function defining the exponential window properties.
  */
@@ -204,7 +184,8 @@ XLALGetExponentialTransientWindowValue ( UINT4 timestamp,	/**< timestamp for whi
 
 } /* XLALGetExponentialTransientWindowValue() */
 
-/** Function to compute the value of a given transient-window function at a given timestamp.
+/**
+ * Function to compute the value of a given transient-window function at a given timestamp.
  *
  * This is a simple wrapper to the actual window-defining functions
  */

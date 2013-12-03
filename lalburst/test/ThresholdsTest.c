@@ -100,7 +100,6 @@ static void ParseOptions(int argc, char *argv[])
 			break;
 		switch(c) {
 		case 'd':
-			lalDebugLevel = atoi(optarg);
 			break;
 
 		case 'v':

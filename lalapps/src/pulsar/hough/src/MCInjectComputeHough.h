@@ -71,7 +71,6 @@ extern "C" {
  * Constant Declarations.  Default parameters.
  */
 
-extern int lalDebugLevel;
 
 #define EARTHEPHEMERIS "./earth00-04.dat"
 #define SUNEPHEMERIS "./sun00-04.dat"

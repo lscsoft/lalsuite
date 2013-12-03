@@ -50,7 +50,7 @@
 #include <lal/LALDatatypes.h>
 #include <lal/AVFactories.h>
 #include <lal/LALConstants.h>
-#include <lal/FrameStream.h>
+#include <lal/LALFrStream.h>
 #include <lal/LIGOMetadataTables.h>
 #include <lal/LIGOMetadataUtils.h>
 #include <lal/LIGOLwXML.h>
@@ -88,7 +88,7 @@ int main( int argc, char *argv[] )
   REAL4                  cohSegLength = 2.0;
   UINT4                  numPoints = 524288;
 
-  FrStream     *frStream = NULL;
+  LALFrStream     *frStream = NULL;
   FrChanIn      frChan;
 
   if( !(tmplt = (SnglInspiralTable *) LALCalloc( 1, sizeof(SnglInspiralTable)) ) )

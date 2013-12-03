@@ -41,10 +41,12 @@
 extern "C" {
 #endif
 
-/** \name Floating-point constants
+/**
+ * \name Floating-point constants
  * The following constants define the precision and range of
  * floating-point arithmetic in LAL.  They are taken from the IEEE
- * standard 754 for binary arithmetic.  All numbers are dimensionless. */
+ * standard 754 for binary arithmetic.  All numbers are dimensionless.
+ */
 /*@{*/
 #define LAL_REAL4_MANT 24 /**< Bits of precision in the mantissa of a REAL4 */
 #define LAL_REAL4_MAX 3.40282347e+38 /**< Largest REAL4 */
@@ -56,12 +58,14 @@ extern "C" {
 #define LAL_REAL8_EPS 2.2204460492503131e-16  /**< 0.5^(LAL_REAL8_MANT-1), ie the difference between 1 and the next resolveable REAL8 */
 /*@}*/
 
-/** \name Mathematical constants
+/**
+ * \name Mathematical constants
  * The following are fundamental mathematical constants.  They are mostly
  * taken from the GNU C <tt>math.h</tt> header (with the exception of
  * <tt>LAL_TWOPI</tt>, which was computed using Maple).  All numbers are
  * dimensionless. The value of exp(gamma) is taken from
- * http://www.research.att.com/~njas/sequences/A073004 */
+ * http://www.research.att.com/~njas/sequences/A073004
+ */
 /*@{*/
 #define LAL_E         2.7182818284590452353602874713526625  /**< e */
 #define LAL_LOG2E     1.4426950408889634073599246810018922  /**< log_2 e */
@@ -84,13 +88,15 @@ extern "C" {
 #define LAL_180_PI    57.295779513082320876798154814105170 /**< 180/pi */
 /*@}*/
 
-/** \name Exact physical constants
+/**
+ * \name Exact physical constants
  * The following physical constants are defined to have exact values.
- * The values of \f$c\f$ and \f$g\f$ are taken from \ref Barnet_1996,
- * \f$p_\mathrm{atm}\f$ is from \ref Lang_1992, while \f$\epsilon_0\f$ and
+ * The values of \f$c\f$ and \f$g\f$ are taken from \cite Barnet_1996,
+ * \f$p_\mathrm{atm}\f$ is from \cite Lang_1992, while \f$\epsilon_0\f$ and
  * \f$\mu_0\f$ are computed from \f$c\f$ using exact formulae.  The use
  * of a Julian year (365.25 days) as standard is specified by the IAU.
- * They are given in the SI units shown. */
+ * They are given in the SI units shown.
+ */
 /*@{*/
 #define LAL_C_SI      299792458 /**< Speed of light in vacuo, m s^-1 */
 #define LAL_EPSILON0_SI  8.8541878176203898505365630317107503e-12 /**< Permittivity of free space, C^2 N^-1 m^-2 */
@@ -101,10 +107,12 @@ extern "C" {
 #define LAL_LYR_SI 9.4607304725808e15 /**< (Julian) Lightyear, m */
 /*@}*/
 
-/** \name Physical constants
+/**
+ * \name Physical constants
  * The following are measured fundamental physical constants, with values
- * given in \ref Barnet_1996.  When not dimensionless, they are given
- * in the SI units shown. */
+ * given in \cite Barnet_1996.  When not dimensionless, they are given
+ * in the SI units shown.
+ */
 /*@{*/
 #define LAL_G_SI      6.67259e-11    /**< Gravitational constant, N m^2 kg^-2 */
 #define LAL_H_SI      6.6260755e-34  /**< Planck constant, J s */
@@ -129,11 +137,12 @@ extern "C" {
 #define LAL_MUN_SI    5.05078658e-27 /**< Nuclear magneton, J T^-1 */
 /*@}*/
 
-/** \name Astrophysical parameters
+/**
+ * \name Astrophysical parameters
  * The following parameters are derived from measured properties of the
- * Earth and Sun.  The values are taken from \ref Barnet_1996, except
+ * Earth and Sun.  The values are taken from \cite Barnet_1996, except
  * for the obliquity of the ecliptic plane and the eccentricity of
- * Earth's orbit, which are taken from \ref Lang_1992.  All values are
+ * Earth's orbit, which are taken from \cite Lang_1992.  All values are
  * given in the SI units shown.  Note that the ``year'' and
  * ``light-year'' have exactly defined values, and appear under
  * ``Exact physical constants''.
@@ -144,8 +153,8 @@ extern "C" {
 #define LAL_BWGS84_SI 6.356752314e6   /**< Semiminor axis of WGS-84 Reference Ellipsoid, m */
 #define LAL_MEARTH_SI 5.97370e24      /**< Earth mass, kg */
 #define LAL_IEARTH    0.409092804     /**< Earth inclination (2000), radians */
-#define LAL_COSIEARTH 0.91748206215761919815	/**< Cosine of Earth inclination (2000) */
-#define LAL_SINIEARTH 0.39777715572793088957	/**< Sine of Earth inclination (2000) */
+#define LAL_COSIEARTH 0.91748206215761919815    /**< Cosine of Earth inclination (2000) */
+#define LAL_SINIEARTH 0.39777715572793088957    /**< Sine of Earth inclination (2000) */
 #define LAL_EEARTH    0.0167          /**< Earth orbital eccentricity */
 #define LAL_RSUN_SI   6.960e8         /**< Solar equatorial radius, m */
 #define LAL_MSUN_SI   1.98892e30      /**< Solar mass, kg */
@@ -159,10 +168,11 @@ extern "C" {
 #define LAL_DAYSID_SI 86164.09053     /**< Mean sidereal day, s */
 /*@}*/
 
-/** \name Cosmological parameters
+/**
+ * \name Cosmological parameters
  * The following cosmological parameters are derived from measurements of
  * the Hubble expansion rate and of the cosmic background radiation
- * (CBR).  Data are taken from \ref Barnet_1996.  In what follows, the
+ * (CBR).  Data are taken from \cite Barnet_1996.  In what follows, the
  * normalized Hubble constant \f$h_0\f$ is equal to the actual Hubble
  * constant \f$H_0\f$ divided by \f$\langle H
  * \rangle=100\,\mathrm{km}\,\mathrm{s}^{-1}\mathrm{Mpc}^{-1}\f$.  Thus the
@@ -171,7 +181,8 @@ extern "C" {
  * Similarly, the critical energy density \f$\rho_c\f$ required for spatial
  * flatness is given by: \f$\rho_c = \langle\rho\rangle h_0^2\f$.
  * Current estimates give \f$h_0\f$ a value of around 0.65, which is what is
- * assumed below.  All values are in the SI units shown. */
+ * assumed below.  All values are in the SI units shown.
+ */
 /*@{*/
 #define LAL_H0FAC_SI  3.2407792903e-18 /**< Hubble constant prefactor, s^-1 */
 #define LAL_H0_SI     2e-18            /**< Approximate Hubble constant, s^-1 */
@@ -190,5 +201,4 @@ extern "C" {
 #ifdef  __cplusplus
 }
 #endif
-
 #endif /* _LALCONSTANTS_H */

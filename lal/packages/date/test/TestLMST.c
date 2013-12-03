@@ -26,7 +26,6 @@
 #include <lal/Date.h>
 #include <lal/AVFactories.h>
 
-INT4 lalDebugLevel = 0;
 
 #define SUCCESS               0
 #define TESTLMSTC_DATESTRING  1
@@ -57,7 +56,6 @@ int main(void)
 
 
     if (argc > 1)
-      lalDebugLevel = atoi(argv[1]);
 
     /** TEST NO. 1 **/
 

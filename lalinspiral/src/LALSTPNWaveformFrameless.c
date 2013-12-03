@@ -120,7 +120,7 @@ static int XLALSTPNAdaptiveTest(double t, const double values[],
   UNUSED(t);
 
   omega = values[1];
-  v = pow(omega,oneby3);
+  v = pow(omega,(1./3.));
 
   test = -0.5 * params->eta * ( (2.0/3.0) * (1.0/v) * params->epnorb[0]
       + params->epnorb[1] + (4.0/3.0) * v * (params->epnorb[2]
@@ -205,7 +205,7 @@ static int XLALSTPNFramelessAdaptiveDerivatives(double t,
     return LALSTPN_DERIVATIVE_OMEGANONPOS;
   }
 
-  v  = pow(omega,oneby3);
+  v  = pow(omega,(1./3.));
   v2 = v * v; v3 = v2 * v; v4 = v3 * v; v7 = v4 * v3; v11 = v7 * v4;
 
   dotLNS1 = (LNhx*S1x + LNhy*S1y + LNhz*S1z);
@@ -307,8 +307,7 @@ static int XLALSTPNFramelessAdaptiveDerivatives(double t,
 void LALSTPNFramelessWaveform(LALStatus *status, REAL4Vector *signalvec, 
     InspiralTemplate *params)
 {
-  XLALPrintDeprecationWarning("LALSTPNFramelessWaveform",
-      "XLALSTPNFramelessWaveform");
+  XLAL_PRINT_DEPRECATION_WARNING("XLALSTPNFramelessWaveform");
   INITSTATUS(status);
   ATTATCHSTATUSPTR(status);
 
@@ -350,8 +349,7 @@ int XLALSTPNFramelessWaveform(REAL4Vector *signalvec, InspiralTemplate *params)
 void LALSTPNFramelessWaveformTemplates(LALStatus *status, 
     REAL4Vector *signalvec1, REAL4Vector *signalvec2, InspiralTemplate *params)
 {
-  XLALPrintDeprecationWarning("LALSTPNFramelessWaveformTemplates",
-      "XLALSTPNFramelessWaveformTemplates");
+  XLAL_PRINT_DEPRECATION_WARNING("XLALSTPNFramelessWaveformTemplates");
   INITSTATUS(status);
   ATTATCHSTATUSPTR(status);
 
@@ -397,8 +395,7 @@ int XLALSTPNFramelessWaveformTemplates(REAL4Vector *signalvec1,
 void LALSTPNFramelessWaveformForInjection(LALStatus *status, 
     CoherentGW *waveform, InspiralTemplate *params, PPNParamStruc *ppnParams)
 {
-  XLALPrintDeprecationWarning("LALSTPNFramelessWaveformForInjection",
-      "XLALSTPNFramelessWaveformForInjection");
+  XLAL_PRINT_DEPRECATION_WARNING("XLALSTPNFramelessWaveformForInjection");
   INITSTATUS(status);
   ATTATCHSTATUSPTR(status);
 
@@ -526,8 +523,7 @@ void LALSTPNFramelessAdaptiveWaveformEngine( LALStatus *status,
     REAL4Vector *signalvec1, REAL4Vector *signalvec2, UINT4 *countback, 
     InspiralTemplate *params, InspiralInit *paramsInit)
 {
-  XLALPrintDeprecationWarning("LALSTPNFramelessAdaptiveWaveformEngine",
-      "XLALSTPNFramelessAdaptiveWaveformEngine");
+  XLAL_PRINT_DEPRECATION_WARNING("XLALSTPNFramelessAdaptiveWaveformEngine");
 
   INITSTATUS(status);
   ATTATCHSTATUSPTR(status);

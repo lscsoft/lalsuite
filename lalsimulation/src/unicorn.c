@@ -47,7 +47,6 @@ int main(int argc, char *argv[])
 	gsl_rng *rng;
 	FILE *fp = stdout;
 
-	lalDebugLevel = 7;
 	/* XLALSetErrorHandler(XLALBacktraceErrorHandler); */
 	XLALSetErrorHandler(XLALAbortErrorHandler);
 

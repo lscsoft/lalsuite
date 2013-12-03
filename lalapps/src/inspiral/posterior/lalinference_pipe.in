@@ -26,8 +26,7 @@ parser.add_option("-p","--daglog-path",default=None,action="store",type="string"
 parser.add_option("-g","--gps-time-file",action="store",type="string",default=None,help="Text file containing list of GPS times to analyse",metavar="TIMES.txt")
 parser.add_option("-t","--single-triggers",action="store",type="string",default=None,help="SnglInspiralTable trigger list",metavar="SNGL_FILE.xml")
 parser.add_option("-C","--coinc-triggers",action="store",type="string",default=None,help="CoinInspiralTable trigger list",metavar="COINC_FILE.xml")
-parser.add_option("-L","--lvalert",action="store",type="string",default=None,help="LVAlert coinc file",metavar="coinc_G0000.xml")
-parser.add_option("--gid",action="store",type="string",default=None,help="Optional GraceDB ID for submitting results")
+parser.add_option("--gid",action="store",type="string",default=None,help="GraceDB ID")
 parser.add_option("-I","--injections",action="store",type="string",default=None,help="List of injections to perform and analyse",metavar="INJFILE.xml")
 parser.add_option("-P","--pipedown-db",action="store",type="string",default=None,help="Pipedown database to read and analyse",metavar="pipedown.sqlite")
 parser.add_option("--condor-submit",action="store_true",default=False,help="Automatically submit the condor dag")
@@ -65,9 +64,6 @@ if opts.injections is not None:
 
 if opts.coinc_triggers is not None:
   cp.set('input','coinc-inspiral-file',opts.coinc_triggers)
-
-if opts.lvalert is not None:
-  cp.set('input','lvalert-file',opts.lvalert)
 
 if opts.gid is not None:
   cp.set('input','gid',opts.gid)

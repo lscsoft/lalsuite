@@ -108,7 +108,6 @@ fprintf( a, "required.\n" );\
 fprintf( a, "  [--help]                      display this message\n");\
 fprintf( a, "  [--verbose]                   print progress information\n");\
 fprintf( a, "  [--version]                   print version information and exit\n");\
-fprintf( a, "  [--debug-level]   level       set the LAL debug level to LEVEL\n");\
 fprintf( a, "  [--user-tag]      usertag     set the process_params usertag\n");\
 fprintf( a, "  [--ifo-tag]       ifotag      set the ifo-tag - for file naming\n");\
 fprintf( a, "  [--comment]       string      set the process table comment to STRING\n");\
@@ -412,7 +411,6 @@ int main( int argc, char *argv[] )
     {"userTag",             required_argument, 0,                    'Z'},
     {"ifo-tag",             required_argument, 0,                    'i'},
     {"help",                no_argument,       0,                    'h'}, 
-    {"debug-level",         required_argument, 0,                    'z'},
     {"version",             no_argument,       0,                    'V'},
     {"dmchirp-high",        required_argument, 0,                    '^'},
     {"high-mass",           required_argument, 0,                    '&'},
@@ -457,7 +455,6 @@ int main( int argc, char *argv[] )
    */
 
   lal_errhandler = LAL_ERR_EXIT;
-  set_debug_level( "33" );
   setvbuf( stdout, NULL, _IONBF, 0 );
 
   /* create the process and process params tables */
@@ -504,7 +501,7 @@ int main( int argc, char *argv[] )
 
     c = getopt_long_only( argc, argv, 
         "A:B:C:D:E:F:G:H:I:J:K:L:M:N:O:P:Q:R:S:T:U:VW:Y:Z:"
-        "a:b:c:d:e:f:g:hi:j:k:l:m:n:o:p:q:r:s:t:u:v:w:x:y:z:"
+        "a:b:c:d:e:f:g:hi:j:k:l:m:n:o:p:q:r:s:t:u:v:w:x:y:"
         "2:3:4:5:6:7:8:9:`:!:-:+:=:@:^:&:*:(:):{:}:[:]:~", 
         long_options, &option_index );
 
@@ -930,11 +927,6 @@ int main( int argc, char *argv[] )
         /* help message */
         USAGE( stdout , "");
         exit( 1 );
-        break;
-
-      case 'z':
-        set_debug_level( optarg );
-        ADD_PROCESS_PARAM( "string", "%s", optarg );
         break;
 
       case 'Z':

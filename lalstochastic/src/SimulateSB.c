@@ -33,119 +33,118 @@
 #include <lal/DetectorSite.h>
 
 /**
-\author Sukanta Bose (Adapted from a non-LAL code written by Bruce Allen)
-
-\brief Simulates whitened time-domain signal in a pair of detectors.
-
-Simulates whitened time-domain signal in a pair of detectors that arises purely from  an isotropic and
-unpolarized stochastic background of gravitational radiation with the
-desired power spectrum, \f$\Omega_{\mathrm{GW}}(f)\f$. This module
-will evolve beyond its present funtionality to produce only \c real
-time-series signal for a pair of interferometric detectors.
-
-
-\heading{Description}
-
-The frequency domain strains \f$\widetilde{h}_1(f_i)\f$
-and \f$\widetilde{h}_2(f_j)\f$ caused by
-the stochastic background in two detectors are random variables that have
-zero mean and that obey  [\ref Allen1999]:
-  \f{equation}{
-    \langle\widetilde{h}_1^*(f_i)\widetilde{h}_1(f_j)\rangle
-    = \frac{3H_0^2T}{20\pi^2}\delta_{ij}f_i^{-3}\gamma_{11}(f_i)
-    \Omega_{\mathrm{GW}}(|f_i|)
-  \f}
-  and
-   \f{equation}{
-    \langle\widetilde{h}_2^*(f_i)\widetilde{h}_2(f_j)\rangle
-    = \frac{3H_0^2T}{20\pi^2}\delta_{ij}f_i^{-3}\gamma_{22}(f_i)
-    \Omega_{\mathrm{GW}}(|f_i|)
-  \f}
-  and
-  \f{equation}{
-    \langle\widetilde{h}_1^*(f_i)\widetilde{h}_2(f_j)\rangle
-    = \frac{3H_0^2T}{20\pi^2}\delta_{ij}f_i^{-3}\gamma_{12}(f_i)
-    \Omega_{\mathrm{GW}}(|f_i|) \ ,
-  \f}
-where \f$\langle\rangle\f$ denotes ensemble average, \f$T\f$ is the time of
-observation, and \f$\gamma_{AB}\f$ is the overlap reduction function
-[\ref Flanagan1993] of the detector pair comprising detectors \f$A\f$
-and \f$B\f$. Above, \f$\widetilde{h}_1(f_i)\f$ and
-\f$\widetilde{h}_2(f_j)\f$ are the Fourier components of the gravitational strains
-\f$h_1(t)\f$ and \f$h_2(t)\f$ at the two detectors.
-
-The Fourier components that
-obey the above relations are
-  \f{equation}{
-    \widetilde{h}_1(f_i) = \sqrt{\frac{3H_0^2T}{40\pi^2}}f_i^{-3/2}
-    \Omega^{1/2}_{\mathrm{GW}}(|f_i|) \sqrt{\gamma_{11}(f_i)}
-(x_{1i} + i y_{1i})
-    \,
-  \f}
-  and
-  \f{equation}{
-    \widetilde{h}_2(f_i) = \widetilde{h}_1(f_i)\frac{\gamma_{12}(f_i)}
-{\gamma_{11}(f_i)} +
-    \sqrt{\frac{3H_0^2T}{40\pi^2}}f_i^{-3/2}
-    \Omega^{1/2}_{\mathrm{GW}}(|f_i|)
-    \sqrt{\gamma_{22}(f_i)-\frac{\gamma^2_{12}(f_i)}{\gamma_{11}(f_i)}}
-(x_{2i} + i y_{2i})
-    \,
-  \f}
-where \f$x_{1i}\f$, \f$y_{1i}\f$, \f$x_{2i}\f$, and \f$y_{2i}\f$ are statistically
-independent real Gaussian random variables, each of zero mean and unit
-variance.
-
-The routine assumes as inputs the data sample length, temporal spacing,
-stochastic background characteristics, detector locations, the appropriate
-representations of the detector response function in each detector, etc.
-The (frequency domain) response functions, \f$\widetilde{R}_1(f_i)\f$ and
-\f$\widetilde{R}_2(f_i)\f$  are used to whiten the strains
-\f$\widetilde{h}_1(f_i)\f$ and
-\f$\widetilde{h}_2(f_i)\f$, respectively, to obtain the whitened
-Fourier components:
-  \f{equation}{
-    \widetilde{o}_1(f_i) = \widetilde{R}_1(f_i)\widetilde{h}_1(f_i)
-    \,
-  \f}
-  and
-  \f{equation}{
-    \widetilde{o}_2(f_i) = \widetilde{R}_2(f_i)\widetilde{h}_2(f_i)
-    \ .
-  \f}
-To obtain the whitened (real)
-outputs \f$o_1(t_i)\f$ and \f$o_2(t_i)\f$ in the time domain, the inverse
-Fourier transforms of the above frequency series are taken.
-
-\heading{Algorithm}
-
-The routine <tt>LALSSSimStochBGTimeSeries()</tt> produces only \c real
-time-series signal for a pair of interferometric detectors. It
-first inputs the frequency
-series describing the power spectrum of the stochastic background,
-\f$\Omega_{\mathrm{GW}}(|f|)\f$, which the simulated
-signal is required to represent. It also inputs two \c COMPLEX8
-frequency series corresponding, respectively, to the two detector
-response functions. As parameters, it takes the two \c LALDetector
-structures corresponding to the two detectors in which the signal is to be
-mimicked. It also takes the time length (given in terms of the number of
-time data samples), the time spacing, a seed (for generating random
-numbers), and a couple of \c LALUnit structures for specifying the
-units of the two time-series signals that the routine outputs.
-
-Using the specified power
-spectrum for the stochastic background, and a random number generator (of
-zero mean, unit variance Gaussian distributions), the routine produces
-\f$\widetilde{h}_1(f_i)\f$ and \f$\widetilde{h}_2(f_i)\f$. The
-response functions of the two detectors are then used to whiten the two
-strains in the Fourier domain. Their inverse transform is then taken to obtain
-at each detector the whitened simulated signal in the time domain.
-
-\heading{Notes}
-
-This routine does not yet support non-zero heterodyning frequencies.
-
-*/
+ * \author Sukanta Bose (Adapted from a non-LAL code written by Bruce Allen)
+ *
+ * \brief Simulates whitened time-domain signal in a pair of detectors.
+ *
+ * Simulates whitened time-domain signal in a pair of detectors that arises purely from  an isotropic and
+ * unpolarized stochastic background of gravitational radiation with the
+ * desired power spectrum, \f$\Omega_{\mathrm{GW}}(f)\f$. This module
+ * will evolve beyond its present funtionality to produce only \c real
+ * time-series signal for a pair of interferometric detectors.
+ *
+ * ### Description ###
+ *
+ * The frequency domain strains \f$\widetilde{h}_1(f_i)\f$
+ * and \f$\widetilde{h}_2(f_j)\f$ caused by
+ * the stochastic background in two detectors are random variables that have
+ * zero mean and that obey  \cite Allen1999:
+ * \f{equation}{
+ * \langle\widetilde{h}_1^*(f_i)\widetilde{h}_1(f_j)\rangle
+ * = \frac{3H_0^2T}{20\pi^2}\delta_{ij}f_i^{-3}\gamma_{11}(f_i)
+ * \Omega_{\mathrm{GW}}(|f_i|)
+ * \f}
+ * and
+ * \f{equation}{
+ * \langle\widetilde{h}_2^*(f_i)\widetilde{h}_2(f_j)\rangle
+ * = \frac{3H_0^2T}{20\pi^2}\delta_{ij}f_i^{-3}\gamma_{22}(f_i)
+ * \Omega_{\mathrm{GW}}(|f_i|)
+ * \f}
+ * and
+ * \f{equation}{
+ * \langle\widetilde{h}_1^*(f_i)\widetilde{h}_2(f_j)\rangle
+ * = \frac{3H_0^2T}{20\pi^2}\delta_{ij}f_i^{-3}\gamma_{12}(f_i)
+ * \Omega_{\mathrm{GW}}(|f_i|) \ ,
+ * \f}
+ * where \f$\langle\rangle\f$ denotes ensemble average, \f$T\f$ is the time of
+ * observation, and \f$\gamma_{AB}\f$ is the overlap reduction function
+ * \cite Flanagan1993 of the detector pair comprising detectors \f$A\f$
+ * and \f$B\f$. Above, \f$\widetilde{h}_1(f_i)\f$ and
+ * \f$\widetilde{h}_2(f_j)\f$ are the Fourier components of the gravitational strains
+ * \f$h_1(t)\f$ and \f$h_2(t)\f$ at the two detectors.
+ *
+ * The Fourier components that
+ * obey the above relations are
+ * \f{equation}{
+ * \widetilde{h}_1(f_i) = \sqrt{\frac{3H_0^2T}{40\pi^2}}f_i^{-3/2}
+ * \Omega^{1/2}_{\mathrm{GW}}(|f_i|) \sqrt{\gamma_{11}(f_i)}
+ * (x_{1i} + i y_{1i})
+ * \,
+ * \f}
+ * and
+ * \f{equation}{
+ * \widetilde{h}_2(f_i) = \widetilde{h}_1(f_i)\frac{\gamma_{12}(f_i)}
+ * {\gamma_{11}(f_i)} +
+ * \sqrt{\frac{3H_0^2T}{40\pi^2}}f_i^{-3/2}
+ * \Omega^{1/2}_{\mathrm{GW}}(|f_i|)
+ * \sqrt{\gamma_{22}(f_i)-\frac{\gamma^2_{12}(f_i)}{\gamma_{11}(f_i)}}
+ * (x_{2i} + i y_{2i})
+ * \,
+ * \f}
+ * where \f$x_{1i}\f$, \f$y_{1i}\f$, \f$x_{2i}\f$, and \f$y_{2i}\f$ are statistically
+ * independent real Gaussian random variables, each of zero mean and unit
+ * variance.
+ *
+ * The routine assumes as inputs the data sample length, temporal spacing,
+ * stochastic background characteristics, detector locations, the appropriate
+ * representations of the detector response function in each detector, etc.
+ * The (frequency domain) response functions, \f$\widetilde{R}_1(f_i)\f$ and
+ * \f$\widetilde{R}_2(f_i)\f$  are used to whiten the strains
+ * \f$\widetilde{h}_1(f_i)\f$ and
+ * \f$\widetilde{h}_2(f_i)\f$, respectively, to obtain the whitened
+ * Fourier components:
+ * \f{equation}{
+ * \widetilde{o}_1(f_i) = \widetilde{R}_1(f_i)\widetilde{h}_1(f_i)
+ * \,
+ * \f}
+ * and
+ * \f{equation}{
+ * \widetilde{o}_2(f_i) = \widetilde{R}_2(f_i)\widetilde{h}_2(f_i)
+ * \ .
+ * \f}
+ * To obtain the whitened (real)
+ * outputs \f$o_1(t_i)\f$ and \f$o_2(t_i)\f$ in the time domain, the inverse
+ * Fourier transforms of the above frequency series are taken.
+ *
+ * ### Algorithm ###
+ *
+ * The routine <tt>LALSSSimStochBGTimeSeries()</tt> produces only \c real
+ * time-series signal for a pair of interferometric detectors. It
+ * first inputs the frequency
+ * series describing the power spectrum of the stochastic background,
+ * \f$\Omega_{\mathrm{GW}}(|f|)\f$, which the simulated
+ * signal is required to represent. It also inputs two \c COMPLEX8
+ * frequency series corresponding, respectively, to the two detector
+ * response functions. As parameters, it takes the two \c LALDetector
+ * structures corresponding to the two detectors in which the signal is to be
+ * mimicked. It also takes the time length (given in terms of the number of
+ * time data samples), the time spacing, a seed (for generating random
+ * numbers), and a couple of \c LALUnit structures for specifying the
+ * units of the two time-series signals that the routine outputs.
+ *
+ * Using the specified power
+ * spectrum for the stochastic background, and a random number generator (of
+ * zero mean, unit variance Gaussian distributions), the routine produces
+ * \f$\widetilde{h}_1(f_i)\f$ and \f$\widetilde{h}_2(f_i)\f$. The
+ * response functions of the two detectors are then used to whiten the two
+ * strains in the Fourier domain. Their inverse transform is then taken to obtain
+ * at each detector the whitened simulated signal in the time domain.
+ *
+ * ### Notes ###
+ *
+ * This routine does not yet support non-zero heterodyning frequencies.
+ *
+ */
 void
 LALSSSimStochBGTimeSeries( LALStatus                    *status,
 			   SSSimStochBGOutput           *output,
@@ -656,27 +655,27 @@ LALSSSimStochBGTimeSeries( LALStatus                    *status,
 	  wFilter1 = input->whiteningFilter1->data->data[i];
 	  wFilter2 = input->whiteningFilter2->data->data[i];
 
-	  ccountsTmp[0]->data[i].re=factor3*gaussdevsX1->data[i];
-	  ccountsTmp[0]->data[i].im=factor3*gaussdevsY1->data[i];
-	  ccountsTmp[1]->data[i].re=ccountsTmp[0]->data[i].re*gamma12/gamma11+factor2*gaussdevsX2->data[i];
-	  ccountsTmp[1]->data[i].im=ccountsTmp[0]->data[i].im*gamma12/gamma11+factor2*gaussdevsY2->data[i];
+	  ccountsTmp[0]->data[i].realf_FIXME=factor3*gaussdevsX1->data[i];
+	  ccountsTmp[0]->data[i].imagf_FIXME=factor3*gaussdevsY1->data[i];
+	  ccountsTmp[1]->data[i].realf_FIXME=crealf(ccountsTmp[0]->data[i])*gamma12/gamma11+factor2*gaussdevsX2->data[i];
+	  ccountsTmp[1]->data[i].imagf_FIXME=cimagf(ccountsTmp[0]->data[i])*gamma12/gamma11+factor2*gaussdevsY2->data[i];
 
-	  ccounts[0]->data[i].re = wFilter1.re * ccountsTmp[0]->data[i].re -
-	    wFilter1.im * ccountsTmp[0]->data[i].im;
-	  ccounts[0]->data[i].im = wFilter1.re * ccountsTmp[0]->data[i].im +
-	    wFilter1.im * ccountsTmp[0]->data[i].re;
-	  ccounts[1]->data[i].re = wFilter2.re * ccountsTmp[1]->data[i].re -
-	    wFilter2.im * ccountsTmp[1]->data[i].im;
-	  ccounts[1]->data[i].im = wFilter2.re * ccountsTmp[1]->data[i].im +
-	    wFilter2.im * ccountsTmp[1]->data[i].re;
+	  ccounts[0]->data[i].realf_FIXME = crealf(wFilter1) * crealf(ccountsTmp[0]->data[i]) -
+	    cimagf(wFilter1) * cimagf(ccountsTmp[0]->data[i]);
+	  ccounts[0]->data[i].imagf_FIXME = crealf(wFilter1) * cimagf(ccountsTmp[0]->data[i]) +
+	    cimagf(wFilter1) * crealf(ccountsTmp[0]->data[i]);
+	  ccounts[1]->data[i].realf_FIXME = crealf(wFilter2) * crealf(ccountsTmp[1]->data[i]) -
+	    cimagf(wFilter2) * cimagf(ccountsTmp[1]->data[i]);
+	  ccounts[1]->data[i].imagf_FIXME = crealf(wFilter2) * cimagf(ccountsTmp[1]->data[i]) +
+	    cimagf(wFilter2) * crealf(ccountsTmp[1]->data[i]);
 	}
 
       /* Set DC, Nyquist (imaginary) components to zero */
       for (i=0;i<2;++i)
 	{
-	  ccounts[i]->data[0].re=0.0;
-	  ccounts[i]->data[0].im=0.0;
-	  ccountsTmp[i]->data[length/2].im=0.0;
+	  ccounts[i]->data[0].realf_FIXME=0.0;
+	  ccounts[i]->data[0].imagf_FIXME=0.0;
+	  ccountsTmp[i]->data[length/2].imagf_FIXME=0.0;
 	}
 
       /* Compute the whitened Nyquist (real) component */
@@ -691,13 +690,13 @@ LALSSSimStochBGTimeSeries( LALStatus                    *status,
       wFilter2 = input->whiteningFilter2->data->data[length/2];
 
       /* check that whitening filter is real in time domain */
-      if (wFilter1.im != 0)
+      if (cimagf(wFilter1) != 0)
 	{
 	  ABORT(status,
 		SIMULATESBH_ECOMPTIME,
 		SIMULATESBH_MSGECOMPTIME);
 	};
-      if (wFilter2.im != 0)
+      if (cimagf(wFilter2) != 0)
 	{
 	  ABORT(status,
 		SIMULATESBH_ECOMPTIME,
@@ -710,22 +709,22 @@ LALSSSimStochBGTimeSeries( LALStatus                    *status,
       factor2 = sqrt(gamma22-gamma12*gamma12/gamma11)*factor;
       factor3 = sqrt(gamma11)*factor;
 
-      ccountsTmp[0]->data[length/2].re=factor3*gaussdevsX1->data[length/2];
+      ccountsTmp[0]->data[length/2].realf_FIXME=factor3*gaussdevsX1->data[length/2];
 
-      ccountsTmp[1]->data[length/2].re=
-	(ccountsTmp[0]->data[length/2].re*gamma12/gamma11 +
+      ccountsTmp[1]->data[length/2].realf_FIXME=
+	(crealf(ccountsTmp[0]->data[length/2])*gamma12/gamma11 +
 	 factor2*gaussdevsX2->data[length/2]);
 
-      ccounts[0]->data[length/2].re =
-	(wFilter1.re * ccountsTmp[0]->data[length/2].re -
-	 wFilter1.im * ccountsTmp[0]->data[length/2].im);
-      ccounts[0]->data[length/2].im = 0;
+      ccounts[0]->data[length/2].realf_FIXME =
+	(crealf(wFilter1) * crealf(ccountsTmp[0]->data[length/2]) -
+	 cimagf(wFilter1) * cimagf(ccountsTmp[0]->data[length/2]));
+      ccounts[0]->data[length/2].imagf_FIXME = 0;
 
 
-      ccounts[1]->data[length/2].re =
-	(wFilter2.re * ccountsTmp[1]->data[length/2].re -
-	 wFilter2.im * ccountsTmp[1]->data[length/2].im);
-      ccounts[1]->data[length/2].im = 0;
+      ccounts[1]->data[length/2].realf_FIXME =
+	(crealf(wFilter2) * crealf(ccountsTmp[1]->data[length/2]) -
+	 cimagf(wFilter2) * cimagf(ccountsTmp[1]->data[length/2]));
+      ccounts[1]->data[length/2].imagf_FIXME = 0;
 
       LALSDestroyVector(status->statusPtr, &(overlap11.data));
       LALSDestroyVector(status->statusPtr, &(overlap12.data));
@@ -797,8 +796,9 @@ LALSSSimStochBGTimeSeries( LALStatus                    *status,
 
 /* ***************************************************************************/
 
-/** UNDOCUMENTED.
- *\see See \ref SimulateSB_h and LALSSSimStochBGTimeSeries() for documentation
+/**
+ * UNDOCUMENTED.
+ * \see See \ref SimulateSB_h and LALSSSimStochBGTimeSeries() for documentation
  */
 void
 LALSSSimStochBGStrainTimeSeries( LALStatus              *status,
@@ -1304,10 +1304,10 @@ LALSSSimStochBGStrainTimeSeries( LALStatus              *status,
 	  factor2 = sqrt(gamma22-gamma12*gamma12/gamma11)*factor;
 	  factor3 = sqrt(gamma11)*factor;
 
-	  cstrainsTmp[0]->data[i].re=factor3*gaussdevsX1->data[i];
-	  cstrainsTmp[0]->data[i].im=factor3*gaussdevsY1->data[i];
-	  cstrainsTmp[1]->data[i].re=cstrainsTmp[0]->data[i].re*gamma12/gamma11+factor2*gaussdevsX2->data[i];
-	  cstrainsTmp[1]->data[i].im=cstrainsTmp[0]->data[i].im*gamma12/gamma11+factor2*gaussdevsY2->data[i];
+	  cstrainsTmp[0]->data[i].realf_FIXME=factor3*gaussdevsX1->data[i];
+	  cstrainsTmp[0]->data[i].imagf_FIXME=factor3*gaussdevsY1->data[i];
+	  cstrainsTmp[1]->data[i].realf_FIXME=crealf(cstrainsTmp[0]->data[i])*gamma12/gamma11+factor2*gaussdevsX2->data[i];
+	  cstrainsTmp[1]->data[i].imagf_FIXME=cimagf(cstrainsTmp[0]->data[i])*gamma12/gamma11+factor2*gaussdevsY2->data[i];
 	}
 
       for (i = 1; i < freqlen1; ++i)
@@ -1318,18 +1318,18 @@ LALSSSimStochBGStrainTimeSeries( LALStatus              *status,
 
 
       /* Set DC, Nyquist (imaginary) components to zero */
-      cstrain1->data[0].re=0.0;
-      cstrain1->data[0].im=0.0;
-      cstrain2->data[0].re=0.0;
-      cstrain2->data[0].im=0.0;
+      cstrain1->data[0].realf_FIXME=0.0;
+      cstrain1->data[0].imagf_FIXME=0.0;
+      cstrain2->data[0].realf_FIXME=0.0;
+      cstrain2->data[0].imagf_FIXME=0.0;
 
 
       /* Compute the whitened Nyquist (real) component */
 
       /* detector 1 */
 
-      cstrainsTmp[0]->data[length1/2].im=0.0;
-      cstrainsTmp[1]->data[length1/2].im=0.0;
+      cstrainsTmp[0]->data[length1/2].imagf_FIXME=0.0;
+      cstrainsTmp[1]->data[length1/2].imagf_FIXME=0.0;
       gamma11 = overlap11.data->data[length1/2];
       gamma12 = overlap12.data->data[length1/2];
       gamma22 = overlap22.data->data[length1/2];
@@ -1343,19 +1343,19 @@ LALSSSimStochBGStrainTimeSeries( LALStatus              *status,
       factor2 = sqrt(gamma22-gamma12*gamma12/gamma11)*factor;
       factor3 = sqrt(gamma11)*factor;
 
-      cstrainsTmp[0]->data[length1/2].re=factor3*gaussdevsX1->data[length1/2];
+      cstrainsTmp[0]->data[length1/2].realf_FIXME=factor3*gaussdevsX1->data[length1/2];
 
-      cstrainsTmp[1]->data[length1/2].re=
-	(cstrainsTmp[0]->data[length1/2].re*gamma12/gamma11 +
+      cstrainsTmp[1]->data[length1/2].realf_FIXME=
+	(crealf(cstrainsTmp[0]->data[length1/2])*gamma12/gamma11 +
 	 factor2*gaussdevsX2->data[length1/2]);
 
-      cstrain1->data[length1/2].re = cstrainsTmp[0]->data[length1/2].re;
-      cstrain1->data[length1/2].im = 0;
+      cstrain1->data[length1/2].realf_FIXME = crealf(cstrainsTmp[0]->data[length1/2]);
+      cstrain1->data[length1/2].imagf_FIXME = 0;
 
        /* detector 2 */
 
-      cstrainsTmp[0]->data[length2/2].im=0.0;
-      cstrainsTmp[1]->data[length2/2].im=0.0;
+      cstrainsTmp[0]->data[length2/2].imagf_FIXME=0.0;
+      cstrainsTmp[1]->data[length2/2].imagf_FIXME=0.0;
       gamma11 = overlap11.data->data[length2/2];
       gamma12 = overlap12.data->data[length2/2];
       gamma22 = overlap22.data->data[length2/2];
@@ -1370,14 +1370,14 @@ LALSSSimStochBGStrainTimeSeries( LALStatus              *status,
       factor2 = sqrt(gamma22-gamma12*gamma12/gamma11)*factor;
       factor3 = sqrt(gamma11)*factor;
 
-      cstrainsTmp[0]->data[length2/2].re=factor3*gaussdevsX1->data[length2/2];
+      cstrainsTmp[0]->data[length2/2].realf_FIXME=factor3*gaussdevsX1->data[length2/2];
 
-      cstrainsTmp[1]->data[length2/2].re=
-	(cstrainsTmp[0]->data[length2/2].re*gamma12/gamma11 +
+      cstrainsTmp[1]->data[length2/2].realf_FIXME=
+	(crealf(cstrainsTmp[0]->data[length2/2])*gamma12/gamma11 +
 	 factor2*gaussdevsX2->data[length/2]);
 
-      cstrain2->data[length2/2].re = cstrainsTmp[1]->data[length2/2].re;
-      cstrain2->data[length2/2].im = 0;
+      cstrain2->data[length2/2].realf_FIXME = crealf(cstrainsTmp[1]->data[length2/2]);
+      cstrain2->data[length2/2].imagf_FIXME = 0;
 
       LALSDestroyVector(status->statusPtr, &(overlap11.data));
       LALSDestroyVector(status->statusPtr, &(overlap12.data));

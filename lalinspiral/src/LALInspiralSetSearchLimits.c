@@ -20,35 +20,36 @@
 #include <lal/LALInspiralBank.h>
 #include <lal/LALStdlib.h>
 
-/** \ingroup LALInspiralBank_h
+/**
+ * \ingroup LALInspiralBank_h
  * \brief Function which calculates the minimum and maximum values of \f$\tau_{0}\f$ and \f$\tau_{3}\f$.
  * \author Churches, D. K.
-
-This Function calculates the minimum and maximum values of \f$\tau_{0}\f$ and \f$\tau_{3}\f$
-as determined by the total mass of the binary \f$m\f$ and the symmetric
-mass ratio \f$\eta\f$.  The function also calulates the coordinates of the
-first template in the bank. These coordinates are \f$\tau_{0}=\tau_{0min}\f$,
-\f$\tau_{3}=\tau_{3min}\f$.
-
-\heading{Description}
-
-We start with the definition of the chirp times \f$\tau_{0}\f$ and \f$\tau_{3}\f$,
-\f{equation}{
-\tau_{0} = \frac{5}{256 (\pi f_{a} )^{8/3} m^{5/3} \eta}
-\f}
-
-and
-
-\f{equation}{
-\tau_{3} = \frac{1}{8 (\pi^{2} f_{a}^{5} )^{1/3} m^{2/3} \eta}
-\f}
-
-\f$\tau_{0}\f$ is minimised when \f$\eta=1/4\f$ and \f$\mathtt{m=MMax}\f$.
-\f$\tau_{0}\f$ is maximised when \f$\eta=1/4\f$ and \f$\mathtt{m=2mMin}\f$.
-\f$\tau_{3}\f$ is minimised when \f$\eta=1/4\f$ and \f$\mathtt{m=MMax}\f$.
-\f$\tau_{3}\f$ is maximised when
-\f$\eta=\mathtt{ mMin(MMax-mMin)/MMax^{2} }\f$.
-*/
+ *
+ * This Function calculates the minimum and maximum values of \f$\tau_{0}\f$ and \f$\tau_{3}\f$
+ * as determined by the total mass of the binary \f$m\f$ and the symmetric
+ * mass ratio \f$\eta\f$.  The function also calulates the coordinates of the
+ * first template in the bank. These coordinates are \f$\tau_{0}=\tau_{0min}\f$,
+ * \f$\tau_{3}=\tau_{3min}\f$.
+ *
+ * ### Description ###
+ *
+ * We start with the definition of the chirp times \f$\tau_{0}\f$ and \f$\tau_{3}\f$,
+ * \f{equation}{
+ * \tau_{0} = \frac{5}{256 (\pi f_{a} )^{8/3} m^{5/3} \eta}
+ * \f}
+ *
+ * and
+ *
+ * \f{equation}{
+ * \tau_{3} = \frac{1}{8 (\pi^{2} f_{a}^{5} )^{1/3} m^{2/3} \eta}
+ * \f}
+ *
+ * \f$\tau_{0}\f$ is minimised when \f$\eta=1/4\f$ and \f$\mathtt{m=MMax}\f$.
+ * \f$\tau_{0}\f$ is maximised when \f$\eta=1/4\f$ and \f$\mathtt{m=2mMin}\f$.
+ * \f$\tau_{3}\f$ is minimised when \f$\eta=1/4\f$ and \f$\mathtt{m=MMax}\f$.
+ * \f$\tau_{3}\f$ is maximised when
+ * \f$\eta=\mathtt{ mMin(MMax-mMin)/MMax^{2} }\f$.
+ */
 void
 LALInspiralSetSearchLimits (
     LALStatus            *status,	/**< LAL status pointer */

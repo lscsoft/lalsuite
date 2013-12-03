@@ -40,7 +40,6 @@
 #include <time.h>
 #include <math.h>
 
-#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lalapps.h>
 #include <series.h>
 #include <processtable.h>
@@ -53,9 +52,8 @@
 #include <lal/LALDatatypes.h>
 #include <lal/AVFactories.h>
 #include <lal/LALConstants.h>
-#include <lal/FrameStream.h>
+#include <lal/LALFrStream.h>
 #include <lal/Calibration.h>
-#include <lal/LALCalibration.h>
 #include <lal/LALFrameIO.h>
 #include <lal/FrameCalibration.h>
 #include <lal/LIGOMetadataTables.h>
@@ -156,9 +154,9 @@ int main( int argc, char *argv[] )
   LALStatus             status = blank_status;
 
   /* frame input data */
-  FrCache      *frInCache = NULL;
-  FrCache      *calCache = NULL;
-  FrStream     *frStream = NULL;
+  LALCache     *frInCache = NULL;
+  LALCache     *calCache = NULL;
+  LALFrStream     *frStream = NULL;
   FrChanIn      frChan;
   FrChanIn      injChan;
 
@@ -203,7 +201,6 @@ int main( int argc, char *argv[] )
 
   /* set up inital debugging values */
   lal_errhandler = LAL_ERR_EXIT;
-  set_debug_level( "33" );
   XLALSetErrorHandler( XLALAbortErrorHandler );
 
 
@@ -270,12 +267,11 @@ int main( int argc, char *argv[] )
     chan.epoch = gpsStartTime;
 
     /* open a frame cache */
-    LAL_CALL( LALFrCacheImport( &status, &frInCache, frInCacheName), 
-        &status );
+    frInCache = XLALCacheImport(frInCacheName);
     LAL_CALL( LALFrCacheOpen( &status, &frStream, frInCache ), &status );
 
     /* set the mode of the frame stream to fail on gaps or time errors */
-    frStream->mode = LAL_FR_VERBOSE_MODE;
+    frStream->mode = LAL_FR_STREAM_VERBOSE_MODE;
 
 
     /*
@@ -344,12 +340,10 @@ int main( int argc, char *argv[] )
       {
         /* close current frame cache */
         LAL_CALL( LALFrClose( &status, &frStream ), &status );
-        if ( frInCacheName ) LAL_CALL( LALDestroyFrCache( &status, 
-              &frInCache ), &status );
+        if ( frInCacheName ) XLALDestroyCache( frInCache );
 
         /* open injection frame cache */
-        LAL_CALL( LALFrCacheImport( &status, &frInCache, injCacheName), 
-            &status );
+        frInCache = XLALCacheImport(injCacheName);
         LAL_CALL( LALFrCacheOpen( &status, &frStream, frInCache ), &status );
       }
 
@@ -385,8 +379,7 @@ int main( int argc, char *argv[] )
 
     /* close the frame file stream and destroy the frame cache */
     LAL_CALL( LALFrClose( &status, &frStream ), &status );
-    if ( frInCacheName ) LAL_CALL( LALDestroyFrCache( &status, &frInCache ), 
-        &status );
+    if ( frInCacheName ) XLALDestroyCache( frInCache );
   }
 
   /* 
@@ -462,13 +455,7 @@ int main( int argc, char *argv[] )
 
       if ( calFileName )
       {
-        REAL8 duration = XLALGPSDiff(&gpsEndTime, &gpsStartTime);
-        LALCalData *caldata;
-        caldata = XLALFrGetCalData( &inj.epoch, fqChanName, calFileName );
-        if ( duration < caldata->cavityFactors->deltaT )
-          duration = 0.0; /* must be a unity factor: don't bother averaging */
-        XLALUpdateResponse( &injResp, duration, caldata );
-        XLALDestroyCalData( caldata );
+        XLAL_ERROR(XLAL_EERR, "Calibration frames no longer supported");
       }
       else if ( calCacheName )
       {
@@ -486,13 +473,12 @@ int main( int argc, char *argv[] )
         durationNS = gpsEndTimeNS - gpsStartTimeNS;
         XLALINT8NSToGPS( &(inj_calfacts.duration), durationNS );
 
-        LAL_CALL( LALFrCacheImport( &status, &calCache, calCacheName ), 
-            &status );
+        calCache = XLALCacheImport( calCacheName );
         LAL_CALL( LALExtractFrameResponse( &status, &injResp, calCache, 
               &inj_calfacts ), &status );
-        LAL_CALL( LALDestroyFrCache( &status, &calCache ), &status );
-        inj_alpha = (REAL4) inj_calfacts.alpha.re;
-        inj_alphabeta = (REAL4) inj_calfacts.alphabeta.re;
+        XLALDestroyCache( calCache );
+        inj_alpha = (REAL4) crealf(inj_calfacts.alpha);
+        inj_alphabeta = (REAL4) crealf(inj_calfacts.alphabeta);
         if ( vrbflg ) fprintf( stdout, 
             "for injections, alpha = %f and alphabeta = %f\n",
             inj_alpha, inj_alphabeta);
@@ -504,8 +490,7 @@ int main( int argc, char *argv[] )
         injResp.sampleUnits = strainPerCount;
         for ( k = 0; k < injResp.data->length; ++k )
         {
-          injResp.data->data[k].re = 1.0;
-          injResp.data->data[k].im = 0;
+          injResp.data->data[k] = 1.0;
         }
         if ( vrbflg ) fprintf( stdout, "done.\n" );
 
@@ -862,7 +847,6 @@ static void print_usage(char *program)
       " [--help]                           display this message\n"\
       " [--verbose]                        print progress information\n"\
       " [--version]                        print version information and exit\n"\
-      " [--debug-level]          level     set the LAL debug level to level\n"\
       " [--user-tag]             usertag   set the process_params usertag to usertag\n"\
       " [--comment]              string    set the process table comment to string\n"\
       "\n"\
@@ -937,7 +921,6 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     {"inject-safety",           required_argument, 0,                'S'},
     {"injection-channel",       required_argument, 0,                'I'},
     {"injection-start-freq",    required_argument, 0,                'L'},
-    {"debug-level",             required_argument, 0,                'z'},
     {"user-tag",                required_argument, 0,                'Z'},
     {"userTag",                 required_argument, 0,                'Z'},
     {"version",                 no_argument,       0,                'V'},
@@ -962,7 +945,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
 
     c = getopt_long_only( argc, argv, 
         "A:B:C:I:L:N:S:V:Z:"
-        "a:b:c:d:f:hi:l:p:q:r:s:u:w:y:z:",
+        "a:b:c:d:f:hi:l:p:q:r:s:u:w:y:",
         long_options, &option_index );
 
     /* detect the end of the options */
@@ -1282,11 +1265,6 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
         optarg_len = strlen( optarg ) + 1;
         injectionFile = (CHAR *) calloc( optarg_len, sizeof(CHAR));
         memcpy( injectionFile, optarg, optarg_len );
-        ADD_PROCESS_PARAM( "string", "%s", optarg );
-        break;
-
-      case 'z':
-        set_debug_level( optarg );
         ADD_PROCESS_PARAM( "string", "%s", optarg );
         break;
 

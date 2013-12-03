@@ -1,4 +1,5 @@
 EXTRA_DIST = \
+	compile \
 	config.guess \
 	config.sub \
 	depcomp \
@@ -6,6 +7,7 @@ EXTRA_DIST = \
 	install-sh \
 	lalsuite_build.m4 \
 	lalsuite_gccflags.m4 \
+	lalsuite_swig.m4 \
 	libtool.m4 \
 	ltmain.sh \
 	ltoptions.m4 \

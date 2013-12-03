@@ -29,24 +29,25 @@
 #include <lal/TrigScanEThincaCommon.h>
 
 /**
-\author Robinson, C. A. K.
-\file
-
-\brief Provides helper functions used in TrigScan and E-thinca.
-
-\heading{Description}
-The function <tt>XLALCreateTriggerErrorList()</tt> creates a linked list of
-structures pointing to the trigger and their associated position vector and
-shape matrix. If required, the maximum difference in tC associated with the
-triggers in the list of \c ::SnglInspiralTable's will be passed back in
-\c tcMax.
-
-The function <tt>XLALDestroyTriggerErrorList()</tt> frees all memory associated
-with the \c ::TriggerErrorList, with the exception of the wrapped
-::SnglInspiralTable's, which will normally still be required after
-TrigScan and E-thinca have completed.
-
-*/
+ * \author Robinson, C. A. K.
+ * \file
+ *
+ * \brief Provides helper functions used in TrigScan and E-thinca.
+ *
+ * ### Description ###
+ *
+ * The function <tt>XLALCreateTriggerErrorList()</tt> creates a linked list of
+ * structures pointing to the trigger and their associated position vector and
+ * shape matrix. If required, the maximum difference in tC associated with the
+ * triggers in the list of \c ::SnglInspiralTable's will be passed back in
+ * \c tcMax.
+ *
+ * The function <tt>XLALDestroyTriggerErrorList()</tt> frees all memory associated
+ * with the \c ::TriggerErrorList, with the exception of the wrapped
+ * ::SnglInspiralTable's, which will normally still be required after
+ * TrigScan and E-thinca have completed.
+ *
+ */
 
 TriggerErrorList * XLALCreateTriggerErrorList( SnglInspiralTable *tableHead,
                                                REAL8             scaleFactor,

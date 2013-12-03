@@ -1,6 +1,6 @@
 AC_PREREQ([2.63])
-AC_INIT([lalstochastic],[1.1.7.1],[lal-discuss@gravity.phys.uwm.edu])
-AC_CONFIG_HEADERS([include/config.h src/LALStochasticConfig.h])
+AC_INIT([lalstochastic],[1.1.9.1],[lal-discuss@ligo.org])
+AC_CONFIG_HEADERS([src/config.h src/LALStochasticConfig.h])
 AC_CONFIG_SRCDIR([src/StochasticOmegaGW.c])
 AC_CONFIG_AUX_DIR([gnuscripts])
 AC_CONFIG_MACRO_DIR([gnuscripts])
@@ -13,14 +13,19 @@ AC_CONFIG_FILES([ \
   include/Makefile \
   include/lal/Makefile \
   src/Makefile \
+  swig/Makefile \
+  swig/octave/Makefile \
+  swig/python/Makefile \
   test/Makefile
 ])
-AM_INIT_AUTOMAKE([1.11 foreign color-tests parallel-tests])
+AM_INIT_AUTOMAKE([1.11 foreign subdir-objects color-tests parallel-tests])
 
 AC_CANONICAL_HOST
 
 LALSUITE_ARG_VAR
+LALSUITE_CHECK_GIT_REPO
 LALSUITE_DISTCHECK_CONFIGURE_FLAGS
+LALSUITE_WITH_CFLAGS_LIBS
 
 # set library api info
 # 1. start with version information of "0:0:0" for each libtool library
@@ -37,18 +42,18 @@ LALSUITE_DISTCHECK_CONFIGURE_FLAGS
 # 6. if any interfaces have been removed since the last public release,
 #    then set age to 0.
 AC_SUBST([LIBCURRENT],[2])
-AC_SUBST([LIBREVISION],[4])
+AC_SUBST([LIBREVISION],[5])
 AC_SUBST([LIBAGE],[2])
 AC_SUBST([LIBVERSION],[${LIBCURRENT}:${LIBREVISION}:${LIBAGE}])
-
-# check for git repo
-LALSUITE_CHECK_GIT_REPO
 
 # nightly build
 LALSUITE_ENABLE_NIGHTLY
 
 # debug
 LALSUITE_ENABLE_DEBUG
+
+# enable SWIG wrapping modules
+LALSUITE_ENABLE_SWIG
 
 # put version/configure info in config header
 lalstochastic_version_major=`echo "$VERSION" | cut -d. -f1`
@@ -81,11 +86,11 @@ LALSUITE_MULTILIB_LIBTOOL_HACK
 # use silent build rules
 AM_SILENT_RULES([yes])
 
-# check for C/C++ compilers
-LALSUITE_PROG_CC_CXX
+# check for required compilers
+LALSUITE_PROG_COMPILERS
 
 # checks for programs
-AC_PROG_INSTALL
+LALSUITE_PROG_INSTALL
 AC_PROG_LN_S
 AC_PROG_AWK
 AC_PROG_SED
@@ -105,29 +110,44 @@ AC_CHECK_LIB([m],[main],,[AC_MSG_ERROR([could not find the math library])])
 
 # metaio
 PKG_CHECK_MODULES([METAIO],[libmetaio],[true],[false])
-CPPFLAGS="$CPPFLAGS $METAIO_CFLAGS"
-LIBS="$LIBS $METAIO_LIBS"
+LALSUITE_ADD_CFLAGS(${METAIO_CFLAGS})
+LALSUITE_ADD_LIBS(${METAIO_LIBS})
 AC_CHECK_LIB([metaio],[MetaioOpen],,[AC_MSG_ERROR([could not find the metaio library])])
 
 # check for libmetaio headers
 AC_CHECK_HEADERS([metaio.h],,[AC_MSG_ERROR([could not find the metaio.h header])])
 
 # check for lal libraries and headers
-LALSUITE_CHECK_LIB([LAL],[6.9.0],[LALVersion],[lal/LALStdio.h])
-LALSUITE_CHECK_LIB([LALSupport],[6.9.0],[LALOpenDataFile],[lal/FileIO.h])
-LALSUITE_CHECK_LIB([LALMetaIO],[1.0.5],[XLALCreateMetaTableDir],[lal/LIGOLwXMLRead.h])
+LALSUITE_CHECK_LIB([LAL],[6.11.0],[LALVersion],[lal/LALStdio.h])
+LALSUITE_CHECK_LIB([LALSupport],[6.11.0],[LALOpenDataFile],[lal/FileIO.h])
+LALSUITE_CHECK_LIB([LALMetaIO],[1.1.0],[XLALCreateMetaTableDir],[lal/LIGOLwXMLRead.h])
+
+# configure SWIG wrapping modules
+LALSUITE_USE_SWIG([XLAL LAL])
 
 # add gcc specific flags
 LALSUITE_ADD_GCC_FLAGS
 
+# force all python modules into the exec dir to prevent mixed C and
+# pure-python library code from being split across lib and lib64 on
+# RedHat-derived systems.
+AC_SUBST([pkgpythondir], ["\${pkgpyexecdir}"])
+
+# ensure CPPFLAGS/CFLAGS and LDFLAGS/LIBS are in correct order
+LALSUITE_ADD_CFLAGS()
+LALSUITE_ADD_LIBS()
+
 # output
 LAL_HEADER_LINK=${ac_aux_dir}/header-link.mk
 AC_SUBST_FILE([LAL_HEADER_LINK])
-AC_PROG_MAKE_SET
 AC_OUTPUT
 echo "
 ==================================================
-LALStochastic has now been successfully configured
+LALStochastic has now been successfully configured:
+
+* SWIG wrapping module for Octave is $SWIG_OCTAVE_ENABLE_VAL
+* SWIG wrapping module for Python is $SWIG_PYTHON_ENABLE_VAL
+
 and will be installed under the directory:
 
 ${prefix}

@@ -415,7 +415,7 @@ XLALVOTDoc2gsl_vectorByName ( const xmlDocPtr xmlDocument,	/**< [in] Pointer to 
  * \note All matrix elements are written with maximal precision "%.16g" for a double
  *
  * \note We use a VOTable \<PARAM\> element with arraysize=dim1xdim2. The arraysize-convention
- *  is that the the first index varies fastest, while the last index is the slowest-varying.
+ * is that the the first index varies fastest, while the last index is the slowest-varying.
  * We therefore write the matrix in *transposed* order, ie. "cols x rows", such that the
  * fastest-varying index is the column-index!
  *

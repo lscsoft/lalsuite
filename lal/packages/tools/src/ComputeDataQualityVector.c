@@ -61,9 +61,9 @@
  * x.length/n_dq). So it is the "rate" of x with respect to DQ samples.
  *
  * Other special meanings:
- *  t_bad_left:  time (in s) of the last NOT-UP event in the Data Quality
- *  t_bad_right: time (in s) of the next NOT-UP event in the Data Quality
- *  wings:       duration (in s) of the wings used for calibration
+ * t_bad_left:  time (in s) of the last NOT-UP event in the Data Quality
+ * t_bad_right: time (in s) of the next NOT-UP event in the Data Quality
+ * wings:       duration (in s) of the wings used for calibration
  *
  * If t_bad_left < wings then it doesn't matter how much less it
  * is. Same thing for t_bad_right > wings.

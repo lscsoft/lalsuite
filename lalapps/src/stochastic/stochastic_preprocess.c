@@ -43,8 +43,8 @@
 #include <lal/CoarseGrainFrequencySeries.h>
 #include <lal/Date.h>
 #include <lal/DetectorSite.h>
-#include <lal/FrameCache.h>
-#include <lal/FrameStream.h>
+#include <lal/LALCache.h>
+#include <lal/LALFrStream.h>
 #include <lal/IIRFilter.h>
 #include <lal/LALConstants.h>
 #include <lal/LALDatatypes.h>
@@ -153,8 +153,8 @@ INT4 main(INT4 argc, CHAR *argv[])
   INT4 lInter, lSeg;
   
   /* frame variables */
-  FrCache *frCache1,*frCache2;
-  FrStream *frStream1,*frStream2;
+  LALCache *frCache1,*frCache2;
+  LALFrStream *frStream1,*frStream2;
   FrChanIn frChanIn1, frChanIn2;
   FrOutPar frPSD1 = { ifo1, "PSD", ProcDataChannel, 1, 0, 0 };
   FrOutPar frPSD2 = { ifo2, "PSD", ProcDataChannel, 1, 0, 0 };
@@ -214,7 +214,6 @@ INT4 main(INT4 argc, CHAR *argv[])
   status.statusPtr = NULL;
 
   lal_errhandler = LAL_ERR_EXIT;
-  set_debug_level( "1" );
 
   /* parse command line options */
   parseOptions(argc, argv);
@@ -258,7 +257,7 @@ INT4 main(INT4 argc, CHAR *argv[])
    fprintf(stdout, "Opening first frame cache...\n");
   /* open first frame cache */
   frCache1=NULL;frStream1=NULL;
-  LAL_CALL( LALFrCacheImport( &status, &frCache1, frameCache1), &status );
+  frCache1 = XLALCacheImport( frameCache1 );
   LAL_CALL( LALFrCacheOpen( &status, &frStream1, frCache1), &status );
 
   if (verbose_flag)
@@ -266,12 +265,12 @@ INT4 main(INT4 argc, CHAR *argv[])
 
   /* open second frame cache */
   frCache2=NULL;frStream2=NULL;
-  LAL_CALL( LALFrCacheImport( &status, &frCache2, frameCache2), &status);
+  frCache2 = XLALCacheImport( frameCache2 );
   LAL_CALL( LALFrCacheOpen( &status, &frStream2, frCache2), &status);
 
    /* set the mode of the frame stream to fail on gaps or time errors */
-  frStream1->mode = LAL_FR_VERBOSE_MODE;
-  frStream2->mode = LAL_FR_VERBOSE_MODE;
+  frStream1->mode = LAL_FR_STREAM_VERBOSE_MODE;
+  frStream2->mode = LAL_FR_STREAM_VERBOSE_MODE;
 
   
   /* set resample parameters */
@@ -1203,7 +1202,6 @@ void parseOptions(INT4 argc, CHAR *argv[])
       {"hpf-attenuation", required_argument, 0, 'p'},
       {"hpf-order", required_argument, 0, 'P'},
       {"mask-bin", required_argument, 0, 'b'},
-      {"debug-level", required_argument, 0, 'z'},
       {"version", no_argument, 0, 'v'},
       {0, 0, 0, 0}
      };
@@ -1212,7 +1210,7 @@ void parseOptions(INT4 argc, CHAR *argv[])
     int option_index = 0;
 
     c = getopt_long(argc, argv, 
-                  "ht:T:i:I:c:C:d:D:l:s:S:r:R:f:F:w:k:p:P:b:z:v",
+                  "ht:T:i:I:c:C:d:D:l:s:S:r:R:f:F:w:k:p:P:b:v",
  		   long_options, &option_index);
 
     if (c == -1)
@@ -1338,11 +1336,6 @@ void parseOptions(INT4 argc, CHAR *argv[])
               maskBin = atoi(optarg);
               break;
         
-     case 'z':
-	     /* set debug level */
-	     set_debug_level( optarg );
-	     break;
-
      case 'v':
 	     /* display version info and exit */
 	     fprintf(stdout, "Standalone SGWB Search Engine\n" CVS_ID "\n");

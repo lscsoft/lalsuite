@@ -18,21 +18,21 @@
 */
 
 /**
-\author Sathyaprakash, B. S.
-\file
-\ingroup LALInspiralBank_h
-
-\brief Test code for \c LALInspiralParameterCalc module.
-
-If the variable \c type is set to 1 the code works
-out the boundary of the region enclosed
-by the parameter space specified by {\em maximum total
-mass} and {\em minimum companion masses,} as given in \c mmin
-and \c Mmax. If the variable \c type is set to 0
-it computes the boundary of the region corresponding to the companion
-masses in the range defined by \c mmin and \c mmax.
-
-*/
+ * \author Sathyaprakash, B. S.
+ * \file
+ * \ingroup LALInspiralBank_h
+ *
+ * \brief Test code for \c LALInspiralParameterCalc module.
+ *
+ * If the variable \c type is set to 1 the code works
+ * out the boundary of the region enclosed
+ * by the parameter space specified by {\em maximum total
+ * mass} and {\em minimum companion masses,} as given in \c mmin
+ * and \c Mmax. If the variable \c type is set to 0
+ * it computes the boundary of the region corresponding to the companion
+ * masses in the range defined by \c mmin and \c mmax.
+ *
+ */
 
 /** \cond DONT_DOXYGEN */
 
@@ -45,7 +45,6 @@ masses in the range defined by \c mmin and \c mmax.
 #include <stdio.h>
 #include <lal/LALInspiral.h>
 
-INT4 lalDebugLevel=4;
 
 int main ( void ) {
    static InspiralTemplate p;

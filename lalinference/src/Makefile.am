@@ -1,8 +1,13 @@
-AM_CPPFLAGS = -I$(top_builddir)/include
+AM_CPPFLAGS = -I$(top_builddir)/include -DPKG_DATA_DIR='"$(pkgdatadir)/"'
 
 if LALXML
 XMLHDR = LALInferenceXML.h
 XMLSRC = LALInferenceXML.c
+endif
+
+if HAVE_CHEALPIX
+BAYESTARHDR = bayestar_sky_map.h
+BAYESTARSRC = logaddexp.h bayestar_sky_map.c
 endif
 
 lalinferenceincludedir = $(includedir)/lal
@@ -18,6 +23,9 @@ lalinferenceinclude_HEADERS = \
 	LALInferenceLibVCSInfo.h \
 	LALInferenceInit.h \
 	LALInferenceVCSInfo.h \
+	LALInferenceRemoveLines.h \
+	lalinferenceswig_test.i \
+	$(BAYESTARHDR) \
 	$(XMLHDR)
 
 lib_LTLIBRARIES = liblalinference.la
@@ -31,6 +39,8 @@ liblalinference_la_SOURCES = \
 	LALInferenceProposal.c \
 	LALInferenceInitCBC.c \
 	LALInferenceVCSInfo.c \
+	LALInferenceRemoveLines.c \
+	$(BAYESTARSRC) \
 	$(XMLSRC)
 
 liblalinference_la_LDFLAGS = -version-info $(LIBVERSION)
@@ -49,21 +59,24 @@ BUILT_SOURCES = \
 	lalinference-user-env.csh
 
 lalinference-user-env.shell: Makefile $(srcdir)/generate_user_env.awk
-	@echo "# generic user environment script" >$@
+	@echo "# source this file to access $(PACKAGE_NAME)" >$@
 	@echo "set LALINFERENCE_PREFIX $(prefix)" >>$@
 	@echo "prepend PATH $(bindir)" >>$@
 	@echo "prepend MANPATH $(mandir)" >>$@
 	@echo "prepend PKG_CONFIG_PATH $(libdir)/pkgconfig" >>$@
+	@echo "prepend PYTHONPATH $(pyexecdir)" >>$@
 	@echo "prepend LAL_DATA_PATH $(pkgdatadir)" >>$@
+	@echo "prepend OCTAVE_PATH $(octexecdir)" >>$@
 
 lalinference-user-env.csh lalinference-user-env.sh: lalinference-user-env.shell $(srcdir)/generate_user_env.awk
-	$(AM_V_GEN)$(AWK) -f $(srcdir)/generate_user_env.awk -v SED=$(SED) -v package=$(PACKAGE_NAME) -v output=$@ $< || { rm -f $@; exit 1; }
+	$(AM_V_GEN)$(AWK) -f $(srcdir)/generate_user_env.awk -v SED="$(SED)" -v output="$@" $<
 
 EXTRA_DIST = \
 	LALInferenceConfig.h.in \
 	LALInferenceXML.c \
 	LALInferenceXML.h \
 	chapter_inference.dox \
+	config.h.in \
 	generate_user_env.awk
 
 if HAVE_GIT_REPO
@@ -71,7 +84,12 @@ BUILT_SOURCES += LALInferenceVCSInfo.h
 MOSTLYCLEANFILES += LALInferenceVCSInfo.h
 LALInferenceVCSInfo.h .PHONY : gen-LALInferenceVCSInfo.h
 gen-LALInferenceVCSInfo.h :
-	$(GENERATE_VCS_INFO) LALInferenceVCSInfo.h $(srcdir)/LALInferenceVCSInfo.h.git
+	$(AM_V_at)$(GENERATE_VCS_INFO) LALInferenceVCSInfo.h $(srcdir)/LALInferenceVCSInfo.h.git
 endif
 
+DISTCLEANFILES = config.h
+
 @LAL_HEADER_LINK@
+
+swig_headers = $(lalinferenceinclude_HEADERS)
+include $(top_srcdir)/swig/swiglal_header.am

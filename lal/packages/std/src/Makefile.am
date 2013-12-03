@@ -3,11 +3,10 @@ AM_CPPFLAGS = -I$(top_builddir)/include -I$(srcdir)/../include
 noinst_LTLIBRARIES = libstd.la
 libstd_la_SOURCES = \
 	Grid.c \
-	LALComplex.c \
+	LALDebugLevel.c \
 	LALError.c \
 	LALGSL.c \
 	LALMalloc.c \
-	LALStd.c \
 	LALString.c \
 	LALVersion.c \
 	StringConvert.c \

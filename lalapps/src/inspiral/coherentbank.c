@@ -91,7 +91,6 @@ static void print_usage(char *program)
       " [--help]                      display this message\n"\
       " [--verbose]                   print progress information\n"\
       " [--version]                   print version information and exit\n"\
-      " [--debug-level]   level       set the LAL debug level to LEVEL\n"\
       " [--user-tag]      usertag     set the process_params usertag\n"\
       " [--comment]       string      set the process table comment\n"\
       " [--write-compress]            write a compressed xml file\n"\
@@ -190,7 +189,6 @@ int main( int argc, char *argv[] )
     {"comment",                required_argument,     0,                 'x'},
     {"user-tag",               required_argument,     0,                 'Z'},
     {"help",                   no_argument,           0,                 'h'},
-    {"debug-level",            required_argument,     0,                 'z'},
     {"version",                no_argument,           0,                 'V'},
     {"gps-start-time",         required_argument,     0,                 's'},
     {"gps-end-time",           required_argument,     0,                 't'},
@@ -226,7 +224,6 @@ int main( int argc, char *argv[] )
    */
 
   lal_errhandler = LAL_ERR_EXIT;
-  set_debug_level( "1" );
   /*  setvbuf( stdout, NULL, _IONBF, 0 );*/
 
   /* create the process and process params tables */
@@ -259,7 +256,7 @@ int main( int argc, char *argv[] )
     long int gpstime;
 
     c = getopt_long_only( argc, argv,
-        "hi:r:s:t:x:z:C:E:T:N:A:W:X:Y:U:v:(:):{:}:[:]:VZ:", long_options,
+        "hi:r:s:t:x:C:E:T:N:A:W:X:Y:U:v:(:):{:}:[:]:VZ:", long_options,
         &option_index );
 
     /* detect the end of the options */
@@ -342,11 +339,6 @@ int main( int argc, char *argv[] )
         /* help message */
         print_usage(argv[0]);
         exit( 1 );
-        break;
-
-      case 'z':
-        set_debug_level( optarg );
-        ADD_PROCESS_PARAM( "string", "%s", optarg );
         break;
 
       case 'C':

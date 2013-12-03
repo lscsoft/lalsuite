@@ -17,7 +17,7 @@
 *  MA  02111-1307  USA
 */
 
-// ---------- SEE LALDatatypes.dox for doxygen documentation ----------
+/* ---------- SEE LALDatatypes.dox for doxygen documentation ---------- */
 
 #ifndef _LALATOMICDATATYPES_H
 #define _LALATOMICDATATYPES_H
@@ -33,6 +33,18 @@
 #endif /* LAL_USE_OLD_COMPLEX_STRUCTS */
 
 #include <lal/LALConfig.h>
+
+/* macros for certain keywords */
+#if __STDC_VERSION__ >= 199901L
+# define _LAL_RESTRICT_ restrict
+# define _LAL_INLINE_ inline
+#elif defined __GNUC__
+# define _LAL_RESTRICT_ __restrict__
+# define _LAL_INLINE_ __inline__
+#else
+# define _LAL_RESTRICT_
+# define _LAL_INLINE_
+#endif
 
 #if defined(__cplusplus)
 extern "C" {
@@ -69,7 +81,8 @@ typedef uint32_t UINT4;		/**< Four-byte unsigned integer. */
 typedef uint64_t UINT8;		/**< Eight-byte unsigned integer; on some platforms this is equivalent to <tt>unsigned long int</tt> instead. */
 
 /* Macros for integer constants */
-/** \def LAL_INT8_C(v) (v ## LL)
+/**
+ * \def LAL_INT8_C(v) (v ## LL)
  * \brief Macro for use in defining \a v as an INT8 constant.
  *
  * This macro affixes the appropriate qualifier to form an INT8 constant.
@@ -80,7 +93,8 @@ typedef uint64_t UINT8;		/**< Eight-byte unsigned integer; on some platforms thi
  */
 #define LAL_INT8_C INT64_C
 
-/** \def LAL_UINT8_C(v) (v ## ULL)
+/**
+ * \def LAL_UINT8_C(v) (v ## ULL)
  * \brief Macro for use in defining \a v as an UINT8 constant.
  *
  * This macro affixes the appropriate qualifier to form an UINT8 constant.
@@ -109,50 +123,23 @@ typedef double complex COMPLEX16;   /**< Double-precision floating-point complex
 #endif
 
 /* Complex type constructors */
-#if defined(__cplusplus)
-#define CX8rect( re, im) COMPLEX8(  re, im )
-#define CX16rect(re, im) COMPLEX16( re, im )
-#define CX8polar( r, th) ( (r) * std::exp( CX8rect(  0, th ) ) )
-#define CX16polar(r, th) ( (r) * std::exp( CX16rect( 0, th ) ) )
-#else
-#define CX8rect( re, im) ( (re) + _Complex_I * (im) )           /**< Construct a COMPLEX8 from real and imaginary parts */
-#define CX16rect(re, im) ( (re) + _Complex_I * (im) )           /**< Construct a COMPLEX16 from real and imaginary parts */
-#define CX8polar( r, th) ( (r) * cexpf( CX8rect(  0, th ) ) )   /**< Construct a COMPLEX8 from polar modulus and argument */
-#define CX16polar(r, th) ( (r) * cexp(  CX16rect( 0, th ) ) )   /**< Construct a COMPLEX16 from polar modulus and argument */
-#endif
-
-/* Real and imaginary part accessors */
-#if defined(__cplusplus)
-#define CX8re( z) std::real(z)
-#define CX16re(z) std::real(z)
-#define CX8im( z) std::imag(z)
-#define CX16im(z) std::imag(z)
-#else
-#define CX8re( z) crealf(z)   /**< Get the real part of a COMPLEX8 */
-#define CX16re(z) creal( z)   /**< Get the real part of a COMPLEX16 */
-#define CX8im( z) cimagf(z)   /**< Get the imaginary part of a COMPLEX8 */
-#define CX16im(z) cimag( z)   /**< Get the imaginary part of a COMPLEX16 */
-#endif
-
-/* Real and imaginary part assignment */
-#if !defined(__cplusplus) && defined(__GNUC__)
-#define setCX8re( z, re) ( __real__(z) = (re) )
-#define setCX16re(z, re) ( __real__(z) = (re) )
-#define setCX8im( z, im) ( __imag__(z) = (im) )
-#define setCX16im(z, im) ( __imag__(z) = (im) )
-#else
-#define setCX8re( z, re) ( (z) = CX8rect(  re, CX8im( z) ) )   /**< Set the real part of a COMPLEX8 */
-#define setCX16re(z, re) ( (z) = CX16rect( re, CX16im(z) ) )   /**< Set the real part of a COMPLEX16 */
-#define setCX8im( z, im) ( (z) = CX8rect(  CX8re( z), im ) )   /**< Set the imaginary part of a COMPLEX8 */
-#define setCX16im(z, im) ( (z) = CX16rect( CX16re(z), im ) )   /**< Set the imaginary part of a COMPLEX16 */
+#if !defined(__cplusplus)
+#define crectf(re, im) (((REAL4)(re)) + _Complex_I*((REAL4)(im)))	/**< Construct a COMPLEX8 from real and imaginary parts */
+#define crect(re, im)  (((REAL8)(re)) + _Complex_I*((REAL8)(im)))	/**< Construct a COMPLEX16 from real and imaginary parts */
+#define cpolarf(r, th) (((REAL4)(r)) * cexpf(crectf(0, th)))		/**< Construct a COMPLEX8 from polar modulus and argument */
+#define cpolar(r, th)  (((REAL8)(r)) * cexp(crect(0, th)))		/**< Construct a COMPLEX16 from polar modulus and argument */
 #endif
 
 #else /* LAL_USE_OLD_COMPLEX_STRUCTS */
 
 /** \cond DONT_DOXYGEN */
 /* Old LAL complex structs, being phased out ... */
-typedef struct tagCOMPLEX8 { REAL4 re; REAL4 im; } COMPLEX8;
-typedef struct tagCOMPLEX16 { REAL8 re; REAL8 im; } COMPLEX16;
+typedef struct tagCOMPLEX8 { REAL4 realf_FIXME; REAL4 imagf_FIXME; } COMPLEX8;
+#define crealf(z) ((z).realf_FIXME)
+#define cimagf(z) ((z).imagf_FIXME)
+typedef struct tagCOMPLEX16 { REAL8 real_FIXME; REAL8 imag_FIXME; } COMPLEX16;
+#define creal(z) ((z).real_FIXME)
+#define cimag(z) ((z).imag_FIXME)
 /** \endcond */
 
 #endif /* LAL_USE_OLD_COMPLEX_STRUCTS */

@@ -3,13 +3,11 @@
 #include <lal/LALCache.h>
 #include <lal/FileIO.h>
 
-extern int lalDebugLevel;
 int main( int argc, char *argv[] )
 {
 	LALFILE *outfile = NULL;
 	LALCache *cache;
 	int arg = 1;
-	lalDebugLevel = 7;
 	XLALSetErrorHandler( XLALExitErrorHandler );
 	if ( argc > 1 && ! strcmp(argv[1],"-o") ) {
 		outfile = XLALFileOpen( argv[2], "w" );

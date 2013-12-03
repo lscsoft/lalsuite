@@ -27,31 +27,30 @@
  */
 
 /**
-
-\author Brown, D. A. and Fairhurst, S.
-\file
-\ingroup lalmetaio
-\brief Provides functions for manipulating the LAL structures that correspond
-to the LIGO metadata database tables defined in \ref LIGOMetadataTables.h.
-
-\heading{Synopsis}
-\code
-#include <lal/LIGOMetadataUtils.h>
-\endcode
-
-This header provides prototypes for routines that perform processing
-on the LAL structures that correspond to the LIGO metadata database tables
-defined in \ref LIGOMetadataTables.h, such as sorting and eliminating
-duplictaes. The functions specific to a particular metadata table (e.g.
-\c sngl_inspiral, \c sngl_burst, etc.) are all prototyped in
-this header.
-
-\heading{Types}
-
-None.
-
-
-*/
+ * \author Brown, D. A. and Fairhurst, S.
+ * \file
+ * \ingroup lalmetaio
+ * \brief Provides functions for manipulating the LAL structures that correspond
+ * to the LIGO metadata database tables defined in \ref LIGOMetadataTables.h.
+ *
+ * ### Synopsis ###
+ *
+ * \code
+ * #include <lal/LIGOMetadataUtils.h>
+ * \endcode
+ *
+ * This header provides prototypes for routines that perform processing
+ * on the LAL structures that correspond to the LIGO metadata database tables
+ * defined in \ref LIGOMetadataTables.h, such as sorting and eliminating
+ * duplictaes. The functions specific to a particular metadata table (e.g.
+ * \c sngl_inspiral, \c sngl_burst, etc.) are all prototyped in
+ * this header.
+ *
+ * ### Types ###
+ *
+ * None.
+ *
+ */
 
 #ifndef _LIGOMETADATAUTILS_H
 #define _LIGOMETADATAUTILS_H
@@ -88,9 +87,10 @@ extern "C" {
 
 /*@}*/
 
-/** The \c LALPlaygroundDataMask contains an enum type for describing the
-    subset of data to be used, \c playground_only, \c exclude_play and \c all_data.
-*/
+/**
+ * The \c LALPlaygroundDataMask contains an enum type for describing the
+ * subset of data to be used, \c playground_only, \c exclude_play and \c all_data.
+ */
 typedef enum
 {
   unspecified_data_type,
@@ -108,23 +108,43 @@ LALPlaygroundDataMask;
  */
 
 ProcessTable *XLALCreateProcessTableRow(void);
+#ifndef SWIG   // exclude from SWIG interface
 void XLALDestroyProcessTableRow(ProcessTable *);
+#endif   // SWIG
 void XLALDestroyProcessTable(ProcessTable *);
 long XLALProcessTableGetNextID(ProcessTable *);
 
 ProcessParamsTable *XLALCreateProcessParamsTableRow(const ProcessTable *);
+#ifndef SWIG   // exclude from SWIG interface
 void XLALDestroyProcessParamsTableRow(ProcessParamsTable *);
+#endif   // SWIG
 void XLALDestroyProcessParamsTable(ProcessParamsTable *);
 
 TimeSlide *XLALCreateTimeSlide(void);
+#ifndef SWIG   // exclude from SWIG interface
 void XLALDestroyTimeSlide(TimeSlide *);
+#endif   // SWIG
 void XLALDestroyTimeSlideTable(TimeSlide *);
 const TimeSlide *XLALTimeSlideConstGetByIDAndInstrument(const TimeSlide *, long, const char *);
 TimeSlide *XLALTimeSlideGetByIDAndInstrument(TimeSlide *, long, const char *);
 
 SearchSummaryTable *XLALCreateSearchSummaryTableRow(const ProcessTable *);
+#ifndef SWIG   // exclude from SWIG interface
 void XLALDestroySearchSummaryTableRow(SearchSummaryTable *);
+#endif   // SWIG
 void XLALDestroySearchSummaryTable(SearchSummaryTable *);
+
+SegmentTable *XLALCreateSegmentTableRow(const ProcessTable *process);
+#ifndef SWIG   // exclude from SWIG interface
+void XLALDestroySegmentTableRow(SegmentTable *row);
+#endif   // SWIG
+void XLALDestroySegmentTable(SegmentTable *head);
+
+TimeSlideSegmentMapTable *XLALCreateTimeSlideSegmentMapTableRow(void);
+#ifndef SWIG   // exclude from SWIG interface
+void XLALDestroyTimeSlideSegmentMapTableRow(TimeSlideSegmentMapTable *row);
+#endif   // SWIG
+void XLALDestroyTimeSlideSegmentMapTable(TimeSlideSegmentMapTable *head);
 
 int
 XLALCountProcessTable(
@@ -174,23 +194,8 @@ LALPlaygroundInSearchSummary (
     LIGOTimeGPS        *outPlayTime
     );
 
-
-void
-LALTimeCheckSearchSummary (
-    LALStatus          *status,
-    SearchSummaryTable *ssTable,
-    LIGOTimeGPS        *startTime,
-    LIGOTimeGPS        *endTime
-    );
-
 int
 LALCompareSearchSummaryByInTime (
-    const void *a,
-    const void *b
-    );
-
-int
-XLALCompareCoincInspiralByStat (
     const void *a,
     const void *b
     );

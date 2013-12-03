@@ -27,8 +27,8 @@
 #include <lal/LALDatatypes.h>
 #include <lal/Aggregation.h>
 #include <lal/XLALError.h>
-#include <lal/FrameCache.h>
-#include <lal/FrameStream.h>
+#include <lal/LALCache.h>
+#include <lal/LALFrStream.h>
 #include <lal/PrintFTSeries.h>
 #include <lal/TimeSeries.h>
 #include <lal/XLALError.h>
@@ -58,7 +58,6 @@ static void parse_options(INT4 argc, CHAR *argv[])
       {"verbose", no_argument, &vrbflg, 1},
       /* options that don't set a flag */
       {"help", no_argument, 0, 'a'},
-      {"debug-level", required_argument, 0, 'b'},
       {"ifo", required_argument, 0, 'c'},
       {"gps-start-time", required_argument, 0, 'd'},
       {"duration", required_argument, 0, 'e'},
@@ -70,7 +69,7 @@ static void parse_options(INT4 argc, CHAR *argv[])
     size_t optarg_len;
 
     /* parse options */
-    c = getopt_long_only(argc, argv, "ab:c:d:e:", long_options, &option_index);
+    c = getopt_long_only(argc, argv, "ac:d:e:", long_options, &option_index);
 
     if (c == -1)
     {
@@ -99,16 +98,10 @@ static void parse_options(INT4 argc, CHAR *argv[])
         fprintf(stdout, "Usage: AggregationTest [options]\n");
         fprintf(stdout, " --help                 print this message\n");
         fprintf(stdout, " --verbose              run in verbose mode\n");
-        fprintf(stdout, " --debug-level N        set lalDebugLevel\n");
         fprintf(stdout, " --ifo IFO              set IFO\n");
         fprintf(stdout, " --gps-start-time GPS   set GPS start time\n");
         fprintf(stdout, " --duration TIME        set data duration\n");
         exit(0);
-        break;
-
-      case 'b':
-        /* set debug level */
-        lalDebugLevel = atoi(optarg);
         break;
 
       case 'c':

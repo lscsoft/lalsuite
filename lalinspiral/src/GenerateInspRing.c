@@ -43,8 +43,10 @@ XLALDeriveRingdownParameters(
     SimRingdownTable    *ringInj
     );
 
-/** Takes an inspiral waveform, and a simInspiralTable and generates a ringdown
- * at an appropriate frequency and quality */
+/**
+ * Takes an inspiral waveform, and a simInspiralTable and generates a ringdown
+ * at an appropriate frequency and quality
+ */
 CoherentGW *
 XLALGenerateInspRing(
     CoherentGW          *waveform,     /**< the inspiral waveform */
@@ -583,7 +585,7 @@ XLALDeriveRingdownParameters(
   splus = -( 1.0 + cosiota * cosiota );
   scross = -2.0 * cosiota;
   /* LHO */
-  XLALComputeDetAMResponse(&fplus, &fcross, lho.response, ringInj->latitude,
+  XLALComputeDetAMResponse(&fplus, &fcross, (const REAL4(*)[3])lho.response, ringInj->latitude,
       ringInj->longitude, ringInj->polarization, ringInj->start_time_gmst);
   ringInj->eff_dist_h = 2.0 * ringInj->distance;
   ringInj->eff_dist_h /= sqrt( splus*splus*fplus*fplus +
@@ -599,7 +601,7 @@ XLALDeriveRingdownParameters(
 
   /* compute hrss at LLO */
   /* LLO */
-  XLALComputeDetAMResponse(&fplus, &fcross, llo.response, ringInj->longitude,
+  XLALComputeDetAMResponse(&fplus, &fcross, (const REAL4(*)[3])llo.response, ringInj->longitude,
       ringInj->latitude, ringInj->polarization, ringInj->start_time_gmst);
   ringInj->eff_dist_l = 2.0 * ringInj->distance;
   ringInj->eff_dist_l /= sqrt( splus*splus*fplus*fplus +

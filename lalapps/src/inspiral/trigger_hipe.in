@@ -292,6 +292,18 @@ class hipe_run(object):
     if numslides == 0: numslides = ""
     self._cp.set('input', 'num-slides', numslides)
 
+  def remove_longslides(self):
+    if self._cp.has_option('input','do-long-slides'):
+      self._cp.remove_option('input','do-long-slides')
+
+  def set_longslides(self):
+    if not self._cp.has_option('input','do-long-slides'):
+      self._cp.set('input','do-long-slides','')
+
+  def remove_shortslides(self):
+    if self._cp.has_option('coh_PTF_inspiral','do-short-slides'):
+      self._cp.remove_option('coh_PTF_inspiral','do-short-slides')
+
   def set_injections(self, injrun, numberInjFiles):
     """
     Turn this analysis into an injection run, using the injrun section from
@@ -776,6 +788,7 @@ for grb in ext_trigs:
                         offSourceSegment,
                         usertag=idirectory + "_ZERO_LAG_CATEGORY_1",
                         verbose=opts.verbose)
+      onoff_analysis.remove_longslides()
     else:
       onoff_analysis = hipe_run(idirectory + "/onoff", cp, grb_ifolist,
                         opts.log_path, source_file, "zero_lag",
@@ -783,7 +796,7 @@ for grb in ext_trigs:
                         usertag=idirectory + "_ZERO_LAG_CATEGORY_1",
                         verbose=opts.verbose,
                         dont_run=["datafind"])
-    onoff_analysis.set_numslides(0)
+      onoff_analysis.set_numslides(0)
     onoff_node = onoff_analysis.finalize(uberdag=uberdag, parent=datafind_node)
     hipe_caches.append(onoff_analysis.get_cache_name())
 
@@ -795,6 +808,7 @@ for grb in ext_trigs:
                         offSourceSegment,
                         usertag=idirectory + "_TIME_SLIDES_CATEGORY_1",
                         verbose=opts.verbose)
+      slide_analysis.set_longslides()
     else:
       slide_analysis = hipe_run(idirectory + "/timeslides", cp, grb_ifolist,
                         opts.log_path, source_file, "slides",
@@ -857,6 +871,9 @@ for grb in ext_trigs:
       if opts.verbose: print "  Writing DAG..."
       if not opts.do_coh_PTF:
         injection_analysis.set_numslides(0)
+      else:
+        injection_analysis.remove_longslides()
+        injection_analysis.remove_shortslides()
       injection_analysis.set_injections(injrun, deltaIndex)
       injection_node = injection_analysis.finalize(uberdag=uberdag,
                                                    parent=datafind_node)

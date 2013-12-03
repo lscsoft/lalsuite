@@ -17,13 +17,14 @@
  *  MA  02111-1307  USA
  */
 
-/** \author C.Messenger
+/**
+ * \author C.Messenger
  * \ingroup pulsarCoherent
  * \file
  * \brief
  * This code is designed to combine (R)XTE frames from simultaneous observations.
  *
- * A particular observation using (R)XTE can have multiple timeseries generated 
+ * A particular observation using (R)XTE can have multiple timeseries generated
  * simultaneaously each with a different "data mode".  This code combines the data
  * into a single timeseries using user-defined choices regarding the type of combination.
  *
@@ -44,7 +45,7 @@
 #include <lal/LogPrintf.h>
 #include <lal/LALFrameIO.h>
 #include <lal/SFTutils.h>
-#include <lal/FrameStream.h>
+#include <lal/LALFrStream.h>
 #include <lalappsfrutils.h>
 #include <lalapps.h>
 
@@ -52,10 +53,9 @@
 #include <lal/LALStdio.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALFrameIO.h>
-#include <lal/FrameCache.h>
-#include <lal/FrameStream.h>
+#include <lal/LALCache.h>
+#include <lal/LALFrStream.h>
 #include <lal/LALDatatypes.h>
-#include <lal/FrameCache.h>
 
 /***********************************************************************************************/
 /* some global constants */
@@ -120,7 +120,8 @@ typedef struct {
   CHAR OBS_ID[STRINGLENGTH];        /**< the OBS_ID of the interval */      
 } FrameChannel;
 
-/** A structure that stores information about a collection of Frame files
+/**
+ * A structure that stores information about a collection of Frame files
  */
 typedef struct { 
   UINT4 length;	                    /**< the number of channels */
@@ -129,7 +130,8 @@ typedef struct {
   FrameChannel *channel;            /**< a pointer to FrameChannel structures */
 } FrameChannelList;
 
-/** A structure that sores user input variables 
+/**
+ * A structure that sores user input variables
  */
 typedef struct { 
   UINT4 length;	                    /**< the number of intervals */
@@ -138,7 +140,8 @@ typedef struct {
   UINT2 *pcucount;                  /**< the number of operational PCUs */
 } GoodPCUIntervals;
 
-/** A structure that contains information regarding how to combine coincident frames
+/**
+ * A structure that contains information regarding how to combine coincident frames
  */
 typedef struct { 
   FrameChannelList channellist;     /**< a list of frame channels */
@@ -149,14 +152,16 @@ typedef struct {
   REAL8 duration;                   /**< combination duration */
 } FrameCombinationPlan;
 
-/** A vector of structures containing information regarding how to combine coincident frames
+/**
+ * A vector of structures containing information regarding how to combine coincident frames
  */
 typedef struct { 
   FrameCombinationPlan *data;       /**< a vector of plans */
   INT4 length;                      /**< the vector length */
 } FrameCombinationPlanVector;
 
-/** A structure that sores user input variables 
+/**
+ * A structure that sores user input variables
  */
 typedef struct { 
   BOOLEAN help;		            /**< trigger output of help string */
@@ -199,10 +204,10 @@ int XLALReadFrameHistory(CHAR **history_string, FrFile *file);
 /* empty initializers */
 UserInput_t empty_UserInput;
 
-/** The main function of xtefitstoframe.c
- *
+/**
+ * The main function of xtefitstoframe.c
  * Here we read in a single XTE FITS file containing PCA data, generate a timeseries,
- * barycenter the data if requested, and output as a frame file. 
+ * barycenter the data if requested, and output as a frame file.
  *
  */
 int main( int argc, char *argv[] )
@@ -214,15 +219,10 @@ int main( int argc, char *argv[] )
   CHAR clargs[LONGSTRINGLENGTH];                /* store the command line args */ 
   UINT4 i;                                       /* counter */
 
-  lalDebugLevel = 1;
   vrbflg = 1;	                        /* verbose error-messages */
 
   /* turn off default GSL error handler */
   gsl_set_error_handler_off();
-
-  /* setup LAL debug level */
-  LAL_CALL (LALGetDebugLevel(&status, argc, argv, 'v'), &status);
-  LogSetLevel(lalDebugLevel);
 
   /* register and read all user-variables */
   LAL_CALL (ReadUserVars(&status,argc,argv,&uvar,clargs), &status);
@@ -357,7 +357,8 @@ int main( int argc, char *argv[] )
   
 }
 
-/** Read in input user arguments
+/**
+ * Read in input user arguments
  */
 void ReadUserVars(LALStatus *status,int argc,char *argv[],UserInput_t *uvar,CHAR *clargs)
 {
@@ -413,7 +414,8 @@ void ReadUserVars(LALStatus *status,int argc,char *argv[],UserInput_t *uvar,CHAR
 
 }
 
-/** Read in list of frame files from input directory
+/**
+ * Read in list of frame files from input directory
  */
 int XLALReadFrameDir(FrameChannelList **framechannels,    /**< [out] a structure containing a list of all input frame channels */
 		     CHAR *inputdir,                      /**< [in] the input frame directory */
@@ -427,7 +429,7 @@ int XLALReadFrameDir(FrameChannelList **framechannels,    /**< [out] a structure
   INT4 count = 0;                 /* counter */
   CHAR *temp,*c;                  /* temporary char pointers */
   CHAR *channelinfo;              /* string containing channel names */
-  FrStream *fs = NULL;            /* frame stream pointer */
+  LALFrStream *fs = NULL;            /* frame stream pointer */
   glob_t pglob;
   CHAR glob_pattern[STRINGLENGTH];
   CHAR apid[APIDLENGTH];
@@ -479,7 +481,7 @@ int XLALReadFrameDir(FrameChannelList **framechannels,    /**< [out] a structure
     if ( ! ( (!goodxenon) && (strstr(pglob.gl_pathv[i],"XENO") != NULL) ) ) {
 
       /* open the frame file */
-      if ((fs = XLALFrOpen(inputdir,pglob.gl_pathv[i])) == NULL) {
+      if ((fs = XLALFrStreamOpen(inputdir,pglob.gl_pathv[i])) == NULL) {
 	LogPrintf(LOG_CRITICAL,"%s : unable to open FS46 frame file %s.\n",__func__,pglob.gl_pathv[i]);
 	XLAL_ERROR(XLAL_EINVAL);
       }
@@ -498,7 +500,7 @@ int XLALReadFrameDir(FrameChannelList **framechannels,    /**< [out] a structure
       free(channelinfo);
       
       /* close the frame file */
-      XLALFrClose(fs);
+      XLALFrStreamClose(fs);
   
     }
 
@@ -525,7 +527,7 @@ int XLALReadFrameDir(FrameChannelList **framechannels,    /**< [out] a structure
       CHAR *temp_obsid;
       
       /* open the frame file */
-      if ((fs = XLALFrOpen(inputdir,pglob.gl_pathv[i])) == NULL) {
+      if ((fs = XLALFrStreamOpen(inputdir,pglob.gl_pathv[i])) == NULL) {
 	LogPrintf(LOG_CRITICAL,"%s : unable to open FS46 frame file %s.\n",__func__,pglob.gl_pathv[i]);
 	XLAL_ERROR(XLAL_EINVAL);
       }
@@ -581,7 +583,7 @@ int XLALReadFrameDir(FrameChannelList **framechannels,    /**< [out] a structure
 	  LogPrintf(LOG_DEBUG,"%s : read channel name as %s\n",__func__,channelname);
 	  
 	  /* read in timeseries metadata from this channel - specifically to get deltaT */
-	  if (XLALFrGetINT4TimeSeriesMetadata(&ts,fs)) {
+	  if (XLALFrStreamGetINT4TimeSeriesMetadata(&ts,fs)) {
 	    LogPrintf(LOG_CRITICAL,"%s : unable to read channel %s from frame file %s.\n",__func__,ts.name,(*framechannels)->channel[i].filename);
 	    XLAL_ERROR(XLAL_EINVAL);
 	  }
@@ -687,7 +689,7 @@ int XLALReadFrameDir(FrameChannelList **framechannels,    /**< [out] a structure
       }
       
       /* close the frame file and free history */
-      XLALFrClose(fs);
+      XLALFrStreamClose(fs);
       XLALFree(temp_obsid);
     
     }
@@ -707,7 +709,8 @@ int XLALReadFrameDir(FrameChannelList **framechannels,    /**< [out] a structure
 }
 
 
-/** Read in pcu counts from FS46 files and generate a vector of PCU numbers 
+/**
+ * Read in pcu counts from FS46 files and generate a vector of PCU numbers
  */
 int XLALReadGoodPCUInterval(GoodPCUIntervals **pcu,              /**< [out] the PCU interval information */
 			    FrameChannelList *framechannels      /**< [in] the framefile list */
@@ -782,7 +785,7 @@ int XLALReadGoodPCUInterval(GoodPCUIntervals **pcu,              /**< [out] the 
 
     UINT2 pcucount = 0;
     INT4 FS46channels = 0;
-    FrStream *fs = NULL;
+    LALFrStream *fs = NULL;
     LIGOTimeGPS epoch;
     LIGOTimeGPS end;
     REAL8 duration;
@@ -796,7 +799,7 @@ int XLALReadGoodPCUInterval(GoodPCUIntervals **pcu,              /**< [out] the 
       	INT4TimeSeries *ts = NULL;
 
 	/* open the frame file */
-	if ((fs = XLALFrOpen(framechannels->dir,framechannels->channel[i].filename)) == NULL) {
+	if ((fs = XLALFrStreamOpen(framechannels->dir,framechannels->channel[i].filename)) == NULL) {
 	  LogPrintf(LOG_CRITICAL,"%s: unable to open FS46 frame file %s.\n",__func__,framechannels->channel[i].filename);
 	  XLAL_ERROR(XLAL_EINVAL);
 	}
@@ -810,13 +813,13 @@ int XLALReadGoodPCUInterval(GoodPCUIntervals **pcu,              /**< [out] the 
 	LogPrintf(LOG_DEBUG,"%s: frame duration = %f.\n",__func__,duration);
 	
 	/* seek to the start of the frame */
-	if (XLALFrSeek(fs,&epoch)) {
+	if (XLALFrStreamSeek(fs,&epoch)) {
 	  LogPrintf(LOG_CRITICAL,"%s: unable to seek to start of frame file %s.\n",__func__,framechannels->channel[i].filename);
 	  XLAL_ERROR(XLAL_EINVAL);
 	}
 
 	/* read in timeseries from this file - final arg is limit on length of timeseries (0 = no limit) */
-	if ((ts = XLALFrReadINT4TimeSeries(fs,framechannels->channel[i].channelname,&epoch,duration,0)) == NULL) {
+	if ((ts = XLALFrStreamReadINT4TimeSeries(fs,framechannels->channel[i].channelname,&epoch,duration,0)) == NULL) {
 	  LogPrintf(LOG_CRITICAL,"%s: unable to read channel %s from frame file %s.\n",__func__,framechannels->channel[i].channelname,framechannels->channel[i].filename);
 	  XLAL_ERROR(XLAL_EINVAL);
 	}
@@ -843,7 +846,7 @@ int XLALReadGoodPCUInterval(GoodPCUIntervals **pcu,              /**< [out] the 
 	XLALDestroyINT4TimeSeries(ts);
 	
 	/* close the frame file */
-	XLALFrClose(fs);
+	XLALFrStreamClose(fs);
 
 	/* increment the number of channels read from this file */
 	FS46channels++;
@@ -897,7 +900,8 @@ int XLALReadGoodPCUInterval(GoodPCUIntervals **pcu,              /**< [out] the 
   
 }
 
-/** Finds a subset of frame files within a given time interval 
+/**
+ * Finds a subset of frame files within a given time interval
  */
 int XLALFindFramesInInterval(FrameChannelList **subframechannels,   /**< [out] a list of channel names containing data within the interval */
 			     FrameChannelList *framechannels,       /**< [in] the frame channel list */
@@ -1014,7 +1018,8 @@ int XLALFindFramesInInterval(FrameChannelList **subframechannels,   /**< [out] a
   
 }
 
-/** Finds a subset of frame files within a given time interval 
+/**
+ * Finds a subset of frame files within a given time interval
  */
 int XLALCreateCombinationPlan(FrameCombinationPlanVector *plans,             /**< [out] a plan of how to combine the frames */
 			      FrameChannelList *framechannels,               /**< [in] the framefile list */
@@ -1360,7 +1365,8 @@ int XLALCreateCombinationPlan(FrameCombinationPlanVector *plans,             /**
   
 }
 
-/** wrapper for XLALGPSCmp for use with qsort
+/**
+ * wrapper for XLALGPSCmp for use with qsort
  */
 static int compareGPS(const void *p1, const void *p2)
 {
@@ -1372,7 +1378,8 @@ static int compareGPS(const void *p1, const void *p2)
   
 }
 
-/** this function combines the files listed in the combination plan into a single REAL4 timeseries 
+/**
+ * this function combines the files listed in the combination plan into a single REAL4 timeseries
  */
 int XLALCombinationPlanToREAL4TimeSeries(REAL4TimeSeries **ts,           /**< [out] the timeseries containing the combined data */
 					 HeaderVector *header,          /**< [out] the combined history fields of all files */
@@ -1425,7 +1432,7 @@ int XLALCombinationPlanToREAL4TimeSeries(REAL4TimeSeries **ts,           /**< [o
   for (i=0;i<(INT4)plan->channellist.length;i++) {
 
     INT4TimeSeries *tempts = NULL;
-    FrStream *fs = NULL;
+    LALFrStream *fs = NULL;
     CHAR channelname[STRINGLENGTH];
     INT4 lldfactor = 1;
     INT8 testN = (INT8)(plan->duration/plan->channellist.channel[i].dt);
@@ -1436,7 +1443,7 @@ int XLALCombinationPlanToREAL4TimeSeries(REAL4TimeSeries **ts,           /**< [o
     LogPrintf(LOG_DEBUG,"%s: channel %d/%d is %s.\n",__func__,i+1,plan->channellist.length,channelname);
 
     /* open the frame file */
-    if ((fs = XLALFrOpen(plan->channellist.dir,plan->channellist.channel[i].filename)) == NULL) {
+    if ((fs = XLALFrStreamOpen(plan->channellist.dir,plan->channellist.channel[i].filename)) == NULL) {
       LogPrintf(LOG_CRITICAL,"%s: unable to open frame file %s.\n",__func__,plan->channellist.channel[i].filename);
       XLAL_ERROR(XLAL_EINVAL);
     }
@@ -1450,13 +1457,13 @@ int XLALCombinationPlanToREAL4TimeSeries(REAL4TimeSeries **ts,           /**< [o
     LogPrintf(LOG_DEBUG,"%s : read history field from file %s.\n",__func__,plan->channellist.channel[i].filename);
 
     /* seek to the start of the frame */
-    if (XLALFrSeek(fs,&(plan->epoch))) {
+    if (XLALFrStreamSeek(fs,&(plan->epoch))) {
       LogPrintf(LOG_CRITICAL,"%s: unable to seek to start of frame file %s.\n",__func__,plan->channellist.channel[i].filename);
       XLAL_ERROR(XLAL_EINVAL);
     }
 
     /* read in timeseries from this file - final arg is limit on length of timeseries (0 = no limit) */
-    if ((tempts = XLALFrReadINT4TimeSeries(fs,channelname,&(plan->epoch),plan->duration,testN)) == NULL) {
+    if ((tempts = XLALFrStreamReadINT4TimeSeries(fs,channelname,&(plan->epoch),plan->duration,testN)) == NULL) {
       LogPrintf(LOG_CRITICAL,"%s: unable to read channel %s from frame file %s.\n",__func__,plan->channellist.channel[i].filename);
       XLAL_ERROR(XLAL_EINVAL);
     }
@@ -1466,7 +1473,7 @@ int XLALCombinationPlanToREAL4TimeSeries(REAL4TimeSeries **ts,           /**< [o
     printf("\n");
     
     /* close the frame file */
-    XLALFrClose(fs);
+    XLALFrStreamClose(fs);
     LogPrintf(LOG_DEBUG,"%s : closed input frame file.\n",__func__);
 
     /* if the data is lld data then we multiply by 2 before adding */
@@ -1520,7 +1527,8 @@ int XLALCombinationPlanToREAL4TimeSeries(REAL4TimeSeries **ts,           /**< [o
   
 }
 
-/** this function combines the files listed in the combination plan into a single timeseries 
+/**
+ * this function combines the files listed in the combination plan into a single timeseries
  */
 int XLALREAL4TimeSeriesToFrame(CHAR *outputdir,               /**< [in] name of output directory */
 			       REAL4TimeSeries *ts,           /**< [in] timeseries to output */
@@ -1677,7 +1685,8 @@ int XLALREAL4TimeSeriesToFrame(CHAR *outputdir,               /**< [in] name of 
   
 }
 
-/** this function reads in the frame history as a string
+/**
+ * this function reads in the frame history as a string
  */
 int XLALReadFrameHistory(CHAR **history_string,     /**< [out] the history field read in as a string */ 
 			 FrFile *file               /**< [in] frame file pointer */

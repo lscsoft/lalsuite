@@ -30,8 +30,10 @@
 extern "C" {
 #endif
 
-/** The usage format for the test case of performing the analysis on a
- * one-dimensional grid. */
+/**
+ * The usage format for the test case of performing the analysis on a
+ * one-dimensional grid.
+ */
 #define USAGEGRID \
 "Usage: %s [options]\n\n"\
 " --grid              perform the posterior evalution on a 1D grid over the\n\
@@ -50,7 +52,7 @@ void gridOutput( LALInferenceRunState *runState );
 
 REAL8 test_gaussian_log_likelihood( LALInferenceVariables *vars,
                                     LALInferenceIFOData *data,
-                                    LALInferenceTemplateFunction *get_model );
+                                    LALInferenceTemplateFunction get_model );
 
 void outputPriorSamples( LALInferenceRunState *runState );
 

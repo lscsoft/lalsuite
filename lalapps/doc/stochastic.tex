@@ -13,7 +13,6 @@
 [\option{--version}] \newline \hspace*{0.5in}
 [\option{--verbose}] \newline \hspace*{0.5in}
 [\option{--debug}] \newline \hspace*{0.5in}
-[\option{--debug-level}~\parm{N}] \newline \hspace*{0.5in}
 [\option{--user-tag}~\parm{STRING}] \newline \hspace*{0.5in}
 [\option{--comment}~\parm{STRING}] \newline \hspace*{0.5in}
 [\option{--output-dir}~\parm{DIR}] \newline \hspace*{0.5in}
@@ -67,13 +66,6 @@ Enable the output of informational messages.
 
 \item[\option{--debug}]
 Run in debug mode, saves out all intermediate products as ASCII files.
-
-\item[\option{--debug-level}~\parm{N}]
-Sets the LAL debug level to \parm{N}. The default value is
-\texttt{LALMSGLVL2}, displaying error and warning messages. A useful
-setting is 65 which turns off memory padding, but keeps memory tracking
-and error messages. If you want to turn off memory tracking completly,
-then use 33.
 
 \item[\option{--user-tag}~\parm{STRING}]
 Set the user tag to the string \parm{STRING}. This string must not
@@ -216,7 +208,7 @@ by the pipeline generation scripts, \prog{lalapps\_stochastic\_pipe} or
 below.
 
 \begin{verbatim}
-> lalapps_stochastic --debug-level 33 --verbose \
+> lalapps_stochastic --verbose \
 >   --gps-start-time 752242398 --gps-end-time 752242758 \
 >   --interval-duration 180 --segment-duration 60 \
 >   --resample-rate 1024 --f-min 50 --f-max 250 --ifo-one H1 \

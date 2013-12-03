@@ -1,7 +1,7 @@
 ## Process this file with automake to produce Makefile.in
 
 
-AM_CPPFLAGS = -I$(top_srcdir)/src -I$(top_srcdir)/src/lalapps
+AM_CPPFLAGS = -I$(top_srcdir)/src -I$(top_srcdir)/src/lalapps -DPKG_DATA_DIR='"$(pkgdatadir)/"'
 LDADD = $(top_builddir)/src/lalapps/liblalapps.la
 
 SUBDIRS = OptimizedCFS ResamplingFstat
@@ -9,7 +9,7 @@ SUBDIRS = OptimizedCFS ResamplingFstat
 bin_PROGRAMS = lalapps_ComputeFStatistic lalapps_FstatShapeTest lalapps_SemiAnalyticF \
 	lalapps_polka lalapps_uberpolka lalapps_FstatShapeTestLAL lalapps_compareFstats\
 	lalapps_makeInvetofile lalapps_extractSFTband lalapps_FindSh \
-	lalapps_monteint lalapps_zellepolka		\
+	lalapps_zellepolka		\
 	lalapps_PredictFStat  lalapps_ComputeFStatistic_v2 \
 	lalapps_ComputeFStatAnalyticMonteCarloUpperLimit	\
 	lalapps_synthesizeBstatMC lalapps_synthesizeTransientStats \
@@ -31,7 +31,6 @@ LVsrc = ../GCT
 OPTsrc = ./OptimizedCFS
 
 lalapps_zellepolka_SOURCES = zellepolka.c
-lalapps_monteint_SOURCES = monteint.c
 
 CFSsources = 	ComputeFStatistic.h	\
 		clusters.c clusters.h  	\
@@ -110,7 +109,7 @@ TESTS += testCFSv2.sh testCFSv2_resamp.sh testGridv2.sh
 endif
 
 
-TESTS_ENVIRONMENT = LALPULSAR_DATADIR="$(LALPULSAR_DATADIR)"
+TESTS_ENVIRONMENT = LAL_DEBUG_LEVEL=memdbg LALPULSAR_DATADIR="$(LALPULSAR_DATADIR)"
 
 CLEANFILES = testFstat_v3-LFT.sft testFstat_v3-timeseries.dat
 
@@ -121,4 +120,4 @@ NVCC ?= nvcc
 
 ## make sure lalapps.la is rebuilt when appropriate
 BUILT_SOURCES =
-include $(top_srcdir)/misc/vcsID.common
+include $(top_srcdir)/gnuscripts/vcsID.common

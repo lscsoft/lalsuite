@@ -17,7 +17,8 @@
  *  MA  02111-1307  USA
  */
 
-/** \author J. T. Whelan, Reinhard Prix
+/**
+ * \author J. T. Whelan, Reinhard Prix
  * \ingroup pulsarTODO
  * \file
  * \brief
@@ -51,8 +52,9 @@
 
 /*==================== FUNCTION DEFINITIONS ====================*/
 
-/** Compute the 'amplitude coefficients' \f$a(t)\sin\zeta\f$,
- * \f$b(t)\sin\zeta\f$ as defined in \ref JKS98 for a series of
+/**
+ * Compute the 'amplitude coefficients' \f$a(t)\sin\zeta\f$,
+ * \f$b(t)\sin\zeta\f$ as defined in \cite JKS98 for a series of
  * timestamps.
  *
  * The input consists of the DetectorState-timeseries, which contains
@@ -114,11 +116,11 @@ LALGetCmplxAMCoeffs(LALStatus *status,				/**< pointer to LALStatus structure */
 	ABORT ( status, COMPLEXAMC_EXLAL, COMPLEXAMC_MSGEXLAL );
       }
 
-      ai.re = XLALContractSymmTensor3s ( &d.re, &(freq_skypos->ePlus) );
-      ai.im = XLALContractSymmTensor3s ( &d.im, &(freq_skypos->ePlus) );
+      ai.realf_FIXME = XLALContractSymmTensor3s ( &d.re, &(freq_skypos->ePlus) );
+      ai.imagf_FIXME = XLALContractSymmTensor3s ( &d.im, &(freq_skypos->ePlus) );
 
-      bi.re = XLALContractSymmTensor3s ( &d.re, &(freq_skypos->eCross) );
-      bi.im = XLALContractSymmTensor3s ( &d.im, &(freq_skypos->eCross) );
+      bi.realf_FIXME = XLALContractSymmTensor3s ( &d.re, &(freq_skypos->eCross) );
+      bi.imagf_FIXME = XLALContractSymmTensor3s ( &d.im, &(freq_skypos->eCross) );
 
       coeffs->a->data[i] = ai;
       coeffs->b->data[i] = bi;
@@ -129,7 +131,8 @@ LALGetCmplxAMCoeffs(LALStatus *status,				/**< pointer to LALStatus structure */
 
 } /* LALGetCmplxAMCoeffs() */
 
-/** Multi-IFO version of LALGetCmplxAMCoeffs().
+/**
+ * Multi-IFO version of LALGetCmplxAMCoeffs().
  * Get all antenna-pattern coefficients for all input detector-series.
  *
  * NOTE: contrary to LALGetCmplxAMCoeffs(), this functions *allocates* the output-vector,
@@ -242,7 +245,8 @@ LALGetMultiCmplxAMCoeffs (LALStatus *status,				/**< pointer to LALStatus struct
 
 /* ===== Object creation/destruction functions ===== */
 
-/** Destroy a MultiCmplxAMCoeffs structure.
+/**
+ * Destroy a MultiCmplxAMCoeffs structure.
  * Note, this is "NULL-robust" in the sense that it will not crash
  * on NULL-entries anywhere in this struct, so it can be used
  * for failure-cleanup even on incomplete structs
@@ -278,7 +282,8 @@ XLALDestroyMultiCmplxAMCoeffs ( MultiCmplxAMCoeffs *multiAMcoef )
 } /* XLALDestroyMultiCmplxAMCoeffs() */
 
 
-/** Multiply AM-coeffs \f$a_{X\alpha}, b_{X\alpha}\f$ by weights \f$\sqrt(w_{X\alpha})\f$ and
+/**
+ * Multiply AM-coeffs \f$a_{X\alpha}, b_{X\alpha}\f$ by weights \f$\sqrt(w_{X\alpha})\f$ and
  * compute the resulting \f$\widehat{A}, \widehat{B}, \widehat{C}, \widehat{E}\f$ by simply *SUMMING* them, i.e.
  * \f$\widehat{A} \equiv \sum_{X,\alpha} w_{X\alpha} a_{X\alpha}^2\f$ etc.
  *
@@ -325,22 +330,22 @@ XLALWeightMultiCmplxAMCoeffs (  MultiCmplxAMCoeffs *multiAMcoef, const MultiNois
 	      REAL8 Sqwi = sqrt ( weightsX->data[alpha] );
 	      COMPLEX16 ahat;
 	      COMPLEX16 bhat;
-	      ahat.re = Sqwi * amcoeX->a->data[alpha].re;
-	      ahat.im = Sqwi * amcoeX->a->data[alpha].im;
-	      bhat.re= Sqwi * amcoeX->b->data[alpha].re;
-	      bhat.im= Sqwi * amcoeX->b->data[alpha].im;
+	      ahat.real_FIXME = Sqwi * crealf(amcoeX->a->data[alpha]);
+	      ahat.imag_FIXME = Sqwi * cimagf(amcoeX->a->data[alpha]);
+	      bhat.real_FIXME= Sqwi * crealf(amcoeX->b->data[alpha]);
+	      bhat.imag_FIXME= Sqwi * cimagf(amcoeX->b->data[alpha]);
 
 	      /* *replace* original a(t), b(t) by noise-weighed version! */
-	      amcoeX->a->data[alpha].re = ahat.re;
-	      amcoeX->a->data[alpha].im = ahat.im;
-	      amcoeX->b->data[alpha].re = bhat.re;
-	      amcoeX->b->data[alpha].im = bhat.im;
+	      amcoeX->a->data[alpha].realf_FIXME = creal(ahat);
+	      amcoeX->a->data[alpha].imagf_FIXME = cimag(ahat);
+	      amcoeX->b->data[alpha].realf_FIXME = creal(bhat);
+	      amcoeX->b->data[alpha].imagf_FIXME = cimag(bhat);
 
 	      /* sum A, B, C, E on the fly */
-	      Ad += ahat.re * ahat.re + ahat.im * ahat.im;
-	      Bd += bhat.re * bhat.re + bhat.im * bhat.im;
-	      Cd += ahat.re * bhat.re + ahat.im * bhat.im;
-	      Ed += ahat.re * bhat.im - ahat.im * bhat.re;
+	      Ad += creal(ahat) * creal(ahat) + cimag(ahat) * cimag(ahat);
+	      Bd += creal(bhat) * creal(bhat) + cimag(bhat) * cimag(bhat);
+	      Cd += creal(ahat) * creal(bhat) + cimag(ahat) * cimag(bhat);
+	      Ed += creal(ahat) * cimag(bhat) - cimag(ahat) * creal(bhat);
 	    } /* for alpha < numSFTsX */
 	} /* for X < numDetectors */
       multiAMcoef->Mmunu.Sinv_Tsft = multiWeights->Sinv_Tsft;
@@ -356,16 +361,16 @@ XLALWeightMultiCmplxAMCoeffs (  MultiCmplxAMCoeffs *multiAMcoef, const MultiNois
 	    {
 	      COMPLEX16 ahat;
 	      COMPLEX16 bhat;
-	      ahat.re = amcoeX->a->data[alpha].re;
-	      ahat.im = amcoeX->a->data[alpha].im;
-	      bhat.re = amcoeX->b->data[alpha].re;
-	      bhat.im = amcoeX->b->data[alpha].im;
+	      ahat.real_FIXME = crealf(amcoeX->a->data[alpha]);
+	      ahat.imag_FIXME = cimagf(amcoeX->a->data[alpha]);
+	      bhat.real_FIXME = crealf(amcoeX->b->data[alpha]);
+	      bhat.imag_FIXME = cimagf(amcoeX->b->data[alpha]);
 
 	      /* sum A, B, C, E on the fly */
-	      Ad += ahat.re * ahat.re + ahat.im * ahat.im;
-	      Bd += bhat.re * bhat.re + bhat.im * bhat.im;
-	      Cd += ahat.re * bhat.re + ahat.im * bhat.im;
-	      Ed += ahat.re * bhat.im - ahat.im * bhat.re;
+	      Ad += creal(ahat) * creal(ahat) + cimag(ahat) * cimag(ahat);
+	      Bd += creal(bhat) * creal(bhat) + cimag(bhat) * cimag(bhat);
+	      Cd += creal(ahat) * creal(bhat) + cimag(ahat) * cimag(bhat);
+	      Ed += creal(ahat) * cimag(bhat) - cimag(ahat) * creal(bhat);
 	    } /* for alpha < numSFTsX */
 	} /* for X < numDetectors */
 

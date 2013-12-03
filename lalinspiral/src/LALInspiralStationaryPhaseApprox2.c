@@ -19,13 +19,13 @@
 
 /**
  * \author B.S. Sathyaprakash
- \file
- \ingroup LALInspiral_h
-
- \brief This module computes the usual stationary phase approximation to the
- Fourier transform of a chirp waveform given by Eq.\eqref{eq_InspiralFourierPhase_f2}.
-
- * \heading{Prototypes}
+ * \file
+ * \ingroup LALInspiral_h
+ *
+ * \brief This module computes the usual stationary phase approximation to the
+ * Fourier transform of a chirp waveform given by \eqref{eq_InspiralFourierPhase_f2}.
+ *
+ * ### Prototypes ###
  *
  * <tt>LALInspiralStationaryPhaseApprox2()</tt>
  * <ul>
@@ -33,7 +33,7 @@
  * </li><li> \c params: Input containing binary chirp parameters.
  * </li></ul>
  *
- * \heading{Description}
+ * ### Description ###
  *
  * Computes the Fourier transform of the chirp signal in the stationary
  * phase approximation and returns the real and imaginary parts of the
@@ -47,9 +47,9 @@
  * the duration of the signal and \f$\Delta f=1/T\f$ is the frequency resolution.
  * </li></ul>
  *
- * \heading{Algorithm}
+ * ### Algorithm ###
  *
- * The standard SPA is given by Eq.\eqref{eq_InspiralFourierPhase_f2}.
+ * The standard SPA is given by \eqref{eq_InspiralFourierPhase_f2}.
  * We define a variable function pointer \c LALInspiralTaylorF2Phasing and point
  * it to one of the \c static functions defined within this function
  * that explicitly calculates the Fourier phase at the PN order chosen by the user.
@@ -61,14 +61,15 @@
  * </li><li> have an amplitude of \f$n v^2.\f$
  * </li></ul>
  *
- * \heading{Uses}
+ * ### Uses ###
+ *
  * \code
-   XLALInspiralSetup()
-   XLALInspiralChooseModel()
-   XLALInspiralTaylorF2Phasing[0234567]PN()
+ * XLALInspiralSetup()
+ * XLALInspiralChooseModel()
+ * XLALInspiralTaylorF2Phasing[0234567]PN()
  * \endcode
  *
- * \heading{Notes}
+ * ### Notes ###
  *
  * If it is required to compare the output of this module with a time domain
  * signal one should use an inverse Fourier transform routine that packs data
@@ -76,9 +77,7 @@
  * Fourier transform by a factor \f$n/2\f$ to be consistent with the
  * amplitude used in time-domain signal models.
  *
- *
- *
-*/
+ */
 
 #include "LALInspiral.h"
 
@@ -104,8 +103,7 @@ LALInspiralStationaryPhaseApprox2 (
    )
 {
   /* Print Deprecation Warning */
-  XLALPrintDeprecationWarning("LALInspiralStationaryPhaseApprox2", 
-			      "XLALInspiralStationaryPhaseApprox2");
+  XLAL_PRINT_DEPRECATION_WARNING("XLALInspiralStationaryPhaseApprox2");
 
   /* Initialize the status pointer */
   INITSTATUS(status);
@@ -128,7 +126,7 @@ XLALInspiralStationaryPhaseApprox2 (
    InspiralTemplate *params
    )
 {
-   REAL8 Oneby3, UNUSED h1, UNUSED h2, pimmc, f, v, df, shft, phi, amp0, amp, psif, psi;
+   REAL8 UNUSED h1, UNUSED h2, pimmc, f, v, df, shft, phi, amp0, amp, psif, psi;
    INT4 n, nby2, i, f0, fn;
    expnCoeffs ak;
    expnFunc func;
@@ -188,12 +186,11 @@ XLALInspiralStationaryPhaseApprox2 (
      XLAL_ERROR(XLAL_EFUNC);
 
    /* compute some basic variables */
-   Oneby3 = 1.L/3.L;
    df = params->tSampling/signalvec->length;
    pimmc = LAL_PI * params->totalMass * LAL_MTSUN_SI;
    f0 = params->fLower;
    fn = (params->fCutoff < ak.fn) ? params->fCutoff : ak.fn;
-   v = pow(pimmc*f0, Oneby3);
+   v = pow(pimmc*f0, (1./3.));
 
    /* If we want to pad with zeroes in the beginning then the instant of
     * coalescence will be the chirp time + the duration for which padding
@@ -223,7 +220,7 @@ XLALInspiralStationaryPhaseApprox2 (
        }
      else
        {
-       v = pow(pimmc * f, Oneby3);
+       v = pow(pimmc * f, (1./3.));
        psif = XLALInspiralTaylorF2Phasing(v, &ak);
        psi = shft * f + phi + psif;
        /*

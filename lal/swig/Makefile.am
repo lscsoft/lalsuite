@@ -1,21 +1,24 @@
 # Top-level SWIG build makefile.
 # Author: Karl Wette, 2011, 2012
 
+# regenerate dependency files when Makefile is regenerated
+am__depfiles_maybe = depfiles
+
 # make subdirectories
 SUBDIRS = . octave python
 
 # SWIG interface file
-swig_iface = @PACKAGE_NAME@swig.i
+swig_iface = @PACKAGE@swig.i
 
 # SWIG interface header list
-swig_iface_headers = $(top_builddir)/swig/@PACKAGE_NAME@swig_headers.list
+swig_iface_headers = $(top_builddir)/swig/@PACKAGE@swig_headers.list
 
 # SWIG preprocessing interface
-swig_iface_preproc = @PACKAGE_NAME@swig_preproc.i
-swig_iface_preproc_xml = @PACKAGE_NAME@swig_preproc.xml
+swig_iface_preproc = @PACKAGE@swig_preproc.i
+swig_iface_preproc_xml = @PACKAGE@swig_preproc.xml
 
 # SWIG preprocessing interface dependencies file
-swig_iface_preproc_deps = ./$(DEPDIR)/@PACKAGE_NAME@swig_preproc.deps
+swig_iface_preproc_deps = ./$(DEPDIR)/@PACKAGE@swig_preproc.deps
 
 # SWIG preprocessing interface flags
 swig_preprocflags = -xml -xmllite -includeall -ignoremissing -w201,302
@@ -23,19 +26,8 @@ swig_preprocflags = -xml -xmllite -includeall -ignoremissing -w201,302
 # script which builds SWIG interface header
 swig_generate_iface = $(srcdir)/generate_swiglal_iface.py
 
-# SWIG interface tests header
-swig_iface_test = @PACKAGE_NAME@swig_test.i
-
-# include headers in SWIG interface header list
-swig_extra_headers = $(swig_iface_test)
-
 # installation location for SWIG interfaces
 swigincludedir = $(includedir)/lal
-
-# SWIG interfaces to install
-EXTRA_HEADERS =
-nodist_swiginclude_HEADERS =
-swiginclude_HEADERS = $(SWIG_IFACES) $(swig_iface_test)
 
 # extra distribution files
 EXTRA_DIST = $(swig_generate_iface)
@@ -46,38 +38,18 @@ CLEANFILES = \
 	$(swig_iface_preproc) \
 	$(swig_iface_preproc_xml) \
 	$(swig_iface)
+clean-local:
+	-rm -rf $(builddir)/lal
 DISTCLEANFILES = \
 	$(swig_iface_preproc_deps)
 
 if SWIG_BUILD
 
 # generated SWIG interfaces to install
-nodist_swiginclude_HEADERS += $(swig_iface)
+nodist_swiginclude_HEADERS = $(swig_iface)
 
 # delete failed targets
 rm_targets = { rm -f $@; exit 1; }
-
-# create links to SWIG interfaces
-.PHONY : swig-iface-links
-swig-iface-links :
-	@for file in $(nodist_swiginclude_HEADERS) $(swiginclude_HEADERS); do \
-		srcdir=$(abs_srcdir); \
-		builddir=$(abs_builddir); \
-		incldir=$(abs_top_builddir)/include/lal; \
-		if test ! -r $${incldir}/$${file}; then \
-			rm -f $${incldir}/$${file}; \
-			if test -f $${srcdir}/$${file}; then \
-				$(LN_S) $${srcdir}/$${file} $${incldir}; \
-			elif test -f $${builddir}/$${file}; then \
-				$(LN_S) $${builddir}/$${file} $${incldir}; \
-			fi; \
-		fi; \
-	done
-
-# rebuild SWIG preprocessing interface dependencies file
-$(swig_iface_preproc_deps) :
-	@echo '#dummy' > $@
-	@touch $(srcdir)/Makefile.in
 
 # build SWIG preprocessing interface file
 $(swig_iface_preproc) : $(swig_iface_headers) Makefile
@@ -88,7 +60,7 @@ $(swig_iface_preproc) : $(swig_iface_headers) Makefile
 	echo "#define SWIGLAL(...) const char __swiglal__[] = #__VA_ARGS__" >> $@; \
 	echo "#define SWIGLAL_CLEAR(...) const char __swiglal_clear__[] = #__VA_ARGS__" >> $@; \
 	headers=`cat $(swig_iface_headers) | $(SED) 's|^.*:||'`; \
-	for header in $$headers $(swig_extra_headers); do \
+	for header in $$headers; do \
 		header=`echo $$header | $(SED) '\|LibVCSInfo.h$$|p;\|VCSInfo.h$$|d'`; \
 		if test "x$$header" != x; then \
 			echo "%include <lal/$${header}>" >> $@; \
@@ -96,22 +68,18 @@ $(swig_iface_preproc) : $(swig_iface_headers) Makefile
 	done
 
 # include SWIG preprocessing interface dependencies file
-@am__include@ @am__quote@./$(DEPDIR)/@PACKAGE_NAME@swig_preproc.deps@am__quote@
+@am__include@ @am__quote@./$(DEPDIR)/@PACKAGE@swig_preproc.deps@am__quote@
 
 # generate SWIG parse tree of preprocessing interface file
 $(swig_iface_preproc_xml) : $(swig_iface_preproc)
-	@$(MAKE) swig-iface-links
 	$(AM_V_GEN)$(SWIG) $(SWIG_SWIGFLAGS) $(swig_preprocflags) -MD -MF $(swig_iface_preproc_deps) -o $@ $< || $(rm_targets)
 
 # generate SWIG interface file
-export PACKAGE_NAME
-export SWIG_MODULE_DEPENDS
-export SWIG_SYMBOL_PREFIXES
-export swig_iface_preproc
-export swig_iface_preproc_xml
-export swig_iface
 $(swig_iface) : $(swig_iface_preproc_xml) $(swig_generate_iface)
-	$(AM_V_GEN)$(PYTHON) $(swig_generate_iface) || $(rm_targets)
-	@$(MAKE) swig-iface-links
+	$(AM_V_GEN)$(PYTHON) $(swig_generate_iface) -n "$(PACKAGE)" -d "$(SWIG_MODULE_DEPENDS)" -s "$(SWIG_SYMBOL_PREFIXES)" -p "$(swig_iface_preproc)" -x "$(swig_iface_preproc_xml)" -i "$(swig_iface)" || $(rm_targets)
+	@if test -d "$(top_builddir)/include/lal"; then \
+		rm -f "$(top_builddir)/include/lal/$@"; \
+		$(LN_S) "$(abs_builddir)/$@" "$(top_builddir)/include/lal/$@"; \
+	fi
 
 endif

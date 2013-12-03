@@ -1,20 +1,13 @@
 # Environment script generation
 # Author: Karl Wette, 2011
 
-# print an error message to standard error, and exit
+# print an error message to standard error, remove output file, and exit
 function msg(str) {
     print "generate_user_env.awk: " str >"/dev/stderr"
+    if (output != "") {
+        system("rm -f " output)
+    }
     exit 1
-}
-
-# print a string to output file
-function printout(str, first) {
-    if (first) {
-        print str >output
-    }
-    else {
-        print str >>output
-    }
 }
 
 # script setup
@@ -23,12 +16,16 @@ BEGIN {
     if (SED == "") {
         msg("no value for 'SED' given on command line")
     }
-    if (package == "") {
-        msg("no value for 'package' given on command line")
-    }
     if (output == "") {
         msg("no value for 'output' given on command line")
     }
+    # remove output file
+    system("rm -f " output)
+}
+
+# comments are passed through
+/^#/ {
+    print $0 >>output
 }
 
 # source another environment setup file
@@ -56,7 +53,9 @@ $1 == "set" {
             value = value ":" $i
         }
     }
-    setvars[name] = substr(value, 2)
+    if (value != "") {
+        setvars[name] = substr(value, 2)
+    }
     delete pathvars[name]
 }
 
@@ -67,9 +66,6 @@ $1 == "prepend" {
     if (name == "") {
         msg("no name given to prepend")
     }
-    if (pathvars[name] == "") {
-        pathvars[name] = sprintf("${%s}", name)
-    }
     value = ""
     for (i = 3; i <= NF; ++i) {
         found = index(":" pathvars[name] ":", ":" $i ":") > 0 ||
@@ -78,7 +74,12 @@ $1 == "prepend" {
             value = value $i ":"
         }
     }
-    pathvars[name] = value pathvars[name]
+    if (value != "") {
+        if (pathvars[name] == "") {
+            pathvars[name] = sprintf("${%s}", name)
+        }
+        pathvars[name] = value pathvars[name]
+    }
     delete setvars[name]
 }
 
@@ -89,9 +90,6 @@ $1 == "append" {
     if (name == "") {
         msg("no name given to prepend")
     }
-    if (pathvars[name] == "") {
-        pathvars[name] = sprintf("${%s}", name)
-    }
     value = ""
     for (i = 3; i <= NF; ++i) {
         found = index(":" pathvars[name] ":", ":" $i ":") > 0 ||
@@ -100,7 +98,12 @@ $1 == "append" {
             value = value ":" $i
         }
     }
-    pathvars[name] = pathvars[name] value
+    if (value != "") {
+        if (pathvars[name] == "") {
+            pathvars[name] = sprintf("${%s}", name)
+        }
+        pathvars[name] = pathvars[name] value
+    }
     delete setvars[name]
 }
 
@@ -108,25 +111,23 @@ $1 == "append" {
 END {
     # if output file ends in 'csh', use C shell syntax, otherwise Bourne shell syntax
     csh = (output ~ /\.csh$/)
-    # output usage
-    printout("# source this file to access '" package "'", 1)
     # output source files
     for (sourcefile in sourcefiles) {
         if (csh) {
-            printout("source " sourcefile ".csh")
+            print "source " sourcefile ".csh" >>output
         }
         else {
-            printout(". " sourcefile ".sh")
+            print ". " sourcefile ".sh" >>output
         }
     }
     # output set variables
     for (name in setvars) {
         if (csh) {
-            printout("setenv " name " \"" setvars[name] "\"")
+            print "setenv " name " \"" setvars[name] "\"" >>output
         }
         else {
-            printout(name "=\"" setvars[name] "\"")
-            printout("export " name)
+            print name "=\"" setvars[name] "\"" >>output
+            print "export " name >>output
         }
     }
     # output prepend/append variables
@@ -140,14 +141,14 @@ END {
         }
         sed_script = sed_script "s|::*|:|g;s|^:||;s|:$||"
         if (csh) {
-            printout("if ( ! ${?" name "} ) setenv " name)
-            printout("setenv " name " `echo \":${" name "}:\" | " SED " '" sed_script "'`")
-            printout("setenv " name " \"" pathvars[name] "\"")
+            print "if ( ! ${?" name "} ) setenv " name >>output
+            print "setenv " name " `echo \":${" name "}:\" | " SED " '" sed_script "'`" >>output
+            print "setenv " name " \"" pathvars[name] "\"" >>output
         }
         else {
-            printout(name "=`echo \":${" name "}:\" | " SED " '" sed_script "'`")
-            printout(name "=\"" pathvars[name] "\"")
-            printout("export " name)
+            print name "=`echo \":${" name "}:\" | " SED " '" sed_script "'`" >>output
+            print name "=\"" pathvars[name] "\"" >>output
+            print "export " name >>output
         }
     }
 }

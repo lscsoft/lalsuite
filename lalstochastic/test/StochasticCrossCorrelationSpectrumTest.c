@@ -18,112 +18,112 @@
 */
 
 /**
-\author UTB Relativity Group; contact whelan@phys.utb.edu (original by S. Drasco)
-\file
-\ingroup StochasticCrossCorrelation_c
-
-\brief A program to test <tt>LALStochasticCrossCorrelationSpectrum()</tt>.
-
-\heading{Usage}
-
-\code
-./StochasticCrossCorrelationSpectrumTest [options]
-Options:
-  -h             print usage message
-  -q             quiet: run silently
-  -v             verbose: print extra information
-  -d level       set lalDebugLevel to level
-  -o filename    write spectrum to file filename
-  -i filename    read first data stream from file filename
-  -j filename    read second data stream from file filename
-  -k filename    read optimal filter from file filename
-  -m length      optimal filter contains length points
-  -n length      data streams contain length points
-  -t             epochs need not match
-\endcode
-
-This program tests the function
-<tt>LALStochasticCrossCorrelationSpectrum()</tt>, which calculates
-the cross-correlation spectrum given two zero-padded and
-Fourier-transformed data streams and a (frequency domain) optimal
-filter.
-
-First, it tests that the correct error codes
-(cf. \ref StochasticCrossCorrelation_h)
-are generated for the following error conditions (tests in
-\e italics are not performed if \c LAL_NDEBUG is set, as
-the corresponding checks in the code are made using the ASSERT macro):
-<ul>
-<li> <em>null pointer to output series</em></li>
-<li> <em>null pointer to input structure</em></li>
-<li> <em>null pointer to first data stream</em></li>
-<li> <em>null pointer to second data stream</em></li>
-<li> <em>null pointer to optimal filter</em></li>
-<li> <em>null pointer to data member of first data stream</em></li>
-<li> <em>null pointer to data member of second data stream</em></li>
-<li> <em>null pointer to data member of optimal filter</em></li>
-<li> <em>null pointer to data member of data member of first data stream</em></li>
-<li> <em>null pointer to data member of data member of second data stream</em></li>
-<li> <em>null pointer to data member of data member of optimal filter</em></li>
-<li> <em>zero length</em></li>
-<li> <em>negative frequency spacing</em></li>
-<li> <em>zero frequency spacing</em></li>
-<li> negative start frequency</li>
-<li> length mismatch between data streams</li>
-<li> frequency spacing mismatch between data streams</li>
-<li> start frequency mismatch between data streams</li>
-<li> mismatch between epochs of data streams</li>
-</ul>
-
-It then verifies that the correct cross-correlation statistic (value
-and units) is generated for the following simple test case:
-\f$\widetilde{Q}(f) = x(1-x)\f$; \f$\widetilde{\bar{h}}_1(f)=x^2+ix\f$,
-  \f$\widetilde{\bar{h}}_2(f)=x^{-2}-ix^{-1}\f$, with \f$x=f/400\,\textrm{Hz}\f$.
-  The expected result in this case is \f$Y(f)=-i(2-x)(x^2+2)\f$.
-For each successful test
-(this valid data test and the invalid ones described above), it
-prints "\c PASS" to standard output; if a test fails, it
-prints "\c FAIL".
-
-If the \c filename arguments are present, it also reads in the
-optimal filter and the two data streams from the specified files and
-use the specified parameters to calculate the cross-correlation
-statistic.  The result is printed to the specified output file.
-
-\heading{Uses}
-
-\code
-LALStochasticCrossCorrelationSpectrum()
-LALCheckMemoryLeaks()
-LALCReadFrequencySeries()
-LALCCreateVector()
-LALCDestroyVector()
-LALCHARCreateVector()
-LALCHARDestroyVector()
-LALUnitAsString()
-LALUnitCompare()
-getopt()
-printf()
-fprintf()
-freopen()
-fabs()
-\endcode
-
-\heading{Notes}
-
-<ul>
-  <li> No specific error checking is done on user-specified data.  If
-    \c length is missing, the resulting default will cause a bad
-    data error.
-  </li><li> The length of the user-provided series must be specified, even
-    though it could in principle be deduced from the input file,
-    because the data sequences must be allocated before the
-    <tt>LALCReadFrequencySeries()</tt> function is called.
-  </li><li> If some, but not all, of the \c filename arguments are
-    present, the user-specified data will be silently ignored.</li>
-</ul>
-
-*/
+ * \author UTB Relativity Group; contact whelan@phys.utb.edu (original by S. Drasco)
+ * \file
+ * \ingroup StochasticCrossCorrelation_c
+ *
+ * \brief A program to test <tt>LALStochasticCrossCorrelationSpectrum()</tt>.
+ *
+ * ### Usage ###
+ *
+ * \code
+ * ./StochasticCrossCorrelationSpectrumTest [options]
+ * Options:
+ * -h             print usage message
+ * -q             quiet: run silently
+ * -v             verbose: print extra information
+ * -d level       set lalDebugLevel to level
+ * -o filename    write spectrum to file filename
+ * -i filename    read first data stream from file filename
+ * -j filename    read second data stream from file filename
+ * -k filename    read optimal filter from file filename
+ * -m length      optimal filter contains length points
+ * -n length      data streams contain length points
+ * -t             epochs need not match
+ * \endcode
+ *
+ * This program tests the function
+ * <tt>LALStochasticCrossCorrelationSpectrum()</tt>, which calculates
+ * the cross-correlation spectrum given two zero-padded and
+ * Fourier-transformed data streams and a (frequency domain) optimal
+ * filter.
+ *
+ * First, it tests that the correct error codes
+ * (cf. \ref StochasticCrossCorrelation_h)
+ * are generated for the following error conditions (tests in
+ * \e italics are not performed if \c LAL_NDEBUG is set, as
+ * the corresponding checks in the code are made using the ASSERT macro):
+ * <ul>
+ * <li> <em>null pointer to output series</em></li>
+ * <li> <em>null pointer to input structure</em></li>
+ * <li> <em>null pointer to first data stream</em></li>
+ * <li> <em>null pointer to second data stream</em></li>
+ * <li> <em>null pointer to optimal filter</em></li>
+ * <li> <em>null pointer to data member of first data stream</em></li>
+ * <li> <em>null pointer to data member of second data stream</em></li>
+ * <li> <em>null pointer to data member of optimal filter</em></li>
+ * <li> <em>null pointer to data member of data member of first data stream</em></li>
+ * <li> <em>null pointer to data member of data member of second data stream</em></li>
+ * <li> <em>null pointer to data member of data member of optimal filter</em></li>
+ * <li> <em>zero length</em></li>
+ * <li> <em>negative frequency spacing</em></li>
+ * <li> <em>zero frequency spacing</em></li>
+ * <li> negative start frequency</li>
+ * <li> length mismatch between data streams</li>
+ * <li> frequency spacing mismatch between data streams</li>
+ * <li> start frequency mismatch between data streams</li>
+ * <li> mismatch between epochs of data streams</li>
+ * </ul>
+ *
+ * It then verifies that the correct cross-correlation statistic (value
+ * and units) is generated for the following simple test case:
+ * \f$\widetilde{Q}(f) = x(1-x)\f$; \f$\widetilde{\bar{h}}_1(f)=x^2+ix\f$,
+ * \f$\widetilde{\bar{h}}_2(f)=x^{-2}-ix^{-1}\f$, with \f$x=f/400\,\textrm{Hz}\f$.
+ * The expected result in this case is \f$Y(f)=-i(2-x)(x^2+2)\f$.
+ * For each successful test
+ * (this valid data test and the invalid ones described above), it
+ * prints "\c PASS" to standard output; if a test fails, it
+ * prints "\c FAIL".
+ *
+ * If the \c filename arguments are present, it also reads in the
+ * optimal filter and the two data streams from the specified files and
+ * use the specified parameters to calculate the cross-correlation
+ * statistic.  The result is printed to the specified output file.
+ *
+ * ### Uses ###
+ *
+ * \code
+ * LALStochasticCrossCorrelationSpectrum()
+ * LALCheckMemoryLeaks()
+ * LALCReadFrequencySeries()
+ * LALCCreateVector()
+ * LALCDestroyVector()
+ * LALCHARCreateVector()
+ * LALCHARDestroyVector()
+ * LALUnitAsString()
+ * LALUnitCompare()
+ * getopt()
+ * printf()
+ * fprintf()
+ * freopen()
+ * fabs()
+ * \endcode
+ *
+ * ### Notes ###
+ *
+ * <ul>
+ * <li> No specific error checking is done on user-specified data.  If
+ * \c length is missing, the resulting default will cause a bad
+ * data error.
+ * </li><li> The length of the user-provided series must be specified, even
+ * though it could in principle be deduced from the input file,
+ * because the data sequences must be allocated before the
+ * <tt>LALCReadFrequencySeries()</tt> function is called.
+ * </li><li> If some, but not all, of the \c filename arguments are
+ * present, the user-specified data will be silently ignored.</li>
+ * </ul>
+ *
+ */
 
 /**\name Error Codes */ /*@{*/
 #define STOCHASTICCROSSCORRELATIONSPECTRUMTESTC_ENOM 0	/**< Nominal exit */
@@ -181,8 +181,6 @@ fabs()
 extern char *optarg;
 extern int   optind;
 
-/* int lalDebugLevel = LALMSGLVL3; */
-extern int lalDebugLevel;
 BOOLEAN optVerbose    = STOCHASTICCROSSCORRELATIONSPECTRUMTESTC_FALSE;
 BOOLEAN optMatch    = STOCHASTICCROSSCORRELATIONSPECTRUMTESTC_TRUE;
 UINT4 optStreamLength     = 0;
@@ -219,7 +217,6 @@ int main( int argc, char *argv[] )
   INT4  code;
   REAL4 expIm;
 
-  lalDebugLevel = LALNDEBUG;
 
   ParseOptions( argc, argv );
 
@@ -654,21 +651,21 @@ int main( int argc, char *argv[] )
 
   goodData1.f0 = goodData2.f0 = goodFilter.f0 = 0.0;
 
-  goodData1.data->data[0].re = goodData1.data->data[0].im
-    = goodData2.data->data[0].re = goodData2.data->data[0].im
-    = goodFilter.data->data[0].re = goodFilter.data->data[0].im
+  goodData1.data->data[0].realf_FIXME = goodData1.data->data[0].imagf_FIXME
+    = goodData2.data->data[0].realf_FIXME = goodData2.data->data[0].imagf_FIXME
+    = goodFilter.data->data[0].realf_FIXME = goodFilter.data->data[0].imagf_FIXME
     = 0.0;
 
   for (i=1; i<STOCHASTICCROSSCORRELATIONSPECTRUMTESTC_LENGTH; ++i)
   {
     f = i * STOCHASTICCROSSCORRELATIONSPECTRUMTESTC_DELTAF;
     x = f / (STOCHASTICCROSSCORRELATIONSPECTRUMTESTC_FLIM / 2.0);
-    goodData1.data->data[i].re = x*x;
-    goodData1.data->data[i].im = x;
-    goodData2.data->data[i].re = 1.0/goodData1.data->data[i].re;
-    goodData2.data->data[i].im = -1.0/goodData1.data->data[i].im;
-    goodFilter.data->data[i].re = x * (2-x);
-    goodFilter.data->data[i].im = 0.0;
+    goodData1.data->data[i].realf_FIXME = x*x;
+    goodData1.data->data[i].imagf_FIXME = x;
+    goodData2.data->data[i].realf_FIXME = 1.0/crealf(goodData1.data->data[i]);
+    goodData2.data->data[i].imagf_FIXME = -1.0/cimagf(goodData1.data->data[i]);
+    goodFilter.data->data[i].realf_FIXME = x * (2-x);
+    goodFilter.data->data[i].imagf_FIXME = 0.0;
   }
 
   LALStochasticCrossCorrelationSpectrum(&status, &goodOutput, &input,  STOCHASTICCROSSCORRELATIONSPECTRUMTESTC_TRUE);
@@ -684,11 +681,11 @@ int main( int argc, char *argv[] )
   if (optVerbose)
   {
     printf("Y(0)=%g + %g i, should be 0\n",
-           goodOutput.data->data[0].re, goodOutput.data->data[0].im);
+           crealf(goodOutput.data->data[0]), cimagf(goodOutput.data->data[0]));
   }
-  if ( ( fabs(goodOutput.data->data[0].re)
+  if ( ( fabs(crealf(goodOutput.data->data[0]))
          > STOCHASTICCROSSCORRELATIONSPECTRUMTESTC_TOL )
-       || ( fabs(goodOutput.data->data[0].im)
+       || ( fabs(cimagf(goodOutput.data->data[0]))
             > STOCHASTICCROSSCORRELATIONSPECTRUMTESTC_TOL ) )
   {
     printf("  FAIL: Valid data test\n");
@@ -708,12 +705,12 @@ int main( int argc, char *argv[] )
     if (optVerbose)
     {
       printf("Y(%f Hz)=%g + %g i, should be %g i\n",
-             f, goodOutput.data->data[i].re, goodOutput.data->data[i].im,
+             f, crealf(goodOutput.data->data[i]), cimagf(goodOutput.data->data[i]),
              expIm);
      }
-     if ( fabs(goodOutput.data->data[i].re)
+     if ( fabs(crealf(goodOutput.data->data[i]))
           > STOCHASTICCROSSCORRELATIONSPECTRUMTESTC_TOL
-          || fabs(goodOutput.data->data[i].im - expIm)
+          || fabs(cimagf(goodOutput.data->data[i]) - expIm)
           > STOCHASTICCROSSCORRELATIONSPECTRUMTESTC_TOL )
      {
        printf("  FAIL: Valid data test\n");
@@ -946,7 +943,6 @@ ParseOptions (int argc, char *argv[])
         break;
 
       case 'd': /* set debug level */
-        lalDebugLevel = atoi (optarg);
         break;
 
       case 'v': /* optVerbose */

@@ -20,18 +20,17 @@
 
 /*---------- INCLUDES ----------*/
 #include <config.h>
-#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/SFTfileIO.h>
 #include <lal/LogPrintf.h>
 #include <lal/Units.h>
 #include <stdlib.h>
 
-/** \file
+/**
+ * \file
  * \ingroup SFTfileIO_h
  * \author R. Prix, B. Machenschalk, A.M. Sintes
  *
  * \brief Test-code for SFT-fileIO library
- *
  *
  */
 
@@ -173,8 +172,8 @@ static int CompareSFTVectors(SFTVector *sft_vect, SFTVector *sft_vect2)
       return(-1);
     }
     for(bin=0; bin < sft1.data->length; bin++) {
-      if((sft1.data->data[bin].re != sft2.data->data[bin].re) ||
-	 (sft1.data->data[bin].im != sft2.data->data[bin].im)) {
+      if((crealf(sft1.data->data[bin]) != crealf(sft2.data->data[bin])) ||
+	 (cimagf(sft1.data->data[bin]) != cimagf(sft2.data->data[bin]))) {
 	XLALPrintError ( "CompareSFTVectors(): bins %u of SFT#%u differ!\n", sft, bin);
 	return(-1);
       }
@@ -194,7 +193,6 @@ int main(int argc, char *argv[])
   REAL8 fMax = -1.0;
   int loglevel = LOG_DETAIL;
 
-  lalDebugLevel = 3;
 
   if((argc != 4) && (argc != 5)) {
     XLALPrintError ( "Usage: %s <files> <fmin> <fmax> [<debuglevel>]\n", argv[0]);

@@ -18,12 +18,12 @@
  */
 
 
-/** \file NRWaveIOTest.c
+/**
+ * \file NRWaveIOTest.c
  * \ingroup NRWaveIO
  * \author S.Fairhurst, B.Krishnan, L.Santamaria
  *
  * \brief Test-code for NRWaveIO
- *
  *
  */
 
@@ -128,7 +128,6 @@ LALStatus empty_status;
 
 /*---------- Global variables ----------*/
 
-INT4 lalDebugLevel = 3;
 
 /* ----------------------------------------------------------------------*/
 int main(int argc, char *argv[])

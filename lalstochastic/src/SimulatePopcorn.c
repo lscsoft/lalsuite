@@ -166,48 +166,48 @@ static void Fscalfunc (REAL4 *result, REAL4 Fp, REAL4 Fm)
  }
 
 /**
-\author Tania Regimbau
-
-\brief Routine for simulating whitened time-domain signals in a pair
-of detectors that arises from low duty cycle astrophysical backgrounds.
-
-\heading{Description}
-
-This routines  simulate stochastic backgrounds of astrophysical origin produced by the superposition
-of 'burst sources' since the beginning of the stellar activity. Depending on the ratio between the
-burst duration and the mean arrival time interval between events, such signals may be sequences of
-resolved bursts, 'popcorn noises' or continuous backgrounds.
-
-\heading{Algorithm}
-
-The two unwhitened time series are produced according to the procedure discribed in Coward,Burman & Blair, 2002, MNRAS, 329.
-<ol>
-<li> the arrival time of the events is randomly selected assuming a Poisson statistic.</li>
-<li> for each event, the distance z to the source is randomly selected. The probability distribution is given by normalizing the differential cosmic star formation rate.</li>
-<li> for each event, the direction of arrival of the wave as well as the angle of polarization are randomly selected in order to compute the beam factors of the antenna.</li>
-
-<li>the resulting signal is the sum of the individual strain amplitudes expressed in our frame.</li>
-</ol>
-
-The frequency domain strains \f$\widetilde{o}_{1}\f$ and \f$\widetilde{o}_{2}\f$ in the output of the two detectors are constructed as follow:
-\f{equation}{
-\widetilde{o}_{1}  = \widetilde{R}_{1}\widetilde{h}_{1}
-\f}
-\f{equation}{
-\widetilde{o}_{2}  = \widetilde{R}_{2}(\widetilde{h}_{1}\gamma + \widetilde{h}_{1}\sqrt{1-\gamma^{2}})
-\f}
-where  \f$\widetilde{h}_{i}\f$ is the %FFT and \f$\widetilde{R}_{i}\f$  the response function of the ith detector.
-In the second equation,  \f$\gamma\f$ is the overlap reduction function.
-
-Then the inverse %FFTs give the whitened time series \f$o_{1}\f$ and \f$o_{2}\f$.
-
-\heading{Notes}
-
-The cosmological model considered here corresponds to a flat Einstein de Sitter Universe with \f$\Omega_{matter}=0.3\f$,
-\f$\Omega_{vacuum}=0.7\f$ and \f$h_{0}=0.7\f$. The code can be easily adapted to any cosmological model.
-The same for the cosmic star formation rate (Madau \& Porciani, 2001, ApJ, 548, 522).
-
-*/
+ * \author Tania Regimbau
+ *
+ * \brief Routine for simulating whitened time-domain signals in a pair
+ * of detectors that arises from low duty cycle astrophysical backgrounds.
+ *
+ * ### Description ###
+ *
+ * This routines  simulate stochastic backgrounds of astrophysical origin produced by the superposition
+ * of 'burst sources' since the beginning of the stellar activity. Depending on the ratio between the
+ * burst duration and the mean arrival time interval between events, such signals may be sequences of
+ * resolved bursts, 'popcorn noises' or continuous backgrounds.
+ *
+ * ### Algorithm ###
+ *
+ * The two unwhitened time series are produced according to the procedure discribed in Coward,Burman & Blair, 2002, MNRAS, 329.
+ * <ol>
+ * <li> the arrival time of the events is randomly selected assuming a Poisson statistic.</li>
+ * <li> for each event, the distance z to the source is randomly selected. The probability distribution is given by normalizing the differential cosmic star formation rate.</li>
+ * <li> for each event, the direction of arrival of the wave as well as the angle of polarization are randomly selected in order to compute the beam factors of the antenna.</li>
+ *
+ * <li>the resulting signal is the sum of the individual strain amplitudes expressed in our frame.</li>
+ * </ol>
+ *
+ * The frequency domain strains \f$\widetilde{o}_{1}\f$ and \f$\widetilde{o}_{2}\f$ in the output of the two detectors are constructed as follow:
+ * \f{equation}{
+ * \widetilde{o}_{1}  = \widetilde{R}_{1}\widetilde{h}_{1}
+ * \f}
+ * \f{equation}{
+ * \widetilde{o}_{2}  = \widetilde{R}_{2}(\widetilde{h}_{1}\gamma + \widetilde{h}_{1}\sqrt{1-\gamma^{2}})
+ * \f}
+ * where  \f$\widetilde{h}_{i}\f$ is the %FFT and \f$\widetilde{R}_{i}\f$  the response function of the ith detector.
+ * In the second equation,  \f$\gamma\f$ is the overlap reduction function.
+ *
+ * Then the inverse %FFTs give the whitened time series \f$o_{1}\f$ and \f$o_{2}\f$.
+ *
+ * ### Notes ###
+ *
+ * The cosmological model considered here corresponds to a flat Einstein de Sitter Universe with \f$\Omega_{matter}=0.3\f$,
+ * \f$\Omega_{vacuum}=0.7\f$ and \f$h_{0}=0.7\f$. The code can be easily adapted to any cosmological model.
+ * The same for the cosmic star formation rate (Madau \& Porciani, 2001, ApJ, 548, 522).
+ *
+ */
 void
 LALSimPopcornTimeSeries (  LALStatus                *status,	/**< UNDOCUMENTED */
                            SimPopcornOutputStruc    *output,	/**< UNDOCUMENTED */
@@ -495,15 +495,15 @@ LALSimPopcornTimeSeries (  LALStatus                *status,	/**< UNDOCUMENTED *
 
       jref=fref*length;
 
-      Href=sqrt(Hvec[0]->data[jref].re*Hvec[0]->data[jref].re
-               +Hvec[0]->data[jref].im*Hvec[0]->data[jref].im);
+      Href=sqrt(crealf(Hvec[0]->data[jref])*crealf(Hvec[0]->data[jref])
+               +cimagf(Hvec[0]->data[jref])*cimagf(Hvec[0]->data[jref]));
       norm=(4.E-19*ho*sqrt(length)/sqrt(fref*fref*fref))/Href;
       }
 
      for (detect=0;detect<2;detect++)
        for (j=0;j<Nfreq;j++) {
-        Hvec[detect]->data[j].re= Hvec[detect]->data[j].re*norm;
-        Hvec[detect]->data[j].im= Hvec[detect]->data[j].im*norm;}
+        Hvec[detect]->data[j].realf_FIXME= crealf(Hvec[detect]->data[j])*norm;
+        Hvec[detect]->data[j].imagf_FIXME= cimagf(Hvec[detect]->data[j])*norm;}
 
      /*model the relative orientation of the detectors*/
 
@@ -523,25 +523,25 @@ LALSimPopcornTimeSeries (  LALStatus                *status,	/**< UNDOCUMENTED *
        for (j=0;j<Nfreq;j++)
         {
          mygamma=overlap.data->data[j];
-         Hvec[1]->data[j].re=(Hvec[0]->data[j].re*mygamma
-                     +sqrt(1-mygamma*mygamma)*Hvec[1]->data[j].re);
+         Hvec[1]->data[j].realf_FIXME=(crealf(Hvec[0]->data[j])*mygamma
+                     +sqrt(1-mygamma*mygamma)*crealf(Hvec[1]->data[j]));
 
-         Hvec[1]->data[j].im=(Hvec[1]->data[j].im*mygamma
-                     +sqrt(1-mygamma*mygamma)*Hvec[1]->data[j].im);
+         Hvec[1]->data[j].imagf_FIXME=(cimagf(Hvec[1]->data[j])*mygamma
+                     +sqrt(1-mygamma*mygamma)*cimagf(Hvec[1]->data[j]));
          }
         LALSDestroyVector(status->statusPtr, &(overlap.data));
       }
     else {
      for (j=0;j<Nfreq;j++)
       {
-       Hvec[1]->data[j].re=Hvec[0]->data[j].re;
-       Hvec[1]->data[j].im=Hvec[0]->data[j].im;
+       Hvec[1]->data[j].realf_FIXME=crealf(Hvec[0]->data[j]);
+       Hvec[1]->data[j].imagf_FIXME=cimagf(Hvec[0]->data[j]);
       }}
 
    /*compute the spectrum of omega*/
    for (detect=0;detect<2;detect++){
     for (j=0;j<Nfreq;j++) {
-      omegavec[detect]->data[j]=6.26E36*(Hvec[detect]->data[j].re*Hvec[detect]->data[j].re+Hvec[detect]->data[j].im*Hvec[detect]->data[j].im)*(j*deltaf)*(j*deltaf)*(j*deltaf)/(ho*ho*length);}}
+      omegavec[detect]->data[j]=6.26E36*(crealf(Hvec[detect]->data[j])*crealf(Hvec[detect]->data[j])+cimagf(Hvec[detect]->data[j])*cimagf(Hvec[detect]->data[j]))*(j*deltaf)*(j*deltaf)*(j*deltaf)/(ho*ho*length);}}
 
 
     /*whithening*/
@@ -549,10 +549,10 @@ LALSimPopcornTimeSeries (  LALStatus                *status,	/**< UNDOCUMENTED *
     {
       resp0 = input->wfilter0->data->data[j];
       resp1 = input->wfilter1->data->data[j];
-      Hvec[0]->data[j].re=Hvec[0]->data[j].re*resp0.re;
-      Hvec[0]->data[j].im=Hvec[0]->data[j].im*resp0.im;
-      Hvec[1]->data[j].re=Hvec[1]->data[j].re*resp1.re;
-      Hvec[1]->data[j].im=Hvec[1]->data[j].im*resp1.im;
+      Hvec[0]->data[j].realf_FIXME=crealf(Hvec[0]->data[j])*crealf(resp0);
+      Hvec[0]->data[j].imagf_FIXME=cimagf(Hvec[0]->data[j])*cimagf(resp0);
+      Hvec[1]->data[j].realf_FIXME=crealf(Hvec[1]->data[j])*crealf(resp1);
+      Hvec[1]->data[j].imagf_FIXME=cimagf(Hvec[1]->data[j])*cimagf(resp1);
     }
 
     /* Inverse Fourier transform */

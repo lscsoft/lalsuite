@@ -28,46 +28,47 @@
 #include <lal/StreamOutput.h>
 
 /**
-   \author Creighton, T. D.
-   \file
-   \ingroup BandPassTimeSeries_h
-
-   \brief Tests time-domain high- and low-pass filters.
-
-\heading{Usage}
-\code
-BandPassTest [-d debuglevel] [-i infile | -n npts dt offset] [-o outfile]
-             [-f f1 f2 a1 a2 order]
-\endcode
-
-\heading{Description}
-
-This program applies a Butterworth time-domain low-pass or high-pass
-filter to a time series, using the routine
-<tt>LALDButterworthREAL4TimeSeries()</tt>.  The following option flags
-are accepted:
-<ul>
-<li>[<tt>-d</tt>] Changes the default debug level from 0 to
-\c debuglevel.</li>
-<li>[<tt>-i</tt>] Reads the input time series from \c infile
-using the routine LALSReadTSeries(); see \ref StreamInput_h
-for a description of the file format.</li>
-<li>[<tt>-n</tt>] Generates an input time series of length
-\c npts and sampling interval \c dt, containing just an
-impulse at sample index \c offset.  If the <tt>-i</tt> option is
-also given, it overrides this option.  If neither are given,
-<tt>-n 4096 1.0 1024</tt> is assumed.</li>
-<li>[<tt>-o</tt>] Writes the output time series to \c outfile,
-using the routine LALSWriteTSeries(); see StreamOutput_h
-for a description of the file format.  If not specified, the routines
-are exercised, but no output is written.</li>
-<li>[<tt>-f</tt>] Sets the filter to have attenuation \c a1 and
-\c a2 at frequencies \c f1 and \c f2, with a maximum
-filter order of \c order; see \ref ButterworthTimeSeries_c for a
-description of how these values are interpreted.  If not specified,
-<tt>-f 0.01 0.015 0.9 0.1 20</tt> is assumed.</li>
-</ul>
-*/
+ * \author Creighton, T. D.
+ * \file
+ * \ingroup BandPassTimeSeries_h
+ *
+ * \brief Tests time-domain high- and low-pass filters.
+ *
+ * ### Usage ###
+ *
+ * \code
+ * BandPassTest [-d debuglevel] [-i infile | -n npts dt offset] [-o outfile]
+ * [-f f1 f2 a1 a2 order]
+ * \endcode
+ *
+ * ### Description ###
+ *
+ * This program applies a Butterworth time-domain low-pass or high-pass
+ * filter to a time series, using the routine
+ * <tt>LALDButterworthREAL4TimeSeries()</tt>.  The following option flags
+ * are accepted:
+ * <ul>
+ * <li>[<tt>-d</tt>] Changes the default debug level from 0 to
+ * \c debuglevel.</li>
+ * <li>[<tt>-i</tt>] Reads the input time series from \c infile
+ * using the routine LALSReadTSeries(); see \ref StreamInput_h
+ * for a description of the file format.</li>
+ * <li>[<tt>-n</tt>] Generates an input time series of length
+ * \c npts and sampling interval \c dt, containing just an
+ * impulse at sample index \c offset.  If the <tt>-i</tt> option is
+ * also given, it overrides this option.  If neither are given,
+ * <tt>-n 4096 1.0 1024</tt> is assumed.</li>
+ * <li>[<tt>-o</tt>] Writes the output time series to \c outfile,
+ * using the routine LALSWriteTSeries(); see StreamOutput_h
+ * for a description of the file format.  If not specified, the routines
+ * are exercised, but no output is written.</li>
+ * <li>[<tt>-f</tt>] Sets the filter to have attenuation \c a1 and
+ * \c a2 at frequencies \c f1 and \c f2, with a maximum
+ * filter order of \c order; see \ref ButterworthTimeSeries_c for a
+ * description of how these values are interpreted.  If not specified,
+ * <tt>-f 0.01 0.015 0.9 0.1 20</tt> is assumed.</li>
+ * </ul>
+ */
 
 /** \name Error Codes */
 /*@{*/
@@ -86,7 +87,6 @@ description of how these values are interpreted.  If not specified,
 #define BANDPASSTESTC_MSGEFILE "Could not open file"
 
 /* Default parameters. */
-INT4 lalDebugLevel=0;
 #define NPTS 4096   /* Length of time series. */
 #define DT 1.0      /* Sampling interval of time series. */
 #define OFFSET 1024 /* Offset of the impulse from the start. */
@@ -161,7 +161,6 @@ main(int argc, char **argv)
     if ( !strcmp( argv[arg], "-d" ) ) {
       if ( argc > arg + 1 ) {
         arg++;
-        lalDebugLevel = atoi( argv[arg++] );
       } else {
 	ERROR( BANDPASSTESTC_EARG, BANDPASSTESTC_MSGEARG, 0 );
         LALPrintError( USAGE, *argv );

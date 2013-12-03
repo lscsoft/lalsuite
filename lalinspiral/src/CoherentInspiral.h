@@ -45,18 +45,20 @@ extern "C" {
 } /* so that editors will match preceding brace */
 #endif
 
-/** \defgroup CoherentInspiral_h Header CoherentInspiral.h
+/**
+ * \defgroup CoherentInspiral_h Header CoherentInspiral.h
  * \ingroup pkg_CBC_NEW
  * \author Bose, S., Seader, S. E.
  *
  * \brief Provides core prototypes, structures and functions to filter
  * data from multiple interferometers coherently for binary inspiral chirps.
  *
- * \heading{Coherent search statistic for binary neutron stars}
+ * ### Coherent search statistic for binary neutron stars ###
  *
  * The coherent statistic will be defined here.
  *
- * \heading{Synopsis}
+ * ### Synopsis ###
+ *
  * \code
  * #include <lal/CoherentInspiral.h>
  * \endcode
@@ -139,7 +141,8 @@ tagCoherentInspiralBeamVector
 CoherentInspiralBeamVector;
 
 
-/** This structure provides the parameters used by the CoherentInspiralFilter() function.
+/**
+ * This structure provides the parameters used by the CoherentInspiralFilter() function.
  */
 typedef struct
 tagCoherentInspiralFilterParams
@@ -188,7 +191,8 @@ CoherentInspiralFilterParams;
 
 /* --- input to the CoherentInspiral filtering functions --------- */
 
-/** This structure groups the \f$c = x+iy\f$ outputs of \f$M\f$ detectors
+/**
+ * This structure groups the \f$c = x+iy\f$ outputs of \f$M\f$ detectors
  * into an ordered set. The FindChirpFilter code, when separately run on the
  * data from multiple detectors, outputs a \c COMPLEX8TimeSeries, \f$c\f$, for
  * each detector. If a coherent search is to be performed on the data from
@@ -210,7 +214,8 @@ tagCoherentInspiralCVector
 }
 CoherentInspiralCVector;
 
-/** This structure provides the essential information for
+/**
+ * This structure provides the essential information for
  * computing the coherent SNR from the \f$c\f$ outputs of multiple detectors.
  * In addition to this, the code requires the beam-pattern coefficients
  * for the different detectors. These coefficients are currently

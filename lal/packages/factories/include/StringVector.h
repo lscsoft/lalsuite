@@ -36,9 +36,10 @@ extern "C" {
  * \addtogroup StringVector_h
  *
  * \brief Creation/destruction/manipulation API for ::LALStringVector objects,
- *  which are just LAL-type vectors of CHAR * pointers.
+ * which are just LAL-type vectors of CHAR * pointers.
  *
- * \heading{Synopsis}
+ * ### Synopsis ###
+ *
  * \code
  * #include <lal/StringVector.h>
  * \endcode
@@ -64,6 +65,8 @@ void XLALDestroyStringVector ( LALStringVector *vect );
 int XLALSortStringVector (LALStringVector *strings);
 LALStringVector *XLALParseCSV2StringVector ( const CHAR *CSVlist );
 INT4 XLALFindStringInVector ( const char *needle, const LALStringVector *haystack );
+
+char *XLALDeblankString ( const char *start, UINT4 len );
 
 /*@}*/
 

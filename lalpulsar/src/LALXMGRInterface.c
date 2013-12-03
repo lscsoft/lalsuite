@@ -28,17 +28,15 @@
  */
 
 /**
-\author Brady, P. R., Brown, D. A., and Owen, B. J.
-\file
-\ingroup pulsarTODO
-
-\heading{Module \ref LALXMGRInterface.c}
-\latexonly\label{ss_LALXMGRInterface_c}\endlatexonly
-
-Functions for creating XMGR graphs from LAL structures and functions.
-
-
-*/
+ * \author Brady, P. R., Brown, D. A., and Owen, B. J.
+ * \file
+ * \ingroup pulsarTODO
+ *
+ * ### Module LALXMGRInterface.c ###
+ *
+ * Functions for creating XMGR graphs from LAL structures and functions.
+ *
+ */
 
 #include <math.h>
 #include <time.h>

@@ -301,21 +301,22 @@ REAL8 XLALRingdownTimeError( const SnglRingdownTable *table,  REAL8 lal_ring_ds_
   return ( sqrt( lal_ring_ds_sq / gtt ) );
 }
 
-/** This routine computes the ringdown waveform
+/**
+ * This routine computes the ringdown waveform
  * \f{equation}{
- *   r(t) = \left\{
- *   \begin{array}{ll}
- *     e^{-\pi ft/Q}\cos(2\pi ft) & \mbox{for} t\ge0 \\
- *     0 & \mbox{for} t<0
- *   \end{array}
- *   \right.
+ * r(t) = \left\{
+ * \begin{array}{ll}
+ * e^{-\pi ft/Q}\cos(2\pi ft) & \mbox{for} t\ge0 \\
+ * 0 & \mbox{for} t<0
+ * \end{array}
+ * \right.
  * \f}
  * where the parameters \f$f\f$ and \f$Q\f$ are specified in the input structure.
  * The output must have an appropriate amount of memory allocated, and must
- * have the desired temporal spacing set.  Note: Ref.\ [\ref JDECreighton99]
+ * have the desired temporal spacing set.  Note: Ref.\ \cite JDECreighton99
  * used a different convention for the ringdown normlization: there the
  * ringdown waveform was taken to be \f$q(t)=(2\pi)^{1/2}r(t)\f$.
-*/
+ */
 int XLALComputeRingTemplate( REAL4TimeSeries *output, SnglRingdownTable *input )
 
 {
@@ -365,7 +366,8 @@ int XLALComputeRingTemplate( REAL4TimeSeries *output, SnglRingdownTable *input )
   return 0;
 }
 
-/** This routine computes a waveform for a
+/**
+ * This routine computes a waveform for a
  * black hole with the specified physical parameters (in the input structure).
  * The parameters are the black hole mass \f$M\f$ (in solar masses \f$M_\odot\f$), the
  * spin \f$S={\hat{a}}GM^2/c\f$ expressed in terms of the dimensionless mass
@@ -373,27 +375,27 @@ int XLALComputeRingTemplate( REAL4TimeSeries *output, SnglRingdownTable *input )
  * radiation expressed as a percent, and the distance to the typical source
  * (angle-averaged waveform) \f$r\f$ given in megaparsecs (Mpc).  The central
  * frequency and quality of the ringdown are approximated
- * as\ [\ref EWLeaver85,\ref EBertiEtAl06]:
+ * as\ \cite EWLeaver85,\cite EBertiEtAl06:
  * \f{equation}{
- *   f \simeq 32\,\textrm{kHz}\times[f_1+f_2(1-{\hat{a}})^{f_3}](M_\odot/M)
+ * f \simeq 32\,\textrm{kHz}\times[f_1+f_2(1-{\hat{a}})^{f_3}](M_\odot/M)
  * \f}
  * and
  * \f{equation}{
- *   Q \simeq q_1+q_2(1-{\hat{a}})^{q_3},
+ * Q \simeq q_1+q_2(1-{\hat{a}})^{q_3},
  * \f}
  * where the values of the constants (f_1,f_2,f_3) and (q_1,q_2,q_3) are
- * given for each of (l,m,n) in\ [\ref EBertiEtAl06].
+ * given for each of (l,m,n) in\ \cite EBertiEtAl06.
  * The strain waveform produced is \f$h(t)=A_q q(t)\f$ where the amplitude factor
- * is\ [\ref JDECreighton99]
+ * is\ \cite JDECreighton99
  * \f{equation}{
- *   A_q = 2.415\times10^{-21}Q^{-1/2}[1-0.63(1-{\hat{a}})^{3/10}]^{-1/2}
- *   \left(\frac{\textrm{Mpc}}{r}\right)
- *   \left(\frac{M}{M_\odot}\right)
- *   \left(\frac{\epsilon}{0.01}\right)^{1/2}.
+ * A_q = 2.415\times10^{-21}Q^{-1/2}[1-0.63(1-{\hat{a}})^{3/10}]^{-1/2}
+ * \left(\frac{\textrm{Mpc}}{r}\right)
+ * \left(\frac{M}{M_\odot}\right)
+ * \left(\frac{\epsilon}{0.01}\right)^{1/2}.
  * \f}
  * Note that this is written \f$A_q\f$ to emphasize that it is the amplitude
  * factor for \f$q(t)\f$ rather than \f$r(t)\f$.
-*/
+ */
 int XLALComputeBlackHoleRing(
     REAL4TimeSeries     *output,
     SnglRingdownTable   *input,
@@ -449,7 +451,8 @@ static int MakeBank( SnglRingdownTable *tmplt, RingTemplateBankInput *input )
   return count;
 }
 
-/** This routine creates a bank of ringdown
+/**
+ * This routine creates a bank of ringdown
  * templates that cover a set range in the parameters \f$f\f$ and \f$Q\f$.
  */
 RingTemplateBank *XLALCreateRingTemplateBank( RingTemplateBankInput *input )

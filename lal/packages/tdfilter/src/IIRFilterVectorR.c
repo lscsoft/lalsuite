@@ -22,37 +22,37 @@
 
 
 /**
-   \addtogroup IIRFilterVectorR_c
-   \author Creighton, T. D.
-
-   \brief Applies a time-reversed IIR filter to a data stream.
-
-\heading{Description}
-
-These functions apply a generic time-domain filter <tt>*filter</tt> to a
-time series <tt>*vector</tt>, as with the routines
-<tt>LALIIRFilterREAL4Vector()</tt>, <tt>LALIIRFilterREAL8Vector()</tt>,
-and <tt>LALDIIRFilterREAL4Vector()</tt>, but do so in a time-reversed
-manner.  By successively applying normal and time-reversed IIR filters
-to the same data, one squares the magnitude of the frequency response
-while canceling the phase shift.  This can be significant when one
-wishes to preserve phase correlations across wide frequency bands.
-
-\heading{Algorithm}
-
-Because these filter routines are inherently acausal, the
-<tt>filter-\>history</tt> vector is meaningless and unnecessary.  These
-routines neither use nor modify this data array.  They effectively
-treat the &quot;future&quot; as zero.
-
-(An alternative implementation would be to assume that the filter
-&quot;history&quot; invoked by these routines, stores the \e future
-values of the auxiliary sequence.  This would allow a large vector to
-be broken into chunks and time-reverse filtered, yielding the same
-result as if the whole vector had been time-reverse filtered.  I can
-switch to this implementation if there is any demand for it.)
-
-*/
+ * \addtogroup IIRFilterVectorR_c
+ * \author Creighton, T. D.
+ *
+ * \brief Applies a time-reversed IIR filter to a data stream.
+ *
+ * ### Description ###
+ *
+ * These functions apply a generic time-domain filter <tt>*filter</tt> to a
+ * time series <tt>*vector</tt>, as with the routines
+ * <tt>LALIIRFilterREAL4Vector()</tt>, <tt>LALIIRFilterREAL8Vector()</tt>,
+ * and <tt>LALDIIRFilterREAL4Vector()</tt>, but do so in a time-reversed
+ * manner.  By successively applying normal and time-reversed IIR filters
+ * to the same data, one squares the magnitude of the frequency response
+ * while canceling the phase shift.  This can be significant when one
+ * wishes to preserve phase correlations across wide frequency bands.
+ *
+ * ### Algorithm ###
+ *
+ * Because these filter routines are inherently acausal, the
+ * <tt>filter-\>history</tt> vector is meaningless and unnecessary.  These
+ * routines neither use nor modify this data array.  They effectively
+ * treat the &quot;future&quot; as zero.
+ *
+ * (An alternative implementation would be to assume that the filter
+ * &quot;history&quot; invoked by these routines, stores the \e future
+ * values of the auxiliary sequence.  This would allow a large vector to
+ * be broken into chunks and time-reverse filtered, yielding the same
+ * result as if the whole vector had been time-reverse filtered.  I can
+ * switch to this implementation if there is any demand for it.)
+ *
+ */
 /*@{*/
 
 /** \see See \ref IIRFilterVectorR_c for documentation */
@@ -176,7 +176,8 @@ int XLALIIRFilterReverseREAL8Vector( REAL8Vector *vector, REAL8IIRFilter *filter
   return 0;
 }
 
-/** WARNING: THIS FUNCTION IS OBSOLETE.
+/**
+ * WARNING: THIS FUNCTION IS OBSOLETE.
  * \deprecated
  */
 void
@@ -246,7 +247,8 @@ LALIIRFilterREAL4VectorR( LALStatus      *stat,
   RETURN(stat);
 }
 
-/** WARNING: THIS FUNCTION IS OBSOLETE.
+/**
+ * WARNING: THIS FUNCTION IS OBSOLETE.
  * \deprecated
  */
 void
@@ -277,7 +279,8 @@ LALIIRFilterREAL8VectorR( LALStatus      *stat,
   RETURN(stat);
 }
 
-/** WARNING: THIS FUNCTION IS OBSOLETE.
+/**
+ * WARNING: THIS FUNCTION IS OBSOLETE.
  * \deprecated
  */
 void

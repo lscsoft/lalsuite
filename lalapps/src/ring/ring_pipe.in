@@ -1,4 +1,4 @@
-#!/usr/bin/env @PYTHONPROG@
+#!@PYTHONPROG@
 """
 ring_pipe.py - standalone ring pipeline driver script
 

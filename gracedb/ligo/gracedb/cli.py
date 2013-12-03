@@ -16,15 +16,17 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-import httplib, mimetypes, urllib
-import socket
-import os, sys, shutil
+import os, sys, shutil, urllib
 import json
+from ligo.gracedb.rest import GraceDb
 
-DEFAULT_SERVICE_URL = "https://gracedb.ligo.org/gracedb/cli"
 
-GIT_TAG = 'gracedb-1.11-1'
+DEFAULT_SERVICE_URL = "https://gracedb.ligo.org/gracedb/api"
 
+GIT_TAG = 'gracedb-1.13-1'
+
+DEFAULT_COLUMNS = "graceid,labels,group,analysisType,far,gpstime,created,dataurl"
+ 
 #-----------------------------------------------------------------
 # Util routines
 
@@ -40,73 +42,24 @@ def output(*message):
     message = "".join(message) + "\n"
     sys.stdout.write(message)
 
-#-----------------------------------------------------------------
-# HTTP/S Proxy classses
-# Taken from: http://code.activestate.com/recipes/456195/
-
-class ProxyHTTPConnection(httplib.HTTPConnection):
-
-    _ports = {'http' : 80, 'https' : 443}
-
-    def request(self, method, url, body=None, headers={}):
-        #request is called before connect, so can interpret url and get
-        #real host/port to be used to make CONNECT request to proxy
-        proto, rest = urllib.splittype(url)
-        if proto is None:
-            raise ValueError, "unknown URL type: %s" % url
-        #get host
-        host, rest = urllib.splithost(rest)
-        #try to get port
-        host, port = urllib.splitport(host)
-        #if port is not defined try to get from proto
-        if port is None:
-            try:
-                port = self._ports[proto]
-            except KeyError:
-                raise ValueError, "unknown protocol for: %s" % url
-        self._real_host = host
-        self._real_port = port
-        httplib.HTTPConnection.request(self, method, url, body, headers)
-        
-
-    def connect(self):
-        httplib.HTTPConnection.connect(self)
-        #send proxy CONNECT request
-        self.send("CONNECT %s:%d HTTP/1.0\r\n\r\n" % (self._real_host, self._real_port))
-        #expect a HTTP/1.0 200 Connection established
-        response = self.response_class(self.sock, strict=self.strict, method=self._method)
-        (version, code, message) = response._read_status()
-        #probably here we can handle auth requests...
-        if code != 200:
-            #proxy returned and error, abort connection, and raise exception
-            self.close()
-            raise socket.error, "Proxy connection failed: %d %s" % (code, message.strip())
-        #eat up header block from proxy....
-        while True:
-            #should not use directly fp probablu
-            line = response.fp.readline()
-            if line == '\r\n': break
-
-
-class ProxyHTTPSConnection(ProxyHTTPConnection):
-    
-    default_port = 443
-
-    def __init__(self, host, port = None, key_file = None, cert_file = None, strict = None):
-        ProxyHTTPConnection.__init__(self, host, port)
-        self.key_file = key_file
-        self.cert_file = cert_file
-    
-    def connect(self):
-        ProxyHTTPConnection.connect(self)
-        #make the sock ssl-aware
-        ssl = socket.ssl(self.sock, self.key_file, self.cert_file)
-        self.sock = httplib.FakeSocket(self.sock, ssl)
+def defaultAccess(e,a):
+    if a.find('.') < 0:
+        return str(e.get(a,""))
+    rv = e
+    attrs = a.split('.')
+    while attrs and rv:
+        rv = rv.get(attrs[0],"")
+        attrs = attrs[1:]
+    return str(rv)
 
 #-----------------------------------------------------------------
 # HTTP upload encoding
 # Taken from http://code.activestate.com/recipes/146306/
 
+# NB:  We are not checking against this list anymore.  Instead, we will
+# get the list of groups and types from the API Root.  However, this is
+# left in so that the docstring will still work even without a connection
+# to the API.
 typeCodeMap = {
         "LowMass" : "LM",
         "HighMass" : "HM",
@@ -121,300 +74,21 @@ typeCodeMap = {
 }
 validTypes = typeCodeMap.keys()
 
-def post_multipart(h, selector, fields, files):
-    """
-    Post fields and files to an http host as multipart/form-data.
-    fields is a sequence of (name, value) elements for regular form fields.
-    files is a sequence of (name, filename, value) elements for data to be uploaded as files
-    Return the server's response page.
-    """
-    content_type, body = encode_multipart_formdata(fields, files)
-    #h = httplib.HTTP(host)
-    h.putrequest('POST', selector)
-    h.putheader('content-type', content_type)
-    h.putheader('content-length', str(len(body)))
-    h.endheaders()
-    h.send(body)
-    errcode, errmsg, headers = h.getreply()
-    return h.file.read()
-
-def encode_multipart_formdata(fields, files):
-    """
-    fields is a sequence of (name, value) elements for regular form fields.
-    files is a sequence of (name, filename, value) elements for data to be uploaded as files
-    Return (content_type, body) ready for httplib.HTTP instance
-    """
-    BOUNDARY = '----------ThIs_Is_tHe_bouNdaRY_$'
-    CRLF = '\r\n'
-    L = []
-    for (key, value) in fields:
-        L.append('--' + BOUNDARY)
-        L.append('Content-Disposition: form-data; name="%s"' % key)
-        L.append('')
-        # str(value) in case it is unicode
-        L.append(str(value))
-    for (key, filename, value) in files:
-        L.append('--' + BOUNDARY)
-        # str(filename) in case it is unicode
-        L.append('Content-Disposition: form-data; name="%s"; filename="%s"' % (key, str(filename)))
-        L.append('Content-Type: %s' % get_content_type(filename))
-        L.append('')
-        L.append(value)
-    L.append('--' + BOUNDARY + '--')
-    L.append('')
-    body = CRLF.join(L)
-    content_type = 'multipart/form-data; boundary=%s' % BOUNDARY
-    return content_type, body
-
-def get_content_type(filename):
-    return mimetypes.guess_type(filename)[0] or 'application/octet-stream'
-
-#-----------------------------------------------------------------
-# X509 Credentials
-
-def checkProxy(fname):
-    """Check to see if this is a pre-RFC proxy.
-       Not sure if this is valid in all cases, but it works at
-       least sometimes and is better than giving the user a
-       "broken pipe" error message.
-
-       Do one of three things:
-
-         (1) If a check cannot be done because the M2Crypto lib is not
-             available, say so.
-
-         (2) If it is a RFC 3820 compliant proxy, say and do nothing.
-
-         (3) Otherwise issue a warning.
-       """
-    try:
-        import M2Crypto
-        cert = M2Crypto.X509.load_cert(fname)
-        try:
-            cert.get_ext('proxyCertInfo')
-        except LookupError:
-            # Really, there shouldn't be an undefined extension.
-            warning("Warning: You seem to be using a pre-RFC proxy.\n"
-                    "Try doing grid-proxy-init -rfc")
-    except ImportError:
-        warning("Warning: Cannot load M2Crypto.  Not able to check proxy\n"
-                "   If you are getting errors, perhaps you are not using\n"
-                '   an RFC compliant proxy.  Did you do "grid-proxy-init -rfc"?\n'
-                "To enable proxy checking, install m2crypto (CentOS, RedHat),\n"
-                "python-m2crypto (Debian) or py25-m2crypto (MacPorts)")
-
-def findUserCredentials(warnOnOldProxy=1):
-
-    proxyFile = os.environ.get('X509_USER_PROXY')
-    certFile = os.environ.get('X509_USER_CERT')
-    keyFile = os.environ.get('X509_USER_KEY')
-
-    if certFile and keyFile:
-        return certFile, keyFile
-
-    if proxyFile:
-        if warnOnOldProxy:
-            checkProxy(proxyFile)
-        return proxyFile, proxyFile
-
-    # Try default proxy
-    proxyFile = os.path.join('/tmp', "x509up_u%d" % os.getuid())
-    if os.path.exists(proxyFile):
-        if warnOnOldProxy:
-            checkProxy(proxyFile)
-        return proxyFile, proxyFile
-
-    # Try default cert/key
-    homeDir = os.environ.get('HOME')
-    certFile = os.path.join(homeDir, '.globus', 'usercert.pem')
-    keyFile = os.path.join(homeDir, '.globus', 'userkey.pem')
-
-    if os.path.exists(certFile) and os.path.exists(keyFile):
-        return certFile, keyFile
 
 #-----------------------------------------------------------------
 # Web Service Client
 
-class Client:
+class Client(GraceDb):
     def __init__(self,
-            url=DEFAULT_SERVICE_URL,
+            url=DEFAULT_SERVICE_URL, 
             proxy_host=None, proxy_port=3128,
-            credentials=None):
-        if credentials is None:
-            credentials = findUserCredentials(warnOnOldProxy=0)
-            if not credentials:
-                raise Exception("No credentials found")
-        cert, key = credentials
-        if proxy_host:
-            self.connector = lambda: ProxyHTTPSConnection(
-                    proxy_host, proxy_port, key_file=key, cert_file=cert)
-        else:
-            proto, rest = urllib.splittype(url)
-            if proto is None:
-                raise ValueError, "unknown URL type: %s" % url
-            #get host
-            host, rest = urllib.splithost(rest)
-            #try to get port
-            host, port = urllib.splitport(host)
-            port = port or 443
-            self.connector = lambda: httplib.HTTPSConnection(
-                    host, port, key_file=key, cert_file=cert)
-        self.url = url
-        # XXX sad sad hack for transition from our somewhat ad hoc to rest api.
-        if url.endswith('cli') or url.endswith('cli/'):
-            self.rest_url = url[:url.rindex('cli')]+"api"
-        else:
-            self.rest_url = url
-
-    def _connect(self):
-        self._conn = self.connector()
-
-    def _send(self, method, httpmethod="POST", **kw):
-        try:
-            kw['cli'] = 'true'
-            kw['cli_version'] = "1"
-            kw = urllib.urlencode(kw)
-            headers = {'connection' : 'keep-alive'}
-            url = "%s/%s" % (self.url, method)
-            self._connect()
-            self._conn.request(httpmethod, url, kw, headers)
-            response = self._conn.getresponse()
-            rv = response.read()
-        except Exception, e:
-            return { 'error':  "client send exception: " + str(e) }
-
-        # XXX ridiculous hack to deal with downloaded ligolw search results.
-        if response.getheader('content-type') == 'application/xml':
-            return rv
-
-        try:
-            # XXX Bad!  Should be JSON conversion
-            return eval(rv)
-        except Exception, e:
-            if "Authorization Required" in rv:
-                return { 'error': 'Credentials not accepted' }
-            return {'error': "while parsing:%s\nclient send exception: %s" % (rv, str(e))}
-
-    def _is_absolute_url(self, url):
-        _, junk = urllib.splittype(url)
-        host, _ = urllib.splithost(junk)
-        return host is not None
-
-    def rest(self, resource, method="GET", **kw):
-        headers = kw.pop('headers', {})
-        headers['connection'] = 'keep-alive'
-#       If absolute URL, use, otherwise pre-append the REST service URL.
-        if self._is_absolute_url(resource):
-            url = resource
-        else:
-            url = "%s%s" % (self.rest_url, resource)
-        kw = urllib.urlencode(kw)
-        self._connect()
-        self._conn.request(method, url, kw, headers)
-        return self._conn.getresponse()
-
-    def _upload(self, method, fields, files,
-            alert=False, http_method="POST", rawresponse=False):
-        # Do an tiny GET request to get SSL primed.
-        # Large initial SSL/POST requests will choke the server.
-        #r = self._send('ping', 'GET', ack='priming')
-        r = self._send('ping', ack='priming')
-        if 'error' in r and r['error']:
-            return r
-        try:
-            fields += [('cli', 'true')]
-            fields += [('cli_version', "1")]
-            fields += [('alert', str(alert))]
-            content_type, body = encode_multipart_formdata(fields, files)
-            headers = {
-                'content-type': content_type,
-                'content-length': str(len(body)),
-                'connection': 'keep-alive',
-            }
-            if self._is_absolute_url(method):
-                url = method
-            else:
-                url = "%s/%s" % (self.url, method)
-            self._conn.request(http_method, url, body, headers)
-            response = self._conn.getresponse()
-            if rawresponse:
-                return response
-            rv = response.read()
-        except Exception, e:
-            return { "error" : "client upload exception: " + str(e) }
-        # XXX should be JSON conversion
-        try:
-            return eval(rv)
-        except Exception, e:
-            return {'error': "while parsing:%s\nclient upload exception: %s" % (rv, str(e))}
-
-    def ping(self, msg=""):
-        return self._send('ping', ack=msg)
-
-    def search(self, query, columns=None, ligolw=False):
-        terms = { "query" : query }
-        if columns:
-            terms['columns'] = columns
-        if ligolw:
-            terms['ligolw'] = 1
-        return self._send('search', **terms)
-
-    def log(self, graceid, message, alert=False):
-        return self._send('log', graceid=graceid, message=message, alert=alert)
-
-    def tag(self, graceid, tag):
-        return self._send('tag', graceid=graceid, tag=tag)
-
-    def label(self, graceid, label, alert=False):
-        return self._send('label', graceid=graceid, label=label, alert=alert)
-
-    def create(self, group, analysis_type, filename, filecontents=None):
-        if analysis_type in typeCodeMap:
-            analysis_type = typeCodeMap[analysis_type]
-        if filecontents is None:
-            if filename == '-':
-                filename = 'initial.data'
-                filecontents = sys.stdin.read()
-            else:
-                filecontents = open(filename, 'r').read()
-        fields = [
-                  ('group', group),
-                  ('type', analysis_type),
-                 ]
-        files = [('eventFile', filename, filecontents)]
-        return self._upload('create', fields, files)
-
-    def replace(self, graceid, filename, filecontents=None):
-        from ligo.gracedb.rest import GraceDb
-        url = self.rest_url
-        if url[-1] != '/':
+            credentials=None,
+            *args, **kwargs):
+        if (url[-1] != '/'):
             url += '/'
-        server = GraceDb(url)
-        response = server.replaceEvent(graceid, filename, filecontents)
-        if response.status == 202:  # Accepted
-            return "%s updated" % graceid
-        else:
-            return {'error': "Bad response %s / %s\n%s" %
-                    (response.status, response.reason, response.read())}
-
-    def upload(self, graceid, filename, filecontents=None, comment="", alert=False):
-        if filecontents is None:
-            if filename == '-':
-                filename = 'stdin'
-                filecontents = sys.stdin.read()
-            else:
-                filecontents = open(filename, 'r').read()
-        fields = [
-            ('graceid', graceid),
-            ('comment', comment),
-            ('filename', filename)
-        ]
-        files = [ ('upload', filename, filecontents) ]
-        return self._upload('upload', fields, files, alert)
-
-    def listfiles(self, graceid):
-        response = self.rest('/event/%s/files/' % graceid)
-        return response
+        self.url = url
+        super(Client, self).__init__(url, proxy_host, proxy_port, 
+                                        credentials, *args, **kwargs)
 
     def download(self, graceid, filename, destfile):
         # Check that we *could* write the file before we
@@ -423,7 +97,7 @@ class Client:
         if not isinstance(destfile, file) and destfile != "-":
             if not os.access(os.path.dirname(os.path.abspath(destfile)), os.W_OK):
                 raise IOError("%s: Permission denied" % destfile)
-        response = self.rest('/event/%s/files/%s' % (graceid, filename))
+        response = self.files(graceid, filename)
         if response.status == 200:
             if not isinstance(destfile, file):
                 if destfile == '-':
@@ -434,6 +108,12 @@ class Client:
             return 0
         else:
             return "Error. (%d) %s" % (response.status, response.reason)
+
+    # Hamstring 'adjustResponse' from the example REST client.
+    # We don't want it messing with the response from the server.
+    def adjustResponse(self, response):
+        response.json = lambda: json.loads(response.read())
+        return response
 
 #-----------------------------------------------------------------
 # Main 
@@ -453,11 +133,12 @@ def main():
 %%prog [options] ping
    Test server connection
 
-%%prog [options] upload GRACEID FILE [COMMENT]
+%%prog [options] upload GRACEID FILE [COMMENT] 
    where GRACEID is the id of an existing candidate event in GraCEDb
-         FILE    is the name of the file to upload. '-' indicates stdin.
-         COMMENT is an optional annotation to enter into the log
-   Upload FILE to the private data area for a candidate event
+         FILE      is the name of the file to upload. '-' indicates stdin.
+         COMMENT   is an optional annotation to enter into the log
+   Upload FILE to the private data area for a candidate event. To apply 
+   a tag, use the --tag-name option (and --tag-display-name if desired.)
 
 %%prog [options] download GRACEID FILE [DESTINATION]
    where GRACEID      is the id of an existing candidate event in GraCEDb
@@ -469,13 +150,24 @@ def main():
 %%prog [options] log GRACEID COMMENT
    where GRACEID  is the id of an existing candidate event in GraCEDb
          COMMENT  is text that will be entered into the event's log
-   Enter a comment into the log for a candidate event
+   Enter a comment into the log for a candidate event.  To apply a tag,
+   use the --tag-name option (and --tag-display-name if desired).
 
 %%prog [options] label GRACEID LABEL
     Label event with GRACEDID with LABEL.  LABEL must already exist.
 
-%%prog [options] slot GRACEID slotname [filename]
-    Tag an uploaded file with a name or view value of slotname.
+%%prog [options] tag GRACEID LOG_N TAG_NAME [DISP_NAME]
+   where GRACEID   is the id of an existing candidate event in GraCEDb
+         LOG_N     is the number of the log message.
+         TAG_NAME  is the name of the tag
+         DISP_NAME is the tag display name (ignored for existing tags)
+    Tag an existing log message. Alternatively, the tag name and 
+    display name can be passed in with the --tag-name and 
+    --tag-display-name options.
+
+%%prog [options] delete_tag GRACEID LOG_N TAG_NAME
+    Remove a tag from a log message. Alternatively, the tag name 
+    can be passed in with the --tag-name option.
 
 %%prog [options] search SEARCH PARAMS
     Search paramaters are a list of requirements to be satisfied.  They
@@ -498,7 +190,7 @@ Credentials are looked for in this order:
 
 Note that comments can only be 200 characters long.
 Longer strings will be truncated.""" % {
-        'groups' : 'CBC, Burst, Stochastic, CW',
+        'groups' : 'CBC, Burst, Stochastic, Coherent, Test, External',
         'types'  : ", ".join(validTypes),
     }
 
@@ -512,26 +204,49 @@ Longer strings will be truncated.""" % {
                   help="If data is read from stdin, use this as the filename.", metavar="NAME")
 
     op.add_option("-a", "--alert", dest="alert",
-                  help="Send an LV alert (not meaningful for search, implied for create)",
-                  action="store_true", default=False
+                  help="Send an LV alert (deprecated; alerts sent by default)",
+                  action="store_true", default=None
                  )
 
     op.add_option("-c", "--columns", dest="columns",
                   help="Comma separated list of event attributes to include in results (only meaningful in search)",
-                  default=None
+                  default=DEFAULT_COLUMNS
                  )
 
     op.add_option("-l", "--ligolw", dest="ligolw",
                   help="Download ligolw file of combined search results (not meaningful outside of search)",
                   action="store_true", default=False
                  )
+    op.add_option("-t", "--tag-name", dest="tagName",
+                  help="tag name in database (only used for log, upload, tag, and delete_tag)",
+                  default=None
+                 )
+    op.add_option("-d", "--tag-display-name", dest="tagDispName",
+                  help="tag display name (ignored for existing tags)",
+                  default=None
+                 )
 
     options, args = op.parse_args()
+
+    try:
+        from glue.ligolw import ligolw
+        from glue.ligolw import lsctables
+        from glue.ligolw import utils
+        from glue.ligolw.utils import ligolw_add
+    except:
+        if options.ligolw:
+            error("ligolw modules not found")
+            exit(1)
+        else:
+            pass
 
     proxy = options.proxy or os.environ.get('HTTP_PROXY', None)
     service = options.service or \
               os.environ.get('GRACEDB_SERVICE_URL', None) or \
               DEFAULT_SERVICE_URL
+
+    if options.alert is not None:
+        warning("alert option is deprecated.  Alerts are now sent by default.")
 
     proxyport = None
     if proxy and proxy.find(':') > 0:
@@ -550,22 +265,27 @@ Longer strings will be truncated.""" % {
     if len(args) < 1:
         op.error("not enough arguments")
     elif args[0] == 'ping':
-        msg = " ".join(args[1:]) or "PING"
-        response = client.ping(msg)
+        response = client.ping()
+        if response.status==200:
+            output("%s: 200 OK" % service)
+            exit(0)
     elif args[0] == 'upload':
         if len(args) < 3:
             op.error("not enough arguments for upload")
         graceid = args[1]
         filename = args[2]
         comment = " ".join(args[3:])
-        response = client.upload(graceid, filename, comment=comment, alert=options.alert)
+        tagName = options.tagName
+        tagDispName = options.tagDispName
+        response = client.writeLog(graceid, comment, filename, None,
+            tagName, tagDispName)
     elif args[0] == 'download':
         if len(args) not in [2,3,4]:
             op.error("not enough arguments for download")
         graceid = args[1]
         if len(args) == 2:
             # get/print listing.
-            response = client.listfiles(graceid)
+            response = client.files(graceid)
             if response and response.status == 200:
                 for fname in json.loads(response.read()):
                     print(fname)
@@ -588,85 +308,174 @@ Longer strings will be truncated.""" % {
             op.error("not enough arguments for log")
         graceid = args[1]
         message = " ".join(args[2:])
-        response = client.log(graceid, message, alert=options.alert)
+        response = client.writeLog(graceid, message, options.tagName, options.tagDispName)
     elif args[0] == 'tag':
-        if len(args) != 3:
-            op.error("wrong number of arguments for tag")
+        if options.tagName:
+            if len(args) != 2:
+                op.error("wrong number of arguments for tag")
+            tagName = options.tagName
+            tagDispName = options.tagDispName
+        else:
+            if len(args) not in [4,5]:
+                op.error("wrong number of arguments for tag")
+            tagName = args[3]
+            tagDispName = None
+            if len(args)==5:
+                tagDispName = args[4]
         graceid = args[1]
-        tag = args[2]
-        response = client.tag(graceid, tag)
+        logN = args[2]
+        response = client.createTag(graceid, logN, tagName, tagDispName)
+    elif args[0] == 'delete_tag':
+        error("len args = %s" % len(args))
+        error("args = %s" % args)
+        if options.tagName:
+            if len(args) != 2:
+                op.error("wrong number of arguments for delete_tag")
+            tagName = options.tagName
+        else:
+            if len(args) != 4:
+                op.error("wrong number of arguments for delete_tag")
+            tagName = args[3]
+        graceid = args[1]
+        logN = args[2]
+        response = client.deleteTag(graceid, logN, tagName)
     elif args[0] == 'label':
         if len(args) != 3:
             op.error("wrong number of arguments for label")
         graceid = args[1]
         label = args[2]
-        response = client.label(graceid, label, alert=options.alert)
+        response = client.writeLabel(graceid, label)
     elif args[0] == 'search':
-        response = client.search(" ".join(args[1:]), options.columns, options.ligolw)
+        query = " ".join(args[1:])
+        
+        columns = options.columns
+        columns.replace('DEFAULTS',DEFAULT_COLUMNS)
+        columns = columns.split(',')
+
+        count = None # XXX Let's just get rid of this?
+        orderby = None # XXX Should we implement this?
+
+        events = client.events(query, orderby, count, columns)
+
+        if options.ligolw:
+            xmldoc = ligolw.Document()
+            for e in events:
+                graceid = e['graceid']
+                try:
+                    r = client.files(graceid, "coinc.xml")
+                    utils.load_fileobj(r, xmldoc = xmldoc)
+                except:
+                    error("Missing coinc.xml for %s. Cannot build ligolw output." % graceid)
+                    exit(1)
+            ligolw_add.reassign_ids(xmldoc)
+            ligolw_add.merge_ligolws(xmldoc)
+            ligolw_add.merge_compatible_tables(xmldoc)
+            xmldoc.write()
+        else:
+            accessFun = {
+                "labels" : lambda e: \
+                    ",".join(e['labels'].keys()),
+                "dataurl" : lambda e: e['links']['files'],
+            }
+
+            header = "#" + "\t".join(columns)
+            output(header)
+            for e in events:
+                row = [ accessFun.get(column, lambda e: defaultAccess(e,column))(e) for column in columns ]
+                row = "\t".join(row)
+                output(row)
+        
+        return 0
     elif args[0] == 'replace':
         if len(args) != 3:
             op.error("wrong number of args for replace")
         graceid = args[1]
         filename = args[2]
-        response = client.replace(graceid, filename)
-    elif args[0] == 'slot':
-        if len(args) in [3,4]:
-            url = '/events/%s/slot/%s' % (args[1], args[2])
-            if len(args) == 3:
-                response = client.rest(url, method='GET')
-            else:
-                headers = {'content-type' : "application/x-www-form-urlencoded" }
-                response = client.rest(url,
-                        method='PUT',
-                        headers=headers,
-                        filename=args[3])
-            if response and response.status in [200, 201]:
-                print( json.loads(response.read()) ) 
-                exit(0)
-            else:
-                print(response.reason)
-                exit(1)
-        else:
-            op.error("wrong number of args for slot")
+        response = client.replaceEvent(graceid, filename)
     elif len(args) == 3:
+        # Create a new event.
         group = args[0]
         type = args[1]
         filename = args[2]
 
-        if type in typeCodeMap:
-            type = typeCodeMap[type]
-        else:
-            error("Type must be one of: ", ", ".join(typeCodeMap.keys()))
+        # Check that the group and type are known to the API.
+        # NB: the dictionary returned by the API has keys and values
+        # reversed w.r.t. the typeCodeMap above.
+        foundType = False
+        for key, value in client.analysis_types.items():
+            if type==str(value):
+                type = key
+                foundType = True
+        if not foundType:
+            error("Type must be one of: ", ", ".join(client.analysis_types.values()))
             sys.exit(1)
-        response = client.create(group, type, filename)
+
+        foundGroup = True if (unicode(group) in client.groups) else False
+        if not foundGroup:
+            error("Group must be one of: ", ", ".join(client.groups))
+            sys.exit(1)
+
+        response = client.createEvent(group, type, filename)
         if not response:
             error("There was a problem.  Did you do grid-proxy-init -rfc?")
             sys.exit(1)
+
+        # XXX Must output graceid for consistency with earlier client.
+        # Therefore, must deal with response here rather than at the end.
+        exitCode = 0
+        status = response.status
+        if status >= 400:
+            exitCode=1
+        try:
+            rv = response.read()
+        except:
+            rv = response
+        try:
+            rv = json.loads(rv)
+        except:
+            pass
+
+        if 'graceid' in rv.keys():
+            output(rv['graceid'])
+        elif 'error' in rv.keys():
+            exitCode=1
+            error(rv['error'])
+
+        return exitCode
+
     else:
         op.error("")
         sys.exit(1)
 
     # Output the response.
-
     exitCode = 0
-    # XXX oddball exception for ligolw query responses.
-    if isinstance(response, str):
-        print(response)
+    try:
+        rv = response.read()
+        status = response.status
+    except:
+        rv = response
+
+    try:
+        responseBody = json.loads(rv)
+    except:
+        responseBody = rv
+
+    if status >= 400:
+        exitCode=1
+    if isinstance(responseBody, str):
+        output("%d: %s" % (status, responseBody))
     else:
-        if ('error' in response) and response['error']:
+        output("Server returned %d" % status)
+        if ('error' in responseBody) and response['error']:
             error(response['error'])
             exitCode = 1
-        if ('warning' in response) and response['warning']:
+        if ('warning' in responseBody) and response['warning']:
             warning(response['warning'])
-        if ('output' in response) and response['output']:
+        if ('output' in responseBody) and response['output']:
             output(response['output'])
 
     return exitCode
 
 if __name__ == "__main__":
-    try:
-        code = main()
-    except Exception, e:
-        error(str(e))
-        sys.exit(1)
+    code = main()
     sys.exit(code)

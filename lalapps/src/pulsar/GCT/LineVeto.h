@@ -27,7 +27,6 @@
  * This code is partly based on work done by
  * Reinhard Prix, Maria Alessandra Papa, M. Siddiqi
  *
- *
  */
 
 #ifndef _LINEVETO_H  /* Double-include protection. */
@@ -98,16 +97,16 @@ XLALComputeFstatFromAtoms ( const MultiFstatAtomVector *multiFstatAtoms,
 REAL4
 XLALComputeLineVeto ( const REAL4 TwoF,
 		      const REAL4Vector *TwoFX,
-		      const REAL4 rhomaxline,
-		      const REAL4Vector *lX,
+		      const REAL8 rhomaxline,
+		      const REAL8Vector *lX,
 		      const BOOLEAN useAllTerms );
 
 REAL4
 XLALComputeLineVetoArray ( const REAL4 TwoF,
                            const UINT4 numDetectors,
                            const REAL4 *TwoFX,
-                           const REAL4 rhomaxline,
-                           const REAL4 *lX,
+                           const REAL8 logRhoTerm,
+                           const REAL8 *loglX,
                            const BOOLEAN useAllTerms );
 
 LALStringVector *

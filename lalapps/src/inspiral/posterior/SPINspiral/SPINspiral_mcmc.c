@@ -563,7 +563,7 @@ double sigmaPeriodicBoundaries(double sigma, int p, struct MCMCvariables mcmc)
 /**
  * \brief Do a correlated block MCMC update
  *
- * Do an update for all non-fixed MCMC parameters. Use the covariance matrix to take into account correlations. 
+ * Do an update for all non-fixed MCMC parameters. Use the covariance matrix to take into account correlations.
  * The covariance matrix has been constructed from previous iterations.
  * Use adaptation to scale the whole matrix.
  * Some experiments with larger jumps using the 'hotter' covariance matrix.
@@ -675,7 +675,7 @@ void correlatedMCMCupdate(struct interferometer *ifo[], struct parSet *state, st
 /**
  * \brief Do an uncorrelated, per-parameter MCMC update
  *
- * Do an update for all non-fixed MCMC parameters in the current T chain. 
+ * Do an update for all non-fixed MCMC parameters in the current T chain.
  * Propose a jump and decide whether to accept or not on a per-parameter basis.
  * Use adaptation.
  */
@@ -756,7 +756,7 @@ void uncorrelatedMCMCsingleUpdate(struct interferometer *ifo[], struct parSet *s
 /**
  * \brief Do an uncorrelated block update
  *
- * Do an update for all non-fixed MCMC parameters in the current T chain. 
+ * Do an update for all non-fixed MCMC parameters in the current T chain.
  * Propose a jump and decide whether to accept or not for all parameters at once.
  * No adaptation here, some experimenting with larger jumps every now and then.
  */
@@ -1457,7 +1457,7 @@ void writeChainInfo(struct MCMCvariables mcmc)
 // ****************************************************************************************************************************************************  
 /**
  * \brief Choose and print offset starting values for the Markov chain
- * 
+ *
  * Set MCMC parameters to either the best-guess values or the injection values (where possible).
  * Then, depending on the detailed per-parameter settings, add a random offset from this value.
  * Require a good value for logL (determined by mcmc->minlogL) in order to accept the proposed starting values, unless MCMC parameters do not fully match the injection parameters.

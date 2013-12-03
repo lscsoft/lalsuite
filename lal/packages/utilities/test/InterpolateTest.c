@@ -18,29 +18,30 @@
 */
 
 /**
-   \file
-   \ingroup Interpolate_h
-
-   \brief Tests the routines in \ref Interpolate.h.
-
-\heading{Usage}
-\code
-InterpolateTest [options]
-Options:
-  -h         print this message
-  -q         quiet: run silently
-  -v         verbose: print extra information
-  -d level   set lalDebugLevel to level
-\endcode
-
-\heading{Exit codes}
-
-<table><tr><th>Code</th><th>Explanation</th></tr>
-<tr><td>0</td><td>Success, normal exit.</td></tr>
-<tr><td>1</td><td>Subroutine failed.</td></tr>
-</table>
-
-*/
+ * \file
+ * \ingroup Interpolate_h
+ *
+ * \brief Tests the routines in \ref Interpolate.h.
+ *
+ * ### Usage ###
+ *
+ * \code
+ * InterpolateTest [options]
+ * Options:
+ * -h         print this message
+ * -q         quiet: run silently
+ * -v         verbose: print extra information
+ * -d level   set lalDebugLevel to level
+ * \endcode
+ *
+ * ### Exit codes ###
+ *
+ * <table><tr><th>Code</th><th>Explanation</th></tr>
+ * <tr><td>0</td><td>Success, normal exit.</td></tr>
+ * <tr><td>1</td><td>Subroutine failed.</td></tr>
+ * </table>
+ *
+ */
 
 /** \cond DONT_DOXYGEN */
 #include <config.h>
@@ -68,7 +69,6 @@ Options:
 extern char *optarg;
 extern int   optind;
 
-int   lalDebugLevel = 0;
 int   verbose    = 0;
 
 static void Usage (const char *program, int exitflag);
@@ -386,7 +386,6 @@ ParseOptions (int argc, char *argv[])
     switch (c)
     {
       case 'd': /* set debug level */
-        lalDebugLevel = atoi (optarg);
         break;
 
       case 'v': /* verbose */

@@ -1,14 +1,5 @@
 The LAL and LALApps Bug Reporting System can be accessed at the URL
 
-	https://www.lsc-group.phys.uwm.edu/daswg/projects/lal/bugreport.html
+	https://bugs.ligo.org
 
 To enter the bug reporting system you will need a username and a password.
-Anyone can enter to create or query bug reports using:
-
-	Username: anonymous
-	Password: anonymous
-
-To edit or close bug reports, you will need you own username and password for
-the bug reporting system.  This can be obtained using the form at the URL
-
-	http://www.lsc-group.phys.uwm.edu/cgi-bin/cvs-login-request.cgi

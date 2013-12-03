@@ -23,92 +23,91 @@
  * \file
  * \ingroup pulsarApps
  * \brief Program for calculating F-stat values for different time segments
-   and combining them semi-coherently using the Hough transform, and following
-   up candidates using a longer coherent integration.
-
-   \par  Description
-
-   This code implements a hierarchical strategy to look for unknown gravitational
-   wave pulsars. It scans through the parameter space using a less sensitive but
-   computationally inexpensive search and follows up the candidates using
-   more sensitive methods.
-
-   \par Algorithm
-
-   Currently the code does a single stage hierarchical search using the Hough
-   algorithm and follows up the candidates using a full coherent integration.
-
-   - The user specifies a directory containing SFTs, and the number of
-     \e stacks that this must be broken up into.  Stacks are chosen by
-     breaking up the total time spanned by the sfts into equal
-     portions, and then choosing the sfts which lie in each stack
-     portion.  The SFTs can be from multiple IFOs.
-
-   - The user specifies a region in parameter space to search over.
-     The code sets up a grid (the "coarse" grid) in this region and
-     calculates the F-statistic for each stack at each point of the
-     coarse grid, for the entire frequency band.  Alternatively, the
-     user can specify a sky-grid file.
-
-   - The different Fstat vactors for each stack are combined using a
-     semi-coherent method such as the Hough transform or stack slide
-     algorithms.
-
-   - For Hough, a threshold is set on the F-statistic to convert the
-     F-statistic vector into a vector of 0s and 1s known as a \e
-     peakgram -- there is one peakgram for each stack and for each
-     grid point.  These peakgrams are combined using the Hough algorithm.
-
-   - For stack-slide, we add the different Fstatistic values to get
-     the summed Fstatistic power.
-
-   - The semi-coherent part of the search constructs a grid (the
-     "fine" grid) in a small patch around every coarse grid point, and
-     combines the different stacks following the \e master equation
-     \f[ f(t) - F_0(t) = \xi(t).(\hat{n} - \hat{n}_0) \f]
-     where
-     \f[ F_0 = f_0 + \sum \Delta f_k \frac{(\Delta t)^k}{k!}  \f]
-     Here \f$ \hat{n}_0 \f$ is the sky-point at which the F-statistic is
-     calculated and \f$ \Delta f_k \f$ is the \e residual spindown
-     parameter.  For details see Phys.Rev.D 70, 082001 (2004).  The
-     size of the patch depends on the validity of the above master
-     equation.
-
-   - The output of the Hough search is a \e number \e count at each point
-     of the grid.  A threshold is set on the number count, leading to
-     candidates in parameter space.  For stack slide, instead of the
-     number count, we get the summed Fstatistic power.  Alternatively,
-     the user can specify exactly how many candidates should be
-     followed up for each coarse grid point.
-
-   - These candidates are followed up using a second set of SFTs (also
-     specified by the user).  The follow up consists of a full
-     coherent integration, i.e. the F-statistic is calculated for the
-     whole set of SFTs without breaking them up into stacks.  The user
-     can choose to output the N highest significance candidates.
-
-
-   \par Questions/To-do
-
-   - Should we over-resolve the Fstat calculation to reduce loss in signal power?  We would
-     still calculate the peakgrams at the 1/T resolution, but the peak selection would
-     take into account Fstat values over several over-resolved bins.
-
-   - What is the best grid for calculating the F-statistic?  At first glance, the
-     Hough patch and the metric F-statistic patch do not seem to be compatible.  If we
-     use the Hough patches to break up the sky, it could be far from optimal.  What is
-     the exact connection between the two grids?
-
-   - Implement multiple semi-coherent stages
-
-   - Get timings and optimize the pipeline parameters
-
-   - Checkpointing for running on Einstein\@Home
-
-   - Incorporate stack slide as an alternative to Hough in the semi-coherent stages
-
-   - ....
-
+ * and combining them semi-coherently using the Hough transform, and following
+ * up candidates using a longer coherent integration.
+ *
+ * \par  Description
+ *
+ * This code implements a hierarchical strategy to look for unknown gravitational
+ * wave pulsars. It scans through the parameter space using a less sensitive but
+ * computationally inexpensive search and follows up the candidates using
+ * more sensitive methods.
+ *
+ * \par Algorithm
+ *
+ * Currently the code does a single stage hierarchical search using the Hough
+ * algorithm and follows up the candidates using a full coherent integration.
+ *
+ * - The user specifies a directory containing SFTs, and the number of
+ * \e stacks that this must be broken up into.  Stacks are chosen by
+ * breaking up the total time spanned by the sfts into equal
+ * portions, and then choosing the sfts which lie in each stack
+ * portion.  The SFTs can be from multiple IFOs.
+ *
+ * - The user specifies a region in parameter space to search over.
+ * The code sets up a grid (the "coarse" grid) in this region and
+ * calculates the F-statistic for each stack at each point of the
+ * coarse grid, for the entire frequency band.  Alternatively, the
+ * user can specify a sky-grid file.
+ *
+ * - The different Fstat vactors for each stack are combined using a
+ * semi-coherent method such as the Hough transform or stack slide
+ * algorithms.
+ *
+ * - For Hough, a threshold is set on the F-statistic to convert the
+ * F-statistic vector into a vector of 0s and 1s known as a \e
+ * peakgram -- there is one peakgram for each stack and for each
+ * grid point.  These peakgrams are combined using the Hough algorithm.
+ *
+ * - For stack-slide, we add the different Fstatistic values to get
+ * the summed Fstatistic power.
+ *
+ * - The semi-coherent part of the search constructs a grid (the
+ * "fine" grid) in a small patch around every coarse grid point, and
+ * combines the different stacks following the \e master equation
+ * \f[ f(t) - F_0(t) = \xi(t).(\hat{n} - \hat{n}_0) \f]
+ * where
+ * \f[ F_0 = f_0 + \sum \Delta f_k \frac{(\Delta t)^k}{k!}  \f]
+ * Here \f$ \hat{n}_0 \f$ is the sky-point at which the F-statistic is
+ * calculated and \f$ \Delta f_k \f$ is the \e residual spindown
+ * parameter.  For details see Phys.Rev.D 70, 082001 (2004).  The
+ * size of the patch depends on the validity of the above master
+ * equation.
+ *
+ * - The output of the Hough search is a \e number \e count at each point
+ * of the grid.  A threshold is set on the number count, leading to
+ * candidates in parameter space.  For stack slide, instead of the
+ * number count, we get the summed Fstatistic power.  Alternatively,
+ * the user can specify exactly how many candidates should be
+ * followed up for each coarse grid point.
+ *
+ * - These candidates are followed up using a second set of SFTs (also
+ * specified by the user).  The follow up consists of a full
+ * coherent integration, i.e. the F-statistic is calculated for the
+ * whole set of SFTs without breaking them up into stacks.  The user
+ * can choose to output the N highest significance candidates.
+ *
+ * \par Questions/To-do
+ *
+ * - Should we over-resolve the Fstat calculation to reduce loss in signal power?  We would
+ * still calculate the peakgrams at the 1/T resolution, but the peak selection would
+ * take into account Fstat values over several over-resolved bins.
+ *
+ * - What is the best grid for calculating the F-statistic?  At first glance, the
+ * Hough patch and the metric F-statistic patch do not seem to be compatible.  If we
+ * use the Hough patches to break up the sky, it could be far from optimal.  What is
+ * the exact connection between the two grids?
+ *
+ * - Implement multiple semi-coherent stages
+ *
+ * - Get timings and optimize the pipeline parameters
+ *
+ * - Checkpointing for running on Einstein\@Home
+ *
+ * - Incorporate stack slide as an alternative to Hough in the semi-coherent stages
+ *
+ * - ....
+ *
  */
 
 #include "OptimizedCFS/ComputeFstatREAL4.h"
@@ -152,7 +151,6 @@
 #define UNINITIALIZE_COPROCESSOR_DEVICE
 #endif
 
-extern int lalDebugLevel;
 
 BOOLEAN uvar_printMaps = FALSE; /**< global variable for printing Hough maps */
 BOOLEAN uvar_printGrid = FALSE; /**< global variable for printing Hough grid */
@@ -239,8 +237,8 @@ void RCComputeFstatHoughMap (LALStatus *status,
 
 
 /* default values for input variables */
-#define EARTHEPHEMERIS 		"earth05-09.dat"
-#define SUNEPHEMERIS 		"sun05-09.dat"
+#define EARTHEPHEMERIS 		"earth00-19-DE405.dat"
+#define SUNEPHEMERIS 		"sun00-19-DE405.dat"
 
 #define BLOCKSRNGMED 		101 	/**< Default running median window size */
 
@@ -425,11 +423,7 @@ int MAIN( int argc, char *argv[]) {
 
   BOOLEAN uvar_correctFreqs = TRUE;
 
-  /* LALDebugLevel must be called before any LALMallocs have been used */
-  lalDebugLevel = 0;
-  LAL_CALL( LALGetDebugLevel( &status, argc, argv, 'd'), &status);
 #ifdef EAH_LALDEBUGLEVEL
-  lalDebugLevel = EAH_LALDEBUGLEVEL;
 #endif
 
   uvar_ephemE = LALCalloc( strlen( EARTHEPHEMERIS ) + 1, sizeof(CHAR) );
@@ -1102,9 +1096,7 @@ int MAIN( int argc, char *argv[]) {
 
 
   /* free Vel/Pos vectors and ephemeris */
-  LALFree(edat->ephemE);
-  LALFree(edat->ephemS);
-  LALFree(edat);
+  XLALDestroyEphemerisData(edat);
   LAL_CALL( LALDDestroyVectorSequence (&status,  &velStack), &status);
   LAL_CALL( LALDDestroyVectorSequence (&status,  &posStack), &status);
 
@@ -1132,8 +1124,10 @@ int MAIN( int argc, char *argv[]) {
 
 
 
-/** Set up stacks, read SFTs, calculate SFT noise weights and calculate
-    detector-state */
+/**
+ * Set up stacks, read SFTs, calculate SFT noise weights and calculate
+ * detector-state
+ */
 void SetUpSFTs( LALStatus *status,			/**< pointer to LALStatus structure */
 		MultiSFTVectorSequence *stackMultiSFT, /**< output multi sft vector for each stack */
 		MultiNoiseWeightsSequence *stackMultiNoiseWeights, /**< output multi noise weights for each stack */
@@ -1356,16 +1350,16 @@ void SetUpSFTs( LALStatus *status,			/**< pointer to LALStatus structure */
 
 
 
-/** Function for calculating Hough Maps and candidates.
-
-    This function takes a peakgram as input. This peakgram was constructed
-    by setting a threshold on a sequence of Fstatistic vectors.  The function
-    produces a Hough map in the sky for each value of the frequency and spindown.
-    The Hough nummber counts are then used to select candidates in
-    parameter space to be followed up in a more refined search.
-    This uses DriveHough_v3.c as a prototype suitably modified to work
-    on demodulated data instead of SFTs.
-*/
+/**
+ * Function for calculating Hough Maps and candidates.
+ * This function takes a peakgram as input. This peakgram was constructed
+ * by setting a threshold on a sequence of Fstatistic vectors.  The function
+ * produces a Hough map in the sky for each value of the frequency and spindown.
+ * The Hough nummber counts are then used to select candidates in
+ * parameter space to be followed up in a more refined search.
+ * This uses DriveHough_v3.c as a prototype suitably modified to work
+ * on demodulated data instead of SFTs.
+ */
 void
 RCComputeFstatHoughMap(LALStatus *status,		/**< pointer to LALStatus structure */
                        SemiCohCandidateList  *out,   /**< Candidates from thresholding Hough number counts */
@@ -1904,13 +1898,14 @@ RCComputeFstatHoughMap(LALStatus *status,		/**< pointer to LALStatus structure *
 } /* RCComputeFstatHoughMap() */
 
 
-/** Function for selecting frequency bins from a set of Fstatistic vectors.
-
-    Input is a vector of Fstatistic vectors.  It allocates memory
-    for the peakgrams based on the frequency span of the Fstatistic vectors
-    and fills tyem up by setting a threshold on the Fstatistic.  Peakgram must be
-    deallocated outside the function.
-*/
+/**
+ * Function for selecting frequency bins from a set of Fstatistic vectors.
+ *
+ * Input is a vector of Fstatistic vectors.  It allocates memory
+ * for the peakgrams based on the frequency span of the Fstatistic vectors
+ * and fills tyem up by setting a threshold on the Fstatistic.  Peakgram must be
+ * deallocated outside the function.
+ */
 void FstatVectToPeakGram (LALStatus *status,			/**< pointer to LALStatus structure */
 			  HOUGHPeakGramVector *pgV,		/**< a vector of peakgrams  */
                           REAL4FrequencySeriesVector *FstatVect,/**< sequence of Fstatistic vectors */
@@ -2006,13 +2001,14 @@ void FstatVectToPeakGram (LALStatus *status,			/**< pointer to LALStatus structu
 }
 
 
-/** \brief Breaks up input sft catalog into specified number of stacks
-
-    Loops over elements of the catalog, assigns a bin index and
-    allocates memory to the output catalog sequence appropriately.  If
-    there are long gaps in the data, then some of the catalogs in the
-    output catalog sequence may be of zero length.
-*/
+/**
+ * \brief Breaks up input sft catalog into specified number of stacks
+ *
+ * Loops over elements of the catalog, assigns a bin index and
+ * allocates memory to the output catalog sequence appropriately.  If
+ * there are long gaps in the data, then some of the catalogs in the
+ * output catalog sequence may be of zero length.
+ */
 void SetUpStacks(LALStatus *status, 	   /**< pointer to LALStatus structure */
 		 SFTCatalogSequence  *out, /**< Output catalog of sfts -- one for each stack */
 		 REAL8 tStack,             /**< Output duration of each stack */
@@ -2747,9 +2743,11 @@ void PrintStackInfo( LALStatus  *status,
 }
 
 
-/** Read checkpointing file
-    This does not (yet) check any consistency of
-    the existing results file */
+/**
+ * Read checkpointing file
+ * This does not (yet) check any consistency of
+ * the existing results file
+ */
 void GetChkPointIndex( LALStatus *status,
 		       INT4 *loopindex,
 		       const CHAR *fnameChkPoint)
@@ -2800,8 +2798,10 @@ void GetChkPointIndex( LALStatus *status,
 
 }
 
-/** Calculate average velocity and position of detector network during each
-    stack */
+/**
+ * Calculate average velocity and position of detector network during each
+ * stack
+ */
 void GetStackVelPos( LALStatus *status,
 		     REAL8VectorSequence **velStack,
 		     REAL8VectorSequence **posStack,
@@ -3391,7 +3391,8 @@ void GetXiInSingleStack (LALStatus         *status,
 }
 
 
-/** Load hough-candidate list from given file
+/**
+ * Load hough-candidate list from given file
  */
 HoughCandidateList *
 XLALLoadHoughCandidateList ( const char *fname,	/**< input candidate-list file 'Freq Alpha Delta f1dot sig' */

@@ -18,42 +18,46 @@
 */
 
 /**
-\author Sathyaprakash, B. S.
-\file
-\ingroup LALInspiral_h
-
-\brief Given \f$\tau_0\f$ and \f$\tau_2\f$ compute the mass ratio \f$\eta.\f$
-
-\heading{Description}
-Given \f$\tau_0\f$ and \f$\tau_2\f$ one can determine \f$\eta\f$ by solving
-\f{equation}{
--\eta^{2/5} \tau_2 + A_2 \left ( \frac {\tau_0}{A_0} \right )^{3/5}
-\left (1 + B_2\eta \right )  = 0,
-\f}
-where \f$A_0 = 5/[256 (\pi f_{s} )^{8/3}],\f$ \f$A_2 = 3715 / [64512 (\pi f_s)^2],\f$
-\f$B_2 = 4620/3715.\f$
-This function returns the LHS of the above
-equation in \c x for a given \c eta.
-
-\heading{Algorithm}
-None.
-
-\heading{Uses}
-None.
-
-\heading{Notes}
-The void pointer} <tt>*p</tt> should point to a struct
-of type ::EtaTau02In :
-\code
-{
-   void *p;
-   EtaTau02In q;
-    ...
-    p = (void *) &q;
-}
-\endcode
-
-*/
+ * \author Sathyaprakash, B. S.
+ * \file
+ * \ingroup LALInspiral_h
+ *
+ * \brief Given \f$\tau_0\f$ and \f$\tau_2\f$ compute the mass ratio \f$\eta.\f$
+ *
+ * ### Description ###
+ *
+ * Given \f$\tau_0\f$ and \f$\tau_2\f$ one can determine \f$\eta\f$ by solving
+ * \f{equation}{
+ * -\eta^{2/5} \tau_2 + A_2 \left ( \frac {\tau_0}{A_0} \right )^{3/5}
+ * \left (1 + B_2\eta \right )  = 0,
+ * \f}
+ * where \f$A_0 = 5/[256 (\pi f_{s} )^{8/3}],\f$ \f$A_2 = 3715 / [64512 (\pi f_s)^2],\f$
+ * \f$B_2 = 4620/3715.\f$
+ * This function returns the LHS of the above
+ * equation in \c x for a given \c eta.
+ *
+ * ### Algorithm ###
+ *
+ * None.
+ *
+ * ### Uses ###
+ *
+ * None.
+ *
+ * ### Notes ###
+ *
+ * The void pointer} <tt>*p</tt> should point to a struct
+ * of type ::EtaTau02In :
+ * \code
+ * {
+ * void *p;
+ * EtaTau02In q;
+ * ...
+ * p = (void *) &q;
+ * }
+ * \endcode
+ *
+ */
 
 #include <lal/LALInspiral.h>
 
@@ -65,7 +69,7 @@ LALEtaTau02(
    void      *p
    )
 {
-   XLALPrintDeprecationWarning("LALEtaTau02", "XLALEtaTau02");
+   XLAL_PRINT_DEPRECATION_WARNING("XLALEtaTau02");
 
    INITSTATUS(status);
    ATTATCHSTATUSPTR(status);

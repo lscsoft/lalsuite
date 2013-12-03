@@ -22,7 +22,7 @@
  * \file ninja.c
  * \author Badri Krishnan
  * \brief Code for parsing and selecting numerical relativity
- *        waves in frame files
+ * waves in frame files
  */
 
 
@@ -57,7 +57,7 @@
 #include <lal/LALFrameIO.h>
 #include <lal/UserInput.h>
 #include <lalappsfrutils.h>
-#include <lal/FrameStream.h>
+#include <lal/LALFrStream.h>
 #include <lal/LogPrintf.h>
 #include <lal/LALFrameL.h>
 
@@ -124,9 +124,8 @@ int main(INT4 argc, CHAR *argv[])
   LALStatus status = blank_status;
 
   /* frame file stuff */
-  FrCache *frGlobCache = NULL;
-  FrCache *frInCache = NULL;
-  FrCacheSieve sieve;
+  LALCache *frGlobCache = NULL;
+  LALCache *frInCache = NULL;
   FrameH *frame = NULL;
   FrFile *frFile = NULL;
 
@@ -161,8 +160,6 @@ int main(INT4 argc, CHAR *argv[])
 
   /* default debug level */
   lal_errhandler = LAL_ERR_EXIT;
-  lalDebugLevel = 0;
-  LAL_CALL(LALGetDebugLevel(&status, argc, argv, 'd'), &status);
 
   /* set default output file */
   uvar_outFile = (CHAR *)LALCalloc(1, FILENAME_MAX * sizeof(CHAR));
@@ -245,23 +242,19 @@ int main(INT4 argc, CHAR *argv[])
   LogPrintf(LOG_NORMAL, "Globbing frame files...");
 
   /* create a frame cache by globbing *.gwf in specified dir */
-  LAL_CALL(LALFrCacheGenerate(&status, &frGlobCache, uvar_nrDir, uvar_pattern),
-            &status);
+  frGlobCache = XLALCacheGlob(uvar_nrDir, uvar_pattern);
 
-  memset(&sieve, 0, sizeof(FrCacheSieve));
-  /* sieve doesn't actually do anything yet */
-  LAL_CALL( LALFrSieveCache(&status, &frInCache, frGlobCache, &sieve),
-            &status);
+  frInCache = XLALCacheDuplicate(frGlobCache);
 
-  LAL_CALL(LALDestroyFrCache(&status, &frGlobCache), &status);
+  XLALDestroyCache(frGlobCache);
 
   /* check we globbed at least one frame file */
-  if (!frInCache->numFrameFiles)
+  if (!frInCache->length)
   {
     fprintf(stderr, "error: no numrel frame files found\n");
     exit(1);
   }
-  LogPrintfVerbatim(LOG_NORMAL, "found %d\n",frInCache->numFrameFiles);
+  LogPrintfVerbatim(LOG_NORMAL, "found %d\n",frInCache->length);
 
   /* initialize head of simInspiralTable linked list to null */
   injections.simInspiralTable = NULL;
@@ -269,9 +262,17 @@ int main(INT4 argc, CHAR *argv[])
   LogPrintf(LOG_NORMAL, "Selecting frame files with right numrel parameters...");
 
   /* loop over frame files and select the ones with nr-params in the right range */
-  for (k = 0; k < frInCache->numFrameFiles; k++)
+  for (k = 0; k < frInCache->length; k++)
   {
-    frFile = XLALFrOpenURL(frInCache->frameFiles[k].url);
+    /* convert url to path by skipping protocol part of protocol:path */
+    char *path;
+    path = strchr(frInCache->list[k].url, ':');
+    if (path == NULL)
+      path = frInCache->list[k].url;
+    else
+      path++; /* skip the ':' -- now on the path */
+
+    frFile = FrFileINew(path);
 
     frame = FrameRead(frFile);
 
@@ -305,7 +306,7 @@ int main(INT4 argc, CHAR *argv[])
       this_inj->spin2z = metaData.spin2[2];
       this_inj->f_lower = metaData.freqStart22;
 
-      strcpy(this_inj->numrel_data, frInCache->frameFiles[k].url);
+      strcpy(this_inj->numrel_data, frInCache->list[k].url);
 
       this_inj->numrel_mode_min = uvar_minMode;
       this_inj->numrel_mode_max = uvar_maxMode;
@@ -391,7 +392,7 @@ int main(INT4 argc, CHAR *argv[])
 
   /* close cache */
   /* LAL_CALL(LALFrClose(&status, &frStream), &status); */
-  LAL_CALL(LALDestroyFrCache(&status, &frInCache), &status);
+  XLALDestroyCache(frInCache);
 
   /* close the injection file */
   LAL_CALL(LALCloseLIGOLwXMLFile(&status, &xmlfp), &status);
@@ -668,8 +669,10 @@ static int get_mode_index_from_channel_name(INT4 *mode_l,
   return ret;
 }
 
-/** take a list of numrel group names separated by ";" and parse it to
-    get a vector of NumRelGroup */
+/**
+ * take a list of numrel group names separated by ";" and parse it to
+ * get a vector of NumRelGroup
+ */
 static int parse_group_list(NrParRange *range,
                        CHAR *list)
 {

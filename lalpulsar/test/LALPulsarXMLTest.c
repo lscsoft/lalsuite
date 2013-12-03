@@ -75,7 +75,6 @@ int main(void)
     int result = LALXMLC_ENOM;
 
     /* set debug level*/
-    lalDebugLevel = LALMSGLVL3;
 
     printf( "\n" );
     printf( "======================================================================\n");
@@ -248,7 +247,7 @@ int testPulsarDopplerParams(void)
 int validateDocument(const xmlDocPtr xmlDocument)
 {
     /* set up local variables */
-    char schemaUrl[] = "file://" DATADIR "VOTable-1.1.xsd";
+    char schemaUrl[] = "file://" TEST_DATA_DIR "VOTable-1.1.xsd";
     int result;
 
     /* validate document */

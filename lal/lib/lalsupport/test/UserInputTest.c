@@ -27,7 +27,6 @@
 
 
 /* Default parameters. */
-INT4 lalDebugLevel=3;
 
 typedef struct
 {
@@ -46,7 +45,7 @@ UserInput_t empty_UserInput_t;
 const char *cfgfile_content = \
 "## Some 'tough' tests for config-file reading routines\n"
 "# comment line\n"
-"float1 = 1.0    ; you can also comment using semi-colons\n"
+"float1 = 1.0    ; ## semi-colon ignored\n"
 "\n"
 "string1 = some text.\\\n"
 "	You can also use\\\n"
@@ -66,7 +65,8 @@ const char *cfgfile_content = \
 
 
 
-/** some basic consistency checks of the (XLAL) UserInput module, far from exhaustive,
+/**
+ * some basic consistency checks of the (XLAL) UserInput module, far from exhaustive,
  * but should be enough to catch big obvious malfunctions
  */
 int
@@ -89,12 +89,6 @@ main(int argc, char *argv[])
       my_argv[i] = XLALCalloc ( 1, strlen(argv_in[i])+1);
       strcpy ( my_argv[i], argv_in[i] );
     }
-
-  /* laldebug level always needs to be read first (before any lal-mallocs!) */
-  if ( XLALGetDebugLevel (my_argc, my_argv, 'v') != XLAL_SUCCESS ) {
-    XLALPrintError ("%s: XLALGetDebugLevel() failed with code %d\n", __func__, xlalErrno );
-    XLAL_ERROR ( XLAL_EFUNC );
-  }
 
   /* ----- dump config-file content into config-file ----- */
   FILE *fid;

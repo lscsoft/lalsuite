@@ -1,40 +1,45 @@
 /**
-\file
-\ingroup AVFactories_h
-
-\brief A program to test create/destroy vector routines.
-
-\heading{Usage}
-\code
-VectorFactoriesTest [options]
-Options:
-  -h         print help
-  -q         quiet: run silently
-  -v         verbose: print extra information
-  -d level   set lalDebugLevel to level
-\endcode
-
-\heading{Description}
-
-\heading{Exit codes}
-<table><tr><th>Code</th><th>Explanation</th></tr>
-<tr><td>0</td><td>Success, normal exit.</td></tr>
-<tr><td>1</td><td>Subroutine failed.</td></tr>
-</table>
-
-\heading{Algorithm}
-
-\heading{Uses}
-\code
-lalDebugLevel
-\<datatype\>CreateVector()
-\<datatype\>ResizeVector()
-\<datatype\>DestroyVector()
-\endcode
-
-\heading{Notes}
-
-*/
+ * \file
+ * \ingroup AVFactories_h
+ *
+ * \brief A program to test create/destroy vector routines.
+ *
+ * ### Usage ###
+ *
+ * \code
+ * VectorFactoriesTest [options]
+ * Options:
+ * -h         print help
+ * -q         quiet: run silently
+ * -v         verbose: print extra information
+ * -d level   set lalDebugLevel to level
+ * \endcode
+ *
+ * ### Description ###
+ *
+ *
+ * ### Exit codes ###
+ *
+ * <table><tr><th>Code</th><th>Explanation</th></tr>
+ * <tr><td>0</td><td>Success, normal exit.</td></tr>
+ * <tr><td>1</td><td>Subroutine failed.</td></tr>
+ * </table>
+ *
+ * ### Algorithm ###
+ *
+ *
+ * ### Uses ###
+ *
+ * \code
+ * lalDebugLevel
+ * \<datatype\>CreateVector()
+ * \<datatype\>ResizeVector()
+ * \<datatype\>DestroyVector()
+ * \endcode
+ *
+ * ### Notes ###
+ *
+ */
 /** \cond DONT_DOXYGEN */
 #include <config.h>
 
@@ -61,7 +66,6 @@ lalDebugLevel
 extern char *optarg;
 extern int   optind;
 
-extern int lalDebugLevel;
 int verbose    = 0;
 
 static void
@@ -145,7 +149,6 @@ TestStatus (LALStatus *status, const char *expectedCodes, int exitCode);
 
 int main( int argc, char *argv[] )
 {
-  lalDebugLevel = 0;
 
   ParseOptions( argc, argv );
 
@@ -254,7 +257,6 @@ ParseOptions (int argc, char *argv[])
     switch (c)
     {
       case 'd': /* set debug level */
-        lalDebugLevel = atoi (optarg);
         break;
 
       case 'v': /* verbose */

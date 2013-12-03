@@ -29,14 +29,16 @@ extern "C" {
 } /* so that editors will match preceding brace */
 #endif
 
-/** \addtogroup ResampleTimeSeries_h
- *  \author Brown, D. A.
+/**
+ * \addtogroup ResampleTimeSeries_h
+ * \author Brown, D. A.
  *
  * \brief Provides routines to resample a time series.
  *
  * At present only integer downsampling of ::REAL4TimeSeries by a power of two is supported.
  *
- * \heading{Synopsis}
+ * ### Synopsis ###
+ *
  * \code
  * #include <lal/ResampleTimeSeries.h>
  * \endcode
@@ -45,7 +47,7 @@ extern "C" {
  * a low pass filter and decimating the resulting time series. Further
  * documentation is given in the individual routines' modules.
  *
-*/
+ */
 /*@{*/
 
 /**\name Error Codes */
@@ -75,7 +77,8 @@ extern "C" {
 #define RESAMPLETIMESERIESH_MSGELDAS "Input resample factor with LDAS FIR"
 /** \endcond */
 
-/** This enum type contains the different low pass filters available to
+/**
+ * This enum type contains the different low pass filters available to
  * prevent power above the new Nyquist frequency entering the resampled
  * time series due to aliasing.
  */
@@ -95,7 +98,8 @@ typedef enum
 ResampleTSFilter;
 
 
-/** This union is provided so that the code can store the parameters of the
+/**
+ * This union is provided so that the code can store the parameters of the
  * filter in a place accessible by the user for user designed low pass filters.
  * This is not presently implemented and this structure may be ignored.
  */
@@ -111,7 +115,8 @@ tagResampleTSFilterParams
 }
 ResampleTSFilterParams;
 
-/** This structure controls the behaviour of the resampling function.
+/**
+ * This structure controls the behaviour of the resampling function.
  */
 typedef struct
 tagResampleTSParams

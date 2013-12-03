@@ -1,11 +1,11 @@
-/** \addtogroup pkg_factories
-
-    \brief This package provides routines for creating and destroying
-    the LAL aggregate datatypes.
-
-    @{
-    \defgroup AVFactories_h	Header AVFactories.h
-    \defgroup SeqFactories_h	Header SeqFactories.h
-    \defgroup StringVector_h	Header StringVector.h
-    @}
-*/
+/**
+ * \addtogroup pkg_factories
+ * \brief This package provides routines for creating and destroying
+ * the LAL aggregate datatypes.
+ *
+ * @{
+ * \defgroup AVFactories_h	Header AVFactories.h
+ * \defgroup SeqFactories_h	Header SeqFactories.h
+ * \defgroup StringVector_h	Header StringVector.h
+ * @}
+ */

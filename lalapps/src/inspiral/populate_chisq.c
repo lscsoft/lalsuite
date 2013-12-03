@@ -42,7 +42,6 @@
 #include <time.h>
 #include <math.h>
 
-#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lalapps.h>
 #include <series.h>
 #include <processtable.h>
@@ -55,7 +54,7 @@
 #include <lal/LALDatatypes.h>
 #include <lal/AVFactories.h>
 #include <lal/LALConstants.h>
-#include <lal/FrameStream.h>
+#include <lal/LALFrStream.h>
 #include <lal/ResampleTimeSeries.h>
 #include <lal/Calibration.h>
 #include <lal/FrameCalibration.h>
@@ -325,12 +324,11 @@ int main(int argc, char *argv[])
     LALStatus status = blank_status;
 
     /* frame input data */
-    FrCache *frInCache = NULL;
-    FrCache *frGlobCache = NULL;
-    FrCache *calCache = NULL;
-    FrStream *frStream = NULL;
+    LALCache *frInCache = NULL;
+    LALCache *frGlobCache = NULL;
+    LALCache *calCache = NULL;
+    LALFrStream *frStream = NULL;
     FrChanIn frChan;
-    FrCacheSieve sieve;
     const size_t calGlobLen = FILENAME_MAX;
     CHAR *calGlobPattern;
 
@@ -442,7 +440,6 @@ int main(int argc, char *argv[])
 
     /* set up inital debugging values */
     lal_errhandler = LAL_ERR_EXIT;
-    set_debug_level("1");
 
     /* create the process and process params tables */
     proctable.processTable =
@@ -644,11 +641,10 @@ int main(int argc, char *argv[])
         frGlobCache = NULL;
 
         /* create a frame cache by globbing all *.gwf files in the pwd */
-        LAL_CALL(LALFrCacheGenerate(&status, &frGlobCache, NULL, NULL),
-                 &status);
+        frGlobCache = XLALCacheGlob(NULL, NULL);
 
         /* check we globbed at least one frame file */
-        if (!frGlobCache->numFrameFiles) {
+        if (!frGlobCache->length) {
             fprintf(stderr,
                     "error: no frame file files of type %s found\n",
                     frInType);
@@ -656,24 +652,18 @@ int main(int argc, char *argv[])
         }
 
         /* sieve out the requested data type */
-        memset(&sieve, 0, sizeof(FrCacheSieve));
-        snprintf(ifoRegExPattern,
-                 sizeof(ifoRegExPattern) / sizeof(*ifoRegExPattern),
-                 ".*%c.*", fqChanName[0]);
-        sieve.srcRegEx = ifoRegExPattern;
-        sieve.dscRegEx = frInType;
-        LAL_CALL(LALFrSieveCache(&status, &frInCache, frGlobCache, &sieve),
-                 &status);
+        frInCache = XLALCacheDuplicate(frGlobCache);
+        XLALCacheSieve(frInCache, 0, 0, ifoRegExPattern, frInType, NULL);
 
         /* check we got at least one frame file back after the sieve */
-        if (!frInCache->numFrameFiles) {
+        if (!frInCache->length) {
             fprintf(stderr,
                     "error: no frame files of type %s globbed as input\n",
                     frInType);
             exit(1);
         }
 
-        LAL_CALL(LALDestroyFrCache(&status, &frGlobCache), &status);
+        XLALDestroyCache(frGlobCache);
     } else {
         if (vrbflg)
             fprintf(stdout,
@@ -681,18 +671,17 @@ int main(int argc, char *argv[])
                     frInCacheName);
 
         /* read a frame cache from the specified file */
-        LAL_CALL(LALFrCacheImport(&status, &frInCache, frInCacheName),
-                 &status);
+        frInCache = XLALCacheImport(frInCacheName);
     }
 
     /* open the input data frame stream from the frame cache */
     LAL_CALL(LALFrCacheOpen(&status, &frStream, frInCache), &status);
 
     /* set the mode of the frame stream to fail on gaps or time errors */
-    frStream->mode = LAL_FR_VERBOSE_MODE;
+    frStream->mode = LAL_FR_STREAM_VERBOSE_MODE;
 
     /* enable frame-file checksum checking */
-    XLALFrSetMode(frStream, frStream->mode | LAL_FR_CHECKSUM_MODE);
+    XLALFrStreamSetMode(frStream, frStream->mode | LAL_FR_STREAM_CHECKSUM_MODE);
 
     /* seek to required epoch and set chan name */
     LAL_CALL(LALFrSeek(&status, &(chan.epoch), frStream), &status);
@@ -834,7 +823,7 @@ int main(int argc, char *argv[])
 
     /* close the frame file stream and destroy the cache */
     LAL_CALL(LALFrClose(&status, &frStream), &status);
-    LAL_CALL(LALDestroyFrCache(&status, &frInCache), &status);
+    XLALDestroyCache(frInCache);
 
     /* write the raw channel data as read in from the frame files */
     if (writeRawData)
@@ -888,8 +877,7 @@ int main(int argc, char *argv[])
     if (calData) {
         /* if we are using calibrated data set the response to unity */
         for (k = 0; k < resp.data->length; ++k) {
-            resp.data->data[k].re = (REAL4) (1.0 / dynRange);
-            resp.data->data[k].im = 0.0;
+            resp.data->data[k] = (REAL4) (1.0 / dynRange);
         }
         if (writeResponse)
             outFrame =
@@ -919,7 +907,7 @@ int main(int argc, char *argv[])
             LALFree(calGlobPattern);
 
         /* store the name of the calibration files used */
-        for (i = 0; i < calCache->numFrameFiles; ++i) {
+        for (i = 0; i < calCache->length; ++i) {
             this_search_summvar = this_search_summvar->next =
                 (SearchSummvarsTable *) LALCalloc(1,
                                                   sizeof
@@ -929,15 +917,15 @@ int main(int argc, char *argv[])
                      "calibration frame %d", i);
             snprintf(this_search_summvar->string,
                      LIGOMETA_STRING_MAX, "%s",
-                     calCache->frameFiles[i].url);
+                     calCache->list[i].url);
         }
 
         /* get the response from the frame data */
         LAL_CALL(LALExtractFrameResponse(&status, &resp, calCache,
                                          &calfacts), &status);
-        LAL_CALL(LALDestroyFrCache(&status, &calCache), &status);
-        alpha = (REAL4) calfacts.alpha.re;
-        alphabeta = (REAL4) calfacts.alphabeta.re;
+        XLALDestroyCache(calCache);
+        alpha = (REAL4) crealf(calfacts.alpha);
+        alphabeta = (REAL4) crealf(calfacts.alphabeta);
         if (vrbflg)
             fprintf(stdout,
                     "for calibration of data, alpha = %f and alphabeta = %f\n",
@@ -955,8 +943,7 @@ int main(int argc, char *argv[])
         if (vrbflg)
             fprintf(stdout, "setting response to unity... ");
         for (k = 0; k < resp.data->length; ++k) {
-            resp.data->data[k].re = 1.0;
-            resp.data->data[k].im = 0;
+            resp.data->data[k] = 1.0;
         }
         if (vrbflg)
             fprintf(stdout, "done\n");
@@ -973,8 +960,7 @@ int main(int argc, char *argv[])
         if (vrbflg)
             fprintf(stdout, "setting response to inverse dynRange... ");
         for (k = 0; k < resp.data->length; ++k) {
-            resp.data->data[k].re = (REAL4) (1.0 / dynRange);
-            resp.data->data[k].im = 0.0;
+            resp.data->data[k] = (REAL4) (1.0 / dynRange);
         }
         if (vrbflg)
             fprintf(stdout, "done\n");
@@ -2129,7 +2115,6 @@ fprintf( a,   "lalapps_inspiral [options]\n\n");\
 fprintf( a, "  --help                       display this message\n");\
 fprintf( a, "  --verbose                    print progress information\n");\
 fprintf( a, "  --version                    print version information and exit\n");\
-fprintf( a, "  --debug-level LEVEL          set the LAL debug level to LEVEL\n");\
 fprintf( a, "  --user-tag STRING            set the process_params usertag to STRING\n");\
 fprintf( a, "  --ifo-tag STRING             set the ifotag to STRING - for file naming\n");\
 fprintf( a, "  --comment STRING             set the process table comment to STRING\n");\
@@ -2349,7 +2334,6 @@ int arg_parse_check(int argc, char *argv[], MetadataTable procparams)
         {"colored-gaussian", required_argument, 0, '.'},
         {"checkpoint-path", required_argument, 0, 'N'},
         {"output-path", required_argument, 0, 'O'},
-        {"debug-level", required_argument, 0, 'z'},
         {"user-tag", required_argument, 0, 'Z'},
         {"userTag", required_argument, 0, 'Z'},
         {"ifo-tag", required_argument, 0, 'I'},
@@ -2411,7 +2395,7 @@ int arg_parse_check(int argc, char *argv[], MetadataTable procparams)
 
         c = getopt_long_only(argc, argv,
                              "-A:B:C:D:E:F:G:H:I:J:K:L:M:N:O:P:Q:R:S:T:U:VW:?:X:Y:Z:"
-                             "a:b:c:d:e:f:g:hi:j:k:l:m:n:o:p:q:r:s:t:u:v:w:x:y:z:"
+                             "a:b:c:d:e:f:g:hi:j:k:l:m:n:o:p:q:r:s:t:u:v:w:x:y:"
                              "0:1::2:3:4:567:8:9:*:>:<:(:):[:],:{:}:|:+:=:^:.:",
                              long_options, &option_index);
 
@@ -3158,11 +3142,6 @@ int arg_parse_check(int argc, char *argv[], MetadataTable procparams)
                     exit(1);
                 }
                 ADD_PROCESS_PARAM("string", "%s", optarg);
-
-            case 'z':
-                set_debug_level(optarg);
-                ADD_PROCESS_PARAM("string", "%s", optarg);
-                break;
 
             case 'Z':
                 /* create storage for the usertag */

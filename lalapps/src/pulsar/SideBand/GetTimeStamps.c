@@ -18,15 +18,16 @@
  */
 
 /*********************************************************************************/
-/** \author C. Messenger
- * \file 
+/**
+ * \author C. Messenger
+ * \file
  * \ingroup pulsarApps
  * \brief
- * Generates posterior pdfs for a subset of the unknown orbital and nuisance 
+ * Generates posterior pdfs for a subset of the unknown orbital and nuisance
  * parameters given a set of candidate regions in frequency of demodulated Fourier
  * transform results.
- *                                                                          
- *********************************************************************************/
+ *
+ */
 
 /* System includes */
 #include <stdio.h>
@@ -80,7 +81,7 @@ void initUserVars (LALStatus *);
 /* Function definitions start here */
 /*----------------------------------------------------------------------*/
 
-/** 
+/**
  * MAIN function of SideBandMCMC code
  * Compute the posterior pdfs of the orbital and nuisance parameters of a binary signal
  * in Fstat form
@@ -95,7 +96,6 @@ int main(int argc,char *argv[])
   LIGOTimeGPS end = empty_LIGOTimeGPS;
   INT4 i;
 
-  lalDebugLevel = 0;  
   vrbflg = 0;	/* verbose error-messages */
 
   /**************************************************************************************/
@@ -105,7 +105,6 @@ int main(int argc,char *argv[])
   lal_errhandler = LAL_ERR_EXIT;
 
   /* register all user-variable */
-  LAL_CALL (LALGetDebugLevel(&status, argc, argv, 'v'), &status);
   LAL_CALL (initUserVars(&status), &status); 	
 
   /* do ALL cmdline and cfgfile handling */

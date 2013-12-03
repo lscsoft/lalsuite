@@ -18,12 +18,13 @@
  */
 
 /*********************************************************************************/
-/** \author R. Prix
+/**
+ * \author R. Prix
  * \file Fstat_v3.c
  * \brief
  * Calculate the Fourier transform over the total timespan from a set of SFTs
  *
- *********************************************************************************/
+ */
 #include "config.h"
 
 /* System includes */
@@ -63,7 +64,8 @@ static LALUnit empty_LALUnit;
 
 /* ---------- function definitions ---------- */
 
-/** Turn the given multi-IFO SFTvectors into one long Fourier transform (LFT) over the total observation time
+/**
+ * Turn the given multi-IFO SFTvectors into one long Fourier transform (LFT) over the total observation time
  */
 SFTtype *
 XLALSFTVectorToLFT ( const SFTVector *sfts,	/**< input SFT vector */
@@ -239,11 +241,11 @@ XLALSFTVectorToLFT ( const SFTVector *sfts,	/**< input SFT vector */
 	{
 	  REAL8 binReal, binImag;
 
-	  binReal = fact_re * thisSFT->data->data[k].re - fact_im * thisSFT->data->data[k].im;
-	  binImag = fact_re * thisSFT->data->data[k].im + fact_im * thisSFT->data->data[k].re;
+	  binReal = fact_re * crealf(thisSFT->data->data[k]) - fact_im * cimagf(thisSFT->data->data[k]);
+	  binImag = fact_re * cimagf(thisSFT->data->data[k]) + fact_im * crealf(thisSFT->data->data[k]);
 
-	  thisSFT->data->data[k].re = binReal;
-	  thisSFT->data->data[k].im = binImag;
+	  thisSFT->data->data[k].realf_FIXME = binReal;
+	  thisSFT->data->data[k].imagf_FIXME = binImag;
 	} /* k < numBins */
 
       if ( XLALReorderSFTtoFFTW (thisSFT->data) != XLAL_SUCCESS )
@@ -298,8 +300,8 @@ XLALSFTVectorToLFT ( const SFTVector *sfts,	/**< input SFT vector */
 
 
 
-/** Turn the given SFTvector into one long time-series, properly dealing with gaps.
- *
+/**
+ * Turn the given SFTvector into one long time-series, properly dealing with gaps.
  * NOTE: this function <b>modifies</b> the input SFTs in the process!
  * If you need to reuse the SFTvector afterwards, you need to copy it before
  * passing it into this function.
@@ -464,7 +466,7 @@ XLALSFTVectorToCOMPLEX8TimeSeries ( SFTVector *sfts,                /**< [in/out
       offsetEff = 1e-9 * (floor)( offsetEff * 1e9 + 0.5 );	/* round to closest integer multiple of nanoseconds */
       hetCycles = fmod ( fHet * offsetEff, 1);			/* required heterodyning phase-correction for this SFT */
     
-      sin_cos_2PI_LUT (&hetCorrection.im, &hetCorrection.re, -hetCycles );
+      sin_cos_2PI_LUT (&hetCorrection.imagf_FIXME, &hetCorrection.realf_FIXME, -hetCycles );
      
       /* Note: we also bundle the overall normalization of 'df' into the het-correction.
        * This ensures that the resulting timeseries will have the correct normalization, according to
@@ -475,8 +477,8 @@ XLALSFTVectorToCOMPLEX8TimeSeries ( SFTVector *sfts,                /**< [in/out
        * apply it ourselves)
        *
        */
-      hetCorrection.re *= dfSFT;
-      hetCorrection.im *= dfSFT;
+      hetCorrection.realf_FIXME *= dfSFT;
+      hetCorrection.imagf_FIXME *= dfSFT;
 
       /* FIXME: check how time-critical this step is, using proper profiling! */
       if ( XLALMultiplySFTbyCOMPLEX8 ( thisSFT, hetCorrection ) != XLAL_SUCCESS )
@@ -486,7 +488,7 @@ XLALSFTVectorToCOMPLEX8TimeSeries ( SFTVector *sfts,                /**< [in/out
 	}
 
       XLALPrintInfo ("SFT n = %d: (tn - t0) = %g s EQUIV %g s, hetCycles = %g, ==> fact = %g + i %g\n",
-                     n, offset0, offsetEff, hetCycles, hetCorrection.re, hetCorrection.im );
+                     n, offset0, offsetEff, hetCycles, crealf(hetCorrection), cimagf(hetCorrection) );
 
       /* FIXME: check if required */
       if ( XLALReorderSFTtoFFTW (thisSFT->data) != XLAL_SUCCESS )
@@ -528,7 +530,8 @@ XLALSFTVectorToCOMPLEX8TimeSeries ( SFTVector *sfts,                /**< [in/out
 } /* XLALSFTVectorToCOMPLEX8TimeSeries() */
 
 
-/** Change frequency-bin order from fftw-convention to a 'SFT'
+/**
+ * Change frequency-bin order from fftw-convention to a 'SFT'
  * ie. from FFTW: f[0], f[1],...f[N/2], f[-(N-1)/2], ... f[-2], f[-1]
  * to: f[-(N-1)/2], ... f[-1], f[0], f[1], .... f[N/2]
  */
@@ -572,7 +575,8 @@ XLALReorderFFTWtoSFT (COMPLEX8Vector *X)
 
 }  /* XLALReorderFFTWtoSFT() */
 
-/** Change frequency-bin order from 'SFT' to fftw-convention
+/**
+ * Change frequency-bin order from 'SFT' to fftw-convention
  * ie. from f[-(N-1)/2], ... f[-1], f[0], f[1], .... f[N/2]
  * to FFTW: f[0], f[1],...f[N/2], f[-(N-1)/2], ... f[-2], f[-1]
  */
@@ -617,7 +621,8 @@ XLALReorderSFTtoFFTW (COMPLEX8Vector *X)
 }  /* XLALReorderSFTtoFFTW() */
 
 
-/** Multiply SFT frequency bins by given complex factor.
+/**
+ * Multiply SFT frequency bins by given complex factor.
  *
  * NOTE: this <b>modifies</b> the given SFT in place
  */
@@ -637,11 +642,11 @@ XLALMultiplySFTbyCOMPLEX8 ( SFTtype *sft,	/**< [in/out] SFT */
     {
       REAL4 yRe, yIm;
 
-      yRe = factor.re * sft->data->data[k].re - factor.im * sft->data->data[k].im;
-      yIm = factor.re * sft->data->data[k].im + factor.im * sft->data->data[k].re;
+      yRe = crealf(factor) * crealf(sft->data->data[k]) - cimagf(factor) * cimagf(sft->data->data[k]);
+      yIm = crealf(factor) * cimagf(sft->data->data[k]) + cimagf(factor) * crealf(sft->data->data[k]);
 
-      sft->data->data[k].re = yRe;
-      sft->data->data[k].im = yIm;
+      sft->data->data[k].realf_FIXME = yRe;
+      sft->data->data[k].imagf_FIXME = yIm;
 
     } /* for k < numBins */
 
@@ -650,7 +655,8 @@ XLALMultiplySFTbyCOMPLEX8 ( SFTtype *sft,	/**< [in/out] SFT */
 } /* XLALMultiplySFTbyCOMPLEX8() */
 
 
-/** Time-shift the given SFT by an amount of 'shift' seconds,
+/**
+ * Time-shift the given SFT by an amount of 'shift' seconds,
  * using the frequency-domain expression y(f) = x(f) * e^(-i 2pi f tau),
  * which shifts x(t) into y(t) = x(t - tau)
  *
@@ -677,11 +683,11 @@ XLALTimeShiftSFT ( SFTtype *sft,	/**< [in/out] SFT to time-shift */
 
       sin_cos_2PI_LUT ( &fact_im, &fact_re, shiftCyles );
 
-      yRe = fact_re * sft->data->data[k].re - fact_im * sft->data->data[k].im;
-      yIm = fact_re * sft->data->data[k].im + fact_im * sft->data->data[k].re;
+      yRe = fact_re * crealf(sft->data->data[k]) - fact_im * cimagf(sft->data->data[k]);
+      yIm = fact_re * cimagf(sft->data->data[k]) + fact_im * crealf(sft->data->data[k]);
 
-      sft->data->data[k].re = yRe;
-      sft->data->data[k].im = yIm;
+      sft->data->data[k].realf_FIXME = yRe;
+      sft->data->data[k].imagf_FIXME = yIm;
 
     } /* for k < numBins */
 

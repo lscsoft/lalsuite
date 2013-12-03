@@ -27,23 +27,70 @@ int main(__attribute__((unused)) int argc, __attribute__((unused)) char **argv)
 {
     int result;
     double tmax;
-    COMPLEX16 ymax;
-    const COMPLEX16 y[] = {1+2*I};
 
     NearestNeighborTriggerInterpolant *interp = XLALCreateNearestNeighborTriggerInterpolant(0);
     if (!interp)
         exit(EXIT_FAILURE);
 
-    result = XLALApplyNearestNeighborTriggerInterpolant(interp, &tmax, &ymax, y);
-    if (result)
-        exit(EXIT_FAILURE);
+    {
+        const COMPLEX16 y[] = {1+2*I};
+        COMPLEX16 ymax;
 
-    if (tmax != 0)
-        exit(EXIT_FAILURE);
-    if (creal(ymax) != 1)
-        exit(EXIT_FAILURE);
-    if (cimag(ymax) != 2)
-        exit(EXIT_FAILURE);
+        result = XLALCOMPLEX16ApplyNearestNeighborTriggerInterpolant(interp, &tmax, &ymax, y);
+        if (result)
+            exit(EXIT_FAILURE);
+
+        if (tmax != 0)
+            exit(EXIT_FAILURE);
+        if (creal(ymax) != 1)
+            exit(EXIT_FAILURE);
+        if (cimag(ymax) != 2)
+            exit(EXIT_FAILURE);
+    }
+
+    {
+        const COMPLEX8 y[] = {1+2*I};
+        COMPLEX8 ymax;
+
+        result = XLALCOMPLEX8ApplyNearestNeighborTriggerInterpolant(interp, &tmax, &ymax, y);
+        if (result)
+            exit(EXIT_FAILURE);
+
+        if (tmax != 0)
+            exit(EXIT_FAILURE);
+        if (crealf(ymax) != 1)
+            exit(EXIT_FAILURE);
+        if (cimagf(ymax) != 2)
+            exit(EXIT_FAILURE);
+    }
+
+    {
+        const REAL8 y[] = {1};
+        REAL8 ymax;
+
+        result = XLALREAL8ApplyNearestNeighborTriggerInterpolant(interp, &tmax, &ymax, y);
+        if (result)
+            exit(EXIT_FAILURE);
+
+        if (tmax != 0)
+            exit(EXIT_FAILURE);
+        if (ymax != 1)
+            exit(EXIT_FAILURE);
+    }
+
+    {
+        const REAL4 y[] = {1};
+        REAL4 ymax;
+
+        result = XLALREAL4ApplyNearestNeighborTriggerInterpolant(interp, &tmax, &ymax, y);
+        if (result)
+            exit(EXIT_FAILURE);
+
+        if (tmax != 0)
+            exit(EXIT_FAILURE);
+        if (ymax != 1)
+            exit(EXIT_FAILURE);
+    }
 
     XLALDestroyNearestNeighborTriggerInterpolant(interp);
     exit(EXIT_SUCCESS);

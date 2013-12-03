@@ -23,9 +23,8 @@
 #include <lal/LALStdio.h>
 #include <lal/UserInput.h>
 #include <lal/LogPrintf.h>
+#include <lal/LALString.h>
 #include <lal/StringVector.h>
-
-extern INT4 lalDebugLevel;
 
 #define TRUE  (1==1)
 #define FALSE (1==0)
@@ -42,7 +41,8 @@ typedef enum {
   UVAR_LAST
 } UserVarType;
 
-/** Linked list to hold the complete information about the user-variables.
+/**
+ * Linked list to hold the complete information about the user-variables.
  */
 typedef struct tagLALUserVariable {
   const CHAR *name;	/**< full name */
@@ -70,7 +70,7 @@ CHAR *XLALUvarValue2String (LALUserVariable *uvar);
 
 CHAR *XLALUvarType2String (LALUserVariable *uvar);
 
-CHAR *copy_string_unquoted ( const CHAR *in );
+CHAR *XLAL_copy_string_unquoted ( const CHAR *in );
 void check_and_mark_as_set ( LALUserVariable *varp );
 
 
@@ -117,16 +117,17 @@ XLALRegisterLISTUserVar ( const CHAR *name, CHAR optchar, UserVarState flag, con
 }
 
 
-/** \ingroup UserInput_h
+/**
+ * \ingroup UserInput_h
  * Internal function: Register a user-variable with the module.
- *  Effectively put an appropriate entry into UVAR_vars
+ * Effectively put an appropriate entry into UVAR_vars
  *
  * Checks that long- and short-options are unique, an error is returned
  * if a previous option name collides.
  *
  * \note don't use this function directly, as it is not type-safe!!
- *      ==> use one of the 4 wrappers: XLALRegisterREALUserVar(),
- *    XLALRegisterINTUserVar(), XLALRegisterBOOLUserVar(), XLALRegisterSTRINGUserVar().
+ * ==> use one of the 4 wrappers: XLALRegisterREALUserVar(),
+ * XLALRegisterINTUserVar(), XLALRegisterBOOLUserVar(), XLALRegisterSTRINGUserVar().
  *
  */
 int XLALRegisterUserVar ( const CHAR *name,	/**< name of user-variable to register */
@@ -179,7 +180,8 @@ int XLALRegisterUserVar ( const CHAR *name,	/**< name of user-variable to regist
 
 } /* XLALRegisterUserVar() */
 
-/** Free all memory associated with user-variable linked list
+/**
+ * Free all memory associated with user-variable linked list
  */
 void
 XLALDestroyUserVars( void )
@@ -225,7 +227,8 @@ XLALDestroyUserVars( void )
 } /* XLALDestroyUserVars() */
 
 
-/** Parse command-line into UserVariable array
+/**
+ * Parse command-line into UserVariable array
  */
 int
 XLALUserVarReadCmdline ( int argc, char *argv[] )
@@ -365,7 +368,7 @@ XLALUserVarReadCmdline ( int argc, char *argv[] )
 	  else	/* parse bool-argument: should be consistent with bool-parsing in ConfigFile!! */
 	    {
 	      /* get rid of case ambiguities */
-	      if ( XLALLowerCaseString (optarg) != XLAL_SUCCESS ) {
+	      if ( XLALStringToLowerCase (optarg) != XLAL_SUCCESS ) {
                 XLAL_ERROR ( XLAL_EFUNC );
               }
 
@@ -415,8 +418,8 @@ XLALUserVarReadCmdline ( int argc, char *argv[] )
 	  strp = *(CHAR**)(ptr->varp);
 	  if ( strp != NULL) 	 /* something allocated here before? */
 	    XLALFree ( strp );
-	  if ( (strp = copy_string_unquoted ( optarg )) == NULL ) {
-            XLALPrintError ("%s: copy_string_unquoted() failed.\n", __func__ );
+	  if ( (strp = XLAL_copy_string_unquoted ( optarg )) == NULL ) {
+            XLALPrintError ("%s: XLAL_copy_string_unquoted() failed.\n", __func__ );
             XLAL_ERROR ( XLAL_EFUNC );
 	  }
 	  /* return value */
@@ -455,8 +458,8 @@ XLALUserVarReadCmdline ( int argc, char *argv[] )
 } /* XLALUserVarReadCmdline() */
 
 
-/** Read config-variables from cfgfile and parse into input-structure.
- *
+/**
+ * Read config-variables from cfgfile and parse into input-structure.
  * An error is reported if the config-file reading fails, but the
  * individual variable-reads are treated as optional
  */
@@ -571,7 +574,8 @@ XLALUserVarReadCfgfile ( const CHAR *cfgfile ) 	   /**< [in] name of config-file
 #define UVAR_MAXDEFSTR    100 	/* max length of default-string */
 #define UVAR_MAXFMTLEN    128   /* max length of help-line format-string */
 
-/** Assemble all help-info from uvars into a help-string.
+/**
+ * Assemble all help-info from uvars into a help-string.
  */
 CHAR *
 XLALUserVarHelpString ( const CHAR *progname )
@@ -781,7 +785,8 @@ XLALUserVarHelpString ( const CHAR *progname )
 } /* XLALUserVarHelpString() */
 
 
-/** Put all the pieces together, and basically does everything:
+/**
+ * Put all the pieces together, and basically does everything:
  * get config-filename from cmd-line (if found),
  * then interpret config-file and then the command-line
  */
@@ -884,7 +889,8 @@ XLALUserVarReadAllInput ( int argc, char *argv[] )
 
 
 
-/** Has this user-variable been set by the user?
+/**
+ * Has this user-variable been set by the user?
  * returns TRUE/FALSE
  */
 int
@@ -914,7 +920,8 @@ XLALUserVarWasSet (const void *cvar)
 } /* XLALUserVarWasSet() */
 
 
-/** Check that all required user-variables have been set successfully.
+/**
+ * Check that all required user-variables have been set successfully.
  * Print error if not
  */
 int
@@ -936,70 +943,8 @@ XLALUserVarCheckRequired (void)
 } /* XLALUserVarCheckRequired() */
 
 
-/** Handle the delicate setting of lalDebuglevel.
- *
- * \note *NEVER* call this function after any LALMalloc/LALCalloc/LALRealloc
- * have been used. A change of lalDebugLevel can then lead to inconsistencies
- * in the LAL memory-checker.
- * You should therefore call this function very early on in main(), before any
- * LALMallocs ...
- */
-int
-XLALGetDebugLevel (int argc, char *argv[], CHAR optchar)
-{
-  static const char *help = "set lalDebugLevel";
-  static INT4 defaultDebugLevel;
-
-  INT4 i;
-  CHAR *ptr;
-
-  if ( !argv ) {
-    XLALPrintError ("%s: NULL argv[] passed as input.\n", __func__ );
-    XLAL_ERROR ( XLAL_EINVAL );
-  }
-  if ( UVAR_vars.next != NULL || UVAR_vars.varp ) {
-    XLALPrintError ("%s: lalDebugLevel can only be read before ANY mallocs(), even hidden..\n", __func__ );
-    XLAL_ERROR ( XLAL_EFAULT );
-  }
-
-  /* "register" the debug-level variable in the head of the UVAR-list,
-   * to avoid any mallocs. We need this to show up in the help-string */
-  UVAR_vars.name = NULL;
-  UVAR_vars.type = UVAR_INT4;
-  UVAR_vars.optchar = optchar;
-  UVAR_vars.help = help;
-
-  defaultDebugLevel = lalDebugLevel;
-  UVAR_vars.varp = &defaultDebugLevel;	/* trick: use to store default-value (for help-string) */
-
-  UVAR_vars.state = UVAR_OPTIONAL;
-  UVAR_vars.next = NULL;
-
-  /* the command-line has to be processed by hand for this... ! */
-  for (i=1; i < argc; i++)
-    {
-      if ( (argv[i][0] == '-') && (argv[i][1] == optchar) )
-	{
-	  if (argv[i][2] != '\0')
-	    ptr = argv[i]+2;
-	  else
-	    ptr = argv[i+1];
-
-	  if ( (ptr == NULL) || (sscanf ( ptr, "%d", &lalDebugLevel) != 1) ) {
-	    XLALPrintError ("%s: Setting debug-level `-%c` requires an argument\n", __func__, optchar);
-	    XLAL_ERROR ( XLAL_EDOM );
-	  }
-	  break;
-	} /* if debug-switch found */
-
-    } /* for i < argc */
-
-  return XLAL_SUCCESS;
-
-} /* XLALGetDebugLevel() */
-
-
-/** Return a log-string representing the <em>complete</em> user-input.
+/**
+ * Return a log-string representing the <em>complete</em> user-input.
  * <em>NOTE:</em> we only record user-variables that have been set
  * by the user.
  */
@@ -1226,35 +1171,32 @@ XLALUvarValue2String ( LALUserVariable *uvar )
 } /* XLALUvarValue2String() */
 
 
-/** Copy (and allocate) string 'in', possibly with quotes \" or \' removed.
+/**
+ * Copy (and allocate) string 'in', possibly with quotes \" or \' removed.
  * If quotes are present at the beginning of 'in', they must have a matching
  * quote at the end of string, otherwise an error is printed and return=NULL
  */
 CHAR *
-copy_string_unquoted ( const CHAR *in )
+XLAL_copy_string_unquoted ( const CHAR *in )
 {
   const CHAR *tmp;
   CHAR *out;
   CHAR opening_quote = 0;
   CHAR closing_quote = 0;
-  UINT4 inlen, outlen;
+  UINT4 outlen;
 
-  if ( !in )
-    return NULL;
+  XLAL_CHECK_NULL ( in != NULL, XLAL_EINVAL );
+  UINT4 inlen = strlen ( in );
 
-  inlen = strlen ( in );
-
-  if ( (in[0] == '\'') || (in[0] == '\"') )
+  if ( (in[0] == '\'') || (in[0] == '\"') ) {
     opening_quote = in[0];
-  if ( (in[inlen-1] == '\'') || (in[inlen-1] == '\"') )
+  }
+  if ( (inlen >= 2) && ( (in[inlen-1] == '\'') || (in[inlen-1] == '\"') ) ) {
     closing_quote = in[inlen-1];
+  }
 
   /* check matching quotes */
-  if ( opening_quote != closing_quote )
-    {
-      LogPrintf (LOG_CRITICAL, "Unmatched quotes in string [%s]\n", in );
-      return NULL;
-    }
+  XLAL_CHECK_NULL ( opening_quote == closing_quote, XLAL_EINVAL, "Unmatched quotes in string [%s]\n", in );
 
   if ( opening_quote )
     {
@@ -1267,18 +1209,17 @@ copy_string_unquoted ( const CHAR *in )
       outlen = inlen;
     }
 
-  if ( (out = LALCalloc (1, outlen + 1)) == NULL ) {
-    LogPrintf (LOG_CRITICAL, "Out of memory!\n");
-    return NULL;
-  }
+  XLAL_CHECK_NULL ( (out = LALCalloc (1, outlen + 1)) != NULL, XLAL_ENOMEM );
 
   strncpy ( out, tmp, outlen);
   out[outlen] = 0;
+
   return out;
 
-} /* copy_string_unquoted() */
+} /* XLAL_copy_string_unquoted() */
 
-/** Mark the user-variable as set, check if it has been
+/**
+ * Mark the user-variable as set, check if it has been
  * set previously and issue a warning if set more than once ...
  */
 void
@@ -1404,28 +1345,6 @@ LALUserVarWasSet (const void *cvar)
   return (XLALUserVarWasSet(cvar));
 }
 
-/** \deprecated use XLALGetDebugLevel() instead */
-void
-LALGetDebugLevel (LALStatus *status, int argc, char *argv[], CHAR optchar)
-{
-  const char *fn = __func__;
-
-  INITSTATUS(status);
-
-  ASSERT (argv, status,  USERINPUTH_ENULL, USERINPUTH_MSGENULL);
-  ASSERT (UVAR_vars.next == NULL, status, USERINPUTH_EDEBUG,  USERINPUTH_MSGEDEBUG);
-  ASSERT (UVAR_vars.varp == NULL, status, USERINPUTH_EDEBUG,  USERINPUTH_MSGEDEBUG);
-
-  if ( XLALGetDebugLevel (argc, argv, optchar) != XLAL_SUCCESS ) {
-    XLALPrintError ("%s: call to XLALGetDebugLevel() failed with code %d\n", fn, xlalErrno );
-    ABORT ( status,  USERINPUTH_EXLAL,  USERINPUTH_MSGEXLAL );
-  }
-
-  RETURN (status);
-
-} /* LALGetDebugLevel() */
-
-
 /** \deprecated use XLALUserVarGetLog() instead */
 void
 LALUserVarGetLog (LALStatus *status, CHAR **logstr,  UserVarLogFormat format)
@@ -1448,7 +1367,8 @@ LALUserVarGetLog (LALStatus *status, CHAR **logstr,  UserVarLogFormat format)
 
 
 #if 0
-/** Return user log as a process-params table
+/**
+ * Return user log as a process-params table
  *
  * \param[out] **procPar the output ProcessParamsTable
  * \param[in] *progname  name of calling code
@@ -1508,7 +1428,8 @@ LALUserVarGetProcParamsTable (LALStatus *status, ProcessParamsTable **out, CHAR 
 #endif
 
 
-/** \deprecated use XLALUserVarHelpString() instead
+/**
+ * \deprecated use XLALUserVarHelpString() instead
  */
 void
 LALUserVarHelpString (LALStatus *status,

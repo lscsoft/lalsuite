@@ -18,7 +18,8 @@
  */
 
 /*********************************************************************************/
-/** \author R. Prix, D. Keitel
+/**
+ * \author R. Prix, D. Keitel
  * \file
  * \brief
  * Generate N samples of various statistics (F-stat, LV-stat,...) drawn from their
@@ -28,7 +29,7 @@
  * This is based on synthesizeBstat and synthesizeTransientStats, and is mostly meant
  * to be used for Monte-Carlos studies of ROC curves
  *
- *********************************************************************************/
+ */
 
 /*
  *
@@ -72,7 +73,7 @@
 #include <lalapps.h>
 
 /*---------- DEFINES ----------*/
-#define EPHEM_YEARS  "05-09"	/**< default range, covering S5: override with --ephemYear */
+#define EPHEM_YEARS  "00-19-DE405"	/**< default range, covering S5: override with --ephemYear */
 #define SQ(x) ((x)*(x))
 #define SQUARE(x) ( (x) * (x) )
 #define CUBE(x) ((x)*(x)*(x))
@@ -129,7 +130,8 @@ typedef struct {
   INT4 randSeed;	/**< GSL random-number generator seed value to use */
 } UserInput_t;
 
-/** Configuration settings required for and defining a coherent pulsar search.
+/**
+ * Configuration settings required for and defining a coherent pulsar search.
  * These are 'pre-processed' settings, which have been derived from the user-input.
  */
 typedef struct {
@@ -148,12 +150,6 @@ typedef struct {
 
 } ConfigVariables;
 
-/** multi-detector array of InjParams_t types */
-typedef struct {
-   UINT4 length;            /**< number of detectors */
-   InjParams_t *data;       /**< array of InjParams_t (pointers), one for each detector X */
- } MultiInjParams;
-
 /* ---------- local prototypes ---------- */
 int main(int argc,char *argv[]);
 
@@ -163,9 +159,6 @@ EphemerisData * XLALInitEphemeris (const CHAR *ephemYear );
 int XLALInitAmplitudePrior ( AmplitudePrior_t *AmpPrior, const UserInput_t *uvar );
 MultiLIGOTimeGPSVector * XLALCreateMultiLIGOTimeGPSVector ( UINT4 numDetectors );
 int write_LV_candidate_to_fp ( FILE *fp, const LVcomponents *LVstat, const PulsarDopplerParams *dopplerParams_in );
-MultiInjParams * XLALCreateMultiInjParams ( UINT4 numDetectors );
-void XLALDestroyMultiInjParams ( MultiInjParams *multipar );
-InjParams_t * XLALCombineInjParamsForLine( const MultiInjParams *injParamsDrawnX, const UINT4 lineX );
 
 /* exportable API */
 
@@ -188,7 +181,6 @@ int main(int argc,char *argv[])
   UserInput_t uvar = empty_UserInput;
   ConfigVariables cfg = empty_ConfigVariables;		/**< various derived configuration settings */
 
-  lalDebugLevel = 0;
   vrbflg = 1;	/* verbose error-messages */
   LogSetLevel(lalDebugLevel);
 
@@ -196,10 +188,6 @@ int main(int argc,char *argv[])
   gsl_set_error_handler_off ();
 
   /* ----- register and read all user-variables ----- */
-  if ( XLALGetDebugLevel ( argc, argv, 'v') != XLAL_SUCCESS ) {
-    LogPrintf ( LOG_CRITICAL, "%s: XLALGetDebugLevel() failed with errno=%d\n", __func__, xlalErrno );
-    return 1;
-  }
   LogSetLevel(lalDebugLevel);
 
   if ( XLALInitUserVars( &uvar ) != XLAL_SUCCESS ) {
@@ -288,81 +276,8 @@ int main(int argc,char *argv[])
       multiAMBuffer_t multiAMBuffer = empty_multiAMBuffer;      /* prepare AM-buffer */
       MultiFstatAtomVector *multiAtoms;
 
-      if ( !uvar.lineIFO ) { /* signal injection in all detectors, 1 call to XLALSynthesizeTransientAtoms for multi-detector results */
-        multiAtoms = XLALSynthesizeTransientAtoms ( &injParamsDrawn, cfg.skypos, cfg.AmpPrior, cfg.transientInjectRange, cfg.multiDetStates, cfg.SignalOnly, &multiAMBuffer, cfg.rng);
-        if ( multiAtoms ==NULL ) {
-          LogPrintf ( LOG_CRITICAL, "%s: XLALSynthesizeTransientAtoms() failed with xlalErrno = %d\n", __func__, xlalErrno );
-          XLAL_ERROR ( XLAL_EFUNC );
-        }
-      }
-
-      else { /* inject a signal in detector lineIFO only, pure gaussian noise in the others */
-
-        /* prepare multiAtoms structure (will be filled by hand from single-IFO results of individual calls to XLALSynthesizeTransientAtoms ) */
-        if ( ( multiAtoms = XLALCalloc ( 1, sizeof(*multiAtoms) )) == NULL ) {
-          XLALPrintError ("%s: XLALCalloc ( 1, %d) failed.\n", __func__, sizeof(*multiAtoms) );
-          XLAL_ERROR ( XLAL_ENOMEM );
-        }
-        multiAtoms->length = numDetectors;
-        if ( ( multiAtoms->data = XLALCalloc ( numDetectors, sizeof(*multiAtoms->data) ) ) == NULL ) {
-          XLALPrintError ("%s: XLALCalloc ( %d, %d) failed.\n", __func__, numDetectors, sizeof(*multiAtoms->data) );
-          XLALFree ( multiAtoms );
-          XLAL_ERROR ( XLAL_ENOMEM );
-        }
-
-        /* prepare array of injection parameters per detector, so that they can be combined for output afterwards */
-        MultiInjParams *injParamsDrawnX = XLALCreateMultiInjParams ( numDetectors );
-
-        for ( UINT4 X=0; X < numDetectors; X++ ) { /* loop through detectors */
-
-          /* finish preparing multiAtoms structure for insertion of atoms for detector X */
-          UINT4 numAtoms = cfg.multiDetStates->data[X]->length;
-          if ( ( multiAtoms->data[X] = XLALCreateFstatAtomVector ( numAtoms ) ) == NULL ) {
-            XLALPrintError ("%s: XLALCreateFstatAtomVector(%d) failed.\n", __func__, numAtoms );
-            XLAL_ERROR ( XLAL_EFUNC );
-          }
-
-          MultiFstatAtomVector *multiAtomsX; /* temporary multiAtoms structure with only 1 detector entry */
-          AmplitudePrior_t AmpPriorX = cfg.AmpPrior; /* for all detectors without line, use temporary AmpPrior struct to set signal strength to 0 */
-          if ( X != (UINT4)(lineX) )
-            AmpPriorX.fixedSNR = 0.0;
-          injParamsDrawnX->data[X] = empty_InjParams_t; /* initialize injection parameter structure for 1 detector */
-
-          /* temporary DetectorStateSeries structure so that XLALSynthesizeTransientAtoms will only synth for detector X */
-          MultiDetectorStateSeries multiDetStatesX;
-          if ( ( multiDetStatesX.data = LALCalloc ( 1, sizeof( *(multiDetStatesX.data) ) )) == NULL ) {
-            XLALPrintError ("%s: LALCalloc ( %d, sizeof(%d)) failed\n", __func__, 1, sizeof(*(multiDetStatesX.data)) );
-            XLAL_ERROR ( XLAL_ENOMEM );
-          }
-          multiDetStatesX.length = 1;
-          multiDetStatesX.startTime = cfg.multiDetStates->startTime;
-          multiDetStatesX.Tspan = cfg.multiDetStates->Tspan;
-          multiDetStatesX.data[0] = cfg.multiDetStates->data[X];
-
-          /* finally, the synth call for this detector X with temporary DetStates and AmpPrior */
-          multiAtomsX = XLALSynthesizeTransientAtoms ( &injParamsDrawnX->data[X], cfg.skypos, AmpPriorX, cfg.transientInjectRange, &multiDetStatesX, cfg.SignalOnly, &multiAMBuffer, cfg.rng);
-          if ( multiAtomsX == NULL ) {
-            LogPrintf ( LOG_CRITICAL, "%s: XLALSynthesizeTransientAtoms() failed with xlalErrno = %d\n", __func__, xlalErrno );
-            XLAL_ERROR ( XLAL_EFUNC );
-          }
-
-          /* copy single-IFO atoms into multiAtoms struct (manually to avoid LALFree errors - should be done better! */
-          multiAtoms->data[X]->length = multiAtomsX->data[0]->length;
-          multiAtoms->data[X]->TAtom = multiAtomsX->data[0]->TAtom;
-          for ( UINT4 alpha=0; alpha < multiAtomsX->data[0]->length; alpha++ )
-            multiAtoms->data[X]->data[alpha] = multiAtomsX->data[0]->data[alpha];
-
-          /* free temporary structs for this detector */
-          XLALFree ( multiDetStatesX.data );
-          XLALDestroyMultiFstatAtomVector ( multiAtomsX );
-
-        } /* for X < numDetectors */
-
-        /* combine single-IFO injection parameters into one struct for output, free temp struct afterwards */
-        injParamsDrawn = *XLALCombineInjParamsForLine( injParamsDrawnX, lineX );
-        XLALDestroyMultiInjParams ( injParamsDrawnX );
-
-      } /* finished if/else statement for line injection */
+      multiAtoms = XLALSynthesizeTransientAtoms ( &injParamsDrawn, cfg.skypos, cfg.AmpPrior, cfg.transientInjectRange, cfg.multiDetStates, cfg.SignalOnly, &multiAMBuffer, cfg.rng, lineX);
+      XLAL_CHECK ( multiAtoms != NULL, XLAL_EFUNC );
 
       /* ----- if requested, output signal injection parameters into file */
       if ( fpInjParams && (write_InjParams_to_fp ( fpInjParams, &injParamsDrawn, uvar.dataStartGPS ) != XLAL_SUCCESS ) ) {
@@ -376,9 +291,9 @@ int main(int argc,char *argv[])
         XLAL_ERROR ( XLAL_EFUNC );
       }
 
-      REAL4Vector *linepriorX;
-      if ( (linepriorX = XLALCreateREAL4Vector ( numDetectors )) == NULL ) {
-        XLALPrintError ("%s: failed to XLALCreateREAL4Vector( %d )\n", __func__, numDetectors );
+      REAL8Vector *linepriorX;
+      if ( (linepriorX = XLALCreateREAL8Vector ( numDetectors )) == NULL ) {
+        XLALPrintError ("%s: failed to XLALCreateREAL8Vector( %d )\n", __func__, numDetectors );
         XLAL_ERROR ( XLAL_EFUNC );
       }
 
@@ -448,7 +363,7 @@ int main(int argc,char *argv[])
 
       /* ----- free Memory */
       XLALDestroyREAL4Vector ( lvstats.TwoFX );
-      XLALDestroyREAL4Vector ( linepriorX );
+      XLALDestroyREAL8Vector ( linepriorX );
       XLALDestroyMultiFstatAtomVector ( multiAtoms );
       XLALDestroyMultiAMCoeffs ( multiAMBuffer.multiAM );
 
@@ -701,7 +616,8 @@ XLALInitCode ( ConfigVariables *cfg, const UserInput_t *uvar )
 } /* XLALInitCode() */
 
 
-/** Load Ephemeris from ephemeris data-files
+/**
+ * Load Ephemeris from ephemeris data-files
  */
 EphemerisData *
 XLALInitEphemeris (const CHAR *ephemYear )	/**< which years do we need? */
@@ -734,7 +650,8 @@ XLALInitEphemeris (const CHAR *ephemYear )	/**< which years do we need? */
 } /* XLALInitEphemeris() */
 
 
-/** Initialize amplitude-prior pdfs from the user-input
+/**
+ * Initialize amplitude-prior pdfs from the user-input
  */
 int
 XLALInitAmplitudePrior ( AmplitudePrior_t *AmpPrior, const UserInput_t *uvar )
@@ -875,7 +792,8 @@ XLALInitAmplitudePrior ( AmplitudePrior_t *AmpPrior, const UserInput_t *uvar )
 } /* XLALInitAmplitudePrior() */
 
 
-/** Simple creator function for MultiLIGOTimeGPSVector with numDetectors entries
+/**
+ * Simple creator function for MultiLIGOTimeGPSVector with numDetectors entries
  */
 MultiLIGOTimeGPSVector *
 XLALCreateMultiLIGOTimeGPSVector ( UINT4 numDetectors )
@@ -899,7 +817,8 @@ XLALCreateMultiLIGOTimeGPSVector ( UINT4 numDetectors )
 } /* XLALCreateMultiLIGOTimeGPSVector() */
 
 
-/** Write one line for given LV candidate into output file.
+/**
+ * Write one line for given LV candidate into output file.
  *
  * NOTE: input dopplerParams can be NULL pointer, then just writes 0 in doppler fields (useful for synthetic LV draws)
  *
@@ -955,93 +874,3 @@ write_LV_candidate_to_fp ( FILE *fp, const LVcomponents *LVstat, const PulsarDop
   return XLAL_SUCCESS;
 
 } /* write_LV_candidate_to_fp() */
-
-
-/** Simple creator function for MultiInjParams with numDetectors entries */
-MultiInjParams *
-XLALCreateMultiInjParams ( UINT4 numDetectors )
-{
-  MultiInjParams *ret;
-
-  if ( (ret = XLALMalloc ( sizeof(*ret) )) == NULL ) {
-    XLALPrintError ("%s: XLALMalloc(%d) failed.\n", __func__, sizeof(*ret) );
-    XLAL_ERROR_NULL ( XLAL_ENOMEM );
-  }
-
-  ret->length = numDetectors;
-  if ( (ret->data = XLALCalloc ( numDetectors, sizeof(*ret->data) )) == NULL ) {
-    XLALPrintError ("%s: XLALCalloc(%d, %d) failed.\n", __func__, numDetectors, sizeof(*ret->data) );
-    XLALFree ( ret );
-    XLAL_ERROR_NULL ( XLAL_ENOMEM );
-  }
-
-  return ret;
-
-} /* XLALCreateMultiInjParams() */
-
-
-/** Corresponding destructor function for MultiInjParams.
-  * As usual this allows NULL input.
-  */
-void
-XLALDestroyMultiInjParams ( MultiInjParams *multipar )
-{
-  if ( !multipar )
-    return;
-
-  if ( multipar->data )
-    XLALFree ( multipar->data );
-
-  XLALFree ( multipar );
-
-  return;
-
-} /* XLALDestroyMultiInjParams() */
-
-
-InjParams_t *
-XLALCombineInjParamsForLine( const MultiInjParams *injParamsX,  /**< array of the single-IFO injection parameters */
-                      const UINT4 lineX                      /**< detector number where line was injected */
-                      )
-{
-
-  /* check input parameters and report errors */
-  if ( !injParamsX ) {
-    XLALPrintError ("\nError in function %s, line %d : received empty injParamsX pointer!\n\n", __func__, __LINE__);
-    XLAL_ERROR_NULL ( XLAL_EFAULT);
-  }
-
-  UINT4 numDetectors = injParamsX->length;
-//   for ( UINT4 X=0; X < numDetectors; X ++ ) {
-//     if ( !injParamsX->data[X] ) {
-//       XLALPrintError ("\nError in function %s, line %d : injParams[%d] is empty!\n\n", __func__, __LINE__, X);
-//       XLAL_ERROR_NULL ( XLAL_EFAULT);
-//     }
-//   }
-
-  InjParams_t *multiInjParams = &empty_InjParams_t;
-
-  /* pulsar parameters (skypos, amplitudes, transient stuff) can be taken from the single IFO with a line injection */
-  multiInjParams->skypos = injParamsX->data[lineX].skypos;
-  multiInjParams->ampParams = injParamsX->data[lineX].ampParams;
-  for ( UINT4 i=0; i < 4; i++ )
-    multiInjParams->ampVect[i] = injParamsX->data[lineX].ampVect[i];
-  multiInjParams->transientWindow = injParamsX->data[lineX].transientWindow;
-
-  /* SNR and Mmunu have to be summed over detectors */
-  REAL8 rho2 = 0.0;
-  for ( UINT4 X=0; X < numDetectors; X ++ ) {
-    multiInjParams->M_mu_nu.Ad += injParamsX->data[X].M_mu_nu.Ad; /* multi-IFO M_mu_nu = sum_X M_mu_nu_X */
-    multiInjParams->M_mu_nu.Bd += injParamsX->data[X].M_mu_nu.Bd;
-    multiInjParams->M_mu_nu.Cd += injParamsX->data[X].M_mu_nu.Cd;
-    multiInjParams->M_mu_nu.Sinv_Tsft += injParamsX->data[X].M_mu_nu.Sinv_Tsft; /* noise adds harmonically 1/S = sum_X (1/S_X) */
-    rho2 += SQ(injParamsX->data[X].SNR); /* multi-IFO SNR^2 = sum_X SNR_X^2 */
-  } /* for X < numDetectors */
-
-  /* compute multi-SNR and -determinants */
-  multiInjParams->M_mu_nu.Dd = multiInjParams->M_mu_nu.Ad * multiInjParams->M_mu_nu.Bd - SQ(multiInjParams->M_mu_nu.Cd); /* update sub-determinant */
-  multiInjParams->SNR = sqrt(rho2); /* multi-IFO SNR^2 = sum_X SNR_X^2 */
-  multiInjParams->detM1o8 = sqrt ( multiInjParams->M_mu_nu.Sinv_Tsft ) * pow ( multiInjParams->M_mu_nu.Dd, 0.25 ); /* (detM)^(1/8) = sqrt(Tsft/Sn) * (Dp)^(1/4) */
-
-  return multiInjParams;
-} /* XLALCombineInjParamsForLine */

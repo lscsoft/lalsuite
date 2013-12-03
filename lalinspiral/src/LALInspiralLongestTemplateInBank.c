@@ -19,7 +19,8 @@
 
 #include <lal/LALInspiralBank.h>
 
-/** \ingroup LALInspiralBank_h
+/**
+ * \ingroup LALInspiralBank_h
  * \brief Function to find the longest template in a template bank.
  * \author Sathyaprakash, B.S.
  *

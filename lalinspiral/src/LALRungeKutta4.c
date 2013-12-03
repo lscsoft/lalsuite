@@ -18,40 +18,43 @@
 */
 
 /**
-\author Robinson, C. A.
-\file
-\ingroup LALInspiral_h
-
-\brief NONE
-
-\heading{Prototypes}
-
-<tt>LALRungeKutta4()</tt>
-<ul>
-<li> \c n: The number of coupled equations being integrated.</li>
-<li> \c yout: The output values for the system after the time-step.</li>
-<li> \c input: The input for the system</li>
-<li> \c integrator Required for the GSL integratior. Created using XLALRungeKutta4Init().</li>
-<li> \c params Parameters to be passed to the derivative function</li>
-</ul>
-
-\heading{Description}
-The code \ref LALRungeKutta4.c solves a system of \f$n\f$ coupled first--order differential equations.
-Internally, it uses the gsl routines for performing adaptive step evolution of the system, but to the outside
-user, it returns results for a fixed step size.
-
-Prior to evolving a system using LALRungeKutta4(), it is necessary to create the GSL integrator using
-XLALRungeKutta4Init(). Once the evolution of the system has finished, this integrator should then
-be freed using XLALRungeKutta4Free().
-
-\heading{Algorithm}
-
-\heading{Uses}
-None.
-
-\heading{Notes}
-
-*/
+ * \author Robinson, C. A.
+ * \file
+ * \ingroup LALInspiral_h
+ *
+ * \brief NONE
+ *
+ * ### Prototypes ###
+ *
+ * <tt>LALRungeKutta4()</tt>
+ * <ul>
+ * <li> \c n: The number of coupled equations being integrated.</li>
+ * <li> \c yout: The output values for the system after the time-step.</li>
+ * <li> \c input: The input for the system</li>
+ * <li> \c integrator Required for the GSL integratior. Created using XLALRungeKutta4Init().</li>
+ * <li> \c params Parameters to be passed to the derivative function</li>
+ * </ul>
+ *
+ * ### Description ###
+ *
+ * The code \ref LALRungeKutta4.c solves a system of \f$n\f$ coupled first--order differential equations.
+ * Internally, it uses the gsl routines for performing adaptive step evolution of the system, but to the outside
+ * user, it returns results for a fixed step size.
+ *
+ * Prior to evolving a system using LALRungeKutta4(), it is necessary to create the GSL integrator using
+ * XLALRungeKutta4Init(). Once the evolution of the system has finished, this integrator should then
+ * be freed using XLALRungeKutta4Free().
+ *
+ * ### Algorithm ###
+ *
+ *
+ * ### Uses ###
+ *
+ * None.
+ *
+ * ### Notes ###
+ *
+ */
 
 #include <lal/LALInspiral.h>
 
@@ -130,8 +133,7 @@ LALRungeKutta4(
 
    INITSTATUS(status);
 
-   // FIXME: uncomment when transitioned
-   //XLALPrintDeprecationWarning( "LALRungeKutta4", "XLALRungeKutta4" );
+   XLAL_PRINT_DEPRECATION_WARNING("XLALRungeKutta4");
 
    if ( XLALRungeKutta4( yout, integrator, params ) == XLAL_FAILURE )
      ABORTXLAL( status );

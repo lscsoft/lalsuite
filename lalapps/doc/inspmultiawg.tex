@@ -20,7 +20,6 @@ data.  Intended for producing the hardware injection data.
 --smooth QFAC        ringdown the end of the injection with Q factor Qfac
 --length LENGTH      length of the data (default 64 seconds)
 --samplerate FREQ    rate at which data is sampled (default 16384Hz)
---debug-level DEBUG  the lal debug level
 --user-tag TAG       user-tag added to output file names
 \end{verbatim}
 
@@ -107,9 +106,6 @@ used in naming the output files.
 will continue to ISCO.  If set to a negative number, the generator will use its
 absolute value as the terminating frequency, but will ignore post-Newtonian
 breakdown. 
-
-\item[\texttt{--debug-level} \textsc{debug}]  Optional.  Set the LAL debug
-level.  The default is 33.
 
 \item[\texttt{--help}] Optional.  Print a help message.
 \end{entry}

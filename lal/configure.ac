@@ -1,15 +1,16 @@
 AC_PREREQ([2.63])
-AC_INIT([lal],[6.9.1.1],[lal-discuss@gravity.phys.uwm.edu])
+AC_INIT([lal],[6.11.0.1],[lal-discuss@ligo.org])
 AC_CONFIG_HEADERS([include/config.h include/lal/LALConfig.h])
 AC_CONFIG_SRCDIR([packages/std/include/LALStdio.h])
-AC_CONFIG_AUX_DIR([misc])
-AC_CONFIG_MACRO_DIR([misc])
+AC_CONFIG_AUX_DIR([gnuscripts])
+AC_CONFIG_MACRO_DIR([gnuscripts])
 AC_CONFIG_FILES([ \
   lal.spec \
   lal.pc \
   lalsupport.pc \
   Makefile \
   debian/Makefile \
+  gnuscripts/Makefile \
   include/Makefile \
   include/lal/Makefile \
   lib/Makefile \
@@ -19,9 +20,10 @@ AC_CONFIG_FILES([ \
   lib/lalsupport/include/Makefile \
   lib/lalsupport/src/Makefile \
   lib/lalsupport/test/Makefile \
-  misc/Makefile \
   python/Makefile \
   python/__init__.py \
+  python/utils/Makefile \
+  python/spectrum/Makefile \
   swig/Makefile \
   swig/octave/Makefile \
   swig/python/Makefile \
@@ -87,19 +89,14 @@ AC_CONFIG_FILES([ \
   packages/noisemodels/src/Makefile \
   packages/noisemodels/test/Makefile
 ])
-AM_INIT_AUTOMAKE([1.11 foreign color-tests parallel-tests])
-AH_TOP([
-#ifndef CONFIG_H__LAL
-#define CONFIG_H__LAL
-])
-AH_BOTTOM([
-#endif /* CONFIG_H__LAL */
-])
+AM_INIT_AUTOMAKE([1.11 foreign subdir-objects color-tests parallel-tests])
 
 AC_CANONICAL_HOST
 
 LALSUITE_ARG_VAR
+LALSUITE_CHECK_GIT_REPO
 LALSUITE_DISTCHECK_CONFIGURE_FLAGS
+LALSUITE_WITH_CFLAGS_LIBS
 
 # set library api info - liblal
 # 1. start with version information of "0:0:0" for each libtool library
@@ -115,8 +112,8 @@ LALSUITE_DISTCHECK_CONFIGURE_FLAGS
 #    then increment age.
 # 6. if any interfaces have been removed since the last public release,
 #    then set age to 0.
-AC_SUBST([LIBCURRENT],[5])
-AC_SUBST([LIBREVISION],[1])
+AC_SUBST([LIBCURRENT],[7])
+AC_SUBST([LIBREVISION],[0])
 AC_SUBST([LIBAGE],[0])
 AC_SUBST([LIBVERSION],[${LIBCURRENT}:${LIBREVISION}:${LIBAGE}])
 
@@ -134,20 +131,10 @@ AC_SUBST([LIBVERSION],[${LIBCURRENT}:${LIBREVISION}:${LIBAGE}])
 #    then increment age.
 # 6. if any interfaces have been removed since the last public release,
 #    then set age to 0.
-AC_SUBST([LIBCURRENT_SUPPORT],[2])
+AC_SUBST([LIBCURRENT_SUPPORT],[4])
 AC_SUBST([LIBREVISION_SUPPORT],[0])
-AC_SUBST([LIBAGE_SUPPORT],[2])
+AC_SUBST([LIBAGE_SUPPORT],[0])
 AC_SUBST([LIBVERSION_SUPPORT],[${LIBCURRENT_SUPPORT}:${LIBREVISION_SUPPORT}:${LIBAGE_SUPPORT}])
-
-# check for git repo
-LALSUITE_CHECK_GIT_REPO
-
-LAL_WITH_CC
-LAL_WITH_CFLAGS
-LAL_WITH_EXTRA_CFLAGS
-LAL_WITH_EXTRA_CPPFLAGS
-LAL_WITH_EXTRA_LDFLAGS
-LAL_WITH_EXTRA_LIBS
 
 LAL_ENABLE_INTELFFT
 
@@ -187,16 +174,16 @@ LALSUITE_MULTILIB_LIBTOOL_HACK
 # use silent build rules
 AM_SILENT_RULES([yes])
 
-# check for C/C++ compilers
-LALSUITE_PROG_CC_CXX
+# check for required compilers
+LALSUITE_PROG_COMPILERS
 
 # check for pthreads
 lal_pthread_available="yes"
 AX_PTHREAD(,[lal_pthread_available="no"])
 if test "$lal_pthread_lock" = "true" ; then
   if test "$lal_pthread_available" = "yes" ; then
-    LIBS="$PTHREAD_LIBS $LIBS"
-    CFLAGS="$CFLAGS $PTHREAD_CFLAGS"
+    LALSUITE_ADD_LIBS(${PTHREAD_LIBS})
+    LALSUITE_ADD_CFLAGS(${PTHREAD_CFLAGS})
     CC="$PTHREAD_CC"
   else
     AC_MSG_ERROR([do not know how to compile posix threads])
@@ -204,12 +191,11 @@ if test "$lal_pthread_lock" = "true" ; then
 fi
 
 # check for programs
-AC_PROG_INSTALL
+LALSUITE_PROG_INSTALL
 AC_PROG_LN_S
 AC_PROG_AWK
 AC_PROG_SED
 AM_PATH_PYTHON([2.6],,[AC_MSG_ERROR([Python-2.6, or higher, is required])])
-AC_CHECK_PROGS([M4],[gm4 m4], m4)
 
 # check for supported mac os x version
 LALSUITE_OSX_VERSION_CHECK
@@ -220,7 +206,7 @@ LALSUITE_USE_LIBTOOL
 # set additional compiler flags
 AC_MSG_CHECKING([for additional compiler flags])
 case "${host_os}" in
-  solaris*) CFLAGS="$CFLAGS -D_POSIX_C_SOURCE=200112L"
+  solaris*) LALSUITE_ADD_CFLAGS(-D_POSIX_C_SOURCE=200112L)
   AC_MSG_RESULT([-D_POSIX_C_SOURCE=200112L]);;
   *) AC_MSG_RESULT([none]);;
 esac
@@ -260,8 +246,8 @@ esac
 
 # check for gsl
 PKG_CHECK_MODULES([GSL],[gsl],[true],[false])
-CPPFLAGS="$CPPFLAGS $GSL_CFLAGS"
-LIBS="$LIBS $GSL_LIBS"
+LALSUITE_ADD_CFLAGS(${GSL_CFLAGS})
+LALSUITE_ADD_LIBS(${GSL_LIBS})
 AC_CHECK_LIB([gslcblas],[main])
 AC_CHECK_LIB([gsl],[gsl_strerror],,[AC_MSG_ERROR([could not find the gsl library])])
 LAL_CHECK_GSL_VERSION([1.9])
@@ -274,8 +260,8 @@ AC_CHECK_HEADERS([gsl/gsl_errno.h],,[AC_MSG_ERROR([could not find the gsl/gsl_er
 if test "${intelfft}" = "false" ; then
   fftw3="true"
   PKG_CHECK_MODULES([FFTW3],[fftw3 fftw3f],[true],[false])
-  CPPFLAGS="$CPPFLAGS $FFTW3_CFLAGS"
-  LIBS="$LIBS $FFTW3_LIBS"
+  LALSUITE_ADD_CFLAGS(${FFTW3_CFLAGS})
+  LALSUITE_ADD_LIBS(${FFTW3_LIBS})
   AC_CHECK_LIB([fftw3f],[fftwf_execute_dft],,[AC_MSG_ERROR([could not find the fftw3f library])],[-lm])
   AC_CHECK_LIB([fftw3],[fftw_execute_dft],,[AC_MSG_ERROR([could not find the fftw3 library])],[-lm])
 else
@@ -306,15 +292,15 @@ fi
 
 # check for boinc
 if test "${boinc}" = "true" ; then
-  if test -n "$BOINC_PREFIX}" ; then
+  if test -n "${BOINC_PREFIX}" ; then
     # do compilation checks with c++
     AC_LANG_PUSH([C++])
 
     # set boinc flags
-    BOINC_CFLAGS="-I$BOINC_PREFIX/include"
-    BOINC_LIBS="-L$BOINC_PREFIX/lib -lboinc_api -lboinc"
-    CPPFLAGS="$CPPFLAGS $BOINC_CFLAGS"
-    LIBS="$LIBS $BOINC_LIBS"
+    BOINC_CFLAGS="-I${BOINC_PREFIX}/include"
+    BOINC_LIBS="-L${BOINC_PREFIX}/lib -lboinc_api -lboinc"
+    LALSUITE_ADD_CFLAGS(${BOINC_CFLAGS})
+    LALSUITE_ADD_LIBS(${BOINC_LIBS})
 
     # check for boinc libraries
     AC_CHECK_LIB([boinc],[boinc_fopen],[true],[boinc=false])
@@ -358,6 +344,12 @@ AC_TYPE_SIZE_T
 AC_HEADER_TIME
 
 # checks for library functions
+AC_CHECK_FUNC([gmtime_r],[:],[
+  AC_CHECK_FUNCS([gmtime_s],[:],[AC_MSG_ERROR([could not find either gmtime_r() or gmtime_s() functions])])
+])
+AC_CHECK_FUNC([localtime_r],[:],[
+  AC_CHECK_FUNCS([localtime_s],[:],[AC_MSG_ERROR([could not find either localtime_r() or localtime_s() functions])])
+])
 AC_CHECK_FUNCS([stat],,[AC_MSG_ERROR([could not find the stat() function])])
 AC_CHECK_FUNCS([getopt],,[AC_MSG_ERROR([could not find the getopt() function])])
 AC_CHECK_FUNCS([getopt_long],,[AC_MSG_ERROR([could not find the getopt_long() function])])
@@ -379,7 +371,11 @@ LALSUITE_ADD_GCC_FLAGS
 # RedHat-derived systems.
 AC_SUBST([pkgpythondir], ["\${pkgpyexecdir}"])
 
-INCLUDEMKFILE=$srcdir/misc/include.mk
+# ensure CPPFLAGS/CFLAGS and LDFLAGS/LIBS are in correct order
+LALSUITE_ADD_CFLAGS()
+LALSUITE_ADD_LIBS()
+
+INCLUDEMKFILE=$srcdir/gnuscripts/include.mk
 AC_SUBST_FILE([INCLUDEMKFILE])
 AC_OUTPUT
 echo "

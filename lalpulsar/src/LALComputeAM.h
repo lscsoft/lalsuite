@@ -29,7 +29,7 @@ extern "C" {
  * \ingroup pkg_pulsarCoh
  * \author S.J. Berukoff, Reinhard Prix, John Whelan
  * \date 2007
-
+ *
  * \brief Header-file for computing antenna-pattern components for amplitude demodulation.
  *
  * <tt>\#include <lal/LALComputeAM.h></tt>
@@ -77,7 +77,8 @@ extern "C" {
 
 /* ---------- exported data types -------------------- */
 
-/** This structure contains the per-SFT (weighted) antenna-pattern functions
+/**
+ * This structure contains the per-SFT (weighted) antenna-pattern functions
  * \f$\widehat{a}_{X\alpha}, \widehat{b}_{X\alpha}\f$,
  * with \f$\alpha\f$ the SFT-index, and \f$X\f$ the IFO index. The per-IFO summed antenna-pattern coefficients
  * for detector X are
@@ -95,7 +96,8 @@ typedef struct tagAMCoeffs
   REAL4           D;           /**< determinant \f$\widehat{D}_X = \widehat{A}_X \widehat{B}_X - \widehat{C}_X^2\f$  */
 } AMCoeffs;
 
-/** This structure contains the parameters for the routine.  They include:
+/**
+ * This structure contains the parameters for the routine.  They include:
  */
 typedef struct tagAMCoeffsParams
 {
@@ -108,9 +110,10 @@ typedef struct tagAMCoeffsParams
 } AMCoeffsParams;
 
 
-/** Struct holding the "antenna-pattern" matrix \f$\mathcal{M}_{\mu\nu} \equiv \left( \mathbf{h}_\mu|\mathbf{h}_\nu\right)\f$,
+/**
+ * Struct holding the "antenna-pattern" matrix \f$\mathcal{M}_{\mu\nu} \equiv \left( \mathbf{h}_\mu|\mathbf{h}_\nu\right)\f$,
  * in terms of the multi-detector scalar product. This matrix can be shown to be expressible as
- * \f{equation}
+ * \f{equation}{
  * \mathcal{M}_{\mu\nu} = \mathcal{S}^{-1}\,T_\mathrm{SFT}\,\left( \begin{array}{c c c c}
  * \widehat{A} & \widehat{C} & 0 & 0 \\
  * \widehat{C} & \widehat{B} & 0 & 0 \\
@@ -120,7 +123,7 @@ typedef struct tagAMCoeffsParams
  * \f}
  * where (here) \f$\mathcal{S} \equiv \frac{1}{N_\mathrm{SFT}}\sum_{X,\alpha} S_{X\alpha}\f$ characterizes the (single-sided!)
  * multi-detector noise-floor, and
- * \f{equation}
+ * \f{equation}{
  * \widehat{A} \equiv \sum_{X,\alpha} \widehat{a}^2_{X\alpha} \,,\quad
  * \widehat{B} \equiv \sum_{X,\alpha} \widehat{b}^2_{X\alpha} \,,\quad
  * \widehat{C} \equiv \sum_{X,\alpha} \widehat{a}_{X\alpha} \widehat{b}_{X\alpha} \,,

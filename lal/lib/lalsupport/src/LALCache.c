@@ -17,6 +17,7 @@
 *  MA  02111-1307  USA
 */
 
+#include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -25,13 +26,6 @@
 #include <config.h>
 
 #ifdef HAVE_REGEX_H
-/* hack to get around problem in regex.h */
-#ifdef __GLIBC__
-#ifdef __restrict_arr
-#undef __restrict_arr
-#endif
-#define __restrict_arr
-#endif
 #include <regex.h>
 #endif
 
@@ -50,6 +44,11 @@
 #define UNUSED __attribute__ ((unused))
 #else
 #define UNUSED
+#endif
+
+/* for e.g. MinGW */
+#ifndef NAME_MAX
+#define NAME_MAX FILENAME_MAX
 #endif
 
 static int XLALCacheFileReadRow(char *s, size_t len, LALFILE * fp,
@@ -76,7 +75,7 @@ static int XLALCacheFileReadRow(char *s, size_t len, LALFILE * fp,
 /* counts the rows of the file */
 static int XLALCacheFileCountRows(LALFILE * fp)
 {
-    char s[2 * FILENAME_MAX];
+    char s[PATH_MAX + 4 * (NAME_MAX + 1)];
     int line = 0;
     int n = 0;
     int c;
@@ -226,7 +225,7 @@ LALCache *XLALCacheMerge(const LALCache * cache1, const LALCache * cache2)
 LALCache *XLALCacheFileRead(LALFILE * fp)
 {
     LALCache *cache;
-    char s[2 * FILENAME_MAX];
+    char s[PATH_MAX + 4*(NAME_MAX + 1)];
     int line = 0;
     int n;
     int i;
@@ -266,14 +265,19 @@ LALCache *XLALCacheImport(const char *fname)
 
 #ifdef HAVE_GLOB_H      /* only use this if globbing is supported */
 static int XLALCacheFilenameParseEntry(LALCacheEntry * entry,
-                                       const char *path)
+                                       const char *fname)
 {
-    char src[FILENAME_MAX];
-    char dsc[FILENAME_MAX];
+    char path[PATH_MAX];
+    char src[NAME_MAX];
+    char dsc[NAME_MAX];
     const char *base;
     INT4 t0;
     INT4 dt;
     int c;
+
+    /* resolve path */
+    if (!realpath(fname, path))
+        XLAL_ERROR(XLAL_EIO);
 
     /* basename */
     base = strrchr(path, '/');
@@ -283,18 +287,7 @@ static int XLALCacheFilenameParseEntry(LALCacheEntry * entry,
     entry->url = XLALStringDuplicate("file://localhost");
     if (!entry->url)
         XLAL_ERROR(XLAL_EFUNC);
-    if (*path == '/') { /* absolute path */
-        entry->url = XLALStringAppend(entry->url, path);
-    } else {    /* relative path */
-        char cwd[FILENAME_MAX];
-#if 0
-        char *ptr;
-        ptr = getcwd(cwd, sizeof(cwd) - 1);
-#endif
-        XLALStringConcatenate(cwd, "/", sizeof(cwd));
-        XLALStringConcatenate(cwd, path, sizeof(cwd));
-        entry->url = XLALStringAppend(entry->url, cwd);
-    }
+    entry->url = XLALStringAppend(entry->url, path);
     if (!entry->url)
         XLAL_ERROR(XLAL_EFUNC);
 
@@ -336,8 +329,8 @@ LALCache *XLALCacheGlob(const char *dirstr, const char *fnptrn)
                                          && fnptrn[2] == '/')))))
         glob(fnptrn, globflags, NULL, &g);
     else {      /* prepend path from dirname */
-        char path[FILENAME_MAX];
-        char dirname[FILENAME_MAX];
+        char path[PATH_MAX];
+        char dirname[PATH_MAX];
         char *nextdir;
         strncpy(dirname, dirstr, sizeof(dirname) - 1);
         dirname[sizeof(dirname) - 1] = 0;
@@ -383,28 +376,41 @@ LALCache *XLALCacheGlob(const char *dirstr, const char *fnptrn)
 
 int XLALCacheFileWrite(LALFILE * fp, const LALCache * cache)
 {
+#define FS "\t" /* field separator */
+#define RS "\n" /* record separator */
     UINT4 i;
     if (!fp || !cache)
         XLAL_ERROR(XLAL_EFAULT);
     for (i = 0; i < cache->length; ++i) {
-        XLALFilePrintf(fp, "%s\t",
-                       cache->list[i].src ? cache->list[i].src : "-");
-        XLALFilePrintf(fp, "%s\t",
-                       cache->list[i].dsc ? cache->list[i].dsc : "-");
-        if (cache->list[i].t0 > 0)
-            XLALFilePrintf(fp, "%d\t", cache->list[i].t0);
+        LALCacheEntry *entry = cache->list + i;
+        XLALFilePrintf(fp, "%s" FS, entry->src ? entry->src : "-");
+        XLALFilePrintf(fp, "%s" FS, entry->dsc ? entry->dsc : "-");
+        if (entry->t0 > 0)
+            XLALFilePrintf(fp, "%d" FS, entry->t0);
         else
-            XLALFilePrintf(fp, "-\t");
-        if (cache->list[i].dt > 0)
-            XLALFilePrintf(fp, "%d\t", cache->list[i].dt);
+            XLALFilePrintf(fp, "-" FS);
+        if (entry->dt > 0)
+            XLALFilePrintf(fp, "%d" FS, entry->dt);
         else
-            XLALFilePrintf(fp, "-\t");
-        XLALFilePrintf(fp, "%s\n",
-                       cache->list[i].url ? cache->list[i].url : "-");
+            XLALFilePrintf(fp, "-" FS);
+        XLALFilePrintf(fp, "%s" RS, entry->url ? entry->url : "-");
     }
     return 0;
+#undef RS
+#undef FS
 }
 
+int XLALCacheExport(const LALCache *cache, const char *fname)
+{
+    LALFILE *fp;
+    if ((fp = XLALFileOpen(fname, "w")) == NULL)
+        XLAL_ERROR(XLAL_EFUNC);
+    if (XLALCacheFileWrite(fp, cache) < 0)
+        XLAL_ERROR(XLAL_EFUNC);
+    if (XLALFileClose(fp) < 0)
+        XLAL_ERROR(XLAL_EFUNC);
+    return 0;
+}
 
 static int XLALCacheCompareSource(void UNUSED * p, const void *p1,
                                   const void *p2)

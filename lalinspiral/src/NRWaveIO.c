@@ -17,12 +17,12 @@
  *  MA  02111-1307  USA
  */
 
-/** \file NRWaveIO.c
- *  \ingroup NRWaveIO_h
- *  \author S.Fairhurst, B.Krishnan, L.Santamaria
+/**
+ * \file NRWaveIO.c
+ * \ingroup NRWaveIO_h
+ * \author S.Fairhurst, B.Krishnan, L.Santamaria
  *
- *  \brief Functions for reading/writing numerical relativity waveforms
- *
+ * \brief Functions for reading/writing numerical relativity waveforms
  *
  */
 
@@ -31,8 +31,10 @@
 #include <lal/NRWaveIO.h>
 #include <lal/NRWaveInject.h>
 
-/** Functionfor reading the numrel waveform -- just returns the numrel
-    data as it is without any rescaling of time or amplitude */
+/**
+ * Functionfor reading the numrel waveform -- just returns the numrel
+ * data as it is without any rescaling of time or amplitude
+ */
 
 void LALReadNRWave_raw(LALStatus *status,	/**< pointer to LALStatus structure */
 		       REAL4TimeVectorSeries **out, /**< [out] output time series for h+ and hx */
@@ -187,10 +189,11 @@ void LALReadNRWave_raw_real8(LALStatus *status,	/**< pointer to LALStatus struct
 } /* LALReadNRWave() */
 
 
-/** Reads a numerical relativity waveform given a filename and a value of the
-    total mass for setting the timescale.  The output waveform is scaled corresponding
-    to a distance of 1Mpc.
-*/
+/**
+ * Reads a numerical relativity waveform given a filename and a value of the
+ * total mass for setting the timescale.  The output waveform is scaled corresponding
+ * to a distance of 1Mpc.
+ */
 void LALReadNRWave(LALStatus *status,		/**< pointer to LALStatus structure */
 		   REAL4TimeVectorSeries **out, /**< [out] output time series for h+ and hx */
 		   const REAL4  mass,           /**< [in] Value of total mass for setting time scale */
@@ -274,10 +277,11 @@ void LALReadNRWave(LALStatus *status,		/**< pointer to LALStatus structure */
 
 
 
-/** Function for reading a numerical relativity metadata file.
-    It returns a list of numrel wave parameters.  It uses
-    LALParseDataFile() for reading the data file.  This automatically
-    takes care of removing comment lines starting with # and other details.
+/**
+ * Function for reading a numerical relativity metadata file.
+ * It returns a list of numrel wave parameters.  It uses
+ * LALParseDataFile() for reading the data file.  This automatically
+ * takes care of removing comment lines starting with # and other details.
  */
 void
 LALNRDataFind( LALStatus *status,   /**< pointer to LALStatus structure */

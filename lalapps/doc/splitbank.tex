@@ -11,7 +11,6 @@ files
 \prog{lalapps\_splitbank} \newline \hspace*{0.5in}
 \option{--bank-file} \parm{file} \newline \hspace*{0.5in}
 \option{--comment} \parm{comment}\newline \hspace*{0.5in}
-\option{--debug-level} \parm{level} \newline \hspace*{0.5in}
 \option{--help}  \newline \hspace*{0.5in}
 \option{--minimal-match} \parm{m} \newline \hspace*{0.5in}
 \option{--number-of-banks} \parm{n}\newline \hspace*{0.5in}
@@ -54,12 +53,6 @@ Read the templates from the \texttt{sngl\_inspiral} table in the file \parm{file
 
 \item[ \option{--comment}~\parm{comment}]
 Add the string \parm{comment} to the \verb$process$ table in the output XML file.
-
-\item[\option{--debug-level} \parm{level}]
-Sets the LAL debug level to \parm{level}.  The default value is
-\texttt{LALMSGLVL2}.  A useful setting is 65 which turns off memory
-padding, but keeps memory tracking and error messages.  If you want to turn
-off memory tracking completely, then use 33.
 
 \item[\option{--help}]
 Display a usage message and exit.

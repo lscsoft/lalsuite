@@ -47,63 +47,64 @@ extern "C" {
 
 
 /**
-   \addtogroup FindChirp_h
-   \author Allen, B., Brown, D. A. and Creighton, J. D. E.
-
-   \brief This header provides core prototypes, structures and functions to
-   filter interferometer data for binary inspiral chirps.
-
-   \heading{Synopsis}
-   \code
-   #include <lal/FindChirp.h>
-   \endcode
-
-Each function in findchirp falls into one of four classes:
-<ol>
-<li> Generate management functions which are independent of the type of
-filtering implemented. The prototypes for these functions are provided by
-this header file.</li>
-
-<li> Functions for filtering data for time domain and frequency domain
-templates with an unknown amplitude and phase. These are the functions
-that implement matched filtering for time domain templates (TaylorT1,
-TaylorT2, TaylorT2, PadeT1, EOB and GeneratePPN) and matched filtering
-for post-Newtonian frequency domain templates (FindChirpSP). The main
-filter function <tt>FindChirpFilterSegment()</tt> is prototyped in
-this header file. The template generation and data conditioning functions
-are prototyped in \ref FindChirpSP.h and \ref FindChirpTD.h.
-Full documentation of the filtering algorithm used can be found in the
-documentation of the module \ref FindChirpFilter.c.</li>
-
-<li> Functions to filter interferometer data for using the frequency
-domain non-spinning black hole detection template family known as BCV.
-These functions are protoyped by the header \ref FindChirpBCV.h
-which contains documentation of the algorithms used.</li>
-
-<li> Functions to filter interferometer data for using the frequency domain
-spinning black hole detection template family known as BCVSpin.  These
-functions are protoyped by the header \ref FindChirpBCVSpin.h which
-contains documentation of the algorithms used.</li>
-</ol>
-
-The goal of all the filtering functions is to determine if the
-(calibrated) output of the interferometer \f$s(t)\f$ contains a gravitational wave
-\f$h(t)\f$ in the presence of the detector noise \f$n(t)\f$. When the interferometer
-is operating properly
-\f{equation}{
-s(t) = \left\{ \begin{array}{ll}
-n(t) + h(t) & \textrm{signal present},\\
-n(t) & \textrm{signal absent}.
-\end{array}\right.
-\f}
-The detection of signals of known form in noise is a classic problem of signal
-processing [\ref WeinZub62] and can be answered by the construction of a
-<em>detection statistic</em> and a test to see if the statistic is above some
-pre-assigned threshold. The construction of the various detection
-statistics used for each the three types of search are described in the modules
-that implement the search.
-
-*/
+ * \addtogroup FindChirp_h
+ * \author Allen, B., Brown, D. A. and Creighton, J. D. E.
+ *
+ * \brief This header provides core prototypes, structures and functions to
+ * filter interferometer data for binary inspiral chirps.
+ *
+ * ### Synopsis ###
+ *
+ * \code
+ * #include <lal/FindChirp.h>
+ * \endcode
+ *
+ * Each function in findchirp falls into one of four classes:
+ * <ol>
+ * <li> Generate management functions which are independent of the type of
+ * filtering implemented. The prototypes for these functions are provided by
+ * this header file.</li>
+ *
+ * <li> Functions for filtering data for time domain and frequency domain
+ * templates with an unknown amplitude and phase. These are the functions
+ * that implement matched filtering for time domain templates (TaylorT1,
+ * TaylorT2, TaylorT2, PadeT1, EOB and GeneratePPN) and matched filtering
+ * for post-Newtonian frequency domain templates (FindChirpSP). The main
+ * filter function <tt>FindChirpFilterSegment()</tt> is prototyped in
+ * this header file. The template generation and data conditioning functions
+ * are prototyped in \ref FindChirpSP.h and \ref FindChirpTD.h.
+ * Full documentation of the filtering algorithm used can be found in the
+ * documentation of the module \ref FindChirpFilter.c.</li>
+ *
+ * <li> Functions to filter interferometer data for using the frequency
+ * domain non-spinning black hole detection template family known as BCV.
+ * These functions are protoyped by the header \ref FindChirpBCV.h
+ * which contains documentation of the algorithms used.</li>
+ *
+ * <li> Functions to filter interferometer data for using the frequency domain
+ * spinning black hole detection template family known as BCVSpin.  These
+ * functions are protoyped by the header \ref FindChirpBCVSpin.h which
+ * contains documentation of the algorithms used.</li>
+ * </ol>
+ *
+ * The goal of all the filtering functions is to determine if the
+ * (calibrated) output of the interferometer \f$s(t)\f$ contains a gravitational wave
+ * \f$h(t)\f$ in the presence of the detector noise \f$n(t)\f$. When the interferometer
+ * is operating properly
+ * \f{equation}{
+ * s(t) = \left\{ \begin{array}{ll}
+ * n(t) + h(t) & \textrm{signal present},\\
+ * n(t) & \textrm{signal absent}.
+ * \end{array}\right.
+ * \f}
+ * The detection of signals of known form in noise is a classic problem of signal
+ * processing \cite WeinZub62 and can be answered by the construction of a
+ * <em>detection statistic</em> and a test to see if the statistic is above some
+ * pre-assigned threshold. The construction of the various detection
+ * statistics used for each the three types of search are described in the modules
+ * that implement the search.
+ *
+ */
 /*@{*/
 
 /**\name Error Codes */
@@ -167,7 +168,8 @@ that implement the search.
 #define FINDCHIRPH_MSGEFLOX "Error calculating an appropriate value of f_low"
 /** \endcond */
 
-/** This structure provides the essential information for the
+/**
+ * This structure provides the essential information for the
  * filter initialisation and memory allocation functions used by findchirp.
  */
 typedef struct
@@ -191,7 +193,8 @@ tagFindChirpInitParams
 FindChirpInitParams;
 
 
-/** This structure contains the parameters needed to call the data
+/**
+ * This structure contains the parameters needed to call the data
  * conditioning functions <tt>FindChirpSPData()</tt>, <tt>FindChirpTDData()</tt>,
  * <tt>FindChirpBCVData()</tt> or <tt>FindChirpBCVSpinData()</tt>. It should be
  * initialized by <tt>FindChirpDataInit()</tt> and destroyed by
@@ -256,7 +259,8 @@ tagFindChirpDataParams
 }
 FindChirpDataParams;
 
-/** This structure contains the parameters for generation of templates
+/**
+ * This structure contains the parameters for generation of templates
  * by the various template generation functions provided in \ref pkg_findchirp.
  */
 typedef struct
@@ -304,10 +308,12 @@ tagFindChirpTmpltParams
   INT4                          bandPassTmplt;		/**< UNDOCUMENTED */
   LALSimInspiralApplyTaper      taperTmplt;		/**< UNDOCUMENTED */
   INT4                          dynamicTmpltFlow;       /**< Use longest template that will fit in pad length */
+  REAL4                         maxTempLength;                   /**< This can be used to store the maximum allowed template length, given the pad length and spectrum truncation */
 }
 FindChirpTmpltParams;
 
-/** This structure contains the possible methods by which
+/**
+ * This structure contains the possible methods by which
  * to maximize over a chirp in a data segment.
  */
 typedef enum {
@@ -320,7 +326,8 @@ typedef enum {
 FindChirpClustering;
 
 
-/** This structure provides the parameters for the filter output veto.
+/**
+ * This structure provides the parameters for the filter output veto.
  */
 typedef struct
 tagFindChirpFilterOutputVetoParams
@@ -334,7 +341,8 @@ tagFindChirpFilterOutputVetoParams
 }
 FindChirpFilterOutputVetoParams;
 
-/** This structure provides the parameters used by the <tt>FindChirpFilterSegment()</tt> function.
+/**
+ * This structure provides the parameters used by the <tt>FindChirpFilterSegment()</tt> function.
  *
  * \note Original laldoc contained the following documentation for a non-existent struct-member:
  * <tt>REAL4 norm</tt> On exit this contains the normalisation constant
@@ -419,7 +427,8 @@ FindChirpFilterParams;
 
 /* ---------- typedefs of input structures used by functions in findchirp ---------- */
 
-/** This structure groups the input data required for the
+/**
+ * This structure groups the input data required for the
  * <tt>FindChirpFilterSegment()</tt> function into a single structure.
  */
 typedef struct
@@ -430,8 +439,9 @@ tagFindChirpFilterInput
 }
 FindChirpFilterInput;
 
-/** This structure contains data needed for the bank veto.
-*/
+/**
+ * This structure contains data needed for the bank veto.
+ */
 typedef struct
 tagFindChirpBankVetoData
 {
@@ -456,8 +466,9 @@ tagFindChirpBankVetoData
 FindChirpBankVetoData;
 
 
-/** UNDOCUMENTED
-*/
+/**
+ * UNDOCUMENTED
+ */
 typedef struct
 tagFindChirpBankSimParams
 {

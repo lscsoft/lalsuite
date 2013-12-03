@@ -54,7 +54,6 @@ int main(int argc, char *argv[])
 	REAL8TimeSeries *hcross;
 	size_t j;
 
-	lalDebugLevel = 7;
 	XLALSetErrorHandler(XLALBacktraceErrorHandler);
 
 	parseargs(argc, argv);

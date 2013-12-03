@@ -30,23 +30,23 @@ extern "C" {
 #endif
 
 /**
- *
  * \addtogroup RealFFT_h
  * \brief Performs real-to-complex and complex-to-real FFTs.
  *
- * \heading{Synopsis}
+ * ### Synopsis ###
+ *
  * \code
  * #include <lal/RealFFT.h>
  * \endcode
  *
  * Perform real-to-complex and complex-to-real fast Fourier
  * transforms of vectors, and sequences of vectors using the package
- * FFTW [\ref fj_1998].
- *
+ * FFTW \cite fj_1998.
  *
  * \section sec_RealFFT_XLAL XLAL Functions
  *
- * \heading{Synopsis}
+ * ### Synopsis ###
+ *
  * \code
  * #include <lal/RealFFT.h>
  *
@@ -71,7 +71,7 @@ extern "C" {
  * int XLALREAL8PowerSpectrum( REAL8Vector *spec, REAL8Vector *data, REAL8FFTPlan *plan );
  * \endcode
  *
- * \heading{Description}
+ * ### Description ###
  *
  * The \c REAL4 routines are described below.  These use single-precision
  * FFTs, i.e., they convert \c REAL4Vectors into \c COMPLEX8Vectors
@@ -116,7 +116,7 @@ extern "C" {
  * XLALREAL4PowerSpectrum() computes a real power spectrum of the
  * input real vector and a forward FFT plan.
  *
- * \heading{Return Values}
+ * ### Return Values ###
  *
  * Upon success,
  * XLALCreateREAL4FFTPlan(),
@@ -153,7 +153,7 @@ extern "C" {
  * As before, the \c REAL8 versions of these routines behave the
  * same way but for double-precision transforms.
  *
-*/
+ */
 /*@{*/
 
 /** Plan to perform FFT of REAL4 data */
@@ -201,8 +201,8 @@ typedef struct tagREAL8FFTPlan REAL8FFTPlan;
  *
  */
 
-/** Returns a new REAL4FFTPlan
- *
+/**
+ * Returns a new REAL4FFTPlan
  * A REAL4FFTPlan is required to perform a FFT that involves real data.
  * A different plan is required for each size of the real data vector
  * and for each direction of transform (forward or reverse).
@@ -220,25 +220,26 @@ typedef struct tagREAL8FFTPlan REAL8FFTPlan;
  *
  * @param[in] size The number of points in the real data.
  * @param[in] fwdflg Set non-zero for a forward FFT plan;
- *                    otherwise create a reverse plan
+ * otherwise create a reverse plan
  * @param[in] measurelvl Measurement level for plan creation:
- *                      - 0: no measurement, just estimate the plan;
- *                      - 1: measure the best plan;
- *                      - 2: perform a lengthy measurement of the best plan;
- *                      - 3: perform an exhasutive measurement of the best plan.
+ * - 0: no measurement, just estimate the plan;
+ * - 1: measure the best plan;
+ * - 2: perform a lengthy measurement of the best plan;
+ * - 3: perform an exhasutive measurement of the best plan.
  * @return A pointer to an allocated \c REAL4FFTPlan structure is returned
  * upon successful completion.  Otherwise, a \c NULL pointer is returned
  * and \c xlalErrno is set to indicate the error.
  * @par Errors:
  * The \c XLALCreateREAL4Plan() function shall fail if:
- *  - [\c XLAL_EBADLEN] The size of the requested plan is 0.
- *  - [\c XLAL_ENOMEM] Insufficient storage space is available.
- *  - [\c XLAL_EFAILED] The call to the underlying FFTW routine failed.
- *  .
+ * - [\c XLAL_EBADLEN] The size of the requested plan is 0.
+ * - [\c XLAL_ENOMEM] Insufficient storage space is available.
+ * - [\c XLAL_EFAILED] The call to the underlying FFTW routine failed.
+ * .
  */
 REAL4FFTPlan * XLALCreateREAL4FFTPlan( UINT4 size, int fwdflg, int measurelvl );
 
-/** Returns a new REAL4FFTPlan for a forward transform
+/**
+ * Returns a new REAL4FFTPlan for a forward transform
  *
  * A REAL4FFTPlan is required to perform a FFT that involves real data.
  * A different plan is required for each size of the real data vector.
@@ -248,23 +249,24 @@ REAL4FFTPlan * XLALCreateREAL4FFTPlan( UINT4 size, int fwdflg, int measurelvl );
  *
  * @param[in] size The number of points in the real data.
  * @param[in] measurelvl Measurement level for plan creation:
- *                      - 0: no measurement, just estimate the plan;
- *                      - 1: measure the best plan;
- *                      - 2: perform a lengthy measurement of the best plan;
- *                      - 3: perform an exhasutive measurement of the best plan.
+ * - 0: no measurement, just estimate the plan;
+ * - 1: measure the best plan;
+ * - 2: perform a lengthy measurement of the best plan;
+ * - 3: perform an exhasutive measurement of the best plan.
  * @return A pointer to an allocated \c REAL4FFTPlan structure is returned
  * upon successful completion.  Otherwise, a \c NULL pointer is returned
  * and \c xlalErrno is set to indicate the error.
  * @par Errors:
  * The \c XLALCreateForwardREAL4Plan() function shall fail if:
- *  - [\c XLAL_EBADLEN] The size of the requested plan is 0.
- *  - [\c XLAL_ENOMEM] Insufficient storage space is available.
- *  - [\c XLAL_EFAILED] The call to the underlying FFTW routine failed.
- *  .
+ * - [\c XLAL_EBADLEN] The size of the requested plan is 0.
+ * - [\c XLAL_ENOMEM] Insufficient storage space is available.
+ * - [\c XLAL_EFAILED] The call to the underlying FFTW routine failed.
+ * .
  */
 REAL4FFTPlan * XLALCreateForwardREAL4FFTPlan( UINT4 size, int measurelvl );
 
-/** Returns a new REAL4FFTPlan for a reverse transform
+/**
+ * Returns a new REAL4FFTPlan for a reverse transform
  *
  * A REAL4FFTPlan is required to perform a FFT that involves real data.
  * A reverse transform performs
@@ -278,29 +280,31 @@ REAL4FFTPlan * XLALCreateForwardREAL4FFTPlan( UINT4 size, int measurelvl );
  *
  * @param[in] size The number of points in the real data.
  * @param[in] measurelvl Measurement level for plan creation:
- *                      - 0: no measurement, just estimate the plan;
- *                      - 1: measure the best plan;
- *                      - 2: perform a lengthy measurement of the best plan;
- *                      - 3: perform an exhasutive measurement of the best plan.
+ * - 0: no measurement, just estimate the plan;
+ * - 1: measure the best plan;
+ * - 2: perform a lengthy measurement of the best plan;
+ * - 3: perform an exhasutive measurement of the best plan.
  * @return A pointer to an allocated \c REAL4FFTPlan structure is returned
  * upon successful completion.  Otherwise, a \c NULL pointer is returned
  * and \c xlalErrno is set to indicate the error.
  * @par Errors:
  * The \c XLALCreateReverseREAL4Plan() function shall fail if:
- *  - [\c XLAL_EBADLEN] The size of the requested plan is 0.
- *  - [\c XLAL_ENOMEM] Insufficient storage space is available.
- *  - [\c XLAL_EFAILED] The call to the underlying FFTW routine failed.
- *  .
+ * - [\c XLAL_EBADLEN] The size of the requested plan is 0.
+ * - [\c XLAL_ENOMEM] Insufficient storage space is available.
+ * - [\c XLAL_EFAILED] The call to the underlying FFTW routine failed.
+ * .
  */
 REAL4FFTPlan * XLALCreateReverseREAL4FFTPlan( UINT4 size, int measurelvl );
 
-/** Destroys a REAL4FFTPlan
+/**
+ * Destroys a REAL4FFTPlan
  * @param[in] plan A pointer to the REAL4FFTPlan to be destroyed.
  * @return None.
  */
 void XLALDestroyREAL4FFTPlan( REAL4FFTPlan *plan );
 
-/** Performs a forward FFT of REAL4 data
+/**
+ * Performs a forward FFT of REAL4 data
  *
  * This routine performs the transformation:
  * \f[z[k] = \sum_{j=0}^{N-1} e^{-2\pi ijk/N}\,x[j]\f]
@@ -320,18 +324,19 @@ void XLALDestroyREAL4FFTPlan( REAL4FFTPlan *plan );
  * @return 0 upon successful completion or non-zero upon failure.
  * @par Errors:
  * The \c XLALREAL4ForwardFFT() function shall fail if:
- *  - [\c XLAL_EFAULT] A \c NULL pointer is provided as one of the arguments.
- *  - [\c XLAL_EINVAL] A argument is invalid or the plan is for a
- *    reverse transform.
- *  - [\c XLAL_EBADLEN] The input vector, output vector, and plan size are
- *    incompatible.
- *  - [\c XLAL_ENOMEM] Insufficient storage space is available.
- *  .
+ * - [\c XLAL_EFAULT] A \c NULL pointer is provided as one of the arguments.
+ * - [\c XLAL_EINVAL] A argument is invalid or the plan is for a
+ * reverse transform.
+ * - [\c XLAL_EBADLEN] The input vector, output vector, and plan size are
+ * incompatible.
+ * - [\c XLAL_ENOMEM] Insufficient storage space is available.
+ * .
  */
 int XLALREAL4ForwardFFT( COMPLEX8Vector *output, const REAL4Vector *input,
     const REAL4FFTPlan *plan );
 
-/** Performs a reverse FFT of REAL4 data
+/**
+ * Performs a reverse FFT of REAL4 data
  *
  * This routine performs the transformation:
  * \f[y[j] = \sum_{k=0}^{N-1} e^{+2\pi ijk/N}\,z[k]\f]
@@ -352,22 +357,23 @@ int XLALREAL4ForwardFFT( COMPLEX8Vector *output, const REAL4Vector *input,
  * @return 0 upon successful completion or non-zero upon failure.
  * @par Errors:
  * The \c XLALREAL4ForwardFFT() function shall fail if:
- *  - [\c XLAL_EFAULT] A \c NULL pointer is provided as one of the arguments.
- *  - [\c XLAL_EINVAL] A argument is invalid or the plan is for a
- *    reverse transform.
- *  - [\c XLAL_EBADLEN] The input vector, output vector, and plan size are
- *    incompatible.
- *  - [\c XLAL_ENOMEM] Insufficient storage space is available.
- *  - [\c XLAL_EDOM] Domain error if the DC component of the input data, z[0],
- *    is not purely real
- *    or if the length of the output vector N is even and the Nyquist
- *    component of the input data, z[N/2], is not purely real.
- *  .
+ * - [\c XLAL_EFAULT] A \c NULL pointer is provided as one of the arguments.
+ * - [\c XLAL_EINVAL] A argument is invalid or the plan is for a
+ * reverse transform.
+ * - [\c XLAL_EBADLEN] The input vector, output vector, and plan size are
+ * incompatible.
+ * - [\c XLAL_ENOMEM] Insufficient storage space is available.
+ * - [\c XLAL_EDOM] Domain error if the DC component of the input data, z[0],
+ * is not purely real
+ * or if the length of the output vector N is even and the Nyquist
+ * component of the input data, z[N/2], is not purely real.
+ * .
  */
 int XLALREAL4ReverseFFT( REAL4Vector *output, const COMPLEX8Vector *input,
     const REAL4FFTPlan *plan );
 
-/** Perform a REAL4Vector to REAL4Vector FFT
+/**
+ * Perform a REAL4Vector to REAL4Vector FFT
  *
  * This routine computes
  * \f[y[k]=\left\{\begin{array}{ll}\Re z[k]&0\le k\le\lfloor N/2\rfloor\\\Im z[N-k]&\lfloor N/2\rfloor<k<N\end{array}\right.\f]
@@ -384,18 +390,19 @@ int XLALREAL4ReverseFFT( REAL4Vector *output, const COMPLEX8Vector *input,
  * @return 0 upon successful completion or non-zero upon failure.
  * @par Errors:
  * The \c XLALREAL4VectorFFT() function shall fail if:
- *  - [\c XLAL_EFAULT] A \c NULL pointer is provided as one of the arguments.
- *  - [\c XLAL_EINVAL] A argument is invalid or the plan is for a
- *    reverse transform.
- *  - [\c XLAL_EBADLEN] The input vector, output vector, and plan size are
- *    incompatible.
- *  - [\c XLAL_ENOMEM] Insufficient storage space is available.
- *  .
+ * - [\c XLAL_EFAULT] A \c NULL pointer is provided as one of the arguments.
+ * - [\c XLAL_EINVAL] A argument is invalid or the plan is for a
+ * reverse transform.
+ * - [\c XLAL_EBADLEN] The input vector, output vector, and plan size are
+ * incompatible.
+ * - [\c XLAL_ENOMEM] Insufficient storage space is available.
+ * .
  */
-int XLALREAL4VectorFFT( REAL4Vector * restrict output, const REAL4Vector * restrict input,
+int XLALREAL4VectorFFT( REAL4Vector * _LAL_RESTRICT_ output, const REAL4Vector * _LAL_RESTRICT_ input,
     const REAL4FFTPlan *plan );
 
-/** Computes the power spectrum of REAL4 data
+/**
+ * Computes the power spectrum of REAL4 data
  *
  * This routine computes
  * \f[P[k]=\left\{\begin{array}{ll}|z[0]|^2&k=0\\2|z[k]|^2&1\leq \lfloor (N+1)/2\rfloor\\|z[N/2]|^2&k=N/2,\;\mbox{$N$ even}\end{array}\right.\f]
@@ -408,13 +415,13 @@ int XLALREAL4VectorFFT( REAL4Vector * restrict output, const REAL4Vector * restr
  * @return 0 upon successful completion or non-zero upon failure.
  * @par Errors:
  * The \c XLALREAL4PowerSpectrum() function shall fail if:
- *  - [\c XLAL_EFAULT] A \c NULL pointer is provided as one of the arguments.
- *  - [\c XLAL_EINVAL] A argument is invalid or the input and output
- *    data vectors are the same.
- *  - [\c XLAL_EBADLEN] The input vector, output vector, and plan size are
- *    incompatible.
- *  - [\c XLAL_ENOMEM] Insufficient storage space is available.
- *  .
+ * - [\c XLAL_EFAULT] A \c NULL pointer is provided as one of the arguments.
+ * - [\c XLAL_EINVAL] A argument is invalid or the input and output
+ * data vectors are the same.
+ * - [\c XLAL_EBADLEN] The input vector, output vector, and plan size are
+ * incompatible.
+ * - [\c XLAL_ENOMEM] Insufficient storage space is available.
+ * .
  */
 int XLALREAL4PowerSpectrum( REAL4Vector *spec, const REAL4Vector *data,
     const REAL4FFTPlan *plan );
@@ -425,7 +432,8 @@ int XLALREAL4PowerSpectrum( REAL4Vector *spec, const REAL4Vector *data,
  *
  */
 
-/** Returns a new REAL8FFTPlan
+/**
+ * Returns a new REAL8FFTPlan
  *
  * A REAL8FFTPlan is required to perform a FFT that involves real data.
  * A different plan is required for each size of the real data vector
@@ -444,25 +452,26 @@ int XLALREAL4PowerSpectrum( REAL4Vector *spec, const REAL4Vector *data,
  *
  * @param[in] size The number of points in the real data.
  * @param[in] fwdflg Set non-zero for a forward FFT plan;
- *                    otherwise create a reverse plan
+ * otherwise create a reverse plan
  * @param[in] measurelvl Measurement level for plan creation:
- *                      - 0: no measurement, just estimate the plan;
- *                      - 1: measure the best plan;
- *                      - 2: perform a lengthy measurement of the best plan;
- *                      - 3: perform an exhasutive measurement of the best plan.
+ * - 0: no measurement, just estimate the plan;
+ * - 1: measure the best plan;
+ * - 2: perform a lengthy measurement of the best plan;
+ * - 3: perform an exhasutive measurement of the best plan.
  * @return A pointer to an allocated \c REAL8FFTPlan structure is returned
  * upon successful completion.  Otherwise, a \c NULL pointer is returned
  * and \c xlalErrno is set to indicate the error.
  * @par Errors:
  * The \c XLALCreateREAL8Plan() function shall fail if:
- *  - [\c XLAL_EBADLEN] The size of the requested plan is 0.
- *  - [\c XLAL_ENOMEM] Insufficient storage space is available.
- *  - [\c XLAL_EFAILED] The call to the underlying FFTW routine failed.
- *  .
+ * - [\c XLAL_EBADLEN] The size of the requested plan is 0.
+ * - [\c XLAL_ENOMEM] Insufficient storage space is available.
+ * - [\c XLAL_EFAILED] The call to the underlying FFTW routine failed.
+ * .
  */
 REAL8FFTPlan * XLALCreateREAL8FFTPlan( UINT4 size, int fwdflg, int measurelvl );
 
-/** Returns a new REAL8FFTPlan for a forward transform
+/**
+ * Returns a new REAL8FFTPlan for a forward transform
  *
  * A REAL8FFTPlan is required to perform a FFT that involves real data.
  * A different plan is required for each size of the real data vector.
@@ -472,23 +481,24 @@ REAL8FFTPlan * XLALCreateREAL8FFTPlan( UINT4 size, int fwdflg, int measurelvl );
  *
  * @param[in] size The number of points in the real data.
  * @param[in] measurelvl Measurement level for plan creation:
- *                      - 0: no measurement, just estimate the plan;
- *                      - 1: measure the best plan;
- *                      - 2: perform a lengthy measurement of the best plan;
- *                      - 3: perform an exhasutive measurement of the best plan.
+ * - 0: no measurement, just estimate the plan;
+ * - 1: measure the best plan;
+ * - 2: perform a lengthy measurement of the best plan;
+ * - 3: perform an exhasutive measurement of the best plan.
  * @return A pointer to an allocated \c REAL8FFTPlan structure is returned
  * upon successful completion.  Otherwise, a \c NULL pointer is returned
  * and \c xlalErrno is set to indicate the error.
  * @par Errors:
  * The \c XLALCreateForwardREAL8Plan() function shall fail if:
- *  - [\c XLAL_EBADLEN] The size of the requested plan is 0.
- *  - [\c XLAL_ENOMEM] Insufficient storage space is available.
- *  - [\c XLAL_EFAILED] The call to the underlying FFTW routine failed.
- *  .
+ * - [\c XLAL_EBADLEN] The size of the requested plan is 0.
+ * - [\c XLAL_ENOMEM] Insufficient storage space is available.
+ * - [\c XLAL_EFAILED] The call to the underlying FFTW routine failed.
+ * .
  */
 REAL8FFTPlan * XLALCreateForwardREAL8FFTPlan( UINT4 size, int measurelvl );
 
-/** Returns a new REAL8FFTPlan for a reverse transform
+/**
+ * Returns a new REAL8FFTPlan for a reverse transform
  *
  * A REAL8FFTPlan is required to perform a FFT that involves real data.
  * A reverse transform performs
@@ -502,29 +512,31 @@ REAL8FFTPlan * XLALCreateForwardREAL8FFTPlan( UINT4 size, int measurelvl );
  *
  * @param[in] size The number of points in the real data.
  * @param[in] measurelvl Measurement level for plan creation:
- *                      - 0: no measurement, just estimate the plan;
- *                      - 1: measure the best plan;
- *                      - 2: perform a lengthy measurement of the best plan;
- *                      - 3: perform an exhasutive measurement of the best plan.
+ * - 0: no measurement, just estimate the plan;
+ * - 1: measure the best plan;
+ * - 2: perform a lengthy measurement of the best plan;
+ * - 3: perform an exhasutive measurement of the best plan.
  * @return A pointer to an allocated \c REAL8FFTPlan structure is returned
  * upon successful completion.  Otherwise, a \c NULL pointer is returned
  * and \c xlalErrno is set to indicate the error.
  * @par Errors:
  * The \c XLALCreateReverseREAL8Plan() function shall fail if:
- *  - [\c XLAL_EBADLEN] The size of the requested plan is 0.
- *  - [\c XLAL_ENOMEM] Insufficient storage space is available.
- *  - [\c XLAL_EFAILED] The call to the underlying FFTW routine failed.
- *  .
+ * - [\c XLAL_EBADLEN] The size of the requested plan is 0.
+ * - [\c XLAL_ENOMEM] Insufficient storage space is available.
+ * - [\c XLAL_EFAILED] The call to the underlying FFTW routine failed.
+ * .
  */
 REAL8FFTPlan * XLALCreateReverseREAL8FFTPlan( UINT4 size, int measurelvl );
 
-/** Destroys a REAL8FFTPlan
+/**
+ * Destroys a REAL8FFTPlan
  * @param[in] plan A pointer to the REAL8FFTPlan to be destroyed.
  * @return None.
  */
 void XLALDestroyREAL8FFTPlan( REAL8FFTPlan *plan );
 
-/** Performs a forward FFT of REAL8 data
+/**
+ * Performs a forward FFT of REAL8 data
  *
  * This routine performs the transformation:
  * \f[z[k] = \sum_{j=0}^{N-1} e^{-2\pi ijk/N}\,x[j]\f]
@@ -544,18 +556,19 @@ void XLALDestroyREAL8FFTPlan( REAL8FFTPlan *plan );
  * @return 0 upon successful completion or non-zero upon failure.
  * @par Errors:
  * The \c XLALREAL8ForwardFFT() function shall fail if:
- *  - [\c XLAL_EFAULT] A \c NULL pointer is provided as one of the arguments.
- *  - [\c XLAL_EINVAL] A argument is invalid or the plan is for a
- *    reverse transform.
- *  - [\c XLAL_EBADLEN] The input vector, output vector, and plan size are
- *    incompatible.
- *  - [\c XLAL_ENOMEM] Insufficient storage space is available.
- *  .
+ * - [\c XLAL_EFAULT] A \c NULL pointer is provided as one of the arguments.
+ * - [\c XLAL_EINVAL] A argument is invalid or the plan is for a
+ * reverse transform.
+ * - [\c XLAL_EBADLEN] The input vector, output vector, and plan size are
+ * incompatible.
+ * - [\c XLAL_ENOMEM] Insufficient storage space is available.
+ * .
  */
 int XLALREAL8ForwardFFT( COMPLEX16Vector *output, REAL8Vector *input,
     const REAL8FFTPlan *plan );
 
-/** Performs a reverse FFT of REAL8 data
+/**
+ * Performs a reverse FFT of REAL8 data
  *
  * This routine performs the transformation:
  * \f[y[j] = \sum_{k=0}^{N-1} e^{+2\pi ijk/N}\,z[k]\f]
@@ -576,22 +589,23 @@ int XLALREAL8ForwardFFT( COMPLEX16Vector *output, REAL8Vector *input,
  * @return 0 upon successful completion or non-zero upon failure.
  * @par Errors:
  * The \c XLALREAL8ForwardFFT() function shall fail if:
- *  - [\c XLAL_EFAULT] A \c NULL pointer is provided as one of the arguments.
- *  - [\c XLAL_EINVAL] A argument is invalid or the plan is for a
- *    reverse transform.
- *  - [\c XLAL_EBADLEN] The input vector, output vector, and plan size are
- *    incompatible.
- *  - [\c XLAL_ENOMEM] Insufficient storage space is available.
- *  - [\c XLAL_EDOM] Domain error if the DC component of the input data, z[0],
- *    is not purely real
- *    or if the length of the output vector N is even and the Nyquist
- *    component of the input data, z[N/2], is not purely real.
- *  .
+ * - [\c XLAL_EFAULT] A \c NULL pointer is provided as one of the arguments.
+ * - [\c XLAL_EINVAL] A argument is invalid or the plan is for a
+ * reverse transform.
+ * - [\c XLAL_EBADLEN] The input vector, output vector, and plan size are
+ * incompatible.
+ * - [\c XLAL_ENOMEM] Insufficient storage space is available.
+ * - [\c XLAL_EDOM] Domain error if the DC component of the input data, z[0],
+ * is not purely real
+ * or if the length of the output vector N is even and the Nyquist
+ * component of the input data, z[N/2], is not purely real.
+ * .
  */
 int XLALREAL8ReverseFFT( REAL8Vector *output, COMPLEX16Vector *input,
     const REAL8FFTPlan *plan );
 
-/** Perform a REAL8Vector to REAL8Vector FFT
+/**
+ * Perform a REAL8Vector to REAL8Vector FFT
  *
  * This routine computes
  * \f[y[k]=\left\{\begin{array}{ll}\Re z[k]&0\le k\le\lfloor N/2\rfloor\\\Im z[N-k]&\lfloor N/2\rfloor<k<N\end{array}\right.\f]
@@ -608,18 +622,19 @@ int XLALREAL8ReverseFFT( REAL8Vector *output, COMPLEX16Vector *input,
  * @return 0 upon successful completion or non-zero upon failure.
  * @par Errors:
  * The \c XLALREAL8VectorFFT() function shall fail if:
- *  - [\c XLAL_EFAULT] A \c NULL pointer is provided as one of the arguments.
- *  - [\c XLAL_EINVAL] A argument is invalid or the input and output data
- *    vectors are the same.
- *  - [\c XLAL_EBADLEN] The input vector, output vector, and plan size are
- *    incompatible.
- *  - [\c XLAL_ENOMEM] Insufficient storage space is available.
- *  .
+ * - [\c XLAL_EFAULT] A \c NULL pointer is provided as one of the arguments.
+ * - [\c XLAL_EINVAL] A argument is invalid or the input and output data
+ * vectors are the same.
+ * - [\c XLAL_EBADLEN] The input vector, output vector, and plan size are
+ * incompatible.
+ * - [\c XLAL_ENOMEM] Insufficient storage space is available.
+ * .
  */
 int XLALREAL8VectorFFT( REAL8Vector *output, REAL8Vector *input,
     const REAL8FFTPlan *plan );
 
-/** Computes the power spectrum of REAL8 data
+/**
+ * Computes the power spectrum of REAL8 data
  *
  * This routine computes
  * \f[P[k]=\left\{\begin{array}{ll}|z[0]|^2 & k=0\\2|z[k]|^2 & 1\leq \lfloor (N+1)/2\rfloor\\ |z[N/2]|^2 & k=N/2,\;\mbox{$N$ even}\end{array}\right.\f]
@@ -632,13 +647,13 @@ int XLALREAL8VectorFFT( REAL8Vector *output, REAL8Vector *input,
  * @return 0 upon successful completion or non-zero upon failure.
  * @par Errors:
  * The \c XLALREAL8PowerSpectrum() function shall fail if:
- *  - [\c XLAL_EFAULT] A \c NULL pointer is provided as one of the arguments.
- *  - [\c XLAL_EINVAL] A argument is invalid or the plan is for a
- *    reverse transform.
- *  - [\c XLAL_EBADLEN] The input vector, output vector, and plan size are
- *    incompatible.
- *  - [\c XLAL_ENOMEM] Insufficient storage space is available.
- *  .
+ * - [\c XLAL_EFAULT] A \c NULL pointer is provided as one of the arguments.
+ * - [\c XLAL_EINVAL] A argument is invalid or the plan is for a
+ * reverse transform.
+ * - [\c XLAL_EBADLEN] The input vector, output vector, and plan size are
+ * incompatible.
+ * - [\c XLAL_ENOMEM] Insufficient storage space is available.
+ * .
  */
 int XLALREAL8PowerSpectrum( REAL8Vector *spec, REAL8Vector *data,
     const REAL8FFTPlan *plan );
@@ -649,7 +664,8 @@ int XLALREAL8PowerSpectrum( REAL8Vector *spec, REAL8Vector *data,
  *
  */
 
-/** \b DEPRECATED
+/**
+ * \b DEPRECATED
  * @deprecated Use XLALCreateForwardREAL4FFTPlan() instead.
  */
 void
@@ -659,12 +675,14 @@ LALCreateForwardREAL4FFTPlan(
     UINT4         size,
     INT4          measure
     );
-/** \b DEPRECATED
+/**
+ * \b DEPRECATED
  * @deprecated Use XLALCreateForwardREAL4FFTPlan() instead.
  */
 #define LALCreateForwardRealFFTPlan LALCreateForwardREAL4FFTPlan
 
-/** \b DEPRECATED
+/**
+ * \b DEPRECATED
  * @deprecated Use XLALCreateReverseREAL4FFTPlan() instead.
  */
 void
@@ -674,12 +692,14 @@ LALCreateReverseREAL4FFTPlan(
     UINT4         size,
     INT4          measure
     );
-/** \b DEPRECATED
+/**
+ * \b DEPRECATED
  * @deprecated Use XLALCreateReverseREAL4FFTPlan() instead.
  */
 #define LALCreateReverseRealFFTPlan LALCreateReverseREAL4FFTPlan
 
-/** \b DEPRECATED
+/**
+ * \b DEPRECATED
  * @deprecated Use XLALDestroyREAL4FFTPlan() instead.
  */
 void
@@ -687,12 +707,14 @@ LALDestroyREAL4FFTPlan(
     LALStatus    *status,
     REAL4FFTPlan **plan
     );
-/** \b DEPRECATED
+/**
+ * \b DEPRECATED
  * @deprecated Use XLALDestroyREAL4FFTPlan() instead.
  */
 #define LALDestroyRealFFTPlan LALDestroyREAL4FFTPlan
 
-/** \b DEPRECATED
+/**
+ * \b DEPRECATED
  * @deprecated Use XLALREAL4ForwardFFT() instead.
  */
 void
@@ -702,12 +724,14 @@ LALForwardREAL4FFT(
     REAL4Vector    *input,
     REAL4FFTPlan    *plan
     );
-/** \b DEPRECATED
+/**
+ * \b DEPRECATED
  * @deprecated Use XLALREAL4ForwardFFT() instead.
  */
 #define LALForwardRealFFT LALForwardREAL4FFT
 
-/** \b DEPRECATED
+/**
+ * \b DEPRECATED
  * @deprecated Use XLALREAL4ReverseFFT() instead.
  */
 void
@@ -717,12 +741,14 @@ LALReverseREAL4FFT(
     COMPLEX8Vector *input,
     REAL4FFTPlan    *plan
     );
-/** \b DEPRECATED
+/**
+ * \b DEPRECATED
  * @deprecated Use XLALREAL4ReverseFFT() instead.
  */
 #define LALReverseRealFFT LALReverseREAL4FFT
 
-/** \b DEPRECATED
+/**
+ * \b DEPRECATED
  * @deprecated Use XLALREAL4PowerSpectrum() instead.
  */
 void
@@ -732,12 +758,14 @@ LALREAL4PowerSpectrum (
     REAL4Vector *data,
     REAL4FFTPlan *plan
     );
-/** \b DEPRECATED
+/**
+ * \b DEPRECATED
  * @deprecated Use XLALREAL4PowerSpectrum() instead.
  */
 #define LALRealPowerSpectrum LALREAL4PowerSpectrum
 
-/** \b DEPRECATED
+/**
+ * \b DEPRECATED
  * @deprecated Use XLALREAL4VectorFFT() instead.
  */
 void
@@ -754,7 +782,8 @@ LALREAL4VectorFFT(
  *
  */
 
-/** \b DEPRECATED
+/**
+ * \b DEPRECATED
  * @deprecated Use XLALCreateForwardREAL8FFTPlan() instead.
  */
 void
@@ -765,7 +794,8 @@ LALCreateForwardREAL8FFTPlan(
     INT4          measure
     );
 
-/** \b DEPRECATED
+/**
+ * \b DEPRECATED
  * @deprecated Use XLALCreateReverseREAL8FFTPlan() instead.
  */
 void
@@ -776,7 +806,8 @@ LALCreateReverseREAL8FFTPlan(
     INT4          measure
     );
 
-/** \b DEPRECATED
+/**
+ * \b DEPRECATED
  * @deprecated Use XLALDestroyREAL8FFTPlan() instead.
  */
 void
@@ -785,7 +816,8 @@ LALDestroyREAL8FFTPlan(
     REAL8FFTPlan **plan
     );
 
-/** \b DEPRECATED
+/**
+ * \b DEPRECATED
  * @deprecated Use XLALREAL8ForwardFFT() instead.
  */
 void
@@ -796,7 +828,8 @@ LALForwardREAL8FFT(
     REAL8FFTPlan    *plan
     );
 
-/** \b DEPRECATED
+/**
+ * \b DEPRECATED
  * @deprecated Use XLALREAL8ReverseFFT() instead.
  */
 void
@@ -807,7 +840,8 @@ LALReverseREAL8FFT(
     REAL8FFTPlan    *plan
     );
 
-/** \b DEPRECATED
+/**
+ * \b DEPRECATED
  * @deprecated Use XLALREAL8PowerSpectrum() instead.
  */
 void
@@ -818,7 +852,8 @@ LALREAL8PowerSpectrum (
     REAL8FFTPlan *plan
     );
 
-/** \b DEPRECATED
+/**
+ * \b DEPRECATED
  * @deprecated Use XLALREAL8VectorFFT() instead.
  */
 void

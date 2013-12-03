@@ -27,38 +27,37 @@
  *-----------------------------------------------------------------------*/
 
 /**
-   \file
-   \ingroup Sort_h
-
-   \brief A program to test sorting routines.
-
-   \heading{Usage}
-   \code
-   SortTest [-s seed] [-d [debug-level]] [-v]
-   \endcode
-
-\heading{Description}
-
-This test program creates rank and index arrays for an unordered list
-of numbers, and then sorts the list.  The data for the list are
-generated randomly, and the output is to \c stdout if <tt>-v</tt> is
-specified (unless redirected).  \c SortTest returns 0 if it executes
-successfully, and 1 if any of the subroutines fail.
-
-The <tt>-s</tt> option sets the seed for the random number generator; if
-\c seed is set to zero (or if no <tt>-s</tt> option is given) then
-the seed is taken from the processor clock.  The <tt>-d</tt> option
-increases the default debug level from 0 to 1, or sets it to the
-specified value <tt>debug-level</tt>.
-
-\heading{Exit codes}
-
-<table><tr><th>Code</th><th>Explanation</th></tr>
-<tr><td>0</td><td>Success, normal exit.</td></tr>
-<tr><td>1</td><td>Subroutine failed.</td></tr>
-</table>
-
-*/
+ * \file
+ * \ingroup Sort_h
+ *
+ * \brief A program to test sorting routines.
+ *
+ * ### Usage ###
+ *
+ * \code
+ * SortTest [-s seed]
+ * \endcode
+ *
+ * ### Description ###
+ *
+ * This test program creates rank and index arrays for an unordered list
+ * of numbers, and then sorts the list.  The data for the list are
+ * generated randomly, and the output is to \c stdout if <tt>-v</tt> is
+ * specified (unless redirected).  \c SortTest returns 0 if it executes
+ * successfully, and 1 if any of the subroutines fail.
+ *
+ * The <tt>-s</tt> option sets the seed for the random number generator; if
+ * \c seed is set to zero (or if no <tt>-s</tt> option is given) then
+ * the seed is taken from the processor clock.
+ *
+ * ### Exit codes ###
+ *
+ * <table><tr><th>Code</th><th>Explanation</th></tr>
+ * <tr><td>0</td><td>Success, normal exit.</td></tr>
+ * <tr><td>1</td><td>Subroutine failed.</td></tr>
+ * </table>
+ *
+ */
 
 /** \cond DONT_DOXYGEN */
 
@@ -75,7 +74,6 @@ specified value <tt>debug-level</tt>.
 #define SORTTEST_ESUB 1
 #define SORTTEST_MSGESUB "Subroutine returned error"
 
-INT4 lalDebugLevel=0;
 void test_xlal_routines( void );
 
 int main(int argc, char **argv)
@@ -88,26 +86,10 @@ int main(int argc, char **argv)
   REAL4Vector  *data=NULL;
   RandomParams *params=NULL;
 
-  /* Set debug level to the input argument, if any. */
-  for(i=1;argc>1;i++,argc--){
-    if(!strcmp(argv[i],"-s")){
-      if(argc>2){
-	seed=atoi(argv[++i]);
-	argc--;
-      }else
-	LALPrintError("%s: Ignoring argument: -s\n",argv[0]);
-    }else if(!strcmp(argv[i],"-d")){
-      if((argc>2)&&(argv[i+1][0]!='-')){
-	lalDebugLevel=atoi(argv[++i]);
-	argc--;
-      }else
-	lalDebugLevel=1;
-    }else if(!strcmp(argv[i],"-v")){
-      verbose=1;
-    }else
-      LALPrintError("%s: Ignoring argument: %s\n",argv[0],argv[i]);
-  }
-
+  if(argc==2&&!strcmp(argv[1],"-s"))
+    seed=atoi(argv[1]);
+  else if (argc!=1)
+      LALPrintError("%s: Incorrect arguments\n",argv[0]);
   test_xlal_routines();
 
   /* Create vectors and random parameters. */

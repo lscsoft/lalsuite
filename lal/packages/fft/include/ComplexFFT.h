@@ -34,15 +34,16 @@ extern "C" {
  *
  * \brief Performs complex-to-complex FFTs.
  *
- * \heading{Synopsis}
+ * ### Synopsis ###
+ *
  * \code
  * #include <lal/ComplexFFT.h>
  * \endcode
  *
  * Perform complex-to-complex fast Fourier transforms of vectors using the
- * package FFTW [\ref fj_1998].
+ * package FFTW \cite fj_1998.
  *
-*/
+ */
 /*@{*/
 
 /** \name Error Codes */
@@ -87,8 +88,8 @@ typedef struct tagCOMPLEX16FFTPlan COMPLEX16FFTPlan;
  *
  */
 
-/** Returns a new COMPLEX8FFTPlan
- *
+/**
+ * Returns a new COMPLEX8FFTPlan
  * A COMPLEX8FFTPlan is required to perform a FFT that involves complex data.
  * A different plan is required for each size of the complex data vectors
  * and for each direction of transform (forward or reverse).
@@ -106,25 +107,26 @@ typedef struct tagCOMPLEX16FFTPlan COMPLEX16FFTPlan;
  *
  * @param[in] size The number of points in the complex data.
  * @param[in] fwdflg Set non-zero for a forward FFT plan;
- *                    otherwise create a reverse plan
+ * otherwise create a reverse plan
  * @param[in] measurelvl Measurement level for plan creation:
- *                      - 0: no measurement, just estimate the plan;
- *                      - 1: measure the best plan;
- *                      - 2: perform a lengthy measurement of the best plan;
- *                      - 3: perform an exhasutive measurement of the best plan.
+ * - 0: no measurement, just estimate the plan;
+ * - 1: measure the best plan;
+ * - 2: perform a lengthy measurement of the best plan;
+ * - 3: perform an exhasutive measurement of the best plan.
  * @return A pointer to an allocated \c COMPLEX8FFTPlan structure is returned
  * upon successful completion.  Otherwise, a \c NULL pointer is returned
  * and \c xlalErrno is set to indicate the error.
  * @par Errors:
  * The \c XLALCreateCOMPLEX8Plan() function shall fail if:
- *  - [\c XLAL_EBADLEN] The size of the requested plan is 0.
- *  - [\c XLAL_ENOMEM] Insufficient storage space is available.
- *  - [\c XLAL_EFAILED] The call to the underlying FFTW routine failed.
- *  .
+ * - [\c XLAL_EBADLEN] The size of the requested plan is 0.
+ * - [\c XLAL_ENOMEM] Insufficient storage space is available.
+ * - [\c XLAL_EFAILED] The call to the underlying FFTW routine failed.
+ * .
  */
 COMPLEX8FFTPlan * XLALCreateCOMPLEX8FFTPlan( UINT4 size, int fwdflg, int measurelvl );
 
-/** Returns a new COMPLEX8FFTPlan for a forward transform
+/**
+ * Returns a new COMPLEX8FFTPlan for a forward transform
  *
  * A COMPLEX8FFTPlan is required to perform a FFT that involves complex data.
  * A different plan is required for each size of the complex data vectors.
@@ -134,23 +136,24 @@ COMPLEX8FFTPlan * XLALCreateCOMPLEX8FFTPlan( UINT4 size, int fwdflg, int measure
  *
  * @param[in] size The number of points in the complex data.
  * @param[in] measurelvl Measurement level for plan creation:
- *                      - 0: no measurement, just estimate the plan;
- *                      - 1: measure the best plan;
- *                      - 2: perform a lengthy measurement of the best plan;
- *                      - 3: perform an exhasutive measurement of the best plan.
+ * - 0: no measurement, just estimate the plan;
+ * - 1: measure the best plan;
+ * - 2: perform a lengthy measurement of the best plan;
+ * - 3: perform an exhasutive measurement of the best plan.
  * @return A pointer to an allocated \c COMPLEX8FFTPlan structure is returned
  * upon successful completion.  Otherwise, a \c NULL pointer is returned
  * and \c xlalErrno is set to indicate the error.
  * @par Errors:
  * The \c XLALCreateForwardCOMPLEX8Plan() function shall fail if:
- *  - [\c XLAL_EBADLEN] The size of the requested plan is 0.
- *  - [\c XLAL_ENOMEM] Insufficient storage space is available.
- *  - [\c XLAL_EFAILED] The call to the underlying FFTW routine failed.
- *  .
+ * - [\c XLAL_EBADLEN] The size of the requested plan is 0.
+ * - [\c XLAL_ENOMEM] Insufficient storage space is available.
+ * - [\c XLAL_EFAILED] The call to the underlying FFTW routine failed.
+ * .
  */
 COMPLEX8FFTPlan * XLALCreateForwardCOMPLEX8FFTPlan( UINT4 size, int measurelvl );
 
-/** Returns a new COMPLEX8FFTPlan for a reverse transform
+/**
+ * Returns a new COMPLEX8FFTPlan for a reverse transform
  *
  * A COMPLEX8FFTPlan is required to perform a FFT that involves complex data.
  * A reverse transform performs
@@ -164,29 +167,31 @@ COMPLEX8FFTPlan * XLALCreateForwardCOMPLEX8FFTPlan( UINT4 size, int measurelvl )
  *
  * @param[in] size The number of points in the complex data.
  * @param[in] measurelvl Measurement level for plan creation:
- *                      - 0: no measurement, just estimate the plan;
- *                      - 1: measure the best plan;
- *                      - 2: perform a lengthy measurement of the best plan;
- *                      - 3: perform an exhasutive measurement of the best plan.
+ * - 0: no measurement, just estimate the plan;
+ * - 1: measure the best plan;
+ * - 2: perform a lengthy measurement of the best plan;
+ * - 3: perform an exhasutive measurement of the best plan.
  * @return A pointer to an allocated \c COMPLEX8FFTPlan structure is returned
  * upon successful completion.  Otherwise, a \c NULL pointer is returned
  * and \c xlalErrno is set to indicate the error.
  * @par Errors:
  * The \c XLALCreateReverseCOMPLEX8Plan() function shall fail if:
- *  - [\c XLAL_EBADLEN] The size of the requested plan is 0.
- *  - [\c XLAL_ENOMEM] Insufficient storage space is available.
- *  - [\c XLAL_EFAILED] The call to the underlying FFTW routine failed.
- *  .
+ * - [\c XLAL_EBADLEN] The size of the requested plan is 0.
+ * - [\c XLAL_ENOMEM] Insufficient storage space is available.
+ * - [\c XLAL_EFAILED] The call to the underlying FFTW routine failed.
+ * .
  */
 COMPLEX8FFTPlan * XLALCreateReverseCOMPLEX8FFTPlan( UINT4 size, int measurelvl );
 
-/** Destroys a COMPLEX8FFTPlan
+/**
+ * Destroys a COMPLEX8FFTPlan
  * @param[in] plan A pointer to the COMPLEX8FFTPlan to be destroyed.
  * @return None.
  */
 void XLALDestroyCOMPLEX8FFTPlan( COMPLEX8FFTPlan *plan );
 
-/** Perform a COMPLEX8Vector to COMPLEX8Vector FFT
+/**
+ * Perform a COMPLEX8Vector to COMPLEX8Vector FFT
  *
  * This routine computes
  * \f[Z[k] = \sum_{j=0}^{N-1} e^{\mp2\pi ijk/N}\,z[j],\f]
@@ -202,15 +207,15 @@ void XLALDestroyCOMPLEX8FFTPlan( COMPLEX8FFTPlan *plan );
  * @return 0 upon successful completion or non-zero upon failure.
  * @par Errors:
  * The \c XLALCOMPLEX8VectorFFT() function shall fail if:
- *  - [\c XLAL_EFAULT] A \c NULL pointer is provided as one of the arguments.
- *  - [\c XLAL_EINVAL] A argument is invalid or the input and output data
- *    vectors are the same.
- *  - [\c XLAL_EBADLEN] The input vector, output vector, and plan size are
- *    incompatible.
- *  - [\c XLAL_ENOMEM] Insufficient storage space is available.
- *  .
+ * - [\c XLAL_EFAULT] A \c NULL pointer is provided as one of the arguments.
+ * - [\c XLAL_EINVAL] A argument is invalid or the input and output data
+ * vectors are the same.
+ * - [\c XLAL_EBADLEN] The input vector, output vector, and plan size are
+ * incompatible.
+ * - [\c XLAL_ENOMEM] Insufficient storage space is available.
+ * .
  */
-int XLALCOMPLEX8VectorFFT( COMPLEX8Vector * restrict output, COMPLEX8Vector * restrict input,
+int XLALCOMPLEX8VectorFFT( COMPLEX8Vector * _LAL_RESTRICT_ output, const COMPLEX8Vector * _LAL_RESTRICT_ input,
     const COMPLEX8FFTPlan *plan );
 
 /*
@@ -220,7 +225,8 @@ int XLALCOMPLEX8VectorFFT( COMPLEX8Vector * restrict output, COMPLEX8Vector * re
  */
 
 
-/** Returns a new COMPLEX16FFTPlan
+/**
+ * Returns a new COMPLEX16FFTPlan
  *
  * A COMPLEX16FFTPlan is required to perform a FFT that involves complex data.
  * A different plan is required for each size of the complex data vectors
@@ -239,25 +245,26 @@ int XLALCOMPLEX8VectorFFT( COMPLEX8Vector * restrict output, COMPLEX8Vector * re
  *
  * @param[in] size The number of points in the complex data.
  * @param[in] fwdflg Set non-zero for a forward FFT plan;
- *                    otherwise create a reverse plan
+ * otherwise create a reverse plan
  * @param[in] measurelvl Measurement level for plan creation:
- *                      - 0: no measurement, just estimate the plan;
- *                      - 1: measure the best plan;
- *                      - 2: perform a lengthy measurement of the best plan;
- *                      - 3: perform an exhasutive measurement of the best plan.
+ * - 0: no measurement, just estimate the plan;
+ * - 1: measure the best plan;
+ * - 2: perform a lengthy measurement of the best plan;
+ * - 3: perform an exhasutive measurement of the best plan.
  * @return A pointer to an allocated \c COMPLEX16FFTPlan structure is returned
  * upon successful completion.  Otherwise, a \c NULL pointer is returned
  * and \c xlalErrno is set to indicate the error.
  * @par Errors:
  * The \c XLALCreateCOMPLEX16Plan() function shall fail if:
- *  - [\c XLAL_EBADLEN] The size of the requested plan is 0.
- *  - [\c XLAL_ENOMEM] Insufficient storage space is available.
- *  - [\c XLAL_EFAILED] The call to the underlying FFTW routine failed.
- *  .
+ * - [\c XLAL_EBADLEN] The size of the requested plan is 0.
+ * - [\c XLAL_ENOMEM] Insufficient storage space is available.
+ * - [\c XLAL_EFAILED] The call to the underlying FFTW routine failed.
+ * .
  */
 COMPLEX16FFTPlan * XLALCreateCOMPLEX16FFTPlan( UINT4 size, int fwdflg, int measurelvl );
 
-/** Returns a new COMPLEX16FFTPlan for a forward transform
+/**
+ * Returns a new COMPLEX16FFTPlan for a forward transform
  *
  * A COMPLEX16FFTPlan is required to perform a FFT that involves complex data.
  * A different plan is required for each size of the complex data vectors.
@@ -267,23 +274,24 @@ COMPLEX16FFTPlan * XLALCreateCOMPLEX16FFTPlan( UINT4 size, int fwdflg, int measu
  *
  * @param[in] size The number of points in the complex data.
  * @param[in] measurelvl Measurement level for plan creation:
- *                      - 0: no measurement, just estimate the plan;
- *                      - 1: measure the best plan;
- *                      - 2: perform a lengthy measurement of the best plan;
- *                      - 3: perform an exhasutive measurement of the best plan.
+ * - 0: no measurement, just estimate the plan;
+ * - 1: measure the best plan;
+ * - 2: perform a lengthy measurement of the best plan;
+ * - 3: perform an exhasutive measurement of the best plan.
  * @return A pointer to an allocated \c COMPLEX16FFTPlan structure is returned
  * upon successful completion.  Otherwise, a \c NULL pointer is returned
  * and \c xlalErrno is set to indicate the error.
  * @par Errors:
  * The \c XLALCreateForwardCOMPLEX16Plan() function shall fail if:
- *  - [\c XLAL_EBADLEN] The size of the requested plan is 0.
- *  - [\c XLAL_ENOMEM] Insufficient storage space is available.
- *  - [\c XLAL_EFAILED] The call to the underlying FFTW routine failed.
- *  .
+ * - [\c XLAL_EBADLEN] The size of the requested plan is 0.
+ * - [\c XLAL_ENOMEM] Insufficient storage space is available.
+ * - [\c XLAL_EFAILED] The call to the underlying FFTW routine failed.
+ * .
  */
 COMPLEX16FFTPlan * XLALCreateForwardCOMPLEX16FFTPlan( UINT4 size, int measurelvl );
 
-/** Returns a new COMPLEX16FFTPlan for a reverse transform
+/**
+ * Returns a new COMPLEX16FFTPlan for a reverse transform
  *
  * A COMPLEX16FFTPlan is required to perform a FFT that involves complex data.
  * A reverse transform performs
@@ -297,29 +305,31 @@ COMPLEX16FFTPlan * XLALCreateForwardCOMPLEX16FFTPlan( UINT4 size, int measurelvl
  *
  * @param[in] size The number of points in the complex data.
  * @param[in] measurelvl Measurement level for plan creation:
- *                      - 0: no measurement, just estimate the plan;
- *                      - 1: measure the best plan;
- *                      - 2: perform a lengthy measurement of the best plan;
- *                      - 3: perform an exhasutive measurement of the best plan.
+ * - 0: no measurement, just estimate the plan;
+ * - 1: measure the best plan;
+ * - 2: perform a lengthy measurement of the best plan;
+ * - 3: perform an exhasutive measurement of the best plan.
  * @return A pointer to an allocated \c COMPLEX16FFTPlan structure is returned
  * upon successful completion.  Otherwise, a \c NULL pointer is returned
  * and \c xlalErrno is set to indicate the error.
  * @par Errors:
  * The \c XLALCreateReverseCOMPLEX16Plan() function shall fail if:
- *  - [\c XLAL_EBADLEN] The size of the requested plan is 0.
- *  - [\c XLAL_ENOMEM] Insufficient storage space is available.
- *  - [\c XLAL_EFAILED] The call to the underlying FFTW routine failed.
- *  .
+ * - [\c XLAL_EBADLEN] The size of the requested plan is 0.
+ * - [\c XLAL_ENOMEM] Insufficient storage space is available.
+ * - [\c XLAL_EFAILED] The call to the underlying FFTW routine failed.
+ * .
  */
 COMPLEX16FFTPlan * XLALCreateReverseCOMPLEX16FFTPlan( UINT4 size, int measurelvl );
 
-/** Destroys a COMPLEX16FFTPlan
+/**
+ * Destroys a COMPLEX16FFTPlan
  * @param[in] plan A pointer to the COMPLEX16FFTPlan to be destroyed.
  * @return None.
  */
 void XLALDestroyCOMPLEX16FFTPlan( COMPLEX16FFTPlan *plan );
 
-/** Perform a COMPLEX16Vector to COMPLEX16Vector FFT
+/**
+ * Perform a COMPLEX16Vector to COMPLEX16Vector FFT
  *
  * This routine computes
  * \f[Z[k] = \sum_{j=0}^{N-1} e^{\mp2\pi ijk/N}\,z[j],\f]
@@ -335,15 +345,15 @@ void XLALDestroyCOMPLEX16FFTPlan( COMPLEX16FFTPlan *plan );
  * @return 0 upon successful completion or non-zero upon failure.
  * @par Errors:
  * The \c XLALCOMPLEX16VectorFFT() function shall fail if:
- *  - [\c XLAL_EFAULT] A \c NULL pointer is provided as one of the arguments.
- *  - [\c XLAL_EINVAL] A argument is invalid or the input and output data
- *    vectors are the same.
- *  - [\c XLAL_EBADLEN] The input vector, output vector, and plan size are
- *    incompatible.
- *  - [\c XLAL_ENOMEM] Insufficient storage space is available.
- *  .
+ * - [\c XLAL_EFAULT] A \c NULL pointer is provided as one of the arguments.
+ * - [\c XLAL_EINVAL] A argument is invalid or the input and output data
+ * vectors are the same.
+ * - [\c XLAL_EBADLEN] The input vector, output vector, and plan size are
+ * incompatible.
+ * - [\c XLAL_ENOMEM] Insufficient storage space is available.
+ * .
  */
-int XLALCOMPLEX16VectorFFT( COMPLEX16Vector * restrict output, COMPLEX16Vector * restrict input,
+int XLALCOMPLEX16VectorFFT( COMPLEX16Vector * _LAL_RESTRICT_ output, const COMPLEX16Vector * _LAL_RESTRICT_ input,
     const COMPLEX16FFTPlan *plan );
 
 /*
@@ -352,7 +362,8 @@ int XLALCOMPLEX16VectorFFT( COMPLEX16Vector * restrict output, COMPLEX16Vector *
  *
  */
 
-/** \b DEPRECATED
+/**
+ * \b DEPRECATED
  * @deprecated Use XLALCreateForwardCOMPLEX8FFTPlan() instead.
  */
 void
@@ -362,12 +373,14 @@ LALCreateForwardCOMPLEX8FFTPlan(
     UINT4            size,
     INT4             measure
     );
-/** \b DEPRECATED
+/**
+ * \b DEPRECATED
  * @deprecated Use XLALCreateForwardCOMPLEX8FFTPlan() instead.
  */
 #define LALCreateForwardComplexFFTPlan LALCreateForwardCOMPLEX8FFTPlan
 
-/** \b DEPRECATED
+/**
+ * \b DEPRECATED
  * @deprecated Use XLALCreateReverseCOMPLEX8FFTPlan() instead.
  */
 void
@@ -377,12 +390,14 @@ LALCreateReverseCOMPLEX8FFTPlan(
     UINT4            size,
     INT4             measure
     );
-/** \b DEPRECATED
+/**
+ * \b DEPRECATED
  * @deprecated Use XLALCreateReverseCOMPLEX8FFTPlan() instead.
  */
 #define LALCreateReverseComplexFFTPlan LALCreateReverseCOMPLEX8FFTPlan
 
-/** \b DEPRECATED
+/**
+ * \b DEPRECATED
  * @deprecated Use XLALDestroyCOMPLEX8FFTPlan() instead.
  */
 void
@@ -390,12 +405,14 @@ LALDestroyCOMPLEX8FFTPlan (
     LALStatus       *status,
     COMPLEX8FFTPlan **plan
     );
-/** \b DEPRECATED
+/**
+ * \b DEPRECATED
  * @deprecated Use XLALDestroyCOMPLEX8FFTPlan() instead.
  */
 #define LALDestroyComplexFFTPlan LALDestroyCOMPLEX8FFTPlan
 
-/** \b DEPRECATED
+/**
+ * \b DEPRECATED
  * @deprecated Use XLALCOMPLEX8VectorFFT() instead.
  */
 void
@@ -412,7 +429,8 @@ LALCOMPLEX8VectorFFT (
  *
  */
 
-/** \b DEPRECATED
+/**
+ * \b DEPRECATED
  * @deprecated Use XLALCreateForwardCOMPLEX16FFTPlan() instead.
  */
 void
@@ -423,7 +441,8 @@ LALCreateForwardCOMPLEX16FFTPlan(
     INT4             measure
     );
 
-/** \b DEPRECATED
+/**
+ * \b DEPRECATED
  * @deprecated Use XLALCreateReverseCOMPLEX16FFTPlan() instead.
  */
 void
@@ -434,7 +453,8 @@ LALCreateReverseCOMPLEX16FFTPlan(
     INT4             measure
     );
 
-/** \b DEPRECATED
+/**
+ * \b DEPRECATED
  * @deprecated Use XLALDestroyCOMPLEX16FFTPlan() instead.
  */
 void
@@ -443,7 +463,8 @@ LALDestroyCOMPLEX16FFTPlan (
     COMPLEX16FFTPlan **plan
     );
 
-/** \b DEPRECATED
+/**
+ * \b DEPRECATED
  * @deprecated Use XLALCOMPLEX16VectorFFT() instead.
  */
 void

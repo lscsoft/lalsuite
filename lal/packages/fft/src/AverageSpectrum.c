@@ -40,7 +40,6 @@ static COMPLEX16 cabs2(COMPLEX16 z)
 }
 
 /**
- *
  * Compute a "modified periodogram," i.e., the power spectrum of a windowed
  * time series.
  *
@@ -117,7 +116,6 @@ int XLALREAL4ModifiedPeriodogram(
 }
 
 /**
- *
  * Compute a "modified periodogram," i.e., the power spectrum of a windowed
  * time series.
  *
@@ -195,7 +193,6 @@ int XLALREAL8ModifiedPeriodogram(
 
 
 /**
- *
  * Use Welch's method to compute the average power spectrum of a time series.
  *
  * See: Peter D. Welch "The Use of Fast Fourier Transform for the Estimation
@@ -282,7 +279,6 @@ int XLALREAL4AverageSpectrumWelch(
 }
 
 /**
- *
  * Use Welch's method to compute the average power spectrum of a time series.
  *
  * See: Peter D. Welch "The Use of Fast Fourier Transform for the Estimation
@@ -375,8 +371,10 @@ int XLALREAL8AverageSpectrumWelch(
  *
  */
 
-/** compute the median bias *
- * See arXiv: gr-qc/0509116 appendix B for details */
+/**
+ * compute the median bias *
+ * See arXiv: gr-qc/0509116 appendix B for details
+ */
 
 REAL8 XLALMedianBias( UINT4 nn )
 {
@@ -437,7 +435,6 @@ static int compare_REAL8( const void *p1, const void *p2 )
 
 
 /**
- *
  * Median Method: use median average rather than mean.  Note: this will
  * cause a bias if the segments overlap, i.e., if the stride is less than
  * the segment length -- even though the median bias for Gaussian noise
@@ -566,7 +563,6 @@ int XLALREAL4AverageSpectrumMedian(
 }
 
 /**
- *
  * Median Method: use median average rather than mean.  Note: this will
  * cause a bias if the segments overlap, i.e., if the stride is less than
  * the segment length -- even though the median bias for Gaussian noise
@@ -737,7 +733,6 @@ static void median_mean_cleanup_REAL8( REAL8FrequencySeries *even, REAL8Frequenc
 }
 
 /**
- *
  * Median-Mean Method: divide overlapping segments into "even" and "odd"
  * segments; compute the bin-by-bin median of the "even" segments and the
  * "odd" segments, and then take the bin-by-bin average of these two median
@@ -907,7 +902,6 @@ int XLALREAL4AverageSpectrumMedianMean(
 }
 
 /**
- *
  * Median-Mean Method: divide overlapping segments into "even" and "odd"
  * segments; compute the bin-by-bin median of the "even" segments and the
  * "odd" segments, and then take the bin-by-bin average of these two median

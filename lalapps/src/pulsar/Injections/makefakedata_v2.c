@@ -37,88 +37,90 @@
  * \ingroup pulsarApps
  * \author Papa, M.A.
  * \brief
- Produces fake SFT data.
-
-\heading{Usage}
-\code
-makefakedata [-d debuglevel] [-o outfile] [-f f0] [-p alpha delta] [-I input dir]
-\endcode
-
-\heading{Description}
-
-This program uses Teviet Creighton's LAL CW signal routines in order
-to produce SFT files in the GEO binary format.
-
-The signal parameters are specified in an input file. The default name
-for the input file is In.data, however a file with another name can
-also be used, as long as the name is specified with the -i command
-line argument. The input file must contain the following information:
-<table><tr><td>
-time-baseline of the SFT</td><td>(Tsft_in_sec)</td></tr>
-<tr><td>number of SFTs to be produced</td><td>(nTsft)</td></tr>
-</table>
-
-frequency of first bin of SFTs       (first_SFT_frequency_in_Hz)
-band of produced SFT data            (SFT_freq_band_in_Hz)
-standard deviation of noise
-    (for real and imag) SFT          (std_of_noise.When=0_only_signal_present)
-amplitude of plus polarization       (Aplus)
-amplitude of cross polarization      (Across)
-polarization angle                   (psi)
-initial phase                        (phi0)
-intrinsic emission frequency
-    at the beginning of observation   (f0)
-position of source (eq. coordinates)  (latitude_in_degrees)
-                                     (longitude_in_degrees)
-maximum spin-down order               (max_spin-down_param_order)
-name of time-stamps file              (name_of_time-stamps_file)
-The information in parenthesis above shows what appears in the In.data
-input file as a comment to help you remember what the different
-entries are.
-
-A number of SFTs will be created. The names will be
-NAME.00001
-NAME.00002
-.....
-and so on.
-The default name for the SFT files is TEST_SFT however a different
-name can be specified using the -n command line argument.
-
-How many SFTs will be created is specified in the input file mentioned
-above (In.data is the default).
-
-The time of the first datum of each SFT has to be specified. This is
-done with a time-stamps file. The time-stamps file must have at least
-as many rows as the number of SFTs that one wants to create and it has
-two columns: one column for the gps seconds and one for the gps
-nanoseconds of each time-stamp. The name of the time-stamps file is
-specified in the input file (In.data default name).
-
-If one uses the command line argument -t to specify a filename, say
-TIMEFILES, then a set of files:
-TIMEFILES.00001
-TIMEFILES.00002
-.....
-and so on is created. These contain the time series data that each SFT
-is computed from. Note that Teviet's routines allow idealized
-heterodyning that is used inthis code to reduce the amount of produced
-data.
-
-If sigma in the input file is negative, then the noise data is read in
-from SFT files that are specified in the code.
-
-\heading{Uses}
-\code
-LALGenerateTaylorCW()
-LALSimulateCoherentGW()
-LALMalloc()
-LALSCreateVector()
-LALSDestroyVector()
-LALFree()
-LALCheckMemoryLeaks()
-\endcode
-
-*/
+ * Produces fake SFT data.
+ *
+ * ### Usage ###
+ *
+ * \code
+ * makefakedata [-d debuglevel] [-o outfile] [-f f0] [-p alpha delta] [-I input dir]
+ * \endcode
+ *
+ * ### Description ###
+ *
+ * This program uses Teviet Creighton's LAL CW signal routines in order
+ * to produce SFT files in the GEO binary format.
+ *
+ * The signal parameters are specified in an input file. The default name
+ * for the input file is In.data, however a file with another name can
+ * also be used, as long as the name is specified with the -i command
+ * line argument. The input file must contain the following information:
+ * <table><tr><td>
+ * time-baseline of the SFT</td><td>(Tsft_in_sec)</td></tr>
+ * <tr><td>number of SFTs to be produced</td><td>(nTsft)</td></tr>
+ * </table>
+ *
+ * frequency of first bin of SFTs       (first_SFT_frequency_in_Hz)
+ * band of produced SFT data            (SFT_freq_band_in_Hz)
+ * standard deviation of noise
+ * (for real and imag) SFT          (std_of_noise.When=0_only_signal_present)
+ * amplitude of plus polarization       (Aplus)
+ * amplitude of cross polarization      (Across)
+ * polarization angle                   (psi)
+ * initial phase                        (phi0)
+ * intrinsic emission frequency
+ * at the beginning of observation   (f0)
+ * position of source (eq. coordinates)  (latitude_in_degrees)
+ * (longitude_in_degrees)
+ * maximum spin-down order               (max_spin-down_param_order)
+ * name of time-stamps file              (name_of_time-stamps_file)
+ * The information in parenthesis above shows what appears in the In.data
+ * input file as a comment to help you remember what the different
+ * entries are.
+ *
+ * A number of SFTs will be created. The names will be
+ * NAME.00001
+ * NAME.00002
+ * .....
+ * and so on.
+ * The default name for the SFT files is TEST_SFT however a different
+ * name can be specified using the -n command line argument.
+ *
+ * How many SFTs will be created is specified in the input file mentioned
+ * above (In.data is the default).
+ *
+ * The time of the first datum of each SFT has to be specified. This is
+ * done with a time-stamps file. The time-stamps file must have at least
+ * as many rows as the number of SFTs that one wants to create and it has
+ * two columns: one column for the gps seconds and one for the gps
+ * nanoseconds of each time-stamp. The name of the time-stamps file is
+ * specified in the input file (In.data default name).
+ *
+ * If one uses the command line argument -t to specify a filename, say
+ * TIMEFILES, then a set of files:
+ * TIMEFILES.00001
+ * TIMEFILES.00002
+ * .....
+ * and so on is created. These contain the time series data that each SFT
+ * is computed from. Note that Teviet's routines allow idealized
+ * heterodyning that is used inthis code to reduce the amount of produced
+ * data.
+ *
+ * If sigma in the input file is negative, then the noise data is read in
+ * from SFT files that are specified in the code.
+ *
+ * ### Uses ###
+ *
+ * \code
+ * LALGenerateTaylorCW()
+ * LALPulsarSimulateCoherentGW()
+ * LALMalloc()
+ * LALSCreateVector()
+ * LALSDestroyVector()
+ * LALFree()
+ * LALCheckMemoryLeaks()
+ * \endcode
+ *
+ */
 
 #define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/LALStdlib.h>
@@ -165,7 +167,7 @@ LALCheckMemoryLeaks()
 #include <lal/LALConstants.h>
 #include <lal/DetResponse.h>
 #include <lal/DetectorSite.h>
-#include <lal/SimulateCoherentGW.h>
+#include <lal/PulsarSimulateCoherentGW.h>
 #include <lal/GenerateTaylorCW.h>
 #include <lal/LALDatatypes.h>
 #include <lal/LALBarycenter.h>
@@ -174,8 +176,8 @@ LALCheckMemoryLeaks()
 #include <lal/GenerateSpinOrbitCW.h>
 
 /* Locations of the earth and sun ephemeris data */
-#define EARTHDATA "earth00-04.dat"
-#define SUNDATA "sun00-04.dat"
+#define EARTHDATA "earth00-19-DE405.dat.gz"
+#define SUNDATA   "sun00-19-DE405.dat.gz"
 
 int mycalls=0;
 int myclears=0;
@@ -299,8 +301,9 @@ REAL4TimeSeries *timeSeries = NULL;
 
 /* Signal parameters to generate signal at source */
 TaylorCWParamStruc genTayParams;
-CoherentGW cgwOutput;
-DetectorResponse cwDetector;
+PulsarCoherentGW cgwOutput;
+PulsarDetectorResponse cwDetector;
+COMPLEX8FrequencySeries *transferFunction;
 
 /*This will hold the SFT*/
 COMPLEX8Vector *fvec = NULL;
@@ -309,7 +312,6 @@ COMPLEX8Vector *fvecn = NULL;
 /*FFT plan*/
 RealFFTPlan *pfwd = NULL;
 
-INT4 lalDebugLevel = 1;
 
 /* Note: apparently including unistd.h leads to a bus-error using getopt() on MacOSX,
  * most likely due to a header/lib conflict with the included getopt source in LALsuite.
@@ -483,7 +485,7 @@ int main(int argc,char *argv[]) {
   SSBfirst        == SSB time corresponding to first output sample
   */
 
-  memset(&cgwOutput, 0, sizeof(CoherentGW));
+  memset(&cgwOutput, 0, sizeof(PulsarCoherentGW));
   memset(&spinorbit, '\0', sizeof(spinorbit));
 
   /* The GENERATE routines work entirely in Barycentric Time. This is
@@ -572,7 +574,7 @@ int main(int argc,char *argv[]) {
     printclock("Starting simulate coherent");
 
     /* produce a time series simulation of a CW signal */
-    SUB( LALSimulateCoherentGW(&status, timeSeries, &cgwOutput, &cwDetector), &status);
+    SUB( LALPulsarSimulateCoherentGW(&status, timeSeries, &cgwOutput, &cwDetector), &status);
 
     /*if you want noise, make it and add to timeseries */
     if (sigma > 0.0 && make_and_add_time_domain_noise(&status))
@@ -660,8 +662,8 @@ int freemem(LALStatus* status){
   LALFree(edat);
 
   /* Clean up cwDetector */
-  LALCDestroyVector( status, &( cwDetector.transfer->data ) );
-  LALFree(cwDetector.transfer);
+  LALCDestroyVector( status, &( transferFunction->data ) );
+  LALFree(transferFunction);
 /*   LALFree( cwDetector.ephemerides->ephemE->pos ); */
 /*   LALFree( cwDetector.ephemerides->ephemS ); */
 /*   LALFree( cwDetector.ephemerides ); */
@@ -799,8 +801,8 @@ int correct_phase(void) {
   sinx=sin(x);
   for (i = 0; i < fvec->length; ++i){
     fvec1=fvec->data[i];
-    fvec->data[i].re=fvec1.re*cosx-fvec1.im*sinx;
-    fvec->data[i].im=fvec1.im*cosx+fvec1.re*sinx;
+    fvec->data[i].realf_FIXME=crealf(fvec1)*cosx-cimagf(fvec1)*sinx;
+    fvec->data[i].imagf_FIXME=cimagf(fvec1)*cosx+crealf(fvec1)*sinx;
   }
 
   return 0;
@@ -885,7 +887,7 @@ int prepare_baryinput(LALStatus* status){
 /* prepares cwDetector */
 int prepare_cwDetector(LALStatus* status){
 
-  memset(&cwDetector, 0, sizeof(DetectorResponse));
+  memset(&cwDetector, 0, sizeof(PulsarDetectorResponse));
   /* The ephemerides */
   cwDetector.ephemerides = edat;
   /* Specifying the detector site (set above) */
@@ -894,22 +896,24 @@ int prepare_cwDetector(LALStatus* status){
    * Note, this xfer function has only two points at it extends
    between 0 and 16384 Hz. The routine that will generate the signal as
    output from the detector on Earth will interpolate*/
-  cwDetector.transfer = (COMPLEX8FrequencySeries *)LALMalloc(sizeof(COMPLEX8FrequencySeries));
-  memset(cwDetector.transfer, 0, sizeof(COMPLEX8FrequencySeries));
+  transferFunction = (COMPLEX8FrequencySeries *)LALMalloc(sizeof(COMPLEX8FrequencySeries));
+  memset(transferFunction, 0, sizeof(COMPLEX8FrequencySeries));
+
   /* it does not change so just use first timestamp. Does not
    seem to matter whether SSBtimestamps or timestamps are used */
-  cwDetector.transfer->epoch = timestamps[0];
-  cwDetector.transfer->f0 = 0.0;
-  cwDetector.transfer->deltaF = 16384.0;
-  cwDetector.transfer->data = NULL;
-  LALCCreateVector(status, &(cwDetector.transfer->data), 2);
+  transferFunction->epoch = timestamps[0];
+  transferFunction->f0 = 0.0;
+  transferFunction->deltaF = 16384.0;
+  transferFunction->data = NULL;
+  LALCCreateVector(status, &(transferFunction->data), 2);
 
   /* unit response function */
-  cwDetector.transfer->data->data[0].re = 1.0;
-  cwDetector.transfer->data->data[1].re = 1.0;
-  cwDetector.transfer->data->data[0].im = 0.0;
-  cwDetector.transfer->data->data[1].im = 0.0;
+  transferFunction->data->data[0].realf_FIXME = 1.0;
+  transferFunction->data->data[1].realf_FIXME = 1.0;
+  transferFunction->data->data[0].imagf_FIXME = 0.0;
+  transferFunction->data->data[1].imagf_FIXME = 0.0;
 
+  cwDetector.transfer = transferFunction;
   /*
      Note that we DON'T update cwDetector Heterodyne Epoch.  Teviet
      says: "You can set it to anything you like; it doesn't really
@@ -1274,8 +1278,8 @@ int read_and_add_freq_domain_noise(LALStatus* status, int iSFT) {
   norm=((REAL4)(fvec->length-1)*1.0/((REAL4)(header.nsamples-1)));
 
   for (i = 0; i < fvec->length; ++i) {
-    fvec->data[i].re += scale*fvecn->data[i].re*norm;
-    fvec->data[i].im += scale*fvecn->data[i].im*norm;
+    fvec->data[i].realf_FIXME += scale*crealf(fvecn->data[i])*norm;
+    fvec->data[i].imagf_FIXME += scale*cimagf(fvecn->data[i])*norm;
   }
 
   return 0;
@@ -1363,8 +1367,8 @@ int write_SFTS(int iSFT){
 
   for (i=0;i<fvec->length-1;i++){
 
-    rpw=fvec->data[i].re;
-    ipw=fvec->data[i].im;
+    rpw=crealf(fvec->data[i]);
+    ipw=cimagf(fvec->data[i]);
 
     errorcode=fwrite((void*)&rpw, sizeof(REAL4),1,fp);
     if (errorcode!=1){
@@ -1728,16 +1732,6 @@ int read_commandline_and_file(LALStatus* status, int argc,char *argv[]) {
     exit(1);
   }
 
-  /* check that ephemeris files exist and can be read... */
-  if (!(fp=fopen(earthdata, "r")) || fclose(fp)) {
-    syserror("Unable to read ephemeris file %s\n", earthdata);
-    exit(1);
-  }
-  if (!(fp=fopen(sundata, "r")) || fclose(fp)) {
-    syserror("Unable to read ephemeris file %s\n", sundata);
-    exit(1);
-  }
-
   /* Open input data file */
   if (!(fp=fopen(inDataFilename,"r"))) {
     syserror("Unable to find the inDataFilename file %s\n",inDataFilename);
@@ -1848,5 +1842,3 @@ Timestamps:
    FORMAT: INT4 SECONDS
 
 */
-
-

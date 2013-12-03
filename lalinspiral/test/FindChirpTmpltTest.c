@@ -31,7 +31,6 @@
 #include <lal/LALStdlib.h>
 #include <lal/FindChirpEngine.h>
 
-extern int lalDebugLevel;
 
 static
 void PrintInspiralBank (
@@ -55,7 +54,6 @@ main ( void )
   const UINT4                   numPts = 262144;
   UINT4                         k;
 
-  lalDebugLevel = 0;
 
   /*
    *

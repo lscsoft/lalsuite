@@ -35,18 +35,19 @@ extern "C" {
  *
  * \brief Routines for solving ordinary differential equations (ODEs).
  *
- * \heading{Synopsis}
+ * ### Synopsis ###
+ *
  * \code
  * #include <lal/ODE.h>
  * \endcode
  *
  * These routines solve ordinary differential equations (ODEs) of the form:
  * \f[
- *   \dot{\mathbf{x}} = {\mathbf{f}}({\mathbf{x}},t,\ldots)
+ * \dot{\mathbf{x}} = {\mathbf{f}}({\mathbf{x}},t,\ldots)
  * \f]
  * where \f$\mathbf{f}\f$ is a specified vector-valued function.
  *
-*/
+ */
 /*@{*/
 
 /**\name Error Codes */

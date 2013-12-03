@@ -33,18 +33,19 @@ extern "C" {
 
 /**
  * \addtogroup GenerateRing_h
- \author Goggin, L., and Brown, D. A.
-
- \brief Provides routines to generate ringdown waveforms.
-
-\heading{Synopsis}
-\code
-#include <lal/GenerateRing.h>
-\endcode
-
-Computes the ringdown waveform with specified \f$h_{rss}\f$.
-
-*/
+ * \author Goggin, L., and Brown, D. A.
+ *
+ * \brief Provides routines to generate ringdown waveforms.
+ *
+ * ### Synopsis ###
+ *
+ * \code
+ * #include <lal/GenerateRing.h>
+ * \endcode
+ *
+ * Computes the ringdown waveform with specified \f$h_{rss}\f$.
+ *
+ */
 /*@{*/
 
 /** \name Error Codes */
@@ -70,9 +71,10 @@ typedef enum{
 } SimRingType;
 
 
-/** This structure stores the parameters for constructing a burst gravitational
-    waveform
-*/
+/**
+ * This structure stores the parameters for constructing a burst gravitational
+ * waveform
+ */
 typedef struct tagRingParamStruc {
   REAL8 deltaT;             /**< requested sampling interval (s) */
   CoordinateSystem system;  /**< coordinate system to assume for simRingdown */

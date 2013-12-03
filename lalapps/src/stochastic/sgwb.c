@@ -310,8 +310,8 @@ COMPLEX8FrequencySeries *unity_response(LIGOTimeGPS epoch,
   /* get unity response function */
   for (i = 0; i < length; i++)
   {
-    response->data->data[i].re = 1;
-    response->data->data[i].im = 0;
+    response->data->data[i].realf_FIXME = 1;
+    response->data->data[i].imagf_FIXME = 0;
   }
 
   return(response);
@@ -330,7 +330,7 @@ COMPLEX8FrequencySeries *ligo_response(LALStatus *status,
 {
   /* variables */
   COMPLEX8FrequencySeries *response;
-  FrCache *cache = NULL;
+  LALCache *cache = NULL;
   CalibrationUpdateParams calib_params;
 
   /* apply offset to epoch */
@@ -345,14 +345,14 @@ COMPLEX8FrequencySeries *ligo_response(LALStatus *status,
   calib_params.ifo = ifo;
 
   /* open calibration frame cache */
-  cache = XLALFrImportCache(cache_file);
+  cache = XLALCacheImport(cache_file);
 
   /* generate response function */
   LAL_CALL(LALExtractFrameResponse(status, response, cache, &calib_params), \
       status);
 
   /* destory calibration frame cache */
-  XLALFrDestroyCache(cache);
+  XLALDestroyCache(cache);
 
   /* reduce to required band */
   XLALShrinkCOMPLEX8FrequencySeries(response, f0/delta_f, length);
@@ -534,7 +534,7 @@ REAL8 cc_statistic(COMPLEX8FrequencySeries *cc_spectra)
   /* sum up frequencies */
   for (i = 0; i < cc_spectra->data->length; i++)
   {
-    cc_stat += cc_spectra->data->data[i].re;
+    cc_stat += crealf(cc_spectra->data->data[i]);
   }
 
   /* normalise */

@@ -24,12 +24,13 @@
 
 ihsMaximaStruct *new_ihsMaxima(INT4 fbins, INT4 rows);
 void free_ihsMaxima(ihsMaximaStruct *data);
-void runIHS(ihsMaximaStruct *output, ffdataStruct *input, ihsfarStruct *ihsfarinput, inputParamsStruct *params, INT4 rows, REAL4Vector *FbinMean);
+void runIHS(ihsMaximaStruct *output, ffdataStruct *input, ihsfarStruct *ihsfarinput, inputParamsStruct *params, INT4 rows, REAL4Vector *aveNoise, REAL4Vector *FbinMean);
 
 ihsVals * new_ihsVals(void);
 void free_ihsVals(ihsVals *ihsvals);
 void incHarmSum(ihsVals *output, REAL4Vector *input, INT4 ihsfactor);
 void incHarmSumVector(REAL4Vector *output, REAL4Vector *input, INT4 ihsfactor);
+void incHarmSumVectorWeighted(REAL4Vector *output, REAL4Vector *input, REAL4Vector *aveNoise, INT4 ihsfactor);
 
 ihsfarStruct * new_ihsfarStruct(INT4 rows, inputParamsStruct *params);
 void free_ihsfarStruct(ihsfarStruct *ihsfarstruct);

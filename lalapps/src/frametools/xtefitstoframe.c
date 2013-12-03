@@ -17,15 +17,16 @@
  *  MA  02111-1307  USA
  */
 
-/** \author C.Messenger
+/**
+ * \author C.Messenger
  * \ingroup pulsarCoherent
  * \file
  * \brief
- * This code is designed to convert an (R)XTE FITS data file into a frame file. 
+ * This code is designed to convert an (R)XTE FITS data file into a frame file.
  *
- * It reads in either individually time-tagged photons or pre-binned photon counts.  
- * If the input file has been pre-processed such that it also contains barycentric 
- * time information then the user can specify that the output timeseries be 
+ * It reads in either individually time-tagged photons or pre-binned photon counts.
+ * If the input file has been pre-processed such that it also contains barycentric
+ * time information then the user can specify that the output timeseries be
  * barycentered.  The final timeseries is output in frame file format.
  *
  */
@@ -43,7 +44,7 @@
 #include <lal/UserInput.h>
 #include <lal/LogPrintf.h>
 #include <lal/LALFrameIO.h>
-#include <lal/FrameStream.h>
+#include <lal/LALFrStream.h>
 #include <lalappsfrutils.h>
 #include <lalapps.h>
 
@@ -83,11 +84,11 @@
 /***********************************************************************************************/
 /* structure for storing the content read from a FITS file */
 
-/** A structure for storing vectors of detector and barycentric frame timestamps 
- *
- * A pre-barycentered FITS file contains an original set of detector frame 
+/**
+ * A structure for storing vectors of detector and barycentric frame timestamps
+ * A pre-barycentered FITS file contains an original set of detector frame
  * timestamps (not always uniformly spaced) and a corresponding set of barycentric
- * timestamps.    
+ * timestamps.
  *
  */
 typedef struct {
@@ -97,8 +98,8 @@ typedef struct {
   REAL8 dtrow;                   /**< the time steps for the timestamps */
 } BarycentricData;
 
-/** The good time interval data read from a FITS file  
- *
+/**
+ * The good time interval data read from a FITS file
  */
 typedef struct {
   REAL8 *start;                /**< the start times of good data */
@@ -106,10 +107,10 @@ typedef struct {
   INT8 length;                 /**< the number of gti segments */
 } GTIData;
 
-/** A structure to store TDDES2 DDL data.  
- * 
+/**
+ * A structure to store TDDES2 DDL data.
  * This is a string found in the FITS header that contains information
- * regarding the energy range used and the timing parameters for a specific 
+ * regarding the energy range used and the timing parameters for a specific
  * column in the FITS file.
  *
  */
@@ -125,7 +126,8 @@ typedef struct {
   INT4 nchannels;                  /**< the number of channels (nenergy * ndetconfig) */
 } XTETDDESParams;
 
-/** A structure containing all of the relavent information extracted from the header of 
+/**
+ * A structure containing all of the relavent information extracted from the header of
  * an (R)XTE FITS PCA file.
  *
  */
@@ -153,8 +155,9 @@ typedef struct {
   char *headerdump;                /**< the entire header dumped in ascii */
 } FITSHeader;
 
-/** A structure containing event information from a single channel found in an
- * (R)XTE FITS file. 
+/**
+ * A structure containing event information from a single channel found in an
+ * (R)XTE FITS file.
  */
 typedef struct {
   CHAR *data;                      /**< vector of data */
@@ -167,16 +170,18 @@ typedef struct {
   CHAR detconfig[6];               /**< contains detector config string */
 } XTECHARVector;
 
-/** A structure containing a vector of event data information.  Specifically, many
- * energy channels from a single FITS data column. 
+/**
+ * A structure containing a vector of event data information.  Specifically, many
+ * energy channels from a single FITS data column.
  */
 typedef struct {
   INT4 nchannels;                  /**< the number of channels */
   XTECHARVector *channeldata;      /**< pointers to individual event data vectors */
 } XTECHARArray;
 
-/** A structure containing array data information from a single channel found in an
- * (R)XTE FITS file. 
+/**
+ * A structure containing array data information from a single channel found in an
+ * (R)XTE FITS file.
  */
 typedef struct {
   UINT4 *data;                     /**< vector of data */
@@ -188,7 +193,8 @@ typedef struct {
   CHAR detconfig[NPCU+1];               /**< contains detector config string */
 } XTEUINT4Vector;
 
-/** A structure containing a vector of array data information.  Specifically, many
+/**
+ * A structure containing a vector of array data information.  Specifically, many
  * energy channels from a single FITS data column.
  */
 typedef struct {
@@ -196,8 +202,9 @@ typedef struct {
   XTEUINT4Vector *channeldata;     /**< a pointer to array data vectors */
 } XTEUINT4Array;
 
-/** A structure containing all of the relavent information extracted from a single 
- * (R)XTE FITS PCA file 
+/**
+ * A structure containing all of the relavent information extracted from a single
+ * (R)XTE FITS PCA file
  */
 typedef struct {
   FITSHeader *header;              /**< FITS file header information */
@@ -207,10 +214,11 @@ typedef struct {
   BarycentricData *stamps;         /**< barycentric timestamps information */   
 } FITSData;
 
-/** A structure for storing a timeseries of unsigned integers for XTE data.
- * 
+/**
+ * A structure for storing a timeseries of unsigned integers for XTE data.
+ *
  * This structure contains a distilled version of the information found
- * in the FITS data file.  It stores a continuous timeseries as well as 
+ * in the FITS data file.  It stores a continuous timeseries as well as
  * a data quality vector.
  *
  */
@@ -226,9 +234,9 @@ typedef struct {
   CHAR detconfig[NPCU+1];               /**< contains detector config string */
 } XTEUINT4TimeSeries;
 
-/** A structure for storing an array of integer timeseries for XTE data.
- *
- * It is designed to be able to store a number of timeseries with identical start, duration and 
+/**
+ * A structure for storing an array of integer timeseries for XTE data.
+ * It is designed to be able to store a number of timeseries with identical start, duration and
  * sampling times.
  */
 typedef struct {
@@ -244,7 +252,8 @@ typedef struct {
   CHAR *comment;                   /**< a comment field (used to store original clargs) */ 
 } XTEUINT4TimeSeriesArray;
 
-/** A structure that stores user input variables 
+/**
+ * A structure that stores user input variables
  */
 typedef struct { 
   BOOLEAN help;		            /**< trigger output of help string */
@@ -326,10 +335,11 @@ int XLALFreeBarycentricData(BarycentricData *stamps);
 /* empty initializers */
 UserInput_t empty_UserInput;
 
-/** The main function of xtefitstoframe.c
+/**
+ * The main function of xtefitstoframe.c
  *
  * Here we read in a single XTE FITS file containing PCA data, generate a timeseries,
- * barycenter the data if requested, and output as a frame file. 
+ * barycenter the data if requested, and output as a frame file.
  *
  */
 int main( int argc, char *argv[] )  {
@@ -341,14 +351,12 @@ int main( int argc, char *argv[] )  {
   XTEUINT4TimeSeriesArray *ts = NULL;           /* a timeseries array structure */ 
   CHAR clargs[LONGSTRINGLENGTH];                /* store the command line args */
 
-  lalDebugLevel = 1;
   vrbflg = 1;	                        /* verbose error-messages */
 
   /* turn off default GSL error handler */
   gsl_set_error_handler_off();
 
   /* setup LAL debug level */
-  LAL_CALL (LALGetDebugLevel(&status, argc, argv, 'v'), &status);
   LogSetLevel(lalDebugLevel);
 
   /* register and read all user-variables */
@@ -470,7 +478,8 @@ int main( int argc, char *argv[] )  {
   
 }
 
-/** Read in input user arguments
+/**
+ * Read in input user arguments
  */
 void ReadUserVars(LALStatus *status,int argc,char *argv[],UserInput_t *uvar,CHAR *clargs)
 {
@@ -526,8 +535,8 @@ void ReadUserVars(LALStatus *status,int argc,char *argv[],UserInput_t *uvar,CHAR
 
 
 
-/** This function reads in data from a FITS file and returns a FITSdata data structure.
- *
+/**
+ * This function reads in data from a FITS file and returns a FITSdata data structure.
  */
 int XLALReadFITSFile(FITSData **fitsfiledata,        /**< [out] FITS file null data structure */
 		     CHAR *filepath                  /**< [in] full path to input FITS file */ 
@@ -660,11 +669,11 @@ int XLALReadFITSFile(FITSData **fitsfiledata,        /**< [out] FITS file null d
 
 }
 
-/** Read in GTI (good time interval) table from FITS file.  
+/**
+ * Read in GTI (good time interval) table from FITS file.
+ * The second extension HDU2 (3 from the beginning) lists the standard good time intervals,
+ * i.e. the start and stop times of all the potentially useable data in the file.
  *
- * The second extension HDU2 (3 from the beginning) lists the standard good time intervals, 
- * i.e. the start and stop times of all the potentially useable data in the file. 
- *            
  */
 int XLALReadFITSGTI(GTIData **gti,              /**< [out] Good time interval data structure */ 
 		    fitsfile *fptr              /**< [in] fitsfile file pointer */
@@ -770,8 +779,8 @@ int XLALReadFITSGTI(GTIData **gti,              /**< [out] Good time interval da
 
 }
 
-/** Reads in the FITS file first extension header information.
- *
+/**
+ * Reads in the FITS file first extension header information.
  * The first extension Header HDU1 (2 from the beginning) contains keywords which
  * provide a complete and detailed description of the contents of the first
  * extension. For convenience, it also contains some of the same information as
@@ -1122,8 +1131,8 @@ int XLALReadFITSHeader(FITSHeader *header,        /**< [out] The FITS file heade
   return XLAL_SUCCESS;
 
 }
-/** Removes a character from a string 
- *
+/**
+ * Removes a character from a string
  */
 int removechar(CHAR *p,    /**< [in/out] string to edit */ 
 	       CHAR ch     /**< [in] character to remove */
@@ -1152,8 +1161,8 @@ int removechar(CHAR *p,    /**< [in/out] string to edit */
 
 } 
 
-/** Reads in FITS file first extension header timestamps information.
- *
+/**
+ * Reads in FITS file first extension header timestamps information.
  * It also reads in barycentric timestamps if they are present.
  *
  */
@@ -1310,8 +1319,8 @@ int XLALReadFITSTimeStamps(BarycentricData **stamps,     /**< [out] the detector
 
 }
 
-/** Reads in array mode data from a FITS file.
- *
+/**
+ * Reads in array mode data from a FITS file.
  * Science array mode data is binned data and so contains photon counts.
  *
  */
@@ -1469,10 +1478,10 @@ int XLALReadFITSArrayData(XTEUINT4Array **array,      /**< [out] the output data
   
 }
 
-/** Reads in event mode data from a FITS file.
- *
- * The information regarding each event is stored in groups of nbytes.  The first char in each 
- * group defined whether the event is real.  We read in all information (real and non-real events). 
+/**
+ * Reads in event mode data from a FITS file.
+ * The information regarding each event is stored in groups of nbytes.  The first char in each
+ * group defined whether the event is real.  We read in all information (real and non-real events).
  * We group all energies together her so we only have a single channel
  *
  */
@@ -1585,8 +1594,8 @@ int XLALReadFITSEventData(XTECHARArray **event,       /**< [out] The FITSdata st
  
 }
 
-/** Extracts PCA config, energy range and sampling parameters from tddes2 DDL string.
- *
+/**
+ * Extracts PCA config, energy range and sampling parameters from tddes2 DDL string.
  * It's not pretty but it does the job.
  */
 int XLALConvertTDDES(XTETDDESParams **params,     /**< [out] a null TDDES parameter structure */
@@ -1872,12 +1881,13 @@ int XLALConvertTDDES(XTETDDESParams **params,     /**< [out] a null TDDES parame
 
 }
 
-/** Converts a FITS event data file to a binned timeseries.
+/**
+ * Converts a FITS event data file to a binned timeseries.
  *
- * This function acts as a wrapper for XLALEventDataToXTEUINT4TimeSeries which deals 
- * with single timeseries.  We enforce that each timeseries has the same start, end, 
+ * This function acts as a wrapper for XLALEventDataToXTEUINT4TimeSeries which deals
+ * with single timeseries.  We enforce that each timeseries has the same start, end,
  * and sampling time for consistency.
- * 
+ *
  */
 int XLALEventDataToXTEUINT4TimeSeriesArray(XTEUINT4TimeSeriesArray **ts,   /**< [out] a NULL timeseries */
 					   FITSData *fits,                 /**< in] a FITSHeader structure */
@@ -1977,9 +1987,9 @@ int XLALEventDataToXTEUINT4TimeSeriesArray(XTEUINT4TimeSeriesArray **ts,   /**< 
   
 }
 
-/** Converts a FITS event data file to a binned timeseries.
- *
- * Using the detector timestamps data we convert the FITS data into a continuous binned timeseries. 
+/**
+ * Converts a FITS event data file to a binned timeseries.
+ * Using the detector timestamps data we convert the FITS data into a continuous binned timeseries.
  *
  */
 int XLALEventDataToXTEUINT4TimeSeries(XTEUINT4TimeSeries **ts,      /**< [out] a NULL timeseries */
@@ -2058,12 +2068,12 @@ int XLALEventDataToXTEUINT4TimeSeries(XTEUINT4TimeSeries **ts,      /**< [out] a
 
 }
 
-/** Converts a FITS array data file to a binned timeseries.
- *
- * This function acts as a wrapper for XLALArrayDataToXTEUINT4TimeSeries which deals 
- * with single timeseries.  We enforce that each timeseries has the same start, end, 
+/**
+ * Converts a FITS array data file to a binned timeseries.
+ * This function acts as a wrapper for XLALArrayDataToXTEUINT4TimeSeries which deals
+ * with single timeseries.  We enforce that each timeseries has the same start, end,
  * and sampling time for consistency.
- * 
+ *
  */
 int XLALArrayDataToXTEUINT4TimeSeriesArray(XTEUINT4TimeSeriesArray **ts,   /**< [out] a NULL timeseries */
 					   FITSData *fits,                 /**< in] a FITSHeader structure */
@@ -2164,9 +2174,9 @@ int XLALArrayDataToXTEUINT4TimeSeriesArray(XTEUINT4TimeSeriesArray **ts,   /**< 
   
 }
 
-/** Converts a FITS file data structure containing science array (binned) data into a timeseries.
- *
- * Using the detector timestamps data we convert the FITS data into a continuous binned timeseries. 
+/**
+ * Converts a FITS file data structure containing science array (binned) data into a timeseries.
+ * Using the detector timestamps data we convert the FITS data into a continuous binned timeseries.
  *
  */
 int XLALArrayDataToXTEUINT4TimeSeries(XTEUINT4TimeSeries **ts,      /**< [out] a null timeseries */
@@ -2275,8 +2285,8 @@ int XLALArrayDataToXTEUINT4TimeSeries(XTEUINT4TimeSeries **ts,      /**< [out] a
 
 }
 
-/** Allocates memory for a XTEUINT4TimeSeries.
- *
+/**
+ * Allocates memory for a XTEUINT4TimeSeries.
  */
 int XLALCreateXTEUINT4TimeSeries(XTEUINT4TimeSeries **x,   /**< [out] a null timeseries */
 				 INT8 N                    /**< [in] the desired number of elements in the timeseries */
@@ -2314,8 +2324,8 @@ int XLALCreateXTEUINT4TimeSeries(XTEUINT4TimeSeries **x,   /**< [out] a null tim
   
 }
 
-/** Frees a FITS data structure.
- *
+/**
+ * Frees a FITS data structure.
  */
 int XLALFreeFITSData(FITSData *x    /**< [in/out] a FITS data structure */
 		     )
@@ -2397,8 +2407,8 @@ int XLALFreeFITSData(FITSData *x    /**< [in/out] a FITS data structure */
   
 }
 
-/** Frees an XTEUINT4TimeSeriesArray data structure.
- *
+/**
+ * Frees an XTEUINT4TimeSeriesArray data structure.
  */
 int XLALFreeXTEUINT4TimeSeriesArray(XTEUINT4TimeSeriesArray *ts   /**< [in/out] a timeseries */
 				    )
@@ -2435,8 +2445,8 @@ int XLALFreeXTEUINT4TimeSeriesArray(XTEUINT4TimeSeriesArray *ts   /**< [in/out] 
 
 }
 
-/** Frees an XTEUINT4TimeSeries data structure.
- *
+/**
+ * Frees an XTEUINT4TimeSeries data structure.
  */
 int XLALFreeXTEUINT4TimeSeries(XTEUINT4TimeSeries *ts   /**< [in/out] a timeseries */
 				  )
@@ -2459,8 +2469,8 @@ int XLALFreeXTEUINT4TimeSeries(XTEUINT4TimeSeries *ts   /**< [in/out] a timeseri
 
 }
 
-/** Sets timeseries array samples NOT in the GTI table as undefined and zeros the corresponding data.
- *
+/**
+ * Sets timeseries array samples NOT in the GTI table as undefined and zeros the corresponding data.
  * This is a wrapper for XLALApplyGTIToXTEUINT4TimeSeries.
  *
  */
@@ -2497,8 +2507,8 @@ int XLALApplyGTIToXTEUINT4TimeSeriesArray(XTEUINT4TimeSeriesArray **ts,    /**< 
 
 }
 
-/** Sets timeseries samples NOT in the GTI table as undefined and zeros the corresponding data.
- *
+/**
+ * Sets timeseries samples NOT in the GTI table as undefined and zeros the corresponding data.
  */
 int XLALApplyGTIToXTEUINT4TimeSeries(XTEUINT4TimeSeries **ts,    /**< [in/out] the timeseries */
 				     GTIData *gti                /**< [in] a GTIData structure containing GTI information */
@@ -2607,9 +2617,9 @@ int XLALApplyGTIToXTEUINT4TimeSeries(XTEUINT4TimeSeries **ts,    /**< [in/out] t
 
 }
 
-/** Resizes an XTEUINT4TimeSeries data structure.
- *
- */  
+/**
+ * Resizes an XTEUINT4TimeSeries data structure.
+ */
 int XLALReallocXTEUINT4TimeSeries(XTEUINT4TimeSeries **ts,    /**< [in/out] the timeseries */
 				  INT8 N                         /**< [in] the new length */
 				  )
@@ -2637,12 +2647,12 @@ int XLALReallocXTEUINT4TimeSeries(XTEUINT4TimeSeries **ts,    /**< [in/out] the 
   
 }
 
-/** Reduces the number of barycentric timestamps from a FITS data structure.
- *
- * We do this because we don't need fast sampling in time to perform accurate barycentering.  For event data 
+/**
+ * Reduces the number of barycentric timestamps from a FITS data structure.
+ * We do this because we don't need fast sampling in time to perform accurate barycentering.  For event data
  * there will be a timestamp for every event which means a lot of timestamps.  Here we reduce the number to
  * one timestamp per TIMESTAMPDELTAT seconds.
- * 
+ *
  */
 int XLALReduceBarycentricData(BarycentricData **stamps   /**< [in/out] barycentered null timestamps vector */      
 			      )
@@ -2710,8 +2720,8 @@ int XLALReduceBarycentricData(BarycentricData **stamps   /**< [in/out] barycente
   
 }
 
-/** Allocates memory for a GTI structure.
- *
+/**
+ * Allocates memory for a GTI structure.
  */
 int XLALCreateGTIData(GTIData **gti,      /**< [out] a null timeseries */
 		      INT8 N              /**< [in] the desired number of elements in the timeseries */
@@ -2749,8 +2759,8 @@ int XLALCreateGTIData(GTIData **gti,      /**< [out] a null timeseries */
   
 }
 
-/** Frees memory for a GTI structure.
- *
+/**
+ * Frees memory for a GTI structure.
  */
 int XLALFreeGTIData(GTIData *gti   /**< [out] a null timeseries */
 		    )
@@ -2773,8 +2783,8 @@ int XLALFreeGTIData(GTIData *gti   /**< [out] a null timeseries */
   
 }
 
-/** Allocates memory for a barycentric timestamps structure.
- *
+/**
+ * Allocates memory for a barycentric timestamps structure.
  */
 int XLALCreateBarycentricData(BarycentricData **stamps,   /**< [out] a null timeseries */
 			      INT8 N                      /**< [in] the desired number of elements in the timeseries */
@@ -2812,8 +2822,8 @@ int XLALCreateBarycentricData(BarycentricData **stamps,   /**< [out] a null time
   
 }
 
-/** Allocates memory for a barycentric timestamps structure.
- *
+/**
+ * Allocates memory for a barycentric timestamps structure.
  */
 int XLALFreeBarycentricData(BarycentricData *stamps   /**< [out] a null timeseries */
 			    )
@@ -2835,8 +2845,8 @@ int XLALFreeBarycentricData(BarycentricData *stamps   /**< [out] a null timeseri
    return XLAL_SUCCESS;
   
 }
-/** This function outputs an XTEUINT4TimeSeriesArray to a frame file or files.
- * 
+/**
+ * This function outputs an XTEUINT4TimeSeriesArray to a frame file or files.
  */
 int XLALXTEUINT4TimeSeriesArrayToGTI(GTIData **gti,                 /**< [out] the output GTI table */ 
 				     XTEUINT4TimeSeriesArray *ts    /**< [in] the timeseries array */
@@ -2989,11 +2999,11 @@ int XLALXTEUINT4TimeSeriesArrayToGTI(GTIData **gti,                 /**< [out] t
 
 }
 
-/** This function outputs an XTEUINT4TimeSeriesArray to a frame file or files.
- *
- * It creates a frame channel for each seperate timeseries extracted from the 
+/**
+ * This function outputs an XTEUINT4TimeSeriesArray to a frame file or files.
+ * It creates a frame channel for each seperate timeseries extracted from the
  * FITS file.  It creates multiple frames if there are gaps in the data.
- * 
+ *
  */
 int XLALXTEUINT4TimeSeriesArrayToFrames(XTEUINT4TimeSeriesArray *ts,      /**< [in] the input xte timeseries array */
 					CHAR *outputdir                  /**< [in] the output directory name */
@@ -3160,10 +3170,10 @@ int XLALXTEUINT4TimeSeriesArrayToFrames(XTEUINT4TimeSeriesArray *ts,      /**< [
  
 }
 
-/** This function barycenters an XTEUINT4TimeSeriesArray using a set of barycentric timestamps.
- * 
+/**
+ * This function barycenters an XTEUINT4TimeSeriesArray using a set of barycentric timestamps.
  * This is a wrapper for XLALBarycenterXTEUINT4TimeSeries.
- * 
+ *
  */
 int XLALBarycenterXTEUINT4TimeSeriesArray(XTEUINT4TimeSeriesArray **ts,       /**< [in/out] timeseries */
 					  BarycentricData *stamps             /**< [in] vector of pairs of detector/barycentered timestamps */
@@ -3219,8 +3229,8 @@ int XLALBarycenterXTEUINT4TimeSeriesArray(XTEUINT4TimeSeriesArray **ts,       /*
 
 }
 
-/** This function barycenters an XTEUINT4TimeSeries using a set of barycentric timestamps.
- * 
+/**
+ * This function barycenters an XTEUINT4TimeSeries using a set of barycentric timestamps.
  * The input detector frame timeseries is replaced with the output barycentered timeseries.
  *
  */

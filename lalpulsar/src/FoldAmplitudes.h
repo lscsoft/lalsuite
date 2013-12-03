@@ -27,53 +27,53 @@ extern "C" {
 #endif
 
 /**
-\author Mendell, Greg A.
-\defgroup FoldAmplitudes_h Header FoldAmplitudes.h
-\ingroup pkg_pulsarFold
-
-\heading{Synopsis}
-
-\code
-#include <lal/FoldAmplitudes.h>
-\endcode
-
-Contains prototypes for:
-
-struct FoldAmplitudesInput
-
-struct FoldAmplitudesParams
-
-function LALFoldAmplitudes
-
-%[Generic documentation on the header; this is the main place to
-%document any stuff not specific to the module]
-
-\heading{Structures}
-
-%[Document here any structures defined in the header.
-%Also include any of them in the index; e.g.:]
-\code
-
-typedef struct tagFoldAmplitudesInput
-{
-
-  REAL4Vector 	*amplitudeVec;  input vector of amplitudes
-  REAL4Vector  	*phaseVec;      input vector of phases
-
-} FoldAmplitudesInput;
-
-typedef struct tagFoldAmplitudesParams
-{
-
-  INT4		numBins;      number of bins
-  REAL4		binMin;       minimum phase to bin
-  REAL4		binMax;       maximum phase to bin
-
-} FoldAmplitudesParams;
-
-\endcode
-
-*/
+ * \author Mendell, Greg A.
+ * \defgroup FoldAmplitudes_h Header FoldAmplitudes.h
+ * \ingroup pkg_pulsarFold
+ *
+ * ### Synopsis ###
+ *
+ * \code
+ * #include <lal/FoldAmplitudes.h>
+ * \endcode
+ *
+ * Contains prototypes for:
+ *
+ * struct FoldAmplitudesInput
+ *
+ * struct FoldAmplitudesParams
+ *
+ * function LALFoldAmplitudes
+ *
+ * %[Generic documentation on the header; this is the main place to
+ * %document any stuff not specific to the module]
+ *
+ * ### Structures ###
+ *
+ * %[Document here any structures defined in the header.
+ * %Also include any of them in the index; e.g.:]
+ * \code
+ *
+ * typedef struct tagFoldAmplitudesInput
+ * {
+ *
+ * REAL4Vector 	*amplitudeVec;  input vector of amplitudes
+ * REAL4Vector  	*phaseVec;      input vector of phases
+ *
+ * } FoldAmplitudesInput;
+ *
+ * typedef struct tagFoldAmplitudesParams
+ * {
+ *
+ * INT4		numBins;      number of bins
+ * REAL4		binMin;       minimum phase to bin
+ * REAL4		binMax;       maximum phase to bin
+ *
+ * } FoldAmplitudesParams;
+ *
+ * \endcode
+ *
+ */
 /*@{*/
 
 /**\name Error Codes */

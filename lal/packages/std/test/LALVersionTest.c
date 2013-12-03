@@ -18,34 +18,35 @@
 */
 
 /**
-   \file
-   \ingroup LALVersion_h
-
-   \brief Prints the version and configure options of the LAL library being used.
-
-   \heading{Usage}
-   \code
-   LALVersionTest
-   \endcode
-
-   \heading{Description}
-
-   This program prints the current version of LAL.\@  If the version information
-   in the library differs from the version information in the header file, this
-   program prints the two versions and exits with code 1.  This is useful for
-   determining which version of the LAL library and header files you are linking
-   to.
-
-   \heading{Exit codes}
-
-   <table>
-   <tr><th>Code</th><th>Explanation</th></tr>
-   <tr><td>   0</td><td>Success, normal exit.</td></tr>
-   <tr><td>   1</td><td>Version info in library disagrees with header file.</td></tr>
-   <tr><td>   2</td><td>Subroutine failed.</td></tr>
-   </table>
-
-*/
+ * \file
+ * \ingroup LALVersion_h
+ *
+ * \brief Prints the version and configure options of the LAL library being used.
+ *
+ * ### Usage ###
+ *
+ * \code
+ * LALVersionTest
+ * \endcode
+ *
+ * ### Description ###
+ *
+ * This program prints the current version of LAL.\@  If the version information
+ * in the library differs from the version information in the header file, this
+ * program prints the two versions and exits with code 1.  This is useful for
+ * determining which version of the LAL library and header files you are linking
+ * to.
+ *
+ * ### Exit codes ###
+ *
+ * <table>
+ * <tr><th>Code</th><th>Explanation</th></tr>
+ * <tr><td>   0</td><td>Success, normal exit.</td></tr>
+ * <tr><td>   1</td><td>Version info in library disagrees with header file.</td></tr>
+ * <tr><td>   2</td><td>Subroutine failed.</td></tr>
+ * </table>
+ *
+ */
 /** \cond DONT_DOXYGEN */
 
 #include <stdio.h>
@@ -53,15 +54,13 @@
 #include <lal/LALStdlib.h>
 #include <lal/LALVersion.h>
 
-extern int lalDebugLevel;
 
 int main( void )
 {
   static LALStatus status;
-  char msg[2048];
+  char msg[16384];
   int verbose = 1;
 
-  lalDebugLevel = 0;
 
   if ( strcmp( LAL_VERSION, lalVersion ) ||
        strcmp( LAL_CONFIGURE_ARGS, lalConfigureArgs ) ||

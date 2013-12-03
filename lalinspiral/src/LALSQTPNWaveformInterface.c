@@ -1,8 +1,8 @@
 /**
  * @file LALSQTPNWaveformInterface.c
- *		Contains function definitions to integrate the SpinQuadTaylor code into the other parts of the LALSuit.
- *	If you want to run the program use the \ref LALSQTPNWaveformTest.c file int the
- *	test directory.
+ * Contains function definitions to integrate the SpinQuadTaylor code into the other parts of the LALSuit.
+ * If you want to run the program use the \ref LALSQTPNWaveformTest.c file int the
+ * test directory.
  * @author László Veréb
  * @date 2010.06.27.
  */
@@ -13,8 +13,7 @@
 void LALSQTPNWaveformTemplates (LALStatus *status, REAL4Vector *signalvec1, 
 		REAL4Vector *signalvec2, InspiralTemplate *params) {
 
-	XLALPrintDeprecationWarning("LALSQTPNWaveformTemplates", 
-		"XLALSQTPNWaveformTemplates");
+	XLAL_PRINT_DEPRECATION_WARNING("XLALSQTPNWaveformTemplates");
 	INITSTATUS(status);
 	ATTATCHSTATUSPTR(status);
 
@@ -63,7 +62,7 @@ int XLALSQTPNWaveformTemplates (REAL4Vector *signalvec1,
 
 void LALSQTPNWaveform (LALStatus *status, REAL4Vector *signalvec, InspiralTemplate *params){
 
-	XLALPrintDeprecationWarning("LALSQTPNWaveform", "XLALSQTPNWaveform");
+	XLAL_PRINT_DEPRECATION_WARNING("XLALSQTPNWaveform");
 	INITSTATUS(status);
 	ATTATCHSTATUSPTR(status);
 
@@ -114,8 +113,7 @@ int XLALSQTPNWaveform (REAL4Vector *signalvec, InspiralTemplate *params){
 void LALSQTPNWaveformForInjection(LALStatus *status, CoherentGW *waveform,
 		InspiralTemplate *params, PPNParamStruc *ppnParams) {
 
-	XLALPrintDeprecationWarning("LALSQTPNWaveformForInjection", 
-		"XLALSQTPNWaveformForInjection");
+	XLAL_PRINT_DEPRECATION_WARNING("XLALSQTPNWaveformForInjection");
 	INITSTATUS(status);
 	ATTATCHSTATUSPTR(status);
 

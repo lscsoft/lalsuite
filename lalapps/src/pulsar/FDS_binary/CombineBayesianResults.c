@@ -17,7 +17,8 @@
  *  MA  02111-1307  USA
  */
 
-/** \author C.Messenger
+/**
+ * \author C.Messenger
  * \ingroup pulsarApps
  * \file
  * \brief
@@ -25,7 +26,7 @@
  * lalapps_SemiCoherentBinary into a single Bayesian results file.
  *
  * It takes as input a set of Bayesian output files divided up into contiguous frequency
- * chunks and produces new Bayes factors and posterior disributions through interpolation. 
+ * chunks and produces new Bayes factors and posterior disributions through interpolation.
  *
  */
 
@@ -68,7 +69,8 @@
 /***********************************************************************************************/
 /* define internal structures */
 
-/** A structure that stores information about an individual results file
+/**
+ * A structure that stores information about an individual results file
  */
 typedef struct { 
   CHAR filename[STRINGLENGTH];      /**< the name of the file */
@@ -99,7 +101,8 @@ typedef struct {
   REAL8Vector *logposterior_fixed[NBINMAX+1];
 } BayesianResultsFile;
 
-/** A structure that stores information about a collection of Bayesian results files
+/**
+ * A structure that stores information about a collection of Bayesian results files
  */
 typedef struct { 
   UINT4 length;	                    /**< the number of channels */
@@ -107,7 +110,8 @@ typedef struct {
   BayesianResultsFile *file;        /**< a pointer to Bayesian Results file structures */
 } BayesianResultsFileList;
 
-/** A structure that stores user input variables 
+/**
+ * A structure that stores user input variables
  */
 typedef struct { 
   BOOLEAN help;		            /**< trigger output of help string */
@@ -135,8 +139,8 @@ int XLALOutputCombinedBayesResults(CHAR *outputdir,BayesianResultsFile *results,
 /* empty initializers */
 UserInput_t empty_UserInput;
 
-/** The main function of semicoherentbinary.c
- *
+/**
+ * The main function of semicoherentbinary.c
  */
 int main( int argc, char *argv[] )
 {
@@ -146,17 +150,12 @@ int main( int argc, char *argv[] )
   BayesianResultsFile *combinedresult = NULL;     /* the output combined result */
   UINT4 i,j;                                      /* counters */
 
-  lalDebugLevel = 1;
   vrbflg = 1;	                        /* verbose error-messages */
 
   /* turn off default GSL error handler */
   gsl_set_error_handler_off();
 
   /* setup LAL debug level */
-  if (XLALGetDebugLevel(argc, argv, 'v')) {
-    LogPrintf(LOG_CRITICAL,"%s : XLALGetDebugLevel() failed with error = %d\n",__func__,xlalErrno);
-    return 1;
-  }
   LogSetLevel(lalDebugLevel);
 
   /* register and read all user-variables */
@@ -246,8 +245,8 @@ int main( int argc, char *argv[] )
   
 } /* end of main */
 
-/** Read in input user arguments
- *
+/**
+ * Read in input user arguments
  */
 int XLALReadUserVars(int argc,            /**< [in] the command line argument counter */ 
 		     char *argv[],        /**< [in] the command line arguments */
@@ -310,7 +309,8 @@ int XLALReadUserVars(int argc,            /**< [in] the command line argument co
   
 }
 
-/** Read in list of Bayesian results files
+/**
+ * Read in list of Bayesian results files
  */
 int XLALReadResultsDir(BayesianResultsFileList **resultsfiles,     /**< [out] a structure containing a list of all input results files */
 		       CHAR *inputdir,                             /**< [in] the input results directory */
@@ -623,8 +623,8 @@ int XLALReadResultsDir(BayesianResultsFileList **resultsfiles,     /**< [out] a 
   
 }
 
-/** Combines the input results files into a single consistent result file
- *
+/**
+ * Combines the input results files into a single consistent result file
  */
 int XLALCombineBayesianResults(BayesianResultsFile **combinedresult,
 			       BayesianResultsFileList *resultsfiles
@@ -1109,9 +1109,9 @@ REAL8 XLALLogSumExp(REAL8 logx,      /**< [in] the log of x */
   
 }
 
-/** Output the results to file 
- *
- * We choose to output all results from a specific analysis to a single file 
+/**
+ * Output the results to file
+ * We choose to output all results from a specific analysis to a single file
  *
  */
 int XLALOutputCombinedBayesResults(CHAR *outputdir,                 /**< [in] the output directory name */

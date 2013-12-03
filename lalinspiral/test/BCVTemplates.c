@@ -18,26 +18,30 @@
 */
 
 /**
-\author B.S. Sathyaprakash
-\file
-
-\brief Creates a template mesh for BCV (or, alternatively, for SPA but
-assuing a constant metric) using the mismatch metric.
-
-\heading{Usage}
-
-\heading{Description}
-
-\heading{Algorithm}
-
-\heading{Uses}
-\code
-lalDebugLevel
-\endcode
-
-\heading{Notes}
-
-*/
+ * \author B.S. Sathyaprakash
+ * \file
+ *
+ * \brief Creates a template mesh for BCV (or, alternatively, for SPA but
+ * assuing a constant metric) using the mismatch metric.
+ *
+ * ### Usage ###
+ *
+ *
+ * ### Description ###
+ *
+ *
+ * ### Algorithm ###
+ *
+ *
+ * ### Uses ###
+ *
+ * \code
+ * lalDebugLevel
+ * \endcode
+ *
+ * ### Notes ###
+ *
+ */
 
 #include <math.h>
 #include <stdlib.h>
@@ -46,7 +50,6 @@ lalDebugLevel
 #include <lal/SeqFactories.h>
 
 /* Default parameter settings. */
-INT4 lalDebugLevel = 0;
 
 int
 main(void)

@@ -19,12 +19,13 @@
  */
 
 /*********************************************************************************/
-/** \author Reinhard Prix
+/**
+ * \author Reinhard Prix
  * \file
  * \brief Test for LALGetAMCoeffs(): compare results to older, well-tested
  * (but less efficient, and harder to understand) function  LALComputeAM()
  *
- *********************************************************************************/
+ */
 #include <math.h>
 #include <sys/times.h>
 
@@ -82,11 +83,11 @@ static const LALStatus empty_status;
 static const AMCoeffsParams empty_AMCoeffsParams;
 static const AMCoeffs empty_AMCoeffs;
 
-extern int lalDebugLevel;
 
-/** Very simple test: pick random skyposition, compute a_i, b_i using
- *  once LALComputeAM() and once LALGetAMCoeffs(), and look at the errors
- *  sum_i (a_i - a_i')^2
+/**
+ * Very simple test: pick random skyposition, compute a_i, b_i using
+ * once LALComputeAM() and once LALGetAMCoeffs(), and look at the errors
+ * sum_i (a_i - a_i')^2
  */
 int main(int argc, char *argv[])
 {
@@ -112,12 +113,11 @@ int main(int argc, char *argv[])
 
   const CHAR *sites[] = {"H1", "L1", "V2", "G1", "T1" };
   UINT4 pickedSite;
-  char earthEphem[] = DATADIR "earth00-04.dat";
-  char sunEphem[] = DATADIR "sun00-04.dat";
 
-  lalDebugLevel = 0;
+  char earthEphem[] = TEST_DATA_DIR "earth00-19-DE405.dat.gz";
+  char sunEphem[]   = TEST_DATA_DIR "sun00-19-DE405.dat.gz";
+
   if ( argc == 2 && !strcmp(argv[1], "-v1") )
-    lalDebugLevel = 1;
 
 
   /* init random-generator */

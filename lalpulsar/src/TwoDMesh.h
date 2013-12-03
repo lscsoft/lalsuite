@@ -29,73 +29,72 @@ extern "C" {
 #endif
 
 /**
-\author Creighton, T. D.
-\defgroup TwoDMesh_h Header TwoDMesh.h
-\ingroup pkg_pulsarCovering
-\brief Provides routines to place search meshes for two-dimensional parameter spaces with varying metric.
-
-\heading{Synopsis}
-\code
-#include <lal/TwoDMesh.h>
-\endcode
-
-This header covers routines that lay out a mesh of points on
-an 2-dimensional parameter space \f$\{(x,y)\}\f$, placed such that no
-point in the space lies further than some maximum proper distance
-\f$m_\mathrm{thresh}\f$ from a mesh point.
-
-The intended purpose of these routines is to place a set of ``target''
-search points over a parameter space, in order to detect signals with
-unknown parameters.  The formalism for defining a proper distance
-metric on the parameter space is defined in
-\ref FlatMesh_h.  However, whereas the routines under
-\ref FlatMesh_h require the metric \f$\mathsf{g}_{ab}\f$ to be constant
-over the parameter space, the routines under this header only treat
-\f$\mathsf{g}_{ab}\f$ as constant over distances \f$\lesssim m_\mathrm{thresh}\f$.
-
-\floatfig{H,fig_tiling}
-\image html pulsar_tiling.png "Fig. [fig_tiling]: Mesh placement using parallelogram tiling. (a) The left and right sides of a tile are required to be vertical; the top and bottom sides can tilt to maximize the tile area. (b) Tiles can be stacked in fixed-width columns, even as the elliptical contours change.  (c) Extra overlapping tiles are sometimes required at the corners of columns."
-\image latex pulsar_tiling.pdf "Mesh placement using parallelogram tiling. (a) The left and right sides of a tile are required to be vertical; the top and bottom sides can tilt to maximize the tile area. (b) Tiles can be stacked in fixed-width columns, even as the elliptical contours change.  (c) Extra overlapping tiles are sometimes required at the corners of columns." width=\textwidth
-
-Since the metric is treated as constant over distances \f$\lesssim
-m_\mathrm{thresh}\f$, this distance defines an elliptical contour around
-any mesh point.  We define a ``tile'' as a parallelogram inscribed
-within the ellipse, with its left and right sides aligned with the \f$y\f$
-axis.  This is shown in Fig.\figref{fig_tiling} (a), above.  A ``column''
-is a set of tiles of constant horizontal width stacked one on top of
-the other, as shown in Fig.\figref{fig_tiling} (b).  As the metric
-changes over space, the vertical height and tilt of the tiles in a
-column may change, so long as their width remains fixed; we note that
-if the tilt changes, the tiles will overlap slightly to ensure
-complete coverage.  Finally, the boundary of the parameter space may
-extend outside the ``corners'' of the column, crossing the end of a
-tile between its centre and its edge, as shown in
-Fig.\figref{fig_tiling} (c).  These triangular corners can be covered
-with one or more extra overlapping tiles of reduced width.
-
-In a parameter space with constant metric, the tile area is maximized
-(and the number of covering tiles minimized) when the column width is
-\f$\sqrt{2}\f$ times smaller than the projected horizontal width of the
-ellipses.  When the ellipses vary, it is generally best to determine
-the column width from the \e narrowest ellipse in a column, to
-avoid singular effects when tile widths approach the ellipse widths
-and become infinitesimally high.
-
-For the column-placement algorithm to work effectively, we require
-that the parameter space be representable as a range
-\f$y\in[y_1(x),y_2(x)]\f$ between two single-valued functions defined on a
-domain \f$x\in[x_\mathrm{min},x_\mathrm{max}]\f$.  If a desired search
-region is too complicated to express this way (e.g.\ it has
-disconnected regions, or ``branches'' where a vertical line intersects
-the boundary more than twice), then one should divide the region up
-into subregions with well-behaved boundary functions and tile these
-subregions separately.
-
-This header and its associated modules are placed in the \c pulsar
-package because they were originally intended for use in searches over
-sky position, but they can be used generically for any two-dimensional
-parameter space search where the metric is not too poorly behaved.
-*/
+ * \author Creighton, T. D.
+ * \defgroup TwoDMesh_h Header TwoDMesh.h
+ * \ingroup pkg_pulsarCovering
+ * \brief Provides routines to place search meshes for two-dimensional parameter spaces with varying metric.
+ *
+ * ### Synopsis ###
+ *
+ * \code
+ * #include <lal/TwoDMesh.h>
+ * \endcode
+ *
+ * This header covers routines that lay out a mesh of points on
+ * an 2-dimensional parameter space \f$\{(x,y)\}\f$, placed such that no
+ * point in the space lies further than some maximum proper distance
+ * \f$m_\mathrm{thresh}\f$ from a mesh point.
+ *
+ * The intended purpose of these routines is to place a set of ``target''
+ * search points over a parameter space, in order to detect signals with
+ * unknown parameters.  The formalism for defining a proper distance
+ * metric on the parameter space is defined in
+ * \ref FlatMesh_h.  However, whereas the routines under
+ * \ref FlatMesh_h require the metric \f$\mathsf{g}_{ab}\f$ to be constant
+ * over the parameter space, the routines under this header only treat
+ * \f$\mathsf{g}_{ab}\f$ as constant over distances \f$\lesssim m_\mathrm{thresh}\f$.
+ *
+ * \figure{pulsar_tiling,eps,,Mesh placement using parallelogram tiling. (a) The left and right sides of a tile are required to be vertical; the top and bottom sides can tilt to maximize the tile area. (b) Tiles can be stacked in fixed-width columns\, even as the elliptical contours change.  (c) Extra overlapping tiles are sometimes required at the corners of columns.}
+ *
+ * Since the metric is treated as constant over distances \f$\lesssim
+ * m_\mathrm{thresh}\f$, this distance defines an elliptical contour around
+ * any mesh point.  We define a ``tile'' as a parallelogram inscribed
+ * within the ellipse, with its left and right sides aligned with the \f$y\f$
+ * axis.  This is shown in \figref{pulsar_tiling} (a), above.  A ``column''
+ * is a set of tiles of constant horizontal width stacked one on top of
+ * the other, as shown in \figref{pulsar_tiling} (b).  As the metric
+ * changes over space, the vertical height and tilt of the tiles in a
+ * column may change, so long as their width remains fixed; we note that
+ * if the tilt changes, the tiles will overlap slightly to ensure
+ * complete coverage.  Finally, the boundary of the parameter space may
+ * extend outside the ``corners'' of the column, crossing the end of a
+ * tile between its centre and its edge, as shown in
+ * \figref{pulsar_tiling} (c).  These triangular corners can be covered
+ * with one or more extra overlapping tiles of reduced width.
+ *
+ * In a parameter space with constant metric, the tile area is maximized
+ * (and the number of covering tiles minimized) when the column width is
+ * \f$\sqrt{2}\f$ times smaller than the projected horizontal width of the
+ * ellipses.  When the ellipses vary, it is generally best to determine
+ * the column width from the \e narrowest ellipse in a column, to
+ * avoid singular effects when tile widths approach the ellipse widths
+ * and become infinitesimally high.
+ *
+ * For the column-placement algorithm to work effectively, we require
+ * that the parameter space be representable as a range
+ * \f$y\in[y_1(x),y_2(x)]\f$ between two single-valued functions defined on a
+ * domain \f$x\in[x_\mathrm{min},x_\mathrm{max}]\f$.  If a desired search
+ * region is too complicated to express this way (e.g.\ it has
+ * disconnected regions, or ``branches'' where a vertical line intersects
+ * the boundary more than twice), then one should divide the region up
+ * into subregions with well-behaved boundary functions and tile these
+ * subregions separately.
+ *
+ * This header and its associated modules are placed in the \c pulsar
+ * package because they were originally intended for use in searches over
+ * sky position, but they can be used generically for any two-dimensional
+ * parameter space search where the metric is not too poorly behaved.
+ */
 /*@{*/
 
 /** \name Error Codes */
@@ -117,7 +116,8 @@ parameter space search where the metric is not too poorly behaved.
 #define TWODMESHH_MSGEINT    "Non-positive interval"
 /*@}*/
 
-/** This structure represents a single node in a linked list of
+/**
+ * This structure represents a single node in a linked list of
  * mesh points, specified in the coordinate system used to place it
  */
 typedef struct tagTwoDMeshNode
@@ -135,7 +135,8 @@ typedef struct tagTwoDMeshNode
                  */
 } TwoDMeshNode;
 
-/** This structure stores the parameters required by the
+/**
+ * This structure stores the parameters required by the
  * two-dimensional mesh placement functions.
  */
 typedef struct tagTwoDMeshParamStruc
@@ -158,7 +159,7 @@ typedef struct tagTwoDMeshParamStruc
                          */
   REAL4 widthMaxFac;	/**<  The minimum ratio of mismatch ellipse width (projected onto the horizontal axis) to column width
                          * that must be maintained throughout the column: if an ellipse falls
-                         * below this ratio due to shrinkage or rotation, as in Fig.\figref{fig_tiling} (b), the
+                         * below this ratio due to shrinkage or rotation, as in \figref{pulsar_tiling} (b), the
                          * code will try a narrower column; if set to \f$\leq1\f$, the default value
                          * \c TWODMESHINTERNALC_WMAXFAC=\f$\sqrt[4]{2}\f$ will be used.
                          */
@@ -172,7 +173,8 @@ typedef struct tagTwoDMeshParamStruc
 } TwoDMeshParamStruc;
 
 
-/** This structure stores additional parameters required when
+/**
+ * This structure stores additional parameters required when
  * laying down a single column of a two-dimensional mesh.  The area to be
  * covered is specified by intersecting the area between two lines with
  * the parameter space.  If part of a column has already been covered,

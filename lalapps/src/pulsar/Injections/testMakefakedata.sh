@@ -1,5 +1,8 @@
 #!/bin/bash
 
+## run all LALApps programs with memory debugging
+export LAL_DEBUG_LEVEL="${LAL_DEBUG_LEVEL},memdbg"
+
 ## allow 'make test' to work from builddir != srcdir
 if [ -z "${srcdir}" ]; then
     srcdir=`dirname $0`
@@ -15,13 +18,6 @@ compCode="${builddir}lalapps_compareSFTs"
 if [ -n "${LALPULSAR_DATADIR}" ]; then
     oldcode="${oldcode} -E ${LALPULSAR_DATADIR}"
     newcodeDEFAULT="${newcodeDEFAULT} -E ${LALPULSAR_DATADIR}"
-else
-    echo
-    echo "Need environment-variable LALPULSAR_DATADIR to be set to"
-    echo "your ephemeris-directory (e.g. /usr/local/share/lalpulsar)"
-    echo "This might indicate an incomplete LAL+LALPULSAR installation"
-    echo
-    exit 1
 fi
 
 if [ -z "$1" ]; then
@@ -136,7 +132,7 @@ fi
 
 ## clean up files [allow turning off via 'NOCLEANUP' environment variable
 if [ -z "$NOCLEANUP" ]; then
-    rm -rf $testDIR In.data-test
+    rm -rf $testDIR In.data-test debug_phi_v2.dat Tseries_v2_?????.dat
 fi
 
 

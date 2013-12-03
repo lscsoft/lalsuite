@@ -20,12 +20,12 @@
 /**
  * \author Reinhard Prix
  * \date 2005
- * \file 
+ * \file
  * \ingroup pulsarApps
- * \brief Match two "equivalent" (i.e. corresponding to same parameters) sky-grids 
- *  at a given tolerance. This is to only meaningful for sky-grids which are identical
+ * \brief Match two "equivalent" (i.e. corresponding to same parameters) sky-grids
+ * at a given tolerance. This is to only meaningful for sky-grids which are identical
  * up to small numerical errors plus allowing for 'outlier'-points, which don't match up.
- * Return two 'matched'-grids (match1.txt, match2.txt), i.e. the subsets of the two grids 
+ * Return two 'matched'-grids (match1.txt, match2.txt), i.e. the subsets of the two grids
  * that match within the given tolerance , and two lists of the  respective 'skipped points'
  * (skip1.txt, skip2.txt).
  *
@@ -89,14 +89,12 @@ int main(int argc, char *argv[])
 
   DopplerSkyGrid *node1, *node2;
 
-  lalDebugLevel = 0;  
   vrbflg = 1;	/* verbose error-messages */
 
   /* set LAL error-handler */
   lal_errhandler = LAL_ERR_EXIT;
 
   /* register user-variables */
-  LAL_CALL (LALGetDebugLevel (&status, argc, argv, 'v'), &status);
   LAL_CALL (initUserVars (&status), &status);	  
 
   /* read cmdline & cfgfile  */	

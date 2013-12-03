@@ -11,7 +11,6 @@
 [\option{--help}] \newline \hspace*{0.5in}
 [\option{--verbose}] \newline \hspace*{0.5in}
 [\option{--version}] \newline \hspace*{0.5in}
-[\option{--debug-level}~\parm{level}] \newline \hspace*{0.5in}
 [\option{--user-tag}~\parm{usertag}] \newline \hspace*{0.5in}
 [\option{--ifo-tag}~\parm{ifotag}] \newline \hspace*{0.5in}
 [\option{--comment}] \newline \hspace*{0.5in}
@@ -107,9 +106,6 @@ naming of the output file.
 \item[\texttt{--version}] Optional.  Print out the author, CVS version and
 tag information and exit.
 
-\item[\texttt{--debug-level} \textsc{level}] Optional. Set the LAL debug
-level to \textsc{level}. If not specified the default is 1.
-
 \end{entry}
 
 \item[Arguments]\leavevmode
@@ -125,7 +121,7 @@ in.
 \begin{verbatim}
 lalapps_trigbank \
 --data-type playground_only --input-ifo H1 --output-ifo H1 --ifo-tag H1H2 \
---debug-level 33 --gps-start-time 734323079 --gps-end-time 734324999 \
+--gps-start-time 734323079 --gps-end-time 734324999 \
 H1-INSPIRAL-734323015-2048.xml
 \end{verbatim}
 

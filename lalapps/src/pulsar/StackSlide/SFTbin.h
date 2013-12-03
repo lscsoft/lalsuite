@@ -31,22 +31,24 @@
  */
  
 /**
-\author Sintes, A.M.,
-*/
+ * \author Sintes, A.M.,
+ */
 
 /* REVISIONS: */
 /* 07/13/05 gam; make RandomParams *randPar a parameter for CleanCOMPLEX8SFT; initialze RandomParams *randPar once to avoid repeatly opening /dev/urandom */
 
 /**
-\heading{Header \ref SFTbin.h}
-Routines for reading SFT binary files
-
-\heading{Synopsis}
-
-\code
-#include <lal/SFTbin.h>
-\endcode
-*/
+ *
+ * ### Header SFTbin.h ###
+ *
+ * Routines for reading SFT binary files
+ *
+ * ### Synopsis ###
+ *
+ * \code
+ * #include <lal/SFTbin.h>
+ * \endcode
+ */
 
 /*
  * 4.  Protection against double inclusion (include-loop protection)

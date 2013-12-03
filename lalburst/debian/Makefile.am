@@ -8,6 +8,7 @@ EXTRA_DIST = \
 	lalburst-dev.install \
 	lalburst.dirs \
 	lalburst.install \
+	lalburst-octave.install \
 	lalburst-python.install \
 	rules \
 	source/format

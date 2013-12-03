@@ -219,7 +219,6 @@ UserVariables_t empty_UserVariables;
 /* ---------- global variables ----------*/
 
 extern int vrbflg;
-extern INT4 lalDebugLevel;
 
 
 /* ---------- local prototypes ---------- */
@@ -277,14 +276,10 @@ main(int argc, char *argv[]){
   MJDTime TrefTDBMJD;
   LIGOTimeGPS TrefSSB_TDB_GPS;
 
-  /* LALDebugLevel must be called before anything else */
-  lalDebugLevel = 1;
   vrbflg = 1;	/* verbose error-messages */
 
   /* set LAL error-handler */
   lal_errhandler = LAL_ERR_EXIT;
-
-  LAL_CALL( LALGetDebugLevel( &status, argc, argv, 'd'), &status);
 
   /* set log-level */
   LogSetLevel ( lalDebugLevel );
@@ -320,8 +315,8 @@ main(int argc, char *argv[]){
     if (lalDebugLevel) fprintf(stdout,"STATUS : Randomly generate a sky position - alpha = %s delta = %s (hms)\n",RA,DEC);
 
     /* convert back to rads to test conversion */
-    alphatest = LALDegsToRads(RA, "alpha");
-    deltatest = LALDegsToRads(DEC, "delta");
+    alphatest = XLALhmsToRads(RA);
+    deltatest = XLALdmsToRads(DEC);
     if (lalDebugLevel) fprintf(stdout,"STATUS : Converted back to rads for testing - alpha = %6.12f delta = %6.12f (rads)\n",alphatest,deltatest);
     
     /* free memory */
@@ -332,8 +327,8 @@ main(int argc, char *argv[]){
   /* if a user has defined a sky position */
   else if ((LALUserVarWasSet(uvar.RAJ))&&(LALUserVarWasSet(uvar.DECJ))) {
     if (lalDebugLevel) fprintf(stdout,"STATUS : User defined sky position - alpha = %s delta = %s (hms)\n",uvar.RAJ,uvar.DECJ);
-    alpha = LALDegsToRads(uvar.RAJ, "alpha");
-    delta = LALDegsToRads(uvar.DECJ, "delta");
+    alpha = XLALhmsToRads(uvar.RAJ);
+    delta = XLALdmsToRads(uvar.DECJ);
     if (lalDebugLevel) fprintf(stdout,"STATUS : Converted user defined sky position to - alpha = %6.12f delta = %6.12f (rads)\n",alpha,delta);
   }
   else {
@@ -528,18 +523,20 @@ main(int argc, char *argv[]){
   if (lalDebugLevel) fprintf(stdout,"STATUS : MJD conversion gives discrepancies of %e sec\n",diff);
 
   /* fill in required pulsar params structure for Barycentering */
-  pulsarparams.site = NULL;
-  pulsarparams.site = (LALDetector *)LALMalloc(sizeof(LALDetector));
-  pulsarparams.site->location[0] = baryinput.site.location[0];
-  pulsarparams.site->location[1] = baryinput.site.location[1];
-  pulsarparams.site->location[2] = baryinput.site.location[2];
+  LALDetector *site = NULL;
+  site = (LALDetector *)LALMalloc(sizeof(LALDetector));
+  site->location[0] = baryinput.site.location[0];
+  site->location[1] = baryinput.site.location[1];
+  site->location[2] = baryinput.site.location[2];
+  pulsarparams.site = site;
+
   pulsarparams.pulsar.position.longitude = alpha;
   pulsarparams.pulsar.position.latitude = delta;
   pulsarparams.pulsar.position.system = COORDINATESYSTEM_EQUATORIAL;
   pulsarparams.ephemerides = edat;
   
   /* generate SSB initial TOA in GPS */
-  LALConvertGPS2SSB (&status,&TstartSSB,TstartGPS,&pulsarparams); 
+  XLALConvertGPS2SSB ( &TstartSSB, TstartGPS, &pulsarparams);
   if (lalDebugLevel) fprintf(stdout,"STATUS : TstartSSB = %d %d\n",TstartSSB.gpsSeconds,TstartSSB.gpsNanoSeconds);
   
   /* force integer seconds */
@@ -553,7 +550,7 @@ main(int argc, char *argv[]){
   if (lalDebugLevel) fprintf(stdout,"STATUS : GPS end time of TOAs = %d %d\n",TendGPS.gpsSeconds,TendGPS.gpsNanoSeconds);
 
   /* generate SSB end time in GPS (force integer seconds) */
-  LALConvertGPS2SSB (&status,&TendSSB,TendGPS,&pulsarparams); 
+  XLALConvertGPS2SSB (&TendSSB,TendGPS,&pulsarparams);
   if (lalDebugLevel) fprintf(stdout,"STATUS : TendSSB = %d %d\n",TendSSB.gpsSeconds,TendSSB.gpsNanoSeconds);
   
   /* force integer seconds */
@@ -620,11 +617,16 @@ main(int argc, char *argv[]){
       LIGOTimeGPS GPStest;
 
       /* convert SSB to Detector time */
-      LALConvertSSB2GPS (&status,&TDET,TSSB[i],&pulsarparams); 
+      int ret = XLALConvertSSB2GPS ( &TDET, TSSB[i], &pulsarparams);
+      if ( ret != XLAL_SUCCESS ) {
+        XLALPrintError ("XLALConvertSSB2GPS() failed with xlalErrno = %d\n", xlalErrno );
+	return(TEMPOCOMPARISONC_ESUB);
+      }
+
       if (lalDebugLevel) fprintf(stdout,"STATUS : converted SSB TOA %d %d -> Detector TOA %d %d\n",TSSB[i].gpsSeconds,TSSB[i].gpsNanoSeconds,TDET.gpsSeconds,TDET.gpsNanoSeconds);
       
       /* convert back for testing conversion */
-      LALConvertGPS2SSB (&status,&TSSBtest,TDET,&pulsarparams); 
+      XLALConvertGPS2SSB (&TSSBtest,TDET,&pulsarparams);
       diff = XLALGPSDiff(&TSSBtest,&TSSB[i]);
       if ( fabs(diff)  > 1e-9) {
 	fprintf(stderr,"ERROR : Time conversion gives discrepancy of %e sec. Exiting.\n",diff);
@@ -735,7 +737,7 @@ main(int argc, char *argv[]){
   /* free memory */
   LALFree(TSSB);
   LALFree(TOA);
-  LALFree(pulsarparams.site);
+  LALFree(site);
   LALFree(edat->ephemS);
   LALFree(edat->ephemE);
   LALFree(edat);
@@ -769,7 +771,7 @@ initUserVars (LALStatus *status, int argc, char *argv[], UserVariables_t *uvar)
   uvar->DurationMJD = 1800;
 
   uvar->ephemyear = (CHAR*)LALMalloc(512);
-  sprintf(uvar->ephemyear,"05-09");
+  sprintf(uvar->ephemyear,"00-19-DE405");
 
   uvar->f0 = 1.0;
   uvar->fdot = 0.0;
@@ -788,7 +790,7 @@ initUserVars (LALStatus *status, int argc, char *argv[], UserVariables_t *uvar)
   LALregSTRINGUserStruct ( status, 	RAJ, 	        'r', UVAR_OPTIONAL, 	"Right ascension hh:mm.ss.ssss [Default = 00:00.00.0000]");
   LALregSTRINGUserStruct ( status, 	DECJ, 	        'j', UVAR_OPTIONAL, 	"Declination dd:mm.ss.ssss [Default = 00:00.00.0000]");
   LALregSTRINGUserStruct ( status,      ephemdir,       'e', UVAR_REQUIRED, 	"Name of ephemeris directory");
-  LALregSTRINGUserStruct ( status,      ephemyear,      'y', UVAR_OPTIONAL, 	"Ephemeris year [Default = 05-09]");
+  LALregSTRINGUserStruct ( status,      ephemyear,      'y', UVAR_OPTIONAL, 	"Ephemeris year [Default = 00-19-DE405]");
   LALregREALUserStruct ( status, 	f0,     	'f', UVAR_OPTIONAL, 	"The signal frequency in Hz at SSB at the reference time [Default = 1.0]");
   LALregREALUserStruct ( status, 	fdot,     	'p', UVAR_OPTIONAL, 	"The signal frequency derivitive in Hz at SSB at the reference time [Default = 0.0]");
   LALregREALUserStruct ( status, 	TrefTDBMJD, 	'R', UVAR_OPTIONAL, 	"Reference time at the SSB in TDB in MJD [Default = 53400 ~ Jan 2005]");

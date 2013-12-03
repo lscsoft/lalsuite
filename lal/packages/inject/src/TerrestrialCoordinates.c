@@ -31,311 +31,311 @@
 #define LAL_BSERIES (0.001)  /* value B below which we expand v */
 
 /**
-   \author Creighton, T. D.
-   \addtogroup TerrestrialCoordinates_c
-   \brief Converts among equatorial, geographic, and horizon coordinates.
-
-The functions <tt>LALEquatorialToGeographic()</tt> and
-<tt>LALGeographicToEquatorial()</tt> convert between equatorial and
-geographic coordinate systems, reading coordinates in the first system
-from <tt>*input</tt> and storing the new coordinates in <tt>*output</tt>.
-The two pointers may point to the same object, in which case the
-conversion is done in place.  The functions will also check
-<tt>input->system</tt> and set <tt>output->system</tt> as appropriate.
-Because the geographic coordinate system is not fixed, one must also
-specify the time of the transformation in <tt>*gpsTime</tt>.
-
-The function <tt>LALSystemToHorizon()</tt> transforms coordinates from
-either celestial equatorial coordinates or geographic coordinates to a
-horizon coordinate system, reading coordinates in the first system
-from <tt>*input</tt> and storing the horizon coordinates in
-<tt>*output</tt>, as above.  The parameter <tt>*zenith</tt> specifies the
-direction of the vertical axis <em>in the original coordinate
-system</em>; the routine checks to see that <tt>input->system</tt> and
-<tt>zenith->system</tt> agree.  Normally this routine is used to convert
-from \e geographic latitude and longitude to a horizon system, in
-which case <tt>*zenith</tt> simply stores the geographic (geodetic)
-coordinates of the observer; if converting from equatorial
-coordinates, <tt>zenith->longitude</tt> should store the local mean
-sidereal time of the horizon system.
-
-The function <tt>LALHorizonToSystem()</tt> does the reverse of the
-above, transforming coordinates from horizon coordinates to either
-equatorial or geographic coordinates as specified by
-<tt>zenith->system</tt>; the value of <tt>output->system</tt> is set to
-agree with <tt>zenith->system</tt>.
-
-Although it is conventional to specify an observation location by its
-\e geodetic coordinates, some routines may provide or require
-\e geocentric coordinates.  The routines
-<tt>LALGeocentricToGeodetic()</tt> and <tt>LALGeodeticToGeocentric()</tt>
-perform this computation, reading and writing to the variable
-parameter structure <tt>*location</tt>.  The function
-<tt>LALGeocentricToGeodetic()</tt> reads the fields <tt>location->x</tt>,
-\c y, \c z, and computes <tt>location->zenith</tt> and
-<tt>location->altitude</tt>.  The function
-<tt>LALGeodeticToGeocentric()</tt> does the reverse, and also sets the
-fields <tt>location->position</tt> and <tt>location->radius</tt>.
-
-\heading{Algorithm}
-
-These routines follow the formulae in Sec. 5.1 of [\ref Lang_K1999],
-which we reproduce below.
-
-\heading{Geographic coordinates:} Since geographic and equatorial
-coordinates share the same \f$z\f$-axis, the geographic latitude \f$\phi\f$ of
-a direction in space is the same as its declination \f$\delta\f$, and
-longitude \f$\lambda\f$ and right ascension \f$\alpha\f$ differ only through
-the rotation of the Earth:
-\anchor eq_lambda_geographic \f{equation}{
-\label{eq_lambda_geographic}
-\lambda = \alpha - \left(\frac{2\pi\,\mathrm{radians}}
-	{24\,\mathrm{hours}}\right)\times\mathrm{GMST} \; ,
-\f}
-where GMST is Greenwich mean sidereal time.  The conversion routines
-here simply use the functions in the date package to compute
-GMST for a given GPS time, and add it to the longitude.  While this is
-simple enough, it does involve several function calls, so it is
-convenient to collect these into one routine.
-
-\heading{Horizon coordinates:} We correct a typographical
-error on the second line of Eq. 5.45 of [\ref Lang_K1999], (it should
-have \f$\cos A\f$, not \f$\sin A\f$).  We also note that while our latitudinal
-coordinate is just the altitude \f$a\f$ in this system, our longitudinal
-coordinate increases counterclockwise, and thus corresponds to the
-\e negative of the azimuth \f$A\f$ as defined by [\ref Lang_K1999].
-So we have:
-\anchor eq_altitude_horizon \anchor eq_azimuth_horizon \f{eqnarray}{
-\label{eq_altitude_horizon}
-a & = & \arcsin(\sin\delta\sin\phi + \cos\delta\cos\phi\cos h) \; , \\
-\label{eq_azimuth_horizon}
--A & = & \arctan\!2(\cos\delta\sin h, \sin\delta\cos\phi -
-		\cos\delta\sin\phi\cos h) \; ,
-\f}
-where \f$\delta\f$ is the declination (geographic latitude) of the
-direction being transformed, \f$\phi\f$ is the geographic latitude of the
-observer's zenith (i.e.\ the observer's \e geodetic latitude), and
-\f$h\f$ is the <em>hour angle</em> of the direction being transformed.  This
-is defined as:
-\f{eqnarray}{
-h & = & \lambda_\mathrm{zenith} - \lambda \nonumber\\
-  & = & \mathrm{LMST} - \alpha \nonumber
-\f}
-where LMST is the local mean sidereal time at the point of
-observation.  The inverse transformation is:
-\anchor eq_delta_horizon \anchor eq_h_horizon \f{eqnarray}{
-\label{eq_delta_horizon}
-\delta & = & \arcsin(\sin a\sin\phi + \cos a\cos A\cos\phi) \; , \\
-\label{eq_h_horizon}
-h & = & \arctan\!2[\cos a\sin(-A), \sin a\cos\phi -
-		\cos a\cos A\sin\phi] \; .
-\f}
-As explained in \ref CelestialCoordinates_c, the function
-\f$\arctan\!2(y,x)\f$ returns the argument of the complex number \f$x+iy\f$.
-
-
-\wrapfig{r,0.35\textwidth,fig_geodetic}
-\image html  inject_geodetic.png "Fig. [fig_geodetic]: The difference between geodetic and geocentric latitude."
-\image latex inject_geodetic.eps "The difference between geodetic and geocentric latitude." width=0.3\textwidth
-
-\heading{Geocentric coordinates:} As shown in
-Fig.\figref{fig_geodetic}, the ellipticity of the Earth means that the
-vertical axis of a point on the Earth's surface does not pass through
-the geometric centre of the Earth.  This means that the geodetic
-latitude of a location (defined as the latitude angle
-\f$\phi_\mathrm{geodetic}\f$ of that location's zenith direction) is
-typically some 10 arcminutes larger than its geocentric latitude
-(defined as the latitude angle \f$\phi_\mathrm{geographic}\f$ of the
-position vector from the geocentre through the location).
-Cartographers traditionally refer to locations by their geodetic
-coordinates, since these can be determined locally; however,
-geocentric coordinates are required if one wants to construct a
-uniform Cartesian system for the Earth as a whole.
-
-To transform from geodetic to geocentric coordinates, one first
-defines a "reference ellipsoid", the best-fit ellipsoid to the
-surface of the Earth.  This is specified by the polar and equatorial
-radii of the Earth \f$r_p\f$ and \f$r_e\f$, or equivalently by \f$r_e\f$ and a
-flattening factor:
-\f[
-f \equiv 1 - \frac{r_p}{r_e} = 0.00335281 \; .
-\f]
-(This constant will eventually migrate into \ref LALConstants_h.)
-The surface of the ellipsoid is then specified by the equation
-\f[
-r = r_e ( 1 - f\sin^2\phi ) \; ,
-\f]
-where \f$\phi=\phi_\mathrm{geodetic}\f$ is the geodetic latitude.  For
-points off of the reference ellipsoid, the transformation from
-geodetic coordinates \f$\lambda\f$, \f$\phi\f$ to geocentric Cartesian
-coordinates is:
-\f{eqnarray}{
-x & = & ( r_e C + h ) \cos\phi\cos\lambda \; , \\
-y & = & ( r_e C + h ) \cos\phi\sin\lambda \; , \\
-z & = & ( r_e S + h ) \sin\phi \; ,
-\f}
-where
-\f{eqnarray}{
-C & = & \frac{1}{\sqrt{\cos^2\phi + (1-f)^2\sin^2\phi}} \; , \\
-S & = & (1-f)^2 C \; ,
-\f}
-and \f$h\f$ is the perpendicular elevation of the location above the
-reference ellipsoid.  The geocentric spherical coordinates are given
-simply by:
-\f{eqnarray}{
-r & = & \sqrt{ x^2 + y^2 + z^2 } \; , \\
-\lambda_\mathrm{geocentric} & = & \lambda \quad = \quad
-	\lambda_\mathrm{geodetic} \; , \\
-\phi_\mathrm{geocentric} & = & \arcsin( z/r ) \; .
-\f}
-When computing \f$r\f$ we are careful to factor out the largest component
-before computing the sum of squares, to avoid floating-point overflow;
-however this should be unnecessary for radii near the surface of the
-Earth.
-
-The inverse transformation is somewhat trickier.  Eq. 5.29
-of [\ref Lang_K1999] conveniently gives the transformation in terms
-of a sequence of intermediate variables, but unfortunately these
-variables are not particularly computer-friendly, in that they are
-prone to underflow or overflow errors.  The following equations
-essentially reproduce this sequence using better-behaved methods of
-calculation.
-
-Given geocentric Cartesian coordinates
-\f$x=r\cos\phi_\mathrm{geocentric}\cos\lambda\f$,
-\f$y=r\cos\phi_\mathrm{geocentric}\sin\lambda\f$, and
-\f$z=r\sin\phi_\mathrm{geocentric}\f$, one computes the following:
-\f{eqnarray}{
-\varpi & = & \sqrt{ \left(\frac{x}{r_e}\right)^2
-	+ \left(\frac{y}{r_e}\right)^2 } \;,\nonumber\\
-E & = & (1-f)\left|\frac{z}{r_e}\right| - f(2-f) \;,\nonumber\\
-F & = & (1-f)\left|\frac{z}{r_e}\right| + f(2-f) \;,\nonumber\\
-P & = & \frac{4}{3}\left( EF + \varpi^2 \right) \quad = \quad
-	\frac{4}{3}\left[ \varpi^2 + (1-f)^2\left(\frac{z}{r_e}\right)^2
-		- f^2(2-f)^2 \right] \;,\nonumber\\
-Q & = & 2\varpi(F^2 - E^2) \quad = \quad
-	8\varpi f(1-f)(2-f)\left|\frac{z}{r_e}\right| \;,\nonumber\\
-D & = & P^3 + Q^2 \;,\nonumber\\
-v & = & \left\{\begin{array}{lr}
-	\left(\sqrt{D}+Q\right)^{1/3}
-		- \left(\sqrt{D}-Q\right)^{1/3} &
-		D\geq0 \\
-	2\sqrt{-P}\cos\left(\frac{1}{3}
-		\arccos\left[\frac{Q}{-P\sqrt{-P}}\right]\right) &
-		D\leq0 \end{array}\right.\nonumber\\
-W & = & \sqrt{E^2 + \varpi v} \nonumber\\
-G & = & \frac{1}{2}\left(E+W\right)\;,\nonumber\\
-t & = & \sqrt{G^2+\frac{\varpi^2 F - \varpi vG}{W}}-G \;.\nonumber
-\f}
-Once we have \f$t\f$ and \f$\varpi\f$, we can compute the geodetic longitude
-\f$\lambda\f$, latitude \f$\phi\f$, and elevation \f$h\f$:
-\f{eqnarray}{
-\lambda & = & \arctan\!2(y,x) \; , \\
-\phi & = & \mathrm{sgn}({z})\arctan\left[\frac{1}{2(1-f)}
-	\left(\frac{(\varpi-t)(\varpi+t)}{\varpi t}\right)\right] \; , \\
-h & = & r_e(\varpi-t/\varpi)\cos\phi
-	+ [z-\mathrm{sgn}({z})r_e(1-f)]\sin\phi \; .
-\f}
-
-\wrapfig{r,0.47\textwidth,fig_geodeticsing}
-\image html  inject_geodeticsing.png "Fig. [fig_geodeticsing]: Singular surfaces in the geodetic coordinate system.  The ellipticity of this spheroid has been exaggerated compared with the Earth"
-\image latex inject_geodeticsing.eps "Singular surfaces in the geodetic coordinate system. The ellipticity of this spheroid has been exaggerated compared with the Earth." width=0.47\textwidth
-
-These formulae still leave certain areas where coordinate
-singularities or numerical cancelations can occur.  Some of these have
-been dealt with in the code:
-<ul>
-<li> There is a coordinate singularity at \f$\varpi=0\f$, which we deal
-with by setting \f$\phi=\pm90^\circ\f$ and \f$\lambda\f$ arbitrarily to
-\f$0^\circ\f$.  When \f$z=0\f$ as well, we arbitrarily choose the positive
-sign for \f$\phi\f$.  As \f$\varpi\rightarrow0\f$, there are cancellations in
-the computation of \f$G\f$ and \f$t\f$, which call for special treatment
-(below).</li>
-
-<li> There is another coordinate singularity when \f$D\leq0\f$, where
-lines of constant geodetic latitude will cross each other, as shown in
-Fig.\figref{fig_geodeticsing}.  That is, a given point within this
-region can be assigned a range of geodetic latitudes.  The
-multi-valued region lies within an inner ellipsoid \f$P\leq0\f$, which in
-the case of the Earth has equatorial radius \f$r_0=r_ef(2-f)=42.6977\f$km
-and axial height \f$z_0=r_0/(1-f)=42.8413\f$km.  The formula for \f$v\f$,
-above, has an analytic continuation to \f$D\leq0\f$, assigning consistent
-(though not unique) values of latitute and elevation to these points.</li>
-
-<li> Near the equator we have \f$Q\rightarrow0\f$, and the first
-expression for \f$v\f$ becomes a difference of nearly-equal numbers,
-leading to loss of precision.  To deal with this, we write that
-expression for \f$v\f$ as:
-\f[
-\begin{array}{rcl@{\qquad}c@{\qquad}l}
-  v &=& D^{1/6}\left[(1+B)^{1/3}-(1-B)^{1/3}\right]
-  &\mbox{where}& B \;\;=\;\; \displaystyle \frac{Q}{\sqrt{D}} \\
-  &\approx& D^{1/6}\left[\frac{2}{3}B+\frac{10}{81}B^3\right]
-  &\mbox{as}& B \;\;\rightarrow\;\;0
-\end{array}
-\f]
-
-The switch from the "exact" formula to the series expansion is done
-for \f$B<10^{-3}\f$ (within about \f$2^\circ\f$ of the equator).  This was
-found by experimentation to be the point where the inaccuracy of the
-series expansion is roughly equal to the imprecision in evaluating the
-"exact" formula.  The resulting position errors are of order 1 part
-in \f$10^{12}\f$ or less; i.e.\ about 3--4 digits loss of precision.</li>
-
-<li> In some places we have expressions of the form \f$\sqrt{a^2+b}-a\f$,
-which becomes a difference of nearly equal numbers for \f$|b|\ll a^2\f$,
-resulting in loss of precision.  There are three distinct lines or
-surfaces where this occurs:</li>
-<ol>
-<li> Near the ellipsoidal surface \f$P\approx0\f$, the expression \f$\sqrt{D}-Q\f$
-in the equation for \f$v\f$ becomes of this form.</li>
-<li> Near the polar axis \f$\varpi\approx0\f$, the expression for \f$t\f$
-becomes of this form.</li>
-<li> Near the polar axis \f$\varpi\approx0\f$ within the inner ellipsoid,
-we have \f$E<0\f$ and the expression for \f$G\f$ becomes of this form.
-</ol>
-In each case, we expand in the small parameter \f$H=b/a^2\f$, giving:
-\f[
-\sqrt{a^2+b}-a \;\;\approx\;\; a\left(\frac{1}{2} H
-- \frac{1}{8} H^2 + \frac{1}{16} H^3\right)
-\qquad\mbox{for}\qquad |H| = \left|\frac{b}{a^2}\right| \ll 1
-\f]
-
-We switch to the series expansion for \f$|H|<\times10^{-4}\f$, which again
-is the point where residual errors in the series expansion are about
-the same as the loss of precision without the expansion.  This formula
-converges much better than the one for \f$v\f$ (above), resulting in
-negligible loss of precision in the final position.</li>
-
-<li> The only remaining known numerical singularities are at the
-poles of the inner ellipsoid, shown as red dots in
-Fig.\figref{fig_geodeticsing}.  These points stubbornly resist
-high-precision calculation.  However, they are extremely unlikely to
-come up in practice.</li>
-</ul>
-
-\heading{Ellipsoidal vs. orthometric elevation:} In this module it
-is assumed that all elevations refer heights above the reference
-ellipsoid.  This is the elevation computed by such techniques as GPS
-triangulation.  However, the "true" orthometric elevation refers to
-the height above the mean sea level or \e geoid, a level surface
-in the Earth's gravitational potential.  Thus, even if two points have
-the same ellipsoidal elevation, water will still flow from the higher
-to the lower orthometric elevation.
-
-The difference between the geoid and reference ellipsoid is called the
-"undulation of the geoid", and can vary by over a hundred metres
-over the Earth's surface.  However, it can only be determined through
-painstaking measurements of local variations in the Earth's
-gravitational field.  For this reason we will ignore the undulation of
-the geoid.
-
-\heading{Uses}
-\code
-XLALGreenwichMeanSiderealTime()
-\endcode
-
-*/
+ * \author Creighton, T. D.
+ * \addtogroup TerrestrialCoordinates_c
+ * \brief Converts among equatorial, geographic, and horizon coordinates.
+ *
+ * The functions <tt>LALEquatorialToGeographic()</tt> and
+ * <tt>LALGeographicToEquatorial()</tt> convert between equatorial and
+ * geographic coordinate systems, reading coordinates in the first system
+ * from <tt>*input</tt> and storing the new coordinates in <tt>*output</tt>.
+ * The two pointers may point to the same object, in which case the
+ * conversion is done in place.  The functions will also check
+ * <tt>input->system</tt> and set <tt>output->system</tt> as appropriate.
+ * Because the geographic coordinate system is not fixed, one must also
+ * specify the time of the transformation in <tt>*gpsTime</tt>.
+ *
+ * The function <tt>LALSystemToHorizon()</tt> transforms coordinates from
+ * either celestial equatorial coordinates or geographic coordinates to a
+ * horizon coordinate system, reading coordinates in the first system
+ * from <tt>*input</tt> and storing the horizon coordinates in
+ * <tt>*output</tt>, as above.  The parameter <tt>*zenith</tt> specifies the
+ * direction of the vertical axis <em>in the original coordinate
+ * system</em>; the routine checks to see that <tt>input->system</tt> and
+ * <tt>zenith->system</tt> agree.  Normally this routine is used to convert
+ * from \e geographic latitude and longitude to a horizon system, in
+ * which case <tt>*zenith</tt> simply stores the geographic (geodetic)
+ * coordinates of the observer; if converting from equatorial
+ * coordinates, <tt>zenith->longitude</tt> should store the local mean
+ * sidereal time of the horizon system.
+ *
+ * The function <tt>LALHorizonToSystem()</tt> does the reverse of the
+ * above, transforming coordinates from horizon coordinates to either
+ * equatorial or geographic coordinates as specified by
+ * <tt>zenith->system</tt>; the value of <tt>output->system</tt> is set to
+ * agree with <tt>zenith->system</tt>.
+ *
+ * Although it is conventional to specify an observation location by its
+ * \e geodetic coordinates, some routines may provide or require
+ * \e geocentric coordinates.  The routines
+ * <tt>LALGeocentricToGeodetic()</tt> and <tt>LALGeodeticToGeocentric()</tt>
+ * perform this computation, reading and writing to the variable
+ * parameter structure <tt>*location</tt>.  The function
+ * <tt>LALGeocentricToGeodetic()</tt> reads the fields <tt>location->x</tt>,
+ * \c y, \c z, and computes <tt>location->zenith</tt> and
+ * <tt>location->altitude</tt>.  The function
+ * <tt>LALGeodeticToGeocentric()</tt> does the reverse, and also sets the
+ * fields <tt>location->position</tt> and <tt>location->radius</tt>.
+ *
+ * ### Algorithm ###
+ *
+ * These routines follow the formulae in Sec. 5.1 of \cite Lang_K1999,
+ * which we reproduce below.
+ *
+ * \par Geographic coordinates:
+ * Since geographic and equatorial
+ * coordinates share the same \f$z\f$-axis, the geographic latitude \f$\phi\f$ of
+ * a direction in space is the same as its declination \f$\delta\f$, and
+ * longitude \f$\lambda\f$ and right ascension \f$\alpha\f$ differ only through
+ * the rotation of the Earth:
+ * \f{equation}{
+ * \label{eq_lambda_geographic}
+ * \lambda = \alpha - \left(\frac{2\pi\,\mathrm{radians}}
+ * {24\,\mathrm{hours}}\right)\times\mathrm{GMST} \; ,
+ * \f}
+ * where GMST is Greenwich mean sidereal time.  The conversion routines
+ * here simply use the functions in the date package to compute
+ * GMST for a given GPS time, and add it to the longitude.  While this is
+ * simple enough, it does involve several function calls, so it is
+ * convenient to collect these into one routine.
+ *
+ * \par Horizon coordinates:
+ * We correct a typographical
+ * error on the second line of Eq. 5.45 of \cite Lang_K1999, (it should
+ * have \f$\cos A\f$, not \f$\sin A\f$).  We also note that while our latitudinal
+ * coordinate is just the altitude \f$a\f$ in this system, our longitudinal
+ * coordinate increases counterclockwise, and thus corresponds to the
+ * \e negative of the azimuth \f$A\f$ as defined by \cite Lang_K1999.
+ * So we have:
+ * \f{eqnarray}{
+ * \label{eq_altitude_horizon}
+ * a & = & \arcsin(\sin\delta\sin\phi + \cos\delta\cos\phi\cos h) \; , \\
+ * \label{eq_azimuth_horizon}
+ * -A & = & \arctan\!2(\cos\delta\sin h, \sin\delta\cos\phi -
+ * \cos\delta\sin\phi\cos h) \; ,
+ * \f}
+ * where \f$\delta\f$ is the declination (geographic latitude) of the
+ * direction being transformed, \f$\phi\f$ is the geographic latitude of the
+ * observer's zenith (i.e.\ the observer's \e geodetic latitude), and
+ * \f$h\f$ is the <em>hour angle</em> of the direction being transformed.  This
+ * is defined as:
+ * \f{eqnarray}{
+ * h & = & \lambda_\mathrm{zenith} - \lambda\\
+ * & = & \mathrm{LMST} - \alpha
+ * \f}
+ * where LMST is the local mean sidereal time at the point of
+ * observation.  The inverse transformation is:
+ * \f{eqnarray}{
+ * \label{eq_delta_horizon}
+ * \delta & = & \arcsin(\sin a\sin\phi + \cos a\cos A\cos\phi) \; , \\
+ * \label{eq_h_horizon}
+ * h & = & \arctan\!2[\cos a\sin(-A), \sin a\cos\phi -
+ * \cos a\cos A\sin\phi] \; .
+ * \f}
+ * As explained in \ref CelestialCoordinates_c, the function
+ * \f$\arctan\!2(y,x)\f$ returns the argument of the complex number \f$x+iy\f$.
+ *
+ * \figure{inject_geodetic,eps,0.3,The difference between geodetic and geocentric latitude.}
+ *
+ * \par Geocentric coordinates:
+ * As shown in
+ * \figref{inject_geodetic}, the ellipticity of the Earth means that the
+ * vertical axis of a point on the Earth's surface does not pass through
+ * the geometric centre of the Earth.  This means that the geodetic
+ * latitude of a location (defined as the latitude angle
+ * \f$\phi_\mathrm{geodetic}\f$ of that location's zenith direction) is
+ * typically some 10 arcminutes larger than its geocentric latitude
+ * (defined as the latitude angle \f$\phi_\mathrm{geographic}\f$ of the
+ * position vector from the geocentre through the location).
+ * Cartographers traditionally refer to locations by their geodetic
+ * coordinates, since these can be determined locally; however,
+ * geocentric coordinates are required if one wants to construct a
+ * uniform Cartesian system for the Earth as a whole.
+ *
+ * To transform from geodetic to geocentric coordinates, one first
+ * defines a "reference ellipsoid", the best-fit ellipsoid to the
+ * surface of the Earth.  This is specified by the polar and equatorial
+ * radii of the Earth \f$r_p\f$ and \f$r_e\f$, or equivalently by \f$r_e\f$ and a
+ * flattening factor:
+ * \f[
+ * f \equiv 1 - \frac{r_p}{r_e} = 0.00335281 \; .
+ * \f]
+ * (This constant will eventually migrate into \ref LALConstants_h.)
+ * The surface of the ellipsoid is then specified by the equation
+ * \f[
+ * r = r_e ( 1 - f\sin^2\phi ) \; ,
+ * \f]
+ * where \f$\phi=\phi_\mathrm{geodetic}\f$ is the geodetic latitude.  For
+ * points off of the reference ellipsoid, the transformation from
+ * geodetic coordinates \f$\lambda\f$, \f$\phi\f$ to geocentric Cartesian
+ * coordinates is:
+ * \f{eqnarray}{
+ * x & = & ( r_e C + h ) \cos\phi\cos\lambda \; , \\
+ * y & = & ( r_e C + h ) \cos\phi\sin\lambda \; , \\
+ * z & = & ( r_e S + h ) \sin\phi \; ,
+ * \f}
+ * where
+ * \f{eqnarray}{
+ * C & = & \frac{1}{\sqrt{\cos^2\phi + (1-f)^2\sin^2\phi}} \; , \\
+ * S & = & (1-f)^2 C \; ,
+ * \f}
+ * and \f$h\f$ is the perpendicular elevation of the location above the
+ * reference ellipsoid.  The geocentric spherical coordinates are given
+ * simply by:
+ * \f{eqnarray}{
+ * r & = & \sqrt{ x^2 + y^2 + z^2 } \; , \\
+ * \lambda_\mathrm{geocentric} & = & \lambda \quad = \quad
+ * \lambda_\mathrm{geodetic} \; , \\
+ * \phi_\mathrm{geocentric} & = & \arcsin( z/r ) \; .
+ * \f}
+ * When computing \f$r\f$ we are careful to factor out the largest component
+ * before computing the sum of squares, to avoid floating-point overflow;
+ * however this should be unnecessary for radii near the surface of the
+ * Earth.
+ *
+ * The inverse transformation is somewhat trickier.  Eq. 5.29
+ * of \cite Lang_K1999 conveniently gives the transformation in terms
+ * of a sequence of intermediate variables, but unfortunately these
+ * variables are not particularly computer-friendly, in that they are
+ * prone to underflow or overflow errors.  The following equations
+ * essentially reproduce this sequence using better-behaved methods of
+ * calculation.
+ *
+ * Given geocentric Cartesian coordinates
+ * \f$x=r\cos\phi_\mathrm{geocentric}\cos\lambda\f$,
+ * \f$y=r\cos\phi_\mathrm{geocentric}\sin\lambda\f$, and
+ * \f$z=r\sin\phi_\mathrm{geocentric}\f$, one computes the following:
+ * \f{eqnarray}{
+ * \varpi & = & \sqrt{ \left(\frac{x}{r_e}\right)^2
+ * + \left(\frac{y}{r_e}\right)^2 } \;,\\
+ * E & = & (1-f)\left|\frac{z}{r_e}\right| - f(2-f) \;,\\
+ * F & = & (1-f)\left|\frac{z}{r_e}\right| + f(2-f) \;,\\
+ * P & = & \frac{4}{3}\left( EF + \varpi^2 \right) \quad = \quad
+ * \frac{4}{3}\left[ \varpi^2 + (1-f)^2\left(\frac{z}{r_e}\right)^2
+ * - f^2(2-f)^2 \right] \;,\\
+ * Q & = & 2\varpi(F^2 - E^2) \quad = \quad
+ * 8\varpi f(1-f)(2-f)\left|\frac{z}{r_e}\right| \;,\\
+ * D & = & P^3 + Q^2 \;,\\
+ * v & = & \left\{\begin{array}{lr}
+ * \left(\sqrt{D}+Q\right)^{1/3}
+ * - \left(\sqrt{D}-Q\right)^{1/3} &
+ * D\geq0 \\
+ * 2\sqrt{-P}\cos\left(\frac{1}{3}
+ * \arccos\left[\frac{Q}{-P\sqrt{-P}}\right]\right) &
+ * D\leq0 \end{array}\right.\\
+ * W & = & \sqrt{E^2 + \varpi v}\\
+ * G & = & \frac{1}{2}\left(E+W\right)\;,\\
+ * t & = & \sqrt{G^2+\frac{\varpi^2 F - \varpi vG}{W}}-G \;.
+ * \f}
+ * Once we have \f$t\f$ and \f$\varpi\f$, we can compute the geodetic longitude
+ * \f$\lambda\f$, latitude \f$\phi\f$, and elevation \f$h\f$:
+ * \f{eqnarray}{
+ * \lambda & = & \arctan\!2(y,x) \; , \\
+ * \phi & = & \mathrm{sgn}({z})\arctan\left[\frac{1}{2(1-f)}
+ * \left(\frac{(\varpi-t)(\varpi+t)}{\varpi t}\right)\right] \; , \\
+ * h & = & r_e(\varpi-t/\varpi)\cos\phi
+ * + [z-\mathrm{sgn}({z})r_e(1-f)]\sin\phi \; .
+ * \f}
+ *
+ * \figure{inject_geodeticsing,eps,0.47,Singular surfaces in the geodetic coordinate system. The ellipticity of this spheroid has been exaggerated compared with the Earth.}
+ *
+ * These formulae still leave certain areas where coordinate
+ * singularities or numerical cancelations can occur.  Some of these have
+ * been dealt with in the code:
+ * <ul>
+ * <li> There is a coordinate singularity at \f$\varpi=0\f$, which we deal
+ * with by setting \f$\phi=\pm90^\circ\f$ and \f$\lambda\f$ arbitrarily to
+ * \f$0^\circ\f$.  When \f$z=0\f$ as well, we arbitrarily choose the positive
+ * sign for \f$\phi\f$.  As \f$\varpi\rightarrow0\f$, there are cancellations in
+ * the computation of \f$G\f$ and \f$t\f$, which call for special treatment
+ * (below).</li>
+ *
+ * <li> There is another coordinate singularity when \f$D\leq0\f$, where
+ * lines of constant geodetic latitude will cross each other, as shown in
+ * \figref{inject_geodeticsing}.  That is, a given point within this
+ * region can be assigned a range of geodetic latitudes.  The
+ * multi-valued region lies within an inner ellipsoid \f$P\leq0\f$, which in
+ * the case of the Earth has equatorial radius \f$r_0=r_ef(2-f)=42.6977\f$km
+ * and axial height \f$z_0=r_0/(1-f)=42.8413\f$km.  The formula for \f$v\f$,
+ * above, has an analytic continuation to \f$D\leq0\f$, assigning consistent
+ * (though not unique) values of latitute and elevation to these points.</li>
+ *
+ * <li> Near the equator we have \f$Q\rightarrow0\f$, and the first
+ * expression for \f$v\f$ becomes a difference of nearly-equal numbers,
+ * leading to loss of precision.  To deal with this, we write that
+ * expression for \f$v\f$ as:
+ * \f[
+ * \begin{array}{rcl@{\qquad}c@{\qquad}l}
+ * v &=& D^{1/6}\left[(1+B)^{1/3}-(1-B)^{1/3}\right]
+ * &\mbox{where}& B \;\;=\;\; \displaystyle \frac{Q}{\sqrt{D}} \\
+ * &\approx& D^{1/6}\left[\frac{2}{3}B+\frac{10}{81}B^3\right]
+ * &\mbox{as}& B \;\;\rightarrow\;\;0
+ * \end{array}
+ * \f]
+ *
+ * The switch from the "exact" formula to the series expansion is done
+ * for \f$B<10^{-3}\f$ (within about \f$2^\circ\f$ of the equator).  This was
+ * found by experimentation to be the point where the inaccuracy of the
+ * series expansion is roughly equal to the imprecision in evaluating the
+ * "exact" formula.  The resulting position errors are of order 1 part
+ * in \f$10^{12}\f$ or less; i.e.\ about 3--4 digits loss of precision.</li>
+ *
+ * <li> In some places we have expressions of the form \f$\sqrt{a^2+b}-a\f$,
+ * which becomes a difference of nearly equal numbers for \f$|b|\ll a^2\f$,
+ * resulting in loss of precision.  There are three distinct lines or
+ * surfaces where this occurs:</li>
+ * <ol>
+ * <li> Near the ellipsoidal surface \f$P\approx0\f$, the expression \f$\sqrt{D}-Q\f$
+ * in the equation for \f$v\f$ becomes of this form.</li>
+ * <li> Near the polar axis \f$\varpi\approx0\f$, the expression for \f$t\f$
+ * becomes of this form.</li>
+ * <li> Near the polar axis \f$\varpi\approx0\f$ within the inner ellipsoid,
+ * we have \f$E<0\f$ and the expression for \f$G\f$ becomes of this form.
+ * </ol>
+ * In each case, we expand in the small parameter \f$H=b/a^2\f$, giving:
+ * \f[
+ * \sqrt{a^2+b}-a \;\;\approx\;\; a\left(\frac{1}{2} H
+ * - \frac{1}{8} H^2 + \frac{1}{16} H^3\right)
+ * \qquad\mbox{for}\qquad |H| = \left|\frac{b}{a^2}\right| \ll 1
+ * \f]
+ *
+ * We switch to the series expansion for \f$|H|<\times10^{-4}\f$, which again
+ * is the point where residual errors in the series expansion are about
+ * the same as the loss of precision without the expansion.  This formula
+ * converges much better than the one for \f$v\f$ (above), resulting in
+ * negligible loss of precision in the final position.</li>
+ *
+ * <li> The only remaining known numerical singularities are at the
+ * poles of the inner ellipsoid, shown as red dots in
+ * \figref{inject_geodeticsing}.  These points stubbornly resist
+ * high-precision calculation.  However, they are extremely unlikely to
+ * come up in practice.</li>
+ * </ul>
+ *
+ * \par Ellipsoidal vs. orthometric elevation:
+ * In this module it
+ * is assumed that all elevations refer heights above the reference
+ * ellipsoid.  This is the elevation computed by such techniques as GPS
+ * triangulation.  However, the "true" orthometric elevation refers to
+ * the height above the mean sea level or \e geoid, a level surface
+ * in the Earth's gravitational potential.  Thus, even if two points have
+ * the same ellipsoidal elevation, water will still flow from the higher
+ * to the lower orthometric elevation.
+ *
+ * The difference between the geoid and reference ellipsoid is called the
+ * "undulation of the geoid", and can vary by over a hundred metres
+ * over the Earth's surface.  However, it can only be determined through
+ * painstaking measurements of local variations in the Earth's
+ * gravitational field.  For this reason we will ignore the undulation of
+ * the geoid.
+ *
+ * ### Uses ###
+ *
+ * \code
+ * XLALGreenwichMeanSiderealTime()
+ * \endcode
+ *
+ */
 /*@{*/
 
 /** \see See documentation in \ref TerrestrialCoordinates_c */

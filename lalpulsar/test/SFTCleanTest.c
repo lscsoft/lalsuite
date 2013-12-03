@@ -24,10 +24,10 @@
 /*               initialze RandomParams *randPar once and avoid repeatly opening /dev/urandom.  */
 
 /**
-\author Krishnan, B.
-\file
-\ingroup SFTClean_h
-*/
+ * \author Krishnan, B.
+ * \file
+ * \ingroup SFTClean_h
+ */
 
 /**\name Error Codes */
 /*@{*/
@@ -52,7 +52,6 @@
 
 /* Default parameters. */
 
-INT4 lalDebugLevel=0;
 
 
 #define MAXFILENAMELENGTH 256
@@ -143,7 +142,6 @@ int main(int argc, char *argv[]){
 
   /* set defaults */
 
-  lalDebugLevel = 0;
   /* LALDebugLevel must be called before anything else */
   SUB( LALGetDebugLevel( &status, argc, argv, 'd'), &status);
 

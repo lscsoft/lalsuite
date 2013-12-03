@@ -13,9 +13,17 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
- 
-"""Read and manipulate Coherent WaveBurst events from ROOT files
+
+## \addtogroup pkg_py_laldetchar_triggers_cwb
+"""Read Coherent WaveBurst events from `ROOT` files
 """
+#
+# ### Synopsis ###
+#
+# ~~~
+# from laldetchar.triggers import cwb
+# ~~~
+# \author Duncan Macleod (<duncan.macleod@ligo.org>)
 
 from __future__ import division
 
@@ -23,7 +31,7 @@ import re
 
 from ROOT import TChain
 
-from glue.ligolw import ilwd,lsctables,table,utils
+from glue.ligolw import lsctables
 
 from lal import LIGOTimeGPS
 from laldetchar import git_version
@@ -33,133 +41,147 @@ __version__ = git_version.id
 __date__ = git_version.date
 
 CWB_DETECTOR_INDEX = ["L1", "H1", "H2", "G1", "T1", "V1", "A1"]
+CWB_MULTI_COLUMNS = ['process_id', 'event_id', 'ifos',
+                     'start_time', 'start_time_ns', 'duration',
+                     'peak_time', 'peak_time_ns', 'central_freq',
+                     'bandwidth', 'snr', 'confidence']
+CWB_SNGL_COLUMNS = ['process_id', 'event_id', 'search', 'ifo', 'peak_time',
+                    'peak_time_ns', 'start_time', 'start_time_ns',
+                    'duration', 'time_lag', 'peak_frequency', 'bandwidth',
+                    'central_freq', 'snr', 'confidence', 'hrss', 'tfvolume']
+
+# open doxygen
+## \addtogroup pkg_py_laldetchar_triggers_cwb
+#@{
 
 
-def get_ifos_from_index(cwb_event):
-    """@returns the instrument set for this cWB ROOT tree event
+def root_multi_trigger(root_event, columns=CWB_MULTI_COLUMNS):
+    """Parse a multi-detector Coherent WaveBurst `ROOT` tree entry
+    into a `MultiBurst` object.
+
+    @param root_event
+        `ROOT` `TChain` object
+    @param columns
+        a list of valid `LIGO_LW` column names to load (defaults to all)
+
+    @returns a `MultiBurst` built from the `ROOT` data
     """
-    ifo_index = list(cwb_event.ifo)
-    ndim = cwb_event.ndim
-    return [CWB_DETECTOR_INDEX[ifo_index[i]-1] for i in range(cwb_event.ndim)]
+    ifos = get_ifos(root_event)
+    first_ifo_idx = CWB_DETECTOR_INDEX.index(list(ifos)[0])
 
-
-def get_multi_burst(cwb_event,
-                    columns=lsctables.MultiBurstTable.validcolumns.keys()):
-    """@returns a LIGOLw MultiBurst event with attributes seeded from
-    the given cWB ROOT tree event
-    """
-    ndim = cwb_event.ndim
     mb = lsctables.MultiBurst()
-
-    ifos = get_ifos_from_index(cwb_event)
-    first_ifo_idx = min(sorted(range(len(ifos)), key=ifos.__getitem__))
-
-    if "ifos" in columns:
+    if 'process_id' in columns:
+        mb.process_id = lsctables.ProcessID(root_event.run)
+    if 'event_id' in columns:
+        mb.event_id = lsctables.MultiBurstTable.get_next_id()
+    if 'ifos' in columns:
         mb.set_ifos(ifos)
 
-    if "process_id" in columns:
-        mb.process_id = ilwd.get_ilwdchar_class("multi_burst", "process_id")(
-                            cwb_event.run)
-
-    if "snr" in columns:
-        mb.snr = min(cwb_event.rho) 
-
-    fmin = min(cwb_event.low)
-    fmax = min(cwb_event.high)
-    if "peak_frequency" in columns:
-        mb.peak_frequency = list(cwb_event.frequency)[0]
-    if "bandwidth" in columns:
-        mb.bandwidth = fmax-fmin
-    if "central_freq" in columns:
-        mb.central_freq = fmin + mb.bandwidth/2.0
-
-    peak_time = LIGOTimeGPS(list(cwb_event.time)[first_ifo_idx])
-    if "peak_time" in columns:
+    peak_time = LIGOTimeGPS(list(root_event.time)[first_ifo_idx])
+    if 'peak_time' in columns:
         mb.peak_time = peak_time.gpsSeconds
-    if "peak_time_ns" in columns:
+    if 'peak_time_ns' in columns:
         mb.peak_time_ns = peak_time.gpsNanoSeconds
-    start_time = LIGOTimeGPS(list(cwb_event.start)[first_ifo_idx])
-    if "start_time" in columns:
+    start_time = LIGOTimeGPS(list(root_event.start)[first_ifo_idx])
+    if 'start_time' in columns:
         mb.start_time = start_time.gpsSeconds
-    if "start_time_ns" in columns:
+    if 'start_time_ns' in columns:
         mb.start_time_ns = start_time.gpsNanoSeconds
-    stop_time = LIGOTimeGPS(list(cwb_event.stop)[first_ifo_idx])
-    #mb.stop_time = stop_time.gpsSeconds
-    #mb.stop_time_ns = stop_time.gpsNanoSeconds
-    if "duration" in columns:
-        mb.duration = float(stop_time-start_time)
+    if 'duration' in columns:
+        mb.duration = float(list(root_event.duration)[first_ifo_idx])
+
+    fmin = min(root_event.low)
+    fmax = min(root_event.high)
+    if 'central_freq' in columns:
+        mb.central_freq = list(root_event.frequency)[0]
+    if 'bandwidth' in columns:
+        mb.bandwidth = fmax-fmin
+
+    if 'snr' in columns:
+        mb.snr = min(root_event.rho)
+    if 'confidence' in columns:
+        mb.confidence = root_event.likelihood
 
     return mb
 
+def root_sngl_trigger(root_event, instrument, columns=CWB_SNGL_COLUMNS):
+    """Parse a multi-detector Coherent WaveBurst `ROOT` tree entry
+    into a `SnglBurst` object for the given instrument.
 
-def get_sngl_burst(cwb_event, ifo,
-                   columns=lsctables.MultiBurstTable.validcolumns.keys()):
-    """@returns a LIGOLw SnglBurst event with attributes seeded from
-    the given cWB ROOT tree event
+    @param root_event
+        `ROOT` `TChain` object
+    @param instrument UNDOCUMENTED
+    @param columns
+        a list of valid `LIGO_LW` column names to load (defaults to all)
+
+    @returns a `SnglBurst` built from the `ROOT` data
     """
-    ndim = cwb_event.ndim
+    ifo_idx = CWB_DETECTOR_INDEX.index(instrument)
+
     sb = lsctables.SnglBurst()
+    if 'process_id' in columns:
+        sb.process_id = lsctables.ProcessID(root_event.run)
+    if 'event_id' in columns:
+        sb.event_id = lsctables.SnglBurstTable.get_next_id()
+    if 'search' in columns:
+        sb.search = u'waveburst'
 
-    ifo_idx = CWB_DETECTOR_INDEX.index(ifo)
-    if ifo in columns:
-        sb.ifo = ifo
+    if 'ifo' in columns:
+        sb.ifo = instrument
 
-    if "process_id" in columns:
-        sb.process_id = ilwd.get_ilwdchar_class("multi_burst", "process_id")(
-                            cwb_event.run)
-    if "search" in columns:
-        sb.search = u"waveburst"
-
-    if "snr" in columns:
-        sb.snr = list(cwb_event.rho)[ifo_idx]
-    if "confidence" in columns:
-        sb.confidence = cwb_event.likelihood
-    
-    if "peak_frequency" in columns:
-        sb.peak_frequency = list(cwb_event.frequency)[ifo_idx]
-    if "flow" in columns:
-        sb.flow = list(cwb_event.low)[ifo_idx]
-    if "fhigh" in columns:
-        sb.fhigh = list(cwb_event.high)[ifo_idx]
-    if "bandwidth" in columns:
-        sb.bandwidth = list(cwb_event.bandwidth)[ifo_idx]
-    if "central_freq" in columns:
-        sb.central_freq = sb.flow + sb.bandwidth/2.0
-
-    peak_time = LIGOTimeGPS(list(cwb_event.time)[ifo_idx])
-    if "peak_time" in columns:
+    peak_time = LIGOTimeGPS(list(root_event.time)[ifo_idx])
+    if 'peak_time' in columns:
         sb.peak_time = peak_time.gpsSeconds
-    if "peak_time_ns" in columns:
+    if 'peak_time_ns' in columns:
         sb.peak_time_ns = peak_time.gpsNanoSeconds
-    start_time = LIGOTimeGPS(list(cwb_event.start)[ifo_idx])
-    if "start_time" in columns:
+    start_time = LIGOTimeGPS(list(root_event.start)[ifo_idx])
+    if 'start_time' in columns:
         sb.start_time = start_time.gpsSeconds
-    if "start_time_ns" in columns:
+    if 'start_time_ns' in columns:
         sb.start_time_ns = start_time.gpsNanoSeconds
-    stop_time = LIGOTimeGPS(list(cwb_event.stop)[ifo_idx])
-    if "stop_time" in columns:
+    stop_time = LIGOTimeGPS(list(root_event.stop)[ifo_idx])
+    if 'stop_time' in columns:
         sb.stop_time = stop_time.gpsSeconds
-    if "stop_time_ns" in columns:
+    if 'stop_time_ns' in columns:
         sb.stop_time_ns = stop_time.gpsNanoSeconds
-    if "duration" in columns:
+    if 'duration' in columns:
         sb.duration = float(stop_time-start_time)
-    if "time_lag" in columns:
-        sb.time_lag = list(cwb_event.lag)[ifo_idx]
+    if 'time_lag' in columns:
+        sb.time_lag = list(root_event.lag)[ifo_idx]
 
-    if "hrss" in columns:
-        sb.hrss = list(cwb_event.hrss)[ifo_idx]
+    flow = list(root_event.low)[ifo_idx]
+    fhigh = list(root_event.high)[ifo_idx]
+    if 'peak_frequency' in columns:
+        sb.peak_frequency = list(root_event.frequency)[ifo_idx]
+    if 'flow' in columns:
+        sb.flow = flow
+    if 'fhigh' in columns:
+        sb.fhigh = fhigh
+    if 'bandwidth' in columns:
+        sb.bandwidth = list(root_event.bandwidth)[ifo_idx]
+    if 'central_freq' in columns:
+        sb.central_freq = flow + list(root_event.bandwidth)[ifo_idx]/2.0
 
+    if 'snr' in columns:
+        sb.snr = list(root_event.snr)[ifo_idx]**(1./2.)
+    if 'confidence' in columns:
+        sb.confidence = root_event.likelihood
+
+    if 'hrss' in columns:
+        sb.hrss = list(root_event.hrss)[ifo_idx]
+    if 'tfvolume' in columns:
+        sb.tfvolume = list(root_event.volume)[ifo_idx]
     return sb
 
 
-def from_root_file(filename, start=None, end=None, ifo=None, channel=None,
-                   columns=None):
-    """Read a {Multi,Sngl}BurstTable from cWB ROOT file
+def from_root(filename, columns=None, start=None, end=None, ifo=None,
+              channel=None):
+    """Read cWB triggers from a `ROOT` file
 
-    If ifo is not given, the ROOT file will be read into a MultiBurstTable
-    containing the coherent information. If ifo is given, a SnglBurstTable
-    will be returned, containing the single-detector information for that
-    observatory.
+    If channel is not given, the `ROOT` file will be read into a
+    MultiBurstTable containing the coherent information. If ifo is
+    given, a SnglBurstTable will be returned, containing the
+    single-detector information for that observatory.
 
     @param filename
         file path from which to read the data
@@ -174,170 +196,66 @@ def from_root_file(filename, start=None, end=None, ifo=None, channel=None,
     @param columns
         set of valid SnglBurst columns to read from data
 
-    @returns a Multi or Sngl BurstTable object representing the data
+    @returns a `MultiBurstTable` or `SnglBurstTable` representing the data
     """
-    if channel and not ifo and re.match("[A-Z]\d:", channel):
-       ifo = channel[:2]
+    if channel and re.match("[A-Z]\d:", channel) and not ifo:
+        ifo = channel[:2]
 
-    # set columns
-    if columns is None:
-        if ifo:
-            columns = lsctables.SnglBurst.__slots__
-        else:
-            columns = lsctables.MultiBurst.__slots__
-        usercolumns = False
-    else:
-        usercolumns = True
-    columns = set(columns)
-
-    if start or end:
-        if start is None:
-            start = -numpy.inf
-        if end is None:
-            end = numpy.inf
+    if not columns and ifo:
+        columns = CWB_SNGL_COLUMNS
+    elif not columns:
+        columns = CWB_MULTI_COLUMNS
+    if columns:
+        columns = set(columns)
+        if 'peak_time' not in columns and (start or end):
+            columns.add("peak_time")
+            columns.add("peak_time_ns")
+        if 'snr' in columns:
+            columns.add('amplitude')
+    if (start or end):
+        start = start or segments.NegInfinity
+        end = end or segments.PosInfinity
         span = segments.segment(start, end)
-        columns.update(["peak_time", "peak_time_ns"])
         check_time = True
     else:
         check_time = False
 
     # generate table
-    if usercolumns:
-        for c in out.columnnames:
-            if c.lower() not in columns:
-                idx = out.columnnames.index(c)
-                out.columnnames.pop(idx)
-                out.columntypes.pop(idx)
+    if ifo:
+        out = lsctables.New(lsctables.SnglBurstTable, columns=columns)
+    else:
+        out = lsctables.New(lsctables.MultiBurstTable, columns=columns)
+    columns = out.columnnames
+    append = out.append
 
     # read file and generate triggers
     root_tree = TChain("waveburst")
     root_tree.Add(filename)
-    
-    if ifo:
-        out = lsctables.New(lsctables.SnglBurstTable, columns=columns)
-    else:
-        out = lsctables.New(lsctables.MultiBurstTable, columns=columns)
-    append = out.append
-
     nevents = root_tree.GetEntries()
     for i in range(nevents):
         root_tree.GetEntry(i)
         if ifo:
-            t = get_sngl_burst(root_tree, ifo, columns=columns)
-        else:
-            t = get_multi_burst(root_tree, columns=columns)
-        if check_time and (float(t.get_peak()) not in span):
-            continue
-        if channel:
+            t = root_sngl_trigger(root_tree, ifo, columns=columns)
             t.channel = channel
-        append(t)
-
+        else:
+            t = root_multi_trigger(root_tree, columns=columns)
+        if not check_time or (float(t.get_peak()) in span):
+            append(t)
     return out
 
 
-def from_file(filename, start=None, end=None, ifo=None, channel=None,
-              columns=None):
-    """Read a {Multi,Sngl}BurstTable from a cWB ROOT or ASCII file
+def get_ifos(root_event):
+    """Find the instrument set for this cWB `ROOT` tree event 
 
-    If ifo is not given, the file will be read into a MultiBurstTable
-    containing the coherent information. If ifo is given, a SnglBurstTable
-    will be returned, containing the single-detector information for that
-    observatory.
+    @param root_event
+        a cWB `ROOT` tree event
 
-    @param filename
-        file path from which to read the data
-    @param start
-        GPS start time after which to restrict returned events
-    @param end
-        GPS end time before which to restrict returned
-    @param ifo
-        observatory that produced the given data
-    @param channel
-        source channel that produced the given data
-    @param columns
-        set of valid SnglBurst columns to read from data
-
-    @returns a Multi or Sngl BurstTable object representing the data
+    @returns a set of instruments
     """
-    if os.path.splitext(filename)[1] == ".root":
-         return from_root_file(filename, start=start, end=end, ifo=ifo,
-                               channel=channel, columns=columns)
-    else:
-         raise RuntimeError("Unable to parse cWB-format ASCII files, "
-                            "please code up the 'from_ascii_file' for "
-                            "cWB and patch this module...")
+    ifo_index = list(root_event.ifo)
+    ndim = root_event.ndim
+    return set([CWB_DETECTOR_INDEX[ifo_index[i]-1] for
+                i in range(root_event.ndim)])
 
 
-def from_files(filelist, start=None, end=None, ifo=None, channel=None,
-               columns=None, verbose=False):
-    """Read a BurstTable from a list of cWB-format ROOT or ASCII files
-
-    @param filelist
-        list of filepaths from which to read the data
-    @param start
-        GPS start time after which to restrict returned events
-    @param end
-        GPS end time before which to restrict returned
-    @param ifo
-        observatory that produced the given data
-    @param channel
-        source channel that produced the given data
-    @param columns
-        set of valid SnglBurst columns to read from data
-    @param verbose
-        print verbose progress, default False
-
-    @returns a glue.lsctables.SnglBurstTable object representing the data
-    """
-    if verbose:
-        sys.stdout.write("Extracting KW triggers from %d files...     \r"
-                         % len(filelist))
-        sys.stdout.flush()
-        num = len(filelist)
-
-    if ifo:
-        out = lsctables.New(lsctables.SnglBurstTable, columns=columns)
-    else:
-        out = lsctables.New(lsctables.MultiBurstTable, columns=columns)
-    extend = out.extend
-
-    # load results
-    for i,fp in enumerate(filelist):
-        extend(from_file(fp, start=start, end=end, columns=columns,
-                         ifo=ifo, channel=channel))
-        if verbose:
-            progress = int((i+1)/num*100)
-            sys.stdout.write("Extracting KW triggers from %d files... "
-                             "%.2d%%\r" % (num, progress))
-            sys.stdout.flush()
-    if verbose:
-        sys.stdout.write("Extracting KW triggers from %d files... "
-                         "100%%\n" % (num))
-        sys.stdout.flush()
-
-    return out
-
-
-def from_lal_cache(cache, start=None, end=None, ifo=None, channel=None,
-                   columns=None, verbose=False):
-    """Read a BurstTable from a Cache of cWB ROOT files
-    
-    @param cache
-        glue.lal.Cache of filepaths from which to read the data
-    @param start
-        GPS start time after which to restrict returned events
-    @param end
-        GPS end time before which to restrict returned
-    @param ifo
-        observatory that produced the given data
-    @param channel
-        source channel that produced the given data
-    @param columns
-        set of valid SnglBurst columns to read from data
-    @param verbose
-        print verbose progress, default False
-
-    @returns a Multi or Sngl BurstTable object representing the data
-    """
-    return from_files(cache.pfnlist(), start=start, end=end, ifo=ifo,
-                      channel=channel, columns=columns, verbose=verbose)
+##@}

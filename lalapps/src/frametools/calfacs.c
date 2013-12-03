@@ -19,8 +19,8 @@
 
 /**
  * \author Jolien D. E. Creighton
-\file
-*/
+ * \file
+ */
 
 #include <stdio.h>
 #include <unistd.h>
@@ -29,7 +29,7 @@
 #include <lal/LALConstants.h>
 #include <lal/AVFactories.h>
 #include <lal/PrintFTSeries.h>
-#include <lal/FrameStream.h>
+#include <lal/LALFrStream.h>
 #include <lal/LALMoment.h>
 #include <lal/Units.h>
 #include <lal/BandPassTimeSeries.h>
@@ -54,7 +54,6 @@
               "   [--freq frequency]     Frequency of line\n"\
               "   [--numpts npoints]     Points to use\n"
 
-INT4 lalDebugLevel = LALMSGLVL3;
 
 #include <config.h>
 #ifndef HAVE_LIBLALFRAME
@@ -122,7 +121,7 @@ void graphout(float x1,float x2,int thistime, int last) {
 int main( int argc, char *argv[] )
 {
     static LALStatus  status;
-    FrStream         *stream = NULL;
+    LALFrStream         *stream = NULL;
     FrChanIn          channelIn;
     REAL4             numSeconds = 2.0, oreal, oimag, dt, omega = 0.0;
     INT4              i, numPoints=4096, inarg = 1;

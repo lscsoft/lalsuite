@@ -50,7 +50,7 @@
 
 //Global variables
 FILE *LOG = NULL, *ULFILE = NULL, *NORMRMSOUT = NULL;
-CHAR *earth_ephemeris = NULL, *sun_ephemeris = NULL, *sft_dir = NULL;
+CHAR *earth_ephemeris = NULL, *sun_ephemeris = NULL, *sft_dir_file = NULL;
 static const LALStatus empty_status;
 
 //prototypes
@@ -95,7 +95,6 @@ int main(int argc, char *argv[])
    
    
    //Set lalDebugLevel to user input or 0 if no input
-   lalDebugLevel = args_info.laldebug_arg;
    
    //Create directory
    mkdir(args_info.outdirectory_arg, 0777);
@@ -147,8 +146,8 @@ int main(int argc, char *argv[])
    }
 
    //Print input SFTs argument
-   fprintf(stderr, "Input SFTs: %s\n", sft_dir);
-   fprintf(LOG, "Input SFTs: %s\n", sft_dir);
+   fprintf(stderr, "Input SFTs: %s\n", sft_dir_file);
+   fprintf(LOG, "Input SFTs: %s\n", sft_dir_file);
    
    //Initialize ephemeris data structure
    EphemerisData *edat = XLALInitBarycenter(earth_ephemeris, sun_ephemeris);
@@ -842,7 +841,7 @@ int main(int argc, char *argv[])
    free_inputParams(inputParams);
    free_ihsMaxima(ihsmaxima);
    XLALDestroyREAL4FFTPlan(secondFFTplan);
-   XLALFree((CHAR*)sft_dir);
+   XLALFree((CHAR*)sft_dir_file);
    XLALFree((CHAR*)earth_ephemeris);
    XLALFree((CHAR*)sun_ephemeris);
    XLALFree((CHAR*)sky);
@@ -1003,7 +1002,7 @@ REAL4Vector * readInSFTs(inputParamsStruct *input, REAL8 *normalization)
    constraints.endTime = &end;
    
    //Find SFT files
-   LALSFTdataFind(&status, &catalog, sft_dir, &constraints);
+   LALSFTdataFind(&status, &catalog, sft_dir_file, &constraints);
    if (status.statusCode != 0) {
       fprintf(stderr,"%s: LALSFTdataFind() failed with code = %d.\n", __func__, status.statusCode);
       XLAL_ERROR_NULL(XLAL_EFUNC);
@@ -1931,91 +1930,88 @@ INT4 readTwoSpectInputParams(inputParamsStruct *params, struct gengetopt_args_in
    params->ULsolver = args_info.ULsolver_arg;                                    //Solver function for UL calculation (default = 0)
    params->signalOnly = args_info.signalOnly_given;                              //SFTs contain only signal, no noise (default = 0)
    
-   //Non-default arguments
-   if (args_info.Tcoh_given) params->Tcoh = args_info.Tcoh_arg;                  //SFT coherence time (s)
-   else {
-      fprintf(stderr, "%s: a SFT coherence time must be specified.\n", __func__);
-      XLAL_ERROR(XLAL_FAILURE);
-   }
-   if (args_info.SFToverlap_given) params->SFToverlap = args_info.SFToverlap_arg; //SFT overlap (s)
-   else {
-      fprintf(stderr, "%s: the SFT overlap time must be specified.\n", __func__);
-      XLAL_ERROR(XLAL_FAILURE);
-   }
-   if (args_info.Tobs_given) params->Tobs = args_info.Tobs_arg;                  //Total observation time (s)
-   else {
-      fprintf(stderr, "%s: an observation time must be specified.\n", __func__);
-      XLAL_ERROR(XLAL_FAILURE);
-   }
-   if (args_info.fmin_given) params->fmin = args_info.fmin_arg;                  //Minimum frequency to search (Hz)
-   else {
-      fprintf(stderr, "%s: a minimum frequency to search must be specified.\n", __func__);
-      XLAL_ERROR(XLAL_FAILURE);
-   }
-   if (args_info.fspan_given) params->fspan = args_info.fspan_arg;               //Maximum frequency to search (Hz)
-   else {
-      fprintf(stderr, "%s: a frequency span must be specified.\n", __func__);
-      XLAL_ERROR(XLAL_FAILURE);
-   }
-   if (args_info.t0_given) params->searchstarttime = args_info.t0_arg;           //GPS start time of the search (s)
-   else {
-      fprintf(stderr, "%s: a search start time must be specified.\n", __func__);
-      XLAL_ERROR(XLAL_FAILURE);
-   }
-   if (args_info.Pmin_given) params->Pmin = args_info.Pmin_arg;                  //Minimum period to search (s)
-   else {
-      fprintf(stderr, "%s: a minimum period to search must be specified.\n", __func__);
-      XLAL_ERROR(XLAL_FAILURE);
-   }
-   if (args_info.Pmax_given) params->Pmax = args_info.Pmax_arg;                  //Maximum period to search (s)
-   else {
-      fprintf(stderr, "%s: a maximum period to search must be specified.\n", __func__);
-      XLAL_ERROR(XLAL_FAILURE);
-   }
-   if (args_info.dfmin_given) params->dfmin = args_info.dfmin_arg;               //Minimum modulation depth to search (Hz)
-   else {
-      fprintf(stderr, "%s: a minimum modulation depth to search must be specified.\n", __func__);
-      XLAL_ERROR(XLAL_FAILURE);
-   }
-   if (args_info.dfmax_given) params->dfmax = args_info.dfmax_arg;               //Maximum modulation depth to search (Hz)
-   else {
-      fprintf(stderr, "%s: a maximum modulation depth to search must be specified.\n", __func__);
-      XLAL_ERROR(XLAL_FAILURE);
-   }
+   //Parameters without default arguments but are required
+   //gengetopt has already checked to see they are present and would have failed
+   params->Tobs = args_info.Tobs_arg;
+   params->Tcoh = args_info.Tcoh_arg;
+   params->SFToverlap = args_info.SFToverlap_arg;
+   params->searchstarttime = args_info.t0_arg;
+   params->fmin = args_info.fmin_arg;
+   params->fspan = args_info.fspan_arg;
+   params->Pmin = args_info.Pmin_arg;
+   params->Pmax = args_info.Pmax_arg;
+   params->dfmin = args_info.dfmin_arg;
+   params->dfmax = args_info.dfmax_arg;
+   
+   //Non-default arguments (but nonetheless required in certain circumstances)
    if (args_info.ihsfar_given) params->ihsfar = args_info.ihsfar_arg;            //Incoherent harmonic sum false alarm rate
-   else {
+   else if (!args_info.ihsfar_given && !args_info.templateTest_given) {
       fprintf(stderr, "%s: the IHS FAR must be specified.\n", __func__);
       XLAL_ERROR(XLAL_FAILURE);
    }
    if (args_info.tmplfar_given) params->templatefar = args_info.tmplfar_arg;     //Template false alarm rate
-   else {
+   else if (!args_info.tmplfar_given && args_info.templateTest_given) {
       fprintf(stderr, "%s: the template FAR must be specified.\n", __func__);
       XLAL_ERROR(XLAL_FAILURE);
    }
    
+   //Arguments that might not be given, but we should just set them to an invalid value if they are not given
    if (args_info.keepOnlyTopNumIHS_given) params->keepOnlyTopNumIHS = args_info.keepOnlyTopNumIHS_arg;         //Keep only top X IHS candidates
    else params->keepOnlyTopNumIHS = -1;
-   if (args_info.simpleBandRejection_given) params->simpleSigmaExclusion = args_info.simpleBandRejection_arg;  //Simple band rejection (default off)
    if (args_info.lineDetection_given) params->lineDetection = args_info.lineDetection_arg;                     //Line detection
-   
-   
-   params->log10templatefar = log10(params->templatefar);                        //log_10(template FAR)
-   
+   else params->lineDetection = -1.0;
+
    //Settings for IHS FOM
-   //Exit with error if neither is chosen
+   //Exit with error if both or neither is chosen unless we are only doing the template test
+   //When the parameters are not given, set them to zero
+   if (!args_info.templateTest_given && ((args_info.ihsfomfar_given && args_info.ihsfom_given) || (!args_info.ihsfomfar_given && !args_info.ihsfom_given))) {
+      fprintf(stderr, "%s: You must choose only one of the IHS FOM FAR argument or the IHS FOM argument.\n", __func__);
+      XLAL_ERROR(XLAL_EINVAL);
+   }
    if (args_info.ihsfomfar_given) params->ihsfomfar = args_info.ihsfomfar_arg;   //IHS figure of merit false alarm rate
    else params->ihsfomfar = 0.0;
    if (args_info.ihsfom_given) params->ihsfom = args_info.ihsfom_arg;            //IHS figure of merit threshold value
    else params->ihsfom = 0.0;
-   if ((params->ihsfom!=0.0 && params->ihsfomfar!=0.0) || (params->ihsfom==0.0 && params->ihsfomfar==0.0)) {
-      fprintf(stderr, "%s: You must choose either the IHS FOM FAR argument or the IHS FOM argument.\n", __func__);
-      XLAL_ERROR(XLAL_EINVAL);
-   }
+   
+   //log10(template FAR)
+   params->log10templatefar = log10(params->templatefar);
    
    //Blocksize should be an odd number
    if (params->blksize % 2 != 1) params->blksize += 1;
    
    // Warnings when using hidden flags
+   if (args_info.signalOnly_given) {
+      fprintf(LOG,"WARNING: --signalOnly argument has been specified\n");
+      fprintf(stderr,"WARNING: --signalOnly argument has been specified\n");
+   }
+   if (args_info.templateTest_given) {
+      fprintf(LOG,"WARNING: --templateTest argument has been specified\n");
+      fprintf(stderr,"WARNING: --templateTest argument has been specified\n");
+   }
+   if (args_info.ULsolver_arg!=0) {
+      fprintf(LOG,"WARNING: --ULsolver = %d instead of the default value of 0\n", args_info.ULsolver_arg);
+      fprintf(stderr,"WARNING: --ULsolver = %d instead of the default value of 0\n", args_info.ULsolver_arg);
+   }
+   if (args_info.dopplerMultiplier_given) {
+      fprintf(LOG,"WARNING: --dopplerMultiplier = %g instead of the default value of 1.0\n", args_info.dopplerMultiplier_arg);
+      fprintf(stderr,"WARNING: --dopplerMultiplier = %g instead of the default value of 1.0\n", args_info.dopplerMultiplier_arg);
+   }
+   if (args_info.IHSonly_given) {
+      fprintf(LOG,"WARNING: Only IHS stage is being used\n");
+      fprintf(stderr,"WARNING: Only IHS stage is being used\n");
+   }
+   if (args_info.noNotchHarmonics_given) {
+      fprintf(LOG,"WARNING: Daily and sidereal period harmonics are not being notched out\n");
+      fprintf(stderr,"WARNING: Daily and sidereal period harmonics are not being notched out\n");
+   }
+   if (args_info.calcRthreshold_given) {
+      fprintf(LOG,"WARNING: R threshold values for templates is being calculated with Monte Carlo simulations\n");
+      fprintf(stderr,"WARNING: R threshold values for templates is being calculated with Monte Carlo simulations\n");
+   }
+   if (args_info.BrentsMethod_given) {
+      fprintf(LOG,"WARNING: Using Brent's method for root finding instead of Newton's method.\n");
+      fprintf(stderr,"WARNING: Using Brent's method for root finding instead of Newton's method.\n");
+   }
    if (args_info.antennaOff_given) {
       fprintf(LOG,"WARNING: Antenna pattern weights are all being set to 1.0\n");
       fprintf(stderr,"WARNING: Antenna pattern weights are all being set to 1.0\n");
@@ -2028,10 +2024,32 @@ INT4 readTwoSpectInputParams(inputParamsStruct *params, struct gengetopt_args_in
       fprintf(LOG,"WARNING: Only Gaussian templates will be used\n");
       fprintf(stderr,"WARNING: Only Gaussian templates will be used\n");
    }
-   if (args_info.IHSonly_given) {
-      fprintf(LOG,"WARNING: Only IHS stage is being used\n");
-      fprintf(stderr,"WARNING: Only IHS stage is being used\n");
+   if (args_info.validateSSE_given) {
+      fprintf(LOG,"WARNING: SSE computations will be validated\n");
+      fprintf(stderr,"WARNING: SSE computations will be validated\n");
    }
+   if (args_info.ULoff_given) {
+      fprintf(LOG,"WARNING: --ULoff has been specifed; no upper limits will be produced\n");
+      fprintf(stderr,"WARNING: --ULoff has been specifed; no upper limits will be produced\n");
+   }
+   if (args_info.printSFTtimes_given) {
+      fprintf(LOG,"WARNING: input SFT start times are being saved\n");
+      fprintf(stderr,"WARNING: input SFT start times are being saved\n");
+   }
+   if (args_info.printUsedSFTtimes_given) {
+      fprintf(LOG,"WARNING: used SFT start times are being saved\n");
+      fprintf(stderr,"WARNING: used SFT start times are being saved\n");
+   }
+   if (args_info.randSeed_given) {
+      fprintf(LOG,"NOTE: random seed value %d is being used\n", args_info.randSeed_arg);
+      fprintf(stderr,"NOTE: random seed value %d is being used\n", args_info.randSeed_arg);
+   }
+   if (args_info.chooseSeed_given) {
+      fprintf(LOG,"NOTE: random seed valueis being chosen based on the input search parameters\n");
+      fprintf(stderr,"NOTE: random seed valueis being chosen based on the input search parameters\n");
+   }
+   
+   //Extra warning that bad SFTs are being marked and removed
    if (args_info.markBadSFTs_given) {
       fprintf(LOG,"WARNING: Marking bad SFTs\n");
       fprintf(stderr,"WARNING: Marking bad SFTs\n");
@@ -2074,10 +2092,10 @@ INT4 readTwoSpectInputParams(inputParamsStruct *params, struct gengetopt_args_in
    }
    
    //Adjustments for improper modulation depth inputs
-   //params->dfmin = 0.5*round(2.0*params->dfmin*params->Tcoh)/params->Tcoh;
-   //params->dfmax = 0.5*round(2.0*params->dfmax*params->Tcoh)/params->Tcoh;
+   params->dfmin = 0.5*round(2.0*params->dfmin*params->Tcoh)/params->Tcoh;
+   params->dfmax = 0.5*round(2.0*params->dfmax*params->Tcoh)/params->Tcoh;
    
-   //Upper limit settings
+   //Upper limit settings take span of search values unless specified
    if (args_info.ULfmin_given) params->ULfmin = args_info.ULfmin_arg;            //Upper limit minimum frequency (Hz)
    else params->ULfmin = params->fmin;
    if (args_info.ULfspan_given) params->ULfspan = args_info.ULfspan_arg;         //Upper limit maximum frequency (Hz)
@@ -2101,15 +2119,6 @@ INT4 readTwoSpectInputParams(inputParamsStruct *params, struct gengetopt_args_in
    fprintf(stderr,"FFT plan flag = %d\n", params->FFTplanFlag);
    if (args_info.ihsfomfar_given) fprintf(stderr,"IHS FOM FAR = %f\n", params->ihsfomfar);
    else fprintf(stderr,"IHS FOM = %f\n", params->ihsfom);
-
-   //Root finding method
-   if (args_info.BrentsMethod_given == 0) {
-      fprintf(LOG,"Using Newton's method for root finding.\n");
-      fprintf(stderr,"Using Newton's method for root finding.\n");
-   } else {
-      fprintf(LOG,"Using Brent's method for root finding.\n");
-      fprintf(stderr,"Using Brent's method for root finding.\n");
-   }
    
    //SFT type standard or vladimir (Vladimir's SFT generation program has a different normalization factor than standard v2)
    params->sftType = XLALCalloc(strlen(args_info.sftType_arg)+1, sizeof(*(params->sftType)));
@@ -2166,8 +2175,7 @@ INT4 readTwoSpectInputParams(inputParamsStruct *params, struct gengetopt_args_in
       }
       XLALFree((CHAR*)IFO);
    }
-   
-   
+
    //Read in file names for ephemeris files
    if (!args_info.ephemDir_given) {
       fprintf(stderr, "%s: An ephemeris directory path must be specified.\n", __func__);
@@ -2177,8 +2185,8 @@ INT4 readTwoSpectInputParams(inputParamsStruct *params, struct gengetopt_args_in
       fprintf(stderr, "%s: An ephemeris year/type suffix must be specified.\n", __func__);
       XLAL_ERROR(XLAL_FAILURE);
    }
-   earth_ephemeris = XLALCalloc(strlen(args_info.ephemDir_arg)+25, sizeof(*earth_ephemeris));
-   sun_ephemeris = XLALCalloc(strlen(args_info.ephemDir_arg)+25, sizeof(*sun_ephemeris));
+   earth_ephemeris = XLALCalloc(strlen(args_info.ephemDir_arg)+strlen(args_info.ephemYear_arg)+12, sizeof(*earth_ephemeris));
+   sun_ephemeris = XLALCalloc(strlen(args_info.ephemDir_arg)+strlen(args_info.ephemYear_arg)+12, sizeof(*sun_ephemeris));
    if (earth_ephemeris==NULL) {
       fprintf(stderr, "%s: XLALCalloc(%zu) failed.\n", __func__, sizeof(*earth_ephemeris));
       XLAL_ERROR(XLAL_ENOMEM);
@@ -2190,23 +2198,23 @@ INT4 readTwoSpectInputParams(inputParamsStruct *params, struct gengetopt_args_in
    sprintf(sun_ephemeris, "%s/sun%s.dat", args_info.ephemDir_arg, args_info.ephemYear_arg);
 
    //SFT input
-   if (args_info.sftDir_given && !args_info.sftFile_given) {
-      sft_dir = XLALCalloc(strlen(args_info.sftDir_arg)+20, sizeof(*sft_dir));
-      if (sft_dir==NULL) {
-	 fprintf(stderr, "%s: XLALCalloc(%zu) failed.\n", __func__, sizeof(*sft_dir));
-	 XLAL_ERROR(XLAL_ENOMEM);
-      }
-      sprintf(sft_dir, "%s/*.sft", args_info.sftDir_arg);
-   } else if (!args_info.sftDir_given && args_info.sftFile_given) {
-      sft_dir = XLALCalloc(strlen(args_info.sftFile_arg)+2, sizeof(*sft_dir));
-      if (sft_dir==NULL) {
-	 fprintf(stderr, "%s: XLALCalloc(%zu) failed.\n", __func__, sizeof(*sft_dir));
-	 XLAL_ERROR(XLAL_ENOMEM);
-      }
-      sprintf(sft_dir, "%s", args_info.sftFile_arg);
-   } else if ((args_info.sftDir_given && args_info.sftFile_given) || !(args_info.sftDir_given && args_info.sftFile_given)) {
+   if ((args_info.sftDir_given && args_info.sftFile_given) || !(args_info.sftDir_given && args_info.sftFile_given)) {
       fprintf(stderr, "%s: One of either sftDir or sftFile must be given but not both or neither.\n", __func__);
       XLAL_ERROR(XLAL_FAILURE);
+   } else if (args_info.sftDir_given && !args_info.sftFile_given) {
+      sft_dir_file = XLALCalloc(strlen(args_info.sftDir_arg)+20, sizeof(*sft_dir_file));
+      if (sft_dir_file==NULL) {
+	 fprintf(stderr, "%s: XLALCalloc(%zu) failed.\n", __func__, sizeof(*sft_dir_file));
+	 XLAL_ERROR(XLAL_ENOMEM);
+      }
+      sprintf(sft_dir_file, "%s/*.sft", args_info.sftDir_arg);
+   } else if (!args_info.sftDir_given && args_info.sftFile_given) {
+      sft_dir_file = XLALCalloc(strlen(args_info.sftFile_arg)+2, sizeof(*sft_dir_file));
+      if (sft_dir_file==NULL) {
+	 fprintf(stderr, "%s: XLALCalloc(%zu) failed.\n", __func__, sizeof(*sft_dir_file));
+	 XLAL_ERROR(XLAL_ENOMEM);
+      }
+      sprintf(sft_dir_file, "%s", args_info.sftFile_arg);
    }
    
    return 0;

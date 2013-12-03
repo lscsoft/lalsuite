@@ -26,102 +26,104 @@
 extern "C" {
 #endif
 
-/** \addtogroup Units_h
-    \author J. T. Whelan <john.whelan@ligo.org>
-
-    \brief Provides prototypes for manipulation of units and declares
-    \c extern constants for the basic and derived SI units.
-
-    \heading{Synopsis}
-    \code
-    #include <lal/Units.h>
-    \endcode
-
-This header provides prototypes for functions to manipulate
-the \c LALUnit structure.  It also defines \c extern
-constants for a set of predefined units, which are designed to make
-the structure easier to use.  For instance, to determine whether a
-quantity has units of strain per root hertz, one constructs the unit
-&quot;strain per root hertz&quot; from the predefined \c lalStrainUnit and
-\c lalHertzUnit constant structures using the
-LALUnitRaise() and LALUnitMultiply() functions, then
-compares that to the unit structure in question using the
-LALUnitCompare() function.
-
-The LALUnit datatype itself is included in the header
-\ref LALDatatypes.h, and defines a unit in terms of an integer
-power of ten multiplier along with rational powers of the basic SI
-units (meters, kilograms, seconds, Amperes, and Kelvins) and two
-custom units (strain and ADC counts).
-
-\heading{XLAL interface to Units.h functions}
-
-XLALUnitAsString() converts a ::LALUnit structure into a character
-string of maximum length \c length (including NUL termination)
-representation of the units.  The inverse function, XLALParseUnitString()
-parses a character string to produce a \c LALUnit structure; if
-\c output is \c NULL, memory for the output is allocated.  If the input
-\c string is \c NULL or is empty then the output units are
-dimensionless: lalDimensionlessUnit.
-
-XLALUnitNormalize() puts a ::LALUnit structure into normal form
-by simplifying all unit exponent fractions to their simplest form.
-
-XLALUnitCompare() compares two ::LALUnit structures: they are the
-same if their normal forms are identical.
-
-XLALUnitMultiply() multiplies two ::LALUnit structures.  The result
-is put into normal form.
-
-XLALUnitRaiseRAT4() raises a ::LALUnit structure to a rational
-power given by the ::RAT4 structure \c power.
-XLALUnitRaiseINT2() raises a ::LALUnit structure to an integer
-power \c power.
-XLALUnitSquare() produces the square of a ::LALUnit structure.
-XLALUnitSqrt() produces the square-root of a ::LALUnit structure.
-
-\heading{Return Values}
-
-XLALUnitAsString() returns the pointer to the input \c string, which
-is populated with the unit string if successful.  If there is a failure,
-XLALUnitAsString() returns a \c NULL pointer and \c ::xlalErrno
-is set to one of the following values:  \c #XLAL_EFAULT if one of the
-input pointers is \c NULL or \c #XLAL_EBADLEN if the length of the
-string is insufficent for the unit string.
-
-XLALParseUnitString() returns the pointer \c output upon return
-or a pointer to newly allocated memory if \c output was \c NULL;
-on failure, \c XLALParseUnitString returns \c NULL and sets
-\c ::xlalErrno to one of the following values:  \c #XLAL_ENOMEM
-if the routine was unable to allocate memory for the output or
-\c #XLAL_EFAILED if the routine was unable to parse the unit string.
-
-XLALUnitNormalize() returns 0 upon success or \c #XLAL_FAILURE
-if the input pointer is \c NULL, in which case \c xlalErrno
-is set to \c #XLAL_EFAULT
-
-XLALUnitCompare() returns 0 if the the normal form of the two unit
-structures are the same or \> 0 if they are different.  It returns
-\c #XLAL_FAILURE and \c ::xlalErrno is set to \c #XLAL_EFAULT if
-one of the input pointers is \c NULL.
-
-XLALUnitMultiply(), XLALUnitRaiseRAT4(), XLALUnitRaiseINT2(), XLALUnitSquare() and
-XLALUnitSqrt() all return a pointer to the output unit structure
-\c output upon success or \c NULL upon failure.  If there is
-a failure, \c ::xlalErrno is set to one of the following values:
-\c #XLAL_EFAULT if one of the input pointers is \c NULL,
-\c #XLAL_ERANGE if one of the unit powers exceeds the allowed range,
-or \c #XLAL_EINVAL (for the raise functions only) if the unit power
-would not be an integer.
-
-@{
-\defgroup UnitDefs_c 		Module UnitDefs.c
-\defgroup UnitNormalize_c 	Module UnitNormalize.c
-\defgroup UnitRaise_c 		Module UnitRaise.c
-\defgroup UnitMultiply_c 	Module UnitMultiply.c
-\defgroup UnitCompare_c 	Module UnitCompare.c
-@}
-*/
+/**
+ * \addtogroup Units_h
+ * \author J. T. Whelan <john.whelan@ligo.org>
+ *
+ * \brief Provides prototypes for manipulation of units and declares
+ * \c extern constants for the basic and derived SI units.
+ *
+ * ### Synopsis ###
+ *
+ * \code
+ * #include <lal/Units.h>
+ * \endcode
+ *
+ * This header provides prototypes for functions to manipulate
+ * the \c LALUnit structure.  It also defines \c extern
+ * constants for a set of predefined units, which are designed to make
+ * the structure easier to use.  For instance, to determine whether a
+ * quantity has units of strain per root hertz, one constructs the unit
+ * &quot;strain per root hertz&quot; from the predefined \c lalStrainUnit and
+ * \c lalHertzUnit constant structures using the
+ * LALUnitRaise() and LALUnitMultiply() functions, then
+ * compares that to the unit structure in question using the
+ * LALUnitCompare() function.
+ *
+ * The LALUnit datatype itself is included in the header
+ * \ref LALDatatypes.h, and defines a unit in terms of an integer
+ * power of ten multiplier along with rational powers of the basic SI
+ * units (meters, kilograms, seconds, Amperes, and Kelvins) and two
+ * custom units (strain and ADC counts).
+ *
+ * ### XLAL interface to Units.h functions ###
+ *
+ * XLALUnitAsString() converts a ::LALUnit structure into a character
+ * string of maximum length \c length (including NUL termination)
+ * representation of the units.  The inverse function, XLALParseUnitString()
+ * parses a character string to produce a \c LALUnit structure; if
+ * \c output is \c NULL, memory for the output is allocated.  If the input
+ * \c string is \c NULL or is empty then the output units are
+ * dimensionless: lalDimensionlessUnit.
+ *
+ * XLALUnitNormalize() puts a ::LALUnit structure into normal form
+ * by simplifying all unit exponent fractions to their simplest form.
+ *
+ * XLALUnitCompare() compares two ::LALUnit structures: they are the
+ * same if their normal forms are identical.
+ *
+ * XLALUnitMultiply() multiplies two ::LALUnit structures.  The result
+ * is put into normal form.
+ *
+ * XLALUnitRaiseRAT4() raises a ::LALUnit structure to a rational
+ * power given by the ::RAT4 structure \c power.
+ * XLALUnitRaiseINT2() raises a ::LALUnit structure to an integer
+ * power \c power.
+ * XLALUnitSquare() produces the square of a ::LALUnit structure.
+ * XLALUnitSqrt() produces the square-root of a ::LALUnit structure.
+ *
+ * ### Return Values ###
+ *
+ * XLALUnitAsString() returns the pointer to the input \c string, which
+ * is populated with the unit string if successful.  If there is a failure,
+ * XLALUnitAsString() returns a \c NULL pointer and \c ::xlalErrno
+ * is set to one of the following values:  \c #XLAL_EFAULT if one of the
+ * input pointers is \c NULL or \c #XLAL_EBADLEN if the length of the
+ * string is insufficent for the unit string.
+ *
+ * XLALParseUnitString() returns the pointer \c output upon return
+ * or a pointer to newly allocated memory if \c output was \c NULL;
+ * on failure, \c XLALParseUnitString returns \c NULL and sets
+ * \c ::xlalErrno to one of the following values:  \c #XLAL_ENOMEM
+ * if the routine was unable to allocate memory for the output or
+ * \c #XLAL_EFAILED if the routine was unable to parse the unit string.
+ *
+ * XLALUnitNormalize() returns 0 upon success or \c #XLAL_FAILURE
+ * if the input pointer is \c NULL, in which case \c xlalErrno
+ * is set to \c #XLAL_EFAULT
+ *
+ * XLALUnitCompare() returns 0 if the the normal form of the two unit
+ * structures are the same or \> 0 if they are different.  It returns
+ * \c #XLAL_FAILURE and \c ::xlalErrno is set to \c #XLAL_EFAULT if
+ * one of the input pointers is \c NULL.
+ *
+ * XLALUnitMultiply(), XLALUnitRaiseRAT4(), XLALUnitRaiseINT2(), XLALUnitSquare() and
+ * XLALUnitSqrt() all return a pointer to the output unit structure
+ * \c output upon success or \c NULL upon failure.  If there is
+ * a failure, \c ::xlalErrno is set to one of the following values:
+ * \c #XLAL_EFAULT if one of the input pointers is \c NULL,
+ * \c #XLAL_ERANGE if one of the unit powers exceeds the allowed range,
+ * or \c #XLAL_EINVAL (for the raise functions only) if the unit power
+ * would not be an integer.
+ *
+ * @{
+ * \defgroup UnitDefs_c 		Module UnitDefs.c
+ * \defgroup UnitNormalize_c 	Module UnitNormalize.c
+ * \defgroup UnitRaise_c 		Module UnitRaise.c
+ * \defgroup UnitMultiply_c 	Module UnitMultiply.c
+ * \defgroup UnitCompare_c 	Module UnitCompare.c
+ * @}
+ */
 /*@{*/
 
 /** \name Error Codes */
@@ -147,7 +149,8 @@ would not be an integer.
 #define UNITSH_MSGEPARSE        "Error parsing unit string"
 /** \endcond */
 
-/** A four-byte rational number, used as a parameter structure for
+/**
+ * A four-byte rational number, used as a parameter structure for
  * LALUnitRaise().
  */
 typedef struct
@@ -157,7 +160,8 @@ tagRAT4
   UINT2 denominatorMinusOne;	/**< One less than the denominator */
 } RAT4;
 
-/** Consists of a pair of unit structures; used as an input structure for
+/**
+ * Consists of a pair of unit structures; used as an input structure for
  * the LALUnitCompare() and LALUnitMultiply() functions.
  */
 typedef struct
@@ -179,6 +183,7 @@ LALUnitPair;
 
 /* XLAL routines */
 char * XLALUnitAsString( char *string, UINT4 length, const LALUnit *input );
+char * XLALUnitToString( const LALUnit *input );
 LALUnit * XLALParseUnitString( LALUnit *output, const char *string );
 int XLALUnitNormalize( LALUnit *unit );
 int XLALUnitCompare( const LALUnit *unit1, const LALUnit *unit2 );

@@ -35,14 +35,16 @@ extern "C" {
 } /* so that editors will match preceding brace */
 #endif
 
-/** \defgroup BBHPhenomCoeffs_h Header BBHPhenomCoeffs.h
+/**
+ * \defgroup BBHPhenomCoeffs_h Header BBHPhenomCoeffs.h
  * \ingroup pkg_CBC_NEW
  * \author Santamaria L, Krishnan B, Whelan JT, Dias M, Parameswaran A.
  *
  * \brief Provides coëfficients for the phenomenological waveforms
  * introduced by Ajith et al. in arXiv:0710.2335 [gr-qc]
  *
- * \heading{Synopsis}
+ * ### Synopsis ###
+ *
  * \code
  * #include <lal/BBHPhenomCoeffs.h>
  * \endcode

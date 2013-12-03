@@ -32,10 +32,6 @@
 #define Pi_p2by3 2.1450293971110256000774441009412356
 #define log4 1.3862943611198906188344642429163531
 
-static size_t NextPow2(const size_t n) {
-  return 1 << (size_t) ceil(log2(n));
-}
-
 /**
  * Compute the dimensionless, aligned-spin parameter chi as used in the
  * TaylorF2RedSpin waveform. This is different from chi in IMRPhenomB!
@@ -102,6 +98,7 @@ int XLALSimInspiralTaylorF2ReducedSpin(
     const REAL8 m2_SI,               /**< mass of companion 2 (kg) */
     const REAL8 chi,                 /**< dimensionless aligned-spin param */
     const REAL8 fStart,              /**< start GW frequency (Hz) */
+    const REAL8 fEnd,                /**< highest GW frequency (Hz) of waveform generation - if 0, end at Schwarzschild ISCO */
     const REAL8 r,                   /**< distance of source (m) */
     const INT4 phaseO,               /**< twice PN phase order */
     const INT4 ampO                  /**< twice PN amplitude order */
@@ -124,7 +121,7 @@ int XLALSimInspiralTaylorF2ReducedSpin(
     REAL8 psiNewt, psi2, psi3, psi4, psi5, psi6, psi6L, psi7, psi3S, psi4S, psi5S;
     REAL8 alpha2, alpha3, alpha4, alpha5, alpha6, alpha6L, alpha7, alpha3S, alpha4S, alpha5S;
     REAL8 eta_fac = -113. + 76. * eta;
-    size_t i, n, iStart, iISCO;
+    size_t i, n, iStart;
     COMPLEX16 *data = NULL;
     LIGOTimeGPS tStart = {0, 0};
 
@@ -140,8 +137,11 @@ int XLALSimInspiralTaylorF2ReducedSpin(
     if (phaseO > 7) XLAL_ERROR(XLAL_EDOM); /* only implemented to pN 3.5 */
 
     /* allocate htilde */
-    f_max = NextPow2(fISCO);
-    n = f_max / deltaF + 1;
+    if ( fEnd == 0. ) // End at ISCO
+        f_max = fISCO;
+    else // End at user-specified freq.
+        f_max = fEnd;
+    n = (size_t) (f_max / deltaF + 1);
     XLALGPSAdd(&tStart, -1 / deltaF);  /* coalesce at t=0 */
     *htilde = XLALCreateCOMPLEX16FrequencySeries("htilde: FD waveform", &tStart, 0.0, deltaF, &lalStrainUnit, n);
     if (!(*htilde)) XLAL_ERROR(XLAL_EFUNC);
@@ -149,8 +149,8 @@ int XLALSimInspiralTaylorF2ReducedSpin(
     XLALUnitDivide(&((*htilde)->sampleUnits), &((*htilde)->sampleUnits), &lalSecondUnit);
 
     /* extrinsic parameters */
-    amp0 = pow(m_sec, 5./6.) * sqrt(5. * eta / 24.) / (Pi_p2by3 * r / LAL_C_SI);
-    shft = -LAL_TWOPI * (tStart.gpsSeconds + 1e-9 * tStart.gpsNanoSeconds);
+    amp0 = -pow(m_sec, 5./6.) * sqrt(5.*eta / 24.) / (Pi_p2by3 * r / LAL_C_SI);
+    shft = LAL_TWOPI * (tStart.gpsSeconds + 1e-9 * tStart.gpsNanoSeconds);
 
     /* spin terms in the amplitude and phase (in terms of the reduced
      * spin parameter */
@@ -226,11 +226,10 @@ int XLALSimInspiralTaylorF2ReducedSpin(
             break;
     }
 
+    /* Fill with non-zero vals from fStart to f_max */
     iStart = (size_t) ceil(fStart / deltaF);
-    iISCO = (size_t) (fISCO / deltaF);
-    iISCO = (iISCO < n) ? iISCO : n;  /* overflow protection; should we warn? */
     data = (*htilde)->data->data;
-    for (i = iStart; i < iISCO; i++) {
+    for (i = iStart; i < n; i++) {
         /* fourier frequency corresponding to this bin */
         const REAL8 f = i * deltaF;
         const REAL8 v3 = piM*f;
@@ -252,15 +251,16 @@ int XLALSimInspiralTaylorF2ReducedSpin(
             + (alpha6 + alpha6L * (LAL_GAMMA + log4 + logv)) * v6
             + alpha7 * v7);
 
-        data[i] = amp * cos(Psi + shft * f - 2.*phic + LAL_PI_4) - I * (amp * sin(Psi + shft * f - 2.*phic + LAL_PI_4));
+        data[i] = amp * cos(Psi + shft * f - 2.*phic - LAL_PI_4)
+            - I * (amp * sin(Psi + shft * f - 2.*phic - LAL_PI_4));
     }
 
     return XLAL_SUCCESS;
 }
 
 /**
-Compute the chirp time of the "reduced-spin" templates
-*/
+ * Compute the chirp time of the "reduced-spin" templates
+ */
 REAL8 XLALSimInspiralTaylorF2ReducedSpinChirpTime(
     const REAL8 fStart,  /**< start GW frequency (Hz) */
     const REAL8 m1_SI,   /**< mass of companion 1 (kg) */

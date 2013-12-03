@@ -77,7 +77,7 @@ bin_SCRIPTS = \
 endif
 
 pkgdata_DATA = ring_test.ini ringpost_remove_cluster.sql
-AM_CPPFLAGS = -I$(top_srcdir)/src -I$(top_srcdir)/src/lalapps -I$(top_builddir)/src/lalapps
+AM_CPPFLAGS = -I$(top_srcdir)/src -I$(top_srcdir)/src/lalapps -I$(top_builddir)/src/lalapps -DPKG_DATA_DIR='"$(pkgdatadir)/"'
 LDADD = $(top_builddir)/src/lalapps/liblalapps.la
 CLEANFILES = python_config.sed lalapps_ring_pipe lalapps_ringcorse
 EXTRA_DIST = ring.c ring_pipe.in ringcorse.in ring.py $(DATA)
@@ -97,4 +97,4 @@ lalapps_ringcorse: $(srcdir)/ringcorse.in python_config.sed
 	@chmod +x lalapps_ringcorse
 
 BUILT_SOURCES =
-include $(top_srcdir)/misc/vcsID.common
+include $(top_srcdir)/gnuscripts/vcsID.common

@@ -106,13 +106,11 @@ main(int argc, char *argv[])
   REAL4Vector *ts1 = NULL, *ts2 = NULL;
   REAL4 maxd;
 
-  lalDebugLevel = 0;
 
   /* set LAL error-handler */
   lal_errhandler = LAL_ERR_EXIT;	/* exit with returned status-code on error */
 
   /* register all user-variables */
-  LAL_CALL (LALGetDebugLevel (&status, argc, argv, 'd'), &status);
   LAL_CALL ( initUserVars (&status, &uvar), &status );
 
   /* read cmdline & cfgfile  */
@@ -201,7 +199,8 @@ initUserVars (LALStatus *status, UserVar *uvar)
 } /* initUserVars() */
 
 
-/** Compare two REAL8 vectors, returns a measure of the difference.
+/**
+ * Compare two REAL8 vectors, returns a measure of the difference.
  */
 REAL4
 XLALcompareREAL4Vectors ( REAL4Vector *ts1, REAL4Vector *ts2 )
@@ -257,7 +256,8 @@ XLALcompareREAL4Vectors ( REAL4Vector *ts1, REAL4Vector *ts2 )
   } /* XLALcompareREAL4Vectors() */
 
 
-/** Load timeseries from binary input file into REAL4Vector
+/**
+ * Load timeseries from binary input file into REAL4Vector
  */
 REAL4Vector *
 XLALREAL4VectorFromFile ( const CHAR *fname )

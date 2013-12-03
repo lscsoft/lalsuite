@@ -28,7 +28,7 @@
  * Outputs a file with three columns corresponding to time (in seconds),
  * \f$h_+\f$, and \f$h_\times\f$.
  *
- * \heading{Usage}
+ * ### Usage ###
  *
  * <tt>LALSpinInspiralRDTest m1 m2 S1x S1y S1z S2x S2y S2z inclination polarization finit distance PNorder [outputfile]</tt>
  *

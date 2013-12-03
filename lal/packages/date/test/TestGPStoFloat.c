@@ -25,7 +25,6 @@
 #include <lal/LALStdlib.h>
 #include <lal/Date.h>
 
-INT4 lalDebugLevel = 0;
 
 static int test_random_doubles(unsigned int seed)
 {
@@ -55,10 +54,8 @@ static int test_random_doubles(unsigned int seed)
 
 
 
-int main(int argc, char *argv[])
+int main(void)
 {
-  if (argc > 1)
-    lalDebugLevel = atoi(argv[1]);
 
   /* 5 */
   if(test_random_doubles(time(NULL)))

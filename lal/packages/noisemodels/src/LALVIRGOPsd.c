@@ -26,25 +26,25 @@
 #endif
 
 /**
-\author Sathyaprakash, B. S., Cokelaer T.
-\ingroup LALNoiseModels_h
-\brief Module to calculate the noise power spectral density for the VIRGO detector.
-
-\heading{Description}
-
-The module takes as an input a frequency \f$f\f$ in Hz, and it
-calculates the noise spectral density (per Hz) \f$S_{h}(f)\f$
-for that frequency. The noise PSD is based on data provided by
-J-Y. Vinet and is approximated by
-the following:
-\f{equation}{
-   S_h(f) =
-   s_0 \left ( \frac {7.87f}{f_0} \right )^{-4.8} + \frac{6}{17} \frac{f_0}{f}
-   + \left [1 + \left (\frac {f}{f_0} \right)^2 \right ],
-\f}
-where \f$s_0=10.2e-46\f$
-
-*/
+ * \author Sathyaprakash, B. S., Cokelaer T.
+ * \ingroup LALNoiseModels_h
+ * \brief Module to calculate the noise power spectral density for the VIRGO detector.
+ *
+ * ### Description ###
+ *
+ * The module takes as an input a frequency \f$f\f$ in Hz, and it
+ * calculates the noise spectral density (per Hz) \f$S_{h}(f)\f$
+ * for that frequency. The noise PSD is based on data provided by
+ * J-Y. Vinet and is approximated by
+ * the following:
+ * \f{equation}{
+ * S_h(f) =
+ * s_0 \left ( \frac {7.87f}{f_0} \right )^{-4.8} + \frac{6}{17} \frac{f_0}{f}
+ * + \left [1 + \left (\frac {f}{f_0} \right)^2 \right ],
+ * \f}
+ * where \f$s_0=10.2e-46\f$
+ *
+ */
 void LALVIRGOPsd (LALStatus UNUSED *status, REAL8 *psd, REAL8 f)
 {
    REAL8 s0, x;

@@ -17,10 +17,12 @@
 *  MA  02111-1307  USA
 */
 
-// ---------- SEE LALError.dox for doxygen documentation ----------
+/* ---------- SEE LALError.dox for doxygen documentation ---------- */
 
 #ifndef _LALERROR_H
 #define _LALERROR_H
+
+#include <lal/LALDebugLevel.h>
 
 #include <lal/LALDatatypes.h>
 
@@ -28,92 +30,63 @@
 
 #ifdef  __cplusplus
 extern "C" {
+#elif 0
+}       /* so that editors will match preceding brace */
 #endif
 
-/* lalDebugLevel bit field values: */
-enum
-{
-  LALNDEBUG  = 0,
-  LALERROR   = 1,
-  LALWARNING = 2,
-  LALINFO    = 4,
-  LALTRACE   = 8,
-  LALMEMINFO = 16,
-  LALNMEMDBG = 32,
-  LALNMEMPAD = 64,
-  LALNMEMTRK = 128,
-  LALMEMDBG  = 16384 /* convenience: don't combine with other bits */
-};
+#ifndef SWIG    /* exclude from SWIG interface */
 
-/* composite lalDebugLevels: */
-enum { LALMSGLVL1  = LALERROR };
-enum { LALMSGLVL2  = LALERROR | LALWARNING };
-enum { LALMSGLVL3  = LALERROR | LALWARNING | LALINFO };
-enum { LALMEMTRACE = LALTRACE | LALMEMINFO };
-enum { LALALLDBG   = ~( LALNMEMDBG | LALNMEMPAD | LALNMEMTRK ) };
+extern int (*lalRaiseHook) (int, const char *, ...);
+extern void (*lalAbortHook) (const char *, ...);
 
-#ifndef SWIG /* exclude from SWIG interface */
+/** \addtogroup LALError_h */ /*@{ */
 
-extern int  ( *lalRaiseHook )( int, const char *, ... );
-extern void ( *lalAbortHook )( const char *, ... );
+int LALPrintError(const char *fmt, ...);
 
-/** \addtogroup LALError_h */ /*@{*/
-int
-LALPrintError( const char *fmt, ... );
+int LALRaise(int sig, const char *fmt, ...);
 
-int
-LALRaise( int sig, const char *fmt, ... );
+void LALAbort(const char *fmt, ...);
 
-void
-LALAbort( const char *fmt, ... );
+int LALError(LALStatus * status, const char *statement);
 
-int
-LALError( LALStatus *status, const char *statement );
+int LALWarning(LALStatus * status, const char *warning);
 
-int
-LALWarning( LALStatus *status, const char *warning );
+int LALInfo(LALStatus * status, const char *info);
 
-int
-LALInfo( LALStatus *status, const char *info );
-
-int
-LALTrace( LALStatus *status, int exitflg );
+int LALTrace(LALStatus * status, int exitflg);
 
 /*@}*/
 
 int
-LALInitStatus( LALStatus *status, const char *function, const char *id,
-               const char *file, const int line );
+LALInitStatus(LALStatus * status, const char *function,
+              const char *id, const char *file, const int line);
+
+int LALPrepareReturn(LALStatus * status, const char *file, const int line);
 
 int
-LALPrepareReturn( LALStatus *status, const char *file, const int line );
+LALAttatchStatusPtr(LALStatus * status, const char *file, const int line);
 
 int
-LALAttatchStatusPtr( LALStatus *status, const char *file, const int line );
+LALDetatchStatusPtr(LALStatus * status, const char *file, const int line);
 
 int
-LALDetatchStatusPtr( LALStatus *status, const char *file, const int line );
+LALPrepareAbort(LALStatus * status, const INT4 code, const char *mesg,
+                const char *file, const int line);
 
 int
-LALPrepareAbort( LALStatus *status, const INT4 code, const char *mesg,
-                 const char *file, const int line );
+LALPrepareAssertFail(LALStatus * status, const INT4 code,
+                     const char *mesg, const char *statement,
+                     const char *file, const int line);
 
 int
-LALPrepareAssertFail( LALStatus *status, const INT4 code, const char *mesg,
-                      const char *statement, const char *file,
-                      const int line );
-
-int
-LALCheckStatusPtr( LALStatus *status, const char *statement, const char *file,
-                   const int line );
+LALCheckStatusPtr(LALStatus * status, const char *statement,
+                  const char *file, const int line);
 
 #ifdef NOLALMACROS
 
-void
-FREESTATUSPTR( LALStatus *status );
+void FREESTATUSPTR(LALStatus * status);
 
-void
-REPORTSTATUS( LALStatus *status );
+void REPORTSTATUS(LALStatus * status);
 
 #endif
 
@@ -164,7 +137,9 @@ REPORTSTATUS( LALStatus *status );
 
 #endif /* SWIG */
 
-#ifdef  __cplusplus
+#if 0
+{       /* so that editors will match succeeding brace */
+#elif defined(__cplusplus)
 }
 #endif
 

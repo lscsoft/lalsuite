@@ -26,7 +26,6 @@
 #include <lal/Date.h>
 #include <XLALLeapSeconds.h>
 
-INT4 lalDebugLevel = 0;
 
 static int do_test(int gpssec, int tai_utc_before, int tai_utc_after)
 {
@@ -68,12 +67,9 @@ static int do_test(int gpssec, int tai_utc_before, int tai_utc_after)
 }
 
 
-int main(int argc, char *argv[])
+int main(void)
 {
 	int i;
-
-	if(argc > 1)
-		lalDebugLevel = atoi(argv[1]);
 
 	for(i = 1; i < numleaps; i++)
 		do_test(leaps[i].gpssec, leaps[i-1].taiutc, leaps[i].taiutc);

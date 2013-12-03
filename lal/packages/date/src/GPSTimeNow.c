@@ -16,12 +16,18 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
+#include <config.h>
+
+#ifdef HAVE_GMTIME_S
+#define gmtime_r(t, tm) gmtime_s(tm, t)
+#endif
 
 #include <time.h>
 #include <lal/Date.h>
 #include <lal/XLALError.h>
 
-/** \ingroup Date_h
+/**
+ * \ingroup Date_h
  * \brief Populate the LIGOTimeGPS argument with the current system time as
  * returned by time(2) converted to GPS seconds.  Returns the address of
  * the LIGOTimeGPS argument or NULL on error.  On error, the GPS time is
@@ -39,8 +45,10 @@ XLALGPSTimeNow (
     )
 {
   time_t ticks = time(NULL);
+  struct tm tm;
 
-  gpstime->gpsSeconds = XLALUTCToGPS(gmtime(&ticks));
+  gmtime_r(&ticks, &tm);
+  gpstime->gpsSeconds = XLALUTCToGPS(&tm);
   gpstime->gpsNanoSeconds = 0;
 
   /*

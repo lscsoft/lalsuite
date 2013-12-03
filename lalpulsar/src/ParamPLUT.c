@@ -42,27 +42,29 @@
  */
 
 /**
-\author Sintes, A. M., Krishnan, B.
-\file
-\ingroup LUT_h
-\brief Function that calculates the parameters needed for generating the look-up-table.
-
-\heading{Description}
-This routine calculates the parameters needed for generating the look-up-table.
-It is valid for all cases in which the Hough transform
- master equation is of the form:
-\f$f(t)\f$-\c f0 = \f$\vec\xi \cdot (\hat n-\hat N)\f$, or
-equivalently,
-\f$\cos(\phi)\f$ = (\f$f(t)-\f$\c f0 + \f$\vec\xi \cdot\hat N\f$)/\f$\vert\vec\xi\vert\f$.
-\f$\vec\xi\f$, hereafter \c xi, is calculated according to the demodulation procedure used in a
- first stage.\\
-
-\heading{Uses}
-\code
-LALRotatePolarU()
-\endcode
-
-*/
+ * \author Sintes, A. M., Krishnan, B.
+ * \file
+ * \ingroup LUT_h
+ * \brief Function that calculates the parameters needed for generating the look-up-table.
+ *
+ * ### Description ###
+ *
+ * This routine calculates the parameters needed for generating the look-up-table.
+ * It is valid for all cases in which the Hough transform
+ * master equation is of the form:
+ * \f$f(t)\f$-\c f0 = \f$\vec\xi \cdot (\hat n-\hat N)\f$, or
+ * equivalently,
+ * \f$\cos(\phi)\f$ = (\f$f(t)-\f$\c f0 + \f$\vec\xi \cdot\hat N\f$)/\f$\vert\vec\xi\vert\f$.
+ * \f$\vec\xi\f$, hereafter \c xi, is calculated according to the demodulation procedure used in a
+ * first stage.\\
+ *
+ * ### Uses ###
+ *
+ * \code
+ * LALRotatePolarU()
+ * \endcode
+ *
+ */
 
 #include <lal/LUT.h>
 

@@ -18,47 +18,48 @@
 */
 
 /**
-
-\author Sathyaprakash, B. S.
-\file
-\ingroup LALInspiral_h
-
-\brief The code \ref LALInspiralFrequency3.c calculates the frequency the
-waveform from an inspiralling binary system as a function of time up to 3.5
-post-Nowtonian order.
-
-\heading{Prototypes}
-
-<tt>LALInspiralFrequency3()</tt>
-<ul>
-<li> \c frequency: Output containing the inspiral waveform.</li>
-<li> \c td: Input containing PN expansion coefficients \f$F_k\f$ (cf. Table\tableref{table_flux})
-of frequency as a function of time.</li>
-<li> \c ak: Input containing all PN expansion coefficients.</li>
-</ul>
-
-\heading{Description}
-
-This module computes the instantaneous frequency of an inspiral wave using
-\f{equation}{
-F(t) = F_N(\theta) \sum F_k \theta^k,
-\f}
-where the expansion coefficients \f$F_k,\f$ Newtonian value \f$F_N\f$ and the
-time-variable \f$\theta\f$ are defined in Table\tableref{table_flux}.
-
-\heading{Algorithm}
-
-
-\heading{Uses}
-None.
-
-\heading{Notes}
-The frequency evolution defined by post-Newtonian expansion is not monotonic.
-Indeed, the equations become highly inaccurate close to the last stable orbit (lso)
-and breakdown at or slightly after lso, and the frequency begins to decrease at later times.
-It turns out that the evolution is monotonic at least up to lso.
-
-*/
+ * \author Sathyaprakash, B. S.
+ * \file
+ * \ingroup LALInspiral_h
+ *
+ * \brief The code \ref LALInspiralFrequency3.c calculates the frequency the
+ * waveform from an inspiralling binary system as a function of time up to 3.5
+ * post-Nowtonian order.
+ *
+ * ### Prototypes ###
+ *
+ * <tt>LALInspiralFrequency3()</tt>
+ * <ul>
+ * <li> \c frequency: Output containing the inspiral waveform.</li>
+ * <li> \c td: Input containing PN expansion coefficients \f$F_k\f$ (cf. \tableref{table_flux})
+ * of frequency as a function of time.</li>
+ * <li> \c ak: Input containing all PN expansion coefficients.</li>
+ * </ul>
+ *
+ * ### Description ###
+ *
+ * This module computes the instantaneous frequency of an inspiral wave using
+ * \f{equation}{
+ * F(t) = F_N(\theta) \sum F_k \theta^k,
+ * \f}
+ * where the expansion coefficients \f$F_k,\f$ Newtonian value \f$F_N\f$ and the
+ * time-variable \f$\theta\f$ are defined in \tableref{table_flux}.
+ *
+ * ### Algorithm ###
+ *
+ *
+ * ### Uses ###
+ *
+ * None.
+ *
+ * ### Notes ###
+ *
+ * The frequency evolution defined by post-Newtonian expansion is not monotonic.
+ * Indeed, the equations become highly inaccurate close to the last stable orbit (lso)
+ * and breakdown at or slightly after lso, and the frequency begins to decrease at later times.
+ * It turns out that the evolution is monotonic at least up to lso.
+ *
+ */
 
 #include <lal/LALStdlib.h>
 #include <lal/LALInspiral.h>
@@ -71,7 +72,7 @@ LALInspiralFrequency3_0PN (
    expnCoeffs *ak
    )
 {
-  XLALPrintDeprecationWarning("LALInspiralFrequency3_0PN", "XLALInspiralFrequency3_0PN");
+  XLAL_PRINT_DEPRECATION_WARNING("XLALInspiralFrequency3_0PN");
 
   INITSTATUS(status);
   ATTATCHSTATUSPTR(status);
@@ -118,7 +119,7 @@ LALInspiralFrequency3_2PN (
    expnCoeffs *ak
    )
 {
-  XLALPrintDeprecationWarning("LALInspiralFrequency3_2PN", "XLALInspiralFrequency3_2PN");
+  XLAL_PRINT_DEPRECATION_WARNING("XLALInspiralFrequency3_2PN");
 
   INITSTATUS(status);
   ATTATCHSTATUSPTR(status);
@@ -167,7 +168,7 @@ LALInspiralFrequency3_3PN (
    expnCoeffs *ak
    )
 {
-  XLALPrintDeprecationWarning("LALInspiralFrequency3_3PN", "XLALInspiralFrequency3_3PN");
+  XLAL_PRINT_DEPRECATION_WARNING("XLALInspiralFrequency3_3PN");
 
   INITSTATUS(status);
   ATTATCHSTATUSPTR(status);
@@ -217,7 +218,7 @@ LALInspiralFrequency3_4PN (
    expnCoeffs *ak
    )
 {
-  XLALPrintDeprecationWarning("LALInspiralFrequency3_4PN", "XLALInspiralFrequency3_4PN");
+  XLAL_PRINT_DEPRECATION_WARNING("XLALInspiralFrequency3_4PN");
 
   INITSTATUS(status);
   ATTATCHSTATUSPTR(status);
@@ -269,7 +270,7 @@ LALInspiralFrequency3_5PN (
    expnCoeffs *ak
    )
 {
-  XLALPrintDeprecationWarning("LALInspiralFrequency3_5PN", "XLALInspiralFrequency3_5PN");
+  XLAL_PRINT_DEPRECATION_WARNING("XLALInspiralFrequency3_5PN");
 
   INITSTATUS(status);
   ATTATCHSTATUSPTR(status);
@@ -323,7 +324,7 @@ LALInspiralFrequency3_6PN (
    expnCoeffs *ak
    )
 {
-  XLALPrintDeprecationWarning("LALInspiralFrequency3_6PN", "XLALInspiralFrequency3_6PN");
+  XLAL_PRINT_DEPRECATION_WARNING("XLALInspiralFrequency3_6PN");
 
   INITSTATUS(status);
   ATTATCHSTATUSPTR(status);
@@ -379,7 +380,7 @@ LALInspiralFrequency3_7PN (
    expnCoeffs *ak
    )
 {
-  XLALPrintDeprecationWarning("LALInspiralFrequency3_7PN", "XLALInspiralFrequency3_7PN");
+  XLAL_PRINT_DEPRECATION_WARNING("XLALInspiralFrequency3_7PN");
 
   INITSTATUS(status);
   ATTATCHSTATUSPTR(status);

@@ -140,203 +140,203 @@ do {                                                                 \
  *********************************************************************/
 
 /**
-\author Creighton, T. D.
-
-\brief Computes a parametrized post-Newtonian inspiral waveform.
-
-\heading{Description}
-
-This function computes an inspiral waveform using the parameters in
-<tt>*params</tt>, storing the result in <tt>*output</tt>.
-
-In the <tt>*params</tt> structure, the routine uses all the "input"
-fields specified in \ref GeneratePPNInspiral.h, and sets all of the
-"output" fields.  If <tt>params->ppn=NULL</tt>, a normal
-post\f${}^2\f$-Newtonian waveform is generated; i.e.\ \f$p_0=1\f$, \f$p_1=0\f$,
-\f$p_2=1\f$, \f$p_3=1\f$, \f$p_4=1\f$, \f$p_{5+}=0\f$.
-
-In the <tt>*output</tt> structure, the field <tt>output->h</tt> is
-ignored, but all other pointer fields must be set to \c NULL.  The
-function will create and allocate space for <tt>output->a</tt>,
-<tt>output->f</tt>, and <tt>output->phi</tt> as necessary.  The
-<tt>output->shift</tt> field will remain set to \c NULL, as it is
-not required to describe a nonprecessing binary.
-
-\heading{Algorithm}
-
-This function is a fairly straightforward calculation of
-Eqs.\eqref{eq_ppn_freq}--\eqref{eq_ppn_across} in
-\ref GeneratePPNInspiral.h.  However, there are some nontrivial
-issues involved, which are discussed in some depth in Secs.\ 6.4, 6.6,
-and 6.9.2 of [\ref GRASP2000].  What follows is a brief
-discussion of these issues and how this routine deals with them.
-
-<tt>Computing the start time:</tt>
-
-When building a waveform for data analysis, one would generally like
-to start the waveform at some well-defined frequency where it first
-enters the band of interest; one then defines the start time of the
-integration by inverting Eq.\eqref{eq_ppn_freq} if
-\ref GeneratePPNInspiral.h.  The current algorithm follows this
-standard approach by requiring the calling routine to specify
-<tt>params->fStartIn</tt>, which is then inverted to find
-\f$\Theta_\mathrm{start}\f$.  This inversion is in fact the most
-algorithmically complicated part of the routine, so we will discuss it
-in depth.
-
-To help clarify the problem, let us rewrite the equation in
-dimensionless parameters \f$y=8\pi fT_\odot m_\mathrm{tot}/M_\odot\f$ and
-\f$x=\Theta^{-1/8}\f$:
-\anchor eq_ppn_fnorm \f{equation}{
-\label{eq_ppn_fnorm}
-y = \sum_{k=0}^{5} C_k x^{k+3} \; ,
-\f}
-where:
-\f{eqnarray}{
-C_0 & = & p_0 \;,\nonumber\\
-C_1 & = & p_1 \;,\nonumber\\
-C_2 & = & p_2\left(\frac{743}{2688}+\frac{11}{32}\eta\right) \;,\nonumber\\
-C_3 & = & p_3\frac{3\pi}{10} \;,\nonumber\\
-C_4 & = & p_4\left(\frac{1855099}{14450688}+\frac{56975}{258048}\eta+
-		\frac{371}{2048}\eta^2\right) \;,\nonumber\\
-C_5 & = & p_5\left(\frac{7729}{21504}+\frac{3}{256}\eta\right)\pi \;.\nonumber
-\f}
-We note that \f$x\f$ is a time parameter mapping the range
-\f$t=-\infty\rightarrow t_c\f$ to \f$x=0\rightarrow\infty\f$.
-
-In a normal post-Newtonian expansion it is possible to characterize
-the general behaviour of this equation quite accurately, since the
-values of \f$p_k\f$ are known and since \f$\eta\f$ varies only over the range
-\f$[0,1/4]\f$.  In a parametrized post-Newtonian expansion, however, even
-the relative orders of magnitude of the coefficients can vary
-significantly, making a robust generic root finder impractical.
-However, we are saved by the fact that we can restrict our search to
-domains where the post-Newtonian expansion is a valid approximation.
-We define the post-Newtonian expansion \e not to be valid if
-\e any of the following conditions occur:
-<ol>
-<li> A higher-order term in the frequency expansion becomes larger in
-magnitude than the leading (lowest-order nonzero) term.</li>
-<li> The inferred orbital radius, approximated by
-\f$r\sim4m_\mathrm{tot}\Theta^{1/4}\f$, drops below \f$2m_\mathrm{tot}\f$;
-i.e.\ \f$\Theta<1/16\f$ or \f$x>\sqrt{2}\f$.</li>
-<li> The frequency evolution becomes non-monotonic.</li>
-</ol>
-We can further require as a matter of convention that the lowest-order
-nonzero coefficient in the frequency expansion be positive; this is
-simply a sign convention stating that the frequency of a system be
-positive at large radii.
-
-The first two conditions above allow us to set firm limits on the
-range of the initial \f$x_\mathrm{start}\f$.  Let \f$C_j\f$ be the
-lowest-order nonzero coefficient; then for every nonzero \f$C_{k>j}\f$
-we can define a point \f$x_k=|C_j/C_k|^{1/(k-j)}\f$ where that term
-exceeds the leading-order term in magnitude.  We can therefore limit
-the range of \f$x\f$ to values less than \f$x_\mathrm{max}\f$, which is the
-minimum of \f$\sqrt{2}\f$ and all \f$x_k\f$.  We note that even if we were
-to extend the post-Newtonian expansion in Eq.\eqref{eq_ppn_fnorm} to an
-infinite number of terms, this definition of \f$x_\mathrm{max}\f$ implies
-that the frequency is guaranteed to be monotonic up to
-\f$x_\mathrm{max}(5-\sqrt{7})/6\f$, and positive up to \f$x_\mathrm{max}/2\f$.
-Thus we can confidently begin our search for \f$x_\mathrm{start}\f$ in the
-domain \f$(0,0.39x_\mathrm{max})\f$, where the leading-order term
-dominates, and end it if we ever exceed \f$x_\mathrm{max}\f$.
-
-We therefore bracket our value of \f$x_\mathrm{start}\f$ as follows: We
-start with an initial guess
-\f$x_\mathrm{guess}=(y_\mathrm{start}/C_j)^{1/(j+3)}\f$, or
-\f$0.39x_\mathrm{max}\f$, whichever is less.  If
-\f$y(x_\mathrm{guess})>y_\mathrm{start}\f$, we iteratively decrease \f$x\f$ by
-factors of 0.95 until \f$y(x)<y_\mathrm{start}\f$; this is guaranteed to
-occur within a few iterations, since we are moving into a regime where
-the leading-order behaviour dominates more and more.  If
-\f$y(x_\mathrm{guess})<y_\mathrm{start}\f$, we iteratively increase \f$x\f$ by
-factors of 1.05 until \f$y(x)>y_\mathrm{start}\f$, or until
-\f$x>x_\mathrm{max}\f$; this is also guaranteed to occur quickly because,
-in the worst case, it only takes about 20 iterations to step from
-\f$0.39x_\mathrm{max}\f$ to \f$x_\mathrm{max}\f$, and if \f$x_\mathrm{guess}\f$
-were much lower than \f$0.39x_\mathrm{max}\f$ it would have been a pretty
-good guess to begin with.  If at any point while increasing \f$x\f$ we
-find that \f$y\f$ is decreasing, we determine that the starting frequency
-is already in a regime where the post-Newtonian approximation is
-invalid, and we return an error.  Otherwise, once we have bracketed
-the value of \f$x_\mathrm{start}\f$, we use <tt>LALSBisectionFindRoot()</tt>
-to pin down the value to an accuracy of a part in \f$10^6\f$.
-
-<tt>Computing the phase and amplitudes:</tt>
-
-Once we have \f$x_\mathrm{start}\f$, we can find \f$\Theta_\mathrm{start}\f$,
-and begin incrementing it; at each timestep we compute \f$x\f$ and hence
-\f$f\f$, \f$\phi\f$, \f$A_+\f$, and \f$A_\times\f$ according to
-Eqs.\eqref{eq_ppn_freq},\eqref{eq_ppn_phi},\eqref{eq_ppn_aplus},
-and\eqref{eq_ppn_across}.  The routine progressively creates a list of
-length-1024 arrays and fills them.  The process stops when any of the
-following occurs:
-<ol>
-<li> The frequency exceeds the requested termination frequency.</li>
-<li> The number of steps reaches the suggested maximum length in
-<tt>*params</tt>.</li>
-<li> The frequency is no longer increasing.</li>
-<li> The parameter \f$x>x_\mathrm{max}\f$.</li>
-<li> We run out of memory.</li>
-</ol>
-In the last case an error is returned; otherwise the waveform is
-deemed "complete".  Output arrays are created of the appropriate
-length and are filled with the data.
-
-Internally, the routine keeps a list of all coefficients, as well as a
-list of booleans indicating which terms are nonzero.  The latter
-allows the code to avoid lengthy floating-point operations (especially
-the logarithm in the post\f${}^{5/2}\f$-Newtonian phase term) when these
-are not required.
-
-When generating the waveform, we note that the sign of \f$\dot{f}\f$ is
-the same as the sign of \f$y'/x^2 = \sum (k+3)C_k x^k\f$, and use this
-series to test whether the frequency has stopped increasing.  (The
-reason is that for waveforms far from coalescence \f$f\f$ is nearly
-constant: numerical errors can cause positive <em>and negative</em>
-fluctuations \f$\Delta f\f$ bewteen timesteps.  The analytic formulae for
-\f$\dot{f}\f$ or \f$y'\f$ are less susceptible to this.)  The coefficients
-\f$(k+3)C_k\f$ are also precomputed for added efficiency.
-
-<tt>Warnings and suggestions:</tt>
-
-If no post-Newtonian parameters are provided (i.e.\
-<tt>params->ppn=NULL</tt>), we generate a post\f${}^2\f$-Newtonian waveform,
-\e not a post\f${}^{5/2}\f$-Newtonian waveform.  This is done not only
-for computationally efficiency, but also because the accuracy and
-reliability of the post\f${}^{5/2}\f$-Newtonian waveform is actually
-worse.  You can of course specify a post\f${}^{5/2}\f$-Newtonian waveform
-with an appropriate assignment of <tt>params->ppn</tt>, but you do so at
-your own risk!
-
-This routine also performs no sanity checking on the requested
-sampling interval \f$\Delta t=\f$<tt>params->deltaT</tt>, because this
-depends very much on how one intends to use the generated waveform.
-If you plan to generate actual wave functions \f$h_{+,\times}(t)\f$ at the
-same sample rate, then you will generally want a sampling interval
-\f$\Delta t<1/2f_\mathrm{max}\f$; you can enforce this by specifying a
-suitable <tt>params->fStopIn</tt>.
-
-However, many routines (such as those in \ref SimulateCoherentGW.h)
-generate actual wave functions by linear interpolation of the
-amplitude and phase data, which then need only be sampled on
-timescales \f$\sim\dot{f}^{-1/2}\f$ rather than \f$\sim f^{-1}\f$.  More
-precisely, we would like our interpolated phase to differ from the
-actual phase by no more than some specified amount, say \f$\pi/2\f$
-radians.  The largest deviation from linear phase evolution will
-typically be on the order of \f$\Delta\phi\approx(1/2)\ddot{\phi}(\Delta
-t/2)^2\approx(\pi/4)\Delta f\Delta t\f$, where \f$\Delta f\f$ is the
-frequency shift over the timestep.  Thus in general we would like to
-have
-\f[
-\Delta f \Delta t \lesssim 2
-\f]
-for our linear interpolation to be valid.  This routine helps out by
-setting the output parameter field <tt>params->dfdt</tt> equal to the
-maximum value of \f$\Delta f\Delta t\f$ encountered during the
-integration.
-*/
+ * \author Creighton, T. D.
+ *
+ * \brief Computes a parametrized post-Newtonian inspiral waveform.
+ *
+ * ### Description ###
+ *
+ * This function computes an inspiral waveform using the parameters in
+ * <tt>*params</tt>, storing the result in <tt>*output</tt>.
+ *
+ * In the <tt>*params</tt> structure, the routine uses all the "input"
+ * fields specified in \ref GeneratePPNInspiral.h, and sets all of the
+ * "output" fields.  If <tt>params->ppn=NULL</tt>, a normal
+ * post\f${}^2\f$-Newtonian waveform is generated; i.e.\ \f$p_0=1\f$, \f$p_1=0\f$,
+ * \f$p_2=1\f$, \f$p_3=1\f$, \f$p_4=1\f$, \f$p_{5+}=0\f$.
+ *
+ * In the <tt>*output</tt> structure, the field <tt>output->h</tt> is
+ * ignored, but all other pointer fields must be set to \c NULL.  The
+ * function will create and allocate space for <tt>output->a</tt>,
+ * <tt>output->f</tt>, and <tt>output->phi</tt> as necessary.  The
+ * <tt>output->shift</tt> field will remain set to \c NULL, as it is
+ * not required to describe a nonprecessing binary.
+ *
+ * ### Algorithm ###
+ *
+ * This function is a fairly straightforward calculation of
+ * \eqref{eq_ppn_freq}--\eqref{eq_ppn_across} in
+ * \ref GeneratePPNInspiral.h.  However, there are some nontrivial
+ * issues involved, which are discussed in some depth in Secs.\ 6.4, 6.6,
+ * and 6.9.2 of \cite GRASP2000.  What follows is a brief
+ * discussion of these issues and how this routine deals with them.
+ *
+ * <tt>Computing the start time:</tt>
+ *
+ * When building a waveform for data analysis, one would generally like
+ * to start the waveform at some well-defined frequency where it first
+ * enters the band of interest; one then defines the start time of the
+ * integration by inverting \eqref{eq_ppn_freq} if
+ * \ref GeneratePPNInspiral.h.  The current algorithm follows this
+ * standard approach by requiring the calling routine to specify
+ * <tt>params->fStartIn</tt>, which is then inverted to find
+ * \f$\Theta_\mathrm{start}\f$.  This inversion is in fact the most
+ * algorithmically complicated part of the routine, so we will discuss it
+ * in depth.
+ *
+ * To help clarify the problem, let us rewrite the equation in
+ * dimensionless parameters \f$y=8\pi fT_\odot m_\mathrm{tot}/M_\odot\f$ and
+ * \f$x=\Theta^{-1/8}\f$:
+ * \f{equation}{
+ * \label{eq_ppn_fnorm}
+ * y = \sum_{k=0}^{5} C_k x^{k+3} \; ,
+ * \f}
+ * where:
+ * \f{eqnarray}{
+ * C_0 & = & p_0 \;,\\
+ * C_1 & = & p_1 \;,\\
+ * C_2 & = & p_2\left(\frac{743}{2688}+\frac{11}{32}\eta\right) \;,\\
+ * C_3 & = & p_3\frac{3\pi}{10} \;,\\
+ * C_4 & = & p_4\left(\frac{1855099}{14450688}+\frac{56975}{258048}\eta+
+ * \frac{371}{2048}\eta^2\right) \;,\\
+ * C_5 & = & p_5\left(\frac{7729}{21504}+\frac{3}{256}\eta\right)\pi \;.
+ * \f}
+ * We note that \f$x\f$ is a time parameter mapping the range
+ * \f$t=-\infty\rightarrow t_c\f$ to \f$x=0\rightarrow\infty\f$.
+ *
+ * In a normal post-Newtonian expansion it is possible to characterize
+ * the general behaviour of this equation quite accurately, since the
+ * values of \f$p_k\f$ are known and since \f$\eta\f$ varies only over the range
+ * \f$[0,1/4]\f$.  In a parametrized post-Newtonian expansion, however, even
+ * the relative orders of magnitude of the coefficients can vary
+ * significantly, making a robust generic root finder impractical.
+ * However, we are saved by the fact that we can restrict our search to
+ * domains where the post-Newtonian expansion is a valid approximation.
+ * We define the post-Newtonian expansion \e not to be valid if
+ * \e any of the following conditions occur:
+ * <ol>
+ * <li> A higher-order term in the frequency expansion becomes larger in
+ * magnitude than the leading (lowest-order nonzero) term.</li>
+ * <li> The inferred orbital radius, approximated by
+ * \f$r\sim4m_\mathrm{tot}\Theta^{1/4}\f$, drops below \f$2m_\mathrm{tot}\f$;
+ * i.e.\ \f$\Theta<1/16\f$ or \f$x>\sqrt{2}\f$.</li>
+ * <li> The frequency evolution becomes non-monotonic.</li>
+ * </ol>
+ * We can further require as a matter of convention that the lowest-order
+ * nonzero coefficient in the frequency expansion be positive; this is
+ * simply a sign convention stating that the frequency of a system be
+ * positive at large radii.
+ *
+ * The first two conditions above allow us to set firm limits on the
+ * range of the initial \f$x_\mathrm{start}\f$.  Let \f$C_j\f$ be the
+ * lowest-order nonzero coefficient; then for every nonzero \f$C_{k>j}\f$
+ * we can define a point \f$x_k=|C_j/C_k|^{1/(k-j)}\f$ where that term
+ * exceeds the leading-order term in magnitude.  We can therefore limit
+ * the range of \f$x\f$ to values less than \f$x_\mathrm{max}\f$, which is the
+ * minimum of \f$\sqrt{2}\f$ and all \f$x_k\f$.  We note that even if we were
+ * to extend the post-Newtonian expansion in \eqref{eq_ppn_fnorm} to an
+ * infinite number of terms, this definition of \f$x_\mathrm{max}\f$ implies
+ * that the frequency is guaranteed to be monotonic up to
+ * \f$x_\mathrm{max}(5-\sqrt{7})/6\f$, and positive up to \f$x_\mathrm{max}/2\f$.
+ * Thus we can confidently begin our search for \f$x_\mathrm{start}\f$ in the
+ * domain \f$(0,0.39x_\mathrm{max})\f$, where the leading-order term
+ * dominates, and end it if we ever exceed \f$x_\mathrm{max}\f$.
+ *
+ * We therefore bracket our value of \f$x_\mathrm{start}\f$ as follows: We
+ * start with an initial guess
+ * \f$x_\mathrm{guess}=(y_\mathrm{start}/C_j)^{1/(j+3)}\f$, or
+ * \f$0.39x_\mathrm{max}\f$, whichever is less.  If
+ * \f$y(x_\mathrm{guess})>y_\mathrm{start}\f$, we iteratively decrease \f$x\f$ by
+ * factors of 0.95 until \f$y(x)<y_\mathrm{start}\f$; this is guaranteed to
+ * occur within a few iterations, since we are moving into a regime where
+ * the leading-order behaviour dominates more and more.  If
+ * \f$y(x_\mathrm{guess})<y_\mathrm{start}\f$, we iteratively increase \f$x\f$ by
+ * factors of 1.05 until \f$y(x)>y_\mathrm{start}\f$, or until
+ * \f$x>x_\mathrm{max}\f$; this is also guaranteed to occur quickly because,
+ * in the worst case, it only takes about 20 iterations to step from
+ * \f$0.39x_\mathrm{max}\f$ to \f$x_\mathrm{max}\f$, and if \f$x_\mathrm{guess}\f$
+ * were much lower than \f$0.39x_\mathrm{max}\f$ it would have been a pretty
+ * good guess to begin with.  If at any point while increasing \f$x\f$ we
+ * find that \f$y\f$ is decreasing, we determine that the starting frequency
+ * is already in a regime where the post-Newtonian approximation is
+ * invalid, and we return an error.  Otherwise, once we have bracketed
+ * the value of \f$x_\mathrm{start}\f$, we use <tt>LALSBisectionFindRoot()</tt>
+ * to pin down the value to an accuracy of a part in \f$10^6\f$.
+ *
+ * <tt>Computing the phase and amplitudes:</tt>
+ *
+ * Once we have \f$x_\mathrm{start}\f$, we can find \f$\Theta_\mathrm{start}\f$,
+ * and begin incrementing it; at each timestep we compute \f$x\f$ and hence
+ * \f$f\f$, \f$\phi\f$, \f$A_+\f$, and \f$A_\times\f$ according to
+ * \eqref{eq_ppn_freq}, \eqref{eq_ppn_phi}, \eqref{eq_ppn_aplus},
+ * and \eqref{eq_ppn_across}.  The routine progressively creates a list of
+ * length-1024 arrays and fills them.  The process stops when any of the
+ * following occurs:
+ * <ol>
+ * <li> The frequency exceeds the requested termination frequency.</li>
+ * <li> The number of steps reaches the suggested maximum length in
+ * <tt>*params</tt>.</li>
+ * <li> The frequency is no longer increasing.</li>
+ * <li> The parameter \f$x>x_\mathrm{max}\f$.</li>
+ * <li> We run out of memory.</li>
+ * </ol>
+ * In the last case an error is returned; otherwise the waveform is
+ * deemed "complete".  Output arrays are created of the appropriate
+ * length and are filled with the data.
+ *
+ * Internally, the routine keeps a list of all coefficients, as well as a
+ * list of booleans indicating which terms are nonzero.  The latter
+ * allows the code to avoid lengthy floating-point operations (especially
+ * the logarithm in the post\f${}^{5/2}\f$-Newtonian phase term) when these
+ * are not required.
+ *
+ * When generating the waveform, we note that the sign of \f$\dot{f}\f$ is
+ * the same as the sign of \f$y'/x^2 = \sum (k+3)C_k x^k\f$, and use this
+ * series to test whether the frequency has stopped increasing.  (The
+ * reason is that for waveforms far from coalescence \f$f\f$ is nearly
+ * constant: numerical errors can cause positive <em>and negative</em>
+ * fluctuations \f$\Delta f\f$ bewteen timesteps.  The analytic formulae for
+ * \f$\dot{f}\f$ or \f$y'\f$ are less susceptible to this.)  The coefficients
+ * \f$(k+3)C_k\f$ are also precomputed for added efficiency.
+ *
+ * <tt>Warnings and suggestions:</tt>
+ *
+ * If no post-Newtonian parameters are provided (i.e.\
+ * <tt>params->ppn=NULL</tt>), we generate a post\f${}^2\f$-Newtonian waveform,
+ * \e not a post\f${}^{5/2}\f$-Newtonian waveform.  This is done not only
+ * for computationally efficiency, but also because the accuracy and
+ * reliability of the post\f${}^{5/2}\f$-Newtonian waveform is actually
+ * worse.  You can of course specify a post\f${}^{5/2}\f$-Newtonian waveform
+ * with an appropriate assignment of <tt>params->ppn</tt>, but you do so at
+ * your own risk!
+ *
+ * This routine also performs no sanity checking on the requested
+ * sampling interval \f$\Delta t=\f$<tt>params->deltaT</tt>, because this
+ * depends very much on how one intends to use the generated waveform.
+ * If you plan to generate actual wave functions \f$h_{+,\times}(t)\f$ at the
+ * same sample rate, then you will generally want a sampling interval
+ * \f$\Delta t<1/2f_\mathrm{max}\f$; you can enforce this by specifying a
+ * suitable <tt>params->fStopIn</tt>.
+ *
+ * However, many routines (such as those in \ref SimulateCoherentGW.h)
+ * generate actual wave functions by linear interpolation of the
+ * amplitude and phase data, which then need only be sampled on
+ * timescales \f$\sim\dot{f}^{-1/2}\f$ rather than \f$\sim f^{-1}\f$.  More
+ * precisely, we would like our interpolated phase to differ from the
+ * actual phase by no more than some specified amount, say \f$\pi/2\f$
+ * radians.  The largest deviation from linear phase evolution will
+ * typically be on the order of \f$\Delta\phi\approx(1/2)\ddot{\phi}(\Delta
+ * t/2)^2\approx(\pi/4)\Delta f\Delta t\f$, where \f$\Delta f\f$ is the
+ * frequency shift over the timestep.  Thus in general we would like to
+ * have
+ * \f[
+ * \Delta f \Delta t \lesssim 2
+ * \f]
+ * for our linear interpolation to be valid.  This routine helps out by
+ * setting the output parameter field <tt>params->dfdt</tt> equal to the
+ * maximum value of \f$\Delta f\Delta t\f$ encountered during the
+ * integration.
+ */
 void
 LALGeneratePPNInspiral( LALStatus     *stat,	/**< UNDOCUMENTED */
 			CoherentGW    *output,	/**< UNDOCUMENTED */

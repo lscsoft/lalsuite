@@ -81,13 +81,6 @@ if [ -n "${LALPULSAR_DATADIR}" ]; then
 	EEPHEM="${LALPULSAR_DATADIR}/earth00-19-DE405.dat.gz"
 	SEPHEM="${LALPULSAR_DATADIR}/sun00-19-DE405.dat.gz"
 	TEPHEM="${LALPULSAR_DATADIR}/tdb_2000-2019.dat.gz"
-else
-	echo
-	echo "Need environment-variable LALPULSAR_DATADIR to be set to"
-	echo "your ephemeris-directory (e.g. /usr/local/share/lalpulsar)"
-	echo "This might indicate an incomplete LAL+LALPULSAR installation"
-	echo
-	exit 2
 fi
 
 if [ ! -f $EEPHEM ]; then

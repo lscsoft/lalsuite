@@ -18,23 +18,23 @@
  */
 
 /**
- *
  * \author Chris Pankow
  *
  * \file
  *
  * \brief Testing SphHarmTimeSeries code
- *
- * */
+ */
 
 
+#include <assert.h>
+
+#include <lal/Sequence.h>
 #include <lal/LALSimInspiral.h>
 #include <lal/TimeSeries.h>
 #include <lal/Date.h>
 #include <lal/Units.h>
 
 int main(void){
-		lalDebugLevel=7;
 		// Empty time series -- technically works, but doesn't make a lot
 		// of sense
 		SphHarmTimeSeries *ts = XLALSphHarmTimeSeriesAddMode( NULL, NULL, 0, 0 );
@@ -83,6 +83,16 @@ int main(void){
 			fprintf( stderr, "Returned structure does not match after mode overwrite." );
 			return 1;
 		}
+
+		// Check the addition of tdata
+		REAL8Sequence *tdata = XLALCreateREAL8Sequence(10);
+		int i = 0;
+		for(; i<10; i++){
+				tdata->data[i] = (double)i;
+		}
+		XLALSphHarmTimeSeriesSetTData( ts, tdata );
+		REAL8Sequence *tdata_hlm = XLALSphHarmTimeSeriesGetTData( ts );
+		assert( tdata_hlm == tdata );
 
 		XLALDestroySphHarmTimeSeries( ts );
 

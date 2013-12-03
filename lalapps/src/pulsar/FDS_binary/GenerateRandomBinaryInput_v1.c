@@ -52,7 +52,6 @@
 #include "GenerateRandomBinaryInput_v1.h"
 
 
-INT4 lalDebugLevel=3;
 static LALStatus status;
 
 REAL8 raMIN,raMAX,decMIN,decMAX;

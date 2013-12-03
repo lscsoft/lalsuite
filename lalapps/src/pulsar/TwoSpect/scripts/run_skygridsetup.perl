@@ -19,6 +19,8 @@ if ($ifo eq "LHO") {
    $ifo = "H1";
 } elsif ($ifo eq "LLO") {
    $ifo = "L1";
+} elsif ($ifo eq "Virgo") {
+   $ifo = "V1";
 }
 
 system("mkdir $outputPathBase/$band\_$ifo");

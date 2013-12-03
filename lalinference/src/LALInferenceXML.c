@@ -113,8 +113,8 @@ xmlNodePtr XLALInferenceVariablesArray2VOTTable(const LALInferenceVariables *var
 		}
 		varitem=varitem->next;
 	}
-  valuearrays=calloc(Nfields,sizeof(void *));
-  VOTABLE_DATATYPE *dataTypes=calloc(Nfields,sizeof(VOTABLE_DATATYPE));
+  valuearrays=XLALCalloc(Nfields,sizeof(void *));
+  VOTABLE_DATATYPE *dataTypes=XLALCalloc(Nfields,sizeof(VOTABLE_DATATYPE));
   /* Build array of DATA for fields */
 	for(j=0,varitem=varsArray[0].head; varitem; varitem=varitem->next)
 	{
@@ -124,7 +124,7 @@ xmlNodePtr XLALInferenceVariablesArray2VOTTable(const LALInferenceVariables *var
 			case LALINFERENCE_PARAM_OUTPUT:
 			{
 				UINT4 typesize = LALInferenceTypeSize[LALInferenceGetVariableType(&varsArray[0],varitem->name)];
-				valuearrays[j]=calloc(N,typesize);
+				valuearrays[j]=XLALCalloc(N,typesize);
 				dataTypes[j]=LALInferenceVariableType2VOT(varitem->type);
 				for(i=0;i<N;i++)
 					memcpy((char *)valuearrays[j]+i*typesize,LALInferenceGetVariable(&varsArray[i],varitem->name),typesize);
@@ -257,7 +257,7 @@ xmlNodePtr XLALInferenceStateVariables2VOTResource(const LALInferenceRunState *s
  * \sa LALInferenceVariableItem2VOTParamNode
  *
  * \author John Veitch
- * 
+ *
  */
 xmlNodePtr XLALInferenceVariables2VOTParamNode (const LALInferenceVariables *const vars)
 {
@@ -294,7 +294,7 @@ xmlNodePtr XLALInferenceVariables2VOTParamNode (const LALInferenceVariables *con
  * embedded into an existing %node hierarchy or turned into a full VOTable document.
  *
  * \param varitem [in] Pointer to the \c LALInferenceVariables structure to be serialized
- * 
+ *
  * \return A pointer to a \c xmlNode that holds the VOTable fragment that represents
  * the \c LALInferenceVariableItem structure.
  * In case of an error, a null-pointer is returned.\n
@@ -303,9 +303,9 @@ xmlNodePtr XLALInferenceVariables2VOTParamNode (const LALInferenceVariables *con
  * can be used later on when the returned fragment has been embedded in a XML document.
  *
  * \sa XLALCreateVOTParamNode
- * 
+ *
  * \author John Veitch\n
- * 
+ *
  */
 
 xmlNodePtr LALInferenceVariableItem2VOTFieldNode(LALInferenceVariableItem *varitem)

@@ -19,6 +19,38 @@
 
 #include <lal/FFTWMutex.h>
 
-#ifdef LAL_PTHREAD_LOCK
-pthread_mutex_t lalFFTWMutex = PTHREAD_MUTEX_INITIALIZER;
+#if defined(LAL_PTHREAD_LOCK) && defined(LAL_FFTW3_ENABLED)
+static pthread_mutex_t lalFFTWMutex = PTHREAD_MUTEX_INITIALIZER;
 #endif
+
+
+/**
+ * Aquire LAL's FFTW wisdom lock.  This lock must be held when creating or
+ * destroying FFTW plans.  This function is a no-op if LAL has been
+ * compiled without pthread support or with an FFT backend other than FFTW.
+ *
+ * See also:  XLALFFTWWisdomUnlock()
+ */
+
+void XLALFFTWWisdomLock(void)
+{
+#if defined(LAL_PTHREAD_LOCK) && defined(LAL_FFTW3_ENABLED)
+    pthread_mutex_lock( &lalFFTWMutex );
+#endif
+}
+
+
+/**
+ * Release LAL's FFTW wisdom lock.  This function is a no-op if LAL has
+ * been compiled without pthread support or with an FFT backend other than
+ * FFTW.
+ *
+ * See also:  XLALFFTWWisdomLock()
+ */
+
+void XLALFFTWWisdomUnlock(void)
+{
+#if defined(LAL_PTHREAD_LOCK) && defined(LAL_FFTW3_ENABLED)
+    pthread_mutex_unlock( &lalFFTWMutex );
+#endif
+}

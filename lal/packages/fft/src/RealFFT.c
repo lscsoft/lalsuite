@@ -33,7 +33,7 @@
  * \section sec_RealFFT_LAL LAL-style functions [DEPRECATED]
  *
  * This package also provides a (deprecated!) LAL-style interface with the FFTW fast Fourier
- * transform package [\ref fj_1998].
+ * transform package \cite fj_1998.
  *
  * The routines LALCreateForwardRealFFTPlan() and
  * LALCreateReverseRealFFTPlan() create plans for computing the
@@ -49,11 +49,11 @@
  * \f$k=0\ldots\lfloor{n/2}\rfloor\f$ (\f$n/2\f$ rounded down), of a vector \f$h_j\f$,
  * \f$j=0\ldots n-1\f$, of length \f$n\f$ is defined by
  * \f[
- *   H_k = \sum_{j=0}^{n-1} h_j e^{-2\pi ijk/n}
+ * H_k = \sum_{j=0}^{n-1} h_j e^{-2\pi ijk/n}
  * \f]
  * and, similarly, the \e inverse Fourier transform is defined by
  * \f[
- *   h_j = \frac{1}{n} \sum_{k=0}^{n-1} H_k e^{2\pi ijk/n}
+ * h_j = \frac{1}{n} \sum_{k=0}^{n-1} H_k e^{2\pi ijk/n}
  * \f]
  * where \f$H_k\f$ for \f$\lfloor{n/2}\rfloor<k<n\f$ can be obtained from the relation
  * \f$H_k=H_{n-k}^\ast\f$.  The present implementation of the \e reverse FFT
@@ -107,22 +107,23 @@
  * LALSDestroyVector( &status, &Pvec );
  * \endcode
  *
- * \heading{Algorithm}
+ * ### Algorithm ###
  *
- * The FFTW [\ref fj_1998] is used.
+ * The FFTW \cite fj_1998 is used.
  *
- * \heading{Uses}
+ * ### Uses ###
  *
- * \heading{Notes}
+ *
+ * ### Notes ###
  *
  * <ol>
  * <li> The sign convention used here is the opposite of
- * <em>Numerical Recipes</em> [\ref ptvf1992], but agrees with the one used
- * by FFTW [\ref fj_1998] and the other LIGO software components.
+ * <em>Numerical Recipes</em> \cite ptvf1992, but agrees with the one used
+ * by FFTW \cite fj_1998 and the other LIGO software components.
  * </li>
  * <li> The result of the reverse FFT must be multiplied by \f$1/n\f$ to recover
  * the original vector.  This is unlike the <em>Numerical
- * Recipes</em> [\ref ptvf1992] convension where the factor is \f$2/n\f$ for real
+ * Recipes</em> \cite ptvf1992 convension where the factor is \f$2/n\f$ for real
  * FFTs.  This is different from the \c datacondAPI where the
  * normalization constant is applied by default.
  * </li>
@@ -130,7 +131,7 @@
  * performance is \f$O(n\log n)\f$.  However, better performance is obtained if \f$n\f$
  * is the product of powers of 2, 3, 5, 7, and zero or one power of either 11
  * or 13.  Transforms when \f$n\f$ is a power of 2 are especially fast.  See
- * [\ref fj_1998].
+ * \cite fj_1998.
  * </li>
  * <li> All of these routines leave the input array undamaged.  (Except for LALREAL4VectorFFT().)
  * </li>
@@ -138,12 +139,11 @@
  * </li>
  * </ol>
  *
- *
- *
-*/
+ */
 /*@{*/
 
-/** \brief Plan to perform FFT of REAL4 data.
+/**
+ * \brief Plan to perform FFT of REAL4 data.
  */
 struct
 tagREAL4FFTPlan
@@ -153,7 +153,8 @@ tagREAL4FFTPlan
   fftwf_plan plan; /**< the FFTW plan */
 };
 
-/** \brief Plan to perform FFT of REAL8 data.
+/**
+ * \brief Plan to perform FFT of REAL8 data.
  */
 struct
 tagREAL8FFTPlan
@@ -212,12 +213,12 @@ REAL4FFTPlan * XLALCreateREAL4FFTPlan( UINT4 size, int fwdflg, int measurelvl )
     XLAL_ERROR_NULL( XLAL_ENOMEM );
   }
 
-  LAL_FFTW_PTHREAD_MUTEX_LOCK;
+  LAL_FFTW_WISDOM_LOCK;
   if ( fwdflg ) /* forward */
     plan->plan = fftwf_plan_r2r_1d( size, tmp1, tmp2, FFTW_R2HC, flags );
   else /* reverse */
     plan->plan = fftwf_plan_r2r_1d( size, tmp1, tmp2, FFTW_HC2R, flags );
-  LAL_FFTW_PTHREAD_MUTEX_UNLOCK;
+  LAL_FFTW_WISDOM_UNLOCK;
 
   /* free temporary arrays */
   XLALFree( tmp2 );
@@ -264,9 +265,9 @@ void XLALDestroyREAL4FFTPlan( REAL4FFTPlan *plan )
   {
     if ( plan->plan )
     {
-      LAL_FFTW_PTHREAD_MUTEX_LOCK;
+      LAL_FFTW_WISDOM_LOCK;
       fftwf_destroy_plan( plan->plan );
-      LAL_FFTW_PTHREAD_MUTEX_UNLOCK;
+      LAL_FFTW_WISDOM_UNLOCK;
     }
     memset( plan, 0, sizeof( *plan ) );
     XLALFree( plan );
@@ -364,7 +365,7 @@ int XLALREAL4ReverseFFT( REAL4Vector *output, const COMPLEX8Vector *input,
 }
 
 
-int XLALREAL4VectorFFT( REAL4Vector * restrict output, const REAL4Vector * restrict input,
+int XLALREAL4VectorFFT( REAL4Vector * _LAL_RESTRICT_ output, const REAL4Vector * _LAL_RESTRICT_ input,
     const REAL4FFTPlan *plan )
 {
   if ( ! output || ! input || ! plan )
@@ -478,12 +479,12 @@ REAL8FFTPlan * XLALCreateREAL8FFTPlan( UINT4 size, int fwdflg, int measurelvl )
     XLAL_ERROR_NULL( XLAL_ENOMEM );
   }
 
-  LAL_FFTW_PTHREAD_MUTEX_LOCK;
+  LAL_FFTW_WISDOM_LOCK;
   if ( fwdflg ) /* forward */
     plan->plan = fftw_plan_r2r_1d( size, tmp1, tmp2, FFTW_R2HC, flags );
   else /* reverse */
     plan->plan = fftw_plan_r2r_1d( size, tmp1, tmp2, FFTW_HC2R, flags );
-  LAL_FFTW_PTHREAD_MUTEX_UNLOCK;
+  LAL_FFTW_WISDOM_UNLOCK;
 
   /* free temporary arrays */
   XLALFree( tmp2 );
@@ -530,9 +531,9 @@ void XLALDestroyREAL8FFTPlan( REAL8FFTPlan *plan )
   {
     if ( plan->plan )
     {
-      LAL_FFTW_PTHREAD_MUTEX_LOCK;
+      LAL_FFTW_WISDOM_LOCK;
       fftw_destroy_plan( plan->plan );
-      LAL_FFTW_PTHREAD_MUTEX_UNLOCK;
+      LAL_FFTW_WISDOM_UNLOCK;
     }
     memset( plan, 0, sizeof( *plan ) );
     XLALFree( plan );
@@ -716,7 +717,7 @@ LALCreateForwardREAL4FFTPlan(
     )
 {
   INITSTATUS(status);
-  XLALPrintDeprecationWarning("LALCreateForwardREAL4FFTPlan", "XLALCreateForwardREAL4FFTPlan");
+  XLAL_PRINT_DEPRECATION_WARNING("XLALCreateForwardREAL4FFTPlan");
 
   ASSERT( plan, status, REALFFTH_ENULL, REALFFTH_MSGENULL );
   ASSERT( ! *plan, status, REALFFTH_ENNUL, REALFFTH_MSGENNUL );
@@ -754,7 +755,7 @@ LALCreateReverseREAL4FFTPlan(
     )
 {
   INITSTATUS(status);
-  XLALPrintDeprecationWarning("LALCreateReverseREAL4FFTPlan", "XLALCreateReverseREAL4FFTPlan");
+  XLAL_PRINT_DEPRECATION_WARNING("XLALCreateReverseREAL4FFTPlan");
 
   ASSERT( plan, status, REALFFTH_ENULL, REALFFTH_MSGENULL );
   ASSERT( ! *plan, status, REALFFTH_ENNUL, REALFFTH_MSGENNUL );
@@ -790,7 +791,7 @@ LALDestroyREAL4FFTPlan(
     )
 {
   INITSTATUS(status);
-  XLALPrintDeprecationWarning("LALDestroyREAL4FFTPlan", "XLALDestroyREAL4FFTPlan");
+  XLAL_PRINT_DEPRECATION_WARNING("XLALDestroyREAL4FFTPlan");
   ASSERT( plan, status, REALFFTH_ENULL, REALFFTH_MSGENULL );
   ASSERT( *plan, status, REALFFTH_ENULL, REALFFTH_MSGENULL );
   XLALDestroyREAL4FFTPlan( *plan );
@@ -823,7 +824,7 @@ LALForwardREAL4FFT(
   int code;
   UINT4 n;
   INITSTATUS(status);
-  XLALPrintDeprecationWarning("LALForwardREAL4FFT", "XLALForwardREAL4FFT");
+  XLAL_PRINT_DEPRECATION_WARNING("XLALForwardREAL4FFT");
 
   ASSERT( output, status, REALFFTH_ENULL, REALFFTH_MSGENULL );
   ASSERT( input, status, REALFFTH_ENULL, REALFFTH_MSGENULL );
@@ -886,7 +887,7 @@ LALReverseREAL4FFT(
   int code;
   UINT4 n;
   INITSTATUS(status);
-  XLALPrintDeprecationWarning("LALReverseREAL4FFT", "XLALReverseREAL4FFT");
+  XLAL_PRINT_DEPRECATION_WARNING("XLALReverseREAL4FFT");
 
   ASSERT( output, status, REALFFTH_ENULL, REALFFTH_MSGENULL );
   ASSERT( input, status, REALFFTH_ENULL, REALFFTH_MSGENULL );
@@ -955,7 +956,7 @@ LALREAL4PowerSpectrum (
   UINT4 n;
 
   INITSTATUS(status);
-  XLALPrintDeprecationWarning("LALREAL4PowerSpectrum", "XLALREAL4PowerSpectrum");
+  XLAL_PRINT_DEPRECATION_WARNING("XLALREAL4PowerSpectrum");
 
   ASSERT( spec, status, REALFFTH_ENULL, REALFFTH_MSGENULL );
   ASSERT( data, status, REALFFTH_ENULL, REALFFTH_MSGENULL );
@@ -1010,7 +1011,7 @@ LALREAL4VectorFFT(
 {
   int code;
   INITSTATUS(status);
-  XLALPrintDeprecationWarning("LALREAL4VectorFFT", "XLALREAL4VectorFFT");
+  XLAL_PRINT_DEPRECATION_WARNING("XLALREAL4VectorFFT");
 
   ASSERT( output, status, REALFFTH_ENULL, REALFFTH_MSGENULL );
   ASSERT( input, status, REALFFTH_ENULL, REALFFTH_MSGENULL );
@@ -1078,7 +1079,7 @@ LALCreateForwardREAL8FFTPlan(
     )
 {
   INITSTATUS(status);
-  XLALPrintDeprecationWarning("LALCreateForwardREAL8FFTPlan", "XLALCreateForwardREAL8FFTPlan");
+  XLAL_PRINT_DEPRECATION_WARNING("XLALCreateForwardREAL8FFTPlan");
 
   ASSERT( plan, status, REALFFTH_ENULL, REALFFTH_MSGENULL );
   ASSERT( ! *plan, status, REALFFTH_ENNUL, REALFFTH_MSGENNUL );
@@ -1116,7 +1117,7 @@ LALCreateReverseREAL8FFTPlan(
     )
 {
   INITSTATUS(status);
-  XLALPrintDeprecationWarning("LALCreateReverseREAL8FFTPlan", "XLALCreateReverseREAL8FFTPlan");
+  XLAL_PRINT_DEPRECATION_WARNING("XLALCreateReverseREAL8FFTPlan");
 
   ASSERT( plan, status, REALFFTH_ENULL, REALFFTH_MSGENULL );
   ASSERT( ! *plan, status, REALFFTH_ENNUL, REALFFTH_MSGENNUL );
@@ -1152,7 +1153,7 @@ LALDestroyREAL8FFTPlan(
     )
 {
   INITSTATUS(status);
-  XLALPrintDeprecationWarning("LALDestroyREAL8FFTPlan", "XLALDestroyREAL8FFTPlan");
+  XLAL_PRINT_DEPRECATION_WARNING("XLALDestroyREAL8FFTPlan");
   ASSERT( plan, status, REALFFTH_ENULL, REALFFTH_MSGENULL );
   ASSERT( *plan, status, REALFFTH_ENULL, REALFFTH_MSGENULL );
   XLALDestroyREAL8FFTPlan( *plan );
@@ -1185,7 +1186,7 @@ LALForwardREAL8FFT(
   int code;
   UINT4 n;
   INITSTATUS(status);
-  XLALPrintDeprecationWarning("LALForwardREAL8FFT", "XLALForwardREAL8FFT");
+  XLAL_PRINT_DEPRECATION_WARNING("XLALForwardREAL8FFT");
 
   ASSERT( output, status, REALFFTH_ENULL, REALFFTH_MSGENULL );
   ASSERT( input, status, REALFFTH_ENULL, REALFFTH_MSGENULL );
@@ -1248,7 +1249,7 @@ LALReverseREAL8FFT(
   int code;
   UINT4 n;
   INITSTATUS(status);
-  XLALPrintDeprecationWarning("LALReverseREAL8FFT", "XLALReverseREAL8FFT");
+  XLAL_PRINT_DEPRECATION_WARNING("XLALReverseREAL8FFT");
 
   ASSERT( output, status, REALFFTH_ENULL, REALFFTH_MSGENULL );
   ASSERT( input, status, REALFFTH_ENULL, REALFFTH_MSGENULL );
@@ -1317,7 +1318,7 @@ LALREAL8PowerSpectrum (
   UINT4 n;
 
   INITSTATUS(status);
-  XLALPrintDeprecationWarning("LALREAL8PowerSpectrum", "XLALREAL8PowerSpectrum");
+  XLAL_PRINT_DEPRECATION_WARNING("XLALREAL8PowerSpectrum");
 
   ASSERT( spec, status, REALFFTH_ENULL, REALFFTH_MSGENULL );
   ASSERT( data, status, REALFFTH_ENULL, REALFFTH_MSGENULL );
@@ -1372,7 +1373,7 @@ LALREAL8VectorFFT(
 {
   int code;
   INITSTATUS(status);
-  XLALPrintDeprecationWarning("LALREAL8VectorFFT", "XLALREAL8VectorFFT");
+  XLAL_PRINT_DEPRECATION_WARNING("XLALREAL8VectorFFT");
 
   ASSERT( output, status, REALFFTH_ENULL, REALFFTH_MSGENULL );
   ASSERT( input, status, REALFFTH_ENULL, REALFFTH_MSGENULL );

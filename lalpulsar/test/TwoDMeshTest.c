@@ -18,220 +18,220 @@
 */
 
 /**
-\author Creighton, T. D.
-\file
-\ingroup TwoDMeshPlot_h
-\brief Creates a 2-dimensional template mesh for linearly-changing mismatch ellipses.
-
-\heading{Usage}
-\code
-TwoDMeshTest [-o outfile] [-p psfile flags] [-d debug] [-m mismatch nmax cmax]
-             [-i metricfile rangefile] [-b x1 y1 x2 y2 ] [-e a b c]
-             [-x dadx dbdx dcdx] [-y dady dbdy dcdy]
-\endcode
-
-\heading{Description}
-
-This test program creates a template mesh for a parameter space with
-an arbitrary mismatch metric.  The following option flags are
-accepted:
-<ul>
-<li><b>-o</b> Writes the output mesh list to the file
-\c outfile.  If absent, no output is written.</li>
-<li><b>-p</b> Plots the output mesh in a PostScript file
-\c psfile, using plot flags \c flags (see below).  If absent,
-no plot is made.</li>
-<li><b>-d</b> Sets the debug level to \c debug.  If
-absent, a debug level of zero is used.</li>
-<li><b>-m</b> Sets the maximum mismatch to \c mismatch,
-maximum number of mesh points to \c nmax and the maximum estimated
-number of columns to \c cmax.  If \c mismatch is not in the
-range (0,1], it is taken to be 1.  If \c nmax or \c cmax is
-non-positive, it is ignored (no maximum).  If this option is not
-given, <b>-m 1 0 0</b> is assumed.</li>
-<li><b>-i</b> Determines the metric and the parameter space
-boundary from \c REAL4Grid structures stored in the files
-\c metricfile and \c rangefile, read using the generic parser
-LALSReadGrid().  The formats for these grids are discussed
-below.  If present, this option \e overrides the <b>-b</b>,
-<b>-e</b>, <b>-x</b>, and <b>-y</b> options, below.  If absent, these
-options, or their defaults, will be used.</li>
-<li><b>-b</b> Sets the parameter space boundary to be a
-parallelogram defined by the vectors (\c x1,\c y1) and
-(\c x2,\c y2) from the origin.  If absent, the region is
-taken to be a unit square.</li>
-<li><b>-e</b> Sets the parameters of the mismatch ellipse at the
-origin: its principal axis lengths are \c a and \c b units,
-and the angle from the \f$x\f$-axis to the first principal axis is
-\c c radians.  If absent, <b>-e 0.1 0.05 1</b> is assumed.</li>
-<li><b>-x</b> Sets the rates of change in the \f$x\f$-direction of
-\c a, \c b, and \c c (above) to \c dadx, \c dbdx,
-and \c dcdx, respectively.  If absent, the rates are taken to be
-zero.</li>
-<li><b>-y</b> Sets the rates of change in the \f$y\f$-direction of
-\c a, \c b, and \c c (above) to \c dady, \c dbdy,
-and \c dcdy, respectively.  If absent, the rates are taken to be
-zero.</li>
-</ul>
-
-
-\heading{Algorithm}
-
-The test program reads the input arguments and creates a parameter
-structure <tt>*params</tt> to be passed to LALCreateTwoDMesh().
-In particular, it computes the domain of the parameter space, and
-defines functions and parameter lists to compute the range in \f$y\f$ at
-any \f$x\f$, and the metric at any point \f$(x,y)\f$.  If PostScript output is
-requested, it is generated using LALPlotTwoDMesh(), using the
-value of the command-line number \c flags to set the plotting
-parameters.  Each of these functions is discussed below.
-
-\heading{Metric and range grid files:}  If the <b>-i</b> option was
-given, the metric and parameter ranges are read from the files named
-by the \c metricfile and \c rangefile arguments.  These two
-files must be in a format parseable by LALSReadGrid(); see the
-documentation of that routine for more details.
-
-The \c REAL4Grid extracted from \c metricfile must
-have grid dimension 2 and data dimension 3: the grid dimensions refer
-to the \f$(x,y)\f$ coordinates of the points where the metric is
-evaluated, while the third dimension must have length 3, storing the
-metric components \f$g_{xx}\f$, \f$g_{yy}\f$, and \f$g_{xy}\f$ (in that order) at
-each point.  Within the \ref TwoDMesh_h routines, this metric grid
-is interpolated using LALInterpolateMetricGrid().
-
-The \c REAL4Grid extracted from \c rangefile must have grid
-dimension 1 and data dimension 2: the grid dimension refers to an \f$x\f$
-coordinate, and the second dimension must have length 3, storing the
-lower and upper boundaries \f$y_1(x)\f$ and \f$y_2(x)\f$ at each sampled value
-of \f$x\f$.  Within the \ref TwoDMesh_h routines, this range grid is
-interpolated using LALInterpolateRangeGrid().
-
-If the <b>-i</b> option is \e not given, then the parameter
-boundary and metric are determined by internal routines, with default
-settings that can be overridden using command-line options <b>-p</b>,
-<b>-e</b>, <b>-x</b>, and <b>-y</b>.
-
-\heading{Parameter ranges:} The parameter space boundary can be
-specified by input parameters \c x1\f$=x_1\f$, \c x2\f$=x_2\f$,
-\c y1\f$=y_1\f$, and \c y2\f$=y_2\f$.  The parameter space is then
-defined to be a parallelogram with one corner on the origin, and two
-sides defined by vectors \f$(x_1,y_1)\f$ and \f$(x_2,y_2)\f$.  Without loss of
-generality we assume that \f$x_1<x_2\f$.  The functions defining the
-boundaries are denoted \f$y_{a,b}(x)\f$, and we make no assumption about
-their signs or relative order.  The algorithm used then depends on the
-signs of \f$x_1\f$ and \f$x_2\f$.
-
-
-If \f$x_1=x_2=0\f$, then the parameter space is singular, and no mesh need
-be generated.
-
-
-If \f$x_1=0\f$ and \f$x_2\neq0\f$, then the domain is \f$[0,x_2]\f$, and the
-boundary functions are:
-\f{eqnarray}{
-y_a(x) & = & y_2x/x_2 \nonumber\\
-y_b(x) & = & y_1 + y_2x/x_2 \nonumber
-\f}
-
-
-If \f$x_2=0\f$ and \f$x_1\neq0\f$, then the domain is \f$[x_1,0]\f$, and the above
-equations for \f$y_{a,b}(x)\f$ simply have 1 and 2 reversed.
-
-
-If \f$x_1\f$ and \f$x_2\f$ have the same sign, then the domain is
-\f$[0,x_1+x_2]\f$ if \f$x_1\f$ and \f$x_2\f$ are positive, and \f$[x_1+x_2,0]\f$
-otherwise.  The boundary functions are:
-\f{eqnarray}{
-y_a(x) & = & \left\{\begin{array}{c@{\qquad}c}
-	y_1x/x_1             & x\mathrm{~between~}0\mathrm{~and~}x_1 \\
-	y_1 + y_2(x-x_1)/x_2 & x\mathrm{~between~}x_1\mathrm{~and~}x_1+x_2
-	\end{array}\right.\nonumber\\
-y_b(x) & = & \left\{\begin{array}{c@{\qquad}c}
-	y_2x/x_2             & x\mathrm{~between~}0\mathrm{~and~}x_2 \\
-	y_2 + y_1(x-x_2)/x_1 & x\mathrm{~between~}x_2\mathrm{~and~}x_1+x_2
-	\end{array}\right.\nonumber
-\f}
-
-
-If \f$x_1\f$ and \f$x_2\f$ have opposite sign, the domain is \f$[x_1,x_2]\f$ if
-\f$x_1<0\f$, and \f$[x_2,x_1]\f$ otherwise.  The boundary functions are:
-\f{eqnarray}{
-y_a(x) & = & \left\{\begin{array}{c@{\qquad}c}
-	y_1x/x_1 & x\mathrm{~between~}0\mathrm{~and~}x_1 \\
-	y_2x/x_2 & x\mathrm{~between~}0\mathrm{~and~}x_2
-	\end{array}\right.\nonumber\\
-y_b(x) & = & \left\{\begin{array}{c@{\qquad}c}
-	y_1 + y_2(x-x_1)/x_2 & x\mathrm{~between~}x_1\mathrm{~and~}x_1+x_2 \\
-	y_2 + y1(x-x_2)/x_1  & x\mathrm{~between~}x_2\mathrm{~and~}x_1+x_2
-	\end{array}\right.\nonumber
-\f}
-
-The main program sorts the input parameters so that \f$x_1\leq x_2\f$,
-stores them in a 4-dimensional array, and assigns a \c void
-pointer to that array.  It also computes the domain.  The routine
-LALTwoDRangeTest() takes a value of \f$x\f$ and the \c void
-pointer, computes the values of \f$y_a(x)\f$ and \f$y_b(x)\f$ according to the
-algorithm above, sorts them, and returns them ordered from lower to
-higher.
-
-\heading{Metric values:} The main program takes the input parameters
-\c a, \c b, \c c, \c dadx, \c dbdx, and
-\c dcdx, stores them in a 9-dimensional array, and assigns a
-\c void pointer to it.  The routine LALTwoDMetricTest()
-takes a position \f$(x,y)\f$ and the \c void pointer, and computes the
-``local'' value of the principal axis
-\f$a=\f$\c a\f$+x\times\f$\c dadx\f$+y\times\f$\c dady, and similarly
-for \f$b\f$ and \f$c\f$.  If that ellipse corresponds to the
-\f$m_\mathrm{thresh}\f$ mismatch level contour, then the eigenvalues of
-the corresponding metric are \f$\lambda_1=m_\mathrm{thresh}/a^2\f$ and
-\f$\lambda_2=m_\mathrm{thresh}/b^2\f$.  The metric components are thus:
-\f{eqnarray}{
-g_{xx} & = & \lambda_1\cos^2(c) + \lambda_2\sin^2(c) \;,\nonumber\\
-g_{yy} & = & \lambda_1\sin^2(c) + \lambda_2\cos^2(c) \;,\nonumber\\
-g_{xy} \quad = \quad g_{yx} & = & (\lambda_1-\lambda_2)\cos(c)\sin(c)
-	\;.\nonumber
-\f}
-The routine assumes that the values of \f$a\f$, \f$b\f$, and \f$c\f$ refer to an
-\f$m_\mathrm{thresh}=1\f$ mismatch ellipse.  It computes and returns
-\f$g_{xx}\f$, \f$g_{yy}\f$, and \f$g_{xy}\f$ in a 3-dimensional array.
-
-\heading{PostScript flags:} The parameter \c flags is an
-unsigned integer whose lowest-order bits contain parameters to be
-passed to LALPlotTwoDMesh().  The bits and their meanings are:
-<dl>
-<dt>bit 0:</dt><dd> 1 if mesh points will be plotted, 0 otherwise.</dd>
-<dt>bit 1:</dt><dd> 1 if mesh tiles will be plotted, 0 otherwise.</dd>
-<dt>bit 2:</dt><dd> 1 if mismatch ellipses will be plotted, 0 otherwise.</dd>
-<dt>bit 3:</dt><dd> 1 if the boundary will be plotted, 0 otherwise.</dd>
-</dl>
-Thus a value of 15 will plot everything, while a value of 9 will just
-plot the mesh points and the boundary.  A value of zero suppresses the
-plot.
-
-If mesh points are to be plotted, they will be filled circles \f$1/72''\f$
-(1~point) in diameter.  The parameter space will be rotated so that
-the longer of the diagonals of the parallelogram will be vertical, and
-scaled to fit on one \f$8.5''\times11''\f$ page.  That is, if
-\f$||(x_1+x_2,y_1+y_2)||\geq||(x_1-x_2,y_1-y_2)||\f$, the rotation angle
-of the coordinate axes will be
-\f$\theta=\pi/2-\arctan\!2(y_1+y_2,x_1+x_2)\f$, or
-\f$\theta=\pi/2-\arctan\!2(y_2-y_1,x_2-x_1)\f$ otherwise.  We note that
-the function \f$\arctan\!2(y,x)\f$ returns the argument of the complex
-number \f$x+iy\f$ in the range \f$[-\pi,\pi]\f$.
-
-\heading{Uses}
-\code
-lalDebugLevel
-LALPrintError()                 LALCheckMemoryLeaks()
-LALCreateTwoDMesh()             LALDestroyTwoDMesh()
-LALSReadGrid()                  LALSDestroyGrid()
-LALPlotTwoDMesh()
-\endcode
-
-\heading{Notes}
-
-*/
+ * \author Creighton, T. D.
+ * \file
+ * \ingroup TwoDMeshPlot_h
+ * \brief Creates a 2-dimensional template mesh for linearly-changing mismatch ellipses.
+ *
+ * ### Usage ###
+ *
+ * \code
+ * TwoDMeshTest [-o outfile] [-p psfile flags] [-d debug] [-m mismatch nmax cmax]
+ * [-i metricfile rangefile] [-b x1 y1 x2 y2 ] [-e a b c]
+ * [-x dadx dbdx dcdx] [-y dady dbdy dcdy]
+ * \endcode
+ *
+ * ### Description ###
+ *
+ * This test program creates a template mesh for a parameter space with
+ * an arbitrary mismatch metric.  The following option flags are
+ * accepted:
+ * <ul>
+ * <li><b>-o</b> Writes the output mesh list to the file
+ * \c outfile.  If absent, no output is written.</li>
+ * <li><b>-p</b> Plots the output mesh in a PostScript file
+ * \c psfile, using plot flags \c flags (see below).  If absent,
+ * no plot is made.</li>
+ * <li><b>-d</b> Sets the debug level to \c debug.  If
+ * absent, a debug level of zero is used.</li>
+ * <li><b>-m</b> Sets the maximum mismatch to \c mismatch,
+ * maximum number of mesh points to \c nmax and the maximum estimated
+ * number of columns to \c cmax.  If \c mismatch is not in the
+ * range (0,1], it is taken to be 1.  If \c nmax or \c cmax is
+ * non-positive, it is ignored (no maximum).  If this option is not
+ * given, <b>-m 1 0 0</b> is assumed.</li>
+ * <li><b>-i</b> Determines the metric and the parameter space
+ * boundary from \c REAL4Grid structures stored in the files
+ * \c metricfile and \c rangefile, read using the generic parser
+ * LALSReadGrid().  The formats for these grids are discussed
+ * below.  If present, this option \e overrides the <b>-b</b>,
+ * <b>-e</b>, <b>-x</b>, and <b>-y</b> options, below.  If absent, these
+ * options, or their defaults, will be used.</li>
+ * <li><b>-b</b> Sets the parameter space boundary to be a
+ * parallelogram defined by the vectors (\c x1,\c y1) and
+ * (\c x2,\c y2) from the origin.  If absent, the region is
+ * taken to be a unit square.</li>
+ * <li><b>-e</b> Sets the parameters of the mismatch ellipse at the
+ * origin: its principal axis lengths are \c a and \c b units,
+ * and the angle from the \f$x\f$-axis to the first principal axis is
+ * \c c radians.  If absent, <b>-e 0.1 0.05 1</b> is assumed.</li>
+ * <li><b>-x</b> Sets the rates of change in the \f$x\f$-direction of
+ * \c a, \c b, and \c c (above) to \c dadx, \c dbdx,
+ * and \c dcdx, respectively.  If absent, the rates are taken to be
+ * zero.</li>
+ * <li><b>-y</b> Sets the rates of change in the \f$y\f$-direction of
+ * \c a, \c b, and \c c (above) to \c dady, \c dbdy,
+ * and \c dcdy, respectively.  If absent, the rates are taken to be
+ * zero.</li>
+ * </ul>
+ *
+ * ### Algorithm ###
+ *
+ * The test program reads the input arguments and creates a parameter
+ * structure <tt>*params</tt> to be passed to LALCreateTwoDMesh().
+ * In particular, it computes the domain of the parameter space, and
+ * defines functions and parameter lists to compute the range in \f$y\f$ at
+ * any \f$x\f$, and the metric at any point \f$(x,y)\f$.  If PostScript output is
+ * requested, it is generated using LALPlotTwoDMesh(), using the
+ * value of the command-line number \c flags to set the plotting
+ * parameters.  Each of these functions is discussed below.
+ *
+ * \par Metric and range grid files:
+ * If the <b>-i</b> option was
+ * given, the metric and parameter ranges are read from the files named
+ * by the \c metricfile and \c rangefile arguments.  These two
+ * files must be in a format parseable by LALSReadGrid(); see the
+ * documentation of that routine for more details.
+ *
+ * The \c REAL4Grid extracted from \c metricfile must
+ * have grid dimension 2 and data dimension 3: the grid dimensions refer
+ * to the \f$(x,y)\f$ coordinates of the points where the metric is
+ * evaluated, while the third dimension must have length 3, storing the
+ * metric components \f$g_{xx}\f$, \f$g_{yy}\f$, and \f$g_{xy}\f$ (in that order) at
+ * each point.  Within the \ref TwoDMesh_h routines, this metric grid
+ * is interpolated using LALInterpolateMetricGrid().
+ *
+ * The \c REAL4Grid extracted from \c rangefile must have grid
+ * dimension 1 and data dimension 2: the grid dimension refers to an \f$x\f$
+ * coordinate, and the second dimension must have length 3, storing the
+ * lower and upper boundaries \f$y_1(x)\f$ and \f$y_2(x)\f$ at each sampled value
+ * of \f$x\f$.  Within the \ref TwoDMesh_h routines, this range grid is
+ * interpolated using LALInterpolateRangeGrid().
+ *
+ * If the <b>-i</b> option is \e not given, then the parameter
+ * boundary and metric are determined by internal routines, with default
+ * settings that can be overridden using command-line options <b>-p</b>,
+ * <b>-e</b>, <b>-x</b>, and <b>-y</b>.
+ *
+ * \par Parameter ranges:
+ * The parameter space boundary can be
+ * specified by input parameters \c x1\f$=x_1\f$, \c x2\f$=x_2\f$,
+ * \c y1\f$=y_1\f$, and \c y2\f$=y_2\f$.  The parameter space is then
+ * defined to be a parallelogram with one corner on the origin, and two
+ * sides defined by vectors \f$(x_1,y_1)\f$ and \f$(x_2,y_2)\f$.  Without loss of
+ * generality we assume that \f$x_1<x_2\f$.  The functions defining the
+ * boundaries are denoted \f$y_{a,b}(x)\f$, and we make no assumption about
+ * their signs or relative order.  The algorithm used then depends on the
+ * signs of \f$x_1\f$ and \f$x_2\f$.
+ *
+ * If \f$x_1=x_2=0\f$, then the parameter space is singular, and no mesh need
+ * be generated.
+ *
+ * If \f$x_1=0\f$ and \f$x_2\neq0\f$, then the domain is \f$[0,x_2]\f$, and the
+ * boundary functions are:
+ * \f{eqnarray}{
+ * y_a(x) & = & y_2x/x_2\\
+ * y_b(x) & = & y_1 + y_2x/x_2
+ * \f}
+ *
+ * If \f$x_2=0\f$ and \f$x_1\neq0\f$, then the domain is \f$[x_1,0]\f$, and the above
+ * equations for \f$y_{a,b}(x)\f$ simply have 1 and 2 reversed.
+ *
+ * If \f$x_1\f$ and \f$x_2\f$ have the same sign, then the domain is
+ * \f$[0,x_1+x_2]\f$ if \f$x_1\f$ and \f$x_2\f$ are positive, and \f$[x_1+x_2,0]\f$
+ * otherwise.  The boundary functions are:
+ * \f{eqnarray}{
+ * y_a(x) & = & \left\{\begin{array}{c@{\qquad}c}
+ * y_1x/x_1             & x\mathrm{~between~}0\mathrm{~and~}x_1 \\
+ * y_1 + y_2(x-x_1)/x_2 & x\mathrm{~between~}x_1\mathrm{~and~}x_1+x_2
+ * \end{array}\right.\\
+ * y_b(x) & = & \left\{\begin{array}{c@{\qquad}c}
+ * y_2x/x_2             & x\mathrm{~between~}0\mathrm{~and~}x_2 \\
+ * y_2 + y_1(x-x_2)/x_1 & x\mathrm{~between~}x_2\mathrm{~and~}x_1+x_2
+ * \end{array}\right.
+ * \f}
+ *
+ * If \f$x_1\f$ and \f$x_2\f$ have opposite sign, the domain is \f$[x_1,x_2]\f$ if
+ * \f$x_1<0\f$, and \f$[x_2,x_1]\f$ otherwise.  The boundary functions are:
+ * \f{eqnarray}{
+ * y_a(x) & = & \left\{\begin{array}{c@{\qquad}c}
+ * y_1x/x_1 & x\mathrm{~between~}0\mathrm{~and~}x_1 \\
+ * y_2x/x_2 & x\mathrm{~between~}0\mathrm{~and~}x_2
+ * \end{array}\right.\\
+ * y_b(x) & = & \left\{\begin{array}{c@{\qquad}c}
+ * y_1 + y_2(x-x_1)/x_2 & x\mathrm{~between~}x_1\mathrm{~and~}x_1+x_2 \\
+ * y_2 + y1(x-x_2)/x_1  & x\mathrm{~between~}x_2\mathrm{~and~}x_1+x_2
+ * \end{array}\right.
+ * \f}
+ *
+ * The main program sorts the input parameters so that \f$x_1\leq x_2\f$,
+ * stores them in a 4-dimensional array, and assigns a \c void
+ * pointer to that array.  It also computes the domain.  The routine
+ * LALTwoDRangeTest() takes a value of \f$x\f$ and the \c void
+ * pointer, computes the values of \f$y_a(x)\f$ and \f$y_b(x)\f$ according to the
+ * algorithm above, sorts them, and returns them ordered from lower to
+ * higher.
+ *
+ * \par Metric values:
+ * The main program takes the input parameters
+ * \c a, \c b, \c c, \c dadx, \c dbdx, and
+ * \c dcdx, stores them in a 9-dimensional array, and assigns a
+ * \c void pointer to it.  The routine LALTwoDMetricTest()
+ * takes a position \f$(x,y)\f$ and the \c void pointer, and computes the
+ * ``local'' value of the principal axis
+ * \f$a=\f$\c a\f$+x\times\f$\c dadx\f$+y\times\f$\c dady, and similarly
+ * for \f$b\f$ and \f$c\f$.  If that ellipse corresponds to the
+ * \f$m_\mathrm{thresh}\f$ mismatch level contour, then the eigenvalues of
+ * the corresponding metric are \f$\lambda_1=m_\mathrm{thresh}/a^2\f$ and
+ * \f$\lambda_2=m_\mathrm{thresh}/b^2\f$.  The metric components are thus:
+ * \f{eqnarray}{
+ * g_{xx} & = & \lambda_1\cos^2(c) + \lambda_2\sin^2(c) \;,\\
+ * g_{yy} & = & \lambda_1\sin^2(c) + \lambda_2\cos^2(c) \;,\\
+ * g_{xy} \quad = \quad g_{yx} & = & (\lambda_1-\lambda_2)\cos(c)\sin(c)
+ * \;.
+ * \f}
+ * The routine assumes that the values of \f$a\f$, \f$b\f$, and \f$c\f$ refer to an
+ * \f$m_\mathrm{thresh}=1\f$ mismatch ellipse.  It computes and returns
+ * \f$g_{xx}\f$, \f$g_{yy}\f$, and \f$g_{xy}\f$ in a 3-dimensional array.
+ *
+ * \par PostScript flags:
+ * The parameter \c flags is an
+ * unsigned integer whose lowest-order bits contain parameters to be
+ * passed to LALPlotTwoDMesh().  The bits and their meanings are:
+ * <dl>
+ * <dt>bit 0:</dt><dd> 1 if mesh points will be plotted, 0 otherwise.</dd>
+ * <dt>bit 1:</dt><dd> 1 if mesh tiles will be plotted, 0 otherwise.</dd>
+ * <dt>bit 2:</dt><dd> 1 if mismatch ellipses will be plotted, 0 otherwise.</dd>
+ * <dt>bit 3:</dt><dd> 1 if the boundary will be plotted, 0 otherwise.</dd>
+ * </dl>
+ * Thus a value of 15 will plot everything, while a value of 9 will just
+ * plot the mesh points and the boundary.  A value of zero suppresses the
+ * plot.
+ *
+ * If mesh points are to be plotted, they will be filled circles \f$1/72''\f$
+ * (1~point) in diameter.  The parameter space will be rotated so that
+ * the longer of the diagonals of the parallelogram will be vertical, and
+ * scaled to fit on one \f$8.5''\times11''\f$ page.  That is, if
+ * \f$||(x_1+x_2,y_1+y_2)||\geq||(x_1-x_2,y_1-y_2)||\f$, the rotation angle
+ * of the coordinate axes will be
+ * \f$\theta=\pi/2-\arctan\!2(y_1+y_2,x_1+x_2)\f$, or
+ * \f$\theta=\pi/2-\arctan\!2(y_2-y_1,x_2-x_1)\f$ otherwise.  We note that
+ * the function \f$\arctan\!2(y,x)\f$ returns the argument of the complex
+ * number \f$x+iy\f$ in the range \f$[-\pi,\pi]\f$.
+ *
+ * ### Uses ###
+ *
+ * \code
+ * lalDebugLevel
+ * LALPrintError()                 LALCheckMemoryLeaks()
+ * LALCreateTwoDMesh()             LALDestroyTwoDMesh()
+ * LALSReadGrid()                  LALSDestroyGrid()
+ * LALPlotTwoDMesh()
+ * \endcode
+ *
+ * ### Notes ###
+ *
+ */
 
 /** \name Error Codes */ /*@{*/
 #define TWODMESHTESTC_ENORM   0
@@ -265,7 +265,6 @@ LALPlotTwoDMesh()
 /** \cond DONT_DOXYGEN */
 
 /* Default parameter settings. */
-extern int lalDebugLevel;
 #define X1 (1.0)
 #define Y1 (0.0)
 #define X2 (0.0)
@@ -354,7 +353,6 @@ main(int argc, char **argv)
   REAL4 dadx = DADX, dbdx = DBDX, dcdx = DCDX;       /* ellipse x gradient */
   REAL4 dady = DADY, dbdy = DBDY, dcdy = DCDY;       /* ellipse y gradient */
 
-  lalDebugLevel = 0;
 
   /******************************************************************
    * ARGUMENT PARSING                                               *
@@ -390,7 +388,6 @@ main(int argc, char **argv)
     else if ( !strcmp( argv[arg], "-d" ) ) {
       if ( argc > arg + 1 ) {
 	arg++;
-	lalDebugLevel = atoi( argv[arg++] );
       } else {
 	ERROR( TWODMESHTESTC_EARG, TWODMESHTESTC_MSGEARG, 0 );
         XLALPrintError( USAGE, *argv );

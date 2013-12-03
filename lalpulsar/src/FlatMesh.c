@@ -35,7 +35,8 @@ Transform( REAL4 *vectorOut, REAL4 *vectorIn, REAL4 *matrix,
 	   UINT4 dim );
 /** \endcond */
 
-/** \author Creighton, T. D.
+/**
+ * \author Creighton, T. D.
  * \ingroup FlatMesh_h
  * \brief Places a mesh of templates on an \f$n\f$-dimensional rectilinear parameter space.
  *
@@ -49,7 +50,7 @@ Transform( REAL4 *vectorOut, REAL4 *vectorIn, REAL4 *matrix,
  * list of mesh point locations is returned in <tt>**mesh</tt>; see
  * <tt>FlatMesh.h</tt> for a description of the fields in <tt>*params</tt>.
  *
- * \heading{Algorithm}
+ * ### Algorithm ###
  *
  * The algorithm initially lays a mesh over a
  * region much larger than is ultimately required.  First, in the
@@ -78,7 +79,7 @@ Transform( REAL4 *vectorOut, REAL4 *vectorIn, REAL4 *matrix,
  * choose an initial coordinate system that is aligned with the preferred
  * axes of the desired search area, or with the preferred axes of the
  * mismatch metric, whichever will improve performance the most.
-*/
+ */
 void
 LALCreateFlatMesh( LALStatus           *stat,
 		   REAL4VectorSequence **mesh,
@@ -326,7 +327,8 @@ Superset( REAL4 *mesh, REAL4 *matrix, REAL4 *yMin, UINT4 *nMax,
 }
 
 
-/** \author Creighton, T. D.
+/**
+ * \author Creighton, T. D.
  * \ingroup FlatMesh_h
  * \brief Simple routine that restricts a parameter mesh <tt>*mesh</tt> to a rectilinear region.
  *
@@ -339,7 +341,7 @@ Superset( REAL4 *mesh, REAL4 *matrix, REAL4 *yMin, UINT4 *nMax,
  * general the values of <tt>mesh->length</tt> and the pointer
  * <tt>mesh->data</tt> will be changed when the dataset is reduced.
  *
- * \heading{Algorithm}
+ * ### Algorithm ###
  *
  * LALRectIntersect() performs the dataset reduction ``in place'',
  * within the memory block allocated to <tt>mesh->data</tt>, and then uses

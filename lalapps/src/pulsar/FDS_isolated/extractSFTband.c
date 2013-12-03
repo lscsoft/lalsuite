@@ -126,7 +126,6 @@ COMPLEX8Vector *fvec=NULL;
 LIGOTimeGPS *timestamps=NULL;
 
 
-INT4 lalDebugLevel=3;
 
 /* Prototypes for the functions defined in this file */
 int make_filelist(LALStatus *);
@@ -299,8 +298,8 @@ int read_noise(LALStatus* status, int iSFT) {
 
   for (i=0;i<len2;i++){
 
-    fvec->data[i].re=norm*fvec->data[i].re;
-    fvec->data[i].im=norm*fvec->data[i].im;    
+    fvec->data[i].realf_FIXME=norm*crealf(fvec->data[i]);
+    fvec->data[i].imagf_FIXME=norm*cimagf(fvec->data[i]);    
   }
 
 
@@ -358,8 +357,8 @@ int write_SFTS(LALStatus* status, int iSFT){
 
   for (i=0;i<fvec->length;i++){
 
-    rpw=fvec->data[i].re;
-    ipw=fvec->data[i].im;
+    rpw=crealf(fvec->data[i]);
+    ipw=cimagf(fvec->data[i]);
 
     errorcode=fwrite((void*)&rpw, sizeof(REAL4),1,fp);  
     if (errorcode!=1){

@@ -146,7 +146,6 @@ int main( int argc, char *argv[] )
     {"help",                    no_argument,       0,                'h'},
     {"verbose",                 no_argument,       &vrbflg,           1 },
     {"version",                 no_argument,       0,                'V'},
-    {"debug-level",             required_argument, 0,                'z'},
     {"injection-file",          required_argument, 0,                'I'},
     {"mass-cut",                required_argument, 0,                'M'},
     {"mass-range-low",          required_argument, 0,                't'},
@@ -160,7 +159,6 @@ int main( int argc, char *argv[] )
 
   /* set up inital debugging values */
   lal_errhandler = LAL_ERR_EXIT;
-  set_debug_level( "1" );
 
   /* create the process and process params tables */
   proctable.processTable = (ProcessTable *) 
@@ -195,7 +193,7 @@ int main( int argc, char *argv[] )
     size_t optarg_len;
 
     c = getopt_long_only( argc, argv, 
-        "c:C:hI:m:M:o:t:T:Vz:Z:", long_options, &option_index );
+        "c:C:hI:m:M:o:t:T:VZ:", long_options, &option_index );
 
     /* detect the end of the options */
     if ( c == - 1 )
@@ -311,13 +309,6 @@ int main( int argc, char *argv[] )
         this_proc_param = this_proc_param->next =
           next_process_param( long_options[option_index].name,
               "float", "%e", maxMass2 );
-        break;
-
-      case 'z':
-        set_debug_level( optarg );
-        this_proc_param = this_proc_param->next = 
-          next_process_param( long_options[option_index].name, 
-            "string", "%s", optarg );
         break;
 
       case 'V':

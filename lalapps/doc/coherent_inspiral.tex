@@ -10,7 +10,6 @@
 [\option{--help}] \newline \hspace*{0.5in} 
 [\option{--verbose}] \newline \hspace*{0.5in} 
 [\option{--version}] \newline \hspace*{0.5in}
-\option{--debug-level}~\parm{LEVEL} \newline \hspace*{0.5in}            
 \option{--channel-number}~\parm{CHANNUMBER} \newline \hspace*{0.5in}           
 \option{--bank-file}~\parm{FILE} \newline \hspace*{0.5in}           
 \option{--sample-rate}~\parm{F} \newline \hspace*{0.5in}         
@@ -49,9 +48,6 @@ and GEOBeam.dat.
 \item[\option{--verbose}] Optional. Print progress information.
 
 \item[\option{--version}] Optional. Print version information and exit.
-
-\item[\option{--debug-level}~\parm{LEVEL}] Set the LAL debug level to 
-\parm{LEVEL}. For example: 1 :developer, 33 :production.
 
 \item[\option{--channel-number}~\parm{CHANNUMBER}] Read data from 
 C data channel number \parm{CHANNUMBER}. After running inspiral.c with the 
@@ -116,7 +112,6 @@ To run the program, type (for example):
 \begin{verbatim}
 lalapps_coherent_inspiral \
 --verbose \
---debug-level 33 \ 
 --low-frequency-cutoff 70.0 \
 --bank-file L1-TMPLTBANK-751957200-512.xml \
 --sample-rate 4096 \

@@ -23,7 +23,7 @@
  * \author Alicia Sintes, Badri Krishnan
  * \brief
  * Monte Carlo signal injections for several h_0 values and
- *  compute the Hough transform for a small number of point in parameter space each time
+ * compute the Hough transform for a small number of point in parameter space each time
  */
 
 /* 
@@ -50,7 +50,6 @@
 #define LAL_USE_OLD_COMPLEX_STRUCTS
 #include "./MCInjectHoughMulti.h" /* proper path*/
 
-extern int lalDebugLevel;
 
 #define EARTHEPHEMERIS "./earth05-09.dat" 
 #define SUNEPHEMERIS "./sun05-09.dat"    
@@ -197,10 +196,6 @@ int main(int argc, char *argv[]){
   /* LAL error-handler */
   lal_errhandler   =   LAL_ERR_EXIT;
   
-  lalDebugLevel = 0;
-  /* LALDebugLevel must be called before anything else */
-  LAL_CALL( LALGetDebugLevel( &status, argc, argv, 'd'), &status);
-
   uvar_help = FALSE;
   uvar_AllSkyFlag = 1;
   
@@ -741,8 +736,8 @@ int main(int argc, char *argv[]){
 	 /* initialize data to zero */
          for ( iSFT = 0; iSFT < numsft; iSFT++){	   
 	   for (j=0; j < binsSFT; j++) {
-	     signalSFTs->data[iIFO]->data[iSFT].data->data[j].re = 0.0;
-	     signalSFTs->data[iIFO]->data[iSFT].data->data[j].im = 0.0;	    
+	     signalSFTs->data[iIFO]->data[iSFT].data->data[j].realf_FIXME = 0.0;
+	     signalSFTs->data[iIFO]->data[iSFT].data->data[j].imagf_FIXME = 0.0;	    
 	   }	 
          }
      	  	 
@@ -855,8 +850,8 @@ int main(int argc, char *argv[]){
 	  sumSFT    = sumSFTs->data[iIFO]->data[iSFT].data->data;
 	  	  
 	  for (j=0; j < binsSFT; j++) {
-	    sumSFT->re = noiseSFT->re + h0scale *signalSFT->re;
-	    sumSFT->im = noiseSFT->im + h0scale *signalSFT->im;
+	    sumSFT->realf_FIXME = crealf(*noiseSFT) + h0scale *crealf(*signalSFT);
+	    sumSFT->imagf_FIXME = cimagf(*noiseSFT) + h0scale *cimagf(*signalSFT);
 	    ++noiseSFT;
 	    ++signalSFT;
 	    ++sumSFT;

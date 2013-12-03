@@ -1,0 +1,83 @@
+.TH LALFR\-STREAM 1 "10 June 2013" LALFrame LALFrame
+.SH NAME
+lalfr-stream \-\- output a frame data stream
+
+.SH SYNOPSIS
+.NF
+\fBlalfr-stream\fP \-\-channel=\fIchannel\fP \-\-frame\-cache=\fIcachefile\fP
+             [\-\-start\-time=\fItstart\fP] [\-\-duration=\fIdeltat\fP]
+
+\fBlalfr-stream\fP \-\-channel=\fIchannel\fP \-\-frame\-glob=\fIglobstring\fP
+             [\-\-start\-time=\fItstart\fP] [\-\-duration=\fIdeltat\fP]
+.FI
+.SH DESCRIPTION
+.PP
+The \fBlalfr-stream\fP utility reads a requested interval
+[\fItstart\fP,\fItstart\fP+\fIdeltat\fP)
+of \fIchannel\fP data from frame files that are either indexed
+in the \fIcachefile\fP or matching the pattern \fIglobstring\fP as
+described by glob(3).
+If \fItstart\fP is not specified, streaming begins at the beginning
+of the available data.
+If \fIdeltat\fP is not specified, streaming continues until the
+end of the available data.
+The output is written to the
+standard output in two-column ascii format data in which the first
+column contains the GPS times of each sample and the second column
+contains the corresponding sample values.
+
+.SH OPTIONS
+.TP
+\fB-h\fP, \fB--help
+Prints the help message.
+.TP
+\fB-c\fP \fIchannel\fP, \fB--channel\fP=\fIchannel\fP
+The \fIchannel\fP name that is to be read.
+.TP
+\fB-f\fP \fIcachefile\fP, \fB--frame-cache\fP=\fIcachefile\fP
+The \fIcachefile\fP indexing the frame files to be used.
+.TP
+\fB-f\fP \fIglobstring\fP, \fB--frame-cache\fP=\fIglobstring\fP
+The \fIcachefile\fP indexing the frame files to be used.
+.TP
+\fB-s\fP \fItstart\fP, \fB--start-time\fP=\fItstart\fP
+The time \fItstart\fP GPS seconds of the data to read.  If padding
+is specified with the \fB-P\fP option or the \fB--pad\fP option, an additional
+amount of data preceding \fItstart\fP is also read, and discarded after
+any requested filtering of the data is complete.
+.TP
+\fB-t\fP \fIdeltat\fP, \fB--duration\fP=\fIdeltat\fP
+The duration \fIdeltat\fP in seconds of data to read.  If padding
+is specified with the \fB-P\fP option or the \fB--pad\fP option, an additional
+amount of data is also read, and discarded after any requested filtering of
+the data is complete.
+
+.SH ENVIRONMENT
+The LAL_DEBUG_LEVEL can used to control the error and warning reporting
+of \fBlalfr-stream\fP.  Common values are:
+LAL_DEBUG_LEVEL=0 which suppresses error messages,
+LAL_DEBUG_LEVEL=1 which prints error messages alone,
+LAL_DEBUG_LEVEL=3 which prints both error messages and warning messages, and
+LAL_DEBUG_LEVEL=7 which additionally prints informational messages.
+
+.SH EXIT STATUS
+The \fBlalfr-stream\fP utility exits 0 on success, and >0 if an error occurs.
+
+
+.SH EXAMPLES
+.PP
+The command:
+.PP
+.RS
+.HP
+lalfr-stream -c H1:LSC-STRAIN -g "H-*.gwf" -s 1000000000 -t 1000
+.RE
+.PP
+will stream 1000 seconds of H1:LSC-STRAIN data beginning at GPS time 1000000000
+from frame files matching ``H-*.gwf'' in the current directory.
+
+.SH SEE ALSO
+lalfr-vis(1)
+
+.SH AUTHOR
+Jolien Creighton

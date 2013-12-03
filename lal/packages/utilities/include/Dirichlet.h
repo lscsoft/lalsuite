@@ -27,19 +27,20 @@ extern "C" {
 #endif
 
 /**
-   \addtogroup Dirichlet_h
-   \author UTB Relativity Group; contact whelan@phys.utb.edu
-
-   \brief Provides prototype and error code information for <tt>LALDirichlet()</tt>,
-   a routine which calculates the values of the Dirichlet kernel
-   \f${\cal D}_N(x)\f$.
-
-   \heading{Synopsis}
-   \code
-   #include "Dirichlet.h"
-   \endcode
-
-*/
+ * \addtogroup Dirichlet_h
+ * \author UTB Relativity Group; contact whelan@phys.utb.edu
+ *
+ * \brief Provides prototype and error code information for <tt>LALDirichlet()</tt>,
+ * a routine which calculates the values of the Dirichlet kernel
+ * \f${\cal D}_N(x)\f$.
+ *
+ * ### Synopsis ###
+ *
+ * \code
+ * #include "Dirichlet.h"
+ * \endcode
+ *
+ */
 /*@{*/
 
 /**\name Error Codes */

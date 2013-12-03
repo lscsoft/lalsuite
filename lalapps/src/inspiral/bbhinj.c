@@ -215,7 +215,6 @@ int main( int argc, char *argv[] )
     {"d-distr",                 required_argument, 0,                'd'},
     {"m-distr",                 required_argument, 0,                'm'},
     {"waveform",                required_argument, 0,                'w'},
-    {"debug-level",             required_argument, 0,                'z'},
     {"user-tag",                required_argument, 0,                'Z'},
     {"userTag",                 required_argument, 0,                'Z'},
     {0, 0, 0, 0}
@@ -224,7 +223,6 @@ int main( int argc, char *argv[] )
 
   /* set up inital debugging values */
   lal_errhandler = LAL_ERR_EXIT;
-  set_debug_level( "1" );
 
 
   /* create the process and process params tables */
@@ -266,7 +264,7 @@ int main( int argc, char *argv[] )
     size_t optarg_len;
 
     c = getopt_long_only( argc, argv, 
-        "a:A:b:B:d:f:hi:m:p:q:r:s:t:vz:Z:w:", long_options, &option_index );
+        "a:A:b:B:d:f:hi:m:p:q:r:s:t:vZ:w:", long_options, &option_index );
 
     /* detect the end of the options */
     if ( c == - 1 )
@@ -494,13 +492,6 @@ int main( int argc, char *argv[] )
         this_proc_param = this_proc_param->next =
           next_process_param( long_options[option_index].name, "string",
               "%s", optarg);
-        break;
-
-      case 'z':
-        set_debug_level( optarg );
-        this_proc_param = this_proc_param->next = 
-          next_process_param( long_options[option_index].name, 
-            "string", "%s", optarg );
         break;
 
       case 'V':

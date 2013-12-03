@@ -29,10 +29,10 @@
 /**
  * \addtogroup ComplexFFT_h
  *
- * \heading{Description}
+ * ### Description ###
  *
  * This package provides a (X)LAL-style interface with the FFTW fast Fourier
- * transform package [\ref fj_1998].
+ * transform package \cite fj_1998.
  *
  * The routines LALCreateForwardComplexFFTPlan() and
  * LALCreateReverseComplexFFTPlan() create plans for computing the
@@ -47,16 +47,16 @@
  * \f$k=0\ldots n-1\f$ of a vector \f$h_j\f$, \f$j=0\ldots n-1\f$, of length \f$n\f$ is defined
  * by
  * \f[
- *   H_k = \sum_{j=0}^{n-1} h_j e^{-2\pi ijk/n}
+ * H_k = \sum_{j=0}^{n-1} h_j e^{-2\pi ijk/n}
  * \f]
  * and, similarly, the \e inverse Fourier transform is defined by
  * \f[
- *   h_j = \frac{1}{n}\sum_{k=0}^{n-1} H_k e^{2\pi ijk/n}.
+ * h_j = \frac{1}{n}\sum_{k=0}^{n-1} H_k e^{2\pi ijk/n}.
  * \f]
  * However, the present implementation of the \e reverse FFT omits the
  * factor of \f$1/n\f$.  The input and output vectors must be distinct.
  *
- * \heading{Operating Instructions}
+ * ### Operating Instructions ###
  *
  * \code
  * const UINT4 n = 17;
@@ -85,18 +85,19 @@
  * LALCDestroyVector( &status, &cvec );
  * \endcode
  *
- * \heading{Algorithm}
+ * ### Algorithm ###
  *
- * The FFTW [\ref fj_1998] is used.
+ * The FFTW \cite fj_1998 is used.
  *
- * \heading{Uses}
+ * ### Uses ###
  *
- * \heading{Notes}
+ *
+ * ### Notes ###
  *
  * <ol>
  * <li> The sign convention used here is the opposite of the definition in
- * <em>Numerical Recipes</em> [\ref ptvf1992], but agrees with the one used
- * by FFTW [\ref fj_1998] and the other LIGO software components.
+ * <em>Numerical Recipes</em> \cite ptvf1992, but agrees with the one used
+ * by FFTW \cite fj_1998 and the other LIGO software components.
  * </li><li> The result of the inverse FFT must be multiplied by \f$1/n\f$ to recover
  * the original vector.  This is different from the \c datacondAPI where
  * the factor is applied by default.
@@ -104,18 +105,17 @@
  * performance is \f$O(n\log n)\f$.  However, better performance is obtained if \f$n\f$
  * is the product of powers of 2, 3, 5, 7, and zero or one power of either 11
  * or 13.  Transforms when \f$n\f$ is a power of 2 are especially fast.  See
- * Ref. [\ref fj_1998].
+ * Ref. \cite fj_1998.
  * </li><li> LALMalloc() is used by all the fftw routines.
  * </li><li> The input and output vectors for LALCOMPLEX8VectorFFT() must
  * be distinct.
  * </li></ol>
  *
- *
- *
-*/
+ */
 /*@{*/
 
-/** Plan to perform an FFT of COMPLEX8 data
+/**
+ * Plan to perform an FFT of COMPLEX8 data
  */
 struct
 tagCOMPLEX8FFTPlan
@@ -125,7 +125,8 @@ tagCOMPLEX8FFTPlan
   fftwf_plan plan; /**< the FFTW plan */
 };
 
-/** Plan to perform an FFT of COMPLEX16 data
+/**
+ * Plan to perform an FFT of COMPLEX16 data
  */
 struct
 tagCOMPLEX16FFTPlan
@@ -184,11 +185,11 @@ COMPLEX8FFTPlan * XLALCreateCOMPLEX8FFTPlan( UINT4 size, int fwdflg, int measure
   }
 
   /* create the plan */
-  LAL_FFTW_PTHREAD_MUTEX_LOCK;
+  LAL_FFTW_WISDOM_LOCK;
   plan->plan = fftwf_plan_dft_1d( size,
       (fftwf_complex *)tmp1, (fftwf_complex *)tmp2,
       fwdflg ? FFTW_FORWARD : FFTW_BACKWARD, flags );
-  LAL_FFTW_PTHREAD_MUTEX_UNLOCK;
+  LAL_FFTW_WISDOM_UNLOCK;
 
   /* free temporary arrays */
   XLALFree( tmp2 );
@@ -235,9 +236,9 @@ void XLALDestroyCOMPLEX8FFTPlan( COMPLEX8FFTPlan *plan )
   {
     if ( plan->plan )
     {
-      LAL_FFTW_PTHREAD_MUTEX_LOCK;
+      LAL_FFTW_WISDOM_LOCK;
       fftwf_destroy_plan( plan->plan );
-      LAL_FFTW_PTHREAD_MUTEX_UNLOCK;
+      LAL_FFTW_WISDOM_UNLOCK;
     }
     memset( plan, 0, sizeof( *plan ) );
     XLALFree( plan );
@@ -246,7 +247,7 @@ void XLALDestroyCOMPLEX8FFTPlan( COMPLEX8FFTPlan *plan )
 }
 
 
-int XLALCOMPLEX8VectorFFT( COMPLEX8Vector *output, COMPLEX8Vector *input,
+int XLALCOMPLEX8VectorFFT( COMPLEX8Vector * _LAL_RESTRICT_ output, const COMPLEX8Vector * _LAL_RESTRICT_ input,
     const COMPLEX8FFTPlan *plan )
 {
   if ( ! output || ! input || ! plan )
@@ -317,11 +318,11 @@ COMPLEX16FFTPlan * XLALCreateCOMPLEX16FFTPlan( UINT4 size, int fwdflg, int measu
   }
 
   /* create the plan */
-  LAL_FFTW_PTHREAD_MUTEX_LOCK;
+  LAL_FFTW_WISDOM_LOCK;
   plan->plan = fftw_plan_dft_1d( size,
       (fftw_complex *)tmp1, (fftw_complex *)tmp2,
       fwdflg ? FFTW_FORWARD : FFTW_BACKWARD, flags );
-  LAL_FFTW_PTHREAD_MUTEX_UNLOCK;
+  LAL_FFTW_WISDOM_UNLOCK;
 
   /* free temporary arrays */
   XLALFree( tmp2 );
@@ -368,9 +369,9 @@ void XLALDestroyCOMPLEX16FFTPlan( COMPLEX16FFTPlan *plan )
   {
     if ( plan->plan )
     {
-      LAL_FFTW_PTHREAD_MUTEX_LOCK;
+      LAL_FFTW_WISDOM_LOCK;
       fftw_destroy_plan( plan->plan );
-      LAL_FFTW_PTHREAD_MUTEX_UNLOCK;
+      LAL_FFTW_WISDOM_UNLOCK;
     }
     memset( plan, 0, sizeof( *plan ) );
     XLALFree( plan );
@@ -379,7 +380,7 @@ void XLALDestroyCOMPLEX16FFTPlan( COMPLEX16FFTPlan *plan )
 }
 
 
-int XLALCOMPLEX16VectorFFT( COMPLEX16Vector *output, COMPLEX16Vector *input,
+int XLALCOMPLEX16VectorFFT( COMPLEX16Vector * _LAL_RESTRICT_ output, const COMPLEX16Vector * _LAL_RESTRICT_ input,
     const COMPLEX16FFTPlan *plan )
 {
   if ( ! output || ! input || ! plan )
@@ -419,7 +420,7 @@ LALCreateForwardCOMPLEX8FFTPlan(
     )
 {
   INITSTATUS(status);
-  XLALPrintDeprecationWarning("LALCreateForwardCOMPLEX8FFTPlan", "XLALCreateForwardCOMPLEX8FFTPlan");
+  XLAL_PRINT_DEPRECATION_WARNING("XLALCreateForwardCOMPLEX8FFTPlan");
 
   ASSERT( plan, status, COMPLEXFFTH_ENULL, COMPLEXFFTH_MSGENULL );
   ASSERT( ! *plan, status, COMPLEXFFTH_ENNUL, COMPLEXFFTH_MSGENNUL );
@@ -457,7 +458,7 @@ LALCreateReverseCOMPLEX8FFTPlan(
     )
 {
   INITSTATUS(status);
-  XLALPrintDeprecationWarning("LALCreateReverseCOMPLEX8FFTPlan", "XLALCreateReverseCOMPLEX8FFTPlan");
+  XLAL_PRINT_DEPRECATION_WARNING("XLALCreateReverseCOMPLEX8FFTPlan");
 
   ASSERT( plan, status, COMPLEXFFTH_ENULL, COMPLEXFFTH_MSGENULL );
   ASSERT( ! *plan, status, COMPLEXFFTH_ENNUL, COMPLEXFFTH_MSGENNUL );
@@ -493,7 +494,7 @@ LALDestroyCOMPLEX8FFTPlan (
     )
 {
   INITSTATUS(status);
-  XLALPrintDeprecationWarning("LALDestroyCOMPLEX8FFTPlan", "XLALDestroyCOMPLEX8FFTPlan");
+  XLAL_PRINT_DEPRECATION_WARNING("XLALDestroyCOMPLEX8FFTPlan");
   ASSERT( plan, status, COMPLEXFFTH_ENULL, COMPLEXFFTH_MSGENULL );
   ASSERT( *plan, status, COMPLEXFFTH_ENULL, COMPLEXFFTH_MSGENULL );
   XLALDestroyCOMPLEX8FFTPlan( *plan );
@@ -524,7 +525,7 @@ LALCOMPLEX8VectorFFT (
 {
   int code;
   INITSTATUS(status);
-  XLALPrintDeprecationWarning("LALCOMPLEX8VectorFFT", "XLALCOMPLEX8VectorFFT");
+  XLAL_PRINT_DEPRECATION_WARNING("XLALCOMPLEX8VectorFFT");
 
   ASSERT( output, status, COMPLEXFFTH_ENULL, COMPLEXFFTH_MSGENULL );
   ASSERT( input, status, COMPLEXFFTH_ENULL, COMPLEXFFTH_MSGENULL );
@@ -592,7 +593,7 @@ LALCreateForwardCOMPLEX16FFTPlan(
     )
 {
   INITSTATUS(status);
-  XLALPrintDeprecationWarning("LALCreateForwardCOMPLEX16FFTPlan", "XLALCreateForwardCOMPLEX16FFTPlan");
+  XLAL_PRINT_DEPRECATION_WARNING("XLALCreateForwardCOMPLEX16FFTPlan");
 
   ASSERT( plan, status, COMPLEXFFTH_ENULL, COMPLEXFFTH_MSGENULL );
   ASSERT( ! *plan, status, COMPLEXFFTH_ENNUL, COMPLEXFFTH_MSGENNUL );
@@ -630,7 +631,7 @@ LALCreateReverseCOMPLEX16FFTPlan(
     )
 {
   INITSTATUS(status);
-  XLALPrintDeprecationWarning("LALCreateReverseCOMPLEX16FFTPlan", "XLALCreateReverseCOMPLEX16FFTPlan");
+  XLAL_PRINT_DEPRECATION_WARNING("XLALCreateReverseCOMPLEX16FFTPlan");
 
   ASSERT( plan, status, COMPLEXFFTH_ENULL, COMPLEXFFTH_MSGENULL );
   ASSERT( ! *plan, status, COMPLEXFFTH_ENNUL, COMPLEXFFTH_MSGENNUL );
@@ -666,7 +667,7 @@ LALDestroyCOMPLEX16FFTPlan (
     )
 {
   INITSTATUS(status);
-  XLALPrintDeprecationWarning("LALDestroyCOMPLEX16FFTPlan", "XLALDestroyCOMPLEX16FFTPlan");
+  XLAL_PRINT_DEPRECATION_WARNING("XLALDestroyCOMPLEX16FFTPlan");
   ASSERT( plan, status, COMPLEXFFTH_ENULL, COMPLEXFFTH_MSGENULL );
   ASSERT( *plan, status, COMPLEXFFTH_ENULL, COMPLEXFFTH_MSGENULL );
   XLALDestroyCOMPLEX16FFTPlan( *plan );
@@ -697,7 +698,7 @@ LALCOMPLEX16VectorFFT (
 {
   int code;
   INITSTATUS(status);
-  XLALPrintDeprecationWarning("LALCOMPLEX16VectorFFT", "XLALCOMPLEX16VectorFFT");
+  XLAL_PRINT_DEPRECATION_WARNING("XLALCOMPLEX16VectorFFT");
 
   ASSERT( output, status, COMPLEXFFTH_ENULL, COMPLEXFFTH_MSGENULL );
   ASSERT( input, status, COMPLEXFFTH_ENULL, COMPLEXFFTH_MSGENULL );

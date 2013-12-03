@@ -17,62 +17,57 @@
 *  MA  02111-1307  USA
 */
 
-/** \ingroup ResampleTimeSeries_h
+/**
+ * \ingroup ResampleTimeSeries_h
  * \file
  * \author Brown, D. A.
  *
  * \brief Tests the routines in \ref ResampleTimeSeries.h
  *
- * \heading{Usage}
+ * ### Usage ###
+ *
  * \code
  * Usage: ./ResampleTimeSeriesTest [options] defaults shown in brackets
  * Options:
- *   -h         print this message
- *   -d level   set lalDebugLevel to level
- *   -v         verbose: print extra information
- *   -n points  number of points in the raw time series (1048576)
- *   -i freq    sample rate of input time series (16384)
- *   -o freq    sample rate of output time series (4096)
- *   -f freq    frequency of sine wave to inject as input (1000.0)
- *   -r type    type of filter to use in resampling (ldas)
- *              [ldas|butterworth]
+ * -h         print this message
+ * -d level   set lalDebugLevel to level
+ * -v         verbose: print extra information
+ * -n points  number of points in the raw time series (1048576)
+ * -i freq    sample rate of input time series (16384)
+ * -o freq    sample rate of output time series (4096)
+ * -f freq    frequency of sine wave to inject as input (1000.0)
+ * -r type    type of filter to use in resampling (ldas)
+ * [ldas|butterworth]
  * \endcode
  *
- * \heading{Description}
+ * ### Description ###
  *
  * Tests the resampling functions by injecting a sine wave of a given
  * frequency into a time series and downsampling it. The raw and output
  * data are returned as frame files for plotting in matlab.
  *
- * \heading{Sample Results}
+ * ### Sample Results ###
  *
- * Figures.\figref{f_resamp1}-\figref{f_resamp3} show the results of various
+ * \figref{resamp_figs1}--\figref{resamp_figs3} show the results of various
  * tests using this program.
  *
- * \floatfig{htb,f_resamp1}
- * \image html  resamp_figs1.png "Fig. [f_resamp1]"
- * \image latex resamp_figs1.pdf ""
+ * \figure{resamp_figs1,pdf,0.6,}
  *
- * Fig. [f_resamp1]: The left figure shows a 10 Hz sine wave generated at 16384 Hz resampled to
+ * \figref{resamp_figs1}: The left figure shows a 10 Hz sine wave generated at 16384 Hz resampled to
  * 4096 Hz. The right figure shows a 100Hz sine wave generated at 16384 Hz
  * resampled to 4096 Hz. Note that there is no attenuation, time delay or
  * phase shift of the output. FIXME the legend in the right figure is wrong.
  * It should say 100 Hz, not 10 Hz the output.
  *
+ * \figure{resamp_figs2,pdf,0.6,}
  *
- * \floatfig{htb,f_resamp2}
- * \image html  resamp_figs2.png "Fig. [f_resamp2]"
- * \image latex resamp_figs2.pdf ""
- *
- * Fig. [f_resamp2]: A 100Hz sine wave generated at 16384 Hz resampled to 8192 Hz. The left
+ * \figref{resamp_figs2}: A 100Hz sine wave generated at 16384 Hz resampled to 8192 Hz. The left
  * plot shows the start of the time series and the right plot the end. Note
  * the corruption of points due to the time domain filtering.
  *
- * \floatfig{htb,f_resamp3}
- * \image html  resamp_figs3.png "Fig. [f_resamp3]"
- * \image latex resamp_figs3.pdf ""
+ * \figure{resamp_figs3,pdf,0.6,}
  *
- * Fig. [f_resamp3]: The left figure shows a 1000 Hz sine wave generated at 16384 Hz resampled
+ * \figref{resamp_figs3}: The left figure shows a 1000 Hz sine wave generated at 16384 Hz resampled
  * to 4096 Hz. The right figure shows a 1000Hz sine wave generated at 16384 Hz
  * resampled to 2048 Hz. Note that there is no attenuation, time delay or
  * phase shift of the output at 4096 Hz, however there is attenuation and
@@ -80,7 +75,7 @@
  * signal is very close to the output Nyquist frequency. Care should be taken
  * to downsample to a suitable rate to avoid this type of attenuation.
  *
-*/
+ */
 
 /** \cond DONT_DOXYGEN */
 
@@ -92,7 +87,7 @@
 #include <lal/LALConstants.h>
 #include <lal/Units.h>
 #include <lal/ResampleTimeSeries.h>
-#include <lal/FrameStream.h>
+#include <lal/LALFrStream.h>
 #include <lal/AVFactories.h>
 #include <lal/LALStdio.h>
 #ifdef HAVE_UNISTD_H
@@ -105,7 +100,6 @@
 extern char *optarg;
 extern int   optind;
 
-int     lalDebugLevel = LALWARNING | LALINFO;
 int     verbose = 0;
 UINT4   numPoints = 1048576;
 UINT4   inRate    = 16384;
@@ -267,7 +261,6 @@ ParseOptions (int argc, char *argv[])
         break;
 
       case 'd': /* set debug level */
-        lalDebugLevel = atoi (optarg);
         break;
 
       case 'n': /* sets number of points */

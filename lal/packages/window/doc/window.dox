@@ -1,25 +1,24 @@
 /**
-
-\addtogroup pkg_window
-
-\brief This package contains a function to create a vector containing a window (also called a taper, lag window, or
-       apodization function).
-
-This package defines two data types, the \c REAL4Window and
-\c REAL8Window types.  These are suitable for storing window function
-data, providing storage for a sequence of samples as well as metadata about
-the window such as the sum-of-squarse of the samples.  The package also
-provides a collection of functions to construct a variety of pre-defined
-window functions.
-
-The use of window functions in signal analysis is well documented in many
-places.
-
-Definitions of most of the window functions can be found in Numerical Recipes [\ref ptvf1992]
-equations 13.4.13-13.4.15.  Definitions of the
-remaining windows can be found in <em>Spectral analysis for physical
-applications</em> [\ref pw93] Section 6.11.  Definition of the Kaiser window can
-be found in <em>Discrete-time Signal Processing</em> by Oppenheim and
-Schafer, p.474.
-
-*/
+ * \addtogroup pkg_window
+ *
+ * \brief This package contains a function to create a vector containing a window (also called a taper, lag window, or
+ * apodization function).
+ *
+ * This package defines two data types, the \c REAL4Window and
+ * \c REAL8Window types.  These are suitable for storing window function
+ * data, providing storage for a sequence of samples as well as metadata about
+ * the window such as the sum-of-squarse of the samples.  The package also
+ * provides a collection of functions to construct a variety of pre-defined
+ * window functions.
+ *
+ * The use of window functions in signal analysis is well documented in many
+ * places.
+ *
+ * Definitions of most of the window functions can be found in Numerical Recipes \cite ptvf1992
+ * equations 13.4.13-13.4.15.  Definitions of the
+ * remaining windows can be found in <em>Spectral analysis for physical
+ * applications</em> \cite pw93 Section 6.11.  Definition of the Kaiser window can
+ * be found in <em>Discrete-time Signal Processing</em> by Oppenheim and
+ * Schafer, p.474.
+ *
+ */

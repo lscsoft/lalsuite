@@ -18,43 +18,47 @@
 */
 
 /**
-\author Sathyaprakash, B. S.
-\file
-\ingroup LALInspiral_h
-
-\brief Given \f$\tau_0\f$ and \f$\tau_4\f$ solve for the mass ratio \f$\eta.\f$
-
-\heading{Description}
-Given \f$\tau_0\f$ and \f$\tau_4\f$ one can determine \f$\eta\f$ by solving
-\f{equation}{
--\eta^{4/5} \tau_4 + A_4 \left ( \frac {\tau_0}{A_0} \right )^{1/5}
-\left (1 + B_4\eta + C_4 \eta^2 \right )  = 0,
-\f}
-where \f$A_0 = 5/[256 (\pi f_{s} )^{8/3}],\f$
-\f$A_4 = 5 \times 3058673/ [128 \times 1016064  (\pi f_s)^{4/3}],\f$
-\f$B_4 = 5429 \times 1016064 /(1008 \times 3058673),\f$ and \f$C_4 = 617 \times
-1016064/(144 \times 3058673).\f$
-This function returns the LHS of the above
-equation in \c x for a given \c eta.
-
-\heading{Algorithm}
-None.
-
-\heading{Uses}
-None.
-
-\heading{Notes}
-The <tt>void pointer</tt> <tt>*p</tt> should point to a \c struct
-of type ::EtaTau04In
-\code
-{
-   void *p;
-   EtaTau04In q;
-   ...
-   p = (void *) &q;
-}
-\endcode
-*/
+ * \author Sathyaprakash, B. S.
+ * \file
+ * \ingroup LALInspiral_h
+ *
+ * \brief Given \f$\tau_0\f$ and \f$\tau_4\f$ solve for the mass ratio \f$\eta.\f$
+ *
+ * ### Description ###
+ *
+ * Given \f$\tau_0\f$ and \f$\tau_4\f$ one can determine \f$\eta\f$ by solving
+ * \f{equation}{
+ * -\eta^{4/5} \tau_4 + A_4 \left ( \frac {\tau_0}{A_0} \right )^{1/5}
+ * \left (1 + B_4\eta + C_4 \eta^2 \right )  = 0,
+ * \f}
+ * where \f$A_0 = 5/[256 (\pi f_{s} )^{8/3}],\f$
+ * \f$A_4 = 5 \times 3058673/ [128 \times 1016064  (\pi f_s)^{4/3}],\f$
+ * \f$B_4 = 5429 \times 1016064 /(1008 \times 3058673),\f$ and \f$C_4 = 617 \times
+ * 1016064/(144 \times 3058673).\f$
+ * This function returns the LHS of the above
+ * equation in \c x for a given \c eta.
+ *
+ * ### Algorithm ###
+ *
+ * None.
+ *
+ * ### Uses ###
+ *
+ * None.
+ *
+ * ### Notes ###
+ *
+ * The <tt>void pointer</tt> <tt>*p</tt> should point to a \c struct
+ * of type ::EtaTau04In
+ * \code
+ * {
+ * void *p;
+ * EtaTau04In q;
+ * ...
+ * p = (void *) &q;
+ * }
+ * \endcode
+ */
 
 #include <lal/LALInspiral.h>
 
@@ -66,7 +70,7 @@ LALEtaTau04(
    void      *p
    )
 {
-   XLALPrintDeprecationWarning("LALEtaTau04", "XLALEtaTau04");
+   XLAL_PRINT_DEPRECATION_WARNING("XLALEtaTau04");
 
    INITSTATUS(status);
    ATTATCHSTATUSPTR(status);

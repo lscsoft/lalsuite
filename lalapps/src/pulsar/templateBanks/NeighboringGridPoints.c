@@ -65,7 +65,6 @@
 #include <lal/LALConstants.h>
 #include <lal/StringInput.h>
 
-extern INT4 lalDebugLevel;
 
 #define NEIGHBORINGGRIDPOINTSH_ENULL 	1
 #define NEIGHBORINGGRIDPOINTSH_ENONULL	2
@@ -89,8 +88,8 @@ void InitDopplerScanOnRefinedGrid ( LALStatus *status, DopplerScanState *theScan
 
 
 /**
- * Refine the skyRegion to search only at neighboring grid points of the 
- * center of the original skyRegion. 
+ * Refine the skyRegion to search only at neighboring grid points of the
+ * center of the original skyRegion.
  */
 void 
 InitDopplerScanOnRefinedGrid ( LALStatus *status, 		/**< pointer to LALStatus structure */

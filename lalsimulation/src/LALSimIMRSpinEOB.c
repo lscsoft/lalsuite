@@ -20,9 +20,9 @@
 /**
  * \author Craig Robinson
  *
- * \ file 
+ * \ file
  *
- * \brief Functions for producing EOB waveforms for 
+ * \brief Functions for producing EOB waveforms for
  * spinning binaries, as described in Barausse and Buonanno ( arXiv 0912.3517 ).
  */
 

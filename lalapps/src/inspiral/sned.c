@@ -40,7 +40,6 @@
 #include <time.h>
 #include <math.h>
 
-#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lalapps.h>
 #include <series.h>
 #include <processtable.h>
@@ -53,7 +52,7 @@
 #include <lal/LALDatatypes.h>
 #include <lal/AVFactories.h>
 #include <lal/LALConstants.h>
-#include <lal/FrameStream.h>
+#include <lal/LALFrStream.h>
 #include <lal/ResampleTimeSeries.h>
 #include <lal/Calibration.h>
 #include <lal/FrameCalibration.h>
@@ -109,7 +108,6 @@ snprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, format, ppvalue );
 "  --help                   display this message\n"\
 "  --verbose                be verbose\n"\
 "  --version                version info\n"\
-"  --debug-level LEVEL      set the LAL debug level to LEVEL\n"\
 "  --spinning-search        use the normalization for a spinning search\n"\
 "                           instead of for a non-spinning search\n"\
 "  --inject-overhead        inject signals from overhead detector\n"\
@@ -264,9 +262,6 @@ int main( int argc, char *argv[] )
   SnglInspiralTable     *headFoundSngl = NULL;
   SnglInspiralTable     *L1FoundSngl = NULL;
 
-  /* set initial debug level */
-  set_debug_level("1");
-
   /* create the process and process params tables */
   proctable.processTable = (ProcessTable *) calloc( 1, sizeof(ProcessTable) );
   XLALGPSTimeNow(&(proctable.processTable->start_time));
@@ -296,7 +291,6 @@ int main( int argc, char *argv[] )
       {"inject-overhead",         no_argument,       &injoverhead,       1 },
       {"f-lower",                 required_argument, 0,                 'g'},
       {"ligo-only",               no_argument,       &ligoOnly,          1 },
-      {"debug-level",             required_argument, 0,                 'z'}, 
       {"snr-threshold",           required_argument, 0,                 's'},
       {0, 0, 0, 0}
     };
@@ -312,7 +306,7 @@ int main( int argc, char *argv[] )
     int option_index = 0;
     size_t optarg_len;
 
-    c = getopt_long_only( argc, argv, "a:b:c:d:e:f:g:z:s:hV", long_options,
+    c = getopt_long_only( argc, argv, "a:b:c:d:e:f:g:s:hV", long_options,
         &option_index );
 
     /* detect the end of the options */
@@ -384,11 +378,6 @@ int main( int argc, char *argv[] )
             "Drew Keppel and Gareth Jones\n");
         XLALOutputVersionString(stderr, 0);
         exit( 0 );
-        break;
-
-      case 'z':
-        set_debug_level( optarg );
-        ADD_PROCESS_PARAM( "string", "%s", optarg );
         break;
 
       case 's':
@@ -537,15 +526,13 @@ int main( int argc, char *argv[] )
   unity = XLALCreateCOMPLEX8Vector( resp->data->length );
   for ( k = 0; k < unity->length; ++k )
   {
-    unity->data[k].re = 1.0;
-    unity->data[k].im = 0.0;
+    unity->data[k] = 1.0;
   }
 
   /* set response */
   for ( k = 0; k < resp->data->length; ++k )
   {
-    resp->data->data[k].re = 1.0;
-    resp->data->data[k].im = 0.0;
+    resp->data->data[k] = 1.0;
   }
 
   XLALCCVectorDivide( detTransDummy->data, unity, resp->data );
@@ -924,12 +911,12 @@ int main( int argc, char *argv[] )
               }
 
               thisStandardSigmasq +=
-                ((fftStandardData->data->data[k].re * dynRange) *
-                 (fftStandardData->data->data[k].re * dynRange)) /
+                ((crealf(fftStandardData->data->data[k]) * dynRange) *
+                 (crealf(fftStandardData->data->data[k]) * dynRange)) /
                 sim_psd_value;
               thisStandardSigmasq +=
-                ((fftStandardData->data->data[k].im * dynRange) *
-                 (fftStandardData->data->data[k].im * dynRange)) /
+                ((cimagf(fftStandardData->data->data[k]) * dynRange) *
+                 (cimagf(fftStandardData->data->data[k]) * dynRange)) /
                 sim_psd_value;
             }
           }
@@ -995,14 +982,14 @@ int main( int argc, char *argv[] )
                                  exit( 1 );
               }
 
-              numerator += pow((fftStandardData->data->data[k].re * dynRange) *
-                  (fftData->data->data[k].re * dynRange) +
-                  (fftStandardData->data->data[k].im * dynRange) *
-                  (fftData->data->data[k].im * dynRange),2.0);
-              numerator += pow((fftStandardData->data->data[k].im * dynRange) *
-                  (fftData->data->data[k].re * dynRange) -
-                  (fftStandardData->data->data[k].re * dynRange) *
-                  (fftData->data->data[k].im * dynRange),2.0);
+              numerator += pow((crealf(fftStandardData->data->data[k]) * dynRange) *
+                  (crealf(fftData->data->data[k]) * dynRange) +
+                  (cimagf(fftStandardData->data->data[k]) * dynRange) *
+                  (cimagf(fftData->data->data[k]) * dynRange),2.0);
+              numerator += pow((cimagf(fftStandardData->data->data[k]) * dynRange) *
+                  (crealf(fftData->data->data[k]) * dynRange) -
+                  (crealf(fftStandardData->data->data[k]) * dynRange) *
+                  (cimagf(fftData->data->data[k]) * dynRange),2.0);
 
               thisMixedSigmasq += pow(numerator,0.5) / sim_psd_value;
             }
@@ -1070,12 +1057,12 @@ int main( int argc, char *argv[] )
             }
 
             thisSigmasq +=
-              ((fftData->data->data[k].re * dynRange) * 
-               (fftData->data->data[k].re * dynRange)) /
+              ((crealf(fftData->data->data[k]) * dynRange) * 
+               (crealf(fftData->data->data[k]) * dynRange)) /
               sim_psd_value;
             thisSigmasq +=
-              ((fftData->data->data[k].im * dynRange) * 
-               (fftData->data->data[k].im * dynRange)) /
+              ((cimagf(fftData->data->data[k]) * dynRange) * 
+               (cimagf(fftData->data->data[k]) * dynRange)) /
               sim_psd_value;
           }
         }

@@ -27,38 +27,44 @@
  */
 
 /**
+ * \author Brown, D. A., and Brady, P. R.
+ * \file
+ * \ingroup lalmetaio
+ * \brief Construct a \c MetaTableDirectory for a given LIGOLwXML table.
+ *
+ * ### Description ###
+ *
+ * The routine \c LALCreateMetaTableDir constructs a
+ * \c MetaTableDirectory for a given LIGOLwXML table.  It determines the
+ * location of each column expected to be present in the XML table and
+ * populates the \c pos field with this information.  This then allows
+ * other routines to parse the contents of an XML file and correctly interpret
+ * the entries.  When reading these tables, a call is made to
+ * \c LALCreateMetaTableDir.  For all other tables, the directory is
+ * constructed internally by the reading code.
+ *
+ * ### Algorithm ###
+ *
+ * None.
+ *
+ * ### Uses ###
+ *
+ * Functions in the Metaio library:
+ * <ul>
+ * <li> \c MetaioFindColumn()</li>
+ * <li> \c MetaioGetRow()</li>
+ * <li> \c MetaioOpenTable()</li>
+ * <li> \c MetaioClose()</li>
+ * </ul>
+ *
+ * ### Notes ###
+ *
+ */
 
-\author Brown, D. A., and Brady, P. R.
-\file
-\ingroup lalmetaio
-\brief Construct a \c MetaTableDirectory for a given LIGOLwXML table.
-
-\heading{Description}
-
-The routine \c LALCreateMetaTableDir constructs a
-\c MetaTableDirectory for a given LIGOLwXML table.  It determines the
-location of each column expected to be present in the XML table and
-populates the \c pos field with this information.  This then allows
-other routines to parse the contents of an XML file and correctly interpret
-the entries.  When reading these tables, a call is made to
-\c LALCreateMetaTableDir.  For all other tables, the directory is
-constructed internally by the reading code.
-
-\heading{Algorithm}
-
-None.
-
-\heading{Uses}
-Functions in the Metaio library:
-<ul>
-<li> \c MetaioFindColumn()</li>
-<li> \c MetaioGetRow()</li>
-<li> \c MetaioOpenTable()</li>
-<li> \c MetaioClose()</li>
-</ul>
-\heading{Notes}
-
-*/
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
+#include <metaio.h>
 
 #include <lal/LALStdio.h>
 #include <lal/LALStdlib.h>
@@ -73,7 +79,7 @@ Functions in the Metaio library:
 #endif
 
 MetaTableDirectory* XLALCreateMetaTableDir(
-    const MetaioParseEnv    env,
+    struct MetaioParseEnvironment *const env,
     MetadataTableType       table
     )
 
@@ -179,14 +185,17 @@ MetaTableDirectory* XLALCreateMetaTableDir(
           {"spin",                    -1, 9},
           {"epsilon",                 -1, 10},
           {"num_clust_trigs",         -1, 11},
-	  {"ds2_H1H2",		      -1, 12},
+          {"ds2_H1H2",                -1, 12},
           {"ds2_H1L1",                -1, 13},
-          {"ds2_H2L1",                -1, 14},
-          {"amplitude",               -1, 15},
-          {"snr",                     -1, 16},
-          {"eff_dist",                -1, 17},
-          {"sigma_sq",                -1, 18},
-          {"event_id",                -1, 19},
+          {"ds2_H1V1",                -1, 14},
+          {"ds2_H2L1",                -1, 15},
+          {"ds2_H2V1",                -1, 16},
+          {"ds2_L1V1",                -1, 17},
+          {"amplitude",               -1, 18},
+          {"snr",                     -1, 19},
+          {"eff_dist",                -1, 20},
+          {"sigma_sq",                -1, 21},
+          {"event_id",                -1, 22},
           {NULL,                       0, 0}
         };
         for ( i=0 ; tmpTableDir[i].name; ++i )
@@ -339,7 +348,7 @@ void
 LALCreateMetaTableDir(
     LALStatus              *status,
     MetaTableDirectory    **tableDir,
-    const MetaioParseEnv    UNUSED env,
+    struct MetaioParseEnvironment *const env UNUSED,
     MetadataTableType       table
     )
 

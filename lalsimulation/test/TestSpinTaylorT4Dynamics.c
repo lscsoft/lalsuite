@@ -62,12 +62,15 @@ int main (int argc , char **argv)
     REAL8 inclination = 1.;
     REAL8 lambda1 = 500.;
     REAL8 lambda2 = 500.;
+    REAL8 quadparam1 = 1.;
+    REAL8 quadparam2 = 1.;
     LALSimInspiralSpinOrder spinO = -1; // All spin effects
     LALSimInspiralTidalOrder tideO = -1; // All tidal effects
     REAL8 deltaT = 1. / 16384.;
     REAL8 fStart = 40.;
     REAL8 fEnd = 0.;
     INT4 phaseO = 7;
+    Approximant approx = SpinTaylorT4;
 
     lnhatx = sin(inclination);
     lnhaty = 0.;
@@ -79,26 +82,45 @@ int main (int argc , char **argv)
     UNUSED(argc);
     UNUSED(argv);
 
-    XLALSimInspiralPNEvolveOrbitSpinTaylorT4(&V, &Phi, &S1x, &S1y, 
+    // Test SpinTaylorT4
+    XLALSimInspiralSpinTaylorPNEvolveOrbit(&V, &Phi, &S1x, &S1y,
             &S1z, &S2x, &S2y, &S2z, &LNhatx, &LNhaty, &LNhatz, &E1x, &E1y, &E1z,
             deltaT, m1, m2, fStart, fEnd, s1x, s1y, s1z, s2x, s2y,
-            s2z, lnhatx, lnhaty, lnhatz, e1x, e1y, e1z, 
-            lambda1, lambda2, spinO, tideO, phaseO);
-
+            s2z, lnhatx, lnhaty, lnhatz, e1x, e1y, e1z, lambda1, lambda2,
+            quadparam1, quadparam2, spinO, tideO, phaseO, approx);
     len = V->data->length;
-
     f = fopen("ST4-dynamics.dat", "w");
     for(i = 0; i < len; i++)
     {
-        fprintf(f, "%f %f %f %f %f %f %f %f %f %f %f %f %f %f %f\n", 
+        fprintf(f, "%f %f %f %f %f %f %f %f %f %f %f %f %f %f %f\n",
                 i * deltaT, Phi->data->data[i], pow( V->data->data[i], 3.),
-                LNhatx->data->data[i], LNhaty->data->data[i], 
-                LNhatz->data->data[i], S1x->data->data[i], S1y->data->data[i], 
-                S1z->data->data[i], S2x->data->data[i], S2y->data->data[i], 
-                S2z->data->data[i], E1x->data->data[i], 
+                LNhatx->data->data[i], LNhaty->data->data[i],
+                LNhatz->data->data[i], S1x->data->data[i], S1y->data->data[i],
+                S1z->data->data[i], S2x->data->data[i], S2y->data->data[i],
+                S2z->data->data[i], E1x->data->data[i],
                 E1y->data->data[i], E1z->data->data[i]);
     }
+    fclose(f);
 
+    // Test SpinTaylorT2
+    approx = SpinTaylorT2;
+    XLALSimInspiralSpinTaylorPNEvolveOrbit(&V, &Phi, &S1x, &S1y,
+            &S1z, &S2x, &S2y, &S2z, &LNhatx, &LNhaty, &LNhatz, &E1x, &E1y, &E1z,
+            deltaT, m1, m2, fStart, fEnd, s1x, s1y, s1z, s2x, s2y,
+            s2z, lnhatx, lnhaty, lnhatz, e1x, e1y, e1z, lambda1, lambda2,
+            quadparam1, quadparam2, spinO, tideO, phaseO, approx);
+    len = V->data->length;
+    f = fopen("ST2-dynamics.dat", "w");
+    for(i = 0; i < len; i++)
+    {
+        fprintf(f, "%f %f %f %f %f %f %f %f %f %f %f %f %f %f %f\n",
+                i * deltaT, Phi->data->data[i], pow( V->data->data[i], 3.),
+                LNhatx->data->data[i], LNhaty->data->data[i],
+                LNhatz->data->data[i], S1x->data->data[i], S1y->data->data[i],
+                S1z->data->data[i], S2x->data->data[i], S2y->data->data[i],
+                S2z->data->data[i], E1x->data->data[i],
+                E1y->data->data[i], E1z->data->data[i]);
+    }
     fclose(f);
 
     /* Destroy vectors of dynamical variables, check for errors then exit */

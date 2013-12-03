@@ -57,7 +57,6 @@ int main(int argc, char *argv[])
 	LIGOTimeGPS epoch;
 	gsl_rng *rng;
 
-	lalDebugLevel = 7;
 	XLALSetErrorHandler(XLALAbortErrorHandler);
 
 	parseargs(argc, argv);
@@ -118,6 +117,7 @@ int parseargs( int argc, char **argv )
 			{ "virgo", no_argument, 0, 'v' },
 			{ "advvirgo", no_argument, 0, 'V' },
 			{ "geo", no_argument, 0, 'g' },
+                       { "geohf", no_argument, 0, 'G' },
 			{ "tama", no_argument, 0, 'T' },
 			{ "kagra", no_argument, 0, 'K' },
 			{ "official", no_argument, 0, 'O' },
@@ -129,7 +129,7 @@ int parseargs( int argc, char **argv )
 			{ "low-frequency", required_argument, 0, 'f' },
 			{ 0, 0, 0, 0 }
 		};
-	char args[] = "hIABCDEFOPvVgTKs:t:r:d:f:";
+	char args[] = "hIABCDEFOPvVgGTKs:t:r:d:f:";
 	while (1) {
 		int option_index = 0;
 		int c;
@@ -205,6 +205,11 @@ int parseargs( int argc, char **argv )
 				flow = 30.0;
 				detector = "GEO600";
 				break;
+                       case 'G': /* GEO-HF */
+                                psdfunc = XLALSimNoisePSDGEOHF;
+                                flow = 50.0;
+                                detector = "GEOHF";
+                                break;
 			case 'T': /* TAMA300 */
 				psdfunc = XLALSimNoisePSDTAMA;
 				flow = 30.0;
@@ -274,6 +279,7 @@ int usage( const char *program )
 	fprintf(stderr, "\t-v, --virgo                  \tinitial Virgo noise power\n");
 	fprintf(stderr, "\t-V, --advvirgo               \tAdvanced Virgo noise power\n");
 	fprintf(stderr, "\t-g, --geo                    \tGEO600 noise power\n");
+        fprintf(stderr, "\t-G, --geohf                  \tGEO-HF noise power\n");
 	fprintf(stderr, "\t-T, --tama                   \tTAMA300 noise power\n");
 	fprintf(stderr, "\t-K, --kagra                  \tKAGRA noise power\n");
 	fprintf(stderr, "\t-O, --official               \tuse official data files\n");

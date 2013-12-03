@@ -1,7 +1,7 @@
 AM_CFLAGS = $(LALSUPPORT_CFLAGS)
+AM_CPPFLAGS = -I$(top_builddir)/include
 LDADD = $(LALSUPPORT_LIBS) $(top_builddir)/src/liblalinspiral.la
 
-if LALSUPPORT
 check_PROGRAMS = \
 	BCVTemplates \
 	BasicInjectTest \
@@ -28,7 +28,6 @@ check_PROGRAMS = \
 	RandomInspiralSignalTest
 TESTS = $(check_PROGRAMS)
 #FindChirpTDTest_SOURCES = FindChirpTDTest.c FindChirpTDTest.h
-endif
 
 # non-building test
 # BCVSpinTemplates

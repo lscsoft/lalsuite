@@ -23,13 +23,14 @@
  */
 
 /*********************************************************************************/
-/** \author Holger Pletsch
+/**
+ * \author Holger Pletsch
  * \file
  * \ingroup pulsarApps
  * \brief Hierarchical semicoherent CW search code based on F-Statistic,
- *  exploiting global-correlation coordinates (Phys.Rev.Lett. 103, 181102, 2009)
+ * exploiting global-correlation coordinates (Phys.Rev.Lett. 103, 181102, 2009)
  *
- *********************************************************************************/
+ */
 
 /* ---------- Includes -------------------- */
 #include <lal/Segments.h>
@@ -49,6 +50,7 @@
 /* ---------- Defines -------------------- */
 /* #define OUTPUT_TIMING 1 */
 /* #define DIAGNOSISMODE 1 */
+#define NUDGE	10*LAL_REAL8_EPS
 
 #define TRUE (1==1)
 #define FALSE (1==0)
@@ -100,8 +102,8 @@ char**global_argv;
 int global_argc;
 #endif /* EAH_BOINC */
 
-#define EARTHEPHEMERIS  "earth05-09.dat"
-#define SUNEPHEMERIS    "sun05-09.dat"
+#define EARTHEPHEMERIS  "earth00-19-DE405.dat"
+#define SUNEPHEMERIS    "sun00-19-DE405.dat"
 #define BLOCKSRNGMED    101     /**< Default running median window size */
 #define FSTART          100.0	/**< Default Start search frequency */
 #define FBAND           0.0  /**< Default search band */
@@ -162,8 +164,8 @@ typedef struct {
   UINT4 nStacks;                   /**< number of stacks */
   LALSegList *segmentList;         /**< parsed segment list read from user-specified input file --segmentList */
   BOOLEAN LVuseAllTerms;           /**< which terms to use in LineVeto computation - FALSE: only leading term, TRUE: all terms */
-  REAL4 LVlogRhoTerm;              /**< For LineVeto statistic: extra term coming from prior normalization: log(rho_max_line^4/70) */
-  REAL4Vector *LVloglX;            /**< For LineVeto statistic: vector of logs of line prior ratios lX per detector */
+  REAL8 LVlogRhoTerm;              /**< For LineVeto statistic: extra term coming from prior normalization: log(rho_max_line^4/70) */
+  REAL8Vector *LVloglX;            /**< For LineVeto statistic: vector of logs of line prior ratios lX per detector */
   REAL8 dFreqStack;                /**< frequency resolution of Fstat calculation */
   REAL8 df1dot;                    /**< coarse grid resolution in spindown */
   REAL8 df2dot;                    /**< coarse grid resolution in 2nd spindown */
@@ -183,7 +185,7 @@ void UpdateSemiCohToplists ( LALStatus *status, toplist_t *list1, toplist_t *lis
 void GetSegsPosVelAccEarthOrb( LALStatus *status, REAL8VectorSequence **posSeg,
                                REAL8VectorSequence **velSeg, REAL8VectorSequence **accSeg,
                                UsefulStageVariables *usefulparams );
-static inline INT4 ComputeU1idx( REAL8 freq_event, REAL8 f1dot_eventB1, REAL8 A1, REAL8 U1start, REAL8 U1winInv );
+static inline INT4 ComputeU1idx( REAL8 freq_event, REAL8 f1dot_event, REAL8 A1, REAL8 B1, REAL8 U1start, REAL8 U1winInv );
 void ComputeU2idx( REAL8 freq_event, REAL8 f1dot_event, REAL8 A2, REAL8 B2, REAL8 U2start, REAL8 U2winInv,
                    INT4 *U2idx);
 int compareCoarseGridUindex( const void *a, const void *b );
@@ -205,7 +207,6 @@ int XLALExtrapolateToplistPulsarSpins ( toplist_t *list,
 
 /* ---------- Global variables -------------------- */
 LALStatus *global_status; /* a global pointer to MAIN()s head of the LALStatus structure */
-extern int lalDebugLevel;
 char *global_column_headings_stringp;
 
 /* ###################################  MAIN  ################################### */
@@ -290,11 +291,11 @@ int MAIN( int argc, char *argv[]) {
   UINT4 if1dot_fg, if2dot_fg;
   UINT4 fveclength, ifreq;
   INT4  U1idx;
-  REAL8 myf0, freq_event, f1dot_event, deltaF, f1dot_eventB1;
+  REAL8 myf0, freq_event, f1dot_event, deltaF;
   REAL8 dfreq_fg, df1dot_fg, freqmin_fg, f1dotmin_fg, freqband_fg;
   REAL8 df2dot_fg, f2dotmin_fg;
   REAL8 u1start, u1win, u1winInv;
-  REAL8 freq_fg, f1dot_fg, f2dot_fg;
+  REAL8 freq_fg, f1dot_fg, f2dot_fg, f1dot_event_fg;
   REAL4 Fstat;
   REAL8 A1, B1;
   // currently unused: REAL8 A2;
@@ -336,7 +337,7 @@ int MAIN( int argc, char *argv[]) {
   FILE *fpFstat1=NULL;
 
   /* checkpoint filename */
-  CHAR *fnameChkPoint=NULL;
+  CHAR *uvar_fnameChkPoint = NULL;
 
   /* user variables */
   BOOLEAN uvar_help = FALSE;    /* true if -h option is given */
@@ -416,12 +417,8 @@ int MAIN( int argc, char *argv[]) {
   global_argc = argc;
 #endif
 
-  /* LALDebugLevel must be called before any LALMallocs have been used */
-  lalDebugLevel = 0;
 #ifdef EAH_LALDEBUGLEVEL
-  lalDebugLevel = EAH_LALDEBUGLEVEL;
 #endif
-  LAL_CALL( LALGetDebugLevel( &status, argc, argv, 'd'), &status);
 
   /* set log-level */
 #ifdef EAH_LOGLEVEL
@@ -477,6 +474,7 @@ int MAIN( int argc, char *argv[]) {
   LAL_CALL( LALRegisterINTUserVar (   &status, "gammaRefine", 'g', UVAR_OPTIONAL, "Refinement of fine grid (default: use segment times)", &uvar_gammaRefine), &status);
   LAL_CALL( LALRegisterINTUserVar (   &status, "gamma2Refine",'G', UVAR_OPTIONAL, "Refinement of f2dot fine grid (default: use segment times, -1=use gammaRefine)", &uvar_gamma2Refine), &status);
   LAL_CALL( LALRegisterSTRINGUserVar( &status, "fnameout",    'o', UVAR_OPTIONAL, "Output filename", &uvar_fnameout), &status);
+  LAL_CALL( LALRegisterSTRINGUserVar( &status, "fnameChkPoint",0,  UVAR_OPTIONAL, "Checkpoint filename", &uvar_fnameChkPoint), &status);
   LAL_CALL( LALRegisterINTUserVar(    &status, "nCand1",      'n', UVAR_OPTIONAL, "No. of candidates to output", &uvar_nCand1), &status);
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "printCand1",   0,  UVAR_OPTIONAL, "Print 1st stage candidates", &uvar_printCand1), &status);
   LAL_CALL( LALRegisterREALUserVar(   &status, "refTime",      0,  UVAR_OPTIONAL, "Ref. time for pulsar pars [Default: mid-time]", &uvar_refTime), &status);
@@ -593,7 +591,7 @@ int MAIN( int argc, char *argv[]) {
     return( HIERARCHICALSEARCH_EBAD );
   }
   else if ( uvar_LVrho > 0.0 )
-    usefulParams.LVlogRhoTerm = 4.0 * log((REAL4)uvar_LVrho) - log(70.0);
+    usefulParams.LVlogRhoTerm = 4.0 * log(uvar_LVrho) - log(70.0);
   else /* if uvar_LVrho == 0.0, logRhoTerm should become irrelevant in summation */
     usefulParams.LVlogRhoTerm = - LAL_REAL4_MAX;
 
@@ -612,15 +610,17 @@ int MAIN( int argc, char *argv[]) {
                    XLAL_EFUNC, "create_gctFStat_toplist() failed for nCand=%d and sortBy=%d\n", uvar_nCand1, uvar_SortToplist );
     }
 
-  /* checkpoint filename */
-  // in BOINC App don't derive the checkpoint name from the output filename,
-  // or else the checkpoint file will end up in the project- rather than the slot-directory
 #ifdef EAH_BOINC
-  fnameChkPoint="checkpoint.cpt";
-#else
-  fnameChkPoint = LALCalloc( strlen(uvar_fnameout) + 1 + 4, sizeof(CHAR) );
-  strcpy(fnameChkPoint, uvar_fnameout);
-  strcat(fnameChkPoint, ".cpt");
+  // BOINC Apps always checkpoint, so set a default filename here
+  if (uvar_fnameChkPoint == NULL) {
+    CHAR*fname = "checkpoint.cpt";
+    uvar_fnameChkPoint = XLALMalloc(strlen(fname)+1);
+    if (uvar_fnameChkPoint == NULL) {
+      fprintf(stderr, "error allocating memory [HierarchSearchGCT.c %d]\n" , __LINE__);
+      return(HIERARCHICALSEARCH_EMEM);
+    }
+    strcpy(uvar_fnameChkPoint, fname);
+  }
 #endif
 
   /* write the log file */
@@ -663,8 +663,8 @@ int MAIN( int argc, char *argv[]) {
         return HIERARCHICALSEARCH_EFILE;
       }
       /* write column headings */
-      fprintf ( timing_fp, "%6s %6s %6s %6s %6s %6s %6s    %9s %9s %9s %9s    %9s %9s\n",
-                "%% Nsky", "Nf1", "Nf_F", "Nf_SB", "Nsft", "Nseg", "refine", "tau [s]", "tcoh [s]", "tsc [s]", "tLV [s]", "tauF0 [s]", "tauS0 [s]" );
+      fprintf ( timing_fp, "%10s %10s %10s %7s %7s    %9s %9s %9s %9s    %10s %10s\n",
+                "%% Ncoarse", "NSB", "Nfine", "Nsft", "Nseg", "tauWU[s]", "tauCo[s]", "tauIc[s]", "tauLV[s]", "c0co[s]", "c0ic[s]" );
       fclose ( timing_fp );
     } /* if outputTiming */
 
@@ -774,7 +774,7 @@ int MAIN( int argc, char *argv[]) {
   if ( LALUserVarWasSet(&uvar_refTime))
     usefulParams.refTime = uvar_refTime;
   else {
-    LogPrintf(LOG_DETAIL, "Reference time will be set to mid-time of observation time\n");
+    XLALPrintWarning("Reference time will be set to mid-time of observation time\n");
     usefulParams.refTime = -1;
   }
 
@@ -783,7 +783,7 @@ int MAIN( int argc, char *argv[]) {
     if ( LALUserVarWasSet(&uvar_dFreq) ) {
       usefulParams.dFreqStack = uvar_dFreq;
     } else {
-      LALPrintError("--dFreq is required if --FreqBand is given\n");
+      XLALPrintError("--dFreq is required if --FreqBand is given\n");
       return( HIERARCHICALSEARCH_EBAD );
     }
   } else {
@@ -795,7 +795,7 @@ int MAIN( int argc, char *argv[]) {
     if ( LALUserVarWasSet(&uvar_df1dot) ) {
       usefulParams.df1dot = uvar_df1dot;
     } else {
-      LALPrintError("--df1dot is required if --f1dotBand is given\n");
+      XLALPrintError("--df1dot is required if --f1dotBand is given\n");
       return( HIERARCHICALSEARCH_EBAD );
     }
   } else {
@@ -808,7 +808,7 @@ int MAIN( int argc, char *argv[]) {
       usefulParams.df2dot = uvar_df2dot;
     }
     else {
-      LALPrintError("--df2dot is required if --f2dotBand is given\n");
+      XLALPrintError("--df2dot is required if --f2dotBand is given\n");
       return( HIERARCHICALSEARCH_EBAD );
     }
   }
@@ -857,6 +857,7 @@ int MAIN( int argc, char *argv[]) {
         } /* if have segmentList */
 
     } /* for iTS < nStacks */
+  XLALPrintWarning ("Number of segments: %d, total number of SFTs in segments: %d\n", nStacks, nSFTs );
 
   /* free segment list */
   if ( usefulParams.segmentList )
@@ -910,7 +911,7 @@ int MAIN( int argc, char *argv[]) {
   if ( df2dot == 0 ) {
     nf2dot = 1;
   } else {
-    nf2dot = (UINT4) ceil( usefulParams.spinRange_midTime.fkdotBand[2] / df2dot) + 1;
+    nf2dot = (UINT4) floor( usefulParams.spinRange_midTime.fkdotBand[2] / uvar_df2dot + NUDGE) + 1;
   }
 
   /* set number of fine-grid 2nd spindowns */
@@ -940,7 +941,7 @@ int MAIN( int argc, char *argv[]) {
 
   /**** debugging information ******/
   /* print some debug info about spinrange */
-  LogPrintf(LOG_DETAIL, "Frequency and spindown range at refTime (%d): [%f-%f], [%e-%e], [%e-%e]\n",
+  LogPrintf(LOG_DETAIL, "Frequency and spindown range at refTime (%d): [%f,%f], [%e,%e], [%e,%e]\n",
             usefulParams.spinRange_refTime.refTime.gpsSeconds,
             usefulParams.spinRange_refTime.fkdot[0],
             usefulParams.spinRange_refTime.fkdot[0] + usefulParams.spinRange_refTime.fkdotBand[0],
@@ -949,7 +950,7 @@ int MAIN( int argc, char *argv[]) {
             usefulParams.spinRange_refTime.fkdot[2],
             usefulParams.spinRange_refTime.fkdot[2] + usefulParams.spinRange_refTime.fkdotBand[2]);
 
-  LogPrintf(LOG_DETAIL, "Frequency and spindown range at startTime (%d): [%f-%f], [%e-%e], [%e-%e]\n",
+  LogPrintf(LOG_DETAIL, "Frequency and spindown range at startTime (%d): [%f,%f], [%e,%e], [%e,%e]\n",
             usefulParams.spinRange_startTime.refTime.gpsSeconds,
             usefulParams.spinRange_startTime.fkdot[0],
             usefulParams.spinRange_startTime.fkdot[0] + usefulParams.spinRange_startTime.fkdotBand[0],
@@ -958,7 +959,7 @@ int MAIN( int argc, char *argv[]) {
             usefulParams.spinRange_startTime.fkdot[2],
             usefulParams.spinRange_startTime.fkdot[2] + usefulParams.spinRange_startTime.fkdotBand[2]);
 
-  LogPrintf(LOG_DETAIL, "Frequency and spindown range at midTime (%d): [%f-%f], [%e-%e], [%e-%e]\n",
+  LogPrintf(LOG_DETAIL, "Frequency and spindown range at midTime (%d): [%f,%f], [%e,%e], [%e,%e]\n",
             usefulParams.spinRange_midTime.refTime.gpsSeconds,
             usefulParams.spinRange_midTime.fkdot[0],
             usefulParams.spinRange_midTime.fkdot[0] + usefulParams.spinRange_midTime.fkdotBand[0],
@@ -967,7 +968,7 @@ int MAIN( int argc, char *argv[]) {
             usefulParams.spinRange_midTime.fkdot[2],
             usefulParams.spinRange_midTime.fkdot[2] + usefulParams.spinRange_midTime.fkdotBand[2]);
 
-  LogPrintf(LOG_DETAIL, "Frequency and spindown range at endTime (%d): [%f-%f], [%e-%e], [%e-%e]\n",
+  LogPrintf(LOG_DETAIL, "Frequency and spindown range at endTime (%d): [%f,%f], [%e,%e], [%e,%e]\n",
             usefulParams.spinRange_endTime.refTime.gpsSeconds,
             usefulParams.spinRange_endTime.fkdot[0],
             usefulParams.spinRange_endTime.fkdot[0] + usefulParams.spinRange_endTime.fkdotBand[0],
@@ -977,7 +978,7 @@ int MAIN( int argc, char *argv[]) {
             usefulParams.spinRange_endTime.fkdot[2] + usefulParams.spinRange_endTime.fkdotBand[2]);
 
   /* print debug info about stacks */
-  fprintf(stderr, "%% --- Setup, N = %d, T = %.0fs, Tobs = %.0fs, gammaRefine = %f, gamma2Refine = %f\n",
+  fprintf(stderr, "%% --- Setup, N = %d, T = %.0f s, Tobs = %.0f s, gammaRefine = %.0f, gamma2Refine = %.0f\n",
           nStacks, tStack, tObs, gammaRefine, gamma2Refine);
 
   for (k = 0; k < nStacks; k++) {
@@ -1117,13 +1118,13 @@ int MAIN( int argc, char *argv[]) {
       fprintf(stderr, "Length of LV prior ratio vector does not match number of detectors! (%d != %d)\n", uvar_LVlX->length, numDetectors);
       return( HIERARCHICALSEARCH_EBAD );
     }
-    if ( (usefulParams.LVloglX = XLALCreateREAL4Vector ( numDetectors )) == NULL ) {
-      fprintf(stderr, "Failed call to XLALCreateREAL4Vector( %d )\n", numDetectors );
+    if ( (usefulParams.LVloglX = XLALCreateREAL8Vector ( numDetectors )) == NULL ) {
+      fprintf(stderr, "Failed call to XLALCreateREAL8Vector( %d )\n", numDetectors );
       return( HIERARCHICALSEARCH_EXLAL );
     }
     for (UINT4 X = 0; X < numDetectors; X++) {
-      if ( 1 != sscanf ( uvar_LVlX->data[X], "%" LAL_REAL4_FORMAT, &usefulParams.LVloglX->data[X] ) ) {
-        fprintf(stderr, "Illegal REAL4 commandline argument to --LVlX[%d]: '%s'\n", X, uvar_LVlX->data[X]);
+      if ( 1 != sscanf ( uvar_LVlX->data[X], "%" LAL_REAL8_FORMAT, &usefulParams.LVloglX->data[X] ) ) {
+        fprintf(stderr, "Illegal REAL8 commandline argument to --LVlX[%d]: '%s'\n", X, uvar_LVlX->data[X]);
         return ( HIERARCHICALSEARCH_EBAD );
       }
       if ( usefulParams.LVloglX->data[X] < 0.0 ) {
@@ -1133,7 +1134,7 @@ int MAIN( int argc, char *argv[]) {
       else if ( usefulParams.LVloglX->data[X] > 0.0 )
         usefulParams.LVloglX->data[X] = log(usefulParams.LVloglX->data[X]);
       else /* if zero prior ratio, approximate log(0)=-inf by -LAL_REA4_MAX to avoid raising underflow exceptions */
-        usefulParams.LVloglX->data[X] = - LAL_REAL4_MAX;
+        usefulParams.LVloglX->data[X] = - LAL_REAL8_MAX;
     } /* for X < numDetectors */
   } /* if ( computeLV && uvar_LVlX ) */
 
@@ -1178,13 +1179,13 @@ int MAIN( int argc, char *argv[]) {
     UINT4 count = 0; /* The first checkpoint should have value 1 */
     UINT4 skycount = 0;
 
-    GET_GCT_CHECKPOINT (fnameChkPoint, semiCohToplist, semiCohToplist2, &count);
+    GET_GCT_CHECKPOINT (uvar_fnameChkPoint, semiCohToplist, semiCohToplist2, &count);
 
     if (count) {
       f1dotGridCounter = (UINT4) (count % nf1dot);  /* Checkpointing counter = i_sky * nf1dot + i_f1dot */
       skycount = (UINT4) ((count - f1dotGridCounter) / nf1dot);
     }
-    fprintf (stderr, "%% --- Cpt:%d,  total:%d,  sky:%d/%d,  f1dot:%d/%d\n",
+   fprintf (stderr, "%% --- Cpt:%d,  total:%d,  sky:%d/%d,  f1dot:%d/%d\n",
              count, thisScan.numSkyGridPoints*nf1dot, skycount+1, thisScan.numSkyGridPoints, f1dotGridCounter+1, nf1dot);
 
     for(skyGridCounter = 0; skyGridCounter < skycount; skyGridCounter++)
@@ -1306,11 +1307,7 @@ int MAIN( int argc, char *argv[]) {
         while ( if2dot < nf2dot ) {
 
           /* show progress */
-#ifdef EAH_BOINC
-          LogPrintf( LOG_NORMAL, "%d/%d/%d\n", skyGridCounter+1, ifdot+1, if2dot+1 );
-#else
-          LogPrintf( LOG_NORMAL, "sky:%d f1dot:%d f2dot:%d\n", skyGridCounter+1, ifdot+1, if2dot+1 );
-#endif
+          LogPrintf( LOG_NORMAL, "Coarse grid sky:%d/%d f1dot:%d/%d f2dot:%d/%d\n", skyGridCounter+1, thisScan.numSkyGridPoints, ifdot+1, nf1dot, if2dot+1, nf2dot );
 
           /* ------------- Set up coarse grid --------------------------------------*/
           coarsegrid.freqlength = (UINT4) (binsFstat1);
@@ -1365,7 +1362,7 @@ int MAIN( int argc, char *argv[]) {
           f1dotmin_fg = (usefulParams.spinRange_midTime.fkdot[1] + ifdot * df1dot) - df1dot_fg * floor(nf1dots_fg / 2.0);
 
           /* fine-grid f2dot resolution */
-          if (nf2dot == 1) {
+          if ( uvar_f2dotBand == 0 ) {
             nf2dots_fg = 1;
           }
           else {
@@ -1531,9 +1528,6 @@ int MAIN( int argc, char *argv[]) {
                    U2idx = 0;
                 */
 
-                /* pre-compute product */
-                f1dot_eventB1 = f1dot_fg * B1;
-
                 /* timing */
                 if ( uvar_outputTiming )
                   timeStamp1 = XLALGetTimeOfDay();
@@ -1610,7 +1604,7 @@ int MAIN( int argc, char *argv[]) {
                     freq_event = myf0 + ifreq * deltaF;
 
                     /* compute the global-correlation coordinate indices */
-                    U1idx = ComputeU1idx ( freq_event, f1dot_eventB1, A1, u1start, u1winInv );
+                    U1idx = ComputeU1idx ( freq_event, f1dot_event, A1, B1, u1start, u1winInv );
 
                     /* Holger: current code structure of loops (processing f1dot by f1dot) needs only U1 calculation.
                        ComputeU2idx ( freq_event, f1dot_event, A2, B2, u2start, u2winInv, &U2idx);
@@ -1677,11 +1671,12 @@ int MAIN( int argc, char *argv[]) {
 
                 /* get the frequency of this fine-grid point at mid point of segment */
                 /* OLD: ifreq_fg = 0; freq_tmp = finegrid.freqmin_fg + ifreq_fg * finegrid.dfreq_fg + f1dot_tmp * timeDiffSeg; */
+                f1dot_event_fg = f1dot_fg + f2dot_fg * timeDiffSeg;
                 freq_fg = finegrid.freqmin_fg + f1dot_fg * timeDiffSeg +
                   0.5 * f2dot_fg * timeDiffSeg * timeDiffSeg; /* first fine-grid frequency */
 
                 /* compute the global-correlation coordinate indices */
-                U1idx = ComputeU1idx ( freq_fg, f1dot_eventB1, A1, u1start, u1winInv );
+                U1idx = ComputeU1idx ( freq_fg, f1dot_event_fg, A1, B1, u1start, u1winInv );
 
                 if (U1idx < 0) {
                   fprintf(stderr,"ERROR: Stepped outside the coarse grid (%d)! \n", U1idx);
@@ -1752,7 +1747,6 @@ int MAIN( int argc, char *argv[]) {
               if( uvar_semiCohToplist ) {
                 /* this is necessary here, because UpdateSemiCohToplists() might set
                    a checkpoint that needs some information from here */
-                LogPrintf(LOG_DETAIL, "Updating toplist with semicoherent candidates\n");
                 LAL_CALL( UpdateSemiCohToplists (&status, semiCohToplist, semiCohToplist2, &finegrid, f1dot_fg, f2dot_fg, &usefulParams, NSegmentsInv, NSegmentsInvX ), &status);
               }
 
@@ -1769,7 +1763,7 @@ int MAIN( int argc, char *argv[]) {
                       skyGridCounter * nf1dot + ifdot,
                       thisScan.numSkyGridPoints * nf1dot, uvar_Freq, uvar_FreqBand);
 
-        SET_GCT_CHECKPOINT (fnameChkPoint, semiCohToplist, semiCohToplist2, skyGridCounter*nf1dot+ifdot, TRUE);
+        SET_GCT_CHECKPOINT (uvar_fnameChkPoint, semiCohToplist, semiCohToplist2, skyGridCounter*nf1dot+ifdot, TRUE);
 
       } /* ########## End of loop over coarse-grid f1dot values (ifdot) ########## */
 
@@ -1808,8 +1802,6 @@ int MAIN( int argc, char *argv[]) {
   /* timing */
   if ( uvar_outputTiming )
     timeEnd = XLALGetTimeOfDay();
-
-  UINT4 Nrefine = nf1dots_fg;
 
   LogPrintf( LOG_NORMAL, "Finished main analysis.\n");
 
@@ -1856,25 +1848,25 @@ int MAIN( int argc, char *argv[]) {
         XLALPrintError ("%s: failed to open timing-file '%s' for appending.\n", __func__, uvar_outputTiming );
         return HIERARCHICALSEARCH_EFILE;
       }
-      REAL8 tau = timeEnd - timeStart;
+      REAL8 tauWU = timeEnd - timeStart;
 
       /* compute fundamental timing-model constants:
        * 'tauF0' = Fstat time per template per SFT,
        * 'tauS0' = time to add one per-segment F-stat value per fine-grid point
        */
-      REAL8 Ncoarse = thisScan.numSkyGridPoints * nf1dot * ( binsFstatSearch + 2 * semiCohPar.extraBinsFstat);
-      REAL8 Nfine   = thisScan.numSkyGridPoints * binsFstatSearch * Nrefine * nf1dot;	// Note: doesn't include F-stat sideband bins!
-      REAL8 tauF0   = coherentTime / ( Ncoarse * nSFTs );
+      REAL8 Ncoarse = thisScan.numSkyGridPoints * nf1dot * nf2dot * ( binsFstatSearch + 2 * semiCohPar.extraBinsFstat);	// includes GCSideband bins
+      REAL8 NSB     = thisScan.numSkyGridPoints * nf1dot * nf2dot * 2 * semiCohPar.extraBinsFstat;	// pure coarse GCSideband template count
+      REAL8 Nfine   = thisScan.numSkyGridPoints * binsFstatSearch * nf1dots_fg * nf2dots_fg;	// doesn't include F-stat sideband bins
+      REAL8 c0co    = coherentTime / ( Ncoarse * nSFTs );
       // Note: we use (total-FstatTime) instead of incoherentTime to ensure accurate prediction power
       // whatever extra time isn't captured by incoherentTime+coherentTime also needs to be accounted as 'incoherent time'
       // in our model...
-      REAL8 tauS0   = (tau - coherentTime) / ( Nfine * nStacks );
+      REAL8 c0ic   = (tauWU - coherentTime) / ( Nfine * nStacks );
 
-      fprintf ( timing_fp, "%6d %6d %6d %6d %6d %6d %6d    %9.3g %9.3g %9.3g %9.3g    %9.3g %9.3g\n",
-                thisScan.numSkyGridPoints, nf1dot, binsFstatSearch, 2 * semiCohPar.extraBinsFstat, nSFTs,
-                nStacks, Nrefine, tau, coherentTime, incoherentTime, vetoTime, tauF0, tauS0 );
+      fprintf ( timing_fp, "%10.3g %10.3g %10.3g %7d %7d    %9.3g %9.3g %9.3g %9.3g    %10.3g %10.3g\n",
+                Ncoarse, NSB, Nfine, nSFTs, nStacks, tauWU, coherentTime, incoherentTime, vetoTime, c0co, c0ic );
       fclose ( timing_fp );
-    }
+    } // if uvar_outputTiming
 
   LogPrintf ( LOG_DEBUG, "Writing output ... ");
   XLAL_CHECK ( write_hfs_oputput(uvar_fnameout, semiCohToplist) != -1, XLAL_EFAILED, "write_hfs_oputput('%s', toplist) failed.!\n", uvar_fnameout );
@@ -1894,8 +1886,7 @@ int MAIN( int argc, char *argv[]) {
 
   // in BOINC App the checkpoint is left behind to be cleaned up by the Core Client
 #ifndef EAH_BOINC
-  clear_gct_checkpoint (fnameChkPoint);
-  LALFree (fnameChkPoint);
+  clear_gct_checkpoint (uvar_fnameChkPoint);
 #endif
 
   /*------------ free all remaining memory -----------*/
@@ -1986,7 +1977,7 @@ int MAIN( int argc, char *argv[]) {
   free_gctFStat_toplist ( &semiCohToplist );
   if ( semiCohToplist2 ) free_gctFStat_toplist ( &semiCohToplist2 );
 
-  XLALDestroyREAL4Vector ( usefulParams.LVloglX );
+  XLALDestroyREAL8Vector ( usefulParams.LVloglX );
 
   XLALDestroyExpLUT(); /* lookup table for fast exponential function, used in computeLV case */
   XLALDestroyLogLUT(); /* lookup table for fast logarithm function, used in computeLV case */
@@ -2006,8 +1997,10 @@ int MAIN( int argc, char *argv[]) {
 
 
 
-/** Set up stacks, read SFTs, calculate SFT noise weights and calculate
-    detector-state */
+/**
+ * Set up stacks, read SFTs, calculate SFT noise weights and calculate
+ * detector-state
+ */
 void SetUpSFTs( LALStatus *status,			/**< pointer to LALStatus structure */
                 MultiSFTVectorSequence *stackMultiSFT, /**< output multi sft vector for each stack */
                 MultiNoiseWeightsSequence *stackMultiNoiseWeights, /**< output multi noise weights for each stack */
@@ -2293,13 +2286,13 @@ void SetUpSFTs( LALStatus *status,			/**< pointer to LALStatus structure */
 
 
 
-/** \brief Breaks up input sft catalog into specified number of stacks
-
-    Loops over elements of the catalog, assigns a bin index and
-    allocates memory to the output catalog sequence appropriately.  If
-    there are long gaps in the data, then some of the catalogs in the
-    output catalog sequence may be of zero length.
-*/
+/**
+ * \brief Breaks up input sft catalog into specified number of stacks
+ * Loops over elements of the catalog, assigns a bin index and
+ * allocates memory to the output catalog sequence appropriately.  If
+ * there are long gaps in the data, then some of the catalogs in the
+ * output catalog sequence may be of zero length.
+ */
 void SetUpStacks(LALStatus *status,        /**< pointer to LALStatus structure */
                  SFTCatalogSequence  *out, /**< Output catalog of sfts -- one for each stack */
                  REAL8 tStack,             /**< Output duration of each stack */
@@ -2470,7 +2463,8 @@ void PrintStackInfo( LALStatus  *status,
 
 
 
-/** Get SemiCoh candidates into toplist(s)
+/**
+ * Get SemiCoh candidates into toplist(s)
  * This function allows for inserting candidates into up to 2 toplists at once, which might be sorted differently!
  */
 void UpdateSemiCohToplists ( LALStatus *status,
@@ -2509,7 +2503,7 @@ void UpdateSemiCohToplists ( LALStatus *status,
     line.nc = in->nc[ifreq_fg];
     line.sumTwoF = in->sumTwoF[ifreq_fg]; /* here it's still the summed 2F value over segments, not the average */
     line.numDetectors = in->numDetectors;
-    for (UINT4 X = 0; X < GCTTOP_MAX_IFOS; X++) { /* initialise single-IFO F-stat arrays to zero */
+    for (UINT4 X = 0; X < PULSAR_MAX_DETECTORS; X++) { /* initialise single-IFO F-stat arrays to zero */
       line.sumTwoFX[X] = 0.0;
       line.sumTwoFXrecalc[X] = 0.0;
     }
@@ -2520,7 +2514,7 @@ void UpdateSemiCohToplists ( LALStatus *status,
         line.sumTwoFX[X] = in->sumTwoFX[FG_FX_INDEX(*in, X, ifreq_fg)]; /* here it's still the summed 2F value over segments, not the average */
       xlalErrno = 0;
 
-      REAL4 *loglX = NULL;
+      REAL8 *loglX = NULL;
       if ( usefulparams->LVloglX )
         loglX = usefulparams->LVloglX->data;
 
@@ -2569,26 +2563,22 @@ void PrintFstatVec (LALStatus *status,
                     LIGOTimeGPS          refTime,
                     INT4                 stackIndex)
 {
-  INT4 length, k;
-  REAL8 f0, deltaF, alpha, delta;
-  PulsarSpins fkdot;
-
   INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
-  INIT_MEM(fkdot);
-
   fprintf(fp, "%% Fstat values from stack %d (reftime -- %d %d)\n", stackIndex, refTime.gpsSeconds, refTime.gpsNanoSeconds);
 
-  alpha = thisPoint->Alpha;
-  delta = thisPoint->Delta;
-  fkdot[1] = thisPoint->fkdot[1];
-  f0 = thisPoint->fkdot[0];
+  REAL8 alpha = thisPoint->Alpha;
+  REAL8 delta = thisPoint->Delta;
 
-  length = in->data->length;
-  deltaF = in->deltaF;
+  PulsarSpins fkdot;
+  memcpy ( fkdot, thisPoint->fkdot, sizeof(fkdot) );
 
-  for (k=0; k<length; k++)
+  UINT4 length = in->data->length;
+  REAL8 deltaF = in->deltaF;
+
+  REAL8 f0 = fkdot[0];
+  for (UINT4 k=0; k<length; k++)
     {
       fkdot[0] = f0 + k*deltaF;
 
@@ -2620,8 +2610,10 @@ void PrintFstatVec (LALStatus *status,
 
 
 
-/** Calculate Earth orbital position, velocity and acceleration
-    at midpoint of each segment */
+/**
+ * Calculate Earth orbital position, velocity and acceleration
+ * at midpoint of each segment
+ */
 void GetSegsPosVelAccEarthOrb( LALStatus *status,
                                REAL8VectorSequence **posSeg,
                                REAL8VectorSequence **velSeg,
@@ -2699,13 +2691,14 @@ void GetSegsPosVelAccEarthOrb( LALStatus *status,
 
 /** Calculate the U1 index for a given point in parameter space */
 static inline INT4 ComputeU1idx( REAL8 freq_event,
-                                 REAL8 f1dot_eventB1,
+                                 REAL8 f1dot_event,
                                  REAL8 A1,
+                                 REAL8 B1,
                                  REAL8 U1start,
                                  REAL8 U1winInv)
 {
   /* compute the index of global-correlation coordinate U1, Eq. (1) */
-  return (((freq_event * A1 + f1dot_eventB1) - U1start) * U1winInv) + 0.5;
+  return (((freq_event * A1 + f1dot_event * B1) - U1start) * U1winInv) + 0.5;
 
 } /* ComputeU1idx */
 
@@ -2730,7 +2723,8 @@ void ComputeU2idx( REAL8 freq_event,
 
 } /* ComputeU2idx */
 
-/** Set up 'segmented' SFT-catalogs for given list of segments and a total SFT-catalog.
+/**
+ * Set up 'segmented' SFT-catalogs for given list of segments and a total SFT-catalog.
  *
  * Note: this function does not allow 'empty' segments to be returned, i.e. if there is any
  * segment that would contain no SFTs from the given SFT-catalog, an error is returned.
@@ -2774,11 +2768,10 @@ XLALSetUpStacksFromSegmentList ( const SFTCatalog *catalog,	/**< complete list o
     XLAL_ERROR_NULL ( XLAL_ENOMEM );
   }
 
-  REAL8 Tsft = 1.0 / catalog->data[0].header.deltaF;
-
   /* Step through segment list:
    * for every segment:
-   *  - find earliest and last SFT fitting completely into this segment
+   *  - find earliest and last SFT *starting* within given segment
+   *     this ensures we use all SFTs and dont lose some that fall on segment boundaries
    *  - copy this range of SFT-headers into the segmented SFT-catalog 'stacks'
    */
   UINT4 iSeg;
@@ -2807,22 +2800,21 @@ XLALSetUpStacksFromSegmentList ( const SFTCatalog *catalog,	/**< complete list o
             }
         } /* while true */
 
-      /* ----- find last SFT completely fitting into this segment */
+      /* ----- find last SFT still starting within segment */
       iSFT1 = iSFT0;
       while ( 1 )
         {
           LIGOTimeGPS gpsEnd = catalog->data[iSFT1].header.epoch;
-          XLALGPSAdd( &gpsEnd, Tsft - 1e-3 );	/* subtract 1ms from end: segments are half-open intervals [t0, t1) */
           int cmp = XLALGPSInSeg ( &gpsEnd, thisSeg );
 
-          if ( cmp < 0 ) {      /* end of iSFT1 lies *before* current segment ==> something is screwed up! */
-            XLALPrintError ("%s: end of current SFT %d lies before current segment %d ==> code seems inconsistent!\n", __func__, iSFT1, iSeg );
+          if ( cmp < 0 ) {      /* start of iSFT1 lies *before* current segment ==> something is screwed up! */
+            XLALPrintError ("%s: start of current SFT %d lies before current segment %d ==> code seems inconsistent!\n", __func__, iSFT1, iSeg );
             XLAL_ERROR_NULL ( XLAL_EFAILED );
           }
-          if ( cmp == 0 )	/* end of iSFT1 lies *inside* current segment ==> advance */
+          if ( cmp == 0 )	/* start of iSFT1 lies *inside* current segment ==> advance */
             iSFT1 ++;
 
-          if ( cmp > 0 || iSFT1 == (INT4)numSFTs ) {	/* last SFT reached or end of iSFT1 lies *past* current segment => step back once and stop */
+          if ( cmp > 0 || iSFT1 == (INT4)numSFTs ) {	/* last SFT reached or start of iSFT1 lies *past* current segment => step back once and stop */
             iSFT1 --;
             break;
           }
@@ -2852,23 +2844,24 @@ XLALSetUpStacksFromSegmentList ( const SFTCatalog *catalog,	/**< complete list o
 
 
 
-/** XLAL function to (multi-IFO) F-statistic over a vector of number of frequency bins,
-    returned in (*fstatSeries)->F.
-
-    if params->returnSingleF==true: also returns per-IFO F-stat values over frequency bins in (*fstatSeries)->FX.
-
-    Note: Contrary to ComputeFStatFreqBand(), the output (*fstatSeries) can be allocated
-    before this function is called, or passed as a NULL pointer, in which case it will be allocated.
-
-    This allows one to re-use the output structure vectors without unneccessary alloc/free's,
-    and simplifies usage of this function for the called.
-
-    Note2: the start frequency, step size in frequency and the number of frequency bins to be
-    computed are *always* read from input 'doppler'.
-
-    Note3: This function is currently simply a wrapper for ComputeFstat(), while future implementations
-    will also include resampling.
-*/
+/**
+ * XLAL function to (multi-IFO) F-statistic over a vector of number of frequency bins,
+ * returned in (*fstatSeries)->F.
+ *
+ * if params->returnSingleF==true: also returns per-IFO F-stat values over frequency bins in (*fstatSeries)->FX.
+ *
+ * Note: Contrary to ComputeFStatFreqBand(), the output (*fstatSeries) can be allocated
+ * before this function is called, or passed as a NULL pointer, in which case it will be allocated.
+ *
+ * This allows one to re-use the output structure vectors without unneccessary alloc/free's,
+ * and simplifies usage of this function for the called.
+ *
+ * Note2: the start frequency, step size in frequency and the number of frequency bins to be
+ * computed are *always* read from input 'doppler'.
+ *
+ * Note3: This function is currently simply a wrapper for ComputeFstat(), while future implementations
+ * will also include resampling.
+ */
 int XLALComputeFStatFreqBand ( MultiFstatFrequencySeries **fstatSeries,	/**< [out] Combined vectors of multi- and single-IFO Fstat values */
                                const PulsarDopplerParams *doppler,		/**< parameter-space point to compute F for (and freq band info) */
                                const MultiSFTVector *multiSFTs, 		/**< normalized (by DOUBLE-sided Sn!) data-SFTs of all IFOs */
@@ -2969,7 +2962,8 @@ int XLALComputeFStatFreqBand ( MultiFstatFrequencySeries **fstatSeries,	/**< [ou
 
 
 
-/** XLAL function to extrapolate the pulsar spin parameters of all toplist candidates
+/**
+ * XLAL function to extrapolate the pulsar spin parameters of all toplist candidates
  * from reftime of the input toplist ('inRefTime') to a user-specified output reftime 'outRefTime'
  */
 int XLALExtrapolateToplistPulsarSpins ( toplist_t *list,              /**< [out/in] toplist with GCTtopOutputEntry items, 'Freq,F1dot,F2dot' fields will be overwritten  */

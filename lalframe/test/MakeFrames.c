@@ -21,29 +21,29 @@
  * \author Jolien D. E. Creighton
  * \file
  *
- * \heading{Program \ref MakeFrames.c}
+ * ### Program MakeFrames.c ###
  *
  * Make some frames with random Gaussian noise.
  *
- * \heading{Usage}
+ * ### Usage ###
  *
  * \code
  * MakeFrames
  * \endcode
  *
- * \heading{Description}
+ * ### Description ###
  *
  * This program makes some frames with one ADC channel containing random
  * Gaussian noise.
  *
-*/
+ */
 
 #include <stdio.h>
 #include <lal/LALStdlib.h>
 #include <lal/AVFactories.h>
 #include <lal/Random.h>
 #include <lal/Units.h>
-#include <lal/FrameStream.h>
+#include <lal/LALFrStream.h>
 
 #define TESTSTATUS( pstat ) \
   if ( (pstat)->statusCode ) { REPORTSTATUS(pstat); return 1; } else ((void)0)
@@ -52,7 +52,6 @@
 #define CHANNEL "H1:LSC-AS_Q"
 #endif
 
-INT4 lalDebugLevel = LALMSGLVL3;
 
 int main( void )
 {
@@ -138,8 +137,8 @@ int main( void )
   LALFrWriteINT4TimeSeries( &status, &series, &opar );
   TESTSTATUS( &status );
 
-  if ( XLALFrWriteINT4TimeSeries( &series, 7 ) < 0 )
-    return 1;
+  //if ( XLALFrWriteINT4TimeSeries( &series, 7 ) < 0 )
+    //return 1;
 
   /* cleanup */
 

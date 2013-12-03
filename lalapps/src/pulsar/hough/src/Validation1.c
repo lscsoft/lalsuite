@@ -20,13 +20,13 @@
 /**
  * \file
  * \ingroup pulsarApps
- * \author Badri Krishnan, Alicia Sintes 
+ * \author Badri Krishnan, Alicia Sintes
  *
  * History:   Created by Sintes June 16, 2003
- *    to test part of the Hough-Driver code.
- *    Case: Non demodulated. Search with no spin-down, source frequency as the 
- *          first search frequency.
- *    No input from SFT data yet implemented here.
+ * to test part of the Hough-Driver code.
+ * Case: Non demodulated. Search with no spin-down, source frequency as the
+ * first search frequency.
+ * No input from SFT data yet implemented here.
  */
 
 
@@ -83,7 +83,6 @@ char *lalWatch;
  * Constant Declarations.  Default parameters.
  */
 
-INT4 lalDebugLevel=0;
 
 #define IFO 1         /*  detector, 1:GEO, 2:LLO, 3:LHO */
 
@@ -226,7 +225,6 @@ int main(int argc, char *argv[]){
     if ( !strcmp( argv[arg], "-d" ) ) {
       if ( argc > arg + 1 ) {
         arg++;
-        lalDebugLevel = atoi( argv[arg++] );
       } else {
         ERROR( VALIDATION1_EARG, VALIDATION1_MSGEARG, 0 );
         XLALPrintError( USAGE, *argv );

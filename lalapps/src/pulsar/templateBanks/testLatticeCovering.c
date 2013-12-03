@@ -21,10 +21,9 @@
  * \author Reinhard Prix
  * \date 2005
  * \ingroup pulsarApps
- * \file 
+ * \file
  * \ingroup moduleLatticeCovering
  * \brief test-functions for the module LatticeCovering
- *
  *
  */
 
@@ -111,14 +110,12 @@ int main(int argc, char *argv[])
 {
   LALStatus status = blank_status;  
 
-  lalDebugLevel = 0;  
   vrbflg = 1;	/* verbose error-messages */
 
   /* set LAL error-handler */
   lal_errhandler = LAL_ERR_EXIT;
 
   /* register user-variables */
-  LAL_CALL (LALGetDebugLevel (&status, argc, argv, 'v'), &status);
   LAL_CALL (initUserVars (&status), &status);	  
 
   /* read cmdline & cfgfile  */	
@@ -550,8 +547,9 @@ plot2DCovering (FILE *fp, const REAL8VectorList *list, const REAL8Vector *metric
 
 } /* plot2DCovering() */
 
-/** Monte-Carlo run to measure the covering-radius (and distribution) of 
- * a given covering. 
+/**
+ * Monte-Carlo run to measure the covering-radius (and distribution) of
+ * a given covering.
  * Algorithm: pick a point at random within [-1,1]^n, get the minimal distance
  * to one of the lattice-points, and write this distance into a file, etc.
  * The covering-radius is given as the cutoff-distance of this distribution.

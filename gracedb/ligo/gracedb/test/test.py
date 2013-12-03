@@ -80,6 +80,23 @@ class TestGracedb(unittest.TestCase):
         self.assertTrue('numRows' in logs)
         pass
 
+    def test_upload_large_file(self):
+        """Upload a large file.  Issue https://bugs.ligo.org/redmine/issues/951"""
+
+        uploadFile = os.path.join(testdatadir, "big.data")
+        r = gracedb.writeFile(eventId, uploadFile)
+        self.assertEqual(r.status, 201) # CREATED
+        r_content = r.json()
+        link = r_content['permalink']
+        self.assertEqual(
+                open(uploadFile, 'r').read(),
+                gracedb.get(gracedb.files(eventId).json()['big.data']).read()
+                )
+        self.assertEqual(
+                open(uploadFile, 'r').read(),
+                gracedb.get(link).read()
+                )
+
     def test_upload_file(self):
         """Upload and re-upload a file"""
 
@@ -137,15 +154,6 @@ class TestGracedb(unittest.TestCase):
         self.assertEqual(r.status, 200)
         label = r.json()
         self.assertEqual("DQV", label['name'])
-
-    def test_slot_event(self):
-        """Create a slot"""
-        r = gracedb.createSlot(eventId, "newslot", "event.log")
-        self.assertEqual(r.status, 201) # CREATED
-        r = gracedb.slot(eventId, "newslot")
-        self.assertEqual(r.status, 200)
-        slotname = r.json()['value']
-        self.assertTrue(slotname.endswith("event.log"))
 
     def test_create_cwb(self):
         """Create a CWB event"""
@@ -232,6 +240,46 @@ class TestGracedb(unittest.TestCase):
 
         event_logs = gracedb.logs(graceid).read()
         self.assertTrue(message in event_logs)
+
+    def test_issue717(self):
+        # non-backwards-compatibility of cli.Client import.
+        # import and use should not cause an import error.
+        from ligo import gracedb
+        gracedb.Client
+        gracedb.ProxyHTTPConnection
+        gracedb.error
+        gracedb.ProxyHTTPSConnection
+
+    def test_gittag(self):
+        # try to make sure GIT_TAG is set properly.
+        import errno
+        version = "1.13"
+        try:
+            # If we are in the source dir (setup.py is available)
+            # make sure the version above agrees.
+            setup_file = open("setup.py", 'r')
+            v = ""
+            for line in setup_file:
+                if line.startswith("version"):
+                    v = line.split('"')[1]
+                    break
+            self.assertEqual(v, version)
+        except IOError, e:
+            if e.errno != errno.ENOENT:
+                raise
+
+        # GIT_TAG should look like "gracedb-VERSION-PKG"
+        # and VERSION should == version from above.
+
+        from ligo.gracedb import GIT_TAG as package_tag
+        package_tag = package_tag.split('-')[1]
+        self.assertTrue(package_tag.startswith(v))
+
+        from ligo.gracedb.cli import GIT_TAG as cli_tag
+        cli_tag = cli_tag.split('-')[1]
+        self.assertTrue(cli_tag.startswith(v))
+
+        self.assertEqual(cli_tag, package_tag)
 
 if __name__ == "__main__":
 

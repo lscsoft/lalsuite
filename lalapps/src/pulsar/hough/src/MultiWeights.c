@@ -19,22 +19,21 @@
 
 /**
  * \file MultiWeights.c
- * \author Badri Krishnan, Alicia Sintes 
+ * \author Badri Krishnan, Alicia Sintes
  * \ingroup pulsarApps
- * \brief Utility code for calculating some properties of the noise weights 
-   for the multi-IFO Hough search
-
-   History:   Created by Sintes and Krishnan July 04, 2003
-              Modifications for S4 January 2006
-
-*/
+ * \brief Utility code for calculating some properties of the noise weights
+ * for the multi-IFO Hough search
+ *
+ * History:   Created by Sintes and Krishnan July 04, 2003
+ * Modifications for S4 January 2006
+ *
+ */
 
 #include "./DriveHoughColor.h"
 
 /* globals, constants and defaults */
 
 
-extern int lalDebugLevel;
 
 /* boolean global variables for controlling output */
 BOOLEAN uvar_printEvents, uvar_printTemplates, uvar_printMaps, uvar_printStats, uvar_printSigma;
@@ -124,8 +123,6 @@ int main(int argc, char *argv[]){
 
   /* LAL error-handler */
   lal_errhandler = LAL_ERR_EXIT;
-  lalDebugLevel = 0;  /* LALDebugLevel must be called before anything else */
-  LAL_CALL( LALGetDebugLevel( &status, argc, argv, 'd'), &status);  
  
   uvar_help = FALSE;
   uvar_printLog = FALSE;

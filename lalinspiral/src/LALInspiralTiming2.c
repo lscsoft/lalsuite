@@ -18,40 +18,39 @@
 */
 
 /**
-\author Sathyaprakash, B. S.
-\file
-\ingroup LALInspiral_h
-
-\brief Module used in solving the timing and phasing functions in quadrature for the
-::Approximant #TaylorT2.
-
-\heading{Prototypes}
-
-<tt>LALInspiralTiming2()</tt>
-
-\heading{Description}
-
-Given \f$t\f$ and \f$v\f$ this module computes the quantity
-\f{equation}{
-tofv = t - t_C - t_N(v) \sum t_k v^k,
-\f}
-where the coefficients \f$t_k\f$ and the Newtonian value \f$t_N\f$ are all defined
-in Table.\tableref{table_flux}.
-
-\heading{Algorithm}
-None
-
-
-\heading{Uses}
-None
-
-\heading{Notes}
-None
-
-
-
-
-*/
+ * \author Sathyaprakash, B. S.
+ * \file
+ * \ingroup LALInspiral_h
+ *
+ * \brief Module used in solving the timing and phasing functions in quadrature for the
+ * ::Approximant #TaylorT2.
+ *
+ * ### Prototypes ###
+ *
+ * <tt>LALInspiralTiming2()</tt>
+ *
+ * ### Description ###
+ *
+ * Given \f$t\f$ and \f$v\f$ this module computes the quantity
+ * \f{equation}{
+ * tofv = t - t_C - t_N(v) \sum t_k v^k,
+ * \f}
+ * where the coefficients \f$t_k\f$ and the Newtonian value \f$t_N\f$ are all defined
+ * in \tableref{table_flux}.
+ *
+ * ### Algorithm ###
+ *
+ * None
+ *
+ * ### Uses ###
+ *
+ * None
+ *
+ * ### Notes ###
+ *
+ * None
+ *
+ */
 
 #include <lal/LALStdlib.h>
 #include <lal/LALInspiral.h>
@@ -64,7 +63,7 @@ LALInspiralTiming2_0PN (
    void      *params
    )
 {
-  XLALPrintDeprecationWarning("LALInspiralTiming2_0PN", "XLALInspiralTiming2_0PN");
+  XLAL_PRINT_DEPRECATION_WARNING("XLALInspiralTiming2_0PN");
 
   INITSTATUS(status);
   ATTATCHSTATUSPTR(status);
@@ -100,7 +99,7 @@ XLALInspiralTiming2_0PN (
     XLAL_ERROR_REAL8(XLAL_EDOM);
 
 
-  v = pow(toffIn->piM * f,oneby3);
+  v = pow(toffIn->piM * f,(1./3.));
   v8 = pow(v,8.);
 
   toff = - toffIn->t + toffIn->tc
@@ -117,7 +116,7 @@ LALInspiralTiming2_2PN (
    void      *params
    )
 {
-  XLALPrintDeprecationWarning("LALInspiralTiming2_2PN", "XLALInspiralTiming2_2PN");
+  XLAL_PRINT_DEPRECATION_WARNING("XLALInspiralTiming2_2PN");
 
   INITSTATUS(status);
   ATTATCHSTATUSPTR(status);
@@ -153,7 +152,7 @@ XLALInspiralTiming2_2PN (
     XLAL_ERROR_REAL8(XLAL_EDOM);
 
 
-  v = pow(toffIn->piM * f,oneby3);
+  v = pow(toffIn->piM * f,(1./3.));
   v2 = v*v;
   v8 = v2*v2*v2*v2;
 
@@ -172,7 +171,7 @@ LALInspiralTiming2_3PN (
    void      *params
    )
 {
-  XLALPrintDeprecationWarning("LALInspiralTiming2_3PN", "XLALInspiralTiming2_3PN");
+  XLAL_PRINT_DEPRECATION_WARNING("XLALInspiralTiming2_3PN");
 
   INITSTATUS(status);
   ATTATCHSTATUSPTR(status);
@@ -208,7 +207,7 @@ XLALInspiralTiming2_3PN (
     XLAL_ERROR_REAL8(XLAL_EDOM);
 
 
-  v = pow(toffIn->piM * f,oneby3);
+  v = pow(toffIn->piM * f,(1./3.));
   v2 = v*v;
   v3 = v2*v;
   v8 = v3*v3*v2;
@@ -229,7 +228,7 @@ LALInspiralTiming2_4PN (
    void      *params
    )
 {
-  XLALPrintDeprecationWarning("LALInspiralTiming2_4PN", "XLALInspiralTiming2_4PN");
+  XLAL_PRINT_DEPRECATION_WARNING("XLALInspiralTiming2_4PN");
 
   INITSTATUS(status);
   ATTATCHSTATUSPTR(status);
@@ -265,7 +264,7 @@ XLALInspiralTiming2_4PN (
     XLAL_ERROR_REAL8(XLAL_EDOM);
 
 
-  v = pow(toffIn->piM * f,oneby3);
+  v = pow(toffIn->piM * f,(1./3.));
   v2 = v*v;
   v3 = v2*v;
   v4 = v3*v;
@@ -288,7 +287,7 @@ LALInspiralTiming2_5PN (
    void      *params
    )
 {
-  XLALPrintDeprecationWarning("LALInspiralTiming2_5PN", "XLALInspiralTiming2_5PN");
+  XLAL_PRINT_DEPRECATION_WARNING("XLALInspiralTiming2_5PN");
 
   INITSTATUS(status);
   ATTATCHSTATUSPTR(status);
@@ -324,7 +323,7 @@ XLALInspiralTiming2_5PN (
     XLAL_ERROR_REAL8(XLAL_EDOM);
 
 
-  v = pow(toffIn->piM * f,oneby3);
+  v = pow(toffIn->piM * f,(1./3.));
   v2 = v*v;
   v3 = v2*v;
   v4 = v3*v;
@@ -349,7 +348,7 @@ LALInspiralTiming2_6PN (
    void      *params
    )
 {
-  XLALPrintDeprecationWarning("LALInspiralTiming2_6PN", "XLALInspiralTiming2_6PN");
+  XLAL_PRINT_DEPRECATION_WARNING("XLALInspiralTiming2_6PN");
 
   INITSTATUS(status);
   ATTATCHSTATUSPTR(status);
@@ -386,7 +385,7 @@ XLALInspiralTiming2_6PN (
     XLAL_ERROR_REAL8(XLAL_EDOM);
 
 
-  v = pow(toffIn->piM * f,oneby3);
+  v = pow(toffIn->piM * f,(1./3.));
   v2 = v*v;
   v3 = v2*v;
   v4 = v3*v;
@@ -413,7 +412,7 @@ LALInspiralTiming2_7PN (
    void      *params
    )
 {
-  XLALPrintDeprecationWarning("LALInspiralTiming2_7PN", "XLALInspiralTiming2_7PN");
+  XLAL_PRINT_DEPRECATION_WARNING("XLALInspiralTiming2_7PN");
 
   INITSTATUS(status);
   ATTATCHSTATUSPTR(status);
@@ -449,7 +448,7 @@ XLALInspiralTiming2_7PN (
     XLAL_ERROR_REAL8(XLAL_EDOM);
 
 
-  v = pow(toffIn->piM*f, oneby3);
+  v = pow(toffIn->piM*f, (1./3.));
   v2 = v*v;
   v3 = v2*v;
   v4 = v3*v;

@@ -23,25 +23,25 @@
  * \author Bernd Machenschalk, Bruce Allen
  *
  * \brief This program reads in binary SFTs (v1 and v2) and writes out narrow-banded merged SFTs (v2).
-
-  This code links to the SFTReferenceLibrary. To compile, use somehting like
-  <code>gcc -Wall -g -O2 splitSFTs.c -o splitSFTs libSFTReferenceLibrary.a -lm</code>
-
-  Writen by Bernd Machenschalk for Einstein\@home 2008
-
-  * Revision splitSFTs.c,v 1.41 2008/10/29 16:54:13 was
-    reviewed by the LSC CW Review Committee Thur Oct 30, 2008
-
-    Suggested improvements:
-    * issue warning at ambiguous frequency values that are so close to the boundary of a bin
-      that rounding might end up giving an unintended bin
-    * check for consistency of input SFTs (same timebase, ascending timestamps etc., see spec)
-      and merged SFTs (check last header of a file we are appending to)
-
-  * Other possible improvements not suggested by the committee
-    * keep output files open (if there aren't too many)
-    * obscure a mystery factor in command-line record even if given with long option --factor
-*/
+ *
+ * This code links to the SFTReferenceLibrary. To compile, use somehting like
+ * <code>gcc -Wall -g -O2 splitSFTs.c -o splitSFTs libSFTReferenceLibrary.a -lm</code>
+ *
+ * Writen by Bernd Machenschalk for Einstein\@home 2008
+ *
+ * Revision splitSFTs.c,v 1.41 2008/10/29 16:54:13 was
+ * reviewed by the LSC CW Review Committee Thur Oct 30, 2008
+ *
+ * Suggested improvements:
+ * issue warning at ambiguous frequency values that are so close to the boundary of a bin
+ * that rounding might end up giving an unintended bin
+ * check for consistency of input SFTs (same timebase, ascending timestamps etc., see spec)
+ * and merged SFTs (check last header of a file we are appending to)
+ *
+ * Other possible improvements not suggested by the committee
+ * keep output files open (if there aren't too many)
+ * obscure a mystery factor in command-line record even if given with long option --factor
+ */
 
 #include <math.h>
 #include <time.h>
@@ -54,8 +54,10 @@
 
 #define VCSID LALAPPS_VCS_IDENT_ID LALAPPS_VCS_IDENT_STATUS
 
-/** rounding (for positive numbers!)
-    taken from SFTfileIO in LALSupport, should be consistent with that */
+/**
+ * rounding (for positive numbers!)
+ * taken from SFTfileIO in LALSupport, should be consistent with that
+ */
 #define MYROUND(x) ( floor( (x) + 0.5 ) )
 
 #define FALSE 0
@@ -135,6 +137,7 @@ int main(int argc, char**argv) {
   double fMin = -1.0, fMax = -1.0;     /* start and end in Hz */
   double fWidth = -1.0, fOverlap = -1; /* width and overlap in Hz */
   unsigned int nactivesamples;         /* number of bins to actually read in */
+  int validate = TRUE;                 /* validate the checksum of each input SFT before using it? */
 
   /* initialize throtteling */
   time(&read_bandwidth.last_checked);
@@ -151,19 +154,35 @@ int main(int argc, char**argv) {
 	    "\n"
 	    "  Write this help message\n"
 	    "\n"
-	    "%s [-c 0|1|2] [-a] [-s <startbin>] [-e <endbin (exclusively)>] [-b <sftbins>]\n"
-	    "  [-fs <startfrequency>] [-fe <endfrequency (exclusively)>] [-fb <frequencywidth>]\n"
-	    "  [-m <factor>] [-d <detector>] [-o <outputprefix>] -i <inputfile> ...\n"
+	    "%s\n"
+	    "  [-a|--all-comments]\n"
+	    "  [-c|--add-comment 0|1|2]\n"
+	    "  [-v|--no-validation]\n"
+	    "  [-s|--start-bin <startbin>]\n"
+	    "  [-e|--end-bin <endbin (exclusively)>]\n"
+	    "  [-b|--width <sftbins>]\n"
+	    "  [-x|--overlap <overlap>]\n"
+	    "  [-fs|--start-frequency <startfrequency>]\n"
+	    "  [-fe|--end-frequency <endfrequency (exclusively)>]\n"
+	    "  [-fb|--frequency-bandwidth <frequencywidth>]\n"
+	    "  [-fx|--frequency-overlap <frequencyoverlap>]\n"
+	    "  [-m|--factor <factor>]\n"
+	    "  [-d|--detector <detector>]\n"
+	    "  [-o|--output-prefix <outputprefix>]\n"
+	    "  -i|--input-files <inputfile> ...\n"
 	    "\n"
 	    "  This program reads in binary SFTs (v1 and v2) and writes out narrow-banded\n"
 	    "  merged SFTs (v2).\n"
 	    "\n"
 	    "  The frequency bands of the ouput SFTs (first frequency bin of first output SFT,\n"
 	    "  last frequency bin of last output SFT, number of bins in each output SFT)\n"
-	    "  can be specified either in bins ('-s', '-e', '-b') or Hz ('-fs', '-fe', '-fb')\n"
+	    "  and a possible overlap of the output files can be specified\n"
+	    "  either in bins ('-s', '-e', '-b', -'x') or Hz ('-fs', '-fe', '-fb', '-fx')\n"
 	    "  (or mixed - if both are given, frequency values take precedence).\n"
 	    "\n"
 	    "  A 'mystery factor' can be specified with '-m' option.\n"
+	    "\n"
+	    "  '-v' skips validation of the CRC checksum of the input files\n"
 	    "\n"
 	    "  In case of reading v1 SFTs (which don't support detector information in the header)\n"
 	    "  the detector needs to be specified on the command-line using '-d' option.\n"
@@ -217,7 +236,8 @@ int main(int argc, char**argv) {
 
   /* get parameters from command-line */
   for(arg = 1; arg < argc; arg++) {
-    if(strcmp(argv[arg], "-d") == 0) {
+    if((strcmp(argv[arg], "-d") == 0) ||
+	      (strcmp(argv[arg], "--detector") == 0)) {
       detector = argv[++arg];
     } else if((strcmp(argv[arg], "-c") == 0) ||
 	      (strcmp(argv[arg], "--add-comment") == 0)) {
@@ -247,11 +267,14 @@ int main(int argc, char**argv) {
 	      (strcmp(argv[arg], "--frequency-bandwidth") == 0)) {
       fWidth = atof(argv[++arg]);
     } else if((strcmp(argv[arg], "-fx") == 0) ||
-	      (strcmp(argv[arg], "--output-prefix") == 0)) {
+	      (strcmp(argv[arg], "--frequency-overlap") == 0)) {
       fOverlap = atof(argv[++arg]);
     } else if((strcmp(argv[arg], "-m") == 0) ||
 	      (strcmp(argv[arg], "--factor") == 0)) {
       factor = atof(argv[++arg]);
+    } else if((strcmp(argv[arg], "-v") == 0) ||
+	      (strcmp(argv[arg], "--no-validation") == 0)) {
+      validate = FALSE;
     } else if((strcmp(argv[arg], "-o") == 0) ||
 	      (strcmp(argv[arg], "--output-prefix") == 0)) {
       prefix = argv[++arg];
@@ -297,7 +320,7 @@ int main(int argc, char**argv) {
     
     /* read header */
     request_resource(&read_bandwidth, 40);
-    TRYSFT(ReadSFTHeader(fp, &hd, &oldcomment, &swap, 1),
+    TRYSFT(ReadSFTHeader(fp, &hd, &oldcomment, &swap, validate),
 	   "could not read SFT header");
 
     /* calculate bins from frequency parameters if they were given */

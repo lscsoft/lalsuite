@@ -18,20 +18,25 @@
 */
 
 /**
-\author Sathyaprakash, B. S.
-\file
-\brief <tt>LALInspiralComputeSNRIntegrand()</tt>
-
-\heading{Description}
-\heading{Algorithm}
-\heading{Uses}
-\code
-LALREAL4VectorFFT
-\endcode
-
-\heading{Notes}
-
-*/
+ * \author Sathyaprakash, B. S.
+ * \file
+ * \brief <tt>LALInspiralComputeSNRIntegrand()</tt>
+ *
+ * ### Description ###
+ *
+ *
+ * ### Algorithm ###
+ *
+ *
+ * ### Uses ###
+ *
+ * \code
+ * LALREAL4VectorFFT
+ * \endcode
+ *
+ * ### Notes ###
+ *
+ */
 
 #include <lal/LALNoiseModelsInspiral.h>
 

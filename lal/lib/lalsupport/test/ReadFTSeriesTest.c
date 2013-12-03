@@ -18,29 +18,30 @@
 */
 
 /**
-   \file
-   \ingroup ReadFTSeries_h
-   \author Torres, C. W.
-
-   \brief Tests the routines in \ref ReadTimeSeries_c and \ref ReadFrequencySeries_c.
-
-   \heading{Usage}
-   \code
-ReadFTSeriesTest
-   \endcode
-
-   \heading{Description}
-
-For each of the real and complex datatypes (single and double
-precision), this program fills a Time- and FrequencySeries, prints
-them to disk with the appropriate
-   \c LALPrint<datatype><tt>FrequencySeries()</tt>
-   and \c LALPrint<datatype><tt>TimeSeries()</tt>
-routines, then reads them back in with the appropriate
-   \c LALRead<datatype><tt>FrequencySeries()</tt>
-   and \c LALRead<datatype><tt>TimeSeries()</tt>
-routines and checks to make sure the resulting series agree, printing the results to standard error.
-*/
+ * \file
+ * \ingroup ReadFTSeries_h
+ * \author Torres, C. W.
+ *
+ * \brief Tests the routines in \ref ReadTimeSeries_c and \ref ReadFrequencySeries_c.
+ *
+ * ### Usage ###
+ *
+ * \code
+ * ReadFTSeriesTest
+ * \endcode
+ *
+ * ### Description ###
+ *
+ * For each of the real and complex datatypes (single and double
+ * precision), this program fills a Time- and FrequencySeries, prints
+ * them to disk with the appropriate
+ * \c LALPrint<datatype><tt>FrequencySeries()</tt>
+ * and \c LALPrint<datatype><tt>TimeSeries()</tt>
+ * routines, then reads them back in with the appropriate
+ * \c LALRead<datatype><tt>FrequencySeries()</tt>
+ * and \c LALRead<datatype><tt>TimeSeries()</tt>
+ * routines and checks to make sure the resulting series agree, printing the results to standard error.
+ */
 
 /**\name Error Codes */ /*@{*/
 #define READFTSERIESTESTC_ENOM 0        /**< Nominal exit */
@@ -66,7 +67,6 @@ routines and checks to make sure the resulting series agree, printing the result
 #define  READFTSERIESTEST_TOL 1e6
 #define  READFTSERIESTEST_LEN 20
 
-extern int lalDebugLevel;
 
 
 int main( void )
@@ -130,7 +130,6 @@ int main( void )
   /* Data Test Variable */
   UINT4   j;
 
-  lalDebugLevel = LALMSGLVL3;
 
   fprintf(stderr,"Testing value of LALUnitTextSize ... ");
   if ( (int)LALSupportUnitTextSize != (int)LALUnitTextSize )
@@ -156,8 +155,8 @@ int main( void )
   }
   for ( i=1, cData=cSequenceIn->data; i<=READFTSERIESTEST_LEN ; i++, cData++ )
   {
-    cData->re = i;
-    cData->im = i+1;
+    cData->realf_FIXME = i;
+    cData->imagf_FIXME = i+1;
     }
 
   strncpy(cFrequencySeries.name,"Complex frequency series",LALNameLength);
@@ -250,20 +249,20 @@ int main( void )
 
   for (j = 0; j < cSequenceIn->length;j++)
   {
-    if ((cSequenceIn->data[j].re ?
-	 fabs((cSequenceIn->data[j].re - cSequenceOut->data[j].re)
-	      /cSequenceIn->data[j].re)
-	 :fabs(cSequenceIn->data[j].re - cSequenceOut->data[j].re)) >
+    if ((crealf(cSequenceIn->data[j]) ?
+	 fabs((crealf(cSequenceIn->data[j]) - crealf(cSequenceOut->data[j]))
+	      /crealf(cSequenceIn->data[j]))
+	 :fabs(crealf(cSequenceIn->data[j]) - crealf(cSequenceOut->data[j]))) >
 	 READFTSERIESTEST_TOL)
     {
       fprintf(stderr,"Data Tolerance Exceeded [ReadFTSeriesTest:%s]\n",
 	      READFTSERIESTESTC_MSGEFLS);
       return READFTSERIESTESTC_EFLS;
     }
-    if ((cSequenceIn->data[j].im ?
-	 fabs((cSequenceIn->data[j].im - cSequenceOut->data[j].im)
-	      /cSequenceIn->data[j].im)
-	 :fabs(cSequenceIn->data[j].im - cSequenceOut->data[j].im)) >
+    if ((cimagf(cSequenceIn->data[j]) ?
+	 fabs((cimagf(cSequenceIn->data[j]) - cimagf(cSequenceOut->data[j]))
+	      /cimagf(cSequenceIn->data[j]))
+	 :fabs(cimagf(cSequenceIn->data[j]) - cimagf(cSequenceOut->data[j]))) >
 	 READFTSERIESTEST_TOL)
     {
       fprintf(stderr,"Data Tolerance Exceeded [ReadFTSeriesTest:%s]\n",
@@ -293,8 +292,8 @@ int main( void )
 
   for ( i=1, zData=zSequenceIn->data; i<=READFTSERIESTEST_LEN ; i++, zData++ )
   {
-    zData->re = i/4.0;
-    zData->im = (i+1)/5.0;
+    zData->real_FIXME = i/4.0;
+    zData->imag_FIXME = (i+1)/5.0;
   }
   zFrequencySeries.sampleUnits = lalDimensionlessUnit;
   strncpy(zFrequencySeries.name,"Complex frequency series",LALNameLength);
@@ -384,20 +383,20 @@ int main( void )
 
   for (j = 0; j < zSequenceIn->length;j++)
   {
-    if ((zSequenceIn->data[j].re ?
-	fabs((zSequenceIn->data[j].re - zSequenceOut->data[j].re)
-	     /zSequenceIn->data[j].re) :
-	fabs(zSequenceIn->data[j].re - zSequenceOut->data[j].re)) >
+    if ((creal(zSequenceIn->data[j]) ?
+	fabs((creal(zSequenceIn->data[j]) - creal(zSequenceOut->data[j]))
+	     /creal(zSequenceIn->data[j])) :
+	fabs(creal(zSequenceIn->data[j]) - creal(zSequenceOut->data[j]))) >
 	READFTSERIESTEST_TOL)
     {
       fprintf(stderr,"Data Tolerance Exceeded [ReadFTSeriesTest:%s]\n",
 	      READFTSERIESTESTC_MSGEFLS);
       return READFTSERIESTESTC_EFLS;
     }
-   if ((zSequenceIn->data[j].im ?
-	fabs((zSequenceIn->data[j].im - zSequenceOut->data[j].im)
-	     /zSequenceIn->data[j].im) :
-	fabs(zSequenceIn->data[j].im - zSequenceOut->data[j].im)) >
+   if ((cimag(zSequenceIn->data[j]) ?
+	fabs((cimag(zSequenceIn->data[j]) - cimag(zSequenceOut->data[j]))
+	     /cimag(zSequenceIn->data[j])) :
+	fabs(cimag(zSequenceIn->data[j]) - cimag(zSequenceOut->data[j]))) >
 	READFTSERIESTEST_TOL)
     {
       fprintf(stderr,"Data Tolerance Exceeded [ReadFTSeriesTest:%s]\n",
@@ -1025,8 +1024,8 @@ int main( void )
 
   for ( i=1, zData=zSequenceIn->data; i<=READFTSERIESTEST_LEN ; i++, zData++ )
   {
-    zData->re = 0.005;
-    zData->im = 1;
+    zData->real_FIXME = 0.005;
+    zData->imag_FIXME = 1;
   }
   strncpy(zTimeSeries.name,"Complex16 Time series",LALNameLength);
   zTimeSeries.deltaT = 1.3;
@@ -1119,20 +1118,20 @@ int main( void )
 
   for (j = 0; j < zSequenceIn->length;j++)
   {
-    if ((zSequenceIn->data[j].re ?
-	 fabs((zSequenceIn->data[j].re - zSequenceOut->data[j].re)
-	      /zSequenceIn->data[j].re)
-	 :fabs(zSequenceIn->data[j].re - zSequenceOut->data[j].re)) >
+    if ((creal(zSequenceIn->data[j]) ?
+	 fabs((creal(zSequenceIn->data[j]) - creal(zSequenceOut->data[j]))
+	      /creal(zSequenceIn->data[j]))
+	 :fabs(creal(zSequenceIn->data[j]) - creal(zSequenceOut->data[j]))) >
 	 READFTSERIESTEST_TOL)
     {
       fprintf(stderr,"Data Tolerance Exceeded [ReadFTSeriesTest:%s]\n",
 	      READFTSERIESTESTC_MSGEFLS);
       return READFTSERIESTESTC_EFLS;
     }
-    if ((zSequenceIn->data[j].im ?
-	 fabs((zSequenceIn->data[j].im - zSequenceOut->data[j].im)
-	      /zSequenceIn->data[j].im)
-	 :fabs(zSequenceIn->data[j].im - zSequenceOut->data[j].im)) >
+    if ((cimag(zSequenceIn->data[j]) ?
+	 fabs((cimag(zSequenceIn->data[j]) - cimag(zSequenceOut->data[j]))
+	      /cimag(zSequenceIn->data[j]))
+	 :fabs(cimag(zSequenceIn->data[j]) - cimag(zSequenceOut->data[j]))) >
 	 READFTSERIESTEST_TOL)
     {
       fprintf(stderr,"Data Tolerance Exceeded [ReadFTSeriesTest:%s]\n",
@@ -1362,8 +1361,8 @@ int main( void )
 
   for ( i=1, cData=cSequenceIn->data; i<=READFTSERIESTEST_LEN ; i++, cData++ )
   {
-    cData->re = 0.005;
-    cData->im = 1;
+    cData->realf_FIXME = 0.005;
+    cData->imagf_FIXME = 1;
   }
   strncpy(cTimeSeries.name,"Complex8 Time series",LALNameLength);
   cTimeSeries.deltaT = 1.3;
@@ -1451,20 +1450,20 @@ int main( void )
 
   for (j = 0; j < cSequenceIn->length;j++)
   {
-    if ((cSequenceIn->data[j].re ?
-	 fabs((cSequenceIn->data[j].re - cSequenceOut->data[j].re)
-	      /cSequenceIn->data[j].re)
-	 :fabs(cSequenceIn->data[j].re - cSequenceOut->data[j].re)) >
+    if ((crealf(cSequenceIn->data[j]) ?
+	 fabs((crealf(cSequenceIn->data[j]) - crealf(cSequenceOut->data[j]))
+	      /crealf(cSequenceIn->data[j]))
+	 :fabs(crealf(cSequenceIn->data[j]) - crealf(cSequenceOut->data[j]))) >
 	 READFTSERIESTEST_TOL)
     {
       fprintf(stderr,"Data Tolerance Exceeded [ReadFTSeriesTest:%s]\n",
 	      READFTSERIESTESTC_MSGEFLS);
       return READFTSERIESTESTC_EFLS;
     }
-    if ((cSequenceIn->data[j].im ?
-	 fabs((cSequenceIn->data[j].im - cSequenceOut->data[j].im)
-	      /cSequenceIn->data[j].im)
-	 :fabs(cSequenceIn->data[j].im - cSequenceOut->data[j].im)) >
+    if ((cimagf(cSequenceIn->data[j]) ?
+	 fabs((cimagf(cSequenceIn->data[j]) - cimagf(cSequenceOut->data[j]))
+	      /cimagf(cSequenceIn->data[j]))
+	 :fabs(cimagf(cSequenceIn->data[j]) - cimagf(cSequenceOut->data[j]))) >
 	 READFTSERIESTEST_TOL)
     {
       fprintf(stderr,"Data Tolerance Exceeded [ReadFTSeriesTest:%s]\n",

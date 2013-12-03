@@ -18,43 +18,44 @@
 */
 
 /**
-\author J. T. Whelan <john.whelan@ligo.org>
-\file
-\ingroup LALDetectors_h
-
-\brief Tests the detector response and site parameter structures and the
-routine to create one from the other.
-
-\heading{Usage}
-
-\code
-DetectorSiteTest [options]
-Options:
-  -h         print help
-  -q         quiet: run silently
-  -v         verbose: print extra information
-  -d level   set lalDebugLevel to level
-\endcode
-
-\heading{Description}
-
-Right now the test routine does very little.  It contains a static
-function <tt>PrintLALDetector()</tt> which will print the fields of a
-\c LALDetector to standard output in the same format that would
-be used for a C initialization.  This function is not currently
-called.  It also contains a static function <tt>CheckDetector()</tt>
-which extracts the \c ::LALFrDetector and type from a
-\c ::LALDetector, changes the name of the \c ::LALFrDetector
-(in case it's one of the predefined constant detectors), constructs a
-new \c ::LALDetector and compares the values of the fields of the
-old and new structures.  The program currently performs this check
-for the two LIGO sites.
-
-\heading{Uses}
-\code
-LALCreateDetector()
-\endcode
-*/
+ * \author J. T. Whelan <john.whelan@ligo.org>
+ * \file
+ * \ingroup LALDetectors_h
+ *
+ * \brief Tests the detector response and site parameter structures and the
+ * routine to create one from the other.
+ *
+ * ### Usage ###
+ *
+ * \code
+ * DetectorSiteTest [options]
+ * Options:
+ * -h         print help
+ * -q         quiet: run silently
+ * -v         verbose: print extra information
+ * -d level   set lalDebugLevel to level
+ * \endcode
+ *
+ * ### Description ###
+ *
+ * Right now the test routine does very little.  It contains a static
+ * function <tt>PrintLALDetector()</tt> which will print the fields of a
+ * \c LALDetector to standard output in the same format that would
+ * be used for a C initialization.  This function is not currently
+ * called.  It also contains a static function <tt>CheckDetector()</tt>
+ * which extracts the \c ::LALFrDetector and type from a
+ * \c ::LALDetector, changes the name of the \c ::LALFrDetector
+ * (in case it's one of the predefined constant detectors), constructs a
+ * new \c ::LALDetector and compares the values of the fields of the
+ * old and new structures.  The program currently performs this check
+ * for the two LIGO sites.
+ *
+ * ### Uses ###
+ *
+ * \code
+ * LALCreateDetector()
+ * \endcode
+ */
 
 /**\name Error Codes */ /*@{*/
 #define DETECTORSITETESTC_ENOM 0	/**< Nominal exit */
@@ -90,7 +91,6 @@ LALCreateDetector()
 extern char *optarg;
 extern int   optind;
 
-extern int lalDebugLevel;
 int verbose    = 0;
 
 static void
@@ -309,7 +309,6 @@ int main( int argc, char *argv[] )
 
   LALDetector          cachedDetector;
 
-  lalDebugLevel = LALMSGLVL1;
 
   ParseOptions( argc, argv );
 
@@ -487,7 +486,6 @@ ParseOptions (int argc, char *argv[])
     switch (c)
     {
       case 'd': /* set debug level */
-        lalDebugLevel = atoi (optarg);
         break;
 
       case 'v': /* verbose */

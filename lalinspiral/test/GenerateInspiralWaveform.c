@@ -18,18 +18,18 @@
 */
 
 /**
-\author Sathyaprakash, B. S., Cokelaer T.
-\file
-\ingroup LALInspiral_h
-
-\brief Test routine for wave generation codes.
-
-To get some help just type the name of the executable and the option --h
-
-Basically, you can provide all the arguments from the InspiralTemplate structure such as
---approximant, --order ....
-
-*/
+ * \author Sathyaprakash, B. S., Cokelaer T.
+ * \file
+ * \ingroup LALInspiral_h
+ *
+ * \brief Test routine for wave generation codes.
+ *
+ * To get some help just type the name of the executable and the option --h
+ *
+ * Basically, you can provide all the arguments from the InspiralTemplate structure such as
+ * --approximant, --order ....
+ *
+ */
 
 
 #define LALGENERATEINSPIRALWAVEFORMC_ENORM 0
@@ -54,7 +54,6 @@ Basically, you can provide all the arguments from the InspiralTemplate structure
 #include <lal/Random.h>
 #include <lal/GenerateInspiral.h>
 
-INT4 lalDebugLevel=1;
 #define ERROR( code, msg, statement )                                \
 do                                                                   \
 if ( lalDebugLevel & LALERROR )                                      \
@@ -235,7 +234,6 @@ int main (int argc , char **argv) {
     case BCVSpin:
     case IMRPhenomFA:
     case IMRPhenomFB:
-    case PhenSpinTaylorRDF:
       switch( otherIn.output )
       {
         default:

@@ -27,8 +27,8 @@
 #include <string.h>
 
 #include <lal/LALFrameIO.h>
-#include <lal/FrameCache.h>
-#include <lal/FrameStream.h>
+#include <lal/LALCache.h>
+#include <lal/LALFrStream.h>
 #include <lal/BandPassTimeSeries.h>
 #include <lal/Date.h>
 #include <lal/TimeSeries.h>
@@ -39,7 +39,6 @@
 #include <lal/RealFFT.h>
 #include <lal/TimeFreqFFT.h>
 #include <lal/Units.h>
-#include <lal/LALCalibration.h>
 #include <lal/LIGOMetadataTables.h>
 #include <lal/LIGOMetadataBurstUtils.h>
 #include <lal/LIGOLwXML.h>
@@ -89,7 +88,7 @@ int dbg_fsdump( COMPLEX8FrequencySeries *series, const char *fname );
 int dbg_specdump( REAL4FrequencySeries *series, const char *fname );
 REAL4TimeSeries * setdata( int intype, const char *channel, LIGOTimeGPS *start, REAL8 duration, REAL8 samplerate );
 REAL4TimeSeries * getdata( const char *path, int cachefileflg, const char *channel, LIGOTimeGPS *start, REAL8 duration );
-COMPLEX8FrequencySeries * getresp( const char *calibfile, const char *channel, LIGOTimeGPS *epoch, REAL4 deltaF, UINT4 seglen, REAL8 dynrange );
+// COMPLEX8FrequencySeries * getresp( const char *calibfile, const char *channel, LIGOTimeGPS *epoch, REAL4 deltaF, UINT4 seglen, REAL8 dynrange );
 int inspinj( REAL4TimeSeries *series, const char *inspinjfile, const char *calfile );
 int burstinj( REAL4TimeSeries *series, const char *burstinjfile, const char *calfile );
 int resample( REAL4TimeSeries *series, REAL8 srate );
@@ -107,7 +106,6 @@ int main( int argc, char *argv[] )
 	REAL8 discard;
 	UINT4 ndiscard;
 
-	lalDebugLevel = 1;
 	XLALSetErrorHandler( XLALAbortErrorHandler );
 
 	parseopts( argc, argv );
@@ -312,9 +310,9 @@ REAL4TimeSeries * setdata( int intype, const char *channel, LIGOTimeGPS *start, 
 
 REAL4TimeSeries * getdata( const char *path, int cachefileflg, const char *channel, LIGOTimeGPS *start, REAL8 duration )
 {
-	FrCache *cache   = NULL;
-	FrStream *stream = NULL;
-	int mode = LAL_FR_VERBOSE_MODE;
+	LALCache *cache   = NULL;
+	LALFrStream *stream = NULL;
+	int mode = LAL_FR_STREAM_VERBOSE_MODE;
 	int tstype;
 	REAL4TimeSeries *series;
 
@@ -324,7 +322,7 @@ REAL4TimeSeries * getdata( const char *path, int cachefileflg, const char *chann
 	/* open the data cache and use it to get a frame stream */
 	if ( cachefileflg ) {
 		verbose( "importing cache file %s\n", path );
-		cache = XLALFrImportCache( path );
+		cache = XLALCacheImport( path );
 	} else {
 		char pathcpy[FILENAME_MAX];
 		char *basename;
@@ -339,22 +337,22 @@ REAL4TimeSeries * getdata( const char *path, int cachefileflg, const char *chann
 			dirname = NULL;
 		}
 		verbose( "using data file(s) %s\n", path );
-		cache = XLALFrGenerateCache( dirname, basename );
+		cache = XLALCacheGlob( dirname, basename );
 	}
-	stream = XLALFrCacheOpen( cache );
-	XLALFrDestroyCache( cache );
+	stream = XLALFrStreamCacheOpen( cache );
+	XLALDestroyCache( cache );
 
 	/* set the mode of the frame stream */
-	XLALFrSetMode( stream, mode );
+	XLALFrStreamSetMode( stream, mode );
 
-	tstype = XLALFrGetTimeSeriesType( channel, stream );
+	tstype = XLALFrStreamGetTimeSeriesType( channel, stream );
 	if ( tstype == LAL_S_TYPE_CODE ) {
-		series = XLALFrReadREAL4TimeSeries( stream, channel, start, duration, 0 );
+		series = XLALFrStreamReadREAL4TimeSeries( stream, channel, start, duration, 0 );
 	} else if ( tstype == LAL_D_TYPE_CODE ) { /* assume strain data */
 		REAL8TimeSeries *dblseries;
 		UINT4 i;
 		dynrange_ = 1e20;
-		dblseries = XLALFrReadREAL8TimeSeries( stream, channel, start, duration, 0 );
+		dblseries = XLALFrStreamReadREAL8TimeSeries( stream, channel, start, duration, 0 );
 		/* TODO: this shouldn't be hard-coded! */
 		XLALHighPassREAL8TimeSeries( dblseries, 40.0, 0.9, 8 );
 		series = XLALCreateREAL4TimeSeries( dblseries->name, &dblseries->epoch, dblseries->f0, dblseries->deltaT, &dblseries->sampleUnits, dblseries->data->length );
@@ -365,30 +363,20 @@ REAL4TimeSeries * getdata( const char *path, int cachefileflg, const char *chann
 	}
 
 	/* close the stream */
-	XLALFrClose( stream );
+	XLALFrStreamClose( stream );
 
 	return series;
 }
 
+#if 0
 COMPLEX8FrequencySeries * getresp( const char *calibfile, const char *channel, LIGOTimeGPS *epoch, REAL4 deltaF, UINT4 seglen, REAL8 dynrange )
 {
-	COMPLEX8FrequencySeries *response;
-	LALCalData *caldata;
-	UINT4 k;
-
 	if ( ! calibfile )
 		return NULL;
 
-	verbose( "reading response function at resolution %g Hz for channel %s and epoch %d.%09d from file %s\n", deltaF, channel, epoch->gpsSeconds, epoch->gpsNanoSeconds, calibfile );
-
-	caldata   = XLALFrGetCalData( epoch, channel, calibfile );
-	response  = XLALCreateCOMPLEX8FrequencySeries( "response", epoch, 0, deltaF, &lalDimensionlessUnit, seglen/2 + 1 );
-	XLALUpdateResponse( response, 0.0, caldata );
-	response->data->data[0] = 0.0;
-	for ( k = 1; k < response->data->length; ++k )
-		response->data->data[k] = response->data->data[k] * dynrange;
-	return response;
+        XLAL_ERROR_NULL(XLAL_EERR, "Calibration frames no longer supported");
 }
+#endif
 
 
 int inspinj( REAL4TimeSeries *series, const char *inspinjfile, const char *calfile )
@@ -397,7 +385,7 @@ int inspinj( REAL4TimeSeries *series, const char *inspinjfile, const char *calfi
 	SimInspiralTable *injections = NULL;
 	COMPLEX8FrequencySeries *response;
 	REAL4TimeSeries keep;
-	REAL8 deltaF;
+	// REAL8 deltaF;
 	int ninj;
 	int tbeg;
 	int tend;
@@ -423,8 +411,9 @@ int inspinj( REAL4TimeSeries *series, const char *inspinjfile, const char *calfi
 		return 0;
 	}
 
-	deltaF = 1.0 / ( series->deltaT * series->data->length );
-	response = getresp( calfile, series->name, &series->epoch, deltaF, series->data->length, 1.0 );
+	// deltaF = 1.0 / ( series->deltaT * series->data->length );
+	// response = getresp( calfile, series->name, &series->epoch, deltaF, series->data->length, 1.0 );
+	response = NULL;
 	keep = *series;
 	LALFindChirpInjectSignals( &status, series, injections, response );
 	*series = keep;
@@ -450,7 +439,7 @@ int burstinj( REAL4TimeSeries *series, const char *burstinjfile, const char *cal
 	SimBurst *sim_burst;
 	REAL8TimeSeries *injections;
 	COMPLEX8FrequencySeries *response;
-	REAL8 deltaF;
+	// REAL8 deltaF;
 	LIGOTimeGPS tbeg = series->epoch;
 	LIGOTimeGPS tend = series->epoch;
 	unsigned i;
@@ -473,8 +462,9 @@ int burstinj( REAL4TimeSeries *series, const char *burstinjfile, const char *cal
 
 	verbose( "injecting bursts listed in file %s between times %d and %d\n", burstinjfile, tbeg, tend );
 
-	deltaF = 1.0 / ( series->deltaT * series->data->length );
-	response = getresp( calfile, series->name, &series->epoch, deltaF, series->data->length, 1.0 );
+	// deltaF = 1.0 / ( series->deltaT * series->data->length );
+	// response = getresp( calfile, series->name, &series->epoch, deltaF, series->data->length, 1.0 );
+	response = NULL;
 
 	injections = XLALCreateREAL8TimeSeries(series->name, &series->epoch, series->f0, series->deltaT, &series->sampleUnits, series->data->length);
 	/* FIXME:  new injection code requires double precision respose */
@@ -525,7 +515,7 @@ int calibrate( REAL4TimeSeries *tseries, const char *calfile, REAL8 f_min )
 	COMPLEX8FrequencySeries *response;
 	COMPLEX8FrequencySeries *fseries;
 	REAL4FFTPlan *pfwd, *prev;
-	REAL8 deltaF;
+	// REAL8 deltaF;
 	UINT4 kmin, k;
 
 	if ( ! calfile )
@@ -539,9 +529,10 @@ int calibrate( REAL4TimeSeries *tseries, const char *calfile, REAL8 f_min )
 	fseries = XLALCreateCOMPLEX8FrequencySeries( tseries->name, &tseries->epoch, 0, 1.0/tseries->deltaT, &lalDimensionlessUnit, tseries->data->length/2 + 1 );
 	XLALREAL4TimeFreqFFT( fseries, tseries, pfwd );
 
-	deltaF = 1.0 / ( tseries->deltaT * tseries->data->length );
+	// deltaF = 1.0 / ( tseries->deltaT * tseries->data->length );
 	dynrange_ = 1e20;
-	response = getresp( calfile, tseries->name, &tseries->epoch, deltaF, tseries->data->length, dynrange_ );
+	// response = getresp( calfile, tseries->name, &tseries->epoch, deltaF, tseries->data->length, dynrange_ );
+	response = NULL;
 
 	if ( f_min < 30.0 ) {
 		fprintf( stderr, "warning: setting minimum frequency to 30 Hz for calibration\n" );
@@ -594,7 +585,8 @@ REAL4FrequencySeries * powerspec( REAL4TimeSeries *series, REAL8 segdur, LIGOTim
 		COMPLEX8FrequencySeries *response;
 		UINT4 k;
 		dynrange_ = 1e20;
-		response = getresp( calibfile, series->name, &series->epoch, spectrum->deltaF, seglen, dynrange_ );
+		// response = getresp( calibfile, series->name, &series->epoch, spectrum->deltaF, seglen, dynrange_ );
+		response = NULL;
 		for ( k = 1; k < spectrum->data->length; ++k ) {
 			REAL4 re = crealf(response->data->data[k]);
 			REAL4 im = cimagf(response->data->data[k]);

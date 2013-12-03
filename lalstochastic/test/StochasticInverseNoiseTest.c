@@ -18,113 +18,114 @@
 */
 
 /**
-\author UTB Relativity Group; contact whelan\@phys.utb.edu
-\file
-\ingroup StochasticInverseNoise_c
-
-\brief Test suite for <tt>LALStochasticInverseNoise()</tt>.
-
-\heading{Usage}
-
-\code
-./StochasticInverseNoiseTest [options]
-Options:
-  -h             print usage message
-  -q             quiet: run silently
-  -v             verbose: print extra information
-  -d level       set lalDebugLevel to level
-  -n length      frequency series contain length points
-  -w filename    read uncalibrated noise PSD from file filename
-  -f filename    read response function from file filename
-  -u filename    print calibrated inverse noise PSD to file filename
-  -m filename    print half-calibrated inverse noise PSD to file filename
-\endcode
-
-\heading{Description}
-
-This program tests the function <tt>LALStochasticInverseNoise()</tt>,
-which outputs an uncalibrated and "half-calibrated" inverse noise spectra
-from a uncalibrated data stream and a response function.
-
-First, it tests that the correct error codes
-(cf. \ref StochasticCrossCorrelation_h)
-are generated for the following error conditions (tests in
-\e italics are not performed if \c LAL_NDEBUG is set, as
-the corresponding checks in the code are made using the ASSERT macro):
-<ul>
-<li> <em>null pointer to output structure</em></li>
-<li> <em>null pointer to input structure</em></li>
-<li> <em>null pointer to uncalibrated noise</em></li>
-<li> <em>null pointer to response function</em></li>
-<li> <em>null pointer to calibrated inverse noise</em></li>
-<li> <em>null pointer to half-calibrated inverse noise</em></li>
-<li> <em>null pointer to data member of uncalibrated noise</em></li>
-<li> <em>null pointer to data member of response function</em></li>
-<li> <em>null pointer to data member of calibrated inverse noise</em></li>
-<li> <em>null pointer to data member of half-calibrated inverse noise</em></li>
-<li> <em>null pointer to data member of data member of uncalibrated noise</em></li>
-<li> <em>null pointer to data member of data member of response function</em></li>
-<li> <em>null pointer to data member of data member of calibrated inverse noise</em></li>
-<li> <em>null pointer to data member of data member of half-calibrated inverse noise</em></li>
-<li> <em>zero length</em></li>
-<li> <em>negative frequency spacing</em></li>
-<li> <em>zero frequency spacing</em></li>
-<li> negative start frequency</li>
-<li> length mismatch between uncalibrated noise and response function</li>
-<li> length mismatch between uncalibrated noise and calibrated inverse noise</li>
-<li> length mismatch between uncalibrated noise and half-calibrated inverse noise</li>
-<li> frequency spacing mismatch between uncalibrated noise and response function</li>
-<li> start frequency mismatch between uncalibrated noise and response function</li>
-</ul>
-
-It then verifies that the correct uncalibrated and half-calibrated inverse
-noise are generated for a simple test case:
-<ol>
-<li> \f$\tilde{R}(f)=(1+i)f^2\f$, \f$P(f)=f^3\f$.  The
-  expected results are \f$1/P^{\mathrm{C}}(f)=2f\f$,
-  \f$1/P^{\mathrm{HC}}(f)=(1-i)f^{-1}\f$.</li>
-</ol>
-
-For each successful test (both of these valid data and the invalid ones
-described above), it prints "\c PASS" to standard output; if a
-test fails, it prints "\c FAIL".
-
-If the four \c filename arguments are present, it also
-calculates a spectrum based on user-specified data and it prints the
-noise spectra to the files specified by the user.
-
-\heading{Uses}
-
-\code
-getopt()
-LALStochasticInverseNoise()
-LALSCreateVector()
-LALCCreateVector()
-LALSDestroyVector()
-LALCDestroyVector()
-LALSReadFrequencySeries()
-LALCReadFrequencySeries()
-LALSPrintFrequencySeries()
-LALCPrintFrequencySeries()
-LALUnitAsString()
-LALUnitCompare()
-LALCheckMemoryLeaks()
-\endcode
-
-\heading{Notes}
-<ul>
-<li> No specific error checking is done on user-specified data.  If
-  the \c length argument missing, the resulting defaults
-  will cause a bad data error.</li>
-<li> The length of the user-provided series must be specified, even
-  though it could in principle be deduced from the input file, because
-  the data sequences must be allocated before the
-  <tt>LALCReadFrequencySeries()</tt> function is called.</li>
-<li> If one \c filename argument, but not both, is present,
-  the user-specified data will be silently ignored.</li>
-</ul>
-
-*/
+ * \author UTB Relativity Group; contact whelan\@phys.utb.edu
+ * \file
+ * \ingroup StochasticInverseNoise_c
+ *
+ * \brief Test suite for <tt>LALStochasticInverseNoise()</tt>.
+ *
+ * ### Usage ###
+ *
+ * \code
+ * ./StochasticInverseNoiseTest [options]
+ * Options:
+ * -h             print usage message
+ * -q             quiet: run silently
+ * -v             verbose: print extra information
+ * -d level       set lalDebugLevel to level
+ * -n length      frequency series contain length points
+ * -w filename    read uncalibrated noise PSD from file filename
+ * -f filename    read response function from file filename
+ * -u filename    print calibrated inverse noise PSD to file filename
+ * -m filename    print half-calibrated inverse noise PSD to file filename
+ * \endcode
+ *
+ * ### Description ###
+ *
+ * This program tests the function <tt>LALStochasticInverseNoise()</tt>,
+ * which outputs an uncalibrated and "half-calibrated" inverse noise spectra
+ * from a uncalibrated data stream and a response function.
+ *
+ * First, it tests that the correct error codes
+ * (cf. \ref StochasticCrossCorrelation_h)
+ * are generated for the following error conditions (tests in
+ * \e italics are not performed if \c LAL_NDEBUG is set, as
+ * the corresponding checks in the code are made using the ASSERT macro):
+ * <ul>
+ * <li> <em>null pointer to output structure</em></li>
+ * <li> <em>null pointer to input structure</em></li>
+ * <li> <em>null pointer to uncalibrated noise</em></li>
+ * <li> <em>null pointer to response function</em></li>
+ * <li> <em>null pointer to calibrated inverse noise</em></li>
+ * <li> <em>null pointer to half-calibrated inverse noise</em></li>
+ * <li> <em>null pointer to data member of uncalibrated noise</em></li>
+ * <li> <em>null pointer to data member of response function</em></li>
+ * <li> <em>null pointer to data member of calibrated inverse noise</em></li>
+ * <li> <em>null pointer to data member of half-calibrated inverse noise</em></li>
+ * <li> <em>null pointer to data member of data member of uncalibrated noise</em></li>
+ * <li> <em>null pointer to data member of data member of response function</em></li>
+ * <li> <em>null pointer to data member of data member of calibrated inverse noise</em></li>
+ * <li> <em>null pointer to data member of data member of half-calibrated inverse noise</em></li>
+ * <li> <em>zero length</em></li>
+ * <li> <em>negative frequency spacing</em></li>
+ * <li> <em>zero frequency spacing</em></li>
+ * <li> negative start frequency</li>
+ * <li> length mismatch between uncalibrated noise and response function</li>
+ * <li> length mismatch between uncalibrated noise and calibrated inverse noise</li>
+ * <li> length mismatch between uncalibrated noise and half-calibrated inverse noise</li>
+ * <li> frequency spacing mismatch between uncalibrated noise and response function</li>
+ * <li> start frequency mismatch between uncalibrated noise and response function</li>
+ * </ul>
+ *
+ * It then verifies that the correct uncalibrated and half-calibrated inverse
+ * noise are generated for a simple test case:
+ * <ol>
+ * <li> \f$\tilde{R}(f)=(1+i)f^2\f$, \f$P(f)=f^3\f$.  The
+ * expected results are \f$1/P^{\mathrm{C}}(f)=2f\f$,
+ * \f$1/P^{\mathrm{HC}}(f)=(1-i)f^{-1}\f$.</li>
+ * </ol>
+ *
+ * For each successful test (both of these valid data and the invalid ones
+ * described above), it prints "\c PASS" to standard output; if a
+ * test fails, it prints "\c FAIL".
+ *
+ * If the four \c filename arguments are present, it also
+ * calculates a spectrum based on user-specified data and it prints the
+ * noise spectra to the files specified by the user.
+ *
+ * ### Uses ###
+ *
+ * \code
+ * getopt()
+ * LALStochasticInverseNoise()
+ * LALSCreateVector()
+ * LALCCreateVector()
+ * LALSDestroyVector()
+ * LALCDestroyVector()
+ * LALSReadFrequencySeries()
+ * LALCReadFrequencySeries()
+ * LALSPrintFrequencySeries()
+ * LALCPrintFrequencySeries()
+ * LALUnitAsString()
+ * LALUnitCompare()
+ * LALCheckMemoryLeaks()
+ * \endcode
+ *
+ * ### Notes ###
+ *
+ * <ul>
+ * <li> No specific error checking is done on user-specified data.  If
+ * the \c length argument missing, the resulting defaults
+ * will cause a bad data error.</li>
+ * <li> The length of the user-provided series must be specified, even
+ * though it could in principle be deduced from the input file, because
+ * the data sequences must be allocated before the
+ * <tt>LALCReadFrequencySeries()</tt> function is called.</li>
+ * <li> If one \c filename argument, but not both, is present,
+ * the user-specified data will be silently ignored.</li>
+ * </ul>
+ *
+ */
 
 /**\name Error Codes */ /*@{*/
 #define STOCHASTICINVERSENOISETESTC_ENOM 0	/**< Nominal exit */
@@ -176,8 +177,6 @@ LALCheckMemoryLeaks()
 extern char *optarg;
 extern int   optind;
 
-/* int lalDebugLevel  = LALMSGLVL3; */
-extern int lalDebugLevel;
 
 BOOLEAN optVerbose = STOCHASTICINVERSENOISETESTC_FALSE;
 UINT4 optLength    = 0;
@@ -220,7 +219,6 @@ int main(int argc, char *argv[])
 
   CHARVector               *unitString = NULL;
 
-  lalDebugLevel = LALNDEBUG;
 
   ParseOptions (argc, argv);
 
@@ -685,8 +683,8 @@ int main(int argc, char *argv[])
      f = i*STOCHASTICINVERSENOISETESTC_DELTAF;
 
      wNoise.data->data[i]     = f*f*f;
-     wFilter.data->data[i].re = f*f;
-     wFilter.data->data[i].im = f*f;
+     wFilter.data->data[i].realf_FIXME = f*f;
+     wFilter.data->data[i].imagf_FIXME = f*f;
    }
 
    /* fill inverse noise input and output */
@@ -812,10 +810,10 @@ int main(int argc, char *argv[])
    if (optVerbose)
    {
      printf("1/PHW(0)=%g + %g i, should be 0\n",
-            hwInvNoise.data->data[0].re, hwInvNoise.data->data[0].im);
+            crealf(hwInvNoise.data->data[0]), cimagf(hwInvNoise.data->data[0]));
    }
-   if ( fabs(hwInvNoise.data->data[0].re) > STOCHASTICINVERSENOISETESTC_TOL
-        || fabs(hwInvNoise.data->data[0].im)
+   if ( fabs(crealf(hwInvNoise.data->data[0])) > STOCHASTICINVERSENOISETESTC_TOL
+        || fabs(cimagf(hwInvNoise.data->data[0]))
 	> STOCHASTICINVERSENOISETESTC_TOL )
    {
      printf("  FAIL: Valid data test\n");
@@ -834,12 +832,12 @@ int main(int argc, char *argv[])
     if (optVerbose)
     {
       printf("1/PHW(%f Hz)=%g + %g i, should be %g + %g i\n",
-	     f, hwInvNoise.data->data[i].re, hwInvNoise.data->data[i].im,
+	     f, crealf(hwInvNoise.data->data[i]), cimagf(hwInvNoise.data->data[i]),
 	     expectedReal, expectedImag);
     }
-    if (fabs(hwInvNoise.data->data[i].re - expectedReal)/expectedReal
+    if (fabs(crealf(hwInvNoise.data->data[i]) - expectedReal)/expectedReal
 	> STOCHASTICINVERSENOISETESTC_TOL
-	|| fabs(hwInvNoise.data->data[i].im - expectedImag)/expectedImag
+	|| fabs(cimagf(hwInvNoise.data->data[i]) - expectedImag)/expectedImag
 	> STOCHASTICINVERSENOISETESTC_TOL)
     {
       printf("  FAIL: Valid data test\n");
@@ -1200,7 +1198,6 @@ ParseOptions (int argc, char *argv[])
         break;
 
       case 'd': /* set debug level */
-        lalDebugLevel = atoi (optarg);
         break;
 
       case 'v': /* optVerbose */

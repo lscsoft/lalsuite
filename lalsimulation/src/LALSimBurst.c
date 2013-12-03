@@ -336,20 +336,20 @@ int XLALGenerateImpulseBurst(
  * Parameters:
  *
  * duration
- * 	time domain Gaussian envelope is \f$\propto \exp ( -\frac{1}{2} t^{2} / duration^{2} )\f$
- *      where t and duration are in seconds.
+ * time domain Gaussian envelope is \f$\propto \exp ( -\frac{1}{2} t^{2} / duration^{2} )\f$
+ * where t and duration are in seconds.
  * frequency
  * bandwidth
- * 	frequency domain Gaussian envelope is \f$\propto \exp ( -\frac{1}{2} (f - f_{0})^{2} / bandwidth^{2} )\f$
- *      where f and bandwidth are in Hertz.
+ * frequency domain Gaussian envelope is \f$\propto \exp ( -\frac{1}{2} (f - f_{0})^{2} / bandwidth^{2} )\f$
+ * where f and bandwidth are in Hertz.
  * int_hdot_squared
- * 	waveform is normalized so that \f$\int (\stackrel{.}{h}_{+}^{2} + \stackrel{.}{h}_{\times}^{2}) d t\f$
- *       equals this
+ * waveform is normalized so that \f$\int (\stackrel{.}{h}_{+}^{2} + \stackrel{.}{h}_{\times}^{2}) d t\f$
+ * equals this
  * delta_t
- * 	the sample rate of the time series to construct
+ * the sample rate of the time series to construct
  * rng
- * 	a GSL random number generator to be used to produce Gaussian random
- * 	variables
+ * a GSL random number generator to be used to produce Gaussian random
+ * variables
  *
  * Output:
  *
@@ -581,7 +581,7 @@ int XLALGenerateBandAndTimeLimitedWhiteNoiseBurst(
  * get multiplied by the Gaussian envelope.
  *
  * hrss:  the root-sum-squares strain of the waveform (summed over both
- * polarizations).
+ * polarizations).  See K. Riles, LIGO-T040055-00.pdf.
  *
  * eccentricity:  0 --> circularly polarized, 1 --> linearly polarized.
  *
@@ -694,14 +694,14 @@ int XLALSimBurstSineGaussian(
 
 /**
  * Input:
- *	amplitude = waveform's amplitude parameter
- *	f_high = high frequency cutoff
- *	delta_t = sample period of output time series
+ * amplitude = waveform's amplitude parameter
+ * f_high = high frequency cutoff
+ * delta_t = sample period of output time series
  *
  * Output:
- * 	h+(t) and hx(t), where the cusp waveform has been placed entirely
- * 	in the + polarization (the x polarization is zeroed), and the
- * 	waveform peaks at t = 0 (as defined by the epoch and deltaT).
+ * h+(t) and hx(t), where the cusp waveform has been placed entirely
+ * in the + polarization (the x polarization is zeroed), and the
+ * waveform peaks at t = 0 (as defined by the epoch and deltaT).
  *
  * The low frequency cut-off is fixed at 1 Hz;  there's nothing special
  * about 1 Hz except that it is low compared to the frequency at which we

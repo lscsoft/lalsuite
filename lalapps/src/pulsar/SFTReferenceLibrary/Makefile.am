@@ -2,9 +2,9 @@
 
 ## make sure lalapps.la is rebuilt when appropriate
 BUILT_SOURCES =
-include $(top_srcdir)/misc/vcsID.common
+include $(top_srcdir)/gnuscripts/vcsID.common
 
-AM_CPPFLAGS = -I$(top_srcdir)/src -I$(top_builddir)/src/lalapps -I$(top_srcdir)/src/lalapps
+AM_CPPFLAGS = -I$(top_srcdir)/src -I$(top_builddir)/src/lalapps -I$(top_srcdir)/src/lalapps -DPKG_DATA_DIR='"$(pkgdatadir)/"'
 LDADD = $(top_builddir)/src/lalapps/liblalapps.la
 
 binsources = SFTReferenceLibrary.c \

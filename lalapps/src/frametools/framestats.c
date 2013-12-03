@@ -17,14 +17,15 @@
  *  MA  02111-1307  USA
  */
 
-/** \author C.Messenger
+/**
+ * \author C.Messenger
  * \ingroup pulsarCoherent
  * \file
  * \brief
- * This code is designed to compute statistical quantities from a specified channel in a given 
+ * This code is designed to compute statistical quantities from a specified channel in a given
  * frame file.
  *
- * It reads in the timeseries from the frame file and returns the quantiles of the timeseries 
+ * It reads in the timeseries from the frame file and returns the quantiles of the timeseries
  * distribution as well as the min, max, mean and standard deviation values.
  *
  */
@@ -39,7 +40,7 @@
 #include <lal/UserInput.h>
 #include <lal/LogPrintf.h>
 #include <lal/LALFrameIO.h>
-#include <lal/FrameStream.h>
+#include <lal/LALFrStream.h>
 #include <lalappsfrutils.h>
 #include <lalapps.h>
 
@@ -51,10 +52,9 @@
 #include <lal/LALStdio.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALFrameIO.h>
-#include <lal/FrameCache.h>
-#include <lal/FrameStream.h>
+#include <lal/LALCache.h>
+#include <lal/LALFrStream.h>
 #include <lal/LALDatatypes.h>
-#include <lal/FrameCache.h>
 
 /***********************************************************************************************/
 /* some macros */
@@ -68,7 +68,8 @@
 /***********************************************************************************************/
 /* define internal structures */
 
-/** A structure that stores statistical information gathered from a timeseries
+/**
+ * A structure that stores statistical information gathered from a timeseries
  */
 typedef struct { 
   CHAR filename[1024];              /**< the frame filename */
@@ -84,14 +85,16 @@ typedef struct {
   REAL8 quant[NQUANTILE+1];         /**< the quantiles of the samples in the timeseries */
 } Stats;
 
-/** A structure that stores statistical information gathered from a timeseries
+/**
+ * A structure that stores statistical information gathered from a timeseries
  */
 typedef struct { 
   Stats *data;                      /**< a vector of stats info */
   INT4 length;                      /**< the length of the vector */
 } StatsVector;
 
-/** A structure that sores user input variables 
+/**
+ * A structure that sores user input variables
  */
 typedef struct { 
   BOOLEAN help;		            /**< trigger output of help string */
@@ -123,10 +126,10 @@ int XLALReadXTEFrameINT4Keyword(INT4 *value, CHAR *filename, const CHAR *keyword
 /* empty initializers */
 UserInput_t empty_UserInput;
 
-/** The main function of framestats.c
- *
- * Here we read in a channel from a single frame file and return statistical quantities 
- * computed from the timeseries.  
+/**
+ * The main function of framestats.c
+ * Here we read in a channel from a single frame file and return statistical quantities
+ * computed from the timeseries.
  *
  */
 int main( int argc, char *argv[] )
@@ -137,15 +140,10 @@ int main( int argc, char *argv[] )
   StatsVector stats;                            /* a structure containing statistical info */
   INT4 i;                                       /* counter */
 
-  lalDebugLevel = 1;
   vrbflg = 1;	                        /* verbose error-messages */
 
   /* turn off default GSL error handler */
   gsl_set_error_handler_off();
-
-  /* setup LAL debug level */
-  LAL_CALL (LALGetDebugLevel(&status, argc, argv, 'v'), &status);
-  LogSetLevel(lalDebugLevel);
 
   /* register and read all user-variables */
   LAL_CALL (ReadUserVars(&status,argc,argv,&uvar), &status);
@@ -231,7 +229,8 @@ int main( int argc, char *argv[] )
   
 }
 
-/** Read in input user arguments
+/**
+ * Read in input user arguments
  */
 void ReadUserVars(LALStatus *status,int argc,char *argv[],UserInput_t *uvar)
 {
@@ -275,7 +274,8 @@ void ReadUserVars(LALStatus *status,int argc,char *argv[],UserInput_t *uvar)
 
 }
 
-/** Read in list of frame files from input directory
+/**
+ * Read in list of frame files from input directory
  */
 int XLALReadFrameDir(glob_t *filelist,         /**< [out] a structure containing a list of all input frame channels */
 		     CHAR *inputfile           /**< [in] the input frame file pattern */
@@ -313,14 +313,15 @@ int XLALReadFrameDir(glob_t *filelist,         /**< [out] a structure containing
   
 }
 
-/** this function combines the files listed in the combination plan into a single timeseries 
+/**
+ * this function combines the files listed in the combination plan into a single timeseries
  */
 int XLALReadFrameINT4TimeSeries(INT4TimeSeries **ts,           /**< [out] the timeseries */
 				CHAR *filename,                /**< [in] the input frame file name */
 				CHAR *channel                  /**< [in] the channel to be read */
 				)
 {
-  FrStream *fs = NULL;
+  LALFrStream *fs = NULL;
   LIGOTimeGPS epoch;
   REAL8 duration;
 
@@ -340,7 +341,7 @@ int XLALReadFrameINT4TimeSeries(INT4TimeSeries **ts,           /**< [out] the ti
   LogPrintf(LOG_DEBUG,"%s : checked input\n",__func__);
   
   /* open the frame file */
-  if ((fs = XLALFrOpen(NULL,filename)) == NULL) {
+  if ((fs = XLALFrStreamOpen(NULL,filename)) == NULL) {
     LogPrintf(LOG_DEBUG,"%s: unable to open frame file %s.\n",__func__,filename);
     XLAL_ERROR(XLAL_EINVAL);
   }  
@@ -351,34 +352,35 @@ int XLALReadFrameINT4TimeSeries(INT4TimeSeries **ts,           /**< [out] the ti
   duration = fs->flist->dt;
   
   /* seek to the start of the frame */
-  if (XLALFrSeek(fs,&epoch)) {
+  if (XLALFrStreamSeek(fs,&epoch)) {
     LogPrintf(LOG_CRITICAL,"%s: unable to seek to start of frame file %s.\n",__func__,filename);
     XLAL_ERROR(XLAL_EINVAL);
   }
   
   /* read in timeseries from this file - final arg is limit on length of timeseries (0 = no limit) */
-  if (((*ts) = XLALFrReadINT4TimeSeries(fs,channel,&epoch,duration,0)) == NULL) {
+  if (((*ts) = XLALFrStreamReadINT4TimeSeries(fs,channel,&epoch,duration,0)) == NULL) {
     LogPrintf(LOG_CRITICAL,"%s: unable to read channel %s from frame file %s.\n",__func__,channel,filename);
     XLAL_ERROR(XLAL_EINVAL);
   }
   LogPrintf(LOG_DEBUG,"%s: reading channel %s\n",__func__,channel);
   
   /* close the frame file */
-  XLALFrClose(fs);
+  XLALFrStreamClose(fs);
   
   LogPrintf(LOG_DEBUG,"%s : leaving.\n",__func__);
   return XLAL_SUCCESS;
   
 }
 
-/** this function extracts a keyword value from the history field in a frame
+/**
+ * this function extracts a keyword value from the history field in a frame
  */
 int XLALReadXTEFrameINT4Keyword(INT4 *value,          /**< [out] the keyword value */
 				CHAR *filename,       /**< [in] the input frame file name */
 				const CHAR *keyword         /**< [in] the keyword to be read */
 				)
 {
-  FrStream *fs = NULL;
+  LALFrStream *fs = NULL;
   CHAR *c = NULL;
   CHAR *history_string = NULL;
 
@@ -394,7 +396,7 @@ int XLALReadXTEFrameINT4Keyword(INT4 *value,          /**< [out] the keyword val
   LogPrintf(LOG_DEBUG,"%s : checked input\n",__func__);
   
   /* open the frame file */
-  if ((fs = XLALFrOpen(NULL,filename)) == NULL) {
+  if ((fs = XLALFrStreamOpen(NULL,filename)) == NULL) {
     LogPrintf(LOG_DEBUG,"%s: unable to open frame file %s.\n",__func__,filename);
     XLAL_ERROR(XLAL_EINVAL);
   }  
@@ -429,14 +431,15 @@ int XLALReadXTEFrameINT4Keyword(INT4 *value,          /**< [out] the keyword val
   XLALFree(history_string);
   
   /* close the frame file */
-  XLALFrClose(fs);
+  XLALFrStreamClose(fs);
   
   LogPrintf(LOG_DEBUG,"%s : leaving.\n",__func__);
   return XLAL_SUCCESS;
   
 }
 
-/** this function computes a series of statistics based on the input timeseries
+/**
+ * this function computes a series of statistics based on the input timeseries
  */
 int XLALComputeINT4TimeSeriesStats(Stats *stats,             /**< [out] the timeseries statistics */
 				   INT4TimeSeries *ts,       /**< [in] the input timeseries */ 
@@ -513,7 +516,8 @@ int XLALComputeINT4TimeSeriesStats(Stats *stats,             /**< [out] the time
   
 }
 
-/** comparison function for use with qsort
+/**
+ * comparison function for use with qsort
  */
 static int compareINT4(const void *a, const void *b)
 {
@@ -526,7 +530,8 @@ static int compareINT4(const void *a, const void *b)
 	and positive if a > b */
    
 }
-/** function to output the stats results to file
+/**
+ * function to output the stats results to file
  */
 int XLALOutputStats(StatsVector *stats,      /**< [in] the output stats results */
 		    CHAR *outputfile         /**< [in] the output filename */
@@ -560,7 +565,8 @@ int XLALOutputStats(StatsVector *stats,      /**< [in] the output stats results 
   
 }
 
-/** this function reads in the frame history as a string
+/**
+ * this function reads in the frame history as a string
  */
 int XLALReadFrameHistory(CHAR **history_string,     /**< [out] the history field read in as a string */ 
 			 FrFile *file               /**< [in] frame file pointer */

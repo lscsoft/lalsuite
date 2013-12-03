@@ -1,12 +1,12 @@
 /**
-\addtogroup pkg_vectorops
-
-\brief This package contains routines for manipulating vectors.
-
-@{
-   \defgroup VectorOps_h 	Header VectorOps.h
-   \defgroup VectorIndexRange_h Header VectorIndexRange.h
-   \defgroup Matrix_h 		Header Matrix.h
-@}
-
-*/
+ * \addtogroup pkg_vectorops
+ *
+ * \brief This package contains routines for manipulating vectors.
+ *
+ * @{
+ * \defgroup VectorOps_h 	Header VectorOps.h
+ * \defgroup VectorIndexRange_h Header VectorIndexRange.h
+ * \defgroup Matrix_h 		Header Matrix.h
+ * @}
+ *
+ */

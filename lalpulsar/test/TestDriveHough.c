@@ -35,61 +35,62 @@
  */
 
 /**
-\author Sintes, A. M., Krishnan, B.
-\file
-\ingroup LALHough_h
-\brief Tests the construction
-
-\heading{Program \ref TestDriveHough.c}
-
-\heading{Usage}
-\code
-TestDriveHough [-d debuglevel] [-o outfile] [-f f0] [-p alpha delta]
-\endcode
-
-
-\heading{Description}
-
-\%TO BE CHANGED
-
-This program generates  a patch grid, a vector of  \c luts by changing the
-alpha component of the velocity orientation of the detector by a fixed amount
-in each of them, and a vector of
-peak-grams (all of them containing the same information). Similar to the previous
-test codes the patch is set at the south pole.
-
-Then the program builds the set
-of \c phmd, updates the cylinder and computes a Hough map at a given
-frequency using only one horizontal line set of \c phmd, and outputs the
-result into a file.
-
-
-By default, running this program with no arguments simply tests the subroutines,
-producing an output file called <tt>OutHough.asc</tt>.  All default parameters are set from
-<tt>\#define</tt>d constants.
-
-The <b>-d</b> option sets the debug level to the specified value
-\c debuglevel.  The <b>-o</b> flag tells the program to print the partial Hough map
-derivative  to the specified data file \c outfile.  The
-<b>-f</b> option sets the intrinsic frequency \c f0 at which build the <tt>lut</tt>.
-The <b>-p</b> option sets the velocity orientation of the detector
-\c alpha, \c delta (in radians) for the first \c lut (time-stamp).
-
-\heading{Uses}
-\code
-LALHOUGHCalcParamPLUT()
-LALHOUGHConstructPLUT()
-LALHOUGHConstructSpacePHMD()
-LALHOUGHupdateSpacePHMDup()
-LALHOUGHInitializeHT()
-LALHOUGHConstructHMT()
-LALPrintError()
-LALMalloc()
-LALFree()
-LALCheckMemoryLeaks()
-\endcode
-
-*/
+ * \author Sintes, A. M., Krishnan, B.
+ * \file
+ * \ingroup LALHough_h
+ * \brief Tests the construction
+ *
+ * ### Program TestDriveHough.c ###
+ *
+ *
+ * ### Usage ###
+ *
+ * \code
+ * TestDriveHough [-d debuglevel] [-o outfile] [-f f0] [-p alpha delta]
+ * \endcode
+ *
+ * ### Description ###
+ *
+ * \%TO BE CHANGED
+ *
+ * This program generates  a patch grid, a vector of  \c luts by changing the
+ * alpha component of the velocity orientation of the detector by a fixed amount
+ * in each of them, and a vector of
+ * peak-grams (all of them containing the same information). Similar to the previous
+ * test codes the patch is set at the south pole.
+ *
+ * Then the program builds the set
+ * of \c phmd, updates the cylinder and computes a Hough map at a given
+ * frequency using only one horizontal line set of \c phmd, and outputs the
+ * result into a file.
+ *
+ * By default, running this program with no arguments simply tests the subroutines,
+ * producing an output file called <tt>OutHough.asc</tt>.  All default parameters are set from
+ * <tt>\#define</tt>d constants.
+ *
+ * The <b>-d</b> option sets the debug level to the specified value
+ * \c debuglevel.  The <b>-o</b> flag tells the program to print the partial Hough map
+ * derivative  to the specified data file \c outfile.  The
+ * <b>-f</b> option sets the intrinsic frequency \c f0 at which build the <tt>lut</tt>.
+ * The <b>-p</b> option sets the velocity orientation of the detector
+ * \c alpha, \c delta (in radians) for the first \c lut (time-stamp).
+ *
+ * ### Uses ###
+ *
+ * \code
+ * LALHOUGHCalcParamPLUT()
+ * LALHOUGHConstructPLUT()
+ * LALHOUGHConstructSpacePHMD()
+ * LALHOUGHupdateSpacePHMDup()
+ * LALHOUGHInitializeHT()
+ * LALHOUGHConstructHMT()
+ * LALPrintError()
+ * LALMalloc()
+ * LALFree()
+ * LALCheckMemoryLeaks()
+ * \endcode
+ *
+ */
 
 
 #include <lal/LALHough.h>
@@ -114,7 +115,6 @@ LALCheckMemoryLeaks()
 
 /* Default parameters. */
 
-INT4 lalDebugLevel=0;
 
 #define F0 500.0          /*  frequency to build the LUT. */
 #define TCOH 100000.0     /*  time baseline of coherent integration. */
@@ -250,7 +250,6 @@ int main(int argc, char *argv[]){
     if ( !strcmp( argv[arg], "-d" ) ) {
       if ( argc > arg + 1 ) {
         arg++;
-        lalDebugLevel = atoi( argv[arg++] );
       } else {
         ERROR( TESTDRIVEHOUGHC_EARG, TESTDRIVEHOUGHC_MSGEARG, 0 );
         XLALPrintError( USAGE, *argv );

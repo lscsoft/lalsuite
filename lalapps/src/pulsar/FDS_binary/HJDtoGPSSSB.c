@@ -17,18 +17,19 @@
  *  MA  02111-1307  USA
  */
 
-/** \author C.Messenger
+/**
+ * \author C.Messenger
  * \ingroup pulsarApps
  * \file
  * \brief
  * This code is converts an HJD (Heliocentric Julian Date) to a GPS time defined at the
- * SSB (solar system barycenter).  
+ * SSB (solar system barycenter).
  *
- * It simply takes the dot product of the vector defining the sun location in the SSB 
- * frame with the unit vector defining the sky position of the source.  The quantity 
+ * It simply takes the dot product of the vector defining the sun location in the SSB
+ * frame with the unit vector defining the sky position of the source.  The quantity
  * (divided by c) is the time difference between a wave-front passing the heliocenter
  * and the SSB i.e the SBS time is equal to the heliocentric time *plus* this correction.
- * 
+ *
  * The accuracy of this code is only good to of order 0.01 seconds.
  *
  */
@@ -61,7 +62,8 @@
 /***********************************************************************************************/
 /* define internal structures */
 
-/** A structure that stores user input variables 
+/**
+ * A structure that stores user input variables
  */
 typedef struct { 
   BOOLEAN help;		            /**< trigger output of help string */
@@ -104,8 +106,8 @@ REAL8 LALUTCMJDtoGPS(REAL8 MJDutc);
 /* empty initializers */
 UserInput_t empty_UserInput;
 
-/** The main function of semicoherentbinary.c
- *
+/**
+ * The main function of semicoherentbinary.c
  */
 int main( int argc, char *argv[] )
 {
@@ -121,17 +123,12 @@ int main( int argc, char *argv[] )
   REAL8 te;                                     /* the GPS emission time at the earth */
   REAL8 alpha,delta;                            /* the sky position angles in radians */
 
-  lalDebugLevel = 1;
   vrbflg = 1;	                        /* verbose error-messages */
 
   /* turn off default GSL error handler */
   gsl_set_error_handler_off();
 
   /* setup LAL debug level */
-  if (XLALGetDebugLevel(argc, argv, 'v')) {
-    LogPrintf(LOG_CRITICAL,"%s : XLALGetDebugLevel() failed with error = %d\n",__func__,xlalErrno);
-    return 1;
-  }
   LogSetLevel(lalDebugLevel);
 
   /* register and read all user-variables */
@@ -142,9 +139,9 @@ int main( int argc, char *argv[] )
   LogPrintf(LOG_DEBUG,"%s : read in uservars\n",__func__);
  
   /* if coordinates input in hh:mm:ss.s format then convert to radians */
-  if (XLALUserVarWasSet(&(uvar.ra))) alpha = LALDegsToRads(uvar.ra,"ra");
+  if (XLALUserVarWasSet(&(uvar.ra))) alpha = XLALhmsToRads(uvar.ra);
   else alpha = uvar.ra_rads;
-  if (XLALUserVarWasSet(&(uvar.dec))) delta = LALDegsToRads(uvar.dec,"dec");
+  if (XLALUserVarWasSet(&(uvar.dec))) delta = XLALdmsToRads(uvar.dec);
   else delta = uvar.dec_rads;
 
   {
@@ -156,11 +153,11 @@ int main( int argc, char *argv[] )
 
   /* convert MJD to TT GPS time */
   if (strstr(uvar.HJDconv,"TT")) {
-    helio_gps = LALTTMJDtoGPS(uvar.HJD-2400000.5);
+    helio_gps = XLALTTMJDtoGPS(uvar.HJD-2400000.5);
     LogPrintf(LOG_DEBUG,"%s : heliocentric MJD %6.12f -> GPS(TT) %6.12f\n",__func__,uvar.HJD,helio_gps);
   }
   else if (strstr(uvar.HJDconv,"TDB")) {
-    helio_gps = LALTDBMJDtoGPS(uvar.HJD-2400000.5);
+    helio_gps = XLALTDBMJDtoGPS(uvar.HJD-2400000.5);
     LogPrintf(LOG_DEBUG,"%s : heliocentric MJD %6.12f -> GPS(TDB) %6.12f\n",__func__,uvar.HJD,helio_gps);
   }
   else if (strstr(uvar.HJDconv,"UTC")) {
@@ -268,8 +265,9 @@ int main( int argc, char *argv[] )
   
 } /* end of main */
 
-/** For a given set of binary parameters we solve the following function for
- *  the eccentric anomoly E
+/**
+ * For a given set of binary parameters we solve the following function for
+ * the eccentric anomoly E
  */
 static void TimeOfEmission(LALStatus *status,
 			   REAL8 *tr,
@@ -295,7 +293,8 @@ static void TimeOfEmission(LALStatus *status,
 
 }
 
-/** Read in input user arguments
+/**
+ * Read in input user arguments
  *
  */
 int XLALReadUserVars(int argc,            /**< [in] the command line argument counter */ 
@@ -363,8 +362,8 @@ int XLALReadUserVars(int argc,            /**< [in] the command line argument co
   
 }
 
-/** Compute the GPS time from an input UTC time in MJD format 
- *
+/**
+ * Compute the GPS time from an input UTC time in MJD format
  * This is a copy of an octapps code that Reinhard prix originally
  * copied from a lalapps code that no longer exists.
  *

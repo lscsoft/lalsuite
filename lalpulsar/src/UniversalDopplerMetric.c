@@ -34,16 +34,15 @@
 #include <lal/ComputeFstat.h>
 #include <lal/XLALGSL.h>
 #include <lal/Factorial.h>
+#include <lal/LogPrintf.h>
 
 #include <lal/UniversalDopplerMetric.h>
 
 /**
- *
  * \author Reinhard Prix, Karl Wette
  * \ingroup UniversalDopplerMetric_h
  * \brief Function to compute the full F-statistic metric, including
- *  antenna-pattern functions from multi-detector, as derived in \ref Prix07.
- *
+ * antenna-pattern functions from multi-detector, as derived in \cite Prix07.
  *
  */
 
@@ -63,23 +62,31 @@
 
 /*---------- LOOKUP ARRAYS ----------*/
 
-/** Array of symbolic 'names' for various detector-motions
+/**
+ * Array of symbolic 'names' for various detector-motions
  */
-static const CHAR *const DetectorMotionNames[DETMOTION_LAST] = {
-  [DETMOTION_SPIN_ORBIT] = "spin+orbit",
-  [DETMOTION_ORBIT] = "orbit",
-  [DETMOTION_SPIN] = "spin",
+static const struct {
+  const DetectorMotionType type;
+  const char *const name;
+} DetectorMotionNames[] = {
 
-  [DETMOTION_SPIN_PTOLEORBIT] = "spin+ptoleorbit",
-  [DETMOTION_PTOLEORBIT] = "ptoleorbit",
+#define DETMOTION_NAMES(orbit_type, spin_orbit_name, nospin_orbit_name) \
+  {DETMOTION_SPIN | orbit_type, "spin" spin_orbit_name}, \
+  {DETMOTION_SPINZ | orbit_type, "spinz" spin_orbit_name}, \
+  {DETMOTION_SPINXY | orbit_type, "spinxy" spin_orbit_name}, \
+  {orbit_type, nospin_orbit_name}   /* this must be the last entry in the macro */
 
-  [DETMOTION_ORBIT_SPINZ] = "orbit+spin_Z",
-  [DETMOTION_ORBIT_SPINXY] = "orbit+spin_XY",
+  DETMOTION_NAMES(DETMOTION_ORBIT, "+orbit", "orbit"),
+  DETMOTION_NAMES(DETMOTION_PTOLEORBIT, "+ptoleorbit", "ptoleorbit"),
+  DETMOTION_NAMES(0, "", NULL)   /* last entry provides marker for end of list */
+
+#undef DETMOTION_NAMES
 };
 
-/** Array of descriptor structs for each Doppler coordinate name
+/**
+ * Array of descriptor structs for each Doppler coordinate name
  */
-const struct {
+static const struct {
   const char *const name;	/**< coordinate name */
   const double scale;		/**< multiplicative scaling factor of the coordinate */
   const char *const help;	/**< help string explaining the coordinate's meaning and units */
@@ -115,8 +122,9 @@ const struct {
   [DOPPLERCOORD_N3SX_EQU] = {"n3sx_equ",SCALE_R/LAL_C_SI, "X spin-component of unconstrained super-sky position in equatorial coordinates [Units: none]."},
   [DOPPLERCOORD_N3SY_EQU] = {"n3sy_equ",SCALE_R/LAL_C_SI, "Y spin-component of unconstrained super-sky position in equatorial coordinates [Units: none]."},
 
-  [DOPPLERCOORD_N3OX_ECL] = {"n3ox_ecl",SCALE_R/LAL_C_SI, "X orbit-component of unconstrained super-sky position in equatorial coordinates [Units: none]."},
-  [DOPPLERCOORD_N3OY_ECL] = {"n3oy_ecl",SCALE_R/LAL_C_SI, "Y orbit-component of unconstrained super-sky position in equatorial coordinates [Units: none]."},
+  [DOPPLERCOORD_N3OX_ECL] = {"n3ox_ecl",SCALE_R/LAL_C_SI, "X orbit-component of unconstrained super-sky position in ecliptic coordinates [Units: none]."},
+  [DOPPLERCOORD_N3OY_ECL] = {"n3oy_ecl",SCALE_R/LAL_C_SI, "Y orbit-component of unconstrained super-sky position in ecliptic coordinates [Units: none]."},
+  [DOPPLERCOORD_N3OZ_ECL] = {"n3oz_ecl",SCALE_R/LAL_C_SI, "Z orbit-component of unconstrained super-sky position in ecliptic coordinates [Units: none]."},
 
 };
 
@@ -169,7 +177,8 @@ const struct {
 /*----- SWITCHES -----*/
 /*---------- internal types ----------*/
 
-/** components of antenna-pattern function: q_l = {a(t), b(t)}
+/**
+ * components of antenna-pattern function: q_l = {a(t), b(t)}
  */
 typedef enum {
   AMCOMP_NONE   = -1,	/**< no antenna pattern function: (equivalent "a = 1") */
@@ -181,6 +190,7 @@ typedef enum {
 /** parameters for metric-integration */
 typedef struct
 {
+  int errnum;			/**< store XLAL error of any failures within integrator */
   DetectorMotionType detMotionType;	/**< which detector-motion to use in metric integration */
   DopplerCoordinateID deriv1, deriv2;	/**< the two components of the derivative-product Phi_i_Phi_j to compute*/
   DopplerCoordinateID deriv;		/**< component for single phase-derivative Phi_i compute */
@@ -205,14 +215,12 @@ static const PulsarTimesParamStruc empty_PulsarTimesParamStruc;
 const PosVel3D_t empty_PosVel3D_t;
 const DopplerMetricParams empty_DopplerMetricParams;
 const DopplerCoordinateSystem empty_DopplerCoordinateSystem;
-const MultiDetectorInfo empty_MultiDetectorInfo;
 
 /*---------- Global variables ----------*/
 
-BOOLEAN outputIntegrand = 0;
-
 /* Some local constants. */
 #define rOrb_c  (LAL_AU_SI / LAL_C_SI)
+#define rEarth_c  (LAL_REARTH_SI / LAL_C_SI)
 #define vOrb_c  (LAL_TWOPI * LAL_AU_SI / LAL_C_SI / LAL_YRSID_SI)
 
 /*---------- internal prototypes ----------*/
@@ -230,7 +238,8 @@ UINT4 findHighestGCSpinOrder ( const DopplerCoordinateSystem *coordSys );
 /*==================== FUNCTION DEFINITIONS ====================*/
 
 
-/** Integrate a general quadruple product CW_am1_am2_Phi_i_Phi_j() from 0 to 1.
+/**
+ * Integrate a general quadruple product CW_am1_am2_Phi_i_Phi_j() from 0 to 1.
  * This implements the expression \f$\langle<q_1 q_2 \phi_i \phi_j\rangle\f$
  * for single-IFO average over the observation time.
  *
@@ -289,7 +298,8 @@ XLALAverage_am1_am2_Phi_i_Phi_j ( const intparams_t *params, double *relerr_max 
       if ( stat != 0 )
         {
           XLALPrintWarning ( "\n%s: GSL-integration 'gsl_integration_qag()' of <am1_am2_Phi_i Phi_j> did not reach requested precision!\n", __func__ );
-          XLALPrintWarning ("Segment n=%d, Result = %g, abserr=%g ==> relerr = %.2e > %.2e\n", n, res_n, err_n, fabs(err_n/res_n), epsrel);
+          XLALPrintWarning ("xlalErrno=%i, Segment n=%d, Result = %g, abserr=%g ==> relerr = %.2e > %.2e\n",
+                            par.errnum, n, res_n, err_n, fabs(err_n/res_n), epsrel);
           /* XLAL_ERROR_REAL8( XLAL_EFUNC ); */
         }
 
@@ -312,7 +322,8 @@ XLALAverage_am1_am2_Phi_i_Phi_j ( const intparams_t *params, double *relerr_max 
 } /* XLALAverage_am1_am2_Phi_i_Phi_j() */
 
 
-/** For gsl-integration: general quadruple product between two antenna-pattern functions
+/**
+ * For gsl-integration: general quadruple product between two antenna-pattern functions
  * am1, am2 in {a(t),b(t)} and two phase-derivatives phi_i * phi_j,
  * i.e. compute an expression of the form
  * \f$q_1(t) q_2(t) \phi_i(t) \phi_j(t)\f$, where \f$q_i = \{a(t), b(t)\}\f$.
@@ -326,6 +337,9 @@ double
 CW_am1_am2_Phi_i_Phi_j ( double tt, void *params )
 {
   intparams_t *par = (intparams_t*) params;
+  if (par->errnum) {
+    return GSL_NAN;
+  }
 
   REAL8 am1, am2, phi_i, phi_j, ret;
 
@@ -387,13 +401,10 @@ CW_am1_am2_Phi_i_Phi_j ( double tt, void *params )
 
   ret = am1 * am2 * phi_i * phi_j;
 
-  if ( outputIntegrand )
-    {
-      printf ( "%d %d %d %d   %f  %f  %f  %f  %f   %f\n",
-               par->amcomp1, par->amcomp2, par->deriv1, par->deriv2,
-               tt, am1, am2, phi_i, phi_j, ret );
-    }
-
+  LogPrintf( LOG_DETAIL,
+             "amcomp1=%d amcomp2=%d deriv1=%d deriv2=%d tt=%f am1=%f am2=%f phi_i=%f phi_j=%f ret=%f\n",
+             par->amcomp1, par->amcomp2, par->deriv1, par->deriv2,
+             tt, am1, am2, phi_i, phi_j, ret );
 
   return ( ret );
 
@@ -401,7 +412,8 @@ CW_am1_am2_Phi_i_Phi_j ( double tt, void *params )
 
 
 
-/** Partial derivative of continuous-wave (CW) phase, with respect
+/**
+ * Partial derivative of continuous-wave (CW) phase, with respect
  * to Doppler coordinate 'i' := intparams_t->phderiv
  *
  * Time is in 'natural units' of Tspan, i.e. tt is in [0, 1] corresponding
@@ -411,8 +423,12 @@ CW_am1_am2_Phi_i_Phi_j ( double tt, void *params )
 double
 CWPhaseDeriv_i ( double tt, void *params )
 {
-  REAL8 ret = 0;
   intparams_t *par = (intparams_t*) params;
+  if (par->errnum) {
+    return GSL_NAN;
+  }
+
+  REAL8 ret = 0;
   vect3D_t nn_equ, nn_ecl;	/* skypos unit vector */
   vect3D_t nDeriv_i;	/* derivative of sky-pos vector wrt i */
 
@@ -422,7 +438,6 @@ CWPhaseDeriv_i ( double tt, void *params )
   PosVel3D_t posvel = empty_PosVel3D_t;
 
   /* orbit position in ecliptic plane */
-  vect3D_t ecl_pos = empty_vect3D_t;
   vect3D_t ecl_orbit_pos = empty_vect3D_t;
 
   /* get skypos-vector */
@@ -443,11 +458,10 @@ CWPhaseDeriv_i ( double tt, void *params )
   REAL8 ttSI = par->startTime + tt * par->Tspan;	/* current GPS time in seconds */
   LIGOTimeGPS ttGPS;
   XLALGPSSetREAL8( &ttGPS, ttSI );
-  int errnum;
-  XLAL_TRY( XLALDetectorPosVel ( &spin_posvel, &orbit_posvel, &ttGPS, par->site, par->edat, par->detMotionType ), errnum );
-  if ( errnum ) {
+  if ( XLALDetectorPosVel ( &spin_posvel, &orbit_posvel, &ttGPS, par->site, par->edat, par->detMotionType ) != XLAL_SUCCESS ) {
+    par->errnum = xlalErrno;
     XLALPrintError ( "%s: Call to XLALDetectorPosVel() failed!\n", __func__);
-    GSL_ERROR_VAL( "Failure in CWPhaseDeriv_i", GSL_EFAILED, GSL_NAN );
+    return GSL_NAN;
   }
 
   /* XLALDetectorPosVel() returns detector positions and velocities from XLALBarycenter(),
@@ -465,7 +479,6 @@ CWPhaseDeriv_i ( double tt, void *params )
   ADD_VECT(posvel.vel, orbit_posvel.vel);
 
   /* compute orbital detector positions projected onto ecliptic plane */
-  XLALequatorialVect2ecliptic(ecl_pos, posvel.pos);
   XLALequatorialVect2ecliptic(ecl_orbit_pos, orbit_posvel.pos);
 
   /* get frequency of Doppler point */
@@ -562,23 +575,23 @@ CWPhaseDeriv_i ( double tt, void *params )
       break;
 
     case DOPPLERCOORD_N3X_EQU:		/**< X component of unconstrained super-sky position in equatorial coordinates [Units: none]. */
-      ret = LAL_TWOPI * Freq * posvel.pos[0];
+      ret = LAL_TWOPI * Freq * rr_ord_Equ[0];
       break;
     case DOPPLERCOORD_N3Y_EQU:		/**< Y component of unconstrained super-sky position in equatorial coordinates [Units: none]. */
-      ret = LAL_TWOPI * Freq * posvel.pos[1];
+      ret = LAL_TWOPI * Freq * rr_ord_Equ[1];
       break;
     case DOPPLERCOORD_N3Z_EQU:		/**< Z component of unconstrained super-sky position in equatorial coordinates [Units: none]. */
-      ret = LAL_TWOPI * Freq * posvel.pos[2];
+      ret = LAL_TWOPI * Freq * rr_ord_Equ[2];
       break;
 
     case DOPPLERCOORD_N3X_ECL:		/**< X component of unconstrained super-sky position in ecliptic coordinates [Units: none]. */
-      ret = LAL_TWOPI * Freq * ecl_pos[0];
+      ret = LAL_TWOPI * Freq * rr_ord_Ecl[0];
       break;
     case DOPPLERCOORD_N3Y_ECL:		/**< Y component of unconstrained super-sky position in ecliptic coordinates [Units: none]. */
-      ret = LAL_TWOPI * Freq * ecl_pos[1];
+      ret = LAL_TWOPI * Freq * rr_ord_Ecl[1];
       break;
     case DOPPLERCOORD_N3Z_ECL:		/**< Z component of unconstrained super-sky position in ecliptic coordinates [Units: none]. */
-      ret = LAL_TWOPI * Freq * ecl_pos[2];
+      ret = LAL_TWOPI * Freq * rr_ord_Ecl[2];
       break;
 
     case DOPPLERCOORD_N3SX_EQU:	/**< X spin-component of unconstrained super-sky position in equatorial coordinates [Units: none]. */
@@ -588,16 +601,20 @@ CWPhaseDeriv_i ( double tt, void *params )
       ret = LAL_TWOPI * Freq * spin_posvel.pos[1];
       break;
 
-    case DOPPLERCOORD_N3OX_ECL:	/**< X orbit-component of unconstrained super-sky position in equatorial coordinates [Units: none]. */
+    case DOPPLERCOORD_N3OX_ECL:	/**< X orbit-component of unconstrained super-sky position in ecliptic coordinates [Units: none]. */
       ret = LAL_TWOPI * Freq * ecl_orbit_pos[0];
       break;
-    case DOPPLERCOORD_N3OY_ECL:	/**< Y orbit-component of unconstrained super-sky position in equatorial coordinates [Units: none]. */
+    case DOPPLERCOORD_N3OY_ECL:	/**< Y orbit-component of unconstrained super-sky position in ecliptic coordinates [Units: none]. */
       ret = LAL_TWOPI * Freq * ecl_orbit_pos[1];
+      break;
+    case DOPPLERCOORD_N3OZ_ECL:	/**< Z orbit-component of unconstrained super-sky position in ecliptic coordinates [Units: none]. */
+      ret = LAL_TWOPI * Freq * ecl_orbit_pos[2];
       break;
 
     default:
+      par->errnum = XLAL_EINVAL;
       XLALPrintError("%s: Unknown phase-derivative type '%d'\n", __func__, par->deriv );
-      GSL_ERROR_VAL( "Failure in CWPhaseDeriv_i", GSL_EFAILED, GSL_NAN );
+      return GSL_NAN;
       break;
 
     } /* switch par->deriv */
@@ -607,20 +624,17 @@ CWPhaseDeriv_i ( double tt, void *params )
 } /* CWPhaseDeriv_i() */
 
 
-/** Given a GPS time and detector, return the current position (and velocity) of the detector.
- *
- * NOTE: the 'special' flag allows to simulate artifically truncated
- * detector motions, such as pure orbital motion.
- *
+/**
+ * Given a GPS time and detector, return the current position (and velocity) of the detector.
  */
 int
-XLALDetectorPosVel ( PosVel3D_t *spin_posvel,	/**< [out] instantaneous sidereal position and velocity vector */
-                     PosVel3D_t *orbit_posvel,	/**< [out] instantaneous orbital position and velocity vector */
-		     const LIGOTimeGPS *tGPS,	/**< [in] GPS time */
-		     const LALDetector *site,	/**< [in] detector info */
-		     const EphemerisData *edat,	/**< [in] ephemeris data */
-		     DetectorMotionType special	/**< [in] detector motion type */
-		     )
+XLALDetectorPosVel ( PosVel3D_t *spin_posvel,		/**< [out] instantaneous sidereal position and velocity vector */
+                     PosVel3D_t *orbit_posvel,		/**< [out] instantaneous orbital position and velocity vector */
+                     const LIGOTimeGPS *tGPS,		/**< [in] GPS time */
+                     const LALDetector *site,		/**< [in] detector info */
+                     const EphemerisData *edat,		/**< [in] ephemeris data */
+                     DetectorMotionType detMotionType	/**< [in] detector motion type */
+                     )
 {
   EarthState earth;
   BarycenterInput baryinput = empty_BarycenterInput;
@@ -628,178 +642,101 @@ XLALDetectorPosVel ( PosVel3D_t *spin_posvel,	/**< [out] instantaneous sidereal 
   PosVel3D_t Det_wrt_Earth;
   PosVel3D_t PtoleOrbit;
   PosVel3D_t Spin_z, Spin_xy;
-  REAL8 eZ[3];
+  const vect3D_t eZ = {0, -LAL_SINIEARTH, LAL_COSIEARTH};       /* ecliptic z-axis in equatorial coordinates */
 
-  if ( !tGPS || !site || !edat ) {
-    XLALPrintError ( "%s: Illegal NULL pointer passed!\n", __func__);
-    XLAL_ERROR( XLAL_EINVAL );
-  }
+  XLAL_CHECK( tGPS, XLAL_EFAULT );
+  XLAL_CHECK( site, XLAL_EFAULT );
+  XLAL_CHECK( edat, XLAL_EFAULT );
+
+  XLAL_CHECK( detMotionType > 0, XLAL_EINVAL, "Invalid detector motion type '%d'", detMotionType );
 
   /* ----- find ephemeris-based position of Earth wrt to SSB at this moment */
-  if ( XLALBarycenterEarth( &earth, tGPS, edat ) != XLAL_SUCCESS ) {
-    XLALPrintError ( "%s: call to XLALBarycenterEarth() failed!\n\n", __func__);
-    XLAL_ERROR( XLAL_EFUNC );
-  }
+  XLAL_CHECK( XLALBarycenterEarth( &earth, tGPS, edat ) == XLAL_SUCCESS, XLAL_EFUNC );
+
   /* ----- find ephemeris-based position of detector wrt to SSB */
   baryinput.tgps = *tGPS;
   baryinput.site = *site;
   baryinput.site.location[0] /= LAL_C_SI; baryinput.site.location[1] /= LAL_C_SI; baryinput.site.location[2] /= LAL_C_SI;
   baryinput.alpha = 0; baryinput.delta = 0; baryinput.dInv = 0;
-  if ( XLALBarycenter ( &emit, &baryinput, &earth ) != XLAL_SUCCESS ) {
-    XLALPrintError ( "%s: call to XLALBarycenter() failed!\n\n", __func__);
-    XLAL_ERROR( XLAL_EFUNC );
-  }
+  XLAL_CHECK( XLALBarycenter ( &emit, &baryinput, &earth ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   /* ----- determine position-vector of detector wrt center of Earth */
   COPY_VECT(Det_wrt_Earth.pos, emit.rDetector);
   SUB_VECT(Det_wrt_Earth.pos, earth.posNow);
-
   COPY_VECT(Det_wrt_Earth.vel, emit.vDetector);
   SUB_VECT(Det_wrt_Earth.vel, earth.velNow);
 
-  eZ[0] = 0; eZ[1] = -LAL_SINIEARTH; eZ[2] = LAL_COSIEARTH; 	/* ecliptic z-axis in equatorial coordinates */
   /* compute ecliptic-z projected spin motion */
   REAL8 pz = DOT_VECT ( Det_wrt_Earth.pos, eZ );
   REAL8 vz = DOT_VECT ( Det_wrt_Earth.vel, eZ );
-
   COPY_VECT ( Spin_z.pos, eZ );
   MULT_VECT ( Spin_z.pos, pz );
-
   COPY_VECT ( Spin_z.vel, eZ );
   MULT_VECT ( Spin_z.vel, vz );
 
   /* compute ecliptic-xy projected spin motion */
   COPY_VECT ( Spin_xy.pos, Det_wrt_Earth.pos );
   SUB_VECT ( Spin_xy.pos, Spin_z.pos );
-
   COPY_VECT ( Spin_xy.vel, Det_wrt_Earth.vel );
   SUB_VECT ( Spin_xy.vel, Spin_z.vel );
 
   /* ----- Ptolemaic special case: orbital motion on a circle */
-  if ( (special == DETMOTION_SPIN_PTOLEORBIT) || (special == DETMOTION_PTOLEORBIT) )
-    {
-      if ( XLALPtolemaicPosVel ( &PtoleOrbit, tGPS ) ) {
-	XLALPrintError ( "%s: call to XLALPtolemaicPosVel() failed!\n\n", __func__);
-	XLAL_ERROR( XLAL_EFUNC );
-      }
-    }
+  if ( detMotionType & DETMOTION_PTOLEORBIT ) {
+    XLAL_CHECK( XLALPtolemaicPosVel ( &PtoleOrbit, tGPS ) == XLAL_SUCCESS, XLAL_EFUNC );
+  }
 
   /* ----- return the requested type of detector motion */
-  switch ( special )
-    {
-      /* full detector-motion: ephemeris-orbital + Earth-spin */
-    case DETMOTION_SPIN_ORBIT:
-      if ( spin_posvel ) {
-        COPY_VECT(spin_posvel->pos, Det_wrt_Earth.pos);
-        COPY_VECT(spin_posvel->vel, Det_wrt_Earth.vel);
-      }
+  if ( spin_posvel ) {
+    switch ( detMotionType & DETMOTION_MASKSPIN ) {
 
-      if ( orbit_posvel ) {
-        COPY_VECT(orbit_posvel->pos, earth.posNow);
-        COPY_VECT(orbit_posvel->vel, earth.velNow);
-      }
+    case 0:   /**< No spin motion */
+      ZERO_VECT(spin_posvel->pos);
+      ZERO_VECT(spin_posvel->vel);
       break;
 
-      /* full ephemeris orbital detector-motion, neglecting Earth-spin */
-    case DETMOTION_ORBIT:
-      if ( spin_posvel ) {
-        ZERO_VECT(spin_posvel->pos);
-        ZERO_VECT(spin_posvel->vel);
-      }
-
-      if ( orbit_posvel ) {
-        COPY_VECT(orbit_posvel->pos, earth.posNow);
-        COPY_VECT(orbit_posvel->vel, earth.velNow);
-      }
+    case DETMOTION_SPIN:   /**< Full spin motion */
+      COPY_VECT(spin_posvel->pos, Det_wrt_Earth.pos);
+      COPY_VECT(spin_posvel->vel, Det_wrt_Earth.vel);
       break;
 
-      /* detector-motion including only Earth-spin, no orbital motion */
-    case DETMOTION_SPIN:
-      if ( spin_posvel ) {
-        COPY_VECT(spin_posvel->pos, Det_wrt_Earth.pos);
-        COPY_VECT(spin_posvel->vel, Det_wrt_Earth.vel);
-      }
-
-      if ( orbit_posvel ) {
-        ZERO_VECT(orbit_posvel->pos);
-        ZERO_VECT(orbit_posvel->vel);
-      }
+    case DETMOTION_SPINZ:   /**< Ecliptic-Z component of spin motion only */
+      COPY_VECT ( spin_posvel->pos, Spin_z.pos );
+      COPY_VECT ( spin_posvel->vel, Spin_z.vel );
       break;
 
-      /* pure orbital detector motion, using "Ptolemaic" (ie. circular) approximation */
-    case DETMOTION_PTOLEORBIT:
-      if ( spin_posvel ) {
-        ZERO_VECT(spin_posvel->pos);
-        ZERO_VECT(spin_posvel->vel);
-      }
-
-      if ( orbit_posvel ) {
-        COPY_VECT(orbit_posvel->pos, PtoleOrbit.pos);
-        COPY_VECT(orbit_posvel->vel, PtoleOrbit.vel);
-      }
-      break;
-
-      /* Ptolemaic-orbital motion, plus Earth spin */
-    case DETMOTION_SPIN_PTOLEORBIT:
-      if ( spin_posvel ) {
-        COPY_VECT(spin_posvel->pos, Det_wrt_Earth.pos);
-        COPY_VECT(spin_posvel->vel, Det_wrt_Earth.vel);
-      }
-
-      if ( orbit_posvel ) {
-        COPY_VECT(orbit_posvel->pos, PtoleOrbit.pos);
-        COPY_VECT(orbit_posvel->vel, PtoleOrbit.vel);
-      }
-      /*
-      printf ("\nPtole = [ %f, %f, %f ], Ephem = [%f, %f, %f]\n",
-	      posvel->pos[0], posvel->pos[1], posvel->pos[2],
-	      emit.rDetector[0], emit.rDetector[1], emit.rDetector[2] );
-      */
-      break;
-
-      /**< orbital motion plus *only* z-component of Earth spin-motion wrt to ecliptic plane */
-    case DETMOTION_ORBIT_SPINZ:
-      if ( spin_posvel ) {
-        COPY_VECT ( spin_posvel->pos, Spin_z.pos );
-        COPY_VECT ( spin_posvel->vel, Spin_z.vel );
-      }
-
-      if ( orbit_posvel ) {
-        COPY_VECT(orbit_posvel->pos, earth.posNow);
-        COPY_VECT(orbit_posvel->vel, earth.velNow);
-      }
-
-      break;
-
-      /**< orbital motion plus *only* x+y component of Earth spin-motion in the ecliptic */
-    case DETMOTION_ORBIT_SPINXY:
-      if ( spin_posvel ) {
-        COPY_VECT ( spin_posvel->pos, Spin_xy.pos );
-        COPY_VECT ( spin_posvel->vel, Spin_xy.vel );
-      }
-
-      if ( orbit_posvel ) {
-        COPY_VECT(orbit_posvel->pos, earth.posNow);
-        COPY_VECT(orbit_posvel->vel, earth.velNow);
-      }
-
+    case DETMOTION_SPINXY:   /**< Ecliptic-X+Y components of spin motion only */
+      COPY_VECT ( spin_posvel->pos, Spin_xy.pos );
+      COPY_VECT ( spin_posvel->vel, Spin_xy.vel );
       break;
 
     default:
-      XLALPrintError("\n%s: Illegal 'special' value passed: '%d'\n\n", __func__, special );
-      XLAL_ERROR( XLAL_EINVAL );
+      XLAL_ERROR( XLAL_EINVAL, "%s: Illegal spin motion '%d'\n\n", __func__, detMotionType & DETMOTION_MASKSPIN );
       break;
-    } /* switch(special) */
+    }
+  }
+  if ( orbit_posvel ) {
+    switch ( detMotionType & DETMOTION_MASKORBIT ) {
 
+    case 0:   /**< No orbital motion */
+      ZERO_VECT(orbit_posvel->pos);
+      ZERO_VECT(orbit_posvel->vel);
+      break;
 
-#if 0
-  /* debug output */
-  printf ("%.6f  %.16g  %.16g  %.16g    %.16g  %.16g %.16g \n",
-          GPS2REAL8((*tGPS)),
-          posvel->pos[0], posvel->pos[1], posvel->pos[2],
-          posvel->vel[0], posvel->vel[1], posvel->vel[2] );
+    case DETMOTION_ORBIT:   /**< Ephemeris-based orbital motion */
+      COPY_VECT(orbit_posvel->pos, earth.posNow);
+      COPY_VECT(orbit_posvel->vel, earth.velNow);
+      break;
 
-#endif
+    case DETMOTION_PTOLEORBIT:   /**< Ptolemaic (circular) orbital motion */
+      COPY_VECT(orbit_posvel->pos, PtoleOrbit.pos);
+      COPY_VECT(orbit_posvel->vel, PtoleOrbit.vel);
+      break;
+
+    default:
+      XLAL_ERROR( XLAL_EINVAL, "%s: Illegal orbit motion '%d'\n\n", __func__, detMotionType & DETMOTION_MASKORBIT );
+      break;
+    }
+  }
 
   return XLAL_SUCCESS;
 
@@ -807,7 +744,8 @@ XLALDetectorPosVel ( PosVel3D_t *spin_posvel,	/**< [out] instantaneous sidereal 
 
 
 
-/** Compute position and velocity assuming a purely "Ptolemaic" orbital motion
+/**
+ * Compute position and velocity assuming a purely "Ptolemaic" orbital motion
  * (i.e. on a circle) around the sun, approximating Earth's orbit
  */
 int
@@ -852,7 +790,8 @@ XLALPtolemaicPosVel ( PosVel3D_t *posvel,		/**< [out] instantaneous position and
 
 
 
-/** Compute a pure phase-deriv covariance \f$[\phi_i, \phi_j] = \langle phi_i phi_j\rangle - \langle phi_i\rangle\langle phi_j\rangle\f$
+/**
+ * Compute a pure phase-deriv covariance \f$[\phi_i, \phi_j] = \langle phi_i phi_j\rangle - \langle phi_i\rangle\langle phi_j\rangle\f$
  * which gives a component of the "phase metric"
  */
 double
@@ -925,10 +864,9 @@ CWPhase_cov_Phi_ij ( const MultiDetectorInfo *detInfo, const intparams_t *params
       /* compute <phi_i phi_j> */
       integrand.function = &CW_am1_am2_Phi_i_Phi_j;
       XLAL_CALLGSL ( stat = gsl_integration_qag (&integrand, ti, tf, epsabs, epsrel, limit, GSL_INTEG_GAUSS61, wksp, &res_n, &abserr) );
-      if ( outputIntegrand ) printf ("\n");
       if ( stat != 0 ) {
-        XLALPrintError ( "\n%s: GSL-integration 'gsl_integration_qag()' of <Phi_i Phi_j> failed! seg=%d, av_ij_n=%g, abserr=%g\n",
-                         __func__, n, res_n, abserr);
+        XLALPrintError ( "\n%s: GSL-integration 'gsl_integration_qag()' of <Phi_i Phi_j> failed! xlalErrno=%i, seg=%d, av_ij_n=%g, abserr=%g\n",
+                         __func__, par.errnum, n, res_n, abserr);
         XLAL_ERROR_REAL8( XLAL_EFUNC );
       }
       res_n *= scale12;
@@ -941,8 +879,8 @@ CWPhase_cov_Phi_ij ( const MultiDetectorInfo *detInfo, const intparams_t *params
       par.deriv = par.deriv1;
       XLAL_CALLGSL ( stat = gsl_integration_qag (&integrand, ti, tf, epsabs, epsrel, limit, GSL_INTEG_GAUSS61, wksp, &res_n, &abserr) );
       if ( stat != 0 ) {
-        XLALPrintError ( "\n%s: GSL-integration 'gsl_integration_qag()' of <Phi_i> failed! seg=%d, av_i_n=%g, abserr=%g\n",
-                         __func__, n, res_n, abserr);
+        XLALPrintError ( "\n%s: GSL-integration 'gsl_integration_qag()' of <Phi_i> failed! xlalErrno=%i, seg=%d, av_i_n=%g, abserr=%g\n",
+                         __func__, par.errnum, n, res_n, abserr);
         XLAL_ERROR_REAL8( XLAL_EFUNC );
       }
       res_n *= scale1;
@@ -955,8 +893,8 @@ CWPhase_cov_Phi_ij ( const MultiDetectorInfo *detInfo, const intparams_t *params
       par.deriv = par.deriv2;
       XLAL_CALLGSL ( stat = gsl_integration_qag (&integrand, ti, tf, epsabs, epsrel, limit, GSL_INTEG_GAUSS61, wksp, &res_n, &abserr) );
       if ( stat != 0 ) {
-        XLALPrintError ( "\n%s: GSL-integration 'gsl_integration_qag()' of <Phi_j> failed! seg=%d, av_j_n=%g, abserr=%g\n",
-                         __func__, n, res_n, abserr);
+        XLALPrintError ( "\n%s: GSL-integration 'gsl_integration_qag()' of <Phi_j> failed! xlalErrno=%i, seg=%d, av_j_n=%g, abserr=%g\n",
+                         __func__, par.errnum, n, res_n, abserr);
         XLAL_ERROR_REAL8( XLAL_EFUNC );
       }
       res_n *= scale2;
@@ -1001,7 +939,8 @@ CWPhase_cov_Phi_ij ( const MultiDetectorInfo *detInfo, const intparams_t *params
 } /* CWPhase_cov_Phi_ij() */
 
 
-/** Calculate an approximate "phase-metric" with the specified parameters.
+/**
+ * Calculate an approximate "phase-metric" with the specified parameters.
  *
  * Note: if this function is called with multiple detectors, the phase components
  * are averaged over detectors as well as time. This is a somewhat ad-hoc approach;
@@ -1020,26 +959,33 @@ XLALDopplerPhaseMetric ( const DopplerMetricParams *metricParams,  	/**< input p
   intparams_t intparams = empty_intparams;
   UINT4 i, j;
   REAL8 gg;
-  UINT4 dim;
-  const DopplerCoordinateSystem *coordSys;
 
   /* ---------- sanity/consistency checks ---------- */
-  if ( !metricParams || !edat ) {
-    XLALPrintError ("\n%s: Illegal NULL pointer passed.\n\n", __func__);
-    XLAL_ERROR_NULL( XLAL_EINVAL );
-  }
+  XLAL_CHECK_NULL ( metricParams != NULL, XLAL_EINVAL );
+  XLAL_CHECK_NULL ( edat != NULL, XLAL_EINVAL );
   XLAL_CHECK_NULL ( XLALSegListIsInitialized ( &(metricParams->segmentList) ), XLAL_EINVAL, "Passed un-initialzied segment list 'metricParams->segmentList'\n");
   UINT4 Nseg = metricParams->segmentList.length;
   XLAL_CHECK_NULL ( Nseg == 1, XLAL_EINVAL, "Segment list must only contain Nseg=1 segments, got Nseg=%d", Nseg );
 
+  UINT4 dim = metricParams->coordSys.dim;
+  const DopplerCoordinateSystem *coordSys = &(metricParams->coordSys);
+  // ----- check that {n2x_equ, n2y_equ} are not used at the equator (delta=0), as metric is undefined there
+  BOOLEAN have_n2xy = 0;
+  for ( i = 0; i < dim; i ++ ) {
+    if ( (coordSys->coordIDs[i] == DOPPLERCOORD_N2X_EQU) || ( coordSys->coordIDs[i] == DOPPLERCOORD_N2Y_EQU) ) {
+      have_n2xy = 1;
+    }
+  }
+  BOOLEAN at_equator = (metricParams->signalParams.Doppler.Delta == 0);
+  XLAL_CHECK_NULL ( !(at_equator && have_n2xy), XLAL_EINVAL, "Can't use 'n2x_equ','n2y_equ' at equator (Delta=0): metric is singular there");
+
+  // ----- useful shortcuts
   LIGOTimeGPS *startTime = &(metricParams->segmentList.segs[0].start);
   LIGOTimeGPS *endTime   = &(metricParams->segmentList.segs[0].end);
   REAL8 Tspan = XLALGPSDiff( endTime, startTime );
 
   const LIGOTimeGPS *refTime   = &(metricParams->signalParams.Doppler.refTime);
 
-  dim = metricParams->coordSys.dim;
-  coordSys = &(metricParams->coordSys);
 
   /* ---------- prepare output metric ---------- */
   if ( (g_ij = gsl_matrix_calloc ( dim, dim )) == NULL ) {
@@ -1091,12 +1037,6 @@ XLALDopplerPhaseMetric ( const DopplerMetricParams *metricParams,  	/**< input p
           maxrelerr = MYMAX ( maxrelerr, err );
 	  if ( xlalErrno ) {
 	    XLALPrintError ("\n%s: Integration of g_ij (i=%d, j=%d) failed. errno = %d\n", __func__, i, j, xlalErrno );
-            xlalErrno = 0;
-            BOOLEAN sav = outputIntegrand;
-            outputIntegrand = 1;
-            gg = CWPhase_cov_Phi_ij ( &metricParams->detInfo, &intparams, &maxrelerr );	/* [Phi_i, Phi_j] */
-            outputIntegrand = sav;
-
 	    XLAL_ERROR_NULL( XLAL_EFUNC );
 	  }
 	  gsl_matrix_set (g_ij, i, j, gg);
@@ -1118,14 +1058,14 @@ XLALDopplerPhaseMetric ( const DopplerMetricParams *metricParams,  	/**< input p
 
 /**
  * Calculate the general (single-segment coherent, or multi-segment semi-coherent) phase-metric,
- * the *full* (multi-IFO) Fstat-metrix and the Fisher-matrix derived in \ref Prix07.
+ * the *full* (multi-IFO) Fstat-metrix and the Fisher-matrix derived in \cite Prix07.
  *
  * The semi-coherent metrics \f$g_{ij}\f$ over \f$N\f$ segments are computed according to
  *
  * \f[ \overline{g}_{ij} \equiv \frac{1}{N} \sum_{k=1}^{N} g_{ij,k} \f]
  *
  * where \f$g_{ij,k}\f$ is the coherent single-segment metric of segment k
-
+ *
  * Note: The returned DopplerMetric struct contains the matrices
  * g_ij (the phase metric), gF_ij (the F-metric), gFav_ij (the average F-metric),
  * m1_ij, m2_ij, m3_ij (auxiliary matrices)
@@ -1146,6 +1086,18 @@ XLALDopplerFstatMetric ( const DopplerMetricParams *metricParams,  	/**< input p
 {
   XLAL_CHECK_NULL ( metricParams, XLAL_EINVAL, "Invalid NULL input 'metricParams'\n" );
   XLAL_CHECK_NULL ( XLALSegListIsInitialized ( &(metricParams->segmentList) ), XLAL_EINVAL, "Passed un-initialzied segment list 'metricParams->segmentList'\n");
+
+  UINT4 dim = metricParams->coordSys.dim;
+  const DopplerCoordinateSystem *coordSys = &(metricParams->coordSys);
+  // ----- check that {n2x_equ, n2y_equ} are not used at the equator (delta=0), as metric is undefined there
+  BOOLEAN have_n2xy = 0;
+  for ( UINT4 i = 0; i < dim; i ++ ) {
+    if ( (coordSys->coordIDs[i] == DOPPLERCOORD_N2X_EQU) || ( coordSys->coordIDs[i] == DOPPLERCOORD_N2Y_EQU) ) {
+      have_n2xy = 1;
+    }
+  }
+  BOOLEAN at_equator = (metricParams->signalParams.Doppler.Delta == 0);
+  XLAL_CHECK_NULL ( !(at_equator && have_n2xy), XLAL_EINVAL, "Can't use 'n2x_equ','n2y_equ' at equator (Delta=0): metric is singular there");
 
   UINT4 Nseg = metricParams->segmentList.length;	// number of semi-coherent segments to average metrics over
   XLAL_CHECK_NULL ( Nseg >= 1, XLAL_EINVAL, "Got empty segment list metricParams->segmentList, needs to contain at least 1 segments\n");
@@ -1191,7 +1143,7 @@ XLALDopplerFstatMetric ( const DopplerMetricParams *metricParams,  	/**< input p
 
 /**
  * Calculate the *coherent* (single-segment) phase-metric, the *full* (multi-IFO) Fstat-metrix
- *  and the Fisher-matrix derived in \ref Prix07.
+ * and the Fisher-matrix derived in \cite Prix07.
  *
  * Note: The returned DopplerMetric struct contains the matrices
  * g_ij (the phase metric), gF_ij (the F-metric), gFav_ij (the average F-metric),
@@ -1326,7 +1278,8 @@ XLALDopplerFstatMetricCoh ( const DopplerMetricParams *metricParams,  	/**< inpu
 
 } /* XLALDopplerFstatMetricCoh() */
 
-/** Function to the compute the FmetricAtoms_t, from which the F-metric and Fisher-matrix can be computed.
+/**
+ * Function to the compute the FmetricAtoms_t, from which the F-metric and Fisher-matrix can be computed.
  */
 FmetricAtoms_t*
 XLALComputeAtomsForFmetric ( const DopplerMetricParams *metricParams,  	/**< input parameters determining the metric calculation */
@@ -1387,10 +1340,12 @@ XLALComputeAtomsForFmetric ( const DopplerMetricParams *metricParams,  	/**< inp
   }
 
   /* ----- integrate antenna-pattern coefficients A, B, C */
+  REAL8 sum_weights = 0;
   A = B = C = 0;
   for ( X = 0; X < numDet; X ++ )
     {
       REAL8 weight = metricParams->detInfo.detWeights[X];
+      sum_weights += weight;
       REAL8 av, relerr;
       intparams.site = &(metricParams->detInfo.sites[X]);
 
@@ -1422,6 +1377,12 @@ XLALComputeAtomsForFmetric ( const DopplerMetricParams *metricParams,  	/**< inp
       C += weight * av;
 
     } /* for X < numDetectors */
+
+  REAL8 norm_weight = 1.0 / sum_weights;
+
+  A *= norm_weight;
+  B *= norm_weight;
+  C *= norm_weight;
 
   ret->a_a = A;
   ret->b_b = B;
@@ -1532,19 +1493,19 @@ XLALComputeAtomsForFmetric ( const DopplerMetricParams *metricParams,  	/**< inp
 
 	    } /* for X < numDetectors */
 
-	  gsl_vector_set (ret->a_a_i, i, a_a_i);
-	  gsl_vector_set (ret->a_b_i, i, a_b_i);
-	  gsl_vector_set (ret->b_b_i, i, b_b_i);
+	  gsl_vector_set (ret->a_a_i, i, a_a_i * norm_weight );
+	  gsl_vector_set (ret->a_b_i, i, a_b_i * norm_weight );
+	  gsl_vector_set (ret->b_b_i, i, b_b_i * norm_weight );
 
 
-	  gsl_matrix_set (ret->a_a_i_j, i, j, a_a_i_j);
-	  gsl_matrix_set (ret->a_a_i_j, j, i, a_a_i_j);
+	  gsl_matrix_set (ret->a_a_i_j, i, j, a_a_i_j * norm_weight);
+	  gsl_matrix_set (ret->a_a_i_j, j, i, a_a_i_j * norm_weight);
 
-	  gsl_matrix_set (ret->a_b_i_j, i, j, a_b_i_j);
-	  gsl_matrix_set (ret->a_b_i_j, j, i, a_b_i_j);
+	  gsl_matrix_set (ret->a_b_i_j, i, j, a_b_i_j * norm_weight);
+	  gsl_matrix_set (ret->a_b_i_j, j, i, a_b_i_j * norm_weight);
 
-	  gsl_matrix_set (ret->b_b_i_j, i, j, b_b_i_j);
-	  gsl_matrix_set (ret->b_b_i_j, j, i, b_b_i_j);
+	  gsl_matrix_set (ret->b_b_i_j, i, j, b_b_i_j * norm_weight);
+	  gsl_matrix_set (ret->b_b_i_j, j, i, b_b_i_j * norm_weight);
 
 	} /* for j <= i */
 
@@ -1600,51 +1561,48 @@ XLALDestroyDopplerMetric ( DopplerMetric *metric )
 } /* XLALDestroyDopplerMetric() */
 
 
-/** Parse a detector-motion type string into the corresponding enum-number,
+/**
+ * Parse a detector-motion type string into the corresponding enum-number,
  */
 int
 XLALParseDetectorMotionString ( const CHAR *detMotionString )
 {
-  int i;
 
-  if ( ! detMotionString ) {
-    XLAL_ERROR ( XLAL_EINVAL );
+  XLAL_CHECK( detMotionString, XLAL_EINVAL );
+
+  for ( int i = 0; DetectorMotionNames[i].type > 0; ++i ) {
+    if ( strcmp ( detMotionString, DetectorMotionNames[i].name ) != 0 )
+      continue;
+    return DetectorMotionNames[i].type;   /* found the right entry */
   }
 
-  for ( i=0; i < DETMOTION_LAST; i ++ )
-    {
-      if ( DetectorMotionNames[i] && strcmp ( detMotionString, DetectorMotionNames[i] ) )
-	continue;
-      return i;	/* found the right entry */
-    }
-
-  XLALPrintError ("\nCould not parse '%s' into a valid detector-motion type!\n\n", detMotionString );
-  XLAL_ERROR ( XLAL_EINVAL );
+  XLAL_ERROR ( XLAL_EINVAL, "Could not parse '%s' into a valid detector-motion type!", detMotionString );
 
 } /* XLALParseDetectorMotionString() */
 
 
-/** Provide a pointer to a static string containing the DopplerCoordinate-name
+/**
+ * Provide a pointer to a static string containing the DopplerCoordinate-name
  * cooresponding to the enum DopplerCoordinateID
  */
 const CHAR *
-XLALDetectorMotionName ( DetectorMotionType detType )
+XLALDetectorMotionName ( DetectorMotionType detMotionType )
 {
-  if ( detType >= DETMOTION_LAST ) {
-    XLAL_ERROR_NULL ( XLAL_EINVAL, "detector-motion type '%d' outside valid range [0, %d]\n\n", detType, DETMOTION_LAST - 1 );
+
+  for ( int i = 0; DetectorMotionNames[i].type > 0; ++i ) {
+    if ( DetectorMotionNames[i].type != detMotionType )
+      continue;
+    return DetectorMotionNames[i].name;   /* found the right entry */
   }
 
-  if ( !DetectorMotionNames[detType] ) {
-    XLAL_ERROR_NULL ( XLAL_EINVAL, "detector-motion type '%d' has no associated name\n\n", detType );
-  }
-
-  return ( DetectorMotionNames[detType] );
+  XLAL_ERROR_NULL ( XLAL_EINVAL, "Could not parse '%d' into a valid detector-motion name!", detMotionType );
 
 } /* XLALDetectorMotionName() */
 
 
 
-/** Parse a DopplerCoordinate-name into the corresponding DopplerCoordinateID
+/**
+ * Parse a DopplerCoordinate-name into the corresponding DopplerCoordinateID
  */
 int
 XLALParseDopplerCoordinateString ( const CHAR *coordName )
@@ -1666,7 +1624,8 @@ XLALParseDopplerCoordinateString ( const CHAR *coordName )
 
 } /* XLALParseDopplerCoordinateString() */
 
-/** Given a LALStringVector of coordinate-names, parse them into a
+/**
+ * Given a LALStringVector of coordinate-names, parse them into a
  * 'DopplerCoordinateSystem', namely a list of coordinate-IDs
  */
 int
@@ -1693,7 +1652,8 @@ XLALDopplerCoordinateNames2System ( DopplerCoordinateSystem *coordSys,	/**< [out
 
 
 
-/** Provide a pointer to a static string containing the DopplerCoordinate-name
+/**
+ * Provide a pointer to a static string containing the DopplerCoordinate-name
  * cooresponding to the enum DopplerCoordinateID
  */
 const CHAR *
@@ -1712,7 +1672,8 @@ XLALDopplerCoordinateName ( DopplerCoordinateID coordID )
 } /* XLALDopplerCoordinateName() */
 
 
-/** Provide a pointer to a static string containing the a descriptive
+/**
+ * Provide a pointer to a static string containing the a descriptive
  * 'help-string' describing the coordinate DopplerCoordinateID
  */
 const CHAR *
@@ -1730,7 +1691,8 @@ XLALDopplerCoordinateHelp ( DopplerCoordinateID coordID )
 
 } /* XLALDopplerCoordinateHelp() */
 
-/** Return a string (allocated here) containing a full name - helpstring listing
+/**
+ * Return a string (allocated here) containing a full name - helpstring listing
  * for all doppler-coordinates DopplerCoordinateID allowed by UniversalDopplerMetric.c
  */
 CHAR *
@@ -1784,82 +1746,8 @@ XLALDopplerCoordinateHelpAll ( void )
 
 } /* XLALDopplerCoordinateHelpAll() */
 
-
-/** Parse string-vectors (typically input by user) of detector-names
- * and relative noise-weights, and return a MultiDetectorInfo struct.
- *
- * NOTE: you can pass detWeights == NULL, corresponding to equal-sensitivity detectors,
- * ie. all noise-weights equal.
- *
- * NOTE: the input noise-weights dont have to be normalized, but the
- * returned noise-weights will be properly normalized, i.e. \f$\sum_{i=1}^N w_i = 1\f$.
- *
- * Return  0 == OK, nonzero == ERROR
- */
-int
-XLALParseMultiDetectorInfo ( MultiDetectorInfo *detInfo,	/**< [out] parsed detector-info struct */
-			     const LALStringVector *detNames,	/**< [in] list of detector names */
-			     const LALStringVector *detWeights	/**< [in] list of (strings) with detector weights (NULL if all 1) */
-			     )
-{
-  UINT4 X, numDet;
-  REAL8 totalWeight;
-
-  if ( !detInfo || !detNames || (detNames->length == 0) ) {
-    XLALPrintError ("\n%s: Illegal NULL pointer input\n", __func__ );
-    XLAL_ERROR ( XLAL_EINVAL );
-  }
-
-  numDet = detNames->length;
-  if ( detWeights && (detWeights->length != numDet ) ) {
-    XLALPrintError ("\n%s: Illegal input: number of noise-weights must agree with number of detectors\n", __func__ );
-    XLAL_ERROR ( XLAL_EINVAL );
-  }
-
-  /* initialize empty return struct */
-  memset ( detInfo, 0, sizeof(*detInfo) );
-
-  detInfo->length = numDet;
-
-  totalWeight = 0;
-  /* parse input strings and fill detInfo */
-  for ( X = 0; X < numDet; X ++ )
-    {
-      LALDetector *ifo;
-      /* first parse detector name */
-      if ( ( ifo = XLALGetSiteInfo ( detNames->data[X] ) ) == NULL ) {
-	XLALPrintError ("%s: Failed to get site-info for detector '%s'\n", __func__, detNames->data[X] );
-	XLAL_ERROR ( XLAL_EINVAL );
-      }
-      detInfo->sites[X] = (*ifo);
-      XLALFree ( ifo );
-
-      /* parse noise weights if any */
-      if ( detWeights )
-	{
-	  if ( 1 != sscanf ( detWeights->data[X], "%lf", &(detInfo->detWeights[X]) ) )
-	    {
-	      XLALPrintError ("%s: Failed to parse noise-weight '%s' into float.\n", __func__, detWeights->data[X] );
-	      XLAL_ERROR ( XLAL_EINVAL );
-	    }
-	} /* if detWeights */
-      else
-	detInfo->detWeights[X] = 1;
-
-      totalWeight += detInfo->detWeights[X];
-
-    } /* for X < numDet */
-
-  /* normalized noise-weights to sum weights = 1 */
-  for ( X = 0; X < numDet; X ++ )
-    detInfo->detWeights[X] /= totalWeight;
-
-  return XLAL_SUCCESS;
-
-} /* XLALParseMultiDetectorInfo() */
-
-
-/** Free a FmetricAtoms_t structure, allowing any pointers to be NULL
+/**
+ * Free a FmetricAtoms_t structure, allowing any pointers to be NULL
  */
 void
 XLALDestroyFmetricAtoms ( FmetricAtoms_t *atoms )
@@ -1883,7 +1771,8 @@ XLALDestroyFmetricAtoms ( FmetricAtoms_t *atoms )
 
 
 
-/** Allocate an FmetricAtoms_t structure for given number of dimension.
+/**
+ * Allocate an FmetricAtoms_t structure for given number of dimension.
  */
 FmetricAtoms_t*
 XLALCreateFmetricAtoms ( UINT4 dim )
@@ -1937,7 +1826,8 @@ XLALCreateFmetricAtoms ( UINT4 dim )
 } /* XLALCreateFmetricAtoms() */
 
 
-/** Compute the 'F-metric' gF_ij (and also gFav_ij, m1_ij, m2_ij, m3_ij)
+/**
+ * Compute the 'F-metric' gF_ij (and also gFav_ij, m1_ij, m2_ij, m3_ij)
  * from the given FmetricAtoms and the signal amplitude parameters.
  *
  */
@@ -2023,12 +1913,12 @@ XLALComputeFmetricFromAtoms ( const FmetricAtoms_t *atoms, REAL8 cosi, REAL8 psi
 	  a_b_i_j = gsl_matrix_get ( atoms->a_b_i_j, i, j );
 	  b_b_i_j = gsl_matrix_get ( atoms->b_b_i_j, i, j );
 
-	  /* trivial assignments, see Eq.(76) in \ref Prix07 */
+	  /* trivial assignments, see Eq.(76) in \cite Prix07 */
 	  P1_ij = a_a_i_j;
 	  P2_ij = b_b_i_j;
 	  P3_ij = a_b_i_j;
 
-	  /* bit more involved, see Eq.(80)-(82) in \ref Prix07 [includes *explicit* index-symmetrization!!] */
+	  /* bit more involved, see Eq.(80)-(82) in \cite Prix07 [includes *explicit* index-symmetrization!!] */
 	  Q1_ij = A * a_b_i * a_b_j + B * a_a_i * a_a_j - C * ( a_a_i * a_b_j + a_a_j * a_b_i );	/* (80) symmetrized */
 	  Q1_ij /= D;
 
@@ -2079,8 +1969,9 @@ XLALComputeFmetricFromAtoms ( const FmetricAtoms_t *atoms, REAL8 cosi, REAL8 psi
 } /* XLALComputeFmetricFromAtoms() */
 
 
-/** Function to compute *full* 4+n dimensional Fisher matric for the
- *  full CW parameter-space of Amplitude + Doppler parameters !
+/**
+ * Function to compute *full* 4+n dimensional Fisher matric for the
+ * full CW parameter-space of Amplitude + Doppler parameters !
  */
 gsl_matrix*
 XLALComputeFisherFromAtoms ( const FmetricAtoms_t *atoms, PulsarAmplitudeParams Amp )
@@ -2197,7 +2088,8 @@ XLALComputeFisherFromAtoms ( const FmetricAtoms_t *atoms, PulsarAmplitudeParams 
 } /* XLALComputeFisherFromAtoms() */
 
 
-/** Calculate the projected metric onto the subspace orthogonal to coordinate-axis 'c', namely
+/**
+ * Calculate the projected metric onto the subspace orthogonal to coordinate-axis 'c', namely
  * ret_ij = g_ij - ( g_ic * g_jc / g_cc ) , where c is the value of the projected coordinate
  * The output-matrix is allocate here
  *
@@ -2289,7 +2181,8 @@ XLALmatrix33_in_vect3 ( vect3D_t out, mat33_t mat, const vect3D_t in )
 
 } /* XLALmatrix33_in_vect3() */
 
-/** Compute time-derivatives up to 'maxorder' of the Earths' orbital position vector
+/**
+ * Compute time-derivatives up to 'maxorder' of the Earths' orbital position vector
  * \f$r_{\mathrm{orb}}(t)\f$.
  *
  * Algorithm: using 5-point differentiation expressions on r_orb(t) returned from LALBarycenterEarth().
@@ -2418,10 +2311,11 @@ XLALDestroyVect3Dlist ( vect3Dlist_t *list )
 
 } /* XLALDestroyVect3Dlist() */
 
-/** Return the highest 'global-correlation' spindown order found in this coordinate system.
-    Counting nu0 = order1, nu1 = order2, nu2 = order3, ...,
-    order = 0 therefore means there are no GC spin coordinates at all
-*/
+/**
+ * Return the highest 'global-correlation' spindown order found in this coordinate system.
+ * Counting nu0 = order1, nu1 = order2, nu2 = order3, ...,
+ * order = 0 therefore means there are no GC spin coordinates at all
+ */
 UINT4
 findHighestGCSpinOrder ( const DopplerCoordinateSystem *coordSys )
 {
@@ -2450,10 +2344,11 @@ findHighestGCSpinOrder ( const DopplerCoordinateSystem *coordSys )
  * where \f$\overline{\Delta T}\equiv\sum_{k}^{N} \Delta T_k\f$ is the average segment-length
  * over all \f$N\f$ segments.
  *
- * Sky coordinates are scaled by
- * \f[ \frac{2\pi \bar{f} R_{ES}}{c} \f]
- * where \f$\bar{f}\f$ is a fiducial frequency and
- * \f$R_{ES}\f$ the mean Earth--Sun distance.
+ * Sky coordinates are scaled by Holgers' units, see Eq.(44) in PRD82,042002(2010),
+ * without the equatorial rotation in alpha:
+ * \f[ \frac{2\pi f R_{E}  \cos(\delta_{D})}{c} \f]
+ * where \f$f\f$ is the frequency and
+ * \f$R_{E}\f$ the Earth radius, and \f$\delta_{D}\f$ is the detectors latitude.
  *
  * Returns NULL on error, otherwise a new matrix is allocated.
  */
@@ -2462,7 +2357,6 @@ gsl_matrix* XLALNaturalizeMetric(
   const DopplerMetricParams *metricParams	/**< [in] Input parameters used to calculate g_ij */
   )
 {
-
   /* Check input */
   XLAL_CHECK_NULL( g_ij, XLAL_EINVAL );
   XLAL_CHECK_NULL( g_ij->size1 == g_ij->size2, XLAL_EINVAL, "Input matrix g_ij must be square! (got %d x %d)\n", g_ij->size1, g_ij->size2 );
@@ -2526,7 +2420,10 @@ gsl_matrix* XLALNaturalizeMetric(
     case DOPPLERCOORD_N3SY_EQU:
     case DOPPLERCOORD_N3OX_ECL:
     case DOPPLERCOORD_N3OY_ECL:
-      scale = LAL_TWOPI * Freq * rOrb_c;
+      {
+        REAL8 cosdD = cos ( metricParams->detInfo.sites[0].frDetector.vertexLatitudeRadians );
+        scale = LAL_TWOPI * Freq * rEarth_c * cosdD;
+      }
       break;
 
     default:
@@ -2553,7 +2450,8 @@ gsl_matrix* XLALNaturalizeMetric(
 } /* XLALNaturalizeMetric() */
 
 
-/** "DiagNormalize" a metric matrix.
+/**
+ * "DiagNormalize" a metric matrix.
  * DiagNormalization means normalize metric by its diagonal, namely apply the transformation
  * G_ij = g_ij /sqrt(g_ii * g_jj), to all elements, resulting in lower
  * condition number and unit diagonal elements.
@@ -2623,7 +2521,7 @@ XLALDiagNormalizeMetric ( const gsl_matrix * g_ij )
  * in 'metric2'. The elements are *copied* and the result is allocated here.
  *
  * Note2: the 'meta' field-information of 'metric2' is simply copied into the output,
- *        meta-info consistency is *not* checked.
+ * meta-info consistency is *not* checked.
  */
 int
 XLALAddDopplerMetric ( DopplerMetric **metric1, const DopplerMetric *metric2 )

@@ -158,22 +158,24 @@ typedef struct
 #define YYLEX_PARAM parm
 #define YYPARSE_PARAM parm
 
-static int yyerror ();
-static int yylex ();
-
 %}
 
 /* We want a reentrant parser.  */
 %pure_parser
 
-/* This grammar has 13 shift/reduce conflicts. */
-%expect 13
+/* This grammar has 14 shift/reduce conflicts. */
+%expect 14
 
 %union
 {
   int intval;
   textint textintval;
 }
+
+%{
+static int yyerror (const char *s ATTRIBUTE_UNUSED);
+static int yylex (YYSTYPE *lvalp, parser_control *pc);
+%}
 
 %token tAGO tDST
 
@@ -453,16 +455,6 @@ o_merid:
    may define-away `const'.  We want the prototype for get_date to have
    the same signature as the function definition.  */
 #include "getdate.h"
-
-#ifndef gmtime
-struct tm *gmtime ();
-#endif
-#ifndef localtime
-struct tm *localtime ();
-#endif
-#ifndef mktime
-time_t mktime ();
-#endif
 
 static table const meridian_table[] =
 {
@@ -868,7 +860,7 @@ yylex (YYSTYPE *lvalp, parser_control *pc)
 
 /* Do nothing if the parser reports an error.  */
 static int
-yyerror (char *s ATTRIBUTE_UNUSED)
+yyerror (const char *s ATTRIBUTE_UNUSED)
 {
   return 0;
 }

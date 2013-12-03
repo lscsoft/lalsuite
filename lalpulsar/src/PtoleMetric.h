@@ -39,32 +39,32 @@ extern "C" {
  * \brief Provides routines to compute pulsar parameter-space metrics using the
  * ``Ptolemaic'' approximation.
  *
- * \heading{Synopsis}
- \code
- #include <lal/PtoleMetric.h>
- \endcode
-
- This module covers routines for using a ``Ptolemaic'' (epicyclic)
- approximation to the detector motion to compute the parameter-space metric
- for a pulsar search. (At the moment, the search is assumed to be a single
- coherent integration.) The results should be very similar to those under
- \ref StackMetric_h, and reading that documention is a good
- background for this documentation.
-
- Why this extra module? Two words: simplicity and speed. The metric
- components can be expressed analytically in terms of trig functions,
- allowing one to get a feel for what the parameter space will look like
- before using a single CPU cycle. In addition, CPU usage is much reduced
- (compared to the routines in \ref StackMetric_h) in numerical
- explorations such as testing the suitability of various tiling codes. Thus,
- the functions in this header can be very useful in the current stage of
- exploring parameter space and wondering how we can practically take
- advantage of correlations. It's also good at catching bugs and errors in the
- numerical routines under \ref StackMetric_h. The effectiveness of the
- tiling at catching signals should be very little reduced by the
- approximation. Jones, Owen, and Whitbeck will write a short paper on this
- and other details.
-
+ * ### Synopsis ###
+ *
+ * \code
+ * #include <lal/PtoleMetric.h>
+ * \endcode
+ *
+ * This module covers routines for using a ``Ptolemaic'' (epicyclic)
+ * approximation to the detector motion to compute the parameter-space metric
+ * for a pulsar search. (At the moment, the search is assumed to be a single
+ * coherent integration.) The results should be very similar to those under
+ * \ref StackMetric_h, and reading that documention is a good
+ * background for this documentation.
+ *
+ * Why this extra module? Two words: simplicity and speed. The metric
+ * components can be expressed analytically in terms of trig functions,
+ * allowing one to get a feel for what the parameter space will look like
+ * before using a single CPU cycle. In addition, CPU usage is much reduced
+ * (compared to the routines in \ref StackMetric_h) in numerical
+ * explorations such as testing the suitability of various tiling codes. Thus,
+ * the functions in this header can be very useful in the current stage of
+ * exploring parameter space and wondering how we can practically take
+ * advantage of correlations. It's also good at catching bugs and errors in the
+ * numerical routines under \ref StackMetric_h. The effectiveness of the
+ * tiling at catching signals should be very little reduced by the
+ * approximation. Jones, Owen, and Whitbeck will write a short paper on this
+ * and other details.
  *
  */
 /*@{*/
@@ -102,9 +102,11 @@ typedef enum
 } LALPulsarMetricType;
 
 
-/** This structure will likely be changed to match up better with
-    those under \ref StackMetric_h; it contains the bare
-    necessities, not needing function pointers etc. */
+/**
+ * This structure will likely be changed to match up better with
+ * those under \ref StackMetric_h; it contains the bare
+ * necessities, not needing function pointers etc.
+ */
 typedef struct
 tagPtoleMetricIn
 {

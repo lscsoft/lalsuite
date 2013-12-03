@@ -18,39 +18,40 @@
 */
 
 /**
-\author Thomas Cokelaer
-\file
-\ingroup LALInspiralBank_h
-
-\brief Test code for the \c bank modules.
-
-\heading{Usage}
-\code
-./getOrientationEllipse
-\endcode
-
-\heading{Description}
-
-This code illustrates the use of several functions such as
-\c LALInspiralParameterCalc(), \c LALGetInspiralMoments(),
-and \c LALInspiralComputeMetric(). It shows how to defined
-a suitable \c InspiralCoarseBankIn structure so as to extract
-the metric components for a set of binary parameters. In this
-example, we first declare all the relevant parameter needed
-(minimum  and maximum mass, fLower, design sensitivity curve
-and so on), which can be changed by the user before compilation.
-
-Then, a loop spans a square parameter space defined by tau0 in the
-range [.1,40] seconds and tau3 in [1, 2] seconds. For each set of
-parameter, the metric is computed and the code prints on stdout
-the value of the coordinate used (tau0, tau3) and the orientation
-of the metric in degrees. We do not check whether a template is valid
-or not in this code but one could have use a function such as
-\c LALInspiralValidtemplate to do so.
-
-\heading{Notes}
-
-*/
+ * \author Thomas Cokelaer
+ * \file
+ * \ingroup LALInspiralBank_h
+ *
+ * \brief Test code for the \c bank modules.
+ *
+ * ### Usage ###
+ *
+ * \code
+ * ./getOrientationEllipse
+ * \endcode
+ *
+ * ### Description ###
+ *
+ * This code illustrates the use of several functions such as
+ * \c LALInspiralParameterCalc(), \c LALGetInspiralMoments(),
+ * and \c LALInspiralComputeMetric(). It shows how to defined
+ * a suitable \c InspiralCoarseBankIn structure so as to extract
+ * the metric components for a set of binary parameters. In this
+ * example, we first declare all the relevant parameter needed
+ * (minimum  and maximum mass, fLower, design sensitivity curve
+ * and so on), which can be changed by the user before compilation.
+ *
+ * Then, a loop spans a square parameter space defined by tau0 in the
+ * range [.1,40] seconds and tau3 in [1, 2] seconds. For each set of
+ * parameter, the metric is computed and the code prints on stdout
+ * the value of the coordinate used (tau0, tau3) and the orientation
+ * of the metric in degrees. We do not check whether a template is valid
+ * or not in this code but one could have use a function such as
+ * \c LALInspiralValidtemplate to do so.
+ *
+ * ### Notes ###
+ *
+ */
 
 
 #include <stdio.h>
@@ -58,7 +59,6 @@ or not in this code but one could have use a function such as
 #include <lal/LALInspiralBank.h>
 #include <lal/LALNoiseModels.h>
 
-INT4 lalDebugLevel=33;
 
 int
 main(void)

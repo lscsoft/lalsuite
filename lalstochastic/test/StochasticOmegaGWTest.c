@@ -18,120 +18,118 @@
 */
 
 /**
-\author UTB Relativity Group; contact whelan@phys.utb.edu
-\file
-\ingroup StochasticOmegaGW_c
-
-\brief A program to test <tt>LALStochasticOmegaGW()</tt>.
-
-\heading{Usage}
-
-\code
-./StochasticOmegaGWTest [options]
-Options:
-  -h             print usage message
-  -q             quiet: run silently
-  -v             verbose: print extra information
-  -d level       set lalDebugLevel to level
-  -a alpha       set power law exponent to alpha
-  -O omegaRef    set amplitude to omegaRef
-  -F fRef        set normalization reference frequency to fRef
-  -f f0          set start frequency to f0
-  -e deltaF      set frequency spacing to deltaF
-  -n length      set number of points in frequency series to length
-  -o filename    print gravitational-wave spectrum to file filename
-\endcode
-
-\heading{Description}
-
-This program tests the function <tt>LALStochasticOmegaGW()</tt>, which outputs a
-power law spectrum
-\f{equation}{
-h_{100}^2\Omega_{\mathrm{GW}}(f)
-=\Omega_{\mathrm{R}}
-\left(
-  \frac{f}{f_{\mathrm{R}}}
-\right)^\alpha
-\f}
-
-First, it tests that the correct error codes
-(cf. \ref StochasticCrossCorrelation_h)
-are generated for the following error conditions (tests in
-\e italics are not performed if \c LAL_NDEBUG is set, as
-the corresponding checks in the code are made using the ASSERT macro):
-<ul>
-<li> <em>null pointer to output series</em></li>
-<li> <em>null pointer to parameter structure</em></li>
-<li> <em>null pointer to data member of output series</em></li>
-<li> <em>null pointer to data member of data member of output series</em></li>
-<li> <em>zero length parameter</em></li>
-<li> <em>negative frequency spacing</em></li>
-<li> <em>zero frequency spacing</em></li>
-<li> mismatch between length of output series and length parameter</li>
-<li> zero reference frequency \f$f_{\mathrm{R}}\f$
-% </li><li> reference frequency \f$f_{\mathrm{R}}\f$
-% smaller than lowest positive output frequency</li>
-<li> negative amplitude parameter \f$\Omega_{\mathrm{R}}\f$</li>
-<li> zero amplitude parameter \f$\Omega_{\mathrm{R}}\f$</li>
-</ul>
-
-It then verifies that the correct frequency series are generated for
-two simple test cases: \f$\alpha=2.5\f$ and \f$\alpha=0\f$.  For each
-successful test (both of these valid data and the invalid ones
-described above), it prints "\c PASS" to standard output; if a
-test fails, it prints "\c FAIL".
-
-If the \c filename argument is present, it also calculates a
-spectrum based on user-specified data.
-Figure\figref{stochastic_quadOmega} illustrates the output of the
-command with the following arguments:
-\code
-StochasticOmegaGWTest -e 1 -n 1000 -F 100 -O 1e-6 -a 2 -o OmegaGW.dat
-\endcode
-
-\floatfig{htbp,stochastic_quadOmega}
-\image html  stochasticOmegaGWQuadratic.png "Fig. [stochastic_quadOmega]: A quadratic stochastic gravitational-wave background spectrum."
-\image latex stochasticOmegaGWQuadratic.pdf "A quadratic stochastic gravitational-wave background spectrum."  width=4in
-
-\heading{Uses}
-
-\code
-lalDebugLevel
-getopt()
-LALSCreateVector()
-LALStochasticOmegaGW()
-LALSPrintFrequencySeries
-LALSDestroyVector()
-LALCheckMemoryLeaks()
-\endcode
-
-\heading{Notes}
-
-<ul>
-  <li> No specific error checking is done on user-specified data.  If
-\c deltaF or \c length are missing, the resulting defaults
-will cause a bad data error.  If other arguments are unspecified, the
-following defaults are used:
-<dl>
-<dt>alpha</dt><dd> 0</dd>
-<dt>f0</dt><dd> 0</dd>
-<dt>fRef</dt><dd> 1\,Hz</dd>
-<dt>omegaRef</dt><dd> 1</dd>
-</dl></li>
-<li> The routine <tt>LALStochasticOmegaGW()</tt> will eventually be generalized to
-include "broken" power law spectra
-\f{equation}{
-h_{100}^2\Omega_{\mathrm{GW}}
-= \left\{
-\begin{array}{cc}
-\Omega_1 f^{\alpha_1} & f\le f_c\\
-\Omega_2 f^{\alpha_2} & f\ge f_c
-\end{array}
-\right.
-\f}</li>
-</ul>
-
-*/
+ * \author UTB Relativity Group; contact whelan@phys.utb.edu
+ * \file
+ * \ingroup StochasticOmegaGW_c
+ *
+ * \brief A program to test <tt>LALStochasticOmegaGW()</tt>.
+ *
+ * ### Usage ###
+ *
+ * \code
+ * ./StochasticOmegaGWTest [options]
+ * Options:
+ * -h             print usage message
+ * -q             quiet: run silently
+ * -v             verbose: print extra information
+ * -d level       set lalDebugLevel to level
+ * -a alpha       set power law exponent to alpha
+ * -O omegaRef    set amplitude to omegaRef
+ * -F fRef        set normalization reference frequency to fRef
+ * -f f0          set start frequency to f0
+ * -e deltaF      set frequency spacing to deltaF
+ * -n length      set number of points in frequency series to length
+ * -o filename    print gravitational-wave spectrum to file filename
+ * \endcode
+ *
+ * ### Description ###
+ *
+ * This program tests the function <tt>LALStochasticOmegaGW()</tt>, which outputs a
+ * power law spectrum
+ * \f{equation}{
+ * h_{100}^2\Omega_{\mathrm{GW}}(f)
+ * =\Omega_{\mathrm{R}}
+ * \left(
+ * \frac{f}{f_{\mathrm{R}}}
+ * \right)^\alpha
+ * \f}
+ *
+ * First, it tests that the correct error codes
+ * (cf. \ref StochasticCrossCorrelation_h)
+ * are generated for the following error conditions (tests in
+ * \e italics are not performed if \c LAL_NDEBUG is set, as
+ * the corresponding checks in the code are made using the ASSERT macro):
+ * <ul>
+ * <li> <em>null pointer to output series</em></li>
+ * <li> <em>null pointer to parameter structure</em></li>
+ * <li> <em>null pointer to data member of output series</em></li>
+ * <li> <em>null pointer to data member of data member of output series</em></li>
+ * <li> <em>zero length parameter</em></li>
+ * <li> <em>negative frequency spacing</em></li>
+ * <li> <em>zero frequency spacing</em></li>
+ * <li> mismatch between length of output series and length parameter</li>
+ * <li> zero reference frequency \f$f_{\mathrm{R}}\f$
+ * % </li><li> reference frequency \f$f_{\mathrm{R}}\f$
+ * % smaller than lowest positive output frequency</li>
+ * <li> negative amplitude parameter \f$\Omega_{\mathrm{R}}\f$</li>
+ * <li> zero amplitude parameter \f$\Omega_{\mathrm{R}}\f$</li>
+ * </ul>
+ *
+ * It then verifies that the correct frequency series are generated for
+ * two simple test cases: \f$\alpha=2.5\f$ and \f$\alpha=0\f$.  For each
+ * successful test (both of these valid data and the invalid ones
+ * described above), it prints "\c PASS" to standard output; if a
+ * test fails, it prints "\c FAIL".
+ *
+ * If the \c filename argument is present, it also calculates a
+ * spectrum based on user-specified data.
+ * \figref{stochasticOmegaGWQuadratic} illustrates the output of the
+ * command with the following arguments:
+ * \code
+ * StochasticOmegaGWTest -e 1 -n 1000 -F 100 -O 1e-6 -a 2 -o OmegaGW.dat
+ * \endcode
+ *
+ * \figure{stochasticOmegaGWQuadratic,eps,0.6,A quadratic stochastic gravitational-wave background spectrum.}
+ *
+ * ### Uses ###
+ *
+ * \code
+ * lalDebugLevel
+ * getopt()
+ * LALSCreateVector()
+ * LALStochasticOmegaGW()
+ * LALSPrintFrequencySeries
+ * LALSDestroyVector()
+ * LALCheckMemoryLeaks()
+ * \endcode
+ *
+ * ### Notes ###
+ *
+ * <ul>
+ * <li> No specific error checking is done on user-specified data.  If
+ * \c deltaF or \c length are missing, the resulting defaults
+ * will cause a bad data error.  If other arguments are unspecified, the
+ * following defaults are used:
+ * <dl>
+ * <dt>alpha</dt><dd> 0</dd>
+ * <dt>f0</dt><dd> 0</dd>
+ * <dt>fRef</dt><dd> 1\,Hz</dd>
+ * <dt>omegaRef</dt><dd> 1</dd>
+ * </dl></li>
+ * <li> The routine <tt>LALStochasticOmegaGW()</tt> will eventually be generalized to
+ * include "broken" power law spectra
+ * \f{equation}{
+ * h_{100}^2\Omega_{\mathrm{GW}}
+ * = \left\{
+ * \begin{array}{cc}
+ * \Omega_1 f^{\alpha_1} & f\le f_c\\
+ * \Omega_2 f^{\alpha_2} & f\ge f_c
+ * \end{array}
+ * \right.
+ * \f}</li>
+ * </ul>
+ *
+ */
 
 /**\name Error Codes */ /*@{*/
 #define STOCHASTICOMEGAGWTESTC_ENOM 0	/**< Nominal exit */
@@ -186,8 +184,6 @@ h_{100}^2\Omega_{\mathrm{GW}}
 extern char *optarg;
 extern int   optind;
 
-/* int lalDebugLevel = LALMSGLVL3; */
-extern int lalDebugLevel;
 BOOLEAN optVerbose    = STOCHASTICOMEGAGWTESTC_FALSE;
 REAL8 optDeltaF     = -1.0;
 UINT4 optLength     = 0;
@@ -214,7 +210,6 @@ int main( int argc, char *argv[] )
   REAL4 omega, f;
   INT4 code;
 
-  lalDebugLevel = LALNDEBUG;
 
   /* define valid parameters */
 
@@ -631,7 +626,6 @@ ParseOptions (int argc, char *argv[])
         break;
 
       case 'd': /* set debug level */
-        lalDebugLevel = atoi (optarg);
         break;
 
       case 'v': /* optVerbose */

@@ -24,11 +24,8 @@
 #include <string.h>
 #include <lal/LALFrameU.h>
 
-
 #define FS "\t" /* field separator */
 #define RS "\n" /* record separator */
-#define GS "--\n"       /* group separator */
-
 
 #define FAILURE(...) do { fprintf(stderr, __VA_ARGS__); exit(1); } while (0)
 
@@ -50,7 +47,6 @@ int main(int argc, char *argv[])
         size_t nadc;
         size_t nsim;
         size_t nproc;
-        size_t nchan;
         size_t nframe;
         size_t chan;
         size_t pos;
@@ -75,13 +71,12 @@ int main(int argc, char *argv[])
         nadc = XLALFrameUFrTOCQueryAdcN(toc);
         nsim = XLALFrameUFrTOCQuerySimN(toc);
         nproc = XLALFrameUFrTOCQueryProcN(toc);
-        nchan = nadc + nsim + nproc;
-
 
         for (chan = 0; chan < nadc; ++chan) {
             LALFrameUFrChan *channel;
             const char *name;
             name = XLALFrameUFrTOCQueryAdcName(toc, chan);
+            printf("#%s\n", name);
             for (pos = 0; pos < nframe; ++pos) {
                 double tip;
                 double tfp;
@@ -90,14 +85,13 @@ int main(int argc, char *argv[])
                 printchannel(channel, tip + tfp);
                 XLALFrameUFrChanFree(channel);
             }
-            if (--nchan)
-                fputs(GS, stdout);
         }
 
         for (chan = 0; chan < nsim; ++chan) {
             LALFrameUFrChan *channel;
             const char *name;
             name = XLALFrameUFrTOCQuerySimName(toc, chan);
+            printf("#%s\n", name);
             for (pos = 0; pos < nframe; ++pos) {
                 double tip;
                 double tfp;
@@ -106,14 +100,13 @@ int main(int argc, char *argv[])
                 printchannel(channel, tip + tfp);
                 XLALFrameUFrChanFree(channel);
             }
-            if (--nchan)
-                fputs(GS, stdout);
         }
 
         for (chan = 0; chan < nproc; ++chan) {
             LALFrameUFrChan *channel;
             const char *name;
             name = XLALFrameUFrTOCQueryProcName(toc, chan);
+            printf("#%s\n", name);
             for (pos = 0; pos < nframe; ++pos) {
                 double tip;
                 double tfp;
@@ -122,8 +115,6 @@ int main(int argc, char *argv[])
                 printchannel(channel, tip + tfp);
                 XLALFrameUFrChanFree(channel);
             }
-            if (--nchan)
-                fputs(GS, stdout);
         }
 
         XLALFrameUFrTOCFree(toc);
@@ -132,7 +123,6 @@ int main(int argc, char *argv[])
 
     return 0;
 }
-
 
 int printchannel(LALFrameUFrChan * channel, double t0)
 {
@@ -145,6 +135,8 @@ int printchannel(LALFrameUFrChan * channel, double t0)
 
     if (!channel)
         return -1;
+
+    XLALFrameUFrChanVectorExpand(channel);
 
     /* name = XLALFrameUFrChanQueryName(channel); */
     t0 += XLALFrameUFrChanQueryTimeOffset(channel);
@@ -170,7 +162,7 @@ int printval(void *data, size_t i, int dtype)
 {
     switch (dtype) {
     case LAL_FRAMEU_FR_VECT_C:
-        return printf("%c", ((char *) data)[i]);
+        return printf("%c", ((char *)data)[i]);
     case LAL_FRAMEU_FR_VECT_2S:
         return printf("%" PRIi16, ((int16_t *) data)[i]);
     case LAL_FRAMEU_FR_VECT_4S:
@@ -186,15 +178,17 @@ int printval(void *data, size_t i, int dtype)
     case LAL_FRAMEU_FR_VECT_8U:
         return printf("%" PRIu64, ((uint64_t *) data)[i]);
     case LAL_FRAMEU_FR_VECT_4R:
-        return printf("%e", (double) ((float *) data)[i]);
+        return printf("%e", (double)((float *)data)[i]);
     case LAL_FRAMEU_FR_VECT_8R:
-        return printf("%e", ((double *) data)[i]);
+        return printf("%e", ((double *)data)[i]);
     case LAL_FRAMEU_FR_VECT_8C:
-        return printf("(%e,%e)", (double) ((float *) data)[2 * i], (double) ((float *) data)[2 * i + 1]);
+        return printf("(%e,%e)", (double)((float *)data)[2 * i],
+            (double)((float *)data)[2 * i + 1]);
     case LAL_FRAMEU_FR_VECT_16C:
-        return printf("(%e,%e)", ((float *) data)[2 * i], ((float *) data)[2 * i + 1]);
+        return printf("(%e,%e)", ((float *)data)[2 * i],
+            ((float *)data)[2 * i + 1]);
     case LAL_FRAMEU_FR_VECT_STRING:
-        return printf("%s", ((char **) data)[i]);
+        return printf("%s", ((char **)data)[i]);
     default:
         break;
     }

@@ -34,14 +34,15 @@ extern "C" {
  *
  * \brief Generates random numbers.
  *
- * \heading{Synopsis}
+ * ### Synopsis ###
+ *
  * \code
  * #include <lal/Random.h>
  * \endcode
  *
  * This header covers the routines for generating random numbers.
  *
-*/
+ */
 /*@{*/
 
 /**\name Error Codes */
@@ -73,7 +74,8 @@ extern "C" {
 #define RANDOMH_MSGESEED "Improper seed value"
 /** \endcond */
 
-/** \ingroup Random_h
+/**
+ * \ingroup Random_h
  * \brief This structure contains the parameters necessary for generating the current
  * sequence of random numbers (based on the initial seed).
  * \note The contents should not be manually adjusted.

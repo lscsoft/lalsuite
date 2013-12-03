@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2012 Chris Pankow
+ *  Copyright (C) 2012 Chris Pankow, Evan Ochsner
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -18,139 +18,83 @@
  */
 
 /**
- *
  * \author Chris Pankow
  *
  * \file
  *
- * \brief Testing constant precession code on IMRPhenomB waveform.
- *
- * */
+ * \brief Testing constant precession code on TaylorT1 waveform.
+ */
 
 
 #include <lal/LALSimInspiralPrecess.h>
 
 int main(void){
-		lalDebugLevel=7;
 
 		FILE* h_ref = fopen("h_ref.txt", "w");
 		FILE* h_rot = fopen("h_rot.txt", "w");
+		REAL8TimeSeries *hp = NULL, *hx = NULL;
 
 		int ret;
 		unsigned int i;
 		
-		// Get waveform
-		double m1 = 5.0*LAL_MSUN_SI, m2 = 5.0*LAL_MSUN_SI;
-		double s1x = 0.0, s1y = 0.0, s1z = 0.0;
-		double s2x = 0.0, s2y = 0.0, s2z = 0.0;
-		double f_min = 40.0, f_ref = 40.0, dist = 1e6*LAL_PC_SI, inc = LAL_PI;
-		double lambda1 = 0.0, lambda2 = 0.0;
-		double phi = 0.0, dt = 1/16384.0;
-		LALSimInspiralWaveformFlags *waveFlags = XLALSimInspiralCreateWaveformFlags();
-		int amplitudeOrder = 0, phaseOrder = 7;
-		Approximant approximant = IMRPhenomB;
+		// Waveform parameters
+		REAL8 m1 = 2.0*LAL_MSUN_SI, m2 = 5.0*LAL_MSUN_SI;
+		REAL8 f_min = 40.0, f_ref = 0., dist = 1e6*LAL_PC_SI;
+		REAL8 lambda1 = 0.0, lambda2 = 0.0;
+		REAL8 phi = 0.0, dt = 1/16384.0;
+		REAL8 inclination = LAL_PI_4, psi = 0.;
+		LALSimInspiralWaveformFlags *waveFlags = NULL;
+		LALSimInspiralTestGRParam *nonGRparams = NULL;
+		int Lmax = 5, amplitudeOrder = -1, phaseOrder = -1;
+		Approximant approximant = TaylorT1;
 
-		double view_th = 0.0, view_ph = 0.0;
-		double Y_2_m2 = XLALSpinWeightedSphericalHarmonic( view_th + LAL_PI, view_ph, -2, 2, -2), Y_22 = XLALSpinWeightedSphericalHarmonic( view_th, view_ph, -2, 2, 2);
+		// Parameters define a constant precession cone
+		REAL8 precess_freq = 10.; // Freq. of L's motion about cone (Hz)
+		REAL8 cone_opening = LAL_PI_4; // Opening angle of precession cone
+		REAL8 cone_azimuth = 0.; // Initial azimuthal angle of L on its cone
+		REAL8 J_azimuth = 0.;//azimuth btwn center of cone (J) and line of sight
+		REAL8 J_zenith = inclination; // zenith angle btwn J and line of sight
 
-		REAL8TimeSeries *hp, *hx;
-		hp = NULL; hx = NULL;
-
-		ret = XLALSimInspiralChooseTDWaveform(
-			&hp, &hx,
+		// Generate all available waveform modes
+		SphHarmTimeSeries *ts = XLALSimInspiralChooseTDModes(
 			phi, dt,
 			m1, m2,
-			s1x, s1y, s1z,
-			s2x, s2y, s2z,
 			f_min, f_ref, 
-			dist, inc,
+			dist,
 			lambda1, lambda2,
 			waveFlags,
-			NULL, // non-GR params
+			nonGRparams,
 			amplitudeOrder, phaseOrder,
+			Lmax,
 			approximant
 		);
-        if( ret != XLAL_SUCCESS )
-            XLAL_ERROR( XLAL_EFUNC );
 
-		COMPLEX16TimeSeries *h_22, *h_2_2;
-		h_22 = NULL; h_2_2 = NULL;
-		// Initialize the h_lm REAL8 vectors
-		h_2_2 = XLALCreateCOMPLEX16TimeSeries( 
-			"h_{2-2}",
-			&(hp->epoch),
-			hp->f0,
-			hp->deltaT,
-			&(hp->sampleUnits),
-			hp->data->length
-		);
+		// Generate the unrotated polarizations from the modes
+		ret = XLALSimInspiralPolarizationsFromSphHarmTimeSeries(&hp, &hx, ts,
+				inclination, psi);
+		if( ret != XLAL_SUCCESS ) XLAL_ERROR( XLAL_EFUNC );
 
-		// Define h_{2-2}
-		for( i=0; i< hp->data->length; i++ ){
-			h_2_2->data->data[i] = (hp->data->data[i] + 1I * hx->data->data[i]) / Y_2_m2;
-		}
-
-		XLALDestroyREAL8TimeSeries( hp );
-		XLALDestroyREAL8TimeSeries( hx );
-		hp = NULL; hx = NULL;
-
-		inc=0;  // +z axis
-		ret = XLALSimInspiralChooseTDWaveform(
-			&hp, &hx,
-			phi, dt,
-			m1, m2,
-			s1x, s1y, s1z,
-			s2x, s2y, s2z,
-			f_min, f_ref,
-			dist, inc,
-			lambda1, lambda2,
-			waveFlags,
-			NULL, // non-GR params
-			amplitudeOrder, phaseOrder,
-			approximant
-		);
-        if( ret != XLAL_SUCCESS )
-            XLAL_ERROR( XLAL_EFUNC );
-
-
-		// Initialize the h_lm REAL8 vectors
-		h_22 = XLALCreateCOMPLEX16TimeSeries( 
-			"h_{22}",
-			&(hp->epoch),
-			hp->f0,
-			hp->deltaT,
-			&(hp->sampleUnits),
-			hp->data->length
-		);
-
-		// Define h_{22}
-		for( i=0; i< hp->data->length; i++ ){
-			h_22->data->data[i] = (hp->data->data[i] + 1I * hx->data->data[i]) / Y_22;
-		}
-
-		// Write out reference waveform
-        REAL8 t0 = XLALGPSGetREAL8(&(hp->epoch));
+		// Write out unrotated polarizations
+		REAL8 t0 = XLALGPSGetREAL8(&(hp->epoch));
 		for(i=0; i<hp->data->length; i++)
-			fprintf( h_ref, "%g %g %g\n", t0 + i * hp->deltaT,
-                    hp->data->data[i], hx->data->data[i] );
+			fprintf( h_ref, "%.16g %.16g %.16g\n", t0 + i * hp->deltaT,
+					hp->data->data[i], hx->data->data[i] );
 
-		XLALSimInspiralDestroyWaveformFlags( waveFlags );
-
+		// Transform waveform so L moves on a constant precession cone
 		ret = XLALSimInspiralConstantPrecessionConeWaveform(
 				&hp, &hx,
-				h_2_2, h_22, 
-				10, LAL_PI/4, 0,
-				0, LAL_PI/4 );
-        if( ret != XLAL_SUCCESS )
-            XLAL_ERROR( XLAL_EFUNC );
+				ts,
+				precess_freq,
+				cone_opening, cone_azimuth,
+				J_azimuth, J_zenith );
+        if( ret != XLAL_SUCCESS ) XLAL_ERROR( XLAL_EFUNC );
 
-		//XLALDestroyCOMPLEX16TimeSeries( h_22 );
-		//XLALDestroyCOMPLEX16TimeSeries( h_2_2 );
+		XLALDestroySphHarmTimeSeries( ts );
 
 		// Write out rotated waveform
 		for(i=0; i<hp->data->length; i++)
-			fprintf( h_rot, "%g %g %g\n", t0 + i * hp->deltaT,
-                    hp->data->data[i], hx->data->data[i] );
+			fprintf( h_rot, "%.16g %.16g %.16g\n", t0 + i * hp->deltaT,
+					hp->data->data[i], hx->data->data[i] );
 
 		// We're done.
 		XLALDestroyREAL8TimeSeries( hp );

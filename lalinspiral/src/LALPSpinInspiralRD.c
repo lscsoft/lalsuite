@@ -19,12 +19,12 @@
 */
 
 /**
-\file
-\ingroup LALInspiral_h
-
+ * \file
+ * \ingroup LALInspiral_h
+ *
  * \brief Module to generate generic spinning binaries waveforms complete with ring-down
  *
- * \heading{Prototypes}
+ * ### Prototypes ###
  *
  * <tt>LALPSpinInspiralRD()</tt>
  * <dl>
@@ -33,7 +33,6 @@
  * <dt>params:</dt><dd> Input containing binary chirp parameters.</dd>
  * </dl>
  *
- *
  * <tt>LALPSpinInspiralRDTemplates()</tt>
  * <dl>
  * <dt>status:</dt><dd>Input/Output
@@ -41,7 +40,6 @@
  * <dt>signalvec2:</dt><dd>Output containing the \f$\times\f$ inspiral waveform.</dd>
  * <dt>params:</dt><dd>Input containing binary chirp parameters.</dd>
  * </dl>
- *
  *
  * <tt>LALPSpinInspiralRDInjection()</tt>
  * <dl>
@@ -57,7 +55,8 @@
  * <dt>params:</dt><dd>Input containing binary chirp parameters.</dd>
  * </dl>
  *
- * \heading{Description}
+ * ### Description ###
+ *
  * This codes provide complete waveforms for generically spinning binary systems.
  * In order to construct the waveforms three phases are joined together:
  * an initial inspiral phase, a phenomenological phase encompassing the description
@@ -71,9 +70,11 @@
  * ensure continuity of the phase, the frequency and its first and second
  * derivatives. Finally a ring-down phase is attached.
  *
- * \heading{Algorithm}
+ * ### Algorithm ###
  *
- * \heading{Uses}
+ *
+ * ### Uses ###
+ *
  * \code
  * LALPSpinInspiralRDderivatives()
  * LALInspiralSetup()
@@ -90,11 +91,12 @@
  * XLALSpinInspiralFillH4Modes()
  * \endcode
  *
- * \heading{Notes}
+ * ### Notes ###
  *
-*/
+ */
 
-/** \defgroup psird Complete phenomenological spin-inspiral waveforms
+/**
+ * \defgroup psird Complete phenomenological spin-inspiral waveforms
  * \ingroup ch_inspiral
  *
  * This code provides complete waveforms for generically spinning binary
@@ -102,7 +104,6 @@
  *
  */
 
-#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/LALPSpinInspiralRD.h>
 #include <lal/LALAdaptiveRungeKutta4.h>
 
@@ -2767,7 +2768,7 @@ static int XLALPSpinInspiralRDEngine(
 	XLAL_ERROR(XLAL_EFAILED);
       }
 
-      omegaRD = modefreqs->data[0].re * unitHz / LAL_PI / 2.;
+      omegaRD = crealf(modefreqs->data[0]) * unitHz / LAL_PI / 2.;
       frOmRD = fracRD(phenPars.LNhS1,phenPars.LNhS2,phenPars.S1S1,phenPars.S1S2,phenPars.S2S2)*omegaRD;
 
       v     = cbrt(om);
@@ -3037,8 +3038,8 @@ static int XLALPSpinInspiralRDEngine(
     x1 = h2P2->data[2 * i + 1];
     x2 = h2M2->data[2 * i];
     x3 = h2M2->data[2 * i + 1];
-    sigp->data[i] +=   x0 * MultSphHarmP.re - x1 * MultSphHarmP.im + x2 * MultSphHarmM.re - x3 * MultSphHarmM.im;
-    sigc->data[i] += - x0 * MultSphHarmP.im - x1 * MultSphHarmP.re - x2 * MultSphHarmM.im - x3 * MultSphHarmM.re;
+    sigp->data[i] +=   x0 * creal(MultSphHarmP) - x1 * cimag(MultSphHarmP) + x2 * creal(MultSphHarmM) - x3 * cimag(MultSphHarmM);
+    sigc->data[i] += - x0 * cimag(MultSphHarmP) - x1 * creal(MultSphHarmP) - x2 * cimag(MultSphHarmM) - x3 * creal(MultSphHarmM);
   }
 
   errcode  = XLALSphHarm(&MultSphHarmP, 2, 1, inc, 0.);
@@ -3053,8 +3054,8 @@ static int XLALPSpinInspiralRDEngine(
       x1 = h2P1->data[2 * i + 1];
       x2 = h2M1->data[2 * i];
       x3 = h2M1->data[2 * i + 1];
-      sigp->data[i] +=   x0 * MultSphHarmP.re - x1 * MultSphHarmP.im + x2 * MultSphHarmM.re - x3 * MultSphHarmM.im;
-      sigc->data[i] += - x0 * MultSphHarmP.im - x1 * MultSphHarmP.re - x2 * MultSphHarmM.im - x3 * MultSphHarmM.re;
+      sigp->data[i] +=   x0 * creal(MultSphHarmP) - x1 * cimag(MultSphHarmP) + x2 * creal(MultSphHarmM) - x3 * cimag(MultSphHarmM);
+      sigc->data[i] += - x0 * cimag(MultSphHarmP) - x1 * creal(MultSphHarmP) - x2 * cimag(MultSphHarmM) - x3 * creal(MultSphHarmM);
     }
   }
 
@@ -3066,8 +3067,8 @@ static int XLALPSpinInspiralRDEngine(
     for (i = 0; i < length; i++) {
       x0 = h20->data[2 * i];
       x1 = h20->data[2 * i + 1];
-      sigp->data[i] += x1 * MultSphHarmP.re - x1 * MultSphHarmP.im;
-      sigc->data[i] -= x1 * MultSphHarmP.im + x1 * MultSphHarmP.re;
+      sigp->data[i] += x1 * creal(MultSphHarmP) - x1 * cimag(MultSphHarmP);
+      sigc->data[i] -= x1 * cimag(MultSphHarmP) + x1 * creal(MultSphHarmP);
     }
   }
 
@@ -3084,8 +3085,8 @@ static int XLALPSpinInspiralRDEngine(
       x1 = h3P3->data[2 * i + 1];
       x2 = h3M3->data[2 * i];
       x3 = h3M3->data[2 * i + 1];
-      sigp->data[i] += x0 * MultSphHarmP.re - x1 * MultSphHarmP.im + x2 * MultSphHarmM.re - x3 * MultSphHarmM.im;
-      sigc->data[i] -= x0 * MultSphHarmP.im + x1 * MultSphHarmP.re + x2 * MultSphHarmM.im + x3 * MultSphHarmM.re;
+      sigp->data[i] += x0 * creal(MultSphHarmP) - x1 * cimag(MultSphHarmP) + x2 * creal(MultSphHarmM) - x3 * cimag(MultSphHarmM);
+      sigc->data[i] -= x0 * cimag(MultSphHarmP) + x1 * creal(MultSphHarmP) + x2 * cimag(MultSphHarmM) + x3 * creal(MultSphHarmM);
     }
   }
 
@@ -3101,8 +3102,8 @@ static int XLALPSpinInspiralRDEngine(
       x1 = h3P2->data[2 * i + 1];
       x2 = h3M2->data[2 * i];
       x3 = h3M2->data[2 * i + 1];
-      sigp->data[i] += x0 * MultSphHarmP.re - x1 * MultSphHarmP.im + x2 * MultSphHarmM.re - x3 * MultSphHarmM.im;
-      sigc->data[i] -= x0 * MultSphHarmP.im + x1 * MultSphHarmP.re + x2 * MultSphHarmM.im + x3 * MultSphHarmM.re;
+      sigp->data[i] += x0 * creal(MultSphHarmP) - x1 * cimag(MultSphHarmP) + x2 * creal(MultSphHarmM) - x3 * cimag(MultSphHarmM);
+      sigc->data[i] -= x0 * cimag(MultSphHarmP) + x1 * creal(MultSphHarmP) + x2 * cimag(MultSphHarmM) + x3 * creal(MultSphHarmM);
     }
   }
 
@@ -3118,8 +3119,8 @@ static int XLALPSpinInspiralRDEngine(
       x1 = h3P1->data[2 * i + 1];
       x2 = h3M1->data[2 * i];
       x3 = h3M1->data[2 * i + 1];
-      sigp->data[i] += x0 * MultSphHarmP.re - x1 * MultSphHarmP.im + x2 * MultSphHarmM.re - x3 * MultSphHarmM.im;
-      sigc->data[i] -= x0 * MultSphHarmP.im + x1 * MultSphHarmP.re + x2 * MultSphHarmM.im + x3 * MultSphHarmM.re;
+      sigp->data[i] += x0 * creal(MultSphHarmP) - x1 * cimag(MultSphHarmP) + x2 * creal(MultSphHarmM) - x3 * cimag(MultSphHarmM);
+      sigc->data[i] -= x0 * cimag(MultSphHarmP) + x1 * creal(MultSphHarmP) + x2 * cimag(MultSphHarmM) + x3 * creal(MultSphHarmM);
     }
   }
 
@@ -3131,8 +3132,8 @@ static int XLALPSpinInspiralRDEngine(
     for (i = 0; i < length; i++) {
       x0 = h30->data[2 * i];
       x1 = h30->data[2 * i + 1];    
-      sigp->data[i] += x0 * MultSphHarmP.re - x1 * MultSphHarmM.im;
-      sigc->data[i] -= x0 * MultSphHarmP.im + x1 * MultSphHarmP.re;
+      sigp->data[i] += x0 * creal(MultSphHarmP) - x1 * cimag(MultSphHarmM);
+      sigc->data[i] -= x0 * cimag(MultSphHarmP) + x1 * creal(MultSphHarmP);
     }
   }
 
@@ -3148,8 +3149,8 @@ static int XLALPSpinInspiralRDEngine(
       x1 = h4P4->data[2 * i + 1];
       x2 = h4P4->data[2 * i];
       x3 = h4M4->data[2 * i + 1];
-      sigp->data[i] += x0 * MultSphHarmP.re - x1 * MultSphHarmP.im + x2 * MultSphHarmM.re - x3 * MultSphHarmM.im;
-      sigc->data[i] -= x0 * MultSphHarmP.im + x1 * MultSphHarmP.re + x2 * MultSphHarmM.im + x3 * MultSphHarmM.re;
+      sigp->data[i] += x0 * creal(MultSphHarmP) - x1 * cimag(MultSphHarmP) + x2 * creal(MultSphHarmM) - x3 * cimag(MultSphHarmM);
+      sigc->data[i] -= x0 * cimag(MultSphHarmP) + x1 * creal(MultSphHarmP) + x2 * cimag(MultSphHarmM) + x3 * creal(MultSphHarmM);
     }
   }
 
@@ -3165,8 +3166,8 @@ static int XLALPSpinInspiralRDEngine(
       x1 = h4P3->data[2 * i + 1];
       x2 = h4M3->data[2 * i];
       x3 = h4M3->data[2 * i + 1];
-      sigp->data[i] += x0 * MultSphHarmP.re - x1 * MultSphHarmP.im + x2 * MultSphHarmM.re - x3 * MultSphHarmM.im;
-      sigc->data[i] -= x0 * MultSphHarmP.im + x1 * MultSphHarmP.re + x2 * MultSphHarmM.im + x3 * MultSphHarmM.re;
+      sigp->data[i] += x0 * creal(MultSphHarmP) - x1 * cimag(MultSphHarmP) + x2 * creal(MultSphHarmM) - x3 * cimag(MultSphHarmM);
+      sigc->data[i] -= x0 * cimag(MultSphHarmP) + x1 * creal(MultSphHarmP) + x2 * cimag(MultSphHarmM) + x3 * creal(MultSphHarmM);
     }
   }
 
@@ -3182,8 +3183,8 @@ static int XLALPSpinInspiralRDEngine(
       x1 = h4P2->data[2 * i + 1];
       x2 = h4M2->data[2 * i];
       x3 = h4M2->data[2 * i + 1];
-      sigp->data[i] += x0 * MultSphHarmP.re - x1 * MultSphHarmP.im + x2 * MultSphHarmM.re - x3 * MultSphHarmM.im;
-      sigc->data[i] -= x0 * MultSphHarmP.im + x1 * MultSphHarmP.re + x2 * MultSphHarmM.im + x3 * MultSphHarmM.re;
+      sigp->data[i] += x0 * creal(MultSphHarmP) - x1 * cimag(MultSphHarmP) + x2 * creal(MultSphHarmM) - x3 * cimag(MultSphHarmM);
+      sigc->data[i] -= x0 * cimag(MultSphHarmP) + x1 * creal(MultSphHarmP) + x2 * cimag(MultSphHarmM) + x3 * creal(MultSphHarmM);
     }
   }
 
@@ -3199,8 +3200,8 @@ static int XLALPSpinInspiralRDEngine(
       x1 = h4P1->data[2 * i + 1];
       x2 = h4M1->data[2 * i];
       x3 = h4M1->data[2 * i + 1];
-      sigp->data[i] += x0 * MultSphHarmP.re - x1 * MultSphHarmP.im + x2 * MultSphHarmM.re - x3 * MultSphHarmM.im;
-      sigc->data[i] -= x0 * MultSphHarmP.im + x1 * MultSphHarmP.re + x2 * MultSphHarmM.im + x3 * MultSphHarmM.re;
+      sigp->data[i] += x0 * creal(MultSphHarmP) - x1 * cimag(MultSphHarmP) + x2 * creal(MultSphHarmM) - x3 * cimag(MultSphHarmM);
+      sigc->data[i] -= x0 * cimag(MultSphHarmP) + x1 * creal(MultSphHarmP) + x2 * cimag(MultSphHarmM) + x3 * creal(MultSphHarmM);
     }
   }
 
@@ -3212,8 +3213,8 @@ static int XLALPSpinInspiralRDEngine(
     for (i = 0; i < length; i++) {
       x0 = h40->data[2 * i];
       x1 = h40->data[2 * i + 1];
-      sigp->data[i] += x0 * MultSphHarmP.re - x1 * MultSphHarmP.im;
-      sigc->data[i] -= x0 * MultSphHarmP.im + x1 * MultSphHarmP.re;
+      sigp->data[i] += x0 * creal(MultSphHarmP) - x1 * cimag(MultSphHarmP);
+      sigc->data[i] -= x0 * cimag(MultSphHarmP) + x1 * creal(MultSphHarmP);
     }
   }
 

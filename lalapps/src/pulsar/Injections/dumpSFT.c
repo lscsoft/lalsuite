@@ -21,17 +21,17 @@
 /**
  * \author Reinhard Prix
  * \date 2005
- * \file 
+ * \file
  * \ingroup pulsarApps
  * \brief Code to dump various SFT-info in human-readable form to stdout.
  */
 
 /* ---------- includes ---------- */
-#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lalapps.h>
 
 #include <lal/UserInput.h>
 #include <lal/SFTfileIO.h>
+#include <lal/SFTutils.h>
 #include "sft_extra.h"
 
 /** \name Error codes */
@@ -90,13 +90,9 @@ main(int argc, char *argv[])
   SFTVector *sfts = NULL;
   UINT4 i;
 
-  lalDebugLevel = 0;
 
   /* set LAL error-handler */
   lal_errhandler = LAL_ERR_EXIT;	/* exit with returned status-code on error */
-  
-  /* set debug level */
-  LAL_CALL (LALGetDebugLevel (&status, argc, argv, 'v'), &status);
 
   /* register all user-variables */
   LAL_CALL (initUserVars (&status), &status);	  
@@ -144,7 +140,7 @@ main(int argc, char *argv[])
 	  SFTtype *sft = &(sfts->data[i]);;
 	  if ( ! uvar_noHeader ) printf (" Frequency_Hz     Real           Imaginary \n");
 	  for ( k=0; k < sft->data->length; k ++ )
-	    printf ( "%.9f      % 6e  % 6e  \n", sft->f0 + k * sft->deltaF, sft->data->data[k].re, sft->data->data[k].im );
+	    printf ( "%.9f      % 6e  % 6e  \n", sft->f0 + k * sft->deltaF, crealf(sft->data->data[k]), cimagf(sft->data->data[k]) );
 	  
 	  printf ("\n");
 	  

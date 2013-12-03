@@ -7,8 +7,7 @@ pkginclude_HEADERS = \
 	EllipsoidOverlapTools.h \
 	FlatLatticeTiling.h \
 	FrequencySeries.h \
-	LALBarycenter.h \
-	LALCalibration.h \
+	LALCosmologyCalculator.h \
 	LALDetectors.h \
 	ResampleTimeSeries.h \
 	Segments.h \

@@ -53,7 +53,6 @@ int main( int argc, char *argv[] )
   LALDetectorPair     detectors;
 
   lal_errhandler = LAL_ERR_EXIT;
-  set_debug_level( "1" );
 
   olapredfcn_parse_options( argc, argv );
 

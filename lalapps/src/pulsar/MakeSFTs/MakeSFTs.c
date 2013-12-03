@@ -83,8 +83,8 @@ int main(void) {fputs("disabled, no gsl or no lal frame library support.\n", std
 #include <lal/LALStdio.h>
 #include <lal/FileIO.h>
 #include <lal/AVFactories.h>
-#include <lal/FrameCache.h>
-#include <lal/FrameStream.h>
+#include <lal/LALCache.h>
+#include <lal/LALFrStream.h>
 #include <lal/Window.h>
 #include <lal/Calibration.h>
 #include <lal/LALConstants.h>
@@ -96,6 +96,7 @@ int main(void) {fputs("disabled, no gsl or no lal frame library support.\n", std
 #include <lal/RealFFT.h>
 #include <lal/ComplexFFT.h>
 #include <lal/SFTfileIO.h>
+#include <lal/SFTutils.h>
 
 #ifdef PSS_ENABLED
 #include <XLALPSSInterface.h>
@@ -164,9 +165,8 @@ REAL8 DF = 2000.0; /* default band */
 REAL8 winFncRMS = 1.0; /* 10/05/12 gam; global variable with the RMS of the window function; default value is 1.0 */
 
 static LALStatus status;
-INT4 lalDebugLevel=0;        /* 11/02/05 gam; changed from 3 to 0. */
-FrCache *framecache;         /* frame reading variables */
-FrStream *framestream=NULL;
+LALCache *framecache;         /* frame reading variables */
+LALFrStream *framestream=NULL;
 
 REAL8TimeSeries dataDouble;
 REAL4TimeSeries dataSingle;
@@ -487,12 +487,10 @@ int main(int argc,char *argv[])
   SegmentDuration = CommandLineArgs.GPSEnd - CommandLineArgs.GPSStart ;
 
   /* create Frame cache, open frame stream and delete frame cache */
-  LALFrCacheImport(&status,&framecache,CommandLineArgs.FrCacheFile);
-  TESTSTATUS( &status );
+  framecache = XLALCacheImport(CommandLineArgs.FrCacheFile);
   LALFrCacheOpen(&status,&framestream,framecache);
   TESTSTATUS( &status );
-  LALDestroyFrCache(&status,&framecache);
-  TESTSTATUS( &status );
+  XLALDestroyCache(framecache);
 
   #if TRACKMEMUSE
     printf("Memory use after reading command line arguments and reading frame cache:\n"); printmemuse();
@@ -1681,12 +1679,12 @@ int CreateSFT(struct CommandLineArgsTag CLA)
 #ifdef PSS_ENABLED
 
 /**
-  returns
-  -1 if out of memory
-  -2 if some computation failes
-  -3 if input parameters are invalid
-   0 otherwise (all went well)
-*/
+ * returns
+ * -1 if out of memory
+ * -2 if some computation failes
+ * -3 if input parameters are invalid
+ * 0 otherwise (all went well)
+ */
 int PSSTDCleaningREAL8(REAL8TimeSeries *LALTS, REAL4 highpassFrequency, INT4 extendTimeseries) {
   UINT4 samples;                /**< number of samples in the timeseries */
   PSSTimeseries *originalTS;    /**< the timeseries converted to a PSS timeseries */
@@ -1924,9 +1922,9 @@ int WriteSFT(struct CommandLineArgsTag CLA)
     for (k=0; k<header.nsamples; k++)
     {
       rpw=((REAL4)(((REAL8)DF)/(0.5*(REAL8)(1/dataSingle.deltaT))))
-	* fftDataSingle->data[k+firstbin].re;
+	* crealf(fftDataSingle->data[k+firstbin]);
       ipw=((REAL4)(((REAL8)DF)/(0.5*(REAL8)(1/dataSingle.deltaT))))
-	* fftDataSingle->data[k+firstbin].im;
+	* cimagf(fftDataSingle->data[k+firstbin]);
       /* 06/26/07 gam; use finite to check that data does not contains a non-FINITE (+/- Inf, NaN) values */
       #if CHECKFORINFINITEANDNANS
         if (!finite(rpw) || !finite(ipw)) {
@@ -1950,9 +1948,9 @@ int WriteSFT(struct CommandLineArgsTag CLA)
     for (k=0; k<header.nsamples; k++)
     {
       rpw=(((REAL8)DF)/(0.5*(REAL8)(1/dataDouble.deltaT))) 
-	* fftDataDouble->data[k+firstbin].re;
+	* creal(fftDataDouble->data[k+firstbin]);
       ipw=(((REAL8)DF)/(0.5*(REAL8)(1/dataDouble.deltaT))) 
-	* fftDataDouble->data[k+firstbin].im;
+	* cimag(fftDataDouble->data[k+firstbin]);
       /* 06/26/07 gam; use finite to check that data does not contains a non-FINITE (+/- Inf, NaN) values */
       #if CHECKFORINFINITEANDNANS
         if (!finite(rpw) || !finite(ipw)) {
@@ -2063,11 +2061,11 @@ int WriteVersion2SFT(struct CommandLineArgsTag CLA)
     singleDeltaT = (REAL4)(dataSingle.deltaT/winFncRMS); /* include 1 over window function RMS */
     for (k=0; k<nBins; k++)
     {
-      oneSFT->data->data[k].re = singleDeltaT*fftDataSingle->data[k+firstbin].re;
-      oneSFT->data->data[k].im = singleDeltaT*fftDataSingle->data[k+firstbin].im;
+      oneSFT->data->data[k].realf_FIXME = singleDeltaT*crealf(fftDataSingle->data[k+firstbin]);
+      oneSFT->data->data[k].imagf_FIXME = singleDeltaT*cimagf(fftDataSingle->data[k+firstbin]);
       /* 06/26/07 gam; use finite to check that data does not contains a non-FINITE (+/- Inf, NaN) values */
       #if CHECKFORINFINITEANDNANS
-        if (!finite(oneSFT->data->data[k].re) || !finite(oneSFT->data->data[k].im)) {
+        if (!finite(crealf(oneSFT->data->data[k])) || !finite(cimagf(oneSFT->data->data[k]))) {
           fprintf(stderr, "Infinite or NaN data at freq bin %d.\n", k);
           return 7;
         }
@@ -2086,11 +2084,11 @@ int WriteVersion2SFT(struct CommandLineArgsTag CLA)
     doubleDeltaT = (REAL8)(dataDouble.deltaT/winFncRMS); /* include 1 over window function RMS */
     for (k=0; k<nBins; k++)
     {
-      oneSFT->data->data[k].re = doubleDeltaT*fftDataDouble->data[k+firstbin].re;
-      oneSFT->data->data[k].im = doubleDeltaT*fftDataDouble->data[k+firstbin].im;
+      oneSFT->data->data[k].realf_FIXME = doubleDeltaT*creal(fftDataDouble->data[k+firstbin]);
+      oneSFT->data->data[k].imagf_FIXME = doubleDeltaT*cimag(fftDataDouble->data[k+firstbin]);
       /* 06/26/07 gam; use finite to check that data does not contains a non-FINITE (+/- Inf, NaN) values */
       #if CHECKFORINFINITEANDNANS
-        if (!finite(oneSFT->data->data[k].re) || !finite(oneSFT->data->data[k].im)) {
+        if (!finite(crealf(oneSFT->data->data[k])) || !finite(cimagf(oneSFT->data->data[k]))) {
           fprintf(stderr, "Infinite or NaN data at freq bin %d.\n", k);
           return 7;
         }

@@ -346,7 +346,7 @@ extern "C" {
 /*----------------------------------------------------------------------*/
 /* some local defines */
 
-#define EPHEM_YEARS  "00-04"
+#define EPHEM_YEARS  "00-19-DE405"
 #define SFT_BNAME  "SFT"
 
 #ifndef TRUE 
@@ -423,7 +423,7 @@ int BOINC_ERR_EXIT(LALStatus  *stat, const char *func, const char *file, const i
 }
 #endif
 
-/** 
+/**
  * MAIN function of ComputeFStatistic code.
  * Calculate the F-statistic over a given portion of the parameter-space
  * and write a list of 'candidates' into a file(default: 'Fstats').
@@ -473,7 +473,6 @@ int main(int argc,char *argv[])
   vrbflg = 1;   /* verbose error-messages */
 
   /* register all user-variable */
-  LAL_CALL (LALGetDebugLevel(status, argc, argv, 'v'), status);
   LAL_CALL (initUserVars(status), status);  
 
   /* we use lalDebugLevel for our logging */
@@ -483,7 +482,6 @@ int main(int argc,char *argv[])
   LogSetLevel ( lalDebugLevel - 1 );
 #endif
 
-  LogPrintf (LOG_NORMAL, "Started search at lalDebugLevel = %d\n", lalDebugLevel);
 
   debug_dump_commandline (argc, argv);
 
@@ -1175,7 +1173,7 @@ int main(int argc,char *argv[])
 } /* main() */
 
 
-/** 
+/**
  * Register all our "user-variables" that can be specified from cmd-line and/or config-file.
  * Here we set defaults for some user-variables and register them with the UserInput module.
  */
@@ -1386,10 +1384,10 @@ int EstimateSignalParameters(INT4 * maxIndex)
 
       irec=maxIndex[jrec];
 
-      A1 =  2.0*( B * Fstat.Fa[irec].re - C * Fstat.Fb[irec].re) / D;
-      A2 =  2.0*( A * Fstat.Fb[irec].re - C * Fstat.Fa[irec].re) / D;
-      A3 = - 2.0*( B * Fstat.Fa[irec].im - C * Fstat.Fb[irec].im) / D;
-      A4 = - 2.0*( A * Fstat.Fb[irec].im - C * Fstat.Fa[irec].im) / D;
+      A1 =  2.0*( B * creal(Fstat.Fa[irec]) - C * creal(Fstat.Fb[irec])) / D;
+      A2 =  2.0*( A * creal(Fstat.Fb[irec]) - C * creal(Fstat.Fa[irec])) / D;
+      A3 = - 2.0*( B * cimag(Fstat.Fa[irec]) - C * cimag(Fstat.Fb[irec])) / D;
+      A4 = - 2.0*( A * cimag(Fstat.Fb[irec]) - C * cimag(Fstat.Fa[irec])) / D;
 
 
 
@@ -1675,10 +1673,10 @@ int writeFaFb(INT4 *maxIndex, PulsarDopplerParams searchpos)
       /* Freqency, Re[Fa],Im[Fa],Re[Fb],Im[Fb], F */
       fprintf(fp,"%22.16f %22.12f %22.12f %22.12f %22.12f %22.12f\n",
               GV.spinRange.fkdot[0] + ind* DemodParams->df,
-              Fstat.Fa[ind].re/sqrt(GV.SFTno)*bias,
-              Fstat.Fa[ind].im/sqrt(GV.SFTno)*bias,
-              Fstat.Fb[ind].re/sqrt(GV.SFTno)*bias,
-              Fstat.Fb[ind].im/sqrt(GV.SFTno)*bias,
+              creal(Fstat.Fa[ind])/sqrt(GV.SFTno)*bias,
+              cimag(Fstat.Fa[ind])/sqrt(GV.SFTno)*bias,
+              creal(Fstat.Fb[ind])/sqrt(GV.SFTno)*bias,
+              cimag(Fstat.Fb[ind])/sqrt(GV.SFTno)*bias,
               Fstat.F[ind]*bias*bias);
 #endif
 
@@ -1926,11 +1924,12 @@ writeFLinesCS(INT4 *maxIndex, PulsarDopplerParams searchpos, FILE *fpOut, long*b
 } /* writeFLines() */
 
 
-/** Reads in data from SFT-files.
+/**
+ * Reads in data from SFT-files.
  *
- * This function reads in the SFTs from the list of files in \em ConfigVariables GV.filelist 
+ * This function reads in the SFTs from the list of files in \em ConfigVariables GV.filelist
  * or from merged SFTs in uvar_mergedSFTFile.  If user has specified --startTime or --endTime
- * The read SFT-data is stored in the global array \em SFTData and the timestamps 
+ * The read SFT-data is stored in the global array \em SFTData and the timestamps
  * of the SFTs are stored in the global array \em timestamps (both are allocated here).
  *
  * NOTE: this function is obsolete and should be replaced by the use of the SFT-IO lib in LAL.
@@ -2043,8 +2042,8 @@ int ReadSFTData(void)
       if (reverse_endian) {
         unsigned int cnt;
         for (cnt=0; cnt<ndeltaf; cnt++) {
-          swap4((char *)&(SFTData[filenum]->fft->data->data[cnt].re));
-          swap4((char *)&(SFTData[filenum]->fft->data->data[cnt].im));
+          swap4((char *)&(crealf(SFTData[filenum]->fft->data->data[cnt])));
+          swap4((char *)&(cimagf(SFTData[filenum]->fft->data->data[cnt])));
         }
       }
       
@@ -2065,7 +2064,8 @@ int ReadSFTData(void)
 
 } /* ReadSFTData() */
 
-/** Upsamples the SFT data
+/**
+ * Upsamples the SFT data
  *
  * This function upsamples the SFTs using the Dirichlet kernel
  *
@@ -2153,21 +2153,21 @@ int UpsampleSFTData(void)
 
 	      if (SFTIndex < 0 || SFTIndex > ndeltaf-1)
 		{
-		  Xalpha_k.re= Xalpha_k.im=0.0;
+		  Xalpha_k.realf_FIXME= Xalpha_k.imagf_FIXME=0.0;
 		}else{
 		Xalpha_k=SFTData[filenum]->fft->data->data[SFTIndex];
 	      }
 
 	      /* these four lines compute P*xtilde */
-	      realXP += Xalpha_k.re*realP;
-	      realXP -= Xalpha_k.im*imagP;
-	      imagXP += Xalpha_k.re*imagP;
-	      imagXP += Xalpha_k.im*realP;
+	      realXP += crealf(Xalpha_k)*realP;
+	      realXP -= cimagf(Xalpha_k)*imagP;
+	      imagXP += crealf(Xalpha_k)*imagP;
+	      imagXP += cimagf(Xalpha_k)*realP;
 	    }
      
 	  /* fill in the data here */
-	  UpSFTData[filenum]->fft->data->data[i].re= realXP;
-	  UpSFTData[filenum]->fft->data->data[i].im= imagXP;
+	  UpSFTData[filenum]->fft->data->data[i].realf_FIXME= realXP;
+	  UpSFTData[filenum]->fft->data->data[i].imagf_FIXME= imagXP;
 	  
 /*  	  fprintf(stdout,"%d %d %e %e\n", i, filenum, realXP, imagXP); */
 
@@ -2200,12 +2200,13 @@ int UpsampleSFTData(void)
 
 
 /*----------------------------------------------------------------------*/
-/** Do some basic initializations of the F-statistic code before starting the main-loop.
- * Things we do in this function: 
+/**
+ * Do some basic initializations of the F-statistic code before starting the main-loop.
+ * Things we do in this function:
  * \li prepare ephemeris-data and determine SFT input-files to be loaded
- * \li set some defaults + allocate memory 
+ * \li set some defaults + allocate memory
  * \li Return 'derived' configuration settings in the struct \em ConfigVariables
- * 
+ *
  */
 void
 InitFStat (LALStatus *status, ConfigVariables *cfg)
@@ -2753,7 +2754,8 @@ InitFStat (LALStatus *status, ConfigVariables *cfg)
 
 
 /*----------------------------------------------------------------------*/
-/** Some general consistency-checks on user-input.
+/**
+ * Some general consistency-checks on user-input.
  * Throws an error plus prints error-message if problems are found.
  */
 void
@@ -2877,7 +2879,8 @@ checkUserInputConsistency (LALStatus *lstat)
 
 
 /***********************************************************************/
-/** Log the all relevant parameters of the present search-run to a log-file.
+/**
+ * Log the all relevant parameters of the present search-run to a log-file.
  * The name of the log-file is "Fstats{uvar_outputLabel}.log".
  * <em>NOTE:</em> Currently this function only logs the user-input and code-versions.
  */
@@ -3117,15 +3120,16 @@ int compare(const void *ip, const void *jp)
 
 /*******************************************************************************/
 
-/** Print the values of (f,FF) above a certain threshold 
- * in 2F, called 2Fthr.  If there are more than ReturnMaxN of these, 
- * then it simply returns the top ReturnMaxN of them. If there are 
+/**
+ * Print the values of (f,FF) above a certain threshold
+ * in 2F, called 2Fthr.  If there are more than ReturnMaxN of these,
+ * then it simply returns the top ReturnMaxN of them. If there are
  * none, then it returns none.  It also returns some basic statisical
- * information about the distribution of 2F: the mean and standard 
+ * information about the distribution of 2F: the mean and standard
  * deviation.
- * Returns zero if all is well, else nonzero if a problem was encountered. 
- * Basic strategy: sort the array by values of F, then look at the 
- * top ones. Then search for the points above threshold. 
+ * Returns zero if all is well, else nonzero if a problem was encountered.
+ * Basic strategy: sort the array by values of F, then look at the
+ * top ones. Then search for the points above threshold.
  */
 INT4 PrintTopValues(REAL8 TwoFthr, INT4 ReturnMaxN, PulsarDopplerParams searchpos)
 {
@@ -3277,8 +3281,9 @@ INT4 PrintTopValues(REAL8 TwoFthr, INT4 ReturnMaxN, PulsarDopplerParams searchpo
 }
 
 
-/** Find outliers and then clusters in the F-statistic array over frequency. 
- * These clusters get written in the global highFLines. 
+/**
+ * Find outliers and then clusters in the F-statistic array over frequency.
+ * These clusters get written in the global highFLines.
  */
 void
 EstimateFLines(LALStatus *stat)
@@ -3484,9 +3489,10 @@ EstimateFLines(LALStatus *stat)
 
 } /* EstimateFLines() */
 
-/** Normalise the SFT-array \em SFTData by the running median.
- * The running median windowSize in this routine determines 
- * the sample bias which, instead of log(2.0), must be 
+/**
+ * Normalise the SFT-array \em SFTData by the running median.
+ * The running median windowSize in this routine determines
+ * the sample bias which, instead of log(2.0), must be
  * multiplied by F statistics.
  */
 void 
@@ -3536,8 +3542,8 @@ NormaliseSFTDataRngMdn(LALStatus *stat, INT4 windowSize)
       
       /* loop over SFT data to estimate noise */
       for (j=0;j<nbins;j++){
-        xre=SFTData[i]->fft->data->data[j].re;
-        xim=SFTData[i]->fft->data->data[j].im;
+        xre=crealf(SFTData[i]->fft->data->data[j]);
+        xim=cimagf(SFTData[i]->fft->data->data[j]);
         Sp->data[j]=((REAL8)xre)*((REAL8)xre)+((REAL8)xim)*((REAL8)xim);
       }
       
@@ -3576,12 +3582,12 @@ NormaliseSFTDataRngMdn(LALStatus *stat, INT4 windowSize)
       /*  also compute Sp1, average normalized PSD */
       /*  and the sum of the PSD in the band, SpSum */
       for (j=0;j<nbins;j++){
-        xre=SFTData[i]->fft->data->data[j].re;
-        xim=SFTData[i]->fft->data->data[j].im;
+        xre=crealf(SFTData[i]->fft->data->data[j]);
+        xim=cimagf(SFTData[i]->fft->data->data[j]);
         xreNorm=N[j]*xre; 
         ximNorm=N[j]*xim; 
-        SFTData[i]->fft->data->data[j].re = xreNorm;    
-        SFTData[i]->fft->data->data[j].im = ximNorm;
+        SFTData[i]->fft->data->data[j].realf_FIXME = xreNorm;    
+        SFTData[i]->fft->data->data[j].imagf_FIXME = ximNorm;
         Sp1[j]=Sp1[j]+xreNorm*xreNorm+ximNorm*ximNorm;
       }
       
@@ -3846,12 +3852,10 @@ int main(int argc, char *argv[])
       if ( 1 == fscanf(fp_debug, "%d", &read_int ) ) 
 	{
 	  LogPrintf (LOG_NORMAL, "...containing int: Setting lalDebugLevel -> %d\n", read_int );
-	  lalDebugLevel = read_int;
 	}
       else
 	{
 	  LogPrintf (LOG_NORMAL, "...with no parsable int: Setting lalDebugLevel -> 1\n");
-	  lalDebugLevel = 1;
 	}
       fclose (fp_debug);
 
@@ -4033,9 +4037,10 @@ void sighandler(int sig){
 #endif /*USE_BOINC*/
 
 
-/** Check presence and consistency of checkpoint-file and use to set loopcounter if valid.
+/**
+ * Check presence and consistency of checkpoint-file and use to set loopcounter if valid.
  *
- *  The name of the checkpoint-file is FNAME.ckp
+ * The name of the checkpoint-file is FNAME.ckp
  */
 void
 getCheckpointCounters(LALStatus *stat,		/**< pointer to LALStatus structure */
@@ -4055,7 +4060,6 @@ getCheckpointCounters(LALStatus *stat,		/**< pointer to LALStatus structure */
   int i;
 #ifdef DEBUG_CHECKPOINTING
   int savelaldebuglevel=lalDebugLevel;
-  lalDebugLevel=1;
 #endif
  
   INITSTATUS(stat);
@@ -4174,7 +4178,6 @@ getCheckpointCounters(LALStatus *stat,		/**< pointer to LALStatus structure */
   *checksum=cksum;
 
 #ifdef DEBUG_CHECKPOINTING
-  lalDebugLevel=savelaldebuglevel;
 #endif
   
   fclose(fp);
@@ -4203,7 +4206,8 @@ void PrintAMCoeffs (REAL8 Alpha, REAL8 Delta, AMCoeffs* amc) {
 #endif
 
 
-/** Set up the search-grid and prepare DopplerSkyScan for stepping through parameter-space.
+/**
+ * Set up the search-grid and prepare DopplerSkyScan for stepping through parameter-space.
  * \note this is a bit ugly as it's using global uvar_ User-input variables.
  */
 void

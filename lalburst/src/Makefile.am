@@ -1,6 +1,7 @@
-AM_CPPFLAGS = -I$(top_builddir)/include
+AM_CPPFLAGS = -I$(top_builddir)/include -DPKG_DATA_DIR='"$(pkgdatadir)/"'
 
 lalburstincludedir = $(includedir)/lal
+
 lalburstinclude_HEADERS = \
 	CLR.h \
 	EPSearch.h \
@@ -17,7 +18,8 @@ lalburstinclude_HEADERS = \
 	TimeFreq.h \
 	TrackSearch.h \
 	cs_cosmo.h \
-	cs_lambda_cosmo.h
+	cs_lambda_cosmo.h \
+	lalburstswig_test.i
 
 lib_LTLIBRARIES = liblalburst.la
 liblalburst_la_SOURCES = \
@@ -61,27 +63,34 @@ BUILT_SOURCES = \
 	lalburst-user-env.csh
 
 lalburst-user-env.shell: Makefile $(srcdir)/generate_user_env.awk
-	@echo "# generic user environment script" >$@
+	@echo "# source this file to access $(PACKAGE_NAME)" >$@
 	@echo "set LALBURST_PREFIX $(prefix)" >>$@
 	@echo "prepend PATH $(bindir)" >>$@
 	@echo "prepend MANPATH $(mandir)" >>$@
 	@echo "prepend PKG_CONFIG_PATH $(libdir)/pkgconfig" >>$@
 	@echo "prepend PYTHONPATH $(pyexecdir)" >>$@
 	@echo "prepend LAL_DATA_PATH $(pkgdatadir)" >>$@
+	@echo "prepend OCTAVE_PATH $(octexecdir)" >>$@
 
 lalburst-user-env.csh lalburst-user-env.sh: lalburst-user-env.shell $(srcdir)/generate_user_env.awk
-	$(AM_V_GEN)$(AWK) -f $(srcdir)/generate_user_env.awk -v SED=$(SED) -v package=$(PACKAGE_NAME) -v output=$@ $< || { rm -f $@; exit 1; }
+	$(AM_V_GEN)$(AWK) -f $(srcdir)/generate_user_env.awk -v SED="$(SED)" -v output="$@" $<
 
 EXTRA_DIST = \
 	LALBurstConfig.h.in \
+	config.h.in \
 	generate_user_env.awk
+
+DISTCLEANFILES = config.h
 
 if HAVE_GIT_REPO
 BUILT_SOURCES += LALBurstVCSInfo.h
 MOSTLYCLEANFILES += LALBurstVCSInfo.h
 LALBurstVCSInfo.h .PHONY : gen-LALBurstVCSInfo.h
 gen-LALBurstVCSInfo.h :
-	$(GENERATE_VCS_INFO) LALBurstVCSInfo.h $(srcdir)/LALBurstVCSInfo.h.git
+	$(AM_V_at)$(GENERATE_VCS_INFO) LALBurstVCSInfo.h $(srcdir)/LALBurstVCSInfo.h.git
 endif
 
 @LAL_HEADER_LINK@
+
+swig_headers = $(lalburstinclude_HEADERS)
+include $(top_srcdir)/swig/swiglal_header.am

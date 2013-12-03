@@ -18,33 +18,36 @@
 */
 
 /**
-\author B.S. Sathyaprakash
-\file
-
-\brief Creates a template mesh for BCV (or, alternatively, for SPA but
-assuing a constant metric) using the mismatch metric.
-
-\heading{Usage}
-
-\heading{Description}
-
-\heading{Algorithm}
-
-\heading{Uses}
-\code
-lalDebugLevel
-\endcode
-
-\heading{Notes}
-
-*/
+ * \author B.S. Sathyaprakash
+ * \file
+ *
+ * \brief Creates a template mesh for BCV (or, alternatively, for SPA but
+ * assuing a constant metric) using the mismatch metric.
+ *
+ * ### Usage ###
+ *
+ *
+ * ### Description ###
+ *
+ *
+ * ### Algorithm ###
+ *
+ *
+ * ### Uses ###
+ *
+ * \code
+ * lalDebugLevel
+ * \endcode
+ *
+ * ### Notes ###
+ *
+ */
 
 #include <stdio.h>
 #include <lal/LALInspiralBank.h>
 #include <lal/LALNoiseModels.h>
 #include <lal/AVFactories.h>
 
-INT4 lalDebugLevel=0;
 
 int
 main ( void )

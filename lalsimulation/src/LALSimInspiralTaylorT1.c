@@ -52,8 +52,8 @@
 #define LALSIMINSPIRAL_T1_RELATIVE_TOLERANCE 1.e-12
 
 /**
- * This structure contains the intrinsic parameters and post-newtonian 
- * co-efficients for the denergy/dv and flux expansions. 
+ * This structure contains the intrinsic parameters and post-newtonian
+ * co-efficients for the denergy/dv and flux expansions.
  * These are computed by XLALSimInspiralTaylorT1Setup routine.
  */
 
@@ -87,7 +87,7 @@ typedef REAL8 (SimInspiralTaylorT1Flux)(
 /**
  * This strucuture contains pointers to the functions for calculating
  * the post-newtonian terms at the desired order. They can be set by
- * XLALSimInspiralTaylorT1Setup by passing an appropriate PN order. 
+ * XLALSimInspiralTaylorT1Setup by passing an appropriate PN order.
  */
 
 typedef struct
@@ -105,7 +105,7 @@ typedef struct
 	expnCoeffsTaylorT1 ak;
 }XLALSimInspiralTaylorT1PNEvolveOrbitParams;
 
-/** 
+/**
  * This function is used in the call to the integrator.
  */
 static int 
@@ -134,7 +134,7 @@ XLALSimInspiralTaylorT1StoppingTest(double UNUSED t, const double y[], double UN
 /**
  * Set up the expnCoeffsTaylorT1 and expnFuncTaylorT1 structures for
  * generating a TaylorT1 waveform and select the post-newtonian
- * functions corresponding to the desired order. 
+ * functions corresponding to the desired order.
  *
  * Inputs given in SI units.
  */
@@ -175,14 +175,14 @@ XLALSimInspiralTaylorT1Setup(
     ak->akdEF.dETa3 = 4.0 * ak->akdEF.ETa3;
 
     /* Taylor co-efficients for flux. */
-    ak->akdEF.FTaN = XLALSimInspiralTaylorT1Flux_0PNCoeff(ak->nu);
-    ak->akdEF.FTa2 = XLALSimInspiralTaylorT1Flux_2PNCoeff(ak->nu);
-    ak->akdEF.FTa3 = XLALSimInspiralTaylorT1Flux_3PNCoeff(ak->nu);
-    ak->akdEF.FTa4 = XLALSimInspiralTaylorT1Flux_4PNCoeff(ak->nu);
-    ak->akdEF.FTa5 = XLALSimInspiralTaylorT1Flux_5PNCoeff(ak->nu);
-    ak->akdEF.FTa6 = XLALSimInspiralTaylorT1Flux_6PNCoeff(ak->nu);
-    ak->akdEF.FTl6 = XLALSimInspiralTaylorT1Flux_6PNLogCoeff(ak->nu);
-    ak->akdEF.FTa7 = XLALSimInspiralTaylorT1Flux_7PNCoeff(ak->nu);
+    ak->akdEF.FTaN = XLALSimInspiralPNFlux_0PNCoeff(ak->nu);
+    ak->akdEF.FTa2 = XLALSimInspiralPNFlux_2PNCoeff(ak->nu);
+    ak->akdEF.FTa3 = XLALSimInspiralPNFlux_3PNCoeff(ak->nu);
+    ak->akdEF.FTa4 = XLALSimInspiralPNFlux_4PNCoeff(ak->nu);
+    ak->akdEF.FTa5 = XLALSimInspiralPNFlux_5PNCoeff(ak->nu);
+    ak->akdEF.FTa6 = XLALSimInspiralPNFlux_6PNCoeff(ak->nu);
+    ak->akdEF.FTl6 = XLALSimInspiralPNFlux_6PNLogCoeff(ak->nu);
+    ak->akdEF.FTa7 = XLALSimInspiralPNFlux_7PNCoeff(ak->nu);
 
     /* Tidal co-efficients for E(v), dE/dv, and flux */
     ak->akdEF.ETa5  = 0.;
@@ -197,18 +197,18 @@ XLALSimInspiralTaylorT1Setup(
                     ak->chi2, ak->chi1, lambda1)
                     + XLALSimInspiralPNEnergy_12PNTidalCoeff(
                     ak->chi1, ak->chi2, lambda2);
-            ak->akdEF.FTa12 = XLALSimInspiralTaylorT1Flux_12PNTidalCoeff(
+            ak->akdEF.FTa12 = XLALSimInspiralPNFlux_12PNTidalCoeff(
                     ak->chi1, lambda1)
-                    + XLALSimInspiralTaylorT1Flux_12PNTidalCoeff(
+                    + XLALSimInspiralPNFlux_12PNTidalCoeff(
                     ak->chi2, lambda2);
         case LAL_SIM_INSPIRAL_TIDAL_ORDER_5PN:
             ak->akdEF.ETa5  = XLALSimInspiralPNEnergy_10PNTidalCoeff(
                     ak->chi2, ak->chi1, lambda1)
                     + XLALSimInspiralPNEnergy_10PNTidalCoeff(
                     ak->chi1, ak->chi2, lambda2);
-            ak->akdEF.FTa10 = XLALSimInspiralTaylorT1Flux_10PNTidalCoeff(
+            ak->akdEF.FTa10 = XLALSimInspiralPNFlux_10PNTidalCoeff(
                     ak->chi1, lambda1)
-                    + XLALSimInspiralTaylorT1Flux_10PNTidalCoeff(
+                    + XLALSimInspiralPNFlux_10PNTidalCoeff(
                     ak->chi2, lambda2);
         case LAL_SIM_INSPIRAL_TIDAL_ORDER_0PN:
             break;
@@ -519,7 +519,7 @@ SphHarmTimeSeries *XLALSimInspiralTaylorT1PNModes(
 			if ( !hxx ){
 				XLAL_ERROR_NULL(XLAL_EFUNC);
 			}
-	 		XLALSphHarmTimeSeriesAddMode(hlm, hxx, l, m);
+			hlm = XLALSphHarmTimeSeriesAddMode(hlm, hxx, l, m);
 			XLALDestroyCOMPLEX16TimeSeries(hxx);
 		}
 	}
@@ -660,7 +660,6 @@ int XLALSimInspiralTaylorT1PNRestricted(
 #if 0
 #include <lal/PrintFTSeries.h>
 #include <lal/PrintFTSeries.h>
-extern int lalDebugLevel;
 int main(void)
 {
 	LIGOTimeGPS tc = { 888888888, 222222222 };
@@ -675,7 +674,6 @@ int main(void)
 	int O = -1;
 	REAL8TimeSeries *hplus;
 	REAL8TimeSeries *hcross;
-	lalDebugLevel = 7;
 	XLALSimInspiralTaylorT1PN(&hplus, &hcross, &tc, phic, deltaT, m1, m2, f_min, fRef, r, i, lambda1, lambda2, tideO, O);
 	LALDPrintTimeSeries(hplus, "hp.dat");
 	LALDPrintTimeSeries(hcross, "hc.dat");

@@ -1,478 +1,463 @@
 /**
-\authors J. D. E. Creighton
-\authors T. D. Creighton
-\authors K. Wette
-
-\addtogroup LALDatatypes
-
-\brief Provides the basic LAL datatypes.
-
-\heading{Synopsis}
-\code
-#include <lal/LALDatatypes.h>
-\endcode
-
-This header defines the standard data types and data
-structures that are used throughout LAL.  They fall into three general
-categories: \e primitive datatypes, \e aggregates of primitive
-datatypes, and \e structured datatypes.  The LAL status structure
-is a special case of a structured datatype that is used in every
-standard LAL function, and is described in \ref LALStatusMacros_h.
-
-This header file is automatically included by
-\ref LALStdlib_h.  In turn, this header file starts by including
-\ref LALAtomicDatatypes.h, which is discussed in the
-following section.
-
-\section ss_LALAtomicDatatypes_h Primitive datatypes
-
-These datatypes are: ::CHAR, ::INT2, ::INT4, ::INT8 (signed integer types); ::UCHAR, ::UINT2
-::UINT4, ::UINT8 (unsigned integer types); ::REAL4, ::REAL8 (single- and
-double-precision floating point types); and ::COMPLEX8 and ::COMPLEX16
-(single- and double-precision floating point complex types).
-The non-complex datatypes are known as <em>atomic</em>
-datatypes: these may be passed directly to functions or used as
-the return value of XLAL functions.
-
-The number in the name of each of these types (other than
-CHAR and UCHAR) is the number of 8-bit bytes that the datatype
-occupies.  E.g., ::INT4 is a four-byte integer.  In C99 it would be
-called <tt>int32_t</tt>. While the size of types such as <tt>int</tt> and
-<tt>long int</tt> are platform dependent, the sizes of ::INT4 and ::INT8
-is always 4- and 8-bytes respectively (platform independent).
-::REAL4 and ::REAL8 are always type <tt>float</tt> and <tt>double</tt>
-but LAL is only supported on platforms in which these types conform
-to the IEEE 754 standard.
-
-This documentation shows how the datatypes are defined on today's
-most common (32-bit) platform.  Be careful in particular about
-the integer type ::INT8.  On 64-bit platforms it will usually be
-equivalent to type <tt>long int</tt> rather than type
-<tt>long long int</tt>.
-
-The primitive datatypes are defined in a separate header
-LALAtomicDatatypes.h, which is included by
-LALDatatypes.h.  This is done in order to facilitate the
-interface between LAL and non-LAL modules.  By including just
-LALAtomicDatatypes.h, a non-LAL module can ensure that it is
-using the same arithmetic standard as LAL, without being burdened by
-LAL's more specialized structures.
-
-Primitive datatypes are those that conceptually store a single number
-or quantity.  They include both the \e atomic datatypes and the
-complex datatypes.
-
-\subsection ss_Atomic_datatypes Atomic datatypes
-
-Atomic LAL datatypes are platform-independent datatypes corresponding
-to the basic types in the C/C++ language.  However, since the C/C++
-types are not necessarily the same across platforms, the actual
-mapping between LAL and C/C++ datatypes may be different on different
-platforms.  The following table lists the LAL atomic datatypes, their
-size and range, and the C/C++ datatype to which they \e usually
-correspond.
-
-<table>
-<tr><th>Type</th><th>Bytes</th><th>Range</th><th>Usual C/C++ type</th></tr>
-<tr><td>::CHAR</td><td>1</td><td><tt>'\0'</tt> to <tt>'\255'</tt></td><td>char</td></tr>
-<tr><td>::UCHAR</td><td>1</td><td><tt>'\0'</tt> to <tt>'\255'</tt></td><td>unsigned char</td></tr>
-<tr><td>::BOOLEAN</td><td>1</td><td>0 or positive</td><td>unsigned char</td></tr>
-<tr><td>::INT2</td><td>2</td><td>\f$-2^{-15}\f$ to \f$2^{15}-1\f$</td><td>short</td></tr>
-<tr><td>::INT4</td><td>4</td><td>\f$-2^{-31}\f$ to \f$2^{31}-1\f$</td><td>\c int or \c long</td></tr>
-<tr><td>::INT8</td><td>8</td><td>\f$-2^{-63}\f$ to \f$2^{63}-1\f$</td><td>long long</td></tr>
-<tr><td>::UINT2</td><td>2</td><td>0 to \f$2^{16}-1\f$</td><td>unsigned short</td></tr>
-<tr><td>::UINT4</td><td>4</td><td>0 to \f$2^{32}-1\f$</td><td><tt>unsigned int</tt> or \c long</td></tr>
-<tr><td>::UINT8</td><td>8</td><td>0 to \f$2^{64}-1\f$</td><td>unsigned long long</td></tr>
-<tr><td>::REAL4</td><td>4</td><td>\f$-3.4\times10^{38}\f$ to \f$3.4\times10^{38}\f$</td><td>float</td></tr>
-<tr><td>::REAL8</td><td>8</td><td>\f$-1.8\times10^{308}\f$ to \f$1.8\times10^{308}\f$</td><td>double</td></tr>
-</table>
-
-The unsigned character and integer datatypes store their values
-according to the usual binary system.  For signed characters and
-integers, setting the most-significant bit indicates that the number
-formed from the remaining bits should be added to the lower value of
-the range.  The ::REAL4 and ::REAL8 datatypes should store
-values according to the IEEE Standard 754 for Binary Floating-Point
-Arithmetic, which gives them the following precisions and dynamic
-ranges:
-
-<table>
-<tr><td></td><th>REAL4</th><th>REAL8</th></tr>
-<tr><td>Minimum positive subnormal</td><td>\f$1.4\times10^{-45}\f$</td><td>\f$4.9\times10^{-324}\f$</td></tr>
-<tr><td>Minimum positive normal</td><td>\f$1.2\times10^{-38}\f$</td><td>\f$2.2\times10^{-308}\f$</td></tr>
-<tr><td>Maximum finite normal</td><td>\f$3.4\times10^{38}\f$</td><td>\f$1.8\times10^{308}\f$</td></tr>
-<tr><td>Minimum fractional difference</td><td>\f$6.0\times10^{-8}\f$</td><td>\f$1.1\times10^{-16}\f$</td></tr>
-<tr><td>Significant decimal digits</td><td>6-9</td><td>15-17</td></tr>
-</table>
-
-
-The minimum positive subnormal is the smallest positive representable
-number.  The minimum positive normal is the smallest positive number
-that can be represented with full precision; that is, one whose
-mantissa lies in the range [0.5,1).  The maximum finite normal is the
-largest representable number other than the reserved code for
-\f$+\infty\f$.  The minimum fractional difference is the smallest
-fractional difference between consecutive representable numbers, or
-\e half the difference between 1 and the next representable
-number.  Significant decimal digits gives the number of decimal digits
-used to represent the binary number in decimal notation: the first is
-the maximum number of digits that are guaranteed not to change upon
-conversion to binary, the second is the number of digits required to
-represent a unique binary quantity.
-
-\subsection ss_Complex Complex datatypes
-
-LAL uses native C99 datatypes <tt>float complex</tt> and <tt>double complex</tt>
-to represent complex numbers. These are considered
-primitive datatypes (rather than aggregate or structured datatypes)
-because they conceptually represent a single number.  Furthermore,
-atomic and complex datatypes are treated equivalently by LAL aggregate
-and structured datatypes. The two complex datatypes are ::COMPLEX8 and ::COMPLEX16.
-Macros are provided for constructing ::COMPLEX8 and ::COMPLEX16 values
-from rectangular (::CX8rect, ::CX16rect) and polar (::CX8polar, ::CX16polar)
-coordinates, and for accessing (::CX8re, ::CX16re, ::CX8im, ::CX16im) and
-assigning (::setCX8re, ::setCX16re, ::setCX8im, ::setCX16im) their real and
-imaginary parts.
-
-
-\section ss_Atomic_datatype_codes Atomic datatypes codes
-
-The following constants specify the size, in bytes, of the atomic datatype.
-
-<table>
-<tr><th>Name</th><th>Octal Value</th><th>Description</th></tr>
-<tr><td>#LAL_1_BYTE_TYPE_SIZE</td><td>000</td><td>1 byte type</td></tr>
-<tr><td>#LAL_2_BYTE_TYPE_SIZE</td><td>001</td><td>2 byte type</td></tr>
-<tr><td>#LAL_4_BYTE_TYPE_SIZE</td><td>002</td><td>4 byte type</td></tr>
-<tr><td>#LAL_8_BYTE_TYPE_SIZE</td><td>003</td><td>8 byte type</td></tr>
-<tr><td>#LAL_16_BYTE_TYPE_SIZE</td><td>004</td><td>16 byte type</td></tr>
-<tr><td>#LAL_TYPE_SIZE_MASK</td><td>007</td><td>Mask for byte type size fields</td></tr>
-</table>
-
-The constant #LAL_TYPE_SIZE_MASK is useful in extracting the size
-information from other type attributes.  For example, the size, in bytes,
-of an atomic datatype can be found using something like the following:
-\code
-UINT4 code = LAL_S_TYPE_CODE;
-UINT4 size = 1U << ( code & LAL_TYPE_SIZE_MASK );
-\endcode
-
-
-The following constants are flags describing the type attributes.  A type
-is either an integer or a floating-point, either purely real or complex,
-and, if integer, is either signed or unsigned.
-
-<table>
-<tr><th>Name</th><th>Octal Value</th><th>Description</th></tr>
-<tr><td>#LAL_FLTPT_TYPE_FLAG</td><td>010</td><td>Floating-point (not integer) type</td></tr>
-<tr><td>#LAL_CMPLX_TYPE_FLAG</td><td>020</td><td>Complex (not purely real) type</td></tr>
-<tr><td>#LAL_UNSGN_TYPE_FLAG</td><td>040</td><td>Unsigned (no sign info) type</td></tr>
-</table>
-
-
-To get the actual type, these flags are combined together and with the
-type size constants using the bitwise-or operator (<tt>|</tt>).  For example,
-an eight-byte floating point number would be
-<tt>(#LAL_8_BYTE_TYPE_SIZE | #LAL_8_BYTE_TYPE_SIZE | #LAL_FLTPT_TYPE_FLAG)</tt>.
-Conceivably you could have a complex type made from a pair of unsigned
-one-byte integers that would be specified as
-<tt>(#LAL_1_BYTE_TYPE_SIZE | #LAL_CMPLX_TYPE_FLAG | #LAL_UNSGN_TYPE_FLAG)</tt>.
-Fortunately, there are none of these in LAL.  Attribues of a particular
-type can be extracted using the bitwise-and operator.  For example:
-\code
-UINT4 code = LAL_S_TYPE_CODE;
-UINT4 isfloat = ( code & LAL_FLTPT_TYPE_FLAG );
-UINT4 iscmplx = ( code & LAL_CMPLX_TYPE_FLAG );
-\endcode
-
-The following constants correspond to the types that actually exist in LAL.
-Their enumeration is the type ::LALTYPECODE.
-
-<table>
-<tr><th>Name</th><th>Octal Value</th><th>Corresponding Type</th></tr>
-<tr><td>#LAL_CHAR_TYPE_CODE</td><td>000</td><td>#CHAR</td></tr>
-<tr><td>#LAL_I2_TYPE_CODE</td><td>001</td><td>#INT2</td></tr>
-<tr><td>#LAL_I4_TYPE_CODE</td><td>002</td><td>#INT4</td></tr>
-<tr><td>#LAL_I8_TYPE_CODE</td><td>003</td><td>#INT8</td></tr>
-<tr><td>#LAL_UCHAR_TYPE_CODE</td><td>040</td><td>#UCHAR</td></tr>
-<tr><td>#LAL_U2_TYPE_CODE</td><td>041</td><td>#UINT2</td></tr>
-<tr><td>#LAL_U4_TYPE_CODE</td><td>042</td><td>#UINT4</td></tr>
-<tr><td>#LAL_U8_TYPE_CODE</td><td>043</td><td>#UINT8</td></tr>
-<tr><td>#LAL_S_TYPE_CODE</td><td>012</td><td>#REAL4</td></tr>
-<tr><td>#LAL_D_TYPE_CODE</td><td>013</td><td>#REAL8</td></tr>
-<tr><td>#LAL_C_TYPE_CODE</td><td>033</td><td>#COMPLEX8</td></tr>
-<tr><td>#LAL_Z_TYPE_CODE</td><td>034</td><td>#COMPLEX16</td></tr>
-</table>
-
-\section ss_aggregate_datatypes Aggregate datatypes
-
-These datatypes store arbitrarily large sets or collections of
-primitive datatypes.  At this level there is no physical
-interpretation assigned to the objects (such as names or units); the
-aggregate datatypes simply collect and arrange the primitive
-datatypes.  The following types of aggregate datatypes are defines:
-vectors, arrays, sequences, vector sequences, and array sequences.
-
-
-\subsection ss_Vector DATATYPE-Vector types
-
-This structure stores an ordered set of \f$n\f$ elements of type
-<tt>\<datatype\></tt>, which can be any primitive datatype.  The data are
-to be interpreted as being a point in an \f$n\f$-dimensional vector space.
-The fields are:
-<ul>
-<li><tt>UINT4 length</tt>: The number of data \f$n\f$.</li>
-<li><tt>\<datatype\> *data</tt>: Pointer to the data array.  The data
-                     are stored sequentially as \f$\mathtt{data}[0,\ldots,n-1]\f$.</li>
-</ul>
-
-The concrete types are ::CHARVector, ::LALStringVector, ::INT2Vector, ::UINT2Vector,
-::INT4Vector, ::UINT4Vector, ::INT8Vector, ::UINT8Vector, ::REAL4Vector,
-::REAL8Vector, ::COMPLEX8Vector, ::COMPLEX16Vector.
-
-
-\subsection ss_Array DATATYPE-Array types
-
-This structure stores a set of elements of type <tt>\<datatype\></tt>,
-which can be any primitive datatype, arranged as an \f$m\f$-dimensional
-array.  That is, each element can be thought of as having \f$m\f$
-indecies, \f$\mathsf{A}_{i_0\cdots i_{m-1}}\f$, where each index \f$i_k\f$
-runs over its own range \f$0,\ldots,n_k-1\f$.  The total number of
-elements is then \f$N=n_0\times\cdots\times n_{m-1}\f$.  In memory the
-array is "flattened" so that the elements are stored sequentially in
-a contiguous block.  The fields are:
-<ul>
-<li><tt>UINT4Vector *dimLength</tt>: Pointer to a vector of length
-                    \f$m\f$, storing the index ranges \f$(n_0,\ldots,n_{m-1})\f$.</dd>
-<li><tt>\<datatype\> *data</tt>: Pointer to the data array.  The data
-                     element \f$\mathsf{A}_{i_0\cdots i_{m-1}}\f$ is stored as
-                     \f$\mathtt{data}[i_{m-1} + n_{m-2}\times(i_{m-2} + n_{m-3}\times(\cdots(i_1 + n_0\times i_0)\cdots))]\f$;
-                      that is, the index of <tt>data[]</tt> runs over the entire range of an index
-                      \f$i_{k+1}\f$ before incrementing \f$i_k\f$.</li>
-</ul>
-
-The concrete types are ::INT2Array, ::UINT2Array, ::INT4Array, ::UINT4Array,
-::INT8Array, ::UINT8Array, ::REAL4Array, ::REAL8Array, ::COMPLEX8Array, ::COMPLEX16Array.
-
-
-\subsection ss_Sequence DATATYPE-Sequence types
-
-This structure stores an ordered set of \f$l\f$ elements of type
-<tt>\<datatype\></tt>, which can be any primitive datatype.  It is
-identical to <tt>\<datatype\>Vector</tt>, except that the elements are to
-be interpreted as \f$l\f$ consecutive elements rather than the components
-of an \f$l\f$-dimensional vector.  The fields are:
-<ul>
-<li><tt>UINT4 length</tt>: The number of data \f$l\f$.</li>
-<li><tt>\<datatype\> *data</tt>: Pointer to the data array.  The data
-                     are stored sequentially as \f$\mathtt{data}[0, \ldots, l-1]\f$.</li>
-</ul>
-
-The concrete types are ::CHARSequence, ::INT2Sequence, ::UINT2Sequence,
-::INT4Sequence, ::UINT4Sequence, ::INT8Sequence, ::UINT8Sequence, ::REAL4Sequence,
-::REAL8Sequence, ::COMPLEX8Sequence, ::COMPLEX16Sequence.
-
-
-\subsection ss_VectorSequence DATATYPE-VectorSequence types
-
-This structure stores an ordered set of \f$l\f$ elements of type
-<tt>\<datatype\>Vector</tt>, where <tt>\<datatype\></tt> can be any primitive
-datatype.  Mathematically the sequence can be written as
-\f$\{\vec{v}^{(0)},\ldots,\vec{v}^{(l-1)}\}\f$, where each element
-\f$\vec{v}^{(j)}=(v^{(j)}_0,\ldots,v^{(i)}_{n-1})\f$ is a vector of length
-\f$n\f$.  In memory the elements are "flattened"; that is, they are
-stored sequentially in a contiguous block of memory.  The fields are:
-<ul>
-<li><tt>UINT4 length</tt>: The number of vectors \f$l\f$.</li>
-<li><tt>UINT4 vectorLength</tt>: The length \f$n\f$ of each vector.</li>
-<li><tt>\<datatype\> *data</tt>: Pointer to the data array.  The data
-                     element \f$v^{(j)}_i\f$ is stored as \f$\mathtt{data}[j\times n + i]\f$;
-                     that is, the index of <tt>data[]</tt> runs over the internal index of
-                     each vector element before incrementing to the next vector element.</li>
-</ul>
-
-The concrete types are ::CHARVectorSequence, ::INT2VectorSequence, ::UINT2VectorSequence,
-::INT4VectorSequence, ::UINT4VectorSequence, ::INT8VectorSequence, ::UINT8VectorSequence,
-::REAL4VectorSequence, ::REAL8VectorSequence, ::COMPLEX8VectorSequence, ::COMPLEX16VectorSequence.
-
-
-\subsection ss_ArraySequence DATATYPE-ArraySequence types
-
-This structure stores an ordered set of \f$l\f$ elements of type
-<tt>\<datatype\>Array</tt>, where <tt>\<datatype\></tt> can be any primitive
-datatype.  The indexing of an array sequence can get quite
-complicated; it helps to read first the documentation for data arrays,
-above.  Mathematically the data can be written as a set
-\f$\{\mathsf{A}^{(j)}_{i_0\cdots i_{m-1}}\f$, where the sequence number
-\f$j\f$ runs from 0 to \f$l-1\f$, and each array index \f$i_k\f$ runs over its own
-range \f$0,\ldots,n_k-1\f$.  The total number of data in a given array
-element is then \f$N=n_0\times\cdots\times n_{m-1}\f$, and the total
-number of data in the sequence is \f$N\times l\f$.  In memory the array is
-"flattened" so that the elements are stored sequentially in a
-contiguous block.  The fields are:
-<ul>
-<li><tt>UINT4 length</tt>: The number \f$l\f$ of array elements in the sequence.</li>
-<li><tt>UINT4 arrayDim</tt>: The number of data \f$N\f$ (\e not the
-              number of indecies \f$m\f$) in each array element of the sequence.</li>
-<li><tt>UINT4Vector *dimLength</tt>: Pointer to a vector of length
-                    \f$m\f$, storing the index ranges \f$(n_0,\ldots,n_{m-1})\f$.</dd>
-<li><tt>\<datatype\> *data</tt>: Pointer to the data.  The element
-                     \f$\mathsf{A}^{(j)}_{i_0\cdots i_{m-1}}\f$ is stored as
-                     \f$\mathtt{data}[j\times N + i_{m-1} + n_{m-2}\times(i_{m-2} + n_{m-3}\times(\cdots(i_1 + n_0\times i_0)\cdots))]\f$;
-                      that is, the index of <tt>data[]</tt> runs over the internal indecies of each
-                      array element before incrementing to the next array element.</li>
-</ul>
-
-The concrete types are ::INT2ArraySequence, ::UINT2ArraySequence,
-::INT4ArraySequence, ::UINT4ArraySequence, ::INT8ArraySequence, ::UINT8ArraySequence,
-::REAL4ArraySequence, ::REAL8ArraySequence, ::COMPLEX8ArraySequence, ::COMPLEX16ArraySequence
-
-\section ss_structured_datatypes Structured datatypes
-
-These datatypes embed primitive and aggregate datatypes inside
-structures that define their physical meaning.  Most of these
-structures are wrappers for aggregate datatypes that store a physical
-quantity as a function of time or frequency.  Other structures store
-specific physical information, such as the GPS time, or the factored
-response function of a filter.
-
-
-\subsection ss_LIGOTimeGPS LIGOTimeGPS type
-
-The ::LIGOTimeGPS structure stores the time, to nanosecond precision, synchronized
-to the Global Positioning System time reference.  The zero time for
-the GPS standard is the moment of midnight beginning January 6, 1980,
-UTC.  The ::LIGOTimeGPS structure can represent times up to
-68 years on either side of this epoch.  (Note that this is better than
-an equivalently-sized ::REAL8 representation of time, which can
-maintain nanosecond precision only for times within 104 days of its
-reference point.  However, the ::REAL8 representation does allow
-one to cover arbitrarily long timescales at correspondingly lower
-precision.)
-
-The macro #LIGOTIMEGPSZERO can be used to statically initialize a
-::LIGOTimeGPS object, for example:
-\code
-LIGOTimeGPS epoch = LIGOTIMEGPSZERO;
-\endcode
-
-\subsection ss_TimeSeries DATATYPE-TimeSeries types
-
-This structure represents a sequence of data of type <tt>\<datatype\></tt>
-(where <tt>\<datatype\></tt> can be any primitive datatype), sampled over
-uniform time intervals \f$t_0, t_0+\Delta t, \ldots , t_0+l\Delta t\f$.
-Essentially this is a <tt>\<datatype\>Sequence</tt> with extra fields
-defining the sample times and the type of data being sampled.  The raw
-data may also have been \e heterodyned; that is, multiplied by a
-sinusoid of some frequency \f$f_0\f$, low-pass filtered, and resampled, in
-order to extract the behaviour in a small bandwidth about \f$f_0\f$.  The
-fields are:
-<ul>
-<li><tt>::CHAR name[LALNameLength]</tt>: The name of the data series (i.e. the type of data being sampled).</li>
-<li><tt>::LIGOTimeGPS epoch</tt>: The start time \f$t_0\f$ of the data series.</li>
-<li><tt>::REAL8 deltaT</tt>: The sampling interval \f$\Delta t\f$, in seconds.</li>
-<li><tt>::REAL8 f0</tt>: The heterodyning frequency \f$f_0\f$, in Hertz.</li>
-<li><tt>::LALUnit sampleUnits</tt>: The physical units of the quantity being sampled.</li>
-<li><tt>\<datatype\>Sequence *data</tt>: The sequence of sampled data.</li>
-</ul>
-
-The concrete types are ::INT2TimeSeries, ::UINT2TimeSeries,
-::INT4TimeSeries, ::UINT4TimeSeries, ::INT8TimeSeries, ::UINT8TimeSeries,
-::REAL4TimeSeries, ::REAL8TimeSeries, ::COMPLEX8TimeSeries, ::COMPLEX16TimeSeries.
-
-
-\subsection ss_TimeVectorSeries DATATYPE-TimeVectorSeries
-
-Like <tt>\<datatype\>TimeSeries</tt>, above, except that the sampled data
-are of type <tt>\<datatype\>Vector</tt> (where <tt>\<datatype\></tt> can
-be any primitive datatype).  The fields are:
-<ul>
-<li><tt>::CHAR name[LALNameLength]</tt>: The name of the data series (i.e. the type of data being sampled).</li>
-<li><tt>::LIGOTimeGPS epoch</tt>: The start time of the data series.</li>
-<li><tt>::REAL8 deltaT</tt>: The sampling interval, in seconds.</li>
-<li><tt>::REAL8 f0</tt>: The heterodyning frequency, in Hertz.</li>
-<li><tt>::LALUnit sampleUnits</tt>: The physical units of the quantity being sampled.</li>
-<li><tt>\<datatype\>VectorSequence *data</tt>: The sequence of sampled data.</li>
-</ul>
-
-The concrete types are ::INT2TimeVectorSeries, ::UINT2TimeVectorSeries,
-::INT4TimeVectorSeries, ::UINT4TimeVectorSeries, ::INT8TimeVectorSeries, ::UINT8TimeVectorSeries,
-::REAL4TimeVectorSeries, ::REAL8TimeVectorSeries, ::COMPLEX8TimeVectorSeries, ::COMPLEX16TimeVectorSeries.
-
-
-\subsection ss_TimeArraySeries DATATYPE-TimeArraySeries types
-
-Like <tt>\<datatype\>TimeSeries</tt>, above, except that the sampled data
-are of type <tt>\<datatype\>Array</tt> (where <tt>\<datatype\></tt> can
-be any primitive datatype).  The fields are:
-<ul>
-<li><tt>::CHAR name[LALNameLength]</tt>: The name of the data series (i.e. the type of data being sampled).</li>
-<li><tt>::LIGOTimeGPS epoch</tt>: The start time of the data series.</li>
-<li><tt>::REAL8 deltaT</tt>: The sampling interval, in seconds.</li>
-<li><tt>::REAL8 f0</tt>: The heterodyning frequency, in Hertz.</li>
-<li><tt>::LALUnit sampleUnits</tt>: The physical units of the quantity being sampled.</li>
-<li><tt>\<datatype\>ArraySequence *data</tt>: The sequence of sampled data.</li>
-</ul>
-
-The concrete types are ::INT2TimeArraySeries, ::UINT2TimeArraySeries,
-::INT4TimeArraySeries, ::UINT4TimeArraySeries, ::INT8TimeArraySeries, ::UINT8TimeArraySeries,
-::REAL4TimeArraySeries, ::REAL8TimeArraySeries, ::COMPLEX8TimeArraySeries, ::COMPLEX16TimeArraySeries.
-
-
-\subsection ss_FrequencySeries DATATYPE-FrequencySeries types
-
-This structure represents a frequency spectrum of data of type
-<tt>\<datatype\></tt> (where <tt>\<datatype\></tt> can be any primitive
-datatype), sampled over uniform frequency intervals
-\f$f_0, f_0+\Delta f, \ldots , f_0+l\Delta f\f$.  Essentially this is a
-<tt>\<datatype\>Sequence</tt> with extra fields defining the sample
-frequencies, the timestamp of the spectrum, and the type of data being
-sampled.  The fields are:
-<ul>
-<li><tt>::CHAR name[LALNameLength]</tt>: The name of the data series (i.e. the type of data being sampled).</li>
-<li><tt>::LIGOTimeGPS epoch</tt>: The start time of the time series from which the spectrum was calculated.</li>
-<li><tt>::REAL8 f0</tt>: The lowest frequency \f$f_0\f$ being sampled, in Hertz.</li>
-<li><tt>::REAL8 deltaF</tt>: The frequency sampling interval \f$\Delta f\f$, in Hertz.</li>
-<li><tt>::LALUnit sampleUnits</tt>: The physical units of the quantity being sampled.</li>
-<li><tt>\<datatype\>Sequence *data</tt>: The sequence of sampled data.</li>
-</ul>
-
-The concrete types are ::INT2FrequencySeries, ::UINT2FrequencySeries,
-::INT4FrequencySeries, ::UINT4FrequencySeries, ::INT8FrequencySeries, ::UINT8FrequencySeries,
-::REAL4FrequencySeries, ::REAL8FrequencySeries, ::COMPLEX8FrequencySeries, ::COMPLEX16FrequencySeries.
-
-\subsection ss_ZPGFilter DATATYPE-ZPGFilter types
-
-This structure stores the complex frequency response of a filter or
-transfer function in a factored form, where <tt>\<datatype\></tt> can be
-either ::COMPLEX8 or ::COMPLEX16.  One defines a
-(dimensionless) complex frequency variable \f$\zeta(f\Delta t)\f$, where
-\f$\Delta t\f$ is the time sampling interval of the data to which the
-filter will be applied (in the case of a digital filter), or some
-other reference timescale (in the case of an analog filter).  The
-complex response function can then be given (or approximated) as
-\f$H(f)=g\times\prod_k(\zeta-z_k)/\prod_l(\zeta-p_l)\f$, where \f$z_k\f$ are
-the complex \e zeros, \f$p_l\f$ are the complex \e poles, and \f$g\f$
-is the complex \e gain of the response function.  Some common
-complex frequency representations are the \f$z\f$-plane representation
-\f$\zeta(f\Delta t)=\exp(2\pi if\Delta t)\f$, which maps the Nyquist
-interval \f$f\in[0,1/2\Delta t)\f$ onto the upper-half unit circle in
-\f$\zeta\f$, and the \f$w\f$-plane representation \f$\zeta(f\Delta t)=\tan(\pi
-f\Delta t)\f$, which maps the Nyquist interval onto the positive real
-axis in \f$\zeta\f$.
-
-The fields of <tt>\<datatype\>ZPGFilter</tt> are:
-<ul>
-<li><tt>::CHAR name[LALNameLength]</tt>: The name of the filter or transfer function.
-               This should also mention its complex frequency representation.</li>
-<li><tt>::REAL8 deltaT</tt>: The sampling time or reference timescale
-              \f$\Delta t\f$ for the filter, in seconds.  If zero, it will be treated as
-              being equal to the sampling interval of the data being filtered.</li>
-<li><tt>\<datatype\>Vector *zeros</tt>: Pointer to a vector storing the zeros \f$z_k\f$ of the filter.</li>
-<li><tt>\<datatype\>Vector *poles</tt>: Pointer to a vector storing the poles \f$p_k\f$ of the filter.</li>
-<li><tt>\<datatype\> gain</tt>: The gain \f$g\f$ of the filter.</li>
-</ul>
-
-The concrete types are ::COMPLEX8ZPGFilter and ::COMPLEX16ZPGFilter.
-
-*/
+ * \authors J. D. E. Creighton
+ * \authors T. D. Creighton
+ * \authors K. Wette
+ *
+ * \addtogroup LALDatatypes
+ *
+ * \brief Provides the basic LAL datatypes.
+ *
+ * ### Synopsis ###
+ *
+ * \code
+ * #include <lal/LALDatatypes.h>
+ * \endcode
+ *
+ * This header defines the standard data types and data
+ * structures that are used throughout LAL.  They fall into three general
+ * categories: \e primitive datatypes, \e aggregates of primitive
+ * datatypes, and \e structured datatypes.  The LAL status structure
+ * is a special case of a structured datatype that is used in every
+ * standard LAL function, and is described in \ref LALStatusMacros_h.
+ *
+ * This header file is automatically included by
+ * \ref LALStdlib_h.  In turn, this header file starts by including
+ * \ref LALAtomicDatatypes.h, which is discussed in the
+ * following section.
+ *
+ * \section ss_LALAtomicDatatypes_h Primitive datatypes
+ *
+ * These datatypes are: ::CHAR, ::INT2, ::INT4, ::INT8 (signed integer types); ::UCHAR, ::UINT2
+ * ::UINT4, ::UINT8 (unsigned integer types); ::REAL4, ::REAL8 (single- and
+ * double-precision floating point types); and ::COMPLEX8 and ::COMPLEX16
+ * (single- and double-precision floating point complex types).
+ * The non-complex datatypes are known as <em>atomic</em>
+ * datatypes: these may be passed directly to functions or used as
+ * the return value of XLAL functions.
+ *
+ * The number in the name of each of these types (other than
+ * CHAR and UCHAR) is the number of 8-bit bytes that the datatype
+ * occupies.  E.g., ::INT4 is a four-byte integer.  In C99 it would be
+ * called <tt>int32_t</tt>. While the size of types such as <tt>int</tt> and
+ * <tt>long int</tt> are platform dependent, the sizes of ::INT4 and ::INT8
+ * is always 4- and 8-bytes respectively (platform independent).
+ * ::REAL4 and ::REAL8 are always type <tt>float</tt> and <tt>double</tt>
+ * but LAL is only supported on platforms in which these types conform
+ * to the IEEE 754 standard.
+ *
+ * This documentation shows how the datatypes are defined on today's
+ * most common (32-bit) platform.  Be careful in particular about
+ * the integer type ::INT8.  On 64-bit platforms it will usually be
+ * equivalent to type <tt>long int</tt> rather than type
+ * <tt>long long int</tt>.
+ *
+ * The primitive datatypes are defined in a separate header
+ * LALAtomicDatatypes.h, which is included by
+ * LALDatatypes.h.  This is done in order to facilitate the
+ * interface between LAL and non-LAL modules.  By including just
+ * LALAtomicDatatypes.h, a non-LAL module can ensure that it is
+ * using the same arithmetic standard as LAL, without being burdened by
+ * LAL's more specialized structures.
+ *
+ * Primitive datatypes are those that conceptually store a single number
+ * or quantity.  They include both the \e atomic datatypes and the
+ * complex datatypes.
+ *
+ * \subsection ss_Atomic_datatypes Atomic datatypes
+ *
+ * Atomic LAL datatypes are platform-independent datatypes corresponding
+ * to the basic types in the C/C++ language.  However, since the C/C++
+ * types are not necessarily the same across platforms, the actual
+ * mapping between LAL and C/C++ datatypes may be different on different
+ * platforms.  The following table lists the LAL atomic datatypes, their
+ * size and range, and the C/C++ datatype to which they \e usually
+ * correspond.
+ *
+ * <table>
+ * <tr><th>Type</th><th>Bytes</th><th>Range</th><th>Usual C/C++ type</th></tr>
+ * <tr><td>::CHAR</td><td>1</td><td><tt>'\0'</tt> to <tt>'\255'</tt></td><td>char</td></tr>
+ * <tr><td>::UCHAR</td><td>1</td><td><tt>'\0'</tt> to <tt>'\255'</tt></td><td>unsigned char</td></tr>
+ * <tr><td>::BOOLEAN</td><td>1</td><td>0 or positive</td><td>unsigned char</td></tr>
+ * <tr><td>::INT2</td><td>2</td><td>\f$-2^{-15}\f$ to \f$2^{15}-1\f$</td><td>short</td></tr>
+ * <tr><td>::INT4</td><td>4</td><td>\f$-2^{-31}\f$ to \f$2^{31}-1\f$</td><td>\c int or \c long</td></tr>
+ * <tr><td>::INT8</td><td>8</td><td>\f$-2^{-63}\f$ to \f$2^{63}-1\f$</td><td>long long</td></tr>
+ * <tr><td>::UINT2</td><td>2</td><td>0 to \f$2^{16}-1\f$</td><td>unsigned short</td></tr>
+ * <tr><td>::UINT4</td><td>4</td><td>0 to \f$2^{32}-1\f$</td><td><tt>unsigned int</tt> or \c long</td></tr>
+ * <tr><td>::UINT8</td><td>8</td><td>0 to \f$2^{64}-1\f$</td><td>unsigned long long</td></tr>
+ * <tr><td>::REAL4</td><td>4</td><td>\f$-3.4\times10^{38}\f$ to \f$3.4\times10^{38}\f$</td><td>float</td></tr>
+ * <tr><td>::REAL8</td><td>8</td><td>\f$-1.8\times10^{308}\f$ to \f$1.8\times10^{308}\f$</td><td>double</td></tr>
+ * </table>
+ *
+ * The unsigned character and integer datatypes store their values
+ * according to the usual binary system.  For signed characters and
+ * integers, setting the most-significant bit indicates that the number
+ * formed from the remaining bits should be added to the lower value of
+ * the range.  The ::REAL4 and ::REAL8 datatypes should store
+ * values according to the IEEE Standard 754 for Binary Floating-Point
+ * Arithmetic, which gives them the following precisions and dynamic
+ * ranges:
+ *
+ * <table>
+ * <tr><td></td><th>REAL4</th><th>REAL8</th></tr>
+ * <tr><td>Minimum positive subnormal</td><td>\f$1.4\times10^{-45}\f$</td><td>\f$4.9\times10^{-324}\f$</td></tr>
+ * <tr><td>Minimum positive normal</td><td>\f$1.2\times10^{-38}\f$</td><td>\f$2.2\times10^{-308}\f$</td></tr>
+ * <tr><td>Maximum finite normal</td><td>\f$3.4\times10^{38}\f$</td><td>\f$1.8\times10^{308}\f$</td></tr>
+ * <tr><td>Minimum fractional difference</td><td>\f$6.0\times10^{-8}\f$</td><td>\f$1.1\times10^{-16}\f$</td></tr>
+ * <tr><td>Significant decimal digits</td><td>6-9</td><td>15-17</td></tr>
+ * </table>
+ *
+ * The minimum positive subnormal is the smallest positive representable
+ * number.  The minimum positive normal is the smallest positive number
+ * that can be represented with full precision; that is, one whose
+ * mantissa lies in the range [0.5,1).  The maximum finite normal is the
+ * largest representable number other than the reserved code for
+ * \f$+\infty\f$.  The minimum fractional difference is the smallest
+ * fractional difference between consecutive representable numbers, or
+ * \e half the difference between 1 and the next representable
+ * number.  Significant decimal digits gives the number of decimal digits
+ * used to represent the binary number in decimal notation: the first is
+ * the maximum number of digits that are guaranteed not to change upon
+ * conversion to binary, the second is the number of digits required to
+ * represent a unique binary quantity.
+ *
+ * \subsection ss_Complex Complex datatypes
+ *
+ * LAL uses native C99 datatypes <tt>float complex</tt> and <tt>double complex</tt>
+ * to represent complex numbers. These are considered
+ * primitive datatypes (rather than aggregate or structured datatypes)
+ * because they conceptually represent a single number.  Furthermore,
+ * atomic and complex datatypes are treated equivalently by LAL aggregate
+ * and structured datatypes. The two complex datatypes are ::COMPLEX8 and ::COMPLEX16.
+ * Macros are provided for constructing ::COMPLEX8 and ::COMPLEX16 values
+ * from rectangular (::crectf, ::crect) and polar (::cpolarf, ::cpolar) coordinates.
+ *
+ * \section ss_Atomic_datatype_codes Atomic datatypes codes
+ *
+ * The following constants specify the size, in bytes, of the atomic datatype.
+ *
+ * <table>
+ * <tr><th>Name</th><th>Octal Value</th><th>Description</th></tr>
+ * <tr><td>#LAL_1_BYTE_TYPE_SIZE</td><td>000</td><td>1 byte type</td></tr>
+ * <tr><td>#LAL_2_BYTE_TYPE_SIZE</td><td>001</td><td>2 byte type</td></tr>
+ * <tr><td>#LAL_4_BYTE_TYPE_SIZE</td><td>002</td><td>4 byte type</td></tr>
+ * <tr><td>#LAL_8_BYTE_TYPE_SIZE</td><td>003</td><td>8 byte type</td></tr>
+ * <tr><td>#LAL_16_BYTE_TYPE_SIZE</td><td>004</td><td>16 byte type</td></tr>
+ * <tr><td>#LAL_TYPE_SIZE_MASK</td><td>007</td><td>Mask for byte type size fields</td></tr>
+ * </table>
+ *
+ * The constant #LAL_TYPE_SIZE_MASK is useful in extracting the size
+ * information from other type attributes.  For example, the size, in bytes,
+ * of an atomic datatype can be found using something like the following:
+ * \code
+ * UINT4 code = LAL_S_TYPE_CODE;
+ * UINT4 size = 1U << ( code & LAL_TYPE_SIZE_MASK );
+ * \endcode
+ *
+ * The following constants are flags describing the type attributes.  A type
+ * is either an integer or a floating-point, either purely real or complex,
+ * and, if integer, is either signed or unsigned.
+ *
+ * <table>
+ * <tr><th>Name</th><th>Octal Value</th><th>Description</th></tr>
+ * <tr><td>#LAL_FLTPT_TYPE_FLAG</td><td>010</td><td>Floating-point (not integer) type</td></tr>
+ * <tr><td>#LAL_CMPLX_TYPE_FLAG</td><td>020</td><td>Complex (not purely real) type</td></tr>
+ * <tr><td>#LAL_UNSGN_TYPE_FLAG</td><td>040</td><td>Unsigned (no sign info) type</td></tr>
+ * </table>
+ *
+ * To get the actual type, these flags are combined together and with the
+ * type size constants using the bitwise-or operator (<tt>|</tt>).  For example,
+ * an eight-byte floating point number would be
+ * <tt>(#LAL_8_BYTE_TYPE_SIZE | #LAL_8_BYTE_TYPE_SIZE | #LAL_FLTPT_TYPE_FLAG)</tt>.
+ * Conceivably you could have a complex type made from a pair of unsigned
+ * one-byte integers that would be specified as
+ * <tt>(#LAL_1_BYTE_TYPE_SIZE | #LAL_CMPLX_TYPE_FLAG | #LAL_UNSGN_TYPE_FLAG)</tt>.
+ * Fortunately, there are none of these in LAL.  Attribues of a particular
+ * type can be extracted using the bitwise-and operator.  For example:
+ * \code
+ * UINT4 code = LAL_S_TYPE_CODE;
+ * UINT4 isfloat = ( code & LAL_FLTPT_TYPE_FLAG );
+ * UINT4 iscmplx = ( code & LAL_CMPLX_TYPE_FLAG );
+ * \endcode
+ *
+ * The following constants correspond to the types that actually exist in LAL.
+ * Their enumeration is the type ::LALTYPECODE.
+ *
+ * <table>
+ * <tr><th>Name</th><th>Octal Value</th><th>Corresponding Type</th></tr>
+ * <tr><td>#LAL_CHAR_TYPE_CODE</td><td>000</td><td>#CHAR</td></tr>
+ * <tr><td>#LAL_I2_TYPE_CODE</td><td>001</td><td>#INT2</td></tr>
+ * <tr><td>#LAL_I4_TYPE_CODE</td><td>002</td><td>#INT4</td></tr>
+ * <tr><td>#LAL_I8_TYPE_CODE</td><td>003</td><td>#INT8</td></tr>
+ * <tr><td>#LAL_UCHAR_TYPE_CODE</td><td>040</td><td>#UCHAR</td></tr>
+ * <tr><td>#LAL_U2_TYPE_CODE</td><td>041</td><td>#UINT2</td></tr>
+ * <tr><td>#LAL_U4_TYPE_CODE</td><td>042</td><td>#UINT4</td></tr>
+ * <tr><td>#LAL_U8_TYPE_CODE</td><td>043</td><td>#UINT8</td></tr>
+ * <tr><td>#LAL_S_TYPE_CODE</td><td>012</td><td>#REAL4</td></tr>
+ * <tr><td>#LAL_D_TYPE_CODE</td><td>013</td><td>#REAL8</td></tr>
+ * <tr><td>#LAL_C_TYPE_CODE</td><td>033</td><td>#COMPLEX8</td></tr>
+ * <tr><td>#LAL_Z_TYPE_CODE</td><td>034</td><td>#COMPLEX16</td></tr>
+ * </table>
+ *
+ * \section ss_aggregate_datatypes Aggregate datatypes
+ *
+ * These datatypes store arbitrarily large sets or collections of
+ * primitive datatypes.  At this level there is no physical
+ * interpretation assigned to the objects (such as names or units); the
+ * aggregate datatypes simply collect and arrange the primitive
+ * datatypes.  The following types of aggregate datatypes are defines:
+ * vectors, arrays, sequences, vector sequences, and array sequences.
+ *
+ * \subsection ss_Vector DATATYPE-Vector types
+ *
+ * This structure stores an ordered set of \f$n\f$ elements of type
+ * <tt>\<datatype\></tt>, which can be any primitive datatype.  The data are
+ * to be interpreted as being a point in an \f$n\f$-dimensional vector space.
+ * The fields are:
+ * <ul>
+ * <li><tt>UINT4 length</tt>: The number of data \f$n\f$.</li>
+ * <li><tt>\<datatype\> *data</tt>: Pointer to the data array.  The data
+ * are stored sequentially as \f$\mathtt{data}[0,\ldots,n-1]\f$.</li>
+ * </ul>
+ *
+ * The concrete types are ::CHARVector, ::LALStringVector, ::INT2Vector, ::UINT2Vector,
+ * ::INT4Vector, ::UINT4Vector, ::INT8Vector, ::UINT8Vector, ::REAL4Vector,
+ * ::REAL8Vector, ::COMPLEX8Vector, ::COMPLEX16Vector.
+ *
+ * \subsection ss_Array DATATYPE-Array types
+ *
+ * This structure stores a set of elements of type <tt>\<datatype\></tt>,
+ * which can be any primitive datatype, arranged as an \f$m\f$-dimensional
+ * array.  That is, each element can be thought of as having \f$m\f$
+ * indecies, \f$\mathsf{A}_{i_0\cdots i_{m-1}}\f$, where each index \f$i_k\f$
+ * runs over its own range \f$0,\ldots,n_k-1\f$.  The total number of
+ * elements is then \f$N=n_0\times\cdots\times n_{m-1}\f$.  In memory the
+ * array is "flattened" so that the elements are stored sequentially in
+ * a contiguous block.  The fields are:
+ * <ul>
+ * <li><tt>UINT4Vector *dimLength</tt>: Pointer to a vector of length
+ * \f$m\f$, storing the index ranges \f$(n_0,\ldots,n_{m-1})\f$.</dd>
+ * <li><tt>\<datatype\> *data</tt>: Pointer to the data array.  The data
+ * element \f$\mathsf{A}_{i_0\cdots i_{m-1}}\f$ is stored as
+ * \f$\mathtt{data}[i_{m-1} + n_{m-2}\times(i_{m-2} + n_{m-3}\times(\cdots(i_1 + n_0\times i_0)\cdots))]\f$;
+ * that is, the index of <tt>data[]</tt> runs over the entire range of an index
+ * \f$i_{k+1}\f$ before incrementing \f$i_k\f$.</li>
+ * </ul>
+ *
+ * The concrete types are ::INT2Array, ::UINT2Array, ::INT4Array, ::UINT4Array,
+ * ::INT8Array, ::UINT8Array, ::REAL4Array, ::REAL8Array, ::COMPLEX8Array, ::COMPLEX16Array.
+ *
+ * \subsection ss_Sequence DATATYPE-Sequence types
+ *
+ * This structure stores an ordered set of \f$l\f$ elements of type
+ * <tt>\<datatype\></tt>, which can be any primitive datatype.  It is
+ * identical to <tt>\<datatype\>Vector</tt>, except that the elements are to
+ * be interpreted as \f$l\f$ consecutive elements rather than the components
+ * of an \f$l\f$-dimensional vector.  The fields are:
+ * <ul>
+ * <li><tt>UINT4 length</tt>: The number of data \f$l\f$.</li>
+ * <li><tt>\<datatype\> *data</tt>: Pointer to the data array.  The data
+ * are stored sequentially as \f$\mathtt{data}[0, \ldots, l-1]\f$.</li>
+ * </ul>
+ *
+ * The concrete types are ::CHARSequence, ::INT2Sequence, ::UINT2Sequence,
+ * ::INT4Sequence, ::UINT4Sequence, ::INT8Sequence, ::UINT8Sequence, ::REAL4Sequence,
+ * ::REAL8Sequence, ::COMPLEX8Sequence, ::COMPLEX16Sequence.
+ *
+ * \subsection ss_VectorSequence DATATYPE-VectorSequence types
+ *
+ * This structure stores an ordered set of \f$l\f$ elements of type
+ * <tt>\<datatype\>Vector</tt>, where <tt>\<datatype\></tt> can be any primitive
+ * datatype.  Mathematically the sequence can be written as
+ * \f$\{\vec{v}^{(0)},\ldots,\vec{v}^{(l-1)}\}\f$, where each element
+ * \f$\vec{v}^{(j)}=(v^{(j)}_0,\ldots,v^{(i)}_{n-1})\f$ is a vector of length
+ * \f$n\f$.  In memory the elements are "flattened"; that is, they are
+ * stored sequentially in a contiguous block of memory.  The fields are:
+ * <ul>
+ * <li><tt>UINT4 length</tt>: The number of vectors \f$l\f$.</li>
+ * <li><tt>UINT4 vectorLength</tt>: The length \f$n\f$ of each vector.</li>
+ * <li><tt>\<datatype\> *data</tt>: Pointer to the data array.  The data
+ * element \f$v^{(j)}_i\f$ is stored as \f$\mathtt{data}[j\times n + i]\f$;
+ * that is, the index of <tt>data[]</tt> runs over the internal index of
+ * each vector element before incrementing to the next vector element.</li>
+ * </ul>
+ *
+ * The concrete types are ::CHARVectorSequence, ::INT2VectorSequence, ::UINT2VectorSequence,
+ * ::INT4VectorSequence, ::UINT4VectorSequence, ::INT8VectorSequence, ::UINT8VectorSequence,
+ * ::REAL4VectorSequence, ::REAL8VectorSequence, ::COMPLEX8VectorSequence, ::COMPLEX16VectorSequence.
+ *
+ * \subsection ss_ArraySequence DATATYPE-ArraySequence types
+ *
+ * This structure stores an ordered set of \f$l\f$ elements of type
+ * <tt>\<datatype\>Array</tt>, where <tt>\<datatype\></tt> can be any primitive
+ * datatype.  The indexing of an array sequence can get quite
+ * complicated; it helps to read first the documentation for data arrays,
+ * above.  Mathematically the data can be written as a set
+ * \f$\{\mathsf{A}^{(j)}_{i_0\cdots i_{m-1}}\f$, where the sequence number
+ * \f$j\f$ runs from 0 to \f$l-1\f$, and each array index \f$i_k\f$ runs over its own
+ * range \f$0,\ldots,n_k-1\f$.  The total number of data in a given array
+ * element is then \f$N=n_0\times\cdots\times n_{m-1}\f$, and the total
+ * number of data in the sequence is \f$N\times l\f$.  In memory the array is
+ * "flattened" so that the elements are stored sequentially in a
+ * contiguous block.  The fields are:
+ * <ul>
+ * <li><tt>UINT4 length</tt>: The number \f$l\f$ of array elements in the sequence.</li>
+ * <li><tt>UINT4 arrayDim</tt>: The number of data \f$N\f$ (\e not the
+ * number of indecies \f$m\f$) in each array element of the sequence.</li>
+ * <li><tt>UINT4Vector *dimLength</tt>: Pointer to a vector of length
+ * \f$m\f$, storing the index ranges \f$(n_0,\ldots,n_{m-1})\f$.</dd>
+ * <li><tt>\<datatype\> *data</tt>: Pointer to the data.  The element
+ * \f$\mathsf{A}^{(j)}_{i_0\cdots i_{m-1}}\f$ is stored as
+ * \f$\mathtt{data}[j\times N + i_{m-1} + n_{m-2}\times(i_{m-2} + n_{m-3}\times(\cdots(i_1 + n_0\times i_0)\cdots))]\f$;
+ * that is, the index of <tt>data[]</tt> runs over the internal indecies of each
+ * array element before incrementing to the next array element.</li>
+ * </ul>
+ *
+ * The concrete types are ::INT2ArraySequence, ::UINT2ArraySequence,
+ * ::INT4ArraySequence, ::UINT4ArraySequence, ::INT8ArraySequence, ::UINT8ArraySequence,
+ * ::REAL4ArraySequence, ::REAL8ArraySequence, ::COMPLEX8ArraySequence, ::COMPLEX16ArraySequence
+ *
+ * \section ss_structured_datatypes Structured datatypes
+ *
+ * These datatypes embed primitive and aggregate datatypes inside
+ * structures that define their physical meaning.  Most of these
+ * structures are wrappers for aggregate datatypes that store a physical
+ * quantity as a function of time or frequency.  Other structures store
+ * specific physical information, such as the GPS time, or the factored
+ * response function of a filter.
+ *
+ * \subsection ss_LIGOTimeGPS LIGOTimeGPS type
+ *
+ * The ::LIGOTimeGPS structure stores the time, to nanosecond precision, synchronized
+ * to the Global Positioning System time reference.  The zero time for
+ * the GPS standard is the moment of midnight beginning January 6, 1980,
+ * UTC.  The ::LIGOTimeGPS structure can represent times up to
+ * 68 years on either side of this epoch.  (Note that this is better than
+ * an equivalently-sized ::REAL8 representation of time, which can
+ * maintain nanosecond precision only for times within 104 days of its
+ * reference point.  However, the ::REAL8 representation does allow
+ * one to cover arbitrarily long timescales at correspondingly lower
+ * precision.)
+ *
+ * The macro #LIGOTIMEGPSZERO can be used to statically initialize a
+ * ::LIGOTimeGPS object, for example:
+ * \code
+ * LIGOTimeGPS epoch = LIGOTIMEGPSZERO;
+ * \endcode
+ *
+ * \subsection ss_TimeSeries DATATYPE-TimeSeries types
+ *
+ * This structure represents a sequence of data of type <tt>\<datatype\></tt>
+ * (where <tt>\<datatype\></tt> can be any primitive datatype), sampled over
+ * uniform time intervals \f$t_0, t_0+\Delta t, \ldots , t_0+l\Delta t\f$.
+ * Essentially this is a <tt>\<datatype\>Sequence</tt> with extra fields
+ * defining the sample times and the type of data being sampled.  The raw
+ * data may also have been \e heterodyned; that is, multiplied by a
+ * sinusoid of some frequency \f$f_0\f$, low-pass filtered, and resampled, in
+ * order to extract the behaviour in a small bandwidth about \f$f_0\f$.  The
+ * fields are:
+ * <ul>
+ * <li><tt>::CHAR name[LALNameLength]</tt>: The name of the data series (i.e. the type of data being sampled).</li>
+ * <li><tt>::LIGOTimeGPS epoch</tt>: The start time \f$t_0\f$ of the data series.</li>
+ * <li><tt>::REAL8 deltaT</tt>: The sampling interval \f$\Delta t\f$, in seconds.</li>
+ * <li><tt>::REAL8 f0</tt>: The heterodyning frequency \f$f_0\f$, in Hertz.</li>
+ * <li><tt>::LALUnit sampleUnits</tt>: The physical units of the quantity being sampled.</li>
+ * <li><tt>\<datatype\>Sequence *data</tt>: The sequence of sampled data.</li>
+ * </ul>
+ *
+ * The concrete types are ::INT2TimeSeries, ::UINT2TimeSeries,
+ * ::INT4TimeSeries, ::UINT4TimeSeries, ::INT8TimeSeries, ::UINT8TimeSeries,
+ * ::REAL4TimeSeries, ::REAL8TimeSeries, ::COMPLEX8TimeSeries, ::COMPLEX16TimeSeries.
+ *
+ * \subsection ss_TimeVectorSeries DATATYPE-TimeVectorSeries
+ *
+ * Like <tt>\<datatype\>TimeSeries</tt>, above, except that the sampled data
+ * are of type <tt>\<datatype\>Vector</tt> (where <tt>\<datatype\></tt> can
+ * be any primitive datatype).  The fields are:
+ * <ul>
+ * <li><tt>::CHAR name[LALNameLength]</tt>: The name of the data series (i.e. the type of data being sampled).</li>
+ * <li><tt>::LIGOTimeGPS epoch</tt>: The start time of the data series.</li>
+ * <li><tt>::REAL8 deltaT</tt>: The sampling interval, in seconds.</li>
+ * <li><tt>::REAL8 f0</tt>: The heterodyning frequency, in Hertz.</li>
+ * <li><tt>::LALUnit sampleUnits</tt>: The physical units of the quantity being sampled.</li>
+ * <li><tt>\<datatype\>VectorSequence *data</tt>: The sequence of sampled data.</li>
+ * </ul>
+ *
+ * The concrete types are ::INT2TimeVectorSeries, ::UINT2TimeVectorSeries,
+ * ::INT4TimeVectorSeries, ::UINT4TimeVectorSeries, ::INT8TimeVectorSeries, ::UINT8TimeVectorSeries,
+ * ::REAL4TimeVectorSeries, ::REAL8TimeVectorSeries, ::COMPLEX8TimeVectorSeries, ::COMPLEX16TimeVectorSeries.
+ *
+ * \subsection ss_TimeArraySeries DATATYPE-TimeArraySeries types
+ *
+ * Like <tt>\<datatype\>TimeSeries</tt>, above, except that the sampled data
+ * are of type <tt>\<datatype\>Array</tt> (where <tt>\<datatype\></tt> can
+ * be any primitive datatype).  The fields are:
+ * <ul>
+ * <li><tt>::CHAR name[LALNameLength]</tt>: The name of the data series (i.e. the type of data being sampled).</li>
+ * <li><tt>::LIGOTimeGPS epoch</tt>: The start time of the data series.</li>
+ * <li><tt>::REAL8 deltaT</tt>: The sampling interval, in seconds.</li>
+ * <li><tt>::REAL8 f0</tt>: The heterodyning frequency, in Hertz.</li>
+ * <li><tt>::LALUnit sampleUnits</tt>: The physical units of the quantity being sampled.</li>
+ * <li><tt>\<datatype\>ArraySequence *data</tt>: The sequence of sampled data.</li>
+ * </ul>
+ *
+ * The concrete types are ::INT2TimeArraySeries, ::UINT2TimeArraySeries,
+ * ::INT4TimeArraySeries, ::UINT4TimeArraySeries, ::INT8TimeArraySeries, ::UINT8TimeArraySeries,
+ * ::REAL4TimeArraySeries, ::REAL8TimeArraySeries, ::COMPLEX8TimeArraySeries, ::COMPLEX16TimeArraySeries.
+ *
+ * \subsection ss_FrequencySeries DATATYPE-FrequencySeries types
+ *
+ * This structure represents a frequency spectrum of data of type
+ * <tt>\<datatype\></tt> (where <tt>\<datatype\></tt> can be any primitive
+ * datatype), sampled over uniform frequency intervals
+ * \f$f_0, f_0+\Delta f, \ldots , f_0+l\Delta f\f$.  Essentially this is a
+ * <tt>\<datatype\>Sequence</tt> with extra fields defining the sample
+ * frequencies, the timestamp of the spectrum, and the type of data being
+ * sampled.  The fields are:
+ * <ul>
+ * <li><tt>::CHAR name[LALNameLength]</tt>: The name of the data series (i.e. the type of data being sampled).</li>
+ * <li><tt>::LIGOTimeGPS epoch</tt>: The start time of the time series from which the spectrum was calculated.</li>
+ * <li><tt>::REAL8 f0</tt>: The lowest frequency \f$f_0\f$ being sampled, in Hertz.</li>
+ * <li><tt>::REAL8 deltaF</tt>: The frequency sampling interval \f$\Delta f\f$, in Hertz.</li>
+ * <li><tt>::LALUnit sampleUnits</tt>: The physical units of the quantity being sampled.</li>
+ * <li><tt>\<datatype\>Sequence *data</tt>: The sequence of sampled data.</li>
+ * </ul>
+ *
+ * The concrete types are ::INT2FrequencySeries, ::UINT2FrequencySeries,
+ * ::INT4FrequencySeries, ::UINT4FrequencySeries, ::INT8FrequencySeries, ::UINT8FrequencySeries,
+ * ::REAL4FrequencySeries, ::REAL8FrequencySeries, ::COMPLEX8FrequencySeries, ::COMPLEX16FrequencySeries.
+ *
+ * \subsection ss_ZPGFilter DATATYPE-ZPGFilter types
+ *
+ * This structure stores the complex frequency response of a filter or
+ * transfer function in a factored form, where <tt>\<datatype\></tt> can be
+ * either ::COMPLEX8 or ::COMPLEX16.  One defines a
+ * (dimensionless) complex frequency variable \f$\zeta(f\Delta t)\f$, where
+ * \f$\Delta t\f$ is the time sampling interval of the data to which the
+ * filter will be applied (in the case of a digital filter), or some
+ * other reference timescale (in the case of an analog filter).  The
+ * complex response function can then be given (or approximated) as
+ * \f$H(f)=g\times\prod_k(\zeta-z_k)/\prod_l(\zeta-p_l)\f$, where \f$z_k\f$ are
+ * the complex \e zeros, \f$p_l\f$ are the complex \e poles, and \f$g\f$
+ * is the complex \e gain of the response function.  Some common
+ * complex frequency representations are the \f$z\f$-plane representation
+ * \f$\zeta(f\Delta t)=\exp(2\pi if\Delta t)\f$, which maps the Nyquist
+ * interval \f$f\in[0,1/2\Delta t)\f$ onto the upper-half unit circle in
+ * \f$\zeta\f$, and the \f$w\f$-plane representation \f$\zeta(f\Delta t)=\tan(\pi
+ * f\Delta t)\f$, which maps the Nyquist interval onto the positive real
+ * axis in \f$\zeta\f$.
+ *
+ * The fields of <tt>\<datatype\>ZPGFilter</tt> are:
+ * <ul>
+ * <li><tt>::CHAR name[LALNameLength]</tt>: The name of the filter or transfer function.
+ * This should also mention its complex frequency representation.</li>
+ * <li><tt>::REAL8 deltaT</tt>: The sampling time or reference timescale
+ * \f$\Delta t\f$ for the filter, in seconds.  If zero, it will be treated as
+ * being equal to the sampling interval of the data being filtered.</li>
+ * <li><tt>\<datatype\>Vector *zeros</tt>: Pointer to a vector storing the zeros \f$z_k\f$ of the filter.</li>
+ * <li><tt>\<datatype\>Vector *poles</tt>: Pointer to a vector storing the poles \f$p_k\f$ of the filter.</li>
+ * <li><tt>\<datatype\> gain</tt>: The gain \f$g\f$ of the filter.</li>
+ * </ul>
+ *
+ * The concrete types are ::COMPLEX8ZPGFilter and ::COMPLEX16ZPGFilter.
+ *
+ */

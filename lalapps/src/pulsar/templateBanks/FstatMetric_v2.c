@@ -48,6 +48,7 @@
 #include <lal/ComputeFstat.h>
 #include <lal/PulsarTimes.h>
 #include <lal/SFTutils.h>
+#include <lal/LALString.h>
 
 #include <lal/ComputeFstat.h>
 #include <lal/LogPrintf.h>
@@ -101,7 +102,8 @@
 
 /* ---------- local types ---------- */
 
-/** Rudimentary first sketch of a history type, to encode all
+/**
+ * Rudimentary first sketch of a history type, to encode all
  * the history-trail leading to a certain result from primal inputs.
  *
  * This will be extended in the future and moved into LAL.
@@ -129,8 +131,8 @@ typedef struct
 {
   BOOLEAN help;
 
-  LALStringVector* IFOs;	/**< list of detector-names "H1,H2,L1,.." or single detector*/
-  LALStringVector* IFOweights; /**< list of relative detector-weights "w1, w2, w3, .." */
+  LALStringVector *IFOs;	/**< list of detector-names "H1,H2,L1,.." or single detector*/
+  LALStringVector *sqrtSX; 	/**< (string-) list of per-IFO sqrt{Sn} values, \f$\sqrt{S_X}\f$ */
 
   REAL8 Freq;		/**< target-frequency */
   REAL8 Alpha;		/**< skyposition Alpha: radians, equatorial coords. */
@@ -156,7 +158,7 @@ typedef struct
 
   CHAR* outputMetric;	/**< filename to write metrics into */
 
-  INT4 detMotionType;	/**< enum-value DetectorMotionType specifying type of detector-motion to use */
+  CHAR *detMotionStr;	/**< string specifying type of detector-motion to use */
 
   INT4 metricType;	/**< type of metric to compute: 0=phase-metric, 1=F-metric(s), 2=both */
 
@@ -201,17 +203,12 @@ main(int argc, char *argv[])
   UserVariables_t uvar = empty_UserVariables;
   DopplerMetricParams metricParams = empty_DopplerMetricParams;
 
-  lalDebugLevel = 0;
   vrbflg = 1;	/* verbose error-messages */
 
   /* set LAL error-handler */
   lal_errhandler = LAL_ERR_EXIT;
 
   /* register user-variables */
-  if ( XLALGetDebugLevel (argc, argv, 'v') != XLAL_SUCCESS ) {
-    XLALPrintError( "%s(): XLALGetDebugLevel() failed\n", __func__ );
-    return EXIT_FAILURE;
-  }
 
   /* set log-level */
   LogSetLevel ( lalDebugLevel );
@@ -259,9 +256,13 @@ main(int argc, char *argv[])
   XLAL_CHECK ( XLALInitCode( &config, &uvar, argv[0] ) == XLAL_SUCCESS, XLAL_EFUNC, "XLALInitCode() failed with xlalErrno = %d\n\n", xlalErrno );
   config.history->VCSInfoString = VCSInfoString;
 
+  /* parse detector motion string */
+  int detMotionType = XLALParseDetectorMotionString( uvar.detMotionStr );
+  XLAL_CHECK ( detMotionType != XLAL_FAILURE, XLAL_EFUNC, "Failed to pass detector motion string '%s'", uvar.detMotionStr );
+  metricParams.detMotionType = detMotionType;
+
   metricParams.segmentList   = config.segmentList;
   metricParams.coordSys      = config.coordSys;
-  metricParams.detMotionType = uvar.detMotionType;
   metricParams.metricType    = uvar.metricType;
   metricParams.detInfo       = config.detInfo;
   metricParams.signalParams  = config.signalParams;
@@ -317,7 +318,7 @@ initUserVars (UserVariables_t *uvar)
   /* set a few defaults */
   uvar->help = FALSE;
 
-#define EPHEM_YEAR  "00-04"
+#define EPHEM_YEAR  "00-19-DE405"
   uvar->ephemYear = XLALCalloc (1, strlen(EPHEM_YEAR)+1);
   strcpy (uvar->ephemYear, EPHEM_YEAR);
 
@@ -341,9 +342,9 @@ initUserVars (UserVariables_t *uvar)
     XLAL_ERROR ( XLAL_ENOMEM );
   }
 
-  uvar->IFOweights = NULL;
+  uvar->sqrtSX = NULL;
 
-  uvar->detMotionType = DETMOTION_SPIN_ORBIT;
+  uvar->detMotionStr = XLALStringDuplicate(XLALDetectorMotionName(DETMOTION_SPIN | DETMOTION_ORBIT));
   uvar->metricType = 0;	/* by default: compute only phase metric */
 
   if ( (uvar->coords = XLALCreateStringVector ( "freq", "alpha", "delta", "f1dot", NULL )) == NULL ) {
@@ -356,10 +357,10 @@ initUserVars (UserVariables_t *uvar)
   /* register all our user-variables */
 
   XLALregBOOLUserStruct(help,		'h', UVAR_HELP,		"Print this help/usage message");
-  XLALregLISTUserStruct(IFOs,		'I', UVAR_OPTIONAL, 	"Comma-separated list of detectors, eg. \"H1,H2,L1,G1, ...\" ");
-  XLALregLISTUserStruct(IFOweights,	 0,  UVAR_OPTIONAL, 	"Comma-separated list of relative noise-weights, eg. \"w1,w2,w3,..\" ");
-  XLALregREALUserStruct(Alpha,		'a', UVAR_OPTIONAL,	"skyposition Alpha in radians, equatorial coords.");
-  XLALregREALUserStruct(Delta, 		'd', UVAR_OPTIONAL,	"skyposition Delta in radians, equatorial coords.");
+  XLALregLISTUserStruct(IFOs,		'I', UVAR_OPTIONAL, 	"CSV list of detectors, eg. \"H1,H2,L1,G1, ...\" ");
+  XLALregLISTUserStruct(sqrtSX,	 	 0,  UVAR_OPTIONAL, 	"[for F-metric weights] CSV list of detectors' noise-floors sqrt{Sn}");
+  XLALregREALUserStruct(Alpha,		'a', UVAR_OPTIONAL,	"Equatorial Right-ascension (RA) Alpha in radians");
+  XLALregREALUserStruct(Delta, 		'd', UVAR_OPTIONAL,	"Equatorial Declination (DEC) Delta in radians");
   XLALregREALUserStruct(Freq, 		'f', UVAR_OPTIONAL, 	"target frequency");
   XLALregREALUserStruct(f1dot, 		's', UVAR_OPTIONAL, 	"first spindown-value df/dt");
   XLALregREALUserStruct(f2dot, 		 0 , UVAR_OPTIONAL, 	"second spindown-value d2f/dt2");
@@ -384,7 +385,7 @@ initUserVars (UserVariables_t *uvar)
   XLALregLISTUserStruct(coords,		'c', UVAR_OPTIONAL, 	"Doppler-coordinates to compute metric in (see --coordsHelp)");
   XLALregBOOLUserStruct(coordsHelp,      0,  UVAR_OPTIONAL,     "output help-string explaining all the possible Doppler-coordinate names for --coords");
 
-  XLALregINTUserStruct(detMotionType,	 0,  UVAR_DEVELOPER,	"Detector-motion: 0=spin+orbit, 1=orbit, 2=spin, 3=spin+ptoleorbit, 4=ptoleorbit, 5=orbit+spin_z, 6=orbit+spin_xy");
+  XLALregSTRINGUserStruct(detMotionStr,  0,  UVAR_DEVELOPER,	"Detector-motion string: S|O|S+O where S=spin|spinz|spinxy and O=orbit|ptoleorbit");
   XLALregBOOLUserStruct(approxPhase,     0,  UVAR_DEVELOPER,	"Use an approximate phase-model, neglecting Roemer delay in spindown coordinates (or orders >= 1)");
 
   XLALregBOOLUserStruct(version,        'V', UVAR_SPECIAL,      "Output code version");
@@ -394,7 +395,8 @@ initUserVars (UserVariables_t *uvar)
 } /* initUserVars() */
 
 
-/** basic initializations: set-up 'ConfigVariables'
+/**
+ * basic initializations: set-up 'ConfigVariables'
  */
 int
 XLALInitCode ( ConfigVariables *cfg, const UserVariables_t *uvar, const char *app_name)
@@ -417,7 +419,7 @@ XLALInitCode ( ConfigVariables *cfg, const UserVariables_t *uvar, const char *ap
   }
   LIGOTimeGPS startTimeGPS;
   REAL8 duration;
-  if ( manualSegments )
+  if ( uvar->segmentList == NULL )
     {
       XLAL_CHECK ( uvar->Nseg >= 1, XLAL_EDOM, "Invalid input --Nseg=%d: number of segments must be >= 1\n", uvar->Nseg );
       XLAL_CHECK ( uvar->duration >= 1, XLAL_EDOM, "Invalid input --duration=%f: duration must be >= 1 s\n", uvar->duration );
@@ -476,28 +478,7 @@ XLALInitCode ( ConfigVariables *cfg, const UserVariables_t *uvar, const char *ap
   }
 
   /* ----- initialize IFOs and (Multi-)DetectorStateSeries  ----- */
-  {
-    UINT4 numDet = uvar->IFOs->length;
-
-    if ( numDet > DOPPLERMETRIC_MAX_DETECTORS ) {
-      LogPrintf (LOG_CRITICAL, "%s: More detectors (%d) specified than allowed (%d)\n", __func__, numDet, DOPPLERMETRIC_MAX_DETECTORS );
-      XLAL_ERROR ( XLAL_EINVAL );
-    }
-    if ( uvar->IFOweights && (uvar->IFOweights->length != numDet ) )
-      {
-	LogPrintf (LOG_CRITICAL, "%s: number of IFOweights (%d) must agree with the number of IFOs (%d)!\n\n",
-		   __func__, uvar->IFOweights->length, numDet );
-	XLAL_ERROR ( XLAL_EINVAL );
-      }
-
-    cfg->detInfo = empty_MultiDetectorInfo;
-    if ( XLALParseMultiDetectorInfo ( &cfg->detInfo, uvar->IFOs, uvar->IFOweights ) != XLAL_SUCCESS ) {
-      LogPrintf (LOG_CRITICAL, "%s: XLALParseMultiDetectorInfo() failed to parse detector names and/or weights. errno = %d.\n\n", __func__, xlalErrno);
-      XLAL_ERROR ( XLAL_EFUNC );
-    }
-
-  } /* handle detector input */
-
+  XLAL_CHECK ( XLALParseMultiDetectorInfo ( &cfg->detInfo, uvar->IFOs, uvar->sqrtSX ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   /* ---------- translate coordinate system into internal representation ---------- */
   if ( XLALDopplerCoordinateNames2System ( &cfg->coordSys, uvar->coords ) ) {
@@ -748,7 +729,8 @@ XLALOutputDopplerMetric ( FILE *fp, const DopplerMetric *metric, const ResultHis
 } /* XLALOutputDopplerMetric() */
 
 
-/** Destructor for ResultHistory type
+/**
+ * Destructor for ResultHistory type
  */
 void
 XLALDestroyResultHistory ( ResultHistory_t * history )

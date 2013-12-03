@@ -17,7 +17,8 @@
 *  MA  02111-1307  USA
 */
 
-/** \file
+/**
+ * \file
  * \ingroup support
  * \author Creighton, J. D. E.
  * \date 2007
@@ -74,25 +75,32 @@ LALCache *XLALCacheFileRead(LALFILE * fp);
 /** Reads a LAL cache file and produces a LALCache structure. */
 LALCache *XLALCacheImport(const char *fname);
 
-/** Globs a directory and construct LALCache from matching entries.
+/**
+ * Globs a directory and construct LALCache from matching entries.
  * \param [in] dirstr Colon-delimited list of directories.
  * \param [in] fnptrn Glob pattern for matching files.
  * \returns LALCache structure.
  */
 LALCache *XLALCacheGlob(const char *dirstr, const char *fnptrn);
 
-/** Writes a LALCache structure to an output LAL cache file. */
+/** Writes a LALCache structure to output LALFILE. */
 int XLALCacheFileWrite(LALFILE * fp, const LALCache * cache);
+
+/** Exports a LALCache structure to an output LAL cache file. */
+int XLALCacheExport(const LALCache * cache, const char *filename);
 
 /** Sorts entries in a LALCache structure. */
 int XLALCacheSort(LALCache * cache);
 
-/** Prunes duplicate entries keeping the second one; cache is reduced in
+/**
+ * Prunes duplicate entries keeping the second one; cache is reduced in
  * length if there are.  Entries are duplicates if their metadata are
- * the same (even if the urls are different */
+ * the same (even if the urls are different
+ */
 int XLALCacheUniq(LALCache * cache);
 
-/** Selects only matching entries in a LALCache structure -- other entries
+/**
+ * Selects only matching entries in a LALCache structure -- other entries
  * are deleted from the LALCache structure.
  * \param cache *UNDOCUMENTED*
  * \param t0 Remove entries ending before t0 (0 to disable).
@@ -105,7 +113,8 @@ int XLALCacheSieve(LALCache * cache, INT4 t0, INT4 t1,
                    const char *srcregex, const char *dscregex,
                    const char *urlregex);
 
-/** Finds the first entry that contains the requested time, or the first entry
+/**
+ * Finds the first entry that contains the requested time, or the first entry
  * after the time if the time is in a gap or before the first entry.  Returns
  * NULL if the time is after the last entry.
  */

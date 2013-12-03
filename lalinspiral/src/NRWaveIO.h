@@ -43,7 +43,8 @@
 extern "C" {
 #endif
 
-/** \defgroup NRWaveIO_h Header NRWaveIO.h
+/**
+ * \defgroup NRWaveIO_h Header NRWaveIO.h
  * \ingroup pkg_CBC_NEW
  * \author S.Fairhurst, B. Krishnan, L.Santamaria
  *
@@ -72,11 +73,12 @@ extern "C" {
 /** \endcond */
 
 
-/** Struct containing metadata information about a
-    single numerical relativity waveform.  This information
-    will be read from a metadata file. It is expected that
-    more elements will be added to this struct as required.
-*/
+/**
+ * Struct containing metadata information about a
+ * single numerical relativity waveform.  This information
+ * will be read from a metadata file. It is expected that
+ * more elements will be added to this struct as required.
+ */
 typedef struct
 tagNRWaveMetaData
 {

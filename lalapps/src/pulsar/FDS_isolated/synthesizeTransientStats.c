@@ -18,7 +18,8 @@
  */
 
 /*********************************************************************************/
-/** \author R. Prix
+/**
+ * \author R. Prix
  * \file
  * \brief
  * Generate N samples of various statistics (F-stat, B-stat,...) drawn from their
@@ -28,7 +29,7 @@
  * This is based on synthesizeBstat, and is mostly meant to be used for Monte-Carlos
  * studies of ROC curves
  *
- *********************************************************************************/
+ */
 
 /*
  *
@@ -68,7 +69,7 @@
 #include <lalapps.h>
 
 /*---------- DEFINES ----------*/
-#define EPHEM_YEARS  "05-09"	/**< default range, covering S5: override with --ephemYear */
+#define EPHEM_YEARS  "00-19-DE405"	/**< default range, covering S5: override with --ephemYear */
 #define SQ(x) ((x)*(x))
 #define CUBE(x) ((x)*(x)*(x))
 #define QUAD(x) ((x)*(x)*(x)*(x))
@@ -133,7 +134,8 @@ typedef struct {
   INT4 randSeed;	/**< GSL random-number generator seed value to use */
 } UserInput_t;
 
-/** Configuration settings required for and defining a coherent pulsar search.
+/**
+ * Configuration settings required for and defining a coherent pulsar search.
  * These are 'pre-processed' settings, which have been derived from the user-input.
  */
 typedef struct {
@@ -181,7 +183,6 @@ int main(int argc,char *argv[])
   UserInput_t uvar = empty_UserInput;
   ConfigVariables cfg = empty_ConfigVariables;		/**< various derived configuration settings */
 
-  lalDebugLevel = 0;
   vrbflg = 1;	/* verbose error-messages */
   LogSetLevel(lalDebugLevel);
 
@@ -189,10 +190,6 @@ int main(int argc,char *argv[])
   gsl_set_error_handler_off ();
 
   /* ----- register and read all user-variables ----- */
-  if ( XLALGetDebugLevel ( argc, argv, 'v') != XLAL_SUCCESS ) {
-    LogPrintf ( LOG_CRITICAL, "%s: XLALGetDebugLevel() failed with errno=%d\n", __func__, xlalErrno );
-    return 1;
-  }
   LogSetLevel(lalDebugLevel);
 
   if ( XLALInitUserVars( &uvar ) != XLAL_SUCCESS ) {
@@ -267,7 +264,7 @@ int main(int argc,char *argv[])
 
       /* ----- generate signal random draws from ranges and generate Fstat atoms */
       MultiFstatAtomVector *multiAtoms;
-      multiAtoms = XLALSynthesizeTransientAtoms ( &injParamsDrawn, cfg.skypos, cfg.AmpPrior, cfg.transientInjectRange, cfg.multiDetStates, cfg.SignalOnly, &multiAMBuffer, cfg.rng);
+      multiAtoms = XLALSynthesizeTransientAtoms ( &injParamsDrawn, cfg.skypos, cfg.AmpPrior, cfg.transientInjectRange, cfg.multiDetStates, cfg.SignalOnly, &multiAMBuffer, cfg.rng, -1);
       if ( multiAtoms ==NULL ) {
         LogPrintf ( LOG_CRITICAL, "%s: XLALSynthesizeTransientAtoms() failed with xlalErrno = %d\n", __func__, xlalErrno );
         XLAL_ERROR ( XLAL_EFUNC );
@@ -848,7 +845,8 @@ XLALInitCode ( ConfigVariables *cfg, const UserInput_t *uvar )
 } /* XLALInitCode() */
 
 
-/** Load Ephemeris from ephemeris data-files
+/**
+ * Load Ephemeris from ephemeris data-files
  */
 EphemerisData *
 XLALInitEphemeris (const CHAR *ephemYear )	/**< which years do we need? */
@@ -881,7 +879,8 @@ XLALInitEphemeris (const CHAR *ephemYear )	/**< which years do we need? */
 } /* XLALInitEphemeris() */
 
 
-/** Initialize amplitude-prior pdfs from the user-input
+/**
+ * Initialize amplitude-prior pdfs from the user-input
  */
 int
 XLALInitAmplitudePrior ( AmplitudePrior_t *AmpPrior, const UserInput_t *uvar )

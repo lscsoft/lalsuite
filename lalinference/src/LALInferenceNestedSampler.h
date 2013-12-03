@@ -31,7 +31,6 @@
  * \ingroup pkg_LALInference
  * \brief Nested sampler written for LALInference. Independent of model.
  *
- *
  * Nested Sampling algorithm defined using the LALInference
  * Infrastructure. This code should be independent of choice
  * of model. Provided are a LALAlgorithm function and a
@@ -43,8 +42,10 @@
 /* logadd(a,b) = log(exp(a) + exp(b)) using Stirling's approximation */
 /* double logadd(double a,double b); */
 
-/** NestedSamplingAlgorithm implements the nested sampling algorithm,
- see e.g. Sivia "Data Analysis: A Bayesian Tutorial, 2nd edition */
+/**
+ * NestedSamplingAlgorithm implements the nested sampling algorithm,
+ * see e.g. Sivia "Data Analysis: A Bayesian Tutorial, 2nd edition
+ */
 void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState);
 
 /** Calculate covariance matrix from a collection of live points */
@@ -56,7 +57,7 @@ void LALInferenceNScalcCVM(gsl_matrix **cvm, LALInferenceVariables **Live, UINT4
 void LALInferenceNestedSamplingOneStep(LALInferenceRunState *runState);
 
 /** Compute the autocorrelation length from the sampler at the current global iteration */
-LALInferenceVariables *LALInferenceComputeAutoCorrelation(LALInferenceRunState *runState, UINT4 max_iterations, LALInferenceEvolveOneStepFunction *evolve);
+LALInferenceVariables *LALInferenceComputeAutoCorrelation(LALInferenceRunState *runState, UINT4 max_iterations, LALInferenceEvolveOneStepFunction evolve);
 
 /** Perform one MCMC iteration on runState->currentParams. Return 1 if accepted or 0 if not */
 UINT4 LALInferenceMCMCSamplePrior(LALInferenceRunState *runState);
@@ -64,20 +65,29 @@ UINT4 LALInferenceMCMCSamplePrior(LALInferenceRunState *runState);
 /** Sample the prior N times, returns number of acceptances */
 UINT4 LALInferenceMCMCSamplePriorNTimes(LALInferenceRunState *runState, UINT4 N);
 
-/** Sample the limited prior distribution using the MCMC method as usual, but
-   run a sub-chain of x iterations which doesn't check the likelihood bound.
-   x=LALInferenceGetVariable(runState->algorithmParams,"sloppyratio")
-*/
+/**
+ * Sample the limited prior distribution using the MCMC method as usual, but
+ * run a sub-chain of x iterations which doesn't check the likelihood bound.
+ * x=LALInferenceGetVariable(runState->algorithmParams,"sloppyratio")
+ */
 void LALInferenceNestedSamplingSloppySample(LALInferenceRunState *runState);
+
+/* Cache wrapper around the sloppy sampler */
+void LALInferenceNestedSamplingCachedSampler(LALInferenceRunState *runState);
 
 /* REAL8 mean(REAL8 *array,int N); */
 REAL8 LALInferenceNSSample_logt(int Nlive,gsl_rng *RNG);
 
-/** Setup the live points */
+/**
+ * Setup the live points by calling runState->initVariables on each of them
+ * if it is specified. Otherwise clones runState->currentParams (legacy)
+ */
 void LALInferenceSetupLivePointsArray(LALInferenceRunState *runState);
 
-/** Setup a k-D tree from the current set of nested sampling live points for use
-    as a proposal distribution. */
+/**
+ * Setup a k-D tree from the current set of nested sampling live points for use
+ * as a proposal distribution.
+ */
 void LALInferenceSetupkDTreeNSLivePoints( LALInferenceRunState *runState );
 
 /** Project the sample in params onto the eigenvectors given in eigenvectors. */

@@ -18,81 +18,83 @@
 */
 
 /**
-\author Owen, B. J.,   Jones, D. I.
-\file
-\ingroup PtoleMetric_h
-\brief Tests the LALPtoleMetric() function.
-
-\heading{Program \c PtoleMetricTest}
-\latexonly\label{ss_PtoleMetricTest}\endlatexonly
-
-\heading{Usage}
-\code
-PtoleMetricTest
-\endcode
-
-\heading{Description}
-
-This program computes metric components using LALPtoleMetric(). The
-ordering of the components is \f$(f_0, \alpha, \delta, f_1, \ldots)\f$ for the
-unprojected metric, and \f$(\alpha, \delta, f_1, \ldots)\f$ for the metric with
-\f$f_0\f$ projected out.
-
-With no options, this program displays metric components for a single point
-in parameter space for the default integration time (see the <tt>-t</tt>
-option).
-
-The <tt>-b</tt> option sets the beginning time of integration to the option
-argument. (Default is \f$0\f$ seconds)
-
-The <tt>-e</tt> option causes the program to showcase error messages when
-given bad parameter values, etc.
-
-The <tt>-m</tt> option sets the mismatch (default is \f$0.02\f$).
-
-The <tt>-p</tt> option is provided for users who wish to view the
-power mismatch contours provided by the <tt>-x</tt> option (see below)
-but don't have xmgrace installed.  All necessary data is simply
-written to a file ``nongrace.data''; it's probably best to look at the
-code to see the exact format.  The user should then write a small
-script to convert the data into the format appropriate to their
-favorite graphics package.
-
-The <tt>-t</tt> option sets the duration of integration in seconds. The default
-is \f$10^5\f$ seconds, which is chosen because it is about one day but not an
-integer multiple of any astronomically important timescale.
-
-The <tt>-x</tt> option produces a graph of the 2\% power mismatch
-contours on the sky. Dimensions of the ellipses have been exaggerated
-by a factor of \c MAGNIFY (specified within the code) for
-legibility. The purpose of the graph is to get a feel for how ellipses
-are varying across parameter space. Note that this option makes a
-system call to the \c xmgrace program, and will not work if that
-program is not installed on your system.
-
-\heading{Algorithm}
-
-\heading{Uses}
-
-\code
-lalDebugLevel
-LALCheckMemoryLeaks()
-LALCreateVector()
-LALDestroyVector()
-LALDCreateVector()
-LALDDestroyVector()
-LALProjectMetric()
-LALPtoleMetric()
-xmgrace
-\endcode
-
-\heading{Notes}
-
-The graph shows that the patches' overall area is independent of right
-ascension but that those near the equator rotate, which adds a new
-complication to the tiling.
-
-*/
+ * \author Owen, B. J.,   Jones, D. I.
+ * \file
+ * \ingroup PtoleMetric_h
+ * \brief Tests the LALPtoleMetric() function.
+ *
+ * ### Program PtoleMetricTest ###
+ *
+ *
+ * ### Usage ###
+ *
+ * \code
+ * PtoleMetricTest
+ * \endcode
+ *
+ * ### Description ###
+ *
+ * This program computes metric components using LALPtoleMetric(). The
+ * ordering of the components is \f$(f_0, \alpha, \delta, f_1, \ldots)\f$ for the
+ * unprojected metric, and \f$(\alpha, \delta, f_1, \ldots)\f$ for the metric with
+ * \f$f_0\f$ projected out.
+ *
+ * With no options, this program displays metric components for a single point
+ * in parameter space for the default integration time (see the <tt>-t</tt>
+ * option).
+ *
+ * The <tt>-b</tt> option sets the beginning time of integration to the option
+ * argument. (Default is \f$0\f$ seconds)
+ *
+ * The <tt>-e</tt> option causes the program to showcase error messages when
+ * given bad parameter values, etc.
+ *
+ * The <tt>-m</tt> option sets the mismatch (default is \f$0.02\f$).
+ *
+ * The <tt>-p</tt> option is provided for users who wish to view the
+ * power mismatch contours provided by the <tt>-x</tt> option (see below)
+ * but don't have xmgrace installed.  All necessary data is simply
+ * written to a file ``nongrace.data''; it's probably best to look at the
+ * code to see the exact format.  The user should then write a small
+ * script to convert the data into the format appropriate to their
+ * favorite graphics package.
+ *
+ * The <tt>-t</tt> option sets the duration of integration in seconds. The default
+ * is \f$10^5\f$ seconds, which is chosen because it is about one day but not an
+ * integer multiple of any astronomically important timescale.
+ *
+ * The <tt>-x</tt> option produces a graph of the 2\% power mismatch
+ * contours on the sky. Dimensions of the ellipses have been exaggerated
+ * by a factor of \c MAGNIFY (specified within the code) for
+ * legibility. The purpose of the graph is to get a feel for how ellipses
+ * are varying across parameter space. Note that this option makes a
+ * system call to the \c xmgrace program, and will not work if that
+ * program is not installed on your system.
+ *
+ * ### Algorithm ###
+ *
+ *
+ * ### Uses ###
+ *
+ * \code
+ * lalDebugLevel
+ * LALCheckMemoryLeaks()
+ * LALCreateVector()
+ * LALDestroyVector()
+ * LALDCreateVector()
+ * LALDDestroyVector()
+ * LALProjectMetric()
+ * LALPtoleMetric()
+ * xmgrace
+ * \endcode
+ *
+ * ### Notes ###
+ *
+ * The graph shows that the patches' overall area is independent of right
+ * ascension but that those near the equator rotate, which adds a new
+ * complication to the tiling.
+ *
+ */
 
 /** \name Error Codes */ /*@{*/
 #define PTOLEMETRICTESTC_EMEM 1
@@ -125,7 +127,6 @@ extern char *optarg;
 #define SPOKES 30
 #define MAGNIFY 1.0           /* Magnification factor of ellipses */
 
-extern int lalDebugLevel;
 
 int main( int argc, char *argv[] ) {
   static LALStatus status;          /* Status structure */
@@ -142,7 +143,6 @@ int main( int argc, char *argv[] ) {
   FILE            *pvc=NULL;        /* Temporary file for xmgrace option */
   FILE            *fnongrace=NULL;  /* File contaning ellipse coordinates */
 
-  lalDebugLevel = 0;
 
   /* Default values. */
   in.duration = DEFAULT_DURATION;
@@ -159,7 +159,6 @@ int main( int argc, char *argv[] ) {
       break;
     case 'e':
       test = 1;
-      lalDebugLevel = 1;
       break;
     case 'm':
       mismatch = atof( optarg );

@@ -70,7 +70,6 @@ typedef REAL4 skygrid_t[NUM_RA * NUM_DEC];
 /*
  * globals
  */
-int        lalDebugLevel = 0;
 BOOLEAN    verbose_p     = FALSE;
 int        verbose_level = 0;
 const INT4 oneBillion    = 1000000000;
@@ -100,7 +99,7 @@ LALSource   src_0_45_c;
                                    REAL4Vector * pB,
                                    REAL4Vector *pAminusB); */
 /*static REAL4 REAL4VectorRMS(REAL4Vector *pVector); */
-static void PrintLALDetector(LALDetector * const detector);
+static void PrintLALDetector(const LALDetector * detector);
 static void PrintDetResponse(const LALDetAMResponse * const response,
                              const char * const title);
 
@@ -850,7 +849,6 @@ int main(int argc, char *argv[])
 
   if (argc >= 3)
     {
-      lalDebugLevel = atoi(argv[1]);
       verbose_level = atoi(argv[2]);
       verbose_p     = verbose_level;
     }
@@ -872,7 +870,6 @@ int main(int argc, char *argv[])
    * and Malik Rakhmanov */
   if (lalDebugLevel == 13)
     {
-      lalDebugLevel = 1;  /* avoid verbose debug output */
       crab_pulsar_test(&status);
       goto conclusion;
     }
@@ -1825,7 +1822,7 @@ static REAL4 REAL4VectorRMS(REAL4Vector *pVector)
 
 
 static void
-PrintLALDetector(LALDetector * const detector)
+PrintLALDetector(const LALDetector * detector)
 {
   printf( "Detector  = \n");
   printf("{\n");
@@ -2882,7 +2879,6 @@ void find_zero_gmst(void)
   for (k = 0; k < 4096; ++k)
     {
       /*  to avoid printing out all the LAL INFO messages */
-      lalDebugLevel = 0;
       gmst1 = XLALGreenwichMeanSiderealTime(&gps);
 
       printf("k = %9d; GPS = %d:%d;\t\tgmst1 = % 22.14e; gmst1-2*Pi = % 20.14e\n",

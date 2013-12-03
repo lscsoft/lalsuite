@@ -28,37 +28,39 @@
  */
 
 /**
-
-\author Brown, D. A. and Creighton, T. D
-\file
-\ingroup FindChirp_h
-
-\brief Provides an interface between code build from \c findchirp and
-various simulation packages for injecting chirps into data.
-
-\heading{Prototypes}
-
-<dl>
-<dt><tt>LALFindChirpInjectSignals()</tt></dt><dd> injects the signals described
-in the linked list of \c SimInspiralTable structures \c events
-into the data \c chan. The response function \c resp should
-contain the response function to use when injecting the signals into the data.</dd>
-</dl>
-
-\heading{Algorithm}
-
-None.
-
-\heading{Notes}
-\heading{Uses}
-\code
-LALCalloc()
-LALFree()
-\endcode
-
-\heading{Notes}
-
-*/
+ * \author Brown, D. A. and Creighton, T. D
+ * \file
+ * \ingroup FindChirp_h
+ *
+ * \brief Provides an interface between code build from \c findchirp and
+ * various simulation packages for injecting chirps into data.
+ *
+ * ### Prototypes ###
+ *
+ * <dl>
+ * <dt><tt>LALFindChirpInjectSignals()</tt></dt><dd> injects the signals described
+ * in the linked list of \c SimInspiralTable structures \c events
+ * into the data \c chan. The response function \c resp should
+ * contain the response function to use when injecting the signals into the data.</dd>
+ * </dl>
+ *
+ * ### Algorithm ###
+ *
+ * None.
+ *
+ * ### Notes ###
+ *
+ *
+ * ### Uses ###
+ *
+ * \code
+ * LALCalloc()
+ * LALFree()
+ * \endcode
+ *
+ * ### Notes ###
+ *
+ */
 
 #define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/Units.h>
@@ -239,8 +241,8 @@ LALFindChirpInjectSignals (
   CHECKSTATUSPTR( status );
   for ( k = 0; k < resp->data->length; ++k )
   {
-    unity->data[k].re = 1.0;
-    unity->data[k].im = 0.0;
+    unity->data[k].realf_FIXME = 1.0;
+    unity->data[k].imagf_FIXME = 0.0;
   }
 
   LALCCVectorDivide( status->statusPtr, detector.transfer->data, unity,
@@ -473,7 +475,7 @@ LALFindChirpInjectSignals (
        * XXX filtering uncalibrated data.                               XXX */
       REAL8 dynRange;
       LALWarning (status, "Attempting to calculate dynRange: Will break if un-calibrated strain-data is used.");
-      dynRange = 1.0/(resp->data->data[0].re);
+      dynRange = 1.0/(crealf(resp->data->data[0]));
 
       /* set the start times for injection */
       XLALINT8NSToGPS( &(waveform.h->epoch), waveformStartTime );
@@ -887,10 +889,10 @@ LALFindChirpSetAnalyseTemplate (
       /* Populate the shf vector from the wtilde vector */
       for (ki=0; ki<fcDataParams->wtildeVec->length ; ki++)
       {
-        if (fcDataParams->wtildeVec->data[ki].re)
+        if (crealf(fcDataParams->wtildeVec->data[ki]))
         {
           mmFshf->data->data[ki] =
-            1./fcDataParams->wtildeVec->data[ki].re;
+            1./crealf(fcDataParams->wtildeVec->data[ki]);
         }
         else
         {
@@ -1065,7 +1067,14 @@ LALFindChirpSetAnalyseTemplate (
     for ( tmpltCurrent = tmpltHead, kj = 0; tmpltCurrent;
         tmpltCurrent = tmpltCurrent->next, kj++)
     {
-      analyseThisTmplt[kj] = pow(2.0, (double)(numInjections)) - 1 ;
+      if ( numInjections )
+      {
+        analyseThisTmplt[kj] = pow(2.0, (double)(numInjections)) - 1 ;
+      }
+      else
+      {
+        analyseThisTmplt[kj] = 1;
+      }
     }
   }
 
@@ -1122,8 +1131,8 @@ XLALFindChirpBankSimInitialize (
   cut = fLow / spec->deltaF > 1 ? fLow / spec->deltaF : 1;
 
   psdMin = spec->data->data[cut] *
-    ( ( resp->data->data[cut].re * resp->data->data[cut].re +
-        resp->data->data[cut].im * resp->data->data[cut].im ) / psdScaleFac );
+    ( ( crealf(resp->data->data[cut]) * crealf(resp->data->data[cut]) +
+        cimagf(resp->data->data[cut]) * cimagf(resp->data->data[cut]) ) / psdScaleFac );
 
   /* calibrate the input power spectrum, scale to the */
   /* range of REAL4 and store the as S_v(f)           */
@@ -1133,8 +1142,8 @@ XLALFindChirpBankSimInitialize (
   }
   for ( k = cut; k < spec->data->length; ++k )
   {
-    REAL4 respRe = resp->data->data[k].re;
-    REAL4 respIm = resp->data->data[k].im;
+    REAL4 respRe = crealf(resp->data->data[k]);
+    REAL4 respIm = cimagf(resp->data->data[k]);
     spec->data->data[k] = spec->data->data[k] *
       ( ( respRe * respRe + respIm * respIm ) / psdScaleFac );
   }
@@ -1143,8 +1152,8 @@ XLALFindChirpBankSimInitialize (
   /* of the psd scale factor since S_h = |R|^2 S_v        */
   for ( k = 0; k < resp->data->length; ++k )
   {
-    resp->data->data[k].re = sqrt( psdScaleFac );
-    resp->data->data[k].im = 0;
+    resp->data->data[k].realf_FIXME = sqrt( psdScaleFac );
+    resp->data->data[k].imagf_FIXME = 0;
   }
 
   return cut;
@@ -1163,7 +1172,7 @@ XLALFindChirpBankSimInjectSignal (
   CHAR                  tmpChName[LALNameLength];
   REAL4                 M, mu;
 #if 0
-  FrStream             *frStream = NULL;
+  LALFrStream             *frStream = NULL;
   REAL4TimeSeries       frameData;
   INT8                  waveformStartTime = 0;
   UINT4                 waveformLengthCtr = 0;
@@ -1203,8 +1212,8 @@ XLALFindChirpBankSimInjectSignal (
     snprintf( bankInjection->source, LIGOMETA_SOURCE_MAX * sizeof(CHAR),
         "%s", simParams->frameChan );
 
-    frStream = XLALFrOpen( NULL, simParams->frameName );
-    XLALFrSetMode( frStream, LAL_FR_VERBOSE_MODE );
+    frStream = XLALFrStreamOpen( NULL, simParams->frameName );
+    XLALFrStreamSetMode( frStream, LAL_FR_STREAM_VERBOSE_MODE );
 
     memset( &frameData, 0, sizeof(REAL4TimeSeries) );
     snprintf( frameData.name,
@@ -1214,7 +1223,7 @@ XLALFindChirpBankSimInjectSignal (
     frameData.data =
       XLALCreateREAL4Vector( dataSegVec->data->chan->data->length );
 
-    XLALFrGetREAL4TimeSeries( &frameData, frStream );
+    XLALFrStreamGetREAL4TimeSeries( &frameData, frStream );
     if ( xlalErrno == XLAL_EIO )
     {
       /* ignore end of data: we need the channel */
@@ -1229,7 +1238,7 @@ XLALFindChirpBankSimInjectSignal (
     fprintf( stderr, "expected template sampling rate = %le\n",
         dataSegVec->data->chan->deltaT );
 
-    XLALFrClose( frStream );
+    XLALFrStreamClose( frStream );
 
     /* center the waveform in the data segment */
     waveformStartTime = XLALGPSToINT8NS( &(dataSegVec->data->chan->epoch) );
@@ -1386,8 +1395,8 @@ XLALFindChirpBankSimSignalNorm(
       /* up to Nyquist */
       for ( k = cut; k < fcDataParams->tmpltPowerVec->length; ++k )
       {
-        if ( tmpltPower[k] ) matchNorm += ( fcData[k].re * fcData[k].re +
-            fcData[k].im * fcData[k].im ) / tmpltPower[k];
+        if ( tmpltPower[k] ) matchNorm += ( crealf(fcData[k]) * crealf(fcData[k]) +
+            cimagf(fcData[k]) * cimagf(fcData[k]) ) / tmpltPower[k];
       }
       break;
 
@@ -1402,8 +1411,8 @@ XLALFindChirpBankSimSignalNorm(
       /* integrated up to Nyquist*/
       for ( k = cut; k < fcDataParams->wtildeVec->length; ++k )
       {
-        if ( wtilde[k].re ) matchNorm += ( fcData[k].re * fcData[k].re +
-            fcData[k].im * fcData[k].im ) / wtilde[k].re;
+        if ( crealf(wtilde[k]) ) matchNorm += ( crealf(fcData[k]) * crealf(fcData[k]) +
+            cimagf(fcData[k]) * cimagf(fcData[k]) ) / crealf(wtilde[k]);
       }
       break;
 

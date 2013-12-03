@@ -199,7 +199,6 @@ int main( int argc, char *argv[] )
     {"core-radius",             required_argument, 0,                'p'},
     {"flatten-halo",            required_argument, 0,                'q'},
     {"halo-radius",             required_argument, 0,                'r'},
-    {"debug-level",             required_argument, 0,                'z'},
     {"user-tag",                required_argument, 0,                'Z'},
     {"userTag",                 required_argument, 0,                'Z'},
     {0, 0, 0, 0}
@@ -208,7 +207,6 @@ int main( int argc, char *argv[] )
 
   /* set up inital debugging values */
   lal_errhandler = LAL_ERR_EXIT;
-  set_debug_level( "1" );
 
   /* create the process and process params tables */
   proctable.processTable = (ProcessTable *) 
@@ -244,7 +242,7 @@ int main( int argc, char *argv[] )
     size_t optarg_len;
 
     c = getopt_long_only( argc, argv, 
-        "a:A:b:B:hi:p:q:r:s:t:vz:Z:", long_options, &option_index );
+        "a:A:b:B:hi:p:q:r:s:t:vZ:", long_options, &option_index );
 
     /* detect the end of the options */
     if ( c == - 1 )
@@ -428,13 +426,6 @@ int main( int argc, char *argv[] )
 
       case 'v':
         vrbflg = 1;
-        break;
-
-      case 'z':
-        set_debug_level( optarg );
-        this_proc_param = this_proc_param->next = 
-          next_process_param( long_options[option_index].name, 
-            "string", "%s", optarg );
         break;
 
       case 'h':

@@ -27,7 +27,7 @@
  * \author Karl Wette
  * \brief Static tables of the factorial and double-factorial functions, and derived quantities.
  *
- * \heading{Description}
+ * ### Description ###
  *
  * The following tables of the factorial function are provided:
  * <ul>
@@ -51,7 +51,7 @@
  */
 /*@{*/
 
-#ifndef SWIG // exclude from SWIG wrappings
+#ifndef SWIG /* exclude from SWIG wrappings */
 
 #define LAL_FACT_MAX 20
 
@@ -240,7 +240,7 @@ static const REAL8 LAL_FACT2_LOG[] = { \
   43.2922520225417196595260757880648636 \
 };
 
-#endif // SWIG
+#endif /* SWIG */
 
 /*@}*/
 

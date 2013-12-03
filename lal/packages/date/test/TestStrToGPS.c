@@ -25,7 +25,6 @@
 #include <lal/LALStdio.h>
 #include <lal/XLALError.h>
 
-extern int lalDebugLevel;
 
 
 struct TESTCASE {
@@ -62,7 +61,7 @@ static int runtest(const struct TESTCASE *testcase)
 }
 
 
-int main(int argc, char *argv[])
+int main(void)
 {
 	/* Most of these test were shamelessly stolen from Peter's original
 	 * code for testing LALStringToGPS() */
@@ -168,11 +167,6 @@ int main(int argc, char *argv[])
 	struct TESTCASE *testcase;
 	int failures = 0;
 
-  lalDebugLevel = 0;
-
-	/* set lalDebugLevel */
-	if(argc > 1)
-		lalDebugLevel = atoi(argv[1]);
 
 	/* run tests that all platforms must pass */
 	for(testcase = general_testcases; testcase->string; testcase++)

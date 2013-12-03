@@ -98,8 +98,10 @@ extern "C" {
 /** Macro to square a value. */
 #define SQUARE(x) ( (x) * (x) );
 
-/** The maximum allowable length of the input data stream. Note: this may be
- * removed in the future with memory allocated dynamically. */
+/**
+ * The maximum allowable length of the input data stream. Note: this may be
+ * removed in the future with memory allocated dynamically.
+ */
 #define MAXLENGTH 1000000
 
 /* default values */
@@ -107,73 +109,96 @@ extern "C" {
 #define CHUNKMIN 5
 /** Default value of the maximum length into which the data can be split. */
 #define CHUNKMAX 0
-/** Default number of bins in polarisation angle \f$ \psi \f$ for the time vs.
- * \f$ \psi \f$ antenna pattern lookup table. */
+/**
+ * Default number of bins in polarisation angle \f$ \psi \f$ for the time vs.
+ * \f$ \psi \f$ antenna pattern lookup table.
+ */
 #define PSIBINS 1000
-/** Default number of bins in time (over one sidereal day) for the time vs.
- * \f$ \psi \f$ antenna pattern lookup table. */
+/**
+ * Default number of bins in time (over one sidereal day) for the time vs.
+ * \f$ \psi \f$ antenna pattern lookup table.
+ */
 #define TIMEBINS 2880
 
-/** The total number of 'amplitude' parameters that can define a signal e.g.
- * gravitational wave amplitude from a triaxial star \f$ h_0 \f$, initial phase
- * of the signal \f$ \phi_0 \f$, polarisation angle \f$ psi \f$, and cosine of
- * the inclination angle \f$ \cos{\iota} \f$.  For the pinSf model, extra pars include
- \f$ I_{31}, I_{21}\f$ the equivalents of \f$ h_0 \f$, and the extra orientation parameters
- \f$ \cos(\theta) \f$ and \f$ \lambda \f$.
+/**
+ * The total number of 'amplitude' parameters that can define a signal e.g. gravitational wave amplitude from a
+ * triaxial star emitting from the \f$l=m=2\f$ mode we have \f$ h_0 \f$, initial phase of the signal \f$ \phi_0 \f$,
+ * polarisation angle \f$ psi \f$, and cosine of the inclination angle \f$ \cos{\iota} \f$. Or, more generally for
+ * emission from \f$l=2\f$ and \f$m=1,2\f$ instead of \f$ h_0 \f$ and \f$ \phi_0 \f$ there can be complex amplitude and
+ * phase parameters \f$C_{22}\f$, \f$C_{21}\f$, \f$\phi_{22}\f$ and \f$\phi_{21}\f$.
  *
  * Note: These should be increased if additional model parameters are added.
  */
 #define NUMAMPPARS 8
 
-/** The total number of frequency parameters that can defined a signal e.g.
+/**
+ * The total number of frequency parameters that can defined a signal e.g.
  * the signal frequency and its time derivatives, and the frequency (period)
- * epoch. */
-#define NUMFREQPARS 7
+ * epoch.
+ */
+#define NUMFREQPARS 8
 
-/** The total number of sky position parameters that can define a signal e.g.
- * right ascension, declination, proper motion and the positional epoch. */
+/**
+ * The total number of sky position parameters that can define a signal e.g.
+ * right ascension, declination, proper motion and the positional epoch.
+ */
 #define NUMSKYPARS 5
 
-/** The total number of binary system parameters that can define a signal e.g.
+/**
+ * The total number of binary system parameters that can define a signal e.g.
  * binary period, orbital eccentricity, projected semi-major axis, time of
- * periastron and angle of periastron. */
+ * periastron and angle of periastron.
+ */
 #define NUMBINPARS 33
 
-/** A list of the amplitude parameters. The names given here are those that are
- * recognised within the code. */
+/**
+ * A list of the amplitude parameters. The names given here are those that are
+ * recognised within the code.
+ */
 static const CHAR amppars[NUMAMPPARS][VARNAME_MAX] = { "h0", "phi0", "psi",
-"cosiota", "I31", "I21", "lambda", "costheta" };
+"cosiota", "C22", "C21", "phi22", "phi21" };
 
-/** A list of the frequency parameters. The names given here are those that are
- * recognised within the code. */
+/**
+ * A list of the frequency parameters. The names given here are those that are
+ * recognised within the code.
+ */
 static const CHAR freqpars[NUMFREQPARS][VARNAME_MAX] = { "f0", "f1", "f2", "f3",
-"f4", "f5", "pepoch" };
+"f4", "f5", "pepoch", "cgw" };
 
-/** A list of the sky position parameters. The names given here are those that
- * are recognised within the code. */
+/**
+ * A list of the sky position parameters. The names given here are those that
+ * are recognised within the code.
+ */
 static const CHAR skypars[NUMSKYPARS][VARNAME_MAX] = { "ra", "pmra", "dec",
 "pmdec", "posepoch" };
 
-/** A list of the binary system parameters. The names given here are those that
- * are recognised within the code. */
+/**
+ * A list of the binary system parameters. The names given here are those that
+ * are recognised within the code.
+ */
 static const CHAR binpars[NUMBINPARS][VARNAME_MAX] = { "Pb", "e", "eps1",
 "eps2", "T0", "Tasc", "x", "w0", "Pb2", "e2", "T02", "x2", "w02", "Pb3", "e3",
 "T03", "x3", "w03", "xpbdot", "eps1dot", "eps2dot", "wdot", "gamma", "Pbdot",
 "xdot", "edot", "s", "dr", "dth", "a0", "b0", "M", "m2" };
 
-/** A flag to specify if phase parameters are being searched over and
+/**
+ * A flag to specify if phase parameters are being searched over and
  * therefore the pulsar model requires phase evolution to be re-calculated (0 =
- * no, 1 = yes). */
+ * no, 1 = yes).
+ */
 extern UINT4 varyphase;
 
-/** A flag to specify if the sky position will be searched over, and therefore
+/**
+ * A flag to specify if the sky position will be searched over, and therefore
  * whether the solar system barycentring needs recalculating (0 = no, 1 = yes).
-*/
+ */
 extern UINT4 varyskypos;
 
-/** A flag to specify if the binary system parameters will be searched over,
+/**
+ * A flag to specify if the binary system parameters will be searched over,
  * and therefore whether the binary system barycentring needs recalculating (0 =
- * no, 1 = yes) */
+ * no, 1 = yes)
+ */
 extern UINT4 varybinary;
 
 extern LALStringVector *corlist;
@@ -187,21 +212,15 @@ void setupFromParFile( LALInferenceRunState *runState );
 
 void setupLookupTables(LALInferenceRunState *runState, LALSource *source);
 
-void add_initial_variables( LALInferenceVariables *ini, 
-                            LALInferenceVariables *scaleFac,
-                            LALInferenceVariables *priorArgs, 
-                            BinaryPulsarParams pars ); 
-  
-void add_variable_scale_prior( LALInferenceVariables *var, 
-                               LALInferenceVariables *scale, 
-                               LALInferenceVariables *prior, const char *name, 
-                               REAL8 value, REAL8 sigma );
+void add_initial_variables( LALInferenceVariables *ini, LALInferenceVariables *scaleFac, BinaryPulsarParams pars );
+
+void add_variable_scale( LALInferenceVariables *var, LALInferenceVariables *scale, const char *name, REAL8 value );
 
 void initialisePrior( LALInferenceRunState *runState );
 
 void initialiseProposal( LALInferenceRunState *runState );
 
-void add_correlation_matrix( LALInferenceVariables *ini, 
+void add_correlation_matrix( LALInferenceVariables *ini,
                              LALInferenceVariables *priors, REAL8Array *corMat,
                              LALStringVector *parMat );
 
@@ -211,8 +230,7 @@ void injectSignal( LALInferenceRunState *runState );
 /* helper functions */
 UINT4Vector *get_chunk_lengths( LALInferenceIFOData *data, INT4 chunkMax );
 
-UINT4Vector *chop_n_merge( LALInferenceIFOData *data, INT4 chunkMin, 
-                           INT4 chunkMax );
+UINT4Vector *chop_n_merge( LALInferenceIFOData *data, INT4 chunkMin, INT4 chunkMax );
 
 COMPLEX16Vector *subtract_running_median( COMPLEX16Vector *data );
 
@@ -245,11 +263,7 @@ TimeCorrectionType XLALAutoSetEphemerisFiles( CHAR *efile, CHAR *sfile,
                                               BinaryPulsarParams pulsar,
                                               INT4 gpsstart, INT4 gpsend );
 
-void phi0_psi_transform( REAL8 phi0, REAL8 psi, REAL8 *phi0prime,
-                         REAL8 *psiprime );
-
-void inverse_phi0_psi_transform( REAL8 phi0prime, REAL8 psiprime,
-                                 REAL8 *phi0, REAL8 *psi );
+void remove_variable_and_prior( LALInferenceRunState *runState, LALInferenceIFOData *data, const CHAR *var );
 
 void samples_prior( LALInferenceRunState *runState );
 

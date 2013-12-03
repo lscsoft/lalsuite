@@ -7,6 +7,9 @@
 /**
 \defgroup ch_spec	LAL Specification and Style Guide
 
+\defgroup ch_c		C Library
+@{
+
 \defgroup ch_gen	General LAL Packages
    @{
    \defgroup pkg_std		Package 'std'
@@ -50,6 +53,20 @@
 \defgroup ch_lalframe	Framedata Interface
    @{
    \defgroup pkg_framedata	Package 'framedata'
+   @}
+@}
+
+\defgroup ch_python Python Library
+   @{
+   \defgroup pkg_py_lal				General packages (LAL)
+   \defgroup pkg_py_lalframe		GWFrame packages (LALFrame)
+   \defgroup pkg_py_lalsimulation	Signal simulation packages (LALSimulation)
+   \defgroup pkg_py_lalburst		Burst packages (LALBurst)
+   \defgroup pkg_py_lalinspiral		Inspiral packages (LALInspiral)
+   \defgroup pkg_py_lalinference	Inference packages (LALInference)
+   \defgroup pkg_py_lalpulsar		Pulsar packages (LALPulsar)
+   \defgroup pkg_py_lalstochastic	Stochastic packages (LALStochastic)
+   \defgroup pkg_py_laldetchar		Detector characterisation packages (LALDetChar)
    @}
 
 */

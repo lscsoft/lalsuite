@@ -65,7 +65,6 @@ extern int LAL_ERR_RTRN(
     volatile const char *id
     );
 extern int clear_status( LALStatus * );
-extern int set_debug_level( const char *s );
 
 extern char *XLALGetVersionString( int level );
 extern int XLALOutputVersionString ( FILE *fp, int level );

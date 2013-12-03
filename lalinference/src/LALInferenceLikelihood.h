@@ -32,7 +32,7 @@
  *
  * \brief Header file for likelihood functions used by LALInference codes
  *
- * LALInferenceLikelihood contains all the necessary routines to compute the likelihood 
+ * LALInferenceLikelihood contains all the necessary routines to compute the likelihood
  * from a template (computed with LALInferenceTemplate) and the data (initialised with LALInferenceReadData).
  *
  * Likelihood functions follow the basic naming convention: LALInference<type_of>LogLikelihood()
@@ -41,18 +41,17 @@
  * - a pointer to a LALInferenceVariable structure containing the parameters to compute the likelihood for,
  * - a pointer to a LALInferenceIFOData structure containing the linked list of interferometer data,
  * - a pointer to the LALInferenceTemplateFunction template function to be used.
- * 
+ *
  * Outputs as a REAL8 the natural logarithm value of the likelihood, as defined by:
- *  
+ *
  * \f[
  * Likelihood(\vec{x}|\vec{\lambda},M)=\exp(-\tfrac{1}{2}<\vec{x}-\vec{h_M}(\vec{\lambda})|\vec{x}-\vec{h_M}(\vec{\lambda})>)
- * \f] 
+ * \f]
  *
  * where: \f$<x|y>=4Re\left ( \int \frac{\tilde{x}\,\tilde{y}^*}{S_f}\, df \right )\f$
- * 
  *
  * Note that the likelihood is reported unnormalised.
- * 
+ *
  */
 /*@{*/
 
@@ -68,12 +67,16 @@
  *   - "time"            (REAL8, GPS sec.)                     
  ***************************************************************/
 REAL8 LALInferenceUndecomposedFreqDomainLogLikelihood(LALInferenceVariables *currentParams, LALInferenceIFOData *data, 
-                              LALInferenceTemplateFunction *template);
+                              LALInferenceTemplateFunction templt);
 
-/** For testing purposes (for instance sampling the prior), 
+REAL8 LALInferenceNoiseOnlyLogLikelihood(LALInferenceVariables *currentParams, LALInferenceIFOData *data, LALInferenceTemplateFunction templt);
+
+/**
+ * For testing purposes (for instance sampling the prior),
  * likelihood that returns 0.0 = log(1) every
- * time.  Activated with the --zeroLogLike command flag. */
-REAL8 LALInferenceZeroLogLikelihood(LALInferenceVariables *currentParams, LALInferenceIFOData *data, LALInferenceTemplateFunction *template);
+ * time.  Activated with the --zeroLogLike command flag.
+ */
+REAL8 LALInferenceZeroLogLikelihood(LALInferenceVariables *currentParams, LALInferenceIFOData *data, LALInferenceTemplateFunction templt);
 
 /***********************************************************//**
  * (log-) likelihood function.                                 
@@ -89,7 +92,7 @@ REAL8 LALInferenceZeroLogLikelihood(LALInferenceVariables *currentParams, LALInf
  *   - "time"            (REAL8, GPS sec.)                     
  ***************************************************************/
 REAL8 LALInferenceFreqDomainLogLikelihood(LALInferenceVariables *currentParams, LALInferenceIFOData * data,
-                              LALInferenceTemplateFunction *template);
+                              LALInferenceTemplateFunction templt);
 
 /***********************************************************//**
  * Chi-Square function.                                        
@@ -104,7 +107,7 @@ REAL8 LALInferenceFreqDomainLogLikelihood(LALInferenceVariables *currentParams, 
  *   - "time"            (REAL8, GPS sec.)                     
  ***************************************************************/
 REAL8 LALInferenceChiSquareTest(LALInferenceVariables *currentParams, LALInferenceIFOData * data,
-                              LALInferenceTemplateFunction *template);
+                              LALInferenceTemplateFunction templt);
 
 /***********************************************************//**
  * Frequency-domain single-IFO response computation.           
@@ -125,45 +128,7 @@ REAL8 LALInferenceChiSquareTest(LALInferenceVariables *currentParams, LALInferen
  *   - "time"            (REAL8, GPS sec.)                     
  ***************************************************************/				
 void LALInferenceComputeFreqDomainResponse(LALInferenceVariables *currentParams, LALInferenceIFOData * dataPtr,
-                              LALInferenceTemplateFunction *template, COMPLEX16Vector *freqWaveform);
-
-/***********************************************************//**
- * Time domain (log-) likelihood function.                     
- * Returns the non-normalised logarithmic likelihood.          
- * Mathematically equivalent to Frequency domain likelihood.   
- * Time domain version of LALInferenceFreqDomainLogLikelihood()
- *
- * Required (`currentParams') parameters are:                  
- *   - "rightascension"  (REAL8, radian, 0 <= RA <= 2pi)       
- *   - "declination"     (REAL8, radian, -pi/2 <= dec <=pi/2)  
- *   - "polarisation"    (REAL8, radian, 0 <= psi <= ?)        
- *   - "distance"        (REAL8, Mpc, >0)                      
- *   - "time"            (REAL8, GPS sec.)                     
- ***************************************************************/
-//REAL8 LALInferenceTimeDomainLogLikelihood(LALInferenceVariables *currentParams, LALInferenceIFOData * data,
-//                              LALInferenceTemplateFunction *template);
-
-/***********************************************************//**
- * Based on ComputeFreqDomainResponse above.                   
- * Time-domain single-IFO response computation.                
- * Computes response for a given template.                     
- * Will re-compute template only if necessary                  
- * (i.e., if previous, as stored in data->timeModelhCross,     
- * was based on different parameters or template function).    
- * Carries out timeshifting for a given detector               
- * and projection onto this detector.                          
- * Result stored in timeResponse, assumed to be correctly      
- * initialized												   
- * 
- * Required (`currentParams') parameters are:                  
- *   - "rightascension"  (REAL8, radian, 0 <= RA <= 2pi)       
- *   - "declination"     (REAL8, radian, -pi/2 <= dec <=pi/2)  
- *   - "polarisation"    (REAL8, radian, 0 <= psi <= ?)        
- *   - "distance"        (REAL8, Mpc, >0)                      
- *   - "time"            (REAL8, GPS sec.)                     
- ***************************************************************/		
-//void LALInferenceComputeTimeDomainResponse(LALInferenceVariables *currentParams, LALInferenceIFOData * dataPtr,
-//                               LALInferenceTemplateFunction *template, REAL8TimeSeries *timeWaveform);
+                              LALInferenceTemplateFunction templt, COMPLEX16Vector *freqWaveform);
 
 /**
  * Computes the <x|y> overlap in the Fourrier domain.
@@ -176,56 +141,6 @@ REAL8 LALInferenceComputeFrequencyDomainOverlap(LALInferenceIFOData * data,
  * Used for normalising.
  */
 REAL8 LALInferenceNullLogLikelihood(LALInferenceIFOData *data);
-
-/**
- * Identical to LALInferenceTimeDomainLogLikelihood, but returns the likelihood of a null template.
- * Used for normalising.
- */
-//REAL8 LALInferenceTimeDomainNullLogLikelihood(LALInferenceIFOData *data);
-
-/**
- * Computes the whitened <x|y> overlap in the time domain.
- * For overlaps in time domain including IFO data.
- */
-//REAL8 LALInferenceWhitenedTimeDomainOverlap(const REAL8TimeSeries *whitenedData, const REAL8TimeSeries *data);
-
-/**
- * Takes a Power Spectrum Density and transforms it to the equivalent Time Domain Weights.
- */
-//void LALInferencePSDToTDW(REAL8TimeSeries *TDW, const REAL8FrequencySeries *PSD, const REAL8FFTPlan *plan,
-//              const REAL8 fMin, const REAL8 fMax); 
-
-/* UINT4 nextPowerOfTwo(const UINT4 n);
-void padREAL8Sequence(REAL8Sequence *padded, const REAL8Sequence *data);
-void padWrappedREAL8Sequence(REAL8Sequence *padded, const REAL8Sequence *data); */
-/* UINT4 LIGOTimeGPSToNearestIndex(const LIGOTimeGPS *time, const REAL8TimeSeries *series); */
-
-/**
- * Integrate (in the time-domain) the product of two series.
- */
-//REAL8 LALInferenceIntegrateSeriesProduct(const REAL8TimeSeries *s1, const REAL8TimeSeries *s2);
-
-/**
- * Convolves a time serie and the data (equivalent to product in the Fourrier domain).
- */
-//void LALInferenceConvolveTimeSeries(REAL8TimeSeries *conv, const REAL8TimeSeries *data, const REAL8TimeSeries *response);
-/* UINT4 NTDWFromNPSD(const UINT4 NPSD); */
-
-/**
- * Transform a wrapped time serie into a linear time serie. UNUSED.
- */
-//void LALInferenceWrappedTimeSeriesToLinearTimeSeries(REAL8TimeSeries *linear, const REAL8TimeSeries *wrapped);
-
-/**
- * Transform a linear time serie into a wrapped time serie. UNUSED.
- */
-//void LALInferenceLinearTimeSeriesToWrappedTimeSeries(REAL8TimeSeries *wrapped, const REAL8TimeSeries *linear);
-
-/**
- * Computes the <x|y> overlap in the time domain.
- * For template overlaps in time domain.
- */
-//REAL8 LALInferenceTimeDomainOverlap(const REAL8TimeSeries *TDW, const REAL8TimeSeries *A, const REAL8TimeSeries *B);
 
 /***********************************************************//**
  * Student-t (log-) likelihood function                        
@@ -258,25 +173,53 @@ void padWrappedREAL8Sequence(REAL8Sequence *padded, const REAL8Sequence *data); 
  *        frequencies)                                         
  ***************************************************************/
 REAL8 LALInferenceFreqDomainStudentTLogLikelihood(LALInferenceVariables *currentParams, LALInferenceIFOData *data,
-                                      LALInferenceTemplateFunction *template);
+                                      LALInferenceTemplateFunction templt);
 
-/** An analytic likeilhood that is a correlated Gaussian in 15
-    dimensions.  */
+/**
+ * An analytic likeilhood that is a correlated Gaussian in 15
+ * dimensions.
+ */
 REAL8 LALInferenceCorrelatedAnalyticLogLikelihood(LALInferenceVariables *currentParams,
                                                   LALInferenceIFOData *data,
-                                                  LALInferenceTemplateFunction *template);
+                                                  LALInferenceTemplateFunction templt);
 
-/** An analytic likeilhood that is two correlated Gaussians in 15
-    dimensions.  */
+/**
+ * An analytic likeilhood that is two correlated Gaussians in 15
+ * dimensions.
+ */
 REAL8 LALInferenceBimodalCorrelatedAnalyticLogLikelihood(LALInferenceVariables *currentParams,
                                                   LALInferenceIFOData *data,
-                                                  LALInferenceTemplateFunction *template);
+                                                  LALInferenceTemplateFunction templt);
 
-/** 15-D Rosenbrock log(L) function (see Eq (3) of
-    http://en.wikipedia.org/wiki/Rosenbrock_function . */
+/**
+ * 15-D Rosenbrock log(L) function (see Eq (3) of
+ * http://en.wikipedia.org/wiki/Rosenbrock_function .
+ */
 REAL8 LALInferenceRosenbrockLogLikelihood(LALInferenceVariables *currentParams,
                                           LALInferenceIFOData *data,
-                                          LALInferenceTemplateFunction *template);
+                                          LALInferenceTemplateFunction templt);
+
+REAL8 LALInferenceMarginalisedPhaseLogLikelihood(LALInferenceVariables *currentParams, LALInferenceIFOData * data,LALInferenceTemplateFunction templt);
+
+/**
+ * Returns the log-likelihood marginalised over the time dimension.
+ * The boundaries of the time marginalization are the data segment;
+ * any prior on time is ignored.
+ */
+REAL8 LALInferenceMarginalisedTimeLogLikelihood(LALInferenceVariables *currentParams, LALInferenceIFOData *data, LALInferenceTemplateFunction templt);
+
+/**
+ * Initialisation function which reads runState->commaneLine and sets up the
+ * likelihood function accordingly. Can choose between Gaussian, Student-t, marginalised
+ * phase likelihoods
+ */
+void LALInferenceInitLikelihood(LALInferenceRunState *runState);
+
+/** Get the intrinsic parameters from currentParams */
+LALInferenceVariables LALInferenceGetInstrinsicParams(LALInferenceVariables *currentParams);
+
+/** Switch for controlling the removal of lines */
+INT4 LALInferenceLineSwitch(INT4 lineFlag, INT4 Nlines, INT4 *lines_array, INT4 *widths_array, INT4 i);
 
 /*@}*/
 

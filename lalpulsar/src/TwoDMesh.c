@@ -18,77 +18,78 @@
 */
 
 /**
-\author Creighton, T. D.
-\file
-\ingroup TwoDMesh_h
-\brief Creates or destroys a hierarchical mesh of templates on an 2-dimensional parameter space.
-
-\heading{Description}
-
-The routine <tt>LALCreateTwoDMesh()</tt> lays out an unevenly-spaced
-mesh on a 2-dimensional parameter space, according to the method
-presented in \ref TwoDMesh_h and detailed in
-TwoDMeshInternal.c.  The parameter \c mesh is a handle to
-the head of the newly-created linked list of mesh points, while
-\c params points to the parameter structure used to create the
-list.  On completion, <tt>params->nOut</tt> is set to the number of mesh
-points created.
-
-The routine <tt>LALDestroyTwoDMesh()</tt> destroys the list pointed to
-by <tt>*mesh</tt>, including all sub-meshes, and sets
-<tt>*mesh</tt>=\c NULL.  If <tt>*mesh</tt> is already \c NULL,
-nothing is done (this is \e not an erroneous usage).  If
-\c nFree\f$\neq\f$\c NULL, then <tt>*nFree</tt> is set to the number
-of nodes freed.
-
-The routine <tt>LALRefineTwoDMesh()</tt> creates a heirarchical search
-mesh by inserting copies of the nodes in the list pointed to by
-\c fineMesh into the \c subMesh fields of appropriate nodes in
-the list pointed to by \c coarseMesh.  The contents of the
-\c fineMesh list are untouched.  If a \c fineMesh tile does
-not overlap with any \c cosarseMesh tile, a warning is generated,
-but this is not treated as an error.  If an internal error does occur,
-the refinement will be left in a state of partial completion; there is
-just too much overhead involved in maintaining an uncorrupted copy of
-the \c coarseMesh list for it to be worthwhile.
-
-\heading{Algorithm}
-
-\c LALCreateTwoDMesh() simply creates a dummy node to serve as the
-head of the linked list, and calls <tt>LALTwoDMesh()</tt> in
-TwoDMeshInternal.c to attach a mesh to it.  The details of the
-algorithm are given in TwoDMeshInternal.c.
-
-<tt>LALDestroyTwoDMesh()</tt> navigates down the linked list of mesh
-points, destroying them as it goes.  It calls itself recursively on
-any non-empty sub-meshes to destroy them too.
-
-<tt>LALRefineTwoDMesh()</tt> moves along the \c fineMesh list; for
-each node in the list, it searches the \c coarseMesh list for the
-any tile that overlaps with the fine mesh tile.  It then \e copies
-the fine mesh node (and its submesh, if any) into the coarse mesh
-node's \c subMesh list, using <tt>LALTwoDNodeCopy()</tt> in
-TwoDMeshInternal.c.  Although it uses more memory, this
-recursive copy routine is preferred over simple relinking, so as to
-avoid any possible memory leaks: destroying the coarse mesh list will
-leave the fine mesh list intact, and vice-versa.
-
-To create a \f$>2\f$~level hierarchical search mesh, build it from the
-bottom up: call <tt>LALRefineTwoDMesh()</tt> to add the finest mesh to
-the next finest, add that to the next finest, and so on up to the
-coarsest mesh.
-
-\heading{Uses}
-\code
-lalDebugLevel               XLALPrintError()
-LALWarning()                LALInfo()
-LALTwoDMesh()               LALTwoDNodeCopy()
-LALFree()
-\endcode
-
-\heading{Notes}
-
-*/
+ * \author Creighton, T. D.
+ * \file
+ * \ingroup TwoDMesh_h
+ * \brief Creates or destroys a hierarchical mesh of templates on an 2-dimensional parameter space.
+ *
+ * ### Description ###
+ *
+ * The routine <tt>LALCreateTwoDMesh()</tt> lays out an unevenly-spaced
+ * mesh on a 2-dimensional parameter space, according to the method
+ * presented in \ref TwoDMesh_h and detailed in
+ * TwoDMeshInternal.c.  The parameter \c mesh is a handle to
+ * the head of the newly-created linked list of mesh points, while
+ * \c params points to the parameter structure used to create the
+ * list.  On completion, <tt>params->nOut</tt> is set to the number of mesh
+ * points created.
+ *
+ * The routine <tt>LALDestroyTwoDMesh()</tt> destroys the list pointed to
+ * by <tt>*mesh</tt>, including all sub-meshes, and sets
+ * <tt>*mesh</tt>=\c NULL.  If <tt>*mesh</tt> is already \c NULL,
+ * nothing is done (this is \e not an erroneous usage).  If
+ * \c nFree\f$\neq\f$\c NULL, then <tt>*nFree</tt> is set to the number
+ * of nodes freed.
+ *
+ * The routine <tt>LALRefineTwoDMesh()</tt> creates a heirarchical search
+ * mesh by inserting copies of the nodes in the list pointed to by
+ * \c fineMesh into the \c subMesh fields of appropriate nodes in
+ * the list pointed to by \c coarseMesh.  The contents of the
+ * \c fineMesh list are untouched.  If a \c fineMesh tile does
+ * not overlap with any \c cosarseMesh tile, a warning is generated,
+ * but this is not treated as an error.  If an internal error does occur,
+ * the refinement will be left in a state of partial completion; there is
+ * just too much overhead involved in maintaining an uncorrupted copy of
+ * the \c coarseMesh list for it to be worthwhile.
+ *
+ * ### Algorithm ###
+ *
+ * \c LALCreateTwoDMesh() simply creates a dummy node to serve as the
+ * head of the linked list, and calls <tt>LALTwoDMesh()</tt> in
+ * TwoDMeshInternal.c to attach a mesh to it.  The details of the
+ * algorithm are given in TwoDMeshInternal.c.
+ *
+ * <tt>LALDestroyTwoDMesh()</tt> navigates down the linked list of mesh
+ * points, destroying them as it goes.  It calls itself recursively on
+ * any non-empty sub-meshes to destroy them too.
+ *
+ * <tt>LALRefineTwoDMesh()</tt> moves along the \c fineMesh list; for
+ * each node in the list, it searches the \c coarseMesh list for the
+ * any tile that overlaps with the fine mesh tile.  It then \e copies
+ * the fine mesh node (and its submesh, if any) into the coarse mesh
+ * node's \c subMesh list, using <tt>LALTwoDNodeCopy()</tt> in
+ * TwoDMeshInternal.c.  Although it uses more memory, this
+ * recursive copy routine is preferred over simple relinking, so as to
+ * avoid any possible memory leaks: destroying the coarse mesh list will
+ * leave the fine mesh list intact, and vice-versa.
+ *
+ * To create a \f$>2\f$~level hierarchical search mesh, build it from the
+ * bottom up: call <tt>LALRefineTwoDMesh()</tt> to add the finest mesh to
+ * the next finest, add that to the next finest, and so on up to the
+ * coarsest mesh.
+ *
+ * ### Uses ###
+ *
+ * \code
+ * lalDebugLevel               XLALPrintError()
+ * LALWarning()                LALInfo()
+ * LALTwoDMesh()               LALTwoDNodeCopy()
+ * LALFree()
+ * \endcode
+ *
+ * ### Notes ###
+ *
+ */
 
 #include <math.h>
 #include <lal/LALStdlib.h>

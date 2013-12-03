@@ -50,7 +50,6 @@
  *-----------------------------------------------------------------------
  */
 
-#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/TimeFreq.h>
 
 /* well, better macros than these one are welcome! */
@@ -203,19 +202,19 @@ void LALTfrRsp (LALStatus *stat, REAL4Vector* sig, TimeFreqRep *tfr, TimeFreqPar
 
       for (row = 0; row < (tfr->fRow/2+1); row++)
 	{
-	  modulus = vtmpH->data[row].re * vtmpH->data[row].re +
-	    vtmpH->data[row].im * vtmpH->data[row].im;
+	  modulus = crealf(vtmpH->data[row]) * crealf(vtmpH->data[row]) +
+	    cimagf(vtmpH->data[row]) * cimagf(vtmpH->data[row]);
 	  if  (modulus > eps)
 	    {
 
-	      hatt =  vtmpT->data[row].re * vtmpH->data[row].re +
-		      vtmpT->data[row].im * vtmpH->data[row].im;
+	      hatt =  crealf(vtmpT->data[row]) * crealf(vtmpH->data[row]) +
+		      cimagf(vtmpT->data[row]) * cimagf(vtmpH->data[row]);
  	      hatt = hatt / modulus / stepTime;
               indext = time + ROUND(hatt);
 	      indext = MAX(indext,0);
 	      indext = MIN(indext,tfr->tCol - 1);
-	      hatf = vtmpD->data[row].re * vtmpH->data[row].im -
-		vtmpD->data[row].im * vtmpH->data[row].re;
+	      hatf = crealf(vtmpD->data[row]) * cimagf(vtmpH->data[row]) -
+		cimagf(vtmpD->data[row]) * crealf(vtmpH->data[row]);
 	      hatf = hatf / modulus * normhatf;
 	      indexf = row - ROUND(hatf);
  	      indexf = ((indexf)%(tfr->fRow)+ tfr->fRow)%(tfr->fRow);

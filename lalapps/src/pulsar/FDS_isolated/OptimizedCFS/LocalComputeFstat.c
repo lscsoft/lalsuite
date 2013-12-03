@@ -107,14 +107,15 @@ LocalComputeFStatFreqBand ( LALStatus *status,
 /*==================== FUNCTION DEFINITIONS ====================*/
 
 
-/** Function to compute a vector of Fstatistic values for a number of frequency bins.
-    This function is simply a wrapper for LocalComputeFstat() which is called repeatedly for
-    every frequency value.  The output, i.e. fstatVector must be properly allocated
-    before this function is called.  The values of the start frequency, the step size
-    in the frequency and the number of frequency values for which the Fstatistic is 
-    to be calculated are read from fstatVector.  The other parameters are not checked and 
-    they must be correctly set outside this function. 
-*/
+/**
+ * Function to compute a vector of Fstatistic values for a number of frequency bins.
+ * This function is simply a wrapper for LocalComputeFstat() which is called repeatedly for
+ * every frequency value.  The output, i.e. fstatVector must be properly allocated
+ * before this function is called.  The values of the start frequency, the step size
+ * in the frequency and the number of frequency values for which the Fstatistic is
+ * to be calculated are read from fstatVector.  The other parameters are not checked and
+ * they must be correctly set outside this function.
+ */
 void LocalComputeFStatFreqBand ( LALStatus *status, 		/**< pointer to LALStatus structure */
 				 REAL4FrequencySeries *fstatVector, /**< [out] Vector of Fstat values */
 				 const PulsarDopplerParams *doppler,/**< parameter-space point to compute F for */
@@ -163,9 +164,11 @@ void LocalComputeFStatFreqBand ( LALStatus *status, 		/**< pointer to LALStatus 
     }
   }
 
-  /** something to improve/cleanup -- the start frequency is available both 
-      from the fstatvector and from the input doppler point -- they could be inconsistent
-      or the user of this function could misunderstand */
+/**
+ * something to improve/cleanup -- the start frequency is available both
+ * from the fstatvector and from the input doppler point -- they could be inconsistent
+ * or the user of this function could misunderstand
+ */
 
   /* copy values from 'doppler' to local variable 'thisPoint' */
   thisPoint = *doppler;
@@ -194,9 +197,10 @@ void LocalComputeFStatFreqBand ( LALStatus *status, 		/**< pointer to LALStatus 
 
 
 
-/** Function to compute (multi-IFO) F-statistic for given parameter-space point ::doppler,
- *  normalized SFT-data (normalized by <em>double-sided</em> PSD Sn), noise-weights
- *  and detector state-series
+/**
+ * Function to compute (multi-IFO) F-statistic for given parameter-space point ::doppler,
+ * normalized SFT-data (normalized by <em>double-sided</em> PSD Sn), noise-weights
+ * and detector state-series
  *
  * NOTE: for better efficiency some quantities that need to be recomputed only for different
  * sky-positions are buffered in \a cfBuffer if given.
@@ -256,15 +260,18 @@ LocalComputeFStat ( LALStatus *status, 		/**< pointer to LALStatus structure */
       multiSSB = cfBuffer->multiSSB;
       multiAMcoef = cfBuffer -> multiAMcoef;
     }
-  else 
+  else
     {
       SkyPosition skypos;
       skypos.system =   COORDINATESYSTEM_EQUATORIAL;
       skypos.longitude = doppler->Alpha;
       skypos.latitude  = doppler->Delta;
       /* compute new AM-coefficients and SSB-times */
-      TRY ( LALGetMultiSSBtimes ( status->statusPtr, &multiSSB, multiDetStates, skypos, doppler->refTime, params->SSBprec ), status );
-
+      if ( (multiSSB = XLALGetMultiSSBtimes ( multiDetStates, skypos, doppler->refTime, params->SSBprec )) == NULL )
+        {
+          XLALPrintError("XLALGetMultiSSBtimes() failed with error = %d\n\n", xlalErrno );
+          ABORT ( status, COMPUTEFSTATC_EXLAL, COMPUTEFSTATC_MSGEXLAL );
+        }
       LALGetMultiAMCoeffs ( status->statusPtr, &multiAMcoef, multiDetStates, skypos );
       BEGINFAIL ( status ) {
 	XLALDestroyMultiSSBtimes ( multiSSB );
@@ -298,8 +305,8 @@ LocalComputeFStat ( LALStatus *status, 		/**< pointer to LALStatus structure */
   if ( params->returnSingleF )
     {
       retF.numDetectors = numDetectors;
-      if ( numDetectors > CFS_MAX_IFOS ) {
-        XLALPrintError ("%s: numDetectors = %d exceeds currently allowed upper limit of detectors (%d) for returnSingleF=TRUE\n", __func__, numDetectors, CFS_MAX_IFOS );
+      if ( numDetectors > PULSAR_MAX_DETECTORS ) {
+        XLALPrintError ("%s: numDetectors = %d exceeds currently allowed upper limit of detectors (%d) for returnSingleF=TRUE\n", __func__, numDetectors, PULSAR_MAX_DETECTORS );
         ABORT ( status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT );
       }
     }
@@ -340,9 +347,9 @@ LocalComputeFStat ( LALStatus *status, 		/**< pointer to LALStatus structure */
 	}
 
 #ifndef LAL_NDEBUG
-      if ( !finite(FcX.Fa.re) || !finite(FcX.Fa.im) || !finite(FcX.Fb.re) || !finite(FcX.Fb.im) ) {
+      if ( !finite(creal(FcX.Fa)) || !finite(cimag(FcX.Fa)) || !finite(creal(FcX.Fb)) || !finite(cimag(FcX.Fb)) ) {
 	XLALPrintError("LocalXLALComputeFaFb() returned non-finite: Fa=(%f,%f), Fb=(%f,%f)\n", 
-		      FcX.Fa.re, FcX.Fa.im, FcX.Fb.re, FcX.Fb.im );
+		      creal(FcX.Fa), cimag(FcX.Fa), creal(FcX.Fb), cimag(FcX.Fb) );
 	ABORT (status,  COMPUTEFSTATC_EIEEE,  COMPUTEFSTATC_MSGEIEEE);
       }
 #endif
@@ -356,19 +363,19 @@ LocalComputeFStat ( LALStatus *status, 		/**< pointer to LALStatus structure */
          REAL8 DdX_inv = 1.0 / multiAMcoef->data[X]->D;
 
          /* compute final single-IFO F-stat */
-	 retF.FX[X] = DdX_inv * (  BdX * (SQ(FcX.Fa.re) + SQ(FcX.Fa.im) )
-	                           + AdX * ( SQ(FcX.Fb.re) + SQ(FcX.Fb.im) )
-		                   - 2.0 * CdX *( FcX.Fa.re * FcX.Fb.re + FcX.Fa.im * FcX.Fb.im )
+	 retF.FX[X] = DdX_inv * (  BdX * (SQ(creal(FcX.Fa)) + SQ(cimag(FcX.Fa)) )
+	                           + AdX * ( SQ(creal(FcX.Fb)) + SQ(cimag(FcX.Fb)) )
+		                   - 2.0 * CdX *( creal(FcX.Fa) * creal(FcX.Fb) + cimag(FcX.Fa) * cimag(FcX.Fb) )
 		                   );
         } /* if returnSingleF */
 
       /* Fa = sum_X Fa_X */
-      retF.Fa.re += FcX.Fa.re;
-      retF.Fa.im += FcX.Fa.im;
+      retF.Fa.real_FIXME += creal(FcX.Fa);
+      retF.Fa.imag_FIXME += cimag(FcX.Fa);
 
       /* Fb = sum_X Fb_X */ 		  
-      retF.Fb.re += FcX.Fb.re;
-      retF.Fb.im += FcX.Fb.im;
+      retF.Fb.real_FIXME += creal(FcX.Fb);
+      retF.Fb.imag_FIXME += cimag(FcX.Fb);
   		  
     } /* for  X < numDetectors */
  
@@ -379,9 +386,9 @@ LocalComputeFStat ( LALStatus *status, 		/**< pointer to LALStatus structure */
    * where based on the single-sided PSD.
    */ 
  		       
-  retF.F = Dd_inv * (  Bd * (SQ(retF.Fa.re) + SQ(retF.Fa.im) ) 
-                     + Ad * ( SQ(retF.Fb.re) + SQ(retF.Fb.im) )
-                     - 2.0 * Cd *( retF.Fa.re * retF.Fb.re + retF.Fa.im * retF.Fb.im )  
+  retF.F = Dd_inv * (  Bd * (SQ(creal(retF.Fa)) + SQ(cimag(retF.Fa)) ) 
+                     + Ad * ( SQ(creal(retF.Fb)) + SQ(cimag(retF.Fb)) )
+                     - 2.0 * Cd *( creal(retF.Fa) * creal(retF.Fb) + cimag(retF.Fa) * cimag(retF.Fb) )  
 		   );
 
   (*Fstat) = retF;
@@ -399,7 +406,8 @@ LocalComputeFStat ( LALStatus *status, 		/**< pointer to LALStatus structure */
 } /* LocalComputeFStat() */
 
 
-/** Revamped version of LALDemod() (based on TestLALDemod() in CFS).
+/**
+ * Revamped version of LALDemod() (based on TestLALDemod() in CFS).
  * Compute JKS's Fa and Fb, which are ingredients for calculating the F-statistic.
  */
 static int
@@ -462,10 +470,10 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
     if ( fkdot[spdnOrder] != 0.0 )
       break;
 
-  Fa.re = 0.0f;
-  Fa.im = 0.0f;
-  Fb.re = 0.0f;
-  Fb.im = 0.0f;
+  Fa.real_FIXME = 0.0f;
+  Fa.imag_FIXME = 0.0f;
+  Fb.real_FIXME = 0.0f;
+  Fb.imag_FIXME = 0.0f;
 
   a_al = amcoe->a->data;	/* point to beginning of alpha-arrays */
   b_al = amcoe->b->data;
@@ -572,7 +580,7 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
 
 	/* if no danger of denominator -> 0 */
 #ifdef __GNUC__
-	/** somehow the branch prediction of gcc-4.1.2 terribly failes
+	/*  somehow the branch prediction of gcc-4.1.2 terribly failes
 	    with the current case distinction in the hot-loop,
 	    having a severe impact on runtime of the E@H Linux App.
 	    So let's allow to give gcc a hint which path has a higher probablility */
@@ -608,8 +616,8 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
 	      ind0 = DTERMS - 1;
 	    else
 	      ind0 = DTERMS;
-	    realXP = TWOPI_FLOAT * Xalpha_l[ind0].re;
-	    imagXP = TWOPI_FLOAT * Xalpha_l[ind0].im;
+	    realXP = TWOPI_FLOAT * crealf(Xalpha_l[ind0]);
+	    imagXP = TWOPI_FLOAT * cimagf(Xalpha_l[ind0]);
 
 	  } /* if |remainder| <= LD_SMALL4 */
       }
@@ -625,11 +633,11 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
       a_alpha = (*a_al);
       b_alpha = (*b_al);
 
-      Fa.re += a_alpha * realQXP;
-      Fa.im += a_alpha * imagQXP;
+      Fa.real_FIXME += a_alpha * realQXP;
+      Fa.imag_FIXME += a_alpha * imagQXP;
       
-      Fb.re += b_alpha * realQXP;
-      Fb.im += b_alpha * imagQXP;
+      Fb.real_FIXME += b_alpha * realQXP;
+      Fb.imag_FIXME += b_alpha * imagQXP;
 
 
       /* advance pointers over alpha */
@@ -642,10 +650,10 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
     } /* for alpha < numSFTs */
 
   /* return result */
-  FaFb->Fa.re = norm * Fa.re;
-  FaFb->Fa.im = norm * Fa.im;
-  FaFb->Fb.re = norm * Fb.re;
-  FaFb->Fb.im = norm * Fb.im;
+  FaFb->Fa.real_FIXME = norm * creal(Fa);
+  FaFb->Fa.imag_FIXME = norm * cimag(Fa);
+  FaFb->Fb.real_FIXME = norm * creal(Fb);
+  FaFb->Fb.imag_FIXME = norm * cimag(Fb);
 
   return XLAL_SUCCESS;
 

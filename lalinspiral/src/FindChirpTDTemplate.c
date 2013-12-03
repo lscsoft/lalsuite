@@ -26,35 +26,35 @@
  */
 
 /**
-\author Brown, D. A., and Creighton, J. D. E.
-\file
-\ingroup FindChirpTD_h
+ * \author Brown, D. A., and Creighton, J. D. E.
+ * \file
+ * \ingroup FindChirpTD_h
+ *
+ * \brief Provides functions to create time domain inspiral templates in a
+ * form that can be used by the <tt>FindChirpFilter()</tt> function.
+ *
+ * ### Prototypes ###
+ *
+ * The function <tt>LALFindChirpTDTemplate()</tt> creates a time domain template
+ * template using the inspiral package.
+ *
+ * ### Algorithm ###
+ *
+ * Blah.
+ *
+ * ### Uses ###
+ *
+ * \code
+ * LALCalloc()
+ * LALFree()
+ * LALCreateVector()
+ * LALDestroyVector()
+ * \endcode
+ *
+ * ### Notes ###
+ *
+ */
 
-\brief Provides functions to create time domain inspiral templates in a
-form that can be used by the <tt>FindChirpFilter()</tt> function.
-
-\heading{Prototypes}
-
-The function <tt>LALFindChirpTDTemplate()</tt> creates a time domain template
-template using the inspiral package.
-
-\heading{Algorithm}
-
-Blah.
-
-\heading{Uses}
-\code
-LALCalloc()
-LALFree()
-LALCreateVector()
-LALDestroyVector()
-\endcode
-
-\heading{Notes}
-
-*/
-
-#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <math.h>
 #include <lal/LALStdlib.h>
 #include <lal/AVFactories.h>
@@ -140,6 +140,7 @@ LALFindChirpTDTemplate (
     case FindChirpPTF:
     case EOBNRv2:
     case IMRPhenomB:
+    case IMRPhenomC:
       break;
 
     default:
@@ -247,11 +248,26 @@ LALFindChirpTDTemplate (
     tmplt->tSampling       = sampleRate;
     tmplt->fLower          = params->fLow;
     tmplt->fCutoff         = sampleRate / 2.0 - deltaF;
-    tmplt->signalAmplitude = 1.0;
-    if (params->approximant == IMRPhenomB)
+    /* get the template norm right */
+    if ( params->approximant==EOBNR )
     {
-      tmplt->spin1[2] = 2 * tmplt->chi/(1. + sqrt(1.-4.*tmplt->eta));
-      tmplt->distance = 1.;
+     /* lalinspiral EOBNR code produces correct norm when 
+        fed unit signalAmplitude and non-physical distance */
+      tmplt->signalAmplitude = 1.0;
+      tmplt->distance      = -1.0;
+    }
+    else if ( params->approximant==EOBNRv2 )
+    {
+     /* this formula sets the ampl0 variable to 1.0 
+      * within the lalsimulation EOBNRv2 waveform engine 
+      * which again produces a correct template norm     */
+      tmplt->distance      = tmplt->totalMass*LAL_MRSUN_SI;
+    }
+    else if ( (params->approximant==IMRPhenomB) || (params->approximant==IMRPhenomC) )
+    {
+      /* 1Mpc standard distance - not clear if this produces correct norm */
+      tmplt->distance      = 1.0;
+      tmplt->spin1[2]      = 2 * tmplt->chi/(1. + sqrt(1.-4.*tmplt->eta));
     }
 
     /* compute the tau parameters from the input template */
@@ -348,8 +364,8 @@ LALFindChirpTDTemplate (
       ABORTXLAL( status );
     }
 
-    if ( params->approximant == EOBNR 
-         || params->approximant == EOBNRv2 || params->approximant == IMRPhenomB)
+    if ( params->approximant == EOBNR || params->approximant == EOBNRv2
+        || params->approximant == IMRPhenomB || params->approximant == IMRPhenomC )
     {
       /* We need to do something slightly different for EOBNR */
       UINT4 endIndx = (UINT4) (tmplt->tC * sampleRate);
@@ -374,8 +390,8 @@ LALFindChirpTDTemplate (
     XLALDestroyREAL4Vector( tmpxfac );
     tmpxfac = NULL;
   }
-  else if ( params->approximant == EOBNR 
-            || params->approximant == EOBNRv2|| params->approximant == IMRPhenomB)
+  else if ( params->approximant == EOBNR || params->approximant == EOBNRv2
+      || params->approximant == IMRPhenomB || params->approximant == IMRPhenomC )
   {
     /* For EOBNR we shift so that tC is at the end of the vector */
     if ( ( tmpxfac = XLALCreateREAL4Vector( numPoints ) ) == NULL )
@@ -472,6 +488,7 @@ LALFindChirpTDNormalize(
     case FindChirpPTF:
     case EOBNRv2:
     case IMRPhenomB:
+    case IMRPhenomC:
       break;
     default:
       ABORT( status, FINDCHIRPTDH_EMAPX, FINDCHIRPTDH_MSGEMAPX );
@@ -489,10 +506,10 @@ LALFindChirpTDNormalize(
   segNormSum = 0;
   for ( k = 1; k < fcTmplt->data->length; ++k )
   {
-    REAL4 re = fcTmplt->data->data[k].re;
-    REAL4 im = fcTmplt->data->data[k].im;
+    REAL4 re = crealf(fcTmplt->data->data[k]);
+    REAL4 im = cimagf(fcTmplt->data->data[k]);
     REAL4 power = re * re + im * im;
-    tmpltPower[k] = power * wtilde[k].re;
+    tmpltPower[k] = power * crealf(wtilde[k]);
     segNormSum += tmpltPower[k];
     segNorm[k] = segNormSum;
   }

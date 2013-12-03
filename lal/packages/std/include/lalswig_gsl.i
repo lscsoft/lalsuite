@@ -37,7 +37,7 @@
 
 // Set custom GSL error handler which raises an XLAL error (instead of aborting).
 %header %{
-  void swiglal_gsl_error_handler(const char *reason, const char *file, int line, int errnum) {
+  static void swiglal_gsl_error_handler(const char *reason, const char *file, int line, int errnum) {
     XLALPrintError("GSL function failed: %s (errnum=%i)\n", reason, errnum);
     XLALError("<GSL function>", file, line, XLAL_EFAILED);
   }
@@ -66,7 +66,8 @@
         %swiglal_call_dtor(gsl_vector##NAME##_free, $self);
       }
     }
-    %swiglal_array_dynamic_1D(TYPE, size_t, data, size, arg1->stride);
+    %swiglal_array_dynamic_size(size_t, size);
+    %swiglal_array_dynamic_1D(gsl_vector##NAME, TYPE, size_t, data, arg1->size, arg1->stride);
   } gsl_vector##NAME;
 
   // GSL matrix of type NAME.
@@ -84,7 +85,9 @@
         %swiglal_call_dtor(gsl_matrix##NAME##_free, $self);
       }
     }
-    %swiglal_array_dynamic_2D(TYPE, size_t, data, size1, size2, arg1->tda, 1);
+    %swiglal_array_dynamic_size(size_t, size1);
+    %swiglal_array_dynamic_size(size_t, size2);
+    %swiglal_array_dynamic_2D(gsl_matrix##NAME, TYPE, size_t, data, arg1->size1, arg1->size2, arg1->tda, 1);
   } gsl_matrix##NAME;
 
 %enddef // %lalswig_gsl_vector_matrix

@@ -18,25 +18,29 @@
 */
 
 /**
-\author Sathyaprakash, B. S.
-\file
-\brief NONE
-
-\heading{Prototypes}
-
-<tt>LALInspiralComputeChisq()</tt>
-
-\heading{Description}
-\heading{Algorithm}
-\heading{Uses}
-\code
-LALREAL4VectorFFT
-\endcode
-
-\heading{Notes}
-
-
-*/
+ * \author Sathyaprakash, B. S.
+ * \file
+ * \brief NONE
+ *
+ * ### Prototypes ###
+ *
+ * <tt>LALInspiralComputeChisq()</tt>
+ *
+ * ### Description ###
+ *
+ *
+ * ### Algorithm ###
+ *
+ *
+ * ### Uses ###
+ *
+ * \code
+ * LALREAL4VectorFFT
+ * \endcode
+ *
+ * ### Notes ###
+ *
+ */
 
 #include <lal/AVFactories.h>
 #include <lal/LALNoiseModelsInspiral.h>
@@ -51,7 +55,7 @@ LALInspiralComputeChisq
    )
 {
 
-  REAL8 c2, flso, df, duration, totalModelSNR, SNRPerBin, binSNR, totalSNR, diffSNR, mSevenBy3;
+  REAL8 c2, flso, df, duration, totalModelSNR, SNRPerBin, binSNR, totalSNR, diffSNR;
   INT4 n, k_0, k_N, /*ki,*/ count, k, k_start, k_end, i;
   UINT4 binIndexLength;
   INT4Vector *binIndexes = NULL;
@@ -83,10 +87,9 @@ LALInspiralComputeChisq
    */
 
   totalModelSNR = 0.0;
-  mSevenBy3 = -7.L/3.L;
   for(k=k_0; k<=k_N; k++)
   {
-     if (input->psd->data[k]) totalModelSNR += pow( (float)k*df, mSevenBy3) / input->psd->data[k];
+     if (input->psd->data[k]) totalModelSNR += pow( (float)k*df, (-7./3.)) / input->psd->data[k];
   }
 
   c2 = SNRPerBin = totalModelSNR/(double)params->nBins;
@@ -109,7 +112,7 @@ LALInspiralComputeChisq
      for(k=k_start; k<=k_N; k++)
      {
 	double dSNR=0., ePlus=0., eMinus=0.;
-        if (input->psd->data[k]) binSNR += (dSNR=pow( (float)k*df, mSevenBy3) / input->psd->data[k]);
+        if (input->psd->data[k]) binSNR += (dSNR=pow( (float)k*df, (-7./3.)) / input->psd->data[k]);
 
            if (binSNR > SNRPerBin)
 	   {
@@ -146,7 +149,7 @@ LALInspiralComputeChisq
   binSNR = 0.;
   for(k=k_start; k<=k_N; k++)
   {
-	  if (input->psd->data[k]) binSNR += pow( (float)k*df, mSevenBy3) / input->psd->data[k];
+	  if (input->psd->data[k]) binSNR += pow( (float)k*df, (-7./3.)) / input->psd->data[k];
   }
 
   binIndexes->data[count] = k_N;
@@ -165,7 +168,7 @@ LALInspiralComputeChisq
   for(k=1; k < input->psd->length; k++)
   {
      if (input->psd->data[k])
-	     fprintf(stdout, "%e %e \n", (float)k*df, (pow((float)k * df, mSevenBy3) / input->psd->data[k]));
+	     fprintf(stdout, "%e %e \n", (float)k*df, (pow((float)k * df, (-7./3.)) / input->psd->data[k]));
   }
      fprintf(stdout, "&\n");
    for(i=0; i < binIndexLength; i++)

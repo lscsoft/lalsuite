@@ -18,38 +18,43 @@
 */
 
 /**
-\author Sathyaprakash, B. S.
-\file
-
-\brief Module to find all `distinct' events in a given data set with an SNR
-larger than a pre-specified threshold. To select `distinct'
-events the code uses two thresholds; all events crossing a first
-\e lower threshold are clustered. If at least one of the points
-in the clustered event crosses a second \e higher threshold then the clustered
-event is a trigger and what is recorded is the loudest point in the
-clustered event and the number of points above the first threshold in
-the cluster.
-
-The module uses two orthogonal inspiral signals of specified parameters
-with a weight specified in a psd array. The code returns
-the number of events found, and for each event the snr,
-the bin number and the phase of the template at that bin.
-
-\heading{Prototypes}
-
-<tt>LALInspiralFindEventsCluster()</tt>
-
-\heading{Description}
-\heading{Algorithm}
-\heading{Uses}
-\code
-LALInspiralWave()
-LALREAL4VectorFFT()
-LALInspiralWaveNormaliseLSO()
-LALInspiralWaveCorrelate()
-\endcode
-
-*/
+ * \author Sathyaprakash, B. S.
+ * \file
+ *
+ * \brief Module to find all `distinct' events in a given data set with an SNR
+ * larger than a pre-specified threshold. To select `distinct'
+ * events the code uses two thresholds; all events crossing a first
+ * \e lower threshold are clustered. If at least one of the points
+ * in the clustered event crosses a second \e higher threshold then the clustered
+ * event is a trigger and what is recorded is the loudest point in the
+ * clustered event and the number of points above the first threshold in
+ * the cluster.
+ *
+ * The module uses two orthogonal inspiral signals of specified parameters
+ * with a weight specified in a psd array. The code returns
+ * the number of events found, and for each event the snr,
+ * the bin number and the phase of the template at that bin.
+ *
+ * ### Prototypes ###
+ *
+ * <tt>LALInspiralFindEventsCluster()</tt>
+ *
+ * ### Description ###
+ *
+ *
+ * ### Algorithm ###
+ *
+ *
+ * ### Uses ###
+ *
+ * \code
+ * LALInspiralWave()
+ * LALREAL4VectorFFT()
+ * LALInspiralWaveNormaliseLSO()
+ * LALInspiralWaveCorrelate()
+ * \endcode
+ *
+ */
 #include <lal/LALNoiseModelsInspiral.h>
 
 void
@@ -82,7 +87,6 @@ LALInspiralFindEventsCluster
    REAL8 phase = 0;
    REAL8 distanceNorm;
    REAL8 flso;
-   REAL8 msevenby3;
    REAL8 x;
    REAL8 y;
    REAL8 z;
@@ -256,7 +260,6 @@ LALInspiralFindEventsCluster
          }
          printf("&\n");
    }
-   msevenby3 = -7.L/3.L;
    distanceNorm = 0.;
    totalMass = findeventsin->param.totalMass*LAL_MTSUN_SI;
    eta = findeventsin->param.eta;
@@ -265,7 +268,7 @@ LALInspiralFindEventsCluster
    {
 	   f = i*df;
 	   if (f > flso) break;
-	   if (findeventsin->psd.data[i]) distanceNorm += pow(f,msevenby3)/findeventsin->psd.data[i];
+	   if (findeventsin->psd.data[i]) distanceNorm += pow(f,(-7./3.))/findeventsin->psd.data[i];
    }
    distanceNorm = sqrt(distanceNorm);
    distanceNorm *= df * pow(totalMass, 5.L/6.L) * sqrt(5.L*eta/12.L)/pow(LAL_PI,2.L/3.L) ;

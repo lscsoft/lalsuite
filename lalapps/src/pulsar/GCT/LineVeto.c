@@ -75,7 +75,8 @@ const LVcomponents empty_LVcomponents;
 
 /* ----- module-local fast lookup-table handling of negative exponentials ----- */
 
-/** Lookup-table for logarithms log(x)
+/**
+ * Lookup-table for logarithms log(x)
  * Holds an array 'data' of 'length' for values log(x) for x in the range (0, xmax]
  */
 #define LOGLUT_XMAX 	3.0	// LUT for range (0,numDetectors+1), currently numDetectors = 2 FIXME: get this dynamically
@@ -193,6 +194,7 @@ int XLALComputeExtraStatsForToplist ( toplist_t *list,                          
         candidateDopplerParams.Delta = elem->Delta;
         candidateDopplerParams.fkdot[0] = elem->Freq;
         candidateDopplerParams.fkdot[1] = elem->F1dot;
+        candidateDopplerParams.fkdot[2] = elem->F2dot;
       } else if ( listEntryType == 2 ) {
         HoughFStatOutputEntry *elem = toplist_elem ( list, j );
         elemV = elem;
@@ -207,12 +209,13 @@ int XLALComputeExtraStatsForToplist ( toplist_t *list,                          
         candidateDopplerParams.Delta = elem->DeltaBest;
         candidateDopplerParams.fkdot[0] = elem->Freq;
         candidateDopplerParams.fkdot[1] = elem->f1dot;
+        /* no 2nd spindown in HoughFStatOutputEntry */
       } /* if listEntryType 2 */
 
       /* write header information into segment-Fstats file */
       if ( singleSegStatsFile )
-        fprintf ( singleSegStatsFile, "%%%% Freq: %.16g\n%%%% RA: %.13g\n%%%% Dec: %.13g\n%%%% f1dot: %.13g\n%%%% reftime: %d\n",
-                  candidateDopplerParams.fkdot[0], candidateDopplerParams.Alpha, candidateDopplerParams.Delta, candidateDopplerParams.fkdot[1], refTimeGPS.gpsSeconds );
+        fprintf ( singleSegStatsFile, "%%%% Freq: %.16g\n%%%% RA: %.13g\n%%%% Dec: %.13g\n%%%% f1dot: %.13g\n%%%% f2dot: %.13g\n%%%% reftime: %d\n",
+                  candidateDopplerParams.fkdot[0], candidateDopplerParams.Alpha, candidateDopplerParams.Delta, candidateDopplerParams.fkdot[1], candidateDopplerParams.fkdot[2], refTimeGPS.gpsSeconds );
 
       /*  recalculate multi- and single-IFO Fstats for all segments for this candidate */
       XLALComputeExtraStatsSemiCoherent( &lineVeto, &candidateDopplerParams, multiSFTsV, multiNoiseWeightsV, multiDetStatesV, detectorIDs, &CFparams_internal, SignalOnly, singleSegStatsFile );
@@ -258,8 +261,9 @@ int XLALComputeExtraStatsForToplist ( toplist_t *list,                          
 
 
 
-/** XLAL Function to recalculate single-IFO Fstats for all semicoherent search segments, and use them to compute Line Veto statistics
-*/
+/**
+ * XLAL Function to recalculate single-IFO Fstats for all semicoherent search segments, and use them to compute Line Veto statistics
+ */
 int XLALComputeExtraStatsSemiCoherent ( LVcomponents *lineVeto,                                 /**< [out] structure containing multi TwoF, single TwoF, LV stat */
 					const PulsarDopplerParams *dopplerParams,               /**< sky position, frequency and fdot for a given candidate */
 					const MultiSFTVectorSequence *multiSFTsV,               /**< data files (SFTs) for all detectors and segments */
@@ -353,7 +357,7 @@ int XLALComputeExtraStatsSemiCoherent ( LVcomponents *lineVeto,                 
 
       /* recompute multi-detector Fstat and atoms */
       if ( singleSegStatsFile )
-        fprintf ( singleSegStatsFile, "%%%% Reftime: %d %%%% Freq: %.16g %%%% RA: %.13g %%%% Dec: %.13g %%%% f1dot: %.13g\n", dopplerParams_temp.refTime.gpsSeconds, dopplerParams_temp.fkdot[0], dopplerParams_temp.Alpha, dopplerParams_temp.Delta, dopplerParams_temp.fkdot[1] );
+        fprintf ( singleSegStatsFile, "%%%% Reftime: %d %%%% Freq: %.16g %%%% RA: %.13g %%%% Dec: %.13g %%%% f1dot: %.13g %%%% f2dot: %.13g\n", dopplerParams_temp.refTime.gpsSeconds, dopplerParams_temp.fkdot[0], dopplerParams_temp.Alpha, dopplerParams_temp.Delta, dopplerParams_temp.fkdot[1], dopplerParams_temp.fkdot[2] );
       fakeStatus = blank_status;
       COMPUTEFSTAT ( &fakeStatus, &Fstat, &dopplerParams_temp, multiSFTsV->data[k], multiNoiseWeightsThisSeg, multiDetStatesV->data[k], CFparams, NULL );
       if ( fakeStatus.statusCode ) {
@@ -462,10 +466,10 @@ REAL8 XLALComputeFstatFromAtoms ( const MultiFstatAtomVector *multiFstatAtoms,  
   REAL8 mmatrixA = 0.0, mmatrixB = 0.0, mmatrixC = 0.0;
   REAL8 F = 0.0;
   COMPLEX8 Fa, Fb;
-  Fa.re = 0.0;
-  Fa.im = 0.0;
-  Fb.re = 0.0;
-  Fb.im = 0.0;
+  Fa.realf_FIXME = 0.0;
+  Fa.imagf_FIXME = 0.0;
+  Fb.realf_FIXME = 0.0;
+  Fb.imagf_FIXME = 0.0;
 
   for (Y = Ystart; Y <= Yend; Y++) {  /* loop through detectors */
 
@@ -482,17 +486,17 @@ REAL8 XLALComputeFstatFromAtoms ( const MultiFstatAtomVector *multiFstatAtoms,  
       mmatrixA += thisAtom->a2_alpha;
       mmatrixB += thisAtom->b2_alpha;
       mmatrixC += thisAtom->ab_alpha;
-      Fa.re    += thisAtom->Fa_alpha.re;
-      Fa.im    += thisAtom->Fa_alpha.im;
-      Fb.re    += thisAtom->Fb_alpha.re;
-      Fb.im    += thisAtom->Fb_alpha.im;
+      Fa.realf_FIXME    += crealf(thisAtom->Fa_alpha);
+      Fa.imagf_FIXME    += cimagf(thisAtom->Fa_alpha);
+      Fb.realf_FIXME    += crealf(thisAtom->Fb_alpha);
+      Fb.imagf_FIXME    += cimagf(thisAtom->Fb_alpha);
     } /* loop through SFTs */
 
   } /* loop through detectors */
 
   /* compute determinant and final Fstat (not twoF!) */
   REAL8 Dinv = 1.0 / ( mmatrixA * mmatrixB - SQUARE(mmatrixC) );
-  F = Dinv * ( mmatrixB * ( SQUARE(Fa.re) + SQUARE(Fa.im) ) + mmatrixA * ( SQUARE(Fb.re) + SQUARE(Fb.im) ) - 2.0 * mmatrixC * (Fa.re*Fb.re + Fa.im*Fb.im) );
+  F = Dinv * ( mmatrixB * ( SQUARE(crealf(Fa)) + SQUARE(cimagf(Fa)) ) + mmatrixA * ( SQUARE(crealf(Fb)) + SQUARE(cimagf(Fb)) ) - 2.0 * mmatrixC * (crealf(Fa)*crealf(Fb) + cimagf(Fa)*cimagf(Fb)) );
 
   return(F);
 
@@ -501,15 +505,16 @@ REAL8 XLALComputeFstatFromAtoms ( const MultiFstatAtomVector *multiFstatAtoms,  
 
 
 
-/** XLAL function to compute Line Veto statistics from multi- and single-detector Fstats:
- *  this is now a wrapper for XLALComputeLineVetoArray which just translates REAL4Vectors to fixed REAL4 arrays
- *  and linear to logarithmic priors rhomaxline and lX
- *  NOTE: if many LV values at identical priors are required, directly call XLALComputeLineVetoArray for better performance
-*/
+/**
+ * XLAL function to compute Line Veto statistics from multi- and single-detector Fstats:
+ * this is now a wrapper for XLALComputeLineVetoArray which just translates REAL4Vectors to fixed REAL4 arrays
+ * and linear to logarithmic priors rhomaxline and lX
+ * NOTE: if many LV values at identical priors are required, directly call XLALComputeLineVetoArray for better performance
+ */
 REAL4 XLALComputeLineVeto ( const REAL4 TwoF,          /**< multi-detector  Fstat */
                             const REAL4Vector *TwoFXvec,  /**< vector of single-detector Fstats */
-                            const REAL4 rhomaxline,    /**< amplitude prior normalization for lines */
-                            const REAL4Vector *lXvec, /**< vector of single-detector prior line odds ratio, default to lX=1 for all X if NULL */
+                            const REAL8 rhomaxline,    /**< amplitude prior normalization for lines */
+                            const REAL8Vector *lXvec, /**< vector of single-detector prior line odds ratio, default to lX=1 for all X if NULL */
                             const BOOLEAN useAllTerms  /**< only use leading term (FALSE) or all terms (TRUE) in log sum exp formula? */
                           )
 {
@@ -524,20 +529,20 @@ REAL4 XLALComputeLineVeto ( const REAL4 TwoF,          /**< multi-detector  Fsta
 
   if ( rhomaxline < 0 )
     XLAL_ERROR_REAL4 ( XLAL_EDOM, "Negative prior range 'rhomaxline' = %g! Must be >= 0!\n", rhomaxline );
-  REAL4 logRhoTerm = 0.0;
+  REAL8 logRhoTerm = 0.0;
   if ( rhomaxline > 0.0 )
    logRhoTerm = 4.0 * log(rhomaxline) - log(70.0);
   else /* if rhomaxline == 0.0, logRhoTerm should become irrelevant in summation */
-    logRhoTerm = - LAL_REAL4_MAX;
+    logRhoTerm = - LAL_REAL8_MAX;
 
-  REAL4 *loglX = NULL;
-  REAL4 loglXtemp[numDetectors];
+  REAL8 *loglX = NULL;
+  REAL8 loglXtemp[numDetectors];
   if ( lXvec ) {
     for (UINT4 X = 0; X < numDetectors; X++) {
       if ( lXvec->data[X] > 0 )
         loglXtemp[X] = log(lXvec->data[X]);
       else if ( lXvec->data[X] == 0 ) /* if zero prior ratio, approximate log(0)=-inf by -LAL_REA4_MAX to avoid raising underflow exceptions */
-        loglXtemp[X] = - LAL_REAL4_MAX;
+        loglXtemp[X] = - LAL_REAL8_MAX;
       else /* negative prior ratio is a mistake! */
        XLAL_ERROR_REAL4 ( XLAL_EDOM, "Negative input prior-ratio for detector X=%d: lX[X]=%g\n", X, lXvec->data[X] );
     }
@@ -553,20 +558,21 @@ REAL4 XLALComputeLineVeto ( const REAL4 TwoF,          /**< multi-detector  Fsta
 
 
 
-/** XLAL function to compute Line Veto statistics from multi- and single-detector Fstats:
- *  LV = F - log ( rhomaxline^4/70 + sum(e^FX) )
- *  implemented by log sum exp formula:
- *  LV = F - max(denom_terms) - log( sum(e^(denom_term-max)) )
- *  from the analytical derivation, there should be a term LV += O_SN^0 + 4.0*log(rhomaxline/rhomaxsig)
- *  but this is irrelevant for toplist sorting, only a normalization which can be replaced arbitrarily
- *  NOTE: priors logRhoTerm, loglX have to be logarithmized already
-*/
+/**
+ * XLAL function to compute Line Veto statistics from multi- and single-detector Fstats:
+ * LV = F - log ( rhomaxline^4/70 + sum(e^FX) )
+ * implemented by log sum exp formula:
+ * LV = F - max(denom_terms) - log( sum(e^(denom_term-max)) )
+ * from the analytical derivation, there should be a term LV += O_SN^0 + 4.0*log(rhomaxline/rhomaxsig)
+ * but this is irrelevant for toplist sorting, only a normalization which can be replaced arbitrarily
+ * NOTE: priors logRhoTerm, loglX have to be logarithmized already
+ */
 REAL4
 XLALComputeLineVetoArray ( const REAL4 TwoF,   /**< multi-detector Fstat */
                            const UINT4 numDetectors, /**< number of detectors */
                            const REAL4 *TwoFX,       /**< array of single-detector Fstats */
-                           const REAL4 logRhoTerm,   /**< extra term coming from prior normalization: log(rho_max_line^4/70) */
-                           const REAL4 *loglX,       /**< array of logs of single-detector prior line odds ratios, default to loglX=log(1)=0 for all X if NULL */
+                           const REAL8 logRhoTerm,   /**< extra term coming from prior normalization: log(rho_max_line^4/70) */
+                           const REAL8 *loglX,       /**< array of logs of single-detector prior line odds ratios, default to loglX=log(1)=0 for all X if NULL */
                            const BOOLEAN useAllTerms /**< only use leading term (FALSE) or all terms (TRUE) in log sum exp formula? */
                            )
 {
@@ -618,9 +624,10 @@ XLALComputeLineVetoArray ( const REAL4 TwoF,   /**< multi-detector Fstat */
 } /* XLALComputeLineVetoArray() */
 
 
-/** XLAL function to get a list of detector IDs from multi-segment multiSFT vectors
-* returns all unique detector IDs for cases with some detectors switching on and off
-*/
+/**
+ * XLAL function to get a list of detector IDs from multi-segment multiSFT vectors
+ * returns all unique detector IDs for cases with some detectors switching on and off
+ */
 LALStringVector *
 XLALGetDetectorIDs ( const MultiSFTVectorSequence *multiSFTsV /**< data files (SFTs) for all detectors and segments */
                      )
@@ -712,7 +719,8 @@ XLALCreateLogLUT ( void )
 
 } /* XLALCreateLogLUT() */
 
-/** Destructor function for logLUT_t lookup table
+/**
+ * Destructor function for logLUT_t lookup table
  */
 void
 XLALDestroyLogLUT ( void )
@@ -728,7 +736,8 @@ XLALDestroyLogLUT ( void )
 
 } /* XLALDestroyLogLUT() */
 
-/** Fast logarithmic function log(x) using lookup-table (LUT).
+/**
+ * Fast logarithmic function log(x) using lookup-table (LUT).
  * We need to compute log(x) for x in (0,xmax], typically in a B-stat
  * integral of the form int e^-x dx: this means that small values e^(-x)
  * will not contribute much to the integral and are less important than

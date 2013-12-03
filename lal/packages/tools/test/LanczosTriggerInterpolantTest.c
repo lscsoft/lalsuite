@@ -58,7 +58,7 @@ int main(__attribute__((unused)) int argc, __attribute__((unused)) char **argv)
             15.85961229+11.44834434*I,  14.29135572+12.25702765*I,
             12.80306731+12.77700535*I};
 
-        result = XLALApplyLanczosTriggerInterpolant(interp, &tmax, &ymax, &y[16]);
+        result = XLALCOMPLEX16ApplyLanczosTriggerInterpolant(interp, &tmax, &ymax, &y[16]);
         if (result)
             exit(EXIT_FAILURE);
 
@@ -94,7 +94,7 @@ int main(__attribute__((unused)) int argc, __attribute__((unused)) char **argv)
             -27.73414707 +8.52204497*I, -27.23875261 +6.08054244*I,
             -26.58717550 +3.98060113*I};
 
-        result = XLALApplyLanczosTriggerInterpolant(interp, &tmax, &ymax, &y[16]);
+        result = XLALCOMPLEX16ApplyLanczosTriggerInterpolant(interp, &tmax, &ymax, &y[16]);
         if (result)
             exit(EXIT_FAILURE);
 
@@ -130,7 +130,7 @@ int main(__attribute__((unused)) int argc, __attribute__((unused)) char **argv)
             -26.04673459 +9.92719558*I, -26.08115387 +7.46027909*I,
             -25.90777937 +5.03328563*I};
 
-        result = XLALApplyLanczosTriggerInterpolant(interp, &tmax, &ymax, &y[16]);
+        result = XLALCOMPLEX16ApplyLanczosTriggerInterpolant(interp, &tmax, &ymax, &y[16]);
         if (result)
             exit(EXIT_FAILURE);
 

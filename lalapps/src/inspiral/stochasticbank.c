@@ -40,7 +40,6 @@
 #include <time.h>
 #include <math.h>
 
-#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lalapps.h>
 #include <series.h>
 #include <processtable.h>
@@ -280,7 +279,6 @@ int main ( int argc, char *argv[] )
 
 
   /* set up inital debugging values */
-  lalDebugLevel = 7;
   XLALSetErrorHandler(XLALAbortErrorHandler);
   lal_errhandler = LAL_ERR_EXIT;
 
@@ -467,8 +465,7 @@ int main ( int argc, char *argv[] )
 
     for (i=0; i< realWaveform->data->length; i++)
     {
-      waveform->data->data[i].re = realWaveform->data->data[i];
-      waveform->data->data[i].im = imagWaveform->data->data[i];
+      waveform->data->data[i] = crectf( realWaveform->data->data[i], imagWaveform->data->data[i] );
     }
 
     // FFT complex waveform
@@ -494,8 +491,7 @@ int main ( int argc, char *argv[] )
 
     for (i = 0; i < waveformf1->data->length; i++)
     {
-      waveformf1->data->data[i].re /= norm;
-      waveformf1->data->data[i].im /= norm;
+      waveformf1->data->data[i] /= norm;
     }
 
     // compute overlap with previous tmplts
@@ -713,7 +709,6 @@ this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
 #define USAGE \
 "  --help                       display this message\n"\
 "  --version                    print version information and exit\n"\
-"  --debug-level LEVEL          set the LAL debug level to LEVEL\n"\
 "  --user-tag STRING            set the process_params usertag to STRING\n"\
 "\n"\
 "  --gps-start-time SEC         GPS second of data start time\n"\
@@ -752,7 +747,6 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     {"random-seed",             required_argument, 0,                'S'},
     {"user-tag",                required_argument, 0,                'Z'},
     {"userTag",                 required_argument, 0,                'Z'},
-    {"debug-level",             required_argument, 0,                'z'},
     {0, 0, 0, 0}
   };
   int c;
@@ -772,7 +766,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     int option_index = 0;
     size_t optarg_len;
 
-    c = getopt_long_only( argc, argv, "ha:b:c:e:m:s:z:A:B:C:N:P:S:Z:",
+    c = getopt_long_only( argc, argv, "ha:b:c:e:m:s:A:B:C:N:P:S:Z:",
         long_options, &option_index );
 
     /* detect the end of the options */
@@ -1022,11 +1016,6 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
           gpsEndTime.gpsNanoSeconds = 0;
           ADD_PROCESS_PARAM( "int", "%ld", gendt );
         }
-        break;
-
-      case 'z':
-        set_debug_level( optarg );
-        ADD_PROCESS_PARAM( "string", "%s", optarg );
         break;
 
       case '?':

@@ -17,17 +17,19 @@
 extern "C" {
 #endif
 
-/** \addtogroup InspiralInjectionParams_h
+/**
+ * \addtogroup InspiralInjectionParams_h
  * \author D. Brown, J. Creighton, S. Fairhurst, G. Jones, E. Messaritaki
  *
  * \brief Module for generating randomly distributed inspiral parameters
  *
- *
  */
 /*@{*/
 
-/** enum containing the different ways in which the time step to
- injections can be distributed */
+/**
+ * enum containing the different ways in which the time step to
+ * injections can be distributed
+ */
 typedef enum
 {
   LALINSPIRAL_UNKNOWN_TIME_DIST,
@@ -37,22 +39,29 @@ typedef enum
 }
 lalinspiral_time_distribution;
 
-/** enum containing the different ways in which the distance to
-    injections can be distributed */
+/**
+ * enum containing the different ways in which the loudness of
+ * injections can be distributed
+ */
 typedef enum
 {
-  unknownDistanceDist,
+  unknownLoudnessDist,
   distFromSourceFile,
   uniformDistance,
   uniformDistanceSquared,
   uniformLogDistance,
   uniformVolume,
-  sfr
+  starFormationRate,
+  uniformSnr,
+  uniformLogSnr,
+  uniformVolumeSnr
 }
-DistanceDistribution;
+LoudnessDistribution;
 
-/** enum containing the different ways in which the sky location of
-    injections can be distributed */
+/**
+ * enum containing the different ways in which the sky location of
+ * injections can be distributed
+ */
 typedef enum
 {
   unknownLocationDist,
@@ -64,8 +73,10 @@ typedef enum
 }
 SkyLocationDistribution;
 
-/** enum containing the different ways in which the masses of
-    injections can be distributed */
+/**
+ * enum containing the different ways in which the masses of
+ * injections can be distributed
+ */
 typedef enum
 {
   unknownMassDist,
@@ -83,8 +94,10 @@ typedef enum
 }
 MassDistribution;
 
-/** enum containing the different ways in which the inclinations of
-    injections can be distributed */
+/**
+ * enum containing the different ways in which the inclinations of
+ * injections can be distributed
+ */
 typedef enum
 {
   unknownInclDist,
@@ -94,8 +107,22 @@ typedef enum
 }
 InclDistribution;
 
-/** enum for two distinct ways a spin-aligned injection is realized
-    depending on the waveform family */
+/**
+ * enum containing the different ways in which the spin magnitudes of
+ * injections can be distributed
+ */
+typedef enum
+{
+  unknownSpinDist,
+  uniformSpinDist,
+  gaussianSpinDist
+}
+SpinDistribution;
+
+/**
+ * enum for two distinct ways a spin-aligned injection is realized
+ * depending on the waveform family
+ */
 typedef enum
 {
   alongzAxis,
@@ -112,7 +139,7 @@ SimInspiralTable* XLALRandomInspiralTime( SimInspiralTable *inj,
 
 SimInspiralTable* XLALRandomInspiralDistance( SimInspiralTable *inj,
     RandomParams *randParams,
-    DistanceDistribution dDist,
+    LoudnessDistribution dDist,
     REAL4  distMin,
     REAL4  distMax );
 
@@ -196,7 +223,12 @@ SimInspiralTable* XLALRandomInspiralSpins( SimInspiralTable *inj,
     REAL4  kappa1Max,
     REAL4  abskappa1Min,
     REAL4  abskappa1Max,
-    AlignmentType alignInj);
+    AlignmentType alignInj,
+    SpinDistribution distribution,
+    REAL4  spin1Mean,
+    REAL4  spin1Std,
+    REAL4  spin2Mean,
+    REAL4  spin2Std);
 
 SimInspiralTable* XLALRandomNRInjectTotalMass(
     SimInspiralTable *inj,

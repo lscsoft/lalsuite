@@ -34,7 +34,6 @@
 # include <lal/GeneratePPNInspiral.h>
 # include <lal/LIGOMetadataTables.h>
 # include <lal/LALDatatypes.h>
-# include <lal/LALComplex.h>
 # include <lal/LALSimInspiral.h>
 
 #ifdef  __cplusplus
@@ -47,7 +46,8 @@ extern "C" {
  *
  * \brief %Header file for the template generation codes.
  *
- * \heading{Synopsis}
+ * ### Synopsis ###
+ *
  * \code
  * #include <lal/LALInspiral.h>
  * \endcode
@@ -56,24 +56,6 @@ extern "C" {
  *
  */
 /*@{*/
-
-/** \cond DONT_DOXYGEN */
-# define oneby3    0.333333333333333333333333333
-# define twoby3    0.666666666666666666666666667
-# define fourby3   1.333333333333333333333333333
-# define fiveby3   1.666666666666666666666666667
-# define sevenby3  2.333333333333333333333333333
-# define eightby3  2.666666666666666666666666667
-# define tenby3    3.333333333333333333333333333
-# define elevenby3 3.666666666666666666666666666
-# define threeby8  0.375
-# define fiveby8   0.625
-# define threeby4  0.75
-# define sevenby8  0.875
-# define ninty4by3etc 18.687902694437592603 /* (94/3 -41/31*pi*pi) */
-# define LALINSPIRAL_PNTHETA -11831.L/9240.L
-# define LALINRPIAL_PNLAMBDA -1987.L/3080.L
-/** \endcond */
 
 /**\name Error Codes */
 /*@{*/
@@ -125,7 +107,8 @@ extern "C" {
 /** \endcond */
 
 
-/** These are the input structures needed to solve for the mass
+/**
+ * These are the input structures needed to solve for the mass
  * ratio \f$\eta\f$ given the chirptimes \f$(\tau_0,\, \tau_2)\f$ or
  * \f$(\tau_0, \, \tau_4).\f$
  *
@@ -160,7 +143,8 @@ tagEtaTau04In
 /*@}*/
 
 
-/** This structure is one of the members of the \c InspiralTemplate structure.
+/**
+ * This structure is one of the members of the \c InspiralTemplate structure.
  * A user can specify the parameters of a binary using any of the following combination of \e masses:
  * m1Andm2, totalMassAndEta, totalMassUAndEta, totalMassAndMu, t01, t02, t03, t04, psi0Andpsi3
  *
@@ -192,7 +176,8 @@ typedef enum {
 
 
 
-/** The inspiral waveform parameter structure containing information about the waveform to be generated.
+/**
+ * The inspiral waveform parameter structure containing information about the waveform to be generated.
  */
 typedef struct
 tagInspiralTemplate
@@ -256,8 +241,8 @@ tagInspiralTemplate
   REAL8 inclination;		/**< Inclination of the orbit  (currently not in use) */
   REAL8 orbitTheta0;		/**< Initial co-latitute of the orbit */
   REAL8 orbitPhi0;		/**< Initial azimuth angle of the orbit */
-  REAL8 spin1[3];		/**< Spin vector of the primary (currently not in use) */
-  REAL8 spin2[3];		/**< Spin vector of the secondary (currently not in use) */
+  REAL8 spin1[3];		/**< Spin vector of the primary */
+  REAL8 spin2[3];		/**< Spin vector of the secondary */
   REAL8 sourceTheta;		/**< Co-latitute in the direction to the source */
   REAL8 sourcePhi;		/**< Azimuth angle in the direction to the source */
   REAL8 polarisationAngle;
@@ -276,9 +261,10 @@ tagInspiralTemplate
 
   LALSimInspiralFrameAxis axisChoice;	/**< UNDOCUMENTED */
 
-  /** \name Paramters which are computed using LALInspiralParameterCalc
-   * Note that tc and fFinal are computed during waveform generation!!!
-   */
+/**
+ * \name Paramters which are computed using LALInspiralParameterCalc
+ * Note that tc and fFinal are computed during waveform generation!!!
+ */
   /*@{*/
   REAL8 chirpMass;		/**< chirp mass of the binary \f$=\eta^{3/5} m\f$ in solar mass (output) */
   REAL8 eta;			/**< symmetric mass ratio \f$\eta=m_1m_2/m^2\f$ (input/output) */
@@ -342,7 +328,8 @@ tagInspiralTemplate
 } InspiralTemplate;
 
 
-/** This is a structure needed by the inner workings of the inspiral wave generation code
+/**
+ * This is a structure needed by the inner workings of the inspiral wave generation code
  */
 typedef struct
 tagInspiralToffInput
@@ -361,7 +348,8 @@ tagInspiralToffInput
  } InspiralToffInput;
 
 
-/** This structure is needed to solve the differential equation
+/**
+ * This structure is needed to solve the differential equation
  * giving the evolution of the orbital angular momentum and the
  * spin angular momenta in the case of spinning black hole binaries.
  */
@@ -381,7 +369,8 @@ tagInspiralACSTParams
   REAL8 thirtytwoBy5etc;	/**< thirtytwoBy5etc:=  \f$(32/5) \eta^2 M\f$ */
 }  InspiralACSTParams;
 
-/** This structure contains various post-Newtonian and P-approximant expansion
+/**
+ * This structure contains various post-Newtonian and P-approximant expansion
  * coefficients; the meanings of the coefficients is indicated as comments
  * before each list.
  */
@@ -469,9 +458,10 @@ tagexpnCoeffs {
   REAL8 lambda, theta, EulerC, omegaS, zeta2;
   /*@}*/
 
-  /** \name Initial and final values of frequency, time, velocity; lso
-   * values of velocity and frequency; final phase.
-   */
+/**
+ * \name Initial and final values of frequency, time, velocity; lso
+ * values of velocity and frequency; final phase.
+ */
   /*@{*/
   REAL8 f0, fn, t0, tn, v0, vn, vf, vlso, flso, phiC;
   /*@}*/
@@ -488,7 +478,8 @@ tagexpnCoeffs {
 }  expnCoeffs;
 
 
-/** \name Energy, flux, phase, time and frequency functions.
+/**
+ * \name Energy, flux, phase, time and frequency functions.
  * The following functions are generic function definitions that will be used in
  * template generation. The function <tt>LALInspiralChooseModel,</tt>
  * which is called by wave generation interface code, points these
@@ -526,7 +517,8 @@ typedef REAL8 (InspiralTiming2) (
    void *params);
 /*@}*/
 
-/** Structure to hold the pointers to the generic functions defined above
+/**
+ * Structure to hold the pointers to the generic functions defined above
  */
 typedef struct
 tagexpnFunc
@@ -540,7 +532,8 @@ tagexpnFunc
 } expnFunc;
 
 
-/** Structure needed to compute the time elapsed
+/**
+ * Structure needed to compute the time elapsed
  * from/to the starting epoch of the waveform when the velocity
  * parameter was \f$v_0,\f$ to/from the current epoch when velocity
  * parameter is \f$v\f$
@@ -558,7 +551,8 @@ tagTofVIn
    expnCoeffs *coeffs;
 } TofVIn;
 
-/** Structure needed to compute the time elapsed
+/**
+ * Structure needed to compute the time elapsed
  * from/to the starting epoch of the waveform when the velocity
  * parameter was \f$v_0,\f$ to/from the current epoch when velocity
  * parameter is \f$v\f$
@@ -583,7 +577,8 @@ tagEOBNonQCCoeffs
   REAL8 b2;
 } EOBNonQCCoeffs;
 
-/** Structure used as an input to compute the derivatives needed in solving the phasing formula when the
+/**
+ * Structure used as an input to compute the derivatives needed in solving the phasing formula when the
  * \c approximant is <tt>TaylorT1, TaylorP1</tt> or <tt>EOB</tt>
  */
 typedef struct
@@ -596,7 +591,8 @@ tagInspiralDerivativesIn
    EOBNonQCCoeffs *nqcCoeffs;
 } InspiralDerivativesIn;
 
-/** Structure used as an input to Runge-Kutta solver.
+/**
+ * Structure used as an input to Runge-Kutta solver.
  */
 typedef struct
 tagrk4In
@@ -612,7 +608,8 @@ tagrk4In
    INT4 n;
 } rk4In;
 
-/** Structure containing steps and controls for the GSL Runge-Kutta solver.
+/**
+ * Structure containing steps and controls for the GSL Runge-Kutta solver.
  */
 typedef struct
 tagrk4GSLIntegrator
@@ -626,7 +623,8 @@ tagrk4GSLIntegrator
 } rk4GSLIntegrator;
 
 
-/** Structures used to compute the phase of the signal from the `beginning', when the
+/**
+ * Structures used to compute the phase of the signal from the `beginning', when the
  * veolcity parameter is \f$v_0,\f$ to a time when the velocity parameter
  * has evolved to a user input value \f$v\f$.
  */
@@ -640,7 +638,8 @@ tagInspiralPhaseIn
    expnCoeffs *coeffs;
 } InspiralPhaseIn;
 
-/** Structures used to compute the phase of the signal from the `beginning', when the
+/**
+ * Structures used to compute the phase of the signal from the `beginning', when the
  * veolcity parameter is \f$v_0,\f$ to a time when the velocity parameter
  * has evolved to a user input value \f$v\f$.
  */
@@ -1814,6 +1813,19 @@ INT4 XLALInspiralAttachRingdownWave (
         REAL4Vector  	 *signalvec2,
         InspiralTemplate *params);
 
+/**
+ * XLAL function to determine adaptive integration flag from a string.  Returns
+ * 1 if string contains 'fixedStep', otherwise returns 0 to signal
+ * adaptive integration should be used.
+ */
+int XLALGetAdaptiveIntFromString(const CHAR *inString);
+
+/**
+ * XLAL function to determine inspiral-only flag from a string.  Returns
+ * 1 if string contains 'inspiralOnly', otherwise returns 0 to signal
+ * full inspiral-merger-ringdown waveform should be generated.
+ */
+int XLALGetInspiralOnlyFromString(const CHAR *inString);
 
 INT4 XLALPSpinInspiralRingdownWave (
        REAL8Vector             *rdwave,
@@ -1921,6 +1933,11 @@ void XLALSimInjectNinjaSignals(
         const char *ifo,
         REAL8 dynRange,
         SimInspiralTable* events
+);
+
+/* Determines if a given time is playground data. */
+int XLALINT8NanoSecIsPlayground (
+        INT8 ns
 );
 
 /*---------------------------------------------------------------- */

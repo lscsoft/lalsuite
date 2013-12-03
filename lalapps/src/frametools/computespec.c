@@ -19,22 +19,21 @@
 
 /**
  * \author Patrick R Brady
-\file
-*/
+ * \file
+ */
 
 #include <stdio.h>
 #include <unistd.h>
 #include <math.h>
-#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/LALStdlib.h>
 #include <lal/AVFactories.h>
 #include <lal/PrintFTSeries.h>
-#include <lal/FrameStream.h>
+#include <lal/LALFrStream.h>
 #include <lal/LALMoment.h>
 #include <lal/Units.h>
 #include <lal/RealFFT.h>
 #include <lal/BandPassTimeSeries.h>
-#include <lal/FrameCache.h>
+#include <lal/LALCache.h>
 #include <lal/LALFrameL.h>
 
 #define TRUE       1
@@ -58,7 +57,6 @@
               "    --numpts npoints      Points per graph displayed\n"\
               "    --numavg navg         Number of segments to average\n"
 
-INT4 lalDebugLevel = LALMSGLVL3;
 
 #include <config.h>
 #ifndef HAVE_LIBLALFRAME
@@ -72,7 +70,7 @@ int main( void )
 int main( int argc, char *argv[] )
 {
     static LALStatus  status;
-    FrStream         *stream = NULL;
+    LALFrStream         *stream = NULL;
     FrChanIn          channelIn;
     REAL4             lowfreq, highfreq=0, norm;
     REAL4Vector      *spectrum = NULL;
@@ -83,7 +81,7 @@ int main( int argc, char *argv[] )
     BOOLEAN           epochSet = FALSE;
     BOOLEAN           highpass = FALSE;
     PassBandParamStruc highpassParam;
-    FrCache           *frameCache = NULL;
+    LALCache           *frameCache = NULL;
 
     /* test files are version 4 frames */
     if ( FRAMELIB_VERSION < 4 )
@@ -191,7 +189,7 @@ int main( int argc, char *argv[] )
 
 
     /* Import the frame cache file */
-    LALFrCacheImport( &status, &frameCache, dirname);
+    frameCache = XLALCacheImport(dirname);
 
     /* Open frame stream */
     LALFrCacheOpen( &status, &stream, frameCache );
@@ -245,8 +243,8 @@ int main( int argc, char *argv[] )
             LALForwardRealFFT( &status, Hvec, &hvec, pfwd );
 
             for( j=0 ; j<numPoints/2+1; j++){
-                re = Hvec->data[j].re;
-                im = Hvec->data[j].im;
+                re = crealf(Hvec->data[j]);
+                im = cimagf(Hvec->data[j]);
                 spectrum->data[j] += 2.0*(re*re+im*im)/((REAL4)navg);
             }
         }
@@ -280,7 +278,7 @@ int main( int argc, char *argv[] )
     }
 
     /* clean up */
-    LALDestroyFrCache( &status, &frameCache);
+    XLALDestroyCache(frameCache);
     LALSDestroyVector( &status, &spectrum );
     LALSDestroyVector( &status, &(series.data) );
     LALCheckMemoryLeaks();

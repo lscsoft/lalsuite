@@ -31,20 +31,19 @@
 #include <lal/XLALError.h>
 
 /**
- *
  * An implementation of the detector response formulae in Anderson et al
- * PRD 63 042003 (2001) [\ref ABCF2001].
+ * PRD 63 042003 (2001) \cite ABCF2001.
  *
  * Computes F+ and Fx for a source at a specified sky position,
  * polarization angle, and sidereal time.  Also requires the detector's
  * response matrix which is defined by Eq. (B6) of [ABCF] using either
- * Table 1 of [\ref ABCF2001] or Eqs. (B11)--(B17) to compute the arm
+ * Table 1 of \cite ABCF2001 or Eqs. (B11)--(B17) to compute the arm
  * direction unit vectors.
  */
 void XLALComputeDetAMResponse(
 	double *fplus,		/**< Returned value of F+ */
 	double *fcross,		/**< Returned value of Fx */
-	REAL4 D[3][3],		/**< Detector response 3x3 matrix */
+	const REAL4 D[3][3],	/**< Detector response 3x3 matrix */
 	const double ra,	/**< Right ascention of source (radians) */
 	const double dec,	/**< Declination of source (radians) */
 	const double psi,	/**< Polarization angle of source (radians) */
@@ -96,9 +95,9 @@ void XLALComputeDetAMResponse(
  *
  * An implementation of the detector response for all six tensor, vector and
  * scalar polarisation modes of general metric theories of gravity. We follow
- * the convention of [\ref Blaut2012] (this is also equivalent to the
- * Equations in [\ref ABCF2001] and  [\ref Nishizawa2009] in albeit with a
- * rotated set of coordinates), but with [\ref Blaut2012]'s \f$\theta = \pi/2 -
+ * the convention of \cite Blaut2012 (this is also equivalent to the
+ * Equations in \cite ABCF2001 and  \cite Nishizawa2009 in albeit with a
+ * rotated set of coordinates), but with \cite Blaut2012's \f$\theta = \pi/2 -
  * dec\f$ and \f$\phi = ra-GMST\f$ rather than the gha = gmst - ra used here.
  *
  * The values computed are the tensor mode response, F+ and Fx ("cross"), the
@@ -106,7 +105,7 @@ void XLALComputeDetAMResponse(
  * "y" modes, Fx ("x") and Fy, for a source at a specified sky position,
  * polarization angle, and sidereal time.  Also requires the detector's
  * response matrix which is defined by Eq. (B6) of [ABCF] using either
- * Table 1 of [\ref ABCF2001] or Eqs. (B11)--(B17) to compute the arm
+ * Table 1 of \cite ABCF2001 or Eqs. (B11)--(B17) to compute the arm
  * direction unit vectors.
  */
 void XLALComputeDetAMResponseExtraModes(
@@ -116,7 +115,7 @@ void XLALComputeDetAMResponseExtraModes(
 	double *fl,		/**< Returned value of Fl (scalar longitudinal */
 	double *fx,		/**< Returned value of Fx ("x" vector mode) */
 	double *fy,		/**< Returned value of Fy (y vector mode) */
-	REAL4 D[3][3],		/**< Detector response 3x3 matrix */
+	const REAL4 D[3][3],		/**< Detector response 3x3 matrix */
 	const double ra,	/**< Right ascention of source (radians) */
 	const double dec,	/**< Declination of source (radians) */
 	const double psi,	/**< Polarization angle of source (radians) */
@@ -181,7 +180,8 @@ void XLALComputeDetAMResponseExtraModes(
 	}
 }
 
-/** \deprecated Use XLALComputeDetAMResponse() instead.
+/**
+ * \deprecated Use XLALComputeDetAMResponse() instead.
  */
 void LALComputeDetAMResponse(LALStatus * status, LALDetAMResponse * pResponse, const LALDetAndSource * pDetAndSrc, const LIGOTimeGPS * gps)
 {
@@ -210,10 +210,11 @@ void LALComputeDetAMResponse(LALStatus * status, LALDetAMResponse * pResponse, c
 }
 
 
-/** Computes REAL4TimeSeries containing time series of response amplitudes.
+/**
+ * Computes REAL4TimeSeries containing time series of response amplitudes.
  * \see XLALComputeDetAMResponse() for more details.
  */
-int XLALComputeDetAMResponseSeries(REAL4TimeSeries ** fplus, REAL4TimeSeries ** fcross, REAL4 D[3][3], const double ra, const double dec, const double psi, const LIGOTimeGPS * start, const double deltaT, const int n)
+int XLALComputeDetAMResponseSeries(REAL4TimeSeries ** fplus, REAL4TimeSeries ** fcross, const REAL4 D[3][3], const double ra, const double dec, const double psi, const LIGOTimeGPS * start, const double deltaT, const int n)
 {
 	LIGOTimeGPS t;
 	double gmst;
@@ -246,11 +247,12 @@ int XLALComputeDetAMResponseSeries(REAL4TimeSeries ** fplus, REAL4TimeSeries ** 
 	return 0;
 }
 
-/** Computes REAL4TimeSeries containing time series of the full general
+/**
+ * Computes REAL4TimeSeries containing time series of the full general
  * metric theory of gravity response amplitudes.
  * \see XLALComputeDetAMResponseExtraModes() for more details.
  */
-int XLALComputeDetAMResponseExtraModesSeries(REAL4TimeSeries ** fplus, REAL4TimeSeries ** fcross, REAL4TimeSeries ** fb, REAL4TimeSeries ** fl, REAL4TimeSeries ** fx, REAL4TimeSeries ** fy, REAL4 D[3][3], const double ra, const double dec, const double psi, const LIGOTimeGPS * start, const double deltaT, const int n)
+int XLALComputeDetAMResponseExtraModesSeries(REAL4TimeSeries ** fplus, REAL4TimeSeries ** fcross, REAL4TimeSeries ** fb, REAL4TimeSeries ** fl, REAL4TimeSeries ** fx, REAL4TimeSeries ** fy, const REAL4 D[3][3], const double ra, const double dec, const double psi, const LIGOTimeGPS * start, const double deltaT, const int n)
 {
 	LIGOTimeGPS t;
 	double gmst;
@@ -302,7 +304,8 @@ int XLALComputeDetAMResponseExtraModesSeries(REAL4TimeSeries ** fplus, REAL4Time
 	return 0;
 }
 
-/** Computes REAL4TimeSeries containing time series of response amplitudes.
+/**
+ * Computes REAL4TimeSeries containing time series of response amplitudes.
  * \deprecated Use XLALComputeDetAMResponseSeries() instead.
  */
 void LALComputeDetAMResponseSeries(LALStatus * status, LALDetAMResponseSeries * pResponseSeries, const LALDetAndSource * pDetAndSource, const LALTimeIntervalAndNSample * pTimeInfo)

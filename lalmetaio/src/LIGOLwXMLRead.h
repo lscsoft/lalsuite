@@ -27,25 +27,24 @@
  */
 
 /**
-
-\author Brown, D. A. and Fairhurst, S.
-\file
-\ingroup lalmetaio
-\brief Provides functions for reading LIGO lightweight XML files to LIGO metadata database tables.
-
-\heading{Synopsis}
-\code
-#include <lal/LIGOLwXMLRead.h>
-\endcode
-
-*/
+ * \author Brown, D. A. and Fairhurst, S.
+ * \file
+ * \ingroup lalmetaio
+ * \brief Provides functions for reading LIGO lightweight XML files to LIGO metadata database tables.
+ *
+ * ### Synopsis ###
+ *
+ * \code
+ * #include <lal/LIGOLwXMLRead.h>
+ * \endcode
+ *
+ */
 
 #ifndef _LIGOLWXMLREAD_H
 #define _LIGOLWXMLREAD_H
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <metaio.h>
 #include <lal/LALDatatypes.h>
 #include <lal/LALConstants.h>
 #include <lal/LIGOMetadataTables.h>
@@ -80,18 +79,22 @@ extern "C" {
 #define LIGOLWXMLREADH_MSGETNOP "Table not begun for writing"
 /*@}*/
 
+/* Forward declarations of MetaIO types */
+struct MetaioParseEnvironment;
 
-
-
-/** This structure allows for the association of entries in a MetaDataTable
-with columns in an xml file.
-<dl>
-<dt>name</dt><dd> The name of the column in the XML table.</dd>
-<dt>pos</dt><dd> The position of this column in the XML table.</dd>
-<dt>idx</dt><dd> The id number of the column.</dd>
-</dl>
-
-*/
+/**
+ * This structure allows for the association of entries in a MetaDataTable
+ * with columns in an xml file.
+ * <dl>
+ * <dt>name</dt><dd> The name of the column in the XML table.</dd>
+ * <dt>pos</dt><dd> The position of this column in the XML table.</dd>
+ * <dt>idx</dt><dd> The id number of the column.</dd>
+ * </dl>
+ *
+ */
+#ifdef SWIG /* SWIG interface directives */
+SWIGLAL(IMMUTABLE_MEMBERS(tagMetaTableDirectory, name));
+#endif /* SWIG */
 typedef struct
 tagMetaTableDirectory
 {
@@ -101,16 +104,8 @@ tagMetaTableDirectory
 }
 MetaTableDirectory;
 
-
-
-
-
-
-
-
-
 MetaTableDirectory* XLALCreateMetaTableDir(
-    const MetaioParseEnv    env,
+    struct MetaioParseEnvironment *const env,
     MetadataTableType       table
     );
 
@@ -118,21 +113,15 @@ void
 LALCreateMetaTableDir(
     LALStatus              *status,
     MetaTableDirectory    **tableDir,
-    const MetaioParseEnv    env,
+    struct MetaioParseEnvironment *const env,
     MetadataTableType       table
     );
-
-
-
-
-
-
 
 int
 XLALLIGOLwFindColumn(
     struct MetaioParseEnvironment *env,
     const char *name,
-    enum METAIO_Type type,
+    unsigned int type,
     int required
 );
 

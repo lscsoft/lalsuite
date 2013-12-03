@@ -1,6 +1,6 @@
 # generate_swiglal_iface.py - generate SWIG interface
 #
-# Copyright (C) 2011, 2012 Karl Wette
+# Copyright (C) 2011--2013 Karl Wette
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -18,25 +18,51 @@
 # MA  02111-1307  USA
 
 __author__ = 'Karl Wette <karl.wette@ligo.org>'
-__copyright__ = 'Copyright (C) 2011, 2012 Karl Wette'
+__copyright__ = 'Copyright (C) 2011--2013 Karl Wette'
 
-import sys, os, re
+import getopt, sys, os, re
 import xml.parsers.expat
-
-_, my_basename = os.path.split(__file__)
-
-# get input variables from environment
-module_name = os.environ['PACKAGE_NAME']
-module_depends = os.environ['SWIG_MODULE_DEPENDS']
-symbol_prefixes = os.environ['SWIG_SYMBOL_PREFIXES']
-preproc_filename = os.environ['swig_iface_preproc']
-preproc_xml_filename = os.environ['swig_iface_preproc_xml']
-iface_filename = os.environ['swig_iface']
 
 # print error message and exit
 def fail(msg):
-    sys.stderr.write('%s: %s\n' % (my_basename, msg))
+    sys.stderr.write('%s: %s\n' % (sys.argv[0], msg))
     sys.exit(1)
+
+# parse input options
+opts, args = getopt.getopt(sys.argv[1:], 'n:d:s:p:x:i:')
+if len(args) > 0:
+    fail('invalid arguments: %s' % ' '.join(args))
+module_name = None
+module_depends = None
+symbol_prefixes = None
+preproc_filename = None
+preproc_xml_filename = None
+iface_filename = None
+for opt, optarg in opts:
+    if opt == '-n':
+        module_name = optarg
+    elif opt == '-d':
+        module_depends = optarg
+    elif opt == '-s':
+        symbol_prefixes = optarg
+    elif opt == '-p':
+        preproc_filename = optarg
+    elif opt == '-x':
+        preproc_xml_filename = optarg
+    elif opt == '-i':
+        iface_filename = optarg
+if module_name is None:
+    fail('missing argument: -n <module_name>');
+if module_depends is None:
+    fail('missing argument: -d <module_depends>');
+if symbol_prefixes is None:
+    fail('missing argument: -s <symbol_prefixes>');
+if preproc_filename is None:
+    fail('missing argument: -p <preproc_filename>');
+if preproc_xml_filename is None:
+    fail('missing argument: -x <preproc_xml_filename>');
+if iface_filename is None:
+    fail('missing argument: -i <iface_filename>');
 
 # XML parser class
 class XMLParser:
@@ -240,8 +266,8 @@ for header in headers:
         structs[struct['name']] = struct
 
 # look for a destructor function for each struct
-dtor_name_regexp = re.compile('(Destroy|Close)([A-Z0-9]|$)')
-dtor_decl_regexp = re.compile('^f\(p\.(.*)\)\.$')
+dtor_name_regexp = re.compile(r'(Destroy|Free|Close)([A-Z0-9_]|$)')
+dtor_decl_regexp = re.compile(r'^f\(p\.(.*)\)\.$')
 for function_name in functions:
 
     # function must match destructor name regexp, and return void
@@ -262,56 +288,32 @@ for function_name in functions:
     if not dtor_struct_name in tdstructs:
         continue
 
+    # struct must not already have a destructor
+    if 'dtor_function' in tdstructs[dtor_struct_name]:
+        fail("struct typedef '%s' has duplicate destructors '%s' and '%s'" %
+             (dtor_struct_name, tdstructs[dtor_struct_name]['dtor_function'], function_name)
+             )
+
     # save destructor name
     tdstructs[dtor_struct_name]['dtor_function'] = function_name
 
     # remove destructor function from interface
     functions[function_name]['feature_ignore'] = '1'
 
-# determine whether return value of functions should be ignored
-func_arg_types_regexp = re.compile('^f\((.*)\)\.(p\.)?$')
+# indicate if the return type of a function is a pointer type, and matches the
+# type of its first argument; many LAL functions return their first argument
+# after performing some operation on it, but we want to prevent two different
+# SWIG wrapping objects from owning the same LAL memory
+func_retn_1starg_regexp = re.compile(r'^f\(((?:p\.)+[^,]+?)(?:,[^,]+)*\)\.\1$')
 for function_name in functions:
-
-    # get function argument and return types
-    func_decl = functions[function_name]['decl']
-    func_arg_types_match = func_arg_types_regexp.match(func_decl)
-    if func_arg_types_match is None:
-        fail("could not match function declaration '%s'" % func_decl)
-    func_arg_types = func_arg_types_match.group(1).split(',')
-    func_retn_type = functions[function_name]['type']
-    if not func_arg_types_match.group(2) is None:
-        func_retn_type = func_arg_types_match.group(2) + func_retn_type
-
-    # return function values by default
-    func_ignore_retn = False
-
-    # ignore function return values whose type is a pointer and which
-    # matches the type of the first argument, since it is common for
-    # XLAL functions to return the value of the first argument
-    if func_retn_type.startswith('p.') and func_retn_type == func_arg_types[0]:
-        func_ignore_retn = True
-
-    if func_ignore_retn:
-
-        # construct return type from SWIG type syntax
-        if func_retn_type.startswith('p.'):
-            func_c_retn_type = func_retn_type[2:] + '*'
-        else:
-            func_c_retn_type = func_retn_type
-        func_c_retn_type = func_c_retn_type.replace('q(const).', 'const ')
-
-    else:
-
-        # empty return type indicates that return value is not ignored
-        func_c_retn_type = ''
-
-    # add return type as extra argument to swiglal_process_function() macro
-    functions[function_name]['extra_process_args'].append(func_c_retn_type)
+    func_decl_type = functions[function_name]['decl'] + functions[function_name]['type']
+    retn_1starg = (not func_retn_1starg_regexp.match(func_decl_type) is None)
+    functions[function_name]['extra_process_args'].append('%d' % retn_1starg)
 
 # open SWIG interface file
 iface_file = open(iface_filename, 'w')
 _, iface_file_basename = os.path.split(iface_filename)
-iface_file.write('// %s: generated by %s\n' % (iface_file_basename, my_basename))
+iface_file.write('// %s: generated by %s\n' % (iface_file_basename, sys.argv[0]))
 
 # define module name
 iface_file.write('%%module %s;\n' % module_name)
@@ -320,8 +322,10 @@ iface_file.write('%%module %s;\n' % module_name)
 iface_file.write('%include <lal/swiglal_common.i>\n')
 
 # import dependent modules
+iface_file.write('#ifndef SWIGIMPORTED\n')
 for module in module_depends.split():
     iface_file.write('%%import <lal/%sswig.i>\n' % module)
+iface_file.write('#endif\n')
 
 # include interface headers in wrapping code
 iface_file.write('%header %{\n')

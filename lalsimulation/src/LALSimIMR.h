@@ -21,7 +21,7 @@
 #define _LALSIMIMR_H
 
 #include <lal/LALDatatypes.h>
-#include  <lal/LALSimInspiralWaveformFlags.h>
+#include <lal/LALSimInspiral.h>
 
 #if defined(__cplusplus)
 extern "C" {
@@ -30,25 +30,19 @@ extern "C" {
 #endif
 
 /**
- * The number of e-folds of ringdown which should be attached for 
+ * The number of e-folds of ringdown which should be attached for
  * EOBNR models
  */
 #define EOB_RD_EFOLDS 10.0
-
-/**
- * Constant which comes up in some of the EOB models. Its value is
- * (94/3 -41/32*pi*pi)
- */
-#define ninty4by3etc 18.687902694437592603
 
 /**
  * Driver routine to compute the non-spinning, inspiral-merger-ringdown
  * phenomenological waveform IMRPhenomA in the frequency domain.
  *
  * Reference:
- *   - Waveform: Eq.(4.13) and (4.16) of http://arxiv.org/pdf/0710.2335
- *   - Coefficients: Eq.(4.18) of http://arxiv.org/pdf/0710.2335 and
- *                   Table I of http://arxiv.org/pdf/0712.0343
+ * - Waveform: Eq.(4.13) and (4.16) of http://arxiv.org/pdf/0710.2335
+ * - Coefficients: Eq.(4.18) of http://arxiv.org/pdf/0710.2335 and
+ * Table I of http://arxiv.org/pdf/0712.0343
  *
  * All input parameters should be SI units.
  */
@@ -68,9 +62,9 @@ int XLALSimIMRPhenomAGenerateFD(
  * phenomenological waveform IMRPhenomA in the time domain.
  *
  * Reference:
- *   - Waveform: Eq.(4.13) and (4.16) of http://arxiv.org/pdf/0710.2335
- *   - Coefficients: Eq.(4.18) of http://arxiv.org/pdf/0710.2335 and
- *                   Table I of http://arxiv.org/pdf/0712.0343
+ * - Waveform: Eq.(4.13) and (4.16) of http://arxiv.org/pdf/0710.2335
+ * - Coefficients: Eq.(4.18) of http://arxiv.org/pdf/0710.2335 and
+ * Table I of http://arxiv.org/pdf/0712.0343
  *
  * All input parameters should be in SI units. Angles should be in radians.
  */
@@ -104,8 +98,8 @@ double XLALSimIMRPhenomBComputeChi(
  * phenomenological waveform IMRPhenomB in the frequency domain.
  *
  * Reference: http://arxiv.org/pdf/0909.2867
- *   - Waveform: Eq.(1)
- *   - Coefficients: Eq.(2) and Table I
+ * - Waveform: Eq.(1)
+ * - Coefficients: Eq.(2) and Table I
  *
  * All input parameters should be in SI units. Angles should be in radians.
  */
@@ -126,8 +120,8 @@ int XLALSimIMRPhenomBGenerateFD(
  * phenomenological waveform IMRPhenomB in the time domain.
  *
  * Reference: http://arxiv.org/pdf/0909.2867
- *   - Waveform: Eq.(1)
- *   - Coefficients: Eq.(2) and Table I
+ * - Waveform: Eq.(1)
+ * - Coefficients: Eq.(2) and Table I
  *
  * All input parameters should be in SI units. Angles should be in radians.
  */
@@ -143,6 +137,28 @@ int XLALSimIMRPhenomBGenerateTD(
     const REAL8 f_max,        /**< end frequency; 0 defaults to ringdown cutoff freq */
     const REAL8 distance,     /**< distance of source (m) */
     const REAL8 inclination   /**< inclination of source (rad) */
+);
+
+/**
+ * Driver routine to compute the spin-aligned, inspiral-merger-ringdown
+ * phenomenological waveform IMRPhenomC in the frequency domain.
+ *
+ * Reference: http://arxiv.org/abs/1005.3306
+ * - Waveform: Eq.(5.1) - (5.13)
+ * - Coefficients: Eq.(5.14) and Table II
+ *
+ * All input parameters should be in SI units. Angles should be in radians.
+ */
+int XLALSimIMRPhenomCGenerateFD(
+    COMPLEX16FrequencySeries **htilde, /**< FD waveform */
+    const REAL8 phiPeak,               /**< orbital phase at peak (rad) */
+    const REAL8 deltaF,                /**< sampling interval (Hz) */
+    const REAL8 m1_SI,                 /**< mass of companion 1 (kg) */
+    const REAL8 m2_SI,                 /**< mass of companion 2 (kg) */
+    const REAL8 chi,                   /**< mass-weighted aligned-spin parameter */
+    const REAL8 f_min,                 /**< starting GW frequency (Hz) */
+    const REAL8 f_max,                 /**< end frequency; 0 defaults to ringdown cutoff freq */
+    const REAL8 distance               /**< distance of source (m) */
 );
 
 /**
@@ -179,6 +195,15 @@ int XLALSimIMREOBNRv2AllModes(
     const REAL8       inclination /**<< Inclination of the source (in radians) */
 );
 
+SphHarmTimeSeries *XLALSimIMREOBNRv2Modes(
+        const REAL8 phiRef,  /**< Orbital phase at coalescence (radians) */
+        const REAL8 deltaT,  /**< Sampling interval (s) */
+        const REAL8 m1,      /**< First component mass (kg) */
+        const REAL8 m2,      /**< Second component mass (kg) */
+        const REAL8 fLower,  /**< Starting GW frequency (Hz) */
+        const REAL8 distance /**< Distance to sources (m) */
+        );
+
 int XLALSimIMRSpinAlignedEOBWaveform(
         REAL8TimeSeries **hplus,
         REAL8TimeSeries **hcross,
@@ -194,30 +219,47 @@ int XLALSimIMRSpinAlignedEOBWaveform(
      );
 
 /**
- * Routine to compute the mass and spin of the final black hole given 
+ * Routine to compute the mass and spin of the final black hole given
  * the masses, spins, binding energy, and orbital angular momentum vector.
  */
-int XLALSimIMRPSpinFinalMassSpin(
-    REAL8 *finalMass,
-    REAL8 *finalSpin,
-    REAL8 m1,
-    REAL8 m2,
-    REAL8 s1x,
-    REAL8 s1y,
-    REAL8 s1z,
-    REAL8 s2x,
-    REAL8 s2y,
-    REAL8 s2z,
-    REAL8 energy,
-    REAL8 LNhvecx,
-    REAL8 LNhvecy,
-    REAL8 LNhvecz
-    );
+int XLALSimIMRPhenSpinFinalMassSpin(REAL8 *finalMass,
+				    REAL8 *finalSpin,
+				    REAL8 m1,
+				    REAL8 m2,
+				    REAL8 s1s1,
+				    REAL8 s2s2,
+				    REAL8 s1L,
+				    REAL8 s2L,
+				    REAL8 s1s2,
+				    REAL8 energy);
+
+int XLALSimSpinInspiralGenerator(REAL8TimeSeries **hPlus,	        /**< +-polarization waveform [returned] */
+				 REAL8TimeSeries **hCross,	        /**< x-polarization waveform [returned] */
+				 REAL8 phi_start,                       /**< start phase */
+				 REAL8 deltaT,                          /**< sampling interval */
+				 REAL8 m1,                              /**< mass of companion 1 */
+				 REAL8 m2,                              /**< mass of companion 2 */
+				 REAL8 f_min,                           /**< start frequency */
+				 REAL8 f_ref,                           /**< reference frequency */
+				 REAL8 r,                               /**< distance of source */
+				 REAL8 iota,                            /**< inclination of source (rad) */
+				 REAL8 s1x,                             /**< x-component of dimensionless spin for object 1 */
+				 REAL8 s1y,                             /**< y-component of dimensionless spin for object 1 */
+				 REAL8 s1z,                             /**< z-component of dimensionless spin for object 1 */
+				 REAL8 s2x,                             /**< x-component of dimensionless spin for object 2 */
+				 REAL8 s2y,                             /**< y-component of dimensionless spin for object 2 */
+				 REAL8 s2z,                             /**< z-component of dimensionless spin for object 2 */
+				 int phaseO,                            /**< twice post-Newtonian phase order */
+				 int ampO,                              /**< twice post-Newtonian amplitude order */
+				 LALSimInspiralWaveformFlags *waveFlags,/**< Choice of axis for input spin params */
+				 LALSimInspiralTestGRParam *testGRparams/**< Choice of axis for input spin params */
+				 );
 
 /**
  * Driver routine to compute a precessing post-Newtonian inspiral-merger-ringdown waveform
  */
-int XLALSimIMRPSpinInspiralRDGenerator(
+
+int XLALSimIMRPhenSpinInspiralRDGenerator(
     REAL8TimeSeries **hplus,    /**< +-polarization waveform */
     REAL8TimeSeries **hcross,   /**< x-polarization waveform */
     REAL8 phi0,                 /**< phase at time of peak amplitude*/
@@ -225,6 +267,7 @@ int XLALSimIMRPSpinInspiralRDGenerator(
     REAL8 m1,                   /**< mass of companion 1 */
     REAL8 m2,                   /**< mass of companion 2 */
     REAL8 f_min,                /**< start frequency */
+    REAL8 f_ref,                /**< reference frequency */
     REAL8 r,                    /**< distance of source */
     REAL8 iota,                 /**< inclination of source (rad) */
     REAL8 s1x,                  /**< x-component of dimensionless spin for object 1 */
@@ -234,9 +277,10 @@ int XLALSimIMRPSpinInspiralRDGenerator(
     REAL8 s2y,                  /**< y-component of dimensionless spin for object 2 */
     REAL8 s2z,                  /**< z-component of dimensionless spin for object 2 */
     int phaseO,                 /**< twice post-Newtonian phase order */
-    LALSimInspiralFrameAxis axisChoice, /**< Choice of axis for input spin params */
-    int inspiralOnly            /**< 0 generate RD, 1 generate inspiralOnly*/
-    );
+    int ampO,                   /**< twice post-Newtonian amplitude order */
+    LALSimInspiralWaveformFlags *waveFlag,/**< Choice of axis for input spin params */
+    LALSimInspiralTestGRParam *testGRparam  /**< Choice of axis for input spin params */
+					  );
 
 #if 0
 { /* so that editors will match succeeding brace */

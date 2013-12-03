@@ -22,12 +22,12 @@
 #include <lal/TimeDelay.h>
 
 /**
-\author Bose, S.
-\file
-
-\brief Provides a set of utilities for manipulating \c multiInspiralTables.
-
-*/
+ * \author Bose, S.
+ * \file
+ *
+ * \brief Provides a set of utilities for manipulating \c multiInspiralTables.
+ *
+ */
 
   /* a few useful static functions */
 static INT8 geocent_end_time(const SimInspiralTable *x)
@@ -539,7 +539,7 @@ XLALMultiSimInspiralTest (
   MultiInspiralTable *prevEvent   = NULL;
   MultiInspiralTable *thisMissed  = NULL;
   EventIDColumn     *thisId      = NULL;
-  CHAR              ifo[3];
+  CHAR              ifo[LIGOMETA_IFO_MAX];
 
   int numSimFound  = 0;
   int coincidence = 0;

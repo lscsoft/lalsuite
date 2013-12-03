@@ -26,11 +26,10 @@ extern "C" {
 
 /**
  * \author Reinhard Prix
+ * \addtogroup DetectorStates_h Header DetectorStates.h
  * \ingroup pkg_pulsarCommon
  * \date 2005
- * \ingroup pulsarTODO
  * \brief API for the DetectorStates.c functions.
- *
  *
  */
 /*@{*/
@@ -60,7 +59,8 @@ extern "C" {
 
 /*---------- exported types ----------*/
 
-/** A symmetric 3x3 tensor (such as detector-tensors), storing only the upper triangle.
+/**
+ * A symmetric 3x3 tensor (such as detector-tensors), storing only the upper triangle.
  */
 typedef struct tagSymmTensor3
 {
@@ -70,7 +70,8 @@ typedef struct tagSymmTensor3
 } SymmTensor3;
 
 
-/** A symmetric 3x3 tensor (such as detector-tensors), storing only the upper triangle, using REAL8 precision
+/**
+ * A symmetric 3x3 tensor (such as detector-tensors), storing only the upper triangle, using REAL8 precision
  */
 typedef struct tagSymmTensor3d
 {
@@ -80,7 +81,8 @@ typedef struct tagSymmTensor3d
 } SymmTensor3d;
 
 
-/** Struct containing pre-computed quantites describing a
+/**
+ * Struct containing pre-computed quantites describing a
  * single detector arm: unit-vector along detector-arm, arm-length,
  * and arm "basis-tensor" n x n. This is used to speed up the
  * computation of LISA detector tensors in the rigid-adiabatic approximation.
@@ -94,7 +96,8 @@ typedef struct tagDetectorArm
 
 typedef DetectorArm Detector3Arms[3];	/**< used to allow functions some type/size checking */
 
-/** simple multi-IFO array of detector-information, standard LAL-vector
+/**
+ * simple multi-IFO array of detector-information, standard LAL-vector
  */
 typedef struct tagMultiLALDetector
 {
@@ -102,8 +105,24 @@ typedef struct tagMultiLALDetector
   LALDetector *data;	/**< array of LALDetector structs */
 } MultiLALDetector;
 
+
+/**
+ * Struct describing a set of detectors with their PSDs and derived noise-weights
+ *
+ */
+typedef struct tagMultiDetectorInfo
+{
+  UINT4 length;                         //!< number of detectors \f$N\f$
+  LALDetector sites[PULSAR_MAX_DETECTORS];  //!< array of site information
+  REAL8 sqrtSn[PULSAR_MAX_DETECTORS];       //!< per-IFO sqrt{Sn} values, \f$\sqrt{S_X}\f$
+  REAL8 detWeights[PULSAR_MAX_DETECTORS];   //!< (derived) noise-weights, defined as \f$w_X = \frac{S_X^{-1}}{\mathcal{S}^{-1}}\f$
+  REAL8 calS;                           //!< noise normalization constant \f$\mathcal{S}^{-1}= \frac{1}{N}\sum_{X=1}^{N} S_X^{-1}\f$
+                                        //!< such that \f$\sum_{X=1}^N w_X = N\f$
+} MultiDetectorInfo;
+
 /* ----- Output types for LALGetDetectorStates() */
-/** State-info about position, velocity and LMST of a detector together
+/**
+ * State-info about position, velocity and LMST of a detector together
  * with corresponding EarthState.
  */
 typedef struct tagDetectorState
@@ -118,7 +137,8 @@ typedef struct tagDetectorState
 } DetectorState;
 
 
-/** Timeseries of DetectorState's, representing the detector-info at different timestamps.
+/**
+ * Timeseries of DetectorState's, representing the detector-info at different timestamps.
  * In addition to the standard 'vector'-fields we also store the detector-info in here.
  */
 typedef struct tagDetectorStateSeries
@@ -163,6 +183,8 @@ XLALGetDetectorStates ( const LIGOTimeGPSVector *timestamps, const LALDetector *
 MultiDetectorStateSeries*
 XLALGetMultiDetectorStates( const MultiLIGOTimeGPSVector *multiTS, const MultiLALDetector *multiIFO, const EphemerisData *edat, REAL8 tOffset );
 
+int XLALParseMultiDetectorInfo ( MultiDetectorInfo *detInfo, const LALStringVector *detNames, const LALStringVector *sqrtSX );
+int XLALMultiDetectorInfoFromMultiSFTCatalogView ( MultiDetectorInfo *multiDetInfo, const MultiSFTCatalogView *multiView );
 
 int XLALAddSymmTensor3s ( SymmTensor3 *sum, const SymmTensor3 *aT, const SymmTensor3 *bT );
 int XLALSubtractSymmTensor3s ( SymmTensor3 *diff, const SymmTensor3 *aT, const SymmTensor3 *bT );

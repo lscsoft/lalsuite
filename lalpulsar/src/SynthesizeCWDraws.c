@@ -18,7 +18,8 @@
  */
 
 /*********************************************************************************/
-/** \author R. Prix
+/**
+ * \author R. Prix
  * \file
  * \brief
  * Generate samples of various statistics (F-stat, B-stat,...) drawn from their
@@ -28,7 +29,7 @@
  * This is based on synthesizeBstat, and is mostly meant to be used for Monte-Carlos
  * studies of ROC curves
  *
- *********************************************************************************/
+ */
 
 /*---------- INCLUDES ----------*/
 
@@ -55,7 +56,8 @@ InjParams_t empty_InjParams_t;
 
 /*==================== FUNCTION DEFINITIONS ====================*/
 
-/** Generate 4 random-noise draws n_mu = {n_1, n_2, n_3, n_4} with correlations according to
+/**
+ * Generate 4 random-noise draws n_mu = {n_1, n_2, n_3, n_4} with correlations according to
  * the matrix M = L L^T, which is passed in as input.
  *
  * Note: you need to pass a pre-allocated 4-vector n_mu.
@@ -107,7 +109,8 @@ XLALDrawCorrelatedNoise ( PulsarAmplitudeVect n_mu,	/**< [out] 4d vector of nois
 
 } /* XLALDrawCorrelatedNoise() */
 
-/** Generate an FstatAtomVector for given antenna-pattern functions.
+/**
+ * Generate an FstatAtomVector for given antenna-pattern functions.
  * Simply creates FstatAtomVector and initializes with antenna-pattern function.
  */
 FstatAtomVector*
@@ -159,7 +162,8 @@ XLALGenerateFstatAtomVector ( const DetectorStateSeries *detStates,	/**< input d
 } /* XLALGenerateFstatAtomVector() */
 
 
-/** Generate a multi-FstatAtomVector for given antenna-pattern functions.
+/**
+ * Generate a multi-FstatAtomVector for given antenna-pattern functions.
  * Simply creates MultiFstatAtomVector and initializes with antenna-pattern function.
  */
 MultiFstatAtomVector*
@@ -213,7 +217,8 @@ XLALGenerateMultiFstatAtomVector ( const MultiDetectorStateSeries *multiDetState
 
 } /* XLALGenerateMultiFstatAtomVector() */
 
-/** Add Gaussian-noise components to given FstatAtomVector
+/**
+ * Add Gaussian-noise components to given FstatAtomVector
  */
 int
 XLALAddNoiseToFstatAtomVector ( FstatAtomVector *atoms,	/**< input atoms-vector, noise will be added to this */
@@ -277,10 +282,10 @@ XLALAddNoiseToFstatAtomVector ( FstatAtomVector *atoms,	/**< input atoms-vector,
 
       /* add this to Fstat-atom */
       /* relation Fa,Fb <--> x_mu: see Eq.(72) in CFSv2-LIGO-T0900149-v2.pdf */
-      atoms->data[alpha].Fa_alpha.re +=   x1;
-      atoms->data[alpha].Fa_alpha.im += - x3;
-      atoms->data[alpha].Fb_alpha.re +=   x2;
-      atoms->data[alpha].Fb_alpha.im += - x4;
+      atoms->data[alpha].Fa_alpha.realf_FIXME +=   x1;
+      atoms->data[alpha].Fa_alpha.imagf_FIXME += - x3;
+      atoms->data[alpha].Fb_alpha.realf_FIXME +=   x2;
+      atoms->data[alpha].Fb_alpha.imagf_FIXME += - x4;
 
     } /* for i < numAtoms */
 
@@ -292,7 +297,8 @@ XLALAddNoiseToFstatAtomVector ( FstatAtomVector *atoms,	/**< input atoms-vector,
 } /* XLALAddNoiseToFstatAtomVector() */
 
 
-/** Add Gaussian-noise components to given multi-FstatAtomVector
+/**
+ * Add Gaussian-noise components to given multi-FstatAtomVector
  */
 int
 XLALAddNoiseToMultiFstatAtomVector ( MultiFstatAtomVector *multiAtoms,	/**< input multi atoms-vector, noise will be added to this */
@@ -326,8 +332,9 @@ XLALAddNoiseToMultiFstatAtomVector ( MultiFstatAtomVector *multiAtoms,	/**< inpu
 } /* XLALSynthesizeMultiFstatAtomVector4Noise() */
 
 
-/** Add signal s_mu = M_mu_nu A^nu within the given transient-window
- *  to given atoms.
+/**
+ * Add signal s_mu = M_mu_nu A^nu within the given transient-window
+ * to given atoms.
  *
  * RETURN: SNR^2 of the injected signal
  * and the effective AntennaPatternMatrix M_mu_nu for this signal.
@@ -434,10 +441,10 @@ XLALAddSignalToFstatAtomVector ( FstatAtomVector* atoms,	 /**< [in/out] atoms ve
       s3 = sh_mu[2];
       s4 = sh_mu[3];
 
-      atoms->data[alpha].Fa_alpha.re +=   s1;
-      atoms->data[alpha].Fa_alpha.im += - s3;
-      atoms->data[alpha].Fb_alpha.re +=   s2;
-      atoms->data[alpha].Fb_alpha.im += - s4;
+      atoms->data[alpha].Fa_alpha.realf_FIXME +=   s1;
+      atoms->data[alpha].Fa_alpha.imagf_FIXME += - s3;
+      atoms->data[alpha].Fb_alpha.realf_FIXME +=   s2;
+      atoms->data[alpha].Fb_alpha.imagf_FIXME += - s4;
 
     } /* for alpha < numAtoms */
 
@@ -468,7 +475,8 @@ XLALAddSignalToFstatAtomVector ( FstatAtomVector* atoms,	 /**< [in/out] atoms ve
 } /* XLALAddSignalToFstatAtomVector() */
 
 
-/** Add given signal s_mu = M_mu_nu A^nu within the given transient-window
+/**
+ * Add given signal s_mu = M_mu_nu A^nu within the given transient-window
  * to multi-IFO noise-atoms.
  *
  * RETURN: SNR^2 of the injected signal
@@ -478,7 +486,8 @@ REAL8
 XLALAddSignalToMultiFstatAtomVector ( MultiFstatAtomVector* multiAtoms,	 /**< [in/out] multi atoms vectors containing antenna-functions and possibly noise {Fa,Fb} */
                                       AntennaPatternMatrix *M_mu_nu,	 /**< [out] effective antenna-pattern matrix for the injected signal */
                                       const PulsarAmplitudeVect A_Mu, 	/**< [in] input canonical amplitude vector A^mu = {A1,A2,A3,A4} */
-                                      transientWindow_t transientWindow /**< transient signal window */
+                                      transientWindow_t transientWindow, /**< transient signal window */
+                                      INT4 lineX	 		/**< [in] if >= 0: generate signal only for detector 'lineX': must be within 0,...(Ndet-1) */
                                       )
 {
   /* check input consistency */
@@ -492,8 +501,9 @@ XLALAddSignalToMultiFstatAtomVector ( MultiFstatAtomVector* multiAtoms,	 /**< [i
   }
 
   UINT4 numDet = multiAtoms->length;
-  UINT4 X;
+  XLAL_CHECK ( (lineX < 0) || ((UINT4)lineX < numDet), XLAL_EINVAL, "Inconsistent input of lineX = %d, not within 0 ... Ndet-1 (= %d)\n", lineX, numDet );
 
+  UINT4 X;
   REAL8 rho2 = 0;
   (*M_mu_nu) = empty_AntennaPatternMatrix;
 
@@ -501,11 +511,15 @@ XLALAddSignalToMultiFstatAtomVector ( MultiFstatAtomVector* multiAtoms,	 /**< [i
     {
       REAL8 rho2X;
       AntennaPatternMatrix M_mu_nu_X;
-      rho2X = XLALAddSignalToFstatAtomVector ( multiAtoms->data[X], &M_mu_nu_X, A_Mu, transientWindow );
-      if ( xlalErrno ) {
-        XLALPrintError ("%s: XLALAddSignalToFstatAtomVector() failed.\n", __func__ );
-        XLAL_ERROR_REAL8 ( XLAL_EFUNC );
+      PulsarAmplitudeVect A0_Mu = {0,0,0,0};	// zero amplitude signal for simulating single-IFO line
+
+      if ( (lineX >= 0) && ((UINT4)lineX != X) ) {
+        rho2X = XLALAddSignalToFstatAtomVector ( multiAtoms->data[X], &M_mu_nu_X, A0_Mu, transientWindow );	// zero-signal injection
       }
+      else {
+        rho2X = XLALAddSignalToFstatAtomVector ( multiAtoms->data[X], &M_mu_nu_X, A_Mu, transientWindow );	// actual signal injection
+      }
+      XLAL_CHECK_REAL8 ( xlalErrno == 0, XLAL_EFUNC );
 
       rho2 += rho2X;			/* multi-IFO SNR^2 = sum_X SNR_X^2 */
       M_mu_nu->Ad += M_mu_nu_X.Ad;	/* multi-IFO M_mu_nu = sum_X M_mu_nu_X */
@@ -524,7 +538,8 @@ XLALAddSignalToMultiFstatAtomVector ( MultiFstatAtomVector* multiAtoms,	 /**< [i
 
 } /* XLALAddSignalToMultiFstatAtomVector() */
 
-/** Generates a multi-Fstat atoms vector for given parameters, drawing random parameters wherever required.
+/**
+ * Generates a multi-Fstat atoms vector for given parameters, drawing random parameters wherever required.
  *
  * Input: detector states, signal sky-pos (or allsky), amplitudes (or range), transient window range
  *
@@ -537,7 +552,8 @@ XLALSynthesizeTransientAtoms ( InjParams_t *injParamsOut,			/**< [out] return su
                                const MultiDetectorStateSeries *multiDetStates, 	/**< [in] multi-detector state series covering observation time */
                                BOOLEAN SignalOnly,				/**< [in] switch to generate signal draws without noise */
                                multiAMBuffer_t *multiAMBuffer,			/**< [in/out] buffer for AM-coefficients if re-using same skyposition (must be !=NULL) */
-                               gsl_rng *rng					/**< [in/out] gsl random-number generator */
+                               gsl_rng *rng,					/**< [in/out] gsl random-number generator */
+                               INT4 lineX					/**< [in] if >= 0: generate signal only for detector 'lineX': must be within 0,...(Ndet-1) */
                                )
 {
   /* check input */
@@ -614,7 +630,7 @@ XLALSynthesizeTransientAtoms ( InjParams_t *injParamsOut,			/**< [out] return su
 
   /* ----- add transient signal to the Fstat atoms */
   AntennaPatternMatrix M_mu_nu;
-  REAL8 rho2 = XLALAddSignalToMultiFstatAtomVector ( multiAtoms, &M_mu_nu, A_Mu, injectWindow );
+  REAL8 rho2 = XLALAddSignalToMultiFstatAtomVector ( multiAtoms, &M_mu_nu, A_Mu, injectWindow, lineX );
   if ( xlalErrno ) {
     XLALPrintError ( "%s: XLALAddSignalToMultiFstatAtomVector() failed with xlalErrno = %d\n", __func__, xlalErrno );
     XLAL_ERROR_NULL ( XLAL_EFUNC );
@@ -674,7 +690,8 @@ XLALSynthesizeTransientAtoms ( InjParams_t *injParamsOut,			/**< [out] return su
 
 } /* XLALSynthesizeTransientAtoms() */
 
-/** Rescale a given multi-Fstat atoms vector {Fa,Fb} by given scalar factor.
+/**
+ * Rescale a given multi-Fstat atoms vector {Fa,Fb} by given scalar factor.
  * This is used to rescale signal atoms to desired fixed SNR.
  */
 int
@@ -700,11 +717,11 @@ XLALRescaleMultiFstatAtomVector ( MultiFstatAtomVector* multiAtoms,	/**< [in/out
         {
           FstatAtom *thisAtom = &atoms->data[i];
 
-          thisAtom->Fa_alpha.re *= rescale;
-          thisAtom->Fa_alpha.im *= rescale;
+          thisAtom->Fa_alpha.realf_FIXME *= rescale;
+          thisAtom->Fa_alpha.imagf_FIXME *= rescale;
 
-          thisAtom->Fb_alpha.re *= rescale;
-          thisAtom->Fb_alpha.im *= rescale;
+          thisAtom->Fb_alpha.realf_FIXME *= rescale;
+          thisAtom->Fb_alpha.imagf_FIXME *= rescale;
 
         } /* for i < numAtoms */
 
@@ -715,7 +732,8 @@ XLALRescaleMultiFstatAtomVector ( MultiFstatAtomVector* multiAtoms,	/**< [in/out
 } /* XLALRescaleMultiFstatAtomVector() */
 
 
-/** Write an injection-parameters structure to the given file-pointer,
+/**
+ * Write an injection-parameters structure to the given file-pointer,
  * adding one line with the injection parameters
  */
 int

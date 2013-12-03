@@ -41,7 +41,7 @@ extern "C" {
  * \author Reinhard Prix
  * \date 2005
  * \brief General-purpose log-message handling, controlled by lalDebugLevel independent of lalDebugLevel,
- *        mostly modelled after the MSG_LOG class in BOINC.
+ * mostly modelled after the MSG_LOG class in BOINC.
  *
  */
 /*@{*/

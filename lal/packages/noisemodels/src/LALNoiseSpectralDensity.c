@@ -20,33 +20,33 @@
 #include <lal/LALNoiseModels.h>
 
 /**
-\author Sathyaprakash, B. S.
-\ingroup LALNoiseModels_h
-
-\brief This function generates an array of size specified in the vector \c psd, that is <tt>psd.length</tt>.
-The inputs are
-<ol>
-<li> The lenght of the psd array required: this must be
-given as a non-zero positive integer by setting the \c length
-of the \c psd vector to the desired value;</li>
-<li> Frequency resolution \c df in Hz.</li>
-<li> Pointer to a function that should be used in generating the
-power spectral density values in units of Hz\f$^{-1}.\f$ This function
-must necessarily be of the type:
-<tt> void  (*NoisePsd)(LALStatus *status, REAL8 *shf, REAL8 f).</tt></li>
-</ol>
-Presently, there are four such functions in the \c noisemodels
-package. These are <tt>LALGEOPsd, LALLIGOIPsd, LALTAMAPsd, LALVIRGOPsd.</tt>
-These four packages return a scaled PSD while this module returns the
-correctly scaled version. It is assumed that new PSD modules return
-unscaled versions. (Note, however, that it might be better to use the
-scaled versions of the PSD when computing the metric on the signal
-manifold; this is because computing the metric involves calculation of
-many moments of the noise PSD and one might encounter round-off errors
-if un-scaled version of PSD is used; I have not checked this to be
-the case but suspect that there might be some problems.)
-
-*/
+ * \author Sathyaprakash, B. S.
+ * \ingroup LALNoiseModels_h
+ *
+ * \brief This function generates an array of size specified in the vector \c psd, that is <tt>psd.length</tt>.
+ * The inputs are
+ * <ol>
+ * <li> The lenght of the psd array required: this must be
+ * given as a non-zero positive integer by setting the \c length
+ * of the \c psd vector to the desired value;</li>
+ * <li> Frequency resolution \c df in Hz.</li>
+ * <li> Pointer to a function that should be used in generating the
+ * power spectral density values in units of Hz\f$^{-1}.\f$ This function
+ * must necessarily be of the type:
+ * <tt> void  (*NoisePsd)(LALStatus *status, REAL8 *shf, REAL8 f).</tt></li>
+ * </ol>
+ * Presently, there are four such functions in the \c noisemodels
+ * package. These are <tt>LALGEOPsd, LALLIGOIPsd, LALTAMAPsd, LALVIRGOPsd.</tt>
+ * These four packages return a scaled PSD while this module returns the
+ * correctly scaled version. It is assumed that new PSD modules return
+ * unscaled versions. (Note, however, that it might be better to use the
+ * scaled versions of the PSD when computing the metric on the signal
+ * manifold; this is because computing the metric involves calculation of
+ * many moments of the noise PSD and one might encounter round-off errors
+ * if un-scaled version of PSD is used; I have not checked this to be
+ * the case but suspect that there might be some problems.)
+ *
+ */
 void
 LALNoiseSpectralDensity
    (

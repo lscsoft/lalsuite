@@ -1,4 +1,4 @@
-#!/usr/bin/env @PYTHONPROG@
+#!@PYTHONPROG@
 """
 stochastic_bayes.in - SGWB Standalone Analysis Pipeline
                     - Bayesian Pipeline DAG Driver Script

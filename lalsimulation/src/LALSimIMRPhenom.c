@@ -48,7 +48,6 @@ typedef struct tagBBHPhenomParams{
 BBHPhenomParams;
 
 /**
- *
  * private function prototypes; all internal functions use solar masses.
  *
  */
@@ -76,7 +75,6 @@ static int apply_inclination(const REAL8TimeSeries *hp, const REAL8TimeSeries *h
 
 
 /**
- *
  * main functions
  *
  */
@@ -86,19 +84,19 @@ static int apply_inclination(const REAL8TimeSeries *hp, const REAL8TimeSeries *h
  * phenomenological waveform IMRPhenomA in the frequency domain.
  *
  * Reference:
- *   - Waveform: Eq.(4.13) and (4.16) of http://arxiv.org/pdf/0710.2335
- *   - Coefficients: Eq.(4.18) of http://arxiv.org/pdf/0710.2335 and
- *                   Table I of http://arxiv.org/pdf/0712.0343
+ * - Waveform: Eq.(4.13) and (4.16) of http://arxiv.org/pdf/0710.2335
+ * - Coefficients: Eq.(4.18) of http://arxiv.org/pdf/0710.2335 and
+ * Table I of http://arxiv.org/pdf/0712.0343
  *
  * All input parameters should be SI units.
  */
 int XLALSimIMRPhenomAGenerateFD(
     COMPLEX16FrequencySeries **htilde, /**< FD waveform */
-    const REAL8 phi0,                  /**< phase at peak */
-    const REAL8 deltaF,                /**< frequency resolution */
+    const REAL8 phi0,                  /**< orbital phase at peak (rad) */
+    const REAL8 deltaF,                /**< frequency resolution (Hz) */
     const REAL8 m1_SI,                 /**< mass of companion 1 (kg) */
     const REAL8 m2_SI,                 /**< mass of companion 2 (kg) */
-    const REAL8 f_min,                 /**< start frequency */
+    const REAL8 f_min,                 /**< starting GW frequency (Hz) */
     const REAL8 f_max,                 /**< end frequency; if 0, set to fCut */
     const REAL8 distance               /**< distance of source (m) */
 ) {
@@ -141,9 +139,9 @@ int XLALSimIMRPhenomAGenerateFD(
  * phenomenological waveform IMRPhenomA in the time domain.
  *
  * Reference:
- *   - Waveform: Eq.(4.13) and (4.16) of http://arxiv.org/pdf/0710.2335
- *   - Coefficients: Eq.(4.18) of http://arxiv.org/pdf/0710.2335 and
- *                   Table I of http://arxiv.org/pdf/0712.0343
+ * - Waveform: Eq.(4.13) and (4.16) of http://arxiv.org/pdf/0710.2335
+ * - Coefficients: Eq.(4.18) of http://arxiv.org/pdf/0710.2335 and
+ * Table I of http://arxiv.org/pdf/0712.0343
  *
  * All input parameters should be in SI units. Angles should be in radians.
  */
@@ -200,8 +198,9 @@ int XLALSimIMRPhenomAGenerateTD(
       XLAL_ERROR(XLAL_EFUNC);
   }
 
-  /* generate hcross, which is hplus phase-shifted by pi/2 */
-  IMRPhenomAGenerateTD(hcross, LAL_PI_2, deltaT, m1, m2, f_min, f_max_prime, distance, params);
+  /* generate hcross, which is hplus w/ GW phase shifted by pi/2
+   * <==> orb. phase shifted by pi/4 */
+  IMRPhenomAGenerateTD(hcross, LAL_PI_4, deltaT, m1, m2, f_min, f_max_prime, distance, params);
   XLALFree(params);
   if (!(*hcross)) {
       XLALDestroyREAL8TimeSeries(*hplus);
@@ -247,8 +246,8 @@ double XLALSimIMRPhenomBComputeChi(
  * phenomenological waveform IMRPhenomB in the time domain.
  *
  * Reference: http://arxiv.org/pdf/0909.2867
- *   - Waveform: Eq.(1)
- *   - Coefficients: Eq.(2) and Table I
+ * - Waveform: Eq.(1)
+ * - Coefficients: Eq.(2) and Table I
  *
  * All input parameters should be in SI units. Angles should be in radians.
  */
@@ -307,8 +306,9 @@ int XLALSimIMRPhenomBGenerateTD(
       XLAL_ERROR(XLAL_EFUNC);
   }
 
-  /* generate cross, phase-shifted by pi/2 */
-  IMRPhenomBGenerateTD(hcross, LAL_PI_2, deltaT, m1, m2, chi, f_min, f_max_prime, distance, params);
+  /* generate hcross, which is hplus w/ GW phase shifted by pi/2
+   * <==> orb. phase shifted by pi/4 */
+  IMRPhenomBGenerateTD(hcross, LAL_PI_4, deltaT, m1, m2, chi, f_min, f_max_prime, distance, params);
   XLALFree(params);
   if (!(*hcross)) {
       XLALDestroyREAL8TimeSeries(*hplus);
@@ -341,19 +341,19 @@ int XLALSimIMRPhenomBGenerateTD(
  * phenomenological waveform IMRPhenomB in the frequency domain.
  *
  * Reference: http://arxiv.org/pdf/0909.2867
- *   - Waveform: Eq.(1)
- *   - Coefficients: Eq.(2) and Table I
+ * - Waveform: Eq.(1)
+ * - Coefficients: Eq.(2) and Table I
  *
  * All input parameters should be in SI units. Angles should be in radians.
  */
 int XLALSimIMRPhenomBGenerateFD(
     COMPLEX16FrequencySeries **htilde, /**< FD waveform */
-    const REAL8 phi0,                  /**< initial phase */
-    const REAL8 deltaF,                /**< sampling interval */
+    const REAL8 phi0,                  /**< orbital phase at peak (rad) */
+    const REAL8 deltaF,                /**< sampling interval (Hz) */
     const REAL8 m1_SI,                 /**< mass of companion 1 (kg) */
     const REAL8 m2_SI,                 /**< mass of companion 2 (kg) */
     const REAL8 chi,                   /**< mass-weighted aligned-spin parameter */
-    const REAL8 f_min,                 /**< start frequency */
+    const REAL8 f_min,                 /**< starting GW frequency (Hz) */
     const REAL8 f_max,                 /**< end frequency; 0 defaults to ringdown cutoff freq */
     const REAL8 distance               /**< distance of source (m) */
 ) {
@@ -558,7 +558,7 @@ static BBHPhenomParams *ComputeIMRPhenomBParams(const REAL8 m1, const REAL8 m2, 
 }
 
 /**
- * Return tau0, the Newtonian chirp length estimate.
+ * Return tau0, the Newtonian chirp length estimate. Ref. Eq.(6) of B. S. Sathyaprakash, http://arxiv.org/abs/gr-qc/9411043v1
  */
 static REAL8 ComputeTau0(const REAL8 m1, const REAL8 m2, const REAL8 f_min) {
   const REAL8 totalMass = m1 + m2;
@@ -594,7 +594,8 @@ static REAL8 EstimateSafeFMinForTD(const REAL8 m1, const REAL8 m2, const REAL8 f
 }
 
 /**
- * Find a higher value of f_max so that we can safely apply a window later.
+ * Find a higher value of f_max so that we can safely apply a window later. 
+ * The safety factor 1.025 is an empirical estimation 
  */
 static REAL8 EstimateSafeFMaxForTD(const REAL8 f_max, const REAL8 deltaT) {
   REAL8 temp_f_max = 1.025 * f_max;
@@ -615,7 +616,7 @@ static REAL8 LorentzianFn(const REAL8 freq, const REAL8 fRing, const REAL8 sigma
  */
 static int IMRPhenomAGenerateFD(
     COMPLEX16FrequencySeries **htilde, /**< FD waveform */
-    const REAL8 phi0,                  /**< initial phase */
+    const REAL8 phi0,                  /**< orbital phase at peak (rad) */
     const REAL8 deltaF,                /**< frequency resolution */
     const REAL8 m1,                    /**< mass of companion 1 [solar masses] */
     const REAL8 m2,                    /**< mass of companion 2 [solar masses] */
@@ -635,7 +636,7 @@ static int IMRPhenomAGenerateFD(
   const REAL8 eta = m1 * m2 / (totalMass * totalMass);
 
   /* compute the amplitude pre-factor */
-  const REAL8 amp0 = pow(LAL_MTSUN_SI*totalMass, 5./6.) * pow(fMerg, -7./6.)
+  const REAL8 amp0 = - pow(LAL_MTSUN_SI*totalMass, 5./6.) * pow(fMerg, -7./6.)
     / pow(LAL_PI, 2./3.) * sqrt(5. * eta / 24.) / (distance / LAL_C_SI);
 
   /* allocate htilde */
@@ -668,7 +669,7 @@ static int IMRPhenomAGenerateFD(
     }
 
     /* now compute the phase */
-    psiEff = phi0
+    psiEff = - 2.*phi0
       + params->psi0 / (f * f) * cbrt_f  /* f^-5/3 */
       + params->psi1 / (f * cbrt_f)      /* f^-4/3 */
       + params->psi2 / f                 /* f^-3/3 */
@@ -680,7 +681,7 @@ static int IMRPhenomAGenerateFD(
 
     /* generate the waveform */
     data[i] = ampEff * cos(psiEff);
-    data[i] += I * ampEff * sin(psiEff);
+    data[i] += -I * ampEff * sin(psiEff);
   }
 
   return XLAL_SUCCESS;
@@ -691,7 +692,7 @@ static int IMRPhenomAGenerateFD(
  */
 static int IMRPhenomBGenerateFD(
     COMPLEX16FrequencySeries **htilde, /**< FD waveform */
-    const REAL8 phi0,                  /**< phase at peak */
+    const REAL8 phi0,                  /**< orbital phase at peak (rad) */
     const REAL8 deltaF,                /**< frequency resolution */
     const REAL8 m1,                    /**< mass of companion 1 [solar masses] */
     const REAL8 m2,                    /**< mass of companion 2 [solar masses] */
@@ -712,7 +713,7 @@ static int IMRPhenomBGenerateFD(
   const REAL8 piM = LAL_PI * totalMass * LAL_MTSUN_SI;
 
   /* compute the amplitude pre-factor */
-  REAL8 amp0 = pow(LAL_MTSUN_SI*totalMass, 5./6.) * pow(fMerg, -7./6.)
+  REAL8 amp0 = - pow(LAL_MTSUN_SI*totalMass, 5./6.) * pow(fMerg, -7./6.)
     / pow(LAL_PI, 2./3.) * sqrt(5. * eta / 24.) / (distance / LAL_C_SI);
 
   /***********************************************************************/
@@ -768,7 +769,7 @@ static int IMRPhenomBGenerateFD(
       ampEff = w1 * pow(f / fMerg, mergPower) * (1. + epsilon_1 * v + epsilon_2 * v2);
 
     /* now compute the phase */
-    psiEff = -phi0  /* phi is flipped relative to IMRPhenomA */
+    psiEff = -2.*phi0
       + 3./(128.*eta*v5)*(1 + params->psi2*v2
       + params->psi3*v3 + params->psi4*v4
       + params->psi5*v5 + params->psi6*v6
@@ -895,8 +896,9 @@ static size_t find_instant_freq(const REAL8TimeSeries *hp, const REAL8TimeSeries
   size_t k = start + 1;
   const size_t n = hp->data->length - 1;
 
-  /* Use second order differencing to find the instantaneous frequency as
-   * h = A e^(2 pi i f t) ==> f = d/dt(h) / (2*pi*h) */
+  /* complex_h := hp - i hc := A e^{i \phi}. Hence \phi = arctan(-hc/hp) 
+  and F = d \phi/dt = (-hp hc' + hc hp') / (2 \pi A^2)
+  We use first order finite difference to compute the derivatives hp' and hc'*/
   for (; k < n; k++) {
     const REAL8 hpDot = (hp->data->data[k+1] - hp->data->data[k-1]) / (2 * hp->deltaT);
     const REAL8 hcDot = (hc->data->data[k+1] - hc->data->data[k-1]) / (2 * hc->deltaT);
@@ -941,14 +943,20 @@ static int apply_phase_shift(const REAL8TimeSeries *hp, const REAL8TimeSeries *h
     return 0;
 }
 
+/** Apply the inclination-angle weighting to the two polarizations 
+* Ref. Eq.(63) of B.S. Sathyaprakash and Bernard F. Schutz,
+* “Physics, Astrophysics and Cosmology with Gravitational Waves”, 
+* Living Rev. Relativity, 12, (2009), 2. [Online Article]: cited 27 Nov 2013,
+* http://www.livingreviews.org/lrr-2009-2
+*/
 static int apply_inclination(const REAL8TimeSeries *hp, const REAL8TimeSeries *hc, const REAL8 inclination) {
   REAL8 inclFacPlus, inclFacCross;
   REAL8 *hpdata = hp->data->data;
   REAL8 *hcdata = hc->data->data;
   size_t k = hp->data->length;
 
-  inclFacCross = -cos(inclination);
-  inclFacPlus = -0.5 * (1. + inclFacCross * inclFacCross);
+  inclFacCross = cos(inclination);
+  inclFacPlus = 0.5 * (1. + inclFacCross * inclFacCross);
   for (;k--;) {
       hpdata[k] *= inclFacPlus;
       hcdata[k] *= inclFacCross;

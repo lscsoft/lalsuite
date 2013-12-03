@@ -1,5 +1,5 @@
 /*
-*  Copyright (C) 2007 Bernd Machenschalk, Jolien Creighton, Robert Adam Mercer, Xavier Siemens
+*  Copyright (C) 2013 Jolien Creighton
 *
 *  This program is free software; you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
@@ -18,1076 +18,771 @@
 */
 
 #include <config.h>
-#include <unistd.h>
-#ifndef HAVE_GETHOSTNAME_PROTOTYPE
-int gethostname(char *name, int len);
+
+#ifdef HAVE_LOCALTIME_S
+#define localtime_r(t, tm) localtime_s(tm, t)
 #endif
 
+#include <ctype.h>
 #include <math.h>
+#include <stdio.h>
+#include <string.h>
+#include <unistd.h>
 
+#include <lal/LALDatatypes.h>
 #include <lal/LALDetectors.h>
-#include <lal/LALStdio.h>
-#include <lal/Date.h>
-#include <lal/Units.h>
+#include <lal/LALString.h>
 #include <lal/TimeSeries.h>
 #include <lal/FrequencySeries.h>
+#include <lal/Units.h>
+#include <lal/Date.h>
 
-#include <lal/LALString.h>
-#include <lal/FrameCache.h>
+#include <lal/LALFrameU.h>
 #include <lal/LALFrameIO.h>
-#include <lal/LALCalibration.h>
 
-/* FIXME: WARNING: this value might need to change in the future */
-#define FR_FILE_HEADER_SIZE 40 /* size of frame file header in bytes */
+struct tagLALFrFile {
+    LALFrameUFrFile *file;
+    LALFrameUFrTOC *toc;
+};
 
-#ifdef __GNUC__
-#define UNUSED __attribute__ ((unused))
-#else
-#define UNUSED
-#endif
-
-struct FrFile * XLALFrOpenURL( const char *url )
+int XLALFrFileClose(LALFrFile * frfile)
 {
-  struct FrFile *frfile = NULL;
-  char prot[FILENAME_MAX] = "";
-  char host[FILENAME_MAX] = "";
-  char path[FILENAME_MAX] = "";
-  int n;
-
-  if ( ! url )
-    XLAL_ERROR_NULL( XLAL_EFAULT );
-  if ( strlen( url ) >= FILENAME_MAX )
-  {
-    XLALPrintError( "XLAL Error - %s: URL too long: %s\n", __func__, url );
-    XLAL_ERROR_NULL( XLAL_EBADLEN );
-  }
-
-  n = sscanf( url, "%[^:]://%[^/]%s", prot, host, path );
-  if ( n != 3 ) /* perhaps the hostname has been omitted */
-  {
-    strncpy( host, "localhost", sizeof( host ) - 1 );
-    n = sscanf( url, "%[^:]://%s", prot, path );
-    if ( n != 2 ) /* assume the whole thing is a file path */
-    {
-      strncpy( prot, "file", sizeof( prot ) - 1 );
-      strncpy( path, url, sizeof( path ) - 1 );
+    if (frfile) {
+        if (frfile->file) {
+            XLALFrameUFrFileClose(frfile->file);
+            frfile->file = NULL;
+        }
+        if (frfile->toc) {
+            XLALFrameUFrTOCFree(frfile->toc);
+            frfile->toc = NULL;
+        }
+        LALFree(frfile);
     }
-  }
+    return 0;
+}
 
-  if ( strcmp( prot, "file" ) ) /* not a file URL */
-  {
-    XLALPrintError( "XLAL Error - %s: unsupported protocol %s\n", __func__, prot );
-    XLAL_ERROR_NULL( XLAL_EINVAL );
-  }
-  else /* OK: this is a file URL */
-  {
-    if ( strcmp( host, "localhost" ) ) /* not explicitly localhost */
-    { /* make sure that the host is the localhost */
-      char localhost[FILENAME_MAX];
-      gethostname( localhost, FILENAME_MAX - 1 );
-      if ( strcmp( host, localhost ) ) /* not localhost */
-      {
-        XLALPrintError( "XLAL Error - %s: cannot read files from remote host %s\n", __func__, host );
-        XLAL_ERROR_NULL( XLAL_EINVAL );
-      }
-    }
-    frfile = FrFileINew( path );
-    if ( ! frfile )
-    {
-      XLALPrintError( "XLAL Error - %s: could not open frame file %s\n", __func__, path );
-      XLAL_ERROR_NULL( XLAL_EIO );
-    }
-  }
+LALFrFile *XLALFrFileOpenURL(const char *url)
+{
+    LALFrFile *frfile;
+    char prot[FILENAME_MAX] = "";
+    char host[FILENAME_MAX] = "";
+    char path[FILENAME_MAX] = "";
+    int n;
 
-  return frfile;
+    XLAL_CHECK_NULL(url, XLAL_EFAULT);
+    XLAL_CHECK_NULL(strlen(url) < FILENAME_MAX, XLAL_EBADLEN,
+        "url %s is too long", url);
+
+    n = sscanf(url, "%[^:]://%[^/]%s", prot, host, path);
+    if (n != 3) {       /* perhaps the hostname has been omitted */
+        XLALStringCopy(host, "localhost", sizeof(host));
+        if (n != 2) {   /* assume the whole thing is a file path */
+            XLALStringCopy(prot, "file", sizeof(prot));
+            XLALStringCopy(path, url, sizeof(path));
+        }
+    }
+
+    /* only file urls are supported at this time */
+    if (strcmp(prot, "file"))   /* not a file url */
+        XLAL_ERROR_NULL(XLAL_EINVAL, "Unsupported protocol %s", prot);
+
+    /* only files on localhost are supported at this time */
+    if (strcmp(host, "localhost")) {    /* not explicitly localhost */
+        /* make sure the host *is* the localhost */
+        char localhost[FILENAME_MAX];
+        gethostname(localhost, FILENAME_MAX - 1);
+        if (strcmp(host, localhost))    /* not localhost */
+            XLAL_ERROR_NULL(XLAL_EINVAL, "Cannot read files from host %s",
+                host);
+    }
+
+    /* open frame file in read mode */
+    /*
+     * frfile = XLALFrameUFrFileOpen(path, "r");
+     * if (!frfile)
+     * XLAL_ERROR_NULL(XLAL_EIO, "Could not open frame file %s", path);
+     */
+    frfile = LALMalloc(sizeof(*frfile));
+    if (!frfile)
+        XLAL_ERROR_NULL(XLAL_ENOMEM);
+    frfile->file = XLALFrameUFrFileOpen(path, "r");
+    if (!frfile->file) {
+        LALFree(frfile);
+        XLAL_ERROR_NULL(XLAL_EIO, "Could not open frame file %s", path);
+    }
+    frfile->toc = XLALFrameUFrTOCRead(frfile->file);
+    if (!frfile->toc) {
+        XLALFrameUFrFileClose(frfile->file);
+        LALFree(frfile);
+        XLAL_ERROR_NULL(XLAL_EIO, "Could not open TOC for frame file %s",
+            path);
+    }
+
+    return frfile;
+}
+
+size_t XLALFrFileQueryNFrame(const LALFrFile * frfile)
+{
+    return XLALFrameUFrTOCQueryNFrame(frfile->toc);
+}
+
+LIGOTimeGPS *XLALFrFileQueryGTime(LIGOTimeGPS * start,
+    const LALFrFile * frfile, size_t pos)
+{
+    double ip, fp;      /* integer part and fraction part */
+    fp = XLALFrameUFrTOCQueryGTimeModf(&ip, frfile->toc, pos);
+    return XLALGPSSet(start, ip, XLAL_BILLION_REAL8 * fp);
+}
+
+double XLALFrFileQueryDt(const LALFrFile * frfile, size_t pos)
+{
+    return XLALFrameUFrTOCQueryDt(frfile->toc, pos);
+}
+
+LALTYPECODE XLALFrFileQueryChanType(const LALFrFile * frfile,
+    const char *chname, size_t pos)
+{
+    LALFrameUFrChan *channel;
+    int type;
+    channel = XLALFrameUFrChanRead(frfile->file, chname, pos);
+    if (!channel)
+        XLAL_ERROR(XLAL_ENAME);
+    type = XLALFrameUFrChanVectorQueryType(channel);
+    XLALFrameUFrChanFree(channel);
+    switch (type) {
+    case LAL_FRAMEU_FR_VECT_C:
+        return LAL_CHAR_TYPE_CODE;
+    case LAL_FRAMEU_FR_VECT_2S:
+        return LAL_I2_TYPE_CODE;
+    case LAL_FRAMEU_FR_VECT_8R:
+        return LAL_D_TYPE_CODE;
+    case LAL_FRAMEU_FR_VECT_4R:
+        return LAL_S_TYPE_CODE;
+    case LAL_FRAMEU_FR_VECT_4S:
+        return LAL_I4_TYPE_CODE;
+    case LAL_FRAMEU_FR_VECT_8S:
+        return LAL_I8_TYPE_CODE;
+    case LAL_FRAMEU_FR_VECT_8C:
+        return LAL_C_TYPE_CODE;
+    case LAL_FRAMEU_FR_VECT_16C:
+        return LAL_Z_TYPE_CODE;
+    case LAL_FRAMEU_FR_VECT_2U:
+        return LAL_U2_TYPE_CODE;
+    case LAL_FRAMEU_FR_VECT_4U:
+        return LAL_U4_TYPE_CODE;
+    case LAL_FRAMEU_FR_VECT_8U:
+        return LAL_U8_TYPE_CODE;
+    case LAL_FRAMEU_FR_VECT_1U:
+        return LAL_UCHAR_TYPE_CODE;
+    case LAL_FRAMEU_FR_VECT_STRING:
+        XLAL_ERROR(XLAL_ETYPE,
+            "No LAL typecode equivalent to FrVect type STRING");
+    default:
+        XLAL_ERROR(XLAL_ETYPE, "Unrecognized FrVect type %d", type);
+    }
+    return -1;  /* never get here anyway... */
+}
+
+size_t XLALFrFileQueryChanVectorLength(const LALFrFile * frfile,
+    const char *chname, size_t pos)
+{
+    LALFrameUFrChan *channel;
+    size_t length;
+    channel = XLALFrameUFrChanRead(frfile->file, chname, pos);
+    if (!channel)
+        XLAL_ERROR(XLAL_ENAME);
+    length = XLALFrameUFrChanVectorQueryNData(channel);
+    XLALFrameUFrChanFree(channel);
+    return length;
+}
+
+int XLALFrFileCksumValid(LALFrFile * frfile)
+{
+    int result;
+    /* this process might mess up the TOC so need to reread it afterwards */
+    XLALFrameUFrTOCFree(frfile->toc);
+    result = XLALFrameUFileCksumValid(frfile->file);
+    frfile->toc = XLALFrameUFrTOCRead(frfile->file);
+    return result;
+}
+
+#define TDOM 1
+#define FDOM 2
+
+#define DOM TDOM
+
+#define TYPE INT2
+#define VEXT 2S
+#include "LALFrameIO_source.c"
+#undef VEXT
+#undef TYPE
+
+#define TYPE INT4
+#define VEXT 4S
+#include "LALFrameIO_source.c"
+#undef VEXT
+#undef TYPE
+
+#define TYPE INT8
+#define VEXT 8S
+#include "LALFrameIO_source.c"
+#undef VEXT
+#undef TYPE
+
+#define TYPE UINT2
+#define VEXT 2U
+#include "LALFrameIO_source.c"
+#undef VEXT
+#undef TYPE
+
+#define TYPE UINT4
+#define VEXT 4U
+#include "LALFrameIO_source.c"
+#undef VEXT
+#undef TYPE
+
+#define TYPE UINT8
+#define VEXT 8U
+#include "LALFrameIO_source.c"
+#undef VEXT
+#undef TYPE
+
+#define TYPE REAL4
+#define VEXT 4R
+#include "LALFrameIO_source.c"
+#undef VEXT
+#undef TYPE
+
+#define TYPE REAL8
+#define VEXT 8R
+#include "LALFrameIO_source.c"
+#undef VEXT
+#undef TYPE
+
+#define TYPE COMPLEX8
+#define VEXT 8C
+#include "LALFrameIO_source.c"
+#undef VEXT
+#undef TYPE
+
+#define TYPE COMPLEX16
+#define VEXT 16C
+#include "LALFrameIO_source.c"
+#undef VEXT
+#undef TYPE
+
+#undef DOM
+#define DOM FDOM
+
+#define TYPE REAL4
+#define VEXT 4R
+#include "LALFrameIO_source.c"
+#undef VEXT
+#undef TYPE
+
+#define TYPE REAL8
+#define VEXT 8R
+#include "LALFrameIO_source.c"
+#undef VEXT
+#undef TYPE
+
+#define TYPE COMPLEX8
+#define VEXT 8C
+#include "LALFrameIO_source.c"
+#undef VEXT
+#undef TYPE
+
+#define TYPE COMPLEX16
+#define VEXT 16C
+#include "LALFrameIO_source.c"
+#undef VEXT
+#undef TYPE
+
+#undef DOM
+#undef TDOM
+#undef FDOM
+
+int XLALFrameAddFrHistory(LALFrameH * frame, const char *name,
+    const char *comment)
+{
+    LALFrameUFrHistory *history = NULL;
+    LIGOTimeGPS now;
+
+    /* get current time */
+    if (!XLALGPSTimeNow(&now))
+        XLAL_ERROR(XLAL_EFUNC);
+
+    history = XLALFrameUFrHistoryAlloc(name, now.gpsSeconds, comment);
+    if (!history)
+        XLAL_ERROR(XLAL_EFUNC);
+
+    if (XLALFrameUFrameHFrHistoryAdd(frame, history)) {
+        XLALFrameUFrHistoryFree(history);
+        XLAL_ERROR(XLAL_EFUNC);
+    }
+
+    XLALFrameUFrHistoryFree(history);
+    return 0;
+}
+
+static time_t XLALSecondsSinceUnixEpoch(struct tm *tm)
+{
+    return tm->tm_sec + tm->tm_min * 60 + tm->tm_hour * 3600 +
+        tm->tm_yday * 86400 + (tm->tm_year - 70) * 31536000 +
+        ((tm->tm_year - 69) / 4) * 86400 -
+        ((tm->tm_year - 1) / 100) * 86400 +
+        ((tm->tm_year + 299) / 400) * 86400;
+}
+
+/* determine local seasonal time - UTC (seconds) */
+static int XLALLocalTime(char site, int gpssec)
+{
+    struct tm utc;
+    struct tm loc;
+    time_t tutc;
+    time_t tloc;
+    const char *zone;
+    char *orig = NULL;
+
+    XLALGPSToUTC(&utc, gpssec);
+    tutc = XLALSecondsSinceUnixEpoch(&utc);
+
+    switch (site) {
+    case 'G':
+        zone = "Europe/Berlin";
+        break;
+    case 'H':
+        zone = "PST8PDT";
+        break;
+    case 'L':
+        zone = "CST6CDT";
+        break;
+    case 'T':
+        zone = "Japan";
+        break;
+    case 'V':
+        zone = "Europe/Rome";
+        break;
+    default:   /* use UTC */
+        return 0;
+    }
+    orig = getenv("TZ");
+    if (orig)
+        orig = strdup(orig);
+    setenv("TZ", zone, 1);
+    tzset();
+
+    localtime_r(&tutc, &loc);
+    tloc = XLALSecondsSinceUnixEpoch(&loc);
+
+    if (orig) {
+        setenv("TZ", orig, 1);
+        tzset();
+        free(orig);
+    }
+
+    return (int)floor(0.5 + difftime(tloc, tutc));
+}
+
+int XLALFrameAddFrDetector(LALFrameH * frame, const LALFrDetector * detector)
+{
+    LALFrameUFrDetector *d;
+    double gpssec;
+    int localTime;
+    XLALFrameUFrameHQueryGTimeModf(&gpssec, frame);
+    localTime = XLALLocalTime(detector->prefix[0], gpssec);
+    d = XLALFrameUFrDetectorAlloc(detector->name, detector->prefix,
+        detector->vertexLatitudeRadians,
+        detector->vertexLongitudeRadians,
+        detector->vertexElevation,
+        detector->xArmAzimuthRadians,
+        detector->yArmAzimuthRadians,
+        detector->xArmAltitudeRadians,
+        detector->yArmAltitudeRadians,
+        detector->xArmMidpoint, detector->yArmMidpoint, localTime);
+    XLALFrameUFrameHFrDetectorAdd(frame, d);
+    XLALFrameUFrDetectorFree(d);
+    return 0;
+}
+
+void XLALFrameFree(LALFrameH * frame)
+{
+    XLALFrameUFrameHFree(frame);
+    return;
+}
+
+LALFrameH *XLALFrameNew(const LIGOTimeGPS * epoch, double duration,
+    const char *project, int run, int frnum, int detectorFlags)
+{
+    LALFrameH *frame = NULL;
+    int detind;
+
+    /* allocate frame and set run */
+    frame =
+        XLALFrameUFrameHAlloc(project, XLALGPSGetREAL8(epoch), duration,
+        frnum);
+    if (!frame)
+        XLAL_ERROR_NULL(XLAL_EFUNC);
+    if (XLALFrameUFrameHSetRun(frame, run) < 0) {
+        XLALFrameFree(frame);
+        XLAL_ERROR_NULL(XLAL_EFUNC);
+    }
+
+    /* add detectors */
+    for (detind = 0; detind < LAL_NUM_DETECTORS; ++detind) {
+        int detflg = 1 << 2 * detind;
+        if ((detflg & detectorFlags))   /* yes, one ampersand! */
+            XLALFrameAddFrDetector(frame,
+                &lalCachedDetectors[detind].frDetector);
+    }
+
+    return frame;
+}
+
+static LIGOTimeGPS *XLALFrameQueryGTime(LIGOTimeGPS * start,
+    const LALFrameH * frame)
+{
+    double ip, fp;      /* integer part and fraction part */
+    fp = XLALFrameUFrameHQueryGTimeModf(&ip, frame);
+    return XLALGPSSet(start, ip, XLAL_BILLION_REAL8 * fp);
 }
 
 
-/* code taken from the FrCheck program in the FrameL library */
-int XLALFrFileCheckSum( FrFile *iFile )
+#define DEFINE_FR_CHAN_ADD_TS_FUNCTION(chantype, laltype, vectype, compress) \
+	int XLALFrameAdd ## laltype ## TimeSeries ## chantype ## Data(LALFrameH *frame, const laltype ## TimeSeries *series) \
+	{ \
+		LIGOTimeGPS frameStart; \
+		double timeOffset; \
+		const char unitX[] = "s"; \
+		char unitY[LALUnitTextSize]; \
+		LALFrameUFrChan *channel = NULL; \
+		void *data = NULL; \
+		XLALUnitAsString(unitY, sizeof(unitY), &series->sampleUnits); \
+		XLALFrameQueryGTime(&frameStart, frame); \
+		timeOffset = XLALGPSDiff(&series->epoch, &frameStart); \
+		if (timeOffset < 0) \
+			XLAL_ERROR(XLAL_EINVAL, "Series start time %d.%09d " \
+				"is earlier than frame start time %d.%09d", \
+				series->epoch.gpsSeconds, \
+				series->epoch.gpsNanoSeconds, \
+				frameStart.gpsSeconds, \
+				frameStart.gpsNanoSeconds); \
+		channel = XLALFrameUFr ## chantype ## ChanAlloc(series->name, LAL_FRAMEU_FR_VECT_ ## vectype, series->data->length); \
+		if (!channel) \
+			goto failure; \
+		data = XLALFrameUFrChanVectorQueryData(channel); \
+		if (!data) \
+			goto failure; \
+		memcpy(data, series->data->data, series->data->length * sizeof(*series->data->data)); \
+		XLALFrameUFrChanSetSampleRate(channel, 1.0/series->deltaT); \
+		XLALFrameUFrChanSetTimeOffset(channel, timeOffset); \
+		XLALFrameUFrChanVectorSetName(channel, series->name); \
+		XLALFrameUFrChanVectorSetDx(channel, series->deltaT); \
+		XLALFrameUFrChanVectorSetStartX(channel, 0.0); \
+		XLALFrameUFrChanVectorSetUnitX(channel, unitX); \
+		XLALFrameUFrChanVectorSetUnitY(channel, unitY); \
+		XLALFrameUFrChanVectorCompress(channel, LAL_FRAMEU_FR_VECT_COMPRESS_ ## compress); \
+		XLALFrameUFrameHFrChanAdd(frame, channel); \
+		XLALFrameUFrChanFree(channel); \
+		return 0; \
+	failure: /* unsuccessful exit */ \
+		XLALFrameUFrChanFree(channel); \
+		XLAL_ERROR(XLAL_EFUNC); \
+	}
+
+
+#define DEFINE_FR_PROC_CHAN_ADD_TS_FUNCTION(laltype, vectype, compress) \
+int XLALFrameAdd ## laltype ## TimeSeriesProcData(LALFrameH *frame, const laltype ## TimeSeries *series) \
+	{ \
+		LIGOTimeGPS frameStart; \
+		double timeOffset; \
+		const char unitX[] = "s"; \
+		char unitY[LALUnitTextSize]; \
+		LALFrameUFrChan *channel = NULL; \
+		void *data = NULL; \
+		XLALUnitAsString(unitY, sizeof(unitY), &series->sampleUnits); \
+		XLALFrameQueryGTime(&frameStart, frame); \
+		timeOffset = XLALGPSDiff(&series->epoch, &frameStart); \
+		if (timeOffset < 0) \
+			XLAL_ERROR(XLAL_EINVAL, "Series start time %d.%09d " \
+				"is earlier than frame start time %d.%09d", \
+				series->epoch.gpsSeconds, \
+				series->epoch.gpsNanoSeconds, \
+				frameStart.gpsSeconds, \
+				frameStart.gpsNanoSeconds); \
+		channel = XLALFrameUFrProcChanAlloc(series->name, LAL_FRAMEU_FR_PROC_TYPE_TIME_SERIES, LAL_FRAMEU_FR_PROC_SUB_TYPE_UNKNOWN, LAL_FRAMEU_FR_VECT_ ## vectype, series->data->length); \
+		if (!channel) \
+			goto failure; \
+		data = XLALFrameUFrChanVectorQueryData(channel); \
+		if (!data) \
+			goto failure; \
+		memcpy(data, series->data->data, series->data->length * sizeof(*series->data->data)); \
+		XLALFrameUFrChanSetTimeOffset(channel, timeOffset); \
+		XLALFrameUFrChanVectorSetName(channel, series->name); \
+		XLALFrameUFrChanVectorSetDx(channel, series->deltaT); \
+		XLALFrameUFrChanVectorSetStartX(channel, 0.0); \
+		XLALFrameUFrChanVectorSetUnitX(channel, unitX); \
+		XLALFrameUFrChanVectorSetUnitY(channel, unitY); \
+		XLALFrameUFrChanVectorCompress(channel, LAL_FRAMEU_FR_VECT_COMPRESS_ ## compress); \
+		XLALFrameUFrameHFrChanAdd(frame, channel); \
+		XLALFrameUFrChanFree(channel); \
+		return 0; \
+	failure: /* unsuccessful exit */ \
+		XLALFrameUFrChanFree(channel); \
+		XLAL_ERROR(XLAL_EFUNC); \
+	}
+
+
+#define DEFINE_FR_PROC_CHAN_ADD_FS_FUNCTION(laltype, vectype, compress) \
+int XLALFrameAdd ## laltype ## FrequencySeriesProcData(LALFrameH *frame, const laltype ## FrequencySeries *series, int subtype) \
+	{ \
+		LIGOTimeGPS frameStart; \
+		double timeOffset; \
+		const char unitX[] = "s^-1"; \
+		char unitY[LALUnitTextSize]; \
+		LALFrameUFrChan *channel = NULL; \
+		void *data = NULL; \
+		XLALUnitAsString(unitY, sizeof(unitY), &series->sampleUnits); \
+		XLALFrameQueryGTime(&frameStart, frame); \
+		timeOffset = XLALGPSDiff(&series->epoch, &frameStart); \
+		if (timeOffset < 0) \
+			XLAL_ERROR(XLAL_EINVAL, "Series start time %d.%09d " \
+				"is earlier than frame start time %d.%09d", \
+				series->epoch.gpsSeconds, \
+				series->epoch.gpsNanoSeconds, \
+				frameStart.gpsSeconds, \
+				frameStart.gpsNanoSeconds); \
+		channel = XLALFrameUFrProcChanAlloc(series->name, LAL_FRAMEU_FR_PROC_TYPE_FREQUENCY_SERIES, subtype, LAL_FRAMEU_FR_VECT_ ## vectype, series->data->length); \
+		if (!channel) \
+			goto failure; \
+		data = XLALFrameUFrChanVectorQueryData(channel); \
+		if (!data) \
+			goto failure; \
+		memcpy(data, series->data->data, series->data->length * sizeof(*series->data->data)); \
+		XLALFrameUFrChanSetTimeOffset(channel, timeOffset); \
+		XLALFrameUFrChanVectorSetName(channel, series->name); \
+		XLALFrameUFrChanVectorSetDx(channel, series->deltaF); \
+		XLALFrameUFrChanVectorSetStartX(channel, series->f0); \
+		XLALFrameUFrChanVectorSetUnitX(channel, unitX); \
+		XLALFrameUFrChanVectorSetUnitY(channel, unitY); \
+		XLALFrameUFrChanVectorCompress(channel, LAL_FRAMEU_FR_VECT_COMPRESS_ ## compress); \
+		XLALFrameUFrameHFrChanAdd(frame, channel); \
+		XLALFrameUFrChanFree(channel); \
+		return 0; \
+	failure: /* unsuccessful exit */ \
+		XLALFrameUFrChanFree(channel); \
+		XLAL_ERROR(XLAL_EFUNC); \
+	}
+
+/* *INDENT-OFF* */
+DEFINE_FR_CHAN_ADD_TS_FUNCTION(Adc, INT2,  2S, ZERO_SUPPRESS_WORD_2)
+DEFINE_FR_CHAN_ADD_TS_FUNCTION(Adc, INT4,  4S, ZERO_SUPPRESS_WORD_4)
+DEFINE_FR_CHAN_ADD_TS_FUNCTION(Adc, REAL4, 4R, DIFF_GZIP)
+DEFINE_FR_CHAN_ADD_TS_FUNCTION(Adc, REAL8, 8R, DIFF_GZIP)
+
+DEFINE_FR_CHAN_ADD_TS_FUNCTION(Sim, INT2,  2S, ZERO_SUPPRESS_WORD_2)
+DEFINE_FR_CHAN_ADD_TS_FUNCTION(Sim, INT4,  4S, ZERO_SUPPRESS_WORD_4)
+DEFINE_FR_CHAN_ADD_TS_FUNCTION(Sim, REAL4, 4R, DIFF_GZIP)
+DEFINE_FR_CHAN_ADD_TS_FUNCTION(Sim, REAL8, 8R, DIFF_GZIP)
+
+DEFINE_FR_PROC_CHAN_ADD_TS_FUNCTION(INT2,       2S, ZERO_SUPPRESS_WORD_2)
+DEFINE_FR_PROC_CHAN_ADD_TS_FUNCTION(INT4,       4S, ZERO_SUPPRESS_WORD_4)
+DEFINE_FR_PROC_CHAN_ADD_TS_FUNCTION(INT8,       8S, DIFF_GZIP)
+DEFINE_FR_PROC_CHAN_ADD_TS_FUNCTION(UINT2,      2U, ZERO_SUPPRESS_WORD_2)
+DEFINE_FR_PROC_CHAN_ADD_TS_FUNCTION(UINT4,      4U, ZERO_SUPPRESS_WORD_4)
+DEFINE_FR_PROC_CHAN_ADD_TS_FUNCTION(UINT8,      8U, DIFF_GZIP)
+DEFINE_FR_PROC_CHAN_ADD_TS_FUNCTION(REAL4,      4R, DIFF_GZIP)
+DEFINE_FR_PROC_CHAN_ADD_TS_FUNCTION(REAL8,      8R, DIFF_GZIP)
+DEFINE_FR_PROC_CHAN_ADD_TS_FUNCTION(COMPLEX8,   8C, DIFF_GZIP)
+DEFINE_FR_PROC_CHAN_ADD_TS_FUNCTION(COMPLEX16, 16C, DIFF_GZIP)
+
+DEFINE_FR_PROC_CHAN_ADD_FS_FUNCTION(REAL4,      4R, DIFF_GZIP)
+DEFINE_FR_PROC_CHAN_ADD_FS_FUNCTION(REAL8,      8R, DIFF_GZIP)
+DEFINE_FR_PROC_CHAN_ADD_FS_FUNCTION(COMPLEX8,   8C, DIFF_GZIP)
+DEFINE_FR_PROC_CHAN_ADD_FS_FUNCTION(COMPLEX16, 16C, DIFF_GZIP)
+/* *INDENT-ON* */
+
+int XLALFrameWrite(LALFrameH * frame, const char *fname)
 {
-  FrameH *frame = NULL;
-  int retval = 0;
-  FRBOOL chkSumFiFlag = iFile->chkSumFiFlag;
-  FRBOOL chkSumFrFlag = iFile->chkSumFrFlag;
-  iFile->chkSumFiFlag = FR_YES;
-  iFile->chkSumFrFlag = FR_NO;
-  /* sequential read */
-  /* FIXME: WARNING: HACK: following line may need to be updated in future */
-  FrIOSet(iFile->frfd, FR_FILE_HEADER_SIZE);
-  while ((frame = FrameReadRecycle(iFile, frame)))
-    ;
-  iFile->chkSumFiFlag = chkSumFiFlag;
-  iFile->chkSumFrFlag = chkSumFrFlag;
-  if ( iFile->error != FR_OK ) {
-    XLALPrintError( "XLAL Error - %s: %s\n", __func__, FrErrorGetHistory() );
-    XLAL_ERROR( XLAL_EFAILED );
+    // LALFrFile *frfile = NULL;
+    LALFrameUFrFile *frfile = NULL;
+    char tmpfname[FILENAME_MAX];
+
+    /* open temporary file */
+    snprintf(tmpfname, sizeof(tmpfname), "%s.tmp", fname);
+    frfile = XLALFrameUFrFileOpen(tmpfname, "w");
+    if (!frfile)
+        goto failure;
+
+    /* write frame */
+    XLALFrameUFrameHWrite(frfile, frame);
+
+    /* close temporary file */
+    XLALFrameUFrFileClose(frfile);
+
+    /* rename file */
+    rename(tmpfname, fname);
+    return 0;
+
+  failure:     /* unsuccessful exit */
+    XLALFrameUFrFileClose(frfile);
+    /* TODO: remove tempfile */
     return -1;
-  }
-  if ( iFile->chkTypeFiRead == 0 ) {
-    XLALPrintWarning( "XLAL Warning - %s: missing checksum\n", __func__ );
-    retval = 1; /* missing checksum */
-  } else if ( iFile->chkSumFiRead != iFile->chkSumFi ) {
-    XLALPrintError( "XLAL Error - %s: bad checksum\n", __func__ );
-    retval = -1; /* bad checksum */
-  } else
-    retval = 0;
-  FrFileIRewind(iFile);
-  return retval;
 }
 
-
-/* This routine is essentially the same as FrHistoryNew but the name of the
- * history can be set too. */
-FrHistory * XLALFrHistoryAdd( FrameH *frame, const char *name, const char *comment )
+static int charcmp(const void *c1, const void *c2)
 {
-  union { const char *cs; char *s; } namecnvrt; /* get rid of const qual */
-  union { const char *cs; char *s; } commentcnvrt; /* get rid of const qual */
-  LIGOTimeGPS now;
-  FrHistory *history;
-
-  /* get current time */
-  if ( ! XLALGPSTimeNow( &now ) )
-    XLAL_ERROR_NULL( XLAL_EFUNC );
-
-  /* this nonsense is to convert const char * to char * ... don't worry,
-   * the frame library just copies the string anyway */
-  namecnvrt.cs    = name;
-  commentcnvrt.cs = comment;
-
-  /* now create the history */
-  history = FrHistoryNew( namecnvrt.s, now.gpsSeconds, commentcnvrt.s );
-  if ( ! history )
-    XLAL_ERROR_NULL( XLAL_EERR ); /* "internal" error */
-
-  /* attach history to the frame structure */
-  if ( frame )
-  {
-    /* behaviour is identical to FrHistoryAdd if name is NULL */
-    if ( ! name )
-      FrStrCpy( &history->name, frame->name );
-    history->next = frame->history;
-    frame->history = history;
-  }
-
-  return history;
+    char a = *(const char *)c1;
+    char b = *(const char *)c2;
+    return (a > b) - (a < b);
 }
 
-FrDetector * XLALFrDetectorNew( int detector )
+/*
+ * Based on a channel name, format a standard frame filename;
+ * in the process, determine recognized detectors and sites;
+ * returns detector flags, if recognized detectors are found.
+ */
+static int XLALFrameFileName(char *fname, size_t size, const char *chname,
+    const LIGOTimeGPS * epoch, double duration)
 {
-  const LALDetector *lalDetector;
-  FrDetector *frDetector;
-  char *detectorName;
+    char site[LAL_NUM_DETECTORS + 1] = "";
+    char *desc;
+    const char *cs;
+    char *s;
+    int detflgs = 0;
+    int t0;
+    int dt;
 
-  if ( detector < 0 || detector >= LAL_NUM_DETECTORS )
-    XLAL_ERROR_NULL( XLAL_EINVAL );
-  lalDetector = lalCachedDetectors + detector;
-
-  detectorName = XLALStringDuplicate( lalDetector->frDetector.name );
-  frDetector = FrDetectorNew( detectorName );
-  LALFree( detectorName );
-  if ( ! frDetector )
-    XLAL_ERROR_NULL( XLAL_EERR ); /* "internal" error */
-
-  memcpy( frDetector->prefix, lalDetector->frDetector.prefix, 2 );
-  frDetector->longitude    = lalDetector->frDetector.vertexLongitudeRadians;
-  frDetector->latitude     = lalDetector->frDetector.vertexLatitudeRadians;
-  frDetector->elevation    = lalDetector->frDetector.vertexElevation;
-  frDetector->armXazimuth  = lalDetector->frDetector.xArmAzimuthRadians;
-  frDetector->armYazimuth  = lalDetector->frDetector.yArmAzimuthRadians;
-  frDetector->armXaltitude = lalDetector->frDetector.xArmAltitudeRadians;
-  frDetector->armYaltitude = lalDetector->frDetector.yArmAltitudeRadians;
-  frDetector->armXmidpoint = lalDetector->frDetector.xArmMidpoint;
-  frDetector->armYmidpoint = lalDetector->frDetector.yArmMidpoint;
-  frDetector->localTime    = 0;
-
-  return frDetector;
-}
-
-
-void XLALFrameFree( FrameH *frame )
-{
-  FrameFree( frame );
-}
-
-
-FrameH * XLALFrameNew( LIGOTimeGPS *epoch, double duration,
-    const char *project, int run, int frnum, int detectorFlags )
-{
-  static char histidname[] = __FILE__ " Id";
-  static char histtagname[] = __FILE__ " Tag";
-  /** \deprecated FIXME: the following code uses obsolete CVS ID tags.
-   *  It should be modified to use git version information. */
-  static char rcsname[] = "$Name$";
-  static char rcsid[] = "$Id$";
-  int detector;
-  char *proj;
-  FrameH *frame;
-
-  proj = XLALStringDuplicate( project );
-  if ( ! proj )
-    XLAL_ERROR_NULL( XLAL_ENOMEM );
-  frame = FrameHNew( proj );
-  LALFree( proj );
-  if ( ! frame )
-    XLAL_ERROR_NULL( XLAL_EERR ); /* "internal" error */
-
-  frame->run    = run;
-  frame->frame  = frnum;
-  frame->GTimeS = epoch->gpsSeconds;
-  frame->GTimeN = epoch->gpsNanoSeconds;
-  frame->ULeapS = XLALLeapSeconds( epoch->gpsSeconds );
-  frame->dt     = duration;
-  /* TODO: what about dataQuality ? */
-
-  for ( detector = 0; detector < LAL_NUM_DETECTORS; ++detector )
-  {
-    int detector_flag = 1 << 2 * detector;
-    if ( ( detector_flag & detectorFlags ) ) /* yes, one ampersand! */
-    {
-      /* add this detector */
-      FrDetector *d;
-      d = XLALFrDetectorNew( detector );
-      if ( ! d )
-        XLAL_ERROR_NULL( XLAL_EFUNC );
-      d->next = frame->detectProc;
-      frame->detectProc = d;
+    /* parse chname to get identified sites and detectors */
+    /* strip out detectors from "XmYn...:"-style prefix */
+    for (cs = chname; *cs; cs += 2) {
+        int d;
+        /* when you get to a colon, you're done! */
+        if (*cs == ':')
+            break;
+        /* see if this is an unexpected format */
+        if (strlen(cs) <= 2 || !isupper(cs[0]) || !isdigit(cs[1])) {
+            /* parse error so reset detflgs and site */
+            detflgs = 0;
+            site[0] = 0;
+            break;
+        }
+        /* try to find this detector */
+        for (d = 0; d < LAL_NUM_DETECTORS; ++d)
+            if (0 == strncmp(cs, lalCachedDetectors[d].frDetector.prefix, 2)) {
+                /* found it: put it in sites and detflgs */
+                detflgs |= 1 << 2 * d;
+                strncat(site, cs, 1);
+            }
     }
-  }
 
-  /* add history: name of history field is this function's name */
-  if ( ! XLALFrHistoryAdd( frame, histidname, rcsid ) )
-    XLAL_ERROR_NULL( XLAL_EFUNC );
-  if ( ! XLALFrHistoryAdd( frame, histtagname, rcsname ) )
-    XLAL_ERROR_NULL( XLAL_EFUNC );
-  return frame;
+    /* sort and uniqify sites */
+    qsort(site, strlen(site), 1, charcmp);
+    cs = s = site;
+    for (cs = s = site; *s; ++cs)
+        if (*s != *cs)
+            *++s = *cs;
+
+    /* description is a modified version of chname */
+    /* replace invalid description char with '_' */
+    desc = XLALStringDuplicate(chname);
+    for (s = desc; *s; ++s)
+        if (!isalnum(*s))
+            *s = '_';
+
+    /* determine start time field and duration field */
+    t0 = epoch->gpsSeconds;
+    dt = (int)ceil(XLALGPSGetREAL8(epoch) + duration) - t0;
+
+    /* now format the file name */
+    snprintf(fname, size, "%s-%s-%d-%d.gwf", *site ? site : "X", desc, t0,
+        dt);
+
+    LALFree(desc);
+    return detflgs;
 }
 
-
-FrVect * XLALFrVectINT4TimeSeries( INT4TimeSeries *series )
-{
-  char seconds[LALUnitTextSize] = "s";
-  char units[LALUnitTextSize];
-  FrVect *vect;
-
-  if ( NULL == XLALUnitAsString( units, sizeof( units ), &series->sampleUnits ) )
-    XLAL_ERROR_NULL( XLAL_EFUNC );
-
-  vect = FrVectNew1D( series->name, FR_VECT_4S, series->data->length, series->deltaT, seconds, units );
-  if ( ! vect )
-    XLAL_ERROR_NULL( XLAL_EERR ); /* "internal" error */
-  vect->startX[0] = 0.0;
-
-  memcpy( vect->data, series->data->data, series->data->length * sizeof( *series->data->data ) );
-
-  FrVectCompress (vect, 8, 0);
-  if (vect->compress == 0) FrVectCompress (vect, 6, 1);
-
-  return vect;
-}
-
-
-FrVect * XLALFrVectREAL4TimeSeries( REAL4TimeSeries *series )
-{
-  char seconds[LALUnitTextSize] = "s";
-  char units[LALUnitTextSize];
-  FrVect *vect;
-
-  if ( NULL == XLALUnitAsString( units, sizeof( units ), &series->sampleUnits ) )
-    XLAL_ERROR_NULL( XLAL_EFUNC );
-
-  vect = FrVectNew1D( series->name, FR_VECT_4R, series->data->length, series->deltaT, seconds, units );
-  if ( ! vect )
-    XLAL_ERROR_NULL( XLAL_EERR ); /* "internal" error */
-  vect->startX[0] = 0.0;
-
-  memcpy( vect->data, series->data->data, series->data->length * sizeof( *series->data->data ) );
-
-  FrVectCompress (vect, 8, 0);
-  if (vect->compress == 0) FrVectCompress (vect, 6, 1);
-
-  return vect;
-}
-
-
-FrVect * XLALFrVectREAL8TimeSeries( REAL8TimeSeries *series )
-{
-  char seconds[LALUnitTextSize] = "s";
-  char units[LALUnitTextSize];
-  FrVect *vect;
-
-  if ( NULL == XLALUnitAsString( units, sizeof( units ), &series->sampleUnits ) )
-    XLAL_ERROR_NULL( XLAL_EFUNC );
-
-  vect = FrVectNew1D( series->name, FR_VECT_8R, series->data->length, series->deltaT, seconds, units );
-  if ( ! vect )
-    XLAL_ERROR_NULL( XLAL_EERR ); /* "internal" error */
-  vect->startX[0] = 0.0;
-
-  memcpy( vect->data, series->data->data, series->data->length * sizeof( *series->data->data ) );
-
-  FrVectCompress (vect, 6, 1);
-
-  return vect;
-}
-
-
-FrVect * XLALFrVectCOMPLEX8TimeSeries( COMPLEX8TimeSeries *series )
-{
-  char seconds[LALUnitTextSize] = "s";
-  char units[LALUnitTextSize];
-  FrVect *vect;
-
-  if ( NULL == XLALUnitAsString( units, sizeof( units ), &series->sampleUnits ) )
-    XLAL_ERROR_NULL( XLAL_EFUNC );
-
-  vect = FrVectNew1D( series->name, FR_VECT_8C, series->data->length, series->deltaT, seconds, units );
-  if ( ! vect )
-    XLAL_ERROR_NULL( XLAL_EERR ); /* "internal" error */
-  vect->startX[0] = 0.0;
-
-  memcpy( vect->data, series->data->data, series->data->length * sizeof( *series->data->data ) );
-
-  FrVectCompress (vect, 6, 1);
-
-  return vect;
-}
-
-
-
-FrVect * XLALFrVectCOMPLEX16TimeSeries( COMPLEX16TimeSeries *series )
-{
-  char seconds[LALUnitTextSize] = "s";
-  char units[LALUnitTextSize];
-  FrVect *vect;
-
-  if ( NULL == XLALUnitAsString( units, sizeof( units ), &series->sampleUnits ) )
-    XLAL_ERROR_NULL( XLAL_EFUNC );
-
-  vect = FrVectNew1D( series->name, FR_VECT_16C, series->data->length, series->deltaT, seconds, units );
-  if ( ! vect )
-    XLAL_ERROR_NULL( XLAL_EERR ); /* "internal" error */
-  vect->startX[0] = 0.0;
-
-  memcpy( vect->data, series->data->data, series->data->length * sizeof( *series->data->data ) );
-
-  FrVectCompress (vect, 6, 1);
-
-  return vect;
-}
-
-/*  FIXME: Should f0 be startX in the vect or fShift in the proc data ??? */
-
-FrVect * XLALFrVectREAL4FrequencySeries( REAL4FrequencySeries *series )
-{
-  char hertz[LALUnitTextSize] = "s^-1";
-  char units[LALUnitTextSize];
-  FrVect *vect;
-
-  if ( NULL == XLALUnitAsString( units, sizeof( units ), &series->sampleUnits ) )
-    XLAL_ERROR_NULL( XLAL_EFUNC );
-
-  vect = FrVectNew1D( series->name, FR_VECT_4R, series->data->length, series->deltaF, hertz, units );
-  if ( ! vect )
-    XLAL_ERROR_NULL( XLAL_EERR ); /* "internal" error */
-  vect->startX[0] = series->f0;
-
-  memcpy( vect->data, series->data->data, series->data->length * sizeof( *series->data->data ) );
-
-  FrVectCompress (vect, 8, 0);
-  if (vect->compress == 0) FrVectCompress (vect, 6, 1);
-
-  return vect;
-}
-
-
-FrVect * XLALFrVectREAL8FrequencySeries( REAL8FrequencySeries *series )
-{
-  char hertz[LALUnitTextSize] = "s^-1";
-  char units[LALUnitTextSize];
-  FrVect *vect;
-
-  if ( NULL == XLALUnitAsString( units, sizeof( units ), &series->sampleUnits ) )
-    XLAL_ERROR_NULL( XLAL_EFUNC );
-
-  vect = FrVectNew1D( series->name, FR_VECT_8R, series->data->length, series->deltaF, hertz, units );
-  if ( ! vect )
-    XLAL_ERROR_NULL( XLAL_EERR ); /* "internal" error */
-  vect->startX[0] = series->f0;
-
-  memcpy( vect->data, series->data->data, series->data->length * sizeof( *series->data->data ) );
-
-  FrVectCompress (vect, 6, 1);
-
-  return vect;
-}
-
-
-FrVect * XLALFrVectCOMPLEX8FrequencySeries( COMPLEX8FrequencySeries *series )
-{
-  char hertz[LALUnitTextSize] = "s^-1";
-  char units[LALUnitTextSize];
-  FrVect *vect;
-
-  if ( NULL == XLALUnitAsString( units, sizeof( units ), &series->sampleUnits ) )
-    XLAL_ERROR_NULL( XLAL_EFUNC );
-
-  vect = FrVectNew1D( series->name, FR_VECT_8C, series->data->length, series->deltaF, hertz, units );
-  if ( ! vect )
-    XLAL_ERROR_NULL( XLAL_EERR ); /* "internal" error */
-  vect->startX[0] = series->f0;
-
-  memcpy( vect->data, series->data->data, series->data->length * sizeof( *series->data->data ) );
-
-  FrVectCompress (vect, 6, 1);
-
-  return vect;
-}
-
-
-FrVect * XLALFrVectCOMPLEX16FrequencySeries( COMPLEX16FrequencySeries *series )
-{
-  char hertz[LALUnitTextSize] = "s^-1";
-  char units[LALUnitTextSize];
-  FrVect *vect;
-
-  if ( NULL == XLALUnitAsString( units, sizeof( units ), &series->sampleUnits ) )
-    XLAL_ERROR_NULL( XLAL_EFUNC );
-
-  vect = FrVectNew1D( series->name, FR_VECT_8C, series->data->length, series->deltaF, hertz, units );
-  if ( ! vect )
-    XLAL_ERROR_NULL( XLAL_EERR ); /* "internal" error */
-  vect->startX[0] = series->f0;
-
-  memcpy( vect->data, series->data->data, series->data->length * sizeof( *series->data->data ) );
-
-  FrVectCompress (vect, 6, 1);
-
-  return vect;
-}
-
-
-int XLALFrameAddCalRef( FrameH *frame, COMPLEX8FrequencySeries *series, int version, double duration )
-{
-  char representation[] = "freq_series";
-  /** \deprecated FIXME: the following code uses obsolete CVS ID tags.
-   *  It should be modified to use git version information. */
-  char comment[] = "$Id$";
-  char prefix[3];
-  FrDetector *detector;
-  FrStatData *sdat;
-  FrVect *vect;
-  int tstart;
-  int tend;
-
-  /* To find the detector, look for the detector prefix stored as the first
-   * two characters of the channel name. */
-  prefix[0] = series->name[0];
-  prefix[1] = series->name[1];
-  prefix[2] = 0;
-
-  detector = FrameFindDetector( frame, prefix );
-  if ( ! detector )
-  {
-    XLALPrintError( "XLAL Error - %s: no detector associated with prefix %s in frame\n", __func__, prefix );
-    XLAL_ERROR( XLAL_EINVAL );
-  }
-
-  vect = XLALFrVectCOMPLEX8FrequencySeries( series );
-  if ( ! vect )
-    XLAL_ERROR( XLAL_EFUNC );
-
-  tstart = series->epoch.gpsSeconds;
-  tend = (int)ceil( series->epoch.gpsSeconds + 1e-9*series->epoch.gpsNanoSeconds + duration );
-  sdat = FrStatDataNew( series->name, comment, representation, tstart, tend, version, vect, NULL );
-  if ( ! sdat )
-  {
-    FrVectFree( vect );
-    XLAL_ERROR( XLAL_EERR );
-  }
-
-  FrStatDataAdd( detector, sdat );
-
-  return 0;
-}
-
-
-COMPLEX8FrequencySeries * XLALFrameGetCalRef( LIGOTimeGPS *validUntil, LIGOTimeGPS *epoch, const char *channel, FrameH *frame )
-{
-  char prefix[3];
-  LALUnit unit;
-  COMPLEX8FrequencySeries *series;
-  FrStatData *sdat;
-  char *chan;
-
-  /* To find the detector, look for the detector prefix stored as the first
-   * two characters of the channel name. */
-  prefix[0] = channel[0];
-  prefix[1] = channel[1];
-  prefix[2] = 0;
-
-  chan = XLALStringDuplicate( channel );
-  sdat = FrameFindStatData( frame, prefix, chan, epoch->gpsSeconds );
-  LALFree( chan );
-  if ( ! sdat || sdat->timeStart > (UINT4)epoch->gpsSeconds || sdat->timeEnd < (UINT4)epoch->gpsSeconds )
-  {
-    XLALPrintError( "XLAL Error - %s: no stat data channel %s for GPS time %d in frame\n", __func__, channel, epoch->gpsSeconds );
-    XLAL_ERROR_NULL( XLAL_EINVAL );
-  }
-
-  /* parse units */
-  if ( NULL == XLALParseUnitString( &unit, sdat->data->unitY ) )
-  {
-    XLALPrintError( "XLAL Error - %s: could not parse unit string %s\n", __func__, sdat->data->unitY );
-    XLAL_ERROR_NULL( XLAL_EFUNC );
-  }
-
-  /* use validUntil as dummy structure */
-  validUntil->gpsSeconds     = sdat->timeStart;
-  validUntil->gpsNanoSeconds = 0;
-
-  series = XLALCreateCOMPLEX8FrequencySeries( sdat->data->name, validUntil, sdat->data->startX[0], sdat->data->dx[0], &unit, sdat->data->nData );
-  if ( ! series )
-    XLAL_ERROR_NULL( XLAL_EFUNC );
-
-  memcpy( series->data->data, sdat->data->data, series->data->length * sizeof( *series->data->data ) );
-
-  /* report end time of validity in validUntil */
-  validUntil->gpsSeconds = sdat->timeEnd;
-
-  return series;
-}
-
-
-int XLALFrameAddCalFac( FrameH *frame, REAL4TimeSeries *series, int version )
-{
-  char representation[] = "time_series";
-  /** \deprecated FIXME: the following code uses obsolete CVS ID tags.
-   *  It should be modified to use git version information. */
-  char comment[] = "$Id$";
-  char prefix[3];
-  FrDetector *detector;
-  FrStatData *sdat;
-  FrVect *vect;
-  int tstart;
-  int tend;
-
-  /* To find the detector, look for the detector prefix stored as the first
-   * two characters of the channel name. */
-  prefix[0] = series->name[0];
-  prefix[1] = series->name[1];
-  prefix[2] = 0;
-
-  detector = FrameFindDetector( frame, prefix );
-  if ( ! detector )
-  {
-    XLALPrintError( "XLAL Error - %s: no detector associated with prefix %s in frame\n", __func__, prefix );
-    XLAL_ERROR( XLAL_EINVAL );
-  }
-
-  vect = XLALFrVectREAL4TimeSeries( series );
-  if ( ! vect )
-    XLAL_ERROR( XLAL_EFUNC );
-
-  tstart = series->epoch.gpsSeconds;
-  tend = (int)ceil( series->epoch.gpsSeconds + 1e-9*series->epoch.gpsNanoSeconds + series->data->length * series->deltaT );
-  sdat = FrStatDataNew( series->name, comment, representation, tstart, tend, version, vect, NULL );
-  if ( ! sdat )
-  {
-    FrVectFree( vect );
-    XLAL_ERROR( XLAL_EERR );
-  }
-
-  FrStatDataAdd( detector, sdat );
-
-  return 0;
-}
-
-
-REAL4TimeSeries * XLALFrameGetCalFac( LIGOTimeGPS *epoch, const char *channel, FrameH *frame )
-{
-  char prefix[3];
-  LIGOTimeGPS tmpEpoch;
-  REAL4TimeSeries *series;
-  FrStatData *sdat;
-  char *chan;
-
-  /* To find the detector, look for the detector prefix stored as the first
-   * two characters of the channel name. */
-  prefix[0] = channel[0];
-  prefix[1] = channel[1];
-  prefix[2] = 0;
-
-  chan = XLALStringDuplicate( channel );
-  sdat = FrameFindStatData( frame, prefix, chan, epoch->gpsSeconds );
-  LALFree( chan );
-  if ( ! sdat || sdat->timeStart > (UINT4)epoch->gpsSeconds || sdat->timeEnd < (UINT4)epoch->gpsSeconds )
-  {
-    XLALPrintError( "XLAL Error - %s: no stat data channel %s for GPS time %d in frame\n", __func__, channel, epoch->gpsSeconds );
-    XLAL_ERROR_NULL( XLAL_EINVAL );
-  }
-
-  tmpEpoch.gpsSeconds     = sdat->timeStart;
-  tmpEpoch.gpsNanoSeconds = 0;
-  series = XLALCreateREAL4TimeSeries( sdat->data->name, &tmpEpoch, 0.0, sdat->data->dx[0], &lalDimensionlessUnit, sdat->data->nData );
-  if ( ! series )
-    XLAL_ERROR_NULL( XLAL_EFUNC );
-
-  memcpy( series->data->data, sdat->data->data, series->data->length * sizeof( *series->data->data ) );
-
-  return series;
-}
-
-int XLALFrameAddREAL8TimeSeriesProcData( FrameH *frame, REAL8TimeSeries *series )
-{
-  LIGOTimeGPS frameEpoch;
-  FrProcData *proc;
-  FrVect *vect;
-  REAL8 duration;
-
-  duration = series->deltaT * series->data->length;
-
-  vect = XLALFrVectREAL8TimeSeries( series );
-  if ( ! vect )
-    XLAL_ERROR( XLAL_EFUNC );
-
-  proc = FrProcDataNewV( frame, vect );
-  if ( ! proc ) {
-    FrVectFree( vect );
-    XLAL_ERROR( XLAL_EERR );
-  }
-
-  /* time offset: compute this from frame time */
-  frameEpoch.gpsSeconds     = frame->GTimeS;
-  frameEpoch.gpsNanoSeconds = frame->GTimeN;
-  proc->timeOffset = XLALGPSDiff( &series->epoch, &frameEpoch );
-
-  /* remaining metadata */
-  proc->type    = 1;
-  proc->subType = 0;
-  proc->tRange  = duration;
-  proc->fShift  = 0.0;
-  proc->phase   = 0.0;
-  proc->BW      = 0.0;
-
-  return 0;
-}
-
-int XLALFrameAddREAL4TimeSeriesProcData( FrameH *frame, REAL4TimeSeries *series )
-{
-  LIGOTimeGPS frameEpoch;
-  FrProcData *proc;
-  FrVect *vect;
-  REAL8 duration;
-
-  duration = series->deltaT * series->data->length;
-
-  vect = XLALFrVectREAL4TimeSeries( series );
-  if ( ! vect )
-    XLAL_ERROR( XLAL_EFUNC );
-
-  proc = FrProcDataNewV( frame, vect );
-  if ( ! proc ) {
-    FrVectFree( vect );
-    XLAL_ERROR( XLAL_EERR );
-  }
-
-  /* time offset: compute this from frame time */
-  frameEpoch.gpsSeconds     = frame->GTimeS;
-  frameEpoch.gpsNanoSeconds = frame->GTimeN;
-  proc->timeOffset = XLALGPSDiff( &series->epoch, &frameEpoch );
-
-  /* remaining metadata */
-  proc->type    = 1;
-  proc->subType = 0;
-  proc->tRange  = duration;
-  proc->fShift  = 0.0;
-  proc->phase   = 0.0;
-  proc->BW      = 0.0;
-
-  return 0;
-}
-
-
-
-int XLALFrameAddINT4TimeSeriesProcData( FrameH *frame, INT4TimeSeries *series )
-{
-  LIGOTimeGPS frameEpoch;
-  FrProcData *proc;
-  FrVect *vect;
-  REAL8 duration;
-
-  duration = series->deltaT * series->data->length;
-
-  vect = XLALFrVectINT4TimeSeries( series );
-  if ( ! vect )
-    XLAL_ERROR( XLAL_EFUNC );
-
-  proc = FrProcDataNewV( frame, vect );
-  if ( ! proc ) {
-    FrVectFree( vect );
-    XLAL_ERROR( XLAL_EERR );
-  }
-
-  /* time offset: compute this from frame time */
-  frameEpoch.gpsSeconds     = frame->GTimeS;
-  frameEpoch.gpsNanoSeconds = frame->GTimeN;
-  proc->timeOffset = XLALGPSDiff( &series->epoch, &frameEpoch );
-
-  /* remaining metadata */
-  proc->type    = 1;
-  proc->subType = 0;
-  proc->tRange  = duration;
-  proc->fShift  = 0.0;
-  proc->phase   = 0.0;
-  proc->BW      = 0.0;
-
-  return 0;
-}
-
-
-int XLALFrameAddREAL4TimeSeriesSimData( FrameH *frame, REAL4TimeSeries *series )
-{
-  LIGOTimeGPS frameEpoch;
-  FrSimData *sim;
-  FrVect *vect;
-
-  vect = XLALFrVectREAL4TimeSeries( series );
-  if ( ! vect )
-    XLAL_ERROR( XLAL_EFUNC );
-
-  sim = FrSimDataNew( frame, series->name, 1./series->deltaT, series->data->length, -32 );
-  if ( ! sim ) {
-    FrVectFree( vect );
-    XLAL_ERROR( XLAL_EERR );
-  }
-  FrVectFree( sim->data );
-  sim->data = vect;
-
-  /* time offset: compute this from frame time */
-  frameEpoch.gpsSeconds     = frame->GTimeS;
-  frameEpoch.gpsNanoSeconds = frame->GTimeN;
-  sim->timeOffset = XLALGPSDiff( &series->epoch, &frameEpoch );
-
-  /* remaining metadata */
-  sim->fShift = 0;
-  sim->phase  = 0;
-
-  return 0;
-}
-
-int XLALFrameAddREAL8TimeSeriesSimData( FrameH *frame, REAL8TimeSeries *series )
-{
-  LIGOTimeGPS frameEpoch;
-  FrSimData *sim;
-  FrVect *vect;
-
-  vect = XLALFrVectREAL8TimeSeries( series );
-  if ( ! vect )
-    XLAL_ERROR( XLAL_EFUNC );
-
-  sim = FrSimDataNew( frame, series->name, 1./series->deltaT, series->data->length, -64 );
-  if ( ! sim ) {
-    FrVectFree( vect );
-    XLAL_ERROR( XLAL_EERR );
-  }
-  FrVectFree( sim->data );
-  sim->data = vect;
-
-  /* time offset: compute this from frame time */
-  frameEpoch.gpsSeconds     = frame->GTimeS;
-  frameEpoch.gpsNanoSeconds = frame->GTimeN;
-  sim->timeOffset = XLALGPSDiff( &series->epoch, &frameEpoch );
-
-  /* remaining metadata */
-  sim->fShift = 0;
-  sim->phase  = 0;
-
-  return 0;
-}
-
-int XLALFrameAddREAL4TimeSeriesAdcData( FrameH *frame, REAL4TimeSeries *series )
-{
-  FrAdcData *adc;
-  int i;
-
-  adc = FrAdcDataNew( frame, series->name, 1./series->deltaT, series->data->length, -32 );
-  if ( ! adc ) {
-    XLAL_ERROR( XLAL_EERR );
-  }
-
-  for(i=0; i < (int)series->data->length; i++) {
-    adc->data->dataF[i] = series->data->data[i];
-    /*    fprintf(stdout,"%d %f %f\n",i, adc->data->dataF[i], series->data->data[i]); */
-  }
-
-  FrVectCompress (adc->data, 8, 0);
-  if (adc->data->compress == 0) FrVectCompress (adc->data, 6, 1);
-
-  return 0;
-}
+#define DEFINE_FR_WRITE_TS_FUNCTION(laltype) \
+    int XLALFrWrite ## laltype ## TimeSeries(const laltype ## TimeSeries *series, int frnum) \
+    { \
+        LALFrameH *frame; \
+        double duration; \
+        char fname[FILENAME_MAX]; \
+        int detflgs; \
+        duration = series->deltaT * series->data->length; \
+        detflgs = XLALFrameFileName(fname, sizeof(fname), series->name, &series->epoch, duration); \
+        frame = XLALFrameNew(&series->epoch, duration, "LAL", 0, frnum, detflgs); \
+        XLALFrameAdd ## laltype ## TimeSeriesProcData(frame, series); \
+        XLALFrameWrite(frame, fname); \
+        XLALFrameFree(frame); \
+        return 0; \
+    }
+
+/* *INDENT-OFF* */
+DEFINE_FR_WRITE_TS_FUNCTION(INT2)
+DEFINE_FR_WRITE_TS_FUNCTION(INT4)
+DEFINE_FR_WRITE_TS_FUNCTION(INT8)
+DEFINE_FR_WRITE_TS_FUNCTION(REAL4)
+DEFINE_FR_WRITE_TS_FUNCTION(REAL8)
+DEFINE_FR_WRITE_TS_FUNCTION(COMPLEX8)
+DEFINE_FR_WRITE_TS_FUNCTION(COMPLEX16)
+/* *INDENT-ON* */
+#define DEFINE_FR_WRITE_FS_FUNCTION(laltype) \
+    int XLALFrWrite ## laltype ## FrequencySeries(const laltype ## FrequencySeries *series, int frnum, int subtype) \
+    { \
+    	LALFrameH *frame; \
+    	double duration; \
+    	char fname[FILENAME_MAX]; \
+    	int detflgs; \
+    	duration = series->deltaF > 0.0 ? 1.0 / series->deltaF : 1.0; \
+    	detflgs = XLALFrameFileName(fname, sizeof(fname), series->name, &series->epoch, duration); \
+    	frame = XLALFrameNew(&series->epoch, duration, "LAL", 0, frnum, detflgs); \
+    	XLALFrameAdd ## laltype ## FrequencySeriesProcData(frame, series, subtype); \
+    	XLALFrameWrite(frame, fname); \
+    	return 0; \
+    }
+/* *INDENT-OFF* */
+DEFINE_FR_WRITE_FS_FUNCTION(REAL4)
+DEFINE_FR_WRITE_FS_FUNCTION(REAL8)
+DEFINE_FR_WRITE_FS_FUNCTION(COMPLEX8)
+DEFINE_FR_WRITE_FS_FUNCTION(COMPLEX16)
+/* *INDENT-ON* */
 
 #if 0
-int XLALFrameAddCalFac( FrameH *frame, REAL4TimeSeries *series )
+int main(void)
 {
-  /** \deprecated FIXME: the following code uses obsolete CVS ID tags.
-   *  It should be modified to use git version information. */
-  char comment[] = "$Id$";
-  LIGOTimeGPS frameEpoch;
-  FrProcData *proc;
-  FrVect *vect;
+    const LIGOTimeGPS epoch = { 1000000000, 0 };
+    const double duration = 16.0;
+    const char *project = "LIGO";
+    const int run = 0;
+    const int frnum = 0;
+    const int detectorFlags =
+        LAL_LHO_4K_DETECTOR_BIT | LAL_LLO_4K_DETECTOR_BIT;
+    const double srate = 16384.0;
+    double deltaT = 1.0 / srate;
+    size_t length = duration * srate;
+    size_t j;
 
-  vect = XLALFrVectREAL4TimeSeries( series );
-  if ( ! vect )
-    XLAL_ERROR( XLAL_EFUNC );
+    LALFrameH *frame;
+    REAL4TimeSeries *series;
 
-  proc = FrProcDataNewV( frame, vect );
-  if ( ! proc )
-  {
-    FrVectFree( vect );
-    XLAL_ERROR( XLAL_EERR );
-  }
+    series =
+        XLALCreateREAL4TimeSeries("dummy", &epoch, 0.0, deltaT,
+        &lalStrainUnit, length);
+    for (j = 0; j < length; ++j)
+        series->data->data[j] = j % 256;
 
-  /* comment is rcs id */
-  FrStrCpy( &proc->comment, comment );
+    frame =
+        XLALFrameNew(&epoch, duration, project, run, frnum, detectorFlags);
 
-  /* time offset: compute this from frame time */
-  frameEpoch.gpsSeconds     = frame->GTimeS;
-  frameEpoch.gpsNanoSeconds = frame->GTimeN;
-  proc->timeOffset = XLALGPSDiff( &series->epoch, &frameEpoch );
+    XLALFrameAddREAL4TimeSeriesProcData(frame, series);
 
-  /* remaining metadata */
-  proc->type    = 1;
-  proc->subType = 0;
-  proc->tRange  = series->data->length * series->deltaT;
-  proc->fShift  = 0.0;
-  proc->phase   = 0.0;
-  proc->BW      = 0.0;
+    XLALDestroyREAL4TimeSeries(series);
 
-  return 0;
-}
+    XLALFrameWrite(frame, "dummy.gwf");
 
+    XLALFrameFree(frame);
 
-REAL4TimeSeries * XLALFrameGetCalFac( const char *channel, FrameH *frame )
-{
-  LIGOTimeGPS epoch;
-  REAL4TimeSeries *series;
-  FrProcData *proc;
-  char *chan;
-
-  chan = XLALStringDuplicate( channel );
-  proc = FrProcDataFind( frame, chan );
-  LALFree( chan );
-  if ( ! proc )
-  {
-    XLALPrintError( "XLAL Error - %s: no proc data channel %s in frame\n", __func__, channel );
-    XLAL_ERROR_NULL( XLAL_EINVAL );
-  }
-
-  epoch.gpsSeconds     = frame->GTimeS;
-  epoch.gpsNanoSeconds = frame->GTimeN;
-  XLALGPSAdd( &epoch, proc->timeOffset );
-
-  series = XLALCreateREAL4TimeSeries( proc->data->name, &epoch, proc->fShift, proc->data->dx[0], &lalDimensionlessUnit, proc->data->nData );
-  if ( ! series )
-    XLAL_ERROR_NULL( XLAL_EFUNC );
-
-  memcpy( series->data->data, proc->data->data, series->data->length * sizeof( *series->data->data ) );
-
-  return series;
+    return 0;
 }
 #endif
-
-
-LALCalData * XLALFrameGetCalData( LIGOTimeGPS *epoch, const char *readoutChannel, FrameH *frame )
-{
-  LALCalData *caldata;
-  char oloopgainName[LALNameLength]     = "Xn:CAL-OLOOP_GAIN";
-  char cavgainName[LALNameLength]       = "Xn:CAL-CAV_GAIN_";
-  char responseName[LALNameLength]      = "Xn:CAL-RESPONSE_";
-  char actuationName[LALNameLength]     = "Xn:CAL-ACTUATION";
-  char digfltName[LALNameLength]        = "Xn:CAL-DIGFLT_";
-  char cavfacName[LALNameLength]        = "Xn:CAL-CAV_FAC";
-  char oloopfacName[LALNameLength]      = "Xn:CAL-OLOOP_FAC";
-  char readoutPoint[LALNameLength]; /* DARM_ERR or AS_Q */
-  char ifo[3];
-  LIGOTimeGPS tend;
-  int UNUSED errnum;
-
-  /* setup channel names based on readout channel */
-  XLALStringCopy( ifo, readoutChannel, sizeof( ifo ) );
-  XLALStringCopy( readoutPoint, readoutChannel + strlen("Xn:LSC-"), sizeof( readoutPoint ) );
-  XLALStringConcatenate( responseName, readoutPoint, sizeof( responseName ) );
-  XLALStringConcatenate( cavgainName, readoutPoint, sizeof( cavgainName ) );
-  XLALStringConcatenate( digfltName, readoutPoint, sizeof( digfltName ) );
-  memcpy( oloopgainName, ifo, 2 );
-  memcpy( actuationName, ifo, 2 );
-  memcpy( responseName, ifo, 2 );
-  memcpy( cavgainName, ifo, 2 );
-  memcpy( digfltName, ifo, 2 );
-  memcpy( cavfacName, ifo, 2 );
-  memcpy( oloopfacName, ifo, 2 );
-
-  if ( strcmp( readoutPoint, "AS_Q" ) && strcmp( readoutPoint, "DARM_ERR" ) )
-    XLAL_ERROR_NULL( XLAL_ENAME );
-
-  caldata = LALCalloc( 1, sizeof( *caldata ) );
-  if ( ! caldata )
-    XLAL_ERROR_NULL( XLAL_ENOMEM );
-
-  /* caldata->cavityFactors = XLALFrameGetCalFac( cavfacName, frame ); */
-  caldata->cavityFactors = XLALFrameGetCalFac( epoch, cavfacName, frame );
-  if ( ! caldata->cavityFactors )
-  {
-    XLALDestroyCalData( caldata );
-    XLAL_ERROR_NULL( XLAL_EFUNC );
-  }
-  /* caldata->openLoopFactors = XLALFrameGetCalFac( oloopfacName, frame ); */
-  caldata->openLoopFactors = XLALFrameGetCalFac( epoch, oloopfacName, frame );
-  if ( ! caldata->openLoopFactors )
-  {
-    XLALDestroyCalData( caldata );
-    XLAL_ERROR_NULL( XLAL_EFUNC );
-  }
-  caldata->responseReference = XLALFrameGetCalRef( &tend, epoch, responseName, frame );
-  if ( ! caldata->responseReference )
-  {
-    XLALDestroyCalData( caldata );
-    XLAL_ERROR_NULL( XLAL_EFUNC );
-  }
-  caldata->cavityGainReference = XLALFrameGetCalRef( &tend, epoch, cavgainName, frame );
-  if ( ! caldata->cavityGainReference )
-  {
-    XLALDestroyCalData( caldata );
-    XLAL_ERROR_NULL( XLAL_EFUNC );
-  }
-  caldata->openLoopGainReference = XLALFrameGetCalRef( &tend, epoch, oloopgainName, frame );
-  if ( ! caldata->openLoopGainReference )
-  {
-    XLALDestroyCalData( caldata );
-    XLAL_ERROR_NULL( XLAL_EFUNC );
-  }
-  XLAL_TRY( caldata->actuationReference = XLALFrameGetCalRef( &tend, epoch, actuationName, frame ), errnum );
-  XLAL_TRY( caldata->digitalFilterReference = XLALFrameGetCalRef( &tend, epoch, digfltName, frame ), errnum );
-
-  return caldata;
-}
-
-
-LALCalData * XLALFrGetCalData( LIGOTimeGPS *epoch, const char *readoutChannel, const char *fname )
-{
-  LALCalData *caldata;
-  char *fileName;
-  FrFile *frfile;
-  FrameH *frame;
-
-  fileName = XLALStringDuplicate( fname );
-  if ( ! fileName )
-    XLAL_ERROR_NULL( XLAL_EFUNC );
-  frfile = FrFileINew( fileName );
-  XLALFree( fileName );
-  if ( ! frfile )
-    XLAL_ERROR_NULL( XLAL_EERR );
-  frame = FrameRead( frfile );
-  if ( ! frame )
-  {
-    FrFileIEnd( frfile );
-    XLAL_ERROR_NULL( XLAL_EERR );
-  }
-  caldata = XLALFrameGetCalData( epoch, readoutChannel, frame );
-  if ( ! caldata )
-  {
-    FrFileIEnd( frfile );
-    XLALDestroyCalData( caldata );
-    XLAL_ERROR_NULL( XLAL_EFUNC );
-  }
-
-  FrFileIEnd( frfile );
-  return caldata;
-}
-
-
-LALCalData * XLALFrCacheGetCalData( LIGOTimeGPS *epoch, const char *readoutChannel, FrCache *cache )
-{
-  LALCalData *caldata;
-  char srcRegEx[] = "X";
-  char dscRegEx[] = "Xn_CAL_";
-  FrCacheSieve sieve;
-  FrFile *frfile;
-  FrameH *frame;
-
-  memset( &sieve, 0, sizeof(sieve) );
-  memcpy( srcRegEx, readoutChannel, 1 ); /* copy site */
-  memcpy( dscRegEx, readoutChannel, 2 ); /* copy ifo */
-
-  /* first sieve: get all cal frames containing the specified time */
-  sieve.srcRegEx = srcRegEx; /* those files for the correct site */
-  sieve.dscRegEx = dscRegEx; /* those files for the correct ifo */
-  /* only want frame files that contain the specified time */
-  sieve.earliestTime = epoch->gpsSeconds;
-  sieve.latestTime = epoch->gpsSeconds;
-  cache = XLALFrSieveCache( cache, &sieve );
-  if ( ! cache )
-    XLAL_ERROR_NULL( XLAL_EFUNC );
-  if ( cache->numFrameFiles < 1 )
-  {
-    XLALPrintError( "XLAL Error - %s: no matching calibration frame files found in cache %s\n", __func__ );
-    XLALFrDestroyCache( cache );
-    XLAL_ERROR_NULL( XLAL_EIO );
-  }
-
-  /*
-   * We want to open the LAST of the remaining frames!
-   * This frame will have the highest version number and
-   * it will be the latest one to contain the specified
-   * time (in case the files overlap).
-   */
-  frfile = XLALFrOpenURL( cache->frameFiles[cache->numFrameFiles - 1].url );
-  XLALFrDestroyCache( cache ); /* don't need this anymore */
-  if ( ! frfile )
-    XLAL_ERROR_NULL( XLAL_EFUNC );
-  frame = FrameRead( frfile );
-  if ( ! frame )
-  {
-    FrFileIEnd( frfile );
-    XLAL_ERROR_NULL( XLAL_EERR );
-  }
-  caldata = XLALFrameGetCalData( epoch, readoutChannel, frame );
-  if ( ! caldata )
-  {
-    FrFileIEnd( frfile );
-    XLALDestroyCalData( caldata );
-    XLAL_ERROR_NULL( XLAL_EFUNC );
-  }
-
-  FrFileIEnd( frfile );
-  return caldata;
-}
-
-
-int XLALFrameWrite(FrameH *frame, const char *fname, int compressLevel)
-{
-  FrFile *frfile;
-  char tmpfname[FILENAME_MAX];
-  int c;
-
-  /* set temporary filename */
-  c = snprintf( tmpfname, sizeof( tmpfname ), "%s.tmp", fname );
-  if ( c < 0 || c > (int)sizeof(tmpfname) - 2 )
-    XLAL_ERROR( XLAL_ENAME );
-
-  /* open temporary file */
-  frfile = FrFileONew( tmpfname, compressLevel );
-  if ( !frfile )
-    XLAL_ERROR( XLAL_EIO );
-
-  /* write frame to temporary filename */
-  FrameWrite( frame, frfile );
-  FrFileOEnd( frfile );
-
-  /* rename tmpfile */
-  if (rename(tmpfname, fname) < 0)
-    XLAL_ERROR( XLAL_ESYS );
-
-  return 0;
-}

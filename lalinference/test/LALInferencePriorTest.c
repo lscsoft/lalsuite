@@ -42,8 +42,6 @@ REAL8 ASinOmegaTPrior(LALInferenceRunState *runState, LALInferenceVariables *par
 
 int main(void)
 {
-	lalDebugLevel |= LALERROR;
-	lalDebugLevel |= LALWARNING;
 	int failureCount = 0;
 
 	failureCount += computePriorMassNormTest();

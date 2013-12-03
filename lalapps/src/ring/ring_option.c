@@ -64,7 +64,6 @@ int ring_parse_options( struct ring_params *params, int argc, char **argv )
     { "gps-end-time-ns",         required_argument, 0, 'B' },
     { "channel-name",            required_argument, 0, 'c' },
     { "calibration-cache",       required_argument, 0, 'C' },
-    { "debug-level",             required_argument, 0, 'd' },
     { "frame-cache",             required_argument, 0, 'D' },
     { "cutoff-frequency",        required_argument, 0, 'e' },
     { "highpass-frequency",      required_argument, 0, 'E' },
@@ -138,9 +137,6 @@ int ring_parse_options( struct ring_params *params, int argc, char **argv )
         break;
       case 'C': /* calibration-cache */
         localparams.calibCache = optarg;
-        break;
-      case 'd': /* debug-level */
-        set_debug_level( optarg );
         break;
       case 'D': /* frame-cache */
         localparams.dataCache = optarg;
@@ -560,7 +556,6 @@ static int ring_usage( const char *program )
   fprintf( stderr, "--help                     print this message\n" );
   fprintf( stderr, "--version                  print the version of the code\n" );
   fprintf( stderr, "--verbose                  print verbose messages while running\n" );
-  fprintf( stderr, "--debug-level=dbglvl       set the LAL debug level\n" );
 
   fprintf( stderr, "\ndata reading options:\n" );
   fprintf( stderr, "--frame-cache=cachefile    name of the frame cache file\n" );

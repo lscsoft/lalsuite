@@ -39,8 +39,8 @@
 #include <lal/AVFactories.h>
 #include <lal/Date.h>
 #include <lal/DetectorSite.h>
-#include <lal/FrameCache.h>
-#include <lal/FrameStream.h>
+#include <lal/LALCache.h>
+#include <lal/LALFrStream.h>
 #include <lal/LALConstants.h>
 #include <lal/LALDatatypes.h>
 #include <lal/LALStatusMacros.h>
@@ -81,8 +81,8 @@ INT4 main()
   LALStatus status;
   
   /* frame variables */
-  FrCache *frCache;
-  FrStream *frStream;
+  LALCache *frCache;
+  LALFrStream *frStream;
   FrChanIn frChanIn;
  
  /* input data segment */
@@ -97,8 +97,6 @@ INT4 main()
   status.statusPtr = NULL;
 
   lal_errhandler = LAL_ERR_EXIT;
-  set_debug_level( "1" );
-
   
    /* initialize gps time structure */  
   gpsStartTime.gpsSeconds = startTime;
@@ -125,11 +123,11 @@ INT4 main()
   fprintf(stdout, "Opening frame cache...\n");
   frCache=NULL;
   frStream=NULL;
-  LAL_CALL( LALFrCacheImport( &status, &frCache, frameCache), &status );
+  frCache = XLALCacheImport( frameCache );
   LAL_CALL( LALFrCacheOpen( &status, &frStream, frCache), &status );
 
    /* set the mode of the frame stream to fail on gaps or time errors */
-  frStream->mode = LAL_FR_VERBOSE_MODE;
+  frStream->mode = LAL_FR_STREAM_VERBOSE_MODE;
                 
   /* read data */	
   fprintf(stdout, "Reading in channel \"%s\"...\n", frChanIn.name); 

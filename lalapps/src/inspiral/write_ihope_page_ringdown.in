@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!@PYTHONPROG@
 
 # $Id$
 """
@@ -636,10 +636,10 @@ def write_summary(page,opts,thisSearch='playground',injection = 'allinj',
   section = 'inspmissed'
   sections.append(section)
   htmlAndPlot.append(section)
-  titles[section] = "Found and missed plots (second stage) and the 10 closest missed injections (CAT2 and CAT3 vetoes applied and CBC hardware injections removed)."
-  tags[section] = '*ligolw_cbc_plotfm_fm_injdist_v_injmchirp_ALLINJ*CAT_4*'
+  titles[section] = "Found and missed plots and the 10 closest missed injections (CAT2, CAT3, and CAT3 vetoes applied and CBC hardware injections removed)."
+  tags[section] = '*ligolw_cbc_plotfm_fm_injdist_plots_imr_ALLINJ*CAT_4*'
   htmltags[section] = '*'+injection.upper()+'_CAT_4_VETO_CLOSEST_MISSED_INJECTIONS_SUMMARY*'
-  imagetags[section] = ['cbc_plotfm_fm_injdist_v_injmchirp']
+  imagetags[section] = ['cbc_plotfm_fm_injdist_plots_imr']
   captions[section] = 'Found and missed injections. Stars are injections found with zero combined far; circles are injections found with non-zero combined far (their color corresponds to their far). Red crosses are missed injections; vetoed injections are excluded. The decisive distance is the second smallest effective distance. The table below shows the 10 closest missed injections (i.e., the 10 closest red crosses). For a table of the non-zero FAR injections (the colored circles), please go to the "All Injections Combined" section and click on "Loudest injections that are not louder than the loudest slide."'
   comments[section] = None
   configs[section] = None
@@ -1313,7 +1313,6 @@ def write_analysis(page, opts, thisSearch='playground',pipedown='pipedown'):
   configs[section] = None
   images_dirs[section] = PDdir
 
-
   section = 'printlcsl4'
   sections.append(section)
   htmlOnly.append(section)
@@ -1334,7 +1333,7 @@ def write_analysis(page, opts, thisSearch='playground',pipedown='pipedown'):
 # ***************************************************************************
 def write_summaryFiles(page, opts):
   """
-  Creates a section to provide the relevant summary files such as COIRE_SUMMARY
+  Creates a section to provide the relevant summary files such as COINCRINGREAD_SUMMARY
   files
 
   @param page: the HTML document page.
@@ -1356,7 +1355,7 @@ def write_summaryFiles(page, opts):
     for this in injections: 
       directories.append(this[0])
 
-  page.add("This section provides a list of COIRE and SIRE summary files.<br/>")
+  page.add("This section provides a list of COINCRINGREAD summary files.<br/>")
 
   for thisSearch in directories:
     page.add('<h1>' + thisSearch  +' section</h1>')
@@ -1365,42 +1364,11 @@ def write_summaryFiles(page, opts):
 
     path = opts.physdir + "/" + thisSearch
     mkdir(path)
-    # link all the RING text files
-    page = heading(page, "Final SIRE Summary files ")
+
     prefix = opts.datadir + thisSearch + '/'
     ifos = get_ifos()
-    for ifo in ifos:
-      if 'inj' in thisSearch:
-        fname = ifo + '-SIRE_INJECTIONS*SUMMARY_FIRST_' + thisSearch.upper() \
-            + opts.txt_suffix     
-      else:
-        fname = ifo + '-SIRE_SUMMARY_FIRST_' + thisSearch.upper() \
-            + opts.txt_suffix     
-      page.add( "<p>SIRE Summary file for "+ifo+".</p>")
-      flist = glob.glob(prefix + fname)
-      if len(flist) == 1: 
-        file = open(flist[0], "r")
-        text = file.read()
-        file.close()
-        page.add("<pre>"+fname+"<br/>"+text+"</pre>")
-      else:
-        page.add('<pre>Could not find '+fname+'</pre>')
 
-    # copy all SUMMARY SIRE file 
-    try:
-      dest = path + "/sire"
-      mkdir(dest)
-      src = opts.datadir+thisSearch+'/'+"*SIRE*SUMMARY*xml* " 
-      if opts.no_copy is False:
-        command = 'cp ' +src +' ' + dest
-        make_external_call(command, opts.debug, opts.debug, True)   
-      page.add("All SIRE files are available in sire directory")
-      page = add_href(page, href= webdir +thisSearch+"/sire", name="here")
-    except: 
-      page.add("<pre>Problem while copying the sire summary files.</pre>")
-    page.div.close()
-
-    # link and copy all the SUMMARY COIRE text files
+    # link and copy all the SUMMARY COINCRINGREAD text files
     
     if 'inj' in thisSearch:
       page = heading(page, "Final COINCRINGREAD Summary files ")
@@ -1435,7 +1403,7 @@ def write_summaryFiles(page, opts):
 
     if thisSearch == "full_data" or thisSearch == "playground":
       if thisSearch == "playground" or opts.full_data:
-        page = heading(page, "Final COIRE zero lag files")
+        page = heading(page, "Final COINCRINGREAD zero lag files")
         for ifostring in get_ifo_coinc():
           if len(ifostring)>2:
             fnames = []
@@ -1678,140 +1646,140 @@ def write_injection(page, opts,injection,pipedown='pipedown'):
 
   section = 'pipedowninjparams1'
   sections.append(section)
-  titles[section] = "Injection Parameters: distance vs mchirp (Pipedown, CAT2 and CAT3 vetoes applied)"
-  tags[section] = '*ligolw_cbc_plotfm_fm_injmass2_v_injmass1_imr*'+injection.upper()+'_CAT_3_VETO*'
-  imagetags[section] = ['ligolw_cbc_plotfm_fm_injmass2_v_injmass1_imr']
-  captions[section] = 'Injected mass2 vs injected mass1 of "found" and "missed" IMR injections. Stars are injections found with zero combined far; circles are injections found with non-zero combined far. Red crosses are missed injections (vetoed injections are excluded).'
+  titles[section] = "IMR Injection Parameters (Pipedown, CAT2 and CAT3 vetoes applied)"
+  tags[section] = '*ligolw_cbc_plotfm_fm_injected_params_imr*'+injection.upper()+'_CAT_3_VETO*'
+  imagetags[section] = ['ligolw_cbc_plotfm_fm_injected_params_imr*F1*']
+  captions[section] = 'Stars are injections found with zero combined far; circles are injections found with non-zero combined far. Red crosses are missed injections (vetoed injections are excluded).'
   comments[section] = None
   configs[section] = None
   images_dirs[section] = PDdir
 
   section = 'pipedowninjparams2'
   sections.append(section)
-  titles[section] = "Injection Parameters: spin1z vs spin2z (Pipedown, CAT2 and CAT3 vetoes applied)"
-  tags[section] = '*ligolw_cbc_plotfm_fm_injspin2z_v_injspin1z_imr*'+injection.upper()+'_CAT_3_VETO*'
-  imagetags[section] = ['ligolw_cbc_plotfm_fm_injspin1z_v_injspin1z_imr']
-  captions[section] = 'Injected spin2z vs injected spin1z of "found" and "missed" IMR injections. Stars are injections found with zero combined far; circles are injections found with non-zero combined far. Red crosses are missed injections (vetoed injections are excluded).'
+  titles[section] = "Linear Ringdown Injection Parameters (Pipedown, CAT2 and CAT3 vetoes applied)"
+  tags[section] = '*ligolw_cbc_plotfm_fm_lin_injected_params_ringdown*'+injection.upper()+'_CAT_3_VETO*'
+  imagetags[section] = ['ligolw_cbc_plotfm_fm_lin_injected_params_ringdown*F1*']
+  captions[section] = 'Stars are injections found with zero combined far; circles are injections found with non-zero combined far. Red crosses are missed injections (vetoed injections are excluded).'
   comments[section] = None
   configs[section] = None
   images_dirs[section] = PDdir
 
-  section = 'pipedownrecparams1'
+  section = 'pipedowninjparams3'
   sections.append(section)
-  titles[section] = "Recovered Parameters: quality vs frequency (Pipedown, CAT2 and CAT3 vetoes applied)"
-  tags[section] = '*ligolw_cbc_plotfm_fm_recqual_v_recfreq_ringdown*'+injection.upper()+'_CAT_3_VETO*'
-  imagetags[section] = ['ligolw_cbc_plotfm_fm_recqual_v_recfreq_ringdown']
-  captions[section] = 'Recovered quality versus recovered frequency of "found" IMR and Ringdown injections. Stars are injections found with zero combined far; circles are injections found with non-zero combined far.'
+  titles[section] = "Logarithmic Ringdown Injection Parameters (Pipedown, CAT2 and CAT3 vetoes applied)"
+  tags[section] = '*ligolw_cbc_plotfm_fm_log_injected_params_ringdown*'+injection.upper()+'_CAT_3_VETO*'
+  imagetags[section] = ['ligolw_cbc_plotfm_fm_log_injected_params_ringdown*F1*']
+  captions[section] = 'Stars are injections found with zero combined far; circles are injections found with non-zero combined far. Red crosses are missed injections (vetoed injections are excluded).'
   comments[section] = None
   configs[section] = None
   images_dirs[section] = PDdir
 
-  section = 'pipedowninjvrec1'
+  section = 'pipedowndetvinj1'
   sections.append(section)
-  titles[section] = "Injected vs Recovered: frequency (Pipedown, CAT2 and CAT3 vetoes applied)"
-  tags[section] = '*ligolw_cbc_plotfm_fm_injfreq_v_recfreq_ringdown*'+injection.upper()+'_CAT_3_VETO*'
-  imagetags[section] = ['ligolw_cbc_plotfm_fm_injfreq_v_recfreq_ringdown']
-  captions[section] = 'Injected frequency vs recovered frequency of "found" injections. Stars are injections found with zero combined far; circles are injections found with non-zero combined far.'
+  titles[section] = "Linear Detected vs Injected IMR Injection Parameters (Pipedown, CAT2 and CAT3 vetoes applied)"
+  tags[section] = '*ligolw_cbc_plotfm_fm_lin_detected_vs_injected_imr*'+injection.upper()+'_CAT_3_VETO*'
+  imagetags[section] = ['ligolw_cbc_plotfm_fm_lin_detected_vs_injected_imr*F1*']
+  captions[section] = 'Stars are injections found with zero combined far; circles are injections found with non-zero combined far.'
   comments[section] = None
   configs[section] = None
   images_dirs[section] = PDdir
 
-  section = 'pipedowninjvrec2'
+  section = 'pipedowndetvinj2'
   sections.append(section)
-  titles[section] = "Injected vs Recovered: quality (Pipedown, CAT2 and CAT3 vetoes applied)"
-  tags[section] = '*ligolw_cbc_plotfm_fm_injqual_v_recqual_ringdown*'+injection.upper()+'_CAT_3_VETO*'
-  imagetags[section] = ['ligolw_cbc_plotfm_fm_injqual_v_recqual_ringdown']
-  captions[section] = 'Injected quality vs recovered quality of "found" injections. Stars are injections found with zero combined far; circles are injections found with non-zero combined far.'
+  titles[section] = "Logarithmic Detected vs Injected IMR Injection Parameters (Pipedown, CAT2 and CAT3 vetoes applied)"
+  tags[section] = '*ligolw_cbc_plotfm_fm_log_detected_vs_injected_imr*'+injection.upper()+'_CAT_3_VETO*'
+  imagetags[section] = ['ligolw_cbc_plotfm_fm_log_detected_vs_injected_imr*F1*']
+  captions[section] = 'Stars are injections found with zero combined far; circles are injections found with non-zero combined far.'
   comments[section] = None
   configs[section] = None
   images_dirs[section] = PDdir
 
-  section = 'pipedowninjvrec3'
+  section = 'pipedowndetvinj3'
   sections.append(section)
-  titles[section] = "Injected vs Recovered: mass (Pipedown, CAT2 and CAT3 vetoes applied)"
-  tags[section] = '*ligolw_cbc_plotfm_fm_injmass_v_recmass_ringdown*'+injection.upper()+'_CAT_3_VETO*'
-  imagetags[section] = ['ligolw_cbc_plotfm_fm_injmass_v_recmass_ringdown']
-  captions[section] = 'Injected mass vs recovered mass of "found" injections. Stars are injections found with zero combined far; circles are injections found with non-zero combined far.'
+  titles[section] = "Linear Detected vs Injected Ringdown Parameters (Pipedown, CAT2 and CAT3 vetoes applied)"
+  tags[section] = '*ligolw_cbc_plotfm_fm_lin_detected_vs_injected_ringdown*'+injection.upper()+'_CAT_3_VETO*'
+  imagetags[section] = ['ligolw_cbc_plotfm_fm_lin_detected_vs_injected_ringdown*F1*']
+  captions[section] = 'Stars are injections found with zero combined far; circles are injections found with non-zero combined far.'
   comments[section] = None
   configs[section] = None
   images_dirs[section] = PDdir
 
-  section = 'pipedowninjvrec4'
+  section = 'pipedowndetvinj4'
   sections.append(section)
-  titles[section] = "Injected vs Recovered: spin (Pipedown, CAT2 and CAT3 vetoes applied)"
-  tags[section] = '*ligolw_cbc_plotfm_fm_injspin_v_recspin_ringdown*'+injection.upper()+'_CAT_3_VETO*'
-  imagetags[section] = ['ligolw_cbc_plotfm_fm_injmass_v_recmass_ringdown']
-  captions[section] = 'Injected mass vs recovered mass of "found" injections. Stars are injections found with zero combined far; circles are injections found with non-zero combined far.'
+  titles[section] = "Logarithmic Detected vs Injected Ringdown Parameters (Pipedown, CAT2 and CAT3 vetoes applied)"
+  tags[section] = '*ligolw_cbc_plotfm_fm_log_detected_vs_injected_ringdown*'+injection.upper()+'_CAT_3_VETO*'
+  imagetags[section] = ['ligolw_cbc_plotfm_fm_log_detected_vs_injected_ringdown*F1*']
+  captions[section] = 'Stars are injections found with zero combined far; circles are injections found with non-zero combined far.'
+  comments[section] = None
+  configs[section] = None
+  images_dirs[section] = PDdir
+
+  section = 'pipedowndetvinj5'
+  sections.append(section)
+  titles[section] = "Loglog Detected vs Injected Ringdown Parameters (Pipedown, CAT2 and CAT3 vetoes applied)"
+  tags[section] = '*ligolw_cbc_plotfm_fm_loglog_detected_vs_injected_ringdown*'+injection.upper()+'_CAT_3_VETO*'
+  imagetags[section] = ['ligolw_cbc_plotfm_fm_loglog_detected_vs_injected_ringdown*F1*']
+  captions[section] = 'Stars are injections found with zero combined far; circles are injections found with non-zero combined far.'
   comments[section] = None
   configs[section] = None
   images_dirs[section] = PDdir
 
   section = 'pipedownacc1'
   sections.append(section)
-  titles[section] = "Accuracies: dt vs mchirp (Pipedown, CAT2 and CAT3 vetoes applied)"
-  tags[section] = '*ligolw_cbc_plotfm_fm_dt_v_injmchirp_imr*'+injection.upper()+'_CAT_3_VETO*'
-  imagetags[section] = ['ligolw_cbc_plotfm_fm_dt_v_injmchirp']
-  captions[section] = 'Difference between recovered start times and injected end(start) times vs injected chirp mass for imr injections. Stars are triggers with zero combined far, circles are triggers with non-zero far.'
+  titles[section] = "Linear IMR Parameter Accuracy (Pipedown, CAT2 and CAT3 vetoes applied)"
+  tags[section] = '*ligolw_cbc_plotfm_fm_lin_accuracy_plots_imr*'+injection.upper()+'_CAT_3_VETO*'
+  imagetags[section] = ['ligolw_cbc_plotfm_fm_lin_accuracy_plots_imr*F2*']
+  captions[section] = 'Stars are injections found with zero combined far; circles are injections found with non-zero combined far.'
   comments[section] = None
   configs[section] = None
   images_dirs[section] = PDdir
 
   section = 'pipedownacc2'
   sections.append(section)
-  titles[section] = "Accuracies: dt vs dist (Pipedown, CAT2 and CAT3 vetoes applied)"
-  tags[section] = '*ligolw_cbc_plotfm_fm_dt_v_injdist_ringdown*'+injection.upper()+'_CAT_3_VETO*'
-  imagetags[section] = ['ligolw_cbc_plotfm_fm_dt_v_injdist_ringdown']
-  captions[section] = 'Difference between recovered start times and injected end(start) times vs injected decisive distance. Stars are triggers with zero combined far, circles are triggers with non-zero far. The decisive distance is the second smallest effective distance.'
+  titles[section] = "Linear Ringdown Parameter Accuracy (Pipedown, CAT2 and CAT3 vetoes applied)"
+  tags[section] = '*ligolw_cbc_plotfm_fm_lin_accuracy_plots_ringdown*'+injection.upper()+'_CAT_3_VETO*'
+  imagetags[section] = ['ligolw_cbc_plotfm_fm_lin_accuracy_plots_ringdown*F4*']
+  captions[section] = 'Stars are injections found with zero combined far; circles are injections found with non-zero combined far.'
   comments[section] = None
   configs[section] = None
   images_dirs[section] = PDdir
 
   section = 'pipedownacc3'
   sections.append(section)
-  titles[section] = "Accuracies: frequency (Pipedown, CAT2 and CAT3 vetoes applied)"
-  tags[section] = '*ligolw_cbc_plotfm_fm_lin_plots_ringdown*'+injection.upper()+'_CAT_3_VETO*'
-  imagetags[section] = ['ligolw_cbc_plotfm_fm_lin_plots_ringdown']
-  captions[section] = 'Fractional frequency differences versus frequency. Stars are triggers with zero combined far, circles are triggers with non-zero far.'
+  titles[section] = "Ringdown Frequency Parameter Accuracy (Pipedown, CAT2 and CAT3 vetoes applied)"
+  tags[section] = '*ligolw_cbc_plotfm_fm_freq_accuracy_plots_ringdown*'+injection.upper()+'_CAT_3_VETO*'
+  imagetags[section] = ['ligolw_cbc_plotfm_fm_freq_accuracy_plots_ringdown*F1*']
+  captions[section] = 'Stars are injections found with zero combined far; circles are injections found with non-zero combined far.'
   comments[section] = None
   configs[section] = None
   images_dirs[section] = PDdir
 
   section = 'pipedownfm1'
   sections.append(section)
-  titles[section] = "Found and missed plots I: gps time (Pipedown, CAT2 and CAT3 vetoes applied)"
-  tags[section] = '*ligolw_cbc_plotfm_fm_injdist_v_gps_time_ringdown*'+injection.upper()+'_CAT_3_VETO*'
-  imagetags[section] = ['ligolw_cbc_plotfm_fm_injdist_v_gps_time_ringdown']
-  captions[section] = 'Found and missed injections: injected decisive distance vs. injected gps time. Stars are injections found with zero combined far; circles are injections found with non-zero combined far. Red crosses are missed injections (vetoed injections are excluded). The decisive distance is the second smallest effective distance.'
+  titles[section] = "Found and Missed Plots I: IMR Parameters (Pipedown, CAT2 and CAT3 vetoes applied)"
+  tags[section] = '*ligolw_cbc_plotfm_fm_injdist_plots_imr*'+injection.upper()+'_CAT_3_VETO*'
+  imagetags[section] = ['ligolw_cbc_plotfm_fm_injdist_plots_imr*F3*']
+  captions[section] = 'Stars are injections found with zero combined far; circles are injections found with non-zero combined far. Red crosses are missed injections (vetoed injections are excluded). The decisive distance is the second smallest effective distance.'
   comments[section] = None
   configs[section] = None
   images_dirs[section] = PDdir
 
   section = 'pipedownfm2'
   sections.append(section)
-  titles[section] = "Found and missed plots II: mchirp (Pipedown, CAT2 and CAT3 vetoes applied)"
-  tags[section] = '*ligolw_cbc_plotfm_fm_injdist_v_injmchirp_imr*'+injection.upper()+'_CAT_3_VETO*'
-  imagetags[section] = ['ligolw_cbc_plotfm_fm_injdist_v_injmchirp_imr']
-  captions[section] = 'Found and missed injections: injected decisive distance vs. injected mchirp for IMR injections. Stars are injections found with zero combined far; circles are injections found with non-zero combined far. Red crosses are missed injections (vetoed injections are excluded). The decisive distance is the second smallest effective distance.'
+  titles[section] = "Found and Missed Plots II: Ringdown Parameters (Pipedown, CAT2 and CAT3 vetoes applied)"
+  tags[section] = '*ligolw_cbc_plotfm_fm_log_injdist_plots_ringdown*'+injection.upper()+'_CAT_3_VETO*'
+  imagetags[section] = ['ligolw_cbc_plotfm_fm_log_injdist_plots_ringdown*F1*']
+  captions[section] = 'Stars are injections found with zero combined far; circles are injections found with non-zero combined far. Red crosses are missed injections (vetoed injections are excluded). The decisive distance is the second smallest effective distance.'
   comments[section] = None
   configs[section] = None
   images_dirs[section] = PDdir
 
   section = 'pipedownfm3'
   sections.append(section)
-  titles[section] = "Found and missed plots III: frequency (Pipedown, CAT2 and CAT3 vetoes applied)"
-  tags[section] = '*ligolw_cbc_plotfm_fm_injdist_v_injfreq_ringdown*'+injection.upper()+'_CAT_3_VETO*'
-  imagetags[section] = ['ligolw_cbc_plotfm_fm_injdist_v_injfreq_ringdown']
-  captions[section] = 'Found and missed injections: injected decisive distance vs. injected frequency. Stars are injections found with zero combined far; circles are injections found with non-zero combined far. Red crosses are missed injections (vetoed injections are excluded). The decisive distance is the second smallest effective distance.'
-  comments[section] = None
-  configs[section] = None
-  images_dirs[section] = PDdir
-
-  section = 'pipedownfm4'
-  sections.append(section)
-  titles[section] = "Found and missed plots IV: mass (Pipedown, CAT2 and CAT3 vetoes applied)"
-  tags[section] = '*ligolw_cbc_plotfm_fm_injdist_v_injmass_ringdown*'+injection.upper()+'_CAT_3_VETO*'
-  imagetags[section] = ['ligolw_cbc_plotfm_fm_injdist_v_injmass_ringdown']
-  captions[section] = 'Found and missed injections: injected decisive distance vs. injected. Stars are injections found with zero combined far; circles are injections found with non-zero combined far. Red crosses are missed injections (vetoed injections are excluded). The decisive distance is the second smallest effective distance.'
+  titles[section] = "Found and Missed Plots III: Loglog Ringdown Parameters (Pipedown, CAT2 and CAT3 vetoes applied)"
+  tags[section] = '*ligolw_cbc_plotfm_fm_loglog_injdist_plots_ringdown*'+injection.upper()+'_CAT_3_VETO*'
+  imagetags[section] = ['ligolw_cbc_plotfm_fm_loglog_injdist_plots_ringdown*F1*']
+  captions[section] = 'Stars are injections found with zero combined far; circles are injections found with non-zero combined far. Red crosses are missed injections (vetoed injections are excluded). The decisive distance is the second smallest effective distance.'
   comments[section] = None
   configs[section] = None
   images_dirs[section] = PDdir
@@ -2516,7 +2484,7 @@ def html_and_plot(page, opts, cachefile_tag=None,\
   cachefileList.sort()
   for file in cachefileList: 
     ifo = None
-    for combo in ['H1','L1','V1','H1L1','H1V1','L1V1','H1L1V1']:
+    for combo in ['H1','H2','L1','V1','H1L1','H1H2','H2L1','H2V1','H1V1','L1V1','H1L1V1','H1H2L1','H2L1V1','H1H2V1','H1H2L1V1']:
       if os.path.basename(file).startswith(combo):
         ifo = combo
     if ifo:
@@ -2527,7 +2495,7 @@ def html_and_plot(page, opts, cachefile_tag=None,\
 
   for file in htmlfileList:
     ifo = None
-    for combo in ['H1','L1','V1','H1L1','H1V1','L1V1','H1L1V1']:
+    for combo in ['H1','H2','L1','V1','H1L1','H1H2','H2L1','H2V1','H1V1','L1V1','H1L1V1','H1H2L1','H2L1V1','H1H2V1','H1H2L1V1']:
       if os.path.basename(file).startswith(combo):
         ifo = combo
     if ifo:
@@ -2635,7 +2603,7 @@ def html_insert(page,opts, html_tag=None,\
     this_count = 0
    # Determine the ifo
     ifo = None
-    for combo in ['H1','L1','V1','H1L1','H1V1','L1V1','H1L1V1']:
+    for combo in ['H1','H2','L1','V1','H1L1','H1H2','H2L1','H2V1','H1V1','L1V1','H1L1V1','H1H2L1','H2L1V1','H1H2V1','H1H2L1V1']:
       if os.path.basename(htmlfile).startswith(combo):
         ifo = combo
     if ifo and not all_ifos:
@@ -2939,7 +2907,7 @@ mainpage.div(id_='header')
 mainpage.add('<h1>' + title  +' </h1>')
 leads = 'Lead: ' + Lead + '&nbsp;&nbsp&nbsp Second: '+ Second
 mainpage.add('<h3> ' + leads + ' </h3>')
-mainpage.add('<h3>' + Notes + ' </h3')
+mainpage.add('<h3>' + Notes + ' </h3>')
 mainpage.div.close()
 mainpage.div(id_='iframecontent')
 mainpage.add('<p id="placeholder">Please select a report section on the left.</p>')

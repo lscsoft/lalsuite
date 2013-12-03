@@ -17,7 +17,6 @@
 *  MA  02111-1307  USA
 */
 
-#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <math.h>
 #include <stdlib.h>
 #include <gsl/gsl_matrix.h>
@@ -41,60 +40,60 @@ static const PulsarTimesParamStruc empty_PulsarTimesParamStruc;
 /* A private factorial function */
 /* static int factrl( int ); */
 
-/** \author Jones D. I., Owen, B. J., and Whitbeck, D. M.
+/**
+ * \author Jones D. I., Owen, B. J., and Whitbeck, D. M.
  * \date 2001-2005
  * \brief Computes metric components for a pulsar search in the ``Ptolemaic''
  * approximation; both the Earth's spin and orbit are included.
  *
+ * ### Description ###
  *
- \heading{Description}
-
- This function computes metric components in a way that yields results
- very similar to those of LALCoherentMetric() called with the
- output of LALTBaryPtolemaic(). The CPU demand, however, is less,
- and the metric components can be expressed analytically, lending
- themselves to better understanding of the behavior of the parameter
- space.  For short durations (less than about 70000 seconds or 20 hours) a
- Taylor series expansion is used to improve the accuracy with which several
- terms are computed.
-
- \heading{Algorithm}
-
- For speed and checking reasons, a minimum of numerical computation is
- involved. The metric components can be expressed analytically (though not
- tidily) in terms of trig functions and are much too large to be worth
- writing down here.  More comprehensive documentation on the derivation of
- the metric components can be found in the pulgroup CVS archive as
- docs/S2/FDS/Isolated/ptolemetric.tex.  Jones, Owen, and Whitbeck will write
- up the calculation and some tests as a journal article.
-
- The function LALGetEarthTimes() is used to calculate the spin and
- rotational phase of the Earth at the beginning of the observation.
-
- On output, the \a metric->data is arranged with the same indexing
- scheme as in LALCoherentMetric(). The order of the parameters is
- \f$(f_0, \alpha, \delta)\f$.
-
- \heading{Notes}
-
- The analytic metric components were derived separately by Jones and
- Whitbeck (and partly by Owen) and found to agree.  Also, the output of this
- function has been compared against that of the function combination
- (CoherentMetric + TDBaryPtolemaic), which is a numerical implementation of
- the Ptolemaic approximation, and found to agree up to the fourth
- significant figure or better.  Even using DTEphemeris.c for the true
- Earth's orbit only causes errors in the metric components of order 10\%,
- with (so far) no noticeable effect on the sky coverage.
-
- At present, only one spindown parameter can be included with the sky
- location.  The code contains (commented out) expressions for
- spindown-spindown metric components for an arbitrary number of spindowns,
- but the (commented out) spindown-sky components neglect orbital motion.
-
- A separate routine, XLALSpindownMetric(), has been added to compute the
- metric for multiple spindowns but for fixed sky position, suitable for
- e.g. directed searches.
-*/
+ * This function computes metric components in a way that yields results
+ * very similar to those of LALCoherentMetric() called with the
+ * output of LALTBaryPtolemaic(). The CPU demand, however, is less,
+ * and the metric components can be expressed analytically, lending
+ * themselves to better understanding of the behavior of the parameter
+ * space.  For short durations (less than about 70000 seconds or 20 hours) a
+ * Taylor series expansion is used to improve the accuracy with which several
+ * terms are computed.
+ *
+ * ### Algorithm ###
+ *
+ * For speed and checking reasons, a minimum of numerical computation is
+ * involved. The metric components can be expressed analytically (though not
+ * tidily) in terms of trig functions and are much too large to be worth
+ * writing down here.  More comprehensive documentation on the derivation of
+ * the metric components can be found in the pulgroup CVS archive as
+ * docs/S2/FDS/Isolated/ptolemetric.tex.  Jones, Owen, and Whitbeck will write
+ * up the calculation and some tests as a journal article.
+ *
+ * The function LALGetEarthTimes() is used to calculate the spin and
+ * rotational phase of the Earth at the beginning of the observation.
+ *
+ * On output, the \a metric->data is arranged with the same indexing
+ * scheme as in LALCoherentMetric(). The order of the parameters is
+ * \f$(f_0, \alpha, \delta)\f$.
+ *
+ * ### Notes ###
+ *
+ * The analytic metric components were derived separately by Jones and
+ * Whitbeck (and partly by Owen) and found to agree.  Also, the output of this
+ * function has been compared against that of the function combination
+ * (CoherentMetric + TDBaryPtolemaic), which is a numerical implementation of
+ * the Ptolemaic approximation, and found to agree up to the fourth
+ * significant figure or better.  Even using DTEphemeris.c for the true
+ * Earth's orbit only causes errors in the metric components of order 10\%,
+ * with (so far) no noticeable effect on the sky coverage.
+ *
+ * At present, only one spindown parameter can be included with the sky
+ * location.  The code contains (commented out) expressions for
+ * spindown-spindown metric components for an arbitrary number of spindowns,
+ * but the (commented out) spindown-sky components neglect orbital motion.
+ *
+ * A separate routine, XLALSpindownMetric(), has been added to compute the
+ * metric for multiple spindowns but for fixed sky position, suitable for
+ * e.g. directed searches.
+ */
 void LALPtoleMetric( LALStatus *status,
                      REAL8Vector *metric,
                      PtoleMetricIn *input )
@@ -114,7 +113,7 @@ void LALPtoleMetric( LALStatus *status,
   REAL8 cos_d, sin_d, sin_2d;  /* Trig fns for source declination */
   REAL8 A[22];     /* Array of intermediate quantities */
   REAL8 B[10];     /* Array of intermediate quantities */
-  REAL8 I[5];      /* Array of integrals needed for spindown.*/
+  REAL8 Is[5];      /* Array of integrals needed for spindown.*/
   UINT2 dim;         /* Dimension of parameter space */
   PulsarTimesParamStruc zero_phases; /* Needed to calculate phases of spin*/
   /* and orbit at t_gps =0             */
@@ -409,17 +408,17 @@ void LALPtoleMetric( LALStatus *status,
 
   /* orbital t^2 cos */
 
-  I[1] = (2*sin(phi_o_i) + 2*omega_o*T*cos_p_o + (-2 + pow(omega_o*T,2))*sin_p_o)/pow(omega_o*T,3);
+  Is[1] = (2*sin(phi_o_i) + 2*omega_o*T*cos_p_o + (-2 + pow(omega_o*T,2))*sin_p_o)/pow(omega_o*T,3);
 
   /* spin t^2 cos */
-  I[2] = (2*sin(phi_s_i) + 2*omega_s*T*cos_p_s + (-2 + pow(omega_s*T,2))*sin_p_s)/pow(omega_s*T,3);
+  Is[2] = (2*sin(phi_s_i) + 2*omega_s*T*cos_p_s + (-2 + pow(omega_s*T,2))*sin_p_s)/pow(omega_s*T,3);
 
   /* orbital t^2 sin */
-  I[3] = (-2*cos(phi_o_i) + 2*omega_o*T*sin_p_o - (-2 + pow(omega_o*T,2))*cos_p_o)/pow(omega_o*T,3);
+  Is[3] = (-2*cos(phi_o_i) + 2*omega_o*T*sin_p_o - (-2 + pow(omega_o*T,2))*cos_p_o)/pow(omega_o*T,3);
 
   /*spin t^2 sin */
 
-  I[4] = (-2*cos(phi_s_i) + 2*omega_s*T*sin_p_s - (-2 + pow(omega_s*T,2))*cos_p_s)/pow(omega_s*T,3);
+  Is[4] = (-2*cos(phi_s_i) + 2*omega_s*T*sin_p_s - (-2 + pow(omega_s*T,2))*cos_p_s)/pow(omega_s*T,3);
 
 
 
@@ -479,10 +478,10 @@ void LALPtoleMetric( LALStatus *status,
       T*pow(LAL_PI*T,2)*f/2;
 
     /* g_a1 = */
-    big_metric->data[12] = T*2*pow(LAL_PI*f,2)*T*(-cos_d*sin_a*(R_o*I[1] + R_s*cos_l*I[2])+ cos_d*cos_a*(R_o*cos_i*I[3] + R_s*cos_l*I[4]));
+    big_metric->data[12] = T*2*pow(LAL_PI*f,2)*T*(-cos_d*sin_a*(R_o*Is[1] + R_s*cos_l*Is[2])+ cos_d*cos_a*(R_o*cos_i*Is[3] + R_s*cos_l*Is[4]));
 
     /* g_d1 = */
-    big_metric->data[13] = T*2*pow(LAL_PI*f,2)*T*(-sin_d*cos_a*(R_o*I[1] + R_s*cos_l*I[2])- sin_d*sin_a*(R_o*cos_i*I[3] + R_s*cos_l*I[4]) + cos_d*(R_o*sin_i*I[3] + R_s*sin_l/3));
+    big_metric->data[13] = T*2*pow(LAL_PI*f,2)*T*(-sin_d*cos_a*(R_o*Is[1] + R_s*cos_l*Is[2])- sin_d*sin_a*(R_o*cos_i*Is[3] + R_s*cos_l*Is[4]) + cos_d*(R_o*sin_i*Is[3] + R_s*sin_l/3));
 
     /* g_11 = */
     big_metric->data[14] = T*T*pow(LAL_PI*f*T,2)/5;
@@ -627,7 +626,8 @@ void LALPtoleMetric( LALStatus *status,
 /* } */ /* factrl() */
 
 
-/** \brief Unified "wrapper" to provide a uniform interface to LALPtoleMetric() and LALCoherentMetric().
+/**
+ * \brief Unified "wrapper" to provide a uniform interface to LALPtoleMetric() and LALCoherentMetric().
  * \author Reinhard Prix
  *
  * The parameter structure of LALPtoleMetric() was used, because it's more compact.
@@ -778,7 +778,8 @@ void LALPulsarMetric ( LALStatus *stat,
 } /* LALPulsarMetric() */
 
 
-/** \brief Figure out dimension of a REAL8Vector -encoded metric (see PMETRIC_INDEX() ).
+/**
+ * \brief Figure out dimension of a REAL8Vector -encoded metric (see PMETRIC_INDEX() ).
  * Return error if input-vector is NULL or not consistent with a quadratic matrix.
  */
 int

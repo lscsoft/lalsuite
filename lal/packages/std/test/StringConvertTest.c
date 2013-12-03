@@ -36,10 +36,14 @@
     gpsOutNS[istring] = ns ;                                     \
     strcpy( gpsOutRemainder[istring], remain );
 
-extern int lalDebugLevel;
+#ifdef __GNUC__
+#define UNUSED __attribute__ ((unused))
+#else
+#define UNUSED
+#endif
 
 int
-main( int argc, char **argv )
+main(int UNUSED argc, char **argv )
 {
   static LALStatus stat;
   CHAR gpsString[MAXGPSSTRINGS][256];
@@ -52,16 +56,6 @@ main( int argc, char **argv )
   INT4 istring, remlength;
   INT4 nfailures = 0;
 
-  lalDebugLevel = 0;
-
-  /*------ Parse input line. ------*/
-  if ( argc == 2 )
-    lalDebugLevel = atoi( argv[1] );
-  else if ( argc != 1 )
-    {
-      fprintf( stderr, "Usage: %s [ lalDebugLevel ]\n", argv[0] );
-      return 0; /* so that test script won't fail */
-    }
 
   /*------ Initialize arrays of example cases and expected outputs ------*/
   for ( istring=0; istring<MAXGPSSTRINGS; istring++ ) {
@@ -206,5 +200,6 @@ main( int argc, char **argv )
     fprintf(stdout,"Summary of GPS string conversion tests: all succeeded\n");
   }
 
+  argc = 0;
   return 0;
 }

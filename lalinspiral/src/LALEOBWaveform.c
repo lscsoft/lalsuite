@@ -19,92 +19,93 @@
 */
 
 /**
-\author Sathyaprakash, B. S., Cokelaer T.
-\file
-\ingroup LALInspiral_h
-
-\brief Module to generate effective-one-body waveforms.
-
-\heading{Prototypes}
-
-<tt>LALEOBWaveform()</tt>
-<ul>
-<li> \c signalvec: Output containing the inspiral waveform.</li>
-<li> \c params: Input containing binary chirp parameters.</li>
-</ul>
-
-
-<tt>LALEOBWaveformTemplates()</tt>
-<ul>
-<li> \c signalvec1: Output containing the 0-phase inspiral waveform.</li>
-<li> \c signalvec2: Output containing the \f$\pi/2\f$-phase inspiral waveform.</li>
-<li> \c params: Input containing binary chirp parameters.</li>
-</ul>
-
-
-<tt>LALEOBWaveformForInjection()</tt>
-<ul>
-<li> \c inject_hc: Output containing the 0-phase inspiral waveform.</li>
-<li> \c inject_hp: Output containing the \f$\pi/2\f$-phase inspiral waveform.</li>
-<li> \c inject_phase: Output containing the phase of inspiral waveform.</li>
-<li> \c inject_freq: Output containing the frequency of inspiral waveform.</li>
-<li> \c params: Input containing binary chirp parameters.</li>
-</ul>
-
-
-\heading{Description}
-By solving four coupled ordinary differential equations in
-Eq.\eqref{eq_3_28}-\eqref{eq_3_31} this module computes the
-waveform in Eq.\eqref{eq_4_1} (see discussion in sec_EOB
-for details on how the initial conditions are chosen, when the
-waveform is terminated and so on).
-No quasi-normal mode oscillations are added to the plunge signal
-so the waveform is terminated around \f$2.8\,M\f$.
-
-\heading{3PN vs 2PN}
-At 3PN, two additional parameters exist namely OmegaS and Zeta2.
-The first parameters should be set to zero. If the  second parameter
-is also set to zero then the waveform correponds to the standard
-waveforms.
-
-\heading{Algorithm}
-A fourth order Runge-Kutta is used to solve the differential equations.
-
-\heading{Uses}
-\code
-   LALInspiralSetup
-   LALInspiralChooseModel
-   LALInspiralVelocity
-   LALInspiralPhasing1
-   LALDBisectionFindRoot
-   LALRungeKutta4
-   LALHCapDerivatives
-   LALHCapDerivatives3PN
-   LALHCapDerivativesP4PN
-   LALlightRingRadius
-   LALlightRingRadius3PN
-   LALlightRingRadiusP4PN
-   LALpphiInit
-   LALpphiInit3PN
-   LALpphiInitP4PN
-   LALprInit
-   LALprInit3PN
-   LALprInitP4PN
-   LALrOfOmega
-   LALrOfOmega3PN
-   LALrOfOmegaP4PN
-\endcode
-
-\heading{Notes}
-The length of the waveform returned by \c LALInspiralWaveLength is
-occassionally smaller than what is required to hold an EOB waveform.
-This is because EOB goes beyond the last stable orbit up to the light
-ring while \c LALInspiralWaveLength assumes that the waveform terminates
-at the last stable orbit. It is recommended that a rather generous
-<tt>params->nEndPad</tt> be used to prevent the code from crashing.
-
-*/
-#define LAL_USE_OLD_COMPLEX_STRUCTS
+ * \author Sathyaprakash, B. S., Cokelaer T.
+ * \file
+ * \ingroup LALInspiral_h
+ *
+ * \brief Module to generate effective-one-body waveforms.
+ *
+ * ### Prototypes ###
+ *
+ * <tt>LALEOBWaveform()</tt>
+ * <ul>
+ * <li> \c signalvec: Output containing the inspiral waveform.</li>
+ * <li> \c params: Input containing binary chirp parameters.</li>
+ * </ul>
+ *
+ * <tt>LALEOBWaveformTemplates()</tt>
+ * <ul>
+ * <li> \c signalvec1: Output containing the 0-phase inspiral waveform.</li>
+ * <li> \c signalvec2: Output containing the \f$\pi/2\f$-phase inspiral waveform.</li>
+ * <li> \c params: Input containing binary chirp parameters.</li>
+ * </ul>
+ *
+ * <tt>LALEOBWaveformForInjection()</tt>
+ * <ul>
+ * <li> \c inject_hc: Output containing the 0-phase inspiral waveform.</li>
+ * <li> \c inject_hp: Output containing the \f$\pi/2\f$-phase inspiral waveform.</li>
+ * <li> \c inject_phase: Output containing the phase of inspiral waveform.</li>
+ * <li> \c inject_freq: Output containing the frequency of inspiral waveform.</li>
+ * <li> \c params: Input containing binary chirp parameters.</li>
+ * </ul>
+ *
+ * ### Description ###
+ *
+ * By solving four coupled ordinary differential equations in
+ * \eqref{eq_3_28}--\eqref{eq_3_31} this module computes the
+ * waveform in \eqref{eq_4_1} (see discussion in sec_EOB
+ * for details on how the initial conditions are chosen, when the
+ * waveform is terminated and so on).
+ * No quasi-normal mode oscillations are added to the plunge signal
+ * so the waveform is terminated around \f$2.8\,M\f$.
+ *
+ * ### 3PN vs 2PN ###
+ *
+ * At 3PN, two additional parameters exist namely OmegaS and Zeta2.
+ * The first parameters should be set to zero. If the  second parameter
+ * is also set to zero then the waveform correponds to the standard
+ * waveforms.
+ *
+ * ### Algorithm ###
+ *
+ * A fourth order Runge-Kutta is used to solve the differential equations.
+ *
+ * ### Uses ###
+ *
+ * \code
+ * LALInspiralSetup
+ * LALInspiralChooseModel
+ * LALInspiralVelocity
+ * LALInspiralPhasing1
+ * LALDBisectionFindRoot
+ * LALRungeKutta4
+ * LALHCapDerivatives
+ * LALHCapDerivatives3PN
+ * LALHCapDerivativesP4PN
+ * LALlightRingRadius
+ * LALlightRingRadius3PN
+ * LALlightRingRadiusP4PN
+ * LALpphiInit
+ * LALpphiInit3PN
+ * LALpphiInitP4PN
+ * LALprInit
+ * LALprInit3PN
+ * LALprInitP4PN
+ * LALrOfOmega
+ * LALrOfOmega3PN
+ * LALrOfOmegaP4PN
+ * \endcode
+ *
+ * ### Notes ###
+ *
+ * The length of the waveform returned by \c LALInspiralWaveLength is
+ * occassionally smaller than what is required to hold an EOB waveform.
+ * This is because EOB goes beyond the last stable orbit up to the light
+ * ring while \c LALInspiralWaveLength assumes that the waveform terminates
+ * at the last stable orbit. It is recommended that a rather generous
+ * <tt>params->nEndPad</tt> be used to prevent the code from crashing.
+ *
+ */
 #include <lal/Units.h>
 #include <lal/LALInspiral.h>
 #include <lal/FindRoot.h>
@@ -117,6 +118,8 @@ at the last stable orbit. It is recommended that a rather generous
 #else
 #define UNUSED
 #endif
+
+#define ninty4by3etc 18.687902694437592603 /* (94/3 -41/31*pi*pi) */
 
 typedef struct tagrOfOmegaIn {
    REAL8 eta, omega;
@@ -975,7 +978,7 @@ LALEOBWaveform (
 
    INITSTATUS(status);
 
-   XLALPrintDeprecationWarning( "LALEOBWaveform", "XLALEOBWaveform" );
+   XLAL_PRINT_DEPRECATION_WARNING("XLALEOBWaveform");
 
    if ( XLALEOBWaveform( signalvec, params ) == XLAL_FAILURE )
    {
@@ -1063,7 +1066,7 @@ LALEOBWaveformTemplates (
 
    INITSTATUS(status);
 
-   XLALPrintDeprecationWarning( "LALEOBWaveformTemplates", "XLALEOBWaveformTemplates" );
+   XLAL_PRINT_DEPRECATION_WARNING("XLALEOBWaveformTemplates");
 
    if ( XLALEOBWaveformTemplates( signalvec1, signalvec2, params ) == XLAL_FAILURE )
    {
@@ -1167,7 +1170,7 @@ LALEOBWaveformForInjection (
 
   INITSTATUS(status);
 
-  XLALPrintDeprecationWarning( "LALEOBWaveformForInjection", "XLALEOBWaveformForInjection" );
+  XLAL_PRINT_DEPRECATION_WARNING("XLALEOBWaveformForInjection");
 
   if ( XLALEOBWaveformForInjection( waveform, params, ppnParams ) == XLAL_FAILURE )
   {
@@ -1649,7 +1652,7 @@ XLALEOBWaveformEngine (
 
      /* If 220 QNM freq. > Nyquist freq., print warning but continue */
      /* Note that we cancelled a factor of 2 occuring on both sides */
-     if ( params->tSampling < modefreqs->data[0].re / LAL_PI )
+     if ( params->tSampling < crealf(modefreqs->data[0]) / LAL_PI )
      {
        XLALPrintWarning( "Ringdown freq. greater than Nyquist freq. "
              "Beware of aliasing! Consider increasing the sample rate.\n" );
@@ -2233,10 +2236,10 @@ XLALEOBWaveformEngine (
      XLAL_ERROR( XLAL_EFUNC );
    }
 
-   y_1 =   MultSphHarmP.re + MultSphHarmM.re;
-   y_2 =   MultSphHarmM.im - MultSphHarmP.im;
-   z1 = - MultSphHarmM.im - MultSphHarmP.im;
-   z2 =   MultSphHarmM.re - MultSphHarmP.re;
+   y_1 =   creal(MultSphHarmP) + creal(MultSphHarmM);
+   y_2 =   cimag(MultSphHarmM) - cimag(MultSphHarmP);
+   z1 = - cimag(MultSphHarmM) - cimag(MultSphHarmP);
+   z2 =   creal(MultSphHarmM) - creal(MultSphHarmP);
 
 #if 0
    sprintf(message, "MultSphHarm2,+2 re=%10.5e im=%10.5e\n", MultSphHarmP.re, MultSphHarmP.im);

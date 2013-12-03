@@ -22,7 +22,6 @@
  * \ingroup pulsarApps
  */
 
-#define LAL_USE_OLD_COMPLEX_STRUCTS
 
 /*temporary rubbish bin for headers*/
 /*These are included in HeterodyneCrabPulsar files
@@ -100,8 +99,6 @@ int main(int argc, char **argv)
     CHAR *sunFile = NULL;
   /*========================================================================================================================*/
     
-    lalDebugLevel = 0;
-    LAL_CALL (LALGetDebugLevel(&status, argc, argv, 'v'), &status);
     
     LAL_CALL(LALRegisterBOOLUserVar  (&status, "help",         'h', UVAR_HELP,     "Print this help message",     &help        ), &status);
     LAL_CALL(LALRegisterSTRINGUserVar(&status, "SFTs",         'p', UVAR_REQUIRED, "SFT location/pattern",        &SFTpatt     ), &status);
@@ -200,8 +197,8 @@ int main(int argc, char **argv)
             avg = 0.0;/*cg; the vairable avg is reset each time.*/
             if (i+NumBinsAvg>numBins) {printf("Error\n");return(2);}/*cg; error is detected, to prevent referencing data past the end of sft_vect.*/
             for (k=0;k<NumBinsAvg;k++)/*cg; for each bin, k goes trhough each entry from 0 to 180.*/
-                avg += sqrt(2*(sft_vect->data[j].data->data[i+k].re*sft_vect->data[j].data->data[i+k].re + 
-                sft_vect->data[j].data->data[i+k].im*sft_vect->data[j].data->data[i+k].im)/timebaseline);/*cg; re amd im are real and imaginary parts of SFT, duh!*/
+                avg += sqrt(2*(crealf(sft_vect->data[j].data->data[i+k])*crealf(sft_vect->data[j].data->data[i+k]) + 
+                cimagf(sft_vect->data[j].data->data[i+k])*cimagf(sft_vect->data[j].data->data[i+k]))/timebaseline);/*cg; re amd im are real and imaginary parts of SFT, duh!*/
             fprintf(fp,"%e\t",avg/NumBinsAvg);
         }
         fprintf(fp,"\n");
@@ -249,13 +246,13 @@ int main(int argc, char **argv)
         {
             if (j == 0) 
             {
-                timeavg[i] = sft_vect->data[j].data->data[i].re*sft_vect->data[j].data->data[i].re + 
-                            sft_vect->data[j].data->data[i].im*sft_vect->data[j].data->data[i].im;
+                timeavg[i] = crealf(sft_vect->data[j].data->data[i])*crealf(sft_vect->data[j].data->data[i]) + 
+                            cimagf(sft_vect->data[j].data->data[i])*cimagf(sft_vect->data[j].data->data[i]);
             } 
             else 
             {
-                timeavg[i] += sft_vect->data[j].data->data[i].re*sft_vect->data[j].data->data[i].re + 
-                            sft_vect->data[j].data->data[i].im*sft_vect->data[j].data->data[i].im;
+                timeavg[i] += crealf(sft_vect->data[j].data->data[i])*crealf(sft_vect->data[j].data->data[i]) + 
+                            cimagf(sft_vect->data[j].data->data[i])*cimagf(sft_vect->data[j].data->data[i]);
             }
         }
     }

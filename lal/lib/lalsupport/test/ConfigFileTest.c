@@ -1,5 +1,6 @@
 /*
-*  Copyright (C) 2007 Reinhard Prix
+*  Copyright (C) 2010 Larne Pekowsky
+*  based on code (C) 2009 Reinhard Prix
 *
 *  This program is free software; you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
@@ -19,89 +20,16 @@
 
 #include <lal/AVFactories.h>
 #include <lal/ConfigFile.h>
-
-/**
-   \file
-   \ingroup ConfigFile_h
-   \author Reinhard Prix
-
-   \brief Tests the routines in \ref ConfigFile.h.
-
-   \heading{Usage}
-   \code
-ConfigFileTest
-   \endcode
-
-\heading{Description}
-
-Does some standard-tests for the config-file reading routines. No
-extensive error-condition checking is done here, we only check if the
-basic functionality works.
-
-*/
-
-/* Error codes and messages */
-
-/**\name Error Codes */ /*@{*/
-#define CONFIGFILETESTC_ENORM           0       /**< Normal exit */
-#define CONFIGFILETESTC_EFLOAT          1       /**< Read-in REAL8 variable is not what it should be... */
-#define CONFIGFILETESTC_EINT            2       /**< Read-in INT4 variable is not what it should be... */
-#define CONFIGFILETESTC_EBOOL           3       /**< Read-in BOOL variable is not what it should be... */
-#define CONFIGFILETESTC_ESTRING         4       /**< Read-in STRING-variable is not what it should be... */
-#define CONFIGFILETESTC_ESUB            5       /**< Error occurred in sub-routine */
-/*@}*/
-
-/** \cond DONT_DOXYGEN */
-#define CONFIGFILETESTC_MSGENORM 	"Normal exit"
-#define CONFIGFILETESTC_MSGEFLOAT 	"Read-in REAL8 variable is not what it should be..."
-#define CONFIGFILETESTC_MSGEINT 	"Read-in INT4 variable is not what it should be..."
-#define CONFIGFILETESTC_MSGEBOOL 	"Read-in BOOL variable is not what it should be..."
-#define CONFIGFILETESTC_MSGESTRING 	"Read-in STRING-variable is not what it should be..."
-#define CONFIGFILETESTC_MSGESUB	 	"Error occurred in sub-routine"
-
+#include <lal/StringVector.h>
 
 /* Default parameters. */
 
-INT4 lalDebugLevel=3;
+int main ( int argc, char *argv[])
+{
+  XLAL_CHECK ( argc == 1, XLAL_EINVAL, "Command-line arguments useless here \n");
+  XLAL_CHECK ( argv != NULL, XLAL_EINVAL );
 
-
-/*********************************************************************/
-/* Macros for printing errors & testing subroutines (from Creighton) */
-/*********************************************************************/
-
-#define ERROR( code, msg, statement )                                \
-do {                                                                 \
-  if ( lalDebugLevel & LALERROR )                                    \
-    XLALPrintError( "Error[0] %d: program %s, file %s, line %d, %s\n" \
-                   "        %s %s\n", (code), *argv, __FILE__,       \
-              __LINE__, "$Id$", statement ? statement :  \
-                   "", (msg) );                                      \
-} while (0)
-
-#define INFO( statement )                                            \
-do {                                                                 \
-  if ( lalDebugLevel & LALINFO )                                     \
-    XLALPrintError( "Info[0]: program %s, file %s, line %d, %s\n"     \
-                   "        %s\n", *argv, __FILE__, __LINE__,        \
-              "$Id$", (statement) );                     \
-} while (0)
-
-#define SUB( func, statusptr )                                       \
-do {                                                                 \
-  if ( (func), (statusptr)->statusCode ) {                           \
-    ERROR( CONFIGFILETESTC_ESUB, CONFIGFILETESTC_MSGESUB,      \
-           "Function call \"" #func "\" failed:" );                  \
-    return CONFIGFILETESTC_ESUB;                                  \
-  }                                                                  \
-} while (0)
-/******************************************************************/
-
-#define TRUE (1==1)
-#define FALSE (1==0)
-
-int main(int argc, char *argv[]){
-  static LALStatus       status;
-  static LALParsedDataFile *cfgdata;
+  LALParsedDataFile *cfgdata = NULL;
 
   BOOLEAN testBool;
   CHAR *string1 = NULL;
@@ -109,73 +37,138 @@ int main(int argc, char *argv[]){
   CHAR *string2b = NULL;
   CHAR *string3 = NULL;
   INT4 someint;
-  REAL8 somefloat;
-  BOOLEAN wasRead = FALSE;
+  REAL8 float1, float2;
+  BOOLEAN wasRead = 0;
 
-  if ( argc > 1 )
-    XLALPrintError ("WARNING: commond-line arguments useless here \n");
+  // ---------- TEST 1: make sure the XLAL methods can read config files without sections ----------
+  const char *cfgname = TEST_DATA_DIR "ConfigFileSample.cfg";
 
-  SUB (LALParseDataFile (&status, &cfgdata, DATADIR "ConfigFileSample.cfg"), &status);
+  XLAL_CHECK ( XLALParseDataFile ( &cfgdata, cfgname ) == XLAL_SUCCESS, XLAL_EFUNC, "Failed to parse config-file '%s'", cfgname );
 
-  SUB (LALReadConfigREAL8Variable  (&status, &somefloat, cfgdata, "float1", &wasRead), &status);
-  SUB (LALReadConfigSTRINGVariable (&status, &string1,   cfgdata, "string1", &wasRead), &status);
+  // check section-listing function
+  LALStringVector *sections;
+  XLAL_CHECK ( (sections = XLALListConfigFileSections ( cfgdata )) != NULL, XLAL_EFUNC );
+  XLAL_CHECK  ( sections->length == 1, XLAL_EFAILED, "%s: Found %d sections instead of 1\n", cfgname, sections->length );
+  XLAL_CHECK ( strcmp ( sections->data[0], "default" ) == 0, XLAL_EFAILED, "%s: found section '%s' instead of 'default'\n", cfgname, sections->data[0] );
+  XLALDestroyStringVector ( sections );
 
-  SUB (LALReadConfigINT4Variable   (&status, &someint,   cfgdata, "int1", &wasRead), &status);
+  // check config-variable reading
+  XLAL_CHECK ( XLALReadConfigREAL8Variable ( &float1, cfgdata, 0, "float1", &wasRead ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK ( XLALReadConfigREAL8Variable ( &float2, cfgdata, 0, "float2", &wasRead ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK ( XLALReadConfigSTRINGVariable ( &string1, cfgdata, 0, "string1", &wasRead ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK ( XLALReadConfigINT4Variable ( &someint, cfgdata, 0, "int1", &wasRead ) == XLAL_SUCCESS, XLAL_EFUNC );
 
-  SUB (LALCHARCreateVector (&status, &string2, 35), &status);
-  SUB (LALReadConfigSTRINGNVariable(&status, string2,   cfgdata, "string2", &wasRead), &status);
+  UINT4 trunc_len = 35;
+  XLAL_CHECK ( ( string2 = XLALCreateCHARVector (trunc_len) ) != NULL, XLAL_EFUNC );
+  XLAL_CHECK ( XLALReadConfigSTRINGNVariable ( string2, cfgdata, 0, "string2", &wasRead ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK ( XLALReadConfigSTRINGVariable ( &string2b, cfgdata, 0, "string2", &wasRead ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK ( XLALReadConfigSTRINGVariable ( &string3, cfgdata, 0, "string3", &wasRead ) == XLAL_SUCCESS, XLAL_EFUNC );
 
-  SUB (LALReadConfigSTRINGVariable(&status, &string2b,   cfgdata, "string2", &wasRead), &status);
-  SUB (LALReadConfigSTRINGVariable(&status, &string3,   cfgdata, "string3", &wasRead), &status);
+  XLAL_CHECK ( XLALReadConfigBOOLVariable ( &testBool, cfgdata, 0, "testBool", &wasRead ) == XLAL_SUCCESS, XLAL_EFUNC );
 
-  SUB (LALReadConfigBOOLVariable   (&status, &testBool,  cfgdata, "testBool", &wasRead), &status);
+  XLAL_CHECK ( XLALCheckConfigReadComplete (cfgdata, CONFIGFILE_ERROR) == XLAL_SUCCESS, XLAL_EFUNC );
 
-  SUB (LALCheckConfigReadComplete (&status, cfgdata, CONFIGFILE_ERROR), &status);
-  SUB (LALDestroyParsedDataFile (&status, &cfgdata), &status);
+  XLALDestroyParsedDataFile (cfgdata);
+  cfgdata = NULL;
 
-  /* now check the stuff got read-in correctly */
-  if (somefloat != 1.0) {
-    ERROR (CONFIGFILETESTC_EFLOAT, CONFIGFILETESTC_MSGEFLOAT, 0);
-    return (CONFIGFILETESTC_EFLOAT);
-  }
-  if ( strcmp (string1, "some text. You can also use line-continuation") ) {
-    XLALPrintError ("read-in: '%s'\n", string1);
-    ERROR (CONFIGFILETESTC_ESTRING, CONFIGFILETESTC_MSGESTRING, 0);
-    return (CONFIGFILETESTC_ESTRING);
-  }
-  if (someint != 4) {
-    ERROR (CONFIGFILETESTC_EINT, CONFIGFILETESTC_MSGEINT, 0);
-    return (CONFIGFILETESTC_EINT);
-  }
-  if ( strcmp(string2->data, "this is also possible, and # here ") ) {
-    XLALPrintError ("read-in: '%s'\n", string2->data);
-    ERROR (CONFIGFILETESTC_ESTRING, CONFIGFILETESTC_MSGESTRING, 0);
-    return (CONFIGFILETESTC_ESTRING);
-  }
-  if ( strcmp(string2b, "this is also possible, and # here does nothing ")) {
-    XLALPrintError ("read-in: '%s'\n", string2b);
-    ERROR (CONFIGFILETESTC_ESTRING, CONFIGFILETESTC_MSGESTRING, 0);
-    return (CONFIGFILETESTC_ESTRING);
-  }
-  if ( strcmp(string3, "how about #quotes AND line-continuation?") ) {
-    XLALPrintError ("read-in: '%s'\n", string3);
-    ERROR (CONFIGFILETESTC_ESTRING, CONFIGFILETESTC_MSGESTRING, 0);
-    return (CONFIGFILETESTC_ESTRING);
-  }
+  // ----- now check the stuff got read-in correctly
+  XLAL_CHECK ( float1 == 1.0, XLAL_EFAILED, "%s: got float1 = %g, expected 1.0\n", cfgname, float1 );
 
+  XLAL_CHECK ( float2 == 2.0, XLAL_EFAILED, "%s: got float2 = %g, expected 2.0\n", cfgname, float2 );
 
-  if ( testBool != 0 ) {
-    ERROR (CONFIGFILETESTC_EBOOL, CONFIGFILETESTC_MSGEBOOL, 0);
-    return (CONFIGFILETESTC_EBOOL);
-  }
+  XLAL_CHECK ( someint == 4, XLAL_EFAILED, "%s: someint = %d, expected 4\n", cfgname, someint );
 
-  LALFree (string1);
-  LALCHARDestroyVector (&status, &string2);
-  LALFree (string2b);
-  LALFree (string3);
+  const char *string1_ref = "some text. You can also use line-continuation";
+  XLAL_CHECK ( strcmp(string1, string1_ref) == 0, XLAL_EFAILED, "%s: got string1 = '%s', expected '%s'\n", cfgname, string1, string1_ref );
 
+  const char *string2_ref = "this is also possible, and # here does nothing; and neither does semi-colon ";
+  XLAL_CHECK ( string2->length == trunc_len, XLAL_EFAILED, "%s: got string2->length = %d, expected %d\n", cfgname, string2->length, trunc_len );
+  XLAL_CHECK ( strncmp ( string2->data, string2_ref, trunc_len-1 ) == 0, XLAL_EFAILED, "%s: got string2[%d] = '%s', expected '%.34s'\n", cfgname, trunc_len, string2->data, string2_ref );
+  XLAL_CHECK ( strcmp ( string2b, string2_ref ) == 0, XLAL_EFAILED, "%s: got string2 = '%s', expected '%s'\n", cfgname, string2b, string2_ref );
+
+  const char *string3_ref = "how about #quotes AND line-continuation?";
+  XLAL_CHECK ( strcmp ( string3, string3_ref ) == 0, XLAL_EFAILED, "%s: got string3 = '%s', expected '%s'\n", cfgname, string3, string3_ref );
+
+  XLAL_CHECK ( testBool == 0, XLAL_EFAILED, "%s: got testBool = %d, expected 0\n", cfgname, testBool );
+
+  XLALFree (string1);
+  XLALFree (string2b);
+  XLALFree (string3);
+  string1 = string2b = string3 = NULL;
+
+  // ---------- TEST 2: read some values from different sections ----------
+
+  cfgname = TEST_DATA_DIR "ConfigFileSample2.cfg";
+  XLAL_CHECK ( XLALParseDataFile ( &cfgdata, cfgname ) == XLAL_SUCCESS, XLAL_EFUNC, "Failed to parse config-file '%s'", cfgname );
+
+  // check section-listing function
+  XLAL_CHECK ( (sections = XLALListConfigFileSections ( cfgdata )) != NULL, XLAL_EFUNC );
+  XLAL_CHECK  ( sections->length == 3, XLAL_EFAILED, "%s: found %d sections instead of 3\n", cfgname, sections->length );
+  XLAL_CHECK ( strcmp ( sections->data[0], "section1" ) == 0, XLAL_EFAILED, "%s: 1st section found is '%s' instead of 'section1'\n", cfgname, sections->data[0] );
+  XLAL_CHECK ( strcmp ( sections->data[1], "section2" ) == 0, XLAL_EFAILED, "%s: 2nd section found is '%s' instead of 'section2'\n", cfgname, sections->data[1] );
+  XLAL_CHECK ( strcmp ( sections->data[2], "section3" ) == 0, XLAL_EFAILED, "%s: 3rd section found is '%s' instead of 'section3'\n", cfgname, sections->data[2] );
+  XLALDestroyStringVector ( sections );
+
+  // Check for a section we have and one we don't
+  XLAL_CHECK ( XLALConfigSectionExists ( cfgdata, "section1" ), XLAL_EFAILED );
+  XLAL_CHECK ( !XLALConfigSectionExists ( cfgdata, "section5" ), XLAL_EFAILED );
+
+  // check config-variable reading
+  XLAL_CHECK ( XLALReadConfigREAL8Variable  (&float1, cfgdata, "section1", "float1", &wasRead) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK ( XLALReadConfigSTRINGVariable (&string1,   cfgdata, "section1", "string1", &wasRead) == XLAL_SUCCESS, XLAL_EFUNC );
+
+  XLAL_CHECK ( XLALReadConfigINT4Variable   (&someint,   cfgdata, "section1", "int1", &wasRead) == XLAL_SUCCESS, XLAL_EFUNC );
+
+  XLAL_CHECK ( XLALReadConfigSTRINGNVariable(string2,   cfgdata, "section2", "string2", &wasRead) == XLAL_SUCCESS, XLAL_EFUNC );
+
+  XLAL_CHECK ( XLALReadConfigSTRINGVariable(&string2b,   cfgdata, "section2", "string2", &wasRead) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK ( XLALReadConfigSTRINGVariable(&string3,   cfgdata, "section3", "string3", &wasRead) == XLAL_SUCCESS, XLAL_EFUNC );
+
+  XLAL_CHECK ( XLALReadConfigBOOLVariable   (&testBool,  cfgdata, "section3", "testBool", &wasRead) == XLAL_SUCCESS, XLAL_EFUNC );
+
+  XLAL_CHECK ( XLALCheckConfigReadComplete (cfgdata, CONFIGFILE_ERROR) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLALDestroyParsedDataFile (cfgdata);
+  cfgdata = NULL;
+
+  // ----- now check the stuff got read-in correctly
+  XLAL_CHECK ( float1 == 1.0, XLAL_EFAILED, "%s: got float1 = %g, expected 1.0\n", cfgname, float1 );
+
+  XLAL_CHECK ( float2 == 2.0, XLAL_EFAILED, "%s: got float2 = %g, expected 2.0\n", cfgname, float2 );
+
+  XLAL_CHECK ( someint == 4, XLAL_EFAILED, "%s: someint = %d, expected 4\n", cfgname, someint );
+
+  XLAL_CHECK ( strcmp(string1, string1_ref) == 0, XLAL_EFAILED, "%s: got string1 = '%s', expected '%s'\n", cfgname, string1, string1_ref );
+
+  XLAL_CHECK ( string2->length == trunc_len, XLAL_EFAILED, "%s: got string2->length = %d, expected %d\n", cfgname, string2->length, trunc_len );
+  XLAL_CHECK ( strncmp ( string2->data, string2_ref, trunc_len-1 ) == 0, XLAL_EFAILED, "%s: got string2[%d] = '%s', expected '%.34s'\n", cfgname, trunc_len, string2->data, string2_ref );
+  XLAL_CHECK ( strcmp ( string2b, string2_ref ) == 0, XLAL_EFAILED, "%s: got string2 = '%s', expected '%s'\n", cfgname, string2b, string2_ref );
+
+  XLAL_CHECK ( strcmp ( string3, string3_ref ) == 0, XLAL_EFAILED, "%s: got string3 = '%s', expected '%s'\n", cfgname, string3, string3_ref );
+
+  XLAL_CHECK ( testBool == 0, XLAL_EFAILED, "%s: got testBool = %d, expected 0\n", cfgname, testBool );
+
+  // ---------- TEST 3: check reading of compressed files ----------
+  cfgname = TEST_DATA_DIR "ConfigFileSample3.cfg.gz";
+  XLAL_CHECK ( XLALParseDataFile ( &cfgdata, cfgname ) == XLAL_SUCCESS, XLAL_EFUNC );
+
+  XLAL_CHECK ( cfgdata->lines->nTokens == 4, XLAL_EFAILED );
+  XLAL_CHECK ( strcmp(cfgdata->lines->tokens[0], "a") == 0, XLAL_EFAILED );
+  XLAL_CHECK ( strcmp(cfgdata->lines->tokens[1], "b") == 0, XLAL_EFAILED );
+  XLAL_CHECK ( strcmp(cfgdata->lines->tokens[2], "c") == 0, XLAL_EFAILED );
+  XLAL_CHECK ( strcmp(cfgdata->lines->tokens[3], "d") == 0, XLAL_EFAILED );
+  XLALDestroyParsedDataFile (cfgdata);
+  cfgdata = NULL;
+
+  XLALFree (string1);
+  XLALDestroyCHARVector (string2);
+  XLALFree (string2b);
+  XLALFree (string3);
+
+  // -----
   LALCheckMemoryLeaks();
 
-  return CONFIGFILETESTC_ENORM;
-}
-/** \endcond */
+  return XLAL_SUCCESS;
+
+} // main()
+
+

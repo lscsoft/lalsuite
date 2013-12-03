@@ -71,10 +71,8 @@ int main (int argc, char *argv[])
   fflush( stdout );
 
  /* SET LAL DEBUG STUFF */
-  set_debug_level("MEMDBG");
   memset(&status, 0, sizeof(status));
   lal_errhandler = LAL_ERR_ABRT;
-  /*ls  set_debug_level("ALLDBG");*/
 
 
   struct option long_options[] =

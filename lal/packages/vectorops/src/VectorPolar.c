@@ -51,37 +51,37 @@
  *
  * The double-precision functions are similar.
  *
- * \heading{Algorithm}
+ * ### Algorithm ###
  *
  * The algorithm for LALUnwrapREAL4Angle() and LALUnwrapREAL8Angle()
  * (Inspired from the MATLAP function unwrap):
  * \code
  *
- *   a = in->data;
- *   b = out->data;
- *   n = out->length;
+ * a = in->data;
+ * b = out->data;
+ * n = out->length;
  *
- *   cumsum = 0.0;
- *   phaseI = *a;
- *   *b = phaseI;
- *   --n;
+ * cumsum = 0.0;
+ * phaseI = *a;
+ * *b = phaseI;
+ * --n;
  *
- *   while (n-- > 0)
- *   {
- *     ++a;
- *     ++b;
- *     phaseII = *a;
- *     diffph = phaseII - phaseI;
- *     phaseI = phaseII;
+ * while (n-- > 0)
+ * {
+ *   ++a;
+ *   ++b;
+ *   phaseII = *a;
+ *   diffph = phaseII - phaseI;
+ *   phaseI = phaseII;
  *
- *     cumsum += LAL_TWOPI*( (diffph < - LAL_PI) - (diffph > LAL_PI) );
+ *   cumsum += LAL_TWOPI*( (diffph < - LAL_PI) - (diffph > LAL_PI) );
  *
- *     *b= phaseII + cumsum;
- *   }
+ *   *b= phaseII + cumsum;
+ * }
  *
  * \endcode
  *
- * \heading{Notes}
+ * ### Notes ###
  *
  * For the LALUnwrapREAL4Angle() and LALUnwrapREAL8Angle() functions, \c a,
  * and \c b should  not point to the same memory location (<tt>a != b</tt>).
@@ -150,9 +150,11 @@ int XLALCOMPLEX16VectorArg( REAL8Vector *out, const COMPLEX16Vector *in )
 }
 
 
-/** corrects the radian phase angles of a real vector by adding multiples of
+/**
+ * corrects the radian phase angles of a real vector by adding multiples of
  * pi when the absolute jumps between consecutive angle elements are greater
- * pi radians */
+ * pi radians
+ */
 int XLALREAL4VectorUnwrapAngle( REAL4Vector *out, const REAL4Vector *in )
 {
 	REAL4 prev;
@@ -176,9 +178,11 @@ int XLALREAL4VectorUnwrapAngle( REAL4Vector *out, const REAL4Vector *in )
 	return 0;
 }
 
-/** corrects the radian phase angles of a real vector by adding multiples of
+/**
+ * corrects the radian phase angles of a real vector by adding multiples of
  * pi when the absolute jumps between consecutive angle elements are greater
- * pi radians */
+ * pi radians
+ */
 int XLALREAL8VectorUnwrapAngle( REAL8Vector *out, const REAL8Vector *in )
 {
 	REAL8 prev;

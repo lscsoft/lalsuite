@@ -18,46 +18,48 @@
 */
 
 /**
-\author Sathyaprakash, B. S.
-\file
-\ingroup LALInspiral_h
-
-
-\brief This module generates the inspiral waveform from a binary consisting of
-two spinning compact stars.
-
-\heading{Prototypes}
-
-<tt>LALInspiralSpinningBHBinary()</tt>
-<ul>
-<li> \c signalvec: Output containing the spin modulated inspiral waveform.</li>
-<li> \c in: Input containing binary chirp parameters.</li>
-</ul>
-
-\heading{Description}
-Using the formalism described in Apostolatos
-et al [\ref ACST94] and Blanchet et al. [\ref BDIWW1995] and formulas
-summarized in Sec.\ \ref sec_smirches this module computes
-the spin-modulated chirps from a pair of compact stars in orbit around
-each other.
-
-\heading{Algorithm}
-This code uses a fourth-order Runge-Kutta algorithm to solve the nine
-first-order, coupled, ordinary differential equations in Eq.\eqref{eqn_precession1}
-Eq.\eqref{eqn_precession2} and Eq.\eqref{eqn_precession3}. The solution is then used
-in Eq.\eqref{eqn_waveform} (and following equations) to get the waveform  emitted
-by a spinning black hole binary.
-
-\heading{Uses}
-\code
-LALInspiralSetup()
-LALInspiralChooseModel()
-LALInspiralVelocity()
-LALInspiralPhasing3()
-LALRungeKutta4()
-\endcode
-
-*/
+ * \author Sathyaprakash, B. S.
+ * \file
+ * \ingroup LALInspiral_h
+ *
+ * \brief This module generates the inspiral waveform from a binary consisting of
+ * two spinning compact stars.
+ *
+ * ### Prototypes ###
+ *
+ * <tt>LALInspiralSpinningBHBinary()</tt>
+ * <ul>
+ * <li> \c signalvec: Output containing the spin modulated inspiral waveform.</li>
+ * <li> \c in: Input containing binary chirp parameters.</li>
+ * </ul>
+ *
+ * ### Description ###
+ *
+ * Using the formalism described in Apostolatos
+ * et al \cite ACST94 and Blanchet et al. \cite BDIWW1995 and formulas
+ * summarized in Sec.\ \ref sec_smirches this module computes
+ * the spin-modulated chirps from a pair of compact stars in orbit around
+ * each other.
+ *
+ * ### Algorithm ###
+ *
+ * This code uses a fourth-order Runge-Kutta algorithm to solve the nine
+ * first-order, coupled, ordinary differential equations in \eqref{eqn_precession1}
+ * \eqref{eqn_precession2} and \eqref{eqn_precession3}. The solution is then used
+ * in \eqref{eqn_waveform} (and following equations) to get the waveform  emitted
+ * by a spinning black hole binary.
+ *
+ * ### Uses ###
+ *
+ * \code
+ * LALInspiralSetup()
+ * LALInspiralChooseModel()
+ * LALInspiralVelocity()
+ * LALInspiralPhasing3()
+ * LALRungeKutta4()
+ * \endcode
+ *
+ */
 
 /*
    Interface routine needed to generate time-domain T- or a P-approximant

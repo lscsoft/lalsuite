@@ -1,4 +1,4 @@
-#!/usr/bin/env @PYTHONPROG@
+#!@PYTHONPROG@
 """
 inspiral_sip.in - standalone Single-stage Inspiral Pipeline driver script
 

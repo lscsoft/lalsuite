@@ -26,13 +26,9 @@
  * into agreement with that of NR simulations. This file contains the functions
  * used to calculate these NQC corrections. The fits to NR peak amplitude,
  * frequency, and their derivatives, are taken from Pan et al, arXiv:1106.1021v1 [gr-qc].
- * 
+ *
  */
 
-#include <complex.h>
-
-#define LAL_USE_OLD_COMPLEX_STRUCTS
-#include <lal/LALComplex.h>
 #include <lal/LALInspiral.h>
 #include <lal/LALEOBNRv2Waveform.h>
 
@@ -319,7 +315,7 @@ REAL8 GetNRPeakOmegaDot( INT4 l, INT4 m, REAL8 eta )
 
 /**
  * For the 2,2 mode, there are fits available for the NQC coefficients.
- * This function provides the values of these coefficients, so the 
+ * This function provides the values of these coefficients, so the
  * correction can be used in the dynamics prior to finding the more
  * accurate NQC values later on.
  */
@@ -385,8 +381,7 @@ int  XLALEOBNonQCCorrection(
 
   phase = coeffs->b1 * p / rOmega + coeffs->b2 * p*p*p/rOmega;
 
-  nqc->re = mag * cos(phase);
-  nqc->im = mag * sin(phase);
+  *nqc = crect( mag * cos(phase), mag * sin(phase) );
 
   return XLAL_SUCCESS;
 

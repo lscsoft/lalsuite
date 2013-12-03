@@ -18,26 +18,29 @@
 */
 
 /**
-
-\author Yi Pan
-\file
-
-\brief Generate a full waveform from inspiral to ring-down.
-
-\heading{Usage}
-
-\heading{Description}
-
-\heading{Algorithm}
-
-\heading{Uses}
-\code
-lalDebugLevel
-\endcode
-
-\heading{Notes}
-
-*/
+ * \author Yi Pan
+ * \file
+ *
+ * \brief Generate a full waveform from inspiral to ring-down.
+ *
+ * ### Usage ###
+ *
+ *
+ * ### Description ###
+ *
+ *
+ * ### Algorithm ###
+ *
+ *
+ * ### Uses ###
+ *
+ * \code
+ * lalDebugLevel
+ * \endcode
+ *
+ * ### Notes ###
+ *
+ */
 
 #include <math.h>
 #include <stdlib.h>
@@ -47,7 +50,6 @@ lalDebugLevel
 #include <lal/AVFactories.h>
 #include <lal/SeqFactories.h>
 
-extern int lalDebugLevel;
 
 int main( int argc, char *argv[] )
 {
@@ -59,7 +61,6 @@ int main( int argc, char *argv[] )
   UINT4 N = 65536;
   REAL8 deltaF = 1.0/((REAL8)N * deltaT);
 
-  lalDebugLevel = 1;
 
   memset( &status, 0, sizeof(LALStatus) );
   memset( &tmplt, 0, sizeof(InspiralTemplate) );

@@ -29,11 +29,12 @@
 extern "C" {
 #endif
 
-  /** \defgroup Thresholds_h Header Thresholds.h
-   * \ingroup pkg_burstsearch
-   *
-   * \brief UNDOCUMENTED
-   */
+/**
+ * \defgroup Thresholds_h Header Thresholds.h
+ * \ingroup pkg_burstsearch
+ *
+ * \brief UNDOCUMENTED
+ */
   /*@{*/
 
 REAL8 XLALChisqCdf(
@@ -51,13 +52,6 @@ REAL8 XLALOneMinusChisqCdf(
 REAL8 XLALlnOneMinusChisqCdf(
 	REAL8 chi2,
 	REAL8 dof
-);
-
-
-REAL8 XLALNoncChisqCdf (
-	REAL8 chi2,
-	REAL8 dof,
-	REAL8 nonCentral
 );
 
 

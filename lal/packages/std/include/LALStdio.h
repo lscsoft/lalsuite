@@ -18,17 +18,18 @@
 */
 
 /**
-   \addtogroup LALStdio_h
-
-   \brief Provides LAL functions similar to the non-file functions in <tt><stdio.h></tt>.
-
-   \heading{Synopsis}
-   \code
-   #include <lal/LALStdio.h>
-   #include <lal/FileIO.h>
-   \endcode
-
-*/
+ * \addtogroup LALStdio_h
+ *
+ * \brief Provides LAL functions similar to the non-file functions in <tt><stdio.h></tt>.
+ *
+ * ### Synopsis ###
+ *
+ * \code
+ * #include <lal/LALStdio.h>
+ * #include <lal/FileIO.h>
+ * \endcode
+ *
+ */
 
 #ifndef _LALSTDIO_H
 #define _LALSTDIO_H
@@ -38,12 +39,14 @@
 #include <inttypes.h>
 #include <lal/LALConfig.h>
 
-#ifdef __cplusplus
+#ifdef  __cplusplus
 extern "C" {
+#elif 0
+}       /* so that editors will match preceding brace */
 #endif
 
 #if LAL_BOINC_ENABLED
-  extern FILE* boinc_fopen(const char* path, const char* mode);
+    extern FILE *boinc_fopen(const char *path, const char *mode);
 #define LALFopen boinc_fopen
 #else
 #define LALFopen fopen
@@ -101,8 +104,9 @@ extern "C" {
 #define LAL_REAL4_FORMAT "g"
 #define LAL_REAL8_FORMAT "lg"
 
-#ifdef __cplusplus
+#if 0
+{       /* so that editors will match succeeding brace */
+#elif defined(__cplusplus)
 }
 #endif
-
 #endif /* _LALSTDIO_H */

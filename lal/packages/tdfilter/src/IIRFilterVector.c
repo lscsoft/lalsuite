@@ -21,39 +21,39 @@
 #include <lal/IIRFilter.h>
 
 /**
-   \addtogroup IIRFilterVector_c
-   \author Creighton, T. D.
-
-   \brief Applies an IIR filter to a data stream.
-
-\heading{Description}
-
-These functions apply a generic time-domain filter given by an object
-<tt>*filter</tt> of type \c REAL4IIRFilter or \c REAL8IIRFilter
-to a list <tt>*vector</tt> of data representing a time series.  This is
-done in place using the auxiliary data series formalism described in
-\ref IIRFilter.h, so as to accomodate potentially large data series.
-To filter a piece of a larger dataset, the calling routine may pass a
-vector structure whose data pointer and length fields specify a subset
-of a larger vector.
-
-The routine <tt>LALDIIRFilterREAL4Vector()</tt> applies a
-double-precision filter to single-precision data.  It makes a single
-pass through the data, continuously updating the filter history at
-each step rather than storing the auxiliary array in-place.  This
-reduces roundoff error by keeping \e all intermediate results to
-double-precision.
-
-\heading{Algorithm}
-
-The implementation of <tt>LALDIIRFilterREAL4Vector()</tt> not only has
-lower truncation errors than <tt>LALIIRFilterREAL4Vector()</tt>, but
-also appears to be more computationally efficient, for reasons I have
-not yet determined; see the documentation for \ref IIRFilterTest.c.
-These combine to suggest that <tt>LALDIIRFilterREAL4Vector()</tt> is the
-better overall algorithm for filtering \c REAL4Vectors.
-
-*/
+ * \addtogroup IIRFilterVector_c
+ * \author Creighton, T. D.
+ *
+ * \brief Applies an IIR filter to a data stream.
+ *
+ * ### Description ###
+ *
+ * These functions apply a generic time-domain filter given by an object
+ * <tt>*filter</tt> of type \c REAL4IIRFilter or \c REAL8IIRFilter
+ * to a list <tt>*vector</tt> of data representing a time series.  This is
+ * done in place using the auxiliary data series formalism described in
+ * \ref IIRFilter.h, so as to accomodate potentially large data series.
+ * To filter a piece of a larger dataset, the calling routine may pass a
+ * vector structure whose data pointer and length fields specify a subset
+ * of a larger vector.
+ *
+ * The routine <tt>LALDIIRFilterREAL4Vector()</tt> applies a
+ * double-precision filter to single-precision data.  It makes a single
+ * pass through the data, continuously updating the filter history at
+ * each step rather than storing the auxiliary array in-place.  This
+ * reduces roundoff error by keeping \e all intermediate results to
+ * double-precision.
+ *
+ * ### Algorithm ###
+ *
+ * The implementation of <tt>LALDIIRFilterREAL4Vector()</tt> not only has
+ * lower truncation errors than <tt>LALIIRFilterREAL4Vector()</tt>, but
+ * also appears to be more computationally efficient, for reasons I have
+ * not yet determined; see the documentation for \ref IIRFilterTest.c.
+ * These combine to suggest that <tt>LALDIIRFilterREAL4Vector()</tt> is the
+ * better overall algorithm for filtering \c REAL4Vectors.
+ *
+ */
 /*@{*/
 
 /** \see See \ref IIRFilterVector_c for documentation */
@@ -204,7 +204,8 @@ int XLALIIRFilterREAL8Vector( REAL8Vector *vector, REAL8IIRFilter *filter )
   return 0;
 }
 
-/** WARNING: THIS FUNCTION IS OBSOLETE.
+/**
+ * WARNING: THIS FUNCTION IS OBSOLETE.
  * \deprecated
  */
 void
@@ -302,7 +303,8 @@ LALIIRFilterREAL4Vector( LALStatus      *stat,
 }
 
 
-/** WARNING: THIS FUNCTION IS OBSOLETE.
+/**
+ * WARNING: THIS FUNCTION IS OBSOLETE.
  * \deprecated
  */
 void
@@ -336,7 +338,8 @@ LALIIRFilterREAL8Vector( LALStatus      *stat,
 }
 
 
-/** WARNING: THIS FUNCTION IS OBSOLETE.
+/**
+ * WARNING: THIS FUNCTION IS OBSOLETE.
  * \deprecated
  */
 void

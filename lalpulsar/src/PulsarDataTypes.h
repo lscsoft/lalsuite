@@ -32,7 +32,8 @@ extern "C" {
  * \ingroup pkg_pulsarCommon
  * \brief Some common useful data-types for pulsar-searches.
  *
- * \heading{Synopsis}
+ * ### Synopsis ###
+ *
  * \code
  * #include <lal/PulsarDataTypes.h>
  * \endcode
@@ -48,10 +49,15 @@ extern "C" {
 #include <lal/SkyCoordinates.h>
 #include <lal/LALBarycenter.h>
 
-#include "SFTutils.h"
+#include <lal/SFTutils.h>
 
 /** maximal number of spin-parameters (Freq + spindowns) we can handle */
 #define PULSAR_MAX_SPINS	7
+
+/** maximal number of detectors we can handle (for static arrays of detector quantities) */
+#ifndef PULSAR_MAX_DETECTORS	// allow this value to be overridden for e.g. E@H apps
+#define PULSAR_MAX_DETECTORS	10
+#endif
 
 /** Type defining the orbital parameters of a binary pulsar */
 typedef struct tagBinaryOrbitParams {
@@ -76,8 +82,9 @@ typedef REAL8 PulsarAmplitudeVect[4];
 /** Typedef for fixed-size array holding GW frequency and derivatives fk = d^k Freq/dt^k|(tau_ref) */
 typedef REAL8 PulsarSpins[PULSAR_MAX_SPINS];
 
-/** Contains a "spin-range", ie spins \f$f^{(k)}\f$ and corresponding bands \f$\Delta f^{(k)}\f$
- *  at a given (SSB) reference GPS-time \f$\tau\f$.
+/**
+ * Contains a "spin-range", ie spins \f$f^{(k)}\f$ and corresponding bands \f$\Delta f^{(k)}\f$
+ * at a given (SSB) reference GPS-time \f$\tau\f$.
  * "Canonical" ordering refers to \f$\Delta f^{(k)} >= 0\f$ for all k.
  */
 typedef struct tagPulsarSpinRange
@@ -98,10 +105,35 @@ typedef struct tagPulsarDopplerParams {
   UINT4 numFreqBins;	/**< if used for a frequency band: number of frequency bins */
 } PulsarDopplerParams;
 
-/** Type defining the parameters of a pulsar-source of Gravitational waves */
+// ---------- transient-CW related types ----------
+/** Struct to define parameters of a 'transient window' to be applied to obtain transient signals */
+typedef enum {
+  TRANSIENT_NONE = 0,		/**< Note: in this case the window-parameters will be ignored, and treated as rect={data},
+                                 * i.e. a simple rectangular window covering all the data => this should always reproduce the
+                                 * standard F-statistic computation. */
+  TRANSIENT_RECTANGULAR = 1,	/**< standard rectangular window covering [t0, t0+tau] */
+  TRANSIENT_EXPONENTIAL,	/**< exponentially decaying window e^{-t0/tau} starting at t0.
+                                 * Note: we'll truncate this at some small (eg 3x) e-folding TRANSIENT_EXP_EFOLDING */
+  TRANSIENT_LAST
+} transientWindowType_t;
+
+/** Struct defining one transient window instance */
+typedef struct tagtransientWindow_t
+{
+  transientWindowType_t type;	/**< window-type: none, rectangular, exponential, .... */
+  UINT4 t0;			/**< GPS start-time 't0' */
+  UINT4 tau;			/**< transient timescale tau in seconds */
+} transientWindow_t;
+
+
+// ---------- 'integrated' types describing a complete CW signal ----------
+
+/** Type defining the parameters of a pulsar-source of CW Gravitational waves */
 typedef struct tagPulsarParams {
-  PulsarAmplitudeParams Amp;	/**< 'Amplitude-parameters': h0, cosi, phi0, psi */
-  PulsarDopplerParams Doppler;	/**< 'Doppler-parameters': {skypos, fkdot, orbital params } */
+  char *name;				/**< 'name' for this sources, can be NULL */
+  PulsarAmplitudeParams Amp;		/**< 'Amplitude-parameters': h0, cosi, phi0, psi */
+  PulsarDopplerParams   Doppler;	/**< 'Phase-evolution parameters': {skypos, fkdot, orbital params } */
+  transientWindow_t     Transient;	/**< Transient window-parameters (start-time, duration, window-type) */
 } PulsarParams;
 
 /** Type containing a "candidate": parameter-space point with estimated errors and Fstat-value/significance */
@@ -113,7 +145,8 @@ typedef struct tagPulsarCandidate {
 } PulsarCandidate;
 
 
-/** DEPRECATED Type defining the parameters of a pulsar-source of Gravitational waves.
+/**
+ * DEPRECATED Type defining the parameters of a pulsar-source of Gravitational waves.
  * \note this type is obsolete and should no longer be used,
  * however, it's too entrenched in LALGeneratePulsarSignal() et al, and codes using it,
  * so we can't easily get rid of it and keep it for now....

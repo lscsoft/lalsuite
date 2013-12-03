@@ -35,67 +35,70 @@
  */
 
 /**
-\author Sintes, A. M., Krishnan, B.
-\file
-\ingroup HoughMap_h
-\brief Tests the construction of Hough maps.
-
-\heading{Program \ref TestHoughMap.c}
-
-\heading{Usage}
-\code
-TestHoughMap [-d debuglevel] [-o outfile] [-f f0] [-p alpha delta]
-\endcode
-
-\heading{Description}
-
-\%TO BE CHANGED
-
-Similar to the previous ones, this program generates a patch grid, calculates
-the parameters needed for
-building a \c lut, and  builds the \c lut. Then, given a peak-gram
-constructs a \c phmd at a
-certain frequency (shifted from the frequency at which the \c lut was built).
-The sky patch is set at the south pole,
-no spin-down parameters are assumed for the demodulation and
-every third  peak in the spectrum is selected. The peak-gram frequency interval
-is large enough to ensure compatibility with the \c lut and the frequency of
-the \c phmd.
-
-Moreover, this program initializes a Hough map \c ht
-and the Hough
-map derivative space \c hd, adds one \c phmd into the Hough map
-derivative \c hd,
-constructs the total Hough map \c ht by integrating the \c hd,
-and outputs the \c ht into a file.
-
-By default, running this program with no arguments simply tests the subroutines,
-producing an output file called <tt>OutHough.asc</tt>.  All default parameters are set from
-<tt>\#define</tt>d constants.
-
-The <b>-d</b> option sets the debug level to the specified value
-\c debuglevel.  The <b>-o</b> flag tells the program to print the partial Hough map
-derivative  to the specified data file \c outfile.  The
-<b>-f</b> option sets the intrinsic frequency \c f0 at which build the <tt>lut</tt>.
-The <b>-p</b> option sets the velocity orientation of the detector
-\c alpha, \c delta (in radians).
-
-\heading{Uses}
-\code
-LALHOUGHCalcParamPLUT()
-LALHOUGHConstructPLUT()
-LALHOUGHPeak2PHMD()
-LALHOUGHInitializeHT()
-LALHOUGHInitializeHD()
-LALHOUGHAddPHMD2HD()
-LALHOUGHIntegrHD2HT()
-LALPrintError()
-LALMalloc()
-LALFree()
-LALCheckMemoryLeaks()
-\endcode
-
-*/
+ * \author Sintes, A. M., Krishnan, B.
+ * \file
+ * \ingroup HoughMap_h
+ * \brief Tests the construction of Hough maps.
+ *
+ * ### Program TestHoughMap.c ###
+ *
+ *
+ * ### Usage ###
+ *
+ * \code
+ * TestHoughMap [-d debuglevel] [-o outfile] [-f f0] [-p alpha delta]
+ * \endcode
+ *
+ * ### Description ###
+ *
+ * \%TO BE CHANGED
+ *
+ * Similar to the previous ones, this program generates a patch grid, calculates
+ * the parameters needed for
+ * building a \c lut, and  builds the \c lut. Then, given a peak-gram
+ * constructs a \c phmd at a
+ * certain frequency (shifted from the frequency at which the \c lut was built).
+ * The sky patch is set at the south pole,
+ * no spin-down parameters are assumed for the demodulation and
+ * every third  peak in the spectrum is selected. The peak-gram frequency interval
+ * is large enough to ensure compatibility with the \c lut and the frequency of
+ * the \c phmd.
+ *
+ * Moreover, this program initializes a Hough map \c ht
+ * and the Hough
+ * map derivative space \c hd, adds one \c phmd into the Hough map
+ * derivative \c hd,
+ * constructs the total Hough map \c ht by integrating the \c hd,
+ * and outputs the \c ht into a file.
+ *
+ * By default, running this program with no arguments simply tests the subroutines,
+ * producing an output file called <tt>OutHough.asc</tt>.  All default parameters are set from
+ * <tt>\#define</tt>d constants.
+ *
+ * The <b>-d</b> option sets the debug level to the specified value
+ * \c debuglevel.  The <b>-o</b> flag tells the program to print the partial Hough map
+ * derivative  to the specified data file \c outfile.  The
+ * <b>-f</b> option sets the intrinsic frequency \c f0 at which build the <tt>lut</tt>.
+ * The <b>-p</b> option sets the velocity orientation of the detector
+ * \c alpha, \c delta (in radians).
+ *
+ * ### Uses ###
+ *
+ * \code
+ * LALHOUGHCalcParamPLUT()
+ * LALHOUGHConstructPLUT()
+ * LALHOUGHPeak2PHMD()
+ * LALHOUGHInitializeHT()
+ * LALHOUGHInitializeHD()
+ * LALHOUGHAddPHMD2HD()
+ * LALHOUGHIntegrHD2HT()
+ * LALPrintError()
+ * LALMalloc()
+ * LALFree()
+ * LALCheckMemoryLeaks()
+ * \endcode
+ *
+ */
 
 #include <lal/HoughMap.h>
 
@@ -118,7 +121,6 @@ LALCheckMemoryLeaks()
 
 /* Default parameters. */
 
-INT4 lalDebugLevel=0;
 
 #define F0 500.0          /*  frequency to build the LUT. */
 #define TCOH 100000.0     /*  time baseline of coherent integration. */
@@ -238,7 +240,6 @@ int main(int argc, char *argv[]){
     if ( !strcmp( argv[arg], "-d" ) ) {
       if ( argc > arg + 1 ) {
         arg++;
-        lalDebugLevel = atoi( argv[arg++] );
       } else {
         ERROR( TESTHOUGHMAPC_EARG, TESTHOUGHMAPC_MSGEARG, 0 );
         XLALPrintError( USAGE, *argv );

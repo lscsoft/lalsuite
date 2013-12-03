@@ -64,7 +64,6 @@ int main(int argc, char *argv[])
   fflush( stdout );
 
   /* SET LAL DEBUG STUFF */
-  set_debug_level("ERROR | WARNING");
   lal_errhandler = LAL_ERR_RTRN;
 
   /*set_debug_level("ALLDBG");*/

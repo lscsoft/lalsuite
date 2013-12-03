@@ -29,7 +29,7 @@
 #include <lal/Date.h>
 #include <lal/RealFFT.h>
 #include <lal/RingUtils.h>
-#include <lal/FrameStream.h>
+#include <lal/LALFrStream.h>
 
 #include "lalapps.h"
 #include "getdata.h"

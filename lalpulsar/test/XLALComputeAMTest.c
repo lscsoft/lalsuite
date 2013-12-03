@@ -38,7 +38,8 @@
 #include <lal/LALInitBarycenter.h>
 #include <lal/AVFactories.h>
 
-/** \author Reinhard Prix, John Whelan
+/**
+ * \author Reinhard Prix, John Whelan
  * \file
  * \ingroup LALComputeAM_h
  *
@@ -60,7 +61,6 @@ static const LALStatus empty_status;
 static const AMCoeffsParams empty_AMCoeffsParams;
 static const AMCoeffs empty_AMCoeffs;
 
-extern int lalDebugLevel;
 
 /* ----- internal prototypes ---------- */
 int XLALCompareMultiAMCoeffs ( MultiAMCoeffs *multiAM1, MultiAMCoeffs *multiAM2, REAL8 tolerance );
@@ -80,17 +80,16 @@ int main(int argc, char *argv[])
 
   REAL8 tolerance = 2e-6;	/* same algorithm, should be basically identical results */
 
-  char earthEphem[] = DATADIR "earth00-04.dat";
-  char sunEphem[] = DATADIR "sun00-04.dat";
+  char earthEphem[] = TEST_DATA_DIR "earth00-19-DE405.dat.gz";
+  char sunEphem[]   = TEST_DATA_DIR "sun00-19-DE405.dat.gz";
+
   UINT4 numChecks = 1; /* Number of times to check */
 
   /* read user input */
-  lalDebugLevel = 0;
 
   while ((opt = getopt( argc, argv, "n:qv:" )) != -1) {
     switch (opt) {
     case 'v': /* set lalDebugLevel */
-      lalDebugLevel = atoi( optarg );
       break;
     case 'n': /* number of times to check */
       numChecks = atoi( optarg );
@@ -166,9 +165,7 @@ int main(int argc, char *argv[])
   }
   XLALDestroyMultiLALDetector ( multiDet );
   XLALDestroyMultiTimestamps ( multiTS );
-  XLALFree(edat->ephemE);
-  XLALFree(edat->ephemS);
-  XLALFree ( edat );
+  XLALDestroyEphemerisData ( edat );
 
   /* ========== MAIN LOOP: N-trials of comparisons XLAL <--> LAL multiAM functions ========== */
   while ( numChecks-- )
@@ -226,8 +223,8 @@ int main(int argc, char *argv[])
 
 } /* main() */
 
-/** Comparison function for two multiAM vectors, return success or failure for given tolerance.
- *
+/**
+ * Comparison function for two multiAM vectors, return success or failure for given tolerance.
  * we compare avg() and max of |a1_i - a2_i|^2 and |b1_i - b2_i|^2 respectively,
  * and error in |A1 - A2|, |B1 - B2|, |C1 - C2|.
  * These numbers are typically ~ O(1), so we simply compare these absolute errors to the tolerance.

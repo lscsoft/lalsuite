@@ -20,21 +20,22 @@
 #include <lal/LALNoiseModels.h>
 
 /**
-\author Sathyaprakash, B. S.
-\ingroup LALNoiseModels_h
-\brief This function colors a given white noise input into a colored noise
-of power spectral density \c psd.
-
-\heading{Description}
-Given the Fourier transform \f$N(f)\f$ of  white noise, the
-Fourier transform of noise of power spectral density \f$S(f)\f$ is
-given by \f${\cal N}(f) = N(f) \times \sqrt{S(f)}.\f$
-In the discrete version there is an additional normalisation:
-\f[{\cal N}_k = N_k \times \sqrt{\frac{2 S_k}{n}},\ \
-  {\cal N}_{n-k} = N_{n-k} \times \sqrt{\frac{2 S_k}{n}},\ \
-  k=1, \ldots, \frac{n}{2}.\f]
-
-*/
+ * \author Sathyaprakash, B. S.
+ * \ingroup LALNoiseModels_h
+ * \brief This function colors a given white noise input into a colored noise
+ * of power spectral density \c psd.
+ *
+ * ### Description ###
+ *
+ * Given the Fourier transform \f$N(f)\f$ of  white noise, the
+ * Fourier transform of noise of power spectral density \f$S(f)\f$ is
+ * given by \f${\cal N}(f) = N(f) \times \sqrt{S(f)}.\f$
+ * In the discrete version there is an additional normalisation:
+ * \f[{\cal N}_k = N_k \times \sqrt{\frac{2 S_k}{n}},\ \
+ * {\cal N}_{n-k} = N_{n-k} \times \sqrt{\frac{2 S_k}{n}},\ \
+ * k=1, \ldots, \frac{n}{2}.\f]
+ *
+ */
 void
 LALColoredNoise
    (

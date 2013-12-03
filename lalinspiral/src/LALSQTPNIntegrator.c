@@ -1,6 +1,6 @@
 /**
  * @file LALSQTPNIntegrator.c
- *		Contains the function definitions needed by the integration method.
+ * Contains the function definitions needed by the integration method.
  * @author László Veréb
  * @date 2010.05.21.
  */

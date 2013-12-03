@@ -35,38 +35,42 @@
  */
 
 /**
-\author Krishnan, B., Sintes, A.M.
-\file
-\ingroup Velocity_h
-\brief Tests the calculation of the averaged velocity of a given detector.
-
-\heading{Program \ref TestVelocity.c}
-
-\heading{Usage}
-\code
-TestVelocity  [-d debuglevel] [-a accuracy]
-\endcode
-
-\heading{Description}
-This program computes the averaged velocity  of the GEO600 detector
-between the times 730000044 and 730003644 with a default accuracy of 0.01.
-The two ephemeris files (e.g., for data taken in 2003, <tt>sun03.dat</tt> and
-<tt>earth03.dat</tt>) are assumed to be in the  directory
-<tt>lal/packages/pulsar/test/</tt>.
-
-The <b>-d</b> option sets the debug level to the specified value
-\c debuglevel.  The <b>-a</b> flag tells the program which accuracy to use.
-
-\heading{Uses}
-\code
-LALAvgDetectorVel()
-LALPrintError()
-LALMalloc()
-LALFree()
-LALCheckMemoryLeaks()
-\endcode
-
-*/
+ * \author Krishnan, B., Sintes, A.M.
+ * \file
+ * \ingroup Velocity_h
+ * \brief Tests the calculation of the averaged velocity of a given detector.
+ *
+ * ### Program TestVelocity.c ###
+ *
+ *
+ * ### Usage ###
+ *
+ * \code
+ * TestVelocity  [-d debuglevel] [-a accuracy]
+ * \endcode
+ *
+ * ### Description ###
+ *
+ * This program computes the averaged velocity  of the GEO600 detector
+ * between the times 730000044 and 730003644 with a default accuracy of 0.01.
+ * The two ephemeris files (e.g., for data taken in 2003, <tt>sun03.dat</tt> and
+ * <tt>earth03.dat</tt>) are assumed to be in the  directory
+ * <tt>lal/packages/pulsar/test/</tt>.
+ *
+ * The <b>-d</b> option sets the debug level to the specified value
+ * \c debuglevel.  The <b>-a</b> flag tells the program which accuracy to use.
+ *
+ * ### Uses ###
+ *
+ * \code
+ * LALAvgDetectorVel()
+ * LALPrintError()
+ * LALMalloc()
+ * LALFree()
+ * LALCheckMemoryLeaks()
+ * \endcode
+ *
+ */
 
 /* #include "./Velocity.h" */
 #include <lal/Velocity.h>
@@ -91,7 +95,6 @@ LALCheckMemoryLeaks()
 
 /* Default parameters. */
 
-INT4 lalDebugLevel=7;
 
 /* #define T0SEC 714153733 */
 #define T0SEC 730000044
@@ -101,8 +104,9 @@ INT4 lalDebugLevel=7;
 
 /* Locations of the earth and sun ephemeris data */
 
-#define EARTHDATAFILE DATADIR "earth00-04.dat"
-#define SUNDATAFILE DATADIR "sun00-04.dat"
+#define EARTHDATAFILE TEST_DATA_DIR  "earth00-19-DE405.dat.gz";
+#define SUNDATAFILE TEST_DATA_DIR    "sun00-19-DE405.dat.gz";
+
 char EARTHDATA[] = EARTHDATAFILE;
 char SUNDATA[] = SUNDATAFILE;
 
@@ -179,7 +183,6 @@ int main(int argc, char *argv[]){
     if ( !strcmp( argv[arg], "-d" ) ) {
       if ( argc > arg + 1 ) {
         arg++;
-        lalDebugLevel = atoi( argv[arg++] );
       } else {
         ERROR( TESTVELOCITYC_EARG, TESTVELOCITYC_MSGEARG, 0 );
         XLALPrintError( USAGE, *argv );

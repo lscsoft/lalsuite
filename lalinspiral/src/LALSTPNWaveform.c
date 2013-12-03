@@ -18,14 +18,14 @@
 */
 
 /**
-  \author Vallisneri, M.  Cokelaer, T.
-  \file
-  \ingroup LALInspiral_h
-
-  \brief Module to generate STPN (spinning binaries) waveforms in agreement with
-  the injecttion  package (return a CoherentGW structure).
-
-*/
+ * \author Vallisneri, M.  Cokelaer, T.
+ * \file
+ * \ingroup LALInspiral_h
+ *
+ * \brief Module to generate STPN (spinning binaries) waveforms in agreement with
+ * the injecttion  package (return a CoherentGW structure).
+ *
+ */
 
 
 #include <lal/Units.h>
@@ -1064,7 +1064,7 @@ LALSTPNWaveformEngine (
 
       if (signalvec1)
 	{
-	  v = pow(omega, oneby3);
+	  v = pow(omega, (1./3.));
 	  amp = params->signalAmplitude*v*v;
 
 

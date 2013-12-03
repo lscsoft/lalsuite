@@ -1,0 +1,33 @@
+.TH LALFR-PASTE 1 "10 June 2013" LALFrame LALFrame
+.SH NAME
+lalfr-paste -- merge channels in corresponding frames together
+
+.SH SYNOPSIS
+.B lalfr-paste
+[\fIfile\fP ...]
+
+.SH DESCRIPTION
+.PP
+The \fBlalfr-paste\fP utility concatenates the corresponding frames of the
+given input files, producing frames containing the merged
+channels and detector structures that are written to the standard output.
+If \fIfile\fP is a single dash (`\fB-\fP') for one of the input files,
+the standard input is used.
+
+.SH EXAMPLES
+.PP
+The command:
+.PP
+.RS
+lalfr-paste file1.gwf file2.gwf > file3.gwf
+.RE
+.PP
+merges the channels in the frames contained in \fIfile1.gwf\fP with the
+channels in the frames contained in \fIfile2.gwf\fP and writes the resulting
+set of frames to \fIfile3.gwf\fP.
+
+.SH SEE ALSO
+lalfr-cut(1)
+
+.SH AUTHOR
+Jolien Creighton

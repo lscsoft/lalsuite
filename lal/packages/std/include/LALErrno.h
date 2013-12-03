@@ -17,7 +17,8 @@
 *  MA  02111-1307  USA
 */
 
-/** \author: Cannon, K. C.
+/**
+ * \author: Cannon, K. C.
  */
 
 #ifndef _LALERRNO_H

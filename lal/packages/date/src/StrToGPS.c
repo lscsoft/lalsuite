@@ -264,7 +264,8 @@ int XLALStrToGPS(LIGOTimeGPS *t, const char *nptr, char **endptr)
 }
 
 
-/** \ingroup Date_h
+/**
+ * \ingroup Date_h
  * \brief Return a string containing the ASCII base 10 representation of a
  * LIGOTimeGPS.  If s is not NULL, then the string is written to that
  * location which must be large enough to hold the string plus a 0

@@ -215,7 +215,7 @@ XLALOldDopplerFstatMetric ( const DopplerMetricParams *metricParams,  	/**< inpu
     }
   if ( (metricType == METRIC_TYPE_PHASE) || (metricType == METRIC_TYPE_ALL) )
     {
-      if ( metricParams->detMotionType == DETMOTION_ORBIT_SPINXY )
+      if ( metricParams->detMotionType == (DETMOTION_SPINXY | DETMOTION_ORBIT) )
         {
           XLAL_CHECK_NULL ( XLALFlatMetricCW ( metric->g_ij, config.refTime, config.startTime, duration, edat ) == XLAL_SUCCESS, XLAL_EFUNC );
         }
@@ -612,7 +612,8 @@ computePhaseMetric ( gsl_matrix *g_ij, const PhaseDerivs *dPhi, const REAL8Vecto
 
 } /* computePhaseMetric() */
 
-/** basic initializations: set-up 'ConfigVariables'
+/**
+ * basic initializations: set-up 'ConfigVariables'
  * Taken from FstatMetric where it parsed user-input into ConfigVariables,
  * now basically just translates from modern-API 'metricParams' into old-API 'ConfigVariables'
  *
@@ -738,9 +739,9 @@ InitCode ( ConfigVariables *cfg,
   cfg->Al3 = ( SQ(Aplus) - SQ(Across) ) * sin2psi * cos2psi ;
 
   // ----- translate 'new-API' DetectorMotionType into 'old-API' PhaseType_t
-  switch ( metricParams->detMotionType )
+  switch ( (int)metricParams->detMotionType )
     {
-    case DETMOTION_SPIN_ORBIT:
+    case DETMOTION_SPIN | DETMOTION_ORBIT:
       cfg->phaseType = PHASE_FULL;
       break;
 
@@ -752,18 +753,12 @@ InitCode ( ConfigVariables *cfg,
       cfg->phaseType = PHASE_SPIN;
       break;
 
-    case DETMOTION_SPIN_PTOLEORBIT:
+    case DETMOTION_SPIN | DETMOTION_PTOLEORBIT:
       cfg->phaseType = PHASE_PTOLE;
       break;
 
-    case DETMOTION_PTOLEORBIT:
-    case DETMOTION_ORBIT_SPINZ:
-    case DETMOTION_ORBIT_SPINXY:
-      XLAL_ERROR ( XLAL_EDOM, "Can't deal with detMotionType = %d, not analog exists for XLALOldDopplerFstatMetric()\n", metricParams->detMotionType );
-      break;
-
     default:
-      XLAL_ERROR ( XLAL_EDOM, "Invalid detMotionType = %d, not in [0, %d]\n", metricParams->detMotionType,   DETMOTION_LAST - 1 );
+      XLAL_ERROR ( XLAL_EDOM, "Can't deal with detMotionType = %d, not analog exists for XLALOldDopplerFstatMetric()\n", metricParams->detMotionType );
       break;
     } // switch(detMotionType)
 
@@ -776,7 +771,8 @@ InitCode ( ConfigVariables *cfg,
 } /* InitFStat() */
 
 
-/** calculate the phase-derivatives \f$\partial_i \phi \f$ for the
+/**
+ * calculate the phase-derivatives \f$\partial_i \phi \f$ for the
  * time-series detStates and the given doppler-point.
  * Has the option of using only the orbital part of the phase (PHASE_ORBITAL)
  * or the full-phase (PHASE_FULL).
@@ -898,7 +894,8 @@ getMultiPhaseDerivs ( const MultiDetectorStateSeries *multiDetStates,
 
 } /* getMultiPhaseDerivs() */
 
-/** Calculate the projected metric onto the subspace of 'c' given by
+/**
+ * Calculate the projected metric onto the subspace of 'c' given by
  * ret_ij = g_ij - ( g_ic * g_jc / g_cc ) , where c is the value of the projected coordinate
  * The output-matrix ret must be allocated
  *
@@ -932,7 +929,8 @@ project_metric( gsl_matrix *ret_ij, gsl_matrix * g_ij, const UINT4 c )
 }
 
 
-/** Calculate the outer product ret_ij of vectors u_i and v_j, given by
+/**
+ * Calculate the outer product ret_ij of vectors u_i and v_j, given by
  * ret_ij = u_i v_j
  * The output-matrix ret must be allocated and have dimensions len(u) x len(v)
  *
@@ -1008,7 +1006,8 @@ quad_form ( const gsl_matrix *mat, const gsl_vector *vec )
 } /* quad_form() */
 
 
-/** Get Ptolemaic position and velocity at time tGPS
+/**
+ * Get Ptolemaic position and velocity at time tGPS
  * cut-down version of LALDTBaryPtolemaic()
  */
 

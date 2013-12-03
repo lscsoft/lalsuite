@@ -24,56 +24,58 @@
 #include <lal/LALString.h>
 
 /**
-\addtogroup Segments_h
+ * \addtogroup Segments_h
+ *
+ * ### Functions for handling segments ###
+ *
+ * The first few functions listed deal with \e segments:
+ *
+ * XLALSegSet(), XLALSegCreate(), XLALGPSInSeg(), XLALSegCmp()
+ *
+ * ### Functions for handling segment lists ###
+ *
+ * The rest of the functions listed deal with <em>segment lists</em>:
+ *
+ * XLALSegListInit(), XLALSegListClear(), XLALSegListAppend(), XLALSegListSort()
+ * XLALSegListCoalesce(), XLALSegListSearch()
+ *
+ * ### Error codes and return values ###
+ *
+ * Each XLAL function listed above, if it fails invokes the current XLAL error
+ * handler, sets \c xlalErrno to the appropriate XLAL error code, and
+ * returns a particular value as noted below:
+ *
+ * <ul>
+ * <li>
+ * Functions which return an integer status code (XLALSegSet(),
+ * XLALSegListInit(), XLALSegListClear(), XLALSegListAppend(), XLALSegListSort(),
+ * XLALSegListCoalesce() return XLAL_SUCCESS if successful
+ * or XLAL_FAILURE if an error occurs.</li>
+ * <li>
+ * XLALGPSInSeg() and XLALSegCmp() normally return a
+ * comparison value (negative, 0, or positive).</li>
+ * <li>
+ * XLALSegCreate() normally returns a pointer to the created
+ * segment.  If an error occurs, it returns NULL.</li>
+ * <li>
+ * XLALSegListSearch() returns a pointer to a segment in the list which
+ * contains the time being searched for, or NULL if there is no such segment.
+ * If more than one segment in the list contains the time, then this function
+ * returns a pointer to \e one of the segments which contains it, not
+ * necessarily the first such segment in the list.  (This is not an issue if
+ * the list is ``disjoint'', which guarantees that it has no overlapping
+ * segments.)  If no segment in the list contains the time, then this function
+ * returns NULL; however, this is not really an error, use \c xlalErrno
+ * to differentiate between failure and non-failure.
+ * </li>
+ * </ul>
+ *
+ */
 
-\heading{Functions for handling segments}
-
-The first few functions listed deal with \e segments:
-
-XLALSegSet(), XLALSegCreate(), XLALGPSInSeg(), XLALSegCmp()
-
-\heading{Functions for handling segment lists}
-
-The rest of the functions listed deal with <em>segment lists</em>:
-
-XLALSegListInit(), XLALSegListClear(), XLALSegListAppend(), XLALSegListSort()
-XLALSegListCoalesce(), XLALSegListSearch()
-
-\heading{Error codes and return values}
-
-Each XLAL function listed above, if it fails invokes the current XLAL error
-handler, sets \c xlalErrno to the appropriate XLAL error code, and
-returns a particular value as noted below:
-
-<ul>
-<li>
-Functions which return an integer status code (XLALSegSet(),
-XLALSegListInit(), XLALSegListClear(), XLALSegListAppend(), XLALSegListSort(),
-XLALSegListCoalesce() return XLAL_SUCCESS if successful
-or XLAL_FAILURE if an error occurs.</li>
-<li>
-XLALGPSInSeg() and XLALSegCmp() normally return a
-comparison value (negative, 0, or positive).</li>
-<li>
-XLALSegCreate() normally returns a pointer to the created
-segment.  If an error occurs, it returns NULL.</li>
-<li>
-XLALSegListSearch() returns a pointer to a segment in the list which
-contains the time being searched for, or NULL if there is no such segment.
-If more than one segment in the list contains the time, then this function
-returns a pointer to \e one of the segments which contains it, not
-necessarily the first such segment in the list.  (This is not an issue if
-the list is ``disjoint'', which guarantees that it has no overlapping
-segments.)  If no segment in the list contains the time, then this function
-returns NULL; however, this is not really an error, use \c xlalErrno
-to differentiate between failure and non-failure.
-</li>
-</ul>
-
-*/
 
 /*---------------------------------------------------------------------------*/
-/** This function sets the start time, the end time, and the \a id of a segment.
+/**
+ * This function sets the start time, the end time, and the \a id of a segment.
  * The \a id can be any integer and is
  * solely for the use of the user, e.g. to store a segment ID code
  * or an index into some array containing additional information about the
@@ -119,7 +121,8 @@ XLALSegSet( LALSeg *seg, const LIGOTimeGPS *start, const LIGOTimeGPS *end,
 
 /*---------------------------------------------------------------------------*/
 
-/** This function is similar to XLALSegSet()
+/**
+ * This function is similar to XLALSegSet()
  * except that it allocates memory for a new segment structure rather than setting
  * the fields of an existing segment structure.  It returns a pointer to the
  * new \a LALSeg structure.  When the structure is no longer needed, its
@@ -166,7 +169,8 @@ XLALSegCreate( const LIGOTimeGPS *start, const LIGOTimeGPS *end,
 
 /*---------------------------------------------------------------------------*/
 
-/** This is designed to be usable as a comparison function for
+/**
+ * This is designed to be usable as a comparison function for
  * <tt>bsearch()</tt> and therefore returns a negative value, 0, or a positive
  * value depending on whether the GPS time (the first argument) is before the
  * beginning of, within, or after the end of the segment (the second argument).
@@ -193,7 +197,8 @@ XLALGPSInSeg( const void *pgps, const void *pseg )
 
 /*---------------------------------------------------------------------------*/
 
-/** This is designed to be usable as a comparison function for
+/**
+ * This is designed to be usable as a comparison function for
  * <tt>qsort()</tt> and therefore returns a negative value, 0, or a positive value
  * depending on
  * whether the first argument is less than, equal to, or greater than the second.
@@ -225,7 +230,8 @@ XLALSegCmp( const void *pseg0, const void *pseg1 )
 
 /*---------------------------------------------------------------------------*/
 
-/** This function must be called to initialize a segment
+/**
+ * This function must be called to initialize a segment
  * list structure before that structure can be used.
  */
 INT4
@@ -264,7 +270,8 @@ XLALSegListInit( LALSegList *seglist )
 
 /*---------------------------------------------------------------------------*/
 
-/** This function must be called when you are done
+/**
+ * This function must be called when you are done
  * with a segment list, in order to free memory that was allocated to store
  * the segments in the list.  (Strictly speaking, this is only necessary if the
  * list contains one or more segments.)
@@ -319,7 +326,8 @@ XLALSegListClear( LALSegList *seglist )
 
 /*---------------------------------------------------------------------------*/
 
-/** This function appends a segment to a segment list.
+/**
+ * This function appends a segment to a segment list.
  * It first checks to make sure the segment is valid,
  * i.e. the end time is later than or equal to the start time;
  * an error occurs if this condition is not true.
@@ -444,7 +452,8 @@ XLALSegListAppend( LALSegList *seglist, const LALSeg *seg )
 
 /*---------------------------------------------------------------------------*/
 
-/** This function sorts the segments in a segment list
+/**
+ * This function sorts the segments in a segment list
  * into forward time order.  If the list is already sorted, then this function
  * returns promptly.
  */
@@ -488,7 +497,8 @@ XLALSegListSort( LALSegList *seglist )
 
 /*---------------------------------------------------------------------------*/
 
-/** The function XLALSegListCoalesce() first sorts the segments in a
+/**
+ * The function XLALSegListCoalesce() first sorts the segments in a
  * segment list (if not already sorted) and then joins together segments which
  * overlap or touch (i.e. share endpoints).
  * The result is a segment list which is sorted and is guaranteed
@@ -579,57 +589,57 @@ XLALSegListCoalesce( LALSegList *seglist )
 /*---------------------------------------------------------------------------*/
 
 /**
-The function XLALSegListSearch() determines which segment in the
-list, if any, contains the GPS time passed to this function.  It returns
-a pointer to a segment containing the time, if there is one, otherwise
-it returns NULL.  If more than one segment
-in the list contains the time, then this function returns a pointer
-to \e one of the segments which contains it, not necessarily the first
-such segment in the list.  (This is not an issue if the list is ``disjoint'',
-which guarantees that it has no overlapping segments.)
-The following code shows how the XLALSegListSearch() function
-might be used:
-\code
-  LALSegList mylist;
-  LIGOTimeGPS tgps, startgps;
-  LALSeg *segp;
-  ...
-  /\* (Fill the segment list 'mylist' with segments here) *\/
-  /\* (Set the gps time, 'tgps', to search for) *\/
-  ...
-  segp = XLALSegListSearch( &mylist, &tgps );
-  if ( segp ) {
-    startgps = segp->start;
-    printf( "That time is within a segment which starts at GPS time %d.%09d\n",
-            startgps.gpsSecconds, startgps.gpsNanoSeconds );
-  } else {
-    printf( "That time is not within any segment in the list\n" );
-  }
-\endcode
-The search algorithm used by the XLALSegListSearch() function
-depends on whether the segment list is ``sorted'' and/or ``disjoint''.  If
-the segment list has both of these properties, then the function can use
-a binary search to locate the segment containing the time, or to determine
-that there is no such segment.  (Therefore, it is a good idea to pass
-a segment list to XLALSegListCoalesce() before using it with
-XLALSegListSearch(), unless segment list ordering or distinct
-segments which touch/overlap are meaningful for what you are doing,
-which is sometimes the case.)   Otherwise, it must use a linear search,
-although a ``sorted'' list can still be searched slightly more efficiently than
-an un-sorted list.  In all cases, XLALSegListSearch() first checks
-whether the segment found by the last successful search contains the
-specified time, and returns that promptly if so.
-
-\return a pointer to a segment in the list which
-contains the time being searched for, or NULL if there is no such segment.
-If more than one segment in the list contains the time, then this function
-returns a pointer to \e one of the segments which contains it, not
-necessarily the first such segment in the list.  (This is not an issue if
-the list is ``disjoint'', which guarantees that it has no overlapping
-segments.)  If no segment in the list contains the time, then this function
-returns NULL; however, this is not really an error, use \c xlalErrno
-to differentiate between failure and non-failure.
-*/
+ * The function XLALSegListSearch() determines which segment in the
+ * list, if any, contains the GPS time passed to this function.  It returns
+ * a pointer to a segment containing the time, if there is one, otherwise
+ * it returns NULL.  If more than one segment
+ * in the list contains the time, then this function returns a pointer
+ * to \e one of the segments which contains it, not necessarily the first
+ * such segment in the list.  (This is not an issue if the list is ``disjoint'',
+ * which guarantees that it has no overlapping segments.)
+ * The following code shows how the XLALSegListSearch() function
+ * might be used:
+ * \code
+ * LALSegList mylist;
+ * LIGOTimeGPS tgps, startgps;
+ * LALSeg *segp;
+ * ...
+ * /\* (Fill the segment list 'mylist' with segments here) *\/
+ * /\* (Set the gps time, 'tgps', to search for) *\/
+ * ...
+ * segp = XLALSegListSearch( &mylist, &tgps );
+ * if ( segp ) {
+ *   startgps = segp->start;
+ *   printf( "That time is within a segment which starts at GPS time %d.%09d\n",
+ *   startgps.gpsSecconds, startgps.gpsNanoSeconds );
+ * } else {
+ *   printf( "That time is not within any segment in the list\n" );
+ * }
+ * \endcode
+ * The search algorithm used by the XLALSegListSearch() function
+ * depends on whether the segment list is ``sorted'' and/or ``disjoint''.  If
+ * the segment list has both of these properties, then the function can use
+ * a binary search to locate the segment containing the time, or to determine
+ * that there is no such segment.  (Therefore, it is a good idea to pass
+ * a segment list to XLALSegListCoalesce() before using it with
+ * XLALSegListSearch(), unless segment list ordering or distinct
+ * segments which touch/overlap are meaningful for what you are doing,
+ * which is sometimes the case.)   Otherwise, it must use a linear search,
+ * although a ``sorted'' list can still be searched slightly more efficiently than
+ * an un-sorted list.  In all cases, XLALSegListSearch() first checks
+ * whether the segment found by the last successful search contains the
+ * specified time, and returns that promptly if so.
+ *
+ * \return a pointer to a segment in the list which
+ * contains the time being searched for, or NULL if there is no such segment.
+ * If more than one segment in the list contains the time, then this function
+ * returns a pointer to \e one of the segments which contains it, not
+ * necessarily the first such segment in the list.  (This is not an issue if
+ * the list is ``disjoint'', which guarantees that it has no overlapping
+ * segments.)  If no segment in the list contains the time, then this function
+ * returns NULL; however, this is not really an error, use \c xlalErrno
+ * to differentiate between failure and non-failure.
+ */
 LALSeg *
 XLALSegListSearch( LALSegList *seglist, const LIGOTimeGPS *gps )
 
@@ -854,7 +864,8 @@ XLALSegListSearch( LALSegList *seglist, const LIGOTimeGPS *gps )
 
 
 /*---------------------------------------------------------------------------*/
-/** UNDOCUMENTED
+/**
+ * UNDOCUMENTED
  */
 INT4
 XLALSegListShift(  LALSegList *seglist, const LIGOTimeGPS *shift )
@@ -891,7 +902,8 @@ XLALSegListShift(  LALSegList *seglist, const LIGOTimeGPS *shift )
 }
 
 
-/** UNDOCUMENTED
+/**
+ * UNDOCUMENTED
  */
 INT4
 XLALSegListKeep(  LALSegList *seglist, const LIGOTimeGPS *start, const LIGOTimeGPS *end )
@@ -1054,3 +1066,21 @@ XLALSegList2String ( const LALSegList *seglist )
   return ret;
 
 } /* XLALSegList2String() */
+
+/*---------------------------------------------------------------------------*/
+/**
+ * Get a copy of the segment at indx in the internal array. If the segment is
+ * beyond the bounds of the array, return NULL.
+ */
+LALSeg *
+XLALSegListGet( LALSegList *seglist, UINT4 indx )
+
+{
+	if( indx >= seglist->length ){
+		return NULL;
+	}
+	LALSeg* tmp = LALMalloc(sizeof(LALSeg));
+	memcpy(tmp, &seglist->segs[indx], sizeof(LALSeg));
+	return tmp;
+
+}  /* XLALSegListGet() */

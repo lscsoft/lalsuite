@@ -17,17 +17,14 @@
 *  MA  02111-1307  USA
 */
 
-#include <limits.h>
 #include <math.h>
 #include <stdio.h>
-#include <string.h>
-#include <unistd.h>
 
 #include <lal/LALConstants.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALString.h>
 #include <lal/FrequencySeries.h>
-#include <lal/FileIO.h>
+#include <lal/LALSimReadData.h>
 #include <lal/LALSimNoise.h>
 
 // Values for iLIGO
@@ -98,7 +95,7 @@ double XLALSimNoisePSDSeismic(
 	double A_pend   = pow(f_pend / f, 2);
 	double A_stack  = pow(f_stack / f, 2 * n_stack);
 	double S_ground = 1e-18; /* m^2 / Hz */
-	
+
 	if (f > 10.0)
 		S_ground *= pow(10.0 / f, 4);
 
@@ -339,13 +336,13 @@ double XLALSimNoisePSDiLIGOThermal(double f /**< frequency (Hz) */)
 	double susp;
 	double coat;
 	susp = XLALSimNoisePSDSuspTherm(f,
-			LAL_ILIGO_ARMLENGTH_SI, 
+			LAL_ILIGO_ARMLENGTH_SI,
 			LAL_ILIGO_MIRROR_MASS_SI,
 			LAL_ILIGO_TEMPERATURE_SI,
 			LAL_ILIGO_THERMAL_SUSP_FREQ_SI,
 			LAL_ILIGO_THERMAL_SUSP_QUAL);
 	coat = XLALSimNoisePSDMirrorTherm(f,
-			LAL_ILIGO_ARMLENGTH_SI, 
+			LAL_ILIGO_ARMLENGTH_SI,
 			LAL_ILIGO_MIRROR_MASS_SI,
 			LAL_ILIGO_TEMPERATURE_SI,
 			LAL_ILIGO_THERMAL_COAT_FREQ_SI,
@@ -439,9 +436,9 @@ double XLALSimNoisePSDeLIGOModel(double f /**< frequency (Hz) */)
  * phenomenological fit (from the Virgo webiste) that can be approximated by the
  * following:
  * \f{equation}{
- *  S_h(f) =
- *  s_0 \left ( \frac {7.87f}{f_0} \right )^{-4.8} + \frac{6}{17} \frac{f_0}{f}
- *  + \left [1 + \left (\frac {f}{f_0} \right)^2 \right ],
+ * S_h(f) =
+ * s_0 \left ( \frac {7.87f}{f_0} \right )^{-4.8} + \frac{6}{17} \frac{f_0}{f}
+ * + \left [1 + \left (\frac {f}{f_0} \right)^2 \right ],
  * \f}
  * where \f$s_0=10.2e-46\f$.
  *
@@ -460,8 +457,9 @@ double XLALSimNoisePSDVirgo(double f /**< frequency (Hz) */)
   return s0*( pow(7.87*x,-4.8) + 6./17./x + 1. + x*x);
 }
 
-/** Provides a GEO noise power spectrum based on that from Table IV of
- * \ref dis2001.
+/**
+ * Provides a GEO noise power spectrum based on that from Table IV of
+ * \cite dis2001.
  *
  * The comes from the deprecated function LALGEOPsd in the lal noisemodels
  * package.
@@ -478,8 +476,25 @@ double XLALSimNoisePSDGEO(double f /**< frequency (Hz) */)
   return 1e-46*(seismic + thermal + shot);
 }
 
-/** Provides a TAMA300 noise power spectrum based on that from Table IV of
- * \ref dis2001.
+
+/**
+ * Provides a GEO-HF noise power spectrum based on a fit to Figure 6
+ * from \cite Grote2010.
+ *
+ * The fit is good between 50Hz to 8kHz and errors between the analytic
+ * fit given and the <a href="https://intranet.aei.uni-hannover.de/geo600/geohflogbook.nsf/7e8722dffa24dea0c1256de900406c84/4837a612ac990060c12575ce004e70fd?OpenDocument">estimated curve</a> are less than 1%.
+ */
+double XLALSimNoisePSDGEOHF(double f /**< frequency (Hz) */)
+{
+  REAL8 f2 = f*f;
+
+  return 7.18e-46*(1. + (f2/(1059.*1059.))) + (4.90e-41/f2) + (8.91e-43/f) + (1.6e-17/pow(f, 16.));
+}
+
+
+/**
+ * Provides a TAMA300 noise power spectrum based on that from Table IV of
+ * \cite dis2001.
  *
  * The comes from the deprecated function LALTAMAPsd in the lal noisemodels
  * package.
@@ -504,7 +519,7 @@ double XLALSimNoisePSDTAMA(double f /**< frequency (Hz) */)
 
 
 /**
- * Provides the thermal noise (suspension + coating) power spectrum for iLIGO.
+ * Provides the thermal noise (suspension + coating) power spectrum for aLIGO.
  *
  * Note: this is a phenomenological fit to the broadband component.
  */
@@ -513,13 +528,13 @@ double XLALSimNoisePSDaLIGOThermal(double f /**< frequency (Hz) */)
 	double susp;
 	double coat;
 	susp = XLALSimNoisePSDSuspTherm(f,
-			LAL_ALIGO_ARMLENGTH_SI, 
+			LAL_ALIGO_ARMLENGTH_SI,
 			LAL_ALIGO_MIRROR_MASS_SI,
 			LAL_ALIGO_TEMPERATURE_SI,
 			LAL_ALIGO_THERMAL_SUSP_FREQ_SI,
 			LAL_ALIGO_THERMAL_SUSP_QUAL);
 	coat = XLALSimNoisePSDMirrorTherm(f,
-			LAL_ALIGO_ARMLENGTH_SI, 
+			LAL_ALIGO_ARMLENGTH_SI,
 			LAL_ALIGO_MIRROR_MASS_SI,
 			LAL_ALIGO_TEMPERATURE_SI,
 			LAL_ALIGO_THERMAL_COAT_FREQ_SI,
@@ -829,7 +844,7 @@ double XLALSimNoisePSDaLIGOZeroDetHighPower(double f /**< frequency (Hz) */)
 
 
 /**
- * Provides the noise power spectrum for aLIGO under the 
+ * Provides the noise power spectrum for aLIGO under the
  * configuration tuned to optimize sensitivity to NS-NS inspirals.
  *
  * See: LIGO-T0900288-v3 and LIGO-T070247-01.
@@ -851,7 +866,7 @@ double XLALSimNoisePSDaLIGONSNSOpt(double f /**< frequency (Hz) */)
 
 
 /**
- * Provides the noise power spectrum for aLIGO under the 
+ * Provides the noise power spectrum for aLIGO under the
  * configuration tuned to optimize sensitivity to 30+30 solar mass binary
  * black holes with fixed signal recycling cavity detuning of 20 degrees.
  *
@@ -874,7 +889,7 @@ double XLALSimNoisePSDaLIGOBHBH20Deg(double f /**< frequency (Hz) */)
 
 
 /**
- * Provides the noise power spectrum for aLIGO under the 
+ * Provides the noise power spectrum for aLIGO under the
  * configuration tuned to narrow-band high-frequency sensitivity around
  * 1 kHz.
  *
@@ -896,8 +911,9 @@ double XLALSimNoisePSDaLIGOHighFrequency(double f /**< frequency (Hz) */)
 }
 
 
-/** Provides the noise power spectrum for KAGRA based on that from Eqn 5 of
- * \ref md2012. This is a phenomenological fit to the KAGRA spectrum from
+/**
+ * Provides the noise power spectrum for KAGRA based on that from Eqn 5 of
+ * \cite md2012. This is a phenomenological fit to the KAGRA spectrum from
  * http://gwcenter.icrr.u-tokyo.ac.jp/en/researcher/parameter
  */
 double XLALSimNoisePSDKAGRA(double f /**< frequency (Hz) */)
@@ -917,8 +933,9 @@ double XLALSimNoisePSDKAGRA(double f /**< frequency (Hz) */)
 }
 
 
-/** Provides the noise power spectrum for AdvVirgo based on that from Eqn 6 of
- * \ref md2012. This is a phenomenological fit to the AdvVirgo spectrum from
+/**
+ * Provides the noise power spectrum for AdvVirgo based on that from Eqn 6 of
+ * \cite md2012. This is a phenomenological fit to the AdvVirgo spectrum from
  * http://wwwcascina.virgo.infin.it/advirgo.
  */
 double XLALSimNoisePSDAdvVirgo(double f /**< frequency (Hz) */)
@@ -954,7 +971,7 @@ int XLALSimNoisePSD(
 	/* set DC and Nyquist to zero */
 	/* note: assumes last element is Nyquist */
 	psd->data->data[0] = psd->data->data[psd->data->length - 1] = 0.0;
-	
+
 	/* determine low frequency cutoff */
 	kmin = flow / psd->deltaF;
 
@@ -966,87 +983,6 @@ int XLALSimNoisePSD(
 	psd->data->data[psd->data->length - 1] = 0.0; /* set Nyquist to zero (presume this is Nyquist!) */
 
 	return 0;
-}
-
-/* opens a data file */
-static LALFILE *XLALSimNoisePSDFileOpen(const char *fname)
-{
-	const char *pkgdatadir = PKGDATADIR;
-	char path[PATH_MAX] = "";
-	LALFILE *fp;
-
-	if (strchr(fname, '/')) {
-		/* a specific path is given */
-		if (realpath(fname, path) == NULL)
-			XLAL_ERROR_NULL(XLAL_EIO, "Unresolvable path %s\n", path);
-	} else {
-		/* unspecific path given: use LALSIM_DATA_PATH environment */
-		char *env = getenv("LALSIM_DATA_PATH");
-		char *str;
-		char *dir;
-		env = str = XLALStringDuplicate(env ? env : ":");
-		while ((dir = strsep(&str, ":"))) {
-			if (strlen(dir))
-				snprintf(path, sizeof(path), "%s/%s", dir, fname);
-			else /* use default path */
-				snprintf(path, sizeof(path), "%s/%s", pkgdatadir, fname);
-			if (access(path, R_OK) == 0) /* found it! */
-				break;
-			*path = 0;
-		}
-		XLALFree(env);
-	}
-	if (! *path) /* could not find file */
-		XLAL_ERROR_NULL(XLAL_EIO, "Could not find data file %s\n", fname);
-	fp = XLALFileOpenRead(path);
-	if (! fp) /* open failure */
-		XLAL_ERROR_NULL(XLAL_EIO, "Could not open data file %s\n", path);
-	return fp;
-}
-
-/* loads a two-column data file */
-#ifndef PAGESIZE
-#ifdef _SC_PAGE_SIZE
-#define PAGESIZE _SC_PAGE_SIZE
-#else
-#define PAGESIZE 1024
-#endif
-#endif
-#ifndef LINE_MAX
-#ifdef _SC_LINE_MAX
-#define LINE_MAX _SC_LINE_MAX
-#else
-#define LINE_MAX 1024
-#endif
-#endif
-static size_t XLALSimNoiseRead2ColData(double **xdat, double **ydat, LALFILE *fp)
-{
-	char    line[LINE_MAX];
-	size_t  size = PAGESIZE;
-	size_t  npts;
-	*xdat = XLALMalloc(size * sizeof(**xdat));
-	*ydat = XLALMalloc(size * sizeof(**ydat));
-	npts = 0;
-	while (XLALFileGets(line, sizeof(line), fp)) {
-		if (strchr(line, '\n') == NULL) {
-			XLALFree(*xdat);
-			XLALFree(*ydat);
-			XLAL_ERROR(XLAL_EIO, "Line %zd too long\n", npts + 1);
-		}
-		if (sscanf(line, "%lf %lf", *xdat + npts, *ydat + npts) != 2) {
-			XLALFree(*xdat);
-			XLALFree(*ydat);
-			XLAL_ERROR(XLAL_EIO, "Line %zd malformed\n", npts + 1);
-		}
-		if (++npts == size) {
-			size += PAGESIZE;
-			*xdat = XLALRealloc(*xdat, size * sizeof(**xdat));
-			*ydat = XLALRealloc(*ydat, size * sizeof(**ydat));
-		}
-	}
-	*xdat = XLALRealloc(*xdat, npts * sizeof(**xdat));
-	*ydat = XLALRealloc(*ydat, npts * sizeof(**ydat));
-	return npts;
 }
 
 
@@ -1070,10 +1006,10 @@ int XLALSimNoisePSDFromFile(
 	LALFILE *fp;
 
 	/* first, read the data form the datafile */
-	fp = XLALSimNoisePSDFileOpen(fname);
+	fp = XLALSimReadDataFileOpen(fname);
 	if (!fp)
 		XLAL_ERROR(XLAL_EFUNC);
-	n = XLALSimNoiseRead2ColData(&f, &h, fp);
+	n = XLALSimReadDataFile2Col(&f, &h, fp);
 	XLALFileClose(fp);
 	if (n == (size_t)(-1))
 		XLAL_ERROR(XLAL_EFUNC);
@@ -1186,7 +1122,216 @@ int XLALSimNoisePSDaLIGOHighFrequencyGWINC(
 	return XLALSimNoisePSDFromFile(psd, flow, T0900288 "High_Freq.txt");
 }
 
+/* prefix for noise psd files provided by LIGO-T0900288 */
+#define P1200087 "LIGO-P1200087-v18-"
 
+/**
+ * Returns a frequency series psd with low frequency cutoff flow corresponding
+ * to the aLIGO 2015 low-sensitivity scenario in LIGO-P1200087.
+ */
+int XLALSimNoisePSDaLIGOEarlyLowSensitivityP1200087(
+	REAL8FrequencySeries *psd,	/**< frequency series to be computed */
+	double flow 			/**< low frequency cutoff (Hz) */
+)
+{
+	return XLALSimNoisePSDFromFile(psd, flow,
+		P1200087 "aLIGO_EARLY_LOW.txt");
+}
+
+/**
+ * Returns a frequency series psd with low frequency cutoff flow corresponding
+ * to the aLIGO 2015 high-sensitivity scenario in LIGO-P1200087.
+ */
+int XLALSimNoisePSDaLIGOEarlyHighSensitivityP1200087(
+	REAL8FrequencySeries *psd,	/**< frequency series to be computed */
+	double flow 			/**< low frequency cutoff (Hz) */
+)
+{
+	return XLALSimNoisePSDFromFile(psd, flow,
+		P1200087 "aLIGO_EARLY_HIGH.txt");
+}
+
+/**
+ * Returns a frequency series psd with low frequency cutoff flow corresponding
+ * to the aLIGO 2016-2017 low-sensitivity scenario in LIGO-P1200087.
+ */
+int XLALSimNoisePSDaLIGOMidLowSensitivityP1200087(
+	REAL8FrequencySeries *psd,	/**< frequency series to be computed */
+	double flow 			/**< low frequency cutoff (Hz) */
+)
+{
+	return XLALSimNoisePSDFromFile(psd, flow,
+		P1200087 "aLIGO_MID_LOW.txt");
+}
+
+/**
+ * Returns a frequency series psd with low frequency cutoff flow corresponding
+ * to the aLIGO 2016-2017 high-sensitivity scenario in LIGO-P1200087.
+ */
+int XLALSimNoisePSDaLIGOMidHighSensitivityP1200087(
+	REAL8FrequencySeries *psd,	/**< frequency series to be computed */
+	double flow 			/**< low frequency cutoff (Hz) */
+)
+{
+	return XLALSimNoisePSDFromFile(psd, flow,
+		P1200087 "aLIGO_MID_HIGH.txt");
+}
+
+/**
+ * Returns a frequency series psd with low frequency cutoff flow corresponding
+ * to the aLIGO 2017-2018 low-sensitivity scenario in LIGO-P1200087.
+ */
+int XLALSimNoisePSDaLIGOLateLowSensitivityP1200087(
+	REAL8FrequencySeries *psd,	/**< frequency series to be computed */
+	double flow 			/**< low frequency cutoff (Hz) */
+)
+{
+	return XLALSimNoisePSDFromFile(psd, flow,
+		P1200087 "aLIGO_LATE_LOW.txt");
+}
+
+/**
+ * Returns a frequency series psd with low frequency cutoff flow corresponding
+ * to the aLIGO 2017-2018 high-sensitivity scenario in LIGO-P1200087.
+ */
+int XLALSimNoisePSDaLIGOLateHighSensitivityP1200087(
+	REAL8FrequencySeries *psd,	/**< frequency series to be computed */
+	double flow 			/**< low frequency cutoff (Hz) */
+)
+{
+	return XLALSimNoisePSDFromFile(psd, flow,
+		P1200087 "aLIGO_LATE_HIGH.txt");
+}
+
+/**
+ * Returns a frequency series psd with low frequency cutoff flow corresponding
+ * to the aLIGO 2019 design sensitivity scenario in LIGO-P1200087.
+ */
+int XLALSimNoisePSDaLIGODesignSensitivityP1200087(
+	REAL8FrequencySeries *psd,	/**< frequency series to be computed */
+	double flow 			/**< low frequency cutoff (Hz) */
+)
+{
+	return XLALSimNoisePSDFromFile(psd, flow,
+		P1200087 "aLIGO_DESIGN.txt");
+}
+
+/**
+ * Returns a frequency series psd with low frequency cutoff flow corresponding
+ * to the aLIGO BNS-optimized sensitivity scenario in LIGO-P1200087.
+ */
+int XLALSimNoisePSDaLIGOBNSOptimizedSensitivityP1200087(
+	REAL8FrequencySeries *psd,	/**< frequency series to be computed */
+	double flow 			/**< low frequency cutoff (Hz) */
+)
+{
+	return XLALSimNoisePSDFromFile(psd, flow,
+		P1200087 "aLIGO_BNS_OPTIMIZED.txt");
+}
+
+/**
+ * Returns a frequency series psd with low frequency cutoff flow corresponding
+ * to the AdV 2016-2017 low-sensitivity scenario in LIGO-P1200087.
+ */
+int XLALSimNoisePSDAdVEarlyLowSensitivityP1200087(
+	REAL8FrequencySeries *psd,	/**< frequency series to be computed */
+	double flow 			/**< low frequency cutoff (Hz) */
+)
+{
+	return XLALSimNoisePSDFromFile(psd, flow,
+		P1200087 "AdV_EARLY_LOW.txt");
+}
+
+/**
+ * Returns a frequency series psd with low frequency cutoff flow corresponding
+ * to the AdV 2016-2017 high-sensitivity scenario in LIGO-P1200087.
+ */
+int XLALSimNoisePSDAdVEarlyHighSensitivityP1200087(
+	REAL8FrequencySeries *psd,	/**< frequency series to be computed */
+	double flow 			/**< low frequency cutoff (Hz) */
+)
+{
+	return XLALSimNoisePSDFromFile(psd, flow,
+		P1200087 "AdV_EARLY_HIGH.txt");
+}
+
+/**
+ * Returns a frequency series psd with low frequency cutoff flow corresponding
+ * to the AdV 2017-2018 low-sensitivity scenario in LIGO-P1200087.
+ */
+int XLALSimNoisePSDAdVMidLowSensitivityP1200087(
+	REAL8FrequencySeries *psd,	/**< frequency series to be computed */
+	double flow 			/**< low frequency cutoff (Hz) */
+)
+{
+	return XLALSimNoisePSDFromFile(psd, flow,
+		P1200087 "AdV_MID_LOW.txt");
+}
+
+/**
+ * Returns a frequency series psd with low frequency cutoff flow corresponding
+ * to the AdV 2017-2018 high-sensitivity scenario in LIGO-P1200087.
+ */
+int XLALSimNoisePSDAdVMidHighSensitivityP1200087(
+	REAL8FrequencySeries *psd,	/**< frequency series to be computed */
+	double flow 			/**< low frequency cutoff (Hz) */
+)
+{
+	return XLALSimNoisePSDFromFile(psd, flow,
+		P1200087 "AdV_MID_HIGH.txt");
+}
+
+/**
+ * Returns a frequency series psd with low frequency cutoff flow corresponding
+ * to the AdV 2018-2020 low-sensitivity scenario in LIGO-P1200087.
+ */
+int XLALSimNoisePSDAdVLateLowSensitivityP1200087(
+	REAL8FrequencySeries *psd,	/**< frequency series to be computed */
+	double flow 			/**< low frequency cutoff (Hz) */
+)
+{
+	return XLALSimNoisePSDFromFile(psd, flow,
+		P1200087 "AdV_LATE_LOW.txt");
+}
+
+/**
+ * Returns a frequency series psd with low frequency cutoff flow corresponding
+ * to the AdV 2018-2020 high-sensitivity scenario in LIGO-P1200087.
+ */
+int XLALSimNoisePSDAdVLateHighSensitivityP1200087(
+	REAL8FrequencySeries *psd,	/**< frequency series to be computed */
+	double flow 			/**< low frequency cutoff (Hz) */
+)
+{
+	return XLALSimNoisePSDFromFile(psd, flow,
+		P1200087 "AdV_LATE_HIGH.txt");
+}
+
+/**
+ * Returns a frequency series psd with low frequency cutoff flow corresponding
+ * to the AdV 2021 design sensitivity scenario in LIGO-P1200087.
+ */
+int XLALSimNoisePSDAdVDesignSensitivityP1200087(
+	REAL8FrequencySeries *psd,	/**< frequency series to be computed */
+	double flow 			/**< low frequency cutoff (Hz) */
+)
+{
+	return XLALSimNoisePSDFromFile(psd, flow,
+		P1200087 "AdV_DESIGN.txt");
+}
+
+/**
+ * Returns a frequency series psd with low frequency cutoff flow corresponding
+ * to the AdV BNS-optimized sensitivity scenario in LIGO-P1200087.
+ */
+int XLALSimNoisePSDAdVBNSOptimizedSensitivityP1200087(
+	REAL8FrequencySeries *psd,	/**< frequency series to be computed */
+	double flow 			/**< low frequency cutoff (Hz) */
+)
+{
+	return XLALSimNoisePSDFromFile(psd, flow,
+		P1200087 "AdV_BNS_OPTIMIZED.txt");
+}
 
 /*
  *
@@ -1227,14 +1372,14 @@ int test_iligo_psd(void)
 				4);
 
 		S_susp = XLALSimNoisePSDSuspTherm(f,
-				LAL_ILIGO_ARMLENGTH_SI, 
+				LAL_ILIGO_ARMLENGTH_SI,
 				LAL_ILIGO_MIRROR_MASS_SI,
 				LAL_ILIGO_TEMPERATURE_SI,
 				LAL_ILIGO_THERMAL_SUSP_FREQ_SI,
 				LAL_ILIGO_THERMAL_SUSP_QUAL);
 
 		S_coat = XLALSimNoisePSDMirrorTherm(f,
-				LAL_ILIGO_ARMLENGTH_SI, 
+				LAL_ILIGO_ARMLENGTH_SI,
 				LAL_ILIGO_MIRROR_MASS_SI,
 				LAL_ILIGO_TEMPERATURE_SI,
 				LAL_ILIGO_THERMAL_COAT_FREQ_SI,
@@ -1268,7 +1413,6 @@ int test_aligo_psd(void)
 
 int main(void)
 {
-	lalDebugLevel = 7;
 	XLALSetErrorHandler(XLALAbortErrorHandler);
 	test_iligo_psd();
 	test_aligo_psd();

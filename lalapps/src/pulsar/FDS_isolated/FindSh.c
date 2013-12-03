@@ -35,7 +35,6 @@
 #include "FindSh.h"
 #include "clusters.h"
 UINT4 SFTno,RealSFTno;                /* Global variables that keep track of no of SFTs */
-INT4 lalDebugLevel=3;
 INT4 ifmin,band;
 REAL4 *p;
 REAL8 *po;

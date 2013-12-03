@@ -63,7 +63,6 @@
 
 /* Default parameters. */
 
-extern INT4 lalDebugLevel;
 
 
 #define MAXFILENAMELENGTH 256
@@ -118,10 +117,6 @@ int main(int argc, char *argv[]){
   LALStringVector *uvar_linefiles=NULL;
   INT4     uvar_blocksRngMed, uvar_maxBinsClean;
 
-
-  /* LALDebugLevel must be called before anything else */
-  lalDebugLevel = 0;
-  LAL_CALL( LALGetDebugLevel( &status, argc, argv, 'd'), &status);
 
   /* set defaults */
   uvar_help = FALSE;

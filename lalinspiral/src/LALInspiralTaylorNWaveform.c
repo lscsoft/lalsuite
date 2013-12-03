@@ -18,13 +18,13 @@
 */
 
 /**
-\author Sathyaprakash, B. S., Cokelaer T.
-\file
-\ingroup LALInspiral_h
-
-\brief NONE
-
-*/
+ * \author Sathyaprakash, B. S., Cokelaer T.
+ * \file
+ * \ingroup LALInspiral_h
+ *
+ * \brief NONE
+ *
+ */
 /*-------------------------------------------------------------------*/
 #include <lal/LALInspiral.h>
 #include <lal/SeqFactories.h>
@@ -305,8 +305,7 @@ void LALTaylorNWaveform (
    InspiralTemplate *params
    )
 {
-   XLALPrintDeprecationWarning("LALTaylorNWaveform", 
-         "XLALTaylorNWaveform");
+   XLAL_PRINT_DEPRECATION_WARNING("XLALTaylorNWaveform");
    INITSTATUS(status);
    ATTATCHSTATUSPTR(status);
 

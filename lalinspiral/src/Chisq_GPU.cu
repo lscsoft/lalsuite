@@ -29,7 +29,6 @@
 
 #include <stdio.h>
 #include <cufft.h>
-#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/LALAtomicDatatypes.h>
 
 static void CudaError(cudaError_t error, const char *file, int line)
@@ -60,13 +59,13 @@ chisqKernel( REAL4* g_chisq, COMPLEX8* g_q, COMPLEX8 *g_data,
     {
       unsigned j= blockIdx.x * blockDim.x + threadIdx.x;
       
-      REAL4 Xl = g_data[l*numPoints + j].re;
-      REAL4 Yl = g_data[l*numPoints + j].im;
+      REAL4 Xl = crealf(g_data[l*numPoints + j]);
+      REAL4 Yl = cimagf(g_data[l*numPoints + j]);
       
       REAL4 deltaXl = chisqNorm * Xl -
-	(chisqNorm * g_q[j].re / (REAL4) (numChisqBins));
+	(chisqNorm * crealf(g_q[j]) / (REAL4) (numChisqBins));
       REAL4 deltaYl = chisqNorm * Yl -
-	(chisqNorm * g_q[j].im / (REAL4) (numChisqBins));
+	(chisqNorm * cimagf(g_q[j]) / (REAL4) (numChisqBins));
       
       g_chisq[j] += deltaXl * deltaXl + deltaYl * deltaYl;
     }

@@ -18,31 +18,29 @@
 */
 
 /**
-\author Sathyaprakash, B. S.
-\file
-\ingroup LALInspiral_h
-
-\brief The function \c XLALInspiralPhiofVIntegrand() calculates the quantity \f$v^{3} E^{\prime}(v)/\mathcal{F}(v)\f$.
-
-\heading{Prototypes}
-
-<tt>LALInspiralPhiofVIntegrand()</tt>
-
-\heading{Description}
-
-The function \c XLALInspiralPhiofVIntegrand() calculates the quantity \f$v^{3} E^{\prime}(v)/\mathcal{F}(v)\f$.
-
-\heading{Uses}
-
-This function calls \c dEnergy and \c flux functions that are defined in the
-\c expnFunc structure  and represent \f$E^{\prime}(v)\f$ and \f$\mathcal{F}(v)\f$, respectively,
-and pointed to the appropriate PN functions with a call to <tt>XLALInspiralChooseModel().</tt>
-
-\heading{Notes}
-
-
-
-*/
+ * \author Sathyaprakash, B. S.
+ * \file
+ * \ingroup LALInspiral_h
+ *
+ * \brief The function \c XLALInspiralPhiofVIntegrand() calculates the quantity \f$v^{3} E^{\prime}(v)/\mathcal{F}(v)\f$.
+ *
+ * ### Prototypes ###
+ *
+ * <tt>LALInspiralPhiofVIntegrand()</tt>
+ *
+ * ### Description ###
+ *
+ * The function \c XLALInspiralPhiofVIntegrand() calculates the quantity \f$v^{3} E^{\prime}(v)/\mathcal{F}(v)\f$.
+ *
+ * ### Uses ###
+ *
+ * This function calls \c dEnergy and \c flux functions that are defined in the
+ * \c expnFunc structure  and represent \f$E^{\prime}(v)\f$ and \f$\mathcal{F}(v)\f$, respectively,
+ * and pointed to the appropriate PN functions with a call to <tt>XLALInspiralChooseModel().</tt>
+ *
+ * ### Notes ###
+ *
+ */
 
 #include <math.h>
 #include <lal/LALStdlib.h>
@@ -56,7 +54,7 @@ LALInspiralPhiofVIntegrand (
    void       *params
    )
 {
-  XLALPrintDeprecationWarning("LALInspiralPhiofVIntegrand", "XLALInspiralPhiofVIntegrand");
+  XLAL_PRINT_DEPRECATION_WARNING("XLALInspiralPhiofVIntegrand");
 
   INITSTATUS(status);
   ATTATCHSTATUSPTR(status);

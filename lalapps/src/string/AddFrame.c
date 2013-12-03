@@ -7,8 +7,8 @@
 #include <stdlib.h>
 
 #include <lal/LALFrameIO.h>
-#include <lal/FrameCache.h>
-#include <lal/FrameStream.h>
+#include <lal/LALCache.h>
+#include <lal/LALFrStream.h>
 #include <lal/LALConstants.h>
 #include <lal/Date.h>
 #include <lal/Units.h>
@@ -19,7 +19,7 @@ int Min(int a, int b);
 
 int main(int argc,char *argv[])
 {
-  FrameH *frame;                /* output frame        */
+  LALFrameH *frame;                /* output frame        */
   char filename[256];           /* output file name    */
 
   REAL8TimeSeries *ht_1;        /* H1 strain data      */
@@ -28,10 +28,10 @@ int main(int argc,char *argv[])
   
   char cache_name_1[256];       /* H1 frame cache name */
   char cache_name_2[256];       /* H2 frame cache name */
-  FrCache *cache_1;             /* H1 frame cache      */
-  FrCache *cache_2;             /* H2 frame cache      */
-  FrStream *stream_1;           /* H1 stream           */
-  FrStream *stream_2;           /* H2 stream           */
+  LALCache *cache_1;            /* H1 frame cache      */
+  LALCache *cache_2;            /* H2 frame cache      */
+  LALFrStream *stream_1;           /* H1 stream           */
+  LALFrStream *stream_2;           /* H2 stream           */
 
   int i, p, gps_start_i, gps_end_i, start, end;
   LIGOTimeGPS gps_start, gps_end;
@@ -54,34 +54,34 @@ int main(int argc,char *argv[])
   sprintf(cache_name_2,"%s/H2.cache", argv[3]);
   
   /* create Frame cache, open frame stream and delete frame cache */
-  cache_1 = XLALFrImportCache(cache_name_1);
+  cache_1 = XLALCacheImport(cache_name_1);
   if(!cache_1){
     printf("%s(): no cache named %s\n",__func__,cache_name_1);
     return 2;
   }
-  stream_1 = XLALFrCacheOpen(cache_1);
-  XLALFrDestroyCache(cache_1);
+  stream_1 = XLALFrStreamCacheOpen(cache_1);
+  XLALDestroyCache(cache_1);
   if(!stream_1){
     printf("%s(): no stream for H1\n",__func__);
     return 2;
   }
   if(!stream_1) XLAL_ERROR(XLAL_EFUNC);
  
-  cache_2 = XLALFrImportCache(cache_name_2);
+  cache_2 = XLALCacheImport(cache_name_2);
   if(!cache_2){
     printf("%s(): no cache named %s\n",__func__,cache_name_2);
     return 3;
   }
-  stream_2 = XLALFrCacheOpen(cache_2);
-  XLALFrDestroyCache(cache_2);
+  stream_2 = XLALFrStreamCacheOpen(cache_2);
+  XLALDestroyCache(cache_2);
   if(!stream_2){
     printf("%s(): no stream for H2\n",__func__);
     return 3;
   }
  
   /* turn on checking for missing data */
-  XLALFrSetMode(stream_1, LAL_FR_VERBOSE_MODE);
-  XLALFrSetMode(stream_2, LAL_FR_VERBOSE_MODE);
+  XLALFrStreamSetMode(stream_1, LAL_FR_STREAM_VERBOSE_MODE);
+  XLALFrStreamSetMode(stream_2, LAL_FR_STREAM_VERBOSE_MODE);
 
   /* divide the time period into 128s segments */
   for(i=gps_start_i; i<gps_end_i; i+=128){
@@ -97,14 +97,14 @@ int main(int argc,char *argv[])
     gps_end.gpsNanoSeconds = 0;
   
     /* read H1 and H2 data */
-    ht_1 = XLALFrReadREAL8TimeSeries(stream_1, "H1:LSC-STRAIN", &gps_start, XLALGPSDiff(&gps_end, &gps_start), 0);
+    ht_1 = XLALFrStreamReadREAL8TimeSeries(stream_1, "H1:LSC-STRAIN", &gps_start, XLALGPSDiff(&gps_end, &gps_start), 0);
     if(!ht_1) {
-      XLALFrClose(stream_1);
+      XLALFrStreamClose(stream_1);
       printf("%s(): cannot read data for H1:LSC-STRAIN\n",__func__);
     }
-    ht_2 = XLALFrReadREAL8TimeSeries(stream_2, "H2:LSC-STRAIN", &gps_start, XLALGPSDiff(&gps_end, &gps_start), 0);
+    ht_2 = XLALFrStreamReadREAL8TimeSeries(stream_2, "H2:LSC-STRAIN", &gps_start, XLALGPSDiff(&gps_end, &gps_start), 0);
     if(!ht_2) {
-      XLALFrClose(stream_2);
+      XLALFrStreamClose(stream_2);
       printf("%s(): cannot read data for H2:LSC-STRAIN\n",__func__);
     }
 
@@ -125,18 +125,18 @@ int main(int argc,char *argv[])
     /*XLALFrameAddREAL8TimeSeriesProcData( frame, ht_2 );*/
     XLALFrameAddREAL8TimeSeriesProcData( frame, ht_m );
     sprintf(filename,"%s/H-H1H2_COHERENT-%d-%d.gwf", argv[3],start,end-start);
-    XLALFrameWrite(frame, filename, 0);
+    XLALFrameWrite(frame, filename);
     
     /* cleaning */
     XLALDestroyREAL8TimeSeries(ht_1);
     XLALDestroyREAL8TimeSeries(ht_2);
     XLALDestroyREAL8TimeSeries(ht_m);
-    FrameFree(frame);
+    XLALFrameFree(frame);
   }
   
   /* close streams */
-  XLALFrClose(stream_1);
-  XLALFrClose(stream_2);
+  XLALFrStreamClose(stream_1);
+  XLALFrStreamClose(stream_2);
   
   return 0;
 }

@@ -24,127 +24,126 @@
 #include <lal/Units.h>
 #include <lal/AVFactories.h>
 #include <lal/SeqFactories.h>
-#include <lal/SimulateCoherentGW.h>
+#include <lal/PulsarSimulateCoherentGW.h>
 #include <lal/GenerateSpinOrbitCW.h>
 
 /**
-\author Creighton, T. D.
-
-\brief Computes a continuous waveform with frequency drift and Doppler
-modulation from a parabolic orbital trajectory.
-
-This function computes a quaiperiodic waveform using the spindown and
-orbital parameters in <tt>*params</tt>, storing the result in
-<tt>*output</tt>.
-
-In the <tt>*params</tt> structure, the routine uses all the "input"
-fields specified in \ref GenerateSpinOrbitCW_h, and sets all of the
-"output" fields.  If <tt>params-\>f</tt>=\c NULL, no spindown
-modulation is performed.  If <tt>params-\>oneMinusEcc</tt>\f$\neq0\f$, or if
-<tt>params-\>rPeriNorm</tt>\f$\times\f$<tt>params-\>angularSpeed</tt>\f$\geq1\f$
-(faster-than-light speed at periapsis), an error is returned.
-
-In the <tt>*output</tt> structure, the field <tt>output-\>h</tt> is
-ignored, but all other pointer fields must be set to \c NULL.  The
-function will create and allocate space for <tt>output-\>a</tt>,
-<tt>output-\>f</tt>, and <tt>output-\>phi</tt> as necessary.  The
-<tt>output-\>shift</tt> field will remain set to \c NULL.
-
-\heading{Algorithm}
-
-For parabolic orbits, we combine Eqs.\eqref{eq_spinorbit-tr},
-\eqref{eq_spinorbit-t}, and\eqref{eq_spinorbit-upsilon} to get \f$t_r\f$
-directly as a function of \f$E\f$:
-\anchor eq_cubic-e \f{equation}{
-\label{eq_cubic-e}
-t_r = t_p + \frac{r_p\sin i}{c} \left[ \cos\omega +
-	\left(\frac{1}{v_p} + \cos\omega\right)E -
-	\frac{\sin\omega}{4}E^2 + \frac{1}{12v_p}E^3\right] \;,
-\f}
-where \f$v_p=r_p\dot{\upsilon}_p\sin i/c\f$ is a normalized velocity at
-periapsis.  Following the prescription for the general analytic
-solution to the real cubic equation, we substitute
-\f$E=x+3v_p\sin\omega\f$ to obtain:
-\anchor eq_cubic-x \f{equation}{
-\label{eq_cubic-x}
-x^3 + px = q \;,
-\f}
-where:
-\anchor eq_cubic-p \anchor eq_cubic-q \f{eqnarray}{
-\label{eq_cubic-p}
-p & = & 12 + 12v_p\cos\omega - 3v_p^2\sin^2\omega \;, \\
-\label{eq_cubic-q}
-q & = & 12v_p^2\sin\omega\cos\omega - 24v_p\sin\omega +
-	2v_p^3\sin^3\omega + 12\dot{\upsilon}_p(t_r-t_p) \;.
-\f}
-We note that \f$p>0\f$ is guaranteed as long as \f$v_p<1\f$, so the right-hand
-side of Eq.\eqref{eq_cubic-x} is monotonic in \f$x\f$ and has exactly one
-root.  However, \f$p\rightarrow0\f$ in the limit \f$v_p\rightarrow1\f$ and
-\f$\omega=\pi\f$.  This may cause some loss of precision in subsequent
-calculations.  But \f$v_p\sim1\f$ means that our solution will be
-inaccurate anyway because we ignore significant relativistic effects.
-
-Since \f$p>0\f$, we can substitute \f$x=y\sqrt{3/4p}\f$ to obtain:
-\f{equation}{
-4y^3 + 3y = \frac{q}{2}\left(\frac{3}{p}\right)^{3/2} \equiv C \;.
-\f}
-Using the triple-angle hyperbolic identity
-\f$\sinh(3\theta)=4\sinh^3\theta+3\sinh\theta\f$, we have
-\f$y=\sinh\left(\frac{1}{3}\sinh^{-1}C\right)\f$.  The solution to the
-original cubic equation is then:
-\f{equation}{
-E = 3v_p\sin\omega + 2\sqrt{\frac{p}{3}}
-	\sinh\left(\frac{1}{3}\sinh^{-1}C\right) \;.
-\f}
-To ease the calculation of \f$E\f$, we precompute the constant part
-\f$E_0=3v_p\sin\omega\f$ and the coefficient \f$\Delta E=2\sqrt{p/3}\f$.
-Similarly for \f$C\f$, we precompute a constant piece \f$C_0\f$ evaluated at
-the epoch of the output time series, and a stepsize coefficient
-\f$\Delta C=6(p/3)^{3/2}\dot{\upsilon}_p\Delta t\f$, where \f$\Delta t\f$ is
-the step size in the (output) time series in \f$t_r\f$.  Thus at any
-timestep \f$i\f$, we obtain \f$C\f$ and hence \f$E\f$ via:
-\f{eqnarray}{
-C & = & C_0 + i\Delta C \;, \nonumber\\
-E & = & E_0 + \Delta E\times\left\{\begin{array}{l@{\qquad}c}
-	\sinh\left[\frac{1}{3}\ln\left(
-		C + \sqrt{C^2+1} \right) \right]\;, & C\geq0 \;,\\
-	\\
-	\sinh\left[-\frac{1}{3}\ln\left(
-		-C + \sqrt{C^2+1} \right) \right]\;, & C\leq0 \;,\\
-	\end{array}\right. \nonumber
-\f}
-where we have explicitly written \f$\sinh^{-1}\f$ in terms of functions in
-\c math.h.  Once \f$E\f$ is found, we can compute
-\f$t=E(12+E^2)/(12\dot{\upsilon}_p)\f$ (where again \f$1/12\dot{\upsilon}_p\f$
-can be precomputed), and hence \f$f\f$ and \f$\phi\f$ via
-Eqs.\eqref{eq_taylorcw-freq} and\eqref{eq_taylorcw-phi}.  The
-frequency \f$f\f$ must then be divided by the Doppler factor:
-\f[
-1 + \frac{\dot{R}}{c} = 1 + \frac{v_p}{4+E^2}\left(
-	4\cos\omega - 2E\sin\omega \right)
-\f]
-(where once again \f$4\cos\omega\f$ and \f$2\sin\omega\f$ can be precomputed).
-
-This routine does not account for relativistic timing variations, and
-issues warnings or errors based on the criterea of
-Eq.\eqref{eq_relativistic-orbit} in GenerateEllipticSpinOrbitCW().
-The routine will also warn if
-it seems likely that \c REAL8 precision may not be sufficient to
-track the orbit accurately.  We estimate that numerical errors could
-cause the number of computed wave cycles to vary by
-\f[
-\Delta N \lesssim f_0 T\epsilon\left[
-	\sim6+\ln\left(|C|+\sqrt{|C|^2+1}\right)\right] \;,
-\f]
-where \f$|C|\f$ is the maximum magnitude of the variable \f$C\f$ over the
-course of the computation, \f$f_0T\f$ is the approximate total number of
-wave cycles over the computation, and \f$\epsilon\approx2\times10^{-16}\f$
-is the fractional precision of \c REAL8 arithmetic.  If this
-estimate exceeds 0.01 cycles, a warning is issued.
-*/
+ * \author Creighton, T. D.
+ *
+ * \brief Computes a continuous waveform with frequency drift and Doppler
+ * modulation from a parabolic orbital trajectory.
+ *
+ * This function computes a quaiperiodic waveform using the spindown and
+ * orbital parameters in <tt>*params</tt>, storing the result in
+ * <tt>*output</tt>.
+ *
+ * In the <tt>*params</tt> structure, the routine uses all the "input"
+ * fields specified in \ref GenerateSpinOrbitCW_h, and sets all of the
+ * "output" fields.  If <tt>params-\>f</tt>=\c NULL, no spindown
+ * modulation is performed.  If <tt>params-\>oneMinusEcc</tt>\f$\neq0\f$, or if
+ * <tt>params-\>rPeriNorm</tt>\f$\times\f$<tt>params-\>angularSpeed</tt>\f$\geq1\f$
+ * (faster-than-light speed at periapsis), an error is returned.
+ *
+ * In the <tt>*output</tt> structure, the field <tt>output-\>h</tt> is
+ * ignored, but all other pointer fields must be set to \c NULL.  The
+ * function will create and allocate space for <tt>output-\>a</tt>,
+ * <tt>output-\>f</tt>, and <tt>output-\>phi</tt> as necessary.  The
+ * <tt>output-\>shift</tt> field will remain set to \c NULL.
+ *
+ * ### Algorithm ###
+ *
+ * For parabolic orbits, we combine \eqref{eq_spinorbit-tr},
+ * \eqref{eq_spinorbit-t}, and \eqref{eq_spinorbit-upsilon} to get \f$t_r\f$
+ * directly as a function of \f$E\f$:
+ * \f{equation}{
+ * \label{eq_cubic-e}
+ * t_r = t_p + \frac{r_p\sin i}{c} \left[ \cos\omega +
+ * \left(\frac{1}{v_p} + \cos\omega\right)E -
+ * \frac{\sin\omega}{4}E^2 + \frac{1}{12v_p}E^3\right] \;,
+ * \f}
+ * where \f$v_p=r_p\dot{\upsilon}_p\sin i/c\f$ is a normalized velocity at
+ * periapsis.  Following the prescription for the general analytic
+ * solution to the real cubic equation, we substitute
+ * \f$E=x+3v_p\sin\omega\f$ to obtain:
+ * \f{equation}{
+ * \label{eq_cubic-x}
+ * x^3 + px = q \;,
+ * \f}
+ * where:
+ * \f{eqnarray}{
+ * \label{eq_cubic-p}
+ * p & = & 12 + 12v_p\cos\omega - 3v_p^2\sin^2\omega \;, \\
+ * \label{eq_cubic-q}
+ * q & = & 12v_p^2\sin\omega\cos\omega - 24v_p\sin\omega +
+ * 2v_p^3\sin^3\omega + 12\dot{\upsilon}_p(t_r-t_p) \;.
+ * \f}
+ * We note that \f$p>0\f$ is guaranteed as long as \f$v_p<1\f$, so the right-hand
+ * side of \eqref{eq_cubic-x} is monotonic in \f$x\f$ and has exactly one
+ * root.  However, \f$p\rightarrow0\f$ in the limit \f$v_p\rightarrow1\f$ and
+ * \f$\omega=\pi\f$.  This may cause some loss of precision in subsequent
+ * calculations.  But \f$v_p\sim1\f$ means that our solution will be
+ * inaccurate anyway because we ignore significant relativistic effects.
+ *
+ * Since \f$p>0\f$, we can substitute \f$x=y\sqrt{3/4p}\f$ to obtain:
+ * \f{equation}{
+ * 4y^3 + 3y = \frac{q}{2}\left(\frac{3}{p}\right)^{3/2} \equiv C \;.
+ * \f}
+ * Using the triple-angle hyperbolic identity
+ * \f$\sinh(3\theta)=4\sinh^3\theta+3\sinh\theta\f$, we have
+ * \f$y=\sinh\left(\frac{1}{3}\sinh^{-1}C\right)\f$.  The solution to the
+ * original cubic equation is then:
+ * \f{equation}{
+ * E = 3v_p\sin\omega + 2\sqrt{\frac{p}{3}}
+ * \sinh\left(\frac{1}{3}\sinh^{-1}C\right) \;.
+ * \f}
+ * To ease the calculation of \f$E\f$, we precompute the constant part
+ * \f$E_0=3v_p\sin\omega\f$ and the coefficient \f$\Delta E=2\sqrt{p/3}\f$.
+ * Similarly for \f$C\f$, we precompute a constant piece \f$C_0\f$ evaluated at
+ * the epoch of the output time series, and a stepsize coefficient
+ * \f$\Delta C=6(p/3)^{3/2}\dot{\upsilon}_p\Delta t\f$, where \f$\Delta t\f$ is
+ * the step size in the (output) time series in \f$t_r\f$.  Thus at any
+ * timestep \f$i\f$, we obtain \f$C\f$ and hence \f$E\f$ via:
+ * \f{eqnarray}{
+ * C & = & C_0 + i\Delta C \;,\\
+ * E & = & E_0 + \Delta E\times\left\{\begin{array}{l@{\qquad}c}
+ * \sinh\left[\frac{1}{3}\ln\left(
+ * C + \sqrt{C^2+1} \right) \right]\;, & C\geq0 \;,\\ \\
+ * \sinh\left[-\frac{1}{3}\ln\left(
+ * -C + \sqrt{C^2+1} \right) \right]\;, & C\leq0 \;,\\
+ * \end{array}\right.
+ * \f}
+ * where we have explicitly written \f$\sinh^{-1}\f$ in terms of functions in
+ * \c math.h.  Once \f$E\f$ is found, we can compute
+ * \f$t=E(12+E^2)/(12\dot{\upsilon}_p)\f$ (where again \f$1/12\dot{\upsilon}_p\f$
+ * can be precomputed), and hence \f$f\f$ and \f$\phi\f$ via
+ * \eqref{eq_taylorcw-freq} and \eqref{eq_taylorcw-phi}.  The
+ * frequency \f$f\f$ must then be divided by the Doppler factor:
+ * \f[
+ * 1 + \frac{\dot{R}}{c} = 1 + \frac{v_p}{4+E^2}\left(
+ * 4\cos\omega - 2E\sin\omega \right)
+ * \f]
+ * (where once again \f$4\cos\omega\f$ and \f$2\sin\omega\f$ can be precomputed).
+ *
+ * This routine does not account for relativistic timing variations, and
+ * issues warnings or errors based on the criterea of
+ * \eqref{eq_relativistic-orbit} in GenerateEllipticSpinOrbitCW().
+ * The routine will also warn if
+ * it seems likely that \c REAL8 precision may not be sufficient to
+ * track the orbit accurately.  We estimate that numerical errors could
+ * cause the number of computed wave cycles to vary by
+ * \f[
+ * \Delta N \lesssim f_0 T\epsilon\left[
+ * \sim6+\ln\left(|C|+\sqrt{|C|^2+1}\right)\right] \;,
+ * \f]
+ * where \f$|C|\f$ is the maximum magnitude of the variable \f$C\f$ over the
+ * course of the computation, \f$f_0T\f$ is the approximate total number of
+ * wave cycles over the computation, and \f$\epsilon\approx2\times10^{-16}\f$
+ * is the fractional precision of \c REAL8 arithmetic.  If this
+ * estimate exceeds 0.01 cycles, a warning is issued.
+ */
 void
 LALGenerateParabolicSpinOrbitCW( LALStatus             *stat,
-				 CoherentGW            *output,
+				 PulsarCoherentGW            *output,
 				 SpinOrbitCWParamStruc *params )
 {
   UINT4 n, i;              /* number of and index over samples */

@@ -23,28 +23,30 @@
  *
  * \brief Tests the routines in \ref ComplexFFT.h.
  *
- * \heading{Usage}
+ * ### Usage ###
+ *
  * \code
  * ComplexFFTTest [options]
  * Options:
- *   -h         print this message
- *   -q         quiet: run silently
- *   -v         verbose: print extra information
- *   -d level   set lalDebugLevel to level
+ * -h         print this message
+ * -q         quiet: run silently
+ * -v         verbose: print extra information
+ * -d level   set lalDebugLevel to level
  * \endcode
  *
- * \heading{Exit codes}
+ * ### Exit codes ###
+ *
  * <table><tr><th>Code</th><th>Explanation</th></tr>
  * <tr><td>0</td><td>Success, normal exit.</td></tr>
  * <tr><td>1</td><td>Subroutine failed.</td></tr>
  * </table>
  *
- * \heading{Uses}
- * \heading{Notes}
+ * ### Uses ###
  *
  *
+ * ### Notes ###
  *
-*/
+ */
 
 /** \cond DONT_DOXYGEN */
 #include <config.h>
@@ -74,7 +76,6 @@
 extern char *optarg;
 extern int   optind;
 
-extern int lalDebugLevel;
 int verbose       = 0;
 
 static void
@@ -109,7 +110,6 @@ main( int argc, char *argv[] )
   FILE *fp;
   UINT4 i;
 
-  lalDebugLevel = 0;
 
   ParseOptions( argc, argv );
 
@@ -387,7 +387,6 @@ ParseOptions( int argc, char *argv[] )
     switch ( c )
     {
       case 'd': /* set debug level */
-        lalDebugLevel = atoi( optarg );
         break;
 
       case 'v': /* verbose */

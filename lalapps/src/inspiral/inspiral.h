@@ -42,7 +42,7 @@
 #include <lal/VectorOps.h>
 #include <lal/LALDetectors.h>
 #include <lal/LALFrameIO.h>
-#include <lal/FrameStream.h>
+#include <lal/LALFrStream.h>
 
 
 #ifdef  __cplusplus   /* C++ protection. */
@@ -158,6 +158,9 @@ REAL8FrequencySeries *XLALInterpolatePSD(
               REAL8FrequencySeries *in,
               REAL8 deltaFout
             );
+
+REAL8 calculate_lalsim_snr(SimInspiralTable *inj, char *IFOname, REAL8FrequencySeries *psd, REAL8 start_freq);
+void get_FakePsdFromString(REAL8FrequencySeries* PsdFreqSeries,char* FakePsdName, REAL8 StartFreq);
 
 
 #ifdef  __cplusplus

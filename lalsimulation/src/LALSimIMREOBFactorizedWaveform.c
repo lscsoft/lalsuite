@@ -25,7 +25,7 @@
  * coefficients which are required for calculating the factorized waveform
  * in EOBNRv2. Note that for some of the higher modes, the coefficients
  * are changed for the generation of the waveform compared to the generation
- * of the flux. Thus we have a function which adds these additional 
+ * of the flux. Thus we have a function which adds these additional
  * contributions to the already computed coefficients.
  */
 
@@ -46,6 +46,12 @@
 #else
 #define UNUSED
 #endif
+
+/**
+ * Constant which comes up in some of the EOB models. Its value is
+ * (94/3 -41/32*pi*pi)
+ */
+#define ninty4by3etc 18.687902694437592603
 
 
 static inline REAL8 XLALCalculateA5( REAL8 eta );
@@ -151,7 +157,7 @@ REAL8 XLALCalculateEOBA( const REAL8 r,                     /**<< Orbital separa
 }
 
 /**
- * Calculated the derivative of the EOB A function with respect to 
+ * Calculated the derivative of the EOB A function with respect to
  * r, using the pre-computed A coefficients
  */
 static
@@ -240,7 +246,7 @@ REAL8 XLALEffectiveHamiltonian( const REAL8 eta,          /**<< Symmetric mass r
 /**
  * Function which calculates the various coefficients used in the generation
  * of the factorized waveform. These coefficients depend only on the symmetric
- * mass ratio eta. It should be noted that this function calculates the 
+ * mass ratio eta. It should be noted that this function calculates the
  * coefficients used in calculating the flux. For generating the waveforms
  * themselves, the coefficients have additional terms added which are calculated
  * using XLALModifyFacWaveformCoefficients(). THe non-spinning parts of these

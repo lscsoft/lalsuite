@@ -18,74 +18,75 @@
 */
 
 /**
-\author UTB Relativity Group; contact whelan@phys.utb.edu
-\addtogroup StochasticInverseNoise_c
+ * \author UTB Relativity Group; contact whelan@phys.utb.edu
+ * \addtogroup StochasticInverseNoise_c
+ *
+ * \brief Calculates the values of the calibrated and half-calibrated inverse
+ * noise power spectra from the uncalibrated noise power spectrum and the
+ * frequency-domain instrument response function.
+ *
+ * As described in \ref StochasticOptimalFilter_c,
+ * the most convenient combinations of the noise \f$P(f)\f$ (defined by \f$\langle h(f)h(f')^*\rangle=\delta(f-f')P(f)\f$) and
+ * instrument response
+ * \f$\widetilde{R}(f)=h(f)/h(f)\f$ to use in
+ * constructing an optimal filter are the inverse half-calibrated power
+ * spectral density
+ * \f{equation}{
+ * \label{stochastic_e_halfCalibratedPSD}
+ * \frac{1}{P^{\mathrm{HC}}(f)}=\frac{1}{\widetilde{R}(f)\,P^{\mathrm{C}}(f)}
+ * =\frac{\widetilde{R}(f)^*}{P(f)}
+ * \f}
+ * and the inverse calibrated PSD
+ * \f{equation}{
+ * \label{stochastic_e_calibratedPSD}
+ * \frac{1}{P^{\mathrm{C}}(f)}
+ * =\frac{|\widetilde{R}(f)|^2}{P(f)}
+ * \f}
+ * The function <tt>LALStochasticInverseNoise()</tt> takes in a
+ * \c REAL4FrequencySeries describing the uncalibrated PSD
+ * \f$P(f)\f$ along with a
+ * \c COMPLEX8FrequencySeries describing the frequency-domain
+ * response \f$\widetilde{R}(f)\f$, and outputs a
+ * \c REAL4FrequencySeries describing the calibrated inverse PSD
+ * \f$1/P^{\mathrm{C}}(f)\f$
+ * along with a \c COMPLEX8FrequencySeries describing the
+ * half-calibrated inverse PSD \f$1/P^{\mathrm{HC}}(f)\f$.
+ *
+ * ### Algorithm ###
+ *
+ * The output series are filled according to a straightforward
+ * implemementation of
+ * \eqref{stochastic_e_halfCalibratedPSD}--\eqref{stochastic_e_calibratedPSD}.
+ * The DC components, if included in the series, are set to zero.
+ *
+ * ### Uses ###
+ *
+ * \code
+ * LALUnitRaise()
+ * LALUnitMultiply()
+ * strncpy()
+ * \endcode
+ *
+ * ### Notes ###
+ *
+ * <ul>
+ * <li> Note that although \f$P^{\mathrm{C}}(f)\f$
+ * and \f$P(f)\f$
+ * are real, \f$P^{\mathrm{HC}}(f)\f$ is \e complex.</li>
+ * <li> The output units are constructed by combining the input units,
+ * but under normal circumstances the units will be as follows:
+ * \f{eqnarray}{
+ * {} [P] &=& \mathrm{count}^{2}\, \mathrm{Hz}^{-1}\\
+ * {} [\widetilde{R}] &=& 10^{18}\,\mathrm{strain}^{-1}\,\mathrm{count} \\
+ * {} [1/P^{\mathrm{C}}] &:=& [\widetilde{R}]^2 [P] = 10^{36}\,\mathrm{Hz}\,\mathrm{strain}^{-2} \\
+ * {} [1/P^{\mathrm{HC}}] &:=&  [\widetilde{R}] [P] = 10^{18}\,\mathrm{Hz}\,\mathrm{strain}^{-1}\,\mathrm{count}^{-1}
+ * \f}</li>
+ * </ul>
+ *
+ * @{
+ */
 
-\brief Calculates the values of the calibrated and half-calibrated inverse
-noise power spectra from the uncalibrated noise power spectrum and the
-frequency-domain instrument response function.
 
-As described in \ref StochasticOptimalFilter_c,
-the most convenient combinations of the noise \f$P(f)\f$ (defined by \f$\langle h(f)h(f')^*\rangle=\delta(f-f')P(f)\f$) and
-instrument response
-\f$\widetilde{R}(f)=h(f)/h(f)\f$ to use in
-constructing an optimal filter are the inverse half-calibrated power
-spectral density
-\anchor stochastic_e_halfCalibratedPSD \f{equation}{
-  \label{stochastic_e_halfCalibratedPSD}
-  \frac{1}{P^{\mathrm{HC}}(f)}=\frac{1}{\widetilde{R}(f)\,P^{\mathrm{C}}(f)}
-  =\frac{\widetilde{R}(f)^*}{P(f)}
-\f}
-and the inverse calibrated PSD
-\anchor stochastic_e_calibratedPSD \f{equation}{
-  \label{stochastic_e_calibratedPSD}
-  \frac{1}{P^{\mathrm{C}}(f)}
-  =\frac{|\widetilde{R}(f)|^2}{P(f)}
-\f}
-The function <tt>LALStochasticInverseNoise()</tt> takes in a
-\c REAL4FrequencySeries describing the uncalibrated PSD
-\f$P(f)\f$ along with a
-\c COMPLEX8FrequencySeries describing the frequency-domain
-response \f$\widetilde{R}(f)\f$, and outputs a
-\c REAL4FrequencySeries describing the calibrated inverse PSD
-\f$1/P^{\mathrm{C}}(f)\f$
-along with a \c COMPLEX8FrequencySeries describing the
-half-calibrated inverse PSD \f$1/P^{\mathrm{HC}}(f)\f$.
-
-\heading{Algorithm}
-
-The output series are filled according to a straightforward
-implemementation of
-\eqref{stochastic_e_halfCalibratedPSD}-\eqref{stochastic_e_calibratedPSD}.
-The DC components, if included in the series, are set to zero.
-
-\heading{Uses}
-\code
-LALUnitRaise()
-LALUnitMultiply()
-strncpy()
-\endcode
-
-\heading{Notes}
-<ul>
-<li> Note that although \f$P^{\mathrm{C}}(f)\f$
- and \f$P(f)\f$
-  are real, \f$P^{\mathrm{HC}}(f)\f$ is \e complex.</li>
-<li> The output units are constructed by combining the input units,
-  but under normal circumstances the units will be as follows:
-  \f{eqnarray}{
-    {} [P] &=& \mathrm{count}^{2}\, \mathrm{Hz}^{-1}\\
-    {} [\widetilde{R}] &=& 10^{18}\,\mathrm{strain}^{-1}\,\mathrm{count} \\
-    {} [1/P^{\mathrm{C}}] &:=& [\widetilde{R}]^2 [P] = 10^{36}\,\mathrm{Hz}\,\mathrm{strain}^{-2} \\
-    {} [1/P^{\mathrm{HC}}] &:=&  [\widetilde{R}] [P] = 10^{18}\,\mathrm{Hz}\,\mathrm{strain}^{-1}\,\mathrm{count}^{-1}
-  \f}</li>
-</ul>
-
-@{
-*/
-
-
-#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/LALStdlib.h>
 #include <lal/StochasticCrossCorrelation.h>
 #include <lal/Units.h>
@@ -273,8 +274,7 @@ LALStochasticInverseNoiseCal(
   if (f0 == 0)
   {
     /* set DC channel to zero */
-    hcInvNoise->data->data[0].re = 0;
-    hcInvNoise->data->data[0].im = 0;
+    hcInvNoise->data->data[0] = 0;
     invNoise->data->data[0] = 0;
 
     /* initialize pointers */
@@ -294,7 +294,7 @@ LALStochasticInverseNoiseCal(
 
   for (; sPtrPW < sStopPtr ; ++sPtrPW, ++cPtrR, ++sPtrIP, ++cPtrIPHC)
   {
-    *sPtrIP = (cPtrR->re*cPtrR->re + cPtrR->im*cPtrR->im) / *sPtrPW;
+    *sPtrIP = (crealf(*cPtrR)*crealf(*cPtrR) + cimagf(*cPtrR)*cimagf(*cPtrR)) / *sPtrPW;
   }
 
   DETATCHSTATUSPTR(status);
@@ -485,8 +485,7 @@ LALStochasticInverseNoise(
   if (f0 == 0)
   {
     /* set DC channel to zero */
-    hwInvNoise->data->data[0].re = 0;
-    hwInvNoise->data->data[0].im = 0;
+    hwInvNoise->data->data[0] = 0;
     invNoise->data->data[0] = 0;
 
     /* initialize pointers */
@@ -506,11 +505,11 @@ LALStochasticInverseNoise(
 
   for (; sPtrPW < sStopPtr ; ++sPtrPW, ++cPtrR, ++sPtrIP, ++cPtrIPHC)
   {
-    *sPtrIP = (cPtrR->re*cPtrR->re + cPtrR->im*cPtrR->im) / *sPtrPW;
-    cPtrIPHC->re = cPtrR->re / *sPtrPW;
+    *sPtrIP = (crealf(*cPtrR)*crealf(*cPtrR) + cimagf(*cPtrR)*cimagf(*cPtrR)) / *sPtrPW;
+    *cPtrIPHC = crectf( crealf(*cPtrR) / *sPtrPW,
 
     /* minus sign because of complex conjugate */
-    cPtrIPHC->im = -cPtrR->im / *sPtrPW;
+                        -cimagf(*cPtrR) / *sPtrPW );
   }
 
   DETATCHSTATUSPTR(status);

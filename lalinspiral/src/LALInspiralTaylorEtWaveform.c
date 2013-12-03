@@ -18,11 +18,11 @@
 */
 
 /**
-\author Sathyaprakash, B. S., Cokelaer T.
-\file
-\brief NONE
-
-*/
+ * \author Sathyaprakash, B. S., Cokelaer T.
+ * \file
+ * \brief NONE
+ *
+ */
 /*-------------------------------------------------------------------*/
 #include <lal/LALInspiral.h>
 #include <lal/SeqFactories.h>
@@ -355,7 +355,7 @@ void LALTaylorEtWaveform (
    InspiralTemplate *params
    )
 {
-   XLALPrintDeprecationWarning("LALTaylorEtWaveform","XLALTaylorEtWaveform");
+   XLAL_PRINT_DEPRECATION_WARNING("XLALTaylorEtWaveform");
    INITSTATUS(status);
    ATTATCHSTATUSPTR(status);
 
@@ -441,8 +441,7 @@ void LALTaylorEtWaveformEngine (
                 InspiralInit     *paramsInit
                 )
 {
-   XLALPrintDeprecationWarning("LALTaylorEtWaveformEngine", 
-         "XLALTaylorEtWaveformEngine");
+   XLAL_PRINT_DEPRECATION_WARNING("XLALTaylorEtWaveformEngine");
    INITSTATUS(status);
    ATTATCHSTATUSPTR(status);
 

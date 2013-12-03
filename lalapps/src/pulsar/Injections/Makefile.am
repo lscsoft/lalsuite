@@ -1,20 +1,20 @@
 ## Process this file with automake to produce Makefile.in
 
-AM_CPPFLAGS = -I$(top_srcdir)/src -I$(top_srcdir)/src/lalapps
+AM_CPPFLAGS = -I$(top_srcdir)/src -I$(top_srcdir)/src/lalapps -DPKG_DATA_DIR='"$(pkgdatadir)/"'
 LDADD = $(top_builddir)/src/lalapps/liblalapps.la
 
-if FRAME
-frameprogs = lalapps_sw_inj_frames
-else
-frameprogs =
-endif
-
-bin_PROGRAMS = lalapps_makefakedata_v2 lalapps_Makefakedata_v4 lalapps_compareSFTs lalapps_compareTS \
+bin_PROGRAMS = lalapps_makefakedata_v2 lalapps_Makefakedata_v4 lalapps_Makefakedata_v5 lalapps_compareSFTs lalapps_compareTS \
 	lalapps_dumpSFT lalapps_makefakedatabinary lalapps_makefakedata_test
 
-EXTRA_PROGRAMS = eah_Makefakedata_v4 $(frameprogs)
+EXTRA_PROGRAMS = eah_Makefakedata_v4
+
+if LALFRAME
+EXTRA_PROGRAMS += lalapps_sw_inj_frames
+endif
 
 lalapps_Makefakedata_v4_SOURCES = makefakedata_v4.c sft_extra.c sft_extra.h
+
+lalapps_Makefakedata_v5_SOURCES = makefakedata_v5.c sft_extra.c sft_extra.h
 
 # force linking in C++ mode for E@H
 eah_Makefakedata_v4_SOURCES = $(lalapps_Makefakedata_v4_SOURCES) ../hough/src2/EinsteinAtHome/win_lib.cpp
@@ -34,12 +34,12 @@ lalapps_makefakedata_test_SOURCES =  makefakedata_test.c sft_extra.c sft_extra.h
 ## ----- extra-programs
 lalapps_sw_inj_frames_SOURCES = sw_inj_frames.c
 
-EXTRA_DIST = testMakefakedata.sh testMFDv4.sh testMFDv4-HW.sh testT8_1800
-TESTS = testMakefakedata.sh testMFDv4.sh testMFDv4-HW.sh
+EXTRA_DIST = testMakefakedata.sh testMFDv4.sh testMFDv5.sh testMFDv4-HW.sh testT8_1800
+TESTS = testMakefakedata.sh testMFDv4.sh testMFDv4-HW.sh testMFDv5.sh
 
-TESTS_ENVIRONMENT = LALPULSAR_DATADIR="$(LALPULSAR_DATADIR)"
+TESTS_ENVIRONMENT = LAL_DEBUG_LEVEL=memdbg LALPULSAR_DATADIR="$(LALPULSAR_DATADIR)"
 
 
 ## make sure lalapps.la is rebuilt when appropriate
 BUILT_SOURCES =
-include $(top_srcdir)/misc/vcsID.common
+include $(top_srcdir)/gnuscripts/vcsID.common

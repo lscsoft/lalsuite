@@ -24,7 +24,7 @@
  * \file
  * \ingroup pulsarApps
  * \brief Code to convert given input-SFTs (v1 or v2) to v2-SFTs with given extra-comment,
- *        and write them out following the SFTv2 naming conventions (see LIGO-T040164-01-Z)
+ * and write them out following the SFTv2 naming conventions (see LIGO-T040164-01-Z)
  */
 
 /* ---------- includes ---------- */
@@ -35,7 +35,9 @@
 #include <lalapps.h>
 
 #include <lal/UserInput.h>
+#include <lal/PulsarDataTypes.h>
 #include <lal/SFTfileIO.h>
+#include <lal/SFTutils.h>
 #include <lal/LogPrintf.h>
 
 /** \name Error codes */
@@ -99,13 +101,9 @@ main(int argc, char *argv[])
   UINT4 i;
   REAL8 fMin, fMax;
 
-  lalDebugLevel = 0;
 
   /* set LAL error-handler */
   lal_errhandler = LAL_ERR_EXIT;	/* exit with returned status-code on error */
-
-  /* set debug level */
-  LAL_CALL (LALGetDebugLevel (&status, argc, argv, 'v'), &status);
 
   /* register all user-variables */
   LAL_CALL (initUserVars (&status), &status);
@@ -318,8 +316,8 @@ applyFactor2SFTs ( LALStatus *status, SFTVector *SFTs, REAL8 factor )
 
       for ( k=0; k < numBins; k ++ )
 	{
-	  thisSFT->data->data[k].re *= factor;
-	  thisSFT->data->data[k].im *= factor;
+	  thisSFT->data->data[k].realf_FIXME *= factor;
+	  thisSFT->data->data[k].imagf_FIXME *= factor;
 	} /* for k < numBins */
 
     } /* for i < numSFTs */

@@ -155,8 +155,8 @@ void LALCorrelateSingleSFTPair(LALStatus                *status,
 			       COMPLEX8FrequencySeries  *sft2,
 			       REAL8FrequencySeries     *psd1,
 			       REAL8FrequencySeries     *psd2,
-			       REAL8                    freq1,
-			       REAL8                    freq2);
+			       UINT4                    bin1,
+			       UINT4                    bin2);
 
 void LALGetSignalFrequencyInSFT(LALStatus                *status,
 				REAL8                    *out,
@@ -172,8 +172,8 @@ void LALGetSignalPhaseInSFT(LALStatus               *status,
 
 void LALCalculateSigmaAlphaSq(LALStatus            *status,
 			      REAL8                *out,
-			      REAL8                freq1,
-			      REAL8                freq2,
+			      UINT4                bin1,
+			      UINT4                bin2,
 			      REAL8FrequencySeries *psd1,
 			      REAL8FrequencySeries *psd2);
 

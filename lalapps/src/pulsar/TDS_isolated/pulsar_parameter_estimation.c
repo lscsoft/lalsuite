@@ -32,7 +32,6 @@
 
 *******************************************************************************/
 
-#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include "pulsar_parameter_estimation.h"
 
 /* global variable */
@@ -139,8 +138,6 @@ static char USAGE2[] = \
 "\n";
 
 
-
-
 INT4 main(INT4 argc, CHAR *argv[]){
   REAL8 ****singleLike=NULL;
   REAL8 ****jointLike=NULL;
@@ -157,9 +154,10 @@ INT4 main(INT4 argc, CHAR *argv[]){
 
   DataStructure *data=NULL;
   REAL8 times=0.;
-  COMPLEX16 dataVals;
+  REAL8 dataValsRe, dataValsIm;
   REAL8 stdh0=0.;       /* approximate h0 limit from data */
   REAL8 stdh0min=INFINITY;
+  REAL8 h0sigmaSet=0., h0maxSet=0.;
 
   FILE *fp=NULL;
   CHAR dataFile[256];
@@ -289,6 +287,9 @@ defined!\n");
 
   k = -1;
 
+  h0sigmaSet = inputs.mcmc.sigmas.h0;
+  h0maxSet = inputs.mesh.maxVals.h0;
+
   /* read in data for each detector in turn an compute the likelihood */
   for( i = 0 ; i < numDets ; i++ ){
     /*============================ GET DATA ==================================*/
@@ -320,7 +321,7 @@ defined!\n");
     data[k].chunkMax = inputs.chunkMax;
 
     /* read in data */
-    while(fscanf(fp, "%lf%lf%lf", &times, &dataVals.re, &dataVals.im) != EOF){
+    while(fscanf(fp, "%lf%lf%lf", &times, &dataValsRe, &dataValsIm) != EOF){
       /* check that size of data file is not to large */
       if( j == MAXLENGTH ){
         fprintf(stderr, "Error... size of MAXLENGTH not large enough.\n");
@@ -332,7 +333,7 @@ defined!\n");
          the original S5 analysis) */
       /* if( fabs(dataVals.re) > 1.e-28 && fabs(dataVals.im) > 1.e-28 ){ */
         data[k].times->data[j] = times;
-        data[k].data->data[j] = dataVals;
+        data[k].data->data[j] = dataValsRe + I * dataValsIm;
 
         j++;
       /*}*/
@@ -347,10 +348,9 @@ defined!\n");
     data[k].times = XLALResizeREAL8Vector(data[k].times, j);
 
     /* if there is no input range for h0 then estimate it from the data */
-    /* only do this once if performing grid search, but do for each seperate
+    /* only do this once if performing grid search, but do for each separate
        data set if doing MCMC */
-    if( ( inputs.mesh.maxVals.h0 == 0 || inputs.mcmc.sigmas.h0 == 0 ) &&
-        ( inputs.mcmc.doMCMC == 1 || i == 0 ) ){
+    if( ( !h0maxSet || !h0sigmaSet ) && ( inputs.mcmc.doMCMC || i == 0 ) ){
       if( verbose ) fprintf(stderr, "Calculating h0 UL estimate: ");
 
       /* large outliers can completely swamp the standard deviation estimate,
@@ -366,8 +366,8 @@ defined!\n");
 
       /* get the maximum and minimum range for the histogram */
       for (j = 0; j<(INT4)data[k].data->length; j++){
-        logabs->data[2*j] = log(fabs(data[k].data->data[j].re));
-        logabs->data[2*j+1] = log(fabs(data[k].data->data[j].im));
+        logabs->data[2*j] = log(fabs(creal(data[k].data->data[j])));
+        logabs->data[2*j+1] = log(fabs(cimag(data[k].data->data[j])));
 
         if ( logabs->data[2*j] > maxlogabs ) maxlogabs = logabs->data[2*j];
         if ( logabs->data[2*j+1] > maxlogabs ) maxlogabs = logabs->data[2*j+1];
@@ -405,15 +405,15 @@ defined!\n");
       if ( stdh0 < stdh0min ) stdh0min = stdh0;
 
       /* set the MCMC h0 proposal step size at stdh0*scalefac */
-      if( inputs.mcmc.doMCMC == 1 ){
+      if( inputs.mcmc.doMCMC == 1  && !h0sigmaSet ){
         inputs.mcmc.sigmas.h0 = stdh0*inputs.mcmc.h0scale;
 
-        if( inputs.mesh.maxVals.h0 == 0 )
+        if( !h0maxSet )
           inputs.mesh.maxVals.h0 = stdh0;
       }
 
       /* set h0 max value for the grid at 5 times the expected ul */
-      if( inputs.mesh.maxVals.h0 == 0 ){
+      if( !h0maxSet || ( !h0maxSet && inputs.mcmc.doMCMC == 0 ) ){
         inputs.mesh.maxVals.h0 = 5.*stdh0;
         inputs.mesh.delta.h0 = (inputs.mesh.maxVals.h0 -
           inputs.mesh.minVals.h0)/(REAL8)(inputs.mesh.h0Steps - 1.);
@@ -523,8 +523,7 @@ defined!\n");
 
       for( n = 0 ; n < numDets ; n++ ) totLogNoiseEv += logNoiseEv[n];
 
-      output.outPost = inputs.outputPost; /* set for whether we want to output
-                                            the full posterior */
+      output.outPost = inputs.outputPost; /* set for whether we want to output the full posterior */
 
       maxPost = log_posterior(jointLike, inputs.priors, inputs.mesh, output);
 
@@ -564,10 +563,10 @@ defined!\n");
     /*======================= PERFORM JOINT MCMC =============================*/
     if( inputs.mcmc.doMCMC == 1 ){
       /* use smallest of the limits for h0 proposal */
-      if ( inputs.mesh.maxVals.h0 == 0 || inputs.mcmc.sigmas.h0 == 0 ){
+      if ( !h0maxSet || !h0sigmaSet ){
         inputs.mcmc.sigmas.h0 = stdh0min*inputs.mcmc.h0scale;
 
-        if( inputs.mesh.maxVals.h0 == 0 )
+        if( !h0maxSet )
           inputs.mesh.maxVals.h0 = stdh0min;
       }
 
@@ -1032,7 +1031,7 @@ W:y:g:G:K:N:X:O:J:M:{:(r:fFR><)[:" ;
   }
   else if( inputParams->priors.priorFile ){ /* read in h0 prior file */
     FILE *fp = NULL;
-    UINT4 i = 0;
+    UINT4 i = 0, j = 0;
 
     /* set iotaPrior to priorfile */
     inputParams->priors.iotaPrior = inputParams->priors.priorFile;
@@ -1053,7 +1052,7 @@ Just revert to uniform prior", inputParams->priors.priorFile);
        *  - M - number of cos(iota) values
        * followed by an NxM double array of posterior values. */
 
-      double header[6];
+      double header[6], maxtmp = -INFINITY, mintmp = INFINITY;
 
       /* read in header data */
       if ( !fread(header, sizeof(double), 6, fp) ){
@@ -1085,6 +1084,19 @@ Just revert to uniform prior", inputParams->priors.priorFile);
           exit(0);
         }
       }
+
+      for( i = 0; i < (UINT4)header[2]; i++ ){
+        for( j = 0; j < (UINT4)header[5]; j++ ){
+          if ( inputParams->priors.h0cipdf[i][j] < mintmp )
+            mintmp = inputParams->priors.h0cipdf[i][j];
+
+          if ( inputParams->priors.h0cipdf[i][j] > maxtmp )
+            maxtmp = inputParams->priors.h0cipdf[i][j];
+        }
+      }
+
+      inputParams->priors.minh0ci = mintmp;
+      inputParams->priors.maxh0ci = maxtmp;
 
       fclose(fp);
     }
@@ -1195,11 +1207,10 @@ void sum_data(DataStructure data){
     data.sumData->data[count] = 0.;
 
     for( j = i ; j < i + chunkLength ; j++){
-      B.re = data.data->data[j].re;
-      B.im = data.data->data[j].im;
+      B = data.data->data[j];
 
       /* sum up the data */
-      data.sumData->data[count] += (B.re*B.re + B.im*B.im);
+      data.sumData->data[count] += (creal(B)*creal(B) + cimag(B)*cimag(B));
     }
 
     count++;
@@ -1235,6 +1246,9 @@ REAL8 log_likelihood( REAL8 *likeArray, DataStructure data,
 
   REAL8 psteps = (REAL8)data.lookupTable->psiSteps;
   REAL8 tsteps = (REAL8)data.lookupTable->timeSteps;
+
+  //likeArray[0] = 0.;
+  //return noiseEvidence;
 
   /* to save time get all log factorials up to chunkMax */
   for( i = 0 ; i < data.chunkMax+1 ; i++ )
@@ -1273,8 +1287,7 @@ REAL8 log_likelihood( REAL8 *likeArray, DataStructure data,
       plus = data.lookupTable->lookupTable[psibin][timebin].plus;
       cross = data.lookupTable->lookupTable[psibin][timebin].cross;
 
-      B.re = data.data->data[j].re;
-      B.im = data.data->data[j].im;
+      B = data.data->data[j];
 
       /*********************************************************/
       /* stuff for phase offset due to parameter uncertainties - MCMC only */
@@ -1284,23 +1297,23 @@ REAL8 log_likelihood( REAL8 *likeArray, DataStructure data,
         /* create the signal model */
         sin_cos_2PI_LUT( &sphi, &cphi, -dphi->data[j] );
 
-        model.re = (plus*vars.Xpcosphi_2 + cross*vars.Xcsinphi_2)*cphi +
-                 (cross*vars.Xccosphi_2 - plus*vars.Xpsinphi_2)*sphi;
-        model.im = (plus*vars.Xpsinphi_2 - cross*vars.Xccosphi_2)*cphi +
-                 (cross*vars.Xcsinphi_2 + plus*vars.Xpcosphi_2)*sphi;
+        model = ((plus*vars.Xpcosphi_2 + cross*vars.Xcsinphi_2)*cphi +
+          (cross*vars.Xccosphi_2 - plus*vars.Xpsinphi_2)*sphi) +
+          I * ((plus*vars.Xpsinphi_2 - cross*vars.Xccosphi_2)*cphi +
+          (cross*vars.Xcsinphi_2 + plus*vars.Xpcosphi_2)*sphi);
       }
       /*********************************************************/
       else{
         /* create the signal model */
-        model.re = plus*vars.Xpcosphi_2 + cross*vars.Xcsinphi_2;
-        model.im = plus*vars.Xpsinphi_2 - cross*vars.Xccosphi_2;
+        model = (plus*vars.Xpcosphi_2 + cross*vars.Xcsinphi_2) +
+          I * (plus*vars.Xpsinphi_2 - cross*vars.Xccosphi_2);
       }
 
       /* sum over the model */
-      sumModel += model.re*model.re + model.im*model.im;
+      sumModel += creal(model)*creal(model) + cimag(model)*cimag(model);
 
       /* sum over that data and model */
-      sumDataModel += B.re*model.re + B.im*model.im;
+      sumDataModel += creal(B)*creal(model) + cimag(B)*cimag(model);
     }
 
     for( k = 0 ; k < mesh.h0Steps ; k++ ){
@@ -1394,124 +1407,39 @@ REAL8 log_prior(PriorVals prior, MeshGrid mesh){
     UINT4 i = 0, j = 0;
 
     /* use h0 prior read in from a file */
-    REAL8 h0low = 0., h0high = 0., dh0 = prior.h0vals->data[1] - prior.h0vals->data[0];
-    REAL8 cilow = 0., cihigh = 0., dci = prior.civals->data[1] - prior.civals->data[0];
-    REAL8 pdflow = 0., pdfhigh = 0., grad = 0.;
-    REAL8 pdf00 = 0., pdf01 = 0., pdf10 = 0., pdf11 = 0.;
+    REAL8 dh0 = prior.h0vals->data[1] - prior.h0vals->data[0];
+    REAL8 dci = prior.civals->data[1] - prior.civals->data[0];
+    REAL8 dhtot = prior.h0vals->data[prior.h0vals->length-1] - prior.h0vals->data[0] + dh0;
+    REAL8 dcitot = prior.civals->data[prior.civals->length-1] - prior.civals->data[0] + dci;
 
     /* reject points outside allowable h0 and cos(iota) range */
     if ( prior.vars.h0 < 0. || prior.vars.ci < -1. || prior.vars.ci > 1. )
       return -INFINITY;
 
-    /* find the nearest h0 point */
-    if ( prior.vars.h0 < prior.h0vals->data[0] ) i = 0;
-    else if ( prior.vars.h0 > prior.h0vals->data[prior.h0vals->length-1] )
-      i = prior.h0vals->length;
+    /* if outside prior set the prior to be very small, but steeply exponentially sloped away the prior */
+    if ( prior.vars.h0 < prior.h0vals->data[0] - dh0/2. || prior.vars.h0 > prior.h0vals->data[prior.h0vals->length-1] + dh0/2. ||
+         prior.vars.ci < prior.civals->data[0] - dci/2. || prior.vars.ci > prior.civals->data[prior.civals->length-1] + dci/2. ) {
+      if ( prior.vars.h0 < prior.h0vals->data[0] - dh0/2. )
+        pri += log(prior.minh0ci) - 250.*(prior.h0vals->data[0] - dh0/2. - prior.vars.h0)/dhtot;
+      if( prior.vars.h0 > prior.h0vals->data[prior.h0vals->length-1] + dh0/2. )
+        pri += log(prior.minh0ci) - 250.*(prior.vars.h0 - (prior.h0vals->data[prior.h0vals->length-1] + dh0/2.))/dhtot;
+      if( prior.vars.ci < prior.civals->data[0] - dci/2. )
+        pri += log(prior.minh0ci) - 250.*(prior.civals->data[0] - dci/2. - prior.vars.ci)/dcitot;
+      if( prior.vars.ci > prior.civals->data[prior.civals->length-1] + dci/2. )
+        pri += log(prior.minh0ci) - 250.*(prior.vars.ci - (prior.civals->data[prior.civals->length-1] + dci/2.))/dcitot;
+    }
     else{
-      for( i = 1; i < prior.h0vals->length; i++ ){
-        if( prior.h0vals->data[i-1] < prior.vars.h0 &&
-            prior.vars.h0 <= prior.h0vals->data[i] ) break;
-      }
-    }
+      /* get the prior bin */
+      for ( i = 0; i < prior.h0vals->length; i++ )
+        if ( prior.vars.h0 >= prior.h0vals->data[i] - dh0/2 && prior.vars.h0 < prior.h0vals->data[i] + dh0/2 )
+          break;
 
-    /* find the nearest cos(iota) point */
-    if ( prior.vars.ci < prior.civals->data[0] ) j = 0;
-    else if ( prior.vars.ci > prior.civals->data[prior.civals->length-1] )
-      j = prior.civals->length;
-    else{
-      for( j = 1; j < prior.civals->length; j++ ){
-         if( prior.civals->data[j-1] < prior.vars.ci &&
-            prior.vars.ci <= prior.civals->data[j] ) break;
-      }
-    }
+      for ( j = 0; j < prior.civals->length; j++ )
+        if ( prior.vars.ci >= prior.civals->data[j] - dci/2 && prior.vars.ci < prior.civals->data[j] + dci/2 )
+          break;
 
-    /* if point is out of matrix range set prior to be very small (but non-zero)
-     * just in case the MCMC from which the matrix was created didn't well bound
-     * the posterior. */
-    if( i == 0 || i == prior.h0vals->length || j == 0 || j == prior.civals->length ){
-      if ( (prior.vars.h0 > prior.h0vals->data[0] - dh0/2. &&
-           prior.vars.h0 < prior.h0vals->data[0]) && ( j != 0 ) &&
-           ( j != prior.civals->length ) ){
-        cilow = prior.civals->data[j-1];
-        cihigh = prior.civals->data[j];
-
-        pdflow = prior.h0cipdf[i][j-1];
-        pdfhigh = prior.h0cipdf[i][j];
-
-        grad = (pdfhigh-pdflow)/(cihigh-cilow);
-        pri += log( pdflow + grad*(prior.vars.ci - cilow) );
-      }
-      else if( (prior.vars.h0 < prior.h0vals->data[prior.h0vals->length-1] + dh0/2. &&
-           prior.vars.h0 > prior.h0vals->data[prior.h0vals->length-1]) && ( j != 0 ) &&
-           ( j != prior.civals->length ) ){
-        cilow = prior.civals->data[j-1];
-        cihigh = prior.civals->data[j];
-
-        pdflow = prior.h0cipdf[i-1][j-1];
-        pdfhigh = prior.h0cipdf[i-1][j];
-
-        grad = (pdfhigh-pdflow)/(cihigh-cilow);
-        pri += log( pdflow + grad*(prior.vars.ci - cilow) );
-      }
-      else if ( (prior.vars.ci > prior.civals->data[0] - dci/2. &&
-           prior.vars.ci < prior.civals->data[0]) && ( i != 0 ) &&
-           ( i != prior.h0vals->length ) ){
-        h0low = prior.h0vals->data[i-1];
-        h0high = prior.h0vals->data[i];
-
-        pdflow = prior.h0cipdf[i-1][j];
-        pdfhigh = prior.h0cipdf[i][j];
-
-        grad = (pdfhigh-pdflow)/(h0high-h0low);
-        pri += log( pdflow + grad*(prior.vars.h0 - h0low) );
-      }
-      else if( (prior.vars.ci < prior.civals->data[prior.civals->length-1] + dci/2. &&
-           prior.vars.ci > prior.civals->data[prior.civals->length-1]) && ( i != 0 ) &&
-           ( i != prior.h0vals->length ) ){
-        h0low = prior.h0vals->data[i-1];
-        h0high = prior.h0vals->data[i];
-
-        pdflow = prior.h0cipdf[i-1][j-1];
-        pdfhigh = prior.h0cipdf[i][j-1];
-
-        grad = (pdfhigh-pdflow)/(h0high-h0low);
-        pri += log( pdflow + grad*(prior.vars.h0 - h0low) );
-      }
-      else{
-        /* if h0 is outside the h0 range then make small (but non-zero) prior fall
-         * off exponentially outside the h0 range */
-        REAL8 hdist = 0.;
-        REAL8 hwidth = prior.h0vals->data[prior.h0vals->length-1] - prior.h0vals->data[0];
-
-        REAL8 cidist = 0.;
-        REAL8 ciwidth = prior.civals->data[prior.civals->length-1] - prior.civals->data[0];
-
-        if ( i == 0 ) hdist = prior.h0vals->data[i] - prior.vars.h0;
-        if ( i == prior.h0vals->length )
-          hdist = prior.vars.h0 - prior.h0vals->data[i-1];
-
-        if ( j == 0 ) cidist = prior.civals->data[j] - prior.vars.ci;
-        if ( j == prior.civals->length )
-          cidist = prior.vars.ci - prior.civals->data[j-1];
-
-        pri += -20. - (hdist/hwidth) - (cidist/ciwidth);
-      }
-    }
-    else{ /* bilinearly interpolate */
-      h0low = prior.h0vals->data[i-1], h0high = prior.h0vals->data[i];
-      cilow = prior.civals->data[j-1], cihigh = prior.civals->data[j];
-
-      REAL8 h0scaled = (prior.vars.h0 - h0low)/(h0high - h0low);
-      REAL8 ciscaled = (prior.vars.ci - cilow)/(cihigh - cilow);
-
-      pdf00 = prior.h0cipdf[i-1][j-1];
-      pdf01 = prior.h0cipdf[i-1][j];
-      pdf10 = prior.h0cipdf[i][j-1];
-      pdf11 = prior.h0cipdf[i][j];
-
-      pri += log( pdf00*(1. - h0scaled)*(1. - ciscaled) +
-              pdf10*h0scaled*(1. - ciscaled) + pdf01*(1. - h0scaled)*ciscaled +
-              pdf11*h0scaled*ciscaled );
+      /* output the prior bin */
+      pri += log(prior.h0cipdf[i][j]);
     }
   }
 
@@ -2045,7 +1973,9 @@ void perform_mcmc(DataStructure *data, InputParams input, INT4 numDets,
   /* INT4 below0=0; */
 
   REAL4Vector *randNum=NULL; /* LAL random variable params */
-  UINT4 seed=0;              /* set to get seed from clock time */
+  UINT4 seed=0;
+  FILE *devrandom = NULL;
+  struct timeval tv;
   RandomParams *randomParams=NULL;
 
   CHAR *pos1=NULL, *pos2=NULL;
@@ -2059,6 +1989,8 @@ void perform_mcmc(DataStructure *data, InputParams input, INT4 numDets,
 
   FILE *fp=NULL;
   CHAR outFile[256];
+
+  // FILE *fprej=NULL;
 
   /* variables for pulsar parameters */
   INT4 matTrue=0;
@@ -2086,6 +2018,19 @@ void perform_mcmc(DataStructure *data, InputParams input, INT4 numDets,
   if( verbose ){
     fprintf(stderr, "Performing an MCMC for %s with %d iterations.\n",
       det, input.mcmc.iterations);
+  }
+
+  /* get random seed */
+  if ( (devrandom = fopen("/dev/random","r")) == NULL ) {
+    gettimeofday( &tv, 0 );
+    seed = tv.tv_sec + tv.tv_usec;
+  }
+  else {
+    if( fread(&seed, sizeof(seed), 1, devrandom) != 1 ){
+      fprintf(stderr, "Error... could not read random seed\n");
+      exit(3);
+    }
+    fclose( devrandom );
   }
 
   /* set up random parameters */
@@ -2125,7 +2070,7 @@ void perform_mcmc(DataStructure *data, InputParams input, INT4 numDets,
     /* glitch times are seperated by commas so count them up */
     for( i = 0 ; i < nGlitches ; i++ ){
       if( nGlitches == 1 )
-        glitchTimes[i] = LALTTMJDtoGPS(atof(input.mcmc.glitchTimes));
+        glitchTimes[i] = XLALTTMJDtoGPS(atof(input.mcmc.glitchTimes));
       else{
         if( i == 0 )
           pos1 = input.mcmc.glitchTimes;/*string starts "*/
@@ -2149,7 +2094,7 @@ void perform_mcmc(DataStructure *data, InputParams input, INT4 numDets,
           exit(0);
         }
 
-        glitchTimes[i] = LALTTMJDtoGPS(atof(gtimestr)); /* convert to GPS */
+        glitchTimes[i] = XLALTTMJDtoGPS(atof(gtimestr)); /* convert to GPS */
 
         XLALFree(gtimestr);
       }
@@ -2427,6 +2372,8 @@ paramData ) ) == NULL ){
       fprintf(stderr, "Warning: Unable to set output file buffer!");
   }
 
+  //fprej = fopen("MCMCchain_rejected.txt", "w");
+
   /* write MCMC chain header info */
   fprintf(fp, "%% MCMC for %s with %s data using %d iterations\n",
     input.pulsar, det, input.mcmc.iterations);
@@ -2535,15 +2482,20 @@ paramData ) ) == NULL ){
         nege = 1;
     }
 
-    /* if h0 jumps negative, or eccentricity is negative or greater than 1 then
+    varsNew.ci = vars.ci + input.mcmc.sigmas.ci*randNum->data[1];
+
+    /* if h0 jumps negative, or cos(iota) is out of range, or eccentricity is negative or greater than 1 then
        this is equivalent to having jumped outside our prior range so the
        likelihood is always zero and this move always rejected - therefore it's
        quickest just to output the only step now and move on to the next step */
     /* if( ( varsNew.h0 < 0. || below0 == 1 || nege == 1 ) && i > 0 ){ */
-    if( ( varsNew.h0 < 0. || nege == 1 ) && i > 0 ){
+    if( ( varsNew.h0 < 0. || varsNew.ci < -1. || varsNew.ci > 1. || nege == 1 ) && i > 0 ){
       if( fmod(i, input.mcmc.outputRate) == 0. && i >= burnInLength ){
-        fprintf(fp, "%le\t%le\t%lf\t%lf\t%lf", logL1, vars.h0, vars.phi0,
+        fprintf(fp, "%.12le\t%le\t%lf\t%lf\t%lf", logL1, vars.h0, vars.phi0,
           vars.ci, vars.psi);
+
+        //fprintf(fprej, "%.12le\t%le\t%lf\t%lf\t%lf\n", logL1, varsNew.h0, vars.phi0,
+        //  varsNew.ci, vars.psi);
 
         for( j = 0 ; j < nGlitches ; j++ )
           fprintf(fp, "\t%lf", extraVars[j].phi0);
@@ -2565,13 +2517,14 @@ paramData ) ) == NULL ){
       continue;
     }
     /* else if( ( varsNew.h0 < 0. || below0 == 1 || nege == 1 ) && i == 0 ){ */
-    else if( ( varsNew.h0 < 0. || nege == 1 ) && i == 0 ){
+    else if( ( varsNew.h0 < 0. || varsNew.ci < -1. || varsNew.ci > 1. || nege == 1 ) && i == 0 ){
       onlyonce = 1; /* if h0 goes below zero on the first step then we still
                        have to calculate logL1, so continue but make sure
                        logL2 gets set to -Inf (or close to!) later on */
       /* set values of h0 so that they aren't negative, as this could screw
          up other functions */
       varsNew.h0 = 1e-30;
+      varsNew.ci = 0.;
       pulsarParamsNew.e = 0.;
       pulsarParamsNew.e2 = 0.;
       pulsarParamsNew.e3 = 0.;
@@ -2579,16 +2532,11 @@ paramData ) ) == NULL ){
       for( j = 0 ; j < nGlitches ; j++ ) extraVarsNew[j].h0 = 1e-30;
     }
 
-    varsNew.phi0 = vars.phi0 + input.mcmc.sigmas.phi0*randNum->data[1];
-    varsNew.psi = vars.psi + input.mcmc.sigmas.psi*randNum->data[2];
-    varsNew.ci = vars.ci + input.mcmc.sigmas.ci*randNum->data[3];
+    /* new phi0 and psi parameters */
+    varsNew.phi0 = vars.phi0 + input.mcmc.sigmas.phi0*randNum->data[2];
+    varsNew.psi = vars.psi + input.mcmc.sigmas.psi*randNum->data[3];
 
-    /* wrap parameters around or bounce */
-    if( varsNew.ci > 1.0 )
-      varsNew.ci = 1. - fmod(varsNew.ci, 1.);
-    else if( varsNew.ci < -1.0 )
-      varsNew.ci = -1. - fmod(varsNew.ci, 1.);
-
+    /* wrap parameters around */
     if( varsNew.phi0 < 0. ){
       varsNew.phi0 = fmod(varsNew.phi0, LAL_TWOPI);
       varsNew.phi0 += LAL_TWOPI;
@@ -2850,13 +2798,16 @@ paramData ) ) == NULL ){
         acc++; /* count acceptance number */
     }
     else{
-      if( i > input.mcmc.burnIn - 1 )
+      if( i > input.mcmc.burnIn - 1 ){
         rej++; /* count rejection number */
+        //fprintf(fprej, "%.12le\t%le\t%lf\t%lf\t%lf\n", logL2, varsNew.h0, varsNew.phi0,
+        // varsNew.ci, varsNew.psi);
+      }
     }
 
     /* printf out chains */
     if( fmod(i, input.mcmc.outputRate) == 0. && i >= burnInLength ){
-      fprintf(fp, "%le\t%le\t%lf\t%lf\t%lf", logL1, vars.h0, vars.phi0, vars.ci,
+      fprintf(fp, "%.12le\t%le\t%lf\t%lf\t%lf", logL1, vars.h0, vars.phi0, vars.ci,
         vars.psi);
 
       for( j = 0 ; j < nGlitches ; j++ )
@@ -2922,6 +2873,7 @@ paramData ) ) == NULL ){
   }
 
   fclose(fp);
+  //fclose(fprej);
 }
 
 
@@ -3584,14 +3536,31 @@ reading any correlation data!");
     }
 
     /* if there is an ellipticity that is close to 0 and Om and T0 are being
-     * searched over, then set there correlation to (almost) 1 */
-    if ( params.e > 0. && params.e < 0.001 && params.T0Err != 0. && params.w0Err != 0. ){
+     * searched over, then set their correlation to (almost) 1.
+     * Also do the same for omdot and period */
+    if ( params.e > 0. && params.e < 0.001 ){
       /* set the T0 and w0 parameters to be the first and second values in the
        * correlation matrix respectively */
-      j = 2;
+      INT4 numpar1 = 0, numpar2 = 0;
+      j = 0;
+      if( params.T0Err != 0. && params.w0Err != 0. ){
+        numpar1 = 1;
+        j += 2;
+      }
+      if( params.PbErr != 0. && params.wdotErr != 0. ){
+        j += 2;
+        numpar2 = 1;
+      }
+
       for( i = 0; i < MAXPARAMS; i++ ){
-        if ( !strcmp(paramData[i].name, "T0") ) paramData[i].matPos = 1;
-        else if ( !strcmp(paramData[i].name, "Om") ) paramData[i].matPos = 2;
+        if ( !strcmp(paramData[i].name, "T0") && numpar1 )
+          paramData[i].matPos = 1;
+        else if ( !strcmp(paramData[i].name, "Om") && numpar1 )
+          paramData[i].matPos = 2;
+        else if ( !strcmp(paramData[i].name, "Pb") && numpar2 )
+          paramData[i].matPos = 1 + numpar1*2;
+        else if ( !strcmp(paramData[i].name, "Omdt") && numpar2 )
+          paramData[i].matPos = 2 + numpar1*2;
         else if ( paramData[i].sigma != 0. ){
           j++;
           paramData[i].matPos = j;
@@ -3599,8 +3568,15 @@ reading any correlation data!");
       }
 
       /* set the strong correlation */
-      corMat->data[1] = 0.9999999;
-      corMat->data[corMat->dimLength->data[0]] = 0.9999999;
+      if ( numpar1 || numpar2 ){
+        corMat->data[1] = 0.9999999;
+        corMat->data[corMat->dimLength->data[0]] = 0.9999999;
+
+        if ( numpar1 && numpar2 ){
+          corMat->data[2*corMat->dimLength->data[0] + 3] = 0.9999999;
+          corMat->data[3*corMat->dimLength->data[0] + 2] = 0.9999999;
+        }
+      }
     }
 
     /* print out correlation matrix */

@@ -87,7 +87,6 @@ static void print_usage(char *program)
       "  [--help]                      display this message\n"\
       "  [--verbose]                   print progress information\n"\
       "  [--version]                   print version information and exit\n"\
-      "  [--debug-level]   level       set the LAL debug level to LEVEL\n"\
       "  [--user-tag]      usertag     set the process_params usertag\n"\
       "  [--ifo-tag]       ifotag      set the ifo-tag - for file naming\n"\
       "  [--comment]       string      set the process table comment\n"\
@@ -176,7 +175,6 @@ int main( int argc, char *argv[] )
     {"userTag",                required_argument,     0,                 'Z'},
     {"ifo-tag",                required_argument,     0,                 'I'},
     {"help",                   no_argument,           0,                 'h'},
-    {"debug-level",            required_argument,     0,                 'z'},
     {"version",                no_argument,           0,                 'V'},
     {0, 0, 0, 0}
   };
@@ -189,7 +187,6 @@ int main( int argc, char *argv[] )
    */
 
   lal_errhandler = LAL_ERR_EXIT;
-  set_debug_level( "33" );
   setvbuf( stdout, NULL, _IONBF, 0 );
 
   /* create the process and process params tables */
@@ -215,7 +212,7 @@ int main( int argc, char *argv[] )
     size_t optarg_len;
 
     c = getopt_long_only( argc, argv,
-        "a:b:hq:r:s:t:z:A:I:VZ:", long_options,
+        "a:b:hq:r:s:t:A:I:VZ:", long_options,
         &option_index );
 
     /* detect the end of the options */
@@ -376,11 +373,6 @@ int main( int argc, char *argv[] )
         /* help message */
         print_usage(argv[0]);
         exit( 1 );
-        break;
-
-      case 'z':
-        set_debug_level( optarg );
-        ADD_PROCESS_PARAM( "string", "%s", optarg );
         break;
 
       case 'Z':

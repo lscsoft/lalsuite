@@ -113,7 +113,6 @@ static void display_usage(void)
   fprintf(stdout, " --version                     display version\n");
   fprintf(stdout, " --verbose                     verbose mode\n");
   fprintf(stdout, " --debug                       debug mode\n");
-  fprintf(stdout, " --debug-level N               set lalDebugLevel\n");
   fprintf(stdout, " --user-tag STRING             set the user tag\n");
   fprintf(stdout, " --comment STRING              set the comment\n");
   fprintf(stdout, " --output-dir DIR              directory for output files\n");
@@ -178,7 +177,6 @@ static void parse_options(INT4 argc, CHAR *argv[])
       /* options that don't set a flag */
       {"help", no_argument, 0, 'a'},
       {"version", no_argument, 0, 'b'},
-      {"debug-level", required_argument, 0, 'c'},
       {"user-tag", required_argument, 0, 'd'},
       {"comment", required_argument, 0, 'e'},
       {"output-dir", required_argument, 0, 'f'},
@@ -217,7 +215,7 @@ static void parse_options(INT4 argc, CHAR *argv[])
     size_t optarg_len;
 
     c = getopt_long_only(argc, argv, \
-        "abc:d:e:f:g:h:i:j:k:l:m:n:o:p:q:r:s:t:u:v:w:x:y:z:" \
+        "abd:e:f:g:h:i:j:k:l:m:n:o:p:q:r:s:t:u:v:w:x:y:z:" \
         "A:B:C:D:E:F:G:", long_options, &option_index);
 
     if (c == -1)
@@ -253,12 +251,6 @@ static void parse_options(INT4 argc, CHAR *argv[])
         fprintf(stdout, "Standalone SGWB Search Engine\n");
         XLALOutputVersionString(stderr,0);
         exit(0);
-        break;
-
-      case 'c':
-        /* debug level */
-        set_debug_level( optarg );
-        ADD_PROCESS_PARAM("string", "%s", optarg);
         break;
 
       case 'd':
@@ -1019,7 +1011,6 @@ INT4 main(INT4 argc, CHAR *argv[])
   /* error handler */
   status.statusPtr = NULL;
   lal_errhandler = LAL_ERR_EXIT;
-  set_debug_level("3");
 
   /* create the process and process params tables */
   proctable.processTable = (ProcessTable *) calloc(1, sizeof(ProcessTable));

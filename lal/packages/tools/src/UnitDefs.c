@@ -26,109 +26,110 @@
 
 
 /**
-\author J. T. Whelan <john.whelan@ligo.org>
-\addtogroup UnitDefs_c
-
-\brief Defines basic and derived SI units and a function to produce a text
-string corresponding to a unit structure.
-
-LALUnitAsString() converts the unit structure
-<tt>*input</tt> into a text string which is stored in the character
-vector <tt>*output</tt>.  Note that the resulting text string is
-expressed solely in terms of the basic units (m, kg, s, A,
-K, strain and counts), and is thus not necessarily the most
-convenient way to check the units of a quantity.  A better method is
-to construct a unit structure containing the expected units, then
-compare that to the actual units using LALUnitCompare().
-
-LALParseUnitString() reconstructs the original
-\c LALUnit structure from the string output by
-LALUnitAsString().  It is very sensitive to the exact format
-of the string and is not intended for use in parsing user-entered
-strings.
-
-\heading{Algorithm}
-
-LALUnitAsString() moves through the unit structure, appending
-the appropriate text to the string as it goes along.
-
-LALParseUnitString() moves through the input string, one
-character at a time, building an ::LALUnit structure as a it
-goes along, so long as it encounters precisely the syntax expected.
-
-\heading{Notes}
-
-This file also defines a number of \c constant unit structures
-(declared \c extern in \ref Units_h).  Zeroth is
-\c lalDimensionlessUnit, which is simply a ::LALUnit
-structure to be associated with a unitless quantity.
-First, the relevant fundamental SI units and two custom units of use in
-gravitational wave detection:
-
-<table><tr><th>Constant</th><th>Name</th><th>Abbr.</th><th>Physical Quantity</th></tr>
-<tr><td>\c #lalMeterUnit</td><td>meter</td><td>m</td><td>length</td></tr>
-<tr><td>\c #lalKiloGramUnit</td><td>kilogram</td><td>kg</td><td>mass</td></tr>
-<tr><td>\c #lalSecondUnit</td><td>second</td><td>s</td><td>time</td></tr>
-<tr><td>\c #lalAmpereUnit</td><td>ampere</td><td>A</td><td>electric current</td></tr>
-<tr><td>\c #lalKelvinUnit</td><td>kelvin</td><td>K</td><td>thermodynamic temperature</td></tr>
-<tr><td>\c #lalStrainUnit</td><td>strain</td><td>\f$\epsilon\f$</td><td>gravitational strain</td></tr>
-<tr><td>\c #lalADCCountUnit</td><td>ADC count</td><td>count</td><td>A-to-D converter counts</td></tr>
-</table>
-
-Next, the named derived units in the SI [\ref Halliday_2001]:
-
-<table><tr><th>Constant</th><th>Name</th><th>Abbr.</th><th>Physical Quantity</th><th>Def.</th><th>Fundamental</th></tr>
-<tr><td>\c #lalHertzUnit</td><td>hertz</td><td>Hz</td><td>frequency</td><td> s\f$^{-1}\f$</td><td>s\f$^{-1}\f$</td></tr>
-<tr><td>\c #lalNewtonUnit</td><td>newton</td><td>N</td><td>force</td><td> kg\f$\cdot\f$ m/s\f$^2\f$</td><td>m kg s\f$^{-2}\f$</td></tr>
-<tr><td>\c #lalPascalUnit</td><td>pascal</td><td>Pa</td><td>pressure</td><td> N/m\f$^2\f$</td><td>m\f$^{-1}\f$ kg s\f$^{-2}\f$</td></tr>
-<tr><td>\c #lalJouleUnit</td><td>joule</td><td>J</td><td>energy</td><td> N\f$\cdot\f$m</td><td>m\f$^2\f$ kg s\f$^{-2}\f$</td></tr>
-<tr><td>\c #lalWattUnit</td><td>watt</td><td>W</td><td>power</td><td> J/s</td><td>m\f$^2\f$ kg s\f$^{-3}\f$</td></tr>
-<tr><td>\c #lalCoulombUnit</td><td>coulomb</td><td>C</td><td>electric charge</td><td>A\f$\cdot\f$s</td><td>s A</td></tr>
-<tr><td>\c #lalVoltUnit</td><td>volt</td><td>V</td><td>potential</td><td> W/A</td><td>m\f$^2\f$ kg s\f$^{-3}\f$ A\f$^{-1}\f$</td></tr>
-<tr><td>\c #lalOhmUnit</td><td>ohm</td><td>\f$\Omega\f$</td><td>resistance</td><td> V/A</td><td>m\f$^2\f$ kg s\f$^{-3}\f$ A\f$^{-2}\f$</td></tr>
-<tr><td>\c #lalFaradUnit</td><td>farad</td><td>F</td><td>capacitance</td><td> C/V</td><td>m\f$^{-2}\f$ kg\f$^{-1}\f$ s\f$^4\f$ A\f$^2\f$</td></tr>
-<tr><td>\c #lalWeberUnit</td><td>weber</td><td>Wb</td><td>magnetic flux</td><td> V\f$\cdot\f$s</td><td>m\f$^2\f$ kg s\f$^{-2}\f$ A\f$^{-1}\f$</td></tr>
-<tr><td>\c #lalHenryUnit</td><td>henry</td><td>H</td><td>inductance</td><td> V\f$\cdot\f$s/A</td><td>m\f$^2\f$ kg s\f$^{-2}\f$ A\f$^{-2}\f$</td></tr>
-<tr><td>\c #lalTeslaUnit</td><td>tesla</td><td>T</td><td>magnetic flux density</td><td> Wb/m\f$^2\f$</td><td>kg s\f$^{-2}\f$ A\f$^{-1}\f$</td></tr>
-</table>
-
-The powers of ten (SI prefixes)
-
-<table><tr><th>Constant</th><th>Prefix</th><th>Abbr.</th><th>Value</th></tr>
-<tr><td>\c #lalYottaUnit</td><td>yotta</td><td>Y</td><td>\f$10^{ 24}\f$</td></tr>
-<tr><td>\c #lalZettaUnit</td><td>zetta</td><td>Z</td><td>\f$10^{ 21}\f$</td></tr>
-<tr><td>\c #lalExaUnit</td><td>exa</td><td>E</td><td>\f$10^{ 18}\f$</td></tr>
-<tr><td>\c #lalPetaUnit</td><td>peta</td><td>P</td><td>\f$10^{ 15}\f$</td></tr>
-<tr><td>\c #lalTeraUnit</td><td>tera</td><td>T</td><td>\f$10^{ 12}\f$</td></tr>
-<tr><td>\c #lalGigaUnit</td><td>giga</td><td>G</td><td>\f$10^{  9}\f$</td></tr>
-<tr><td>\c #lalMegaUnit</td><td>mega</td><td>M</td><td>\f$10^{  6}\f$</td></tr>
-<tr><td>\c #lalKiloUnit</td><td>kilo</td><td>k</td><td>\f$10^{  3}\f$</td></tr>
-<tr><td>\c #lalHectoUnit</td><td>hecto</td><td>h</td><td>\f$10^{  2}\f$</td></tr>
-<tr><td>\c #lalDekaUnit</td><td>deka</td><td>da</td><td>\f$10^{  1}\f$</td></tr>
-<tr><td>\c #lalDeciUnit</td><td>deci</td><td>d</td><td>\f$10^{ -1}\f$</td></tr>
-<tr><td>\c #lalCentiUnit</td><td>centi</td><td>c</td><td>\f$10^{ -2}\f$</td></tr>
-<tr><td>\c #lalMilliUnit</td><td>milli</td><td>m</td><td>\f$10^{ -3}\f$</td></tr>
-<tr><td>\c #lalMicroUnit</td><td>micro</td><td>\f$\mu\f$</td><td>\f$10^{ -6}\f$</td></tr>
-<tr><td>\c #lalNanoUnit</td><td>nano</td><td>n</td><td>\f$10^{ -9}\f$</td></tr>
-<tr><td>\c #lalPicoUnit</td><td>pico</td><td>p</td><td>\f$10^{-12}\f$</td></tr>
-<tr><td>\c #lalFemtoUnit</td><td>femto</td><td>f</td><td>\f$10^{-15}\f$</td></tr>
-<tr><td>\c #lalAttoUnit</td><td>atto</td><td>a</td><td>\f$10^{-18}\f$</td></tr>
-<tr><td>\c #lalZeptoUnit</td><td>zepto</td><td>z</td><td>\f$10^{-21}\f$</td></tr>
-<tr><td>\c #lalYoctoUnit</td><td>yocto</td><td>y</td><td>\f$10^{-24}\f$</td></tr>
-</table>
-
-And finally a couple of convenient scaled units:
-
-<table><tr><th>Constant</th><th>Name</th><th>Abbr.\</th><th>Def.</th><th>Fundamental</th></tr>
-<tr><td>\c #lalGramUnit</td><td>gram</td><td>g</td><td> \f$10^{-3}\f$ kg</td><td>\f$10^{-3}\f$ kg</td></tr>
-<tr><td>\c #lalAttoStrainUnit</td><td>attostrain</td><td>a\f$\epsilon\f$</td><td>\f$10^{-18} \epsilon\f$</td><td>\f$10^{-18} \epsilon\f$</td></tr>
-<tr><td>\c #lalPicoFaradUnit</td><td>picofarad</td><td>pF</td><td>\f$10^{-12}\f$ F</td><td>\f$10^{-12}\f$ m\f$^{-2}\f$ kg\f$^{-1}\f$ s\f$^4\f$ A\f$^2\f$</td></tr>
-</table>
-
-*/
+ * \author J. T. Whelan <john.whelan@ligo.org>
+ * \addtogroup UnitDefs_c
+ *
+ * \brief Defines basic and derived SI units and a function to produce a text
+ * string corresponding to a unit structure.
+ *
+ * LALUnitAsString() converts the unit structure
+ * <tt>*input</tt> into a text string which is stored in the character
+ * vector <tt>*output</tt>.  Note that the resulting text string is
+ * expressed solely in terms of the basic units (m, kg, s, A,
+ * K, strain and counts), and is thus not necessarily the most
+ * convenient way to check the units of a quantity.  A better method is
+ * to construct a unit structure containing the expected units, then
+ * compare that to the actual units using LALUnitCompare().
+ *
+ * LALParseUnitString() reconstructs the original
+ * \c LALUnit structure from the string output by
+ * LALUnitAsString().  It is very sensitive to the exact format
+ * of the string and is not intended for use in parsing user-entered
+ * strings.
+ *
+ * ### Algorithm ###
+ *
+ * LALUnitAsString() moves through the unit structure, appending
+ * the appropriate text to the string as it goes along.
+ *
+ * LALParseUnitString() moves through the input string, one
+ * character at a time, building an ::LALUnit structure as a it
+ * goes along, so long as it encounters precisely the syntax expected.
+ *
+ * ### Notes ###
+ *
+ * This file also defines a number of \c constant unit structures
+ * (declared \c extern in \ref Units_h).  Zeroth is
+ * \c lalDimensionlessUnit, which is simply a ::LALUnit
+ * structure to be associated with a unitless quantity.
+ * First, the relevant fundamental SI units and two custom units of use in
+ * gravitational wave detection:
+ *
+ * <table><tr><th>Constant</th><th>Name</th><th>Abbr.</th><th>Physical Quantity</th></tr>
+ * <tr><td>\c #lalMeterUnit</td><td>meter</td><td>m</td><td>length</td></tr>
+ * <tr><td>\c #lalKiloGramUnit</td><td>kilogram</td><td>kg</td><td>mass</td></tr>
+ * <tr><td>\c #lalSecondUnit</td><td>second</td><td>s</td><td>time</td></tr>
+ * <tr><td>\c #lalAmpereUnit</td><td>ampere</td><td>A</td><td>electric current</td></tr>
+ * <tr><td>\c #lalKelvinUnit</td><td>kelvin</td><td>K</td><td>thermodynamic temperature</td></tr>
+ * <tr><td>\c #lalStrainUnit</td><td>strain</td><td>\f$\epsilon\f$</td><td>gravitational strain</td></tr>
+ * <tr><td>\c #lalADCCountUnit</td><td>ADC count</td><td>count</td><td>A-to-D converter counts</td></tr>
+ * </table>
+ *
+ * Next, the named derived units in the SI \cite Halliday_2001:
+ *
+ * <table><tr><th>Constant</th><th>Name</th><th>Abbr.</th><th>Physical Quantity</th><th>Def.</th><th>Fundamental</th></tr>
+ * <tr><td>\c #lalHertzUnit</td><td>hertz</td><td>Hz</td><td>frequency</td><td> s\f$^{-1}\f$</td><td>s\f$^{-1}\f$</td></tr>
+ * <tr><td>\c #lalNewtonUnit</td><td>newton</td><td>N</td><td>force</td><td> kg\f$\cdot\f$ m/s\f$^2\f$</td><td>m kg s\f$^{-2}\f$</td></tr>
+ * <tr><td>\c #lalPascalUnit</td><td>pascal</td><td>Pa</td><td>pressure</td><td> N/m\f$^2\f$</td><td>m\f$^{-1}\f$ kg s\f$^{-2}\f$</td></tr>
+ * <tr><td>\c #lalJouleUnit</td><td>joule</td><td>J</td><td>energy</td><td> N\f$\cdot\f$m</td><td>m\f$^2\f$ kg s\f$^{-2}\f$</td></tr>
+ * <tr><td>\c #lalWattUnit</td><td>watt</td><td>W</td><td>power</td><td> J/s</td><td>m\f$^2\f$ kg s\f$^{-3}\f$</td></tr>
+ * <tr><td>\c #lalCoulombUnit</td><td>coulomb</td><td>C</td><td>electric charge</td><td>A\f$\cdot\f$s</td><td>s A</td></tr>
+ * <tr><td>\c #lalVoltUnit</td><td>volt</td><td>V</td><td>potential</td><td> W/A</td><td>m\f$^2\f$ kg s\f$^{-3}\f$ A\f$^{-1}\f$</td></tr>
+ * <tr><td>\c #lalOhmUnit</td><td>ohm</td><td>\f$\Omega\f$</td><td>resistance</td><td> V/A</td><td>m\f$^2\f$ kg s\f$^{-3}\f$ A\f$^{-2}\f$</td></tr>
+ * <tr><td>\c #lalFaradUnit</td><td>farad</td><td>F</td><td>capacitance</td><td> C/V</td><td>m\f$^{-2}\f$ kg\f$^{-1}\f$ s\f$^4\f$ A\f$^2\f$</td></tr>
+ * <tr><td>\c #lalWeberUnit</td><td>weber</td><td>Wb</td><td>magnetic flux</td><td> V\f$\cdot\f$s</td><td>m\f$^2\f$ kg s\f$^{-2}\f$ A\f$^{-1}\f$</td></tr>
+ * <tr><td>\c #lalHenryUnit</td><td>henry</td><td>H</td><td>inductance</td><td> V\f$\cdot\f$s/A</td><td>m\f$^2\f$ kg s\f$^{-2}\f$ A\f$^{-2}\f$</td></tr>
+ * <tr><td>\c #lalTeslaUnit</td><td>tesla</td><td>T</td><td>magnetic flux density</td><td> Wb/m\f$^2\f$</td><td>kg s\f$^{-2}\f$ A\f$^{-1}\f$</td></tr>
+ * </table>
+ *
+ * The powers of ten (SI prefixes)
+ *
+ * <table><tr><th>Constant</th><th>Prefix</th><th>Abbr.</th><th>Value</th></tr>
+ * <tr><td>\c #lalYottaUnit</td><td>yotta</td><td>Y</td><td>\f$10^{ 24}\f$</td></tr>
+ * <tr><td>\c #lalZettaUnit</td><td>zetta</td><td>Z</td><td>\f$10^{ 21}\f$</td></tr>
+ * <tr><td>\c #lalExaUnit</td><td>exa</td><td>E</td><td>\f$10^{ 18}\f$</td></tr>
+ * <tr><td>\c #lalPetaUnit</td><td>peta</td><td>P</td><td>\f$10^{ 15}\f$</td></tr>
+ * <tr><td>\c #lalTeraUnit</td><td>tera</td><td>T</td><td>\f$10^{ 12}\f$</td></tr>
+ * <tr><td>\c #lalGigaUnit</td><td>giga</td><td>G</td><td>\f$10^{  9}\f$</td></tr>
+ * <tr><td>\c #lalMegaUnit</td><td>mega</td><td>M</td><td>\f$10^{  6}\f$</td></tr>
+ * <tr><td>\c #lalKiloUnit</td><td>kilo</td><td>k</td><td>\f$10^{  3}\f$</td></tr>
+ * <tr><td>\c #lalHectoUnit</td><td>hecto</td><td>h</td><td>\f$10^{  2}\f$</td></tr>
+ * <tr><td>\c #lalDekaUnit</td><td>deka</td><td>da</td><td>\f$10^{  1}\f$</td></tr>
+ * <tr><td>\c #lalDeciUnit</td><td>deci</td><td>d</td><td>\f$10^{ -1}\f$</td></tr>
+ * <tr><td>\c #lalCentiUnit</td><td>centi</td><td>c</td><td>\f$10^{ -2}\f$</td></tr>
+ * <tr><td>\c #lalMilliUnit</td><td>milli</td><td>m</td><td>\f$10^{ -3}\f$</td></tr>
+ * <tr><td>\c #lalMicroUnit</td><td>micro</td><td>\f$\mu\f$</td><td>\f$10^{ -6}\f$</td></tr>
+ * <tr><td>\c #lalNanoUnit</td><td>nano</td><td>n</td><td>\f$10^{ -9}\f$</td></tr>
+ * <tr><td>\c #lalPicoUnit</td><td>pico</td><td>p</td><td>\f$10^{-12}\f$</td></tr>
+ * <tr><td>\c #lalFemtoUnit</td><td>femto</td><td>f</td><td>\f$10^{-15}\f$</td></tr>
+ * <tr><td>\c #lalAttoUnit</td><td>atto</td><td>a</td><td>\f$10^{-18}\f$</td></tr>
+ * <tr><td>\c #lalZeptoUnit</td><td>zepto</td><td>z</td><td>\f$10^{-21}\f$</td></tr>
+ * <tr><td>\c #lalYoctoUnit</td><td>yocto</td><td>y</td><td>\f$10^{-24}\f$</td></tr>
+ * </table>
+ *
+ * And finally a couple of convenient scaled units:
+ *
+ * <table><tr><th>Constant</th><th>Name</th><th>Abbr.\</th><th>Def.</th><th>Fundamental</th></tr>
+ * <tr><td>\c #lalGramUnit</td><td>gram</td><td>g</td><td> \f$10^{-3}\f$ kg</td><td>\f$10^{-3}\f$ kg</td></tr>
+ * <tr><td>\c #lalAttoStrainUnit</td><td>attostrain</td><td>a\f$\epsilon\f$</td><td>\f$10^{-18} \epsilon\f$</td><td>\f$10^{-18} \epsilon\f$</td></tr>
+ * <tr><td>\c #lalPicoFaradUnit</td><td>picofarad</td><td>pF</td><td>\f$10^{-12}\f$ F</td><td>\f$10^{-12}\f$ m\f$^{-2}\f$ kg\f$^{-1}\f$ s\f$^4\f$ A\f$^2\f$</td></tr>
+ * </table>
+ *
+ */
 /*@{*/
 
-/** To convert a units structure to a string repesentation, we need to
+/**
+ * To convert a units structure to a string repesentation, we need to
  * define the names of the basic units.
  */
 const CHAR lalUnitName[LALNumUnits][LALUnitNameSize] =
@@ -264,7 +265,8 @@ static int readString( char temp[UNITDEFSC_TEMPSIZE], const char **charPtrPtr )
   return 0;
 }
 
-/** Returns the pointer to the input \c string, which
+/**
+ * Returns the pointer to the input \c string, which
  * is populated with the unit string if successful.  If there is a failure,
  * XLALUnitAsString() returns a \c NULL pointer and \c xlalErrno
  * is set to one of the following values:  \c XLAL_EFAULT if one of the
@@ -333,7 +335,28 @@ char * XLALUnitAsString( char *string, UINT4 length, const LALUnit *input )
   return string;
 }
 
-/** \deprecated Use XLALUnitAsString() instead.
+/**
+ * Allocates and returns a new string, which is populated with the unit
+ * string.  If there is a failure, returns a \c NULL pointer and \c xlalErrno
+ * is set to one of the error values of \c XLALUnitAsString or \c XLALMalloc.
+ * Caller is responsible for freeing return value with \c XLALFree.
+ */
+char * XLALUnitToString( const LALUnit *input )
+{
+  char *output = NULL, *buf = XLALMalloc(LALUnitTextSize);
+  if (buf)
+  {
+    output = XLALUnitAsString(buf, LALUnitTextSize, input);
+    if (output)
+      output = XLALRealloc(buf, strlen(buf) + 1);
+    if (!output)
+      XLALFree(buf);
+  }
+  return output;
+}
+
+/**
+ * \deprecated Use XLALUnitAsString() instead.
  */
 void
 LALUnitAsString( LALStatus *status,
@@ -377,7 +400,8 @@ LALUnitAsString( LALStatus *status,
   RETURN(status);
 }
 
-/** Returns the pointer \c output upon return
+/**
+ * Returns the pointer \c output upon return
  * or a pointer to newly allocated memory if \c output was \c NULL;
  * on failure, \c XLALParseUnitString() returns \c NULL and sets
  * ::xlalErrno to one of the following values: \c #XLAL_ENOMEM
@@ -551,7 +575,8 @@ LALUnit * XLALParseUnitString( LALUnit *output, const char *string )
 }
 
 
-/** \deprecated Use XLALParseUnitString() instead.
+/**
+ * \deprecated Use XLALParseUnitString() instead.
  */
 void
 LALParseUnitString ( LALStatus *status,

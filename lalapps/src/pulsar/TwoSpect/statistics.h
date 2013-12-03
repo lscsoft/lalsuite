@@ -53,6 +53,7 @@ REAL4 ncx2cdf_float_withouttinyprob_withmatlabchi2cdf(REAL4 x, REAL4 dof, REAL4 
 REAL4 epsval_float(REAL4 val);
 REAL4 calcMean(REAL4Vector *vector);
 REAL4 calcMean_ignoreZeros(REAL4Vector *vector);
+REAL4 calcHarmonicMean(REAL4Vector *vector, INT4 numfbins, INT4 numffts);
 REAL4 calcStddev(REAL4Vector *vector);
 REAL4 calcStddev_ignoreZeros(REAL4Vector *vector);
 REAL4 calcRms(REAL4Vector *vector);

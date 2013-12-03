@@ -23,25 +23,29 @@
  *
  * \brief Tests the routines in \ref TimeFreqFFT.h.
  *
- * \heading{Usage}
+ * ### Usage ###
+ *
  * \code
  * TimeFreqFFTTest [options]
  * Options:
- *   -h         print this message
- *   -q         quiet: run silently
- *   -v         verbose: print extra information
- *   -d level   set lalDebugLevel to level
+ * -h         print this message
+ * -q         quiet: run silently
+ * -v         verbose: print extra information
+ * -d level   set lalDebugLevel to level
  * \endcode
  *
- * \heading{Exit codes}
+ * ### Exit codes ###
+ *
  * <table><tr><th>Code</th><th>Explanation</th></tr>
  * <tr><td>0</td><td>Success, normal exit.</td></tr>
  * <tr><td>1</td><td>Subroutine failed.</td></tr>
  * <tr><td>2</td><td>PSD estimation tolerance exceeded</td></tr>
  * </table>
  *
- * \heading{Uses}
- * \heading{Notes}
+ * ### Uses ###
+ *
+ *
+ * ### Notes ###
  *
  */
 /** \cond DONT_DOXYGEN */
@@ -72,7 +76,6 @@
 extern char *optarg;
 extern int   optind;
 
-extern int lalDebugLevel;
 int verbose       = 0;
 
 static void
@@ -113,7 +116,6 @@ int main( int argc, char *argv[] )
 
   UINT4 j, sr, np, vr;
 
-  lalDebugLevel = 0;
 
   /*CHAR fname[2048];*/
 
@@ -407,7 +409,6 @@ ParseOptions( int argc, char *argv[] )
     switch ( c )
     {
       case 'd': /* set debug level */
-        lalDebugLevel = atoi( optarg );
         break;
 
       case 'v': /* verbose */

@@ -258,13 +258,13 @@ static int XLALSimSGWBSegment(REAL8TimeSeries **h, const LALDetector *detectors,
  *
  * Note:
  *
- *	- If stride = 0, initialize h by generating one (periodic)
- *	realization of noise; subsequent calls should have non-zero
- *	stride.
+ * - If stride = 0, initialize h by generating one (periodic)
+ * realization of noise; subsequent calls should have non-zero
+ * stride.
  *
- *	- If stride = h->data->length then generate one segment of
- *	non-periodic noise by generating two different realizations
- *	and feathering them together.
+ * - If stride = h->data->length then generate one segment of
+ * non-periodic noise by generating two different realizations
+ * and feathering them together.
  *
  * Warning: only the first stride points are valid.
  */
@@ -414,13 +414,13 @@ int XLALSimSGWB(
  *
  * Note:
  *
- *	- If stride = 0, initialize h by generating one (periodic)
- *	realization of noise; subsequent calls should have non-zero
- *	stride.
+ * - If stride = 0, initialize h by generating one (periodic)
+ * realization of noise; subsequent calls should have non-zero
+ * stride.
  *
- *	- If stride = h->data->length then generate one segment of
- *	non-periodic noise by generating two different realizations
- *	and feathering them together.
+ * - If stride = h->data->length then generate one segment of
+ * non-periodic noise by generating two different realizations
+ * and feathering them together.
  *
  * Warning: only the first stride points are valid.
  */
@@ -517,13 +517,13 @@ int XLALSimSGWBFlatSpectrum(
  *
  * Note:
  *
- *	- If stride = 0, initialize h by generating one (periodic)
- *	realization of noise; subsequent calls should have non-zero
- *	stride.
+ * - If stride = 0, initialize h by generating one (periodic)
+ * realization of noise; subsequent calls should have non-zero
+ * stride.
  *
- *	- If stride = h->data->length then generate one segment of
- *	non-periodic noise by generating two different realizations
- *	and feathering them together.
+ * - If stride = h->data->length then generate one segment of
+ * non-periodic noise by generating two different realizations
+ * and feathering them together.
  *
  * Warning: only the first stride points are valid.
  */
@@ -736,7 +736,6 @@ int test_sgwb(void)
 
 int main(void)
 {
-	lalDebugLevel = 7;
 	XLALSetErrorHandler(XLALAbortErrorHandler);
 	gsl_rng_env_setup();
 	mksgwbdata();

@@ -35,27 +35,30 @@
 /* 07/13/05 gam; make RandomParams *randPar a parameter for CleanCOMPLEX8SFT; initialze RandomParams *randPar once to avoid repeatly opening /dev/urandom */
 
 /**
-\author Sintes, A.M., Krishnan, B.
-
-\heading{\ref SFTbin.c}
-Routines for reading SFT binary files
-
-\heading{Prototypes}
-<tt>ReadSFTbinHeader1()</tt>
-<tt>ReadCOMPLEX8SFTbinData1()</tt>
-<tt>ReadCOMPLEX16SFTbinData1()</tt>
-<tt>COMPLEX8SFT2Periodogram1()</tt>
-<tt>COMPLEX16SFT2Periodogram1()</tt>
-
-\heading{Description}
-
-the output of the periodogram should be properly normalized !!!
-
-\heading{Uses}
-\code
-LALHO()
-\endcode
-*/
+ * \author Sintes, A.M., Krishnan, B.
+ *
+ * ### SFTbin.c ###
+ *
+ * Routines for reading SFT binary files
+ *
+ * ### Prototypes ###
+ *
+ * <tt>ReadSFTbinHeader1()</tt>
+ * <tt>ReadCOMPLEX8SFTbinData1()</tt>
+ * <tt>ReadCOMPLEX16SFTbinData1()</tt>
+ * <tt>COMPLEX8SFT2Periodogram1()</tt>
+ * <tt>COMPLEX16SFT2Periodogram1()</tt>
+ *
+ * ### Description ###
+ *
+ * the output of the periodogram should be properly normalized !!!
+ *
+ * ### Uses ###
+ *
+ * \code
+ * LALHO()
+ * \endcode
+ */
 
 #include "./SFTbin.h"
 

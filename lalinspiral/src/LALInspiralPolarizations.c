@@ -18,32 +18,33 @@
 */
 
 /**
-
-\author Ochsner, E.
-\file
-
-\brief This code generates the two GW polarizations of the inspiral waveform for a given phase model.
-
-\heading{Prototypes}
-
-
-<tt>LALInspiralHplus()</tt>
-<ul>
-<li> \c output: Outputs either \f$h_+\f$ or \f$h_\times.\f$</li>
-<li> \c params: Input containing binary chirp parameters.</li>
-<li> \c phase: Input containing binary chirp phase.</li>
-<li> \c v: PN expansion parameter</li>
-</ul>
-
-\heading{Description}
-
-\heading{Algorithm}
-
-\heading{Uses}
-
-\heading{Notes}
-
-*/
+ * \author Ochsner, E.
+ * \file
+ *
+ * \brief This code generates the two GW polarizations of the inspiral waveform for a given phase model.
+ *
+ * ### Prototypes ###
+ *
+ * <tt>LALInspiralHplus()</tt>
+ * <ul>
+ * <li> \c output: Outputs either \f$h_+\f$ or \f$h_\times.\f$</li>
+ * <li> \c params: Input containing binary chirp parameters.</li>
+ * <li> \c phase: Input containing binary chirp phase.</li>
+ * <li> \c v: PN expansion parameter</li>
+ * </ul>
+ *
+ * ### Description ###
+ *
+ *
+ * ### Algorithm ###
+ *
+ *
+ * ### Uses ###
+ *
+ *
+ * ### Notes ###
+ *
+ */
 
 #include <lal/LALStdlib.h>
 #include<lal/LALConstants.h>

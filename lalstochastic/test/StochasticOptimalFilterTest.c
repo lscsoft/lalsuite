@@ -18,135 +18,138 @@
 */
 
 /**
-\author UTB Relativity Group; contact whelan@phys.utb.edu
-\file
-\ingroup StochasticOptimalFilter_c
-
-\brief Test suite for <tt>LALStochasticOptimalFilter()</tt>.
-
-\heading{Usage}
-\code
-./StochasticOptimalFilterTest [options]
-Options:
-  -h             print usage message
-  -q             quiet: run silently
-  -v             verbose: print extra information
-  -d level       set lalDebugLevel to level
-  -n length      frequency series contain length points
-  -f fRef        set normalization reference frequency to fRef
-  -w filename    read gravitational-wave spectrum from file filename
-  -g filename    read overlap reduction function from file filename
-  -i filename    read first calibrated inverse noise PSD from file filename
-  -j filename    read second calibrated inverse noise PSD from file filename
-  -s filename    read first half-calibrated inverse noise PSD from file filename
-  -t filename    read second half-calibrated inverse noise PSD from file filename
-  -o filename    print optimal filter to file filename
-  -y             use normalization appropriate to heterodyned data
-\endcode
-
-\heading{Description}
-
-This program tests the function <tt>LALStochasticOptimalFilter()</tt>,
-which generates a normalized optimal filter from a stochastic
-gravitational-wave background spectrum
-\f$h_{100}^2\Omega_{\mathrm{GW}}(f)\f$, an overlap reduction
-function \f$\gamma(f)\f$, and calibrated and half-calibrated noise power
-spectral densities \f$\{P^{\mathrm{C}}_i(f),P^{\mathrm{HC}}_i(f)\}\f$ for a
-pair of detectors.
-
-First, it tests that the correct error codes
-(cf. \ref StochasticCrossCorrelation_h)
-are generated for the following error conditions (tests in
-\e italics are not performed if \c LAL_NDEBUG is set, as
-the corresponding checks in the code are made using the ASSERT macro):
-<ul>
-<li> <em>null pointer to input structure</em></li>
-<li> <em>null pointer to output series</em></li>
-<li> <em>null pointer to overlap reduction function</em></li>
-<li> <em>null pointer to gravitational-wave spectrum</em></li>
-<li> <em>null pointer to first half-calibrated inverse noise PSD</em></li>
-<li> <em>null pointer to second half-calibrated inverse noise PSD</em></li>
-<li> <em>null pointer to data member of output series</em></li>
-<li> <em>null pointer to data member of overlap reduction function</em></li>
-<li> <em>null pointer to data member of gravitational-wave spectrum</em></li>
-<li> <em>null pointer to data member of first half-calibrated inverse noise PSD</em></li>
-<li> <em>null pointer to data member of second half-calibrated inverse noise PSD</em></li>
-<li> <em>null pointer to data member of data member of output series</em></li>
-<li> <em>null pointer to data member of data member of overlap reduction function</em></li>
-<li> <em>null pointer to data member of data member of gravitational-wave spectrum</em></li>
-<li> <em>null pointer to data member of data member of first half-calibrated inverse noise PSD</em></li>
-<li> <em>null pointer to data member of data member of second half-calibrated inverse noise PSD</em></li>
-<li> <em>zero length</em></li>
-<li> <em>negative frequency spacing</em></li>
-<li> <em>zero frequency spacing</em></li>
-<li> negative start frequency</li>
-<li> length mismatch between overlap reduction function and output series</li>
-<li> length mismatch between overlap reduction function and gravitational-wave spectrum</li>
-<li> length mismatch between overlap reduction function and first half-calibrated inverse noise PSD</li>
-<li> length mismatch between overlap reduction function and second half-calibrated inverse noise PSD</li>
-<li> frequency spacing mismatch between overlap reduction function and gravitational-wave spectrum</li>
-<li> frequency spacing mismatch between overlap reduction function and first half-calibrated inverse noise PSD</li>
-<li> frequency spacing mismatch between overlap reduction function and second half-calibrated inverse noise PSD</li>
-<li> start frequency mismatch between overlap reduction function and gravitational-wave spectrum</li>
-<li> start frequency mismatch between overlap reduction function and first half-calibrated inverse noise PSD</li>
-<li> start frequency mismatch between overlap reduction function and second half-calibrated inverse noise PSD</li>
-<li> reference frequency less than frequency spacing</li>
-<li> reference frequency greater than maximum frequency</li>
-</ul>
-
-It then verifies that the correct optimal filter is generated
-[calculating the normalization with
-<tt>LALStochasticOptimalFilterNormalization()</tt> as described in
-\ref StochasticOptimalFilterNormalization_c, and
-checking the normalization by verifying that\eqref{stochastic_e_mu}
-is satisfied] for each of the following simple test cases:
-<ol>
-<li> \f$\gamma(f) = h_{100}^2\Omega_{\mathrm{GW}}(f) = P^{\mathrm{C}}_1(f)
-  =P^{\mathrm{C}}_2(f)=P^{\mathrm{HC}}_1(f)=P^{\mathrm{HC}}_2(f)=1\f$;
-  The expected optimal filter in this case is
-  \f$\widetilde{Q}(f)\propto f^{-3}\f$.</li>
-<li> \f$\gamma(f) = P^{\mathrm{C}}_1(f) = P^{\mathrm{C}}_2(f) = P^{\mathrm{HC}}_1(f)
-  = P^{\mathrm{HC}}_2(f)=1\f$;
-  \f$h_{100}^2\Omega_{\mathrm{GW}}(f)=f^3\f$.
-  The expected optimal filter in this case is
-  \f$\widetilde{Q}(f)=\textrm{constant}\f$.</li>
-</ol>
-
-\heading{Uses}
-\code
-LALStochasticOptimalFilter()
-LALCheckMemoryLeaks()
-LALCReadFrequencySeries()
-LALSCreateVector()
-LALSDestroyVector()
-LALCCreateVector()
-LALCDestroyVector()
-LALCHARCreateVector()
-LALCHARDestroyVector()
-LALUnitAsString()
-LALUnitCompare()
-getopt()
-printf()
-fprintf()
-freopen()
-fabs()
-\endcode
-
-\heading{Notes}
-<ul>
-<li> No specific error checking is done on user-specified data.  If
-  \c length is missing, the resulting default will cause a bad
-  data error.  If \c fRef is unspecified, a default value of
-  1\,Hz is used.</li>
-<li> The length of the user-provided series must be specified, even
-  though it could in principle be deduced from the input file, because
-  the data sequences must be allocated before the
-  <tt>LALCReadFrequencySeries()</tt> function is called.</li>
-<li> If some, but not all, of the \c filename arguments are
-  present, the user-specified data will be silently ignored.</li>
-</ul>
-
-*/
+ * \author UTB Relativity Group; contact whelan@phys.utb.edu
+ * \file
+ * \ingroup StochasticOptimalFilter_c
+ *
+ * \brief Test suite for <tt>LALStochasticOptimalFilter()</tt>.
+ *
+ * ### Usage ###
+ *
+ * \code
+ * ./StochasticOptimalFilterTest [options]
+ * Options:
+ * -h             print usage message
+ * -q             quiet: run silently
+ * -v             verbose: print extra information
+ * -d level       set lalDebugLevel to level
+ * -n length      frequency series contain length points
+ * -f fRef        set normalization reference frequency to fRef
+ * -w filename    read gravitational-wave spectrum from file filename
+ * -g filename    read overlap reduction function from file filename
+ * -i filename    read first calibrated inverse noise PSD from file filename
+ * -j filename    read second calibrated inverse noise PSD from file filename
+ * -s filename    read first half-calibrated inverse noise PSD from file filename
+ * -t filename    read second half-calibrated inverse noise PSD from file filename
+ * -o filename    print optimal filter to file filename
+ * -y             use normalization appropriate to heterodyned data
+ * \endcode
+ *
+ * ### Description ###
+ *
+ * This program tests the function <tt>LALStochasticOptimalFilter()</tt>,
+ * which generates a normalized optimal filter from a stochastic
+ * gravitational-wave background spectrum
+ * \f$h_{100}^2\Omega_{\mathrm{GW}}(f)\f$, an overlap reduction
+ * function \f$\gamma(f)\f$, and calibrated and half-calibrated noise power
+ * spectral densities \f$\{P^{\mathrm{C}}_i(f),P^{\mathrm{HC}}_i(f)\}\f$ for a
+ * pair of detectors.
+ *
+ * First, it tests that the correct error codes
+ * (cf. \ref StochasticCrossCorrelation_h)
+ * are generated for the following error conditions (tests in
+ * \e italics are not performed if \c LAL_NDEBUG is set, as
+ * the corresponding checks in the code are made using the ASSERT macro):
+ * <ul>
+ * <li> <em>null pointer to input structure</em></li>
+ * <li> <em>null pointer to output series</em></li>
+ * <li> <em>null pointer to overlap reduction function</em></li>
+ * <li> <em>null pointer to gravitational-wave spectrum</em></li>
+ * <li> <em>null pointer to first half-calibrated inverse noise PSD</em></li>
+ * <li> <em>null pointer to second half-calibrated inverse noise PSD</em></li>
+ * <li> <em>null pointer to data member of output series</em></li>
+ * <li> <em>null pointer to data member of overlap reduction function</em></li>
+ * <li> <em>null pointer to data member of gravitational-wave spectrum</em></li>
+ * <li> <em>null pointer to data member of first half-calibrated inverse noise PSD</em></li>
+ * <li> <em>null pointer to data member of second half-calibrated inverse noise PSD</em></li>
+ * <li> <em>null pointer to data member of data member of output series</em></li>
+ * <li> <em>null pointer to data member of data member of overlap reduction function</em></li>
+ * <li> <em>null pointer to data member of data member of gravitational-wave spectrum</em></li>
+ * <li> <em>null pointer to data member of data member of first half-calibrated inverse noise PSD</em></li>
+ * <li> <em>null pointer to data member of data member of second half-calibrated inverse noise PSD</em></li>
+ * <li> <em>zero length</em></li>
+ * <li> <em>negative frequency spacing</em></li>
+ * <li> <em>zero frequency spacing</em></li>
+ * <li> negative start frequency</li>
+ * <li> length mismatch between overlap reduction function and output series</li>
+ * <li> length mismatch between overlap reduction function and gravitational-wave spectrum</li>
+ * <li> length mismatch between overlap reduction function and first half-calibrated inverse noise PSD</li>
+ * <li> length mismatch between overlap reduction function and second half-calibrated inverse noise PSD</li>
+ * <li> frequency spacing mismatch between overlap reduction function and gravitational-wave spectrum</li>
+ * <li> frequency spacing mismatch between overlap reduction function and first half-calibrated inverse noise PSD</li>
+ * <li> frequency spacing mismatch between overlap reduction function and second half-calibrated inverse noise PSD</li>
+ * <li> start frequency mismatch between overlap reduction function and gravitational-wave spectrum</li>
+ * <li> start frequency mismatch between overlap reduction function and first half-calibrated inverse noise PSD</li>
+ * <li> start frequency mismatch between overlap reduction function and second half-calibrated inverse noise PSD</li>
+ * <li> reference frequency less than frequency spacing</li>
+ * <li> reference frequency greater than maximum frequency</li>
+ * </ul>
+ *
+ * It then verifies that the correct optimal filter is generated
+ * [calculating the normalization with
+ * <tt>LALStochasticOptimalFilterNormalization()</tt> as described in
+ * \ref StochasticOptimalFilterNormalization_c, and
+ * checking the normalization by verifying that \eqref{stochastic_e_mu}
+ * is satisfied] for each of the following simple test cases:
+ * <ol>
+ * <li> \f$\gamma(f) = h_{100}^2\Omega_{\mathrm{GW}}(f) = P^{\mathrm{C}}_1(f)
+ * =P^{\mathrm{C}}_2(f)=P^{\mathrm{HC}}_1(f)=P^{\mathrm{HC}}_2(f)=1\f$;
+ * The expected optimal filter in this case is
+ * \f$\widetilde{Q}(f)\propto f^{-3}\f$.</li>
+ * <li> \f$\gamma(f) = P^{\mathrm{C}}_1(f) = P^{\mathrm{C}}_2(f) = P^{\mathrm{HC}}_1(f)
+ * = P^{\mathrm{HC}}_2(f)=1\f$;
+ * \f$h_{100}^2\Omega_{\mathrm{GW}}(f)=f^3\f$.
+ * The expected optimal filter in this case is
+ * \f$\widetilde{Q}(f)=\textrm{constant}\f$.</li>
+ * </ol>
+ *
+ * ### Uses ###
+ *
+ * \code
+ * LALStochasticOptimalFilter()
+ * LALCheckMemoryLeaks()
+ * LALCReadFrequencySeries()
+ * LALSCreateVector()
+ * LALSDestroyVector()
+ * LALCCreateVector()
+ * LALCDestroyVector()
+ * LALCHARCreateVector()
+ * LALCHARDestroyVector()
+ * LALUnitAsString()
+ * LALUnitCompare()
+ * getopt()
+ * printf()
+ * fprintf()
+ * freopen()
+ * fabs()
+ * \endcode
+ *
+ * ### Notes ###
+ *
+ * <ul>
+ * <li> No specific error checking is done on user-specified data.  If
+ * \c length is missing, the resulting default will cause a bad
+ * data error.  If \c fRef is unspecified, a default value of
+ * 1\,Hz is used.</li>
+ * <li> The length of the user-provided series must be specified, even
+ * though it could in principle be deduced from the input file, because
+ * the data sequences must be allocated before the
+ * <tt>LALCReadFrequencySeries()</tt> function is called.</li>
+ * <li> If some, but not all, of the \c filename arguments are
+ * present, the user-specified data will be silently ignored.</li>
+ * </ul>
+ *
+ */
 
 /**\name Error Codes */ /*@{*/
 #define STOCHASTICOPTIMALFILTERTESTC_ENOM 0	/**< Nominal exit */
@@ -199,8 +202,6 @@ fabs()
 extern char *optarg;
 extern int   optind;
 
-extern int lalDebugLevel;
-/* int lalDebugLevel  = LALMSGLVL3; */
 BOOLEAN optVerbose = STOCHASTICOPTIMALFILTERTESTC_FALSE;
 BOOLEAN optHetero = STOCHASTICOPTIMALFILTERTESTC_FALSE;
 REAL8 optFRef      = 1.0;
@@ -256,7 +257,6 @@ int main(int argc, char *argv[])
 
   REAL4WithUnits           lambda;
 
-  lalDebugLevel = LALNDEBUG;
 
   ParseOptions (argc, argv);
 
@@ -870,10 +870,10 @@ int main(int argc, char *argv[])
   omegaGW.data->data[0] = 0;
   invNoise1.data->data[0] = 0;
   invNoise2.data->data[0] = 0;
-  hcInvNoise1.data->data[0].re = 0;
-  hcInvNoise1.data->data[0].im = 0;
-  hcInvNoise2.data->data[0].re = 0;
-  hcInvNoise2.data->data[0].im = 0;
+  hcInvNoise1.data->data[0].realf_FIXME = 0;
+  hcInvNoise1.data->data[0].imagf_FIXME = 0;
+  hcInvNoise2.data->data[0].realf_FIXME = 0;
+  hcInvNoise2.data->data[0].imagf_FIXME = 0;
 
   /** Test 1 **/
   for (i=1; i < STOCHASTICOPTIMALFILTERTESTC_LENGTH; i++)
@@ -884,10 +884,10 @@ int main(int argc, char *argv[])
     omegaGW.data->data[i] = 1;
     invNoise1.data->data[i] = 1;
     invNoise2.data->data[i] = 1;
-    hcInvNoise1.data->data[i].re = 1;
-    hcInvNoise1.data->data[i].im = 0;
-    hcInvNoise2.data->data[i].re = 1;
-    hcInvNoise2.data->data[i].im = 0;
+    hcInvNoise1.data->data[i].realf_FIXME = 1;
+    hcInvNoise1.data->data[i].imagf_FIXME = 0;
+    hcInvNoise2.data->data[i].realf_FIXME = 1;
+    hcInvNoise2.data->data[i].imagf_FIXME = 0;
   }
 
   /* fill normalization output */
@@ -1035,10 +1035,10 @@ int main(int argc, char *argv[])
   if (optVerbose)
   {
     printf("Q(0)=%g + %g i, should be 0\n",
-           optimal.data->data[0].re, optimal.data->data[0].im);
+           crealf(optimal.data->data[0]), cimagf(optimal.data->data[0]));
   }
-  if ( fabs(optimal.data->data[0].re) > STOCHASTICOPTIMALFILTERTESTC_TOL
-       || fabs(optimal.data->data[0].im)
+  if ( fabs(crealf(optimal.data->data[0])) > STOCHASTICOPTIMALFILTERTESTC_TOL
+       || fabs(cimagf(optimal.data->data[0]))
        > STOCHASTICOPTIMALFILTERTESTC_TOL )
   {
     printf("  FAIL: Valid data test #1\n");
@@ -1060,14 +1060,14 @@ int main(int argc, char *argv[])
     {
       printf("Q(%g Hz)/Re(Q(%g Hz))=%g + %g i, should be %g\n",
              f, STOCHASTICOPTIMALFILTERTESTC_DELTAF,
-             optimal.data->data[i].re/optimal.data->data[1].re,
-             optimal.data->data[i].im/optimal.data->data[1].re,
+             crealf(optimal.data->data[i])/crealf(optimal.data->data[1]),
+             cimagf(optimal.data->data[i])/crealf(optimal.data->data[1]),
              testNum);
     }
-    if (fabs(optimal.data->data[i].re/optimal.data->data[1].re
+    if (fabs(crealf(optimal.data->data[i])/crealf(optimal.data->data[1])
              - testNum)/testNum
         > STOCHASTICOPTIMALFILTERTESTC_TOL
-        || fabs(optimal.data->data[i].im/optimal.data->data[1].re)
+        || fabs(cimagf(optimal.data->data[i])/crealf(optimal.data->data[1]))
         > STOCHASTICOPTIMALFILTERTESTC_TOL)
     {
       printf("  FAIL: Valid data test #1\n");
@@ -1104,10 +1104,10 @@ int main(int argc, char *argv[])
     omegaGW.data->data[i] = pow(f,3);
     invNoise1.data->data[i] = 1;
     invNoise2.data->data[i] = 1;
-    hcInvNoise1.data->data[i].re = 1;
-    hcInvNoise1.data->data[i].im = 0;
-    hcInvNoise2.data->data[i].re = 1;
-    hcInvNoise2.data->data[i].im = 0;
+    hcInvNoise1.data->data[i].realf_FIXME = 1;
+    hcInvNoise1.data->data[i].imagf_FIXME = 0;
+    hcInvNoise2.data->data[i].realf_FIXME = 1;
+    hcInvNoise2.data->data[i].imagf_FIXME = 0;
   }
 
   /* fill normalization output */
@@ -1252,10 +1252,10 @@ int main(int argc, char *argv[])
   if (optVerbose)
   {
     printf("Q(0)=%g + %g i, should be 0\n",
-           optimal.data->data[0].re, optimal.data->data[0].im);
+           crealf(optimal.data->data[0]), cimagf(optimal.data->data[0]));
   }
-  if ( fabs(optimal.data->data[0].re) > STOCHASTICOPTIMALFILTERTESTC_TOL
-       || fabs(optimal.data->data[0].im)
+  if ( fabs(crealf(optimal.data->data[0])) > STOCHASTICOPTIMALFILTERTESTC_TOL
+       || fabs(cimagf(optimal.data->data[0]))
        > STOCHASTICOPTIMALFILTERTESTC_TOL )
   {
     printf("  FAIL: Valid data test #2\n");
@@ -1274,14 +1274,14 @@ int main(int argc, char *argv[])
     {
       printf("Q(%g Hz)/Re(Q(%g Hz))=%g + %g i, should be %g\n",
              f, STOCHASTICOPTIMALFILTERTESTC_DELTAF,
-             optimal.data->data[i].re/optimal.data->data[1].re,
-             optimal.data->data[i].im/optimal.data->data[1].re,
+             crealf(optimal.data->data[i])/crealf(optimal.data->data[1]),
+             cimagf(optimal.data->data[i])/crealf(optimal.data->data[1]),
              testNum);
     }
-    if (fabs(optimal.data->data[i].re/optimal.data->data[1].re
+    if (fabs(crealf(optimal.data->data[i])/crealf(optimal.data->data[1])
              - testNum)/testNum
         > STOCHASTICOPTIMALFILTERTESTC_TOL
-        || fabs(optimal.data->data[i].im/optimal.data->data[1].re)
+        || fabs(cimagf(optimal.data->data[i])/crealf(optimal.data->data[1]))
         > STOCHASTICOPTIMALFILTERTESTC_TOL)
     {
       printf("  FAIL: Valid data test #2\n");
@@ -1564,7 +1564,7 @@ static REAL8 mu(const REAL4FrequencySeries* omegaGW,
       f = i*deltaF;
       f3 = f*f*f;
       muval += (2.0  * constant * (omegaGW->data->data[i]) *
-            (overlap->data->data[i]) * (optimal->data->data[i].re))/f3;
+            (overlap->data->data[i]) * (crealf(optimal->data->data[i])))/f3;
     }
     return muval;
 }
@@ -1653,7 +1653,6 @@ ParseOptions (int argc, char *argv[])
         break;
 
       case 'd': /* set debug level */
-        lalDebugLevel = atoi (optarg);
         break;
 
       case 'v': /* optVerbose */

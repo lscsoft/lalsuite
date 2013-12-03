@@ -33,43 +33,44 @@ extern "C"
 {
 #endif
 
-/** \addtogroup DetResponse_h
-    \author David Chin <dwchin@umich.edu>, Kipp Cannon <kipp@gravity.phys.uwm.edu>
-
-    \brief Provides routines to compute gravitational wave detector response to
-    polarized planar gravitational wave originating from a given source,
-    detected at a given time.
-
-\heading{Synopsis}
-
-\code
-#include <lal/DetResponse.h>
-\endcode
-
-\heading{Description}
-
-These routines compute the antenna beam pattern for all supported detector
-types.  <tt>XLALComputeDetAMResponse()</tt> computes the response at one
-instance in time, and <tt>XLALComputeDetAMResponseSeries()</tt> computes a
-vector of response for some length of time.
-
-\heading{Algorithm}
-
-This code is a translation of the algorithm in the Maple worksheet by
-Anderson, <em>et al.</em> [\ref Anderson_2000].  We compute the \f$h\f$-tensors for
-\f$+\f$- and \f$\times\f$-polarized in the Earth-fixed frame, and then contract
-them (take the scalar product) with the detector response tensors as
-described in the \ref LALDetectors_h section of the \c tools package.
-
-\ref LALDetectors_h provides predefined
-\c LALDetector structures representing most current detectors,
-including LIGO (Hanford and Livingston), and GEO.
-
-\heading{Notes}
-
-For examples of usage, please see the test programs in the \c test directory.
-
-*/
+/**
+ * \addtogroup DetResponse_h
+ * \author David Chin <dwchin@umich.edu>, Kipp Cannon <kipp@gravity.phys.uwm.edu>
+ *
+ * \brief Provides routines to compute gravitational wave detector response to
+ * polarized planar gravitational wave originating from a given source,
+ * detected at a given time.
+ *
+ * ### Synopsis ###
+ *
+ * \code
+ * #include <lal/DetResponse.h>
+ * \endcode
+ *
+ * ### Description ###
+ *
+ * These routines compute the antenna beam pattern for all supported detector
+ * types.  <tt>XLALComputeDetAMResponse()</tt> computes the response at one
+ * instance in time, and <tt>XLALComputeDetAMResponseSeries()</tt> computes a
+ * vector of response for some length of time.
+ *
+ * ### Algorithm ###
+ *
+ * This code is a translation of the algorithm in the Maple worksheet by
+ * Anderson, <em>et al.</em> \cite ABCCRW_2001.  We compute the \f$h\f$-tensors for
+ * \f$+\f$- and \f$\times\f$-polarized in the Earth-fixed frame, and then contract
+ * them (take the scalar product) with the detector response tensors as
+ * described in the \ref LALDetectors_h section of the \c tools package.
+ *
+ * \ref LALDetectors_h provides predefined
+ * \c LALDetector structures representing most current detectors,
+ * including LIGO (Hanford and Livingston), and GEO.
+ *
+ * ### Notes ###
+ *
+ * For examples of usage, please see the test programs in the \c test directory.
+ *
+ */
 /*@{*/
 
 /** \name Error Codes */
@@ -86,7 +87,8 @@ For examples of usage, please see the test programs in the \c test directory.
 /** \endcond */
 
 
-/** This structure contains gravitational wave source position (in Equatorial
+/**
+ * This structure contains gravitational wave source position (in Equatorial
  * coördinates), and orientation angle.
  * The orientation is measured counter-clockwise with respect to the "line of ascending nodes",
  * i.e. counter-clockwise with respect to a line perpendicular to the
@@ -110,7 +112,8 @@ tagLALSource
 }
 LALSource;
 
-/** This structure aggregates a pointer to a \c LALDetector and a
+/**
+ * This structure aggregates a pointer to a \c LALDetector and a
  * \c LALSource.  Its sole function is to allow the user to pass
  * detector and source parameters to the functions
  * LALComputeDetAMResponse() and
@@ -119,12 +122,13 @@ LALSource;
 typedef struct
 tagLALDetAndSource
 {
-  LALDetector  *pDetector;	/**< Pointer to ::LALDetector object containing information about the detector */
+  const LALDetector  *pDetector;/**< Pointer to ::LALDetector object containing information about the detector */
   LALSource    *pSource;	/**< Pointer to ::LALSource object containing information about the source */
 }
 LALDetAndSource;
 
-/** This structure encapsulates the detector AM (beam pattern) coefficients for
+/**
+ * This structure encapsulates the detector AM (beam pattern) coefficients for
  * one source at one instance in time.
  */
 typedef struct
@@ -136,7 +140,8 @@ tagLALDetAMResponse
 }
 LALDetAMResponse;
 
-/** This structure aggregates together three ::REAL4TimeSeries objects containing
+/**
+ * This structure aggregates together three ::REAL4TimeSeries objects containing
  * time series of detector AM response.
  */
 typedef struct
@@ -149,7 +154,8 @@ tagLALDetAMResponseSeries
 LALDetAMResponseSeries;
 
 
-/** This structure encapsulates time and sampling information for computing a
+/**
+ * This structure encapsulates time and sampling information for computing a
  * ::LALDetAMResponseSeries. Its fields correspond to some fields of the
  * TimeSeries structures for easy conversion.
  */
@@ -175,7 +181,7 @@ LALComputeDetAMResponse( LALStatus             *status,
 void XLALComputeDetAMResponse(
 	double *fplus,
 	double *fcross,
-	REAL4 D[3][3],
+	const REAL4 D[3][3],
 	const double ra,
 	const double dec,
 	const double psi,
@@ -190,7 +196,7 @@ void XLALComputeDetAMResponseExtraModes(
   double *fl,
   double *fx,
   double *fy,
-  REAL4 D[3][3],
+  const REAL4 D[3][3],
   const double ra,
   const double dec,
   const double psi,
@@ -210,7 +216,7 @@ LALComputeDetAMResponseSeries( LALStatus                      *status,
 int XLALComputeDetAMResponseSeries(
 	REAL4TimeSeries **fplus,
 	REAL4TimeSeries **fcross,
-	REAL4 D[3][3],
+	const REAL4 D[3][3],
 	const double ra,
 	const double dec,
 	const double psi,
@@ -226,7 +232,7 @@ int XLALComputeDetAMResponseExtraModesSeries(
   REAL4TimeSeries **fl,
   REAL4TimeSeries **fx,
   REAL4TimeSeries **fy,
-  REAL4 D[3][3],
+  const REAL4 D[3][3],
   const double ra,
   const double dec,
   const double psi,

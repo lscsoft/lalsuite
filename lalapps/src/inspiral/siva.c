@@ -82,7 +82,6 @@ int main( int argc, char *argv[] )
 
   /* set up inital debugging values */
   lal_errhandler = LAL_ERR_EXIT;
-  set_debug_level( "33" );
 
 
   /*-- Initialize the veto segment list, and read the veto file --*/

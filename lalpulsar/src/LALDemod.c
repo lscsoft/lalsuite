@@ -23,50 +23,50 @@
 
 
 /**
-\author Berukoff, S.J.,  Papa, M.A., Allen, B., Siemens, X.
-
-\brief Computes a demodulated Fourier transform (DeFT) given a set of input short Fourier transforms (SFT).
-
-\heading{Description}
-
-This routine computes the \f$F\f$ statistic for a set of templates that are defined by: one sky
-position, a set of spin-down parameters and a band of possible signal frequencies. The \f$F\f$
-statistic is described in JKS, Phys Rev D 58, 063001 (1998). Here, it has been adapted to a single
-emission frequency model.
-
-The <tt>parameter structure</tt> defines the search frequency band (\c f0 and \c imax), the search
-frequency resolution (\c df) the first frequency of the input SFTs (\c ifmin), how many SFTs have to
-be combined (\c SFTno) and template parameters (<tt>*spinDwnOrder</tt>, <tt>*spinDwn</tt> and
-<tt>*skyConst</tt>). \c amcoe contains the values of the amplitude modulation functions \f$a\f$ and
-\f$b\f$.  \c Dterms represents the numbers of terms to be summed to compute the Dirichlet kernel on
-each side of the instantaneous frequency.
-
-The \c input is: <tt>**input</tt>, an array of structures of type \c FFT. This data type will soon
-disappear as it is just a COMPLEX8FrequencySeries.
-
-The \c output is a pointer a structure of type \c LALFstat containing an array of the values of
-\f$\mathcal{F}\f$. In addition, if <tt>DemodPar-\>returnFaFb == TRUE</tt>, the values of \f$F_a\f$
-and \f$F_b\f$ will be returned in addition. (Memory has to be allocated correctly beforehand!)
-
-\heading{Algorithm}
-
-The routine implements the analytical result of Eq.\eqref{DeFT_algo}.  It thus
-uses a nested-loop structure, which computes \f$F\f$ for all the template frequencies.
-
-The outer most loop is over the search frequencies.   The next loop is over
-\f$\alpha\f$, which identifies the SFTs.
-The value of  \f$k^*\f$ is then computed using the second of Eq.\eqref{DeFT_defs},
-and thus the summation over \f$k\f$ of Eq.\eqref{DeFT_algo} is carried out, with a
-loop over Dterms.  In this loop the product \f$\tilde{x}_{\alpha k}P_{\alpha k}\f$
-is calculated.  Once this loop completes,
-\f$e^{iy_\alpha}\f$ is computed, the summation over \f$\alpha\f$ performed and,
-finally,  the code yields the DeFT \f$\hat{x}_b\f$.  It can be seen that the code
-closely follows the analytical development of the formalism.
-
-Finally, note that in order to avoid repeated
-trigonometric function computations, a look-up-table (LUT) for sine and cosine is
-constructed at the beginning of the routine.
-*/
+ * \author Berukoff, S.J.,  Papa, M.A., Allen, B., Siemens, X.
+ *
+ * \brief Computes a demodulated Fourier transform (DeFT) given a set of input short Fourier transforms (SFT).
+ *
+ * ### Description ###
+ *
+ * This routine computes the \f$F\f$ statistic for a set of templates that are defined by: one sky
+ * position, a set of spin-down parameters and a band of possible signal frequencies. The \f$F\f$
+ * statistic is described in JKS, Phys Rev D 58, 063001 (1998). Here, it has been adapted to a single
+ * emission frequency model.
+ *
+ * The <tt>parameter structure</tt> defines the search frequency band (\c f0 and \c imax), the search
+ * frequency resolution (\c df) the first frequency of the input SFTs (\c ifmin), how many SFTs have to
+ * be combined (\c SFTno) and template parameters (<tt>*spinDwnOrder</tt>, <tt>*spinDwn</tt> and
+ * <tt>*skyConst</tt>). \c amcoe contains the values of the amplitude modulation functions \f$a\f$ and
+ * \f$b\f$.  \c Dterms represents the numbers of terms to be summed to compute the Dirichlet kernel on
+ * each side of the instantaneous frequency.
+ *
+ * The \c input is: <tt>**input</tt>, an array of structures of type \c FFT. This data type will soon
+ * disappear as it is just a COMPLEX8FrequencySeries.
+ *
+ * The \c output is a pointer a structure of type \c LALFstat containing an array of the values of
+ * \f$\mathcal{F}\f$. In addition, if <tt>DemodPar-\>returnFaFb == TRUE</tt>, the values of \f$F_a\f$
+ * and \f$F_b\f$ will be returned in addition. (Memory has to be allocated correctly beforehand!)
+ *
+ * ### Algorithm ###
+ *
+ * The routine implements the analytical result of \eqref{DeFT_algo}.  It thus
+ * uses a nested-loop structure, which computes \f$F\f$ for all the template frequencies.
+ *
+ * The outer most loop is over the search frequencies.   The next loop is over
+ * \f$\alpha\f$, which identifies the SFTs.
+ * The value of  \f$k^*\f$ is then computed using the second of \eqref{DeFT_defs},
+ * and thus the summation over \f$k\f$ of \eqref{DeFT_algo} is carried out, with a
+ * loop over Dterms.  In this loop the product \f$\tilde{x}_{\alpha k}P_{\alpha k}\f$
+ * is calculated.  Once this loop completes,
+ * \f$e^{iy_\alpha}\f$ is computed, the summation over \f$\alpha\f$ performed and,
+ * finally,  the code yields the DeFT \f$\hat{x}_b\f$.  It can be seen that the code
+ * closely follows the analytical development of the formalism.
+ *
+ * Finally, note that in order to avoid repeated
+ * trigonometric function computations, a look-up-table (LUT) for sine and cosine is
+ * constructed at the beginning of the routine.
+ */
 void LALDemod(LALStatus *status, LALFstat *Fstat, FFT **input, DemodPar *params)
 
 {
@@ -141,10 +141,10 @@ void LALDemod(LALStatus *status, LALFstat *Fstat, FFT **input, DemodPar *params)
   /* Loop over frequencies to be demodulated */
   for(i=0 ; i< params->imax  ; i++ )
   {
-    Fa.re =0.0;
-    Fa.im =0.0;
-    Fb.re =0.0;
-    Fb.im =0.0;
+    Fa.real_FIXME =0.0;
+    Fa.imag_FIXME =0.0;
+    Fb.real_FIXME =0.0;
+    Fb.imag_FIXME =0.0;
 
     f=params->f0+i*params->df;
 
@@ -196,10 +196,10 @@ void LALDemod(LALStatus *status, LALFstat *Fstat, FFT **input, DemodPar *params)
 
 	    /* these four lines compute P*xtilde */
 	    Xalpha_k=Xalpha[sftIndex];
-	    realXP += Xalpha_k.re*realP;
-	    realXP -= Xalpha_k.im*imagP;
-	    imagXP += Xalpha_k.re*imagP;
-	    imagXP += Xalpha_k.im*realP;
+	    realXP += crealf(Xalpha_k)*realP;
+	    realXP -= cimagf(Xalpha_k)*imagP;
+	    imagXP += crealf(Xalpha_k)*imagP;
+	    imagXP += cimagf(Xalpha_k)*realP;
 	  }
 
 	y=-LAL_TWOPI*(f*skyConst[tempInt1[alpha]-1]+ySum[alpha]);
@@ -211,16 +211,16 @@ void LALDemod(LALStatus *status, LALFstat *Fstat, FFT **input, DemodPar *params)
 	{
 	  REAL8 realQXP = realXP*realQ-imagXP*imagQ;
 	  REAL8 imagQXP = realXP*imagQ+imagXP*realQ;
-	  Fa.re += a*realQXP;
-	  Fa.im += a*imagQXP;
-	  Fb.re += b*realQXP;
-	  Fb.im += b*imagQXP;
+	  Fa.real_FIXME += a*realQXP;
+	  Fa.imag_FIXME += a*imagQXP;
+	  Fb.real_FIXME += b*realQXP;
+	  Fb.imag_FIXME += b*imagQXP;
 	}
     }
 
-    FaSq = Fa.re*Fa.re+Fa.im*Fa.im;
-    FbSq = Fb.re*Fb.re+Fb.im*Fb.im;
-    FaFb = Fa.re*Fb.re+Fa.im*Fb.im;
+    FaSq = creal(Fa)*creal(Fa)+cimag(Fa)*cimag(Fa);
+    FbSq = creal(Fb)*creal(Fb)+cimag(Fb)*cimag(Fb);
+    FaFb = creal(Fa)*creal(Fb)+cimag(Fa)*cimag(Fb);
 
     Fstat->F[i] = (4.0/(M*D))*(B*FaSq + A*FbSq - 2.0*C*FaFb);
     if (params->returnFaFb)

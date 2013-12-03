@@ -108,9 +108,6 @@ struct tagDopplerLatticeScan {
 /*---------- empty initializers ---------- */
 dopplerParams_t empty_dopplerParams;
 
-/*---------- Global variables ----------*/
-extern INT4 lalDebugLevel;
-
 /*---------- internal function prototypes ----------*/
 void skyRegionString2vect3D ( LALStatus *, vect3Dlist_t **skyRegionEcl, const CHAR *skyRegionString );
 void setupSearchRegion ( LALStatus *status, DopplerLatticeScan *scan, const DopplerRegion *searchRegion );
@@ -140,7 +137,8 @@ DopplerLatticeScan *XLALDuplicateDopplerLatticeScan ( const DopplerLatticeScan *
 /* -------------------- EXTERNAL API -------------------- */
 /* ------------------------------------------------------ */
 
-/** Initialize search-grid using optimal lattice-covering
+/**
+ * Initialize search-grid using optimal lattice-covering
  */
 void
 InitDopplerLatticeScan ( LALStatus *status,		/**< pointer to LALStatus structure */
@@ -253,7 +251,8 @@ InitDopplerLatticeScan ( LALStatus *status,		/**< pointer to LALStatus structure
 } /* InitDopplerLatticeScan() */
 
 
-/** Free an allocated DopplerLatticeScan.
+/**
+ * Free an allocated DopplerLatticeScan.
  * Return: 0=OK, -1=ERROR
  */
 int
@@ -291,7 +290,8 @@ XLALFreeDopplerLatticeScan ( DopplerLatticeScan **scan )
 } /* XLALFreeDopplerLatticeScan() */
 
 
-/** Return current lattice Index of the scan:
+/**
+ * Return current lattice Index of the scan:
  * allocate Index here if *Index == NULL, otherwise use given vector
  * [has to have right dimension]
  */
@@ -318,7 +318,8 @@ XLALgetCurrentLatticeIndex ( gsl_vector_int **Index, const DopplerLatticeScan *s
   return 0;
 } /* XLALgetCurrentLatticeIndex() */
 
-/** Set the current index of the scan.
+/**
+ * Set the current index of the scan.
  */
 int
 XLALsetCurrentLatticeIndex ( DopplerLatticeScan *scan, const gsl_vector_int *Index )
@@ -332,7 +333,8 @@ XLALsetCurrentLatticeIndex ( DopplerLatticeScan *scan, const gsl_vector_int *Ind
   return 0;
 } /* XLALsetCurrentLatticeIndex() */
 
-/** Count number of templates in lattice-grid by stepping through the whole
+/**
+ * Count number of templates in lattice-grid by stepping through the whole
  * grid. NOTE: original scan-state isn't modified.
  *
  * Return: > 0: OK, -1=ERROR
@@ -364,21 +366,21 @@ XLALCountLatticeTemplates ( const DopplerLatticeScan *scan )
 } /* XLALCountLatticeTemplates() */
 
 
-/** The central "lattice-stepping" function: advance to the 'next' Index-point, taking care not
+/**
+ * The central "lattice-stepping" function: advance to the 'next' Index-point, taking care not
  * to leave the boundary, and to cover the whole (convex!) search-region eventually!
  *
  * \note Algorithm:
- o) start with first Index-dimension aI = 0
- 1) if Index(aI) >= 0: Index(aI) ++; else   Index(aI) --;
-    i.e. increase for pos Index, decrease for negative ones ==> always walk "outwards"
-    from origin, towards boundaries)
- o) if resulting point lies inside boundary ==> keep & return
-
- o) if boundary was crossed: return aI to origin: Index(aI) = 0;
- o) step to next dimension: aI ++;
- o) if no more dimensions left: aI >= dim ==> no further lattice-points! RETURN
- o) else continue at 1)
+ * o) start with first Index-dimension aI = 0
+ * 1) if Index(aI) >= 0: Index(aI) ++; else   Index(aI) --;
+ * i.e. increase for pos Index, decrease for negative ones ==> always walk "outwards"
+ * from origin, towards boundaries)
+ * o) if resulting point lies inside boundary ==> keep & return
  *
+ * o) if boundary was crossed: return aI to origin: Index(aI) = 0;
+ * o) step to next dimension: aI ++;
+ * o) if no more dimensions left: aI >= dim ==> no further lattice-points! RETURN
+ * o) else continue at 1)
  *
  * Return: 0=OK, -1=ERROR,  +1=No more lattice points left
  */
@@ -467,8 +469,9 @@ XLALadvanceLatticeIndex ( DopplerLatticeScan *scan )
 } /* XLALadvanceLatticeIndex() */
 
 
-/** Return the current doppler-position {Freq, Alpha, Delta, f1dot, f2dot, ... } of the lattice-scan
- *  NOTE: the skyposition coordinate-system is chosen via 'skyCoords' in [EQUATORIAL, ECLIPTIC]
+/**
+ * Return the current doppler-position {Freq, Alpha, Delta, f1dot, f2dot, ... } of the lattice-scan
+ * NOTE: the skyposition coordinate-system is chosen via 'skyCoords' in [EQUATORIAL, ECLIPTIC]
  */
 int
 XLALgetCurrentDopplerPos ( PulsarDopplerParams *pos, const DopplerLatticeScan *scan, CoordinateSystem skyCoords )
@@ -505,7 +508,8 @@ XLALgetCurrentDopplerPos ( PulsarDopplerParams *pos, const DopplerLatticeScan *s
 /* -------------------- INTERNAL functions -------------------- */
 /* ------------------------------------------------------------ */
 
-/** Return a copy a full DopplerLatticeScan state, useful as a backup
+/**
+ * Return a copy a full DopplerLatticeScan state, useful as a backup
  * while counting the lattice.
  *
  * Return: NULL=ERROR
@@ -597,7 +601,8 @@ XLALDuplicateDopplerLatticeScan ( const DopplerLatticeScan *scan )
 
 
 
-/** Convert given Index into doppler-params
+/**
+ * Convert given Index into doppler-params
  * Return: 0=OK, -1=ERROR
  */
 int
@@ -625,9 +630,10 @@ XLALIndexToDoppler ( dopplerParams_t *doppler, const gsl_vector_int *Index, cons
 
 
 
-/** Determine whether the given lattice-Index corresponds to a Doppler-point
+/**
+ * Determine whether the given lattice-Index corresponds to a Doppler-point
  * that lies within the search-boundary
- *  Return: TRUE, FALSE,  -1 = ERROR
+ * Return: TRUE, FALSE,  -1 = ERROR
  */
 int
 isIndexInsideBoundary ( const gsl_vector_int *Index, const DopplerLatticeScan *scan )
@@ -645,8 +651,9 @@ isIndexInsideBoundary ( const gsl_vector_int *Index, const DopplerLatticeScan *s
 } /* isIndexInsideBoundary() */
 
 
-/** Determine whether the given Doppler-point lies within the search-boundary
- *  Return: TRUE, FALSE,  -1 = ERROR
+/**
+ * Determine whether the given Doppler-point lies within the search-boundary
+ * Return: TRUE, FALSE,  -1 = ERROR
  */
 int
 isDopplerInsideBoundary ( const dopplerParams_t *doppler,  const dopplerBoundary_t *boundary )
@@ -689,7 +696,8 @@ isDopplerInsideBoundary ( const dopplerParams_t *doppler,  const dopplerBoundary
 } /* insideBoundary() */
 
 
-/** Translate the input 'DopplerRegion' into an internal representation for the scan.
+/**
+ * Translate the input 'DopplerRegion' into an internal representation for the scan.
  *
  * \note DopplerLatticeScan->Tspan must have been set! This is used for conversion Doppler -> canonical
  */
@@ -828,7 +836,8 @@ setupSearchRegion ( LALStatus *status, DopplerLatticeScan *scan, const DopplerRe
 
 } /* setupSearchRegion() */
 
-/** Convert Index-vector {i0, i1, i2, ..} into canonical param-vector {w0, kX, kY, w1, w2, ...}
+/**
+ * Convert Index-vector {i0, i1, i2, ..} into canonical param-vector {w0, kX, kY, w1, w2, ...}
  *
  * \note the output-vector 'canonical' can be NULL, in which case it will be allocated here,
  * If allocated already, its dimension must be dimCanonical
@@ -879,8 +888,9 @@ IndexToCanonical ( gsl_vector **canonical, const gsl_vector_int *Index, const Do
 } /* IndexToCanonical() */
 
 
-/** Convert Doppler-parameters from {nX, nY, nZ, fkdot} into internal 'canonical' form
- *  {w0, kX, kY, w1, w1, ... }
+/**
+ * Convert Doppler-parameters from {nX, nY, nZ, fkdot} into internal 'canonical' form
+ * {w0, kX, kY, w1, w1, ... }
  * \note If the return-vector is NULL, it is allocated here, otherwise it has to
  * have dimension DIM_CANONICAL
  *
@@ -919,7 +929,8 @@ convertDoppler2Canonical ( gsl_vector **canonical, const dopplerParams_t *dopple
 } /* convertDoppler2Canonical() */
 
 
-/** Convert a 'canonical' parameter-space point back into a 'physical' Doppler units:
+/**
+ * Convert a 'canonical' parameter-space point back into a 'physical' Doppler units:
  * a unit (ecliptic) sky-vector 'vn' and spin-vector 'fkdot'
  *
  * Return: 0=OK, -1=ERROR
@@ -948,7 +959,8 @@ convertCanonical2Doppler ( dopplerParams_t *doppler, const gsl_vector *canonical
 
 } /* convertCanonical2Doppler() */
 
-/** Convert a sky-region string into a list of vectors in ecliptic 2D coords {nX, nY}
+/**
+ * Convert a sky-region string into a list of vectors in ecliptic 2D coords {nX, nY}
  */
 void
 skyRegionString2vect3D ( LALStatus *status,		/**< pointer to LALStatus structure */
@@ -1019,7 +1031,8 @@ skyRegionString2vect3D ( LALStatus *status,		/**< pointer to LALStatus structure
 
 } /* skyRegionString2list() */
 
-/** Check whether given list of skypoint lie on a single hemisphere
+/**
+ * Check whether given list of skypoint lie on a single hemisphere
  */
 hemisphere_t
 onWhichHemisphere ( const vect3Dlist_t *skypoints )
@@ -1044,7 +1057,8 @@ onWhichHemisphere ( const vect3Dlist_t *skypoints )
 
 } /* onWhichHemisphere() */
 
-/** Convert a 'SkyPosition' {alpha, delta} into a 3D unit vector in ecliptic coordinates
+/**
+ * Convert a 'SkyPosition' {alpha, delta} into a 3D unit vector in ecliptic coordinates
  * Return: 0=OK, -1=ERROR
  */
 int
@@ -1086,7 +1100,8 @@ skyposToVect3D ( vect3D_t *eclVect, const SkyPosition *skypos )
 
 } /* skyposToVect3D() */
 
-/** Convert (ecliptic) vector pointing to a skypos back into (alpha, delta)
+/**
+ * Convert (ecliptic) vector pointing to a skypos back into (alpha, delta)
  *
  * NOTE: The coordinate-system of the result is determined by the 'system'-setting in
  * the output 'skypos'
@@ -1155,7 +1170,8 @@ vect2DToSkypos ( SkyPosition *skypos, vect2D_t * const vect2D, hemisphere_t hemi
 } /* vect2DToSkypos() */
 
 
-/** Find the "center of mass" of the given list of 3D points
+/**
+ * Find the "center of mass" of the given list of 3D points
  * Return: 0=OK, -1 on ERROR
  */
 int
@@ -1182,25 +1198,30 @@ findCenterOfMass ( vect3D_t *center, const vect3Dlist_t *points )
 } /* findCenterOfmass() */
 
 
-/** Function for checking if a given vect2D-point lies inside or outside a given vect2D-polygon.
+/**
+ * Function for checking if a given vect2D-point lies inside or outside a given vect2D-polygon.
  * This is basically indentical to 'pointInPolygon()' only using different data-types.
  *
- * \heading{Note1:}
- * 	The list of polygon-points must not close on itself, the last point
- * 	is automatically assumed to be connected to the first
+ * ### Note1: ###
  *
- * \heading{Algorithm:}
- *     Count the number of intersections of rays emanating to the right
- *     from the point with the lines of the polygon: even =\> outside, odd =\> inside
+ * The list of polygon-points must not close on itself, the last point
+ * is automatically assumed to be connected to the first
  *
- * \heading{Note2:}
- *     we try to get this algorith to count all boundary-points as 'inside'
- *     we do this by counting intersection to the left _AND_ to the right
- *     and consider the point inside if either of those says its inside...
+ * ### Algorithm: ###
  *
- * \heading{Note3:}
- *     correctly handles the case of a 1-point 'polygon', in which the two
- *     points must agree within eps=1e-10 relative precision.
+ * Count the number of intersections of rays emanating to the right
+ * from the point with the lines of the polygon: even =\> outside, odd =\> inside
+ *
+ * ### Note2: ###
+ *
+ * we try to get this algorith to count all boundary-points as 'inside'
+ * we do this by counting intersection to the left _AND_ to the right
+ * and consider the point inside if either of those says its inside...
+ *
+ * ### Note3: ###
+ *
+ * correctly handles the case of a 1-point 'polygon', in which the two
+ * points must agree within eps=1e-10 relative precision.
  *
  * \return TRUE or FALSE, -1=ERROR
  */

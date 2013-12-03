@@ -11,7 +11,6 @@
  [--help ] 
  [--verbose ]
  [--version ] 
- [--debug-level LEVEL ]
  [--user-tag USERTAG ]
  [--ifo-tag IFOTAG ]
  [--comment STRING ] 
@@ -357,9 +356,6 @@ output file.
 \item[\texttt{--version}] Optional.  Print out the author, CVS version and
 tag information and exit.
 
-\item[\texttt{--debug-level} \textsc{level}] Optional. Set the LAL debug
-level to \textsc{level}. If not specified the default is 1.
-
 \end{entry}
 
 \item[Arguments]\leavevmode
@@ -377,7 +373,7 @@ error.
 \begin{verbatim}
 lalapps_inca \
 --playground-only  --dm 0.03 --kappa 1000.0 --ifo-b H1 --ifo-a L1 \
---user-tag SNR6_INJ --debug-level 33 --gps-start-time 734323079
+--user-tag SNR6_INJ --gps-start-time 734323079
 --gps-end-time 734324999 --epsilon 2.0 --dt 11.0 \
 L1-INSPIRAL_INJ-734323015-2048.xml H1-INSPIRAL_INJ-734323015-2048.xml
 \end{verbatim}

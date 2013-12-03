@@ -34,11 +34,11 @@
 extern "C" {
 #endif
 
-/** \addtogroup GenerateInspRing_h
+/**
+ * \addtogroup GenerateInspRing_h
  * \author S.Fairhurst
  *
  * \brief Module for pasting a (realistic) ringdown on the end of an inspiral
- *
  *
  */
 /*@{*/

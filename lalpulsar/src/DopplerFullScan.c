@@ -23,7 +23,7 @@
  * \date 2006, 2007, 2008
  * \file
  * \brief Functions for handling "full" multi-dimensional search-grids for CFS.
- *        as opposed to the "factored" grids implemented in DopplerScan.[ch]
+ * as opposed to the "factored" grids implemented in DopplerScan.[ch]
  */
 
 /*---------- INCLUDES ----------*/
@@ -85,16 +85,14 @@ struct tagDopplerFullScanState {
 /* some empty structs for initializations */
 const DopplerFullScanState empty_DopplerFullScanState;
 
-/*---------- Global variables ----------*/
-extern INT4 lalDebugLevel;
-
 /*---------- internal prototypes ----------*/
 void initFactoredGrid (LALStatus *, DopplerFullScanState *scan,	const DopplerFullScanInit *init);
 int nextPointInFactoredGrid (PulsarDopplerParams *pos, DopplerFullScanState *scan);
 
 /*==================== FUNCTION DEFINITIONS ====================*/
 
-/** Set up a full multi-dimensional grid-scan.
+/**
+ * Set up a full multi-dimensional grid-scan.
  * Currently this only emulates a 'factored' grid-scan with 'sky x Freq x f1dot ...' , but
  * keeps all details within the DopplerScan module for future extension to real multidimensional
  * grids.
@@ -294,7 +292,8 @@ InitDopplerFullScan(LALStatus *status,			/**< pointer to LALStatus structure */
 
 } /* InitDopplerFullScan() */
 
-/** Return the spin-range spanned by the given template bank stored in the
+/**
+ * Return the spin-range spanned by the given template bank stored in the
  * *opaque* DopplerFullScanState.
  *
  * \note The user cannot directly access any internal fields of that opaque type,
@@ -315,8 +314,9 @@ XLALGetDopplerSpinRange ( PulsarSpinRange *spinRange, const DopplerFullScanState
 
 } /* XLALGetDopplerSpinRange() */
 
-/** Initialize Doppler-scanner to emulate an old-style factored template grid: 'sky x f0dot x f1dot x f2dot x f3dot'.
- *  This is a compatiblity-mode with the previous implementation currently also used in ComputeFStatistic.c.
+/**
+ * Initialize Doppler-scanner to emulate an old-style factored template grid: 'sky x f0dot x f1dot x f2dot x f3dot'.
+ * This is a compatiblity-mode with the previous implementation currently also used in ComputeFStatistic.c.
  */
 void
 initFactoredGrid (LALStatus *status,				/**< pointer to LALStatus structure */
@@ -396,7 +396,8 @@ initFactoredGrid (LALStatus *status,				/**< pointer to LALStatus structure */
 } /* initFactoredGrid() */
 
 
-/** Return (and compute if not done so yet) the total number of Doppler templates
+/**
+ * Return (and compute if not done so yet) the total number of Doppler templates
  * of the DopplerScan \a scan
  */
 REAL8
@@ -431,7 +432,8 @@ XLALNumDopplerTemplates ( DopplerFullScanState *scan)
 
 } /* XLALNumDopplerTemplates() */
 
-/** Function to step through the full template grid point by point.
+/**
+ * Function to step through the full template grid point by point.
  * Normal return = 0,
  * errors return -1,
  * end of scan is signalled by return = 1
@@ -557,9 +559,10 @@ XLALNextDopplerPos(PulsarDopplerParams *pos, DopplerFullScanState *scan)
 
 } /* XLALNextDopplerPos() */
 
-/** return current grid-point and step forward one template in 'factored' grids (sky x f0dot x f1dot ... )
+/**
+ * return current grid-point and step forward one template in 'factored' grids (sky x f0dot x f1dot ... )
  * return 0 = OK, -1 = ERROR
-*/
+ */
 int
 nextPointInFactoredGrid (PulsarDopplerParams *pos, DopplerFullScanState *scan)
 {
@@ -632,7 +635,8 @@ nextPointInFactoredGrid (PulsarDopplerParams *pos, DopplerFullScanState *scan)
 
 } /* nextPointInFactoredGrid() */
 
-/** Destroy the a full DopplerFullScanState structure
+/**
+ * Destroy the a full DopplerFullScanState structure
  */
 void
 FreeDopplerFullScan (LALStatus *status, DopplerFullScanState **scan)
@@ -675,20 +679,21 @@ FreeDopplerFullScan (LALStatus *status, DopplerFullScanState **scan)
 
 
 
-/** load a full multi-dim template grid from the file init->gridFile,
+/**
+ * load a full multi-dim template grid from the file init->gridFile,
  * the file-format is: lines of 6 columns, which are:
  *
  * Freq   Alpha  Delta  f1dot  f2dot  f3dot
  *
  * \note
  * *) this function returns the effective spinRange covered by the read-in template bank
- *    by storing it in scan->spinRange, potentially overwriting any previous user-input values in there.
+ * by storing it in scan->spinRange, potentially overwriting any previous user-input values in there.
  *
  * *) a possible future extension should probably *clip* the template-bank to the user-specified ranges,
- *    then return the effective ranges spanned by the resultant template bank.
+ * then return the effective ranges spanned by the resultant template bank.
  *
  * *) in order to avoid surprises until such a feature is implemented, we currently return an error if
- *    any of the input spinRanges are non-zero
+ * any of the input spinRanges are non-zero
  *
  */
 void

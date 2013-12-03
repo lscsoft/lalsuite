@@ -155,14 +155,12 @@ main(int argc, char *argv[])
   DopplerSkyScanState thisScan = empty_DopplerSkyScanState; /* current state of the Doppler-scan */
   UINT4 nFreq, nf1dot;
 
-  lalDebugLevel = 0;
   vrbflg = 1;	/* verbose error-messages */
 
   /* set LAL error-handler */
   lal_errhandler = LAL_ERR_EXIT;
 
   /* register user-variables */
-  LAL_CALL (LALGetDebugLevel (&status, argc, argv, 'v'), &status);
   LAL_CALL (initUserVars (&status, &uvar), &status);
 
   /* read cmdline & cfgfile  */
@@ -317,7 +315,7 @@ initUserVars (LALStatus *status, UserVariables_t *uvar)
   ATTATCHSTATUSPTR (status);
 
   /* set a few defaults */
-#define EPHEM_YEARS  "00-04"
+#define EPHEM_YEARS  "00-19-DE405"
   uvar->ephemYear = (CHAR*)LALCalloc (1, strlen(EPHEM_YEARS)+1);
   strcpy (uvar->ephemYear, EPHEM_YEARS);
 
@@ -402,7 +400,8 @@ initUserVars (LALStatus *status, UserVariables_t *uvar)
 } /* initUserVars() */
 
 /*----------------------------------------------------------------------*/
-/** do some general initializations,
+/**
+ * do some general initializations,
  * e.g. load ephemeris-files (if required), setup detector etc
  */
 void
@@ -455,7 +454,8 @@ initGeneral (LALStatus *status, ConfigVariables *cfg, const UserVariables_t *uva
 } /* initGeneral() */
 
 /*----------------------------------------------------------------------*/
-/** Some general consistency-checks on user-input.
+/**
+ * Some general consistency-checks on user-input.
  * Throws an error plus prints error-message if problems are found.
  */
 void
@@ -574,7 +574,8 @@ checkUserInputConsistency (LALStatus *status, const UserVariables_t *uvar)
 } /* checkUserInputConsistency() */
 
 
-/** Determine the DopplerRegion in parameter-space to search over.
+/**
+ * Determine the DopplerRegion in parameter-space to search over.
  *
  * Normally this is just given directly by the user and therefore trivial.
  *
@@ -720,7 +721,8 @@ getSearchRegion (LALStatus *status,		/**< pointer to LALStatus structure */
 
 } /* getSearchRegion() */
 
-/** set random-seed from /dev/urandom if possible, otherwise
+/**
+ * set random-seed from /dev/urandom if possible, otherwise
  * from uninitialized local-var ;)
  */
 void

@@ -38,8 +38,8 @@
 #include <lal/SeqFactories.h>
 
 /**
-\author Anand Sengupta
-*/
+ * \author Anand Sengupta
+ */
 int XLALBandPassInspiralTemplate(
         REAL4Sequence  *sequence,
         REAL4          fLow,

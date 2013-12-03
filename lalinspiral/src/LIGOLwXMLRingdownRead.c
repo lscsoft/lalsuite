@@ -26,6 +26,11 @@
  *-----------------------------------------------------------------------
  */
 
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
+#include <metaio.h>
+
 #include <lal/LALStdio.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALConstants.h>
@@ -40,28 +45,31 @@
 #endif
 
 /**
-\author Brown, D. A. and Goggin, L. M.
-\file
-
-\brief Routines to read the various ringdown search XML data into LAL structures.
-
-\heading{Description}
-
-\heading{Algorithm}
-
-None.
-
-\heading{Uses}
-Functions in the Metaio library:
-<ul>
-<li>MetaioFindColumn()</li>
-<li>MetaioGetRow()</li>
-<li>MetaioOpenTable()</li>
-<li>MetaioClose()</li>
-</ul>
-\heading{Notes}
-
-*/
+ * \author Brown, D. A. and Goggin, L. M.
+ * \file
+ *
+ * \brief Routines to read the various ringdown search XML data into LAL structures.
+ *
+ * ### Description ###
+ *
+ *
+ * ### Algorithm ###
+ *
+ * None.
+ *
+ * ### Uses ###
+ *
+ * Functions in the Metaio library:
+ * <ul>
+ * <li>MetaioFindColumn()</li>
+ * <li>MetaioGetRow()</li>
+ * <li>MetaioOpenTable()</li>
+ * <li>MetaioClose()</li>
+ * </ul>
+ *
+ * ### Notes ###
+ *
+ */
 
 
 #define XLAL_CLOBBER_EVENTS \
@@ -212,25 +220,37 @@ SnglRingdownTable* XLALSnglRingdownTableFromLIGOLw (
       }
       else if ( tableDir[j].idx == 14 )
       {
-        thisEvent->ds2_H2L1 = r4colData;
+        thisEvent->ds2_H1V1 = r4colData;
       }
       else if ( tableDir[j].idx == 15 )
       {
-        thisEvent->amplitude = r4colData;
+        thisEvent->ds2_H2L1 = r4colData;
       }
       else if ( tableDir[j].idx == 16 )
       {
-        thisEvent->snr = r4colData;
+        thisEvent->ds2_H2V1 = r4colData;
       }
-      else if ( tableDir[j].idx == 17)
+      else if ( tableDir[j].idx == 17 )
       {
-        thisEvent->eff_dist = r4colData;
+        thisEvent->ds2_L1V1 = r4colData;
       }
       else if ( tableDir[j].idx == 18 )
       {
-        thisEvent->sigma_sq = r8colData;
+        thisEvent->amplitude = r4colData;
       }
       else if ( tableDir[j].idx == 19 )
+      {
+        thisEvent->snr = r4colData;
+      }
+      else if ( tableDir[j].idx == 20 )
+      {
+        thisEvent->eff_dist = r4colData;
+      }
+      else if ( tableDir[j].idx == 21 )
+      {
+        thisEvent->sigma_sq = r8colData;
+      }
+      else if ( tableDir[j].idx == 22 )
       {
         thisEvent->event_id = (EventIDColumn *)
           LALCalloc( 1, sizeof(EventIDColumn) );

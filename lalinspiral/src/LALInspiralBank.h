@@ -36,18 +36,19 @@ extern "C" {
 
 /**
  * \addtogroup LALInspiralBank_h
- \author Churches, D.K. and Sathyaprakash, B.S., Cokelaer, T.
-
-\brief %Header file for the template placement codes.
-
-\heading{Synopsis}
-\code
-#include <lal/LALInspiralBank.h>
-\endcode
-
-This header file covers routines that are used in template placement.
-
-*/
+ * \author Churches, D.K. and Sathyaprakash, B.S., Cokelaer, T.
+ *
+ * \brief %Header file for the template placement codes.
+ *
+ * ### Synopsis ###
+ *
+ * \code
+ * #include <lal/LALInspiralBank.h>
+ * \endcode
+ *
+ * This header file covers routines that are used in template placement.
+ *
+ */
 /*@{*/
 
 /**\name Error Codes */
@@ -90,20 +91,21 @@ typedef enum
 ComputeMoments;
 
 
-/** Choose templates either in the \f$(\tau_0,\tau_2)\f$ or \f$(\tau_0,\tau_3)\f$
-space.  This is one of the members of the InspiralCoarseBankIn structure.
-
-This enum allows users to choose template bank either in the \f$(\tau_0, \tau_2)\f$
-space of chirptimes (the choice made by #Tau0Tau2) or in the
-\f$(\tau_0, \tau_3)\f$ space of chirptimes (the choice made by #Tau0Tau3).
-This was implemented in releases before May 25, 2002. On May 25 we migrated to a
-new, slightly faster, computation of the metric in which, at present, only the
-choice \c Tau0Tau3 can be made. Since October 2003 a new choice \c Psi0Psi3
-was added to handle BCV templates. In November 2007 two new choices were addded:
-\c PTFIntrinctic is a PTF metric in only the intrinsic parameters (a \f$4
-\times 4\f$ matrix), and \c PTFFull is the PTF metric in the full parameter
-space (intrinsic and extrinsic parameters).
-*/
+/**
+ * Choose templates either in the \f$(\tau_0,\tau_2)\f$ or \f$(\tau_0,\tau_3)\f$
+ * space.  This is one of the members of the InspiralCoarseBankIn structure.
+ *
+ * This enum allows users to choose template bank either in the \f$(\tau_0, \tau_2)\f$
+ * space of chirptimes (the choice made by #Tau0Tau2) or in the
+ * \f$(\tau_0, \tau_3)\f$ space of chirptimes (the choice made by #Tau0Tau3).
+ * This was implemented in releases before May 25, 2002. On May 25 we migrated to a
+ * new, slightly faster, computation of the metric in which, at present, only the
+ * choice \c Tau0Tau3 can be made. Since October 2003 a new choice \c Psi0Psi3
+ * was added to handle BCV templates. In November 2007 two new choices were addded:
+ * \c PTFIntrinctic is a PTF metric in only the intrinsic parameters (a \f$4
+ * \times 4\f$ matrix), and \c PTFFull is the PTF metric in the full parameter
+ * space (intrinsic and extrinsic parameters).
+ */
 typedef enum
 {
   Tau0Tau2,	/**< \f$(\tau_0, \tau_2)\f$ space of chirptimes */
@@ -114,14 +116,15 @@ typedef enum
 }
 CoordinateSpace;
 
-/** This enum is set by the user to specify the type of placement requested. It can be
-<tt>Square, Hexagonal, SquareNotOriented, HexagonalNotOriented, S2BCV</tt>. The two first
-align the ellipse along the eigen-vectors whereas the two next do not. The last is a
-square placement which was being used during S2 and is therefore obsolete and should
-not be used (feel free to remove it). Historically, we used the \c SquareNotOriented
-placement until S4. Then, in S5, we switched to the \c Hexagonal placement,
-which should be used for future searches.
-*/
+/**
+ * This enum is set by the user to specify the type of placement requested. It can be
+ * <tt>Square, Hexagonal, SquareNotOriented, HexagonalNotOriented, S2BCV</tt>. The two first
+ * align the ellipse along the eigen-vectors whereas the two next do not. The last is a
+ * square placement which was being used during S2 and is therefore obsolete and should
+ * not be used (feel free to remove it). Historically, we used the \c SquareNotOriented
+ * placement until S4. Then, in S5, we switched to the \c Hexagonal placement,
+ * which should be used for future searches.
+ */
 typedef enum
 {
   SquareNotOriented,	/**< UNDOCUMENTED */
@@ -133,11 +136,12 @@ typedef enum
 }
 GridSpacing;
 
-/** This enum can take the following values <tt>In, Out, Below, Edge, Above</tt> and is used
-    \e only by the Hexagonal placement.  It simply specifies
-    the place of a point with respect to the parameter space. Edge, means that the ellipse
-    covers two boundaries(upper and lower).
-*/
+/**
+ * This enum can take the following values <tt>In, Out, Below, Edge, Above</tt> and is used
+ * \e only by the Hexagonal placement.  It simply specifies
+ * the place of a point with respect to the parameter space. Edge, means that the ellipse
+ * covers two boundaries(upper and lower).
+ */
 typedef enum
 {
   In,		/**< UNDOCUMENTED */
@@ -148,7 +152,8 @@ typedef enum
 }
 Position;
 
-/** This enum is set to true or false, it is just a boolean variable for the
+/**
+ * This enum is set to true or false, it is just a boolean variable for the
  * purpose of BCV placement but can be used in an other context.
  */
 typedef enum
@@ -158,7 +163,8 @@ typedef enum
 }
 InsidePolygonEnum;
 
-/** This enum is either <tt>fertile,sterile</tt>, and is a boolean expression used \e only
+/**
+ * This enum is either <tt>fertile,sterile</tt>, and is a boolean expression used \e only
  * by the Hexagonal placement.
  */
 typedef enum
@@ -168,16 +174,17 @@ typedef enum
 }
 Generation;
 
-/** An enum that appears in the \c InspiralCoarseBankIn structure
-which fixes the way templates are chosen: The choice
-\c MinComponentMassMaxTotalMass means the minimum of the
-component masses will be given by \c mMin and maximum total
-mass is given by \c MMax of the \c InspiralBankCoarseIn structure.
-The choice \c MinMaxComponentMass means the minimum of the
-components masses will be again fixed by \c mMin and the
-maximum of the component masses is fixed by \c mMax of the
-\c InspiralCoarseIn structure below.
-*/
+/**
+ * An enum that appears in the \c InspiralCoarseBankIn structure
+ * which fixes the way templates are chosen: The choice
+ * \c MinComponentMassMaxTotalMass means the minimum of the
+ * component masses will be given by \c mMin and maximum total
+ * mass is given by \c MMax of the \c InspiralBankCoarseIn structure.
+ * The choice \c MinMaxComponentMass means the minimum of the
+ * components masses will be again fixed by \c mMin and the
+ * maximum of the component masses is fixed by \c mMax of the
+ * \c InspiralCoarseIn structure below.
+ */
 typedef enum
 {
   MinComponentMassMaxTotalMass,
@@ -187,8 +194,9 @@ typedef enum
 InspiralBankMassRange;
 
 
-/** An enum that lists all the formulas that can be used to specify an upper
-    frequency cutoff.
+/**
+ * An enum that lists all the formulas that can be used to specify an upper
+ * frequency cutoff.
  */
 typedef enum
 {
@@ -208,7 +216,8 @@ typedef enum
 FreqCut;
 
 
-/** Structure to store metric at various points the signal manifold.
+/**
+ * Structure to store metric at various points the signal manifold.
  * We store the diagonalized metric together with the angle theta
  * between the \f$\tau_0\f$-axis and the semi-major axis of the ambiguity ellipse.
  */
@@ -240,7 +249,8 @@ tagInspiralMetric
 InspiralMetric;
 
 
-/** A grid of inspiral templates (ie a template list).
+/**
+ * A grid of inspiral templates (ie a template list).
  * Structure returned by the coarse and fine bank generation routines.
  * Currently we generate an array of type \c InspiralTemplateList
  * which contains the coordinate markers (the parameter structure
@@ -259,7 +269,8 @@ tagInspiralTemplateList
 }
 InspiralTemplateList;
 
-/** This is a structure needed in the inner workings of the \c LALInspiralHexagonalBank code.
+/**
+ * This is a structure needed in the inner workings of the \c LALInspiralHexagonalBank code.
  * It contains some part of CoarseBankIn and some other standard parameters.  It provides the
  * parameter space boundaries with the minimum and maximum values of mass parameters, the
  * minimal match, the space, massRange and gridSpacing parameter.
@@ -284,7 +295,8 @@ tagHexaGridParam
 }
 HexaGridParam;
 
-/** This is a structure needed in the inner workings of the \c LALInspiralHexagonalBank code.
+/**
+ * This is a structure needed in the inner workings of the \c LALInspiralHexagonalBank code.
  *
  * This structure checks the status of the placement. \c fertile tells if the
  * placement is still evolving or not. \c nTemplateMax is the number of maximum templates allowed,
@@ -301,7 +313,8 @@ tagCellEvolution
 CellEvolution;
 
 
-/** This is a structure needed in the inner workings of the \c LALInspiralHexagonalBank code.
+/**
+ * This is a structure needed in the inner workings of the \c LALInspiralHexagonalBank code.
  *
  * Similarly to the square placement, which uses InspiralList, we used a
  * linked list for the hexagonal placement. A different structure has been
@@ -317,7 +330,8 @@ tagCellList
 }
 CellList;
 
-/** This is a structure needed in the inner workings of the \c LALInspiralHexagonalBank code.
+/**
+ * This is a structure needed in the inner workings of the \c LALInspiralHexagonalBank code.
  *
  * Each cell is defined by this structure, which contains the position of
  * each cell in the tau0/tau3 parameter space, the metric at that point, and various
@@ -343,7 +357,8 @@ tagInspiralCell
 InspiralCell;
 
 
-/** This is a structure needed in the inner workings
+/**
+ * This is a structure needed in the inner workings
  * of the \c LALInspiralCreateCoarseBank code.
  */
 typedef struct
@@ -364,11 +379,12 @@ tagInspiralBankParams
 InspiralBankParams;
 
 
-/** Input for choosing a template bank. This is the structure that must
+/**
+ * Input for choosing a template bank. This is the structure that must
  * be filled by a routine calling the code \c InspiralCreateCoarseBank() or \c InspiralCreateBCVBank().
  * Unless BCV template bank is needed (that is, \c InspiralCreateBCVBank())  then one can ignore the
  * parameters <tt>psi0Min, psi0Max, psi3Min, psi3Max, alpha, numFcutTemplates.</tt>
-*/
+ */
 typedef struct
 tagInspiralCoarseBankIn
 {
@@ -443,7 +459,8 @@ tagInspiralCoarseBankIn
 }
 InspiralCoarseBankIn;
 
-/** Inputs to the function that computes the moments of the PSD.
+/**
+ * Inputs to the function that computes the moments of the PSD.
  * The moment is defined as:
  * \f[I(p) \equiv \int_{x_\textrm{min}}^{x_\textrm{max}}
  * \frac{x^{-p}}{S_h(x)} dx,\f]
@@ -464,7 +481,8 @@ tagInspiralMomentsIn
 InspiralMomentsIn;
 
 
-/** Structure needed by the function \c LALInspiralCreateFineBank.
+/**
+ * Structure needed by the function \c LALInspiralCreateFineBank.
  * which computes a finer mesh around a given lattice point
  * using the value of the fine-mesh minimal match, coarse-mesh
  * minimal match and the metric at the current lattice point.
@@ -478,17 +496,19 @@ tagInspiralFineBankIn
 InspiralFineBankIn;
 
 
-/** Parameter structure that holds the moments of the PSD and other useful
+/**
+ * Parameter structure that holds the moments of the PSD and other useful
  * constants required in the computation of the metric.
  */
 typedef struct
 tagInspiralMomentsEtc
 {
-  /** \name Expansion coefficients
-   * Coefficients in the expansion of the phase of the Fourier transform of an inspiral waveform computed
-   * in the stationary phase approximation. See documentation under the function \c LALInspiralComputeMetric() in this
-   * Section for a description of these coefficients
-   */
+/**
+ * \name Expansion coefficients
+ * Coefficients in the expansion of the phase of the Fourier transform of an inspiral waveform computed
+ * in the stationary phase approximation. See documentation under the function \c LALInspiralComputeMetric() in this
+ * Section for a description of these coefficients
+ */
   /*@{*/
   REAL8 a01, a21, a22, a31, a41, a42, a43;
   /*@}*/
@@ -520,7 +540,8 @@ tagInspiralMomentsEtcBCV
 InspiralMomentsEtcBCV;
 
 
-/** Input structure to function LALRectangleVertices()
+/**
+ * Input structure to function LALRectangleVertices()
  */
 typedef struct
 tagRectangleIn
@@ -529,7 +550,8 @@ tagRectangleIn
 }
 RectangleIn;
 
-/** Output structure to function LALRectangleVertices().
+/**
+ * Output structure to function LALRectangleVertices().
  */
 typedef struct
 tagRectangleOut

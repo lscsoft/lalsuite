@@ -1,5 +1,5 @@
 package "lalapps_TwoSpect"
-version "1.1.25"
+version "1.1.30"
 purpose "TwoSpect analysis program"
 
 args "--string-parser --conf-parser --show-required=[required]"
@@ -25,8 +25,8 @@ option "outfilename"    - "Output file name" string typestr="filename" default="
 option "configCopy"     - "Copy of the configuration file whose output is gengetopt format" string typestr="filename" default="input_values.conf" optional
 option "ULfilename"     - "Upper limit file name" string typestr="filename" default="uls.dat" optional
 option "normRMSoutput"  - "File for the output of the normalized RMS from the non-slided data" string typestr="filename" optional
-option "sftDir"         - "Directory containing SFTs, e.g., /path/to/file (one of --sftDir or --sftFile must be specified)" string typestr="directory" optional
-option "sftFile"        - "Path and filename of SFTs, e.g., /path/to/file/sftdata.sft (one of --sftDir or --sftFile must be specified)" string typestr="path/filename" optional
+option "sftDir"         - "Directory containing SFTs, e.g., /path/to/file (conflicts with --sftFile/--timestampsFile)" string typestr="path" optional
+option "sftFile"        - "Path and filename of SFTs, e.g., /path/to/file/sftdata.sft (one of --sftDir/--timestampsFile)" string typestr="path/filename" optional
 option "ephemDir"       - "Path to ephemeris files, e.g. /path/to/ephemeris/files" string typestr="directory" required
 option "ephemYear"      - "Year or year range (e.g. 08-11) of ephemeris files" string required
 
@@ -39,6 +39,7 @@ option "skyRegion"      - "Region of the sky to search (e.g. (ra1,dec1),(ra2,dec
 option "skyRegionFile"  - "File with the grid points" string typestr="filename" optional
 option "linPolAngle"    - "Polarization angle to search using linear polarization (when unspecified default is circular polarization" double optional
 option "harmonicNumToSearch"  - "Number of harmonics of the Pmin to Pmax range to search" int default="1" optional
+option "templateSearch" - "Flag for doing a pure template-based search on search region specified by (sky,f,fspan,hardcoded P, hardcoded asini)" flag off
 
 section "TwoSpect threshold settings"
 option "ihsfactor" - "Number of harmonics to sum in IHS algorithm" int default="5" optional
@@ -68,7 +69,13 @@ option "fastchisqinv"   - "Use a faster central chi-sq inversion function (rough
 option "useSSE"         - "Use SSE functions (caution: user needs to have compiled for SSE or program fails)" flag off
 option "followUpOutsideULrange"  - "Follow up outliers outside the range of the UL values" flag off
 
+section "Injection options"
+option "timestampsFile"    - "File to read timestamps from (file-format: lines with <seconds> <nanoseconds>; conflicts with --sftDir/--sftFile options)" string typestr="path/filename" optional
+option "injectionSources"  - "File containing sources to inject with a required preceding @ symbol" string typestr="@path/filename" optional
+option "injRandSeed"       - "Random seed value for reproducable noise (conflicts with --sftDir/--sftFile options)" int default="0" optional
+
 section "Hidden options"
+option "weightedIHS"   - "Use the noise-weighted IHS scheme" flag off hidden
 option "signalOnly"    - "SFTs contain only signal, no noise" flag off hidden
 option "templateTest"  - "Test the doubly-Fourier transformed data against a single, exact template" flag off hidden
 option "templateTestF" - "The template test frequency; templateTest flag is required" double dependon="templateTest" optional hidden
@@ -83,10 +90,13 @@ option "BrentsMethod"  - "Use Brent's method in the root finding algorithm." fla
 option "antennaOff"  - "Antenna pattern weights are /NOT/ used if this flag is used" flag off hidden
 option "noiseWeightOff"     - "Turn off noise weighting if this flag is used" flag off hidden
 option "gaussTemplatesOnly" - "Gaussian templates only throughout the pipeline if this flag is used" flag off hidden
-option "validateSSE"   - "Validate the use of SSE functions" flag off hidden
+option "periodHarmToCheck"  - "Number of harmonics/sub-harmonics of the IHS candidates to test" int default="5" optional hidden
+option "periodFracToCheck"  - "Number of fractional periods to check in the sense of [(1...N)+1]/[(1...N)+2]" int default="3" optional hidden
 option "ULoff"    - "Turn off upper limits computation" flag off hidden
 option "printSFTtimes" - "Output a list <GPS sec> <GPS nanosec> of SFT start times of input SFTs" flag off hidden
 option "printUsedSFTtimes"  - "Output a list <GPS sec> <GPS nanosec> of SFT start times of the SFTs passing tests" flag off hidden
+option "printData"     - "Print to ASCII files the data values" flag off hidden
+option "printUninitialized" - "Print uninitialized values in TFdata_weighted and TSofPowers vectors at n-th sky location specified by option (if not enough sky locations exist, then these vectors don't get printed!)" int optional hidden
+option "printSignalData"    - "Print f0 and h0 per SFT of the signal, used only with --injectionSources option" dependon="injectionSources" flag off hidden
 option "randSeed" - "Random seed value" int optional hidden
 option "chooseSeed"    - "The random seed value is chosen based on the input search parameters" flag off hidden
-
