@@ -1068,7 +1068,9 @@ loadSkyGridFile (LALStatus *status,
   ASSERT ( *skyGrid == NULL, status, DOPPLERSCANH_ENONULL, DOPPLERSCANH_MSGENONULL);
   ASSERT ( fname, status, DOPPLERSCANH_ENULL, DOPPLERSCANH_MSGENULL);
 
-  TRY (LALParseDataFile (status->statusPtr, &data, fname), status);
+  if ( XLALParseDataFile ( &data, fname ) != XLAL_SUCCESS ) {
+    ABORT (status, DOPPLERSCANH_EINPUT, DOPPLERSCANH_MSGEINPUT);
+  }
 
   thisPoint.system = COORDINATESYSTEM_EQUATORIAL;
 
@@ -1097,7 +1099,7 @@ loadSkyGridFile (LALStatus *status,
 
     } /* for i < nLines */
 
-  TRY ( LALDestroyParsedDataFile (status->statusPtr, &data), status);
+  XLALDestroyParsedDataFile (data);
 
   *skyGrid = head.next;	/* pass result (without head!) */
 

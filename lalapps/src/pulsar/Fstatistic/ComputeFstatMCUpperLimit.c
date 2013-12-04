@@ -167,9 +167,9 @@ int main(int argc, char *argv[]) {
       XLALPrintError("Maximum mismatch must be strictly positive\n");
       return EXIT_FAILURE;
     }
-    
+
     /* Load the file */
-    LAL_CALL(LALParseDataFile(&status, &file, mism_hist_file), &status);
+    XLAL_CHECK ( XLALParseDataFile ( &file, mism_hist_file ) == XLAL_SUCCESS, XLAL_EINVAL );
 
     /* Allocate memory */
     if ((mism_hist = gsl_matrix_alloc(file->lines->nTokens, 3)) == NULL) {
@@ -194,7 +194,7 @@ int main(int argc, char *argv[]) {
     }
 
     /* Cleanup */
-    LAL_CALL(LALDestroyParsedDataFile(&status, &file), &status);
+    XLALDestroyParsedDataFile( file);
 
     /* Rescale histogram to maximum mismatch */
     {

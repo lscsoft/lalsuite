@@ -56,7 +56,9 @@ void LALReadNRWave_raw(LALStatus *status,	/**< pointer to LALStatus structure */
   ASSERT ( out != NULL, status, NRWAVEIO_ENULL, NRWAVEIO_MSGENULL );
   ASSERT ( *out == NULL, status, NRWAVEIO_ENONULL, NRWAVEIO_MSGENONULL );
 
-  TRY( LALParseDataFile ( status->statusPtr, &cfgdata, filename), status);
+  if ( XLALParseDataFile ( &cfgdata, filename) != XLAL_SUCCESS ) {
+    ABORT( status, NRWAVEIO_EFILE, NRWAVEIO_MSGEFILE );
+  }
   length = cfgdata->lines->nTokens; /*number of data points */
 
 
@@ -104,7 +106,7 @@ void LALReadNRWave_raw(LALStatus *status,	/**< pointer to LALStatus structure */
   (*out) = ret;
 
   XLALDestroyREAL4Vector (timeVec);
-  TRY( LALDestroyParsedDataFile (status->statusPtr, &cfgdata), status);
+  XLALDestroyParsedDataFile ( cfgdata);
 
   DETATCHSTATUSPTR(status);
   RETURN(status);
@@ -133,7 +135,9 @@ void LALReadNRWave_raw_real8(LALStatus *status,	/**< pointer to LALStatus struct
   ASSERT ( out != NULL, status, NRWAVEIO_ENULL, NRWAVEIO_MSGENULL );
   ASSERT ( *out == NULL, status, NRWAVEIO_ENONULL, NRWAVEIO_MSGENONULL );
 
-  TRY( LALParseDataFile ( status->statusPtr, &cfgdata, filename), status);
+  if ( XLALParseDataFile ( &cfgdata, filename ) != XLAL_SUCCESS ) {
+    ABORT( status, NRWAVEIO_EFILE, NRWAVEIO_MSGEFILE );
+  }
   length = cfgdata->lines->nTokens; /*number of data points */
 
 
@@ -181,7 +185,7 @@ void LALReadNRWave_raw_real8(LALStatus *status,	/**< pointer to LALStatus struct
   (*out) = ret;
 
   XLALDestroyREAL8Vector (timeVec);
-  TRY( LALDestroyParsedDataFile (status->statusPtr, &cfgdata), status);
+  XLALDestroyParsedDataFile (cfgdata);
 
   DETATCHSTATUSPTR(status);
   RETURN(status);
@@ -217,7 +221,9 @@ void LALReadNRWave(LALStatus *status,		/**< pointer to LALStatus structure */
   ASSERT ( out != NULL, status, NRWAVEIO_ENULL, NRWAVEIO_MSGENULL );
   ASSERT ( *out == NULL, status, NRWAVEIO_ENONULL, NRWAVEIO_MSGENONULL );
 
-  TRY( LALParseDataFile ( status->statusPtr, &cfgdata, filename), status);
+  if ( XLALParseDataFile ( &cfgdata, filename ) != XLAL_SUCCESS ) {
+    ABORT( status, NRWAVEIO_EFILE, NRWAVEIO_MSGEFILE );
+  }
   length = cfgdata->lines->nTokens; /*number of data points */
 
 
@@ -268,7 +274,7 @@ void LALReadNRWave(LALStatus *status,		/**< pointer to LALStatus structure */
   (*out) = ret;
 
   XLALDestroyREAL4Vector (timeVec);
-  TRY( LALDestroyParsedDataFile (status->statusPtr, &cfgdata), status);
+  XLALDestroyParsedDataFile (cfgdata);
 
   DETATCHSTATUSPTR(status);
   RETURN(status);
@@ -280,7 +286,7 @@ void LALReadNRWave(LALStatus *status,		/**< pointer to LALStatus structure */
 /**
  * Function for reading a numerical relativity metadata file.
  * It returns a list of numrel wave parameters.  It uses
- * LALParseDataFile() for reading the data file.  This automatically
+ * XLALParseDataFile() for reading the data file.  This automatically
  * takes care of removing comment lines starting with # and other details.
  */
 void
@@ -299,7 +305,9 @@ LALNRDataFind( LALStatus *status,   /**< pointer to LALStatus structure */
   ASSERT ( out != NULL, status, NRWAVEIO_ENULL, NRWAVEIO_MSGENULL );
   ASSERT ( dir != NULL, status, NRWAVEIO_ENULL, NRWAVEIO_MSGENULL );
 
-  TRY( LALParseDataFile ( status->statusPtr, &cfgdata, filename), status);
+  if ( XLALParseDataFile ( &cfgdata, filename ) != XLAL_SUCCESS ) {
+    ABORT( status, NRWAVEIO_EFILE, NRWAVEIO_MSGEFILE );
+  }
   numWaves = cfgdata->lines->nTokens; /*number of waves */
 
   /* allocate memory for output catalog */
@@ -314,7 +322,7 @@ LALNRDataFind( LALStatus *status,   /**< pointer to LALStatus structure */
     TRY(LALGetSingleNRMetaData( status->statusPtr, out->data + k, dir, cfgdata->lines->tokens[k]), status);
   }
 
-  TRY( LALDestroyParsedDataFile (status->statusPtr, &cfgdata), status);
+  XLALDestroyParsedDataFile (cfgdata);
 
   DETATCHSTATUSPTR(status);
   RETURN(status);

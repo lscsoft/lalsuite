@@ -22,7 +22,7 @@
  */
 
 #include <complex.h>
-#include <lal/ConfigFile.h>   /* to use LALParseDataFile() */
+#include <lal/ConfigFile.h>   /* to use XLALParseDataFile() */
 #include <lal/AVFactories.h>  /* to use XLALCreateREAL8Vector() */
 
 #include <lal/ReadFiltersFile.h>

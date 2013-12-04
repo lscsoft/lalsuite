@@ -1020,47 +1020,6 @@ cleanConfig ( char *text )
  */
 
 /**
- * \deprecated use XLALParseDataFile() instead
- */
-void
-LALParseDataFile (LALStatus *status,		/**< pointer to LALStatus structure */
-                  LALParsedDataFile **cfgdata,  /**< [out] pre-parsed data-file lines */
-                  const CHAR *fname)		/**< [in] name of config-file to be read */
-{
-  const char *fn = __func__;
-
-  INITSTATUS(status);
-
-  if ( XLALParseDataFile (cfgdata, fname) != XLAL_SUCCESS ) {
-    XLALPrintError ("%s: call to XLALParseDataFile() failed with code %d\n", fn, xlalErrno );
-    ABORT ( status, CONFIGFILEH_EXLAL, CONFIGFILEH_MSGEXLAL );
-  }
-
-  RETURN (status);
-
-} /* LALLoadConfigFile() */
-
-
-/**
- * \deprecated used XLALDestroyParsedDataFile() instead
- */
-void
-LALDestroyParsedDataFile (LALStatus *status,		/**< pointer to LALStatus structure */
-                          LALParsedDataFile **cfgdata)	/**< [in/out] config-file data */
-{
-  INITSTATUS(status);
-
-  XLALDestroyParsedDataFile (*cfgdata);
-  *cfgdata = NULL;
-
-  RETURN (status);
-
-} /* LALDestroyConfigData() */
-
-
-
-
-/**
  * \deprecated use XLALReadConfigVariable() instead
  */
 void

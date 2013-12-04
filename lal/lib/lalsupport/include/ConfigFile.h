@@ -132,7 +132,7 @@ typedef struct tagLALConfigVar {
 
 
 /**
- * This structure is returned by LALParseDataFile() and holds the contents of an
+ * This structure is returned by XLALParseDataFile() and holds the contents of an
  * ASCII data-file in a pre-parsed form, namely stripped from all comments ('\#', '\%'),
  * spurious whitespaces, and separated into lines (taking into account line-continuation
  * by '\\' at the end of lines).
@@ -240,9 +240,6 @@ int XLALParseStringValueToBOOLEAN ( BOOLEAN *valBOOLEAN, const char *valString )
  * These functions are deprecated, and you should user their XLAL-equivalents instead.
  */
 /*@{*/
-void LALParseDataFile (LALStatus *, LALParsedDataFile **cfgdata, const CHAR *fname);
-void LALDestroyParsedDataFile (LALStatus *, LALParsedDataFile **cfgdata);
-
 void LALReadConfigBOOLVariable (LALStatus *, BOOLEAN *varp, const LALParsedDataFile *cfgdata, const CHAR *varName, BOOLEAN *wasRead);
 void LALReadConfigINT4Variable (LALStatus *, INT4 *varp, const LALParsedDataFile *cfgdata, const CHAR *varName, BOOLEAN *wasRead);
 void LALReadConfigREAL8Variable (LALStatus *, REAL8 *varp, const LALParsedDataFile *cfgdata, const CHAR *varName, BOOLEAN *wasRead);

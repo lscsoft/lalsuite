@@ -327,7 +327,7 @@ INT4 main(INT4 argc, CHAR **argv)
     fprintf(stdout, "reading metadata: %s\n", nrMetaFile);
 
   /* open metadata file */
-  LAL_CALL(LALParseDataFile(&status, &meta_file, nrMetaFile), &status);
+  XLAL_CHECK ( XLALParseDataFile(&meta_file, nrMetaFile) == XLAL_SUCCESS, XLAL_EFUNC );
 
   /*
    * get metadata
