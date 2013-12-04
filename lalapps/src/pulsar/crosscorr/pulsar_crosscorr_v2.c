@@ -186,16 +186,10 @@ int main(int argc, char *argv[]){
 
   /* Calculate the AM coefficients (a,b) for each SFT */
   if ((multiCoeffs = XLALComputeMultiAMCoeffs ( multiStates, multiWeights, skyPos )) == NULL){ 
-    LogPrintf ( LOG_CRITICAL, "%s: XLALGetMultiDetectorStates() failed with errno=%d\n", __func__, xlalErrno );
+    LogPrintf ( LOG_CRITICAL, "%s: XLALComputeMultiAMCoeffs() failed with errno=%d\n", __func__, xlalErrno );
     XLAL_ERROR( XLAL_EFUNC );
   }
-
- /* Call XLALWeightMultiAMCoffs, replace AM-coeffs by weighted AM-coeffs*/
-  if ( ( XLALWeightMultiAMCoeffs (multiCoeffs, multiWeights ))!= XLAL_SUCCESS){ 
-    LogPrintf ( LOG_CRITICAL, "%s: XLALWeightMultiAMCoeffs() failed with errno=%d\n", __func__, xlalErrno );
-    XLAL_ERROR( XLAL_EFUNC );
-  }
-
+  
   /* Construct the flat list of SFTs (this sort of replicates the
      catalog, but there's not an obvious way to get the information
      back) */
@@ -225,10 +219,18 @@ int main(int argc, char *argv[]){
     XLAL_ERROR( XLAL_EFUNC );
   }
 
-  if ( (XLALCalculateMetricElements(&diagff,&diagaa,&diagTT,&diagpp,uvar.orbitAsiniSec,uvar.fStart,uvar.orbitPSec,devmeanTsq,tSqAvg,sinSqAvg)  != XLAL_SUCCESS ) ) {
+  if ( (XLALCalculateMetricElements( &diagff,&diagaa,&diagTT,&diagpp,uvar.orbitAsiniSec,uvar.fStart,uvar.orbitPSec,devmeanTsq,tSqAvg,sinSqAvg)  != XLAL_SUCCESS ) ) {
     LogPrintf ( LOG_CRITICAL, "%s: XLALCalculateMetricElements() failed with errno=%d\n", __func__, xlalErrno );
     XLAL_ERROR( XLAL_EFUNC );
   }
+
+/* Call XLALWeightMultiAMCoffs, replace AM-coeffs by weighted AM-coeffs
+  if ( ( XLALWeightMultiAMCoeffs (multiCoeffs, multiWeights ))!= XLAL_SUCCESS){ 
+    LogPrintf ( LOG_CRITICAL, "%s: XLALWeightMultiAMCoeffs() failed with errno=%d\n", __func__, xlalErrno );
+    XLAL_ERROR( XLAL_EFUNC );
+  }
+not necessary to weight noise twice */
+
 
   /* /\* get SFT parameters so that we can initialise search frequency resolutions *\/ */
   /* /\* calculate deltaF_SFT *\/ */
