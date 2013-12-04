@@ -212,6 +212,7 @@ Nested sampling arguments:\n\
 (--tolerance dZ)\tTolerance of nested sampling algorithm (0.1)\n\
 (--randomseed seed)\tRandom seed of sampling distribution\n\
 (--prior_distr )\t Set the prior to use (for the moment the only possible choice is SkyLoc which will use the sky localization project prior. All other values or skipping this option select LALInferenceInspiralPriorNormalised)\n\n\
+(--sampleprior N)\t For Testing: Draw N samples from the prior, will not perform the nested sampling integral\n\
   ---------------------------------------------------------------------------------------------------\n\
   --- Noise Model -----------------------------------------------------------------------------------\n\
   ---------------------------------------------------------------------------------------------------\n\
