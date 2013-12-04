@@ -18,10 +18,6 @@
 
 #include <config.h>
 
-#ifdef HAVE_GMTIME_S
-#define gmtime_r(t, tm) gmtime_s(tm, t)
-#endif
-
 #include <time.h>
 #include <lal/Date.h>
 #include <lal/XLALError.h>
@@ -47,7 +43,7 @@ XLALGPSTimeNow (
   time_t ticks = time(NULL);
   struct tm tm;
 
-  gmtime_r(&ticks, &tm);
+  tm = *gmtime(&ticks);
   gpstime->gpsSeconds = XLALUTCToGPS(&tm);
   gpstime->gpsNanoSeconds = 0;
 

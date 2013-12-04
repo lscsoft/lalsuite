@@ -19,10 +19,6 @@
 
 #include <config.h>
 
-#ifdef HAVE_LOCALTIME_S
-#define localtime_r(t, tm) localtime_s(tm, t)
-#endif
-
 #include <ctype.h>
 #include <math.h>
 #include <stdio.h>
@@ -372,7 +368,7 @@ static int XLALLocalTime(char site, int gpssec)
     setenv("TZ", zone, 1);
     tzset();
 
-    localtime_r(&tutc, &loc);
+    loc = *localtime(&tutc);
     tloc = XLALSecondsSinceUnixEpoch(&loc);
 
     if (orig) {
