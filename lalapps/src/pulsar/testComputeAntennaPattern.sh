@@ -39,6 +39,8 @@ awk_isgtr='{if($1>$2) {print "1"}}'
 # ---------- common test parameters
 IFO=H1
 timestamp1=852443819
+## CAP has included offset of Tsft/2, so always need to pass that manually to PDS
+timestamp1_pds=$( echo $timestamp1 $Tsft | awk '{printf "%d", $1+$2/2}' )
 timestamp2=852445619
 timestamp3=852447419
 alpha=4.649850989853494
@@ -52,7 +54,7 @@ echo "--------------------------------------------------------------------------
 echo "ComputeAntennaPattern Test0: internal consistency of different computeAM implementations in PrintDetectorState";
 echo "----------------------------------------------------------------------------------------------------"
 
-pds_cmdline="${pds_code} -I $IFO -a $alpha -d $delta -t $timestamp1 >> $outPDS"
+pds_cmdline="${pds_code} -I $IFO -a $alpha -d $delta -t $timestamp1_pds >> $outPDS"
 echo $pds_cmdline;
 if ! eval $pds_cmdline; then
     echo "Error.. something failed when running '$pds_code' ..."
@@ -143,7 +145,7 @@ echo "$alpha1 $delta1\n$alpha2 $delta2\n$alpha3 $delta3" >> $skygrid
 
 ## ----- run PrintDetectorState 3 times
 rm $outPDS
-pds_cmdline="${pds_code} -I $IFO -a $alpha1 -d $delta1 -t $timestamp1 >> $outPDS"
+pds_cmdline="${pds_code} -I $IFO -a $alpha1 -d $delta1 -t $timestamp1_pds >> $outPDS"
 echo $pds_cmdline;
 if ! eval $pds_cmdline; then
     echo "Error.. something failed when running '$pds_code' ..."
@@ -154,7 +156,7 @@ a1_pds=$( echo $pds_out_xlal | awk '{print $3}')
 b1_pds=$( echo $pds_out_xlal | awk '{print $4}')
 
 rm $outPDS
-pds_cmdline="${pds_code} -I $IFO -a $alpha2 -d $delta2 -t $timestamp1 >> $outPDS"
+pds_cmdline="${pds_code} -I $IFO -a $alpha2 -d $delta2 -t $timestamp1_pds >> $outPDS"
 echo $pds_cmdline;
 if ! eval $pds_cmdline; then
     echo "Error.. something failed when running '$pds_code' ..."
@@ -165,7 +167,7 @@ a2_pds=$( echo $pds_out_xlal | awk '{print $3}')
 b2_pds=$( echo $pds_out_xlal | awk '{print $4}')
 
 rm $outPDS
-pds_cmdline="${pds_code} -I $IFO -a $alpha3 -d $delta3 -t $timestamp1 >> $outPDS"
+pds_cmdline="${pds_code} -I $IFO -a $alpha3 -d $delta3 -t $timestamp1_pds >> $outPDS"
 echo $pds_cmdline;
 if ! eval $pds_cmdline; then
     echo "Error.. something failed when running '$pds_code' ..."
@@ -291,8 +293,7 @@ echo "--------------------------------------------------------------------------
 echo "ComputeAntennaPattern Test4: comparing A,B,C,D with PredictFStat";
 echo "----------------------------------------------------------------------------------------------------"
 
-## here, need offset of Tsft/2=900 for comparison with PredictFStat, which internally computes a,b,A,B,C,D at SFT midpoints
-cap_cmdline="${cap_code} --detector=$IFO --timeStampsFile=$timestampsfile --outputFile=$outCAP --Alpha=$alpha --Delta=$delta --mthopTimeStamps=2 --timeStampOffset=900"
+cap_cmdline="${cap_code} --detector=$IFO --timeStampsFile=$timestampsfile --outputFile=$outCAP --Alpha=$alpha --Delta=$delta --mthopTimeStamps=2"
 echo $cap_cmdline;
 if ! eval $cap_cmdline; then
     echo "Error.. something failed when running '$cap_code' ..."
