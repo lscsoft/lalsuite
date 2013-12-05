@@ -1248,11 +1248,11 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
         printf("IFOdata[%d].freqData->data->length=%d\n",i,IFOdata[i].freqData->data->length);
         printf("IFOdata[%d].freqData->deltaF=%e\n",i,IFOdata[i].freqData->deltaF);
         printf("IFOdata[%d].freqData->data->data[%d]=%e+i*%e\n",i,temp_j,creal(IFOdata[i].freqData->data->data[j]),cimag(IFOdata[i].freqData->data->data[j]));
-        printf("gsl_matrix_get(vandermonde_matrix_re, temp_j, temp_j+1)=%e\n",gsl_matrix_get(vandermonde_matrix_re, temp_j, temp_j+1));
-        printf("gsl_matrix_get(vandermonde_matrix_im, temp_j, temp_j+1)=%e\n",gsl_matrix_get(vandermonde_matrix_im, temp_j, temp_j+1));
-        printf("gsl_matrix_get(rb_matrix_re, temp_j, temp_j+1)=%e\n",gsl_matrix_get(rb_matrix_re, temp_j, temp_j+1));
-        printf("gsl_matrix_get(rb_matrix_im, temp_j, temp_j+1)=%e\n",gsl_matrix_get(rb_matrix_im, temp_j, temp_j+1));
-        printf("gsl_vector_get(IFOdata[i].roqData->frequencyNodes,temp_j)=%e\n",gsl_vector_get(IFOdata[i].roqData->frequencyNodes,temp_j));
+        printf("gsl_matrix_get(vandermonde_matrix_re, %d, %d)=%e\n",temp_j, temp_j+1,gsl_matrix_get(vandermonde_matrix_re, temp_j, temp_j+1));
+        printf("gsl_matrix_get(vandermonde_matrix_im, %d, %d)=%e\n",temp_j, temp_j+1,gsl_matrix_get(vandermonde_matrix_im, temp_j, temp_j+1));
+        printf("gsl_matrix_get(rb_matrix_re, %d, %d)=%e\n",temp_j, temp_j+1,gsl_matrix_get(rb_matrix_re, temp_j, temp_j+1));
+        printf("gsl_matrix_get(rb_matrix_im, %d, %d)=%e\n",temp_j, temp_j+1,gsl_matrix_get(rb_matrix_im, temp_j, temp_j+1));
+        printf("gsl_vector_get(IFOdata[i].roqData->frequencyNodes,%d)=%e\n",temp_j,gsl_vector_get(IFOdata[i].roqData->frequencyNodes,temp_j));
         printf("---------\n");
       
       }
