@@ -1239,6 +1239,27 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
   
     if(LALInferenceGetProcParamVal(commandLine,"--roqnodes") && LALInferenceGetProcParamVal(commandLine,"--roqvandermonde-re") && LALInferenceGetProcParamVal(commandLine,"--roqvandermonde-im") && LALInferenceGetProcParamVal(commandLine,"--roqrb-re") && LALInferenceGetProcParamVal(commandLine,"--roqrb-im")){
       
+      
+      gsl_matrix_complex *vandermonde_matrix = gsl_matrix_complex_calloc(M_rows, M_rows);
+      unsigned int row,col;
+      double realp,imagp;
+      for (row=0;row<M_rows;row++){
+        for(col=0;col<M_rows;col++){
+          realp=gsl_matrix_get(vandermonde_matrix_re,row,col);
+          imagp=gsl_matrix_get(vandermonde_matrix_im,row,col);
+          gsl_matrix_complex_set(vandermonde_matrix,row,col,gsl_complex_rect(realp,imagp));
+        }
+      }
+      gsl_matrix_complex *rb_matrix = gsl_matrix_complex_calloc(M_rows, M_cols);
+      for (row=0;row<M_rows;row++){
+        for(col=0;col<M_cols;col++){
+          realp=gsl_matrix_get(rb_matrix_re,row,col);
+          imagp=gsl_matrix_get(rb_matrix_im,row,col);
+          gsl_matrix_complex_set(rb_matrix,row,col,gsl_complex_rect(realp,imagp));
+        }
+      }
+      
+      
       for (i=0;i<Nifo;i++) {
         int temp_j=10;
         printf("IFO %d\n",i);
