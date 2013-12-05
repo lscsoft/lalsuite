@@ -1217,7 +1217,42 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
       tempfp = fopen(ppt->value, "rb");
       gsl_matrix_complex_fread(tempfp, rb_matrix);
     }
+ 
+
+    /*** compute the weights ***/
+
+    gsl_vector_complex *whitened_data; //IFO data / PSD
+    gsl_vector_complex *E;
+    gsl_vector_complex *weights_row;
+    gsl_complex alpha;
+    gsl_complex beta;
+    
+    GSL_SET_COMPLEX(&alpha, 4.*deltaF, 0);
+    GSL_SET_COMPLEX(&beta, 0, 0);
+ 
+    E = gsl_vector_complex_calloc(n_basis);
+    weights_row = gsl_vector_complex_calloc(n_basis);
+
+    for(unsigned int i = 0; i < time_steps; i++){
+
+        whitened_data = ...; // FIXME: data*exp(2pi*i*f*tc) / psd
   
+    	gsl_blas_zgemv(CBLAS_TRANSPOSE_t CblasTrans, alpha, RB, whitened_data, beta, E);
+
+    	GSL_SET_COMPLEX(&alpha, 1, 0);
+
+    	gsl_blas_zgemv (CBLAS_TRANSPOSE_t CblasTrans, alpha, invV, E, beta, weights_row);
+
+    	//set the rows of the weights matrix
+
+    	gsl_vector_complex_view *weights_row_view;
+
+    	weights_row_view.vector = weights_row;
+
+    	gsl_matrix_complex_row (IFOdata[i].roqData->weights, i) = weights_row_view;
+
+    }
+
     if(LALInferenceGetProcParamVal(commandLine,"--roqnodes") && LALInferenceGetProcParamVal(commandLine,"--roqvandermonde") && LALInferenceGetProcParamVal(commandLine,"--roqrb")){
       
       for (i=0;i<Nifo;i++) {
