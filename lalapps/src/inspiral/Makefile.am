@@ -424,7 +424,9 @@ LDADD = $(top_builddir)/src/lalapps/liblalapps.la
 
 CLEANFILES = \
 	$(bin_SCRIPTS) \
-	python_config.sed
+	python_config.sed \
+        ssipe_config.sed \
+        ihope_ssipe.ini
 
 MOSTLYCLEANFILES = \
 	*INSPIRAL*.xml \
