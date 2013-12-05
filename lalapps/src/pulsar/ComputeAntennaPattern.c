@@ -23,7 +23,7 @@
  * \author David Keitel, Reinhard Prix
  * \brief
  * Simple standalone code to provide ASCII output for antenna-pattern function and matrix
- * for given detector and sky-location
+ * for given detector(s) and sky-location
  * based on PrintDetectorState
  *
  */
@@ -36,6 +36,7 @@
 #include <lal/UserInput.h>
 #include <lal/LALInitBarycenter.h>
 #include <lal/ComputeFstat.h>
+#include <lal/StringVector.h>
 
 #include <lalapps.h>
 
@@ -59,15 +60,13 @@ enum tagMATH_OP_TYPE {
 typedef struct
 {
   EphemerisData *edat;			/**< ephemeris data (from LALInitBarycenter()) */
-  LALDetector *det;			/**< LIGODetector struct holding detector info */
-  LIGOTimeGPSVector *timestamps;	/**< timestamps vector (LIGOtimeGPS format) */
+  MultiDetectorStateSeries *multiDetStates;	/**< detector state time series */
+  MultiNoiseWeights *multiWeights;		/**< per-detector noise weights */
+  MultiLIGOTimeGPSVector *multiTimestamps;	/**< timestamps vector (LIGOtimeGPS format) */
   UINT4 mthopTimeStamps;		/**< math operation over timestamps */
   REAL8Vector *Alpha;			/**< skyposition Alpha: radians, equatorial coords */
   REAL8Vector *Delta;			/**< skyposition Delta: radians, equatorial coords */
-  UINT4 numTimeStamps;			/**< length of timestamps vector */
   UINT4 numSkyPoints;			/**< common length of Alpha and Delta vectors */
-  UINT4 numData;			/**< total number of data points, numTimeStamps*numSkyPoints */
-  DetectorStateSeries *detState;				/**< detector state time series */
 } ConfigVariables;
 
 
@@ -75,7 +74,7 @@ typedef struct
 {
   BOOLEAN help;
 
-  CHAR *detector;	/**< detector name */
+  LALStringVector* IFOs; /**< list of detector-names "H1,H2,L1,.." or single detector*/
 
   REAL8 Alpha;		/**< a single skyposition Alpha: radians, equatorial coords. */
   REAL8 Delta;		/**< a single skyposition Delta: radians, equatorial coords. */
@@ -174,6 +173,8 @@ main(int argc, char *argv[])
 
     }
 
+  UINT4 numTimeStamps = config.multiTimestamps->data[0]->length;
+
   /* loop over sky positions (outer loop, could allow for buffering if necessary) */
   for (UINT4 n = 0; n < config.numSkyPoints; n++) {
     SkyPosition skypos;
@@ -182,8 +183,8 @@ main(int argc, char *argv[])
     skypos.latitude  = config.Delta->data[n];
 
     /* do the actual computation of the antenna pattern functions */
-    AMCoeffs *detAM;
-    if ( ( detAM = XLALComputeAMCoeffs ( config.detState, skypos ) ) == NULL ) {
+    MultiAMCoeffs *multiAM;
+    if ( ( multiAM = XLALComputeMultiAMCoeffs ( config.multiDetStates, config.multiWeights, skypos ) ) == NULL ) {
       XLALPrintError ( "%s: XLALComputeAMCoeffs() failed with xlalErrno = %d\n", __func__, xlalErrno );
       XLAL_ERROR ( XLAL_EFUNC );
     }
@@ -192,44 +193,37 @@ main(int argc, char *argv[])
 
       /* write out the data for this sky point*/
      if ( config.mthopTimeStamps == MATH_OP_ARITHMETIC_SINGLE ) { // in this case, just output all antenna pattern function values at each timestamp
-       for (UINT4 t = 0; t < config.numTimeStamps; t++) {
-         REAL8 A = SQ(detAM->a->data[t]);
-         REAL8 B = SQ(detAM->b->data[t]);
-         REAL8 C = detAM->a->data[t]*detAM->b->data[t];
-         REAL8 D = A*B-SQ(C);
-         fprintf (fpOut, "%.7f %.7f %d %12.8f %12.8f %12.8f %12.8f %12.8f %12.8f\n", config.Alpha->data[n], config.Delta->data[n], config.timestamps->data[t].gpsSeconds, detAM->a->data[t], detAM->b->data[t], A, B, C, D );
+       for (UINT4 t = 0; t < numTimeStamps; t++) {
+         fprintf (fpOut, "%.7f %.7f %d %12.8f %12.8f %12.8f %12.8f %12.8f %12.8f\n", config.Alpha->data[n], config.Delta->data[n], config.multiTimestamps->data[0]->data[t].gpsSeconds, multiAM->data[0]->a->data[t], multiAM->data[0]->b->data[t], multiAM->data[0]->A, multiAM->data[0]->B, multiAM->data[0]->C, multiAM->data[0]->D );
        }
      } // if ( config.mthopTimeStamps == MATH_OP_ARITHMETIC_SINGLE )
 
      else { // in all other cases, output a single antenna pattern function value per sky point computed over all timestamps
-       REAL8 atotn = 0;
-       REAL8 btotn = 0;
-       REAL8 A = 0;
-       REAL8 B = 0;
-       REAL8 C = 0;
+       REAL4 atotn = 0;
+       REAL4 btotn = 0;
+       REAL4 A = multiAM->data[0]->A;
+       REAL4 B = multiAM->data[0]->B;
+       REAL4 C = multiAM->data[0]->C;
        if ( ( config.mthopTimeStamps == MATH_OP_ARITHMETIC_SUM ) || ( config.mthopTimeStamps == MATH_OP_ARITHMETIC_MEAN ) ) {
-         for (UINT4 t = 0; t < config.numTimeStamps; t++) {
-           atotn += detAM->a->data[t];
-           btotn += detAM->b->data[t];
-           A += SQ(detAM->a->data[t]);
-           B += SQ(detAM->b->data[t]);
-           C += detAM->a->data[t]*detAM->b->data[t];
+         for (UINT4 t = 0; t < numTimeStamps; t++) {
+           atotn += multiAM->data[0]->a->data[t];
+           btotn += multiAM->data[0]->b->data[t];
          }
        }
        if ( config.mthopTimeStamps == MATH_OP_ARITHMETIC_MEAN ) {
-         atotn /= config.numTimeStamps;
-         btotn /= config.numTimeStamps;
-         A /= config.numTimeStamps;
-         B /= config.numTimeStamps;
-         C /= config.numTimeStamps;
+         atotn /= numTimeStamps;
+         btotn /= numTimeStamps;
+         A /= numTimeStamps; // FIXME: stop doing this manually when AMCoeffs is changed to contain averaged values
+         B /= numTimeStamps;
+         C /= numTimeStamps;
        }
-       REAL8 D = A*B-SQ(C);
+       REAL4 D = A*B-SQ(C);
        fprintf (fpOut, "%.7f %.7f %12.8f %12.8f %12.8f %12.8f %12.8f %12.8f\n", config.Alpha->data[n], config.Delta->data[n], atotn, btotn, A, B, C, D );
      } // !if ( mthopTimeStamps == MATH_OP_ARITHMETIC_SINGLE )
 
     } /* if outputFile */
 
-  XLALDestroyAMCoeffs ( detAM );
+  XLALDestroyMultiAMCoeffs ( multiAM );
 
   } // for (UINT4 n = 0; n < config.numSkyPoints; n++)
 
@@ -255,6 +249,11 @@ XLALInitUserVars ( UserVariables_t *uvar )
   /* set a few defaults */
   uvar->help = 0;
 
+  if ( (uvar->IFOs = XLALCreateStringVector ( "H1", NULL )) == NULL ) {
+    XLALPrintError ("%s: Call to XLALCreateStringVector() failed with xlalErrno = %d\n", __func__, xlalErrno );
+    XLAL_ERROR ( XLAL_ENOMEM );
+  }
+
 #define EPHEM_YEAR  "00-19-DE405"
   XLAL_CHECK ( (uvar->ephemYear = XLALCalloc (1, strlen(EPHEM_YEAR)+1)) != NULL, XLAL_ENOMEM );
   strcpy (uvar->ephemYear, EPHEM_YEAR);
@@ -272,14 +271,14 @@ XLALInitUserVars ( UserVariables_t *uvar )
 
   /* register all user-variables */
   XLALregBOOLUserStruct(	help,		'h', UVAR_HELP,		"Print this help/usage message");
-  XLALregSTRINGUserStruct( 	detector,	'I', UVAR_REQUIRED, 	"Detector name (eg. H1,H2,L1,G1,etc).");
+  XLALregLISTUserStruct( IFOs,                  'I', UVAR_OPTIONAL, "Comma-separated list of detectors, eg. \"H1,H2,L1,G1, ...\" [only 1 detector supported at the moment] ");
 
   XLALregREALUserStruct(	Alpha,		'a', UVAR_OPTIONAL,	"single skyposition Alpha in radians, equatorial coords.");
   XLALregREALUserStruct(	Delta, 		'd', UVAR_OPTIONAL,	"single skyposition Delta in radians, equatorial coords.");
 
   XLALregSTRINGUserStruct( skyGridFile,		's', UVAR_OPTIONAL,	"Alternatively: sky-grid file");
 
-  XLALregLISTUserStruct( 	timeGPS,        't', UVAR_OPTIONAL, 	"GPS time at which to compute detector state (separate multiple timestamps by commata)");
+  XLALregLISTUserStruct( 	timeGPS,        't', UVAR_OPTIONAL, 	"GPS time at which to compute detector states (separate multiple timestamps by commata)");
   XLALregSTRINGUserStruct(	timeStampsFile, 'T', UVAR_OPTIONAL,	"Alternative: time-stamps file");
   XLALregINTUserStruct(		mthopTimeStamps,'m', UVAR_OPTIONAL,	"type of math. operation over timestamps: 0=individual values, 1=arith-sum, 2=arith-mean");
   XLALregINTUserStruct(		Tsft,		0, UVAR_OPTIONAL,	"Assumed length of one SFT in seconds; needed for timestamps offset consistency with F-stat based codes");
@@ -313,6 +312,13 @@ XLALInitCode ( ConfigVariables *cfg, const UserVariables_t *uvar, const char *ap
     XLAL_ERROR ( XLAL_EINVAL );
   }
 
+  UINT4 numDetectors = uvar->IFOs->length;
+
+  if ( numDetectors > 1 ) { // FIXME
+    XLALPrintError ("%s: Can't handle more than one IFO at the moment.\n\n", __func__ );
+    XLAL_ERROR ( XLAL_EINVAL );
+  }
+
   BOOLEAN haveTimeGPS = XLALUserVarWasSet( &uvar->timeGPS );
   BOOLEAN haveTimeStampsFile = XLALUserVarWasSet( &uvar->timeStampsFile );
 
@@ -326,8 +332,19 @@ XLALInitCode ( ConfigVariables *cfg, const UserVariables_t *uvar, const char *ap
     XLAL_ERROR ( XLAL_EINVAL );
   }
 
+  /* FIXME: only using identical timestamps for all detectors */
+  if ( ( cfg->multiTimestamps = XLALCalloc ( 1, sizeof(*cfg->multiTimestamps))) == NULL ) {
+    XLALPrintError ("%s: Allocating multiTimestamps failed.", __func__ );
+    XLAL_ERROR ( XLAL_ENOMEM );
+  };
+  if ( ( cfg->multiTimestamps->data = XLALCalloc ( numDetectors, sizeof(cfg->multiTimestamps->data[0]) )) == NULL ) {
+    XLALPrintError ("%s: Allocating multiTimestamps->data failed.", __func__ );
+    XLAL_ERROR ( XLAL_ENOMEM );
+  }
+  cfg->multiTimestamps->length = numDetectors;
+
   if ( haveTimeStampsFile ) { // read in timestamps vector from file
-    if ( (cfg->timestamps = XLALReadTimestampsFile ( uvar->timeStampsFile )) == NULL ) {
+    if ( (cfg->multiTimestamps->data[0] = XLALReadTimestampsFile ( uvar->timeStampsFile )) == NULL ) {
       XLALPrintError ("%s: illegal NULL pointer returned when reading timestampsfile '%s'.\n\n", __func__, uvar->timeStampsFile );
       XLAL_ERROR ( XLAL_EFUNC );
     }
@@ -335,7 +352,7 @@ XLALInitCode ( ConfigVariables *cfg, const UserVariables_t *uvar, const char *ap
 
   else if ( haveTimeGPS ) { // set up timestamps vector from timeGPS
 
-    if ( (cfg->timestamps = XLALCreateTimestampVector( uvar->timeGPS->length ) ) == NULL ) {
+    if ( (cfg->multiTimestamps->data[0] = XLALCreateTimestampVector ( uvar->timeGPS->length ) ) == NULL ) {
       XLALPrintError ("%s: XLALCreateTimestampVector( %d ) failed.", __func__, uvar->timeGPS->length );
       XLAL_ERROR ( XLAL_EFUNC );
     }
@@ -347,7 +364,7 @@ XLALInitCode ( ConfigVariables *cfg, const UserVariables_t *uvar, const char *ap
         fprintf(stderr, "Illegal REAL8 commandline argument to --timeGPS[%d]: '%s'\n", t, uvar->timeGPS->data[t]);
         XLAL_ERROR ( XLAL_EINVAL );
       }
-      if ( XLALGPSSetREAL8( &cfg->timestamps->data[t], temp_real8_timestamp ) == NULL ) {
+      if ( XLALGPSSetREAL8( &cfg->multiTimestamps->data[0]->data[t], temp_real8_timestamp ) == NULL ) {
         XLALPrintError ("%s: failed to convert input GPS %g into LIGOTimeGPS\n", __func__, temp_real8_timestamp );
         XLAL_ERROR ( XLAL_EFUNC );
       }
@@ -355,15 +372,47 @@ XLALInitCode ( ConfigVariables *cfg, const UserVariables_t *uvar, const char *ap
 
   } // timestamps from timeGPS
 
-  cfg->numTimeStamps = cfg->timestamps->length;
+  /* in either case, copy timestamps from first detector to all others (for now) */
+  if ( numDetectors > 1 ) {
+    for ( UINT4 X=1; X < numDetectors; X++ ) {
+      if ( (cfg->multiTimestamps->data[X] = XLALCreateTimestampVector ( uvar->timeGPS->length ) ) == NULL ) {
+        XLALPrintError ("%s: XLALCreateTimestampVector( %d ) failed.", __func__, uvar->timeGPS->length );
+        XLAL_ERROR ( XLAL_EFUNC );
+      }
+      for (UINT4 t = 0; t < uvar->timeGPS->length; t++) {
+       cfg->multiTimestamps->data[X]->data[t].gpsSeconds = cfg->multiTimestamps->data[0]->data[t].gpsNanoSeconds;
+       cfg->multiTimestamps->data[X]->data[t].gpsSeconds = cfg->multiTimestamps->data[0]->data[t].gpsNanoSeconds;
+      } // for (UINT4 t = 0; t < uvar->timeGPS->length; t++)
+    } // for ( UINT4 X=1; X < numDetectors; X++ )
+  } // if ( numDetectors > 1 )
+
   cfg->mthopTimeStamps = uvar->mthopTimeStamps;
 
-  /* convert detector name into site-info */
-  if ( ( cfg->det = XLALGetSiteInfo ( uvar->detector )) == NULL )
-    {
-      XLALPrintError ("%s: XLALGetSiteInfo('%s') failed.\n", __func__, uvar->detector );
+  /* convert detector names into site-info */
+  MultiLALDetector *multiDet;
+  if ( (multiDet = XLALCreateMultiLALDetector ( numDetectors )) == NULL ) {
+    XLALPrintError ("%s: XLALCreateMultiLALDetector(1) failed with errno=%d\n", __func__, xlalErrno );
+    XLAL_ERROR ( XLAL_EFUNC );
+  }
+  LALDetector *site = NULL;
+  for ( UINT4 X=0; X < numDetectors; X++ ) {
+    if ( (site = XLALGetSiteInfo ( uvar->IFOs->data[X] )) == NULL ) {
+      XLALPrintError ("%s: Failed to get site-info for detector '%s'\n", __func__, uvar->IFOs->data[X] );
       XLAL_ERROR ( XLAL_EFUNC );
     }
+    multiDet->data[X] = (*site); 	/* copy! */
+    XLALFree ( site );
+  }
+
+  /* get detector states */
+  if ( (cfg->multiDetStates = XLALGetMultiDetectorStates ( cfg->multiTimestamps, multiDet, cfg->edat, 0.5 * uvar->Tsft )) == NULL ) {
+    XLALPrintError ( "%s: XLALGetDetectorStates() failed.\n", __func__ );
+    XLAL_ERROR ( XLAL_EFUNC );
+  }
+
+  XLALDestroyMultiLALDetector ( multiDet );
+
+  cfg->multiWeights =  NULL; // FIXME: noise weights not supported (yet)
 
   BOOLEAN haveAlphaDelta = ( XLALUserVarWasSet(&uvar->Alpha) && XLALUserVarWasSet(&uvar->Delta) );
   BOOLEAN haveSkyGrid = XLALUserVarWasSet( &uvar->skyGridFile );
@@ -418,14 +467,6 @@ XLALInitCode ( ConfigVariables *cfg, const UserVariables_t *uvar, const char *ap
     XLALDestroyParsedDataFile ( data );
   } // else if ( haveSkyGrid )
 
-  cfg->numData = cfg->timestamps->length*cfg->numSkyPoints;
-
-  /* get detector states */
-  if ( (cfg->detState = XLALGetDetectorStates ( cfg->timestamps, cfg->det, cfg->edat, 0.5 * uvar->Tsft )) == NULL ) {
-    XLALPrintError ( "%s: XLALGetDetectorStates() failed.\n", __func__ );
-    XLAL_ERROR ( XLAL_EFUNC );
-  }
-
   return XLAL_SUCCESS;
 
 } /* XLALInitCode() */
@@ -442,12 +483,11 @@ XLALDestroyConfig ( ConfigVariables *cfg )
   XLALDestroyREAL8Vector ( cfg->Alpha );
   XLALDestroyREAL8Vector ( cfg->Delta );
 
-  XLALDestroyTimestampVector ( cfg->timestamps );
+  XLALDestroyMultiTimestamps ( cfg->multiTimestamps );
 
   XLALDestroyEphemerisData ( cfg->edat );
 
-  XLALFree ( cfg->det );
-  XLALDestroyDetectorStateSeries ( cfg->detState );
+  XLALDestroyMultiDetectorStateSeries ( cfg->multiDetStates );
 
   return XLAL_SUCCESS;
 

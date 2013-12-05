@@ -105,7 +105,7 @@ echo "ComputeAntennaPattern Test1: single-sky-point, single-timestamp comparison
 echo "----------------------------------------------------------------------------------------------------"
 
 ## ----- run ComputeAntennaPattern
-cap_cmdline="${cap_code} --detector=$IFO --timeGPS=$timestamp1 --outputFile=$outCAP --Alpha=$alpha --Delta=$delta"
+cap_cmdline="${cap_code} --IFOs=$IFO --timeGPS=$timestamp1 --outputFile=$outCAP --Alpha=$alpha --Delta=$delta"
 echo $cap_cmdline;
 if ! eval $cap_cmdline; then
     echo "Error.. something failed when running '$cap_code' ..."
@@ -178,7 +178,7 @@ a3_pds=$( echo $pds_out_xlal | awk '{print $3}')
 b3_pds=$( echo $pds_out_xlal | awk '{print $4}')
 
 ## ----- run ComputeAntennaPattern
-cap_cmdline="${cap_code} --detector=$IFO --timeGPS=$timestamp1 --outputFile=$outCAP --skyGridFile=$skygrid"
+cap_cmdline="${cap_code} --IFOs=$IFO --timeGPS=$timestamp1 --outputFile=$outCAP --skyGridFile=$skygrid"
 
 echo $cap_cmdline;
 if ! eval $cap_cmdline; then
@@ -223,7 +223,7 @@ echo "ComputeAntennaPattern Test3: summing / averaging over timestamps from file
 echo "----------------------------------------------------------------------------------------------------"
 
 ## ----- run ComputeAntennaPattern with single-timestamp input, output
-cap_cmdline="${cap_code} --detector=$IFO --timeGPS=$timestamp1,$timestamp2,$timestamp3 --outputFile=$outCAP --Alpha=$alpha --Delta=$delta --mthopTimeStamps=0"
+cap_cmdline="${cap_code} --IFOs=$IFO --timeGPS=$timestamp1,$timestamp2,$timestamp3 --outputFile=$outCAP --Alpha=$alpha --Delta=$delta --mthopTimeStamps=0"
 echo $cap_cmdline;
 if ! eval $cap_cmdline; then
     echo "Error.. something failed when running '$cap_code' ..."
@@ -248,7 +248,7 @@ timestampsfile=./timestamps_test.dat
 echo "$timestamp1 0\n$timestamp2 0\n$timestamp3 0" >> $timestampsfile
 
 ## ----- run ComputeAntennaPattern with timestampsfile input, summed output
-cap_cmdline="${cap_code} --detector=$IFO --timeStampsFile=$timestampsfile --outputFile=$outCAP --Alpha=$alpha --Delta=$delta --mthopTimeStamps=1"
+cap_cmdline="${cap_code} --IFOs=$IFO --timeStampsFile=$timestampsfile --outputFile=$outCAP --Alpha=$alpha --Delta=$delta --mthopTimeStamps=1"
 echo $cap_cmdline;
 if ! eval $cap_cmdline; then
     echo "Error.. something failed when running '$cap_code' ..."
@@ -263,7 +263,7 @@ fail_asum=$(echo $reldev_asum $tolerance | awk "$awk_isgtr")
 fail_bsum=$(echo $reldev_bsum $tolerance | awk "$awk_isgtr")
 
 ## ----- run ComputeAntennaPattern with timestampsfile input, mean output
-cap_cmdline="${cap_code} --detector=$IFO --timeStampsFile=$timestampsfile --outputFile=$outCAP --Alpha=$alpha --Delta=$delta --mthopTimeStamps=2"
+cap_cmdline="${cap_code} --IFOs=$IFO --timeStampsFile=$timestampsfile --outputFile=$outCAP --Alpha=$alpha --Delta=$delta --mthopTimeStamps=2"
 echo $cap_cmdline;
 if ! eval $cap_cmdline; then
     echo "Error.. something failed when running '$cap_code' ..."
@@ -293,7 +293,7 @@ echo "--------------------------------------------------------------------------
 echo "ComputeAntennaPattern Test4: comparing A,B,C,D with PredictFStat";
 echo "----------------------------------------------------------------------------------------------------"
 
-cap_cmdline="${cap_code} --detector=$IFO --timeStampsFile=$timestampsfile --outputFile=$outCAP --Alpha=$alpha --Delta=$delta --mthopTimeStamps=2"
+cap_cmdline="${cap_code} --IFOs=$IFO --timeStampsFile=$timestampsfile --outputFile=$outCAP --Alpha=$alpha --Delta=$delta --mthopTimeStamps=2"
 echo $cap_cmdline;
 if ! eval $cap_cmdline; then
     echo "Error.. something failed when running '$cap_code' ..."
