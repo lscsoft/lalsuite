@@ -94,7 +94,7 @@ fail_b_xlal=$(echo $reldev_b_xlal $tolerance | awk "$awk_isgtr")
 
 if [ "$fail_a_get" -o "$fail_b_get" -o "$fail_a_new" -o "$fail_b_new" -o "$fail_a_xlal" -o "$fail_b_xlal" ]; then
     echo "==> FAILED at tolerance=$tolerance"
-    retstatus=1
+    exit 1
 else
     echo "==> OK at tolerance=$tolerance"
 fi
@@ -124,7 +124,7 @@ fail_b_cap=$(echo $reldev_b_cap_xlal $tolerance | awk "$awk_isgtr")
 
 if [ "$fail_a_cap" -o "$fail_b_cap" ]; then
     echo "==> FAILED at tolerance=$tolerance"
-    retstatus=1
+    exit 1
 else
     echo "==> OK at tolerance=$tolerance"
 fi
@@ -212,18 +212,18 @@ fail_b3=$(echo $reldev_b3 $tolerance | awk "$awk_isgtr")
 
 if [ "$fail_a1" -o "$fail_b1" -o "$fail_a2" -o "$fail_b2" -o "$fail_a3" -o "$fail_b3" ]; then
     echo "==> FAILED at tolerance=$tolerance"
-    retstatus=1
+    exit 1
 else
     echo "==> OK at tolerance=$tolerance"
 fi
 
 
 echo "----------------------------------------------------------------------------------------------------"
-echo "ComputeAntennaPattern Test3: summing / averaging over timestamps from file";
+echo "ComputeAntennaPattern Test3: averaging over timestamps from file";
 echo "----------------------------------------------------------------------------------------------------"
 
 ## ----- run ComputeAntennaPattern with single-timestamp input, output
-cap_cmdline="${cap_code} --IFOs=$IFO --timeGPS=$timestamp1,$timestamp2,$timestamp3 --outputFile=$outCAP --Alpha=$alpha --Delta=$delta --mthopTimeStamps=0"
+cap_cmdline="${cap_code} --IFOs=$IFO --timeGPS=$timestamp1,$timestamp2,$timestamp3 --outputFile=$outCAP --Alpha=$alpha --Delta=$delta --doTSAverage=0"
 echo $cap_cmdline;
 if ! eval $cap_cmdline; then
     echo "Error.. something failed when running '$cap_code' ..."
@@ -237,33 +237,16 @@ b2_cap=$( awk 'NR==2 {print $5}' $outCAP)
 a3_cap=$( awk 'NR==3 {print $4}' $outCAP)
 b3_cap=$( awk 'NR==3 {print $5}' $outCAP)
 
-## ----- externally compute sum, mean for test
-asum=$( echo $a1_cap $a2_cap $a3_cap | awk '{print $1+$2+$3}' )
-bsum=$( echo $b1_cap $b2_cap $b3_cap | awk '{print $1+$2+$3}' )
-amean=$( echo $asum | awk '{print $1/3}' )
-bmean=$( echo $bsum | awk '{print $1/3}' )
+## ----- externally compute mean for test
+amean=$( echo $a1_cap $a2_cap $a3_cap | awk '{print ($1+$2+$3)/3}' )
+bmean=$( echo $b1_cap $b2_cap $b3_cap | awk '{print ($1+$2+$3)/3}' )
 
 ## ----- make timestampsfile
 timestampsfile=./timestamps_test.dat
 echo "$timestamp1 0\n$timestamp2 0\n$timestamp3 0" >> $timestampsfile
 
-## ----- run ComputeAntennaPattern with timestampsfile input, summed output
-cap_cmdline="${cap_code} --IFOs=$IFO --timeStampsFile=$timestampsfile --outputFile=$outCAP --Alpha=$alpha --Delta=$delta --mthopTimeStamps=1"
-echo $cap_cmdline;
-if ! eval $cap_cmdline; then
-    echo "Error.. something failed when running '$cap_code' ..."
-    exit 1
-fi
-eval $(sed -i '/^\%\%/d' $outCAP)
-a_cap_sum=$(awk '{print $3}' $outCAP)
-b_cap_sum=$(awk '{print $4}' $outCAP)
-reldev_asum=$(echo $a_cap_sum $asum | awk "$awk_reldev")
-reldev_bsum=$(echo $b_cap_sum $bsum | awk "$awk_reldev")
-fail_asum=$(echo $reldev_asum $tolerance | awk "$awk_isgtr")
-fail_bsum=$(echo $reldev_bsum $tolerance | awk "$awk_isgtr")
-
-## ----- run ComputeAntennaPattern with timestampsfile input, mean output
-cap_cmdline="${cap_code} --IFOs=$IFO --timeStampsFile=$timestampsfile --outputFile=$outCAP --Alpha=$alpha --Delta=$delta --mthopTimeStamps=2"
+## ----- run ComputeAntennaPattern with timestampsfile input, averaged output
+cap_cmdline="${cap_code} --IFOs=$IFO --timeStampsFile=$timestampsfile --outputFile=$outCAP --Alpha=$alpha --Delta=$delta --doTSAverage"
 echo $cap_cmdline;
 if ! eval $cap_cmdline; then
     echo "Error.. something failed when running '$cap_code' ..."
@@ -276,15 +259,12 @@ reldev_amean=$(echo $a_cap_mean $amean | awk "$awk_reldev")
 reldev_bmean=$(echo $b_cap_mean $bmean | awk "$awk_reldev")
 fail_amean=$(echo $reldev_amean $tolerance | awk "$awk_isgtr")
 fail_bmean=$(echo $reldev_bmean $tolerance | awk "$awk_isgtr")
+echo "==> mean externally computed: <a> =$amean, <b> =$bmean"
+echo "    mean from --doTSAverage:  <a> =$a_cap_mean, <b> =$b_cap_mean"
 
-echo "==> --mthopTimeStamps=0, recomputed sum:  asum=$asum, bsum=$bsum"
-echo "    --mthopTimeStamps=1,            sum:  asum=$a_cap_sum, bsum=$b_cap_sum"
-echo "    --mthopTimeStamps=0, recomputed mean: <a> =$amean, <b> =$bmean"
-echo "    --mthopTimeStamps=2,            mean: <a> =$a_cap_mean, <b> =$b_cap_mean"
-
-if [ "$fail_asum" -o "$fail_bsum" -o "$fail_amean" -o "$fail_bmean" ]; then
+if [ "$fail_amean" -o "$fail_bmean" ]; then
     echo "==> FAILED at tolerance=$tolerance"
-    retstatus=1
+    exit 1
 else
     echo "==> OK at tolerance=$tolerance"
 fi
@@ -293,7 +273,7 @@ echo "--------------------------------------------------------------------------
 echo "ComputeAntennaPattern Test4: comparing A,B,C,D with PredictFStat";
 echo "----------------------------------------------------------------------------------------------------"
 
-cap_cmdline="${cap_code} --IFOs=$IFO --timeStampsFile=$timestampsfile --outputFile=$outCAP --Alpha=$alpha --Delta=$delta --mthopTimeStamps=2"
+cap_cmdline="${cap_code} --IFOs=$IFO --timeStampsFile=$timestampsfile --outputFile=$outCAP --Alpha=$alpha --Delta=$delta --doTSAverage"
 echo $cap_cmdline;
 if ! eval $cap_cmdline; then
     echo "Error.. something failed when running '$cap_code' ..."

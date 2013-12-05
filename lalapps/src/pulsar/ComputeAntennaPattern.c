@@ -49,21 +49,13 @@
 
 /* ---------- local types ---------- */
 
-/** types of mathematical operations */
-enum tagMATH_OP_TYPE {
-  MATH_OP_ARITHMETIC_SINGLE = 0, /**< individual x values */
-  MATH_OP_ARITHMETIC_SUM,        /**< sum(x)     */
-  MATH_OP_ARITHMETIC_MEAN,       /**< sum(x) / n */
-};
-
-
 typedef struct
 {
   EphemerisData *edat;			/**< ephemeris data (from LALInitBarycenter()) */
   MultiDetectorStateSeries *multiDetStates;	/**< detector state time series */
   MultiNoiseWeights *multiWeights;		/**< per-detector noise weights */
   MultiLIGOTimeGPSVector *multiTimestamps;	/**< timestamps vector (LIGOtimeGPS format) */
-  UINT4 mthopTimeStamps;		/**< math operation over timestamps */
+  BOOLEAN doTSAverage;			/**< average output quantities over timestamps? */
   REAL8Vector *Alpha;			/**< skyposition Alpha: radians, equatorial coords */
   REAL8Vector *Delta;			/**< skyposition Delta: radians, equatorial coords */
   UINT4 numSkyPoints;			/**< common length of Alpha and Delta vectors */
@@ -85,7 +77,7 @@ typedef struct
 
   LALStringVector* timeGPS;	/**< GPS timestamps to compute detector state for (REAL8 format) */
   CHAR  *timeStampsFile;	/**< alternative: read in timestamps from a file (expect same format) */
-  INT4 mthopTimeStamps; 	/**< math operation over timestamps */
+  BOOLEAN doTSAverage; 		/**< average output quantities over timestamps? */
   INT4 Tsft;			/**< assumed length of SFTs, needed for offset to timestamps when comparing to CFS_v2, PFS etc */
 
   CHAR *outputFile;	/**< output file to write antenna pattern functions into */
@@ -166,7 +158,7 @@ main(int argc, char *argv[])
 
       /* write column headings */
       fprintf(fpOut, "%%%% columns:\n%%%% Alpha  Delta");
-      if ( config.mthopTimeStamps == MATH_OP_ARITHMETIC_SINGLE ) {
+      if ( !config.doTSAverage ) {
         fprintf(fpOut, "     tGPS");
       }
       fprintf(fpOut, "       a(t)         b(t)         A            B            C            D\n");
@@ -192,34 +184,28 @@ main(int argc, char *argv[])
     if ( uvar.outputFile ) {
 
       /* write out the data for this sky point*/
-     if ( config.mthopTimeStamps == MATH_OP_ARITHMETIC_SINGLE ) { // in this case, just output all antenna pattern function values at each timestamp
+     if ( config.doTSAverage ) { // output a single value per sky point averaged over all timestamps
+       // FIXME: stop doing average manually when AMCoeffs is changed to contain averaged values
+       REAL4 A = multiAM->data[0]->A/numTimeStamps;
+       REAL4 B = multiAM->data[0]->B/numTimeStamps;
+       REAL4 C = multiAM->data[0]->C/numTimeStamps;
+       REAL4 atotn = 0;
+       REAL4 btotn = 0;
+       for (UINT4 t = 0; t < numTimeStamps; t++) {
+         atotn += multiAM->data[0]->a->data[t];
+         btotn += multiAM->data[0]->b->data[t];
+       }
+       atotn /= numTimeStamps;
+       btotn /= numTimeStamps;
+       REAL4 D = A*B-SQ(C);
+       fprintf (fpOut, "%.7f %.7f %12.8f %12.8f %12.8f %12.8f %12.8f %12.8f\n", config.Alpha->data[n], config.Delta->data[n], atotn, btotn, A, B, C, D );
+     } // if ( config.doTSAverage )
+
+     else { // just output all values at each timestamp
        for (UINT4 t = 0; t < numTimeStamps; t++) {
          fprintf (fpOut, "%.7f %.7f %d %12.8f %12.8f %12.8f %12.8f %12.8f %12.8f\n", config.Alpha->data[n], config.Delta->data[n], config.multiTimestamps->data[0]->data[t].gpsSeconds, multiAM->data[0]->a->data[t], multiAM->data[0]->b->data[t], multiAM->data[0]->A, multiAM->data[0]->B, multiAM->data[0]->C, multiAM->data[0]->D );
        }
-     } // if ( config.mthopTimeStamps == MATH_OP_ARITHMETIC_SINGLE )
-
-     else { // in all other cases, output a single antenna pattern function value per sky point computed over all timestamps
-       REAL4 atotn = 0;
-       REAL4 btotn = 0;
-       REAL4 A = multiAM->data[0]->A;
-       REAL4 B = multiAM->data[0]->B;
-       REAL4 C = multiAM->data[0]->C;
-       if ( ( config.mthopTimeStamps == MATH_OP_ARITHMETIC_SUM ) || ( config.mthopTimeStamps == MATH_OP_ARITHMETIC_MEAN ) ) {
-         for (UINT4 t = 0; t < numTimeStamps; t++) {
-           atotn += multiAM->data[0]->a->data[t];
-           btotn += multiAM->data[0]->b->data[t];
-         }
-       }
-       if ( config.mthopTimeStamps == MATH_OP_ARITHMETIC_MEAN ) {
-         atotn /= numTimeStamps;
-         btotn /= numTimeStamps;
-         A /= numTimeStamps; // FIXME: stop doing this manually when AMCoeffs is changed to contain averaged values
-         B /= numTimeStamps;
-         C /= numTimeStamps;
-       }
-       REAL4 D = A*B-SQ(C);
-       fprintf (fpOut, "%.7f %.7f %12.8f %12.8f %12.8f %12.8f %12.8f %12.8f\n", config.Alpha->data[n], config.Delta->data[n], atotn, btotn, A, B, C, D );
-     } // !if ( mthopTimeStamps == MATH_OP_ARITHMETIC_SINGLE )
+     } // if ( !config.doTSAverage )
 
     } /* if outputFile */
 
@@ -264,7 +250,7 @@ XLALInitUserVars ( UserVariables_t *uvar )
 
   uvar->timeGPS = NULL;
   uvar->timeStampsFile = NULL;
-  uvar->mthopTimeStamps = MATH_OP_ARITHMETIC_SINGLE;
+  uvar->doTSAverage = 0;
   uvar->Tsft = 1800;
 
   uvar->outputFile = NULL;
@@ -280,7 +266,7 @@ XLALInitUserVars ( UserVariables_t *uvar )
 
   XLALregLISTUserStruct( 	timeGPS,        't', UVAR_OPTIONAL, 	"GPS time at which to compute detector states (separate multiple timestamps by commata)");
   XLALregSTRINGUserStruct(	timeStampsFile, 'T', UVAR_OPTIONAL,	"Alternative: time-stamps file");
-  XLALregINTUserStruct(		mthopTimeStamps,'m', UVAR_OPTIONAL,	"type of math. operation over timestamps: 0=individual values, 1=arith-sum, 2=arith-mean");
+  XLALregBOOLUserStruct(	doTSAverage,	0, UVAR_OPTIONAL,	"average output quantities over timestamps");
   XLALregINTUserStruct(		Tsft,		0, UVAR_OPTIONAL,	"Assumed length of one SFT in seconds; needed for timestamps offset consistency with F-stat based codes");
 
   XLALregSTRINGUserStruct(	ephemDir, 	'E', UVAR_OPTIONAL,     "Directory where Ephemeris files are located");
@@ -386,7 +372,7 @@ XLALInitCode ( ConfigVariables *cfg, const UserVariables_t *uvar, const char *ap
     } // for ( UINT4 X=1; X < numDetectors; X++ )
   } // if ( numDetectors > 1 )
 
-  cfg->mthopTimeStamps = uvar->mthopTimeStamps;
+  cfg->doTSAverage = uvar->doTSAverage;
 
   /* convert detector names into site-info */
   MultiLALDetector *multiDet;
