@@ -1183,10 +1183,17 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
     n_basis = 965;//TODO: have it read from file or from command line.
     n_samples = 31489;
     time_steps = 1;//10000;
-  
+    double deltaF = IFOdata[i].oneSidedNoisePowerSpectrum->deltaF;
     gsl_matrix_complex *vandermonde_matrix=NULL;
     gsl_matrix_complex *rb_matrix=NULL;
-  
+ 
+    gsl_vector_complex *whitened_data = gsl_vector_complex_calloc(IFOdata[i].fHigh/deltaF + 1 - IFOdata[i].fLow/deltaF); //IFO data / PSD
+    gsl_vector_complex *E = gsl_vector_complex_calloc(n_basis);
+    gsl_vector_complex *weights_row = gsl_vector_complex_calloc(n_basis);
+    gsl_complex alpha;
+    gsl_complex beta;
+    gsl_complex wd; // element of whiteFreqData
+
     if(LALInferenceGetProcParamVal(commandLine,"--roqnodes")){
       ppt=LALInferenceGetProcParamVal(commandLine,"--roqnodes");
       
@@ -1219,43 +1226,35 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
     }
  
 
-    /*** compute the weights ***/
-
-    gsl_vector_complex *whitened_data; //IFO data / PSD
-    gsl_vector_complex *E;
-    gsl_vector_complex *weights_row;
-    gsl_complex alpha;
-    gsl_complex beta;
-    
-    GSL_SET_COMPLEX(&alpha, 4.*deltaF, 0);
-    GSL_SET_COMPLEX(&beta, 0, 0);
- 
-    E = gsl_vector_complex_calloc(n_basis);
-    weights_row = gsl_vector_complex_calloc(n_basis);
-
-    for(unsigned int i = 0; i < time_steps; i++){
-
-        whitened_data = ...; // FIXME: data*exp(2pi*i*f*tc) / psd
-  
-    	gsl_blas_zgemv(CBLAS_TRANSPOSE_t CblasTrans, alpha, RB, whitened_data, beta, E);
-
-    	GSL_SET_COMPLEX(&alpha, 1, 0);
-
-    	gsl_blas_zgemv (CBLAS_TRANSPOSE_t CblasTrans, alpha, invV, E, beta, weights_row);
-
-    	//set the rows of the weights matrix
-
-    	gsl_vector_complex_view *weights_row_view;
-
-    	weights_row_view.vector = weights_row;
-
-    	gsl_matrix_complex_row (IFOdata[i].roqData->weights, i) = weights_row_view;
-
-    }
-
     if(LALInferenceGetProcParamVal(commandLine,"--roqnodes") && LALInferenceGetProcParamVal(commandLine,"--roqvandermonde") && LALInferenceGetProcParamVal(commandLine,"--roqrb")){
       
       for (i=0;i<Nifo;i++) {
+   
+ 	    /*** compute the weights ***/
+
+    	GSL_SET_COMPLEX(&alpha, 4.*IFOdata[i].oneSidedNoisePowerSpectrum->deltaF, 0);
+    	GSL_SET_COMPLEX(&beta, 0, 0);
+	
+    	for(unsigned int jj = 0; jj < time_steps; jj++){
+
+		
+		for(unsigned int k = IFOdata[i].fLow/deltaF; k < IFOdata[i].fHigh/deltaF + 1; k++){
+
+			GSL_SET_COMPLEX(&wd, creal(IFOdata[i].whiteFreqData->data->data[k]), cimag(IFOdata[i].whiteFreqData->data->data[k]));
+ 
+       			gsl_vector_complex_set(whitened_data, k, wd); // FIXME: data*exp(2pi*i*f*tc) / psd
+	
+		}
+
+        	gsl_blas_zgemv(CblasTrans, alpha, rb_matrix, whitened_data, beta, E);
+
+        	GSL_SET_COMPLEX(&alpha, 1, 0);
+
+        	gsl_blas_zgemv (CblasTrans, alpha, vandermonde_matrix, E, beta, weights_row);
+
+		gsl_matrix_complex_set_row (IFOdata[i].roqData->weights, jj, weights_row);
+        }
+
         int temp_j=10;
         printf("IFO %d\n",i);
         printf("IFOdata[%d].oneSidedNoisePowerSpectrum->data->length=%d\n",i,IFOdata[i].oneSidedNoisePowerSpectrum->data->length);
@@ -1272,15 +1271,20 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
         printf("rb_matrix[%d][%d]=%e+J*%e\n",temp_j, temp_j+1,GSL_REAL(gsl_matrix_complex_get(rb_matrix, temp_j, temp_j+1)),GSL_IMAG(gsl_matrix_complex_get(rb_matrix, temp_j, temp_j+1)));
         printf("gsl_vector_get(IFOdata[i].roqData->frequencyNodes,%d)=%e\n",temp_j,gsl_vector_get(IFOdata[i].roqData->frequencyNodes,temp_j));
         printf("---------\n");
-      
+     
+
       }
     
     }
   
     if(vandermonde_matrix) gsl_matrix_complex_free(vandermonde_matrix);
     if(rb_matrix) gsl_matrix_complex_free(rb_matrix);
-  
-  
+    if(rb_matrix){
+    	gsl_vector_complex_free(whitened_data);
+    	gsl_vector_complex_free(weights_row);
+    	gsl_vector_complex_free(E);
+    }
+
     for(i=0;i<Nifo;i++) {
         if(channels) if(channels[i]) XLALFree(channels[i]);
         if(caches) if(caches[i]) XLALFree(caches[i]);
