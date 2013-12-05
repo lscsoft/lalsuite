@@ -250,6 +250,132 @@ static int checkTidesZero(REAL8 lambda1, REAL8 lambda2)
 	XLAL_ERROR_NULL(XLAL_EINVAL);\
 	} while (0)
 
+/**
+ * Function that gives the default ending frequencies of the given approximant.
+ *
+ */
+double XLALSimInspiralGetDefaultFinalFreq(
+    REAL8 m1,                               /**< mass of companion 1 (kg) */
+    REAL8 m2,                               /**< mass of companion 2 (kg) */
+    REAL8 S1x,                              /**< x-component of the dimensionless spin of object 1 */
+    REAL8 S1y,                              /**< y-component of the dimensionless spin of object 1 */
+    REAL8 S1z,                              /**< z-component of the dimensionless spin of object 1 */
+    REAL8 S2x,                              /**< x-component of the dimensionless spin of object 2 */
+    REAL8 S2y,                              /**< y-component of the dimensionless spin of object 2 */
+    REAL8 S2z,                              /**< z-component of the dimensionless spin of object 2 */
+    Approximant approximant                 /**< post-Newtonian approximant to use for waveform production */
+    )
+{
+
+    double  freq;   /* The return value */
+
+    /* internal variables */
+    /* we will use m1, m2 in solar masses */
+    m1 /= LAL_MSUN_SI;
+    m2 /= LAL_MSUN_SI;
+
+    /* needed for Phenom */
+    double chi;
+
+    /* Needed for EOBNR */
+    int     modeL;
+    int     modeM;
+    COMPLEX16Vector *modefreqs;
+    REAL8       spin1[3] = {S1x, S1y, S1z};
+    REAL8       spin2[3] = {S2x, S2y, S2z};
+
+    switch (approximant)
+    {
+        /* non-spinning inspiral-only models */
+        // CHECKME: do they really all use Schwarzschild ISCO? */
+        case TaylorEt:
+        case TaylorT1:
+        case TaylorT2:
+        case TaylorT3:
+        case TaylorT4:
+        case TaylorF2:
+            /* Schwarzschild ISCO */
+	        freq = pow(LAL_C_SI,3) / (pow(6.,3./2.)*LAL_PI*(m1+m2)*LAL_G_SI/LAL_MSUN_SI);
+            break;
+
+        /* IMR models */
+        /* EOBNR models all call the same code, just with different inputs */
+        case EOBNRv2HM:
+        case EOBNRv2:
+        case SEOBNRv1:
+            // FIXME: Probably shouldn't hard code the modes.
+            if ( approximant == EOBNRv2HM )
+            {
+                modeL = 5;
+                modeM = 5;
+            }
+            else
+            {
+                modeL = 2;
+                modeM = 2;
+            }
+            /* Ensure that spins are zero for non-spinning */
+            if ( approximant == EOBNRv2 || approximant == EOBNRv2HM )
+            {
+                spin1 = NULL;
+                spin2 = NULL:
+            }
+            modefreqs = XLALCreateCOMPLEX16Vector(1);
+            xlalStatus = XLALSimIMREOBGenerateQNMFreqV2( modefreqs, mass1, mass2, spin1, spin2, modeL, modeM, 1, approximant);
+            if ( xlalStatus != XLAL_SUCCESS )
+            {
+                XLALDestroyCOMPLEX16Vector( modefreqs );
+                XLAL_ERROR( XLAL_EFUNC );
+            }
+
+            freq = 2 * LAL_PI / creal(modefreqs->data[0]);
+            break;
+
+        case IMRPhenomA:
+            BBHPhenomParams *phenomParams;
+            phenomParams = ComputeIMRPhenomAParams(m1, m2);
+            freq = phenomParams->fCut;
+            break;
+
+        case IMRPhenomB:
+            BBHPhenomParams *phenomParams;
+            chi = XLALSimIMRPhenomBComputeChi(m1, m2, S1z, S2z);
+            phenomParams = ComputeIMRPhenomBParams(m1, m2, chi);
+            freq = phenomParams->fCut;
+            break;
+
+        case IMRPhenomC:
+            chi = XLALSimIMRPhenomBComputeChi(m1, m2, S1z, S2z);
+            BBHPhenomCParams *phenomParams;
+            phenomParams = ComputeIMRPhenomCParams(m1, m2, chi);
+            freq = phenomParams->fCut;
+            break;
+
+
+        // FIXME: Following I don't know how to calculate */
+        /* Spinning inspiral-only time domain */
+        case SpinTaylorT2:
+        case SpinTaylorT4:
+        case PhenSpinTaylor:
+        /* Spinning with ringdown attachment */
+        case PhenSpinTaylorRD:
+        /* Spinning inspiral-only frequency domain */
+        case SpinTaylorF2:
+        case TaylorF2RedSpin:
+        case TaylorF2RedSpinTidal:
+            XLALPrintError("I don't know how to calculate final freq. for this approximant, sorry!\n");
+            XLAL_ERROR(XLAL_EINVAL);
+            break;
+
+
+        default:
+            XLALPrintError("Unsupported approximant\n");
+            XLAL_ERROR(XLAL_EINVAL);
+    }
+
+    return freq;
+}
+    
 
 /**
  * Compute the polarizations from all the -2 spin-weighted spherical harmonic
