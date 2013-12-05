@@ -444,8 +444,8 @@ REAL8 LALInferenceROQLogLikelihood(LALInferenceVariables *currentParams, LALInfe
 
     for(unsigned int i=0; i < data->roqData->hplus->size; i++){
 
-	tmp_whitened_re = GSL_REAL(gsl_vector_complex_get(data->roqData->hplus, i)) / sqrt(gsl_vector_get(data->roqData->psd_at_nodes, i));
-        tmp_whitened_im = GSL_IMAG(gsl_vector_complex_get(data->roqData->hplus, i)) / sqrt(gsl_vector_get(data->roqData->psd_at_nodes, i));
+	tmp_whitened_re = GSL_REAL(gsl_vector_complex_get(data->roqData->hplus, i));
+        tmp_whitened_im = GSL_IMAG(gsl_vector_complex_get(data->roqData->hplus, i));
 
 	GSL_SET_COMPLEX(&z, tmp_whitened_re, tmp_whitened_im);
 
@@ -453,7 +453,7 @@ REAL8 LALInferenceROQLogLikelihood(LALInferenceVariables *currentParams, LALInfe
 
     }
     
-    gsl_blas_zdotc(dataPtr->roqData->weights, data->roqData->hplus, &complexL);
+    //gsl_blas_zdotc(dataPtr->roqData->weights, data->roqData->hplus, &complexL);
 
   loglikeli = GSL_REAL(complexL);
   //fprintf(stderr, "%f\n", loglikeli);
