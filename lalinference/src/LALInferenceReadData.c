@@ -1179,86 +1179,46 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
   
   
     FILE *tempfp;
-    unsigned int M_rows,M_cols,time_steps;
-    M_rows = 965;//TODO: have it read from file or from command line.
-    M_cols = 31489;
+    unsigned int n_basis,n_samples,time_steps;
+    n_basis = 965;//TODO: have it read from file or from command line.
+    n_samples = 31489;
     time_steps = 1;//10000;
   
-    gsl_matrix *vandermonde_matrix_re=NULL;
-    gsl_matrix *vandermonde_matrix_im=NULL;
-    gsl_matrix *rb_matrix_re=NULL;
-    gsl_matrix *rb_matrix_im=NULL;
+    gsl_matrix_complex *vandermonde_matrix=NULL;
+    gsl_matrix_complex *rb_matrix=NULL;
   
     if(LALInferenceGetProcParamVal(commandLine,"--roqnodes")){
       ppt=LALInferenceGetProcParamVal(commandLine,"--roqnodes");
       
       for (i=0;i<Nifo;i++) {
         IFOdata[i].roqData = XLALCalloc(1, sizeof(LALInferenceROQData));
-        IFOdata[i].roqData->weights = gsl_matrix_complex_calloc(M_rows,time_steps);
-        IFOdata[i].roqData->hplus = gsl_vector_complex_calloc(M_rows);
-        IFOdata[i].roqData->hcross = gsl_vector_complex_calloc(M_rows);
-        IFOdata[i].roqData->frequencyNodes = gsl_vector_calloc(M_rows);
+        IFOdata[i].roqData->weights = gsl_matrix_complex_calloc(n_basis,time_steps);
+        IFOdata[i].roqData->hplus = gsl_vector_complex_calloc(n_basis);
+        IFOdata[i].roqData->hcross = gsl_vector_complex_calloc(n_basis);
+        IFOdata[i].roqData->frequencyNodes = gsl_vector_calloc(n_basis);
         tempfp = fopen(ppt->value, "rb");
         gsl_vector_fread(tempfp, IFOdata[i].roqData->frequencyNodes);
       }
       
     }
   
-    if(LALInferenceGetProcParamVal(commandLine,"--roqvandermonde-re")){
-      ppt=LALInferenceGetProcParamVal(commandLine,"--roqvandermonde-re");
-      
-      vandermonde_matrix_re = gsl_matrix_calloc(M_rows, M_rows);
-      tempfp = fopen(ppt->value, "rb");
-      gsl_matrix_fread(tempfp, vandermonde_matrix_re);
-    }
-
-    if(LALInferenceGetProcParamVal(commandLine,"--roqvandermonde-im")){
-      ppt=LALInferenceGetProcParamVal(commandLine,"--roqvandermonde-im");
+    if(LALInferenceGetProcParamVal(commandLine,"--roqvandermonde")){
+      ppt=LALInferenceGetProcParamVal(commandLine,"--roqvandermonde");
     
-      vandermonde_matrix_im = gsl_matrix_calloc(M_rows, M_rows);
+      vandermonde_matrix = gsl_matrix_complex_calloc(n_basis, n_basis);
       tempfp = fopen(ppt->value, "rb");
-      gsl_matrix_fread(tempfp, vandermonde_matrix_im);
-    }
-
-    if(LALInferenceGetProcParamVal(commandLine,"--roqrb-re")){
-      ppt=LALInferenceGetProcParamVal(commandLine,"--roqrb-re");
-    
-      rb_matrix_re = gsl_matrix_calloc(M_rows, M_cols);
-      tempfp = fopen(ppt->value, "rb");
-      gsl_matrix_fread(tempfp, rb_matrix_re);
+      gsl_matrix_complex_fread(tempfp, vandermonde_matrix);
     }
   
-    if(LALInferenceGetProcParamVal(commandLine,"--roqrb-im")){
-      ppt=LALInferenceGetProcParamVal(commandLine,"--roqrb-im");
+    if(LALInferenceGetProcParamVal(commandLine,"--roqrb")){
+      ppt=LALInferenceGetProcParamVal(commandLine,"--roqrb");
     
-      rb_matrix_im = gsl_matrix_calloc(M_rows, M_cols);
+      rb_matrix = gsl_matrix_complex_calloc(n_samples, n_basis);
       tempfp = fopen(ppt->value, "rb");
-      gsl_matrix_fread(tempfp, rb_matrix_im);
+      gsl_matrix_complex_fread(tempfp, rb_matrix);
     }
   
-  
-    if(LALInferenceGetProcParamVal(commandLine,"--roqnodes") && LALInferenceGetProcParamVal(commandLine,"--roqvandermonde-re") && LALInferenceGetProcParamVal(commandLine,"--roqvandermonde-im") && LALInferenceGetProcParamVal(commandLine,"--roqrb-re") && LALInferenceGetProcParamVal(commandLine,"--roqrb-im")){
-      
-      
-      gsl_matrix_complex *vandermonde_matrix = gsl_matrix_complex_calloc(M_rows, M_rows);
-      unsigned int row,col;
-      double realp,imagp;
-      for (row=0;row<M_rows;row++){
-        for(col=0;col<M_rows;col++){
-          realp=gsl_matrix_get(vandermonde_matrix_re,row,col);
-          imagp=gsl_matrix_get(vandermonde_matrix_im,row,col);
-          gsl_matrix_complex_set(vandermonde_matrix,row,col,gsl_complex_rect(realp,imagp));
-        }
-      }
-      gsl_matrix_complex *rb_matrix = gsl_matrix_complex_calloc(M_rows, M_cols);
-      for (row=0;row<M_rows;row++){
-        for(col=0;col<M_cols;col++){
-          realp=gsl_matrix_get(rb_matrix_re,row,col);
-          imagp=gsl_matrix_get(rb_matrix_im,row,col);
-          gsl_matrix_complex_set(rb_matrix,row,col,gsl_complex_rect(realp,imagp));
-        }
-      }
-      
+    if(LALInferenceGetProcParamVal(commandLine,"--roqnodes") && LALInferenceGetProcParamVal(commandLine,"--roqvandermonde") && LALInferenceGetProcParamVal(commandLine,"--roqrb")){
       
       for (i=0;i<Nifo;i++) {
         int temp_j=10;
@@ -1269,10 +1229,12 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
         printf("IFOdata[%d].freqData->data->length=%d\n",i,IFOdata[i].freqData->data->length);
         printf("IFOdata[%d].freqData->deltaF=%e\n",i,IFOdata[i].freqData->deltaF);
         printf("IFOdata[%d].freqData->data->data[%d]=%e+i*%e\n",i,temp_j,creal(IFOdata[i].freqData->data->data[j]),cimag(IFOdata[i].freqData->data->data[j]));
-        printf("gsl_matrix_get(vandermonde_matrix_re, %d, %d)=%e\n",temp_j, temp_j+1,gsl_matrix_get(vandermonde_matrix_re, temp_j, temp_j+1));
-        printf("gsl_matrix_get(vandermonde_matrix_im, %d, %d)=%e\n",temp_j, temp_j+1,gsl_matrix_get(vandermonde_matrix_im, temp_j, temp_j+1));
-        printf("gsl_matrix_get(rb_matrix_re, %d, %d)=%e\n",temp_j, temp_j+1,gsl_matrix_get(rb_matrix_re, temp_j, temp_j+1));
-        printf("gsl_matrix_get(rb_matrix_im, %d, %d)=%e\n",temp_j, temp_j+1,gsl_matrix_get(rb_matrix_im, temp_j, temp_j+1));
+        //printf("gsl_matrix_get(vandermonde_matrix_re, %d, %d)=%e\n",temp_j, temp_j+1,gsl_matrix_get(vandermonde_matrix_re, temp_j, temp_j+1));
+        //printf("gsl_matrix_get(vandermonde_matrix_im, %d, %d)=%e\n",temp_j, temp_j+1,gsl_matrix_get(vandermonde_matrix_im, temp_j, temp_j+1));
+        //printf("gsl_matrix_get(rb_matrix_re, %d, %d)=%e\n",temp_j, temp_j+1,gsl_matrix_get(rb_matrix_re, temp_j, temp_j+1));
+        //printf("gsl_matrix_get(rb_matrix_im, %d, %d)=%e\n",temp_j, temp_j+1,gsl_matrix_get(rb_matrix_im, temp_j, temp_j+1));
+        printf("vandermonde_matrix[%d][%d]=%e+J*%e\n",temp_j, temp_j+1,GSL_REAL(gsl_matrix_complex_get(vandermonde_matrix, temp_j, temp_j+1)),GSL_IMAG(gsl_matrix_complex_get(vandermonde_matrix, temp_j, temp_j+1)));
+        printf("rb_matrix[%d][%d]=%e+J*%e\n",temp_j, temp_j+1,GSL_REAL(gsl_matrix_complex_get(rb_matrix, temp_j, temp_j+1)),GSL_IMAG(gsl_matrix_complex_get(rb_matrix, temp_j, temp_j+1)));
         printf("gsl_vector_get(IFOdata[i].roqData->frequencyNodes,%d)=%e\n",temp_j,gsl_vector_get(IFOdata[i].roqData->frequencyNodes,temp_j));
         printf("---------\n");
       
@@ -1280,11 +1242,10 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
     
     }
   
-    if(vandermonde_matrix_re) gsl_matrix_free(vandermonde_matrix_re);
-    if(vandermonde_matrix_im) gsl_matrix_free(vandermonde_matrix_im);
-    if(rb_matrix_re) gsl_matrix_free(rb_matrix_re);
-    if(rb_matrix_im) gsl_matrix_free(rb_matrix_im);
-
+    if(vandermonde_matrix) gsl_matrix_complex_free(vandermonde_matrix);
+    if(rb_matrix) gsl_matrix_complex_free(rb_matrix);
+  
+  
     for(i=0;i<Nifo;i++) {
         if(channels) if(channels[i]) XLALFree(channels[i]);
         if(caches) if(caches[i]) XLALFree(caches[i]);
