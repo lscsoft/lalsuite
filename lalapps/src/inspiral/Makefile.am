@@ -392,6 +392,7 @@ EXTRA_DIST = \
 	multi_hipe.in \
 	trigger_hipe.in \
 	ihope.in \
+	ihope_ssipe.ini.in \
 	ihope_status.in \
 	inspiral_online_pipe_inject.in \
 	check_hipe_times.in \
