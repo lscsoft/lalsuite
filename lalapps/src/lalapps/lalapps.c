@@ -312,7 +312,7 @@ XLALGetVersionString( int level )
       tree_status = orig_tree_status = strdup(lalVCSInfo.vcsStatus);
       snprintf(lal_info, sizeof(lal_info),
           "%%%% LAL: %s (%s %s)\n", lalVCSInfo.version, \
-          strtok(&tree_status, delim), lalVCSInfo.vcsId);
+          strtok(tree_status, delim), lalVCSInfo.vcsId);
       free(orig_tree_status);
 
 #ifdef HAVE_LIBLALFRAME
@@ -320,7 +320,7 @@ XLALGetVersionString( int level )
       tree_status = orig_tree_status = strdup(lalFrameVCSInfo.vcsStatus);
       snprintf(lalframe_info, sizeof(lalframe_info),
           "%%%% LALFrame: %s (%s %s)\n", lalFrameVCSInfo.version, \
-          strtok(&tree_status, delim), lalFrameVCSInfo.vcsId);
+          strtok(tree_status, delim), lalFrameVCSInfo.vcsId);
       free(orig_tree_status);
 #endif
 
@@ -329,7 +329,7 @@ XLALGetVersionString( int level )
       tree_status = orig_tree_status = strdup(lalMetaIOVCSInfo.vcsStatus);
       snprintf(lalmetaio_info, sizeof(lalmetaio_info),
           "%%%% LALMetaIO: %s (%s %s)\n", lalMetaIOVCSInfo.version, \
-          strtok(&tree_status, delim), lalMetaIOVCSInfo.vcsId);
+          strtok(tree_status, delim), lalMetaIOVCSInfo.vcsId);
       free(orig_tree_status);
 #endif
 
@@ -338,7 +338,7 @@ XLALGetVersionString( int level )
       tree_status = orig_tree_status = strdup(lalXMLVCSInfo.vcsStatus);
       snprintf(lalxml_info, sizeof(lalxml_info),
           "%%%% LALXML: %s (%s %s)\n", lalXMLVCSInfo.version, \
-          strtok(&tree_status, delim), lalXMLVCSInfo.vcsId);
+          strtok(tree_status, delim), lalXMLVCSInfo.vcsId);
       free(orig_tree_status);
 #endif
 
@@ -347,7 +347,7 @@ XLALGetVersionString( int level )
       tree_status = orig_tree_status = strdup(lalSimulationVCSInfo.vcsStatus);
       snprintf(lalsimulation_info, sizeof(lalsimulation_info),
           "%%%% LALSimulation: %s (%s %s)\n", lalSimulationVCSInfo.version, \
-          strtok(&tree_status, delim), lalSimulationVCSInfo.vcsId);
+          strtok(tree_status, delim), lalSimulationVCSInfo.vcsId);
       free(orig_tree_status);
 #endif
 
@@ -356,7 +356,7 @@ XLALGetVersionString( int level )
       tree_status = orig_tree_status = strdup(lalBurstVCSInfo.vcsStatus);
       snprintf(lalburst_info, sizeof(lalburst_info),
           "%%%% LALBurst: %s (%s %s)\n", lalBurstVCSInfo.version, \
-          strtok(&tree_status, delim), lalBurstVCSInfo.vcsId);
+          strtok(tree_status, delim), lalBurstVCSInfo.vcsId);
       free(orig_tree_status);
 #endif
 
@@ -365,7 +365,7 @@ XLALGetVersionString( int level )
       tree_status = orig_tree_status = strdup(lalInspiralVCSInfo.vcsStatus);
       snprintf(lalinspiral_info, sizeof(lalinspiral_info),
           "%%%% LALInspiral: %s (%s %s)\n", lalInspiralVCSInfo.version, \
-          strtok(&tree_status, delim), lalInspiralVCSInfo.vcsId);
+          strtok(tree_status, delim), lalInspiralVCSInfo.vcsId);
       free(orig_tree_status);
 #endif
 
@@ -374,7 +374,7 @@ XLALGetVersionString( int level )
       tree_status = orig_tree_status = strdup(lalPulsarVCSInfo.vcsStatus);
       snprintf(lalpulsar_info, sizeof(lalpulsar_info),
           "%%%% LALPulsar: %s (%s %s)\n", lalPulsarVCSInfo.version, \
-          strtok(&tree_status, delim), lalPulsarVCSInfo.vcsId);
+          strtok(tree_status, delim), lalPulsarVCSInfo.vcsId);
       free(orig_tree_status);
 #endif
 
@@ -383,7 +383,7 @@ XLALGetVersionString( int level )
       tree_status = orig_tree_status = strdup(lalInferenceVCSInfo.vcsStatus);
       snprintf(lalinference_info, sizeof(lalinference_info),
           "%%%% LALInference: %s (%s %s)\n", lalInferenceVCSInfo.version, \
-          strtok(&tree_status, delim), lalInferenceVCSInfo.vcsId);
+          strtok(tree_status, delim), lalInferenceVCSInfo.vcsId);
       free(orig_tree_status);
 #endif
 
@@ -392,7 +392,7 @@ XLALGetVersionString( int level )
       tree_status = orig_tree_status = strdup(lalStochasticVCSInfo.vcsStatus);
       snprintf(lalstochastic_info, sizeof(lalstochastic_info),
           "%%%% LALStochastic: %s (%s %s)\n", lalStochasticVCSInfo.version, \
-          strtok(&tree_status, delim), lalStochasticVCSInfo.vcsId);
+          strtok(tree_status, delim), lalStochasticVCSInfo.vcsId);
       free(orig_tree_status);
 #endif
 
@@ -400,7 +400,7 @@ XLALGetVersionString( int level )
       tree_status = orig_tree_status = strdup(lalAppsVCSInfo.vcsStatus);
       snprintf(lalapps_info, sizeof(lalapps_info),
           "%%%% LALApps: %s (%s %s)\n", lalAppsVCSInfo.version, \
-          strtok(&tree_status, delim), lalAppsVCSInfo.vcsId);
+          strtok(tree_status, delim), lalAppsVCSInfo.vcsId);
       free(orig_tree_status);
 
       break;
