@@ -35,6 +35,7 @@
 #include <lal/TimeFreqFFT.h>
 #include <lal/Units.h>
 #include <lal/SphericalHarmonics.h>
+#include <lal/LALSimBlackHoleRingdown.h>
 
 #include "check_series_macros.h"
 
@@ -257,12 +258,12 @@ static int checkTidesZero(REAL8 lambda1, REAL8 lambda2)
 double XLALSimInspiralGetDefaultFinalFreq(
     REAL8 m1,                               /**< mass of companion 1 (kg) */
     REAL8 m2,                               /**< mass of companion 2 (kg) */
-    REAL8 S1x,                              /**< x-component of the dimensionless spin of object 1 */
-    REAL8 S1y,                              /**< y-component of the dimensionless spin of object 1 */
-    REAL8 S1z,                              /**< z-component of the dimensionless spin of object 1 */
-    REAL8 S2x,                              /**< x-component of the dimensionless spin of object 2 */
-    REAL8 S2y,                              /**< y-component of the dimensionless spin of object 2 */
-    REAL8 S2z,                              /**< z-component of the dimensionless spin of object 2 */
+    const REAL8 S1x,                              /**< x-component of the dimensionless spin of object 1 */
+    const REAL8 S1y,                              /**< y-component of the dimensionless spin of object 1 */
+    const REAL8 S1z,                              /**< z-component of the dimensionless spin of object 1 */
+    const REAL8 S2x,                              /**< x-component of the dimensionless spin of object 2 */
+    const REAL8 S2y,                              /**< y-component of the dimensionless spin of object 2 */
+    const REAL8 S2z,                              /**< z-component of the dimensionless spin of object 2 */
     Approximant approximant                 /**< post-Newtonian approximant to use for waveform production */
     )
 {
@@ -278,11 +279,12 @@ double XLALSimInspiralGetDefaultFinalFreq(
     double chi;
 
     /* Needed for EOBNR */
+    REAL8 spin1[3];
+    REAL8 spin2[3];
     int     modeL;
     int     modeM;
-    COMPLEX16Vector *modefreqs;
-    REAL8       spin1[3] = {S1x, S1y, S1z};
-    REAL8       spin2[3] = {S2x, S2y, S2z};
+    COMPLEX16Vector modefreqVec;
+    COMPLEX16      modeFreq;
 
     switch (approximant)
     {
@@ -295,7 +297,7 @@ double XLALSimInspiralGetDefaultFinalFreq(
         case TaylorT4:
         case TaylorF2:
             /* Schwarzschild ISCO */
-	        freq = pow(LAL_C_SI,3) / (pow(6.,3./2.)*LAL_PI*(m1+m2)*LAL_G_SI/LAL_MSUN_SI);
+	        freq = pow(LAL_C_SI,3) / (pow(6.,3./2.)*LAL_PI*(m1+m2)*LAL_MSUN_SI*LAL_G_SI);
             break;
 
         /* IMR models */
@@ -317,38 +319,37 @@ double XLALSimInspiralGetDefaultFinalFreq(
             /* Ensure that spins are zero for non-spinning */
             if ( approximant == EOBNRv2 || approximant == EOBNRv2HM )
             {
-                spin1 = NULL;
-                spin2 = NULL:
+                spin1[0] = 0.; spin1[1] = 0.; spin1[2] = 0.;
+                spin2[0] = 0.; spin2[1] = 0.; spin2[2] = 0.;
             }
-            modefreqs = XLALCreateCOMPLEX16Vector(1);
-            xlalStatus = XLALSimIMREOBGenerateQNMFreqV2( modefreqs, mass1, mass2, spin1, spin2, modeL, modeM, 1, approximant);
-            if ( xlalStatus != XLAL_SUCCESS )
+            else
             {
-                XLALDestroyCOMPLEX16Vector( modefreqs );
+                spin1[0] = S1x; spin1[1] = S1y; spin1[2] = S1z;
+                spin2[0] = S2x; spin2[1] = S2y; spin2[2] = S2z;
+            }
+
+            modefreqVec.length = 1;
+            modefreqVec.data   = &modeFreq;
+            if ( XLALSimIMREOBGenerateQNMFreqV2( &modefreqVec, m1, m2, spin1, spin2, modeL, modeM, 1, approximant) != XLAL_SUCCESS )
+            {
                 XLAL_ERROR( XLAL_EFUNC );
             }
 
-            freq = 2 * LAL_PI / creal(modefreqs->data[0]);
+            freq = creal(modeFreq) / (2 * LAL_PI);
             break;
 
         case IMRPhenomA:
-            BBHPhenomParams *phenomParams;
-            phenomParams = ComputeIMRPhenomAParams(m1, m2);
-            freq = phenomParams->fCut;
+            freq = XLALSimIMRPhenomAGetFinalFreq(m1, m2);
             break;
 
         case IMRPhenomB:
-            BBHPhenomParams *phenomParams;
             chi = XLALSimIMRPhenomBComputeChi(m1, m2, S1z, S2z);
-            phenomParams = ComputeIMRPhenomBParams(m1, m2, chi);
-            freq = phenomParams->fCut;
+            freq = XLALSimIMRPhenomBGetFinalFreq(m1, m2, chi);
             break;
 
         case IMRPhenomC:
             chi = XLALSimIMRPhenomBComputeChi(m1, m2, S1z, S2z);
-            BBHPhenomCParams *phenomParams;
-            phenomParams = ComputeIMRPhenomCParams(m1, m2, chi);
-            freq = phenomParams->fCut;
+            freq = XLALSimIMRPhenomCGetFinalFreq(m1, m2, chi);
             break;
 
 
