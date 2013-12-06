@@ -92,6 +92,7 @@ const char * usage =
 "                             IMRPhenomA\n"
 "                             IMRPhenomB\n"
 "                             IMRPhenomC\n"
+"                             IMRPhenomP\n"
 "                             TaylorF2\n"
 "                             SpinTaylorF2\n"
 "                             TaylorR2F4\n"
