@@ -1183,6 +1183,20 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
     n_basis = 965;//TODO: have it read from file or from command line.
     n_samples = 31489;
     time_steps = 1;//10000;
+    REAL8 dt=0.1;
+    REAL8 endtime=0.0;
+    REAL8 timeMin=endtime-dt,timeMax=endtime+dt;
+  
+    endtime=XLALGPSGetREAL8(&GPStrig);
+  
+    ppt=LALInferenceGetProcParamVal(commandLine,"--dt");
+    if(ppt){
+      dt=atof(ppt->value);
+    }
+  
+    timeMin=endtime-dt; timeMax=endtime+dt;
+  
+  
     double deltaF = IFOdata[i].oneSidedNoisePowerSpectrum->deltaF;
     gsl_matrix_complex *vandermonde_matrix=NULL;
     gsl_matrix_complex *rb_matrix=NULL;
@@ -1255,9 +1269,8 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
 		gsl_matrix_complex_set_row (IFOdata[i].roqData->weights, jj, weights_row);
         }
 
-        int temp_j=10;
-        printf("GSL_REAL(gsl_matrix_complex_get(IFOdata[%d].roqData->weights, 0, %d))=%e\n", i, temp_j, GSL_REAL(gsl_matrix_complex_get(IFOdata[i].roqData->weights, 0, temp_j)));
-	printf("GSL_IMAG(gsl_matrix_complex_get(IFOdata[%d].roqData->weights, 0, %d))=%e\n", i, temp_j, GSL_IMAG(gsl_matrix_complex_get(IFOdata[i].roqData->weights, 0, temp_j)));
+        printf("IFOdata[%d].whiteFreqData->epoch=%e\n",i,XLALGPSGetREAL8(&IFOdata[i].whiteFreqData->epoch));
+        printf("timeMin=%e\tendtime=%e\ttimeMax=%e\n",timeMin,endtime,timeMax);
         printf("---------\n");
 
      
