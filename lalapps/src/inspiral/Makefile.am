@@ -146,6 +146,7 @@ bin_SCRIPTS = \
 	lalapps_generate_upper_limits \
 	lalapps_followup0_page \
 	lalapps_cbc_pipedown \
+	lalapps_cbc_pipedown_ssipe \
 	lalapps_glitch_probe \
 	lalapps_cohPTF_hipe \
 	lalapps_coh_PTF_post_processing \
@@ -166,13 +167,20 @@ dist_bin_SCRIPTS = \
 	lalapps_makeblindinj \
 	lalapps_makeblindinj_himass \
 	lalapps_cbc_code_compare \
-        lalapps_inspiral_ckpttest \
+	lalapps_inspiral_ckpttest \
 	followup/followup_InspiralDataMover.sh
 
 python_config.sed: Makefile
 	@-rm -f python_config.sed
 	@echo "s+@PYTHONLIBDIR@+@pkgpythondir@+g" > python_config.sed
 	@echo "s+@PYTHONPROG@+@PYTHON@+g" >> python_config.sed
+
+ssipe_config.sed: Makefile
+	@-rm -f ssipe_config.sed
+	@echo "s+@LALAPPSDIR@+@bindir@+g" > ssipe_config.sed
+
+ihope_ssipe.ini: $(srcdir)/ihope_ssipe.ini.in ssipe_config.sed
+	$(AM_V_GEN)sed -f ssipe_config.sed $(srcdir)/ihope_ssipe.ini.in > ihope_ssipe.ini
 
 lalapps_inspiral_pipe: $(srcdir)/inspiral_pipe.in python_config.sed
 	$(AM_V_GEN)sed -f python_config.sed $(srcdir)/inspiral_pipe.in > lalapps_inspiral_pipe
@@ -266,6 +274,10 @@ lalapps_cbc_pipedown: $(srcdir)/cbc_pipedown.in python_config.sed
 	$(AM_V_GEN)sed -f python_config.sed $(srcdir)/cbc_pipedown.in > lalapps_cbc_pipedown
 	@chmod +x lalapps_cbc_pipedown
 
+lalapps_cbc_pipedown_ssipe: $(srcdir)/cbc_pipedown_ssipe.in python_config.sed
+	$(AM_V_GEN)sed -f python_config.sed $(srcdir)/cbc_pipedown_ssipe.in > lalapps_cbc_pipedown_ssipe
+	@chmod +x lalapps_cbc_pipedown_ssipe
+
 lalapps_coh_PTF_post_processing: $(srcdir)/coh_PTF_post_processing.in python_config.sed
 	$(AM_V_GEN)sed -f python_config.sed $(srcdir)/coh_PTF_post_processing.in > lalapps_coh_PTF_post_processing
 	@chmod +x lalapps_coh_PTF_post_processing
@@ -301,6 +313,7 @@ lalapps_cbc_sbank_sim: $(srcdir)/cbc_sbank_sim.in python_config.sed
 pkgdata_DATA = \
 	BNSMasses.dat \
 	inspsrcs100Mpc.errors \
+	ihope_ssipe.ini \
 	inspiral_pipe.ini \
 	inspiral_hipe.ini \
 	online.ini \
@@ -379,6 +392,7 @@ EXTRA_DIST = \
 	multi_hipe.in \
 	trigger_hipe.in \
 	ihope.in \
+	ihope_ssipe.ini.in \
 	ihope_status.in \
 	inspiral_online_pipe_inject.in \
 	check_hipe_times.in \
@@ -390,6 +404,7 @@ EXTRA_DIST = \
 	generate_upper_limits.in \
 	followup0_page.in \
 	cbc_pipedown.in \
+	cbc_pipedown_ssipe.in \
 	ihope_daily_page.in \
 	check_flag.in \
 	flag_triggers.in \
@@ -409,7 +424,9 @@ LDADD = $(top_builddir)/src/lalapps/liblalapps.la
 
 CLEANFILES = \
 	$(bin_SCRIPTS) \
-	python_config.sed
+	python_config.sed \
+	ssipe_config.sed \
+	ihope_ssipe.ini
 
 MOSTLYCLEANFILES = \
 	*INSPIRAL*.xml \

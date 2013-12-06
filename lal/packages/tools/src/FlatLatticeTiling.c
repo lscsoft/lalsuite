@@ -17,6 +17,8 @@
 // MA  02111-1307  USA
 //
 
+#include <config.h>
+#include <sys/types.h>
 #include <math.h>
 #include <stdio.h>
 #include <string.h>

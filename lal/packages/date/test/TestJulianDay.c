@@ -19,10 +19,6 @@
 
 #include <config.h>
 
-#ifdef HAVE_LOCALTIME_S
-#define localtime_r(t, tm) localtime_s(tm, t)
-#endif
-
 #include <math.h>
 #include <lal/LALStdlib.h>
 #include <lal/Date.h>
@@ -155,7 +151,7 @@ int main(void)
 	 */
 
 	time(&now);
-	localtime_r(&now, &tnow);
+	tnow = *localtime(&now);
 	if(test(&tnow, 0, 0, __LINE__))
 		return 1;
 

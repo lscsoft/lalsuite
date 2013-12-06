@@ -33,6 +33,7 @@ from pylal import ligolw_tisi
 from pylal import ligolw_cafe
 from lalapps import inspiral
 from lalapps import power
+from lalapps import inspiralutils
 
 ##############################################################################
 # concrete dag setup functions
@@ -147,27 +148,14 @@ def analyze_ifo(ifo_name,ifo_data,ifo_to_do,tmplt_job,insp_job,df_job,\
     tmplt_job.add_ini_opts(cp,ifo_name.lower() + '-tmpltbank')
 
   # we may use a fixed bank specified in ini file
-  try: FixedBank = cp.get('input','fixed-bank')
-  except: FixedBank = None
-  if FixedBank is not None: print "For %s we use bank %s"%(ifo_name, FixedBank)
-  if ifo_name == 'G1':
-    data_opts = 'geo-data'
-    try: type = cp.get('input','geo-type')
-    except: type = None
-    channel = cp.get('input','geo-channel')
-  elif ifo_name == 'V1':
-    data_opts = 'virgo-data'
-    try: type = cp.get('input','virgo-type')
-    except: type = None
-    channel = cp.get('input','virgo-channel')
-  else:
-    data_opts = 'ligo-data'
-    try: 
-      type = cp.get('input','ligo-type')
-      if (type == 'RDS_R_L4') or ('RDS_C' in type) or ('DMT_C' in type) or ('LDAS_C' in type):
-        type = ifo_name + '_' + type
-    except: type = None
-    channel = cp.get('input','ligo-channel')
+  try:
+    FixedBank = cp.get('input','fixed-bank')
+    print "For %s we use bank %s"%(ifo_name, FixedBank)
+  except:
+    FixedBank = None
+
+  # get datatype info from config file
+  data_opts, type, channel = inspiralutils.get_data_options(cp,ifo_name)
   
   if cp.has_section('tmpltbank-1'):
     tmplt_job.add_ini_opts(cp, 'tmpltbank-1')
@@ -293,7 +281,7 @@ def analyze_ifo(ifo_name,ifo_data,ifo_to_do,tmplt_job,insp_job,df_job,\
 ##############################################################################
 # function to do thinca on coincident IFO data  
 def thinca_coinc(ifo_list, single_data_analyzed, cafe_caches, cafe_base,
-    lladd_job, coinc_job, dag, do_coinc, do_insp, usertag=None):
+    lladd_job, coinc_job, dag, do_coinc, do_insp, usertag=None, inspinjNode=None):
   """
   Run thinca on the coincident times from each of the sets of IFOs. 
   Since the way we treat all this data is the same, this function is the same 
@@ -309,6 +297,7 @@ def thinca_coinc(ifo_list, single_data_analyzed, cafe_caches, cafe_base,
   do_coinc = whether we should add the thinca jobs to the dag
   do_insp  = whether previous inspiral jobs are in the dag
   usertag = the usertag to add to the output file name
+  inspinjNode = the inspinj node to be added as a parent to ligolw_add jobs
   """
 
   # create caches using ligolw_cafe
@@ -320,7 +309,7 @@ def thinca_coinc(ifo_list, single_data_analyzed, cafe_caches, cafe_base,
     if len(cafe_caches[idx].objects):
       cache = cafe_caches[idx]
       cachename = cache_names[idx]
-      thincabase = cachename.split('.')[0].replace('CAFE_','')
+      thincabase = cafe_base.split('.')[0].replace('CAFE_','')
       ifos = set(cache_entry.observatory for cache_entry in cache.objects)
 
       # extract segment information
@@ -353,13 +342,17 @@ def thinca_coinc(ifo_list, single_data_analyzed, cafe_caches, cafe_base,
         if ifo in ifos:
           thinca.set_ifo(ifo, pass_to_command_line=False)
                 
-          # add all inspiral jobs in this cache to input
-          if do_insp:
-            for cache_entry in cache.objects:
-              lladd.add_parent(single_data_analyzed[cache_entry])
+      # add all inspiral jobs in this cache to input
+      if do_insp:
+        for cache_entry in cache.objects:
+          lladd.add_parent(single_data_analyzed[cache_entry])
+
+      # add inspinj job as parent of each ligolw_add job
+      if inspinjNode and opts.inspinj: lladd.add_parent(inspinjNode)
 
       # set output of ligolw_add jobs to follow thinca's convention
-      lladd.set_output(thinca.get_output())
+      lladd_outfile = re.sub('THINCA','LLWADD',thinca.get_output())
+      lladd.set_output(lladd_outfile)
       thinca.set_input(lladd.get_output(), pass_to_command_line=False)
       thinca.add_file_arg(lladd.get_output())
 
@@ -766,7 +759,20 @@ else:
 # create the Condor jobs that will be used in the DAG
 
 # datafind:
-df_job = pipeline.LSCDataFindJob('cache','logs',cp,opts.dax)
+frame_types = []
+try:
+  lsync_file = cp.get('pipeline','lsync-cache-file')
+  try: frame_types.append(cp.get('input','ligo-type'))
+  except: pass
+  try: frame_types.append(cp.get('input','virgo-type'))
+  except: pass
+  try: frame_types.append(cp.get('input','geo-type'))
+  except: pass
+  frame_types = [t for t in frame_types if t]
+except:
+  lsync_file = None
+df_job = pipeline.LSCDataFindJob(
+  'cache','logs',cp,opts.dax,lsync_file,'|'.join(frame_types))
 df_job.set_sub_file( basename + '.datafind'+ subsuffix )
 
 # tmpltbank:
@@ -1094,11 +1100,6 @@ if opts.coincidence:
       inspiral_cache.append(output_cache_entry)
       single_data_analyzed[output_cache_entry] = insp.get_dag_node()
 
-  # add th injection file to the ligolw_add jobs
-  if inj_file:
-    lladd_job.add_input_file(inj_file)
-    lladd_job.add_file_arg(inj_file)
-
   # get the ligolw_thinca command line arguments
   thinca_job.add_ini_opts(cp, 'thinca')
 
@@ -1120,7 +1121,12 @@ if opts.coincidence:
 
     # we need different jobs for different time-slide files
     tisi_file_name = cp.get("ligolw_cafe","slides-file-%i"%tisi_file_num)
+
+    # FIXME: Hack out pattern object in lladd_job to avoid TypeError from deepcopy
+    lladd_job._CondorDAGJob__bad_macro_chars = None
     this_lladd_job = copy.deepcopy(lladd_job)
+    this_lladd_job._CondorDAGJob__bad_macro_chars = re.compile(r'[_-]')
+
     # create new sub files for different slides if we have more than one
     if tisi_file_num:
       this_lladd_job.set_sub_file( basename + '.ligolw_add_%i'%tisi_file_num \
@@ -1137,16 +1143,16 @@ if opts.coincidence:
         extentlimit = cafe_extent_limit)[1]
 
     # create the base name for the cafe jobs
-    cafe_base = "%%s%%s_%%0%dd_" % int(math.log10(len(tisi_file_nums))+1)
+    cafe_base = "%%s_%%0%dd%%s_" % int(math.log10(len(tisi_file_nums))+1)
     cafeusertag = ""
     if usertag:
       cafeusertag += "_" + usertag
-    cafe_base = cafe_base % ('CAFE',cafeusertag,tisi_file_num)
+    cafe_base = cafe_base % ('CAFE',tisi_file_num,cafeusertag)
 
     # create the coinc nodes
     new_coinc_nodes = thinca_coinc(ifo_list, single_data_analyzed, cafe_caches,
         cafe_base, this_lladd_job, thinca_job, dag, opts.coincidence,
-        opts.inspiral, usertag)
+        opts.inspiral, usertag=usertag, inspinjNode=inspinj)
 
     coinc_nodes.extend(new_coinc_nodes)
 
@@ -1159,33 +1165,32 @@ if opts.coincidence:
 if gps_start_time is not None and gps_end_time is not None:
   print "generating cache files for output data products...",
   cache_fname = ''
-  for ifo in ifo_analyze: 
+  for ifo in ifo_analyze:
     cache_fname += ifo
-  cache_fname += '-INSPIRAL_HIPE' 
+  cache_fname += '-INSPIRAL_HIPE'
   if usertag: cache_fname += '_' + usertag
   cache_fname += '-' + str(gps_start_time) + '-' + \
     str(gps_end_time - gps_start_time) + '.cache'
   output_data_cache = lal.Cache()
 
   for node in dag.get_nodes():
-    if isinstance(node,pipeline.LSCDataFindNode):
+    if opts.dax and isinstance(node,pipeline.LSCDataFindNode):
       # ignore datafind nodes, as their output is a cache file
       continue
 
     # add the data generated by the job to the output data cache
     output_file = node.get_output()
-
-    if output_file:
-      output_data_cache.append(lal.Cache.from_urls([output_file])[0])
-      if (isinstance(node,inspiral.SireNode)) and \
-          node.get_missed():
-        output_data_cache.append(lal.Cache.from_urls([node.get_missed()])[0])
+    
+    output_data_cache.append(lal.Cache.from_urls([output_file])[0])
+    if (isinstance(node,inspiral.CoireNode) or \
+        isinstance(node,inspiral.SireNode)) and \
+        node.get_missed():
+      output_data_cache.append(lal.Cache.from_urls([node.get_missed()])[0])
 
   output_data_cache.tofile(open(cache_fname, "w"))
   print "done"
 else:
-  print "gps start and stop times not specified: cache files not generated"
-
+  print "gps start and stop times not specified: cache files not generated"     
 
 ##############################################################################
 # Step 8: Setup the Maximum number of jobs for different categories
@@ -1203,10 +1208,6 @@ if cp.has_option("pipeline", "retry-jobs"):
 # Step 9: Write out the DAG, help message and log file
 dag.write_sub_files()
 dag.write_dag()
-if opts.dax:
-  pass
-  #print "writing rls cache" 
-  dag.write_pegasus_rls_cache(cp.get('ldgsubmitdax','gsiftp'),cp.get('ldgsubmitdax','pool'))
 
 if opts.write_script:
   dag.write_script()

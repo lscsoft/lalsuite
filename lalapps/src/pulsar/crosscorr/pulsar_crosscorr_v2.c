@@ -107,7 +107,11 @@ int main(int argc, char *argv[]){
   REAL8Vector *curlyGUnshifted = NULL;
   REAL8 tSqAvg=0;/*weightedfactors*/
   REAL8 sinSqAvg=0;
-
+  REAL8 devmeanTsq=0;
+  REAL8 diagff=0;
+  REAL8 diagaa=0;
+  REAL8 diagTT=0;
+  REAL8 diagpp=0;
   /* initialize and register user variables */
   if ( XLALInitUserVars( &uvar ) != XLAL_SUCCESS ) {
     LogPrintf ( LOG_CRITICAL, "%s: XLALInitUserVars() failed with errno=%d\n", __func__, xlalErrno );
@@ -182,16 +186,10 @@ int main(int argc, char *argv[]){
 
   /* Calculate the AM coefficients (a,b) for each SFT */
   if ((multiCoeffs = XLALComputeMultiAMCoeffs ( multiStates, multiWeights, skyPos )) == NULL){ 
-    LogPrintf ( LOG_CRITICAL, "%s: XLALGetMultiDetectorStates() failed with errno=%d\n", __func__, xlalErrno );
+    LogPrintf ( LOG_CRITICAL, "%s: XLALComputeMultiAMCoeffs() failed with errno=%d\n", __func__, xlalErrno );
     XLAL_ERROR( XLAL_EFUNC );
   }
-
- /* Call XLALWeightMultiAMCoffs, replace AM-coeffs by weighted AM-coeffs*/
-  if ( ( XLALWeightMultiAMCoeffs (multiCoeffs, multiWeights ))!= XLAL_SUCCESS){ 
-    LogPrintf ( LOG_CRITICAL, "%s: XLALWeightMultiAMCoeffs() failed with errno=%d\n", __func__, xlalErrno );
-    XLAL_ERROR( XLAL_EFUNC );
-  }
-
+  
   /* Construct the flat list of SFTs (this sort of replicates the
      catalog, but there's not an obvious way to get the information
      back) */
@@ -216,12 +214,24 @@ int main(int argc, char *argv[]){
     XLAL_ERROR( XLAL_EFUNC );
   }
 
- 
-
-  if ( (XLALCalculateWeightedFactors( &tSqAvg,&sinSqAvg,curlyGUnshifted,sftPairs,sftIndices,inputSFTs,uvar.orbitPSec)  != XLAL_SUCCESS ) ) {
+  if ( (XLALCalculateWeightedFactors( &tSqAvg,&sinSqAvg,&devmeanTsq,curlyGUnshifted,sftPairs,sftIndices,inputSFTs,uvar.orbitPSec)  != XLAL_SUCCESS ) ) {
     LogPrintf ( LOG_CRITICAL, "%s: XLALCalculateWeightedFactors() failed with errno=%d\n", __func__, xlalErrno );
     XLAL_ERROR( XLAL_EFUNC );
   }
+
+  if ( (XLALCalculateMetricElements( &diagff,&diagaa,&diagTT,&diagpp,uvar.orbitAsiniSec,uvar.fStart,uvar.orbitPSec,devmeanTsq,tSqAvg,sinSqAvg)  != XLAL_SUCCESS ) ) {
+    LogPrintf ( LOG_CRITICAL, "%s: XLALCalculateMetricElements() failed with errno=%d\n", __func__, xlalErrno );
+    XLAL_ERROR( XLAL_EFUNC );
+  }
+
+/* Call XLALWeightMultiAMCoffs, replace AM-coeffs by weighted AM-coeffs
+  if ( ( XLALWeightMultiAMCoeffs (multiCoeffs, multiWeights ))!= XLAL_SUCCESS){ 
+    LogPrintf ( LOG_CRITICAL, "%s: XLALWeightMultiAMCoeffs() failed with errno=%d\n", __func__, xlalErrno );
+    XLAL_ERROR( XLAL_EFUNC );
+  }
+not necessary to weight noise twice */
+
+
   /* /\* get SFT parameters so that we can initialise search frequency resolutions *\/ */
   /* /\* calculate deltaF_SFT *\/ */
   /* deltaF_SFT = catalog->data[0].header.deltaF;  /\* frequency resolution *\/ */

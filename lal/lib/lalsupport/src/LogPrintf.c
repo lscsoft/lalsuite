@@ -25,10 +25,6 @@
 
 #include <config.h>
 
-#ifdef HAVE_LOCALTIME_S
-#define localtime_r(t, tm) localtime_s(tm, t)
-#endif
-
 /*---------- INCLUDES ----------*/
 #include <stdio.h>
 #include <string.h>
@@ -158,8 +154,7 @@ LogTimeToString ( double t )
   static char buf[100];
   char finer[16];
   time_t x = (time_t)t;
-  struct tm tm;
-  localtime_r(&x, &tm);
+  struct tm tm = *localtime(&x);
 
   int hundreds_of_microseconds=(int)(10000*(t-(int)t));
 

@@ -450,6 +450,21 @@ XLALUserVarReadCmdline ( int argc, char *argv[] )
 
     } /* while getopt_long() */
 
+  // check if there's any non-option strings left (except for a config-file specification '@file')
+  if ( (optind == argc - 1) && (argv[optind][0] == '@' ) ) {
+    optind ++;	// advance counter in case of one config-file specification (only one allowed)
+  }
+  if ( optind < argc ) // still stuff left? ==> error
+    {
+      XLALPrintError ( "\nGot non-option ARGV-elements: [ ");
+      while (optind < argc) {
+        if ( argv[optind][0] == '@' ) { optind ++; continue; }	// don't list config-file entries here
+        XLALPrintError ("%s ", argv[optind++]);
+      }
+      XLALPrintError(" ]\n");
+      XLAL_ERROR ( XLAL_EDOM );
+    } // non-option arguments found
+
   XLALFree (long_options);
   long_options=NULL;
 

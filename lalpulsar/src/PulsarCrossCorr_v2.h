@@ -102,7 +102,7 @@ extern "C" {
  */
 
 int XLALGetDopplerShiftedFrequencyInfo
-  (
+(
    REAL8Vector         *shiftedFreqs,
    UINT4Vector         *lowestBins,
    REAL8Vector         *kappaValues,
@@ -111,25 +111,25 @@ int XLALGetDopplerShiftedFrequencyInfo
    SFTIndexList        *sfts,
    MultiSSBtimes       *multiTimes,
    REAL8               Tsft
-  )
-;
+   )
+  ;
 
 int XLALCreateSFTIndexListFromMultiSFTVect
-  (
+(
    SFTIndexList        **indexList,
    MultiSFTVector      *sfts
-  )
-;
+ )
+  ;
 
 int XLALCreateSFTPairIndexList
-  (
+(
    SFTPairIndexList  **pairIndexList,
    SFTIndexList       *indexList,
    MultiSFTVector     *sfts,
    REAL8               maxLag,
    BOOLEAN             inclAutoCorr
-  )
-;
+   )
+  ;
 
 int XLALCalculateCrossCorrSigmaUnshifted
   (
@@ -155,12 +155,28 @@ int XLALCalculateWeightedFactors
   ( 
    REAL8             *TSquaWeightedAve, 
    REAL8             *SinSquaWeightedAve,  
+   REAL8             *devTsq,
    REAL8Vector       *G_alpha,       
    SFTPairIndexList  *pairIndexList, 
    SFTIndexList      *indexList,       
    MultiSFTVector    *sfts,          
    REAL8             pOrb          
    )
+  ;
+
+int XLALCalculateMetricElements
+  ( 
+   REAL8             *g_ff, 
+   REAL8             *g_aa, 
+   REAL8             *g_TT, 
+   REAL8             *g_pp,
+   REAL8             aPro,             
+   REAL8             f,
+   REAL8             pOrb,
+   REAL8             devTsq,         
+   REAL8             TSquaWeightedAve, 
+   REAL8             SinSquaWeightedAve    
+    )
   ;
 /*@}*/
 

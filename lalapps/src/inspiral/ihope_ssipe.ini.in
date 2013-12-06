@@ -12,16 +12,16 @@
 
 [segments]
 ; S6 online analysis should use the LDAS derived segment version
-l1-analyze = L1:DMT-SCIENCE:3
-h1-analyze = H1:DMT-SCIENCE:3
-v1-analyze = V1:ITF_SCIENCEMODE:1
+l1-analyze = L1:DMT-SCIENCE:4
+h1-analyze = H1:DMT-SCIENCE:4
+v1-analyze = V1:ITF_SCIENCEMODE:7
 
 ; location of veto-definer xml file
 veto-def-server-url = https://www.lsc-group.phys.uwm.edu/ligovirgo/cbc/public/segments/S6/
 veto-def-file = H1L1V1-S6_CBC_LOWMASS_D_OFFLINE-961545543-0.xml
 
-; veto categories to analyze (starting after cat1 which is always applied)
-veto-categories = 2,3,4
+; veto categories to analyze (cat1 must be included)
+veto-categories = 1,2,3,4
 
 [segfind]
 segment-url = https://segdb.ligo.caltech.edu
@@ -29,9 +29,11 @@ segment-url = https://segdb.ligo.caltech.edu
 [hardware-injections]
 ; location of file containing list of hardware injections to be performed
 hwinj-def-server-url = https://www.lsc-group.phys.uwm.edu/ligovirgo/cbc/public/segments/S6/
-hwinj-def-file = H1L1V1-S6_CBC_HW_INJECTIONS-930493015-36755000.xml
+hwinj-def-file = H1L1V1-S6_CBC_HW_INJECTIONS-930493015-42111800.xml
 
 [ifo-details]
+; comment out ifos that were not taking data in your analysis time
+; comment out 'three-ifo' if three ifos are not being analyzed
 l1-data = 
 h1-data =
 v1-data =
@@ -45,7 +47,7 @@ inspinj =
 template-bank =
 inspiral =
 sire-inspiral =
-summary-inspiral-triggers =
+;summary-inspiral-triggers =
 coincidence =
 output-segs = 
 write-script =
@@ -55,71 +57,75 @@ generate-cache =
 datafind = 
 qscan =
 hoft-qscan =
-trig-bank =
 inspiral =
 plots =
 
 [condor]
 ; setup of condor universe and location of executables
-universe = standard
-hipe = /archive/home/cbc/opt/s6/bin/lalapps_inspiral_ssipe
-plot = /archive/home/cbc/opt/s6/bin/lalapps_plot_hipe
-follow = /archive/home/cbc/opt/s6/bin/lalapps_followup_pipe
-pipedown = /archive/home/cbc/opt/s6/bin/lalapps_cbc_pipedown
-datafind = /archive/home/cbc/opt/s6/bin/ligo_data_find
-segfind = /archive/home/cbc/opt/s6/bin/ligolw_segment_query
-segs_from_cats = /archive/home/cbc/opt/s6/bin/ligolw_segments_from_cats
-ligolw_segments_compat = /archive/home/cbc/opt/s6/bin/ligolw_segments_compat
-ligolw_print = /archive/home/cbc/opt/s6/bin/ligolw_print
-ligolw_add = /archive/home/cbc/opt/s6/bin/ligolw_add
-tmpltbank = /archive/home/cbc/opt/s6/bin/lalapps_tmpltbank
-inspiral = /archive/home/cbc/opt/s6/bin/lalapps_inspiral
-inspinj = /archive/home/cbc/opt/s6/bin/lalapps_inspinj
-inca = /archive/home/cbc/opt/s6/bin/lalapps_inca
-thinca = /archive/home/cbc/opt/s6/bin/ligolw_thinca
-trigbank = /archive/home/cbc/opt/s6/bin/lalapps_trigbank
-sire = /archive/home/cbc/opt/s6/bin/lalapps_sire
-coire = /bin/false
-plotinspiral	 = /archive/home/cbc/opt/s6/bin/plotinspiral
-plotthinca = /archive/home/cbc/opt/s6/bin/plotthinca
-plotnumtemplates = /archive/home/cbc/opt/s6/bin/plotnumtemplates
-plotethinca = /archive/home/cbc/opt/s6/bin/plotethinca
-plotinspmissed = /archive/home/cbc/opt/s6/bin/plotinspmissed
-plotinspinj = /archive/home/cbc/opt/s6/bin/plotinspinj
-plotsnrchi = /archive/home/cbc/opt/s6/bin/plotsnrchi
-plotinspiralrange = /archive/home/cbc/opt/s6/bin/plotinspiralrange
-ploteffdistcut = /archive/home/cbc/opt/s6/bin/ploteffdistcut
-thinca_to_coinc = /archive/home/cbc/opt/s6/bin/ligolw_thinca_to_coinc
-ligolw_sqlite = /archive/home/cbc/opt/s6/bin/ligolw_sqlite
-dbsimplify = /archive/home/cbc/opt/s6/bin/ligolw_cbc_dbsimplify
-compute_durations = /archive/home/cbc/opt/s6/bin/ligolw_cbc_compute_durations
-dbaddinj = /archive/home/cbc/opt/s6/bin/ligolw_cbc_dbaddinj
-cluster_coincs = /archive/home/cbc/opt/s6/bin/ligolw_cbc_cluster_coincs
-mvsc_get_doubles = /bin/true
+universe          = standard
+; programs from lalapps
+hipe              = @LALAPPSDIR@/lalapps_inspiral_ssipe
+plot              = @LALAPPSDIR@/lalapps_plot_hipe
+tmpltbank         = @LALAPPSDIR@/lalapps_tmpltbank
+inspiral          = @LALAPPSDIR@/lalapps_inspiral
+inspinj           = @LALAPPSDIR@/lalapps_inspinj
+pipedown          = @LALAPPSDIR@/lalapps_cbc_pipedown_ssipe
+sire              = @LALAPPSDIR@/lalapps_sire
+; programs from glue
+datafind          = @GLUEDIR@/ligo_data_find
+segfind           = @GLUEDIR@/ligolw_segment_query
+segs_from_cats    = @GLUEDIR@/ligolw_segments_from_cats
+ligolw_add        = @GLUEDIR@/ligolw_add
+ligolw_print      = @GLUEDIR@/ligolw_print
+ligolw_sqlite     = @GLUEDIR@/ligolw_sqlite
+; programs from pylal
+ligolw_segments_compat = @PYLALDIR@/ligolw_segments_compat
+thinca            = @PYLALDIR@/ligolw_sstinca
+plotinspiral      = @PYLALDIR@/plotinspiral
+plotthinca        = @PYLALDIR@/plotthinca
+plotnumtemplates  = @PYLALDIR@/plotnumtemplates
+plotethinca       = @PYLALDIR@/plotethinca
+plotinspinj       = @PYLALDIR@/plotinspinj
+plotsnrchi        = @PYLALDIR@/plotsnrchi
+plotinspiralrange = @PYLALDIR@/plotinspiralrange
+plotinspmissed    = @PYLALDIR@/plotinspmissed
+; ploteffdistcut is only relevant to S5 analysis, thus is not called
+ploteffdistcut    = @PYLALDIR@/ploteffdistcut
+; pylal codes used in pipedown post-processing
+dbsimplify        = @PYLALDIR@/ligolw_cbc_dbsimplify
+repop_coinc       = @PYLALDIR@/ligolw_cbc_repop_coinc
+compute_durations = @PYLALDIR@/ligolw_cbc_compute_durations
+dbaddinj          = @PYLALDIR@/ligolw_cbc_dbaddinj
+injfind           = @PYLALDIR@/ligolw_inspinjfind
+dbinjfind         = @PYLALDIR@/ligolw_dbinjfind
+cluster_coincs    = @PYLALDIR@/ligolw_cbc_cluster_coincs
+minifollowups     = @PYLALDIR@/minifollowups
+cfar              = @PYLALDIR@/ligolw_cbc_cfar
+printlc           = @PYLALDIR@/ligolw_cbc_printlc
+printsims         = @PYLALDIR@/ligolw_cbc_printsims
+printmissed       = @PYLALDIR@/ligolw_cbc_printmissed
+plotfm            = @PYLALDIR@/ligolw_cbc_plotfm
+plotslides        = @PYLALDIR@/ligolw_cbc_plotslides
+plotcumhist       = @PYLALDIR@/ligolw_cbc_plotcumhist
+plotifar          = @PYLALDIR@/ligolw_cbc_plotifar
+search_volume     = @PYLALDIR@/lalapps_cbc_svim
+search_upper_limit = @PYLALDIR@/lalapps_cbc_sink
+hardware_inj_page = @PYLALDIR@/ligolw_cbc_hardware_inj_page
+follow            = @PYLALDIR@/lalapps_followup_pipe
+; programs used by mvsc
+mvsc_get_doubles  = /bin/true
 mvsc_train_forest = /bin/true
-mvsc_use_forest = /bin/true
-mvsc_update_sql = /bin/true
-cfar = /archive/home/cbc/opt/s6/bin/ligolw_cbc_cfar
-printlc = /archive/home/cbc/opt/s6/bin/ligolw_cbc_printlc
-printsims = /archive/home/cbc/opt/s6/bin/ligolw_cbc_printsims
-printmissed = /archive/home/cbc/opt/s6/bin/ligolw_cbc_printmissed
-plotfm = /archive/home/cbc/opt/s6/bin/ligolw_cbc_plotfm
-minifollowups = /archive/home/cbc/opt/s6/bin/minifollowups
-plotslides = /archive/home/cbc/opt/s6/bin/ligolw_cbc_plotslides
-plotcumhist = /archive/home/cbc/opt/s6/bin/ligolw_cbc_plotcumhist
-plotifar = /archive/home/cbc/opt/s6/bin/ligolw_cbc_plotifar
-hardware_inj_page = /archive/home/cbc/opt/s6/bin/ligolw_cbc_hardware_inj_page
-search_volume = /archive/home/cbc/opt/s6/bin/lalapps_cbc_svim
-search_upper_limit = /archive/home/cbc/opt/s6/bin/lalapps_cbc_sink
-convertlalcache = /archive/home/omega/opt/omega/bin/convertlalcache
-omegascan = /archive/home/omega/opt/omega/bin/wpipeline
-
+mvsc_use_forest   = /bin/true
+mvsc_update_sql   = /bin/true
+mvsc_dag          = @PYLALDIR@/mvsc_dag
+; programs from omega
+convertlalcache   = /bin/true
+omegascan         = /bin/true
 
 [condor-max-jobs]
 ;maximum number of jobs that condor should run of a given category
-datafind= 10
-trigbank = 20
-sire = 20
+datafind = 10
+sire     = 20
 
 [pipeline]
 ; tagging information for the configure script
@@ -130,6 +136,12 @@ slides = 1
 retry-subdag = 1 
 retry-jobs = 1
 retry-plot-jobs = 2
+collapse-thinca = 2
+collapse-sire   = 50
+; lsync-cache-file = /var/LDR/diskcache.txt
+search-file-tag = INSPIRAL
+coinc-file-tag = THINCA
+time-column = end_time
 
 ;Set matplotlibdir to a local directory to avoid NFS issues with the TeX part 
 ;of matplotlib. Ensure this directory exists on all nodes!
@@ -139,13 +151,13 @@ retry-plot-jobs = 2
 ;;;;;;;;;;;;;;;;;;
 
 [injections]
-bnslininj = 1234
-bnsloginj = 4321
+bnslininj  = 1234
+bnsloginj  = 4321
 nsbhlininj = 2345
 nsbhloginj = 5432
-bbhlininj = 3456
-bbhloginj = 6543
-spininj = 4567
+bbhlininj  = 3456
+bbhloginj  = 6543
+spininj  = 4567
 
 [bnslininj]
 f-lower = 30
@@ -196,17 +208,17 @@ i-distr = uniform
 min-mass1 = 1.0
 max-mass1 = 3.1
 min-mass2 = 2.9
-max-mass2 = 25.0
+max-mass2 = 13.0
 m-distr = componentMass
 min-mtotal = 2.0
-max-mtotal = 25.0
+max-mtotal = 14.0
 disable-spin =
 time-step = 837.155
 time-interval = 300
 
 [nsbhloginj]
 f-lower = 30
-waveform = EOBNRpseudoFourPN
+waveform = EOBNRv2pseudoFourPN
 min-distance = 10000
 max-distance = 100000
 d-distr = log10
@@ -215,48 +227,48 @@ i-distr = uniform
 min-mass1 = 1.0
 max-mass1 = 3.1
 min-mass2 = 2.9
-max-mass2 = 25.0
+max-mass2 = 13.0
 m-distr = componentMass
 min-mtotal = 2.0
-max-mtotal = 25.0
+max-mtotal = 14.0
 disable-spin =
 time-step = 837.155
 time-interval = 300
 
 [bbhlininj]
 f-lower = 30
-waveform = EOBNRpseudoFourPN
+waveform = EOBNRv2pseudoFourPN
 min-distance = 1000
 max-distance = 80000
 d-distr = uniform
 l-distr = random
 i-distr = uniform
 min-mass1 = 2.9
-max-mass1 = 25.0
+max-mass1 = 9.0
 min-mass2 = 2.9
-max-mass2 = 25.0
+max-mass2 = 9.0
 m-distr = componentMass
 min-mtotal = 2.0
-max-mtotal = 25.0
+max-mtotal = 14.0
 disable-spin =
 time-step = 837.155
 time-interval = 300
 
 [bbhloginj]
 f-lower = 30
-waveform = EOBNRpseudoFourPN
+waveform = EOBNRv2pseudoFourPN
 min-distance = 15000
 max-distance = 120000
 d-distr = log10
 l-distr = random
 i-distr = uniform
 min-mass1 = 2.9
-max-mass1 = 25.0
+max-mass1 = 9.0
 min-mass2 = 2.9
-max-mass2 = 25.0
+max-mass2 = 9.0
 m-distr = componentMass
 min-mtotal = 2.0
-max-mtotal = 25.0
+max-mtotal = 14.0
 disable-spin =
 time-step = 837.155
 time-interval = 300
@@ -270,12 +282,12 @@ d-distr = log10
 l-distr = random
 i-distr = uniform
 min-mass1 = 1.0
-max-mass1 = 25.0
+max-mass1 = 3.1
 min-mass2 = 1.0
-max-mass2 = 25.0
+max-mass2 = 13.0
 m-distr = componentMass
 min-mtotal = 2.0
-max-mtotal = 25.0
+max-mtotal = 14.0
 enable-spin =
 min-spin1=0
 max-spin1=1
@@ -293,9 +305,9 @@ ligo-type = LDAS_C02_L2
 ligo-qscan-type = RDS_R_L1
 geo-channel = 
 geo-type = 
-virgo-type = HrecOnline
+virgo-type = HrecV2
 virgo-channel = h_16384Hz
-;fixed-bank = TMPLTBANK.xml.gz
+;fixed-bank = full_path_to_file/TMPLTBANK.xml.gz
 
 [calibration]
 ; location of the calibration cache and the cache files
@@ -356,37 +368,36 @@ approximant = TaylorF2
 space = Tau0Tau3
 write-compress = 
 candle-snr = 8
-candle-mass1 = 1
-candle-mass2 = 1
+candle-minmass = 1
+candle-maxmass = 12
 standard-candle =
 num-freq-cutoffs = 1
 max-high-freq-cutoff = SchwarzISCO
 min-high-freq-cutoff = SchwarzISCO
 minimum-mass = 1.0
-maximum-mass = 25.0
-max-total-mass = 25.0
+maximum-mass = 11.0
+max-total-mass = 12.0
 
 [h1-tmpltbank]
-; h1 specific tmpltbank paramters
+; h1 specific tmpltbank parameters
 
 [h2-tmpltbank]
-; h2 specific tmpltbank paramters
+; h2 specific tmpltbank parameters
 
 [l1-tmpltbank]
-; l1 specific tmpltbank paramters
+; l1 specific tmpltbank parameters
 
 [v1-tmpltbank]
-; v1 specific tmpltbank paramters
+; v1 specific tmpltbank parameters
 
 [inspiral]
 ; inspiral analysis parameters -- added to all inspiral jobs
 approximant = FindChirpSP
+order = threePointFivePN
 segment-overlap = 524288
 inverse-spec-length = 16
 enable-output = 
 cluster-method = template
-;ts-cluster = T0T3TcAS
-;ts-metric-scaling = 0.06
 maximization-interval = 30
 write-compress = 
 bank-veto-subbank-size = 20
@@ -394,8 +405,10 @@ bank-veto-time-freq =
 autochisq-length = 100
 autochisq-stride = 2
 autochisq-two-sided =
-order = threePointFivePN
 chisq-bins = 16
+chisq-delta = 0.2
+snr-threshold = 5.5
+chisq-threshold = 10.0
 enable-rsq-veto =
 rsq-veto-window = 6.0
 rsq-veto-threshold = 15.0
@@ -406,44 +419,33 @@ enable-filter-inj-only =
 
 [h1-inspiral]
 ; h1 specific inspiral paramters
-snr-threshold = 5.5
-chisq-threshold = 10.0
-chisq-delta = 0.2
 
 [h2-inspiral]
 ; h2 specific inspiral parameters
-snr-threshold = 5.5
-chisq-threshold = 10.0
-chisq-delta = 0.2
 
 [l1-inspiral]
 ; l1 specific inspiral parameters
-snr-threshold = 5.5
-chisq-threshold = 10.0
-chisq-delta = 0.2
 
 [v1-inspiral]
 ; v1 specific inspiral parameters
-chisq-delta = 0.2
-snr-threshold = 5.5
-chisq-threshold = 10.0
-
-[inca]
-; common coincidence parameters -- added to all inca jobs
-write-compress = 
 
 [ligolw_cafe]
 num-slides-files = 2
-slides-file-0 = TISI_ZEROLAG.xml.gz
-slides-file-1 = TISI_SLIDES1.xml.gz
+slides-file-0 = @RUNDIR@/TISI_ZEROLAG.xml.gz
+slides-file-1 = @RUNDIR@/TISI_SLIDES1.xml.gz
 extentlimit = 10000
 
 [ligolw_add]
 
 [thinca]
 ; common coincidence parameters -- added to all thinca jobs
-effective-snr = inspiral
+weighted-snr = newsnr
+magic-number = 6.0
 e-thinca-parameter = 0.5
+depop-sngl-inspiral = 
+make-expr-tables = 
+drop-veto-info = 
+;exact-match = 
 
 [sire]
 ; parameters for sire
@@ -462,9 +464,8 @@ ifo-times = H1L1V1
 enable-output=
 
 [plotnumtemplates-meta]
-cache-patterns = bank,trigbank
+cache-patterns = bank
 bank-program-tag = TMPLTBANK 
-trigbank-program-tag = TRIGBANK
 
 [plotinspiralrange]
 range-vs-time =
@@ -498,6 +499,7 @@ trig-program-tag = SIRE
 
 [plotthinca]
 snr-snr=
+num-slides=100
 slide-snr=
 statistic=new_snr
 chisq-index=6.
@@ -539,35 +541,8 @@ inj-program-tag = COIRE_INJECTIONS_*_FOUND
 slide-program-tag = COIRE_SLIDE
 
 [plotinspmissed]
-time-dist=
-mchirp-dist-log=
-mtotal-dist-log=
-time-dist=
-enable-output=
-eff-vs-eff-dist=
-eff-vs-distance=
-legend=
-do-followup=
-followup-number = 10
-
-[plotinspmissed-meta]
-cache-patterns = found,missed
-found-program-tag = COIRE_INJECTIONS_*_FOUND
-missed-program-tag = COIRE_INJECTIONS_*_MISSED
 
 [ploteffdistcut]
-dist-snr=
-dist-hist=
-dist-cut=
-dist-dist=
-kappa = 0.6
-use-avg-distance=
-
-[ploteffdistcut-meta]
-cache-patterns=inj,slide
-inj-program-tag = COIRE_INJECTIONS_*_FOUND
-slide-program-tag = COIRE_SLIDE
-
 
 [plotinspinj]
 plot-mchirp=
@@ -594,26 +569,24 @@ cache-patterns= found
 found-program-tag= SIRE_INJECTIONS_*_FOUND
 
 [plotsnrchi]
-hist-effsnr=
-hist-newsnr=
-snr-chisq=
-;bank-chisq=
-;NB some triggers may have bank_chisq_dof at second stage, omit plot
-cont-chisq=
-snr-rsq=
-;snr-chisq-contours=
-effsnr-lines=
-newsnr-lines=
-denominator-constant=250.
-chisq-index=6.
-nbins=40
-masshist-newsnr=
-rsq-threshold=0.0002
-rsq-max-snr=12
-rsq-coeff=0.0075
-rsq-pow=1.124764
-ifo-times=
-enable-output=
+hist-effsnr =
+hist-newsnr =
+snr-chisq =
+bank-chisq =
+cont-chisq =
+snr-rsq =
+effsnr-lines =
+newsnr-lines =
+denominator-constant = 250.
+chisq-index = 6.
+nbins = 40
+masshist-newsnr =
+rsq-threshold = 0.0002
+rsq-max-snr = 12
+rsq-coeff = 0.0075
+rsq-pow = 1.124764
+ifo-times =
+enable-output =
 
 [plotsnrchi-meta]
 cache-patterns = trig,found,slide
@@ -628,14 +601,6 @@ slide-program-tag = THINCA_SLIDE_SECOND
 ;   options common to pipedown plotting commands
 enable-output =
 
-[thinca_to_coinc]
-;   set options for thinca_to_coinc jobs
-search = low_mass
-;lars-id = 
-statistic=new_snr
-chisq-index=6.
-effective-snr-factor = 250.
-
 [ligolw_sqlite]
 ;   set options for ligolw_sqlite jobs
 ;preserve_ids =
@@ -643,15 +608,17 @@ effective-snr-factor = 250.
 
 [dbsimplify]
 ;   set options for dbsimplify jobs
-;vacuum =
+vacuum =
 
 [compute_durations]
 ;   set options for compute_durations jobs
+livetime-program = inspiral
 
 [dbaddinj]
 ;   set options for dbaddinj jobs
+sim-table = sim_inspiral
 
-[inspinjfind]
+[injfind]
 ;   set options for inspinjfind jobs
 match-algorithm = inspiral
 time-window = 1
@@ -659,23 +626,53 @@ time-window = 1
 ;force =
 ;comment = None
 
+[dbinjfind]
+exact_insp =
+nearby_insp =
+
+[exact_insp]
+simulation-table = sim_inspiral
+recovery-table = sngl_inspiral
+match-criteria = endTime:endTime:0.01
+map-label = insp_exact
+rough-match = geocent_end_time:end_time:10
+check-all-data = endTime:0.01
+rough-all-data-check = end_time:10
+search = inspiral
+
+[nearby_insp]
+simulation-table = sim_inspiral
+recovery-table = sngl_inspiral
+match-criteria = endTime:endTime:1.0
+map-label = insp_nearby
+rough-match = geocent_end_time:end_time:10
+search = inspiral
+
+;[repop_coinc]
+;   set options for repop-coinc jobs
+
 [cluster_coincs]
+snr_cluster =
+
+[snr_cluster]
 ;   set static options for cluster_coinc jobs
 ;   following are required options
 cluster-window = 10000
+ranking-table = coinc_inspiral
 ranking-stat = snr
 rank-by = MAX
 ;   following are optional
 param-name = mchirp
 param-ranges = [0,3.48);[3.48,7.4);[7.4,20]
 group-by-ifos =
-;exclude-coincs = [all in h1,h2];[h1,h2 in all];[h2,l1 in h1,h2,l1]
-;vacuum =
+;exclude-coincs = [ALLinH1,H2];[H1,H2inALL];[H2,L1inH1,H2,L1]
+vacuum =
 
 [cfar-uncombined]
 ;   set static options for cfar jobs that 
 ;   compute uncombined false alarm rates
 output-column = false_alarm_rate
+ranking-table = coinc_inspiral
 ranking-stat = snr
 rank-by = MAX
 ;   the following 3 options define a 'category':
@@ -685,12 +682,13 @@ rank-by = MAX
 param-name = mchirp
 param-ranges = [0,3.48);[3.48,7.4);[7.4,20]
 group-by-ifos =
-;exclude-coincs = [all in h1,h2];[h1,h2 in all];[h2,l1 in h1,h2,l1]
+;exclude-coincs = [ALLinH1,H2];[H1,H2inALL];[H2,L1inH1,H2,L1]
 
 [cfar-combined]
 ;   set static options for cfar jobs that 
 ;   compute combined false alarm rates
 output-column = combined_far
+ranking-table = coinc_inspiral
 ranking-stat = false_alarm_rate
 rank-by = MIN
 ;   no categories are defined when combining;
@@ -704,10 +702,12 @@ daily-ihope-pages-location = https://ldas-jobs.ligo.caltech.edu/~cbc/ihope_daily
 
 [printlc]
 ;   set static options for printlc jobs
+coinc-table = coinc_inspiral
 ranking-stat = combined_far
 rank-by = MIN
 convert-durations = days
 limit = 10
+sngl-table = sngl_inspiral
 get-sngl-info =
 
 [printsims]
@@ -716,17 +716,27 @@ ranking-stat = combined_far
 rank-by = MIN
 sort-by = injected_decisive_distance
 convert-durations = days
+sngl-table = sngl_inspiral
 simulation-table = sim_inspiral
 recovery-table = coinc_inspiral
 param-name = combined_far
 param-ranges = !0
 ;rank-range = !1
+;Which injection mapping to use; if using injfind:
+map-label = 'sim_inspiral<-->coinc_event coincidences (nearby)'
+; if using dbinjfind
+;map-label= 'nearby_insp'
 
 [printmissed]
 ;   set static options for printmissed jobs
 simulation-table = sim_inspiral
 recovery-table = coinc_inspiral
+livetime-program = inspiral
 limit = 10
+;Which injection mapping to use; if using injfind:
+map-label = 'sim_inspiral<-->coinc_event coincidences (nearby)'
+; if using dbinjfind
+;map-label= 'nearby_insp
 
 [plotfm]
 ; establish what plotfm jobs to do; the following options
@@ -749,10 +759,15 @@ ranking-stat = 'combined_far:Combined FAR (yr$^{-1}$)'
 rank-by = MIN
 simulation-table = sim_inspiral
 recovery-table = coinc_inspiral
+livetime-program = inspiral
+;Which injection mapping to use; if using injfind:
+map-label = 'sim_inspiral<-->coinc_event coincidences (nearby)'
+; if using dbinjfind
+;map-label= 'nearby_insp'
 
 [fm_dist_v_end_time]
 ; plot injected decisive distance vs end_time in days
-variables = 'injected_end_time:gps_days; injected_decisive_distance:Injected Decisive Distance (Mpc)'
+variables = 'injected_gps_time:gps_days; injected_decisive_distance:Injected Decisive Distance (Mpc)'
 ranking-stat = 'combined_far:Combined FAR (yr$^{-1}$)'
 rank-by = MIN
 logy =
@@ -763,10 +778,15 @@ param-name = injected_mchirp
 param-ranges = [0,3.48);[3.48,7.4);[7.4,20]
 simulation-table = sim_inspiral
 recovery-table = coinc_inspiral
+livetime-program = inspiral
+;Which injection mapping to use; if using injfind:
+map-label = 'sim_inspiral<-->coinc_event coincidences (nearby)'
+; if using dbinjfind
+;map-label= 'nearby_insp'
 
 [fm_dist_v_dt]
 ; plot injected decisive distance v. difference in recovered/injected end-times
-variables = '(recovered_end_time+recovered_end_time_ns*1e-9)-(injected_end_time+injected_end_time_ns*1e-9): Recovered - Injected End Time (s); injected_decisive_distance:Injected Decisive Distance (Mpc)'
+variables = '(recovered_end_time+recovered_end_time_ns*1e-9)-(injected_gps_time+injected_gps_time_ns*1e-9): Recovered - Injected End Time (s); injected_decisive_distance:Injected Decisive Distance (Mpc)'
 ranking-stat = 'combined_far:Combined FAR (yr$^{-1}$)'
 rank-by = MIN
 logy =
@@ -774,26 +794,38 @@ logz =
 colorbar =
 simulation-table = sim_inspiral
 recovery-table = coinc_inspiral
+livetime-program = inspiral
+;Which injection mapping to use; if using injfind:
+map-label = 'sim_inspiral<-->coinc_event coincidences (nearby)'
+; if using dbinjfind
+;map-label= 'nearby_insp'
 
 [fm_lin_plots]
 ; plot linear fm plots
-variables = '(recovered_end_time+recovered_end_time_ns*1e-9)-(injected_end_time+injected_end_time_ns*1e-9): Recovered - Injected End Time (s); injected_mchirp: Injected Chirp Mass ($M_\odot$)' --variables '(recovered_end_time+recovered_end_time_ns*1e-9)-(injected_end_time+injected_end_time_ns*1e-9): Recovered - Injected End Time (s); sim_tag: Injection Type' --variables '(recovered_end_time+recovered_end_time_ns*1e-9)-(injected_end_time+injected_end_time_ns*1e-9): Recovered - Injected End Time (s); (recovered_mchirp-injected_mchirp)/injected_mchirp: Chirp Mass Frac. Difference ($\frac{mchirp_{rec}-mchirp_{inj}}{mchirp_{inj}}$)' --variables 'sim_tag: Injection Type; (recovered_mchirp-injected_mchirp)/injected_mchirp: Chirp Mass Frac. Difference ($\frac{mchirp_{rec}-mchirp_{inj}}{mchirp_{inj}}$)'
+variables = '(recovered_end_time+recovered_end_time_ns*1e-9)-(injected_gps_time+injected_gps_time_ns*1e-9): Recovered - Injected End Time (s); injected_mchirp: Injected Chirp Mass ($M_\odot$)' --variables '(recovered_end_time+recovered_end_time_ns*1e-9)-(injected_gps_time+injected_gps_time_ns*1e-9): Recovered - Injected End Time (s); sim_tag: Injection Type' --variables '(recovered_end_time+recovered_end_time_ns*1e-9)-(injected_gps_time+injected_gps_time_ns*1e-9): Recovered - Injected End Time (s); (recovered_mchirp-injected_mchirp)/injected_mchirp: Chirp Mass Frac. Difference ($\frac{mchirp_{rec}-mchirp_{inj}}{mchirp_{inj}}$)' --variables 'sim_tag: Injection Type; (recovered_mchirp-injected_mchirp)/injected_mchirp: Chirp Mass Frac. Difference ($\frac{mchirp_{rec}-mchirp_{inj}}{mchirp_{inj}}$)'
 ranking-stat = 'combined_far:Combined FAR (yr$^{-1}$)'
 rank-by = MIN
 logz =
 colorbar =
 simulation-table = sim_inspiral
 recovery-table = coinc_inspiral
+livetime-program = inspiral
+;Which injection mapping to use; if using injfind:
+map-label = 'sim_inspiral<-->coinc_event coincidences (nearby)'
+; if using dbinjfind
+;map-label= 'nearby_insp'
 
 [minifollowups]
 ;   set static options for minifollowup jobs
 
 [plotslides]
 ;   set static options for plotslide jobs
+coinc-table = coinc_inspiral
 
 [plotcumhist]
 ;   set static options for plotcumhist jobs
 num-bins = 20
+coinc-table = coinc_inspiral
 ranking-stat = snr
 rank-by = MAX
 square-stats =
@@ -802,6 +834,7 @@ square-stats =
 
 [plotifar]
 ;   set static options for plotifar jobs
+coinc-table = coinc_inspiral
 param-name = mchirp
 param-ranges = [0,3.48);[3.48,7.4);[7.4,20]
 plot-uncombined =
@@ -839,7 +872,35 @@ plot-normalized-energy-range = 0,25.5
 ; THIS SECTION MUST BE LEFT BLANK!!!!!!!!
 
 [search-volume]
-d-err = 0.197
-d-sys-err = 0.074
-mass-bins = 5
+livetime-program = inspiral
+total-mass-bins = '2,5,8,11,14,17,20,25'
+component-mass1-bins = '1,3,8,13,18,23'
+bin-by-chirp-mass =
+bin-by-bns-bbh =
 
+[upper-limit]
+cal-err = 0.42
+wave-err = 0.1
+
+[mvsc_dag]
+number-of-trees = 100
+criterion-for-optimization = 6
+leaf-size = 5
+sampled-parameters = 12
+all-instruments = H1,L1,V1
+
+[mvsc_get_doubles]
+number = 10
+;apply-weights =
+;check-weights =
+exact-tag = exact_insp
+nearby-tag = nearby_insp
+;start-time = 0
+;end-time  = 999999999
+
+[mvsc_update_sql]
+
+[plotinspmissed-meta]
+cache-patterns = found,missed
+found-program-tag = COIRE_INJECTIONS_*_FOUND
+missed-program-tag = COIRE_INJECTIONS_*_MISSED

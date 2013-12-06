@@ -2321,7 +2321,7 @@ class PlotThincaJob(InspiralPlottingJob):
     sections = ['plotthinca']
     extension = 'html'
     InspiralPlottingJob.__init__(self,cp,sections,exec_name,extension,dax)
-    self.add_condor_cmd('request_memory', '2000')
+    self.add_condor_cmd('request_memory', '2500')
  
 class PlotThincaNode(InspiralPlottingNode):
   """
@@ -2411,7 +2411,7 @@ class PlotEthincaJob(InspiralPlottingJob):
     sections = ['plotethinca']
     extension = 'html'
     InspiralPlottingJob.__init__(self,cp,sections,exec_name,extension,dax)
-    self.add_condor_cmd('request_memory', '2000')
+    self.add_condor_cmd('request_memory', '2500')
 
 class PlotEthincaNode(InspiralPlottingNode):
   """
@@ -2500,7 +2500,7 @@ class PlotInspinjJob(InspiralPlottingJob):
     sections = ['plotinspinj']
     extension = 'html'
     InspiralPlottingJob.__init__(self,cp,sections,exec_name,extension,dax)
-    self.add_condor_cmd('request_memory', '2000')
+    self.add_condor_cmd('request_memory', '2500')
 
 class PlotInspinjNode(InspiralPlottingNode):
   """
@@ -2530,7 +2530,7 @@ class PlotSnrchiJob(InspiralPlottingJob):
     sections = ['plotsnrchi']
     extension = 'html'
     InspiralPlottingJob.__init__(self,cp,sections,exec_name,extension,dax)
-    self.add_condor_cmd('request_memory', '2000')
+    self.add_condor_cmd('request_memory', '2500')
 
 class PlotSnrchiNode(InspiralPlottingNode):
   """
@@ -2588,7 +2588,7 @@ class MiniFollowupsJob(InspiralPlottingJob):
     sections = ['minifollowups','omega-scans']
     extension = None
     InspiralPlottingJob.__init__(self, cp, sections, exec_name, extension, dax)
-    self.add_condor_cmd('request_memory', '2000')
+    self.add_condor_cmd('request_memory', '2500')
 
   def set_time_slides(self):
     """
