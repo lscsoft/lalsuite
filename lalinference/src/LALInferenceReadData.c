@@ -1182,7 +1182,7 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
     unsigned int n_basis,n_samples,time_steps;
     n_basis = 965;//TODO: have it read from file or from command line.
     n_samples = 31489;
-    time_steps = 10000;
+    time_steps = 100;
     REAL8 dt=0.1;
     REAL8 tc=0;
     REAL8 endtime=0.0;
@@ -1204,10 +1204,10 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
     gsl_matrix_complex *vandermonde_matrix=NULL;
     gsl_matrix_complex *rb_matrix=NULL;
  
-    gsl_vector_complex *whitened_data = gsl_vector_complex_calloc(IFOdata[i].fHigh/deltaF + 1 - IFOdata[i].fLow/deltaF); //IFO data / PSD
-    gsl_vector_complex *E = gsl_vector_complex_calloc(n_basis);
-    gsl_vector_complex *weights_row = gsl_vector_complex_calloc(n_basis);
-    gsl_vector_complex *exp_2pi_i_f_tc = gsl_vector_complex_calloc(whitened_data->size);
+    gsl_matrix_complex *whitened_data_matrix = gsl_matrix_complex_calloc(n_samples, time_steps); //IFO data / PSD
+    gsl_vector_complex *whitened_data = gsl_vector_complex_calloc(n_samples);
+    gsl_matrix_complex *E_matrix = gsl_matrix_complex_calloc(n_basis, time_steps);
+    gsl_vector_complex *exp_2pi_i_f_tc = gsl_vector_complex_calloc(n_samples);
     gsl_complex alpha;
     gsl_complex beta;
     gsl_complex wd; // element of whiteFreqData
@@ -1258,28 +1258,33 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
 
 		tc = timeMin + 2*dt*jj / time_steps;
 
-		for(unsigned int ii=0; ii < exp_2pi_i_f_tc->size; ii++){
+		for(unsigned int ii=0; ii < n_samples; ii++){
 			gsl_vector_complex_set(exp_2pi_i_f_tc, ii, gsl_complex_polar (1, (IFOdata[i].fLow/deltaF+ii)*deltaF*tc*2*LAL_PI));
 		}
 		
-		for(unsigned int k = 0; k < whitened_data->size; k++){
+		for(unsigned int k = 0; k < n_samples; k++){
 
-			GSL_SET_COMPLEX(&wd, creal(IFOdata[i].whiteFreqData->data->data[k + (unsigned int)(IFOdata[i].fLow/deltaF)]), cimag(IFOdata[i].whiteFreqData->data->data[k + (unsigned int)(IFOdata[i].fLow/deltaF)]));
+			GSL_SET_COMPLEX(&wd, creal(IFOdata[i].whiteFreqData->data->data[k + (unsigned int)(IFOdata[i].fLow/deltaF)]), -cimag(IFOdata[i].whiteFreqData->data->data[k + (unsigned int)(IFOdata[i].fLow/deltaF)]));
  
 			shifted_data_element = gsl_complex_mul (wd, gsl_vector_complex_get(exp_2pi_i_f_tc, k));
 			
-			gsl_vector_complex_set(whitened_data, k, shifted_data_element);
+			gsl_vector_complex_set (whitened_data, k, shifted_data_element);
 	
 		}
 
-        	gsl_blas_zgemv(CblasTrans, alpha, rb_matrix, whitened_data, beta, E);
+		gsl_matrix_complex_set_col (whitened_data_matrix, jj, whitened_data);	
 
-        	GSL_SET_COMPLEX(&alpha, 1, 0);
-
-        	gsl_blas_zgemv (CblasTrans, alpha, vandermonde_matrix, E, beta, weights_row);
-
-		gsl_matrix_complex_set_row (IFOdata[i].roqData->weights, jj, weights_row);
         }
+
+	printf("computing weights");
+	
+  	gsl_blas_zgemm (CblasTrans, CblasNoTrans, alpha, rb_matrix, whitened_data_matrix, beta, E_matrix);
+
+        GSL_SET_COMPLEX (&alpha, 1, 0);
+ 
+	gsl_blas_zgemm (CblasTrans, CblasNoTrans, alpha, E_matrix, vandermonde_matrix, beta, IFOdata[i].roqData->weights);
+
+	printf("weights have been computed");	
 
         printf("IFOdata[%d].whiteFreqData->epoch=%e\n",i,XLALGPSGetREAL8(&IFOdata[i].whiteFreqData->epoch));
         printf("timeMin=%e\tendtime=%e\ttimeMax=%e\n",timeMin,endtime,timeMax);
@@ -1294,9 +1299,8 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
     if(vandermonde_matrix) gsl_matrix_complex_free(vandermonde_matrix);
     if(rb_matrix) gsl_matrix_complex_free(rb_matrix);
     if(rb_matrix){
-    	gsl_vector_complex_free(whitened_data);
-    	gsl_vector_complex_free(weights_row);
-    	gsl_vector_complex_free(E);
+    	gsl_matrix_complex_free(whitened_data_matrix);
+    	gsl_matrix_complex_free(E_matrix);
     }
 
     for(i=0;i<Nifo;i++) {
