@@ -183,7 +183,7 @@ int XLALComputeExtraStatsForToplist ( toplist_t *list,                          
         LALFree(singleSegStatsFileName);
       } /* if outputSingleSegStats */
 
-      void *elemV;
+      void *elemV = NULL;
       if ( listEntryType == 1 ) {
         GCTtopOutputEntry *elem = toplist_elem ( list, j );
         elemV = elem;
