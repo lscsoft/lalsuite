@@ -1199,7 +1199,7 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
       
       for (i=0;i<Nifo;i++) {
         IFOdata[i].roqData = XLALCalloc(1, sizeof(LALInferenceROQData));
-        IFOdata[i].roqData->weights = gsl_matrix_complex_calloc(n_basis,time_steps);
+        IFOdata[i].roqData->weights = gsl_matrix_complex_calloc(time_steps, n_basis);
         IFOdata[i].roqData->hplus = gsl_vector_complex_calloc(n_basis);
         IFOdata[i].roqData->hcross = gsl_vector_complex_calloc(n_basis);
         IFOdata[i].roqData->frequencyNodes = gsl_vector_calloc(n_basis);
@@ -1238,9 +1238,9 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
     	for(unsigned int jj = 0; jj < time_steps; jj++){
 
 		
-		for(unsigned int k = IFOdata[i].fLow/deltaF; k < IFOdata[i].fHigh/deltaF + 1; k++){
+		for(unsigned int k = 0; k < whitened_data->size; k++){
 
-			GSL_SET_COMPLEX(&wd, creal(IFOdata[i].whiteFreqData->data->data[k]), cimag(IFOdata[i].whiteFreqData->data->data[k]));
+			GSL_SET_COMPLEX(&wd, creal(IFOdata[i].whiteFreqData->data->data[k + (unsigned int)(IFOdata[i].fLow/deltaF)]), cimag(IFOdata[i].whiteFreqData->data->data[k + (unsigned int)(IFOdata[i].fLow/deltaF)]));
  
        			gsl_vector_complex_set(whitened_data, k, wd); // FIXME: data*exp(2pi*i*f*tc) / psd
 	
@@ -1256,21 +1256,10 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
         }
 
         int temp_j=10;
-        printf("IFO %d\n",i);
-        printf("IFOdata[%d].oneSidedNoisePowerSpectrum->data->length=%d\n",i,IFOdata[i].oneSidedNoisePowerSpectrum->data->length);
-        printf("IFOdata[%d].oneSidedNoisePowerSpectrum->deltaF=%e\n",i,IFOdata[i].oneSidedNoisePowerSpectrum->deltaF);
-        printf("IFOdata[%d].oneSidedNoisePowerSpectrum->data->data[%d]=%e\n",i,temp_j,IFOdata[i].oneSidedNoisePowerSpectrum->data->data[j]);
-        printf("IFOdata[%d].freqData->data->length=%d\n",i,IFOdata[i].freqData->data->length);
-        printf("IFOdata[%d].freqData->deltaF=%e\n",i,IFOdata[i].freqData->deltaF);
-        printf("IFOdata[%d].freqData->data->data[%d]=%e+i*%e\n",i,temp_j,creal(IFOdata[i].freqData->data->data[j]),cimag(IFOdata[i].freqData->data->data[j]));
-        //printf("gsl_matrix_get(vandermonde_matrix_re, %d, %d)=%e\n",temp_j, temp_j+1,gsl_matrix_get(vandermonde_matrix_re, temp_j, temp_j+1));
-        //printf("gsl_matrix_get(vandermonde_matrix_im, %d, %d)=%e\n",temp_j, temp_j+1,gsl_matrix_get(vandermonde_matrix_im, temp_j, temp_j+1));
-        //printf("gsl_matrix_get(rb_matrix_re, %d, %d)=%e\n",temp_j, temp_j+1,gsl_matrix_get(rb_matrix_re, temp_j, temp_j+1));
-        //printf("gsl_matrix_get(rb_matrix_im, %d, %d)=%e\n",temp_j, temp_j+1,gsl_matrix_get(rb_matrix_im, temp_j, temp_j+1));
-        printf("vandermonde_matrix[%d][%d]=%e+J*%e\n",temp_j, temp_j+1,GSL_REAL(gsl_matrix_complex_get(vandermonde_matrix, temp_j, temp_j+1)),GSL_IMAG(gsl_matrix_complex_get(vandermonde_matrix, temp_j, temp_j+1)));
-        printf("rb_matrix[%d][%d]=%e+J*%e\n",temp_j, temp_j+1,GSL_REAL(gsl_matrix_complex_get(rb_matrix, temp_j, temp_j+1)),GSL_IMAG(gsl_matrix_complex_get(rb_matrix, temp_j, temp_j+1)));
-        printf("gsl_vector_get(IFOdata[i].roqData->frequencyNodes,%d)=%e\n",temp_j,gsl_vector_get(IFOdata[i].roqData->frequencyNodes,temp_j));
+        printf("GSL_REAL(gsl_matrix_complex_get(IFOdata[%d].roqData->weights, 0, %d))=%e\n", i, temp_j, GSL_REAL(gsl_matrix_complex_get(IFOdata[i].roqData->weights, 0, temp_j)));
+	printf("GSL_IMAG(gsl_matrix_complex_get(IFOdata[%d].roqData->weights, 0, %d))=%e\n", i, temp_j, GSL_IMAG(gsl_matrix_complex_get(IFOdata[i].roqData->weights, 0, temp_j)));
         printf("---------\n");
+
      
 
       }
