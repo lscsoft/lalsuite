@@ -11,7 +11,8 @@ check_PROGRAMS = \
 	TestWaveformFromCache \
 	TestPrecessWaveform \
 	TestPrecessWaveformIMRPhenomB \
-	TestPrecessWaveformEOBNR
+	TestPrecessWaveformEOBNR \
+	TestPhenomP
 TESTS = $(check_PROGRAMS)
 
 # disable test programs

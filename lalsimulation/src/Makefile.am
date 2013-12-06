@@ -92,6 +92,7 @@ liblalsimulation_la_SOURCES = \
 	LALSimIMRSpinAlignedEOB.c \
 	LALSimIMRPhenom.c \
 	LALSimIMRPhenomC.c \
+	LALSimIMRPhenomP.c \
 	LALSimIMRPSpinInspiralRD.c \
 	LALSimPhenSpinRingDown.c \
 	LALSimInspiralWaveformFlags.c \

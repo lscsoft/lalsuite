@@ -182,6 +182,62 @@ int XLALSimIMRPhenomCGenerateFD(
 );
 
 /**
+ * Driver routine to compute the plus and cross polarizations for the IMRPhenomP model
+ * for precessing binaries in the frequency domain.
+ *
+ * This function takes effective model parameters that should be computed with
+ * XLALSimIMRPhenomPCalculateModelParameters().
+ *
+ * Reference: http://arxiv.org/abs/1308.3271
+ *
+ */
+
+int XLALSimIMRPhenomP(
+  COMPLEX16FrequencySeries **hptilde,   /**< Output: Frequency-domain waveform h+ */
+  COMPLEX16FrequencySeries **hctilde,   /**< Output: Frequency-domain waveform hx */
+  const REAL8 chi_eff,                  /**< Effective aligned spin */
+  const REAL8 chip,                     /**< Effective spin in the orbital plane */
+  const REAL8 eta,                      /**< Symmetric mass-ratio */
+  const REAL8 thetaJ,                   /**< Angle between J0 and line of sight (z-direction) */
+  const REAL8 phiJ,                     /**< Angle of J0 in the plane of the sky */
+  const REAL8 Mtot_SI,                  /**< Total mass of binary (kg) */
+  const REAL8 distance,                 /**< Distance of source (m) */
+  const REAL8 alpha0,                   /**< Initial value of alpha angle */
+  const REAL8 phic,                     /**< Orbital coalescence phase (rad) */
+  const REAL8 deltaF,                   /**< Sampling frequency (Hz) */
+  const REAL8 f_min,                    /**< Starting GW frequency (Hz) */
+  const REAL8 f_max                    	/**< End frequency; 0 defaults to ringdown cutoff freq */
+);
+
+/**
+ * Function that transforms from the LAL frame to model effective parameters for the IMRPhenomP model.
+ *
+ * Reference: http://arxiv.org/abs/1308.3271
+ *
+ */
+
+int XLALSimIMRPhenomPCalculateModelParameters(
+    REAL8 *chi_eff,                 /**< Output: Effective aligned spin */
+    REAL8 *chip,                    /**< Output: Effective spin in the orbital plane */
+    REAL8 *eta,                     /**< Output: Symmetric mass-ratio */
+    REAL8 *thetaJ,                  /**< Output: Angle between J0 and line of sight (z-direction) */
+    REAL8 *phiJ,                    /**< Output: Angle of J0 in the plane of the sky */
+    REAL8 *alpha0,                  /**< Output: Initial value of alpha angle */
+    const REAL8 m1_SI,              /**< Mass of companion 1 (kg) */
+    const REAL8 m2_SI,              /**< Mass of companion 2 (kg) */
+    const REAL8 f_min,              /**< Starting GW frequency (Hz) */
+    const REAL8 lnhatx,             /**< Initial value of LNhatx: orbital angular momentum unit vector */
+    const REAL8 lnhaty,             /**< Initial value of LNhaty */
+    const REAL8 lnhatz,             /**< Initial value of LNhatz */
+    const REAL8 s1x,                /**< Initial value of s1x: dimensionless spin of BH 1 */
+    const REAL8 s1y,                /**< Initial value of s1y: dimensionless spin of BH 1 */
+    const REAL8 s1z,                /**< Initial value of s1z: dimensionless spin of BH 1 */
+    const REAL8 s2x,                /**< Initial value of s2x: dimensionless spin of BH 2 */
+    const REAL8 s2y,                /**< Initial value of s2y: dimensionless spin of BH 2 */
+    const REAL8 s2z                	/**< Initial value of s2z: dimensionless spin of BH 2 */
+);
+
+/**
  * This function generates the plus and cross polarizations for the dominant
  * (2,2) mode of the EOBNRv2 approximant. This model is defined in Pan et al,
  * arXiv:1106.1021v1 [gr-qc].
