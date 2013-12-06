@@ -255,7 +255,7 @@ static int checkTidesZero(REAL8 lambda1, REAL8 lambda2)
  * Function that gives the default ending frequencies of the given approximant.
  *
  */
-double XLALSimInspiralGetDefaultFinalFreq(
+double XLALSimInspiralGetFinalFreq(
     REAL8 m1,                               /**< mass of companion 1 (kg) */
     REAL8 m2,                               /**< mass of companion 2 (kg) */
     const REAL8 S1x,                              /**< x-component of the dimensionless spin of object 1 */
@@ -267,7 +267,6 @@ double XLALSimInspiralGetDefaultFinalFreq(
     Approximant approximant                 /**< post-Newtonian approximant to use for waveform production */
     )
 {
-
     double  freq;   /* The return value */
 
     /* internal variables */
@@ -296,6 +295,10 @@ double XLALSimInspiralGetDefaultFinalFreq(
         case TaylorT3:
         case TaylorT4:
         case TaylorF2:
+            /* Check that spins are zero */
+            if( !checkSpinsZero(S1x, S1y, S1z, S2x, S2y, S2z) )
+                XLALPrintError("Non-zero spins were given, but this is a non-spinning approximant.\n");
+                XLAL_ERROR(XLAL_EINVAL);
             /* Schwarzschild ISCO */
 	        freq = pow(LAL_C_SI,3) / (pow(6.,3./2.)*LAL_PI*(m1+m2)*LAL_MSUN_SI*LAL_G_SI);
             break;
@@ -316,9 +319,12 @@ double XLALSimInspiralGetDefaultFinalFreq(
                 modeL = 2;
                 modeM = 2;
             }
-            /* Ensure that spins are zero for non-spinning */
             if ( approximant == EOBNRv2 || approximant == EOBNRv2HM )
             {
+                /* Check that spins are zero */
+                if( !checkSpinsZero(S1x, S1y, S1z, S2x, S2y, S2z) )
+                    XLALPrintError("Non-zero spins were given, but this is a non-spinning approximant.\n");
+                    XLAL_ERROR(XLAL_EINVAL);
                 spin1[0] = 0.; spin1[1] = 0.; spin1[2] = 0.;
                 spin2[0] = 0.; spin2[1] = 0.; spin2[2] = 0.;
             }
@@ -339,6 +345,10 @@ double XLALSimInspiralGetDefaultFinalFreq(
             break;
 
         case IMRPhenomA:
+            /* Check that spins are zero */
+            if( !checkSpinsZero(S1x, S1y, S1z, S2x, S2y, S2z) )
+                XLALPrintError("Non-zero spins were given, but this is a non-spinning approximant.\n");
+                XLAL_ERROR(XLAL_EINVAL);
             freq = XLALSimIMRPhenomAGetFinalFreq(m1, m2);
             break;
 
