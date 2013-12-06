@@ -149,7 +149,7 @@ int XLALSimInspiralREAL8WaveTaper(
 /**
  * Gives the default ending frequencies of the given approximant.
  */
-double XLALSimInspiralGetDefaultFinalFreq(
+double XLALSimInspiralGetFinalFreq(
     REAL8 m1,                               /**< mass of companion 1 (kg) */
     REAL8 m2,                               /**< mass of companion 2 (kg) */
     REAL8 S1x,                              /**< x-component of the dimensionless spin of object 1 */
