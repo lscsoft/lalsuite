@@ -242,6 +242,28 @@ double XLALSimIMRPhenomBComputeChi(
 }
 
 /**
+ * Compute the default final frequency 
+ */
+double XLALSimIMRPhenomAGetFinalFreq(
+    const REAL8 m1,
+    const REAL8 m2
+) {
+    BBHPhenomParams *phenomParams;
+    phenomParams = ComputeIMRPhenomAParams(m1, m2);
+    return phenomParams->fCut;
+}
+
+double XLALSimIMRPhenomBGetFinalFreq(
+    const REAL8 m1,
+    const REAL8 m2,
+    const REAL8 chi
+) {
+    BBHPhenomParams *phenomParams;
+    phenomParams = ComputeIMRPhenomBParams(m1, m2, chi);
+    return phenomParams->fCut;
+}
+
+/**
  * Driver routine to compute the spin-aligned, inspiral-merger-ringdown
  * phenomenological waveform IMRPhenomB in the time domain.
  *

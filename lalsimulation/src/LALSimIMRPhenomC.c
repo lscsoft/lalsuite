@@ -491,6 +491,20 @@ int XLALSimIMRPhenomCGenerateFD(
   return status;
 }
 
+/*
+ * Convenience function to quickly find the default final
+ * frequency.
+ */
+double XLALSimIMRPhenomCGetFinalFreq(
+    const REAL8 m1,
+    const REAL8 m2,
+    const REAL8 chi
+) {
+    BBHPhenomCParams *phenomParams;
+    phenomParams = ComputeIMRPhenomCParams(m1, m2, chi);
+    return phenomParams->fCut;
+}
+
 /***********************************************************************************/
 /* The following private function generates the Pre-Merger phase, as defined in    */
 /* Eq. (5.3), (5.9) of the Main paper.                                             */
