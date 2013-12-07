@@ -15,9 +15,13 @@ cmp_CODE="${builddir}lalapps_compareSFTs"
 
 testDIR="./mfdv5_TEST"
 
-if [ -n "${LALPULSAR_DATADIR}" ]; then
-    mfdv4_extra="-E ${LALPULSAR_DATADIR}"
-    mfdv5_extra="-E ${LALPULSAR_DATADIR}"
+if [ -z "${LAL_DATA_PATH}" ]; then
+    echo
+    echo "Need environment-variable LAL_DATA_PATH to be set to include"
+    echo "your ephemeris-directory (e.g. /usr/local/share/lalpulsar)"
+    echo "This might indicate an incomplete LAL+LALPULSAR installation"
+    echo
+    exit 1
 fi
 
 ## cleanup: remove any previous output-SFTs
