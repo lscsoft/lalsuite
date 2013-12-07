@@ -126,6 +126,27 @@ InitDopplerFullScan(LALStatus *status,			/**< pointer to LALStatus structure */
   memcpy ( thisScan->spinRange.fkdot, init->searchRegion.fkdot, sizeof(PulsarSpins) );
   memcpy ( thisScan->spinRange.fkdotBand, init->searchRegion.fkdotBand, sizeof(PulsarSpins) );
 
+
+
+  // check that some old metric-codes aren't used with refTime!=startTime, which they don't handle correctly
+  switch ( thisScan->gridType )
+    {
+    case GRID_METRIC:
+    case GRID_METRIC_SKYFILE:
+    case GRID_SPINDOWN_SQUARE: /* square parameter space */
+    case GRID_SPINDOWN_AGEBRK: /* age-braking index parameter space */
+
+      if ( XLALGPSDiff ( &init->startTime, &init->searchRegion.refTime ) != 0 )
+        {
+          XLALPrintError ("NOTE: gridType={metric,4,spin-square,spin-age-brk} only work for refTime (%f) == startTime (%f)!\n",
+                          XLALGPSGetREAL8(&(init->searchRegion.refTime)), XLALGPSGetREAL8(&(init->startTime)));
+          ABORT ( status, DOPPLERSCANH_EINPUT, DOPPLERSCANH_MSGEINPUT );
+        }
+      break;
+    default:
+      break;
+    }
+
   /* which "class" of template grid to generate?: factored, or full-multidim ? */
   switch ( thisScan->gridType )
     {
