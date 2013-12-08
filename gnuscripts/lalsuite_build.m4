@@ -1,141 +1,166 @@
+# -*- mode: autoconf; -*-
 # lalsuite_build.m4 - top level build macros
 #
-# serial 72
+# serial 73
 
-AC_DEFUN([LALSUITE_ADD_CFLAGS],[
-  # all flags are appended to CPPFLAGS/CFLAGS
-  lalsuite_append="$1"
-  # print diagnostics to config.log
-  $as_echo "$as_me:${as_lineno-$LINENO}: [LALSUITE_ADD_CFLAGS]: before: CPPFLAGS=${CPPFLAGS}" >&AS_MESSAGE_LOG_FD
-  $as_echo "$as_me:${as_lineno-$LINENO}: [LALSUITE_ADD_CFLAGS]: before: CFLAGS=${CFLAGS}" >&AS_MESSAGE_LOG_FD
-  $as_echo "$as_me:${as_lineno-$LINENO}: [LALSUITE_ADD_CFLAGS]: append: ${lalsuite_append}" >&AS_MESSAGE_LOG_FD
-  # CPPFLAGS gets -I and -D, CFLAGS gets everything else
-  # only save unique -I flags in CPPFLAGS; first instance takes precedence
-  # order non-system -I before system -I in CPPFLAGS
-  lalsuite_nonsysI=""
-  lalsuite_sysI=""
-  lalsuite_cppflags=""
-  lalsuite_cflags=""
-  for arg in ${CPPFLAGS} ${CFLAGS} ${lalsuite_append}; do
-    AS_CASE([${arg}],
-      [-I/usr/*|-I/opt/*],[
-        AS_CASE([" ${lalsuite_sysI} "],
-          [*" ${arg} "*],[:],
-          [lalsuite_sysI="${lalsuite_sysI} ${arg}"]
-        )
-      ],
-      [-I*],[
-        AS_CASE([" ${lalsuite_nonsysI} "],
-          [*" ${arg} "*],[:],
-          [lalsuite_nonsysI="${lalsuite_nonsysI} ${arg}"]
-        )
-      ],
-      [-D*],[lalsuite_cppflags="${lalsuite_cppflags} ${arg}"],
-      [lalsuite_cflags="${lalsuite_cflags} ${arg}"]
-    )
-  done
-  CPPFLAGS="${lalsuite_nonsysI} ${lalsuite_sysI} ${lalsuite_cppflags}"
-  CFLAGS="${lalsuite_cflags}"
-  # print diagnostics to config.log
-  $as_echo "$as_me:${as_lineno-$LINENO}: [LALSUITE_ADD_CFLAGS]: after: lalsuite_nonsysI=${lalsuite_nonsysI}" >&AS_MESSAGE_LOG_FD
-  $as_echo "$as_me:${as_lineno-$LINENO}: [LALSUITE_ADD_CFLAGS]: after: lalsuite_sysI=${lalsuite_sysI}" >&AS_MESSAGE_LOG_FD
-  $as_echo "$as_me:${as_lineno-$LINENO}: [LALSUITE_ADD_CFLAGS]: after: lalsuite_cppflags=${lalsuite_cppflags}" >&AS_MESSAGE_LOG_FD
-  $as_echo "$as_me:${as_lineno-$LINENO}: [LALSUITE_ADD_CFLAGS]: after: lalsuite_cflags=${lalsuite_cflags}" >&AS_MESSAGE_LOG_FD
-  $as_echo "$as_me:${as_lineno-$LINENO}: [LALSUITE_ADD_CFLAGS]: after: CPPFLAGS=${CPPFLAGS}" >&AS_MESSAGE_LOG_FD
-  $as_echo "$as_me:${as_lineno-$LINENO}: [LALSUITE_ADD_CFLAGS]: after: CFLAGS=${CFLAGS}" >&AS_MESSAGE_LOG_FD
+# not present in older versions of pkg.m4
+m4_pattern_allow([^PKG_CONFIG(_(PATH|LIBDIR|SYSROOT_DIR|ALLOW_SYSTEM_(CFLAGS|LIBS)))?$])
+m4_pattern_allow([^PKG_CONFIG_(DISABLE_UNINSTALLED|TOP_BUILD_DIR|DEBUG_SPEW)$])
+
+# forbid LALSUITE_... from appearing in output (./configure)
+m4_pattern_forbid([^_?LALSUITE_[A-Z_]+$])
+# apart from LALSUITE_PKG_SUFFIX
+m4_pattern_allow([^LALSUITE_PKG_SUFFIX$])
+
+# list of user variables; see section 4.8.1 of the Autoconf manual
+m4_define([uvar_list],[CPPFLAGS CFLAGS CXXFLAGS FCFLAGS FFLAGS LDFLAGS])
+# prefix used to save/restore user variables in
+m4_define([uvar_orig_prefix],[lalsuite_uvar_])
+m4_define([uvar_prefix],uvar_orig_prefix)
+
+m4_append([AC_INIT],[
+  # just after AC_INIT:
+  # save user-supplied values of user variables
+  m4_foreach_w([uvar],uvar_list,[
+    uvar_prefix[]uvar="${uvar}"
+  ])
+  m4_pushdef([uvar_prefix],uvar_prefix[]p_)
 ])
 
-AC_DEFUN([LALSUITE_ADD_LIBS],[
-  # -l flags and non-flags are prepended to LIBS
-  # all other flags are appended to LDFLAGS
-  lalsuite_prepend=""
-  lalsuite_append=""
-  for arg in $1; do
-    AS_CASE([${arg}],
-      [-l*],[lalsuite_prepend="${lalsuite_prepend} ${arg}"],
-      [-*],[lalsuite_append="${lalsuite_append} ${arg}"],
-      [lalsuite_prepend="${lalsuite_prepend} ${arg}"]
-    )
-  done
-  # print diagnostics to config.log
-  $as_echo "$as_me:${as_lineno-$LINENO}: [LALSUITE_ADD_LIBS]: before: LDFLAGS=${LDFLAGS}" >&AS_MESSAGE_LOG_FD
-  $as_echo "$as_me:${as_lineno-$LINENO}: [LALSUITE_ADD_LIBS]: before: LIBS=${LIBS}" >&AS_MESSAGE_LOG_FD
-  $as_echo "$as_me:${as_lineno-$LINENO}: [LALSUITE_ADD_LIBS]: prepend: ${lalsuite_prepend}" >&AS_MESSAGE_LOG_FD
-  $as_echo "$as_me:${as_lineno-$LINENO}: [LALSUITE_ADD_LIBS]: append: ${lalsuite_append}" >&AS_MESSAGE_LOG_FD
-  # LDFLAGS gets -L and other flags, LIBS gets -l and non-flags
-  # only save unique -L flags in LDFLAGS; first instance takes precedence
-  # order non-system -L before system -L in LDFLAGS
-  # only save unique -l flags in LIBS; last instance takes precedence
-  lalsuite_nonsysL=""
-  lalsuite_sysL=""
-  lalsuite_ldflags=""
-  lalsuite_libs_rev=""
-  for arg in ${lalsuite_prepend} ${LDFLAGS} ${LIBS} ${lalsuite_append}; do
-    AS_CASE([${arg}],
-      [-L/usr/*|-L/opt/*],[
-        AS_CASE([" ${lalsuite_sysL} "],
-          [*" ${arg} "*],[:],
-          [lalsuite_sysL="${lalsuite_sysL} ${arg}"]
-        )
-      ],
-      [-L*],[
-        AS_CASE([" ${lalsuite_nonsysL} "],
-          [*" ${arg} "*],[:],
-          [lalsuite_nonsysL="${lalsuite_nonsysL} ${arg}"]
-        )
-      ],
-      [-l*],[lalsuite_libs_rev="${arg} ${lalsuite_libs_rev}"],
-      [-*],[lalsuite_ldflags="${lalsuite_ldflags} ${arg}"],
-      [lalsuite_libs_rev="${arg} ${lalsuite_libs_rev}"]
-    )
-  done
-  lalsuite_libs=""
-  for arg in ${lalsuite_libs_rev}; do
-    AS_CASE([" ${lalsuite_libs} "],
-      [*" ${arg} "*],[:],
-      [lalsuite_libs="${arg} ${lalsuite_libs}"]
-    )
-  done
-  LDFLAGS="${lalsuite_nonsysL} ${lalsuite_sysL} ${lalsuite_ldflags}"
-  LIBS="${lalsuite_libs}"
-  # print diagnostics to config.log
-  $as_echo "$as_me:${as_lineno-$LINENO}: [LALSUITE_ADD_LIBS]: after: lalsuite_nonsysL=${lalsuite_nonsysL}" >&AS_MESSAGE_LOG_FD
-  $as_echo "$as_me:${as_lineno-$LINENO}: [LALSUITE_ADD_LIBS]: after: lalsuite_sysL=${lalsuite_sysL}" >&AS_MESSAGE_LOG_FD
-  $as_echo "$as_me:${as_lineno-$LINENO}: [LALSUITE_ADD_LIBS]: after: lalsuite_ldflags=${lalsuite_ldflags}" >&AS_MESSAGE_LOG_FD
-  $as_echo "$as_me:${as_lineno-$LINENO}: [LALSUITE_ADD_LIBS]: after: lalsuite_libs=${lalsuite_libs}" >&AS_MESSAGE_LOG_FD
-  $as_echo "$as_me:${as_lineno-$LINENO}: [LALSUITE_ADD_LIBS]: after: LDFLAGS=${LDFLAGS}" >&AS_MESSAGE_LOG_FD
-  $as_echo "$as_me:${as_lineno-$LINENO}: [LALSUITE_ADD_LIBS]: after: LIBS=${LIBS}" >&AS_MESSAGE_LOG_FD
+AC_DEFUN([_LALSUITE_PRE_PROG_COMPILERS],[
+  # $0: just before LALSUITE_PROG_COMPILERS:
+  # save current values of user variables, then unset them
+  m4_foreach_w([uvar],uvar_list,[
+    uvar_prefix[]uvar="${uvar}"
+    AS_UNSET(uvar)
+  ])
+  m4_pushdef([uvar_prefix],uvar_prefix[]p_)
+  # end $0
 ])
 
-AC_DEFUN([LALSUITE_WITH_CFLAGS_LIBS],[
-  AC_ARG_WITH([cflags],
-    AC_HELP_STRING([--with-cflags=CFLAGS],[C preprocessor/compiler flags]),
-    AS_IF([test "x${with_cflags}" != x],[
-      CPPFLAGS=
-      CFLAGS=
-      LALSUITE_ADD_CFLAGS(${with_cflags})
+AC_DEFUN([_LALSUITE_POST_PROG_COMPILERS],[
+  # $0: just after LALSUITE_PROG_COMPILERS:
+  # save current values of user variables, as set
+  # during compiler configuration
+  m4_popdef([uvar_prefix])
+  m4_foreach_w([uvar],uvar_list,[
+    lalsuite_compiler_[]uvar="${uvar}"
+   _AS_ECHO_LOG([compiler configuration set uvar=${uvar}])
+    uvar="${uvar_prefix[]uvar}"
+  ])
+  # end $0
+])
+
+m4_rename([AC_OUTPUT],[lalsuite_AC_OUTPUT])
+AC_DEFUN([AC_OUTPUT],[
+  # just before AC_OUTPUT:
+  # check for unbalanced LALSUITE_{PUSH,POP}_UVAR pairs
+  m4_popdef([uvar_prefix])
+  m4_if(uvar_prefix,uvar_orig_prefix,[],[
+    m4_fatal([unbalanced LALSUITE_{PUSH,POP}_UVAR pairs])
+  ])
+  # prepend compiler configuration e.g. CFLAGS to AM_CFLAGS,
+  # then restore original user-supplied values of user variables
+  m4_foreach_w([uvar],uvar_list,[
+    AM_[]uvar="${lalsuite_compiler_[]uvar} ${AM_[]uvar}"
+    uvar="${uvar_prefix[]uvar}"
+  ])
+  # call original AC_OUTPUT
+  lalsuite_AC_OUTPUT
+])
+
+AC_DEFUN([LALSUITE_PUSH_UVARS],[
+  # $0: save current values of user variables and LIBS
+  m4_foreach_w([uvar],uvar_list[ LIBS],[
+    uvar_prefix[]uvar="${uvar}"
+    uvar_prefix[]uvar[]_lineno=$LINENO; _AS_ECHO_LOG([pushed uvar=${uvar}])
+  ])
+  m4_pushdef([uvar_prefix],uvar_prefix[]p_)
+  # end $0
+])
+
+AC_DEFUN([LALSUITE_CLEAR_UVARS],[
+  # $0: clear current values of user variables and LIBS
+  m4_foreach_w([uvar],uvar_list[ LIBS],[
+    AS_UNSET(uvar)
+  ])
+  # end $0
+])
+
+AC_DEFUN([LALSUITE_POP_UVARS],[
+  # $0: restore previous values of user variables and LIBS
+  m4_popdef([uvar_prefix])
+  m4_foreach_w([uvar],uvar_list[ LIBS],[
+    uvar="${uvar_prefix[]uvar}"
+   _AS_ECHO_LOG([popped uvar from line ${uvar_prefix[]uvar[]_lineno}])
+  ])
+  # end $0
+])
+
+AC_DEFUN([LALSUITE_ADD_FLAGS],[
+  # $0: prepend flags to AM_CPPFLAGS/AM_$1FLAGS/AM_LDFLAGS/LIBS,
+  # and update values of CPPFLAGS/$1FLAGS/LDFLAGS for Autoconf tests
+  m4_ifval([$1],[m4_ifval([$2],[
+    prepend_CPPFLAGS=
+    prepend_$1FLAGS=
+    for flag in $2; do
+      # AM_CPPFLAGS gets -I and -D flags, AM_$1FLAGS gets everything else from $2
+      AS_CASE([${flag}],
+        [-I*|-D*],[prepend_CPPFLAGS="${prepend_CPPFLAGS} ${flag}"],
+        [prepend_$1FLAGS="${prepend_$1FLAGS} ${flag}"]
+      )
+    done
+    AS_IF([test "x${prepend_CPPFLAGS}" != x],[
+      AC_SUBST([AM_CPPFLAGS],["${prepend_CPPFLAGS} ${AM_CPPFLAGS}"])
+      _AS_ECHO_LOG([prepended ${prepend_CPPFLAGS} to AM_CPPFLAGS])
+      CPPFLAGS="${AM_CPPFLAGS} ${uvar_orig_prefix[]CPPFLAGS}"
     ])
-  )
-  AC_ARG_WITH([extra_cflags],
-    AC_HELP_STRING([--with-extra-cflags=CFLAGS],[extra C preprocessor/compiler flags]),
-    AS_IF([test "x${with_extra_cflags}" != x],[
-      LALSUITE_ADD_CFLAGS(${with_extra_cflags})
+    AS_IF([test "x${prepend_$1FLAGS}" != x],[
+      AC_SUBST([AM_$1FLAGS],["${prepend_$1FLAGS} ${AM_$1FLAGS}"])
+      _AS_ECHO_LOG([prepended ${prepend_$1FLAGS} to AM_$1FLAGS])
+      $1FLAGS="${AM_$1FLAGS} ${uvar_orig_prefix[]$1FLAGS}"
     ])
-  )
-  AC_ARG_WITH([libs],
-    AC_HELP_STRING([--with-libs=LIBS],[linker flags]),
-    AS_IF([test "x${with_libs}" != x],[
-      LDFLAGS=
-      LIBS=
-      LALSUITE_ADD_LIBS(${with_libs})
+  ])])
+  m4_ifval([$3],[
+    prepend_LDFLAGS=
+    prepend_LIBS=
+    for flag in $3; do
+      # LIBS gets -l flags and .la files, AM_LDFLAGS gets everything else from $3
+      AS_CASE([${flag}],
+        [-l*|*.la],[prepend_LIBS="${prepend_LIBS} ${flag}"],
+        [prepend_LDFLAGS="${prepend_LDFLAGS} ${flag}"]
+      )
+    done
+    AS_IF([test "x${prepend_LDFLAGS}" != x],[
+      AC_SUBST([AM_LDFLAGS],["${prepend_LDFLAGS} ${AM_LDFLAGS}"])
+      _AS_ECHO_LOG([prepended ${prepend_LDFLAGS} to AM_LDFLAGS])
+      LDFLAGS="${AM_LDFLAGS} ${uvar_orig_prefix[]LDFLAGS}"
     ])
-  )
-  AC_ARG_WITH([extra_libs],
-    AC_HELP_STRING([--with-extra-libs=LIBS],[extra linker flags]),
-    AS_IF([test "x${with_extra_libs}" != x],[
-      LALSUITE_ADD_LIBS(${with_extra_libs})
+    AS_IF([test "x${prepend_LIBS}" != x],[
+      LIBS="${prepend_LIBS} ${LIBS}"
+      _AS_ECHO_LOG([prepended ${prepend_LIBS} to LIBS])
     ])
-  )
+  ])
+  # end $0
+])
+
+AC_DEFUN([LALSUITE_ADD_PATH],[
+  # $0: prepend path to $1, removing duplicates, first value taking precedence
+  tokens=$2
+  tokens=`echo ${tokens} ${$1} | sed 's/:/ /g'`
+  $1=
+  for token in ${tokens}; do
+    AS_CASE([":${$1}:"],
+      [*:${token}:*],[:],
+      AS_IF([test "x${$1}" = x],[
+        $1="${token}"
+      ],[
+        $1="${$1}:${token}"
+      ])
+    )
+  done
+  _AS_ECHO_LOG([$1=${$1}])
+  # end $0
 ])
 
 AC_DEFUN([LALSUITE_CHECK_GIT_REPO],[
@@ -176,20 +201,20 @@ AC_DEFUN([LALSUITE_REQUIRE_F77],[
   lalsuite_require_f77=true
 ])
 
-# because we want to decide whether to run AC_PROG_CXX/AC_PROG_CXXCPP
-# at ./configure run time, we must erase the following macros, which
-# (in autoconf 2.64 and later) require AC_PROG_CXX/AC_PROG_CXXCPP to
-# be AC_REQUIRE'd at ./configure build time, regardless of whether
-# they're needed or not (which is only decided later at run time).
-m4_defun([AC_LANG_COMPILER(C++)],[])
-m4_defun([AC_LANG_PREPROC(C++)],[])
-# Same for Fortran compilers
-m4_defun([AC_LANG_COMPILER(Fortran 77)],[])
-m4_defun([AC_LANG_PREPROC(Fortran 77)],[])
-m4_defun([AC_LANG_COMPILER(Fortran)],[])
-m4_defun([AC_LANG_PREPROC(Fortran)],[])
+# because we want to conditionally decide whether to check for
+# C++/Fortran compilers only at ./configure run time, we must erase the
+# following macros; in Autoconf 2.64 and later, they AC_REQUIRE the
+# C++/Fortran AC_PROG_... macros, which forces the C++/Fortran compilers
+# to always be checked for, which prevents us from instead conditionally
+# deciding that at ./configure run time
+m4_foreach([lang],[[C++],[Fortran 77],[Fortran]],[
+  m4_defun([AC_LANG_COMPILER(]lang[)],[])
+  m4_defun([AC_LANG_PREPROC(]lang[)],[])
+])
 
 AC_DEFUN([LALSUITE_PROG_COMPILERS],[
+  AC_REQUIRE([_LALSUITE_PRE_PROG_COMPILERS])
+
   # check for C99 compiler
   AC_REQUIRE([AC_PROG_CC])
   AC_REQUIRE([AC_PROG_CC_C99])
@@ -214,7 +239,7 @@ AC_DEFUN([LALSUITE_PROG_COMPILERS],[
   ],[
     CXX=
     CXXCPP=
-    AM_CONDITIONAL([am__fastdepCXX],[test 1 == 0])
+    AM_CONDITIONAL([am__fastdepCXX],[false])
   ])
 
   # check complex numbers
@@ -229,13 +254,9 @@ AC_DEFUN([LALSUITE_PROG_COMPILERS],[
   ],[
     F77=
   ])
-])
 
-AC_DEFUN([LALSUITE_PROG_INSTALL],[
-  # check for installer
-  AC_REQUIRE([AC_PROG_INSTALL])
-  # add -C to preserve timestamps
-  INSTALL="${INSTALL} -C"
+  _LALSUITE_POST_PROG_COMPILERS
+  # end $0
 ])
 
 AC_DEFUN([LALSUITE_USE_LIBTOOL],
@@ -251,11 +272,6 @@ AC_PROVIDE_IFELSE([AC_PROG_CXX],
 ])])[]dnl
 AC_LANG(_AC_LANG)[]dnl
 ]) # LALSUITE_USE_LIBTOOL
-
-AC_DEFUN([LALSUITE_ARG_VAR],[
-  AC_ARG_VAR(LALSUITE_BUILD,[Set if part of lalsuite build])
-  AC_ARG_VAR(LALSUITE_SUBDIRS,[Set to subdirs configured by lalsuite])
-])
 
 AC_DEFUN([LALSUITE_MULTILIB_LIBTOOL_HACK],
 [## $0: libtool incorrectly determine library path on SL6
@@ -297,82 +313,127 @@ AC_DEFUN([LALSUITE_DISTCHECK_CONFIGURE_FLAGS],[
 ])
 
 AC_DEFUN([LALSUITE_ENABLE_MODULE],[
-AM_CONDITIONAL([$1],[test x$$2 = xtrue])
-eval $1_ENABLE_VAL="`eval test "$$2" = "true" && echo "ENABLED" || echo "DISABLED"`"
+  # $0: enable/disable module $1
+  m4_pushdef([lowercase],m4_translit([[$1]], [A-Z], [a-z]))
+  m4_pushdef([uppercase],m4_translit([[$1]], [a-z], [A-Z]))
+  AM_CONDITIONAL(uppercase,[test "x${lowercase}" = xtrue])
+  AS_IF([test "${lowercase}" = "true"],[
+    uppercase[]_ENABLE_VAL=ENABLED
+  ],[
+    uppercase[]_ENABLE_VAL=DISABLED
+  ])
+  _AS_ECHO_LOG([module $1 is ${]uppercase[_ENABLE_VAL}])
+  m4_popdef([lowercase])
+  m4_popdef([uppercase])
+  # end $0
 ])
 
 AC_DEFUN([LALSUITE_CHECK_LIB],[
-m4_pushdef([lowercase],translit([[$1]], [A-Z], [a-z]))
-m4_pushdef([uppercase],translit([[$1]], [a-z], [A-Z]))
-PKG_CHECK_MODULES(uppercase,[lowercase >= $2],[lowercase="true"
-  if test "x${uppercase[]_DATADIR}" = x; then
-    uppercase[]_DATADIR=`${PKG_CONFIG} --variable=pkgdatadir "lowercase >= $2" 2>/dev/null`
-  fi
-],[lowercase="false"])
-if test "$lowercase" = "true"; then
-  LALSUITE_ADD_CFLAGS(${uppercase[]_CFLAGS})
-  LALSUITE_ADD_LIBS(${uppercase[]_LIBS})
-  LALSUITE_CHECKED_LIBS="${LALSUITE_CHECKED_LIBS} lowercase"
-  if test "$LALSUITE_BUILD" = "true"; then
+  # $0: check for LAL library
+  AC_REQUIRE([PKG_PROG_PKG_CONFIG])
+  m4_pushdef([lowercase],m4_translit([[$1]], [A-Z], [a-z]))
+  m4_pushdef([uppercase],m4_translit([[$1]], [a-z], [A-Z]))
+
+  # build pkg-config library name and version
+  AC_ARG_VAR([LALSUITE_PKG_SUFFIX],[suffix to add to LALSuite pkg-config library names])
+  lal_pkg="lowercase[]${LALSUITE_PKG_SUFFIX} >= $2"
+
+  # substitute required library version in pkg-config files
+  AC_SUBST(uppercase[]_VERSION,[$2])
+
+  # set up pkg-config environment
+  export PKG_CONFIG_PATH
+  AS_UNSET([PKG_CONFIG_DISABLE_UNINSTALLED])
+  AS_UNSET([PKG_CONFIG_ALLOW_SYSTEM_CFLAGS])
+  AS_UNSET([PKG_CONFIG_ALLOW_SYSTEM_LIBS])
+
+  # check for $1
+  AC_MSG_CHECKING([for ${lal_pkg}])
+  lal_pkg_errors=`${PKG_CONFIG} --print-errors --cflags "${lal_pkg}" 2>&1 >/dev/null`
+  AS_IF([test "x${lal_pkg_errors}" = x],[
+    lowercase=true
+    AC_MSG_RESULT([yes])
+
+    # define that we have $1 in the configuration header
     AC_DEFINE([HAVE_LIB]uppercase,[1],[Define to 1 if you have the $1 library])
-    lowercase="true"
-  else
-    AC_CHECK_LIB(lowercase,[$3],[lowercase="true"],[AC_MSG_ERROR([could not find the $1 library])])
-    AC_CHECK_HEADERS([$4],,[AC_MSG_ERROR([could not find the $4 header])])
-    if test "$1" != "LALSupport"; then
-      LALSUITE_HEADER_LIBRARY_MISMATCH_CHECK([$1])
-    fi
-    AC_DEFINE([HAVE_LIB]uppercase,[1],[Define to 1 if you have the $1 library])
-  fi
-else
-  AC_MSG_ERROR([could not find the $1 library])
-fi
-m4_if(lowercase,[lalsupport],[],[
-  AC_ARG_VAR(uppercase[]_DATADIR, [data directory for ]uppercase[, overriding pkg-config])
+
+    # add $1 to list of LALSuite libraries
+    lalsuite_libs="${lalsuite_libs} lowercase"
+
+    # add $1 compiler and linker flags to CPPFLAGS/CFLAGS/LDFLAGS/LIBS
+    LALSUITE_ADD_FLAGS([C],[`${PKG_CONFIG} --cflags "${lal_pkg}"`],[`${PKG_CONFIG} --libs "${lal_pkg}"`])
+
+    # add $1 include flags, including system directories, to LAL_INCLUDES_WITH_SYS_DIRS
+    PKG_CONFIG_ALLOW_SYSTEM_CFLAGS=1
+    export PKG_CONFIG_ALLOW_SYSTEM_CFLAGS
+    LAL_INCLUDES_WITH_SYS_DIRS=`${PKG_CONFIG} --cflags-only-I "${lal_pkg}"`" ${LAL_INCLUDES_WITH_SYS_DIRS}"
+    AS_UNSET([PKG_CONFIG_ALLOW_SYSTEM_CFLAGS])
+    AC_SUBST([LAL_INCLUDES_WITH_SYS_DIRS])
+
+    # add $1 data path to LAL_DATA_PATH
+    LALSUITE_ADD_PATH(LAL_DATA_PATH,`${PKG_CONFIG} --variable=LAL_DATA_PATH "${lal_pkg}"`)
+    AC_SUBST([LAL_DATA_PATH])
+
+    # add $1 Octave extension path to LAL_OCTAVE_PATH
+    LALSUITE_ADD_PATH(LAL_OCTAVE_PATH,`${PKG_CONFIG} --variable=LAL_OCTAVE_PATH "${lal_pkg}"`)
+    AC_SUBST([LAL_OCTAVE_PATH])
+
+    # add $1 Python extension path to LAL_PYTHON_PATH
+    LALSUITE_ADD_PATH(LAL_PYTHON_PATH,`${PKG_CONFIG} --variable=LAL_PYTHON_PATH "${lal_pkg}"`)
+    AC_SUBST([LAL_PYTHON_PATH])
+
+    AS_IF([${PKG_CONFIG} --uninstalled "${lal_pkg}"],[
+
+      # if $1 is not installed, add .pc.in file to ./config.status dependencies
+      lal_pkg_pcin_dir=`${PKG_CONFIG} --variable=abs_top_srcdir "${lal_pkg}"`
+      lal_pkg_pcin_file="${lal_pkg_pcin_dir}/lowercase[]${LALSUITE_PKG_SUFFIX}.pc.in"
+      AS_IF([test ! -f "${lal_pkg_pcin_file}"],[
+        AC_MSG_ERROR([could not find file ${lal_pkg_pcin_file}])
+      ])
+      CONFIG_STATUS_DEPENDENCIES="${CONFIG_STATUS_DEPENDENCIES} ${lal_pkg_pcin_file}"
+      AC_SUBST([CONFIG_STATUS_DEPENDENCIES])
+
+    ],[
+
+      # if $1 is installed, check linking, headers, and VCS info consistency
+      AC_CHECK_LIB(lowercase,[$3],[:],[AC_MSG_ERROR([could not link against the $1 library])])
+      AC_CHECK_HEADERS([$4],[:],[AC_MSG_ERROR([could not find the $1 header $4])])
+      AS_IF([test x`${PKG_CONFIG} --variable=no_header_library_mismatch_check "${lal_pkg}"` != xyes],[
+        LALSUITE_HEADER_LIBRARY_MISMATCH_CHECK([$1])
+      ])
+
+    ])
+
+  ],[
+    lowercase=false
+    AC_MSG_RESULT([no])
+    AC_MSG_ERROR([could not find the $1 library
+
+${lal_pkg_errors}
 ])
-m4_popdef([lowercase])
-m4_popdef([uppercase])
+  ])
+
+  m4_popdef([lowercase])
+  m4_popdef([uppercase])
+  # end $0
 ])
 
 AC_DEFUN([LALSUITE_CHECK_OPT_LIB],[
-m4_pushdef([lowercase],translit([[$1]], [A-Z], [a-z]))
-m4_pushdef([uppercase],translit([[$1]], [a-z], [A-Z]))
-if test "$lowercase" = "true"; then
-  PKG_CHECK_MODULES(uppercase,[lowercase >= $2],[lowercase="true"
-    if test "x${uppercase[]_DATADIR}" = x; then
-      uppercase[]_DATADIR=`${PKG_CONFIG} --variable=pkgdatadir "lowercase >= $2" 2>/dev/null`
-    fi
-  ],[lowercase="false"])
-  if test "$lowercase" = "true"; then
-    LALSUITE_ADD_CFLAGS(${uppercase[]_CFLAGS})
-    LALSUITE_ADD_LIBS(${uppercase[]_LIBS})
-    LALSUITE_CHECKED_LIBS="${LALSUITE_CHECKED_LIBS} lowercase"
-    if test "$LALSUITE_BUILD" = "true"; then
-      AC_DEFINE([HAVE_LIB]uppercase,[1],[Define to 1 if you have the $1 library])
-      lowercase="true"
-    else
-      AC_CHECK_LIB(lowercase,[$3],[lowercase="true"],[lowercase=false
-        AC_MSG_WARN([could not find the $1 library])])
-      if test "$lowercase" = true; then
-        AC_CHECK_HEADERS([$4],,[lowercase=false])
-        if test "$lowercase" = true; then
-          if test "$1" != "LALSupport"; then
-            LALSUITE_HEADER_LIBRARY_MISMATCH_CHECK([$1])
-          fi
-          if test "$lowercase" = true; then
-            AC_DEFINE([HAVE_LIB]uppercase,[1],[Define to 1 if you have the $1 library])
-          fi
-        fi
-      fi
-    fi
-  fi
-fi
-LALSUITE_ENABLE_MODULE(uppercase,lowercase)
-m4_if(lowercase,[lalsupport],[],[
-  AC_ARG_VAR(uppercase[]_DATADIR, [data directory for ]uppercase[, overriding pkg-config])
-])
-m4_popdef([lowercase])
-m4_popdef([uppercase])
+  # $0: check for optional LAL library
+  m4_pushdef([lowercase],m4_translit([[$1]], [A-Z], [a-z]))
+  m4_pushdef([uppercase],m4_translit([[$1]], [a-z], [A-Z]))
+
+  # optional check for $1
+  AS_IF([test "${lowercase}" = "true"],[
+    LALSUITE_CHECK_LIB($1,$2,$3,$4)
+  ])
+
+  # enable/disable $1
+  LALSUITE_ENABLE_MODULE($1)
+
+  m4_popdef([lowercase])
+  m4_popdef([uppercase])
+  # end $0
 ])
 
 AC_DEFUN([LALSUITE_HEADER_LIBRARY_MISMATCH_CHECK],[
@@ -687,8 +748,7 @@ AC_ARG_WITH(
     )
     CUDA_LIBS="-L${cuda_path}/${cuda_libdir} -Wl,-rpath -Wl,${cuda_path}/${cuda_libdir} -lcufft -lcudart"
     CUDA_CFLAGS="-I${with_cuda}/include"
-    LALSUITE_ADD_LIBS(${CUDA_LIBS})
-    LALSUITE_ADD_CFLAGS(${CUDA_CFLAGS})
+    LALSUITE_ADD_FLAGS([C],${CUDA_CFLAGS},${CUDA_LIBS})
     AC_SUBST(CUDA_LIBS)
     AC_SUBST(CUDA_CFLAGS)
     AC_PATH_PROGS(NVCC,[nvcc],[],[${cuda_path}/bin:${PATH}])
@@ -696,7 +756,7 @@ AC_ARG_WITH(
       AC_MSG_ERROR([could not find 'nvcc' in path])
     ])
   ])
-  LALSUITE_ENABLE_MODULE([CUDA],[cuda])
+  LALSUITE_ENABLE_MODULE([CUDA])
 ])
 
 AC_DEFUN([LALSUITE_ENABLE_FAST_GSL],

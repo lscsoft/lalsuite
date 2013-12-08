@@ -1,4 +1,4 @@
-AM_CPPFLAGS = -I$(top_builddir)/include -DPKG_DATA_DIR='"$(pkgdatadir)/"'
+AM_CPPFLAGS = @AM_CPPFLAGS@ -I$(top_builddir)/include -DPKG_DATA_DIR='"$(pkgdatadir)/"'
 LDADD = liblalframe.la
 
 bin_PROGRAMS = \
@@ -67,7 +67,7 @@ noinst_HEADERS = \
 	LALFrStreamReadFS_source.c \
 	LALFrameIO_source.c
 
-liblalframe_la_LDFLAGS = -version-info $(LIBVERSION)
+liblalframe_la_LDFLAGS = $(AM_LDFLAGS) -version-info $(LIBVERSION)
 
 MOSTLYCLEANFILES = \
 	lalframe-user-env.shell \

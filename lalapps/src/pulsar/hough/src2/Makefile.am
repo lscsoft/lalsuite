@@ -1,7 +1,7 @@
 ## Process this file with automake to produce Makefile.in
 
 # for using lalapps-defines + functions
-AM_CPPFLAGS = -I$(top_srcdir)/src -I$(top_srcdir)/src/lalapps -I$(top_srcdir)/src/pulsar/FDS_isolated -DPKG_DATA_DIR='"$(pkgdatadir)/"'
+AM_CPPFLAGS = @AM_CPPFLAGS@ -I$(top_srcdir)/src -I$(top_srcdir)/src/lalapps -I$(top_srcdir)/src/pulsar/FDS_isolated -DPKG_DATA_DIR='"$(pkgdatadir)/"'
 LDADD = $(top_builddir)/src/lalapps/liblalapps.la
 
 ## Compiling with OpenCL on Linux
@@ -117,7 +117,9 @@ erp_execinfo_plus.o: EinsteinAtHome/erp_execinfo_plus.c
 TESTS = testRecalcHS.sh
 EXTRA_DIST = testRecalcHS.sh
 
-TESTS_ENVIRONMENT = LAL_DEBUG_LEVEL=memdbg LALPULSAR_DATADIR="$(LALPULSAR_DATADIR)"
+TESTS_ENVIRONMENT = \
+	LAL_DEBUG_LEVEL=memdbg; export LAL_DEBUG_LEVEL; \
+	LAL_DATA_PATH="$(LAL_DATA_PATH)"; export LAL_DATA_PATH;
 
 ## make sure lalapps.la is rebuilt when appropriate
 BUILT_SOURCES =

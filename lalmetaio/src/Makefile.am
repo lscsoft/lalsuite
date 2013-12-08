@@ -1,4 +1,4 @@
-AM_CPPFLAGS = -I$(top_builddir)/include -DPKG_DATA_DIR='"$(pkgdatadir)/"'
+AM_CPPFLAGS = @AM_CPPFLAGS@ -I$(top_builddir)/include -DPKG_DATA_DIR='"$(pkgdatadir)/"'
 
 lalmetaioincludedir = $(includedir)/lal
 lalmetaioinclude_HEADERS = \
@@ -23,7 +23,7 @@ liblalmetaio_la_SOURCES = \
 	LIGOLwXMLRead.c \
 	LIGOMetadataUtils.c
 
-liblalmetaio_la_LDFLAGS = -version-info $(LIBVERSION)
+liblalmetaio_la_LDFLAGS = $(AM_LDFLAGS) -version-info $(LIBVERSION)
 
 EXTRA_DIST = \
 	LALMetaIOConfig.h.in \

@@ -22,6 +22,7 @@ SUBDIRS = \
 
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = lalxml.pc
+noinst_DATA = lalxml-uninstalled.pc
 
 DISTCLEANFILES = config.lt
 

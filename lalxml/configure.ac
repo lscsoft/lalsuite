@@ -7,6 +7,7 @@ AC_CONFIG_MACRO_DIR([gnuscripts])
 AC_CONFIG_FILES([ \
   lalxml.spec \
   lalxml.pc \
+  lalxml-uninstalled.pc \
   Makefile \
   gnuscripts/Makefile \
   debian/Makefile \
@@ -24,10 +25,8 @@ AM_INIT_AUTOMAKE([1.11 foreign subdir-objects color-tests parallel-tests])
 
 AC_CANONICAL_HOST
 
-LALSUITE_ARG_VAR
 LALSUITE_CHECK_GIT_REPO
 LALSUITE_DISTCHECK_CONFIGURE_FLAGS
-LALSUITE_WITH_CFLAGS_LIBS
 
 # set library api info
 # 1. start with version information of "0:0:0" for each libtool library
@@ -92,7 +91,7 @@ AM_SILENT_RULES([yes])
 LALSUITE_PROG_COMPILERS
 
 # checks for programs
-LALSUITE_PROG_INSTALL
+AC_PROG_INSTALL
 AC_PROG_LN_S
 AC_PROG_AWK
 AC_PROG_SED
@@ -112,8 +111,7 @@ AC_CHECK_LIB([m],[main],,[AC_MSG_ERROR([could not find the math library])])
 
 # check for libxml2
 PKG_CHECK_MODULES([LIBXML2],[libxml-2.0 >= 2.6],[true],[false])
-LALSUITE_ADD_CFLAGS(${LIBXML2_CFLAGS})
-LALSUITE_ADD_LIBS(${LIBXML2_LIBS})
+LALSUITE_ADD_FLAGS([C],[${LIBXML2_CFLAGS}],[${LIBXML2_LIBS}])
 AC_CHECK_LIB([xml2],[xmlInitParser],,[AC_MSG_ERROR([cannot find the xml2 library])])
 
 # check for libxml2 headers
@@ -121,8 +119,7 @@ AC_CHECK_HEADERS([libxml/tree.h],,[AC_MSG_ERROR([could not find the libxml/tree.
 
 # check for gsl
 PKG_CHECK_MODULES([GSL],[gsl],[true],[false])
-LALSUITE_ADD_CFLAGS(${GSL_CFLAGS})
-LALSUITE_ADD_LIBS(${GSL_LIBS})
+LALSUITE_ADD_FLAGS([C],[${GSL_CFLAGS}],[${GSL_LIBS}])
 AC_CHECK_LIB([gslcblas],[main],,[AC_MSG_ERROR([could not find the gsl library])])
 AC_CHECK_LIB([gsl],[gsl_strerror],,[AC_MSG_ERROR([could not find the gsl library])])
 LALSUITE_ENABLE_FAST_GSL
@@ -145,13 +142,10 @@ LALSUITE_ADD_GCC_FLAGS
 # RedHat-derived systems.
 AC_SUBST([pkgpythondir], ["\${pkgpyexecdir}"])
 
-# ensure CPPFLAGS/CFLAGS and LDFLAGS/LIBS are in correct order
-LALSUITE_ADD_CFLAGS()
-LALSUITE_ADD_LIBS()
-
-# output
 LAL_HEADER_LINK=${ac_aux_dir}/header-link.mk
 AC_SUBST_FILE([LAL_HEADER_LINK])
+
+# output
 AC_OUTPUT
 echo "
 ==================================================

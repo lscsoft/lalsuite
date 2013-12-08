@@ -1,4 +1,4 @@
-AM_CPPFLAGS = -I$(top_builddir)/include -DPKG_DATA_DIR='"$(pkgdatadir)/"'
+AM_CPPFLAGS = @AM_CPPFLAGS@ -I$(top_builddir)/include -DPKG_DATA_DIR='"$(pkgdatadir)/"'
 
 lalxmlincludedir = $(includedir)/lal
 lalxmlinclude_HEADERS = \
@@ -16,7 +16,7 @@ liblalxml_la_SOURCES = \
 	LALXMLVCSInfo.c \
 	LALXMLVOTableCommon.c \
 	LALXMLVOTableSerializers.c
-liblalxml_la_LDFLAGS = -version-info $(LIBVERSION)
+liblalxml_la_LDFLAGS = $(AM_LDFLAGS) -version-info $(LIBVERSION)
 
 MOSTLYCLEANFILES = \
 	lalxml-user-env.shell \

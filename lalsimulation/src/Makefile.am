@@ -1,4 +1,4 @@
-AM_CPPFLAGS = -I$(top_builddir)/include -DPKG_DATA_DIR='"$(pkgdatadir)/"'
+AM_CPPFLAGS = @AM_CPPFLAGS@ -I$(top_builddir)/include -DPKG_DATA_DIR='"$(pkgdatadir)/"'
 LDADD = liblalsimulation.la
 
 NOISEPSDFILES = \
@@ -128,7 +128,7 @@ liblalsimulation_la_SOURCES = \
 	check_series_macros.h \
 	unicorn.xpm
 
-liblalsimulation_la_LDFLAGS = -version-info $(LIBVERSION)
+liblalsimulation_la_LDFLAGS = $(AM_LDFLAGS) -version-info $(LIBVERSION)
 
 lalsim_bh_qnmode_SOURCES = bh_qnmode.c
 lalsim_bh_sphwf_SOURCES = bh_sphwf.c

@@ -1,4 +1,4 @@
-AM_CPPFLAGS = -I$(top_builddir)/include -DPKG_DATA_DIR='"$(pkgdatadir)/"'
+AM_CPPFLAGS = @AM_CPPFLAGS@ -I$(top_builddir)/include -DPKG_DATA_DIR='"$(pkgdatadir)/"'
 
 lalstochasticincludedir = $(includedir)/lal
 lalstochasticinclude_HEADERS = \
@@ -28,7 +28,7 @@ liblalstochastic_la_SOURCES = \
 	StochasticOptimalFilter.c \
 	StochasticOptimalFilterNormalization.c \
 	ZeroPadAndFFT.c
-liblalstochastic_la_LDFLAGS = -version-info $(LIBVERSION)
+liblalstochastic_la_LDFLAGS = $(AM_LDFLAGS) -version-info $(LIBVERSION)
 
 MOSTLYCLEANFILES = \
 	lalstochastic-user-env.shell \

@@ -3,12 +3,13 @@ exec_prefix=@exec_prefix@
 libdir=@libdir@
 includedir=@includedir@
 datarootdir=@datarootdir@
-datadir=@datadir@
-pkgdatadir=@datadir@/@PACKAGE@
+LAL_DATA_PATH=@datadir@/@PACKAGE@:@LAL_DATA_PATH@
+LAL_OCTAVE_PATH=@octexecdir@:@LAL_OCTAVE_PATH@
+LAL_PYTHON_PATH=@pyexecdir@:@LAL_PYTHON_PATH@
 
 Name: LALXML
 Description: LAL XML Library Support
 Version: @VERSION@
-Requires: gsl libxml-2.0 lal
+Requires: gsl, libxml-2.0, lal >= @LAL_VERSION@
 Libs: -L${libdir} -llalxml
 Cflags: -I${includedir}

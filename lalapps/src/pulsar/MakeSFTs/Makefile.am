@@ -1,7 +1,7 @@
 
 ## Process this file with automake to produce Makefile.in
 
-AM_CPPFLAGS = -I$(top_srcdir)/src -I$(top_srcdir)/src/lalapps -DPKG_DATA_DIR='"$(pkgdatadir)/"'
+AM_CPPFLAGS = @AM_CPPFLAGS@ -I$(top_srcdir)/src -I$(top_srcdir)/src/lalapps -DPKG_DATA_DIR='"$(pkgdatadir)/"'
 LDADD = $(top_builddir)/src/lalapps/liblalapps.la
 
 if FRAME
@@ -29,8 +29,9 @@ lalapps_MakeSFTs_SOURCES = MakeSFTs.c $(pss_src)
 lalapps_MakeCleanSFTs_SOURCES = MakeCleanSFTs.c
 endif
 
+lalapps_MakeSFTs_CPPFLAGS = $(AM_CPPFLAGS)
 if PSS
-lalapps_MakeSFTs_CPPFLAGS = -DPSS_ENABLED $(AM_CPPFLAGS)
+lalapps_MakeSFTs_CPPFLAGS += -DPSS_ENABLED
 endif
 
 lalapps_ConvertToSFTv2_SOURCES = ConvertToSFTv2.c

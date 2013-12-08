@@ -9,7 +9,6 @@ EXTRA_DIST = \
 	install-sh \
 	lal.m4 \
 	lalsuite_build.m4 \
-	lalsuite_gccflags.m4 \
 	libtool.m4 \
 	ltmain.sh \
 	ltoptions.m4 \

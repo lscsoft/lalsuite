@@ -1,4 +1,4 @@
-AM_CPPFLAGS = -I$(top_builddir)/include -DPKG_DATA_DIR='"$(pkgdatadir)/"'
+AM_CPPFLAGS = @AM_CPPFLAGS@ -I$(top_builddir)/include -DPKG_DATA_DIR='"$(pkgdatadir)/"'
 
 lalinspiralincludedir = $(includedir)/lal
 lalinspiralinclude_HEADERS = \
@@ -229,7 +229,7 @@ liblalinspiralcxx_la_SOURCES = $(INSPCXXSRC)
 nodist_liblalinspiralcxx_la_SOURCES = $(INSPCXXGENSRC)
 liblalinspiral_la_LIBADD = $(INSPLIBCXX)
 
-liblalinspiral_la_LDFLAGS = -version-info $(LIBVERSION)
+liblalinspiral_la_LDFLAGS = $(AM_LDFLAGS) -version-info $(LIBVERSION)
 
 CLEANFILES = \
 	Chisq_GPU.cpp

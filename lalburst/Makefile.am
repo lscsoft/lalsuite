@@ -23,6 +23,7 @@ SUBDIRS = \
 
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = lalburst.pc
+noinst_DATA = lalburst-uninstalled.pc
 
 DISTCLEANFILES = config.lt
 

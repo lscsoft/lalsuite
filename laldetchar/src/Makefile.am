@@ -1,4 +1,4 @@
-AM_CPPFLAGS = -I$(top_builddir)/include -DPKG_DATA_DIR='"$(pkgdatadir)/"'
+AM_CPPFLAGS = @AM_CPPFLAGS@ -I$(top_builddir)/include -DPKG_DATA_DIR='"$(pkgdatadir)/"'
 LDADD = liblaldetchar.la
 
 laldetcharincludedir = $(includedir)/lal
@@ -22,7 +22,7 @@ liblaldetchar_la_SOURCES = \
 	LALDetCharHveto.c \
 	LALDetCharVCSInfo.c
 
-liblaldetchar_la_LDFLAGS = -version-info $(LIBVERSION)
+liblaldetchar_la_LDFLAGS = $(AM_LDFLAGS) -version-info $(LIBVERSION)
 
 MOSTLYCLEANFILES = \
 	laldetchar-user-env.shell \

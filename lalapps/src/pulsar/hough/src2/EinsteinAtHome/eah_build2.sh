@@ -692,7 +692,7 @@ if [ .$check = .true ]; then
     log_and_do cp ../eah_Makefakedata_v4$ext lalapps_Makefakedata_v4
     log_and_do cp ../eah_PredictFStat$ext lalapps_PredictFStat
     log_and_do cp ../eah_ComputeFStatistic_v2$ext lalapps_ComputeFStatistic_v2
-    LALPULSAR_DATADIR="$INSTALL/share/lalpulsar" NOCLEANUP=1 PATH="$PWD:$PATH" \
+    LAL_DATA_PATH="$INSTALL/share/lalpulsar" NOCLEANUP=1 PATH="$PWD:$PATH" \
 	log_and_do ../source/lalsuite/lalapps/src/pulsar/GCT/testHS.sh $wine "$check_app" --Dterms=8
     log_and_show "==========================================="
     log_and_show "Test passed"

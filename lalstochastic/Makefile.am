@@ -22,6 +22,7 @@ SUBDIRS = \
 
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = lalstochastic.pc
+noinst_DATA = lalstochastic-uninstalled.pc
 
 DISTCLEANFILES = config.lt
 

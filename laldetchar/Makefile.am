@@ -23,6 +23,7 @@ SUBDIRS = \
 
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = laldetchar.pc
+noinst_DATA = laldetchar-uninstalled.pc
 
 DISTCLEANFILES = config.lt
 

@@ -77,21 +77,9 @@ if [ $? != "0" ]; then
 fi
 
 # set ephemeris file
-if [ -n "${LALPULSAR_DATADIR}" ]; then
-	EEPHEM="${LALPULSAR_DATADIR}/earth00-19-DE405.dat.gz"
-	SEPHEM="${LALPULSAR_DATADIR}/sun00-19-DE405.dat.gz"
-	TEPHEM="${LALPULSAR_DATADIR}/tdb_2000-2019.dat.gz"
-fi
-
-if [ ! -f $EEPHEM ]; then
-	echo Error! Earth ephemeris file does not exist!
-	exit 2
-fi
-
-if [ ! -f $SEPHEM ]; then
-	echo Error! Sun ephemeris file does not exist!
-	exit 2
-fi 
+EEPHEM="earth00-19-DE405.dat.gz"
+SEPHEM="sun00-19-DE405.dat.gz"
+TEPHEM="tdb_2000-2019.dat.gz"
 
 # get current location
 LOCATION=`pwd`

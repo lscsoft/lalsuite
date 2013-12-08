@@ -1,6 +1,6 @@
 ## Process this file with automake to produce Makefile.in
 
-AM_CPPFLAGS = -I$(top_srcdir)/src -I$(top_srcdir)/src/lalapps -DPKG_DATA_DIR='"$(pkgdatadir)/"'
+AM_CPPFLAGS = @AM_CPPFLAGS@ -I$(top_srcdir)/src -I$(top_srcdir)/src/lalapps -DPKG_DATA_DIR='"$(pkgdatadir)/"'
 LDADD = $(top_builddir)/src/lalapps/liblalapps.la
 
 bin_PROGRAMS = lalapps_makefakedata_v2 lalapps_Makefakedata_v4 lalapps_Makefakedata_v5 lalapps_compareSFTs lalapps_compareTS \
@@ -37,7 +37,9 @@ lalapps_sw_inj_frames_SOURCES = sw_inj_frames.c
 EXTRA_DIST = testMakefakedata.sh testMFDv4.sh testMFDv5.sh testMFDv4-HW.sh testT8_1800
 TESTS = testMakefakedata.sh testMFDv4.sh testMFDv4-HW.sh testMFDv5.sh
 
-TESTS_ENVIRONMENT = LAL_DEBUG_LEVEL=memdbg LALPULSAR_DATADIR="$(LALPULSAR_DATADIR)"
+TESTS_ENVIRONMENT = \
+	LAL_DEBUG_LEVEL=memdbg; export LAL_DEBUG_LEVEL; \
+	LAL_DATA_PATH="$(LAL_DATA_PATH)"; export LAL_DATA_PATH;
 
 
 ## make sure lalapps.la is rebuilt when appropriate

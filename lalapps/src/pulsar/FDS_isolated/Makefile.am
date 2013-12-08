@@ -1,7 +1,7 @@
 ## Process this file with automake to produce Makefile.in
 
 
-AM_CPPFLAGS = -I$(top_srcdir)/src -I$(top_srcdir)/src/lalapps -DPKG_DATA_DIR='"$(pkgdatadir)/"'
+AM_CPPFLAGS = @AM_CPPFLAGS@ -I$(top_srcdir)/src -I$(top_srcdir)/src/lalapps -DPKG_DATA_DIR='"$(pkgdatadir)/"'
 LDADD = $(top_builddir)/src/lalapps/liblalapps.la
 
 SUBDIRS = OptimizedCFS ResamplingFstat
@@ -109,7 +109,9 @@ TESTS += testCFSv2.sh testCFSv2_resamp.sh testGridv2.sh
 endif
 
 
-TESTS_ENVIRONMENT = LAL_DEBUG_LEVEL=memdbg LAL_DATA_PATH="$(LALPULSAR_DATADIR)"
+TESTS_ENVIRONMENT = \
+	LAL_DEBUG_LEVEL=memdbg; export LAL_DEBUG_LEVEL; \
+	LAL_DATA_PATH="$(LAL_DATA_PATH)"; export LAL_DATA_PATH;
 
 CLEANFILES = testFstat_v3-LFT.sft testFstat_v3-timeseries.dat
 

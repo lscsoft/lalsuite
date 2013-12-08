@@ -23,6 +23,7 @@ SUBDIRS = \
 
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = lalpulsar.pc
+noinst_DATA = lalpulsar-uninstalled.pc
 
 DISTCLEANFILES = config.lt
 

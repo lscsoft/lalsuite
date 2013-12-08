@@ -7,6 +7,7 @@ AC_CONFIG_MACRO_DIR([gnuscripts])
 AC_CONFIG_FILES([ \
   lalinspiral.spec \
   lalinspiral.pc \
+  lalinspiral-uninstalled.pc \
   Makefile \
   gnuscripts/Makefile \
   debian/Makefile \
@@ -25,10 +26,8 @@ AM_INIT_AUTOMAKE([1.11 foreign subdir-objects color-tests parallel-tests])
 
 AC_CANONICAL_HOST
 
-LALSUITE_ARG_VAR
 LALSUITE_CHECK_GIT_REPO
 LALSUITE_DISTCHECK_CONFIGURE_FLAGS
-LALSUITE_WITH_CFLAGS_LIBS
 
 # set library api info
 # 1. start with version information of "0:0:0" for each libtool library
@@ -99,7 +98,7 @@ AM_SILENT_RULES([yes])
 LALSUITE_PROG_COMPILERS
 
 # checks for programs
-LALSUITE_PROG_INSTALL
+AC_PROG_INSTALL
 AC_PROG_LN_S
 AC_PROG_AWK
 AC_PROG_SED
@@ -119,8 +118,7 @@ AC_CHECK_LIB([m],[main],,[AC_MSG_ERROR([could not find the math library])])
 
 # check for gsl
 PKG_CHECK_MODULES([GSL],[gsl],[true],[false])
-LALSUITE_ADD_CFLAGS(${GSL_CFLAGS})
-LALSUITE_ADD_LIBS(${GSL_LIBS})
+LALSUITE_ADD_FLAGS([C],[${GSL_CFLAGS}],[${GSL_LIBS}])
 AC_CHECK_LIB([gslcblas],[main],,[AC_MSG_ERROR([could not find the gsl library])])
 AC_CHECK_LIB([gsl],[gsl_strerror],,[AC_MSG_ERROR([could not find the gsl library])])
 LALSUITE_ENABLE_FAST_GSL
@@ -130,8 +128,7 @@ AC_CHECK_HEADERS([gsl/gsl_errno.h],,[AC_MSG_ERROR([could not find the gsl/gsl_er
 
 # metaio
 PKG_CHECK_MODULES([METAIO],[libmetaio],[true],[false])
-LALSUITE_ADD_CFLAGS(${METAIO_CFLAGS})
-LALSUITE_ADD_LIBS(${METAIO_LIBS})
+LALSUITE_ADD_FLAGS([C],[${METAIO_CFLAGS}],[${METAIO_LIBS}])
 AC_CHECK_LIB([metaio],[MetaioOpen],,[AC_MSG_ERROR([could not find the metaio library])])
 
 # check for libmetaio headers
@@ -139,8 +136,7 @@ AC_CHECK_HEADERS([metaio.h],,[AC_MSG_ERROR([could not find the metaio.h header])
 
 # check for frame library
 PKG_CHECK_MODULES([LIBFRAME],[libframe],[true],[false])
-LALSUITE_ADD_CFLAGS(${LIBFRAME_CFLAGS})
-LALSUITE_ADD_LIBS(${LIBFRAME_LIBS})
+LALSUITE_ADD_FLAGS([C],[${LIBFRAME_CFLAGS}],[${LIBFRAME_LIBS}])
 AC_CHECK_LIB([Frame],[FrLibIni],,[AC_MSG_ERROR([could not find the frame library])])
 
 # check for frame library headers
@@ -169,13 +165,10 @@ fi
 # RedHat-derived systems.
 AC_SUBST([pkgpythondir], ["\${pkgpyexecdir}"])
 
-# ensure CPPFLAGS/CFLAGS and LDFLAGS/LIBS are in correct order
-LALSUITE_ADD_CFLAGS()
-LALSUITE_ADD_LIBS()
-
-# output
 LAL_HEADER_LINK=${ac_aux_dir}/header-link.mk
 AC_SUBST_FILE([LAL_HEADER_LINK])
+
+# output
 AC_OUTPUT
 echo "
 ==================================================

@@ -1,4 +1,4 @@
-AM_CPPFLAGS = -I$(top_builddir)/include -DPKG_DATA_DIR='"$(pkgdatadir)/"'
+AM_CPPFLAGS = @AM_CPPFLAGS@ -I$(top_builddir)/include -DPKG_DATA_DIR='"$(pkgdatadir)/"'
 
 lalburstincludedir = $(includedir)/lal
 
@@ -47,7 +47,7 @@ liblalburst_la_SOURCES = \
 	TrackSearch.c \
 	cs_lambda_cosmo.c
 
-liblalburst_la_LDFLAGS = -version-info $(LIBVERSION)
+liblalburst_la_LDFLAGS = $(AM_LDFLAGS) -version-info $(LIBVERSION)
 
 MOSTLYCLEANFILES = \
 	lalburst-user-env.shell \

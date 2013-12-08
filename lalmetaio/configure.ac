@@ -7,6 +7,7 @@ AC_CONFIG_MACRO_DIR([gnuscripts])
 AC_CONFIG_FILES([ \
   lalmetaio.spec \
   lalmetaio.pc \
+  lalmetaio-uninstalled.pc \
   Makefile \
   gnuscripts/Makefile \
   debian/Makefile \
@@ -23,10 +24,8 @@ AM_INIT_AUTOMAKE([1.11 foreign subdir-objects color-tests parallel-tests])
 
 AC_CANONICAL_HOST
 
-LALSUITE_ARG_VAR
 LALSUITE_CHECK_GIT_REPO
 LALSUITE_DISTCHECK_CONFIGURE_FLAGS
-LALSUITE_WITH_CFLAGS_LIBS
 
 # set library api info
 # 1. start with version information of "0:0:0" for each libtool library
@@ -91,7 +90,7 @@ AM_SILENT_RULES([yes])
 LALSUITE_PROG_COMPILERS
 
 # checks for programs
-LALSUITE_PROG_INSTALL
+AC_PROG_INSTALL
 AC_PROG_LN_S
 AC_PROG_AWK
 AC_PROG_SED
@@ -113,8 +112,7 @@ AC_CHECK_LIB([z],[compress],,[AC_MSG_ERROR([could not find the zlib library])])
 
 # metaio
 PKG_CHECK_MODULES([METAIO],[libmetaio],[true],[false])
-LALSUITE_ADD_CFLAGS(${METAIO_CFLAGS})
-LALSUITE_ADD_LIBS(${METAIO_LIBS})
+LALSUITE_ADD_FLAGS([C],[${METAIO_CFLAGS}],[${METAIO_LIBS}])
 AC_CHECK_LIB([metaio],[MetaioOpen],,[AC_MSG_ERROR([could not find the metaio library])])
 
 # check for libmetaio headers
@@ -135,13 +133,10 @@ LALSUITE_ADD_GCC_FLAGS
 # RedHat-derived systems.
 AC_SUBST([pkgpythondir], ["\${pkgpyexecdir}"])
 
-# ensure CPPFLAGS/CFLAGS and LDFLAGS/LIBS are in correct order
-LALSUITE_ADD_CFLAGS()
-LALSUITE_ADD_LIBS()
-
-# output
 LAL_HEADER_LINK=${ac_aux_dir}/header-link.mk
 AC_SUBST_FILE(LAL_HEADER_LINK)
+
+# output
 AC_OUTPUT
 echo "
 ==================================================

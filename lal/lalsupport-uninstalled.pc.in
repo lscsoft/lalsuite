@@ -1,0 +1,9 @@
+abs_top_srcdir=@abs_top_srcdir@
+abs_top_builddir=@abs_top_builddir@
+
+Name: LALSupport
+Description: (uninstalled)
+Version: @VERSION@
+Requires: lal-uninstalled = @VERSION@
+Libs: ${abs_top_builddir}/lib/lalsupport/src/liblalsupport.la @ZLIB_LIBS@
+Cflags: -I${abs_top_builddir}/include @ZLIB_CFLAGS@

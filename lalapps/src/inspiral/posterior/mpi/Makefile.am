@@ -1,8 +1,8 @@
 LDADD = $(top_builddir)/src/lalapps/liblalapps.la
-AM_CPPFLAGS = -I$(top_srcdir)/src -I$(top_srcdir)/src/lalapps -I$(top_builddir)/src/lalapps -DPKG_DATA_DIR='"$(pkgdatadir)/"'
+AM_CPPFLAGS = @AM_CPPFLAGS@ -I$(top_srcdir)/src -I$(top_srcdir)/src/lalapps -I$(top_builddir)/src/lalapps -DPKG_DATA_DIR='"$(pkgdatadir)/"'
 
 CC = $(MPICC)
-AM_CFLAGS = -std=gnu99
+AM_CFLAGS = @AM_CFLAGS@ -std=gnu99
 LIBS += $(MPILIBS)
 
 if LALINFERENCE

@@ -1,4 +1,4 @@
-AM_CPPFLAGS = -I$(top_builddir)/include -DPKG_DATA_DIR='"$(pkgdatadir)/"'
+AM_CPPFLAGS = @AM_CPPFLAGS@ -I$(top_builddir)/include -DPKG_DATA_DIR='"$(pkgdatadir)/"'
 
 if LALXML
 XMLHDR = LALInferenceXML.h
@@ -43,7 +43,7 @@ liblalinference_la_SOURCES = \
 	$(BAYESTARSRC) \
 	$(XMLSRC)
 
-liblalinference_la_LDFLAGS = -version-info $(LIBVERSION)
+liblalinference_la_LDFLAGS = $(AM_LDFLAGS) -version-info $(LIBVERSION)
 
 MOSTLYCLEANFILES = \
 	lalinference-user-env.shell \

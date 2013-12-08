@@ -57,8 +57,6 @@ AM_INIT_AUTOMAKE([1.11 foreign color-tests parallel-tests -Wno-unsupported])
 
 AC_CANONICAL_HOST
 
-LALSUITE_ARG_VAR
-LALSUITE_WITH_CFLAGS_LIBS
 LALSUITE_CHECK_GIT_REPO
 LALSUITE_DISTCHECK_CONFIGURE_FLAGS
 
@@ -114,15 +112,6 @@ AC_DEFINE_UNQUOTED([LALAPPS_CONFIGURE_ARGS],["$ac_configure_args"],
 AC_DEFINE_UNQUOTED([LALAPPS_CONFIGURE_DATE],["$lalapps_configure_date"],
                    [LALApps Configure Date])
 
-# remove -all-static from ldflags, breaks tests
-allstatic=`echo $LDFLAGS | sed '/-all-static/!d'`
-if test "x$allstatic" = "x" ; then
-  allstatic="false"
-else
-  LDFLAGS=`echo $LDFLAGS | sed s/-all-static//g`
-  allstatic="true"
-fi
-
 # workaround broken libtool multilib support on sl6
 LALSUITE_MULTILIB_LIBTOOL_HACK
 
@@ -152,10 +141,10 @@ if test "x$mpi" = "xtrue"; then
     MPILIBS="${MPILIBS_SAVE}"
   ])
 fi
-LALSUITE_ENABLE_MODULE([MPI],[mpi])
+LALSUITE_ENABLE_MODULE([MPI])
 
 # checks for programs
-LALSUITE_PROG_INSTALL
+AC_PROG_INSTALL
 AC_PROG_LN_S
 AC_PROG_AWK
 AC_PROG_SED
@@ -215,8 +204,7 @@ if test "${boinc}" = "true" ; then
     LALSUITE_CHECK_BOINC
 
     # point to boinc headers and libraries
-    LALSUITE_ADD_CFLAGS(-I${BOINC_PREFIX}/include)
-    LALSUITE_ADD_LIBS(-L${BOINC_PREFIX}/lib)
+    LALSUITE_ADD_FLAGS([C],[-I${BOINC_PREFIX}/include],[-L${BOINC_PREFIX}/lib])
 
     # check for boinc libraries
     AC_CHECK_LIB([boinc],[boinc_fopen],[true],[boinc=false])
@@ -233,8 +221,7 @@ BOINC_ENABLE_VAL="`eval test x$boinc = xtrue && echo "ENABLED" || echo "DISABLED
 
 # check for gsl
 PKG_CHECK_MODULES([GSL],[gsl],[true],[false])
-LALSUITE_ADD_CFLAGS(${GSL_CFLAGS})
-LALSUITE_ADD_LIBS(${GSL_LIBS})
+LALSUITE_ADD_FLAGS([C],[${GSL_CFLAGS}],[${GSL_LIBS}])
 AC_CHECK_LIB([gslcblas],[main],,[AC_MSG_ERROR([could not find the gsl library])])
 AC_CHECK_LIB([gsl],[gsl_version],,[AC_MSG_ERROR([could not find the gsl library])])
 LALSUITE_ENABLE_FAST_GSL
@@ -245,8 +232,7 @@ AC_CHECK_HEADERS([gsl/gsl_errno.h],,[AC_MSG_ERROR([could not find the gsl/gsl_er
 # check for fftw libraries
 if test "${fftw}" = "true"; then
   PKG_CHECK_MODULES([FFTW3],[fftw3 fftw3f],[true],[false])
-  LALSUITE_ADD_CFLAGS(${FFTW3_CFLAGS})
-  LALSUITE_ADD_LIBS(${FFTW3_LIBS})
+  LALSUITE_ADD_FLAGS([C],[${FFTW3_CFLAGS}],[${FFTW3_LIBS}])
   AC_CHECK_LIB([fftw3f],[fftwf_execute_dft],,[AC_MSG_WARN([could not find the fftw3f library])],[-lm])
   AC_CHECK_LIB([fftw3],[fftw_execute_dft],,[AC_MSG_WARN([could not find the fftw3 library])],[-lm])
 fi
@@ -255,7 +241,7 @@ fi
 if test "${fftw}" = "true"; then
   AC_CHECK_HEADERS([fftw3.h],,[AC_MSG_WARN([could not find the fftw3.h header])])
 fi
-LALSUITE_ENABLE_MODULE([FFTW],[fftw])
+LALSUITE_ENABLE_MODULE([FFTW])
 
 # check for GDS system: we check if we can link against libawg which is in GDS
 # GDS is a requirements for building 'online_psinject', which is used for hardware injections
@@ -263,13 +249,13 @@ if test "${gds}" = "true"; then
   AC_CHECK_LIB([awg],[awgGetChannelNames],,[gds="false"])
   AC_CHECK_HEADERS([gdstype.h],,[gds="false"])
 fi
-LALSUITE_ENABLE_MODULE([GDS],[gds])
+LALSUITE_ENABLE_MODULE([GDS])
 
 # check for libFrame
 if test "${frame}" = "true"; then
   PKG_CHECK_MODULES([FRAME],[libframe],[true],[false])
   lal_pre_frame_LIBS="$LIBS"
-  LALSUITE_ADD_LIBS(${FRAME_LIBS})
+  LALSUITE_ADD_FLAGS([C],[],[${FRAME_LIBS}])
   AC_SEARCH_LIBS([FrLibIni],[Frame],,
                  [AC_MSG_WARN([could not find the frame library])]
                  [frame="false"]
@@ -280,20 +266,20 @@ fi
 # check for libFrame headers
 if test "${frame}" = "true"; then
   lal_pre_frame_CPPFLAGS="$CPPFLAGS"
-  LALSUITE_ADD_CFLAGS(${FRAME_CFLAGS})
+  LALSUITE_ADD_FLAGS([C],[${FRAME_CFLAGS}],[])
   AC_CHECK_HEADERS([FrameL.h],,
                    [AC_MSG_WARN([could not find the FrameL.h header])]
                    [frame="false"]
                    [lalframe="false"]
                    [CPPFLAGS="$lal_pre_frame_CPPFLAGS"])
 fi
-LALSUITE_ENABLE_MODULE([FRAME],[frame])
+LALSUITE_ENABLE_MODULE([FRAME])
 
 # check for libmetaio
 if test "${metaio}" = "true"; then
   PKG_CHECK_MODULES([METAIO],[libmetaio],[true],[false])
   lal_pre_metaio_LIBS="$LIBS"
-  LALSUITE_ADD_LIBS(${METAIO_LIBS})
+  LALSUITE_ADD_FLAGS([C],[],[${METAIO_LIBS}])
   AC_SEARCH_LIBS([MetaioOpen],[metaio],,
                  [AC_MSG_WARN([could not find the metaio library])]
                  [metaio="false"]
@@ -304,20 +290,20 @@ fi
 # check for libmetaio headers
 if test "${metaio}" = "true"; then
   lal_pre_metaio_CPPFLAGS="$CPPFLAGS"
-  LALSUITE_ADD_CFLAGS(${METAIO_CFLAGS})
+  LALSUITE_ADD_FLAGS([C],[${METAIO_CFLAGS}],[])
   AC_CHECK_HEADERS([metaio.h],,
                    [AC_MSG_WARN([could not find the metaio.h header])]
                    [metaio="false"]
                    [lalmetaio="false"]
                    [CPPFLAGS="$lal_pre_metaio_CPPFLAGS"])
 fi
-LALSUITE_ENABLE_MODULE([METAIO],[metaio])
+LALSUITE_ENABLE_MODULE([METAIO])
 
 # check for libxml2
 if test "$lalxml" = "true"; then
   PKG_CHECK_MODULES([LIBXML2],[libxml-2.0 >= 2.6],[true],[false])
   lal_pre_libxml2_LIBS="$LIBS"
-  LALSUITE_ADD_LIBS(${LIBXML2_LIBS})
+  LALSUITE_ADD_FLAGS([C],[],[${LIBXML2_LIBS}])
   AC_SEARCH_LIBS([xmlInitParser],[xml2],,
                  [AC_MSG_WARN([cannot find the xml2 library])]
                  [lalxml="false"]
@@ -327,7 +313,7 @@ fi
 # check for libxml2 headers
 if test "$lalxml" = "true"; then
   lal_pre_libxml2_CPPFLAGS="$CPPFLAGS"
-  LALSUITE_ADD_CFLAGS(${LIBXML2_CFLAGS})
+  LALSUITE_ADD_FLAGS([C],[${LIBXML2_CFLAGS}],[])
   AC_CHECK_HEADERS([libxml/tree.h],,
                    [AC_MSG_WARN([could not the libxml/tree.h header])]
                    [lalxml="false"]
@@ -338,7 +324,7 @@ fi
 if test "${cfitsio}" = "true"; then
   PKG_CHECK_MODULES([CFITSIO],[cfitsio],[true],[false])
   lal_pre_cfitsio_libs="$LIBS"
-  LALSUITE_ADD_LIBS(${CFITSIO_LIBS})
+  LALSUITE_ADD_FLAGS([C],[],[${CFITSIO_LIBS}])
   AC_SEARCH_LIBS([ffopen],[cfitsio],,
                  [cfitsio="false"]
                  [LIBS="$lal_pre_cfitsio_LIBS"])
@@ -347,18 +333,18 @@ fi
 # check for libcfitsio headers
 if test "${cfitsio}" = "true"; then
   lal_pre_cfitsio_CPPFLAGS="$CPPFLAGS"
-  LALSUITE_ADD_CFLAGS(${CFITSIO_CFLAGS})
+  LALSUITE_ADD_FLAGS([C],[${CFITSIO_CFLAGS}],[])
   AC_CHECK_HEADERS([fitsio.h],,
                    [cfitsio="false"]
                    [CPPFLAGS="$lal_pre_cfitsio_CPPFLAGS"])
 fi
-LALSUITE_ENABLE_MODULE([CFITSIO],[cfitsio])
+LALSUITE_ENABLE_MODULE([CFITSIO])
 
 # check for pss
 if test "${pss}" = "true"; then
   PKG_CHECK_MODULES([PSS],[pss],[true],[false])
   lal_pre_pss_LIBS="$LIBS"
-  LALSUITE_ADD_LIBS(${PSS_LIBS})
+  LALSUITE_ADD_FLAGS([C],[],[${PSS_LIBS}])
   AC_SEARCH_LIBS([crea_sfdbheader],[psssfdb],,
                  [pss="false"]
                  [LIBS="$lal_pre_pss_LIBS"])
@@ -377,7 +363,7 @@ fi
 # check for pss headers
 if test "${pss}" = "true"; then
   lal_pre_pss_CPPFLAGS="$CPPFLAGS"
-  LALSUITE_ADD_CFLAGS(${PSS_CFLAGS})
+  LALSUITE_ADD_FLAGS([C],[${PSS_CFLAGS}],[])
   AC_CHECK_HEADERS([pss_sfdb.h],,
                    [pss="false"]
                    [CPPFLAGS="$lal_pre_pss_CPPFLAGS"])
@@ -391,7 +377,7 @@ if test "${pss}" = "true"; then
                    [pss="false"]
                    [CPPFLAGS="$lal_pre_pss_CPPFLAGS"])
 fi
-LALSUITE_ENABLE_MODULE([PSS],[pss])
+LALSUITE_ENABLE_MODULE([PSS])
 
 # check for libbambi
 # Note:  if done in AS_IF() then AC_REQUIRE'd checks are done when not wanted, causing problems
@@ -452,22 +438,15 @@ fi
 # enable condor compile
 if test "x${condor}" = "xtrue" ; then
   CC="$CONDOR_COMPILE $CC"
-  AM_LDFLAGS="$AM_LDFLAGS -all-static"
+  LALSUITE_ADD_FLAGS([],[],[-all-static])
   AC_DISABLE_SHARED
-  AC_SUBST([AM_LDFLAGS])
   AC_DEFINE([LALAPPS_CONDOR],[1],[LALApps is condor compiled])
 fi
 
 # add -all-static to AM_LDFLAGS for --enable-static-binaries
 if test "${static_binaries}" = "true"; then
-  AM_LDFLAGS="$AM_LDFLAGS -all-static"
+  LALSUITE_ADD_FLAGS([],[],[-all-static])
   AC_DISABLE_SHARED
-  AC_SUBST([AM_LDFLAGS])
-fi
-
-# restore all static to ldflags
-if test "${allstatic}" = "true" ; then
-  LDFLAGS="-static -all-static $LDFLAGS"
 fi
 
 # force all python modules into the exec dir to prevent mixed C and
@@ -475,10 +454,7 @@ fi
 # RedHat-derived systems.
 AC_SUBST([pkgpythondir], ["\${pkgpyexecdir}"])
 
-# ensure CPPFLAGS/CFLAGS and LDFLAGS/LIBS are in correct order
-LALSUITE_ADD_CFLAGS()
-LALSUITE_ADD_LIBS()
-
+# output
 AC_OUTPUT
 echo "
 ==================================================

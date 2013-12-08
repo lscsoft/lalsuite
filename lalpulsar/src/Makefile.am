@@ -1,4 +1,4 @@
-AM_CPPFLAGS = -I$(top_builddir)/include -DPKG_DATA_DIR='"$(pkgdatadir)/"'
+AM_CPPFLAGS = @AM_CPPFLAGS@ -I$(top_builddir)/include -DPKG_DATA_DIR='"$(pkgdatadir)/"'
 
 if LALXML
 XMLHDR = LALXMLVOTableSerializersPulsar.h
@@ -140,7 +140,7 @@ liblalpulsar_la_SOURCES = \
 EXTRA_liblalpulsar_la_SOURCES = \
 	SFTutils-LAL.c
 
-liblalpulsar_la_LDFLAGS = -version-info $(LIBVERSION)
+liblalpulsar_la_LDFLAGS = $(AM_LDFLAGS) -version-info $(LIBVERSION)
 
 MOSTLYCLEANFILES = \
 	lalpulsar-user-env.shell \

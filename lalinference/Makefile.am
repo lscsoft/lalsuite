@@ -22,6 +22,7 @@ SUBDIRS = \
 
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = lalinference.pc
+noinst_DATA = lalinference-uninstalled.pc
 
 DISTCLEANFILES = config.lt
 

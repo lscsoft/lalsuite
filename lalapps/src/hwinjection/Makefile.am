@@ -1,6 +1,6 @@
 ## Process this file with automake to produce Makefile.in
 
-AM_CPPFLAGS = -I$(top_srcdir)/src -I$(top_srcdir)/src/lalapps -DPKG_DATA_DIR='"$(pkgdatadir)/"'
+AM_CPPFLAGS = @AM_CPPFLAGS@ -I$(top_srcdir)/src -I$(top_srcdir)/src/lalapps -DPKG_DATA_DIR='"$(pkgdatadir)/"'
 LDADD = $(top_builddir)/src/lalapps/liblalapps.la
 
 if LALFRAME
@@ -19,8 +19,6 @@ online_psinject_SOURCES = psinject.c SIStr.c SIStr.h
 online_psinject_CPPFLAGS = -DONLINE
 online_psinject_LDFLAGS = -lawg -ltestpoint
 ## --------------------------------------------------------------------------------
-
-TESTS_ENVIRONMENT = LALPULSAR_DATADIR="$(LALPULSAR_DATADIR)"
 
 ## make sure lalapps.la is rebuilt when appropriate
 BUILT_SOURCES =

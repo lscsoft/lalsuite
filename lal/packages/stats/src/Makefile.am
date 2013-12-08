@@ -1,4 +1,4 @@
-AM_CPPFLAGS = -I$(top_builddir)/include -I$(srcdir)/../include
+AM_CPPFLAGS = @AM_CPPFLAGS@ -I$(top_builddir)/include -I$(srcdir)/../include
 
 noinst_LTLIBRARIES = libstats.la
 

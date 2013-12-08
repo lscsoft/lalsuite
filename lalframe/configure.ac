@@ -7,6 +7,7 @@ AC_CONFIG_MACRO_DIR([gnuscripts])
 AC_CONFIG_FILES([ \
   lalframe.spec \
   lalframe.pc \
+  lalframe-uninstalled.pc \
   Makefile \
   gnuscripts/Makefile \
   debian/Makefile \
@@ -25,10 +26,8 @@ AM_INIT_AUTOMAKE([1.11 foreign subdir-objects color-tests parallel-tests])
 
 AC_CANONICAL_HOST
 
-LALSUITE_ARG_VAR
 LALSUITE_CHECK_GIT_REPO
 LALSUITE_DISTCHECK_CONFIGURE_FLAGS
-LALSUITE_WITH_CFLAGS_LIBS
 
 # set library api info
 # 1. start with version information of "0:0:0" for each libtool library
@@ -103,12 +102,11 @@ AX_PTHREAD([lalframe_pthread=true],[lalframe_pthread=false])
 AM_CONDITIONAL([PTHREAD],[test x$lalframe_pthread = xtrue])
 
 # checks for programs
-LALSUITE_PROG_INSTALL
+AC_PROG_INSTALL
 AC_PROG_LN_S
 AC_PROG_AWK
 AC_PROG_SED
 AM_PATH_PYTHON([2.6],,[AC_MSG_ERROR([Python-2.6, or higher, is required])])
-AC_CHECK_PROGS([M4],[gm4 m4],[m4])
 
 # check for supported mac os x version
 LALSUITE_OSX_VERSION_CHECK
@@ -133,16 +131,14 @@ AC_CHECK_LIB([m],[main],,[AC_MSG_ERROR([could not find the math library])])
 PKG_PROG_PKG_CONFIG
 AS_IF([test "${framec}" = "true"],[
        PKG_CHECK_MODULES([FRAMECPPC],[framecppc >= 1.19.32],[true],[false])
-       LALSUITE_ADD_CFLAGS(${FRAMECPPC_CFLAGS})
-       LALSUITE_ADD_LIBS(${FRAMECPPC_LIBS})
+       LALSUITE_ADD_FLAGS([C],[${FRAMECPPC_CFLAGS}],[${FRAMECPPC_LIBS}])
        AC_CHECK_LIB([framecppc],[FrameCFileOpen],,[AC_MSG_ERROR([could not find the framec library])])
        AC_CHECK_HEADERS([framecppc/FrameC.h],,[AC_MSG_ERROR([could not find the FrameC.h header])])
        AC_DEFINE([USE_FRAMEC],[],[Define to use FrameC])
        FRAME_LIBRARY="FrameC"])
 AS_IF([test "${framel}" = "true"],[
        PKG_CHECK_MODULES([LIBFRAME],[libframe],[true],[false])
-       LALSUITE_ADD_CFLAGS(${LIBFRAME_CFLAGS})
-       LALSUITE_ADD_LIBS(${LIBFRAME_LIBS})
+       LALSUITE_ADD_FLAGS([C],[${LIBFRAME_CFLAGS}],[${LIBFRAME_LIBS}])
        AC_CHECK_LIB([Frame],[FrLibIni],,[AC_MSG_ERROR([could not find the frame library])])
        AC_CHECK_HEADERS([FrameL.h],,[AC_MSG_ERROR([could not find the FrameL.h header])])
        AC_DEFINE([USE_FRAMEL],[],[Define to use FrameL])
@@ -171,14 +167,10 @@ LALSUITE_ADD_GCC_FLAGS
 # RedHat-derived systems.
 AC_SUBST([pkgpythondir], ["\${pkgpyexecdir}"])
 
-# ensure CPPFLAGS/CFLAGS and LDFLAGS/LIBS are in correct order
-LALSUITE_ADD_CFLAGS()
-LALSUITE_ADD_LIBS()
-
-# output
 LAL_HEADER_LINK=${ac_aux_dir}/header-link.mk
 AC_SUBST_FILE([LAL_HEADER_LINK])
-AC_PROG_MAKE_SET
+
+# output
 AC_OUTPUT
 echo "
 ==================================================
