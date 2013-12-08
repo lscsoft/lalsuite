@@ -100,7 +100,8 @@ for i, (bin_edge, subdir, title) in enumerate(zip(bin_edges, bin_names, bin_titl
         datasets = [dataset[dataset['snr'] >= bin_edge] for dataset in datasets_]
 
     # Compute titles and labels for plots.
-    labels = tuple(r'\verb/{0}/'.format(name) for name in dataset_names)
+    labels = tuple(r'\verb/{0}/'.format(os.path.basename(name))
+        for name in dataset_names)
     if len(args) == 1:
         title += ' ({0} events)'.format(len(datasets[0]))
 
