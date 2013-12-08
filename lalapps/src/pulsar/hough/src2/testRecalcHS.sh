@@ -34,13 +34,6 @@ if [ -z "${LAL_DATA_PATH}" ]; then
     exit 1
 fi
 
-if [ -n "${LALPULSAR_DATADIR}" ]; then
-    EEPHEM="${LALPULSAR_DATADIR}/earth00-19-DE405.dat"
-    SEPHEM="${LALPULSAR_DATADIR}/sun00-19-DE405.dat"
-    code_HS="${code_HS} --ephemE=${EEPHEM} --ephemS=${SEPHEM}"
-    code_RC="${code_RC} --ephemE=${EEPHEM} --ephemS=${SEPHEM}"
-fi
-
 ## ----- parameters
 SFTsH1="./allSFTs_H1.sft"
 SFTsL1="./allSFTs_L1.sft"
