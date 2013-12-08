@@ -74,7 +74,7 @@ def seq_to_sbtable(sblist, get_col=None):
 			break
 		if get_col is not None:
 			col_ar.append(getattr(next_sb, get_col))
-		sbtable.append(hveto.lalburst_sb_to_glue_sb(next_sb, desired_columns))
+		sbtable.append(lalburst_sb_to_glue_sb(next_sb, desired_columns))
 		sblistitr = laldetchar.GSequenceNext(sblistitr)
 
 	if get_col is not None:
