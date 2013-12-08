@@ -129,7 +129,7 @@ typedef struct
   CHAR *ephemDir;		/**< Directory path for ephemeris files (optional), use LAL_DATA_PATH if unset. */
   CHAR *ephemYear;		/**< Year (or range of years) of ephemeris files to be used */
 
-  /* pulsar parameters [REQUIRED] */
+  /* pulsar parameters */
   CHAR *injectionSources;	///< either a file-specification ("@file-pattern") or a config-string defining the sources to inject
 
   BOOLEAN version;		/**< output version information */
@@ -179,8 +179,10 @@ main(int argc, char *argv[])
   MultiSFTVector *mSFTs = NULL;
   MultiREAL4TimeSeries *mTseries = NULL;
 
-  PulsarParamsVector *injectionSources;
-  XLAL_CHECK ( (injectionSources = XLALPulsarParamsFromUserInput ( uvar.injectionSources ) ) != NULL, XLAL_EFUNC );
+  PulsarParamsVector *injectionSources = NULL;
+  if ( uvar.injectionSources ) {
+    XLAL_CHECK ( (injectionSources = XLALPulsarParamsFromUserInput ( uvar.injectionSources ) ) != NULL, XLAL_EFUNC );
+  }
 
   CWMFDataParams DataParams   = empty_CWMFDataParams;
   DataParams.fMin               = uvar.fmin;
@@ -520,7 +522,7 @@ XLALInitUserVars ( UserVariables_t *uvar, int argc, char *argv[] )
   XLALregREALUserStruct (  SFTWindowBeta,        0, UVAR_OPTIONAL, "Window 'beta' parameter required for a few window-types (eg. 'tukey')");
 
   /* pulsar params */
-  XLALregSTRINGUserStruct( injectionSources,     0, UVAR_REQUIRED, "Either a file-specification (\"@file-pattern\") or a config-string defining the sources to inject" );
+  XLALregSTRINGUserStruct( injectionSources,     0, UVAR_OPTIONAL, "Either a file-specification (\"@file-pattern\") or a config-string defining the sources to inject" );
 
   /* noise */
   XLALregSTRINGUserStruct ( noiseSFTs,          'D', UVAR_OPTIONAL, "Noise-SFTs to be added to signal (Used also to set IFOs and timestamps)");

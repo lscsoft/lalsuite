@@ -38,6 +38,7 @@
 #include <lal/TransientCW_utils.h>
 #include <lal/LALString.h>
 #include <lal/StringVector.h>
+#include <lal/Units.h>
 
 // ---------- local defines
 
@@ -64,7 +65,7 @@ static UINT4 gcd (UINT4 numer, UINT4 denom);
 int
 XLALCWMakeFakeMultiData ( MultiSFTVector **multiSFTs,			///< [out] pointer to optional SFT-vector for output
                           MultiREAL4TimeSeries **multiTseries,		///< [out] pointer to optional timeseries-vector for output
-                          const PulsarParamsVector *injectionSources,	///< [in] array of sources inject
+                          const PulsarParamsVector *injectionSources,	///< [in] (optional) array of sources inject
                           const CWMFDataParams *dataParams,		///< [in] parameters specifying the type of data to generate
                           const EphemerisData *edat			///< [in] ephemeris data
                           )
@@ -73,7 +74,6 @@ XLALCWMakeFakeMultiData ( MultiSFTVector **multiSFTs,			///< [out] pointer to op
   XLAL_CHECK ( (multiTseries == NULL) || ((*multiTseries) == NULL ), XLAL_EINVAL );
   XLAL_CHECK ( (multiSFTs != NULL) || (multiTseries != NULL), XLAL_EINVAL );
 
-  XLAL_CHECK ( injectionSources != NULL, XLAL_EINVAL );
   XLAL_CHECK ( dataParams != NULL, XLAL_EINVAL );
   XLAL_CHECK ( edat != NULL, XLAL_EINVAL );
 
@@ -162,7 +162,6 @@ XLALCWMakeFakeData ( SFTVector **SFTvect,
   XLAL_CHECK ( (Tseries == NULL) || ((*Tseries) == NULL ), XLAL_EINVAL );
   XLAL_CHECK ( (SFTvect != NULL) || (Tseries != NULL), XLAL_EINVAL );
 
-  XLAL_CHECK ( injectionSources != NULL, XLAL_EINVAL );
   XLAL_CHECK ( dataParams != NULL, XLAL_EINVAL );
   XLAL_CHECK ( edat != NULL, XLAL_EINVAL );
   XLAL_CHECK ( dataParams->detInfo.length ==1, XLAL_EINVAL );
@@ -197,7 +196,7 @@ XLALCWMakeFakeData ( SFTVector **SFTvect,
       fSamp = 2.0 * fBand_eff;	// (potentially) higher sampling rate required to fit SFT bins
     } // if SFT-output
 
-  /* characterize the output time-series */
+  // characterize the output time-series
   UINT4 n0_fSamp = (UINT4) round ( Tsft * fSamp );
 
   // by construction, fSamp * Tsft = integer, but if there are gaps between SFTs,
@@ -216,7 +215,7 @@ XLALCWMakeFakeData ( SFTVector **SFTvect,
       fSamp = fSamp1;
     } // if higher effective sampling rate required
 
-   /* ----- start-time and duration ----- */
+  // ----- start-time and duration -----
   LIGOTimeGPS firstGPS = timestamps->data[0];
   REAL8 firstGPS_REAL8 = XLALGPSGetREAL8 ( &firstGPS );
   LIGOTimeGPS lastGPS  = timestamps->data [ timestamps->length - 1 ];
@@ -224,15 +223,25 @@ XLALCWMakeFakeData ( SFTVector **SFTvect,
   XLALGPSAdd( &lastGPS, Tsft );
   REAL8 duration = XLALGPSDiff ( &lastGPS, &firstGPS );
 
-  REAL4TimeSeries *Tseries_sum = NULL;
-  XLAL_CHECK ( (Tseries_sum = XLALGenerateCWSignalTS ( &injectionSources->data[0], site, firstGPS, duration, fSamp, fMin, edat )) != NULL, XLAL_EFUNC );
+  // start with an empty output time-series
+  REAL4TimeSeries *Tseries_sum;
+  {
+    UINT4 numSteps = (UINT4) ceil( fSamp * duration );
+    REAL8 dt = 1.0 / fSamp;
+    REAL8 fHeterodyne = fMin;	// heterodyne signals at lower end of frequency-band
+    CHAR *detPrefix = XLALGetChannelPrefix ( site->frDetector.name );
+    XLAL_CHECK ( (Tseries_sum = XLALCreateREAL4TimeSeries ( detPrefix, &firstGPS, fHeterodyne, dt, &lalStrainUnit, numSteps )) != NULL, XLAL_EFUNC );
+    memset ( Tseries_sum->data->data, 0, Tseries_sum->data->length * sizeof(Tseries_sum->data->data[0]) );
+    XLALFree ( detPrefix );
+  } // generate empty timeseries
 
-  UINT4 numPulsars = injectionSources->length;
-  for ( UINT4 iInj = 1; iInj < numPulsars; iInj ++ )
+  // add CW signals, if any
+  UINT4 numPulsars = injectionSources ? injectionSources->length : 0;
+  for ( UINT4 iInj = 0; iInj < numPulsars; iInj ++ )
     {
-      // for all but the first time-series, we truncate any transient-CW timeseries to the actual support
-      // of the transient signal, in order to make the generation more efficient, these 'partial timeseries'
-      // will then be added to the full timeseries of the 1st signal (with iInj=0)
+      // truncate any transient-CW timeseries to the actual support of the transient signal,
+      // in order to make the generation more efficient, these 'partial timeseries'
+      // will then be added to the full timeseries
       const PulsarParams *pulsarParams = &( injectionSources->data[iInj] );
       UINT4 t0, t1;
       XLAL_CHECK ( XLALGetTransientWindowTimespan ( &t0, &t1, pulsarParams->Transient ) == XLAL_SUCCESS, XLAL_EFUNC );
@@ -269,7 +278,7 @@ XLALCWMakeFakeData ( SFTVector **SFTvect,
         }
     } // for iInj = 1 ... (numPulsars-1)
 
-  /* add Gaussian noise if requested */
+  // add Gaussian noise if requested
   REAL8 sqrtSn = dataParams->detInfo.sqrtSn[0];
   if ( sqrtSn > 0)
     {
