@@ -37,6 +37,7 @@
 #include <lal/DopplerScan.h>
 #include <lal/ExtrapolatePulsarSpins.h>
 #include <gsl/gsl_permutation.h>
+#include <lal/LALString.h>
 
 /* globals, constants and defaults */
 
@@ -73,17 +74,16 @@ REAL8    uvar_brakingindexResolution;
 REAL8    uvar_fRef;
 
 
-CHAR     *uvar_ephemDir=NULL;
-CHAR     *uvar_ephemYear=NULL;
+CHAR 	*uvar_ephemEarth;		/**< Earth ephemeris file to use */
+CHAR 	*uvar_ephemSun;		/**< Sun ephemeris file to use */
+
+
 CHAR     *uvar_sftDir=NULL;
 CHAR     *uvar_dirnameOut=NULL;
 CHAR     *uvar_skyfile=NULL;
 CHAR     *uvar_skyRegion=NULL;
 CHAR     *uvar_filenameOut=NULL;
 CHAR 	 *uvar_debugOut=NULL;
-
-#define DEFAULT_EPHEMDIR "env LAL_DATA_PATH"
-#define EPHEM_YEARS "00-19-DE405"
 
 #define F0 100
 #define FBAND 1
@@ -154,8 +154,6 @@ int main(int argc, char *argv[]){
 
   /* ephemeris */
   EphemerisData    *edat=NULL;
-  CHAR EphemEarth[MAXFILENAMELENGTH];
-  CHAR EphemSun[MAXFILENAMELENGTH];
 
   /* skypatch info */
   REAL8  *skyAlpha=NULL, *skyDelta=NULL,
@@ -465,29 +463,12 @@ int main(int argc, char *argv[]){
     }
 
     delta_fdot = uvar_fdotResolution;
- 
+
     delta_fddot = uvar_fddotResolution;
   }
 
   /*  set up ephemeris  */
-  if(uvar_ephemDir) {
-    snprintf(EphemEarth, MAXFILENAMELENGTH, "%s/earth%s.dat",
-		uvar_ephemDir, uvar_ephemYear);
-    snprintf(EphemSun, MAXFILENAMELENGTH, "%s/sun%s.dat",
-		uvar_ephemDir, uvar_ephemYear);
-  } else {
-    snprintf(EphemEarth, MAXFILENAMELENGTH, "earth%s.dat", uvar_ephemYear);
-    snprintf(EphemSun, MAXFILENAMELENGTH, "sun%s.dat", uvar_ephemYear);
-  }
-
-  EphemEarth[MAXFILENAMELENGTH-1] = 0;
-  EphemSun[MAXFILENAMELENGTH-1] = 0;
-
-  edat = (EphemerisData *)LALCalloc(1, sizeof(EphemerisData));
-  (*edat).ephiles.earthEphemeris = EphemEarth;
-  (*edat).ephiles.sunEphemeris = EphemSun;
-
-  LAL_CALL( LALInitBarycenter( &status, edat), &status);
+  XLAL_CHECK ( (edat = XLALInitBarycenter ( uvar_ephemEarth, uvar_ephemSun )) != NULL, XLAL_EFUNC );
 
   /* set up skypatches */
   if ((skytest = fopen(uvar_skyfile, "r")) == NULL) {
@@ -1074,9 +1055,8 @@ printf("%g %g\n", sigmasq->data[i] * ualpha->data[i].re, sigmasq->data[i] * ualp
   }
   LAL_CALL( LALDestroySFTCatalog( &status, &catalog ), &status);
 
-  LALFree(edat->ephemE);
-  LALFree(edat->ephemS);
-  LALFree(edat);
+  XLALDestroyEphemerisData(edat);
+
   LALFree(skyAlpha);
   LALFree(skyDelta);
   LALFree(skySizeAlpha);
@@ -1783,11 +1763,8 @@ void initUserVars (LALStatus *status)
   uvar_brakingindexResolution = uvar_brakingindex/10.0;
   uvar_fRef = 1.0;
 
-  uvar_ephemDir = (CHAR *)LALCalloc( MAXFILENAMELENGTH , sizeof(CHAR));
-  strcpy(uvar_ephemDir,DEFAULT_EPHEMDIR);
-
-  uvar_ephemYear = (CHAR *)LALCalloc( MAXFILENAMELENGTH , sizeof(CHAR));
-  strcpy(uvar_ephemYear,EPHEM_YEARS);
+  uvar_ephemEarth = XLALStringDuplicate("earth00-19-DE405.dat.gz");
+  uvar_ephemSun = XLALStringDuplicate("sun00-19-DE405.dat.gz");
 
   uvar_dirnameOut = (CHAR *)LALCalloc( MAXFILENAMELENGTH , sizeof(CHAR));
   strcpy(uvar_dirnameOut,DIROUT);
@@ -1894,14 +1871,10 @@ void initUserVars (LALStatus *status)
 			    0, UVAR_OPTIONAL,
 			    "Alternative: input skypatch file",
 			    &uvar_skyfile);
-  LALRegisterSTRINGUserVar( status->statusPtr, "ephemDir",
-			    'E', UVAR_OPTIONAL,
-			    "Directory where ephemeris files are located",
-			    &uvar_ephemDir);
-  LALRegisterSTRINGUserVar( status->statusPtr, "ephemYear",
-			    'y', UVAR_OPTIONAL,
-			    "Year (or range of years) of ephemeris files to be used",
-			    &uvar_ephemYear);
+
+  XLALRegisterSTRINGUserVar( "ephemEarth",   	 0,  UVAR_OPTIONAL,     "Earth ephemeris file to use", &uvar_ephemEarth );
+  XLALRegisterSTRINGUserVar( "ephemSun",     	 0,  UVAR_OPTIONAL,     "Sun ephemeris file to use", &uvar_ephemSun );
+
   LALRegisterSTRINGUserVar( status->statusPtr, "sftDir",
 			    'D', UVAR_REQUIRED,
 			    "SFT filename pattern",
