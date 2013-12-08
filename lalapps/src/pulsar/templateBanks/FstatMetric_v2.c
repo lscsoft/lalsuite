@@ -141,8 +141,8 @@ typedef struct
   REAL8 f2dot;		/**< target 2. spindown-value d2f/dt2 */
   REAL8 f3dot;		/**< target 3. spindown-value d3f/dt3 */
 
-  CHAR *ephemDir;	/**< directory to look for ephemeris files */
-  CHAR *ephemYear;	/**< date-range string on ephemeris-files to use */
+  CHAR *ephemEarth;	/**< Earth ephemeris file to use */
+  CHAR *ephemSun;	/**< Sun ephemeris file to use */
 
   REAL8 refTime;	/**< GPS reference time of Doppler parameters */
 
@@ -184,8 +184,6 @@ extern int vrbflg;
 /* ---------- local prototypes ---------- */
 int initUserVars (UserVariables_t *uvar);
 int XLALInitCode ( ConfigVariables *cfg, const UserVariables_t *uvar, const char *app_name);
-
-EphemerisData *InitEphemeris (const CHAR *ephemDir, const CHAR *ephemYear );
 
 int XLALOutputDopplerMetric ( FILE *fp, const DopplerMetric *metric, const ResultHistory_t *history );
 
@@ -318,9 +316,8 @@ initUserVars (UserVariables_t *uvar)
   /* set a few defaults */
   uvar->help = FALSE;
 
-#define EPHEM_YEAR  "00-19-DE405"
-  uvar->ephemYear = XLALCalloc (1, strlen(EPHEM_YEAR)+1);
-  strcpy (uvar->ephemYear, EPHEM_YEAR);
+  uvar->ephemEarth = XLALStringDuplicate("earth00-19-DE405.dat.gz");
+  uvar->ephemSun = XLALStringDuplicate("sun00-19-DE405.dat.gz");
 
   uvar->Freq = 100;
   uvar->f1dot = 0.0;
@@ -370,8 +367,8 @@ initUserVars (UserVariables_t *uvar)
   XLALregREALUserStruct(duration,	'T', UVAR_OPTIONAL,	"Duration of observation in seconds");
   XLALregINTUserStruct(Nseg,		'N', UVAR_OPTIONAL, 	"Compute semi-coherent metric for this number of segments within 'duration'" );
   XLALregSTRINGUserStruct(segmentList,   0,  UVAR_OPTIONAL,     "ALTERNATIVE: specify segment file with format: repeated lines <startGPS endGPS duration[h] NumSFTs>");
-  XLALregSTRINGUserStruct(ephemDir, 	'E', UVAR_OPTIONAL,     "Directory where Ephemeris files are located");
-  XLALregSTRINGUserStruct(ephemYear, 	'y', UVAR_OPTIONAL,     "Year (or range of years) of ephemeris files to be used");
+  XLALregSTRINGUserStruct( ephemEarth,   0,  UVAR_OPTIONAL,     "Earth ephemeris file to use");
+  XLALregSTRINGUserStruct( ephemSun,     0,  UVAR_OPTIONAL,     "Sun ephemeris file to use");
 
   XLALregREALUserStruct(h0,	 	 0, UVAR_OPTIONAL,	"GW amplitude h0" );
   XLALregREALUserStruct(cosi,	 	 0, UVAR_OPTIONAL,	"Pulsar orientation-angle cos(iota) [-1,1]" );
@@ -406,11 +403,8 @@ XLALInitCode ( ConfigVariables *cfg, const UserVariables_t *uvar, const char *ap
     XLAL_ERROR (XLAL_EINVAL );
   }
 
-  // ----- load ephemeris files
-  if ( (cfg->edat = InitEphemeris ( uvar->ephemDir, uvar->ephemYear)) == NULL ) {
-    LogPrintf (LOG_CRITICAL, "%s: InitEphemeris() Failed to initialize ephemeris data!\n\n", __func__);
-    XLAL_ERROR ( XLAL_EFUNC );
-  }
+  /* Init ephemerides */
+  XLAL_CHECK ( (cfg->edat = XLALInitBarycenter ( uvar->ephemEarth, uvar->ephemSun )) != NULL, XLAL_EFUNC );
 
   // ----- figure out which segments to use
   BOOLEAN manualSegments = XLALUserVarWasSet(&uvar->duration) || XLALUserVarWasSet(&uvar->startTime) || XLALUserVarWasSet(&uvar->Nseg);
@@ -538,46 +532,6 @@ XLALDestroyConfig ( ConfigVariables *cfg )
 
 } /* XLALDestroyConfig() */
 
-
-
-/** Load Ephemeris from ephemeris data-files  */
-EphemerisData *
-InitEphemeris (const CHAR *ephemDir,	/**< directory containing ephems */
-	       const CHAR *ephemYear	/**< which years do we need? */
-	       )
-{
-#define FNAME_LENGTH 1024
-  EphemerisData *edat;
-  CHAR EphemEarth[FNAME_LENGTH];	/* filename of earth-ephemeris data */
-  CHAR EphemSun[FNAME_LENGTH];	/* filename of sun-ephemeris data */
-
-  if ( !ephemYear ) {
-    XLALPrintError ("\n%s: NULL pointer passed as ephemeris year range!\n", __func__);
-    return NULL;
-  }
-
-  if ( ephemDir )
-    {
-      snprintf(EphemEarth, FNAME_LENGTH, "%s/earth%s.dat", ephemDir, ephemYear);
-      snprintf(EphemSun, FNAME_LENGTH, "%s/sun%s.dat", ephemDir, ephemYear);
-    }
-  else
-    {
-      snprintf(EphemEarth, FNAME_LENGTH, "earth%s.dat", ephemYear);
-      snprintf(EphemSun, FNAME_LENGTH, "sun%s.dat",  ephemYear);
-    }
-
-  EphemEarth[FNAME_LENGTH-1] = 0;
-  EphemSun[FNAME_LENGTH-1] = 0;
-
-  if ( (edat = XLALInitBarycenter(EphemEarth, EphemSun)) == NULL ) {
-    XLALPrintError ( "%s: XLALInitBarycenter() failed with xlalErrno = %d.\n\n", __func__, xlalErrno );
-    return NULL;
-  }
-
-  return edat;
-
-} /* InitEphemeris() */
 
 int
 XLALOutputDopplerMetric ( FILE *fp, const DopplerMetric *metric, const ResultHistory_t *history )
