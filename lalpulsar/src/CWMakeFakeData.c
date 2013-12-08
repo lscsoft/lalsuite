@@ -44,7 +44,6 @@
 // ---------- local macro definitions
 #define SQ(x) ( (x) * (x) )
 #define INIT_MEM(x) memset(&(x), 0, sizeof((x)))
-
 // ---------- local type definitions
 
 // ---------- empty initializers
@@ -219,30 +218,56 @@ XLALCWMakeFakeData ( SFTVector **SFTvect,
 
    /* ----- start-time and duration ----- */
   LIGOTimeGPS firstGPS = timestamps->data[0];
+  REAL8 firstGPS_REAL8 = XLALGPSGetREAL8 ( &firstGPS );
   LIGOTimeGPS lastGPS  = timestamps->data [ timestamps->length - 1 ];
-  REAL8 duration = XLALGPSDiff ( &lastGPS, &firstGPS ) + Tsft;
-  XLAL_CHECK ( duration >= Tsft, XLAL_EINVAL, "Requested duration=%.0f sec is less than Tsft =%.0f sec.\n\n", duration, Tsft);
+  REAL8 lastGPS_REAL8 = XLALGPSGetREAL8 ( &lastGPS );
+  XLALGPSAdd( &lastGPS, Tsft );
+  REAL8 duration = XLALGPSDiff ( &lastGPS, &firstGPS );
 
   REAL4TimeSeries *Tseries_sum = NULL;
+  XLAL_CHECK ( (Tseries_sum = XLALGenerateCWSignalTS ( &injectionSources->data[0], site, firstGPS, duration, fSamp, fMin, edat )) != NULL, XLAL_EFUNC );
+
   UINT4 numPulsars = injectionSources->length;
-  for ( UINT4 iInj = 0; iInj < numPulsars; iInj ++ )
+  for ( UINT4 iInj = 1; iInj < numPulsars; iInj ++ )
     {
+      // for all but the first time-series, we truncate any transient-CW timeseries to the actual support
+      // of the transient signal, in order to make the generation more efficient, these 'partial timeseries'
+      // will then be added to the full timeseries of the 1st signal (with iInj=0)
       const PulsarParams *pulsarParams = &( injectionSources->data[iInj] );
+      UINT4 t0, t1;
+      XLAL_CHECK ( XLALGetTransientWindowTimespan ( &t0, &t1, pulsarParams->Transient ) == XLAL_SUCCESS, XLAL_EFUNC );
 
-      REAL4TimeSeries *Tseries_i = NULL;
-      XLAL_CHECK ( (Tseries_i = XLALGenerateCWSignalTS ( pulsarParams, site, firstGPS, duration, fSamp, fMin, edat )) != NULL, XLAL_EFUNC );
+      // use latest possible start-time: max(t0,firstGPS), but not later than than lastGPS
+      LIGOTimeGPS signalStartGPS; INIT_MEM ( signalStartGPS );
+      if ( t0 <= firstGPS_REAL8 ) {
+        signalStartGPS = firstGPS;
+      } else if ( t0 >= lastGPS_REAL8 ) {
+        signalStartGPS = lastGPS;
+      }
+      else {
+        signalStartGPS.gpsSeconds = t0;
+      }
 
-      if ( Tseries_sum == NULL )
+      // use earliest possible end-time: min(t1,lastGPS), but not earlier than firstGPS
+      LIGOTimeGPS signalEndGPS; INIT_MEM ( signalEndGPS );
+      if ( t1 >= lastGPS_REAL8 ) {
+        signalEndGPS = lastGPS;
+      } else if ( t1 <= firstGPS_REAL8 ) {
+        signalEndGPS = firstGPS;
+      } else {
+        signalEndGPS.gpsSeconds = t1;
+      }
+      REAL8 signalDuration = XLALGPSDiff ( &signalEndGPS, &signalStartGPS );
+      XLAL_CHECK ( signalDuration >= 0, XLAL_EFAILED, "Something went wrong, got negative signal duration = %g\n", signalDuration );
+      if ( signalDuration > 0 )	// only need to do sth if transient-window had finite overlap with output TS
         {
-          Tseries_sum = Tseries_i;
-        }
-      else
-        {
+          REAL4TimeSeries *Tseries_i = NULL;
+          XLAL_CHECK ( (Tseries_i = XLALGenerateCWSignalTS ( pulsarParams, site, signalStartGPS, signalDuration, fSamp, fMin, edat )) != NULL, XLAL_EFUNC );
+
           XLAL_CHECK ( (Tseries_sum = XLALAddREAL4TimeSeries ( Tseries_sum, Tseries_i )) != NULL, XLAL_EFUNC );
           XLALDestroyREAL4TimeSeries ( Tseries_i );
         }
-
-    } // for iInj < numSources
+    } // for iInj = 1 ... (numPulsars-1)
 
   /* add Gaussian noise if requested */
   REAL8 sqrtSn = dataParams->detInfo.sqrtSn[0];
