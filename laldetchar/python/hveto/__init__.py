@@ -234,16 +234,20 @@ def query_segments_xml( xml_location, gps_start, gps_end, spec ):
 	"""
 	if spec is None:
 		spec = True
+	else:
+		#ifo, definer, version = spec.split(":")
+		definer = spec.split(":")
+		ifo, definer, version = definer[0], ":".join(definer[1:-1]), definer[-1]
 	xmldoc = utils.load_filename( xml_location )
 	segment_definer = table.get_table( xmldoc, lsctables.SegmentDefTable.tableName )
 	# FIXME: ifo in ifos? What does a segment for a set of ifos even mean?
 	seg_def_id = [ sd.segment_def_id for sd in segment_definer if spec and ifo in sd.get_ifos() and definer == sd.name ]
-	if len(seg_def_id) != 0:
+	if len(seg_def_id) != 1:
 		raise ValueError( "Need exactly one definer row for %s:%s:%s, got %d" % (ifo, definer, version, len(seg_def_id)) )
 	seg_def_id = seg_def_id[0]
 
 	segment = table.get_table( xmldoc, lsctables.SegmentTable.tableName )
-	return segmentlist([s.get_seg() for s in segment if s.segment_def_id == seg_def_id])
+	return segmentlist([s.get() for s in segment if s.segment_def_id == seg_def_id])
 
 def query_segments_db( db_location, gps_start, gps_end, spec ):
 	"""
@@ -266,6 +270,9 @@ def write_round_xml( vetosegs, vetotrigs, winner, ifo, opts ):
 	# Append the process information
 	procrow = utils.process.append_process( xmldoc, program="laldetchar-hveto" )
 	utils.process.append_process_params( xmldoc, procrow, utils.process.process_params_from_dict(opts) )
+
+	summ = lsctables.New(lsctables.SearchSummVarsTable, lsctables.SearchSummVarsTable.validcolumns.keys())
+	import pdb; pdb.set_trace()
 
 	# Add the vetoed triggers
 	xmldoc.childNodes[0].childNodes.append( vetotrigs )
