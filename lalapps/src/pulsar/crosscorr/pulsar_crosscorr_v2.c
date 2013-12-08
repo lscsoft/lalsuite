@@ -38,8 +38,10 @@
 #include <lal/ExtrapolatePulsarSpins.h>
 #include <lal/LALInitBarycenter.h>
 #include <lal/NormalizeSFTRngMed.h>
+#include <lal/LALString.h>
 #include <lal/PulsarCrossCorr_v2.h>
 /* introduce mismatch in f and all 5 binary parameters */
+
 /* user input variables */
 typedef struct{
   BOOLEAN help; /**< if the user wants a help message */
@@ -60,7 +62,8 @@ typedef struct{
   REAL8   orbitTimeAsc;       /**< start time of ascension for binary orbit */
   REAL8   orbitTimeAscBand;   /**< band for time of ascension for binary orbit */
   CHAR    *sftLocation;       /**< location of SFT data */
-  CHAR    *ephemYear;         /**< range of years for ephemeris file */
+  CHAR    *ephemEarth;		/**< Earth ephemeris file to use */
+  CHAR    *ephemSun;		/**< Sun ephemeris file to use */
   INT4    rngMedBlock;        /**< running median block size */
   INT4    numBins;            /**< number of frequency bins to include in sum */
   REAL8   mismatchF;          /**< mismatch for frequency spacing */
@@ -74,10 +77,6 @@ typedef struct{
   SFTCatalog *catalog; /**< catalog of SFTs */
   EphemerisData *edat; /**< ephemeris data */
 } ConfigVariables;
-
-
-#define DEFAULT_EPHEMDIR "env LAL_DATA_PATH"
-#define EPHEM_YEARS "00-19-DE405"
 
 #define TRUE (1==1)
 #define FALSE (1==0)
@@ -484,8 +483,8 @@ int XLALInitUserVars (UserInput_t *uvar)
   uvar->mismatchT = 0.1;
   uvar->mismatchP = 0.1;
 
-  uvar->ephemYear = XLALCalloc (1, strlen(EPHEM_YEARS)+1);
-  strcpy (uvar->ephemYear, EPHEM_YEARS);
+  uvar->ephemEarth = XLALStringDuplicate("earth00-19-DE405.dat.gz");
+  uvar->ephemSun = XLALStringDuplicate("sun00-19-DE405.dat.gz");
 
   uvar->sftLocation = XLALCalloc(1, MAXFILENAMELENGTH+1);
 
@@ -507,7 +506,8 @@ int XLALInitUserVars (UserInput_t *uvar)
   XLALregREALUserStruct  ( orbitPSec,     0,  UVAR_OPTIONAL, "Binary orbital period (seconds) [0 means not a binary]");
   XLALregREALUserStruct  ( orbitTimeAsc,  0,  UVAR_OPTIONAL, "Start of orbital time-of-ascension band in GPS seconds");
   XLALregREALUserStruct  ( orbitTimeAscBand, 0,  UVAR_OPTIONAL, "Width of orbital time-of-ascension band (seconds)");
-  XLALregSTRINGUserStruct( ephemYear,     0,  UVAR_OPTIONAL, "String Ephemeris year range");
+  XLALregSTRINGUserStruct( ephemEarth,    0,  UVAR_OPTIONAL, "Earth ephemeris file to use");
+  XLALregSTRINGUserStruct( ephemSun,      0,  UVAR_OPTIONAL, "Sun ephemeris file to use");
   XLALregSTRINGUserStruct( sftLocation,   0,  UVAR_REQUIRED, "Filename pattern for locating SFT data");
   XLALregINTUserStruct   ( rngMedBlock,   0,  UVAR_OPTIONAL, "Running median block size for PSD estimation");
   XLALregINTUserStruct   ( numBins,       0,  UVAR_OPTIONAL, "Number of frequency bins to include in calculation");
@@ -532,9 +532,6 @@ int XLALInitializeConfigVars (ConfigVariables *config, const UserInput_t *uvar)
 
   static SFTConstraints constraints;
   LIGOTimeGPS startTime, endTime;
-  CHAR EphemEarth[MAXFILENAMELENGTH]; /* file with earth-ephemeris data */
-  CHAR EphemSun[MAXFILENAMELENGTH];	/* file with sun-ephemeris data */
-
 
   /* set sft catalog constraints */
   constraints.detector = NULL;
@@ -561,23 +558,8 @@ int XLALInitializeConfigVars (ConfigVariables *config, const UserInput_t *uvar)
   }
 
   /* initialize ephemeris data*/
-  /* first check input consistency */
-  if ( uvar->ephemYear == NULL) {
-    XLALPrintError ("%s: invalid NULL input for 'ephemYear'\n", __func__ );
-    XLAL_ERROR ( XLAL_EINVAL );
-  }
+  XLAL_CHECK ( (config->edat = XLALInitBarycenter ( uvar->ephemEarth, uvar->ephemSun )) != NULL, XLAL_EFUNC );
 
-  /* construct ephemeris file names from ephemeris year input*/
-  snprintf(EphemEarth, MAXFILENAMELENGTH, "earth%s.dat", uvar->ephemYear);
-  snprintf(EphemSun, MAXFILENAMELENGTH, "sun%s.dat",  uvar->ephemYear);
-  EphemEarth[MAXFILENAMELENGTH-1]=0;
-  EphemSun[MAXFILENAMELENGTH-1]=0;
-
-  /* now call initbarycentering routine */
-  if ( (config->edat = XLALInitBarycenter ( EphemEarth, EphemSun)) == NULL ) {
-    XLALPrintError ("%s: XLALInitBarycenter() failed.\n", __func__ );
-    XLAL_ERROR ( XLAL_EFUNC );
-  }
   return XLAL_SUCCESS;
 
 }
