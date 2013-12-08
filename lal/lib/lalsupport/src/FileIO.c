@@ -549,7 +549,7 @@ int XLALGzipTextFile( const char *filename ){
   XLALFileRewind( fp ); /* return the file pointer to the start of the file */
 
   /* allocate memory to read in data */
-  memblock = XLALMalloc( pos );
+  memblock = XLALMalloc( pos + 1);
 
   if ( !memblock ){
     XLALPrintError ("%s: Unable to allocate memory for reading file.\n", __func__ );
@@ -561,6 +561,7 @@ int XLALGzipTextFile( const char *filename ){
     XLALPrintError ("%s: Unable to read in file.\n", __func__ );
     XLAL_ERROR( XLAL_EIO );
   }
+  memblock[pos] = 0; // properly 0-terminate string
 
   XLALFileClose( fp );
 
@@ -634,6 +635,7 @@ int XLALGunzipTextFile( const char *filename ){
     XLALPrintError ("%s: Unable to strip extension from file string.\n", __func__ );
     XLAL_ERROR ( XLAL_EIO );
   }
+  outname[n] = 0;
 
   /* open gzipped file for reading */
   if ( (fg = XLALFileOpen(filename, "rb")) == NULL ){
