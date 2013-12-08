@@ -22,6 +22,7 @@
 
 #include <lal/LALDatatypes.h>
 #include <lal/Sequence.h>
+#include <lal/LALMalloc.h>
 
 static REAL4Sequence *random_sequence(size_t length)
 {
@@ -83,7 +84,7 @@ int main(void)
 	XLALDestroyREAL4Sequence(NULL);
 
 	/* Incompletely/Incorrectly initialized structure */
-	x = malloc(sizeof(*x));
+	x = XLALCalloc(1, sizeof(*x));
 	x->length = 1000;
 	x->data = NULL;
 	XLALDestroyREAL4Sequence(x);
