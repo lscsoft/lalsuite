@@ -3,7 +3,22 @@
 AM_CPPFLAGS = -I$(top_srcdir)/src -I$(top_srcdir)/src/lalapps -I$(top_builddir)/src/lalapps -DPKG_DATA_DIR='"$(pkgdatadir)/"'
 LDADD = $(top_builddir)/src/lalapps/liblalapps.la
 
-SUBDIRS =  MakeSFTs Injections FDS_isolated hough GCT FDS_binary SideBand templateBanks crosscorr TimingTests TDS_isolated fscan TwoSpect CombSearch SFTReferenceLibrary
+SUBDIRS = \
+	MakeSFTs \
+	Injections \
+	FDS_isolated \
+	hough \
+	GCT \
+	FDS_binary \
+	SideBand \
+	templateBanks \
+	crosscorr \
+	TimingTests \
+	TDS_isolated \
+	fscan \
+	TwoSpect \
+	CombSearch \
+	SFTReferenceLibrary
 
 if LALFRAME
 # this only requires LALFrame because of usage of LALFrameL.h
@@ -12,9 +27,21 @@ else
 LALFRAMEPROGS =
 endif
 
-bin_PROGRAMS = $(LALFRAMEPROGS) lalapps_Calibrate60sSFTs lalapps_Calibrate1800SFTs lalapps_FreqAverager lalapps_psd \
-	lalapps_ComputePSD  lalapps_FreqAverager_v2 lalapps_GetSFTVelocities lalapps_create_solar_system_ephemeris \
-        lalapps_make_job_input_data lalapps_PrintDetectorState lalapps_create_time_correction_ephemeris lalapps_ssbtodetector lalapps_ComputeAntennaPattern
+bin_PROGRAMS = \
+	lalapps_Calibrate60sSFTs \
+	lalapps_Calibrate1800SFTs \
+	lalapps_FreqAverager \
+	lalapps_psd \
+	lalapps_ComputePSD \
+	lalapps_FreqAverager_v2 \
+	lalapps_GetSFTVelocities \
+	lalapps_create_solar_system_ephemeris \
+	lalapps_make_job_input_data \
+	lalapps_PrintDetectorState \
+	lalapps_create_time_correction_ephemeris \
+	lalapps_ssbtodetector \
+	lalapps_ComputeAntennaPattern
+	$(LALFRAMEPROGS)
 
 if LALFRAME
 lalapps_make_sfts_SOURCES = make_sfts.c
@@ -35,38 +62,39 @@ lalapps_create_time_correction_ephemeris_SOURCES = create_time_correction_epheme
 lalapps_ssbtodetector_SOURCES = ssbtodetector.c
 
 EXTRA_DIST = \
-make_locked_data_list \
-make_cluster_data_list \
-make_job_input_data.c \
-make_sfts.c \
-Calibrate60sSFTs.c \
-Calibrate1800SFTs.c \
-FreqAverager.c \
-psd.c \
-psd.h \
-README \
-SFT.00000 \
-SFT.00001 \
-SFT.00002 \
-SFT.00003 \
-SFT.00004 \
-SFT.00005 \
-SFT.00006 \
-SFT.00007 \
-SFT.00008 \
-SFT.00009 \
-S1-H1segments.txt \
-S1-H2segments.txt \
-S1-L1segments.txt \
-S2-H1segments.txt \
-S2-H2segments.txt \
-S2-L1segments.txt \
-testComputePSD.sh \
-testComputeAntennaPattern.sh \
-psd_ref.dat
+	make_locked_data_list \
+	make_cluster_data_list \
+	make_job_input_data.c \
+	make_sfts.c \
+	Calibrate60sSFTs.c \
+	Calibrate1800SFTs.c \
+	FreqAverager.c \
+	psd.c \
+	psd.h \
+	README \
+	SFT.00000 \
+	SFT.00001 \
+	SFT.00002 \
+	SFT.00003 \
+	SFT.00004 \
+	SFT.00005 \
+	SFT.00006 \
+	SFT.00007 \
+	SFT.00008 \
+	SFT.00009 \
+	S1-H1segments.txt \
+	S1-H2segments.txt \
+	S1-L1segments.txt \
+	S2-H1segments.txt \
+	S2-H2segments.txt \
+	S2-L1segments.txt \
+	testComputePSD.sh \
+	testComputeAntennaPattern.sh \
+	psd_ref.dat
 
-
-TESTS = testComputePSD.sh testComputeAntennaPattern.sh
+TESTS = \
+	testComputePSD.sh \
+	testComputeAntennaPattern.sh
 
 TESTS_ENVIRONMENT = LAL_DEBUG_LEVEL=memdbg LALPULSAR_DATADIR="$(LALPULSAR_DATADIR)"
 
