@@ -110,7 +110,7 @@ if ! eval $cap_cmdline; then
     exit 1
 fi
 
-cat ${outCAP} | sed -e"/^\%\%/d" > ${outCAPstripped}
+cat ${outCAP} | sed -e"/^%%.*/d" > ${outCAPstripped}
 a_cap=$(awk '{print $4}' $outCAPstripped)
 b_cap=$(awk '{print $5}' $outCAPstripped)
 echo "==> lalapps_ComputeAntennaPattern:   a=$a_cap, b=$b_cap"
@@ -184,7 +184,7 @@ if ! eval $cap_cmdline; then
     exit 1
 fi
 
-cat ${outCAP} | sed -e"/^\%\%/d" > ${outCAPstripped}
+cat ${outCAP} | sed -e"/^%%.*/d" > ${outCAPstripped}
 
 a1_cap=$( awk 'NR==1 {print $4}' $outCAPstripped)
 b1_cap=$( awk 'NR==1 {print $5}' $outCAPstripped)
@@ -229,7 +229,7 @@ if ! eval $cap_cmdline; then
     exit 1
 fi
 
-cat ${outCAP} | sed -e"/^\%\%/d" > ${outCAPstripped}
+cat ${outCAP} | sed -e"/^%%.*/d" > ${outCAPstripped}
 
 A1_cap=$( awk 'NR==1 {print $6}' $outCAPstripped)
 B1_cap=$( awk 'NR==1 {print $7}' $outCAPstripped)
@@ -259,7 +259,7 @@ if ! eval $cap_cmdline; then
     exit 1
 fi
 
-cat ${outCAP} | sed -e"/^\%\%/d" > ${outCAPstripped}
+cat ${outCAP} | sed -e"/^%%.*/d" > ${outCAPstripped}
 
 A_cap_mean=$(awk '{print $3}' $outCAPstripped)
 B_cap_mean=$(awk '{print $4}' $outCAPstripped)
@@ -294,7 +294,7 @@ if ! eval $cap_cmdline; then
     exit 1
 fi
 
-cat ${outCAP} | sed -e"/^\%\%/d" > ${outCAPstripped}
+cat ${outCAP} | sed -e"/^%%.*/d" > ${outCAPstripped}
 
 A_cap=$(awk '{print $3}' $outCAPstripped)
 B_cap=$(awk '{print $4}' $outCAPstripped)
