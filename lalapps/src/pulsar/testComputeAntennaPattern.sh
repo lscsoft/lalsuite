@@ -44,6 +44,7 @@ alpha=4.649850989853494
 delta=-0.506281802989210
 
 outCAP=antenna_pattern_test.dat
+outCAPstripped=antenna_pattern_test_stripped.dat
 outPDS=detector_state_test.dat
 
 
@@ -109,9 +110,9 @@ if ! eval $cap_cmdline; then
     exit 1
 fi
 
-eval $(sed -i '/^\%\%/d' $outCAP)
-a_cap=$(awk '{print $4}' $outCAP)
-b_cap=$(awk '{print $5}' $outCAP)
+cat ${outCAP} | sed -e"/^\%\%/d" > ${outCAPstripped}
+a_cap=$(awk '{print $4}' $outCAPstripped)
+b_cap=$(awk '{print $5}' $outCAPstripped)
 echo "==> lalapps_ComputeAntennaPattern:   a=$a_cap, b=$b_cap"
 
 reldev_a_cap_xlal=$(echo $a_xlal $a_cap | awk "$awk_reldev")
@@ -183,13 +184,14 @@ if ! eval $cap_cmdline; then
     exit 1
 fi
 
-eval $(sed -i '/^\%\%/d' $outCAP)
-a1_cap=$( awk 'NR==1 {print $4}' $outCAP)
-b1_cap=$( awk 'NR==1 {print $5}' $outCAP)
-a2_cap=$( awk 'NR==2 {print $4}' $outCAP)
-b2_cap=$( awk 'NR==2 {print $5}' $outCAP)
-a3_cap=$( awk 'NR==3 {print $4}' $outCAP)
-b3_cap=$( awk 'NR==3 {print $5}' $outCAP)
+cat ${outCAP} | sed -e"/^\%\%/d" > ${outCAPstripped}
+
+a1_cap=$( awk 'NR==1 {print $4}' $outCAPstripped)
+b1_cap=$( awk 'NR==1 {print $5}' $outCAPstripped)
+a2_cap=$( awk 'NR==2 {print $4}' $outCAPstripped)
+b2_cap=$( awk 'NR==2 {print $5}' $outCAPstripped)
+a3_cap=$( awk 'NR==3 {print $4}' $outCAPstripped)
+b3_cap=$( awk 'NR==3 {print $5}' $outCAPstripped)
 echo "==> alpha=0.0 delta= 0.0: lalapps_ComputeAntennaPattern: a=$a1_cap, b=$b1_cap / lalapps_PrintDetectorState: a=$a1_pds, b=$b1_pds"
 echo "    alpha=0.0 delta= 0.5: lalapps_ComputeAntennaPattern: a=$a2_cap, b=$b2_cap / lalapps_PrintDetectorState: a=$a2_pds, b=$b2_pds"
 echo "    alpha=3.0 delta=-0.5: lalapps_ComputeAntennaPattern: a=$a3_cap, b=$b3_cap / lalapps_PrintDetectorState: a=$a3_pds, b=$b3_pds"
@@ -226,16 +228,18 @@ if ! eval $cap_cmdline; then
     echo "Error.. something failed when running '$cap_code' ..."
     exit 1
 fi
-eval $(sed -i '/^\%\%/d' $outCAP)
-A1_cap=$( awk 'NR==1 {print $6}' $outCAP)
-B1_cap=$( awk 'NR==1 {print $7}' $outCAP)
-C1_cap=$( awk 'NR==1 {print $8}' $outCAP)
-A2_cap=$( awk 'NR==2 {print $6}' $outCAP)
-B2_cap=$( awk 'NR==2 {print $7}' $outCAP)
-C2_cap=$( awk 'NR==2 {print $8}' $outCAP)
-A3_cap=$( awk 'NR==3 {print $6}' $outCAP)
-B3_cap=$( awk 'NR==3 {print $7}' $outCAP)
-C3_cap=$( awk 'NR==3 {print $8}' $outCAP)
+
+cat ${outCAP} | sed -e"/^\%\%/d" > ${outCAPstripped}
+
+A1_cap=$( awk 'NR==1 {print $6}' $outCAPstripped)
+B1_cap=$( awk 'NR==1 {print $7}' $outCAPstripped)
+C1_cap=$( awk 'NR==1 {print $8}' $outCAPstripped)
+A2_cap=$( awk 'NR==2 {print $6}' $outCAPstripped)
+B2_cap=$( awk 'NR==2 {print $7}' $outCAPstripped)
+C2_cap=$( awk 'NR==2 {print $8}' $outCAPstripped)
+A3_cap=$( awk 'NR==3 {print $6}' $outCAPstripped)
+B3_cap=$( awk 'NR==3 {print $7}' $outCAPstripped)
+C3_cap=$( awk 'NR==3 {print $8}' $outCAPstripped)
 
 ## ----- externally compute mean for test
 Amean=$( echo $A1_cap $A2_cap $A3_cap | awk '{print ($1+$2+$3)/3}' )
@@ -254,11 +258,13 @@ if ! eval $cap_cmdline; then
     echo "Error.. something failed when running '$cap_code' ..."
     exit 1
 fi
-eval $(sed -i '/^\%\%/d' $outCAP)
-A_cap_mean=$(awk '{print $3}' $outCAP)
-B_cap_mean=$(awk '{print $4}' $outCAP)
-C_cap_mean=$(awk '{print $5}' $outCAP)
-D_cap_mean=$(awk '{print $6}' $outCAP)
+
+cat ${outCAP} | sed -e"/^\%\%/d" > ${outCAPstripped}
+
+A_cap_mean=$(awk '{print $3}' $outCAPstripped)
+B_cap_mean=$(awk '{print $4}' $outCAPstripped)
+C_cap_mean=$(awk '{print $5}' $outCAPstripped)
+D_cap_mean=$(awk '{print $6}' $outCAPstripped)
 reldev_Amean=$(echo $A_cap_mean $Amean | awk "$awk_reldev")
 reldev_Bmean=$(echo $B_cap_mean $Bmean | awk "$awk_reldev")
 reldev_Cmean=$(echo $C_cap_mean $Cmean | awk "$awk_reldev")
@@ -287,11 +293,13 @@ if ! eval $cap_cmdline; then
     echo "Error.. something failed when running '$cap_code' ..."
     exit 1
 fi
-eval $(sed -i '/^\%\%/d' $outCAP)
-A_cap=$(awk '{print $3}' $outCAP)
-B_cap=$(awk '{print $4}' $outCAP)
-C_cap=$(awk '{print $5}' $outCAP)
-D_cap=$(awk '{print $6}' $outCAP)
+
+cat ${outCAP} | sed -e"/^\%\%/d" > ${outCAPstripped}
+
+A_cap=$(awk '{print $3}' $outCAPstripped)
+B_cap=$(awk '{print $4}' $outCAPstripped)
+C_cap=$(awk '{print $5}' $outCAPstripped)
+D_cap=$(awk '{print $6}' $outCAPstripped)
 
 sftfile=./H1_test.sft
 outPFS=./pfs_test.dat
@@ -339,7 +347,7 @@ fi
 
 ## clean up files
 if [ -z "$NOCLEANUP" ]; then
-    rm $outCAP
+    rm $outCAP $outCAPstripped
     rm $outPDS
     rm $skygrid
     rm $timestampsfile
