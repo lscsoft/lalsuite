@@ -36,6 +36,7 @@
 #include <lal/UserInput.h>
 #include <lal/LALInitBarycenter.h>
 #include <lal/ComputeFstat.h>
+#include <lal/LALString.h>
 #include <lal/StringVector.h>
 
 #include <lalapps.h>
@@ -72,8 +73,8 @@ typedef struct
   REAL8 Delta;		/**< a single skyposition Delta: radians, equatorial coords. */
   CHAR *skyGridFile;	/**< alternative: matrix of (Alpha,Delta) pairs from a file */
 
-  CHAR *ephemDir;	/**< directory to look for ephemeris files */
-  CHAR *ephemYear;	/**< date-range string on ephemeris-files to use */
+  CHAR *ephemEarth;	/**< Earth ephemeris file to use */
+  CHAR *ephemSun;	/**< Sun ephemeris file to use */
 
   LALStringVector* timeGPS;	/**< GPS timestamps to compute detector state for (REAL8 format) */
   CHAR  *timeStampsFile;	/**< alternative: read in timestamps from a file (expect same format) */
@@ -223,9 +224,8 @@ XLALInitUserVars ( UserVariables_t *uvar )
 
   XLAL_CHECK ( (uvar->IFOs = XLALCreateStringVector ( "H1", NULL )) != NULL, XLAL_ENOMEM, "Call to XLALCreateStringVector() failed." );
 
-#define EPHEM_YEAR  "00-19-DE405"
-  XLAL_CHECK ( (uvar->ephemYear = XLALCalloc (1, strlen(EPHEM_YEAR)+1)) != NULL, XLAL_ENOMEM );
-  strcpy (uvar->ephemYear, EPHEM_YEAR);
+  uvar->ephemEarth = XLALStringDuplicate("earth00-19-DE405.dat.gz");
+  uvar->ephemSun = XLALStringDuplicate("sun00-19-DE405.dat.gz");
 
   uvar->Alpha     = 0.0;
   uvar->Delta     = 0.0;
@@ -252,8 +252,8 @@ XLALInitUserVars ( UserVariables_t *uvar )
   XLALregBOOLUserStruct(	averageABCD,	0, UVAR_OPTIONAL,	"output only time-averaged antenna pattern matrix elements");
   XLALregINTUserStruct(		Tsft,		0, UVAR_OPTIONAL,	"Assumed length of one SFT in seconds; needed for timestamps offset consistency with F-stat based codes");
 
-  XLALregSTRINGUserStruct(	ephemDir, 	'E', UVAR_OPTIONAL,     "Directory where Ephemeris files are located");
-  XLALregSTRINGUserStruct(	ephemYear, 	'y', UVAR_OPTIONAL,     "Year (or range of years) of ephemeris files to be used");
+  XLALregSTRINGUserStruct (	ephemEarth,	 0,  UVAR_OPTIONAL,	"Earth ephemeris file to use");
+  XLALregSTRINGUserStruct (	ephemSun,	 0,  UVAR_OPTIONAL,	"Sun ephemeris file to use");
 
   XLALregSTRINGUserStruct(	outputFile, 	'o', UVAR_OPTIONAL,     "Output file for antenna pattern functions");
 
@@ -273,7 +273,7 @@ XLALInitCode ( ConfigVariables *cfg, const UserVariables_t *uvar, const char *ap
   XLAL_CHECK ( cfg && uvar && app_name, XLAL_EINVAL, "Illegal NULL pointer input." );
 
   /* init ephemeris data */
-  XLAL_CHECK ( (cfg->edat = InitEphemeris ( uvar->ephemDir, uvar->ephemYear)) != NULL, XLAL_EINVAL, "InitEphemeris() Failed to initialize ephemeris data!" );
+  XLAL_CHECK ( ( cfg->edat = XLALInitBarycenter( uvar->ephemEarth, uvar->ephemSun ) ) != NULL, XLAL_EFUNC, "XLALInitBarycenter failed: could not load Earth ephemeris '%s' and Sun ephemeris '%s.", uvar->ephemEarth, uvar->ephemSun);
 
   UINT4 numDetectors = uvar->IFOs->length;
   XLAL_CHECK ( numDetectors == 1, XLAL_EINVAL, "Can't handle more than one IFO at the moment." ); // FIXME
