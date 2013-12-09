@@ -507,8 +507,8 @@ REAL8 LALInferenceROQLogLikelihood(LALInferenceVariables *currentParams, LALInfe
     // then set tc in MCMC to be one of the discrete values
     weight_index = (unsigned int) ((time_min - time_requested) / time_step);
     
-    gsl_vector_complex_view *weights_row = gsl_matrix_complex_row (data->roqData->weights, weight_index);
-    gsl_blas_zdotc(weights_row->vector, data->roqData->hplus, &complexL);
+    gsl_vector_complex_view weights_row = gsl_matrix_complex_row (data->roqData->weights, weight_index);
+    gsl_blas_zdotc( &(weights_row.vector), data->roqData->hplus, &complexL);
     
     dataPtr->loglikelihood = GSL_REAL(complexL);
     

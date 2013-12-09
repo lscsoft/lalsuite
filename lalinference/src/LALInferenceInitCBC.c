@@ -428,7 +428,7 @@ LALInferenceVariables *LALInferenceInitCBCVariables(LALInferenceRunState *state)
   } else if (XLALSimInspiralImplementedFDApproximants(approx)) {
     modelDomain = LAL_SIM_DOMAIN_FREQUENCY;
   } else {
-     printf(stderr,"ERROR. Unknown approximant number %i. Unable to choose time or frequency domain model.",approx);
+    fprintf(stderr,"ERROR. Unknown approximant number %i. Unable to choose time or frequency domain model.",approx);
     exit(1);
   }
 
