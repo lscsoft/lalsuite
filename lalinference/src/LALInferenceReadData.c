@@ -1200,7 +1200,7 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
     timeMin -= XLALGPSGetREAL8(&IFOdata[i].whiteFreqData->epoch);
     timeMax -= XLALGPSGetREAL8(&IFOdata[i].whiteFreqData->epoch);
   
-    time_steps = (unsigned int)(timeMax-timeMin)/delta_tc;
+    time_steps = (unsigned int)((timeMax-timeMin)/delta_tc);
   
     double deltaF = IFOdata[i].oneSidedNoisePowerSpectrum->deltaF;
     gsl_matrix_complex *vandermonde_matrix=NULL;
