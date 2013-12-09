@@ -219,50 +219,61 @@ fi
 
 
 echo "----------------------------------------------------------------------------------------------------"
-echo "ComputeAntennaPattern Test3: averaging over timestamps from file";
+echo "ComputeAntennaPattern Test3: matrix-element averaging over timestamps from file";
 echo "----------------------------------------------------------------------------------------------------"
 
 ## ----- run ComputeAntennaPattern with single-timestamp input, output
-cap_cmdline="${cap_code} --IFOs=$IFO --timeGPS=$timestamp1,$timestamp2,$timestamp3 --outputFile=$outCAP --Alpha=$alpha --Delta=$delta --doTSAverage=0"
+cap_cmdline="${cap_code} --IFOs=$IFO --timeGPS=$timestamp1,$timestamp2,$timestamp3 --outputFile=$outCAP --Alpha=$alpha --Delta=$delta"
 echo $cap_cmdline;
 if ! eval $cap_cmdline; then
     echo "Error.. something failed when running '$cap_code' ..."
     exit 1
 fi
 eval $(sed -i '/^\%\%/d' $outCAP)
-a1_cap=$( awk 'NR==1 {print $4}' $outCAP)
-b1_cap=$( awk 'NR==1 {print $5}' $outCAP)
-a2_cap=$( awk 'NR==2 {print $4}' $outCAP)
-b2_cap=$( awk 'NR==2 {print $5}' $outCAP)
-a3_cap=$( awk 'NR==3 {print $4}' $outCAP)
-b3_cap=$( awk 'NR==3 {print $5}' $outCAP)
+A1_cap=$( awk 'NR==1 {print $6}' $outCAP)
+B1_cap=$( awk 'NR==1 {print $7}' $outCAP)
+C1_cap=$( awk 'NR==1 {print $8}' $outCAP)
+A2_cap=$( awk 'NR==2 {print $6}' $outCAP)
+B2_cap=$( awk 'NR==2 {print $7}' $outCAP)
+C2_cap=$( awk 'NR==2 {print $8}' $outCAP)
+A3_cap=$( awk 'NR==3 {print $6}' $outCAP)
+B3_cap=$( awk 'NR==3 {print $7}' $outCAP)
+C3_cap=$( awk 'NR==3 {print $8}' $outCAP)
 
 ## ----- externally compute mean for test
-amean=$( echo $a1_cap $a2_cap $a3_cap | awk '{print ($1+$2+$3)/3}' )
-bmean=$( echo $b1_cap $b2_cap $b3_cap | awk '{print ($1+$2+$3)/3}' )
+Amean=$( echo $A1_cap $A2_cap $A3_cap | awk '{print ($1+$2+$3)/3}' )
+Bmean=$( echo $B1_cap $B2_cap $B3_cap | awk '{print ($1+$2+$3)/3}' )
+Cmean=$( echo $C1_cap $C2_cap $C3_cap | awk '{print ($1+$2+$3)/3}' )
+Dmean=$( echo $Amean $Bmean $Cmean | awk '{print $1*$2-$3*$3}' )
 
 ## ----- make timestampsfile
 timestampsfile=./timestamps_test.dat
 echo "$timestamp1 0\n$timestamp2 0\n$timestamp3 0" >> $timestampsfile
 
 ## ----- run ComputeAntennaPattern with timestampsfile input, averaged output
-cap_cmdline="${cap_code} --IFOs=$IFO --timeStampsFile=$timestampsfile --outputFile=$outCAP --Alpha=$alpha --Delta=$delta --doTSAverage"
+cap_cmdline="${cap_code} --IFOs=$IFO --timeStampsFile=$timestampsfile --outputFile=$outCAP --Alpha=$alpha --Delta=$delta --averageABCD"
 echo $cap_cmdline;
 if ! eval $cap_cmdline; then
     echo "Error.. something failed when running '$cap_code' ..."
     exit 1
 fi
 eval $(sed -i '/^\%\%/d' $outCAP)
-a_cap_mean=$(awk '{print $3}' $outCAP)
-b_cap_mean=$(awk '{print $4}' $outCAP)
-reldev_amean=$(echo $a_cap_mean $amean | awk "$awk_reldev")
-reldev_bmean=$(echo $b_cap_mean $bmean | awk "$awk_reldev")
-fail_amean=$(echo $reldev_amean $tolerance | awk "$awk_isgtr")
-fail_bmean=$(echo $reldev_bmean $tolerance | awk "$awk_isgtr")
-echo "==> mean externally computed: <a> =$amean, <b> =$bmean"
-echo "    mean from --doTSAverage:  <a> =$a_cap_mean, <b> =$b_cap_mean"
+A_cap_mean=$(awk '{print $3}' $outCAP)
+B_cap_mean=$(awk '{print $4}' $outCAP)
+C_cap_mean=$(awk '{print $5}' $outCAP)
+D_cap_mean=$(awk '{print $6}' $outCAP)
+reldev_Amean=$(echo $A_cap_mean $Amean | awk "$awk_reldev")
+reldev_Bmean=$(echo $B_cap_mean $Bmean | awk "$awk_reldev")
+reldev_Cmean=$(echo $C_cap_mean $Cmean | awk "$awk_reldev")
+reldev_Dmean=$(echo $D_cap_mean $Dmean | awk "$awk_reldev")
+fail_Amean=$(echo $reldev_Amean $tolerance | awk "$awk_isgtr")
+fail_Bmean=$(echo $reldev_Bmean $tolerance | awk "$awk_isgtr")
+fail_Cmean=$(echo $reldev_Cmean $tolerance | awk "$awk_isgtr")
+fail_Dmean=$(echo $reldev_Dmean $tolerance | awk "$awk_isgtr")
+echo "==> mean externally computed: <A>=$Amean, <B>=$Bmean, <C>=$Cmean, <D>=$Dmean"
+echo "    mean from --averageABCD:  <A>=$A_cap_mean, <B>=$B_cap_mean, <C>=$C_cap_mean, <D>=$D_cap_mean"
 
-if [ "$fail_amean" -o "$fail_bmean" ]; then
+if [ "$fail_Amean" -o "$fail_Bmean" -o "$fail_Cmean" -o "$fail_Dmean" ]; then
     echo "==> FAILED at tolerance=$tolerance"
     exit 1
 else
@@ -273,17 +284,17 @@ echo "--------------------------------------------------------------------------
 echo "ComputeAntennaPattern Test4: comparing A,B,C,D with PredictFStat";
 echo "----------------------------------------------------------------------------------------------------"
 
-cap_cmdline="${cap_code} --IFOs=$IFO --timeStampsFile=$timestampsfile --outputFile=$outCAP --Alpha=$alpha --Delta=$delta --doTSAverage"
+cap_cmdline="${cap_code} --IFOs=$IFO --timeStampsFile=$timestampsfile --outputFile=$outCAP --Alpha=$alpha --Delta=$delta --averageABCD"
 echo $cap_cmdline;
 if ! eval $cap_cmdline; then
     echo "Error.. something failed when running '$cap_code' ..."
     exit 1
 fi
 eval $(sed -i '/^\%\%/d' $outCAP)
-A_cap=$(awk '{print $5}' $outCAP)
-B_cap=$(awk '{print $6}' $outCAP)
-C_cap=$(awk '{print $7}' $outCAP)
-D_cap=$(awk '{print $8}' $outCAP)
+A_cap=$(awk '{print $3}' $outCAP)
+B_cap=$(awk '{print $4}' $outCAP)
+C_cap=$(awk '{print $5}' $outCAP)
+D_cap=$(awk '{print $6}' $outCAP)
 
 sftfile=./H1_test.sft
 outPFS=./pfs_test.dat
