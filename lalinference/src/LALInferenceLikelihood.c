@@ -399,6 +399,12 @@ REAL8 LALInferenceROQLogLikelihood(LALInferenceVariables *currentParams, LALInfe
   memset(&status,0,sizeof(status));
   LALInferenceVariables intrinsicParams;
   
+  gsl_complex complexL;
+  
+  gsl_complex exp_i_pi;
+  gsl_complex cross_factor;
+  gsl_complex total_scale_factor;
+  
   if(data==NULL) {XLAL_ERROR_REAL8(XLAL_EINVAL,"ERROR: Encountered NULL data pointer in likelihood\n");}
   
   //noise model meta parameters
@@ -541,112 +547,32 @@ REAL8 LALInferenceROQLogLikelihood(LALInferenceVariables *currentParams, LALInfe
     dataPtr->fCross = FcrossScaled;
     dataPtr->timeshift = timeshift;
     
-    /* determine frequency range & loop over frequency bins: */
-    deltaT = dataPtr->timeData->deltaT;
-    deltaF = 1.0 / (((double)dataPtr->timeData->data->length) * deltaT);
-    lower = (UINT4)ceil(dataPtr->fLow / deltaF);
-    upper = (UINT4)floor(dataPtr->fHigh / deltaF);
-    TwoDeltaToverN = 2.0 * deltaT / ((double) dataPtr->timeData->data->length);
+    exp_i_pi = gsl_complex_polar (0, M_PI);
+    cross_factor = gsl_complex_mul_real(exp_i_pi, FcrossScaled);
+    total_scale_factor = gsl_complex_add_real (cross_factor, FplusScaled); //ONLY VALID FOR non-precessing, dominatn mode only templates
     
-    /* Employ a trick here for avoiding cos(...) and sin(...) in time
-     shifting.  We need to multiply each template frequency bin by
-     exp(-J*twopit*deltaF*i) = exp(-J*twopit*deltaF*(i-1)) +
-     exp(-J*twopit*deltaF*(i-1))*(exp(-J*twopit*deltaF) - 1) .  This
-     recurrance relation has the advantage that the error growth is
-     O(sqrt(N)) for N repetitions. */
+    gsl_blas_zscal (total_scale_factor, data->roqData->hplus);
     
-    /* Values for the first iteration: */
-    re = cos(twopit*deltaF*lower);
-    im = -sin(twopit*deltaF*lower);
     
-    /* Incremental values, using cos(theta) - 1 = -2*sin(theta/2)^2 */
-    dim = -sin(twopit*deltaF);
-    dre = -2.0*sin(0.5*twopit*deltaF)*sin(0.5*twopit*deltaF);
+    tc = requested time
     
-    //Set up noise PSD meta parameters
-    for(i=0; i<Nblock; i++)
-    {
-      if(psdFlag)
-      {
-        alpha[i]   = gsl_matrix_get(nparams,ifo,i);
-        lnalpha[i] = log(alpha[i]);
-        
-        psdBandsMin_array[i] = gsl_matrix_get(psdBandsMin,ifo,i);
-        psdBandsMax_array[i] = gsl_matrix_get(psdBandsMax,ifo,i);
-      }
-      else
-      {
-        alpha[i]=1.0;
-        lnalpha[i]=0.0;
-      }
-    }
+    time_step = prior width / weighst->size1
     
-    //Set up psd line arrays
-    for(j=0;j<Nlines;j++)
-    {
-      if(lineFlag)
-      {
-        //find range of fourier fourier bins which are excluded from integration
-        lines_array[j]  = (int)gsl_matrix_get(lines,ifo,j);
-        widths_array[j] = (int)gsl_matrix_get(widths,ifo,j);
-      }
-      else
-      {
-        lines_array[j]=0;
-        widths_array[j]=0;
-      }
-    }
+    tc *= time_step;
+    tc = floor(tc + 0.5);
+    tc /= time_step;
+    // then set tc in MCMC to be one of the discrete values
+    weight_index = (int)(tc_min - tc) / time_step;
     
-    for (i=lower; i<=upper; ++i){
-      /* derive template (involving location/orientation parameters) from given plus/cross waveforms: */
-      plainTemplateReal = FplusScaled * creal(dataPtr->freqModelhPlus->data->data[i])
-      +  FcrossScaled * creal(dataPtr->freqModelhCross->data->data[i]);
-      plainTemplateImag = FplusScaled * cimag(dataPtr->freqModelhPlus->data->data[i])
-      +  FcrossScaled * cimag(dataPtr->freqModelhCross->data->data[i]);
-      
-      /* do time-shifting...             */
-      /* (also un-do 1/deltaT scaling): */
-      templateReal = (plainTemplateReal*re - plainTemplateImag*im) / deltaT;
-      templateImag = (plainTemplateReal*im + plainTemplateImag*re) / deltaT;
-      dataReal     = creal(dataPtr->freqData->data->data[i]) / deltaT;
-      dataImag     = cimag(dataPtr->freqData->data->data[i]) / deltaT;
-      /* compute squared difference & 'chi-squared': */
-      diffRe       = dataReal - templateReal;         // Difference in real parts...
-      diffIm       = dataImag - templateImag;         // ...and imaginary parts, and...
-      diffSquared  = diffRe*diffRe + diffIm*diffIm ;  // ...squared difference of the 2 complex figures.
-      REAL8 temp = ((TwoDeltaToverN * diffSquared) / dataPtr->oneSidedNoisePowerSpectrum->data->data[i]);
-      
-      /* Add noise PSD parameters to the model */
-      if(psdFlag)
-      {
-        for(j=0; j<Nblock; j++)
-        {
-          if (i >= psdBandsMin_array[j] && i <= psdBandsMax_array[j])
-          {
-            temp  /= alpha[j];
-            temp  += lnalpha[j];
-          }
-        }
-      }
-      
-      /*only sum over bins which are outside of excluded regions */
-      if(LALInferenceLineSwitch(lineFlag, Nlines, lines_array, widths_array, i))
-      {
-        chisquared  += temp;
-        dataPtr->loglikelihood -= temp;
-      }
-      
-      /* Now update re and im for the next iteration. */
-      newRe = re + re*dre - im*dim;
-      newIm = im + re*dim + im*dre;
-      
-      re = newRe;
-      im = newIm;
-    }
-    ifo++; //increment IFO counter for noise parameters
+    gsl_vector_complex_view *weights_row = gsl_matrix_complex_row (m, weight_index);
+    gsl_blas_zdotc(weights_row->vector, data->roqData->hplus, &complexL);
+    
+    dataPtr->loglikelihood = GSL_REAL(complexL);
+    
+    loglikeli += dataPtr->loglikelihood;
     dataPtr = dataPtr->next;
   }
-  loglikeli = -1.0 * chisquared; // note (again): the log-likelihood is unnormalised!
+
   LALInferenceClearVariables(&intrinsicParams);
   return(loglikeli);
 }

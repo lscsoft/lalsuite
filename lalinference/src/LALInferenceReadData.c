@@ -1182,7 +1182,7 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
     unsigned int n_basis,n_samples,time_steps;
     n_basis = 965;//TODO: have it read from file or from command line.
     n_samples = 31489;
-    time_steps = 100;
+    REAL8 delta_tc = 0.0001;
     REAL8 dt=0.1;
     REAL8 tc=0;
     REAL8 endtime=0.0;
@@ -1195,10 +1195,12 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
       dt=atof(ppt->value);
     }
   
-    timeMin=endtime-dt; timeMax=endtime+dt;
+    timeMin=endtime-dt-0.022; timeMax=endtime+dt+0.022;
  
     timeMin -= XLALGPSGetREAL8(&IFOdata[i].whiteFreqData->epoch);
-    timeMax -= XLALGPSGetREAL8(&IFOdata[i].whiteFreqData->epoch); 
+    timeMax -= XLALGPSGetREAL8(&IFOdata[i].whiteFreqData->epoch);
+  
+    time_steps = (unsigned int)(timeMax-timeMin)/delta_tc;
   
     double deltaF = IFOdata[i].oneSidedNoisePowerSpectrum->deltaF;
     gsl_matrix_complex *vandermonde_matrix=NULL;
@@ -1250,7 +1252,7 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
       for (i=0;i<Nifo;i++) {
         
         IFOdata[i].roqData->trigtime = endtime;
-        IFOdata[i].roqData->time_prior_width = 2.0*dt;
+        IFOdata[i].roqData->time_prior_width = timeMax-timeMin;
    
  	    /*** compute the weights ***/
 
