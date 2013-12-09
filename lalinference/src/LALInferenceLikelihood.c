@@ -501,9 +501,9 @@ REAL8 LALInferenceROQLogLikelihood(LALInferenceVariables *currentParams, LALInfe
     
     time_min = data->roqData->trigtime - 0.5*data->roqData->time_weights_width;
     
-    time_requested *= time_step;
-    time_requested = floor(time_requested + 0.5);
     time_requested /= time_step;
+    time_requested = floor(time_requested + 0.5);
+    time_requested *= time_step;
     // then set tc in MCMC to be one of the discrete values
     weight_index = (unsigned int) ((time_min - time_requested) / time_step);
     
