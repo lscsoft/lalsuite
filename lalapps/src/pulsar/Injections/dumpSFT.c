@@ -138,7 +138,7 @@ XLALprintDescriptor ( const SFTDescriptor *desc )
   printf ( "Locator:     '%s'\n", XLALshowSFTLocator ( desc->locator ) );
   printf ( "SFT version: %d\n", desc->version );
   printf ( "numBins:     %d\n", desc->numBins );
-  printf ( "crc64:       %ld\n", desc->crc64 );
+  printf ( "crc64:       %" LAL_UINT8_FORMAT "\n", desc->crc64 );
   printf ( "comment:     %s\n", (desc->comment)?(desc->comment) : "<none>" );
 
   return XLAL_SUCCESS;
