@@ -58,6 +58,7 @@ const char *gengetopt_args_info_full_help[] = {
   "      --sftFile=path/filename   Path and filename of SFTs, e.g., \n                                  /path/to/file/sftdata.sft (one of \n                                  --sftDir/--timestampsFile)",
   "      --ephemDir=directory      Path to ephemeris files, e.g. \n                                  /path/to/ephemeris/files [required]",
   "      --ephemYear=STRING        Year or year range (e.g. 08-11) of ephemeris \n                                  files [required]",
+  "      --gaussNoiseWithSFTgaps   Use the same gaps as SFTs that are read-in from \n                                  either --sftDir or --sftFile options (one is \n                                  required!), but create Gaussian noise with \n                                  noise equal to --avesqrtSh (option conflicts \n                                  with --timestampsFile)  (default=off)",
   "\nTwoSpect search parameters:",
   "      --Pmin=DOUBLE             Minimum period to be searched (in seconds) \n                                  [required]",
   "      --Pmax=DOUBLE             Maximum period to be searched (in seconds) \n                                  [required]",
@@ -67,6 +68,8 @@ const char *gengetopt_args_info_full_help[] = {
   "      --skyRegionFile=filename  File with the grid points",
   "      --linPolAngle=DOUBLE      Polarization angle to search using linear \n                                  polarization (when unspecified default is \n                                  circular polarization",
   "      --harmonicNumToSearch=INT Number of harmonics of the Pmin to Pmax range \n                                  to search  (default=`1')",
+  "      --periodHarmToCheck=INT   Number of harmonics/sub-harmonics of the IHS \n                                  candidates to test  (default=`5')",
+  "      --periodFracToCheck=INT   Number of fractional periods to check in the \n                                  sense of [(1...N)+1]/[(1...N)+2]  \n                                  (default=`3')",
   "      --templateSearch          Flag for doing a pure template-based search on \n                                  search region specified by \n                                  (sky,f,fspan,hardcoded P, hardcoded asini)  \n                                  (default=off)",
   "\nTwoSpect threshold settings:",
   "      --ihsfactor=INT           Number of harmonics to sum in IHS algorithm  \n                                  (default=`5')",
@@ -112,8 +115,6 @@ const char *gengetopt_args_info_full_help[] = {
   "      --antennaOff              Antenna pattern weights are /NOT/ used if this \n                                  flag is used  (default=off)",
   "      --noiseWeightOff          Turn off noise weighting if this flag is used  \n                                  (default=off)",
   "      --gaussTemplatesOnly      Gaussian templates only throughout the pipeline \n                                  if this flag is used  (default=off)",
-  "      --periodHarmToCheck=INT   Number of harmonics/sub-harmonics of the IHS \n                                  candidates to test  (default=`5')",
-  "      --periodFracToCheck=INT   Number of fractional periods to check in the \n                                  sense of [(1...N)+1]/[(1...N)+2]  \n                                  (default=`3')",
   "      --ULoff                   Turn off upper limits computation  \n                                  (default=off)",
   "      --printSFTtimes           Output a list <GPS sec> <GPS nanosec> of SFT \n                                  start times of input SFTs  (default=off)",
   "      --printUsedSFTtimes       Output a list <GPS sec> <GPS nanosec> of SFT \n                                  start times of the SFTs passing tests  \n                                  (default=off)",
@@ -192,11 +193,14 @@ init_help_array(void)
   gengetopt_args_info_help[61] = gengetopt_args_info_full_help[61];
   gengetopt_args_info_help[62] = gengetopt_args_info_full_help[62];
   gengetopt_args_info_help[63] = gengetopt_args_info_full_help[63];
-  gengetopt_args_info_help[64] = 0; 
+  gengetopt_args_info_help[64] = gengetopt_args_info_full_help[64];
+  gengetopt_args_info_help[65] = gengetopt_args_info_full_help[65];
+  gengetopt_args_info_help[66] = gengetopt_args_info_full_help[66];
+  gengetopt_args_info_help[67] = 0; 
   
 }
 
-const char *gengetopt_args_info_help[65];
+const char *gengetopt_args_info_help[68];
 
 typedef enum {ARG_NO
   , ARG_FLAG
@@ -276,6 +280,7 @@ void clear_given (struct gengetopt_args_info *args_info)
   args_info->sftFile_given = 0 ;
   args_info->ephemDir_given = 0 ;
   args_info->ephemYear_given = 0 ;
+  args_info->gaussNoiseWithSFTgaps_given = 0 ;
   args_info->Pmin_given = 0 ;
   args_info->Pmax_given = 0 ;
   args_info->dfmin_given = 0 ;
@@ -284,6 +289,8 @@ void clear_given (struct gengetopt_args_info *args_info)
   args_info->skyRegionFile_given = 0 ;
   args_info->linPolAngle_given = 0 ;
   args_info->harmonicNumToSearch_given = 0 ;
+  args_info->periodHarmToCheck_given = 0 ;
+  args_info->periodFracToCheck_given = 0 ;
   args_info->templateSearch_given = 0 ;
   args_info->ihsfactor_given = 0 ;
   args_info->ihsfar_given = 0 ;
@@ -323,8 +330,6 @@ void clear_given (struct gengetopt_args_info *args_info)
   args_info->antennaOff_given = 0 ;
   args_info->noiseWeightOff_given = 0 ;
   args_info->gaussTemplatesOnly_given = 0 ;
-  args_info->periodHarmToCheck_given = 0 ;
-  args_info->periodFracToCheck_given = 0 ;
   args_info->ULoff_given = 0 ;
   args_info->printSFTtimes_given = 0 ;
   args_info->printUsedSFTtimes_given = 0 ;
@@ -374,6 +379,7 @@ void clear_args (struct gengetopt_args_info *args_info)
   args_info->ephemDir_orig = NULL;
   args_info->ephemYear_arg = NULL;
   args_info->ephemYear_orig = NULL;
+  args_info->gaussNoiseWithSFTgaps_flag = 0;
   args_info->Pmin_orig = NULL;
   args_info->Pmax_orig = NULL;
   args_info->dfmin_orig = NULL;
@@ -385,6 +391,10 @@ void clear_args (struct gengetopt_args_info *args_info)
   args_info->linPolAngle_orig = NULL;
   args_info->harmonicNumToSearch_arg = 1;
   args_info->harmonicNumToSearch_orig = NULL;
+  args_info->periodHarmToCheck_arg = 5;
+  args_info->periodHarmToCheck_orig = NULL;
+  args_info->periodFracToCheck_arg = 3;
+  args_info->periodFracToCheck_orig = NULL;
   args_info->templateSearch_flag = 0;
   args_info->ihsfactor_arg = 5;
   args_info->ihsfactor_orig = NULL;
@@ -433,10 +443,6 @@ void clear_args (struct gengetopt_args_info *args_info)
   args_info->antennaOff_flag = 0;
   args_info->noiseWeightOff_flag = 0;
   args_info->gaussTemplatesOnly_flag = 0;
-  args_info->periodHarmToCheck_arg = 5;
-  args_info->periodHarmToCheck_orig = NULL;
-  args_info->periodFracToCheck_arg = 3;
-  args_info->periodFracToCheck_orig = NULL;
   args_info->ULoff_flag = 0;
   args_info->printSFTtimes_flag = 0;
   args_info->printUsedSFTtimes_flag = 0;
@@ -479,63 +485,64 @@ void init_args_info(struct gengetopt_args_info *args_info)
   args_info->sftFile_help = gengetopt_args_info_full_help[23] ;
   args_info->ephemDir_help = gengetopt_args_info_full_help[24] ;
   args_info->ephemYear_help = gengetopt_args_info_full_help[25] ;
-  args_info->Pmin_help = gengetopt_args_info_full_help[27] ;
-  args_info->Pmax_help = gengetopt_args_info_full_help[28] ;
-  args_info->dfmin_help = gengetopt_args_info_full_help[29] ;
-  args_info->dfmax_help = gengetopt_args_info_full_help[30] ;
-  args_info->skyRegion_help = gengetopt_args_info_full_help[31] ;
-  args_info->skyRegionFile_help = gengetopt_args_info_full_help[32] ;
-  args_info->linPolAngle_help = gengetopt_args_info_full_help[33] ;
-  args_info->harmonicNumToSearch_help = gengetopt_args_info_full_help[34] ;
-  args_info->templateSearch_help = gengetopt_args_info_full_help[35] ;
-  args_info->ihsfactor_help = gengetopt_args_info_full_help[37] ;
-  args_info->ihsfar_help = gengetopt_args_info_full_help[38] ;
-  args_info->ihsfom_help = gengetopt_args_info_full_help[39] ;
-  args_info->ihsfomfar_help = gengetopt_args_info_full_help[40] ;
-  args_info->keepOnlyTopNumIHS_help = gengetopt_args_info_full_help[41] ;
-  args_info->tmplfar_help = gengetopt_args_info_full_help[42] ;
-  args_info->minTemplateLength_help = gengetopt_args_info_full_help[43] ;
-  args_info->maxTemplateLength_help = gengetopt_args_info_full_help[44] ;
-  args_info->ULfmin_help = gengetopt_args_info_full_help[46] ;
-  args_info->ULfspan_help = gengetopt_args_info_full_help[47] ;
-  args_info->ULminimumDeltaf_help = gengetopt_args_info_full_help[48] ;
-  args_info->ULmaximumDeltaf_help = gengetopt_args_info_full_help[49] ;
-  args_info->allULvalsPerSkyLoc_help = gengetopt_args_info_full_help[50] ;
-  args_info->markBadSFTs_help = gengetopt_args_info_full_help[52] ;
-  args_info->simpleBandRejection_help = gengetopt_args_info_full_help[53] ;
-  args_info->lineDetection_help = gengetopt_args_info_full_help[54] ;
-  args_info->FFTplanFlag_help = gengetopt_args_info_full_help[56] ;
-  args_info->fastchisqinv_help = gengetopt_args_info_full_help[57] ;
-  args_info->useSSE_help = gengetopt_args_info_full_help[58] ;
-  args_info->followUpOutsideULrange_help = gengetopt_args_info_full_help[59] ;
-  args_info->timestampsFile_help = gengetopt_args_info_full_help[61] ;
-  args_info->injectionSources_help = gengetopt_args_info_full_help[62] ;
-  args_info->injRandSeed_help = gengetopt_args_info_full_help[63] ;
-  args_info->weightedIHS_help = gengetopt_args_info_full_help[65] ;
-  args_info->signalOnly_help = gengetopt_args_info_full_help[66] ;
-  args_info->templateTest_help = gengetopt_args_info_full_help[67] ;
-  args_info->templateTestF_help = gengetopt_args_info_full_help[68] ;
-  args_info->templateTestP_help = gengetopt_args_info_full_help[69] ;
-  args_info->templateTestDf_help = gengetopt_args_info_full_help[70] ;
-  args_info->ULsolver_help = gengetopt_args_info_full_help[71] ;
-  args_info->dopplerMultiplier_help = gengetopt_args_info_full_help[72] ;
-  args_info->IHSonly_help = gengetopt_args_info_full_help[73] ;
-  args_info->noNotchHarmonics_help = gengetopt_args_info_full_help[74] ;
-  args_info->calcRthreshold_help = gengetopt_args_info_full_help[75] ;
-  args_info->BrentsMethod_help = gengetopt_args_info_full_help[76] ;
-  args_info->antennaOff_help = gengetopt_args_info_full_help[77] ;
-  args_info->noiseWeightOff_help = gengetopt_args_info_full_help[78] ;
-  args_info->gaussTemplatesOnly_help = gengetopt_args_info_full_help[79] ;
-  args_info->periodHarmToCheck_help = gengetopt_args_info_full_help[80] ;
-  args_info->periodFracToCheck_help = gengetopt_args_info_full_help[81] ;
-  args_info->ULoff_help = gengetopt_args_info_full_help[82] ;
-  args_info->printSFTtimes_help = gengetopt_args_info_full_help[83] ;
-  args_info->printUsedSFTtimes_help = gengetopt_args_info_full_help[84] ;
-  args_info->printData_help = gengetopt_args_info_full_help[85] ;
-  args_info->printUninitialized_help = gengetopt_args_info_full_help[86] ;
-  args_info->printSignalData_help = gengetopt_args_info_full_help[87] ;
-  args_info->randSeed_help = gengetopt_args_info_full_help[88] ;
-  args_info->chooseSeed_help = gengetopt_args_info_full_help[89] ;
+  args_info->gaussNoiseWithSFTgaps_help = gengetopt_args_info_full_help[26] ;
+  args_info->Pmin_help = gengetopt_args_info_full_help[28] ;
+  args_info->Pmax_help = gengetopt_args_info_full_help[29] ;
+  args_info->dfmin_help = gengetopt_args_info_full_help[30] ;
+  args_info->dfmax_help = gengetopt_args_info_full_help[31] ;
+  args_info->skyRegion_help = gengetopt_args_info_full_help[32] ;
+  args_info->skyRegionFile_help = gengetopt_args_info_full_help[33] ;
+  args_info->linPolAngle_help = gengetopt_args_info_full_help[34] ;
+  args_info->harmonicNumToSearch_help = gengetopt_args_info_full_help[35] ;
+  args_info->periodHarmToCheck_help = gengetopt_args_info_full_help[36] ;
+  args_info->periodFracToCheck_help = gengetopt_args_info_full_help[37] ;
+  args_info->templateSearch_help = gengetopt_args_info_full_help[38] ;
+  args_info->ihsfactor_help = gengetopt_args_info_full_help[40] ;
+  args_info->ihsfar_help = gengetopt_args_info_full_help[41] ;
+  args_info->ihsfom_help = gengetopt_args_info_full_help[42] ;
+  args_info->ihsfomfar_help = gengetopt_args_info_full_help[43] ;
+  args_info->keepOnlyTopNumIHS_help = gengetopt_args_info_full_help[44] ;
+  args_info->tmplfar_help = gengetopt_args_info_full_help[45] ;
+  args_info->minTemplateLength_help = gengetopt_args_info_full_help[46] ;
+  args_info->maxTemplateLength_help = gengetopt_args_info_full_help[47] ;
+  args_info->ULfmin_help = gengetopt_args_info_full_help[49] ;
+  args_info->ULfspan_help = gengetopt_args_info_full_help[50] ;
+  args_info->ULminimumDeltaf_help = gengetopt_args_info_full_help[51] ;
+  args_info->ULmaximumDeltaf_help = gengetopt_args_info_full_help[52] ;
+  args_info->allULvalsPerSkyLoc_help = gengetopt_args_info_full_help[53] ;
+  args_info->markBadSFTs_help = gengetopt_args_info_full_help[55] ;
+  args_info->simpleBandRejection_help = gengetopt_args_info_full_help[56] ;
+  args_info->lineDetection_help = gengetopt_args_info_full_help[57] ;
+  args_info->FFTplanFlag_help = gengetopt_args_info_full_help[59] ;
+  args_info->fastchisqinv_help = gengetopt_args_info_full_help[60] ;
+  args_info->useSSE_help = gengetopt_args_info_full_help[61] ;
+  args_info->followUpOutsideULrange_help = gengetopt_args_info_full_help[62] ;
+  args_info->timestampsFile_help = gengetopt_args_info_full_help[64] ;
+  args_info->injectionSources_help = gengetopt_args_info_full_help[65] ;
+  args_info->injRandSeed_help = gengetopt_args_info_full_help[66] ;
+  args_info->weightedIHS_help = gengetopt_args_info_full_help[68] ;
+  args_info->signalOnly_help = gengetopt_args_info_full_help[69] ;
+  args_info->templateTest_help = gengetopt_args_info_full_help[70] ;
+  args_info->templateTestF_help = gengetopt_args_info_full_help[71] ;
+  args_info->templateTestP_help = gengetopt_args_info_full_help[72] ;
+  args_info->templateTestDf_help = gengetopt_args_info_full_help[73] ;
+  args_info->ULsolver_help = gengetopt_args_info_full_help[74] ;
+  args_info->dopplerMultiplier_help = gengetopt_args_info_full_help[75] ;
+  args_info->IHSonly_help = gengetopt_args_info_full_help[76] ;
+  args_info->noNotchHarmonics_help = gengetopt_args_info_full_help[77] ;
+  args_info->calcRthreshold_help = gengetopt_args_info_full_help[78] ;
+  args_info->BrentsMethod_help = gengetopt_args_info_full_help[79] ;
+  args_info->antennaOff_help = gengetopt_args_info_full_help[80] ;
+  args_info->noiseWeightOff_help = gengetopt_args_info_full_help[81] ;
+  args_info->gaussTemplatesOnly_help = gengetopt_args_info_full_help[82] ;
+  args_info->ULoff_help = gengetopt_args_info_full_help[83] ;
+  args_info->printSFTtimes_help = gengetopt_args_info_full_help[84] ;
+  args_info->printUsedSFTtimes_help = gengetopt_args_info_full_help[85] ;
+  args_info->printData_help = gengetopt_args_info_full_help[86] ;
+  args_info->printUninitialized_help = gengetopt_args_info_full_help[87] ;
+  args_info->printSignalData_help = gengetopt_args_info_full_help[88] ;
+  args_info->randSeed_help = gengetopt_args_info_full_help[89] ;
+  args_info->chooseSeed_help = gengetopt_args_info_full_help[90] ;
   
 }
 
@@ -713,6 +720,8 @@ cmdline_parser_release (struct gengetopt_args_info *args_info)
   free_string_field (&(args_info->skyRegionFile_orig));
   free_string_field (&(args_info->linPolAngle_orig));
   free_string_field (&(args_info->harmonicNumToSearch_orig));
+  free_string_field (&(args_info->periodHarmToCheck_orig));
+  free_string_field (&(args_info->periodFracToCheck_orig));
   free_string_field (&(args_info->ihsfactor_orig));
   free_string_field (&(args_info->ihsfar_orig));
   free_string_field (&(args_info->ihsfom_orig));
@@ -738,8 +747,6 @@ cmdline_parser_release (struct gengetopt_args_info *args_info)
   free_string_field (&(args_info->templateTestDf_orig));
   free_string_field (&(args_info->ULsolver_orig));
   free_string_field (&(args_info->dopplerMultiplier_orig));
-  free_string_field (&(args_info->periodHarmToCheck_orig));
-  free_string_field (&(args_info->periodFracToCheck_orig));
   free_string_field (&(args_info->printUninitialized_orig));
   free_string_field (&(args_info->randSeed_orig));
   
@@ -868,6 +875,8 @@ cmdline_parser_dump(FILE *outfile, struct gengetopt_args_info *args_info)
     write_into_file(outfile, "ephemDir", args_info->ephemDir_orig, 0);
   if (args_info->ephemYear_given)
     write_into_file(outfile, "ephemYear", args_info->ephemYear_orig, 0);
+  if (args_info->gaussNoiseWithSFTgaps_given)
+    write_into_file(outfile, "gaussNoiseWithSFTgaps", 0, 0 );
   if (args_info->Pmin_given)
     write_into_file(outfile, "Pmin", args_info->Pmin_orig, 0);
   if (args_info->Pmax_given)
@@ -884,6 +893,10 @@ cmdline_parser_dump(FILE *outfile, struct gengetopt_args_info *args_info)
     write_into_file(outfile, "linPolAngle", args_info->linPolAngle_orig, 0);
   if (args_info->harmonicNumToSearch_given)
     write_into_file(outfile, "harmonicNumToSearch", args_info->harmonicNumToSearch_orig, 0);
+  if (args_info->periodHarmToCheck_given)
+    write_into_file(outfile, "periodHarmToCheck", args_info->periodHarmToCheck_orig, 0);
+  if (args_info->periodFracToCheck_given)
+    write_into_file(outfile, "periodFracToCheck", args_info->periodFracToCheck_orig, 0);
   if (args_info->templateSearch_given)
     write_into_file(outfile, "templateSearch", 0, 0 );
   if (args_info->ihsfactor_given)
@@ -962,10 +975,6 @@ cmdline_parser_dump(FILE *outfile, struct gengetopt_args_info *args_info)
     write_into_file(outfile, "noiseWeightOff", 0, 0 );
   if (args_info->gaussTemplatesOnly_given)
     write_into_file(outfile, "gaussTemplatesOnly", 0, 0 );
-  if (args_info->periodHarmToCheck_given)
-    write_into_file(outfile, "periodHarmToCheck", args_info->periodHarmToCheck_orig, 0);
-  if (args_info->periodFracToCheck_given)
-    write_into_file(outfile, "periodFracToCheck", args_info->periodFracToCheck_orig, 0);
   if (args_info->ULoff_given)
     write_into_file(outfile, "ULoff", 0, 0 );
   if (args_info->printSFTtimes_given)
@@ -1681,6 +1690,7 @@ cmdline_parser_internal (
         { "sftFile",	1, NULL, 0 },
         { "ephemDir",	1, NULL, 0 },
         { "ephemYear",	1, NULL, 0 },
+        { "gaussNoiseWithSFTgaps",	0, NULL, 0 },
         { "Pmin",	1, NULL, 0 },
         { "Pmax",	1, NULL, 0 },
         { "dfmin",	1, NULL, 0 },
@@ -1689,6 +1699,8 @@ cmdline_parser_internal (
         { "skyRegionFile",	1, NULL, 0 },
         { "linPolAngle",	1, NULL, 0 },
         { "harmonicNumToSearch",	1, NULL, 0 },
+        { "periodHarmToCheck",	1, NULL, 0 },
+        { "periodFracToCheck",	1, NULL, 0 },
         { "templateSearch",	0, NULL, 0 },
         { "ihsfactor",	1, NULL, 0 },
         { "ihsfar",	1, NULL, 0 },
@@ -1728,8 +1740,6 @@ cmdline_parser_internal (
         { "antennaOff",	0, NULL, 0 },
         { "noiseWeightOff",	0, NULL, 0 },
         { "gaussTemplatesOnly",	0, NULL, 0 },
-        { "periodHarmToCheck",	1, NULL, 0 },
-        { "periodFracToCheck",	1, NULL, 0 },
         { "ULoff",	0, NULL, 0 },
         { "printSFTtimes",	0, NULL, 0 },
         { "printUsedSFTtimes",	0, NULL, 0 },
@@ -2054,6 +2064,18 @@ cmdline_parser_internal (
               goto failure;
           
           }
+          /* Use the same gaps as SFTs that are read-in from either --sftDir or --sftFile options (one is required!), but create Gaussian noise with noise equal to --avesqrtSh (option conflicts with --timestampsFile).  */
+          else if (strcmp (long_options[option_index].name, "gaussNoiseWithSFTgaps") == 0)
+          {
+          
+          
+            if (update_arg((void *)&(args_info->gaussNoiseWithSFTgaps_flag), 0, &(args_info->gaussNoiseWithSFTgaps_given),
+                &(local_args_info.gaussNoiseWithSFTgaps_given), optarg, 0, 0, ARG_FLAG,
+                check_ambiguity, override, 1, 0, "gaussNoiseWithSFTgaps", '-',
+                additional_error))
+              goto failure;
+          
+          }
           /* Minimum period to be searched (in seconds).  */
           else if (strcmp (long_options[option_index].name, "Pmin") == 0)
           {
@@ -2162,6 +2184,34 @@ cmdline_parser_internal (
                 &(local_args_info.harmonicNumToSearch_given), optarg, 0, "1", ARG_INT,
                 check_ambiguity, override, 0, 0,
                 "harmonicNumToSearch", '-',
+                additional_error))
+              goto failure;
+          
+          }
+          /* Number of harmonics/sub-harmonics of the IHS candidates to test.  */
+          else if (strcmp (long_options[option_index].name, "periodHarmToCheck") == 0)
+          {
+          
+          
+            if (update_arg( (void *)&(args_info->periodHarmToCheck_arg), 
+                 &(args_info->periodHarmToCheck_orig), &(args_info->periodHarmToCheck_given),
+                &(local_args_info.periodHarmToCheck_given), optarg, 0, "5", ARG_INT,
+                check_ambiguity, override, 0, 0,
+                "periodHarmToCheck", '-',
+                additional_error))
+              goto failure;
+          
+          }
+          /* Number of fractional periods to check in the sense of [(1...N)+1]/[(1...N)+2].  */
+          else if (strcmp (long_options[option_index].name, "periodFracToCheck") == 0)
+          {
+          
+          
+            if (update_arg( (void *)&(args_info->periodFracToCheck_arg), 
+                 &(args_info->periodFracToCheck_orig), &(args_info->periodFracToCheck_given),
+                &(local_args_info.periodFracToCheck_given), optarg, 0, "3", ARG_INT,
+                check_ambiguity, override, 0, 0,
+                "periodFracToCheck", '-',
                 additional_error))
               goto failure;
           
@@ -2676,34 +2726,6 @@ cmdline_parser_internal (
             if (update_arg((void *)&(args_info->gaussTemplatesOnly_flag), 0, &(args_info->gaussTemplatesOnly_given),
                 &(local_args_info.gaussTemplatesOnly_given), optarg, 0, 0, ARG_FLAG,
                 check_ambiguity, override, 1, 0, "gaussTemplatesOnly", '-',
-                additional_error))
-              goto failure;
-          
-          }
-          /* Number of harmonics/sub-harmonics of the IHS candidates to test.  */
-          else if (strcmp (long_options[option_index].name, "periodHarmToCheck") == 0)
-          {
-          
-          
-            if (update_arg( (void *)&(args_info->periodHarmToCheck_arg), 
-                 &(args_info->periodHarmToCheck_orig), &(args_info->periodHarmToCheck_given),
-                &(local_args_info.periodHarmToCheck_given), optarg, 0, "5", ARG_INT,
-                check_ambiguity, override, 0, 0,
-                "periodHarmToCheck", '-',
-                additional_error))
-              goto failure;
-          
-          }
-          /* Number of fractional periods to check in the sense of [(1...N)+1]/[(1...N)+2].  */
-          else if (strcmp (long_options[option_index].name, "periodFracToCheck") == 0)
-          {
-          
-          
-            if (update_arg( (void *)&(args_info->periodFracToCheck_arg), 
-                 &(args_info->periodFracToCheck_orig), &(args_info->periodFracToCheck_given),
-                &(local_args_info.periodFracToCheck_given), optarg, 0, "3", ARG_INT,
-                check_ambiguity, override, 0, 0,
-                "periodFracToCheck", '-',
                 additional_error))
               goto failure;
           
