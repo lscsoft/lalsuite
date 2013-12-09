@@ -1248,6 +1248,9 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
     if(LALInferenceGetProcParamVal(commandLine,"--roqnodes") && LALInferenceGetProcParamVal(commandLine,"--roqvandermonde") && LALInferenceGetProcParamVal(commandLine,"--roqrb")){
       
       for (i=0;i<Nifo;i++) {
+        
+        IFOdata[i].roqData->trigtime = endtime;
+        IFOdata[i].roqData->time_prior_width = 2.0*dt;
    
  	    /*** compute the weights ***/
 
