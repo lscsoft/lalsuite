@@ -377,12 +377,8 @@ REAL8 LALInferenceROQLogLikelihood(LALInferenceVariables *currentParams, LALInfe
 {
   double Fplus, Fcross;
   double FplusScaled, FcrossScaled;
-  double diffRe, diffIm, diffSquared;
-  double dataReal, dataImag;
   REAL8 loglikeli;
-  REAL8 plainTemplateReal, plainTemplateImag;
-  REAL8 templateReal, templateImag;
-  int i, j, lower, upper, ifo;
+  unsigned int time_step, weight_index;
   LALInferenceIFOData *dataPtr;
   double ra, dec, psi, distMpc, gmst;
   double GPSdouble;
@@ -390,7 +386,7 @@ REAL8 LALInferenceROQLogLikelihood(LALInferenceVariables *currentParams, LALInfe
   double chisquared;
   double timedelay;  /* time delay b/w iterferometer & geocenter w.r.t. sky location */
   double timeshift;  /* time shift (not necessarily same as above)                   */
-  double deltaT, TwoDeltaToverN, deltaF, twopit, re, im, dre, dim, newRe, newIm;
+  double time_requested, time_min;
   double timeTmp;
   int different;
 	double mc;
@@ -406,51 +402,6 @@ REAL8 LALInferenceROQLogLikelihood(LALInferenceVariables *currentParams, LALInfe
   gsl_complex total_scale_factor;
   
   if(data==NULL) {XLAL_ERROR_REAL8(XLAL_EINVAL,"ERROR: Encountered NULL data pointer in likelihood\n");}
-  
-  //noise model meta parameters
-  gsl_matrix *lines   = NULL;//pointer to matrix holding line centroids
-  gsl_matrix *widths  = NULL;//pointer to matrix holding line widths
-  gsl_matrix *nparams = NULL;//pointer to matrix holding noise parameters
-  
-  gsl_matrix *psdBandsMin  = NULL;//pointer to matrix holding min frequencies for psd model
-  gsl_matrix *psdBandsMax = NULL;//pointer to matrix holding max frequencies for psd model
-  
-  int Nblock = 1;            //number of frequency blocks per IFO
-  int Nlines = 1;            //number of lines to be removed
-  int psdFlag = 0;           //flag for including psd fitting
-  int lineFlag = 0;          //flag for excluding lines from integration
-  
-  //line removal parameters
-  if(LALInferenceCheckVariable(currentParams, "removeLinesFlag"))
-    lineFlag = *((INT4 *)LALInferenceGetVariable(currentParams, "removeLinesFlag"));
-  if(lineFlag)
-  {
-    //Add line matrices to variable lists
-    lines  = *(gsl_matrix **)LALInferenceGetVariable(currentParams, "line_center");
-    widths = *(gsl_matrix **)LALInferenceGetVariable(currentParams, "line_width");
-    Nlines = (int)lines->size2;
-  }
-  int lines_array[Nlines];
-  int widths_array[Nlines];
-  
-  //check if psd parameters are included in the model
-  if(LALInferenceCheckVariable(currentParams, "psdScaleFlag"))
-    psdFlag = *((INT4 *)LALInferenceGetVariable(currentParams, "psdScaleFlag"));
-  if(psdFlag)
-  {
-    //if so, store current noise parameters in easily accessible matrix
-    nparams = *((gsl_matrix **)LALInferenceGetVariable(currentParams, "psdscale"));
-    Nblock = (int)nparams->size2;
-    
-    psdBandsMin = *((gsl_matrix **)LALInferenceGetVariable(currentParams, "psdBandsMin"));
-    psdBandsMax = *((gsl_matrix **)LALInferenceGetVariable(currentParams, "psdBandsMax"));
-    
-  }
-  double alpha[Nblock];
-  double lnalpha[Nblock];
-  
-  double psdBandsMin_array[Nblock];
-  double psdBandsMax_array[Nblock];
   
   logDistFlag=LALInferenceCheckVariable(currentParams, "logdistance");
   if(LALInferenceCheckVariable(currentParams,"logmc")){
@@ -477,7 +428,6 @@ REAL8 LALInferenceROQLogLikelihood(LALInferenceVariables *currentParams, LALInfe
   chisquared = 0.0;
   /* loop over data (different interferometers): */
   dataPtr = data;
-  ifo=0;
   
   while (dataPtr != NULL) {
     /* The parameters the Likelihood function can handle by itself   */
@@ -518,18 +468,12 @@ REAL8 LALInferenceROQLogLikelihood(LALInferenceVariables *currentParams, LALInfe
       LALInferenceAddVariable(dataPtr->modelParams, "time", &timeTmp, LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_LINEAR);
     }
     
-    /* Template is now in dataPtr->timeFreqModelhPlus and hCross */
-    
     /* determine beam pattern response (F_plus and F_cross) for given Ifo: */
     XLALComputeDetAMResponse(&Fplus, &Fcross, (const REAL4(*)[3])dataPtr->detector->response, ra, dec, psi, gmst);
     
     /* signal arrival time (relative to geocenter); */
     timedelay = XLALTimeDelayFromEarthCenter(dataPtr->detector->location, ra, dec, &GPSlal);
-    /* (negative timedelay means signal arrives earlier at Ifo than at geocenter, etc.) */
-    /* amount by which to time-shift template (not necessarily same as above "timedelay"): */
-    timeshift =  (GPSdouble - (*(REAL8*) LALInferenceGetVariable(dataPtr->modelParams, "time"))) + timedelay;
-    
-    twopit    = LAL_TWOPI * timeshift;
+    time_requested =  GPSdouble + timedelay;
     
     /* include distance (overall amplitude) effect in Fplus/Fcross: */
     FplusScaled  = Fplus  / distMpc;
@@ -553,18 +497,17 @@ REAL8 LALInferenceROQLogLikelihood(LALInferenceVariables *currentParams, LALInfe
     
     gsl_blas_zscal (total_scale_factor, data->roqData->hplus);
     
+    time_step = data->roqData->time_weights_width / data->roqData->weights->size1;
     
-    tc = requested time
+    time_min = data->roqData->trigtime - 0.5*data->roqData->time_weights_width;
     
-    time_step = prior width / weighst->size1
-    
-    tc *= time_step;
-    tc = floor(tc + 0.5);
-    tc /= time_step;
+    time_requested *= time_step;
+    time_requested = floor(time_requested + 0.5);
+    time_requested /= time_step;
     // then set tc in MCMC to be one of the discrete values
-    weight_index = (int)(tc_min - tc) / time_step;
+    weight_index = (unsigned int) ((time_min - time_requested) / time_step);
     
-    gsl_vector_complex_view *weights_row = gsl_matrix_complex_row (m, weight_index);
+    gsl_vector_complex_view *weights_row = gsl_matrix_complex_row (data->roqData->weights, weight_index);
     gsl_blas_zdotc(weights_row->vector, data->roqData->hplus, &complexL);
     
     dataPtr->loglikelihood = GSL_REAL(complexL);

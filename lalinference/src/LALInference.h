@@ -493,7 +493,7 @@ tagLALInferenceROQData
   //double *int_f_7_over_3; /** /int_{fmin}^{fmax} df f^(-7/3)/psd...for <h|h> part of the likelihood */
   //double *h_dot_h; /** <h|h> */
   REAL8 trigtime;
-  REAL8 time_prior_width;
+  REAL8 time_weights_width;
 } LALInferenceROQData;
 
 /** Returns the element of the process params table with "name" */

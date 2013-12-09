@@ -1252,7 +1252,7 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
       for (i=0;i<Nifo;i++) {
         
         IFOdata[i].roqData->trigtime = endtime;
-        IFOdata[i].roqData->time_prior_width = timeMax-timeMin;
+        IFOdata[i].roqData->time_weights_width = timeMax-timeMin;
    
  	    /*** compute the weights ***/
 
