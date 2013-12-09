@@ -93,8 +93,8 @@ EXTRA_DIST = \
 	psd_ref.dat
 
 TESTS = \
-	testComputePSD.sh \
-	testComputeAntennaPattern.sh
+	testComputePSD.sh
+#	testComputeAntennaPattern.sh
 
 TESTS_ENVIRONMENT = LAL_DEBUG_LEVEL=memdbg LALPULSAR_DATADIR="$(LALPULSAR_DATADIR)"
 
