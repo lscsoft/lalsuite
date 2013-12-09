@@ -138,17 +138,10 @@ main(int argc, char *argv[])
   FILE *fpOut = NULL;
   if ( uvar.outputFile ) {
 
-      if ( (fpOut = fopen (uvar.outputFile, "wb")) == NULL)
-        {
-          XLALPrintError ("%s: Error opening file '%s' for writing...\n", __func__, uvar.outputFile );
-          XLAL_ERROR ( XLAL_EIO );
-        }
+      XLAL_CHECK ( (fpOut = fopen (uvar.outputFile, "wb")) != NULL, XLAL_EIO, "Error opening file '%s' for writing...", uvar.outputFile );
 
       /* write header info in comments */
-      if ( XLAL_SUCCESS != XLALOutputVersionString ( fpOut, 0 ) )
-        {
-          XLAL_ERROR ( XLAL_EFUNC );
-        }
+      XLAL_CHECK ( XLAL_SUCCESS == XLALOutputVersionString ( fpOut, 0 ), XLAL_EFUNC );
 
       /* write the command-line */
       for (int a = 0; a < argc; a++)
@@ -176,10 +169,7 @@ main(int argc, char *argv[])
 
     /* do the actual computation of the antenna pattern functions */
     MultiAMCoeffs *multiAM;
-    if ( ( multiAM = XLALComputeMultiAMCoeffs ( config.multiDetStates, config.multiWeights, skypos ) ) == NULL ) {
-      XLALPrintError ( "%s: XLALComputeAMCoeffs() failed with xlalErrno = %d\n", __func__, xlalErrno );
-      XLAL_ERROR ( XLAL_EFUNC );
-    }
+    XLAL_CHECK ( ( multiAM = XLALComputeMultiAMCoeffs ( config.multiDetStates, config.multiWeights, skypos ) ) != NULL, XLAL_EFUNC, "XLALComputeAMCoeffs() failed." );
 
     if ( uvar.outputFile ) {
 
@@ -231,10 +221,7 @@ XLALInitUserVars ( UserVariables_t *uvar )
   /* set a few defaults */
   uvar->help = 0;
 
-  if ( (uvar->IFOs = XLALCreateStringVector ( "H1", NULL )) == NULL ) {
-    XLALPrintError ("%s: Call to XLALCreateStringVector() failed with xlalErrno = %d\n", __func__, xlalErrno );
-    XLAL_ERROR ( XLAL_ENOMEM );
-  }
+  XLAL_CHECK ( (uvar->IFOs = XLALCreateStringVector ( "H1", NULL )) != NULL, XLAL_ENOMEM, "Call to XLALCreateStringVector() failed." );
 
 #define EPHEM_YEAR  "00-19-DE405"
   XLAL_CHECK ( (uvar->ephemYear = XLALCalloc (1, strlen(EPHEM_YEAR)+1)) != NULL, XLAL_ENOMEM );
@@ -283,73 +270,38 @@ XLALInitUserVars ( UserVariables_t *uvar )
 int
 XLALInitCode ( ConfigVariables *cfg, const UserVariables_t *uvar, const char *app_name)
 {
-  if ( !cfg || !uvar || !app_name ) {
-    XLALPrintError ("%s: illegal NULL pointer input.\n\n", __func__ );
-    XLAL_ERROR ( XLAL_EINVAL );
-  }
+  XLAL_CHECK ( cfg && uvar && app_name, XLAL_EINVAL, "Illegal NULL pointer input." );
 
   /* init ephemeris data */
-  if ( (cfg->edat = InitEphemeris ( uvar->ephemDir, uvar->ephemYear)) == NULL ) {
-    XLALPrintError ("%s: InitEphemeris() Failed to initialize ephemeris data!\n\n", __func__);
-    XLAL_ERROR ( XLAL_EINVAL );
-  }
+  XLAL_CHECK ( (cfg->edat = InitEphemeris ( uvar->ephemDir, uvar->ephemYear)) != NULL, XLAL_EINVAL, "InitEphemeris() Failed to initialize ephemeris data!" );
 
   UINT4 numDetectors = uvar->IFOs->length;
-
-  if ( numDetectors > 1 ) { // FIXME
-    XLALPrintError ("%s: Can't handle more than one IFO at the moment.\n\n", __func__ );
-    XLAL_ERROR ( XLAL_EINVAL );
-  }
+  XLAL_CHECK ( numDetectors == 1, XLAL_EINVAL, "Can't handle more than one IFO at the moment." ); // FIXME
 
   BOOLEAN haveTimeGPS = XLALUserVarWasSet( &uvar->timeGPS );
   BOOLEAN haveTimeStampsFile = XLALUserVarWasSet( &uvar->timeStampsFile );
 
-  if ( haveTimeGPS && haveTimeStampsFile ) {
-    XLALPrintError ("%s: Can't handle both timeStampsFile and timeGPS input options.\n\n", __func__ );
-    XLAL_ERROR ( XLAL_EINVAL );
-  }
-
-  if ( !haveTimeGPS && !haveTimeStampsFile ) {
-    XLALPrintError ("%s: Need either timeStampsFile or timeGPS input options.\n\n", __func__ );
-    XLAL_ERROR ( XLAL_EINVAL );
-  }
+  XLAL_CHECK ( !(haveTimeGPS && haveTimeStampsFile), XLAL_EINVAL, "Can't handle both timeStampsFile and timeGPS input options." );
+  XLAL_CHECK ( haveTimeGPS || haveTimeStampsFile, XLAL_EINVAL, "Need either timeStampsFile or timeGPS input option." );
 
   /* FIXME: only using identical timestamps for all detectors */
-  if ( ( cfg->multiTimestamps = XLALCalloc ( 1, sizeof(*cfg->multiTimestamps))) == NULL ) {
-    XLALPrintError ("%s: Allocating multiTimestamps failed.", __func__ );
-    XLAL_ERROR ( XLAL_ENOMEM );
-  };
-  if ( ( cfg->multiTimestamps->data = XLALCalloc ( numDetectors, sizeof(cfg->multiTimestamps->data[0]) )) == NULL ) {
-    XLALPrintError ("%s: Allocating multiTimestamps->data failed.", __func__ );
-    XLAL_ERROR ( XLAL_ENOMEM );
-  }
+  XLAL_CHECK ( ( cfg->multiTimestamps = XLALCalloc ( 1, sizeof(*cfg->multiTimestamps))) != NULL, XLAL_ENOMEM, "Allocating multiTimestamps failed." );
+  XLAL_CHECK ( ( cfg->multiTimestamps->data = XLALCalloc ( numDetectors, sizeof(cfg->multiTimestamps->data[0]) )) != NULL, XLAL_ENOMEM, "Allocating multiTimestamps->data failed." );
   cfg->multiTimestamps->length = numDetectors;
 
   if ( haveTimeStampsFile ) { // read in timestamps vector from file
-    if ( (cfg->multiTimestamps->data[0] = XLALReadTimestampsFile ( uvar->timeStampsFile )) == NULL ) {
-      XLALPrintError ("%s: illegal NULL pointer returned when reading timestampsfile '%s'.\n\n", __func__, uvar->timeStampsFile );
-      XLAL_ERROR ( XLAL_EFUNC );
-    }
+    XLAL_CHECK ( (cfg->multiTimestamps->data[0] = XLALReadTimestampsFile ( uvar->timeStampsFile )) != NULL, XLAL_EFUNC, "illegal NULL pointer returned when reading timestampsfile '%s'.", uvar->timeStampsFile );
   } // timestamps from timeStampsFile
 
   else if ( haveTimeGPS ) { // set up timestamps vector from timeGPS
 
-    if ( (cfg->multiTimestamps->data[0] = XLALCreateTimestampVector ( uvar->timeGPS->length ) ) == NULL ) {
-      XLALPrintError ("%s: XLALCreateTimestampVector( %d ) failed.", __func__, uvar->timeGPS->length );
-      XLAL_ERROR ( XLAL_EFUNC );
-    }
+    XLAL_CHECK ( (cfg->multiTimestamps->data[0] = XLALCreateTimestampVector ( uvar->timeGPS->length ) ) != NULL, XLAL_EFUNC, "XLALCreateTimestampVector( %d ) failed.", uvar->timeGPS->length );
 
     /* convert input REAL8 time into LIGOTimeGPS */
     for (UINT4 t = 0; t < uvar->timeGPS->length; t++) {
       REAL8 temp_real8_timestamp = 0;
-      if ( 1 != sscanf ( uvar->timeGPS->data[t], "%" LAL_REAL8_FORMAT, &temp_real8_timestamp ) ) {
-        fprintf(stderr, "Illegal REAL8 commandline argument to --timeGPS[%d]: '%s'\n", t, uvar->timeGPS->data[t]);
-        XLAL_ERROR ( XLAL_EINVAL );
-      }
-      if ( XLALGPSSetREAL8( &cfg->multiTimestamps->data[0]->data[t], temp_real8_timestamp ) == NULL ) {
-        XLALPrintError ("%s: failed to convert input GPS %g into LIGOTimeGPS\n", __func__, temp_real8_timestamp );
-        XLAL_ERROR ( XLAL_EFUNC );
-      }
+      XLAL_CHECK ( 1 == sscanf ( uvar->timeGPS->data[t], "%" LAL_REAL8_FORMAT, &temp_real8_timestamp ), XLAL_EINVAL, "Illegal REAL8 commandline argument to --timeGPS[%d]: '%s'", t, uvar->timeGPS->data[t] );
+      XLAL_CHECK ( XLALGPSSetREAL8( &cfg->multiTimestamps->data[0]->data[t], temp_real8_timestamp ) != NULL, XLAL_EFUNC, "Failed to convert input GPS %g into LIGOTimeGPS", temp_real8_timestamp );
     } // for (UINT4 t = 0; t < uvar->timeGPS->length; t++)
 
   } // timestamps from timeGPS
@@ -357,10 +309,7 @@ XLALInitCode ( ConfigVariables *cfg, const UserVariables_t *uvar, const char *ap
   /* in either case, copy timestamps from first detector to all others (for now) */
   if ( numDetectors > 1 ) {
     for ( UINT4 X=1; X < numDetectors; X++ ) {
-      if ( (cfg->multiTimestamps->data[X] = XLALCreateTimestampVector ( uvar->timeGPS->length ) ) == NULL ) {
-        XLALPrintError ("%s: XLALCreateTimestampVector( %d ) failed.", __func__, uvar->timeGPS->length );
-        XLAL_ERROR ( XLAL_EFUNC );
-      }
+      XLAL_CHECK ( (cfg->multiTimestamps->data[X] = XLALCreateTimestampVector ( uvar->timeGPS->length ) ) != NULL, XLAL_EFUNC, "XLALCreateTimestampVector( %d ) failed.", uvar->timeGPS->length );
       for (UINT4 t = 0; t < uvar->timeGPS->length; t++) {
        cfg->multiTimestamps->data[X]->data[t].gpsSeconds = cfg->multiTimestamps->data[0]->data[t].gpsNanoSeconds;
        cfg->multiTimestamps->data[X]->data[t].gpsSeconds = cfg->multiTimestamps->data[0]->data[t].gpsNanoSeconds;
@@ -372,25 +321,16 @@ XLALInitCode ( ConfigVariables *cfg, const UserVariables_t *uvar, const char *ap
 
   /* convert detector names into site-info */
   MultiLALDetector *multiDet;
-  if ( (multiDet = XLALCreateMultiLALDetector ( numDetectors )) == NULL ) {
-    XLALPrintError ("%s: XLALCreateMultiLALDetector(1) failed with errno=%d\n", __func__, xlalErrno );
-    XLAL_ERROR ( XLAL_EFUNC );
-  }
+  XLAL_CHECK ( (multiDet = XLALCreateMultiLALDetector ( numDetectors )) != NULL, XLAL_EFUNC, "XLALCreateMultiLALDetector(1) failed." );
   LALDetector *site = NULL;
   for ( UINT4 X=0; X < numDetectors; X++ ) {
-    if ( (site = XLALGetSiteInfo ( uvar->IFOs->data[X] )) == NULL ) {
-      XLALPrintError ("%s: Failed to get site-info for detector '%s'\n", __func__, uvar->IFOs->data[X] );
-      XLAL_ERROR ( XLAL_EFUNC );
-    }
+    XLAL_CHECK ( (site = XLALGetSiteInfo ( uvar->IFOs->data[X] )) != NULL, XLAL_EFUNC, "Failed to get site-info for detector '%s'.", uvar->IFOs->data[X] );
     multiDet->data[X] = (*site); 	/* copy! */
     XLALFree ( site );
   }
 
   /* get detector states */
-  if ( (cfg->multiDetStates = XLALGetMultiDetectorStates ( cfg->multiTimestamps, multiDet, cfg->edat, 0.5 * uvar->Tsft )) == NULL ) {
-    XLALPrintError ( "%s: XLALGetDetectorStates() failed.\n", __func__ );
-    XLAL_ERROR ( XLAL_EFUNC );
-  }
+  XLAL_CHECK ( (cfg->multiDetStates = XLALGetMultiDetectorStates ( cfg->multiTimestamps, multiDet, cfg->edat, 0.5 * uvar->Tsft )) != NULL, XLAL_EFUNC, "XLALGetDetectorStates() failed." );
 
   XLALDestroyMultiLALDetector ( multiDet );
 
@@ -399,52 +339,25 @@ XLALInitCode ( ConfigVariables *cfg, const UserVariables_t *uvar, const char *ap
   BOOLEAN haveAlphaDelta = ( XLALUserVarWasSet(&uvar->Alpha) && XLALUserVarWasSet(&uvar->Delta) );
   BOOLEAN haveSkyGrid = XLALUserVarWasSet( &uvar->skyGridFile );
 
-  if ( haveAlphaDelta && haveSkyGrid ) {
-    XLALPrintError ("%s: Can't handle both Alpha/Delta and skyGridFile input options.\n\n", __func__ );
-    XLAL_ERROR ( XLAL_EINVAL );
-  }
-
-  if ( !haveAlphaDelta && !haveSkyGrid ) {
-    XLALPrintError ("%s: Need either Alpha/Delta or skyGridFile input options.\n\n", __func__ );
-    XLAL_ERROR ( XLAL_EINVAL );
-  }
+  XLAL_CHECK ( !(haveAlphaDelta && haveSkyGrid), XLAL_EINVAL, "Can't handle both Alpha/Delta and skyGridFile input options." );
+  XLAL_CHECK ( haveAlphaDelta || haveSkyGrid, XLAL_EINVAL, "Need either Alpha/Delta or skyGridFile input option." );
 
   if (haveAlphaDelta) { /* parse this into one-element Alpha, Delta vectors */
-    if ( (cfg->Alpha = XLALCreateREAL8Vector ( 1 )) == NULL ) {
-      XLALPrintError ("%s: failed to XLALCreateREAL8Vector( %d )\n", __func__, 1 );
-      XLAL_ERROR ( XLAL_EFUNC );
-    }
+    XLAL_CHECK ( (cfg->Alpha = XLALCreateREAL8Vector ( 1 )) != NULL, XLAL_EFUNC, "XLALCreateREAL8Vector(1) failed." );
     cfg->Alpha->data[0] = uvar->Alpha;
-    if ( (cfg->Delta = XLALCreateREAL8Vector ( 1 )) == NULL ) {
-      XLALPrintError ("%s: failed to XLALCreateREAL8Vector( %d )\n", __func__, 1 );
-      XLAL_ERROR ( XLAL_EFUNC );
-    }
+    XLAL_CHECK ( (cfg->Delta = XLALCreateREAL8Vector ( 1 )) != NULL, XLAL_EFUNC, "XLALCreateREAL8Vector(1) failed." );
     cfg->Delta->data[0] = uvar->Delta;
     cfg->numSkyPoints = 1;
   } // if (haveAlphaDelta)
 
   else if ( haveSkyGrid ) {
     LALParsedDataFile *data = NULL;
-    if ( XLALParseDataFile (&data, uvar->skyGridFile) != XLAL_SUCCESS ) {
-      XLALPrintError ("%s: failed to parse data file '%s'\n", __func__, uvar->skyGridFile );
-      XLAL_ERROR ( XLAL_EFUNC );
-    }
+    XLAL_CHECK ( XLALParseDataFile (&data, uvar->skyGridFile) == XLAL_SUCCESS, XLAL_EFUNC, "Failed to parse data file '%s'.", uvar->skyGridFile );
     cfg->numSkyPoints = data->lines->nTokens;
-    if ( (cfg->Alpha = XLALCreateREAL8Vector ( cfg->numSkyPoints )) == NULL ) {
-      XLALPrintError ("%s: failed to XLALCreateREAL8Vector( %d )\n", __func__, cfg->numSkyPoints );
-      XLAL_ERROR ( XLAL_EFUNC );
-    }
-    if ( (cfg->Delta = XLALCreateREAL8Vector ( cfg->numSkyPoints )) == NULL ) {
-      XLALPrintError ("%s: failed to XLALCreateREAL8Vector( %d )\n", __func__, cfg->numSkyPoints );
-      XLAL_ERROR ( XLAL_EFUNC );
-    }
+    XLAL_CHECK ( (cfg->Alpha = XLALCreateREAL8Vector ( cfg->numSkyPoints )) != NULL, XLAL_EFUNC, "XLALCreateREAL8Vector( %d ) failed.", cfg->numSkyPoints  );
+    XLAL_CHECK ( (cfg->Delta = XLALCreateREAL8Vector ( cfg->numSkyPoints )) != NULL, XLAL_EFUNC, "XLALCreateREAL8Vector( %d ) failed.", cfg->numSkyPoints  );
     for (UINT4 n=0; n < cfg->numSkyPoints; n++) {
-      if ( 2 != sscanf( data->lines->tokens[n], "%" LAL_REAL8_FORMAT "%" LAL_REAL8_FORMAT, &cfg->Alpha->data[n], &cfg->Delta->data[n] ))
-        {
-          XLALPrintError ( "%s: could not parse 2 numbers from line %d in candidate-file '%s':\n", __func__, n, uvar->skyGridFile);
-          XLALPrintError ("'%s'\n", data->lines->tokens[n] );
-          XLAL_ERROR (   XLAL_EDATA );
-        }
+      XLAL_CHECK ( 2 == sscanf( data->lines->tokens[n], "%" LAL_REAL8_FORMAT "%" LAL_REAL8_FORMAT, &cfg->Alpha->data[n], &cfg->Delta->data[n] ), XLAL_EDATA, "Could not parse 2 numbers from line %d in candidate-file '%s':\n'%s'", n, uvar->skyGridFile, data->lines->tokens[n] );
     } // for (UINT4 n=0; n < cfg->numSkyPoints; n++)
     XLALDestroyParsedDataFile ( data );
   } // else if ( haveSkyGrid )
