@@ -467,8 +467,7 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
   }
 
   if (runState->likelihood==&LALInferenceUndecomposedFreqDomainLogLikelihood ||
-      runState->likelihood==&LALInferenceFreqDomainLogLikelihood ||
-      runState->likelihood==&LALInferenceNoiseOnlyLogLikelihood){
+      runState->likelihood==&LALInferenceFreqDomainLogLikelihood){
     nullLikelihood = LALInferenceNullLogLikelihood(runState->data);
   } else if (runState->likelihood==&LALInferenceFreqDomainStudentTLogLikelihood || 
 	     runState->likelihood==&LALInferenceMarginalisedTimeLogLikelihood) {
