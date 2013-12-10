@@ -20,13 +20,6 @@ SUBDIRS = \
 	CombSearch \
 	SFTReferenceLibrary
 
-if LALFRAME
-# this only requires LALFrame because of usage of LALFrameL.h
-LALFRAMEPROGS = lalapps_make_sfts
-else
-LALFRAMEPROGS =
-endif
-
 bin_PROGRAMS = \
 	lalapps_Calibrate60sSFTs \
 	lalapps_Calibrate1800SFTs \
@@ -41,9 +34,10 @@ bin_PROGRAMS = \
 	lalapps_create_time_correction_ephemeris \
 	lalapps_ssbtodetector \
 	lalapps_ComputeAntennaPattern
-	$(LALFRAMEPROGS)
 
 if LALFRAME
+# this only requires LALFrame because of usage of LALFrameL.h
+bin_PROGRAMS += lalapps_make_sfts
 lalapps_make_sfts_SOURCES = make_sfts.c
 endif
 
