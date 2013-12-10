@@ -17,10 +17,14 @@
  */
 
 #include <config.h>
-
 #include <time.h>
+#include <string.h>
 #include <lal/Date.h>
 #include <lal/XLALError.h>
+
+#ifndef HAVE_GMTIME_R
+#define gmtime_r(timep, result) memcpy((result), gmtime(timep), sizeof(struct tm))
+#endif
 
 /**
  * \ingroup Date_h
@@ -43,7 +47,7 @@ XLALGPSTimeNow (
   time_t ticks = time(NULL);
   struct tm tm;
 
-  tm = *gmtime(&ticks);
+  gmtime_r(&ticks, &tm);
   gpstime->gpsSeconds = XLALUTCToGPS(&tm);
   gpstime->gpsNanoSeconds = 0;
 

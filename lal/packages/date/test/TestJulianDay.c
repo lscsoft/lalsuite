@@ -18,11 +18,15 @@
  */
 
 #include <config.h>
-
 #include <math.h>
+#include <string.h>
 #include <lal/LALStdlib.h>
 #include <lal/Date.h>
 #include <lal/XLALError.h>
+
+#ifndef HAVE_LOCALTIME_R
+#define localtime_r(timep, result) memcpy((result), localtime(timep), sizeof(struct tm))
+#endif
 
 #define SUCCESS              0
 #define FAIL_JULIAN_DAY      1
@@ -151,7 +155,7 @@ int main(void)
 	 */
 
 	time(&now);
-	tnow = *localtime(&now);
+	localtime_r(&now, &tnow);
 	if(test(&tnow, 0, 0, __LINE__))
 		return 1;
 
