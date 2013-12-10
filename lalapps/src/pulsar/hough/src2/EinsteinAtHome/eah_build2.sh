@@ -562,7 +562,7 @@ diff -ur include.org/libcoff.h include/libcoff.h
    long indx;
 Only in include: libcoff.h~
 EOF
-)
+) >> "$LOGFILE" 2>&1 || fail
     fi
   fi
 fi
