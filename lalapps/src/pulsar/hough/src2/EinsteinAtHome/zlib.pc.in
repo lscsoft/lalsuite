@@ -1,0 +1,10 @@
+prefix=/Users/bema/EinsteinAtHome/EinsteinAtHome/install
+exec_prefix=${prefix}
+libdir=${exec_prefix}/lib
+includedir=${prefix}/include
+
+Name: ZLIB
+Description: zlib Compression Library
+Version: 1.2.3
+Libs: -L${libdir} -lz
+Cflags: -I${includedir}

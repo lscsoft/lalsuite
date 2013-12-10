@@ -465,6 +465,9 @@ if test ."$build_zlib" = ."true"; then
         fi
         log_and_do make
         log_and_do make install
+        log_and_do mkdir -p "$INSTALL/lib/pkgconfig"
+        echo 'sed "s%^prefix=.*%prefix=$INSTALL%;s/^Version: .*/Version: $zlib/;s/^Version: zlib-/Version: /" "$eah_build2_loc/zlib.pc.in" > "$INSTALL/lib/pkgconfig/zlib.pc"' >> "$LOGFILE"
+        sed "s%^prefix=.*%prefix=$INSTALL%;s/^Version: .*/Version: $zlib/;s/^Version: zlib-/Version: /" "$eah_build2_loc/zlib.pc.in" > "$INSTALL/lib/pkgconfig/zlib.pc" || fail
     fi
 fi
 
