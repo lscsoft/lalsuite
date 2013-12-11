@@ -26,7 +26,6 @@
  *
  */
 
-#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -777,10 +776,8 @@ COMPLEX8FrequencySeries *generateActuation(
   for ( k = 0; k < resp->data->length; k++ )
   {
     fNorm = k * resp->deltaF / pendF;
-    denom->data[k].realf_FIXME = ( 1 - fNorm * fNorm );
-    denom->data[k].imagf_FIXME = - fNorm / pendQ;
-    num->data[k].realf_FIXME = -1.0 * ETMcal;
-    num->data[k].imagf_FIXME = 0.0;
+    denom->data[k] = crectf( ( 1 - fNorm * fNorm ), - fNorm / pendQ );
+    num->data[k] = crectf( -1.0 * ETMcal, 0.0 );
   }
 
   XLALCCVectorDivide( resp->data, num, denom);

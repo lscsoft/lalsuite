@@ -46,7 +46,6 @@ int main(void) {fputs("disabled, no frame library support.\n", stderr);return 1;
 #include <glob.h>
 #include <errno.h>
 
-#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/LALDatatypes.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALStdio.h>
@@ -342,12 +341,9 @@ FILE *fpAlpha=NULL;
       params.asQ = &asq;
       params.exc = &exc;
       params.lineFrequency = CLA.f;
-      params.openloop.real_FIXME =  CLA.G0Re;
-      params.openloop.imag_FIXME =  CLA.G0Im;
-      params.digital.real_FIXME = CLA.D0Re;
-      params.digital.imag_FIXME = CLA.D0Im;
-      params.whitener.real_FIXME = CLA.W0Re;
-      params.whitener.imag_FIXME = CLA.W0Im;
+      params.openloop = crect( CLA.G0Re, CLA.G0Im );
+      params.digital = crect( CLA.D0Re, CLA.D0Im );
+      params.whitener = crect( CLA.W0Re, CLA.W0Im );
 
       LALComputeCalibrationFactors(&status,&factors,&params);
       TESTSTATUS( &status );

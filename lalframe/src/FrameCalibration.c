@@ -89,7 +89,6 @@
  * SenseMon frames are used in preference.
  * </li></ol>
  */
-#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <math.h>
 #include <string.h>
 #include <lal/LALStdlib.h>
@@ -371,9 +370,7 @@ LALExtractFrameResponse(LALStatus * status,
             ENDFAIL(status);
 
             for (i = 0; i < length; ++i) {
-                a.data->data[i].realf_FIXME =
-                    (REAL4) sensemonTS.data->data[i];
-                a.data->data[i].imagf_FIXME = 0;
+                a.data->data[i] = crectf( (REAL4) sensemonTS.data->data[i], 0 );
             }
             a.epoch = sensemonTS.epoch;
             a.deltaT = sensemonTS.deltaT;
@@ -417,9 +414,7 @@ LALExtractFrameResponse(LALStatus * status,
             ENDFAIL(status);
 
             for (i = 0; i < length; ++i) {
-                ab.data->data[i].realf_FIXME =
-                    (REAL4) sensemonTS.data->data[i];
-                ab.data->data[i].imagf_FIXME = 0;
+                ab.data->data[i] = crectf( (REAL4) sensemonTS.data->data[i], 0 );
             }
             ab.epoch = sensemonTS.epoch;
             ab.deltaT = sensemonTS.deltaT;

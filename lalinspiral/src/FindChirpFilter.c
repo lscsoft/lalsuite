@@ -57,7 +57,6 @@
  *
  */
 
-#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <math.h>
 #include <lal/LALStdio.h>
 #include <lal/LALStdlib.h>
@@ -295,8 +294,7 @@ LALFindChirpFilterSegment (
     REAL4 x = crealf(tmpltSignal[k]);
     REAL4 y = 0 - cimagf(tmpltSignal[k]);       /* note complex conjugate */
 
-    qtilde[k].realf_FIXME = r*x - s*y;
-    qtilde[k].imagf_FIXME = r*y + s*x;
+    qtilde[k] = crectf( r*x - s*y, r*y + s*x );
   }
 
 
@@ -353,8 +351,7 @@ LALFindChirpFilterSegment (
 
     for ( j = 0; j < numPoints; ++j )
     {
-      params->cVec->data->data[j].realf_FIXME = sqrt(norm) * crealf(q[j]);
-      params->cVec->data->data[j].imagf_FIXME = sqrt(norm) * cimagf(q[j]);
+      params->cVec->data->data[j] = (((REAL4) sqrt(norm)) * q[j]);
     }
   }
 

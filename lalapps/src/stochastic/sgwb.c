@@ -22,7 +22,6 @@
  *
  */
 
-#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include "sgwb.h"
 #include "misc.h"
 #include "data_output.h"
@@ -310,8 +309,7 @@ COMPLEX8FrequencySeries *unity_response(LIGOTimeGPS epoch,
   /* get unity response function */
   for (i = 0; i < length; i++)
   {
-    response->data->data[i].realf_FIXME = 1;
-    response->data->data[i].imagf_FIXME = 0;
+    response->data->data[i] = 1.0;
   }
 
   return(response);

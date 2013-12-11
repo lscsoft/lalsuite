@@ -36,7 +36,6 @@
  *
  */
 
-#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <math.h>
 #include <lal/LALErrno.h>
 #include <lal/XLALError.h>
@@ -390,10 +389,8 @@ LALFindChirpBCVFilterSegment (
     REAL4 x = crealf(tmpltSignal[k]);
     REAL4 y = 0.0 - cimagf(tmpltSignal[k]); /* note complex conjugate */
 
-    qtilde[k].realf_FIXME = r * x - s * y ;
-    qtilde[k].imagf_FIXME = r * y + s * x ;
-    qtildeBCV[k].realf_FIXME = rBCV * x - sBCV * y ;
-    qtildeBCV[k].imagf_FIXME = rBCV * y + sBCV * x ;
+    qtilde[k] = crectf( r * x - s * y, r * y + s * x );
+    qtildeBCV[k] = crectf( rBCV * x - sBCV * y, rBCV * y + sBCV * x );
   }
 
   /* inverse fft to get q, and qBCV */

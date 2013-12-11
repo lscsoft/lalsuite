@@ -20,7 +20,6 @@
 /* LALDemod variants put out of ComputeFStatistic.c for separate compilation
  * Authors see ComputeFStatistic.c
                                                          Bernd Machenschalk */
-#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include "ComputeFStatistic.h"
 
 #if defined(USE_BOINC) && defined(_WIN32)
@@ -153,10 +152,8 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
   /* Loop over frequencies to be demodulated */
   for(i=0 ; i< params->imax  ; i++ )
   {
-    Fa.real_FIXME =0.0;
-    Fa.imag_FIXME =0.0;
-    Fb.real_FIXME =0.0;
-    Fb.imag_FIXME =0.0;
+    Fa = 0.0;
+    Fb = 0.0;
 
     f=params->f0+i*params->df;
 
@@ -370,10 +367,8 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
         {
           REAL8 realQXP = realXP*realQ-imagXP*imagQ;
           REAL8 imagQXP = realXP*imagQ+imagXP*realQ;
-          Fa.real_FIXME += a*realQXP;
-          Fa.imag_FIXME += a*imagQXP;
-          Fb.real_FIXME += b*realQXP;
-          Fb.imag_FIXME += b*imagQXP;
+          Fa += crect( a*realQXP, a*imagQXP );
+          Fb += crect( b*realQXP, b*imagQXP );
         }
       }      
 

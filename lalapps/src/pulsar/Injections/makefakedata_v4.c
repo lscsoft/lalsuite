@@ -40,7 +40,6 @@
 /* ---------- includes ---------- */
 #include <sys/stat.h>
 
-#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lalapps.h>
 #include <lal/AVFactories.h>
 #include <lal/SeqFactories.h>
@@ -1593,8 +1592,7 @@ XLALLoadTransferFunctionFromActuation ( REAL8 actuationScale, /**< overall scale
       }
 
       /* now convert into transfer-function and (Re,Im): T = A^-1 */
-      data->data[i-startline].realf_FIXME =  cos(phi) / ( amp * actuationScale );
-      data->data[i-startline].imagf_FIXME = -sin(phi) / ( amp * actuationScale );
+      data->data[i-startline] = crectf( cos(phi) / ( amp * actuationScale ), -sin(phi) / ( amp * actuationScale ) );
 
     } /* for i < numlines */
 

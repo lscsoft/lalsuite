@@ -166,7 +166,6 @@
 #define STOCHASTICOPTIMALFILTERTESTC_MSGEFLS "Incorrect answer for valid data"
 #define STOCHASTICOPTIMALFILTERTESTC_MSGEUSE "Bad user-entered data"
 
-#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/LALStdlib.h>
 #include <lal/LALConstants.h>
 
@@ -870,10 +869,8 @@ int main(int argc, char *argv[])
   omegaGW.data->data[0] = 0;
   invNoise1.data->data[0] = 0;
   invNoise2.data->data[0] = 0;
-  hcInvNoise1.data->data[0].realf_FIXME = 0;
-  hcInvNoise1.data->data[0].imagf_FIXME = 0;
-  hcInvNoise2.data->data[0].realf_FIXME = 0;
-  hcInvNoise2.data->data[0].imagf_FIXME = 0;
+  hcInvNoise1.data->data[0] = 0.0;
+  hcInvNoise2.data->data[0] = 0.0;
 
   /** Test 1 **/
   for (i=1; i < STOCHASTICOPTIMALFILTERTESTC_LENGTH; i++)
@@ -884,10 +881,8 @@ int main(int argc, char *argv[])
     omegaGW.data->data[i] = 1;
     invNoise1.data->data[i] = 1;
     invNoise2.data->data[i] = 1;
-    hcInvNoise1.data->data[i].realf_FIXME = 1;
-    hcInvNoise1.data->data[i].imagf_FIXME = 0;
-    hcInvNoise2.data->data[i].realf_FIXME = 1;
-    hcInvNoise2.data->data[i].imagf_FIXME = 0;
+    hcInvNoise1.data->data[i] = 1.0;
+    hcInvNoise2.data->data[i] = 1.0;
   }
 
   /* fill normalization output */
@@ -1104,10 +1099,8 @@ int main(int argc, char *argv[])
     omegaGW.data->data[i] = pow(f,3);
     invNoise1.data->data[i] = 1;
     invNoise2.data->data[i] = 1;
-    hcInvNoise1.data->data[i].realf_FIXME = 1;
-    hcInvNoise1.data->data[i].imagf_FIXME = 0;
-    hcInvNoise2.data->data[i].realf_FIXME = 1;
-    hcInvNoise2.data->data[i].imagf_FIXME = 0;
+    hcInvNoise1.data->data[i] = 1.0;
+    hcInvNoise2.data->data[i] = 1.0;
   }
 
   /* fill normalization output */

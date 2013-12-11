@@ -25,7 +25,6 @@ int isnan( double );
 #include <stdlib.h>
 #include <string.h>
 
-#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/LALStdio.h>
 #include <lal/SeqFactories.h>
 #include <lal/Date.h>
@@ -655,8 +654,7 @@ int XLALASCIIFileReadCalRef( COMPLEX8FrequencySeries **series, REAL8 *duration, 
       XLALDestroyREAL8VectorSequence( data );
       XLAL_ERROR( XLAL_EDATA );
     }
-    (*series)->data->data[row].realf_FIXME = mod * cos( arg );
-    (*series)->data->data[row].imagf_FIXME = mod * sin( arg );
+    (*series)->data->data[row] = crectf( mod * cos( arg ), mod * sin( arg ) );
   }
 
   XLALDestroyREAL8VectorSequence( data );

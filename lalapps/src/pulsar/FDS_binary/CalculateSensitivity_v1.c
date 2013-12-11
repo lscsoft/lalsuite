@@ -38,7 +38,6 @@
 /************************************************************************************/
 
 
-#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include "CalculateSensitivity_v1.h" 
 
 int ReadSource(char *,char *,LIGOTimeGPS *,binarysource *); 
@@ -209,8 +208,7 @@ int SelectSFTs(FFT ***SFTData,FFT ***tempSFTData,dataset *dataparams,dataset *fu
 
 	/* loop over the SFT data and copy it */
 	for (s=0;s<(INT4)(*SFTData)[i]->fft->data->length;s++) {
-	  (*tempSFTData)[k]->fft->data->data[s].realf_FIXME=crealf((*SFTData)[i]->fft->data->data[s]);
-	  (*tempSFTData)[k]->fft->data->data[s].imagf_FIXME=cimagf((*SFTData)[i]->fft->data->data[s]);
+	  (*tempSFTData)[k]->fft->data->data[s] = (*SFTData)[i]->fft->data->data[s];
 	}
 
 	/* increment the loop counter */

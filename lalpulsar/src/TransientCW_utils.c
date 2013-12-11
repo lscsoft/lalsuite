@@ -33,7 +33,6 @@
 #include <math.h>
 
 /* LAL-includes */
-#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/XLALError.h>
 #include <lal/Date.h>
 #include <lal/AVFactories.h>
@@ -951,10 +950,8 @@ XLALmergeMultiFstatAtomsBinned ( const MultiFstatAtomVector *multiAtoms, UINT4 d
           destAtom->a2_alpha += atom_X_i->a2_alpha;
           destAtom->b2_alpha += atom_X_i->b2_alpha;
           destAtom->ab_alpha += atom_X_i->ab_alpha;
-          destAtom->Fa_alpha.realf_FIXME += crealf(atom_X_i->Fa_alpha);
-          destAtom->Fa_alpha.imagf_FIXME += cimagf(atom_X_i->Fa_alpha);
-          destAtom->Fb_alpha.realf_FIXME += crealf(atom_X_i->Fb_alpha);
-          destAtom->Fb_alpha.imagf_FIXME += cimagf(atom_X_i->Fb_alpha);
+          destAtom->Fa_alpha += atom_X_i->Fa_alpha;
+          destAtom->Fb_alpha += atom_X_i->Fb_alpha;
 
         } /* for i < numAtomsX */
     } /* for X < numDet */

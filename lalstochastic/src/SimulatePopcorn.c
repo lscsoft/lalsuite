@@ -17,7 +17,6 @@
 *  MA  02111-1307  USA
 */
 
-#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <stdio.h>
 #include <math.h>
 #include <string.h>
@@ -502,8 +501,7 @@ LALSimPopcornTimeSeries (  LALStatus                *status,	/**< UNDOCUMENTED *
 
      for (detect=0;detect<2;detect++)
        for (j=0;j<Nfreq;j++) {
-        Hvec[detect]->data[j].realf_FIXME= crealf(Hvec[detect]->data[j])*norm;
-        Hvec[detect]->data[j].imagf_FIXME= cimagf(Hvec[detect]->data[j])*norm;}
+        Hvec[detect]->data[j] = (Hvec[detect]->data[j] * ((REAL4) norm));}
 
      /*model the relative orientation of the detectors*/
 
@@ -523,19 +521,14 @@ LALSimPopcornTimeSeries (  LALStatus                *status,	/**< UNDOCUMENTED *
        for (j=0;j<Nfreq;j++)
         {
          mygamma=overlap.data->data[j];
-         Hvec[1]->data[j].realf_FIXME=(crealf(Hvec[0]->data[j])*mygamma
-                     +sqrt(1-mygamma*mygamma)*crealf(Hvec[1]->data[j]));
-
-         Hvec[1]->data[j].imagf_FIXME=(cimagf(Hvec[1]->data[j])*mygamma
-                     +sqrt(1-mygamma*mygamma)*cimagf(Hvec[1]->data[j]));
+         Hvec[1]->data[j] = crectf( (crealf(Hvec[0]->data[j])*mygamma +sqrt(1-mygamma*mygamma)*crealf(Hvec[1]->data[j])), (cimagf(Hvec[1]->data[j])*mygamma +sqrt(1-mygamma*mygamma)*cimagf(Hvec[1]->data[j])) );
          }
         LALSDestroyVector(status->statusPtr, &(overlap.data));
       }
     else {
      for (j=0;j<Nfreq;j++)
       {
-       Hvec[1]->data[j].realf_FIXME=crealf(Hvec[0]->data[j]);
-       Hvec[1]->data[j].imagf_FIXME=cimagf(Hvec[0]->data[j]);
+       Hvec[1]->data[j] = Hvec[0]->data[j];
       }}
 
    /*compute the spectrum of omega*/
@@ -549,10 +542,8 @@ LALSimPopcornTimeSeries (  LALStatus                *status,	/**< UNDOCUMENTED *
     {
       resp0 = input->wfilter0->data->data[j];
       resp1 = input->wfilter1->data->data[j];
-      Hvec[0]->data[j].realf_FIXME=crealf(Hvec[0]->data[j])*crealf(resp0);
-      Hvec[0]->data[j].imagf_FIXME=cimagf(Hvec[0]->data[j])*cimagf(resp0);
-      Hvec[1]->data[j].realf_FIXME=crealf(Hvec[1]->data[j])*crealf(resp1);
-      Hvec[1]->data[j].imagf_FIXME=cimagf(Hvec[1]->data[j])*cimagf(resp1);
+      Hvec[0]->data[j] = crectf( crealf(Hvec[0]->data[j])*crealf(resp0), cimagf(Hvec[0]->data[j])*cimagf(resp0) );
+      Hvec[1]->data[j] = crectf( crealf(Hvec[1]->data[j])*crealf(resp1), cimagf(Hvec[1]->data[j])*cimagf(resp1) );
     }
 
     /* Inverse Fourier transform */

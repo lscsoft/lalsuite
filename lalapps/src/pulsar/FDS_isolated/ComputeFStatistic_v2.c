@@ -51,7 +51,6 @@
 int finite(double);
 
 /* LAL-includes */
-#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/LALString.h>
 #include <lal/AVFactories.h>
 #include <lal/GSLSupport.h>
@@ -725,8 +724,8 @@ int main(int argc,char *argv[])
       if ( uvar.SignalOnly )
 	{
 	  REAL8 norm = 1.0 / sqrt( 0.5 * GV.Tsft );
-	  Fstat.Fa.real_FIXME *= norm;  Fstat.Fa.imag_FIXME *= norm;
-	  Fstat.Fb.real_FIXME *= norm;  Fstat.Fb.imag_FIXME *= norm;
+	  Fstat.Fa *= norm;
+	  Fstat.Fb *= norm;
 	  Fstat.F *= norm * norm;
 	  Fstat.F += 2;		/* compute E[2F]:= 4 + SNR^2 */
 	  UINT4 X, numDet = Fstat.numDetectors;
@@ -745,10 +744,8 @@ int main(int argc,char *argv[])
 		  FstatAtomVector *thisAtomList = Fstat.multiFstatAtoms->data[X];
 		  for ( alpha=0; alpha < thisAtomList->length; alpha ++ )
 		    {
-		      thisAtomList->data[alpha].Fa_alpha.realf_FIXME *= norm;
-		      thisAtomList->data[alpha].Fa_alpha.imagf_FIXME *= norm;
-		      thisAtomList->data[alpha].Fb_alpha.realf_FIXME *= norm;
-		      thisAtomList->data[alpha].Fb_alpha.imagf_FIXME *= norm;
+		      thisAtomList->data[alpha].Fa_alpha *= ((REAL4) norm);
+		      thisAtomList->data[alpha].Fb_alpha *= ((REAL4) norm);
 		    } /* for alpha < numSFTs */
 		} /* for X < numDet */
 	    } /* if outputFstatAtoms */

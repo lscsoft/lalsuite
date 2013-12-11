@@ -268,7 +268,6 @@
  * @{
  */
 
-#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/LALStdlib.h>
 #include <lal/StochasticCrossCorrelation.h>
 #include <lal/CoarseGrainFrequencySeries.h>
@@ -758,7 +757,7 @@ LALStochasticHeterodynedCrossCorrelationStatisticCal(
     TRY(LALCDestroyVector(status->statusPtr, &(ccSpec.data)), status);
   ENDFAIL(status);
 
-  output->value.realf_FIXME = output->value.imagf_FIXME = 0.0;
+  output->value = 0.0;
 
   /* initialize pointers */
   cPtr = ccSpec.data->data;
@@ -768,13 +767,11 @@ LALStochasticHeterodynedCrossCorrelationStatisticCal(
   /* contributions from positive and (negative) frequency components */
   for (; cPtr < cStopPtr; ++cPtr)
   {
-    output->value.realf_FIXME += crealf(*cPtr);
-    output->value.imagf_FIXME += cimagf(*cPtr);
+    output->value += *cPtr;
   }
 
   /* normalize */
-  output->value.realf_FIXME *= ccSpec.deltaF;
-  output->value.imagf_FIXME *= ccSpec.deltaF;
+  output->value *= ((REAL4) ccSpec.deltaF);
 
   TRY(LALCDestroyVector(status->statusPtr, &(ccSpec.data)), status);
 
@@ -1550,7 +1547,7 @@ LALStochasticHeterodynedCrossCorrelationStatistic(
     TRY(LALCDestroyVector(status->statusPtr, &(ccSpec.data)), status);
   ENDFAIL(status);
 
-  output->value.realf_FIXME = output->value.imagf_FIXME = 0.0;
+  output->value = 0.0;
 
   /* initialize pointers */
   cPtr = ccSpec.data->data;
@@ -1559,13 +1556,11 @@ LALStochasticHeterodynedCrossCorrelationStatistic(
   /* contributions from positive and (negative) frequency components */
   for (; cPtr < cStopPtr; ++cPtr)
   {
-    output->value.realf_FIXME += crealf(*cPtr);
-    output->value.imagf_FIXME += cimagf(*cPtr);
+    output->value += *cPtr;
   }
 
   /* normalize */
-  output->value.realf_FIXME *= ccSpec.deltaF;
-  output->value.imagf_FIXME *= ccSpec.deltaF;
+  output->value *= ((REAL4) ccSpec.deltaF);
 
   TRY(LALCDestroyVector(status->statusPtr, &(ccSpec.data)), status);
 
@@ -2215,7 +2210,7 @@ LALStochasticHeterodynedCrossCorrelationStatisticStrain(
     TRY(LALCDestroyVector(status->statusPtr, &(ccSpec.data)), status);
   ENDFAIL(status);
 
-  output->value.realf_FIXME = output->value.imagf_FIXME = 0.0;
+  output->value = 0.0;
 
   /* initialize pointers */
   cPtr = ccSpec.data->data;
@@ -2224,13 +2219,11 @@ LALStochasticHeterodynedCrossCorrelationStatisticStrain(
   /* contributions from positive and (negative) frequency components */
   for (; cPtr < cStopPtr; ++cPtr)
   {
-    output->value.realf_FIXME += crealf(*cPtr);
-    output->value.imagf_FIXME += cimagf(*cPtr);
+    output->value += *cPtr;
   }
 
   /* normalize */
-  output->value.realf_FIXME *= ccSpec.deltaF;
-  output->value.imagf_FIXME *= ccSpec.deltaF;
+  output->value *= ((REAL4) ccSpec.deltaF);
 
   TRY(LALCDestroyVector(status->statusPtr, &(ccSpec.data)), status);
 

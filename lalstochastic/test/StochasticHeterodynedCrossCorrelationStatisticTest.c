@@ -153,7 +153,6 @@
 
 
 
-#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/LALStdlib.h>
 
 #include <math.h>
@@ -695,12 +694,9 @@ int main( int argc, char *argv[] )
     x = f
       / (STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_FLIM / 2.0);
     /* printf ("%f\n",x); */
-    goodData1.data->data[i].realf_FIXME = x*x;
-    goodData1.data->data[i].imagf_FIXME = x;
-    goodData2.data->data[i].realf_FIXME = 1.0/crealf(goodData1.data->data[i]);
-    goodData2.data->data[i].imagf_FIXME = -1.0/cimagf(goodData1.data->data[i]);
-    goodFilter.data->data[i].realf_FIXME = x * (2-x);
-    goodFilter.data->data[i].imagf_FIXME = 0.0;
+    goodData1.data->data[i] = crectf( x*x, x );
+    goodData2.data->data[i] = crectf( 1.0/crealf(goodData1.data->data[i]), -1.0/cimagf(goodData1.data->data[i]) );
+    goodFilter.data->data[i] = crectf( x * (2-x), 0.0 );
     /*    printf ("%f + %f i    %f + %f i    %f + %f i\n",
 	    goodData1.data->data[i].re, goodData1.data->data[i].im,
 	    goodData2.data->data[i].re, goodData2.data->data[i].im,
@@ -817,19 +813,17 @@ int main( int argc, char *argv[] )
   {
     f = STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_F0
       + i * STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_DELTAF;
-    goodData1.data->data[i].realf_FIXME = f/STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_FLIM;
-    goodData2.data->data[i].realf_FIXME = 1 - crealf(goodData1.data->data[i]);
+    goodData1.data->data[i] = crectf( f/STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_FLIM, 0.0 );
+    goodData2.data->data[i] = crectf( 1 - crealf(goodData1.data->data[i]), 0.0 );
     if ( f > STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_WINMIN
          && f < STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_WINMAX )
     {
-      goodFilter.data->data[i].realf_FIXME = 1.0;
+      goodFilter.data->data[i] = 1.0;
     }
     else
     {
-      goodFilter.data->data[i].realf_FIXME = 0.0;
+      goodFilter.data->data[i] = 0.0;
     }
-    goodData1.data->data[i].imagf_FIXME = goodData2.data->data[i].imagf_FIXME
-      = goodFilter.data->data[i].imagf_FIXME = 0.0;
   }
 
   LALStochasticHeterodynedCrossCorrelationStatistic(&status, &output, &input, STOCHASTICHETERODYNEDCROSSCORRELATIONSTATISTICTESTC_TRUE);

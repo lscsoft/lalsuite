@@ -30,7 +30,6 @@
 #define __USE_ISOC99 1
 #include <math.h>
 
-#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/ExtrapolatePulsarSpins.h>
 
 #include <lal/AVFactories.h>
@@ -370,12 +369,10 @@ LocalComputeFStat ( LALStatus *status, 		/**< pointer to LALStatus structure */
         } /* if returnSingleF */
 
       /* Fa = sum_X Fa_X */
-      retF.Fa.real_FIXME += creal(FcX.Fa);
-      retF.Fa.imag_FIXME += cimag(FcX.Fa);
+      retF.Fa += FcX.Fa;
 
       /* Fb = sum_X Fb_X */ 		  
-      retF.Fb.real_FIXME += creal(FcX.Fb);
-      retF.Fb.imag_FIXME += cimag(FcX.Fb);
+      retF.Fb += FcX.Fb;
   		  
     } /* for  X < numDetectors */
  
@@ -470,10 +467,8 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
     if ( fkdot[spdnOrder] != 0.0 )
       break;
 
-  Fa.real_FIXME = 0.0f;
-  Fa.imag_FIXME = 0.0f;
-  Fb.real_FIXME = 0.0f;
-  Fb.imag_FIXME = 0.0f;
+  Fa = 0.0;
+  Fb = 0.0;
 
   a_al = amcoe->a->data;	/* point to beginning of alpha-arrays */
   b_al = amcoe->b->data;
@@ -633,11 +628,9 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
       a_alpha = (*a_al);
       b_alpha = (*b_al);
 
-      Fa.real_FIXME += a_alpha * realQXP;
-      Fa.imag_FIXME += a_alpha * imagQXP;
+      Fa += crect( a_alpha * realQXP, a_alpha * imagQXP );
       
-      Fb.real_FIXME += b_alpha * realQXP;
-      Fb.imag_FIXME += b_alpha * imagQXP;
+      Fb += crect( b_alpha * realQXP, b_alpha * imagQXP );
 
 
       /* advance pointers over alpha */
@@ -650,10 +643,8 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
     } /* for alpha < numSFTs */
 
   /* return result */
-  FaFb->Fa.real_FIXME = norm * creal(Fa);
-  FaFb->Fa.imag_FIXME = norm * cimag(Fa);
-  FaFb->Fb.real_FIXME = norm * creal(Fb);
-  FaFb->Fb.imag_FIXME = norm * cimag(Fb);
+  FaFb->Fa = (((REAL8) norm) * Fa);
+  FaFb->Fb = (((REAL8) norm) * Fb);
 
   return XLAL_SUCCESS;
 

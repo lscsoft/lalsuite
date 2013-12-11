@@ -106,7 +106,6 @@
 #include <string.h>
 #include <stdio.h>
 
-#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/LALStdlib.h>
 #include <lal/LALConstants.h>
 #include <lal/LALStatusMacros.h>
@@ -324,16 +323,12 @@ int main( void ){
     /* response fn */
     float freq = i/(SBParams.deltaT*SBParams.length);
     float factor=SIMULATESBTESTC_RMS/(sqrt(fnyquist)*s_of_f(freq));
-    response[0]->data[i].realf_FIXME = factor;
-    response[0]->data[i].imagf_FIXME = 0.0;
-    response[1]->data[i].realf_FIXME = factor;
-    response[1]->data[i].imagf_FIXME = 0.0;
+    response[0]->data[i] = crectf( factor, 0.0 );
+    response[1]->data[i] = crectf( factor, 0.0 );
   }
 
-  response[0]->data[0].realf_FIXME = 0.0;
-  response[0]->data[0].imagf_FIXME = 0.0;
-  response[1]->data[0].realf_FIXME = 0.0;
-  response[1]->data[0].imagf_FIXME = 0.0;
+  response[0]->data[0] = 0.0;
+  response[1]->data[0] = 0.0;
 
   wFilter1.epoch.gpsSeconds = 0;
   wFilter1.deltaF = deltaF;

@@ -8,7 +8,6 @@
 
 
 
-#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/SFTfileIO.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -157,8 +156,7 @@ int CSFTs(fftw_complex *L,REAL8 Fmin,REAL8 Fmax,int number,int startindex,REAL8 
   /* Loop over frequencies to be demodulated */
   for(m = 0 ; m <= number*(if1-if0)  ; m++ )
   {
-    llSFT.real_FIXME =0.0;
-    llSFT.imag_FIXME =0.0;
+    llSFT = 0.0;
 
     f=if0*deltaF+m*deltaF/number;
 
@@ -226,8 +224,7 @@ int CSFTs(fftw_complex *L,REAL8 Fmin,REAL8 Fmax,int number,int startindex,REAL8 
 	{
 	  REAL8 realQXP = realXP*realQ-imagXP*imagQ;
 	  REAL8 imagQXP = realXP*imagQ+imagXP*realQ;
-	  llSFT.real_FIXME += realQXP;
-	  llSFT.imag_FIXME += imagQXP;
+	  llSFT += crect( realQXP, imagQXP );
 	}
       }      
 

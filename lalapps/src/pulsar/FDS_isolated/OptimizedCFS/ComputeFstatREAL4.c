@@ -42,7 +42,6 @@
 /*---------- INCLUDES ----------*/
 #include <math.h>
 
-#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/AVFactories.h>
 #include <lal/ComputeFstat.h>
 #include <lal/LogPrintf.h>
@@ -587,10 +586,8 @@ XLALComputeFaFbREAL4 ( FcomponentsREAL4 *FaFb,		/**< [out] single-IFO Fa/Fb for 
   tau = 1.0f / df;
   Freq = f0 + df;
 
-  Fa.realf_FIXME = 0.0f;
-  Fa.imagf_FIXME = 0.0f;
-  Fb.realf_FIXME = 0.0f;
-  Fb.imagf_FIXME = 0.0f;
+  Fa = 0.0;
+  Fb = 0.0;
 
   /* convenient shortcuts, pointers to beginning of alpha-arrays */
   a_al = amcoe->a->data;
@@ -807,11 +804,9 @@ XLALComputeFaFbREAL4 ( FcomponentsREAL4 *FaFb,		/**< [out] single-IFO Fa/Fb for 
       a_alpha = (*a_al);
       b_alpha = (*b_al);
 
-      Fa.realf_FIXME += a_alpha * realQXP;
-      Fa.imagf_FIXME += a_alpha * imagQXP;
+      Fa += crectf( a_alpha * realQXP, a_alpha * imagQXP );
 
-      Fb.realf_FIXME += b_alpha * realQXP;
-      Fb.imagf_FIXME += b_alpha * imagQXP;
+      Fb += crectf( b_alpha * realQXP, b_alpha * imagQXP );
 
 
       /* advance pointers over alpha */
@@ -827,10 +822,8 @@ XLALComputeFaFbREAL4 ( FcomponentsREAL4 *FaFb,		/**< [out] single-IFO Fa/Fb for 
     } /* for alpha < numSFTs */
 
   /* return result */
-  FaFb->Fa.realf_FIXME = norm * crealf(Fa);
-  FaFb->Fa.imagf_FIXME = norm * cimagf(Fa);
-  FaFb->Fb.realf_FIXME = norm * crealf(Fb);
-  FaFb->Fb.imagf_FIXME = norm * cimagf(Fb);
+  FaFb->Fa = (((REAL4) norm) * Fa);
+  FaFb->Fb = (((REAL4) norm) * Fb);
 
   return XLAL_SUCCESS;
 

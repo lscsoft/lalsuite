@@ -47,7 +47,6 @@
 #include <io.h>
 #endif
 
-#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/LALStdio.h>
 #include <lal/FileIO.h>
 #include <lal/SFTfileIO.h>
@@ -704,15 +703,13 @@ read_sft_bins_from_fp ( SFTtype *ret, UINT4 *firstBinRead, UINT4 firstBin2read, 
 
       for ( i=0; i < numBins2read; i ++ )
 	{
-	  REAL4 *rep, *imp;
-
-	  rep = &(crealf(ret->data->data[i]));
-	  imp = &(cimagf(ret->data->data[i]));
+	  REAL4 re = crealf(ret->data->data[i]);
+	  REAL4 im = cimagf(ret->data->data[i]);
 
 	  if ( swapEndian )
 	    {
-	      endian_swap( (CHAR *) rep, sizeof ( *rep ), 1 );
-	      endian_swap( (CHAR *) imp, sizeof ( *imp ), 1 );
+	      endian_swap( (CHAR *) &re, sizeof ( re ), 1 );
+	      endian_swap( (CHAR *) &im, sizeof ( im ), 1 );
 	    }
 
 	  /* if the SFT-file was in v1-Format: need to renormalize the data now by 'Delta t'
@@ -721,9 +718,11 @@ read_sft_bins_from_fp ( SFTtype *ret, UINT4 *firstBinRead, UINT4 firstBin2read, 
 	   */
 	  if ( version == 1 )
 	    {
-	      (*rep) *= dt;
-	      (*imp) *= dt;
+	      re *= dt;
+	      im *= dt;
 	    }
+
+          ret->data->data[i] = crectf( re, im );
 	} /* for i < numBins2read */
     } /* if SFT-v1 */
 
@@ -2256,8 +2255,7 @@ LALWrite_v2SFT_to_v1file (LALStatus *status,			/**< pointer to LALStatus structu
 
   for ( i=0; i < numBins; i ++ )
     {
-      v1SFT.data->data[i].realf_FIXME = (REAL4) ( (REAL8)crealf(v1SFT.data->data[i]) / dt );
-      v1SFT.data->data[i].imagf_FIXME = (REAL4) ( (REAL8)cimagf(v1SFT.data->data[i]) / dt );
+      v1SFT.data->data[i] = crectf( (REAL4) ( (REAL8)crealf(v1SFT.data->data[i]) / dt ), (REAL4) ( (REAL8)cimagf(v1SFT.data->data[i]) / dt ) );
     }
 
   TRY ( LALWriteSFTfile (status->statusPtr, &v1SFT, fname ), status );
@@ -3050,8 +3048,7 @@ LALReadSFTfile (LALStatus *status,			/**< pointer to LALStatus structure */
   if (renorm != 1)
     for (i=0; i < readlen; i++)
       {
-	outputSFT->data->data[i].realf_FIXME *= renorm;
-	outputSFT->data->data[i].imagf_FIXME *= renorm;
+	outputSFT->data->data[i] *= ((REAL4) renorm);
       }
 
   /* that's it: return */
@@ -3540,8 +3537,7 @@ LALReadSFTdata(LALStatus *status,			/**< pointer to LALStatus structure */
     {
       if (swapEndian)
 	endian_swap((CHAR*)&rawdata[2*i], sizeof(REAL4), 2);
-      sft->data->data[i].realf_FIXME = rawdata[2 * i];
-      sft->data->data[i].imagf_FIXME = rawdata[2 * i + 1];
+      sft->data->data[i] = crectf( rawdata[2 * i], rawdata[2 * i + 1] );
     }
 
   LALFree (rawdata);
@@ -3750,15 +3746,13 @@ lal_read_sft_bins_from_fp ( LALStatus *status, SFTtype **sft, UINT4 *binsread, U
 
       for ( i=0; i < numBins2read; i ++ )
 	{
-	  REAL4 *rep, *imp;
-
-	  rep = &(crealf(ret->data->data[i]));
-	  imp = &(cimagf(ret->data->data[i]));
+	  REAL4 re = crealf(ret->data->data[i]);
+	  REAL4 im = cimagf(ret->data->data[i]);
 
 	  if ( swapEndian )
 	    {
-	      endian_swap( (CHAR *) rep, sizeof ( *rep ), 1 );
-	      endian_swap( (CHAR *) imp, sizeof ( *imp ), 1 );
+	      endian_swap( (CHAR *) &re, sizeof ( re ), 1 );
+	      endian_swap( (CHAR *) &im, sizeof ( im ), 1 );
 	    }
 
 	  /* if the SFT-file was in v1-Format: need to renormalize the data now by 'Delta t'
@@ -3767,9 +3761,11 @@ lal_read_sft_bins_from_fp ( LALStatus *status, SFTtype **sft, UINT4 *binsread, U
 	   */
 	  if ( version == 1 )
 	    {
-	      (*rep) *= dt;
-	      (*imp) *= dt;
+	      re *= dt;
+	      im *= dt;
 	    }
+
+          ret->data->data[i] = crectf( re, im );
 	} /* for i < numBins2read */
     } /* if SFT-v1 */
 

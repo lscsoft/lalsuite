@@ -32,7 +32,6 @@
 
 /***********************************************************************************************/
 /* includes */
-#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <math.h>
 #include <time.h>
 #include <stdio.h>
@@ -1107,8 +1106,7 @@ int XLALAddBinarySignalToSFTVector(SFTVector **sftvec,           /**< [in/out] t
 	REAL8 t = j*deltat + XLALGPSGetREAL8(&((*sftvec)->data[i].epoch));
 	
 	REAL8 phase = phi0 + LAL_TWOPI*((t-tref)*(nu-fhet) - nu*a*sin(omega*(t-tasc))) - LAL_PI/2.0;
-	xt->data[j].realf_FIXME = 0.5*inject_amplitude*cos(phase)*deltat;
-	xt->data[j].imagf_FIXME = 0.5*inject_amplitude*sin(phase)*deltat;
+	xt->data[j] = crectf( 0.5*inject_amplitude*cos(phase)*deltat, 0.5*inject_amplitude*sin(phase)*deltat );
       }
       
       /* perform fft */
@@ -1120,12 +1118,10 @@ int XLALAddBinarySignalToSFTVector(SFTVector **sftvec,           /**< [in/out] t
     
       /* now add directly to the input sft - making sure to flip negative frequencies */
       for (j=0;j<(UINT4)floor((numBins+1)/2);j++) {
-	(*sftvec)->data[i].data->data[j].realf_FIXME += crealf(xf->data[j+(UINT4)floor((numBins)/2)]);
-	(*sftvec)->data[i].data->data[j].imagf_FIXME += cimagf(xf->data[j+(UINT4)floor((numBins)/2)]);
+	(*sftvec)->data[i].data->data[j] += xf->data[j+(UINT4)floor((numBins)/2)];
       }
       for (j=(UINT4)floor((numBins+1)/2);j<numBins;j++) {
-	(*sftvec)->data[i].data->data[j].realf_FIXME += crealf(xf->data[j-(UINT4)floor((numBins+1)/2)]);
-	(*sftvec)->data[i].data->data[j].imagf_FIXME += cimagf(xf->data[j-(UINT4)floor((numBins+1)/2)]);
+	(*sftvec)->data[i].data->data[j] += xf->data[j-(UINT4)floor((numBins+1)/2)];
       }
       
       /* TESTING */
@@ -1924,8 +1920,7 @@ int XLALComputeDemodulatedPower(REAL4DemodulatedPower **power,     /**< [out] th
       xi = sin(arg);
     
       /* multiply data by phase correction - leave the zero-padding */
-      temp_input->data[j].realf_FIXME = crealf(dsdata->data->data[j])*xr - cimagf(dsdata->data->data[j])*xi;
-      temp_input->data[j].imagf_FIXME = crealf(dsdata->data->data[j])*xi + cimagf(dsdata->data->data[j])*xr;
+      temp_input->data[j] = crectf( crealf(dsdata->data->data[j])*xr - cimagf(dsdata->data->data[j])*xi, crealf(dsdata->data->data[j])*xi + cimagf(dsdata->data->data[j])*xr );
 				     
     }  
 

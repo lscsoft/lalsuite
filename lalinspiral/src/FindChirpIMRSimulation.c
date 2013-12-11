@@ -26,7 +26,6 @@
  *-----------------------------------------------------------------------
  */
 
-#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/Units.h>
 #include <lal/Date.h>
 #include <lal/AVFactories.h>
@@ -195,8 +194,7 @@ LALFindChirpInjectIMR (
   CHECKSTATUSPTR( status );
   for ( k = 0; k < resp->data->length; ++k )
   {
-    unity->data[k].realf_FIXME = 1.0;
-    unity->data[k].imagf_FIXME = 0.0;
+    unity->data[k] = 1.0;
   }
 
   LALCCVectorDivide( status->statusPtr, detector.transfer->data, unity,

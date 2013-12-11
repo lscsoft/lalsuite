@@ -29,7 +29,6 @@
 #include <math.h>
 #include <string.h>
 
-#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/LALConfig.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALStdio.h>
@@ -1432,35 +1431,23 @@ LALCoherentInspiralEstimatePsiEpsilonCoaPhase (
 
   /* Now form the C's ( +2 and -2 ) */
 
-  cPlus.realf_FIXME = 0.0;
-  cPlus.imagf_FIXME = 0.0;
-  cMinus.realf_FIXME = 0.0;
-  cMinus.imagf_FIXME = 0.0;
-  cRatio.realf_FIXME = 0.0;
-  cRatio.imagf_FIXME = 0.0;
+  cPlus = 0.0;
+  cMinus = 0.0;
+  cRatio = 0.0;
 
   k = 0;
   for( i = 0; i < 6; i++ )
     {
       if( caseID[i] )
 	{
-	  cPlus.realf_FIXME += sigmasq[k] * ( crealf(cData[k]) * dVectorPlusRe[i]
-                - cimagf(cData[k]) * dVectorPlusIm[i] );
-	  cPlus.imagf_FIXME += sigmasq[k] * ( crealf(cData[k]) * dVectorPlusIm[i]
-		+ cimagf(cData[k]) * dVectorPlusRe[i] );
-	  cMinus.realf_FIXME += sigmasq[k] * ( crealf(cData[k]) * dVectorMinusRe[i]
-                - cimagf(cData[k]) * dVectorMinusIm[i] );
-	  cMinus.imagf_FIXME += sigmasq[k] * ( crealf(cData[k]) * dVectorMinusIm[i]
-		+ cimagf(cData[k]) * dVectorMinusRe[i] );
+	  cPlus += crectf( sigmasq[k] * ( crealf(cData[k]) * dVectorPlusRe[i] - cimagf(cData[k]) * dVectorPlusIm[i] ), sigmasq[k] * ( crealf(cData[k]) * dVectorPlusIm[i] + cimagf(cData[k]) * dVectorPlusRe[i] ) );
+	  cMinus += crectf( sigmasq[k] * ( crealf(cData[k]) * dVectorMinusRe[i] - cimagf(cData[k]) * dVectorMinusIm[i] ), sigmasq[k] * ( crealf(cData[k]) * dVectorMinusIm[i] + cimagf(cData[k]) * dVectorMinusRe[i] ) );
 	  k++;
 
 	}
     }
 
-  cRatio.realf_FIXME = ( crealf(cPlus) * crealf(cMinus) + cimagf(cPlus) * cimagf(cMinus) ) / ( crealf(cPlus) *
-          crealf(cPlus) + cimagf(cPlus) * cimagf(cPlus) );
-  cRatio.imagf_FIXME = ( crealf(cPlus) * cimagf(cMinus) - cimagf(cPlus) * crealf(cMinus) ) / ( crealf(cPlus) *
-	  crealf(cPlus) + cimagf(cPlus) * cimagf(cPlus) );
+  cRatio = crectf( ( crealf(cPlus) * crealf(cMinus) + cimagf(cPlus) * cimagf(cMinus) ) / ( crealf(cPlus) * crealf(cPlus) + cimagf(cPlus) * cimagf(cPlus) ), ( crealf(cPlus) * cimagf(cMinus) - cimagf(cPlus) * crealf(cMinus) ) / ( crealf(cPlus) * crealf(cPlus) + cimagf(cPlus) * cimagf(cPlus) ) );
 
   /* Now the estimates can be computed */
 
@@ -1864,10 +1851,8 @@ XLALCoherentInspiralFilterSegment (
 
 	    if(cohSNRLocal > cohSNR) {
 	      cohSNR = cohSNRLocal;
-	      quadTemp[0].realf_FIXME=crealf(cData[0]->data->data[k]);
-	      quadTemp[0].imagf_FIXME=cimagf(cData[0]->data->data[k]);
-	      quadTemp[1].realf_FIXME=crealf(cData[1]->data->data[m]);
-	      quadTemp[1].imagf_FIXME=cimagf(cData[1]->data->data[m]);
+	      quadTemp[0] = cData[0]->data->data[k];
+	      quadTemp[1] = cData[1]->data->data[m];
 	    }
 	  }
 	  if( cohSNROut ) params->cohSNRVec->data->data[k]= cohSNR;
@@ -2077,10 +2062,8 @@ XLALCoherentInspiralFilterSegment (
 		      {
 			cohSNR = cohSNRLocal;
 
-			quadTemp[0].realf_FIXME=crealf(cData[0]->data->data[k]);
-			quadTemp[0].imagf_FIXME=cimagf(cData[0]->data->data[k]);
-		       	quadTemp[1].realf_FIXME=crealf(cData[1]->data->data[q]);
-			quadTemp[1].imagf_FIXME=cimagf(cData[1]->data->data[q]);
+			quadTemp[0] = cData[0]->data->data[k];
+			quadTemp[1] = cData[1]->data->data[q];
 			w = q;
 
 		      }
@@ -2325,12 +2308,9 @@ XLALCoherentInspiralFilterSegment (
 			      {
 				cohSNR = cohSNRLocal;
 
-				quadTemp[0].realf_FIXME=crealf(cData[0]->data->data[k]);
-				quadTemp[0].imagf_FIXME=cimagf(cData[0]->data->data[k]);
-				quadTemp[1].realf_FIXME=crealf(cData[1]->data->data[m]);
-				quadTemp[1].imagf_FIXME=cimagf(cData[1]->data->data[m]);
-				quadTemp[2].realf_FIXME=crealf(cData[2]->data->data[q]);
-				quadTemp[2].imagf_FIXME=cimagf(cData[2]->data->data[q]);
+				quadTemp[0] = cData[0]->data->data[k];
+				quadTemp[1] = cData[1]->data->data[m];
+				quadTemp[2] = cData[2]->data->data[q];
 				w = q;
 
 			      }
@@ -2751,8 +2731,7 @@ XLALCoherentInspiralFilterSegment (
 		cohSNR = ratioStatLocal;
 		for ( detId=0 ; detId<params->numDetectors ; detId++ ) {
 		  detIdSlidTimePt = timePt[0]+slidePoints[detId];
-		  quadTemp[detId].realf_FIXME=crealf(cData[detId]->data->data[detIdSlidTimePt]);
-		  quadTemp[detId].imagf_FIXME=cimagf(cData[detId]->data->data[detIdSlidTimePt]);
+		  quadTemp[detId] = cData[detId]->data->data[detIdSlidTimePt];
 		}
 		/* Coh-stat and null-stream sky-maps */
                 if( cohSNROut ) {
@@ -2796,8 +2775,7 @@ XLALCoherentInspiralFilterSegment (
 		  /* Fill thisEvent with this trigger's quadrature values */
 		  for ( detId=0 ; detId<params->numDetectors ; detId++ ) {
 		    detIdSlidTimePt = timePt[0]+slidePoints[detId];
-		    quadTemp[detId].realf_FIXME=crealf(cData[detId]->data->data[detIdSlidTimePt]);
-		    quadTemp[detId].imagf_FIXME=cimagf(cData[detId]->data->data[detIdSlidTimePt]);
+		    quadTemp[detId] = cData[detId]->data->data[detIdSlidTimePt];
 		  }
 		  XLALAssignEventQuads(caseID,quadTemp,thisEvent);
 		  thisEvent->snr = cohSNR;
@@ -2886,8 +2864,7 @@ XLALCoherentInspiralFilterSegment (
 		  /* Fill thisEvent with this trigger's quadrature values */
 		  for ( detId=0 ; detId<params->numDetectors ; detId++ ) {
 		    detIdSlidTimePt = timePt[0]+slidePoints[detId];
-		    quadTemp[detId].realf_FIXME=crealf(cData[detId]->data->data[detIdSlidTimePt]);
-		    quadTemp[detId].imagf_FIXME=cimagf(cData[detId]->data->data[detIdSlidTimePt]);
+		    quadTemp[detId] = cData[detId]->data->data[detIdSlidTimePt];
 		  }
 		  XLALAssignEventQuads(caseID,quadTemp,thisEvent);
 		  thisEvent->snr = cohSNR;
@@ -2988,8 +2965,7 @@ XLALCoherentInspiralFilterSegment (
 		  /* Fill thisEvent with this trigger's quadrature values */
 		  for ( detId=0 ; detId<params->numDetectors ; detId++ ) {
 		    detIdSlidTimePt = timePt[0]+slidePoints[detId];
-		    quadTemp[detId].realf_FIXME=crealf(cData[detId]->data->data[detIdSlidTimePt]);
-		    quadTemp[detId].imagf_FIXME=cimagf(cData[detId]->data->data[detIdSlidTimePt]);
+		    quadTemp[detId] = cData[detId]->data->data[detIdSlidTimePt];
 		  }
 		  XLALAssignEventQuads(caseID,quadTemp,thisEvent);
 		  thisEvent->snr = cohSNR;
@@ -3297,8 +3273,7 @@ XLALCoherentInspiralFilterSegment (
 	      cohSNR = ratioStatLocal;
 	      for ( detId=0 ; detId<params->numDetectors ; detId++ ) {
 		detIdSlidTimePt = timePt[0]+slidePoints4D[detId];
-		quadTemp[detId].realf_FIXME=crealf(cData[detId]->data->data[detIdSlidTimePt]);
-		quadTemp[detId].imagf_FIXME=cimagf(cData[detId]->data->data[detIdSlidTimePt]);
+		quadTemp[detId] = cData[detId]->data->data[detIdSlidTimePt];
 	      }
               if( cohSNROut ) {
                 if ( !params->threeSiteCase ) {
@@ -3339,8 +3314,7 @@ XLALCoherentInspiralFilterSegment (
 		/* Fill thisEvent with this trigger's quadrature values */
 		for ( detId=0 ; detId<params->numDetectors ; detId++ ) {
 		  detIdSlidTimePt = timePt[0]+slidePoints4D[detId];
-		  quadTemp[detId].realf_FIXME=crealf(cData[detId]->data->data[detIdSlidTimePt]);
-		  quadTemp[detId].imagf_FIXME=cimagf(cData[detId]->data->data[detIdSlidTimePt]);
+		  quadTemp[detId] = cData[detId]->data->data[detIdSlidTimePt];
 		}
 		XLALAssignEventQuads(caseID,quadTemp,thisEvent);
 		thisEvent->snr = cohSNR;
@@ -3440,8 +3414,7 @@ XLALCoherentInspiralFilterSegment (
 		/* Fill thisEvent with this trigger's quadrature values */
 		for ( detId=0 ; detId<params->numDetectors ; detId++ ) {
 		  detIdSlidTimePt = timePt[0]+slidePoints4D[detId];
-		  quadTemp[detId].realf_FIXME=crealf(cData[detId]->data->data[detIdSlidTimePt]);
-		  quadTemp[detId].imagf_FIXME=cimagf(cData[detId]->data->data[detIdSlidTimePt]);
+		  quadTemp[detId] = cData[detId]->data->data[detIdSlidTimePt];
 		}
 		XLALAssignEventQuads(caseID,quadTemp,thisEvent);
 		thisEvent->snr = cohSNR;
@@ -3554,8 +3527,7 @@ XLALCoherentInspiralFilterSegment (
 		/* Fill thisEvent with this trigger's quadrature values */
 		for ( detId=0 ; detId<params->numDetectors ; detId++ ) {
 		  detIdSlidTimePt = timePt[0]+slidePoints4D[detId];
-		  quadTemp[detId].realf_FIXME=crealf(cData[detId]->data->data[detIdSlidTimePt]);
-		  quadTemp[detId].imagf_FIXME=cimagf(cData[detId]->data->data[detIdSlidTimePt]);
+		  quadTemp[detId] = cData[detId]->data->data[detIdSlidTimePt];
 		}
 		XLALAssignEventQuads(caseID,quadTemp,thisEvent);
 		thisEvent->snr = cohSNR;
@@ -3756,69 +3728,57 @@ void XLALAssignEventQuads(INT4 caseID[6],COMPLEX8 quadTemp[6],MultiInspiralTable
   INT4 found = 0;
   if(caseID[0])
     {
-      thisEvent->g1quad.realf_FIXME=crealf(quadTemp[found]);
-      thisEvent->g1quad.imagf_FIXME=cimagf(quadTemp[found]);
+      thisEvent->g1quad = quadTemp[found];
       found += 1;
     }
   else
     {
-      thisEvent->g1quad.realf_FIXME=0;
-      thisEvent->g1quad.imagf_FIXME=0;
+      thisEvent->g1quad = 0.0;
     }
   if(caseID[1])
     {
-      thisEvent->h1quad.realf_FIXME=crealf(quadTemp[found]);
-      thisEvent->h1quad.imagf_FIXME=cimagf(quadTemp[found]);
+      thisEvent->h1quad = quadTemp[found];
       found += 1;
     }
   else
     {
-      thisEvent->h1quad.realf_FIXME=0;
-      thisEvent->h1quad.imagf_FIXME=0;
+      thisEvent->h1quad = 0.0;
     }
   if(caseID[2])
     {
-      thisEvent->h2quad.realf_FIXME=crealf(quadTemp[found]);
-      thisEvent->h2quad.imagf_FIXME=cimagf(quadTemp[found]);
+      thisEvent->h2quad = quadTemp[found];
       found += 1;
     }
   else
     {
-      thisEvent->h2quad.realf_FIXME=0;
-      thisEvent->h2quad.imagf_FIXME=0;
+      thisEvent->h2quad = 0.0;
     }
   if(caseID[3])
     {
-      thisEvent->l1quad.realf_FIXME=crealf(quadTemp[found]);
-      thisEvent->l1quad.imagf_FIXME=cimagf(quadTemp[found]);
+      thisEvent->l1quad = quadTemp[found];
       found += 1;
     }
   else
     {
-      thisEvent->l1quad.realf_FIXME=0;
-      thisEvent->l1quad.imagf_FIXME=0;
+      thisEvent->l1quad = 0.0;
     }
   if(caseID[4])
     {
-      thisEvent->t1quad.realf_FIXME=crealf(quadTemp[found]);
-      thisEvent->t1quad.imagf_FIXME=cimagf(quadTemp[found]);
+      thisEvent->t1quad = quadTemp[found];
       found += 1;
     }
   else
     {
-      thisEvent->t1quad.realf_FIXME=0;
-      thisEvent->t1quad.imagf_FIXME=0;
+      thisEvent->t1quad = 0.0;
     }
   if(caseID[5])
     {
-      thisEvent->v1quad.realf_FIXME=crealf(quadTemp[found]);
-      thisEvent->v1quad.imagf_FIXME=cimagf(quadTemp[found]);
+      thisEvent->v1quad = quadTemp[found];
       found += 1;
     }
   else
     {
-      thisEvent->v1quad.realf_FIXME=0;
-      thisEvent->v1quad.imagf_FIXME=0;
+      thisEvent->v1quad = 0.0;
     }
 }
 

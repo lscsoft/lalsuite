@@ -39,7 +39,6 @@
 /*                                                                               */
 /* Binary modifications added by Chris Messenger (University of Birmingham UK)   */
 /*********************************************************************************/
-#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/UserInput.h>
 #include <lal/LALDemod.h>
 #include <lal/RngMedBias.h>
@@ -1396,8 +1395,7 @@ int NormaliseSFTData(void)
       /* loop over SFT data to Normalise it*/
       for (j=0;j<nbins;j++)               
 	{
-	  SFTData[k]->fft->data->data[j].realf_FIXME = N*crealf(SFTData[k]->fft->data->data[j]); 
-	  SFTData[k]->fft->data->data[j].imagf_FIXME = N*cimagf(SFTData[k]->fft->data->data[j]);
+	  SFTData[k]->fft->data->data[j] = (((REAL4) N) * SFTData[k]->fft->data->data[j]);
 	}
     } 
 	
@@ -2800,8 +2798,7 @@ INT4 NormaliseSFTDataRngMdn(LALStatus *status)
 	xim=cimagf(SFTData[i]->fft->data->data[j]);
 	xreNorm=N[j]*xre; 
 	ximNorm=N[j]*xim; 
-	SFTData[i]->fft->data->data[j].realf_FIXME = xreNorm;    
-	SFTData[i]->fft->data->data[j].imagf_FIXME = ximNorm;
+	SFTData[i]->fft->data->data[j] = crectf( xreNorm, ximNorm );
 	Sp1[j]=Sp1[j]+xreNorm*xreNorm+ximNorm*ximNorm;
       }
       

@@ -32,6 +32,7 @@
  *
  */
 #include "config.h"
+#define FFTW_NO_Complex
 
 /* System includes */
 #include <math.h>
@@ -45,7 +46,6 @@
 int finite(double);
 
 /* LAL-includes */
-#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/LALString.h>
 #include <lal/AVFactories.h>
 #include <lal/LALInitBarycenter.h>
@@ -1845,8 +1845,7 @@ INT4 CombineSFTs(COMPLEX16Vector *L,SFTVector *sft_vect,REAL8 FMIN,INT4 number,I
   /*for(m = -number ; m < (number)*(if1-if0-1) ; m++ )*/
   for(m = -number; m < ((INT4)L->length)-number; m++)
   {
-    llSFT.real_FIXME =0.0;
-    llSFT.imag_FIXME =0.0;
+    llSFT = 0.0;
 
     /* Loop over SFTs that contribute to F-stat for a given frequency */
     for(alpha=0;alpha<number;alpha++)
@@ -1907,13 +1906,11 @@ INT4 CombineSFTs(COMPLEX16Vector *L,SFTVector *sft_vect,REAL8 FMIN,INT4 number,I
 	{
 	  REAL8 realQXP = realXP*realQ-imagXP*imagQ;
 	  REAL8 imagQXP = realXP*imagQ+imagXP*realQ;
-	  llSFT.real_FIXME += realQXP;
-	  llSFT.imag_FIXME += imagQXP;
+	  llSFT += crect( realQXP, imagQXP );
 	}
       }      
 
-    L->data[m+number].real_FIXME = creal(llSFT); 
-    L->data[m+number].imag_FIXME = cimag(llSFT); 
+    L->data[m+number] = llSFT;
     
   }
   XLALFree(sinVal);
@@ -1937,8 +1934,7 @@ void ApplyWindow(REAL8Window *Win, COMPLEX16Vector *X)
   /* Multiply it to both the Real and Imaginary Parts */
   for(i=0;i<Win->data->length;i++)
     {
-      X->data[i].real_FIXME = Win->data->data[i] * creal(X->data[i]); /* Real */
-      X->data[i].imag_FIXME = Win->data->data[i] * cimag(X->data[i]); /* Imag */
+      X->data[i] = (((REAL8) Win->data->data[i]) * X->data[i]);
     }
 
 }/*ApplyWindow*/
@@ -1962,23 +1958,20 @@ void Reshuffle(COMPLEX16Vector *X)
   Temp = (COMPLEX8*)XLALMalloc(sizeof(COMPLEX8)*length);
   for(i=0;i<length;i++)
     {
-      Temp[i].realf_FIXME = creal(X->data[i]); /* Real */
-      Temp[i].imagf_FIXME = cimag(X->data[i]); /* Imag */
+      Temp[i] = crectf( creal(X->data[i]), cimag(X->data[i]) );
     }
   
   /* Copy first half */
   for(i=M;i<length;i++)
     {
-      X->data[k].real_FIXME = crealf(Temp[i]);
-      X->data[k].imag_FIXME = cimagf(Temp[i]);
+      X->data[k] = crect( crealf(Temp[i]), cimagf(Temp[i]) );
       k++;
     }
 
   /* Copy Second half */
   for(i=0;i<M;i++)
     {
-      X->data[k].real_FIXME = crealf(Temp[i]);
-      X->data[k].imag_FIXME = cimagf(Temp[i]);
+      X->data[k] = crect( crealf(Temp[i]), cimagf(Temp[i]) );
       k++;
     }
 
@@ -2250,8 +2243,7 @@ MultiCOMPLEX8TimeSeries* CalcTimeSeries(MultiSFTVector *multiSFTs,FILE *Out,Resa
 	    {
 	      for(p=0;p<N;p++)
 		{
-		  L->data[p].real_FIXME = crealf(SFT_Vect->data[StartIndex].data->data[p+uvar_Dterms]);
-		  L->data[p].imag_FIXME = cimagf(SFT_Vect->data[StartIndex].data->data[p+uvar_Dterms]);
+		  L->data[p] = crect( crealf(SFT_Vect->data[StartIndex].data->data[p+uvar_Dterms]), cimagf(SFT_Vect->data[StartIndex].data->data[p+uvar_Dterms]) );
 		}
 	    }
 	 	  
@@ -2275,8 +2267,7 @@ MultiCOMPLEX8TimeSeries* CalcTimeSeries(MultiSFTVector *multiSFTs,FILE *Out,Resa
 	      REAL8 sinphis = -sin(LAL_TWOPI*(TSeries->f_het)*(C.StartTime[k]-StartTime));
 	      REAL8 Realpart = creal(SmallT->data[p]);
 	      REAL8 Imagpart = cimag(SmallT->data[p]);
-	      SmallT->data[p].real_FIXME = Realpart*cosphis - Imagpart*sinphis;
-	      SmallT->data[p].imag_FIXME = Realpart*sinphis + Imagpart*cosphis;
+	      SmallT->data[p] = crect( Realpart*cosphis - Imagpart*sinphis, Realpart*sinphis + Imagpart*cosphis );
 	    }
 	  
 	  /* Add into appropriate chunk */

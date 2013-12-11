@@ -50,7 +50,6 @@
 #include <math.h>
 
 /* LAL-includes */
-#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/LALString.h>
 #include <lal/AVFactories.h>
 #include <lal/RngMedBias.h>
@@ -2033,8 +2032,11 @@ int ReadSFTData(void)
       if (reverse_endian) {
         unsigned int cnt;
         for (cnt=0; cnt<ndeltaf; cnt++) {
-          swap4((char *)&(crealf(SFTData[filenum]->fft->data->data[cnt])));
-          swap4((char *)&(cimagf(SFTData[filenum]->fft->data->data[cnt])));
+          REAL4 re = crealf(SFTData[filenum]->fft->data->data[cnt]);
+          REAL4 im = cimagf(SFTData[filenum]->fft->data->data[cnt]);
+          swap4((char *)&re);
+          swap4((char *)&im);
+          SFTData[filenum]->fft->data->data[cnt] = crectf(re, im);
         }
       }
       
@@ -2144,7 +2146,7 @@ int UpsampleSFTData(void)
 
 	      if (SFTIndex < 0 || SFTIndex > ndeltaf-1)
 		{
-		  Xalpha_k.realf_FIXME= Xalpha_k.imagf_FIXME=0.0;
+		  Xalpha_k =0.0;
 		}else{
 		Xalpha_k=SFTData[filenum]->fft->data->data[SFTIndex];
 	      }
@@ -2157,8 +2159,7 @@ int UpsampleSFTData(void)
 	    }
      
 	  /* fill in the data here */
-	  UpSFTData[filenum]->fft->data->data[i].realf_FIXME= realXP;
-	  UpSFTData[filenum]->fft->data->data[i].imagf_FIXME= imagXP;
+	  UpSFTData[filenum]->fft->data->data[i] = crectf( realXP, imagXP );
 	  
 /*  	  fprintf(stdout,"%d %d %e %e\n", i, filenum, realXP, imagXP); */
 
@@ -3555,8 +3556,7 @@ NormaliseSFTDataRngMdn(LALStatus *stat, INT4 windowSize)
         xim=cimagf(SFTData[i]->fft->data->data[j]);
         xreNorm=N[j]*xre; 
         ximNorm=N[j]*xim; 
-        SFTData[i]->fft->data->data[j].realf_FIXME = xreNorm;    
-        SFTData[i]->fft->data->data[j].imagf_FIXME = ximNorm;
+        SFTData[i]->fft->data->data[j] = crectf( xreNorm, ximNorm );
         Sp1[j]=Sp1[j]+xreNorm*xreNorm+ximNorm*ximNorm;
       }
       

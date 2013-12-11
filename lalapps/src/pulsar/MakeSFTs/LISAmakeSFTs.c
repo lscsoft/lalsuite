@@ -35,7 +35,6 @@
 #include <errno.h>
 #include <string.h>
 
-#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/UserInput.h>
 #include <lal/SFTfileIO.h>
 #include <lal/TimeSeries.h>
@@ -258,8 +257,7 @@ main(int argc, char *argv[])
 
 	      /* multiply SFT-data h_f by "transfer function" R_f */
 	      h_f = sft->data->data[fidx];	/* copy original value */
-	      sft->data->data[fidx].realf_FIXME = crealf(h_f) * crealf(R_f) - cimagf(h_f) * cimagf(R_f);	/*(a+ib)(c+id)=(ac-bd)+i(ad+bc)*/
-	      sft->data->data[fidx].imagf_FIXME = crealf(h_f) * cimagf(R_f) + cimagf(h_f) * crealf(R_f);
+	      sft->data->data[fidx] = crectf( crealf(h_f) * crealf(R_f) - cimagf(h_f) * cimagf(R_f), crealf(h_f) * cimagf(R_f) + cimagf(h_f) * crealf(R_f) );
 
 	    } /* for fidx < sft->data->length */
 
@@ -375,12 +373,9 @@ main(int argc, char *argv[])
     SFTvect = NULL;
 
     LAL_CALL ( LALZCreateVector ( &status, &weights, 3 ) , &status );
-    weights->data[0].real_FIXME = (  2.0 / 3.0 );
-    weights->data[1].real_FIXME = ( -1.0 / 3.0 );
-    weights->data[2].real_FIXME = ( -1.0 / 3.0 );
-    weights->data[0].imag_FIXME = 0.0;
-    weights->data[1].imag_FIXME = 0.0;
-    weights->data[2].imag_FIXME = 0.0;
+    weights->data[0] = crect( (  2.0 / 3.0 ), 0.0 );
+    weights->data[1] = crect( ( -1.0 / 3.0 ), 0.0 );
+    weights->data[2] = crect( ( -1.0 / 3.0 ), 0.0 );
 
     LAL_CALL ( LALLinearlyCombineSFTVectors (&status, &SFTvect,
 					     SFTVectList, weights, comboname),
@@ -416,12 +411,9 @@ main(int argc, char *argv[])
     SFTvect = NULL;
 
     LAL_CALL ( LALZCreateVector ( &status, &weights, 3 ) , &status );
-    weights->data[0].real_FIXME = 0;
-    weights->data[1].real_FIXME = (-1.0 * LAL_SQRT1_3);
-    weights->data[2].real_FIXME =         LAL_SQRT1_3;
-    weights->data[0].imag_FIXME = 0.0;
-    weights->data[1].imag_FIXME = 0.0;
-    weights->data[2].imag_FIXME = 0.0;
+    weights->data[0] = 0.0;
+    weights->data[1] = crect( (-1.0 * LAL_SQRT1_3), 0.0 );
+    weights->data[2] = crect( LAL_SQRT1_3, 0.0 );
 
     LAL_CALL ( LALLinearlyCombineSFTVectors (&status, &SFTvect,
 					     SFTVectList, weights, comboname),
@@ -457,12 +449,9 @@ main(int argc, char *argv[])
     SFTvect = NULL;
 
     LAL_CALL ( LALZCreateVector ( &status, &weights, 3 ) , &status );
-    weights->data[0].real_FIXME = ( LAL_SQRT2 / 3.0 );
-    weights->data[1].real_FIXME = ( LAL_SQRT2 / 3.0 );
-    weights->data[2].real_FIXME = ( LAL_SQRT2 / 3.0 );
-    weights->data[0].imag_FIXME = 0.0;
-    weights->data[1].imag_FIXME = 0.0;
-    weights->data[2].imag_FIXME = 0.0;
+    weights->data[0] = crect( ( LAL_SQRT2 / 3.0 ), 0.0 );
+    weights->data[1] = crect( ( LAL_SQRT2 / 3.0 ), 0.0 );
+    weights->data[2] = crect( ( LAL_SQRT2 / 3.0 ), 0.0 );
 
     LAL_CALL ( LALLinearlyCombineSFTVectors (&status, &SFTvect,
 					     SFTVectList, weights, comboname),
@@ -695,26 +684,22 @@ compute_R_f ( COMPLEX8 *R_f, REAL8 Freq, BOOLEAN useRAA, BOOLEAN isLISAsim )
     {
       if ( isLISAsim ) 	/* RAA && LISAsim */
 	{
-	  R_f->realf_FIXME = - 0.5 * sin(fourpifL) / sin(twopifL);
-	  R_f->imagf_FIXME =   0.5 * cos(fourpifL) / sin(twopifL);
+	  *(R_f) = crectf( - 0.5 * sin(fourpifL) / sin(twopifL), 0.5 * cos(fourpifL) / sin(twopifL) );
 	}
       else 		/* RAA && synthLISA */
 	{
-	  R_f->realf_FIXME = (0.5 / fourpifL) * cos(fourpifL) / sin(twopifL);
-	  R_f->imagf_FIXME = (0.5 / fourpifL) * sin(fourpifL) / sin(twopifL);
+	  *(R_f) = crectf( (0.5 / fourpifL) * cos(fourpifL) / sin(twopifL), (0.5 / fourpifL) * sin(fourpifL) / sin(twopifL) );
 	}
     } /* if useRAA */
   else
     {
       if ( isLISAsim )	/* LWL && LISAsim */
 	{
-	  R_f->realf_FIXME = 0;
-	  R_f->imagf_FIXME = 1.0 / fourpifL;
+	  *(R_f) = crectf( 0, 1.0 / fourpifL );
 	}
       else 		/* LWL && synthLISA */
 	{
-	  R_f->realf_FIXME = 1.0 / ( fourpifL * fourpifL );
-	  R_f->imagf_FIXME = 0;
+	  *(R_f) = crectf( 1.0 / ( fourpifL * fourpifL ), 0 );
 	}
     } /* if LWL */
 

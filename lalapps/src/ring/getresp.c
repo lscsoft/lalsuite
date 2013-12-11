@@ -20,7 +20,6 @@
 #include <math.h>
 #include <string.h>
 
-#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/LALStdlib.h>
 #include <lal/LALStdio.h>
 #include <lal/AVFactories.h>
@@ -95,8 +94,7 @@ COMPLEX8FrequencySeries * get_impulse_response(
   /* uniform response function */
   for ( k = 0; k < response->data->length; ++k )
   {
-    response->data->data[k].realf_FIXME = responseScale;
-    response->data->data[k].imagf_FIXME = 0.0;
+    response->data->data[k] = crectf( responseScale, 0.0 );
   }
 
   return response;
@@ -182,8 +180,7 @@ COMPLEX8FrequencySeries * get_frame_response(
   /* scale response function */
   for ( k = 0; k < response->data->length; ++k )
   {
-    response->data->data[k].realf_FIXME *= responseScale;
-    response->data->data[k].imagf_FIXME *= responseScale;
+    response->data->data[k] *= ((REAL4) responseScale);
   }
 
   /* cleanup memory in reference functions */

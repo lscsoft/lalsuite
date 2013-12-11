@@ -1,7 +1,7 @@
 # -*- mode: autoconf; -*-
 # lalsuite_build.m4 - top level build macros
 #
-# serial 73
+# serial 74
 
 # not present in older versions of pkg.m4
 m4_pattern_allow([^PKG_CONFIG(_(PATH|LIBDIR|SYSROOT_DIR|ALLOW_SYSTEM_(CFLAGS|LIBS)))?$])
@@ -240,12 +240,6 @@ AC_DEFUN([LALSUITE_PROG_COMPILERS],[
     CXX=
     CXXCPP=
     AM_CONDITIONAL([am__fastdepCXX],[false])
-  ])
-
-  # check complex numbers
-  LALSUITE_CHECK_C99_COMPLEX_NUMBERS
-  AS_IF([test "${lalsuite_require_cxx}" = true],[
-    LALSUITE_CHECK_CXX_COMPLEX_NUMBERS
   ])
 
   # check for F77 compiler, if needed
@@ -821,113 +815,4 @@ AC_MSG_RESULT([no])
 [cuda=false],
 AC_MSG_RESULT([unknown])
 [cuda=false])
-])
-
-AC_DEFUN([LALSUITE_CHECK_COMPLEX_NUMBER_MEMORY_LAYOUT],[
-  AC_MSG_CHECKING([memory layout of complex number type '$3'])
-  AS_IF([test "$cross_compiling" = yes],[
-    AC_MSG_WARN([cross compiling: not checking])
-  ],[
-    # compile a C file containing functions where
-    # the complex number datatype is a struct
-    AC_LANG_PUSH([C])
-    AC_COMPILE_IFELSE([
-AC_LANG_SOURCE([
-AC_INCLUDES_DEFAULT
-typedef struct {
-  $2 re;
-  $2 im;
-} ComplexStruct;
-const size_t zsize = sizeof(ComplexStruct);
-const $2 zre = 1.414213562373095048801688724209;
-const $2 zim = 3.141592653589793238462643383276;
-void Function1(ComplexStruct *pz) {
-  pz->re = zre;
-  pz->im = zim;
-}
-int Function2(ComplexStruct pz) {
-  return (pz.re == zre && pz.im == zim);
-}
-])
-    ],[
-      # if compilation was successful, save the compiled object
-      mv -f conftest.$ac_objext conftestlink.$ac_objext
-      _AS_ECHO_LOG([moved conftest.$ac_objext to conftestlink.$ac_objext])
-    ],[
-      AC_MSG_FAILURE([unexpected compile failure])
-    ])
-    AC_LANG_POP([C])
-    # add the object compiled above to the objects
-    # which will be linked against by the next test
-    lalsuite_ccnml_LIBS=$LIBS
-    LIBS="$LIBS conftestlink.$ac_objext"
-    # push current language so that we can restore
-    # previous linker settings at end of this test
-    AC_LANG_PUSH(_AC_LANG)
-    # compile a _AC_LANG file where the complex number
-    # datatype is a C99/C++ complex number, and which
-    # calls functions in the previously-compiled file
-    # (where the complex number datatype was a struct).
-    # link it against the previously-compiled object,
-    # and run the resulting test program.
-    AC_RUN_IFELSE([
-AC_LANG_PROGRAM([
-AC_INCLUDES_DEFAULT
-#include <$1>
-#ifdef __cplusplus
-extern "C" {
-#endif
-extern const size_t zsize;
-extern const $2 zre;
-extern const $2 zim;
-void Function1($3 *pz);
-int Function2($3 pz);
-#ifdef __cplusplus
-}
-#endif
-],[
-  $3 c;
-  if (sizeof($3) != zsize) {
-    return 1;
-  }
-  Function1(&c);
-  if ($4(c) != zre || $5(c) != zim) {
-    return 2;
-  }
-  if (!Function2(c)) {
-    return 3;
-  }
-  return 0 /* ; */
-])
-    ],[
-      # if test program compiled and exited
-      # normally, test was successful
-      AC_MSG_RESULT([compatible])
-    ],[
-      AC_MSG_FAILURE([memory layout of complex number type '$3' is incompatible])
-    ])
-    # restore previous linker settings and
-    # delete remaining test object files
-    LIBS=$lalsuite_ccnml_LIBS
-    AC_LANG_POP(_AC_LANG)
-    rm -f conftestlink.$ac_objext
-  ])
-])
-
-AC_DEFUN([LALSUITE_CHECK_C99_COMPLEX_NUMBERS],[
-  # check C99 complex numbers
-  AC_LANG_PUSH([C])
-  AC_CHECK_HEADERS([complex.h],[],[AC_MSG_ERROR([could not find 'complex.h'])])
-  LALSUITE_CHECK_COMPLEX_NUMBER_MEMORY_LAYOUT([complex.h],[float],[float complex],[crealf],[cimagf])
-  LALSUITE_CHECK_COMPLEX_NUMBER_MEMORY_LAYOUT([complex.h],[double],[double complex],[creal],[cimag])
-  AC_LANG_POP([C])
-])
-
-AC_DEFUN([LALSUITE_CHECK_CXX_COMPLEX_NUMBERS],[
-  # check C++ complex numbers
-  AC_LANG_PUSH([C++])
-  AC_CHECK_HEADERS([complex],[],[AC_MSG_ERROR([could not find 'complex'])])
-  LALSUITE_CHECK_COMPLEX_NUMBER_MEMORY_LAYOUT([complex],[float],[std::complex<float>],[real],[imag])
-  LALSUITE_CHECK_COMPLEX_NUMBER_MEMORY_LAYOUT([complex],[double],[std::complex<double>],[real],[imag])
-  AC_LANG_POP([C++])
 ])

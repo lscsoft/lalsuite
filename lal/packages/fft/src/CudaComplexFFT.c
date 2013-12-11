@@ -19,7 +19,6 @@
 
 #include <string.h>
 
-#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/LALDatatypes.h>
 #include <lal/LALMalloc.h>
 #include <lal/LALStatusMacros.h>
@@ -144,8 +143,7 @@ int XLALCOMPLEX8VectorFFT( COMPLEX8Vector *output, COMPLEX8Vector *input,
   /* do the fft */
   if( plan->size == 1 )
   {
-    output->data[0].realf_FIXME = crealf(input->data[0]);
-    output->data[0].imagf_FIXME = cimagf(input->data[0]);
+    output->data[0] = input->data[0];
   }
   else
     cudafft_execute_c2c( plan->plan,

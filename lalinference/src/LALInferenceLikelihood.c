@@ -21,7 +21,6 @@
  *  MA  02111-1307  USA
  */
 
-#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <complex.h>
 #include <lal/LALInferenceLikelihood.h>
 #include <lal/LALInferencePrior.h>
@@ -1046,8 +1045,7 @@ FILE* file=fopen("TempSignal.dat", "w");
                           +  FcrossScaled * cimag(dataPtr->freqModelhCross->data->data[i]);
 
 		/* do time-shifting...             */
-		freqWaveform->data[i].real_FIXME= (plainTemplateReal*re - plainTemplateImag*im);
-		freqWaveform->data[i].imag_FIXME= (plainTemplateReal*im + plainTemplateImag*re);		
+		freqWaveform->data[i] = crect( (plainTemplateReal*re - plainTemplateImag*im), (plainTemplateReal*im + plainTemplateImag*re) );
 #ifdef DEBUG
 		fprintf(file, "%lg %lg \t %lg\n", f, freqWaveform->data[i].re, freqWaveform->data[i].im);
 #endif
@@ -1931,8 +1929,7 @@ REAL8 LALInferenceMarginalisedTimeLogLikelihood(LALInferenceVariables *currentPa
       XLAL_ERROR_REAL8(XLAL_ENOMEM, "Out of memory in LALInferenceMarginalisedTimeLogLikelihood.");
     }
     for (i = 0; i < freq_length; i++) {
-      dh_S_tilde_im->data[i].real_FIXME = 0.0;
-      dh_S_tilde_im->data[i].imag_FIXME = 0.0;
+      dh_S_tilde_im->data[i] = 0.0;
     }
   }
 
@@ -1940,8 +1937,7 @@ REAL8 LALInferenceMarginalisedTimeLogLikelihood(LALInferenceVariables *currentPa
     XLAL_ERROR_REAL8(XLAL_ENOMEM, "Out of memory in LALInferenceMarginalisedTimeLogLikelihood.");
 
   for (i = 0; i < freq_length; i++) {
-    dh_S_tilde->data[i].real_FIXME = 0.0;
-    dh_S_tilde->data[i].imag_FIXME = 0.0;
+    dh_S_tilde->data[i] = 0.0;
   }
 
   /* Calculate gmst at upper bound of prior for antenna pattern calculation */
@@ -2110,11 +2106,11 @@ REAL8 LALInferenceMarginalisedTimeLogLikelihood(LALInferenceVariables *currentPa
           dh_S_imag = dataReal * templateImag - dataImag * templateReal;
 
 	  if (margphi) {
-	    dh_S_tilde->data[i].real_FIXME += dh_S_real * TwoDeltaToverN / (alph * dataPtr->oneSidedNoisePowerSpectrum->data->data[i]);
-	    dh_S_tilde_im->data[i].imag_FIXME -= dh_S_imag * TwoDeltaToverN / (alph * dataPtr->oneSidedNoisePowerSpectrum->data->data[i]);
+	    dh_S_tilde->data[i] = crect( creal(dh_S_tilde->data[i]) + ( dh_S_real * TwoDeltaToverN / (alph * dataPtr->oneSidedNoisePowerSpectrum->data->data[i]) ), cimag(dh_S_tilde->data[i]) );
+	    dh_S_tilde_im->data[i] = crect( creal(dh_S_tilde_im->data[i]), cimag(dh_S_tilde_im->data[i]) - ( dh_S_imag * TwoDeltaToverN / (alph * dataPtr->oneSidedNoisePowerSpectrum->data->data[i]) ) );
 	  } else {
-	    dh_S_tilde->data[i].real_FIXME += dh_S_real * TwoDeltaToverN / (alph * dataPtr->oneSidedNoisePowerSpectrum->data->data[i]);
-	    dh_S_tilde->data[i].imag_FIXME -= dh_S_imag * TwoDeltaToverN / (alph * dataPtr->oneSidedNoisePowerSpectrum->data->data[i]);
+	    dh_S_tilde->data[i] = crect( creal(dh_S_tilde->data[i]) + ( dh_S_real * TwoDeltaToverN / (alph * dataPtr->oneSidedNoisePowerSpectrum->data->data[i]) ), cimag(dh_S_tilde->data[i]) );
+	    dh_S_tilde->data[i] = crect( creal(dh_S_tilde->data[i]), cimag(dh_S_tilde->data[i]) - ( dh_S_imag * TwoDeltaToverN / (alph * dataPtr->oneSidedNoisePowerSpectrum->data->data[i]) ) );
 	  }
 
           chisquared += 2.0 * TwoDeltaToverN * (templateReal*templateReal + templateImag*templateImag 
@@ -2138,11 +2134,11 @@ REAL8 LALInferenceMarginalisedTimeLogLikelihood(LALInferenceVariables *currentPa
   }
 
   /* LALSuite only performs complex->real reverse-FFTs. */
-  dh_S_tilde->data[0].imag_FIXME = 0.;
+  dh_S_tilde->data[0] = crect( creal(dh_S_tilde->data[0]), 0. );
   XLALREAL8ReverseFFT(dh_S, dh_S_tilde, data->freqToTimeFFTPlan);
 
   if (margphi) {
-    dh_S_tilde_im->data[0].imag_FIXME = 0.0;
+    dh_S_tilde_im->data[0] = crect( creal(dh_S_tilde_im->data[0]), 0.0 );
     XLALREAL8ReverseFFT(dh_S_im, dh_S_tilde_im, data->freqToTimeFFTPlan);
   }
 

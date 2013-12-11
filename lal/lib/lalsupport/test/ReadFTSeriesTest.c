@@ -57,7 +57,6 @@
 #define READFTSERIESTESTC_MSGEFLS "Subroutine returned unexpected results"
 
 
-#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/Units.h>
 #include <lal/ReadFTSeries.h>
 #include <lal/PrintFTSeries.h>
@@ -155,8 +154,7 @@ int main( void )
   }
   for ( i=1, cData=cSequenceIn->data; i<=READFTSERIESTEST_LEN ; i++, cData++ )
   {
-    cData->realf_FIXME = i;
-    cData->imagf_FIXME = i+1;
+    *(cData) = crectf( i, i+1 );
     }
 
   strncpy(cFrequencySeries.name,"Complex frequency series",LALNameLength);
@@ -292,8 +290,7 @@ int main( void )
 
   for ( i=1, zData=zSequenceIn->data; i<=READFTSERIESTEST_LEN ; i++, zData++ )
   {
-    zData->real_FIXME = i/4.0;
-    zData->imag_FIXME = (i+1)/5.0;
+    *(zData) = crect( i/4.0, (i+1)/5.0 );
   }
   zFrequencySeries.sampleUnits = lalDimensionlessUnit;
   strncpy(zFrequencySeries.name,"Complex frequency series",LALNameLength);
@@ -1024,8 +1021,7 @@ int main( void )
 
   for ( i=1, zData=zSequenceIn->data; i<=READFTSERIESTEST_LEN ; i++, zData++ )
   {
-    zData->real_FIXME = 0.005;
-    zData->imag_FIXME = 1;
+    *(zData) = crect( 0.005, 1 );
   }
   strncpy(zTimeSeries.name,"Complex16 Time series",LALNameLength);
   zTimeSeries.deltaT = 1.3;
@@ -1361,8 +1357,7 @@ int main( void )
 
   for ( i=1, cData=cSequenceIn->data; i<=READFTSERIESTEST_LEN ; i++, cData++ )
   {
-    cData->realf_FIXME = 0.005;
-    cData->imagf_FIXME = 1;
+    *(cData) = crectf( 0.005, 1 );
   }
   strncpy(cTimeSeries.name,"Complex8 Time series",LALNameLength);
   cTimeSeries.deltaT = 1.3;

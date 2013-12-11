@@ -46,7 +46,6 @@
  *-----------------------------------------------------------------------
  */
 
-#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/CLR.h>
 
 
@@ -218,16 +217,13 @@ void LALRefInterference (LALStatus    *status,/**< LAL status pointer */
 
   /* Build z_k(nu) */
   for (i=0; i< binini; ++i) {
-    zf->data[i].realf_FIXME = 0.0;
-    zf->data[i].imagf_FIXME = 0.0;
+    zf->data[i] = 0.0;
   }
   for (i=binini; i< binfin+1; ++i) {
-    zf->data[i].realf_FIXME = crealf(x[i]);
-    zf->data[i].imagf_FIXME = cimagf(x[i]);
+    zf->data[i] = x[i];
   }
   for (i=binfin+1; i< n; ++i) {
-    zf->data[i].realf_FIXME = 0.0;
-    zf->data[i].imagf_FIXME = 0.0;
+    zf->data[i] = 0.0;
   }
 
   /* Calculate z_k(t) by performing FFTs */
@@ -257,14 +253,12 @@ void LALRefInterference (LALStatus    *status,/**< LAL status pointer */
   ampB = pow(mod2,inv2k);
   phB  = phaseI*invk;
 
-  b1t->data[0].real_FIXME = ampB * cos(phB);
-  b1t->data[0].imag_FIXME = ampB * sin(phB);
+  b1t->data[0] = crect( ampB * cos(phB), ampB * sin(phB) );
 
   invarb->data[0] = px*mod2;
   sden->data[0]   = invarb->data[0];
 
-  snum->data[0].realf_FIXME = creal(b1t->data[0]) * invarb->data[0];
-  snum->data[0].imagf_FIXME = cimag(b1t->data[0]) * invarb->data[0];
+  snum->data[0] = crectf( creal(b1t->data[0]) * invarb->data[0], cimag(b1t->data[0]) * invarb->data[0] );
 
 
   for (i=1; i< n; ++i) {
@@ -290,14 +284,12 @@ void LALRefInterference (LALStatus    *status,/**< LAL status pointer */
 
     ampB = pow(mod2,inv2k);
 
-    b1t->data[i].real_FIXME = ampB * cos(phB);
-    b1t->data[i].imag_FIXME = ampB * sin(phB);
+    b1t->data[i] = crect( ampB * cos(phB), ampB * sin(phB) );
 
     invarb->data[i] = px*mod2;
     sden->data[i] = invarb->data[i];
 
-    snum->data[i].realf_FIXME = creal(b1t->data[i]) * invarb->data[i];
-    snum->data[i].imagf_FIXME = cimag(b1t->data[i]) * invarb->data[i];
+    snum->data[i] = crectf( creal(b1t->data[i]) * invarb->data[i], cimag(b1t->data[i]) * invarb->data[i] );
   }
 
   /* ----------------------------------------------   */
@@ -334,16 +326,13 @@ void LALRefInterference (LALStatus    *status,/**< LAL status pointer */
 
     /* Build z_k(nu) */
     for (i=0; i< binini; ++i) {
-      zf->data[i].realf_FIXME = 0.0;
-      zf->data[i].imagf_FIXME = 0.0;
+      zf->data[i] = 0.0;
     }
     for (i=binini; i< binfin+1; ++i) {
-      zf->data[i].realf_FIXME = crealf(x[i]);
-      zf->data[i].imagf_FIXME = cimagf(x[i]);
+      zf->data[i] = x[i];
     }
     for (i=binfin+1; i< n; ++i) {
-      zf->data[i].realf_FIXME = 0.0;
-      zf->data[i].imagf_FIXME = 0.0;
+      zf->data[i] = 0.0;
     }
 
     /* Calculate z_k(t) by performing FFTs */
@@ -372,8 +361,7 @@ void LALRefInterference (LALStatus    *status,/**< LAL status pointer */
     ampB = pow(mod2,inv2k);
     phB = phaseI*invk;
 
-    bt->data[0].real_FIXME = ampB * cos(phB);
-    bt->data[0].imag_FIXME = ampB * sin(phB);
+    bt->data[0] = crect( ampB * cos(phB), ampB * sin(phB) );
 
     /* initialize calculation of Lambda_k */
     br =  creal(bt->data[0]);
@@ -381,8 +369,7 @@ void LALRefInterference (LALStatus    *status,/**< LAL status pointer */
     dr =  creal(b1t->data[0]);
     di =  cimag(b1t->data[0]);
 
-    lambdan.real_FIXME =  br*dr + bi*di;
-    lambdan.imag_FIXME = -dr*bi + br*di;
+    lambdan = crect( br*dr + bi*di, -dr*bi + br*di );
     lambdad    =  br*br + bi*bi;
 
     /* inverse of the variance of beta */
@@ -410,8 +397,7 @@ void LALRefInterference (LALStatus    *status,/**< LAL status pointer */
 
       ampB = pow(mod2,inv2k);
 
-      bt->data[i].real_FIXME = ampB * cos(phB);
-      bt->data[i].imag_FIXME = ampB * sin(phB);
+      bt->data[i] = crect( ampB * cos(phB), ampB * sin(phB) );
 
       /* for the calculation of Lambda_k */
       br =  creal(bt->data[i]);
@@ -419,8 +405,7 @@ void LALRefInterference (LALStatus    *status,/**< LAL status pointer */
       dr =  creal(b1t->data[i]);
       di =  cimag(b1t->data[i]);
 
-      lambdan.real_FIXME +=  br*dr + bi*di;
-      lambdan.imag_FIXME += -dr*bi + br*di;
+      lambdan += crect( br*dr + bi*di, -dr*bi + br*di );
       lambdad    +=  br*br + bi*bi;
 
       /* inverse of the variance of beta */
@@ -428,14 +413,12 @@ void LALRefInterference (LALStatus    *status,/**< LAL status pointer */
     }
 
     /* update  sden and snum */
-    lambda.real_FIXME = creal(lambdan)/lambdad;
-    lambda.imag_FIXME = cimag(lambdan)/lambdad;
+    lambda = (lambdan / ((REAL8) lambdad));
 
     for(i=0; i< n; ++i) {
       br =  creal(bt->data[i]);
       bi =  cimag(bt->data[i]);
-      snum->data[i].realf_FIXME += (br*creal(lambda) - bi*cimag(lambda)) * invarb->data[i];
-      snum->data[i].imagf_FIXME += (br*cimag(lambda) + bi*creal(lambda)) * invarb->data[i];
+      snum->data[i] += crectf( (br*creal(lambda) - bi*cimag(lambda)) * invarb->data[i], (br*cimag(lambda) + bi*creal(lambda)) * invarb->data[i] );
       sden->data[i]    += invarb->data[i];
     }
 
@@ -446,8 +429,7 @@ void LALRefInterference (LALStatus    *status,/**< LAL status pointer */
   /* -------------------------------------------   */
 
   for(i=0; i< n; ++i){
-    m[i].realf_FIXME = crealf(snum->data[i]) / sden->data[i] ;
-    m[i].imagf_FIXME = cimagf(snum->data[i]) / sden->data[i] ;
+    m[i] = (snum->data[i] / ((REAL4) sden->data[i]));
   }
   /* -------------------------------------------   */
 

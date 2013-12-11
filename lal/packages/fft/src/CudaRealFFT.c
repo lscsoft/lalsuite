@@ -19,7 +19,6 @@
 
 #include <string.h>
 
-#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/LALDatatypes.h>
 #include <lal/LALMalloc.h>
 #include <lal/LALStatusMacros.h>
@@ -177,8 +176,7 @@ int XLALREAL4ForwardFFT( COMPLEX8Vector *output, const REAL4Vector *input,
    */
   if( plan->size == 1 )
   {
-    output->data[0].realf_FIXME = input->data[0];
-    output->data[0].imagf_FIXME = 0.0;
+    output->data[0] = crectf( input->data[0], 0.0 );
   }
   else
     cudafft_execute_r2c( plan->plan,
@@ -188,7 +186,7 @@ int XLALREAL4ForwardFFT( COMPLEX8Vector *output, const REAL4Vector *input,
   /* Nyquist frequency */
   if( plan->size%2 == 0 )
   {
-    output->data[plan->size/2].imagf_FIXME = 0.0;
+    output->data[plan->size/2] = crectf( crealf(output->data[plan->size/2]), 0.0 );
   }
 
   return 0;
@@ -277,19 +275,16 @@ int XLALREAL4VectorFFT( REAL4Vector *output, const REAL4Vector *input,
     }
     else
     {
-      tmp[0].realf_FIXME = input->data[0];
-      tmp[0].imagf_FIXME = 0.0;
+      tmp[0] = crectf( input->data[0], 0.0 );
 
       for( k = 1; k < (plan->size + 1)/2; k++ )
       {
-	tmp[k].realf_FIXME = input->data[k];
-	tmp[k].imagf_FIXME = input->data[plan->size - k];
+	tmp[k] = crectf( input->data[k], input->data[plan->size - k] );
       }
 
       if( plan->size%2 == 0 )
       {
-	tmp[plan->size/2].realf_FIXME = input->data[plan->size/2];
-	tmp[plan->size/2].imagf_FIXME = 0.0;
+	tmp[plan->size/2] = crectf( input->data[plan->size/2], 0.0 );
       }
 
       cudafft_execute_c2r( plan->plan,
@@ -328,7 +323,7 @@ int XLALREAL4PowerSpectrum( REAL4Vector *spec, const REAL4Vector *data,
 
   /* Check for size 1 to avoid the CUDA bug */
   if( plan->size == 1 )
-    tmp[0].realf_FIXME = data->data[0];
+    tmp[0] = crectf( data->data[0], cimagf(tmp[0]) );
   /* transform the data */
   else
     cudafft_execute_r2c( plan->plan,
@@ -502,21 +497,18 @@ int XLALREAL8ForwardFFT( COMPLEX16Vector *output, REAL8Vector *input,
   /* now unpack the results into the output vector */
 
   /* dc component */
-  output->data[0].real_FIXME = tmp[0];
-  output->data[0].imag_FIXME = 0.0;
+  output->data[0] = crect( tmp[0], 0.0 );
 
   /* other components */
   for ( k = 1; k < (plan->size + 1)/2; ++k ) /* k < size/2 rounded up */
   {
-    output->data[k].real_FIXME = tmp[k];
-    output->data[k].imag_FIXME = tmp[plan->size - k];
+    output->data[k] = crect( tmp[k], tmp[plan->size - k] );
   }
 
   /* Nyquist frequency */
   if ( plan->size%2 == 0 ) /* n is even */
   {
-    output->data[plan->size/2].real_FIXME = tmp[plan->size/2];
-    output->data[plan->size/2].imag_FIXME = 0.0;
+    output->data[plan->size/2] = crect( tmp[plan->size/2], 0.0 );
   }
 
   XLALFree( tmp );

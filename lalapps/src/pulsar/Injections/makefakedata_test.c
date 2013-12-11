@@ -123,7 +123,6 @@
  *
  */
 
-#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/LALStdlib.h>
 
 /* Error codes and messages */
@@ -803,8 +802,7 @@ int correct_phase(void) {
   sinx=sin(x);
   for (i = 0; i < fvec->length; ++i){
     fvec1=fvec->data[i];
-    fvec->data[i].realf_FIXME=crealf(fvec1)*cosx-cimagf(fvec1)*sinx;
-    fvec->data[i].imagf_FIXME=cimagf(fvec1)*cosx+crealf(fvec1)*sinx;
+    fvec->data[i] = crectf( crealf(fvec1)*cosx-cimagf(fvec1)*sinx, cimagf(fvec1)*cosx+crealf(fvec1)*sinx );
   }
 
   return 0;
@@ -909,10 +907,8 @@ int prepare_cwDetector(LALStatus* status){
   LALCCreateVector(status, &(transferFunction->data), 2);
 
   /* unit response function */
-  transferFunction->data->data[0].realf_FIXME = 1.0;
-  transferFunction->data->data[1].realf_FIXME = 1.0;
-  transferFunction->data->data[0].imagf_FIXME = 0.0;
-  transferFunction->data->data[1].imagf_FIXME = 0.0;
+  transferFunction->data->data[0] = 1.0;
+  transferFunction->data->data[1] = 1.0;
 
   cwDetector.transfer = transferFunction;
 
@@ -1275,8 +1271,7 @@ int read_and_add_freq_domain_noise(LALStatus* status, UINT4 iSFT) {
   norm=((REAL4)(fvec->length)/((REAL4)header.nsamples));
 
   for (i = 0; i < fvec->length; ++i) {
-    fvec->data[i].realf_FIXME += norm * crealf(fvecn->data[i]);
-    fvec->data[i].imagf_FIXME += norm * cimagf(fvecn->data[i]);
+    fvec->data[i] += (((REAL4) norm) * fvecn->data[i]);
   }
 
   return 0;

@@ -34,7 +34,6 @@
 #define __USE_ISOC99 1
 #include <math.h>
 
-#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/ExtrapolatePulsarSpins.h>
 #include <lal/FindRoot.h>
 
@@ -456,12 +455,10 @@ ComputeFStat ( LALStatus *status,				/**< pointer to LALStatus structure */
         } /* if returnSingleF */
 
       /* Fa = sum_X Fa_X */
-      retF.Fa.real_FIXME += creal(FcX.Fa);
-      retF.Fa.imag_FIXME += cimag(FcX.Fa);
+      retF.Fa += FcX.Fa;
 
       /* Fb = sum_X Fb_X */
-      retF.Fb.real_FIXME += creal(FcX.Fb);
-      retF.Fb.imag_FIXME += cimag(FcX.Fb);
+      retF.Fb += FcX.Fb;
 
     } /* for  X < numDetectors */
 
@@ -595,10 +592,8 @@ XLALComputeFaFb ( Fcomponents *FaFb,		      	/**< [out] Fa,Fb (and possibly atom
     if ( fkdot[spdnOrder] )
       break;
 
-  Fa.real_FIXME = 0.0f;
-  Fa.imag_FIXME = 0.0f;
-  Fb.real_FIXME = 0.0f;
-  Fb.imag_FIXME = 0.0f;
+  Fa = 0.0;
+  Fb = 0.0;
 
   a_al = amcoe->a->data;	/* point to beginning of alpha-arrays */
   b_al = amcoe->b->data;
@@ -750,15 +745,11 @@ XLALComputeFaFb ( Fcomponents *FaFb,		      	/**< [out] Fa,Fb (and possibly atom
       a_alpha = (*a_al);
       b_alpha = (*b_al);
 
-      Fa_alpha.realf_FIXME = a_alpha * realQXP;
-      Fa_alpha.imagf_FIXME = a_alpha * imagQXP;
-      Fa.real_FIXME += crealf(Fa_alpha);
-      Fa.imag_FIXME += cimagf(Fa_alpha);
+      Fa_alpha = crectf( a_alpha * realQXP, a_alpha * imagQXP );
+      Fa += crect( crealf(Fa_alpha), cimagf(Fa_alpha) );
 
-      Fb_alpha.realf_FIXME = b_alpha * realQXP;
-      Fb_alpha.imagf_FIXME = b_alpha * imagQXP;
-      Fb.real_FIXME += crealf(Fb_alpha);
-      Fb.imag_FIXME += cimagf(Fb_alpha);
+      Fb_alpha = crectf( b_alpha * realQXP, b_alpha * imagQXP );
+      Fb += crect( crealf(Fb_alpha), cimagf(Fb_alpha) );
 
       /* store per-SFT F-stat 'atoms' for transient-CW search */
       if ( params->returnAtoms )
@@ -767,10 +758,8 @@ XLALComputeFaFb ( Fcomponents *FaFb,		      	/**< [out] Fa,Fb (and possibly atom
 	  FaFb->multiFstatAtoms->data[0]->data[alpha].a2_alpha   = a_alpha * a_alpha;
 	  FaFb->multiFstatAtoms->data[0]->data[alpha].b2_alpha   = b_alpha * b_alpha;
 	  FaFb->multiFstatAtoms->data[0]->data[alpha].ab_alpha   = a_alpha * b_alpha;
-	  FaFb->multiFstatAtoms->data[0]->data[alpha].Fa_alpha.realf_FIXME   = norm * crealf(Fa_alpha);
-	  FaFb->multiFstatAtoms->data[0]->data[alpha].Fa_alpha.imagf_FIXME   = norm * cimagf(Fa_alpha);
-	  FaFb->multiFstatAtoms->data[0]->data[alpha].Fb_alpha.realf_FIXME   = norm * crealf(Fb_alpha);
-	  FaFb->multiFstatAtoms->data[0]->data[alpha].Fb_alpha.imagf_FIXME   = norm * cimagf(Fb_alpha);
+	  FaFb->multiFstatAtoms->data[0]->data[alpha].Fa_alpha = (((REAL4) norm) * Fa_alpha);
+	  FaFb->multiFstatAtoms->data[0]->data[alpha].Fb_alpha = (((REAL4) norm) * Fb_alpha);
 	}
 
       /* advance pointers over alpha */
@@ -783,10 +772,8 @@ XLALComputeFaFb ( Fcomponents *FaFb,		      	/**< [out] Fa,Fb (and possibly atom
     } /* for alpha < numSFTs */
 
   /* return result */
-  FaFb->Fa.real_FIXME = norm * creal(Fa);
-  FaFb->Fa.imag_FIXME = norm * cimag(Fa);
-  FaFb->Fb.real_FIXME = norm * creal(Fb);
-  FaFb->Fb.imag_FIXME = norm * cimag(Fb);
+  FaFb->Fa = (((REAL8) norm) * Fa);
+  FaFb->Fb = (((REAL8) norm) * Fb);
 
   return XLAL_SUCCESS;
 
@@ -872,10 +859,8 @@ XLALComputeFaFbCmplx ( Fcomponents *FaFb,		/**< [out] Fa,Fb (and possibly atoms)
     if ( fkdot[spdnOrder] )
       break;
 
-  Fa.real_FIXME = 0.0f;
-  Fa.imag_FIXME = 0.0f;
-  Fb.real_FIXME = 0.0f;
-  Fb.imag_FIXME = 0.0f;
+  Fa = 0.0;
+  Fb = 0.0;
 
   a_al = amcoe->a->data;	/* point to beginning of alpha-arrays */
   b_al = amcoe->b->data;
@@ -1027,12 +1012,10 @@ XLALComputeFaFbCmplx ( Fcomponents *FaFb,		/**< [out] Fa,Fb (and possibly atoms)
       b_alpha = (*b_al);
 
       /* Fa contains complex conjugate of a */
-      Fa.real_FIXME += crealf(a_alpha) * realQXP + cimagf(a_alpha) * imagQXP;
-      Fa.imag_FIXME += crealf(a_alpha) * imagQXP - cimagf(a_alpha) * realQXP;
+      Fa += crect( crealf(a_alpha) * realQXP + cimagf(a_alpha) * imagQXP, crealf(a_alpha) * imagQXP - cimagf(a_alpha) * realQXP );
 
       /* Fb contains complex conjugate of b */
-      Fb.real_FIXME += crealf(b_alpha) * realQXP + cimagf(b_alpha) * imagQXP;
-      Fb.imag_FIXME += crealf(b_alpha) * imagQXP - cimagf(b_alpha) * realQXP;
+      Fb += crect( crealf(b_alpha) * realQXP + cimagf(b_alpha) * imagQXP, crealf(b_alpha) * imagQXP - cimagf(b_alpha) * realQXP );
 
       /* advance pointers over alpha */
       a_al ++;
@@ -1044,10 +1027,8 @@ XLALComputeFaFbCmplx ( Fcomponents *FaFb,		/**< [out] Fa,Fb (and possibly atoms)
     } /* for alpha < numSFTs */
 
   /* return result */
-  FaFb->Fa.real_FIXME = norm * creal(Fa);
-  FaFb->Fa.imag_FIXME = norm * cimag(Fa);
-  FaFb->Fb.real_FIXME = norm * creal(Fb);
-  FaFb->Fb.imag_FIXME = norm * cimag(Fb);
+  FaFb->Fa = (((REAL8) norm) * Fa);
+  FaFb->Fb = (((REAL8) norm) * Fb);
 
   return XLAL_SUCCESS;
 
@@ -1130,10 +1111,8 @@ XLALComputeFaFbXavie ( Fcomponents *FaFb,		/**< [out] Fa,Fb (and possibly atoms)
     if ( fkdot[spdnOrder] )
       break;
 
-  Fa.real_FIXME = 0.0f;
-  Fa.imag_FIXME = 0.0f;
-  Fb.real_FIXME = 0.0f;
-  Fb.imag_FIXME = 0.0f;
+  Fa = 0.0;
+  Fb = 0.0;
 
   a_al = amcoe->a->data;	/* point to beginning of alpha-arrays */
   b_al = amcoe->b->data;
@@ -1221,10 +1200,8 @@ XLALComputeFaFbXavie ( Fcomponents *FaFb,		/**< [out] Fa,Fb (and possibly atoms)
       a_alpha = (*a_al);
       b_alpha = (*b_al);
 
-      Fa.real_FIXME += a_alpha * realQXP;
-      Fa.imag_FIXME += a_alpha * imagQXP;
-      Fb.real_FIXME += b_alpha * realQXP;
-      Fb.imag_FIXME += b_alpha * imagQXP;
+      Fa += crect( a_alpha * realQXP, a_alpha * imagQXP );
+      Fb += crect( b_alpha * realQXP, b_alpha * imagQXP );
 
       /* advance pointers over alpha */
       a_al ++;
@@ -1236,10 +1213,8 @@ XLALComputeFaFbXavie ( Fcomponents *FaFb,		/**< [out] Fa,Fb (and possibly atoms)
     } /* for alpha < numSFTs */
 
   /* return result */
-  FaFb->Fa.real_FIXME = creal(Fa);
-  FaFb->Fa.imag_FIXME = cimag(Fa);
-  FaFb->Fb.real_FIXME = creal(Fb);
-  FaFb->Fb.imag_FIXME = cimag(Fb);
+  FaFb->Fa = Fa;
+  FaFb->Fb = Fb;
 
   return XLAL_SUCCESS;
 

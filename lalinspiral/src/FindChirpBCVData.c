@@ -55,7 +55,6 @@
  *
  */
 
-#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/LALStdlib.h>
 #include <lal/LALConstants.h>
 #include <lal/AVFactories.h>
@@ -303,10 +302,8 @@ LALFindChirpBCVData (
       REAL4 x = crealf(resp[k]) * params->dynRange;
       REAL4 y = cimagf(resp[k]) * params->dynRange;
 
-      outputData[k].realf_FIXME =  p*x - q*y;
-      outputData[k].imagf_FIXME =  p*y + q*x;
-      outputDataBCV[k].realf_FIXME =  pBCV*x - qBCV*y;
-      outputDataBCV[k].imagf_FIXME =  pBCV*y + qBCV*x;
+      outputData[k] = crectf( p*x - q*y, p*y + q*x );
+      outputDataBCV[k] = crectf( pBCV*x - qBCV*y, pBCV*y + qBCV*x );
     }
 
 
@@ -334,7 +331,7 @@ LALFindChirpBCVData (
       {
         ABORT( status, FINDCHIRPBCVH_EDIVZ, FINDCHIRPBCVH_MSGEDIVZ );
       }
-      wtilde[k].realf_FIXME = 1.0 / spec[k];
+      wtilde[k] = crectf( 1.0 / spec[k], cimagf(wtilde[k]) );
     }
 
     /*
@@ -349,12 +346,12 @@ LALFindChirpBCVData (
       /* compute square root of inverse power spectrum */
       for ( k = cut; k < params->wtildeVec->length; ++k )
       {
-        wtilde[k].realf_FIXME = sqrt( crealf(wtilde[k]) );
+        wtilde[k] = crectf( sqrt( crealf(wtilde[k]) ), cimagf(wtilde[k]) );
       }
 
       /* set nyquist and dc to zero */
-      wtilde[params->wtildeVec->length - 1].realf_FIXME = 0.0;
-      wtilde[0].realf_FIXME                             = 0.0;
+      wtilde[params->wtildeVec->length-1] = crectf( 0.0, cimagf(wtilde[params->wtildeVec->length-1]) );
+      wtilde[0] = crectf( 0.0, cimagf(wtilde[0]) );
 
       /* transform to time domain */
       LALReverseRealFFT( status->statusPtr, params->wVec, params->wtildeVec,
@@ -375,15 +372,15 @@ LALFindChirpBCVData (
         REAL4 norm = 1.0 / (REAL4) params->wVec->length;
         for ( k = cut; k < params->wtildeVec->length; ++k )
         {
-          wtilde[k].realf_FIXME *= norm;
-          wtilde[k].realf_FIXME *= crealf(wtilde[k]);
-          wtilde[k].imagf_FIXME = 0.0;
+          wtilde[k] = crectf( crealf(wtilde[k]) * ( norm ), cimagf(wtilde[k]) );
+          wtilde[k] = crectf( crealf(wtilde[k]) * ( crealf(wtilde[k]) ), cimagf(wtilde[k]) );
+          wtilde[k] = crectf( crealf(wtilde[k]), 0.0 );
         }
       }
 
       /* set nyquist and dc to zero */
-      wtilde[params->wtildeVec->length - 1].realf_FIXME = 0.0;
-      wtilde[0].realf_FIXME                             = 0.0;
+      wtilde[params->wtildeVec->length-1] = crectf( 0.0, cimagf(wtilde[params->wtildeVec->length-1]) );
+      wtilde[0] = crectf( 0.0, cimagf(wtilde[0]) );
     }
 
     /* set inverse power spectrum below cut to zero */
@@ -401,7 +398,7 @@ LALFindChirpBCVData (
         ABORT( status, FINDCHIRPBCVH_EDIVZ, FINDCHIRPBCVH_MSGEDIVZ );
       }
       invmodsqResp = 1.0 / modsqResp;
-      wtilde[k].realf_FIXME *= invmodsqResp;
+      wtilde[k] = crectf( crealf(wtilde[k]) * ( invmodsqResp ), cimagf(wtilde[k]) );
     }
 
 
@@ -424,10 +421,8 @@ LALFindChirpBCVData (
 
     for ( k = 0; k < cut; ++k )
     {
-      outputData[k].realf_FIXME = 0.0;
-      outputData[k].imagf_FIXME = 0.0;
-      outputDataBCV[k].realf_FIXME = 0.0;
-      outputDataBCV[k].imagf_FIXME = 0.0;
+      outputData[k] = 0.0;
+      outputDataBCV[k] = 0.0;
     }
 
     memset( tmpltPower, 0, params->tmpltPowerVec->length * sizeof(REAL4) );
@@ -477,10 +472,8 @@ LALFindChirpBCVData (
 
     for ( k = cut; k < fcSeg->data->data->length; ++k )
     {
-      outputData[k].realf_FIXME  *= 4.0 * amp[k] * crealf(wtilde[k]) ;
-      outputData[k].imagf_FIXME  *= 4.0 * amp[k] * crealf(wtilde[k]) ;
-      outputDataBCV[k].realf_FIXME *= 4.0 * ampBCV[k] * crealf(wtilde[k]) ;
-      outputDataBCV[k].imagf_FIXME *= 4.0 * ampBCV[k] * crealf(wtilde[k]) ;
+      outputData[k] *= ((REAL4) 4.0 * amp[k] * crealf(wtilde[k]));
+      outputDataBCV[k] *= ((REAL4) 4.0 * ampBCV[k] * crealf(wtilde[k]));
     }
 
     /* set output frequency series parameters */

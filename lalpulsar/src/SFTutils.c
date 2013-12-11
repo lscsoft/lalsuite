@@ -23,7 +23,6 @@
 #include <gsl/gsl_math.h>
 #include <gsl/gsl_sort_double.h>
 
-#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/AVFactories.h>
 #include <lal/SeqFactories.h>
 #include <lal/FrequencySeries.h>
@@ -898,8 +897,7 @@ XLALrefineCOMPLEX8Vector (const COMPLEX8Vector *in,
 	}
 
       const REAL8 OOTWOPI = (1.0 / LAL_TWOPI );
-      ret->data[l].realf_FIXME = OOTWOPI* Yk_re;
-      ret->data[l].imagf_FIXME = OOTWOPI * Yk_im;
+      ret->data[l] = crectf( OOTWOPI* Yk_re, OOTWOPI * Yk_im );
 
     }  /* for l < newlen */
 
@@ -1152,8 +1150,7 @@ XLALSFTAdd ( SFTtype *a,		/**< [in/out] SFT to be added to */
   UINT4 numBins = a->data->length;
   for ( UINT4 k = 0; k < numBins; k ++ )
     {
-      a->data->data[k].realf_FIXME += b->data->data[k].realf_FIXME;
-      a->data->data[k].imagf_FIXME += b->data->data[k].imagf_FIXME;
+      a->data->data[k] += b->data->data[k];
     }
 
   return XLAL_SUCCESS;

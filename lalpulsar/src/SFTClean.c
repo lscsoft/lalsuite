@@ -16,7 +16,6 @@
  *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
  *  MA  02111-1307  USA
  */
-#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/SFTClean.h>
 
 /**
@@ -698,11 +697,11 @@ void LALCleanCOMPLEX8SFT (LALStatus          *status,/**< pointer to LALStatus s
       inData = sft->data->data + lineBin - minBin;
 
       randVal = ranVector->data + tempk;
-      inData->realf_FIXME = stdPow * (*randVal);
+      *(inData) = crectf( stdPow * (*randVal), cimagf(*(inData)) );
       tempk++;
 
       randVal = ranVector->data + tempk;
-      inData->imagf_FIXME = stdPow * (*randVal);
+      *(inData) = crectf( crealf(*(inData)), stdPow * (*randVal) );
       tempk++;
 
       /* now go left and set the left wing to noise */
@@ -714,11 +713,11 @@ void LALCleanCOMPLEX8SFT (LALStatus          *status,/**< pointer to LALStatus s
 	    inData = sft->data->data + lineBin - minBin - leftCount - 1;
 
 	    randVal = ranVector->data + tempk;
-	    inData->realf_FIXME = stdPow * (*randVal);
+	    *(inData) = crectf( stdPow * (*randVal), cimagf(*(inData)) );
 	    tempk++;
 
 	    randVal = ranVector->data + tempk;
-	    inData->imagf_FIXME = stdPow * (*randVal);
+	    *(inData) = crectf( crealf(*(inData)), stdPow * (*randVal) );
 	    tempk++;
 	  }
 	}
@@ -731,11 +730,11 @@ void LALCleanCOMPLEX8SFT (LALStatus          *status,/**< pointer to LALStatus s
 	    inData = sft->data->data + lineBin - minBin + rightCount + 1;
 
 	    randVal = ranVector->data + tempk;
-	    inData->realf_FIXME = stdPow * (*randVal);
+	    *(inData) = crectf( stdPow * (*randVal), cimagf(*(inData)) );
             tempk++;
 
 	    randVal = ranVector->data + tempk;
-	    inData->imagf_FIXME = stdPow * (*randVal);
+	    *(inData) = crectf( crealf(*(inData)), stdPow * (*randVal) );
 	    tempk++;
 	  }
 	}
