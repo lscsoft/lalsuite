@@ -1085,6 +1085,11 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
 
         makeWhiteData(&(IFOdata[i]));
 
+      /* Store ASD of noise spectrum to whiten glitch model */
+      IFOdata[i].noiseASD=(REAL8FrequencySeries *)XLALCreateREAL8FrequencySeries("asd",&GPSstart,0.0,(REAL8)(SampleRate)/seglen,&lalDimensionlessUnit,seglen/2 +1);
+      for(j=0;j<IFOdata[i].oneSidedNoisePowerSpectrum->data->length;j++)
+        IFOdata[i].noiseASD->data->data[j]=sqrt(IFOdata[i].oneSidedNoisePowerSpectrum->data->data[j]);
+
         if (LALInferenceGetProcParamVal(commandLine, "--spinspiralPSD")) {
             FILE *in;
             //char fileNameIn[256];

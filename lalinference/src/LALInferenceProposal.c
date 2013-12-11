@@ -21,6 +21,8 @@
  *  MA  02111-1307  USA
  */
 
+#define LAL_USE_OLD_COMPLEX_STRUCTS
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <lal/LALInspiral.h>
@@ -44,6 +46,12 @@
 #include <lal/XLALError.h>
 
 #include <lal/LALStdlib.h>
+
+#ifdef __GNUC__
+#define UNUSED __attribute__ ((unused))
+#else
+#define UNUSED
+#endif
 
 const char *const cycleArrayName = "Proposal Cycle";
 const char *const cycleArrayLengthName = "Proposal Cycle Length";
@@ -71,6 +79,8 @@ const char *const distanceQuasiGibbsProposalName = "DistanceQuasiGibbs";
 const char *const extrinsicParamProposalName = "ExtrinsicParamProposal";
 const char *const KDNeighborhoodProposalName = "KDNeighborhood";
 const char *const frequencyBinJumpName = "FrequencyBin";
+const char *const GlitchMorletJumpName = "glitchMorletJump";
+const char *const GlitchMorletReverseJumpName = "glitchMorletReverseJump";
 
 static int
 same_detector_location(LALInferenceIFOData *d1, LALInferenceIFOData *d2) {
@@ -414,6 +424,9 @@ SetupDefaultProposal(LALInferenceRunState *runState, LALInferenceVariables *prop
 
   LALInferenceCopyVariables(runState->currentParams, proposedParams);
 
+  /* Only add signal proposals if signal is part of the model */
+  if(!LALInferenceGetProcParamVal(runState->commandLine,"--noiseonly"))
+  {
   /* The default, single-parameter updates. */
   if(!LALInferenceGetProcParamVal(runState->commandLine,"--proposal-no-singleadapt"))
     LALInferenceAddProposalToCycle(runState, singleAdaptProposalName, &LALInferenceSingleAdaptProposal, BIGWEIGHT);
@@ -448,13 +461,6 @@ SetupDefaultProposal(LALInferenceRunState *runState, LALInferenceVariables *prop
 
   /* Now add various special proposals that are conditional on
      command-line arguments or variables in the params. */
-
-  //Add LALInferencePSDFitJump to the cycle
-  ppt=LALInferenceGetProcParamVal(runState->commandLine, "--psdFit");
-  if(ppt)
-  {
-    LALInferenceAddProposalToCycle (runState, PSDFitJumpName, *LALInferencePSDFitJump, SMALLWEIGHT);
-  }
 
   if (LALInferenceCheckVariable(proposedParams, "theta_spin1")) {
     LALInferenceAddProposalToCycle(runState, rotateSpinsName, &LALInferenceRotateSpins, SMALLWEIGHT);
@@ -491,6 +497,23 @@ SetupDefaultProposal(LALInferenceRunState *runState, LALInferenceVariables *prop
 
   if (!LALInferenceGetProcParamVal(runState->commandLine,"--noProposalCorrPsiPhi") && !LALInferenceGetProcParamVal(runState->commandLine, "--margphi") && !LALInferenceGetProcParamVal(runState->commandLine, "--margtimephi")) {
     LALInferenceAddProposalToCycle(runState, polarizationCorrPhaseJumpName, &LALInferenceCorrPolarizationPhaseJump, SMALLWEIGHT);
+  }
+  }//End noise-only conditional
+
+  /* Add LALInferencePSDFitJump to the cycle */
+  ppt=LALInferenceGetProcParamVal(runState->commandLine, "--psdFit");
+  if(ppt)
+  {
+    LALInferenceAddProposalToCycle(runState, PSDFitJumpName, *LALInferencePSDFitJump, SMALLWEIGHT);
+  }
+
+  /* Add glitch-fitting proposals to cycle */
+  ppt=LALInferenceGetProcParamVal(runState->commandLine, "--glitchFit");
+  if(ppt)
+  {
+    //Morlet wavelet propposals
+    LALInferenceAddProposalToCycle(runState, GlitchMorletJumpName, *LALInferenceGlitchMorletProposal, SMALLWEIGHT);
+    LALInferenceAddProposalToCycle(runState, GlitchMorletReverseJumpName, *LALInferenceGlitchMorletReverseJump, SMALLWEIGHT);
   }
 
   LALInferenceRandomizeProposalCycle(runState);
@@ -599,6 +622,7 @@ void LALInferenceSingleAdaptProposal(LALInferenceRunState *runState, LALInferenc
   LALInferenceSetVariable(args, LALInferenceCurrentProposalName, &propName);
   ProcessParamsTable *ppt = LALInferenceGetProcParamVal(runState->commandLine, "--noAdapt");
   gsl_matrix *m=NULL;
+  UINT4Vector *v=NULL;
 
   if (ppt) {
     /* We are not adaptive, or for some reason don't have a sigma
@@ -624,7 +648,7 @@ void LALInferenceSingleAdaptProposal(LALInferenceRunState *runState, LALInferenc
     varNr = 1+gsl_rng_uniform_int(rng, dim);
     param = LALInferenceGetItemNr(proposedParams, varNr);
 
-    } while (param->vary == LALINFERENCE_PARAM_FIXED || param->vary == LALINFERENCE_PARAM_OUTPUT || !strcmp(param->name, "psdscale"));
+    } while (param->vary == LALINFERENCE_PARAM_FIXED || param->vary == LALINFERENCE_PARAM_OUTPUT || param->type != LALINFERENCE_REAL8_t);
 
     for (dummyParam = proposedParams->head, i = 0; dummyParam != NULL; dummyParam = dummyParam->next) {
           if (!strcmp(dummyParam->name, param->name)) {
@@ -633,11 +657,20 @@ void LALInferenceSingleAdaptProposal(LALInferenceRunState *runState, LALInferenc
           } else if (dummyParam->vary == LALINFERENCE_PARAM_FIXED || dummyParam->vary == LALINFERENCE_PARAM_OUTPUT) {
             /* Don't increment i, since we're not dealing with a "real" parameter. */
             continue;
-          } else if (!strcmp(dummyParam->name, "psdscale"))
+          } else if (param->type == LALINFERENCE_gslMatrix_t)
           {
             /*increment i by number of noise parameters, since they aren't included in adaptive jumps*/
             m = *((gsl_matrix **)dummyParam->value);
             i += (int)( m->size1*m->size2 );
+          } else if (param->type == LALINFERENCE_UINT4Vector_t)
+          {
+            /*
+             increment i by number of size of vectors --
+             number of wavelets in glitch model is not
+             part of adaptive proposal
+             */
+            v = *((UINT4Vector **)dummyParam->value);
+            i += (int)( v->length );
           } else {
             i++;
             continue;
@@ -1372,6 +1405,35 @@ reflected_position_and_time(LALInferenceRunState *runState, const REAL8 ra, cons
   *newTime = oldTime + oldDt - newDt;
 }
 
+static REAL8 evaluate_morlet_proposal(LALInferenceRunState *runState, UNUSED LALInferenceVariables *proposedParams, UNUSED int ifo, UNUSED int k)
+{
+  REAL8 prior = 0.0;
+
+  REAL8 component_min,component_max;
+
+  component_min = (*(REAL8 *)LALInferenceGetVariable(runState->priorArgs,"morlet_f0_prior_min"));
+  component_max = (*(REAL8 *)LALInferenceGetVariable(runState->priorArgs,"morlet_f0_prior_max"));
+  prior -= log(component_max-component_min);
+
+  component_min = (*(REAL8 *)LALInferenceGetVariable(runState->priorArgs,"morlet_Q_prior_min"));
+  component_max = (*(REAL8 *)LALInferenceGetVariable(runState->priorArgs,"morlet_Q_prior_max"));
+  prior -= log(component_max-component_min);
+
+  component_min = (*(REAL8 *)LALInferenceGetVariable(runState->priorArgs,"morlet_Amp_prior_min"));
+  component_max = (*(REAL8 *)LALInferenceGetVariable(runState->priorArgs,"morlet_Amp_prior_max"));
+  prior -= log(component_max-component_min);
+
+  component_min = (*(REAL8 *)LALInferenceGetVariable(runState->priorArgs,"morlet_t0_prior_min"));
+  component_max = (*(REAL8 *)LALInferenceGetVariable(runState->priorArgs,"morlet_t0_prior_max"));
+  prior -= log(component_max-component_min);
+
+  component_min = (*(REAL8 *)LALInferenceGetVariable(runState->priorArgs,"morlet_phi_prior_min"));
+  component_max = (*(REAL8 *)LALInferenceGetVariable(runState->priorArgs,"morlet_phi_prior_max"));
+  prior -= log(component_max-component_min);
+
+  return prior;
+}
+
 void LALInferenceSkyRingProposal(LALInferenceRunState *runState, LALInferenceVariables *proposedParams)
 {
   UINT4 i,j,l,ifo,nifo;
@@ -1551,6 +1613,7 @@ void LALInferenceSkyRingProposal(LALInferenceRunState *runState, LALInferenceVar
   gsl_matrix_free(IFO);
   LALInferenceSetLogProposalRatio(runState, log(pReverse/pForward));
 
+  gsl_matrix_free(IFO);
 }
 
 void LALInferenceSkyReflectDetPlane(LALInferenceRunState *runState, LALInferenceVariables *proposedParams) {
@@ -1664,29 +1727,703 @@ void LALInferencePSDFitJump(LALInferenceRunState *runState, LALInferenceVariable
   INT4 nifo;
   INT4 N;
 
-  REAL8 draw;
+  REAL8 draw=0.0;
   //REAL8 var = *(REAL8 *)(LALInferenceGetVariable(runState->proposalArgs, "psdsigma"));
   REAL8Vector *var = *((REAL8Vector **)LALInferenceGetVariable(runState->proposalArgs, "psdsigma"));
 
   //Get current state of chain into workable form
   LALInferenceCopyVariables(runState->currentParams, proposedParams);
-  gsl_matrix *nx = *((gsl_matrix **)LALInferenceGetVariable(runState->currentParams, "psdstore"));
   gsl_matrix *ny = *((gsl_matrix **)LALInferenceGetVariable(proposedParams, "psdscale"));
 
   //Get size of noise parameter array
-  nifo = (int)nx->size1;
-  N    = (int)nx->size2;
+  nifo = (int)ny->size1;
+  N    = (int)ny->size2;
 
   //perturb noise parameter
   for(i=0; i<nifo; i++)
   {
     for(j=0; j<N; j++)
     {
-      draw = gsl_matrix_get(nx,i,j) + gsl_ran_ugaussian(runState->GSLrandom)*var->data[j];
+      draw = gsl_matrix_get(ny,i,j) + gsl_ran_ugaussian(runState->GSLrandom)*var->data[j];
       gsl_matrix_set(ny,i,j,draw);
     }
   }
   LALInferenceSetLogProposalRatio(runState, 0.0);
+}
+
+static void UpdateWaveletSum(LALInferenceRunState *runState, LALInferenceVariables *proposedParams, gsl_matrix *glitchFD, UINT4 ifo, UINT4 n, UINT4 flag)
+{
+  UINT4 j;
+  LALInferenceIFOData *dataPtr = runState->data;
+
+  REAL8FrequencySeries *noiseASD = NULL;
+  UINT4 i;
+
+  i=0;
+  /* get dataPtr pointing to correct IFO */
+  while(dataPtr!=NULL)
+  {
+    if(ifo==i) noiseASD = dataPtr->noiseASD;
+    dataPtr=dataPtr->next;
+    i++;
+  }
+  dataPtr = runState->data;
+
+  REAL8 deltaT = dataPtr->timeData->deltaT;
+  REAL8 Tobs   = (((double)dataPtr->timeData->data->length) * deltaT);
+  REAL8 deltaF = 1.0 / Tobs;
+
+  UINT4 lower  = (UINT4)ceil(dataPtr->fLow / deltaF);
+  UINT4 upper  = (UINT4)floor(dataPtr->fHigh / deltaF);
+
+  gsl_matrix *glitch_f = *(gsl_matrix **)LALInferenceGetVariable(proposedParams, "morlet_f0");
+  gsl_matrix *glitch_Q = *(gsl_matrix **)LALInferenceGetVariable(proposedParams, "morlet_Q");
+  gsl_matrix *glitch_A = *(gsl_matrix **)LALInferenceGetVariable(proposedParams, "morlet_Amp");
+  gsl_matrix *glitch_t = *(gsl_matrix **)LALInferenceGetVariable(proposedParams, "morlet_t0");
+  gsl_matrix *glitch_p = *(gsl_matrix **)LALInferenceGetVariable(proposedParams, "morlet_phi");
+
+  REAL8 Q,Amp,t0,ph0,f0; //sine-Gaussian parameters
+  REAL8 amparg,phiarg,Ai;//helpers for computing sineGaussian
+  REAL8 gRe,gIm;         //real and imaginary parts of current glitch model
+  Q    = gsl_matrix_get(glitch_Q,ifo,n);
+  Amp  = gsl_matrix_get(glitch_A,ifo,n);
+  t0   = gsl_matrix_get(glitch_t,ifo,n);
+  ph0  = gsl_matrix_get(glitch_p,ifo,n);
+  f0   = gsl_matrix_get(glitch_f,ifo,n);
+
+  //6 x decay time of sine Gaussian (truncate how much glitch we compute)
+  REAL8 tau  = Q/LAL_TWOPI/f0;
+  UINT4 glitchLower = (int)floor((f0 - 1./tau)/deltaF);
+  UINT4 glitchUpper = (int)floor((f0 + 1./tau)/deltaF);
+
+  for(j=glitchLower; j<glitchUpper; j++)
+  {
+    if(j>=lower && j<=upper)
+    {
+      gRe = gsl_matrix_get(glitchFD,ifo,2*j);
+      gIm = gsl_matrix_get(glitchFD,ifo,2*j+1);
+      amparg = ((REAL8)j*deltaF - f0)*LAL_PI*tau;
+      phiarg = LAL_PI*(REAL8)j + ph0 - LAL_TWOPI*(REAL8)j*deltaF*(t0-Tobs/2.);//TODO: SIMPLIFY PHASE FOR SINEGAUSSIAN
+      Ai = Amp*tau*0.5*sqrt(LAL_PI)*exp(-amparg*amparg)*noiseASD->data->data[j];
+
+      switch(flag)
+      {
+          // Remove wavelet from model
+        case -1:
+          gRe -= Ai*cos(phiarg);
+          gIm -= Ai*sin(phiarg);
+          break;
+          // Add wavelet to model
+        case  1:
+          gRe += Ai*cos(phiarg);
+          gIm += Ai*sin(phiarg);
+          break;
+          // Replace model with wavelet
+        case 0:
+          gRe = Ai*cos(phiarg);
+          gIm = Ai*sin(phiarg);
+          break;
+          //Do nothing
+        default:
+          break;
+      }//end switch
+
+      //update glitch model
+      gsl_matrix_set(glitchFD,ifo,2*j,gRe);
+      gsl_matrix_set(glitchFD,ifo,2*j+1,gIm);
+
+    }//end upper/lower check
+  }//end loop over glitch samples
+}
+
+static void phase_blind_time_shift(REAL8 *corr, REAL8 *corrf, COMPLEX16Vector *data1, COMPLEX16Vector *data2, LALInferenceIFOData *IFOdata)
+{
+  UINT4 i;
+
+  UINT4 N  = IFOdata->timeData->data->length;   // Number of data points
+  UINT4 N2 = IFOdata->freqData->data->length-1; // 1/2 number of data points (plus 1)
+
+  REAL8 deltaF = IFOdata->freqData->deltaF;
+  REAL8 deltaT = IFOdata->timeData->deltaT;
+
+  UINT4 lower  = (UINT4)ceil(  IFOdata->fLow  / deltaF );
+  UINT4 upper  = (UINT4)floor( IFOdata->fHigh / deltaF );
+
+  COMPLEX16FrequencySeries *corrFD  = XLALCreateCOMPLEX16FrequencySeries("cf1", &(IFOdata->freqData->epoch), 0.0, deltaF, &lalDimensionlessUnit, N2+1);
+  COMPLEX16FrequencySeries *corrfFD = XLALCreateCOMPLEX16FrequencySeries("cf2", &(IFOdata->freqData->epoch), 0.0, deltaF, &lalDimensionlessUnit, N2+1);
+
+  REAL8TimeSeries *corrTD  = XLALCreateREAL8TimeSeries("ct1", &(IFOdata->timeData->epoch), 0.0, deltaT, &lalDimensionlessUnit, N);
+  REAL8TimeSeries *corrfTD = XLALCreateREAL8TimeSeries("ct2", &(IFOdata->timeData->epoch), 0.0, deltaT, &lalDimensionlessUnit, N);
+
+  REAL8Vector *psd = IFOdata->oneSidedNoisePowerSpectrum->data;
+
+  //convolution of signal & template
+  for (i=0; i < N2; i++)
+  {
+		corrFD->data->data[i].real_FIXME	= 0.0;
+		corrFD->data->data[i].imag_FIXME	= 0.0;
+    corrfFD->data->data[i].real_FIXME = 0.0;
+    corrfFD->data->data[i].imag_FIXME = 0.0;
+
+    if(i>lower && i<upper)
+    {
+      corrFD->data->data[i].real_FIXME	= ( creal(data1->data[i])*creal(data2->data[i]) + cimag(data1->data[i])*cimag(data2->data[i])) / psd->data[i];
+      corrFD->data->data[i].imag_FIXME	= ( cimag(data1->data[i])*creal(data2->data[i]) - creal(data1->data[i])*cimag(data2->data[i])) / psd->data[i];
+      corrfFD->data->data[i].real_FIXME = ( creal(data1->data[i])*cimag(data2->data[i]) - cimag(data1->data[i])*creal(data2->data[i])) / psd->data[i];
+      corrfFD->data->data[i].imag_FIXME = ( cimag(data1->data[i])*cimag(data2->data[i]) + creal(data1->data[i])*creal(data2->data[i])) / psd->data[i];
+    }
+
+  }
+
+  //invFFT convolutions to find time offset
+  XLALREAL8FreqTimeFFT(corrTD, corrFD, IFOdata->freqToTimeFFTPlan);
+  XLALREAL8FreqTimeFFT(corrfTD, corrfFD, IFOdata->freqToTimeFFTPlan);
+
+  for (i=0; i < N; i++)
+  {
+		corr[i]  = corrTD->data->data[i];
+		corrf[i] = corrfTD->data->data[i];
+  }
+
+  XLALDestroyREAL8TimeSeries(corrTD);
+  XLALDestroyREAL8TimeSeries(corrfTD);
+  XLALDestroyCOMPLEX16FrequencySeries(corrFD);
+  XLALDestroyCOMPLEX16FrequencySeries(corrfFD);
+}
+
+static void MaximizeGlitchParameters(LALInferenceVariables *currentParams, LALInferenceRunState *runState, int ifo, int n)//int N, int NI, double Tobs, COMPLEX16Vector **s, COMPLEX16Vector **h, double *params, REAL8Vector **Sn)
+{
+  UINT4 i;
+
+  LALInferenceIFOData *dataPtr = runState->data;
+  i=0;
+  while(i<(UINT4)ifo)
+  {
+    i++;
+    dataPtr = dataPtr->next;
+  }
+
+
+  UINT4 N = (UINT4)dataPtr->timeData->data->length;
+  REAL8 deltaT = (REAL8)(dataPtr->timeData->deltaT);
+  REAL8 Tobs = (REAL8)(deltaT*N);
+  REAL8 sqTwoDeltaToverN = sqrt(2.0 * deltaT / ((double) N) );
+
+  REAL8 deltaF = 1.0 / (((double)dataPtr->timeData->data->length) * deltaT);
+  UINT4 lower  = (UINT4)ceil(dataPtr->fLow / deltaF);
+  UINT4 upper  = (UINT4)floor(dataPtr->fHigh / deltaF);
+
+  COMPLEX16Vector *s = dataPtr->freqData->data;
+  COMPLEX16Vector *h = XLALCreateCOMPLEX16Vector(N/2);
+  COMPLEX16Vector *r = XLALCreateCOMPLEX16Vector(N/2);
+  REAL8Vector *Sn = dataPtr->oneSidedNoisePowerSpectrum->data;
+
+  /* Get parameters for new wavelet */
+  UINT4Vector *gsize   = *(UINT4Vector **) LALInferenceGetVariable(currentParams, "glitch_size");
+
+  gsl_matrix *glitchFD = *(gsl_matrix **)LALInferenceGetVariable(currentParams, "morlet_FD");
+  gsl_matrix *glitch_A = *(gsl_matrix **)LALInferenceGetVariable(currentParams, "morlet_Amp");
+  gsl_matrix *glitch_t = *(gsl_matrix **)LALInferenceGetVariable(currentParams, "morlet_t0");
+  gsl_matrix *glitch_p = *(gsl_matrix **)LALInferenceGetVariable(currentParams, "morlet_phi");
+
+  REAL8 Amp,t0,ph0; //sine-Gaussian parameters
+  Amp  = gsl_matrix_get(glitch_A,ifo,n);
+  t0   = gsl_matrix_get(glitch_t,ifo,n);
+  ph0  = gsl_matrix_get(glitch_p,ifo,n);
+
+  REAL8 *corr;
+  REAL8 *AC,*AF;
+
+  /* Make new wavelet */
+  gsl_matrix *hmatrix = gsl_matrix_alloc(ifo+1,N);
+  gsl_matrix_set_all(hmatrix, 0.0);
+
+  UpdateWaveletSum(runState, currentParams, hmatrix, ifo, n, 1);
+
+  /* Copy to appropriate template array*/
+  REAL8 rho=0.0;
+  REAL8 hRe,hIm;
+  REAL8 gRe,gIm;
+  for(i=0; i<N/2; i++)
+  {
+    hRe = 0.0;
+    hIm = 0.0;
+    gRe = 0.0;
+    gIm = 0.0;
+    r->data[i].real_FIXME = 0.0;
+    r->data[i].imag_FIXME = 0.0;
+
+    if(i>lower && i<upper)
+    {
+      hRe = sqTwoDeltaToverN * gsl_matrix_get(hmatrix,ifo,2*i);
+      hIm = sqTwoDeltaToverN * gsl_matrix_get(hmatrix,ifo,2*i+1);
+
+      h->data[i].real_FIXME = hRe;
+      h->data[i].imag_FIXME = hIm;
+
+      //compute SNR of new wavelet
+      rho += (hRe*hRe + hIm*hIm) / Sn->data[i];
+
+      //form up residual while we're in here (w/out new template)
+      if(gsize->data[ifo]>0)
+      {
+        gRe = gsl_matrix_get(glitchFD,ifo,2*i);
+        gIm = gsl_matrix_get(glitchFD,ifo,2*i+1);
+      }
+
+      r->data[i].real_FIXME = sqTwoDeltaToverN * (creal(s->data[i])/deltaT-gRe);
+      r->data[i].imag_FIXME = sqTwoDeltaToverN * (cimag(s->data[i])/deltaT-gIm);
+    }
+  }
+  rho*=4.0;
+
+  /* Compute correlation of data & template */
+  corr = XLALMalloc(sizeof(REAL8) * N);
+  AF   = XLALMalloc(sizeof(REAL8) * N);
+  AC   = XLALMalloc(sizeof(REAL8) * N);
+
+  for(i=0; i<N; i++)
+  {
+    corr[i] = 0.0;
+  }
+
+
+  /* Cross-correlate template & residual */
+  phase_blind_time_shift(AC, AF, r, h, dataPtr);
+
+  for(i=0; i<N; i++)
+  {
+    corr[i] += sqrt(AC[i]*AC[i] + AF[i]*AF[i]);
+  }
+
+  /* Find element where correlation is maximized */
+  REAL8 max = corr[0];
+  UINT4 imax = 0;
+
+  for(i=1; i<N; i++)
+  {
+    if(corr[i] > max)
+    {
+      max  = corr[i];
+      imax = i;
+    }
+  }
+  max *= 4.0;
+
+  /* Use max correlation to rescale amplitude */
+  REAL8 dAmplitude = max/rho;
+
+  /* Get phase shift at max correlation */
+  REAL8 dPhase = atan2(AF[imax],AC[imax]);
+
+  /* Compute time shift needed for propsed template */
+  REAL8 dTime;
+  if(imax < (N/2)-1) dTime = ( ( (double)imax           )/(double)N )*Tobs;
+  else               dTime = ( ( (double)imax-(double)N )/(double)N )*Tobs;
+
+  /* Shift template parameters accordingly */
+  //printf("%g %g %g %g %g %g\n",dTime,dPhase,dAmplitude,max/rho, max, rho);
+  t0  += dTime;
+  Amp *= dAmplitude;
+  ph0 -= dPhase;
+
+  /* Map time & phase back in range if necessary */
+  if(ph0 < 0.0)            ph0 += LAL_TWOPI;
+  else if(ph0 > LAL_TWOPI) ph0 -= LAL_TWOPI;
+
+  if(t0 < 0.0)       t0 += Tobs;
+  else if(t0 > Tobs) t0 -= Tobs;
+
+  gsl_matrix_set(glitch_t,ifo,n,t0);
+  gsl_matrix_set(glitch_A,ifo,n,Amp);
+  gsl_matrix_set(glitch_p,ifo,n,ph0);
+
+
+  gsl_matrix_free(hmatrix);
+
+  XLALDestroyCOMPLEX16Vector(h);
+  XLALDestroyCOMPLEX16Vector(r);
+
+  XLALFree(corr);
+  XLALFree(AF);
+  XLALFree(AC);
+
+}
+
+static void MorletDiagonalFisherMatrix(REAL8Vector *params, REAL8Vector *sigmas)
+{
+  REAL8 f0;
+  REAL8 Q;
+  REAL8 Amp;
+
+  REAL8 sigma_t0;
+  REAL8 sigma_f0;
+  REAL8 sigma_Q;
+  REAL8 sigma_Amp;
+  REAL8 sigma_phi0;
+
+  REAL8 SNR   = 0.0;
+  REAL8 sqrt3 = 1.7320508;
+
+  f0   = params->data[1];
+  Q    = params->data[2];
+  Amp  = params->data[3];
+
+  SNR = Amp*sqrt(Q/(2.0*sqrt(LAL_TWOPI)*f0));
+
+  // this caps the size of the proposed jumps
+  if(SNR < 5.0) SNR = 5.0;
+
+  sigma_t0   = 1.0/(LAL_TWOPI*f0*SNR);
+  sigma_f0   = 2.0*f0/(Q*SNR);
+  sigma_Q    = 2.0*Q/(sqrt3*SNR);
+  sigma_Amp  = Amp/SNR;
+  sigma_phi0 = 1.0/SNR;
+
+  // Map diagonal Fisher elements to sigmas vector
+  sigmas->data[0] = sigma_t0;
+  sigmas->data[1] = sigma_f0;
+  sigmas->data[2] = sigma_Q;
+  sigmas->data[3] = sigma_Amp;
+  sigmas->data[4] = sigma_phi0;
+
+}
+
+void LALInferenceGlitchMorletProposal(LALInferenceRunState *runState, LALInferenceVariables *proposedParams)
+{
+  const char *propName = GlitchMorletJumpName;
+  LALInferenceSetVariable(runState->proposalArgs, LALInferenceCurrentProposalName, &propName);
+
+  UINT4 i,ifo;
+  UINT4 n;
+
+  REAL8 t0;
+  REAL8 f0;
+  REAL8 Q;
+  REAL8 Amp;
+  REAL8 phi0;
+
+  REAL8 scale;
+
+  REAL8 qyx;
+  REAL8 qxy;
+
+  /*
+   Vectors to store wavelet parameters.  
+   Order:
+   [0] t0
+   [1] f0
+   [2] Q
+   [3] Amp
+   [4] phi0
+ */
+  REAL8Vector *params_x = XLALCreateREAL8Vector(5);
+  REAL8Vector *params_y = XLALCreateREAL8Vector(5);
+
+  REAL8Vector *sigmas_x = XLALCreateREAL8Vector(5);
+  REAL8Vector *sigmas_y = XLALCreateREAL8Vector(5);
+
+  /* Copy parameter structures and get local pointers to glitch parameters */
+  LALInferenceCopyVariables(runState->currentParams, proposedParams);
+
+  /* Get glitch meta paramters (dimnsion, proposal) */
+  UINT4Vector *gsize = *(UINT4Vector **) LALInferenceGetVariable(proposedParams, "glitch_size");
+
+  gsl_matrix *glitchFD = *(gsl_matrix **)LALInferenceGetVariable(proposedParams, "morlet_FD");
+  gsl_matrix *glitch_f = *(gsl_matrix **)LALInferenceGetVariable(proposedParams, "morlet_f0");
+  gsl_matrix *glitch_Q = *(gsl_matrix **)LALInferenceGetVariable(proposedParams, "morlet_Q");
+  gsl_matrix *glitch_A = *(gsl_matrix **)LALInferenceGetVariable(proposedParams, "morlet_Amp");
+  gsl_matrix *glitch_t = *(gsl_matrix **)LALInferenceGetVariable(proposedParams, "morlet_t0");
+  gsl_matrix *glitch_p = *(gsl_matrix **)LALInferenceGetVariable(proposedParams, "morlet_phi");
+
+  /* Choose which IFO */
+  ifo = (UINT4)floor( gsl_rng_uniform(runState->GSLrandom)*(REAL8)(gsize->length) );
+
+  /* Bail out of proposal if no wavelets */
+  if(gsize->data[ifo]==0)
+  {
+    LALInferenceSetLogProposalRatio(runState, 0.0);
+
+    XLALDestroyREAL8Vector(params_x);
+    XLALDestroyREAL8Vector(params_y);
+
+    XLALDestroyREAL8Vector(sigmas_x);
+    XLALDestroyREAL8Vector(sigmas_y);
+
+    return;
+  }
+
+  /* Choose which glitch */
+  n   = (UINT4)floor( gsl_rng_uniform(runState->GSLrandom)*(REAL8)(gsize->data[ifo]));
+
+  /* Remove wavlet form linear combination */
+  UpdateWaveletSum(runState, proposedParams, glitchFD, ifo, n, -1);
+
+  /* Get parameters of n'th glitch int params vector */
+  t0   = gsl_matrix_get(glitch_t,ifo,n); //Centroid time
+  f0   = gsl_matrix_get(glitch_f,ifo,n); //Frequency
+  Q    = gsl_matrix_get(glitch_Q,ifo,n); //Quality
+  Amp  = gsl_matrix_get(glitch_A,ifo,n); //Amplitude
+  phi0 = gsl_matrix_get(glitch_p,ifo,n); //Centroid phase
+
+
+  /* Map to params Vector and compute Fisher */
+  params_x->data[0] = t0;
+  params_x->data[1] = f0;
+  params_x->data[2] = Q;
+  params_x->data[3] = Amp;
+  params_x->data[4] = phi0;
+
+  MorletDiagonalFisherMatrix(params_x, sigmas_x);
+
+  /* Jump from x -> y:  y = x + N[0,sigmas_x]*scale */
+  scale = 0.4082482; // 1/sqrt(6)
+
+  for(i=0; i<5; i++)
+    params_y->data[i] = params_x->data[i] + gsl_ran_ugaussian(runState->GSLrandom)*sigmas_x->data[i]*scale;
+
+  /* Set parameters of n'th glitch int params vector */
+  /* Map to params Vector and compute Fisher */
+  t0   = params_y->data[0];
+  f0   = params_y->data[1];
+  Q    = params_y->data[2];
+  Amp  = params_y->data[3];
+  phi0 = params_y->data[4];
+  
+  gsl_matrix_set(glitch_t,ifo,n,t0);
+  gsl_matrix_set(glitch_f,ifo,n,f0);
+  gsl_matrix_set(glitch_Q,ifo,n,Q);
+  gsl_matrix_set(glitch_A,ifo,n,Amp);
+  gsl_matrix_set(glitch_p,ifo,n,phi0);
+
+  /* Add wavlet to linear combination */
+  UpdateWaveletSum(runState, proposedParams, glitchFD, ifo, n, 1);
+
+  /* Now compute proposal ratio using Fisher at y */
+  MorletDiagonalFisherMatrix(params_y, sigmas_y);
+
+  
+  REAL8 sx  = 1.0; // sigma
+  REAL8 sy  = 1.0;
+  REAL8 dx  = 1.0; // (params_x - params_y)/sigma
+  REAL8 dy  = 1.0;
+  REAL8 exy = 0.0; // argument of exponential part of q
+  REAL8 eyx = 0.0;
+  REAL8 nxy = 1.0; // argument of normalization part of q
+  REAL8 nyx = 1.0; // (computed as product to avoid too many log()s )
+  for(i=0; i<5; i++)
+  {
+    sx = scale*sigmas_x->data[i];
+    sy = scale*sigmas_y->data[i];
+    
+    dx = (params_x->data[i] - params_y->data[i])/sx;
+    dy = (params_x->data[i] - params_y->data[i])/sy;
+
+    nxy *= sy;
+    nyx *= sx;
+
+    exy += -dy*dy/2.0;
+    eyx += -dx*dx/2.0;
+  }
+  
+  qyx = eyx - log(nyx); //probabiltiy of proposing y given x
+  qxy = exy - log(nxy); //probability of proposing x given y
+
+
+  LALInferenceSetLogProposalRatio(runState, qxy-qyx);
+
+  XLALDestroyREAL8Vector(params_x);
+  XLALDestroyREAL8Vector(params_y);
+
+  XLALDestroyREAL8Vector(sigmas_x);
+  XLALDestroyREAL8Vector(sigmas_y);
+
+}
+
+void LALInferenceGlitchMorletReverseJump(LALInferenceRunState *runState, LALInferenceVariables *proposedParams)
+{
+
+  const char *propName = GlitchMorletReverseJumpName;
+  LALInferenceSetVariable(runState->proposalArgs, LALInferenceCurrentProposalName, &propName);
+
+  UINT4 i,n;
+  UINT4 ifo;
+  UINT4 rj,nx,ny;
+  
+  REAL8 draw;
+  REAL8 val;
+  REAL8 t,f;
+  
+  REAL8 qx       = 0.0; //log amp proposals
+  REAL8 qy       = 0.0;
+  REAL8 qyx      = 0.0; //log pixel proposals
+  REAL8 qxy      = 0.0;
+
+  REAL8 pForward; //combined p() & q() probabilities for ...
+  REAL8 pReverse; //...RJMCMC hastings ratio
+
+  //REAL8 temperature = *(REAL8*) LALInferenceGetVariable(runState->proposalArgs, "temperature");
+
+  gsl_matrix *params = NULL;
+
+  /* Copy parameter structures and get local pointers to glitch parameters */
+  LALInferenceCopyVariables(runState->currentParams, proposedParams);
+
+  UINT4Vector *gsize = *(UINT4Vector **)LALInferenceGetVariable(proposedParams, "glitch_size");
+  gsl_matrix *glitchFD = *(gsl_matrix **)LALInferenceGetVariable(proposedParams, "morlet_FD");
+  
+  UINT4 nmin = (UINT4)(*(REAL8 *)LALInferenceGetVariable(runState->priorArgs,"glitch_dim_min"));
+  UINT4 nmax = (UINT4)(*(REAL8 *)LALInferenceGetVariable(runState->priorArgs,"glitch_dim_max"));
+
+  INT4 adapting = *(INT4*) LALInferenceGetVariable(runState->proposalArgs, "adapting");
+
+  /* Choose which IFO */
+  ifo = (UINT4)floor( gsl_rng_uniform(runState->GSLrandom)*(REAL8)(gsize->length) );
+  nx  = gsize->data[ifo];
+
+  /* Choose birth or death move */
+  draw = gsl_rng_uniform(runState->GSLrandom);
+  if( (draw < 0.5 && nx < nmax) || nx == nmin ) rj = 1;
+  else rj = -1;
+
+  //find dimension of proposed model
+  ny = nx + rj;
+
+  switch(rj)
+  {
+    /* Birth */
+    case 1:
+
+      //Add new wavelet to glitch model
+//      flag=0;
+//      while(flag==0)
+//      {
+//        /* Rejection sample on time and frequency */
+//
+//        t = draw_flat(runState, "morlet_t0_prior");
+//        f = draw_flat(runState, "morlet_f0_prior");
+//
+//        //find TF pixel
+//        j = floor( log(f*T)/log(2.) );
+//        i = floor( int_pow(2,j)*t/T );
+//        k = int_pow(2,j) + i;
+//        //draw U[0,max_power]
+//        draw = -10.0;//gsl_rng_uniform(runState->GSLrandom)*max->data[ifo];
+//
+//        //if draw<max_power[ifo][k] exit loop
+//        printf("%g %g\n",draw,gsl_matrix_get(power,ifo,k));
+//        if(draw < gsl_matrix_get(power,ifo,k)) flag=1;
+//        printf("here\n");
+//      }
+      t = draw_flat(runState, "morlet_t0_prior");
+      f = draw_flat(runState, "morlet_f0_prior");
+
+      //Centroid time
+      params = *(gsl_matrix **)LALInferenceGetVariable(proposedParams, "morlet_t0");
+      gsl_matrix_set(params,ifo,nx,t);
+
+      //Frequency
+      params = *(gsl_matrix **)LALInferenceGetVariable(proposedParams, "morlet_f0");
+      gsl_matrix_set(params,ifo,nx,f);
+
+      //Quality
+      params = *(gsl_matrix **)LALInferenceGetVariable(proposedParams, "morlet_Q");
+      val    = draw_flat(runState, "morlet_Q_prior");
+      gsl_matrix_set(params,ifo,nx,val);
+
+      //Amplitude
+      params = *(gsl_matrix **)LALInferenceGetVariable(proposedParams, "morlet_Amp");
+      val    = draw_flat(runState, "morlet_Amp_prior");
+      gsl_matrix_set(params,ifo,nx,val);
+
+      //Centroid phase
+      params = *(gsl_matrix **)LALInferenceGetVariable(proposedParams, "morlet_phi");
+      val    = draw_flat(runState, "morlet_phi_prior");
+      gsl_matrix_set(params,ifo,nx,val);
+
+      //Maximize phase, time, and amplitude using cross-correlation of data & wavelet
+      if(adapting)MaximizeGlitchParameters(proposedParams, runState, ifo, nx);
+
+      //Add wavlet to linear combination
+      UpdateWaveletSum(runState, proposedParams, glitchFD, ifo, nx, 1);
+
+      //Compute probability of drawing parameters
+      qy = evaluate_morlet_proposal(runState,proposedParams,ifo,nx);// + log(gsl_matrix_get(power,ifo,k));
+
+      //Compute reverse probability of dismissing k
+      qxy = 0.0;//-log((double)runState->data->freqData->data->length);//-log( (REAL8)ny );
+
+      //if(adapting) qy += 5.0;//temperature;
+
+      break;
+
+    /* Death */
+    case -1:
+
+      //Choose wavelet to remove from glitch model
+      draw = gsl_rng_uniform(runState->GSLrandom);
+      n    = (UINT4)( floor( draw*(REAL8)nx ) );     //choose which hot pixel
+
+      // Remove wavlet from linear combination
+      UpdateWaveletSum(runState, proposedParams, glitchFD, ifo, n, -1);
+
+      //Get t and f of removed wavelet
+      params = *(gsl_matrix **)LALInferenceGetVariable(proposedParams, "morlet_f0");
+      f = gsl_matrix_get(params,ifo,n);
+      params = *(gsl_matrix **)LALInferenceGetVariable(proposedParams, "morlet_t0");
+      t = gsl_matrix_get(params,ifo,n);
+
+      //Shift morlet parameters to fill in array
+      for(i=n; i<ny; i++)
+      {
+        params = *(gsl_matrix **)LALInferenceGetVariable(proposedParams, "morlet_f0");
+        gsl_matrix_set(params,ifo,i,gsl_matrix_get(params,ifo,i+1) );
+        params = *(gsl_matrix **)LALInferenceGetVariable(proposedParams, "morlet_Q");
+        gsl_matrix_set(params,ifo,i,gsl_matrix_get(params,ifo,i+1) );
+        params = *(gsl_matrix **)LALInferenceGetVariable(proposedParams, "morlet_Amp");
+        gsl_matrix_set(params,ifo,i,gsl_matrix_get(params,ifo,i+1) );
+        params = *(gsl_matrix **)LALInferenceGetVariable(proposedParams, "morlet_t0");
+        gsl_matrix_set(params,ifo,i,gsl_matrix_get(params,ifo,i+1) );
+        params = *(gsl_matrix **)LALInferenceGetVariable(proposedParams, "morlet_phi");
+        gsl_matrix_set(params,ifo,i,gsl_matrix_get(params,ifo,i+1) );
+      }
+
+      //Compute reverse probability of drawing parameters
+      //find TF pixel
+//      j = floor( log(f*T)/log(2.) );
+//      i = floor( int_pow(2,j)*t/T );
+//      k = int_pow(2,j) + i;
+
+      qx = evaluate_morlet_proposal(runState,runState->currentParams,ifo,n);// + log(gsl_matrix_get(power,ifo,k));
+
+      //Compute forward probability of dismissing k
+      qyx = 0.0;//-log((double)runState->data->freqData->data->length);//0.0;//-log( (REAL8)nx );
+
+      //if(adapting) qx += 5.0;//temperature;
+
+      break;
+      
+    default:
+      break;
+  }
+
+  /* Update proposal structure for return to MCMC */
+
+  //Update model meta-date
+  gsize->data[ifo]=ny;
+
+  //Re-package prior and proposal ratios into runState
+  pForward = qxy + qx;
+  pReverse = qyx + qy;
+
+  /*
+   fprintf(stdout," Trying %i->%i\n",nx,ny);
+   fprintf(stdout,"  pForward = %g = %g + %g\n",pForward,qx,qxy);
+   fprintf(stdout,"  pReverse = %g = %g + %g\n",pReverse,qy,qyx);
+   fprintf(stdout,"  qxyRatio = %g\n",pForward-pReverse);
+  */
+  
+  LALInferenceSetLogProposalRatio(runState, pForward-pReverse);
 }
 
 void
@@ -2485,312 +3222,6 @@ void LALInferenceUpdateAdaptiveJumps(LALInferenceRunState *runState, INT4 accept
         }
         *adaptableStep = 0;
 }
-
-/*Some helper conversion functions*/
-static double m2eta(double m1, double m2)
-{
-    return(m1*m2/((m1+m2)*(m1+m2)));
-}
-
-static double m2mc(double m1, double m2)
-{
-    return(pow(m2eta(m1,m2),0.6)*(m1+m2));
-}
-
-static void q2masses(double mc, double q, double *m1, double *m2)
-{
-    *m1 = mc * pow(q, -3.0/5.0) * pow(q+1, 1.0/5.0);
-    *m2 = (*m1) * q;
-    return;
-}
-
-
-void drawFisherMatrix(LALInferenceRunState *runState)
-{
-    int i, j, nIFO;
-    LALInferenceIFOData *dataPtr;
-    dataPtr = runState->data;
-
-    /*set parameters*/
-    FIMParams *params;
-    params = (FIMParams *) XLALMalloc(sizeof(FIMParams));
-    memset(params, 0, sizeof(FIMParams));
-	parametersSetFIM(runState, params);
-
-    /*define step sizes for partial derivatives*/
-	/*this can be tuned on the fly for better numerical estimates*/
-    double h[9];
-    for(i = 0 ; i < 9 ; i++) h[i] = 6.e-6;
-
-    nIFO = 0;
-    while(dataPtr != NULL)
-    {
-        nIFO++;
-        dataPtr = dataPtr->next;
-    }
-
-
-	/*compute array of the partial derivatives*/
-    COMPLEX16FrequencySeries ***outputDerivs;
-	outputDerivs = (COMPLEX16FrequencySeries ***)malloc(nIFO*sizeof(COMPLEX16FrequencySeries **));
-		for(i = 0 ; i < nIFO ; i++) outputDerivs[i] = (COMPLEX16FrequencySeries **)
-		                                              malloc(9*sizeof(COMPLEX16FrequencySeries*));
-	waveformDerivative(params, runState, h, outputDerivs);
-
-    /*compute the Fisher Matrix from the partial derivatives*/
-    gsl_matrix *fisherMatrix;
-	fisherMatrix = gsl_matrix_alloc(9,9);
-    computeFisherMatrix(fisherMatrix, runState, outputDerivs);
-
-
-	/*add fisher matrix to runState*/
-	if(!LALInferenceCheckVariable(runState->proposalArgs,"fisherMatrix"))
-        LALInferenceAddVariable(runState->proposalArgs, "fisherMatrix", &fisherMatrix,
-		                        LALINFERENCE_gslMatrix_t, LALINFERENCE_PARAM_LINEAR);
-	else
-        LALInferenceSetVariable(runState->proposalArgs, "fisherMatrix", &fisherMatrix);
-
-
-    /*clean up all the crap we've generated*/
-	for(i = 0 ; i < nIFO ; i++)
-	{
-	    for(j = 0 ; j < 9 ; j++)
-	        XLALDestroyCOMPLEX16FrequencySeries(outputDerivs[i][j]);
-		free(outputDerivs[i]);
-    }
-	free(outputDerivs);
-	gsl_matrix_free(fisherMatrix);
-	XLALFree(params);
-
-  /*code to print out the FIM*/
-  /*drawFisherMatrix(runState);
-  gsl_matrix *FIM = *((gsl_matrix **)LALInferenceGetVariable(runState->proposalArgs, "fisherMatrix"));
-    for(i = 0 ; i < 9 ; i++)
-	{
-	    for(j = 0 ; j < 9 ; j++)
-		    fprintf(stdout, "%lg\t", gsl_matrix_get(FIM, i, j));
-        fprintf(stdout, "\n");
-    }*/
-}
-
-void waveformDerivative(FIMParams *params, /**< \f$\theta_0\f$ params where you compute the FIM */
-                        LALInferenceRunState *runState, /**< UNDOCUMENTED */
-                        double *h,       /**< derivative step sizes for finite difference */
-					    COMPLEX16FrequencySeries ***outputDerivs) /**< array of complex series, each element
-					                                                is a derivative at parameter i*/
-{
-    int i, det;
-	long length, j;
-	double m1,m2;
-	double mc,q;
-	COMPLEX16 hN, hNp1;
-	REAL8 Fp,Fc,FpN,FcN;
-    COMPLEX16FrequencySeries *hptilde=NULL, *hctilde=NULL;
-    COMPLEX16FrequencySeries *hptildeN=NULL, *hctildeN=NULL;
-
-    FIMParams *paramsNp1;
-    paramsNp1 = (FIMParams *) XLALMalloc(sizeof(FIMParams));
-
-	for(i = 0 ; i < 9 ; i++)
-	{
-		/*pick a single parameter and move it forward for the finite difference*/
-		*paramsNp1 = *params;
-		/*reset the waveform structures*/
-		hptilde  = NULL;
-		hctilde  = NULL;
-		hptildeN = NULL;
-		hctildeN = NULL;
-		switch(i)
-		{
-		    case LALINFERENCEFIM_MC:
-			    mc = m2mc(params->m1,params->m2)/LAL_MSUN_SI;
-				q = params->m2/params->m1;
-			    q2masses(mc + h[LALINFERENCEFIM_MC],q,&m1,&m2);
-			    paramsNp1->m1 = m1*LAL_MSUN_SI;
-			    paramsNp1->m2 = m2*LAL_MSUN_SI;
-				break;
-		    case LALINFERENCEFIM_Q:
-			    mc = m2mc(params->m1,params->m2);
-				q = params->m2/params->m1;
-			    q2masses(mc,q + h[LALINFERENCEFIM_Q],&m1,&m2);
-			    paramsNp1->m1 = m1;
-			    paramsNp1->m2 = m2;
-				break;
-		    case LALINFERENCEFIM_PHIREF:
-			    paramsNp1->phiRef = paramsNp1->phiRef + h[LALINFERENCEFIM_PHIREF];
-				break;
-		    case LALINFERENCEFIM_DIST:
-			    paramsNp1->distance = paramsNp1->distance + h[LALINFERENCEFIM_DIST]*1e6*LAL_PC_SI;
-				break;
-		    case LALINFERENCEFIM_INCL:
-			    paramsNp1->inclination = paramsNp1->inclination + h[LALINFERENCEFIM_INCL];
-				break;
-		    case LALINFERENCEFIM_RA:
-			    paramsNp1->ra = paramsNp1->ra + h[LALINFERENCEFIM_RA];
-				break;
-		    case LALINFERENCEFIM_DEC:
-			    paramsNp1->dec = paramsNp1->dec + h[LALINFERENCEFIM_DEC];
-				break;
-		    case LALINFERENCEFIM_PSI:
-			    paramsNp1->psi = paramsNp1->psi + h[LALINFERENCEFIM_PSI];
-				break;
-		    case LALINFERENCEFIM_TIME:
-			    paramsNp1->gmst = paramsNp1->gmst + h[LALINFERENCEFIM_TIME];
-				break;
-        }
-
-		/*Compute old and new waveforms*/
-        XLALSimInspiralChooseFDWaveform(&hptilde, &hctilde,
-                                    params->phiRef,params->deltaF,params->m1,params->m2,
-                                    params->s1x,params->s1y,params->s1z,params->s2x,
-                                    params->s2y,params->s2z,params->f_min,params->f_max,
-                                    params->distance,params->inclination,params->lambda1,
-									params->lambda2,params->waveFlags,params->nonGRparams,
-									params->ampPhase,params->phaseO,params->approximant);
-        XLALSimInspiralChooseFDWaveform(&hptildeN, &hctildeN,
-                                    paramsNp1->phiRef,paramsNp1->deltaF,paramsNp1->m1,paramsNp1->m2,
-                                    paramsNp1->s1x,paramsNp1->s1y,paramsNp1->s1z,paramsNp1->s2x,
-                                    paramsNp1->s2y,paramsNp1->s2z,paramsNp1->f_min,paramsNp1->f_max,
-                                    paramsNp1->distance,paramsNp1->inclination,paramsNp1->lambda1,
-									paramsNp1->lambda2,paramsNp1->waveFlags,paramsNp1->nonGRparams,
-									paramsNp1->ampPhase,paramsNp1->phaseO,paramsNp1->approximant);
-
-
-		/*If changing the masses, the termination point of the waveform can change
-		 * pick the smaller length waveform to avoid horrendous overlap in deriv*/
-		if(hptildeN->data->length < hptilde->data->length)
-		    length = hptildeN->data->length;
-		else
-		    length = hptilde->data->length;
-
-
-        LALInferenceIFOData *dataPtr;
-        dataPtr = runState->data;
-		det = 0;
-
-        while(dataPtr != NULL)
-		{
-			/*Compute old and new detector Response for each detector*/
-			XLALComputeDetAMResponse(&Fp, &Fc, (const REAL4(*)[3])dataPtr->detector->response,
-			                         params->ra, params->dec, params->psi, params->gmst);
-			XLALComputeDetAMResponse(&FpN, &FcN, (const REAL4(*)[3])dataPtr->detector->response,
-			                         paramsNp1->ra, paramsNp1->dec, paramsNp1->psi, paramsNp1->gmst);
-
-			/*allocate the length to that derivative*/
-			outputDerivs[det][i] = XLALCreateCOMPLEX16FrequencySeries("Deriv",
-										&(hptilde)->epoch, hptilde->f0, hptilde->deltaF,
-										&(hptilde)->sampleUnits, length);
-
-			/*compute forward Euler finite difference*/
-			for(j = 0 ; j < length ; j++)
-			{
-				hN   = Fp*(hptilde->data->data[j]) + Fc*(hctilde->data->data[j]);
-				hNp1 = FpN*(hptildeN->data->data[j]) + FcN*(hctildeN->data->data[j]);
-				outputDerivs[det][i]->data->data[j] = (hN - hNp1) / h[i];
-			}
-			det++;
-			dataPtr = dataPtr->next;
-		}
-    }
-    XLALDestroyCOMPLEX16FrequencySeries(hptilde);
-    XLALDestroyCOMPLEX16FrequencySeries(hctilde);
-    XLALDestroyCOMPLEX16FrequencySeries(hptildeN);
-    XLALDestroyCOMPLEX16FrequencySeries(hctildeN);
-	XLALFree(paramsNp1);
-}
-
-void computeFisherMatrix(void *fisherMatrix, /**< GSL Matrix to store FIM values*/
-						 LALInferenceRunState *runState, /**< UNDOCUMENTED */
-                         COMPLEX16FrequencySeries ***outputDerivs) /**< derivative table from waveformDerivative*/
-{
-	int i,j,det=0;
-	long k;
-	double length, integrand, elementFIM;
-    //(gsl_matrix *)fisherMatrix;
-    LALInferenceIFOData *dataPtr;
-	int iLow = (int) runState->data->fLow / runState->data->freqData->deltaF;
-
-    /*Compute each element of the FIM*/
-    for(i = 0 ; i < 9 ; i++)
-	{
-	elementFIM = 0;
-	    for(j = i ; j < 9 ; j++)
-		{
-			det = 0;
-		    if(outputDerivs[0][i]->data->length < outputDerivs[0][j]->data->length)
-		        length = outputDerivs[0][i]->data->length;
-		    else
-		        length = outputDerivs[0][j]->data->length;
-			/*Peform the appropriate inner product (4 Re \int h_i h_j* / sh)*/
-            dataPtr = runState->data;
-			while(dataPtr != NULL)
-			{
-		        for(k = iLow + 1 ; k < length ; k++)
-			    {
-		        	integrand = creal(outputDerivs[det][i]->data->data[k])*
-					            creal(outputDerivs[det][j]->data->data[k]) +
-		           	        	cimag(outputDerivs[det][i]->data->data[k])*
-								cimag(outputDerivs[det][j]->data->data[k]);
-		            integrand /= XLALSimNoisePSDaLIGOZeroDetHighPower(
-					                outputDerivs[det][i]->f0 + k*(outputDerivs[det][i]->deltaF));
-	//		    	integrand /= dataPtr->oneSidedNoisePowerSpectrum->data->data[k];
-					elementFIM += (double)integrand;
-				}
-				dataPtr = dataPtr->next;
-				det++;
-			}
-			elementFIM *= 4*(outputDerivs[0][i]->deltaF);
-			/*set FIM elements and symmetric elements*/
-			gsl_matrix_set(fisherMatrix, i, j, elementFIM);
-			if(i != j) gsl_matrix_set(fisherMatrix, j, i, elementFIM);
-        }
-	}
-}
-
-void parametersSetFIM(LALInferenceRunState *runState, FIMParams *params)
-{
-    REAL8 m1,m2,Mc,q;
-
-	/*convert to m1 and m2 for LALSimulation*/
-    Mc = *(REAL8 *)LALInferenceGetVariable(runState->currentParams, "chirpmass");
-    q = *(REAL8 *)LALInferenceGetVariable(runState->currentParams, "asym_massratio");
-    q2masses(Mc,q,&m1,&m2);
-
-	/*if making general, complete this*/
-	params->waveFlags = XLALSimInspiralCreateWaveformFlags();
-	params->nonGRparams = NULL;
-	params->approximant = TaylorF2;
-	params->domain = LAL_SIM_DOMAIN_FREQUENCY;
-	params->phaseO = 7;
-	params->ampO = 0;
-	params->phiRef = *(REAL8 *)LALInferenceGetVariable(runState->currentParams, "phase");
-	params->deltaT = 1./4096.;
-	params->deltaF = runState->data->freqData->deltaF;
-	params->m1 = m1*LAL_MSUN_SI;
-	params->m2 = m2*LAL_MSUN_SI;
-	params->f_min = runState->data->fLow;
-	params->fRef = 0.;
-	params->f_max = 0.; /* Generate as much as possible */
-	params->distance = (*(REAL8 *)LALInferenceGetVariable(runState->currentParams, "distance"))
-	                              *1.e6*LAL_PC_SI;
-	params->inclination = *(REAL8 *)LALInferenceGetVariable(runState->currentParams, "inclination");
-	params->s1x = 0.;
-	params->s1y = 0.;
-	params->s1z = 0.;
-	params->s2x = 0.;
-	params->s2y = 0.;
-	params->s2z = 0.;
-	params->lambda1 = 0.;
-	params->lambda2 = 0.;
-	params->ampPhase = 0; /* output h+ and hx */
-	params->verbose = 0; /* No verbosity */
-	params->ra = *(REAL8 *)LALInferenceGetVariable(runState->currentParams, "rightascension");       	 params->dec = *(REAL8 *)LALInferenceGetVariable(runState->currentParams, "declination");
-	params->psi = *(REAL8 *)LALInferenceGetVariable(runState->currentParams, "polarisation");
-	params->gmst = *(REAL8 *)LALInferenceGetVariable(runState->currentParams, "time");
-
-    return;
-}
-
 
 INT4 LALInferencePrintProposalTrackingHeader(FILE *fp,LALInferenceVariables *params) {
       fprintf(fp, "proposal\t");

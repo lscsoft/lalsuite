@@ -102,8 +102,6 @@ REAL8 LALInferenceInspiralPriorNormalised(LALInferenceRunState *runState, LALInf
  */
 UINT4 LALInferenceInspiralPriorNormalisedCubeToPrior(LALInferenceRunState *runState, LALInferenceVariables *params, double *Cube, void *context);
 
-REAL8 LALInferenceInspiralNoiseOnlyPrior(LALInferenceRunState *runState, LALInferenceVariables *params);
-
 /**
  * Function to add the minimum and maximum values for the uniform prior onto the \c priorArgs.
  */

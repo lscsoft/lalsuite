@@ -884,8 +884,8 @@ REAL8 LALInferenceInspiralSkyLocPrior(LALInferenceRunState *runState, LALInferen
     REAL8Vector *sigma = *((REAL8Vector **)LALInferenceGetVariable(priorParams, "psdsigma"));
     gsl_matrix *nparams = *((gsl_matrix **)LALInferenceGetVariable(params,"psdscale"));
 
-    min=0.1;//*(REAL8 *)LALInferenceGetVariable(priorParams,"psdscale_min");
-    max=10.0;//*(REAL8 *)LALInferenceGetVariable(priorParams,"psdscale_max");
+    min=*(REAL8 *)LALInferenceGetVariable(priorParams,"psdrange_min");
+    max=*(REAL8 *)LALInferenceGetVariable(priorParams,"psdrange_max");
 
     psdGaussianPrior = *(UINT4 *)LALInferenceGetVariable(priorParams,"psdGaussianPrior");
 
@@ -1379,54 +1379,6 @@ UINT4 LALInferenceInspiralSkyLocCubeToPrior(LALInferenceRunState *runState, LALI
     return 1;
 }
 
-REAL8 LALInferenceInspiralNoiseOnlyPrior(LALInferenceRunState *runState, LALInferenceVariables *params)
-{
-  REAL8 logPrior=0.0;
-
-  (void)runState;
-  LALInferenceVariableItem *item=params->head;
-    LALInferenceVariables *priorParams=runState->priorArgs;
-  REAL8 component_max, component_min;
-
-    /* Check boundaries */
-    for(;item;item=item->next)
-    {
-    if(!strcmp(item->name, "psdscale"))
-    {
-      UINT4 i;
-      UINT4 j;
-
-      REAL8 val;
-      REAL8 var;
-      REAL8 mean = 1.0;
-      REAL8 prior= 0.0;
-      UINT4 psdGaussianPrior;
-
-      REAL8Vector *sigma = *((REAL8Vector **)LALInferenceGetVariable(priorParams, "psdsigma"));
-      gsl_matrix *nparams = *((gsl_matrix **)item->value);
-
-      component_min=0.1;//*(REAL8 *)LALInferenceGetVariable(priorParams,"psdscale_min");
-      component_max=10.0;//*(REAL8 *)LALInferenceGetVariable(priorParams,"psdscale_max");
-
-      psdGaussianPrior = *(UINT4 *)LALInferenceGetVariable(priorParams,"psdGaussianPrior");
-
-      for(i=0; i<(UINT4)nparams->size1; i++)
-      {
-        for(j=0; j<(UINT4)nparams->size2; j++)
-        {
-          var = sigma->data[j]*sigma->data[j];
-          val = gsl_matrix_get(nparams,i,j);
-
-          //reject prior
-          if(val < component_min || val > component_max) return -DBL_MAX;
-          else if(psdGaussianPrior)prior += -0.5*( (mean-val)*(mean-val)/var + log(2.0*LAL_PI*var) );
-        }
-      }
-      logPrior+=prior;
-    }
-  }
-  return(logPrior);
-}
 
 /* Return the log Prior of the variables specified, for the non-spinning/spinning inspiral signal case */
 REAL8 LALInferenceInspiralPriorNormalised(LALInferenceRunState *runState, LALInferenceVariables *params)
@@ -1464,17 +1416,20 @@ LALInferenceVariableItem *item=params->head;
     for(;item;item=item->next)
     {
         if(item->vary==LALINFERENCE_PARAM_FIXED || item->vary==LALINFERENCE_PARAM_OUTPUT) continue;
-        if(item->type!=LALINFERENCE_REAL8_t) continue; /* Only works for REAL8 */
+        if(item->type!=LALINFERENCE_REAL8_t && item->type!=LALINFERENCE_gslMatrix_t && item->type!=LALINFERENCE_UINT4Vector_t) continue;
         else
         {
 
             val = 0;
             min =-DBL_MAX;
             max = DBL_MAX;
+            /* generic prior check won't work as-is for nonREAL8 noise parameters */
+            if(item->type==LALINFERENCE_REAL8_t){
             if(LALInferenceCheckMinMaxPrior(priorParams,item->name))
             {
                 LALInferenceGetMinMaxPrior(priorParams, item->name, &min, &max);
                 val = *(REAL8 *)item->value;
+            }
             }
             if(val<min || val>max) return -DBL_MAX;
             else
@@ -1741,8 +1696,8 @@ LALInferenceVariableItem *item=params->head;
           REAL8Vector *sigma = *((REAL8Vector **)LALInferenceGetVariable(priorParams, "psdsigma"));
           gsl_matrix *nparams = *((gsl_matrix **)(item->value));
 
-          component_min=0.1;//*(REAL8 *)LALInferenceGetVariable(priorParams,"psdscale_min");
-          component_max=10.0;//*(REAL8 *)LALInferenceGetVariable(priorParams,"psdscale_max");
+          component_min=*(REAL8 *)LALInferenceGetVariable(priorParams,"psdrange_min");
+          component_max=*(REAL8 *)LALInferenceGetVariable(priorParams,"psdrange_max");
 
           psdGaussianPrior = *(UINT4 *)LALInferenceGetVariable(priorParams,"psdGaussianPrior");
 
@@ -1760,7 +1715,33 @@ LALInferenceVariableItem *item=params->head;
           }
           logPrior+=prior;
         }
-                else{
+        else if(!strcmp(item->name,"morlet_Amp") || !strcmp(item->name,"morlet_f0" ) || !strcmp(item->name,"morlet_Q"  ) || !strcmp(item->name,"morlet_t0" ) || !strcmp(item->name,"morlet_phi") )
+        {
+          REAL8 prior = 0.0;
+          gsl_matrix *gparams = *((gsl_matrix **)(item->value));
+          UINT4Vector *gsize  = *((UINT4Vector **)LALInferenceGetVariable(params,"glitch_size"));
+
+          char priormin[100];
+          char priormax[100];
+          sprintf(priormin,"%s_prior_min",item->name);
+          sprintf(priormax,"%s_prior_max",item->name);
+          component_min=*(REAL8 *)LALInferenceGetVariable(priorParams,priormin);
+          component_max=*(REAL8 *)LALInferenceGetVariable(priorParams,priormax);
+
+          for(UINT4 i=0; i<gsize->length; i++)
+          {
+            for(UINT4 j=0; j<gsize->data[i]; j++)
+            {
+              val = gsl_matrix_get(gparams,i,j);
+
+              //rejection sample on prior
+              if(val<component_min || val>component_max) return -DBL_MAX;
+              else prior -= log(component_max-component_min);
+            }
+          }
+          logPrior += prior;//-log(prior);
+        }//end morlet parameters prior
+        else if(item->type==LALINFERENCE_REAL8_t){
                     sprintf(normName,"%s_norm",item->name);
                     if(LALInferenceCheckVariable(priorParams,normName)) {
                         norm = *(REAL8 *)LALInferenceGetVariable(priorParams,normName);
@@ -1772,12 +1753,12 @@ LALInferenceVariableItem *item=params->head;
                     }
                     logPrior += norm;
                     //printf("logPrior@%s=%f\n",item->name,logPrior);
-                }
+                }//end final else of prior
 
-            }
+            }//if(val<min || val>max) return -DBL_MAX;
 
-        }
-    }
+        }//if(item->type!=LALINFERENCE_REAL8_t....
+    }//for(;item;item=item->next)
 
     return(logPrior);
 }
