@@ -17,7 +17,7 @@
 *  MA  02111-1307  USA
 */
 
-/* Many of these functions are (with occasional modification) taken directly 
+/* Many of these functions are (with occasional modification) taken directly
  * from the TEMPO2 software package http://www.atnf.csiro.au/research/pulsar/tempo2/
  * written by George Hobbs and Russell Edwards */
 
@@ -34,7 +34,7 @@
 /* TEMPO style time delay file */
 #define TT2TDB_FILE "/ephemeris/TDB.1950.2050"
 /* TEMPO2 style time delay file */
-#define IFTEPH_FILE "/ephemeris/TIMEEPH_short.te405" 
+#define IFTEPH_FILE "/ephemeris/TIMEEPH_short.te405"
 
 #define MAXFNAME 512
 
@@ -78,7 +78,7 @@ typedef struct taginputParams_t{
   double startT;   /* a start GPS time */
   double endT;     /* an end GPS time */
   double interval; /* number of seconds between output entries */
-  
+
   etype et;
 } inputParams_t;
 

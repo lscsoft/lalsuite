@@ -33,6 +33,7 @@ AC_CONFIG_FILES([\
   src/pulsar/templateBanks/Makefile \
   src/pulsar/TimingTests/Makefile \
   src/pulsar/TDS_isolated/Makefile \
+  src/pulsar/CreateEphemeris/Makefile \
   src/inspiral/Makefile \
   src/inspiral/bayestar/Makefile \
   src/inspiral/posterior/Makefile \

@@ -14,8 +14,8 @@
 %%  GNU General Public License for more details.
 %%
 %%  You should have received a copy of the GNU General Public License
-%%  along with with program; see the file COPYING. If not, write to the 
-%%  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, 
+%%  along with with program; see the file COPYING. If not, write to the
+%%  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
 %%  MA  02111-1307  USA
 %%
 
@@ -26,12 +26,12 @@
 %% which simplifies the expression quite a bit...
 
 %% some useful constants
-YRSID_SI	= 31558149.8;		%% Sidereal year (1994), s 
-AU_SI		= 1.4959787066e11;	%% Astronomical unit, m 
-C_SI 		= 299792458; 					%% Speed of light in vacuo, m s^-1 
+YRSID_SI	= 31558149.8;		%% Sidereal year (1994), s
+AU_SI		= 1.4959787066e11;	%% Astronomical unit, m
+C_SI 		= 299792458; 					%% Speed of light in vacuo, m s^-1
 
 ## MLDC time-origin "t=0" (MUST be equal to setting in lal/packages/pulsar/include/LISAspecifics.h)
-LISA_TIME_ORIGIN = 700000000; 
+LISA_TIME_ORIGIN = 700000000;
 
 if ( nargin != 2 )
   error ("\nNeed exactly two input arguments: start-GPS and end-GPS!");
@@ -42,7 +42,7 @@ endGPS   = str2num ( argv{2} );
 
 duration = endGPS - startGPS;
 
-%% fields to write in the first line of ephem-file 
+%% fields to write in the first line of ephem-file
 gpsYr = ceil(startGPS); %% 'gpsYr' entry, not really used anywhere so we simply set it to start-time
 tStep = 14400;	%% hardcoded default for now
 nSteps = ceil( duration / tStep - 1e-6) + 1;
@@ -52,7 +52,7 @@ lastGPS = startGPS + (nSteps-1) * tStep;
 %% timesteps to compute LISA ephemeris for
 tiGPS = [startGPS:tStep:lastGPS]' ;
 
-%% ----- implement LISA orbit Eq.(2.1) ----- 
+%% ----- implement LISA orbit Eq.(2.1) -----
 %% default at 't=0'
 kappa = 0;
 
@@ -83,7 +83,7 @@ if ( fid == -1 )
   error("Failed to open ephemeris-file '%s'  for writing: error = %s", fname, msg );
 endif
 
-%% write header-line to file: 
+%% write header-line to file:
 fprintf (fid, "%d   %f   %d\n",  gpsYr, tStep, nSteps );
 
 %% write the time-series of [tGPS, pos, vel, acc ]:
@@ -92,6 +92,3 @@ ephem = [ tiGPS,  xG, yG, zG,  x1G, y1G, z1G,   x2G, y2G, z2G ];
 fprintf (fid, "%.16g    %.16g  %.16g  %.16g    %.16g  %.16g  %.16g    %.16g %.16g %.16g\n", ephem' );
 
 fclose ( fid );
-
-
- 

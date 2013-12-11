@@ -455,7 +455,7 @@ A[0], A[1], A[2]);
     gps = gps_2000 + (gps_JD[0] - jd_2000)*day + (INT4)(gps_JD[1]*day + 1.e-4);
 /* the int call and 1.d-4 are just to make sure gps is the ``right'' integer*/
     convert(gps_JD, time);
-    
+
     pleph(coeffArray, time, inputs.target, R, fp);
     Rnow[0] = R[0];
     Rnow[1] = R[1];
@@ -463,7 +463,7 @@ A[0], A[1], A[2]);
     Vnow[0] = R[3];
     Vnow[1] = R[4];
     Vnow[2] = R[5];
-    
+
     gps_JD[1] += halfinterval_jd;
     if(gps_JD[1] >= 1.){
       gps_JD[1] -= 1.;
@@ -576,7 +576,7 @@ INT4 fsizer(FILE *fp){
   /* flip bytes of ipt */
   endian_swap((CHAR*)&head1.data.ipt, sizeof(INT4), 36);
   endian_swap((CHAR*)&head1.data.libratPtr, sizeof(INT4), 3);
-  
+
   /*** Calculate array size in the ephemeris */
   for (i=0;i<12;i++){
     if(head1.data.ipt[i][0] > kmx){
@@ -616,7 +616,7 @@ INT4 fsizer(FILE *fp){
   /* Initialise to ephemeris to the point at which the coefficient values start
   */
   fseek(fp, 2*size*sizeof(REAL8), SEEK_SET);
-  
+
   /* flip bytes of values */
   endian_swap((CHAR*)&head1.data.au, sizeof(REAL8), 1);
   endian_swap((CHAR*)&head1.data.emrat, sizeof(REAL8), 1);

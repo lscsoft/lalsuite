@@ -18,7 +18,8 @@ SUBDIRS = \
 	fscan \
 	TwoSpect \
 	CombSearch \
-	SFTReferenceLibrary
+	SFTReferenceLibrary \
+	CreateEphemeris
 
 bin_PROGRAMS = \
 	lalapps_Calibrate60sSFTs \
@@ -28,10 +29,8 @@ bin_PROGRAMS = \
 	lalapps_ComputePSD \
 	lalapps_FreqAverager_v2 \
 	lalapps_GetSFTVelocities \
-	lalapps_create_solar_system_ephemeris \
 	lalapps_make_job_input_data \
 	lalapps_PrintDetectorState \
-	lalapps_create_time_correction_ephemeris \
 	lalapps_ComputeAntennaPattern
 
 if LALFRAME
@@ -47,11 +46,9 @@ lalapps_psd_SOURCES = psd.c psd.h
 lalapps_ComputePSD_SOURCES = ComputePSD.c
 lalapps_FreqAverager_v2_SOURCES =  FreqAverager_v2.c
 lalapps_GetSFTVelocities_SOURCES = GetSFTVelocities.c
-lalapps_create_solar_system_ephemeris_SOURCES = create_solar_system_ephemeris.c
 lalapps_make_job_input_data_SOURCES = make_job_input_data.c
 lalapps_PrintDetectorState_SOURCES = PrintDetectorState.c
 lalapps_ComputeAntennaPattern_SOURCES = ComputeAntennaPattern.c
-lalapps_create_time_correction_ephemeris_SOURCES = create_time_correction_ephemeris.c create_time_correction_ephemeris.h
 
 EXTRA_DIST = \
 	make_locked_data_list \
