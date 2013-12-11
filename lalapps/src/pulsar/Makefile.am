@@ -61,12 +61,6 @@ EXTRA_DIST = \
 	psd.c \
 	psd.h \
 	README \
-	S1-H1segments.txt \
-	S1-H2segments.txt \
-	S1-L1segments.txt \
-	S2-H1segments.txt \
-	S2-H2segments.txt \
-	S2-L1segments.txt \
 	testComputePSD.sh \
 	testComputeAntennaPattern.sh
 
