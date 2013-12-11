@@ -278,7 +278,7 @@ void LALInferenceUpdateAdaptiveJumps(LALInferenceRunState *runState, INT4 accept
 void LALInferenceSetupAdaptiveProposals(LALInferenceRunState *state);
 
 void LALInferenceSetupDefaultNSProposal(LALInferenceRunState *runState, LALInferenceVariables *proposedParams);
- 
+
 /** Output proposal tracking header to file *fp */
 int LALInferencePrintProposalTrackingHeader(FILE *fp,LALInferenceVariables *params);
 

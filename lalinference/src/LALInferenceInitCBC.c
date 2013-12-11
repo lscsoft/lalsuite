@@ -102,7 +102,6 @@ void LALInferenceInitGlitchVariables(LALInferenceRunState *runState)
 
   UINT4 i,nifo;
   UINT4 n = (UINT4)dataPtr->timeData->data->length;
-  
   UINT4 gflag  = 1;
   REAL8 gmin   = 0.0;
   REAL8 gmax   = 15.0;
@@ -139,7 +138,6 @@ void LALInferenceInitGlitchVariables(LALInferenceRunState *runState)
   double pmin,pmax;
 
   REAL8 TwoDeltaToverN = 2.0 * dataPtr->timeData->deltaT / ((double) dataPtr->timeData->data->length);
-  
   Amin = 1.0   / sqrt(TwoDeltaToverN);
   Amax = 100.0 / sqrt(TwoDeltaToverN);
 
@@ -151,7 +149,7 @@ void LALInferenceInitGlitchVariables(LALInferenceRunState *runState)
   f_max = dataPtr->fHigh;
   pmin = 0.0;
   pmax = LAL_TWOPI;
-  
+
   gsl_matrix  *gFD       = gsl_matrix_alloc(nifo,(int)n); //store the Fourier-domain glitch signal
   gsl_matrix  *gpower    = gsl_matrix_alloc(nifo,(int)n); //store the (normalized) wavelet power in each pixel
   REAL8Vector *maxpower  = XLALCreateREAL8Vector(nifo);   //store the maximum power in any pixel for each ifo (for rejection sampling proposed wavelets)
@@ -176,7 +174,7 @@ void LALInferenceInitGlitchVariables(LALInferenceRunState *runState)
   LALInferenceAddMinMaxPrior(priorArgs, "morlet_phi_prior", &pmin, &pmax, LALINFERENCE_REAL8_t);
 
   LALInferenceAddMinMaxPrior(priorArgs, "glitch_dim", &gmin, &gmax, LALINFERENCE_REAL8_t);
-  
+
   //Meyer-wavelet based proposal distribution
   LALInferenceAddVariable(proposalArgs, "glitch_max_power", &maxpower, LALINFERENCE_REAL8Vector_t, LALINFERENCE_PARAM_FIXED);
   LALInferenceAddVariable(proposalArgs, "glitch_power", &gpower, LALINFERENCE_gslMatrix_t, LALINFERENCE_PARAM_FIXED);
@@ -1256,21 +1254,14 @@ LALInferenceVariables *LALInferenceInitCBCVariables(LALInferenceRunState *state)
   }//End of line-removal initialization
    
   LALInferenceAddVariable(currentParams, "removeLinesFlag", &lines_flag, LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_FIXED);
-
-
-  /*********************  Adding glitch-fitting parameters  *********************/
   if(LALInferenceGetProcParamVal(commandLine, "--glitchFit")) LALInferenceInitGlitchVariables(state);
 
-  /*
-   What follows is the initialization of the signal-model 
-   parameters.  While not doing any harm, these are not 
-   necessary for --noiseonly runs.
-  */
   UINT4 signal_flag=1;
   ppt = LALInferenceGetProcParamVal(commandLine, "--noiseonly");
   if(ppt)signal_flag=0;
   LALInferenceAddVariable(currentParams, "signalModelFlag", &signal_flag,  LALINFERENCE_INT4_t,  LALINFERENCE_PARAM_FIXED);
 
+  //Only add waveform parameters to model if needed
   if(signal_flag)
   {
     ppt=LALInferenceGetProcParamVal(commandLine,"--fixMc");

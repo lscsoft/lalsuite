@@ -2109,7 +2109,7 @@ void LALInferenceGlitchMorletProposal(LALInferenceRunState *runState, LALInferen
   REAL8 qxy;
 
   /*
-   Vectors to store wavelet parameters.  
+   Vectors to store wavelet parameters.
    Order:
    [0] t0
    [1] f0
@@ -2189,7 +2189,7 @@ void LALInferenceGlitchMorletProposal(LALInferenceRunState *runState, LALInferen
   Q    = params_y->data[2];
   Amp  = params_y->data[3];
   phi0 = params_y->data[4];
-  
+
   gsl_matrix_set(glitch_t,ifo,n,t0);
   gsl_matrix_set(glitch_f,ifo,n,f0);
   gsl_matrix_set(glitch_Q,ifo,n,Q);
@@ -2202,7 +2202,7 @@ void LALInferenceGlitchMorletProposal(LALInferenceRunState *runState, LALInferen
   /* Now compute proposal ratio using Fisher at y */
   MorletDiagonalFisherMatrix(params_y, sigmas_y);
 
-  
+
   REAL8 sx  = 1.0; // sigma
   REAL8 sy  = 1.0;
   REAL8 dx  = 1.0; // (params_x - params_y)/sigma
@@ -2215,7 +2215,7 @@ void LALInferenceGlitchMorletProposal(LALInferenceRunState *runState, LALInferen
   {
     sx = scale*sigmas_x->data[i];
     sy = scale*sigmas_y->data[i];
-    
+
     dx = (params_x->data[i] - params_y->data[i])/sx;
     dy = (params_x->data[i] - params_y->data[i])/sy;
 
@@ -2225,7 +2225,7 @@ void LALInferenceGlitchMorletProposal(LALInferenceRunState *runState, LALInferen
     exy += -dy*dy/2.0;
     eyx += -dx*dx/2.0;
   }
-  
+
   qyx = eyx - log(nyx); //probabiltiy of proposing y given x
   qxy = exy - log(nxy); //probability of proposing x given y
 
@@ -2249,11 +2249,11 @@ void LALInferenceGlitchMorletReverseJump(LALInferenceRunState *runState, LALInfe
   UINT4 i,n;
   UINT4 ifo;
   UINT4 rj,nx,ny;
-  
+
   REAL8 draw;
   REAL8 val;
   REAL8 t,f;
-  
+
   REAL8 qx       = 0.0; //log amp proposals
   REAL8 qy       = 0.0;
   REAL8 qyx      = 0.0; //log pixel proposals
@@ -2271,7 +2271,7 @@ void LALInferenceGlitchMorletReverseJump(LALInferenceRunState *runState, LALInfe
 
   UINT4Vector *gsize = *(UINT4Vector **)LALInferenceGetVariable(proposedParams, "glitch_size");
   gsl_matrix *glitchFD = *(gsl_matrix **)LALInferenceGetVariable(proposedParams, "morlet_FD");
-  
+
   UINT4 nmin = (UINT4)(*(REAL8 *)LALInferenceGetVariable(runState->priorArgs,"glitch_dim_min"));
   UINT4 nmax = (UINT4)(*(REAL8 *)LALInferenceGetVariable(runState->priorArgs,"glitch_dim_max"));
 
@@ -2402,7 +2402,7 @@ void LALInferenceGlitchMorletReverseJump(LALInferenceRunState *runState, LALInfe
       //if(adapting) qx += 5.0;//temperature;
 
       break;
-      
+
     default:
       break;
   }
@@ -2422,7 +2422,7 @@ void LALInferenceGlitchMorletReverseJump(LALInferenceRunState *runState, LALInfe
    fprintf(stdout,"  pReverse = %g = %g + %g\n",pReverse,qy,qyx);
    fprintf(stdout,"  qxyRatio = %g\n",pForward-pReverse);
   */
-  
+
   LALInferenceSetLogProposalRatio(runState, pForward-pReverse);
 }
 
