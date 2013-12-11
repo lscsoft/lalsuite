@@ -3,11 +3,10 @@
 AM_CPPFLAGS = -I$(top_srcdir)/src -I$(top_srcdir)/src/lalapps -DPKG_DATA_DIR='"$(pkgdatadir)/"' @AM_CPPFLAGS@
 LDADD = $(top_builddir)/src/lalapps/liblalapps.la
 
-bin_PROGRAMS = lalapps_skynet lalapps_getMetric \
-	lalapps_getMesh lalapps_testLatticeCovering  \
-	lalapps_FstatMetric_v2
-
-lalapps_testLatticeCovering_SOURCES = testLatticeCovering.c
+bin_PROGRAMS =  lalapps_skynet \
+		lalapps_getMetric \
+		lalapps_getMesh \
+		lalapps_FstatMetric_v2
 
 lalapps_skynet_SOURCES = skynet.c
 
