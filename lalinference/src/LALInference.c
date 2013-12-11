@@ -42,6 +42,9 @@
 #define UNUSED
 #endif
 
+#define COL_MAX 128
+#define STR_MAX 2048
+
 size_t LALInferenceTypeSize[] = {sizeof(INT4),
                                    sizeof(INT8),
                                    sizeof(UINT4),
@@ -718,6 +721,248 @@ void LALInferenceReadSampleNonFixed(FILE *fp, LALInferenceVariables *p) {
 
     item = item->next;
   }
+}
+
+/**
+ * Utility for readling in delimited ASCII files.
+ *
+ * Reads in an ASCII (delimited) file, and returns the results in a REAL8 array.
+ * @param[in]  input       Input stream to be parsed.
+ * @param[in]  nCols       Number of total columns in the input stream.
+ * @param[in]  nWantedCols Number of columns to be saved.
+ * @param[in]  wantedCols  Array of 0/1 flags (should be \a nCols long), indicating desired columns.
+ * @param[out] nLines      Total number of lines read.
+ * @return A REAL8 array containing the parsed data.
+ */
+REAL8 *LALInferenceParseDelimitedAscii(FILE *input, UINT4 nCols, UINT4 nWantedCols, UINT4 *wantedCols, UINT4 *nLines) {
+    UINT4 nread;
+    UINT4 i=0, par=0, col=0;
+    REAL8 val=0;
+
+    // Determine number of samples to be read
+    unsigned long startPostBurnin = ftell(input);
+    UINT4 nSamples=0;
+
+    INT4 ch;
+    while ( (ch = getc(input)) != EOF) {
+        if (ch=='\n')
+            ++nSamples;
+    }
+    fseek(input,startPostBurnin,SEEK_SET);
+
+    // Read in samples
+    REAL8 *sampleArray;
+    sampleArray = (REAL8*) XLALMalloc(nSamples*nWantedCols*sizeof(REAL8));
+
+    for (i = 0; i < nSamples; i++) {
+        par=0;
+        for (col = 0; col < nCols; col++) {
+            nread = fscanf(input, "%lg", &val);
+            if (nread != 1) {
+                fprintf(stderr, "Cannot read sample from file (in %s, line %d)\n",
+                __FILE__, __LINE__);
+                exit(1);
+            }
+
+            if (wantedCols[col]) {
+                sampleArray[i*nWantedCols + par] = val;
+                par++;
+            }
+        }
+    }
+
+    *nLines = nSamples;
+    return sampleArray;
+}
+
+
+/**
+ * Parse a single line of delimited ASCII.
+ *
+ * Splits a line using \a delim into an array of strings.
+ * @param[in]  record Line to be parsed.
+ * @param[in]  delim  Delimiter to split on.
+ * @param[out] arr    Parsed string.
+ * @param[out] cnt    Total number of fields read.
+ */
+void parseLine(char *record, const char *delim, char arr[][VARNAME_MAX], UINT4 *cnt) {
+    // Discard newline character at end of line to avoid including it in a field
+    char *newline = strchr(record, '\n');
+    if (newline)
+        *newline=0;
+
+    INT4 i=0;
+    char *p = strtok(record, delim);
+    while (p) {
+        strcpy(arr[i], p);
+        i++;
+        p = strtok(NULL, delim);
+    }
+    *cnt = i;
+}
+
+
+/**
+ * Discard the standard header of a PTMCMC chain file.
+ *
+ * Reads a PTMCMC input stream, moving foward until it finds a line beginning
+ * with "cycle", which is typically the line containing the column names of a
+ * PTMCMC output file.  The final stream points to the line containing the
+ * column names.
+ * @param filestream The PTMCMC input stream to discard the header of.
+ */
+void LALInferenceDiscardPTMCMCHeader(FILE *filestream) {
+    char str[STR_MAX];
+    char row[COL_MAX][VARNAME_MAX];
+    const char *delimiters = " \t";
+    UINT4 nCols;
+    INT4 last_line;
+
+    fgets(str, sizeof(str), filestream);
+    parseLine(str, delimiters, row, &nCols);
+    while (strcmp(row[0], "cycle") && str != NULL) {
+        last_line = ftell(filestream);
+        fgets(str, sizeof(str), filestream);
+        parseLine(str, delimiters, row, &nCols);
+    }
+
+    if (str == NULL) {
+        fprintf(stderr, "Couldn't find column headers in PTMCMC file.\n");
+        exit(1);
+    }
+
+    fseek(filestream, last_line, SEEK_SET);
+    return;
+}
+
+
+/**
+ * Burn-in a PTMCMC output file.
+ *
+ * Read through a PTMCMC output file until the desired cycle is reached.
+ * @param     filestream  The PTMCMC input stream to be burned in.
+ * @param[in] burninCycle The cycle for \a filestream to point to.
+ */
+void LALInferenceBurninPTMCMC(FILE *filestream, UINT4 burninCycle) {
+    char str[STR_MAX];
+    char row[COL_MAX][VARNAME_MAX];
+    const char *delimiters = " \t";
+    UINT4 nCols;
+
+    fgets(str, sizeof(str), filestream);
+    parseLine(str, delimiters, row, &nCols);
+    while ((UINT4)atoi(row[0]) <= burninCycle && str != NULL) {
+        fgets(str, sizeof(str), filestream);
+        parseLine(str, delimiters, row, &nCols);
+    }
+
+    if (str == NULL) {
+        fprintf(stderr, "Error burning in PTMCMC file.\n");
+        exit(1);
+    }
+}
+
+
+/**
+ * Burn-in a generic ASCII stream.
+ *
+ * Reads past the desired number of lines of a filestream.
+ * @param     filestream The filestream to be burned in.
+ * @param[in] burnin     Number of lines to read past in \a filestream.
+ */
+void LALInferenceBurninStream(FILE *filestream, UINT4 burnin) {
+    char str[STR_MAX];
+    UINT4 i=0;
+
+    printf("Burnin: %i.\n", burnin);
+    for (i=0; i<burnin; i++)
+        fgets(str, sizeof(str), filestream);
+
+    if (str == NULL && burnin > 0) {
+        fprintf(stderr, "Error burning in file.\n");
+        exit(1);
+    }
+}
+
+/**
+ * Read desired column names from an ASCII file.
+ *
+ * Reads the column names for an output file, and determines which columns are
+ * parameter names by looking for standard column outputs that aren't parameter
+ * names (e.g. cycle, logpost).  The internal list should be updated if other
+ * non-parameter columns are added in the future.
+ * @param[in]  input      The input files stream to parse.
+ * @param[out] params     The column names of found to be valid parameters.
+ * @param[out] nTotalCols Total number of columns in \a input.
+ * @param[out] nValidCols Number of columns that are parameters.
+ * @param[out] validCols  Array of 0/1 flags indicating which columns are parameters.
+ */
+void LALInferenceReadAsciiHeader(FILE *input, char params[][VARNAME_MAX], UINT4 *nTotalCols, UINT4 *nValidCols, UINT4 **validCols) {
+    char str[STR_MAX];
+    char row[COL_MAX][VARNAME_MAX];
+    const char *delimiters = " \n\t";
+    UINT4 nCols=0, nPar=0, par=0;
+    UINT4 i, j;
+
+    const char *non_params[] = {"cycle","timestamp","logpost","logprior","logl","loglH1","loglL1","loglV1","",NULL};
+
+    fgets(str, sizeof(str), input);
+    parseLine(str, delimiters, row, &nCols);
+
+    UINT4 is_param[COL_MAX];
+    for (i=0; i<nCols; i++) {
+        nPar++;
+        is_param[i] = 1;
+        j=0;
+        while (non_params[j] != NULL) {
+            if (!strcmp(non_params[j], row[i])) {
+                is_param[i] = 0;
+                nPar--;
+                break;
+            }
+            j++;
+        }
+    }
+
+    for (i=0; i<nCols; i++) {
+        if (is_param[i]) {
+            strcpy(params[par], row[i]);
+            par++;
+        }
+    }
+
+    *nTotalCols = nCols;
+    *validCols = is_param;
+    *nValidCols = nPar;
+}
+
+
+/**
+ * Utility for selecting columns from an array, in the specified order.
+ *
+ * Selects a subset of columns from an existing array and create a new array with them.
+ * @param[in]  inarray  The array to select columns from.
+ * @param[in]  nRows    Number of rows in \a inarray.
+ * @param[in]  nCols    Number of columns in \a inarray.
+ * @param[in]  nSelCols Number of columns being extracted.
+ * @param[in]  selCols  Array of column numbers to be extracted from \a inarray.
+ * @returns An array containing the requested columns in the order specified in \a selCols.
+ */
+REAL8 **LALInferenceSelectColsFromArray(REAL8 **inarray, UINT4 nRows, UINT4 nCols, UINT4 nSelCols, UINT4 *selCols) {
+    UINT4 i,j;
+
+    REAL8 **array = (REAL8**) XLALMalloc(nRows * sizeof(REAL8*));
+    for (i = 0; i < nRows; i++) {
+        array[i] = XLALMalloc(nSelCols * sizeof(REAL8));
+
+        for (j = 0; j < nSelCols; j++) {
+            if (selCols[j] > nCols) {
+                XLAL_ERROR_NULL(XLAL_FAILURE, "Requesting a column number that is out of bounds.");
+            }
+            array[i][j] = inarray[i][selCols[j]];
+        }
+    }
+    return array;
 }
 
 int LALInferencePrintProposalStatsHeader(FILE *fp,LALInferenceVariables *propStats) {
