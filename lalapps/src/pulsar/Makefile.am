@@ -29,15 +29,8 @@ bin_PROGRAMS = \
 	lalapps_ComputePSD \
 	lalapps_FreqAverager_v2 \
 	lalapps_GetSFTVelocities \
-	lalapps_make_job_input_data \
 	lalapps_PrintDetectorState \
 	lalapps_ComputeAntennaPattern
-
-if LALFRAME
-# this only requires LALFrame because of usage of LALFrameL.h
-bin_PROGRAMS += lalapps_make_sfts
-lalapps_make_sfts_SOURCES = make_sfts.c
-endif
 
 lalapps_Calibrate60sSFTs_SOURCES = Calibrate60sSFTs.c
 lalapps_Calibrate1800SFTs_SOURCES = Calibrate1800SFTs.c
@@ -46,21 +39,15 @@ lalapps_psd_SOURCES = psd.c psd.h
 lalapps_ComputePSD_SOURCES = ComputePSD.c
 lalapps_FreqAverager_v2_SOURCES =  FreqAverager_v2.c
 lalapps_GetSFTVelocities_SOURCES = GetSFTVelocities.c
-lalapps_make_job_input_data_SOURCES = make_job_input_data.c
 lalapps_PrintDetectorState_SOURCES = PrintDetectorState.c
 lalapps_ComputeAntennaPattern_SOURCES = ComputeAntennaPattern.c
 
 EXTRA_DIST = \
-	make_locked_data_list \
-	make_cluster_data_list \
-	make_job_input_data.c \
-	make_sfts.c \
 	Calibrate60sSFTs.c \
 	Calibrate1800SFTs.c \
 	FreqAverager.c \
 	psd.c \
 	psd.h \
-	README \
 	testComputePSD.sh \
 	testComputeAntennaPattern.sh
 
