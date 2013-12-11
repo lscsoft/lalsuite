@@ -1612,8 +1612,6 @@ void LALInferenceSkyRingProposal(LALInferenceRunState *runState, LALInferenceVar
   pReverse = cos(dec);
   gsl_matrix_free(IFO);
   LALInferenceSetLogProposalRatio(runState, log(pReverse/pForward));
-
-  gsl_matrix_free(IFO);
 }
 
 void LALInferenceSkyReflectDetPlane(LALInferenceRunState *runState, LALInferenceVariables *proposedParams) {
