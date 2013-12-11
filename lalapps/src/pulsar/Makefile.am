@@ -32,7 +32,6 @@ bin_PROGRAMS = \
 	lalapps_make_job_input_data \
 	lalapps_PrintDetectorState \
 	lalapps_create_time_correction_ephemeris \
-	lalapps_ssbtodetector \
 	lalapps_ComputeAntennaPattern
 
 if LALFRAME
@@ -53,7 +52,6 @@ lalapps_make_job_input_data_SOURCES = make_job_input_data.c
 lalapps_PrintDetectorState_SOURCES = PrintDetectorState.c
 lalapps_ComputeAntennaPattern_SOURCES = ComputeAntennaPattern.c
 lalapps_create_time_correction_ephemeris_SOURCES = create_time_correction_ephemeris.c create_time_correction_ephemeris.h
-lalapps_ssbtodetector_SOURCES = ssbtodetector.c
 
 EXTRA_DIST = \
 	make_locked_data_list \

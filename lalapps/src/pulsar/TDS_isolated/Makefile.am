@@ -19,7 +19,9 @@ inference_progs = \
 endif
 endif
 endif
-bin_PROGRAMS = $(frame_progs) $(inference_progs) lalapps_CrabTNHeterodyne
+bin_PROGRAMS = $(frame_progs) $(inference_progs) lalapps_CrabTNHeterodyne lalapps_ssbtodetector
+
+lalapps_ssbtodetector_SOURCES = ssbtodetector.c
 
 lalapps_heterodyne_pulsar_SOURCES = \
 	heterodyne_pulsar.c \
