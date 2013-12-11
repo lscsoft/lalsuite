@@ -61,16 +61,6 @@ EXTRA_DIST = \
 	psd.c \
 	psd.h \
 	README \
-	SFT.00000 \
-	SFT.00001 \
-	SFT.00002 \
-	SFT.00003 \
-	SFT.00004 \
-	SFT.00005 \
-	SFT.00006 \
-	SFT.00007 \
-	SFT.00008 \
-	SFT.00009 \
 	S1-H1segments.txt \
 	S1-H2segments.txt \
 	S1-L1segments.txt \
