@@ -88,10 +88,10 @@ lalapps_CFSv3_SOURCES = CFSv3.c Fstat_v3.c Fstat_v3.h
 testFstat_v3_SOURCES = testFstat_v3.c Fstat_v3.c Fstat_v3.h
 
 
-EXTRA_DIST = testFStat.sh testCFSv2.sh testGridv2.sh Fstats.ref1 Fstats.ref2 testPredictFStat.sh testCFSv2_resamp.sh
+EXTRA_DIST = testCFSv2.sh testGridv2.sh Fstats.ref1 Fstats.ref2 testPredictFStat.sh testCFSv2_resamp.sh
 
 
-TESTS = testFStat.sh testPredictFStat.sh testFstat_v3
+TESTS = testPredictFStat.sh testFstat_v3
 
 if !CONDOR_ENABLED
 TESTS += testCFSv2.sh testCFSv2_resamp.sh testGridv2.sh
