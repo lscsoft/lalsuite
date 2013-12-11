@@ -78,8 +78,7 @@ EXTRA_DIST = \
 	S2-H2segments.txt \
 	S2-L1segments.txt \
 	testComputePSD.sh \
-	testComputeAntennaPattern.sh \
-	psd_ref.dat
+	testComputeAntennaPattern.sh
 
 TESTS = \
 	testComputePSD.sh

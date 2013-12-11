@@ -24,69 +24,16 @@ mfd_code="${injectdir}lalapps_Makefakedata_v4"
 if [ -n "${LALPULSAR_DATADIR}" ]; then
     mfd_code="${mfd_code} -E ${LALPULSAR_DATADIR}"
 fi
-SFTdir="$srcdir"
 
 tolerance=1e-5
-
-# ---------- fixed parameter of our test-signal
+# ---------- fixed parameter of our test SFTs
 IFO=H1
-
-## we specify the frequency range as an "open" interval (300, 300.1) to avoid
-## roundoff ambiguities to discrete bins on different platforms, using eps=1e-6
-fStart=300.000001 ## 300 + eps
-fBand=0.099997	  ## 0.1 - 3eps
-
-
 blocksRngMed=101
 outPSD=psd1.dat
-outPSDstripped=psd1-stripped.dat
-refPSD=${srcdir}/psd_ref.dat
 
-inputData="${SFTdir}/SFT.0*"
+## ----- Correct cropping of normalized SFT
 
-echo "ComputePSD Test1: PSD comparison to reference result..."
-
-## ----- run computePSD
-cmdline="${psd_code} --IFO=$IFO --inputData='$inputData' --outputPSD=$outPSD --blocksRngMed=$blocksRngMed --fStart=$fStart --fBand=$fBand"
-
-echo $cmdline;
-if ! eval $cmdline; then
-    echo "Error.. something failed when running '$psd_code' ..."
-    exit 1
-fi
-
-## ----- compare result PSD to reference result in source-directory
-if [ ! -r "$outPSD" -o ! -r "$refPSD" ]; then
-    echo "ERROR: missing psd output file '$outPSD' or '$refPSD'"
-    exit 1
-fi
-cat ${outPSD} | sed -e"/^%%.*/d" > ${outPSDstripped}
-
-cmp=`paste ${outPSDstripped} $refPSD | awk 'BEGIN {n=0; maxErr = 0; avgErr = 0; binsOff = 0} {n+=1; dFreq = $3 - $1; if ( dFreq != 0 ) binsOff ++; relErr = 2*($4 - $2)/($4 + $2); if (relErr > maxErr) maxErr = relErr; avgErr += relErr } END { avgErr /= n; printf "binsOff=%d; avgErr=%g; maxErr=%g", binsOff, avgErr, maxErr}'`
-
-eval $cmp
-
-failed=`echo $maxErr $tolerance | awk '{failed = $1 > $2; print failed}'`
-
-if [ "$binsOff" != "0" -o "$failed" != "0" ]; then
-    echo
-    echo "*****   ComputePSD Test FAILED *****"
-    echo "binsOff = $binsOff (tolerance = 0)"
-    echo "avgErr = $avgErr"
-    echo "maxErr = $maxErr  (tolerance = $tolerance)"
-    echo "(maxErr > tolerance) = $failed"
-    echo "************************************"
-    echo
-    exit 1
-else
-    echo
-    echo "***** ComputePSD Test1 passed *****"
-    echo
-fi
-
-## ----- Test 2 - correct cropping of normalized SFT
-
-echo "ComputePSD Test2: --outputNormSFT frequency range..."
+echo "ComputePSD: --outputNormSFT frequency range..."
 
 outSFT="./testpsd_sft_H1"
 linefreq="50.05"
@@ -172,7 +119,7 @@ fi
 
 ## clean up files
 if [ -z "$NOCLEANUP" ]; then
-    rm $outPSD $outPSDstripped
+    rm $outPSD
     rm $outSFT
     rm $outPSD_band
     rm $outPSD_full
