@@ -249,7 +249,8 @@ struct gengetopt_args_info
   int printUninitialized_arg;	/**< @brief Print uninitialized values in TFdata_weighted and TSofPowers vectors at n-th sky location specified by option (if not enough sky locations exist, then these vectors don't get printed!).  */
   char * printUninitialized_orig;	/**< @brief Print uninitialized values in TFdata_weighted and TSofPowers vectors at n-th sky location specified by option (if not enough sky locations exist, then these vectors don't get printed!) original value given at command line.  */
   const char *printUninitialized_help; /**< @brief Print uninitialized values in TFdata_weighted and TSofPowers vectors at n-th sky location specified by option (if not enough sky locations exist, then these vectors don't get printed!) help description.  */
-  int printSignalData_flag;	/**< @brief Print f0 and h0 per SFT of the signal, used only with --injectionSources option (default=off).  */
+  char * printSignalData_arg;	/**< @brief Print f0 and h0 per SFT of the signal, used only with --injectionSources option (default='./signal.dat').  */
+  char * printSignalData_orig;	/**< @brief Print f0 and h0 per SFT of the signal, used only with --injectionSources option original value given at command line.  */
   const char *printSignalData_help; /**< @brief Print f0 and h0 per SFT of the signal, used only with --injectionSources option help description.  */
   int randSeed_arg;	/**< @brief Random seed value.  */
   char * randSeed_orig;	/**< @brief Random seed value original value given at command line.  */
