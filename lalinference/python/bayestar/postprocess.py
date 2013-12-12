@@ -26,7 +26,6 @@ import numpy as np
 import healpy as hp
 import collections
 import itertools
-import random
 
 
 _max_order = 30
@@ -69,20 +68,6 @@ class _HEALPixNode(object):
         else:
             return 1 + max(child.order for child in self.children)
 
-    def _repopulate(self, order, samples):
-        if self.children is None:
-            self.samples = samples
-        else:
-            for ipix, samples in itertools.groupby(samples,
-                    self.key_for_order(order)):
-                child = self.children[np.uint64(ipix % len(self.children))]
-                child._repopulate(order + 1, list(samples))
-
-    def repopulate(self, samples):
-        """Repopulate the tree with a new set of samples, keeping its node
-        structure unchanged."""
-        self._repopulate(0, np.sort(samples))
-
     def _flat_bitmap(self, order, full_order, ipix, m):
         if self.children is None:
             nside = 1 << order
@@ -122,16 +107,8 @@ def adaptive_healpix_histogram(theta, phi, max_samples_per_pixel, nside=-1):
     # FIXME: Cast to uint64 needed because Healpy returns signed indices.
     ipix = hp.ang2pix(1 << _max_order, theta, phi, nest=True).astype(np.uint64)
 
-    # Divide the posterior samples into two random subsets.
-    np.random.shuffle(ipix)
-    nsamples = len(ipix) // 2
-    ipix1, ipix2 = ipix[:nsamples], ipix[nsamples:]
-
-    # Build tree structure using first subset.
-    tree = _HEALPixNode(ipix1, max_samples_per_pixel)
-
-    # Count the number of samples in each leaf using the second subset.
-    tree.repopulate(ipix2)
+    # Build tree structure.
+    tree = _HEALPixNode(ipix, max_samples_per_pixel)
 
     # Compute a flattened bitmap representation of the tree.
     p = tree.flat_bitmap

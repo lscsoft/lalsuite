@@ -21,11 +21,6 @@ refined HEALPix tree, subdividing each node if it contains more than
 --samples-per-bin posterior samples. By default, the resolution is set to the
 deepest resolution of the tree.
 
-This employs a two-step procedure whereby the samples are randomly partitioned
-into to two subsets, the first of which is used to lay out the node structure
-of the tree, and the second of which is used to compute the probability weight
-of each node.
-
 If an input filename is specified, then the posterior samples are read from it.
 If no input filename is provided, then input is read from stdin.
 """
