@@ -140,16 +140,6 @@ for i; do
 	--cuda)
 	    cuda=true
 	    acc="_cuda" ;;
-	--panther)
-	    export MACOSX_DEPLOYMENT_TARGET=10.3
-	    export SDKROOT="/Developer/SDKs/MacOSX10.3.9.sdk"
-	    pflags="-arch ppc -D_NONSTD_SOURCE -isystem $SDKROOT"
-	    CPPFLAGS="$pflags $CPPFLAGS -DMAC_OS_X_VERSION_MAX_ALLOWED=1030 -DMAC_OS_X_VERSION_MIN_REQUIRED=1030"
-	    CFLAGS="$pflags -Wno-long-double $CFLAGS"
-	    CXXFLAGS="$pflags -Wno-long-double $CXXFLAGS"
-	    LDFLAGS="$pflags -Wl,-syslibroot,$SDKROOT $LDFLAGS"
-	    export RELEASE_LDADD="./libstdc++.a"
-	    export CC=gcc-3.3 CXX=g++-3.3 ;;
 	--tiger)
 	    export MACOSX_DEPLOYMENT_TARGET=10.4
 	    export SDKROOT="/Developer/SDKs/MacOSX10.4u.sdk"
@@ -189,7 +179,6 @@ for i; do
 	    echo "  --win32           cros-compile a Win32 App (requires MinGW, target i586-mingw32msvc-gcc)"
 	    echo "  --32              build 32Bit (add -m32 to  CPPFLAGS, CXXFLAGS, CFLAGS and LDFLAGS)"
 	    echo "  --64              build 64Bit (add -m64 to  CPPFLAGS, CXXFLAGS, CFLAGS and LDFLAGS)"
-	    echo "  --panther         build to run on Mac OS 10.3.9"
 	    echo "  --tiger           build to run on Mac OS 10.4"
 	    echo "  --cuda            build an App that uses CUDA"
 	    echo "  --sse             build an App that uses SSE"
@@ -266,9 +255,7 @@ if [ ."$build_win32" = ."true" ] ; then
 else
     case `uname -s` in
 	Darwin)
-            if [ ".$MACOSX_DEPLOYMENT_TARGET" = ".10.3" -o ".$acc" = "._altivec" ] ; then
-                platform=powerpc-apple-darwin
-	    elif echo "$LDFLAGS" | grep -w -e -m64 >/dev/null; then
+            if echo "$LDFLAGS" | grep -w -e -m64 >/dev/null; then
 		platform=x86_64-apple-darwin
 	    else
 		platform=i686-apple-darwin
@@ -297,11 +284,6 @@ else
 	    fi ;;
     esac
 fi
-
-# if --pather and not --altivec, make sure the binary runs on G3
-test ."$MACOSX_DEPLOYMENT_TARGET" = ."10.3" -a ."$acc" = ."" &&
-    CFLAGS="-mcpu=G3 $CFLAGS" &&
-    CXXFLAGS="-mcpu=G3 $CXXFLAGS"
 
 if [ ".$cuda" = ".true" -a ."$build_win32" = ."true" ]; then
     export CFLAGS="-g0 $CFLAGS"
@@ -588,10 +570,6 @@ else
 	log_and_do ./_autosetup
 	log_and_do cd "$BUILD/boinc"
 	log_and_do "$SOURCE/boinc/configure" --disable-server --disable-manager --disable-client "$WITH_SSL" "$shared_copt" "$cross_copt" --prefix="$INSTALL" # --target=powerpc-apple-darwin7.9.0
-	if [ .$MACOSX_DEPLOYMENT_TARGET = .10.3 -a -r "$SDKROOT/usr/lib/gcc/darwin/3.3/libstdc++.a" ]; then
-	    log_and_do sed -i~ "s%-lstdc++%$SDKROOT/usr/lib/gcc/darwin/3.3/libstdc++.a%g" `find . -name Makefile`
-	    log_and_do sed -i~ 's/#define HAVE_SYS_STATVFS_H 1/#undef HAVE_SYS_STATVFS_H/' config.h
-	fi
 	log_and_dont_fail make uninstall
 	log_and_do make
 	log_and_do make install
@@ -599,8 +577,6 @@ else
 fi
 
 lalsuite_copts="--disable-gcc-flags --disable-debug --disable-frame --disable-metaio --disable-lalsimulation --enable-boinc --disable-silent-rules --without-simd $shared_copt $cross_copt --prefix=$INSTALL"
-test ".$MACOSX_DEPLOYMENT_TARGET" = ".10.3" &&
-    lalsuite_copts="--disable-osx-version-check $lalsuite_copts"
 if test -z "$rebuild_lal" && pkg-config --exists lal; then
     log_and_show "using existing lal"
 else
@@ -642,35 +618,21 @@ log_and_do "$SOURCE/lalsuite/lalapps/configure" $lalsuite_copts
 log_and_show "building Apps"
 
 log_and_do cd "$BUILD/lalapps/src/lalapps"
-if [ ".$MACOSX_DEPLOYMENT_TARGET" = ".10.3" ] ; then
-    log_and_do make LALAppsVCSInfo.h LALAppsVCSInfo.o lalapps.o
-    log_and_do ar cru liblalapps.la lalapps.o LALAppsVCSInfo.o
-else
-    log_and_do make LALAppsVCSInfo.h liblalapps.la
-fi
+log_and_do make LALAppsVCSInfo.h liblalapps.la
 
 log_and_do cd "$BUILD/lalapps/src/pulsar/GCT"
 log_and_dont_fail make gitID
-if [  .$MACOSX_DEPLOYMENT_TARGET = .10.3 -a -r "$SDKROOT/usr/lib/gcc/darwin/3.3/libstdc++.a" ] ; then
-    log_and_do rm -f libstdc++.a
-    log_and_do ln -s "$SDKROOT/usr/lib/gcc/darwin/3.3/libstdc++.a"
-    log_and_do make "eah_HierarchSearchGCT_manual"
-    log_and_do cp "eah_HierarchSearchGCT_manual" "$EAH/eah_HierarchSearchGCT$acc"
-else
-    log_and_do make "eah_HierarchSearchGCT$ext"
-    log_and_do cp "eah_HierarchSearchGCT$ext" "$EAH/eah_HierarchSearchGCT$acc$ext"
-fi
+log_and_do make "eah_HierarchSearchGCT$ext"
+log_and_do cp "eah_HierarchSearchGCT$ext" "$EAH/eah_HierarchSearchGCT$acc$ext"
 test ".$release" = ".true" &&
     log_and_do cp "$EAH/eah_HierarchSearchGCT$acc$ext" "$EAH/${appname}_${appversion}_$platform$planclass$ext"
 
-if [ ! .$MACOSX_DEPLOYMENT_TARGET = .10.3 ] ; then
-    log_and_do cd "$BUILD/lalapps/src/pulsar/Injections"
-    log_and_do make eah_Makefakedata_v4$ext
-    log_and_do cp eah_Makefakedata_v4$ext "$EAH"
-    log_and_do cd "$BUILD/lalapps/src/pulsar/FDS_isolated"
-    log_and_do make eah_PredictFStat$ext eah_ComputeFStatistic_v2$ext
-    log_and_do cp eah_PredictFStat$ext eah_ComputeFStatistic_v2$ext "$EAH"
-fi
+log_and_do cd "$BUILD/lalapps/src/pulsar/Injections"
+log_and_do make eah_Makefakedata_v4$ext
+log_and_do cp eah_Makefakedata_v4$ext "$EAH"
+log_and_do cd "$BUILD/lalapps/src/pulsar/FDS_isolated"
+log_and_do make eah_PredictFStat$ext eah_ComputeFStatistic_v2$ext
+log_and_do cp eah_PredictFStat$ext eah_ComputeFStatistic_v2$ext "$EAH"
 
 log_and_show "==========================================="
 log_and_show "Einstein@home Apps were built, should be in"
