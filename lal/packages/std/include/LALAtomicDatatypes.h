@@ -103,9 +103,11 @@ typedef double REAL8;   /**< Double precision real floating-point number (8 byte
 /* Complex types */
 #ifndef SWIG /* exclude from SWIG interface */
 
-/* Use C99 complex numbers where available */
-#if __STDC_VERSION__ >= 199901L || (defined(__GNUC__) && !defined(__STRICT_ANSI__))
-# define _LAL_C99_COMPLEX_NUMBERS_
+/* Use C99 complex numbers where available: C99, gcc with non-ANSI extensions */
+#if !defined(__cplusplus)
+# if __STDC_VERSION__ >= 199901L || (defined(__GNUC__) && !defined(__STRICT_ANSI__))
+#  define _LAL_C99_COMPLEX_NUMBERS_
+# endif
 #endif
 
 #ifdef _LAL_C99_COMPLEX_NUMBERS_
