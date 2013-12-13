@@ -27,7 +27,6 @@ AC_CONFIG_FILES([\
   src/pulsar/Injections/Makefile \
   src/pulsar/hough/Makefile \
   src/pulsar/hough/src/Makefile \
-  src/pulsar/FDS_binary/Makefile \
   src/pulsar/SideBand/Makefile \
   src/pulsar/CombSearch/Makefile \
   src/pulsar/templateBanks/Makefile \

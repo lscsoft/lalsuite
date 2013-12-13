@@ -9,7 +9,6 @@ SUBDIRS = \
 	FDS_isolated \
 	hough \
 	GCT \
-	FDS_binary \
 	SideBand \
 	templateBanks \
 	crosscorr \
