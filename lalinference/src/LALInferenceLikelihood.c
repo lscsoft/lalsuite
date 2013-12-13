@@ -377,16 +377,16 @@ REAL8 LALInferenceROQLogLikelihood(LALInferenceVariables *currentParams, LALInfe
 {
   double Fplus, Fcross;
   double FplusScaled, FcrossScaled;
-  REAL8 loglikeli;
-  unsigned int time_step, weight_index;
+  REAL8 loglikeli=0;
+  unsigned int weight_index;
   LALInferenceIFOData *dataPtr;
   double ra, dec, psi, distMpc, gmst;
   double GPSdouble;
   LIGOTimeGPS GPSlal;
   double chisquared;
   double timedelay;  /* time delay b/w iterferometer & geocenter w.r.t. sky location */
-  double timeshift;  /* time shift (not necessarily same as above)                   */
-  double time_requested, time_min;
+  double timeshift=0;  /* time shift (not necessarily same as above)                   */
+  double time_requested, time_min, time_step;
   double timeTmp;
   int different;
 	double mc;
@@ -474,7 +474,7 @@ REAL8 LALInferenceROQLogLikelihood(LALInferenceVariables *currentParams, LALInfe
     /* signal arrival time (relative to geocenter); */
     timedelay = XLALTimeDelayFromEarthCenter(dataPtr->detector->location, ra, dec, &GPSlal);
     time_requested =  GPSdouble + timedelay;
-    
+
     /* include distance (overall amplitude) effect in Fplus/Fcross: */
     FplusScaled  = Fplus  / distMpc;
     FcrossScaled = Fcross / distMpc;
@@ -497,18 +497,18 @@ REAL8 LALInferenceROQLogLikelihood(LALInferenceVariables *currentParams, LALInfe
     
     gsl_blas_zscal (total_scale_factor, data->roqData->hplus);
     
-    time_step = data->roqData->time_weights_width / data->roqData->weights->size1;
-    
+    time_step = (float)data->roqData->time_weights_width / (float)data->roqData->weights->size1;
     time_min = data->roqData->trigtime - 0.5*data->roqData->time_weights_width;
     
     time_requested /= time_step;
     time_requested = floor(time_requested + 0.5);
     time_requested *= time_step;
+
     // then set tc in MCMC to be one of the discrete values
-    weight_index = (unsigned int) ((time_min - time_requested) / time_step);
-    
+    weight_index = (unsigned int) ((time_requested - time_min) / time_step);
+ 
     gsl_vector_complex_view weights_row = gsl_matrix_complex_row (data->roqData->weights, weight_index);
-    gsl_blas_zdotc( &(weights_row.vector), data->roqData->hplus, &complexL);
+    gsl_blas_zdotu( &(weights_row.vector), data->roqData->hplus, &complexL);
     
     dataPtr->loglikelihood = GSL_REAL(complexL);
 
