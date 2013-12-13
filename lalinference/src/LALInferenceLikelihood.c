@@ -493,7 +493,7 @@ REAL8 LALInferenceROQLogLikelihood(LALInferenceVariables *currentParams, LALInfe
     
     exp_i_pi = gsl_complex_polar (0, M_PI);
     cross_factor = gsl_complex_mul_real(exp_i_pi, FcrossScaled);
-    total_scale_factor = gsl_complex_add_real (cross_factor, FplusScaled); //ONLY VALID FOR non-precessing, dominatn mode only templates
+    total_scale_factor = gsl_complex_add_real (cross_factor, FplusScaled); //ONLY VALID FOR non-precessing, dominant mode only templates
     
     gsl_blas_zscal (total_scale_factor, data->roqData->hplus);
     
@@ -511,7 +511,7 @@ REAL8 LALInferenceROQLogLikelihood(LALInferenceVariables *currentParams, LALInfe
     gsl_blas_zdotc( &(weights_row.vector), data->roqData->hplus, &complexL);
     
     dataPtr->loglikelihood = GSL_REAL(complexL);
-    
+
     loglikeli += dataPtr->loglikelihood;
     dataPtr = dataPtr->next;
   }

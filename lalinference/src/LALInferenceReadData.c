@@ -1182,7 +1182,7 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
     unsigned int n_basis,n_samples,time_steps;
     n_basis = 965;//TODO: have it read from file or from command line.
     n_samples = 31489;
-    REAL8 delta_tc = 0.0001;
+  REAL8 delta_tc = 0.01;//0.0001;
     REAL8 dt=0.1;
     REAL8 tc=0;
     REAL8 endtime=0.0;
@@ -1281,7 +1281,7 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
 
         }
 
-	printf("computing weights");
+	printf("Computing weights for %s\n",IFOdata[i].name);
 	
   	gsl_blas_zgemm (CblasTrans, CblasNoTrans, alpha, rb_matrix, whitened_data_matrix, beta, E_matrix);
 
@@ -1289,10 +1289,10 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
  
 	gsl_blas_zgemm (CblasTrans, CblasNoTrans, alpha, E_matrix, vandermonde_matrix, beta, IFOdata[i].roqData->weights);
 
-	printf("weights have been computed");	
+	printf("Weights have been computed for %s\n",IFOdata[i].name);
 
-        printf("IFOdata[%d].whiteFreqData->epoch=%e\n",i,XLALGPSGetREAL8(&IFOdata[i].whiteFreqData->epoch));
-        printf("timeMin=%e\tendtime=%e\ttimeMax=%e\n",timeMin,endtime,timeMax);
+        //printf("IFOdata[%d].whiteFreqData->epoch=%e\n",i,XLALGPSGetREAL8(&IFOdata[i].whiteFreqData->epoch));
+        //printf("timeMin=%e\tendtime=%e\ttimeMax=%e\n",timeMin,endtime,timeMax);
         printf("---------\n");
 
      
