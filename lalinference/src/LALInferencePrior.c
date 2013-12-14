@@ -3167,5 +3167,5 @@ REAL8 LALInferenceCubeToGaussianPrior(double r, double mean, double sigma)
  */
 REAL8 LALInferenceCubeToSinPrior(double r, double x1, double x2)
 {
-    return acos((1.0-r)*cos(x1)+cos(x2));
+    return acos((1.0-r)*cos(x1)+r*cos(x2));
 }
