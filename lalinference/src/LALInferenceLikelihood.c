@@ -474,7 +474,7 @@ REAL8 LALInferenceROQLogLikelihood(LALInferenceVariables *currentParams, LALInfe
     /* signal arrival time (relative to geocenter); */
     timedelay = XLALTimeDelayFromEarthCenter(dataPtr->detector->location, ra, dec, &GPSlal);
     time_requested =  GPSdouble + timedelay;
-
+    printf("time_requested = %f\n", time_requested);
     /* include distance (overall amplitude) effect in Fplus/Fcross: */
     FplusScaled  = Fplus  / distMpc;
     FcrossScaled = Fcross / distMpc;
@@ -506,7 +506,7 @@ REAL8 LALInferenceROQLogLikelihood(LALInferenceVariables *currentParams, LALInfe
 
     // then set tc in MCMC to be one of the discrete values
     weight_index = (unsigned int) ((time_requested - time_min) / time_step);
- 
+    printf("rounded time requested and index: %f %d\n", time_requested, weight_index);
     gsl_vector_complex_view weights_row = gsl_matrix_complex_row (data->roqData->weights, weight_index);
     gsl_blas_zdotu( &(weights_row.vector), data->roqData->hplus, &complexL);
     

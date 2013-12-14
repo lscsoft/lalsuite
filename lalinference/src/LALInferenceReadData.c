@@ -1182,8 +1182,8 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
     unsigned int n_basis,n_samples,time_steps;
     n_basis = 965;//TODO: have it read from file or from command line.
     n_samples = 31489;
-  REAL8 delta_tc = 0.01;//0.0001;
-    REAL8 dt=0.1;
+  REAL8 delta_tc = 0.0001;
+    REAL8 dt=0.01;
     REAL8 tc=0;
     REAL8 endtime=0.0;
     REAL8 timeMin=endtime-dt,timeMax=endtime+dt;
@@ -1201,7 +1201,8 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
     timeMax -= XLALGPSGetREAL8(&IFOdata[i].whiteFreqData->epoch);
   
     time_steps = (unsigned int)((timeMax-timeMin)/delta_tc);
-  
+    printf("timeMin = %f, timeMax = %f\n", timeMin, timeMax);
+    printf("time steps = %d\n", time_steps); 
     double deltaF = IFOdata[i].oneSidedNoisePowerSpectrum->deltaF;
     gsl_matrix_complex *vandermonde_matrix=NULL;
     gsl_matrix_complex *rb_matrix=NULL;
@@ -1269,9 +1270,12 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
 		
 		for(unsigned int k = 0; k < n_samples; k++){
 
-			GSL_SET_COMPLEX(&wd, creal(IFOdata[i].whiteFreqData->data->data[k + (unsigned int)(IFOdata[i].fLow/deltaF)]), -cimag(IFOdata[i].whiteFreqData->data->data[k + (unsigned int)(IFOdata[i].fLow/deltaF)]));
+			GSL_SET_COMPLEX(&wd, creal(IFOdata[i].whiteFreqData->data->data[k + (unsigned int)(IFOdata[i].fLow/deltaF)]), cimag(IFOdata[i].whiteFreqData->data->data[k + (unsigned int)(IFOdata[i].fLow/deltaF)]));
  
 			shifted_data_element = gsl_complex_mul (wd, gsl_vector_complex_get(exp_2pi_i_f_tc, k));
+
+			//take conjugate
+			shifted_data_element = gsl_complex_conjugate (shifted_data_element);
 			
 			gsl_vector_complex_set (whitened_data, k, shifted_data_element);
 	
