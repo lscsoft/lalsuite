@@ -350,8 +350,10 @@ void LALInferenceSetupDefaultNSProposal(LALInferenceRunState *runState, LALInfer
       LALInferenceAddProposalToCycle(runState, drawApproxPriorName, &LALInferenceDrawApproxPrior, TINYWEIGHT);
 
     if(!LALInferenceGetProcParamVal(runState->commandLine,"--margphi") && !LALInferenceGetProcParamVal(runState->commandLine, "--margtimephi"))
-        if(LALInferenceCheckVariable(proposedParams,"phase")) {
+        if(LALInferenceCheckVariableNonFixed(proposedParams,"phase")) {
           LALInferenceAddProposalToCycle(runState, orbitalPhaseJumpName, &LALInferenceOrbitalPhaseJump, TINYWEIGHT);
+          if (!LALInferenceGetProcParamVal(runState->commandLine,"--noProposalCorrPsiPhi"))
+            LALInferenceAddProposalToCycle(runState, polarizationCorrPhaseJumpName, &LALInferenceCorrPolarizationPhaseJump, SMALLWEIGHT);
         }
   }
 
