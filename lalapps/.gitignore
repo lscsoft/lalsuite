@@ -158,6 +158,8 @@ src/power/lalapps_binj
 src/power/lalapps_power
 src/power/sense_compare
 src/pulsar/CombSearch/lalapps_CombSearch
+src/pulsar/CreateEphemeris/lalapps_create_solar_system_ephemeris
+src/pulsar/CreateEphemeris/lalapps_create_time_correction_ephemeris
 src/pulsar/FDS_binary/lalapps_CalculateSensitivity
 src/pulsar/FDS_binary/lalapps_CombineBayesianResults
 src/pulsar/FDS_binary/lalapps_ComputeFStatisticBinary
@@ -242,6 +244,7 @@ src/pulsar/TDS_isolated/lalapps_create_pulsar_signal_frame
 src/pulsar/TDS_isolated/lalapps_heterodyne_pulsar
 src/pulsar/TDS_isolated/lalapps_pulsar_parameter_estimation
 src/pulsar/TDS_isolated/lalapps_pulsar_parameter_estimation_nested
+src/pulsar/TDS_isolated/lalapps_ssbtodetector
 src/pulsar/TimingTests/lalapps_TEMPOcomparison
 src/pulsar/TwoSpect/lalapps_TwoSpect
 src/pulsar/crosscorr/lalapps_pulsar_crosscorr
@@ -273,12 +276,9 @@ src/pulsar/lalapps_FreqAverager
 src/pulsar/lalapps_FreqAverager_v2
 src/pulsar/lalapps_GetSFTVelocities
 src/pulsar/lalapps_PrintDetectorState
-src/pulsar/lalapps_create_solar_system_ephemeris
-src/pulsar/lalapps_create_time_correction_ephemeris
 src/pulsar/lalapps_make_job_input_data
 src/pulsar/lalapps_make_sfts
 src/pulsar/lalapps_psd
-src/pulsar/lalapps_ssbtodetector
 src/pulsar/psd1.dat
 src/pulsar/templateBanks/Fmetric.dat
 src/pulsar/templateBanks/Fmetric_v2.dat
