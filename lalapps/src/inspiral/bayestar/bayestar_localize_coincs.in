@@ -166,4 +166,5 @@ for coinc, sngl_inspirals in ligolw_bayestar.coinc_and_sngl_inspirals_for_xmldoc
 
 
 if count_sky_maps_failed > 0:
-    raise RuntimeError("{0} sky maps did not converge".format(count_sky_maps_failed))
+    raise RuntimeError("{0} sky map{1} did not converge".format(
+        count_sky_maps_failed, 's' if count_sky_maps_failed > 1 else ''))
