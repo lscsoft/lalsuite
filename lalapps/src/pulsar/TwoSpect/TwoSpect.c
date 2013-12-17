@@ -495,7 +495,7 @@ int main(int argc, char *argv[])
                   oneSFTpowers->data[kk] = (2.0*(creal(sft->data->data[kk])*creal(sft->data->data[kk]) + cimag(sft->data->data[kk])*cimag(sft->data->data[kk]))/inputParams->Tcoh);
                }
                INT4 indexValOfMax = max_index_double(oneSFTpowers);
-               fprintf(SIGNALOUT,"%g %g\n", DataParams.fMin+indexValOfMax/inputParams->Tcoh, oneSFTpowers->data[indexValOfMax]);
+               fprintf(SIGNALOUT,"%.9g %.9g\n", DataParams.fMin+indexValOfMax/inputParams->Tcoh, oneSFTpowers->data[indexValOfMax]);
             }
             XLALDestroyREAL8Vector(oneSFTpowers);
             XLALDestroyMultiSFTVector(oneSignalSFTs);
@@ -574,6 +574,14 @@ int main(int argc, char *argv[])
          XLAL_ERROR(XLAL_EFUNC);
       }
 
+      //If there were signal-only SFTs, convert them to powers with normaliztion 1, otherwise, use the right normalization
+      if (inputParams->signalOnly) tfdata = convertSFTdataToPowers(sftvector, inputParams, 1.0);
+      else tfdata = convertSFTdataToPowers(sftvector, inputParams, ffdata->tfnormalization);
+      if (tfdata==NULL) {
+         fprintf(stderr, "%s: convertSFTdataToPowers() failed.\n", __func__);
+         XLAL_ERROR(XLAL_EFUNC);
+      }
+
       //If printing the data outputs, then do that here
       if (args_info.printSignalData_given) {
          DataParams.detInfo.sqrtSn[0] = 0.0;
@@ -602,7 +610,7 @@ int main(int argc, char *argv[])
                   oneSFTpowers->data[kk] = (2.0*(creal(sft->data->data[kk])*creal(sft->data->data[kk]) + cimag(sft->data->data[kk])*cimag(sft->data->data[kk]))/inputParams->Tcoh);
                }
                INT4 indexValOfMax = max_index_double(oneSFTpowers);
-               fprintf(SIGNALOUT,"%g %g\n", DataParams.fMin+indexValOfMax/inputParams->Tcoh, oneSFTpowers->data[indexValOfMax]);
+               fprintf(SIGNALOUT,"%.9g %.9g\n", DataParams.fMin+indexValOfMax/inputParams->Tcoh, oneSFTpowers->data[indexValOfMax]);
             }
             XLALDestroyREAL8Vector(oneSFTpowers);
             XLALDestroyMultiSFTVector(oneSignalSFTs);
@@ -610,14 +618,6 @@ int main(int argc, char *argv[])
          memset(oneSignal->data, 0, sizeof(injectionSources->data[0]));
          XLALDestroyPulsarParamsVector(oneSignal);
          fclose(SIGNALOUT);
-      }
-
-      //If there were signal-only SFTs, convert them to powers with normaliztion 1, otherwise, use the right normalization
-      if (inputParams->signalOnly) tfdata = convertSFTdataToPowers(sftvector, inputParams, 1.0);
-      else tfdata = convertSFTdataToPowers(sftvector, inputParams, ffdata->tfnormalization);
-      if (tfdata==NULL) {
-         fprintf(stderr, "%s: convertSFTdataToPowers() failed.\n", __func__);
-         XLAL_ERROR(XLAL_EFUNC);
       }
 
       XLALDestroyStringVector(timestampFiles);
@@ -755,6 +755,13 @@ int main(int argc, char *argv[])
          XLAL_ERROR(XLAL_EFUNC);
       }
 
+      if (inputParams->signalOnly) tfdata = convertSFTdataToPowers(sftvector, inputParams, 1.0);
+      else tfdata = convertSFTdataToPowers(sftvector, inputParams, ffdata->tfnormalization);
+      if (tfdata==NULL) {
+         fprintf(stderr, "%s: convertSFTdataToPowers() failed.\n", __func__);
+         XLAL_ERROR(XLAL_EFUNC);
+      }
+
       //Printing out the data to file
       if (args_info.printSignalData_given) {
          DataParams.detInfo.sqrtSn[0] = 0.0;
@@ -783,7 +790,7 @@ int main(int argc, char *argv[])
                   oneSFTpowers->data[kk] = (2.0*(creal(sft->data->data[kk])*creal(sft->data->data[kk]) + cimag(sft->data->data[kk])*cimag(sft->data->data[kk]))/inputParams->Tcoh);
                }
                INT4 indexValOfMax = max_index_double(oneSFTpowers);
-               fprintf(SIGNALOUT,"%g %g\n", DataParams.fMin+indexValOfMax/inputParams->Tcoh, oneSFTpowers->data[indexValOfMax]);
+               fprintf(SIGNALOUT,"%.9g %.9g\n", DataParams.fMin+indexValOfMax/inputParams->Tcoh, oneSFTpowers->data[indexValOfMax]);
             }
             XLALDestroyREAL8Vector(oneSFTpowers);
             XLALDestroyMultiSFTVector(oneSignalSFTs);
@@ -792,12 +799,7 @@ int main(int argc, char *argv[])
          XLALDestroyPulsarParamsVector(oneSignal);
          fclose(SIGNALOUT);
       }
-      if (inputParams->signalOnly) tfdata = convertSFTdataToPowers(sftvector, inputParams, 1.0);
-      else tfdata = convertSFTdataToPowers(sftvector, inputParams, ffdata->tfnormalization);
-      if (tfdata==NULL) {
-         fprintf(stderr, "%s: convertSFTdataToPowers() failed.\n", __func__);
-         XLAL_ERROR(XLAL_EFUNC);
-      }
+      
       XLALDestroyMultiTimestamps(multiTimestamps);
       XLALDestroyPulsarParamsVector(injectionSources);
       XLALDestroyMultiSFTVector(sftvector);
