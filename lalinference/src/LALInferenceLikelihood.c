@@ -478,7 +478,7 @@ REAL8 LALInferenceROQLogLikelihood(LALInferenceVariables *currentParams, LALInfe
     /* signal arrival time (relative to geocenter); */
     timedelay = XLALTimeDelayFromEarthCenter(dataPtr->detector->location, ra, dec, &GPSlal);
     time_requested =  GPSdouble + timedelay;
-    printf("time_requested = %f\n", time_requested);
+    //printf("time_requested = %f\n", time_requested);
     /* include distance (overall amplitude) effect in Fplus/Fcross: */
     FplusScaled  = Fplus  / distMpc;
     FcrossScaled = Fcross / distMpc;
@@ -510,7 +510,7 @@ REAL8 LALInferenceROQLogLikelihood(LALInferenceVariables *currentParams, LALInfe
 
     // then set tc in MCMC to be one of the discrete values
     weight_index = (unsigned int) ((time_requested - time_min) / time_step);
-    printf("rounded time requested and index: %f %d\n", time_requested, weight_index);
+    //printf("rounded time requested and index: %f %d\n", time_requested, weight_index);
     gsl_vector_complex_view weights_row = gsl_matrix_complex_row (data->roqData->weights, weight_index);
  
     // compute h_dot_h and d_dot_h
@@ -521,7 +521,11 @@ REAL8 LALInferenceROQLogLikelihood(LALInferenceVariables *currentParams, LALInfe
     dataPtr->loglikelihood = GSL_REAL(complex_d_dot_h);
     dataPtr->loglikelihood += -0.5*h_dot_h;
     
-
+    //printf("%s:\t%e\t%e\n",dataPtr->name,dataPtr->loglikelihood,h_dot_h);
+    //for (int tempk=0;tempk<100;tempk++){
+    //  printf("%e+%ej\n",GSL_REAL(gsl_vector_complex_get(data->roqData->hplus,tempk)),GSL_IMAG(gsl_vector_complex_get(data->roqData->hplus,tempk)));
+    //}
+    
     loglikeli += dataPtr->loglikelihood;
     dataPtr = dataPtr->next;
   }

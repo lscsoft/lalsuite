@@ -1182,8 +1182,8 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
     unsigned int n_basis,n_samples,time_steps;
     n_basis = 965;//TODO: have it read from file or from command line.
     n_samples = 31489;
-  REAL8 delta_tc = 0.0001;
-    REAL8 dt=0.01;
+    REAL8 delta_tc = 0.0001;
+    REAL8 dt=0.1;
     REAL8 tc=0;
     REAL8 endtime=0.0;
     REAL8 timeMin=endtime-dt,timeMax=endtime+dt;
