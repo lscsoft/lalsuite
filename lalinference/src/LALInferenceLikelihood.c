@@ -376,6 +376,7 @@ REAL8 LALInferenceROQLogLikelihood(LALInferenceVariables *currentParams, LALInfe
                               LALInferenceTemplateFunction templt)
 {
   double Fplus, Fcross;
+  double amp_squared=0, h_dot_h=0;
   double FplusScaled, FcrossScaled;
   REAL8 loglikeli=0;
   unsigned int weight_index;
@@ -395,7 +396,7 @@ REAL8 LALInferenceROQLogLikelihood(LALInferenceVariables *currentParams, LALInfe
   memset(&status,0,sizeof(status));
   LALInferenceVariables intrinsicParams;
   
-  gsl_complex complexL;
+  gsl_complex complex_d_dot_h;
   
   gsl_complex exp_i_pi;
   gsl_complex cross_factor;
@@ -496,7 +497,7 @@ REAL8 LALInferenceROQLogLikelihood(LALInferenceVariables *currentParams, LALInfe
     total_scale_factor = gsl_complex_add_real (cross_factor, FplusScaled); //ONLY VALID FOR non-precessing, dominant mode only templates
     
     gsl_blas_zscal (total_scale_factor, data->roqData->hplus);
-    
+ 
     time_step = (float)data->roqData->time_weights_width / (float)data->roqData->weights->size1;
     time_min = data->roqData->trigtime - 0.5*data->roqData->time_weights_width;
     
@@ -508,9 +509,15 @@ REAL8 LALInferenceROQLogLikelihood(LALInferenceVariables *currentParams, LALInfe
     weight_index = (unsigned int) ((time_requested - time_min) / time_step);
     printf("rounded time requested and index: %f %d\n", time_requested, weight_index);
     gsl_vector_complex_view weights_row = gsl_matrix_complex_row (data->roqData->weights, weight_index);
-    gsl_blas_zdotu( &(weights_row.vector), data->roqData->hplus, &complexL);
+ 
+    // compute h_dot_h and d_dot_h
+    gsl_blas_zdotu( &(weights_row.vector), data->roqData->hplus, &complex_d_dot_h);
+  
+    h_dot_h = amp_squared * (pow(dataPtr->fPlus, 2.) + pow(dataPtr->fCross, 2.)) * dataPtr->roqData->int_f_7_over_3;
     
-    dataPtr->loglikelihood = GSL_REAL(complexL);
+    dataPtr->loglikelihood = GSL_REAL(complex_d_dot_h);
+    dataPtr->loglikelihood += -0.5*h_dot_h;
+    
 
     loglikeli += dataPtr->loglikelihood;
     dataPtr = dataPtr->next;

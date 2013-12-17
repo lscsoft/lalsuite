@@ -1299,7 +1299,12 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
         //printf("timeMin=%e\tendtime=%e\ttimeMax=%e\n",timeMin,endtime,timeMax);
         printf("---------\n");
 
-     
+        // compute int_f_7_over_3
+        IFOdata[i].roqData->int_f_7_over_3 = 0;
+	for(unsigned int kk = 0; kk < n_samples; kk++){
+
+		IFOdata[i].roqData->int_f_7_over_3 += 4.*deltaF*pow((IFOdata[i].fLow + kk*deltaF), -7./3.) / IFOdata[i].oneSidedNoisePowerSpectrum->data->data[kk + (unsigned int)(IFOdata[i].fLow/deltaF)];
+	}
 
       }
     

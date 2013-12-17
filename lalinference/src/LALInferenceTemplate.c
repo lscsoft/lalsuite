@@ -338,9 +338,44 @@ double m1,m2,mc,eta,q;
         GSL_SET_COMPLEX(&h_i, amp * cos(Psi + shft * f - 2.*phic - LAL_PI_4), amp * sin(Psi + shft * f - 2.*phic - LAL_PI_4));
 
         gsl_vector_complex_set(IFOdata->roqData->hplus, i, h_i);     
+
+	return;
    }
 
-    return;
+}
+double LALInferenceTemplateROQ_amp_squared(LALInferenceIFOData *IFOdata)
+{
+
+double m1,m2,mc,eta,q;
+/* Prefer m1 and m2 if available (i.e. for injection template) */
+ if(LALInferenceCheckVariable(IFOdata->modelParams,"mass1")&&LALInferenceCheckVariable(IFOdata->modelParams,"mass2"))
+    {
+      m1=*(REAL8 *)LALInferenceGetVariable(IFOdata->modelParams,"mass1");
+      m2=*(REAL8 *)LALInferenceGetVariable(IFOdata->modelParams,"mass2");
+      eta=m1*m2/((m1+m2)*(m1+m2));
+      mc=pow(eta , 0.6)*(m1+m2);
+    }
+  else
+    {
+      if (LALInferenceCheckVariable(IFOdata->modelParams,"asym_massratio")) {
+        q = *(REAL8 *)LALInferenceGetVariable(IFOdata->modelParams,"asym_massratio");
+        q2eta(q, &eta);
+      }
+      else
+        eta = *(REAL8*) LALInferenceGetVariable(IFOdata->modelParams, "massratio");
+        mc       = *(REAL8*) LALInferenceGetVariable(IFOdata->modelParams, "chirpmass");
+      mc2masses(mc, eta, &m1, &m2);
+    } 
+    /* external: SI; internal: solar masses */
+    const REAL8 m = m1 + m2;
+    const REAL8 m_sec = m * LAL_MTSUN_SI;  /* total mass in seconds */
+    const REAL8 r = 10e6*LAL_PC_SI;
+    double amp_squared;
+
+    amp_squared = pow( pow(m_sec, 5./6.) * sqrt(5.*eta / 24.) / (Pi_p2by3 * r / LAL_C_SI), 2. );
+
+    return amp_squared;
+  
 }
 
 
