@@ -180,7 +180,7 @@ void LALInferenceTemplate3525TD(LALInferenceIFOData *IFOdata);
 
 void LALInferenceTemplateROQ(LALInferenceIFOData *IFOdata);
 
-double LALInferenceTemplateROQ_amp_squared(LALInferenceIFOData *IFOdata);
+void LALInferenceTemplateROQ_amp_squared(LALInferenceIFOData *IFOdata);
 
 void LALInferenceTemplateSineGaussian(LALInferenceIFOData *IFOdata);
 

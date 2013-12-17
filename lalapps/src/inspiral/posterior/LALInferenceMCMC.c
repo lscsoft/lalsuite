@@ -234,7 +234,9 @@ LALInferenceRunState *initialize(ProcessParamsTable *commandLine)
 {
   LALInferenceRunState *irs=NULL;
   LALInferenceIFOData *ifoPtr, *ifoListStart;
-
+  unsigned int n_basis;
+  n_basis = 965;//TODO: have it read from file or from command line.
+  
   MPI_Comm_rank(MPI_COMM_WORLD, &MPIrank);
 
   irs = XLALCalloc(1, sizeof(LALInferenceRunState));
@@ -268,6 +270,9 @@ LALInferenceRunState *initialize(ProcessParamsTable *commandLine)
           ifoPtr->timeModelhCross=ifoPtrCompare->timeModelhCross;
           ifoPtr->freqModelhCross=ifoPtrCompare->freqModelhCross;
           ifoPtr->modelParams=ifoPtrCompare->modelParams;
+          ifoPtr->roqData->hplus = ifoPtrCompare->roqData->hplus;
+          ifoPtr->roqData->hcross = ifoPtrCompare->roqData->hcross;
+          ifoPtr->roqData->amp_squared = ifoPtrCompare->roqData->amp_squared;
           foundIFOwithSameSampleRate=1;
           break;
         }
@@ -299,6 +304,9 @@ LALInferenceRunState *initialize(ProcessParamsTable *commandLine)
                                                                      &lalDimensionlessUnit,
                                                                      ifoPtr->freqData->data->length);
         ifoPtr->modelParams = XLALCalloc(1, sizeof(LALInferenceVariables));
+        ifoPtr->roqData->hplus = gsl_vector_complex_calloc(n_basis);
+        ifoPtr->roqData->hcross = gsl_vector_complex_calloc(n_basis);
+        ifoPtr->roqData->amp_squared = XLALCalloc(1, sizeof(REAL8));
       }
       ifoPtr = ifoPtr->next;
     }

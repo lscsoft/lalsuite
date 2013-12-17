@@ -1,4 +1,6 @@
-/* 
+
+
+/*
  *  LALInferenceLikelihood.c:  Bayesian Followup likelihood functions
  *
  *  Copyright (C) 2009 Ilya Mandel, Vivien Raymond, Christian Roever,
@@ -376,7 +378,7 @@ REAL8 LALInferenceROQLogLikelihood(LALInferenceVariables *currentParams, LALInfe
                               LALInferenceTemplateFunction templt)
 {
   double Fplus, Fcross;
-  double amp_squared=0, h_dot_h=0;
+  double h_dot_h=0;
   double FplusScaled, FcrossScaled;
   REAL8 loglikeli=0;
   unsigned int weight_index;
@@ -457,6 +459,7 @@ REAL8 LALInferenceROQLogLikelihood(LALInferenceVariables *currentParams, LALInfe
       LALInferenceCopyVariables(&intrinsicParams, dataPtr->modelParams);
       LALInferenceAddVariable(dataPtr->modelParams, "time", &timeTmp, LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_LINEAR);
       templt(dataPtr);
+      LALInferenceTemplateROQ_amp_squared(dataPtr);
       if(XLALGetBaseErrno()==XLAL_FAILURE) /* Template generation failed in a known way, set -Inf likelihood */
         return(-DBL_MAX);
       
@@ -513,7 +516,7 @@ REAL8 LALInferenceROQLogLikelihood(LALInferenceVariables *currentParams, LALInfe
     // compute h_dot_h and d_dot_h
     gsl_blas_zdotu( &(weights_row.vector), data->roqData->hplus, &complex_d_dot_h);
   
-    h_dot_h = amp_squared * (pow(dataPtr->fPlus, 2.) + pow(dataPtr->fCross, 2.)) * dataPtr->roqData->int_f_7_over_3;
+    h_dot_h = (*(dataPtr->roqData->amp_squared)) * (pow(dataPtr->fPlus, 2.) + pow(dataPtr->fCross, 2.)) * dataPtr->roqData->int_f_7_over_3;
     
     dataPtr->loglikelihood = GSL_REAL(complex_d_dot_h);
     dataPtr->loglikelihood += -0.5*h_dot_h;

@@ -343,7 +343,7 @@ double m1,m2,mc,eta,q;
    }
 
 }
-double LALInferenceTemplateROQ_amp_squared(LALInferenceIFOData *IFOdata)
+void LALInferenceTemplateROQ_amp_squared(LALInferenceIFOData *IFOdata)
 {
 
 double m1,m2,mc,eta,q;
@@ -374,7 +374,7 @@ double m1,m2,mc,eta,q;
 
     amp_squared = pow( pow(m_sec, 5./6.) * sqrt(5.*eta / 24.) / (Pi_p2by3 * r / LAL_C_SI), 2. );
 
-    return amp_squared;
+    *(IFOdata->roqData->amp_squared) = amp_squared;
   
 }
 

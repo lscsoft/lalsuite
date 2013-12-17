@@ -1222,8 +1222,8 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
       for (i=0;i<Nifo;i++) {
         IFOdata[i].roqData = XLALCalloc(1, sizeof(LALInferenceROQData));
         IFOdata[i].roqData->weights = gsl_matrix_complex_calloc(time_steps, n_basis);
-        IFOdata[i].roqData->hplus = gsl_vector_complex_calloc(n_basis);
-        IFOdata[i].roqData->hcross = gsl_vector_complex_calloc(n_basis);
+        //IFOdata[i].roqData->hplus = gsl_vector_complex_calloc(n_basis);
+        //IFOdata[i].roqData->hcross = gsl_vector_complex_calloc(n_basis);
         IFOdata[i].roqData->frequencyNodes = gsl_vector_calloc(n_basis);
         tempfp = fopen(ppt->value, "rb");
         gsl_vector_fread(tempfp, IFOdata[i].roqData->frequencyNodes);
