@@ -214,7 +214,7 @@ Longer strings will be truncated.""" % {
                  )
 
     op.add_option("-l", "--ligolw", dest="ligolw",
-                  help="Download ligolw file of combined search results (not meaningful outside of search)",
+                  help="Download ligolw file of combined search results (not meaningful outside of search). NOTE: Produces an ERROR if any of the events returned by the search do not have coinc.xml files.",
                   action="store_true", default=False
                  )
     op.add_option("-t", "--tag-name", dest="tagName",
