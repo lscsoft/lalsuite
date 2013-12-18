@@ -69,12 +69,14 @@ parser = OptionParser(
         Option("-R", "--repeat-first-injection", type=int, default=None,
             help="Instead of performing each injection once, just perform the first injection this many times."),
         Option("--template-bank", metavar="TMPLTBANK.xml[.gz]",
-            help="Name of template bank file (required)")
+            help="Name of template bank file (required)"),
+        Option("--reference-psd", metavar="PSD.xml[.gz]",
+            help="Name of PSD file (required)")
     ]
 )
 opts, args = parser.parse_args()
 infilename = command.get_input_filename(parser, args)
-command.check_required_arguments(parser, opts, 'waveform', 'template_bank')
+command.check_required_arguments(parser, opts, 'waveform', 'template_bank', 'reference_psd')
 
 
 # Python standard library imports.
@@ -93,6 +95,7 @@ from glue.ligolw import lsctables
 from glue import segments
 import glue.lal
 import lal, lalsimulation
+import lal.series
 
 # BAYESTAR imports.
 from lalinference.bayestar import timing
@@ -178,6 +181,12 @@ out_xmldoc.childNodes[0].appendChild(coinc_map_table)
 coinc_table = lsctables.New(lsctables.CoincTable)
 out_xmldoc.childNodes[0].appendChild(coinc_table)
 
+# Read PSD file.
+xmldoc = ligolw_utils.load_filename(opts.reference_psd)
+psds = lal.series.read_psd_xmldoc(xmldoc)
+psds = dict(
+    (key, timing.InterpolatedPSD(filter.abscissa(psd), psd.data.data))
+    for key, psd in psds.iteritems() if psd is not None)
 
 # Detector noise PSD model
 class psdfunc(object):
@@ -191,7 +200,7 @@ class psdfunc(object):
         else:
             return 0.
 
-psdfuncs = [np.vectorize(psdfunc(timing.get_noise_psd_func(ifo))) for ifo in opts.detector]
+psdfuncs = [np.vectorize(psdfunc(psds[ifo])) for ifo in opts.detector]
 
 # Compute horizon distances for each template, for each detector
 horizons_bank = [
