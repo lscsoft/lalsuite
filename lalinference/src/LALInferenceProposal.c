@@ -72,9 +72,6 @@ const char *const extrinsicParamProposalName = "ExtrinsicParamProposal";
 const char *const KDNeighborhoodProposalName = "KDNeighborhood";
 const char *const frequencyBinJumpName = "FrequencyBin";
 
-/* Mode hopping fraction for the differential evoultion proposals. */
-static const REAL8 modeHoppingFrac = 1.0;
-
 static int
 same_detector_location(LALInferenceIFOData *d1, LALInferenceIFOData *d2) {
   UINT4 i;
