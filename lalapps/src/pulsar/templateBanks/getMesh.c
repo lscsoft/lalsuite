@@ -129,7 +129,6 @@ typedef struct
 /*---------- empty structs for initializations ----------*/
 static const UserVariables_t empty_UserVariables;
 static const ConfigVariables empty_ConfigVariables;
-static const PtoleMetricIn empty_metricpar;
 
 /* ---------- local prototypes ---------- */
 void initUserVars (LALStatus *, UserVariables_t *uvar);
