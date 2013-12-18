@@ -88,10 +88,6 @@
 static const REAL8 inv_fact[NUM_FACT] = { 1.0, 1.0, (1.0/2.0), (1.0/6.0), (1.0/24.0), (1.0/120.0), (1.0/720.0) };
 static LALUnit empty_LALUnit;
 
-/* empty initializers  */
-static const LALStatus empty_status;
-static const AMCoeffs empty_AMCoeffs;
-
 /*---------- internal prototypes ----------*/
 int finite(double x);
 
