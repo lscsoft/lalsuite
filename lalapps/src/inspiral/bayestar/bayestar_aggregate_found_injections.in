@@ -103,6 +103,11 @@ def process(fitsfilename):
     searched_area, searched_prob, offset, searched_modes, contour_areas, contour_modes = postprocess.find_injection(
         sky_map, true_ra, true_dec, contours=[0.01 * p for p in contours])
 
+    if snr is None:
+        snr = float('nan')
+    if far is None:
+        far = float('nan')
+
     return [coinc_event_id, simulation_id, far, snr, searched_area, searched_prob, offset, runtime, searched_modes] + contour_areas + contour_modes
 
 
