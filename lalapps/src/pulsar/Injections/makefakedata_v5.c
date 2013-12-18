@@ -146,7 +146,6 @@ typedef struct
 // ----- empty structs for initializations
 static const UserVariables_t empty_UserVariables;
 static const ConfigVars_t empty_GV;
-static const LALUnit empty_LALUnit;
 
 int XLALWriteREAL4TimeSeries2fp ( FILE *fp, const REAL4TimeSeries *TS );
 

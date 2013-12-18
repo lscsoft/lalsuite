@@ -210,7 +210,6 @@ typedef struct
 // ----- empty structs for initializations
 static const UserVariables_t empty_UserVariables;
 static const ConfigVars_t empty_GV;
-static const LALUnit empty_LALUnit;
 
 // ---------- local prototypes ----------
 int XLALInitUserVars ( UserVariables_t *uvar, int argc, char *argv[] );
