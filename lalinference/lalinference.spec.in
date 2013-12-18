@@ -83,6 +83,7 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}
 
 %files python
 %defattr(-,root,root)
+%{_bindir}/bayestar_*
 %{_libdir}/python*/site-packages/lalinference/*.py
 %{_libdir}/python*/site-packages/lalinference/*.pyc
 %{_libdir}/python*/site-packages/lalinference/bayestar/*.py

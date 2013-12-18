@@ -1,6 +1,5 @@
 ## Process this file with automake to produce Makefile.in
 
-if HAVE_PYTHON
 bin_SCRIPTS = \
 	bayestar_aggregate_found_injections \
 	bayestar_bin_samples \
@@ -14,7 +13,6 @@ bin_SCRIPTS = \
 	bayestar_realize_coincs \
 	bayestar_sim_to_tmpltbank \
 	bayestar_littlehope
-endif
 
 python_config.sed: Makefile
 	@-rm -f python_config.sed

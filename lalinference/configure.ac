@@ -11,6 +11,7 @@ AC_CONFIG_FILES([ \
   Makefile \
   gnuscripts/Makefile \
   debian/Makefile \
+  bin/Makefile \
   include/Makefile \
   include/lal/Makefile \
   src/Makefile \

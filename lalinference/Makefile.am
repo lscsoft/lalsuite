@@ -12,6 +12,7 @@ EXTRA_DIST = \
 	$(DATA)
 
 SUBDIRS = \
+	bin \
 	gnuscripts \
 	debian \
 	include \
