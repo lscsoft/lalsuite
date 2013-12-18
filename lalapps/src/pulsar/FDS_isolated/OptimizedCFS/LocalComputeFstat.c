@@ -78,9 +78,6 @@
 static const REAL4 inv_fact[PULSAR_MAX_SPINS] = { 1.0, 1.0, (1.0/2.0), (1.0/6.0), (1.0/24.0), (1.0/120.0), (1.0/720.0) };
 static int firstcall = TRUE; /* for sin/cos lookup table initialization */
 
-/* empty initializers  */
-static const LALStatus empty_status;
-
 
 /*---------- internal prototypes ----------*/
 void
