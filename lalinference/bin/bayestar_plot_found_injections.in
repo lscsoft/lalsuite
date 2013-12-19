@@ -32,6 +32,7 @@ opts, args = OptionParser(
     description=__doc__,
     option_list=[
         Option("--cumulative", action="store_true"),
+        Option("--normed", action="store_true"),
         Option("--group-by", choices=("far", "snr"), metavar="far|snr",
             default="far", help="Group plots by false alarm rate (FAR) or " +
             "signal to noise ratio (SNR) [default: %default]")
@@ -152,12 +153,12 @@ for i, (bin_edge, subdir, title) in enumerate(zip(bin_edges, bin_names, bin_titl
             plt.figure(1)
             plt.plot(np.sort(data['searched_prob']), np.linspace(0, 1, len(data['searched_prob'])), label=label)
             plt.figure(2)
-            plt.hist(data['searched_area'], histtype='step', label=label, bins=np.logspace(np.log10(min_searched_area), np.log10(max_searched_area), 20), cumulative=opts.cumulative)
+            plt.hist(data['searched_area'], histtype='step', label=label, bins=np.logspace(np.log10(min_searched_area), np.log10(max_searched_area), 20), cumulative=opts.cumulative, normed=opts.normed)
             plt.figure(3)
-            plt.hist(data['offset'], histtype='step', label=label, bins=np.logspace(np.log10(min_offset), np.log10(max_offset), 20), cumulative=opts.cumulative)
+            plt.hist(data['offset'], histtype='step', label=label, bins=np.logspace(np.log10(min_offset), np.log10(max_offset), 20), cumulative=opts.cumulative, normed=opts.normed)
             plt.figure(4)
             if np.any(np.isfinite(data['runtime'])):
-                plt.hist(data['runtime'], histtype='step', bins=np.logspace(np.log10(min_runtime), np.log10(max_runtime), 20), cumulative=opts.cumulative)
+                plt.hist(data['runtime'], histtype='step', bins=np.logspace(np.log10(min_runtime), np.log10(max_runtime), 20), cumulative=opts.cumulative, normed=opts.normed)
 
     # Finish and save plot 1.
     pb.update(i * 4)
