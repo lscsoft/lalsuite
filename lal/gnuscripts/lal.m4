@@ -1,6 +1,17 @@
 # lal.m4 - lal specific macros
 #
-# serial 17
+# serial 18
+
+AC_DEFUN([LAL_ENABLE_DEBUG],
+[AC_ARG_ENABLE(
+  [debug],
+  AC_HELP_STRING([--enable-debug],[include standard LAL debugging code [default=yes]]),
+  [AS_CASE(["${enableval}"],
+    [yes],,
+    [no],AC_DEFINE(LAL_NDEBUG, 1, Suppress debugging code),
+    AC_MSG_ERROR(bad value for ${enableval} for --enable-debug))
+  ], )
+])
 
 AC_DEFUN([LAL_ENABLE_INTELFFT],
 [AC_ARG_ENABLE(

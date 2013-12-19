@@ -1,7 +1,7 @@
 # -*- mode: autoconf; -*-
 # lalsuite_build.m4 - top level build macros
 #
-# serial 75
+# serial 76
 
 # not present in older versions of pkg.m4
 m4_pattern_allow([^PKG_CONFIG(_(PATH|LIBDIR|SYSROOT_DIR|ALLOW_SYSTEM_(CFLAGS|LIBS)))?$])
@@ -501,17 +501,6 @@ AC_DEFUN([LALSUITE_ENABLE_NIGHTLY],
       esac ],
   [ NIGHTLY_VERSION="" ] )
   AC_SUBST(NIGHTLY_VERSION)
-])
-
-AC_DEFUN([LALSUITE_ENABLE_DEBUG],
-[AC_ARG_ENABLE(
-  [debug],
-  AC_HELP_STRING([--enable-debug],[include standard LAL debugging code [default=yes]]),
-  [AS_CASE(["${enableval}"],
-    [yes],,
-    [no],AC_DEFINE(LAL_NDEBUG, 1, Suppress debugging code),
-    AC_MSG_ERROR(bad value for ${enableval} for --enable-debug))
-  ], )
 ])
 
 AC_DEFUN([LALSUITE_ENABLE_ALL_LAL],
