@@ -923,7 +923,7 @@ XLALReadSegmentsFromFile ( const char *fname	/**< name of file containing segmen
 {
   LALSegList *segList = NULL;
 
-  /** check input consistency */
+  /* check input consistency */
   if ( !fname ) {
     XLALPrintError ( "%s: NULL input 'fname'", __func__ );
     XLAL_ERROR_NULL ( XLAL_EINVAL );
