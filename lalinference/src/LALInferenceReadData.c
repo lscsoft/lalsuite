@@ -1186,13 +1186,17 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
     REAL8 dt=0.1;
     REAL8 tc=0;
     REAL8 endtime=0.0;
-    REAL8 timeMin=endtime-dt,timeMax=endtime+dt;
+    REAL8 timeMin=0.0,timeMax=0.0;
   
     endtime=XLALGPSGetREAL8(&GPStrig);
   
     ppt=LALInferenceGetProcParamVal(commandLine,"--dt");
     if(ppt){
       dt=atof(ppt->value);
+    }
+    ppt=LALInferenceGetProcParamVal(commandLine,"--delta_tc");
+    if(ppt){
+      delta_tc=atof(ppt->value);
     }
   
     timeMin=endtime-dt-0.022; timeMax=endtime+dt+0.022;
@@ -1201,7 +1205,7 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
     timeMax -= XLALGPSGetREAL8(&IFOdata[i].whiteFreqData->epoch);
   
     time_steps = (unsigned int)((timeMax-timeMin)/delta_tc);
-    printf("timeMin = %f, timeMax = %f\n", timeMin, timeMax);
+    printf("endtime = %f, timeMin = %f, timeMax = %f\n", endtime, timeMin, timeMax);
     printf("time steps = %d\n", time_steps); 
     double deltaF = IFOdata[i].oneSidedNoisePowerSpectrum->deltaF;
     gsl_matrix_complex *vandermonde_matrix=NULL;
@@ -1227,6 +1231,7 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
         IFOdata[i].roqData->frequencyNodes = gsl_vector_calloc(n_basis);
         tempfp = fopen(ppt->value, "rb");
         gsl_vector_fread(tempfp, IFOdata[i].roqData->frequencyNodes);
+        
       }
       
     }
@@ -1255,45 +1260,49 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
         IFOdata[i].roqData->trigtime = endtime;
         IFOdata[i].roqData->time_weights_width = timeMax-timeMin;
    
- 	    /*** compute the weights ***/
+        /*** compute the weights ***/
 
-    	GSL_SET_COMPLEX(&alpha, 4.*IFOdata[i].oneSidedNoisePowerSpectrum->deltaF, 0);
-    	GSL_SET_COMPLEX(&beta, 0, 0);
+        GSL_SET_COMPLEX(&alpha, 4.*IFOdata[i].oneSidedNoisePowerSpectrum->deltaF, 0);
+        GSL_SET_COMPLEX(&beta, 0, 0);
 	
-    	for(unsigned int jj = 0; jj < time_steps; jj++){
+        for(unsigned int jj = 0; jj < time_steps; jj++){
 
-		tc = timeMin + 2*dt*jj / time_steps;
+          tc = timeMin + 2*dt*jj / time_steps;
 
-		for(unsigned int ii=0; ii < n_samples; ii++){
-			gsl_vector_complex_set(exp_2pi_i_f_tc, ii, gsl_complex_polar (1, (IFOdata[i].fLow/deltaF+ii)*deltaF*tc*2*LAL_PI));
-		}
+          for(unsigned int ii=0; ii < n_samples; ii++){
+            gsl_vector_complex_set(exp_2pi_i_f_tc, ii, gsl_complex_polar (1, (IFOdata[i].fLow/deltaF+ii)*deltaF*tc*2*LAL_PI));
+          }
 		
-		for(unsigned int k = 0; k < n_samples; k++){
+          for(unsigned int k = 0; k < n_samples; k++){
 
-			GSL_SET_COMPLEX(&wd, creal(IFOdata[i].whiteFreqData->data->data[k + (unsigned int)(IFOdata[i].fLow/deltaF)]), cimag(IFOdata[i].whiteFreqData->data->data[k + (unsigned int)(IFOdata[i].fLow/deltaF)]));
+            if(!isnan(creal(IFOdata[i].whiteFreqData->data->data[k + (unsigned int)(IFOdata[i].fLow/deltaF)]))){
+              GSL_SET_COMPLEX(&wd, creal(IFOdata[i].whiteFreqData->data->data[k + (unsigned int)(IFOdata[i].fLow/deltaF)]), cimag(IFOdata[i].whiteFreqData->data->data[k + (unsigned int)(IFOdata[i].fLow/deltaF)]));
+            }else{
+              GSL_SET_COMPLEX(&wd, 0.0, 0.0);
+            }
  
-			shifted_data_element = gsl_complex_mul (wd, gsl_vector_complex_get(exp_2pi_i_f_tc, k));
+            shifted_data_element = gsl_complex_mul (wd, gsl_vector_complex_get(exp_2pi_i_f_tc, k));
 
-			//take conjugate
-			shifted_data_element = gsl_complex_conjugate (shifted_data_element);
+            //take conjugate
+            shifted_data_element = gsl_complex_conjugate (shifted_data_element);
 			
-			gsl_vector_complex_set (whitened_data, k, shifted_data_element);
+            gsl_vector_complex_set (whitened_data, k, shifted_data_element);
 	
-		}
+          }
 
-		gsl_matrix_complex_set_col (whitened_data_matrix, jj, whitened_data);	
+          gsl_matrix_complex_set_col (whitened_data_matrix, jj, whitened_data);
 
         }
 
-	printf("Computing weights for %s\n",IFOdata[i].name);
+        printf("Computing weights for %s\n",IFOdata[i].name);
 	
-  	gsl_blas_zgemm (CblasTrans, CblasNoTrans, alpha, rb_matrix, whitened_data_matrix, beta, E_matrix);
+        gsl_blas_zgemm (CblasTrans, CblasNoTrans, alpha, rb_matrix, whitened_data_matrix, beta, E_matrix);
 
         GSL_SET_COMPLEX (&alpha, 1, 0);
  
-	gsl_blas_zgemm (CblasTrans, CblasNoTrans, alpha, E_matrix, vandermonde_matrix, beta, IFOdata[i].roqData->weights);
+        gsl_blas_zgemm (CblasTrans, CblasNoTrans, alpha, E_matrix, vandermonde_matrix, beta, IFOdata[i].roqData->weights);
 
-	printf("Weights have been computed for %s\n",IFOdata[i].name);
+        printf("Weights have been computed for %s\n",IFOdata[i].name);
 
         //printf("IFOdata[%d].whiteFreqData->epoch=%e\n",i,XLALGPSGetREAL8(&IFOdata[i].whiteFreqData->epoch));
         //printf("timeMin=%e\tendtime=%e\ttimeMax=%e\n",timeMin,endtime,timeMax);
@@ -1301,11 +1310,11 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
 
         // compute int_f_7_over_3
         IFOdata[i].roqData->int_f_7_over_3 = 0;
-	for(unsigned int kk = 0; kk < n_samples; kk++){
-
-		IFOdata[i].roqData->int_f_7_over_3 += 4.*deltaF*pow((IFOdata[i].fLow + kk*deltaF), -7./3.) / IFOdata[i].oneSidedNoisePowerSpectrum->data->data[kk + (unsigned int)(IFOdata[i].fLow/deltaF)];
-	}
-
+        for(unsigned int kk = 0; kk < n_samples; kk++){
+          if(IFOdata[i].oneSidedNoisePowerSpectrum->data->data[kk + (unsigned int)(IFOdata[i].fLow/deltaF)] != 0.0){
+            IFOdata[i].roqData->int_f_7_over_3 += 4.*deltaF*pow((IFOdata[i].fLow + kk*deltaF), -7./3.) / IFOdata[i].oneSidedNoisePowerSpectrum->data->data[kk + (unsigned int)(IFOdata[i].fLow/deltaF)];
+          }
+        }
       }
     
     }

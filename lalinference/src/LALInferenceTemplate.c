@@ -337,11 +337,10 @@ double m1,m2,mc,eta,q;
 
         GSL_SET_COMPLEX(&h_i, amp * cos(Psi + shft * f - 2.*phic - LAL_PI_4), amp * sin(Psi + shft * f - 2.*phic - LAL_PI_4));
 
-        gsl_vector_complex_set(IFOdata->roqData->hplus, i, h_i);     
+        gsl_vector_complex_set(IFOdata->roqData->hplus, i, h_i);
 
-	return;
    }
-
+	return;
 }
 void LALInferenceTemplateROQ_amp_squared(LALInferenceIFOData *IFOdata)
 {
@@ -373,9 +372,9 @@ double m1,m2,mc,eta,q;
     double amp_squared;
 
     amp_squared = pow( pow(m_sec, 5./6.) * sqrt(5.*eta / 24.) / (Pi_p2by3 * r / LAL_C_SI), 2. );
-
-    *(IFOdata->roqData->amp_squared) = amp_squared;
   
+    *(IFOdata->roqData->amp_squared) = amp_squared;
+
 }
 
 
