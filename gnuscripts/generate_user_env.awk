@@ -132,14 +132,14 @@ END {
     }
     # output prepend/append variables
     for (name in pathvars) {
-        sed_script = ""
+        sed_script = "s|::|:!@%COLON%@!:|;"
         split(pathvars[name], pathvar, ":")
         for (i in pathvar) {
             if (substr(pathvar[i], 1, 1) != "$") {
                 sed_script = sed_script "s|:" pathvar[i] ":|:|;"
             }
         }
-        sed_script = sed_script "s|::*|:|g;s|^:||;s|:$||"
+        sed_script = sed_script "s|::*|:|g;s|^:||;s|:$||;s|!@%COLON%@!||g;"
         if (csh) {
             print "if ( ! ${?" name "} ) setenv " name >>output
             print "setenv " name " `echo \":${" name "}:\" | " SED " '" sed_script "'`" >>output
