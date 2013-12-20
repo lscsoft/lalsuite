@@ -1,7 +1,7 @@
 # -*- mode: autoconf; -*-
 # lalsuite_gccflags.m4 - macros to set strict gcc flags
 #
-# serial 17
+# serial 18
 
 AC_DEFUN([LALSUITE_ENABLE_GCC_FLAGS],[
   # $0: enable GCC warning flags
@@ -21,7 +21,7 @@ AC_DEFUN([LALSUITE_ADD_GCC_FLAGS],[
   # $0: add GCC warning flags
   AS_IF([test "x${GCC}" = xyes && test "x${enable_gcc_flags}" = xyes],[
 
-    gcc_flags="-g3 -Wall -W -Wmissing-prototypes -Wstrict-prototypes -Wshadow -Wpointer-arith -Wcast-qual -Wcast-align -Wwrite-strings -fno-common -Wnested-externs -Wno-format-zero-length -fno-strict-aliasing"
+    gcc_flags="-g3 -Wall -W -Werror -Wmissing-prototypes -Wstrict-prototypes -Wshadow -Wpointer-arith -Wcast-qual -Wcast-align -Wwrite-strings -fno-common -Wnested-externs -Wno-format-zero-length -fno-strict-aliasing"
 
     # check if compiler supports -Wno-unused-result
     LALSUITE_PUSH_UVARS
@@ -37,12 +37,6 @@ AC_DEFUN([LALSUITE_ADD_GCC_FLAGS],[
       AC_MSG_RESULT([no])
     ])
     LALSUITE_POP_UVARS
-
-    # don't use -Werror in LALApps
-    AS_CASE([${PACKAGE}],
-      [lalapps],[:],
-      [gcc_flags="${gcc_flags} -Werror"]
-    )
 
 # comment out usage of -pedantic flag due to gcc bug 7263
 # http://gcc.gnu.org/bugzilla/show_bug.cgi?id=7263
