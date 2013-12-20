@@ -223,7 +223,7 @@ def make_dag(config, ifo, category, cluster, start_time, end_time):
 
     roots = []
 
-    for ifo in ['H1','L1','V1']:
+    for ifo in ifos:
         veto_job = Tree('make_veto_files', config, ifo, 1, 'UNCLUSTERED', start_time, end_time, local = True)
 
         roots.append(veto_job)
@@ -328,6 +328,9 @@ def parse_command_line():
 
     if not options.action:
         print >>sys.stderr, "Please specify --action"
+        sys.exit(-1)
+    if not options.ifos:
+        print >>sys.stderr, "Please specify --ifos"
         sys.exit(-1)
 
     return options
@@ -933,7 +936,7 @@ def make_index_page(config, ifo, veto_level, cluster, gps_start_time, gps_end_ti
     print >>out, template
     out.close()
 
-    for ifo in ['H1','L1','V1']:
+    for ifo in ifos:
         for cat in [0,1,2,4]:
             for cluster in ['UNCLUSTERED','30MILLISEC_CLUSTERED','16SEC_CLUSTERED']:
                 # Make the summary section
