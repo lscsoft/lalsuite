@@ -139,7 +139,7 @@ alpha2=0.0
 delta2=0.5
 alpha3=3.0
 delta3=-0.5
-echo "$alpha1 $delta1\n$alpha2 $delta2\n$alpha3 $delta3" >> $skygrid
+printf "%s %s\n%s %s\n%s %s" "$alpha1" "$delta1" "$alpha2" "$delta2" "$alpha3" "$delta3" >> $skygrid
 
 ## ----- run PrintDetectorState 3 times
 rm $outPDS
@@ -249,7 +249,7 @@ Dmean=$( echo $Amean $Bmean $Cmean | awk '{print $1*$2-$3*$3}' )
 
 ## ----- make timestampsfile
 timestampsfile=./timestamps_test.dat
-echo "$timestamp1 0\n$timestamp2 0\n$timestamp3 0" >> $timestampsfile
+printf "%s 0\n%s 0\n%s 0" "$timestamp1" "$timestamp2" "$timestamp3" >> $timestampsfile
 
 ## ----- run ComputeAntennaPattern with timestampsfile input, averaged output
 cap_cmdline="${cap_code} --IFOs=$IFO --timeStampsFile=$timestampsfile --outputFile=$outCAP --Alpha=$alpha --Delta=$delta --averageABCD"
