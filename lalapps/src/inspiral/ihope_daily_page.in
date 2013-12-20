@@ -762,7 +762,7 @@ def make_glitchy_times_table(config, ifo, veto_level, cluster, start_time, end_t
 
 
 def make_usage_table(config, ifo, veto_level, cluster, start_time, end_time):
-    out = open('%s/%s-%d_%s_usage_table.html' % (config['tmp_dir'], ifo, veto_level, cluster), 'w')
+    out = open('%s/%s-%d_%s_usage_table.html' % (config['out_dir'], ifo, veto_level, cluster), 'w')
 
     if veto_level == 0:
         out.close()
@@ -950,7 +950,7 @@ def make_index_page(config, ifo, veto_level, cluster, gps_start_time, gps_end_ti
                 print >>out, '<body>'
 
                 for name in summary_names:
-                    in_f = open(config['tmp_dir'] + '/' + name % (ifo, cat, cluster))
+                    in_f = open(config['out_dir'] + '/' + name % (ifo, cat, cluster))
 
                     for l in in_f:
                         print >>out, l
