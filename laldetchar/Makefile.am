@@ -24,6 +24,7 @@ SUBDIRS = \
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = laldetchar.pc
 noinst_DATA = laldetchar-uninstalled.pc
+BUILT_SOURCES = laldetchar-uninstalled.pc
 
 DISTCLEANFILES = config.lt
 

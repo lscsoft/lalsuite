@@ -24,6 +24,7 @@ SUBDIRS = \
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = lalinspiral.pc
 noinst_DATA = lalinspiral-uninstalled.pc
+BUILT_SOURCES = lalinspiral-uninstalled.pc
 
 DISTCLEANFILES = config.lt
 
