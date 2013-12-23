@@ -1,7 +1,7 @@
 # -*- mode: autoconf; -*-
 # lalsuite_build.m4 - top level build macros
 #
-# serial 76
+# serial 77
 
 # not present in older versions of pkg.m4
 m4_pattern_allow([^PKG_CONFIG(_(PATH|LIBDIR|SYSROOT_DIR|ALLOW_SYSTEM_(CFLAGS|LIBS)))?$])
@@ -62,7 +62,7 @@ AC_DEFUN([AC_OUTPUT],[
   # prepend compiler configuration e.g. CFLAGS to AM_CFLAGS,
   # then restore original user-supplied values of user variables
   m4_foreach_w([uvar],uvar_list,[
-    AM_[]uvar="${lalsuite_compiler_[]uvar} ${AM_[]uvar}"
+    AC_SUBST(AM_[]uvar,"${lalsuite_compiler_[]uvar} ${AM_[]uvar} ${sys_[]uvar}")
     uvar="${uvar_prefix[]uvar}"
   ])
   # call original AC_OUTPUT
@@ -101,45 +101,83 @@ AC_DEFUN([LALSUITE_ADD_FLAGS],[
   # $0: prepend flags to AM_CPPFLAGS/AM_$1FLAGS/AM_LDFLAGS/LIBS,
   # and update values of CPPFLAGS/$1FLAGS/LDFLAGS for Autoconf tests
   m4_ifval([$1],[m4_ifval([$2],[
-    prepend_CPPFLAGS=
-    prepend_$1FLAGS=
+    pre_AM_CPPFLAGS=
+    pre_sys_CPPFLAGS=
+    pre_AM_$1FLAGS=
     for flag in $2; do
-      # AM_CPPFLAGS gets -I and -D flags, AM_$1FLAGS gets everything else from $2
+      # AM_CPPFLAGS gets unique -I, -D and -U flags
+      # sys_CPPFLAGS gets unique system -I flags
+      # AM_$1FLAGS gets everything else
       AS_CASE([${flag}],
-        [-I*|-D*],[prepend_CPPFLAGS="${prepend_CPPFLAGS} ${flag}"],
-        [prepend_$1FLAGS="${prepend_$1FLAGS} ${flag}"]
+        [-I/opt/*|-I/usr/*],[
+          AS_CASE([" ${sys_CPPFLAGS} "],
+            [*" ${flag} "*],[:],
+            [pre_sys_CPPFLAGS="${pre_sys_CPPFLAGS} ${flag}"]
+          )
+        ],
+        [-I*],[
+          AS_CASE([" ${AM_CPPFLAGS} "],
+            [*" ${flag} "*],[:],
+            [pre_AM_CPPFLAGS="${pre_AM_CPPFLAGS} ${flag}"]
+          )
+        ],
+        [-D*|-U*],[pre_AM_CPPFLAGS="${pre_AM_CPPFLAGS} ${flag}"],
+        [pre_AM_$1FLAGS="${pre_AM_$1FLAGS} ${flag}"]
       )
     done
-    AS_IF([test "x${prepend_CPPFLAGS}" != x],[
-      AC_SUBST([AM_CPPFLAGS],["${prepend_CPPFLAGS} ${AM_CPPFLAGS}"])
-      _AS_ECHO_LOG([prepended ${prepend_CPPFLAGS} to AM_CPPFLAGS])
-      CPPFLAGS="${AM_CPPFLAGS} ${uvar_orig_prefix[]CPPFLAGS}"
+    AS_IF([test "x${pre_AM_CPPFLAGS}" != x],[
+      AM_CPPFLAGS="${pre_AM_CPPFLAGS} ${AM_CPPFLAGS}"
+      _AS_ECHO_LOG([prepended ${pre_AM_CPPFLAGS} to AM_CPPFLAGS])
     ])
-    AS_IF([test "x${prepend_$1FLAGS}" != x],[
-      AC_SUBST([AM_$1FLAGS],["${prepend_$1FLAGS} ${AM_$1FLAGS}"])
-      _AS_ECHO_LOG([prepended ${prepend_$1FLAGS} to AM_$1FLAGS])
-      $1FLAGS="${AM_$1FLAGS} ${uvar_orig_prefix[]$1FLAGS}"
+    AS_IF([test "x${pre_sys_CPPFLAGS}" != x],[
+      sys_CPPFLAGS="${pre_sys_CPPFLAGS} ${sys_CPPFLAGS}"
+      _AS_ECHO_LOG([prepended ${pre_sys_CPPFLAGS} to system AM_CPPFLAGS])
     ])
+    AS_IF([test "x${pre_AM_$1FLAGS}" != x],[
+      AM_$1FLAGS="${pre_AM_$1FLAGS} ${AM_$1FLAGS}"
+      _AS_ECHO_LOG([prepended ${pre_AM_$1FLAGS} to AM_$1FLAGS])
+    ])
+    CPPFLAGS="${AM_CPPFLAGS} ${sys_CPPFLAGS} ${uvar_orig_prefix[]CPPFLAGS}"
+    $1FLAGS="${AM_$1FLAGS} ${uvar_orig_prefix[]$1FLAGS}"
   ])])
   m4_ifval([$3],[
-    prepend_LDFLAGS=
-    prepend_LIBS=
+    pre_AM_LDFLAGS=
+    pre_sys_LDFLAGS=
+    pre_LIBS=
     for flag in $3; do
-      # LIBS gets -l flags and .la files, AM_LDFLAGS gets everything else from $3
+      # LIBS gets -l flags and .la files
+      # sys_LDFLAGS gets unique system -L flags
+      # AM_LDFLAGS gets unique -L flags and everything else
       AS_CASE([${flag}],
-        [-l*|*.la],[prepend_LIBS="${prepend_LIBS} ${flag}"],
-        [prepend_LDFLAGS="${prepend_LDFLAGS} ${flag}"]
+        [-L/opt/*|-L/usr/*],[
+          AS_CASE([" ${sys_LDFLAGS} "],
+            [*" ${flag} "*],[:],
+            [pre_sys_LDFLAGS="${pre_sys_LDFLAGS} ${flag}"]
+          )
+        ],
+        [-L*],[
+          AS_CASE([" ${AM_LDFLAGS} "],
+            [*" ${flag} "*],[:],
+            [pre_AM_LDFLAGS="${pre_AM_LDFLAGS} ${flag}"]
+          )
+        ],
+        [-l*|*.la],[pre_LIBS="${pre_LIBS} ${flag}"],
+        [pre_AM_LDFLAGS="${pre_AM_LDFLAGS} ${flag}"]
       )
     done
-    AS_IF([test "x${prepend_LDFLAGS}" != x],[
-      AC_SUBST([AM_LDFLAGS],["${prepend_LDFLAGS} ${AM_LDFLAGS}"])
-      _AS_ECHO_LOG([prepended ${prepend_LDFLAGS} to AM_LDFLAGS])
-      LDFLAGS="${AM_LDFLAGS} ${uvar_orig_prefix[]LDFLAGS}"
+    AS_IF([test "x${pre_AM_LDFLAGS}" != x],[
+      AM_LDFLAGS="${pre_AM_LDFLAGS} ${AM_LDFLAGS}"
+      _AS_ECHO_LOG([prepended ${pre_AM_LDFLAGS} to AM_LDFLAGS])
     ])
-    AS_IF([test "x${prepend_LIBS}" != x],[
-      LIBS="${prepend_LIBS} ${LIBS}"
-      _AS_ECHO_LOG([prepended ${prepend_LIBS} to LIBS])
+    AS_IF([test "x${pre_sys_LDFLAGS}" != x],[
+      sys_LDFLAGS="${pre_sys_LDFLAGS} ${sys_LDFLAGS}"
+      _AS_ECHO_LOG([prepended ${pre_sys_LDFLAGS} to system AM_LDFLAGS])
     ])
+    AS_IF([test "x${pre_LIBS}" != x],[
+      LIBS="${pre_LIBS} ${LIBS}"
+      _AS_ECHO_LOG([prepended ${pre_LIBS} to LIBS])
+    ])
+    LDFLAGS="${AM_LDFLAGS} ${sys_LDFLAGS} ${uvar_orig_prefix[]LDFLAGS}"
   ])
   # end $0
 ])
@@ -361,12 +399,18 @@ AC_DEFUN([LALSUITE_CHECK_LIB],[
     # add $1 compiler and linker flags to CPPFLAGS/CFLAGS/LDFLAGS/LIBS
     LALSUITE_ADD_FLAGS([C],[`${PKG_CONFIG} --cflags "${lal_pkg}"`],[`${PKG_CONFIG} --libs "${lal_pkg}"`])
 
-    # add $1 include flags, including system directories, to LAL_INCLUDES_WITH_SYS_DIRS
+    # add system include flags to LAL_SYSTEM_INCLUDES: get $1 include flags with system flags,
+    # then add any flags not already in CPPFLAGS or LAL_SYSTEM_INCLUDES to LAL_SYSTEM_INCLUDES
     PKG_CONFIG_ALLOW_SYSTEM_CFLAGS=1
     export PKG_CONFIG_ALLOW_SYSTEM_CFLAGS
-    LAL_INCLUDES_WITH_SYS_DIRS=`${PKG_CONFIG} --cflags-only-I "${lal_pkg}"`" ${LAL_INCLUDES_WITH_SYS_DIRS}"
+    for flag in `${PKG_CONFIG} --cflags-only-I "${lal_pkg}"`; do
+      AS_CASE([" ${CPPFLAGS} ${LAL_SYSTEM_INCLUDES} "],
+        [*" ${flag} "*],[:],
+        [LAL_SYSTEM_INCLUDES="${LAL_SYSTEM_INCLUDES} ${flag}"]
+      )
+    done
     AS_UNSET([PKG_CONFIG_ALLOW_SYSTEM_CFLAGS])
-    AC_SUBST([LAL_INCLUDES_WITH_SYS_DIRS])
+    AC_SUBST([LAL_SYSTEM_INCLUDES])
 
     # add $1 data path to LAL_DATA_PATH
     LALSUITE_ADD_PATH(LAL_DATA_PATH,`${PKG_CONFIG} --variable=LAL_DATA_PATH "${lal_pkg}"`)
