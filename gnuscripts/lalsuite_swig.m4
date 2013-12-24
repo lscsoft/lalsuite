@@ -2,7 +2,7 @@
 # lalsuite_swig.m4 - SWIG configuration
 # Author: Karl Wette, 2011, 2012
 #
-# serial 52
+# serial 53
 
 # enable SWIG wrapping modules
 AC_DEFUN([LALSUITE_ENABLE_SWIG],[
@@ -152,12 +152,6 @@ AC_DEFUN([LALSUITE_USE_SWIG],[
 
     # flags for generating/compiling SWIG wrapping module sources
     AC_SUBST(SWIG_CPPFLAGS,["-I\$(abs_top_builddir)/include -I\$(abs_top_builddir)/src ${swig_save_CPPFLAGS} ${LAL_SYSTEM_INCLUDES}"])
-
-    # is GSL available?
-    AS_IF([test "x${GSL_LIBS}" != x],[
-      SWIG_SWIGFLAGS="${SWIG_SWIGFLAGS} -DHAVE_LIBGSL"
-      SWIG_CPPFLAGS="${SWIG_CPPFLAGS} -DHAVE_LIBGSL"
-    ])
 
     # flags for compiling SWIG wrapping module sources
     AC_SUBST(SWIG_CFLAGS,[])

@@ -171,6 +171,11 @@ MACRO(A, B, C, X);
 #endif
 %}
 
+// Include SWIG configuration header generated from 'config.h'.
+%header %{
+#include <swig_config.h>
+%}
+
 // Include LAL headers.
 %header %{
 #include <lal/LALDatatypes.h>
@@ -183,16 +188,16 @@ MACRO(A, B, C, X);
 %constant int swig_version = SWIG_VERSION;
 
 // Constructors for GSL complex numbers, if required.
-#ifdef HAVE_LIBGSL
 %header %{
+#ifdef SWIGLAL_HAVE_LIBGSL
 #include <gsl/gsl_complex_math.h>   // provides gsl_complex_rect()
 SWIGINTERNINLINE gsl_complex_float gsl_complex_float_rect(float x, float y) {
   gsl_complex_float z;
   GSL_SET_COMPLEX(&z, x, y);
   return z;
 }
-%}
 #endif
+%}
 
 // Convert XLAL/LAL errors into native scripting-language exceptions:
 //  - XLAL: Before performing any action, clear the XLAL error number.

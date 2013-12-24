@@ -16,7 +16,7 @@ swig_modl_check = check_@PACKAGE@swig
 # automake libtool variables for SWIG wrapping module
 swig_lt_nodist_sources = $(swig_modl_src)
 swig_lt_sources =
-swig_lt_cppflags = $(AM_CPPFLAGS) -shared
+swig_lt_cppflags = -I$(top_builddir)/swig $(AM_CPPFLAGS) -shared
 swig_lt_cflags =
 swig_lt_cxxflags =
 swig_lt_libadd =
@@ -55,6 +55,6 @@ rm_targets = { rm -f $@; exit 1; }
 # generate SWIG wrapping module source
 $(swig_modl_src) : ../$(swig_iface)
 	@$(MKDIR_P) $(SWIG_OUTDIR)
-	$(AM_V_GEN)$(SWIG) $(SWIG_SWIGFLAGS) $(CPPFLAGS) $(swig_langflags) -MD -MF $(swig_iface_deps) -o $@ $< || $(rm_targets)
+	$(AM_V_GEN)$(SWIG) -I$(top_builddir)/swig $(SWIG_SWIGFLAGS) $(CPPFLAGS) $(swig_langflags) -MD -MF $(swig_iface_deps) -o $@ $< || $(rm_targets)
 
 endif # SWIG_BUILD

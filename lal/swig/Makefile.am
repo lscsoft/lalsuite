@@ -34,6 +34,7 @@ EXTRA_DIST = $(swig_generate_iface)
 
 # clean files
 CLEANFILES = \
+	$(builddir)/swig_config.h \
 	$(swig_iface_headers) \
 	$(swig_iface_preproc) \
 	$(swig_iface_preproc_xml) \
@@ -69,11 +70,16 @@ $(swig_iface_preproc) : $(swig_iface_headers) Makefile
 		fi; \
 	done
 
+# generate SWIG configuration header
+$(builddir)/swig_config.h : $(CONFIG_HEADER)
+	$(AM_V_GEN)echo '// $@: generated from $< by $(subdir)/Makefile' > $@; \
+	$(SED) -n 's/^#define  */#define SWIGLAL_/p' $< >> $@
+
 # include SWIG preprocessing interface dependencies file
 @am__include@ @am__quote@./$(DEPDIR)/@PACKAGE@swig_preproc.deps@am__quote@
 
 # generate SWIG parse tree of preprocessing interface file
-$(swig_iface_preproc_xml) : $(swig_iface_preproc)
+$(swig_iface_preproc_xml) : $(swig_iface_preproc) $(builddir)/swig_config.h
 	$(AM_V_GEN)$(SWIG) $(SWIG_SWIGFLAGS) $(swig_preprocflags) -MD -MF $(swig_iface_preproc_deps) -o $@ $< || $(rm_targets)
 
 # generate SWIG interface file

@@ -4,3 +4,4 @@
 /lal*swig.i
 /octave/lal*swig_octave.cpp
 /python/lal*swig_python.c
+/swig_config.h
