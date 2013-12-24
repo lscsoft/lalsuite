@@ -13,7 +13,7 @@ print("PASSED module load")
 
 # check memory allocation
 print("checking memory allocation ...")
-if lal.swig_debug:
+if not lal.lalNoDebug:
     lal.CheckMemoryLeaks()
     mem1 = lal.Detector()
     mem2 = lal.CreateCOMPLEX8Vector(5)

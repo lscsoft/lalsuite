@@ -182,13 +182,6 @@ MACRO(A, B, C, X);
 // Version of SWIG used to generate wrapping code.
 %constant int swig_version = SWIG_VERSION;
 
-// Whether wrapping code was generated in debug mode.
-#ifdef NDEBUG
-%constant bool swig_debug = false;
-#else
-%constant bool swig_debug = true;
-#endif
-
 // Constructors for GSL complex numbers, if required.
 #ifdef HAVE_LIBGSL
 %header %{

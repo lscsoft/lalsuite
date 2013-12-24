@@ -12,7 +12,7 @@ disp("PASSED module load");
 
 ## check memory allocation
 disp("checking memory allocation ...");
-if lal.swig_debug
+if !lalcvar.lalNoDebug
   CheckMemoryLeaks();
   mem1 = new_Detector();
   mem2 = CreateCOMPLEX8Vector(5);
