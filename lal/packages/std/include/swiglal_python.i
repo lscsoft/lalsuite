@@ -39,12 +39,6 @@
 #if !SWIGLAL_HAVE_DECL_NPY_ARRAY_WRITEABLE
 #define NPY_ARRAY_WRITEABLE NPY_WRITEABLE
 #endif
-#if !SWIGLAL_HAVE_DECL_PYARRAY_BASE
-#define PyArray_BASE(arr) (arr)->base
-#endif
-#if !SWIGLAL_HAVE_DECL_PYARRAY_DESCR
-#define PyArray_DESCR(arr) (arr)->descr
-#endif
 #if !SWIGLAL_HAVE_DECL_PYARRAY_SETBASEOBJECT
 #define PyArray_SetBaseObject(arr, obj) do { (arr)->base = (obj); } while(0)
 #endif

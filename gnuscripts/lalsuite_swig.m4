@@ -2,7 +2,7 @@
 # lalsuite_swig.m4 - SWIG configuration
 # Author: Karl Wette, 2011, 2012
 #
-# serial 54
+# serial 55
 
 # enable SWIG wrapping modules
 AC_DEFUN([LALSUITE_ENABLE_SWIG],[
@@ -457,7 +457,7 @@ EOD`]
     # check for declarations which may need compatibility code for NumPy API < 1.7
     CPPFLAGS=${PYTHON_CPPFLAGS}
     AC_LANG_PUSH([C])
-    AC_CHECK_DECLS([NPY_ARRAY_WRITEABLE,PyArray_BASE,PyArray_DESCR,PyArray_SetBaseObject],,,[
+    AC_CHECK_DECLS([NPY_ARRAY_WRITEABLE,PyArray_SetBaseObject],,,[
       AC_INCLUDES_DEFAULT
       #include <Python.h>
       #include <numpy/arrayobject.h>
