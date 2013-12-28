@@ -80,19 +80,19 @@ disp("PASSED string conversions");
 
 ## check static vector/matrix conversions
 disp("checking static vector/matrix conversions ...");
-lalcvar.lalswig_test_struct_vector{1} = lalcvar.lalswig_test_struct_const;
-assert(lalcvar.lalswig_test_struct_vector{1}.n == lalcvar.lalswig_test_struct_const.n);
-assert(lalcvar.lalswig_test_struct_vector{1}.i == lalcvar.lalswig_test_struct_const.i);
-assert(lalcvar.lalswig_test_struct_vector{1}.f == lalcvar.lalswig_test_struct_const.f);
-assert(strcmp(lalcvar.lalswig_test_struct_vector{1}.str, lalcvar.lalswig_test_struct_const.str));
-assert(all(lalcvar.lalswig_test_struct_vector{1}.vec == lalcvar.lalswig_test_struct_const.vec));
-lalcvar.lalswig_test_struct_matrix{1, 1} = lalcvar.lalswig_test_struct_const;
-assert(lalcvar.lalswig_test_struct_matrix{1, 1}.n == lalcvar.lalswig_test_struct_const.n);
-assert(lalcvar.lalswig_test_struct_matrix{1, 1}.i == lalcvar.lalswig_test_struct_const.i);
-assert(lalcvar.lalswig_test_struct_matrix{1, 1}.f == lalcvar.lalswig_test_struct_const.f);
-assert(strcmp(lalcvar.lalswig_test_struct_matrix{1, 1}.str, lalcvar.lalswig_test_struct_const.str));
-assert(all(lalcvar.lalswig_test_struct_matrix{1, 1}.vec == lalcvar.lalswig_test_struct_const.vec));
-sts = new_lalswig_test_struct();
+lalcvar.swig_lal_test_struct_vector{1} = lalcvar.swig_lal_test_struct_const;
+assert(lalcvar.swig_lal_test_struct_vector{1}.n == lalcvar.swig_lal_test_struct_const.n);
+assert(lalcvar.swig_lal_test_struct_vector{1}.i == lalcvar.swig_lal_test_struct_const.i);
+assert(lalcvar.swig_lal_test_struct_vector{1}.f == lalcvar.swig_lal_test_struct_const.f);
+assert(strcmp(lalcvar.swig_lal_test_struct_vector{1}.str, lalcvar.swig_lal_test_struct_const.str));
+assert(all(lalcvar.swig_lal_test_struct_vector{1}.vec == lalcvar.swig_lal_test_struct_const.vec));
+lalcvar.swig_lal_test_struct_matrix{1, 1} = lalcvar.swig_lal_test_struct_const;
+assert(lalcvar.swig_lal_test_struct_matrix{1, 1}.n == lalcvar.swig_lal_test_struct_const.n);
+assert(lalcvar.swig_lal_test_struct_matrix{1, 1}.i == lalcvar.swig_lal_test_struct_const.i);
+assert(lalcvar.swig_lal_test_struct_matrix{1, 1}.f == lalcvar.swig_lal_test_struct_const.f);
+assert(strcmp(lalcvar.swig_lal_test_struct_matrix{1, 1}.str, lalcvar.swig_lal_test_struct_const.str));
+assert(all(lalcvar.swig_lal_test_struct_matrix{1, 1}.vec == lalcvar.swig_lal_test_struct_const.vec));
+sts = new_swig_lal_test_struct();
 assert(length(sts.vec) == 3);
 assert(length(sts.evec) == 3);
 assert(all(size(sts.mat) == [2, 3]));
@@ -110,38 +110,38 @@ for i = 1:3
   assert(sts.evec(i) == (2*i + 3));
 endfor
 clear ans sts;
-assert(!any(lalcvar.lalswig_test_enum_vector));
-assert(!any(lalcvar.lalswig_test_enum_matrix(:)));
-assert(length(lalcvar.lalswig_test_empty_INT4_vector) == 0);
-assert(!any(lalcvar.lalswig_test_INT4_vector));
-assert(!any(lalcvar.lalswig_test_INT4_matrix(:)));
-assert(!any(lalcvar.lalswig_test_REAL8_vector));
-assert(!any(lalcvar.lalswig_test_REAL8_matrix(:)));
-assert(!any(lalcvar.lalswig_test_COMPLEX8_vector));
-assert(!any(lalcvar.lalswig_test_COMPLEX8_matrix(:)));
-lalcvar.lalswig_test_INT4_vector(1) = 10;
-assert(lalcvar.lalswig_test_INT4_vector(1) == 10);
-lalcvar.lalswig_test_INT4_matrix(1, 1) = 11;
-assert(lalcvar.lalswig_test_INT4_matrix(1, 1) == 11);
-lalcvar.lalswig_test_INT4_vector = lalcvar.lalswig_test_INT4_const_vector;
-assert(all(lalcvar.lalswig_test_INT4_vector == [1; 2; 4]));
-assert(lalcvar.lalswig_test_INT4_const_vector(3) == 4);
-lalcvar.lalswig_test_INT4_matrix = lalcvar.lalswig_test_INT4_const_matrix;
-assert(all(lalcvar.lalswig_test_INT4_matrix == [[1, 2, 4]; [2, 4, 8]]));
-assert(lalcvar.lalswig_test_INT4_const_matrix(2, 3) == 8);
+assert(!any(lalcvar.swig_lal_test_enum_vector));
+assert(!any(lalcvar.swig_lal_test_enum_matrix(:)));
+assert(length(lalcvar.swig_lal_test_empty_INT4_vector) == 0);
+assert(!any(lalcvar.swig_lal_test_INT4_vector));
+assert(!any(lalcvar.swig_lal_test_INT4_matrix(:)));
+assert(!any(lalcvar.swig_lal_test_REAL8_vector));
+assert(!any(lalcvar.swig_lal_test_REAL8_matrix(:)));
+assert(!any(lalcvar.swig_lal_test_COMPLEX8_vector));
+assert(!any(lalcvar.swig_lal_test_COMPLEX8_matrix(:)));
+lalcvar.swig_lal_test_INT4_vector(1) = 10;
+assert(lalcvar.swig_lal_test_INT4_vector(1) == 10);
+lalcvar.swig_lal_test_INT4_matrix(1, 1) = 11;
+assert(lalcvar.swig_lal_test_INT4_matrix(1, 1) == 11);
+lalcvar.swig_lal_test_INT4_vector = lalcvar.swig_lal_test_INT4_const_vector;
+assert(all(lalcvar.swig_lal_test_INT4_vector == [1; 2; 4]));
+assert(lalcvar.swig_lal_test_INT4_const_vector(3) == 4);
+lalcvar.swig_lal_test_INT4_matrix = lalcvar.swig_lal_test_INT4_const_matrix;
+assert(all(lalcvar.swig_lal_test_INT4_matrix == [[1, 2, 4]; [2, 4, 8]]));
+assert(lalcvar.swig_lal_test_INT4_const_matrix(2, 3) == 8);
 try
-  lalcvar.lalswig_test_INT4_const_vector(20);
+  lalcvar.swig_lal_test_INT4_const_vector(20);
   expected_exception = 1;
 end_try_catch
 assert(!expected_exception);
-lalcvar.lalswig_test_REAL8_vector(1) = 3.4;
-assert(lalcvar.lalswig_test_REAL8_vector(1) == 3.4);
-lalcvar.lalswig_test_REAL8_matrix(1, 1) = 5.6;
-assert(lalcvar.lalswig_test_REAL8_matrix(1, 1) == 5.6);
-lalcvar.lalswig_test_COMPLEX8_vector(1) = complex(3.5, 4.75);
-assert(lalcvar.lalswig_test_COMPLEX8_vector(1) == complex(3.5, 4.75));
-lalcvar.lalswig_test_COMPLEX8_matrix(1, 1) = complex(5.5, 6.25);
-assert(lalcvar.lalswig_test_COMPLEX8_matrix(1, 1) == complex(5.5, 6.25));
+lalcvar.swig_lal_test_REAL8_vector(1) = 3.4;
+assert(lalcvar.swig_lal_test_REAL8_vector(1) == 3.4);
+lalcvar.swig_lal_test_REAL8_matrix(1, 1) = 5.6;
+assert(lalcvar.swig_lal_test_REAL8_matrix(1, 1) == 5.6);
+lalcvar.swig_lal_test_COMPLEX8_vector(1) = complex(3.5, 4.75);
+assert(lalcvar.swig_lal_test_COMPLEX8_vector(1) == complex(3.5, 4.75));
+lalcvar.swig_lal_test_COMPLEX8_matrix(1, 1) = complex(5.5, 6.25);
+assert(lalcvar.swig_lal_test_COMPLEX8_matrix(1, 1) == complex(5.5, 6.25));
 disp("PASSED static vector/matrix conversions");
 
 ## check dynamic vector/matrix conversions
@@ -223,7 +223,7 @@ disp("PASSED dynamic vector/matrix conversions (GSL)");
 
 ## check dynamic array of pointers access
 disp("checking dynamic array of pointers access ...");
-ap = lalswig_test_Create_arrayofptrs(3);
+ap = swig_lal_test_Create_arrayofptrs(3);
 assert(ap.length == 3);
 for i = 1:ap.length
   assert(ap.data{i}.length == 6);
@@ -288,7 +288,7 @@ t1 += 812345667.75;
 assert(strcmp(t1.__str__(), "812345678.250000000"));
 assert(new_LIGOTimeGPS(t1.__repr__()) == t1);
 assert(t1.ns() == 812345678250000000);
-t4struct = new_lalswig_test_gps;
+t4struct = new_swig_lal_test_gps;
 t4struct.t = 1234.5;
 assert(t4struct.t == 1234.5);
 t5 = LIGOTimeGPS("1000");
@@ -305,7 +305,7 @@ try
 end_try_catch
 assert(!expected_exception);
 endif # lal.swig_version >= hex2dec("020010")
-assert(lalswig_test_noptrgps(LIGOTimeGPS(1234.5)) == lalswig_test_noptrgps(1234.5))
+assert(swig_lal_test_noptrgps(LIGOTimeGPS(1234.5)) == swig_lal_test_noptrgps(1234.5))
 clear ans t0 t1 t2 t3 t4struct t5;
 CheckMemoryLeaks();
 disp("PASSED LIGOTimeGPS operations");

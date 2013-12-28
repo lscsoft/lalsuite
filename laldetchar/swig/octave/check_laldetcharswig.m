@@ -13,11 +13,11 @@ disp("PASSED module load");
 
 ## check object parent tracking
 disp("checking object parent tracking ...");
-a = laldetchar.new_laldetcharswig_test_parent_map_struct();
+a = laldetchar.new_swig_laldetchar_test_parent_map_struct();
 for i = 1:7
   b = a.s;
-  c = laldetcharcvar.laldetcharswig_test_parent_map.s;
-  laldetcharcvar.laldetcharswig_test_parent_map.s = lalcvar.lalswig_test_struct_const;
+  c = laldetcharcvar.swig_laldetchar_test_parent_map.s;
+  laldetcharcvar.swig_laldetchar_test_parent_map.s = lalcvar.swig_lal_test_struct_const;
 endfor
 clear ans a b c;
 CheckMemoryLeaks();
