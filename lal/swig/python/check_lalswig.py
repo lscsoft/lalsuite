@@ -1,9 +1,14 @@
 # Check SWIG Python module wrapping lal
 # Author: Karl Wette, 2011, 2012
 
+import warnings
 import datetime
 import numpy
 expected_exception = False
+
+# turn NumPy's ComplexWarning into an error, if available
+if hasattr(numpy, "ComplexWarning"):
+    warnings.simplefilter("error", numpy.ComplexWarning)
 
 # check module load
 print("checking module load ...")
@@ -33,7 +38,7 @@ if not lal.lalNoDebug:
 else:
     print("skipped memory allocation")
 
-## check equal return/first argument type handling
+# check equal return/first argument type handling
 print("checking equal return/first argument type handling")
 sv = lal.CreateStringVector("1")
 assert(sv.length == 1)
@@ -78,7 +83,7 @@ del sv
 lal.CheckMemoryLeaks()
 print("PASSED string conversions")
 
-## check static vector/matrix conversions
+# check static vector/matrix conversions
 lalcvar.swig_lal_test_struct_vector[0] = lalcvar.swig_lal_test_struct_const
 assert(lalcvar.swig_lal_test_struct_vector[0].n == lalcvar.swig_lal_test_struct_const.n)
 assert(lalcvar.swig_lal_test_struct_vector[0].i == lalcvar.swig_lal_test_struct_const.i)
@@ -184,14 +189,16 @@ def check_dynamic_vector_matrix(iv, ivl, rv, rvl, cm, cms1, cms2):
     assert(cm.data[3, 2] == complex(0.75, 1.0))
     try:
         iv.data[0] = cm.data[2, 3]
-        raise Exception("NumPy does not raise an exception when downcasting complex to integer values!")
+        if not hasattr(numpy, "ComplexWarning"):
+            raise Exception("NumPy %s does not have ComplexWarning" % numpy.__version__)
         expected_exception = True
     except:
         pass
     assert(not expected_exception)
     try:
         rv.data[0] = cm.data[3, 2]
-        raise Exception("NumPy does not raise an exception when downcasting complex to real values!")
+        if not hasattr(numpy, "ComplexWarning"):
+            raise Exception("NumPy %s does not have ComplexWarning" % numpy.__version__)
         expected_exception = True
     except:
         pass
@@ -224,7 +231,8 @@ rv1.data[0] = 1
 del rv1
 print("PASSED dynamic vector/matrix conversions (GSL)")
 
-## check dynamic array of pointers access
+# check dynamic array of pointers access
+print("checking dynamic array of pointers access ...")
 ap = lal.swig_lal_test_Create_arrayofptrs(3)
 assert(ap.length == 3)
 for i in range(0, ap.length):
