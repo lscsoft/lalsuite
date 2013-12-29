@@ -1,8 +1,8 @@
 // Tests of SWIG interface code
 // Author: Karl Wette, 2011, 2012
 
-// Test various combinations of 1D and 2D fixed arrays with
-// structs, struct/enum type, and global variables (LAL only).
+// Test various combinations of 1D and 2D fixed arrays
+// with structs, struct/enum type, and global variables.
 typedef enum {
   swig_lal_test_enum_a,
   swig_lal_test_enum_b,
