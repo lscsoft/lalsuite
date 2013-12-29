@@ -70,7 +70,7 @@ const UINT4 OptimisedHotloopDterms = DTERMS;
 #endif
 
 /* record which optimized hotloop variant was selected for use in LocalXLALComputeFaFb() */
-const char* OptimisedHotloopSource = OPT_DEMOD_SOURCE;
+const char *const OptimisedHotloopSource = OPT_DEMOD_SOURCE;
 
 #define COMPUTEFSTATC_ENULL 		1
 #define COMPUTEFSTATC_ENONULL 		2
