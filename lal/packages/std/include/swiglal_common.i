@@ -459,32 +459,36 @@ if (swiglal_release_parent(PTR)) {
 //
 
 // Input typemaps for functions and structs:
-%typemap(in) SWIGTYPE[ANY], SWIGTYPE INOUT[ANY] {
-  const size_t dims[] = {$1_dim0};
-  const size_t strides[] = {1};
-  $typemap(swiglal_fixarr_ltype, $1_type) temp[$1_dim0];
-  $1 = &temp[0];
-  // swiglal_array_typeid input type: $1_type
-  int ecode = %swiglal_array_copyin($1_type)(swiglal_no_self(), $input, %as_voidptr($1),
-                                             sizeof($1[0]), 1, dims, strides,
-                                             false, $typemap(swiglal_fixarr_tinfo, $1_type),
-                                             $disown | %convertptr_flags);
-  if (!SWIG_IsOK(ecode)) {
-    %argument_fail(ecode, "$type", $symname, $argnum);
+%typemap(in, noblock=1) SWIGTYPE[ANY], SWIGTYPE INOUT[ANY] {
+  $typemap(swiglal_fixarr_ltype, $1_type) temp$argnum[$1_dim0];
+  $1 = &temp$argnum[0];
+  {
+    const size_t dims[] = {$1_dim0};
+    const size_t strides[] = {1};
+    // swiglal_array_typeid input type: $1_type
+    int ecode = %swiglal_array_copyin($1_type)(swiglal_no_self(), $input, %as_voidptr($1),
+                                                      sizeof($1[0]), 1, dims, strides,
+                                                      false, $typemap(swiglal_fixarr_tinfo, $1_type),
+                                                      $disown | %convertptr_flags);
+    if (!SWIG_IsOK(ecode)) {
+      %argument_fail(ecode, "$type", $symname, $argnum);
+    }
   }
 }
-%typemap(in) SWIGTYPE[ANY][ANY], SWIGTYPE INOUT[ANY][ANY] {
-  const size_t dims[] = {$1_dim0, $1_dim1};
-  const size_t strides[] = {$1_dim1, 1};
-  $typemap(swiglal_fixarr_ltype, $1_type) temp[$1_dim0][$1_dim1];
-  $1 = &temp[0];
-  // swiglal_array_typeid input type: $1_type
-  int ecode = %swiglal_array_copyin($1_type)(swiglal_no_self(), $input, %as_voidptr($1),
-                                             sizeof($1[0][0]), 2, dims, strides,
-                                             false, $typemap(swiglal_fixarr_tinfo, $1_type),
-                                             $disown | %convertptr_flags);
-  if (!SWIG_IsOK(ecode)) {
-    %argument_fail(ecode, "$type", $symname, $argnum);
+%typemap(in, noblock=1) SWIGTYPE[ANY][ANY], SWIGTYPE INOUT[ANY][ANY] {
+  $typemap(swiglal_fixarr_ltype, $1_type) temp$argnum[$1_dim0][$1_dim1];
+  $1 = &temp$argnum[0];
+  {
+    const size_t dims[] = {$1_dim0, $1_dim1};
+    const size_t strides[] = {$1_dim1, 1};
+    // swiglal_array_typeid input type: $1_type
+    int ecode = %swiglal_array_copyin($1_type)(swiglal_no_self(), $input, %as_voidptr($1),
+                                               sizeof($1[0][0]), 2, dims, strides,
+                                               false, $typemap(swiglal_fixarr_tinfo, $1_type),
+                                               $disown | %convertptr_flags);
+    if (!SWIG_IsOK(ecode)) {
+      %argument_fail(ecode, "$type", $symname, $argnum);
+    }
   }
 }
 
@@ -569,9 +573,9 @@ if (swiglal_release_parent(PTR)) {
 }
 
 // Argument-output typemaps for functions:
-%typemap(in, numinputs=0) SWIGTYPE OUTPUT[ANY] {
-  $typemap(swiglal_fixarr_ltype, $1_type) temp[$1_dim0];
-  $1 = &temp[0];
+%typemap(in, noblock=1, numinputs=0) SWIGTYPE OUTPUT[ANY] {
+  $typemap(swiglal_fixarr_ltype, $1_type) temp$argnum[$1_dim0];
+  $1 = &temp$argnum[0];
 }
 %typemap(argout) SWIGTYPE OUTPUT[ANY], SWIGTYPE INOUT[ANY] {
   const size_t dims[] = {$1_dim0};
@@ -582,9 +586,9 @@ if (swiglal_release_parent(PTR)) {
                                                  false, $typemap(swiglal_fixarr_tinfo, $1_type),
                                                  SWIG_POINTER_OWN | %newpointer_flags));
 }
-%typemap(in, numinputs=0) SWIGTYPE OUTPUT[ANY][ANY] {
-  $typemap(swiglal_fixarr_ltype, $1_type) temp[$1_dim0][$1_dim1];
-  $1 = &temp[0];
+%typemap(in, noblock=1, numinputs=0) SWIGTYPE OUTPUT[ANY][ANY] {
+  $typemap(swiglal_fixarr_ltype, $1_type) temp$argnum[$1_dim0][$1_dim1];
+  $1 = &temp$argnum[0];
 }
 %typemap(argout) SWIGTYPE OUTPUT[ANY][ANY], SWIGTYPE INOUT[ANY][ANY] {
   const size_t dims[] = {$1_dim0, $1_dim1};

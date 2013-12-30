@@ -231,6 +231,28 @@ rv1.data[0] = 1
 del rv1
 print("PASSED dynamic vector/matrix conversions (GSL)")
 
+# check fixed and dynamic arrays typemaps
+print("checking fixed and dynamic arrays typemaps ...")
+a1in = numpy.array([1.2, 3.5, 7.9], dtype=numpy.double)
+a1out = a1in * 2.5
+assert((lal.swig_lal_test_copyin_array1(a1in, 2.5) == a1out).all())
+a2in = numpy.array([[3,2], [7,6], [12,10]], dtype=numpy.int32)
+a2out = a2in * 15
+assert((lal.swig_lal_test_copyin_array2(a2in, 15) == a2out).all())
+try:
+    lal.swig_lal_test_copyin_array1(numpy.array([0,0,0,0], dtype=numpy.double), 0)
+    expected_exception = True
+except:
+    pass
+assert(not expected_exception)
+try:
+    lal.swig_lal_test_copyin_array2(numpy.array([[1.2,3.4],[0,0],[0,0]], dtype=numpy.double), 0)
+    expected_exception = True
+except:
+    pass
+assert(not expected_exception)
+print("PASSED fixed and dynamic arrays typemaps")
+
 # check dynamic array of pointers access
 print("checking dynamic array of pointers access ...")
 ap = lal.swig_lal_test_Create_arrayofptrs(3)

@@ -35,6 +35,20 @@ static REAL8 swig_lal_test_REAL8_matrix[2][3];
 static COMPLEX8 swig_lal_test_COMPLEX8_vector[3];
 static COMPLEX8 swig_lal_test_COMPLEX8_matrix[2][3];
 
+// Test fixed and dynamic arrays typemaps.
+static void swig_lal_test_copyin_array1(REAL8 INPUT[3], REAL8 scale, REAL8 OUTPUT[3]);
+static void swig_lal_test_copyin_array2(INT4 INPUT[3][2], INT4 scale, INT4 OUTPUT[3][2]);
+#ifdef SWIG
+%header %{
+  static void swig_lal_test_copyin_array1(REAL8 INPUT[3], REAL8 scale, REAL8 OUTPUT[3]) {
+    for (int i = 0; i < 3; ++i) OUTPUT[i] = scale * INPUT[i];
+  }
+  static void swig_lal_test_copyin_array2(INT4 INPUT[3][2], INT4 scale, INT4 OUTPUT[3][2]) {
+    for (int i = 0; i < 3; ++i) for (int j = 0; j < 2; ++j) OUTPUT[i][j] = scale * INPUT[i][j];
+  }
+%}
+#endif // SWIG
+
 // Test dynamic array of pointer access
 typedef struct tagswig_lal_test_arrayofdata {
 #ifdef SWIG

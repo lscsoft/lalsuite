@@ -221,6 +221,26 @@ rv1.data(1) = 1;
 clear ans rv1;
 disp("PASSED dynamic vector/matrix conversions (GSL)");
 
+## check fixed and dynamic arrays typemaps
+disp("checking fixed and dynamic arrays typemaps ...");
+a1in = double([1.2; 3.5; 7.9]);
+a1out = a1in * 2.5;
+assert(all(swig_lal_test_copyin_array1(a1in, 2.5) == a1out));
+a2in = int32([3,2; 7,6; 12,10]);
+a2out = a2in * 15;
+assert(all(swig_lal_test_copyin_array2(a2in, 15) == a2out));
+try
+  swig_lal_test_viewin_array1([0,0,0,0], 0);
+  expected_exception = 1;
+end_try_catch
+assert(!expected_exception);
+try
+  lal.swig_lal_test_viewin_array2([1.2,3.4; 0,0; 0,0], 0);
+  expected_exception = 1;
+end_try_catch
+assert(!expected_exception);
+disp("PASSED fixed and dynamic arrays typemaps")
+
 ## check dynamic array of pointers access
 disp("checking dynamic array of pointers access ...");
 ap = swig_lal_test_Create_arrayofptrs(3);
