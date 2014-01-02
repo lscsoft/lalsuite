@@ -1,5 +1,6 @@
 /*
  *  Copyright (C) 2013 Badri Krishnan, Shane Larson, John Whelan
+ *  Copyright (C) 2013, 2014 Badri Krishnan, John Whelan, Yuanhao Zhang
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -18,8 +19,8 @@
  */
 
 /**
- * \author B.Krishnan, S.Larson, J.T.Whelan
- * \date 2013
+ * \author B.Krishnan, S.Larson, J.T.Whelan, Y.Zhang
+ * \date 2013, 2014
  * \file pulsar_crosscorr_v2.c
  * \ingroup pulsarApps
  * \brief Perform CW cross-correlation search - version 2
@@ -252,12 +253,6 @@ int main(int argc, char *argv[]){
   dopplerpos.dFreq = 1.0/uvar.maxLag;
   /* set spacings in new dopplerparams struct */
 
-  /* args should be : spacings, min and max doppler params */
-  while ( (GetNextCrossCorrTemplate( &dopplerpos, &binaryTemplateSpacings, &minBinaryTemplate, &maxBinaryTemplate, uvar.fStart + uvar.fBand ) == 0) )
-    {
-      
-      /* do useful stuff here*/
-    } /* end while loop over templates */
   
   /* Call XLALWeightMultiAMCoffs, replace AM-coeffs by weighted AM-coeffs
      if ( ( XLALWeightMultiAMCoeffs (multiCoeffs, multiWeights ))!= XLAL_SUCCESS){ 
@@ -325,6 +320,20 @@ int main(int argc, char *argv[]){
   /*   spinRange_refTime.fkdot[0] = uvar_f0; */
   /*   spinRange_refTime.fkdotBand[0] = uvar_fBand; */
   /* } */
+
+  /* args should be : spacings, min and max doppler params */
+  while ( (GetNextCrossCorrTemplate( &dopplerpos, &binaryTemplateSpacings, &minBinaryTemplate, &maxBinaryTemplate, uvar.fStart + uvar.fBand ) == 0) )
+    {
+      
+      /* do useful stuff here*/
+
+      /* Call GetMultiBinaryTimes */
+      /* Call XLALGetDopplerShiftedFrequencyInfo */
+      /* Call new function (?) to get phase of curly G */
+      /* Call new function to construct optimal cross-correlation statistic */
+      /* Note that sensitivity estimate shouldn't depend on doppler params, to this approximation */
+
+    } /* end while loop over templates */
 
 
   /* XLALDestroySFTPairIndexList(sftPairs) */
