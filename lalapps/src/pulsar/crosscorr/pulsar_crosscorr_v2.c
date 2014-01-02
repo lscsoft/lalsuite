@@ -37,7 +37,7 @@
 #include <lal/LALInitBarycenter.h>
 #include <lal/NormalizeSFTRngMed.h>
 #include <lal/PulsarCrossCorr_v2.h>
-
+/* introduce mismatch in f and all 5 binary parameters */
 /* user input variables */
 typedef struct{
   BOOLEAN help; /**< if the user wants a help message */
@@ -82,6 +82,8 @@ UserInput_t empty_UserInput;
 /* local function prototypes */
 int XLALInitUserVars ( UserInput_t *uvar );
 int XLALInitializeConfigVars (ConfigVariables *config, const UserInput_t *uvar);
+int GetNextCrossCorrTemplate( PulsarDopplerParams *dopplerpos, BinaryOrbitParams *binaryTemplateSpacings, BinaryOrbitParams *minBinaryTemplate, BinaryOrbitParams *maxBinaryTemplte, REAL8 freq_hi );
+
 
 int main(int argc, char *argv[]){
 
@@ -99,8 +101,12 @@ int main(int argc, char *argv[]){
   SFTIndexList *sftIndices = NULL;
   SFTPairIndexList *sftPairs = NULL;
 
+  PulsarDopplerParams dopplerpos = empty_PulsarDopplerParams;  
+  BinaryOrbitParams thisBinaryTemplate, binaryTemplateSpacings;
+  BinaryOrbitParams minBinaryTemplate, maxBinaryTemplate;
   SkyPosition skyPos = empty_SkyPosition;
 
+  INT4  k;
   REAL8 fMin, fMax; /* min and max frequencies read from SFTs */
   REAL8 deltaF; /* frequency resolution associated with time baseline of SFTs */
 
@@ -224,13 +230,42 @@ int main(int argc, char *argv[]){
     XLAL_ERROR( XLAL_EFUNC );
   }
 
-/* Call XLALWeightMultiAMCoffs, replace AM-coeffs by weighted AM-coeffs
-  if ( ( XLALWeightMultiAMCoeffs (multiCoeffs, multiWeights ))!= XLAL_SUCCESS){ 
-    LogPrintf ( LOG_CRITICAL, "%s: XLALWeightMultiAMCoeffs() failed with errno=%d\n", __func__, xlalErrno );
-    XLAL_ERROR( XLAL_EFUNC );
-  }
-not necessary to weight noise twice */
+  
+  /* initialize the doppler scan struct which stores the current template information */
+  XLALGPSSetREAL8(&dopplerpos.refTime, uvar.refTime); 
+  dopplerpos.Alpha = uvar.alphaRad;
+  dopplerpos.Delta = uvar.deltaRad;
+  dopplerpos.fkdot[0] = uvar.fStart;
+  /* set all spindowns to zero */
+  for (k=1; k < PULSAR_MAX_SPINS; k++)
+    dopplerpos.fkdot[k] = 0.0;
 
+  /* now set the initial values of binary parameters */
+  thisBinaryTemplate.asini = uvar.orbitAsiniSec;
+  thisBinaryTemplate.period = uvar.orbitPSec;
+  XLALGPSSetREAL8( &thisBinaryTemplate.tp, uvar.orbitTimeAsc);
+  thisBinaryTemplate.ecc = 0.0;
+  thisBinaryTemplate.argp = 0.0;
+  dopplerpos.orbit = &thisBinaryTemplate;
+
+  /* reasonable choice? */
+  dopplerpos.dFreq = 1.0/uvar.maxLag;
+  /* set spacings in new dopplerparams struct */
+
+  /* args should be : spacings, min and max doppler params */
+  while ( (GetNextCrossCorrTemplate( &dopplerpos, &binaryTemplateSpacings, &minBinaryTemplate, &maxBinaryTemplate, uvar.fStart + uvar.fBand ) == 0) )
+    {
+      
+      /* do useful stuff here*/
+    } /* end while loop over templates */
+  
+  /* Call XLALWeightMultiAMCoffs, replace AM-coeffs by weighted AM-coeffs
+     if ( ( XLALWeightMultiAMCoeffs (multiCoeffs, multiWeights ))!= XLAL_SUCCESS){ 
+     LogPrintf ( LOG_CRITICAL, "%s: XLALWeightMultiAMCoeffs() failed with errno=%d\n", __func__, xlalErrno );
+     XLAL_ERROR( XLAL_EFUNC );
+     }
+     not necessary to weight noise twice */
+  
 
   /* /\* get SFT parameters so that we can initialise search frequency resolutions *\/ */
   /* /\* calculate deltaF_SFT *\/ */
@@ -436,3 +471,35 @@ int XLALInitializeConfigVars (ConfigVariables *config, const UserInput_t *uvar)
 
 }
 /* XLALInitializeConfigVars() */
+
+
+
+/* getting the next template */
+/** FIXME: spacings and min, max values of binary parameters are not used yet */
+int GetNextCrossCorrTemplate( PulsarDopplerParams *dopplerpos, BinaryOrbitParams *binaryTemplateSpacings, BinaryOrbitParams *minBinaryTemplate, BinaryOrbitParams *maxBinaryTemplate, REAL8 freq_hi )
+{
+
+  REAL8 new_freq;
+
+  /* basic sanity checks */
+  if (binaryTemplateSpacings == NULL) 
+    return -1;
+
+  if (minBinaryTemplate == NULL) 
+    return -1;
+
+  if (maxBinaryTemplate == NULL) 
+    return -1;
+
+  /* check spacings not negative */
+
+  new_freq = dopplerpos->fkdot[0] + dopplerpos->dFreq; 
+
+  if (new_freq > freq_hi)
+    return 1;
+  else
+    {
+      dopplerpos->fkdot[0] = new_freq;
+      return 0;
+    }
+}
