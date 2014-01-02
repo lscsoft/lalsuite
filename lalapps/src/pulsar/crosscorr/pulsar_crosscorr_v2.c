@@ -432,7 +432,7 @@ int XLALInitUserVars (UserInput_t *uvar)
   XLALregREALUserStruct  ( mismatchF,     0,  UVAR_OPTIONAL, "Desired mismatch for frequency spacing");
   XLALregREALUserStruct  ( mismatchA,     0,  UVAR_OPTIONAL, "Desired mismatch for asini spacing");
   XLALregREALUserStruct  ( mismatchT,     0,  UVAR_OPTIONAL, "Desired mismatch for periapse passage time spacing");
-  XLALregREALUserStruct  ( mismatchP,     0,  UVAR_OPTIONAL, "Desired spacing for period spacing");
+  XLALregREALUserStruct  ( mismatchP,     0,  UVAR_OPTIONAL, "Desired mismatch for period spacing");
 
   if ( xlalErrno ) {
     XLALPrintError ("%s: user variable initialization failed with errno = %d.\n", __func__, xlalErrno );
