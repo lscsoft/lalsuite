@@ -61,6 +61,10 @@ typedef struct{
   CHAR    *sftLocation;       /**< location of SFT data */
   CHAR    *ephemYear;         /**< range of years for ephemeris file */
   INT4    rngMedBlock;        /**< running median block size */
+  REAL8   mismatchF;          /**< mismatch for frequency spacing */
+  REAL8   mismatchA;          /**< mismatch for spacing in semi-major axis */
+  REAL8   mismatchT;          /**< mismatch for spacing in time of periapse passage */
+  REAL8   mismatchP;          /**< mismatch for spacing in period */
 } UserInput_t;
 
 /* struct to store useful variables */
@@ -249,11 +253,16 @@ int main(int argc, char *argv[]){
   thisBinaryTemplate.argp = 0.0;
   dopplerpos.orbit = &thisBinaryTemplate;
 
-  /* reasonable choice? */
-  dopplerpos.dFreq = 1.0/uvar.maxLag;
+  /* spacing in frequency from diagff */
+  dopplerpos.dFreq = uvar.mismatchF/sqrt(diagff);
   /* set spacings in new dopplerparams struct */
+  binaryTemplateSpacings.asini = uvar.mismatchA/sqrt(diagaa);
+  binaryTemplateSpacings.period = uvar.mismatchP/sqrt(diagpp);
+  /* this is annoying: tp is a GPS time while we want a difference 
+     in time which should be just REAL8 */
+  XLALGPSSetREAL8( &binaryTemplateSpacings.tp, uvar.mismatchT/sqrt(diagTT));
+  /* metric elements for eccentric case not considered? */
 
-  
   /* Call XLALWeightMultiAMCoffs, replace AM-coeffs by weighted AM-coeffs
      if ( ( XLALWeightMultiAMCoeffs (multiCoeffs, multiWeights ))!= XLAL_SUCCESS){ 
      LogPrintf ( LOG_CRITICAL, "%s: XLALWeightMultiAMCoeffs() failed with errno=%d\n", __func__, xlalErrno );
@@ -385,6 +394,14 @@ int XLALInitUserVars (UserInput_t *uvar)
   uvar->orbitTimeAsc = 0;
   uvar->orbitTimeAscBand = 0;
 
+  /*default mismatch values */
+  /* set to 0.1 by default -- for no real reason */
+  /* make 0.1 a macro? */
+  uvar->mismatchF = 0.1;
+  uvar->mismatchA = 0.1;
+  uvar->mismatchT = 0.1;
+  uvar->mismatchP = 0.1;
+
   uvar->ephemYear = XLALCalloc (1, strlen(EPHEM_YEARS)+1);
   strcpy (uvar->ephemYear, EPHEM_YEARS);
 
@@ -412,6 +429,10 @@ int XLALInitUserVars (UserInput_t *uvar)
   XLALregSTRINGUserStruct( ephemYear,     0,  UVAR_OPTIONAL, "String Ephemeris year range");
   XLALregSTRINGUserStruct( sftLocation,   0,  UVAR_REQUIRED, "Filename pattern for locating SFT data");
   XLALregINTUserStruct   ( rngMedBlock,   0,  UVAR_OPTIONAL, "Running median block size for PSD estimation");
+  XLALregREALUserStruct  ( mismatchF,     0,  UVAR_OPTIONAL, "Desired mismatch for frequency spacing");
+  XLALregREALUserStruct  ( mismatchA,     0,  UVAR_OPTIONAL, "Desired mismatch for asini spacing");
+  XLALregREALUserStruct  ( mismatchT,     0,  UVAR_OPTIONAL, "Desired mismatch for periapse passage time spacing");
+  XLALregREALUserStruct  ( mismatchP,     0,  UVAR_OPTIONAL, "Desired spacing for period spacing");
 
   if ( xlalErrno ) {
     XLALPrintError ("%s: user variable initialization failed with errno = %d.\n", __func__, xlalErrno );
