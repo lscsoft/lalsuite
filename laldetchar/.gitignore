@@ -6,6 +6,7 @@
 .deps
 .libs
 bin/laldetchar-hveto
+bin/laldetchar-hveto-summary-page
 bin/laldetchar-segments-from-data
 bin/python_config.sed
 config.lt
