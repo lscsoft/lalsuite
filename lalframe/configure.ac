@@ -145,8 +145,8 @@ AS_IF([test "${framel}" = "true"],[
        FRAME_LIBRARY="FrameL"])
 
 # check for lal libraries and headers
-LALSUITE_CHECK_LIB([LAL],[6.11.0],[LALVersion],[lal/LALStdio.h])
-LALSUITE_CHECK_LIB([LALSupport],[6.11.0],[LALOpenDataFile],[lal/FileIO.h])
+LALSUITE_CHECK_LIB([LAL],[6.12.0],[LALVersion],[lal/LALStdio.h])
+LALSUITE_CHECK_LIB([LALSupport],[6.12.0],[LALOpenDataFile],[lal/FileIO.h])
 
 # check for inotify
 if test "${inotify}" = "true"; then
