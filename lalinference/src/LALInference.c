@@ -867,7 +867,7 @@ int LALInferenceFprintParameterNonFixedHeaders(FILE *out, LALInferenceVariables 
   LALInferenceVariableItem *head = params->head;
 
   int i;//,j;
-  gsl_matrix *matrix = NULL;
+  //gsl_matrix *matrix = NULL;
   UINT4Vector *vector = NULL;
   while (head != NULL) {
     if (head->vary != LALINFERENCE_PARAM_FIXED) {

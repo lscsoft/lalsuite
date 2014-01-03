@@ -1858,17 +1858,25 @@ static void phase_blind_time_shift(REAL8 *corr, REAL8 *corrf, COMPLEX16Vector *d
   //convolution of signal & template
   for (i=0; i < N2; i++)
   {
+    /*
 		corrFD->data->data[i].real_FIXME	= 0.0;
 		corrFD->data->data[i].imag_FIXME	= 0.0;
     corrfFD->data->data[i].real_FIXME = 0.0;
     corrfFD->data->data[i].imag_FIXME = 0.0;
+    */
+    corrFD->data->data[i]  = crect(0.0,0.0);
+    corrfFD->data->data[i] = crect(0.0,0.0);
 
     if(i>lower && i<upper)
     {
+      /*
       corrFD->data->data[i].real_FIXME	= ( creal(data1->data[i])*creal(data2->data[i]) + cimag(data1->data[i])*cimag(data2->data[i])) / psd->data[i];
       corrFD->data->data[i].imag_FIXME	= ( cimag(data1->data[i])*creal(data2->data[i]) - creal(data1->data[i])*cimag(data2->data[i])) / psd->data[i];
       corrfFD->data->data[i].real_FIXME = ( creal(data1->data[i])*cimag(data2->data[i]) - cimag(data1->data[i])*creal(data2->data[i])) / psd->data[i];
       corrfFD->data->data[i].imag_FIXME = ( cimag(data1->data[i])*cimag(data2->data[i]) + creal(data1->data[i])*creal(data2->data[i])) / psd->data[i];
+      */
+      corrFD->data->data[i]	 = crect( ( creal(data1->data[i])*creal(data2->data[i]) + cimag(data1->data[i])*cimag(data2->data[i])) / psd->data[i], ( cimag(data1->data[i])*creal(data2->data[i]) - creal(data1->data[i])*cimag(data2->data[i])) / psd->data[i] );
+      corrfFD->data->data[i] = crect( ( creal(data1->data[i])*cimag(data2->data[i]) - cimag(data1->data[i])*creal(data2->data[i])) / psd->data[i], ( cimag(data1->data[i])*cimag(data2->data[i]) + creal(data1->data[i])*creal(data2->data[i])) / psd->data[i] );
     }
 
   }
@@ -1948,17 +1956,21 @@ static void MaximizeGlitchParameters(LALInferenceVariables *currentParams, LALIn
     hIm = 0.0;
     gRe = 0.0;
     gIm = 0.0;
+    /*
     r->data[i].real_FIXME = 0.0;
     r->data[i].imag_FIXME = 0.0;
+    */
+    r->data[i] = crect(0.0,0.0);
 
     if(i>lower && i<upper)
     {
       hRe = sqTwoDeltaToverN * gsl_matrix_get(hmatrix,ifo,2*i);
       hIm = sqTwoDeltaToverN * gsl_matrix_get(hmatrix,ifo,2*i+1);
-
+      /*
       h->data[i].real_FIXME = hRe;
       h->data[i].imag_FIXME = hIm;
-
+      */
+      h->data[i] = crect(hRe,hIm);
       //compute SNR of new wavelet
       rho += (hRe*hRe + hIm*hIm) / Sn->data[i];
 
@@ -1968,9 +1980,11 @@ static void MaximizeGlitchParameters(LALInferenceVariables *currentParams, LALIn
         gRe = gsl_matrix_get(glitchFD,ifo,2*i);
         gIm = gsl_matrix_get(glitchFD,ifo,2*i+1);
       }
-
+      /*
       r->data[i].real_FIXME = sqTwoDeltaToverN * (creal(s->data[i])/deltaT-gRe);
       r->data[i].imag_FIXME = sqTwoDeltaToverN * (cimag(s->data[i])/deltaT-gIm);
+      */
+      r->data[i] = crect(sqTwoDeltaToverN * (creal(s->data[i])/deltaT-gRe),sqTwoDeltaToverN * (cimag(s->data[i])/deltaT-gIm));
     }
   }
   rho*=4.0;
