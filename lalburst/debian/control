@@ -4,7 +4,7 @@ Priority: optional
 Maintainer: Adam Mercer <adam.mercer@ligo.org>
 Build-Depends: debhelper (>= 7), pkg-config, python-all-dev,
   zlib1g-dev, libgsl0-dev (>= 1.9), libmetaio-dev (>= 8.2),
-  swig (>= 2.0.11), octave3.2-headers, lal-dev (>= 6.11.0~),
+  swig (>= 2.0.11~), octave3.2-headers, lal-dev (>= 6.11.0~),
   lal-python (>= 6.11.0~), lal-octave (>= 6.11.0~),
   lalmetaio-dev (>= 1.1.0), lalmetaio-python (>= 1.1.0),
   lalmetaio-octave (>= 1.1.0), lalsimulation-dev (>= 1.0.0~),
