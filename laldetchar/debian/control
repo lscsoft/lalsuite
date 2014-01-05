@@ -3,7 +3,7 @@ Section: lscsoft
 Priority: optional
 Maintainer: Adam Mercer <adam.mercer@ligo.org>
 Build-Depends: debhelper (>= 7.0.0), pkg-config, python-all-dev,
-  libgsl0-dev (>= 1.9), libglib2.0-dev, swig (>= 2.0.11),
+  libgsl0-dev (>= 1.9), libglib2.0-dev, swig (>= 2.0.11~),
   octave3.2-headers, lal-dev (>= 6.11.0~),
   lal-python (>= 6.11.0~), lal-octave (>= 6.11.0~),
   lalmetaio-dev (>= 1.1.0), lalmetaio-python (>= 1.1.0),
