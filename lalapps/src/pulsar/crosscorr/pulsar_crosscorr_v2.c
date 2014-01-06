@@ -111,6 +111,9 @@ int main(int argc, char *argv[]){
   BinaryOrbitParams minBinaryTemplate, maxBinaryTemplate;
   SkyPosition skyPos = empty_SkyPosition;
 
+  MultiSSBtimes *multiSSBTimes = NULL;
+  MultiSSBtimes *multiBinaryTimes = NULL;
+
   INT4  k;
   REAL8 fMin, fMax; /* min and max frequencies read from SFTs */
   REAL8 deltaF; /* frequency resolution associated with time baseline of SFTs */
@@ -235,7 +238,6 @@ int main(int argc, char *argv[]){
     XLAL_ERROR( XLAL_EFUNC );
   }
 
-  
   /* initialize the doppler scan struct which stores the current template information */
   XLALGPSSetREAL8(&dopplerpos.refTime, uvar.refTime); 
   dopplerpos.Alpha = uvar.alphaRad;
@@ -330,13 +332,31 @@ int main(int argc, char *argv[]){
   /*   spinRange_refTime.fkdotBand[0] = uvar_fBand; */
   /* } */
 
+  /* Calculate SSB times (can do this once since search is currently only for one sky position, and binary doppler shift is added later) */
+  if ((multiSSBTimes = XLALGetMultiSSBtimes ( multiStates, skyPos, dopplerpos.refTime, SSBPREC_RELATIVISTICOPT )) == NULL){
+    LogPrintf ( LOG_CRITICAL, "%s: XLALGetMultiSSBtimes() failed with errno=%d\n", __func__, xlalErrno );
+    XLAL_ERROR( XLAL_EFUNC );
+  }
+
+  /* Allocate structure for binary doppler-shifting information */
+  if ((multiBinaryTimes = XLALDuplicateMultiSSBtimes ( multiSSBTimes )) == NULL){
+    LogPrintf ( LOG_CRITICAL, "%s: XLALDuplicateMultiSSBtimes() failed with errno=%d\n", __func__, xlalErrno );
+    XLAL_ERROR( XLAL_EFUNC );
+  }
+
   /* args should be : spacings, min and max doppler params */
   while ( (GetNextCrossCorrTemplate( &dopplerpos, &binaryTemplateSpacings, &minBinaryTemplate, &maxBinaryTemplate, uvar.fStart + uvar.fBand ) == 0) )
     {
       
       /* do useful stuff here*/
 
-      /* Call GetMultiBinaryTimes */
+      /* Apply additional Doppler shifting using current binary orbital parameters */
+      /* Might want to be clever about checking whether we've changed the orbital parameters or only the frequency */
+
+      if ( (XLALAddMultiBinaryTimes( &multiBinaryTimes, multiSSBTimes, dopplerpos.orbit )  != XLAL_SUCCESS ) ) {
+    LogPrintf ( LOG_CRITICAL, "%s: XLALAddMultiBinaryTimes() failed with errno=%d\n", __func__, xlalErrno );
+    XLAL_ERROR( XLAL_EFUNC );
+  }
       /* Call XLALGetDopplerShiftedFrequencyInfo */
       /* Call new function (?) to get phase of curly G */
       /* Call new function to construct optimal cross-correlation statistic */
@@ -345,6 +365,8 @@ int main(int argc, char *argv[]){
     } /* end while loop over templates */
 
 
+  XLALDestroyMultiSSBtimes ( multiBinaryTimes );
+  XLALDestroyMultiSSBtimes ( multiSSBTimes );
   /* XLALDestroySFTPairIndexList(sftPairs) */
   /* XLALDestroySFTIndexList(sftIndices) */
   XLALDestroyMultiSFTVector ( inputSFTs ); 
