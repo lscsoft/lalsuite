@@ -51,6 +51,8 @@ Depends: ${shlibs:Depends}, ${misc:Depends}, python-numpy,
   lalframe-python (>= 1.1.0~), lalmetaio-python (>= 1.2.0~),
   lalsimulation-python (>= 1.1.0~), lalinspiral-python (>= 1.5.0~),
   lalpulsar-python (>= 1.9.0~)
+Replaces: lalapps (<< 6.14.0-1)
+Breaks: lalapps (<< 6.14.0-1)
 Description: Python bindings for LALInference
 
 Package: lalinference-octave
