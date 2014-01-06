@@ -729,15 +729,19 @@ void LALInferenceReadSampleNonFixed(FILE *fp, LALInferenceVariables *p) {
  * Reads in an ASCII (delimited) file, and returns the results in a REAL8 array.
  * @param[in]  input       Input stream to be parsed.
  * @param[in]  nCols       Number of total columns in the input stream.
- * @param[in]  nWantedCols Number of columns to be saved.
  * @param[in]  wantedCols  Array of 0/1 flags (should be \a nCols long), indicating desired columns.
  * @param[out] nLines      Total number of lines read.
  * @return A REAL8 array containing the parsed data.
  */
-REAL8 *LALInferenceParseDelimitedAscii(FILE *input, UINT4 nCols, UINT4 nWantedCols, UINT4 *wantedCols, UINT4 *nLines) {
+REAL8 *LALInferenceParseDelimitedAscii(FILE *input, UINT4 nCols, UINT4 *wantedCols, UINT4 *nLines) {
     UINT4 nread;
     UINT4 i=0, par=0, col=0;
     REAL8 val=0;
+
+    // Determine the number of wanted columns
+    UINT4 nWantedCols = 0;
+    for (col = 0; col < nCols; col++)
+        nWantedCols += wantedCols[col];
 
     // Determine number of samples to be read
     unsigned long startPostBurnin = ftell(input);
@@ -885,55 +889,27 @@ void LALInferenceBurninStream(FILE *filestream, UINT4 burnin) {
 }
 
 /**
- * Read desired column names from an ASCII file.
+ * Read column names from an ASCII file.
  *
- * Reads the column names for an output file, and determines which columns are
- * parameter names by looking for standard column outputs that aren't parameter
- * names (e.g. cycle, logpost).  The internal list should be updated if other
- * non-parameter columns are added in the future.
- * @param[in]  input      The input files stream to parse.
- * @param[out] params     The column names of found to be valid parameters.
- * @param[out] nTotalCols Total number of columns in \a input.
- * @param[out] nValidCols Number of columns that are parameters.
- * @param[out] validCols  Array of 0/1 flags indicating which columns are parameters.
+ * Reads the column names for an output file.
+ * @param[in]  input  The input files stream to parse.
+ * @param[out] params The column names found in the header.
+ * @param[out] nCols  Number of columns found in the header.
  */
-void LALInferenceReadAsciiHeader(FILE *input, char params[][VARNAME_MAX], UINT4 *nTotalCols, UINT4 *nValidCols, UINT4 **validCols) {
+void LALInferenceReadAsciiHeader(FILE *input, char params[][VARNAME_MAX], UINT4 *nCols) {
+    UINT4 i;
     char str[STR_MAX];
     char row[COL_MAX][VARNAME_MAX];
     const char *delimiters = " \n\t";
-    UINT4 nCols=0, nPar=0, par=0;
-    UINT4 i, j;
-
-    const char *non_params[] = {"cycle","timestamp","logpost","logprior","logl","loglH1","loglL1","loglV1","",NULL};
+    UINT4 col_count=0;
 
     fgets(str, sizeof(str), input);
-    parseLine(str, delimiters, row, &nCols);
+    parseLine(str, delimiters, row, &col_count);
 
-    UINT4 is_param[COL_MAX];
-    for (i=0; i<nCols; i++) {
-        nPar++;
-        is_param[i] = 1;
-        j=0;
-        while (non_params[j] != NULL) {
-            if (!strcmp(non_params[j], row[i])) {
-                is_param[i] = 0;
-                nPar--;
-                break;
-            }
-            j++;
-        }
-    }
+    for (i=0; i<col_count; i++)
+        strcpy(params[i], row[i]);
 
-    for (i=0; i<nCols; i++) {
-        if (is_param[i]) {
-            strcpy(params[par], row[i]);
-            par++;
-        }
-    }
-
-    *nTotalCols = nCols;
-    *validCols = is_param;
-    *nValidCols = nPar;
+    *nCols = col_count;
 }
 
 

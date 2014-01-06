@@ -631,7 +631,7 @@ void LALInferencePrintSampleNonFixed(FILE *fp,LALInferenceVariables *sample);
 void LALInferenceReadSampleNonFixed(FILE *fp, LALInferenceVariables *sample);
 
 /** Utility for readling in delimited ASCII files. */
-REAL8 *LALInferenceParseDelimitedAscii(FILE *input, UINT4 nCols, UINT4 nWantedCols, UINT4 *wantedCols, UINT4 *nLines);
+REAL8 *LALInferenceParseDelimitedAscii(FILE *input, UINT4 nCols, UINT4 *wantedCols, UINT4 *nLines);
 
 /* Parse a single line of delimited ASCII. */
 void parseLine(char *record, const char *delim, char arr[][VARNAME_MAX], UINT4 *cnt);
@@ -645,8 +645,8 @@ void LALInferenceBurninPTMCMC(FILE *filestream, UINT4 burninCycle);
 /* Burn-in a generic ASCII stream. */
 void LALInferenceBurninStream(FILE *filestream, UINT4 burnin);
 
-/* Read desired column names from an ASCII file. */
-void LALInferenceReadAsciiHeader(FILE *input, char params[][VARNAME_MAX], UINT4 *nTotalCols, UINT4 *nValidCols, UINT4 **validCols);
+/* Read column names from an ASCII file. */
+void LALInferenceReadAsciiHeader(FILE *input, char params[][VARNAME_MAX], UINT4 *nCols);
 
 /* Utility for selecting columns from an array, in the specified order. */
 REAL8 **LALInferenceSelectColsFromArray(REAL8 **inarray, UINT4 nRows, UINT4 nCols, UINT4 nSelCols, UINT4 *selCols);

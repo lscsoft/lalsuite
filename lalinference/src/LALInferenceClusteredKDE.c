@@ -35,6 +35,7 @@
 #include <lal/LALConstants.h>
 #include <lal/LALDatatypes.h>
 
+#include <lal/LALInference.h>
 #include <lal/LALInferenceKDE.h>
 #include <lal/LALInferenceClusteredKDE.h>
 
@@ -47,19 +48,14 @@
  * distribution in each cluster with a Gaussian kernel density estimate, then weighting that clusters
  * contribution to the likelihood by the fraction of total samples in that cluster.
  * @param[in] data A GSL matrix containing the data to be clustered.
+ * @param[in] rng  A GSL random number generator used by the kmeans algorithm.
  * @result A kmeans structure containing the clustering that maximizes the BIC.
  */
-LALInferenceKmeans *LALInferenceIncrementalKmeans(gsl_matrix *data) {
+LALInferenceKmeans *LALInferenceIncrementalKmeans(gsl_matrix *data, gsl_rng *rng) {
     UINT4 iter = 20;
     UINT4 k = 1;
     REAL8 best_bic = -DBL_MAX;
     REAL8 bic;
-
-    /* Create a random number generator for use in kmeans */
-    gsl_rng_env_setup();
-    const gsl_rng_type *T = gsl_rng_default;
-    gsl_rng *rng = gsl_rng_alloc(T);
-    gsl_rng_set(rng, 1234);
 
     LALInferenceKmeans *kmeans;
     LALInferenceKmeans *best_clustering = NULL;
@@ -82,7 +78,6 @@ LALInferenceKmeans *LALInferenceIncrementalKmeans(gsl_matrix *data) {
         k++;
     }
 
-    gsl_rng_free(rng);
     return best_clustering;
 }
 
@@ -93,20 +88,16 @@ LALInferenceKmeans *LALInferenceIncrementalKmeans(gsl_matrix *data) {
  * Run an xmeans-style clustering, increasing a kmeans clustering starting from k=1 by splitting each
  * centroid individually and checking for an increase of the BIC over the parent cluster.
  * @param[in] data A GSL matrix containing the data to be clustered.
+ * @param[in] rng  A GSL random number generator used by the kmeans algorithm.
  * @result A kmeans structure containing the clustering that maximizes the BIC.
  */
-LALInferenceKmeans *LALInferenceXmeans(gsl_matrix *data) {
+LALInferenceKmeans *LALInferenceXmeans(gsl_matrix *data, gsl_rng *rng) {
     UINT4 kmax = 50;
     UINT4 split_size = 2;
     UINT4 iter = 20;
     UINT4 c,k;
     REAL8 starting_bic, ending_bic;
     REAL8 old_bic, new_bic;
-
-    gsl_rng_env_setup();
-    const gsl_rng_type *T = gsl_rng_default;
-    gsl_rng *rng = gsl_rng_alloc(T);
-    gsl_rng_set(rng, 1234);
 
     LALInferenceKmeans *sub_kmeans, *new_kmeans;
 
@@ -149,7 +140,7 @@ LALInferenceKmeans *LALInferenceXmeans(gsl_matrix *data) {
         gsl_matrix *centroids = kmeans->recursive_centroids;
         k = centroids->size1;
 
-        LALInferenceKmeans *new_kmeans = LALInferenceCreateKmeans(k, data, rng);
+        new_kmeans = LALInferenceCreateKmeans(k, data, rng);
         gsl_matrix_memcpy(new_kmeans->centroids, centroids);
         LALInferenceKmeansRun(new_kmeans);
 
@@ -167,7 +158,6 @@ LALInferenceKmeans *LALInferenceXmeans(gsl_matrix *data) {
         }
     }
 
-    gsl_rng_free(rng);
     return kmeans;
 }
 
@@ -181,16 +171,11 @@ LALInferenceKmeans *LALInferenceXmeans(gsl_matrix *data) {
  * and the centroid is kept.  This is less precise than other methods, but much faster,
  * as the likelihood is computed at few and fewer points as centroids are split.
  * @param[in] data A GSL matrix containing the data to be clustered.
+ * @param[in] rng  A GSL random number generator used by the kmeans algorithm.
  * @result A kmeans structure containing the clustering that maximizes the BIC.
  */
-LALInferenceKmeans *LALInferenceRecursiveKmeans(gsl_matrix *data) {
+LALInferenceKmeans *LALInferenceRecursiveKmeans(gsl_matrix *data, gsl_rng *rng) {
     UINT4 k;
-
-    /* Create a random number generator for use in kmeans */
-    gsl_rng_env_setup();
-    const gsl_rng_type *T = gsl_rng_default;
-    gsl_rng *rng = gsl_rng_alloc(T);
-    gsl_rng_set(rng, 1234);
 
     /* Perform recursive splitting */
     LALInferenceKmeans *split_kmeans = LALInferenceCreateKmeans(1, data, rng);
@@ -207,7 +192,6 @@ LALInferenceKmeans *LALInferenceRecursiveKmeans(gsl_matrix *data) {
 
     LALInferenceKmeansRun(kmeans);
 
-    gsl_rng_free(rng);
     return kmeans;
 }
 
@@ -227,7 +211,6 @@ void LALInferenceKmeansRecursiveSplit(LALInferenceKmeans *kmeans) {
     UINT4 split_size = 2;
     REAL8 current_bic, new_bic;
 
-    LALInferenceKmeans *best_kmeans = NULL;
     LALInferenceKmeans *new_kmeans = LALInferenceKmeansRunBestOf(split_size, kmeans->data, iter, kmeans->rng);
 
     current_bic = LALInferenceKmeansBIC(kmeans);
@@ -266,7 +249,7 @@ void LALInferenceKmeansRecursiveSplit(LALInferenceKmeans *kmeans) {
  * @param kmeans The initialized kmeans to run.
  */
 void LALInferenceKmeansRun(LALInferenceKmeans *kmeans) {
-    UINT4 i, j, k;
+    UINT4 i;
 
     while (kmeans->has_changed) {
         kmeans->has_changed = 0;
@@ -332,7 +315,7 @@ LALInferenceKmeans * LALInferenceCreateKmeans(UINT4 k, gsl_matrix *data, gsl_rng
     kmeans->mean = LALInferenceComputeMean(data);
 
     /* Whiten the data */
-    kmeans->data = LALInferenceDecorrelateSamples(data, NULL);
+    kmeans->data = LALInferenceWhitenSamples(data);
 
     kmeans->k = k;
     kmeans->npts = data->size1;
@@ -340,16 +323,20 @@ LALInferenceKmeans * LALInferenceCreateKmeans(UINT4 k, gsl_matrix *data, gsl_rng
     kmeans->has_changed = 1;
     kmeans->rng = rng;
 
+    kmeans->unwhitened_chol_dec_cov = LALInferenceComputeCovariance(data);
     kmeans->chol_dec_cov = LALInferenceComputeCovariance(kmeans->data);
 
     /* Cholesky decompose the covariance matrix and decorrelate the data */
+    gsl_linalg_cholesky_decomp(kmeans->unwhitened_chol_dec_cov);
     gsl_linalg_cholesky_decomp(kmeans->chol_dec_cov);
 
     /* Zero out upper right triangle of decomposed covariance matrix, which contains the transpose */
     UINT4 i, j;
     for (i = 0; i < kmeans->dim; i++) {
-        for (j = i+1; j < kmeans->dim; j++)
+        for (j = i+1; j < kmeans->dim; j++) {
+            gsl_matrix_set(kmeans->unwhitened_chol_dec_cov, i, j, 0.);
             gsl_matrix_set(kmeans->chol_dec_cov, i, j, 0.);
+        }
     }
 
     kmeans->assignments = XLALMalloc(kmeans->npts * sizeof(UINT4));
@@ -604,9 +591,9 @@ void append_vec_to_mat(gsl_matrix **mat_ptr, gsl_vector *vec) {
 
 
 /**
- * Evaluate the estimated PDF from a clustered-KDE at a point.
+ * Evaluate the estimated (log) PDF from a clustered-KDE at a point.
  *
- * Compute the value of the estimated probability density function from
+ * Compute the (log) value of the estimated probability density function from
  * the clustered kernel density estimate of a distribution.
  * @param[in] kmeans The kmeans clustering to estimate the PDF from.
  * @param[in] pt     An array containing the point to evaluate the distribution at.
@@ -615,12 +602,12 @@ void append_vec_to_mat(gsl_matrix **mat_ptr, gsl_vector *vec) {
 REAL8 LALInferenceKmeansPDF(LALInferenceKmeans *kmeans, REAL8 *pt) {
     UINT4 j;
 
-    /* The vector is first whiten to be consistent with the data stored
+    /* The vector is first whitened to be consistent with the data stored
      * in the kernel density estimator. */
     gsl_vector *y = gsl_vector_alloc(kmeans->dim);
     gsl_vector_view pt_view = gsl_vector_view_array(pt, kmeans->dim);
 
-    /* Copy the point to a local vector, as it will be overwritten */
+    /* Copy the point to a local vector, since it will be overwritten */
     gsl_vector_memcpy(y, &pt_view.vector);
 
     /* Subtract the mean from the point */
@@ -633,13 +620,52 @@ REAL8 LALInferenceKmeansPDF(LALInferenceKmeans *kmeans, REAL8 *pt) {
 
     REAL8 pdf = 0.;
     for (j = 0; j < kmeans->k; j++)
-        pdf += kmeans->weights[j] * LALInferenceKDEEvaluatePoint(kmeans->KDEs[j], pt);
+        pdf += log(kmeans->weights[j]) + LALInferenceKDEEvaluatePoint(kmeans->KDEs[j], y->data);
     return pdf;
-
 }
 
+
 /**
- * Evaluate the estimated PDF from a clustered-KDE at an already whitened point.
+ * Draw a sample from a kmeans-KDE estimate of a distribution.
+ *
+ * Draw a random sample from the estimated distribution of a set of points.  A cluster
+ * from kmeans is picked at random, from which a sample is drawn from the KDE of the
+ * cluster.
+ * @param[in] kmeans The kmeans to draw a sample from.
+ * @returns An array containing a sample drawn from \a kmeans.
+ */
+REAL8 *LALInferenceKmeansDraw(LALInferenceKmeans *kmeans) {
+    /* Draw a cluster at random, using the weights assigned to each cluster */
+    REAL8 randomDraw = gsl_rng_uniform(kmeans->rng);
+
+    UINT4 cluster = 0;
+    REAL8 cumulativeWeight = kmeans->weights[cluster];
+    while (cumulativeWeight < randomDraw) {
+        cluster++;
+        cumulativeWeight += kmeans->weights[cluster];
+    }
+
+    /* Draw a sample from the chosen cluster's KDE */
+    REAL8 *white_point = LALInferenceDrawKDESample(kmeans->KDEs[cluster], kmeans->rng);
+    gsl_vector_view white_pt = gsl_vector_view_array(white_point, kmeans->dim);
+
+    /* Create an empty array to contain the unwhitened sample */
+    REAL8 *point = XLALMalloc(kmeans->dim * sizeof(REAL8));
+    gsl_vector_view pt = gsl_vector_view_array(point, kmeans->dim);
+    gsl_vector_memcpy(&pt.vector, kmeans->mean);
+
+    gsl_matrix *chol_dec_cov_lower = kmeans->unwhitened_chol_dec_cov;
+
+    /* Recolor the sample */
+    gsl_blas_dgemv(CblasNoTrans, 1.0, chol_dec_cov_lower, &white_pt.vector, 1.0, &pt.vector);
+
+    XLALFree(white_point);
+    return point;
+}
+
+
+/**
+ * Evaluate the estimated (log) PDF from a clustered-KDE at an already whitened point.
  *
  * Calculate the probability at a point from the clustered-KDE estimate, assuming the point has
  * already been whitened using the same process as the stored data in kmeans.  This is particularly
@@ -656,10 +682,61 @@ REAL8 LALInferenceInternalKmeansPDF(LALInferenceKmeans *kmeans, REAL8 *pt) {
 
     REAL8 pdf = 0.;
     for (j = 0; j < kmeans->k; j++)
-        pdf += kmeans->weights[j] * LALInferenceKDEEvaluatePoint(kmeans->KDEs[j], pt);
+        pdf += log(kmeans->weights[j]) + LALInferenceKDEEvaluatePoint(kmeans->KDEs[j], pt);
     return pdf;
 }
 
+
+/**
+ * Transform a data set to obtain a 0-mean and identity covariance matrix.
+ *
+ * Determine and execute the transformation of a data set to remove any global correlations
+ * in a data set.
+ * @param[in] samples The data set to whiten.
+ * @return A whitened data set with samples corresponding to \a samples.
+ */
+gsl_matrix * LALInferenceWhitenSamples(gsl_matrix *samples) {
+    UINT4 i, j;
+    UINT4 npts = samples->size1;
+    UINT4 dim = samples->size2;
+
+    gsl_matrix *whitened_samples = gsl_matrix_alloc(npts, dim);
+    gsl_matrix_memcpy(whitened_samples, samples);
+
+    /* Calculate the mean and covariance matrix */
+    gsl_vector *mean = LALInferenceComputeMean(samples);
+    gsl_matrix *cov = LALInferenceComputeCovariance(samples);
+
+    /* Cholesky decompose the covariance matrix and decorrelate the data */
+    gsl_matrix *cholesky_decomp_cov = gsl_matrix_alloc(dim, dim);
+    gsl_matrix_memcpy(cholesky_decomp_cov, cov);
+    gsl_linalg_cholesky_decomp(cholesky_decomp_cov);
+
+    /* Zero out upper right triangle of decomposed covariance matrix, which contains the transpose */
+    for (i = 0; i < dim; i++) {
+        for (j = i+1; j < dim; j++)
+            gsl_matrix_set(cholesky_decomp_cov, i, j, 0.);
+    }
+
+    /* Decorrelate the data */
+    gsl_vector_view y;
+    gsl_matrix *A = gsl_matrix_alloc(dim, dim);
+    for (i=0; i<npts; i++) {
+        y = gsl_matrix_row(whitened_samples, i);
+        gsl_vector_sub(&y.vector, mean);
+
+        /* The Householder solver destroys the matrix, so don't give it the original */
+        gsl_matrix_memcpy(A, cholesky_decomp_cov);
+        gsl_linalg_HH_svx(A, &y.vector);
+    }
+
+    gsl_matrix_free(cholesky_decomp_cov);
+    gsl_matrix_free(A);
+    XLALFree(mean);
+    gsl_matrix_free(cov);
+
+    return whitened_samples;
+}
 
 /**
  * Calculate the squared Euclidean distance bewteen two points.
@@ -786,7 +863,7 @@ REAL8 LALInferenceKmeansMaxLogL(LALInferenceKmeans *kmeans) {
  * @return The value of the Bayes Information Criterian of the \a kmeans clustering.
  */
 REAL8 LALInferenceKmeansBIC(LALInferenceKmeans *kmeans) {
-    UINT4 i, j;
+    UINT4 i;
     REAL8 log_l;
     REAL8 k = (REAL8) kmeans->k;
     REAL8 N = (REAL8) kmeans->npts;
@@ -795,7 +872,7 @@ REAL8 LALInferenceKmeansBIC(LALInferenceKmeans *kmeans) {
     log_l = 0.;
     for (i = 0; i < kmeans->npts; i++) {
         gsl_vector_view pt = gsl_matrix_row(kmeans->data, i);
-        log_l += log(LALInferenceInternalKmeansPDF(kmeans, (&pt.vector)->data));
+        log_l += LALInferenceInternalKmeansPDF(kmeans, (&pt.vector)->data);
     }
 
     return log_l - k * (d + d * (d + 1.)/2.) * log(N);

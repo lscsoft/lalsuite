@@ -34,6 +34,7 @@
 #include <lal/LALDatatypes.h>
 #include <lal/LALStdlib.h>
 
+#include "logaddexp.h"
 #include <lal/LALInference.h>
 #include <lal/LALInferenceKDE.h>
 
@@ -144,8 +145,6 @@ LALInferenceKDE *LALInferenceNewKDEfromMat(gsl_matrix *data, UINT4 *mask) {
  * \sa LALInferenceKDE, LALInferenceSetKDEBandwidth()
  */
 LALInferenceKDE *LALInferenceInitKDE(UINT4 npts, UINT4 dim) {
-    UINT4 i,j;
-
     LALInferenceKDE *kde = XLALMalloc(sizeof(LALInferenceKDE));
     kde->dim = dim;
     kde->npts = npts;
@@ -165,7 +164,7 @@ LALInferenceKDE *LALInferenceInitKDE(UINT4 npts, UINT4 dim) {
  * Use Scott's rule to determine the bandwidth, and corresponding normalization factor, for a KDE.
  * @param[in] KDE The kernel density estimate to estimate the bandwidth of.
  */
-void LALInferenceSetKDEBandwidth(LALInferenceKDE *kde);
+void LALInferenceSetKDEBandwidth(LALInferenceKDE *kde) {
     /* Use Scott's Bandwidth method */
     REAL8 det_cov, cov_factor;
     UINT4 i, j;
@@ -189,14 +188,14 @@ void LALInferenceSetKDEBandwidth(LALInferenceKDE *kde);
     }
 
     det_cov = LALInferenceMatrixDet(kde->cov);
-    kde->norm_factor = kde->npts * sqrt(pow(2*LAL_PI, kde->dim) * det_cov);
+    kde->log_norm_factor = log(kde->npts * sqrt(pow(2*LAL_PI, kde->dim) * det_cov));
 }
 
 
 /**
- * Evaluate the PDF from a KDE at a single point.
+ * Evaluate the (log) PDF from a KDE at a single point.
  *
- * Calculate the value of the probability density function estimate from
+ * Calculate the (log) value of the probability density function estimate from
  * a kernel density estimate at a single point.
  * @param[in] KDE   The kernel density estimate to evaluate.
  * @param[in] point An array containing the point to evaluate the PDF at.
@@ -229,11 +228,11 @@ REAL8 LALInferenceKDEEvaluatePoint(LALInferenceKDE *kde, REAL8 *point) {
         energy = 0.;
         for (j=0; j<dim; j++)
             energy += gsl_vector_get(diff, j);
-        result += exp(-energy/2.);
+        result = logaddexp(result, -energy/2.);
     }
 
     /* Normalize the result and return */
-    result /= kde->norm_factor;
+    result -= kde->log_norm_factor;
     return result;
 }
 
@@ -242,15 +241,16 @@ REAL8 LALInferenceKDEEvaluatePoint(LALInferenceKDE *kde, REAL8 *point) {
  * Draw a sample from a kernel density estimate.
  *
  * Draw a sample from a distribution, as estimated by a kernel density estimator.
- * @param[out] point The sample drawn from the distribution.
  * @param[in]  KDE   The kernel density estimate to draw \a point from.
  * @param[in]  rng   A GSL random number generator to use for random number generation.
+ * @return The sample drawn from the distribution.
  */
-void LALInferenceDrawKDESample(REAL8 *point, LALInferenceKDE *kde, gsl_rng *rng) {
+REAL8 *LALInferenceDrawKDESample(LALInferenceKDE *kde, gsl_rng *rng) {
     UINT4 dim = kde->dim;
-    UINT4 i, j;
+    UINT4 j;
     REAL8 val;
 
+    REAL8 *point = XLALMalloc(dim * sizeof(REAL8));
     gsl_vector_view pt = gsl_vector_view_array(point, dim);
     gsl_matrix *chol_dec_cov_lower = kde->cholesky_decomp_cov_lower;
 
@@ -270,7 +270,7 @@ void LALInferenceDrawKDESample(REAL8 *point, LALInferenceKDE *kde, gsl_rng *rng)
     gsl_blas_dgemv(CblasNoTrans, 1.0, chol_dec_cov_lower, unit_draw, 1.0, &pt.vector);
 
     gsl_vector_free(unit_draw);
-    return;
+    return point;
 }
 
 
@@ -310,7 +310,7 @@ REAL8 LALInferenceMatrixDet(gsl_matrix *mat) {
  * @return A vector containing the mean of \a data.
  */
 gsl_vector *LALInferenceComputeMean(gsl_matrix *data) {
-    UINT4 i, j;
+    UINT4 i;
     UINT4 npts = data->size1;
     UINT4 dim = data->size2;
 

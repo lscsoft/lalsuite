@@ -19,12 +19,14 @@
  *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
  *  MA  02111-1307  USA
  */
+#ifndef LALInferenceKDE_h
+#define LALInferenceKDE_h
 
 #include <lal/LALStdlib.h>
 #include <lal/LALConstants.h>
 #include <lal/LALDatatypes.h>
 
-struct tagKDE;
+struct tagkmeans;
 
 /**
  * Structure containing the Guassian kernel density of a set of samples.
@@ -36,7 +38,7 @@ tagKDE
     UINT4 dim;                              /**< Dimension of points in \a data. */
     UINT4 npts;                             /**< Number of points in \a data. */
     REAL8 bandwidth;                        /**< Bandwidth of kernels. */
-    REAL8 norm_factor;                      /**< Normalization factor of the KDE. */
+    REAL8 log_norm_factor;                  /**< Normalization factor of the KDE. */
     gsl_vector * mean;                      /**< The mean of \a data */
     gsl_matrix * cov;                       /**< The covariance matrix of \a data */
     gsl_matrix * cholesky_decomp_cov;       /**< The Cholesky decomposition of the
@@ -46,7 +48,7 @@ tagKDE
 } LALInferenceKDE;
 
 /* Allocate, fill, and tune a Gaussian kernel density estimate given an array of points. */
-LALInferenceKDE *LALInferenceNewKDE(REAL8 **pts, UINT4 npts, UINT4 dim, UINT4 *mask);
+LALInferenceKDE *LALInferenceNewKDE(REAL8 *pts, UINT4 npts, UINT4 dim, UINT4 *mask);
 
 /* Allocate, fill, and tune a Gaussian kernel density estimate given a matrix of points. */
 LALInferenceKDE *LALInferenceNewKDEfromMat(gsl_matrix *data, UINT4 *mask);
@@ -57,11 +59,11 @@ LALInferenceKDE *LALInferenceInitKDE(UINT4 npts, UINT4 dim);
 /* Calculate the bandwidth and normalization factor for a KDE. */
 void LALInferenceSetKDEBandwidth(LALInferenceKDE *kde);
 
-/* Evaluate the PDF from a KDE at a single point. */
+/* Evaluate the (log) PDF from a KDE at a single point. */
 REAL8 LALInferenceKDEEvaluatePoint(LALInferenceKDE *kde, REAL8 *point);
 
 /* Draw a sample from a kernel density estimate. */
-void LALInferenceDrawKDESample(REAL8 *point, LALInferenceKDE *kde, gsl_rng *rng);
+REAL8 *LALInferenceDrawKDESample(LALInferenceKDE *kde, gsl_rng *rng);
 
 /* Calculate the covariance matrix of a data set. */
 gsl_matrix *LALInferenceComputeCovariance(gsl_matrix *pts);
@@ -71,3 +73,5 @@ gsl_vector *LALInferenceComputeMean(gsl_matrix *points);
 
 /* Calculate the determinant of a matrix. */
 REAL8 LALInferenceMatrixDet(gsl_matrix *mat);
+
+#endif

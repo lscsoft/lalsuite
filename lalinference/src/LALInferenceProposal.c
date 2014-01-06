@@ -46,6 +46,7 @@
 #include <lal/XLALError.h>
 
 #include <lal/LALStdlib.h>
+#include <lal/LALInferenceClusteredKDE.h>
 
 #ifdef __GNUC__
 #define UNUSED __attribute__ ((unused))
@@ -86,7 +87,7 @@ const char *const GlitchMorletReverseJumpName = "glitchMorletReverseJump";
 const char *const ensembleWalkFullName = "EnsembleWalkFull";
 const char *const ensembleWalkIntrinsicName = "EnsembleWalkIntrinsic";
 const char *const ensembleWalkExtrinsicName = "EnsembleWalkExtrinsic";
-
+const char *const clusteredKDEProposalName = "ClusteredKDEProposal";
 
 static int
 same_detector_location(LALInferenceIFOData *d1, LALInferenceIFOData *d2) {
@@ -494,6 +495,11 @@ SetupDefaultProposal(LALInferenceRunState *runState, LALInferenceVariables *curr
     //Morlet wavelet propposals
     LALInferenceAddProposalToCycle(runState, GlitchMorletJumpName, *LALInferenceGlitchMorletProposal, SMALLWEIGHT);
     LALInferenceAddProposalToCycle(runState, GlitchMorletReverseJumpName, *LALInferenceGlitchMorletReverseJump, SMALLWEIGHT);
+  }
+
+  if (LALInferenceGetProcParamVal(runState->commandLine,"--ptmcmc-samples") || LALInferenceGetProcParamVal(runState->commandLine,"--ascii-samples")) {
+    LALInferenceSetupClusteredKDEProposalsFromFile(runState);
+    LALInferenceAddProposalToCycle(runState, clusteredKDEProposalName, &LALInferenceClusteredKDEProposal, BIGWEIGHT);
   }
 
   LALInferenceRandomizeProposalCycle(runState);
@@ -3361,6 +3367,334 @@ void LALInferenceUpdateAdaptiveJumps(LALInferenceRunState *runState, INT4 accept
                 }
         }
         *adaptableStep = 0;
+}
+
+
+/**
+ * Setup all clustered-KDE proposals with samples read from file.
+ *
+ * Constructed clustered-KDE proposals from all sample lists provided in
+ * files given on the command line.
+ * @param runState The LALInferenceRunState to get command line options from and to the proposal cycle of.
+ */
+void LALInferenceSetupClusteredKDEProposalsFromFile(LALInferenceRunState *runState) {
+    printf("Setting up cluster proposal.\n");
+    LALInferenceVariableItem *item;
+    UINT4 i=0, j=0;
+    UINT4 nBurnins=0, nWeights=0, nPostEsts=0;
+    UINT4 burnin;
+    REAL8 weight;
+    ProcessParamsTable *command;
+
+    /* Loop once to get number of sample files and sanity check */
+    nPostEsts=0;
+    for(command=runState->commandLine; command; command=command->next) {
+        if(!strcmp(command->param, "--ptmcmc-samples") || !strcmp(command->param, "--ascii-samples")) {
+            nPostEsts++;
+        }
+    }
+
+    UINT4 *burnins = XLALCalloc(nPostEsts, sizeof(UINT4));
+    UINT4 *weights = XLALCalloc(nPostEsts, sizeof(UINT4));
+
+    /* Get burnins and weights */
+    for(command=runState->commandLine; command; command=command->next) {
+      if(!strcmp(command->param, "--input-burnin")) {
+        if (nBurnins < nPostEsts) {
+          burnins[nBurnins] = atoi(command->value);
+          nBurnins++;
+        } else {
+          nBurnins++;
+          break;
+        }
+      } else if (!strcmp(command->param, "--input-weight")) {
+        if (nWeights < nPostEsts) {
+          weights[nWeights] = atoi(command->value);
+          nWeights++;
+        } else {
+          nWeights++;
+          break;
+        }
+      }
+    }
+
+    if (nBurnins > 0 && nBurnins != nPostEsts) { fprintf(stderr, "Inconsistent number of posterior sample files and burnins given!\n"); exit(1); }
+    if (nWeights > 0 && nWeights != nPostEsts) { fprintf(stderr, "Inconsistent number of posterior sample files and weights given!\n"); exit(1); }
+
+    /* Assign equal weighting if none specified. */
+    if (nWeights == 0) {
+        weight = 1.;
+        for (i=0; i<nPostEsts; i++)
+            weights[i] = weight;
+    }
+
+    i=0;
+    for(command=runState->commandLine; command; command=command->next) {
+        if(!strcmp(command->param, "--ptmcmc-samples") || !strcmp(command->param, "--ascii-samples")) {
+            void (*burnin_method)(FILE *, UINT4);
+
+            LALInferenceClusteredKDE *kde = XLALMalloc(sizeof(LALInferenceClusteredKDE));
+
+            weight = weights[i];
+            if (nBurnins > 0)
+                burnin = burnins[i];
+            else
+                burnin = 0;
+
+            char *infilename = command->value;
+            FILE *input = fopen(infilename, "r");
+
+            char *propName = XLALMalloc(512*sizeof(char));
+            sprintf(propName, "%s_%s", clusteredKDEProposalName, infilename);
+
+            UINT4 nInSamps;
+            UINT4 nCols;
+            REAL8 *sampleArray;
+
+            if(!strcmp(command->param, "--ptmcmc-samples")) {
+                LALInferenceDiscardPTMCMCHeader(input);
+                burnin_method = &LALInferenceBurninPTMCMC;
+            } else {
+                burnin_method = &LALInferenceBurninStream;
+            }
+
+            char params[128][VARNAME_MAX];
+            LALInferenceReadAsciiHeader(input, params, &nCols);
+
+            LALInferenceVariables *backwardClusterParams = XLALCalloc(1, sizeof(LALInferenceVariables));
+
+            /* Only cluster parameters that are being sampled */
+            UINT4 nValidCols=0;
+            UINT4 *validCols = XLALMalloc(nCols * sizeof(UINT4));
+            for (j=0; j<nCols; j++)
+                validCols[j] = 0;
+
+            for (j=0; j<nCols; j++) {
+                char* internal_param_name = XLALMalloc(512*sizeof(char));
+                LALInferenceTranslateExternalToInternalParamName(internal_param_name, params[j]);
+
+                for (item = runState->currentParams->head; item; item = item->next) {
+                    if (!strcmp(item->name, internal_param_name) &&
+                        (item->vary == LALINFERENCE_PARAM_LINEAR || item->vary == LALINFERENCE_PARAM_CIRCULAR)) {
+                        nValidCols++;
+                        validCols[j] = 1;
+                        LALInferenceAddVariable(backwardClusterParams, item->name, item->value, item->type, item->vary);
+                        break;
+                    }
+                }
+            }
+
+            /* LALInferenceAddVariable() builds the array backwards, so reverse it. */
+            LALInferenceVariables *clusterParams = XLALCalloc(1, sizeof(LALInferenceVariables));
+
+            for (item = backwardClusterParams->head; item; item = item->next)
+                LALInferenceAddVariable(clusterParams, item->name, item->value, item->type, item->vary);
+
+            /* Burn in samples and parse the remainder */
+            burnin_method(input, burnin);
+            sampleArray = LALInferenceParseDelimitedAscii(input, nCols, validCols, &nInSamps);
+
+            /* Build the KDE estimate and add to the KDE proposal set */
+            LALInferenceInitClusteredKDEProposal(runState, kde, sampleArray, nInSamps, clusterParams, propName, weight);
+            LALInferenceAddClusteredKDEProposalToSet(runState, kde);
+
+            LALInferenceClearVariables(backwardClusterParams);
+            XLALFree(backwardClusterParams);
+            XLALFree(propName);
+            XLALFree(sampleArray);
+
+            i++;
+        }
+    }
+
+    XLALFree(burnins);
+    XLALFree(weights);
+}
+
+
+/**
+ * Initialize a clustered-KDE proposal.
+ *
+ * Estimates the underlying distribution of a set of points with a clustered kernel density estimate
+ * and constructs a jump proposal from the estimated distribution.
+ * @param      runState The current LALInferenceRunState.
+ * @param[out] kde      An empty proposal structure to populate with the clustered-KDE estimate.
+ * @param[in]  array    The data to estimate the underlying distribution of.
+ * @param[in]  nSamps   Number of samples contained in \a array.
+ * @param[in]  params   The parameters contained in \a array.
+ * @param[in]  name     The name of the proposal being constructed.
+ * @param[in]  weight   The relative weight this proposal is to have against other KDE proposals.
+ */
+void LALInferenceInitClusteredKDEProposal(LALInferenceRunState *runState, LALInferenceClusteredKDE *kde, REAL8 *array, UINT4 nSamps, LALInferenceVariables *params, const char *name, REAL8 weight) {
+
+    strcpy(kde->name, name);
+
+    gsl_matrix_view mview = gsl_matrix_view_array(array, nSamps, params->dimension);
+    kde->kmeans = LALInferenceIncrementalKmeans(&mview.matrix, runState->GSLrandom);
+
+    kde->dimension = kde->kmeans->dim;
+    kde->params = params;
+
+    kde->weight = weight;
+    kde->next = NULL;
+}
+
+
+/**
+ * Add a KDE proposal to the KDE proposal set.
+ *
+ * If other KDE proposals already exist, the provided KDE is appended to the list, otherwise it is added
+ * as the first of such proposals.
+ * @param     runState The current LALInferenceRunState.
+ * @param[in] kde      The proposal to be added to \a runState.
+ */
+void LALInferenceAddClusteredKDEProposalToSet(LALInferenceRunState *runState, LALInferenceClusteredKDE *kde) {
+    LALInferenceVariables *propArgs = runState->proposalArgs;
+
+    /* If proposal doesn't already exist, add to proposal args */
+    if (!LALInferenceCheckVariable(propArgs, clusteredKDEProposalName)) {
+        LALInferenceAddVariable(propArgs, clusteredKDEProposalName, (void *)&kde, LALINFERENCE_void_ptr_t, LALINFERENCE_PARAM_LINEAR);
+
+    /* If proposals already exist, add to the end */
+    } else {
+        LALInferenceClusteredKDE *existing_kde = *((LALInferenceClusteredKDE **)LALInferenceGetVariable(propArgs, clusteredKDEProposalName));
+
+        while (existing_kde->next != NULL)
+            existing_kde = existing_kde->next;
+
+        existing_kde->next=kde;
+    }
+
+    /* Add proposal to tracking */
+    LALInferenceVariables *propStats = runState->proposalStats;
+    if(propStats){
+        const char *propName = (const char *) kde->name;
+        if(!LALInferenceCheckVariable(propStats, propName)) {
+            LALInferenceProposalStatistics propStat = {
+                .weight = kde->weight,
+                .proposed = 0,
+                .accepted = 0};
+        LALInferenceAddVariable(propStats, propName, (void *)&propStat, LALINFERENCE_void_ptr_t, LALINFERENCE_PARAM_LINEAR);
+        }
+    }
+
+    return;
+}
+
+
+/**
+ * Setup a clustered-KDE proposal from the differential evolution buffer.
+ *
+ * Reads the samples currently in the differential evolution buffer and construct a
+ * jump proposal from its clustered kernel density estimate.
+ * @param runState The LALInferenceRunState to get the buffer from and add the proposal to.
+ */
+void LALInferenceSetupClusteredKDEProposalFromRun(LALInferenceRunState *runState) {
+    printf("Setting up PT-tuned proposal.\n");
+
+    LALInferenceClusteredKDE *proposal = XLALMalloc(sizeof(LALInferenceClusteredKDE));
+    REAL8 weight=2.;
+    INT4 i=0;
+
+    INT4 nPar = LALInferenceGetVariableDimensionNonFixed(runState->currentParams);
+    INT4 Nskip = *(INT4*) LALInferenceGetVariable(runState->algorithmParams, "Nskip");
+    INT4 startCycle = *(INT4*) LALInferenceGetVariable(runState->proposalArgs, "clusteredStartCycle");
+    INT4 endCycle = *(INT4*) LALInferenceGetVariable(runState->proposalArgs, "clusteredEndCycle");
+    INT4 nPoints = (endCycle - startCycle) / Nskip + 1;
+
+    /* Get points to be clustered from the differential evolution buffer. */
+    REAL8** DEsamples = (REAL8**) XLALMalloc(nPoints * sizeof(REAL8*));
+    REAL8*  temp = (REAL8*) XLALMalloc(nPoints * nPar * sizeof(REAL8));
+    for (i=0; i < nPoints; i++) {
+      DEsamples[i] = temp + (i*nPar);
+    }
+
+    INT4 bufferSize = LALInferenceBufferToArray(runState, startCycle, endCycle, DEsamples);
+
+    LALInferenceVariables *clusterParams = XLALCalloc(1, sizeof(LALInferenceVariables));
+
+    /* Only cluster parameters that are being sampled */
+    INT4 nInPar = 0;
+    LALInferenceVariableItem *item = runState->currentParams->head;
+    while(item!=NULL) {
+        if (item->vary == LALINFERENCE_PARAM_LINEAR || item->vary == LALINFERENCE_PARAM_CIRCULAR) {
+            LALInferenceAddVariable(clusterParams, item->name, item->value, item->type, item->vary);
+            nInPar++;
+        }
+        item = item->next;
+    }
+
+    LALInferenceInitClusteredKDEProposal(runState, proposal, DEsamples[0], bufferSize, clusterParams, clusteredKDEProposalName, weight);
+    LALInferenceAddClusteredKDEProposalToSet(runState, proposal);
+
+    XLALFree(temp);
+}
+
+
+/**
+ * A proposal based on the clustered kernal density estimate of a set of samples.
+ *
+ * Proposes samples from the estimated distribution of a sample of points.  The
+ * distribution is estimated with a clustered kernel density estimator.  This
+ * proposal is added to the proposal cycle with a specified weight, and in turn
+ * chooses at random a KDE-estimate from a linked list.
+ * @param      runState      The current LALInferenceRunState.
+ * @param[out] proposedParam The proposed parameters.
+ */
+void LALInferenceClusteredKDEProposal(LALInferenceRunState *runState, LALInferenceVariables *proposedParams) {
+    REAL8 cumulativeWeight, totalWeight;
+
+    LALInferenceVariableItem *item;
+    LALInferenceVariables *propArgs = runState->proposalArgs;
+
+    if (!LALInferenceCheckVariable(propArgs, clusteredKDEProposalName)) {
+        fprintf(stderr, "KDE Proposal called but never intialized.\n");
+        exit(1);
+    }
+
+    /* Clustered KDE estimates are stored in a linked list, with possibly different weights */
+    LALInferenceClusteredKDE *kdes = *((LALInferenceClusteredKDE **)LALInferenceGetVariable(propArgs, clusteredKDEProposalName));
+
+    totalWeight = 0.;
+    LALInferenceClusteredKDE *kde = kdes;
+    while (kde!=NULL) {
+        totalWeight += kde->weight;
+        kde = kde->next;
+    }
+
+    /* If multiple KDE estimates exists, draw one at random */
+    REAL8 randomDraw = gsl_rng_uniform(runState->GSLrandom);
+
+    kde = kdes;
+    cumulativeWeight = kde->weight;
+    while(cumulativeWeight/totalWeight < randomDraw) {
+        kde = kde->next;
+        cumulativeWeight += kde->weight;
+    }
+
+    /* Update the current proposal name */
+    const char *propName = (const char *) kde->name;
+    LALInferenceSetVariable(runState->proposalArgs, LALInferenceCurrentProposalName, &propName);
+
+    /* Draw a sample and fill the proposedParams variable */
+    LALInferenceCopyVariables(runState->currentParams, proposedParams);
+    REAL8 *current = XLALMalloc(kde->dimension * sizeof(REAL8));
+    REAL8 *proposed = LALInferenceKmeansDraw(kde->kmeans);
+
+    UINT4 i=0;
+    for (item = kde->params->head; item; item = item->next) {
+        current[i] = *(REAL8 *) LALInferenceGetVariable(runState->currentParams, item->name);
+        LALInferenceSetVariable(proposedParams, item->name, &(proposed[i]));
+        i++;
+    }
+
+    /* Calculate the proposal ratio */
+    REAL8 logCurrentP = LALInferenceKmeansPDF(kde->kmeans, current);
+    REAL8 logProposedP = LALInferenceKmeansPDF(kde->kmeans, proposed);
+    LALInferenceSetLogProposalRatio(runState, logCurrentP-logProposedP);
+
+    XLALFree(current);
+    XLALFree(proposed);
 }
 
 INT4 LALInferencePrintProposalTrackingHeader(FILE *fp,LALInferenceVariables *params) {

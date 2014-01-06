@@ -24,6 +24,7 @@
 #define LALInferenceProposal_h
 
 #include <lal/LALInference.h>
+#include <lal/LALInferenceClusteredKDE.h>
 
 #ifdef SWIG // SWIG interface directives
 SWIGLAL(
@@ -129,6 +130,7 @@ extern const char *const GlitchMorletReverseJumpName;
 extern const char *const ensembleWalkFullName;
 extern const char *const ensembleWalkIntrinsicName;
 extern const char *const ensembleWalkExtrinsicName;
+extern const char *const clusteredKDEProposalName;
 
 /**
  * The name of the variable that will store the name of the current
@@ -285,6 +287,34 @@ void LALInferenceTrackProposalAcceptance(LALInferenceRunState *runState, INT4 ac
 
 /** Helper function to update the adaptive steps after each jump. Set accepted=1 if accepted, 0 otherwise */
 void LALInferenceUpdateAdaptiveJumps(LALInferenceRunState *runState, INT4 accepted, REAL8 targetAcceptance);
+
+/** Struct to hold clustered-KDE estimates */
+typedef struct
+tagLALInferenceClusteredKDEProposal
+{
+    char name[VARNAME_MAX];
+    LALInferenceKmeans *kmeans;
+    REAL8 weight;
+    UINT4 dimension;
+    LALInferenceVariables *params;
+    struct tagLALInferenceClusteredKDEProposal *next;
+} LALInferenceClusteredKDE;
+
+/* Setup all clustered-KDE proposals with samples read from file. */
+void LALInferenceSetupClusteredKDEProposalsFromFile(LALInferenceRunState *runState);
+
+/* Add a KDE proposal to the KDE proposal set. */
+void LALInferenceAddClusteredKDEProposalToSet(LALInferenceRunState *runState, LALInferenceClusteredKDE *kde);
+
+/* Setup a clustered-KDE proposal from the differential evolution buffer. */
+void LALInferenceSetupClusteredKDEProposalFromRun(LALInferenceRunState *runState);
+
+/* A proposal based on the clustered kernal density estimate of a set of samples. */
+void LALInferenceClusteredKDEProposal(LALInferenceRunState *runState, LALInferenceVariables *proposedParams);
+
+/* Initialize a clustered-KDE proposal. */
+void LALInferenceInitClusteredKDEProposal(LALInferenceRunState *runState, LALInferenceClusteredKDE *kde, REAL8 *array, UINT4 nSamps, LALInferenceVariables *params, const char *name, REAL8 weight);
+
 /** Helper function to setup the adaptive step proposals before the run */
 void LALInferenceSetupAdaptiveProposals(LALInferenceRunState *state);
 
