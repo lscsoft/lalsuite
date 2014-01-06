@@ -953,7 +953,7 @@ XLALReadSegmentsFromFile ( const char *fname	/**< name of file containing segmen
       int ret;
       ret = sscanf ( flines->lines->tokens[iSeg], "%lf %lf %lf %d", &t0, &t1, &TspanHours, &NSFT );
       if ( !(ret == 2 || ret == 4) ) {
-        XLALPrintError ("%s: failed to parse data-line %d (%d) in segment-list %s: '%s'\n", __func__, iSeg, ret, fname, flines->lines->tokens[iSeg] );
+        XLALPrintError ("%s: failed to parse data-line %d (%d columns instead of supported 2 or 4) in segment-list '%s':\n%s\n", __func__, iSeg, ret, fname, flines->lines->tokens[iSeg] );
         XLALSegListClear ( segList );
         XLALFree ( segList );
         XLALDestroyParsedDataFile ( flines );
