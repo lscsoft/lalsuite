@@ -911,10 +911,12 @@ XLALrefineCOMPLEX8Vector (const COMPLEX8Vector *in,
  *
  * The segment-list format parse here is consistent with Xavie's segment lists used previously
  * and follows the format <repeated lines of form "startGPS endGPS duration[h] NumSFTs">,
+ * or an alternative format <repeated lines of form "startGPS endGPS">,
  * allowed comment-characters are '%' and '#'
  *
  * \note we (ab)use the integer 'id' field in LALSeg to carry the total number of SFTs
- * contained in that segment. This can be used as a consistency check when loading SFTs for these segments.
+ * contained in that segment if NumSFTs was provided in the segment file.
+ * This can be used as a consistency check when loading SFTs for these segments.
  *
  */
 LALSegList *
@@ -950,27 +952,35 @@ XLALReadSegmentsFromFile ( const char *fname	/**< name of file containing segmen
       LALSeg thisSeg;
       int ret;
       ret = sscanf ( flines->lines->tokens[iSeg], "%lf %lf %lf %d", &t0, &t1, &TspanHours, &NSFT );
-      if ( ret != 4 ) {
+      if ( !(ret == 2 || ret == 4) ) {
         XLALPrintError ("%s: failed to parse data-line %d (%d) in segment-list %s: '%s'\n", __func__, iSeg, ret, fname, flines->lines->tokens[iSeg] );
         XLALSegListClear ( segList );
         XLALFree ( segList );
         XLALDestroyParsedDataFile ( flines );
         XLAL_ERROR_NULL ( XLAL_ESYS );
       }
-      /* check internal consistency of these numbers */
-      REAL8 hours = 3600.0;
-      if ( fabs ( t1 - t0 - TspanHours * hours ) >= 1.0 ) {
-        XLALPrintError ("%s: Inconsistent segment list, in line %d: t0 = %f, t1 = %f, Tspan = %f != t1 - t0 (to within 1s)\n", __func__, iSeg, t0, t1, TspanHours );
-        XLAL_ERROR_NULL ( XLAL_EDOM );
+
+      if ( ret == 4 ) {
+        /* check internal consistency of these numbers */
+        REAL8 hours = 3600.0;
+        if ( fabs ( t1 - t0 - TspanHours * hours ) >= 1.0 ) {
+          XLALPrintError ("%s: Inconsistent segment list, in line %d: t0 = %f, t1 = %f, Tspan = %f != t1 - t0 (to within 1s)\n", __func__, iSeg, t0, t1, TspanHours );
+          XLAL_ERROR_NULL ( XLAL_EDOM );
+        }
       }
 
       LIGOTimeGPS start, end;
       XLALGPSSetREAL8( &start, t0 );
       XLALGPSSetREAL8( &end,   t1 );
 
-      /* we set number of SFTs as 'id' field, as we have no other use for it */
-      if ( XLALSegSet ( &thisSeg, &start, &end, NSFT ) != XLAL_SUCCESS )
-        XLAL_ERROR_NULL ( XLAL_EFUNC );
+      if ( ret == 2 ) {
+        if ( XLALSegSet ( &thisSeg, &start, &end, 0 ) != XLAL_SUCCESS )
+          XLAL_ERROR_NULL ( XLAL_EFUNC );
+      } else {
+        /* we set number of SFTs as 'id' field, as we have no other use for it */
+        if ( XLALSegSet ( &thisSeg, &start, &end, NSFT ) != XLAL_SUCCESS )
+          XLAL_ERROR_NULL ( XLAL_EFUNC );
+      }
 
       if ( XLALSegListAppend ( segList, &thisSeg ) != XLAL_SUCCESS )
         XLAL_ERROR_NULL ( XLAL_EFUNC );
