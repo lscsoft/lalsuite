@@ -193,6 +193,9 @@ REAL4Vector * sseSSVectorSum(REAL4Vector *output, REAL4Vector *input1, REAL4Vect
    
    return output;
 #else
+   (void*)output;
+   (void*)input1;
+   (void*)input2;
    fprintf(stderr, "%s: Failed because SSE is not supported, possibly because -msse flag wasn't used for compiling.\n", __func__);
    XLAL_ERROR_NULL(XLAL_EFAILED);
 #endif
@@ -277,6 +280,9 @@ REAL4Vector * sseSSVectorMultiply(REAL4Vector *output, REAL4Vector *input1, REAL
    
    return output;
 #else
+   (void*)output;
+   (void*)input1;
+   (void*)input2;
    fprintf(stderr, "%s: Failed because SSE is not supported, possibly because -msse flag wasn't used for compiling.\n", __func__);
    XLAL_ERROR_NULL(XLAL_EFAILED);
 #endif
@@ -345,6 +351,9 @@ REAL4Vector * sseAddScalarToREAL4Vector(REAL4Vector *output, REAL4Vector *input,
    
    return output;
 #else
+   (void*)output;
+   (void*)input;
+   (void)scalar;
    fprintf(stderr, "%s: Failed because SSE is not supported, possibly because -msse flag wasn't used for compiling.\n", __func__);
    XLAL_ERROR_NULL(XLAL_EFAILED);
 #endif
@@ -413,6 +422,9 @@ REAL8Vector * sseAddScalarToREAL8Vector(REAL8Vector *output, REAL8Vector *input,
    
    return output;
 #else
+   (void*)output;
+   (void*)input;
+   (void)scalar;
    fprintf(stderr, "%s: Failed because SSE2 is not supported, possibly because -msse2 flag wasn't used for compiling.\n", __func__);
    XLAL_ERROR_NULL(XLAL_EFAILED);
 #endif
@@ -481,6 +493,9 @@ REAL4Vector * sseScaleREAL4Vector(REAL4Vector *output, REAL4Vector *input, REAL4
    
    return output;
 #else
+   (void*)output;
+   (void*)input;
+   (void)scale;
    fprintf(stderr, "%s: Failed because SSE is not supported, possibly because -msse flag wasn't used for compiling.\n", __func__);
    XLAL_ERROR_NULL(XLAL_EFAILED);
 #endif
@@ -549,6 +564,9 @@ REAL8Vector * sseScaleREAL8Vector(REAL8Vector *output, REAL8Vector *input, REAL8
    
    return output;
 #else
+   (void*)output;
+   (void*)input;
+   (void)scale;
    fprintf(stderr, "%s: Failed because SSE2 is not supported, possibly because -msse2 flag wasn't used for compiling.\n", __func__);
    XLAL_ERROR_NULL(XLAL_EFAILED);
 #endif
@@ -633,6 +651,13 @@ void sseSSVectorSequenceSum(REAL4VectorSequence *output, REAL4VectorSequence *in
    XLALFree(allocinput2);
    XLALFree(allocoutput);
 #else
+   (void*)output;
+   (void*)input1;
+   (void*)input2;
+   (void)vectorpos1;
+   (void)vectorpos2;
+   (void)outputvectorpos;
+   (void)numvectors;
    fprintf(stderr, "%s: Failed because SSE is not supported, possibly because -msse flag wasn't used for compiling.\n", __func__);
    XLAL_ERROR_VOID(XLAL_EFAILED);
 #endif
@@ -720,6 +745,10 @@ void sseSSVectorSequenceSubtract(REAL4Vector *output, REAL4VectorSequence *input
    if (!vec2aligned) XLALFree(allocinput2);
    if (!outputaligned) XLALFree(allocoutput);
 #else
+   (void*)output;
+   (void*)input1;
+   (void*)input2;
+   (void)vectorpos1;
    fprintf(stderr, "%s: Failed because SSE is not supported, possibly because -msse flag wasn't used for compiling.\n", __func__);
    XLAL_ERROR_VOID(XLAL_EFAILED);
 #endif
@@ -870,6 +899,9 @@ INT4 sse_sin_cos_2PI_LUT_REAL8Vector(REAL8Vector *sin2pix_vector, REAL8Vector *c
    
    return XLAL_SUCCESS;
 #else
+   (void*)sin2pix_vector;
+   (void*)cos2pix_vector;
+   (void*)x;
    fprintf(stderr, "%s: Failed because SSE2 is not supported, possibly because -msse2 flag wasn't used for compiling.\n", __func__);
    XLAL_ERROR(XLAL_EFAILED);
 #endif
@@ -1024,6 +1056,9 @@ INT4 sse_sin_cos_2PI_LUT_REAL4Vector(REAL4Vector *sin2pix_vector, REAL4Vector *c
    
    return XLAL_SUCCESS;
 #else
+   (void*)sin2pix_vector;
+   (void*)cos2pix_vector;
+   (void*)x;
    fprintf(stderr, "%s: Failed because SSE2 is not supported, possibly because -msse2 flag wasn't used for compiling.\n", __func__);
    XLAL_ERROR(XLAL_EFAILED);
 #endif
@@ -1182,6 +1217,8 @@ void sse_exp_REAL8Vector(REAL8Vector *output, REAL8Vector *input)
    if (!vecaligned) XLALFree(allocinput);
    if (!outputaligned) XLALFree(allocoutput);
 #else
+   (void*)output;
+   (void*)input;
    fprintf(stderr, "%s: Failed because SSE2 is not supported, possibly because -msse2 flag wasn't used for compiling.\n", __func__);
    XLAL_ERROR_VOID(XLAL_EFAILED);
 #endif
@@ -1334,6 +1371,8 @@ void sse_exp_REAL4Vector(REAL4Vector *output, REAL4Vector *input)
    if (!vecaligned) XLALFree(allocinput);
    if (!outputaligned) XLALFree(allocoutput);
 #else
+   (void*)output;
+   (void*)input;
    fprintf(stderr, "%s: Failed because SSE2 is not supported, possibly because -msse2 flag wasn't used for compiling.\n", __func__);
    XLAL_ERROR_VOID(XLAL_EFAILED);
 #endif
