@@ -42,7 +42,7 @@
 /* user input variables */
 typedef struct{
   BOOLEAN help; /**< if the user wants a help message */
-  INT4    startTime;          /**< desired start GPS time of search */ 
+  INT4    startTime;          /**< desired start GPS time of search */
   INT4    endTime;            /**< desired end GPS time */
   REAL8   maxLag;             /**< maximum lag time in seconds between SFTs in correlation */
   BOOLEAN inclAutoCorr;       /**< include auto-correlation terms (an SFT with itself) */
@@ -56,8 +56,8 @@ typedef struct{
   REAL8   orbitAsiniSec;      /**< start projected semimajor axis in seconds */
   REAL8   orbitAsiniSecBand;  /**< band for projected semimajor axis in seconds */
   REAL8   orbitPSec;          /**< binary orbital period in seconds */
-  REAL8   orbitTimeAsc;       /**< start time of ascension for binary orbit */ 
-  REAL8   orbitTimeAscBand;   /**< band for time of ascension for binary orbit */ 
+  REAL8   orbitTimeAsc;       /**< start time of ascension for binary orbit */
+  REAL8   orbitTimeAscBand;   /**< band for time of ascension for binary orbit */
   CHAR    *sftLocation;       /**< location of SFT data */
   CHAR    *ephemYear;         /**< range of years for ephemeris file */
   INT4    rngMedBlock;        /**< running median block size */
@@ -69,7 +69,7 @@ typedef struct{
 
 /* struct to store useful variables */
 typedef struct{
-  SFTCatalog *catalog; /**< catalog of SFTs */  
+  SFTCatalog *catalog; /**< catalog of SFTs */
   EphemerisData *edat; /**< ephemeris data */
 } ConfigVariables;
 
@@ -95,7 +95,7 @@ int main(int argc, char *argv[]){
   UserInput_t uvar = empty_UserInput;
   static ConfigVariables config;
 
-  /* sft related variables */ 
+  /* sft related variables */
   MultiSFTVector *inputSFTs = NULL;
   MultiPSDVector *multiPSDs = NULL;
   MultiNoiseWeights *multiWeights = NULL;
@@ -106,7 +106,7 @@ int main(int argc, char *argv[]){
   SFTIndexList *sftIndices = NULL;
   SFTPairIndexList *sftPairs = NULL;
 
-  PulsarDopplerParams dopplerpos = empty_PulsarDopplerParams;  
+  PulsarDopplerParams dopplerpos = empty_PulsarDopplerParams;
   BinaryOrbitParams thisBinaryTemplate, binaryTemplateSpacings;
   BinaryOrbitParams minBinaryTemplate, maxBinaryTemplate;
   SkyPosition skyPos = empty_SkyPosition;
@@ -140,7 +140,7 @@ int main(int argc, char *argv[]){
 
   if (uvar.help)	/* if help was requested, then exit */
     return 0;
- 
+
   /* configure useful variables based on user input */
   if ( XLALInitializeConfigVars ( &config, &uvar) != XLAL_SUCCESS ) {
     LogPrintf ( LOG_CRITICAL, "%s: XLALInitUserVars() failed with errno=%d\n", __func__, xlalErrno );
@@ -157,7 +157,7 @@ int main(int argc, char *argv[]){
   fMax = uvar.fStart + 0.5 * uvar.rngMedBlock * deltaF + uvar.fBand;
 
   /* read the SFTs*/
-  if ((inputSFTs = XLALLoadMultiSFTs ( config.catalog, fMin, fMax)) == NULL){ 
+  if ((inputSFTs = XLALLoadMultiSFTs ( config.catalog, fMin, fMax)) == NULL){
     LogPrintf ( LOG_CRITICAL, "%s: XLALLoadMultiSFTs() failed with errno=%d\n", __func__, xlalErrno );
     XLAL_ERROR( XLAL_EFUNC );
   }
@@ -175,7 +175,7 @@ int main(int argc, char *argv[]){
   }
 
   /* read the timestamps from the SFTs */
-  if ((multiTimes = XLALExtractMultiTimestampsFromSFTs ( inputSFTs )) == NULL){ 
+  if ((multiTimes = XLALExtractMultiTimestampsFromSFTs ( inputSFTs )) == NULL){
     LogPrintf ( LOG_CRITICAL, "%s: XLALExtractMultiTimestampsFromSFTs() failed with errno=%d\n", __func__, xlalErrno );
     XLAL_ERROR( XLAL_EFUNC );
   }
@@ -187,7 +187,7 @@ int main(int argc, char *argv[]){
   }
 
   /* Find the detector state for each SFT */
-  if ((multiStates = XLALGetMultiDetectorStates ( multiTimes, multiDetectors, config.edat, 0.0 )) == NULL){ 
+  if ((multiStates = XLALGetMultiDetectorStates ( multiTimes, multiDetectors, config.edat, 0.0 )) == NULL){
     LogPrintf ( LOG_CRITICAL, "%s: XLALGetMultiDetectorStates() failed with errno=%d\n", __func__, xlalErrno );
     XLAL_ERROR( XLAL_EFUNC );
   }
@@ -203,7 +203,7 @@ int main(int argc, char *argv[]){
     LogPrintf ( LOG_CRITICAL, "%s: XLALComputeMultiAMCoeffs() failed with errno=%d\n", __func__, xlalErrno );
     XLAL_ERROR( XLAL_EFUNC );
   }
-  
+
   /* Construct the flat list of SFTs (this sort of replicates the
      catalog, but there's not an obvious way to get the information
      back) */
@@ -239,7 +239,7 @@ int main(int argc, char *argv[]){
   }
 
   /* initialize the doppler scan struct which stores the current template information */
-  XLALGPSSetREAL8(&dopplerpos.refTime, uvar.refTime); 
+  XLALGPSSetREAL8(&dopplerpos.refTime, uvar.refTime);
   dopplerpos.Alpha = uvar.alphaRad;
   dopplerpos.Delta = uvar.deltaRad;
   dopplerpos.fkdot[0] = uvar.fStart;
@@ -260,18 +260,10 @@ int main(int argc, char *argv[]){
   /* set spacings in new dopplerparams struct */
   binaryTemplateSpacings.asini = uvar.mismatchA/sqrt(diagaa);
   binaryTemplateSpacings.period = uvar.mismatchP/sqrt(diagpp);
-  /* this is annoying: tp is a GPS time while we want a difference 
+  /* this is annoying: tp is a GPS time while we want a difference
      in time which should be just REAL8 */
   XLALGPSSetREAL8( &binaryTemplateSpacings.tp, uvar.mismatchT/sqrt(diagTT));
   /* metric elements for eccentric case not considered? */
-
-  /* Call XLALWeightMultiAMCoffs, replace AM-coeffs by weighted AM-coeffs
-     if ( ( XLALWeightMultiAMCoeffs (multiCoeffs, multiWeights ))!= XLAL_SUCCESS){ 
-     LogPrintf ( LOG_CRITICAL, "%s: XLALWeightMultiAMCoeffs() failed with errno=%d\n", __func__, xlalErrno );
-     XLAL_ERROR( XLAL_EFUNC );
-     }
-     not necessary to weight noise twice */
-  
 
   /* /\* get SFT parameters so that we can initialise search frequency resolutions *\/ */
   /* /\* calculate deltaF_SFT *\/ */
@@ -347,7 +339,6 @@ int main(int argc, char *argv[]){
   /* args should be : spacings, min and max doppler params */
   while ( (GetNextCrossCorrTemplate( &dopplerpos, &binaryTemplateSpacings, &minBinaryTemplate, &maxBinaryTemplate, uvar.fStart + uvar.fBand ) == 0) )
     {
-      
       /* do useful stuff here*/
 
       /* Apply additional Doppler shifting using current binary orbital parameters */
@@ -369,7 +360,7 @@ int main(int argc, char *argv[]){
   XLALDestroyMultiSSBtimes ( multiSSBTimes );
   /* XLALDestroySFTPairIndexList(sftPairs) */
   /* XLALDestroySFTIndexList(sftIndices) */
-  XLALDestroyMultiSFTVector ( inputSFTs ); 
+  XLALDestroyMultiSFTVector ( inputSFTs );
   XLALDestroyMultiPSDVector ( multiPSDs );
 
   XLALDestroySFTCatalog (config.catalog );
@@ -398,7 +389,7 @@ int XLALInitUserVars (UserInput_t *uvar)
   uvar->endTime = uvar->startTime + (INT4) round ( LAL_YRSID_SI ) ;	/* 1 year of data */
   uvar->maxLag = 0.0;
   uvar->inclAutoCorr = FALSE;
-  uvar->fStart = 100.0; 
+  uvar->fStart = 100.0;
   uvar->fBand = 0.1;
   /* uvar->fdotStart = 0.0; */
   /* uvar->fdotBand = 0.0; */
@@ -430,8 +421,7 @@ int XLALInitUserVars (UserInput_t *uvar)
   uvar->sftLocation = XLALCalloc(1, MAXFILENAMELENGTH+1);
 
   /* register  user-variables */
-  XLALregBOOLUserStruct ( help, 	 'h',  UVAR_HELP, "Print this message");  
-  
+  XLALregBOOLUserStruct ( help, 	 'h',  UVAR_HELP, "Print this message");
   XLALregINTUserStruct   ( startTime,     0,  UVAR_OPTIONAL, "Desired start time of analysis in GPS seconds");
   XLALregINTUserStruct   ( endTime,       0,  UVAR_OPTIONAL, "Desired end time of analysis in GPS seconds");
   XLALregREALUserStruct  ( maxLag,        0,  UVAR_OPTIONAL, "Maximum lag time in seconds between SFTs in correlation");
@@ -482,7 +472,7 @@ int XLALInitializeConfigVars (ConfigVariables *config, const UserInput_t *uvar)
   constraints.startTime = &startTime;
   constraints.endTime = &endTime;
   XLALGPSSet( constraints.startTime, uvar->startTime, 0);
-  XLALGPSSet( constraints.endTime, uvar->endTime,0); 
+  XLALGPSSet( constraints.endTime, uvar->endTime,0);
 
   /* This check doesn't seem to work, since XLALGPSSet doesn't set its
      first argument.
@@ -495,7 +485,7 @@ int XLALInitializeConfigVars (ConfigVariables *config, const UserInput_t *uvar)
   */
 
   /* get catalog of SFTs */
-  if ((config->catalog = XLALSFTdataFind (uvar->sftLocation, &constraints)) == NULL){ 
+  if ((config->catalog = XLALSFTdataFind (uvar->sftLocation, &constraints)) == NULL){
     LogPrintf ( LOG_CRITICAL, "%s: XLALSFTdataFind() failed with errno=%d\n", __func__, xlalErrno );
     XLAL_ERROR( XLAL_EFUNC );
   }
@@ -518,7 +508,6 @@ int XLALInitializeConfigVars (ConfigVariables *config, const UserInput_t *uvar)
     XLALPrintError ("%s: XLALInitBarycenter() failed.\n", __func__ );
     XLAL_ERROR ( XLAL_EFUNC );
   }
-  
   return XLAL_SUCCESS;
 
 }
@@ -534,18 +523,18 @@ int GetNextCrossCorrTemplate( PulsarDopplerParams *dopplerpos, BinaryOrbitParams
   REAL8 new_freq;
 
   /* basic sanity checks */
-  if (binaryTemplateSpacings == NULL) 
+  if (binaryTemplateSpacings == NULL)
     return -1;
 
-  if (minBinaryTemplate == NULL) 
+  if (minBinaryTemplate == NULL)
     return -1;
 
-  if (maxBinaryTemplate == NULL) 
+  if (maxBinaryTemplate == NULL)
     return -1;
 
   /* check spacings not negative */
 
-  new_freq = dopplerpos->fkdot[0] + dopplerpos->dFreq; 
+  new_freq = dopplerpos->fkdot[0] + dopplerpos->dFreq;
 
   if (new_freq > freq_hi)
     return 1;
