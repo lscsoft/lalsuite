@@ -75,6 +75,7 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}
 %{_libdir}/*.so*
 %{_sysconfdir}/*
 %{_bindir}/lalfr-*
+%{_datadir}/man/man1/*
 
 %files devel
 %defattr(-,root,root)

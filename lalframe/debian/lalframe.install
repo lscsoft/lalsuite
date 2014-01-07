@@ -1,3 +1,4 @@
 usr/bin/lalfr-*
 usr/lib/*.so*
 etc/*
+usr/share/man/man1/*
