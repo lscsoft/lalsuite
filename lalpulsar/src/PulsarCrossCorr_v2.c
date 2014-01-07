@@ -307,9 +307,19 @@ int XLALCalculatePulsarCrossCorrStatistic
  )
 {
 
-  UINT8 numPairs = sftPairs->length;
+  UINT8 numSFTs = sftIndices->length;
+  if ( signalPhases->length !=numSFTs
+       || lowestBins->length !=numSFTs
+       || kappaValues->length !=numSFTs ) {
+    XLALPrintError("Lengths of SFT-indexed lists don't match!");
+    XLAL_ERROR(XLAL_EBADLEN );
+  }
 
-  /* add check on lengths of vectors */
+  UINT8 numPairs = sftPairs->length;
+  if ( curlyGAmp->length !=numPairs ) {
+    XLALPrintError("Lengths of pair-indexed lists don't match!");
+    XLAL_ERROR(XLAL_EBADLEN );
+  }
 
   *ccStat = 0.0;
   *evSquared = 0.0;
@@ -326,15 +336,16 @@ int XLALCalculatePulsarCrossCorrStatistic
       * cexp( I * ( signalPhases->data[sftNum1]
 		   - signalPhases->data[sftNum2] )
 	      );
-    UINT4 ccSign = 1; /* Alternating sign is (-1)**(k1-k2) */
+    UINT4 baseCCSign = 1; /* Alternating sign is (-1)**(k1-k2) */
     if ( ( (lowestBins->data[sftNum1]-lowestBins->data[sftNum2]) % 2) != 0 ) {
-      ccSign = -1;
+      baseCCSign = -1;
     }
 
     for (UINT8 j=0; j < numBins; j++) {
       COMPLEX16 data1 = dataArray1[lowestBins->data[sftNum1]+j];
       REAL8 sincFactor = gsl_sf_sinc(kappaValues->data[lowestBins->data[sftNum1]+j]);
       /* Normalized sinc, i.e., sin(pi*x)/(pi*x) */
+      UINT8 ccSign = baseCCSign;
       for (UINT8 k=0; k < numBins; k++) {
 	COMPLEX16 data2 = dataArray2[lowestBins->data[sftNum2]+k];
 	sincFactor *= gsl_sf_sinc(kappaValues->data[lowestBins->data[sftNum2]+k]);
@@ -344,7 +355,7 @@ int XLALCalculatePulsarCrossCorrStatistic
 	*evSquared += SQUARE( GalphaAmp );
 	ccSign *= -1;
       }
-      ccSign *= -1;
+      baseCCSign *= -1;
     }
   }
   return XLAL_SUCCESS;
