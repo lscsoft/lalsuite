@@ -1,5 +1,5 @@
 AC_PREREQ([2.63])
-AC_INIT([laldetchar],[0.0.4.1],[lal-discuss@ligo.org])
+AC_INIT([laldetchar],[0.1.0.1],[lal-discuss@ligo.org])
 AC_CONFIG_HEADERS([src/config.h src/LALDetCharConfig.h])
 AC_CONFIG_SRCDIR([src/LALDetChar.h])
 AC_CONFIG_AUX_DIR([gnuscripts])
