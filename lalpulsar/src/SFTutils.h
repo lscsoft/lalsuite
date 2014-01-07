@@ -124,6 +124,8 @@ MultiLIGOTimeGPSVector *XLALExtractMultiTimestampsFromSFTs ( const MultiSFTVecto
 LIGOTimeGPSVector *XLALTimestampsFromSFTCatalog ( const SFTCatalog *catalog );
 MultiLIGOTimeGPSVector *XLALTimestampsFromMultiSFTCatalogView ( const MultiSFTCatalogView *multiView );
 
+LIGOTimeGPSVector *XLALTimestampsFromSegmentFile( const char *filename, REAL8 Tsft, REAL8 Toverlap, INT4 adjustSegExtraTime, INT4 synchronize );
+
 void XLALDestroyTimestampVector (LIGOTimeGPSVector *vect);
 void XLALDestroyMultiTimestamps ( MultiLIGOTimeGPSVector *multiTS );
 

@@ -470,6 +470,183 @@ XLALTimestampsFromSFTCatalog ( const SFTCatalog *catalog )		/**< [in] input SFT-
 
 
 /**
+ * Extract timestamps-vector from a segment file, with functionality based on MakeSFTDAG
+ * The filename should point to a file containing <GPSstart GPSend> of segments or <GPSstart GPSend segLength numSFTs> where segLength is in hours.
+ * adjustSegExtraTime is used in MakeSFTDAG to maximize the number of SFTs in each segement by placing the SFTs in the middle of the segment.
+ * synchronize is used to force the start times of the SFTs to be integer multiples of Toverlap from the start time of the first SFT.
+ * adjustSegExtraTime and synchronize cannot be used concurrently (synchronize will be preferred if both values are non-zero).
+ */
+LIGOTimeGPSVector *
+XLALTimestampsFromSegmentFile ( const char *filename,    //!< filename: Input filename
+                                REAL8 Tsft,              //!< Tsft: SFT length of each timestamp, in seconds
+                                REAL8 Toverlap,          //!< Toverlap: time to overlap successive SFTs by, in seconds
+                                INT4 adjustSegExtraTime, //!< adjustSegExtraTime: (0 or 1) remove the unused time from beginning and end of the segments (see MakeSFTDAG)
+                                INT4 synchronize         //!< synchronize: (0 or 1) synchronize SFT start times according to the start time of the first SFT
+                                )
+{
+  XLAL_CHECK_NULL ( filename != NULL, XLAL_EINVAL );
+
+  LALSegList *list = NULL;
+  XLAL_CHECK_NULL ( ( list = XLALReadSegmentsFromFile ( filename )) != NULL, XLAL_EFUNC );
+
+  //Need to know the number of SFTs before creating the timestamps vector, so we have to do the same loop twice
+  INT4 numSFTs = 0;
+  REAL8 firstSFTstartTime = 0.0, overlapFraction = Toverlap/Tsft;
+
+  for ( UINT4 i = 0; i < list->length; i++ )
+    {
+      INT4 numThisSeg = 0;
+      REAL8 analysisStartTime, analysisEndTime;
+      if ( adjustSegExtraTime && !synchronize )
+        {
+          REAL8 segStartTime = XLALGPSGetREAL8 ( &(list->segs[i].start) );
+          REAL8 segEndTime = XLALGPSGetREAL8 ( &(list->segs[i].end) );
+          REAL8 segExtraTime = fmod ( (segEndTime - segStartTime), Tsft );
+          if (overlapFraction!=0.0)
+            {
+              if ((segEndTime - segStartTime) > Tsft) {
+                segExtraTime = fmod((segEndTime - segStartTime - Tsft), ((1.0 - overlapFraction)*Tsft));
+              }
+            }
+          else
+            {
+              segExtraTime = fmod((segEndTime - segStartTime), Tsft);
+            }
+          REAL8 segExtraStart =  segExtraTime / 2;
+          REAL8 segExtraEnd = segExtraTime - segExtraStart;
+          analysisStartTime = segStartTime + segExtraStart;
+          if (analysisStartTime > segEndTime) {
+            analysisStartTime = segEndTime;
+          }
+          analysisEndTime = segEndTime - segExtraEnd;
+          if (analysisEndTime < segStartTime) {
+            analysisEndTime = segStartTime;
+          }
+        } // if adjustSegExtraTime && !synchronize
+      else if (synchronize)
+        {
+          REAL8 segStartTime = XLALGPSGetREAL8 ( &(list->segs[i].start) );
+          REAL8 segEndTime = XLALGPSGetREAL8 ( &(list->segs[i].end) );
+          if ( firstSFTstartTime==0.0 ) {
+            firstSFTstartTime = segStartTime;
+          }
+          analysisStartTime = round ( ceil ( (segStartTime - firstSFTstartTime)/((1.0 - overlapFraction)*Tsft))*(1.0 - overlapFraction)*Tsft) + firstSFTstartTime;
+          if (analysisStartTime > segEndTime) {
+            analysisStartTime = segEndTime;
+          }
+          analysisEndTime = round ( floor ( (segEndTime - analysisStartTime - Tsft)/((1.0 - overlapFraction)*Tsft))*(1.0 - overlapFraction)*Tsft) + Tsft + analysisStartTime;
+          if (analysisEndTime < segStartTime) {
+            analysisEndTime = segStartTime;
+          }
+        }
+      else
+        {
+          analysisStartTime = XLALGPSGetREAL8 ( &(list->segs[i].start) );
+          analysisEndTime = XLALGPSGetREAL8 ( &(list->segs[i].end) );
+        }
+
+      REAL8 endTime = analysisStartTime;
+      while (endTime < analysisEndTime)
+        {
+          if (numThisSeg==0) {
+            endTime += Tsft;
+          }
+          else {
+            endTime += (1.0 - overlapFraction)*Tsft;
+          }
+          if (endTime <= analysisEndTime) {
+            numThisSeg++;
+          }
+        } // while endTime < analysisEndTime
+      numSFTs += numThisSeg;
+    } // for i < length
+
+  LIGOTimeGPSVector *ret;
+  XLAL_CHECK_NULL ( ( ret = XLALCreateTimestampVector ( numSFTs )) != NULL, XLAL_EFUNC );
+
+  ret->deltaT = Tsft;
+
+  //Second time doing the same thing, but now we can set the times of the SFTs in the timestamps vector
+  firstSFTstartTime = 0.0;
+  UINT4 j = 0;
+  for ( UINT4 i = 0; i < list->length; i++ )
+    {
+      INT4 numThisSeg = 0;
+      REAL8 analysisStartTime, analysisEndTime;
+      if ( adjustSegExtraTime && !synchronize )
+        {
+          REAL8 segStartTime = XLALGPSGetREAL8 ( &(list->segs[i].start) );
+          REAL8 segEndTime = XLALGPSGetREAL8 ( &(list->segs[i].end) );
+          REAL8 segExtraTime = fmod ( (segEndTime - segStartTime), Tsft );
+          if (overlapFraction!=0.0)
+            {
+              if ((segEndTime - segStartTime) > Tsft) {
+                segExtraTime = fmod((segEndTime - segStartTime - Tsft), ((1.0 - overlapFraction)*Tsft));
+              }
+            }
+          else
+            {
+              segExtraTime = fmod((segEndTime - segStartTime), Tsft);
+            }
+          REAL8 segExtraStart =  segExtraTime / 2;
+          REAL8 segExtraEnd = segExtraTime - segExtraStart;
+          analysisStartTime = segStartTime + segExtraStart;
+          if (analysisStartTime > segEndTime) {
+            analysisStartTime = segEndTime;
+          }
+          analysisEndTime = segEndTime - segExtraEnd;
+          if (analysisEndTime < segStartTime) {
+            analysisEndTime = segStartTime;
+          }
+        } // if adjustSegExtraTime && !synchronize
+      else if (synchronize)
+        {
+          REAL8 segStartTime = XLALGPSGetREAL8 ( &(list->segs[i].start) );
+          REAL8 segEndTime = XLALGPSGetREAL8 ( &(list->segs[i].end) );
+          if ( firstSFTstartTime==0.0 ) {
+            firstSFTstartTime = segStartTime;
+          }
+          analysisStartTime = round ( ceil ( (segStartTime - firstSFTstartTime)/((1.0 - overlapFraction)*Tsft))*(1.0 - overlapFraction)*Tsft) + firstSFTstartTime;
+          if (analysisStartTime > segEndTime) {
+            analysisStartTime = segEndTime;
+          }
+          analysisEndTime = round ( floor ( (segEndTime - analysisStartTime - Tsft)/((1.0 - overlapFraction)*Tsft))*(1.0 - overlapFraction)*Tsft) + Tsft + analysisStartTime;
+          if (analysisEndTime < segStartTime) {
+            analysisEndTime = segStartTime;
+          }
+        }
+      else
+        {
+          analysisStartTime = XLALGPSGetREAL8(&(list->segs[i].start));
+          analysisEndTime = XLALGPSGetREAL8(&(list->segs[i].end));
+        }
+
+      REAL8 endTime = analysisStartTime;
+      while ( endTime < analysisEndTime )
+        {
+          if ( numThisSeg==0 ) {
+            endTime += Tsft;
+          }
+          else {
+            endTime += (1.0 - overlapFraction)*Tsft;
+          }
+          if ( endTime <= analysisEndTime ) {
+            numThisSeg++;
+          }
+          LIGOTimeGPS sftStart;
+          XLALGPSSetREAL8( &sftStart, endTime-Tsft);
+          ret->data[j] = sftStart;
+          j++;
+        } // while ( endTime < analysisEndTime )
+    } // for i < length
+
+  /* done: return Ts-vector */
+  return ret;
+
+} // XLALTimestampsFromSegmentFile()
+
+
+/**
  * Given a multi-SFTCatalogView, return a MultiLIGOTimeGPSVector holding the
  * SFT timestamps
  */
