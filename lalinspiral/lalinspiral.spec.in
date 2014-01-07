@@ -84,9 +84,11 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}
 %{_libdir}/python*/site-packages/lalinspiral/*.py
 %{_libdir}/python*/site-packages/lalinspiral/*.pyc
 %{_libdir}/python*/site-packages/lalinspiral/_lalinspiral.so*
-%{_libdir}/python*/site-packages/lalinspiral/sbank
+%{_libdir}/python*/site-packages/lalinspiral/sbank/*.py
+%{_libdir}/python*/site-packages/lalinspiral/sbank/*.pyc
 %exclude %{_libdir}/python*/site-packages/lalinspiral/*.pyo
 %exclude %{_libdir}/python*/site-packages/lalinspiral/*.la
+%exclude %{_libdir}/python*/site-packages/lalinspiral/sbank/*.pyo
 
 %files octave
 %defattr(-,root,root)
