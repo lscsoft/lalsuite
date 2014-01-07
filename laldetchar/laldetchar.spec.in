@@ -72,6 +72,7 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}
 
 %files
 %defattr(-,root,root)
+%{_bindir}/laldetchar-*
 %{_libdir}/*.so*
 %{_sysconfdir}/*
 
