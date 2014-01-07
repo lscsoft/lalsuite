@@ -87,10 +87,13 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}
 %{_libdir}/python*/site-packages/laldetchar/*.py
 %{_libdir}/python*/site-packages/laldetchar/*.pyc
 %{_libdir}/python*/site-packages/laldetchar/_laldetchar.so*
+%{_libdir}/python*/site-packages/laldetchar/hveto/*.py
+%{_libdir}/python*/site-packages/laldetchar/hveto/*.pyc
 %{_libdir}/python*/site-packages/laldetchar/triggers/*.py
 %{_libdir}/python*/site-packages/laldetchar/triggers/*.pyc
 %exclude %{_libdir}/python*/site-packages/laldetchar/*.pyo
 %exclude %{_libdir}/python*/site-packages/laldetchar/*.la
+%exclude %{_libdir}/python*/site-packages/laldetchar/hveto/*.pyo
 %exclude %{_libdir}/python*/site-packages/laldetchar/triggers/*.pyo
 
 %files octave
