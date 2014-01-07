@@ -396,7 +396,7 @@ def make_title(ifo, veto_level, cluster, start_time, desc = None):
                          '16SEC_CLUSTERED':'16 sec window'}
 
 
-    tstring =  os.popen('tconvert -f "%b %d, %Y" ' + str(start_time)).readlines()[0].strip()
+    tstring =  os.popen('lalapps_tconvert -f "%b %d, %Y" ' + str(start_time)).readlines()[0].strip()
 
     if desc:
         return '%s (%s: %s, %s, %s)' % (desc, tstring, ifo, veto_level_labels[veto_level], cluster_labels[cluster])
@@ -415,7 +415,7 @@ def new_snr(snr, chisq, chisq_dof, index=6.0):
 
 
 def make_time_label(start_time):
-    tstring =  os.popen('tconvert -f "%b %d %Y" ' + str(start_time)).readlines()[0].strip()
+    tstring =  os.popen('lalapps_tconvert -f "%b %d %Y" ' + str(start_time)).readlines()[0].strip()
 
     return 'Time [hours since %s 00:00:00 UTC]' % tstring
 
@@ -688,7 +688,7 @@ def make_glitchy_times_table(config, ifo, veto_level, cluster, start_time, end_t
     """Find intervals with trigger rates > 200 Hz"""
 
     def tconvert(t):
-        return os.popen('tconvert -f %H:%M:%S ' + str(t)).readlines()[0].strip()
+        return os.popen('lalapps_tconvert -f %H:%M:%S ' + str(t)).readlines()[0].strip()
 
 
     out = open('%s/%s-%d_%s_glitchy_times_table.html' % (config['tmp_dir'], ifo, veto_level, cluster), 'w')
@@ -929,7 +929,7 @@ def make_index_page(config, ifo, veto_level, cluster, gps_start_time, gps_end_ti
 
     map['start_time'] = gps_start_time
     map['end_time']   = gps_end_time
-    map['date']       = os.popen('tconvert -f "%B %d, %Y" ' + str(gps_start_time)).readlines()[0].strip()
+    map['date']       = os.popen('lalapps_tconvert -f "%B %d, %Y" ' + str(gps_start_time)).readlines()[0].strip()
     template          = html_template % map
 
     out = open('%s/index.html' % config['out_dir'],'w')
