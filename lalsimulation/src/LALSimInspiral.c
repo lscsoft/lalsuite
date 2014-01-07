@@ -297,8 +297,10 @@ double XLALSimInspiralGetFinalFreq(
         case TaylorF2:
             /* Check that spins are zero */
             if( !checkSpinsZero(S1x, S1y, S1z, S2x, S2y, S2z) )
+            {
                 XLALPrintError("Non-zero spins were given, but this is a non-spinning approximant.\n");
                 XLAL_ERROR(XLAL_EINVAL);
+            }
         case TaylorF2RedSpin:
         case TaylorF2RedSpinTidal:
             /* Schwarzschild ISCO */
