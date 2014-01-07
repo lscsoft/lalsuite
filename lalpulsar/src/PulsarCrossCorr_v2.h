@@ -64,6 +64,7 @@ extern "C" {
 #include <lal/LALInitBarycenter.h>
 #include <lal/SFTClean.h>
 #include <gsl/gsl_cdf.h>
+#include <gsl/gsl_sf_trig.h>
 #include <lal/FrequencySeries.h>
 #include <lal/Sequence.h>
 
@@ -150,6 +151,21 @@ int XLALCalculateAveCurlyGAmpUnshifted
    SFTPairIndexList  *pairIndexList,
    SFTIndexList      *indexList,
    MultiAMCoeffs     *multiCoeffs
+  )
+ ;
+
+int XLALCalculatePulsarCrossCorrStatistic
+  (
+   REAL8              *ccStat,
+   REAL8           *evSquared,
+   REAL8Vector     *curlyGAmp,
+   REAL8Vector  *signalPhases,
+   UINT4Vector    *lowestBins,
+   REAL8Vector   *kappaValues,
+   UINT4              numBins,
+   SFTPairIndexList *sftPairs,
+   SFTIndexList   *sftIndices,
+   MultiSFTVector  *inputSFTs 
   )
  ;
 

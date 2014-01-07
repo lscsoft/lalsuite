@@ -290,10 +290,68 @@ int XLALCalculateAveCurlyGAmpUnshifted
   return XLAL_SUCCESS;
 }
 
+/** Calculate multi-bin cross-correlation statistic */
+/* This assumes rectangular or nearly-rectangular windowing */
+int XLALCalculatePulsarCrossCorrStatistic
+(
+ REAL8              *ccStat,   /* Output: cross-correlation statistic rho */
+ REAL8           *evSquared,   /* Output: (E[rho]/h0^2)^2 */
+ REAL8Vector     *curlyGAmp,   /* Input: Amplitude of curly G for each pair */
+ REAL8Vector  *signalPhases,   /* Input: Phase of signal for each SFT */
+ UINT4Vector    *lowestBins,   /* Input: Bin index to start with for each SFT */
+ REAL8Vector   *kappaValues,   /* Input: Fractional offset of signal freq from best bin center */
+ UINT4              numBins,   /* Input: Number of bins to include in calc */
+ SFTPairIndexList *sftPairs,   /* Input: flat list of SFT pairs */
+ SFTIndexList   *sftIndices,   /* Input: flat list of SFTs */
+ MultiSFTVector  *inputSFTs    /* Input: SFT data */
+ )
+{
 
+  UINT8 numPairs = sftPairs->length;
+
+  /* add check on lengths of vectors */
+
+  *ccStat = 0.0;
+  *evSquared = 0.0;
+  for (UINT8 alpha=0; alpha < numPairs; alpha++) {
+    UINT8 sftNum1 = sftPairs->data[alpha].sftNum[0];
+    UINT8 sftNum2 = sftPairs->data[alpha].sftNum[1];
+    UINT8 detInd1 = sftIndices->data[sftNum1].detInd;
+    UINT8 detInd2 = sftIndices->data[sftNum2].detInd;
+    UINT8 sftInd1 = sftIndices->data[sftNum1].sftInd;
+    UINT8 sftInd2 = sftIndices->data[sftNum2].sftInd;
+    COMPLEX8 *dataArray1 = inputSFTs->data[detInd1]->data[sftInd1].data->data;
+    COMPLEX8 *dataArray2 = inputSFTs->data[detInd2]->data[sftInd2].data->data;
+    COMPLEX16 GalphaCC = curlyGAmp->data[alpha]
+      * cexp( I * ( signalPhases->data[sftNum1]
+		   - signalPhases->data[sftNum2] )
+	      );
+    UINT4 ccSign = 1; /* Alternating sign is (-1)**(k1-k2) */
+    if ( ( (lowestBins->data[sftNum1]-lowestBins->data[sftNum2]) % 2) != 0 ) {
+      ccSign = -1;
+    }
+
+    for (UINT8 j=0; j < numBins; j++) {
+      COMPLEX16 data1 = dataArray1[lowestBins->data[sftNum1]+j];
+      REAL8 sincFactor = gsl_sf_sinc(kappaValues->data[lowestBins->data[sftNum1]+j]);
+      /* Normalized sinc, i.e., sin(pi*x)/(pi*x) */
+      for (UINT8 k=0; k < numBins; k++) {
+	COMPLEX16 data2 = dataArray2[lowestBins->data[sftNum2]+k];
+	sincFactor *= gsl_sf_sinc(kappaValues->data[lowestBins->data[sftNum2]+k]);
+	*ccStat += crealf ( GalphaCC * ccSign * sincFactor
+			    * conj(data1) * data2 );
+	REAL8 GalphaAmp = curlyGAmp->data[alpha] * sincFactor;
+	*evSquared += SQUARE( GalphaAmp );
+	ccSign *= -1;
+      }
+      ccSign *= -1;
+    }
+  }
+  return XLAL_SUCCESS;
+}
 
 int XLALCalculateWeightedFactors
-  ( 
+  (
    REAL8             *TSquaWeightedAve, /*Output: weighted factors*/
    REAL8             *SinSquaWeightedAve,  
    REAL8             *devTsq,           /*Output: mean time deviation^2*/

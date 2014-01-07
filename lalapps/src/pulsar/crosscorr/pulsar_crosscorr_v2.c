@@ -131,6 +131,8 @@ int main(int argc, char *argv[]){
   REAL8 diagaa=0;
   REAL8 diagTT=0;
   REAL8 diagpp=0;
+  REAL8 ccStat=0;
+  REAL8 evSquared=0;
   /* initialize and register user variables */
   if ( XLALInitUserVars( &uvar ) != XLAL_SUCCESS ) {
     LogPrintf ( LOG_CRITICAL, "%s: XLALInitUserVars() failed with errno=%d\n", __func__, xlalErrno );
@@ -379,9 +381,12 @@ int main(int argc, char *argv[]){
 	XLAL_ERROR( XLAL_EFUNC );
       }
 
-      /* Call new function (?) to get phase of curly G */
-      /* Call new function to construct optimal cross-correlation statistic */
-      /* Note that sensitivity estimate shouldn't depend on doppler params, to this approximation */
+      if ( (XLALCalculatePulsarCrossCorrStatistic( &ccStat, &evSquared, curlyGUnshifted, signalPhases, lowestBins, kappaValues, uvar.numBins, sftPairs, sftIndices, inputSFTs )  != XLAL_SUCCESS ) ) {
+	LogPrintf ( LOG_CRITICAL, "%s: XLALCalculateAveCrossCorrStatistic() failed with errno=%d\n", __func__, xlalErrno );
+	XLAL_ERROR( XLAL_EFUNC );
+      }
+
+      /* check whether ccStat belongs in the toplist */
 
     } /* end while loop over templates */
 
