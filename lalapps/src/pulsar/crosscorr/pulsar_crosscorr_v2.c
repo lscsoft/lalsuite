@@ -61,6 +61,7 @@ typedef struct{
   CHAR    *sftLocation;       /**< location of SFT data */
   CHAR    *ephemYear;         /**< range of years for ephemeris file */
   INT4    rngMedBlock;        /**< running median block size */
+  INT4    numBins;            /**< number of frequency bins to include in sum */
   REAL8   mismatchF;          /**< mismatch for frequency spacing */
   REAL8   mismatchA;          /**< mismatch for spacing in semi-major axis */
   REAL8   mismatchT;          /**< mismatch for spacing in time of periapse passage */
@@ -105,6 +106,9 @@ int main(int argc, char *argv[]){
   MultiAMCoeffs *multiCoeffs = NULL;
   SFTIndexList *sftIndices = NULL;
   SFTPairIndexList *sftPairs = NULL;
+  REAL8Vector *shiftedFreqs = NULL;
+  UINT4Vector *lowestBins = NULL;
+  REAL8Vector *kappaValues = NULL;
 
   PulsarDopplerParams dopplerpos = empty_PulsarDopplerParams;
   BinaryOrbitParams thisBinaryTemplate, binaryTemplateSpacings;
@@ -148,8 +152,69 @@ int main(int argc, char *argv[]){
   }
 
   deltaF = config.catalog->data[0].header.deltaF;
+  REAL8 Tsft = 1.0 / deltaF;
 
   /* now read the data */
+
+  /* /\* get SFT parameters so that we can initialise search frequency resolutions *\/ */
+  /* /\* calculate deltaF_SFT *\/ */
+  /* deltaF_SFT = catalog->data[0].header.deltaF;  /\* frequency resolution *\/ */
+  /* timeBase= 1.0/deltaF_SFT; /\* sft baseline *\/ */
+
+  /* /\* catalog is ordered in time so we can get start, end time and tObs *\/ */
+  /* firstTimeStamp = catalog->data[0].header.epoch; */
+  /* lastTimeStamp = catalog->data[catalog->length - 1].header.epoch; */
+  /* tObs = XLALGPSDiff( &lastTimeStamp, &firstTimeStamp ) + timeBase; */
+
+  /* /\*set pulsar reference time *\/ */
+  /* if (LALUserVarWasSet ( &uvar_refTime )) { */
+  /*   XLALGPSSetREAL8(&refTime, uvar_refTime); */
+  /* }  */
+  /* else {	/\*if refTime is not set, set it to midpoint of sfts*\/ */
+  /*   XLALGPSSetREAL8(&refTime, (0.5*tObs) + XLALGPSGetREAL8(&firstTimeStamp));  */
+  /* } */
+
+  /* /\* set frequency resolution defaults if not set by user *\/ */
+  /* if (!(LALUserVarWasSet (&uvar_fResolution))) { */
+  /*   uvar_fResolution = 1/tObs; */
+  /* } */
+
+
+
+  /* { */
+  /*   /\* block for calculating frequency range to read from SFTs *\/ */
+  /*   /\* user specifies freq and fdot range at reftime */
+  /*      we translate this range of fdots to start and endtime and find */
+  /*      the largest frequency band required to cover the  */
+  /*      frequency evolution  *\/ */
+  /*   PulsarSpinRange spinRange_startTime; /\**< freq and fdot range at start-time of observation *\/ */
+  /*   PulsarSpinRange spinRange_endTime;   /\**< freq and fdot range at end-time of observation *\/ */
+  /*   PulsarSpinRange spinRange_refTime;   /\**< freq and fdot range at the reference time *\/ */
+
+  /*   REAL8 startTime_freqLo, startTime_freqHi, endTime_freqLo, endTime_freqHi, freqLo, freqHi; */
+
+  /*   REAL8Vector *fdotsMin=NULL; */
+  /*   REAL8Vector *fdotsMax=NULL; */
+
+  /*   UINT4 k; */
+
+  /*   fdotsMin = (REAL8Vector *)LALCalloc(1, sizeof(REAL8Vector)); */
+  /*   fdotsMin->length = N_SPINDOWN_DERIVS; */
+  /*   fdotsMin->data = (REAL8 *)LALCalloc(fdotsMin->length, sizeof(REAL8)); */
+
+  /*   fdotsMax = (REAL8Vector *)LALCalloc(1, sizeof(REAL8Vector)); */
+  /*   fdotsMax->length = N_SPINDOWN_DERIVS; */
+  /*   fdotsMax->data = (REAL8 *)LALCalloc(fdotsMax->length, sizeof(REAL8)); */
+
+  /*   INIT_MEM(spinRange_startTime); */
+  /*   INIT_MEM(spinRange_endTime); */
+  /*   INIT_MEM(spinRange_refTime); */
+
+  /*   spinRange_refTime.refTime = refTime; */
+  /*   spinRange_refTime.fkdot[0] = uvar_f0; */
+  /*   spinRange_refTime.fkdotBand[0] = uvar_fBand; */
+  /* } */
+
   /* FIXME: need to correct fMin and fMax for Doppler shift, rngmedian bins and spindown range */
   /* this is essentially just a place holder for now */
   /* FIXME: this running median buffer is overkill, since the running median block need not be centered on the search frequency */
@@ -181,7 +246,7 @@ int main(int argc, char *argv[]){
   }
 
   /* read the detector information from the SFTs */
-  if ((multiDetectors = XLALExtractMultiLALDetectorFromSFTs ( inputSFTs )) == NULL){ 
+  if ((multiDetectors = XLALExtractMultiLALDetectorFromSFTs ( inputSFTs )) == NULL){
     LogPrintf ( LOG_CRITICAL, "%s: XLALExtractMultiLALDetectorFromSFTs() failed with errno=%d\n", __func__, xlalErrno );
     XLAL_ERROR( XLAL_EFUNC );
   }
@@ -199,7 +264,7 @@ int main(int argc, char *argv[]){
   skyPos.latitude  = uvar.deltaRad;
 
   /* Calculate the AM coefficients (a,b) for each SFT */
-  if ((multiCoeffs = XLALComputeMultiAMCoeffs ( multiStates, multiWeights, skyPos )) == NULL){ 
+  if ((multiCoeffs = XLALComputeMultiAMCoeffs ( multiStates, multiWeights, skyPos )) == NULL){
     LogPrintf ( LOG_CRITICAL, "%s: XLALComputeMultiAMCoeffs() failed with errno=%d\n", __func__, xlalErrno );
     XLAL_ERROR( XLAL_EFUNC );
   }
@@ -265,65 +330,6 @@ int main(int argc, char *argv[]){
   XLALGPSSetREAL8( &binaryTemplateSpacings.tp, uvar.mismatchT/sqrt(diagTT));
   /* metric elements for eccentric case not considered? */
 
-  /* /\* get SFT parameters so that we can initialise search frequency resolutions *\/ */
-  /* /\* calculate deltaF_SFT *\/ */
-  /* deltaF_SFT = catalog->data[0].header.deltaF;  /\* frequency resolution *\/ */
-  /* timeBase= 1.0/deltaF_SFT; /\* sft baseline *\/ */
-
-  /* /\* catalog is ordered in time so we can get start, end time and tObs *\/ */
-  /* firstTimeStamp = catalog->data[0].header.epoch; */
-  /* lastTimeStamp = catalog->data[catalog->length - 1].header.epoch; */
-  /* tObs = XLALGPSDiff( &lastTimeStamp, &firstTimeStamp ) + timeBase; */
-
-  /* /\*set pulsar reference time *\/ */
-  /* if (LALUserVarWasSet ( &uvar_refTime )) { */
-  /*   XLALGPSSetREAL8(&refTime, uvar_refTime); */
-  /* }  */
-  /* else {	/\*if refTime is not set, set it to midpoint of sfts*\/ */
-  /*   XLALGPSSetREAL8(&refTime, (0.5*tObs) + XLALGPSGetREAL8(&firstTimeStamp));  */
-  /* } */
-
-  /* /\* set frequency resolution defaults if not set by user *\/ */
-  /* if (!(LALUserVarWasSet (&uvar_fResolution))) { */
-  /*   uvar_fResolution = 1/tObs; */
-  /* } */
-
-
-
-  /* { */
-  /*   /\* block for calculating frequency range to read from SFTs *\/ */
-  /*   /\* user specifies freq and fdot range at reftime */
-  /*      we translate this range of fdots to start and endtime and find */
-  /*      the largest frequency band required to cover the  */
-  /*      frequency evolution  *\/ */
-  /*   PulsarSpinRange spinRange_startTime; /\**< freq and fdot range at start-time of observation *\/ */
-  /*   PulsarSpinRange spinRange_endTime;   /\**< freq and fdot range at end-time of observation *\/ */
-  /*   PulsarSpinRange spinRange_refTime;   /\**< freq and fdot range at the reference time *\/ */
-
-  /*   REAL8 startTime_freqLo, startTime_freqHi, endTime_freqLo, endTime_freqHi, freqLo, freqHi; */
-
-  /*   REAL8Vector *fdotsMin=NULL; */
-  /*   REAL8Vector *fdotsMax=NULL; */
-
-  /*   UINT4 k; */
-
-  /*   fdotsMin = (REAL8Vector *)LALCalloc(1, sizeof(REAL8Vector)); */
-  /*   fdotsMin->length = N_SPINDOWN_DERIVS; */
-  /*   fdotsMin->data = (REAL8 *)LALCalloc(fdotsMin->length, sizeof(REAL8)); */
-
-  /*   fdotsMax = (REAL8Vector *)LALCalloc(1, sizeof(REAL8Vector)); */
-  /*   fdotsMax->length = N_SPINDOWN_DERIVS; */
-  /*   fdotsMax->data = (REAL8 *)LALCalloc(fdotsMax->length, sizeof(REAL8)); */
-
-  /*   INIT_MEM(spinRange_startTime); */
-  /*   INIT_MEM(spinRange_endTime); */
-  /*   INIT_MEM(spinRange_refTime); */
-
-  /*   spinRange_refTime.refTime = refTime; */
-  /*   spinRange_refTime.fkdot[0] = uvar_f0; */
-  /*   spinRange_refTime.fkdotBand[0] = uvar_fBand; */
-  /* } */
-
   /* Calculate SSB times (can do this once since search is currently only for one sky position, and binary doppler shift is added later) */
   if ((multiSSBTimes = XLALGetMultiSSBtimes ( multiStates, skyPos, dopplerpos.refTime, SSBPREC_RELATIVISTICOPT )) == NULL){
     LogPrintf ( LOG_CRITICAL, "%s: XLALGetMultiSSBtimes() failed with errno=%d\n", __func__, xlalErrno );
@@ -345,10 +351,29 @@ int main(int argc, char *argv[]){
       /* Might want to be clever about checking whether we've changed the orbital parameters or only the frequency */
 
       if ( (XLALAddMultiBinaryTimes( &multiBinaryTimes, multiSSBTimes, dopplerpos.orbit )  != XLAL_SUCCESS ) ) {
-    LogPrintf ( LOG_CRITICAL, "%s: XLALAddMultiBinaryTimes() failed with errno=%d\n", __func__, xlalErrno );
-    XLAL_ERROR( XLAL_EFUNC );
-  }
-      /* Call XLALGetDopplerShiftedFrequencyInfo */
+	LogPrintf ( LOG_CRITICAL, "%s: XLALAddMultiBinaryTimes() failed with errno=%d\n", __func__, xlalErrno );
+	XLAL_ERROR( XLAL_EFUNC );
+      }
+
+      UINT8 numSFTs = sftIndices->length;
+      if ((shiftedFreqs = XLALCreateREAL8Vector ( numSFTs ) ) == NULL){
+	LogPrintf ( LOG_CRITICAL, "%s: XLALCreateREAL8Vector() failed with errno=%d\n", __func__, xlalErrno );
+	XLAL_ERROR( XLAL_EFUNC );
+      }
+      if ((lowestBins = XLALCreateUINT4Vector ( numSFTs ) ) == NULL){
+	LogPrintf ( LOG_CRITICAL, "%s: XLALCreateUINT4Vector() failed with errno=%d\n", __func__, xlalErrno );
+	XLAL_ERROR( XLAL_EFUNC );
+      }
+      if ((kappaValues = XLALCreateREAL8Vector ( numSFTs ) ) == NULL){
+	LogPrintf ( LOG_CRITICAL, "%s: XLALCreateREAL8Vector() failed with errno=%d\n", __func__, xlalErrno );
+	XLAL_ERROR( XLAL_EFUNC );
+      }
+
+      if ( (XLALGetDopplerShiftedFrequencyInfo( shiftedFreqs, lowestBins, kappaValues, uvar.numBins, &dopplerpos, sftIndices, multiBinaryTimes, Tsft )  != XLAL_SUCCESS ) ) {
+	LogPrintf ( LOG_CRITICAL, "%s: XLALGetDopplerShiftedFrequencyInfo() failed with errno=%d\n", __func__, xlalErrno );
+	XLAL_ERROR( XLAL_EFUNC );
+      }
+
       /* Call new function (?) to get phase of curly G */
       /* Call new function to construct optimal cross-correlation statistic */
       /* Note that sensitivity estimate shouldn't depend on doppler params, to this approximation */
@@ -396,6 +421,7 @@ int XLALInitUserVars (UserInput_t *uvar)
   uvar->alphaRad = 0.0;
   uvar->deltaRad = 0.0;
   uvar->rngMedBlock = 50;
+  uvar->numBins = 1;
 
   /* default for reftime is in the middle */
   uvar->refTime = 0.5*(uvar->startTime + uvar->endTime);
@@ -441,6 +467,7 @@ int XLALInitUserVars (UserInput_t *uvar)
   XLALregSTRINGUserStruct( ephemYear,     0,  UVAR_OPTIONAL, "String Ephemeris year range");
   XLALregSTRINGUserStruct( sftLocation,   0,  UVAR_REQUIRED, "Filename pattern for locating SFT data");
   XLALregINTUserStruct   ( rngMedBlock,   0,  UVAR_OPTIONAL, "Running median block size for PSD estimation");
+  XLALregINTUserStruct   ( numBins,       0,  UVAR_OPTIONAL, "Number of frequency bins to include in calculation");
   XLALregREALUserStruct  ( mismatchF,     0,  UVAR_OPTIONAL, "Desired mismatch for frequency spacing");
   XLALregREALUserStruct  ( mismatchA,     0,  UVAR_OPTIONAL, "Desired mismatch for asini spacing");
   XLALregREALUserStruct  ( mismatchT,     0,  UVAR_OPTIONAL, "Desired mismatch for periapse passage time spacing");
@@ -477,10 +504,10 @@ int XLALInitializeConfigVars (ConfigVariables *config, const UserInput_t *uvar)
   /* This check doesn't seem to work, since XLALGPSSet doesn't set its
      first argument.
 
-  if ( (constraints.startTime == NULL)&& (constraints.endTime == NULL) ) {
-    LogPrintf ( LOG_CRITICAL, "%s: XLALGPSSet() failed with errno=%d\n", __func__, xlalErrno );
-    XLAL_ERROR( XLAL_EFUNC );
-  }
+     if ( (constraints.startTime == NULL)&& (constraints.endTime == NULL) ) {
+     LogPrintf ( LOG_CRITICAL, "%s: XLALGPSSet() failed with errno=%d\n", __func__, xlalErrno );
+     XLAL_ERROR( XLAL_EFUNC );
+     }
 
   */
 
