@@ -3672,11 +3672,11 @@ void LALInferenceClusteredKDEProposal(LALInferenceRunState *runState, LALInferen
         cumulativeWeight += kde->weight;
     }
 
-    /* Update the current proposal name */
+    /* Update the current proposal name for tracking purposes */
     const char *propName = (const char *) kde->name;
     LALInferenceSetVariable(runState->proposalArgs, LALInferenceCurrentProposalName, &propName);
 
-    /* Draw a sample and fill the proposedParams variable */
+    /* Draw a sample and fill the proposedParams variable with the parameters described by the KDE */
     LALInferenceCopyVariables(runState->currentParams, proposedParams);
     REAL8 *current = XLALMalloc(kde->dimension * sizeof(REAL8));
     REAL8 *proposed = LALInferenceKmeansDraw(kde->kmeans);
