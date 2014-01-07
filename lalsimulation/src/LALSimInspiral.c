@@ -299,6 +299,8 @@ double XLALSimInspiralGetFinalFreq(
             if( !checkSpinsZero(S1x, S1y, S1z, S2x, S2y, S2z) )
                 XLALPrintError("Non-zero spins were given, but this is a non-spinning approximant.\n");
                 XLAL_ERROR(XLAL_EINVAL);
+        case TaylorF2RedSpin:
+        case TaylorF2RedSpinTidal:
             /* Schwarzschild ISCO */
 	        freq = pow(LAL_C_SI,3) / (pow(6.,3./2.)*LAL_PI*(m1+m2)*LAL_MSUN_SI*LAL_G_SI);
             break;
@@ -372,8 +374,6 @@ double XLALSimInspiralGetFinalFreq(
         case PhenSpinTaylorRD:
         /* Spinning inspiral-only frequency domain */
         case SpinTaylorF2:
-        case TaylorF2RedSpin:
-        case TaylorF2RedSpinTidal:
             XLALPrintError("I don't know how to calculate final freq. for this approximant, sorry!\n");
             XLAL_ERROR(XLAL_EINVAL);
             break;
