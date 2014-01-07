@@ -22,13 +22,15 @@
 
 #define SQUARE(x) ((x)*(x))
 
-/** Calculate the Doppler-shifted frequency associate with each SFT in a list */
+/** Calculate the Doppler-shifted frequency associated with each SFT in a list */
 /* This is according to Eqns 2.11 and 2.12 of Dhurandhar et al 2008 */
+/* Also returns the signal phase according to eqn 2.4 */
 int XLALGetDopplerShiftedFrequencyInfo
   (
    REAL8Vector         *shiftedFreqs, /**< Output list of shifted frequencies */
    UINT4Vector         *lowestBins,   /**< Output list of bin indices */
    REAL8Vector         *kappaValues,  /**< Output list of bin offsets */
+   REAL8Vector         *signalPhases, /**< Output list of signal phases */
    UINT4               numBins,       /**< Number of frequency bins to use */
    PulsarDopplerParams *dopp,         /**< Doppler parameters for signal */
    SFTIndexList        *sfts,         /**< List of indices for SFTs */
@@ -39,12 +41,13 @@ int XLALGetDopplerShiftedFrequencyInfo
   UINT8 numSFTs;
   UINT8 indI;
   UINT4 k;
-  REAL8 timeDiff, factor, fhat;
+  REAL8 timeDiff, factor, fhat, phiByTwoPi;
   SFTIndex sftInd;
   SSBtimes *times;
 
   numSFTs = sfts->length;
-  if ( shiftedFreqs->length !=numSFTs
+  if ( signalPhases->length !=numSFTs
+       || shiftedFreqs->length !=numSFTs
        || lowestBins->length !=numSFTs
        || kappaValues->length !=numSFTs ) {
     XLALPrintError("Lengths of SFT-indexed lists don't match!");
@@ -66,11 +69,14 @@ int XLALGetDopplerShiftedFrequencyInfo
     timeDiff = times->DeltaT->data[sftInd.sftInd]
       + XLALGPSDiff( &(times->refTime), &(dopp->refTime));
     fhat = dopp->fkdot[0]; /* initialization */
-    factor = 1.0;
+    phiByTwoPi = fmod ( fhat * timeDiff , 1.0 );
+    factor = timeDiff;
     for (k = 1;  k < PULSAR_MAX_SPINS; k++) {
-      factor *= timeDiff / k;
       fhat += dopp->fkdot[k] * factor;
+      factor *= timeDiff / (k+1);
+      phiByTwoPi += dopp->fkdot[k] * factor;
     }
+    signalPhases->data[indI] = LAL_TWOPI * fmod ( phiByTwoPi , 1.0 );
     shiftedFreqs->data[indI] = fhat * times->Tdot->data[sftInd.sftInd];
     lowestBins->data[indI]
       = ceil(shiftedFreqs->data[indI] * Tsft - 0.5*numBins);

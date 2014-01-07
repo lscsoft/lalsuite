@@ -109,6 +109,7 @@ int main(int argc, char *argv[]){
   REAL8Vector *shiftedFreqs = NULL;
   UINT4Vector *lowestBins = NULL;
   REAL8Vector *kappaValues = NULL;
+  REAL8Vector *signalPhases = NULL;
 
   PulsarDopplerParams dopplerpos = empty_PulsarDopplerParams;
   BinaryOrbitParams thisBinaryTemplate, binaryTemplateSpacings;
@@ -368,8 +369,12 @@ int main(int argc, char *argv[]){
 	LogPrintf ( LOG_CRITICAL, "%s: XLALCreateREAL8Vector() failed with errno=%d\n", __func__, xlalErrno );
 	XLAL_ERROR( XLAL_EFUNC );
       }
+      if ((signalPhases = XLALCreateREAL8Vector ( numSFTs ) ) == NULL){
+	LogPrintf ( LOG_CRITICAL, "%s: XLALCreateREAL8Vector() failed with errno=%d\n", __func__, xlalErrno );
+	XLAL_ERROR( XLAL_EFUNC );
+      }
 
-      if ( (XLALGetDopplerShiftedFrequencyInfo( shiftedFreqs, lowestBins, kappaValues, uvar.numBins, &dopplerpos, sftIndices, multiBinaryTimes, Tsft )  != XLAL_SUCCESS ) ) {
+      if ( (XLALGetDopplerShiftedFrequencyInfo( shiftedFreqs, lowestBins, kappaValues, signalPhases, uvar.numBins, &dopplerpos, sftIndices, multiBinaryTimes, Tsft )  != XLAL_SUCCESS ) ) {
 	LogPrintf ( LOG_CRITICAL, "%s: XLALGetDopplerShiftedFrequencyInfo() failed with errno=%d\n", __func__, xlalErrno );
 	XLAL_ERROR( XLAL_EFUNC );
       }

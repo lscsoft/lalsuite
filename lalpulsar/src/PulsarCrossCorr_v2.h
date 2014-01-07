@@ -107,6 +107,7 @@ int XLALGetDopplerShiftedFrequencyInfo
    REAL8Vector         *shiftedFreqs,
    UINT4Vector         *lowestBins,
    REAL8Vector         *kappaValues,
+   REAL8Vector         *signalPhases,
    UINT4               numBins,
    PulsarDopplerParams *dopp,
    SFTIndexList        *sfts,
