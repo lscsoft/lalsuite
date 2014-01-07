@@ -2,7 +2,7 @@
 # lalsuite_swig.m4 - SWIG configuration
 # Author: Karl Wette, 2011, 2012
 #
-# serial 55
+# serial 56
 
 # enable SWIG wrapping modules
 AC_DEFUN([LALSUITE_ENABLE_SWIG],[
@@ -27,8 +27,8 @@ AC_DEFUN([LALSUITE_ENABLE_SWIG],[
   # options to enable/disable languages
   swig_build_any=false
   swig_min_version=0.0
-  LALSUITE_ENABLE_SWIG_LANGUAGE([Octave],[false],[2.0.7],[LALSUITE_REQUIRE_CXX])
-  LALSUITE_ENABLE_SWIG_LANGUAGE([Python],[false],[2.0.7])
+  LALSUITE_ENABLE_SWIG_LANGUAGE([Octave],[false],[2.0.11],[LALSUITE_REQUIRE_CXX])
+  LALSUITE_ENABLE_SWIG_LANGUAGE([Python],[false],[2.0.11])
 
 ])
 
@@ -141,10 +141,8 @@ AC_DEFUN([LALSUITE_USE_SWIG],[
     # flags for preprocessing/generating SWIG wrapping module sources
     AC_SUBST(SWIG_SWIGFLAGS,["-Wextra -Werror -I\$(abs_top_builddir)/include"])
 
-    # add -MP option if SWIG is greater than version 2.0.9
-    AS_VERSION_COMPARE([${swig_version}],[2.0.9],[],[],[
-      SWIG_SWIGFLAGS="${SWIG_SWIGFLAGS} -MP"
-    ])
+    # add -MP option
+    SWIG_SWIGFLAGS="${SWIG_SWIGFLAGS} -MP"
 
     # send language-specific SWIG output files to libtool directory
     AC_SUBST(SWIG_OUTDIR,["\$(abs_builddir)/${objdir}"])

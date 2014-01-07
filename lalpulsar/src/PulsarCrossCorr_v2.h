@@ -1,5 +1,6 @@
 /*
  *  Copyright (C) 2012, 2013 John Whelan, Shane Larson and Badri Krishnan
+ *  Copyright (C) 2013, 2014 Badri Krishnan, John Whelan, Yuanhao Zhang
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -26,8 +27,8 @@ extern "C" {
 /**
  * \defgroup PulsarCrossCorr_v2_h Header PulsarCrossCorr_v2.h
  * \ingroup pkg_pulsarCrossCorr
- * \author John Whelan, Shane Larson, Badri Krishnan
- * \date 2012
+ * \author John Whelan, Yuanhao Zhang, Shane Larson, Badri Krishnan
+ * \date 2012, 2013, 2014
  * \brief Header-file for XLAL routines for v2 CW cross-correlation searches
  *
  */
@@ -106,6 +107,7 @@ int XLALGetDopplerShiftedFrequencyInfo
    REAL8Vector         *shiftedFreqs,
    UINT4Vector         *lowestBins,
    REAL8Vector         *kappaValues,
+   REAL8Vector         *signalPhases,
    UINT4               numBins,
    PulsarDopplerParams *dopp,
    SFTIndexList        *sfts,

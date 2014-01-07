@@ -22,17 +22,6 @@
 
 ////////// General SWIG directives and interface code //////////
 
-// Improved version of segfault-on-exit prevention hack.
-#if SWIG_VERSION < 0x020008
-%begin %{
-#include <cstdlib>
-#define SWIG_OCTAVE_NO_SEGFAULT_HACK
-%}
-%init %{
-  octave_exit = ::_Exit;
-%}
-#endif
-
 // Include SWIG Octave headers.
 %include <octcomplex.swg>
 

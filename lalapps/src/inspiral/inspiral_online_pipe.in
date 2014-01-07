@@ -309,7 +309,7 @@ for ifo in ifo_list:
         continue
     
     # decide if we need to segment the data
-    available_segments = get_valid_segments(cp.get('segfind','segment-url'), '/archive/frames/ER3/hoft', ifo, cp.get('segments',ifo.lower() + '-analyze'), gps_start_time, gps_end_time)
+    available_segments = get_valid_segments(cp.get('segfind','segment-url'), cp.get('framefind','base-dir'), ifo, cp.get('segments',ifo.lower() + '-analyze'), gps_start_time, gps_end_time)
 
     if not available_segments:
         print "No available segments for %s, skipping" % ifo
