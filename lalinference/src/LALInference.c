@@ -626,7 +626,7 @@ void LALInferencePrintSample(FILE *fp,LALInferenceVariables *sample){
 }
 
 void LALInferencePrintSampleNonFixed(FILE *fp,LALInferenceVariables *sample){
-  int i;//,j;
+  UINT4 i;//,j;
   //gsl_matrix *m=NULL;
   UINT4Vector *v=NULL;
 	if(sample==NULL) return;
