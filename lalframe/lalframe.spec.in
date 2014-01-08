@@ -75,6 +75,7 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}
 %{_libdir}/*.so*
 %{_sysconfdir}/*
 %{_bindir}/lalfr-*
+%{_datadir}/man/man1/*
 
 %files devel
 %defattr(-,root,root)
@@ -87,8 +88,11 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}
 %{_libdir}/python*/site-packages/lalframe/*.py
 %{_libdir}/python*/site-packages/lalframe/*.pyc
 %{_libdir}/python*/site-packages/lalframe/_lalframe.so*
+%{_libdir}/python*/site-packages/lalframe/utils/*.py
+%{_libdir}/python*/site-packages/lalframe/utils/*.pyc
 %exclude %{_libdir}/python*/site-packages/lalframe/*.pyo
 %exclude %{_libdir}/python*/site-packages/lalframe/*.la
+%exclude %{_libdir}/python*/site-packages/lalframe/utils/*.pyo
 
 %files octave
 %defattr(-,root,root)

@@ -145,6 +145,22 @@ int XLALSimInspiralREAL8WaveTaper(
 		LALSimInspiralApplyTaper  bookends	/**< taper type enumerator */
 		);
 
+
+/**
+ * Gives the default ending frequencies of the given approximant.
+ */
+double XLALSimInspiralGetFinalFreq(
+    REAL8 m1,                               /**< mass of companion 1 (kg) */
+    REAL8 m2,                               /**< mass of companion 2 (kg) */
+    REAL8 S1x,                              /**< x-component of the dimensionless spin of object 1 */
+    REAL8 S1y,                              /**< y-component of the dimensionless spin of object 1 */
+    REAL8 S1z,                              /**< z-component of the dimensionless spin of object 1 */
+    REAL8 S2x,                              /**< x-component of the dimensionless spin of object 2 */
+    REAL8 S2y,                              /**< y-component of the dimensionless spin of object 2 */
+    REAL8 S2z,                              /**< z-component of the dimensionless spin of object 2 */
+    Approximant approximant                 /**< post-Newtonian approximant to use for waveform production */
+    );
+
 /**
  * Compute the polarizations from all the -2 spin-weighted spherical harmonic
  * modes stored in 'hlms'. Be sure that 'hlms' is the head of the linked list!

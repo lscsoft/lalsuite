@@ -1,4 +1,5 @@
 usr/bin/laldetchar-hveto
 usr/lib/python*/dist-packages/laldetchar/*.py
+usr/lib/python*/dist-packages/laldetchar/hveto/*.py
 usr/lib/python*/dist-packages/laldetchar/triggers/*.py
 usr/lib/python*/dist-packages/laldetchar/_laldetchar.so*

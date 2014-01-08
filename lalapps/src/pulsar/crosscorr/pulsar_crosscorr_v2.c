@@ -127,10 +127,13 @@ int main(int argc, char *argv[]){
   REAL8 tSqAvg=0;/*weightedfactors*/
   REAL8 sinSqAvg=0;
   REAL8 devmeanTsq=0;
-  REAL8 diagff=0;
+  REAL8 diagff=0; /*diagnal metric components*/
   REAL8 diagaa=0;
   REAL8 diagTT=0;
   REAL8 diagpp=0;
+  REAL8 ccStat=0;
+  REAL8 evSquared=0;
+  REAL8 estSens=0; /*estimated sensitivity(4.13)*/
   /* initialize and register user variables */
   if ( XLALInitUserVars( &uvar ) != XLAL_SUCCESS ) {
     LogPrintf ( LOG_CRITICAL, "%s: XLALInitUserVars() failed with errno=%d\n", __func__, xlalErrno );
@@ -293,12 +296,12 @@ int main(int argc, char *argv[]){
     LogPrintf ( LOG_CRITICAL, "%s: XLALCalculateAveCurlyGUnshifted() failed with errno=%d\n", __func__, xlalErrno );
     XLAL_ERROR( XLAL_EFUNC );
   }
-
-  if ( (XLALCalculateWeightedFactors( &tSqAvg,&sinSqAvg,&devmeanTsq,curlyGUnshifted,sftPairs,sftIndices,inputSFTs,uvar.orbitPSec)  != XLAL_SUCCESS ) ) {
+  /*Get weighted factors T_alpha sin^2(_pi T/pOrb), also estimate sensitivity i.e. E[rho]/(h0)^2 (4.13)*/
+  if ( (XLALCalculateWeightedFactors( &tSqAvg,&sinSqAvg,&devmeanTsq,&estSens,curlyGUnshifted,sftPairs,sftIndices,inputSFTs,uvar.orbitPSec)  != XLAL_SUCCESS ) ) {
     LogPrintf ( LOG_CRITICAL, "%s: XLALCalculateWeightedFactors() failed with errno=%d\n", __func__, xlalErrno );
     XLAL_ERROR( XLAL_EFUNC );
   }
-
+  /*Calculate metric diagonal components*/
   if ( (XLALCalculateMetricElements( &diagff,&diagaa,&diagTT,&diagpp,uvar.orbitAsiniSec,uvar.fStart,uvar.orbitPSec,devmeanTsq,tSqAvg,sinSqAvg)  != XLAL_SUCCESS ) ) {
     LogPrintf ( LOG_CRITICAL, "%s: XLALCalculateMetricElements() failed with errno=%d\n", __func__, xlalErrno );
     XLAL_ERROR( XLAL_EFUNC );
@@ -379,9 +382,12 @@ int main(int argc, char *argv[]){
 	XLAL_ERROR( XLAL_EFUNC );
       }
 
-      /* Call new function (?) to get phase of curly G */
-      /* Call new function to construct optimal cross-correlation statistic */
-      /* Note that sensitivity estimate shouldn't depend on doppler params, to this approximation */
+      if ( (XLALCalculatePulsarCrossCorrStatistic( &ccStat, &evSquared, curlyGUnshifted, signalPhases, lowestBins, kappaValues, uvar.numBins, sftPairs, sftIndices, inputSFTs )  != XLAL_SUCCESS ) ) {
+	LogPrintf ( LOG_CRITICAL, "%s: XLALCalculateAveCrossCorrStatistic() failed with errno=%d\n", __func__, xlalErrno );
+	XLAL_ERROR( XLAL_EFUNC );
+      }
+
+      /* check whether ccStat belongs in the toplist */
 
     } /* end while loop over templates */
 

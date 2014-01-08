@@ -94,6 +94,26 @@ double XLALSimIMRPhenomBComputeChi(
 );
 
 /**
+ * Compute the default final frequency 
+ */
+double XLALSimIMRPhenomAGetFinalFreq(
+    const REAL8 m1,
+    const REAL8 m2
+);
+
+double XLALSimIMRPhenomBGetFinalFreq(
+    const REAL8 m1,
+    const REAL8 m2,
+    const REAL8 chi
+);
+
+double XLALSimIMRPhenomCGetFinalFreq(
+    const REAL8 m1,
+    const REAL8 m2,
+    const REAL8 chi
+);
+
+/**
  * Driver routine to compute the spin-aligned, inspiral-merger-ringdown
  * phenomenological waveform IMRPhenomB in the frequency domain.
  *
