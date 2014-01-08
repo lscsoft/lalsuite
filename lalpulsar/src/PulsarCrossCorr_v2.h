@@ -174,6 +174,7 @@ int XLALCalculateWeightedFactors
    REAL8             *TSquaWeightedAve, 
    REAL8             *SinSquaWeightedAve,  
    REAL8             *devTsq,
+   REAL8             *hSens,           
    REAL8Vector       *G_alpha,       
    SFTPairIndexList  *pairIndexList, 
    SFTIndexList      *indexList,       

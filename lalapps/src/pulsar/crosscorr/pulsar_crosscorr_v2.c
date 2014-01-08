@@ -127,12 +127,13 @@ int main(int argc, char *argv[]){
   REAL8 tSqAvg=0;/*weightedfactors*/
   REAL8 sinSqAvg=0;
   REAL8 devmeanTsq=0;
-  REAL8 diagff=0;
+  REAL8 diagff=0; /*diagnal metric components*/
   REAL8 diagaa=0;
   REAL8 diagTT=0;
   REAL8 diagpp=0;
   REAL8 ccStat=0;
   REAL8 evSquared=0;
+  REAL8 estSens=0; /*estimated sensitivity(4.13)*/
   /* initialize and register user variables */
   if ( XLALInitUserVars( &uvar ) != XLAL_SUCCESS ) {
     LogPrintf ( LOG_CRITICAL, "%s: XLALInitUserVars() failed with errno=%d\n", __func__, xlalErrno );
@@ -296,7 +297,7 @@ int main(int argc, char *argv[]){
     XLAL_ERROR( XLAL_EFUNC );
   }
 
-  if ( (XLALCalculateWeightedFactors( &tSqAvg,&sinSqAvg,&devmeanTsq,curlyGUnshifted,sftPairs,sftIndices,inputSFTs,uvar.orbitPSec)  != XLAL_SUCCESS ) ) {
+  if ( (XLALCalculateWeightedFactors( &tSqAvg,&sinSqAvg,&devmeanTsq,&estSens,curlyGUnshifted,sftPairs,sftIndices,inputSFTs,uvar.orbitPSec)  != XLAL_SUCCESS ) ) {
     LogPrintf ( LOG_CRITICAL, "%s: XLALCalculateWeightedFactors() failed with errno=%d\n", __func__, xlalErrno );
     XLAL_ERROR( XLAL_EFUNC );
   }

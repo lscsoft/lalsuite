@@ -360,12 +360,13 @@ int XLALCalculatePulsarCrossCorrStatistic
   }
   return XLAL_SUCCESS;
 }
-
+/*calculate the weighted factors, also include the estimation of sensitivity E[rho]/(h_0)^2*/
 int XLALCalculateWeightedFactors
   (
    REAL8             *TSquaWeightedAve, /*Output: weighted factors*/
    REAL8             *SinSquaWeightedAve,  
    REAL8             *devTsq,           /*Output: mean time deviation^2*/
+   REAL8             *hSens,            /*Output:sensitivity*/
    REAL8Vector       *G_alpha,       /* Input: vector of sigma_alpha values */ 
    SFTPairIndexList  *pairIndexList, /* Input: list of SFT pairs */
    SFTIndexList      *indexList,     /* Input: list of SFTs */   
@@ -384,6 +385,7 @@ int XLALCalculateWeightedFactors
   REAL8 denom=0;
   REAL8 sinSquare=0;
   REAL8 tSquare=0;
+  REAL8 rhosum=0;
  
     numalpha = G_alpha->length;
 
@@ -400,10 +402,12 @@ int XLALCalculateWeightedFactors
     tSquare += SQUARE( G_alpha->data[j]*T);                 /*(\curlyg_alpha*)^2*T^2*/
     denom +=SQUARE(G_alpha->data[j]);                      /*calculate the denominator*/
     muT +=Tmean/numalpha;                                 /*calculate the average of Tmean*/
+    rhosum +=2*SQUARE(G_alpha->data[j]);
       }
 
   *TSquaWeightedAve =(tSquare/denom);
   *SinSquaWeightedAve =(sinSquare/denom);
+  *hSens = sqrt(rhosum);
 
   for(k=0;k < numalpha;k++){
     sftNum1 = pairIndexList->data[k].sftNum[0];
