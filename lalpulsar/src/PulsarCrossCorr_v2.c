@@ -387,7 +387,7 @@ int XLALCalculateWeightedFactors
   REAL8 tSquare=0;
   REAL8 rhosum=0;
  
-    numalpha = G_alpha->length;
+  numalpha = G_alpha->length;
 
   for (j=0; j < numalpha; j++) {
     sftNum1 = pairIndexList->data[j].sftNum[0];

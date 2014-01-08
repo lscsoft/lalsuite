@@ -296,12 +296,12 @@ int main(int argc, char *argv[]){
     LogPrintf ( LOG_CRITICAL, "%s: XLALCalculateAveCurlyGUnshifted() failed with errno=%d\n", __func__, xlalErrno );
     XLAL_ERROR( XLAL_EFUNC );
   }
-
+  /*Get weighted factors T_alpha sin^2(_pi T/pOrb), also estimate sensitivity i.e. E[rho]/(h0)^2 (4.13)*/
   if ( (XLALCalculateWeightedFactors( &tSqAvg,&sinSqAvg,&devmeanTsq,&estSens,curlyGUnshifted,sftPairs,sftIndices,inputSFTs,uvar.orbitPSec)  != XLAL_SUCCESS ) ) {
     LogPrintf ( LOG_CRITICAL, "%s: XLALCalculateWeightedFactors() failed with errno=%d\n", __func__, xlalErrno );
     XLAL_ERROR( XLAL_EFUNC );
   }
-
+  /*Calculate metric diagonal components*/
   if ( (XLALCalculateMetricElements( &diagff,&diagaa,&diagTT,&diagpp,uvar.orbitAsiniSec,uvar.fStart,uvar.orbitPSec,devmeanTsq,tSqAvg,sinSqAvg)  != XLAL_SUCCESS ) ) {
     LogPrintf ( LOG_CRITICAL, "%s: XLALCalculateMetricElements() failed with errno=%d\n", __func__, xlalErrno );
     XLAL_ERROR( XLAL_EFUNC );
