@@ -36,6 +36,7 @@ typedef struct {
 } CrossCorrOutputEntry;
 
 /** Type to hold the fields that will be kept in a "toplist" -- for a directed binary search */
+/* add field for sensitivity estimate */
 typedef struct {
   REAL8 freq;		/**< Frequency */
   REAL8 tp; 		/**< time of periapse passage */
@@ -107,7 +108,7 @@ extern void sort_crossCorr_toplist(toplist_t*list);
  */
 extern int write_crossCorr_toplist_item_to_fp(CrossCorrOutputEntry line, FILE*fp, UINT4*checksum);
 
-extern int write_crossCorr_toplist_item_to_fp(CrossCorrBinaryOutputEntry line, FILE*fp, UINT4*checksum);
+extern int write_crossCorrBinary_toplist_item_to_fp(CrossCorrBinaryOutputEntry line, FILE*fp, UINT4*checksum);
 
 /**
  * writes the given toplitst to a temporary file, then renames the

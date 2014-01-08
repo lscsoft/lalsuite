@@ -124,29 +124,29 @@ static int crossCorr_toplist_qsort_function(const void *a, const void *b) {
 
 /* ordering function for sorting the list */
 static int crossCorrBinary_toplist_qsort_function(const void *a, const void *b) {
-    if      (((const CrossCorrOutputEntry*)a)->freq  < ((const CrossCorrOutputEntry*)b)->freq)
+    if      (((const CrossCorrBinaryOutputEntry*)a)->freq  < ((const CrossCorrBinaryOutputEntry*)b)->freq)
 	return -1;
-    else if (((const CrossCorrOutputEntry*)a)->freq  > ((const CrossCorrOutputEntry*)b)->freq)
+    else if (((const CrossCorrBinaryOutputEntry*)a)->freq  > ((const CrossCorrBinaryOutputEntry*)b)->freq)
 	return 1;
-    if      (((const CrossCorrOutputEntry*)a)->tp  < ((const CrossCorrOutputEntry*)b)->tp)
+    if      (((const CrossCorrBinaryOutputEntry*)a)->tp  < ((const CrossCorrBinaryOutputEntry*)b)->tp)
 	return -1;
-    else if (((const CrossCorrOutputEntry*)a)->tp  > ((const CrossCorrOutputEntry*)b)->tp)
+    else if (((const CrossCorrBinaryOutputEntry*)a)->tp  > ((const CrossCorrBinaryOutputEntry*)b)->tp)
 	return 1;
-    if      (((const CrossCorrOutputEntry*)a)->argp  < ((const CrossCorrOutputEntry*)b)->argp)
+    if      (((const CrossCorrBinaryOutputEntry*)a)->argp  < ((const CrossCorrBinaryOutputEntry*)b)->argp)
 	return -1;
-    else if (((const CrossCorrOutputEntry*)a)->argp  > ((const CrossCorrOutputEntry*)b)->argp)
+    else if (((const CrossCorrBinaryOutputEntry*)a)->argp  > ((const CrossCorrBinaryOutputEntry*)b)->argp)
 	return 1;
-    if      (((const CrossCorrOutputEntry*)a)->asini  < ((const CrossCorrOutputEntry*)b)->asini)
+    if      (((const CrossCorrBinaryOutputEntry*)a)->asini  < ((const CrossCorrBinaryOutputEntry*)b)->asini)
 	return -1;
-    else if (((const CrossCorrOutputEntry*)a)->asini  > ((const CrossCorrOutputEntry*)b)->asini)
+    else if (((const CrossCorrBinaryOutputEntry*)a)->asini  > ((const CrossCorrBinaryOutputEntry*)b)->asini)
 	return 1;
-    else if (((const CrossCorrOutputEntry*)a)->ecc < ((const CrossCorrOutputEntry*)b)->ecc)
+    else if (((const CrossCorrBinaryOutputEntry*)a)->ecc < ((const CrossCorrBinaryOutputEntry*)b)->ecc)
 	return -1;
-    else if (((const CrossCorrOutputEntry*)a)->ecc > ((const CrossCorrOutputEntry*)b)->ecc)
+    else if (((const CrossCorrBinaryOutputEntry*)a)->ecc > ((const CrossCorrBinaryOutputEntry*)b)->ecc)
 	return 1;
-    else if (((const CrossCorrOutputEntry*)a)->period < ((const CrossCorrOutputEntry*)b)->period)
+    else if (((const CrossCorrBinaryOutputEntry*)a)->period < ((const CrossCorrBinaryOutputEntry*)b)->period)
 	return -1;
-    else if (((const CrossCorrOutputEntry*)a)->period > ((const CrossCorrOutputEntry*)b)->period)
+    else if (((const CrossCorrBinaryOutputEntry*)a)->period > ((const CrossCorrBinaryOutputEntry*)b)->period)
 	return 1;
     else
 	return 0;
@@ -165,9 +165,9 @@ static int crossCorr_smaller(const void*a, const void*b) {
 
 
 static int crossCorrBinary_smaller(const void*a, const void*b) {
-  if     (((const CrossCorrBinaryOutputEntry*)a)->rho < ((const CrossCorrBinaryOutputEntry*)b)->rho)
+  if     (((const CrossCorrBinaryBinaryOutputEntry*)a)->rho < ((const CrossCorrBinaryBinaryOutputEntry*)b)->rho)
     return(1);
-  else if(((const CrossCorrBinaryOutputEntry*)a)->rho > ((const CrossCorrBinaryOutputEntry*)b)->rho)
+  else if(((const CrossCorrBinaryBinaryOutputEntry*)a)->rho > ((const CrossCorrBinaryBinaryOutputEntry*)b)->rho)
     return(-1);
   else
     return(crossCorrBinary_toplist_qsort_function(a,b));
@@ -540,7 +540,7 @@ int write_crossCorr_toplist_item_to_fp(CrossCorrOutputEntry fline, FILE*fp, UINT
 }
 
 
-int write_crossCorr_toplist_item_to_fp(CrossCorrBinaryOutputEntry fline, FILE*fp, UINT4*checksum) {
+int write_crossCorrBinary_toplist_item_to_fp(CrossCorrBinaryOutputEntry fline, FILE*fp, UINT4*checksum) {
     char linebuf[256];
     UINT4 i;
 
