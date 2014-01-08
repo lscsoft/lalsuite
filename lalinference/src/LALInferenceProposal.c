@@ -1464,6 +1464,7 @@ void LALInferenceSkyRingProposal(LALInferenceRunState *runState, LALInferenceVar
   intpart = (int)( gmst );
   decpart = gmst - (REAL8)intpart;
   gmst = decpart*LAL_TWOPI;
+  gmst = gmst < 0. ? gmst + LAL_TWOPI : gmst;
 
   /*
    line-of-sight vector
