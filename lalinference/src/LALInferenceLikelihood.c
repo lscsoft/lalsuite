@@ -217,7 +217,7 @@ REAL8 LALInferenceUndecomposedFreqDomainLogLikelihood(LALInferenceVariables *cur
 /***************************************************************/
 {
   double Fplus, Fcross;
-  double FplusScaled, FcrossScaled;
+  double FplusScaled=0.0, FcrossScaled=0.0;
   double diffRe, diffIm, diffSquared;
   double dataReal, dataImag;
   double glitchReal=0.0, glitchImag=0.0;
@@ -226,14 +226,14 @@ REAL8 LALInferenceUndecomposedFreqDomainLogLikelihood(LALInferenceVariables *cur
   REAL8 templateReal=0.0, templateImag=0.0;
   int i, j, lower, upper, ifo;
   LALInferenceIFOData *dataPtr;
-  double ra, dec, psi, distMpc, gmst;
-  double GPSdouble;
+  double ra=0.0, dec=0.0, psi=0.0, distMpc=0.0, gmst=0.0;
+  double GPSdouble=0.0;
   LIGOTimeGPS GPSlal;
   double chisquared;
   double signal2noise=0.0;
   double timedelay;  /* time delay b/w iterferometer & geocenter w.r.t. sky location */
   double timeshift=0;  /* time shift (not necessarily same as above)                   */
-  double deltaT, TwoDeltaToverN, deltaF, twopit, re, im, dre, dim, newRe, newIm;
+  double deltaT, TwoDeltaToverN, deltaF, twopit=0.0, re, im, dre, dim, newRe, newIm;
   double timeTmp;
   int different;
 	double mc;
@@ -253,7 +253,7 @@ REAL8 LALInferenceUndecomposedFreqDomainLogLikelihood(LALInferenceVariables *cur
   gsl_matrix *psdBandsMax = NULL;//pointer to matrix holding max frequencies for psd model
 
   //different formats for storing glitch model for DWT, FFT, and integration
-  gsl_matrix *glitchFD;
+  gsl_matrix *glitchFD=NULL;
 
   int Nblock = 1;            //number of frequency blocks per IFO
   int Nlines = 1;            //number of lines to be removed
@@ -1927,7 +1927,7 @@ REAL8 LALInferenceMarginalisedTimeLogLikelihood(LALInferenceVariables *currentPa
   gsl_matrix *psdBandsMax = NULL;//pointer to matrix holding max frequencies for psd model
 
   //pointers to morlet wavelet parameters
-  gsl_matrix *glitchFD;
+  gsl_matrix *glitchFD=NULL;
 
   //initialize various noise-model constants
   UINT4 Nblock = 1;            //number of frequency blocks per IFO
