@@ -35,6 +35,20 @@ typedef struct {
   REAL8 Rho; 		/**< Crosscorr statistic */
 } CrossCorrOutputEntry;
 
+/** Type to hold the fields that will be kept in a "toplist" -- for a directed binary search */
+typedef struct {
+  REAL8 freq;		/**< Frequency */
+  REAL8 tp; 		/**< time of periapse passage */
+  REAL8 argp;		/**< argument of periapse */
+  REAL8 asini;		/**< projected semi-major axis */
+  REAL8 ecc;     	/**< eccentricity */
+  REAL8 period; 	/**< bperiod */
+  REAL8 rho; 		/**< Crosscorr statistic */
+} CrossCorrBinaryOutputEntry;
+
+
+
+
 
 
 /**
@@ -53,6 +67,8 @@ extern void free_crossCorr_toplist(toplist_t**list);
  * Returns 1 if the element was actually inserted, 0 if not.
  */
 extern int insert_into_crossCorr_toplist(toplist_t*list, CrossCorrOutputEntry line);
+
+extern int insert_into_CrossCorrBinary_toplist(toplist_t*list, CrossCorrBinaryOutputEntry line);
 
 /**
  * Writes the toplist to an (already open) filepointer
@@ -90,6 +106,8 @@ extern void sort_crossCorr_toplist(toplist_t*list);
  * Updates checksum if given (i.e. not NULL)
  */
 extern int write_crossCorr_toplist_item_to_fp(CrossCorrOutputEntry line, FILE*fp, UINT4*checksum);
+
+extern int write_crossCorr_toplist_item_to_fp(CrossCorrBinaryOutputEntry line, FILE*fp, UINT4*checksum);
 
 /**
  * writes the given toplitst to a temporary file, then renames the
