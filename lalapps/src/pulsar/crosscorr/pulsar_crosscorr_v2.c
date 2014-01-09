@@ -410,10 +410,8 @@ int main(int argc, char *argv[]){
   XLALDestroyMultiPSDVector ( multiPSDs );
   XLALDestroyMultiSFTVector ( inputSFTs );
 
-  XLALDestroySFTCatalog (config.catalog );
-  XLALFree( config.edat->ephemE );
-  XLALFree( config.edat->ephemS );
-  XLALFree( config.edat );
+  /* de-allocate memory for configuration variables */
+  XLALDestroyConfigVars ( &config );
 
   /* de-allocate memory for user input variables */
   XLALDestroyUserVars();
