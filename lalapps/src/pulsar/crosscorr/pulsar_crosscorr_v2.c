@@ -32,6 +32,7 @@
 #include <lalapps.h>
 #include <lal/UserInput.h>
 #include <lal/SFTfileIO.h>
+#include <lal/SFTutils.h>
 #include <lal/LogPrintf.h>
 #include <lal/DopplerScan.h>
 #include <lal/ExtrapolatePulsarSpins.h>
@@ -88,6 +89,7 @@ UserInput_t empty_UserInput;
 /* local function prototypes */
 int XLALInitUserVars ( UserInput_t *uvar );
 int XLALInitializeConfigVars (ConfigVariables *config, const UserInput_t *uvar);
+int XLALDestroyConfigVars (ConfigVariables *config);
 int GetNextCrossCorrTemplate( PulsarDopplerParams *dopplerpos, BinaryOrbitParams *binaryTemplateSpacings, BinaryOrbitParams *minBinaryTemplate, BinaryOrbitParams *maxBinaryTemplte, REAL8 freq_hi );
 
 
@@ -346,19 +348,6 @@ int main(int argc, char *argv[]){
     XLAL_ERROR( XLAL_EFUNC );
   }
 
-  /* args should be : spacings, min and max doppler params */
-  while ( (GetNextCrossCorrTemplate( &dopplerpos, &binaryTemplateSpacings, &minBinaryTemplate, &maxBinaryTemplate, uvar.fStart + uvar.fBand ) == 0) )
-    {
-      /* do useful stuff here*/
-
-      /* Apply additional Doppler shifting using current binary orbital parameters */
-      /* Might want to be clever about checking whether we've changed the orbital parameters or only the frequency */
-
-      if ( (XLALAddMultiBinaryTimes( &multiBinaryTimes, multiSSBTimes, dopplerpos.orbit )  != XLAL_SUCCESS ) ) {
-	LogPrintf ( LOG_CRITICAL, "%s: XLALAddMultiBinaryTimes() failed with errno=%d\n", __func__, xlalErrno );
-	XLAL_ERROR( XLAL_EFUNC );
-      }
-
       UINT8 numSFTs = sftIndices->length;
       if ((shiftedFreqs = XLALCreateREAL8Vector ( numSFTs ) ) == NULL){
 	LogPrintf ( LOG_CRITICAL, "%s: XLALCreateREAL8Vector() failed with errno=%d\n", __func__, xlalErrno );
@@ -377,6 +366,19 @@ int main(int argc, char *argv[]){
 	XLAL_ERROR( XLAL_EFUNC );
       }
 
+  /* args should be : spacings, min and max doppler params */
+  while ( (GetNextCrossCorrTemplate( &dopplerpos, &binaryTemplateSpacings, &minBinaryTemplate, &maxBinaryTemplate, uvar.fStart + uvar.fBand ) == 0) )
+    {
+      /* do useful stuff here*/
+
+      /* Apply additional Doppler shifting using current binary orbital parameters */
+      /* Might want to be clever about checking whether we've changed the orbital parameters or only the frequency */
+
+      if ( (XLALAddMultiBinaryTimes( &multiBinaryTimes, multiSSBTimes, dopplerpos.orbit )  != XLAL_SUCCESS ) ) {
+	LogPrintf ( LOG_CRITICAL, "%s: XLALAddMultiBinaryTimes() failed with errno=%d\n", __func__, xlalErrno );
+	XLAL_ERROR( XLAL_EFUNC );
+      }
+
       if ( (XLALGetDopplerShiftedFrequencyInfo( shiftedFreqs, lowestBins, kappaValues, signalPhases, uvar.numBins, &dopplerpos, sftIndices, multiBinaryTimes, Tsft )  != XLAL_SUCCESS ) ) {
 	LogPrintf ( LOG_CRITICAL, "%s: XLALGetDopplerShiftedFrequencyInfo() failed with errno=%d\n", __func__, xlalErrno );
 	XLAL_ERROR( XLAL_EFUNC );
@@ -391,13 +393,22 @@ int main(int argc, char *argv[]){
 
     } /* end while loop over templates */
 
-
+  XLALDestroyREAL8Vector ( signalPhases );
+  XLALDestroyREAL8Vector ( kappaValues );
+  XLALDestroyUINT4Vector ( lowestBins );
+  XLALDestroyREAL8Vector ( shiftedFreqs );
   XLALDestroyMultiSSBtimes ( multiBinaryTimes );
   XLALDestroyMultiSSBtimes ( multiSSBTimes );
-  /* XLALDestroySFTPairIndexList(sftPairs) */
-  /* XLALDestroySFTIndexList(sftIndices) */
-  XLALDestroyMultiSFTVector ( inputSFTs );
+  XLALDestroyREAL8Vector ( curlyGUnshifted );
+  XLALDestroySFTPairIndexList( sftPairs );
+  XLALDestroySFTIndexList( sftIndices );
+  XLALDestroyMultiAMCoeffs ( multiCoeffs );
+  XLALDestroyMultiDetectorStateSeries ( multiStates );
+  XLALDestroyMultiLALDetector( multiDetectors );
+  XLALDestroyMultiTimestamps ( multiTimes );
+  XLALDestroyMultiNoiseWeights ( multiWeights );
   XLALDestroyMultiPSDVector ( multiPSDs );
+  XLALDestroyMultiSFTVector ( inputSFTs );
 
   XLALDestroySFTCatalog (config.catalog );
   XLALFree( config.edat->ephemE );
@@ -551,7 +562,14 @@ int XLALInitializeConfigVars (ConfigVariables *config, const UserInput_t *uvar)
 }
 /* XLALInitializeConfigVars() */
 
-
+/* deallocate memory associated with config variables */
+int XLALDestroyConfigVars (ConfigVariables *config)
+{
+  XLALDestroySFTCatalog(config->catalog);
+  XLALDestroyEphemerisData(config->edat);
+  return XLAL_SUCCESS;
+}
+/* XLALDestroyConfigVars() */
 
 /* getting the next template */
 /** FIXME: spacings and min, max values of binary parameters are not used yet */

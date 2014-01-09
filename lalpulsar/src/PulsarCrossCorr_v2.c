@@ -130,7 +130,7 @@ int XLALCreateSFTIndexListFromMultiSFTVect
   /* qsort(ret->data, ret->length, sizeof(ret->data[0]), CompareGPSTime ) */
 
   (*indexList) = ret;
-  
+
   return XLAL_SUCCESS;
 }
 
@@ -459,3 +459,46 @@ int XLALCalculateMetricElements
   return XLAL_SUCCESS;
 }
 */
+/* ===== Object destruction functions ===== */
+
+/**
+ * Destroy a SFTIndexList structure.
+ * Note, this is "NULL-robust" in the sense that it will not crash
+ * on NULL-entries anywhere in this struct, so it can be used
+ * for failure-cleanup even on incomplete structs
+ */
+void
+XLALDestroySFTIndexList ( SFTIndexList *sftIndices )
+{
+  if ( ! sftIndices )
+    return;
+
+  if ( sftIndices->data )
+    XLALFree(sftIndices->data);
+
+  XLALFree ( sftIndices );
+
+  return;
+
+} /* XLALDestroySFTIndexList() */
+
+/**
+ * Destroy a SFTPairIndexList structure.
+ * Note, this is "NULL-robust" in the sense that it will not crash
+ * on NULL-entries anywhere in this struct, so it can be used
+ * for failure-cleanup even on incomplete structs
+ */
+void
+XLALDestroySFTPairIndexList ( SFTPairIndexList *sftPairs )
+{
+  if ( ! sftPairs )
+    return;
+
+  if ( sftPairs->data )
+    XLALFree(sftPairs->data);
+
+  XLALFree ( sftPairs );
+
+  return;
+
+} /* XLALDestroySFTPairIndexList() */

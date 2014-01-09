@@ -205,6 +205,10 @@ int XLALCalculateMetricElements
   ;
 /*@}*/
 
+void XLALDestroySFTIndexList ( SFTIndexList *sftIndices );
+
+void XLALDestroySFTPairIndexList ( SFTPairIndexList *sftPairs );
+
 #ifdef  __cplusplus
 }                /* Close C++ protection */
 #endif
