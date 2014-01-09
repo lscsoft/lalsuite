@@ -1147,6 +1147,21 @@ UINT4 LALInferencePTswap(LALInferenceRunState *runState, REAL8 *ladder, INT4 i, 
         /* Unpack parameters */
         LALInferenceCopyArrayToVariables(adjParameters, runState->currentParams);
 
+        /* Recompute glitch model */
+        UINT4 glitchFlag = 0;
+        if(LALInferenceCheckVariable(runState->currentParams,"glitchFitFlag"))
+          glitchFlag = *((UINT4 *)LALInferenceGetVariable(runState->currentParams, "glitchFitFlag"));
+
+        if(glitchFlag)
+        {
+          UINT4Vector *gsize = *(UINT4Vector **) LALInferenceGetVariable(runState->currentParams, "glitch_size");
+          UINT4 ifo = 0;
+          UINT4 n   = 0;
+
+          /* Remove wavlet form linear combination */
+          for(ifo=0; ifo<gsize->length; ifo++) for(n=0; n<gsize->data[ifo]; n++) UpdateWaveletSum(runState, runState->currentParams, runState->data->glitchModel, ifo, n, 0);
+        }
+
         XLALDestroyREAL8Vector(parameters);
         XLALDestroyREAL8Vector(adjParameters);
       }

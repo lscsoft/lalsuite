@@ -268,7 +268,7 @@ REAL8 LALInferenceUndecomposedFreqDomainLogLikelihood(LALInferenceVariables *cur
   if(LALInferenceCheckVariable(currentParams,"glitchFitFlag"))
     glitchFlag = *((INT4 *)LALInferenceGetVariable(currentParams, "glitchFitFlag"));
   if(glitchFlag)
-    glitchFD = *((gsl_matrix **)LALInferenceGetVariable(currentParams, "morlet_FD"));
+    glitchFD = data->glitchModel;//*((gsl_matrix **)LALInferenceGetVariable(currentParams, "morlet_FD"));
 
   //check if signal model is being used
   signalFlag=1;
@@ -296,7 +296,6 @@ REAL8 LALInferenceUndecomposedFreqDomainLogLikelihood(LALInferenceVariables *cur
   /* figure out GMST: */
   XLALGPSSetREAL8(&GPSlal, GPSdouble);
   gmst=XLALGreenwichMeanSiderealTime(&GPSlal);
-  }
 
   chisquared = 0.0;
   /* loop over data (different interferometers): */
@@ -1840,7 +1839,7 @@ REAL8 LALInferenceMarginalisedTimeLogLikelihood(LALInferenceVariables *currentPa
   if(LALInferenceCheckVariable(currentParams,"glitchFitFlag"))
     glitchFlag = *((INT4 *)LALInferenceGetVariable(currentParams, "glitchFitFlag"));
   if(glitchFlag)
-    glitchFD = *((gsl_matrix **)LALInferenceGetVariable(currentParams, "morlet_FD"));
+    glitchFD = data->glitchModel;//*((gsl_matrix **)LALInferenceGetVariable(currentParams, "morlet_FD"));
 
   if(LALInferenceCheckVariable(currentParams, "logdistance")){
     REAL8 distMpc = exp(*(REAL8*)LALInferenceGetVariable(currentParams,"logdistance"));

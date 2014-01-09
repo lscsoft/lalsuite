@@ -137,14 +137,15 @@ void LALInferenceInitGlitchVariables(LALInferenceRunState *runState)
   pmin = 0.0;
   pmax = LAL_TWOPI;
 
-  gsl_matrix  *gFD       = gsl_matrix_alloc(nifo,(int)n); //store the Fourier-domain glitch signal
+  runState->data->glitchModel = gsl_matrix_alloc(nifo,(int)n); //store the Fourier-domain glitch signal
+  //gsl_matrix  *gFD       = gsl_matrix_alloc(nifo,(int)n); //store the Fourier-domain glitch signal
   gsl_matrix  *gpower    = gsl_matrix_alloc(nifo,(int)n); //store the (normalized) wavelet power in each pixel
   REAL8Vector *maxpower  = XLALCreateREAL8Vector(nifo);   //store the maximum power in any pixel for each ifo (for rejection sampling proposed wavelets)
 
   for(i=0; i<nifo; i++) gsize->data[i]=0;
 
   //Morlet wavelet parameters
-  LALInferenceAddVariable(currentParams, "morlet_FD",  &gFD,  LALINFERENCE_gslMatrix_t, LALINFERENCE_PARAM_LINEAR);
+  //LALInferenceAddVariable(currentParams, "morlet_FD",  &gFD,  LALINFERENCE_gslMatrix_t, LALINFERENCE_PARAM_LINEAR);
   LALInferenceAddVariable(currentParams, "morlet_Amp", &mAmp, LALINFERENCE_gslMatrix_t, LALINFERENCE_PARAM_LINEAR);
   LALInferenceAddVariable(currentParams, "morlet_f0" , &mf0,  LALINFERENCE_gslMatrix_t, LALINFERENCE_PARAM_LINEAR);
   LALInferenceAddVariable(currentParams, "morlet_Q"  , &mQ,   LALINFERENCE_gslMatrix_t, LALINFERENCE_PARAM_LINEAR);
