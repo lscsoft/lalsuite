@@ -1,4 +1,5 @@
 /*
+*  Copyright (C) 2014 Karl Wette (XLALification)
 *  Copyright (C) 2007 Jolien Creighton, John Whelan
 *
 *  This program is free software; you can redistribute it and/or modify
@@ -24,17 +25,6 @@
  *
  * \brief Test Suite for unit manipulation programs
  *
- * ### Usage ###
- *
- * \code
- * UnitsTest [options]
- * Options:
- * -h         print help
- * -q         quiet: run silently
- * -v         verbose: print extra information
- * -d level   set lalDebugLevel to level
- * \endcode
- *
  * ### Description ###
  *
  * This program tests the various units-manipulation routines, as well as
@@ -44,964 +34,390 @@
  * ### Uses ###
  *
  * \code
- * LALCHARCreateVector()
- * LALUnitAsString()
- * LALParseUnitString()
- * LALCHARDestroyVector()
- * LALUnitMultiply()
- * LALUnitRaise()
- * LALUnitNormalize()
- * LALUnitCompare()
+ * XLALMalloc()
+ * XLALUnitAsString()
+ * XLALParseUnitString()
+ * XLALFree()
+ * XLALUnitMultiply()
+ * XLALUnitRaiseRAT4()
+ * XLALUnitNormalize()
+ * XLALUnitCompare()
  * \endcode
  *
- * ### Notes ###
- *
  */
-/** @{ */
-/**\name Error Codes */ /*@{*/
-#define UNITSTESTC_ENOM 0
-#define UNITSTESTC_ECHK 1
-#define UNITSTESTC_EFLS 2
-#define UNITSTESTC_MSGENOM "Nominal exit"
-#define UNITSTESTC_MSGECHK "Error checking failed to catch bad data"
-#define UNITSTESTC_MSGEFLS "Incorrect answer for valid data"
-/*@}*/
-/** @} */
 
 /** \cond  DONT_DOXYGEN */
+
 #include <config.h>
-
 #include <stdlib.h>
-
 #include <lal/LALStdlib.h>
 #include <lal/Units.h>
 #include <lal/AVFactories.h>
 
-#ifdef HAVE_UNISTD_H
-#include <unistd.h>
-#endif
+int main(void) {
 
-#ifdef HAVE_GETOPT_H
-#include <getopt.h>
-#endif
+  int errnum;
+  LALUnit unit1, unit2, unit3, *punit;
+  RAT4 power;
+  CHAR *string, buffer[LALUnitTextSize];
+  UINT4 length;
 
-#define CODES_(x) #x
-#define CODES(x) CODES_(x)
+  printf("Checking input validation of XLALUnitAsString:\n");
 
-extern char *optarg;
-extern int   optind;
+  length = sizeof("m^2 kg s^-3 A^-1") - 1;
+  string = XLALMalloc(length);
+  XLAL_CHECK( string != NULL, XLAL_EFAILED );
 
-int verbose    = 0;
+  XLAL_TRY( XLALUnitAsString( NULL, length, &unit1 ), errnum );
+  XLAL_CHECK( errnum == XLAL_EFAULT, XLAL_EFAILED );
+  printf("  PASS: Null pointer to output string\n");
 
-static void
-Usage (const char *program, int exitflag);
+  XLAL_TRY( XLALUnitAsString( string, 0, &unit1 ), errnum );
+  XLAL_CHECK( errnum == XLAL_EBADLEN, XLAL_EFAILED );
+  printf("  PASS: Bad output string length\n");
 
-static void
-ParseOptions (int argc, char *argv[]);
+  XLAL_TRY( XLALUnitAsString( string, length, NULL ), errnum );
+  XLAL_CHECK( errnum == XLAL_EFAULT, XLAL_EFAILED );
+  printf("  PASS: Null pointer to input LALUnit\n");
 
-static void
-TestStatus (LALStatus *status, const char *expectedCodes, int exitCode);
+  XLAL_TRY( XLALUnitAsString( string, length, &lalVoltUnit ), errnum );
+  XLAL_CHECK( errnum == XLAL_EBADLEN, XLAL_EFAILED );
+  printf("  PASS: Output string too short\n");
 
-/* The main function */
-int main( int argc, char *argv[] )
-{
-  static LALStatus   status;
-  LALUnit            unit1, unit2;
-  LALUnitPair        unitPair;
-  RAT4               power;
-  CHARVector         dummy;
-  CHARVector         *string;
-  BOOLEAN            answer;
+  XLALFree(string);
 
+  printf("Testing response of XLALUnitAsString to valid data:\n");
 
-  ParseOptions( argc, argv );
+  length = sizeof("m^2 kg s^-3 A^-1");
+  string = XLALMalloc(length);
+  XLAL_CHECK( string != NULL, XLAL_EFAILED );
 
-  printf("Checking Input Validation of LALUnitAsString:\n");
+  XLAL_CHECK( XLALUnitAsString( string, length, &lalVoltUnit ) != NULL, XLAL_EFAILED );
+  XLAL_CHECK( strcmp(string, "m^2 kg s^-3 A^-1") == 0, XLAL_EFAILED );
+  printf("  PASS: String representation of Volt is '%s'\n", string);
 
-  string = NULL;
+  XLALFree(string);
 
-  LALCHARCreateVector(&status, &string, sizeof("m^2 kg s^-3 A^-1")-1);
-  TestStatus(&status, CODES(0), UNITSTESTC_EFLS);
-#ifndef LAL_NDEBUG
+  length = sizeof("10^-12 m^-2 kg^-1 s^2 A^2");
+  string = XLALMalloc(length);
+  XLAL_CHECK( string != NULL, XLAL_EFAILED );
 
-  if ( ! lalNoDebug )
-  {
-    LALUnitAsString( &status, NULL, &unit1 );
-    TestStatus(&status, CODES(UNITSH_ENULLPOUT), UNITSTESTC_ECHK);
-    printf("  PASS: %s\n", UNITSH_MSGENULLPOUT);
+  XLAL_CHECK( XLALUnitAsString( string, length, &lalPicoFaradUnit ) != NULL, XLAL_EFAILED );
+  XLAL_CHECK( strcmp(string, "10^-12 m^-2 kg^-1 s^2 A^2") == 0, XLAL_EFAILED );
+  printf("  PASS: String representation of PicoFarad is '%s'\n", string);
 
-    dummy.data = NULL;
+  XLAL_CHECK( XLALUnitAsString( string, length, &lalMeterUnit ) != NULL, XLAL_EFAILED );
+  XLAL_CHECK( strcmp(string, "m") == 0, XLAL_EFAILED );
+  printf("  PASS: String representation of Meter is '%s'\n", string);
 
-    LALUnitAsString( &status, &dummy, &unit1 );
-    TestStatus(&status, CODES(UNITSH_ENULLPD), UNITSTESTC_ECHK);
-    printf("  PASS: %s\n", UNITSH_MSGENULLPD);
+  XLAL_CHECK( XLALUnitAsString( string, length, &lalCoulombUnit ) != NULL, XLAL_EFAILED );
+  XLAL_CHECK( strcmp(string, "s A") == 0, XLAL_EFAILED );
+  printf("  PASS: String representation of Coulomb is '%s'\n", string);
 
-    LALUnitAsString( &status, string, NULL );
-    TestStatus(&status, CODES(UNITSH_ENULLPIN), UNITSTESTC_ECHK);
-    printf("  PASS: %s\n", UNITSH_MSGENULLPIN);
-  }
-#else
-  (void)dummy;
-#endif /* LAL_NDEBUG */
+  XLAL_CHECK( XLALUnitAsString( string, length, &lalMegaUnit ) != NULL, XLAL_EFAILED );
+  XLAL_CHECK( strcmp(string, "10^6") == 0, XLAL_EFAILED );
+  printf("  PASS: String representation of Mega is '%s'\n", string);
 
-  LALUnitAsString( &status, string, &lalVoltUnit );
-  TestStatus(&status, CODES(UNITSH_ESTRINGSIZE), UNITSTESTC_ECHK);
-  printf("  PASS: %s\n", UNITSH_MSGESTRINGSIZE);
+  XLAL_CHECK( XLALUnitAsString( string, length, &lalAttoStrainUnit ) != NULL, XLAL_EFAILED );
+  XLAL_CHECK( strcmp(string, "10^-18 strain") == 0, XLAL_EFAILED );
+  printf("  PASS: String representation of AttoStrain is '%s'\n", string);
 
-  LALCHARDestroyVector(&status, &string);
-  TestStatus(&status, CODES(0), UNITSTESTC_EFLS);
+  XLAL_CHECK( XLALUnitAsString( string, length, &lalDimensionlessUnit ) != NULL, XLAL_EFAILED );
+  XLAL_CHECK( strcmp(string, "") == 0, XLAL_EFAILED );
+  printf("  PASS: String representation of dimensionless is '%s'\n", string);
 
-  printf("Testing response of LALUnitAsString to valid data:\n");
+  XLALFree(string);
 
-  LALCHARCreateVector(&status, &string, sizeof("m^2 kg s^-3 A^-1"));
-  TestStatus(&status, CODES(0), UNITSTESTC_EFLS);
+  printf("Checking input validation of XLALParseUnitString:\n");
 
-  LALUnitAsString(&status, string, &lalVoltUnit);
-  TestStatus(&status, CODES(0), UNITSTESTC_EFLS);
-  if (strcmp(string->data, "m^2 kg s^-3 A^-1"))
-  {
-    fprintf (stderr, "\nExiting to system with code %d\n", UNITSTESTC_EFLS);
-    return UNITSTESTC_EFLS;
-  }
-  printf("  PASS: string representation of Volt\n");
+  punit = XLALParseUnitString( NULL, "" );
+  XLAL_CHECK( punit != NULL, XLAL_EFAILED );
+  XLAL_CHECK( XLALUnitCompare( punit, &lalDimensionlessUnit) == 0, XLAL_EFAILED );
+  XLALFree(punit);
+  printf("  PASS: Null pointer to output LALUnit allocates new one\n");
 
-  LALCHARDestroyVector(&status, &string);
-  TestStatus(&status, CODES(0), UNITSTESTC_EFLS);
+  punit = XLALParseUnitString( &unit1, NULL );
+  XLAL_CHECK( punit == &unit1, XLAL_EFAILED );
+  XLAL_CHECK( XLALUnitCompare( &unit1, &lalDimensionlessUnit) == 0, XLAL_EFAILED );
+  printf("  PASS: Null pointer to string returns dimensionless\n");
 
-  LALCHARCreateVector(&status, &string, sizeof("10^-12 m^-2 kg^-1 s^2 A^2"));
-  TestStatus(&status, CODES(0), UNITSTESTC_EFLS);
+  memset(buffer, 0, LALUnitTextSize);
 
-  LALUnitAsString(&status, string, &lalPicoFaradUnit);
-  TestStatus(&status, CODES(0), UNITSTESTC_EFLS);
-  if (strcmp(string->data, "10^-12 m^-2 kg^-1 s^2 A^2"))
-  {
-    fprintf (stderr, "\nExiting to system with code %d\n", UNITSTESTC_EFLS);
-    return UNITSTESTC_EFLS;
-  }
-  printf("  PASS: string representation of PicoFarad is '%s'\n",
-	 string->data);
+  strncpy( buffer, "10^", LALUnitTextSize );
+  XLAL_TRY( XLALParseUnitString( &unit1, buffer ), errnum );
+  XLAL_CHECK( errnum == XLAL_EFAILED, XLAL_EFAILED );
+  printf("  PASS: Expected failure to parse '%s'\n", buffer);
 
-  LALUnitAsString(&status, string, &lalMeterUnit);
-  TestStatus(&status, CODES(0), UNITSTESTC_EFLS);
-  if (strcmp(string->data, "m"))
-  {
-    fprintf (stderr, "\nExiting to system with code %d\n", UNITSTESTC_EFLS);
-    return UNITSTESTC_EFLS;
-  }
-  printf("  PASS: string representation of Meter is '%s'\n", string->data);
+  strncpy( buffer, "s^3 s^2", LALUnitTextSize );
+  XLAL_TRY( XLALParseUnitString( &unit1, buffer ), errnum );
+  XLAL_CHECK( errnum == XLAL_EFAILED, XLAL_EFAILED );
+  printf("  PASS: Expected failure to parse '%s'\n", buffer);
 
-  LALUnitAsString(&status, string, &lalCoulombUnit);
-  TestStatus(&status, CODES(0), UNITSTESTC_EFLS);
-  if (strcmp(string->data, "s A"))
-  {
-    fprintf (stderr, "\nExiting to system with code %d\n", UNITSTESTC_EFLS);
-    return UNITSTESTC_EFLS;
-  }
-  printf("  PASS: string representation of Coulomb is '%s'\n", string->data);
+  strncpy( buffer, "V", LALUnitTextSize );
+  XLAL_TRY( XLALParseUnitString( &unit1, buffer ), errnum );
+  XLAL_CHECK( errnum == XLAL_EFAILED, XLAL_EFAILED );
+  printf("  PASS: Expected failure to parse '%s'\n", buffer);
 
-  LALUnitAsString(&status, string, &lalMegaUnit);
-  TestStatus(&status, CODES(0), UNITSTESTC_EFLS);
-  if (strcmp(string->data, "10^6"))
-  {
-    fprintf (stderr, "\nExiting to system with code %d\n", UNITSTESTC_EFLS);
-    return UNITSTESTC_EFLS;
-  }
-  printf("  PASS: string representation of Mega is '%s'\n", string->data);
+  printf("Testing response of XLALParseUnitString to valid data:\n");
 
-  LALUnitAsString(&status, string, &lalAttoStrainUnit);
-  TestStatus(&status, CODES(0), UNITSTESTC_EFLS);
-  if (strcmp(string->data, "10^-18 strain"))
-  {
-    fprintf (stderr, "\nExiting to system with code %d\n", UNITSTESTC_EFLS);
-    return UNITSTESTC_EFLS;
-  }
-  printf("  PASS: string representation of AttoStrain is '%s'\n",
-	 string->data);
-
-  LALUnitAsString(&status, string, &lalDimensionlessUnit);
-
-  TestStatus(&status, CODES(0), UNITSTESTC_EFLS);
-  if (strcmp(string->data, ""))
-  {
-    fprintf (stderr, "\nExiting to system with code %d\n", UNITSTESTC_EFLS);
-    return UNITSTESTC_EFLS;
-  }
-  printf("  PASS: string representation of dimensionless is '%s'\n",
-	 string->data);
-  LALCHARDestroyVector(&status, &string);
-  TestStatus(&status, CODES(0), UNITSTESTC_EFLS);
-
-  printf("Checking Input Validation of LALParseUnitString:\n");
-
-  string = NULL;
-
-  LALCHARCreateVector(&status, &string, LALUnitTextSize);
-  TestStatus(&status, CODES(0), UNITSTESTC_EFLS);
-#ifndef LAL_NDEBUG
-
-  if ( ! lalNoDebug )
-  {
-    LALParseUnitString( &status,  &unit1, NULL );
-    TestStatus(&status, CODES(UNITSH_ENULLPIN), UNITSTESTC_ECHK);
-    printf("  PASS: %s\n", UNITSH_MSGENULLPIN);
-
-    dummy.data = NULL;
-
-    LALParseUnitString( &status, &unit1, &dummy );
-    TestStatus(&status, CODES(UNITSH_ENULLPD), UNITSTESTC_ECHK);
-    printf("  PASS: %s\n", UNITSH_MSGENULLPD);
-
-    LALParseUnitString( &status, NULL, string );
-    TestStatus(&status, CODES(UNITSH_ENULLPOUT), UNITSTESTC_ECHK);
-    printf("  PASS: %s\n", UNITSH_MSGENULLPOUT);
-  }
-#endif /* LAL_NDEBUG */
-
-  strncpy( string->data, "10^", string->length );
-
-  LALParseUnitString( &status, &unit1, string );
-  TestStatus(&status, CODES(UNITSH_EPARSE), UNITSTESTC_ECHK);
-  printf("  PASS: %s\n", UNITSH_MSGEPARSE);
-
-  strncpy( string->data, "s^3 s^2", string->length );
-
-  LALParseUnitString( &status, &unit1, string );
-  TestStatus(&status, CODES(UNITSH_EPARSE), UNITSTESTC_ECHK);
-  printf("  PASS: %s\n", UNITSH_MSGEPARSE);
-
-  strncpy( string->data, "V", string->length );
-
-  LALParseUnitString( &status, &unit1, string );
-  TestStatus(&status, CODES(UNITSH_EPARSE), UNITSTESTC_ECHK);
-  printf("  PASS: %s\n", UNITSH_MSGEPARSE);
-
-  printf("Testing response of LALParseUnitString to valid data:\n");
-
-  unitPair.unitOne = &unit1;
-  unitPair.unitTwo = &lalVoltUnit;
-
-  LALUnitAsString(&status, string, &lalVoltUnit);
-  TestStatus(&status, CODES(0), UNITSTESTC_EFLS);
-
-  LALParseUnitString(&status, &unit1, string);
-  TestStatus(&status, CODES(0), UNITSTESTC_EFLS);
-
-  LALUnitCompare( &status, &answer, &unitPair );
-  TestStatus(&status, CODES(0), UNITSTESTC_EFLS);
-  if (!answer)
-  {
-    fprintf (stderr, "\nExiting to system with code %d\n", UNITSTESTC_EFLS);
-    return UNITSTESTC_EFLS;
-  }
+  XLAL_CHECK( XLALUnitAsString( buffer, LALUnitTextSize, &lalVoltUnit ) != NULL, XLAL_EFAILED );
+  XLAL_CHECK( XLALParseUnitString( &unit1, buffer ) != NULL, XLAL_EFAILED );
+  XLAL_CHECK( XLALUnitCompare( &unit1, &lalVoltUnit ) == 0, XLAL_EFAILED );
   printf("  PASS: Volt <-> string\n");
 
-  unitPair.unitTwo = &lalPicoFaradUnit;
-
-  LALUnitAsString(&status, string, unitPair.unitTwo);
-  TestStatus(&status, CODES(0), UNITSTESTC_EFLS);
-
-  LALParseUnitString(&status, &unit1, string);
-  TestStatus(&status, CODES(0), UNITSTESTC_EFLS);
-
-  LALUnitCompare( &status, &answer, &unitPair );
-  TestStatus(&status, CODES(0), UNITSTESTC_EFLS);
-  if (!answer)
-  {
-    fprintf (stderr, "\nExiting to system with code %d\n", UNITSTESTC_EFLS);
-    return UNITSTESTC_EFLS;
-  }
+  XLAL_CHECK( XLALUnitAsString( buffer, LALUnitTextSize, &lalPicoFaradUnit ) != NULL, XLAL_EFAILED );
+  XLAL_CHECK( XLALParseUnitString( &unit1, buffer ) != NULL, XLAL_EFAILED );
+  XLAL_CHECK( XLALUnitCompare( &unit1, &lalPicoFaradUnit ) == 0, XLAL_EFAILED );
   printf("  PASS: PicoFarad <-> string\n");
 
-  unitPair.unitTwo = &lalMeterUnit;
-
-  LALUnitAsString(&status, string, unitPair.unitTwo);
-  TestStatus(&status, CODES(0), UNITSTESTC_EFLS);
-
-  LALParseUnitString(&status, &unit1, string);
-  TestStatus(&status, CODES(0), UNITSTESTC_EFLS);
-
-  LALUnitCompare( &status, &answer, &unitPair );
-  TestStatus(&status, CODES(0), UNITSTESTC_EFLS);
-  if (!answer)
-  {
-    fprintf (stderr, "\nExiting to system with code %d\n", UNITSTESTC_EFLS);
-    return UNITSTESTC_EFLS;
-  }
+  XLAL_CHECK( XLALUnitAsString( buffer, LALUnitTextSize, &lalMeterUnit ) != NULL, XLAL_EFAILED );
+  XLAL_CHECK( XLALParseUnitString( &unit1, buffer ) != NULL, XLAL_EFAILED );
+  XLAL_CHECK( XLALUnitCompare( &unit1, &lalMeterUnit ) == 0, XLAL_EFAILED );
   printf("  PASS: Meter <-> string\n");
 
-  unitPair.unitTwo = &lalAttoStrainUnit;
-
-  LALUnitAsString(&status, string, unitPair.unitTwo);
-  TestStatus(&status, CODES(0), UNITSTESTC_EFLS);
-
-  LALParseUnitString(&status, &unit1, string);
-  TestStatus(&status, CODES(0), UNITSTESTC_EFLS);
-
-  LALUnitCompare( &status, &answer, &unitPair );
-  TestStatus(&status, CODES(0), UNITSTESTC_EFLS);
-  if (!answer)
-  {
-    fprintf (stderr, "\nExiting to system with code %d\n", UNITSTESTC_EFLS);
-    return UNITSTESTC_EFLS;
-  }
+  XLAL_CHECK( XLALUnitAsString( buffer, LALUnitTextSize, &lalAttoStrainUnit ) != NULL, XLAL_EFAILED );
+  XLAL_CHECK( XLALParseUnitString( &unit1, buffer ) != NULL, XLAL_EFAILED );
+  XLAL_CHECK( XLALUnitCompare( &unit1, &lalAttoStrainUnit ) == 0, XLAL_EFAILED );
   printf("  PASS: AttoStrain <-> string\n");
 
-  unitPair.unitTwo = &lalCoulombUnit;
-
-  LALUnitAsString(&status, string, unitPair.unitTwo);
-  TestStatus(&status, CODES(0), UNITSTESTC_EFLS);
-
-  LALParseUnitString(&status, &unit1, string);
-  TestStatus(&status, CODES(0), UNITSTESTC_EFLS);
-
-  LALUnitCompare( &status, &answer, &unitPair );
-  TestStatus(&status, CODES(0), UNITSTESTC_EFLS);
-  if (!answer)
-  {
-    fprintf (stderr, "\nExiting to system with code %d\n", UNITSTESTC_EFLS);
-    return UNITSTESTC_EFLS;
-  }
+  XLAL_CHECK( XLALUnitAsString( buffer, LALUnitTextSize, &lalCoulombUnit ) != NULL, XLAL_EFAILED );
+  XLAL_CHECK( XLALParseUnitString( &unit1, buffer ) != NULL, XLAL_EFAILED );
+  XLAL_CHECK( XLALUnitCompare( &unit1, &lalCoulombUnit ) == 0, XLAL_EFAILED );
   printf("  PASS: Coulomb <-> string\n");
 
-  unitPair.unitTwo = &lalMegaUnit;
-
-  LALUnitAsString(&status, string, unitPair.unitTwo);
-  TestStatus(&status, CODES(0), UNITSTESTC_EFLS);
-
-  LALParseUnitString(&status, &unit1, string);
-  TestStatus(&status, CODES(0), UNITSTESTC_EFLS);
-
-  LALUnitCompare( &status, &answer, &unitPair );
-  TestStatus(&status, CODES(0), UNITSTESTC_EFLS);
-  if (!answer)
-  {
-    fprintf (stderr, "\nExiting to system with code %d\n", UNITSTESTC_EFLS);
-    return UNITSTESTC_EFLS;
-  }
+  XLAL_CHECK( XLALUnitAsString( buffer, LALUnitTextSize, &lalMegaUnit ) != NULL, XLAL_EFAILED );
+  XLAL_CHECK( XLALParseUnitString( &unit1, buffer ) != NULL, XLAL_EFAILED );
+  XLAL_CHECK( XLALUnitCompare( &unit1, &lalMegaUnit ) == 0, XLAL_EFAILED );
   printf("  PASS: Mega <-> string\n");
 
-  unitPair.unitTwo = &lalDimensionlessUnit;
-
-  LALUnitAsString(&status, string, unitPair.unitTwo);
-  TestStatus(&status, CODES(0), UNITSTESTC_EFLS);
-
-  LALParseUnitString(&status, &unit1, string);
-  TestStatus(&status, CODES(0), UNITSTESTC_EFLS);
-
-  LALUnitCompare( &status, &answer, &unitPair );
-  TestStatus(&status, CODES(0), UNITSTESTC_EFLS);
-  if (!answer)
-  {
-    fprintf (stderr, "\nExiting to system with code %d\n", UNITSTESTC_EFLS);
-    return UNITSTESTC_EFLS;
-  }
+  XLAL_CHECK( XLALUnitAsString( buffer, LALUnitTextSize, &lalDimensionlessUnit ) != NULL, XLAL_EFAILED );
+  XLAL_CHECK( XLALParseUnitString( &unit1, buffer ) != NULL, XLAL_EFAILED );
+  XLAL_CHECK( XLALUnitCompare( &unit1, &lalDimensionlessUnit ) == 0, XLAL_EFAILED );
   printf("  PASS: Dimensionless <-> string\n");
 
+  unit1 = unit2 = lalDimensionlessUnit;
 
-  LALCHARDestroyVector(&status, &string);
-  TestStatus(&status, CODES(0), UNITSTESTC_EFLS);
+  printf("Checking input validation of LALUnitMultiply:\n");
 
+  XLAL_TRY( XLALUnitMultiply( NULL, &unit1, &unit2 ), errnum );
+  XLAL_CHECK( errnum == XLAL_EFAULT, XLAL_EFAILED );
+  printf("  PASS: Null pointer to output LALUnit\n");
 
-#ifndef LAL_NDEBUG
-  if ( ! lalNoDebug )
-  {
-    unit1 = unit2 = lalDimensionlessUnit;
+  XLAL_TRY( XLALUnitMultiply( &unit3, NULL, NULL ), errnum );
+  XLAL_CHECK( errnum == XLAL_EFAULT, XLAL_EFAILED );
+  printf("  PASS: Null pointer to input LALUnits\n");
 
-    unitPair.unitTwo = &unit2;
+  unit1.powerOfTen = 20000;
+  unit2.powerOfTen = 30000;
+  XLAL_TRY( XLALUnitMultiply( &unit3, &unit1, &unit2 ), errnum );
+  XLAL_CHECK( errnum == XLAL_ERANGE, XLAL_EFAILED );
+  printf("  PASS: Exponent outside of (U)INT2 bounds\n");
 
-    printf("Checking Input Validation of LALUnitMultiply:\n");
+  unit1.powerOfTen = 0;
+  unit2.powerOfTen = 0;
+  unit1.unitNumerator[2] = 12345;
+  unit1.unitDenominatorMinusOne[2] = 23456;
+  unit2.unitNumerator[2] = 23456;
+  unit2.unitDenominatorMinusOne[2] = 12345;
+  XLAL_TRY( XLALUnitMultiply( &unit3, &unit1, &unit2 ), errnum );
+  XLAL_CHECK( errnum == XLAL_ERANGE, XLAL_EFAILED );
+  printf("  PASS: Product outside of (U)INT2 bounds\n");
 
-    LALUnitMultiply( &status, NULL, &unitPair );
-    TestStatus(&status, CODES(UNITSH_ENULLPOUT), UNITSTESTC_ECHK);
-    printf("  PASS: %s\n", UNITSH_MSGENULLPOUT);
+  printf("Checking input validation of XLALUnitRaiseRAT4:\n");
 
-    LALUnitMultiply( &status, &unit1, NULL );
-    TestStatus(&status, CODES(UNITSH_ENULLPIN), UNITSTESTC_ECHK);
-    printf("  PASS: %s\n", UNITSH_MSGENULLPIN);
+  XLAL_TRY( XLALUnitRaiseRAT4( NULL, &unit1, &power ), errnum );
+  XLAL_CHECK( errnum == XLAL_EFAULT, XLAL_EFAILED );
+  printf("  PASS: Null pointer to output LALUnit\n");
 
-    unit1.powerOfTen = 20000;
-    unit2.powerOfTen = 30000;
+  XLAL_TRY( XLALUnitRaiseRAT4( &unit3, NULL, &power ), errnum );
+  XLAL_CHECK( errnum == XLAL_EFAULT, XLAL_EFAILED );
+  printf("  PASS: Null pointer to input LALUnit\n");
 
-    LALUnitMultiply( &status, &unit1, &unitPair );
-    TestStatus(&status, CODES(UNITSH_EOVERFLOW), UNITSTESTC_ECHK);
-    printf("  PASS: %s\n", UNITSH_MSGEOVERFLOW);
+  XLAL_TRY( XLALUnitRaiseRAT4( &unit3, &unit1, NULL ), errnum );
+  XLAL_CHECK( errnum == XLAL_EFAULT, XLAL_EFAILED );
+  printf("  PASS: Null pointer to input RAT4\n");
 
-    unit1.powerOfTen = 0;
-    unit2.powerOfTen = 0;
-    unit1.unitNumerator[2] = 12345;
-    unit1.unitDenominatorMinusOne[2] = 23456;
-    unit2.unitNumerator[2] = 23456;
-    unit2.unitDenominatorMinusOne[2] = 12345;
+  unit1 = lalKiloUnit;
+  power.numerator = 1;
+  power.denominatorMinusOne = 1;
+  XLAL_TRY( XLALUnitRaiseRAT4( &unit2, &unit1, &power ), errnum );
+  XLAL_CHECK( errnum == XLAL_EINVAL, XLAL_EFAILED );
+  printf("  PASS: Non-integer power of ten\n");
 
-    LALUnitMultiply( &status, &unit1, &unitPair );
-    TestStatus(&status, CODES(UNITSH_EOVERFLOW), UNITSTESTC_ECHK);
-    printf("  PASS: %s\n", UNITSH_MSGEOVERFLOW);
+  unit1.unitNumerator[2] = 20000;
+  unit1.unitNumerator[2] += 20000;
+  power.numerator = 2;
+  power.denominatorMinusOne = 0;
+  XLAL_TRY( XLALUnitRaiseRAT4( &unit2, &unit1, &power ), errnum );
+  XLAL_CHECK( errnum == XLAL_ERANGE, XLAL_EFAILED );
+  printf("  PASS: Exponent outside of (U)INT2 bounds\n");
 
-    printf("Checking Input Validation of LALUnitRaise:\n");
+  printf("Testing response of XLALUnitNormalize to valid data:\n");
 
-    LALUnitRaise( &status, NULL, &unit1, &power );
-    TestStatus(&status, CODES(UNITSH_ENULLPOUT), UNITSTESTC_ECHK);
-    printf("  PASS: %s\n", UNITSH_MSGENULLPOUT);
-
-    LALUnitRaise( &status, &unit1, NULL, &power );
-    TestStatus(&status, CODES(UNITSH_ENULLPIN), UNITSTESTC_ECHK);
-    printf("  PASS: %s\n", UNITSH_MSGENULLPIN);
-
-    LALUnitRaise( &status, &unit1, &unit1, NULL );
-    TestStatus(&status, CODES(UNITSH_ENULLPPARAM), UNITSTESTC_ECHK);
-    printf("  PASS: %s\n", UNITSH_MSGENULLPPARAM);
-
-    unit1 = lalKiloUnit;
-    power.numerator = 1;
-    power.denominatorMinusOne = 1;
-    LALUnitRaise( &status, &unit1, &unit1, &power );
-    TestStatus(&status, CODES(UNITSH_ENONINT), UNITSTESTC_ECHK);
-    printf("  PASS: %s\n", UNITSH_MSGENONINT);
-
-    unit1.unitNumerator[2] = 20000;
-    unit1.unitNumerator[2] += 20000;
-    power.numerator = 2;
-    power.denominatorMinusOne = 0;
-    LALUnitRaise( &status, &unit1, &unit1, &power );
-    TestStatus(&status, CODES(UNITSH_EOVERFLOW), UNITSTESTC_ECHK);
-    printf("  PASS: %s\n", UNITSH_MSGEOVERFLOW);
-
-    printf("Checking Input Validation of LALNormalize:\n");
-
-    LALUnitRaise( &status, NULL, &unit1, &power );
-    TestStatus(&status, CODES(UNITSH_ENULLPOUT), UNITSTESTC_ECHK);
-    printf("  PASS: %s\n", UNITSH_MSGENULLPOUT);
-
-    LALUnitRaise( &status, &unit1, NULL, &power );
-    TestStatus(&status, CODES(UNITSH_ENULLPIN), UNITSTESTC_ECHK);
-    printf("  PASS: %s\n", UNITSH_MSGENULLPIN);
-  }
-#endif /* LAL_NDEBUG */
-
-  printf("Testing response of LALUnitNormalize to valid data:\n");
-
-  unit2 = lalDimensionlessUnit;
-  unit2.unitNumerator[0] = 2;
-  unit2.unitDenominatorMinusOne[0] = 5;
-
-  LALUnitNormalize( &status, &unit1, &unit2 );
-  TestStatus(&status, CODES(0), UNITSTESTC_EFLS);
-
+  unit1 = lalDimensionlessUnit;
+  unit1.unitNumerator[0] = 2;
+  unit1.unitDenominatorMinusOne[0] = 5;
+  XLAL_CHECK( XLALUnitNormalize( &unit1 ) == XLAL_SUCCESS, XLAL_EFAILED );
   unit2 = lalDimensionlessUnit;
   unit2.unitNumerator[0] = 1;
   unit2.unitDenominatorMinusOne[0] = 2;
-
-  unitPair.unitOne = &unit1;
-  unitPair.unitTwo = &unit2;
-
-  LALUnitCompare( &status, &answer, &unitPair );
-  TestStatus(&status, CODES(0), UNITSTESTC_EFLS);
-  if (!answer)
-  {
-    fprintf (stderr, "\nExiting to system with code %d\n", UNITSTESTC_EFLS);
-    return UNITSTESTC_EFLS;
-  }
+  XLAL_CHECK( XLALUnitCompare( &unit1, &unit2 ) == 0, XLAL_EFAILED );
   printf("  PASS: 2/6 reduces to 1/3\n");
 
+  printf("Checking input validation of XLALUnitCompare:\n");
 
-#ifndef LAL_NDEBUG
-  if ( ! lalNoDebug )
-  {
-    printf("Checking Input Validation of LALUnitCompare:\n");
+  XLAL_TRY( XLALUnitCompare( &unit1, NULL ), errnum );
+  XLAL_CHECK( errnum == XLAL_EFAULT, XLAL_EFAILED );
+  XLAL_TRY( XLALUnitCompare( NULL, &unit2 ), errnum );
+  XLAL_CHECK( errnum == XLAL_EFAULT, XLAL_EFAILED );
+  printf("  PASS: Null pointer to input LALUnits\n");
 
-    LALUnitCompare( &status, NULL, &unitPair );
-    TestStatus(&status, CODES(UNITSH_ENULLPOUT), UNITSTESTC_ECHK);
-    printf("  PASS: %s\n", UNITSH_MSGENULLPOUT);
+  printf("Testing response of XLALUnitCompare to valid data:\n");
 
-    LALUnitCompare( &status, &answer, NULL );
-    TestStatus(&status, CODES(UNITSH_ENULLPIN), UNITSTESTC_ECHK);
-    printf("  PASS: %s\n", UNITSH_MSGENULLPIN);
-  }
-#endif /* LAL_NDEBUG */
-
-  printf("Testing response of LALUnitCompare to valid data:\n");
-
-  unitPair.unitOne = &lalMeterUnit;
-  unitPair.unitTwo = &lalMeterUnit;
-
-  LALUnitCompare( &status, &answer, &unitPair );
-  TestStatus(&status, CODES(0), UNITSTESTC_EFLS);
-  if ( !answer )
-  {
-    fprintf (stderr, "\nExiting to system with code %d\n", UNITSTESTC_EFLS);
-    return UNITSTESTC_EFLS;
-  }
+  XLAL_CHECK( XLALUnitCompare( &lalMeterUnit, &lalMeterUnit ) == 0, XLAL_EFAILED );
   printf("  PASS: m = m\n");
 
-  unitPair.unitTwo = &lalKiloGramUnit;
-
-  LALUnitCompare( &status, &answer, &unitPair );
-  TestStatus(&status, CODES(0), UNITSTESTC_EFLS);
-  if ( answer )
-  {
-    fprintf (stderr, "\nExiting to system with code %d\n", UNITSTESTC_EFLS);
-    return UNITSTESTC_EFLS;
-  }
+  XLAL_CHECK( XLALUnitCompare( &lalMeterUnit, &lalKiloGramUnit ) != 0, XLAL_EFAILED );
   printf("  PASS: m != kg\n");
 
-  unitPair.unitOne = &lalGramUnit;
-
-  LALUnitCompare( &status, &answer, &unitPair );
-  TestStatus(&status, CODES(0), UNITSTESTC_EFLS);
-  if ( answer )
-  {
-    fprintf (stderr, "\nExiting to system with code %d\n", UNITSTESTC_EFLS);
-    return UNITSTESTC_EFLS;
-  }
+  XLAL_CHECK( XLALUnitCompare( &lalGramUnit, &lalKiloGramUnit ) != 0, XLAL_EFAILED );
   printf("  PASS: g != kg\n");
 
   printf("Testing definitions of basic units:\n");
 
-  unitPair.unitOne = &unit1;
-
   unit1 = lalDimensionlessUnit;
   unit1.unitNumerator[LALUnitIndexMeter] = 1;
-  unitPair.unitTwo = &lalMeterUnit;
-  LALUnitCompare( &status, &answer, &unitPair );
-  TestStatus(&status, CODES(0), UNITSTESTC_EFLS);
-  if ( !answer || unitPair.unitTwo->unitNumerator[LALUnitIndexMeter] != 1 )
-  {
-    fprintf (stderr, "\nExiting to system with code %d\n", UNITSTESTC_EFLS);
-    return UNITSTESTC_EFLS;
-  }
+  unit2 = lalMeterUnit;
+  XLAL_CHECK( XLALUnitCompare( &unit1, &unit2 ) == 0, XLAL_EFAILED );
+  XLAL_CHECK( unit2.unitNumerator[LALUnitIndexMeter] == 1, XLAL_EFAILED );
   printf("  PASS: meter\n");
 
   unit1 = lalDimensionlessUnit;
   unit1.unitNumerator[LALUnitIndexKiloGram] = 1;
-  unitPair.unitTwo = &lalKiloGramUnit;
-  LALUnitCompare( &status, &answer, &unitPair );
-  TestStatus(&status, CODES(0), UNITSTESTC_EFLS);
-  if ( !answer || unitPair.unitTwo->unitNumerator[LALUnitIndexKiloGram] != 1 )
-  {
-    fprintf (stderr, "\nExiting to system with code %d\n", UNITSTESTC_EFLS);
-    return UNITSTESTC_EFLS;
-  }
+  unit2 = lalKiloGramUnit;
+  XLAL_CHECK( XLALUnitCompare( &unit1, &unit2 ) == 0, XLAL_EFAILED );
+  XLAL_CHECK( unit2.unitNumerator[LALUnitIndexKiloGram] == 1, XLAL_EFAILED );
   printf("  PASS: kilogram\n");
 
   unit1 = lalDimensionlessUnit;
   unit1.unitNumerator[LALUnitIndexSecond] = 1;
-  unitPair.unitTwo = &lalSecondUnit;
-  LALUnitCompare( &status, &answer, &unitPair );
-  TestStatus(&status, CODES(0), UNITSTESTC_EFLS);
-  if ( !answer || unitPair.unitTwo->unitNumerator[LALUnitIndexSecond] != 1 )
-  {
-    fprintf (stderr, "\nExiting to system with code %d\n", UNITSTESTC_EFLS);
-    return UNITSTESTC_EFLS;
-  }
+  unit2 = lalSecondUnit;
+  XLAL_CHECK( XLALUnitCompare( &unit1, &unit2 ) == 0, XLAL_EFAILED );
+  XLAL_CHECK( unit2.unitNumerator[LALUnitIndexSecond] == 1, XLAL_EFAILED );
   printf("  PASS: second\n");
 
   unit1 = lalDimensionlessUnit;
   unit1.unitNumerator[LALUnitIndexAmpere] = 1;
-  unitPair.unitTwo = &lalAmpereUnit;
-  LALUnitCompare( &status, &answer, &unitPair );
-  TestStatus(&status, CODES(0), UNITSTESTC_EFLS);
-  if ( !answer || unitPair.unitTwo->unitNumerator[LALUnitIndexAmpere] != 1 )
-  {
-    fprintf (stderr, "\nExiting to system with code %d\n", UNITSTESTC_EFLS);
-    return UNITSTESTC_EFLS;
-  }
+  unit2 = lalAmpereUnit;
+  XLAL_CHECK( XLALUnitCompare( &unit1, &unit2 ) == 0, XLAL_EFAILED );
+  XLAL_CHECK( unit2.unitNumerator[LALUnitIndexAmpere] == 1, XLAL_EFAILED );
   printf("  PASS: Ampere\n");
 
   unit1 = lalDimensionlessUnit;
   unit1.unitNumerator[LALUnitIndexKelvin] = 1;
-  unitPair.unitTwo = &lalKelvinUnit;
-  LALUnitCompare( &status, &answer, &unitPair );
-  TestStatus(&status, CODES(0), UNITSTESTC_EFLS);
-  if ( !answer || unitPair.unitTwo->unitNumerator[LALUnitIndexKelvin] != 1 )
-  {
-    fprintf (stderr, "\nExiting to system with code %d\n", UNITSTESTC_EFLS);
-    return UNITSTESTC_EFLS;
-  }
+  unit2 = lalKelvinUnit;
+  XLAL_CHECK( XLALUnitCompare( &unit1, &unit2 ) == 0, XLAL_EFAILED );
+  XLAL_CHECK( unit2.unitNumerator[LALUnitIndexKelvin] == 1, XLAL_EFAILED );
   printf("  PASS: Kelvin\n");
 
   unit1 = lalDimensionlessUnit;
   unit1.unitNumerator[LALUnitIndexStrain] = 1;
-  unitPair.unitTwo = &lalStrainUnit;
-  LALUnitCompare( &status, &answer, &unitPair );
-  TestStatus(&status, CODES(0), UNITSTESTC_EFLS);
-  if ( !answer || unitPair.unitTwo->unitNumerator[LALUnitIndexStrain] != 1 )
-  {
-    fprintf (stderr, "\nExiting to system with code %d\n", UNITSTESTC_EFLS);
-    return UNITSTESTC_EFLS;
-  }
+  unit2 = lalStrainUnit;
+  XLAL_CHECK( XLALUnitCompare( &unit1, &unit2 ) == 0, XLAL_EFAILED );
+  XLAL_CHECK( unit2.unitNumerator[LALUnitIndexStrain] == 1, XLAL_EFAILED );
   printf("  PASS: strain\n");
 
   unit1 = lalDimensionlessUnit;
   unit1.unitNumerator[LALUnitIndexADCCount] = 1;
-  unitPair.unitTwo = &lalADCCountUnit;
-  LALUnitCompare( &status, &answer, &unitPair );
-  TestStatus(&status, CODES(0), UNITSTESTC_EFLS);
-  if ( !answer || unitPair.unitTwo->unitNumerator[LALUnitIndexADCCount] != 1 )
-  {
-    fprintf (stderr, "\nExiting to system with code %d\n", UNITSTESTC_EFLS);
-    return UNITSTESTC_EFLS;
-  }
+  unit2 = lalADCCountUnit;
+  XLAL_CHECK( XLALUnitCompare( &unit1, &unit2 ) == 0, XLAL_EFAILED );
+  XLAL_CHECK( unit2.unitNumerator[LALUnitIndexADCCount] == 1, XLAL_EFAILED );
   printf("  PASS: ADC Count\n");
 
   printf("Testing definitions of derived units:\n");
 
   power.numerator = -1;
   power.denominatorMinusOne = 0;
-  LALUnitRaise( &status, &unit1, &lalSecondUnit, &power );
-  TestStatus(&status, CODES(0), UNITSTESTC_EFLS);
-  unitPair.unitTwo = &lalHertzUnit;
-  LALUnitCompare( &status, &answer, &unitPair );
-  TestStatus(&status, CODES(0), UNITSTESTC_EFLS);
-  if ( !answer )
-  {
-    fprintf (stderr, "\nExiting to system with code %d\n", UNITSTESTC_EFLS);
-    return UNITSTESTC_EFLS;
-  }
+  XLAL_CHECK( XLALUnitRaiseRAT4( &unit1, &lalSecondUnit, &power ) != NULL, XLAL_EFAILED );
+  XLAL_CHECK( XLALUnitCompare( &unit1, &lalHertzUnit ) == 0, XLAL_EFAILED );
   printf("  PASS: Hz is s^-1\n");
 
   power.numerator = -2;
   power.denominatorMinusOne = 0;
-  LALUnitRaise( &status, &unit2, &lalSecondUnit, &power);
-  TestStatus(&status, CODES(0), UNITSTESTC_EFLS);
-  unitPair.unitOne = &lalMeterUnit;
-  unitPair.unitTwo = &unit2;
-  LALUnitMultiply( &status, &unit1, &unitPair); /* unit is now m/s^2 */
-  TestStatus(&status, CODES(0), UNITSTESTC_EFLS);
-  unitPair.unitOne = &lalKiloGramUnit;
-  unitPair.unitTwo = &unit1;
-  LALUnitMultiply( &status, &unit2, &unitPair);
-  TestStatus(&status, CODES(0), UNITSTESTC_EFLS);
-  unitPair.unitOne = &unit2;
-  unitPair.unitTwo = &lalNewtonUnit;
-  LALUnitCompare( &status, &answer, &unitPair );
-  TestStatus(&status, CODES(0), UNITSTESTC_EFLS);
-  if ( !answer )
-  {
-    fprintf (stderr, "\nExiting to system with code %d\n", UNITSTESTC_EFLS);
-    return UNITSTESTC_EFLS;
-  }
+  XLAL_CHECK( XLALUnitRaiseRAT4( &unit2, &lalSecondUnit, &power ) != NULL, XLAL_EFAILED );
+  XLAL_CHECK( XLALUnitMultiply( &unit1, &lalMeterUnit, &unit2 ) != NULL, XLAL_EFAILED );
+  XLAL_CHECK( XLALUnitMultiply( &unit2, &lalKiloGramUnit, &unit1 ) != NULL, XLAL_EFAILED );
+  XLAL_CHECK( XLALUnitCompare( &unit2, &lalNewtonUnit ) == 0, XLAL_EFAILED );
   printf("  PASS: N is kg m s^-2\n");
 
   power.numerator = -2;
   power.denominatorMinusOne = 0;
-  LALUnitRaise( &status, &unit2, &lalMeterUnit, &power );
-  TestStatus(&status, CODES(0), UNITSTESTC_EFLS);
-  unitPair.unitOne = &lalNewtonUnit;
-  unitPair.unitTwo = &unit2;
-  LALUnitMultiply( &status, &unit1, &unitPair);
-  TestStatus(&status, CODES(0), UNITSTESTC_EFLS);
-  unitPair.unitOne = &unit1;
-  unitPair.unitTwo = &lalPascalUnit;
-  LALUnitCompare( &status, &answer, &unitPair );
-  TestStatus(&status, CODES(0), UNITSTESTC_EFLS);
-  if ( !answer )
-  {
-    fprintf (stderr, "\nExiting to system with code %d\n", UNITSTESTC_EFLS);
-    return UNITSTESTC_EFLS;
-  }
+  XLAL_CHECK( XLALUnitRaiseRAT4( &unit2, &lalMeterUnit, &power ) != NULL, XLAL_EFAILED );
+  XLAL_CHECK( XLALUnitMultiply( &unit1, &lalNewtonUnit, &unit2 ) != NULL, XLAL_EFAILED );
+  XLAL_CHECK( XLALUnitCompare( &unit1, &lalPascalUnit ) == 0, XLAL_EFAILED );
   printf("  PASS: Pa is N m^-2\n");
 
-  unitPair.unitOne = &lalNewtonUnit;
-  unitPair.unitTwo = &lalMeterUnit;
-  LALUnitMultiply( &status, &unit1, &unitPair);
-  TestStatus(&status, CODES(0), UNITSTESTC_EFLS);
-  unitPair.unitOne = &unit1;
-  unitPair.unitTwo = &lalJouleUnit;
-  LALUnitCompare( &status, &answer, &unitPair );
-  TestStatus(&status, CODES(0), UNITSTESTC_EFLS);
-  if ( !answer )
-  {
-    fprintf (stderr, "\nExiting to system with code %d\n", UNITSTESTC_EFLS);
-    return UNITSTESTC_EFLS;
-  }
+  XLAL_CHECK( XLALUnitMultiply( &unit1, &lalNewtonUnit, &lalMeterUnit ) != NULL, XLAL_EFAILED );
+  XLAL_CHECK( XLALUnitCompare( &unit1, &lalJouleUnit ) == 0, XLAL_EFAILED );
   printf("  PASS: J is N m\n");
 
   power.numerator = -1;
   power.denominatorMinusOne = 0;
-  LALUnitRaise( &status, &unit2, &lalSecondUnit, &power );
-  TestStatus(&status, CODES(0), UNITSTESTC_EFLS);
-  unitPair.unitOne = &lalJouleUnit;
-  unitPair.unitTwo = &unit2;
-  LALUnitMultiply( &status, &unit1, &unitPair);
-  TestStatus(&status, CODES(0), UNITSTESTC_EFLS);
-  unitPair.unitOne = &unit1;
-  unitPair.unitTwo = &lalWattUnit;
-  LALUnitCompare( &status, &answer, &unitPair );
-  TestStatus(&status, CODES(0), UNITSTESTC_EFLS);
-  if ( !answer )
-  {
-    fprintf (stderr, "\nExiting to system with code %d\n", UNITSTESTC_EFLS);
-    return UNITSTESTC_EFLS;
-  }
+  XLAL_CHECK( XLALUnitRaiseRAT4( &unit2, &lalSecondUnit, &power ) != NULL, XLAL_EFAILED );
+  XLAL_CHECK( XLALUnitMultiply( &unit1, &lalJouleUnit, &unit2 ) != NULL, XLAL_EFAILED );
+  XLAL_CHECK( XLALUnitCompare( &unit1, &lalWattUnit ) == 0, XLAL_EFAILED );
   printf("  PASS: W is J/s\n");
 
-  unitPair.unitOne = &lalAmpereUnit;
-  unitPair.unitTwo = &lalSecondUnit;
-  LALUnitMultiply( &status, &unit1, &unitPair);
-  TestStatus(&status, CODES(0), UNITSTESTC_EFLS);
-  unitPair.unitOne = &unit1;
-  unitPair.unitTwo = &lalCoulombUnit;
-
-  LALUnitCompare( &status, &answer, &unitPair );
-  TestStatus(&status, CODES(0), UNITSTESTC_EFLS);
-  if ( !answer )
-  {
-    fprintf (stderr, "\nExiting to system with code %d\n", UNITSTESTC_EFLS);
-    return UNITSTESTC_EFLS;
-  }
+  XLAL_CHECK( XLALUnitMultiply( &unit1, &lalAmpereUnit, &lalSecondUnit ) != NULL, XLAL_EFAILED );
+  XLAL_CHECK( XLALUnitCompare( &unit1, &lalCoulombUnit ) == 0, XLAL_EFAILED );
   printf("  PASS: C is A s\n");
 
   power.numerator = -1;
   power.denominatorMinusOne = 0;
-  LALUnitRaise( &status, &unit2, &lalAmpereUnit, &power );
-  TestStatus(&status, CODES(0), UNITSTESTC_EFLS);
-  unitPair.unitOne = &lalWattUnit;
-  unitPair.unitTwo = &unit2;
-  LALUnitMultiply( &status, &unit1, &unitPair);
-  TestStatus(&status, CODES(0), UNITSTESTC_EFLS);
-  unitPair.unitOne = &unit1;
-  unitPair.unitTwo = &lalVoltUnit;
-  LALUnitCompare( &status, &answer, &unitPair );
-  TestStatus(&status, CODES(0), UNITSTESTC_EFLS);
-  if ( !answer )
-  {
-    fprintf (stderr, "\nExiting to system with code %d\n", UNITSTESTC_EFLS);
-    return UNITSTESTC_EFLS;
-  }
+  XLAL_CHECK( XLALUnitRaiseRAT4( &unit2, &lalAmpereUnit, &power ) != NULL, XLAL_EFAILED );
+  XLAL_CHECK( XLALUnitMultiply( &unit1, &lalWattUnit, &unit2 ) != NULL, XLAL_EFAILED );
+  XLAL_CHECK( XLALUnitCompare( &unit1, &lalVoltUnit ) == 0, XLAL_EFAILED );
   printf("  PASS: V is W/A\n");
 
   power.numerator = -1;
   power.denominatorMinusOne = 0;
-  LALUnitRaise( &status, &unit2, &lalAmpereUnit, &power );
-  TestStatus(&status, CODES(0), UNITSTESTC_EFLS);
-  unitPair.unitOne = &lalVoltUnit;
-  unitPair.unitTwo = &unit2;
-  LALUnitMultiply( &status, &unit1, &unitPair);
-  TestStatus(&status, CODES(0), UNITSTESTC_EFLS);
-  unitPair.unitOne = &unit1;
-  unitPair.unitTwo = &lalOhmUnit;
-  LALUnitCompare( &status, &answer, &unitPair );
-  TestStatus(&status, CODES(0), UNITSTESTC_EFLS);
-  if ( !answer )
-  {
-    fprintf (stderr, "\nExiting to system with code %d\n", UNITSTESTC_EFLS);
-    return UNITSTESTC_EFLS;
-  }
+  XLAL_CHECK( XLALUnitRaiseRAT4( &unit2, &lalAmpereUnit, &power ) != NULL, XLAL_EFAILED );
+  XLAL_CHECK( XLALUnitMultiply( &unit1, &lalVoltUnit, &unit2 ) != NULL, XLAL_EFAILED );
+  XLAL_CHECK( XLALUnitCompare( &unit1, &lalOhmUnit ) == 0, XLAL_EFAILED );
   printf("  PASS: Ohm is V/A\n");
 
   power.numerator = -1;
   power.denominatorMinusOne = 0;
-  LALUnitRaise( &status, &unit2, &lalVoltUnit, &power );
-  TestStatus(&status, CODES(0), UNITSTESTC_EFLS);
-  unitPair.unitOne = &lalCoulombUnit;
-  unitPair.unitTwo = &unit2;
-  LALUnitMultiply( &status, &unit1, &unitPair);
-  TestStatus(&status, CODES(0), UNITSTESTC_EFLS);
-  unitPair.unitOne = &unit1;
-  unitPair.unitTwo = &lalFaradUnit;
-  LALUnitCompare( &status, &answer, &unitPair );
-  TestStatus(&status, CODES(0), UNITSTESTC_EFLS);
-  if ( !answer )
-  {
-    fprintf (stderr, "\nExiting to system with code %d\n", UNITSTESTC_EFLS);
-    return UNITSTESTC_EFLS;
-  }
+  XLAL_CHECK( XLALUnitRaiseRAT4( &unit2, &lalVoltUnit, &power ) != NULL, XLAL_EFAILED );
+  XLAL_CHECK( XLALUnitMultiply( &unit1, &lalCoulombUnit, &unit2 ) != NULL, XLAL_EFAILED );
+  XLAL_CHECK( XLALUnitCompare( &unit1, &lalFaradUnit ) == 0, XLAL_EFAILED );
   printf("  PASS: F is C/V\n");
 
-  unitPair.unitOne = &lalVoltUnit;
-  unitPair.unitTwo = &lalSecondUnit;
-  LALUnitMultiply( &status, &unit1, &unitPair);
-  TestStatus(&status, CODES(0), UNITSTESTC_EFLS);
-  unitPair.unitOne = &unit1;
-  unitPair.unitTwo = &lalWeberUnit;
-  LALUnitCompare( &status, &answer, &unitPair );
-  TestStatus(&status, CODES(0), UNITSTESTC_EFLS);
-  if ( !answer )
-  {
-    fprintf (stderr, "\nExiting to system with code %d\n", UNITSTESTC_EFLS);
-    return UNITSTESTC_EFLS;
-  }
+  XLAL_CHECK( XLALUnitMultiply( &unit1, &lalVoltUnit, &lalSecondUnit ) != NULL, XLAL_EFAILED );
+  XLAL_CHECK( XLALUnitCompare( &unit1, &lalWeberUnit ) == 0, XLAL_EFAILED );
   printf("  PASS: Wb is V s\n");
 
   power.numerator = -1;
   power.denominatorMinusOne = 0;
-  LALUnitRaise( &status, &unit2, &lalAmpereUnit, &power );
-  TestStatus(&status, CODES(0), UNITSTESTC_EFLS);
-  unitPair.unitOne = &lalSecondUnit;
-  unitPair.unitTwo = &unit2;
-  LALUnitMultiply( &status, &unit1, &unitPair);
-  TestStatus(&status, CODES(0), UNITSTESTC_EFLS);
-  unitPair.unitOne = &lalVoltUnit;
-  unitPair.unitTwo = &unit1;
-  LALUnitMultiply( &status, &unit1, &unitPair);
-  TestStatus(&status, CODES(0), UNITSTESTC_EFLS);
-  unitPair.unitOne = &unit1;
-  unitPair.unitTwo = &lalHenryUnit;
-  LALUnitCompare( &status, &answer, &unitPair );
-  TestStatus(&status, CODES(0), UNITSTESTC_EFLS);
-  if ( !answer )
-  {
-    fprintf (stderr, "\nExiting to system with code %d\n", UNITSTESTC_EFLS);
-    return UNITSTESTC_EFLS;
-  }
+  XLAL_CHECK( XLALUnitRaiseRAT4( &unit2, &lalAmpereUnit, &power ) != NULL, XLAL_EFAILED );
+  XLAL_CHECK( XLALUnitMultiply( &unit1, &lalSecondUnit, &unit2 ) != NULL, XLAL_EFAILED );
+  XLAL_CHECK( XLALUnitMultiply( &unit1, &lalVoltUnit, &unit1 ) != NULL, XLAL_EFAILED );
+  XLAL_CHECK( XLALUnitCompare( &unit1, &lalHenryUnit ) == 0, XLAL_EFAILED );
   printf("  PASS: H is V s/A\n");
 
   power.numerator = -2;
   power.denominatorMinusOne = 0;
-  LALUnitRaise( &status, &unit2, &lalMeterUnit, &power );
-  TestStatus(&status, CODES(0), UNITSTESTC_EFLS);
-
-  unitPair.unitOne = &lalWeberUnit;
-  unitPair.unitTwo = &unit2;
-  LALUnitMultiply( &status, &unit1, &unitPair);
-  TestStatus(&status, CODES(0), UNITSTESTC_EFLS);
-  unitPair.unitOne = &unit1;
-  unitPair.unitTwo = &lalTeslaUnit;
-
-  LALUnitCompare( &status, &answer, &unitPair );
-  TestStatus(&status, CODES(0), UNITSTESTC_EFLS);
-  if ( !answer )
-  {
-    fprintf (stderr, "\nExiting to system with code %d\n", UNITSTESTC_EFLS);
-    return UNITSTESTC_EFLS;
-  }
+  XLAL_CHECK( XLALUnitRaiseRAT4( &unit2, &lalMeterUnit, &power ) != NULL, XLAL_EFAILED );
+  XLAL_CHECK( XLALUnitMultiply( &unit1, &lalWeberUnit, &unit2 ) != NULL, XLAL_EFAILED );
+  XLAL_CHECK( XLALUnitCompare( &unit1, &lalTeslaUnit ) == 0, XLAL_EFAILED );
   printf("  PASS: T is Wb m^-2\n");
 
   LALCheckMemoryLeaks();
 
   printf("PASS: All tests\n");
 
-  return UNITSTESTC_ENOM;
+  return 0;
+
 }
 
-
-/*----------------------------------------------------------------------*/
-
-
-/*
- * TestStatus ()
- *
- * Routine to check that the status code status->statusCode agrees with one of
- * the codes specified in the space-delimited string ignored; if not,
- * exit to the system with code exitcode.
- *
- */
-static void
-TestStatus (LALStatus *status, const char *ignored, int exitcode)
-{
-  char  str[64];
-  char *tok;
-
-  if (verbose)
-  {
-    REPORTSTATUS (status);
-  }
-
-  if (strncpy (str, ignored, sizeof (str)))
-  {
-    if ((tok = strtok (str, " ")))
-    {
-      do
-      {
-        if (status->statusCode == atoi (tok))
-        {
-          return;
-        }
-      }
-      while ((tok = strtok (NULL, " ")));
-    }
-    else
-    {
-      if (status->statusCode == atoi (tok))
-      {
-        return;
-      }
-    }
-  }
-
-  fprintf (stderr, "\nExiting to system with code %d\n", exitcode);
-  exit (exitcode);
-}
-
-/*
- * Usage ()
- *
- * Prints a usage message for program program and exits with code exitcode.
- *
- */
-static void
-Usage (const char *program, int exitcode)
-{
-  fprintf (stderr, "Usage: %s [options]\n", program);
-  fprintf (stderr, "Options:\n");
-  fprintf (stderr, "  -h         print this message\n");
-  fprintf (stderr, "  -q         quiet: run silently\n");
-  fprintf (stderr, "  -v         verbose: print extra information\n");
-  fprintf (stderr, "  -d level   set lalDebugLevel to level\n");
-  exit (exitcode);
-}
-
-
-/*
- * ParseOptions ()
- *
- * Parses the argc - 1 option strings in argv[].
- *
- */
-static void
-ParseOptions (int argc, char *argv[])
-{
-  FILE *fp;
-
-  while (1)
-  {
-    int c = -1;
-
-    c = getopt (argc, argv, "hqvd:");
-    if (c == -1)
-    {
-      break;
-    }
-
-    switch (c)
-    {
-      case 'd': /* set debug level */
-        break;
-
-      case 'v': /* verbose */
-        ++verbose;
-        break;
-
-      case 'q': /* quiet: run silently (ignore error messages) */
-        fp = freopen ("/dev/null", "w", stderr);
-        if (fp == NULL)
-        {
-          fprintf(stderr, "Error: unable to open /dev/null\n");
-          exit(1);
-        }
-        fp = freopen ("/dev/null", "w", stdout);
-        if (fp == NULL)
-        {
-          fprintf(stderr, "Error: unable to open /dev/null\n");
-          exit(1);
-        }
-        break;
-
-      case 'h':
-        Usage (argv[0], 0);
-        break;
-
-      default:
-        Usage (argv[0], 1);
-    }
-
-  }
-
-  if (optind < argc)
-  {
-    Usage (argv[0], 1);
-  }
-
-  return;
-}
 /** \endcond */
