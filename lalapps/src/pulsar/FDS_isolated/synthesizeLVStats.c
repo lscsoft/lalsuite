@@ -654,9 +654,7 @@ XLALInitCode ( ConfigVariables *cfg, const UserInput_t *uvar )
 
   /* get rid of all temporary memory allocated for this step */
   XLALDestroyMultiLALDetector ( multiDet );
-  XLALFree(edat->ephemE);
-  XLALFree(edat->ephemS);
-  XLALFree ( edat );
+  XLALDestroyEphemerisData ( edat );
   XLALDestroyMultiTimestamps ( multiTS );
   multiTS = NULL;
 
