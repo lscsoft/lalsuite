@@ -360,80 +360,95 @@ int XLALCalculatePulsarCrossCorrStatistic
   }
   return XLAL_SUCCESS;
 }
-/*calculate the weighted factors, also include the estimation of sensitivity E[rho]/(h_0)^2*/
-int XLALCalculateWeightedFactors
+/*calculate the weighted factors, and metric diagnol components, also include the estimation of sensitivity E[rho]/(h_0)^2*/
+int XLALCalculateMetricElements
   (
    REAL8             *TSquaWeightedAve, /*Output: weighted factors*/
    REAL8             *SinSquaWeightedAve,  
-   REAL8             *devTsq,           /*Output: mean time deviation^2*/
    REAL8             *hSens,            /*Output:sensitivity*/
+   REAL8             *g_ff,             /*Output:metric elements*/
+   REAL8             *g_aa, 
+   REAL8             *g_TT, 
    REAL8Vector       *G_alpha,       /* Input: vector of sigma_alpha values */ 
    SFTPairIndexList  *pairIndexList, /* Input: list of SFT pairs */
    SFTIndexList      *indexList,     /* Input: list of SFTs */   
    MultiSFTVector    *sfts,          /* Input: set of per-detector SFT vectors */
-   REAL8             pOrb            /* Input: orbit period in second*/
+   REAL8             pOrb,           /* Input: orbit period in second*/
+   REAL8             aPro,           /* Input: projected semimajor*/
+   REAL8             f              /* Input: frequency*/ 
+   /*REAL8             *devTsq,     */      /*Output: mean time deviation^2*/
+   /*REAL8             *g_pp,*/
    )
 {
-  UINT8 sftNum1;
-  UINT8 sftNum2;
-  UINT8 j,k,numalpha;
-  LIGOTimeGPS T1,T2;
-  LIGOTimeGPS *T3=NULL;
-  REAL8 T;
-  REAL8 Tmean=0;
-  REAL8 muT=0;
+  UINT8 sftNum1=0;
+  UINT8 sftNum2=0;
+  UINT8 j=0;
+  REAL8 T=0;
   REAL8 denom=0;
   REAL8 sinSquare=0;
   REAL8 tSquare=0;
   REAL8 rhosum=0;
- 
-  numalpha = G_alpha->length;
+  LIGOTimeGPS *T1=NULL;
+  LIGOTimeGPS *T2=NULL;
+   /*  REAL8 hfT=0;
+      REAL8 Tmean=0;
+      REAL8 muT=0;
+      REAL8 sumDev=0;
+      UINT8 k=0*/
+  
+   UINT8 numalpha = G_alpha->length;
 
   for (j=0; j < numalpha; j++) {
+    REAL8 sqrG_alpha=SQUARE(G_alpha->data[j]);
     sftNum1 = pairIndexList->data[j].sftNum[0];
     sftNum2 = pairIndexList->data[j].sftNum[1];
-    T1 = sfts->data[indexList->data[sftNum1].detInd]->data[indexList->data[sftNum1].sftInd].epoch;
-    T2 = sfts->data[indexList->data[sftNum2].detInd]->data[indexList->data[sftNum2].sftInd].epoch;
-    T3->gpsSeconds = -1*T2.gpsSeconds;
-    T3->gpsNanoSeconds = -1*T2.gpsNanoSeconds;
-    T = XLALGPSDiff( &T1, &T2 ); 
-    Tmean=0.5* XLALGPSDiff( &T1, T3 );
-    sinSquare +=SQUARE( G_alpha->data[j]*sin(LAL_PI*T/pOrb));/*(G_alpha)^2*(sin(\pi*T/T_orbit))^2*/
-    tSquare += SQUARE( G_alpha->data[j]*T);                 /*(\curlyg_alpha*)^2*T^2*/
-    denom +=SQUARE(G_alpha->data[j]);                      /*calculate the denominator*/
-    muT +=Tmean/numalpha;                                 /*calculate the average of Tmean*/
-    rhosum +=2*SQUARE(G_alpha->data[j]);
+    UINT8 detInd1 = indexList->data[sftNum1].detInd;
+    UINT8 detInd2 = indexList->data[sftNum2].detInd;
+    UINT8 sftInd1 = indexList->data[sftNum1].sftInd;
+    UINT8 sftInd2 = indexList->data[sftNum2].sftInd;
+   *T1= sfts->data[detInd1]->data[sftInd1].epoch;
+   *T2= sfts->data[detInd2]->data[sftInd2].epoch;
+    T = XLALGPSDiff( T1, T2 );
+    sinSquare += sqrG_alpha*SQUARE(sin(LAL_PI*T/pOrb));/*(G_alpha)^2*(sin(\pi*T/T_orbit))^2*/
+    tSquare += sqrG_alpha*SQUARE( G_alpha->data[j]*T); /*(\curlyg_alpha*)^2*T^2*/
+    denom += sqrG_alpha;                               /*calculate the denominator*/
+    rhosum += 2*sqrG_alpha;
+    /*hfT=0.5*T;
+      Tmean=XLALGPSAdd(&T2, hfT);*/
+    /*muT +=Tmean/numalpha;*/                            /*calculate the average of Tmean*/
       }
 
   *TSquaWeightedAve =(tSquare/denom);
   *SinSquaWeightedAve =(sinSquare/denom);
   *hSens = sqrt(rhosum);
+  *g_ff= *TSquaWeightedAve* 2 * SQUARE(LAL_PI);
+  *g_aa= *SinSquaWeightedAve* SQUARE(LAL_PI*f);
+  *g_TT= *SinSquaWeightedAve* SQUARE(2*SQUARE(LAL_PI)*f*aPro/pOrb);
+  return XLAL_SUCCESS;
 
-  for(k=0;k < numalpha;k++){
+  /* *g_pp=SQUARE(2*SQUARE(LAL_PI)*f*aPro/SQUARE(pOrb))*devTsq*SinSquaWeightedAve;*/
+  /*for(k=0;k < numalpha;k++){
     sftNum1 = pairIndexList->data[k].sftNum[0];
     sftNum2 = pairIndexList->data[k].sftNum[1];
     T1 = sfts->data[indexList->data[sftNum1].detInd]->data[indexList->data[sftNum1].sftInd].epoch;
     T2 = sfts->data[indexList->data[sftNum2].detInd]->data[indexList->data[sftNum2].sftInd].epoch;
-    T3->gpsSeconds = -1*T2.gpsSeconds;
-    T3->gpsNanoSeconds = -1*T2.gpsNanoSeconds;
-    Tmean=0.5* XLALGPSDiff( &T1, T3 );
-    *devTsq +=SQUARE(Tmean-muT)/numalpha;        /*calculate the mean time deviation squared*/
-  }  
-  
-  return XLAL_SUCCESS;
+    Tmean=XLALGPSAdd(&T2, hfT);*/
+  /*sumDev +=SQUARE (G_alpha->data[k]*(Tmean-muT));  */      /*calculate the mean time deviation squared*/
+    /* }  */
+  /**devTsq=sumDev/denom;*/
 }
 
-int XLALCalculateMetricElements
+/*int XLALCalculateMetricElements
 ( 
-   REAL8             *g_ff, /*Output:metric elements*/
+   REAL8             *g_ff, Output:metric elements
    REAL8             *g_aa, 
    REAL8             *g_TT, 
    REAL8             *g_pp,
-   REAL8             aPro,             /*Input: variables*/
+   REAL8             aPro,            Input: variables
    REAL8             f,
    REAL8             pOrb,
-   REAL8             devTsq,           /*Input: T deviation^2 function(5.25)*/
-   REAL8             TSquaWeightedAve, /*Input: weighted factors*/
+   REAL8             devTsq,           Input: T deviation^2 function(5.25)
+   REAL8             TSquaWeightedAve, Input: weighted factors
    REAL8             SinSquaWeightedAve 
     )
 {
@@ -443,3 +458,4 @@ int XLALCalculateMetricElements
   *g_pp=SQUARE(2*SQUARE(LAL_PI)*f*aPro/SQUARE(pOrb))*devTsq*SinSquaWeightedAve;
   return XLAL_SUCCESS;
 }
+*/

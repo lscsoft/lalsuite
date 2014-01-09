@@ -126,7 +126,7 @@ int main(int argc, char *argv[]){
   REAL8Vector *curlyGUnshifted = NULL;
   REAL8 tSqAvg=0;/*weightedfactors*/
   REAL8 sinSqAvg=0;
-  REAL8 devmeanTsq=0;
+  /* REAL8 devmeanTsq=0;*/
   REAL8 diagff=0; /*diagnal metric components*/
   REAL8 diagaa=0;
   REAL8 diagTT=0;
@@ -296,16 +296,16 @@ int main(int argc, char *argv[]){
     LogPrintf ( LOG_CRITICAL, "%s: XLALCalculateAveCurlyGUnshifted() failed with errno=%d\n", __func__, xlalErrno );
     XLAL_ERROR( XLAL_EFUNC );
   }
-  /*Get weighted factors T_alpha sin^2(_pi T/pOrb), also estimate sensitivity i.e. E[rho]/(h0)^2 (4.13)*/
-  if ( (XLALCalculateWeightedFactors( &tSqAvg,&sinSqAvg,&devmeanTsq,&estSens,curlyGUnshifted,sftPairs,sftIndices,inputSFTs,uvar.orbitPSec)  != XLAL_SUCCESS ) ) {
-    LogPrintf ( LOG_CRITICAL, "%s: XLALCalculateWeightedFactors() failed with errno=%d\n", __func__, xlalErrno );
-    XLAL_ERROR( XLAL_EFUNC );
-  }
-  /*Calculate metric diagonal components*/
-  if ( (XLALCalculateMetricElements( &diagff,&diagaa,&diagTT,&diagpp,uvar.orbitAsiniSec,uvar.fStart,uvar.orbitPSec,devmeanTsq,tSqAvg,sinSqAvg)  != XLAL_SUCCESS ) ) {
+  /*Get weighted factors T_alpha & sin^2(_pi T/pOrb),metric diagonal components, also estimate sensitivity i.e. E[rho]/(h0)^2 (4.13)*/
+  if ( (XLALCalculateMetricElements( &tSqAvg,&sinSqAvg,/*&devmeanTsq,*/&estSens,&diagff,&diagaa,&diagTT,curlyGUnshifted,sftPairs,sftIndices,inputSFTs,uvar.orbitPSec,uvar.orbitAsiniSec,uvar.fStart)  != XLAL_SUCCESS ) ) {
     LogPrintf ( LOG_CRITICAL, "%s: XLALCalculateMetricElements() failed with errno=%d\n", __func__, xlalErrno );
     XLAL_ERROR( XLAL_EFUNC );
   }
+ 
+  /* if ( (XLALCalculateMetricElements( &diagff,&diagaa,&diagTT,&diagpp,uvar.orbitAsiniSec,uvar.fStart,uvar.orbitPSec,devmeanTsq,tSqAvg,sinSqAvg)  != XLAL_SUCCESS ) ) {
+    LogPrintf ( LOG_CRITICAL, "%s: XLALCalculateMetricElements() failed with errno=%d\n", __func__, xlalErrno );
+    XLAL_ERROR( XLAL_EFUNC );
+    }*/
 
   /* initialize the doppler scan struct which stores the current template information */
   XLALGPSSetREAL8(&dopplerpos.refTime, uvar.refTime);
