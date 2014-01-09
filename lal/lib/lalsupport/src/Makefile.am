@@ -26,9 +26,9 @@ liblalsupport_la_SOURCES = \
 	StreamVectorInput.c \
 	StreamVectorSequenceInput.c \
 	UserInput.c \
-	getopt.c \
-	getopt.h \
-	getopt1.c
+	LALgetopt.c \
+	LALgetopt.h
+
 
 liblalsupport_la_LIBADD = $(top_builddir)/lib/lal/liblal.la $(ZLIB_LIBS)
 liblalsupport_la_CFLAGS = $(AM_CFLAGS) $(ZLIB_CFLAGS)

@@ -18,7 +18,7 @@
  *  MA  02111-1307  USA
  */
 
-#include "getopt.h"
+#include "LALgetopt.h"
 
 #include <lal/LALStdio.h>
 #include <lal/UserInput.h>
@@ -59,8 +59,8 @@ static LALUserVariable UVAR_vars;	/**< empty head */
 static const CHAR *program_name;	/**< keep a pointer to the program name */
 
 /* needed for command-line parsing */
-extern char *optarg;
-extern int optind, opterr, optopt;
+extern char *LALoptarg;
+extern int LALoptind, LALopterr, LALoptopt;
 
 /* ---------- internal prototypes ---------- */
 
@@ -313,10 +313,10 @@ XLALUserVarReadCmdline ( int argc, char *argv[] )
    * Bruce's notes: read getopt_long() source code, and in particular
    * _getopt_internal() to see what is initialized.
    */
-  optind = 0; 	/* reset getopt(), getopt_long() */
+  LALoptind = 0; 	/* reset getopt(), getopt_long() */
 
   /* parse the command-line */
-  while ( (c = getopt_long(argc, argv, optstring, long_options, &longindex)) != -1 )
+  while ( (c = LALgetopt_long(argc, argv, optstring, long_options, &longindex)) != -1 )
     {
       if (c == '?') {
 	XLALPrintError ( "%s: ERROR: unkown command-line option encountered\n", __func__ );
@@ -357,42 +357,42 @@ XLALUserVarReadCmdline ( int argc, char *argv[] )
 	   * eg, if no '=' was used, so we have to check for that case by hand: */
 
 	  /* if the next entry is not an option, take it as an argument */
-	  if ( (optarg == NULL) && (optind < argc) && (argv[optind][0] != '-') && (argv[optind][0] != '@') ) {
-	    optarg = argv[optind];
+	  if ( (LALoptarg == NULL) && (LALoptind < argc) && (argv[LALoptind][0] != '-') && (argv[LALoptind][0] != '@') ) {
+	    LALoptarg = argv[LALoptind];
           }
 
-	  if ( optarg == NULL )  /* no argument found at all: defaults to TRUE */
+	  if ( LALoptarg == NULL )  /* no argument found at all: defaults to TRUE */
             {
               *(BOOLEAN*)(ptr->varp) = TRUE;
               check_and_mark_as_set ( ptr );
             }
           else
             {	/* parse bool string argument */
-              XLAL_CHECK ( XLALParseStringValueToBOOLEAN ( (BOOLEAN*)(ptr->varp), optarg ) == XLAL_SUCCESS, XLAL_EFUNC );
+              XLAL_CHECK ( XLALParseStringValueToBOOLEAN ( (BOOLEAN*)(ptr->varp), LALoptarg ) == XLAL_SUCCESS, XLAL_EFUNC );
               check_and_mark_as_set ( ptr );
             }
 
 	  break;
 
 	case UVAR_INT4:
-          XLAL_CHECK ( XLALParseStringValueToINT4 ( (INT4*)(ptr->varp), optarg ) == XLAL_SUCCESS, XLAL_EFUNC );
+          XLAL_CHECK ( XLALParseStringValueToINT4 ( (INT4*)(ptr->varp), LALoptarg ) == XLAL_SUCCESS, XLAL_EFUNC );
 	  check_and_mark_as_set ( ptr );
 	  break;
 
 	case UVAR_REAL8:
-          XLAL_CHECK ( XLALParseStringValueToREAL8 ( (REAL8*)(ptr->varp), optarg ) == XLAL_SUCCESS, XLAL_EFUNC );
+          XLAL_CHECK ( XLALParseStringValueToREAL8 ( (REAL8*)(ptr->varp), LALoptarg ) == XLAL_SUCCESS, XLAL_EFUNC );
 	  check_and_mark_as_set ( ptr );
 	  break;
 
 	case UVAR_STRING:
-	  if (!optarg) {	/* should not be possible, but let's be paranoid */
-	    XLALPrintError ( "%s: optarg==NULL, something went badly wrong ...\n", __func__ );
+	  if (!LALoptarg) {	/* should not be possible, but let's be paranoid */
+	    XLALPrintError ( "%s: LALoptarg==NULL, something went badly wrong ...\n", __func__ );
             XLAL_ERROR ( XLAL_EFAULT );
 	  }
 	  strp = *(CHAR**)(ptr->varp);
 	  if ( strp != NULL) 	 /* something allocated here before? */
 	    XLALFree ( strp );
-	  if ( (strp = XLAL_copy_string_unquoted ( optarg )) == NULL ) {
+	  if ( (strp = XLAL_copy_string_unquoted ( LALoptarg )) == NULL ) {
             XLALPrintError ("%s: XLAL_copy_string_unquoted() failed.\n", __func__ );
             XLAL_ERROR ( XLAL_EFUNC );
 	  }
@@ -406,8 +406,8 @@ XLALUserVarReadCmdline ( int argc, char *argv[] )
 	  if ( csv != NULL) { 	/* something allocated here before? */
 	    XLALDestroyStringVector ( csv );
           }
-	  if ( (csv = XLALParseCSV2StringVector ( optarg )) == NULL ) {
-            XLALPrintError ("%s: XLALParseCSV2StringVector() failed on '%s'\n", __func__, optarg );
+	  if ( (csv = XLALParseCSV2StringVector ( LALoptarg )) == NULL ) {
+            XLALPrintError ("%s: XLALParseCSV2StringVector() failed on '%s'\n", __func__, LALoptarg );
             XLAL_ERROR ( XLAL_EFUNC );
 	  }
 	  /* return value */
@@ -425,15 +425,15 @@ XLALUserVarReadCmdline ( int argc, char *argv[] )
     } /* while getopt_long() */
 
   // check if there's any non-option strings left (except for a config-file specification '@file')
-  if ( (optind == argc - 1) && (argv[optind][0] == '@' ) ) {
-    optind ++;	// advance counter in case of one config-file specification (only one allowed)
+  if ( (LALoptind == argc - 1) && (argv[LALoptind][0] == '@' ) ) {
+    LALoptind ++;	// advance counter in case of one config-file specification (only one allowed)
   }
-  if ( optind < argc ) // still stuff left? ==> error
+  if ( LALoptind < argc ) // still stuff left? ==> error
     {
       XLALPrintError ( "\nGot non-option ARGV-elements: [ ");
-      while (optind < argc) {
-        if ( argv[optind][0] == '@' ) { optind ++; continue; }	// don't list config-file entries here
-        XLALPrintError ("%s ", argv[optind++]);
+      while (LALoptind < argc) {
+        if ( argv[LALoptind][0] == '@' ) { LALoptind ++; continue; }	// don't list config-file entries here
+        XLALPrintError ("%s ", argv[LALoptind++]);
       }
       XLALPrintError(" ]\n");
       XLAL_ERROR ( XLAL_EDOM );
