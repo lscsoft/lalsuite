@@ -395,7 +395,7 @@ int XLALCalculateMetricElements
       REAL8 muT=0;
       REAL8 sumDev=0;
       UINT8 k=0*/
-  
+
    UINT8 numalpha = G_alpha->length;
 
   for (j=0; j < numalpha; j++) {
@@ -406,8 +406,8 @@ int XLALCalculateMetricElements
     UINT8 detInd2 = indexList->data[sftNum2].detInd;
     UINT8 sftInd1 = indexList->data[sftNum1].sftInd;
     UINT8 sftInd2 = indexList->data[sftNum2].sftInd;
-   *T1= sfts->data[detInd1]->data[sftInd1].epoch;
-   *T2= sfts->data[detInd2]->data[sftInd2].epoch;
+    T1 = &(sfts->data[detInd1]->data[sftInd1].epoch);
+    T2 = &(sfts->data[detInd2]->data[sftInd2].epoch);
     T = XLALGPSDiff( T1, T2 );
     sinSquare += sqrG_alpha*SQUARE(sin(LAL_PI*T/pOrb));/*(G_alpha)^2*(sin(\pi*T/T_orbit))^2*/
     tSquare += sqrG_alpha*SQUARE( G_alpha->data[j]*T); /*(\curlyg_alpha*)^2*T^2*/
