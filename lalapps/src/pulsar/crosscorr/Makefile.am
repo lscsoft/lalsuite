@@ -12,7 +12,7 @@ lalapps_pulsar_crosscorr_v2_SOURCES = pulsar_crosscorr_v2.c
 
 EXTRA_DIST = testPulsarCrossCorr_v2.sh
 
-TESTS = testPulsarCrossCorr_v2.sh
+#TESTS = testPulsarCrossCorr_v2.sh
 
 TESTS_ENVIRONMENT = \
 	LAL_DEBUG_LEVEL=memdbg; export LAL_DEBUG_LEVEL; \
