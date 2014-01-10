@@ -487,6 +487,11 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
     LALInferenceSetVariable(runState->currentParams, "distance", &d);
   } else {
     nullLikelihood = 0.0;
+    LALInferenceIFOData *headData = runState->data;
+    while (headData != NULL) {
+      headData->nullloglikelihood = 0.0;
+      headData = headData->next;
+    }
   }
 
   LALInferenceAddVariable(runState->algorithmParams, "nChain", &nChain,  LALINFERENCE_INT4_t, LALINFERENCE_PARAM_FIXED);
