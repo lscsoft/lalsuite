@@ -3,6 +3,10 @@
 ## run all LALApps programs with memory debugging
 export LAL_DEBUG_LEVEL="${LAL_DEBUG_LEVEL},memdbg"
 
+LC_ALL_BAK=${LC_ALL}
+
+export LC_ALL=C
+
 ## take user-arguments
 extra_args="$@"
 
@@ -58,7 +62,7 @@ if [ ! -r "$outPSD" -o ! -r "$refPSD" ]; then
 fi
 cat ${outPSD} | sed -e"/^%%.*/d" > ${outPSDstripped}
 
-cmp=`paste ${outPSDstripped} $refPSD | LC_ALL=C awk 'BEGIN {n=0; maxErr = 0; avgErr = 0; binsOff = 0} {n+=1; dFreq = $3 - $1; if ( dFreq != 0 ) binsOff ++; relErr = 2*($4 - $2)/($4 + $2); if (relErr > maxErr) maxErr = relErr; avgErr += relErr } END { avgErr /= n; printf "binsOff=%d; avgErr=%g; maxErr=%g", binsOff, avgErr, maxErr}'`
+cmp=`paste ${outPSDstripped} $refPSD | awk 'BEGIN {n=0; maxErr = 0; avgErr = 0; binsOff = 0} {n+=1; dFreq = $3 - $1; if ( dFreq != 0 ) binsOff ++; relErr = 2*($4 - $2)/($4 + $2); if (relErr > maxErr) maxErr = relErr; avgErr += relErr } END { avgErr /= n; printf "binsOff=%d; avgErr=%g; maxErr=%g", binsOff, avgErr, maxErr}'`
 
 eval $cmp
 
@@ -174,5 +178,7 @@ if [ -z "$NOCLEANUP" ]; then
     rm $outPSD_full
     echo "Cleaned up."
 fi
+
+LC_ALL=${LC_ALL_BAK}
 
 exit $retstatus
