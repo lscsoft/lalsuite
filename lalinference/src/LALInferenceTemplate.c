@@ -281,7 +281,7 @@ double m1,m2,mc,eta,q;
     const REAL8 mSevenBySix = -7./6.;
     const REAL8 phic = 0;
     //const REAL8 vISCO = 1. / sqrt(6.);
-    const REAL8 r = 10e6*LAL_PC_SI;
+    const REAL8 r = 1e6*LAL_PC_SI;
     //REAL8 v0 = cbrt(piM * IFOdata->fLow);
     REAL8 logv0 = log(1.); //the standard tf2 definition is log(v0), but I've changed it to reflect Scott's convention
     REAL8 shft, amp0;//, f_max;
@@ -368,7 +368,7 @@ double m1,m2,mc,eta,q;
     /* external: SI; internal: solar masses */
     const REAL8 m = m1 + m2;
     const REAL8 m_sec = m * LAL_MTSUN_SI;  /* total mass in seconds */
-    const REAL8 r = 10e6*LAL_PC_SI;
+    const REAL8 r = 1e6*LAL_PC_SI;
     double amp_squared;
 
     amp_squared = pow( pow(m_sec, 5./6.) * sqrt(5.*eta / 24.) / (Pi_p2by3 * r / LAL_C_SI), 2. );
