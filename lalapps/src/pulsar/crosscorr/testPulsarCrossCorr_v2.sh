@@ -7,6 +7,7 @@ export LAL_DEBUG_LEVEL="${LAL_DEBUG_LEVEL},memdbg"
 extra_args="$@"
 
 builddir="./";
+injectdir="../Injections/"
 
 ##---------- names of codes and input/output files
 mfd_code="lalapps_Makefakedata_v4"
