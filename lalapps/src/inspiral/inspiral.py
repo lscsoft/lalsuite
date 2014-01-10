@@ -124,7 +124,17 @@ class TmpltBankJob(InspiralAnalysisJob):
     exec_name = 'tmpltbank'
     extension = 'xml'
     sections = ['data','tmpltbank']
+
+    have_pycbc = False
+    if cp.has_option('tmpltbank', 'pycbc'):
+         have_pycbc=True
+         cp.set('condor', 'universe', 'vanilla')
+
     InspiralAnalysisJob.__init__(self,cp,sections,exec_name,extension,dax)
+
+    if have_pycbc:
+        self.add_condor_cmd('getenv', 'True')
+
 
 
 class InspInjJob(InspiralAnalysisJob):
