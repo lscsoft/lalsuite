@@ -493,7 +493,8 @@ tagLALInferenceIFOData
   LALSimInspiralWaveformFlags *waveFlags;   /** A pointer to the WF flag. Will store here tide and spin order, as well as frame */
   LALSimInspiralWaveformCache *waveformCache;   /** Waveform cache */
 
-  gsl_matrix                *glitchModel;       /** Fourier coefficients of current glitch model */
+  gsl_matrix                *glitch_x;       /** Fourier coefficients of current glitch model */
+  gsl_matrix                *glitch_y;       /** Fourier coefficients of proposed glitch model */
 
   struct tagLALInferenceIFOData      *next;     /** A pointer to the next set of data for linked list */
 } LALInferenceIFOData;

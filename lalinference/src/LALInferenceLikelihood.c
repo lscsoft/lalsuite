@@ -221,7 +221,9 @@ REAL8 LALInferenceUndecomposedFreqDomainLogLikelihood(LALInferenceVariables *cur
   gsl_matrix *psdBandsMax = NULL;//pointer to matrix holding max frequencies for psd model
 
   //different formats for storing glitch model for DWT, FFT, and integration
-  gsl_matrix *glitchFD=NULL;
+  //gsl_matrix *glitchFD=NULL;
+  gsl_matrix *glitch_x = NULL;
+  gsl_matrix *glitch_y = NULL;
 
   int Nblock = 1;            //number of frequency blocks per IFO
   int Nlines = 1;            //number of lines to be removed
@@ -454,8 +456,12 @@ REAL8 LALInferenceUndecomposedFreqDomainLogLikelihood(LALInferenceVariables *cur
       if(glitchFlag)
       {
         /* fourier amplitudes of glitches */
+        /*
         glitchReal = gsl_matrix_get(glitchFD,ifo,2*i);
         glitchImag = gsl_matrix_get(glitchFD,ifo,2*i+1);
+         */
+        glitchReal = gsl_matrix_get(glitch_y,ifo,2*i);
+        glitchImag = gsl_matrix_get(glitch_y,ifo,2*i+1);
 
         diffRe -= glitchReal;
         diffIm -= glitchImag;
@@ -1787,7 +1793,9 @@ REAL8 LALInferenceMarginalisedTimeLogLikelihood(LALInferenceVariables *currentPa
   gsl_matrix *psdBandsMax = NULL;//pointer to matrix holding max frequencies for psd model
 
   //pointers to morlet wavelet parameters
-  gsl_matrix *glitchFD=NULL;
+  gsl_matrix *glitch_x = NULL;
+  gsl_matrix *glitch_y = NULL;
+  //gsl_matrix *glitchFD=NULL;
 
   //initialize various noise-model constants
   UINT4 Nblock = 1;            //number of frequency blocks per IFO
@@ -1839,7 +1847,11 @@ REAL8 LALInferenceMarginalisedTimeLogLikelihood(LALInferenceVariables *currentPa
   if(LALInferenceCheckVariable(currentParams,"glitchFitFlag"))
     glitchFlag = *((INT4 *)LALInferenceGetVariable(currentParams, "glitchFitFlag"));
   if(glitchFlag)
-    glitchFD = data->glitchModel;//*((gsl_matrix **)LALInferenceGetVariable(currentParams, "morlet_FD"));
+  {
+    //glitchFD = *((gsl_matrix **)LALInferenceGetVariable(currentParams, "morlet_FD"));
+    glitch_x = data->glitch_x;
+    glitch_y = data->glitch_y;
+  }
 
   if(LALInferenceCheckVariable(currentParams, "logdistance")){
     REAL8 distMpc = exp(*(REAL8*)LALInferenceGetVariable(currentParams,"logdistance"));
@@ -2051,9 +2063,13 @@ REAL8 LALInferenceMarginalisedTimeLogLikelihood(LALInferenceVariables *currentPa
         if(glitchFlag)
         {
           /* fourier amplitudes of glitches */
+
+          glitchReal = gsl_matrix_get(glitch_y,ifo,2*i);
+          glitchImag = gsl_matrix_get(glitch_y,ifo,2*i+1);
+          /*
           glitchReal = gsl_matrix_get(glitchFD,ifo,2*i);
           glitchImag = gsl_matrix_get(glitchFD,ifo,2*i+1);
-
+          */
           dataReal -= glitchReal;
           dataImag -= glitchImag;
         }//end glitch subtraction

@@ -88,6 +88,7 @@ void LALInferenceInitGlitchVariables(LALInferenceRunState *runState)
   LALInferenceVariables *currentParams = runState->currentParams;
 
   UINT4 i,nifo;
+  UINT4 j;
   UINT4 n = (UINT4)dataPtr->timeData->data->length;
   UINT4 gflag  = 1;
   REAL8 gmin   = 0.0;
@@ -137,8 +138,19 @@ void LALInferenceInitGlitchVariables(LALInferenceRunState *runState)
   pmin = 0.0;
   pmax = LAL_TWOPI;
 
-  runState->data->glitchModel = gsl_matrix_alloc(nifo,(int)n); //store the Fourier-domain glitch signal
-  //gsl_matrix  *gFD       = gsl_matrix_alloc(nifo,(int)n); //store the Fourier-domain glitch signal
+  runState->data->glitch_x = gsl_matrix_alloc(nifo,(int)n); //store the Fourier-domain glitch signal
+  runState->data->glitch_y = gsl_matrix_alloc(nifo,(int)n); //store the Fourier-domain glitch signal
+  //set glitch model to zero
+  for(i=0; i<(UINT4)n; i++)
+  {
+    for(j=0; j<nifo; j++)
+    {
+      gsl_matrix_set(runState->data->glitch_x,j,i,0.0);
+      gsl_matrix_set(runState->data->glitch_y,j,i,0.0);
+    }
+  }
+
+  gsl_matrix  *gFD       = gsl_matrix_alloc(nifo,(int)n); //store the Fourier-domain glitch signal
   gsl_matrix  *gpower    = gsl_matrix_alloc(nifo,(int)n); //store the (normalized) wavelet power in each pixel
   REAL8Vector *maxpower  = XLALCreateREAL8Vector(nifo);   //store the maximum power in any pixel for each ifo (for rejection sampling proposed wavelets)
 
