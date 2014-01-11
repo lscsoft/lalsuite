@@ -1,3 +1,7 @@
+ligo-gracedb (1.14-1) unstable; urgency=low
+  * Fixed 10 and 1000 event limits. Issues 986 and 787.
+ -- Branson Stephens <branson.stephens@ligo.org>  Wed, 18 Dec 2013 11:18:00 -0500
+
 ligo-gracedb (1.13-1) unstable; urgency=low
   * Fixed renegotiation regression.  Issue 951
  -- Brian Moe <brian.moe@ligo.org>  Fri, 28 Jun 2013 13:15:26 -0500

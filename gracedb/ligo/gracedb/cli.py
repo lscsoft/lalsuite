@@ -23,7 +23,7 @@ from ligo.gracedb.rest import GraceDb
 
 DEFAULT_SERVICE_URL = "https://gracedb.ligo.org/gracedb/api"
 
-GIT_TAG = 'gracedb-1.13-1'
+GIT_TAG = 'gracedb-1.14-1'
 
 DEFAULT_COLUMNS = "graceid,labels,group,analysisType,far,gpstime,created,dataurl"
  
@@ -349,7 +349,7 @@ Longer strings will be truncated.""" % {
         query = " ".join(args[1:])
         
         columns = options.columns
-        columns.replace('DEFAULTS',DEFAULT_COLUMNS)
+        columns = columns.replace('DEFAULTS',DEFAULT_COLUMNS)
         columns = columns.split(',')
 
         count = None # XXX Let's just get rid of this?
