@@ -65,27 +65,8 @@ LALSUITE_ENABLE_LALXML
 # enable SWIG wrapping modules
 LALSUITE_ENABLE_SWIG
 
-# put version/configure info in config header
-lalinference_version_major=`echo "$VERSION" | cut -d. -f1`
-lalinference_version_minor=`echo "$VERSION" | cut -d. -f2`
-lalinference_version_micro=`echo "$VERSION" | cut -d. -f3`
-lalinference_version_devel=`echo "$VERSION" | cut -d. -f4-`
-test -z "$lalinference_version_micro" && lalinference_version_micro=0
-test -z "$lalinference_version_devel" && lalinference_version_devel=0
-lalinspiral_configure_date=`date +"%Y-%m-%dT%H:%M:%S%z"`
-AC_DEFINE_UNQUOTED([LALINFERENCE_VERSION],["$VERSION"],[LALInference Version])
-AC_DEFINE_UNQUOTED([LALINFERENCE_VERSION_MAJOR],[$lalinference_version_major],
-                   [LALInference Version Major Number])
-AC_DEFINE_UNQUOTED([LALINFERENCE_VERSION_MINOR],[$lalinference_version_minor],
-                   [LALInference Version Minor Number])
-AC_DEFINE_UNQUOTED([LALINFERENCE_VERSION_MICRO],[$lalinference_version_micro],
-                   [LALInference Version Micro Number])
-AC_DEFINE_UNQUOTED([LALINFERENCE_VERSION_DEVEL],[$lalinference_version_devel],
-                   [LALInference Version Devel Number])
-AC_DEFINE_UNQUOTED([LALINFERENCE_CONFIGURE_ARGS],["$ac_configure_args"],
-                   [LALInference Configure Arguments])
-AC_DEFINE_UNQUOTED([LALINFERENCE_CONFIGURE_DATE],["$lalinspiral_configure_date"],
-                   [LALInference Configure Date])
+# define version/configure info
+LALSUITE_VERSION_CONFIGURE_INFO
 
 # workaround broken libtool multilib support on sl6
 LALSUITE_MULTILIB_LIBTOOL_HACK

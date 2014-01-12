@@ -51,27 +51,8 @@ LALSUITE_ENABLE_NIGHTLY
 # enable SWIG wrapping modules
 LALSUITE_ENABLE_SWIG
 
-# put version/configure info in config header
-lalstochastic_version_major=`echo "$VERSION" | cut -d. -f1`
-lalstochastic_version_minor=`echo "$VERSION" | cut -d. -f2`
-lalstochastic_version_micro=`echo "$VERSION" | cut -d. -f3`
-lalstochastic_version_devel=`echo "$VERSION" | cut -d. -f4-`
-test -z "$lalstochastic_version_micro" && lalstochastic_version_micro=0
-test -z "$lalstochastic_version_devel" && lalstochastic_version_devel=0
-lalstochastic_configure_date=`date +"%Y-%m-%dT%H:%M:%S%z"`
-AC_DEFINE_UNQUOTED([LALSTOCHASTIC_VERSION],["$VERSION"],[LALStochastic Version])
-AC_DEFINE_UNQUOTED([LALSTOCHASTIC_VERSION_MAJOR],[$lalstochastic_version_major],
-                   [LALStochastic Version Major Number])
-AC_DEFINE_UNQUOTED([LALSTOCHASTIC_VERSION_MINOR],[$lalstochastic_version_minor],
-                   [LALStochastic Version Minor Number])
-AC_DEFINE_UNQUOTED([LALSTOCHASTIC_VERSION_MICRO],[$lalstochastic_version_micro],
-                   [LALStochastic Version Micro Number])
-AC_DEFINE_UNQUOTED([LALSTOCHASTIC_VERSION_DEVEL],[$lalstochastic_version_devel],
-                   [LALStochastic Version Devel Number])
-AC_DEFINE_UNQUOTED([LALSTOCHASTIC_CONFIGURE_ARGS],["$ac_configure_args"],
-                   [LALStochastic Configure Arguments])
-AC_DEFINE_UNQUOTED([LALSTOCHASTIC_CONFIGURE_DATE],["$lalstochastic_configure_date"],
-                   [LALStochastic Configure Date])
+# define version/configure info
+LALSUITE_VERSION_CONFIGURE_INFO
 
 # enable strict gcc flags
 LALSUITE_ENABLE_GCC_FLAGS

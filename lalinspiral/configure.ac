@@ -63,27 +63,8 @@ LALSUITE_ENABLE_SWIG
 # optional lal libraries
 LALSUITE_ENABLE_LALFRAME
 
-# put version/configure info in config header
-lalinspiral_version_major=`echo "$VERSION" | cut -d. -f1`
-lalinspiral_version_minor=`echo "$VERSION" | cut -d. -f2`
-lalinspiral_version_micro=`echo "$VERSION" | cut -d. -f3`
-lalinspiral_version_devel=`echo "$VERSION" | cut -d. -f4-`
-test -z "$lalinspiral_version_micro" && lalinspiral_version_micro=0
-test -z "$lalinspiral_version_devel" && lalinspiral_version_devel=0
-lalinspiral_configure_date=`date +"%Y-%m-%dT%H:%M:%S%z"`
-AC_DEFINE_UNQUOTED([LALINSPIRAL_VERSION],["$VERSION"],[LALInspiral Version])
-AC_DEFINE_UNQUOTED([LALINSPIRAL_VERSION_MAJOR],[$lalinspiral_version_major],
-                   [LALInspiral Version Major Number])
-AC_DEFINE_UNQUOTED([LALINSPIRAL_VERSION_MINOR],[$lalinspiral_version_minor],
-                   [LALInspiral Version Minor Number])
-AC_DEFINE_UNQUOTED([LALINSPIRAL_VERSION_MICRO],[$lalinspiral_version_micro],
-                   [LALInspiral Version Micro Number])
-AC_DEFINE_UNQUOTED([LALINSPIRAL_VERSION_DEVEL],[$lalinspiral_version_devel],
-                   [LALInspiral Version Devel Number])
-AC_DEFINE_UNQUOTED([LALINSPIRAL_CONFIGURE_ARGS],["$ac_configure_args"],
-                   [LALInspiral Configure Arguments])
-AC_DEFINE_UNQUOTED([LALINSPIRAL_CONFIGURE_DATE],["$lalinspiral_configure_date"],
-                   [LALInspiral Configure Date])
+# define version/configure info
+LALSUITE_VERSION_CONFIGURE_INFO
 
 # workaround broken libtool multilib support on sl6
 LALSUITE_MULTILIB_LIBTOOL_HACK

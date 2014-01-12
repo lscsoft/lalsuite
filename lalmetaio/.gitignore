@@ -14,6 +14,7 @@ libtool
 python/__init__.py
 python/git_version.py
 src/LALMetaIOConfig.h
+src/LALMetaIOBuildInfo.c
 src/LALMetaIOVCSInfo.h
 src/config.h
 src/config.h.in

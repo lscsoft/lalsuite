@@ -16,10 +16,4 @@
 /* LALMetaIO Version Devel Number  */
 #undef LALMETAIO_VERSION_DEVEL
 
-/* LALMetaIO Configure Arguments */
-#undef LALMETAIO_CONFIGURE_ARGS
-
-/* LALMetaIO Configure Date */
-#undef LALMETAIO_CONFIGURE_DATE
-
 #endif /* LALMETAIO_VERSION */

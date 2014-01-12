@@ -18,6 +18,7 @@ libtool
 python/__init__.py
 python/git_version.py
 src/LALDetCharConfig.h
+src/LALDetCharBuildInfo.c
 src/LALDetCharVCSInfo.h
 src/config.h
 src/config.h.in

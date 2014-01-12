@@ -16,10 +16,4 @@
 /* LALStochastic Version Devel Number  */
 #undef LALSTOCHASTIC_VERSION_DEVEL
 
-/* LALStochastic Configure Arguments */
-#undef LALSTOCHASTIC_CONFIGURE_ARGS
-
-/* LALStochastic Configure Date */
-#undef LALSTOCHASTIC_CONFIGURE_DATE
-
 #endif /* LALSTOCHASTIC_VERSION */

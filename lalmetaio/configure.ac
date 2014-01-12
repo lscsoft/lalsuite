@@ -55,27 +55,8 @@ LALSUITE_ENABLE_GCC_FLAGS
 # enable SWIG wrapping modules
 LALSUITE_ENABLE_SWIG
 
-# put version/configure info in config header
-lalmetaio_version_major=`echo "$VERSION" | cut -d. -f1`
-lalmetaio_version_minor=`echo "$VERSION" | cut -d. -f2`
-lalmetaio_version_micro=`echo "$VERSION" | cut -d. -f3`
-lalmetaio_version_devel=`echo "$VERSION" | cut -d. -f4-`
-test -z "$lalmetaio_version_micro" && lalmetaio_version_micro=0
-test -z "$lalmetaio_version_devel" && lalmetaio_version_devel=0
-lalmetaio_configure_date=`date +"%Y-%m-%dT%H:%M:%S%z"`
-AC_DEFINE_UNQUOTED([LALMETAIO_VERSION],["$VERSION"],[LALMetaIO Version])
-AC_DEFINE_UNQUOTED([LALMETAIO_VERSION_MAJOR],[$lalmetaio_version_major],
-                   [LALMetaIO Version Major Number])
-AC_DEFINE_UNQUOTED([LALMETAIO_VERSION_MINOR],[$lalmetaio_version_minor],
-                   [LALMetaIO Version Minor Number])
-AC_DEFINE_UNQUOTED([LALMETAIO_VERSION_MICRO],[$lalmetaio_version_micro],
-                   [LALMetaIO Version Micro Number])
-AC_DEFINE_UNQUOTED([LALMETAIO_VERSION_DEVEL],[$lalmetaio_version_devel],
-                   [LALMetaIO Version Devel Number])
-AC_DEFINE_UNQUOTED([LALMETAIO_CONFIGURE_ARGS],["$ac_configure_args"],
-                   [LALMetaIO Configure Arguments])
-AC_DEFINE_UNQUOTED([LALMETAIO_CONFIGURE_DATE],["$lalmetaio_configure_date"],
-                   [LALMetaIO Configure Date])
+# define version/configure info
+LALSUITE_VERSION_CONFIGURE_INFO
 
 # workaround broken libtool multilib support on sl6
 LALSUITE_MULTILIB_LIBTOOL_HACK

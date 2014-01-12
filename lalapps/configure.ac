@@ -86,27 +86,8 @@ LALSUITE_ENABLE_LALPULSAR
 LALSUITE_ENABLE_LALINFERENCE
 LALSUITE_ENABLE_LALSTOCHASTIC
 
-# put version/configure info in config header
-lalapps_version_major=`echo "$VERSION" | cut -d. -f1`
-lalapps_version_minor=`echo "$VERSION" | cut -d. -f2`
-lalapps_version_micro=`echo "$VERSION" | cut -d. -f3`
-lalapps_version_devel=`echo "$VERSION" | cut -d. -f4-`
-test -z "$lalapps_version_micro" && lalapps_version_micro=0
-test -z "$lalapps_version_devel" && lalapps_version_devel=0
-lalapps_configure_date=`date +"%Y-%m-%dT%H:%M:%S%z"`
-AC_DEFINE_UNQUOTED([LALAPPS_VERSION],["$VERSION"],[LALApps Version])
-AC_DEFINE_UNQUOTED([LALAPPS_VERSION_MAJOR],[$lalapps_version_major],
-                   [LALApps Version Major Number])
-AC_DEFINE_UNQUOTED([LALAPPS_VERSION_MINOR],[$lalapps_version_minor],
-                   [LALApps Version Minor Number])
-AC_DEFINE_UNQUOTED([LALAPPS_VERSION_MICRO],[$lalapps_version_micro],
-                   [LALApps Version Micro Number])
-AC_DEFINE_UNQUOTED([LALAPPS_VERSION_DEVEL],[$lalapps_version_devel],
-                   [LALApps Version Devel Number])
-AC_DEFINE_UNQUOTED([LALAPPS_CONFIGURE_ARGS],["$ac_configure_args"],
-                   [LALApps Configure Arguments])
-AC_DEFINE_UNQUOTED([LALAPPS_CONFIGURE_DATE],["$lalapps_configure_date"],
-                   [LALApps Configure Date])
+# define version/configure info
+LALSUITE_VERSION_CONFIGURE_INFO
 
 # workaround broken libtool multilib support on sl6
 LALSUITE_MULTILIB_LIBTOOL_HACK

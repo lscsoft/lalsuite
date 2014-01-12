@@ -14,6 +14,7 @@ libtool
 python/__init__.py
 python/git_version.py
 src/LALPulsarConfig.h
+src/LALPulsarBuildInfo.c
 src/LALPulsarVCSInfo.h
 src/config.h
 src/config.h.in

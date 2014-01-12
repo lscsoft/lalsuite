@@ -27,6 +27,7 @@ libtool
 python/__init__.py
 python/git_version.py
 src/LALInferenceConfig.h
+src/LALInferenceBuildInfo.c
 src/LALInferenceVCSInfo.h
 src/config.h
 src/config.h.in

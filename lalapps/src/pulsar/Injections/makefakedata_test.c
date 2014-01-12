@@ -394,16 +394,14 @@ int main(int argc,char *argv[]) {
   /* check that LAL header and library versions are consistent */
   if (
       strcmp(lalVersion,LAL_VERSION) ||
-      strcmp(lalConfigureArgs,LAL_CONFIGURE_ARGS) ||
-      strcmp(lalConfigureDate,LAL_CONFIGURE_DATE) ||
       fabs(lalVersionMajor-LAL_VERSION_MAJOR)>1.e-3 ||
       fabs(lalVersionMinor-LAL_VERSION_MINOR)>1.e-3
       ) {
     error( "Mismatch between compile time header versions and run-time library version:\n");
-    error( "LAL Version: %s\nMajor Version: %d\nMinor Version: %d\nConfig Args: %s\nBuild Date: %s\n",
-	    lalVersion,lalVersionMajor,lalVersionMinor,lalConfigureArgs,lalConfigureDate);
-    error( "LAL Headers: %s\nMajor Version: %d\nMinor Version: %d\nConfig Args: %s\nBuild Date: %s\n",
-	    LAL_VERSION, LAL_VERSION_MAJOR, LAL_VERSION_MINOR, LAL_CONFIGURE_ARGS, LAL_CONFIGURE_DATE);
+    error( "LAL Version: %s\nMajor Version: %d\nMinor Version: %d\n",
+	    lalVersion,lalVersionMajor,lalVersionMinor);
+    error( "LAL Headers: %s\nMajor Version: %d\nMinor Version: %d\n",
+	    LAL_VERSION, LAL_VERSION_MAJOR, LAL_VERSION_MINOR);
     exit(1);
   }
 

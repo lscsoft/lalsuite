@@ -15,6 +15,7 @@ python/__init__.py
 python/git_version.py
 src/Chisq_GPU.cpp
 src/LALInspiralConfig.h
+src/LALInspiralBuildInfo.c
 src/LALInspiralVCSInfo.h
 src/config.h
 src/config.h.in

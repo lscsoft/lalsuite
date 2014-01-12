@@ -62,27 +62,8 @@ LALSUITE_ENABLE_SWIG
 # optional lal libraries
 LALSUITE_ENABLE_LALFRAME
 
-# put version/configure info in config header
-laldetchar_version_major=`echo "$VERSION" | cut -d. -f1`
-laldetchar_version_minor=`echo "$VERSION" | cut -d. -f2`
-laldetchar_version_micro=`echo "$VERSION" | cut -d. -f3`
-laldetchar_version_devel=`echo "$VERSION" | cut -d. -f4-`
-test -z "$laldetchar_version_micro" && laldetchar_version_micro=0
-test -z "$laldetchar_version_devel" && laldetchar_version_devel=0
-laldetchar_configure_date=`date +"%Y-%m-%dT%H:%M:%S%z"`
-AC_DEFINE_UNQUOTED([LALDETCHAR_VERSION],["$VERSION"],[LALDetChar Version])
-AC_DEFINE_UNQUOTED([LALDETCHAR_VERSION_MAJOR],[$laldetchar_version_major],
-                   [LALDetChar Version Major Number])
-AC_DEFINE_UNQUOTED([LALDETCHAR_VERSION_MINOR],[$laldetchar_version_minor],
-                   [LALDetChar Version Minor Number])
-AC_DEFINE_UNQUOTED([LALDETCHAR_VERSION_MICRO],[$laldetchar_version_micro],
-                   [LALDetChar Version Micro Number])
-AC_DEFINE_UNQUOTED([LALDETCHAR_VERSION_DEVEL],[$laldetchar_version_devel],
-                   [LALDetChar Version Devel Number])
-AC_DEFINE_UNQUOTED([LALDETCHAR_CONFIGURE_ARGS],["$ac_configure_args"],
-                   [LALDetChar Configure Arguments])
-AC_DEFINE_UNQUOTED([LALDETCHAR_CONFIGURE_DATE],["$laldetchar_configure_date"],
-                   [LALDetChar Configure Date])
+# define version/configure info
+LALSUITE_VERSION_CONFIGURE_INFO
 
 # workaround broken libtool multilib support on sl6
 LALSUITE_MULTILIB_LIBTOOL_HACK

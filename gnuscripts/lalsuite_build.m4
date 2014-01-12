@@ -1,7 +1,7 @@
 # -*- mode: autoconf; -*-
 # lalsuite_build.m4 - top level build macros
 #
-# serial 77
+# serial 78
 
 # not present in older versions of pkg.m4
 m4_pattern_allow([^PKG_CONFIG(_(PATH|LIBDIR|SYSROOT_DIR|ALLOW_SYSTEM_(CFLAGS|LIBS)))?$])
@@ -227,6 +227,27 @@ AC_DEFUN([LALSUITE_CHECK_GIT_REPO],[
     GENERATE_VCS_INFO="\$(PYTHON) \$(top_srcdir)/../gnuscripts/generate_vcs_info.py --git-path='\$(GIT)' \$(genvcsinfo_\$(V))"
   ],[GENERATE_VCS_INFO=false])
   AC_SUBST(GENERATE_VCS_INFO)
+])
+
+AC_DEFUN([LALSUITE_VERSION_CONFIGURE_INFO],[
+  # $0: define version/configure info
+  m4_pushdef([uppercase],m4_translit(AC_PACKAGE_NAME, [a-z], [A-Z]))
+  version_major=`echo "$VERSION" | cut -d. -f1`
+  version_minor=`echo "$VERSION" | cut -d. -f2`
+  version_micro=`echo "$VERSION" | cut -d. -f3`
+  version_devel=`echo "$VERSION" | cut -d. -f4-`
+  test -z "$version_micro" && version_micro=0
+  test -z "$version_devel" && version_devel=0
+  configure_date=`date +"%Y-%m-%dT%H:%M:%S%z"`
+  AC_DEFINE_UNQUOTED(uppercase[_VERSION],["$VERSION"],AC_PACKAGE_NAME[ Version])
+  AC_DEFINE_UNQUOTED(uppercase[_VERSION_MAJOR],[$version_major],AC_PACKAGE_NAME[ Version Major Number])
+  AC_DEFINE_UNQUOTED(uppercase[_VERSION_MINOR],[$version_minor],AC_PACKAGE_NAME[ Version Minor Number])
+  AC_DEFINE_UNQUOTED(uppercase[_VERSION_MICRO],[$version_micro],AC_PACKAGE_NAME[ Version Micro Number])
+  AC_DEFINE_UNQUOTED(uppercase[_VERSION_DEVEL],[$version_devel],AC_PACKAGE_NAME[ Version Devel Number])
+  AC_SUBST([ac_configure_args])
+  AC_SUBST([configure_date])
+  m4_popdef([uppercase])
+  # end $0
 ])
 
 AC_DEFUN([LALSUITE_REQUIRE_CXX],[

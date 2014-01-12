@@ -16,10 +16,4 @@
 /* LALXML Version Devel Number  */
 #undef LALXML_VERSION_DEVEL
 
-/* LALXML Configure Arguments */
-#undef LALXML_CONFIGURE_ARGS
-
-/* LALXML Configure Date */
-#undef LALXML_CONFIGURE_DATE
-
 #endif /* LALXML_VERSION */

@@ -56,27 +56,8 @@ LALSUITE_ENABLE_GCC_FLAGS
 # enable SWIG wrapping modules
 LALSUITE_ENABLE_SWIG
 
-# put version/configure info in config header
-lalsimulation_version_major=`echo "$VERSION" | cut -d. -f1`
-lalsimulation_version_minor=`echo "$VERSION" | cut -d. -f2`
-lalsimulation_version_micro=`echo "$VERSION" | cut -d. -f3`
-lalsimulation_version_devel=`echo "$VERSION" | cut -d. -f4-`
-test -z "$lalsimulation_version_micro" && lalsimulation_version_micro=0
-test -z "$lalsimulation_version_devel" && lalsimulation_version_devel=0
-lalsimulation_configure_date=`date +"%Y-%m-%dT%H:%M:%S%z"`
-AC_DEFINE_UNQUOTED([LALSIMULATION_VERSION],["$VERSION"],[LALSimulation Version])
-AC_DEFINE_UNQUOTED([LALSIMULATION_VERSION_MAJOR],[$lalsimulation_version_major],
-                   [LALSimulation Version Major Number])
-AC_DEFINE_UNQUOTED([LALSIMULATION_VERSION_MINOR],[$lalsimulation_version_minor],
-                   [LALSimulation Version Minor Number])
-AC_DEFINE_UNQUOTED([LALSIMULATION_VERSION_MICRO],[$lalsimulation_version_micro],
-                   [LALSimulation Version Micro Number])
-AC_DEFINE_UNQUOTED([LALSIMULATION_VERSION_DEVEL],[$lalsimulation_version_devel],
-                   [LALSimulation Version Devel Number])
-AC_DEFINE_UNQUOTED([LALSIMULATION_CONFIGURE_ARGS],["$ac_configure_args"],
-                   [LALSimulation Configure Arguments])
-AC_DEFINE_UNQUOTED([LALSIMULATION_CONFIGURE_DATE],["$lalsimulation_configure_date"],
-                   [LALSimulation Configure Date])
+# define version/configure info
+LALSUITE_VERSION_CONFIGURE_INFO
 
 # workaround broken libtool multilib support on sl6
 LALSUITE_MULTILIB_LIBTOOL_HACK

@@ -14,6 +14,7 @@ libtool
 python/__init__.py
 python/git_version.py
 src/LALFrameConfig.h
+src/LALFrameBuildInfo.c
 src/LALFrameVCSInfo.h
 src/config.h
 src/config.h.in

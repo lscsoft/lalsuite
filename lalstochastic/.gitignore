@@ -12,6 +12,7 @@ lalstochastic-*.tar.gz
 lalstochastic.spec
 libtool
 src/LALStochasticConfig.h
+src/LALStochasticBuildInfo.c
 src/LALStochasticVCSInfo.h
 src/config.h
 src/config.h.in

@@ -56,27 +56,8 @@ LALSUITE_ENABLE_GCC_FLAGS
 # enable SWIG wrapping modules
 LALSUITE_ENABLE_SWIG
 
-# put version/configure info in config header
-lalburst_version_major=`echo "$VERSION" | cut -d. -f1`
-lalburst_version_minor=`echo "$VERSION" | cut -d. -f2`
-lalburst_version_micro=`echo "$VERSION" | cut -d. -f3`
-lalburst_version_devel=`echo "$VERSION" | cut -d. -f4-`
-test -z "$lalburst_version_micro" && lalburst_version_micro=0
-test -z "$lalburst_version_devel" && lalburst_version_devel=0
-lalburst_configure_date=`date +"%Y-%m-%dT%H:%M:%S%z"`
-AC_DEFINE_UNQUOTED([LALBURST_VERSION],["$VERSION"],[LALBurst Version])
-AC_DEFINE_UNQUOTED([LALBURST_VERSION_MAJOR],[$lalburst_version_major],
-                   [LALBurst Version Major Number])
-AC_DEFINE_UNQUOTED([LALBURST_VERSION_MINOR],[$lalburst_version_minor],
-                   [LALBurst Version Minor Number])
-AC_DEFINE_UNQUOTED([LALBURST_VERSION_MICRO],[$lalburst_version_micro],
-                   [LALBurst Version Micro Number])
-AC_DEFINE_UNQUOTED([LALBURST_VERSION_DEVEL],[$lalburst_version_devel],
-                   [LALBurst Version Devel Number])
-AC_DEFINE_UNQUOTED([LALBURST_CONFIGURE_ARGS],["$ac_configure_args"],
-                   [LALBurst Configure Arguments])
-AC_DEFINE_UNQUOTED([LALBURST_CONFIGURE_DATE],["$lalburst_configure_date"],
-                   [LALBurst Configure Date])
+# define version/configure info
+LALSUITE_VERSION_CONFIGURE_INFO
 
 # workaround broken libtool multilib support on sl6
 LALSUITE_MULTILIB_LIBTOOL_HACK
