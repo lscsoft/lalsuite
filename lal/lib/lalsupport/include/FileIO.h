@@ -81,6 +81,9 @@ int XLALFileIsRegularAndGetSize ( const char *path, size_t *fileLen );
 int XLALFileIsRegular ( const char *path );
 size_t XLALFileSize ( const char *path );
 
+char *XLALFileResolvePathLong ( const char *fname, const char *fallbackdir );
+char *XLALFileResolvePath( const char *fname );
+
 int XLALGzipTextFile( const char *path );
 int XLALGunzipTextFile( const char *filename );
 

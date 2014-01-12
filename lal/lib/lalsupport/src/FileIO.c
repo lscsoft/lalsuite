@@ -81,6 +81,8 @@
 
 #include <lal/LALStdlib.h>
 #include <lal/LALStdio.h>
+#include <lal/LALString.h>
+#include <lal/StringInput.h>
 #include <lal/FileIO.h>
 
 struct tagLALFILE {
@@ -211,6 +213,111 @@ LALOpenDataFile( const char *fname )
   ERRORMSG( fname );
   return NULL;
 }
+
+/** 'Resolve' a given filename 'fname', returning a file path where the
+ *  file can successfully be opened by fopen() using mode='rb'.
+ *
+ * Return: successful file-path or NULL if failed.
+ *
+ * Resolving follows an algorithm similar to what LALOpenDataFile() did,
+ * namely if 'fname' contains a
+ * i) (relative or absolute) path: only tries to open that path directly
+ * ii) pure filename: try 1) local dir, then 2) search LAL_DATA_PATH, then 3) try fallbackdir
+ *                    return first successful hit
+ *
+ * Note: it is not an error if the given 'fname' cannot be resolved,
+ * this will simply return NULL but xlalErrno will not be set in that case.
+ *
+ * Note2: successfully resolving an 'fname' doesn't guarantee that the path points
+ * to a file, as directories can also be opened in 'rb'.
+ *
+ * Note3: the returned string is allocated here and must be XLALFree'ed by the caller.
+ */
+char *
+XLALFileResolvePathLong ( const char *fname,	  //!< [in] filename or file-path to resolve
+                          const char *fallbackdir //!< [in] directory to try as a last resort (usually PKG_DATA_DIR) [can be NULL]
+                          )
+{
+  XLAL_CHECK_NULL ( fname != NULL, XLAL_EINVAL );
+
+  UINT4 fname_len = strlen ( fname );
+
+  if ( strchr ( fname, '/' ) != NULL )	// any kind of (absolute or relative) path is given -> use only that
+    {
+      FILE *tmp;
+      if ( (tmp = LALFopen ( fname, "rb" )) != NULL ) {
+        LALFclose ( tmp );
+        return XLALStringDuplicate ( fname );
+      } // if found
+      else {
+        return NULL;
+      } // if not found
+
+    } // end: if path given
+  else	// if pure filename given: try 1) local directory, then 2) scan LAL_DATA_PATH, then 3) try fallbackdir (if given)
+    {
+      FILE *tmp;
+      char *resolveFname = NULL;
+
+      // ----- Strategy 1: try local directory explicitly
+      XLAL_CHECK_NULL ( (resolveFname = XLALMalloc ( fname_len + 2 + 1 )) != NULL, XLAL_ENOMEM );
+      sprintf ( resolveFname, "./%s", fname );
+      if ( (tmp = LALFopen ( resolveFname, "rb" )) != NULL ) {
+        LALFclose ( tmp );
+        return resolveFname;
+      } // if found
+
+      // ----- Strategy 2: scan LAL_DATA_PATH
+      const char *lal_data_path = getenv( "LAL_DATA_PATH" );
+      if ( lal_data_path && (strlen (lal_data_path ) > 0) )
+        {
+          TokenList *subPaths = NULL;
+          XLAL_CHECK_NULL ( XLALCreateTokenList ( &subPaths, lal_data_path, ":" ) == XLAL_SUCCESS, XLAL_EFUNC );
+          for ( UINT4 i = 0; i < subPaths->nTokens; i ++ )
+            {
+              const char *subPath_i = subPaths->tokens[i];
+              XLAL_CHECK_NULL ( (resolveFname = XLALRealloc ( resolveFname, strlen(subPath_i) + 1 + fname_len + 1 )) != NULL, XLAL_ENOMEM );
+              sprintf ( resolveFname, "%s/%s", subPath_i, fname );
+              if ( (tmp = LALFopen ( resolveFname, "rb" )) != NULL ) {
+                LALFclose ( tmp );
+                XLALDestroyTokenList ( subPaths );
+                return resolveFname;
+              } // if found
+
+            } // for i < nTokens
+
+          XLALDestroyTokenList ( subPaths );
+
+        } // if LAL_DATA_PATH given
+
+      // ----- Strategy 3: try 'fallbackdir' if given
+      if ( fallbackdir != NULL )
+        {
+          XLAL_CHECK_NULL ( (resolveFname = XLALRealloc ( resolveFname, strlen(fallbackdir) + 1 + strlen(fname) + 1 )) != NULL, XLAL_ENOMEM );
+          sprintf ( resolveFname, "%s/%s", fallbackdir, fname );
+          if ( (tmp = LALFopen ( resolveFname, "rb" )) != NULL ) {
+            LALFclose ( tmp );
+            return resolveFname;
+          } // if found
+        } // if fallbackdir
+
+      XLALFree ( resolveFname );
+
+    } // end: if pure filename given
+
+  // nothing worked? that's ok: return NULL without failure!
+  return NULL;
+
+} // XLALFileResolvePathLong()
+
+/** Simple wrapper to XLALFileResolvePathLong(), using hardcoded fallbackdir=PKG_DATA_DIR
+ */
+char *
+XLALFileResolvePath ( const char *fname	  //!< [in] filename or file-path to resolve
+                      )
+{
+  return XLALFileResolvePathLong ( fname, PKG_DATA_DIR );
+} // XLALFileResolvePath()
 
 int XLALFileIsCompressed( const char *path )
 {
