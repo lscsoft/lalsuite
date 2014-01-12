@@ -176,6 +176,7 @@ BcastDifferentialEvolutionPoints(LALInferenceRunState *runState, INT4 sourceTemp
 
   /* Clean up */
   XLALFree(temp);
+  XLALFree(packedDEsamples);
   MPI_Barrier(MPI_COMM_WORLD);
 }
 
@@ -247,7 +248,7 @@ computeMaxAutoCorrLen(LALInferenceRunState *runState, INT4 startCycle, INT4 endC
         max=ACL;
     }
     XLALFree(temp);
-    //XLALFree(DEarray);
+    XLALFree(DEarray);
   } else {
     max = Niter;
   }
@@ -981,12 +982,19 @@ void PTMCMCOneStep(LALInferenceRunState *runState)
   INT4 acceptanceCount;
   INT4 accepted = 0;
 
+  // check if we are using a glitch model
+  UINT4 glitchFlag = 0;
+  if(LALInferenceCheckVariable(runState->currentParams,"glitchFitFlag"))
+    glitchFlag = *((INT4 *)LALInferenceGetVariable(runState->currentParams, "glitchFitFlag"));
+
   // current values:
   logPriorCurrent      = runState->currentPrior;
   logLikelihoodCurrent = runState->currentLikelihood;
 
   temperature = *(REAL8*) LALInferenceGetVariable(runState->proposalArgs, "temperature");
   acceptanceCount = *(INT4*) LALInferenceGetVariable(runState->proposalArgs, "acceptanceCount");
+
+  if(glitchFlag) gsl_matrix_memcpy (runState->data->glitch_y, runState->data->glitch_x);
 
   // generate proposal:
   proposedParams.head = NULL;
@@ -1024,7 +1032,9 @@ void PTMCMCOneStep(LALInferenceRunState *runState)
   if ((logAcceptanceProbability > 0)
       || (log(gsl_rng_uniform(runState->GSLrandom)) < logAcceptanceProbability)) {   //accept
     LALInferenceCopyVariables(&proposedParams, runState->currentParams);
-    gsl_matrix_memcpy (runState->data->glitch_x, runState->data->glitch_y);
+
+    if(glitchFlag) gsl_matrix_memcpy (runState->data->glitch_x, runState->data->glitch_y);
+
     runState->currentLikelihood = logLikelihoodProposed;
     LALInferenceIFOData *headData = runState->data;
     while (headData != NULL) {

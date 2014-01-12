@@ -2144,7 +2144,6 @@ void LALInferenceGlitchMorletProposal(LALInferenceRunState *runState, LALInferen
 
   /* Copy parameter structures and get local pointers to glitch parameters */
   LALInferenceCopyVariables(runState->currentParams, proposedParams);
-  gsl_matrix_memcpy (runState->data->glitch_y, runState->data->glitch_x);
 
   /* Get glitch meta paramters (dimnsion, proposal) */
   UINT4Vector *gsize = *(UINT4Vector **) LALInferenceGetVariable(proposedParams, "glitch_size");
@@ -2288,7 +2287,7 @@ void LALInferenceGlitchMorletReverseJump(LALInferenceRunState *runState, LALInfe
 
   /* Copy parameter structures and get local pointers to glitch parameters */
   LALInferenceCopyVariables(runState->currentParams, proposedParams);
-  gsl_matrix_memcpy (runState->data->glitch_y, runState->data->glitch_x);
+  //gsl_matrix_memcpy (runState->data->glitch_y, runState->data->glitch_x);
 
   UINT4Vector *gsize = *(UINT4Vector **)LALInferenceGetVariable(proposedParams, "glitch_size");
   gsl_matrix *glitchFD = runState->data->glitch_y;//*(gsl_matrix **)LALInferenceGetVariable(proposedParams, "morlet_FD");
