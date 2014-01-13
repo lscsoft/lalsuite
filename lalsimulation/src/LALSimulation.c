@@ -37,6 +37,7 @@
 #include <lal/TimeDelay.h>
 #include <lal/SkyCoordinates.h>
 #include <lal/TimeSeries.h>
+#include <lal/TimeSeriesInterp.h>
 #include <lal/FrequencySeries.h>
 #include <lal/TimeFreqFFT.h>
 #include <lal/Window.h>
@@ -182,12 +183,23 @@ REAL8TimeSeries * XLALSimQuasiPeriodicInjectionREAL8TimeSeries( REAL8TimeSeries 
  *
  * Notes
  *
- * Antenna response factors are computed sample-by-sample, but waveform is
- * not Doppler corrected or otherwise re-interpolated to account for
- * detector motion.
+ * A 19-sample Lanczos-windowed sinc kernel is used for sub-sample
+ * interpolation.  See XLALREAL8TimeSeriesInterpEval() for more
+ * information, and consider the frequency response of this kernel when
+ * using this function with injections whose frequency content approaches
+ * the Nyquist frequency.
  *
- * The output time series units are the same as the two input time series
- * (which must both have the same sample units).
+ * The geometric delay and antenna response are only recalculated every 250
+ * ms.  The Earth rotates through 7e-5 rad/s, therefore given a radius of
+ * 6e6 m and c=3e8 m/s, the maximum geometric speed for points on the
+ * surface is about 1.5 us/s.  Updating the detector response and geometric
+ * delay every 250 ms means the antenna response is accurate to about +/-
+ * 20 urad and the geometric delay to about +/- 300 ns (about 0.01 sample
+ * at 32 kHz).  The mapping from UTC to sidereal time is only accurate to
+ * +/- 900 ms, so assuming the Earth's orientation to be fixed for 250 ms
+ * at a time is not the dominant source of Earth orientation error in these
+ * calculations, but one should be aware of the periodic nature of the
+ * updates if extreme phase stability is required.
  */
 
 
@@ -200,6 +212,16 @@ REAL8TimeSeries *XLALSimDetectorStrainREAL8TimeSeries(
 	const LALDetector *detector
 )
 {
+	/* samples */
+	const int kernel_length = 19;
+	/* 0.25 s or 1 sample whichever is larger */
+	const unsigned det_resp_interval = round(0.25 / hplus->deltaT) < 1 ? 1 : round(.25 / hplus->deltaT);
+	LALREAL8TimeSeriesInterp *hplusinterp = NULL;
+	LALREAL8TimeSeriesInterp *hcrossinterp = NULL;
+	double fplus = XLAL_REAL8_FAIL_NAN;
+	double fcross = XLAL_REAL8_FAIL_NAN;
+	double geometric_delay = XLAL_REAL8_FAIL_NAN;
+	double dt;	/* an offset */
 	char *name;
 	REAL8TimeSeries *h = NULL;
 	unsigned i;
@@ -215,41 +237,75 @@ REAL8TimeSeries *XLALSimDetectorStrainREAL8TimeSeries(
 		goto error;
 	sprintf(name, "%s injection", detector->frDetector.prefix);
 
-	/* allocate output time series. */
+	/* allocate output time series.  include 2 and bit times the radius
+	 * of the Earth to accomodate Doppler-induced dilation of the
+	 * waveform */
 
-	h = XLALCreateREAL8TimeSeries(name, &hplus->epoch, hplus->f0, hplus->deltaT, &hplus->sampleUnits, hplus->data->length);
+	h = XLALCreateREAL8TimeSeries(name, &hplus->epoch, hplus->f0, hplus->deltaT, &hplus->sampleUnits, hplus->data->length + (unsigned) ceil(2.0625 * LAL_REARTH_SI / LAL_C_SI / hplus->deltaT));
 	XLALFree(name);
 	if(!h)
 		goto error;
 
-	/* add the detector's geometric delay.  after this, epoch = the
-	 * time of the injection time series' first sample at the desired
-	 * detector */
+	/* add the detector's geometric delay.  round epoch to an integer
+	 * sample boundary so that XLALSimAddInjectionREAL8TimeSeries() can
+	 * use no-op code path.  note:  we assume a sample boundary occurs
+	 * on the integer second.  if this isn't the case (e.g, some GEO
+	 * data) that's OK, but we might end up paying for a second
+	 * sub-sample time shift when adding the the time series into the
+	 * target data stream in XLALSimAddInjectionREAL8TimeSeries() */
 
-	XLALGPSAdd(&h->epoch, XLALTimeDelayFromEarthCenter(detector->location, right_ascension, declination, &h->epoch));
+	dt = XLALTimeDelayFromEarthCenter(detector->location, right_ascension, declination, &h->epoch);
+	if(XLAL_IS_REAL8_FAIL_NAN(dt))
+		goto error;
+	XLALGPSAdd(&h->epoch, dt);
+	dt = XLALGPSModf(&dt, &h->epoch);
+	XLALGPSAdd(&h->epoch, round(dt / h->deltaT) * h->deltaT - dt);
 
 	/* project + and x time series onto detector */
 
-	for(i = 0; i < h->data->length; i++) {
-		LIGOTimeGPS t = h->epoch;
-		double fplus, fcross;
+	hplusinterp = XLALREAL8TimeSeriesInterpCreate(hplus, kernel_length);
+	hcrossinterp = XLALREAL8TimeSeriesInterpCreate(hcross, kernel_length);
+	if(!hplusinterp || !hcrossinterp)
+		goto error;
 
+	for(i = 0; i < h->data->length; i++) {
 		/* time of sample in detector */
+		LIGOTimeGPS t = h->epoch;
 		XLALGPSAdd(&t, i * h->deltaT);
 
-		/* detector's response at that time */
-		XLALComputeDetAMResponse(&fplus, &fcross, (const REAL4(*)[3])detector->response, right_ascension, declination, psi, XLALGreenwichMeanSiderealTime(&t));
-		if(XLAL_IS_REAL8_FAIL_NAN(fplus) || XLAL_IS_REAL8_FAIL_NAN(fcross))
+		/* detector's response and geometric delay from geocentre
+		 * at that time */
+		if(!(i % det_resp_interval)) {
+			XLALComputeDetAMResponse(&fplus, &fcross, (const REAL4(*)[3])detector->response, right_ascension, declination, psi, XLALGreenwichMeanSiderealTime(&t));
+			geometric_delay = -XLALTimeDelayFromEarthCenter(detector->location, right_ascension, declination, &t);
+		}
+		if(XLAL_IS_REAL8_FAIL_NAN(fplus) || XLAL_IS_REAL8_FAIL_NAN(fcross) || XLAL_IS_REAL8_FAIL_NAN(geometric_delay))
 			goto error;
 
-		h->data->data[i] = fplus * hplus->data->data[i] + fcross * hcross->data->data[i];
+		/* time of sample at geocentre.  skip if outside of input
+		 * domain */
+		XLALGPSAdd(&t, geometric_delay);
+		dt = XLALGPSDiff(&t, &hplus->epoch);
+		if(dt < 0.0 || dt >= hplus->data->length * hplus->deltaT) {
+			h->data->data[i] = 0.0;
+			continue;
+		}
+
+		/* evaluate linear combination of interpolators */
+		h->data->data[i] = fplus * XLALREAL8TimeSeriesInterpEval(hplusinterp, &t) + fcross * XLALREAL8TimeSeriesInterpEval(hcrossinterp, &t);
+		if(XLAL_IS_REAL8_FAIL_NAN(h->data->data[i]))
+			goto error;
 	}
+	XLALREAL8TimeSeriesInterpDestroy(hplusinterp);
+	XLALREAL8TimeSeriesInterpDestroy(hcrossinterp);
 
 	/* done */
 
 	return h;
 
 error:
+	XLALREAL8TimeSeriesInterpDestroy(hplusinterp);
+	XLALREAL8TimeSeriesInterpDestroy(hcrossinterp);
 	XLALDestroyREAL8TimeSeries(h);
 	XLAL_ERROR_NULL(XLAL_EFUNC);
 }
