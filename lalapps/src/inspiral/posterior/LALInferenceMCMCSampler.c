@@ -994,7 +994,7 @@ void PTMCMCOneStep(LALInferenceRunState *runState)
   temperature = *(REAL8*) LALInferenceGetVariable(runState->proposalArgs, "temperature");
   acceptanceCount = *(INT4*) LALInferenceGetVariable(runState->proposalArgs, "acceptanceCount");
 
-  if(glitchFlag) gsl_matrix_memcpy (runState->data->glitch_y, runState->data->glitch_x);
+  //if(glitchFlag) gsl_matrix_memcpy (runState->data->glitch_y, runState->data->glitch_x);
 
   // generate proposal:
   proposedParams.head = NULL;
@@ -1033,7 +1033,7 @@ void PTMCMCOneStep(LALInferenceRunState *runState)
       || (log(gsl_rng_uniform(runState->GSLrandom)) < logAcceptanceProbability)) {   //accept
     LALInferenceCopyVariables(&proposedParams, runState->currentParams);
 
-    if(glitchFlag) gsl_matrix_memcpy (runState->data->glitch_x, runState->data->glitch_y);
+    //if(glitchFlag) gsl_matrix_memcpy (runState->data->glitch_x, runState->data->glitch_y);
 
     runState->currentLikelihood = logLikelihoodProposed;
     LALInferenceIFOData *headData = runState->data;
@@ -1161,7 +1161,7 @@ UINT4 LALInferencePTswap(LALInferenceRunState *runState, REAL8 *ladder, INT4 i, 
         /* Unpack parameters */
         LALInferenceCopyArrayToVariables(adjParameters, runState->currentParams);
 
-        /* Recompute glitch model */
+        /* Recompute glitch model
         UINT4 glitchFlag = 0;
         if(LALInferenceCheckVariable(runState->currentParams,"glitchFitFlag"))
           glitchFlag = *((UINT4 *)LALInferenceGetVariable(runState->currentParams, "glitchFitFlag"));
@@ -1172,10 +1172,10 @@ UINT4 LALInferencePTswap(LALInferenceRunState *runState, REAL8 *ladder, INT4 i, 
           UINT4 ifo = 0;
           UINT4 n   = 0;
 
-          /* Remove wavlet form linear combination */
+          // Remove wavlet form linear combination
           for(ifo=0; ifo<gsize->length; ifo++) for(n=0; n<runState->data->glitch_x->size2; n++) gsl_matrix_set(runState->data->glitch_x, ifo, n, 0.0);
           for(ifo=0; ifo<gsize->length; ifo++) for(n=0; n<gsize->data[ifo]; n++) UpdateWaveletSum(runState, runState->currentParams, runState->data->glitch_x, ifo, n, 1);
-        }
+        }*/
 
         XLALDestroyREAL8Vector(parameters);
         XLALDestroyREAL8Vector(adjParameters);
