@@ -319,6 +319,59 @@ XLALFileResolvePath ( const char *fname	  //!< [in] filename or file-path to res
   return XLALFileResolvePathLong ( fname, PKG_DATA_DIR );
 } // XLALFileResolvePath()
 
+/** Read a complete data-file into memory as a string
+ */
+char *
+XLALFileLoad ( const char *path		//!< [in] input filepath
+               )
+{
+  XLAL_CHECK_NULL ( path != NULL, XLAL_EINVAL );
+
+  // check that this is actually a regular file, rather than sth else (eg a directory)
+  size_t blobLen;
+  XLAL_CHECK_NULL ( XLALFileIsRegularAndGetSize ( path, &blobLen ) == 1, XLAL_EINVAL, "Path '%s' does not point to a regular file!\n", path );
+
+  char *dataBuffer = NULL;
+  size_t dataBufferLen = 0;
+  size_t numReadTotal = 0;
+  LALFILE *fp;
+  XLAL_CHECK_NULL ( (fp = XLALFileOpenRead (path)) != NULL, XLAL_EFUNC );
+
+  // read file in blobs the size of the (possibly compressed) file
+  int blobCounter = 0;
+  while ( ! XLALFileEOF( fp ) )
+    {
+      dataBufferLen += blobLen;
+      if ( (dataBuffer = XLALRealloc ( dataBuffer, dataBufferLen + 1)) == NULL ) {
+        XLALFileClose(fp);
+        XLAL_ERROR_NULL ( XLAL_ENOMEM, "Failed to XLALRealloc(%d)\n", dataBufferLen+1 );
+      }
+      size_t numRead = XLALFileRead ( dataBuffer + blobCounter*blobLen, sizeof(char), blobLen, fp );
+      if ( xlalErrno != XLAL_SUCCESS ) {
+        XLALFree ( dataBuffer );
+        XLALFileClose(fp);
+        XLAL_ERROR_NULL ( XLAL_EFUNC );
+      }
+
+      numReadTotal += numRead;
+
+      if ( numRead < blobLen ) {
+        break;
+      }
+      blobCounter ++;
+
+    } // while !eof
+
+  XLALFileClose(fp);
+
+  // adjust buffer to final size of data read
+  XLAL_CHECK_NULL ( (dataBuffer = XLALRealloc ( dataBuffer, numReadTotal + 1)) != NULL, XLAL_ENOMEM, "Failed to XLALRealloc(%d)\n", numReadTotal+1 );
+  dataBuffer[numReadTotal] = 0;
+
+  return dataBuffer;
+
+} // XLALFileLoad()
+
 int XLALFileIsCompressed( const char *path )
 {
   FILE *fp;
