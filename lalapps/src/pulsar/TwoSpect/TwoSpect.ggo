@@ -73,7 +73,8 @@ option "useSSE"         - "Use SSE functions (caution: user needs to have compil
 option "followUpOutsideULrange"  - "Follow up outliers outside the range of the UL values" flag off
 
 section "Injection options"
-option "timestampsFile"    - "File to read timestamps from (file-format: lines with <seconds> <nanoseconds>; conflicts with --sftDir/--sftFile options)" string typestr="path/filename" optional
+option "timestampsFile"    - "File to read timestamps from (file-format: lines with <seconds> <nanoseconds>; conflicts with --sftDir/--sftFile and --segmentFile options)" string typestr="path/filename" optional
+option "segmentFile"       - "File to read segments from (file-format: lines with <startGPSTime> <endGPSTime>; conflicts with --sftDir/--sftFile and --timestampsFile options)" string typestr="path/filename" optional
 option "injectionSources"  - "File containing sources to inject with a required preceding @ symbol" string typestr="@path/filename" optional
 option "injRandSeed"       - "Random seed value for reproducable noise (conflicts with --sftDir/--sftFile options)" int default="0" optional
 

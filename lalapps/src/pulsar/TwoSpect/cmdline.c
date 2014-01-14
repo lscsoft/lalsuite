@@ -96,7 +96,8 @@ const char *gengetopt_args_info_full_help[] = {
   "      --useSSE                  Use SSE functions (caution: user needs to have \n                                  compiled for SSE or program fails)  \n                                  (default=off)",
   "      --followUpOutsideULrange  Follow up outliers outside the range of the UL \n                                  values  (default=off)",
   "\nInjection options:",
-  "      --timestampsFile=path/filename\n                                File to read timestamps from (file-format: \n                                  lines with <seconds> <nanoseconds>; conflicts \n                                  with --sftDir/--sftFile options)",
+  "      --timestampsFile=path/filename\n                                File to read timestamps from (file-format: \n                                  lines with <seconds> <nanoseconds>; conflicts \n                                  with --sftDir/--sftFile and --segmentFile \n                                  options)",
+  "      --segmentFile=path/filename\n                                File to read segments from (file-format: lines \n                                  with <startGPSTime> <endGPSTime>; conflicts \n                                  with --sftDir/--sftFile and --timestampsFile \n                                  options)",
   "      --injectionSources=@path/filename\n                                File containing sources to inject with a \n                                  required preceding @ symbol",
   "      --injRandSeed=INT         Random seed value for reproducable noise \n                                  (conflicts with --sftDir/--sftFile options)  \n                                  (default=`0')",
   "\nHidden options:",
@@ -196,11 +197,12 @@ init_help_array(void)
   gengetopt_args_info_help[64] = gengetopt_args_info_full_help[64];
   gengetopt_args_info_help[65] = gengetopt_args_info_full_help[65];
   gengetopt_args_info_help[66] = gengetopt_args_info_full_help[66];
-  gengetopt_args_info_help[67] = 0; 
+  gengetopt_args_info_help[67] = gengetopt_args_info_full_help[67];
+  gengetopt_args_info_help[68] = 0; 
   
 }
 
-const char *gengetopt_args_info_help[68];
+const char *gengetopt_args_info_help[69];
 
 typedef enum {ARG_NO
   , ARG_FLAG
@@ -313,6 +315,7 @@ void clear_given (struct gengetopt_args_info *args_info)
   args_info->useSSE_given = 0 ;
   args_info->followUpOutsideULrange_given = 0 ;
   args_info->timestampsFile_given = 0 ;
+  args_info->segmentFile_given = 0 ;
   args_info->injectionSources_given = 0 ;
   args_info->injRandSeed_given = 0 ;
   args_info->weightedIHS_given = 0 ;
@@ -422,6 +425,8 @@ void clear_args (struct gengetopt_args_info *args_info)
   args_info->followUpOutsideULrange_flag = 0;
   args_info->timestampsFile_arg = NULL;
   args_info->timestampsFile_orig = NULL;
+  args_info->segmentFile_arg = NULL;
+  args_info->segmentFile_orig = NULL;
   args_info->injectionSources_arg = NULL;
   args_info->injectionSources_orig = NULL;
   args_info->injRandSeed_arg = 0;
@@ -519,31 +524,32 @@ void init_args_info(struct gengetopt_args_info *args_info)
   args_info->useSSE_help = gengetopt_args_info_full_help[61] ;
   args_info->followUpOutsideULrange_help = gengetopt_args_info_full_help[62] ;
   args_info->timestampsFile_help = gengetopt_args_info_full_help[64] ;
-  args_info->injectionSources_help = gengetopt_args_info_full_help[65] ;
-  args_info->injRandSeed_help = gengetopt_args_info_full_help[66] ;
-  args_info->weightedIHS_help = gengetopt_args_info_full_help[68] ;
-  args_info->signalOnly_help = gengetopt_args_info_full_help[69] ;
-  args_info->templateTest_help = gengetopt_args_info_full_help[70] ;
-  args_info->templateTestF_help = gengetopt_args_info_full_help[71] ;
-  args_info->templateTestP_help = gengetopt_args_info_full_help[72] ;
-  args_info->templateTestDf_help = gengetopt_args_info_full_help[73] ;
-  args_info->ULsolver_help = gengetopt_args_info_full_help[74] ;
-  args_info->dopplerMultiplier_help = gengetopt_args_info_full_help[75] ;
-  args_info->IHSonly_help = gengetopt_args_info_full_help[76] ;
-  args_info->noNotchHarmonics_help = gengetopt_args_info_full_help[77] ;
-  args_info->calcRthreshold_help = gengetopt_args_info_full_help[78] ;
-  args_info->BrentsMethod_help = gengetopt_args_info_full_help[79] ;
-  args_info->antennaOff_help = gengetopt_args_info_full_help[80] ;
-  args_info->noiseWeightOff_help = gengetopt_args_info_full_help[81] ;
-  args_info->gaussTemplatesOnly_help = gengetopt_args_info_full_help[82] ;
-  args_info->ULoff_help = gengetopt_args_info_full_help[83] ;
-  args_info->printSFTtimes_help = gengetopt_args_info_full_help[84] ;
-  args_info->printUsedSFTtimes_help = gengetopt_args_info_full_help[85] ;
-  args_info->printData_help = gengetopt_args_info_full_help[86] ;
-  args_info->printUninitialized_help = gengetopt_args_info_full_help[87] ;
-  args_info->printSignalData_help = gengetopt_args_info_full_help[88] ;
-  args_info->randSeed_help = gengetopt_args_info_full_help[89] ;
-  args_info->chooseSeed_help = gengetopt_args_info_full_help[90] ;
+  args_info->segmentFile_help = gengetopt_args_info_full_help[65] ;
+  args_info->injectionSources_help = gengetopt_args_info_full_help[66] ;
+  args_info->injRandSeed_help = gengetopt_args_info_full_help[67] ;
+  args_info->weightedIHS_help = gengetopt_args_info_full_help[69] ;
+  args_info->signalOnly_help = gengetopt_args_info_full_help[70] ;
+  args_info->templateTest_help = gengetopt_args_info_full_help[71] ;
+  args_info->templateTestF_help = gengetopt_args_info_full_help[72] ;
+  args_info->templateTestP_help = gengetopt_args_info_full_help[73] ;
+  args_info->templateTestDf_help = gengetopt_args_info_full_help[74] ;
+  args_info->ULsolver_help = gengetopt_args_info_full_help[75] ;
+  args_info->dopplerMultiplier_help = gengetopt_args_info_full_help[76] ;
+  args_info->IHSonly_help = gengetopt_args_info_full_help[77] ;
+  args_info->noNotchHarmonics_help = gengetopt_args_info_full_help[78] ;
+  args_info->calcRthreshold_help = gengetopt_args_info_full_help[79] ;
+  args_info->BrentsMethod_help = gengetopt_args_info_full_help[80] ;
+  args_info->antennaOff_help = gengetopt_args_info_full_help[81] ;
+  args_info->noiseWeightOff_help = gengetopt_args_info_full_help[82] ;
+  args_info->gaussTemplatesOnly_help = gengetopt_args_info_full_help[83] ;
+  args_info->ULoff_help = gengetopt_args_info_full_help[84] ;
+  args_info->printSFTtimes_help = gengetopt_args_info_full_help[85] ;
+  args_info->printUsedSFTtimes_help = gengetopt_args_info_full_help[86] ;
+  args_info->printData_help = gengetopt_args_info_full_help[87] ;
+  args_info->printUninitialized_help = gengetopt_args_info_full_help[88] ;
+  args_info->printSignalData_help = gengetopt_args_info_full_help[89] ;
+  args_info->randSeed_help = gengetopt_args_info_full_help[90] ;
+  args_info->chooseSeed_help = gengetopt_args_info_full_help[91] ;
   
 }
 
@@ -740,6 +746,8 @@ cmdline_parser_release (struct gengetopt_args_info *args_info)
   free_string_field (&(args_info->FFTplanFlag_orig));
   free_string_field (&(args_info->timestampsFile_arg));
   free_string_field (&(args_info->timestampsFile_orig));
+  free_string_field (&(args_info->segmentFile_arg));
+  free_string_field (&(args_info->segmentFile_orig));
   free_string_field (&(args_info->injectionSources_arg));
   free_string_field (&(args_info->injectionSources_orig));
   free_string_field (&(args_info->injRandSeed_orig));
@@ -944,6 +952,8 @@ cmdline_parser_dump(FILE *outfile, struct gengetopt_args_info *args_info)
     write_into_file(outfile, "followUpOutsideULrange", 0, 0 );
   if (args_info->timestampsFile_given)
     write_into_file(outfile, "timestampsFile", args_info->timestampsFile_orig, 0);
+  if (args_info->segmentFile_given)
+    write_into_file(outfile, "segmentFile", args_info->segmentFile_orig, 0);
   if (args_info->injectionSources_given)
     write_into_file(outfile, "injectionSources", args_info->injectionSources_orig, 0);
   if (args_info->injRandSeed_given)
@@ -1726,6 +1736,7 @@ cmdline_parser_internal (
         { "useSSE",	0, NULL, 0 },
         { "followUpOutsideULrange",	0, NULL, 0 },
         { "timestampsFile",	1, NULL, 0 },
+        { "segmentFile",	1, NULL, 0 },
         { "injectionSources",	1, NULL, 0 },
         { "injRandSeed",	1, NULL, 0 },
         { "weightedIHS",	0, NULL, 0 },
@@ -2501,7 +2512,7 @@ cmdline_parser_internal (
               goto failure;
           
           }
-          /* File to read timestamps from (file-format: lines with <seconds> <nanoseconds>; conflicts with --sftDir/--sftFile options).  */
+          /* File to read timestamps from (file-format: lines with <seconds> <nanoseconds>; conflicts with --sftDir/--sftFile and --segmentFile options).  */
           else if (strcmp (long_options[option_index].name, "timestampsFile") == 0)
           {
           
@@ -2511,6 +2522,20 @@ cmdline_parser_internal (
                 &(local_args_info.timestampsFile_given), optarg, 0, 0, ARG_STRING,
                 check_ambiguity, override, 0, 0,
                 "timestampsFile", '-',
+                additional_error))
+              goto failure;
+          
+          }
+          /* File to read segments from (file-format: lines with <startGPSTime> <endGPSTime>; conflicts with --sftDir/--sftFile and --timestampsFile options).  */
+          else if (strcmp (long_options[option_index].name, "segmentFile") == 0)
+          {
+          
+          
+            if (update_arg( (void *)&(args_info->segmentFile_arg), 
+                 &(args_info->segmentFile_orig), &(args_info->segmentFile_given),
+                &(local_args_info.segmentFile_given), optarg, 0, 0, ARG_STRING,
+                check_ambiguity, override, 0, 0,
+                "segmentFile", '-',
                 additional_error))
               goto failure;
           

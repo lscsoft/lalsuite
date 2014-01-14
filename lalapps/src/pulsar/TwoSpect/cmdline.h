@@ -194,9 +194,12 @@ struct gengetopt_args_info
   const char *useSSE_help; /**< @brief Use SSE functions (caution: user needs to have compiled for SSE or program fails) help description.  */
   int followUpOutsideULrange_flag;	/**< @brief Follow up outliers outside the range of the UL values (default=off).  */
   const char *followUpOutsideULrange_help; /**< @brief Follow up outliers outside the range of the UL values help description.  */
-  char * timestampsFile_arg;	/**< @brief File to read timestamps from (file-format: lines with <seconds> <nanoseconds>; conflicts with --sftDir/--sftFile options).  */
-  char * timestampsFile_orig;	/**< @brief File to read timestamps from (file-format: lines with <seconds> <nanoseconds>; conflicts with --sftDir/--sftFile options) original value given at command line.  */
-  const char *timestampsFile_help; /**< @brief File to read timestamps from (file-format: lines with <seconds> <nanoseconds>; conflicts with --sftDir/--sftFile options) help description.  */
+  char * timestampsFile_arg;	/**< @brief File to read timestamps from (file-format: lines with <seconds> <nanoseconds>; conflicts with --sftDir/--sftFile and --segmentFile options).  */
+  char * timestampsFile_orig;	/**< @brief File to read timestamps from (file-format: lines with <seconds> <nanoseconds>; conflicts with --sftDir/--sftFile and --segmentFile options) original value given at command line.  */
+  const char *timestampsFile_help; /**< @brief File to read timestamps from (file-format: lines with <seconds> <nanoseconds>; conflicts with --sftDir/--sftFile and --segmentFile options) help description.  */
+  char * segmentFile_arg;	/**< @brief File to read segments from (file-format: lines with <startGPSTime> <endGPSTime>; conflicts with --sftDir/--sftFile and --timestampsFile options).  */
+  char * segmentFile_orig;	/**< @brief File to read segments from (file-format: lines with <startGPSTime> <endGPSTime>; conflicts with --sftDir/--sftFile and --timestampsFile options) original value given at command line.  */
+  const char *segmentFile_help; /**< @brief File to read segments from (file-format: lines with <startGPSTime> <endGPSTime>; conflicts with --sftDir/--sftFile and --timestampsFile options) help description.  */
   char * injectionSources_arg;	/**< @brief File containing sources to inject with a required preceding @ symbol.  */
   char * injectionSources_orig;	/**< @brief File containing sources to inject with a required preceding @ symbol original value given at command line.  */
   const char *injectionSources_help; /**< @brief File containing sources to inject with a required preceding @ symbol help description.  */
@@ -315,6 +318,7 @@ struct gengetopt_args_info
   unsigned int useSSE_given ;	/**< @brief Whether useSSE was given.  */
   unsigned int followUpOutsideULrange_given ;	/**< @brief Whether followUpOutsideULrange was given.  */
   unsigned int timestampsFile_given ;	/**< @brief Whether timestampsFile was given.  */
+  unsigned int segmentFile_given ;	/**< @brief Whether segmentFile was given.  */
   unsigned int injectionSources_given ;	/**< @brief Whether injectionSources was given.  */
   unsigned int injRandSeed_given ;	/**< @brief Whether injRandSeed was given.  */
   unsigned int weightedIHS_given ;	/**< @brief Whether weightedIHS was given.  */

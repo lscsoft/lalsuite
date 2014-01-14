@@ -55,6 +55,7 @@
 FILE *LOG = NULL, *ULFILE = NULL, *NORMRMSOUT = NULL;
 CHAR *earth_ephemeris = NULL, *sun_ephemeris = NULL, *sft_dir_file = NULL;
 static const LALStatus empty_status;
+static const SFTConstraints empty_constraints;
 
 //Main program
 int main(int argc, char *argv[])
@@ -391,11 +392,9 @@ int main(int argc, char *argv[])
          multiTimestamps->data[0]->deltaT = inputParams->Tcoh;
          XLALDestroyINT4Vector(removeTheseSFTs);
          XLALDestroyREAL4Vector(tfdata);
+         XLALDestroyMultiSFTVector(sftvector);
+         sftvector = NULL;
          inputParams->markBadSFTs = 0;
-         if (args_info.gaussNoiseWithSFTgaps_given) {
-            XLALDestroyMultiSFTVector(sftvector);
-            sftvector = NULL;
-         }
       } else {
          multiTimestamps = XLALTimestampsFromMultiSFTCatalogView(catalogView);
          if (multiTimestamps==NULL) {
@@ -423,36 +422,34 @@ int main(int argc, char *argv[])
       DataParams.SFTWindowType = "Hann";
       DataParams.SFTWindowBeta = 0;
 
-      //Make the signal SFTs and then we can destroy the injectionSources
+      //Make the signal SFTs
       MultiSFTVector *signalSFTs = NULL;
       if (XLALCWMakeFakeMultiData(&signalSFTs, NULL, injectionSources, &DataParams, edat) != 0) {   //Make the signal SFTs
          fprintf(stderr, "%s: XLALCWMakeFakeMultiData() failed.\n", __func__);
          XLAL_ERROR(XLAL_EFUNC);
       }
-      XLALDestroyPulsarParamsVector(injectionSources);
 
       //If we specified to use Gaussian SFTs with gaps the same as source SFTs, then create noise SFTs here
       if (args_info.gaussNoiseWithSFTgaps_given) {
-         injectionSources = XLALCreatePulsarParamsVector(1);
-         if (injectionSources == NULL) {
-            fprintf(stderr, "%s: XLALCreatePulsarParamsVector(%d) failed\n", __func__, 1);
-            XLAL_ERROR(XLAL_EFUNC);
-         }
-         injectionSources->data[0].Amp.h0 = 0.0;
-         injectionSources->data[0].Amp.cosi = 0.0;
-         injectionSources->data[0].Amp.psi = 0.0;
-         injectionSources->data[0].Amp.phi0 = 0.0;
-         injectionSources->data[0].Amp.cosi = 0.0;
-         injectionSources->data[0].Doppler.refTime = (LIGOTimeGPS){1000000000,0};
-         injectionSources->data[0].Doppler.Alpha = 0.0;
-         injectionSources->data[0].Doppler.Delta = 0.0;
-         injectionSources->data[0].Doppler.fkdot[0] = 0.0;
          DataParams.detInfo.sqrtSn[0] = args_info.avesqrtSh_arg;
-         if (XLALCWMakeFakeMultiData(&sftvector, NULL, injectionSources, &DataParams, edat) != 0) {
+         if (XLALCWMakeFakeMultiData(&sftvector, NULL, NULL, &DataParams, edat) != 0) {
             fprintf(stderr, "%s: XLALCWMakeFakeMultiData() failed.\n", __func__);
             XLAL_ERROR(XLAL_EFUNC);
          }
-         XLALDestroyPulsarParamsVector(injectionSources);
+      } else if (inputParams->signalOnly==0) {
+         SFTConstraints constraints = empty_constraints;
+         constraints.detector = inputParams->det[0].frDetector.prefix;
+         constraints.timestamps = multiTimestamps->data[0];
+         catalog = XLALSFTdataFind(sft_dir_file, &constraints);
+         if (catalog==NULL) {
+            fprintf(stderr,"%s: XLALSFTdataFind() failed.\n", __func__);
+            XLAL_ERROR(XLAL_EFUNC);
+         }
+         sftvector = extractSFTband(inputParams, catalog);
+         if (sftvector==NULL) {
+            fprintf(stderr, "%s: extractSFTband() failed.\n", __func__);
+            XLAL_ERROR(XLAL_EFUNC);
+         }
       }
 
       //Add the SFT vectors together
@@ -470,6 +467,7 @@ int main(int argc, char *argv[])
 
       //If printing the data outputs, then do that here
       if (args_info.printSignalData_given) {
+         DataParams.detInfo.sqrtSn[0] = 0.0;
          FILE *SIGNALOUT = fopen(args_info.printSignalData_arg, "w");
          PulsarParamsVector *oneSignal = XLALCreatePulsarParamsVector(1);
          if (oneSignal==NULL) {
@@ -505,30 +503,53 @@ int main(int argc, char *argv[])
          fclose(SIGNALOUT);
       }
 
+      XLALDestroyPulsarParamsVector(injectionSources);
       XLALDestroyMultiSFTCatalogView(catalogView);
+      XLALDestroySFTCatalog(catalog);
       XLALDestroyMultiTimestamps(multiTimestamps);
       XLALDestroyMultiSFTVector(signalSFTs);
-      XLALDestroySFTCatalog(catalog);
       XLALDestroyMultiSFTVector(sftvector);
-   } else if (args_info.timestampsFile_given) {
+   } else if (args_info.timestampsFile_given || args_info.segmentFile_given) {
       if (inputParams->signalOnly) args_info.avesqrtSh_arg = 0.0;   //set the noise values to zero for signal-only SFTs
 
-      //Create a stringVector for the timestamps files
-      LALStringVector *timestampFiles = XLALCreateStringVector(args_info.timestampsFile_arg, NULL);
-      if (timestampFiles==NULL) {
-         fprintf(stderr, "%s: XLALCreateStringVector() failed.\n", __func__);
-         XLAL_ERROR(XLAL_EFUNC);
-      }
+      MultiLIGOTimeGPSVector *multiTimestamps = NULL;
+      if (args_info.timestampsFile_given) {
+         //Create a stringVector for the timestamps files
+         LALStringVector *timestampFiles = XLALCreateStringVector(args_info.timestampsFile_arg, NULL);
+         if (timestampFiles==NULL) {
+            fprintf(stderr, "%s: XLALCreateStringVector() failed.\n", __func__);
+            XLAL_ERROR(XLAL_EFUNC);
+         }
 
-      //Read the timestamps files
-      MultiLIGOTimeGPSVector *multiTimestamps = XLALReadMultiTimestampsFiles(timestampFiles);
-      if (multiTimestamps==NULL) {
-         fprintf(stderr, "%s: XLALReadMultiTimestampsFiles() failed.\n", __func__);
-         XLAL_ERROR(XLAL_EFUNC);
-      }
+         //Read the timestamps files
+         multiTimestamps = XLALReadMultiTimestampsFiles(timestampFiles);
+         if (multiTimestamps==NULL) {
+            fprintf(stderr, "%s: XLALReadMultiTimestampsFiles() failed.\n", __func__);
+            XLAL_ERROR(XLAL_EFUNC);
+         }
+         XLALDestroyStringVector(timestampFiles);
 
-      //Hard-coded same coherence time as input
-      for (ii=0; ii<(INT4)multiTimestamps->length; ii++) multiTimestamps->data[ii]->deltaT = inputParams->Tcoh;
+         //Hard-coded same coherence time as input
+         for (ii=0; ii<(INT4)multiTimestamps->length; ii++) multiTimestamps->data[ii]->deltaT = inputParams->Tcoh;
+      } else {
+         LIGOTimeGPSVector *timestamps = XLALTimestampsFromSegmentFile( args_info.segmentFile_arg, inputParams->Tcoh, inputParams->SFToverlap, 0, 1);
+         if (timestamps==NULL) {
+            fprintf(stderr, "%s: XLALTimestampsFromSegmentFile() failed.\n", __func__);
+            XLAL_ERROR(XLAL_EFUNC);
+         }
+         multiTimestamps = XLALCalloc(1, sizeof(MultiLIGOTimeGPSVector));
+         if (multiTimestamps==NULL) {
+            fprintf(stderr, "%s: XLALCalloc() failed.\n", __func__);
+            XLAL_ERROR(XLAL_ENOMEM);
+         }
+         multiTimestamps->data = XLALCalloc(1, sizeof(multiTimestamps->data[0]));
+         if (multiTimestamps->data==NULL) {
+            fprintf(stderr, "%s: XLALCalloc() failed.\n", __func__);
+            XLAL_ERROR(XLAL_ENOMEM);
+         }
+         multiTimestamps->length = 1;
+         multiTimestamps->data[0] = timestamps;
+      }
 
       //If injection sources file was provided then read them from the input, otherwise create Gaussian noise SFTs
       PulsarParamsVector *injectionSources = NULL;
@@ -538,21 +559,6 @@ int main(int argc, char *argv[])
             fprintf(stderr, "%s: XLALPulsarParamsFromUserInput() failed.\n", __func__);
             XLAL_ERROR(XLAL_EFUNC);
          }
-      } else {
-         injectionSources = XLALCreatePulsarParamsVector(1);
-         if (injectionSources == NULL) {
-            fprintf(stderr, "%s: XLALCreatePulsarParamsVector(%d) failed\n", __func__, 1);
-            XLAL_ERROR(XLAL_EFUNC);
-         }
-         injectionSources->data[0].Amp.h0 = 0.0;
-         injectionSources->data[0].Amp.cosi = 0.0;
-         injectionSources->data[0].Amp.psi = 0.0;
-         injectionSources->data[0].Amp.phi0 = 0.0;
-         injectionSources->data[0].Amp.cosi = 0.0;
-         injectionSources->data[0].Doppler.refTime = (LIGOTimeGPS){1000000000,0};
-         injectionSources->data[0].Doppler.Alpha = 0.0;
-         injectionSources->data[0].Doppler.Delta = 0.0;
-         injectionSources->data[0].Doppler.fkdot[0] = 1.0;
       }
 
       //Setup the MFD data parameters
@@ -620,7 +626,6 @@ int main(int argc, char *argv[])
          fclose(SIGNALOUT);
       }
 
-      XLALDestroyStringVector(timestampFiles);
       XLALDestroyMultiTimestamps(multiTimestamps);
       XLALDestroyPulsarParamsVector(injectionSources);
       XLALDestroyMultiSFTVector(sftvector);
@@ -719,21 +724,6 @@ int main(int argc, char *argv[])
             fprintf(stderr, "%s: XLALPulsarParamsFromUserInput() failed.\n", __func__);
             XLAL_ERROR(XLAL_EFUNC);
          }
-      } else {
-         injectionSources = XLALCreatePulsarParamsVector(1);
-         if (injectionSources == NULL) {
-            fprintf(stderr, "%s: XLALCreatePulsarParamsVector(%d) failed\n", __func__, 1);
-            XLAL_ERROR(XLAL_EFUNC);
-         }
-         injectionSources->data[0].Amp.h0 = 0.0;
-         injectionSources->data[0].Amp.cosi = 0.0;
-         injectionSources->data[0].Amp.psi = 0.0;
-         injectionSources->data[0].Amp.phi0 = 0.0;
-         injectionSources->data[0].Amp.cosi = 0.0;
-         injectionSources->data[0].Doppler.refTime = (LIGOTimeGPS){1000000000,0};
-         injectionSources->data[0].Doppler.Alpha = 0.0;
-         injectionSources->data[0].Doppler.Delta = 0.0;
-         injectionSources->data[0].Doppler.fkdot[0] = 0.0;
       }
 
       //Set up the data parameters
@@ -1867,10 +1857,7 @@ SFTCatalog * findSFTdata(inputParamsStruct *input)
    }
    
    //Setup the constraints
-   SFTConstraints constraints;
-   constraints.detector = NULL;
-   constraints.startTime = constraints.endTime = NULL;
-   constraints.timestamps = NULL;
+   SFTConstraints constraints = empty_constraints;
    constraints.detector = input->det[0].frDetector.prefix;
    constraints.startTime = &start;
    constraints.endTime = &end;
@@ -1995,10 +1982,7 @@ REAL4Vector * readInSFTs(inputParamsStruct *input, REAL8 *normalization)
    }
    
    //Setup the constraints
-   SFTConstraints constraints;
-   constraints.detector = NULL;
-   constraints.startTime = constraints.endTime = NULL;
-   constraints.timestamps = NULL;
+   SFTConstraints constraints = empty_constraints;
    constraints.detector = input->det[0].frDetector.prefix;
    constraints.startTime = &start;
    constraints.endTime = &end;
@@ -2108,10 +2092,7 @@ REAL4VectorSequence * readInMultiSFTs(inputParamsStruct *input, REAL8 *normaliza
       XLAL_ERROR_NULL(XLAL_EFUNC);
    }
    
-   SFTConstraints constraints;
-   constraints.detector = NULL;
-   constraints.startTime = constraints.endTime = NULL;
-   constraints.timestamps = NULL;
+   SFTConstraints constraints = empty_constraints;
    constraints.startTime = &start;
    constraints.endTime = &end;
    
@@ -3340,6 +3321,8 @@ INT4 readTwoSpectInputParams(inputParamsStruct *params, struct gengetopt_args_in
    params->ULsolver = args_info.ULsolver_arg;                                    //Solver function for UL calculation (default = 0)
    params->signalOnly = args_info.signalOnly_given;                              //SFTs contain only signal, no noise (default = 0)
    params->weightedIHS = args_info.weightedIHS_given;
+   params->periodHarmToCheck = args_info.periodHarmToCheck_arg;
+   params->periodFracToCheck = args_info.periodFracToCheck_arg;
 
    //Parameters without default arguments but are required
    //gengetopt has already checked to see they are present and would have failed
@@ -3630,8 +3613,11 @@ INT4 readTwoSpectInputParams(inputParamsStruct *params, struct gengetopt_args_in
    if (args_info.sftFile_given && args_info.sftDir_given) {
       fprintf(stderr, "%s: Only one of either --sftDir or --sftFile can be given.\n", __func__);
       XLAL_ERROR(XLAL_FAILURE);
-   } else if (args_info.timestampsFile_given && (args_info.sftFile_given || args_info.sftDir_given || args_info.gaussNoiseWithSFTgaps_given)) {
-      fprintf(stderr, "%s: When specifying --timestampsFile, --sftDir, --sftFile, or --gaussNoiseWithSFTgaps cannot be used.\n", __func__);
+   } else if (args_info.timestampsFile_given && (args_info.sftFile_given || args_info.sftDir_given || args_info.gaussNoiseWithSFTgaps_given || args_info.segmentFile_given)) {
+      fprintf(stderr, "%s: When specifying --timestampsFile, --sftDir, --sftFile, --gaussNoiseWithSFTgaps, or --segmentFile cannot be used.\n", __func__);
+      XLAL_ERROR(XLAL_FAILURE);
+   } else if (args_info.segmentFile_given && (args_info.sftFile_given || args_info.sftDir_given || args_info.gaussNoiseWithSFTgaps_given || args_info.timestampsFile_given)) {
+      fprintf(stderr, "%s: When specifying --segmentFile, --sftDir, --sftFile, --gaussNoiseWithSFTgaps, or --timestampsFile cannot be used.\n", __func__);
       XLAL_ERROR(XLAL_FAILURE);
    } else if (args_info.sftDir_given) {
       sft_dir_file = XLALCalloc(strlen(args_info.sftDir_arg)+20, sizeof(*sft_dir_file));
