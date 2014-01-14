@@ -75,7 +75,8 @@ int XLALSimInspiralTaylorF2(
     const REAL8 piM = LAL_PI * m_sec;
     const REAL8 vISCO = 1. / sqrt(6.);
     const REAL8 fISCO = vISCO * vISCO * vISCO / piM;
-    const REAL8 v0 = cbrt(piM * fStart);
+    REAL8 v0 = cbrt(piM * fStart);
+    v0 = 1.;
     const REAL8 chi1 = m1 / m;
     const REAL8 chi2 = m2 / m;
     const REAL8 lam1 = lambda1;
