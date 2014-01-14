@@ -40,6 +40,7 @@ check_PROGRAMS = \
 	UniversalDopplerMetricTest \
 	NormalizeSFTRngMedTest \
 	XLALMultiNoiseWeightsTest \
+	FileIOTest \
 	$(XMLTEST)
 ##	SFTCleanTest \
 
