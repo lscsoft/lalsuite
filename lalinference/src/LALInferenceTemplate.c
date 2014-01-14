@@ -294,7 +294,7 @@ double m1,m2,mc,eta,q;
     //XLALGPSAdd(&tStart, -1 / deltaF);  /* coalesce at t=0 */
 
     /* extrinsic parameters */
-    amp0 = pow(m_sec, 5./6.) * sqrt(5.*eta / 24.) / (Pi_p2by3 * r / LAL_C_SI);
+    amp0 = -pow(m_sec, 5./6.) * sqrt(5.*eta / 24.) / (Pi_p2by3 * r / LAL_C_SI);
     shft = 0;//LAL_TWOPI * (tStart.gpsSeconds + 1e-9 * tStart.gpsNanoSeconds);
 
     /* spin terms in the amplitude and phase (in terms of the reduced
