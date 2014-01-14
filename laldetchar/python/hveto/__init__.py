@@ -272,7 +272,6 @@ def write_round_xml( vetosegs, vetotrigs, winner, ifo, opts ):
 	utils.process.append_process_params( xmldoc, procrow, utils.process.process_params_from_dict(opts) )
 
 	summ = lsctables.New(lsctables.SearchSummVarsTable, lsctables.SearchSummVarsTable.validcolumns.keys())
-	import pdb; pdb.set_trace()
 
 	# Add the vetoed triggers
 	xmldoc.childNodes[0].childNodes.append( vetotrigs )
