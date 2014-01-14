@@ -1918,6 +1918,7 @@ void initialisePrior( LALInferenceRunState *runState )
       remove_variable_and_prior( runState, data, "phi21" );
     }
     else if( LALInferenceGetVariableVaryType( runState->currentParams, "phi22" ) == LALINFERENCE_PARAM_FIXED &&
+      *(REAL8*)LALInferenceGetVariable( runState->currentParams, "phi22" ) == 0. &&
       ( LALInferenceGetVariableVaryType( runState->currentParams, "phi21" ) == LALINFERENCE_PARAM_CIRCULAR ||
         LALInferenceGetVariableVaryType( runState->currentParams, "phi21" ) == LALINFERENCE_PARAM_LINEAR ) ){
       /* check if using a prior range that corresponds to a biaxial star */
