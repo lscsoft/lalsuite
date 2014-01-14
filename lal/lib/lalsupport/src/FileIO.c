@@ -69,6 +69,13 @@
 #include <string.h>
 #include <errno.h>
 
+#ifdef HAVE_SYS_STAT_H
+#include <sys/stat.h>
+#endif
+#ifdef HAVE_SYS_TYPES_H
+#include <sys/types.h>
+#endif
+
 #include <zlib.h>
 #define ZLIB_ENABLED
 
@@ -204,7 +211,6 @@ LALOpenDataFile( const char *fname )
   ERRORMSG( fname );
   return NULL;
 }
-
 
 int XLALFileIsCompressed( const char *path )
 {
@@ -522,6 +528,70 @@ int XLALFileEOF( LALFILE *file )
 #endif
   return c;
 }
+
+/** Check if path points to a 'regular file', rather than a directory or sth else.
+ * and also return the size of the given file.
+ *
+ * This is simply a wrapper to stat(), and S_ISREG()
+ * and could be easily generalized along those lines to test for directories etc.
+ *
+ * return an error if stat() was unavailable
+ * return 1 for true, 0 for false, -1 on error
+ */
+int
+XLALFileIsRegularAndGetSize ( const char *path,	//!< [in] path to file
+                              size_t *fileLen	//!< [out] size in bytes of file
+                              )
+{
+#ifndef HAVE_STAT
+  XLAL_ERROR ( XLAL_EFAILED, "No implementation of function stat() available, which is required here!\n");
+#else
+  XLAL_CHECK ( path != NULL, XLAL_EINVAL );
+
+  struct stat sb;
+  XLAL_CHECK ( stat( path, &sb) != -1, XLAL_EIO, "stat() failed: perror = '%s'\n", strerror(errno) );
+
+  if ( fileLen ) {	// optional output argument
+    (*fileLen) = (size_t)sb.st_size;
+  }
+
+  return (S_ISREG(sb.st_mode));
+#endif
+
+} // XLALFileIsRegularAndGetSize()
+
+
+/** Check if given file is 'regular' (rather than a directory or sth else)
+ *
+ * This is a simple wrapper to XLALFileIsRegularAndGetSize().
+ *
+ * Return 1 for true, 0 for false, -1 on error
+ */
+int
+XLALFileIsRegular ( const char *path	//!< [in] path to file
+                    )
+{
+  return XLALFileIsRegularAndGetSize ( path, NULL );
+} // XLALFileIsRegular()
+
+
+/** Return the size of given file in bytes.
+ *
+ * This is simply a wrapper to XLALFileIsRegularAndGetSize()
+ *
+ * Returns (size_t)-1 on error
+ */
+size_t
+XLALFileSize ( const char *path		//!< [in] path to file
+               )
+{
+  size_t size;
+
+  XLAL_CHECK ( XLALFileIsRegularAndGetSize ( path, &size ) != -1, XLAL_EFUNC );
+
+  return size;
+
+} // XLALFileSize()
 
 /**
  * \brief Use gzip to compress a text file
