@@ -248,7 +248,7 @@ static void q2masses(double mc, double q, double *m1, double *m2)
 
 void LALInferenceTemplateROQ(LALInferenceIFOData *IFOdata)
 {
-double m1,m2,mc,eta,q,iota;
+double m1,m2,mc,eta,q,iota=0;
 /* Prefer m1 and m2 if available (i.e. for injection template) */
   if(LALInferenceCheckVariable(IFOdata->modelParams,"mass1")&&LALInferenceCheckVariable(IFOdata->modelParams,"mass2"))
   {
