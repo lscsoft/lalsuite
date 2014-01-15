@@ -400,9 +400,12 @@ REAL8 LALInferenceROQLogLikelihood(LALInferenceVariables *currentParams, LALInfe
   
   gsl_complex complex_d_dot_h;
   
-  gsl_complex exp_i_pi;
-  gsl_complex cross_factor;
-  gsl_complex total_scale_factor;
+  gsl_complex gsl_fplus;
+  gsl_complex gsl_fcross;
+  
+  //gsl_complex exp_i_pi;
+  //gsl_complex cross_factor;
+  //gsl_complex total_scale_factor;
   
   if(data==NULL) {XLAL_ERROR_REAL8(XLAL_EINVAL,"ERROR: Encountered NULL data pointer in likelihood\n");}
   
@@ -421,6 +424,11 @@ REAL8 LALInferenceROQLogLikelihood(LALInferenceVariables *currentParams, LALInfe
     distMpc = exp(*(REAL8*)LALInferenceGetVariable(currentParams,"logdistance"));
   else
     distMpc = *(REAL8*) LALInferenceGetVariable(currentParams, "distance");       /* Mpc         */
+  
+  double iota	= *(REAL8*) LALInferenceGetVariable(currentParams, "inclination");
+  double cosiota = cos(iota);
+  double plusCoef  = 0.5 * (1.0 + cosiota*cosiota);
+  double crossCoef = cosiota;
   
   /* figure out GMST: */
   XLALGPSSetREAL8(&GPSlal, GPSdouble);
@@ -495,12 +503,20 @@ REAL8 LALInferenceROQLogLikelihood(LALInferenceVariables *currentParams, LALInfe
     dataPtr->fCross = FcrossScaled;
     dataPtr->timeshift = timeshift;
     
-    exp_i_pi = gsl_complex_polar (0, M_PI);
-    cross_factor = gsl_complex_mul_real(exp_i_pi, FcrossScaled);
-    total_scale_factor = gsl_complex_add_real (cross_factor, FplusScaled); //ONLY VALID FOR non-precessing, dominant mode only templates
+    gsl_fplus = gsl_complex_rect(FplusScaled,0.0);
+    gsl_fcross = gsl_complex_rect(FcrossScaled,0.0);
     
-    gsl_blas_zscal (total_scale_factor, data->roqData->hplus);
+    //exp_i_pi = gsl_complex_polar (0, M_PI);
+    //cross_factor = gsl_complex_mul_real(exp_i_pi, FcrossScaled);
+    //total_scale_factor = gsl_complex_add_real (cross_factor, FplusScaled); //ONLY VALID FOR non-precessing, dominant mode only templates
+    
+    //gsl_blas_zscal (total_scale_factor, data->roqData->hplus);
  
+    gsl_vector_complex_set_zero(data->roqData->hstrain);
+    
+    gsl_blas_zaxpy(gsl_fplus,data->roqData->hplus,data->roqData->hstrain);
+    gsl_blas_zaxpy(gsl_fcross,data->roqData->hcross,data->roqData->hstrain);
+    
     time_step = (float)data->roqData->time_weights_width / (float)data->roqData->weights->size1;
     time_min = data->roqData->trigtime - 0.5*data->roqData->time_weights_width;
     
@@ -514,18 +530,18 @@ REAL8 LALInferenceROQLogLikelihood(LALInferenceVariables *currentParams, LALInfe
     gsl_vector_complex_view weights_row = gsl_matrix_complex_row (data->roqData->weights, weight_index);
  
     // compute h_dot_h and d_dot_h
-    gsl_blas_zdotu( &(weights_row.vector), data->roqData->hplus, &complex_d_dot_h);
+    gsl_blas_zdotu( &(weights_row.vector), data->roqData->hstrain, &complex_d_dot_h);
   
-    h_dot_h = (*(dataPtr->roqData->amp_squared)) * (pow(dataPtr->fPlus, 2.) + pow(dataPtr->fCross, 2.)) * dataPtr->roqData->int_f_7_over_3;
+    h_dot_h = (*(dataPtr->roqData->amp_squared)) * (pow(dataPtr->fPlus*plusCoef, 2.) + pow(dataPtr->fCross*crossCoef, 2.)) * dataPtr->roqData->int_f_7_over_3;
     
     dataPtr->loglikelihood = GSL_REAL(complex_d_dot_h);
     dataPtr->loglikelihood += -0.5*h_dot_h;
     
     loglikeli += dataPtr->loglikelihood;
     
-   // printf("GSL_REAL(complex_d_dot_h)=%e\n",GSL_REAL(complex_d_dot_h));
-   // printf("h_dot_h=%e\n",h_dot_h);
-   // printf("loglikeli=%e\n",loglikeli);
+    printf("GSL_REAL(complex_d_dot_h)=%e\n",GSL_REAL(complex_d_dot_h));
+    printf("h_dot_h=%e\n",h_dot_h);
+    printf("loglikeli=%e\n",loglikeli);
     
     dataPtr = dataPtr->next;
   }

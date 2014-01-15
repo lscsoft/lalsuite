@@ -317,6 +317,7 @@ LALInferenceRunState *initialize(ProcessParamsTable *commandLine)
         if (ifoPtr->roqData){
           ifoPtr->roqData->hplus = gsl_vector_complex_calloc(n_basis);
           ifoPtr->roqData->hcross = gsl_vector_complex_calloc(n_basis);
+          ifoPtr->roqData->hstrain = gsl_vector_complex_calloc(n_basis);
           ifoPtr->roqData->amp_squared = XLALCalloc(1, sizeof(REAL8));
         }
       }
