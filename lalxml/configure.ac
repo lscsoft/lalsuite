@@ -1,25 +1,18 @@
 AC_PREREQ([2.63])
-AC_INIT([lalxml],[1.1.10.1],[lal-discuss@ligo.org])
-AC_CONFIG_HEADERS([src/config.h src/LALXMLConfig.h])
+AC_INIT([LALXML],[1.1.10.1],[lal-discuss@ligo.org])
+AC_CONFIG_HEADERS([src/config.h src/lal/LALXMLConfig.h])
 AC_CONFIG_SRCDIR([src/LALXML.c])
 AC_CONFIG_AUX_DIR([gnuscripts])
 AC_CONFIG_MACRO_DIR([gnuscripts])
 AC_CONFIG_FILES([ \
-  lalxml.spec \
-  lalxml.pc \
-  lalxml-uninstalled.pc \
   Makefile \
-  gnuscripts/Makefile \
-  debian/Makefile \
-  include/Makefile \
-  include/lal/Makefile \
-  src/Makefile \
-  python/Makefile \
+  lalxml-uninstalled.pc \
+  lalxml.pc \
+  lalxml.spec \
   python/__init__.py \
   swig/Makefile \
   swig/octave/Makefile \
   swig/python/Makefile \
-  test/Makefile
 ])
 AM_INIT_AUTOMAKE([1.11 foreign subdir-objects color-tests parallel-tests])
 
@@ -119,9 +112,6 @@ LALSUITE_ADD_GCC_FLAGS
 # pure-python library code from being split across lib and lib64 on
 # RedHat-derived systems.
 AC_SUBST([pkgpythondir], ["\${pkgpyexecdir}"])
-
-LAL_HEADER_LINK=${ac_aux_dir}/header-link.mk
-AC_SUBST_FILE([LAL_HEADER_LINK])
 
 # output
 AC_OUTPUT
