@@ -896,10 +896,8 @@ peg_frame_cache = inspiralutils.create_pegasus_cache_file(pfnfile)
 #set up site and dir options
 if opts.grid_site:
   exec_site='local,' + opts.grid_site
-  dirs_entry='--relative-dir ' + os.path.basename(tmp_exec_dir) + ' --relative-submit-dir .'
 else:
-  exec_site='local'
-  dirs_entry='--relative-dir .' 
+  exec_site=None
 
 
 ##############################################################################
