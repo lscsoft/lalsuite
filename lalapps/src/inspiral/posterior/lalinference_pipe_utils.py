@@ -420,7 +420,7 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
         for a in combinations(self.ifos,N):
             ifocombos.append(a)
     for ifos in ifocombos:
-        self.engine_jobs[ifos] = EngineJob(self.config, os.path.join(self.basepath,'engine_%s.sub'%(reduce(lambda x,y:x+y, map(str,ifos)))),self.logpath ,dax=self.is_dax(), site=self.site)
+        self.engine_jobs[ifos] = EngineJob(self.config, os.path.join(self.basepath,'engine_%s.sub'%(reduce(lambda x,y:x+y, map(str,ifos)))),self.logpath ,dax=self.is_dax())
     self.results_page_job = ResultsPageJob(self.config,os.path.join(self.basepath,'resultspage.sub'),self.logpath,dax=self.is_dax())
     self.cotest_results_page_job = ResultsPageJob(self.config,os.path.join(self.basepath,'resultspagecoherent.sub'),self.logpath,dax=self.is_dax())
     self.merge_job = MergeNSJob(self.config,os.path.join(self.basepath,'merge_runs.sub'),self.logpath,dax=self.is_dax())
@@ -783,7 +783,7 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
       ifos=event.ifos
     if ifos is None:
       ifos=self.ifos
-    node=self.EngineNode(self.engine_jobs[tuple(ifos)])
+    node=self.EngineNode(self.engine_jobs[tuple(ifos)],site=self.site)
     end_time=event.trig_time
     node.set_trig_time(end_time)
     node.set_seed(random.randint(1,2**31))
@@ -887,7 +887,7 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
     return node
 
 class EngineJob(pipeline.CondorDAGJob,pipeline.AnalysisJob):
-  def __init__(self,cp,submitFile,logdir,dax=False, site='local'):
+  def __init__(self,cp,submitFile,logdir,dax=False):
     self.engine=cp.get('analysis','engine')
     basepath=cp.get('paths','basedir')
     snrpath=os.path.join(basepath,'SNR')
@@ -910,9 +910,7 @@ class EngineJob(pipeline.CondorDAGJob,pipeline.AnalysisJob):
         universe='vanilla'
       else: universe="standard"
     pipeline.CondorDAGJob.__init__(self,universe,exe)
-    if site=='bologna' or site=='nikhef': # For Bologna cluster
-        self.set_executable_installed(False)
-    pipeline.AnalysisJob.__init__(self,cp,dax=dax,site=site)
+    pipeline.AnalysisJob.__init__(self,cp,dax=dax)
     # Set the options which are always used
     self.set_sub_file(submitFile)
     if self.engine=='lalinferencemcmc' or self.engine=='lalinferencebambimpi':
@@ -966,8 +964,12 @@ class EngineJob(pipeline.CondorDAGJob,pipeline.AnalysisJob):
  
 class EngineNode(pipeline.CondorDAGNode):
   new_id = itertools.count().next
-  def __init__(self,li_job):
+  def __init__(self,li_job,site=None):
     pipeline.CondorDAGNode.__init__(self,li_job)
+    if site:
+      self.set_grid_site(site)
+      if site!='local':
+        self.job().set_executable_installed(False)
     self.ifos=[]
     self.scisegs={}
     self.channels={}
@@ -1160,8 +1162,8 @@ class EngineNode(pipeline.CondorDAGNode):
       self.__finaldata=True
 
 class LALInferenceNestNode(EngineNode):
-  def __init__(self,li_job):
-    EngineNode.__init__(self,li_job)
+  def __init__(self,li_job,site=None):
+    EngineNode.__init__(self,li_job,site=site)
     self.engine='lalinferencenest'
     self.outfilearg='outfile'
     
@@ -1183,8 +1185,8 @@ class LALInferenceNestNode(EngineNode):
     return self.headerfile
 
 class LALInferenceMCMCNode(EngineNode):
-  def __init__(self,li_job):
-    EngineNode.__init__(self,li_job)
+  def __init__(self,li_job,site=None):
+    EngineNode.__init__(self,li_job,site=site)
     self.engine='lalinferencemcmc'
     self.outfilearg='outfile'
 
@@ -1197,8 +1199,8 @@ class LALInferenceMCMCNode(EngineNode):
     return self.posfile
 
 class LALInferenceBAMBINode(EngineNode):
-  def __init__(self,li_job):
-    EngineNode.__init__(self,li_job)
+  def __init__(self,li_job,site=None):
+    EngineNode.__init__(self,li_job,site=site)
     self.engine='lalinferencebambi'
     self.outfilearg='outfile'
 
@@ -1220,10 +1222,10 @@ class LALInferenceBAMBINode(EngineNode):
     return self.headerfile
 
 class ResultsPageJob(pipeline.CondorDAGJob,pipeline.AnalysisJob):
-  def __init__(self,cp,submitFile,logdir,dax=False,site='local'):
+  def __init__(self,cp,submitFile,logdir,dax=False):
     exe=cp.get('condor','resultspage')
     pipeline.CondorDAGJob.__init__(self,"vanilla",exe)
-    pipeline.AnalysisJob.__init__(self,cp,dax=dax,site=site) # Job always runs locally
+    pipeline.AnalysisJob.__init__(self,cp,dax=dax) # Job always runs locally
     self.set_sub_file(submitFile)
     self.set_stdout_file(os.path.join(logdir,'resultspage-$(cluster)-$(process).out'))
     self.set_stderr_file(os.path.join(logdir,'resultspage-$(cluster)-$(process).err'))
@@ -1236,8 +1238,9 @@ class ResultsPageJob(pipeline.CondorDAGJob,pipeline.AnalysisJob):
         self.add_opt('skyres',cp.get('results','skyres'))
 
 class ResultsPageNode(pipeline.CondorDAGNode):
-    def __init__(self,results_page_job,outpath=None):
+    def __init__(self,results_page_job,outpath=None,site='local'):
         pipeline.CondorDAGNode.__init__(self,results_page_job)
+        self.set_grid_site(site)
         if outpath is not None:
             self.set_output_path(path)
     def set_gzip_output(self,path):
@@ -1287,10 +1290,10 @@ class CoherenceTestJob(pipeline.CondorDAGJob,pipeline.AnalysisJob):
     """
     Class defining the coherence test job to be run as part of a pipeline.
     """
-    def __init__(self,cp,submitFile,logdir,dax=False,site='local'):
+    def __init__(self,cp,submitFile,logdir,dax=False):
       exe=cp.get('condor','coherencetest')
       pipeline.CondorDAGJob.__init__(self,"vanilla",exe)
-      pipeline.AnalysisJob.__init__(self,cp,dax=dax,site=site) 
+      pipeline.AnalysisJob.__init__(self,cp,dax=dax) 
       self.add_opt('coherent-incoherent','')
       self.add_condor_cmd('getenv','True')
       self.set_stdout_file(os.path.join(logdir,'coherencetest-$(cluster)-$(process).out'))
@@ -1301,8 +1304,9 @@ class CoherenceTestNode(pipeline.CondorDAGNode):
     """
     Class defining the node for the coherence test
     """
-    def __init__(self,coherencetest_job,outfile=None):
+    def __init__(self,coherencetest_job,outfile=None,site='local'):
       pipeline.CondorDAGNode.__init__(self,coherencetest_job)
+      self.set_grid_site(site)
       self.incoherent_parents=[]
       self.coherent_parent=None
       self.finalized=False
@@ -1339,10 +1343,10 @@ class MergeNSJob(pipeline.CondorDAGJob,pipeline.AnalysisJob):
     submitFile    - Path to store the submit file
     logdir        - A directory to hold the stderr, stdout files of the merge runs
     """
-    def __init__(self,cp,submitFile,logdir,dax=False, site='local'):
+    def __init__(self,cp,submitFile,logdir,dax=False):
       exe=cp.get('condor','mergescript')
       pipeline.CondorDAGJob.__init__(self,"vanilla",exe)
-      pipeline.AnalysisJob.__init__(self,cp,dax=dax,site=site) 
+      pipeline.AnalysisJob.__init__(self,cp,dax=dax) 
       self.set_sub_file(submitFile)
       self.set_stdout_file(os.path.join(logdir,'merge-$(cluster)-$(process).out'))
       self.set_stderr_file(os.path.join(logdir,'merge-$(cluster)-$(process).err'))
@@ -1362,8 +1366,9 @@ class MergeNSNode(pipeline.CondorDAGNode):
     merge_job = A MergeJob object
     parents = iterable of parent LALInferenceNest nodes (must have get_ns_file() method)
     """
-    def __init__(self,merge_job,parents=None):
+    def __init__(self,merge_job,parents=None,site='local'):
         pipeline.CondorDAGNode.__init__(self,merge_job)
+        self.set_grid_site(site)
         if parents is not None:
           for parent in parents:
             self.add_engine_parent(parent)
@@ -1387,11 +1392,11 @@ class GraceDBJob(pipeline.CondorDAGJob,pipeline.AnalysisJob):
     """
     Class for a gracedb job
     """
-    def __init__(self,cp,submitFile,logdir,dax=False,site='local'):
+    def __init__(self,cp,submitFile,logdir,dax=False):
       exe=cp.get('condor','gracedb')
       #pipeline.CondorDAGJob.__init__(self,"vanilla",exe)
       pipeline.CondorDAGJob.__init__(self,"scheduler",exe)
-      pipeline.AnalysisJob.__init__(self,cp,dax=dax,site=site)
+      pipeline.AnalysisJob.__init__(self,cp,dax=dax)
       self.set_sub_file(submitFile)
       self.set_stdout_file(os.path.join(logdir,'gracedb-$(cluster)-$(process).out'))
       self.set_stderr_file(os.path.join(logdir,'gracedb-$(cluster)-$(process).err'))
@@ -1403,8 +1408,9 @@ class GraceDBNode(pipeline.CondorDAGNode):
     """
     Run the gracedb executable to report the results
     """
-    def __init__(self,gracedb_job,gid=None,parent=None):
+    def __init__(self,gracedb_job,gid=None,parent=None,site='local'):
         pipeline.CondorDAGNode.__init__(self,gracedb_job)
+        self.set_grid_site(site)
         self.resultsurl=""
         if gid: self.set_gid(gid)
         if parent: self.set_parent_resultspage(parent,gid)
