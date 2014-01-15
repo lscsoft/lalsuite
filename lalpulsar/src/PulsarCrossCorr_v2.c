@@ -360,22 +360,21 @@ int XLALCalculatePulsarCrossCorrStatistic
   }
   return XLAL_SUCCESS;
 }
-/*calculate the weighted factors, and metric diagnol components, also include the estimation of sensitivity E[rho]/(h_0)^2*/
-int XLALCalculateMetricElements
+/*calculate metric diagnol components, also include the estimation of sensitivity E[rho]/(h_0)^2*/
+int XLALFindLMXBCrossCorrDiagMetric
   (
-   REAL8             *TSquaWeightedAve, /*Output: weighted factors*/
-   REAL8             *SinSquaWeightedAve,  
    REAL8             *hSens,            /*Output:sensitivity*/
    REAL8             *g_ff,             /*Output:metric elements*/
    REAL8             *g_aa, 
    REAL8             *g_TT, 
+   BinaryOrbitParams *BinaryParams,  /* Input & Output: binary orbit paramaters*/
+   REAL8             *f,             /* Input & Output: thisfrequency*/
    REAL8Vector       *G_alpha,       /* Input: vector of sigma_alpha values */ 
    SFTPairIndexList  *pairIndexList, /* Input: list of SFT pairs */
    SFTIndexList      *indexList,     /* Input: list of SFTs */   
    MultiSFTVector    *sfts,          /* Input: set of per-detector SFT vectors */
-   REAL8             pOrb,           /* Input: orbit period in second*/
-   REAL8             aPro,           /* Input: projected semimajor*/
-   REAL8             f              /* Input: frequency*/ 
+   REAL8             fB,             /* Input: frequency band*/ 
+   REAL8             mf
    /*REAL8             *devTsq,     */      /*Output: mean time deviation^2*/
    /*REAL8             *g_pp,*/
    )
@@ -385,6 +384,8 @@ int XLALCalculateMetricElements
   UINT8 j=0;
   REAL8 T=0;
   REAL8 denom=0;
+  REAL8 TSquaWeightedAve=0;
+  REAL8 SinSquaWeightedAve=0;
   REAL8 sinSquare=0;
   REAL8 tSquare=0;
   REAL8 rhosum=0;
@@ -409,7 +410,7 @@ int XLALCalculateMetricElements
     T1 = &(sfts->data[detInd1]->data[sftInd1].epoch);
     T2 = &(sfts->data[detInd2]->data[sftInd2].epoch);
     T = XLALGPSDiff( T1, T2 );
-    sinSquare += sqrG_alpha*SQUARE(sin(LAL_PI*T/pOrb));/*(G_alpha)^2*(sin(\pi*T/T_orbit))^2*/
+    sinSquare += sqrG_alpha*SQUARE(sin(LAL_PI*T/(BinaryParams->period)));/*(G_alpha)^2*(sin(\pi*T/T_orbit))^2*/
     tSquare += sqrG_alpha*SQUARE( G_alpha->data[j]*T); /*(\curlyg_alpha*)^2*T^2*/
     denom += sqrG_alpha;                               /*calculate the denominator*/
     rhosum += 2*sqrG_alpha;
@@ -417,14 +418,17 @@ int XLALCalculateMetricElements
       Tmean=XLALGPSAdd(&T2, hfT);*/
     /*muT +=Tmean/numalpha;*/                            /*calculate the average of Tmean*/
       }
-
-  *TSquaWeightedAve =(tSquare/denom);
-  *SinSquaWeightedAve =(sinSquare/denom);
+  TSquaWeightedAve =(tSquare/denom);
+  SinSquaWeightedAve =(sinSquare/denom);
   *hSens = sqrt(rhosum);
-  *g_ff= *TSquaWeightedAve* 2 * SQUARE(LAL_PI);
-  *g_aa= *SinSquaWeightedAve* SQUARE(LAL_PI*f);
-  *g_TT= *SinSquaWeightedAve* SQUARE(2*SQUARE(LAL_PI)*f*aPro/pOrb);
+  *g_ff= TSquaWeightedAve* 2 * SQUARE(LAL_PI);
+  *g_aa= SinSquaWeightedAve* SQUARE(LAL_PI**f);
+  *g_TT= SinSquaWeightedAve* SQUARE(2*SQUARE(LAL_PI)*(*f+0.5*fB)*(BinaryParams->asini)/(BinaryParams->period));
+  *f +=sqrt(mf/ *g_ff);
+  
   return XLAL_SUCCESS;
+
+
 
   /* *g_pp=SQUARE(2*SQUARE(LAL_PI)*f*aPro/SQUARE(pOrb))*devTsq*SinSquaWeightedAve;*/
   /*for(k=0;k < numalpha;k++){
@@ -438,27 +442,6 @@ int XLALCalculateMetricElements
   /**devTsq=sumDev/denom;*/
 }
 
-/*int XLALCalculateMetricElements
-( 
-   REAL8             *g_ff, Output:metric elements
-   REAL8             *g_aa, 
-   REAL8             *g_TT, 
-   REAL8             *g_pp,
-   REAL8             aPro,            Input: variables
-   REAL8             f,
-   REAL8             pOrb,
-   REAL8             devTsq,           Input: T deviation^2 function(5.25)
-   REAL8             TSquaWeightedAve, Input: weighted factors
-   REAL8             SinSquaWeightedAve 
-    )
-{
-  *g_ff=2*SQUARE(LAL_PI)*TSquaWeightedAve;
-  *g_aa=SQUARE(LAL_PI*f)*SinSquaWeightedAve;
-  *g_TT=SQUARE(2*SQUARE(LAL_PI)*f*aPro/pOrb)*SinSquaWeightedAve;
-  *g_pp=SQUARE(2*SQUARE(LAL_PI)*f*aPro/SQUARE(pOrb))*devTsq*SinSquaWeightedAve;
-  return XLAL_SUCCESS;
-}
-*/
 /* ===== Object destruction functions ===== */
 
 /**

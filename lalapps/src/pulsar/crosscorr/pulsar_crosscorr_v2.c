@@ -117,7 +117,6 @@ int main(int argc, char *argv[]){
   BinaryOrbitParams thisBinaryTemplate, binaryTemplateSpacings;
   BinaryOrbitParams minBinaryTemplate, maxBinaryTemplate;
   SkyPosition skyPos = empty_SkyPosition;
-
   MultiSSBtimes *multiSSBTimes = NULL;
   MultiSSBtimes *multiBinaryTimes = NULL;
 
@@ -126,9 +125,6 @@ int main(int argc, char *argv[]){
   REAL8 deltaF; /* frequency resolution associated with time baseline of SFTs */
 
   REAL8Vector *curlyGUnshifted = NULL;
-  REAL8 tSqAvg=0;/*weightedfactors*/
-  REAL8 sinSqAvg=0;
-  /* REAL8 devmeanTsq=0;*/
   REAL8 diagff=0; /*diagnal metric components*/
   REAL8 diagaa=0;
   REAL8 diagTT=0;
@@ -136,6 +132,7 @@ int main(int argc, char *argv[]){
   REAL8 ccStat=0;
   REAL8 evSquared=0;
   REAL8 estSens=0; /*estimated sensitivity(4.13)*/
+  REAL8 thisfrequency=uvar.fStart;
   /* initialize and register user variables */
   if ( XLALInitUserVars( &uvar ) != XLAL_SUCCESS ) {
     LogPrintf ( LOG_CRITICAL, "%s: XLALInitUserVars() failed with errno=%d\n", __func__, xlalErrno );
@@ -298,16 +295,42 @@ int main(int argc, char *argv[]){
     LogPrintf ( LOG_CRITICAL, "%s: XLALCalculateAveCurlyGUnshifted() failed with errno=%d\n", __func__, xlalErrno );
     XLAL_ERROR( XLAL_EFUNC );
   }
-  /*Get weighted factors T_alpha & sin^2(_pi T/pOrb),metric diagonal components, also estimate sensitivity i.e. E[rho]/(h0)^2 (4.13)*/
-  if ( (XLALCalculateMetricElements( &tSqAvg,&sinSqAvg,/*&devmeanTsq,*/&estSens,&diagff,&diagaa,&diagTT,curlyGUnshifted,sftPairs,sftIndices,inputSFTs,uvar.orbitPSec,uvar.orbitAsiniSec,uvar.fStart)  != XLAL_SUCCESS ) ) {
-    LogPrintf ( LOG_CRITICAL, "%s: XLALCalculateMetricElements() failed with errno=%d\n", __func__, xlalErrno );
+ /*initialize binary parameters structure*/
+  minBinaryTemplate=empty_BinaryOrbitParams;
+  maxBinaryTemplate=empty_BinaryOrbitParams;
+  thisBinaryTemplate=empty_BinaryOrbitParams;
+  binaryTemplateSpacings=empty_BinaryOrbitParams;
+  /*fill in binaryspacings*/
+  XLALGPSSetREAL8( &binaryTemplateSpacings.tp, 0.0);
+  binaryTemplateSpacings.argp = 0.0;
+  binaryTemplateSpacings.asini = uvar.orbitAsiniSecBand;
+  binaryTemplateSpacings.ecc = 0.0;
+  binaryTemplateSpacings.period = 0.0;
+  /*fill in minbinaryOrbitParams*/
+  XLALGPSSetREAL8( &minBinaryTemplate.tp, uvar.orbitTimeAsc);
+  minBinaryTemplate.argp = 0.0;
+  minBinaryTemplate.asini = uvar.orbitAsiniSec;
+  minBinaryTemplate.ecc = 0.0;
+  minBinaryTemplate.period = uvar.orbitPSec;
+  /*fill in maxBinaryParams*/
+  XLALGPSSetREAL8( &maxBinaryTemplate.tp, uvar.orbitTimeAsc);
+  maxBinaryTemplate.argp = 0.0;
+  maxBinaryTemplate.asini = uvar.orbitAsiniSec+ binaryTemplateSpacings.asini;
+  maxBinaryTemplate.ecc = 0.0;
+  maxBinaryTemplate.period = uvar.orbitPSec; 
+  /*fill in thisBinaryTemplate*/
+  XLALGPSSetREAL8( &maxBinaryTemplate.tp, uvar.orbitTimeAsc);
+  thisBinaryTemplate.argp = 0.0;
+  thisBinaryTemplate.asini = 0.5*(minBinaryTemplate.asini+ maxBinaryTemplate.asini);
+  thisBinaryTemplate.ecc = 0.0;
+  thisBinaryTemplate.period =0.5*(minBinaryTemplate.period+ maxBinaryTemplate.period);
+
+  /*Get metric diagonal components, also estimate sensitivity i.e. E[rho]/(h0)^2 (4.13)*/
+  if ( (XLALFindLMXBCrossCorrDiagMetric(&estSens,&diagff,&diagaa,&diagTT,&thisBinaryTemplate,&thisfrequency,curlyGUnshifted,sftPairs,sftIndices,inputSFTs,uvar.fBand,uvar.mismatchF)  != XLAL_SUCCESS ) ) {
+    LogPrintf ( LOG_CRITICAL, "%s: XLALFindLMXBCrossCorrDiagMetric() failed with errno=%d\n", __func__, xlalErrno );
     XLAL_ERROR( XLAL_EFUNC );
   }
  
-  /* if ( (XLALCalculateMetricElements( &diagff,&diagaa,&diagTT,&diagpp,uvar.orbitAsiniSec,uvar.fStart,uvar.orbitPSec,devmeanTsq,tSqAvg,sinSqAvg)  != XLAL_SUCCESS ) ) {
-    LogPrintf ( LOG_CRITICAL, "%s: XLALCalculateMetricElements() failed with errno=%d\n", __func__, xlalErrno );
-    XLAL_ERROR( XLAL_EFUNC );
-    }*/
 
   /* initialize the doppler scan struct which stores the current template information */
   XLALGPSSetREAL8(&dopplerpos.refTime, uvar.refTime);
@@ -325,7 +348,7 @@ int main(int argc, char *argv[]){
   thisBinaryTemplate.ecc = 0.0;
   thisBinaryTemplate.argp = 0.0;
   dopplerpos.orbit = &thisBinaryTemplate;
-
+  
   /* spacing in frequency from diagff */
   dopplerpos.dFreq = uvar.mismatchF/sqrt(diagff);
   /* set spacings in new dopplerparams struct */

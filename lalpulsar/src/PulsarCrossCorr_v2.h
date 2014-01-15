@@ -169,39 +169,24 @@ int XLALCalculatePulsarCrossCorrStatistic
   )
  ;
 
-int XLALCalculateMetricElements
+int XLALFindLMXBCrossCorrDiagMetric
   ( 
-  REAL8             *TSquaWeightedAve, 
-   REAL8             *SinSquaWeightedAve,  
    REAL8             *hSens,           
    REAL8             *g_ff,            
    REAL8             *g_aa, 
-   REAL8             *g_TT, 
+   REAL8             *g_TT,
+   BinaryOrbitParams *BinaryParams, 
+   REAL8             *f,         
    REAL8Vector       *G_alpha,     
    SFTPairIndexList  *pairIndexList, 
    SFTIndexList      *indexList,    
-   MultiSFTVector    *sfts,         
-   REAL8             pOrb,         
-   REAL8             aPro,          
-   REAL8             f             
-   /*REAL8           *devTsq,     
-   REAL8             *g_pp,*/         
+   MultiSFTVector    *sfts, 
+   REAL8             fB,
+   REAL8             mf             
+   /*REAL8             *g_pp,*/         
    )
   ;
 
-  /*int XLALCalculateMetricElements
-  ( 
-   REAL8             *g_ff, 
-   REAL8             *g_aa, 
-   REAL8             *g_TT, 
-   REAL8             *g_pp,
-   REAL8             aPro,             
-   REAL8             f,
-   REAL8             pOrb,
-   REAL8             devTsq,         
-   REAL8             TSquaWeightedAve, 
-   REAL8             SinSquaWeightedAve    
-   )*/
   ;
 /*@}*/
 
