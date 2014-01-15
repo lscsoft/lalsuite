@@ -281,6 +281,7 @@ LALInferenceRunState *initialize(ProcessParamsTable *commandLine)
           if (ifoPtr->roqData){
             ifoPtr->roqData->hplus = ifoPtrCompare->roqData->hplus;
             ifoPtr->roqData->hcross = ifoPtrCompare->roqData->hcross;
+            ifoPtr->roqData->hstrain = ifoPtrCompare->roqData->hstrain;
             ifoPtr->roqData->amp_squared = ifoPtrCompare->roqData->amp_squared;
           }
           foundIFOwithSameSampleRate=1;
