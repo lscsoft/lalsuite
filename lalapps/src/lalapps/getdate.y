@@ -25,28 +25,11 @@
    the right thing about local DST.  Unlike previous versions, this
    version is reentrant.  */
 
-#ifdef HAVE_CONFIG_H
-# include <config.h>
-# ifdef HAVE_ALLOCA_H
-#  include <alloca.h>
-# endif
-#endif
+#include <config.h>
 
-/* Since the code of getdate.y is not included in the Emacs executable
-   itself, there is no need to #define static in this file.  Even if
-   the code were included in the Emacs executable, it probably
-   wouldn't do any harm to #undef it here; this will only cause
-   problems if we try to write to a static variable, which I don't
-   think this code needs to do.  */
-#ifdef emacs
-# undef static
-#endif
-
+#include <stdlib.h>
+#include <string.h>
 #include <ctype.h>
-
-#if HAVE_STDLIB_H
-# include <stdlib.h> /* for `free'; used by Bison 1.27 */
-#endif
 
 #if STDC_HEADERS || (! defined isascii && ! HAVE_ISASCII)
 # define IN_CTYPE_DOMAIN(c) 1
