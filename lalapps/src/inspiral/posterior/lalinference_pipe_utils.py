@@ -421,11 +421,17 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
             ifocombos.append(a)
     for ifos in ifocombos:
         self.engine_jobs[ifos] = EngineJob(self.config, os.path.join(self.basepath,'engine_%s.sub'%(reduce(lambda x,y:x+y, map(str,ifos)))),self.logpath ,dax=self.is_dax())
+        self.engine_jobs[ifos].set_grid_site('local')
     self.results_page_job = ResultsPageJob(self.config,os.path.join(self.basepath,'resultspage.sub'),self.logpath,dax=self.is_dax())
+    self.results_page_job.set_grid_site('local')
     self.cotest_results_page_job = ResultsPageJob(self.config,os.path.join(self.basepath,'resultspagecoherent.sub'),self.logpath,dax=self.is_dax())
+    self.cotest_results_page_job.set_grid_site
     self.merge_job = MergeNSJob(self.config,os.path.join(self.basepath,'merge_runs.sub'),self.logpath,dax=self.is_dax())
+    self.merge_job.set_grid_site('local')
     self.coherence_test_job = CoherenceTestJob(self.config,os.path.join(self.basepath,'coherence_test.sub'),self.logpath,dax=self.is_dax())
+    self.coherence_test_job.set_grid_site('local')
     self.gracedbjob = GraceDBJob(self.config,os.path.join(self.basepath,'gracedb.sub'),self.logpath,dax=self.is_dax())
+    self.gracedbjob.set_grid_site('local')
     # Process the input to build list of analyses to do
     self.events=self.setup_from_inputs()
     self.times=[e.trig_time for e in self.events]
@@ -783,7 +789,7 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
       ifos=event.ifos
     if ifos is None:
       ifos=self.ifos
-    node=self.EngineNode(self.engine_jobs[tuple(ifos)],site=self.site)
+    node=self.EngineNode(self.engine_jobs[tuple(ifos)])
     end_time=event.trig_time
     node.set_trig_time(end_time)
     node.set_seed(random.randint(1,2**31))
@@ -887,7 +893,7 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
     return node
 
 class EngineJob(pipeline.CondorDAGJob,pipeline.AnalysisJob):
-  def __init__(self,cp,submitFile,logdir,dax=False):
+  def __init__(self,cp,submitFile,logdir,dax=False,site=None):
     self.engine=cp.get('analysis','engine')
     basepath=cp.get('paths','basedir')
     snrpath=os.path.join(basepath,'SNR')
@@ -911,6 +917,11 @@ class EngineJob(pipeline.CondorDAGJob,pipeline.AnalysisJob):
       else: universe="standard"
     pipeline.CondorDAGJob.__init__(self,universe,exe)
     pipeline.AnalysisJob.__init__(self,cp,dax=dax)
+    # Set grid site if needed
+    if site:
+      self.set_grid_site(site)
+      if site!='local':
+        self.set_executable_installed(False)
     # Set the options which are always used
     self.set_sub_file(submitFile)
     if self.engine=='lalinferencemcmc' or self.engine=='lalinferencebambimpi':
@@ -964,12 +975,8 @@ class EngineJob(pipeline.CondorDAGJob,pipeline.AnalysisJob):
  
 class EngineNode(pipeline.CondorDAGNode):
   new_id = itertools.count().next
-  def __init__(self,li_job,site=None):
+  def __init__(self,li_job):
     pipeline.CondorDAGNode.__init__(self,li_job)
-    if site:
-      self.set_grid_site(site)
-      if site!='local':
-        self.job().set_executable_installed(False)
     self.ifos=[]
     self.scisegs={}
     self.channels={}
@@ -1162,8 +1169,8 @@ class EngineNode(pipeline.CondorDAGNode):
       self.__finaldata=True
 
 class LALInferenceNestNode(EngineNode):
-  def __init__(self,li_job,site=None):
-    EngineNode.__init__(self,li_job,site=site)
+  def __init__(self,li_job):
+    EngineNode.__init__(self,li_job)
     self.engine='lalinferencenest'
     self.outfilearg='outfile'
     
@@ -1185,8 +1192,8 @@ class LALInferenceNestNode(EngineNode):
     return self.headerfile
 
 class LALInferenceMCMCNode(EngineNode):
-  def __init__(self,li_job,site=None):
-    EngineNode.__init__(self,li_job,site=site)
+  def __init__(self,li_job):
+    EngineNode.__init__(self,li_job)
     self.engine='lalinferencemcmc'
     self.outfilearg='outfile'
 
@@ -1199,8 +1206,8 @@ class LALInferenceMCMCNode(EngineNode):
     return self.posfile
 
 class LALInferenceBAMBINode(EngineNode):
-  def __init__(self,li_job,site=None):
-    EngineNode.__init__(self,li_job,site=site)
+  def __init__(self,li_job):
+    EngineNode.__init__(self,li_job)
     self.engine='lalinferencebambi'
     self.outfilearg='outfile'
 
@@ -1238,9 +1245,8 @@ class ResultsPageJob(pipeline.CondorDAGJob,pipeline.AnalysisJob):
         self.add_opt('skyres',cp.get('results','skyres'))
 
 class ResultsPageNode(pipeline.CondorDAGNode):
-    def __init__(self,results_page_job,outpath=None,site='local'):
+    def __init__(self,results_page_job,outpath=None):
         pipeline.CondorDAGNode.__init__(self,results_page_job)
-        self.set_grid_site(site)
         if outpath is not None:
             self.set_output_path(path)
     def set_gzip_output(self,path):
@@ -1304,9 +1310,8 @@ class CoherenceTestNode(pipeline.CondorDAGNode):
     """
     Class defining the node for the coherence test
     """
-    def __init__(self,coherencetest_job,outfile=None,site='local'):
+    def __init__(self,coherencetest_job,outfile=None):
       pipeline.CondorDAGNode.__init__(self,coherencetest_job)
-      self.set_grid_site(site)
       self.incoherent_parents=[]
       self.coherent_parent=None
       self.finalized=False
@@ -1366,9 +1371,8 @@ class MergeNSNode(pipeline.CondorDAGNode):
     merge_job = A MergeJob object
     parents = iterable of parent LALInferenceNest nodes (must have get_ns_file() method)
     """
-    def __init__(self,merge_job,parents=None,site='local'):
+    def __init__(self,merge_job,parents=None):
         pipeline.CondorDAGNode.__init__(self,merge_job)
-        self.set_grid_site(site)
         if parents is not None:
           for parent in parents:
             self.add_engine_parent(parent)
@@ -1408,9 +1412,8 @@ class GraceDBNode(pipeline.CondorDAGNode):
     """
     Run the gracedb executable to report the results
     """
-    def __init__(self,gracedb_job,gid=None,parent=None,site='local'):
+    def __init__(self,gracedb_job,gid=None,parent=None):
         pipeline.CondorDAGNode.__init__(self,gracedb_job)
-        self.set_grid_site(site)
         self.resultsurl=""
         if gid: self.set_gid(gid)
         if parent: self.set_parent_resultspage(parent,gid)
