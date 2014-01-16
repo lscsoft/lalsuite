@@ -39,10 +39,26 @@ timestamp3=852447419
 alpha=4.649850989853494
 delta=-0.506281802989210
 
+# ---------- temporary files
 outCAP=antenna_pattern_test.dat
-outCAPstripped=antenna_pattern_test_stripped.dat
 outPDS=detector_state_test.dat
+skygridfile=./skygrid_test.dat
+timestampsfile=./timestamps_test.dat
+sftfile=./H1_test.sft
+outPFS=./pfs_test.dat
 
+
+## if a previous run failed, have to delete some files to avoid appending
+## (the others are forcefully recreated by their respective lalapps)
+if [ -f $outPDS ]; then
+    rm $outPDS
+fi
+if [ -f $skygridfile ]; then
+    rm $skygridfile
+fi
+if [ -f $timestampsfile ]; then
+    rm $timestampsfile
+fi
 
 echo "----------------------------------------------------------------------------------------------------"
 echo "ComputeAntennaPattern Test0: internal consistency of different computeAM implementations in PrintDetectorState";
@@ -106,9 +122,9 @@ if ! eval $cap_cmdline; then
     exit 1
 fi
 
-cat ${outCAP} | sed -e"/^%%.*/d" > ${outCAPstripped}
-a_cap=$(awk '{print $4}' $outCAPstripped)
-b_cap=$(awk '{print $5}' $outCAPstripped)
+outCAPstripped=$(sed -e"/^%%.*/d" $outCAP)
+a_cap=$(echo $outCAPstripped | awk '{print $4}')
+b_cap=$(echo $outCAPstripped | awk '{print $5}')
 echo "==> lalapps_ComputeAntennaPattern:   a=$a_cap, b=$b_cap"
 
 reldev_a_cap_xlal=$(echo $a_xlal $a_cap | awk "$awk_reldev")
@@ -128,14 +144,14 @@ echo "--------------------------------------------------------------------------
 echo "ComputeAntennaPattern Test2: sky grid";
 echo "----------------------------------------------------------------------------------------------------"
 
-skygrid=./skygrid_test.dat
+## ----- produce skygrid
 alpha1=0.0
 delta1=0.0
 alpha2=0.0
 delta2=0.5
 alpha3=3.0
 delta3=-0.5
-printf "%s %s\n%s %s\n%s %s" "$alpha1" "$delta1" "$alpha2" "$delta2" "$alpha3" "$delta3" >> $skygrid
+printf "%s %s\n%s %s\n%s %s" "$alpha1" "$delta1" "$alpha2" "$delta2" "$alpha3" "$delta3" >> $skygridfile
 
 ## ----- run PrintDetectorState 3 times
 rm $outPDS
@@ -172,7 +188,7 @@ a3_pds=$( echo $pds_out_xlal | awk '{print $3}')
 b3_pds=$( echo $pds_out_xlal | awk '{print $4}')
 
 ## ----- run ComputeAntennaPattern
-cap_cmdline="${cap_code} --IFOs=$IFO --timeGPS=$timestamp1 --outputFile=$outCAP --skyGridFile=$skygrid"
+cap_cmdline="${cap_code} --IFOs=$IFO --timeGPS=$timestamp1 --outputFile=$outCAP --skyGridFile=$skygridfile"
 
 echo $cap_cmdline;
 if ! eval $cap_cmdline; then
@@ -180,14 +196,16 @@ if ! eval $cap_cmdline; then
     exit 1
 fi
 
-cat ${outCAP} | sed -e"/^%%.*/d" > ${outCAPstripped}
+outCAP1=$(sed -e"/^%%.*/d" $outCAP | head -n 1) ## first line
+outCAP2=$(sed -e"/^%%.*/d" $outCAP | head -n 2 | tail -n 1) ## second line
+outCAP3=$(sed -e"/^%%.*/d" $outCAP | tail -n 2) ## third = next-to-last line (last one is blank)
 
-a1_cap=$( awk 'NR==1 {print $4}' $outCAPstripped)
-b1_cap=$( awk 'NR==1 {print $5}' $outCAPstripped)
-a2_cap=$( awk 'NR==2 {print $4}' $outCAPstripped)
-b2_cap=$( awk 'NR==2 {print $5}' $outCAPstripped)
-a3_cap=$( awk 'NR==3 {print $4}' $outCAPstripped)
-b3_cap=$( awk 'NR==3 {print $5}' $outCAPstripped)
+a1_cap=$(echo $outCAP1 |  awk '{print $4}')
+b1_cap=$(echo $outCAP1 |  awk '{print $5}')
+a2_cap=$(echo $outCAP2 |  awk '{print $4}')
+b2_cap=$(echo $outCAP2 |  awk '{print $5}')
+a3_cap=$(echo $outCAP3 |  awk '{print $4}')
+b3_cap=$(echo $outCAP3 |  awk '{print $5}')
 echo "==> alpha=0.0 delta= 0.0: lalapps_ComputeAntennaPattern: a=$a1_cap, b=$b1_cap / lalapps_PrintDetectorState: a=$a1_pds, b=$b1_pds"
 echo "    alpha=0.0 delta= 0.5: lalapps_ComputeAntennaPattern: a=$a2_cap, b=$b2_cap / lalapps_PrintDetectorState: a=$a2_pds, b=$b2_pds"
 echo "    alpha=3.0 delta=-0.5: lalapps_ComputeAntennaPattern: a=$a3_cap, b=$b3_cap / lalapps_PrintDetectorState: a=$a3_pds, b=$b3_pds"
@@ -225,17 +243,19 @@ if ! eval $cap_cmdline; then
     exit 1
 fi
 
-cat ${outCAP} | sed -e"/^%%.*/d" > ${outCAPstripped}
+outCAP1=$(sed -e"/^%%.*/d" $outCAP | head -n 1) ## first line
+outCAP2=$(sed -e"/^%%.*/d" $outCAP | head -n 2 | tail -n 1) ## second line
+outCAP3=$(sed -e"/^%%.*/d" $outCAP | tail -n 2) ## third = next-to-last line (last one is blank)
 
-A1_cap=$( awk 'NR==1 {print $6}' $outCAPstripped)
-B1_cap=$( awk 'NR==1 {print $7}' $outCAPstripped)
-C1_cap=$( awk 'NR==1 {print $8}' $outCAPstripped)
-A2_cap=$( awk 'NR==2 {print $6}' $outCAPstripped)
-B2_cap=$( awk 'NR==2 {print $7}' $outCAPstripped)
-C2_cap=$( awk 'NR==2 {print $8}' $outCAPstripped)
-A3_cap=$( awk 'NR==3 {print $6}' $outCAPstripped)
-B3_cap=$( awk 'NR==3 {print $7}' $outCAPstripped)
-C3_cap=$( awk 'NR==3 {print $8}' $outCAPstripped)
+A1_cap=$(echo $outCAP1 |  awk '{print $6}')
+B1_cap=$(echo $outCAP1 |  awk '{print $7}')
+C1_cap=$(echo $outCAP1 |  awk '{print $8}')
+A2_cap=$(echo $outCAP2 |  awk '{print $6}')
+B2_cap=$(echo $outCAP2 |  awk '{print $7}')
+C2_cap=$(echo $outCAP2 |  awk '{print $8}')
+A3_cap=$(echo $outCAP3 |  awk '{print $6}')
+B3_cap=$(echo $outCAP3 |  awk '{print $7}')
+C3_cap=$(echo $outCAP3 |  awk '{print $8}')
 
 ## ----- externally compute mean for test
 Amean=$( echo $A1_cap $A2_cap $A3_cap | awk '{print ($1+$2+$3)/3}' )
@@ -244,7 +264,6 @@ Cmean=$( echo $C1_cap $C2_cap $C3_cap | awk '{print ($1+$2+$3)/3}' )
 Dmean=$( echo $Amean $Bmean $Cmean | awk '{print $1*$2-$3*$3}' )
 
 ## ----- make timestampsfile
-timestampsfile=./timestamps_test.dat
 printf "%s 0\n%s 0\n%s 0" "$timestamp1" "$timestamp2" "$timestamp3" >> $timestampsfile
 
 ## ----- run ComputeAntennaPattern with timestampsfile input, averaged output
@@ -255,12 +274,11 @@ if ! eval $cap_cmdline; then
     exit 1
 fi
 
-cat ${outCAP} | sed -e"/^%%.*/d" > ${outCAPstripped}
-
-A_cap_mean=$(awk '{print $3}' $outCAPstripped)
-B_cap_mean=$(awk '{print $4}' $outCAPstripped)
-C_cap_mean=$(awk '{print $5}' $outCAPstripped)
-D_cap_mean=$(awk '{print $6}' $outCAPstripped)
+outCAPstripped=$(sed -e"/^%%.*/d" $outCAP)
+A_cap_mean=$(echo $outCAPstripped | awk '{print $3}')
+B_cap_mean=$(echo $outCAPstripped | awk '{print $4}')
+C_cap_mean=$(echo $outCAPstripped | awk '{print $5}')
+D_cap_mean=$(echo $outCAPstripped | awk '{print $6}')
 reldev_Amean=$(echo $A_cap_mean $Amean | awk "$awk_reldev")
 reldev_Bmean=$(echo $B_cap_mean $Bmean | awk "$awk_reldev")
 reldev_Cmean=$(echo $C_cap_mean $Cmean | awk "$awk_reldev")
@@ -290,15 +308,11 @@ if ! eval $cap_cmdline; then
     exit 1
 fi
 
-cat ${outCAP} | sed -e"/^%%.*/d" > ${outCAPstripped}
-
-A_cap=$(awk '{print $3}' $outCAPstripped)
-B_cap=$(awk '{print $4}' $outCAPstripped)
-C_cap=$(awk '{print $5}' $outCAPstripped)
-D_cap=$(awk '{print $6}' $outCAPstripped)
-
-sftfile=./H1_test.sft
-outPFS=./pfs_test.dat
+outCAPstripped=$(sed -e"/^%%.*/d" $outCAP)
+A_cap=$(echo $outCAPstripped | awk '{print $3}')
+B_cap=$(echo $outCAPstripped | awk '{print $4}')
+C_cap=$(echo $outCAPstripped | awk '{print $5}')
+D_cap=$(echo $outCAPstripped | awk '{print $6}')
 
 mfd_cmdline="${mfd_code} --IFO=$IFO --outSingleSFT --outSFTbname=$sftfile --fmin=59.95 --Band=0.1 --timestampsFile=$timestampsfile"
 echo $mfd_cmdline;
@@ -354,12 +368,11 @@ if ! eval $cap_cmdline; then
     exit 1
 fi
 
-sed -e"/^%%.*/d" ${outCAP} > ${outCAPstripped}
-
-A_L1_single=$(awk '{print $3}' $outCAPstripped)
-B_L1_single=$(awk '{print $4}' $outCAPstripped)
-C_L1_single=$(awk '{print $5}' $outCAPstripped)
-D_L1_single=$(awk '{print $6}' $outCAPstripped)
+outCAPstripped=$(sed -e"/^%%.*/d" $outCAP)
+A_L1_single=$(echo $outCAPstripped |awk '{print $3}')
+B_L1_single=$(echo $outCAPstripped |awk '{print $4}')
+C_L1_single=$(echo $outCAPstripped |awk '{print $5}')
+D_L1_single=$(echo $outCAPstripped |awk '{print $6}')
 
 cap_cmdline="${cap_code} --IFOs=H1,L1 --timeStampsFile=$timestampsfile --outputFile=$outCAP --Alpha=$alpha --Delta=$delta --averageABCD"
 echo $cap_cmdline;
@@ -368,20 +381,19 @@ if ! eval $cap_cmdline; then
     exit 1
 fi
 
-sed -e"/^%%.*/d" ${outCAP} > ${outCAPstripped}
-
-A_H1L1=$(awk '{print $3}' $outCAPstripped)
-B_H1L1=$(awk '{print $4}' $outCAPstripped)
-C_H1L1=$(awk '{print $5}' $outCAPstripped)
-D_H1L1=$(awk '{print $6}' $outCAPstripped)
-A_H1_from_multi=$(awk '{print $7}' $outCAPstripped)
-B_H1_from_multi=$(awk '{print $8}' $outCAPstripped)
-C_H1_from_multi=$(awk '{print $9}' $outCAPstripped)
-D_H1_from_multi=$(awk '{print $10}' $outCAPstripped)
-A_L1_from_multi=$(awk '{print $11}' $outCAPstripped)
-B_L1_from_multi=$(awk '{print $12}' $outCAPstripped)
-C_L1_from_multi=$(awk '{print $13}' $outCAPstripped)
-D_L1_from_multi=$(awk '{print $14}' $outCAPstripped)
+outCAPstripped=$(sed -e"/^%%.*/d" $outCAP)
+A_H1L1=$(echo $outCAPstripped |awk '{print $3}')
+B_H1L1=$(echo $outCAPstripped |awk '{print $4}')
+C_H1L1=$(echo $outCAPstripped |awk '{print $5}')
+D_H1L1=$(echo $outCAPstripped |awk '{print $6}')
+A_H1_from_multi=$(echo $outCAPstripped |awk '{print $7}')
+B_H1_from_multi=$(echo $outCAPstripped |awk '{print $8}')
+C_H1_from_multi=$(echo $outCAPstripped |awk '{print $9}')
+D_H1_from_multi=$(echo $outCAPstripped |awk '{print $10}')
+A_L1_from_multi=$(echo $outCAPstripped |awk '{print $11}')
+B_L1_from_multi=$(echo $outCAPstripped |awk '{print $12}')
+C_L1_from_multi=$(echo $outCAPstripped |awk '{print $13}')
+D_L1_from_multi=$(echo $outCAPstripped |awk '{print $14}')
 
 reldev_A_H1=$(echo $A_H1_single $A_H1_from_multi | awk "$awk_reldev")
 fail_A_H1=$(echo $reldev_A_H1 $tolerance | awk "$awk_isgtr")
@@ -433,9 +445,9 @@ fi
 
 ## clean up files
 if [ -z "$NOCLEANUP" ]; then
-    rm $outCAP $outCAPstripped
+    rm $outCAP
     rm $outPDS
-    rm $skygrid
+    rm $skygridfile
     rm $timestampsfile
     rm $sftfile
     rm $outPFS
