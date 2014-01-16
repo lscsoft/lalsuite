@@ -758,12 +758,6 @@ else:
 ##############################################################################
 # create the Condor jobs that will be used in the DAG
 
-# determine if compute-intensive jobs should run on a remote site
-try:
-  remotesites = cp.get('pipeline','remote-sites')
-except:
-  remotesites = 'local'
-
 # datafind:
 frame_types = []
 try:
@@ -780,7 +774,6 @@ except:
 df_job = pipeline.LSCDataFindJob(
   'cache','logs',cp,opts.dax,lsync_file,'|'.join(frame_types))
 df_job.set_sub_file( basename + '.datafind'+ subsuffix )
-df_job.set_grid_site('local')
 
 # tmpltbank:
 tmplt_jobs = {}
@@ -788,14 +781,10 @@ tmplt_jobs = {}
 for ifo in ifo_list:
   tmplt_jobs[ifo] = inspiral.TmpltBankJob(cp,opts.dax)
   tmplt_jobs[ifo].set_sub_file( basename + '.tmpltbank_' + ifo + subsuffix )
-  tmplt_jobs[ifo].set_grid_site(remotesites)
-  if remotesites != 'local':
-    tmplt_jobs[ifo].set_executable_installed(False)
 
 # inspinj:
 inspinj_job = inspiral.InspInjJob(cp) 
 inspinj_job.set_sub_file( basename + '.inspinj' + subsuffix )
-inspinj_job.set_grid_site('local')
 
 if opts.noop_inspinj:
   inspinj_job.add_condor_cmd("noop_job", "true")
@@ -806,30 +795,22 @@ insp_jobs = {}
 for ifo in ifo_list:
   insp_jobs[ifo] = inspiral.InspiralJob(cp,opts.dax)
   insp_jobs[ifo].set_sub_file( basename + '.inspiral_' + ifo + subsuffix )
-  insp_jobs[ifo].set_grid_site(remotesites)
-  if remotesites != 'local':
-    insp_jobs[ifo].set_executable_installed(False)
 
 # ligolw_add:
 lladd_job = pipeline.LigolwAddJob('logs', cp, opts.dax)
 lladd_job.set_sub_file( basename + '.ligolw_add' + subsuffix )
-lladd_job.set_grid_site('local')
 
 # thinca:
 thinca_job = inspiral.ThincaJob(cp,opts.dax)
 thinca_job.set_universe('vanilla')
 thinca_job.set_sub_file(basename + '.thinca' + subsuffix )
 thinca_job.add_condor_cmd("getenv", "True")
-thinca_job.set_grid_site('local')
 
 # sire:
 sire_job = inspiral.SireJob(cp)
 sire_job.set_sub_file( basename + '.sire' + subsuffix )
-sire_job.set_grid_site('local')
 sire_summary_job = inspiral.SireJob(cp)
 sire_summary_job.set_sub_file( basename + '.sire_summary' + subsuffix )
-sire_summary_job.set_grid_site('local')
-
 
 all_jobs = [inspinj_job, sire_job, sire_summary_job]
 all_jobs.extend(tmplt_jobs.values())

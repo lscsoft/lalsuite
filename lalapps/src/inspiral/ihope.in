@@ -890,10 +890,16 @@ except:
 pfnfile = inspiralutils.create_frame_pfn_file(ifo_frame_type_dict,opts.gps_start_time,opts.gps_end_time,server=ldrserver)
 peg_frame_cache = inspiralutils.create_pegasus_cache_file(pfnfile)
 
-# set up site and dir options
-try: 
-  exec_site='local,' + cp.get("pipeline","remote-sites")
-except:
+# see if any of the jobs use remote sites
+exec_site_dict = {}
+for sec in cp.sections():
+  if cp.has_option(sec,'remote-sites'):
+    exec_site_dict[cp.get(sec,'remote-sites')] = True
+
+exec_site_list = exec_site_dict.keys()
+if exec_site_list:
+  exec_site = ','.join(['local'] + exec_site_list)
+else:
   exec_site=None
 
 

@@ -8,6 +8,7 @@ __author__ = 'Duncan Brown <duncan@gravity.phys.uwm.edu>'
 __date__ = '$Date$'
 __version__ = '$Revision$'
 
+import copy
 import string
 import exceptions
 import sys, os, re, subprocess
@@ -43,11 +44,23 @@ class InspiralAnalysisJob(pipeline.AnalysisJob, pipeline.CondorDAGJob):
     pipeline.CondorDAGJob.__init__(self,universe,executable)
     pipeline.AnalysisJob.__init__(self,cp,dax)
     self.add_condor_cmd('copy_to_spool','False')
+    self.set_grid_site('local')
     self.__use_gpus = cp.has_option('condor', 'use-gpus')
 
+    mycp = copy.deepcopy(cp)
     for sec in sections:
-      if cp.has_section(sec):
-        self.add_ini_opts(cp, sec)
+      if mycp.has_section(sec):
+        # check to see if the job should run on a remote site
+        if mycp.has_option(sec,'remote-sites'):
+          remotesites = mycp.get(sec,'remote-sites')
+          mycp.remove_option(sec,'remote-sites')
+          self.set_grid_site(remotesites)
+          if remotesites != 'local':
+            self.set_executable_installed(False)
+
+        # add all the other options as arguments to the code
+        self.add_ini_opts(mycp, sec)
+
       else:
         print >>sys.stderr, "warning: config file is missing section [" + sec + "]"
 
