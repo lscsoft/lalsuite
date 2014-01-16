@@ -53,9 +53,12 @@
 typedef struct
 {
   EphemerisData *edat;			/**< ephemeris data (from LALInitBarycenter()) */
+  UINT4 numDetectors;			/**< number of detectors */
   MultiDetectorStateSeries *multiDetStates;	/**< detector state time series */
   MultiNoiseWeights *multiWeights;		/**< per-detector noise weights */
   MultiLIGOTimeGPSVector *multiTimestamps;	/**< timestamps vector (LIGOtimeGPS format) */
+  UINT4 numTimeStamps;			/**< number of timestamps (SFTs) PER DETECTOR */
+  UINT4 numSFTstotal;                   /**< number of timestamps (SFTs) for ALL detectors together */
   BOOLEAN averageABCD;			/**< output antenna pattern matrix elements averaged over timestamps, suppress a(t), b(t) */
   REAL8Vector *Alpha;			/**< skyposition Alpha: radians, equatorial coords */
   REAL8Vector *Delta;			/**< skyposition Delta: radians, equatorial coords */
@@ -152,11 +155,16 @@ main(int argc, char *argv[])
       if ( !config.averageABCD ) {
         fprintf(fpOut, "     tGPS       a(t)         b(t)");
       }
-      fprintf(fpOut, "         A            B            C            D\n");
+      fprintf(fpOut, "         A            B            C            D");
+      if ( config.numDetectors > 1 ) {
+        fprintf(fpOut, "   ");
+        for ( UINT4 X=0; X < config.numDetectors; X++ ) {
+          fprintf(fpOut, "         A[%d]         B[%d]         C[%d]         D[%d]", X, X, X, X);
+        }
+      }
+      fprintf(fpOut, "\n");
 
-    }
-
-  UINT4 numTimeStamps = config.multiTimestamps->data[0]->length;
+  }
 
   /* loop over sky positions (outer loop, could allow for buffering if necessary) */
   for (UINT4 n = 0; n < config.numSkyPoints; n++) {
@@ -174,20 +182,42 @@ main(int argc, char *argv[])
       /* write out the data for this sky point*/
      if ( config.averageABCD ) { // output only ABCD averaged over all timestamps, suppress a(t), b(t) (no meaningful use known for their averages)
        // FIXME: stop doing average manually when AMCoeffs is changed to contain averaged values
-       REAL4 A = multiAM->data[0]->A/numTimeStamps;
-       REAL4 B = multiAM->data[0]->B/numTimeStamps;
-       REAL4 C = multiAM->data[0]->C/numTimeStamps;
-       REAL4 D = A*B-SQ(C);
-       fprintf (fpOut, "%.7f %.7f %12.8f %12.8f %12.8f %12.8f\n", config.Alpha->data[n], config.Delta->data[n], A, B, C, D );
+       REAL8 A = multiAM->Mmunu.Ad/config.numSFTstotal;
+       REAL8 B = multiAM->Mmunu.Bd/config.numSFTstotal;
+       REAL8 C = multiAM->Mmunu.Cd/config.numSFTstotal;
+       REAL8 D = A*B-SQ(C);
+       fprintf (fpOut, "%.7f %.7f %12.8f %12.8f %12.8f %12.8f", config.Alpha->data[n], config.Delta->data[n], A, B, C, D );
+       if ( config.numDetectors > 1 ) {
+         fprintf(fpOut, "   ");
+         for ( UINT4 X=0; X < config.numDetectors; X++ ) {
+           REAL4 AX = multiAM->data[X]->A/config.numTimeStamps;
+           REAL4 BX = multiAM->data[X]->B/config.numTimeStamps;
+           REAL4 CX = multiAM->data[X]->C/config.numTimeStamps;
+           REAL4 DX = AX*BX-SQ(CX);
+           fprintf(fpOut, " %12.8f %12.8f %12.8f %12.8f", AX, BX, CX, DX);
+         }
+       }
+       fprintf(fpOut, "\n");
      } // if ( config.averageABCD )
 
      else { // output all values at each timestamp
-       for (UINT4 t = 0; t < numTimeStamps; t++) {
+       for (UINT4 t = 0; t < config.numTimeStamps; t++) {
          REAL4 A = SQ(multiAM->data[0]->a->data[t]);
          REAL4 B = SQ(multiAM->data[0]->b->data[t]);
          REAL4 C = multiAM->data[0]->a->data[t]*multiAM->data[0]->b->data[t];
          REAL4 D = A*B-SQ(C);
-         fprintf (fpOut, "%.7f %.7f %d %12.8f %12.8f %12.8f %12.8f %12.8f %12.8f\n", config.Alpha->data[n], config.Delta->data[n], config.multiTimestamps->data[0]->data[t].gpsSeconds, multiAM->data[0]->a->data[t], multiAM->data[0]->b->data[t], A, B, C, D );
+         fprintf (fpOut, "%.7f %.7f %d %12.8f %12.8f %12.8f %12.8f %12.8f %12.8f", config.Alpha->data[n], config.Delta->data[n], config.multiTimestamps->data[0]->data[t].gpsSeconds, multiAM->data[0]->a->data[t], multiAM->data[0]->b->data[t], A, B, C, D );
+         if ( config.numDetectors > 1 ) {
+           fprintf(fpOut, "   ");
+           for ( UINT4 X=0; X < config.numDetectors; X++ ) {
+             REAL4 AX = multiAM->data[X]->A/config.numTimeStamps;
+             REAL4 BX = multiAM->data[X]->B/config.numTimeStamps;
+             REAL4 CX = multiAM->data[X]->C/config.numTimeStamps;
+             REAL4 DX = AX*BX-SQ(CX);
+             fprintf(fpOut, " %12.8f %12.8f %12.8f %12.8f", AX, BX, CX, DX);
+           }
+         }
+         fprintf(fpOut, "\n");
        }
      } // if ( !config.averageABCD )
 
@@ -272,8 +302,7 @@ XLALInitCode ( ConfigVariables *cfg, const UserVariables_t *uvar, const char *ap
   /* init ephemeris data */
   XLAL_CHECK ( ( cfg->edat = XLALInitBarycenter( uvar->ephemEarth, uvar->ephemSun ) ) != NULL, XLAL_EFUNC, "XLALInitBarycenter failed: could not load Earth ephemeris '%s' and Sun ephemeris '%s.", uvar->ephemEarth, uvar->ephemSun);
 
-  UINT4 numDetectors = uvar->IFOs->length;
-  XLAL_CHECK ( numDetectors == 1, XLAL_EINVAL, "Can't handle more than one IFO at the moment." ); // FIXME
+  cfg->numDetectors = uvar->IFOs->length;
 
   BOOLEAN haveTimeGPS = XLALUserVarWasSet( &uvar->timeGPS );
   BOOLEAN haveTimeStampsFile = XLALUserVarWasSet( &uvar->timeStampsFile );
@@ -283,8 +312,8 @@ XLALInitCode ( ConfigVariables *cfg, const UserVariables_t *uvar, const char *ap
 
   /* FIXME: only using identical timestamps for all detectors */
   XLAL_CHECK ( ( cfg->multiTimestamps = XLALCalloc ( 1, sizeof(*cfg->multiTimestamps))) != NULL, XLAL_ENOMEM, "Allocating multiTimestamps failed." );
-  XLAL_CHECK ( ( cfg->multiTimestamps->data = XLALCalloc ( numDetectors, sizeof(cfg->multiTimestamps->data[0]) )) != NULL, XLAL_ENOMEM, "Allocating multiTimestamps->data failed." );
-  cfg->multiTimestamps->length = numDetectors;
+  XLAL_CHECK ( ( cfg->multiTimestamps->data = XLALCalloc ( cfg->numDetectors, sizeof(cfg->multiTimestamps->data) )) != NULL, XLAL_ENOMEM, "Allocating multiTimestamps->data failed." );
+  cfg->multiTimestamps->length = cfg->numDetectors;
 
   if ( haveTimeStampsFile ) { // read in timestamps vector from file
     XLAL_CHECK ( (cfg->multiTimestamps->data[0] = XLALReadTimestampsFile ( uvar->timeStampsFile )) != NULL, XLAL_EFUNC, "illegal NULL pointer returned when reading timestampsfile '%s'.", uvar->timeStampsFile );
@@ -304,15 +333,19 @@ XLALInitCode ( ConfigVariables *cfg, const UserVariables_t *uvar, const char *ap
   } // timestamps from timeGPS
 
   /* in either case, copy timestamps from first detector to all others (for now) */
-  if ( numDetectors > 1 ) {
-    for ( UINT4 X=1; X < numDetectors; X++ ) {
-      XLAL_CHECK ( (cfg->multiTimestamps->data[X] = XLALCreateTimestampVector ( uvar->timeGPS->length ) ) != NULL, XLAL_EFUNC, "XLALCreateTimestampVector( %d ) failed.", uvar->timeGPS->length );
-      for (UINT4 t = 0; t < uvar->timeGPS->length; t++) {
-       cfg->multiTimestamps->data[X]->data[t].gpsSeconds = cfg->multiTimestamps->data[0]->data[t].gpsNanoSeconds;
-       cfg->multiTimestamps->data[X]->data[t].gpsSeconds = cfg->multiTimestamps->data[0]->data[t].gpsNanoSeconds;
+  if ( cfg->numDetectors > 1 ) {
+    for ( UINT4 X=1; X < cfg->numDetectors; X++ ) {
+      XLAL_CHECK ( (cfg->multiTimestamps->data[X] = XLALCreateTimestampVector ( cfg->multiTimestamps->data[0]->length ) ) != NULL, XLAL_EFUNC, "XLALCreateTimestampVector( %d ) failed.", uvar->timeGPS->length );
+      for (UINT4 t = 0; t < cfg->multiTimestamps->data[0]->length; t++) {
+       cfg->multiTimestamps->data[X]->data[t].gpsSeconds = cfg->multiTimestamps->data[0]->data[t].gpsSeconds;
+       cfg->multiTimestamps->data[X]->data[t].gpsNanoSeconds = cfg->multiTimestamps->data[0]->data[t].gpsNanoSeconds;
       } // for (UINT4 t = 0; t < uvar->timeGPS->length; t++)
-    } // for ( UINT4 X=1; X < numDetectors; X++ )
-  } // if ( numDetectors > 1 )
+    } // for ( UINT4 X=1; X < cfg->numDetectors; X++ )
+  } // if ( cfg->numDetectors > 1 )
+
+  cfg->numTimeStamps = cfg->multiTimestamps->data[0]->length;
+
+  cfg->numSFTstotal = cfg->numDetectors*cfg->numTimeStamps;
 
   cfg->averageABCD = uvar->averageABCD;
 

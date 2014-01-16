@@ -336,6 +336,96 @@ if [ "$fail_A" -o "$fail_B" -o "$fail_C" -o "$fail_D" ]; then
     retstatus=1
 else
     echo "==> OK at tolerance=$tolerance"
+fi
+
+echo "----------------------------------------------------------------------------------------------------"
+echo "ComputeAntennaPattern Test5: multi-IFO";
+echo "----------------------------------------------------------------------------------------------------"
+
+A_H1_single=$A_cap
+B_H1_single=$B_cap
+C_H1_single=$C_cap
+D_H1_single=$D_cap
+
+cap_cmdline="${cap_code} --IFOs=L1 --timeStampsFile=$timestampsfile --outputFile=$outCAP --Alpha=$alpha --Delta=$delta --averageABCD"
+echo $cap_cmdline;
+if ! eval $cap_cmdline; then
+    echo "Error.. something failed when running '$cap_code' ..."
+    exit 1
+fi
+
+sed -e"/^%%.*/d" ${outCAP} > ${outCAPstripped}
+
+A_L1_single=$(awk '{print $3}' $outCAPstripped)
+B_L1_single=$(awk '{print $4}' $outCAPstripped)
+C_L1_single=$(awk '{print $5}' $outCAPstripped)
+D_L1_single=$(awk '{print $6}' $outCAPstripped)
+
+cap_cmdline="${cap_code} --IFOs=H1,L1 --timeStampsFile=$timestampsfile --outputFile=$outCAP --Alpha=$alpha --Delta=$delta --averageABCD"
+echo $cap_cmdline;
+if ! eval $cap_cmdline; then
+    echo "Error.. something failed when running '$cap_code' ..."
+    exit 1
+fi
+
+sed -e"/^%%.*/d" ${outCAP} > ${outCAPstripped}
+
+A_H1L1=$(awk '{print $3}' $outCAPstripped)
+B_H1L1=$(awk '{print $4}' $outCAPstripped)
+C_H1L1=$(awk '{print $5}' $outCAPstripped)
+D_H1L1=$(awk '{print $6}' $outCAPstripped)
+A_H1_from_multi=$(awk '{print $7}' $outCAPstripped)
+B_H1_from_multi=$(awk '{print $8}' $outCAPstripped)
+C_H1_from_multi=$(awk '{print $9}' $outCAPstripped)
+D_H1_from_multi=$(awk '{print $10}' $outCAPstripped)
+A_L1_from_multi=$(awk '{print $11}' $outCAPstripped)
+B_L1_from_multi=$(awk '{print $12}' $outCAPstripped)
+C_L1_from_multi=$(awk '{print $13}' $outCAPstripped)
+D_L1_from_multi=$(awk '{print $14}' $outCAPstripped)
+
+reldev_A_H1=$(echo $A_H1_single $A_H1_from_multi | awk "$awk_reldev")
+fail_A_H1=$(echo $reldev_A_H1 $tolerance | awk "$awk_isgtr")
+reldev_B_H1=$(echo $B_H1_single $B_H1_from_multi | awk "$awk_reldev")
+fail_B_H1=$(echo $reldev_B_H1 $tolerance | awk "$awk_isgtr")
+reldev_C_H1=$(echo $C_H1_single $C_H1_from_multi | awk "$awk_reldev")
+fail_C_H1=$(echo $reldev_C_H1 $tolerance | awk "$awk_isgtr")
+reldev_D_H1=$(echo $D_H1_single $D_H1_from_multi | awk "$awk_reldev")
+fail_D_H1=$(echo $reldev_D_H1 $tolerance | awk "$awk_isgtr")
+reldev_A_L1=$(echo $A_L1_single $A_L1_from_multi | awk "$awk_reldev")
+fail_A_L1=$(echo $reldev_A_L1 $tolerance | awk "$awk_isgtr")
+reldev_B_L1=$(echo $B_L1_single $B_L1_from_multi | awk "$awk_reldev")
+fail_B_L1=$(echo $reldev_B_L1 $tolerance | awk "$awk_isgtr")
+reldev_C_L1=$(echo $C_L1_single $C_L1_from_multi | awk "$awk_reldev")
+fail_C_L1=$(echo $reldev_C_L1 $tolerance | awk "$awk_isgtr")
+reldev_D_L1=$(echo $D_L1_single $D_L1_from_multi | awk "$awk_reldev")
+fail_D_L1=$(echo $reldev_D_L1 $tolerance | awk "$awk_isgtr")
+
+A_H1L1_sum=$(echo $A_H1_single $A_L1_single | awk '{print ($1+$2)/2}')
+B_H1L1_sum=$(echo $B_H1_single $B_L1_single | awk '{print ($1+$2)/2}')
+C_H1L1_sum=$(echo $C_H1_single $C_L1_single | awk '{print ($1+$2)/2}')
+D_H1L1_sum=$(echo $A_H1L1_sum $B_H1L1_sum $C_H1L1_sum | awk '{print $1*$2-$3*$3}')
+
+reldev_A_H1L1=$(echo $A_H1L1 $A_H1L1_sum | awk "$awk_reldev")
+fail_A_H1L1=$(echo $reldev_A_H1L1 $tolerance | awk "$awk_isgtr")
+reldev_B_H1L1=$(echo $B_H1L1 $B_H1L1_sum | awk "$awk_reldev")
+fail_B_H1L1=$(echo $reldev_B_H1L1 $tolerance | awk "$awk_isgtr")
+reldev_C_H1L1=$(echo $C_H1L1 $C_H1L1_sum | awk "$awk_reldev")
+fail_C_H1L1=$(echo $reldev_C_H1L1 $tolerance | awk "$awk_isgtr")
+reldev_D_H1L1=$(echo $D_H1L1 $D_H1L1_sum | awk "$awk_reldev")
+fail_D_H1L1=$(echo $reldev_D_H1L1 $tolerance | awk "$awk_isgtr")
+
+echo "==> H1 from single-IFO run:           A=$A_H1_single, B=$B_H1_single, C=$C_H1_single, D=$D_H1_single"
+echo "    H1 from multi-IFO run:            A=$A_H1_from_multi, B=$B_H1_from_multi, C=$C_H1_from_multi, D=$D_H1_from_multi"
+echo "    L1 from single-IFO run:           A=$A_L1_single, B=$B_L1_single, C=$C_L1_single, D=$D_L1_single"
+echo "    L1 from multi-IFO run:            A=$A_L1_from_multi, B=$B_L1_from_multi, C=$C_L1_from_multi, D=$D_L1_from_multi"
+echo "    H1L1 summed from single-IFO runs: A=$A_H1L1_sum, B=$B_H1L1_sum, C=$C_H1L1_sum, D=$D_H1L1_sum"
+echo "    H1L1 from multi-IFO run:          A=$A_H1L1, B=$B_H1L1, C=$C_H1L1, D=$D_H1L1"
+
+if [ "$fail_A_H1" -o "$fail_B_H1" -o "$fail_C_H1" -o "$fail_D_H1" -o "$fail_A_L1" -o "$fail_B_L1" -o "$fail_C_L1" -o "$fail_D_L1" -o "$fail_A_H1L1" -o "$fail_B_H1L1" -o "$fail_C_H1L1" -o "$fail_D_H1L1" ]; then
+    echo "==> FAILED at tolerance=$tolerance"
+    retstatus=1
+else
+    echo "==> OK at tolerance=$tolerance"
     echo
     echo "========== OK. All ComputeAntennaPattern tests PASSED. =========="
     echo
