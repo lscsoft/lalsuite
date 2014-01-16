@@ -16,9 +16,9 @@ swig_modl_check = check_@PACKAGE@swig
 # automake libtool variables for SWIG wrapping module
 swig_lt_nodist_sources = $(swig_modl_src)
 swig_lt_sources =
-swig_lt_cppflags = -I$(top_builddir)/swig $(AM_CPPFLAGS) -shared
-swig_lt_cflags =
-swig_lt_cxxflags =
+swig_lt_cppflags = -I$(top_builddir)/swig -I$(top_srcdir)/include -I$(top_srcdir)/src -I$(top_builddir)/include -I$(top_builddir)/src $(AM_CPPFLAGS) -shared
+swig_lt_cflags = -I$(top_srcdir)/include -I$(top_srcdir)/src -I$(top_builddir)/include -I$(top_builddir)/src
+swig_lt_cxxflags = -I$(top_srcdir)/include -I$(top_srcdir)/src -I$(top_builddir)/include -I$(top_builddir)/src
 swig_lt_libadd =
 swig_lt_ldflags = $(AM_LDFLAGS) -module -avoid-version -version-info 0:0:0
 swig_lt_libtoolflags = --tag=disable-static

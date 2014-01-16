@@ -2,7 +2,7 @@
 # lalsuite_swig.m4 - SWIG configuration
 # Author: Karl Wette, 2011, 2012
 #
-# serial 56
+# serial 57
 
 # enable SWIG wrapping modules
 AC_DEFUN([LALSUITE_ENABLE_SWIG],[
@@ -139,7 +139,7 @@ AC_DEFUN([LALSUITE_USE_SWIG],[
     AC_SUBST(SWIG_SYMBOL_PREFIXES,["$1"])
 
     # flags for preprocessing/generating SWIG wrapping module sources
-    AC_SUBST(SWIG_SWIGFLAGS,["-Wextra -Werror -I\$(abs_top_builddir)/include"])
+    AC_SUBST(SWIG_SWIGFLAGS,["-Wextra -Werror -I\$(top_srcdir)/include -I\$(top_srcdir)/src -I\$(top_builddir)/include -I\$(top_builddir)/src"])
 
     # add -MP option
     SWIG_SWIGFLAGS="${SWIG_SWIGFLAGS} -MP"
@@ -149,7 +149,7 @@ AC_DEFUN([LALSUITE_USE_SWIG],[
     SWIG_SWIGFLAGS="${SWIG_SWIGFLAGS} -outdir \$(SWIG_OUTDIR)"
 
     # flags for generating/compiling SWIG wrapping module sources
-    AC_SUBST(SWIG_CPPFLAGS,["-I\$(abs_top_builddir)/include -I\$(abs_top_builddir)/src ${swig_save_CPPFLAGS} ${LAL_SYSTEM_INCLUDES}"])
+    AC_SUBST(SWIG_CPPFLAGS,["-I\$(top_srcdir)/include -I\$(top_srcdir)/src -I\$(top_builddir)/include -I\$(top_builddir)/src ${swig_save_CPPFLAGS} ${LAL_SYSTEM_INCLUDES}"])
 
     # flags for compiling SWIG wrapping module sources
     AC_SUBST(SWIG_CFLAGS,[])
