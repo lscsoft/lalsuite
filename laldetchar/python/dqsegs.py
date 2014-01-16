@@ -45,15 +45,25 @@ def threshold_data_to_seglist(data, start, dt, min_threshold=None, max_threshold
 	if max_threshold is None:
 		max_threshold = float("inf")
 	if invert:
-		return from_bitstream([not(min_threshold < d and d < max_threshold) for d in data], start, dt)
+		return from_bitstream([min_threshold > d or d > max_threshold for d in data], start, dt)
 	else:
 		return from_bitstream([min_threshold < d and d < max_threshold for d in data], start, dt)
 
-def equality_data_to_seglist(data, start, dt, equality):
+def equality_data_to_seglist(data, start, dt, equality, invert=False):
 	"""
 	Apply equality test threshold to data and parse the result into a segment list.
 	"""
 	# FIXME: numpy operations?
-	return from_bitstream([d == equality for d in data], start, dt)
+	if invert:
+		return from_bitstream([d != equality for d in data], start, dt)
+	else:
+		return from_bitstream([d == equality for d in data], start, dt)
+
+def mask_data_to_seglist(data, start, dt, mask_on=0x1, mask_off=0x0):
+	"""
+	Apply bitmask to data and parse the result into a segment list.
+	"""
+	# FIXME: numpy operations?
+	return from_bitstream([(d & mask_on) & (not(d & mask_off)) for d in data], start, dt)
 
 ##@}
