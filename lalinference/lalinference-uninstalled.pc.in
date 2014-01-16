@@ -9,4 +9,4 @@ Description: (uninstalled)
 Version: @VERSION@
 Requires: gsl, lal >= @LAL_VERSION@, libmetaio, lalmetaio >= @LALMETAIO_VERSION@, lalinspiral >= @LALINSPIRAL_VERSION@, lalpulsar >= @LALPULSAR_VERSION@
 Libs: ${abs_top_builddir}/src/liblalinference.la
-Cflags: -I${abs_top_builddir}/include
+Cflags: -I${abs_top_builddir}/include @OPENMP_CFLAGS@
