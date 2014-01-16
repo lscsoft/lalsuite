@@ -172,9 +172,6 @@ parser.add_option("-M","--run-mvsc",action="store_true",\
 parser.add_option("-x", "--dax",action="store_true",\
     default=False, help="Delete the ligo_data_find jobs and populate frame LFNs in the DAX")
 
-parser.add_option("-g", "--grid-site",action="store",type="string",\
-    metavar="SITE", help="Specify remote site in conjunction with --dax option")
-
 parser.add_option("--data-checkpoint", action="store_true",default=False,\
     help="checkpoint the inspiral code")
 
@@ -893,10 +890,10 @@ except:
 pfnfile = inspiralutils.create_frame_pfn_file(ifo_frame_type_dict,opts.gps_start_time,opts.gps_end_time,server=ldrserver)
 peg_frame_cache = inspiralutils.create_pegasus_cache_file(pfnfile)
 
-#set up site and dir options
-if opts.grid_site:
-  exec_site='local,' + opts.grid_site
-else:
+# set up site and dir options
+try: 
+  exec_site='local,' + cp.get("pipeline","remote-sites")
+except:
   exec_site=None
 
 
