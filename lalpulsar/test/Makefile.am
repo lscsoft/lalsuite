@@ -41,8 +41,8 @@ check_PROGRAMS = \
 	NormalizeSFTRngMedTest \
 	XLALMultiNoiseWeightsTest \
 	$(XMLTEST)
-#	FileIOTest \
-#	SFTCleanTest \
+#	FileIOTest
+#	SFTCleanTest
 
 TESTS = $(check_PROGRAMS)
 EXTRA_PROGRAMS = XLALLoadSFTsTest
