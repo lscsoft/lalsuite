@@ -172,6 +172,9 @@ parser.add_option("-M","--run-mvsc",action="store_true",\
 parser.add_option("-x", "--dax",action="store_true",\
     default=False, help="Delete the ligo_data_find jobs and populate frame LFNs in the DAX")
 
+parser.add_option("-r", "--reuse-data",action="store_true",\
+    default=False, help="In DAX mode, reuse data from a previous run stored in the static PFN cache")
+
 parser.add_option("--data-checkpoint", action="store_true",default=False,\
     help="checkpoint the inspiral code")
 
@@ -397,6 +400,24 @@ print "Setting up an analysis for " + str(ifos) + " from " + \
 print
 sys.stdout.flush()
 
+
+##############################################################################
+# Create a static frame cache file for use by pegasus
+
+ifo_frame_type_dict = {}
+for ifo in ifos:
+  ifo_frame_type_dict[ifo] = inspiralutils.get_data_options(cp,ifo)[1]
+
+# determine which data server port to use
+try:
+  ldrserver = cp.get("datafind","server")
+except:
+  ldrserver = "internal_ldr_port"
+
+pfnfile = inspiralutils.create_frame_pfn_file(ifo_frame_type_dict,opts.gps_start_time,opts.gps_end_time,server=ldrserver)
+peg_frame_cache = os.path.join(os.getcwd(),inspiralutils.create_pegasus_cache_file(pfnfile))
+
+
 ##############################################################################
 # create a local execute directory for the pipeline
 tmp_exec_dir = tempfile.mkdtemp( prefix="%s-%s-%s-%d." % (''.join(ifos),
@@ -502,7 +523,8 @@ if opts.run_datafind or opts.run_tmpltbank:
   print "Running inspiral hipe for datafind/template bank run"
   hipeDfNode = inspiralutils.hipe_setup("datafind", cp, ifos, \
       opts.log_path, dataFind = opts.run_datafind, tmpltBank = opts.run_tmpltbank,
-      dax=opts.dax, local_exec_dir=tmp_exec_dir)
+      dax=opts.dax, local_exec_dir=tmp_exec_dir, static_pfn_cache=peg_frame_cache,
+      reuse_data=opts.reuse_data)
   for cacheFile in hipeDfNode.get_output_files():
       cachelist.append("datafind/" + cacheFile)
   dag.add_node(hipeDfNode)
@@ -551,7 +573,8 @@ if opts.complete_cache:
             playDir, cp, ifos, opts.log_path, \
             playOnly = True, vetoCat = category, vetoFiles = dqVetoes, \
             dax=opts.dax, tmpltbankCache = tmpltbank_cache, \
-            local_exec_dir=tmp_exec_dir)
+            local_exec_dir=tmp_exec_dir, static_pfn_cache=peg_frame_cache,
+            reuse_data=opts.reuse_data)
         for cacheFile in hipePlayVetoNode[category].get_output_files():
           cachelist.append(playDir + "/" + cacheFile)
         dag.add_node(hipePlayVetoNode[category])
@@ -586,7 +609,9 @@ if opts.complete_cache:
             vetoCat = category, vetoFiles = dqVetoes, \
             dax = opts.dax, tmpltbankCache = tmpltbank_cache, \
             local_exec_dir=tmp_exec_dir, \
-            data_checkpoint = opts.data_checkpoint)
+            data_checkpoint = opts.data_checkpoint,
+            static_pfn_cache=peg_frame_cache,
+            reuse_data=opts.reuse_data)
         for cacheFile in hipeAnalysisVetoNode[category].get_output_files():
           cachelist.append(fullDir + "/" + cacheFile)
         dag.add_node(hipeAnalysisVetoNode[category])
@@ -625,7 +650,9 @@ if opts.complete_cache:
               injSeed = injSeed, vetoCat = category, vetoFiles = dqVetoes, \
               dax=opts.dax, tmpltbankCache = tmpltbank_cache, \
               local_exec_dir = tmp_exec_dir, \
-              data_checkpoint = opts.data_checkpoint)
+              data_checkpoint = opts.data_checkpoint,
+              static_pfn_cache=peg_frame_cache,
+              reuse_data=opts.reuse_data)
           for cacheFile in hipeInjVetoNode[category][injDir].get_output_files():
             cachelist.append(injDir + "/" + cacheFile)
           dag.add_node(hipeInjVetoNode[category][injDir])
@@ -875,20 +902,7 @@ except:
   pass
 
 ##############################################################################
-# Write the files needed to invoke pegasus
-
-ifo_frame_type_dict = {}
-for ifo in ifos:
-  ifo_frame_type_dict[ifo] = inspiralutils.get_data_options(cp,ifo)[1]
-
-# determine which data server port to use
-try:
-  ldrserver = cp.get("datafind","server")
-except:
-  ldrserver = "internal_ldr_port"
-
-pfnfile = inspiralutils.create_frame_pfn_file(ifo_frame_type_dict,opts.gps_start_time,opts.gps_end_time,server=ldrserver)
-peg_frame_cache = inspiralutils.create_pegasus_cache_file(pfnfile)
+# Write the dag and sub files
 
 # see if any of the jobs use remote sites
 exec_site_dict = {}
@@ -902,10 +916,8 @@ if exec_site_list:
 else:
   exec_site=None
 
-
-##############################################################################
-# Write the dag and sub files
-dag.prepare_dax(tmp_exec_dir=tmp_exec_dir,grid_site=exec_site,peg_frame_cache=peg_frame_cache)
+# write the workflow control files
+dag.prepare_dax(tmp_exec_dir=tmp_exec_dir,grid_site=exec_site)
 dag.write_sub_files()
 dag.write_dag()
 
