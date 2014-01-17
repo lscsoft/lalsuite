@@ -16,7 +16,6 @@ python/git_version.py
 src/build_info.c
 src/config.h
 src/config.h.in
-src/git_version
 src/lal/LALXMLConfig.h
 src/lal/LALXMLVCSInfo.h
 src/lal/lalxmlswig.i
