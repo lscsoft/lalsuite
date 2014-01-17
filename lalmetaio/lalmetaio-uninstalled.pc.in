@@ -7,6 +7,6 @@ LAL_PYTHON_PATH=@abs_top_builddir@/swig/python/.libs:@LAL_PYTHON_PATH@
 Name: LALMetaIO
 Description: (uninstalled)
 Version: @VERSION@
-Requires: lal-uninstalled >= @LAL_VERSION@, libmetaio
+Requires: lal, libmetaio
 Libs: ${abs_top_builddir}/src/liblalmetaio.la
 Cflags: -I${abs_top_builddir}/include

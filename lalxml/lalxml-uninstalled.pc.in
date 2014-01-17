@@ -7,6 +7,6 @@ LAL_PYTHON_PATH=@abs_top_builddir@/swig/python/.libs:@LAL_PYTHON_PATH@
 Name: LALXML
 Description: (uninstalled)
 Version: @VERSION@
-Requires: gsl, libxml-2.0, lal-uninstalled >= @LAL_VERSION@
+Requires: gsl, libxml-2.0, lal
 Libs: ${abs_top_builddir}/src/liblalxml.la
 Cflags: -I${abs_top_srcdir}/src -I${abs_top_builddir}/src

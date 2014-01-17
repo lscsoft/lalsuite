@@ -7,6 +7,6 @@ LAL_PYTHON_PATH=@abs_top_builddir@/swig/python/.libs:@LAL_PYTHON_PATH@
 Name: LALFrame
 Description: (uninstalled)
 Version: @VERSION@
-Requires: lal-uninstalled >= @LAL_VERSION@, libframe
+Requires: lal, libframe
 Libs: ${abs_top_builddir}/src/liblalframe.la
 Cflags: -I${abs_top_builddir}/include

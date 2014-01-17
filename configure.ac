@@ -9,10 +9,6 @@ AM_INIT_AUTOMAKE([1.11 foreign subdir-objects color-tests parallel-tests])
 
 LALSUITE_DISTCHECK_CONFIGURE_FLAGS
 
-# always prefer uninstalled LAL libraries
-LALSUITE_PKG_SUFFIX="-uninstalled"
-export LALSUITE_PKG_SUFFIX
-
 # provide LAL library enable/disable options
 LALSUITE_ENABLE_ALL_LAL
 doxygen=true

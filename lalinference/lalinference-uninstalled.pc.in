@@ -7,6 +7,6 @@ LAL_PYTHON_PATH=@abs_top_builddir@/swig/python/.libs:@LAL_PYTHON_PATH@
 Name: LALInference
 Description: (uninstalled)
 Version: @VERSION@
-Requires: gsl, lal-uninstalled >= @LAL_VERSION@, libmetaio, lalmetaio-uninstalled >= @LALMETAIO_VERSION@, lalinspiral-uninstalled >= @LALINSPIRAL_VERSION@, lalpulsar-uninstalled >= @LALPULSAR_VERSION@
+Requires: gsl, lal, libmetaio, lalmetaio, lalinspiral, lalpulsar
 Libs: ${abs_top_builddir}/src/liblalinference.la
 Cflags: -I${abs_top_builddir}/include
