@@ -98,9 +98,6 @@ extern int vrbflg;
 /* ---------- local prototypes ---------- */
 int XLALInitUserVars ( UserVariables_t *uvar );
 int XLALInitCode ( ConfigVariables *cfg, const UserVariables_t *uvar, const char *app_name);
-
-EphemerisData *InitEphemeris (const CHAR *ephemDir, const CHAR *ephemYear );
-
 int XLALDestroyConfig ( ConfigVariables *cfg );
 
 /*============================================================
@@ -387,38 +384,3 @@ XLALDestroyConfig ( ConfigVariables *cfg )
   return XLAL_SUCCESS;
 
 } /* XLALDestroyConfig() */
-
-
-
-/** Load Ephemeris from ephemeris data-files  */
-EphemerisData *
-InitEphemeris (const CHAR *ephemDir,	/**< directory containing ephems */
-	       const CHAR *ephemYear	/**< which years do we need? */
-	       )
-{
-#define FNAME_LENGTH 1024
-  EphemerisData *edat;
-  CHAR EphemEarth[FNAME_LENGTH];	/* filename of earth-ephemeris data */
-  CHAR EphemSun[FNAME_LENGTH];	/* filename of sun-ephemeris data */
-
-  XLAL_CHECK_NULL ( ephemYear != NULL, XLAL_EINVAL );
-
-  if ( ephemDir )
-    {
-      snprintf(EphemEarth, FNAME_LENGTH, "%s/earth%s.dat", ephemDir, ephemYear);
-      snprintf(EphemSun, FNAME_LENGTH, "%s/sun%s.dat", ephemDir, ephemYear);
-    }
-  else
-    {
-      snprintf(EphemEarth, FNAME_LENGTH, "earth%s.dat", ephemYear);
-      snprintf(EphemSun, FNAME_LENGTH, "sun%s.dat",  ephemYear);
-    }
-
-  EphemEarth[FNAME_LENGTH-1] = 0;
-  EphemSun[FNAME_LENGTH-1] = 0;
-
-  XLAL_CHECK_NULL ( ( edat = XLALInitBarycenter ( EphemEarth, EphemSun )) != NULL, XLAL_EFUNC );
-
-  return edat;
-
-} /* InitEphemeris() */
