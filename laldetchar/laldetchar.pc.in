@@ -10,6 +10,6 @@ LAL_PYTHON_PATH=@pyexecdir@:@LAL_PYTHON_PATH@
 Name: LALDetChar
 Description: LAL DetChar Library Support
 Version: @VERSION@
-Requires: glib-2.0, gsl, lal >= @LAL_VERSION@, libmetaio, lalburst >= @LALBURST_VERSION@, lalsimulation >= @LALSIMULATION_VERSION@
+Requires: glib-2.0, gsl, lal >= @LAL_VERSION@, libmetaio, lalmetaio >= @LALMETAIO_VERSION@, lalburst >= @LALBURST_VERSION@
 Libs: -L${libdir} -llaldetchar
 Cflags: -I${includedir}
