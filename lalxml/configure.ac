@@ -115,7 +115,7 @@ AC_SUBST([pkgpythondir], ["\${pkgpyexecdir}"])
 
 # output
 AC_OUTPUT
-echo "
+AC_MSG_NOTICE([
 ==================================================
 LALXML has now been successfully configured:
 
@@ -129,4 +129,4 @@ ${prefix}
 Now run 'make' to build LALXML,
 and run 'make install' to install LALXML.
 ==================================================
-"
+])

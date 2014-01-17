@@ -69,7 +69,7 @@ lalsuite_config_subdir([lalapps])
 
 AC_SUBST([ac_configure_args])
 AC_OUTPUT
-echo "
+AC_MSG_NOTICE([
 ==================================================
 LALSuite has now been successfully configured:
 
@@ -92,4 +92,4 @@ ${prefix}
 Now run 'make' to build LALSuite,
 and run 'make install' to install LALSuite.
 ==================================================
-"
+])

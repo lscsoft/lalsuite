@@ -356,7 +356,7 @@ AC_SUBST_FILE([INCLUDEMKFILE])
 
 # output
 AC_OUTPUT
-echo "
+AC_MSG_NOTICE([
 ==================================================
 LAL has now been successfully configured:
 
@@ -372,4 +372,4 @@ ${prefix}
 Now run 'make' to build LAL,
 and run 'make install' to install LAL.
 ==================================================
-"
+])

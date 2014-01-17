@@ -114,7 +114,7 @@ AC_SUBST_FILE([LAL_HEADER_LINK])
 
 # output
 AC_OUTPUT
-echo "
+AC_MSG_NOTICE([
 ==================================================
 LALStochastic has now been successfully configured:
 
@@ -128,4 +128,4 @@ ${prefix}
 Now run 'make' to build LALStochastic,
 and run 'make install' to install LALStochastic.
 ==================================================
-"
+])

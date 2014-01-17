@@ -411,7 +411,7 @@ AC_SUBST([pkgpythondir], ["\${pkgpyexecdir}"])
 
 # output
 AC_OUTPUT
-echo "
+AC_MSG_NOTICE([
 ==================================================
 LALApps has now been successfully configured:
 
@@ -443,4 +443,4 @@ ${prefix}
 Now run 'make' to build LALApps,
 and run 'make install' to install LALApps.
 ==================================================
-"
+])
