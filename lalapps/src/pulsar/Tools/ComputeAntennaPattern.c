@@ -59,7 +59,6 @@ typedef struct
   MultiLIGOTimeGPSVector *multiTimestamps;	/**< timestamps vector (LIGOtimeGPS format) */
   UINT4 numTimeStamps;			/**< number of timestamps (SFTs) PER DETECTOR */
   UINT4 numSFTstotal;                   /**< number of timestamps (SFTs) for ALL detectors together */
-  BOOLEAN averageABCD;			/**< output antenna pattern matrix elements averaged over timestamps, suppress a(t), b(t) */
   REAL8Vector *Alpha;			/**< skyposition Alpha: radians, equatorial coords */
   REAL8Vector *Delta;			/**< skyposition Delta: radians, equatorial coords */
   UINT4 numSkyPoints;			/**< common length of Alpha and Delta vectors */
@@ -80,13 +79,13 @@ typedef struct
   CHAR *ephemSun;	/**< Sun ephemeris file to use */
 
   LALStringVector* timeGPS;	/**< GPS timestamps to compute detector state for (REAL8 format) */
-  CHAR  *timeStampsFile;	/**< alternative: read in timestamps from a file (expect same format) */
-  BOOLEAN averageABCD; 		/**< output antenna pattern matrix elements averaged over timestamps, suppress a(t), b(t) */
+  CHAR *timeStampsFile;		/**< alternative: read in timestamps from a file (expect same format) */
   INT4 Tsft;			/**< assumed length of SFTs, needed for offset to timestamps when comparing to CFS_v2, PFS etc */
 
   LALStringVector* noiseSqrtShX; /**< per-detector noise PSD sqrt(SX) */
 
-  CHAR *outputFile;	/**< output file to write antenna pattern functions into */
+  CHAR *outab; 			/**< output file for antenna pattern functions a(t), b(t) at each timestamp */
+  CHAR *outABCD; 		/**< output file for antenna pattern matrix elements A, B, C, D averaged over timestamps */
 
   BOOLEAN version;	/**< output code versions */
 
@@ -137,34 +136,59 @@ main(int argc, char *argv[])
   /* basic setup and initializations */
   XLAL_CHECK ( XLALInitCode( &config, &uvar, argv[0] ) == XLAL_SUCCESS, XLAL_EFUNC );
 
-  /* prepare output file */
-  FILE *fpOut = NULL;
-  if ( uvar.outputFile ) {
+  /* prepare output files */
+  FILE *fpOutab = NULL;
+  if ( uvar.outab ) {
 
-      XLAL_CHECK ( (fpOut = fopen (uvar.outputFile, "wb")) != NULL, XLAL_EIO, "Error opening file '%s' for writing...", uvar.outputFile );
+      XLAL_CHECK ( (fpOutab = fopen (uvar.outab, "wb")) != NULL, XLAL_EIO, "Error opening file '%s' for writing...", uvar.outab );
 
       /* write header info in comments */
-      XLAL_CHECK ( XLAL_SUCCESS == XLALOutputVersionString ( fpOut, 0 ), XLAL_EFUNC );
+      XLAL_CHECK ( XLAL_SUCCESS == XLALOutputVersionString ( fpOutab, 0 ), XLAL_EFUNC );
 
       /* write the command-line */
       for (int a = 0; a < argc; a++)
         {
-          fprintf(fpOut,"%%%% argv[%d]: '%s'\n", a, argv[a]);
+          fprintf(fpOutab,"%%%% argv[%d]: '%s'\n", a, argv[a]);
         }
 
       /* write column headings */
-      fprintf(fpOut, "%%%% columns:\n%%%% Alpha  Delta");
-      if ( !config.averageABCD ) {
-        fprintf(fpOut, "     tGPS       a(t)         b(t)");
+      fprintf(fpOutab, "%%%% columns:\n%%%% Alpha   Delta       tGPS ");
+      if ( config.numDetectors == 1 ) {
+        fprintf(fpOutab, "      a(t)         b(t)");
       }
-      fprintf(fpOut, "         A            B            C            D");
-      if ( config.numDetectors > 1 ) {
-        fprintf(fpOut, "   ");
+      else {
         for ( UINT4 X=0; X < config.numDetectors; X++ ) {
-          fprintf(fpOut, "         A[%d]         B[%d]         C[%d]         D[%d]", X, X, X, X);
+          fprintf(fpOutab, "      a[%d](t)      b[%d](t)", X, X);
         }
       }
-      fprintf(fpOut, "\n");
+      fprintf(fpOutab, "\n");
+
+  }
+
+  FILE *fpOutABCD = NULL;
+  if ( uvar.outABCD ) {
+
+      XLAL_CHECK ( (fpOutABCD = fopen (uvar.outABCD, "wb")) != NULL, XLAL_EIO, "Error opening file '%s' for writing...", uvar.outABCD );
+
+      /* write header info in comments */
+      XLAL_CHECK ( XLAL_SUCCESS == XLALOutputVersionString ( fpOutABCD, 0 ), XLAL_EFUNC );
+
+      /* write the command-line */
+      for (int a = 0; a < argc; a++)
+        {
+          fprintf(fpOutABCD,"%%%% argv[%d]: '%s'\n", a, argv[a]);
+        }
+
+      /* write column headings */
+      fprintf(fpOutABCD, "%%%% columns:\n%%%% Alpha   Delta");
+      fprintf(fpOutABCD, "        A            B            C            D");
+      if ( config.numDetectors > 1 ) {
+        fprintf(fpOutABCD, "   ");
+        for ( UINT4 X=0; X < config.numDetectors; X++ ) {
+          fprintf(fpOutABCD, "         A[%d]         B[%d]         C[%d]         D[%d]", X, X, X, X);
+        }
+      }
+      fprintf(fpOutABCD, "\n");
 
   }
 
@@ -179,59 +203,49 @@ main(int argc, char *argv[])
     MultiAMCoeffs *multiAM;
     XLAL_CHECK ( ( multiAM = XLALComputeMultiAMCoeffs ( config.multiDetStates, config.multiNoiseWeights, skypos ) ) != NULL, XLAL_EFUNC, "XLALComputeAMCoeffs() failed." );
 
-    if ( uvar.outputFile ) {
-
-      /* write out the data for this sky point*/
-     if ( config.averageABCD ) { // output only ABCD averaged over all timestamps, suppress a(t), b(t) (no meaningful use known for their averages)
-       // FIXME: stop doing average manually when AMCoeffs is changed to contain averaged values
-       REAL8 A = multiAM->Mmunu.Ad/config.numSFTstotal;
-       REAL8 B = multiAM->Mmunu.Bd/config.numSFTstotal;
-       REAL8 C = multiAM->Mmunu.Cd/config.numSFTstotal;
-       REAL8 D = A*B-SQ(C);
-       fprintf (fpOut, "%.7f %.7f %12.8f %12.8f %12.8f %12.8f", config.Alpha->data[n], config.Delta->data[n], A, B, C, D );
-       if ( config.numDetectors > 1 ) {
-         fprintf(fpOut, "   ");
+    /* write out the data for this sky point */
+    if ( uvar.outab ) { // output a(t), b(t) at each timestamp
+      for (UINT4 t = 0; t < config.numTimeStamps; t++) {
+         fprintf (fpOutab, "%.7f  %.7f  %d", config.Alpha->data[n], config.Delta->data[n], config.multiTimestamps->data[0]->data[t].gpsSeconds );
          for ( UINT4 X=0; X < config.numDetectors; X++ ) {
-           REAL4 AX = multiAM->data[X]->A/config.numTimeStamps;
-           REAL4 BX = multiAM->data[X]->B/config.numTimeStamps;
-           REAL4 CX = multiAM->data[X]->C/config.numTimeStamps;
-           REAL4 DX = AX*BX-SQ(CX);
-           fprintf(fpOut, " %12.8f %12.8f %12.8f %12.8f", AX, BX, CX, DX);
-         }
-       }
-       fprintf(fpOut, "\n");
-     } // if ( config.averageABCD )
+           fprintf(fpOutab, " %12.8f %12.8f", multiAM->data[X]->a->data[t], multiAM->data[X]->b->data[t]);
+         } // for ( UINT4 X=0; X < config.numDetectors; X++ )
+         fprintf(fpOutab, "\n");
+       } // for (UINT4 t = 0; t < config.numTimeStamps; t++)
+    } // if ( uvar.outab )
 
-     else { // output all values at each timestamp
-       for (UINT4 t = 0; t < config.numTimeStamps; t++) {
-         REAL4 A = SQ(multiAM->data[0]->a->data[t]);
-         REAL4 B = SQ(multiAM->data[0]->b->data[t]);
-         REAL4 C = multiAM->data[0]->a->data[t]*multiAM->data[0]->b->data[t];
-         REAL4 D = A*B-SQ(C);
-         fprintf (fpOut, "%.7f %.7f %d %12.8f %12.8f %12.8f %12.8f %12.8f %12.8f", config.Alpha->data[n], config.Delta->data[n], config.multiTimestamps->data[0]->data[t].gpsSeconds, multiAM->data[0]->a->data[t], multiAM->data[0]->b->data[t], A, B, C, D );
-         if ( config.numDetectors > 1 ) {
-           fprintf(fpOut, "   ");
-           for ( UINT4 X=0; X < config.numDetectors; X++ ) {
-             REAL4 AX = multiAM->data[X]->A/config.numTimeStamps;
-             REAL4 BX = multiAM->data[X]->B/config.numTimeStamps;
-             REAL4 CX = multiAM->data[X]->C/config.numTimeStamps;
-             REAL4 DX = AX*BX-SQ(CX);
-             fprintf(fpOut, " %12.8f %12.8f %12.8f %12.8f", AX, BX, CX, DX);
-           }
-         }
-         fprintf(fpOut, "\n");
-       }
-     } // if ( !config.averageABCD )
+    if ( uvar.outABCD ) { // output ABCD averaged over all timestamps
+      // FIXME: stop doing average manually when AMCoeffs is changed to contain averaged values
+      REAL8 A = multiAM->Mmunu.Ad/config.numSFTstotal;
+      REAL8 B = multiAM->Mmunu.Bd/config.numSFTstotal;
+      REAL8 C = multiAM->Mmunu.Cd/config.numSFTstotal;
+      REAL8 D = A*B-SQ(C);
+      fprintf (fpOutABCD, "%.7f  %.7f %12.8f %12.8f %12.8f %12.8f", config.Alpha->data[n], config.Delta->data[n], A, B, C, D );
+      if ( config.numDetectors > 1 ) {
+        for ( UINT4 X=0; X < config.numDetectors; X++ ) {
+          REAL4 AX = multiAM->data[X]->A/config.numTimeStamps;
+          REAL4 BX = multiAM->data[X]->B/config.numTimeStamps;
+          REAL4 CX = multiAM->data[X]->C/config.numTimeStamps;
+          REAL4 DX = AX*BX-SQ(CX);
+          fprintf(fpOutABCD, " %12.8f %12.8f %12.8f %12.8f", AX, BX, CX, DX);
+        }
+      }
+      fprintf(fpOutABCD, "\n");
+    } // if ( uvar.outABCD )
 
-    } /* if outputFile */
-
-  XLALDestroyMultiAMCoeffs ( multiAM );
+    XLALDestroyMultiAMCoeffs ( multiAM );
 
   } // for (UINT4 n = 0; n < config.numSkyPoints; n++)
 
-  /* ----- close output file ----- */
-  fprintf (fpOut, "\n");
-  if ( fpOut ) fclose ( fpOut );
+  /* ----- close output files ----- */
+  if ( fpOutab ) {
+    fprintf (fpOutab, "\n");
+    fclose ( fpOutab );
+  }
+  if ( fpOutABCD ) {
+    fprintf (fpOutABCD, "\n");
+    fclose ( fpOutABCD );
+  }
 
   /* ----- done: free all memory */
   XLAL_CHECK ( XLALDestroyConfig( &config ) == XLAL_SUCCESS, XLAL_EFUNC );
@@ -262,12 +276,11 @@ XLALInitUserVars ( UserVariables_t *uvar )
 
   uvar->timeGPS = NULL;
   uvar->timeStampsFile = NULL;
-  uvar->averageABCD = 0;
+  uvar->outab = 0;
+  uvar->outABCD = 0;
   uvar->Tsft = 1800;
 
   uvar->noiseSqrtShX = NULL;
-
-  uvar->outputFile = NULL;
 
   /* register all user-variables */
   XLALregBOOLUserStruct(	help,		'h', UVAR_HELP,		"Print this help/usage message");
@@ -280,15 +293,15 @@ XLALInitUserVars ( UserVariables_t *uvar )
 
   XLALregLISTUserStruct( 	timeGPS,        't', UVAR_OPTIONAL, 	"GPS time at which to compute detector states (separate multiple timestamps by commata)");
   XLALregSTRINGUserStruct(	timeStampsFile, 'T', UVAR_OPTIONAL,	"Alternative: time-stamps file");
-  XLALregBOOLUserStruct(	averageABCD,	0, UVAR_OPTIONAL,	"output only time-averaged antenna pattern matrix elements");
-  XLALregINTUserStruct(		Tsft,		0, UVAR_OPTIONAL,	"Assumed length of one SFT in seconds; needed for timestamps offset consistency with F-stat based codes");
+  XLALregINTUserStruct(		Tsft,		 0, UVAR_OPTIONAL,	"Assumed length of one SFT in seconds; needed for timestamps offset consistency with F-stat based codes");
 
   XLALregLISTUserStruct ( noiseSqrtShX,		 0, UVAR_OPTIONAL, "Per-detector noise PSD sqrt(SX). Only ratios relevant to compute noise weights. Defaults to 1,1,...");
 
   XLALregSTRINGUserStruct (	ephemEarth,	 0,  UVAR_OPTIONAL,	"Earth ephemeris file to use");
   XLALregSTRINGUserStruct (	ephemSun,	 0,  UVAR_OPTIONAL,	"Sun ephemeris file to use");
 
-  XLALregSTRINGUserStruct(	outputFile, 	'o', UVAR_OPTIONAL,     "Output file for antenna pattern functions");
+  XLALregSTRINGUserStruct(	outab,		'o', UVAR_OPTIONAL,	"output file for antenna pattern functions a(t), b(t) at each timestamp");
+  XLALregSTRINGUserStruct(	outABCD,	'O', UVAR_OPTIONAL,	"output file for antenna pattern matrix elements A, B, C, D averaged over timestamps");
 
   XLALregBOOLUserStruct(	version,        'V', UVAR_SPECIAL,      "Output code version");
 
@@ -355,8 +368,6 @@ XLALInitCode ( ConfigVariables *cfg, const UserVariables_t *uvar, const char *ap
   cfg->numTimeStamps = cfg->multiTimestamps->data[0]->length;
 
   cfg->numSFTstotal = cfg->numDetectors*cfg->numTimeStamps;
-
-  cfg->averageABCD = uvar->averageABCD;
 
   /* convert detector names into site-info */
   MultiLALDetector multiDet;

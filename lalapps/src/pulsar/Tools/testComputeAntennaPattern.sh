@@ -122,7 +122,7 @@ echo "ComputeAntennaPattern Test1: single-sky-point, single-timestamp comparison
 echo "----------------------------------------------------------------------------------------------------"
 
 ## ----- run ComputeAntennaPattern
-cap_cmdline="${cap_code} --IFOs=H1 --timeGPS=$timestamp1 --outputFile=$outCAP --Alpha=$alpha --Delta=$delta"
+cap_cmdline="${cap_code} --IFOs=H1 --timeGPS=$timestamp1 --outab=$outCAP --Alpha=$alpha --Delta=$delta"
 echo $cap_cmdline;
 if ! eval $cap_cmdline; then
     echo "Error.. something failed when running '$cap_code' ..."
@@ -194,7 +194,7 @@ a3_pds=$( echo $pds_out_xlal | awk '{print $3}')
 b3_pds=$( echo $pds_out_xlal | awk '{print $4}')
 
 ## ----- run ComputeAntennaPattern
-cap_cmdline="${cap_code} --IFOs=H1 --timeGPS=$timestamp1 --outputFile=$outCAP --skyGridFile=$skygridfile"
+cap_cmdline="${cap_code} --IFOs=H1 --timeGPS=$timestamp1 --outab=$outCAP --skyGridFile=$skygridfile"
 
 echo $cap_cmdline;
 if ! eval $cap_cmdline; then
@@ -246,7 +246,7 @@ echo "ComputeAntennaPattern Test3: matrix-element averaging over timestamps from
 echo "----------------------------------------------------------------------------------------------------"
 
 ## ----- run ComputeAntennaPattern with single-timestamp input, output
-cap_cmdline="${cap_code} --IFOs=H1 --timeGPS=$timestamp1,$timestamp2,$timestamp3 --outputFile=$outCAP --Alpha=$alpha --Delta=$delta"
+cap_cmdline="${cap_code} --IFOs=H1 --timeGPS=$timestamp1,$timestamp2,$timestamp3 --outab=$outCAP --Alpha=$alpha --Delta=$delta"
 echo $cap_cmdline;
 if ! eval $cap_cmdline; then
     echo "Error.. something failed when running '$cap_code' ..."
@@ -263,7 +263,7 @@ Dmean=$( echo $Amean $Bmean $Cmean | awk '{print $1*$2-$3*$3}' )
 printf "%s 0\n%s 0\n%s 0" "$timestamp1" "$timestamp2" "$timestamp3" >> $timestampsfile
 
 ## ----- run ComputeAntennaPattern with timestampsfile input, direct average ABCD output
-cap_cmdline="${cap_code} --IFOs=H1 --timeStampsFile=$timestampsfile --outputFile=$outCAP --Alpha=$alpha --Delta=$delta --averageABCD"
+cap_cmdline="${cap_code} --IFOs=H1 --timeStampsFile=$timestampsfile --outABCD=$outCAP --Alpha=$alpha --Delta=$delta"
 echo $cap_cmdline;
 if ! eval $cap_cmdline; then
     echo "Error.. something failed when running '$cap_code' ..."
@@ -282,8 +282,8 @@ fail_Amean=$(echo $reldev_Amean $tolerance | awk "$awk_isgtr")
 fail_Bmean=$(echo $reldev_Bmean $tolerance | awk "$awk_isgtr")
 fail_Cmean=$(echo $reldev_Cmean $tolerance | awk "$awk_isgtr")
 fail_Dmean=$(echo $reldev_Dmean $tolerance | awk "$awk_isgtr")
-echo "==> mean from a(t), b(t)   : <A>=$Amean,  <B>=$Bmean,  <C>=$Cmean,  <D>=$Dmean"
-echo "    mean from --averageABCD: <A>=$A_cap_mean, <B>=$B_cap_mean, <C>=$C_cap_mean, <D>=$D_cap_mean"
+echo "==> computed from a(t), b(t): <A>=$Amean,  <B>=$Bmean,  <C>=$Cmean,  <D>=$Dmean"
+echo "    direct ABCD output:       <A>=$A_cap_mean, <B>=$B_cap_mean, <C>=$C_cap_mean, <D>=$D_cap_mean"
 
 if [ "$fail_Amean" -o "$fail_Bmean" -o "$fail_Cmean" -o "$fail_Dmean" ]; then
     echo "==> FAILED at tolerance=$tolerance"
@@ -296,7 +296,7 @@ echo "--------------------------------------------------------------------------
 echo "ComputeAntennaPattern Test4: comparing A,B,C,D with PredictFStat";
 echo "----------------------------------------------------------------------------------------------------"
 
-cap_cmdline="${cap_code} --IFOs=H1 --timeStampsFile=$timestampsfile --outputFile=$outCAP --Alpha=$alpha --Delta=$delta --averageABCD"
+cap_cmdline="${cap_code} --IFOs=H1 --timeStampsFile=$timestampsfile --outABCD=$outCAP --Alpha=$alpha --Delta=$delta"
 echo $cap_cmdline;
 if ! eval $cap_cmdline; then
     echo "Error.. something failed when running '$cap_code' ..."
@@ -355,7 +355,7 @@ B_H1_single=$B_cap
 C_H1_single=$C_cap
 D_H1_single=$D_cap
 
-cap_cmdline="${cap_code} --IFOs=L1 --timeStampsFile=$timestampsfile --outputFile=$outCAP --Alpha=$alpha --Delta=$delta --averageABCD"
+cap_cmdline="${cap_code} --IFOs=L1 --timeStampsFile=$timestampsfile --outABCD=$outCAP --Alpha=$alpha --Delta=$delta"
 echo $cap_cmdline;
 if ! eval $cap_cmdline; then
     echo "Error.. something failed when running '$cap_code' ..."
@@ -367,7 +367,7 @@ B_L1_single=$(awk -v col=4 "$awk_print_wo_headers" $outCAP)
 C_L1_single=$(awk -v col=5 "$awk_print_wo_headers" $outCAP)
 D_L1_single=$(awk -v col=6 "$awk_print_wo_headers" $outCAP)
 
-cap_cmdline="${cap_code} --IFOs=H1,L1 --timeStampsFile=$timestampsfile --outputFile=$outCAP --Alpha=$alpha --Delta=$delta --averageABCD"
+cap_cmdline="${cap_code} --IFOs=H1,L1 --timeStampsFile=$timestampsfile --outABCD=$outCAP --Alpha=$alpha --Delta=$delta"
 echo $cap_cmdline;
 if ! eval $cap_cmdline; then
     echo "Error.. something failed when running '$cap_code' ..."
@@ -451,7 +451,7 @@ while [ $iTS -le $Nsteps ]; do
     iTS=$(($iTS + 1))
 done
 
-cap_cmdline="${cap_code} --IFOs=H1,L1 --timeStampsFile=$timestampsfile --outputFile=$outCAP --Alpha=$alpha --Delta=$delta --noiseSqrtShX=$SqrtShH,$SqrtShL --averageABCD"
+cap_cmdline="${cap_code} --IFOs=H1,L1 --timeStampsFile=$timestampsfile --outABCD=$outCAP --Alpha=$alpha --Delta=$delta --noiseSqrtShX=$SqrtShH,$SqrtShL"
 echo $cap_cmdline;
 if ! eval $cap_cmdline; then
     echo "Error.. something failed when running '$cap_code' ..."
