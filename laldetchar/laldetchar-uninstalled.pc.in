@@ -7,6 +7,6 @@ LAL_PYTHON_PATH=@abs_top_builddir@/swig/python/.libs:@LAL_PYTHON_PATH@
 Name: LALDetChar
 Description: (uninstalled)
 Version: @VERSION@
-Requires: glib-2.0, gsl, lal, libmetaio, lalmetaio, lalburst
+Requires: glib-2.0, gsl, lal >= @LAL_VERSION@, libmetaio, lalmetaio >= @LALMETAIO_VERSION@, lalburst >= @LALBURST_VERSION@
 Libs: ${abs_top_builddir}/src/liblaldetchar.la
 Cflags: -I${abs_top_builddir}/include
