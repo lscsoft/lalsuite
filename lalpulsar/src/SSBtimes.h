@@ -70,8 +70,8 @@ extern const SSBtimes empty_SSBtimes;
 extern const MultiSSBtimes empty_MultiSSBtimes;
 
 /*---------- exported prototypes [API] ----------*/
-int XLALAddBinaryTimes ( SSBtimes **tSSBOut, const SSBtimes *tSSBIn, const BinaryOrbitParams *binaryparams );
-int XLALAddMultiBinaryTimes ( MultiSSBtimes **multiSSBOut, const MultiSSBtimes *multiSSBIn, const BinaryOrbitParams *binaryparams );
+int XLALAddBinaryTimes ( SSBtimes **tSSBOut, const SSBtimes *tSSBIn, const PulsarDopplerParams *Doppler );
+int XLALAddMultiBinaryTimes ( MultiSSBtimes **multiSSBOut, const MultiSSBtimes *multiSSBIn, const PulsarDopplerParams *Doppler );
 SSBtimes *XLALDuplicateSSBtimes ( const SSBtimes *tSSB );
 MultiSSBtimes *XLALDuplicateMultiSSBtimes ( const MultiSSBtimes *multiSSB );
 

@@ -68,7 +68,7 @@ static double gsl_E_solver ( REAL8 E, void *par )
 /*==================== FUNCTION DEFINITIONS ====================*/
 
 /**
- * For a given OrbitalParams, return a newly-allocated SSBtimes structure
+ * For a given PulsarDopplerParams, return a newly-allocated SSBtimes structure
  * containing the input SSBtimes with the *additional* time-differences due to
  * the binary orbital motion *added* to it.
  *
@@ -84,13 +84,15 @@ static double gsl_E_solver ( REAL8 E, void *par )
 int
 XLALAddBinaryTimes ( SSBtimes **tSSBOut,			/**< [out] SSB timings tSSBIn with binary offsets added, can be NULL */
                      const SSBtimes *tSSBIn,			/**< [in] SSB timings DeltaT_alpha = T(t_alpha) - T_0; and Tdot(t_alpha) */
-                     const BinaryOrbitParams *binaryparams	/**< [in] source binary orbit parameters */
+                     const PulsarDopplerParams *Doppler		/**< [in] pulsar Doppler parameters, includes binary orbit parameters */
                      )
 {
   XLAL_CHECK ( tSSBIn != NULL, XLAL_EINVAL, "Invalid NULL input 'tSSB'\n" );
   XLAL_CHECK ( tSSBIn->DeltaT != NULL, XLAL_EINVAL, "Invalid NULL input 'tSSBIn->DeltaT'\n" );
   XLAL_CHECK ( tSSBIn->Tdot != NULL, XLAL_EINVAL, "Invalid NULL input 'tSSBIn->Tdot'\n" );
-  XLAL_CHECK ( binaryparams != NULL, XLAL_EINVAL, "Invalid NULL input 'binaryparams'\n");
+
+  XLAL_CHECK ( Doppler != NULL, XLAL_EINVAL, "Invalid NULL input 'Doppler'\n");
+  XLAL_CHECK ( Doppler->asini >= 0, XLAL_EINVAL );
 
   UINT4 numSteps = tSSBIn->DeltaT->length;		/* number of timesteps */
   XLAL_CHECK (tSSBIn->Tdot->length == numSteps, XLAL_EINVAL,
@@ -120,13 +122,19 @@ XLALAddBinaryTimes ( SSBtimes **tSSBOut,			/**< [out] SSB timings tSSBIn with bi
       memcpy ( binaryTimes->Tdot->data,   tSSBIn->Tdot->data,   numSteps * sizeof(binaryTimes->Tdot->data[0]) );
     } // re-using input vector
 
+  // If 'Doppler' does not represent a binary pulsar, we're done; return binaryTimes
+  if ( Doppler->asini == 0 ) {
+    (*tSSBOut) = binaryTimes;
+    return XLAL_SUCCESS;
+  }
+
   /* ----- convenience variables */
-  REAL8 Porb = binaryparams->period;		/* binary orbital period */
-  REAL8 e = binaryparams->ecc;			/* the eccentricity */
-  REAL8 ome = 1.0 - e;				/* 1 minus eccentricity */
-  REAL8 asini = binaryparams->asini;		/* the projected orbital semimajor axis */
-  REAL8 sinw = sin(binaryparams->argp);		/* the sin and cos of the argument of periapsis */
-  REAL8 cosw = cos(binaryparams->argp);
+  REAL8 Porb = Doppler->period;		/* binary orbital period */
+  REAL8 e = Doppler->ecc;		/* the eccentricity */
+  REAL8 ome = 1.0 - e;			/* 1 minus eccentricity */
+  REAL8 asini = Doppler->asini;		/* the projected orbital semimajor axis */
+  REAL8 sinw = sin(Doppler->argp);	/* the sin and cos of the argument of periapsis */
+  REAL8 cosw = cos(Doppler->argp);
 
   REAL8 refTimeREAL8 = XLALGPSGetREAL8 ( &tSSBIn->refTime );
 
@@ -146,7 +154,7 @@ XLALAddBinaryTimes ( SSBtimes **tSSBOut,			/**< [out] SSB timings tSSBIn with bi
 
       /* define fractional orbit in SSB frame since periapsis (enforce result 0->1) */
       /* the result of fmod uses the dividend sign hence the second procedure */
-      REAL8 temp = fmod((tSSB_now - XLALGPSGetREAL8 ( &binaryparams->tp ) ),Porb)/(REAL8)Porb;
+      REAL8 temp = fmod((tSSB_now - XLALGPSGetREAL8 ( &Doppler->tp ) ),Porb)/(REAL8)Porb;
       REAL8 fracorb = temp - floor(temp);	        /* the fraction of orbits completed since current SSB time */
 
       // ---------- FIXME: can we use GSL for this root-finding?
@@ -219,12 +227,13 @@ XLALAddBinaryTimes ( SSBtimes **tSSBOut,			/**< [out] SSB timings tSSBIn with bi
 int
 XLALAddMultiBinaryTimes ( MultiSSBtimes **multiSSBOut,		/**< [out] output SSB times */
                           const MultiSSBtimes *multiSSBIn,	/**< [in] SSB-timings for all input detector-state series */
-                          const BinaryOrbitParams *binaryparams	/**< [in] source binary orbit parameters, NULL = isolated system */
+                          const PulsarDopplerParams *Doppler	/**< [in] pulsar Doppler parameters, includes binary orbit parameters */
                           )
 {
   /* check input */
   XLAL_CHECK ( multiSSBIn != NULL, XLAL_EINVAL, "Invalid NULL input 'multiSSB'\n");
-  XLAL_CHECK ( binaryparams != NULL, XLAL_EINVAL, "Invalid NULL input 'binaryparams'\n");
+  XLAL_CHECK ( Doppler != NULL, XLAL_EINVAL, "Invalid NULL input 'Doppler'\n");
+  XLAL_CHECK ( Doppler->asini >= 0, XLAL_EINVAL );
 
   UINT4 numDetectors = multiSSBIn->length;
 
@@ -245,7 +254,7 @@ XLALAddMultiBinaryTimes ( MultiSSBtimes **multiSSBOut,		/**< [out] output SSB ti
   // ----- simply loop over detectors for XLALAddBinaryTimes()
   for ( UINT4 X = 0; X < numDetectors; X ++ )
     {
-      int ret = XLALAddBinaryTimes ( &(multiBinaryTimes->data[X]), multiSSBIn->data[X], binaryparams );
+      int ret = XLALAddBinaryTimes ( &(multiBinaryTimes->data[X]), multiSSBIn->data[X], Doppler );
       XLAL_CHECK( ret == XLAL_SUCCESS, XLAL_EFUNC, "XLALAddBinaryTimes() failed for X=%d\n", X );
     } /* for X < numDet */
 

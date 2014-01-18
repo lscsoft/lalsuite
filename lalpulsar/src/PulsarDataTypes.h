@@ -59,15 +59,6 @@ extern "C" {
 #define PULSAR_MAX_DETECTORS	10
 #endif
 
-/** Type defining the orbital parameters of a binary pulsar */
-typedef struct tagBinaryOrbitParams {
-  LIGOTimeGPS tp;         /**< time of observed periapsis passage (in SSB) */
-  REAL8 argp;            /**< argument of periapsis (radians) */
-  REAL8 asini;            /**< projected, normalized orbital semi-major axis (s) */
-  REAL8 ecc;              /**< orbital eccentricity */
-  REAL8 period;           /**< orbital period (sec) */
-} BinaryOrbitParams;
-
 /** Type containing the JKS 'amplitude parameters' {h0, cosi, phi0, psi} */
 typedef struct tagPulsarAmplitudeParams {
   REAL8 h0;	/**< overall signal amplitude */
@@ -96,11 +87,16 @@ typedef struct tagPulsarSpinRange
 
 /** Type containing the 'Doppler-parameters' affecting the time-evolution of the phase */
 typedef struct tagPulsarDopplerParams {
-  LIGOTimeGPS refTime;	/**< reference time of pulsar parameters (in SSB!) */
-  REAL8 Alpha;		/**< skyposition: RA (longitude) in equatorial coords and radians */
-  REAL8 Delta;		/**< skyposition: DEC (latitude) in equatorial coords and radians */
-  PulsarSpins fkdot;	/**< intrinsic spins: [Freq, f1dot, f2dot, ... ] where fkdot = d^kFreq/dt^k */
-  BinaryOrbitParams *orbit;	/**< binary orbital parameters (or NULL if isolated pulsar) */
+  LIGOTimeGPS refTime;	/**< Reference time of pulsar parameters (in SSB!) */
+  REAL8 Alpha;		/**< Sky position: RA (longitude) in equatorial coords and radians */
+  REAL8 Delta;		/**< Sky position: DEC (latitude) in equatorial coords and radians */
+  PulsarSpins fkdot;	/**< Intrinsic spins: [Freq, f1dot, f2dot, ... ] where fkdot = d^kFreq/dt^k */
+  REAL8 asini;		/**< Binary: projected, normalized orbital semi-major axis (s).
+                             If asini = 0 this is an \e isolated pulsar, and other binary parameters are ignored. */
+  REAL8 period;		/**< Binary: orbital period (sec) */
+  REAL8 ecc;		/**< Binary: orbital eccentricity */
+  LIGOTimeGPS tp;	/**< Binary: time of observed periapsis passage (in SSB) */
+  REAL8 argp;		/**< Binary: argument of periapsis (radians) */
 } PulsarDopplerParams;
 
 // ---------- transient-CW related types ----------
@@ -164,7 +160,6 @@ typedef struct tagPulsarSourceParams {
 /*---------- Global variables ----------*/
 /** \name empty struct initializers */
 /*@{*/
-extern const BinaryOrbitParams empty_BinaryOrbitParams;
 extern const PulsarAmplitudeParams empty_PulsarAmplitudeParams;
 extern const PulsarSpinRange empty_PulsarSpinRange;
 extern const PulsarDopplerParams empty_PulsarDopplerParams;

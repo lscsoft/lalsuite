@@ -386,7 +386,6 @@ int main(int argc,char *argv[])
   time_t clock0;
   PulsarDopplerParams dopplerpos = empty_PulsarDopplerParams;		/* current search-parameters */
   FstatCandidate loudestFCand = empty_FstatCandidate, thisFCand = empty_FstatCandidate;
-  BinaryOrbitParams *orbitalParams = NULL;
   FILE *fpLogPrintf = NULL;
   gsl_vector_int *Fstat_histogram = NULL;
 
@@ -501,27 +500,30 @@ int main(int argc,char *argv[])
   }
 
   /* setup binary parameters */
-  orbitalParams = NULL;
+  REAL8 orbit_asini = 0 /* isolated pulsar */;
+  REAL8 orbit_period = 0;
+  REAL8 orbit_ecc = 0;
+  LIGOTimeGPS orbit_tp = LIGOTIMEGPSZERO;
+  REAL8 orbit_argp = 0;
   if ( LALUserVarWasSet(&uvar.orbitasini) && (uvar.orbitasini > 0) )
     {
-      orbitalParams = (BinaryOrbitParams *)LALCalloc(1,sizeof(BinaryOrbitParams));
-      orbitalParams->tp.gpsSeconds = uvar.orbitTpSSBsec;
-      orbitalParams->tp.gpsNanoSeconds = uvar.orbitTpSSBnan;
-      orbitalParams->argp = uvar.orbitArgp;
-      orbitalParams->asini = uvar.orbitasini;
-      orbitalParams->ecc = uvar.orbitEcc;
-      orbitalParams->period = uvar.orbitPeriod;
+      orbit_tp.gpsSeconds = uvar.orbitTpSSBsec;
+      orbit_tp.gpsNanoSeconds = uvar.orbitTpSSBnan;
+      orbit_argp = uvar.orbitArgp;
+      orbit_asini = uvar.orbitasini;
+      orbit_ecc = uvar.orbitEcc;
+      orbit_period = uvar.orbitPeriod;
       if (LALUserVarWasSet(&uvar.orbitTpSSBMJD))
 	{
 	  /* convert MJD peripase to GPS using Matt Pitkins code found at lal/packages/pulsar/src/BinaryPulsarTimeing.c */
 	  REAL8 GPSfloat;
 	  GPSfloat = XLALTTMJDtoGPS(uvar.orbitTpSSBMJD);
-	  XLALGPSSetREAL8(&(orbitalParams->tp),GPSfloat);
+	  XLALGPSSetREAL8(&(orbit_tp),GPSfloat);
 	}
       else
 	{
-	  orbitalParams->tp.gpsSeconds = uvar.orbitTpSSBsec;
-	  orbitalParams->tp.gpsNanoSeconds = uvar.orbitTpSSBnan;
+	  orbit_tp.gpsSeconds = uvar.orbitTpSSBsec;
+	  orbit_tp.gpsNanoSeconds = uvar.orbitTpSSBnan;
 	}
     }
 
@@ -562,7 +564,12 @@ int main(int argc,char *argv[])
   /* skip search if user supplied --countTemplates */
   while ( !uvar.countTemplates && (XLALNextDopplerPos( &dopplerpos, GV.scanState ) == 0) )
     {
-      dopplerpos.orbit = orbitalParams;		/* temporary solution until binary-gridding exists */
+      /* temporary solution until binary-gridding exists */
+      dopplerpos.asini  = orbit_asini;
+      dopplerpos.period = orbit_period;
+      dopplerpos.ecc    = orbit_ecc;
+      dopplerpos.tp     = orbit_tp;
+      dopplerpos.argp   = orbit_argp;
 
       tic0 = tic = GETTIME();
 
@@ -633,12 +640,12 @@ int main(int argc,char *argv[])
 	  LogPrintf (LOG_CRITICAL, "[Alpha,Delta] = [%.16g,%.16g],\nfkdot=[%.16g,%.16g,%.16g,%16.g]\n",
 		     thisFCand.doppler.Alpha, thisFCand.doppler.Delta,
 		     thisFCand.doppler.fkdot[0], thisFCand.doppler.fkdot[1], thisFCand.doppler.fkdot[2], thisFCand.doppler.fkdot[3] );
-	  if (thisFCand.doppler.orbit != NULL)
+	  if (thisFCand.doppler.asini > 0)
           {
             LogPrintf (LOG_CRITICAL, "tp = {%d s, %d ns}, argp = %f, asini = %f, ecc = %f, period = %f\n",
-                       thisFCand.doppler.orbit->tp.gpsSeconds, thisFCand.doppler.orbit->tp.gpsNanoSeconds,
-                       thisFCand.doppler.orbit->argp, thisFCand.doppler.orbit->asini,
-                       thisFCand.doppler.orbit->ecc, thisFCand.doppler.orbit->period);
+                       thisFCand.doppler.tp.gpsSeconds, thisFCand.doppler.tp.gpsNanoSeconds,
+                       thisFCand.doppler.argp, thisFCand.doppler.asini,
+                       thisFCand.doppler.ecc, thisFCand.doppler.period);
           }
 	  return -1;
 	}
@@ -1001,9 +1008,6 @@ int main(int argc,char *argv[])
 
   XLALDestroyFstatResults ( Fstat_res );
 
-  /* free memory allocated for binary parameters */
-  if (orbitalParams) LALFree(orbitalParams);
-
   LAL_CALL ( Freemem(&status, &GV), &status);
 
   if (Fstat_histogram)
@@ -1060,7 +1064,7 @@ initUserVars (LALStatus *status, UserInput_t *uvar)
   uvar->df3dot    = 0.0;
 
   /* define default orbital semi-major axis */
-  uvar->orbitasini = 0.0;
+  uvar->orbitasini = 0 /* isolated pulsar */;
 
   uvar->TwoFthreshold = 0.0;
   uvar->NumCandidatesToKeep = 0;
@@ -1428,7 +1432,6 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg, const UserInput_t *uvar )
   cfg->stepSizes.fkdot[1] = uvar->df1dot;
   cfg->stepSizes.fkdot[2] = uvar->df2dot;
   cfg->stepSizes.fkdot[3] = uvar->df3dot;
-  cfg->stepSizes.orbit = NULL;
 
 
   REAL8 tmpFreqBandRef = cfg->searchRegion.fkdotBand[0];
@@ -2189,14 +2192,14 @@ write_PulsarCandidate_to_fp ( FILE *fp,  const PulsarCandidate *pulsarParams, co
   fprintf (fp, "\n");
 
   /* Binary parameters */
-  if (pulsarParams->Doppler.orbit)
+  if (pulsarParams->Doppler.asini > 0)
     {
-      fprintf (fp, "orbitPeriod       = % .16g;\n", pulsarParams->Doppler.orbit->period );
-      fprintf (fp, "orbitasini        = % .16g;\n", pulsarParams->Doppler.orbit->asini );
-      fprintf (fp, "orbitTpSSBsec     = % .8d;\n", pulsarParams->Doppler.orbit->tp.gpsSeconds );
-      fprintf (fp, "orbitTpSSBnan     = % .8d;\n", pulsarParams->Doppler.orbit->tp.gpsNanoSeconds );
-      fprintf (fp, "orbitArgp         = % .16g;\n", pulsarParams->Doppler.orbit->argp );
-      fprintf (fp, "orbitEcc          = % .16g;\n", pulsarParams->Doppler.orbit->ecc );
+      fprintf (fp, "orbitPeriod       = % .16g;\n", pulsarParams->Doppler.period );
+      fprintf (fp, "orbitasini        = % .16g;\n", pulsarParams->Doppler.asini );
+      fprintf (fp, "orbitTpSSBsec     = % .8d;\n", pulsarParams->Doppler.tp.gpsSeconds );
+      fprintf (fp, "orbitTpSSBnan     = % .8d;\n", pulsarParams->Doppler.tp.gpsNanoSeconds );
+      fprintf (fp, "orbitArgp         = % .16g;\n", pulsarParams->Doppler.argp );
+      fprintf (fp, "orbitEcc          = % .16g;\n", pulsarParams->Doppler.ecc );
     }
 
   /* Amplitude Modulation Coefficients */

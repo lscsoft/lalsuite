@@ -289,7 +289,7 @@ XLALComputeFstat(
   XLAL_CHECK(Fstats != NULL, XLAL_EFAULT);
   XLAL_CHECK(input != NULL, XLAL_EFAULT);
   XLAL_CHECK(doppler != NULL, XLAL_EFAULT);
-  XLAL_CHECK(doppler->orbit == NULL, XLAL_EINVAL, "Binary parameters are currently not supported!");
+  XLAL_CHECK(doppler->asini >= 0, XLAL_EINVAL);
   XLAL_CHECK(dFreq > 0 || (numFreqBins == 1 && dFreq >= 0), XLAL_EINVAL);
   XLAL_CHECK(numFreqBins > 0, XLAL_EINVAL);
   XLAL_CHECK(0 < whatToCompute && whatToCompute < FSTATQ_LAST, XLAL_EINVAL);

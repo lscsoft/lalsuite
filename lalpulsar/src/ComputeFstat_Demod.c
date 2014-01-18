@@ -971,10 +971,10 @@ ComputeFStat ( LALStatus *status,				/* pointer to LALStatus structure */
     } /* could not reuse previously buffered quantites */
 
     /* new orbital parameter corrections if not already buffered */
-  if ( doppler->orbit )
+  if ( doppler->asini > 0 )
     {
       /* compute binary time corrections to the SSB time delays and SSB time derivitive */
-      if ( XLALAddMultiBinaryTimes ( &multiBinary, multiSSB, doppler->orbit ) != XLAL_SUCCESS )
+      if ( XLALAddMultiBinaryTimes ( &multiBinary, multiSSB, doppler ) != XLAL_SUCCESS )
         {
           XLALPrintError("XLALAddMultiBinaryTimes() failed with xlalErrno = %d\n\n", xlalErrno );
           ABORTXLAL ( status );
@@ -1448,7 +1448,7 @@ LocalComputeFStat ( LALStatus *status,          /* pointer to LALStatus structur
     ASSERT ( multiWeights->length == numDetectors , status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT );
   }
 
-  if ( doppler->orbit ) {
+  if ( doppler->asini > 0 ) {
     XLALPrintError ("\nSorry, binary-pulsar search not yet implemented in LALComputeFStat()\n\n");
     ABORT ( status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT );
   }

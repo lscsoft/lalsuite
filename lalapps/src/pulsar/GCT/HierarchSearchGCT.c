@@ -912,7 +912,7 @@ int MAIN( int argc, char *argv[]) {
   thisPoint.refTime = tMidGPS; /* midpoint of data spanned */
 
   /* binary orbit and higher spindowns not considered */
-  thisPoint.orbit = NULL;
+  thisPoint.asini = 0 /* isolated pulsar */;
   INIT_MEM ( thisPoint.fkdot );
 
   /*---------- set up stuff for semi-coherent part ---------*/

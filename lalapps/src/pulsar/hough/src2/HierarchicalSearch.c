@@ -821,7 +821,7 @@ int MAIN( int argc, char *argv[]) {
   /* thisPoint.refTime = tStartGPS; */
   thisPoint.refTime = tMidGPS;
   /* binary orbit and higher spindowns not considered */
-  thisPoint.orbit = NULL;
+  thisPoint.asini = 0 /* isolated pulsar */;
   INIT_MEM ( thisPoint.fkdot );
 
 

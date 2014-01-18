@@ -336,7 +336,7 @@ int main(int argc, char *argv[])
                   oneSignal->data[0].Amp.cosi = 2.0*gsl_rng_uniform(inputParams->rng) - 1.0;
                   oneSignal->data[0].Amp.psi = LAL_TWOPI*gsl_rng_uniform(inputParams->rng);
                   oneSignal->data[0].Amp.phi0 = LAL_TWOPI*gsl_rng_uniform(inputParams->rng);
-                  oneSignal->data[0].Doppler.orbit->argp = LAL_TWOPI*gsl_rng_uniform(inputParams->rng);
+                  oneSignal->data[0].Doppler.argp = LAL_TWOPI*gsl_rng_uniform(inputParams->rng);
                   MultiSFTVector *oneSignalSFTs = NULL;
                   XLAL_CHECK( XLALCWMakeFakeMultiData(&oneSignalSFTs, NULL, oneSignal, &DataParams, edat) == XLAL_SUCCESS, XLAL_EFUNC );
 

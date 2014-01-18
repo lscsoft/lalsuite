@@ -639,7 +639,7 @@ int main(int argc, char *argv[]){
   sftParams.Tsft = timeBase;
   sftParams.noiseSFTs = NULL;       
   
-  params.orbit = NULL;
+  params.orbit.asini = 0 /* isolated pulsar */;
   /* params.transferFunction = NULL; */
   params.ephemerides = edat;
   params.startTimeGPS.gpsSeconds = firstTimeStamp.gpsSeconds;   /* start time of output time series */

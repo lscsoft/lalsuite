@@ -400,7 +400,11 @@ XLALGenerateCWSignalTS ( const PulsarParams *pulsarParams,	///< input CW pulsar-
   params.pulsar.psi                = pulsarParams->Amp.psi;
   params.pulsar.f0                 = pulsarParams->Doppler.fkdot[0];
   params.pulsar.spindown           = spindown;
-  params.orbit                     = pulsarParams->Doppler.orbit;
+  params.orbit.tp                  = pulsarParams->Doppler.tp;
+  params.orbit.argp                = pulsarParams->Doppler.argp;
+  params.orbit.asini               = pulsarParams->Doppler.asini;
+  params.orbit.ecc                 = pulsarParams->Doppler.ecc;
+  params.orbit.period              = pulsarParams->Doppler.period;
   params.transfer                  = NULL;
   params.ephemerides               = edat;
   params.fHeterodyne               = fHet;
@@ -585,8 +589,6 @@ XLALDestroyPulsarParamsVector ( PulsarParamsVector *ppvect )
     {
       for ( UINT4 i = 0 ; i < numPulsars; i ++ )
         {
-          BinaryOrbitParams *orbit = ppvect->data[i].Doppler.orbit;
-          XLALFree ( orbit );
           XLALFree ( ppvect->data[i].name );
         } // for i < numPulsars
       XLALFree ( ppvect->data );
@@ -607,7 +609,6 @@ XLALDestroyPulsarParams ( PulsarParams *params )
     return;
   }
   XLALFree ( params->name );
-  XLALFree ( params->Doppler.orbit );
   XLALFree ( params );
 
   return;
@@ -647,7 +648,6 @@ XLALReadPulsarParams ( PulsarParams *pulsarParams,	///< [out] pulsar parameters 
                        )
 {
   XLAL_CHECK ( pulsarParams != NULL, XLAL_EINVAL );
-  XLAL_CHECK ( pulsarParams->Doppler.orbit == NULL, XLAL_EINVAL );
   XLAL_CHECK ( cfgdata != NULL, XLAL_EINVAL );
 
   INIT_MEM ( (*pulsarParams) );	// wipe input struct clean
@@ -761,7 +761,7 @@ XLALReadPulsarParams ( PulsarParams *pulsarParams,	///< [out] pulsar parameters 
   XLAL_CHECK ( XLALReadConfigREAL8Variable ( &orbitTpSSB, cfgdata, secName, "orbitTpSSB", &have_orbitTpSSB ) == XLAL_SUCCESS, XLAL_EFUNC );
   REAL8 orbitArgp = 0; 	BOOLEAN have_orbitArgp;
   XLAL_CHECK ( XLALReadConfigREAL8Variable ( &orbitArgp, cfgdata, secName, "orbitArgp", &have_orbitArgp ) == XLAL_SUCCESS, XLAL_EFUNC );
-  REAL8 orbitasini = 0; BOOLEAN have_orbitasini;
+  REAL8 orbitasini = 0 /* isolated pulsar */; BOOLEAN have_orbitasini;
   XLAL_CHECK ( XLALReadConfigREAL8Variable ( &orbitasini, cfgdata, secName, "orbitasini", &have_orbitasini ) == XLAL_SUCCESS, XLAL_EFUNC );
   REAL8 orbitEcc = 0;  	BOOLEAN have_orbitEcc;
   XLAL_CHECK ( XLALReadConfigREAL8Variable ( &orbitEcc, cfgdata, secName, "orbitEcc", &have_orbitEcc ) == XLAL_SUCCESS, XLAL_EFUNC );
@@ -774,17 +774,13 @@ XLALReadPulsarParams ( PulsarParams *pulsarParams,	///< [out] pulsar parameters 
       XLAL_CHECK ( (orbitasini == 0) || ( have_orbitEcc && have_orbitPeriod && have_orbitArgp && have_orbitTpSSB ), XLAL_EINVAL );
       XLAL_CHECK ( (orbitEcc >= 0) && (orbitEcc <= 1), XLAL_EDOM );
 
-      BinaryOrbitParams *orbit;
-      XLAL_CHECK ( ( orbit = XLALCalloc ( 1, sizeof(BinaryOrbitParams))) != NULL, XLAL_ENOMEM );
-
       /* fill in orbital parameter structure */
-      XLAL_CHECK ( XLALGPSSetREAL8 ( &(orbit->tp), orbitTpSSB ) != NULL, XLAL_EFUNC );
-      orbit->argp 	= orbitArgp;
-      orbit->asini 	= orbitasini;
-      orbit->ecc 	= orbitEcc;
-      orbit->period 	= orbitPeriod;
+      XLAL_CHECK ( XLALGPSSetREAL8 ( &(pulsarParams->Doppler.tp), orbitTpSSB ) != NULL, XLAL_EFUNC );
+      pulsarParams->Doppler.argp 	= orbitArgp;
+      pulsarParams->Doppler.asini 	= orbitasini;
+      pulsarParams->Doppler.ecc 	= orbitEcc;
+      pulsarParams->Doppler.period 	= orbitPeriod;
 
-      pulsarParams->Doppler.orbit = orbit;
     } // if have non-trivial orbit
 
   // ---------- transientWindow_t ----------

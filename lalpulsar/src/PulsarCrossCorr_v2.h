@@ -165,7 +165,7 @@ int XLALFindLMXBCrossCorrDiagMetric
    REAL8             *g_ff,
    REAL8             *g_aa,
    REAL8             *g_TT,
-   BinaryOrbitParams BinaryParams,
+   PulsarDopplerParams DopplerParams,
    REAL8             f,
    REAL8Vector       *G_alpha,
    SFTPairIndexList  *pairIndexList,

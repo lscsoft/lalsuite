@@ -65,6 +65,15 @@ typedef struct
   INT4 randSeed;	/**< allow user to specify random-number seed for reproducible noise-realizations */
 } UserInput_t;
 
+/* Type defining the orbital parameters of a binary pulsar */
+typedef struct tagBinaryOrbitParams {
+  LIGOTimeGPS tp;         /* time of observed periapsis passage (in SSB) */
+  REAL8 argp;             /* argument of periapsis (radians) */
+  REAL8 asini;            /* projected, normalized orbital semi-major axis (s) */
+  REAL8 ecc;              /* orbital eccentricity */
+  REAL8 period;           /* orbital period (sec) */
+} BinaryOrbitParams;
+
 /* ----- internal prototypes ---------- */
 static void LALGetBinarytimes (LALStatus *, SSBtimes *tBinary, const SSBtimes *tSSB, const DetectorStateSeries *DetectorStates, const BinaryOrbitParams *binaryparams, LIGOTimeGPS refTime);
 static void LALGetMultiBinarytimes (LALStatus *, MultiSSBtimes **multiBinary, const MultiSSBtimes *multiSSB, const MultiDetectorStateSeries *multiDetStates, const BinaryOrbitParams *binaryparams, LIGOTimeGPS refTime);
@@ -175,7 +184,14 @@ main ( int argc, char *argv[] )
 
   // ----- step 2: compute test-result using new XLALAddMultiBinaryTimes()
   MultiSSBtimes *multiBinary_test = NULL;
-  XLAL_CHECK ( XLALAddMultiBinaryTimes ( &multiBinary_test, multiSSBIn, &orbit ) == XLAL_SUCCESS, XLAL_EFUNC );
+  PulsarDopplerParams doppler;
+  memset(&doppler, 0, sizeof(doppler));
+  doppler.tp = orbit.tp;
+  doppler.argp = orbit.argp;
+  doppler.asini = orbit.asini;
+  doppler.ecc = orbit.ecc;
+  doppler.period = orbit.period;
+  XLAL_CHECK ( XLALAddMultiBinaryTimes ( &multiBinary_test, multiSSBIn, &doppler ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   // ----- step 3: compare results
   REAL8 err_DeltaT, err_Tdot;

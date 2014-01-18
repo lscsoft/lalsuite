@@ -94,9 +94,7 @@ int main(void)
 
 int testPulsarDopplerParams(void)
 {
-    static BinaryOrbitParams bopSource;
     static PulsarDopplerParams pdpSource;
-    static BinaryOrbitParams bopDestination;
     static PulsarDopplerParams pdpDestination;
     xmlNodePtr xmlFragment = NULL;
     xmlDocPtr xmlDocument = NULL;
@@ -104,12 +102,6 @@ int testPulsarDopplerParams(void)
     int result;
 
     /* initialize test data */
-    bopSource.tp.gpsSeconds = 913399939;
-    bopSource.tp.gpsNanoSeconds = 15;
-    bopSource.argp = 0.5;
-    bopSource.asini = 500;
-    bopSource.ecc = 0.0167;
-    bopSource.period = 31536000;
     pdpSource.refTime.gpsSeconds = 913399939;
     pdpSource.refTime.gpsNanoSeconds = 15;
     pdpSource.Alpha = 3.1452;
@@ -118,9 +110,13 @@ int testPulsarDopplerParams(void)
     pdpSource.fkdot[1] = -1.7e-8;
     pdpSource.fkdot[2] = 0.0;
     pdpSource.fkdot[3] = 0.0;
-    pdpSource.orbit = &bopSource;
 
-    pdpDestination.orbit = &bopDestination;
+    pdpSource.tp.gpsSeconds = 913399939;
+    pdpSource.tp.gpsNanoSeconds = 15;
+    pdpSource.argp = 0.5;
+    pdpSource.asini = 500;
+    pdpSource.ecc = 0.0167;
+    pdpSource.period = 31536000;
 
     printf( "--> Initial PulsarDopplerParams struct: ");
     printf( "%s = { \n"
@@ -128,21 +124,21 @@ int testPulsarDopplerParams(void)
             "\tAlpha: %g\n"
             "\tDelta: %g\n"
             "\tfkdot: {%g, %g, %g, %g}\n"
-            "\torbit.tp: {%d, %d}\n"
-            "\torbit.argp: %g\n"
-            "\torbit.asini: %g\n"
-            "\torbit.ecc: %g\n"
-            "\torbit.period: %g}\n",
+            "\tp: {%d, %d}\n"
+            "\targp: %g\n"
+            "\tasini: %g\n"
+            "\tecc: %g\n"
+            "\tperiod: %g}\n",
             LALXMLC_NAMETEST2,
             pdpSource.refTime.gpsSeconds, pdpSource.refTime.gpsNanoSeconds,
             pdpSource.Alpha,
             pdpSource.Delta,
             pdpSource.fkdot[0], pdpSource.fkdot[1], pdpSource.fkdot[2], pdpSource.fkdot[3],
-            pdpSource.orbit->tp.gpsSeconds, pdpSource.orbit->tp.gpsNanoSeconds,
-            pdpSource.orbit->argp,
-            pdpSource.orbit->asini,
-            pdpSource.orbit->ecc,
-            pdpSource.orbit->period);
+            pdpSource.tp.gpsSeconds, pdpSource.tp.gpsNanoSeconds,
+            pdpSource.argp,
+            pdpSource.asini,
+            pdpSource.ecc,
+            pdpSource.period);
 
     /* serialize structure into VOTable fragment */
     printf( "--> Serializing into XML string ... ");
@@ -193,21 +189,21 @@ int testPulsarDopplerParams(void)
             "\tAlpha: %g\n"
             "\tDelta: %g\n"
             "\tfkdot: {%g, %g, %g, %g}\n"
-            "\torbit.tp: {%d, %d}\n"
-            "\torbit.argp: %g\n"
-            "\torbit.asini: %g\n"
-            "\torbit.ecc: %g\n"
-            "\torbit.period: %g}\n",
+            "\tp: {%d, %d}\n"
+            "\targp: %g\n"
+            "\tasini: %g\n"
+            "\tecc: %g\n"
+            "\tperiod: %g}\n",
             LALXMLC_NAMETEST2,
             pdpDestination.refTime.gpsSeconds, pdpDestination.refTime.gpsNanoSeconds,
             pdpDestination.Alpha,
             pdpDestination.Delta,
             pdpDestination.fkdot[0], pdpDestination.fkdot[1], pdpDestination.fkdot[2], pdpDestination.fkdot[3],
-            pdpDestination.orbit->tp.gpsSeconds, pdpDestination.orbit->tp.gpsNanoSeconds,
-            pdpDestination.orbit->argp,
-            pdpDestination.orbit->asini,
-            pdpDestination.orbit->ecc,
-            pdpDestination.orbit->period);
+            pdpDestination.tp.gpsSeconds, pdpDestination.tp.gpsNanoSeconds,
+            pdpDestination.argp,
+            pdpDestination.asini,
+            pdpDestination.ecc,
+            pdpDestination.period);
 
     /* validate test results */
     if(
@@ -219,12 +215,12 @@ int testPulsarDopplerParams(void)
             pdpSource.fkdot[1] != pdpDestination.fkdot[1] ||
             pdpSource.fkdot[2] != pdpDestination.fkdot[2] ||
             pdpSource.fkdot[3] != pdpDestination.fkdot[3] ||
-            pdpSource.orbit->tp.gpsSeconds != pdpDestination.orbit->tp.gpsSeconds ||
-            pdpSource.orbit->tp.gpsNanoSeconds != pdpDestination.orbit->tp.gpsNanoSeconds ||
-            pdpSource.orbit->argp != pdpDestination.orbit->argp ||
-            pdpSource.orbit->asini != pdpDestination.orbit->asini ||
-            pdpSource.orbit->ecc != pdpDestination.orbit->ecc ||
-            pdpSource.orbit->period != pdpDestination.orbit->period)
+            pdpSource.tp.gpsSeconds != pdpDestination.tp.gpsSeconds ||
+            pdpSource.tp.gpsNanoSeconds != pdpDestination.tp.gpsNanoSeconds ||
+            pdpSource.argp != pdpDestination.argp ||
+            pdpSource.asini != pdpDestination.asini ||
+            pdpSource.ecc != pdpDestination.ecc ||
+            pdpSource.period != pdpDestination.period)
     {
       XLALPrintError ( "%s: PulsarDopplerParams structure differs before and after XML serialization!\n", __func__);
       return LALXMLC_EVAL;

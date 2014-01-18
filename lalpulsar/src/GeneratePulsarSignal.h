@@ -274,10 +274,17 @@ extern "C" {
 /**
  * Input parameters to GeneratePulsarSignal(), defining the source and the time-series
  */
+#ifndef SWIG   /* exclude from SWIG interface; nested struct */
 typedef struct tagPulsarSignalParams {
   /* source-parameters */
   PulsarSourceParams pulsar;		/**< the actual pulsar-source */
-  const BinaryOrbitParams *orbit;	/**< and its binary orbit (NULL if isolated pulsar) */
+  struct {
+    LIGOTimeGPS tp;         /**< time of observed periapsis passage (in SSB) */
+    REAL8 argp;             /**< argument of periapsis (radians) */
+    REAL8 asini;            /**< projected, normalized orbital semi-major axis (s) */
+    REAL8 ecc;              /**< orbital eccentricity */
+    REAL8 period;           /**< orbital period (sec) */
+  } orbit;
 
   /* characterize the detector */
   const COMPLEX8FrequencySeries *transfer;/**< detector transfer function (NULL if not used) */
@@ -292,6 +299,7 @@ typedef struct tagPulsarSignalParams {
   UINT4 dtDelayBy2; 		/**< half-interval for the Doppler delay look-up table for LALPulsarSimulateCoherentGW() */
   UINT4 dtPolBy2; 		/**< half-interval for the polarisation response look-up table for LALPulsarSimulateCoherentGW() */
 } PulsarSignalParams;
+#endif   /* SWIG */
 
 /**
  * Parameters defining the SFTs to be returned from LALSignalToSFTs().

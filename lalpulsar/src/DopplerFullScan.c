@@ -502,7 +502,7 @@ XLALNextDopplerPos(PulsarDopplerParams *pos, DopplerFullScanState *scan)
       pos->fkdot[1] = scan->thisGridPoint->entry.data[3];
       pos->fkdot[2] = scan->thisGridPoint->entry.data[4];
       pos->fkdot[3] = scan->thisGridPoint->entry.data[5];
-      pos->orbit    = NULL;
+      pos->asini = 0;   // isolated pulsar
       /* advance to next grid point */
       if ( ( scan->thisGridPoint = scan->thisGridPoint->next ) == NULL )
 	scan->state = STATE_FINISHED;

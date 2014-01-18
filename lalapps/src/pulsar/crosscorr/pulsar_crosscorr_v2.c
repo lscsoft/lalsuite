@@ -89,7 +89,7 @@ UserInput_t empty_UserInput;
 int XLALInitUserVars ( UserInput_t *uvar );
 int XLALInitializeConfigVars (ConfigVariables *config, const UserInput_t *uvar);
 int XLALDestroyConfigVars (ConfigVariables *config);
-int GetNextCrossCorrTemplate(BOOLEAN *binaryParamsFlag, PulsarDopplerParams *dopplerpos, REAL8 dFreq, BinaryOrbitParams *binaryTemplateSpacings, BinaryOrbitParams *minBinaryTemplate, BinaryOrbitParams *maxBinaryTemplate, REAL8 h0, REAL8 freq_hi);
+int GetNextCrossCorrTemplate(BOOLEAN *binaryParamsFlag, PulsarDopplerParams *dopplerpos, REAL8 dFreq, PulsarDopplerParams *binaryTemplateSpacings, PulsarDopplerParams *minBinaryTemplate, PulsarDopplerParams *maxBinaryTemplate, REAL8 h0, REAL8 freq_hi);
 
 
 int main(int argc, char *argv[]){
@@ -113,8 +113,8 @@ int main(int argc, char *argv[]){
   REAL8Vector *signalPhases = NULL;
 
   PulsarDopplerParams dopplerpos = empty_PulsarDopplerParams;
-  BinaryOrbitParams thisBinaryTemplate, binaryTemplateSpacings;
-  BinaryOrbitParams minBinaryTemplate, maxBinaryTemplate;
+  PulsarDopplerParams thisBinaryTemplate, binaryTemplateSpacings;
+  PulsarDopplerParams minBinaryTemplate, maxBinaryTemplate;
   SkyPosition skyPos = empty_SkyPosition;
   MultiSSBtimes *multiSSBTimes = NULL;
   MultiSSBtimes *multiBinaryTimes = NULL;
@@ -296,10 +296,10 @@ int main(int argc, char *argv[]){
     XLAL_ERROR( XLAL_EFUNC );
   }
   /*initialize binary parameters structure*/
-  minBinaryTemplate=empty_BinaryOrbitParams;
-  maxBinaryTemplate=empty_BinaryOrbitParams;
-  thisBinaryTemplate=empty_BinaryOrbitParams;
-  binaryTemplateSpacings=empty_BinaryOrbitParams;
+  minBinaryTemplate=empty_PulsarDopplerParams;
+  maxBinaryTemplate=empty_PulsarDopplerParams;
+  thisBinaryTemplate=empty_PulsarDopplerParams;
+  binaryTemplateSpacings=empty_PulsarDopplerParams;
   /*fill in minbinaryOrbitParams*/
   XLALGPSSetREAL8( &minBinaryTemplate.tp, uvar.orbitTimeAsc);
   minBinaryTemplate.argp = 0.0;
@@ -342,7 +342,12 @@ int main(int argc, char *argv[]){
   XLALGPSSetREAL8( &thisBinaryTemplate.tp, uvar.orbitTimeAsc);
   thisBinaryTemplate.ecc = 0.0;
   thisBinaryTemplate.argp = 0.0;
-  dopplerpos.orbit = &thisBinaryTemplate;
+  /* copy to dopplerpos */
+  dopplerpos.asini = thisBinaryTemplate.asini;
+  dopplerpos.period = thisBinaryTemplate.period;
+  dopplerpos.tp = thisBinaryTemplate.tp;
+  dopplerpos.ecc = thisBinaryTemplate.ecc;
+  dopplerpos.argp = thisBinaryTemplate.argp;
 
   /* spacing in frequency from diagff */
   REAL8 dFreq = uvar.mismatchF/sqrt(diagff);
@@ -393,7 +398,7 @@ int main(int argc, char *argv[]){
       /* Might want to be clever about checking whether we've changed the orbital parameters or only the frequency */
       if (dopplerShiftFlag == TRUE)
 	{
-	  if ( (XLALAddMultiBinaryTimes( &multiBinaryTimes, multiSSBTimes, dopplerpos.orbit )  != XLAL_SUCCESS ) ) {
+	  if ( (XLALAddMultiBinaryTimes( &multiBinaryTimes, multiSSBTimes, &dopplerpos )  != XLAL_SUCCESS ) ) {
 	    LogPrintf ( LOG_CRITICAL, "%s: XLALAddMultiBinaryTimes() failed with errno=%d\n", __func__, xlalErrno );
 	    XLAL_ERROR( XLAL_EFUNC );
 	  }
@@ -577,12 +582,12 @@ int XLALDestroyConfigVars (ConfigVariables *config)
 /** FIXME: spacings and min, max values of binary parameters are not used yet */
 
 
-int GetNextCrossCorrTemplate(BOOLEAN *binaryParamsFlag, PulsarDopplerParams *dopplerpos, REAL8 dFreq, BinaryOrbitParams *binaryTemplateSpacings, BinaryOrbitParams *minBinaryTemplate, BinaryOrbitParams *maxBinaryTemplate, REAL8 f0, REAL8 freq_hi)
+int GetNextCrossCorrTemplate(BOOLEAN *binaryParamsFlag, PulsarDopplerParams *dopplerpos, REAL8 dFreq, PulsarDopplerParams *binaryTemplateSpacings, PulsarDopplerParams *minBinaryTemplate, PulsarDopplerParams *maxBinaryTemplate, REAL8 f0, REAL8 freq_hi)
 {
 
   REAL8 new_freq = dopplerpos->fkdot[0];
-  REAL8 new_asini = dopplerpos->orbit->asini;
-  REAL8 new_tp = XLALGPSGetREAL8(&(dopplerpos->orbit->tp));
+  REAL8 new_asini = dopplerpos->asini;
+  REAL8 new_tp = XLALGPSGetREAL8(&(dopplerpos->tp));
   REAL8 tp_hi = XLALGPSGetREAL8(&(maxBinaryTemplate->tp));
   
   /* basic sanity checks */
@@ -608,8 +613,8 @@ int GetNextCrossCorrTemplate(BOOLEAN *binaryParamsFlag, PulsarDopplerParams *dop
     {
       if (new_asini <= maxBinaryTemplate->asini)  /*after looping all f, initialize f and loop over a_p*/
 	{
-	  new_asini = dopplerpos->orbit->asini + binaryTemplateSpacings->asini;
-	  dopplerpos->orbit->asini = new_asini;
+	  new_asini = dopplerpos->asini + binaryTemplateSpacings->asini;
+	  dopplerpos->asini = new_asini;
 	  new_freq = f0;
 	  dopplerpos->fkdot[0] = new_freq;
 	  *binaryParamsFlag = TRUE;
@@ -619,10 +624,10 @@ int GetNextCrossCorrTemplate(BOOLEAN *binaryParamsFlag, PulsarDopplerParams *dop
 	{
 	  if (new_tp <= tp_hi)                /*after looping the plane of f and a_p, initialize f, a_p and loop over T*/
 	    {
-	      new_tp = XLALGPSGetREAL8(XLALGPSAddGPS(&(dopplerpos->orbit->tp), &(binaryTemplateSpacings->tp)));
-	      XLALGPSSetREAL8(&(dopplerpos->orbit->tp),new_tp);
+	      new_tp = XLALGPSGetREAL8(XLALGPSAddGPS(&(dopplerpos->tp), &(binaryTemplateSpacings->tp)));
+	      XLALGPSSetREAL8(&(dopplerpos->tp),new_tp);
 	      new_asini = minBinaryTemplate->asini;
-	      dopplerpos->orbit->asini = new_asini;
+	      dopplerpos->asini = new_asini;
 	      new_freq = f0;
 	      dopplerpos->fkdot[0] = new_freq;
 	      *binaryParamsFlag = TRUE;

@@ -1175,7 +1175,6 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg )
   cfg->stepSizes.fkdot[1] = uvar_df1dot;
   cfg->stepSizes.fkdot[2] = uvar_df2dot;
   cfg->stepSizes.fkdot[3] = uvar_df3dot;
-  cfg->stepSizes.orbit = NULL;
 
   /* ----- set up toplist if requested ----- */
   if ( uvar_NumCandidatesToKeep > 0 )
@@ -2742,7 +2741,7 @@ void ComputeFStat_resamp(LALStatus *status, const PulsarDopplerParams *doppler, 
     } /* could not reuse previously buffered quantites */
 
     /* new orbital parameter corrections if not already buffered */
-  if ( doppler->orbit )
+  if ( doppler->asini > 0 )
     {
       /* if already buffered */
       if ( Buffer && Buffer->multiBinary )
@@ -2752,7 +2751,7 @@ void ComputeFStat_resamp(LALStatus *status, const PulsarDopplerParams *doppler, 
       else
 	{
 	  /* compute binary time corrections to the SSB time delays and SSB time derivitive */
-	  if ( (XLALAddMultiBinaryTimes ( &multiBinary, multiSSB, doppler->orbit )) != XLAL_SUCCESS )
+	  if ( (XLALAddMultiBinaryTimes ( &multiBinary, multiSSB, doppler )) != XLAL_SUCCESS )
             {
               XLALPrintError("XLALAddMultiBinaryTimes() failed with xlalErrno = %d\n\n", xlalErrno );
               ABORTXLAL( status );
