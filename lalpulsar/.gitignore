@@ -5,6 +5,8 @@
 *.pc
 .deps
 .libs
+Makefile
+Makefile.in
 config.lt
 include/lal/*.h
 include/lal/*.i
@@ -13,8 +15,8 @@ lalpulsar.spec
 libtool
 python/__init__.py
 python/git_version.py
-src/LALPulsarConfig.h
 src/LALPulsarBuildInfo.c
+src/LALPulsarConfig.h
 src/LALPulsarVCSInfo.h
 src/config.h
 src/config.h.in

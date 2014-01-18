@@ -5,6 +5,8 @@
 *.o
 .deps
 .libs
+Makefile
+Makefile.in
 config.lt
 doc/AUTHORS.tex
 doc/hello.c

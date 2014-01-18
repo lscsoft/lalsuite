@@ -5,7 +5,8 @@
 *.pc
 .deps
 .libs
-config.lt
+Makefile
+Makefile.in
 bin/bayestar_aggregate_found_injections
 bin/bayestar_bin_samples
 bin/bayestar_lattice_tmpltbank
@@ -19,6 +20,7 @@ bin/bayestar_prune_neighborhood_tmpltbank
 bin/bayestar_realize_coincs
 bin/bayestar_sim_to_tmpltbank
 bin/python_config.sed
+config.lt
 include/lal/*.h
 include/lal/*.i
 lalinference-*.tar.gz
@@ -26,8 +28,8 @@ lalinference.spec
 libtool
 python/__init__.py
 python/git_version.py
-src/LALInferenceConfig.h
 src/LALInferenceBuildInfo.c
+src/LALInferenceConfig.h
 src/LALInferenceVCSInfo.h
 src/config.h
 src/config.h.in
