@@ -146,15 +146,13 @@ XLALCHARReadSequence( CHARSequence **sequence, FILE *stream )
     data = here->buf.CH;
     while ( !gzeof( gzstream ) && n )
 	{
-	   *(data++) = (CHAR)gzgetc( gzstream );
-	    n--;
+          CHAR thisChar = (CHAR)gzgetc( gzstream );
+          if ( thisChar == -1 ) {
+            break;
+          }
+          *(data++) = thisChar;
+          n--;
 	}
-    /* The very last value returned by getc() is EOF, which is not a
-       character and should not be stored. */
-    if ( gzeof( gzstream ) ) {
-      data--;
-      n++;
-    }
     here->size = BUFFSIZE - n;
     nTot += here->size;
     if ( !gzeof( gzstream ) ) {
