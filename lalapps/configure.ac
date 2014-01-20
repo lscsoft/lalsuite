@@ -117,6 +117,7 @@ if test "x$mpi" = "xtrue"; then
     AC_LANG([C])
     MPILIBS="${MPILIBS_SAVE}"
   ])
+  AC_LANG([C])
 fi
 LALSUITE_ENABLE_MODULE([MPI])
 
