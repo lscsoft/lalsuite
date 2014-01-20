@@ -163,6 +163,7 @@
 #include <lal/Units.h>
 
 #include "CheckStatus.h"
+#include "CheckStatus.c"
 
 #define STOCHASTICCROSSCORRELATIONSPECTRUMTESTC_LENGTH    9
 #define STOCHASTICCROSSCORRELATIONSPECTRUMTESTC_F0        80.0
