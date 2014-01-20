@@ -35,43 +35,6 @@ from lalapps import inspiral
 from lalapps import power
 from lalapps import inspiralutils
 
-##############################################################################
-# concrete dag setup functions
-def write_local_tc(cp):
-  """
-  Function to add the executables that this DAX needs to the transformation 
-  catalog so pegasus can stage them to the remote sites.
-  """
-  # open the transformation catalog file
-  try:
-    tc = open('tc.data','w')
-  except:
-    print >> sys.stderr, "Cannot open transformation catalog for writing"
-    sys.exit(1)
-
-  # write a line to the transformation catalog for each executable
-  host = socket.getfqdn()
-  programs = cp.items('condor')
-  for prog in programs:
-    if prog[0] != '/':
-      # relative path, so append the pwd to the path
-      prog = os.path.join(os.getcwd(), prog)
-    tc.write("local ligo::%s:1.0 gsiftp://" + os.path.join(host,prog))
-    tc.write(" STATIC_BINARY INTEL32::LINUX\n")
-  tc.close()
-
-def create_local_pool(cp):
-  """
-  Function to set up the local pool entries in to pool catalog.
-  """
-  pass
-
-def create_static_pfn_cache(cp):
-  """
-  Function to create a static PFN cache for any files needed by not in RLS.
-  """
-  pass
-
 
 ##############################################################################
 # some functions to make life easier later
@@ -281,7 +244,8 @@ def analyze_ifo(ifo_name,ifo_data,ifo_to_do,tmplt_job,insp_job,df_job,\
 ##############################################################################
 # function to do thinca on coincident IFO data  
 def thinca_coinc(ifo_list, single_data_analyzed, cafe_caches, cafe_base,
-    lladd_job, coinc_job, dag, do_coinc, do_insp, usertag=None, inspinjNode=None):
+    lladd_job, tisi_file_name, lladd_veto_file, 
+    coinc_job, dag, do_coinc, do_insp, usertag=None, inspinjNode=None):
   """
   Run thinca on the coincident times from each of the sets of IFOs. 
   Since the way we treat all this data is the same, this function is the same 
@@ -292,6 +256,8 @@ def thinca_coinc(ifo_list, single_data_analyzed, cafe_caches, cafe_base,
   cafe_caches = the caches from ligolw_cafe.ligolw_cafe()
   cafe_base = the base name for the cafe caches
   lladd_job = the condor job to do ligolw_add
+  tisi_file_name = the name of the tisi file to add
+  lladd_veto_file = the name of the veto file to add or None
   coinc_job = the condor job to do thinca
   dag = the DAG to attach the nodes to
   do_coinc = whether we should add the thinca jobs to the dag
@@ -316,10 +282,21 @@ def thinca_coinc(ifo_list, single_data_analyzed, cafe_caches, cafe_base,
       seg = power.cache_span(cache.objects)
       seg = pipeline.AnalysisChunk(seg[0],seg[1])
 
-      # create node for ligolw_add to create xml file from cache
+      # create node for ligolw_add to create xml file
       lladd = pipeline.LigolwAddNode(lladd_job)
-      lladd.set_input(cachename, pass_to_command_line=False)
-      lladd.add_var_opt('input-cache', cachename)
+      
+      # add the tisi and veto files
+      lladd.add_file_arg(tisi_file_name)
+      if lladd_veto_file:
+        lladd.add_file_arg(lladd_veto_file)
+
+      # add the input xml files from the cafe cache
+      cachefp = open(cachename,'r')
+      cacheobject = lal.Cache().fromfile(cachefp)
+      cachefp.close()
+      cachepfns = cacheobject.pfnlist()
+      for pfn in cachepfns:
+        lladd.add_file_arg(pfn)
 
       # create node for ligolw_thinca to analyze xml file
       thinca = inspiral.ThincaNode(coinc_job)
@@ -1104,9 +1081,10 @@ if opts.coincidence:
 
   # add the vetoes to the ligolw_add and ligolw_thinca jobs
   if cp.has_section("vetoes"):
-    lladd_job.add_input_file(cp.get("vetoes","vetoes-file"))
-    lladd_job.add_file_arg(cp.get("vetoes","vetoes-file"))
+    lladd_veto_file = cp.get("vetoes","vetoes-file")
     thinca_job.add_opt("vetoes-name",cp.get("vetoes","vetoes-name"))
+  else:
+    lladd_veto_file = None
 
   # load the number of distint time-slide files
   if inj_file:
@@ -1120,18 +1098,6 @@ if opts.coincidence:
 
     # we need different jobs for different time-slide files
     tisi_file_name = cp.get("ligolw_cafe","slides-file-%i"%tisi_file_num)
-
-    # FIXME: Hack out pattern object in lladd_job to avoid TypeError from deepcopy
-    lladd_job._CondorDAGJob__bad_macro_chars = None
-    this_lladd_job = copy.deepcopy(lladd_job)
-    this_lladd_job._CondorDAGJob__bad_macro_chars = re.compile(r'[_-]')
-
-    # create new sub files for different slides if we have more than one
-    if tisi_file_num:
-      this_lladd_job.set_sub_file( basename + '.ligolw_add_%i'%tisi_file_num \
-          + subsuffix )
-    this_lladd_job.add_input_file(tisi_file_name)
-    this_lladd_job.add_file_arg(tisi_file_name)
 
     # create cafe caches
     cafe_extent_limit = float(cp.get("ligolw_cafe","extentlimit"))
@@ -1150,7 +1116,8 @@ if opts.coincidence:
 
     # create the coinc nodes
     new_coinc_nodes = thinca_coinc(ifo_list, single_data_analyzed, cafe_caches,
-        cafe_base, this_lladd_job, thinca_job, dag, opts.coincidence,
+        cafe_base, lladd_job, tisi_file_name, lladd_veto_file,
+        thinca_job, dag, opts.coincidence,
         opts.inspiral, usertag=usertag, inspinjNode=inspinj)
 
     coinc_nodes.extend(new_coinc_nodes)
