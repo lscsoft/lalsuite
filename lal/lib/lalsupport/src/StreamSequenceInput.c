@@ -45,7 +45,7 @@ if ( headPtr ) {                                                     \
 
 void
 LALCHARReadSequence( LALStatus *stat, CHARSequence **sequence, FILE *stream )
-{ 
+{
   BufferList head;  /* head of linked list of buffers */
   BufferList *here; /* pointer to current position in list */
   CHAR *data;       /* pointer to vector data */
@@ -115,7 +115,7 @@ LALCHARReadSequence( LALStatus *stat, CHARSequence **sequence, FILE *stream )
 
 int
 XLALCHARReadSequence( CHARSequence **sequence, FILE *stream )
-{ 
+{
   BufferList head;  /* head of linked list of buffers */
   BufferList *here; /* pointer to current position in list */
   CHAR *data;       /* pointer to vector data */
@@ -189,7 +189,7 @@ XLALCHARReadSequence( CHARSequence **sequence, FILE *stream )
 
   /* Free buffer list and exit. */
   FREEBUFFERLIST( head.next );
-  
+
   return 0;
 }
 
