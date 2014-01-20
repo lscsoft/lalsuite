@@ -1,6 +1,6 @@
 /*
  *  Copyright (C) 2013 Karl Wette
- *  Copyright (C) 2011 David Keitel
+ *  Copyright (C) 2011-2014 David Keitel
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -80,32 +80,21 @@ int XLALComputeExtraStatsForToplist ( toplist_t *list,                          
 				      const char* outputSingleSegStats                        /**< base filename to output Fstats for each segment individually */
 				    )
 {
+
   /* check input parameters and report errors */
-  if ( !list || !listEntryTypeName || !Fstat_in_vec || !detectorIDs ) {
-    XLALPrintError ("\nError in function %s, line %d : Empty pointer as input parameter!\n\n", __func__, __LINE__);
-    XLAL_ERROR ( XLAL_EFAULT);
-  }
-
-  if ( !list->data || !list->heap ) {
-    XLALPrintError ("\nError in function %s, line %d : Input toplist has no elements!\n\n", __func__, __LINE__);
-    XLAL_ERROR ( XLAL_EFAULT);
-  }
-
-  if ( list->elems == 0 ) {
-    XLALPrintError ("\nError in function %s, line %d : Input toplist has zero length!\n\n", __func__, __LINE__);
-    XLAL_ERROR ( XLAL_EBADLEN );
-  }
+  XLAL_CHECK ( list && listEntryTypeName && Fstat_in_vec && detectorIDs, XLAL_EFAULT, "Empty pointer as input parameter." );
+  XLAL_CHECK ( list->data && list->heap, XLAL_EFAULT, "Input toplist has no elements." );
+  XLAL_CHECK ( list->elems > 0, XLAL_EBADLEN, "Input toplist has zero length." );
 
   /* check listEntryTypeName only once by strcmp, afterwards by int, to be faster */
   UINT4 listEntryType = 0;
-  if (strcmp(listEntryTypeName, "GCTtop") == 0 )
+  if (strcmp(listEntryTypeName, "GCTtop") == 0 ) {
     listEntryType = 1;
-  if (strcmp(listEntryTypeName, "HoughFStat") == 0 )
-    listEntryType = 2;
-  if ( listEntryType == 0 ) {
-    XLALPrintError ("\nError in function %s, line %d : Unsupported entry type for input toplist! Supported types currently are: GCTtop, HoughFStat.\n\n", __func__, __LINE__);
-    XLAL_ERROR ( XLAL_EBADLEN );
   }
+  if (strcmp(listEntryTypeName, "HoughFStat") == 0 ) {
+    listEntryType = 2;
+  }
+  XLAL_CHECK ( listEntryType != 0, XLAL_EBADLEN, "Unsupported entry type for input toplist! Supported types currently are: GCTtop, HoughFStat." );
 
   /* set up temporary variables and structs */
   PulsarDopplerParams candidateDopplerParams = empty_PulsarDopplerParams; /* struct containing sky position, frequency and fdot for the current candidate */
@@ -118,10 +107,7 @@ int XLALComputeExtraStatsForToplist ( toplist_t *list,                          
 
   /* initialise LVcomponents structure and allocate memory */
   LVcomponents   lineVeto = empty_LVcomponents; /* struct containing multi-detector Fstat, single-detector Fstats, Line Veto stat */
-  if ( (lineVeto.TwoFX = XLALCreateREAL4Vector ( numDetectors )) == NULL ) {
-    XLALPrintError ("%s: failed to XLALCreateREAL4Vector( %d )\n", __func__, numDetectors );
-    XLAL_ERROR ( XLAL_EFUNC );
-  }
+  XLAL_CHECK ( (lineVeto.TwoFX = XLALCreateREAL4Vector ( numDetectors )) != NULL, XLAL_EFUNC, "Failed call to XLALCreateREAL4Vector( %d ).", numDetectors );
 
   UINT4 j;
   UINT4 numElements = list->elems;
@@ -160,14 +146,12 @@ int XLALComputeExtraStatsForToplist ( toplist_t *list,                          
         candidateDopplerParams.fkdot[0] = elem->Freq;
         candidateDopplerParams.fkdot[1] = elem->F1dot;
         candidateDopplerParams.fkdot[2] = elem->F2dot;
-      } else if ( listEntryType == 2 ) {
+      }
+      else if ( listEntryType == 2 ) {
         HoughFStatOutputEntry *elem = toplist_elem ( list, j );
         elemV = elem;
 
-        if ( (elem->sumTwoFX = XLALCreateREAL4Vector ( numDetectors )) == NULL ) {
-          XLALPrintError ("%s: failed to XLALCreateREAL4Vector( %d )\n", __func__, numDetectors );
-          XLAL_ERROR ( XLAL_EFUNC );
-        }
+        XLAL_CHECK ( (elem->sumTwoFX = XLALCreateREAL4Vector ( numDetectors )) != NULL, XLAL_EFUNC, "Failed call to XLALCreateREAL4Vector( %d ).", numDetectors );
 
         /* get frequency, sky position, doppler parameters from toplist candidate and save to dopplerParams */
         candidateDopplerParams.Alpha = elem->AlphaBest;
@@ -178,38 +162,36 @@ int XLALComputeExtraStatsForToplist ( toplist_t *list,                          
       } /* if listEntryType 2 */
 
       /* write header information into segment-Fstats file */
-      if ( singleSegStatsFile )
+      if ( singleSegStatsFile ) {
         fprintf ( singleSegStatsFile, "%%%% Freq: %.16g\n%%%% RA: %.13g\n%%%% Dec: %.13g\n%%%% f1dot: %.13g\n%%%% f2dot: %.13g\n%%%% reftime: %d\n",
                   candidateDopplerParams.fkdot[0], candidateDopplerParams.Alpha, candidateDopplerParams.Delta, candidateDopplerParams.fkdot[1], candidateDopplerParams.fkdot[2], refTimeGPS.gpsSeconds );
-
-      /*  recalculate multi- and single-IFO Fstats for all segments for this candidate */
-      XLALComputeExtraStatsSemiCoherent( &lineVeto, &candidateDopplerParams, Fstat_in_vec, detectorIDs, startTstack, singleSegStatsFile );
-      if ( xlalErrno != 0 ) {
-        XLALPrintError ("\nError in function %s, line %d : Failed call to XLALComputeLineVetoSemiCoherent().\n\n", __func__, __LINE__);
-        XLAL_ERROR ( XLAL_EFUNC );
       }
 
+      /*  recalculate multi- and single-IFO Fstats for all segments for this candidate */
+      XLAL_CHECK ( XLALComputeExtraStatsSemiCoherent( &lineVeto, &candidateDopplerParams, Fstat_in_vec, detectorIDs, startTstack, singleSegStatsFile ) == XLAL_SUCCESS, XLAL_EFUNC, "Failed call to XLALComputeLineVetoSemiCoherent()." );
+
       /* save values in toplist */
-      if ( listEntryType == 1 )
-        {
+      if ( listEntryType == 1 ) {
           GCTtopOutputEntry *elem = elemV;
           elem->numDetectors = numDetectors;
           elem->sumTwoFrecalc  = lineVeto.TwoF;
-          for ( X = 0; X < numDetectors; X ++ )
+          for ( X = 0; X < numDetectors; X ++ ) {
             elem->sumTwoFXrecalc[X]  = lineVeto.TwoFX->data[X];
-        }
-      else if ( listEntryType == 2 )
-        {
+          }
+      }
+      else if ( listEntryType == 2 ) {
           HoughFStatOutputEntry *elem = elemV;
 
           elem->sumTwoF         = lineVeto.TwoF;
-          for ( X = 0; X < numDetectors; X ++ )
+          for ( X = 0; X < numDetectors; X ++ ) {
             elem->sumTwoFX->data[X]  = lineVeto.TwoFX->data[X];
-        }
+          }
+      }
 
       /* close single-segment Fstat file */
-      if ( singleSegStatsFile )
+      if ( singleSegStatsFile ) {
         fclose (singleSegStatsFile);
+      }
 
     } /* for j < numElements */
 
@@ -236,42 +218,31 @@ int XLALComputeExtraStatsSemiCoherent ( LVcomponents *lineVeto,                 
 					FILE *singleSegStatsFile                                /**< pointer to file to output Fstats for each segment individually */
 				      )
 {
-  /* check input parameters and report errors */
-  if ( !lineVeto || !lineVeto->TwoFX || !lineVeto->TwoFX->data || !dopplerParams || !Fstat_in_vec || !detectorIDs || !startTstack ) {
-    XLALPrintError ("\nError in function %s, line %d : Empty pointer as input parameter!\n\n", __func__, __LINE__);
-    XLAL_ERROR ( XLAL_EFAULT);
-  }
 
-  /* fake LAL status structure, needed as long as ComputeFStat is LAL function and not XLAL */
-  UINT4 X, Y;
+  /* check input parameters and report errors */
+  XLAL_CHECK ( lineVeto && lineVeto->TwoFX && lineVeto->TwoFX->data && dopplerParams && Fstat_in_vec && detectorIDs && startTstack, XLAL_EFAULT, "Empty pointer as input parameter." );
 
   UINT4 numSegments  = Fstat_in_vec->length;
   UINT4 numDetectors = detectorIDs->length;
 
-  if ( lineVeto->TwoFX->length != numDetectors ) {
-    XLALPrintError ("%s, line %d : Inconsistent number of detectors: TwoFX vector has length %d, while detectorID list contains %d elements!\n\n", __func__, __LINE__, lineVeto->TwoFX->length, numDetectors );
-    XLAL_ERROR ( XLAL_EBADLEN );
-  }
+  XLAL_CHECK ( lineVeto->TwoFX->length == numDetectors, XLAL_EBADLEN, "Inconsistent number of detectors: TwoFX vector has length %d, while detectorID list contains %d elements.", lineVeto->TwoFX->length, numDetectors );
 
   /* initialiase LVcomponents structure */
   lineVeto->TwoF = 0.0;
   lineVeto->LV   = 0.0;
-  for (X = 0; X < numDetectors; X++) {
+  for (UINT4 X = 0; X < numDetectors; X++) {
     lineVeto->TwoFX->data[X] = 0.0;
   }
 
   /* variables necessary to catch segments where not all detectors have data */
   INT4 detid = -1; /* count through detector IDs for matching with name strings */
   UINT4 numSegmentsX[numDetectors];  /* number of segments with data might be different for each detector */
-  for (X = 0; X < numDetectors; X++)
+  for (UINT4 X = 0; X < numDetectors; X++) {
     numSegmentsX[X] = 0;
-
+  }
 
   REAL4Vector *twoFXseg = NULL;
-  if ( (twoFXseg = XLALCreateREAL4Vector ( numDetectors )) == NULL ) {
-    XLALPrintError ("%s: failed to XLALCreateREAL4Vector( %d )\n", __func__, numDetectors );
-    XLAL_ERROR ( XLAL_EFUNC );
-  }
+  XLAL_CHECK ( ( twoFXseg = XLALCreateREAL4Vector ( numDetectors )) != NULL, XLAL_EFUNC, "Failed call to XLALCreateREAL4Vector( %d ).", numDetectors );
 
   /* internal dopplerParams structure, for extrapolating to correct reftimes for each segment */
   PulsarDopplerParams dopplerParams_temp = empty_PulsarDopplerParams; /* struct containing sky position, frequency and fdot for the current candidate */
@@ -286,49 +257,44 @@ int XLALComputeExtraStatsSemiCoherent ( LVcomponents *lineVeto,                 
     {
 
       /* initialize temporary single-IFO Fstat vector */
-      for (X = 0; X < numDetectors; X++)
+      for (UINT4 X = 0; X < numDetectors; X++) {
         twoFXseg->data[X] = 0.0;
+      }
 
       /* starttime of segment */
       dopplerParams_temp.refTime = startTstack->data[k];
       /* convert LIGOTimeGPS into real number difference for XLALExtrapolatePulsarSpins */
       REAL8 deltaTau = XLALGPSDiff( &dopplerParams_temp.refTime, &dopplerParams->refTime );
       /* extrapolate pulsar spins to correct time for this segment */
-      if ( XLALExtrapolatePulsarSpins( dopplerParams_temp.fkdot, dopplerParams->fkdot, deltaTau ) != XLAL_SUCCESS ) {
-        XLALPrintError ("\n%s, line %d : XLALExtrapolatePulsarSpins() failed.\n\n", __func__, __LINE__);
-        XLAL_ERROR ( XLAL_EFUNC );
-      }
+      XLAL_CHECK ( XLALExtrapolatePulsarSpins( dopplerParams_temp.fkdot, dopplerParams->fkdot, deltaTau ) == XLAL_SUCCESS, XLAL_EFUNC, "XLALExtrapolatePulsarSpins() failed." );
 
       /* recompute multi-detector Fstat and atoms */
-      if ( singleSegStatsFile )
+      if ( singleSegStatsFile ) {
         fprintf ( singleSegStatsFile, "%%%% Reftime: %d %%%% Freq: %.16g %%%% RA: %.13g %%%% Dec: %.13g %%%% f1dot: %.13g %%%% f2dot: %.13g\n", dopplerParams_temp.refTime.gpsSeconds, dopplerParams_temp.fkdot[0], dopplerParams_temp.Alpha, dopplerParams_temp.Delta, dopplerParams_temp.fkdot[1], dopplerParams_temp.fkdot[2] );
-      const int retn = XLALComputeFstat(&Fstat_res, Fstat_in_vec->data[k], &dopplerParams_temp, 0.0, 1, FSTATQ_2F | FSTATQ_2F_PER_DET);
-      if ( retn != XLAL_SUCCESS ) {
-        XLALPrintError ("%s: XLALComputeFstat() failed with errno=%d\n", __func__, xlalErrno );
-        XLAL_ERROR ( XLAL_EFUNC );
       }
+      XLAL_CHECK ( XLALComputeFstat(&Fstat_res, Fstat_in_vec->data[k], &dopplerParams_temp, 0.0, 1, FSTATQ_2F | FSTATQ_2F_PER_DET) == XLAL_SUCCESS, XLAL_EFUNC, "XLALComputeFstat() failed with errno=%d", xlalErrno );
 
       lineVeto->TwoF  += Fstat_res->twoF[0]; /* sum up multi-detector Fstat for this segment*/
 
-      if ( singleSegStatsFile )
+      if ( singleSegStatsFile ) {
         fprintf ( singleSegStatsFile, "%.6f", Fstat_res->twoF[0] );
+      }
 
       /* for each segment, number of detectors with data might be smaller than overall number */
       const UINT4 numDetectorsSeg = Fstat_res->numDetectors;
 
       /* recompute single-detector Fstats from atoms */
-      for (X = 0; X < numDetectorsSeg; X++)
+      for (UINT4 X = 0; X < numDetectorsSeg; X++)
         {
 
           /* match detector ID in this segment to one from detectorIDs list, sum up the corresponding twoFX */
           detid = -1;
-          for (Y = 0; Y < numDetectors; Y++)
-          {
-            if ( strcmp( Fstat_res->detectorNames[X], detectorIDs->data[Y] ) == 0 )
+          for (UINT4 Y = 0; Y < numDetectors; Y++) {
+            if ( strcmp( Fstat_res->detectorNames[X], detectorIDs->data[Y] ) == 0 ) {
               detid = Y;
+            }
           }
-          if ( detid == -1 )
-          {
+          if ( detid == -1 ) {
             XLALPrintError ("\nError in function %s, line %d : For segment k=%d, detector X=%d, could not match detector ID %s.\n\n",
                             __func__, __LINE__, k, X, Fstat_res->detectorNames[X] );
             XLAL_ERROR ( XLAL_EFAILED );
@@ -342,8 +308,9 @@ int XLALComputeExtraStatsSemiCoherent ( LVcomponents *lineVeto,                 
         } /* for X < numDetectorsSeg */
 
       if ( singleSegStatsFile ) {
-        for (X = 0; X < numDetectors; X++)
+        for (UINT4 X = 0; X < numDetectors; X++) {
           fprintf ( singleSegStatsFile, " %.6f",twoFXseg->data[X] );
+        }
         fprintf ( singleSegStatsFile, "\n" );
       }
 
@@ -351,7 +318,7 @@ int XLALComputeExtraStatsSemiCoherent ( LVcomponents *lineVeto,                 
 
   /* get average stats over all segments */
   lineVeto->TwoF /= numSegments;
-  for (X = 0; X < numDetectors; X++) {
+  for (UINT4 X = 0; X < numDetectors; X++) {
     lineVeto->TwoFX->data[X] /= numSegmentsX[X];
   }
 
@@ -369,25 +336,10 @@ REAL8 XLALComputeFstatFromAtoms ( const MultiFstatAtomVector *multiFstatAtoms,  
 				  )
 {
   /* check input parameters and report errors */
-  if ( !multiFstatAtoms || !multiFstatAtoms->data || !multiFstatAtoms->data[0]->data ) {
-    XLALPrintError ("\nError in function %s, line %d : Empty pointer as input parameter!\n\n", __func__, __LINE__);
-    XLAL_ERROR ( XLAL_EFAULT);
-  }
-
-  if ( multiFstatAtoms->length == 0 ) {
-    XLALPrintError ("\nError in function %s, line %d : Input MultiFstatAtomVector has zero length! (no detectors)\n\n", __func__, __LINE__);
-    XLAL_ERROR ( XLAL_EBADLEN );
-  }
-
-  if ( X < -1 ) {
-    XLALPrintError ("\nError in function %s, line %d : Invalid detector number X=%d, only nonnegative numbers or -1 for multi-F are allowed!\n\n", __func__, __LINE__, X);
-    XLAL_ERROR ( XLAL_EDOM );
-  }
-
-  if ( ( X >= 0 ) && ( (UINT4)(X) > multiFstatAtoms->length-1 ) ) {
-    XLALPrintError ("\nError in function %s, line %d : Invalid detector number!\nRequested X=%d, but FstatAtoms only have length %d.\n\n", __func__, __LINE__, X, multiFstatAtoms->length);
-    XLAL_ERROR ( XLAL_EDOM );
-  }
+  XLAL_CHECK_REAL8 ( multiFstatAtoms && multiFstatAtoms->data && multiFstatAtoms->data[0]->data, XLAL_EFAULT, "Empty pointer as input parameter." );
+  XLAL_CHECK_REAL8 ( multiFstatAtoms->length > 0, XLAL_EBADLEN, "Input MultiFstatAtomVector has zero length. (i.e., no detectors)" );
+  XLAL_CHECK_REAL8 ( X >= -1, XLAL_EDOM, "Invalid detector number X=%d. Only nonnegative numbers, or -1 for multi-F, are allowed.", X );
+  XLAL_CHECK_REAL8 ( ( X < 0 ) || ( (UINT4)(X) <= multiFstatAtoms->length-1 ), XLAL_EDOM, "Requested X=%d, but FstatAtoms only have length %d.", X, multiFstatAtoms->length );
 
   /* internal detector index Y to do both single- and multi-F case */
   UINT4 Y, Ystart, Yend;
@@ -411,10 +363,7 @@ REAL8 XLALComputeFstatFromAtoms ( const MultiFstatAtomVector *multiFstatAtoms,  
 
     UINT4 alpha, numSFTs;
     numSFTs = multiFstatAtoms->data[Y]->length;
-    if ( numSFTs == 0 ) {
-      XLALPrintError ("\nError in function %s, line %d : Input FstatAtomVector has zero length! (no timestamps for detector X=%d)\n\n", __func__, __LINE__, Y);
-      XLAL_ERROR ( XLAL_EDOM );
-    }
+    XLAL_CHECK_REAL8 ( numSFTs > 0, XLAL_EDOM, "Input FstatAtomVector has zero length. (i.e., no timestamps for detector X=%d)", Y );
 
     for ( alpha = 0; alpha < numSFTs; alpha++) { /* loop through SFTs */
       FstatAtom *thisAtom = &multiFstatAtoms->data[Y]->data[alpha];
@@ -452,36 +401,37 @@ REAL4 XLALComputeLineVeto ( const REAL4 TwoF,          /**< multi-detector  Fsta
                             const BOOLEAN useAllTerms  /**< only use leading term (FALSE) or all terms (TRUE) in log sum exp formula? */
                           )
 {
+
   /* check input parameters and report errors */
-  if ( !TwoF || !TwoFXvec || !TwoFXvec->data )
-    XLAL_ERROR_REAL4 ( XLAL_EFAULT, "Empty TwoF or TwoFX pointer as input parameter!\n\n");
-
+  XLAL_CHECK_REAL4 ( TwoF && TwoFXvec && TwoFXvec->data, XLAL_EFAULT, "Empty TwoF or TwoFX pointer as input parameter." );
   UINT4 numDetectors = TwoFXvec->length;
+  XLAL_CHECK_REAL4 ( !lXvec || ( lXvec->length == numDetectors ), XLAL_EBADLEN, "Input lX (%d) and TwoFX (%d) vectors have different lengths.", lXvec->length, numDetectors );
 
-  if ( lXvec && ( lXvec->length != numDetectors ) )
-    XLAL_ERROR_REAL4 ( XLAL_EBADLEN, "Input lX and TwoFX vectors have different length!\n\n" );
-
-  if ( rhomaxline < 0 )
-    XLAL_ERROR_REAL4 ( XLAL_EDOM, "Negative prior range 'rhomaxline' = %g! Must be >= 0!\n", rhomaxline );
+  XLAL_CHECK_REAL4 ( rhomaxline >= 0, XLAL_EDOM, "Negative prior range 'rhomaxline' = %g. Must be >= 0!", rhomaxline );
   REAL8 logRhoTerm = 0.0;
-  if ( rhomaxline > 0.0 )
+  if ( rhomaxline > 0.0 ) {
    logRhoTerm = 4.0 * log(rhomaxline) - log(70.0);
-  else /* if rhomaxline == 0.0, logRhoTerm should become irrelevant in summation */
+  }
+  else { /* if rhomaxline == 0.0, logRhoTerm should become irrelevant in summation */
     logRhoTerm = - LAL_REAL8_MAX;
+  }
 
   REAL8 *loglX = NULL;
   REAL8 loglXtemp[numDetectors];
   if ( lXvec ) {
     for (UINT4 X = 0; X < numDetectors; X++) {
-      if ( lXvec->data[X] > 0 )
+      if ( lXvec->data[X] > 0 ) {
         loglXtemp[X] = log(lXvec->data[X]);
-      else if ( lXvec->data[X] == 0 ) /* if zero prior ratio, approximate log(0)=-inf by -LAL_REA4_MAX to avoid raising underflow exceptions */
+      }
+      else if ( lXvec->data[X] == 0 ) { /* if zero prior ratio, approximate log(0)=-inf by -LAL_REA4_MAX to avoid raising underflow exceptions */
         loglXtemp[X] = - LAL_REAL8_MAX;
-      else /* negative prior ratio is a mistake! */
+      }
+      else { /* negative prior ratio is a mistake! */
        XLAL_ERROR_REAL4 ( XLAL_EDOM, "Negative input prior-ratio for detector X=%d: lX[X]=%g\n", X, lXvec->data[X] );
-    }
+      }
+    }  /* for X < numDetectors */
     loglX = loglXtemp;
-  }
+  } /* if lXvec */
 
   REAL4 LV = XLALComputeLineVetoArray ( TwoF, numDetectors, TwoFXvec->data, logRhoTerm, loglX, useAllTerms );
 
@@ -511,8 +461,7 @@ XLALComputeLineVetoArray ( const REAL4 TwoF,   /**< multi-detector Fstat */
                            )
 {
   /* check input parameters and report errors */
-  if ( !TwoF || !TwoFX )
-    XLAL_ERROR_REAL4 ( XLAL_EFAULT, "Empty TwoF or TwoFX pointer as input parameter!\n\n");
+  XLAL_CHECK_REAL4 ( TwoF && TwoFX, XLAL_EFAULT, "Empty TwoF or TwoFX pointer as input parameter." );
 
   /* set up temporary variables and structs */
   REAL4 log0  = - LAL_REAL4_MAX;	/* approximates -inf */
@@ -520,38 +469,41 @@ XLALComputeLineVetoArray ( const REAL4 TwoF,   /**< multi-detector Fstat */
   REAL4 maxInSum = log0;           /* keep track of largest summand in denominator, for logsumexp formula below */
   REAL4 FXprior[numDetectors];     /* FXprior equiv log(lX * e^(FX)) = FX + loglX */
 
-  for (UINT4 X = 0; X < numDetectors; X++)
-    {
-      FXprior[X] = 0.5 * TwoFX[X];
-      if (loglX) /* if no priors given, just use lX=1 => loglX=0 for all X => do not add anything */
-        FXprior[X] += loglX[X];
-      /* keep track of maximum value in denominator sum  */
-      if ( FXprior[X] > maxInSum )
-        maxInSum = FXprior[X];
-    } /* for X < numDetectors */
+  for (UINT4 X = 0; X < numDetectors; X++) {
+    FXprior[X] = 0.5 * TwoFX[X];
+    if (loglX) { /* if no priors given, just use lX=1 => loglX=0 for all X => do not add anything */
+      FXprior[X] += loglX[X];
+    }
+    /* keep track of maximum value in denominator sum  */
+    if ( FXprior[X] > maxInSum ) {
+      maxInSum = FXprior[X];
+    }
+  } /* for X < numDetectors */
 
   /* special treatment for additional denominator term 'rho^4/70' */
-  if ( logRhoTerm > maxInSum )
+  if ( logRhoTerm > maxInSum ) {
     maxInSum = logRhoTerm;
+  }
 
   REAL4 LV = 0.0;	/* output variable for Line Veto statistics */
 
   LV = 0.5 * TwoF - maxInSum;	/* dominant term to LV-statistic */
 
-  if ( useAllTerms )	/* optionally add logsumexp term (possibly negligible in many cases) */
-    {
-      REAL4 extraSum=0;	/* will be:  e^[-(maxInSum - logRhoTerm)] + sum_X e^[ -(maxInSum - FXprior) ] >= 1 */
+  if ( useAllTerms ) { /* optionally add logsumexp term (possibly negligible in many cases) */
 
-      /* need to treat (rho^4/70) term separately */
-      extraSum += exp ( logRhoTerm - maxInSum );
+    REAL4 extraSum=0;	/* will be:  e^[-(maxInSum - logRhoTerm)] + sum_X e^[ -(maxInSum - FXprior) ] >= 1 */
 
-      /* now add all FX-contributions */
-      for (UINT4 X = 0; X < numDetectors; X++)
-        extraSum += exp ( FXprior[X] - maxInSum );
+    /* need to treat (rho^4/70) term separately */
+    extraSum += exp ( logRhoTerm - maxInSum );
 
-      LV -= log ( extraSum );
+    /* now add all FX-contributions */
+    for (UINT4 X = 0; X < numDetectors; X++) {
+      extraSum += exp ( FXprior[X] - maxInSum );
+    }
 
-    } /* if useAllTerms */
+    LV -= log ( extraSum );
+
+  } /* if useAllTerms */
 
   return LV;
 
@@ -572,29 +524,23 @@ XLALGetDetectorIDs(
   /* check input parameters and report errors */
   XLAL_CHECK_NULL( SFTcatalog != NULL, XLAL_EFAULT );
 
-  for (UINT4 X = 0; X < SFTcatalog->length; X++)
-  {
-    /* check if this segment k, IFO X contains a new detector */
+  for (UINT4 X = 0; X < SFTcatalog->length; X++) {
+    /* check for a new detector */
     const char *thisIFO = SFTcatalog->data[X].header.name;
 
-    if ( XLALFindStringInVector ( thisIFO, IFOList ) >= 0 )
-    { // if already in list, do nothing
+    if ( XLALFindStringInVector ( thisIFO, IFOList ) >= 0 ) { // if already in list, do nothing
       continue;
     }
-    else
-    {       // otherwise, append to IFOList
-      if ( (IFOList = XLALAppendString2Vector ( IFOList, thisIFO )) == NULL )
+    else {       // otherwise, append to IFOList
+      if ( (IFOList = XLALAppendString2Vector ( IFOList, thisIFO )) == NULL ) {
         XLAL_ERROR_NULL ( XLAL_EFUNC );
+      }
     }
 
   } /* for X < number of detectors */
 
   /* sort final list by detector-name */
-  XLALSortStringVector ( IFOList );
-  if ( xlalErrno != 0 ) {
-    XLALPrintError ("\nError in function %s, line %d : Failed call to XLALSortStringVector().\n\n", __func__, __LINE__);
-    XLAL_ERROR_NULL ( XLAL_EFUNC );
-  }
+  XLAL_CHECK_NULL ( XLALSortStringVector ( IFOList ) == XLAL_SUCCESS, XLAL_EFUNC, "Failed call to XLALSortStringVector()." );
 
   return IFOList;
 
@@ -607,21 +553,15 @@ XLALCreateLogLUT ( void )
 {
   /* create empty output LUT */
   gsl_vector *ret;
-  if ( ( ret = gsl_vector_alloc ( LOGLUT_LENGTH + 1)) == NULL ) {
-    XLALPrintError ("%s: failed to gsl_vector_alloc (%s)\n", __func__, LOGLUT_LENGTH +1 );
-    XLAL_ERROR ( XLAL_ENOMEM );
-  }
+  XLAL_CHECK ( ( ret = gsl_vector_alloc ( LOGLUT_LENGTH + 1)) != NULL, XLAL_ENOMEM, "Failed call to gsl_vector_alloc (%s).", LOGLUT_LENGTH +1 );
 
   /* fill output LUT */
   REAL8 dx = LOGLUT_XMAX / LOGLUT_LENGTH;
   UINT4 i;
-  for ( i=0; i <= LOGLUT_LENGTH; i ++ )
-    {
-      REAL8 xi = i * dx;
-
-      gsl_vector_set ( ret, i, log( xi ) );
-
-    } /* for i < length() */
+  for ( i=0; i <= LOGLUT_LENGTH; i ++ ) {
+    REAL8 xi = i * dx;
+    gsl_vector_set ( ret, i, log( xi ) );
+  } /* for i < length() */
 
   /* 'return' this by setting the global vector */
   logLUT = ret;
@@ -636,8 +576,10 @@ XLALCreateLogLUT ( void )
 void
 XLALDestroyLogLUT ( void )
 {
-  if ( !logLUT )
+
+  if ( !logLUT ) {
     return;
+  }
 
   gsl_vector_free ( logLUT );
 
@@ -661,16 +603,15 @@ XLALDestroyLogLUT ( void )
 REAL8
 XLALFastLog ( REAL8 x )
 {
-  if ( x > LOGLUT_XMAX )	/* for values bigger than xmax, use normal log function */
-    return log(x);
 
-  if ( x < 0 )
-    XLAL_ERROR_REAL8 ( XLAL_EDOM, "Negative argument: x=%f\n", x );
+  if ( x > LOGLUT_XMAX ) { /* for values bigger than xmax, use normal log function */
+    return log(x);
+  }
+
+  XLAL_CHECK_REAL8 ( x >= 0, XLAL_EDOM, "Negative argument: x=%f.", x );
 
   /* if lookup table doesn't exist yet: generate it now */
-  if ( !logLUT && ( XLALCreateLogLUT() != XLAL_SUCCESS) ) {
-    XLAL_ERROR_REAL8 ( XLAL_EFUNC );
-  }
+  XLAL_CHECK_REAL8 ( logLUT || ( XLALCreateLogLUT() == XLAL_SUCCESS), XLAL_EFUNC, "Failed call to XLALCreateLogLUT()." );
 
   /* find index of closest point xp in LUT to xm */
   UINT4 i0 = (UINT4) ( x * LOGLUT_DXINV + 0.5 );
