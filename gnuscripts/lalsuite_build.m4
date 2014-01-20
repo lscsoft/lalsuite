@@ -1,7 +1,7 @@
 # -*- mode: autoconf; -*-
 # lalsuite_build.m4 - top level build macros
 #
-# serial 79
+# serial 80
 
 # not present in older versions of pkg.m4
 m4_pattern_allow([^PKG_CONFIG(_(PATH|LIBDIR|SYSROOT_DIR|ALLOW_SYSTEM_(CFLAGS|LIBS)))?$])
@@ -295,7 +295,7 @@ AC_DEFUN([LALSUITE_PROG_COMPILERS],[
     AC_SUBST(CLANG_CXX)
 
     # define C99 constant and limit macros for C++ sources
-    LALSUITE_ADD_FLAGS([CXX],[-D__STDC_CONSTANT_MACROS -D__STDC_LIMIT_MACROS],[])
+    CXXFLAGS="${CXXFLAGS} -D__STDC_CONSTANT_MACROS -D__STDC_LIMIT_MACROS"
 
   ],[
     CXX=

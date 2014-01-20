@@ -2,7 +2,7 @@
 # lalsuite_swig.m4 - SWIG configuration
 # Author: Karl Wette, 2011, 2012
 #
-# serial 57
+# serial 58
 
 # enable SWIG wrapping modules
 AC_DEFUN([LALSUITE_ENABLE_SWIG],[
@@ -164,9 +164,6 @@ AC_DEFUN([LALSUITE_USE_SWIG],[
         [-g*|-O*],[SWIG_CXXFLAGS="${SWIG_CXXFLAGS} ${arg}"]
       )
     done
-
-    # define C99 constant and limit macros for C++ sources
-    SWIG_CXXFLAGS="${SWIG_CXXFLAGS} -D__STDC_CONSTANT_MACROS -D__STDC_LIMIT_MACROS"
 
     # make SWIG use C++ casts in typemaps in C++ mode
     SWIG_CXXFLAGS="${SWIG_CXXFLAGS} -DSWIG_CPLUSPLUS_CAST"
