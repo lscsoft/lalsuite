@@ -55,8 +55,6 @@ class InspiralAnalysisJob(pipeline.AnalysisJob, pipeline.CondorDAGJob):
           remotesites = mycp.get(sec,'remote-sites')
           mycp.remove_option(sec,'remote-sites')
           self.set_grid_site(remotesites)
-          if remotesites != 'local':
-            self.set_executable_installed(False)
 
         # add all the other options as arguments to the code
         self.add_ini_opts(mycp, sec)
