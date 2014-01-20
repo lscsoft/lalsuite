@@ -135,6 +135,8 @@ LALOpenDataFile( const char *fname )
   char  fdata[32768];
   int   n;
 
+  XLAL_PRINT_DEPRECATION_WARNING("XLALFileResolvePathLong");
+
   if ( (fname==NULL) || ( strlen(fname)==0) ) {
     return NULL;
   }
