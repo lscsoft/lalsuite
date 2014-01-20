@@ -1,21 +1,15 @@
 AC_PREREQ([2.63])
-AC_INIT([lalmetaio],[1.2.0.1],[lal-discuss@ligo.org])
-AC_CONFIG_HEADERS([src/config.h src/LALMetaIOConfig.h])
+AC_INIT([LALMetaIO],[1.2.0.1],[lal-discuss@ligo.org])
+AC_CONFIG_HEADERS([src/config.h src/lal/LALMetaIOConfig.h])
 AC_CONFIG_SRCDIR([src/LIGOLwXML.c])
 AC_CONFIG_AUX_DIR([gnuscripts])
 AC_CONFIG_MACRO_DIR([gnuscripts])
 AC_CONFIG_FILES([ \
-  lalmetaio.spec \
-  lalmetaio.pc \
-  lalmetaio-uninstalled.pc \
   Makefile \
-  gnuscripts/Makefile \
-  debian/Makefile \
-  include/Makefile \
-  include/lal/Makefile \
-  python/Makefile \
+  lalmetaio-uninstalled.pc \
+  lalmetaio.pc \
+  lalmetaio.spec \
   python/__init__.py \
-  src/Makefile \
   swig/Makefile \
   swig/octave/Makefile \
   swig/python/Makefile
@@ -111,8 +105,10 @@ LALSUITE_ADD_GCC_FLAGS
 # RedHat-derived systems.
 AC_SUBST([pkgpythondir], ["\${pkgpyexecdir}"])
 
-LAL_HEADER_LINK=${ac_aux_dir}/header-link.mk
-AC_SUBST_FILE(LAL_HEADER_LINK)
+# extra preprocessor flags
+LALSUITE_ADD_FLAGS([C],["-DPKG_DATA_DIR='\"\$(pkgdatadir)/\"'"])
+LALSUITE_ADD_FLAGS([C],["-DTEST_DATA_DIR='\"\$(abs_top_srcdir)/test/\"'"])
+LALSUITE_ADD_FLAGS([C],["-DTEST_OUTPUT_DIR='\"\$(abs_top_builddir)/test/\"'"])
 
 # output
 AC_OUTPUT

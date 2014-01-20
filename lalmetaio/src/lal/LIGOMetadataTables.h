@@ -270,22 +270,22 @@ SearchSummvarsTable;
 typedef struct
 tagSnglBurst
 {
-	struct tagSnglBurst *next;
-	CHAR ifo[LIGOMETA_IFO_MAX];
-	CHAR search[LIGOMETA_SEARCH_MAX];
-	CHAR channel[LIGOMETA_CHANNEL_MAX];
-	LIGOTimeGPS start_time;
-	LIGOTimeGPS peak_time;
-	REAL4 duration;
-	REAL4 central_freq;
-	REAL4 bandwidth;
-	REAL4 amplitude;
-	REAL4 snr;
-	REAL4 confidence;
-	REAL8 chisq;
-	REAL8 chisq_dof;
-	long process_id;
-	long event_id;
+        struct tagSnglBurst *next;
+        CHAR ifo[LIGOMETA_IFO_MAX];
+        CHAR search[LIGOMETA_SEARCH_MAX];
+        CHAR channel[LIGOMETA_CHANNEL_MAX];
+        LIGOTimeGPS start_time;
+        LIGOTimeGPS peak_time;
+        REAL4 duration;
+        REAL4 central_freq;
+        REAL4 bandwidth;
+        REAL4 amplitude;
+        REAL4 snr;
+        REAL4 confidence;
+        REAL8 chisq;
+        REAL8 chisq_dof;
+        long process_id;
+        long event_id;
 }
 SnglBurst;
 
@@ -576,8 +576,8 @@ tagSimInspiralTable
   REAL4          eff_dist_g;
   REAL4          eff_dist_t;
   REAL4          eff_dist_v;
-  REAL4	         qmParameter1;
-  REAL4		 qmParameter2;
+  REAL4          qmParameter1;
+  REAL4          qmParameter2;
   EventIDColumn  *event_id;
   INT4           numrel_mode_min;
   INT4           numrel_mode_max;
@@ -635,26 +635,26 @@ CoincInspiralSlideTable;
 typedef struct
 tagSimBurst
 {
-	struct tagSimBurst *next;
-	long process_id;
-	char waveform[LIGOMETA_WAVEFORM_MAX];
-	REAL8 ra;
-	REAL8 dec;
-	REAL8 psi;
-	LIGOTimeGPS time_geocent_gps;
-	REAL8 time_geocent_gmst;
-	REAL8 duration;
-	REAL8 frequency;
-	REAL8 bandwidth;
-	REAL8 q;
-	REAL8 pol_ellipse_angle;
-	REAL8 pol_ellipse_e;
-	REAL8 amplitude;
-	REAL8 hrss;
-	REAL8 egw_over_rsquared;
-	unsigned long waveform_number;
-	long time_slide_id;
-	long simulation_id;
+        struct tagSimBurst *next;
+        long process_id;
+        char waveform[LIGOMETA_WAVEFORM_MAX];
+        REAL8 ra;
+        REAL8 dec;
+        REAL8 psi;
+        LIGOTimeGPS time_geocent_gps;
+        REAL8 time_geocent_gmst;
+        REAL8 duration;
+        REAL8 frequency;
+        REAL8 bandwidth;
+        REAL8 q;
+        REAL8 pol_ellipse_angle;
+        REAL8 pol_ellipse_e;
+        REAL8 amplitude;
+        REAL8 hrss;
+        REAL8 egw_over_rsquared;
+        unsigned long waveform_number;
+        long time_slide_id;
+        long simulation_id;
 } SimBurst;
 
 
@@ -969,7 +969,7 @@ tagSegmentTable
   LIGOTimeGPS start_time;
   LIGOTimeGPS end_time;
   long segment_def_id;
-  INT4 segment_def_cdb; 
+  INT4 segment_def_cdb;
 }
 SegmentTable;
 
