@@ -1,17 +1,17 @@
+include $(top_srcdir)/gnuscripts/topdir_common.am
+
 ACLOCAL_AMFLAGS = -I gnuscripts
 
-include $(srcdir)/gnuscripts/topdir_common.am
-
-git_generated_sources = \
+git_generated_sources += \
 	python/git_version.py \
 	src/lal/LALXMLVCSInfo.h \
 	$(EOL)
 
-noswig_pkginclude_HEADERS = \
+noswig_pkginclude_HEADERS += \
 	src/lal/LALXMLVCSInfo.h \
 	$(EOL)
 
-pkginclude_HEADERS = \
+pkginclude_HEADERS += \
 	src/lal/LALXML.h \
 	src/lal/LALXMLBuildInfo.h \
 	src/lal/LALXMLConfig.h \
@@ -21,7 +21,10 @@ pkginclude_HEADERS = \
 	src/lal/lalxmlswig_test.i \
 	$(EOL)
 
-lib_LTLIBRARIES = src/liblalxml.la
+pkgconfig_DATA += lalxml.pc
+noinst_DATA += lalxml-uninstalled.pc
+
+lib_LTLIBRARIES += src/liblalxml.la
 
 src_liblalxml_la_SOURCES = \
 	src/LALXML.c \
@@ -36,24 +39,24 @@ nodist_src_liblalxml_la_SOURCES = \
 
 src_liblalxml_la_LDFLAGS = $(AM_LDFLAGS) -version-info $(LIBVERSION)
 
-pkgpython_PYTHON = \
+LDADD += $(top_builddir)/src/liblalxml.la
+
+pkgpython_PYTHON += \
 	python/__init__.py \
 	python/git_version.py \
 	$(EOL)
 
-LDADD = $(top_builddir)/src/liblalxml.la
-
-TESTS = \
+TESTS += \
 	test/LALXMLTest \
 	$(EOL)
 
-check_PROGRAMS = \
+check_PROGRAMS += \
 	$(TESTS)
 
 pkgdata_DATA += \
 	test/VOTable-1.1.xsd
 
-DISTCLEANFILES = \
+DISTCLEANFILES += \
 	config.lt \
 	src/config.h \
 	$(EOL)
@@ -75,4 +78,4 @@ EXTRA_DIST += \
 	lalxml.spec \
 	$(EOL)
 
-include $(srcdir)/gnuscripts/swig_common.am
+include $(top_srcdir)/gnuscripts/swig_common.am

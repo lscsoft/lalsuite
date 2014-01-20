@@ -113,6 +113,11 @@ LALSUITE_ADD_GCC_FLAGS
 # RedHat-derived systems.
 AC_SUBST([pkgpythondir], ["\${pkgpyexecdir}"])
 
+# extra preprocessor flags
+LALSUITE_ADD_FLAGS([C],["-DPKG_DATA_DIR='\"\$(pkgdatadir)/\"'"])
+LALSUITE_ADD_FLAGS([C],["-DTEST_DATA_DIR='\"\$(abs_top_srcdir)/test/\"'"])
+LALSUITE_ADD_FLAGS([C],["-DTEST_OUTPUT_DIR='\"\$(abs_top_builddir)/test/\"'"])
+
 # output
 AC_OUTPUT
 AC_MSG_NOTICE([

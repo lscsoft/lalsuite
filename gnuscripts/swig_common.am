@@ -1,6 +1,3 @@
-# For installed headers which are not part of the SWIG interface
-noswig_pkgincludedir = $(pkgincludedir)
-
 SUBDIRS = . swig
 
 if SWIG_BUILD
