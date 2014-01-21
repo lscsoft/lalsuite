@@ -33,7 +33,7 @@ __author__  = "Chris Pankow <chris.pankow@ligo.org>"
 __version__ = git_version.id
 __date__    = git_version.date
 
-## \addtogroup pkg_py_laldetchar_triggers_omega
+## \addtogroup pkg_py_laldetchar_dqsegs
 #@{
 
 def threshold_data_to_seglist(data, start, dt, min_threshold=None, max_threshold=None, invert=False):
