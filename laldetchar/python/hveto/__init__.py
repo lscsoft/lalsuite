@@ -259,7 +259,33 @@ def query_segments_db( db_location, gps_start, gps_end, spec ):
 	result = segmentdb_utils.query_segments( engine, "segment", definer_args )
 	return segmentlist(result[0])
 
-def write_round_xml( vetosegs, vetotrigs, winner, ifo, opts ):
+def append_summ_vars(xmldoc, procid, **summvars):
+  """
+  Append round information in the form of SummVars.
+  """
+
+  try:
+    summtable = table.get_table(xmldoc, lsctables.SearchSummVarsTable.tableName)
+    procid = summtable[0].process_id
+  except ValueError:
+    summtable = lsctables.New(lsctables.SearchSummVarsTable, lsctables.SearchSummVarsTable.validcolumns.keys())
+
+  for name, value in summvars.iteritems():
+    summvar = summtable.RowType()
+    summvar.name = name
+    if isinstance(value, str):
+      summvar.string = str(value)
+      summvar.value = -1.0
+    else:
+      summvar.string = str(value)
+      summvar.value = float(value)
+    summvar.process_id = procid
+    summvar.search_summvar_id = summtable.get_next_id()
+    summtable.append(summvar)
+
+  xmldoc.childNodes[0].appendChild(summtable)
+
+def write_round_xml( vetosegs, vetotrigs, ifo, opts ):
 	"""
 	Write out the products from this round of hveto: veto segments and the vetoed triggers.
 	"""
@@ -270,8 +296,6 @@ def write_round_xml( vetosegs, vetotrigs, winner, ifo, opts ):
 	# Append the process information
 	procrow = utils.process.append_process( xmldoc, program="laldetchar-hveto" )
 	utils.process.append_process_params( xmldoc, procrow, utils.process.process_params_from_dict(opts) )
-
-	summ = lsctables.New(lsctables.SearchSummVarsTable, lsctables.SearchSummVarsTable.validcolumns.keys())
 
 	# Add the vetoed triggers
 	xmldoc.childNodes[0].childNodes.append( vetotrigs )
