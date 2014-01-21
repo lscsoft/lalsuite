@@ -331,6 +331,7 @@ int XLALCalculatePulsarCrossCorrStatistic
     UINT8 sftInd1 = sftIndices->data[sftNum1].sftInd;
     UINT8 sftInd2 = sftIndices->data[sftNum2].sftInd;
     COMPLEX8 *dataArray1 = inputSFTs->data[detInd1]->data[sftInd1].data->data;
+    UINT4 lenDataArray1 = inputSFTs->data[detInd1]->data[sftInd1].data->length;
     COMPLEX8 *dataArray2 = inputSFTs->data[detInd2]->data[sftInd2].data->data;
     COMPLEX16 GalphaCC = curlyGAmp->data[alpha]
       * cexp( I * ( signalPhases->data[sftNum1]
@@ -342,8 +343,11 @@ int XLALCalculatePulsarCrossCorrStatistic
     }
 
     for (UINT8 j=0; j < numBins; j++) {
-      COMPLEX16 data1 = dataArray1[lowestBins->data[sftNum1]+j];
-      REAL8 sincFactor = gsl_sf_sinc(kappaValues->data[lowestBins->data[sftNum1]+j]);
+      UINT4 lowestBin = lowestBins->data[sftNum1];
+      XLAL_CHECK ( (lowestBin + j < lenDataArray1) && (lowestBin + j < kappaValues->length), XLAL_EINVAL,
+                   "Prevented memory violation: lowestBin=%d, j=%d, len(dataArray1)=%d, len(kappaValues)=%d\n", lowestBin, j, lenDataArray1, kappaValues->length );
+      COMPLEX16 data1 = dataArray1[lowestBin+j];
+      REAL8 sincFactor = gsl_sf_sinc(kappaValues->data[lowestBin+j]);
       /* Normalized sinc, i.e., sin(pi*x)/(pi*x) */
       UINT8 ccSign = baseCCSign;
       for (UINT8 k=0; k < numBins; k++) {
