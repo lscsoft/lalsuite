@@ -112,6 +112,7 @@ int XLALGetDopplerShiftedFrequencyInfo
    UINT4               numBins,
    PulsarDopplerParams *dopp,
    SFTIndexList        *sfts,
+   MultiSFTVector      *inputSFTs,
    MultiSSBtimes       *multiTimes,
    REAL8               Tsft
    )

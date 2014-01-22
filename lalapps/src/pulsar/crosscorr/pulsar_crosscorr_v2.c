@@ -401,7 +401,7 @@ int main(int argc, char *argv[]){
 	XLAL_ERROR( XLAL_EFUNC );
       }
 
-      if ( (XLALGetDopplerShiftedFrequencyInfo( shiftedFreqs, lowestBins, kappaValues, signalPhases, uvar.numBins, &dopplerpos, sftIndices, multiBinaryTimes, Tsft )  != XLAL_SUCCESS ) ) {
+      if ( (XLALGetDopplerShiftedFrequencyInfo( shiftedFreqs, lowestBins, kappaValues, signalPhases, uvar.numBins, &dopplerpos, sftIndices, inputSFTs, multiBinaryTimes, Tsft )  != XLAL_SUCCESS ) ) {
 	LogPrintf ( LOG_CRITICAL, "%s: XLALGetDopplerShiftedFrequencyInfo() failed with errno=%d\n", __func__, xlalErrno );
 	XLAL_ERROR( XLAL_EFUNC );
       }

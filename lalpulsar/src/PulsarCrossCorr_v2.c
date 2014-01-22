@@ -33,19 +33,17 @@ int XLALGetDopplerShiftedFrequencyInfo
    REAL8Vector         *signalPhases, /**< Output list of signal phases */
    UINT4               numBins,       /**< Number of frequency bins to use */
    PulsarDopplerParams *dopp,         /**< Doppler parameters for signal */
-   SFTIndexList        *sfts,         /**< List of indices for SFTs */
+   SFTIndexList        *sftIndices,   /**< List of indices for SFTs */
+   MultiSFTVector      *inputSFTs,    /**< SFT data (needed for f0) */
    MultiSSBtimes       *multiTimes,   /**< SSB or Binary times */
    REAL8               Tsft           /**< SFT duration */
   )
 {
   UINT8 numSFTs;
-  UINT8 indI;
   UINT4 k;
   REAL8 timeDiff, factor, fhat, phiByTwoPi;
-  SFTIndex sftInd;
-  SSBtimes *times;
 
-  numSFTs = sfts->length;
+  numSFTs = sftIndices->length;
   if ( signalPhases->length !=numSFTs
        || shiftedFreqs->length !=numSFTs
        || lowestBins->length !=numSFTs
@@ -53,6 +51,10 @@ int XLALGetDopplerShiftedFrequencyInfo
     XLALPrintError("Lengths of SFT-indexed lists don't match!");
     XLAL_ERROR(XLAL_EBADLEN );
   }
+
+  XLAL_CHECK ( ( inputSFTs->length == multiTimes->length ),
+	       XLAL_EBADLEN,
+	       "Lengths of detector-indexed lists don't match!" );
 
   if ( numBins < 1 ) {
     XLALPrintError("Must specify a positive number of bins to use!");
@@ -63,10 +65,27 @@ int XLALGetDopplerShiftedFrequencyInfo
   /* fhat = f_0 + f_1(t-t0) + f_2(t-t0)^2/2 + ... */
 
   /* this is the sft reference time  - the pulsar reference time */
-  for (indI=0; indI < numSFTs; indI++) {
-    sftInd = sfts->data[indI];
-    times = multiTimes->data[sftInd.detInd];
-    timeDiff = times->DeltaT->data[sftInd.sftInd]
+  for (UINT8 sftNum=0; sftNum < numSFTs; sftNum++) {
+    UINT8 detInd = sftIndices->data[sftNum].detInd;
+    XLAL_CHECK ( ( detInd < inputSFTs->length ),
+		 XLAL_EINVAL,
+		 "SFT asked for detector index off end of list:\n sftNum=%d, detInd=%d, inputSFTs->length=%d\n",
+		 sftNum, detInd, inputSFTs->length );
+
+    UINT8 numSFTsDet = inputSFTs->data[detInd]->length;
+    SSBtimes *times;
+    times = multiTimes->data[detInd];
+    XLAL_CHECK ( ( times->DeltaT->length == numSFTsDet )
+		 && ( times->Tdot->length == numSFTsDet ),
+		 XLAL_EBADLEN,
+		 "Lengths of multilists don't match!" );
+
+    UINT8 sftInd = sftIndices->data[sftNum].sftInd;
+    XLAL_CHECK ( ( sftInd < numSFTsDet ),
+		 XLAL_EINVAL,
+		 "SFT asked for SFT index off end of list:\n sftNum=%d, detInd=%d, sftInd=%d, numSFTsDet=%d\n",
+		 sftNum, detInd, sftInd, numSFTsDet );
+    timeDiff = times->DeltaT->data[sftInd]
       + XLALGPSDiff( &(times->refTime), &(dopp->refTime));
     fhat = dopp->fkdot[0]; /* initialization */
     phiByTwoPi = fmod ( fhat * timeDiff , 1.0 );
@@ -76,12 +95,18 @@ int XLALGetDopplerShiftedFrequencyInfo
       factor *= timeDiff / (k+1);
       phiByTwoPi += dopp->fkdot[k] * factor;
     }
-    signalPhases->data[indI] = LAL_TWOPI * fmod ( phiByTwoPi , 1.0 );
-    shiftedFreqs->data[indI] = fhat * times->Tdot->data[sftInd.sftInd];
-    lowestBins->data[indI]
-      = ceil(shiftedFreqs->data[indI] * Tsft - 0.5*numBins);
-    kappaValues->data[indI] = lowestBins->data[indI]
-      - shiftedFreqs->data[indI] * Tsft;
+    signalPhases->data[sftNum] = LAL_TWOPI * fmod ( phiByTwoPi , 1.0 );
+    shiftedFreqs->data[sftNum] = fhat * times->Tdot->data[sftInd];
+    REAL8 fminusf0 = shiftedFreqs->data[sftNum] - inputSFTs->data[detInd]->data[sftInd].f0;
+    lowestBins->data[sftNum]
+      = ceil( fminusf0 * Tsft - 0.5*numBins );
+    kappaValues->data[sftNum] = lowestBins->data[sftNum] - fminusf0 * Tsft;
+    /* printf("f=%.7f, f0=%.7f, Tsft=%g, numbins=%d, lowestbin=%d, kappa=%g\n",
+	   shiftedFreqs->data[sftNum],
+	   inputSFTs->data[detInd]->data[sftInd].f0,
+	   Tsft, numBins, lowestBins->data[sftNum],
+	   kappaValues->data[sftNum]); */
+
   }
 
   return XLAL_SUCCESS;
@@ -297,10 +322,10 @@ int XLALCalculatePulsarCrossCorrStatistic
     XLAL_CHECK ( ( sftInd1 < inputSFTs->data[detInd1]->length )
 		 && ( sftInd2 < inputSFTs->data[detInd2]->length ),
 		 XLAL_EINVAL,
-		 "SFT asked for detector index off end of list:\n sftNum1=%d, sftNum2=%d, detInd1=%d, detInd2=%d, sftInd1=%d, sftInd2=%d, inputSFTs->data[detInd1]->length=%d, inputSFTs->data[detInd2]->length=%d\n",
+		 "SFT asked for SFT index off end of list:\n sftNum1=%d, sftNum2=%d, detInd1=%d, detInd2=%d, sftInd1=%d, sftInd2=%d, inputSFTs->data[detInd1]->length=%d, inputSFTs->data[detInd2]->length=%d\n",
 		 sftNum1, sftNum2, detInd1, detInd2, sftInd1, sftInd2,
 		 inputSFTs->data[detInd1]->length,
-		 inputSFTs->data[detInd2]->length);
+		 inputSFTs->data[detInd2]->length );
 
     COMPLEX8 *dataArray1 = inputSFTs->data[detInd1]->data[sftInd1].data->data;
     COMPLEX8 *dataArray2 = inputSFTs->data[detInd2]->data[sftInd2].data->data;
