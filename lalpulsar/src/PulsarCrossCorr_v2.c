@@ -194,10 +194,10 @@ int XLALCreateSFTPairIndexList
     XLALFree ( ret );
     XLAL_ERROR ( XLAL_ENOMEM );
   }
-  
+
 
   (*pairIndexList) = ret;
-  
+
   return XLAL_SUCCESS;
 }
 
@@ -276,10 +276,32 @@ int XLALCalculatePulsarCrossCorrStatistic
   for (UINT8 alpha=0; alpha < numPairs; alpha++) {
     UINT8 sftNum1 = sftPairs->data[alpha].sftNum[0];
     UINT8 sftNum2 = sftPairs->data[alpha].sftNum[1];
+
+    XLAL_CHECK ( ( sftNum1 < numSFTs ) && ( sftNum2 < numSFTs ),
+		 XLAL_EINVAL,
+		 "SFT pair asked for SFT index off end of list:\n alpha=%d, sftNum1=%d, sftNum2=%d, numSFTs=%d\n",
+		 alpha,  sftNum1, sftNum2, numSFTs );
+
     UINT8 detInd1 = sftIndices->data[sftNum1].detInd;
     UINT8 detInd2 = sftIndices->data[sftNum2].detInd;
+
+    XLAL_CHECK ( ( detInd1 < inputSFTs->length )
+		 && ( detInd2 < inputSFTs->length ),
+		 XLAL_EINVAL,
+		 "SFT asked for detector index off end of list:\n sftNum1=%d, sftNum2=%d, detInd1=%d, detInd2=%d, inputSFTs->length=%d\n",
+		 sftNum1, sftNum2, detInd1, detInd2, inputSFTs->length );
+
     UINT8 sftInd1 = sftIndices->data[sftNum1].sftInd;
     UINT8 sftInd2 = sftIndices->data[sftNum2].sftInd;
+
+    XLAL_CHECK ( ( sftInd1 < inputSFTs->data[detInd1]->length )
+		 && ( sftInd2 < inputSFTs->data[detInd2]->length ),
+		 XLAL_EINVAL,
+		 "SFT asked for detector index off end of list:\n sftNum1=%d, sftNum2=%d, detInd1=%d, detInd2=%d, sftInd1=%d, sftInd2=%d, inputSFTs->data[detInd1]->length=%d, inputSFTs->data[detInd2]->length=%d\n",
+		 sftNum1, sftNum2, detInd1, detInd2, sftInd1, sftInd2,
+		 inputSFTs->data[detInd1]->length,
+		 inputSFTs->data[detInd2]->length);
+
     COMPLEX8 *dataArray1 = inputSFTs->data[detInd1]->data[sftInd1].data->data;
     COMPLEX8 *dataArray2 = inputSFTs->data[detInd2]->data[sftInd2].data->data;
     UINT4 lenDataArray1 = inputSFTs->data[detInd1]->data[sftInd1].data->length;
