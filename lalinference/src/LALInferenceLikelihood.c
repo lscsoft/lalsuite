@@ -539,9 +539,9 @@ REAL8 LALInferenceROQLogLikelihood(LALInferenceVariables *currentParams, LALInfe
     
     loglikeli += dataPtr->loglikelihood;
     
-    //printf("GSL_REAL(complex_d_dot_h)=%e\n",GSL_REAL(complex_d_dot_h));
-    //printf("h_dot_h=%e\n",h_dot_h);
-    //printf("loglikeli=%e\n",loglikeli);
+    printf("GSL_REAL(complex_d_dot_h)=%e\n",GSL_REAL(complex_d_dot_h));
+    printf("h_dot_h=%e\n",h_dot_h);
+    printf("loglikeli=%e\n",loglikeli);
     
     dataPtr = dataPtr->next;
   }

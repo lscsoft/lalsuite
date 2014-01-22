@@ -2737,6 +2737,20 @@ void LALInferenceSetupROQ(LALInferenceIFOData *IFOdata, ProcessParamsTable *comm
       GSL_SET_COMPLEX(&alpha, 4.*IFOdata[i].oneSidedNoisePowerSpectrum->deltaF, 0);
       GSL_SET_COMPLEX(&beta, 0, 0);
       
+      
+      const UINT4 nameLength=FILENAME_MAX;
+      char filename[nameLength];
+      FILE *out;
+      snprintf(filename, nameLength, "%s-ROQFreqData.dat", IFOdata[i].name);
+      out = fopen(filename, "w");
+      for(unsigned int k = 0; k < n_samples; k++){
+            fprintf(out,"%g %g %g\n", IFOdata[i].freqData->deltaF*(k + (unsigned int)(IFOdata[i].fLow/deltaF)),
+              creal(IFOdata[i].freqData->data->data[k + (unsigned int)(IFOdata[i].fLow/deltaF)]),
+              cimag(IFOdata[i].freqData->data->data[k + (unsigned int)(IFOdata[i].fLow/deltaF)]));
+      }
+      fclose(out);
+      //REAL8 deltaT = IFOdata[i].timeData->deltaT;
+      
       for(unsigned int jj = 0; jj < time_steps; jj++){
         
         tc = timeMin + 2*dt*jj / time_steps;
@@ -2747,8 +2761,13 @@ void LALInferenceSetupROQ(LALInferenceIFOData *IFOdata, ProcessParamsTable *comm
         
         for(unsigned int k = 0; k < n_samples; k++){
           
-          if(!isnan(creal(IFOdata[i].whiteFreqData->data->data[k + (unsigned int)(IFOdata[i].fLow/deltaF)]))){
-            GSL_SET_COMPLEX(&wd, creal(IFOdata[i].whiteFreqData->data->data[k + (unsigned int)(IFOdata[i].fLow/deltaF)]), cimag(IFOdata[i].whiteFreqData->data->data[k + (unsigned int)(IFOdata[i].fLow/deltaF)]));
+          if(!isnan(creal(IFOdata[i].freqData->data->data[k + (unsigned int)(IFOdata[i].fLow/deltaF)])) &&
+             IFOdata[i].oneSidedNoisePowerSpectrum->data->data[k + (unsigned int)(IFOdata[i].fLow/deltaF)] != 0.0 ){
+            //GSL_SET_COMPLEX(&wd, creal(IFOdata[i].whiteFreqData->data->data[k + (unsigned int)(IFOdata[i].fLow/deltaF)]), cimag(IFOdata[i].whiteFreqData->data->data[k + (unsigned int)(IFOdata[i].fLow/deltaF)]));
+            GSL_SET_COMPLEX(&wd, creal(IFOdata[i].freqData->data->data[k + (unsigned int)(IFOdata[i].fLow/deltaF)])/
+                                       IFOdata[i].oneSidedNoisePowerSpectrum->data->data[k + (unsigned int)(IFOdata[i].fLow/deltaF)],
+                            cimag(IFOdata[i].freqData->data->data[k + (unsigned int)(IFOdata[i].fLow/deltaF)])/
+                                  IFOdata[i].oneSidedNoisePowerSpectrum->data->data[k + (unsigned int)(IFOdata[i].fLow/deltaF)]);
           }else{
             GSL_SET_COMPLEX(&wd, 0.0, 0.0);
           }
@@ -2775,6 +2794,16 @@ void LALInferenceSetupROQ(LALInferenceIFOData *IFOdata, ProcessParamsTable *comm
       gsl_blas_zgemm (CblasTrans, CblasNoTrans, alpha, E_matrix, vandermonde_matrix, beta, IFOdata[i].roqData->weights);
       
       printf("Weights have been computed for %s\n",IFOdata[i].name);
+      
+      snprintf(filename, nameLength, "%s-ROQWeights.dat", IFOdata[i].name);
+      out = fopen(filename, "w");
+      for(unsigned int size2 = 0; size2 < IFOdata[i].roqData->weights->size2; size2++){
+        for(unsigned int size1 = 0; size1 < IFOdata[i].roqData->weights->size1; size1++){
+          fprintf(out,"(%g+%gj)\t",GSL_REAL(gsl_matrix_complex_get(IFOdata[i].roqData->weights,size1,size2)),GSL_IMAG(gsl_matrix_complex_get(IFOdata[i].roqData->weights,size1,size2)));
+        }
+        fprintf(out,"\n");
+      }
+      fclose(out);
       
       //printf("IFOdata[%d].whiteFreqData->epoch=%e\n",i,XLALGPSGetREAL8(&IFOdata[i].whiteFreqData->epoch));
       //printf("timeMin=%e\tendtime=%e\ttimeMax=%e\n",timeMin,endtime,timeMax);
