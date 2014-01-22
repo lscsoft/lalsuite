@@ -433,7 +433,7 @@ int XLALFindLMXBCrossCorrDiagMetric
   *g_ff= TSquaWeightedAve* 2 * SQUARE(LAL_PI);
   *g_aa= SinSquaWeightedAve* SQUARE(LAL_PI**f);
   *g_TT= SinSquaWeightedAve* SQUARE(2*SQUARE(LAL_PI)*(*f+0.5*fB)*(BinaryParams->asini)/(BinaryParams->period));
-  *f +=sqrt(mf/ *g_ff);
+
   
   return XLAL_SUCCESS;
 
