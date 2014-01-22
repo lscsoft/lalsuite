@@ -331,8 +331,9 @@ int XLALCalculatePulsarCrossCorrStatistic
     UINT8 sftInd1 = sftIndices->data[sftNum1].sftInd;
     UINT8 sftInd2 = sftIndices->data[sftNum2].sftInd;
     COMPLEX8 *dataArray1 = inputSFTs->data[detInd1]->data[sftInd1].data->data;
-    UINT4 lenDataArray1 = inputSFTs->data[detInd1]->data[sftInd1].data->length;
     COMPLEX8 *dataArray2 = inputSFTs->data[detInd2]->data[sftInd2].data->data;
+    UINT4 lenDataArray1 = inputSFTs->data[detInd1]->data[sftInd1].data->length;
+    UINT4 lenDataArray2 = inputSFTs->data[detInd2]->data[sftInd2].data->length;
     COMPLEX16 GalphaCC = curlyGAmp->data[alpha]
       * cexp( I * ( signalPhases->data[sftNum1]
 		   - signalPhases->data[sftNum2] )
@@ -342,14 +343,23 @@ int XLALCalculatePulsarCrossCorrStatistic
       baseCCSign = -1;
     }
 
+    UINT4 lowestBin1 = lowestBins->data[sftNum1];
+    XLAL_CHECK ( (lowestBin1 + numBins - 1 < lenDataArray1)
+		 && (lowestBin1 + numBins - 1 < kappaValues->length),
+		 XLAL_EINVAL,
+		 "Loop would run off end of array:\n lowestBin1=%d, numBins=%d, len(dataArray1)=%d, len(kappaValues)=%d\n",
+		 lowestBin1, numBins, lenDataArray1, kappaValues->length );
     for (UINT8 j=0; j < numBins; j++) {
-      UINT4 lowestBin = lowestBins->data[sftNum1];
-      XLAL_CHECK ( (lowestBin + j < lenDataArray1) && (lowestBin + j < kappaValues->length), XLAL_EINVAL,
-                   "Prevented memory violation: lowestBin=%d, j=%d, len(dataArray1)=%d, len(kappaValues)=%d\n", lowestBin, j, lenDataArray1, kappaValues->length );
-      COMPLEX16 data1 = dataArray1[lowestBin+j];
-      REAL8 sincFactor = gsl_sf_sinc(kappaValues->data[lowestBin+j]);
+      COMPLEX16 data1 = dataArray1[lowestBin1+j];
+      REAL8 sincFactor = gsl_sf_sinc(kappaValues->data[lowestBin1+j]);
       /* Normalized sinc, i.e., sin(pi*x)/(pi*x) */
       UINT8 ccSign = baseCCSign;
+      UINT4 lowestBin2 = lowestBins->data[sftNum2];
+      XLAL_CHECK ( (lowestBin2 + numBins - 1 < lenDataArray2)
+		   && (lowestBin2 + numBins - 1 < kappaValues->length),
+		   XLAL_EINVAL,
+		   "Loop would run off end of array:\n lowestBin2=%d, numBins=%d, len(dataArray2)=%d, len(kappaValues)=%d\n",
+		   lowestBin2, numBins, lenDataArray2, kappaValues->length );
       for (UINT8 k=0; k < numBins; k++) {
 	COMPLEX16 data2 = dataArray2[lowestBins->data[sftNum2]+k];
 	sincFactor *= gsl_sf_sinc(kappaValues->data[lowestBins->data[sftNum2]+k]);
