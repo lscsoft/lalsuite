@@ -327,10 +327,12 @@ double XLALSimInspiralGetFinalFreq(
             {
                 /* Check that spins are zero */
                 if( !checkSpinsZero(S1x, S1y, S1z, S2x, S2y, S2z) )
+                {
                     XLALPrintError("Non-zero spins were given, but this is a non-spinning approximant.\n");
                     XLAL_ERROR(XLAL_EINVAL);
                 spin1[0] = 0.; spin1[1] = 0.; spin1[2] = 0.;
                 spin2[0] = 0.; spin2[1] = 0.; spin2[2] = 0.;
+                }
             }
             else
             {
@@ -351,8 +353,10 @@ double XLALSimInspiralGetFinalFreq(
         case IMRPhenomA:
             /* Check that spins are zero */
             if( !checkSpinsZero(S1x, S1y, S1z, S2x, S2y, S2z) )
+            {
                 XLALPrintError("Non-zero spins were given, but this is a non-spinning approximant.\n");
                 XLAL_ERROR(XLAL_EINVAL);
+            }
             freq = XLALSimIMRPhenomAGetFinalFreq(m1, m2);
             break;
 
