@@ -31,7 +31,7 @@ extern "C" {
 
 #ifndef CMDLINE_PARSER_VERSION
 /** @brief the program version */
-#define CMDLINE_PARSER_VERSION "1.1.31"
+#define CMDLINE_PARSER_VERSION "1.1.32"
 #endif
 
 /** @brief Where the command line options are stored */
@@ -255,6 +255,9 @@ struct gengetopt_args_info
   char * printSignalData_arg;	/**< @brief Print f0 and h0 per SFT of the signal, used only with --injectionSources option (default='./signal.dat').  */
   char * printSignalData_orig;	/**< @brief Print f0 and h0 per SFT of the signal, used only with --injectionSources option original value given at command line.  */
   const char *printSignalData_help; /**< @brief Print f0 and h0 per SFT of the signal, used only with --injectionSources option help description.  */
+  char * printMarginalizedSignalData_arg;	/**< @brief Print f0 and h0 per SFT of the signal, used only with --injectionSources option (default='./signal.dat').  */
+  char * printMarginalizedSignalData_orig;	/**< @brief Print f0 and h0 per SFT of the signal, used only with --injectionSources option original value given at command line.  */
+  const char *printMarginalizedSignalData_help; /**< @brief Print f0 and h0 per SFT of the signal, used only with --injectionSources option help description.  */
   int randSeed_arg;	/**< @brief Random seed value.  */
   char * randSeed_orig;	/**< @brief Random seed value original value given at command line.  */
   const char *randSeed_help; /**< @brief Random seed value help description.  */
@@ -342,6 +345,7 @@ struct gengetopt_args_info
   unsigned int printData_given ;	/**< @brief Whether printData was given.  */
   unsigned int printUninitialized_given ;	/**< @brief Whether printUninitialized was given.  */
   unsigned int printSignalData_given ;	/**< @brief Whether printSignalData was given.  */
+  unsigned int printMarginalizedSignalData_given ;	/**< @brief Whether printMarginalizedSignalData was given.  */
   unsigned int randSeed_given ;	/**< @brief Whether randSeed was given.  */
   unsigned int chooseSeed_given ;	/**< @brief Whether chooseSeed was given.  */
 

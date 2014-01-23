@@ -313,7 +313,7 @@ int main(int argc, char *argv[])
    if (inputParams->signalOnly) args_info.avesqrtSh_arg = 1.0;
 
    //TF normalization
-    ffdata->tfnormalization = 2.0/inputParams->Tcoh/(args_info.avesqrtSh_arg*args_info.avesqrtSh_arg);
+   ffdata->tfnormalization = 2.0/inputParams->Tcoh/(args_info.avesqrtSh_arg*args_info.avesqrtSh_arg);
 
    //Read in the T-F data from SFTs
    REAL4Vector *tfdata = NULL;
@@ -327,87 +327,34 @@ int main(int argc, char *argv[])
       }
       fprintf(LOG, "done\n");
       fprintf(stderr, "done\n");
-   } else if (args_info.injectionSources_given && (args_info.sftDir_given || args_info.sftFile_given)) {
-      //Make a catalog from the inputParams
-      SFTCatalog *catalog = findSFTdata(inputParams);
-      if (catalog==NULL) {
-         fprintf(stderr, "%s: findSFTdata() failed.\n", __func__);
-         XLAL_ERROR(XLAL_EFUNC);
-      }
-
-      //Get the MultiSFTCatalogView
-      MultiSFTCatalogView *catalogView = XLALGetMultiSFTCatalogView(catalog);
-      if (catalogView==NULL) {
-         fprintf(stderr, "%s: XLALGetMultiSFTCatalogView() failed.\n", __func__);
-         XLAL_ERROR(XLAL_EFUNC);
-      }
-
-      //If Gaussian noise with SFT timestamps is not selected, then extract the SFT band from the catalog
-      MultiSFTVector *sftvector = NULL;
+   } else {
       MultiLIGOTimeGPSVector *multiTimestamps = NULL;
-      if (inputParams->markBadSFTs!=0 && inputParams->signalOnly==0) {
-         //Extract the band
-         sftvector = extractSFTband(inputParams, catalog);
-         if (sftvector==NULL) {
-            fprintf(stderr, "%s: extractSFTband() failed.\n", __func__);
-            XLAL_ERROR(XLAL_EFUNC);
-         }
-
-         //This section is for when we wanted to get rid of the non-Guassian SFTs
-         tfdata = convertSFTdataToPowers(sftvector, inputParams, ffdata->tfnormalization);
-         if (tfdata==NULL) {
-            fprintf(stderr, "%s: convertSFTdataToPowers() failed.\n", __func__);
-            XLAL_ERROR(XLAL_EFUNC);
-         }
-         INT4Vector *removeTheseSFTs = markBadSFTs(tfdata, inputParams);
-         if (removeTheseSFTs==NULL) {
-            fprintf(stderr, "%s: markBadSFTs() failed.\n", __func__);
-            XLAL_ERROR(XLAL_EFUNC);
-         }
-         INT4 numberofsfts = 0, sftlength = tfdata->length/ffdata->numffts;
-         for (ii=0; ii<(INT4)removeTheseSFTs->length; ii++) if (removeTheseSFTs->data[ii]==0 && tfdata->data[ii*sftlength]!=0.0) numberofsfts++;
-         multiTimestamps = XLALCalloc(1, sizeof(MultiLIGOTimeGPSVector));
+      if (args_info.sftDir_given || args_info.sftFile_given) {
+         multiTimestamps = getMultiTimeStampsFromSFTs(inputParams);
          if (multiTimestamps==NULL) {
-            fprintf(stderr, "%s: XLALCalloc() failed.\n", __func__);
-            XLAL_ERROR(XLAL_ENOMEM);
-         }
-         multiTimestamps->data = XLALCalloc(1, sizeof(multiTimestamps->data[0]));
-         if (multiTimestamps->data==NULL) {
-            fprintf(stderr, "%s: XLALCalloc() failed.\n", __func__);
-            XLAL_ERROR(XLAL_ENOMEM);
-         }
-         multiTimestamps->length = 1;
-         multiTimestamps->data[0] = XLALCreateTimestampVector(numberofsfts);
-         if (multiTimestamps->data[0]==NULL) {
-            fprintf(stderr, "%s: XLALCreateTimestampVector() failed.\n", __func__);
+            fprintf(stderr, "%s: getMultiTimeStampsFromSFTs() failed.\n", __func__);
             XLAL_ERROR(XLAL_EFUNC);
          }
-         jj = 0;
-         for (ii=0; ii<(INT4)removeTheseSFTs->length; ii++) {
-            if (removeTheseSFTs->data[ii]==0 && tfdata->data[ii*sftlength]!=0.0) {
-               XLALGPSSetREAL8(&(multiTimestamps->data[0]->data[jj]), inputParams->searchstarttime+ii*(inputParams->Tcoh-inputParams->SFToverlap));
-               jj++;
-            }
+      } else if (args_info.timestampsFile_given) {
+         multiTimestamps = getMultiTimeStampsFromTimeStampsFile(args_info.timestampsFile_arg, inputParams);
+         if (multiTimestamps==NULL) {
+            fprintf(stderr, "%s: getMultiTimeStampsFromTimeStampsFile() failed.\n", __func__);
+            XLAL_ERROR(XLAL_EFUNC);
          }
-         multiTimestamps->data[0]->deltaT = inputParams->Tcoh;
-         XLALDestroyINT4Vector(removeTheseSFTs);
-         XLALDestroyREAL4Vector(tfdata);
-         XLALDestroyMultiSFTVector(sftvector);
-         sftvector = NULL;
-         inputParams->markBadSFTs = 0;
+      } else if (args_info.segmentFile_given) {
+         multiTimestamps = getMultiTimeStampsFromSegmentsFile(args_info.segmentFile_arg, inputParams);
+         if (multiTimestamps==NULL) {
+            fprintf(stderr, "%s: getMultiTimeStampsFromSegmentsFile() failed.\n", __func__);
+            XLAL_ERROR(XLAL_EFUNC);
+         }
       } else {
-         multiTimestamps = XLALTimestampsFromMultiSFTCatalogView(catalogView);
+         LIGOTimeGPS tStart;
+         XLALGPSSetREAL8 ( &tStart, inputParams->searchstarttime );
+         multiTimestamps = XLALMakeMultiTimestamps(tStart, inputParams->Tobs, inputParams->Tcoh, inputParams->SFToverlap, 1);
          if (multiTimestamps==NULL) {
-            fprintf(stderr, "%s: XLALTimestampsFromMultiSFTCatalogView() failed.\n", __func__);
+            fprintf(stderr, "%s: XLALMakeMultiTimestamps() failed.\n", __func__);
             XLAL_ERROR(XLAL_EFUNC);
          }
-      }
-
-      //Get the injection sources
-      PulsarParamsVector *injectionSources =  XLALPulsarParamsFromUserInput ( args_info.injectionSources_arg );
-      if (injectionSources==NULL) {
-         fprintf(stderr, "%s: XLALPulsarParamsFromUserInput() failed.\n", __func__);
-         XLAL_ERROR(XLAL_EFUNC);
       }
 
       //Setup the MFD data parameters
@@ -422,379 +369,157 @@ int main(int argc, char *argv[])
       DataParams.SFTWindowType = "Hann";
       DataParams.SFTWindowBeta = 0;
 
-      //Make the signal SFTs
-      MultiSFTVector *signalSFTs = NULL;
-      if (XLALCWMakeFakeMultiData(&signalSFTs, NULL, injectionSources, &DataParams, edat) != 0) {   //Make the signal SFTs
-         fprintf(stderr, "%s: XLALCWMakeFakeMultiData() failed.\n", __func__);
-         XLAL_ERROR(XLAL_EFUNC);
-      }
-
-      //If we specified to use Gaussian SFTs with gaps the same as source SFTs, then create noise SFTs here
-      if (args_info.gaussNoiseWithSFTgaps_given) {
-         DataParams.detInfo.sqrtSn[0] = args_info.avesqrtSh_arg;
-         if (XLALCWMakeFakeMultiData(&sftvector, NULL, NULL, &DataParams, edat) != 0) {
-            fprintf(stderr, "%s: XLALCWMakeFakeMultiData() failed.\n", __func__);
+      MultiSFTVector *signalSFTs = NULL, *sftvector = NULL;
+      PulsarParamsVector *injectionSources = NULL;
+      if (args_info.injectionSources_given) {
+         injectionSources =  XLALPulsarParamsFromUserInput ( args_info.injectionSources_arg );
+         if (injectionSources==NULL) {
+            fprintf(stderr, "%s: XLALPulsarParamsFromUserInput() failed.\n", __func__);
             XLAL_ERROR(XLAL_EFUNC);
          }
-      } else if (inputParams->signalOnly==0) {
-         SFTConstraints constraints = empty_constraints;
-         constraints.detector = inputParams->det[0].frDetector.prefix;
-         constraints.timestamps = multiTimestamps->data[0];
-         catalog = XLALSFTdataFind(sft_dir_file, &constraints);
-         if (catalog==NULL) {
-            fprintf(stderr,"%s: XLALSFTdataFind() failed.\n", __func__);
+         if (!inputParams->signalOnly) {
+            if (XLALCWMakeFakeMultiData(&signalSFTs, NULL, injectionSources, &DataParams, edat) != 0) {   //Make the signal SFTs
+               fprintf(stderr, "%s: XLALCWMakeFakeMultiData() failed.\n", __func__);
+               XLAL_ERROR(XLAL_EFUNC);
+            }
+         } else {
+            if (XLALCWMakeFakeMultiData(&sftvector, NULL, injectionSources, &DataParams, edat) != 0) {   //Make the signal SFTs
+               fprintf(stderr, "%s: XLALCWMakeFakeMultiData() failed.\n", __func__);
+               XLAL_ERROR(XLAL_EFUNC);
+            }
+         }
+      } // if there are injections
+
+      if (!inputParams->signalOnly) {
+         if (args_info.gaussNoiseWithSFTgaps_given || args_info.timestampsFile_given || args_info.segmentFile_given || !(args_info.sftDir_given || args_info.sftFile_given)) {
+            DataParams.detInfo.sqrtSn[0] = args_info.avesqrtSh_arg;
+            if (XLALCWMakeFakeMultiData(&sftvector, NULL, NULL, &DataParams, edat) != 0) {
+               fprintf(stderr, "%s: XLALCWMakeFakeMultiData() failed.\n", __func__);
+               XLAL_ERROR(XLAL_EFUNC);
+            }
+         } else {
+            SFTConstraints constraints = empty_constraints;
+            constraints.detector = inputParams->det[0].frDetector.prefix;
+            constraints.timestamps = multiTimestamps->data[0];
+            SFTCatalog *catalog = XLALSFTdataFind(sft_dir_file, &constraints);
+            if (catalog==NULL) {
+               fprintf(stderr,"%s: XLALSFTdataFind() failed.\n", __func__);
+               XLAL_ERROR(XLAL_EFUNC);
+            }
+            sftvector = extractSFTband(inputParams, catalog);
+            if (sftvector==NULL) {
+               fprintf(stderr, "%s: extractSFTband() failed.\n", __func__);
+               XLAL_ERROR(XLAL_EFUNC);
+            }
+            XLALDestroySFTCatalog(catalog);
+         }
+      } // if not signal only SFTs
+
+      XLALDestroyMultiTimestamps(multiTimestamps);
+
+      if (args_info.injectionSources_given && !inputParams->signalOnly) {
+         //Add the SFT vectors together
+         if (XLALMultiSFTVectorAdd(sftvector, signalSFTs) != 0) {
+            fprintf(stderr, "%s: XLALMultiSFTVectorAdd() failed.\n", __func__);
             XLAL_ERROR(XLAL_EFUNC);
          }
-         sftvector = extractSFTband(inputParams, catalog);
-         if (sftvector==NULL) {
-            fprintf(stderr, "%s: extractSFTband() failed.\n", __func__);
-            XLAL_ERROR(XLAL_EFUNC);
-         }
+         XLALDestroyMultiSFTVector(signalSFTs);
       }
 
-      //Add the SFT vectors together
-      if (XLALMultiSFTVectorAdd(sftvector, signalSFTs) != 0) {
-         fprintf(stderr, "%s: XLALMultiSFTVectorAdd() failed.\n", __func__);
-         XLAL_ERROR(XLAL_EFUNC);
-      }
-
-      //Convert added SFTs to powers
+      //Convert SFTs to powers
       tfdata = convertSFTdataToPowers(sftvector, inputParams, ffdata->tfnormalization);
       if (tfdata==NULL) {
          fprintf(stderr, "%s: convertSFTdataToPowers() failed.\n", __func__);
          XLAL_ERROR(XLAL_EFUNC);
       }
+      XLALDestroyMultiSFTVector(sftvector);
 
       //If printing the data outputs, then do that here
-      if (args_info.printSignalData_given) {
+      if ((args_info.printSignalData_given || args_info.printMarginalizedSignalData_given) && args_info.injectionSources_given) {
          DataParams.detInfo.sqrtSn[0] = 0.0;
-         FILE *SIGNALOUT = fopen(args_info.printSignalData_arg, "w");
          PulsarParamsVector *oneSignal = XLALCreatePulsarParamsVector(1);
          if (oneSignal==NULL) {
             fprintf(stderr, "%s: XLALCWMakeFakeMultiData() failed.\n", __func__);
             XLAL_ERROR(XLAL_EFUNC);
          }
+
+         FILE *SIGNALOUT = NULL, *MARGINALIZEDSIGNALOUT = NULL;
+         if (args_info.printSignalData_given) SIGNALOUT = fopen(args_info.printSignalData_arg, "w");
+         if (args_info.printMarginalizedSignalData_given) MARGINALIZEDSIGNALOUT = fopen(args_info.printMarginalizedSignalData_arg, "w");
+
          for (ii=0; ii<(INT4)injectionSources->length; ii++) {
             memcpy(oneSignal->data, &(injectionSources->data[ii]), sizeof(injectionSources->data[0]));
-            MultiSFTVector *oneSignalSFTs = NULL;
-            if (XLALCWMakeFakeMultiData(&oneSignalSFTs, NULL, oneSignal, &DataParams, edat) != 0) {
-               fprintf(stderr, "%s: XLALCWMakeFakeMultiData() failed.\n", __func__);
-               XLAL_ERROR(XLAL_EFUNC);
-            }
-            REAL8Vector *oneSFTpowers = XLALCreateREAL8Vector(oneSignalSFTs->data[0]->data->data->length);
+            REAL8Vector *oneSFTpowers = XLALCreateREAL8Vector(sftvector->data[0]->data->data->length);
             if (oneSFTpowers==NULL) {
-               fprintf(stderr, "%s: XLALCreateREAL8Vector(%d) failed.\n", __func__, oneSignalSFTs->data[0]->data->data->length);
+               fprintf(stderr, "%s: XLALCreateREAL8Vector(%d) failed.\n", __func__, sftvector->data[0]->data->data->length);
                XLAL_ERROR(XLAL_EFUNC);
             }
-            for (jj=0; jj<(INT4)oneSignalSFTs->data[0]->length; jj++) {
-               INT4 kk = 0;
-               SFTtype *sft = &(oneSignalSFTs->data[0]->data[jj]);
-               for (kk=0; kk<(INT4)oneSFTpowers->length; kk++) {
-                  oneSFTpowers->data[kk] = (2.0*(creal(sft->data->data[kk])*creal(sft->data->data[kk]) + cimag(sft->data->data[kk])*cimag(sft->data->data[kk]))/inputParams->Tcoh);
+            if (args_info.printSignalData_given) {
+               MultiSFTVector *oneSignalSFTs = NULL;
+               if (XLALCWMakeFakeMultiData(&oneSignalSFTs, NULL, oneSignal, &DataParams, edat) != 0) {
+                  fprintf(stderr, "%s: XLALCWMakeFakeMultiData() failed.\n", __func__);
+                  XLAL_ERROR(XLAL_EFUNC);
                }
-               INT4 indexValOfMax = max_index_double(oneSFTpowers);
-               fprintf(SIGNALOUT,"%.9g %.9g\n", DataParams.fMin+indexValOfMax/inputParams->Tcoh, oneSFTpowers->data[indexValOfMax]);
+               INT4 kk = 0;
+               for (kk=0; kk<(INT4)oneSignalSFTs->data[0]->length; kk++) {
+                  INT4 ll = 0;
+                  SFTtype *sft = &(oneSignalSFTs->data[0]->data[kk]);
+                  for (ll=0; ll<(INT4)oneSFTpowers->length; ll++) {
+                     oneSFTpowers->data[ll] = (2.0*(creal(sft->data->data[ll])*creal(sft->data->data[ll]) + cimag(sft->data->data[ll])*cimag(sft->data->data[ll]))/inputParams->Tcoh);
+                  }
+                  INT4 indexValOfMax = max_index_double(oneSFTpowers);
+                  fprintf(SIGNALOUT,"%.9g %.9g\n", DataParams.fMin+indexValOfMax/inputParams->Tcoh, oneSFTpowers->data[indexValOfMax]);
+               }
+               XLALDestroyMultiSFTVector(oneSignalSFTs);
+
             }
+            if (args_info.printMarginalizedSignalData_given) {
+               REAL8Vector *marginalizedSignalData = XLALCreateREAL8Vector(oneSFTpowers->length);
+               if (marginalizedSignalData==NULL) {
+                  fprintf(stderr, "%s: XLALCreateREAL8Vector(%d) failed.\n", __func__, oneSFTpowers->length);
+                  XLAL_ERROR(XLAL_EFUNC);
+               }
+               memset(marginalizedSignalData->data, 0, sizeof(REAL8)*marginalizedSignalData->length);
+               for (jj=0; jj<300; jj++) {
+                  oneSignal->data[0].Amp.cosi = 2.0*gsl_rng_uniform(inputParams->rng) - 1.0;
+                  oneSignal->data[0].Amp.psi = LAL_TWOPI*gsl_rng_uniform(inputParams->rng);
+                  oneSignal->data[0].Amp.phi0 = LAL_TWOPI*gsl_rng_uniform(inputParams->rng);
+                  oneSignal->data[0].Doppler.orbit->argp = LAL_TWOPI*gsl_rng_uniform(inputParams->rng);
+                  MultiSFTVector *oneSignalSFTs = NULL;
+                  if (XLALCWMakeFakeMultiData(&oneSignalSFTs, NULL, oneSignal, &DataParams, edat) != 0) {
+                     fprintf(stderr, "%s: XLALCWMakeFakeMultiData() failed.\n", __func__);
+                     XLAL_ERROR(XLAL_EFUNC);
+                  }
+
+                  INT4 kk = 0;
+                  for (kk=0; kk<(INT4)oneSignalSFTs->data[0]->length; kk++) {
+                     INT4 ll = 0;
+                     SFTtype *sft = &(oneSignalSFTs->data[0]->data[kk]);
+                     for (ll=0; ll<(INT4)oneSFTpowers->length; ll++) {
+                        oneSFTpowers->data[ll] = (2.0*(creal(sft->data->data[ll])*creal(sft->data->data[ll]) + cimag(sft->data->data[ll])*cimag(sft->data->data[ll]))/inputParams->Tcoh);
+                     }
+                     INT4 indexValOfMax = max_index_double(oneSFTpowers);
+                     marginalizedSignalData->data[indexValOfMax] += oneSFTpowers->data[indexValOfMax];
+                  }
+                  XLALDestroyMultiSFTVector(oneSignalSFTs);
+               } //Loop over trials
+               for (jj=0; jj<(INT4)marginalizedSignalData->length; jj++) {
+                  marginalizedSignalData->data[jj] /= 300.0*sftvector->data[0]->length;
+                  fprintf(MARGINALIZEDSIGNALOUT,"%.9g %.9g\n", DataParams.fMin+jj/inputParams->Tcoh, marginalizedSignalData->data[jj]);
+               }
+               XLALDestroyREAL8Vector(marginalizedSignalData);
+            } //If printing marginalized data
             XLALDestroyREAL8Vector(oneSFTpowers);
-            XLALDestroyMultiSFTVector(oneSignalSFTs);
-         }
+         } //loop over the number of injected sources
          memset(oneSignal->data, 0, sizeof(injectionSources->data[0]));
          XLALDestroyPulsarParamsVector(oneSignal);
-         fclose(SIGNALOUT);
-      }
+         if (args_info.printSignalData_given) fclose(SIGNALOUT);
+         if (args_info.printMarginalizedSignalData_given) fclose(MARGINALIZEDSIGNALOUT);
+      } //end printing data
 
-      XLALDestroyPulsarParamsVector(injectionSources);
-      XLALDestroyMultiSFTCatalogView(catalogView);
-      XLALDestroySFTCatalog(catalog);
-      XLALDestroyMultiTimestamps(multiTimestamps);
-      XLALDestroyMultiSFTVector(signalSFTs);
-      XLALDestroyMultiSFTVector(sftvector);
-   } else if (args_info.timestampsFile_given || args_info.segmentFile_given) {
-      if (inputParams->signalOnly) args_info.avesqrtSh_arg = 0.0;   //set the noise values to zero for signal-only SFTs
+      if (args_info.injectionSources_given) XLALDestroyPulsarParamsVector(injectionSources);
 
-      MultiLIGOTimeGPSVector *multiTimestamps = NULL;
-      if (args_info.timestampsFile_given) {
-         //Create a stringVector for the timestamps files
-         LALStringVector *timestampFiles = XLALCreateStringVector(args_info.timestampsFile_arg, NULL);
-         if (timestampFiles==NULL) {
-            fprintf(stderr, "%s: XLALCreateStringVector() failed.\n", __func__);
-            XLAL_ERROR(XLAL_EFUNC);
-         }
-
-         //Read the timestamps files
-         multiTimestamps = XLALReadMultiTimestampsFiles(timestampFiles);
-         if (multiTimestamps==NULL) {
-            fprintf(stderr, "%s: XLALReadMultiTimestampsFiles() failed.\n", __func__);
-            XLAL_ERROR(XLAL_EFUNC);
-         }
-         XLALDestroyStringVector(timestampFiles);
-
-         //Hard-coded same coherence time as input
-         for (ii=0; ii<(INT4)multiTimestamps->length; ii++) multiTimestamps->data[ii]->deltaT = inputParams->Tcoh;
-      } else {
-         LIGOTimeGPSVector *timestamps = XLALTimestampsFromSegmentFile( args_info.segmentFile_arg, inputParams->Tcoh, inputParams->SFToverlap, 0, 1);
-         if (timestamps==NULL) {
-            fprintf(stderr, "%s: XLALTimestampsFromSegmentFile() failed.\n", __func__);
-            XLAL_ERROR(XLAL_EFUNC);
-         }
-         multiTimestamps = XLALCalloc(1, sizeof(MultiLIGOTimeGPSVector));
-         if (multiTimestamps==NULL) {
-            fprintf(stderr, "%s: XLALCalloc() failed.\n", __func__);
-            XLAL_ERROR(XLAL_ENOMEM);
-         }
-         multiTimestamps->data = XLALCalloc(1, sizeof(multiTimestamps->data[0]));
-         if (multiTimestamps->data==NULL) {
-            fprintf(stderr, "%s: XLALCalloc() failed.\n", __func__);
-            XLAL_ERROR(XLAL_ENOMEM);
-         }
-         multiTimestamps->length = 1;
-         multiTimestamps->data[0] = timestamps;
-      }
-
-      //If injection sources file was provided then read them from the input, otherwise create Gaussian noise SFTs
-      PulsarParamsVector *injectionSources = NULL;
-      if (args_info.injectionSources_given) {
-         injectionSources = XLALPulsarParamsFromUserInput ( args_info.injectionSources_arg );
-         if (injectionSources==NULL) {
-            fprintf(stderr, "%s: XLALPulsarParamsFromUserInput() failed.\n", __func__);
-            XLAL_ERROR(XLAL_EFUNC);
-         }
-      }
-
-      //Setup the MFD data parameters
-      CWMFDataParams DataParams;
-      DataParams.fMin = round(inputParams->fmin*inputParams->Tcoh - inputParams->dfmax*inputParams->Tcoh - 0.5*(inputParams->blksize-1) - (REAL8)(inputParams->maxbinshift) - 6.0)/inputParams->Tcoh;
-      DataParams.Band = round(inputParams->fspan*inputParams->Tcoh + 2.0*inputParams->dfmax*inputParams->Tcoh + (inputParams->blksize-1) + (REAL8)(2.0*inputParams->maxbinshift) + 12.0)/inputParams->Tcoh;
-      DataParams.detInfo.length = 1;
-      DataParams.detInfo.sites[0] = *(inputParams->det);
-      DataParams.detInfo.sqrtSn[0] = args_info.avesqrtSh_arg;
-      DataParams.multiTimestamps = *multiTimestamps;
-      DataParams.randSeed = args_info.injRandSeed_arg;
-      DataParams.SFTWindowType = "Hann";
-      DataParams.SFTWindowBeta = 0;
-
-      //Make the fake data
-      MultiSFTVector *sftvector = NULL;
-      if (XLALCWMakeFakeMultiData(&sftvector, NULL, injectionSources, &DataParams, edat) != 0) {
-         fprintf(stderr, "%s: XLALCWMakeFakeMultiData() failed.\n", __func__);
-         XLAL_ERROR(XLAL_EFUNC);
-      }
-
-      //If there were signal-only SFTs, convert them to powers with normaliztion 1, otherwise, use the right normalization
-      if (inputParams->signalOnly) tfdata = convertSFTdataToPowers(sftvector, inputParams, 1.0);
-      else tfdata = convertSFTdataToPowers(sftvector, inputParams, ffdata->tfnormalization);
-      if (tfdata==NULL) {
-         fprintf(stderr, "%s: convertSFTdataToPowers() failed.\n", __func__);
-         XLAL_ERROR(XLAL_EFUNC);
-      }
-
-      //If printing the data outputs, then do that here
-      if (args_info.printSignalData_given) {
-         DataParams.detInfo.sqrtSn[0] = 0.0;
-         FILE *SIGNALOUT = fopen(args_info.printSignalData_arg, "w");
-         PulsarParamsVector *oneSignal = XLALCreatePulsarParamsVector(1);
-         if (oneSignal==NULL) {
-            fprintf(stderr, "%s: XLALCWMakeFakeMultiData() failed.\n", __func__);
-            XLAL_ERROR(XLAL_EFUNC);
-         }
-         for (ii=0; ii<(INT4)injectionSources->length; ii++) {
-            memcpy(oneSignal->data, &(injectionSources->data[ii]), sizeof(injectionSources->data[0]));
-            MultiSFTVector *oneSignalSFTs = NULL;
-            if (XLALCWMakeFakeMultiData(&oneSignalSFTs, NULL, oneSignal, &DataParams, edat) != 0) {
-               fprintf(stderr, "%s: XLALCWMakeFakeMultiData() failed.\n", __func__);
-               XLAL_ERROR(XLAL_EFUNC);
-            }
-            REAL8Vector *oneSFTpowers = XLALCreateREAL8Vector(oneSignalSFTs->data[0]->data->data->length);
-            if (oneSFTpowers==NULL) {
-               fprintf(stderr, "%s: XLALCreateREAL8Vector(%d) failed.\n", __func__, oneSignalSFTs->data[0]->data->data->length);
-               XLAL_ERROR(XLAL_EFUNC);
-            }
-            for (jj=0; jj<(INT4)oneSignalSFTs->data[0]->length; jj++) {
-               INT4 kk = 0;
-               SFTtype *sft = &(oneSignalSFTs->data[0]->data[jj]);
-               for (kk=0; kk<(INT4)oneSFTpowers->length; kk++) {
-                  oneSFTpowers->data[kk] = (2.0*(creal(sft->data->data[kk])*creal(sft->data->data[kk]) + cimag(sft->data->data[kk])*cimag(sft->data->data[kk]))/inputParams->Tcoh);
-               }
-               INT4 indexValOfMax = max_index_double(oneSFTpowers);
-               fprintf(SIGNALOUT,"%.9g %.9g\n", DataParams.fMin+indexValOfMax/inputParams->Tcoh, oneSFTpowers->data[indexValOfMax]);
-            }
-            XLALDestroyREAL8Vector(oneSFTpowers);
-            XLALDestroyMultiSFTVector(oneSignalSFTs);
-         }
-         memset(oneSignal->data, 0, sizeof(injectionSources->data[0]));
-         XLALDestroyPulsarParamsVector(oneSignal);
-         fclose(SIGNALOUT);
-      }
-
-      XLALDestroyMultiTimestamps(multiTimestamps);
-      XLALDestroyPulsarParamsVector(injectionSources);
-      XLALDestroyMultiSFTVector(sftvector);
-      if (inputParams->signalOnly) args_info.avesqrtSh_arg = 1.0;
-   } else {
-      if (inputParams->signalOnly) args_info.avesqrtSh_arg = 0.0;
-
-      //set the start time in LIGO GPS format
-      LIGOTimeGPS tStart;
-      XLALGPSSetREAL8 ( &tStart, inputParams->searchstarttime );
-
-      //If not using Gaussian noise SFTs from SFT timestamps, then set up the timestamps
-      MultiLIGOTimeGPSVector *multiTimestamps = NULL;
-      if (!args_info.gaussNoiseWithSFTgaps_given) {
-         multiTimestamps = XLALMakeMultiTimestamps(tStart, inputParams->Tobs, inputParams->Tcoh, inputParams->SFToverlap, 1);
-         if (multiTimestamps==NULL) {
-            fprintf(stderr, "%s: XLALMakeMultiTimestamps() failed.\n", __func__);
-            XLAL_ERROR(XLAL_EFUNC);
-         }
-      } else {
-         //Get the SFT catalog
-         SFTCatalog *catalog = findSFTdata(inputParams);
-         if (catalog==NULL) {
-            fprintf(stderr, "%s: findSFTdata() failed.\n", __func__);
-            XLAL_ERROR(XLAL_EFUNC);
-         }
-
-         //If removing the non-Gaussian SFTs, then we have to read in the SFTs, otherwise get the timestamps from the catalog
-         if (inputParams->markBadSFTs!=0 && inputParams->signalOnly==0) {
-            MultiSFTVector *sftvector = extractSFTband(inputParams, catalog);
-            if (sftvector==NULL) {
-               fprintf(stderr, "%s: extractSFTband() failed.\n", __func__);
-               XLAL_ERROR(XLAL_EFUNC);
-            }
-            tfdata = convertSFTdataToPowers(sftvector, inputParams, ffdata->tfnormalization);
-            if (tfdata==NULL) {
-               fprintf(stderr, "%s: convertSFTdataToPowers() failed.\n", __func__);
-               XLAL_ERROR(XLAL_EFUNC);
-            }
-            INT4Vector *removeTheseSFTs = markBadSFTs(tfdata, inputParams);
-            if (removeTheseSFTs==NULL) {
-               fprintf(stderr, "%s: markBadSFTs() failed.\n", __func__);
-               XLAL_ERROR(XLAL_EFUNC);
-            }
-            INT4 numberofsfts = 0, sftlength = tfdata->length/ffdata->numffts;
-            for (ii=0; ii<(INT4)removeTheseSFTs->length; ii++) if (removeTheseSFTs->data[ii]==0 && tfdata->data[ii*sftlength]!=0.0) numberofsfts++;
-            multiTimestamps = XLALCalloc(1, sizeof(MultiLIGOTimeGPSVector));
-            if (multiTimestamps==NULL) {
-               fprintf(stderr, "%s: XLALCalloc() failed.\n", __func__);
-               XLAL_ERROR(XLAL_ENOMEM);
-            }
-            multiTimestamps->data = XLALCalloc(1, sizeof(multiTimestamps->data[0]));
-            if (multiTimestamps->data==NULL) {
-               fprintf(stderr, "%s: XLALCalloc() failed.\n", __func__);
-               XLAL_ERROR(XLAL_ENOMEM);
-            }
-            multiTimestamps->length = 1;
-            multiTimestamps->data[0] = XLALCreateTimestampVector(numberofsfts);
-            if (multiTimestamps->data[0]==NULL) {
-               fprintf(stderr, "%s: XLALCreateTimestampVector() failed.\n", __func__);
-               XLAL_ERROR(XLAL_EFUNC);
-            }
-            jj = 0;
-            for (ii=0; ii<(INT4)removeTheseSFTs->length; ii++) {
-               if (removeTheseSFTs->data[ii]==0 && tfdata->data[ii*sftlength]!=0.0) {
-                  XLALGPSSetREAL8(&(multiTimestamps->data[0]->data[jj]), inputParams->searchstarttime+ii*(inputParams->Tcoh-inputParams->SFToverlap));
-                  jj++;
-               }
-            }
-            multiTimestamps->data[0]->deltaT = inputParams->Tcoh;
-            XLALDestroyINT4Vector(removeTheseSFTs);
-            XLALDestroyREAL4Vector(tfdata);
-            XLALDestroyMultiSFTVector(sftvector);
-            inputParams->markBadSFTs = 0;
-         } else {
-            MultiSFTCatalogView *catalogView = XLALGetMultiSFTCatalogView(catalog);
-            if (catalogView==NULL) {
-               fprintf(stderr, "%s: XLALGetMultiSFTCatalogView() failed.\n", __func__);
-               XLAL_ERROR(XLAL_EFUNC);
-            }
-            multiTimestamps = XLALTimestampsFromMultiSFTCatalogView(catalogView);
-            if (multiTimestamps==NULL) {
-               fprintf(stderr, "%s: XLALTimestampsFromMultiSFTCatalogView() failed.\n", __func__);
-               XLAL_ERROR(XLAL_EFUNC);
-            }
-            XLALDestroyMultiSFTCatalogView(catalogView);
-         }
-         XLALDestroySFTCatalog(catalog);
-      }
-
-      //If an injection provided, read it in, otherwise create Gaussian noise SFTs
-      PulsarParamsVector *injectionSources = NULL;
-      if (args_info.injectionSources_given) {
-         injectionSources = XLALPulsarParamsFromUserInput ( args_info.injectionSources_arg );
-         if (injectionSources==NULL) {
-            fprintf(stderr, "%s: XLALPulsarParamsFromUserInput() failed.\n", __func__);
-            XLAL_ERROR(XLAL_EFUNC);
-         }
-      }
-
-      //Set up the data parameters
-      CWMFDataParams DataParams;
-      DataParams.fMin = round(inputParams->fmin*inputParams->Tcoh - inputParams->dfmax*inputParams->Tcoh - 0.5*(inputParams->blksize-1) - (REAL8)(inputParams->maxbinshift) - 6.0)/inputParams->Tcoh;
-      DataParams.Band = round(inputParams->fspan*inputParams->Tcoh + 2.0*inputParams->dfmax*inputParams->Tcoh + (inputParams->blksize-1) + (REAL8)(2.0*inputParams->maxbinshift) + 12.0)/inputParams->Tcoh;
-      DataParams.detInfo.length = 1;
-      DataParams.detInfo.sites[0] = *(inputParams->det);
-      DataParams.detInfo.sqrtSn[0] = args_info.avesqrtSh_arg;
-      DataParams.multiTimestamps = *multiTimestamps;
-      DataParams.randSeed = args_info.injRandSeed_arg;
-      DataParams.SFTWindowType = "Hann";
-      DataParams.SFTWindowBeta = 0;
-
-      //Create the SFTs
-      MultiSFTVector *sftvector = NULL;
-      if (XLALCWMakeFakeMultiData(&sftvector, NULL, injectionSources, &DataParams, edat) != 0) {
-         fprintf(stderr, "%s: XLALCWMakeFakeMultiData() failed.\n", __func__);
-         XLAL_ERROR(XLAL_EFUNC);
-      }
-
-      if (inputParams->signalOnly) tfdata = convertSFTdataToPowers(sftvector, inputParams, 1.0);
-      else tfdata = convertSFTdataToPowers(sftvector, inputParams, ffdata->tfnormalization);
-      if (tfdata==NULL) {
-         fprintf(stderr, "%s: convertSFTdataToPowers() failed.\n", __func__);
-         XLAL_ERROR(XLAL_EFUNC);
-      }
-
-      //Printing out the data to file
-      if (args_info.printSignalData_given) {
-         DataParams.detInfo.sqrtSn[0] = 0.0;
-         FILE *SIGNALOUT = fopen(args_info.printSignalData_arg, "w");
-         PulsarParamsVector *oneSignal = XLALCreatePulsarParamsVector(1);
-         if (oneSignal==NULL) {
-            fprintf(stderr, "%s: XLALCWMakeFakeMultiData() failed.\n", __func__);
-            XLAL_ERROR(XLAL_EFUNC);
-         }
-         for (ii=0; ii<(INT4)injectionSources->length; ii++) {
-            memcpy(oneSignal->data, &(injectionSources->data[ii]), sizeof(injectionSources->data[0]));
-            MultiSFTVector *oneSignalSFTs = NULL;
-            if (XLALCWMakeFakeMultiData(&oneSignalSFTs, NULL, oneSignal, &DataParams, edat) != 0) {
-               fprintf(stderr, "%s: XLALCWMakeFakeMultiData() failed.\n", __func__);
-               XLAL_ERROR(XLAL_EFUNC);
-            }
-            REAL8Vector *oneSFTpowers = XLALCreateREAL8Vector(oneSignalSFTs->data[0]->data->data->length);
-            if (oneSFTpowers==NULL) {
-               fprintf(stderr, "%s: XLALCreateREAL8Vector(%d) failed.\n", __func__, oneSignalSFTs->data[0]->data->data->length);
-               XLAL_ERROR(XLAL_EFUNC);
-            }
-            for (jj=0; jj<(INT4)oneSignalSFTs->data[0]->length; jj++) {
-               INT4 kk = 0;
-               SFTtype *sft = &(oneSignalSFTs->data[0]->data[jj]);
-               for (kk=0; kk<(INT4)oneSFTpowers->length; kk++) {
-                  oneSFTpowers->data[kk] = (2.0*(creal(sft->data->data[kk])*creal(sft->data->data[kk]) + cimag(sft->data->data[kk])*cimag(sft->data->data[kk]))/inputParams->Tcoh);
-               }
-               INT4 indexValOfMax = max_index_double(oneSFTpowers);
-               fprintf(SIGNALOUT,"%.9g %.9g\n", DataParams.fMin+indexValOfMax/inputParams->Tcoh, oneSFTpowers->data[indexValOfMax]);
-            }
-            XLALDestroyREAL8Vector(oneSFTpowers);
-            XLALDestroyMultiSFTVector(oneSignalSFTs);
-         }
-         memset(oneSignal->data, 0, sizeof(injectionSources->data[0]));
-         XLALDestroyPulsarParamsVector(oneSignal);
-         fclose(SIGNALOUT);
-      }
-      
-      XLALDestroyMultiTimestamps(multiTimestamps);
-      XLALDestroyPulsarParamsVector(injectionSources);
-      XLALDestroyMultiSFTVector(sftvector);
-      if (inputParams->signalOnly) args_info.avesqrtSh_arg = 1.0;
-   }
+   } //end load data or generate data
    
    //Print SFT times, if requested by user
    if (args_info.printSFTtimes_given) {
@@ -1313,41 +1038,41 @@ int main(int argc, char *argv[])
          }
 
          /* exactCandidates2->numofcandidates = 0;
-         candidate cand;
-         loadCandidateData(&cand, args_info.templateTestF_arg-0.5/inputParams->Tcoh, args_info.templateTestP_arg, args_info.templateTestDf_arg, 0, 0, 0, 0, 0, 0, 0);
-         analyzeOneTemplate(&(exactCandidates2->data[exactCandidates2->numofcandidates]), &cand, ffdata, aveNoise, aveTFnoisePerFbinRatio, inputParams, sftexist, secondFFTplan);
-         if (xlalErrno!=0) {
+            candidate cand;
+            loadCandidateData(&cand, args_info.templateTestF_arg-0.5/inputParams->Tcoh, args_info.templateTestP_arg, args_info.templateTestDf_arg, 0, 0, 0, 0, 0, 0, 0);
+            analyzeOneTemplate(&(exactCandidates2->data[exactCandidates2->numofcandidates]), &cand, ffdata, aveNoise, aveTFnoisePerFbinRatio, inputParams, sftexist, secondFFTplan);
+            if (xlalErrno!=0) {
             fprintf(stderr, "%s: analyzeOneTemplate() failed.\n", __func__);
             XLAL_ERROR(XLAL_FAILURE);
-         }
-         fprintf(stderr, "%.8g %.9g %g %.14g\n", exactCandidates2->data[exactCandidates2->numofcandidates].fsig, exactCandidates2->data[exactCandidates2->numofcandidates].period, exactCandidates2->data[exactCandidates2->numofcandidates].moddepth, exactCandidates2->data[exactCandidates2->numofcandidates].stat);
-         exactCandidates2->numofcandidates++;
-         loadCandidateData(&cand, args_info.templateTestF_arg+0.5/inputParams->Tcoh, args_info.templateTestP_arg, args_info.templateTestDf_arg, 0, 0, 0, 0, 0, 0, 0);
-         analyzeOneTemplate(&(exactCandidates2->data[exactCandidates2->numofcandidates]), &cand, ffdata, aveNoise, aveTFnoisePerFbinRatio, inputParams, sftexist, secondFFTplan);
-         if (xlalErrno!=0) {
+            }
+            fprintf(stderr, "%.8g %.9g %g %.14g\n", exactCandidates2->data[exactCandidates2->numofcandidates].fsig, exactCandidates2->data[exactCandidates2->numofcandidates].period, exactCandidates2->data[exactCandidates2->numofcandidates].moddepth, exactCandidates2->data[exactCandidates2->numofcandidates].stat);
+            exactCandidates2->numofcandidates++;
+            loadCandidateData(&cand, args_info.templateTestF_arg+0.5/inputParams->Tcoh, args_info.templateTestP_arg, args_info.templateTestDf_arg, 0, 0, 0, 0, 0, 0, 0);
+            analyzeOneTemplate(&(exactCandidates2->data[exactCandidates2->numofcandidates]), &cand, ffdata, aveNoise, aveTFnoisePerFbinRatio, inputParams, sftexist, secondFFTplan);
+            if (xlalErrno!=0) {
             fprintf(stderr, "%s: analyzeOneTemplate() failed.\n", __func__);
             XLAL_ERROR(XLAL_FAILURE);
-         }
-         fprintf(stderr, "%.8g %.9g %g %.14g\n", exactCandidates2->data[exactCandidates2->numofcandidates].fsig, exactCandidates2->data[exactCandidates2->numofcandidates].period, exactCandidates2->data[exactCandidates2->numofcandidates].moddepth, exactCandidates2->data[exactCandidates2->numofcandidates].stat);
-         exactCandidates2->numofcandidates++;
-         loadCandidateData(&cand, args_info.templateTestF_arg, args_info.templateTestP_arg, args_info.templateTestDf_arg, 0, 0, 0, 0, 0, 0, 0);
-         bruteForceTemplateSearch(&(exactCandidates2->data[exactCandidates2->numofcandidates]), cand, cand.fsig, cand.fsig, 1, 1, 1, cand.moddepth, cand.moddepth, 1, inputParams, ffdata->ffdata, sftexist, aveNoise, aveTFnoisePerFbinRatio, secondFFTplan, 1);
-         loadCandidateData(&cand, args_info.templateTestF_arg, args_info.templateTestP_arg, args_info.templateTestDf_arg-0.5/inputParams->Tcoh, 0, 0, 0, 0, 0, 0, 0);
-         analyzeOneTemplate(&(exactCandidates2->data[exactCandidates2->numofcandidates]), &cand, ffdata, aveNoise, aveTFnoisePerFbinRatio, inputParams, sftexist, secondFFTplan);
-         if (xlalErrno!=0) {
+            }
+            fprintf(stderr, "%.8g %.9g %g %.14g\n", exactCandidates2->data[exactCandidates2->numofcandidates].fsig, exactCandidates2->data[exactCandidates2->numofcandidates].period, exactCandidates2->data[exactCandidates2->numofcandidates].moddepth, exactCandidates2->data[exactCandidates2->numofcandidates].stat);
+            exactCandidates2->numofcandidates++;
+            loadCandidateData(&cand, args_info.templateTestF_arg, args_info.templateTestP_arg, args_info.templateTestDf_arg, 0, 0, 0, 0, 0, 0, 0);
+            bruteForceTemplateSearch(&(exactCandidates2->data[exactCandidates2->numofcandidates]), cand, cand.fsig, cand.fsig, 1, 1, 1, cand.moddepth, cand.moddepth, 1, inputParams, ffdata->ffdata, sftexist, aveNoise, aveTFnoisePerFbinRatio, secondFFTplan, 1);
+            loadCandidateData(&cand, args_info.templateTestF_arg, args_info.templateTestP_arg, args_info.templateTestDf_arg-0.5/inputParams->Tcoh, 0, 0, 0, 0, 0, 0, 0);
+            analyzeOneTemplate(&(exactCandidates2->data[exactCandidates2->numofcandidates]), &cand, ffdata, aveNoise, aveTFnoisePerFbinRatio, inputParams, sftexist, secondFFTplan);
+            if (xlalErrno!=0) {
             fprintf(stderr, "%s: analyzeOneTemplate() failed.\n", __func__);
             XLAL_ERROR(XLAL_FAILURE);
-         }
-         fprintf(stderr, "%.8g %.9g %g %.14g\n", exactCandidates2->data[exactCandidates2->numofcandidates].fsig, exactCandidates2->data[exactCandidates2->numofcandidates].period, exactCandidates2->data[exactCandidates2->numofcandidates].moddepth, exactCandidates2->data[exactCandidates2->numofcandidates].stat);
-         exactCandidates2->numofcandidates++;
-         loadCandidateData(&cand, args_info.templateTestF_arg, args_info.templateTestP_arg, args_info.templateTestDf_arg+0.5/inputParams->Tcoh, 0, 0, 0, 0, 0, 0, 0);
-         analyzeOneTemplate(&(exactCandidates2->data[exactCandidates2->numofcandidates]), &cand, ffdata, aveNoise, aveTFnoisePerFbinRatio, inputParams, sftexist, secondFFTplan);
-         if (xlalErrno!=0) {
+            }
+            fprintf(stderr, "%.8g %.9g %g %.14g\n", exactCandidates2->data[exactCandidates2->numofcandidates].fsig, exactCandidates2->data[exactCandidates2->numofcandidates].period, exactCandidates2->data[exactCandidates2->numofcandidates].moddepth, exactCandidates2->data[exactCandidates2->numofcandidates].stat);
+            exactCandidates2->numofcandidates++;
+            loadCandidateData(&cand, args_info.templateTestF_arg, args_info.templateTestP_arg, args_info.templateTestDf_arg+0.5/inputParams->Tcoh, 0, 0, 0, 0, 0, 0, 0);
+            analyzeOneTemplate(&(exactCandidates2->data[exactCandidates2->numofcandidates]), &cand, ffdata, aveNoise, aveTFnoisePerFbinRatio, inputParams, sftexist, secondFFTplan);
+            if (xlalErrno!=0) {
             fprintf(stderr, "%s: analyzeOneTemplate() failed.\n", __func__);
             XLAL_ERROR(XLAL_FAILURE);
-         }
-         fprintf(stderr, "%.8g %.9g %g %.14g\n", exactCandidates2->data[exactCandidates2->numofcandidates].fsig, exactCandidates2->data[exactCandidates2->numofcandidates].period, exactCandidates2->data[exactCandidates2->numofcandidates].moddepth, exactCandidates2->data[exactCandidates2->numofcandidates].stat);
-         exactCandidates2->numofcandidates++; */
+            }
+            fprintf(stderr, "%.8g %.9g %g %.14g\n", exactCandidates2->data[exactCandidates2->numofcandidates].fsig, exactCandidates2->data[exactCandidates2->numofcandidates].period, exactCandidates2->data[exactCandidates2->numofcandidates].moddepth, exactCandidates2->data[exactCandidates2->numofcandidates].stat);
+            exactCandidates2->numofcandidates++; */
 
          for (ii=0; ii<(INT4)exactCandidates2->numofcandidates; ii++) exactCandidates2->data[ii].h0 /= sqrt(ffdata->tfnormalization)*pow(frac_tobs_complete*ffdata->ffnormalization/skypointffnormalization,0.25);
 
@@ -1436,8 +1161,8 @@ int main(int argc, char *argv[])
 
          //Test the IHS candidates against Gaussian templates in this function
          if ( testIHScandidates(gaussCandidates1, ihsCandidates, ffdata, aveNoise, aveTFnoisePerFbinRatio, (REAL4)dopplerpos.Alpha, (REAL4)dopplerpos.Delta, inputParams) != 0 ) {
-           fprintf(stderr, "%s: testIHScandidates() failed.\n", __func__);
-           XLAL_ERROR(XLAL_EFUNC);
+            fprintf(stderr, "%s: testIHScandidates() failed.\n", __func__);
+            XLAL_ERROR(XLAL_EFUNC);
          }
 
          fprintf(LOG,"Initial stage done with candidates = %d\n",gaussCandidates1->numofcandidates);
@@ -1937,8 +1662,8 @@ REAL4Vector * convertSFTdataToPowers(MultiSFTVector *sfts, inputParamsStruct *in
             nonexistantsft++;    //increment the nonexistantsft counter
          }
       } else {
-          memset(&(tfdata->data[ii*sftlength]), 0, sizeof(REAL4)*sftlength);
-          nonexistantsft++;    //increment the nonexistantsft counter
+         memset(&(tfdata->data[ii*sftlength]), 0, sizeof(REAL4)*sftlength);
+         nonexistantsft++;    //increment the nonexistantsft counter
       }
       
       
@@ -2166,6 +1891,172 @@ REAL4VectorSequence * readInMultiSFTs(inputParamsStruct *input, REAL8 *normaliza
    return multiTFdata;
    
 } /* readInMultiSFTs() */
+
+
+MultiLIGOTimeGPSVector * getMultiTimeStampsFromSFTCatalog(SFTCatalog *catalog)
+{
+
+   if (catalog==NULL) {
+      fprintf(stderr, "%s: Invalid input argument.\n", __func__);
+      XLAL_ERROR_NULL(XLAL_EINVAL);
+   }
+
+   //Get the MultiSFTCatalogView
+   MultiSFTCatalogView *catalogView = XLALGetMultiSFTCatalogView(catalog);
+   if (catalogView==NULL) {
+      fprintf(stderr, "%s: XLALGetMultiSFTCatalogView() failed.\n", __func__);
+      XLAL_ERROR_NULL(XLAL_EFUNC);
+   }
+
+   MultiLIGOTimeGPSVector *multiTimestamps = XLALTimestampsFromMultiSFTCatalogView(catalogView);
+   if (multiTimestamps==NULL) {
+      fprintf(stderr, "%s: XLALTimestampsFromMultiSFTCatalogView() failed.\n", __func__);
+      XLAL_ERROR_NULL(XLAL_EFUNC);
+   }
+
+   XLALDestroyMultiSFTCatalogView(catalogView);
+
+   return multiTimestamps;
+
+}
+
+
+MultiLIGOTimeGPSVector * getMultiTimeStampsFromSFTs(inputParamsStruct *params)
+{
+
+   if (params==NULL) {
+      fprintf(stderr, "%s: Invalid input argument.\n", __func__);
+      XLAL_ERROR_NULL(XLAL_EINVAL);
+   }
+
+   INT4 ii;
+   MultiLIGOTimeGPSVector *multiTimestamps = NULL;
+
+   SFTCatalog *catalog = findSFTdata(params);
+   if (catalog==NULL) {
+      fprintf(stderr, "%s: findSFTdata() failed.\n", __func__);
+      XLAL_ERROR_NULL(XLAL_EFUNC);
+   }
+
+   if (params->markBadSFTs && !params->signalOnly) {
+      multiTimestamps = XLALCalloc(1, sizeof(MultiLIGOTimeGPSVector));
+      if (multiTimestamps==NULL) {
+         fprintf(stderr, "%s: XLALCalloc() failed.\n", __func__);
+         XLAL_ERROR_NULL(XLAL_ENOMEM);
+      }
+      multiTimestamps->data = XLALCalloc(1, sizeof(multiTimestamps->data[0]));
+      if (multiTimestamps->data==NULL) {
+         fprintf(stderr, "%s: XLALCalloc() failed.\n", __func__);
+         XLAL_ERROR_NULL(XLAL_ENOMEM);
+      }
+      multiTimestamps->length = 1;
+
+      MultiSFTVector *sftvector = extractSFTband(params, catalog);
+      if (sftvector==NULL) {
+         fprintf(stderr, "%s: extractSFTband() failed.\n", __func__);
+         XLAL_ERROR_NULL(XLAL_EFUNC);
+      }
+      REAL8 tfnormval = 2.0/(params->Tcoh*(1.0e-22*1.0e-22));
+      REAL4Vector *tfdata = convertSFTdataToPowers(sftvector, params, tfnormval);
+      if (tfdata==NULL) {
+         fprintf(stderr, "%s: convertSFTdataToPowers() failed.\n", __func__);
+         XLAL_ERROR_NULL(XLAL_EFUNC);
+      }
+      INT4Vector *removeTheseSFTs = markBadSFTs(tfdata, params);
+      if (removeTheseSFTs==NULL) {
+         fprintf(stderr, "%s: markBadSFTs() failed.\n", __func__);
+         XLAL_ERROR_NULL(XLAL_EFUNC);
+      }
+
+      INT4 numberofsfts = 0, sftlength = (INT4)sftvector->data[0]->data[0].data->length;
+      for (ii=0; ii<(INT4)removeTheseSFTs->length; ii++) if (removeTheseSFTs->data[ii]==0 && tfdata->data[ii*sftlength]!=0.0) numberofsfts++;
+
+      multiTimestamps->data[0] = XLALCreateTimestampVector(numberofsfts);
+      if (multiTimestamps->data[0]==NULL) {
+         fprintf(stderr, "%s: XLALCreateTimestampVector() failed.\n", __func__);
+         XLAL_ERROR_NULL(XLAL_EFUNC);
+      }
+
+      INT4 jj = 0;
+      for (ii=0; ii<(INT4)removeTheseSFTs->length; ii++) {
+         if (removeTheseSFTs->data[ii]==0 && tfdata->data[ii*sftlength]!=0.0) {
+            XLALGPSSetREAL8(&(multiTimestamps->data[0]->data[jj]), params->searchstarttime+ii*(params->Tcoh-params->SFToverlap));
+            jj++;
+         }
+      }
+
+      multiTimestamps->data[0]->deltaT = params->Tcoh;
+
+      XLALDestroyINT4Vector(removeTheseSFTs);
+      XLALDestroyREAL4Vector(tfdata);
+      XLALDestroyMultiSFTVector(sftvector);
+      params->markBadSFTs = 0;
+   } else {
+      multiTimestamps = getMultiTimeStampsFromSFTCatalog(catalog);
+      if (multiTimestamps==NULL) {
+         fprintf(stderr, "%s: getMultiTimeStampsFromSFTCatalog() failed.\n", __func__);
+         XLAL_ERROR_NULL(XLAL_EFUNC);
+      }
+   }
+
+   XLALDestroySFTCatalog(catalog);
+
+   return multiTimestamps;
+
+}
+
+
+MultiLIGOTimeGPSVector * getMultiTimeStampsFromTimeStampsFile(CHAR *file, inputParamsStruct *params)
+{
+
+   //Create a stringVector for the timestamps files
+   LALStringVector *timestampFiles = XLALCreateStringVector(file, NULL);
+   if (timestampFiles==NULL) {
+      fprintf(stderr, "%s: XLALCreateStringVector() failed.\n", __func__);
+      XLAL_ERROR_NULL(XLAL_EFUNC);
+   }
+
+   //Read the timestamps files
+   MultiLIGOTimeGPSVector *multiTimestamps = XLALReadMultiTimestampsFiles(timestampFiles);
+   if (multiTimestamps==NULL) {
+      fprintf(stderr, "%s: XLALReadMultiTimestampsFiles() failed.\n", __func__);
+      XLAL_ERROR_NULL(XLAL_EFUNC);
+   }
+
+   XLALDestroyStringVector(timestampFiles);
+
+   //Hard-coded same coherence time as input
+   for (INT4 ii=0; ii<(INT4)multiTimestamps->length; ii++) multiTimestamps->data[ii]->deltaT = params->Tcoh;
+
+   return multiTimestamps;
+
+}
+
+
+MultiLIGOTimeGPSVector * getMultiTimeStampsFromSegmentsFile(CHAR *file, inputParamsStruct *params)
+{
+
+   LIGOTimeGPSVector *timestamps = XLALTimestampsFromSegmentFile(file, params->Tcoh, params->SFToverlap, 0, 1);
+   if (timestamps==NULL) {
+      fprintf(stderr, "%s: XLALTimestampsFromSegmentFile() failed.\n", __func__);
+      XLAL_ERROR_NULL(XLAL_EFUNC);
+   }
+   MultiLIGOTimeGPSVector *multiTimestamps = XLALCalloc(1, sizeof(MultiLIGOTimeGPSVector));
+   if (multiTimestamps==NULL) {
+      fprintf(stderr, "%s: XLALCalloc() failed.\n", __func__);
+      XLAL_ERROR_NULL(XLAL_ENOMEM);
+   }
+   multiTimestamps->data = XLALCalloc(1, sizeof(multiTimestamps->data[0]));
+   if (multiTimestamps->data==NULL) {
+      fprintf(stderr, "%s: XLALCalloc() failed.\n", __func__);
+      XLAL_ERROR_NULL(XLAL_ENOMEM);
+   }
+   multiTimestamps->length = 1;
+   multiTimestamps->data[0] = timestamps;
+
+   return multiTimestamps;
+
+}
 
 
 
