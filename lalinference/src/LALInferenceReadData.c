@@ -2697,7 +2697,7 @@ void LALInferenceSetupROQ(LALInferenceIFOData *IFOdata, ProcessParamsTable *comm
     
     for (i=0;i<Nifo;i++) {
       IFOdata[i].roqData = XLALCalloc(1, sizeof(LALInferenceROQData));
-      IFOdata[i].roqData->weights = gsl_matrix_complex_calloc(time_steps, n_basis);
+      IFOdata[i].roqData->weights = gsl_matrix_complex_calloc(n_basis, time_steps);
       //IFOdata[i].roqData->hplus = gsl_vector_complex_calloc(n_basis);
       //IFOdata[i].roqData->hcross = gsl_vector_complex_calloc(n_basis);
       IFOdata[i].roqData->frequencyNodes = gsl_vector_calloc(n_basis);
@@ -2753,7 +2753,8 @@ void LALInferenceSetupROQ(LALInferenceIFOData *IFOdata, ProcessParamsTable *comm
       
       for(unsigned int jj = 0; jj < time_steps; jj++){
         
-        tc = timeMin + 2*dt*jj / time_steps;
+        tc = timeMin + 2.0*(dt+0.022)*jj / time_steps;
+        //printf("%f = %f + 2*%f*%d / %d;\n",tc,timeMin,dt,jj,time_steps);
         
         for(unsigned int ii=0; ii < n_samples; ii++){
           gsl_vector_complex_set(exp_2pi_i_f_tc, ii, gsl_complex_polar (1, (IFOdata[i].fLow/deltaF+ii)*deltaF*tc*2*LAL_PI));
@@ -2791,7 +2792,7 @@ void LALInferenceSetupROQ(LALInferenceIFOData *IFOdata, ProcessParamsTable *comm
       
       GSL_SET_COMPLEX (&alpha, 1, 0);
       
-      gsl_blas_zgemm (CblasTrans, CblasNoTrans, alpha, E_matrix, vandermonde_matrix, beta, IFOdata[i].roqData->weights);
+      gsl_blas_zgemm (CblasTrans, CblasNoTrans, alpha, vandermonde_matrix, E_matrix, beta, IFOdata[i].roqData->weights);
       
       printf("Weights have been computed for %s\n",IFOdata[i].name);
       

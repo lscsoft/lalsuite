@@ -517,17 +517,23 @@ REAL8 LALInferenceROQLogLikelihood(LALInferenceVariables *currentParams, LALInfe
     gsl_blas_zaxpy(gsl_fplus,data->roqData->hplus,data->roqData->hstrain);
     gsl_blas_zaxpy(gsl_fcross,data->roqData->hcross,data->roqData->hstrain);
     
-    time_step = (float)data->roqData->time_weights_width / (float)data->roqData->weights->size1;
+    time_step = (float)data->roqData->time_weights_width / (float)data->roqData->weights->size2;
     time_min = data->roqData->trigtime - 0.5*data->roqData->time_weights_width;
+    
+    //printf("time_min=%f\n",time_min);
+    
+    time_requested -= time_min;
     
     time_requested /= time_step;
     time_requested = floor(time_requested + 0.5);
-    time_requested *= time_step;
+    
+    //time_requested *= time_step;
 
     // then set tc in MCMC to be one of the discrete values
-    weight_index = (unsigned int) ((time_requested - time_min) / time_step);
+    weight_index = (unsigned int) (time_requested);
+    
     //printf("rounded time requested and index: %f %d\n", time_requested, weight_index);
-    gsl_vector_complex_view weights_row = gsl_matrix_complex_row (data->roqData->weights, weight_index);
+    gsl_vector_complex_view weights_row = gsl_matrix_complex_column(data->roqData->weights, weight_index);
  
     // compute h_dot_h and d_dot_h
     gsl_blas_zdotu( &(weights_row.vector), data->roqData->hstrain, &complex_d_dot_h);
@@ -539,9 +545,9 @@ REAL8 LALInferenceROQLogLikelihood(LALInferenceVariables *currentParams, LALInfe
     
     loglikeli += dataPtr->loglikelihood;
     
-    printf("GSL_REAL(complex_d_dot_h)=%e\n",GSL_REAL(complex_d_dot_h));
-    printf("h_dot_h=%e\n",h_dot_h);
-    printf("loglikeli=%e\n",loglikeli);
+    //printf("GSL_REAL(complex_d_dot_h)=%e\n",GSL_REAL(complex_d_dot_h));
+    //printf("h_dot_h=%e\n",h_dot_h);
+    //printf("loglikeli=%e\n",loglikeli);
     
     dataPtr = dataPtr->next;
   }
