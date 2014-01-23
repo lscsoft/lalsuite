@@ -135,17 +135,6 @@ int XLALCreateSFTPairIndexList
    )
   ;
 
-int XLALCalculateCrossCorrSigmaUnshifted
-  (
-   REAL8Vector      **sigma_alpha,
-   SFTPairIndexList  *pairIndexList,
-   SFTIndexList      *indexList,
-   MultiPSDVector    *psds,
-   REAL8              freq,
-   REAL8              Tsft
-  )
-  ;
-
 int XLALCalculateAveCurlyGAmpUnshifted
   (
    REAL8Vector      **G_alpha,
@@ -166,25 +155,25 @@ int XLALCalculatePulsarCrossCorrStatistic
    UINT4              numBins,
    SFTPairIndexList *sftPairs,
    SFTIndexList   *sftIndices,
-   MultiSFTVector  *inputSFTs 
+   MultiSFTVector  *inputSFTs
   )
  ;
 
 int XLALFindLMXBCrossCorrDiagMetric
-  ( 
-   REAL8             *hSens,           
-   REAL8             *g_ff,            
-   REAL8             *g_aa, 
+  (
+   REAL8             *hSens,
+   REAL8             *g_ff,
+   REAL8             *g_aa,
    REAL8             *g_TT,
-   BinaryOrbitParams *BinaryParams, 
-   REAL8             *f,         
-   REAL8Vector       *G_alpha,     
-   SFTPairIndexList  *pairIndexList, 
-   SFTIndexList      *indexList,    
-   MultiSFTVector    *sfts, 
+   BinaryOrbitParams *BinaryParams,
+   REAL8             *f,
+   REAL8Vector       *G_alpha,
+   SFTPairIndexList  *pairIndexList,
+   SFTIndexList      *indexList,
+   MultiSFTVector    *sfts,
    REAL8             fB,
-   REAL8             mf             
-   /*REAL8             *g_pp,*/         
+   REAL8             mf
+   /*REAL8             *g_pp,*/
    )
   ;
 
