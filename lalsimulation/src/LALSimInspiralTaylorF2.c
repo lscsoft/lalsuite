@@ -346,7 +346,7 @@ int XLALSimInspiralTaylorF2(
         phasing += shft * f - 2.*phic;
         amp = amp0 * sqrt(-dEnergy/flux) * v;
         data[i] = amp * cos(phasing - LAL_PI_4)
-                + amp * sin(phasing - LAL_PI_4) * 1.0j;
+                - amp * sin(phasing - LAL_PI_4) * 1.0j;
     }
 
     *htilde_out = htilde;

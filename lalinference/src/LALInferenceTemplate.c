@@ -346,7 +346,7 @@ double m1,m2,mc,eta,q,iota=0;
 
     amp = amp0 * pow(f, mSevenBySix);
 
-    GSL_SET_COMPLEX(&h_i, amp * cos(Psi + shft * f - 2.*phic - LAL_PI_4), amp * sin(Psi + shft * f - 2.*phic - LAL_PI_4));
+    GSL_SET_COMPLEX(&h_i, amp * cos(Psi + shft * f - 2.*phic - LAL_PI_4), - amp * sin(Psi + shft * f - 2.*phic - LAL_PI_4));
 
     gsl_vector_complex_set(IFOdata->roqData->hplus, i, gsl_complex_mul_real(h_i,plusCoef));
     gsl_vector_complex_set(IFOdata->roqData->hcross, i, gsl_complex_mul_real(gsl_complex_mul_imag(h_i,1.0),crossCoef));
