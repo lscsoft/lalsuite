@@ -449,34 +449,32 @@ int main(int argc, char *argv[])
 
          for (ii=0; ii<(INT4)injectionSources->length; ii++) {
             memcpy(oneSignal->data, &(injectionSources->data[ii]), sizeof(injectionSources->data[0]));
-            REAL8Vector *oneSFTpowers = XLALCreateREAL8Vector(sftvector->data[0]->data->data->length);
-            if (oneSFTpowers==NULL) {
-               fprintf(stderr, "%s: XLALCreateREAL8Vector(%d) failed.\n", __func__, sftvector->data[0]->data->data->length);
-               XLAL_ERROR(XLAL_EFUNC);
-            }
             if (args_info.printSignalData_given) {
                MultiSFTVector *oneSignalSFTs = NULL;
                if (XLALCWMakeFakeMultiData(&oneSignalSFTs, NULL, oneSignal, &DataParams, edat) != 0) {
                   fprintf(stderr, "%s: XLALCWMakeFakeMultiData() failed.\n", __func__);
                   XLAL_ERROR(XLAL_EFUNC);
                }
-               INT4 kk = 0;
-               for (kk=0; kk<(INT4)oneSignalSFTs->data[0]->length; kk++) {
-                  INT4 ll = 0;
+               REAL8Vector *oneSFTpowers = XLALCreateREAL8Vector(sftvector->data[0]->data->data->length);
+               if (oneSFTpowers==NULL) {
+                  fprintf(stderr, "%s: XLALCreateREAL8Vector(%d) failed.\n", __func__, sftvector->data[0]->data->data->length);
+                  XLAL_ERROR(XLAL_EFUNC);
+               }
+               for (INT4 kk=0; kk<(INT4)oneSignalSFTs->data[0]->length; kk++) {
                   SFTtype *sft = &(oneSignalSFTs->data[0]->data[kk]);
-                  for (ll=0; ll<(INT4)oneSFTpowers->length; ll++) {
+                  for (INT4 ll=0; ll<(INT4)oneSFTpowers->length; ll++) {
                      oneSFTpowers->data[ll] = (2.0*(creal(sft->data->data[ll])*creal(sft->data->data[ll]) + cimag(sft->data->data[ll])*cimag(sft->data->data[ll]))/inputParams->Tcoh);
                   }
                   INT4 indexValOfMax = max_index_double(oneSFTpowers);
                   fprintf(SIGNALOUT,"%.9g %.9g\n", DataParams.fMin+indexValOfMax/inputParams->Tcoh, oneSFTpowers->data[indexValOfMax]);
                }
                XLALDestroyMultiSFTVector(oneSignalSFTs);
-
+               XLALDestroyREAL8Vector(oneSFTpowers);
             }
             if (args_info.printMarginalizedSignalData_given) {
-               REAL8Vector *marginalizedSignalData = XLALCreateREAL8Vector(oneSFTpowers->length);
+               REAL8Vector *marginalizedSignalData = XLALCreateREAL8Vector(sftvector->data[0]->data->data->length);
                if (marginalizedSignalData==NULL) {
-                  fprintf(stderr, "%s: XLALCreateREAL8Vector(%d) failed.\n", __func__, oneSFTpowers->length);
+                  fprintf(stderr, "%s: XLALCreateREAL8Vector(%d) failed.\n", __func__, sftvector->data[0]->data->data->length);
                   XLAL_ERROR(XLAL_EFUNC);
                }
                memset(marginalizedSignalData->data, 0, sizeof(REAL8)*marginalizedSignalData->length);
@@ -491,15 +489,9 @@ int main(int argc, char *argv[])
                      XLAL_ERROR(XLAL_EFUNC);
                   }
 
-                  INT4 kk = 0;
-                  for (kk=0; kk<(INT4)oneSignalSFTs->data[0]->length; kk++) {
-                     INT4 ll = 0;
+                  for (INT4 kk=0; kk<(INT4)oneSignalSFTs->data[0]->length; kk++) {
                      SFTtype *sft = &(oneSignalSFTs->data[0]->data[kk]);
-                     for (ll=0; ll<(INT4)oneSFTpowers->length; ll++) {
-                        oneSFTpowers->data[ll] = (2.0*(creal(sft->data->data[ll])*creal(sft->data->data[ll]) + cimag(sft->data->data[ll])*cimag(sft->data->data[ll]))/inputParams->Tcoh);
-                     }
-                     INT4 indexValOfMax = max_index_double(oneSFTpowers);
-                     marginalizedSignalData->data[indexValOfMax] += oneSFTpowers->data[indexValOfMax];
+                     for (INT4 ll=0; ll<(INT4)marginalizedSignalData->length; ll++) marginalizedSignalData->data[ll] += (2.0*(crealf(sft->data->data[ll])*crealf(sft->data->data[ll]) + cimagf(sft->data->data[ll])*cimagf(sft->data->data[ll]))/inputParams->Tcoh);
                   }
                   XLALDestroyMultiSFTVector(oneSignalSFTs);
                } //Loop over trials
@@ -509,7 +501,6 @@ int main(int argc, char *argv[])
                }
                XLALDestroyREAL8Vector(marginalizedSignalData);
             } //If printing marginalized data
-            XLALDestroyREAL8Vector(oneSFTpowers);
          } //loop over the number of injected sources
          memset(oneSignal->data, 0, sizeof(injectionSources->data[0]));
          XLALDestroyPulsarParamsVector(oneSignal);
