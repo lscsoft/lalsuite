@@ -211,7 +211,8 @@ def time_column(table, ifo=None):
         return numpy.asarray(map(func_name, table))
 
 
-def from_ligolw(filepath, table_name, columns=None, start=None, end=None):
+def from_ligolw(filepath, table_name, columns=None, start=None, end=None,
+                **kwargs):
     """Load a LIGO_LW table from a file.
 
     @param filepath
