@@ -514,7 +514,7 @@ void LALInferencePrintVariables(LALInferenceVariables *var)
           fprintf(stdout, "%" LAL_INT8_FORMAT, *(INT8 *) ptr->value);
           break;
         case LALINFERENCE_UINT4_t:
-          fprintf(stdout, "%ud", *(UINT4 *) ptr->value);
+          fprintf(stdout, "%u", *(UINT4 *) ptr->value);
           break;
         case LALINFERENCE_REAL4_t:
           fprintf(stdout, "%.15lf", *(REAL4 *) ptr->value);
