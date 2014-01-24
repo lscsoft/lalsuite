@@ -2207,9 +2207,17 @@ REAL8 LALInferenceMarginalisedTimeLogLikelihood(LALInferenceVariables *currentPa
           dh_S_real = dataReal * templateReal + dataImag * templateImag;
           dh_S_imag = dataReal * templateImag - dataImag * templateReal;
 
+	  /* Note: the "-" signs on the imaginary components below are
+	     to get the sign of time correct when we inverse FFT back
+	     to the time-domain. */
 	  if (margphi) {
-	    dh_S_tilde->data[i] = crect( creal(dh_S_tilde->data[i]) + ( dh_S_real * TwoDeltaToverN / (alph * dataPtr->oneSidedNoisePowerSpectrum->data->data[i]) ), cimag(dh_S_tilde->data[i]) );
-	    dh_S_tilde_im->data[i] = crect( creal(dh_S_tilde_im->data[i]), cimag(dh_S_tilde_im->data[i]) - ( dh_S_imag * TwoDeltaToverN / (alph * dataPtr->oneSidedNoisePowerSpectrum->data->data[i]) ) );
+	    /* dh_S_tilde stores the Fourier array of d^* h / S(f) */
+	    dh_S_tilde->data[i] = crect( creal(dh_S_tilde->data[i]) + dh_S_real * TwoDeltaToverN / (alph * dataPtr->oneSidedNoisePowerSpectrum->data->data[i]),
+					 cimag(dh_S_tilde->data[i]) - dh_S_imag * TwoDeltaToverN / (alph * dataPtr->oneSidedNoisePowerSpectrum->data->data[i]));
+
+	    /* dh_S_tilde_im stores the Fourier array of d^* (ih) / S(f) */
+	    dh_S_tilde_im->data[i] = crect( creal(dh_S_tilde_im->data[i]) + dh_S_imag * TwoDeltaToverN / (alph * dataPtr->oneSidedNoisePowerSpectrum->data->data[i]),
+					    cimag(dh_S_tilde_im->data[i]) + dh_S_real * TwoDeltaToverN / (alph * dataPtr->oneSidedNoisePowerSpectrum->data->data[i]));
 	  } else {
 	    dh_S_tilde->data[i] = crect( creal(dh_S_tilde->data[i]) + ( dh_S_real * TwoDeltaToverN / (alph * dataPtr->oneSidedNoisePowerSpectrum->data->data[i]) ), cimag(dh_S_tilde->data[i]) );
 	    dh_S_tilde->data[i] = crect( creal(dh_S_tilde->data[i]), cimag(dh_S_tilde->data[i]) - ( dh_S_imag * TwoDeltaToverN / (alph * dataPtr->oneSidedNoisePowerSpectrum->data->data[i]) ) );
