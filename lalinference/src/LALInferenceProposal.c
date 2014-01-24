@@ -399,7 +399,7 @@ void LALInferenceSetupDefaultNSProposal(LALInferenceRunState *runState, LALInfer
   */
 
   LALInferenceRandomizeProposalCycle(runState);
-
+  LALInferenceZeroProposalStats(runState);
 }
 
 
@@ -937,9 +937,8 @@ void LALInferenceDifferentialEvolutionNames(LALInferenceRunState *runState,
 
 
   size_t Ndim = 0;
-  const char *name = names[0];
   for(Ndim=0,i=0; names[i] != NULL; i++ ) {
-    if(LALInferenceCheckVariableNonFixed(proposedParams,name))
+    if(LALInferenceCheckVariableNonFixed(proposedParams,names[i]))
       Ndim++;
   }
   LALInferenceVariables **dePts = runState->differentialPoints;
@@ -965,13 +964,12 @@ void LALInferenceDifferentialEvolutionNames(LALInferenceRunState *runState,
   REAL8 scale = 2.38/sqrt(Ndim) * exp(log(0.1) + log(100.0)*gsl_rng_uniform(runState->GSLrandom));
 
   for (i = 0; names[i] != NULL; i++) {
-    if (!LALInferenceCheckVariable(proposedParams, names[i]) || !LALInferenceCheckVariable(ptJ, names[i]) || !LALInferenceCheckVariable(ptI, names[i])) {
+    if (!LALInferenceCheckVariableNonFixed(proposedParams, names[i]) || !LALInferenceCheckVariable(ptJ, names[i]) || !LALInferenceCheckVariable(ptI, names[i])) {
       /* Ignore variable if it's not in each of the params. */
     } else {
       REAL8 x = *((REAL8 *)LALInferenceGetVariable(proposedParams, names[i]));
       x += scale * (*((REAL8 *) LALInferenceGetVariable(ptJ, names[i])));
       x -= scale * (*((REAL8 *) LALInferenceGetVariable(ptI, names[i])));
-
       LALInferenceSetVariable(proposedParams, names[i], &x);
     }
   }
