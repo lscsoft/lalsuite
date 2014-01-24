@@ -512,13 +512,13 @@ REAL8 LALInferenceROQLogLikelihood(LALInferenceVariables *currentParams, LALInfe
     
     //gsl_blas_zscal (total_scale_factor, data->roqData->hplus);
  
-    gsl_vector_complex_set_zero(data->roqData->hstrain);
+    gsl_vector_complex_set_zero(dataPtr->roqData->hstrain);
     
-    gsl_blas_zaxpy(gsl_fplus,data->roqData->hplus,data->roqData->hstrain);
-    gsl_blas_zaxpy(gsl_fcross,data->roqData->hcross,data->roqData->hstrain);
+    gsl_blas_zaxpy(gsl_fplus,dataPtr->roqData->hplus,data->roqData->hstrain);
+    gsl_blas_zaxpy(gsl_fcross,dataPtr->roqData->hcross,data->roqData->hstrain);
     
-    time_step = (float)data->roqData->time_weights_width / (float)data->roqData->weights->size2;
-    time_min = data->roqData->trigtime - 0.5*data->roqData->time_weights_width;
+    time_step = (float)dataPtr->roqData->time_weights_width / (float)dataPtr->roqData->weights->size2;
+    time_min = dataPtr->roqData->trigtime - 0.5*dataPtr->roqData->time_weights_width;
     
     //printf("time_min=%f\n",time_min);
     
@@ -533,10 +533,10 @@ REAL8 LALInferenceROQLogLikelihood(LALInferenceVariables *currentParams, LALInfe
     weight_index = (unsigned int) (time_requested);
     
     //printf("rounded time requested and index: %f %d\n", time_requested, weight_index);
-    gsl_vector_complex_view weights_row = gsl_matrix_complex_column(data->roqData->weights, weight_index);
+    gsl_vector_complex_view weights_row = gsl_matrix_complex_column(dataPtr->roqData->weights, weight_index);
  
     // compute h_dot_h and d_dot_h
-    gsl_blas_zdotu( &(weights_row.vector), data->roqData->hstrain, &complex_d_dot_h);
+    gsl_blas_zdotu( &(weights_row.vector), dataPtr->roqData->hstrain, &complex_d_dot_h);
   
     h_dot_h = (*(dataPtr->roqData->amp_squared)) * (pow(dataPtr->fPlus*plusCoef, 2.) + pow(dataPtr->fCross*crossCoef, 2.)) * dataPtr->roqData->int_f_7_over_3;
     
