@@ -965,7 +965,7 @@ void LALInferenceDifferentialEvolutionNames(LALInferenceRunState *runState,
 
   REAL8 scale;
 
-  const REAL8 modeHoppingFrac = 1.0;
+  const REAL8 modeHoppingFrac = 0.5;
   /* Some small fraction of the time, we do a "mode hopping" jump,
      where we jump exactly along the difference vector. */
   if (gsl_rng_uniform(runState->GSLrandom) < modeHoppingFrac) {
