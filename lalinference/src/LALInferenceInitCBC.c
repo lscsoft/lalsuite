@@ -29,6 +29,7 @@
 #include <lal/StringInput.h>
 #include <lal/LIGOLwXMLInspiralRead.h>
 #include <lal/TimeSeries.h>
+#include <lal/LALSimInspiralWaveformCache.h>
 #include <lal/LALInferencePrior.h>
 #include <lal/LALInferenceTemplate.h>
 #include <lal/LALInferenceProposal.h>
@@ -487,7 +488,14 @@ LALInferenceVariables *LALInferenceInitCBCVariables(LALInferenceRunState *state)
       else {fprintf(stderr,"Error: Cannot pin parameter %s. No such parameter found in injection!\n",node->name);}
     }
   }
-  
+
+  /* Allocate SimInspiral waveform cache */
+  LALSimInspiralWaveformCache *cache = XLALCreateSimInspiralWaveformCache();
+  if (cache == NULL) {
+      XLALPrintError(" ERROR in LALInferenceTemplateXLALSimInspiralChooseWaveform(): Problem allocating waveform cache!\n");
+      XLAL_ERROR_NULL(XLAL_ENOMEM);
+  }
+  LALInferenceAddVariable(currentParams, "SIMINSPIRAL_WAVEFORM_CACHE", &cache, LALINFERENCE_WAVEFORM_CACHE_ptr_t, LALINFERENCE_PARAM_FIXED);  
   
   /* Over-ride approximant if user specifies */
   ppt=LALInferenceGetProcParamVal(commandLine,"--approximant");

@@ -25,6 +25,7 @@
 #include <stdlib.h>
 #include <math.h>
 #include <lal/LALInference.h>
+#include <lal/LALSimInspiralWaveformCache.h>
 #include <lal/Units.h>
 #include <lal/FrequencySeries.h>
 #include <lal/TimeSeries.h>
@@ -42,7 +43,7 @@
 #define UNUSED
 #endif
 
-size_t LALInferenceTypeSize[13] = {sizeof(INT4),
+size_t LALInferenceTypeSize[14] = {sizeof(INT4),
                                    sizeof(INT8),
                                    sizeof(UINT4),
                                    sizeof(REAL4),
@@ -53,7 +54,8 @@ size_t LALInferenceTypeSize[13] = {sizeof(INT4),
                                    sizeof(REAL8Vector *),
                                    sizeof(UINT4Vector *),
                                    sizeof(CHAR *),
-				   sizeof(LALInferenceMCMCRunPhase *),
+                                   sizeof(LALInferenceMCMCRunPhase *),
+                                   sizeof(LALSimInspiralWaveformCache *),
                                    sizeof(void *)
 };
 
@@ -973,6 +975,9 @@ int LALInferenceCompareVariables(LALInferenceVariables *var1, LALInferenceVariab
                 result = 0;
             else
                 result = 1;
+            break;
+          case LALINFERENCE_WAVEFORM_CACHE_ptr_t:
+            result = 1;
             break;
           default:
             XLAL_ERROR(XLAL_EFAILED, "Encountered unknown LALInferenceVariables type (entry: \"%s\").", ptr1->name);
@@ -2792,6 +2797,12 @@ int LALInferenceWriteVariablesBinary(FILE *file, LALInferenceVariables *vars)
 	fwrite(ph, sizeof(LALInferenceMCMCRunPhase), 1, file);
 	break;
       }
+    case LALINFERENCE_WAVEFORM_CACHE_ptr_t:
+      {
+    LALSimInspiralWaveformCache *ca = *((LALSimInspiralWaveformCache **)item->value);
+    fwrite(ca, sizeof(LALSimInspiralWaveformCache), 1, file);
+    break;
+      }
     case LALINFERENCE_void_ptr_t:
       {
 	/* Write void_ptr as NULL, so fails if used without
@@ -2878,6 +2889,13 @@ LALInferenceVariables *LALInferenceReadVariablesBinary(FILE *stream)
 	fread(ph, sizeof(LALInferenceMCMCRunPhase), 1, stream);
 	LALInferenceAddVariable(vars,name,&ph,type,vary);
 	break;
+      }
+    case LALINFERENCE_WAVEFORM_CACHE_ptr_t:
+      {
+    LALSimInspiralWaveformCache *ca = XLALCalloc(sizeof(LALSimInspiralWaveformCache),1);
+    fread(ca, sizeof(LALSimInspiralWaveformCache), 1, stream);
+    LALInferenceAddVariable(vars,name,&ca,type,vary);
+    break;
       }
     case LALINFERENCE_void_ptr_t:
       {
