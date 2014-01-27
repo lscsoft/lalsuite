@@ -231,7 +231,10 @@ REAL8TimeSeries *XLALSimDetectorStrainREAL8TimeSeries(
 		LIGOTimeGPS t = h->epoch;
 		double fplus, fcross;
 
+		/* time of sample in detector */
 		XLALGPSAdd(&t, i * h->deltaT);
+
+		/* detector's response at that time */
 		XLALComputeDetAMResponse(&fplus, &fcross, (const REAL4(*)[3])detector->response, right_ascension, declination, psi, XLALGreenwichMeanSiderealTime(&t));
 
 		h->data->data[i] = fplus * hplus->data->data[i] + fcross * hcross->data->data[i];
