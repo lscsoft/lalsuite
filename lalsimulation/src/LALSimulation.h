@@ -32,8 +32,6 @@ extern "C" {
 const LALDetector *XLALDetectorPrefixToLALDetector(
 	const char *string
 );
-/* FIXME:  compatibility wrapper.  remove when not needed */
-const LALDetector *XLALInstrumentNameToLALDetector(const char *string);
 
 
 REAL8TimeSeries *XLALSimDetectorStrainREAL8TimeSeries(
