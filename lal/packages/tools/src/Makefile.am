@@ -14,8 +14,8 @@ libtools_la_SOURCES = \
 	EllipsoidOverlapTools.c \
 	FlatLatticeTiling.c \
 	FrequencySeries.c \
-    LALCosmologyCalculator.c \
-    ResampleTimeSeries.c \
+	LALCosmologyCalculator.c \
+	ResampleTimeSeries.c \
 	Segments.c \
 	Sequence.c \
 	Skymap.c \
