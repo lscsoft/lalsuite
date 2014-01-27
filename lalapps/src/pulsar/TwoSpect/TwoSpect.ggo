@@ -27,8 +27,8 @@ option "ULfilename"     - "Upper limit file name" string typestr="filename" defa
 option "normRMSoutput"  - "File for the output of the normalized RMS from the non-slided data" string typestr="filename" optional
 option "sftDir"         - "Directory containing SFTs, e.g., /path/to/file (conflicts with --sftFile/--timestampsFile)" string typestr="path" optional
 option "sftFile"        - "Path and filename of SFTs, e.g., /path/to/file/sftdata.sft (one of --sftDir/--timestampsFile)" string typestr="path/filename" optional
-option "ephemDir"       - "Path to ephemeris files, e.g. /path/to/ephemeris/files" string typestr="directory" required
-option "ephemYear"      - "Year or year range (e.g. 08-11) of ephemeris files" string required
+option "ephemEarth"     - "Location of Earth ephemeris file" string typestr="path/filename" default="earth00-19-DE405.dat.gz" optional
+option "ephemSun"       - "Location of Sun ephemeris file" string typestr="path/filename" default="sun00-19-DE405.dat.gz" optional
 option "gaussNoiseWithSFTgaps" - "Use the same gaps as SFTs that are read-in from either --sftDir or --sftFile options (one is required!), but create Gaussian noise with noise equal to --avesqrtSh (option conflicts with --timestampsFile)" flag off
 
 section "TwoSpect search parameters"

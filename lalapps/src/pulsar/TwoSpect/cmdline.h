@@ -99,12 +99,12 @@ struct gengetopt_args_info
   char * sftFile_arg;	/**< @brief Path and filename of SFTs, e.g., /path/to/file/sftdata.sft (one of --sftDir/--timestampsFile).  */
   char * sftFile_orig;	/**< @brief Path and filename of SFTs, e.g., /path/to/file/sftdata.sft (one of --sftDir/--timestampsFile) original value given at command line.  */
   const char *sftFile_help; /**< @brief Path and filename of SFTs, e.g., /path/to/file/sftdata.sft (one of --sftDir/--timestampsFile) help description.  */
-  char * ephemDir_arg;	/**< @brief Path to ephemeris files, e.g. /path/to/ephemeris/files.  */
-  char * ephemDir_orig;	/**< @brief Path to ephemeris files, e.g. /path/to/ephemeris/files original value given at command line.  */
-  const char *ephemDir_help; /**< @brief Path to ephemeris files, e.g. /path/to/ephemeris/files help description.  */
-  char * ephemYear_arg;	/**< @brief Year or year range (e.g. 08-11) of ephemeris files.  */
-  char * ephemYear_orig;	/**< @brief Year or year range (e.g. 08-11) of ephemeris files original value given at command line.  */
-  const char *ephemYear_help; /**< @brief Year or year range (e.g. 08-11) of ephemeris files help description.  */
+  char * ephemEarth_arg;	/**< @brief Location of Earth ephemeris file (default='earth00-19-DE405.dat.gz').  */
+  char * ephemEarth_orig;	/**< @brief Location of Earth ephemeris file original value given at command line.  */
+  const char *ephemEarth_help; /**< @brief Location of Earth ephemeris file help description.  */
+  char * ephemSun_arg;	/**< @brief Location of Sun ephemeris file (default='sun00-19-DE405.dat.gz').  */
+  char * ephemSun_orig;	/**< @brief Location of Sun ephemeris file original value given at command line.  */
+  const char *ephemSun_help; /**< @brief Location of Sun ephemeris file help description.  */
   int gaussNoiseWithSFTgaps_flag;	/**< @brief Use the same gaps as SFTs that are read-in from either --sftDir or --sftFile options (one is required!), but create Gaussian noise with noise equal to --avesqrtSh (option conflicts with --timestampsFile) (default=off).  */
   const char *gaussNoiseWithSFTgaps_help; /**< @brief Use the same gaps as SFTs that are read-in from either --sftDir or --sftFile options (one is required!), but create Gaussian noise with noise equal to --avesqrtSh (option conflicts with --timestampsFile) help description.  */
   double Pmin_arg;	/**< @brief Minimum period to be searched (in seconds).  */
@@ -286,8 +286,8 @@ struct gengetopt_args_info
   unsigned int normRMSoutput_given ;	/**< @brief Whether normRMSoutput was given.  */
   unsigned int sftDir_given ;	/**< @brief Whether sftDir was given.  */
   unsigned int sftFile_given ;	/**< @brief Whether sftFile was given.  */
-  unsigned int ephemDir_given ;	/**< @brief Whether ephemDir was given.  */
-  unsigned int ephemYear_given ;	/**< @brief Whether ephemYear was given.  */
+  unsigned int ephemEarth_given ;	/**< @brief Whether ephemEarth was given.  */
+  unsigned int ephemSun_given ;	/**< @brief Whether ephemSun was given.  */
   unsigned int gaussNoiseWithSFTgaps_given ;	/**< @brief Whether gaussNoiseWithSFTgaps was given.  */
   unsigned int Pmin_given ;	/**< @brief Whether Pmin was given.  */
   unsigned int Pmax_given ;	/**< @brief Whether Pmax was given.  */

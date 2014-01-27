@@ -53,7 +53,7 @@
 
 //Global variables
 FILE *LOG = NULL, *ULFILE = NULL, *NORMRMSOUT = NULL;
-CHAR *earth_ephemeris = NULL, *sun_ephemeris = NULL, *sft_dir_file = NULL;
+CHAR *sft_dir_file = NULL;
 static const LALStatus empty_status;
 static const SFTConstraints empty_constraints;
 
@@ -164,7 +164,7 @@ int main(int argc, char *argv[])
    }
    
    //Initialize ephemeris data structure
-   EphemerisData *edat = XLALInitBarycenter(earth_ephemeris, sun_ephemeris);
+   EphemerisData *edat = XLALInitBarycenter(args_info.ephemEarth_arg, args_info.ephemSun_arg);
    if (edat==NULL) {
       fprintf(stderr, "%s: XLALInitBarycenter() failed.\n", __func__);
       XLAL_ERROR(XLAL_EFUNC);
@@ -182,41 +182,25 @@ int main(int argc, char *argv[])
       fprintf(stderr, "%s: You must choose either the the sky region (point or polygon) *or* a file.\n", __func__);
       XLAL_ERROR(XLAL_EINVAL);
    }
-   CHAR *sky = NULL;
-   if (args_info.skyRegion_given) {
-      sky = XLALCalloc(strlen(args_info.skyRegion_arg)+1, sizeof(*sky));
-      if (sky==NULL) {
-         fprintf(stderr, "%s: XLALCalloc(%zu) failed.\n", __func__, sizeof(*sky));
-         XLAL_ERROR(XLAL_ENOMEM);
-      }
-      sprintf(sky, "%s", args_info.skyRegion_arg);
-      fprintf(LOG, "Sky region = %s\n", sky);
-      fprintf(stderr, "Sky region = %s\n", sky);
-   } else {
-      sky = XLALCalloc(strlen(args_info.skyRegionFile_arg)+1, sizeof(*sky));
-      if (sky==NULL) {
-         fprintf(stderr, "%s: XLALCalloc(%zu) failed.\n", __func__, sizeof(*sky));
-         XLAL_ERROR(XLAL_ENOMEM);
-      }
-      sprintf(sky, "%s", args_info.skyRegionFile_arg);
-      fprintf(LOG, "Sky file = %s\n", sky);
-      fprintf(stderr, "Sky file = %s\n", sky);
-   }
    DopplerSkyScanInit scanInit = empty_DopplerSkyScanInit;
    DopplerSkyScanState scan = empty_DopplerSkyScanState;
    PulsarDopplerParams dopplerpos;
    if (args_info.skyRegion_given) {
       scanInit.gridType = GRID_ISOTROPIC;     //Default value for an approximate-isotropic grid
-      scanInit.skyRegionString = sky;      //"allsky" = Default value for all-sky search
+      scanInit.skyRegionString = args_info.skyRegion_arg;      //"allsky" = Default value for all-sky search
       scanInit.numSkyPartitions = 1;   //Default value so sky is not broken into chunks
       scanInit.Freq = args_info.fmin_arg+0.5*args_info.fspan_arg;  //Mid-point of the frequency band
       scanInit.dAlpha = 0.5/((inputParams->fmin+0.5*inputParams->fspan) * inputParams->Tcoh * detectorVmax);
       scanInit.dDelta = scanInit.dAlpha;
+      fprintf(LOG, "Sky region = %s\n", args_info.skyRegion_arg);
+      fprintf(stderr, "Sky region = %s\n", args_info.skyRegion_arg);
    } else {
       scanInit.gridType = GRID_FILE_SKYGRID;
-      scanInit.skyGridFile = sky;
+      scanInit.skyGridFile = args_info.skyRegionFile_arg;
       scanInit.numSkyPartitions = 1;   //Default value so sky is not broken into chunks
       scanInit.Freq = args_info.fmin_arg+0.5*args_info.fspan_arg;  //Mid-point of the frequency band
+      fprintf(LOG, "Sky file = %s\n", args_info.skyRegionFile_arg);
+      fprintf(stderr, "Sky file = %s\n", args_info.skyRegionFile_arg);
    }
    
    //Initialize the sky-grid
@@ -1439,9 +1423,6 @@ int main(int argc, char *argv[])
    free_ihsMaxima(ihsmaxima);
    XLALDestroyREAL4FFTPlan(secondFFTplan);
    XLALFree((CHAR*)sft_dir_file);
-   XLALFree((CHAR*)earth_ephemeris);
-   XLALFree((CHAR*)sun_ephemeris);
-   XLALFree((CHAR*)sky);
    XLALDestroyEphemerisData(edat);
    cmdline_parser_free(&args_info);
    XLALFree(configparams);
@@ -3463,27 +3444,6 @@ INT4 readTwoSpectInputParams(inputParamsStruct *params, struct gengetopt_args_in
       }
       XLALFree((CHAR*)IFO);
    }
-   
-   //Read in file names for ephemeris files
-   if (!args_info.ephemDir_given) {
-      fprintf(stderr, "%s: An ephemeris directory path must be specified.\n", __func__);
-      XLAL_ERROR(XLAL_FAILURE);
-   }
-   if (!args_info.ephemYear_given) {
-      fprintf(stderr, "%s: An ephemeris year/type suffix must be specified.\n", __func__);
-      XLAL_ERROR(XLAL_FAILURE);
-   }
-   earth_ephemeris = XLALCalloc(strlen(args_info.ephemDir_arg)+strlen(args_info.ephemYear_arg)+12, sizeof(*earth_ephemeris));
-   sun_ephemeris = XLALCalloc(strlen(args_info.ephemDir_arg)+strlen(args_info.ephemYear_arg)+12, sizeof(*sun_ephemeris));
-   if (earth_ephemeris==NULL) {
-      fprintf(stderr, "%s: XLALCalloc(%zu) failed.\n", __func__, sizeof(*earth_ephemeris));
-      XLAL_ERROR(XLAL_ENOMEM);
-   } else if (sun_ephemeris==NULL) {
-      fprintf(stderr, "%s: XLALCalloc(%zu) failed.\n", __func__, sizeof(*sun_ephemeris));
-      XLAL_ERROR(XLAL_ENOMEM);
-   }
-   sprintf(earth_ephemeris, "%s/earth%s.dat", args_info.ephemDir_arg, args_info.ephemYear_arg);
-   sprintf(sun_ephemeris, "%s/sun%s.dat", args_info.ephemDir_arg, args_info.ephemYear_arg);
 
    //SFT input conflicts with injRandSeed option
    if (args_info.injRandSeed_given && (args_info.sftFile_given || args_info.sftDir_given) && !args_info.gaussNoiseWithSFTgaps_given) {
