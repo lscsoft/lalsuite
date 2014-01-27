@@ -304,7 +304,7 @@ void skypoint95UL(UpperLimit *ul, inputParamsStruct *params, ffdataStruct *ffdat
          ul->period->data[ii-minrows] = params->Tobs/locationofloudestoutlier;
          ul->moddepth->data[ii-minrows] = 0.5*(ii-1.0)/params->Tcoh;
          ul->ULval->data[ii-minrows] = h0;
-         ul->effSNRval->data[ii-minrows] = unitGaussianSNR(root+pars.dof, pars.dof);
+         ul->effSNRval->data[ii-minrows] = unitGaussianSNR(root, pars.dof);
          ULdetermined++;
       } /* for ii=minrows --> maximum rows */
    }
