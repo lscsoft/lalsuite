@@ -197,8 +197,8 @@ REAL8TimeSeries *XLALSimDetectorStrainREAL8TimeSeries(
 	const LALDetector *detector
 )
 {
-	REAL8TimeSeries *h;
 	char *name;
+	REAL8TimeSeries *h = NULL;
 	unsigned i;
 
 	LAL_CHECK_VALID_SERIES(hplus, NULL);
@@ -217,7 +217,7 @@ REAL8TimeSeries *XLALSimDetectorStrainREAL8TimeSeries(
 	h = XLALCreateREAL8TimeSeries(name, &hplus->epoch, hplus->f0, hplus->deltaT, &hplus->sampleUnits, hplus->data->length);
 	XLALFree(name);
 	if(!h)
-		XLAL_ERROR_NULL(XLAL_EFUNC);
+		goto error;
 
 	/* add the detector's geometric delay.  after this, epoch = the
 	 * time of the injection time series' first sample at the desired
@@ -240,6 +240,10 @@ REAL8TimeSeries *XLALSimDetectorStrainREAL8TimeSeries(
 	/* done */
 
 	return h;
+
+error:
+	XLALDestroyREAL8TimeSeries(h);
+	XLAL_ERROR_NULL(XLAL_EFUNC);
 }
 
 
