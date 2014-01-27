@@ -197,8 +197,8 @@ REAL8TimeSeries *XLALSimDetectorStrainREAL8TimeSeries(
 	const LALDetector *detector
 )
 {
-	char name[13];	/* "?? injection" + terminator */
 	REAL8TimeSeries *h;
+	char *name;
 	unsigned i;
 
 	LAL_CHECK_VALID_SERIES(hplus, NULL);
@@ -207,11 +207,15 @@ REAL8TimeSeries *XLALSimDetectorStrainREAL8TimeSeries(
 
 	/* generate name */
 
-	sprintf(name, "%2s injection", detector->frDetector.prefix);
+	name = XLALMalloc(strlen(detector->frDetector.prefix) + 11);
+	if(!name)
+		goto error;
+	sprintf(name, "%s injection", detector->frDetector.prefix);
 
 	/* allocate output time series. */
 
 	h = XLALCreateREAL8TimeSeries(name, &hplus->epoch, hplus->f0, hplus->deltaT, &hplus->sampleUnits, hplus->data->length);
+	XLALFree(name);
 	if(!h)
 		XLAL_ERROR_NULL(XLAL_EFUNC);
 
