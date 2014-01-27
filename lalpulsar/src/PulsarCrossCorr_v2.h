@@ -165,14 +165,13 @@ int XLALFindLMXBCrossCorrDiagMetric
    REAL8             *g_ff,
    REAL8             *g_aa,
    REAL8             *g_TT,
-   BinaryOrbitParams *BinaryParams,
-   REAL8             *f,
+   BinaryOrbitParams BinaryParams,
+   REAL8             f,
    REAL8Vector       *G_alpha,
    SFTPairIndexList  *pairIndexList,
    SFTIndexList      *indexList,
-   MultiSFTVector    *sfts,
-   REAL8             fB,
-   REAL8             mf
+   MultiSFTVector    *sfts
+  
    /*REAL8             *g_pp,*/
    )
   ;

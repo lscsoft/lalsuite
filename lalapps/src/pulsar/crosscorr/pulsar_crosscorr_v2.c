@@ -131,7 +131,7 @@ int main(int argc, char *argv[]){
   REAL8 ccStat=0;
   REAL8 evSquared=0;
   REAL8 estSens=0; /*estimated sensitivity(4.13)*/
-  REAL8 thisfrequency=uvar.fStart;
+  REAL8 thisfrequency=0;
   /* initialize and register user variables */
   if ( XLALInitUserVars( &uvar ) != XLAL_SUCCESS ) {
     LogPrintf ( LOG_CRITICAL, "%s: XLALInitUserVars() failed with errno=%d\n", __func__, xlalErrno );
@@ -294,17 +294,11 @@ int main(int argc, char *argv[]){
     LogPrintf ( LOG_CRITICAL, "%s: XLALCalculateAveCurlyGUnshifted() failed with errno=%d\n", __func__, xlalErrno );
     XLAL_ERROR( XLAL_EFUNC );
   }
- /*initialize binary parameters structure*/
+  /*initialize binary parameters structure*/
   minBinaryTemplate=empty_BinaryOrbitParams;
   maxBinaryTemplate=empty_BinaryOrbitParams;
   thisBinaryTemplate=empty_BinaryOrbitParams;
   binaryTemplateSpacings=empty_BinaryOrbitParams;
-  /*fill in binaryspacings*/
-  XLALGPSSetREAL8( &binaryTemplateSpacings.tp, 0.0);
-  binaryTemplateSpacings.argp = 0.0;
-  binaryTemplateSpacings.asini = uvar.orbitAsiniSecBand;
-  binaryTemplateSpacings.ecc = 0.0;
-  binaryTemplateSpacings.period = 0.0;
   /*fill in minbinaryOrbitParams*/
   XLALGPSSetREAL8( &minBinaryTemplate.tp, uvar.orbitTimeAsc);
   minBinaryTemplate.argp = 0.0;
@@ -314,7 +308,7 @@ int main(int argc, char *argv[]){
   /*fill in maxBinaryParams*/
   XLALGPSSetREAL8( &maxBinaryTemplate.tp, uvar.orbitTimeAsc);
   maxBinaryTemplate.argp = 0.0;
-  maxBinaryTemplate.asini = uvar.orbitAsiniSec+ binaryTemplateSpacings.asini;
+  maxBinaryTemplate.asini = uvar.orbitAsiniSec+ uvar.orbitAsiniSecBand;
   maxBinaryTemplate.ecc = 0.0;
   maxBinaryTemplate.period = uvar.orbitPSec; 
   /*fill in thisBinaryTemplate*/
@@ -323,9 +317,11 @@ int main(int argc, char *argv[]){
   thisBinaryTemplate.asini = 0.5*(minBinaryTemplate.asini+ maxBinaryTemplate.asini);
   thisBinaryTemplate.ecc = 0.0;
   thisBinaryTemplate.period =0.5*(minBinaryTemplate.period+ maxBinaryTemplate.period);
+  /*Calculate midpoint of frequency*/
+  thisfrequency=uvar.fStart+0.5* uvar.fBand;
 
   /*Get metric diagonal components, also estimate sensitivity i.e. E[rho]/(h0)^2 (4.13)*/
-  if ( (XLALFindLMXBCrossCorrDiagMetric(&estSens,&diagff,&diagaa,&diagTT,&thisBinaryTemplate,&thisfrequency,curlyGUnshifted,sftPairs,sftIndices,inputSFTs,uvar.fBand,uvar.mismatchF)  != XLAL_SUCCESS ) ) {
+  if ( (XLALFindLMXBCrossCorrDiagMetric(&estSens,&diagff,&diagaa,&diagTT,thisBinaryTemplate,thisfrequency,curlyGUnshifted,sftPairs,sftIndices,inputSFTs)  != XLAL_SUCCESS ) ) {
     LogPrintf ( LOG_CRITICAL, "%s: XLALFindLMXBCrossCorrDiagMetric() failed with errno=%d\n", __func__, xlalErrno );
     XLAL_ERROR( XLAL_EFUNC );
   }
@@ -576,11 +572,15 @@ int XLALDestroyConfigVars (ConfigVariables *config)
 
 /* getting the next template */
 /** FIXME: spacings and min, max values of binary parameters are not used yet */
-int GetNextCrossCorrTemplate( PulsarDopplerParams *dopplerpos, BinaryOrbitParams *binaryTemplateSpacings, BinaryOrbitParams *minBinaryTemplate, BinaryOrbitParams *maxBinaryTemplate, REAL8 freq_hi )
+
+/*freq_hi = uvar.fStart+uvar.fBand;
+  numTemplate=int(uvar.fBand*uvar.orbitAsiniSecBand*uvar.orbitTimeAscBand*sqrt(diagff*diagaa*diagTT/uvar.mismatchF/uvar.mismatchA/uvar.mismatchT))+1;*/
+int GetNextCrossCorrTemplate( PulsarDopplerParams *dopplerpos, BinaryOrbitParams *binaryTemplateSpacings, BinaryOrbitParams *minBinaryTemplate, BinaryOrbitParams *maxBinaryTemplate, REAL8 freq_hi /*, REAL8 *rho, int numTem*/)
 {
 
   REAL8 new_freq;
-
+ /*BinaryOrbitParams *new_BinParams=empty_BinaryOrbitParams;*/
+  /*  REAL8 ret[numTem];*/
   /* basic sanity checks */
   if (binaryTemplateSpacings == NULL)
     return -1;
@@ -603,3 +603,5 @@ int GetNextCrossCorrTemplate( PulsarDopplerParams *dopplerpos, BinaryOrbitParams
       return 0;
     }
 }
+
+/*if(new_BinParams.)*/
