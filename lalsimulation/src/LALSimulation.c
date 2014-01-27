@@ -194,7 +194,7 @@ REAL8TimeSeries *XLALSimDetectorStrainREAL8TimeSeries(
 	REAL8 right_ascension,
 	REAL8 declination,
 	REAL8 psi,
-	LALDetector *detector
+	const LALDetector *detector
 )
 {
 	char name[13];	/* "?? injection" + terminator */
