@@ -236,6 +236,8 @@ REAL8TimeSeries *XLALSimDetectorStrainREAL8TimeSeries(
 
 		/* detector's response at that time */
 		XLALComputeDetAMResponse(&fplus, &fcross, (const REAL4(*)[3])detector->response, right_ascension, declination, psi, XLALGreenwichMeanSiderealTime(&t));
+		if(XLAL_IS_REAL8_FAIL_NAN(fplus) || XLAL_IS_REAL8_FAIL_NAN(fcross))
+			goto error;
 
 		h->data->data[i] = fplus * hplus->data->data[i] + fcross * hcross->data->data[i];
 	}
