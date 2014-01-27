@@ -274,6 +274,62 @@ static INT4 getDataOptionsByDetectors(ProcessParamsTable *commandLine, char ***i
     return(1);
 }
 
+void LALInferencePrintDataWithInjection(LALInferenceIFOData *IFOdata, ProcessParamsTable *commandLine);
+void LALInferencePrintDataWithInjection(LALInferenceIFOData *IFOdata, ProcessParamsTable *commandLine){
+  
+  UINT4 Nifo=0,i,j;
+  LALInferenceIFOData *thisData=IFOdata;
+  ProcessParamsTable *ppt=NULL;
+  while(thisData){
+    thisData=thisData->next;
+    Nifo++;
+  }
+  
+  
+  if (LALInferenceGetProcParamVal(commandLine, "--data-dump")) {
+    const UINT4 nameLength=FILENAME_MAX;
+    char filename[nameLength];
+    FILE *out;
+    
+    for (i=0;i<Nifo;i++) {
+      
+      ppt=LALInferenceGetProcParamVal(commandLine,"--outfile");
+      if(ppt) {
+        snprintf(filename, nameLength, "%s-%s-timeDataWithInjection.dat", ppt->value, IFOdata[i].name);
+      }
+      else
+        snprintf(filename, nameLength, "%s-timeDataWithInjection.dat", IFOdata[i].name);
+      out = fopen(filename, "w");
+      for (j = 0; j < IFOdata[i].timeData->data->length; j++) {
+        REAL8 t = XLALGPSGetREAL8(&(IFOdata[i].timeData->epoch)) +
+        j * IFOdata[i].timeData->deltaT;
+        REAL8 d = IFOdata[i].timeData->data->data[j];
+        
+        fprintf(out, "%.6f %g\n", t, d);
+      }
+      fclose(out);
+      
+      ppt=LALInferenceGetProcParamVal(commandLine,"--outfile");
+      if(ppt) {
+        snprintf(filename, nameLength, "%s-%s-freqDataWithInjection.dat", ppt->value, IFOdata[i].name);
+      }
+      else
+        snprintf(filename, nameLength, "%s-freqDataWithInjection.dat", IFOdata[i].name);
+      out = fopen(filename, "w");
+      for (j = 0; j < IFOdata[i].freqData->data->length; j++) {
+        REAL8 f = IFOdata[i].freqData->deltaF * j;
+        REAL8 dre = creal(IFOdata[i].freqData->data->data[j]);
+        REAL8 dim = cimag(IFOdata[i].freqData->data->data[j]);
+        
+        fprintf(out, "%10.10g %10.10g %10.10g\n", f, dre, dim);
+      }
+      fclose(out);
+    }
+    
+  }
+  
+}
+
 #define USAGE "\
  --ifo IFO1 [--ifo IFO2 ...]    IFOs can be H1,L1,V1\n\
  --IFO1-cache cache1 [--IFO2-cache2 cache2 ...]    cache files (LALLIGO, LALAdLIGO, LALVirgo to simulate these detectors using lal; LALSimLIGO, LALSimAdLIGO, LALSimVirgo, LALSimAdVirgo to use lalsimuation)\n\
@@ -1143,7 +1199,7 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
                 REAL8 f = IFOdata[i].oneSidedNoisePowerSpectrum->deltaF*j;
                 REAL8 psd = IFOdata[i].oneSidedNoisePowerSpectrum->data->data[j];
 
-                fprintf(out, "%g %g\n", f, psd);
+                fprintf(out, "%10.10g %10.10g\n", f, psd);
             }
             fclose(out);
 
@@ -1337,58 +1393,7 @@ void LALInferenceInjectInspiralSignal(LALInferenceIFOData *IFOdata, ProcessParam
 	if(strstr(injTable->waveform,"TaylorF2"))
 	{ printf("Injecting TaylorF2 in the frequency domain...\n");
 	 InjectTaylorF2(IFOdata, injTable, commandLine);
-    
-    UINT4 Nifo=0;
-    thisData=IFOdata;
-    while(thisData){
-      thisData=thisData->next;
-      Nifo++;
-    }
-    
-    
-    if (LALInferenceGetProcParamVal(commandLine, "--data-dump")) {
-      const UINT4 nameLength=FILENAME_MAX;
-      char filename[nameLength];
-      FILE *out;
-      
-      for (i=0;i<Nifo;i++) {
-        
-        ppt=LALInferenceGetProcParamVal(commandLine,"--outfile");
-        if(ppt) {
-          snprintf(filename, nameLength, "%s-%s-timeDataWithInjection.dat", ppt->value, IFOdata[i].name);
-        }
-        else
-          snprintf(filename, nameLength, "%s-timeDataWithInjection.dat", IFOdata[i].name);
-        out = fopen(filename, "w");
-        for (j = 0; j < IFOdata[i].timeData->data->length; j++) {
-          REAL8 t = XLALGPSGetREAL8(&(IFOdata[i].timeData->epoch)) +
-          j * IFOdata[i].timeData->deltaT;
-          REAL8 d = IFOdata[i].timeData->data->data[j];
-          
-          fprintf(out, "%.6f %g\n", t, d);
-        }
-        fclose(out);
-        
-        ppt=LALInferenceGetProcParamVal(commandLine,"--outfile");
-        if(ppt) {
-          snprintf(filename, nameLength, "%s-%s-freqDataWithInjection.dat", ppt->value, IFOdata[i].name);
-        }
-        else
-          snprintf(filename, nameLength, "%s-freqDataWithInjection.dat", IFOdata[i].name);
-        out = fopen(filename, "w");
-        for (j = 0; j < IFOdata[i].freqData->data->length; j++) {
-          REAL8 f = IFOdata[i].freqData->deltaF * j;
-          REAL8 dre = creal(IFOdata[i].freqData->data->data[j]);
-          REAL8 dim = cimag(IFOdata[i].freqData->data->data[j]);
-          
-          fprintf(out, "%g %g %g\n", f, dre, dim);
-        }
-        fclose(out);
-      }
-      
-    }
-
-    
+   LALInferencePrintDataWithInjection(IFOdata,commandLine);
     
 	 return;
 	}
@@ -1679,59 +1684,11 @@ void LALInferenceInjectInspiralSignal(LALInferenceIFOData *IFOdata, ProcessParam
         XLALDestroyREAL4TimeSeries(injectionBuffer);
     }
   
-    UINT4 Nifo=0;
-    thisData=IFOdata;
-    while(thisData){
-      thisData=thisData->next;
-      Nifo++;
-    }
-
-  
-    if (LALInferenceGetProcParamVal(commandLine, "--data-dump")) {
-      const UINT4 nameLength=FILENAME_MAX;
-      char filename[nameLength];
-      FILE *out;
-      
-      for (i=0;i<Nifo;i++) {
-      
-        ppt=LALInferenceGetProcParamVal(commandLine,"--outfile");
-        if(ppt) {
-          snprintf(filename, nameLength, "%s-%s-timeDataWithInjection.dat", ppt->value, IFOdata[i].name);
-        }
-        else
-          snprintf(filename, nameLength, "%s-timeDataWithInjection.dat", IFOdata[i].name);
-        out = fopen(filename, "w");
-        for (j = 0; j < IFOdata[i].timeData->data->length; j++) {
-          REAL8 t = XLALGPSGetREAL8(&(IFOdata[i].timeData->epoch)) +
-          j * IFOdata[i].timeData->deltaT;
-          REAL8 d = IFOdata[i].timeData->data->data[j];
-      
-          fprintf(out, "%.6f %g\n", t, d);
-        }
-        fclose(out);
-    
-        ppt=LALInferenceGetProcParamVal(commandLine,"--outfile");
-        if(ppt) {
-          snprintf(filename, nameLength, "%s-%s-freqDataWithInjection.dat", ppt->value, IFOdata[i].name);
-        }
-        else
-          snprintf(filename, nameLength, "%s-freqDataWithInjection.dat", IFOdata[i].name);
-        out = fopen(filename, "w");
-        for (j = 0; j < IFOdata[i].freqData->data->length; j++) {
-          REAL8 f = IFOdata[i].freqData->deltaF * j;
-          REAL8 dre = creal(IFOdata[i].freqData->data->data[j]);
-          REAL8 dim = cimag(IFOdata[i].freqData->data->data[j]);
-      
-          fprintf(out, "%g %g %g\n", f, dre, dim);
-        }
-        fclose(out);
-      }
-      
-    }
-  
+    LALInferencePrintDataWithInjection(IFOdata,commandLine);
   
     return;
 }
+
 
 //temporary? replacement function for FindChirpInjectSignals in order to accept any detector.site and not only the ones in lalCachedDetectors.
 void
