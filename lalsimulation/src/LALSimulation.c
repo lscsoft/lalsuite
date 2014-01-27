@@ -276,14 +276,14 @@ int XLALSimAddInjectionREAL8TimeSeries(
 	const COMPLEX16FrequencySeries *response
 )
 {
-	COMPLEX16FrequencySeries *tilde_h;
-	REAL8FFTPlan *plan;
-	REAL8Window *window;
+	/* 1 ns is about 10^-5 samples at 16384 Hz */
+	const double noop_threshold = 1e-4;	/* samples */
 	/* the source time series is padded with at least this many 0's at
 	 * the start and end before re-interpolation in an attempt to
 	 * suppress aperiodicity artifacts, and 1/2 this many samples is
 	 * clipped from the start and end afterwards */
 	const unsigned aperiodicity_suppression_buffer = 32768;
+	REAL8Window *window;
 	unsigned i;
 	double start_sample_int;
 	double start_sample_frac;
@@ -332,113 +332,118 @@ int XLALSimAddInjectionREAL8TimeSeries(
 		start_sample_int += 1.0;
 	}
 
-	/* transform source time series to frequency domain.  the FFT
-	 * function populates the frequency series' metadata with the
-	 * appropriate values. */
+	if(fabs(start_sample_frac) > noop_threshold) {
+		COMPLEX16FrequencySeries *tilde_h;
+		REAL8FFTPlan *plan;
 
-	tilde_h = XLALCreateCOMPLEX16FrequencySeries(NULL, &h->epoch, 0, 0, &lalDimensionlessUnit, h->data->length / 2 + 1);
-	plan = XLALCreateForwardREAL8FFTPlan(h->data->length, 0);
-	if(!tilde_h || !plan) {
-		XLALDestroyCOMPLEX16FrequencySeries(tilde_h);
+		/* transform source time series to frequency domain.  the FFT
+		 * function populates the frequency series' metadata with the
+		 * appropriate values. */
+
+		tilde_h = XLALCreateCOMPLEX16FrequencySeries(NULL, &h->epoch, 0, 0, &lalDimensionlessUnit, h->data->length / 2 + 1);
+		plan = XLALCreateForwardREAL8FFTPlan(h->data->length, 0);
+		if(!tilde_h || !plan) {
+			XLALDestroyCOMPLEX16FrequencySeries(tilde_h);
+			XLALDestroyREAL8FFTPlan(plan);
+			XLAL_ERROR(XLAL_EFUNC);
+		}
+		i = XLALREAL8TimeFreqFFT(tilde_h, h, plan);
 		XLALDestroyREAL8FFTPlan(plan);
-		XLAL_ERROR(XLAL_EFUNC);
-	}
-	i = XLALREAL8TimeFreqFFT(tilde_h, h, plan);
-	XLALDestroyREAL8FFTPlan(plan);
-	if(i) {
-		XLALDestroyCOMPLEX16FrequencySeries(tilde_h);
-		XLAL_ERROR(XLAL_EFUNC);
-	}
-
-	/* apply sub-sample time correction and optional response function
-	 * */
-
-	for(i = 0; i < tilde_h->data->length; i++) {
-		const double f = tilde_h->f0 + i * tilde_h->deltaF;
-		COMPLEX16 fac;
-
-		/* phase for sub-sample time correction */
-
-		fac = cexp(-I * LAL_TWOPI * f * start_sample_frac * target->deltaT);
-
-		/* divide the source by the response function.  if a
-		 * frequency is required that lies outside the domain of
-		 * definition of the response function, then the response
-		 * is assumed equal to its value at the nearest edge of the
-		 * domain of definition.  within the domain of definition,
-		 * frequencies are rounded to the nearest bin.  if the
-		 * response function is zero in some bin, then the source
-		 * data is zeroed in that bin (instead of dividing by 0).
-		 * */
-
-		/* FIXME:  should we use GSL to construct an interpolator
-		 * for the modulus and phase as functions of frequency, and
-		 * use that to evaluate the response?  instead of rounding
-		 * to nearest bin? */
-
-		if(response) {
-			int j = floor((f - response->f0) / response->deltaF + 0.5);
-			if(j < 0)
-				j = 0;
-			else if((unsigned) j > response->data->length - 1)
-				j = response->data->length - 1;
-			if(response->data->data[j] == 0.0)
-				fac = 0.0;
-			else
-				fac /= response->data->data[j];
+		if(i) {
+			XLALDestroyCOMPLEX16FrequencySeries(tilde_h);
+			XLAL_ERROR(XLAL_EFUNC);
 		}
 
-		/* apply factor */
+		/* apply sub-sample time correction and optional response function
+		 * */
 
-		tilde_h->data->data[i] *= fac;
-	}
+		for(i = 0; i < tilde_h->data->length; i++) {
+			const double f = tilde_h->f0 + i * tilde_h->deltaF;
+			COMPLEX16 fac;
 
-	/* adjust DC and Nyquist components.  the DC component must always
-	 * be real-valued.  because we have adjusted the source time series
-	 * to have a length that is an even integer (we've made it a power
-	 * of 2) the Nyquist component must also be real valued. */
+			/* phase for sub-sample time correction */
 
-	if(response) {
-		/* a response function has been provided.  zero the DC and
-		 * Nyquist components */
-		if(tilde_h->f0 == 0.0)
-			tilde_h->data->data[0] = 0.0;
-		tilde_h->data->data[tilde_h->data->length - 1] = 0.0;
-	} else {
-		/* no response has been provided.  set the phase of the DC
-		 * component to 0, set the imaginary component of the
-		 * Nyquist to 0 */
-		if(tilde_h->f0 == 0.0)
-			tilde_h->data->data[0] = cabs(tilde_h->data->data[0]);
-		tilde_h->data->data[tilde_h->data->length - 1] = creal(tilde_h->data->data[tilde_h->data->length - 1]);
-	}
+			fac = cexp(-I * LAL_TWOPI * f * start_sample_frac * target->deltaT);
 
-	/* return to time domain */
+			/* divide the source by the response function.  if a
+			 * frequency is required that lies outside the domain of
+			 * definition of the response function, then the response
+			 * is assumed equal to its value at the nearest edge of the
+			 * domain of definition.  within the domain of definition,
+			 * frequencies are rounded to the nearest bin.  if the
+			 * response function is zero in some bin, then the source
+			 * data is zeroed in that bin (instead of dividing by 0).
+			 * */
 
-	plan = XLALCreateReverseREAL8FFTPlan(h->data->length, 0);
-	if(!plan) {
+			/* FIXME:  should we use GSL to construct an interpolator
+			 * for the modulus and phase as functions of frequency, and
+			 * use that to evaluate the response?  instead of rounding
+			 * to nearest bin? */
+
+			if(response) {
+				int j = floor((f - response->f0) / response->deltaF + 0.5);
+				if(j < 0)
+					j = 0;
+				else if((unsigned) j > response->data->length - 1)
+					j = response->data->length - 1;
+				if(response->data->data[j] == 0.0)
+					fac = 0.0;
+				else
+					fac /= response->data->data[j];
+			}
+
+			/* apply factor */
+
+			tilde_h->data->data[i] *= fac;
+		}
+
+		/* adjust DC and Nyquist components.  the DC component must always
+		 * be real-valued.  because we have adjusted the source time series
+		 * to have a length that is an even integer (we've made it a power
+		 * of 2) the Nyquist component must also be real valued. */
+
+		if(response) {
+			/* a response function has been provided.  zero the DC and
+			 * Nyquist components */
+			if(tilde_h->f0 == 0.0)
+				tilde_h->data->data[0] = 0.0;
+			tilde_h->data->data[tilde_h->data->length - 1] = 0.0;
+		} else {
+			/* no response has been provided.  set the phase of the DC
+			 * component to 0, set the imaginary component of the
+			 * Nyquist to 0 */
+			if(tilde_h->f0 == 0.0)
+				tilde_h->data->data[0] = cabs(tilde_h->data->data[0]);
+			tilde_h->data->data[tilde_h->data->length - 1] = creal(tilde_h->data->data[tilde_h->data->length - 1]);
+		}
+
+		/* return to time domain */
+
+		plan = XLALCreateReverseREAL8FFTPlan(h->data->length, 0);
+		if(!plan) {
+			XLALDestroyCOMPLEX16FrequencySeries(tilde_h);
+			XLAL_ERROR(XLAL_EFUNC);
+		}
+		i = XLALREAL8FreqTimeFFT(h, tilde_h, plan);
+		XLALDestroyREAL8FFTPlan(plan);
 		XLALDestroyCOMPLEX16FrequencySeries(tilde_h);
-		XLAL_ERROR(XLAL_EFUNC);
-	}
-	i = XLALREAL8FreqTimeFFT(h, tilde_h, plan);
-	XLALDestroyREAL8FFTPlan(plan);
-	XLALDestroyCOMPLEX16FrequencySeries(tilde_h);
-	if(i)
-		XLAL_ERROR(XLAL_EFUNC);
+		if(i)
+			XLAL_ERROR(XLAL_EFUNC);
 
-	/* the deltaT can get "corrupted" by floating point round-off
-	 * during its trip through the frequency domain.  since this
-	 * function starts by confirming that the sample rate of the source
-	 * matches that of the target time series, we can use the target
-	 * series' sample rate to reset the source's sample rate to its
-	 * original value.  but we do a check to make sure we're not
-	 * masking a real bug */
+		/* the deltaT can get "corrupted" by floating point round-off
+		 * during its trip through the frequency domain.  since this
+		 * function starts by confirming that the sample rate of the source
+		 * matches that of the target time series, we can use the target
+		 * series' sample rate to reset the source's sample rate to its
+		 * original value.  but we do a check to make sure we're not
+		 * masking a real bug */
 
-	if(fabs(h->deltaT - target->deltaT) / target->deltaT > 1e-12) {
-		XLALPrintError("%s(): error: oops, internal sample rate mismatch\n", __func__);
-		XLAL_ERROR(XLAL_EERR);
+		if(fabs(h->deltaT - target->deltaT) / target->deltaT > 1e-12) {
+			XLALPrintError("%s(): error: oops, internal sample rate mismatch\n", __func__);
+			XLAL_ERROR(XLAL_EERR);
+		}
+		h->deltaT = target->deltaT;
 	}
-	h->deltaT = target->deltaT;
 
 	/* set source epoch from target epoch and integer sample offset */
 
@@ -499,8 +504,8 @@ int XLALSimAddInjectionREAL4TimeSeries(
 	const COMPLEX8FrequencySeries *response
 )
 {
-	COMPLEX8FrequencySeries *tilde_h;
-	REAL4FFTPlan *plan;
+	/* 1 ns is about 10^-5 samples at 16384 Hz */
+	const double noop_threshold = 1e-4;	/* samples */
 	REAL4Window *window;
 	/* the source time series is padded with at least this many 0's at
 	 * the start and end before re-interpolation in an attempt to
@@ -555,113 +560,118 @@ int XLALSimAddInjectionREAL4TimeSeries(
 		start_sample_int += 1.0;
 	}
 
-	/* transform source time series to frequency domain.  the FFT
-	 * function populates the frequency series' metadata with the
-	 * appropriate values. */
+	if(fabs(start_sample_frac) > noop_threshold) {
+		COMPLEX8FrequencySeries *tilde_h;
+		REAL4FFTPlan *plan;
 
-	tilde_h = XLALCreateCOMPLEX8FrequencySeries(NULL, &h->epoch, 0, 0, &lalDimensionlessUnit, h->data->length / 2 + 1);
-	plan = XLALCreateForwardREAL4FFTPlan(h->data->length, 0);
-	if(!tilde_h || !plan) {
-		XLALDestroyCOMPLEX8FrequencySeries(tilde_h);
+		/* transform source time series to frequency domain.  the FFT
+		 * function populates the frequency series' metadata with the
+		 * appropriate values. */
+
+		tilde_h = XLALCreateCOMPLEX8FrequencySeries(NULL, &h->epoch, 0, 0, &lalDimensionlessUnit, h->data->length / 2 + 1);
+		plan = XLALCreateForwardREAL4FFTPlan(h->data->length, 0);
+		if(!tilde_h || !plan) {
+			XLALDestroyCOMPLEX8FrequencySeries(tilde_h);
+			XLALDestroyREAL4FFTPlan(plan);
+			XLAL_ERROR(XLAL_EFUNC);
+		}
+		i = XLALREAL4TimeFreqFFT(tilde_h, h, plan);
 		XLALDestroyREAL4FFTPlan(plan);
-		XLAL_ERROR(XLAL_EFUNC);
-	}
-	i = XLALREAL4TimeFreqFFT(tilde_h, h, plan);
-	XLALDestroyREAL4FFTPlan(plan);
-	if(i) {
-		XLALDestroyCOMPLEX8FrequencySeries(tilde_h);
-		XLAL_ERROR(XLAL_EFUNC);
-	}
-
-	/* apply sub-sample time correction and optional response function
-	 * */
-
-	for(i = 0; i < tilde_h->data->length; i++) {
-		const double f = tilde_h->f0 + i * tilde_h->deltaF;
-		COMPLEX8 fac;
-
-		/* phase for sub-sample time correction */
-
-		fac = cexp(-I * LAL_TWOPI * f * start_sample_frac * target->deltaT);
-
-		/* divide the source by the response function.  if a
-		 * frequency is required that lies outside the domain of
-		 * definition of the response function, then the response
-		 * is assumed equal to its value at the nearest edge of the
-		 * domain of definition.  within the domain of definition,
-		 * frequencies are rounded to the nearest bin.  if the
-		 * response function is zero in some bin, then the source
-		 * data is zeroed in that bin (instead of dividing by 0).
-		 * */
-
-		/* FIXME:  should we use GSL to construct an interpolator
-		 * for the modulus and phase as functions of frequency, and
-		 * use that to evaluate the response?  instead of rounding
-		 * to nearest bin? */
-
-		if(response) {
-			int j = floor((f - response->f0) / response->deltaF + 0.5);
-			if(j < 0)
-				j = 0;
-			else if((unsigned) j > response->data->length - 1)
-				j = response->data->length - 1;
-			if(response->data->data[j] == 0.0)
-				fac = 0.0;
-			else
-				fac /= response->data->data[j];
+		if(i) {
+			XLALDestroyCOMPLEX8FrequencySeries(tilde_h);
+			XLAL_ERROR(XLAL_EFUNC);
 		}
 
-		/* apply factor */
+		/* apply sub-sample time correction and optional response function
+		 * */
 
-		tilde_h->data->data[i] *= fac;
-	}
+		for(i = 0; i < tilde_h->data->length; i++) {
+			const double f = tilde_h->f0 + i * tilde_h->deltaF;
+			COMPLEX8 fac;
 
-	/* adjust DC and Nyquist components.  the DC component must always
-	 * be real-valued.  because we have adjusted the source time series
-	 * to have a length that is an even integer (we've made it a power
-	 * of 2) the Nyquist component must also be real valued. */
+			/* phase for sub-sample time correction */
 
-	if(response) {
-		/* a response function has been provided.  zero the DC and
-		 * Nyquist components */
-		if(tilde_h->f0 == 0.0)
-			tilde_h->data->data[0] = 0.0;
-		tilde_h->data->data[tilde_h->data->length - 1] = 0.0;
-	} else {
-		/* no response has been provided.  set the phase of the DC
-		 * component to 0, set the imaginary component of the
-		 * Nyquist to 0 */
-		if(tilde_h->f0 == 0.0)
-			tilde_h->data->data[0] = cabsf(tilde_h->data->data[0]);
-		tilde_h->data->data[tilde_h->data->length - 1] = crealf(tilde_h->data->data[tilde_h->data->length - 1]);
-	}
+			fac = cexp(-I * LAL_TWOPI * f * start_sample_frac * target->deltaT);
 
-	/* return to time domain */
+			/* divide the source by the response function.  if a
+			 * frequency is required that lies outside the domain of
+			 * definition of the response function, then the response
+			 * is assumed equal to its value at the nearest edge of the
+			 * domain of definition.  within the domain of definition,
+			 * frequencies are rounded to the nearest bin.  if the
+			 * response function is zero in some bin, then the source
+			 * data is zeroed in that bin (instead of dividing by 0).
+			 * */
 
-	plan = XLALCreateReverseREAL4FFTPlan(h->data->length, 0);
-	if(!plan) {
+			/* FIXME:  should we use GSL to construct an interpolator
+			 * for the modulus and phase as functions of frequency, and
+			 * use that to evaluate the response?  instead of rounding
+			 * to nearest bin? */
+
+			if(response) {
+				int j = floor((f - response->f0) / response->deltaF + 0.5);
+				if(j < 0)
+					j = 0;
+				else if((unsigned) j > response->data->length - 1)
+					j = response->data->length - 1;
+				if(response->data->data[j] == 0.0)
+					fac = 0.0;
+				else
+					fac /= response->data->data[j];
+			}
+
+			/* apply factor */
+
+			tilde_h->data->data[i] *= fac;
+		}
+
+		/* adjust DC and Nyquist components.  the DC component must always
+		 * be real-valued.  because we have adjusted the source time series
+		 * to have a length that is an even integer (we've made it a power
+		 * of 2) the Nyquist component must also be real valued. */
+
+		if(response) {
+			/* a response function has been provided.  zero the DC and
+			 * Nyquist components */
+			if(tilde_h->f0 == 0.0)
+				tilde_h->data->data[0] = 0.0;
+			tilde_h->data->data[tilde_h->data->length - 1] = 0.0;
+		} else {
+			/* no response has been provided.  set the phase of the DC
+			 * component to 0, set the imaginary component of the
+			 * Nyquist to 0 */
+			if(tilde_h->f0 == 0.0)
+				tilde_h->data->data[0] = cabsf(tilde_h->data->data[0]);
+			tilde_h->data->data[tilde_h->data->length - 1] = crealf(tilde_h->data->data[tilde_h->data->length - 1]);
+		}
+
+		/* return to time domain */
+
+		plan = XLALCreateReverseREAL4FFTPlan(h->data->length, 0);
+		if(!plan) {
+			XLALDestroyCOMPLEX8FrequencySeries(tilde_h);
+			XLAL_ERROR(XLAL_EFUNC);
+		}
+		i = XLALREAL4FreqTimeFFT(h, tilde_h, plan);
+		XLALDestroyREAL4FFTPlan(plan);
 		XLALDestroyCOMPLEX8FrequencySeries(tilde_h);
-		XLAL_ERROR(XLAL_EFUNC);
-	}
-	i = XLALREAL4FreqTimeFFT(h, tilde_h, plan);
-	XLALDestroyREAL4FFTPlan(plan);
-	XLALDestroyCOMPLEX8FrequencySeries(tilde_h);
-	if(i)
-		XLAL_ERROR(XLAL_EFUNC);
+		if(i)
+			XLAL_ERROR(XLAL_EFUNC);
 
-	/* the deltaT can get "corrupted" by floating point round-off
-	 * during its trip through the frequency domain.  since this
-	 * function starts by confirming that the sample rate of the source
-	 * matches that of the target time series, we can use the target
-	 * series' sample rate to reset the source's sample rate to its
-	 * original value.  but we do a check to make sure we're not
-	 * masking a real bug */
+		/* the deltaT can get "corrupted" by floating point round-off
+		 * during its trip through the frequency domain.  since this
+		 * function starts by confirming that the sample rate of the source
+		 * matches that of the target time series, we can use the target
+		 * series' sample rate to reset the source's sample rate to its
+		 * original value.  but we do a check to make sure we're not
+		 * masking a real bug */
 
-	if(fabs(h->deltaT - target->deltaT) / target->deltaT > 1e-12) {
-		XLALPrintError("%s(): error: oops, internal sample rate mismatch\n", __func__);
-		XLAL_ERROR(XLAL_EERR);
+		if(fabs(h->deltaT - target->deltaT) / target->deltaT > 1e-12) {
+			XLALPrintError("%s(): error: oops, internal sample rate mismatch\n", __func__);
+			XLAL_ERROR(XLAL_EERR);
+		}
+		h->deltaT = target->deltaT;
 	}
-	h->deltaT = target->deltaT;
 
 	/* set source epoch from target epoch and integer sample offset */
 
