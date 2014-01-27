@@ -36,11 +36,11 @@ double fdiff(double index, void *params) {
  
 int main(void) {
    FILE *H1CANDS, *L1CANDS;
-   char *infile1 = "/Users/evgoet/Documents/MATLAB/pulsar/S6/400-501HzH1Candidates.dat";
-   char *infile2 = "/Users/evgoet/Documents/MATLAB/pulsar/S6/400-501HzL1Candidates.dat";
-   char *outfile1 = "/Users/evgoet/Documents/MATLAB/pulsar/S6/400-501HzCandidates.dat";
-   char *outfile2 = "/Users/evgoet/Documents/MATLAB/pulsar/S6/400-501HzCandidates_reduced.dat";
-   char *outfile3 = "/Users/evgoet/Documents/MATLAB/pulsar/S6/400-501HzCandidates_reduced2.dat";
+   char *infile1 = "/Users/evgoet/Documents/MATLAB/pulsar/S6/50-252HzH1Candidates.dat";
+   char *infile2 = "/Users/evgoet/Documents/MATLAB/pulsar/S6/50-252HzL1Candidates.dat";
+   char *outfile1 = "/Users/evgoet/Documents/MATLAB/pulsar/S6/50-252HzCandidates2.dat";
+   char *outfile2 = "/Users/evgoet/Documents/MATLAB/pulsar/S6/50-252HzCandidates2_reduced.dat";
+   char *outfile3 = "/Users/evgoet/Documents/MATLAB/pulsar/S6/50-252HzCandidates2_reduced2.dat";
 
    H1CANDS = fopen(infile1,"r");
    if (H1CANDS == NULL) {
@@ -177,6 +177,7 @@ int main(void) {
                      double Pdiff_allowed = 1.5*allh1cands_sorted[ii*9+1]*allh1cands_sorted[ii*9+1]*sqrt(3.6e-3/allh1cands_sorted[ii*9+2])/(4.5*tobs);
                      double Pdiff_allowed_2 = 1.5*alll1cands_sorted[jj*9+1]*alll1cands_sorted[jj*9+1]*sqrt(3.6e-3/alll1cands_sorted[jj*9+2])/(4.5*tobs);
                      if (fabs(allh1cands_sorted[ii*9+1]-alll1cands_sorted[jj*9+1])<=Pdiff_allowed || fabs(allh1cands_sorted[ii*9+1]-alll1cands_sorted[jj*9+1])<=Pdiff_allowed_2 || fabs(allh1cands_sorted[ii*9+1]-2.0*alll1cands_sorted[jj*9+1])<=Pdiff_allowed || fabs(2.0*allh1cands_sorted[ii*9+1]-alll1cands_sorted[jj*9+1])<=Pdiff_allowed_2 || fabs(allh1cands_sorted[ii*9+1]-3.0*alll1cands_sorted[jj*9+1])<=Pdiff_allowed || fabs(3.0*allh1cands_sorted[ii*9+1]-alll1cands_sorted[jj*9+1])<=Pdiff_allowed_2 || fabs(allh1cands_sorted[ii*9+1]-4.0*alll1cands_sorted[jj*9+1])<=Pdiff_allowed || fabs(4.0*allh1cands_sorted[ii*9+1]-alll1cands_sorted[jj*9+1])<=Pdiff_allowed_2 || fabs(allh1cands_sorted[ii*9+1]-0.5*alll1cands_sorted[jj*9+1])<=Pdiff_allowed || fabs(0.5*allh1cands_sorted[ii*9+1]-alll1cands_sorted[jj*9+1])<=Pdiff_allowed_2 || fabs(allh1cands_sorted[ii*9+1]-alll1cands_sorted[jj*9+1]/3.0)<=Pdiff_allowed || fabs(allh1cands_sorted[ii*9+1]/3.0-alll1cands_sorted[jj*9+1])<=Pdiff_allowed_2 || fabs(allh1cands_sorted[ii*9+1]-0.25*alll1cands_sorted[jj*9+1])<=Pdiff_allowed || fabs(0.25*allh1cands_sorted[ii*9+1]-alll1cands_sorted[jj*9+1])<=Pdiff_allowed_2) {
+                     //if (fabs(allh1cands_sorted[ii*9+1]-alll1cands_sorted[jj*9+1])<=Pdiff_allowed || fabs(allh1cands_sorted[ii*9+1]-alll1cands_sorted[jj*9+1])<=Pdiff_allowed_2 || fabs(allh1cands_sorted[ii*9+1]-2.0*alll1cands_sorted[jj*9+1])<=Pdiff_allowed || fabs(2.0*allh1cands_sorted[ii*9+1]-alll1cands_sorted[jj*9+1])<=Pdiff_allowed_2 || fabs(allh1cands_sorted[ii*9+1]-3.0*alll1cands_sorted[jj*9+1])<=Pdiff_allowed || fabs(3.0*allh1cands_sorted[ii*9+1]-alll1cands_sorted[jj*9+1])<=Pdiff_allowed_2 || fabs(allh1cands_sorted[ii*9+1]-4.0*alll1cands_sorted[jj*9+1])<=Pdiff_allowed || fabs(4.0*allh1cands_sorted[ii*9+1]-alll1cands_sorted[jj*9+1])<=Pdiff_allowed_2 || fabs(allh1cands_sorted[ii*9+1]-0.5*alll1cands_sorted[jj*9+1])<=Pdiff_allowed || fabs(0.5*allh1cands_sorted[ii*9+1]-alll1cands_sorted[jj*9+1])<=Pdiff_allowed_2 || fabs(allh1cands_sorted[ii*9+1]-alll1cands_sorted[jj*9+1]/3.0)<=Pdiff_allowed || fabs(allh1cands_sorted[ii*9+1]/3.0-alll1cands_sorted[jj*9+1])<=Pdiff_allowed_2 || fabs(allh1cands_sorted[ii*9+1]-0.25*alll1cands_sorted[jj*9+1])<=Pdiff_allowed || fabs(0.25*allh1cands_sorted[ii*9+1]-alll1cands_sorted[jj*9+1])<=Pdiff_allowed_2 || fabs(allh1cands_sorted[ii*9+1]-0.75*alll1cands_sorted[jj*9+1])<=Pdiff_allowed || fabs(0.75*allh1cands_sorted[ii*9+1]-alll1cands_sorted[jj*9+1])<=Pdiff_allowed_2 || fabs(allh1cands_sorted[ii*9+1]-1.5*alll1cands_sorted[jj*9+1])<=Pdiff_allowed || fabs(1.5*allh1cands_sorted[ii*9+1]-alll1cands_sorted[jj*9+1])<=Pdiff_allowed_2 || fabs(allh1cands_sorted[ii*9+1]-2.0/3.0*alll1cands_sorted[jj*9+1])<=Pdiff_allowed || fabs(2.0/3.0*allh1cands_sorted[ii*9+1]-alll1cands_sorted[jj*9+1])<=Pdiff_allowed_2 || fabs(allh1cands_sorted[ii*9+1]-4.0/3.0*alll1cands_sorted[jj*9+1])<=Pdiff_allowed || fabs(4.0/3.0*allh1cands_sorted[ii*9+1]-alll1cands_sorted[jj*9+1])<=Pdiff_allowed_2) {
                         //Check the sky location
                         double absd1mPo2 = fabs(allh1cands_sorted[ii*9+4]-M_PI_2);
                         double absd2mPo2 = fabs(alll1cands_sorted[jj*9+4]-M_PI_2);
@@ -209,6 +210,7 @@ int main(void) {
                   double Pdiff_allowed = allh1cands_sorted[ii*9+1]*allh1cands_sorted[ii*9+1]*sqrt(3.6e-3/allh1cands_sorted[ii*9+2])/(4.5*tobs);
                   double Pdiff_allowed_2 = alll1cands_sorted[jj*9+1]*alll1cands_sorted[jj*9+1]*sqrt(3.6e-3/alll1cands_sorted[jj*9+2])/(4.5*tobs);
                   if (fabs(allh1cands_sorted[ii*9+1]-alll1cands_sorted[jj*9+1])<=Pdiff_allowed || fabs(allh1cands_sorted[ii*9+1]-alll1cands_sorted[jj*9+1])<=Pdiff_allowed_2 || fabs(allh1cands_sorted[ii*9+1]-2.0*alll1cands_sorted[jj*9+1])<=Pdiff_allowed || fabs(2.0*allh1cands_sorted[ii*9+1]-alll1cands_sorted[jj*9+1])<=Pdiff_allowed_2 || fabs(allh1cands_sorted[ii*9+1]-3.0*alll1cands_sorted[jj*9+1])<=Pdiff_allowed || fabs(3.0*allh1cands_sorted[ii*9+1]-alll1cands_sorted[jj*9+1])<=Pdiff_allowed_2 || fabs(allh1cands_sorted[ii*9+1]-4.0*alll1cands_sorted[jj*9+1])<=Pdiff_allowed || fabs(4.0*allh1cands_sorted[ii*9+1]-alll1cands_sorted[jj*9+1])<=Pdiff_allowed_2 || fabs(allh1cands_sorted[ii*9+1]-0.5*alll1cands_sorted[jj*9+1])<=Pdiff_allowed || fabs(0.5*allh1cands_sorted[ii*9+1]-alll1cands_sorted[jj*9+1])<=Pdiff_allowed_2 || fabs(allh1cands_sorted[ii*9+1]-alll1cands_sorted[jj*9+1]/3.0)<=Pdiff_allowed || fabs(allh1cands_sorted[ii*9+1]/3.0-alll1cands_sorted[jj*9+1])<=Pdiff_allowed_2 || fabs(allh1cands_sorted[ii*9+1]-0.25*alll1cands_sorted[jj*9+1])<=Pdiff_allowed || fabs(0.25*allh1cands_sorted[ii*9+1]-alll1cands_sorted[jj*9+1])<=Pdiff_allowed_2) {
+                  //if (fabs(allh1cands_sorted[ii*9+1]-alll1cands_sorted[jj*9+1])<=Pdiff_allowed || fabs(allh1cands_sorted[ii*9+1]-alll1cands_sorted[jj*9+1])<=Pdiff_allowed_2 || fabs(allh1cands_sorted[ii*9+1]-2.0*alll1cands_sorted[jj*9+1])<=Pdiff_allowed || fabs(2.0*allh1cands_sorted[ii*9+1]-alll1cands_sorted[jj*9+1])<=Pdiff_allowed_2 || fabs(allh1cands_sorted[ii*9+1]-3.0*alll1cands_sorted[jj*9+1])<=Pdiff_allowed || fabs(3.0*allh1cands_sorted[ii*9+1]-alll1cands_sorted[jj*9+1])<=Pdiff_allowed_2 || fabs(allh1cands_sorted[ii*9+1]-4.0*alll1cands_sorted[jj*9+1])<=Pdiff_allowed || fabs(4.0*allh1cands_sorted[ii*9+1]-alll1cands_sorted[jj*9+1])<=Pdiff_allowed_2 || fabs(allh1cands_sorted[ii*9+1]-0.5*alll1cands_sorted[jj*9+1])<=Pdiff_allowed || fabs(0.5*allh1cands_sorted[ii*9+1]-alll1cands_sorted[jj*9+1])<=Pdiff_allowed_2 || fabs(allh1cands_sorted[ii*9+1]-alll1cands_sorted[jj*9+1]/3.0)<=Pdiff_allowed || fabs(allh1cands_sorted[ii*9+1]/3.0-alll1cands_sorted[jj*9+1])<=Pdiff_allowed_2 || fabs(allh1cands_sorted[ii*9+1]-0.25*alll1cands_sorted[jj*9+1])<=Pdiff_allowed || fabs(0.25*allh1cands_sorted[ii*9+1]-alll1cands_sorted[jj*9+1])<=Pdiff_allowed_2 || fabs(allh1cands_sorted[ii*9+1]-0.75*alll1cands_sorted[jj*9+1])<=Pdiff_allowed || fabs(0.75*allh1cands_sorted[ii*9+1]-alll1cands_sorted[jj*9+1])<=Pdiff_allowed_2 || fabs(allh1cands_sorted[ii*9+1]-1.5*alll1cands_sorted[jj*9+1])<=Pdiff_allowed || fabs(1.5*allh1cands_sorted[ii*9+1]-alll1cands_sorted[jj*9+1])<=Pdiff_allowed_2 || fabs(allh1cands_sorted[ii*9+1]-2.0/3.0*alll1cands_sorted[jj*9+1])<=Pdiff_allowed || fabs(2.0/3.0*allh1cands_sorted[ii*9+1]-alll1cands_sorted[jj*9+1])<=Pdiff_allowed_2 || fabs(allh1cands_sorted[ii*9+1]-4.0/3.0*alll1cands_sorted[jj*9+1])<=Pdiff_allowed || fabs(4.0/3.0*allh1cands_sorted[ii*9+1]-alll1cands_sorted[jj*9+1])<=Pdiff_allowed_2) {
                      double absd1mPo2 = fabs(allh1cands_sorted[ii*9+4]-M_PI_2);
                      double absd2mPo2 = fabs(alll1cands_sorted[jj*9+4]-M_PI_2);
                      double dist = acos(sin(absd1mPo2)*sin(absd2mPo2)*cos(allh1cands_sorted[ii*9+3]-alll1cands_sorted[jj*9+3])+cos(absd1mPo2)*cos(absd2mPo2));
@@ -242,6 +244,7 @@ int main(void) {
                   double Pdiff_allowed = allh1cands_sorted[ii*9+1]*allh1cands_sorted[ii*9+1]*sqrt(3.6e-3/allh1cands_sorted[ii*9+2])/(4.5*tobs);
                   double Pdiff_allowed_2 = alll1cands_sorted[jj*9+1]*alll1cands_sorted[jj*9+1]*sqrt(3.6e-3/alll1cands_sorted[jj*9+2])/(4.5*tobs);
                   if (fabs(allh1cands_sorted[ii*9+1]-alll1cands_sorted[jj*9+1])<=Pdiff_allowed || fabs(allh1cands_sorted[ii*9+1]-alll1cands_sorted[jj*9+1])<=Pdiff_allowed_2 || fabs(allh1cands_sorted[ii*9+1]-2.0*alll1cands_sorted[jj*9+1])<=Pdiff_allowed || fabs(2.0*allh1cands_sorted[ii*9+1]-alll1cands_sorted[jj*9+1])<=Pdiff_allowed_2 || fabs(allh1cands_sorted[ii*9+1]-3.0*alll1cands_sorted[jj*9+1])<=Pdiff_allowed || fabs(3.0*allh1cands_sorted[ii*9+1]-alll1cands_sorted[jj*9+1])<=Pdiff_allowed_2 || fabs(allh1cands_sorted[ii*9+1]-4.0*alll1cands_sorted[jj*9+1])<=Pdiff_allowed || fabs(4.0*allh1cands_sorted[ii*9+1]-alll1cands_sorted[jj*9+1])<=Pdiff_allowed_2 || fabs(allh1cands_sorted[ii*9+1]-0.5*alll1cands_sorted[jj*9+1])<=Pdiff_allowed || fabs(0.5*allh1cands_sorted[ii*9+1]-alll1cands_sorted[jj*9+1])<=Pdiff_allowed_2 || fabs(allh1cands_sorted[ii*9+1]-alll1cands_sorted[jj*9+1]/3.0)<=Pdiff_allowed || fabs(allh1cands_sorted[ii*9+1]/3.0-alll1cands_sorted[jj*9+1])<=Pdiff_allowed_2 || fabs(allh1cands_sorted[ii*9+1]-0.25*alll1cands_sorted[jj*9+1])<=Pdiff_allowed || fabs(0.25*allh1cands_sorted[ii*9+1]-alll1cands_sorted[jj*9+1])<=Pdiff_allowed_2) {
+                  //if (fabs(allh1cands_sorted[ii*9+1]-alll1cands_sorted[jj*9+1])<=Pdiff_allowed || fabs(allh1cands_sorted[ii*9+1]-alll1cands_sorted[jj*9+1])<=Pdiff_allowed_2 || fabs(allh1cands_sorted[ii*9+1]-2.0*alll1cands_sorted[jj*9+1])<=Pdiff_allowed || fabs(2.0*allh1cands_sorted[ii*9+1]-alll1cands_sorted[jj*9+1])<=Pdiff_allowed_2 || fabs(allh1cands_sorted[ii*9+1]-3.0*alll1cands_sorted[jj*9+1])<=Pdiff_allowed || fabs(3.0*allh1cands_sorted[ii*9+1]-alll1cands_sorted[jj*9+1])<=Pdiff_allowed_2 || fabs(allh1cands_sorted[ii*9+1]-4.0*alll1cands_sorted[jj*9+1])<=Pdiff_allowed || fabs(4.0*allh1cands_sorted[ii*9+1]-alll1cands_sorted[jj*9+1])<=Pdiff_allowed_2 || fabs(allh1cands_sorted[ii*9+1]-0.5*alll1cands_sorted[jj*9+1])<=Pdiff_allowed || fabs(0.5*allh1cands_sorted[ii*9+1]-alll1cands_sorted[jj*9+1])<=Pdiff_allowed_2 || fabs(allh1cands_sorted[ii*9+1]-alll1cands_sorted[jj*9+1]/3.0)<=Pdiff_allowed || fabs(allh1cands_sorted[ii*9+1]/3.0-alll1cands_sorted[jj*9+1])<=Pdiff_allowed_2 || fabs(allh1cands_sorted[ii*9+1]-0.25*alll1cands_sorted[jj*9+1])<=Pdiff_allowed || fabs(0.25*allh1cands_sorted[ii*9+1]-alll1cands_sorted[jj*9+1])<=Pdiff_allowed_2 || fabs(allh1cands_sorted[ii*9+1]-0.75*alll1cands_sorted[jj*9+1])<=Pdiff_allowed || fabs(0.75*allh1cands_sorted[ii*9+1]-alll1cands_sorted[jj*9+1])<=Pdiff_allowed_2 || fabs(allh1cands_sorted[ii*9+1]-1.5*alll1cands_sorted[jj*9+1])<=Pdiff_allowed || fabs(1.5*allh1cands_sorted[ii*9+1]-alll1cands_sorted[jj*9+1])<=Pdiff_allowed_2 || fabs(allh1cands_sorted[ii*9+1]-2.0/3.0*alll1cands_sorted[jj*9+1])<=Pdiff_allowed || fabs(2.0/3.0*allh1cands_sorted[ii*9+1]-alll1cands_sorted[jj*9+1])<=Pdiff_allowed_2 || fabs(allh1cands_sorted[ii*9+1]-4.0/3.0*alll1cands_sorted[jj*9+1])<=Pdiff_allowed || fabs(4.0/3.0*allh1cands_sorted[ii*9+1]-alll1cands_sorted[jj*9+1])<=Pdiff_allowed_2) {
                      double absd1mPo2 = fabs(allh1cands_sorted[ii*9+4]-M_PI_2);
                      double absd2mPo2 = fabs(alll1cands_sorted[jj*9+4]-M_PI_2);
                      double dist = acos(sin(absd1mPo2)*sin(absd2mPo2)*cos(allh1cands_sorted[ii*9+3]-alll1cands_sorted[jj*9+3])+cos(absd1mPo2)*cos(absd2mPo2));
@@ -318,51 +321,15 @@ int main(void) {
       if (allcands[ii*18]!=0.0) {
          int bestcand = ii;
          double bestcandprob = allcands[ii*18+16];
-         if (ii==0) {
-            for (jj=ii+1; jj<count; jj++) {
-               if (allcands[jj*18]!=0.0 && allcands[jj*18] == allcands[ii*18] && allcands[jj*18+1] == allcands[ii*18+1] && allcands[jj*18+2] == allcands[ii*18+2]) {
-                  if (allcands[jj*18+16]<bestcandprob) {
-                     bestcandprob = allcands[jj*18+16];
-                     allcands[bestcand*18] = 0.0;
-                     bestcand = jj;
-                  } else {
-                     allcands[jj*18] = 0.0;
-                  }
-               }
-            }
-         } else if (ii<count-1) {
-            for (jj=0; jj<ii; jj++) {
-               if (allcands[jj*18]!=0.0 && allcands[jj*18] == allcands[ii*18] && allcands[jj*18+1] == allcands[ii*18+1] && allcands[jj*18+2] == allcands[ii*18+2]) {
-                  if (allcands[jj*18+16]<bestcandprob) {
-                     bestcandprob = allcands[jj*18+16];
-                     allcands[bestcand*18] = 0.0;
-                     bestcand = jj;
-                  } else {
-                     allcands[jj*18] = 0.0;
-                  }
-               }
-            }
-            for (jj=ii+1; jj<count; jj++) {
-               if (allcands[jj*18]!=0.0 && allcands[jj*18] == allcands[ii*18] && allcands[jj*18+1] == allcands[ii*18+1] && allcands[jj*18+2] == allcands[ii*18+2]) {
-                  if (allcands[jj*18+16]<bestcandprob) {
-                     bestcandprob = allcands[jj*18+16];
-                     allcands[bestcand*18] = 0.0;
-                     bestcand = jj;
-                  } else {
-                     allcands[jj*18] = 0.0;
-                  }
-               }
-            }
-         } else if (ii==count-1) {
-            for (jj=0; jj<count-1; jj++) {
-               if (allcands[jj*18]!=0.0 && allcands[jj*18] == allcands[ii*18] && allcands[jj*18+1] == allcands[ii*18+1] && allcands[jj*18+2] == allcands[ii*18+2]) {
-                  if (allcands[jj*18+16]<bestcandprob) {
-                     bestcandprob = allcands[jj*18+16];
-                     allcands[bestcand*18] = 0.0;
-                     bestcand = jj;
-                  } else {
-                     allcands[jj*18] = 0.0;
-                  }
+         for (jj=0; jj<count; jj++) {
+            if (jj==ii) continue;
+            if (allcands[jj*18]!=0.0 && allcands[jj*18] == allcands[ii*18] && allcands[jj*18+1] == allcands[ii*18+1] && allcands[jj*18+2] == allcands[ii*18+2]) {
+               if (allcands[jj*18+16]<bestcandprob) {
+                  bestcandprob = allcands[jj*18+16];
+                  allcands[bestcand*18] = 0.0;
+                  bestcand = jj;
+               } else {
+                  allcands[jj*18] = 0.0;
                }
             }
          }
@@ -418,51 +385,15 @@ int main(void) {
       if (allcands[ii*18]!=0.0) {
          int bestcand = ii;
          double bestcandprob = allcands[ii*18+7];
-         if (ii==0) {
-            for (jj=ii+1; jj<count; jj++) {
-               if (allcands[jj*18]!=0.0 && allcands[jj*18+9] == allcands[ii*18+9] && allcands[jj*18+10] == allcands[ii*18+10] && allcands[jj*18+11] == allcands[ii*18+11]) {
-                  if (allcands[jj*18+7]<bestcandprob) {
-                     bestcandprob = allcands[jj*18+7];
-                     allcands[bestcand*18] = 0.0;
-                     bestcand = jj;
-                  } else {
-                     allcands[jj*18] = 0.0;
-                  }
-               }
-            }
-         } else if (ii<count-1) {
-            for (jj=0; jj<ii; jj++) {
-               if (allcands[jj*18]!=0.0 && allcands[jj*18+9] == allcands[ii*18+9] && allcands[jj*18+10] == allcands[ii*18+10] && allcands[jj*18+11] == allcands[ii*18+11]) {
-                  if (allcands[jj*18+7]<bestcandprob) {
-                     bestcandprob = allcands[jj*18+7];
-                     allcands[bestcand*18] = 0.0;
-                     bestcand = jj;
-                  } else {
-                     allcands[jj*18] = 0.0;
-                  }
-               }
-            }
-            for (jj=ii+1; jj<count; jj++) {
-               if (allcands[jj*18]!=0.0 && allcands[jj*18+9] == allcands[ii*18+9] && allcands[jj*18+10] == allcands[ii*18+10] && allcands[jj*18+11] == allcands[ii*18+11]) {
-                  if (allcands[jj*18+7]<bestcandprob) {
-                     bestcandprob = allcands[jj*18+7];
-                     allcands[bestcand*18] = 0.0;
-                     bestcand = jj;
-                  } else {
-                     allcands[jj*18] = 0.0;
-                  }
-               }
-            }
-         } else if (ii==count-1) {
-            for (jj=0; jj<count-1; jj++) {
-               if (allcands[jj*18]!=0.0 && allcands[jj*18+9] == allcands[ii*18+9] && allcands[jj*18+10] == allcands[ii*18+10] && allcands[jj*18+11] == allcands[ii*18+11]) {
-                  if (allcands[jj*18+7]<bestcandprob) {
-                     bestcandprob = allcands[jj*18+7];
-                     allcands[bestcand*18] = 0.0;
-                     bestcand = jj;
-                  } else {
-                     allcands[jj*18] = 0.0;
-                  }
+         for (jj=0; jj<count; jj++) {
+            if (jj==ii) continue;
+            if (allcands[jj*18]!=0.0 && allcands[jj*18+9] == allcands[ii*18+9] && allcands[jj*18+10] == allcands[ii*18+10] && allcands[jj*18+11] == allcands[ii*18+11]) {
+               if (allcands[jj*18+7]<bestcandprob) {
+                  bestcandprob = allcands[jj*18+7];
+                  allcands[bestcand*18] = 0.0;
+                  bestcand = jj;
+               } else {
+                  allcands[jj*18] = 0.0;
                }
             }
          }
