@@ -89,7 +89,7 @@ UserInput_t empty_UserInput;
 int XLALInitUserVars ( UserInput_t *uvar );
 int XLALInitializeConfigVars (ConfigVariables *config, const UserInput_t *uvar);
 int XLALDestroyConfigVars (ConfigVariables *config);
-int GetNextCrossCorrTemplate( PulsarDopplerParams *dopplerpos, BinaryOrbitParams *binaryTemplateSpacings, BinaryOrbitParams *minBinaryTemplate, BinaryOrbitParams *maxBinaryTemplte, REAL8 freq_hi );
+int GetNextCrossCorrTemplate( PulsarDopplerParams *dopplerpos, BinaryOrbitParams *binaryTemplateSpacings, BinaryOrbitParams *minBinaryTemplate, BinaryOrbitParams *maxBinaryTemplte, REAL8 freq_hi, UserInput_t uvar );
 
 
 int main(int argc, char *argv[]){
@@ -124,7 +124,7 @@ int main(int argc, char *argv[]){
   REAL8 deltaF; /* frequency resolution associated with time baseline of SFTs */
 
   REAL8Vector *curlyGUnshifted = NULL;
-  REAL8 diagff=0; /*diagnal metric components*/
+  REAL8 diagff=0; /*diagonal metric components*/
   REAL8 diagaa=0;
   REAL8 diagTT=0;
   REAL8 diagpp=0;
@@ -385,7 +385,7 @@ int main(int argc, char *argv[]){
       }
 
   /* args should be : spacings, min and max doppler params */
-  while ( (GetNextCrossCorrTemplate( &dopplerpos, &binaryTemplateSpacings, &minBinaryTemplate, &maxBinaryTemplate, uvar.fStart + uvar.fBand ) == 0) )
+      while ( (GetNextCrossCorrTemplate( &dopplerpos, &binaryTemplateSpacings, &minBinaryTemplate, &maxBinaryTemplate, uvar.fStart + uvar.fBand, uvar ) == 0) )
     {
       /* do useful stuff here*/
 
@@ -573,14 +573,15 @@ int XLALDestroyConfigVars (ConfigVariables *config)
 /* getting the next template */
 /** FIXME: spacings and min, max values of binary parameters are not used yet */
 
-/*freq_hi = uvar.fStart+uvar.fBand;
-  numTemplate=int(uvar.fBand*uvar.orbitAsiniSecBand*uvar.orbitTimeAscBand*sqrt(diagff*diagaa*diagTT/uvar.mismatchF/uvar.mismatchA/uvar.mismatchT))+1;*/
-int GetNextCrossCorrTemplate( PulsarDopplerParams *dopplerpos, BinaryOrbitParams *binaryTemplateSpacings, BinaryOrbitParams *minBinaryTemplate, BinaryOrbitParams *maxBinaryTemplate, REAL8 freq_hi /*, REAL8 *rho, int numTem*/)
+
+int GetNextCrossCorrTemplate( PulsarDopplerParams *dopplerpos, BinaryOrbitParams *binaryTemplateSpacings, BinaryOrbitParams *minBinaryTemplate, BinaryOrbitParams *maxBinaryTemplate, REAL8 freq_hi, UserInput_t uvar)
 {
 
-  REAL8 new_freq;
- /*BinaryOrbitParams *new_BinParams=empty_BinaryOrbitParams;*/
-  /*  REAL8 ret[numTem];*/
+  REAL8 new_freq= dopplerpos->fkdot[0];
+  REAL8 new_asini= dopplerpos->orbit->asini;
+  REAL8 new_tp= XLALGPSGetREAL8(&(dopplerpos->orbit->tp));
+  REAL8 tp_hi=XLALGPSGetREAL8(&(maxBinaryTemplate->tp));
+
   /* basic sanity checks */
   if (binaryTemplateSpacings == NULL)
     return -1;
@@ -593,15 +594,47 @@ int GetNextCrossCorrTemplate( PulsarDopplerParams *dopplerpos, BinaryOrbitParams
 
   /* check spacings not negative */
 
-  new_freq = dopplerpos->fkdot[0] + dopplerpos->dFreq;
-
-  if (new_freq > freq_hi)
-    return 1;
-  else
+  if (new_freq < freq_hi)                        /*loop over frequency at first*/
     {
+      new_freq = dopplerpos->fkdot[0] + dopplerpos->dFreq;
       dopplerpos->fkdot[0] = new_freq;
       return 0;
+    }    
+  else
+    {
+      if ( new_asini < maxBinaryTemplate->asini) /*after looping all frequency, initialize f and loop over a_p*/
+	  {
+	    new_asini= dopplerpos->orbit->asini + binaryTemplateSpacings->asini;
+	    dopplerpos->orbit->asini= new_asini;
+	    new_freq= uvar.fStart;
+	    dopplerpos->fkdot[0]= new_freq;
+	    return 0;
+	  }
+	else
+	  {
+	    if ( new_tp < tp_hi)                 /*after looping the plane of f and a_p, initialize f, a_p, and loop over T*/
+		{ 		  
+		  new_tp= XLALGPSGetREAL8(XLALGPSAddGPS(&(dopplerpos->orbit->tp), &(binaryTemplateSpacings->tp)));	     
+		  XLALGPSSetREAL8(&(dopplerpos->orbit->tp),new_tp);
+		  new_asini = minBinaryTemplate->asini;
+		  dopplerpos->orbit->asini= new_asini;
+		  new_freq= uvar.fStart;
+		  dopplerpos->fkdot[0]= new_freq;
+		  return 0;
+		}
+	      else
+		{
+		  return 1;
+		}
+	      
+	  }
     }
+	 
 }
+  
 
-/*if(new_BinParams.)*/
+
+
+
+
+ 
