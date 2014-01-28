@@ -2681,6 +2681,7 @@ void LALInferenceSetupROQ(LALInferenceIFOData *IFOdata, ProcessParamsTable *comm
   const UINT4 nameLength=FILENAME_MAX;
   char filename[nameLength];
   FILE *out;
+	char tmp[128];
 
   
   while(thisData){
@@ -2781,21 +2782,22 @@ void LALInferenceSetupROQ(LALInferenceIFOData *IFOdata, ProcessParamsTable *comm
   */
   
   //if(LALInferenceGetProcParamVal(commandLine,"--roqnodes") && LALInferenceGetProcParamVal(commandLine,"--roqvandermonde") && LALInferenceGetProcParamVal(commandLine,"--roqrb")){
-  if(LALInferenceGetProcParamVal(commandLine,"--roqnodes") && LALInferenceGetProcParamVal(commandLine,"--roqweights")){
-
-    IFOdata[i].roqData = XLALCalloc(1, sizeof(LALInferenceROQData));
+  if(LALInferenceGetProcParamVal(commandLine,"--roqnodes")){
     
     ppt=LALInferenceGetProcParamVal(commandLine,"--roqnodes");
     for (i=0;i<Nifo;i++) {
+			IFOdata[i].roqData = XLALCalloc(1, sizeof(LALInferenceROQData));
       IFOdata[i].roqData->frequencyNodes = gsl_vector_calloc(n_basis);
       tempfp = fopen(ppt->value, "rb");
       gsl_vector_fread(tempfp, IFOdata[i].roqData->frequencyNodes);
     }
     
     //printf("n_basis=%d\ttime_steps=%d\n", n_basis, time_steps);
-    
-    ppt=LALInferenceGetProcParamVal(commandLine,"--roqweights");
+		
+    //ppt=LALInferenceGetProcParamVal(commandLine,"--roqweights");
     for (i=0;i<Nifo;i++) {
+			sprintf(tmp,"--%s-roqweights",IFOdata[i].name);
+			ppt=LALInferenceGetProcParamVal(commandLine,tmp);
       IFOdata[i].roqData->weights = gsl_matrix_complex_calloc(n_basis, time_steps);
       tempfp = fopen(ppt->value, "rb");
       gsl_matrix_complex_fread(tempfp, IFOdata[i].roqData->weights);

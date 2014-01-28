@@ -6,11 +6,6 @@ from optparse import OptionParser
 data_dir = './'
 # load in data from file
 
-basis_set = np.fromfile("/home/vivien/projects/rom/TF2_ROM_40_1024/basis_complex_conjugate.dat", dtype = complex)
-basis_set = basis_set.reshape(31489, 965)
-invV = np.fromfile("/home/vivien/projects/rom/TF2_ROM_40_1024/invV_complex_conjugate.dat", dtype=complex)
-invV =invV.reshape(965, 965)
-
 parser = OptionParser(usage="usage: %prog [options]",
                           version="%prog")
 parser.add_option("-d", "--data", type='string',
@@ -41,10 +36,22 @@ parser.add_option("-T", "--delta_tc", type=float,
                       action="store",
                       dest="delta_tc",
                       help="width of tc subdomain",)
+parser.add_option("-B", "--basis-set", type='string',
+                      action="store",
+											dest="basis_set_path",
+											help="reduced basis matrix",)
+parser.add_option("-V", "--invV", type='string',
+											action="store",
+											dest="invV_path",
+											help="inverse of the Vandermonde matrix",)
 (options, args) = parser.parse_args()
 
-print options.data_file
-print options.IFOs
+#basis_set = np.fromfile("/Users/vivien/mcmc/rom/TF2_ROM_40_1024/basis_complex_conjugate.dat", dtype = complex)
+basis_set = np.fromfile(options.basis_set_path, dtype = complex)
+basis_set = basis_set.reshape(31489, 965)
+#invV = np.fromfile("/Users/vivien/mcmc/rom/TF2_ROM_40_1024/invV_complex_conjugate.dat", dtype=complex)
+invV = np.fromfile(options.invV_path, dtype=complex)
+invV =invV.reshape(965, 965)
 
 def BuildWeights(data, rb, deltaF, invV):
 
@@ -79,13 +86,13 @@ for ifo in options.IFOs:
 	data = dat_file[1] + 1j*dat_file[2]
 	fseries = dat_file[0]
         deltaF = fseries[1] - fseries[0]
-	fseries = fseries[options.fLow/deltaF:len(fseries)]
-	data = data[options.fLow/deltaF:len(data)]
+	fseries = fseries[int(options.fLow/deltaF):len(fseries)]
+	data = data[int(options.fLow/deltaF):len(data)]
 
 
 	psdfile = np.column_stack( np.loadtxt(options.psd_file[i]) )
 	psd = psdfile[1]
-	psd = psd[options.fLow/deltaF:len(psd)]
+	psd = psd[int(options.fLow/deltaF):len(psd)]
 	data /= psd
 
 
@@ -116,7 +123,9 @@ for ifo in options.IFOs:
 	weights_file = open("weights_%s.dat"%ifo, "wb")
 	size_file = open("Num_tc_sub_domains_%s.dat"%ifo, "wb")
 
+	print "Computing weights for "+ifo
 	weights = BuildWeights(tc_shifted_data, basis_set, deltaF, invV)
+	print "Weights have been computed for "+ifo
 
 	(weights.T).tofile(weights_file)
 	np.array(len(tcs)).tofile(size_file)
