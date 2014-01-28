@@ -281,7 +281,7 @@ def inject(hplus, hcross, ifo, psd):
     x = filter.colored_noise(epoch, data_duration, sample_rate, psd)
 
     # Project injection for this detector.
-    detector = lalsimulation.InstrumentNameToLALDetector(ifo)
+    detector = lalsimulation.DetectorPrefixToLALDetector(ifo)
     h = lalsimulation.SimDetectorStrainREAL8TimeSeries(hplus, hcross,
         ra, dec, psi, detector)
 

@@ -92,7 +92,7 @@ def ligolw_sky_map(sngl_inspirals, approximant, amplitude_order, phase_order, f_
     w2s = [signal_model.get_sn_moment(2) for signal_model in signal_models]
 
     # Look up physical parameters for detector.
-    detectors = [lalsimulation.InstrumentNameToLALDetector(str(ifo))
+    detectors = [lalsimulation.DetectorPrefixToLALDetector(str(ifo))
         for ifo in ifos]
     responses = [det.response for det in detectors]
     locations = [det.location for det in detectors]
