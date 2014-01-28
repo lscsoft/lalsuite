@@ -106,7 +106,12 @@ Tsft=1800
 startTime=852443819
 refTime=862999869
 Tsegment=90000
-Nsegments=3
+if [ -n "$NSEGMENTS" ]; then
+    Nsegments=${NSEGMENTS}
+else
+    Nsegments=3
+fi
+
 
 seggap=$(echo ${Tsegment} | awk '{printf "%.0f", $1 * 1.12345}')
 
@@ -409,7 +414,7 @@ awk_isgtr='{if($1>$2) {print "1"}}'
 echo
 echo "--------- Timings ------------------------------------------------------------------------------------------------"
 awk_timing='BEGIN { sumTau = 0; sumTauCoh = 0; sumTauSC = 0; sumTauF0 = 0; sumTauS0 = 0; counter=0; } \
-           { sumTau = sumTau + $8; sumTauCoh = sumTauCoh + $9; sumTauSC = sumTauSC + $10; sumTauF0 = sumTauF0 + $12; sumTauS0 = sumTauS0 + $13; counter=counter+1; } \
+           { sumTau = sumTau + $6; sumTauCoh = sumTauCoh + $7; sumTauSC = sumTauSC + $8; sumTauF0 = sumTauF0 + $10; sumTauS0 = sumTauS0 + $11; counter=counter+1; } \
            END {printf "tau = %6.3g s, tauCoh = %6.3g s, tauSC = %6.3g s;  tauF0 = %6.3g s, tauS0 = %6.3g s",
                 sumTau/counter, sumTauCoh/counter, sumTauSC/counter, sumTauF0 / counter, sumTauS0 / counter}'
 timing_DM=$(sed '/^%.*/d' $timingsfile_DM | awk "$awk_timing")
