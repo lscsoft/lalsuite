@@ -87,7 +87,7 @@ for ifo in options.IFOs:
 	data /= psd
 
 
-	print len(data),len(psd),len(basis_set)
+	# print len(data),len(psd),len(basis_set)
 
 	assert len(data) == len(psd) == len(basis_set)
 
@@ -98,10 +98,10 @@ for ifo in options.IFOs:
 	tc_shifted_data = []  # array to be filled with data, shifted by discrete time tc
 
 	tcs = np.linspace(relative_tc_shift - options.dt - 0.022, relative_tc_shift + options.dt + 0.022, ceil(2.*(options.dt+0.022) / options.delta_tc) )# array of relative time shifts to be applied to the data
-	print len(tcs)
-	for i in range(len(tcs)):
+	# print len(tcs)
+	for j in range(len(tcs)):
 
-	        tc = tcs[i]
+	        tc = tcs[j]
 
 	        exp_2pi_i_tc = np.array(np.exp(1j*2.*np.pi*fseries*tc))
         	data_tc = np.array(data*exp_2pi_i_tc)
@@ -116,7 +116,7 @@ for ifo in options.IFOs:
 
 	weights = BuildWeights(tc_shifted_data, basis_set, deltaF, invV)
 
-	weights.tofile(weights_file)
+	(weights.T).tofile(weights_file)
 	np.array(len(tcs)).tofile(size_file)
 
 	weights_file.close()
