@@ -2672,7 +2672,7 @@ void LALInferenceSetupROQ(LALInferenceIFOData *IFOdata, ProcessParamsTable *comm
   unsigned int n_basis,n_samples,time_steps;
   n_basis = 965;//TODO: have it read from file or from command line.
   n_samples = 31489;
-  //REAL8 delta_tc = 0.0001;
+  REAL8 delta_tc = 0.0001;
   REAL8 dt=0.1;
   //REAL8 tc=0;
   LIGOTimeGPS GPStrig;
@@ -2728,17 +2728,18 @@ void LALInferenceSetupROQ(LALInferenceIFOData *IFOdata, ProcessParamsTable *comm
   if(ppt){
     dt=atof(ppt->value);
   }
-  //ppt=LALInferenceGetProcParamVal(commandLine,"--delta_tc");
-  //if(ppt){
-  //  delta_tc=atof(ppt->value);
-  //}
+  ppt=LALInferenceGetProcParamVal(commandLine,"--delta_tc");
+  if(ppt){
+    delta_tc=atof(ppt->value);
+  }
   
   timeMin=endtime-dt-0.022; timeMax=endtime+dt+0.022;
   
   timeMin -= XLALGPSGetREAL8(&IFOdata[0].whiteFreqData->epoch);
   timeMax -= XLALGPSGetREAL8(&IFOdata[0].whiteFreqData->epoch);
   
-  //time_steps = (unsigned int)((timeMax-timeMin)/delta_tc);
+  time_steps = (unsigned int)((timeMax-timeMin)/delta_tc);
+  time_steps = 9760;
   printf("endtime = %f, timeMin = %f, timeMax = %f\n", endtime, timeMin, timeMax);
   //printf("time steps = %d\n", time_steps);
   
@@ -2787,6 +2788,8 @@ void LALInferenceSetupROQ(LALInferenceIFOData *IFOdata, ProcessParamsTable *comm
       gsl_vector_fread(tempfp, IFOdata[i].roqData->frequencyNodes);
     }
     
+    printf("n_basis=%d\ttime_steps=%d\n", n_basis, time_steps);
+    
     ppt=LALInferenceGetProcParamVal(commandLine,"--roqweights");
     for (i=0;i<Nifo;i++) {
       IFOdata[i].roqData->weights = gsl_matrix_complex_calloc(n_basis, time_steps);
@@ -2807,9 +2810,7 @@ void LALInferenceSetupROQ(LALInferenceIFOData *IFOdata, ProcessParamsTable *comm
       GSL_SET_COMPLEX(&beta, 0, 0);
       
       
-      const UINT4 nameLength=FILENAME_MAX;
-      char filename[nameLength];
-      FILE *out;
+
       snprintf(filename, nameLength, "%s-ROQFreqData.dat", IFOdata[i].name);
       out = fopen(filename, "w");
       for(unsigned int k = 0; k < n_samples; k++){
@@ -2864,7 +2865,10 @@ void LALInferenceSetupROQ(LALInferenceIFOData *IFOdata, ProcessParamsTable *comm
       gsl_blas_zgemm (CblasTrans, CblasNoTrans, alpha, vandermonde_matrix, E_matrix, beta, IFOdata[i].roqData->weights);
       
       printf("Weights have been computed for %s\n",IFOdata[i].name);
-      
+      */
+      const UINT4 nameLength=FILENAME_MAX;
+      char filename[nameLength];
+      FILE *out;
       snprintf(filename, nameLength, "%s-ROQWeights.dat", IFOdata[i].name);
       out = fopen(filename, "w");
       for(unsigned int size2 = 0; size2 < IFOdata[i].roqData->weights->size2; size2++){
@@ -2874,7 +2878,7 @@ void LALInferenceSetupROQ(LALInferenceIFOData *IFOdata, ProcessParamsTable *comm
         fprintf(out,"\n");
       }
       fclose(out);
-      */
+      
       //printf("IFOdata[%d].whiteFreqData->epoch=%e\n",i,XLALGPSGetREAL8(&IFOdata[i].whiteFreqData->epoch));
       //printf("timeMin=%e\tendtime=%e\ttimeMax=%e\n",timeMin,endtime,timeMax);
       //printf("---------\n");

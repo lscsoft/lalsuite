@@ -6,9 +6,9 @@ from optparse import OptionParser
 data_dir = './'
 # load in data from file
 
-basis_set = np.fromfile("/home/rory.smith/projects/ROQ/lalinference/rom/basis_complex_conjugate.dat", dtype = complex)
+basis_set = np.fromfile("/Users/vivien/mcmc/rom/TF2_ROM_40_1024/basis_complex_conjugate.dat", dtype = complex)
 basis_set = basis_set.reshape(31489, 965)
-invV = np.fromfile("/home/rory.smith/projects/ROQ/lalinference/rom/invV_complex_conjugate.dat", dtype=complex)
+invV = np.fromfile("/Users/vivien/mcmc/rom/TF2_ROM_40_1024/invV_complex_conjugate.dat", dtype=complex)
 invV =invV.reshape(965, 965)
 
 parser = OptionParser(usage="usage: %prog [options]",
@@ -77,23 +77,26 @@ for ifo in options.IFOs:
 	data = data_file[1] + 1j*data_file[2]
 	fseries = data_file[0]
         deltaF = fseries[1] - fseries[0]
-	data = data[options.fLow/deltaF:len(data)-1]	
+	fseries = fseries[options.fLow/deltaF:len(fseries)]
+	data = data[options.fLow/deltaF:len(data)]
 
 
 	psdfile = np.column_stack( np.loadtxt(options.psd_file[i]) )
 	psd = psdfile[1]
-	psd = psd[options.fLow/deltaF:len(psd)-1]
+	psd = psd[options.fLow/deltaF:len(psd)]
 	data /= psd
+
+	print len(data),len(psd),len(basis_set)
 
 	assert len(data) == len(psd) == len(basis_set)
 
 	for i in range(len(data)):
-		if data[i] == float('nan'):
+		if data[i] == float('inf') or data[i] == float('-inf') or data[i] == float('nan'):
 			data[i] = 0
 
 	tc_shifted_data = []  # array to be filled with data, shifted by discrete time tc
 
-	tcs = np.linspace(relative_tc_shift - options.dt - 0.022, relative_tc_shift + options.dt + 0.022, ceil(2.*options.dt / options.delta_tc) )# array of relative time shifts to be applied to the data
+	tcs = np.linspace(relative_tc_shift - options.dt - 0.022, relative_tc_shift + options.dt + 0.022, ceil(2.*(options.dt+0.022) / options.delta_tc) )# array of relative time shifts to be applied to the data
 	print len(tcs)
 	for i in range(len(tcs)):
 
