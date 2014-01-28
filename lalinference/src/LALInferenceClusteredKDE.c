@@ -591,41 +591,6 @@ void append_vec_to_mat(gsl_matrix **mat_ptr, gsl_vector *vec) {
 
 
 /**
- * Evaluate the estimated (log) PDF from a clustered-KDE at a point.
- *
- * Compute the (log) value of the estimated probability density function from
- * the clustered kernel density estimate of a distribution.
- * @param[in] kmeans The kmeans clustering to estimate the PDF from.
- * @param[in] pt     An array containing the point to evaluate the distribution at.
- * @return The estimated value of the PDF at \a pt.
- */
-REAL8 LALInferenceKmeansPDF(LALInferenceKmeans *kmeans, REAL8 *pt) {
-    UINT4 j;
-
-    /* The vector is first whitened to be consistent with the data stored
-     * in the kernel density estimator. */
-    gsl_vector *y = gsl_vector_alloc(kmeans->dim);
-    gsl_vector_view pt_view = gsl_vector_view_array(pt, kmeans->dim);
-
-    /* Copy the point to a local vector, since it will be overwritten */
-    gsl_vector_memcpy(y, &pt_view.vector);
-
-    /* Subtract the mean from the point */
-    gsl_vector_sub(y, kmeans->mean);
-
-    /* The Householder solver destroys the matrix, so don't give it the original */
-    gsl_matrix *A = gsl_matrix_alloc(kmeans->dim, kmeans->dim);
-    gsl_matrix_memcpy(A, kmeans->chol_dec_cov);
-    gsl_linalg_HH_svx(A, y);
-
-    REAL8 pdf = 0.;
-    for (j = 0; j < kmeans->k; j++)
-        pdf += log(kmeans->weights[j]) + LALInferenceKDEEvaluatePoint(kmeans->KDEs[j], y->data);
-    return pdf;
-}
-
-
-/**
  * Draw a sample from a kmeans-KDE estimate of a distribution.
  *
  * Draw a random sample from the estimated distribution of a set of points.  A cluster
@@ -654,13 +619,41 @@ REAL8 *LALInferenceKmeansDraw(LALInferenceKmeans *kmeans) {
     gsl_vector_view pt = gsl_vector_view_array(point, kmeans->dim);
     gsl_vector_memcpy(&pt.vector, kmeans->mean);
 
-    gsl_matrix *chol_dec_cov_lower = kmeans->unwhitened_chol_dec_cov;
-
     /* Recolor the sample */
-    gsl_blas_dgemv(CblasNoTrans, 1.0, chol_dec_cov_lower, &white_pt.vector, 1.0, &pt.vector);
+    gsl_blas_dgemv(CblasNoTrans, 1.0, kmeans->unwhitened_chol_dec_cov, &white_pt.vector, 1.0, &pt.vector);
 
     XLALFree(white_point);
     return point;
+}
+
+
+/**
+ * Evaluate the estimated (log) PDF from a clustered-KDE at a point.
+ *
+ * Compute the (log) value of the estimated probability density function from
+ * the clustered kernel density estimate of a distribution.
+ * @param[in] kmeans The kmeans clustering to estimate the PDF from.
+ * @param[in] pt     An array containing the point to evaluate the distribution at.
+ * @return The estimated value of the PDF at \a pt.
+ */
+REAL8 LALInferenceKmeansPDF(LALInferenceKmeans *kmeans, REAL8 *pt) {
+    /* The vector is first whitened to be consistent with the data stored
+     * in the kernel density estimator. */
+    gsl_vector *y = gsl_vector_alloc(kmeans->dim);
+    gsl_vector_view pt_view = gsl_vector_view_array(pt, kmeans->dim);
+
+    /* Copy the point to a local vector, since it will be overwritten */
+    gsl_vector_memcpy(y, &pt_view.vector);
+
+    /* Subtract the mean from the point */
+    gsl_vector_sub(y, kmeans->mean);
+
+    /* The Householder solver destroys the matrix, so don't give it the original */
+    gsl_matrix *A = gsl_matrix_alloc(kmeans->dim, kmeans->dim);
+    gsl_matrix_memcpy(A, kmeans->unwhitened_chol_dec_cov);
+    gsl_linalg_HH_svx(A, y);
+
+    return LALInferenceWhitenedKmeansPDF(kmeans, y->data);
 }
 
 
@@ -674,16 +667,19 @@ REAL8 *LALInferenceKmeansDraw(LALInferenceKmeans *kmeans) {
  * @param[in] pt     An array containing the point to evaluate the distribution at.
  * @return The estimated value of the PDF at \a pt.
  */
-REAL8 LALInferenceInternalKmeansPDF(LALInferenceKmeans *kmeans, REAL8 *pt) {
+REAL8 LALInferenceWhitenedKmeansPDF(LALInferenceKmeans *kmeans, REAL8 *pt) {
     UINT4 j;
 
     if (kmeans->KDEs == NULL)
         LALInferenceKmeansBuildKDE(kmeans);
 
-    REAL8 pdf = 0.;
+    REAL8* cluster_pdfs = XLALMalloc(kmeans->k * sizeof(REAL8));
     for (j = 0; j < kmeans->k; j++)
-        pdf += log(kmeans->weights[j]) + LALInferenceKDEEvaluatePoint(kmeans->KDEs[j], pt);
-    return pdf;
+        cluster_pdfs[j] = log(kmeans->weights[j]) + LALInferenceKDEEvaluatePoint(kmeans->KDEs[j], pt);
+
+    REAL8 result = log_add_exps(cluster_pdfs, kmeans->k);
+    XLALFree(cluster_pdfs);
+    return result;
 }
 
 
@@ -872,7 +868,7 @@ REAL8 LALInferenceKmeansBIC(LALInferenceKmeans *kmeans) {
     log_l = 0.;
     for (i = 0; i < kmeans->npts; i++) {
         gsl_vector_view pt = gsl_matrix_row(kmeans->data, i);
-        log_l += LALInferenceInternalKmeansPDF(kmeans, (&pt.vector)->data);
+        log_l += LALInferenceWhitenedKmeansPDF(kmeans, (&pt.vector)->data);
     }
 
     return log_l - k * (d + d * (d + 1.)/2.) * log(N);

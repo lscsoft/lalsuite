@@ -74,4 +74,7 @@ gsl_vector *LALInferenceComputeMean(gsl_matrix *points);
 /* Calculate the determinant of a matrix. */
 REAL8 LALInferenceMatrixDet(gsl_matrix *mat);
 
+/* Determine the log of the sum of an array of exponentials. */
+REAL8 log_add_exps(REAL8 *vals, UINT4 size);
+
 #endif

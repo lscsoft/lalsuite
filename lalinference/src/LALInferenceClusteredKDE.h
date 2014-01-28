@@ -109,14 +109,14 @@ void accumulate_vectors(gsl_matrix **mat_ptr, gsl_vector *vec);
 /* Add a vector to the end of a matrix. */
 void append_vec_to_mat(gsl_matrix **mat_ptr, gsl_vector *vec);
 
-/* Evaluate the estimated (log) PDF from a clustered-KDE at a point. */
-REAL8 LALInferenceKmeansPDF(LALInferenceKmeans *kmeans, REAL8 *pt);
-
 /* Draw a sample from a kmeans-KDE estimate of a distribution. */
 REAL8 *LALInferenceKmeansDraw(LALInferenceKmeans *kmeans);
 
+/* Evaluate the estimated (log) PDF from a clustered-KDE at a point. */
+REAL8 LALInferenceKmeansPDF(LALInferenceKmeans *kmeans, REAL8 *pt);
+
 /* Evaluate the estimated (log) PDF from a clustered-KDE at an already whitened point. */
-REAL8 LALInferenceInternalKmeansPDF(LALInferenceKmeans *kmeans, REAL8 *pt);
+REAL8 LALInferenceWhitenedKmeansPDF(LALInferenceKmeans *kmeans, REAL8 *pt);
 
 /* Transform a data set to obtain a 0-mean and identity covariance matrix. */
 gsl_matrix * LALInferenceWhitenSamples(gsl_matrix *samples);

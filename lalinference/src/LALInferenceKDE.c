@@ -34,7 +34,6 @@
 #include <lal/LALDatatypes.h>
 #include <lal/LALStdlib.h>
 
-#include "logaddexp.h"
 #include <lal/LALInference.h>
 #include <lal/LALInferenceKDE.h>
 
@@ -216,7 +215,7 @@ REAL8 LALInferenceKDEEvaluatePoint(LALInferenceKDE *kde, REAL8 *point) {
     /* Loop over points in KDE dataset, using the Cholesky decomposition
      * of the covariance to avoid ever inverting the covariance matrix */
     REAL8 energy;
-    REAL8 result = 0.;
+    REAL8* results = XLALMalloc(npts * sizeof(REAL8));
     for (i=0; i<npts; i++) {
         d = gsl_matrix_row(kde->data, i);
         gsl_vector_memcpy(diff, &d.vector);
@@ -228,11 +227,12 @@ REAL8 LALInferenceKDEEvaluatePoint(LALInferenceKDE *kde, REAL8 *point) {
         energy = 0.;
         for (j=0; j<dim; j++)
             energy += gsl_vector_get(diff, j);
-        result = logaddexp(result, -energy/2.);
+        results[i] = -energy/2.;
     }
 
     /* Normalize the result and return */
-    result -= kde->log_norm_factor;
+    REAL8 result = log_add_exps(results, npts) - kde->log_norm_factor;
+    XLALFree(results);
     return result;
 }
 
@@ -241,8 +241,8 @@ REAL8 LALInferenceKDEEvaluatePoint(LALInferenceKDE *kde, REAL8 *point) {
  * Draw a sample from a kernel density estimate.
  *
  * Draw a sample from a distribution, as estimated by a kernel density estimator.
- * @param[in]  KDE   The kernel density estimate to draw \a point from.
- * @param[in]  rng   A GSL random number generator to use for random number generation.
+ * @param[in] KDE The kernel density estimate to draw \a point from.
+ * @param[in] rng A GSL random number generator to use for random number generation.
  * @return The sample drawn from the distribution.
  */
 REAL8 *LALInferenceDrawKDESample(LALInferenceKDE *kde, gsl_rng *rng) {
@@ -252,7 +252,6 @@ REAL8 *LALInferenceDrawKDESample(LALInferenceKDE *kde, gsl_rng *rng) {
 
     REAL8 *point = XLALMalloc(dim * sizeof(REAL8));
     gsl_vector_view pt = gsl_vector_view_array(point, dim);
-    gsl_matrix *chol_dec_cov_lower = kde->cholesky_decomp_cov_lower;
 
     /* Draw a random sample from KDE dataset */
     UINT4 ind = gsl_rng_uniform_int(rng, kde->npts);
@@ -267,7 +266,7 @@ REAL8 *LALInferenceDrawKDESample(LALInferenceKDE *kde, gsl_rng *rng) {
     }
 
     /* Scale and shift the uncorrelated unit-width sample */
-    gsl_blas_dgemv(CblasNoTrans, 1.0, chol_dec_cov_lower, unit_draw, 1.0, &pt.vector);
+    gsl_blas_dgemv(CblasNoTrans, 1.0, kde->cholesky_decomp_cov_lower, unit_draw, 1.0, &pt.vector);
 
     gsl_vector_free(unit_draw);
     return point;
@@ -368,4 +367,29 @@ gsl_matrix *LALInferenceComputeCovariance(gsl_matrix *data) {
         }
     }
     return cov;
+}
+
+
+/**
+ * Determine the log of the sum of an array of exponentials.
+ *
+ * Utility for calculating the log of the sum of an array of exponentials.  Useful
+ * for avoiding overflows.
+ * @param[in] vals Array containing the values to be exponentiated, summed, and logged.
+ * @param[in] size Number of elements in \a vals.
+ * @return The log of the sum of elements in \a vals.
+ */
+REAL8 log_add_exps(REAL8 *vals, UINT4 size) {
+    UINT4 i;
+
+    gsl_vector_view val_array_view = gsl_vector_view_array(vals, size);
+    REAL8 max_comp = gsl_vector_max(&val_array_view.vector);
+
+    gsl_vector_add_constant(&val_array_view.vector, -max_comp);
+
+    REAL8 result = 0.;
+    for (i = 0; i < size; i++)
+        result += exp(vals[i]);
+
+    return max_comp + log(result);
 }

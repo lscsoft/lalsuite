@@ -878,7 +878,6 @@ void LALInferenceBurninStream(FILE *filestream, UINT4 burnin) {
     char str[STR_MAX];
     UINT4 i=0;
 
-    printf("Burnin: %i.\n", burnin);
     for (i=0; i<burnin; i++)
         fgets(str, sizeof(str), filestream);
 

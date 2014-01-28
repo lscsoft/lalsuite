@@ -3378,7 +3378,8 @@ void LALInferenceUpdateAdaptiveJumps(LALInferenceRunState *runState, INT4 accept
  * @param runState The LALInferenceRunState to get command line options from and to the proposal cycle of.
  */
 void LALInferenceSetupClusteredKDEProposalsFromFile(LALInferenceRunState *runState) {
-    printf("Setting up cluster proposal.\n");
+    fprintf(stdout, "Setting up cluster proposal...");
+    fflush(stdout);
     LALInferenceVariableItem *item;
     UINT4 i=0, j=0;
     UINT4 nBurnins=0, nWeights=0, nPostEsts=0;
@@ -3509,6 +3510,7 @@ void LALInferenceSetupClusteredKDEProposalsFromFile(LALInferenceRunState *runSta
 
     XLALFree(burnins);
     XLALFree(weights);
+    printf("done\n");
 }
 
 
