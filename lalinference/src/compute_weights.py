@@ -107,7 +107,7 @@ for ifo in options.IFOs:
 	tc_shifted_data = []  # array to be filled with data, shifted by discrete time tc
 
 	tcs = np.linspace(relative_tc_shift - options.dt - 0.022, relative_tc_shift + options.dt + 0.022, ceil(2.*(options.dt+0.022) / options.delta_tc) )# array of relative time shifts to be applied to the data
-	# print len(tcs)
+	print "time steps = "+str(len(tcs))
 	for j in range(len(tcs)):
 
 	        tc = tcs[j]
@@ -121,15 +121,16 @@ for ifo in options.IFOs:
 	#*************************************************************************** #
 
 	weights_file = open("weights_%s.dat"%ifo, "wb")
-	size_file = open("Num_tc_sub_domains_%s.dat"%ifo, "wb")
 
 	print "Computing weights for "+ifo
 	weights = BuildWeights(tc_shifted_data, basis_set, deltaF, invV)
 	print "Weights have been computed for "+ifo
 
 	(weights.T).tofile(weights_file)
-	np.array(len(tcs)).tofile(size_file)
 
 	weights_file.close()
-	size_file.close()
 	i += 1
+
+size_file = open("Num_tc_sub_domains.dat", "wb")
+np.array(len(tcs)).tofile(size_file)
+size_file.close()

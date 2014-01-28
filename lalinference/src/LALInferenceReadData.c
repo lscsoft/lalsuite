@@ -2743,10 +2743,16 @@ void LALInferenceSetupROQ(LALInferenceIFOData *IFOdata, ProcessParamsTable *comm
   timeMin -= XLALGPSGetREAL8(&IFOdata[0].whiteFreqData->epoch);
   timeMax -= XLALGPSGetREAL8(&IFOdata[0].whiteFreqData->epoch);
   
-  time_steps = (unsigned int)((timeMax-timeMin)/delta_tc);
-  time_steps = 9760;
+  time_steps = (unsigned int)((timeMax-timeMin)/delta_tc)+1;
+	
+	if(LALInferenceGetProcParamVal(commandLine,"--roqtime_steps")){
+		ppt=LALInferenceGetProcParamVal(commandLine,"--roqtime_steps");
+		tempfp = fopen(ppt->value, "rb");
+		fread(&time_steps,sizeof(int),1 ,tempfp);
+	}
+
   printf("endtime = %f, timeMin = %f, timeMax = %f\n", endtime, timeMin, timeMax);
-  //printf("time steps = %d\n", time_steps);
+  printf("time steps = %d\n", time_steps);
   
   double deltaF = IFOdata[0].oneSidedNoisePowerSpectrum->deltaF; //assumes same deltaF for all IFOs
   /*
