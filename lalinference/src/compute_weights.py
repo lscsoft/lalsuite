@@ -86,13 +86,14 @@ for ifo in options.IFOs:
 	psd = psd[options.fLow/deltaF:len(psd)]
 	data /= psd
 
+
 	print len(data),len(psd),len(basis_set)
 
 	assert len(data) == len(psd) == len(basis_set)
 
 	for i in range(len(data)):
-		if data[i] == float('inf') or data[i] == float('-inf') or data[i] == float('nan'):
-			data[i] = 0
+		if np.isnan(data[i].real):
+			data[i] = 0+0j
 
 	tc_shifted_data = []  # array to be filled with data, shifted by discrete time tc
 

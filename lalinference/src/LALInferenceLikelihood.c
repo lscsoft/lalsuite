@@ -520,7 +520,7 @@ REAL8 LALInferenceROQLogLikelihood(LALInferenceVariables *currentParams, LALInfe
     time_step = (float)dataPtr->roqData->time_weights_width / (float)dataPtr->roqData->weights->size2;
     time_min = dataPtr->roqData->trigtime - 0.5*dataPtr->roqData->time_weights_width;
     
-    //printf("time_min=%f\n",time_min);
+    printf("time_step=%f\n",time_step);
     
     time_requested -= time_min;
     
