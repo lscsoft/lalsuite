@@ -594,7 +594,7 @@ int GetNextCrossCorrTemplate( PulsarDopplerParams *dopplerpos, BinaryOrbitParams
 
   /* check spacings not negative */
 
-  if (new_freq < freq_hi)                        /*loop over frequency at first*/
+  if (new_freq <= freq_hi)                        /*loop over frequency at first*/
     {
       new_freq = dopplerpos->fkdot[0] + dopplerpos->dFreq;
       dopplerpos->fkdot[0] = new_freq;
@@ -602,18 +602,18 @@ int GetNextCrossCorrTemplate( PulsarDopplerParams *dopplerpos, BinaryOrbitParams
     }    
   else
     {
-      if ( new_asini < maxBinaryTemplate->asini) /*after looping all frequency, initialize f and loop over a_p*/
-	  {
+      if ( new_asini <= maxBinaryTemplate->asini) /*after looping all frequency, initialize f and loop over a_p*/
+	{
 	    new_asini= dopplerpos->orbit->asini + binaryTemplateSpacings->asini;
 	    dopplerpos->orbit->asini= new_asini;
 	    new_freq= uvar.fStart;
 	    dopplerpos->fkdot[0]= new_freq;
 	    return 0;
-	  }
-	else
-	  {
-	    if ( new_tp < tp_hi)                 /*after looping the plane of f and a_p, initialize f, a_p, and loop over T*/
-		{ 		  
+	}
+      else
+	{
+	    if ( new_tp <= tp_hi)                 /*after looping the plane of f and a_p, initialize f, a_p, and loop over T*/
+	      { 		  
 		  new_tp= XLALGPSGetREAL8(XLALGPSAddGPS(&(dopplerpos->orbit->tp), &(binaryTemplateSpacings->tp)));	     
 		  XLALGPSSetREAL8(&(dopplerpos->orbit->tp),new_tp);
 		  new_asini = minBinaryTemplate->asini;
@@ -621,17 +621,17 @@ int GetNextCrossCorrTemplate( PulsarDopplerParams *dopplerpos, BinaryOrbitParams
 		  new_freq= uvar.fStart;
 		  dopplerpos->fkdot[0]= new_freq;
 		  return 0;
-		}
-	      else
-		{
+	      }
+	    else
+	      {
 		  return 1;
-		}
+	      }
 	      
-	  }
+	}
     }
 	 
 }
-  
+
 
 
 
