@@ -6,9 +6,9 @@ from optparse import OptionParser
 data_dir = './'
 # load in data from file
 
-basis_set = np.fromfile("/Users/vivien/mcmc/rom/TF2_ROM_40_1024/basis_complex_conjugate.dat", dtype = complex)
+basis_set = np.fromfile("/home/vivien/projects/rom/TF2_ROM_40_1024/basis_complex_conjugate.dat", dtype = complex)
 basis_set = basis_set.reshape(31489, 965)
-invV = np.fromfile("/Users/vivien/mcmc/rom/TF2_ROM_40_1024/invV_complex_conjugate.dat", dtype=complex)
+invV = np.fromfile("/home/vivien/projects/rom/TF2_ROM_40_1024/invV_complex_conjugate.dat", dtype=complex)
 invV =invV.reshape(965, 965)
 
 parser = OptionParser(usage="usage: %prog [options]",
@@ -43,6 +43,8 @@ parser.add_option("-T", "--delta_tc", type=float,
                       help="width of tc subdomain",)
 (options, args) = parser.parse_args()
 
+print options.data_file
+print options.IFOs
 
 def BuildWeights(data, rb, deltaF, invV):
 
@@ -73,9 +75,9 @@ i=0
 
 for ifo in options.IFOs:
 
-	data_file = np.column_stack( np.loadtxt(options.data_file[i]) )
-	data = data_file[1] + 1j*data_file[2]
-	fseries = data_file[0]
+	dat_file = np.column_stack( np.loadtxt(options.data_file[i]) )
+	data = dat_file[1] + 1j*dat_file[2]
+	fseries = dat_file[0]
         deltaF = fseries[1] - fseries[0]
 	fseries = fseries[options.fLow/deltaF:len(fseries)]
 	data = data[options.fLow/deltaF:len(data)]
@@ -91,9 +93,9 @@ for ifo in options.IFOs:
 
 	assert len(data) == len(psd) == len(basis_set)
 
-	for i in range(len(data)):
-		if np.isnan(data[i].real):
-			data[i] = 0+0j
+	for k in range(len(data)):
+		if np.isnan(data[k].real):
+			data[k] = 0+0j
 
 	tc_shifted_data = []  # array to be filled with data, shifted by discrete time tc
 
