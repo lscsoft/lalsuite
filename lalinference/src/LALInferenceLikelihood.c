@@ -1559,7 +1559,7 @@ REAL8 LALInferenceMarginalisedPhaseLogLikelihood(LALInferenceVariables *currentP
      * handling changes. */
     if(!( (*(INT4 *)LALInferenceGetVariable(currentParams,"LAL_AMPORDER") == LAL_PNORDER_NEWTONIAN) \
       || (apprx == TaylorF2 || apprx==TaylorF2RedSpin || apprx==TaylorF2RedSpinTidal || 
-          apprx==SpinTaylorF2 || apprx==IMRPhenomA || apprx==IMRPhenomB || apprx==IMRPhenomC) ))
+          apprx==SpinTaylorF2 || apprx==IMRPhenomA || apprx==IMRPhenomB || apprx==IMRPhenomC || apprx==IMRPhenomP) ))
     {
       XLALPrintError("Error: Cannot use non-Newtonian amplitude order and analytically marginalise over phase!\n");
       exit(1);

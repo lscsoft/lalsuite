@@ -1340,8 +1340,8 @@ void LALInferenceInjectInspiralSignal(LALInferenceIFOData *IFOdata, ProcessParam
 	//LALGenerateInspiral(&status,&InjectGW,injTable,&InjParams);
 	//if(status.statusCode!=0) {fprintf(stderr,"Error generating injection!\n"); REPORTSTATUS(&status); }
 	/* Check for frequency domain injection (TF2 only at present) */
-	if(strstr(injTable->waveform,"TaylorF2"))
-	{ printf("Injecting TaylorF2 in the frequency domain...\n");
+	if(strstr(injTable->waveform,"TaylorF2")||strstr(injTable->waveform,"IMRPhenom"))
+	{ printf("Injecting in the frequency domain...\n");
 	 InjectTaylorF2(IFOdata, injTable, commandLine);
 	 return;
 	}
@@ -2326,9 +2326,9 @@ void InjectTaylorF2(LALInferenceIFOData *IFOdata, SimInspiralTable *inj_table, P
     dataPtr->fCross = FcrossScaled;
     dataPtr->timeshift = timeshift;
 
-  //char InjFileName[50];
-   //       sprintf(InjFileName,"injection_%s.dat",dataPtr->name);
-   //       FILE *outInj=fopen(InjFileName,"w");
+  char InjFileName[50];
+          sprintf(InjFileName,"injection_%s.dat",dataPtr->name);
+          FILE *outInj=fopen(InjFileName,"w");
  
      /* determine frequency range & loop over frequency bins: */
     deltaT = dataPtr->timeData->deltaT;
@@ -2353,7 +2353,7 @@ void InjectTaylorF2(LALInferenceIFOData *IFOdata, SimInspiralTable *inj_table, P
       templateImag = (plainTemplateReal*im + plainTemplateImag*re);
   
   
-       //  fprintf(outInj,"%lf %e %e %e %e %e\n",i*deltaF ,dataPtr->freqData->data->data[i].re,dataPtr->freqData->data->data[i].im,templateReal,templateImag,1.0/dataPtr->oneSidedNoisePowerSpectrum->data->data[i]);
+       fprintf(outInj,"%lf %e %e %e\n",i*deltaF ,templateReal,templateImag,1.0/dataPtr->oneSidedNoisePowerSpectrum->data->data[i]);
       dataPtr->freqData->data->data[i] += crect( templateReal, templateImag );
    
       temp = ((2.0/( deltaT*(double) dataPtr->timeData->data->length) * (templateReal*templateReal+templateImag*templateImag)) / dataPtr->oneSidedNoisePowerSpectrum->data->data[i]);
@@ -2364,7 +2364,7 @@ void InjectTaylorF2(LALInferenceIFOData *IFOdata, SimInspiralTable *inj_table, P
     dataPtr->SNR=sqrt(2.0*chisquared);
     dataPtr = dataPtr->next;
     
-// fclose(outInj);
+ fclose(outInj);
   }
 
     LALInferenceClearVariables(&intrinsicParams);
