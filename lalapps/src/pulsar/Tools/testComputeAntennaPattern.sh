@@ -48,7 +48,8 @@ delta=-0.506281802989210
 outCAP=antenna_pattern_test.dat
 outPDS=detector_state_test.dat
 skygridfile=./skygrid_test.dat
-timestampsfile=./timestamps_test.dat
+timestampsfile_H1=./timestamps_test_H1.dat
+timestampsfile_L1=./timestamps_test_L1.dat
 sftfile_base=./sft_test_
 sftfile_H1="${sftfile_base}H1"
 sftfile_L1="${sftfile_base}L1"
@@ -63,8 +64,11 @@ fi
 if [ -f $skygridfile ]; then
     rm $skygridfile
 fi
-if [ -f $timestampsfile ]; then
-    rm $timestampsfile
+if [ -f $timestampsfile_H1 ]; then
+    rm $timestampsfile_H1
+fi
+if [ -f $timestampsfile_L1 ]; then
+    rm $timestampsfile_L1
 fi
 
 echo "----------------------------------------------------------------------------------------------------"
@@ -260,10 +264,10 @@ Cmean=$(awk -v col1=4 -v col2=5 "$awk_avg_prod" $outCAP)
 Dmean=$( echo $Amean $Bmean $Cmean | awk '{print $1*$2-$3*$3}' )
 
 ## ----- make timestampsfile
-printf "%s 0\n%s 0\n%s 0" "$timestamp1" "$timestamp2" "$timestamp3" >> $timestampsfile
+printf "%s 0\n%s 0\n%s 0" "$timestamp1" "$timestamp2" "$timestamp3" >> $timestampsfile_H1
 
 ## ----- run ComputeAntennaPattern with timestampsfile input, direct average ABCD output
-cap_cmdline="${cap_code} --IFOs=H1 --timeStampsFile=$timestampsfile --outABCD=$outCAP --Alpha=$alpha --Delta=$delta"
+cap_cmdline="${cap_code} --IFOs=H1 --timeStampsFiles=$timestampsfile_H1 --outABCD=$outCAP --Alpha=$alpha --Delta=$delta"
 echo $cap_cmdline;
 if ! eval $cap_cmdline; then
     echo "Error.. something failed when running '$cap_code' ..."
@@ -296,7 +300,7 @@ echo "--------------------------------------------------------------------------
 echo "ComputeAntennaPattern Test4: comparing A,B,C,D with PredictFStat";
 echo "----------------------------------------------------------------------------------------------------"
 
-cap_cmdline="${cap_code} --IFOs=H1 --timeStampsFile=$timestampsfile --outABCD=$outCAP --Alpha=$alpha --Delta=$delta"
+cap_cmdline="${cap_code} --IFOs=H1 --timeStampsFiles=$timestampsfile_H1 --outABCD=$outCAP --Alpha=$alpha --Delta=$delta"
 echo $cap_cmdline;
 if ! eval $cap_cmdline; then
     echo "Error.. something failed when running '$cap_code' ..."
@@ -308,7 +312,7 @@ B_cap=$(awk -v col=4 "$awk_print_wo_headers" $outCAP)
 C_cap=$(awk -v col=5 "$awk_print_wo_headers" $outCAP)
 D_cap=$(awk -v col=6 "$awk_print_wo_headers" $outCAP)
 
-mfd_cmdline="${mfd_code} --IFO=H1 --outSingleSFT --outSFTbname=$sftfile_H1 --fmin=59.95 --Band=0.1 --timestampsFile=$timestampsfile"
+mfd_cmdline="${mfd_code} --IFO=H1 --outSingleSFT --outSFTbname=$sftfile_H1 --fmin=59.95 --Band=0.1 --timestampsFile=$timestampsfile_H1"
 echo $mfd_cmdline;
 if ! eval $mfd_cmdline; then
     echo "Error.. something failed when running '$mfd_code' ..."
@@ -355,7 +359,7 @@ B_H1_single=$B_cap
 C_H1_single=$C_cap
 D_H1_single=$D_cap
 
-cap_cmdline="${cap_code} --IFOs=L1 --timeStampsFile=$timestampsfile --outABCD=$outCAP --Alpha=$alpha --Delta=$delta"
+cap_cmdline="${cap_code} --IFOs=L1 --timeStampsFiles=$timestampsfile_H1 --outABCD=$outCAP --Alpha=$alpha --Delta=$delta"
 echo $cap_cmdline;
 if ! eval $cap_cmdline; then
     echo "Error.. something failed when running '$cap_code' ..."
@@ -367,7 +371,7 @@ B_L1_single=$(awk -v col=4 "$awk_print_wo_headers" $outCAP)
 C_L1_single=$(awk -v col=5 "$awk_print_wo_headers" $outCAP)
 D_L1_single=$(awk -v col=6 "$awk_print_wo_headers" $outCAP)
 
-cap_cmdline="${cap_code} --IFOs=H1,L1 --timeStampsFile=$timestampsfile --outABCD=$outCAP --Alpha=$alpha --Delta=$delta"
+cap_cmdline="${cap_code} --IFOs=H1,L1 --timeStampsFiles=$timestampsfile_H1 --outABCD=$outCAP --Alpha=$alpha --Delta=$delta"
 echo $cap_cmdline;
 if ! eval $cap_cmdline; then
     echo "Error.. something failed when running '$cap_code' ..."
@@ -442,16 +446,21 @@ SqrtShL=6e-23
 Sinv=$(echo $SqrtShH $SqrtShL | awk '{print (1/$1**2+1/$2**2)/2}')
 
 ## need more timestamps to get decent statistics for PFS
-rm $timestampsfile
+rm $timestampsfile_H1
 Nsteps=50
 iTS=1
 while [ $iTS -le $Nsteps ]; do
     timestamp_i=$(echo $timestamp1 $iTS $Tsft| awk '{print $1 + ($2 - 1) * $3}')
-    printf "%s 0\n" "$timestamp_i" >> $timestampsfile
+    printf "%s 0\n" "$timestamp_i" >> $timestampsfile_H1
+    printf "%s 0\n" "$timestamp_i" >> $timestampsfile_L1
     iTS=$(($iTS + 1))
 done
+## get one extra timestamp in L1 to catch errors on unequal Nsteps
+iTS=$(($iTS + 1))
+timestamp_i=$(echo $timestamp1 $iTS $Tsft| awk '{print $1 + ($2 - 1) * $3}')
+printf "%s 0\n" "$timestamp_i" >> $timestampsfile_L1
 
-cap_cmdline="${cap_code} --IFOs=H1,L1 --timeStampsFile=$timestampsfile --outABCD=$outCAP --Alpha=$alpha --Delta=$delta --noiseSqrtShX=$SqrtShH,$SqrtShL"
+cap_cmdline="${cap_code} --IFOs=H1,L1 --timeStampsFiles=$timestampsfile_H1,$timestampsfile_L1 --outABCD=$outCAP --Alpha=$alpha --Delta=$delta --noiseSqrtShX=$SqrtShH,$SqrtShL"
 echo $cap_cmdline;
 if ! eval $cap_cmdline; then
     echo "Error.. something failed when running '$cap_code' ..."
@@ -480,7 +489,7 @@ BSinvT_L1=$(echo $B_L1 $Sinv $Tsft | awk '{printf "%.4e", $1*$2*$3}')
 CSinvT_L1=$(echo $C_L1 $Sinv $Tsft | awk '{printf "%.4e", $1*$2*$3}')
 DSinvT_L1=$(echo $D_L1 $Sinv $Tsft | awk '{printf "%.4e", $1*($2*$3)**2}')
 
-mfd_cmdline="${mfd_code} --randSeed=1 --IFO=H1 --outSingleSFT --outSFTbname=$sftfile_H1 --fmin=59.95 --Band=0.1 --timestampsFile=$timestampsfile --noiseSqrtSh=$SqrtShH"
+mfd_cmdline="${mfd_code} --randSeed=1 --IFO=H1 --outSingleSFT --outSFTbname=$sftfile_H1 --fmin=59.95 --Band=0.1 --timestampsFile=$timestampsfile_H1 --noiseSqrtSh=$SqrtShH"
 echo $mfd_cmdline;
 if ! eval $mfd_cmdline; then
     echo "Error.. something failed when running '$mfd_code' ..."
@@ -513,7 +522,7 @@ fail_C_H1=$(echo $reldev_C_H1 $tolerance_pfs | awk "$awk_isgtr")
 reldev_D_H1=$(echo $DSinvT_H1 $DSinvT_H1_pfs | awk "$awk_reldev")
 fail_D_H1=$(echo $reldev_D_H1 $tolerance_pfs | awk "$awk_isgtr")
 
-mfd_cmdline="${mfd_code} --randSeed=2 --IFO=L1 --outSingleSFT --outSFTbname=$sftfile_L1 --fmin=59.95 --Band=0.1 --timestampsFile=$timestampsfile --noiseSqrtSh=$SqrtShL"
+mfd_cmdline="${mfd_code} --randSeed=2 --IFO=L1 --outSingleSFT --outSFTbname=$sftfile_L1 --fmin=59.95 --Band=0.1 --timestampsFile=$timestampsfile_L1 --noiseSqrtSh=$SqrtShL"
 echo $mfd_cmdline;
 if ! eval $mfd_cmdline; then
     echo "Error.. something failed when running '$mfd_code' ..."
@@ -590,7 +599,7 @@ if [ -z "$NOCLEANUP" ]; then
     rm $outCAP
     rm $outPDS
     rm $skygridfile
-    rm $timestampsfile
+    rm $timestampsfile_H1 $timestampsfile_L1
     rm $sftfile_H1 $sftfile_L1
     rm $outPFS
     echo "Cleaned up."
