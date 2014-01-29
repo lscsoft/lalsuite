@@ -72,7 +72,6 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}
 
 %files
 %defattr(-,root,root)
-%{_bindir}/laldetchar-*
 %{_libdir}/*.so*
 %{_sysconfdir}/*
 
@@ -84,7 +83,7 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}
 
 %files python
 %defattr(-,root,root)
-%{_bindir}/laldetchar-hveto
+%{_bindir}/laldetchar-*
 %{_libdir}/python*/site-packages/laldetchar/*.py
 %{_libdir}/python*/site-packages/laldetchar/*.pyc
 %{_libdir}/python*/site-packages/laldetchar/_laldetchar.so*
