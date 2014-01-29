@@ -305,6 +305,9 @@ LALInferenceRunState *initialize(ProcessParamsTable *commandLine)
     irs = NULL;
   }
 
+  if(LALInferenceGetProcParamVal(commandLine,"--propVerbose"))
+    irs->proposalStats=XLALCalloc(1,sizeof(LALInferenceVariables));
+
   return(irs);
 }
 
@@ -418,8 +421,6 @@ void initializeMCMC(LALInferenceRunState *runState)
   runState->algorithmParams=XLALCalloc(1,sizeof(LALInferenceVariables));
   runState->priorArgs=XLALCalloc(1,sizeof(LALInferenceVariables));
   runState->proposalArgs=XLALCalloc(1,sizeof(LALInferenceVariables));
-  if(LALInferenceGetProcParamVal(commandLine,"--propVerbose"))
-    runState->proposalStats=XLALCalloc(1,sizeof(LALInferenceVariables));
 
   /* Set up the appropriate functions for the MCMC algorithm */
   runState->algorithm=&PTMCMCAlgorithm;

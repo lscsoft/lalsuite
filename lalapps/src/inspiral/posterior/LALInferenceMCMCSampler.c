@@ -1060,6 +1060,7 @@ INT4 PTMCMCOneStep(LALInferenceRunState *runState)
     LALInferenceAddVariable(runState->proposalArgs, "logProposalRatio", &logProposalRatio, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR);
   LALInferenceSetVariable(runState->proposalArgs, "logProposalRatio", &logProposalRatio);
 
+  LALInferenceTrackProposalAcceptance(runState, accepted);
   LALInferenceUpdateAdaptiveJumps(runState, accepted, targetAcceptance);
   LALInferenceClearVariables(&proposedParams);
 
