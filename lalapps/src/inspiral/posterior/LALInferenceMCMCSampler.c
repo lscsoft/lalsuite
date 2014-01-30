@@ -251,6 +251,9 @@ computeMaxAutoCorrLen(LALInferenceRunState *runState, INT4 startCycle, INT4 endC
     max = Niter;
   }
 
+  /* Account for any thinning of the DE buffer that has happend */
+  max *= runState->differentialPointsSkip;
+
   *maxACL = (INT4)max;
 }
 
