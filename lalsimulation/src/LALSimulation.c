@@ -165,7 +165,7 @@ REAL8TimeSeries * XLALSimQuasiPeriodicInjectionREAL8TimeSeries( REAL8TimeSeries 
  *
  * - h+ and hx time series for the injection with their epochs set to the
  * start of those time series at the geocentre (for simplicity the epochs
- * must be the same),
+ * must be the same, and they must have the same length and sample rates),
  *
  * - the right ascension and declination of the source in radians.
  *
@@ -176,7 +176,9 @@ REAL8TimeSeries * XLALSimQuasiPeriodicInjectionREAL8TimeSeries( REAL8TimeSeries 
  * Output
  *
  * The strain time series as seen in the detector, with the epoch set to
- * the start of the time series at that detector.
+ * the start of the time series at that detector.  The output time series
+ * units are the same as the two input time series (which must both have
+ * the same sample units).
  *
  * Notes
  *
