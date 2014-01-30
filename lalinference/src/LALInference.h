@@ -668,7 +668,7 @@ void LALInferenceProcessParamLine(FILE *inp, char **headers, LALInferenceVariabl
 void LALInferenceSortVariablesByName(LALInferenceVariables *vars);
 
 /** LALInferenceVariable buffer to array and vica versa */
-INT4 LALInferenceBufferToArray(LALInferenceRunState *state, INT4 startCycle, INT4 endCycle, REAL8 **array);
+INT4 LALInferenceBufferToArray(LALInferenceRunState *state, REAL8 **array);
 
 void LALInferenceArrayToBuffer(LALInferenceRunState *state, REAL8 **array);
 

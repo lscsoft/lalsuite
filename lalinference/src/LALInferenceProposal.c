@@ -3599,10 +3599,7 @@ void LALInferenceSetupClusteredKDEProposalFromRun(LALInferenceRunState *runState
     INT4 i=0;
 
     INT4 nPar = LALInferenceGetVariableDimensionNonFixed(runState->currentParams);
-    INT4 Nskip = *(INT4*) LALInferenceGetVariable(runState->algorithmParams, "Nskip");
-    INT4 startCycle = *(INT4*) LALInferenceGetVariable(runState->proposalArgs, "clusteredStartCycle");
-    INT4 endCycle = *(INT4*) LALInferenceGetVariable(runState->proposalArgs, "clusteredEndCycle");
-    INT4 nPoints = (endCycle - startCycle) / Nskip + 1;
+    INT4 nPoints = runState->differentialPointsLength;
 
     /* Get points to be clustered from the differential evolution buffer. */
     REAL8** DEsamples = (REAL8**) XLALMalloc(nPoints * sizeof(REAL8*));
@@ -3610,22 +3607,13 @@ void LALInferenceSetupClusteredKDEProposalFromRun(LALInferenceRunState *runState
     for (i=0; i < nPoints; i++) {
       DEsamples[i] = temp + (i*nPar);
     }
+    INT4 bufferSize = LALInferenceBufferToArray(runState, DEsamples);
 
-    INT4 bufferSize = LALInferenceBufferToArray(runState, startCycle, endCycle, DEsamples);
-
+    /* Keep track of clustered parameter names */
     LALInferenceVariables *clusterParams = XLALCalloc(1, sizeof(LALInferenceVariables));
+    LALInferenceCopyVariables(runState->currentParams, clusterParams);
 
-    /* Only cluster parameters that are being sampled */
-    INT4 nInPar = 0;
-    LALInferenceVariableItem *item = runState->currentParams->head;
-    while(item!=NULL) {
-        if (item->vary == LALINFERENCE_PARAM_LINEAR || item->vary == LALINFERENCE_PARAM_CIRCULAR) {
-            LALInferenceAddVariable(clusterParams, item->name, item->value, item->type, item->vary);
-            nInPar++;
-        }
-        item = item->next;
-    }
-
+    /* Build the proposal */
     LALInferenceInitClusteredKDEProposal(runState, proposal, DEsamples[0], bufferSize, clusterParams, clusteredKDEProposalName, weight);
     LALInferenceAddClusteredKDEProposalToSet(runState, proposal);
 
