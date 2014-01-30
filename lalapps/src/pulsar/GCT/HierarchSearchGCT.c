@@ -1841,7 +1841,9 @@ int MAIN( int argc, char *argv[]) {
        */
       REAL8 Ncoarse = thisScan.numSkyGridPoints * nf1dot * nf2dot * ( binsFstatSearch + 2 * semiCohPar.extraBinsFstat);	// includes GCSideband bins
       REAL8 NSB     = thisScan.numSkyGridPoints * nf1dot * nf2dot * 2 * semiCohPar.extraBinsFstat;	// pure coarse GCSideband template count
-      REAL8 Nfine   = thisScan.numSkyGridPoints * binsFstatSearch * nf1dots_fg * nf2dots_fg;	// doesn't include F-stat sideband bins
+      REAL8 nf1dot_fine = nf1dot * nf1dots_fg;	// 'nf1dots_fg' is the number of fine-grid points *per coarse-grid point*!
+      REAL8 nf2dot_fine = nf2dot * nf2dots_fg;	// 'nf1dots_fg' is the number of fine-grid points *per coarse-grid point*!
+      REAL8 Nfine   = thisScan.numSkyGridPoints * binsFstatSearch * nf1dot_fine * nf2dot_fine;	// doesn't include F-stat sideband bins
       REAL8 c0co    = coherentTime / ( Ncoarse * nSFTs );
       // Note: we use (total-FstatTime) instead of incoherentTime to ensure accurate prediction power
       // whatever extra time isn't captured by incoherentTime+coherentTime also needs to be accounted as 'incoherent time'
