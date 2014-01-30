@@ -1106,6 +1106,7 @@ print "Writing DAG and sub files..."
 dag.add_maxjobs_category('minifollowups', 15)
 
 dag.write_sub_files()
+dag.write_script()
 dag.write_dag()
 
 # write process end time to log file and write log file
