@@ -528,7 +528,7 @@ for tag in user_tags:
     dbaddinj_node.set_tmp_space( tmp_space )
     dbaddinj_node.set_database( result_db )
     dbaddinj_node.set_injection_file( inj_file )
-
+    dbaddinj_node.set_inj_tag(sim_tags[-1])
     dbaddinj_node.add_parent( last_node )
 
     dag.add_node( dbaddinj_node )
