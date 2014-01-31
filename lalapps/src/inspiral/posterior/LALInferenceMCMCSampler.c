@@ -93,11 +93,6 @@ accumulateDifferentialEvolutionSample(LALInferenceRunState *runState) {
       thinDifferentialEvolutionPoints(runState);
       return accumulateDifferentialEvolutionSample(runState);
     } else {
-      /* Update clustered-KDE proposal every time the buffer is expanded */
-      if (LALInferenceComputeEffectiveSampleSize(runState) > 100 &&
-              !LALInferenceGetProcParamVal(runState->commandLine,"--proposal-no-kde"))
-          LALInferenceSetupClusteredKDEProposalFromRun(runState);
-
       runState->differentialPoints = XLALRealloc(runState->differentialPoints, newSize*sizeof(LALInferenceVariables *));
       runState->differentialPointsSize = newSize;
     }
@@ -233,6 +228,11 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
     annealingOn = 1;
     *runPhase_p = LALINFERENCE_TEMP_PT;
   }
+
+  /* Clustered-KDE proposal updates */
+  UINT4 kde_update_interval = 100;  // rought number of effective samples between KDE udpates
+  UINT4 last_kde_update = 0;        // effective sample size at last KDE update
+
 
   UINT4 diffEvo = 1; // Differential evolution
   if (LALInferenceGetProcParamVal(runState->commandLine, "--noDifferentialEvolution") || LALInferenceGetProcParamVal(runState->commandLine, "--nodifferentialevolution")) {
@@ -683,6 +683,15 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
     }
 
     if ((i % Nskip) == 0) {
+
+      /* Update clustered-KDE proposal every time the buffer is expanded */
+      if (!LALInferenceGetProcParamVal(runState->commandLine,"--proposal-no-kde")
+          && ((iEff - last_kde_update) > kde_update_interval)) {
+        LALInferenceSetupClusteredKDEProposalFromRun(runState);
+        last_kde_update = iEff;
+      }
+
+
       if (diffEvo) {
 	if (i % (runState->differentialPointsSkip) == 0) 
 	  accumulateDifferentialEvolutionSample(runState);
