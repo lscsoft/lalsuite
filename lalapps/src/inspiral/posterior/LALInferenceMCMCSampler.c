@@ -93,6 +93,11 @@ accumulateDifferentialEvolutionSample(LALInferenceRunState *runState) {
       thinDifferentialEvolutionPoints(runState);
       return accumulateDifferentialEvolutionSample(runState);
     } else {
+      /* Update clustered-KDE proposal every time the buffer is expanded */
+      if (LALInferenceComputeEffectiveSampleSize(runState) > 100 &&
+              !LALInferenceGetProcParamVal(runState->commandLine,"--proposal-no-kde"))
+          LALInferenceSetupClusteredKDEProposalFromRun(runState);
+
       runState->differentialPoints = XLALRealloc(runState->differentialPoints, newSize*sizeof(LALInferenceVariables *));
       runState->differentialPointsSize = newSize;
     }
@@ -175,103 +180,9 @@ BcastDifferentialEvolutionPoints(LALInferenceRunState *runState, INT4 sourceTemp
 
   /* Clean up */
   XLALFree(temp);
+  XLALFree(packedDEsamples);
   MPI_Barrier(MPI_COMM_WORLD);
 }
-
-static void
-computeMaxAutoCorrLen(LALInferenceRunState *runState, INT4* maxACL) {
-/* Define ACL as the smallest s such that
- *
- * 1 + 2*ACF(1) + 2*ACF(2) + ... + 2*ACF(M*s) < s,
- *
- * the short length so that the sum of the ACF function
- * is smaller than that length over a window of M times
- * that length.
- *
- * The maximum window length is restricted to be N/K as
- * a safety precaution against relying on data near the
- * extreme of the lags in the ACF, where there is a lot
- * of noise.
-*/
-  INT4 M=5, K=2;
-  INT4 Niter = *(INT4*) LALInferenceGetVariable(runState->algorithmParams, "Niter");
-  INT4 nPar = LALInferenceGetVariableDimensionNonFixed(runState->currentParams);
-  INT4 nPoints = runState->differentialPointsLength;
-
-  REAL8** DEarray;
-  REAL8*  temp;
-  REAL8 mean, ACL, ACF, max=0;
-  INT4 par=0, lag=0, i=0, imax;
-  REAL8 cumACF, s;
-
-  /* Determine the number of iterations between each entry in the DE buffer */
-  INT4 Nskip = *(INT4*) LALInferenceGetVariable(runState->algorithmParams, "Nskip");
-
-  if (nPoints > 1) {
-    imax = nPoints/K;
-
-    /* Prepare 2D array for DE points */
-    DEarray = (REAL8**) XLALMalloc(nPoints * sizeof(REAL8*));
-    temp = (REAL8*) XLALMalloc(nPoints * nPar * sizeof(REAL8));
-    for (i=0; i < nPoints; i++)
-      DEarray[i] = temp + (i*nPar);
-
-    LALInferenceBufferToArray(runState, DEarray);
-
-    for (par=0; par<nPar; par++) {
-      mean = gsl_stats_mean(&DEarray[0][par], nPar, nPoints);
-      for (i=0; i<nPoints; i++)
-        DEarray[i][par] -= mean;
-
-      lag=1;
-      ACL=1.0;
-      ACF=1.0;
-      s=1.0;
-      cumACF=1.0;
-      while (cumACF >= s) {
-        ACF = gsl_stats_correlation(&DEarray[0][par], nPar, &DEarray[lag][par], nPar, nPoints-lag);
-        cumACF += 2.0 * ACF;
-        lag++;
-        s = (REAL8)lag/(REAL8)M;
-        if (lag > imax) {
-          ACL = INFINITY;
-          break;
-        }
-      }
-      ACL = s*Nskip;
-      if (ACL>max)
-        max=ACL;
-    }
-    XLALFree(temp);
-  } else {
-    max = Niter;
-  }
-
-  *maxACL = (INT4)max;
-}
-
-static void
-updateMaxAutoCorrLen(LALInferenceRunState *runState) {
-  // Calculate ACL with latter half of data to avoid ACL overestimation from chain equilibrating after adaptation
-  INT4 acl;
-
-  computeMaxAutoCorrLen(runState, &acl);
-  LALInferenceSetVariable(runState->algorithmParams, "acl", &acl);
-}
-
-static INT4
-effectiveSampleSize(LALInferenceRunState *runState) {
-    /* Update the ACL estimate */
-    updateMaxAutoCorrLen(runState);
-
-    INT4 acl = *((INT4*) LALInferenceGetVariable(runState->algorithmParams, "acl"));
-
-    /* Estimate the total number of samples post-burnin based on samples in DE buffer */
-    INT4 nPoints =  runState->differentialPointsLength * runState->differentialPointsSkip;
-    INT4 iEff = nPoints/acl;
-    return iEff;
-}
-
 
 void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 {
@@ -675,7 +586,7 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
         if (adapting)
           iEff = 0;
         else
-          iEff = effectiveSampleSize(runState);
+          iEff = LALInferenceComputeEffectiveSampleSize(runState);
       }
 
       if (MPIrank==0 && iEff > endOfPhase) {
@@ -742,7 +653,7 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
     if (*runPhase_p==LALINFERENCE_SINGLE_CHAIN && i % (100*Nskip) == 0) {
       adapting = *((INT4 *)LALInferenceGetVariable(runState->proposalArgs, "adapting"));
       if (!adapting) {
-        iEff = effectiveSampleSize(runState);
+        iEff = LALInferenceComputeEffectiveSampleSize(runState);
         if (iEff >= Neff/nChain) {
           fprintf(stdout,"Chain %i has %i effective samples. Stopping...\n", MPIrank, iEff);
           break;                                 // Sampling is done for this chain!

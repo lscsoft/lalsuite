@@ -104,6 +104,7 @@ extern const char *const cycleArrayCounterName;
 
 
 /* Proposal Names */
+extern const char *const nullProposalName;
 extern const char *const singleAdaptProposalName;
 extern const char *const singleProposalName;
 extern const char *const orbitalPhaseJumpName;
@@ -306,6 +307,9 @@ void LALInferenceSetupClusteredKDEProposalsFromFile(LALInferenceRunState *runSta
 /* Add a KDE proposal to the KDE proposal set. */
 void LALInferenceAddClusteredKDEProposalToSet(LALInferenceRunState *runState, LALInferenceClusteredKDE *kde);
 
+/* Destroy an existing clustered-KDE proposal. */
+void LALInferenceDestroyClusteredKDEProposal(LALInferenceClusteredKDE *proposal);
+
 /* Setup a clustered-KDE proposal from the differential evolution buffer. */
 void LALInferenceSetupClusteredKDEProposalFromRun(LALInferenceRunState *runState);
 
@@ -314,6 +318,15 @@ void LALInferenceClusteredKDEProposal(LALInferenceRunState *runState, LALInferen
 
 /* Initialize a clustered-KDE proposal. */
 void LALInferenceInitClusteredKDEProposal(LALInferenceRunState *runState, LALInferenceClusteredKDE *kde, REAL8 *array, UINT4 nSamps, LALInferenceVariables *params, const char *name, REAL8 weight);
+
+/* Compute the maximum single-parameter autocorrelation length. */
+void LALInferenceComputeMaxAutoCorrLen(LALInferenceRunState *runState, INT4* maxACL);
+
+/* Update the estimatate of the autocorrelation length. */
+void LALInferenceUpdateMaxAutoCorrLen(LALInferenceRunState *runState);
+
+/* Determine the effective sample size based on the DE buffer. */
+INT4 LALInferenceComputeEffectiveSampleSize(LALInferenceRunState *runState);
 
 /** Helper function to setup the adaptive step proposals before the run */
 void LALInferenceSetupAdaptiveProposals(LALInferenceRunState *state);

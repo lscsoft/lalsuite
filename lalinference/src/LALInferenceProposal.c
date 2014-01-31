@@ -61,6 +61,7 @@ const char *const cycleArrayCounterName = "Proposal Cycle Counter";
 const char *const LALInferenceCurrentProposalName = "Current Proposal";
 
 /* Proposal Names */
+const char *const nullProposalName = "NULL";
 const char *const singleAdaptProposalName = "Single";
 const char *const singleProposalName = "Single";
 const char *const orbitalPhaseJumpName = "OrbitalPhase";
@@ -497,9 +498,11 @@ SetupDefaultProposal(LALInferenceRunState *runState, LALInferenceVariables *curr
     LALInferenceAddProposalToCycle(runState, GlitchMorletReverseJumpName, *LALInferenceGlitchMorletReverseJump, SMALLWEIGHT);
   }
 
-  if (LALInferenceGetProcParamVal(runState->commandLine,"--ptmcmc-samples") || LALInferenceGetProcParamVal(runState->commandLine,"--ascii-samples")) {
-    LALInferenceSetupClusteredKDEProposalsFromFile(runState);
-    LALInferenceAddProposalToCycle(runState, clusteredKDEProposalName, &LALInferenceClusteredKDEProposal, BIGWEIGHT);
+  if(!LALInferenceGetProcParamVal(runState->commandLine,"--proposal-no-kde")){
+      LALInferenceAddProposalToCycle(runState, clusteredKDEProposalName, &LALInferenceClusteredKDEProposal, 2*BIGWEIGHT);
+      if (LALInferenceGetProcParamVal(runState->commandLine,"--ptmcmc-samples") || LALInferenceGetProcParamVal(runState->commandLine,"--ascii-samples")) {
+          LALInferenceSetupClusteredKDEProposalsFromFile(runState);
+      }
   }
 
   LALInferenceRandomizeProposalCycle(runState);
@@ -3285,6 +3288,10 @@ void LALInferenceTrackProposalAcceptance(LALInferenceRunState *runState, INT4 ac
     /* Update proposal statistics */
     if (runState->proposalStats){
         currentProposalName = *((const char **)LALInferenceGetVariable(runState->proposalArgs, LALInferenceCurrentProposalName));
+        /* nullProposalName indicates tracking shouldn't be counted this iteration */
+        if (!strcmp(currentProposalName, nullProposalName))
+            return;
+
         propStat = ((LALInferenceProposalStatistics *)LALInferenceGetVariable(runState->proposalStats, currentProposalName));
         propStat->proposed++;
         if (accepted == 1){
@@ -3530,8 +3537,9 @@ void LALInferenceSetupClusteredKDEProposalsFromFile(LALInferenceRunState *runSta
 void LALInferenceInitClusteredKDEProposal(LALInferenceRunState *runState, LALInferenceClusteredKDE *kde, REAL8 *array, UINT4 nSamps, LALInferenceVariables *params, const char *name, REAL8 weight) {
 
     strcpy(kde->name, name);
+    INT4 dim = LALInferenceGetVariableDimensionNonFixed(params);
 
-    gsl_matrix_view mview = gsl_matrix_view_array(array, nSamps, params->dimension);
+    gsl_matrix_view mview = gsl_matrix_view_array(array, nSamps, dim);
     kde->kmeans = LALInferenceIncrementalKmeans(&mview.matrix, runState->GSLrandom);
 
     kde->dimension = kde->kmeans->dim;
@@ -3560,11 +3568,30 @@ void LALInferenceAddClusteredKDEProposalToSet(LALInferenceRunState *runState, LA
     /* If proposals already exist, add to the end */
     } else {
         LALInferenceClusteredKDE *existing_kde = *((LALInferenceClusteredKDE **)LALInferenceGetVariable(propArgs, clusteredKDEProposalName));
+        LALInferenceClusteredKDE *old_kde = NULL;
 
-        while (existing_kde->next != NULL)
-            existing_kde = existing_kde->next;
+        /* If the first proposal has the same name, replace it */
+        if (!strcmp(existing_kde->name, kde->name)) {
+            old_kde = existing_kde;
+            kde->next = existing_kde->next;
+            LALInferenceSetVariable(propArgs, clusteredKDEProposalName, (void *)&kde);
+        } else {
+            while (existing_kde->next != NULL) {
+                /* Replace proposal with the same name if found */
+                if (!strcmp(existing_kde->next->name, kde->name)) {
+                    old_kde = existing_kde->next;
+                    kde->next = old_kde->next;
+                    existing_kde->next = kde;
+                    break;
+                }
+                existing_kde = existing_kde->next;
+            }
 
-        existing_kde->next=kde;
+            /* If a proposal was not replaced, add the proposal to the end of the list */
+            existing_kde->next=kde;
+        }
+
+        LALInferenceDestroyClusteredKDEProposal(old_kde);
     }
 
     /* Add proposal to tracking */
@@ -3579,10 +3606,25 @@ void LALInferenceAddClusteredKDEProposalToSet(LALInferenceRunState *runState, LA
         LALInferenceAddVariable(propStats, propName, (void *)&propStat, LALINFERENCE_void_ptr_t, LALINFERENCE_PARAM_LINEAR);
         }
     }
-
     return;
 }
 
+
+/**
+ * Destroy an existing clustered-KDE proposal.
+ *
+ * Convenience function for freeing a clustered KDE proposal that
+ * already exists.  This is particularly useful for a proposal that
+ * is updated during a run.
+ * @param proposal The proposal to be destroyed.
+ */
+void LALInferenceDestroyClusteredKDEProposal(LALInferenceClusteredKDE *proposal) {
+    if (proposal != NULL) {
+        LALInferenceKmeansDestroy(proposal->kmeans);
+        XLALFree(proposal->params);
+    }
+    return;
+}
 
 /**
  * Setup a clustered-KDE proposal from the differential evolution buffer.
@@ -3592,32 +3634,41 @@ void LALInferenceAddClusteredKDEProposalToSet(LALInferenceRunState *runState, LA
  * @param runState The LALInferenceRunState to get the buffer from and add the proposal to.
  */
 void LALInferenceSetupClusteredKDEProposalFromRun(LALInferenceRunState *runState) {
-    printf("Setting up PT-tuned proposal.\n");
-
     LALInferenceClusteredKDE *proposal = XLALMalloc(sizeof(LALInferenceClusteredKDE));
     REAL8 weight=2.;
     INT4 i=0;
 
     INT4 nPar = LALInferenceGetVariableDimensionNonFixed(runState->currentParams);
-    INT4 nPoints = runState->differentialPointsLength;
+
+    /* If ACL can be estimated, thin DE buffer to only have independent samples */
+    REAL8 bufferSize = (REAL8)runState->differentialPointsLength;
+    REAL8 effSampleSize = (REAL8) LALInferenceComputeEffectiveSampleSize(runState);
+    INT4 step = 1;
+    if (effSampleSize > 0)
+        step = (INT4) ceil(bufferSize/effSampleSize);
+    INT4 nPoints = (INT4) ceil(bufferSize/(REAL8)step);
 
     /* Get points to be clustered from the differential evolution buffer. */
     REAL8** DEsamples = (REAL8**) XLALMalloc(nPoints * sizeof(REAL8*));
     REAL8*  temp = (REAL8*) XLALMalloc(nPoints * nPar * sizeof(REAL8));
-    for (i=0; i < nPoints; i++) {
+    for (i=0; i < nPoints; i++)
       DEsamples[i] = temp + (i*nPar);
-    }
-    INT4 bufferSize = LALInferenceBufferToArray(runState, DEsamples);
+
+    LALInferenceThinnedBufferToArray(runState, DEsamples, step);
 
     /* Keep track of clustered parameter names */
     LALInferenceVariables *clusterParams = XLALCalloc(1, sizeof(LALInferenceVariables));
     LALInferenceCopyVariables(runState->currentParams, clusterParams);
 
     /* Build the proposal */
-    LALInferenceInitClusteredKDEProposal(runState, proposal, DEsamples[0], bufferSize, clusterParams, clusteredKDEProposalName, weight);
+    LALInferenceInitClusteredKDEProposal(runState, proposal, DEsamples[0], nPoints, clusterParams, clusteredKDEProposalName, weight);
     LALInferenceAddClusteredKDEProposalToSet(runState, proposal);
 
+    /* The proposal copies the data, so the local array can be freed */
     XLALFree(temp);
+    XLALFree(DEsamples);
+
+    return;
 }
 
 
@@ -3632,14 +3683,18 @@ void LALInferenceSetupClusteredKDEProposalFromRun(LALInferenceRunState *runState
  * @param[out] proposedParam The proposed parameters.
  */
 void LALInferenceClusteredKDEProposal(LALInferenceRunState *runState, LALInferenceVariables *proposedParams) {
+    const char *propName = (const char *) clusteredKDEProposalName;
     REAL8 cumulativeWeight, totalWeight;
 
     LALInferenceVariableItem *item;
     LALInferenceVariables *propArgs = runState->proposalArgs;
+    LALInferenceCopyVariables(runState->currentParams, proposedParams);
 
     if (!LALInferenceCheckVariable(propArgs, clusteredKDEProposalName)) {
-        fprintf(stderr, "KDE Proposal called but never intialized.\n");
-        exit(1);
+        propName = (const char *) nullProposalName;
+        LALInferenceSetVariable(runState->proposalArgs, LALInferenceCurrentProposalName, &propName);
+        LALInferenceSetLogProposalRatio(runState, 0.0);
+        return; /* Quit now, since there is no proposal to call */
     }
 
     /* Clustered KDE estimates are stored in a linked list, with possibly different weights */
@@ -3663,19 +3718,20 @@ void LALInferenceClusteredKDEProposal(LALInferenceRunState *runState, LALInferen
     }
 
     /* Update the current proposal name for tracking purposes */
-    const char *propName = (const char *) kde->name;
+    propName = (const char *) kde->name;
     LALInferenceSetVariable(runState->proposalArgs, LALInferenceCurrentProposalName, &propName);
 
     /* Draw a sample and fill the proposedParams variable with the parameters described by the KDE */
-    LALInferenceCopyVariables(runState->currentParams, proposedParams);
     REAL8 *current = XLALMalloc(kde->dimension * sizeof(REAL8));
     REAL8 *proposed = LALInferenceKmeansDraw(kde->kmeans);
 
     UINT4 i=0;
     for (item = kde->params->head; item; item = item->next) {
-        current[i] = *(REAL8 *) LALInferenceGetVariable(runState->currentParams, item->name);
-        LALInferenceSetVariable(proposedParams, item->name, &(proposed[i]));
-        i++;
+        if (item->vary != LALINFERENCE_PARAM_FIXED && item->vary != LALINFERENCE_PARAM_OUTPUT) {
+            current[i] = *(REAL8 *) LALInferenceGetVariable(runState->currentParams, item->name);
+            LALInferenceSetVariable(proposedParams, item->name, &(proposed[i]));
+            i++;
+        }
     }
 
     /* Calculate the proposal ratio */
@@ -3686,6 +3742,115 @@ void LALInferenceClusteredKDEProposal(LALInferenceRunState *runState, LALInferen
     XLALFree(current);
     XLALFree(proposed);
 }
+
+
+/**
+ * Compute the maximum single-parameter autocorrelation length.
+ *
+ * 1 + 2*ACF(1) + 2*ACF(2) + ... + 2*ACF(M*s) < s,
+ *
+ * the short length so that the sum of the ACF function
+ * is smaller than that length over a window of M times
+ * that length.
+ *
+ * The maximum window length is restricted to be N/K as
+ * a safety precaution against relying on data near the
+ * extreme of the lags in the ACF, where there is a lot
+ * of noise.
+ * @param      runState      The current LALInferenceRunState.
+*/
+void LALInferenceComputeMaxAutoCorrLen(LALInferenceRunState *runState, INT4* maxACL) {
+  INT4 M=5, K=2;
+  INT4 Niter = *(INT4*) LALInferenceGetVariable(runState->algorithmParams, "Niter");
+  INT4 nPar = LALInferenceGetVariableDimensionNonFixed(runState->currentParams);
+  INT4 nPoints = runState->differentialPointsLength;
+
+  REAL8** DEarray;
+  REAL8*  temp;
+  REAL8 mean, ACL, ACF, max=0;
+  INT4 par=0, lag=0, i=0, imax;
+  REAL8 cumACF, s;
+
+  /* Determine the number of iterations between each entry in the DE buffer */
+  INT4 Nskip = *(INT4*) LALInferenceGetVariable(runState->algorithmParams, "Nskip");
+
+  if (nPoints > 1) {
+    imax = nPoints/K;
+
+    /* Prepare 2D array for DE points */
+    DEarray = (REAL8**) XLALMalloc(nPoints * sizeof(REAL8*));
+    temp = (REAL8*) XLALMalloc(nPoints * nPar * sizeof(REAL8));
+    for (i=0; i < nPoints; i++)
+      DEarray[i] = temp + (i*nPar);
+
+    LALInferenceBufferToArray(runState, DEarray);
+
+    for (par=0; par<nPar; par++) {
+      mean = gsl_stats_mean(&DEarray[0][par], nPar, nPoints);
+      for (i=0; i<nPoints; i++)
+        DEarray[i][par] -= mean;
+
+      lag=1;
+      ACL=1.0;
+      ACF=1.0;
+      s=1.0;
+      cumACF=1.0;
+      while (cumACF >= s) {
+        ACF = gsl_stats_correlation(&DEarray[0][par], nPar, &DEarray[lag][par], nPar, nPoints-lag);
+        cumACF += 2.0 * ACF;
+        lag++;
+        s = (REAL8)lag/(REAL8)M;
+        if (lag > imax) {
+          ACL = INFINITY;
+          break;
+        }
+      }
+      ACL = s*Nskip;
+      if (ACL>max)
+        max=ACL;
+    }
+
+    XLALFree(temp);
+    XLALFree(DEarray);
+  } else {
+    max = Niter;
+  }
+
+  *maxACL = (INT4)max;
+}
+
+/**
+ * Update the estimatate of the autocorrelation length.
+ *
+ * @param      runState      The current LALInferenceRunState.
+*/
+void LALInferenceUpdateMaxAutoCorrLen(LALInferenceRunState *runState) {
+  // Calculate ACL with latter half of data to avoid ACL overestimation from chain equilibrating after adaptation
+  INT4 acl;
+
+  LALInferenceComputeMaxAutoCorrLen(runState, &acl);
+  LALInferenceSetVariable(runState->algorithmParams, "acl", &acl);
+}
+
+/**
+ * Determine the effective sample size based on the DE buffer.
+ *
+ * Compute the number of independent samples in the differential evolution
+ * buffer.
+ * @param      runState      The current LALInferenceRunState.
+ */
+INT4 LALInferenceComputeEffectiveSampleSize(LALInferenceRunState *runState) {
+    /* Update the ACL estimate */
+    LALInferenceUpdateMaxAutoCorrLen(runState);
+
+    INT4 acl = *((INT4*) LALInferenceGetVariable(runState->algorithmParams, "acl"));
+
+    /* Estimate the total number of samples post-burnin based on samples in DE buffer */
+    INT4 nPoints =  runState->differentialPointsLength * runState->differentialPointsSkip;
+    INT4 iEff = nPoints/acl;
+    return iEff;
+}
+
 
 INT4 LALInferencePrintProposalTrackingHeader(FILE *fp,LALInferenceVariables *params) {
       fprintf(fp, "proposal\t");

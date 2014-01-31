@@ -1206,25 +1206,35 @@ int LALInferenceCompareVariables(LALInferenceVariables *var1, LALInferenceVariab
   return(result);
 }
 
-INT4 LALInferenceBufferToArray(LALInferenceRunState *state, REAL8** DEarray) {
+
+/* Move every *step* entry from the buffer to an array */
+INT4 LALInferenceThinnedBufferToArray(LALInferenceRunState *state, REAL8** DEarray, INT4 step) {
   LALInferenceVariableItem *ptr;
   INT4 i=0,p=0;
 
   INT4 nPoints = state->differentialPointsLength;
-  for (i = 0; i < nPoints; i++) {
+  for (i = 0; i < nPoints; i+=step) {
     ptr=state->differentialPoints[i]->head;
     p=0;
     while(ptr!=NULL) {
       if (LALInferenceCheckVariableNonFixed(state->differentialPoints[i], ptr->name) && ptr->type == LALINFERENCE_REAL8_t) {
-        DEarray[i][p]=*(REAL8 *)ptr->value;
+        DEarray[i/step][p]=*(REAL8 *)ptr->value;
         p++;
       }
       ptr=ptr->next;
     }
   }
 
-  return nPoints;
+  return nPoints/step;
 }
+
+
+/* Move the entire buffer to an array */
+INT4 LALInferenceBufferToArray(LALInferenceRunState *state, REAL8** DEarray) {
+  INT4 step = 1;
+  return LALInferenceThinnedBufferToArray(state, DEarray, step);
+}
+
 
 void LALInferenceArrayToBuffer(LALInferenceRunState *runState, REAL8** DEarray) {
   LALInferenceVariableItem *ptr;
