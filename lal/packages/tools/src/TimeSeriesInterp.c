@@ -27,10 +27,10 @@
 #include <lal/XLALError.h>
 
 
-typedef struct tagLALREAL8TimeSeriesInterp {
+struct tagLALREAL8TimeSeriesInterp {
 	const REAL8TimeSeries *series;
 	int kernel_length_over_2;
-} LALREAL8TimeSeriesInterp;
+};
 
 
 /**
