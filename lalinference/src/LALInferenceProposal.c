@@ -1428,7 +1428,13 @@ static REAL8 evaluate_morlet_proposal(LALInferenceRunState *runState, LALInferen
   Q = gsl_matrix_get(glitch_Q,ifo,k);
   f = gsl_matrix_get(glitch_f,ifo,k);
 
+  /*
   prior += logGlitchAmplitudeDensity(A,Q,f);
+  */
+
+  REAL8 Anorm = *(REAL8 *)LALInferenceGetVariable(runState->priorArgs,"glitch_norm");
+
+  prior += logGlitchAmplitudeDensity(A*Anorm,Q,f);
 
   return prior;
 }
@@ -2098,6 +2104,7 @@ static void MaximizeGlitchParameters(LALInferenceVariables *currentParams, LALIn
 
   /* Shift template parameters accordingly */
   //printf("%g %g %g %g %g %g\n",dTime,dPhase,dAmplitude,max/rho, max, rho);
+  //printf("max amp: %g->%g  max time:  %g->%g\n",Amp,Amp*dAmplitude,t0,t0+dTime);
   t0  += dTime;
   Amp *= dAmplitude;
   ph0 -= dPhase;

@@ -41,7 +41,10 @@ static double outerIntegrand(double M1, void *voData);
 REAL8 logGlitchAmplitudeDensity(REAL8 A, REAL8 Q, REAL8 f)
 {
   REAL8 SNR;
+  /*
   REAL8 PIterm = 0.5*LAL_2_SQRTPI*LAL_SQRT1_2;
+  */
+  REAL8 PIterm = LAL_2_SQRTPI*LAL_SQRT1_2;
   REAL8 SNRPEAK = 5.0;
 
   SNR = A*sqrt( (PIterm*Q/f) );
@@ -1756,6 +1759,8 @@ LALInferenceVariableItem *item=params->head;
           gsl_matrix *glitch_Q = *(gsl_matrix **)LALInferenceGetVariable(params, "morlet_Q");
           gsl_matrix *glitch_A = *(gsl_matrix **)LALInferenceGetVariable(params, "morlet_Amp");
 
+          REAL8 Anorm = *(REAL8 *)LALInferenceGetVariable(priorParams,"glitch_norm");
+
           REAL8 A,f,Q;
           for(nifo=0; nifo<(UINT4)gsize->length; nifo++)
           {
@@ -1765,7 +1770,10 @@ LALInferenceVariableItem *item=params->head;
               Q = gsl_matrix_get(glitch_Q,nifo,nglitch);
               f = gsl_matrix_get(glitch_f,nifo,nglitch);
 
+              /*
               logPrior += logGlitchAmplitudeDensity(A,Q,f);
+               */
+              logPrior += logGlitchAmplitudeDensity(A*Anorm,Q,f);
             }
           }
         }

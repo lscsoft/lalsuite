@@ -118,16 +118,27 @@ void LALInferenceInitGlitchVariables(LALInferenceRunState *runState)
   gsl_matrix *mQ   = gsl_matrix_alloc(nifo,(int)(gmax));
   gsl_matrix *mt0  = gsl_matrix_alloc(nifo,(int)(gmax));
   gsl_matrix *mphi = gsl_matrix_alloc(nifo,(int)(gmax));
+  gsl_matrix_set_all(mAmp, 0.0);
+  gsl_matrix_set_all(mf0,  0.0);
+  gsl_matrix_set_all(mQ,   0.0);
+  gsl_matrix_set_all(mt0,  0.0);
+  gsl_matrix_set_all(mphi, 0.0);
 
   double Amin,Amax;
   double Qmin,Qmax;
   double f_min,f_max;
   double tmin,tmax;
   double pmin,pmax;
+  double Anorm;
 
   REAL8 TwoDeltaToverN = 2.0 * dataPtr->timeData->deltaT / ((double) dataPtr->timeData->data->length);
-  Amin = 1.0   / sqrt(TwoDeltaToverN);
-  Amax = 100.0 / sqrt(TwoDeltaToverN);
+  Anorm = sqrt(TwoDeltaToverN);
+  /*
+  Amin = 10.0   / sqrt(TwoDeltaToverN);
+  Amax = 10000.0 / sqrt(TwoDeltaToverN);
+  */
+  Amin = 10.0/Anorm;
+  Amax = 10000.0/Anorm;
 
   Qmin = 3.0;
   Qmax = 30.0;
@@ -174,6 +185,8 @@ void LALInferenceInitGlitchVariables(LALInferenceRunState *runState)
   LALInferenceAddMinMaxPrior(priorArgs, "morlet_phi_prior", &pmin, &pmax, LALINFERENCE_REAL8_t);
 
   LALInferenceAddMinMaxPrior(priorArgs, "glitch_dim", &gmin, &gmax, LALINFERENCE_REAL8_t);
+
+  LALInferenceAddVariable(priorArgs, "glitch_norm", &Anorm, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
 
   //Meyer-wavelet based proposal distribution
   LALInferenceAddVariable(proposalArgs, "glitch_max_power", &maxpower, LALINFERENCE_REAL8Vector_t, LALINFERENCE_PARAM_FIXED);
