@@ -1081,7 +1081,7 @@ def plot_snr_vs_time(config, ifo, veto_level, cluster, start_time, end_time):
         maxindex = pylab.argmax(snr)
         pylab.text(time[maxindex], snr[maxindex]*1.04, 'Max: GPS %.3f' % (gps[maxindex]+1e-9*gpsns[maxindex]), size='medium')
         if len(infTimes):
-            pylab.txt(0.5, max(snr)*1.07, 'One or more SNRs were inf!! See .err file for a list of times')
+            pylab.text(0.5, max(snr)*1.07, 'One or more SNRs were inf!! See .err file for a list of times')
             print >>sys.stderr, 'Times with SNR=inf:', infTimes
 
     pylab.title(make_timeless_title(ifo, veto_level, cluster, start_time))
