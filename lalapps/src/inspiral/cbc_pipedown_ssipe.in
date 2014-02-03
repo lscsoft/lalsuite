@@ -528,7 +528,7 @@ for tag in user_tags:
     dbaddinj_node.set_tmp_space( tmp_space )
     dbaddinj_node.set_database( result_db )
     dbaddinj_node.set_injection_file( inj_file )
-
+    dbaddinj_node.set_inj_tag(sim_tags[-1])
     dbaddinj_node.add_parent( last_node )
 
     dag.add_node( dbaddinj_node )
@@ -1106,6 +1106,7 @@ print "Writing DAG and sub files..."
 dag.add_maxjobs_category('minifollowups', 15)
 
 dag.write_sub_files()
+dag.write_script()
 dag.write_dag()
 
 # write process end time to log file and write log file
