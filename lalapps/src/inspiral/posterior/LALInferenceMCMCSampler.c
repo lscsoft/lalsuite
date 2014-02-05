@@ -29,6 +29,7 @@
 #include <lal/Date.h>
 #include <lal/VectorOps.h>
 #include <lal/TimeFreqFFT.h>
+#include <lal/FrequencySeries.h>
 #include <lal/GenerateInspiral.h>
 #include <lal/TimeDelay.h>
 #include <lalapps.h>
@@ -287,6 +288,7 @@ updateMaxAutoCorrLen(LALInferenceRunState *runState, INT4 currentCycle) {
 void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 {
   INT4 i,t,c; //indexes for for() loops
+  //INT4 j;
   INT4 nChain;
   INT4 MPIrank, MPIsize;
   LALStatus status;
@@ -678,6 +680,9 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 
   // iterate:
   i=0;
+//  FILE *tempFile;
+//  char fileName[100];
+
   while (!runComplete) {
     /* Increment iteration counter */
     i++;
@@ -919,6 +924,42 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
         MPI_Send(&runComplete, 1, MPI_INT, c, RUN_COMPLETE, MPI_COMM_WORLD);
       }
     }
+    /*
+    if(i%10000==0 && MPIrank==0)
+    {
+      gsl_matrix *glitchFD = *((gsl_matrix **)LALInferenceGetVariable(runState->currentParams, "morlet_FD"));
+
+      REAL8TimeSeries *gTD = XLALCreateREAL8TimeSeries("gt", &(runState->data->timeData->epoch), 0.0, (REAL8)(runState->data->timeData->deltaT), &lalDimensionlessUnit, (UINT4)runState->data->timeData->data->length);
+      REAL8TimeSeries *dTD = XLALCreateREAL8TimeSeries("dt", &(runState->data->timeData->epoch), 0.0, (REAL8)(runState->data->timeData->deltaT), &lalDimensionlessUnit, (UINT4)runState->data->timeData->data->length);
+      COMPLEX16FrequencySeries *gFD  = XLALCreateCOMPLEX16FrequencySeries("gf", &(runState->data->freqData->epoch), 0.0, (REAL8)(runState->data->freqData->deltaF), &lalDimensionlessUnit, ((UINT4)runState->data->timeData->data->length)/2+1);
+      COMPLEX16FrequencySeries *dFD  = XLALCreateCOMPLEX16FrequencySeries("df", &(runState->data->freqData->epoch), 0.0, (REAL8)(runState->data->freqData->deltaF), &lalDimensionlessUnit, ((UINT4)runState->data->timeData->data->length)/2+1);
+
+
+      for(j=0; j<((UINT4)runState->data->timeData->data->length)/2; j++)
+      {
+        gFD->data->data[j] = crect( gsl_matrix_get(glitchFD,0,2*j)/runState->data->noiseASD->data->data[j], gsl_matrix_get(glitchFD,0,2*j+1)/runState->data->noiseASD->data->data[j]);
+        dFD->data->data[j] = crect( creal(runState->data->freqData->data->data[j]) / (REAL8)(runState->data->timeData->deltaT) /runState->data->noiseASD->data->data[j], cimag(runState->data->freqData->data->data[j]) / (REAL8)(runState->data->timeData->deltaT) /runState->data->noiseASD->data->data[j]);
+      }
+
+      XLALREAL8FreqTimeFFT(gTD, gFD, runState->data->freqToTimeFFTPlan);
+      XLALREAL8FreqTimeFFT(dTD, dFD, runState->data->freqToTimeFFTPlan);
+      sprintf(fileName,"waveforms/wave_%i.dat",i/1000);
+      tempFile = fopen(fileName,"w");
+      for(j=0;j<(UINT4)runState->data->timeData->data->length;j++)
+      {
+        fprintf(tempFile,"%lg %lg %lg\n",(double)j*(REAL8)(runState->data->timeData->deltaT),gTD->data->data[j], dTD->data->data[j]);
+      }
+
+
+
+
+      fclose(tempFile);
+      XLALDestroyREAL8TimeSeries(gTD);
+      XLALDestroyREAL8TimeSeries(dTD);
+      XLALDestroyCOMPLEX16FrequencySeries(gFD);
+      XLALDestroyCOMPLEX16FrequencySeries(dFD);
+    }
+    */
   }// while (!runComplete)
   
   /* Flush any remaining PT swap attempts before moving on */
