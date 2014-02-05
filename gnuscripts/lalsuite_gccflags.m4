@@ -1,7 +1,7 @@
 # -*- mode: autoconf; -*-
 # lalsuite_gccflags.m4 - macros to set strict gcc flags
 #
-# serial 18
+# serial 19
 
 AC_DEFUN([LALSUITE_ENABLE_GCC_FLAGS],[
   # $0: enable GCC warning flags
@@ -49,6 +49,20 @@ AC_DEFUN([LALSUITE_ADD_GCC_FLAGS],[
     # add mac os x specific flags
     AS_IF([test "x${MACOSX_VERSION}" != "x"],[
       gcc_flags="${gcc_flags} -mmacosx-version-min=10.4"
+      # check if compiler supports -Wl,-no_compact_unwind
+      LALSUITE_PUSH_UVARS
+      LALSUITE_CLEAR_UVARS
+      LDFLAGS="-Wl,-no_compact_unwind"
+      AC_MSG_CHECKING([whether linker supports -Wl,-no_compact_unwind])
+      AC_LINK_IFELSE([
+        AC_LANG_PROGRAM([])
+      ],[
+        AC_MSG_RESULT([yes])
+        gcc_ldflags="-Wl,-no_compact_unwind"
+      ],[
+        AC_MSG_RESULT([no])
+      ])
+      LALSUITE_POP_UVARS
     ])
 
     gcc_cflags="${gcc_flags}"
@@ -68,6 +82,7 @@ AC_DEFUN([LALSUITE_ADD_GCC_FLAGS],[
     ],[
       LALSUITE_ADD_FLAGS([C],[${gcc_cflags}],[])
       LALSUITE_ADD_FLAGS([CXX],[${gcc_cxxflags}],[])
+      LALSUITE_ADD_FLAGS([LD],[${gcc_ldflags}],[])
     ])
 
   ])
