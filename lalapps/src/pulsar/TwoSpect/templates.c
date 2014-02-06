@@ -1,5 +1,5 @@
 /*
-*  Copyright (C) 2010, 2011, 2012, 2013 Evan Goetz
+*  Copyright (C) 2010 -- 2014 Evan Goetz
 *
 *  This program is free software; you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
@@ -41,11 +41,8 @@
 // Allocate memory for farStruct struct
 farStruct * new_farStruct(void)
 {
-   farStruct *farstruct = XLALMalloc(sizeof(*farstruct));
-   if (farstruct==NULL) {
-      fprintf(stderr,"%s: XLALMalloc(%zu) failed.\n", __func__, sizeof(*farstruct));
-      XLAL_ERROR_NULL(XLAL_ENOMEM);
-   }
+   farStruct *farstruct = NULL;
+   XLAL_CHECK_NULL( (farstruct = XLALMalloc(sizeof(*farstruct))) != NULL, XLAL_ENOMEM );
    farstruct->far = 1.0;
    farstruct->topRvalues = NULL;
    return farstruct;
@@ -140,7 +137,7 @@ void estimateFAR(farStruct *output, templateStruct *templatestruct, INT4 trials,
 // This is done using the Davies algorithm and a root finding algorithm
 // method = 0: Brent's method
 // method = 1: Newton's method
-void numericFAR(farStruct *output, templateStruct *templatestruct, REAL8 thresh, REAL4Vector *ffplanenoise, REAL4Vector *fbinaveratios, inputParamsStruct *inputParams, INT4 method)
+INT4 numericFAR(farStruct *output, templateStruct *templatestruct, REAL8 thresh, REAL4Vector *ffplanenoise, REAL4Vector *fbinaveratios, inputParamsStruct *inputParams, INT4 method)
 {
 
    INT4 ii;
@@ -148,18 +145,12 @@ void numericFAR(farStruct *output, templateStruct *templatestruct, REAL8 thresh,
    
    //Set up solver: method 0 is Brent's method, method 1 is Newton's method
    const gsl_root_fsolver_type *T1 = gsl_root_fsolver_brent;
-   gsl_root_fsolver *s1 = gsl_root_fsolver_alloc(T1);
-   if (s1==NULL) {
-      fprintf(stderr,"%s: gsl_root_fsolver_alloc() failed.\n", __func__);
-      XLAL_ERROR_VOID(XLAL_EFUNC);
-   }
+   gsl_root_fsolver *s1 = NULL;
+   XLAL_CHECK( (s1 = gsl_root_fsolver_alloc(T1)) != NULL, XLAL_EFUNC );
    gsl_function F;
    const gsl_root_fdfsolver_type *T0 = gsl_root_fdfsolver_newton;
-   gsl_root_fdfsolver *s0 = gsl_root_fdfsolver_alloc(T0);
-   if (s0==NULL) {
-      fprintf(stderr,"%s: gsl_root_fdfsolver_alloc() failed.\n", __func__);
-      XLAL_ERROR_VOID(XLAL_EFUNC);
-   }
+   gsl_root_fdfsolver *s0 = NULL;
+   XLAL_CHECK( (s0 = gsl_root_fdfsolver_alloc(T0)) != NULL, XLAL_EFUNC );
    gsl_function_fdf FDF;
    
    
@@ -180,15 +171,9 @@ void numericFAR(farStruct *output, templateStruct *templatestruct, REAL8 thresh,
    //Start off with an initial guess and set the solver at the beginning
    REAL8 Rlow = 0.0, Rhigh = 10000.0, root = 400.0;
    if (method != 0) {
-      if ( (gsl_root_fsolver_set(s1, &F, Rlow, Rhigh)) != 0 ) {
-         fprintf(stderr,"%s: Unable to initialize root solver to bracketed positions.\n", __func__);
-         XLAL_ERROR_VOID(XLAL_EFUNC);
-      }
+      XLAL_CHECK( gsl_root_fsolver_set(s1, &F, Rlow, Rhigh) == GSL_SUCCESS, XLAL_EFUNC );
    } else {
-      if ( (gsl_root_fdfsolver_set(s0, &FDF, root)) != 0 ) {
-         fprintf(stderr,"%s: Unable to initialize root solver to first guess.\n", __func__);
-         XLAL_ERROR_VOID(XLAL_EFUNC);
-      } 
+      XLAL_CHECK( gsl_root_fdfsolver_set(s0, &FDF, root) == GSL_SUCCESS, XLAL_EFUNC );
    }
    
    //And now find the root
@@ -202,79 +187,44 @@ void numericFAR(farStruct *output, templateStruct *templatestruct, REAL8 thresh,
       
       if (method != 0) {
          status = gsl_root_fsolver_iterate(s1);
-         if (status!=GSL_CONTINUE && status!=GSL_SUCCESS) {
-            fprintf(stderr,"%s: gsl_root_fsolver_iterate() failed with code %d.\n", __func__, status);
-            XLAL_ERROR_VOID(XLAL_EFUNC);
-         }
+         XLAL_CHECK( status == GSL_CONTINUE || status == GSL_SUCCESS, XLAL_EFUNC, "gsl_root_fsolver_iterate() failed with code %d\n", status );
          if (ii>0) prevroot = root;
          root = gsl_root_fsolver_root(s1);
          Rlow = gsl_root_fsolver_x_lower(s1);
          Rhigh = gsl_root_fsolver_x_upper(s1);
          status = gsl_root_test_interval(Rlow, Rhigh, 0.0, 0.001);
-         if (status!=GSL_CONTINUE && status!=GSL_SUCCESS) {
-            fprintf(stderr,"%s: gsl_root_test_interval() failed with code %d.\n", __func__, status);
-            XLAL_ERROR_VOID(XLAL_EFUNC);
-         }
+         XLAL_CHECK( status == GSL_CONTINUE || status == GSL_SUCCESS, XLAL_EFUNC, "gsl_root_test_interval() failed with code %d\n", status );
       } else {
          status = gsl_root_fdfsolver_iterate(s0);
-         if (status!=GSL_CONTINUE && status!=GSL_SUCCESS) {
-            fprintf(stderr,"%s: gsl_root_fdfsolver_iterate() failed with code %d.\n", __func__, status);
-            XLAL_ERROR_VOID(XLAL_EFUNC);
-         }
+         XLAL_CHECK( status == GSL_CONTINUE || status == GSL_SUCCESS, XLAL_EFUNC, "gsl_root_fdfsolver_iterate() failed with code %d\n", status );
          prevroot = root;
          root = gsl_root_fdfsolver_root(s0);
          status = gsl_root_test_delta(prevroot, root, 0.0, 0.001);
-         if (status!=GSL_CONTINUE && status!=GSL_SUCCESS) {
-            fprintf(stderr,"%s: gsl_root_test_delta() failed with code %d.\n", __func__, status);
-            XLAL_ERROR_VOID(XLAL_EFUNC);
-         }
+         XLAL_CHECK( status == GSL_CONTINUE || status == GSL_SUCCESS, XLAL_EFUNC, "gsl_root_test_delta() failed with code %d\n", status );
          
          //If there is an issue that the root is negative, try a new initial guess
          if (root<0.0 && jj<max_retries) {
             ii = 0;
             jj++;
             status = GSL_CONTINUE;
-            if ( (gsl_root_fdfsolver_set(s0, &FDF, gsl_rng_uniform_pos(inputParams->rng)*Rhigh)) != 0 ) {
-               fprintf(stderr,"%s: Unable to initialize root solver to first guess.\n", __func__);
-               XLAL_ERROR_VOID(XLAL_EFUNC);
-            }
+            XLAL_CHECK( gsl_root_fdfsolver_set(s0, &FDF, gsl_rng_uniform_pos(inputParams->rng)*Rhigh) == GSL_SUCCESS, XLAL_EFUNC );
          } else if (root<0.0 && jj==max_retries) {
             status = GSL_FAILURE;
          } //Up to here
-         
       }
-      
    } /* while status==GSL_CONTINUE && ii < max_iter */
    
    //Failure modes
    if (method != 0) {
-      if (status != GSL_SUCCESS) {
-         fprintf(stderr,"%s: Root finding iteration (%d/%d) failed with failure code %d. Previous root = %f, current root = %f\n", __func__, ii, max_iter, status, prevroot, root);
-         XLAL_ERROR_VOID(XLAL_FAILURE);
-      } else if (ii==max_iter) {
-         fprintf(stderr,"%s: Root finding iteration (%d/%d) failed with failure code %d. Previous root = %f, current root = %f\n", __func__, ii, max_iter, status, prevroot, root);
-         XLAL_ERROR_VOID(XLAL_EMAXITER);
-      } else if (root == 0.0) {
-         fprintf(stderr,"%s: Root finding iteration (%d/%d) converged to 0.0.\n", __func__, ii, max_iter);
-         XLAL_ERROR_VOID(XLAL_ERANGE);
-      } else if (root == 1000.0) {
-         fprintf(stderr,"%s: Root finding iteration (%d/%d) converged to 1000.0.\n", __func__, ii, max_iter);
-         XLAL_ERROR_VOID(XLAL_ERANGE);
-      }
+      XLAL_CHECK( status == GSL_SUCCESS, XLAL_FAILURE, "Root finding iteration (%d/%d) failed with failure code %d. Previous root = %f, current root = %f\n", ii, max_iter, status, prevroot, root );
+      XLAL_CHECK( ii<max_iter, XLAL_EMAXITER, "Root finding iteration (%d/%d) failed with failure code %d. Previous root = %f, current root = %f\n", ii, max_iter, status, prevroot, root );
+      XLAL_CHECK( root != 0.0, XLAL_ERANGE, "Root finding iteration (%d/%d) converged to 0.0\n", ii, max_iter );
    } else {
-      if (status != GSL_SUCCESS) {
-         fprintf(stderr,"%s: Root finding iteration (%d/%d) failed with failure code %d. Previous root = %f, current root = %f\n", __func__, ii, max_iter, status, prevroot, root);
-         XLAL_ERROR_VOID(XLAL_FAILURE);
-      } else if (ii==max_iter) {
-         fprintf(stderr,"%s: Root finding iteration (%d/%d) failed with failure code %d. Previous root = %f, current root = %f\n", __func__, ii, max_iter, status, prevroot, root);
-         XLAL_ERROR_VOID(XLAL_EMAXITER);
-      } else if (root<=0.0) {
-         fprintf(stderr,"%s: Threshold value found (%f) is less than 0.0!\n", __func__, root);
-         XLAL_ERROR_VOID(XLAL_ERANGE);
-      }
+      XLAL_CHECK( status == GSL_SUCCESS, XLAL_FAILURE, "Root finding iteration (%d/%d) failed with failure code %d. Previous root = %f, current root = %f\n", ii, max_iter, status, prevroot, root );
+      XLAL_CHECK( ii<max_iter, XLAL_EMAXITER, "Root finding iteration (%d/%d) failed with failure code %d. Previous root = %f, current root = %f\n", ii, max_iter, status, prevroot, root );
+      XLAL_CHECK( root > 0.0, XLAL_ERANGE, "Threshold value found (%f) is less than 0.0\n", root );
    }
-   
-   
+
    output->far = root;
    output->distMean = 0.0;
    output->distSigma = 0.0; //Fake the value of sigma
@@ -283,8 +233,9 @@ void numericFAR(farStruct *output, templateStruct *templatestruct, REAL8 thresh,
    //Cleanup
    gsl_root_fsolver_free(s1);
    gsl_root_fdfsolver_free(s0);
-   
-   
+
+   return 0;
+
 } /* numericFAR() */
 
 //For the root finding, calculating the false alarm probability of R
@@ -379,15 +330,10 @@ REAL8 probR(templateStruct *templatestruct, REAL4Vector *ffplanenoise, REAL4Vect
       }
    }
    
-   REAL8Vector *newweights = XLALCreateREAL8Vector(numweights);
-   INT4Vector *sorting = XLALCreateINT4Vector(numweights);
-   if (newweights==NULL) {
-      fprintf(stderr,"%s: XLALCreateREAL8Vector(%d) failed.\n", __func__, numweights);
-      XLAL_ERROR_REAL8(XLAL_EFUNC);
-   } else if (sorting==NULL) {
-      fprintf(stderr,"%s: XLALCreateINT4Vector(%d) failed.\n", __func__, numweights);
-      XLAL_ERROR_REAL8(XLAL_EFUNC);
-   }
+   REAL8Vector *newweights = NULL;
+   XLAL_CHECK_REAL8( (newweights = XLALCreateREAL8Vector(numweights)) != NULL, XLAL_EFUNC );
+   INT4Vector *sorting = NULL;
+   XLAL_CHECK_REAL8( (sorting = XLALCreateINT4Vector(numweights)) != NULL, XLAL_EFUNC );
    
    REAL8 Rpr = R;
    for (ii=0; ii<(INT4)newweights->length; ii++) {
@@ -426,15 +372,9 @@ REAL8 probR(templateStruct *templatestruct, REAL4Vector *ffplanenoise, REAL4Vect
       REAL8 probslope=0.0, tempprob, c1;
       REAL8 lowerend = 0.0;
       REAL8 upperend = Rpr;
-      REAL8Vector *probvals = XLALCreateREAL8Vector(20);
-      REAL8Vector *cvals = XLALCreateREAL8Vector(20);
-      if (probvals==NULL) {
-         fprintf(stderr,"%s: XLALCreateREAL8Vector(%d) failed.\n", __func__, 20);
-         XLAL_ERROR_REAL8(XLAL_EFUNC);
-      } else if (cvals==NULL) {
-         fprintf(stderr,"%s: XLALCreateREAL8Vector(%d) failed.\n", __func__, 20);
-         XLAL_ERROR_REAL8(XLAL_EFUNC);
-      }
+      REAL8Vector *probvals = NULL, *cvals = NULL;
+      XLAL_CHECK_REAL8( (probvals = XLALCreateREAL8Vector(20)) != NULL, XLAL_EFUNC );
+      XLAL_CHECK_REAL8( (cvals = XLALCreateREAL8Vector(20)) != NULL, XLAL_EFUNC );
       
       for (ii=0; ii<(INT4)probvals->length; ii++) {
          c1 = gsl_rng_uniform_pos(params->rng)*(upperend-lowerend)+lowerend;
@@ -460,24 +400,15 @@ REAL8 probR(templateStruct *templatestruct, REAL4Vector *ffplanenoise, REAL4Vect
             }
             
          }
-         if (errcode1!=0) {
-            fprintf(stderr,"%s: cdfwchisq_twospect() failed with code %d.\n", __func__, errcode1);
-            XLAL_ERROR_REAL8(XLAL_EFUNC);
-         }
+         XLAL_CHECK_REAL8( errcode1 == 0, XLAL_EFUNC, "cdfwchisq_twospect() failed with code %d\n", errcode1 );
          probvals->data[ii] = log10(tempprob);
          cvals->data[ii] = c1;
       }
       
       REAL8 yintercept, cov00, cov01, cov11, sumsq;
-      if (gsl_fit_linear(cvals->data, 1, probvals->data, 1, cvals->length, &yintercept, &probslope, &cov00, &cov01, &cov11, &sumsq)!=GSL_SUCCESS) {
-         fprintf(stderr,"%s: gsl_fit_linear() failed.\n", __func__);
-         XLAL_ERROR_REAL8(XLAL_EFUNC);
-      }
+      XLAL_CHECK_REAL8( gsl_fit_linear(cvals->data, 1, probvals->data, 1, cvals->length, &yintercept, &probslope, &cov00, &cov01, &cov11, &sumsq) == GSL_SUCCESS, XLAL_EFUNC );
       logprobest = probslope*Rpr + yintercept;
-      if (logprobest>-0.5) {
-         fprintf(stderr, "%s: Failure calculating accurate interpolated value.\n", __func__);
-         XLAL_ERROR_REAL8(XLAL_ERANGE);
-      }
+      XLAL_CHECK_REAL8( logprobest<=-0.5, XLAL_ERANGE, "Failure calculating accurate interpolated value\n" );
       
       XLALDestroyREAL8Vector(probvals);
       XLALDestroyREAL8Vector(cvals);
@@ -487,10 +418,7 @@ REAL8 probR(templateStruct *templatestruct, REAL4Vector *ffplanenoise, REAL4Vect
    }
    
    //If errcode is still != 0, better fail
-   if (*errcode!=0) {
-      fprintf(stderr,"%s: cdfwchisq_twospect() failed at the end with code %d.\n", __func__, *errcode);
-      XLAL_ERROR_REAL8(XLAL_EFUNC);
-   }
+   XLAL_CHECK_REAL8( *errcode == 0, XLAL_EFUNC, "cdfwchisq_twospect() failed at the end with code %d\n", *errcode );
    
    //Cleanup
    XLALDestroyREAL8Vector(newweights);
@@ -506,29 +434,13 @@ REAL8 probR(templateStruct *templatestruct, REAL4Vector *ffplanenoise, REAL4Vect
 templateStruct * new_templateStruct(INT4 length)
 {
 
-   templateStruct *templatestruct = XLALMalloc(sizeof(*templatestruct));
-   if (templatestruct==NULL) {
-      fprintf(stderr,"%s: XLALMalloc(%zu) failed.\n", __func__, sizeof(*templatestruct));
-      XLAL_ERROR_NULL(XLAL_ENOMEM);
-   }
+   templateStruct *templatestruct = NULL;
+   XLAL_CHECK_NULL( (templatestruct = XLALMalloc(sizeof(*templatestruct))) != NULL, XLAL_ENOMEM );
    
-   templatestruct->templatedata = XLALCreateREAL4Vector(length);
-   templatestruct->pixellocations = XLALCreateINT4Vector(length);
-   templatestruct->firstfftfrequenciesofpixels = XLALCreateINT4Vector(length);
-   templatestruct->secondfftfrequencies = XLALCreateINT4Vector(length);
-   if (templatestruct->templatedata==NULL) {
-      fprintf(stderr,"%s: XLALCreateREAL4Vector(%d) failed.\n", __func__, length);
-      XLAL_ERROR_NULL(XLAL_EFUNC);
-   } else if (templatestruct->pixellocations==NULL) {
-      fprintf(stderr,"%s: XLALCreateINT4Vector(%d) failed.\n", __func__, length);
-      XLAL_ERROR_NULL(XLAL_EFUNC);
-   } else if (templatestruct->firstfftfrequenciesofpixels==NULL) {
-      fprintf(stderr,"%s: XLALCreateINT4Vector(%d) failed.\n", __func__, length);
-      XLAL_ERROR_NULL(XLAL_EFUNC);
-   } else if (templatestruct->secondfftfrequencies==NULL) {
-      fprintf(stderr,"%s: XLALCreateINT4Vector(%d) failed.\n", __func__, length);
-      XLAL_ERROR_NULL(XLAL_EFUNC);
-   }
+   XLAL_CHECK_NULL( (templatestruct->templatedata = XLALCreateREAL4Vector(length)) != NULL, XLAL_EFUNC );
+   XLAL_CHECK_NULL( (templatestruct->pixellocations = XLALCreateINT4Vector(length)) != NULL, XLAL_EFUNC );
+   XLAL_CHECK_NULL( (templatestruct->firstfftfrequenciesofpixels = XLALCreateINT4Vector(length)) != NULL, XLAL_EFUNC );
+   XLAL_CHECK_NULL( (templatestruct->secondfftfrequencies = XLALCreateINT4Vector(length)) != NULL, XLAL_EFUNC );
    
    memset(templatestruct->templatedata->data, 0, sizeof(REAL4)*length);
    memset(templatestruct->pixellocations->data, 0, sizeof(INT4)*length);
@@ -581,17 +493,14 @@ void free_templateStruct(templateStruct *nameoftemplate)
 // I've made it so that it handles spillage of power into neighboring bins a little more gracefully
 // Numerical stability issues means that we need to compute exp(log(eq. 18)) = eq. 18
 // exp(log(eq. 18)) = exp(log(4*pi*sigma^2)-sigma^2*omegapr^2)*(1+cos(delta*omegapr))*exp(log(1-cos(N*P*omegapr))-log(P*omegapr))
-void makeTemplateGaussians(templateStruct *output, candidate input, inputParamsStruct *params, INT4 numfbins, INT4 numfprbins)
+INT4 makeTemplateGaussians(templateStruct *output, candidate input, inputParamsStruct *params, INT4 numfbins, INT4 numfprbins)
 {
    
    //Set data for output template
    output->f0 = input.fsig;
    output->period = input.period;
    output->moddepth = input.moddepth;
-   if (input.fsig==0.0 || input.period==0.0 || input.moddepth==0.0) {
-      fprintf(stderr, "%s: Invalid input (%f, %f, %f).\n", __func__, input.fsig, input.period, input.moddepth);
-      XLAL_ERROR_VOID(XLAL_EINVAL);
-   }
+   XLAL_CHECK( input.fsig != 0.0 && input.period != 0.0 && input.moddepth != 0.0, XLAL_EINVAL, "Invalid input (%f, %f, %f)\n", input.fsig, input.period, input.moddepth );
    
    INT4 ii, jj, N;
    
@@ -605,53 +514,32 @@ void makeTemplateGaussians(templateStruct *output, candidate input, inputParamsS
    //Determine separation in time of peaks for each frequency
    //phi = P/2 - P/pi * asin[(f-f0)/modulation depth]
    //When abs(f-f0)>modulation depth, phi := 0
-   REAL4Vector *phi_actual = XLALCreateREAL4Vector(numfbins);
-   if (phi_actual==NULL) {
-      fprintf(stderr,"%s: XLALCreateREAL4Vector(%d) failed.\n", __func__, numfbins);
-      XLAL_ERROR_VOID(XLAL_EFUNC);
-   }
+   REAL4Vector *phi_actual = NULL;
+   XLAL_CHECK( (phi_actual = XLALCreateREAL4Vector(numfbins)) != NULL, XLAL_EFUNC );
    for (ii=0; ii<(INT4)phi_actual->length; ii++) {
-      if ( fabs(params->fmin*params->Tcoh - params->dfmax*params->Tcoh - 6.0 + ii - input.fsig*params->Tcoh)/(input.moddepth*params->Tcoh)-1.0e-14 <= 1.0 ) phi_actual->data[ii] = 0.5*input.period - asin(fabs(params->fmin*params->Tcoh - params->dfmax*params->Tcoh - 6.0 + ii - input.fsig*params->Tcoh)/(input.moddepth*params->Tcoh)-1.0e-14)*LAL_1_PI*input.period;
+      if ( fabs(params->fmin*params->Tcoh - params->dfmax*params->Tcoh - 6.0 + ii - input.fsig*params->Tcoh)/(input.moddepth*params->Tcoh) <= 1.0 ) phi_actual->data[ii] = 0.5*input.period - asin(fabs(params->fmin*params->Tcoh - params->dfmax*params->Tcoh - 6.0 + ii - input.fsig*params->Tcoh)/(input.moddepth*params->Tcoh))*LAL_1_PI*input.period;
       else phi_actual->data[ii] = 0.0;
    } /* for ii < phi_actual->length */
    
    //Create second FFT frequencies and other useful values
-   REAL4Vector *fpr = XLALCreateREAL4Vector(numfprbins);
-   if (fpr==NULL) {
-      fprintf(stderr,"%s: XLALCreateREAL4Vector(%d) failed.\n", __func__, numfprbins);
-      XLAL_ERROR_VOID(XLAL_EFUNC);
-   }
+   REAL4Vector *fpr = NULL;
+   XLAL_CHECK( (fpr = XLALCreateREAL4Vector(numfprbins)) != NULL, XLAL_EFUNC );
    for (ii=0; ii<(INT4)fpr->length; ii++) fpr->data[ii] = (REAL4)ii*(1.0/params->Tobs);
    
    //For speed, we will precompute a number of useful vectors described by their names
    //This part is the allocation
-   REAL4Vector *omegapr = XLALCreateREAL4Vector(fpr->length);
-   REAL4Vector *omegapr_squared = XLALCreateREAL4Vector(fpr->length);
-   REAL4Vector *cos_ratio = XLALCreateREAL4Vector(fpr->length);
-   if (omegapr==NULL) {
-      fprintf(stderr,"%s: XLALCreateREAL4Vector(%d) failed.\n", __func__, fpr->length);
-      XLAL_ERROR_VOID(XLAL_EFUNC);
-   } else if (omegapr_squared==NULL) {
-      fprintf(stderr,"%s: XLALCreateREAL4Vector(%d) failed.\n", __func__, fpr->length);
-      XLAL_ERROR_VOID(XLAL_EFUNC);
-   } else if (cos_ratio==NULL) {
-      fprintf(stderr,"%s: XLALCreateREAL4Vector(%d) failed.\n", __func__, fpr->length);
-      XLAL_ERROR_VOID(XLAL_EFUNC);
-   }
+   REAL4Vector *omegapr = NULL, *omegapr_squared = NULL, *cos_ratio = NULL;
+   XLAL_CHECK( (omegapr = XLALCreateREAL4Vector(fpr->length)) != NULL, XLAL_EFUNC );
+   XLAL_CHECK( (omegapr_squared = XLALCreateREAL4Vector(fpr->length)) != NULL, XLAL_EFUNC );
+   XLAL_CHECK( (cos_ratio = XLALCreateREAL4Vector(fpr->length)) != NULL, XLAL_EFUNC );
    
    //Doing the precomputation of the useful values
    if (params->useSSE) {
       sseScaleREAL4Vector(omegapr, fpr, (REAL4)LAL_TWOPI);
-      if (xlalErrno!=0) {
-         fprintf(stderr, "%s: sseScaleREAL4Vector() failed.\n", __func__);
-         XLAL_ERROR_VOID(XLAL_EFUNC);
-      }
+      XLAL_CHECK( xlalErrno == 0, XLAL_EFUNC );
       
       sseSSVectorMultiply(omegapr_squared, omegapr, omegapr);
-      if (xlalErrno!=0) {
-         fprintf(stderr,"%s: sseSSVectorMultiply() failed.\n", __func__);
-         XLAL_ERROR_VOID(XLAL_EFUNC);
-      }
+      XLAL_CHECK( xlalErrno == 0, XLAL_EFUNC );
       
       for (ii=0; ii<(INT4)fpr->length; ii++) {
          REAL4 cos_omegapr_times_period = cosf((REAL4)(input.period*omegapr->data[ii]));
@@ -672,11 +560,8 @@ void makeTemplateGaussians(templateStruct *output, candidate input, inputParamsS
    
    //Scale used for "spillover" into bins outside of phi_actual
    //REAL4 k = input.moddepth*params->Tcoh;    //amplitude of modulation in units of bins
-   REAL4Vector *scale = XLALCreateREAL4Vector(numfbins);      //the scaling factor
-   if (scale==NULL) {
-      fprintf(stderr,"%s: XLALCreateREAL4Vector(%d) failed.\n", __func__, numfbins);
-      XLAL_ERROR_VOID(XLAL_EFUNC);
-   }
+   REAL4Vector *scale = NULL;
+   XLAL_CHECK( (scale = XLALCreateREAL4Vector(numfbins)) != NULL, XLAL_EFUNC );      //the scaling factor
    INT4 bin0 = (INT4)round(params->fmin*params->Tcoh - params->dfmax*params->Tcoh - 6.0);      //bin number of fmin
    REAL4 m0 = input.fsig*params->Tcoh - bin0;  //central frequency bin
    REAL4 mextent = input.moddepth*params->Tcoh;  //Bins filled by modulation                
@@ -690,30 +575,17 @@ void makeTemplateGaussians(templateStruct *output, candidate input, inputParamsS
    
    //Make sigmas for each frequency
    //First, allocate vectors
-   REAL4Vector *sigmas = XLALCreateREAL4Vector((UINT4)(fnumend-fnumstart+1));
-   REAL4Vector *wvals = XLALCreateREAL4Vector((UINT4)floor(4.0*input.period/params->Tcoh));
-   if (sigmas==NULL) {
-      fprintf(stderr,"%s: XLALCreateREAL4Vector(%d) failed.\n", __func__, (UINT4)(fnumend-fnumstart+1));
-      XLAL_ERROR_VOID(XLAL_EFUNC);
-   } else if (wvals==NULL) {
-      fprintf(stderr,"%s: XLALCreateREAL4Vector(%d) failed.\n", __func__, (UINT4)floor(4.0*input.period/params->Tcoh));
-      XLAL_ERROR_VOID(XLAL_EFUNC);
-   }
-   REAL4Vector *allsigmas = XLALCreateREAL4Vector(wvals->length * sigmas->length);
-   REAL4Vector *weightvals = XLALCreateREAL4Vector(wvals->length * sigmas->length);
-   if (allsigmas==NULL) {
-      fprintf(stderr,"%s: XLALCreateREAL4Vector(%d) failed.\n", __func__, wvals->length * sigmas->length);
-      XLAL_ERROR_VOID(XLAL_EFUNC);
-   } else if (weightvals==NULL) {
-      fprintf(stderr,"%s: XLALCreateREAL4Vector(%d) failed.\n", __func__, wvals->length * sigmas->length);
-      XLAL_ERROR_VOID(XLAL_EFUNC);
-   }
+   REAL4Vector *sigmas = NULL, *wvals = NULL, *allsigmas = NULL, *weightvals = NULL;
+   XLAL_CHECK( (sigmas = XLALCreateREAL4Vector((UINT4)(fnumend-fnumstart+1))) != NULL, XLAL_EFUNC );
+   XLAL_CHECK( (wvals = XLALCreateREAL4Vector((UINT4)floor(4.0*input.period/params->Tcoh))) != NULL, XLAL_EFUNC );
+   XLAL_CHECK( (allsigmas = XLALCreateREAL4Vector(wvals->length * sigmas->length)) != NULL, XLAL_EFUNC );
+   XLAL_CHECK( (weightvals = XLALCreateREAL4Vector(wvals->length * sigmas->length)) != NULL, XLAL_EFUNC );
    
    //Here is where the sigmas are computed. It is a weighted average. t = (ii+1)*in->Tcoh*0.5
    REAL8 sin2pix = 0.0, cos2pix = 0.0;
    for (ii=0; ii<(INT4)wvals->length; ii++) {
       //calculate sin and cos of 2*pi*t/P and then the bin the signal is in and the signal velocity
-      twospect_sin_cos_2PI_LUT(&sin2pix, &cos2pix, periodf*((ii+1)*params->Tcoh*0.5));
+      XLAL_CHECK( twospect_sin_cos_2PI_LUT(&sin2pix, &cos2pix, periodf*((ii+1)*params->Tcoh*0.5)) == XLAL_SUCCESS, XLAL_EFUNC );
       REAL4 sigbin = (input.moddepth*cos2pix+input.fsig)*params->Tcoh;
       REAL4 sigbinvelocity = fabs(-input.moddepth*sin2pix*params->Tcoh*params->Tcoh*LAL_PI*periodf);
       
@@ -740,31 +612,12 @@ void makeTemplateGaussians(templateStruct *output, candidate input, inputParamsS
    } /* for ii < sigmas->length */
 
    //Allocate more useful data vectors. These get computed for each different first FFT frequency bin in the F-F plane
-   REAL4Vector *exp_neg_sigma_sq_times_omega_pr_sq = XLALCreateREAL4Vector(omegapr_squared->length);
-   if (exp_neg_sigma_sq_times_omega_pr_sq==NULL) {
-      fprintf(stderr,"%s: XLALCreateREAL4Vector(%d) failed.\n", __func__, omegapr_squared->length);
-      XLAL_ERROR_VOID(XLAL_EFUNC);
-   }
-   REAL4Vector *sin_phi_times_omega_pr = XLALCreateREAL4Vector(omegapr->length);
-   if (sin_phi_times_omega_pr==NULL) {
-      fprintf(stderr,"%s: XLALCreateREAL4Vector(%d) failed.\n", __func__, omegapr->length);
-      XLAL_ERROR_VOID(XLAL_EFUNC);
-   }
-   REAL4Vector *cos_phi_times_omega_pr = XLALCreateREAL4Vector(omegapr->length);
-   if (cos_phi_times_omega_pr==NULL) {
-      fprintf(stderr,"%s: XLALCreateREAL4Vector(%d) failed.\n", __func__, omegapr->length);
-      XLAL_ERROR_VOID(XLAL_EFUNC);
-   }
-   REAL4Vector *phi_times_fpr = XLALCreateREAL4Vector(fpr->length);
-   if (phi_times_fpr==NULL) {
-      fprintf(stderr,"%s: XLALCreateREAL4Vector(%d) failed.\n", __func__, fpr->length);
-      XLAL_ERROR_VOID(XLAL_EFUNC);
-   }
-   REAL4Vector *datavector = XLALCreateREAL4Vector(fpr->length);
-   if (datavector==NULL) {
-      fprintf(stderr,"%s: XLALCreateREAL4Vector(%d) failed.\n", __func__, fpr->length);
-      XLAL_ERROR_VOID(XLAL_EFUNC);
-   }
+   REAL4Vector *exp_neg_sigma_sq_times_omega_pr_sq = NULL, *sin_phi_times_omega_pr = NULL, *cos_phi_times_omega_pr = NULL, *phi_times_fpr = NULL, *datavector = NULL;
+   XLAL_CHECK( (exp_neg_sigma_sq_times_omega_pr_sq = XLALCreateREAL4Vector(omegapr_squared->length)) != NULL, XLAL_EFUNC );
+   XLAL_CHECK( (sin_phi_times_omega_pr = XLALCreateREAL4Vector(omegapr->length)) != NULL, XLAL_EFUNC );
+   XLAL_CHECK( (cos_phi_times_omega_pr = XLALCreateREAL4Vector(omegapr->length)) != NULL, XLAL_EFUNC );
+   XLAL_CHECK( (phi_times_fpr = XLALCreateREAL4Vector(fpr->length)) != NULL, XLAL_EFUNC );
+   XLAL_CHECK( (datavector = XLALCreateREAL4Vector(fpr->length)) != NULL, XLAL_EFUNC );
    
    //Create template. We are going to do exp(log(Eq. 18))
    REAL8 sum = 0.0;
@@ -783,74 +636,46 @@ void makeTemplateGaussians(templateStruct *output, candidate input, inputParamsS
       if (params->useSSE) {
          //Compute exp(log(4*pi*s*s*exp(-s*s*omegapr_squared))) = exp(log(4*pi*s*s)-s*s*omegapr_squared)
          sseScaleREAL4Vector(exp_neg_sigma_sq_times_omega_pr_sq, omegapr_squared, -s*s);
-         if (xlalErrno!=0) {
-            fprintf(stderr, "%s: sseScaleREAL4Vector() failed.\n", __func__);
-            XLAL_ERROR_VOID(XLAL_EFUNC);
-         }
+         XLAL_CHECK( xlalErrno == 0, XLAL_EFUNC );
          sseAddScalarToREAL4Vector(exp_neg_sigma_sq_times_omega_pr_sq, exp_neg_sigma_sq_times_omega_pr_sq, prefact0);
-         if (xlalErrno!=0) {
-            fprintf(stderr, "%s: sseAddScalarToREAL4Vector() failed.\n", __func__);
-            XLAL_ERROR_VOID(XLAL_EFUNC);
-         }
+         XLAL_CHECK( xlalErrno == 0, XLAL_EFUNC );
          sse_exp_REAL4Vector(exp_neg_sigma_sq_times_omega_pr_sq, exp_neg_sigma_sq_times_omega_pr_sq);
-         if (xlalErrno!=0) {
-            fprintf(stderr, "%s: sse_exp_REAL4Vector() failed.\n", __func__);
-            XLAL_ERROR_VOID(XLAL_EFUNC);
-         }
+         XLAL_CHECK( xlalErrno == 0, XLAL_EFUNC );
          
          //Compute phi_actual*fpr
          sseScaleREAL4Vector(phi_times_fpr, fpr, phi_actual->data[ii+fnumstart]);
-         if (xlalErrno!=0) {
-            fprintf(stderr, "%s: sseScaleREAL4Vector() failed.\n", __func__);
-            XLAL_ERROR_VOID(XLAL_EFUNC);
-         }
+         XLAL_CHECK( xlalErrno == 0, XLAL_EFUNC );
          
          //Start computing the datavector values
          INT4 maxindex = max_index(phi_times_fpr);
          if (phi_times_fpr->data[maxindex]<=2.147483647e9) {
             //Compute cos(2*pi*phi_actual*fpr) using LUT and SSE
-            sse_sin_cos_2PI_LUT_REAL4Vector(sin_phi_times_omega_pr, cos_phi_times_omega_pr, phi_times_fpr);
-            if (xlalErrno!=0) {
-               fprintf(stderr, "%s: sse_sin_cos_2PI_LUT_REAL4Vector() failed.\n", __func__);
-               XLAL_ERROR_VOID(XLAL_EFUNC);
-            }
+            XLAL_CHECK( sse_sin_cos_2PI_LUT_REAL4Vector(sin_phi_times_omega_pr, cos_phi_times_omega_pr, phi_times_fpr) == XLAL_SUCCESS, XLAL_EFUNC );
          } else {
             //Compute cos(2*pi*phi_actual*fpr) using LUT
             for (jj=0; jj<(INT4)omegapr_squared->length; jj++) {
-               twospect_sin_cos_2PI_LUT(&sin2pix, &cos2pix, phi_times_fpr->data[jj]);
+               XLAL_CHECK( twospect_sin_cos_2PI_LUT(&sin2pix, &cos2pix, phi_times_fpr->data[jj]) == XLAL_SUCCESS, XLAL_EFUNC );
                cos_phi_times_omega_pr->data[jj] = (REAL4)cos2pix;
             }
          }
          //datavector = cos(phi_actual*omega_pr) + 1.0
          sseAddScalarToREAL4Vector(datavector, cos_phi_times_omega_pr, 1.0);
-         if (xlalErrno!=0) {
-            fprintf(stderr, "%s: sseAddScalarToREAL4Vector() failed.\n", __func__);
-            XLAL_ERROR_VOID(XLAL_EFUNC);
-         }
+         XLAL_CHECK( xlalErrno == 0, XLAL_EFUNC );
          //datavector = prefact0 * exp(-s*s*omega_pr*omega_pr) * [cos(phi_actual*omega_pr) + 1.0]
          sseSSVectorMultiply(datavector, datavector, exp_neg_sigma_sq_times_omega_pr_sq);
-         if (xlalErrno!=0) {
-            fprintf(stderr, "%s: sseSSVectorMultiply() failed.\n", __func__);
-            XLAL_ERROR_VOID(XLAL_EFUNC);
-         }
+         XLAL_CHECK( xlalErrno == 0, XLAL_EFUNC );
          //datavector = scale * exp(-s*s*omega_pr*omega_pr) * [cos(phi_actual*omega_pr) + 1.0]
          sseScaleREAL4Vector(datavector, datavector, scale->data[ii+fnumstart]);
-         if (xlalErrno!=0) {
-            fprintf(stderr, "%s: sseScaleREAL4Vector() failed.\n", __func__);
-            XLAL_ERROR_VOID(XLAL_EFUNC);
-         }
+         XLAL_CHECK( xlalErrno == 0, XLAL_EFUNC );
          //datavector *= cos_ratio
          sseSSVectorMultiply(datavector, datavector, cos_ratio);
-         if (xlalErrno!=0) {
-            fprintf(stderr, "%s: sseSSVectorMultiply() failed.\n", __func__);
-            XLAL_ERROR_VOID(XLAL_EFUNC);
-         }
+         XLAL_CHECK( xlalErrno == 0, XLAL_EFUNC );
       } else {
          for (jj=0; jj<(INT4)omegapr_squared->length; jj++) {
             //Do all or nothing if the exponential is too negative
             if ((prefact0-s*s*omegapr_squared->data[jj])>-88.0) {
                exp_neg_sigma_sq_times_omega_pr_sq->data[jj] = expf((REAL4)(prefact0-s*s*omegapr_squared->data[jj]));
-               twospect_sin_cos_2PI_LUT(&sin2pix, &cos2pix, phi_actual->data[ii+fnumstart]*fpr->data[jj]);
+               XLAL_CHECK( twospect_sin_cos_2PI_LUT(&sin2pix, &cos2pix, phi_actual->data[ii+fnumstart]*fpr->data[jj]) == XLAL_SUCCESS, XLAL_EFUNC );
                cos_phi_times_omega_pr->data[jj] = (REAL4)cos2pix;
                datavector->data[jj] = scale->data[ii+fnumstart]*exp_neg_sigma_sq_times_omega_pr_sq->data[jj]*(cos_phi_times_omega_pr->data[jj]+1.0)*cos_ratio->data[jj];
             } else {
@@ -877,10 +702,7 @@ void makeTemplateGaussians(templateStruct *output, candidate input, inputParamsS
       for (ii=0; ii<(INT4)output->templatedata->length; ii++) if (output->templatedata->data[ii]!=0.0) output->templatedata->data[ii] *= invsum;
    } else {
       output->templatedata = sseScaleREAL4Vector(output->templatedata, output->templatedata, invsum);
-      if (xlalErrno!=0) {
-         fprintf(stderr,"%s, sseScaleREAL4Vector() failed.\n", __func__);
-         XLAL_ERROR_VOID(XLAL_EFUNC);
-      }
+      XLAL_CHECK( xlalErrno == 0, XLAL_EFUNC );
    }
    
    //Truncate weights when they don't add much to the total sum of weights
@@ -910,6 +732,8 @@ void makeTemplateGaussians(templateStruct *output, candidate input, inputParamsS
    XLALDestroyREAL4Vector(cos_phi_times_omega_pr);
    XLALDestroyREAL4Vector(datavector);
 
+   return 0;
+
 } /* mateTemplateGaussians() */
 
 
@@ -917,7 +741,7 @@ void makeTemplateGaussians(templateStruct *output, candidate input, inputParamsS
 //////////////////////////////////////////////////////////////
 // Make an template based on FFT of sinc squared functions
 // This is eq. 20 of E. Goetz and K. Riles (2011)
-void makeTemplate(templateStruct *output, candidate input, inputParamsStruct *params, INT4Vector *sftexist, REAL4FFTPlan *plan)
+INT4 makeTemplate(templateStruct *output, candidate input, inputParamsStruct *params, INT4Vector *sftexist, REAL4FFTPlan *plan)
 {
    
    //Set data for output template
@@ -933,19 +757,12 @@ void makeTemplate(templateStruct *output, candidate input, inputParamsStruct *pa
    numfbins = (INT4)(round(params->fspan*params->Tcoh+2.0*params->dfmax*params->Tcoh)+12+1);   //Number of frequency bins
    numffts = (INT4)sftexist->length;   //Number of FFTs
    
-   REAL4Vector *psd1 = XLALCreateREAL4Vector(numfbins*numffts);
-   REAL8Vector *freqbins = XLALCreateREAL8Vector(numfbins);
-   REAL8Vector *bindiffs = XLALCreateREAL8Vector(numfbins);
-   if (psd1==NULL) {
-      fprintf(stderr,"%s: XLALCreateREAL4Vector(%d) failed.\n", __func__, numfbins*numffts);
-      XLAL_ERROR_VOID(XLAL_EFUNC);
-   } else if (freqbins==NULL) {
-      fprintf(stderr,"%s: XLALCreateREAL8Vector(%d) failed.\n", __func__, numfbins);
-      XLAL_ERROR_VOID(XLAL_EFUNC);
-   } else if (bindiffs==NULL) {
-      fprintf(stderr,"%s: XLALCreateREAL8Vector(%d) failed.\n", __func__, numfbins);
-      XLAL_ERROR_VOID(XLAL_EFUNC);
-   }
+   REAL4Vector *psd1 = NULL;
+   XLAL_CHECK( (psd1 = XLALCreateREAL4Vector(numfbins*numffts)) != NULL, XLAL_EFUNC );
+   REAL8Vector *freqbins = NULL, *bindiffs = NULL;
+   XLAL_CHECK( (freqbins = XLALCreateREAL8Vector(numfbins)) != NULL, XLAL_EFUNC );
+   XLAL_CHECK( (bindiffs = XLALCreateREAL8Vector(numfbins)) != NULL, XLAL_EFUNC );
+
    memset(psd1->data, 0, sizeof(REAL4)*psd1->length);
    
    REAL8 periodf = 1.0/input.period;
@@ -960,14 +777,11 @@ void makeTemplate(templateStruct *output, candidate input, inputParamsStruct *pa
    REAL8 PSDprefact = 2.0/3.0;
    for (ii=0; ii<numffts; ii++) {
       REAL8 t = 0.5*params->Tcoh*ii;  //Assumed 50% overlapping SFTs
-      twospect_sin_cos_2PI_LUT(&sin2pix, &cos2pix, periodf*t);
+      XLAL_CHECK( twospect_sin_cos_2PI_LUT(&sin2pix, &cos2pix, periodf*t) == XLAL_SUCCESS, XLAL_EFUNC );
       REAL8 n0 = B*sin2pix + input.fsig*params->Tcoh;
       if (params->useSSE) {
          sseAddScalarToREAL8Vector(bindiffs, freqbins, -n0);
-         if (xlalErrno!=0) {
-            fprintf(stderr,"%s: sseAddScalarToREAL8Vector() failed.\n", __func__);
-            XLAL_ERROR_VOID(XLAL_EFUNC);
-         }
+         XLAL_CHECK( xlalErrno == 0, XLAL_EFUNC );
       } else for (jj=0; jj<numfbins; jj++) bindiffs->data[jj] = freqbins->data[jj] - n0;
       for (jj=0; jj<numfbins; jj++) {
          //Create PSD values organized by f0 => psd1->data[0...numffts-1], sft1 => psd1->data[numffts...2*numffts-1]
@@ -977,20 +791,11 @@ void makeTemplate(templateStruct *output, candidate input, inputParamsStruct *pa
    } /* for ii < numffts */
    
    //Do the second FFT
-   REAL4Vector *x = XLALCreateREAL4Vector(numffts);
-   if (x==NULL) {
-      fprintf(stderr,"%s: XLALCreateREAL4Vector(%d) failed.\n", __func__, numffts);
-      XLAL_ERROR_VOID(XLAL_EFUNC);
-   }
-   REAL4Window *win = XLALCreateHannREAL4Window(x->length);
-   REAL4Vector *psd = XLALCreateREAL4Vector((INT4)floor(x->length*0.5)+1);
-   if (win==NULL) {
-      fprintf(stderr,"%s: XLALCreateHannREAL4Window(%d) failed.\n", __func__, x->length);
-      XLAL_ERROR_VOID(XLAL_EFUNC);
-   } else if (psd==NULL) {
-      fprintf(stderr,"%s: XLALCreateREAL4Vector(%d) failed.\n", __func__, (INT4)floor(x->length*0.5)+1);
-      XLAL_ERROR_VOID(XLAL_EFUNC);
-   }
+   REAL4Vector *x = NULL, *psd = NULL;
+   XLAL_CHECK( (x = XLALCreateREAL4Vector(numffts)) != NULL, XLAL_EFUNC );
+   XLAL_CHECK( (psd = XLALCreateREAL4Vector((INT4)floor(x->length*0.5)+1)) != NULL, XLAL_EFUNC );
+   REAL4Window *win = NULL;
+   XLAL_CHECK( (win = XLALCreateHannREAL4Window(x->length)) != NULL, XLAL_EFUNC );
    REAL8 winFactor = 8.0/3.0;
    REAL8 secPSDfactor = winFactor/x->length*0.5*params->Tcoh;
    REAL8 sum = 0.0;
@@ -1013,32 +818,20 @@ void makeTemplate(templateStruct *output, candidate input, inputParamsStruct *pa
          if (!params->useSSE) {
             //x = fastSSVectorMultiply_with_stride_and_offset(x, x, win->data, 1, 1, 0, 0);
             x = XLALSSVectorMultiply(x, x, win->data);
-            if (xlalErrno!=0) {
-               fprintf(stderr,"%s, XLALSSVectorMultiply() failed.\n", __func__);
-               XLAL_ERROR_VOID(XLAL_EFUNC);
-            }
+            XLAL_CHECK( xlalErrno == 0, XLAL_EFUNC );
          } else {
             x = sseSSVectorMultiply(x, x, win->data);
-            if (xlalErrno!=0) {
-               fprintf(stderr,"%s, sseSSVectorMultiply() failed.\n", __func__);
-               XLAL_ERROR_VOID(XLAL_EFUNC);
-            }
+            XLAL_CHECK( xlalErrno == 0, XLAL_EFUNC );
          }
          
          //Do the FFT
-         if ( XLALREAL4PowerSpectrum(psd, x, plan) != 0 ) {
-            fprintf(stderr,"%s: XLALREAL4PowerSpectrum() failed.\n", __func__);
-            XLAL_ERROR_VOID(XLAL_EFUNC);
-         }
+         XLAL_CHECK( XLALREAL4PowerSpectrum(psd, x, plan) == XLAL_SUCCESS, XLAL_EFUNC );
          
          //Scale the data points by 1/N and window factor and (1/fs)
          //Order of vector is by second frequency then first frequency
          if (params->useSSE) {
             psd = sseScaleREAL4Vector(psd, psd, secPSDfactor);
-            if (xlalErrno!=0) {
-               fprintf(stderr,"%s, sseScaleREAL4Vector() failed.\n", __func__);
-               XLAL_ERROR_VOID(XLAL_EFUNC);
-            }
+            XLAL_CHECK( xlalErrno == 0, XLAL_EFUNC );
          } else {
             for (jj=0; jj<(INT4)psd->length; jj++) psd->data[jj] *= secPSDfactor;
          }
@@ -1060,10 +853,7 @@ void makeTemplate(templateStruct *output, candidate input, inputParamsStruct *pa
       for (ii=0; ii<(INT4)output->templatedata->length; ii++) if (output->templatedata->data[ii]!=0.0) output->templatedata->data[ii] *= invsum;
    } else {
       output->templatedata = sseScaleREAL4Vector(output->templatedata, output->templatedata, invsum);
-      if (xlalErrno!=0) {
-         fprintf(stderr,"%s, sseScaleREAL4Vector() failed.\n", __func__);
-         XLAL_ERROR_VOID(XLAL_EFUNC);
-      }
+      XLAL_CHECK( xlalErrno == 0, XLAL_EFUNC );
    }
    
    //Truncate weights if they don't contribute much to the sum
@@ -1083,27 +873,22 @@ void makeTemplate(templateStruct *output, candidate input, inputParamsStruct *pa
    XLALDestroyREAL4Vector(x);
    XLALDestroyREAL4Window(win);
    XLALDestroyREAL4Vector(psd);
+
+   return 0;
    
 }
 
 
-void analyzeOneTemplate(candidate *output, candidate *input, ffdataStruct *ffdata, REAL4Vector *aveNoise, REAL4Vector *aveTFnoisePerFbinRatio, inputParamsStruct *params, INT4Vector *sftexist, REAL4FFTPlan *plan)
+INT4 analyzeOneTemplate(candidate *output, candidate *input, ffdataStruct *ffdata, REAL4Vector *aveNoise, REAL4Vector *aveTFnoisePerFbinRatio, inputParamsStruct *params, INT4Vector *sftexist, REAL4FFTPlan *plan)
 {
 
    INT4 proberrcode = 0;
 
    //Allocate and make the template
-   templateStruct *template = new_templateStruct(params->maxtemplatelength);
-   if (template==NULL) {
-      fprintf(stderr,"%s: new_templateStruct(%d) failed.\n", __func__, params->maxtemplatelength);
-      XLAL_ERROR_VOID(XLAL_EFUNC); 
-   }
+   templateStruct *template = NULL;
+   XLAL_CHECK( (template = new_templateStruct(params->maxtemplatelength)) != NULL, XLAL_EFUNC );
    resetTemplateStruct(template);
-   makeTemplate(template, *input, params, sftexist, plan);
-   if (xlalErrno!=0) {
-      fprintf(stderr,"%s: makeTemplate() failed.\n", __func__);
-      XLAL_ERROR_VOID(XLAL_EFUNC);
-   }
+   XLAL_CHECK( makeTemplate(template, *input, params, sftexist, plan) == XLAL_SUCCESS, XLAL_EFUNC );
 
    //Print out data product if requested
    /* if (args_info.printData_given) {
@@ -1120,17 +905,11 @@ void analyzeOneTemplate(candidate *output, candidate *input, ffdataStruct *ffdat
 
    //Calculate R from the template and the data
    REAL8 R = calculateR(ffdata->ffdata, template, aveNoise, aveTFnoisePerFbinRatio);
-   if (XLAL_IS_REAL8_FAIL_NAN(R)) {
-      fprintf(stderr,"%s: calculateR() failed.\n", __func__);
-      XLAL_ERROR_VOID(XLAL_EFUNC);
-   }
+   XLAL_CHECK( xlalErrno == 0, XLAL_EFUNC );
 
    //Calculate FAP
    REAL8 prob = probR(template, aveNoise, aveTFnoisePerFbinRatio, R, params, &proberrcode);
-   if (XLAL_IS_REAL8_FAIL_NAN(prob)) {
-      fprintf(stderr,"%s: probR() failed.\n", __func__);
-      XLAL_ERROR_VOID(XLAL_EFUNC);
-   }
+   XLAL_CHECK( xlalErrno == 0, XLAL_EFUNC );
 
    //Estimate the h0 if R>0.0
    REAL8 h0 = 0.0;
@@ -1138,11 +917,12 @@ void analyzeOneTemplate(candidate *output, candidate *input, ffdataStruct *ffdat
 
    loadCandidateData(output, input->fsig, input->period, input->moddepth, input->ra, input->dec, R, h0, prob, proberrcode, 1.0);
 
+   return 0;
 }
 
 
 //A brute force template search to find the most significant template around a candidate
-void bruteForceTemplateSearch(candidate *output, candidate input, REAL8 fminimum, REAL8 fmaximum, INT4 numfsteps, INT4 numperiodslonger, INT4 numperiodsshorter, REAL8 dfmin, REAL8 dfmax, INT4 numdfsteps, inputParamsStruct *params, REAL4Vector *ffdata, INT4Vector *sftexist, REAL4Vector *aveNoise, REAL4Vector *aveTFnoisePerFbinRatio, REAL4FFTPlan *secondFFTplan, INT4 useExactTemplates)
+INT4 bruteForceTemplateSearch(candidate *output, candidate input, REAL8 fminimum, REAL8 fmaximum, INT4 numfsteps, INT4 numperiodslonger, INT4 numperiodsshorter, REAL8 dfmin, REAL8 dfmax, INT4 numdfsteps, inputParamsStruct *params, REAL4Vector *ffdata, INT4Vector *sftexist, REAL4Vector *aveNoise, REAL4Vector *aveTFnoisePerFbinRatio, REAL4FFTPlan *secondFFTplan, INT4 useExactTemplates)
 {
    
    INT4 ii, jj, kk;
@@ -1154,11 +934,7 @@ void bruteForceTemplateSearch(candidate *output, candidate input, REAL8 fminimum
    //Set up parameters of modulation depth search
    if (dfmin<params->dfmin) dfmin = params->dfmin;
    if (dfmax>params->dfmax) dfmax = params->dfmax;
-   trialb = XLALCreateREAL8Vector(numdfsteps);
-   if (trialb==NULL) {
-      fprintf(stderr,"%s: XLALCreateREAL8Vector(%d) failed.\n", __func__, numdfsteps);
-      XLAL_ERROR_VOID(XLAL_EFUNC);
-   }
+   XLAL_CHECK( (trialb = XLALCreateREAL8Vector(numdfsteps)) != NULL, XLAL_EFUNC );
    if (numdfsteps>1) {
       dfstepsize = (dfmax-dfmin)/(REAL8)(numdfsteps-1);
       for (ii=0; ii<numdfsteps; ii++) trialb->data[ii] = dfmin + dfstepsize*ii;
@@ -1169,11 +945,7 @@ void bruteForceTemplateSearch(candidate *output, candidate input, REAL8 fminimum
    //Set up parameters of signal frequency search
    if (fminimum<params->fmin) fminimum = params->fmin;
    if (fmaximum>params->fmin+params->fspan) fmaximum = params->fmin+params->fspan;
-   trialf = XLALCreateREAL8Vector(numfsteps);
-   if (trialf==NULL) {
-      fprintf(stderr,"%s: XLALCreateREAL8Vector(%d) failed.\n", __func__, numfsteps);
-      XLAL_ERROR_VOID(XLAL_EFUNC);
-   }
+   XLAL_CHECK( (trialf = XLALCreateREAL8Vector(numfsteps)) != NULL, XLAL_EFUNC );
    if (numfsteps>1) {
       fstepsize = (fmaximum-fminimum)/(REAL8)(numfsteps-1);
       for (ii=0; ii<numfsteps; ii++) trialf->data[ii] = fminimum + fstepsize*ii;
@@ -1182,29 +954,18 @@ void bruteForceTemplateSearch(candidate *output, candidate input, REAL8 fminimum
    }
 
    //Search over numperiods different periods
-   trialp = XLALCreateREAL8Vector(numperiodslonger+numperiodsshorter+1);
-   if (trialp==NULL) {
-      fprintf(stderr,"%s: XLALCreateREAL8Vector(%d) failed.\n", __func__, numperiodslonger+numperiodsshorter+1);
-      XLAL_ERROR_VOID(XLAL_EFUNC);
-   }
+   XLAL_CHECK( (trialp = XLALCreateREAL8Vector(numperiodslonger+numperiodsshorter+1)) != NULL, XLAL_EFUNC );
    
    //Now search over the parameter space. Frequency, then modulation depth, then period
    //Initialze best values as the initial point we are searching around
    INT4 bestproberrcode = 0;
    REAL8 bestf = 0.0, bestp = 0.0, bestdf = 0.0, bestR = 0.0, besth0 = 0.0, bestProb = 0.0;
    candidate cand;
-   templateStruct *template = new_templateStruct(params->maxtemplatelength);
-   if (template==NULL) {
-      fprintf(stderr,"%s: new_templateStruct(%d) failed.\n", __func__, params->maxtemplatelength);
-      XLAL_ERROR_VOID(XLAL_EFUNC); 
-   }
+   templateStruct *template = NULL;
+   XLAL_CHECK( (template = new_templateStruct(params->maxtemplatelength)) != NULL, XLAL_EFUNC );
    farStruct *farval = NULL;
    if (params->calcRthreshold) {
-      farval = new_farStruct();
-      if (farval==NULL) {
-         fprintf(stderr,"%s: new_farStruct() failed.\n", __func__);
-         XLAL_ERROR_VOID(XLAL_EFUNC); 
-      }
+      XLAL_CHECK( (farval = new_farStruct()) != NULL, XLAL_EFUNC );
    }
    
    INT4 startposition = numperiodsshorter, proberrcode = 0;
@@ -1245,37 +1006,19 @@ void bruteForceTemplateSearch(candidate *output, candidate input, REAL8 fminimum
                resetTemplateStruct(template);
                
                if (useExactTemplates!=0) {
-                  makeTemplate(template, cand, params, sftexist, secondFFTplan);
-                  if (xlalErrno!=0) {
-                     fprintf(stderr,"%s: makeTemplate() failed.\n", __func__);
-                     XLAL_ERROR_VOID(XLAL_EFUNC);
-                  }
+                  XLAL_CHECK( makeTemplate(template, cand, params, sftexist, secondFFTplan) == XLAL_SUCCESS, XLAL_EFUNC );
                } else {
-                  makeTemplateGaussians(template, cand, params, (INT4)aveTFnoisePerFbinRatio->length, (INT4)aveNoise->length);
-                  if (xlalErrno!=0) {
-                     fprintf(stderr,"%s: makeTemplateGaussians() failed.\n", __func__);
-                     XLAL_ERROR_VOID(XLAL_EFUNC);
-                  }
+                  XLAL_CHECK( makeTemplateGaussians(template, cand, params, (INT4)aveTFnoisePerFbinRatio->length, (INT4)aveNoise->length) == XLAL_SUCCESS, XLAL_EFUNC );
                }
                
                if (params->calcRthreshold && bestProb==0.0) {
-                  numericFAR(farval, template, params->templatefar, aveNoise, aveTFnoisePerFbinRatio, params, params->rootFindingMethod);
-                  if (xlalErrno!=0) {
-                     fprintf(stderr,"%s: numericFAR() failed.\n", __func__);
-                     XLAL_ERROR_VOID(XLAL_EFUNC);
-                  }
+                  XLAL_CHECK( numericFAR(farval, template, params->templatefar, aveNoise, aveTFnoisePerFbinRatio, params, params->rootFindingMethod) == XLAL_SUCCESS, XLAL_EFUNC );
                }
                
                REAL8 R = calculateR(ffdata, template, aveNoise, aveTFnoisePerFbinRatio);
-               if (XLAL_IS_REAL8_FAIL_NAN(R)) {
-                  fprintf(stderr,"%s: calculateR() failed.\n", __func__);
-                  XLAL_ERROR_VOID(XLAL_EFUNC);
-               }
+               XLAL_CHECK( xlalErrno == 0, XLAL_EFUNC );
                REAL8 prob = probR(template, aveNoise, aveTFnoisePerFbinRatio, R, params, &proberrcode);
-               if (XLAL_IS_REAL8_FAIL_NAN(prob)) {
-                  fprintf(stderr,"%s: probR() failed.\n", __func__);
-                  XLAL_ERROR_VOID(XLAL_EFUNC);
-               }
+               XLAL_CHECK( xlalErrno == 0, XLAL_EFUNC );
                REAL8 h0 = 0.0;
                if ( R > 0.0 ) h0 = 2.7426*pow(R/(params->Tcoh*params->Tobs),0.25);
 
@@ -1314,12 +1057,14 @@ void bruteForceTemplateSearch(candidate *output, candidate input, REAL8 fminimum
       loadCandidateData(output, bestf, bestp, bestdf, input.ra, input.dec, bestR, besth0, bestProb, bestproberrcode, input.normalization);
    }
    
+   return 0;
+
 }
 
 
 //A brute force template search in a region of parameter space
 /// Testing in progress
-void templateSearch_scox1Style(candidateVector *output, REAL8 fminimum, REAL8 fspan, REAL8 period, REAL8 asini, inputParamsStruct *params, REAL4Vector *ffdata, INT4Vector *sftexist, REAL4Vector *aveNoise, REAL4Vector *aveTFnoisePerFbinRatio, REAL4FFTPlan *secondFFTplan, INT4 useExactTemplates)
+INT4 templateSearch_scox1Style(candidateVector *output, REAL8 fminimum, REAL8 fspan, REAL8 period, REAL8 asini, inputParamsStruct *params, REAL4Vector *ffdata, INT4Vector *sftexist, REAL4Vector *aveNoise, REAL4Vector *aveTFnoisePerFbinRatio, REAL4FFTPlan *secondFFTplan, INT4 useExactTemplates)
 {
    
    INT4 ii;
@@ -1328,22 +1073,15 @@ void templateSearch_scox1Style(candidateVector *output, REAL8 fminimum, REAL8 fs
    
    //Set up parameters of signal frequency search
    INT4 numfsteps = (INT4)round(2.0*fspan*params->Tcoh)+1;
-   trialf = XLALCreateREAL8Vector(numfsteps);
-   if (trialf==NULL) {
-      fprintf(stderr,"%s: XLALCreateREAL8Vector(%d) failed.\n", __func__, numfsteps);
-      XLAL_ERROR_VOID(XLAL_EFUNC);
-   }
+   XLAL_CHECK( (trialf = XLALCreateREAL8Vector(numfsteps)) != NULL, XLAL_EFUNC );
    fstepsize = fspan/(REAL8)(numfsteps-1);
    for (ii=0; ii<numfsteps; ii++) trialf->data[ii] = fminimum + fstepsize*ii;
    
    //Now search over the frequencies
    INT4 proberrcode = 0;
    candidate cand;
-   templateStruct *template = new_templateStruct(params->maxtemplatelength);
-   if (template==NULL) {
-      fprintf(stderr,"%s: new_templateStruct(%d) failed.\n", __func__, params->maxtemplatelength);
-      XLAL_ERROR_VOID(XLAL_EFUNC); 
-   }
+   templateStruct *template = NULL;
+   XLAL_CHECK( (template = new_templateStruct(params->maxtemplatelength)) != NULL, XLAL_EFUNC );
    
    //Search over frequency
    for (ii=0; ii<(INT4)trialf->length; ii++) {
@@ -1356,39 +1094,21 @@ void templateSearch_scox1Style(candidateVector *output, REAL8 fminimum, REAL8 fs
       //Make the template
       resetTemplateStruct(template);
       if (useExactTemplates!=0) {
-         makeTemplate(template, cand, params, sftexist, secondFFTplan);
-         if (xlalErrno!=0) {
-            fprintf(stderr,"%s: makeTemplate() failed.\n", __func__);
-            XLAL_ERROR_VOID(XLAL_EFUNC);
-         }
+         XLAL_CHECK( makeTemplate(template, cand, params, sftexist, secondFFTplan) == XLAL_SUCCESS, XLAL_EFUNC );
       } else {
-         makeTemplateGaussians(template, cand, params, (INT4)aveTFnoisePerFbinRatio->length, (INT4)aveNoise->length);
-         if (xlalErrno!=0) {
-            fprintf(stderr,"%s: makeTemplateGaussians() failed.\n", __func__);
-            XLAL_ERROR_VOID(XLAL_EFUNC);
-         }
+         XLAL_CHECK( makeTemplateGaussians(template, cand, params, (INT4)aveTFnoisePerFbinRatio->length, (INT4)aveNoise->length) == XLAL_SUCCESS, XLAL_EFUNC );
       }
 
       REAL8 R = calculateR(ffdata, template, aveNoise, aveTFnoisePerFbinRatio);
-      if (XLAL_IS_REAL8_FAIL_NAN(R)) {
-        fprintf(stderr,"%s: calculateR() failed.\n", __func__);
-        XLAL_ERROR_VOID(XLAL_EFUNC);
-      }
+      XLAL_CHECK( xlalErrno == 0, XLAL_EFUNC );
       REAL8 prob = probR(template, aveNoise, aveTFnoisePerFbinRatio, R, params, &proberrcode);
-      if (XLAL_IS_REAL8_FAIL_NAN(prob)) {
-         fprintf(stderr,"%s: probR() failed.\n", __func__);
-         XLAL_ERROR_VOID(XLAL_EFUNC);
-      }
+      XLAL_CHECK( xlalErrno == 0, XLAL_EFUNC );
       REAL8 h0 = 0.0;
       if ( R > 0.0 ) h0 = 2.7426*pow(R/(params->Tcoh*params->Tobs),0.25);
 
       //Resize the output candidate vector if necessary
       if (output->numofcandidates == output->length-1) {
-         output = resize_candidateVector(output, 2*(output->length));
-         if (output==NULL) {
-            fprintf(stderr,"%s: resize_candidateVector(%d) failed.\n", __func__, 2*(output->length));
-            XLAL_ERROR_VOID(XLAL_EFUNC);
-         }
+         XLAL_CHECK( (output = resize_candidateVector(output, 2*(output->length))) != NULL, XLAL_EFUNC );
       }
 
       loadCandidateData(&(output->data[output->numofcandidates]), trialf->data[ii], period, moddepth, 0.0, 0.0, R, h0, prob, proberrcode, 0.0);
@@ -1399,6 +1119,8 @@ void templateSearch_scox1Style(candidateVector *output, REAL8 fminimum, REAL8 fs
    template = NULL;
    XLALDestroyREAL8Vector(trialf);
    trialf = NULL;
+
+   return 0;
    
 }
 
@@ -1652,7 +1374,7 @@ REAL8 sqsincxoverxsqminusone(REAL8 x)
 
 //Stolen from computeFstat.c with higher resolution
 #define OOTWOPI         (1.0 / LAL_TWOPI)
-int twospect_sin_cos_LUT(REAL8 *sinx, REAL8 *cosx, REAL8 x)
+INT4 twospect_sin_cos_LUT(REAL8 *sinx, REAL8 *cosx, REAL8 x)
 {
    return twospect_sin_cos_2PI_LUT( sinx, cosx, x * OOTWOPI );
 } /* twospect_sin_cos_LUT() */
@@ -1663,7 +1385,7 @@ int twospect_sin_cos_LUT(REAL8 *sinx, REAL8 *cosx, REAL8 x)
 #define IND_TO_X        (LAL_TWOPI * OO_LUT_RES)
 #define TRUE (1==1)
 #define FALSE (1==0)
-int twospect_sin_cos_2PI_LUT(REAL8 *sin2pix, REAL8 *cos2pix, REAL8 x)
+INT4 twospect_sin_cos_2PI_LUT(REAL8 *sin2pix, REAL8 *cos2pix, REAL8 x)
 {
    REAL8 xt;
    INT4 i0;
@@ -1697,10 +1419,11 @@ int twospect_sin_cos_2PI_LUT(REAL8 *sin2pix, REAL8 *cos2pix, REAL8 x)
    
    if ( xt < 0.0 ) xt += 1.0;                  /* xt in [0, 1 ) */
    #ifndef LAL_NDEBUG
-      if ( xt < 0.0 || xt > 1.0 ) {
+   /* if ( xt < 0.0 || xt > 1.0 ) {
          XLALPrintError("\nFailed numerica in twospect_sin_cos_2PI_LUT(): xt = %f not in [0,1)\n\n", xt );
          return XLAL_FAILURE;
-      }
+         } */
+      XLAL_CHECK( !(xt < 0.0 || xt > 1.0), XLAL_EINVAL, "Failed numerica in twospect_sin_cos_2PI_LUT(): xt = %f not in [0,1)\n", xt );
    #endif
    
    i0 = (INT4)( xt * LUT_RES_F + 0.5 );  /* i0 in [0, LUT_RES ] */

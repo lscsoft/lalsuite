@@ -32,21 +32,21 @@ const char *gengetopt_args_info_usage = "Usage: skygridsetup [OPTIONS]...";
 const char *gengetopt_args_info_description = "";
 
 const char *gengetopt_args_info_help[] = {
-  "  -h, --help                Print help and exit",
-  "  -V, --version             Print version and exit",
-  "      --config=STRING       Configuration file in gengetopt format for passing \n                              parameters",
-  "      --Tcoh=DOUBLE         SFT coherence time  (default=`1800')",
-  "      --SFToverlap=DOUBLE   SFT overlap in seconds, usually Tcoh/2  \n                              (default=`900')",
-  "      --t0=DOUBLE           Start time of the search, needed only if --v2 is \n                              specified (in GPS seconds)",
-  "      --Tobs=DOUBLE         Total observation time, needed only if --v2 is \n                              specified (in seconds)",
-  "      --fmin=DOUBLE         Minimum frequency of band [required]",
-  "      --fspan=DOUBLE        Frequency span of band [required]",
-  "      --IFO=IFO code        Interferometer of whose data is being analyzed  \n                              (possible values=\"H1\", \"L1\", \"V1\") \n                              [required]",
-  "      --outfilename=STRING  Output file name  (default=`skygrid.dat')",
-  "      --ephemDir=STRING     Path to ephemeris files  \n                              (default=`/opt/lscsoft/lalpulsar/share/lalpulsar')",
-  "      --ephemYear=STRING    Year or year range (e.g. 08-11) of ephemeris files  \n                              (default=`08-11')",
-  "      --skyRegion=STRING    Region of the sky to search (e.g. \n                              (ra1,dec1),(ra2,dec2),(ra3,dec3)...) or allsky  \n                              (default=`allsky')",
-  "      --v2                  Flag to use the newer style of CompDetectorVmax \n                              input arguments (always specify this unless you \n                              know what you are doing!)  (default=off)",
+  "  -h, --help                    Print help and exit",
+  "  -V, --version                 Print version and exit",
+  "      --config=STRING           Configuration file in gengetopt format for \n                                  passing parameters",
+  "      --Tcoh=DOUBLE             SFT coherence time  (default=`1800')",
+  "      --SFToverlap=DOUBLE       SFT overlap in seconds, usually Tcoh/2  \n                                  (default=`900')",
+  "      --t0=DOUBLE               Start time of the search, needed only if --v2 \n                                  is specified (in GPS seconds)",
+  "      --Tobs=DOUBLE             Total observation time, needed only if --v2 is \n                                  specified (in seconds)",
+  "      --fmin=DOUBLE             Minimum frequency of band [required]",
+  "      --fspan=DOUBLE            Frequency span of band [required]",
+  "      --IFO=IFO code            Interferometer of whose data is being analyzed  \n                                  (possible values=\"H1\", \"L1\", \"V1\") \n                                  [required]",
+  "      --outfilename=STRING      Output file name  (default=`skygrid.dat')",
+  "      --ephemEarth=path/filename\n                                Location of Earth ephemeris file  \n                                  (default=`earth00-19-DE405.dat.gz')",
+  "      --ephemSun=path/filename  Location of Sun ephemeris file  \n                                  (default=`sun00-19-DE405.dat.gz')",
+  "      --skyRegion=STRING        Region of the sky to search (e.g. \n                                  (ra1,dec1),(ra2,dec2),(ra3,dec3)...) or \n                                  allsky  (default=`allsky')",
+  "      --v2                      Flag to use the newer style of CompDetectorVmax \n                                  input arguments (always specify this unless \n                                  you know what you are doing!)  (default=off)",
     0
 };
 
@@ -111,8 +111,8 @@ void clear_given (struct gengetopt_args_info *args_info)
   args_info->fspan_given = 0 ;
   args_info->IFO_given = 0 ;
   args_info->outfilename_given = 0 ;
-  args_info->ephemDir_given = 0 ;
-  args_info->ephemYear_given = 0 ;
+  args_info->ephemEarth_given = 0 ;
+  args_info->ephemSun_given = 0 ;
   args_info->skyRegion_given = 0 ;
   args_info->v2_given = 0 ;
 }
@@ -135,10 +135,10 @@ void clear_args (struct gengetopt_args_info *args_info)
   args_info->IFO_orig = NULL;
   args_info->outfilename_arg = gengetopt_strdup ("skygrid.dat");
   args_info->outfilename_orig = NULL;
-  args_info->ephemDir_arg = gengetopt_strdup ("/opt/lscsoft/lalpulsar/share/lalpulsar");
-  args_info->ephemDir_orig = NULL;
-  args_info->ephemYear_arg = gengetopt_strdup ("08-11");
-  args_info->ephemYear_orig = NULL;
+  args_info->ephemEarth_arg = gengetopt_strdup ("earth00-19-DE405.dat.gz");
+  args_info->ephemEarth_orig = NULL;
+  args_info->ephemSun_arg = gengetopt_strdup ("sun00-19-DE405.dat.gz");
+  args_info->ephemSun_orig = NULL;
   args_info->skyRegion_arg = gengetopt_strdup ("allsky");
   args_info->skyRegion_orig = NULL;
   args_info->v2_flag = 0;
@@ -161,8 +161,8 @@ void init_args_info(struct gengetopt_args_info *args_info)
   args_info->fspan_help = gengetopt_args_info_help[8] ;
   args_info->IFO_help = gengetopt_args_info_help[9] ;
   args_info->outfilename_help = gengetopt_args_info_help[10] ;
-  args_info->ephemDir_help = gengetopt_args_info_help[11] ;
-  args_info->ephemYear_help = gengetopt_args_info_help[12] ;
+  args_info->ephemEarth_help = gengetopt_args_info_help[11] ;
+  args_info->ephemSun_help = gengetopt_args_info_help[12] ;
   args_info->skyRegion_help = gengetopt_args_info_help[13] ;
   args_info->v2_help = gengetopt_args_info_help[14] ;
   
@@ -257,10 +257,10 @@ cmdline_parser_release (struct gengetopt_args_info *args_info)
   free_string_field (&(args_info->IFO_orig));
   free_string_field (&(args_info->outfilename_arg));
   free_string_field (&(args_info->outfilename_orig));
-  free_string_field (&(args_info->ephemDir_arg));
-  free_string_field (&(args_info->ephemDir_orig));
-  free_string_field (&(args_info->ephemYear_arg));
-  free_string_field (&(args_info->ephemYear_orig));
+  free_string_field (&(args_info->ephemEarth_arg));
+  free_string_field (&(args_info->ephemEarth_orig));
+  free_string_field (&(args_info->ephemSun_arg));
+  free_string_field (&(args_info->ephemSun_orig));
   free_string_field (&(args_info->skyRegion_arg));
   free_string_field (&(args_info->skyRegion_orig));
   
@@ -356,10 +356,10 @@ cmdline_parser_dump(FILE *outfile, struct gengetopt_args_info *args_info)
     write_into_file(outfile, "IFO", args_info->IFO_orig, cmdline_parser_IFO_values);
   if (args_info->outfilename_given)
     write_into_file(outfile, "outfilename", args_info->outfilename_orig, 0);
-  if (args_info->ephemDir_given)
-    write_into_file(outfile, "ephemDir", args_info->ephemDir_orig, 0);
-  if (args_info->ephemYear_given)
-    write_into_file(outfile, "ephemYear", args_info->ephemYear_orig, 0);
+  if (args_info->ephemEarth_given)
+    write_into_file(outfile, "ephemEarth", args_info->ephemEarth_orig, 0);
+  if (args_info->ephemSun_given)
+    write_into_file(outfile, "ephemSun", args_info->ephemSun_orig, 0);
   if (args_info->skyRegion_given)
     write_into_file(outfile, "skyRegion", args_info->skyRegion_orig, 0);
   if (args_info->v2_given)
@@ -680,8 +680,8 @@ cmdline_parser_internal (
         { "fspan",	1, NULL, 0 },
         { "IFO",	1, NULL, 0 },
         { "outfilename",	1, NULL, 0 },
-        { "ephemDir",	1, NULL, 0 },
-        { "ephemYear",	1, NULL, 0 },
+        { "ephemEarth",	1, NULL, 0 },
+        { "ephemSun",	1, NULL, 0 },
         { "skyRegion",	1, NULL, 0 },
         { "v2",	0, NULL, 0 },
         { 0,  0, 0, 0 }
@@ -831,30 +831,30 @@ cmdline_parser_internal (
               goto failure;
           
           }
-          /* Path to ephemeris files.  */
-          else if (strcmp (long_options[option_index].name, "ephemDir") == 0)
+          /* Location of Earth ephemeris file.  */
+          else if (strcmp (long_options[option_index].name, "ephemEarth") == 0)
           {
           
           
-            if (update_arg( (void *)&(args_info->ephemDir_arg), 
-                 &(args_info->ephemDir_orig), &(args_info->ephemDir_given),
-                &(local_args_info.ephemDir_given), optarg, 0, "/opt/lscsoft/lalpulsar/share/lalpulsar", ARG_STRING,
+            if (update_arg( (void *)&(args_info->ephemEarth_arg), 
+                 &(args_info->ephemEarth_orig), &(args_info->ephemEarth_given),
+                &(local_args_info.ephemEarth_given), optarg, 0, "earth00-19-DE405.dat.gz", ARG_STRING,
                 check_ambiguity, override, 0, 0,
-                "ephemDir", '-',
+                "ephemEarth", '-',
                 additional_error))
               goto failure;
           
           }
-          /* Year or year range (e.g. 08-11) of ephemeris files.  */
-          else if (strcmp (long_options[option_index].name, "ephemYear") == 0)
+          /* Location of Sun ephemeris file.  */
+          else if (strcmp (long_options[option_index].name, "ephemSun") == 0)
           {
           
           
-            if (update_arg( (void *)&(args_info->ephemYear_arg), 
-                 &(args_info->ephemYear_orig), &(args_info->ephemYear_given),
-                &(local_args_info.ephemYear_given), optarg, 0, "08-11", ARG_STRING,
+            if (update_arg( (void *)&(args_info->ephemSun_arg), 
+                 &(args_info->ephemSun_orig), &(args_info->ephemSun_given),
+                &(local_args_info.ephemSun_given), optarg, 0, "sun00-19-DE405.dat.gz", ARG_STRING,
                 check_ambiguity, override, 0, 0,
-                "ephemYear", '-',
+                "ephemSun", '-',
                 additional_error))
               goto failure;
           

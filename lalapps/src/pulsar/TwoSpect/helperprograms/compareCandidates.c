@@ -25,28 +25,30 @@
 #include <gsl/gsl_sort.h>
 #include <gsl/gsl_roots.h>
 
+#include <lal/LALStdlib.h>
+
 struct solver_params {
    double fvalue;
    double *data_array;
 };
-double fdiff(double index, void *params) {
+REAL8 fdiff(double index, void *params) {
    struct solver_params *p = (struct solver_params *)params;
    return p->fvalue - p->data_array[(int)round(index)*9];
 }
  
-int main(void) {
-   FILE *H1CANDS, *L1CANDS;
-   char *infile1 = "/Users/evgoet/Documents/MATLAB/pulsar/S6/50-252HzH1Candidates.dat";
-   char *infile2 = "/Users/evgoet/Documents/MATLAB/pulsar/S6/50-252HzL1Candidates.dat";
-   char *outfile1 = "/Users/evgoet/Documents/MATLAB/pulsar/S6/50-252HzCandidates2.dat";
-   char *outfile2 = "/Users/evgoet/Documents/MATLAB/pulsar/S6/50-252HzCandidates2_reduced.dat";
-   char *outfile3 = "/Users/evgoet/Documents/MATLAB/pulsar/S6/50-252HzCandidates2_reduced2.dat";
+INT4 main(void) {
 
-   H1CANDS = fopen(infile1,"r");
-   if (H1CANDS == NULL) {
-      fprintf(stderr, "%s: %s does not exist\n", __func__, infile1);
-      exit(1);
-   }
+   //Turn off gsl error handler
+   gsl_set_error_handler_off();
+
+   FILE *H1CANDS, *L1CANDS;
+   char *infile1 = "/Users/evgoet/Documents/MATLAB/pulsar/S6/400-501HzH1Candidates.dat";
+   char *infile2 = "/Users/evgoet/Documents/MATLAB/pulsar/S6/400-501HzL1Candidates.dat";
+   char *outfile1 = "/Users/evgoet/Documents/MATLAB/pulsar/S6/400-501HzCandidates.dat";
+   char *outfile2 = "/Users/evgoet/Documents/MATLAB/pulsar/S6/400-501HzCandidates_reduced.dat";
+   char *outfile3 = "/Users/evgoet/Documents/MATLAB/pulsar/S6/400-501HzCandidates_reduced2.dat";
+
+   XLAL_CHECK( (H1CANDS = fopen(infile1,"r")) != NULL, XLAL_EIO, "Can't fopen %s", infile1 );
 
    //Determines number of candidates in the file
    int ch, h1count = 0, l1count = 0;
@@ -55,11 +57,7 @@ int main(void) {
       if (ch == '\n') h1count++;
    } while (ch != EOF);
 
-   L1CANDS = fopen(infile2,"r");
-   if (L1CANDS == NULL) {
-      fprintf(stderr, "%s: %s does not exist\n", __func__, infile2);
-      exit(1);
-   }
+   XLAL_CHECK( (L1CANDS = fopen(infile2,"r")) != NULL, XLAL_EIO, "Can't fopen %s", infile2 );
 
    //Determines number of candidates in the file
    do {
@@ -67,10 +65,12 @@ int main(void) {
       if (ch == '\n') l1count++;
    } while (ch != EOF);
 
-   double *allh1cands = (double*)malloc(sizeof(double)*h1count*9);
-   double *alll1cands = (double*)malloc(sizeof(double)*l1count*9);
-   int *allh1cands_job = (int*)malloc(sizeof(int)*h1count);
-   int *alll1cands_job = (int*)malloc(sizeof(int)*l1count);
+   double *allh1cands = NULL, *alll1cands = NULL;
+   int *allh1cands_job = NULL, *alll1cands_job = NULL;
+   XLAL_CHECK( (allh1cands = (double*)XLALMalloc(sizeof(double)*h1count*9)) != NULL, XLAL_ENOMEM );
+   XLAL_CHECK( (alll1cands = (double*)XLALMalloc(sizeof(double)*l1count*9)) != NULL, XLAL_ENOMEM );
+   XLAL_CHECK( (allh1cands_job = (int*)XLALMalloc(sizeof(int)*h1count)) != NULL, XLAL_ENOMEM );
+   XLAL_CHECK( (alll1cands_job = (int*)XLALMalloc(sizeof(int)*l1count)) != NULL, XLAL_ENOMEM );
 
    //Reset the pointer in the streams
    rewind(H1CANDS);
@@ -83,17 +83,20 @@ int main(void) {
    }
 
    //Sort the array based on the frequency
-   size_t *sorted_index = (size_t*)malloc(sizeof(size_t)*h1count);
-   double *allh1cands_sorted = (double*)malloc(sizeof(double)*h1count*9);
-   int *allh1cands_job_sorted = (int*)malloc(sizeof(int)*h1count);
+   size_t *sorted_index = NULL;
+   XLAL_CHECK( (sorted_index = (size_t*)XLALMalloc(sizeof(size_t)*h1count)) != NULL, XLAL_ENOMEM );
+   double *allh1cands_sorted = NULL;
+   XLAL_CHECK( (allh1cands_sorted = (double*)XLALMalloc(sizeof(double)*h1count*9)) != NULL, XLAL_ENOMEM );
+   int *allh1cands_job_sorted = NULL;
+   XLAL_CHECK( (allh1cands_job_sorted = (int*)XLALMalloc(sizeof(int)*h1count)) != NULL, XLAL_ENOMEM );
    gsl_sort_index(sorted_index, allh1cands, 9, h1count);
    for (ii=0; ii<h1count; ii++) {
       memcpy(&(allh1cands_sorted[ii*9]), &(allh1cands[sorted_index[ii]*9]), sizeof(double)*9);
       allh1cands_job_sorted[ii] = allh1cands_job[sorted_index[ii]];
    }
-   free(allh1cands);
-   free(sorted_index);
-   free(allh1cands_job);
+   XLALFree(allh1cands);
+   XLALFree(sorted_index);
+   XLALFree(allh1cands_job);
 
    //Put the data into the array
    for (ii=0; ii<l1count; ii++) {
@@ -101,28 +104,27 @@ int main(void) {
    }
 
    //Sort the array based on the frequency
-   sorted_index = (size_t*)malloc(sizeof(size_t)*l1count);
-   double *alll1cands_sorted = (double*)malloc(sizeof(double)*l1count*9);
-   int *alll1cands_job_sorted = (int*)malloc(sizeof(int)*l1count);
+   XLAL_CHECK( (sorted_index = (size_t*)XLALMalloc(sizeof(size_t)*l1count)) != NULL, XLAL_ENOMEM );
+   double *alll1cands_sorted = NULL;
+   XLAL_CHECK( (alll1cands_sorted = (double*)XLALMalloc(sizeof(double)*l1count*9)) != NULL, XLAL_ENOMEM );
+   int *alll1cands_job_sorted = NULL;
+   XLAL_CHECK( (alll1cands_job_sorted = (int*)XLALMalloc(sizeof(int)*l1count)) != NULL, XLAL_ENOMEM );
    gsl_sort_index(sorted_index, alll1cands, 9, l1count);
    for (ii=0; ii<l1count; ii++) {
       memcpy(&(alll1cands_sorted[ii*9]), &(alll1cands[sorted_index[ii]*9]), sizeof(double)*9);
       alll1cands_job_sorted[ii] = alll1cands_job[sorted_index[ii]];
    }
-   free(alll1cands);
-   free(sorted_index);
-   free(alll1cands_job);
+   XLALFree(alll1cands);
+   XLALFree(sorted_index);
+   XLALFree(alll1cands_job);
 
    //Close the streams
    fclose(H1CANDS);
    fclose(L1CANDS);
 
    //Open a file to save the output data
-   FILE *CANDS = fopen(outfile1,"w");
-   if (CANDS == NULL) {
-      fprintf(stderr, "%s: cannot open %s\n", __func__, outfile1);
-      exit(1);
-   }
+   FILE *CANDS = NULL;
+   XLAL_CHECK( (CANDS = fopen(outfile1,"w")) != NULL, XLAL_EIO, "Can't fopen %s", outfile1 );
 
    //Setup and allocate the solver
    int status;
@@ -132,7 +134,8 @@ int main(void) {
    gsl_function F;
    F.function = &fdiff;
    const gsl_root_fsolver_type *T = gsl_root_fsolver_brent;
-   gsl_root_fsolver *s = gsl_root_fsolver_alloc(T);
+   gsl_root_fsolver *s = NULL;
+   XLAL_CHECK( (s = gsl_root_fsolver_alloc(T)) != NULL, XLAL_EFUNC );
 
    double tobs = 40551300.0;
    double fdiff_allowed = 1.0/1800.0;
@@ -146,12 +149,14 @@ int main(void) {
          int iter = 0;
          struct solver_params params = {allh1cands_sorted[ii*9], alll1cands_sorted};
          F.params = &params;
-         gsl_root_fsolver_set (s, &F, x_lo, x_hi);
+         XLAL_CHECK( gsl_root_fsolver_set(s, &F, x_lo, x_hi) == GSL_SUCCESS, XLAL_EFUNC );
          do {
             iter++;
             status = gsl_root_fsolver_iterate(s);
+            XLAL_CHECK( status == GSL_SUCCESS, XLAL_EFUNC );
             foundIndex = gsl_root_fsolver_root(s);
             status = gsl_root_test_residual(fdiff(foundIndex, &params), 1.05*fdiff_allowed);
+            XLAL_CHECK( status == GSL_SUCCESS || status == GSL_CONTINUE, XLAL_EFUNC );
          } while (status == GSL_CONTINUE && iter < max_iter);
 
          //If the search was successful, then we step through the L1 candidates to find matching candidates
@@ -271,22 +276,17 @@ int main(void) {
    CANDS = NULL;
 
    gsl_root_fsolver_free(s);
-   free(allh1cands_sorted);
-   free(alll1cands_sorted);
-   free(allh1cands_job_sorted);
-   free(alll1cands_job_sorted);
+   XLALFree(allh1cands_sorted);
+   XLALFree(alll1cands_sorted);
+   XLALFree(allh1cands_job_sorted);
+   XLALFree(alll1cands_job_sorted);
 
 
 
    /// PART TWO: ///
 
    //open list for reading
-   //FILE *CANDS = fopen("/Users/evgoet/Documents/MATLAB/pulsar/S6/50-252HzCandidates.dat","r");
-   CANDS = fopen(outfile1,"r");
-   if (CANDS == NULL) {
-      fprintf(stderr, "%s: %s does not exist\n", __func__, outfile1);
-      exit(1);
-   }
+   XLAL_CHECK( (CANDS = fopen(outfile1,"r")) != NULL, XLAL_EIO, "Couldn't fopen %s\n", outfile1 );
 
    //Determines number of candidates in the file
    //int count = 0, ch, ii, jj;
@@ -296,8 +296,10 @@ int main(void) {
       if (ch == '\n') count++;
    } while (ch != EOF);
 
-   double *allcands = (double*)malloc(sizeof(double)*count*18);
-   int *allcands_job = (int*)malloc(sizeof(int)*count*2);
+   double *allcands = NULL;
+   XLAL_CHECK( (allcands = (double*)XLALMalloc(sizeof(double)*count*18)) != NULL, XLAL_ENOMEM );
+   int *allcands_job = NULL;
+   XLAL_CHECK( (allcands_job = (int*)XLALMalloc(sizeof(int)*count*2)) != NULL, XLAL_ENOMEM );
 
    //Reset the pointer in the stream
    rewind(CANDS);
@@ -309,13 +311,11 @@ int main(void) {
 
    //Close the stream
    fclose(CANDS);
+   CANDS = NULL;
 
    //Open a file to save the output data
-   FILE *NEWCANDS = fopen(outfile2,"w");
-   if (NEWCANDS == NULL) {
-      fprintf(stderr, "%s: cannot open %s\n", __func__, outfile2);
-      exit(1);
-   }
+   FILE *NEWCANDS = NULL;
+   XLAL_CHECK( (NEWCANDS = fopen(outfile2,"w")) != NULL, XLAL_EIO, "Couldn't fopen %s\n", outfile2 );
 
    for (ii=0; ii<count; ii++) {
       if (allcands[ii*18]!=0.0) {
@@ -341,17 +341,13 @@ int main(void) {
    fclose(NEWCANDS);
    NEWCANDS = NULL;
 
-   free(allcands);
-   free(allcands_job);
+   XLALFree(allcands);
+   XLALFree(allcands_job);
 
    /// PART THREE: ///
 
    //open list for reading
-   CANDS = fopen(outfile2,"r");
-   if (CANDS == NULL) {
-      fprintf(stderr, "%s: %s does not exist\n", __func__, outfile2);
-      exit(1);
-   }
+   XLAL_CHECK( (CANDS = fopen(outfile2,"r")) != NULL, XLAL_EIO, "Couldn't fopen %s\n", outfile2 );
 
    //Determines number of candidates in the file
    count = 0;
@@ -360,8 +356,8 @@ int main(void) {
       if (ch == '\n') count++;
    } while (ch != EOF);
 
-   allcands = (double*)malloc(sizeof(double)*count*18);
-   allcands_job = (int*)malloc(sizeof(int)*count*2);
+   XLAL_CHECK( (allcands = (double*)XLALMalloc(sizeof(double)*count*18)) != NULL, XLAL_ENOMEM );
+   XLAL_CHECK( (allcands_job = (int*)XLALMalloc(sizeof(int)*count*2)) != NULL, XLAL_ENOMEM );
 
    //Reset the pointer in the stream
    rewind(CANDS);
@@ -373,13 +369,10 @@ int main(void) {
 
    //Close the stream
    fclose(CANDS);
+   CANDS = NULL;
 
    //Open a file to save the output data
-   NEWCANDS = fopen(outfile3,"w");
-   if (NEWCANDS == NULL) {
-      fprintf(stderr, "%s: cannot open %s\n", __func__, outfile3);
-      exit(1);
-   }
+   XLAL_CHECK( (NEWCANDS = fopen(outfile3,"w")) != NULL, XLAL_EIO, "Couldn't fopen %s\n", outfile3 );
 
    for (ii=0; ii<count; ii++) {
       if (allcands[ii*18]!=0.0) {
@@ -404,8 +397,8 @@ int main(void) {
 
    fclose(NEWCANDS);
 
-   free(allcands);
-   free(allcands_job);
+   XLALFree(allcands);
+   XLALFree(allcands_job);
 
    return 0;
 }

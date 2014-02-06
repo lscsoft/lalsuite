@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2011 Evan Goetz
+ *  Copyright (C) 2011, 2014 Evan Goetz
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -34,21 +34,13 @@ UpperLimitVector * new_UpperLimitVector(UINT4 length)
    
    INT4 ii;
    
-   UpperLimitVector *vector = XLALMalloc(sizeof(*vector));
-   if (vector==NULL) {
-      fprintf(stderr,"%s: XLALMalloc(%zu) failed.\n", __func__, sizeof(*vector));
-      XLAL_ERROR_NULL(XLAL_ENOMEM);
-   }
+   UpperLimitVector *vector = NULL;
+   XLAL_CHECK_NULL( (vector = XLALMalloc(sizeof(*vector))) != NULL, XLAL_ENOMEM );
    
    vector->length = length;
    if (length==0) vector->data = NULL;
    else {
-      vector->data = XLALMalloc( length*sizeof(*vector->data) );
-      if (vector->data==NULL) {
-         XLALFree((UpperLimitVector*)vector);
-         fprintf(stderr,"%s: XLALMalloc(%zu) failed.\n", __func__, length*sizeof(*vector->data));
-         XLAL_ERROR_NULL(XLAL_ENOMEM);
-      }
+      XLAL_CHECK_NULL( (vector->data = XLALMalloc( length*sizeof(*vector->data) )) != NULL, XLAL_ENOMEM );
       for (ii=0; ii<(INT4)length; ii++) reset_UpperLimitStruct(&(vector->data[ii]));
    }
    
@@ -71,12 +63,7 @@ UpperLimitVector * resize_UpperLimitVector(UpperLimitVector *vector, UINT4 lengt
    UINT4 oldlength = vector->length;
    INT4 ii;
    
-   vector->data = XLALRealloc(vector->data, length*sizeof(*vector->data));
-   if (vector->data==NULL) {
-      vector->length = 0;
-      fprintf(stderr,"%s: XLALRealloc(%zu) failed.\n", __func__, length*sizeof(*vector->data));
-      XLAL_ERROR_NULL(XLAL_ENOMEM);
-   }
+   XLAL_CHECK_NULL( (vector->data = XLALRealloc(vector->data, length*sizeof(*vector->data))) != NULL, XLAL_ENOMEM );
    vector->length = length;
    for (ii=(INT4)oldlength; ii<(INT4)length; ii++) reset_UpperLimitStruct(&(vector->data[ii]));
    
@@ -143,7 +130,7 @@ void free_UpperLimitStruct(UpperLimit *ul)
 
 
 //Determine the 95% confidence level upper limit at a particular sky location from the loudest IHS value
-void skypoint95UL(UpperLimit *ul, inputParamsStruct *params, ffdataStruct *ffdata, ihsMaximaStruct *ihsmaxima, ihsfarStruct *ihsfar, REAL4Vector *fbinavgs)
+INT4 skypoint95UL(UpperLimit *ul, inputParamsStruct *params, ffdataStruct *ffdata, ihsMaximaStruct *ihsmaxima, ihsfarStruct *ihsfar, REAL4Vector *fbinavgs)
 {
    
    INT4 ii, jj, kk, ULdetermined = 0;
@@ -151,31 +138,16 @@ void skypoint95UL(UpperLimit *ul, inputParamsStruct *params, ffdataStruct *ffdat
    INT4 minrows = (INT4)round(2.0*params->dfmin*params->Tcoh)+1;
    
    //Allocate vectors
-   ul->fsig = XLALCreateREAL8Vector((ihsmaxima->rows-minrows)+1);
-   ul->period = XLALCreateREAL8Vector((ihsmaxima->rows-minrows)+1);
-   ul->moddepth = XLALCreateREAL8Vector((ihsmaxima->rows-minrows)+1);
-   ul->ULval = XLALCreateREAL8Vector((ihsmaxima->rows-minrows)+1);
-   ul->effSNRval = XLALCreateREAL8Vector((ihsmaxima->rows-minrows)+1);
-   if (ul->fsig==NULL) {
-      fprintf(stderr, "%s: XLALCreateREAL8Vector(%d) failed.\n", __func__, (ihsmaxima->rows-minrows)+1);
-      XLAL_ERROR_VOID(XLAL_EFUNC);
-   } else if (ul->period==NULL) {
-      fprintf(stderr, "%s: XLALCreateREAL8Vector(%d) failed.\n", __func__, (ihsmaxima->rows-minrows)+1);
-      XLAL_ERROR_VOID(XLAL_EFUNC);
-   } else if (ul->moddepth==NULL) {
-      fprintf(stderr, "%s: XLALCreateREAL8Vector(%d) failed.\n", __func__, (ihsmaxima->rows-minrows)+1);
-      XLAL_ERROR_VOID(XLAL_EFUNC);
-   } else if (ul->ULval==NULL) {
-      fprintf(stderr, "%s: XLALCreateREAL8Vector(%d) failed.\n", __func__, (ihsmaxima->rows-minrows)+1);
-      XLAL_ERROR_VOID(XLAL_EFUNC);
-   } else if (ul->effSNRval==NULL) {
-      fprintf(stderr, "%s: XLALCreateREAL8Vector(%d) failed.\n", __func__, (ihsmaxima->rows-minrows)+1);
-      XLAL_ERROR_VOID(XLAL_EFUNC);
-   }
+   XLAL_CHECK( (ul->fsig = XLALCreateREAL8Vector((ihsmaxima->rows-minrows)+1)) != NULL, XLAL_EFUNC );
+   XLAL_CHECK( (ul->period = XLALCreateREAL8Vector((ihsmaxima->rows-minrows)+1)) != NULL, XLAL_EFUNC );
+   XLAL_CHECK( (ul->moddepth = XLALCreateREAL8Vector((ihsmaxima->rows-minrows)+1)) != NULL, XLAL_EFUNC );
+   XLAL_CHECK( (ul->ULval = XLALCreateREAL8Vector((ihsmaxima->rows-minrows)+1)) != NULL, XLAL_EFUNC );
+   XLAL_CHECK( (ul->effSNRval = XLALCreateREAL8Vector((ihsmaxima->rows-minrows)+1)) != NULL, XLAL_EFUNC );
    
    //Initialize solver
    const gsl_root_fsolver_type *T = gsl_root_fsolver_brent;
-   gsl_root_fsolver *s = gsl_root_fsolver_alloc (T);
+   gsl_root_fsolver *s = NULL;
+   XLAL_CHECK( (s = gsl_root_fsolver_alloc (T)) != NULL, XLAL_EFUNC );
    gsl_function F;
    switch (params->ULsolver) {
       case 1:
@@ -238,19 +210,14 @@ void skypoint95UL(UpperLimit *ul, inputParamsStruct *params, ffdataStruct *ffdat
          //We do a root finding algorithm to find the delta value required so that only 5% of a non-central chi-square
          //distribution lies below the maximum value.
          REAL8 initialguess = ncx2inv_float(0.95, 2.0*loudestoutliernoise, 2.0*loudestoutlierminusnoise);
-         if (XLAL_IS_REAL8_FAIL_NAN(initialguess)) {
-            fprintf(stderr, "%s: ncx2inv(%f,%f,%f) failed.\n", __func__, 0.95, 2.0*loudestoutliernoise, 2.0*loudestoutlierminusnoise);
-            XLAL_ERROR_VOID(XLAL_EFUNC);
-         }
+         XLAL_CHECK( xlalErrno == 0, XLAL_EFUNC );
+
          REAL8 lo = 0.001*initialguess, hi = 10.0*initialguess;
          pars.val = 2.0*loudestoutlier;
          pars.dof = 2.0*loudestoutliernoise;
          pars.ULpercent = 0.95;
          F.params = &pars;
-         if (gsl_root_fsolver_set(s, &F, lo, hi) != 0) {
-            fprintf(stderr,"%s: gsl_root_fsolver_set() failed.\n", __func__);
-            XLAL_ERROR_VOID(XLAL_EFUNC);
-         }
+         XLAL_CHECK( gsl_root_fsolver_set(s, &F, lo, hi) == GSL_SUCCESS, XLAL_EFUNC );
          
          INT4 status = GSL_CONTINUE;
          INT4 max_iter = 100;
@@ -259,45 +226,17 @@ void skypoint95UL(UpperLimit *ul, inputParamsStruct *params, ffdataStruct *ffdat
          while (status==GSL_CONTINUE && jj<max_iter) {
             jj++;
             status = gsl_root_fsolver_iterate(s);
-            if (status!=GSL_CONTINUE && status!=GSL_SUCCESS) {
-               fprintf(stderr,"%s: gsl_root_fsolver_iterate() failed with code %d.\n", __func__, status);
-               XLAL_ERROR_VOID(XLAL_EFUNC);
-            }
+            XLAL_CHECK( status == GSL_CONTINUE || status == GSL_SUCCESS, XLAL_EFUNC, "gsl_root_fsolver_iterate() failed with code %d\n", status );
             root = gsl_root_fsolver_root(s);
-            if (xlalErrno!=0) {
-               fprintf(stderr,"%s: gsl_root_fsolver_root() failed.\n", __func__);
-               XLAL_ERROR_VOID(XLAL_EFUNC);
-            }
             lo = gsl_root_fsolver_x_lower(s);
-            if (xlalErrno!=0) {
-               fprintf(stderr,"%s: gsl_root_fsolver_x_lower() failed.\n", __func__);
-               XLAL_ERROR_VOID(XLAL_EFUNC);
-            }
             hi = gsl_root_fsolver_x_upper(s);
-            if (xlalErrno!=0) {
-               fprintf(stderr,"%s: gsl_root_fsolver_x_upper() failed.\n", __func__);
-               XLAL_ERROR_VOID(XLAL_EFUNC);
-            }
             status = gsl_root_test_interval(lo, hi, 0.0, 0.001);
-            if (status!=GSL_CONTINUE && status!=GSL_SUCCESS) {
-               fprintf(stderr,"%s: gsl_root_test_interval() failed with code %d.\n", __func__, status);
-               XLAL_ERROR_VOID(XLAL_EFUNC);
-            }
+            XLAL_CHECK( status == GSL_CONTINUE || status == GSL_SUCCESS, XLAL_EFUNC, "gsl_root_test_interval() failed with code %d\n", status );
          } /* while status==GSL_CONTINUE and jj<max_iter */
-         if (status != GSL_SUCCESS) {
-            fprintf(stderr, "%s: Root finding iteration (%d/%d) failed with code %d. Current root = %f\n", __func__, jj, max_iter, status, root);
-            XLAL_ERROR_VOID(XLAL_FAILURE);
-         } else if (jj==max_iter) {
-            fprintf(stderr, "%s: Root finding failed to converge after %d iterations", __func__, jj);
-            XLAL_ERROR_VOID(XLAL_FAILURE);
-         }
+         XLAL_CHECK( status == GSL_SUCCESS, XLAL_EFUNC, "Root finding iteration (%d/%d) failed with code %d\n", jj, max_iter, status );
          
          //Convert the root value to an h0 value
          REAL8 h0 = ihs2h0(root, params);
-         if (XLAL_IS_REAL8_FAIL_NAN(h0)) {
-            fprintf(stderr, "%s: ihs2h0() failed.\n", __func__);
-            XLAL_ERROR_VOID(XLAL_EFUNC);
-         }
          
          //Store values in the upper limit struct
          ul->fsig->data[ii-minrows] = params->fmin - params->dfmax + (0.5*(ii-1.0) + jjbinofloudestoutlier - 6.0)/params->Tcoh;
@@ -306,16 +245,15 @@ void skypoint95UL(UpperLimit *ul, inputParamsStruct *params, ffdataStruct *ffdat
          ul->ULval->data[ii-minrows] = h0;
          ul->effSNRval->data[ii-minrows] = unitGaussianSNR(root, pars.dof);
          ULdetermined++;
-      } /* for ii=minrows --> maximum rows */
-   }
+      } // if locationofloudestoutlier != -1
+   } // for ii=minrows --> maximum rows
    
    //Signal an error if we didn't find something above the noise level
-   if (ULdetermined==0) {
-      fprintf(stderr, "%s: Failed to reach a louder outlier minus noise greater than 0\n", __func__);
-      XLAL_ERROR_VOID(XLAL_EFUNC);
-   }
+   XLAL_CHECK( ULdetermined != 0, XLAL_EFUNC, "Failed to reach a louder outlier minus noise greater than 0\n" );
    
    gsl_root_fsolver_free(s);
+
+   return 0;
    
 }
 
@@ -327,10 +265,7 @@ REAL8 gsl_ncx2cdf_solver(REAL8 x, void *p)
    
    struct ncx2cdf_solver_params *params = (struct ncx2cdf_solver_params*)p;
    REAL8 val = ncx2cdf(params->val, params->dof, x);
-   if (XLAL_IS_REAL8_FAIL_NAN(val)) {
-      fprintf(stderr, "%s: ncx2cdf(%f, %f, %f) failed.\n", __func__, params->val, params->dof, x);
-      XLAL_ERROR_REAL8(XLAL_EFUNC);
-   }
+   XLAL_CHECK_REAL8( xlalErrno == 0, XLAL_EFUNC );
    return val - (1.0-params->ULpercent);
    
 }
@@ -342,10 +277,7 @@ REAL8 gsl_ncx2cdf_float_solver(REAL8 x, void *p)
    
    struct ncx2cdf_solver_params *params = (struct ncx2cdf_solver_params*)p;
    REAL4 val = ncx2cdf_float((REAL4)params->val, (REAL4)params->dof, (REAL4)x);
-   if (XLAL_IS_REAL4_FAIL_NAN(val)) {
-      fprintf(stderr, "%s: ncx2cdf_float(%f, %f, %f) failed.\n", __func__, params->val, params->dof, x);
-      XLAL_ERROR_REAL8(XLAL_EFUNC);
-   }
+   XLAL_CHECK_REAL8( xlalErrno == 0, XLAL_EFUNC );
    return (REAL8)val - (1.0-params->ULpercent);
    
 }
@@ -357,11 +289,8 @@ REAL8 gsl_ncx2cdf_withouttinyprob_solver(REAL8 x, void *p)
    
    struct ncx2cdf_solver_params *params = (struct ncx2cdf_solver_params*)p;
    REAL8 val = ncx2cdf_withouttinyprob(params->val, params->dof, x);
-   if (XLAL_IS_REAL8_FAIL_NAN(val)) {
-      fprintf(stderr, "%s: ncx2cdf_withouttinyprob(%f, %f, %f) failed.\n", __func__, params->val, params->dof, x);
-      XLAL_ERROR_REAL8(XLAL_EFUNC);
-   }
-   else return val - (1.0-params->ULpercent);
+   XLAL_CHECK_REAL8( xlalErrno == 0, XLAL_EFUNC );
+   return val - (1.0-params->ULpercent);
    
 }
 
@@ -372,11 +301,8 @@ REAL8 gsl_ncx2cdf_float_withouttinyprob_solver(REAL8 x, void *p)
    
    struct ncx2cdf_solver_params *params = (struct ncx2cdf_solver_params*)p;
    REAL4 val = ncx2cdf_float_withouttinyprob((REAL4)params->val, (REAL4)params->dof, (REAL4)x);
-   if (XLAL_IS_REAL4_FAIL_NAN(val)) {
-      fprintf(stderr, "%s: ncx2cdf_float_withouttinyprob(%f, %f, %f) failed.\n", __func__, params->val, params->dof, x);
-      XLAL_ERROR_REAL8(XLAL_EFUNC);
-   }
-   else return (REAL8)val - (1.0-params->ULpercent);
+   XLAL_CHECK_REAL8( xlalErrno == 0, XLAL_EFUNC );
+   return (REAL8)val - (1.0-params->ULpercent);
    
 }
 
@@ -387,11 +313,8 @@ REAL8 ncx2cdf_withouttinyprob_withmatlabchi2cdf_solver(REAL8 x, void *p)
    
    struct ncx2cdf_solver_params *params = (struct ncx2cdf_solver_params*)p;
    REAL8 val = ncx2cdf_withouttinyprob_withmatlabchi2cdf(params->val, params->dof, x);
-   if (XLAL_IS_REAL8_FAIL_NAN(val)) {
-      fprintf(stderr, "%s: ncx2cdf_withouttinyprob_withmatlabchi2cdf(%f, %f, %f) failed.\n", __func__, params->val, params->dof, x);
-      XLAL_ERROR_REAL8(XLAL_EFUNC);
-   }
-   else return val - (1.0-params->ULpercent);
+   XLAL_CHECK_REAL8( xlalErrno == 0, XLAL_EFUNC );
+   return val - (1.0-params->ULpercent);
    
 }
 
@@ -402,24 +325,24 @@ REAL8 ncx2cdf_float_withouttinyprob_withmatlabchi2cdf_solver(REAL8 x, void *p)
    
    struct ncx2cdf_solver_params *params = (struct ncx2cdf_solver_params*)p;
    REAL4 val = ncx2cdf_float_withouttinyprob_withmatlabchi2cdf((REAL4)params->val, (REAL4)params->dof, (REAL4)x);
-   if (XLAL_IS_REAL4_FAIL_NAN(val)) {
-      fprintf(stderr, "%s: ncx2cdf_float_withouttinyprob_withmatlabchi2cdf(%f, %f, %f) failed.\n", __func__, params->val, params->dof, x);
-      XLAL_ERROR_REAL8(XLAL_EFUNC);
-   }
-   else return (REAL8)val - (1.0-params->ULpercent);
+   XLAL_CHECK_REAL8( xlalErrno == 0, XLAL_EFUNC );
+   return (REAL8)val - (1.0-params->ULpercent);
    
 }
 
 
 //Output the highest upper limit to a file unless printAllULvalues==1 in which case, all UL values are printed to a file
-void outputUpperLimitToFile(FILE *outputfile, UpperLimit ul, INT4 printAllULvalues)
+INT4 outputUpperLimitToFile(CHAR *outputfile, UpperLimit ul, INT4 printAllULvalues)
 {
-   
+
+   FILE *ULFILE = NULL;
+   XLAL_CHECK( (ULFILE = fopen(outputfile, "a")) != NULL, XLAL_EIO, "Couldn't fopen file %s to output upper limits\n", outputfile );
+
    INT4 ii;
    REAL8 highesth0 = 0.0, snr = 0.0, fsig = 0.0, period = 0.0, moddepth = 0.0;
    for (ii=0; ii<(INT4)ul.moddepth->length; ii++) {
       if (printAllULvalues==1) {
-         fprintf(outputfile, "%.6f %.6f %.6g %.6f %.6f %.6f %.6f %.6g\n", ul.alpha, ul.delta, ul.ULval->data[ii], ul.effSNRval->data[ii], ul.fsig->data[ii], ul.period->data[ii], ul.moddepth->data[ii], ul.normalization);
+         fprintf(ULFILE, "%.6f %.6f %.6g %.6f %.6f %.6f %.6f %.6g\n", ul.alpha, ul.delta, ul.ULval->data[ii], ul.effSNRval->data[ii], ul.fsig->data[ii], ul.period->data[ii], ul.moddepth->data[ii], ul.normalization);
       } else if (printAllULvalues==0 && ul.ULval->data[ii]>highesth0) {
          highesth0 = ul.ULval->data[ii];
          snr = ul.effSNRval->data[ii];
@@ -429,8 +352,12 @@ void outputUpperLimitToFile(FILE *outputfile, UpperLimit ul, INT4 printAllULvalu
       }
    }
    if (printAllULvalues==0) {
-      fprintf(outputfile, "%.6f %.6f %.6g %.6f %.6f %.6f %.6f %.6g\n", ul.alpha, ul.delta, highesth0, snr, fsig, period, moddepth, ul.normalization);
+      fprintf(ULFILE, "%.6f %.6f %.6g %.6f %.6f %.6f %.6f %.6g\n", ul.alpha, ul.delta, highesth0, snr, fsig, period, moddepth, ul.normalization);
    }
+
+   fclose(ULFILE);
+
+   return 0;
    
 }
 
