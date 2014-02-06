@@ -204,12 +204,25 @@ main(int argc, char *argv[])
     MultiAMCoeffs *multiAM;
     XLAL_CHECK ( ( multiAM = XLALComputeMultiAMCoeffs ( config.multiDetStates, config.multiNoiseWeights, skypos ) ) != NULL, XLAL_EFUNC, "XLALComputeAMCoeffs() failed." );
 
+    /* for multi-IFO run with weights, do it again, without weights, to get single-IFO quantities consistent with single-IFO runs
+     * FIXME: remove this temporary hack when MultiAmCoeffs have been changed to include non-weighted single-IFO quantities
+     */
+    MultiAMCoeffs *multiAMforSingle = NULL;
+    MultiAMCoeffs *multiAMunweighted = NULL;
+    if ( ( config.numDetectors > 1 ) && ( config.multiNoiseWeights != NULL ) ) {
+      XLAL_CHECK ( ( multiAMunweighted = XLALComputeMultiAMCoeffs ( config.multiDetStates, NULL, skypos ) ) != NULL, XLAL_EFUNC, "XLALComputeAMCoeffs() failed." );
+      multiAMforSingle = multiAMunweighted;
+    }
+    else {
+      multiAMforSingle = multiAM;
+    }
+
     /* write out the data for this sky point */
     if ( uvar.outab ) { // output a(t), b(t) at each timestamp
       for (UINT4 t = 0; t < config.numTimeStamps; t++) { // FIXME: does not work for different multi-IFO numTimeStampsX
          fprintf (fpOutab, "%.7f  %.7f  %d", config.Alpha->data[n], config.Delta->data[n], config.multiTimestamps->data[0]->data[t].gpsSeconds );
          for ( UINT4 X=0; X < config.numDetectors; X++ ) {
-           fprintf(fpOutab, " %12.8f %12.8f", multiAM->data[X]->a->data[t], multiAM->data[X]->b->data[t]);
+           fprintf(fpOutab, " %12.8f %12.8f", multiAMforSingle->data[X]->a->data[t], multiAMforSingle->data[X]->b->data[t]);
          } // for ( UINT4 X=0; X < config.numDetectors; X++ )
          fprintf(fpOutab, "\n");
        } // for (UINT4 t = 0; t < config.numTimeStamps; t++)
@@ -224,9 +237,9 @@ main(int argc, char *argv[])
       fprintf (fpOutABCD, "%.7f  %.7f %12.8f %12.8f %12.8f %12.8f", config.Alpha->data[n], config.Delta->data[n], A, B, C, D );
       if ( config.numDetectors > 1 ) {
         for ( UINT4 X=0; X < config.numDetectors; X++ ) {
-          REAL4 AX = multiAM->data[X]->A/config.numTimeStampsX->data[X];
-          REAL4 BX = multiAM->data[X]->B/config.numTimeStampsX->data[X];
-          REAL4 CX = multiAM->data[X]->C/config.numTimeStampsX->data[X];
+          REAL4 AX = multiAMforSingle->data[X]->A/config.numTimeStampsX->data[X];
+          REAL4 BX = multiAMforSingle->data[X]->B/config.numTimeStampsX->data[X];
+          REAL4 CX = multiAMforSingle->data[X]->C/config.numTimeStampsX->data[X];
           REAL4 DX = AX*BX-SQ(CX);
           fprintf(fpOutABCD, " %12.8f %12.8f %12.8f %12.8f", AX, BX, CX, DX);
         }
@@ -235,6 +248,9 @@ main(int argc, char *argv[])
     } // if ( uvar.outABCD )
 
     XLALDestroyMultiAMCoeffs ( multiAM );
+    if ( multiAMunweighted ) {
+      XLALDestroyMultiAMCoeffs ( multiAMunweighted );
+    }
 
   } // for (UINT4 n = 0; n < config.numSkyPoints; n++)
 

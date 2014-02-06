@@ -479,15 +479,6 @@ A_L1=$(awk -v col=11 "$awk_print_wo_headers" $outCAP)
 B_L1=$(awk -v col=12 "$awk_print_wo_headers" $outCAP)
 C_L1=$(awk -v col=13 "$awk_print_wo_headers" $outCAP)
 D_L1=$(awk -v col=14 "$awk_print_wo_headers" $outCAP)
-## multiply with SinvTsft, as single-IFO runs (as for PFS) do not actually include noise-weighting
-ASinvT_H1=$(echo $A_H1 $Sinv $Tsft | awk '{printf "%.4e", $1*$2*$3}')
-BSinvT_H1=$(echo $B_H1 $Sinv $Tsft | awk '{printf "%.4e", $1*$2*$3}')
-CSinvT_H1=$(echo $C_H1 $Sinv $Tsft | awk '{printf "%.4e", $1*$2*$3}')
-DSinvT_H1=$(echo $D_H1 $Sinv $Tsft | awk '{printf "%.4e", $1*($2*$3)**2}')
-ASinvT_L1=$(echo $A_L1 $Sinv $Tsft | awk '{printf "%.4e", $1*$2*$3}')
-BSinvT_L1=$(echo $B_L1 $Sinv $Tsft | awk '{printf "%.4e", $1*$2*$3}')
-CSinvT_L1=$(echo $C_L1 $Sinv $Tsft | awk '{printf "%.4e", $1*$2*$3}')
-DSinvT_L1=$(echo $D_L1 $Sinv $Tsft | awk '{printf "%.4e", $1*($2*$3)**2}')
 
 mfd_cmdline="${mfd_code} --randSeed=1 --IFO=H1 --outSingleSFT --outSFTbname=$sftfile_H1 --fmin=59.95 --Band=0.1 --timestampsFile=$timestampsfile_H1 --noiseSqrtSh=$SqrtShH"
 echo $mfd_cmdline;
@@ -507,19 +498,14 @@ A_H1_pfs=$(grep 'A =' ${outPFS} | tr -d 'A =;')
 B_H1_pfs=$(grep 'B =' ${outPFS} | tr -d 'B =;')
 C_H1_pfs=$(grep 'C =' ${outPFS} | tr -d 'C =;')
 D_H1_pfs=$(grep 'D =' ${outPFS} | tr -d 'D =;')
-## here, no internal noise-weighting, so have to multiply with single-IFO S only
-ASinvT_H1_pfs=$(echo $A_H1_pfs $SqrtShH $Tsft | awk '{printf "%.4e", $1*$3/$2**2}')
-BSinvT_H1_pfs=$(echo $B_H1_pfs $SqrtShH $Tsft | awk '{printf "%.4e", $1*$3/$2**2}')
-CSinvT_H1_pfs=$(echo $C_H1_pfs $SqrtShH $Tsft | awk '{printf "%.4e", $1*$3/$2**2}')
-DSinvT_H1_pfs=$(echo $D_H1_pfs $SqrtShH $Tsft | awk '{printf "%.4e", $1*($3/$2**2)**2}')
 
-reldev_A_H1=$(echo $ASinvT_H1 $ASinvT_H1_pfs | awk "$awk_reldev")
+reldev_A_H1=$(echo $A_H1 $A_H1_pfs | awk "$awk_reldev")
 fail_A_H1=$(echo $reldev_A_H1 $tolerance_pfs | awk "$awk_isgtr")
-reldev_B_H1=$(echo $BSinvT_H1 $BSinvT_H1_pfs | awk "$awk_reldev")
+reldev_B_H1=$(echo $B_H1 $B_H1_pfs | awk "$awk_reldev")
 fail_B_H1=$(echo $reldev_B_H1 $tolerance_pfs | awk "$awk_isgtr")
-reldev_C_H1=$(echo $CSinvT_H1 $CSinvT_H1_pfs | awk "$awk_reldev")
+reldev_C_H1=$(echo $C_H1 $C_H1_pfs | awk "$awk_reldev")
 fail_C_H1=$(echo $reldev_C_H1 $tolerance_pfs | awk "$awk_isgtr")
-reldev_D_H1=$(echo $DSinvT_H1 $DSinvT_H1_pfs | awk "$awk_reldev")
+reldev_D_H1=$(echo $D_H1 $D_H1_pfs | awk "$awk_reldev")
 fail_D_H1=$(echo $reldev_D_H1 $tolerance_pfs | awk "$awk_isgtr")
 
 mfd_cmdline="${mfd_code} --randSeed=2 --IFO=L1 --outSingleSFT --outSFTbname=$sftfile_L1 --fmin=59.95 --Band=0.1 --timestampsFile=$timestampsfile_L1 --noiseSqrtSh=$SqrtShL"
@@ -540,19 +526,14 @@ A_L1_pfs=$(grep 'A =' ${outPFS} | tr -d 'A =;')
 B_L1_pfs=$(grep 'B =' ${outPFS} | tr -d 'B =;')
 C_L1_pfs=$(grep 'C =' ${outPFS} | tr -d 'C =;')
 D_L1_pfs=$(grep 'D =' ${outPFS} | tr -d 'D =;')
-## here, no internal noise-weighting, so have to multiply with single-IFO S only
-ASinvT_L1_pfs=$(echo $A_L1_pfs $SqrtShL $Tsft | awk '{printf "%.4e", $1*$3/$2**2}')
-BSinvT_L1_pfs=$(echo $B_L1_pfs $SqrtShL $Tsft | awk '{printf "%.4e", $1*$3/$2**2}')
-CSinvT_L1_pfs=$(echo $C_L1_pfs $SqrtShL $Tsft | awk '{printf "%.4e", $1*$3/$2**2}')
-DSinvT_L1_pfs=$(echo $D_L1_pfs $SqrtShL $Tsft | awk '{printf "%.4e", $1*($3/$2**2)**2}')
 
-reldev_A_L1=$(echo $ASinvT_L1 $ASinvT_L1_pfs | awk "$awk_reldev")
+reldev_A_L1=$(echo $A_L1 $A_L1_pfs | awk "$awk_reldev")
 fail_A_L1=$(echo $reldev_A_L1 $tolerance_pfs | awk "$awk_isgtr")
-reldev_B_L1=$(echo $BSinvT_L1 $BSinvT_L1_pfs | awk "$awk_reldev")
+reldev_B_L1=$(echo $B_L1 $B_L1_pfs | awk "$awk_reldev")
 fail_B_L1=$(echo $reldev_B_L1 $tolerance_pfs | awk "$awk_isgtr")
-reldev_C_L1=$(echo $CSinvT_L1 $CSinvT_L1_pfs | awk "$awk_reldev")
+reldev_C_L1=$(echo $C_L1 $C_L1_pfs | awk "$awk_reldev")
 fail_C_L1=$(echo $reldev_C_L1 $tolerance_pfs | awk "$awk_isgtr")
-reldev_D_L1=$(echo $DSinvT_L1 $DSinvT_L1_pfs | awk "$awk_reldev")
+reldev_D_L1=$(echo $D_L1 $D_L1_pfs | awk "$awk_reldev")
 fail_D_L1=$(echo $reldev_D_L1 $tolerance_pfs | awk "$awk_isgtr")
 
 pfs_cmdline="${pfs_code} --h0=1e-24 --cosi=0 --psi=0 --phi0=0 --Freq=60 --Alpha=$alpha --Delta=$delta --DataFiles=$sftfile_base* --outputFstat=$outPFS --printFstat=0"
@@ -576,10 +557,10 @@ fail_C_H1L1=$(echo $reldev_C_H1L1 $tolerance_pfs | awk "$awk_isgtr")
 reldev_D_H1L1=$(echo $D_H1L1 $D_H1L1_pfs | awk "$awk_reldev")
 fail_D_H1L1=$(echo $reldev_D_H1L1 $tolerance_pfs | awk "$awk_isgtr")
 
-echo "==> H1 CAP:   A=$ASinvT_H1, B=$BSinvT_H1, C=$CSinvT_H1, D=$DSinvT_H1"
-echo "    H1 PFS:   A=$ASinvT_H1_pfs, B=$BSinvT_H1_pfs, C=$CSinvT_H1_pfs, D=$DSinvT_H1_pfs"
-echo "    L1 CAP:   A=$ASinvT_L1, B=$BSinvT_L1, C=$CSinvT_L1, D=$DSinvT_L1"
-echo "    L1 PFS:   A=$ASinvT_L1_pfs, B=$BSinvT_L1_pfs, C=$CSinvT_L1_pfs, D=$DSinvT_L1_pfs"
+echo "==> H1 CAP:   A=$A_H1, B=$B_H1, C=$C_H1, D=$D_H1"
+echo "    H1 PFS:   A=$A_H1_pfs, B=$B_H1_pfs, C=$C_H1_pfs, D=$D_H1_pfs"
+echo "    L1 CAP:   A=$A_L1, B=$B_L1, C=$C_L1, D=$D_L1"
+echo "    L1 PFS:   A=$A_L1_pfs, B=$B_L1_pfs, C=$C_L1_pfs, D=$D_L1_pfs"
 echo "    H1L1 CAP: A=$A_H1L1, B=$B_H1L1, C=$C_H1L1, D=$D_H1L1"
 echo "    H1L1 PFS: A=$A_H1L1_pfs,   B=$B_H1L1_pfs,   C=$C_H1L1_pfs,   D=$D_H1L1_pfs"
 
