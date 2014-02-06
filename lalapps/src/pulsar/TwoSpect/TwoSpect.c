@@ -87,8 +87,8 @@ int main(int argc, char *argv[])
    //Create directory
    INT4 dirstatus = mkdir(args_info.outdirectory_arg, 0777);
    XLAL_CHECK( dirstatus == 0 || (dirstatus == -1 && errno == EEXIST), XLAL_EIO, "Couldn't create directory %s\n", args_info.outdirectory_arg ) ;
-   XLAL_CHECK( snprintf(s, 1000, "%s/%s", args_info.outdirectory_arg, args_info.outfilename_arg) ==  (UINT4)strlen(args_info.outdirectory_arg)+(UINT4)strlen(args_info.outfilename_arg)+1, XLAL_EFUNC );
-   XLAL_CHECK( snprintf(t, 1000, "%s/%s", args_info.outdirectory_arg, args_info.ULfilename_arg) == (UINT4)strlen(args_info.outdirectory_arg)+(UINT4)strlen(args_info.ULfilename_arg)+1, XLAL_EFUNC );
+   snprintf(s, 1000, "%s/%s", args_info.outdirectory_arg, args_info.outfilename_arg);
+   snprintf(t, 1000, "%s/%s", args_info.outdirectory_arg, args_info.ULfilename_arg);
    
    //Save args_info
    char v[1000];
