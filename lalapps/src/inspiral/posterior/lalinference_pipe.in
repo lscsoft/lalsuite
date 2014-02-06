@@ -1,7 +1,7 @@
 #!/usr/bin/env @PYTHONPROG@
 
 # DAG generation code for running LALInference pipeline
-# (C) 2012 John Veitch
+# (C) 2012 John Veitch, Vivien Raymond
 
 from lalapps import lalinference_pipe_utils as pipe_utils
 import ConfigParser
@@ -14,6 +14,7 @@ the config.ini file.
 
 The user must specify either an injection file to analyse, with the --inj option,
 a list of SnglInspiralTable or CoincInspiralTable triggers with the --<x>-triggers options,
+a GraceDB ID with the --gid option,
 or an ASCII list of GPS times with the --gps-time-file option.
 
 The user must also specify and ini file which will contain the main analysis config.
