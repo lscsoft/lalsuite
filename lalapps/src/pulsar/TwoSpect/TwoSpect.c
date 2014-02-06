@@ -93,7 +93,7 @@ int main(int argc, char *argv[])
    //Save args_info
    char v[1000];
    FILE *INPUTVALS = NULL;
-   XLAL_CHECK( snprintf(v, 1000, "%s/%s", args_info.outdirectory_arg, args_info.configCopy_arg) == (UINT4)strlen(args_info.outdirectory_arg)+(UINT4)strlen(args_info.configCopy_arg)+1, XLAL_EFUNC );
+   snprintf(v, 1000, "%s/%s", args_info.outdirectory_arg, args_info.configCopy_arg);
    XLAL_CHECK( (INPUTVALS = fopen(v, "w")) != NULL, XLAL_EIO, "Failed to fopen %s for writing input parameter values\n", v);
    XLAL_CHECK( cmdline_parser_dump(INPUTVALS, &args_info) == XLAL_SUCCESS, XLAL_EFUNC );
    fclose(INPUTVALS);
@@ -368,7 +368,7 @@ int main(int argc, char *argv[])
    //Print SFT times, if requested by user
    if (args_info.printSFTtimes_given) {
       char w[1000];
-      XLAL_CHECK( snprintf(w, 1000, "%s/%s", args_info.outdirectory_arg, "inputSFTtimes.dat") == (UINT4)strlen(args_info.outdirectory_arg)+(UINT4)strlen("inputSFTtimes.dat")+1, XLAL_EFUNC );
+      snprintf(w, 1000, "%s/%s", args_info.outdirectory_arg, "inputSFTtimes.dat");
       FILE *INSFTTIMES = NULL;
       XLAL_CHECK( (INSFTTIMES = fopen(w, "w")) != NULL, XLAL_EIO, "Couldn't fopen %s for writing input SFT start times", w );
       INT4 sftlength = tfdata->length/ffdata->numffts;
@@ -391,7 +391,7 @@ int main(int argc, char *argv[])
    //Print out used sft times if requested
    if (args_info.printUsedSFTtimes_given) {
       char w[1000];
-      XLAL_CHECK( snprintf(w, 1000, "%s/%s", args_info.outdirectory_arg, "usedSFTtimes.dat") == (UINT4)strlen(args_info.outdirectory_arg)+(UINT4)strlen("usedSFTtimes.dat")+1, XLAL_EFUNC );
+      snprintf(w, 1000, "%s/%s", args_info.outdirectory_arg, "usedSFTtimes.dat");
       FILE *USEDSFTTIMES = NULL;
       XLAL_CHECK( (USEDSFTTIMES = fopen(w, "w")) != NULL, XLAL_EIO, "Couldn't fopen %s for writing used SFT start times", w );
       INT4 sftlength = tfdata->length/ffdata->numffts;
@@ -447,7 +447,7 @@ int main(int argc, char *argv[])
    
    //If necessary, open the NORMRMSOUT file
    if (args_info.normRMSoutput_given) {
-      XLAL_CHECK( snprintf(u, 1000, "%s/%s", args_info.outdirectory_arg, args_info.normRMSoutput_arg) == (UINT4)strlen( args_info.outdirectory_arg)+(UINT4)strlen(args_info.normRMSoutput_arg)+1, XLAL_EFUNC );
+      snprintf(u, 1000, "%s/%s", args_info.outdirectory_arg, args_info.normRMSoutput_arg);
       XLAL_CHECK( (NORMRMSOUT = fopen(u,"w")) != NULL, XLAL_EIO, "Couldn't open %s for writing normalized RMS data file\n", u );
    }
    
@@ -491,7 +491,7 @@ int main(int argc, char *argv[])
    //Print out data product if requested
    if (args_info.printData_given) {
       char w[1000];
-      XLAL_CHECK( snprintf(w, 1000, "%s/%s", args_info.outdirectory_arg, "tfdata.dat") == (UINT4)strlen(args_info.outdirectory_arg)+(UINT4)strlen("tfdata.dat")+1, XLAL_EFUNC );
+      snprintf(w, 1000, "%s/%s", args_info.outdirectory_arg, "tfdata.dat");
       FILE *USABLETFDATA = NULL;
       XLAL_CHECK( (USABLETFDATA = fopen(w, "w")) != NULL, XLAL_EIO, "Couldn't fopen %s for writing usable TF data", w );
       for (ii=0; ii<(INT4)usableTFdata->length; ii++) fprintf(USABLETFDATA, "%g\n", usableTFdata->data[ii]);
@@ -581,7 +581,7 @@ int main(int argc, char *argv[])
       //Print out data product if requested
       if (args_info.printData_given) {
          char w[1000];
-         XLAL_CHECK( snprintf(w, 1000, "%s/%s", args_info.outdirectory_arg, "tfbackground.dat") == (UINT4)strlen(args_info.outdirectory_arg)+(UINT4)strlen("tfbackground.dat")+1, XLAL_EFUNC );
+         snprintf(w, 1000, "%s/%s", args_info.outdirectory_arg, "tfbackground.dat");
          FILE *TFBACKGROUND = NULL;
          XLAL_CHECK( (TFBACKGROUND = fopen(w, "w")) != NULL, XLAL_EIO, "Couldn't fopen %s for writing TF background", w );
          for (ii=0; ii<(INT4)background_slided->length; ii++) fprintf(TFBACKGROUND, "%g\n", background_slided->data[ii]);
@@ -604,7 +604,7 @@ int main(int argc, char *argv[])
       XLAL_CHECK( ffPlaneNoise(aveNoise, inputParams, sftexist, background_slided, antweights, secondFFTplan, &(ffdata->ffnormalization)) == XLAL_SUCCESS, XLAL_EFUNC );
       if (args_info.printData_given) {
          char w[1000];
-         XLAL_CHECK( snprintf(w, 1000, "%s/%s", args_info.outdirectory_arg, "ffbackground.dat") == (UINT4)strlen(args_info.outdirectory_arg)+(UINT4)strlen("ffbackground.dat")+1, XLAL_EFUNC );
+         snprintf(w, 1000, "%s/%s", args_info.outdirectory_arg, "ffbackground.dat");
          FILE *FFBACKGROUND = NULL;
          XLAL_CHECK( (FFBACKGROUND = fopen(w, "w")) != NULL, XLAL_EIO, "Couldn't fopen %s for writing TF background", w );
          for (ii=0; ii<(INT4)aveNoise->length; ii++) fprintf(FFBACKGROUND, "%g\n", aveNoise->data[ii]);
@@ -616,7 +616,7 @@ int main(int argc, char *argv[])
       XLAL_CHECK( (TFdata_weighted = XLALCreateREAL4Vector(ffdata->numffts*ffdata->numfbins)) != NULL, XLAL_EFUNC );
       if (args_info.printUninitialized_given && args_info.printUninitialized_arg==skycounter) {
          char w[1000];
-         XLAL_CHECK( snprintf(w, 1000, "%s/%s", args_info.outdirectory_arg, "uninitData_TFdata_weighted.dat") == (UINT4)strlen(args_info.outdirectory_arg)+(UINT4)strlen("uninitData_TFdata_weighted.dat")+1, XLAL_EFUNC );
+         snprintf(w, 1000, "%s/%s", args_info.outdirectory_arg, "uninitData_TFdata_weighted.dat");
          FILE *UNINITVALS = NULL;
          XLAL_CHECK( (UNINITVALS = fopen(w, "w")) != NULL, XLAL_EIO, "Couldn't fopen %s for writing uninitialized values", w );
          for (ii=0; ii<(INT4)TFdata_weighted->length; ii++) fprintf(UNINITVALS, "%g\n", TFdata_weighted->data[ii]);
@@ -629,7 +629,7 @@ int main(int argc, char *argv[])
       //Print out data product if requested
       if (args_info.printData_given) {
          char w[1000];
-         XLAL_CHECK( snprintf(w, 1000, "%s/%s", args_info.outdirectory_arg, "procTFdata.dat") == (UINT4)strlen(args_info.outdirectory_arg)+(UINT4)strlen("procTFdata.dat")+1, XLAL_EFUNC );
+         snprintf(w, 1000, "%s/%s", args_info.outdirectory_arg, "procTFdata.dat");
          FILE *PROCTFDATA = NULL;
          XLAL_CHECK( (PROCTFDATA = fopen(w, "w")) != NULL, XLAL_EIO, "Couldn't fopen %s for writing processed TF data", w );
          for (ii=0; ii<(INT4)TFdata_weighted->length; ii++) fprintf(PROCTFDATA, "%g\n", TFdata_weighted->data[ii]);
@@ -644,7 +644,7 @@ int main(int argc, char *argv[])
       XLAL_CHECK( (TSofPowers = XLALCreateREAL4Vector(ffdata->numffts)) != NULL, XLAL_EFUNC );
       if (args_info.printUninitialized_given && args_info.printUninitialized_arg==skycounter) {
          char w[1000];
-         XLAL_CHECK( snprintf(w, 1000, "%s/%s", args_info.outdirectory_arg, "uninitData_TSofPowers.dat") == (UINT4)strlen(args_info.outdirectory_arg)+(UINT4)strlen("uninitData_TSofPowers.dat")+1, XLAL_EFUNC );
+         snprintf(w, 1000, "%s/%s", args_info.outdirectory_arg, "uninitData_TSofPowers.dat");
          FILE *UNINITVALS = NULL;
          XLAL_CHECK( (UNINITVALS = fopen(w, "w")) != NULL, XLAL_EIO, "Couldn't fopen %s for writing uninitialized data", w );
          for (ii=0; ii<(INT4)TSofPowers->length; ii++) fprintf(UNINITVALS, "%g\n", TSofPowers->data[ii]);
@@ -690,7 +690,7 @@ int main(int argc, char *argv[])
       //Print out data product if requested
       if (args_info.printData_given) {
          char w[1000];
-         XLAL_CHECK( snprintf(w, 1000, "%s/%s", args_info.outdirectory_arg, "ffdata.dat") == (UINT4)strlen( args_info.outdirectory_arg)+(UINT4)strlen("ffdata.dat")+1, XLAL_EFUNC );
+         snprintf(w, 1000, "%s/%s", args_info.outdirectory_arg, "ffdata.dat");
          FILE *FFDATA = NULL;
          XLAL_CHECK( (FFDATA = fopen(w, "w")) != NULL, XLAL_EIO, "Couldn't fopen %s for writing FF data", w );
          for (ii=0; ii<(INT4)ffdata->ffdata->length; ii++) fprintf(FFDATA, "%g\n", ffdata->ffdata->data[ii]);
