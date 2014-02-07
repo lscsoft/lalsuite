@@ -756,10 +756,15 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
     node.set_seed(randomseed)
     for ifo in ifos:
       prenode[ifo].set_seed(randomseed)
+    srate=0
     if event.srate:
-      node.set_srate(event.srate)
+      srate=event.srate
+    if self.config.has_option('lalinference','srate'):
+      srate=ast.literal_eval(self.config.get('lalinference','srate'))
+    if srate is not 0:
+      node.set_srate(srate)
       for ifo in ifos:
-        prenode[ifo].set_srate(event.srate)
+        prenode[ifo].set_srate(srate)
     if event.trigSNR:
       node.set_trigSNR(event.trigSNR)
     if self.dataseed:
