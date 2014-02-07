@@ -554,7 +554,7 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
       gid=self.config.get('input','gid')
       flow=40.0
       if self.config.has_option('lalinference','flow'):
-        flow=min(ast.literal_eval(self.config.get('lalinference','flow')))
+        flow=min(ast.literal_eval(self.config.get('lalinference','flow')).values())
       events = readLValert(gid=gid,flow=flow,gracedb=self.config.get('condor','gracedb'))
     # pipedown-database
     else: gid=None
@@ -783,15 +783,32 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
     if self.config.has_option('lalinference','fake-cache'):
       node.cachefiles=ast.literal_eval(self.config.get('lalinference','fake-cache'))
       node.channels=ast.literal_eval(self.config.get('data','channels'))
-      if len(ifos)==0: node.ifos=node.cachefiles.keys()
-      else: node.ifos=ifos
+      for ifo in ifos:
+        prenode[ifo].cachefiles[ifo]=node.cachefiles[ifo]
+        prenode[ifo].channels[ifo]=node.channels[ifo]
+      if len(ifos)==0:
+        node.ifos=node.cachefiles.keys()
+        for ifo in node.ifos:
+          prenode[ifo].ifos[ifo]=node.ifos[ifo]
+      else:
+          node.ifos=ifos
+          for ifo in node.ifos:
+            prenode[ifo].ifos[ifo]=node.ifos[ifo]
       node.timeslides=dict([ (ifo,0) for ifo in node.ifos])
       gotdata=1
     if self.config.has_option('lalinference','psd-xmlfile'):
       psdpath=os.path.realpath(self.config.get('lalinference','psd-xmlfile'))
-      node.psds=get_xml_psds(psdpath,ifos,os.path.join(self.basepath,'PSDs'),end_time=end_time) 
-      if len(ifos)==0: node.ifos=node.cachefiles.keys()
-      else: node.ifos=ifos
+      node.psds=get_xml_psds(psdpath,ifos,os.path.join(self.basepath,'PSDs'),end_time=end_time)
+      for ifo in ifos:
+        prenode[ifo].psds=get_xml_psds(psdpath,ifos,os.path.join(self.basepath,'PSDs'),end_time=end_time)
+      if len(ifos)==0:
+        node.ifos=node.cachefiles.keys()
+        for ifo in node.ifos:
+          prenode[ifo].ifos[ifo]=node.ifos[ifo]
+      else:
+        node.ifos=ifos
+        for ifo in node.ifos:
+          prenode[ifo].ifos[ifo]=node.ifos[ifo]
       gotdata=1
     if self.config.has_option('input','gid'):
       if os.path.isfile(os.path.join(self.basepath,'psd.xml.gz')):
@@ -802,7 +819,7 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
     if self.config.has_option('lalinference','flow'):
       node.flows=ast.literal_eval(self.config.get('lalinference','flow'))
       for ifo in ifos:
-        prenode[ifo].flows=node.flows[ifo]
+        prenode[ifo].flows[ifo]=node.flows[ifo]
     if event.fhigh:
       for ifo in ifos:
         node.fhighs[ifo]=str(event.fhigh)
