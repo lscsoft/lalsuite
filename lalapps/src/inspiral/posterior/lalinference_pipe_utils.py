@@ -849,10 +849,14 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
           ifo_index=str(dfnode.get_observatory())+'1'
           self.add_node(prenode[ifo_index])
           self.add_node(romweightsnode[ifo_index])
-          prenode[ifo_index].add_output_file(os.path.join(self.basepath,ifo_index+'-freqDataWithInjection.dat'))
+          if self.config.has_option('input','injection-file'):
+            freqDataFile=os.path.join(self.basepath,ifo_index+'-freqDataWithInjection.dat')
+          else:
+            freqDataFile=os.path.join(self.basepath,ifo_index+'-freqData.dat')
+          prenode[ifo_index].add_output_file(freqDataFile)
           prenode[ifo_index].add_output_file(os.path.join(self.basepath,ifo_index+'-PDS.dat'))
-          romweightsnode[ifo_index].add_var_arg('-d '+os.path.join(self.basepath,ifo_index+'-freqDataWithInjection.dat'))
-          romweightsnode[ifo_index].add_input_file(os.path.join(self.basepath,ifo_index+'-freqDataWithInjection.dat'))
+          romweightsnode[ifo_index].add_var_arg('-d '+freqDataFile)
+          romweightsnode[ifo_index].add_input_file(freqDataFile)
           romweightsnode[ifo_index].add_var_arg('-p '+os.path.join(self.basepath,ifo_index+'-PSD.dat'))
           romweightsnode[ifo_index].add_input_file(os.path.join(self.basepath,ifo_index+'-PSD.dat'))
     if gotdata:
