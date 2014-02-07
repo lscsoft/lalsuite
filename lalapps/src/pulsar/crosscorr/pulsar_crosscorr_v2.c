@@ -310,7 +310,7 @@ int main(int argc, char *argv[]){
   maxBinaryTemplate.argp = 0.0;
   maxBinaryTemplate.asini = uvar.orbitAsiniSec+ uvar.orbitAsiniSecBand;
   maxBinaryTemplate.ecc = 0.0;
-  maxBinaryTemplate.period = uvar.orbitPSec; 
+  maxBinaryTemplate.period = uvar.orbitPSec;
   /*fill in thisBinaryTemplate*/
   XLALGPSSetREAL8( &maxBinaryTemplate.tp, uvar.orbitTimeAsc);
   thisBinaryTemplate.argp = 0.0;
@@ -325,7 +325,6 @@ int main(int argc, char *argv[]){
     LogPrintf ( LOG_CRITICAL, "%s: XLALFindLMXBCrossCorrDiagMetric() failed with errno=%d\n", __func__, xlalErrno );
     XLAL_ERROR( XLAL_EFUNC );
   }
- 
 
   /* initialize the doppler scan struct which stores the current template information */
   XLALGPSSetREAL8(&dopplerpos.refTime, uvar.refTime);
@@ -343,7 +342,7 @@ int main(int argc, char *argv[]){
   thisBinaryTemplate.ecc = 0.0;
   thisBinaryTemplate.argp = 0.0;
   dopplerpos.orbit = &thisBinaryTemplate;
-  
+
   /* spacing in frequency from diagff */
   dopplerpos.dFreq = uvar.mismatchF/sqrt(diagff);
   /* set spacings in new dopplerparams struct */
@@ -366,26 +365,26 @@ int main(int argc, char *argv[]){
     XLAL_ERROR( XLAL_EFUNC );
   }
 
-      UINT8 numSFTs = sftIndices->length;
-      if ((shiftedFreqs = XLALCreateREAL8Vector ( numSFTs ) ) == NULL){
-	LogPrintf ( LOG_CRITICAL, "%s: XLALCreateREAL8Vector() failed with errno=%d\n", __func__, xlalErrno );
-	XLAL_ERROR( XLAL_EFUNC );
-      }
-      if ((lowestBins = XLALCreateUINT4Vector ( numSFTs ) ) == NULL){
-	LogPrintf ( LOG_CRITICAL, "%s: XLALCreateUINT4Vector() failed with errno=%d\n", __func__, xlalErrno );
-	XLAL_ERROR( XLAL_EFUNC );
-      }
-      if ((kappaValues = XLALCreateREAL8Vector ( numSFTs ) ) == NULL){
-	LogPrintf ( LOG_CRITICAL, "%s: XLALCreateREAL8Vector() failed with errno=%d\n", __func__, xlalErrno );
-	XLAL_ERROR( XLAL_EFUNC );
-      }
-      if ((signalPhases = XLALCreateREAL8Vector ( numSFTs ) ) == NULL){
-	LogPrintf ( LOG_CRITICAL, "%s: XLALCreateREAL8Vector() failed with errno=%d\n", __func__, xlalErrno );
-	XLAL_ERROR( XLAL_EFUNC );
-      }
+  UINT8 numSFTs = sftIndices->length;
+  if ((shiftedFreqs = XLALCreateREAL8Vector ( numSFTs ) ) == NULL){
+    LogPrintf ( LOG_CRITICAL, "%s: XLALCreateREAL8Vector() failed with errno=%d\n", __func__, xlalErrno );
+    XLAL_ERROR( XLAL_EFUNC );
+  }
+  if ((lowestBins = XLALCreateUINT4Vector ( numSFTs ) ) == NULL){
+    LogPrintf ( LOG_CRITICAL, "%s: XLALCreateUINT4Vector() failed with errno=%d\n", __func__, xlalErrno );
+    XLAL_ERROR( XLAL_EFUNC );
+  }
+  if ((kappaValues = XLALCreateREAL8Vector ( numSFTs ) ) == NULL){
+    LogPrintf ( LOG_CRITICAL, "%s: XLALCreateREAL8Vector() failed with errno=%d\n", __func__, xlalErrno );
+    XLAL_ERROR( XLAL_EFUNC );
+  }
+  if ((signalPhases = XLALCreateREAL8Vector ( numSFTs ) ) == NULL){
+    LogPrintf ( LOG_CRITICAL, "%s: XLALCreateREAL8Vector() failed with errno=%d\n", __func__, xlalErrno );
+    XLAL_ERROR( XLAL_EFUNC );
+  }
 
   /* args should be : spacings, min and max doppler params */
-      while ( (GetNextCrossCorrTemplate( &dopplerpos, &binaryTemplateSpacings, &minBinaryTemplate, &maxBinaryTemplate, uvar.fStart + uvar.fBand) == 0) )
+  while ( (GetNextCrossCorrTemplate( &dopplerpos, &binaryTemplateSpacings, &minBinaryTemplate, &maxBinaryTemplate, uvar.fStart + uvar.fBand) == 0) )
     {
       /* do useful stuff here*/
 
@@ -596,17 +595,17 @@ int GetNextCrossCorrTemplate( PulsarDopplerParams *dopplerpos, BinaryOrbitParams
 
   if (new_tp <= tp_hi)                            /*loop over T at first*/
     {
-      new_tp = XLALGPSGetREAL8(XLALGPSAddGPS(&(dopplerpos->orbit->tp), &(binaryTemplateSpacings->tp)));	     
+      new_tp = XLALGPSGetREAL8(XLALGPSAddGPS(&(dopplerpos->orbit->tp), &(binaryTemplateSpacings->tp)));
       XLALGPSSetREAL8(&(dopplerpos->orbit->tp),new_tp);
       return 0;
-    }    
+    }
   else
     {
       if (new_asini <= maxBinaryTemplate->asini)  /*after looping all T, initialize T and loop over a_p*/
 	{
 	  new_asini = dopplerpos->orbit->asini + binaryTemplateSpacings->asini;
 	  dopplerpos->orbit->asini = new_asini;
-	  new_tp = XLALGPSGetREAL8(&(minBinaryTemplate->tp));	     
+	  new_tp = XLALGPSGetREAL8(&(minBinaryTemplate->tp));
 	  XLALGPSSetREAL8(&(dopplerpos->orbit->tp),new_tp);
 	  return 0;
 	}
@@ -616,7 +615,7 @@ int GetNextCrossCorrTemplate( PulsarDopplerParams *dopplerpos, BinaryOrbitParams
 	    {
 	      new_freq = dopplerpos->fkdot[0] + dopplerpos->dFreq;
 	      dopplerpos->fkdot[0] = new_freq;
-	      new_tp = XLALGPSGetREAL8(&(minBinaryTemplate->tp));	     
+	      new_tp = XLALGPSGetREAL8(&(minBinaryTemplate->tp));
 	      XLALGPSSetREAL8(&(dopplerpos->orbit->tp),new_tp);
 	      new_asini = minBinaryTemplate->asini;
 	      dopplerpos->orbit->asini= new_asini;
@@ -625,7 +624,7 @@ int GetNextCrossCorrTemplate( PulsarDopplerParams *dopplerpos, BinaryOrbitParams
 	  else
 	    {
 	      return 1;
-	    }	      
+	    }
 	}
     }
 }
