@@ -824,6 +824,10 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
       for ifo in ifos:
         node.fhighs[ifo]=str(event.fhigh)
         prenode[ifo].fhighs[ifo]=str(event.fhigh)
+    if self.config.has_option('lalinference','fhigh'):
+      node.fhighs=ast.literal_eval(self.config.get('lalinference','fhigh'))
+      for ifo in ifos:
+        prenode[ifo].fhighs[ifo]=node.fhighs[ifo]
     for ifo in ifos:
       prenode[ifo].set_max_psdlength(self.config.getint('input','max-psd-length'))
       prenode[ifo].set_padding(self.config.getint('input','padding'))
