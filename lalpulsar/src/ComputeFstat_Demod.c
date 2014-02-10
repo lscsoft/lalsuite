@@ -1718,7 +1718,7 @@ ComputeFstat_Demod(
     Fcomponents Fcomp;
     {
       LALStatus status = empty_status;
-      if ( (demod->params.Dterms != DTERMS) || (whatToCompute & FSTATQ_ATOMS_PER_DET) ) {
+      if ( (demod->params.Dterms != DTERMS) || (whatToCompute & FSTATQ_ATOMS_PER_DET) || (thisPoint.asini > 0) ) {
         ComputeFStat(&status, &Fcomp, &thisPoint, demod->multiSFTs, common->multiWeights, demod->multiDetStates, &demod->params, &demod->buffer);
         if (status.statusCode) {
           XLAL_ERROR(XLAL_EFAILED, "ComputeFStat() failed: %s (statusCode=%i)", status.statusDescription, status.statusCode);

@@ -56,7 +56,7 @@
 #define INIT_MEM(x) memset(&(x), 0, sizeof((x)))
 
 // ----- global variables
-static REAL8 p,q,r;          /* binary time delay coefficients (need to be global so that the LAL root finding procedure can see them) */
+static REAL8 A,B;          /* binary time delay coefficients (need to be global so that the LAL root finding procedure can see them) */
 
 // local types
 typedef struct
@@ -77,7 +77,7 @@ typedef struct tagBinaryOrbitParams {
 /* ----- internal prototypes ---------- */
 static void LALGetBinarytimes (LALStatus *, SSBtimes *tBinary, const SSBtimes *tSSB, const DetectorStateSeries *DetectorStates, const BinaryOrbitParams *binaryparams, LIGOTimeGPS refTime);
 static void LALGetMultiBinarytimes (LALStatus *, MultiSSBtimes **multiBinary, const MultiSSBtimes *multiSSB, const MultiDetectorStateSeries *multiDetStates, const BinaryOrbitParams *binaryparams, LIGOTimeGPS refTime);
-static void EccentricAnomoly(LALStatus *status, REAL8 *tr, REAL8 lE, void *tr0);
+static void EccentricAnomoly(LALStatus *status, REAL8 *tr, REAL8 lE, void *x0);
 
 int XLALCompareSSBtimes ( REAL8 *err_DeltaT, REAL8 *err_Tdot, const SSBtimes *t1, const SSBtimes *t2 );
 int XLALCompareMultiSSBtimes ( REAL8 *err_DeltaT, REAL8 *err_Tdot, const MultiSSBtimes *m1, const MultiSSBtimes *m2 );
@@ -94,7 +94,9 @@ main ( int argc, char *argv[] )
   INIT_MEM ( status );
   INIT_MEM ( uvar_s );
 
-  uvar->randSeed = 1;
+  struct tms buf;
+  uvar->randSeed = times(&buf);
+
   // ---------- register all our user-variable ----------
   XLALregBOOLUserStruct (  help,                'h', UVAR_HELP    , "Print this help/usage message");
   XLALregINTUserStruct (   randSeed,             's', UVAR_OPTIONAL, "Specify random-number seed for reproducible noise.");
@@ -370,9 +372,10 @@ LALGetBinarytimes (LALStatus *status,				/**< pointer to LALStatus structure */
   refTimeREAL8 = GPS2REAL8(refTime);
 
   /* compute p, q and r coeeficients */
-  p = (LAL_TWOPI/Porb)*cosw*asini*sqrt(1.0-e*e);
-  q = (LAL_TWOPI/Porb)*sinw*asini;
-  r = (LAL_TWOPI/Porb)*sinw*asini*ome;
+  A  = (LAL_TWOPI/Porb)*cosw*asini*sqrt(1.0-e*e) - e;
+  B  = (LAL_TWOPI/Porb)*sinw*asini;
+  REAL8 tp = GPS2REAL8(binaryparams->tp);
+  REAL8 Tp = tp  + asini*sinw*ome;
 
   /* Calculate the required accuracy for the root finding procedure in the main loop */
   acc = LAL_TWOPI*(REAL8)EA_ACC/Porb;   /* EA_ACC is defined above and represents the required timing precision in seconds (roughly) */
@@ -386,10 +389,9 @@ LALGetBinarytimes (LALStatus *status,				/**< pointer to LALStatus structure */
 
       /* define fractional orbit in SSB frame since periapsis (enforce result 0->1) */
       /* the result of fmod uses the dividend sign hence the second procedure */
-      {
-	REAL8 temp = fmod((tSSB_now - GPS2REAL8(binaryparams->tp)),Porb)/(REAL8)Porb;
-	fracorb = temp - (REAL8)floor(temp);
-      }
+      REAL8 temp = fmod((tSSB_now - Tp),Porb)/(REAL8)Porb;
+      fracorb = temp - (REAL8)floor(temp);
+      REAL8 x0 = fracorb * LAL_TWOPI;
 
       /* compute eccentric anomaly using a root finding procedure */
       input.function = EccentricAnomoly;     /* This is the name of the function we must solve to find E */
@@ -398,16 +400,16 @@ LALGetBinarytimes (LALStatus *status,				/**< pointer to LALStatus structure */
       input.xacc = acc;                      /* The accuracy of the root finding procedure */
 
       /* expand domain until a root is bracketed */
-      LALDBracketRoot(status->statusPtr,&input,&fracorb);
+      LALDBracketRoot(status->statusPtr,&input,&x0);
 
       /* bisect domain to find eccentric anomoly E corresponding to the SSB time of the midpoint of this SFT */
-      LALDBisectionFindRoot(status->statusPtr,&E,&input,&fracorb);
+      LALDBisectionFindRoot(status->statusPtr,&E,&input,&x0);
 
       /* use our value of E to compute the additional binary time delay */
       tBinary->DeltaT->data[i] = tSSB->DeltaT->data[i] - ( asini*sinw*(cos(E)-e) + asini*cosw*sqrt(1.0-e*e)*sin(E) );
 
       /* combine with Tdot (dtSSB_by_dtdet) -> dtbin_by_dtdet */
-      tBinary->Tdot->data[i] = tSSB->Tdot->data[i] * ( (1.0 - e*cos(E))/(1.0 + p*cos(E) - q*sin(E)) );
+      tBinary->Tdot->data[i] = tSSB->Tdot->data[i] * ( (1.0 - e*cos(E))/(1.0 + A*cos(E) - B*sin(E)) );
 
     } /* for i < numSteps */
 
@@ -424,14 +426,14 @@ LALGetBinarytimes (LALStatus *status,				/**< pointer to LALStatus structure */
 static void EccentricAnomoly(LALStatus *status,
 			     REAL8 *tr,
 			     REAL8 lE,
-			     void *tr0
+			     void *x0
 			     )
 {
   INITSTATUS(status);
-  ASSERT(tr0,status, 1, "Null pointer");
+  ASSERT(x0,status, 1, "Null pointer");
 
   /* this is the function relating the observed time since periapse in the SSB to the true eccentric anomoly E */
-  *tr = *(REAL8 *)tr0*(-1.0) + (lE + (p*sin(lE)) + q*(cos(lE) - 1.0) + r)/(REAL8)LAL_TWOPI;
+  (*tr) = - (*(REAL8 *)x0) + (lE + A*sin(lE) + B*(cos(lE) - 1.0));
 
   RETURN(status);
 }
