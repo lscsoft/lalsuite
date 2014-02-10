@@ -67,13 +67,13 @@ lalapps_synthesizeLVStats_SOURCES = synthesizeLVStats.c \
 lalapps_CFSv3_SOURCES = CFSv3.c
 
 
-EXTRA_DIST = testCFSv2.sh testGridv2.sh Fstats.ref1 Fstats.ref2 testPredictFStat.sh testCFSv2_resamp.sh
+EXTRA_DIST = testCFSv2.sh testGridv2.sh Fstats.ref1 Fstats.ref2 testPredictFStat.sh testCFSv2_resamp.sh testCFSv2_binary.sh
 
 
 TESTS = testPredictFStat.sh
 
 if !CONDOR_ENABLED
-TESTS += testCFSv2.sh testCFSv2_resamp.sh testGridv2.sh
+TESTS += testCFSv2.sh testCFSv2_resamp.sh testGridv2.sh testCFSv2_binary.sh
 endif
 
 
