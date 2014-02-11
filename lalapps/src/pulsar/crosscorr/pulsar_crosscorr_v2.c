@@ -89,7 +89,7 @@ UserInput_t empty_UserInput;
 int XLALInitUserVars ( UserInput_t *uvar );
 int XLALInitializeConfigVars (ConfigVariables *config, const UserInput_t *uvar);
 int XLALDestroyConfigVars (ConfigVariables *config);
-int GetNextCrossCorrTemplate(BOOLEAN *binaryParamsFlag, PulsarDopplerParams *dopplerpos, BinaryOrbitParams *binaryTemplateSpacings, BinaryOrbitParams *minBinaryTemplate, BinaryOrbitParams *maxBinaryTemplate, REAL8 h0, REAL8 freq_hi);
+int GetNextCrossCorrTemplate(BOOLEAN *binaryParamsFlag, PulsarDopplerParams *dopplerpos, REAL8 dFreq, BinaryOrbitParams *binaryTemplateSpacings, BinaryOrbitParams *minBinaryTemplate, BinaryOrbitParams *maxBinaryTemplate, REAL8 h0, REAL8 freq_hi);
 
 
 int main(int argc, char *argv[]){
@@ -345,7 +345,7 @@ int main(int argc, char *argv[]){
   dopplerpos.orbit = &thisBinaryTemplate;
 
   /* spacing in frequency from diagff */
-  dopplerpos.dFreq = uvar.mismatchF/sqrt(diagff);
+  REAL8 dFreq = uvar.mismatchF/sqrt(diagff);
   /* set spacings in new dopplerparams struct */
   binaryTemplateSpacings.asini = uvar.mismatchA/sqrt(diagaa);
   binaryTemplateSpacings.period = uvar.mismatchP/sqrt(diagpp);
@@ -385,7 +385,7 @@ int main(int argc, char *argv[]){
   }
 
   /* args should be : spacings, min and max doppler params */
-  while ( (GetNextCrossCorrTemplate(&dopplerShiftFlag, &dopplerpos, &binaryTemplateSpacings, &minBinaryTemplate, &maxBinaryTemplate, uvar.fStart, uvar.fStart + uvar.fBand) == 0) )
+  while ( (GetNextCrossCorrTemplate(&dopplerShiftFlag, &dopplerpos, dFreq, &binaryTemplateSpacings, &minBinaryTemplate, &maxBinaryTemplate, uvar.fStart, uvar.fStart + uvar.fBand) == 0) )
     {
       /* do useful stuff here*/
 
@@ -577,7 +577,7 @@ int XLALDestroyConfigVars (ConfigVariables *config)
 /** FIXME: spacings and min, max values of binary parameters are not used yet */
 
 
-int GetNextCrossCorrTemplate(BOOLEAN *binaryParamsFlag, PulsarDopplerParams *dopplerpos, BinaryOrbitParams *binaryTemplateSpacings, BinaryOrbitParams *minBinaryTemplate, BinaryOrbitParams *maxBinaryTemplate, REAL8 f0, REAL8 freq_hi)
+int GetNextCrossCorrTemplate(BOOLEAN *binaryParamsFlag, PulsarDopplerParams *dopplerpos, REAL8 dFreq, BinaryOrbitParams *binaryTemplateSpacings, BinaryOrbitParams *minBinaryTemplate, BinaryOrbitParams *maxBinaryTemplate, REAL8 f0, REAL8 freq_hi)
 {
 
   REAL8 new_freq = dopplerpos->fkdot[0];
@@ -599,7 +599,7 @@ int GetNextCrossCorrTemplate(BOOLEAN *binaryParamsFlag, PulsarDopplerParams *dop
 
   if (new_freq <= freq_hi)                            /*loop over f at first*/
     {	      
-      new_freq = dopplerpos->fkdot[0] + dopplerpos->dFreq;
+      new_freq = dopplerpos->fkdot[0] + dFreq;
       dopplerpos->fkdot[0] = new_freq;
       *binaryParamsFlag = FALSE;
       return 0;
