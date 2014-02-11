@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2011, 2012 Evan Goetz
+ *  Copyright (C) 2011, 2012, 2014 Evan Goetz
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -133,11 +133,7 @@ REAL4Vector * sseSSVectorSum(REAL4Vector *output, REAL4Vector *input1, REAL4Vect
       vec1aligned = 1;
       arr1 = (__m128*)(void*)input1->data;
    } else {
-      allocinput1 = (REAL4*)XLALMalloc(4*roundedvectorlength*sizeof(REAL4) + 15);
-      if (allocinput1==NULL) {
-         fprintf(stderr, "%s: XLALMalloc(%zu) failed.\n", __func__, 4*roundedvectorlength*sizeof(REAL4) + 15);
-         XLAL_ERROR_NULL(XLAL_ENOMEM);
-      }
+      XLAL_CHECK_NULL( (allocinput1 = (REAL4*)XLALMalloc(4*roundedvectorlength*sizeof(REAL4) + 15)) != NULL, XLAL_ENOMEM );
       alignedinput1 = (void*)(((UINT8)allocinput1+15) & ~15);
       memcpy(alignedinput1, input1->data, sizeof(REAL4)*4*roundedvectorlength);
       arr1 = (__m128*)(void*)alignedinput1;
@@ -148,11 +144,7 @@ REAL4Vector * sseSSVectorSum(REAL4Vector *output, REAL4Vector *input1, REAL4Vect
       vec2aligned = 1;
       arr2 = (__m128*)(void*)input2->data;
    } else {
-      allocinput2 = (REAL4*)XLALMalloc(4*roundedvectorlength*sizeof(REAL4) + 15);
-      if (allocinput2==NULL) {
-         fprintf(stderr, "%s: XLALMalloc(%zu) failed.\n", __func__, 4*roundedvectorlength*sizeof(REAL4) + 15);
-         XLAL_ERROR_NULL(XLAL_ENOMEM);
-      }
+      XLAL_CHECK_NULL( (allocinput2 = (REAL4*)XLALMalloc(4*roundedvectorlength*sizeof(REAL4) + 15)) != NULL, XLAL_ENOMEM );
       alignedinput2 = (void*)(((UINT8)allocinput2+15) & ~15);
       memcpy(alignedinput2, input2->data, sizeof(REAL4)*4*roundedvectorlength);
       arr2 = (__m128*)(void*)alignedinput2;
@@ -163,11 +155,7 @@ REAL4Vector * sseSSVectorSum(REAL4Vector *output, REAL4Vector *input1, REAL4Vect
       outputaligned = 1;
       result = (__m128*)(void*)output->data;
    } else {
-      allocoutput = (REAL4*)XLALMalloc(4*roundedvectorlength*sizeof(REAL4) + 15);
-      if (allocoutput==NULL) {
-         fprintf(stderr, "%s: XLALMalloc(%zu) failed.\n", __func__, 4*roundedvectorlength*sizeof(REAL4) + 15);
-         XLAL_ERROR_NULL(XLAL_ENOMEM);
-      }
+      XLAL_CHECK_NULL( (allocoutput = (REAL4*)XLALMalloc(4*roundedvectorlength*sizeof(REAL4) + 15)) != NULL, XLAL_ENOMEM );
       alignedoutput = (void*)(((UINT8)allocoutput+15) & ~15);
       result = (__m128*)(void*)alignedoutput;
    }
@@ -193,6 +181,9 @@ REAL4Vector * sseSSVectorSum(REAL4Vector *output, REAL4Vector *input1, REAL4Vect
    
    return output;
 #else
+   (void*)output;
+   (void*)input1;
+   (void*)input2;
    fprintf(stderr, "%s: Failed because SSE is not supported, possibly because -msse flag wasn't used for compiling.\n", __func__);
    XLAL_ERROR_NULL(XLAL_EFAILED);
 #endif
@@ -217,11 +208,7 @@ REAL4Vector * sseSSVectorMultiply(REAL4Vector *output, REAL4Vector *input1, REAL
       vec1aligned = 1;
       arr1 = (__m128*)(void*)input1->data;
    } else {
-      allocinput1 = (REAL4*)XLALMalloc(4*roundedvectorlength*sizeof(REAL4) + 15);
-      if (allocinput1==NULL) {
-         fprintf(stderr, "%s: XLALMalloc(%zu) failed.\n", __func__, 4*roundedvectorlength*sizeof(REAL4) + 15);
-         XLAL_ERROR_NULL(XLAL_ENOMEM);
-      }
+      XLAL_CHECK_NULL( (allocinput1 = (REAL4*)XLALMalloc(4*roundedvectorlength*sizeof(REAL4) + 15)) != NULL, XLAL_ENOMEM );
       alignedinput1 = (void*)(((UINT8)allocinput1+15) & ~15);
       memcpy(alignedinput1, input1->data, sizeof(REAL4)*4*roundedvectorlength);
       arr1 = (__m128*)(void*)alignedinput1;
@@ -232,11 +219,7 @@ REAL4Vector * sseSSVectorMultiply(REAL4Vector *output, REAL4Vector *input1, REAL
       vec2aligned = 1;
       arr2 = (__m128*)(void*)input2->data;
    } else {
-      allocinput2 = (REAL4*)XLALMalloc(4*roundedvectorlength*sizeof(REAL4) + 15);
-      if (allocinput2==NULL) {
-         fprintf(stderr, "%s: XLALMalloc(%zu) failed.\n", __func__, 4*roundedvectorlength*sizeof(REAL4) + 15);
-         XLAL_ERROR_NULL(XLAL_ENOMEM);
-      }
+      XLAL_CHECK_NULL( (allocinput2 = (REAL4*)XLALMalloc(4*roundedvectorlength*sizeof(REAL4) + 15)) != NULL, XLAL_ENOMEM );
       alignedinput2 = (void*)(((UINT8)allocinput2+15) & ~15);
       memcpy(alignedinput2, input2->data, sizeof(REAL4)*4*roundedvectorlength);
       arr2 = (__m128*)(void*)alignedinput2;
@@ -247,11 +230,7 @@ REAL4Vector * sseSSVectorMultiply(REAL4Vector *output, REAL4Vector *input1, REAL
       outputaligned = 1;
       result = (__m128*)(void*)output->data;
    } else {
-      allocoutput = (REAL4*)XLALMalloc(4*roundedvectorlength*sizeof(REAL4) + 15);
-      if (allocoutput==NULL) {
-         fprintf(stderr, "%s: XLALMalloc(%zu) failed.\n", __func__, 4*roundedvectorlength*sizeof(REAL4) + 15);
-         XLAL_ERROR_NULL(XLAL_ENOMEM);
-      }
+      XLAL_CHECK_NULL( (allocoutput = (REAL4*)XLALMalloc(4*roundedvectorlength*sizeof(REAL4) + 15)) != NULL, XLAL_ENOMEM );
       alignedoutput = (void*)(((UINT8)allocoutput+15) & ~15);
       result = (__m128*)(void*)alignedoutput;
    }
@@ -277,6 +256,9 @@ REAL4Vector * sseSSVectorMultiply(REAL4Vector *output, REAL4Vector *input1, REAL
    
    return output;
 #else
+   (void*)output;
+   (void*)input1;
+   (void*)input2;
    fprintf(stderr, "%s: Failed because SSE is not supported, possibly because -msse flag wasn't used for compiling.\n", __func__);
    XLAL_ERROR_NULL(XLAL_EFAILED);
 #endif
@@ -302,11 +284,7 @@ REAL4Vector * sseAddScalarToREAL4Vector(REAL4Vector *output, REAL4Vector *input,
       vecaligned = 1;
       arr1 = (__m128*)(void*)input->data;
    } else {
-      allocinput = (REAL4*)XLALMalloc(4*roundedvectorlength*sizeof(REAL4) + 15);
-      if (allocinput==NULL) {
-         fprintf(stderr, "%s: XLALMalloc(%zu) failed.\n", __func__, 4*roundedvectorlength*sizeof(REAL4) + 15);
-         XLAL_ERROR_NULL(XLAL_ENOMEM);
-      }
+      XLAL_CHECK_NULL( (allocinput = (REAL4*)XLALMalloc(4*roundedvectorlength*sizeof(REAL4) + 15)) != NULL, XLAL_ENOMEM );
       alignedinput = (void*)(((UINT8)allocinput+15) & ~15);
       memcpy(alignedinput, input->data, sizeof(REAL4)*4*roundedvectorlength);
       arr1 = (__m128*)(void*)alignedinput;
@@ -317,11 +295,7 @@ REAL4Vector * sseAddScalarToREAL4Vector(REAL4Vector *output, REAL4Vector *input,
       outputaligned = 1;
       result = (__m128*)(void*)output->data;
    } else {
-      allocoutput = (REAL4*)XLALMalloc(4*roundedvectorlength*sizeof(REAL4) + 15);
-      if (allocoutput==NULL) {
-         fprintf(stderr, "%s: XLALMalloc(%zu) failed.\n", __func__, 4*roundedvectorlength*sizeof(REAL4) + 15);
-         XLAL_ERROR_NULL(XLAL_ENOMEM);
-      }
+      XLAL_CHECK_NULL( (allocoutput = (REAL4*)XLALMalloc(4*roundedvectorlength*sizeof(REAL4) + 15)) != NULL, XLAL_ENOMEM );
       alignedoutput = (void*)(((UINT8)allocoutput+15) & ~15);
       result = (__m128*)(void*)alignedoutput;
    }
@@ -345,6 +319,9 @@ REAL4Vector * sseAddScalarToREAL4Vector(REAL4Vector *output, REAL4Vector *input,
    
    return output;
 #else
+   (void*)output;
+   (void*)input;
+   (void)scalar;
    fprintf(stderr, "%s: Failed because SSE is not supported, possibly because -msse flag wasn't used for compiling.\n", __func__);
    XLAL_ERROR_NULL(XLAL_EFAILED);
 #endif
@@ -370,11 +347,7 @@ REAL8Vector * sseAddScalarToREAL8Vector(REAL8Vector *output, REAL8Vector *input,
       vecaligned = 1;
       arr1 = (__m128d*)(void*)input->data;
    } else {
-      allocinput = (REAL8*)XLALMalloc(2*roundedvectorlength*sizeof(REAL8) + 15);
-      if (allocinput==NULL) {
-         fprintf(stderr, "%s: XLALMalloc(%zu) failed.\n", __func__, 2*roundedvectorlength*sizeof(REAL8) + 15);
-         XLAL_ERROR_NULL(XLAL_ENOMEM);
-      }
+      XLAL_CHECK_NULL( (allocinput = (REAL8*)XLALMalloc(2*roundedvectorlength*sizeof(REAL8) + 15)) != NULL, XLAL_ENOMEM );
       alignedinput = (void*)(((UINT8)allocinput+15) & ~15);
       memcpy(alignedinput, input->data, sizeof(REAL8)*2*roundedvectorlength);
       arr1 = (__m128d*)(void*)alignedinput;
@@ -385,11 +358,7 @@ REAL8Vector * sseAddScalarToREAL8Vector(REAL8Vector *output, REAL8Vector *input,
       outputaligned = 1;
       result = (__m128d*)(void*)output->data;
    } else {
-      allocoutput = (REAL8*)XLALMalloc(2*roundedvectorlength*sizeof(REAL8) + 15);
-      if (allocoutput==NULL) {
-         fprintf(stderr, "%s: XLALMalloc(%zu) failed.\n", __func__, 2*roundedvectorlength*sizeof(REAL8) + 15);
-         XLAL_ERROR_NULL(XLAL_ENOMEM);
-      }
+      XLAL_CHECK_NULL( (allocoutput = (REAL8*)XLALMalloc(2*roundedvectorlength*sizeof(REAL8) + 15)) != NULL, XLAL_ENOMEM );
       alignedoutput = (void*)(((UINT8)allocoutput+15) & ~15);
       result = (__m128d*)(void*)alignedoutput;
    }
@@ -413,6 +382,9 @@ REAL8Vector * sseAddScalarToREAL8Vector(REAL8Vector *output, REAL8Vector *input,
    
    return output;
 #else
+   (void*)output;
+   (void*)input;
+   (void)scalar;
    fprintf(stderr, "%s: Failed because SSE2 is not supported, possibly because -msse2 flag wasn't used for compiling.\n", __func__);
    XLAL_ERROR_NULL(XLAL_EFAILED);
 #endif
@@ -438,11 +410,7 @@ REAL4Vector * sseScaleREAL4Vector(REAL4Vector *output, REAL4Vector *input, REAL4
       vecaligned = 1;
       arr1 = (__m128*)(void*)input->data;
    } else {
-      allocinput = (REAL4*)XLALMalloc(4*roundedvectorlength*sizeof(REAL4) + 15);
-      if (allocinput==NULL) {
-         fprintf(stderr, "%s: XLALMalloc(%zu) failed.\n", __func__, 4*roundedvectorlength*sizeof(REAL4) + 15);
-         XLAL_ERROR_NULL(XLAL_ENOMEM);
-      }
+      XLAL_CHECK_NULL( (allocinput = (REAL4*)XLALMalloc(4*roundedvectorlength*sizeof(REAL4) + 15)) != NULL, XLAL_ENOMEM );
       alignedinput = (void*)(((UINT8)allocinput+15) & ~15);
       memcpy(alignedinput, input->data, sizeof(REAL4)*4*roundedvectorlength);
       arr1 = (__m128*)(void*)alignedinput;
@@ -453,11 +421,7 @@ REAL4Vector * sseScaleREAL4Vector(REAL4Vector *output, REAL4Vector *input, REAL4
       outputaligned = 1;
       result = (__m128*)(void*)output->data;
    } else {
-      allocoutput = (REAL4*)XLALMalloc(4*roundedvectorlength*sizeof(REAL4) + 15);
-      if (allocoutput==NULL) {
-         fprintf(stderr, "%s: XLALMalloc(%zu) failed.\n", __func__, 4*roundedvectorlength*sizeof(REAL4) + 15);
-         XLAL_ERROR_NULL(XLAL_ENOMEM);
-      }
+      XLAL_CHECK_NULL( (allocoutput = (REAL4*)XLALMalloc(4*roundedvectorlength*sizeof(REAL4) + 15)) != NULL, XLAL_ENOMEM );
       alignedoutput = (void*)(((UINT8)allocoutput+15) & ~15);
       result = (__m128*)(void*)alignedoutput;
    }
@@ -481,6 +445,9 @@ REAL4Vector * sseScaleREAL4Vector(REAL4Vector *output, REAL4Vector *input, REAL4
    
    return output;
 #else
+   (void*)output;
+   (void*)input;
+   (void)scale;
    fprintf(stderr, "%s: Failed because SSE is not supported, possibly because -msse flag wasn't used for compiling.\n", __func__);
    XLAL_ERROR_NULL(XLAL_EFAILED);
 #endif
@@ -506,11 +473,7 @@ REAL8Vector * sseScaleREAL8Vector(REAL8Vector *output, REAL8Vector *input, REAL8
       vecaligned = 1;
       arr1 = (__m128d*)(void*)input->data;
    } else {
-      allocinput = (REAL8*)XLALMalloc(2*roundedvectorlength*sizeof(REAL8) + 15);
-      if (allocinput==NULL) {
-         fprintf(stderr, "%s: XLALMalloc(%zu) failed.\n", __func__, 2*roundedvectorlength*sizeof(REAL8) + 15);
-         XLAL_ERROR_NULL(XLAL_ENOMEM);
-      }
+      XLAL_CHECK_NULL( (allocinput = (REAL8*)XLALMalloc(2*roundedvectorlength*sizeof(REAL8) + 15)) != NULL, XLAL_ENOMEM );
       alignedinput = (void*)(((UINT8)allocinput+15) & ~15);
       memcpy(alignedinput, input->data, sizeof(REAL8)*2*roundedvectorlength);
       arr1 = (__m128d*)(void*)alignedinput;
@@ -521,11 +484,7 @@ REAL8Vector * sseScaleREAL8Vector(REAL8Vector *output, REAL8Vector *input, REAL8
       outputaligned = 1;
       result = (__m128d*)(void*)output->data;
    } else {
-      allocoutput = (REAL8*)XLALMalloc(2*roundedvectorlength*sizeof(REAL8) + 15);
-      if (allocoutput==NULL) {
-         fprintf(stderr, "%s: XLALMalloc(%zu) failed.\n", __func__, 2*roundedvectorlength*sizeof(REAL8) + 15);
-         XLAL_ERROR_NULL(XLAL_ENOMEM);
-      }
+      XLAL_CHECK_NULL( (allocoutput = (REAL8*)XLALMalloc(2*roundedvectorlength*sizeof(REAL8) + 15)) != NULL, XLAL_ENOMEM );
       alignedoutput = (void*)(((UINT8)allocoutput+15) & ~15);
       result = (__m128d*)(void*)alignedoutput;
    }
@@ -549,6 +508,9 @@ REAL8Vector * sseScaleREAL8Vector(REAL8Vector *output, REAL8Vector *input, REAL8
    
    return output;
 #else
+   (void*)output;
+   (void*)input;
+   (void)scale;
    fprintf(stderr, "%s: Failed because SSE2 is not supported, possibly because -msse2 flag wasn't used for compiling.\n", __func__);
    XLAL_ERROR_NULL(XLAL_EFAILED);
 #endif
@@ -568,19 +530,10 @@ void sseSSVectorSequenceSum(REAL4VectorSequence *output, REAL4VectorSequence *in
 #ifdef __SSE__
    INT4 roundedvectorlength = (INT4)input1->vectorLength / 4;
    
-   REAL4* allocinput1 = (REAL4*)XLALMalloc(4*roundedvectorlength*sizeof(REAL4) + 15);
-   REAL4* allocinput2 = (REAL4*)XLALMalloc(4*roundedvectorlength*sizeof(REAL4) + 15);
-   REAL4* allocoutput = (REAL4*)XLALMalloc(4*roundedvectorlength*sizeof(REAL4) + 15);
-   if (allocinput1==NULL) {
-      fprintf(stderr, "%s: XLALMalloc(%zu) failed.\n", __func__, 4*roundedvectorlength*sizeof(REAL4) + 15);
-      XLAL_ERROR_VOID(XLAL_ENOMEM);
-   } else if (allocinput2==NULL) {
-      fprintf(stderr, "%s: XLALMalloc(%zu) failed.\n", __func__, 4*roundedvectorlength*sizeof(REAL4) + 15);
-      XLAL_ERROR_VOID(XLAL_ENOMEM);
-   } else if (allocoutput==NULL) {
-      fprintf(stderr, "%s: XLALMalloc(%zu) failed.\n", __func__, 4*roundedvectorlength*sizeof(REAL4) + 15);
-      XLAL_ERROR_VOID(XLAL_ENOMEM);
-   }
+   REAL4* allocinput1 = NULL, *allocinput2 = NULL, *allocoutput = NULL;
+   XLAL_CHECK_VOID( (allocinput1 = (REAL4*)XLALMalloc(4*roundedvectorlength*sizeof(REAL4) + 15)) != NULL, XLAL_ENOMEM );
+   XLAL_CHECK_VOID( (allocinput2 = (REAL4*)XLALMalloc(4*roundedvectorlength*sizeof(REAL4) + 15)) != NULL, XLAL_ENOMEM );
+   XLAL_CHECK_VOID( (allocoutput = (REAL4*)XLALMalloc(4*roundedvectorlength*sizeof(REAL4) + 15)) != NULL, XLAL_ENOMEM );
    REAL4* alignedinput1 = (void*)(((UINT8)allocinput1+15) & ~15);
    REAL4* alignedinput2 = (void*)(((UINT8)allocinput2+15) & ~15);
    REAL4* alignedoutput = (void*)(((UINT8)allocoutput+15) & ~15);
@@ -633,6 +586,13 @@ void sseSSVectorSequenceSum(REAL4VectorSequence *output, REAL4VectorSequence *in
    XLALFree(allocinput2);
    XLALFree(allocoutput);
 #else
+   (void*)output;
+   (void*)input1;
+   (void*)input2;
+   (void)vectorpos1;
+   (void)vectorpos2;
+   (void)outputvectorpos;
+   (void)numvectors;
    fprintf(stderr, "%s: Failed because SSE is not supported, possibly because -msse flag wasn't used for compiling.\n", __func__);
    XLAL_ERROR_VOID(XLAL_EFAILED);
 #endif
@@ -657,11 +617,7 @@ void sseSSVectorSequenceSubtract(REAL4Vector *output, REAL4VectorSequence *input
       vec1aligned = 1;
       arr1 = (__m128*)(void*)&(input1->data[vec1]);
    } else {
-      allocinput1 = (REAL4*)XLALMalloc(4*roundedvectorlength*sizeof(REAL4) + 15);
-      if (allocinput1==NULL) {
-         fprintf(stderr, "%s: XLALMalloc(%zu) failed.\n", __func__, 4*roundedvectorlength*sizeof(REAL4) + 15);
-         XLAL_ERROR_VOID(XLAL_ENOMEM);
-      }
+      XLAL_CHECK_VOID( (allocinput1 = (REAL4*)XLALMalloc(4*roundedvectorlength*sizeof(REAL4) + 15)) != NULL, XLAL_ENOMEM );
       alignedinput1 = (void*)(((UINT8)allocinput1+15) & ~15);
       memcpy(alignedinput1, &(input1->data[vec1]), sizeof(REAL4)*4*roundedvectorlength);
       arr1 = (__m128*)(void*)alignedinput1;
@@ -672,11 +628,7 @@ void sseSSVectorSequenceSubtract(REAL4Vector *output, REAL4VectorSequence *input
       vec2aligned = 1;
       arr2 = (__m128*)(void*)input2->data;
    } else {
-      allocinput2 = (REAL4*)XLALMalloc(4*roundedvectorlength*sizeof(REAL4) + 15);
-      if (allocinput2==NULL) {
-         fprintf(stderr, "%s: XLALMalloc(%zu) failed.\n", __func__, 4*roundedvectorlength*sizeof(REAL4) + 15);
-         XLAL_ERROR_VOID(XLAL_ENOMEM);
-      }
+      XLAL_CHECK_VOID( (allocinput2 = (REAL4*)XLALMalloc(4*roundedvectorlength*sizeof(REAL4) + 15)) != NULL, XLAL_ENOMEM );
       alignedinput2 = (void*)(((UINT8)allocinput2+15) & ~15);
       memcpy(alignedinput2, input2->data, sizeof(REAL4)*4*roundedvectorlength);
       arr2 = (__m128*)(void*)alignedinput2;
@@ -687,11 +639,7 @@ void sseSSVectorSequenceSubtract(REAL4Vector *output, REAL4VectorSequence *input
       outputaligned = 1;
       result = (__m128*)(void*)output->data;
    } else {
-      allocoutput = (REAL4*)XLALMalloc(4*roundedvectorlength*sizeof(REAL4) + 15);
-      if (allocoutput==NULL) {
-         fprintf(stderr, "%s: XLALMalloc(%zu) failed.\n", __func__, 4*roundedvectorlength*sizeof(REAL4) + 15);
-         XLAL_ERROR_VOID(XLAL_ENOMEM);
-      }
+      XLAL_CHECK_VOID( (allocoutput = (REAL4*)XLALMalloc(4*roundedvectorlength*sizeof(REAL4) + 15)) != NULL, XLAL_ENOMEM );
       alignedoutput = (void*)(((UINT8)allocoutput+15) & ~15);
       result = (__m128*)(void*)alignedoutput;
    }
@@ -720,6 +668,10 @@ void sseSSVectorSequenceSubtract(REAL4Vector *output, REAL4VectorSequence *input
    if (!vec2aligned) XLALFree(allocinput2);
    if (!outputaligned) XLALFree(allocoutput);
 #else
+   (void*)output;
+   (void*)input1;
+   (void*)input2;
+   (void)vectorpos1;
    fprintf(stderr, "%s: Failed because SSE is not supported, possibly because -msse flag wasn't used for compiling.\n", __func__);
    XLAL_ERROR_VOID(XLAL_EFAILED);
 #endif
@@ -758,11 +710,7 @@ INT4 sse_sin_cos_2PI_LUT_REAL8Vector(REAL8Vector *sin2pix_vector, REAL8Vector *c
       vecaligned = 1;
       arr1 = (__m128d*)(void*)x->data;
    } else {
-      allocinput = (REAL8*)XLALMalloc(2*roundedvectorlength*sizeof(REAL8) + 15);
-      if (allocinput==NULL) {
-         fprintf(stderr, "%s: XLALMalloc(%zu) failed.\n", __func__, 2*roundedvectorlength*sizeof(REAL8) + 15);
-         XLAL_ERROR(XLAL_ENOMEM);
-      }
+      XLAL_CHECK( (allocinput = (REAL8*)XLALMalloc(2*roundedvectorlength*sizeof(REAL8) + 15)) != NULL, XLAL_ENOMEM );
       alignedinput = (void*)(((UINT8)allocinput+15) & ~15);
       memcpy(alignedinput, x->data, sizeof(REAL8)*2*roundedvectorlength);
       arr1 = (__m128d*)(void*)alignedinput;
@@ -773,11 +721,7 @@ INT4 sse_sin_cos_2PI_LUT_REAL8Vector(REAL8Vector *sin2pix_vector, REAL8Vector *c
       outputaligned1 = 1;
       sinresult = (__m128d*)(void*)sin2pix_vector->data;
    } else {
-      allocoutput1 = (REAL8*)XLALMalloc(2*roundedvectorlength*sizeof(REAL8) + 15);
-      if (allocoutput1==NULL) {
-         fprintf(stderr, "%s: XLALMalloc(%zu) failed.\n", __func__, 2*roundedvectorlength*sizeof(REAL8) + 15);
-         XLAL_ERROR(XLAL_ENOMEM);
-      }
+      XLAL_CHECK( (allocoutput1 = (REAL8*)XLALMalloc(2*roundedvectorlength*sizeof(REAL8) + 15)) != NULL, XLAL_ENOMEM );
       alignedoutput1 = (void*)(((UINT8)allocoutput1+15) & ~15);
       sinresult = (__m128d*)(void*)alignedoutput1;
    }
@@ -787,21 +731,14 @@ INT4 sse_sin_cos_2PI_LUT_REAL8Vector(REAL8Vector *sin2pix_vector, REAL8Vector *c
       outputaligned2 = 1;
       cosresult = (__m128d*)(void*)cos2pix_vector->data;
    } else {
-      allocoutput2 = (REAL8*)XLALMalloc(2*roundedvectorlength*sizeof(REAL8) + 15);
-      if (allocoutput2==NULL) {
-         fprintf(stderr, "%s: XLALMalloc(%zu) failed.\n", __func__, 2*roundedvectorlength*sizeof(REAL8) + 15);
-         XLAL_ERROR(XLAL_ENOMEM);
-      }
+      XLAL_CHECK( (allocoutput2 = (REAL8*)XLALMalloc(2*roundedvectorlength*sizeof(REAL8) + 15)) != NULL, XLAL_ENOMEM );
       alignedoutput2 = (void*)(((UINT8)allocoutput2+15) & ~15);
       cosresult = (__m128d*)(void*)alignedoutput2;
    }
    
-   INT4 *intgerVect = (INT4*)XLALMalloc(2*sizeof(INT4)+15);
-   if (intgerVect==NULL) {
-      fprintf(stderr, "%s: XLALMalloc(%zu) failed.\n", __func__, 2*sizeof(INT4)+15);
-      XLAL_ERROR(XLAL_ENOMEM);
-   }
-   INT4 *I0 = (void*)(((UINT8)intgerVect+15) & ~15);
+   INT4 *integerVect = NULL;
+   XLAL_CHECK( (integerVect = (INT4*)XLALMalloc(2*sizeof(INT4)+15)) != NULL, XLAL_ENOMEM );
+   INT4 *I0 = (void*)(((UINT8)integerVect+15) & ~15);
    memset(I0, 0, sizeof(INT4)*2);
    
    __m128d lutresf = _mm_set1_pd(LUT_RES_F);
@@ -857,7 +794,7 @@ INT4 sse_sin_cos_2PI_LUT_REAL8Vector(REAL8Vector *sin2pix_vector, REAL8Vector *c
    
    //Finish up the remaining part
    for (ii=2*roundedvectorlength; ii<(INT4)x->length; ii++) {
-      twospect_sin_cos_2PI_LUT(&(sin2pix_vector->data[ii]), &(cos2pix_vector->data[ii]), x->data[ii]);
+      XLAL_CHECK( twospect_sin_cos_2PI_LUT(&(sin2pix_vector->data[ii]), &(cos2pix_vector->data[ii]), x->data[ii]) == XLAL_SUCCESS, XLAL_EFUNC );
    }
    
    //Free memory if necessary
@@ -866,10 +803,13 @@ INT4 sse_sin_cos_2PI_LUT_REAL8Vector(REAL8Vector *sin2pix_vector, REAL8Vector *c
    if (!outputaligned2) XLALFree(allocoutput2);
    
    //Free memory
-   XLALFree(intgerVect);
+   XLALFree(integerVect);
    
    return XLAL_SUCCESS;
 #else
+   (void*)sin2pix_vector;
+   (void*)cos2pix_vector;
+   (void*)x;
    fprintf(stderr, "%s: Failed because SSE2 is not supported, possibly because -msse2 flag wasn't used for compiling.\n", __func__);
    XLAL_ERROR(XLAL_EFAILED);
 #endif
@@ -908,11 +848,7 @@ INT4 sse_sin_cos_2PI_LUT_REAL4Vector(REAL4Vector *sin2pix_vector, REAL4Vector *c
       vecaligned = 1;
       arr1 = (__m128*)(void*)x->data;
    } else {
-      allocinput = (REAL4*)XLALMalloc(4*roundedvectorlength*sizeof(REAL4) + 15);
-      if (allocinput==NULL) {
-         fprintf(stderr, "%s: XLALMalloc(%zu) failed.\n", __func__, 4*roundedvectorlength*sizeof(REAL4) + 15);
-         XLAL_ERROR(XLAL_ENOMEM);
-      }
+      XLAL_CHECK( (allocinput = (REAL4*)XLALMalloc(4*roundedvectorlength*sizeof(REAL4) + 15)) != NULL, XLAL_ENOMEM );
       alignedinput = (void*)(((UINT8)allocinput+15) & ~15);
       memcpy(alignedinput, x->data, sizeof(REAL4)*4*roundedvectorlength);
       arr1 = (__m128*)(void*)alignedinput;
@@ -923,11 +859,7 @@ INT4 sse_sin_cos_2PI_LUT_REAL4Vector(REAL4Vector *sin2pix_vector, REAL4Vector *c
       outputaligned1 = 1;
       sinresult = (__m128*)(void*)sin2pix_vector->data;
    } else {
-      allocoutput1 = (REAL4*)XLALMalloc(4*roundedvectorlength*sizeof(REAL4) + 15);
-      if (allocoutput1==NULL) {
-         fprintf(stderr, "%s: XLALMalloc(%zu) failed.\n", __func__, 4*roundedvectorlength*sizeof(REAL4) + 15);
-         XLAL_ERROR(XLAL_ENOMEM);
-      }
+      XLAL_CHECK( (allocoutput1 = (REAL4*)XLALMalloc(4*roundedvectorlength*sizeof(REAL4) + 15)) != NULL, XLAL_ENOMEM );
       alignedoutput1 = (void*)(((UINT8)allocoutput1+15) & ~15);
       sinresult = (__m128*)(void*)alignedoutput1;
    }
@@ -937,21 +869,14 @@ INT4 sse_sin_cos_2PI_LUT_REAL4Vector(REAL4Vector *sin2pix_vector, REAL4Vector *c
       outputaligned2 = 1;
       cosresult = (__m128*)(void*)cos2pix_vector->data;
    } else {
-      allocoutput2 = (REAL4*)XLALMalloc(4*roundedvectorlength*sizeof(REAL4) + 15);
-      if (allocoutput2==NULL) {
-         fprintf(stderr, "%s: XLALMalloc(%zu) failed.\n", __func__, 4*roundedvectorlength*sizeof(REAL4) + 15);
-         XLAL_ERROR(XLAL_ENOMEM);
-      }
+      XLAL_CHECK( (allocoutput2 = (REAL4*)XLALMalloc(4*roundedvectorlength*sizeof(REAL4) + 15)) != NULL, XLAL_ENOMEM );
       alignedoutput2 = (void*)(((UINT8)allocoutput2+15) & ~15);
       cosresult = (__m128*)(void*)alignedoutput2;
    }
    
-   INT4 *intgerVect = (INT4*)XLALMalloc(4*sizeof(INT4)+15);
-   if (intgerVect==NULL) {
-      fprintf(stderr, "%s: XLALMalloc(%zu) failed.\n", __func__, 4*sizeof(INT4)+15);
-      XLAL_ERROR(XLAL_ENOMEM);
-   }
-   INT4 *I0 = (void*)(((UINT8)intgerVect+15) & ~15);
+   INT4 *integerVect = NULL;
+   XLAL_CHECK( (integerVect = (INT4*)XLALMalloc(4*sizeof(INT4)+15)) != NULL, XLAL_ENOMEM );
+   INT4 *I0 = (void*)(((UINT8)integerVect+15) & ~15);
    memset(I0, 0, sizeof(INT4)*4);
    
    __m128 lutresf = _mm_set1_ps((REAL4)LUT_RES_F);
@@ -1009,7 +934,7 @@ INT4 sse_sin_cos_2PI_LUT_REAL4Vector(REAL4Vector *sin2pix_vector, REAL4Vector *c
    //Finish up the remaining part
    REAL8 sinval = 0.0, cosval = 0.0;
    for (ii=4*roundedvectorlength; ii<(INT4)x->length; ii++) {
-      twospect_sin_cos_2PI_LUT(&sinval, &cosval, x->data[ii]);
+      XLAL_CHECK( twospect_sin_cos_2PI_LUT(&sinval, &cosval, x->data[ii]) == XLAL_SUCCESS, XLAL_EFUNC );
       sin2pix_vector->data[ii] = (REAL4)sinval;
       cos2pix_vector->data[ii] = (REAL4)cosval;
    }
@@ -1020,10 +945,13 @@ INT4 sse_sin_cos_2PI_LUT_REAL4Vector(REAL4Vector *sin2pix_vector, REAL4Vector *c
    if (!outputaligned2) XLALFree(allocoutput2);
    
    //Free memory
-   XLALFree(intgerVect);
+   XLALFree(integerVect);
    
    return XLAL_SUCCESS;
 #else
+   (void*)sin2pix_vector;
+   (void*)cos2pix_vector;
+   (void*)x;
    fprintf(stderr, "%s: Failed because SSE2 is not supported, possibly because -msse2 flag wasn't used for compiling.\n", __func__);
    XLAL_ERROR(XLAL_EFAILED);
 #endif
@@ -1051,11 +979,7 @@ void sse_exp_REAL8Vector(REAL8Vector *output, REAL8Vector *input)
       vecaligned = 1;
       x = (__m128d*)(void*)input->data;
    } else {
-      allocinput = (REAL8*)XLALMalloc(2*roundedvectorlength*sizeof(REAL8) + 15);
-      if (allocinput==NULL) {
-         fprintf(stderr, "%s: XLALMalloc(%zu) failed.\n", __func__, 2*roundedvectorlength*sizeof(REAL8) + 15);
-         XLAL_ERROR_VOID(XLAL_ENOMEM);
-      }
+      XLAL_CHECK_VOID( (allocinput = (REAL8*)XLALMalloc(2*roundedvectorlength*sizeof(REAL8) + 15)) != NULL, XLAL_ENOMEM );
       alignedinput = (void*)(((UINT8)allocinput+15) & ~15);
       memcpy(alignedinput, input->data, sizeof(REAL8)*2*roundedvectorlength);
       x = (__m128d*)(void*)alignedinput;
@@ -1066,11 +990,7 @@ void sse_exp_REAL8Vector(REAL8Vector *output, REAL8Vector *input)
       outputaligned = 1;
       result = (__m128d*)(void*)output->data;
    } else {
-      allocoutput = (REAL8*)XLALMalloc(2*roundedvectorlength*sizeof(REAL8) + 15);
-      if (allocoutput==NULL) {
-         fprintf(stderr, "%s: XLALMalloc(%zu) failed.\n", __func__, 2*roundedvectorlength*sizeof(REAL8) + 15);
-         XLAL_ERROR_VOID(XLAL_ENOMEM);
-      }
+      XLAL_CHECK_VOID( (allocoutput = (REAL8*)XLALMalloc(2*roundedvectorlength*sizeof(REAL8) + 15)) != NULL, XLAL_ENOMEM );
       alignedoutput = (void*)(((UINT8)allocoutput+15) & ~15);
       result = (__m128d*)(void*)alignedoutput;
    }
@@ -1182,6 +1102,8 @@ void sse_exp_REAL8Vector(REAL8Vector *output, REAL8Vector *input)
    if (!vecaligned) XLALFree(allocinput);
    if (!outputaligned) XLALFree(allocoutput);
 #else
+   (void*)output;
+   (void*)input;
    fprintf(stderr, "%s: Failed because SSE2 is not supported, possibly because -msse2 flag wasn't used for compiling.\n", __func__);
    XLAL_ERROR_VOID(XLAL_EFAILED);
 #endif
@@ -1204,31 +1126,23 @@ void sse_exp_REAL4Vector(REAL4Vector *output, REAL4Vector *input)
    __m128 *x, *result;
    
    //Allocate memory for aligning input vector if necessary
-   if ( input->data==(void*)(((UINT8)input->data+15) & ~15) ) {
+   if ( input->data==(void*)(((size_t)input->data+15) & ~15) ) {
       vecaligned = 1;
       x = (__m128*)(void*)input->data;
    } else {
-      allocinput = (REAL4*)XLALMalloc(4*roundedvectorlength*sizeof(REAL4) + 15);
-      if (allocinput==NULL) {
-         fprintf(stderr, "%s: XLALMalloc(%zu) failed.\n", __func__, 4*roundedvectorlength*sizeof(REAL4) + 15);
-         XLAL_ERROR_VOID(XLAL_ENOMEM);
-      }
-      alignedinput = (void*)(((UINT8)allocinput+15) & ~15);
+      XLAL_CHECK_VOID( (allocinput = (REAL4*)XLALMalloc(4*roundedvectorlength*sizeof(REAL4) + 15)) != NULL, XLAL_ENOMEM );
+      alignedinput = (void*)(((size_t)allocinput+15) & ~15);
       memcpy(alignedinput, input->data, sizeof(REAL4)*4*roundedvectorlength);
       x = (__m128*)(void*)alignedinput;
    }
    
    //Allocate memory for aligning output vector 1 if necessary
-   if ( output->data==(void*)(((UINT8)output->data+15) & ~15) ) {
+   if ( output->data==(void*)(((size_t)output->data+15) & ~15) ) {
       outputaligned = 1;
       result = (__m128*)(void*)output->data;
    } else {
-      allocoutput = (REAL4*)XLALMalloc(4*roundedvectorlength*sizeof(REAL4) + 15);
-      if (allocoutput==NULL) {
-         fprintf(stderr, "%s: XLALMalloc(%zu) failed.\n", __func__, 4*roundedvectorlength*sizeof(REAL4) + 15);
-         XLAL_ERROR_VOID(XLAL_ENOMEM);
-      }
-      alignedoutput = (void*)(((UINT8)allocoutput+15) & ~15);
+      XLAL_CHECK_VOID( (allocoutput = (REAL4*)XLALMalloc(4*roundedvectorlength*sizeof(REAL4) + 15)) != NULL, XLAL_ENOMEM );
+      alignedoutput = (void*)(((size_t)allocoutput+15) & ~15);
       result = (__m128*)(void*)alignedoutput;
    }
    
@@ -1334,165 +1248,14 @@ void sse_exp_REAL4Vector(REAL4Vector *output, REAL4Vector *input)
    if (!vecaligned) XLALFree(allocinput);
    if (!outputaligned) XLALFree(allocoutput);
 #else
+   (void*)output;
+   (void*)input;
    fprintf(stderr, "%s: Failed because SSE2 is not supported, possibly because -msse2 flag wasn't used for compiling.\n", __func__);
    XLAL_ERROR_VOID(XLAL_EFAILED);
 #endif
    
 }
 
-
-
-
-//Arctangent of input vector is computed using SSE
-//Cephes library based
-// !!!!!!!! NOT READY TO BE USED!!!!!!!!!
-/* void sse_atan_REAL8Vector(REAL8Vector *output, REAL8Vector *input)
-{
-   
-#ifdef __SSE2__
-   INT4 roundedvectorlength = (INT4)input->length / 2;
-   INT4 ii;
-   
-   REAL8 *allocinput = NULL, *allocoutput = NULL, *alignedinput = NULL, *alignedoutput = NULL;
-   INT4 vecaligned = 0, outputaligned = 0;
-   
-   __m128d *x, *result;
-   
-   //Allocate memory for aligning input vector if necessary
-   if ( input->data==(void*)(((UINT8)input->data+15) & ~15) ) {
-      vecaligned = 1;
-      x = (__m128d*)(void*)input->data;
-   } else {
-      allocinput = (REAL8*)XLALMalloc(2*roundedvectorlength*sizeof(REAL8) + 15);
-      if (allocinput==NULL) {
-         fprintf(stderr, "%s: XLALMalloc(%zu) failed.\n", __func__, 2*roundedvectorlength*sizeof(REAL8) + 15);
-         XLAL_ERROR_VOID(XLAL_ENOMEM);
-      }
-      alignedinput = (void*)(((UINT8)allocinput+15) & ~15);
-      memcpy(alignedinput, input->data, sizeof(REAL8)*2*roundedvectorlength);
-      x = (__m128d*)(void*)alignedinput;
-   }
-   
-   //Allocate memory for aligning output vector 1 if necessary
-   if ( output->data==(void*)(((UINT8)output->data+15) & ~15) ) {
-      outputaligned = 1;
-      result = (__m128d*)(void*)output->data;
-   } else {
-      allocoutput = (REAL8*)XLALMalloc(2*roundedvectorlength*sizeof(REAL8) + 15);
-      if (allocoutput==NULL) {
-         fprintf(stderr, "%s: XLALMalloc(%zu) failed.\n", __func__, 2*roundedvectorlength*sizeof(REAL8) + 15);
-         XLAL_ERROR_VOID(XLAL_ENOMEM);
-      }
-      alignedoutput = (void*)(((UINT8)allocoutput+15) & ~15);
-      result = (__m128d*)(void*)alignedoutput;
-   }
-   
-   //Define values
-   __m128d cephes_p0 = _mm_set1_pd(-8.750608600031904122785e-1);
-   __m128d cephes_p1 = _mm_set1_pd(-1.615753718733365076637e1);
-   __m128d cephes_p2 = _mm_set1_pd(-7.500855792314704667340e1);
-   __m128d cephes_p3 = _mm_set1_pd(-1.228866684490136173410e2);
-   __m128d cephes_p4 = _mm_set1_pd(-6.485021904942025371773e1);
-   __m128d cephes_q0 = _mm_set1_pd(2.485846490142306297962e1);
-   __m128d cephes_q1 = _mm_set1_pd(1.650270098316988542046e2);
-   __m128d cephes_q2 = _mm_set1_pd(4.328810604912902668951e2);
-   __m128d cephes_q3 = _mm_set1_pd(4.853903996359136964868e2);
-   __m128d cephes_q4 = _mm_set1_pd(1.945506571482613964425e2);
-   __m128d tan3pO8 = _mm_set1_pd(2.41421356237309504880);
-   __m128d almostTwoThirds = _mm_set1_pd(0.66);
-   __m128d piOverTwo = _mm_set1_pd(LAL_PI_2);
-   __m128d piOverFour = _mm_set1_pd(LAL_PI_4);
-   __m128d zero = _mm_set1_pd(0.0);
-   __m128d minusOne = _mm_set1_pd(-1.0);
-   __m128d small = _mm_set1_pd(1.0e-50);
-   __m128d morebits = _mm_set1_pd(6.123233995736765886130e-17);
-   __m128d halfmorebits = _mm_set1_pd(3.061616997868382943065e-17);
-   
-   for (ii=0; ii<roundedvectorlength; ii++) {
-      
-      //Save sign values
-      //__m128d signs = _mm_and_pd(*x, signbit);
-      
-      //Make values positive
-      //__m128d intx = _mm_xor_pd(*x, signs);
-      
-      //Assume positive
-      __m128d intx = *x;
-      
-      //Reduce range
-      __m128d greaterThanAlmostTwoThirds = _mm_cmpgt_pd(intx, almostTwoThirds);
-      __m128d greaterThanTan3pO8 = _mm_cmpgt_pd(intx, tan3pO8);
-      __m128d inBetween = _mm_and_pd( _mm_cmple_pd(intx, tan3pO8), greaterThanAlmostTwoThirds);
-      __m128d lessThanAlmostTwoThirds = _mm_cmple_pd(intx, almostTwoThirds);
-      __m128d y = zero;
-      __m128d x1 = _mm_and_pd( _mm_div_pd(minusOne, _mm_add_pd(intx, small)), greaterThanTan3pO8);
-      __m128d y_1 = _mm_and_pd(piOverTwo, greaterThanTan3pO8);
-      __m128d x2 = _mm_and_pd( _mm_div_pd( _mm_add_pd(intx, minusOne), _mm_sub_pd(intx, minusOne)), inBetween);
-      __m128d y_2 = _mm_and_pd(piOverFour, inBetween);
-      y = _mm_add_pd(y, y_1);
-      y = _mm_add_pd(y, y_2);
-      intx = _mm_and_pd(intx, lessThanAlmostTwoThirds);
-      intx = _mm_add_pd(intx, x1);
-      intx = _mm_add_pd(intx, x2);
-      
-      __m128d z = _mm_mul_pd(intx, intx);
-      __m128d polevlresult = cephes_p0;
-      polevlresult = _mm_mul_pd(polevlresult, z);
-      polevlresult = _mm_add_pd(polevlresult, cephes_p1);
-      polevlresult = _mm_mul_pd(polevlresult, z);
-      polevlresult = _mm_add_pd(polevlresult, cephes_p2);
-      polevlresult = _mm_mul_pd(polevlresult, z);
-      polevlresult = _mm_add_pd(polevlresult, cephes_p3);
-      polevlresult = _mm_mul_pd(polevlresult, z);
-      polevlresult = _mm_add_pd(polevlresult, cephes_p4);
-      __m128d zTimesPolEvlResult = _mm_mul_pd(z, polevlresult);
-      
-      polevlresult = z;
-      polevlresult = _mm_add_pd(polevlresult, cephes_q0);
-      polevlresult = _mm_mul_pd(polevlresult, z);
-      polevlresult = _mm_add_pd(polevlresult, cephes_q1);
-      polevlresult = _mm_mul_pd(polevlresult, z);
-      polevlresult = _mm_add_pd(polevlresult, cephes_q2);
-      polevlresult = _mm_mul_pd(polevlresult, z);
-      polevlresult = _mm_add_pd(polevlresult, cephes_q3);
-      polevlresult = _mm_mul_pd(polevlresult, z);
-      polevlresult = _mm_add_pd(polevlresult, cephes_q4);
-      z = _mm_div_pd(zTimesPolEvlResult, polevlresult);
-      
-      z = _mm_add_pd( _mm_mul_pd(intx, z), intx);
-      
-      __m128d addextrabits = zero;
-      addextrabits = _mm_add_pd(addextrabits, _mm_and_pd(morebits, greaterThanTan3pO8) );
-      addextrabits = _mm_add_pd(addextrabits, _mm_and_pd(halfmorebits, inBetween) );
-      z = _mm_add_pd(z, addextrabits);
-      
-      y = _mm_add_pd(y, z);
-      
-      // *result = _mm_xor_pd(y, signs);
-      *result = y;
-      
-      x++;
-      result++;
-      
-   }
-   
-   //Copy output aligned memory to non-aligned memory if necessary
-   if (!outputaligned) memcpy(output->data, alignedoutput, 2*roundedvectorlength*sizeof(REAL8));
-   
-   //Finish up the remaining part
-   for (ii=2*roundedvectorlength; ii<(INT4)input->length; ii++) {
-      output->data[ii] = atan(input->data[ii]);
-   }
-   
-   //Free memory if necessary
-   if (!vecaligned) XLALFree(allocinput);
-   if (!outputaligned) XLALFree(allocoutput);
-#else
-   fprintf(stderr, "%s: Failed because SSE2 is not supported, possibly because -msse2 flag wasn't used for compiling.\n", __func__);
-   XLAL_ERROR_VOID(XLAL_EFAILED);
-#endif
-   
-} */
 
 
 

@@ -1,7 +1,7 @@
 # -*- mode: autoconf; -*-
 # lalsuite_build.m4 - top level build macros
 #
-# serial 75
+# serial 80
 
 # not present in older versions of pkg.m4
 m4_pattern_allow([^PKG_CONFIG(_(PATH|LIBDIR|SYSROOT_DIR|ALLOW_SYSTEM_(CFLAGS|LIBS)))?$])
@@ -9,8 +9,6 @@ m4_pattern_allow([^PKG_CONFIG_(DISABLE_UNINSTALLED|TOP_BUILD_DIR|DEBUG_SPEW)$])
 
 # forbid LALSUITE_... from appearing in output (./configure)
 m4_pattern_forbid([^_?LALSUITE_[A-Z_]+$])
-# apart from LALSUITE_PKG_SUFFIX
-m4_pattern_allow([^LALSUITE_PKG_SUFFIX$])
 
 # list of user variables; see section 4.8.1 of the Autoconf manual
 m4_define([uvar_list],[CPPFLAGS CFLAGS CXXFLAGS FCFLAGS FFLAGS LDFLAGS])
@@ -62,7 +60,7 @@ AC_DEFUN([AC_OUTPUT],[
   # prepend compiler configuration e.g. CFLAGS to AM_CFLAGS,
   # then restore original user-supplied values of user variables
   m4_foreach_w([uvar],uvar_list,[
-    AM_[]uvar="${lalsuite_compiler_[]uvar} ${AM_[]uvar}"
+    AC_SUBST(AM_[]uvar,"${lalsuite_compiler_[]uvar} ${AM_[]uvar} ${sys_[]uvar}")
     uvar="${uvar_prefix[]uvar}"
   ])
   # call original AC_OUTPUT
@@ -101,45 +99,83 @@ AC_DEFUN([LALSUITE_ADD_FLAGS],[
   # $0: prepend flags to AM_CPPFLAGS/AM_$1FLAGS/AM_LDFLAGS/LIBS,
   # and update values of CPPFLAGS/$1FLAGS/LDFLAGS for Autoconf tests
   m4_ifval([$1],[m4_ifval([$2],[
-    prepend_CPPFLAGS=
-    prepend_$1FLAGS=
+    pre_AM_CPPFLAGS=
+    pre_sys_CPPFLAGS=
+    pre_AM_$1FLAGS=
     for flag in $2; do
-      # AM_CPPFLAGS gets -I and -D flags, AM_$1FLAGS gets everything else from $2
+      # AM_CPPFLAGS gets unique -I, -D and -U flags
+      # sys_CPPFLAGS gets unique system -I flags
+      # AM_$1FLAGS gets everything else
       AS_CASE([${flag}],
-        [-I*|-D*],[prepend_CPPFLAGS="${prepend_CPPFLAGS} ${flag}"],
-        [prepend_$1FLAGS="${prepend_$1FLAGS} ${flag}"]
+        [-I/opt/*|-I/usr/*],[
+          AS_CASE([" ${sys_CPPFLAGS} "],
+            [*" ${flag} "*],[:],
+            [pre_sys_CPPFLAGS="${pre_sys_CPPFLAGS} ${flag}"]
+          )
+        ],
+        [-I*],[
+          AS_CASE([" ${AM_CPPFLAGS} "],
+            [*" ${flag} "*],[:],
+            [pre_AM_CPPFLAGS="${pre_AM_CPPFLAGS} ${flag}"]
+          )
+        ],
+        [-D*|-U*],[pre_AM_CPPFLAGS="${pre_AM_CPPFLAGS} ${flag}"],
+        [pre_AM_$1FLAGS="${pre_AM_$1FLAGS} ${flag}"]
       )
     done
-    AS_IF([test "x${prepend_CPPFLAGS}" != x],[
-      AC_SUBST([AM_CPPFLAGS],["${prepend_CPPFLAGS} ${AM_CPPFLAGS}"])
-      _AS_ECHO_LOG([prepended ${prepend_CPPFLAGS} to AM_CPPFLAGS])
-      CPPFLAGS="${AM_CPPFLAGS} ${uvar_orig_prefix[]CPPFLAGS}"
+    AS_IF([test "x${pre_AM_CPPFLAGS}" != x],[
+      AM_CPPFLAGS="${pre_AM_CPPFLAGS} ${AM_CPPFLAGS}"
+      _AS_ECHO_LOG([prepended ${pre_AM_CPPFLAGS} to AM_CPPFLAGS])
     ])
-    AS_IF([test "x${prepend_$1FLAGS}" != x],[
-      AC_SUBST([AM_$1FLAGS],["${prepend_$1FLAGS} ${AM_$1FLAGS}"])
-      _AS_ECHO_LOG([prepended ${prepend_$1FLAGS} to AM_$1FLAGS])
-      $1FLAGS="${AM_$1FLAGS} ${uvar_orig_prefix[]$1FLAGS}"
+    AS_IF([test "x${pre_sys_CPPFLAGS}" != x],[
+      sys_CPPFLAGS="${pre_sys_CPPFLAGS} ${sys_CPPFLAGS}"
+      _AS_ECHO_LOG([prepended ${pre_sys_CPPFLAGS} to system AM_CPPFLAGS])
     ])
+    AS_IF([test "x${pre_AM_$1FLAGS}" != x],[
+      AM_$1FLAGS="${pre_AM_$1FLAGS} ${AM_$1FLAGS}"
+      _AS_ECHO_LOG([prepended ${pre_AM_$1FLAGS} to AM_$1FLAGS])
+    ])
+    CPPFLAGS="${AM_CPPFLAGS} ${sys_CPPFLAGS} ${uvar_orig_prefix[]CPPFLAGS}"
+    $1FLAGS="${AM_$1FLAGS} ${uvar_orig_prefix[]$1FLAGS}"
   ])])
   m4_ifval([$3],[
-    prepend_LDFLAGS=
-    prepend_LIBS=
+    pre_AM_LDFLAGS=
+    pre_sys_LDFLAGS=
+    pre_LIBS=
     for flag in $3; do
-      # LIBS gets -l flags and .la files, AM_LDFLAGS gets everything else from $3
+      # LIBS gets -l flags and .la files
+      # sys_LDFLAGS gets unique system -L flags
+      # AM_LDFLAGS gets unique -L flags and everything else
       AS_CASE([${flag}],
-        [-l*|*.la],[prepend_LIBS="${prepend_LIBS} ${flag}"],
-        [prepend_LDFLAGS="${prepend_LDFLAGS} ${flag}"]
+        [-L/opt/*|-L/usr/*],[
+          AS_CASE([" ${sys_LDFLAGS} "],
+            [*" ${flag} "*],[:],
+            [pre_sys_LDFLAGS="${pre_sys_LDFLAGS} ${flag}"]
+          )
+        ],
+        [-L*],[
+          AS_CASE([" ${AM_LDFLAGS} "],
+            [*" ${flag} "*],[:],
+            [pre_AM_LDFLAGS="${pre_AM_LDFLAGS} ${flag}"]
+          )
+        ],
+        [-l*|*.la],[pre_LIBS="${pre_LIBS} ${flag}"],
+        [pre_AM_LDFLAGS="${pre_AM_LDFLAGS} ${flag}"]
       )
     done
-    AS_IF([test "x${prepend_LDFLAGS}" != x],[
-      AC_SUBST([AM_LDFLAGS],["${prepend_LDFLAGS} ${AM_LDFLAGS}"])
-      _AS_ECHO_LOG([prepended ${prepend_LDFLAGS} to AM_LDFLAGS])
-      LDFLAGS="${AM_LDFLAGS} ${uvar_orig_prefix[]LDFLAGS}"
+    AS_IF([test "x${pre_AM_LDFLAGS}" != x],[
+      AM_LDFLAGS="${pre_AM_LDFLAGS} ${AM_LDFLAGS}"
+      _AS_ECHO_LOG([prepended ${pre_AM_LDFLAGS} to AM_LDFLAGS])
     ])
-    AS_IF([test "x${prepend_LIBS}" != x],[
-      LIBS="${prepend_LIBS} ${LIBS}"
-      _AS_ECHO_LOG([prepended ${prepend_LIBS} to LIBS])
+    AS_IF([test "x${pre_sys_LDFLAGS}" != x],[
+      sys_LDFLAGS="${pre_sys_LDFLAGS} ${sys_LDFLAGS}"
+      _AS_ECHO_LOG([prepended ${pre_sys_LDFLAGS} to system AM_LDFLAGS])
     ])
+    AS_IF([test "x${pre_LIBS}" != x],[
+      LIBS="${pre_LIBS} ${LIBS}"
+      _AS_ECHO_LOG([prepended ${pre_LIBS} to LIBS])
+    ])
+    LDFLAGS="${AM_LDFLAGS} ${sys_LDFLAGS} ${uvar_orig_prefix[]LDFLAGS}"
   ])
   # end $0
 ])
@@ -191,6 +227,27 @@ AC_DEFUN([LALSUITE_CHECK_GIT_REPO],[
   AC_SUBST(GENERATE_VCS_INFO)
 ])
 
+AC_DEFUN([LALSUITE_VERSION_CONFIGURE_INFO],[
+  # $0: define version/configure info
+  m4_pushdef([uppercase],m4_translit(AC_PACKAGE_NAME, [a-z], [A-Z]))
+  version_major=`echo "$VERSION" | cut -d. -f1`
+  version_minor=`echo "$VERSION" | cut -d. -f2`
+  version_micro=`echo "$VERSION" | cut -d. -f3`
+  version_devel=`echo "$VERSION" | cut -d. -f4-`
+  test -z "$version_micro" && version_micro=0
+  test -z "$version_devel" && version_devel=0
+  configure_date=`date +"%Y-%m-%dT%H:%M:%S%z"`
+  AC_DEFINE_UNQUOTED(uppercase[_VERSION],["$VERSION"],AC_PACKAGE_NAME[ Version])
+  AC_DEFINE_UNQUOTED(uppercase[_VERSION_MAJOR],[$version_major],AC_PACKAGE_NAME[ Version Major Number])
+  AC_DEFINE_UNQUOTED(uppercase[_VERSION_MINOR],[$version_minor],AC_PACKAGE_NAME[ Version Minor Number])
+  AC_DEFINE_UNQUOTED(uppercase[_VERSION_MICRO],[$version_micro],AC_PACKAGE_NAME[ Version Micro Number])
+  AC_DEFINE_UNQUOTED(uppercase[_VERSION_DEVEL],[$version_devel],AC_PACKAGE_NAME[ Version Devel Number])
+  AC_SUBST([ac_configure_args])
+  AC_SUBST([configure_date])
+  m4_popdef([uppercase])
+  # end $0
+])
+
 AC_DEFUN([LALSUITE_REQUIRE_CXX],[
   # require a C++ compiler
   lalsuite_require_cxx=true
@@ -238,7 +295,7 @@ AC_DEFUN([LALSUITE_PROG_COMPILERS],[
     AC_SUBST(CLANG_CXX)
 
     # define C99 constant and limit macros for C++ sources
-    LALSUITE_ADD_FLAGS([CXX],[-D__STDC_CONSTANT_MACROS -D__STDC_LIMIT_MACROS],[])
+    CXXFLAGS="${CXXFLAGS} -D__STDC_CONSTANT_MACROS -D__STDC_LIMIT_MACROS"
 
   ],[
     CXX=
@@ -333,8 +390,7 @@ AC_DEFUN([LALSUITE_CHECK_LIB],[
   m4_pushdef([uppercase],m4_translit([[$1]], [a-z], [A-Z]))
 
   # build pkg-config library name and version
-  AC_ARG_VAR([LALSUITE_PKG_SUFFIX],[suffix to add to LALSuite pkg-config library names])
-  lal_pkg="lowercase[]${LALSUITE_PKG_SUFFIX} >= $2"
+  lal_pkg="lowercase[] >= $2"
 
   # substitute required library version in pkg-config files
   AC_SUBST(uppercase[]_VERSION,[$2])
@@ -361,12 +417,18 @@ AC_DEFUN([LALSUITE_CHECK_LIB],[
     # add $1 compiler and linker flags to CPPFLAGS/CFLAGS/LDFLAGS/LIBS
     LALSUITE_ADD_FLAGS([C],[`${PKG_CONFIG} --cflags "${lal_pkg}"`],[`${PKG_CONFIG} --libs "${lal_pkg}"`])
 
-    # add $1 include flags, including system directories, to LAL_INCLUDES_WITH_SYS_DIRS
+    # add system include flags to LAL_SYSTEM_INCLUDES: get $1 include flags with system flags,
+    # then add any flags not already in CPPFLAGS or LAL_SYSTEM_INCLUDES to LAL_SYSTEM_INCLUDES
     PKG_CONFIG_ALLOW_SYSTEM_CFLAGS=1
     export PKG_CONFIG_ALLOW_SYSTEM_CFLAGS
-    LAL_INCLUDES_WITH_SYS_DIRS=`${PKG_CONFIG} --cflags-only-I "${lal_pkg}"`" ${LAL_INCLUDES_WITH_SYS_DIRS}"
+    for flag in `${PKG_CONFIG} --cflags-only-I "${lal_pkg}"`; do
+      AS_CASE([" ${CPPFLAGS} ${LAL_SYSTEM_INCLUDES} "],
+        [*" ${flag} "*],[:],
+        [LAL_SYSTEM_INCLUDES="${LAL_SYSTEM_INCLUDES} ${flag}"]
+      )
+    done
     AS_UNSET([PKG_CONFIG_ALLOW_SYSTEM_CFLAGS])
-    AC_SUBST([LAL_INCLUDES_WITH_SYS_DIRS])
+    AC_SUBST([LAL_SYSTEM_INCLUDES])
 
     # add $1 data path to LAL_DATA_PATH
     LALSUITE_ADD_PATH(LAL_DATA_PATH,`${PKG_CONFIG} --variable=LAL_DATA_PATH "${lal_pkg}"`)
@@ -384,7 +446,7 @@ AC_DEFUN([LALSUITE_CHECK_LIB],[
 
       # if $1 is not installed, add .pc.in file to ./config.status dependencies
       lal_pkg_pcin_dir=`${PKG_CONFIG} --variable=abs_top_srcdir "${lal_pkg}"`
-      lal_pkg_pcin_file="${lal_pkg_pcin_dir}/lowercase[]${LALSUITE_PKG_SUFFIX}.pc.in"
+      lal_pkg_pcin_file="${lal_pkg_pcin_dir}/lowercase[]-uninstalled.pc.in"
       AS_IF([test ! -f "${lal_pkg_pcin_file}"],[
         AC_MSG_ERROR([could not find file ${lal_pkg_pcin_file}])
       ])
@@ -501,17 +563,6 @@ AC_DEFUN([LALSUITE_ENABLE_NIGHTLY],
       esac ],
   [ NIGHTLY_VERSION="" ] )
   AC_SUBST(NIGHTLY_VERSION)
-])
-
-AC_DEFUN([LALSUITE_ENABLE_DEBUG],
-[AC_ARG_ENABLE(
-  [debug],
-  AC_HELP_STRING([--enable-debug],[include standard LAL debugging code [default=yes]]),
-  [AS_CASE(["${enableval}"],
-    [yes],,
-    [no],AC_DEFINE(LAL_NDEBUG, 1, Suppress debugging code),
-    AC_MSG_ERROR(bad value for ${enableval} for --enable-debug))
-  ], )
 ])
 
 AC_DEFUN([LALSUITE_ENABLE_ALL_LAL],

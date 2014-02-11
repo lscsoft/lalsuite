@@ -3,16 +3,16 @@ Section: lscsoft
 Priority: optional
 Maintainer: Adam Mercer <adam.mercer@ligo.org>
 Build-Depends: debhelper (>= 7), pkg-config, python-all-dev,
-  zlib1g-dev, libmetaio-dev (>= 8.2), swig (>= 2.0.7),
+  zlib1g-dev, libmetaio-dev (>= 8.2), swig (>= 2.0.11~),
   octave3.2-headers,
-  lal-dev (>= 6.11.0~), lal-python (>= 6.11.0~), lal-octave (>= 6.11.0~)
+  lal-dev (>= 6.12.0~), lal-python (>= 6.12.0~), lal-octave (>= 6.12.0~)
 X-Python-Version: >= 2.6
 Standards-Version: 3.8.6
 
 Package: lalmetaio
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}, zlib1g,
-  libmetaio1 (>= 8.2), lal (>= 6.11.0~)
+  libmetaio1 (>= 8.2), lal (>= 6.12.0~)
 Description: LSC Algorithm Library MetaIO
  The LSC Algorithm MetaIO Library for gravitational wave data analysis.
  This package contains the shared-object libraries needed to run applications
@@ -21,7 +21,7 @@ Description: LSC Algorithm Library MetaIO
 Package: lalmetaio-dev
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}, zlib1g-dev,
-  libmetaio-dev (>= 8.2), lal-dev (>= 6.11.0~),
+  libmetaio-dev (>= 8.2), lal-dev (>= 6.12.0~),
   lalmetaio (= ${binary:Version})
 Description: LSC Algorithm Library MetaIO Developers
  The LSC Algorithm MetaIO Library for gravitational wave data analysis.
@@ -31,12 +31,12 @@ Description: LSC Algorithm Library MetaIO Developers
 Package: lalmetaio-python
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}, python-numpy,
-  lalmetaio (= ${binary:Version}), lal-python (>= 6.11.0~)
+  lalmetaio (= ${binary:Version}), lal-python (>= 6.12.0~)
 Description: Python bindings for LALMetaIO
 
 Package: lalmetaio-octave
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}, octave,
-  lalmetaio (= ${binary:Version}), lal-octave (>= 6.11.0~)
+  lalmetaio (= ${binary:Version}), lal-octave (>= 6.12.0~)
 Description: Octave bindings for LALMetaIO
 

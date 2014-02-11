@@ -49,7 +49,8 @@ except:
 ALLOWABLE_OPS = {
 	"<": float.__lt__,
 	">": float.__gt__,
-	"=": float.__eq__
+	"=": float.__eq__,
+	"&": int.__and__
 }
 OPS_REG = re.compile("(.*)[%s](.*)" % "".join(ALLOWABLE_OPS.keys()))
 
@@ -60,6 +61,8 @@ def stringify(op):
 		return "LT"
 	elif op == "=":
 		return "EQ"
+	elif op == "&":
+		return "AND"
 
 def parse_specification(specstr):
 	"""
@@ -67,7 +70,7 @@ def parse_specification(specstr):
 	"""
 	match = re.match(OPS_REG, specstr)
 	if match is None:
-		raise ValueError("%s is an invalid operational specification string." % spectr)
+		raise ValueError("%s is an invalid operational specification string." % specstr)
 	chan, value = match.group(1), match.group(2)
 	op = specstr[match.end(1):match.start(2)]
 	assert op in ALLOWABLE_OPS.keys()
@@ -75,7 +78,7 @@ def parse_specification(specstr):
 	return inst, chan, op, value
 
 optp = OptionParser()
-optp.add_option("-s", "--specifier", action="append", help="Channel and action to take. Currently allowable actions are <, >, and =. It is *highly* recommended you place this in a string so that it is not expanded by the shell. Example: -s \"H1:IMC-MC2_TRANS_SUM_OUT16>900\"")
+optp.add_option("-s", "--specifier", action="append", help="Channel and action to take. Currently allowable actions are <, >, &, and =. It is *highly* recommended you place this in a string so that it is not expanded by the shell. Example: -s \"H1:IMC-MC2_TRANS_SUM_OUT16>900\"")
 optp.add_option("-c", "--frame-cache", action="store", help="LIGO formatted frame cache to read data from.")
 optp.add_option("-t", "--output-tag", action="store", default="SEGMENTS", help="Tag for file output. Default is SEGMENTS")
 # FIXME: Do this
@@ -96,7 +99,7 @@ conditions = map(parse_specification, opts.specifier)
 channel_cond = defaultdict(list)
 for inst, channel_name, op, threshold in conditions:
 	channel = "%s:%s" % (inst, channel_name)
-	channel_cond[channel].append((op, float(threshold)))
+	channel_cond[channel].append((op, threshold))
 
 #
 # Read the datas and such
@@ -135,16 +138,21 @@ for channel, opthresholds in channel_cond.iteritems():
 	#
 	# Determine lt and gt thresholds
 	#
-	min_threshold, max_threshold, equals = None, None, None 
+	min_threshold, max_threshold, equals, bit_mask = None, None, None, None
 	for op, value in opthresholds:
 		if opts.verbose:
 			print channel, op, value
 		if op == "<":
-			max_threshold = value
+			max_threshold = float(value)
 		elif op == ">":
-			min_threshold = value
+			min_threshold = float(value)
 		elif op == "=":
-			equals = value
+			equals = float(value)
+		elif op == "&":
+			try:
+				bit_mask = int(value)
+			except ValueError:
+				bit_mask = int(value, 16) # try base 16 in case it's hex
 
 	#
 	# Are we looking outside the range rather than inside?
@@ -168,6 +176,8 @@ for channel, opthresholds in channel_cond.iteritems():
 		#
 		if equals is not None:
 			seglist.extend(dqsegs.equality_data_to_seglist(data, start, dt, equality=equals))
+		if bit_mask is not None:
+			seglist.extend(dqsegs.mask_data_to_seglist(data, start, dt, mask_on=bit_mask))
 		else:
 			seglist.extend(dqsegs.threshold_data_to_seglist(data, start, dt, min_threshold=min_threshold, max_threshold=max_threshold, invert=invert))
 
@@ -191,7 +201,7 @@ for channel, opthresholds in channel_cond.iteritems():
 	# Fill in some metadata about the flags
 	#
 	name = "detchar %s threshold flags" % channel
-	comment = " ".join(["%s %s %f" % (channel, stringify(op), v) for op, v in opthresholds])
+	comment = " ".join(["%s %s %s" % (channel, stringify(op), str(v)) for op, v in opthresholds])
 	lwsegs.insert_from_segmentlistdict(segmentlistdict({channel[:2]: seglist}), name=name, comment=comment)
 
 #

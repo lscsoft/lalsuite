@@ -4,7 +4,7 @@ CFSsrc = $(top_srcdir)/src/pulsar/FDS_isolated
 EAHsrc = $(top_srcdir)/src/pulsar/hough/src2/EinsteinAtHome
 
 # for using lalapps-defines + functions
-AM_CPPFLAGS = @AM_CPPFLAGS@ -I$(top_srcdir)/src/lalapps -I$(CFSsrc) -I$(EAHsrc) -DPKG_DATA_DIR='"$(pkgdatadir)/"'
+AM_CPPFLAGS = -I$(top_srcdir)/src/lalapps -I$(CFSsrc) -I$(EAHsrc) -DPKG_DATA_DIR='"$(pkgdatadir)/"' @AM_CPPFLAGS@
 LDADD = $(top_builddir)/src/lalapps/liblalapps.la
 
 bin_PROGRAMS = lalapps_HierarchSearchGCT

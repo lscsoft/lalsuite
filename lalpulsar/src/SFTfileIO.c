@@ -2066,7 +2066,7 @@ LALWriteSFT2file (LALStatus *status,			/**< pointer to LALStatus structure */
   INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
   if ( XLALWriteSFT2file( sft, fname, SFTcomment ) != XLAL_SUCCESS ) {
-    ABORT ( status, LAL_EXLAL, LAL_MSGEXLAL );
+    ABORTXLAL(status);
   }
   DETATCHSTATUSPTR (status);
   RETURN (status);
@@ -2130,7 +2130,7 @@ LALWriteSFTVector2Dir (LALStatus *status,			/**< pointer to LALStatus structure 
   INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
   if ( XLALWriteSFTVector2Dir( sftVect, dirname, SFTcomment, description ) != XLAL_SUCCESS ) {
-    ABORT ( status, LAL_EXLAL, LAL_MSGEXLAL );
+    ABORTXLAL(status);
   }
   DETATCHSTATUSPTR (status);
   RETURN (status);

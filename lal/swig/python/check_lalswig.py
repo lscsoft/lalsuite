@@ -1,9 +1,14 @@
 # Check SWIG Python module wrapping lal
 # Author: Karl Wette, 2011, 2012
 
+import warnings
 import datetime
 import numpy
 expected_exception = False
+
+# turn NumPy's ComplexWarning into an error, if available
+if hasattr(numpy, "ComplexWarning"):
+    warnings.simplefilter("error", numpy.ComplexWarning)
 
 # check module load
 print("checking module load ...")
@@ -13,7 +18,7 @@ print("PASSED module load")
 
 # check memory allocation
 print("checking memory allocation ...")
-if lal.swig_debug:
+if not lal.lalNoDebug:
     lal.CheckMemoryLeaks()
     mem1 = lal.Detector()
     mem2 = lal.CreateCOMPLEX8Vector(5)
@@ -33,7 +38,7 @@ if lal.swig_debug:
 else:
     print("skipped memory allocation")
 
-## check equal return/first argument type handling
+# check equal return/first argument type handling
 print("checking equal return/first argument type handling")
 sv = lal.CreateStringVector("1")
 assert(sv.length == 1)
@@ -78,20 +83,20 @@ del sv
 lal.CheckMemoryLeaks()
 print("PASSED string conversions")
 
-## check static vector/matrix conversions
-lalcvar.lalswig_test_struct_vector[0] = lalcvar.lalswig_test_struct_const
-assert(lalcvar.lalswig_test_struct_vector[0].n == lalcvar.lalswig_test_struct_const.n)
-assert(lalcvar.lalswig_test_struct_vector[0].i == lalcvar.lalswig_test_struct_const.i)
-assert(lalcvar.lalswig_test_struct_vector[0].f == lalcvar.lalswig_test_struct_const.f)
-assert(lalcvar.lalswig_test_struct_vector[0].str == lalcvar.lalswig_test_struct_const.str)
-assert((lalcvar.lalswig_test_struct_vector[0].vec == lalcvar.lalswig_test_struct_const.vec).all())
-lalcvar.lalswig_test_struct_matrix[0, 0] = lalcvar.lalswig_test_struct_const
-assert(lalcvar.lalswig_test_struct_matrix[0, 0].n == lalcvar.lalswig_test_struct_const.n)
-assert(lalcvar.lalswig_test_struct_matrix[0, 0].i == lalcvar.lalswig_test_struct_const.i)
-assert(lalcvar.lalswig_test_struct_matrix[0, 0].f == lalcvar.lalswig_test_struct_const.f)
-assert(lalcvar.lalswig_test_struct_matrix[0, 0].str == lalcvar.lalswig_test_struct_const.str)
-assert((lalcvar.lalswig_test_struct_matrix[0, 0].vec == lalcvar.lalswig_test_struct_const.vec).all())
-sts = lal.lalswig_test_struct()
+# check static vector/matrix conversions
+lalcvar.swig_lal_test_struct_vector[0] = lalcvar.swig_lal_test_struct_const
+assert(lalcvar.swig_lal_test_struct_vector[0].n == lalcvar.swig_lal_test_struct_const.n)
+assert(lalcvar.swig_lal_test_struct_vector[0].i == lalcvar.swig_lal_test_struct_const.i)
+assert(lalcvar.swig_lal_test_struct_vector[0].f == lalcvar.swig_lal_test_struct_const.f)
+assert(lalcvar.swig_lal_test_struct_vector[0].str == lalcvar.swig_lal_test_struct_const.str)
+assert((lalcvar.swig_lal_test_struct_vector[0].vec == lalcvar.swig_lal_test_struct_const.vec).all())
+lalcvar.swig_lal_test_struct_matrix[0, 0] = lalcvar.swig_lal_test_struct_const
+assert(lalcvar.swig_lal_test_struct_matrix[0, 0].n == lalcvar.swig_lal_test_struct_const.n)
+assert(lalcvar.swig_lal_test_struct_matrix[0, 0].i == lalcvar.swig_lal_test_struct_const.i)
+assert(lalcvar.swig_lal_test_struct_matrix[0, 0].f == lalcvar.swig_lal_test_struct_const.f)
+assert(lalcvar.swig_lal_test_struct_matrix[0, 0].str == lalcvar.swig_lal_test_struct_const.str)
+assert((lalcvar.swig_lal_test_struct_matrix[0, 0].vec == lalcvar.swig_lal_test_struct_const.vec).all())
+sts = lal.swig_lal_test_struct()
 assert(len(sts.vec) == 3)
 assert(len(sts.evec) == 3)
 assert(sts.mat.shape == (2, 3))
@@ -109,39 +114,39 @@ for i in range(0, 3):
     sts.evec[i] = 2*i + 3
     assert(sts.evec[i] == (2*i + 3))
 del sts
-assert(not lalcvar.lalswig_test_enum_vector.any())
-assert(not lalcvar.lalswig_test_enum_matrix.any())
-assert(len(lalcvar.lalswig_test_empty_INT4_vector) == 0)
-assert(not lalcvar.lalswig_test_INT4_vector.any())
-assert(not lalcvar.lalswig_test_INT4_matrix.any())
-assert(not lalcvar.lalswig_test_REAL8_vector.any())
-assert(not lalcvar.lalswig_test_REAL8_matrix.any())
-assert(not lalcvar.lalswig_test_COMPLEX8_vector.any())
-assert(not lalcvar.lalswig_test_COMPLEX8_matrix.any())
-lalcvar.lalswig_test_INT4_vector[0] = 10
-assert(lalcvar.lalswig_test_INT4_vector[0] == 10)
-lalcvar.lalswig_test_INT4_matrix[0, 0] = 11
-assert(lalcvar.lalswig_test_INT4_matrix[0, 0] == 11)
-lalcvar.lalswig_test_INT4_vector = lalcvar.lalswig_test_INT4_const_vector
-assert((lalcvar.lalswig_test_INT4_vector == [1, 2, 4]).all())
-assert(lalcvar.lalswig_test_INT4_const_vector[2] == 4)
-lalcvar.lalswig_test_INT4_matrix = lalcvar.lalswig_test_INT4_const_matrix
-assert((lalcvar.lalswig_test_INT4_matrix == [[1, 2, 4], [2, 4, 8]]).all())
-assert(lalcvar.lalswig_test_INT4_const_matrix[1, 2] == 8)
+assert(not lalcvar.swig_lal_test_enum_vector.any())
+assert(not lalcvar.swig_lal_test_enum_matrix.any())
+assert(len(lalcvar.swig_lal_test_empty_INT4_vector) == 0)
+assert(not lalcvar.swig_lal_test_INT4_vector.any())
+assert(not lalcvar.swig_lal_test_INT4_matrix.any())
+assert(not lalcvar.swig_lal_test_REAL8_vector.any())
+assert(not lalcvar.swig_lal_test_REAL8_matrix.any())
+assert(not lalcvar.swig_lal_test_COMPLEX8_vector.any())
+assert(not lalcvar.swig_lal_test_COMPLEX8_matrix.any())
+lalcvar.swig_lal_test_INT4_vector[0] = 10
+assert(lalcvar.swig_lal_test_INT4_vector[0] == 10)
+lalcvar.swig_lal_test_INT4_matrix[0, 0] = 11
+assert(lalcvar.swig_lal_test_INT4_matrix[0, 0] == 11)
+lalcvar.swig_lal_test_INT4_vector = lalcvar.swig_lal_test_INT4_const_vector
+assert((lalcvar.swig_lal_test_INT4_vector == [1, 2, 4]).all())
+assert(lalcvar.swig_lal_test_INT4_const_vector[2] == 4)
+lalcvar.swig_lal_test_INT4_matrix = lalcvar.swig_lal_test_INT4_const_matrix
+assert((lalcvar.swig_lal_test_INT4_matrix == [[1, 2, 4], [2, 4, 8]]).all())
+assert(lalcvar.swig_lal_test_INT4_const_matrix[1, 2] == 8)
 try:
-    lalcvar.lalswig_test_INT4_const_vector(20)
+    lalcvar.swig_lal_test_INT4_const_vector(20)
     expected_exception = True
 except:
     pass
 assert(not expected_exception)
-lalcvar.lalswig_test_REAL8_vector[0] = 3.4
-assert(lalcvar.lalswig_test_REAL8_vector[0] == 3.4)
-lalcvar.lalswig_test_REAL8_matrix[0, 0] = 5.6
-assert(lalcvar.lalswig_test_REAL8_matrix[0, 0] == 5.6)
-lalcvar.lalswig_test_COMPLEX8_vector[0] = complex(3.5, 4.75)
-assert(lalcvar.lalswig_test_COMPLEX8_vector[0] == complex(3.5, 4.75))
-lalcvar.lalswig_test_COMPLEX8_matrix[0, 0] = complex(5.5, 6.25)
-assert(lalcvar.lalswig_test_COMPLEX8_matrix[0, 0] == complex(5.5, 6.25))
+lalcvar.swig_lal_test_REAL8_vector[0] = 3.4
+assert(lalcvar.swig_lal_test_REAL8_vector[0] == 3.4)
+lalcvar.swig_lal_test_REAL8_matrix[0, 0] = 5.6
+assert(lalcvar.swig_lal_test_REAL8_matrix[0, 0] == 5.6)
+lalcvar.swig_lal_test_COMPLEX8_vector[0] = complex(3.5, 4.75)
+assert(lalcvar.swig_lal_test_COMPLEX8_vector[0] == complex(3.5, 4.75))
+lalcvar.swig_lal_test_COMPLEX8_matrix[0, 0] = complex(5.5, 6.25)
+assert(lalcvar.swig_lal_test_COMPLEX8_matrix[0, 0] == complex(5.5, 6.25))
 print("PASSED static vector/matrix conversions")
 
 # check dynamic vector/matrix conversions
@@ -184,14 +189,16 @@ def check_dynamic_vector_matrix(iv, ivl, rv, rvl, cm, cms1, cms2):
     assert(cm.data[3, 2] == complex(0.75, 1.0))
     try:
         iv.data[0] = cm.data[2, 3]
-        raise Exception("NumPy does not raise an exception when downcasting complex to integer values!")
+        if not hasattr(numpy, "ComplexWarning"):
+            raise Exception("NumPy %s does not have ComplexWarning" % numpy.__version__)
         expected_exception = True
     except:
         pass
     assert(not expected_exception)
     try:
         rv.data[0] = cm.data[3, 2]
-        raise Exception("NumPy does not raise an exception when downcasting complex to real values!")
+        if not hasattr(numpy, "ComplexWarning"):
+            raise Exception("NumPy %s does not have ComplexWarning" % numpy.__version__)
         expected_exception = True
     except:
         pass
@@ -224,8 +231,31 @@ rv1.data[0] = 1
 del rv1
 print("PASSED dynamic vector/matrix conversions (GSL)")
 
-## check dynamic array of pointers access
-ap = lal.lalswig_test_Create_arrayofptrs(3)
+# check fixed and dynamic arrays typemaps
+print("checking fixed and dynamic arrays typemaps ...")
+a1in = numpy.array([1.2, 3.5, 7.9], dtype=numpy.double)
+a1out = a1in * 2.5
+assert((lal.swig_lal_test_copyin_array1(a1in, 2.5) == a1out).all())
+a2in = numpy.array([[3,2], [7,6], [12,10]], dtype=numpy.int32)
+a2out = a2in * 15
+assert((lal.swig_lal_test_copyin_array2(a2in, 15) == a2out).all())
+try:
+    lal.swig_lal_test_copyin_array1(numpy.array([0,0,0,0], dtype=numpy.double), 0)
+    expected_exception = True
+except:
+    pass
+assert(not expected_exception)
+try:
+    lal.swig_lal_test_copyin_array2(numpy.array([[1.2,3.4],[0,0],[0,0]], dtype=numpy.double), 0)
+    expected_exception = True
+except:
+    pass
+assert(not expected_exception)
+print("PASSED fixed and dynamic arrays typemaps")
+
+# check dynamic array of pointers access
+print("checking dynamic array of pointers access ...")
+ap = lal.swig_lal_test_Create_arrayofptrs(3)
 assert(ap.length == 3)
 for i in range(0, ap.length):
     assert(ap.data[i].length == 6)
@@ -292,7 +322,7 @@ assert(LIGOTimeGPS(repr(t1)) == t1)
 assert(long(t1) == 812345678)
 assert(t1.ns() == 812345678250000000L)
 assert(hash(t1) == 1049484238)
-t4struct = lal.lalswig_test_gps()
+t4struct = lal.swig_lal_test_gps()
 t4struct.t = 1234.5
 assert(t4struct.t == 1234.5)
 t5 = LIGOTimeGPS("1000")
@@ -309,7 +339,7 @@ try:
 except:
     pass
 assert(not expected_exception)
-assert(lal.lalswig_test_noptrgps(LIGOTimeGPS(1234.5)) == lal.lalswig_test_noptrgps(1234.5))
+assert(lal.swig_lal_test_noptrgps(LIGOTimeGPS(1234.5)) == lal.swig_lal_test_noptrgps(1234.5))
 del t0, t1, t2, t3, t4struct, t5
 lal.CheckMemoryLeaks()
 print("PASSED LIGOTimeGPS operations")

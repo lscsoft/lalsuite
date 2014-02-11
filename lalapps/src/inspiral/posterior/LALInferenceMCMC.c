@@ -476,9 +476,6 @@ void initializeMCMC(LALInferenceRunState *runState)
     runState->prior=&LALInferenceAnalyticNullPrior;
   } else if (LALInferenceGetProcParamVal(commandLine, "--nullprior")) {
     runState->prior=&LALInferenceNullPrior;
-  } else if (LALInferenceGetProcParamVal(commandLine, "--noiseonly")) {
-    fprintf(stderr, "Using noise-only prior.\n");fflush(stdout);
-    runState->prior=&LALInferenceInspiralNoiseOnlyPrior;
   } else {
     runState->prior=&LALInferenceInspiralPriorNormalised;
   }

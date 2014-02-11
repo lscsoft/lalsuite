@@ -1,6 +1,6 @@
 ## Process this file with automake to produce Makefile.in
 
-SUBDIRS = bayestar posterior
+SUBDIRS = posterior
 
 INSPIRALSRC = inspiral.c inspiralutils.c inspiral.h
 TMPLTBANKSRC = tmpltbank.c inspiralutils.c inspiral.h
@@ -419,7 +419,7 @@ EXTRA_DIST = \
 	cbc_sbank_splitter.in \
 	$(DATA)
 
-AM_CPPFLAGS = @AM_CPPFLAGS@ -I$(top_srcdir)/src -I$(top_srcdir)/src/lalapps -I$(top_builddir)/src/lalapps -DPKG_DATA_DIR='"$(pkgdatadir)/"'
+AM_CPPFLAGS = -I$(top_srcdir)/src -I$(top_srcdir)/src/lalapps -I$(top_builddir)/src/lalapps -DPKG_DATA_DIR='"$(pkgdatadir)/"' @AM_CPPFLAGS@
 LDADD = $(top_builddir)/src/lalapps/liblalapps.la
 
 CLEANFILES = \

@@ -1,5 +1,6 @@
 /*
  *  Copyright (C) 2012, 2013 John Whelan, Shane Larson and Badri Krishnan
+ *  Copyright (C) 2013, 2014 Badri Krishnan, John Whelan, Yuanhao Zhang
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -26,8 +27,8 @@ extern "C" {
 /**
  * \defgroup PulsarCrossCorr_v2_h Header PulsarCrossCorr_v2.h
  * \ingroup pkg_pulsarCrossCorr
- * \author John Whelan, Shane Larson, Badri Krishnan
- * \date 2012
+ * \author John Whelan, Yuanhao Zhang, Shane Larson, Badri Krishnan
+ * \date 2012, 2013, 2014
  * \brief Header-file for XLAL routines for v2 CW cross-correlation searches
  *
  */
@@ -63,6 +64,7 @@ extern "C" {
 #include <lal/LALInitBarycenter.h>
 #include <lal/SFTClean.h>
 #include <gsl/gsl_cdf.h>
+#include <gsl/gsl_sf_trig.h>
 #include <lal/FrequencySeries.h>
 #include <lal/Sequence.h>
 
@@ -106,9 +108,11 @@ int XLALGetDopplerShiftedFrequencyInfo
    REAL8Vector         *shiftedFreqs,
    UINT4Vector         *lowestBins,
    REAL8Vector         *kappaValues,
+   REAL8Vector         *signalPhases,
    UINT4               numBins,
    PulsarDopplerParams *dopp,
    SFTIndexList        *sfts,
+   MultiSFTVector      *inputSFTs,
    MultiSSBtimes       *multiTimes,
    REAL8               Tsft
    )
@@ -131,17 +135,6 @@ int XLALCreateSFTPairIndexList
    )
   ;
 
-int XLALCalculateCrossCorrSigmaUnshifted
-  (
-   REAL8Vector      **sigma_alpha,
-   SFTPairIndexList  *pairIndexList,
-   SFTIndexList      *indexList,
-   MultiPSDVector    *psds,
-   REAL8              freq,
-   REAL8              Tsft
-  )
-  ;
-
 int XLALCalculateAveCurlyGAmpUnshifted
   (
    REAL8Vector      **G_alpha,
@@ -151,34 +144,44 @@ int XLALCalculateAveCurlyGAmpUnshifted
   )
  ;
 
-int XLALCalculateWeightedFactors
-  ( 
-   REAL8             *TSquaWeightedAve, 
-   REAL8             *SinSquaWeightedAve,  
-   REAL8             *devTsq,
-   REAL8Vector       *G_alpha,       
-   SFTPairIndexList  *pairIndexList, 
-   SFTIndexList      *indexList,       
-   MultiSFTVector    *sfts,          
-   REAL8             pOrb          
+int XLALCalculatePulsarCrossCorrStatistic
+  (
+   REAL8              *ccStat,
+   REAL8           *evSquared,
+   REAL8Vector     *curlyGAmp,
+   REAL8Vector  *signalPhases,
+   UINT4Vector    *lowestBins,
+   REAL8Vector   *kappaValues,
+   UINT4              numBins,
+   SFTPairIndexList *sftPairs,
+   SFTIndexList   *sftIndices,
+   MultiSFTVector  *inputSFTs
+  )
+ ;
+
+int XLALFindLMXBCrossCorrDiagMetric
+  (
+   REAL8             *hSens,
+   REAL8             *g_ff,
+   REAL8             *g_aa,
+   REAL8             *g_TT,
+   BinaryOrbitParams BinaryParams,
+   REAL8             f,
+   REAL8Vector       *G_alpha,
+   SFTPairIndexList  *pairIndexList,
+   SFTIndexList      *indexList,
+   MultiSFTVector    *sfts
+  
+   /*REAL8             *g_pp,*/
    )
   ;
 
-int XLALCalculateMetricElements
-  ( 
-   REAL8             *g_ff, 
-   REAL8             *g_aa, 
-   REAL8             *g_TT, 
-   REAL8             *g_pp,
-   REAL8             aPro,             
-   REAL8             f,
-   REAL8             pOrb,
-   REAL8             devTsq,         
-   REAL8             TSquaWeightedAve, 
-   REAL8             SinSquaWeightedAve    
-    )
   ;
 /*@}*/
+
+void XLALDestroySFTIndexList ( SFTIndexList *sftIndices );
+
+void XLALDestroySFTPairIndexList ( SFTPairIndexList *sftPairs );
 
 #ifdef  __cplusplus
 }                /* Close C++ protection */

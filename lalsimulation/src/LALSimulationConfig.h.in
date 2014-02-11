@@ -16,10 +16,4 @@
 /* LALFrame Version Devel Number  */
 #undef LALSIMULATION_VERSION_DEVEL
 
-/* LALFrame Configure Arguments */
-#undef LALSIMULATION_CONFIGURE_ARGS
-
-/* LALFrame Configure Date */
-#undef LALSIMULATION_CONFIGURE_DATE
-
 #endif /* LALSIMULATION_VERSION */

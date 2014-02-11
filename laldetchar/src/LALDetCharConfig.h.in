@@ -16,10 +16,4 @@
 /* LALDetChar Version Devel Number  */
 #undef LALDETCHAR_VERSION_DEVEL
 
-/* LALDetChar Configure Arguments */
-#undef LALDETCHAR_CONFIGURE_ARGS
-
-/* LALDetChar Configure Date */
-#undef LALDETCHAR_CONFIGURE_DATE
-
 #endif /* LALDETCHAR_VERSION */

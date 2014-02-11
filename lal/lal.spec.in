@@ -87,8 +87,14 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}
 %{_libdir}/python*/site-packages/lal/*.py
 %{_libdir}/python*/site-packages/lal/*.pyc
 %{_libdir}/python*/site-packages/lal/_lal.so*
+%{_libdir}/python*/site-packages/lal/spectrum/*.py
+%{_libdir}/python*/site-packages/lal/spectrum/*.pyc
+%{_libdir}/python*/site-packages/lal/utils/*.py
+%{_libdir}/python*/site-packages/lal/utils/*.pyc
 %exclude %{_libdir}/python*/site-packages/lal/*.pyo
 %exclude %{_libdir}/python*/site-packages/lal/*.la
+%exclude %{_libdir}/python*/site-packages/lal/spectrum/*.pyo
+%exclude %{_libdir}/python*/site-packages/lal/utils/*.pyo
 
 %files octave
 %defattr(-,root,root)

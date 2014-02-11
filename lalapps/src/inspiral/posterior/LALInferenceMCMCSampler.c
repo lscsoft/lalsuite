@@ -251,6 +251,9 @@ computeMaxAutoCorrLen(LALInferenceRunState *runState, INT4 startCycle, INT4 endC
     max = Niter;
   }
 
+  /* Account for any thinning of the DE buffer that has happend */
+  max *= runState->differentialPointsSkip;
+
   *maxACL = (INT4)max;
 }
 
@@ -293,7 +296,6 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
   REAL8 *ladder = NULL;			//the ladder
   REAL8 *annealDecay = NULL;
   INT4 parameter=0;
-  INT4 *intVec = NULL;
   INT4 annealStartIter = 0;
   INT4 iEffStart = 0;
   UINT4 hotChain = 0;                 // Affects proposal setup
@@ -375,7 +377,6 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
   nChain = MPIsize;		//number of parallel chain
   ladder = malloc(nChain * sizeof(REAL8));                  // Array of temperatures for parallel tempering.
   annealDecay = malloc(nChain * sizeof(REAL8));           			// Used by annealing scheme
-  intVec = malloc(nChain * sizeof(INT4));
 
   /* If not specified otherwise, set effective sample size to total number of iterations */
   if (!Neff) {
@@ -470,7 +471,8 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
       runState->likelihood==&LALInferenceFreqDomainLogLikelihood){
     nullLikelihood = LALInferenceNullLogLikelihood(runState->data);
   } else if (runState->likelihood==&LALInferenceFreqDomainStudentTLogLikelihood || 
-	     runState->likelihood==&LALInferenceMarginalisedTimeLogLikelihood) {
+	     (runState->likelihood==&LALInferenceMarginalisedTimeLogLikelihood &&
+        !LALInferenceGetProcParamVal(runState->commandLine, "--malmquistPrior")) ) {
     LALInferenceIFOData *headData = runState->data;
     REAL8 d = *(REAL8 *)LALInferenceGetVariable(runState->currentParams, "distance");
     REAL8 bigD = 1.0 / 0.0;
@@ -488,6 +490,12 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
   } else {
     nullLikelihood = 0.0;
   }
+
+  //null log likelihood logic doesn't work with noise parameters
+  if(runState->likelihood==&LALInferenceMarginalisedTimeLogLikelihood &&
+     (LALInferenceGetProcParamVal(runState->commandLine,"--psdFit") ||
+      LALInferenceGetProcParamVal(runState->commandLine,"--glitchFit") ) )
+    nullLikelihood = 0.0;
 
   LALInferenceAddVariable(runState->algorithmParams, "nChain", &nChain,  LALINFERENCE_INT4_t, LALINFERENCE_PARAM_FIXED);
   LALInferenceAddVariable(runState->algorithmParams, "nPar", &nPar,  LALINFERENCE_INT4_t, LALINFERENCE_PARAM_FIXED);
@@ -1011,17 +1019,6 @@ void PTMCMCOneStep(LALInferenceRunState *runState)
   if (LALInferenceCheckVariable(runState->proposalArgs, "accepted"))
     LALInferenceSetVariable(runState->proposalArgs, "accepted", &accepted);
 
-  /* special (clumsy) treatment for noise parameters */
-  //???: Is there a better way to deal with accept/reject of noise parameters?
-  if(LALInferenceCheckVariable(runState->currentParams,"psdscale"))
-  {
-    gsl_matrix *nx = *((gsl_matrix **)LALInferenceGetVariable(runState->currentParams, "psdstore"));
-    gsl_matrix *ny = *((gsl_matrix **)LALInferenceGetVariable(runState->currentParams, "psdscale"));
-    if(accepted == 1) gsl_matrix_memcpy(nx,ny);
-    else              gsl_matrix_memcpy(ny,nx);
-  }
-
-  LALInferenceTrackProposalAcceptance(runState, accepted);
   LALInferenceUpdateAdaptiveJumps(runState, accepted, targetAcceptance);
   LALInferenceClearVariables(&proposedParams);
 }

@@ -443,7 +443,9 @@ INT4 XLALPSpinGenerateQNMFreq(
   if ((l==2)&&(abs(m)==2)) {
     for (i = 0; i < nmodes; i++)
       {
-	modefreqs->data[i] = crectf( BCW22re[i][0] + BCW22re[i][1] * pow(1.- finalSpin, BCW22re[i][2]), crealf(modefreqs->data[i]) / 2. / (BCW22im[i][0] + BCW22im[i][1] * pow(1.- finalSpin, BCW22im[i][2])) );
+	REAL8 real_part = BCW22re[i][0] + BCW22re[i][1] * pow(1.- finalSpin, BCW22re[i][2]);
+	REAL8 imag_part = real_part / 2. / (BCW22im[i][0] + BCW22im[i][1] * pow(1.- finalSpin, BCW22im[i][2]));
+	modefreqs->data[i] = crectf(real_part, imag_part);
 	modefreqs->data[i] *= ((REAL4) 1./ finalMass / (totalMass * LAL_MTSUN_SI));
       }
   }
@@ -451,77 +453,99 @@ INT4 XLALPSpinGenerateQNMFreq(
     if ((l==2)&&(m==0)) {
       for (i = 0; i < nmodes; i++)
 	{
-	  modefreqs->data[i] = crectf( BCW20re[i][0] + BCW20re[i][1] * pow(1.- finalSpin, BCW20re[i][2]), crealf(modefreqs->data[i]) / 2. / (BCW20im[i][0] + BCW20im[i][1] * pow(1.- finalSpin, BCW20im[i][2])) );
+	  REAL8 real_part = BCW20re[i][0] + BCW20re[i][1] * pow(1.- finalSpin, BCW20re[i][2]);
+	  REAL8 imag_part = real_part / 2. / (BCW20im[i][0] + BCW20im[i][1] * pow(1.- finalSpin, BCW20im[i][2]));
+	  modefreqs->data[i] = crectf(real_part, imag_part);
 	  modefreqs->data[i] /= ((REAL4) finalMass * totalMass * LAL_MTSUN_SI);
 	}
     }
     else {
       if ((l==2)&&(abs(m)==1)) {
 	for (i = 0; i < nmodes; i++) {
-	  modefreqs->data[i] = crectf( BCW21re[i][0] + BCW21re[i][1] * pow(1.- finalSpin, BCW21re[i][2]), crealf(modefreqs->data[i]) / 2. / (BCW21im[i][0] + BCW21im[i][1] * pow(1.- finalSpin, BCW21im[i][2])) );
+	  REAL8 real_part = BCW21re[i][0] + BCW21re[i][1] * pow(1.- finalSpin, BCW21re[i][2]);
+	  REAL8 imag_part = real_part / 2. / (BCW21im[i][0] + BCW21im[i][1] * pow(1.- finalSpin, BCW21im[i][2]));
+	  modefreqs->data[i] = crectf(real_part, imag_part);
 	  modefreqs->data[i] /= ((REAL4) finalMass * totalMass * LAL_MTSUN_SI);
 	}
       }
       else {
 	if ((l==3)&&(abs(m)==3)) {
 	  for (i = 0; i < nmodes; i++) {
-	    modefreqs->data[i] = crectf( BCW33re[i][0] + BCW33re[i][1] * pow(1.- finalSpin, BCW33re[i][2]), crealf(modefreqs->data[i]) / 2. / (BCW33im[i][0] + BCW33im[i][1] * pow(1.- finalSpin, BCW33im[i][2])) );
+	    REAL8 real_part = BCW33re[i][0] + BCW33re[i][1] * pow(1.- finalSpin, BCW33re[i][2]);
+	    REAL8 imag_part = real_part / 2. / (BCW33im[i][0] + BCW33im[i][1] * pow(1.- finalSpin, BCW33im[i][2]));
+	    modefreqs->data[i] = crectf(real_part, imag_part);
 	    modefreqs->data[i] /= ((REAL4) finalMass * totalMass * LAL_MTSUN_SI);
 	  }
 	}
 	else
 	  if ((l==3)&&(abs(m)==2)) {
 	    for (i = 0; i < nmodes; i++) {
-	      modefreqs->data[i] = crectf( BCW32re[i][0] + BCW32re[i][1] * pow(1.- finalSpin, BCW32re[i][2]), crealf(modefreqs->data[i]) / 2. / (BCW32im[i][0] + BCW32im[i][1] * pow(1.- finalSpin, BCW32im[i][2])) );
+	      REAL8 real_part = BCW32re[i][0] + BCW32re[i][1] * pow(1.- finalSpin, BCW32re[i][2]);
+	      REAL8 imag_part = real_part / 2. / (BCW32im[i][0] + BCW32im[i][1] * pow(1.- finalSpin, BCW32im[i][2]));
+	      modefreqs->data[i] = crectf(real_part, imag_part);
 	      modefreqs->data[i] /= ((REAL4) finalMass * totalMass * LAL_MTSUN_SI);
 	    }
 	  }
 	  else {
 	    if ((l==3)&&(abs(m)==1)) {
 	      for (i = 0; i < nmodes; i++) {
-		modefreqs->data[i] = crectf( BCW31re[i][0] + BCW31re[i][1] * pow(1.- finalSpin, BCW31re[i][2]), crealf(modefreqs->data[i]) / 2. / (BCW31im[i][0] + BCW31im[i][1] * pow(1.- finalSpin, BCW31im[i][2])) );
+		REAL8 real_part = BCW31re[i][0] + BCW31re[i][1] * pow(1.- finalSpin, BCW31re[i][2]);
+		REAL8 imag_part = real_part / 2. / (BCW31im[i][0] + BCW31im[i][1] * pow(1.- finalSpin, BCW31im[i][2]));
+		modefreqs->data[i] = crectf(real_part, imag_part);
 		modefreqs->data[i] /= ((REAL4) finalMass * totalMass * LAL_MTSUN_SI);
 	      }
 	    }
 	    else {
 	      if ((l==3)&&(m==0)) {
 		for (i = 0; i < nmodes; i++) {
-		  modefreqs->data[i] = crectf( BCW30re[i][0] + BCW30re[i][1] * pow(1.- finalSpin, BCW30re[i][2]), crealf(modefreqs->data[i]) / 2. / (BCW30im[i][0] + BCW30im[i][1] * pow(1.- finalSpin, BCW30im[i][2])) );
+		  REAL8 real_part = BCW30re[i][0] + BCW30re[i][1] * pow(1.- finalSpin, BCW30re[i][2]);
+		  REAL8 imag_part = real_part / 2. / (BCW30im[i][0] + BCW30im[i][1] * pow(1.- finalSpin, BCW30im[i][2]));
+		  modefreqs->data[i] = crectf(real_part, imag_part);
 		  modefreqs->data[i] /= ((REAL4) finalMass * totalMass * LAL_MTSUN_SI);
 		}
 	      }
 	      else {
 		if ((l==4)&&(abs(m)==4)) {
 		  for (i = 0; i < nmodes; i++) {
-		    modefreqs->data[i] = crectf( BCW44re[i][0] + BCW44re[i][1] * pow(1.- finalSpin, BCW44re[i][2]), crealf(modefreqs->data[i]) / 2. / (BCW44im[i][0] + BCW44im[i][1] * pow(1.- finalSpin, BCW44im[i][2])) );
+		    REAL8 real_part = BCW44re[i][0] + BCW44re[i][1] * pow(1.- finalSpin, BCW44re[i][2]);
+		    REAL8 imag_part = real_part / 2. / (BCW44im[i][0] + BCW44im[i][1] * pow(1.- finalSpin, BCW44im[i][2]));
+		    modefreqs->data[i] = crectf(real_part, imag_part);
 		    modefreqs->data[i] /= ((REAL4) finalMass * totalMass * LAL_MTSUN_SI);
 		  }
 		}
 		else {
 		  if ((l==4)&&(abs(m)==3)) {
 		    for (i = 0; i < nmodes; i++) {
-		      modefreqs->data[i] = crectf( BCW43re[i][0] + BCW43re[i][1] * pow(1.- finalSpin, BCW43re[i][2]), crealf(modefreqs->data[i]) / 2. / (BCW43im[i][0] + BCW43im[i][1] * pow(1.- finalSpin, BCW43im[i][2])) );
+		      REAL8 real_part = BCW43re[i][0] + BCW43re[i][1] * pow(1.- finalSpin, BCW43re[i][2]);
+		      REAL8 imag_part = real_part / 2. / (BCW43im[i][0] + BCW43im[i][1] * pow(1.- finalSpin, BCW43im[i][2]));
+		      modefreqs->data[i] = crectf(real_part, imag_part);
 		      modefreqs->data[i] /= ((REAL4) finalMass * totalMass * LAL_MTSUN_SI);
 		    }
 		  }
 		  else {
 		    if ((l==4)&&(abs(m)==2)) {
 		      for (i = 0; i < nmodes; i++) {
-			modefreqs->data[i] = crectf( BCW42re[i][0] + BCW42re[i][1] * pow(1.- finalSpin, BCW42re[i][2]), crealf(modefreqs->data[i]) / 2. / (BCW42im[i][0] + BCW42im[i][1] * pow(1.- finalSpin, BCW42im[i][2])) );
+			REAL8 real_part = BCW42re[i][0] + BCW42re[i][1] * pow(1.- finalSpin, BCW42re[i][2]);
+			REAL8 imag_part = real_part / 2. / (BCW42im[i][0] + BCW42im[i][1] * pow(1.- finalSpin, BCW42im[i][2]));
+			modefreqs->data[i] = crectf(real_part, imag_part);
 			modefreqs->data[i] /= ((REAL4) finalMass * totalMass * LAL_MTSUN_SI);
 		      }
 		    }
 		    else {
 		      if ((l==4)&&(abs(m)==1)) {
 			for (i = 0; i < nmodes; i++) {
-			  modefreqs->data[i] = crectf( BCW41re[i][0] + BCW41re[i][1] * pow(1.- finalSpin, BCW41re[i][2]), crealf(modefreqs->data[i]) / 2. / (BCW41im[i][0] + BCW41im[i][1] * pow(1.- finalSpin, BCW41im[i][2])) );
+			  REAL8 real_part = BCW41re[i][0] + BCW41re[i][1] * pow(1.- finalSpin, BCW41re[i][2]);
+			  REAL8 imag_part = real_part / 2. / (BCW41im[i][0] + BCW41im[i][1] * pow(1.- finalSpin, BCW41im[i][2]));
+			  modefreqs->data[i] = crectf(real_part, imag_part);
 			  modefreqs->data[i] /= ((REAL4) finalMass * totalMass * LAL_MTSUN_SI);
 			}
 		      }
 		      else {
 			if ((l==4)&&(m==0)) {
 			  for (i = 0; i < nmodes; i++) {
-			    modefreqs->data[i] = crectf( BCW40re[i][0] + BCW40re[i][1] * pow(1.- finalSpin, BCW40re[i][2]), crealf(modefreqs->data[i]) / 2. / (BCW40im[i][0] + BCW40im[i][1] * pow(1.- finalSpin, BCW40im[i][2])) );
+			    REAL8 real_part = BCW40re[i][0] + BCW40re[i][1] * pow(1.- finalSpin, BCW40re[i][2]);
+			    REAL8 imag_part = real_part / 2. / (BCW40im[i][0] + BCW40im[i][1] * pow(1.- finalSpin, BCW40im[i][2]));
+			    modefreqs->data[i] = crectf(real_part, imag_part);
 			    modefreqs->data[i] /= ((REAL4) finalMass * totalMass * LAL_MTSUN_SI);
 			  }
 			}

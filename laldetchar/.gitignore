@@ -5,7 +5,10 @@
 *.pc
 .deps
 .libs
+Makefile
+Makefile.in
 bin/laldetchar-hveto
+bin/laldetchar-hveto-summary-page
 bin/laldetchar-segments-from-data
 bin/python_config.sed
 config.lt
@@ -16,6 +19,7 @@ laldetchar.spec
 libtool
 python/__init__.py
 python/git_version.py
+src/LALDetCharBuildInfo.c
 src/LALDetCharConfig.h
 src/LALDetCharVCSInfo.h
 src/config.h

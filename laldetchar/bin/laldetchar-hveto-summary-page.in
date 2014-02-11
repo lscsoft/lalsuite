@@ -8,6 +8,9 @@ from glue import cbcwebpage
 from glue.ligolw import lsctables, table, utils
 from glue.ligolw.utils import process
 
+optp = OptionParser()
+opts, args = optp.parse_args()
+
 xmlfiles = sorted(glob.glob("*HVETO_ROUND_*.xml.gz"))
 
 ignore_list = process.get_process_params(utils.load_filename(xmlfiles[0]), "laldetchar-hveto", "--ignore-list")[0]

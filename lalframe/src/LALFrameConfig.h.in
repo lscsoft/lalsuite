@@ -16,12 +16,6 @@
 /* LALFrame Version Devel Number  */
 #undef LALFRAME_VERSION_DEVEL
 
-/* LALFrame Configure Arguments */
-#undef LALFRAME_CONFIGURE_ARGS
-
-/* LALFrame Configure Date */
-#undef LALFRAME_CONFIGURE_DATE
-
 /* Define if you have inotify */
 #undef HAVE_INOTIFY
 

@@ -35,6 +35,7 @@
 #include <lal/TimeFreqFFT.h>
 #include <lal/Units.h>
 #include <lal/SphericalHarmonics.h>
+#include <lal/LALSimBlackHoleRingdown.h>
 
 #include "check_series_macros.h"
 
@@ -250,6 +251,148 @@ static int checkTidesZero(REAL8 lambda1, REAL8 lambda2)
 	XLAL_ERROR_NULL(XLAL_EINVAL);\
 	} while (0)
 
+/**
+ * Function that gives the default ending frequencies of the given approximant.
+ *
+ */
+double XLALSimInspiralGetFinalFreq(
+    REAL8 m1,                               /**< mass of companion 1 (kg) */
+    REAL8 m2,                               /**< mass of companion 2 (kg) */
+    const REAL8 S1x,                              /**< x-component of the dimensionless spin of object 1 */
+    const REAL8 S1y,                              /**< y-component of the dimensionless spin of object 1 */
+    const REAL8 S1z,                              /**< z-component of the dimensionless spin of object 1 */
+    const REAL8 S2x,                              /**< x-component of the dimensionless spin of object 2 */
+    const REAL8 S2y,                              /**< y-component of the dimensionless spin of object 2 */
+    const REAL8 S2z,                              /**< z-component of the dimensionless spin of object 2 */
+    Approximant approximant                 /**< post-Newtonian approximant to use for waveform production */
+    )
+{
+    double  freq;   /* The return value */
+
+    /* internal variables */
+    /* we will use m1, m2 in solar masses */
+    m1 /= LAL_MSUN_SI;
+    m2 /= LAL_MSUN_SI;
+
+    /* needed for Phenom */
+    double chi;
+
+    /* Needed for EOBNR */
+    REAL8 spin1[3];
+    REAL8 spin2[3];
+    int     modeL;
+    int     modeM;
+    COMPLEX16Vector modefreqVec;
+    COMPLEX16      modeFreq;
+
+    switch (approximant)
+    {
+        /* non-spinning inspiral-only models */
+        // CHECKME: do they really all use Schwarzschild ISCO? */
+        case TaylorEt:
+        case TaylorT1:
+        case TaylorT2:
+        case TaylorT3:
+        case TaylorT4:
+        case TaylorF2:
+            /* Check that spins are zero */
+            if( !checkSpinsZero(S1x, S1y, S1z, S2x, S2y, S2z) )
+            {
+                XLALPrintError("Non-zero spins were given, but this is a non-spinning approximant.\n");
+                XLAL_ERROR(XLAL_EINVAL);
+            }
+        case TaylorF2RedSpin:
+        case TaylorF2RedSpinTidal:
+            /* Schwarzschild ISCO */
+	        freq = pow(LAL_C_SI,3) / (pow(6.,3./2.)*LAL_PI*(m1+m2)*LAL_MSUN_SI*LAL_G_SI);
+            break;
+
+        /* IMR models */
+        /* EOBNR models all call the same code, just with different inputs */
+        case EOBNRv2HM:
+        case EOBNRv2:
+        case SEOBNRv1:
+            // FIXME: Probably shouldn't hard code the modes.
+            if ( approximant == EOBNRv2HM )
+            {
+                modeL = 5;
+                modeM = 5;
+            }
+            else
+            {
+                modeL = 2;
+                modeM = 2;
+            }
+            if ( approximant == EOBNRv2 || approximant == EOBNRv2HM )
+            {
+                /* Check that spins are zero */
+                if( !checkSpinsZero(S1x, S1y, S1z, S2x, S2y, S2z) )
+                {
+                    XLALPrintError("Non-zero spins were given, but this is a non-spinning approximant.\n");
+                    XLAL_ERROR(XLAL_EINVAL);
+                spin1[0] = 0.; spin1[1] = 0.; spin1[2] = 0.;
+                spin2[0] = 0.; spin2[1] = 0.; spin2[2] = 0.;
+                }
+            }
+            else
+            {
+                spin1[0] = S1x; spin1[1] = S1y; spin1[2] = S1z;
+                spin2[0] = S2x; spin2[1] = S2y; spin2[2] = S2z;
+            }
+
+            modefreqVec.length = 1;
+            modefreqVec.data   = &modeFreq;
+            if ( XLALSimIMREOBGenerateQNMFreqV2( &modefreqVec, m1, m2, spin1, spin2, modeL, modeM, 1, approximant) != XLAL_SUCCESS )
+            {
+                XLAL_ERROR( XLAL_EFUNC );
+            }
+
+            freq = creal(modeFreq) / (2 * LAL_PI);
+            break;
+
+        case IMRPhenomA:
+            /* Check that spins are zero */
+            if( !checkSpinsZero(S1x, S1y, S1z, S2x, S2y, S2z) )
+            {
+                XLALPrintError("Non-zero spins were given, but this is a non-spinning approximant.\n");
+                XLAL_ERROR(XLAL_EINVAL);
+            }
+            freq = XLALSimIMRPhenomAGetFinalFreq(m1, m2);
+            break;
+
+        case IMRPhenomB:
+            chi = XLALSimIMRPhenomBComputeChi(m1, m2, S1z, S2z);
+            freq = XLALSimIMRPhenomBGetFinalFreq(m1, m2, chi);
+            break;
+
+        case IMRPhenomC:
+            chi = XLALSimIMRPhenomBComputeChi(m1, m2, S1z, S2z);
+            freq = XLALSimIMRPhenomCGetFinalFreq(m1, m2, chi);
+            break;
+
+
+        // FIXME: Following I don't know how to calculate */
+        /* Spinning inspiral-only time domain */
+        case SpinTaylorT2:
+        case SpinTaylorT4:
+        case PhenSpinTaylor:
+        /* Spinning with ringdown attachment */
+        case PhenSpinTaylorRD:
+        /* Spinning inspiral-only frequency domain */
+        case SpinTaylorF2:
+            XLALPrintError("I don't know how to calculate final freq. for this approximant, sorry!\n");
+            XLAL_ERROR(XLAL_EINVAL);
+            break;
+
+
+        default:
+            XLALPrintError("Unsupported approximant\n");
+            XLAL_ERROR(XLAL_EINVAL);
+    }
+
+    return freq;
+}
+    
 
 /**
  * Compute the polarizations from all the -2 spin-weighted spherical harmonic
@@ -2070,6 +2213,34 @@ int XLALSimInspiralChooseFDWaveform(
             }
             break;
 
+        case IMRPhenomP:
+            /* Waveform-specific sanity checks */
+            if( !XLALSimInspiralFrameAxisIsDefault(
+                    XLALSimInspiralGetFrameAxis(waveFlags) ) ) /* Default is LAL_SIM_INSPIRAL_FRAME_AXIS_VIEW : z-axis along direction of GW propagation (line of sight). */
+                ABORT_NONDEFAULT_FRAME_AXIS(waveFlags);
+            if( !XLALSimInspiralModesChoiceIsDefault(          /* Default is (2,2) or l=2 modes. */
+                    XLALSimInspiralGetModesChoice(waveFlags) ) )
+                ABORT_NONDEFAULT_MODES_CHOICE(waveFlags);
+            if( !checkTidesZero(lambda1, lambda2) )
+                ABORT_NONZERO_TIDES(waveFlags);
+            LNhatx = sin(i);
+            LNhaty = 0.;
+            LNhatz = cos(i);
+            /* Tranform to model parameters */
+            REAL8 chi_eff, chip, eta, thetaJ, phiJ, alpha0;
+            XLALSimIMRPhenomPCalculateModelParameters(
+                &chi_eff, &chip, &eta, &thetaJ, &phiJ, &alpha0,
+                m1, m2, f_min,
+                LNhatx, LNhaty, LNhatz,
+                S1x, S1y, S1z,
+                S2x, S2y, S2z);
+            /* Call the waveform driver routine */
+            ret = XLALSimIMRPhenomP(hptilde, hctilde,
+              chi_eff, chip, eta, thetaJ, phiJ,
+              m1+m2, r, alpha0, phiRef, deltaF, f_min, f_max);
+            if (ret == XLAL_FAILURE) XLAL_ERROR(XLAL_EFUNC);
+            break;
+
         default:
             XLALPrintError("FD version of approximant not implemented in lalsimulation\n");
             XLAL_ERROR(XLAL_EINVAL);
@@ -2410,6 +2581,7 @@ int XLALSimInspiralImplementedFDApproximants(
         case IMRPhenomA:
         case IMRPhenomB:
         case IMRPhenomC:
+        case IMRPhenomP:
         //case TaylorR2F4:
         case TaylorF2:
         case SpinTaylorF2:
@@ -2512,6 +2684,10 @@ int XLALGetApproximantFromString(const CHAR *inString)
   else if ( strstr(inString, "IMRPhenomC" ) )
   {
     return IMRPhenomC;
+  }
+  else if ( strstr(inString, "IMRPhenomP" ) )
+  {
+    return IMRPhenomP;
   }
   else if ( strstr(inString, "IMRPhenomFA" ) )
   {
@@ -2664,6 +2840,8 @@ char* XLALGetStringFromApproximant(Approximant approximant)
       return strdup("IMRPhenomB");
     case IMRPhenomC:
       return strdup("IMRPhenomC");
+    case IMRPhenomP:
+      return strdup("IMRPhenomP");
     case IMRPhenomFA:
       return strdup("IMRPhenomFA");
     case IMRPhenomFB:
@@ -2905,6 +3083,7 @@ int XLALSimInspiralGetSpinSupportFromApproximant(Approximant approx){
     case PhenSpinTaylor:
     case PhenSpinTaylorRD:
     case SpinTaylorT3:
+    case IMRPhenomP:
       spin_support=LAL_SIM_INSPIRAL_PRECESSINGSPIN;
       break;
     case SpinTaylorF2:

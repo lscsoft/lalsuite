@@ -223,7 +223,7 @@ def make_dag(config, ifo, category, cluster, start_time, end_time):
 
     roots = []
 
-    for ifo in ['H1','L1','V1']:
+    for ifo in ifos:
         veto_job = Tree('make_veto_files', config, ifo, 1, 'UNCLUSTERED', start_time, end_time, local = True)
 
         roots.append(veto_job)
@@ -329,6 +329,9 @@ def parse_command_line():
     if not options.action:
         print >>sys.stderr, "Please specify --action"
         sys.exit(-1)
+    if not options.ifos:
+        print >>sys.stderr, "Please specify --ifos"
+        sys.exit(-1)
 
     return options
 
@@ -393,7 +396,7 @@ def make_title(ifo, veto_level, cluster, start_time, desc = None):
                          '16SEC_CLUSTERED':'16 sec window'}
 
 
-    tstring =  os.popen('tconvert -f "%b %d, %Y" ' + str(start_time)).readlines()[0].strip()
+    tstring =  os.popen('lalapps_tconvert -f "%b %d, %Y" ' + str(start_time)).readlines()[0].strip()
 
     if desc:
         return '%s (%s: %s, %s, %s)' % (desc, tstring, ifo, veto_level_labels[veto_level], cluster_labels[cluster])
@@ -412,7 +415,7 @@ def new_snr(snr, chisq, chisq_dof, index=6.0):
 
 
 def make_time_label(start_time):
-    tstring =  os.popen('tconvert -f "%b %d %Y" ' + str(start_time)).readlines()[0].strip()
+    tstring =  os.popen('lalapps_tconvert -f "%b %d %Y" ' + str(start_time)).readlines()[0].strip()
 
     return 'Time [hours since %s 00:00:00 UTC]' % tstring
 
@@ -685,7 +688,7 @@ def make_glitchy_times_table(config, ifo, veto_level, cluster, start_time, end_t
     """Find intervals with trigger rates > 200 Hz"""
 
     def tconvert(t):
-        return os.popen('tconvert -f %H:%M:%S ' + str(t)).readlines()[0].strip()
+        return os.popen('lalapps_tconvert -f %H:%M:%S ' + str(t)).readlines()[0].strip()
 
 
     out = open('%s/%s-%d_%s_glitchy_times_table.html' % (config['tmp_dir'], ifo, veto_level, cluster), 'w')
@@ -759,7 +762,7 @@ def make_glitchy_times_table(config, ifo, veto_level, cluster, start_time, end_t
 
 
 def make_usage_table(config, ifo, veto_level, cluster, start_time, end_time):
-    out = open('%s/%s-%d_%s_usage_table.html' % (config['tmp_dir'], ifo, veto_level, cluster), 'w')
+    out = open('%s/%s-%d_%s_usage_table.html' % (config['out_dir'], ifo, veto_level, cluster), 'w')
 
     if veto_level == 0:
         out.close()
@@ -926,14 +929,14 @@ def make_index_page(config, ifo, veto_level, cluster, gps_start_time, gps_end_ti
 
     map['start_time'] = gps_start_time
     map['end_time']   = gps_end_time
-    map['date']       = os.popen('tconvert -f "%B %d, %Y" ' + str(gps_start_time)).readlines()[0].strip()
+    map['date']       = os.popen('lalapps_tconvert -f "%B %d, %Y" ' + str(gps_start_time)).readlines()[0].strip()
     template          = html_template % map
 
     out = open('%s/index.html' % config['out_dir'],'w')
     print >>out, template
     out.close()
 
-    for ifo in ['H1','L1','V1']:
+    for ifo in ifos:
         for cat in [0,1,2,4]:
             for cluster in ['UNCLUSTERED','30MILLISEC_CLUSTERED','16SEC_CLUSTERED']:
                 # Make the summary section
@@ -947,7 +950,7 @@ def make_index_page(config, ifo, veto_level, cluster, gps_start_time, gps_end_ti
                 print >>out, '<body>'
 
                 for name in summary_names:
-                    in_f = open(config['tmp_dir'] + '/' + name % (ifo, cat, cluster))
+                    in_f = open(config['out_dir'] + '/' + name % (ifo, cat, cluster))
 
                     for l in in_f:
                         print >>out, l
@@ -1078,7 +1081,7 @@ def plot_snr_vs_time(config, ifo, veto_level, cluster, start_time, end_time):
         maxindex = pylab.argmax(snr)
         pylab.text(time[maxindex], snr[maxindex]*1.04, 'Max: GPS %.3f' % (gps[maxindex]+1e-9*gpsns[maxindex]), size='medium')
         if len(infTimes):
-            pylab.txt(0.5, max(snr)*1.07, 'One or more SNRs were inf!! See .err file for a list of times')
+            pylab.text(0.5, max(snr)*1.07, 'One or more SNRs were inf!! See .err file for a list of times')
             print >>sys.stderr, 'Times with SNR=inf:', infTimes
 
     pylab.title(make_timeless_title(ifo, veto_level, cluster, start_time))

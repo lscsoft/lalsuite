@@ -23,6 +23,7 @@ SUBDIRS = \
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = lalframe.pc
 noinst_DATA = lalframe-uninstalled.pc
+BUILT_SOURCES = lalframe-uninstalled.pc
 
 DISTCLEANFILES = config.lt
 

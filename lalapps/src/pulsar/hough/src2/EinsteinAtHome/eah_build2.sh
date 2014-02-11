@@ -76,7 +76,10 @@ zlib_shared="--static"
 for i; do
     case "$i" in
 	--win32)
-	    build_win32=true ;;
+	    build_win32=true
+	    cross_prefix=i586-mingw32msvc ;;
+	--cross-prefix=*)
+	    cross_prefix=`echo "$i" | sed 's/--cross-prefix=//'` ;;
 	--static)
 	    shared_copt="--disable-shared" ;;
 	--rebuild)
@@ -187,6 +190,7 @@ for i; do
 	--help)
 	    echo "$0 builds Einstein@home Applications of LALApps HierarchSearchGCT code"
 	    echo "  --win32           cros-compile a Win32 App (requires MinGW, target i586-mingw32msvc-gcc)"
+	    echo "  --cross-prefix=<p> use a compiler toolchain with a prefix other than i586-mingw32msvc"
 	    echo "  --32              build 32Bit (add -m32 to  CPPFLAGS, CXXFLAGS, CFLAGS and LDFLAGS)"
 	    echo "  --64              build 64Bit (add -m64 to  CPPFLAGS, CXXFLAGS, CFLAGS and LDFLAGS)"
 	    echo "  --tiger           build to run on Mac OS 10.4"
@@ -230,11 +234,11 @@ missing_wine_warning=false
 if [ ."$build_win32" = ."true" ] ; then
     BUILD="${BUILD}_win32"
     INSTALL="${INSTALL}_win32"
-    export CC=i586-mingw32msvc-gcc
-    export CXX=i586-mingw32msvc-g++
-    export AR=i586-mingw32msvc-ar
-    export RANLIB=i586-mingw32msvc-ranlib
-    export LIBTOOL=i586-mingw32msvc-libtool
+    export CC=${cross_prefix}-gcc
+    export CXX=${cross_prefix}-g++
+    export AR=${cross_prefix}-ar
+    export RANLIB=${cross_prefix}-ranlib
+    export LIBTOOL=${cross_prefix}-libtool
     CPPFLAGS="-DMINGW_WIN32 -DWIN32 -D_WIN32 -D_WIN32_WINDOWS=0x0410 $CPPFLAGS"
     # -include $INSTALL/include/win32_hacks.h
     cross_copt=--host=i586-pc-mingw32

@@ -5,6 +5,8 @@
 *.pc
 .deps
 .libs
+Makefile
+Makefile.in
 config.lt
 include/lal/*.h
 include/lal/*.i
@@ -13,6 +15,7 @@ lalburst.spec
 libtool
 python/__init__.py
 python/git_version.py
+src/LALBurstBuildInfo.c
 src/LALBurstConfig.h
 src/LALBurstVCSInfo.h
 src/config.h

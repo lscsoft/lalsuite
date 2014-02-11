@@ -69,11 +69,20 @@
 #include <string.h>
 #include <errno.h>
 
+#ifdef HAVE_SYS_STAT_H
+#include <sys/stat.h>
+#endif
+#ifdef HAVE_SYS_TYPES_H
+#include <sys/types.h>
+#endif
+
 #include <zlib.h>
 #define ZLIB_ENABLED
 
 #include <lal/LALStdlib.h>
 #include <lal/LALStdio.h>
+#include <lal/LALString.h>
+#include <lal/StringInput.h>
 #include <lal/FileIO.h>
 
 struct tagLALFILE {
@@ -125,6 +134,8 @@ LALOpenDataFile( const char *fname )
   char *p1;		/* pointer to next sub-path */
   char  fdata[32768];
   int   n;
+
+  XLAL_PRINT_DEPRECATION_WARNING("XLALFileResolvePathLong");
 
   if ( (fname==NULL) || ( strlen(fname)==0) ) {
     return NULL;
@@ -205,6 +216,163 @@ LALOpenDataFile( const char *fname )
   return NULL;
 }
 
+/** 'Resolve' a given filename 'fname', returning a file path where the
+ *  file can successfully be opened by fopen() using mode='rb'.
+ *
+ * Return: successful file-path or NULL if failed.
+ *
+ * Resolving follows an algorithm similar to what LALOpenDataFile() did,
+ * namely if 'fname' contains a
+ * i) (relative or absolute) path: only tries to open that path directly
+ * ii) pure filename: try 1) local dir, then 2) search LAL_DATA_PATH, then 3) try fallbackdir
+ *                    return first successful hit
+ *
+ * Note: it is not an error if the given 'fname' cannot be resolved,
+ * this will simply return NULL but xlalErrno will not be set in that case.
+ *
+ * Note2: successfully resolving an 'fname' doesn't guarantee that the path points
+ * to a file, as directories can also be opened in 'rb'.
+ *
+ * Note3: the returned string is allocated here and must be XLALFree'ed by the caller.
+ */
+char *
+XLALFileResolvePathLong ( const char *fname,	  //!< [in] filename or file-path to resolve
+                          const char *fallbackdir //!< [in] directory to try as a last resort (usually PKG_DATA_DIR) [can be NULL]
+                          )
+{
+  XLAL_CHECK_NULL ( fname != NULL, XLAL_EINVAL );
+
+  UINT4 fname_len = strlen ( fname );
+
+  if ( strchr ( fname, '/' ) != NULL )	// any kind of (absolute or relative) path is given -> use only that
+    {
+      FILE *tmp;
+      if ( (tmp = LALFopen ( fname, "rb" )) != NULL ) {
+        LALFclose ( tmp );
+        return XLALStringDuplicate ( fname );
+      } // if found
+      else {
+        return NULL;
+      } // if not found
+
+    } // end: if path given
+  else	// if pure filename given: try 1) local directory, then 2) scan LAL_DATA_PATH, then 3) try fallbackdir (if given)
+    {
+      FILE *tmp;
+      char *resolveFname = NULL;
+
+      // ----- Strategy 1: try local directory explicitly
+      XLAL_CHECK_NULL ( (resolveFname = XLALMalloc ( fname_len + 2 + 1 )) != NULL, XLAL_ENOMEM );
+      sprintf ( resolveFname, "./%s", fname );
+      if ( (tmp = LALFopen ( resolveFname, "rb" )) != NULL ) {
+        LALFclose ( tmp );
+        return resolveFname;
+      } // if found
+
+      // ----- Strategy 2: scan LAL_DATA_PATH
+      const char *lal_data_path = getenv( "LAL_DATA_PATH" );
+      if ( lal_data_path && (strlen (lal_data_path ) > 0) )
+        {
+          TokenList *subPaths = NULL;
+          XLAL_CHECK_NULL ( XLALCreateTokenList ( &subPaths, lal_data_path, ":" ) == XLAL_SUCCESS, XLAL_EFUNC );
+          for ( UINT4 i = 0; i < subPaths->nTokens; i ++ )
+            {
+              const char *subPath_i = subPaths->tokens[i];
+              XLAL_CHECK_NULL ( (resolveFname = XLALRealloc ( resolveFname, strlen(subPath_i) + 1 + fname_len + 1 )) != NULL, XLAL_ENOMEM );
+              sprintf ( resolveFname, "%s/%s", subPath_i, fname );
+              if ( (tmp = LALFopen ( resolveFname, "rb" )) != NULL ) {
+                LALFclose ( tmp );
+                XLALDestroyTokenList ( subPaths );
+                return resolveFname;
+              } // if found
+
+            } // for i < nTokens
+
+          XLALDestroyTokenList ( subPaths );
+
+        } // if LAL_DATA_PATH given
+
+      // ----- Strategy 3: try 'fallbackdir' if given
+      if ( fallbackdir != NULL )
+        {
+          XLAL_CHECK_NULL ( (resolveFname = XLALRealloc ( resolveFname, strlen(fallbackdir) + 1 + strlen(fname) + 1 )) != NULL, XLAL_ENOMEM );
+          sprintf ( resolveFname, "%s/%s", fallbackdir, fname );
+          if ( (tmp = LALFopen ( resolveFname, "rb" )) != NULL ) {
+            LALFclose ( tmp );
+            return resolveFname;
+          } // if found
+        } // if fallbackdir
+
+      XLALFree ( resolveFname );
+
+    } // end: if pure filename given
+
+  // nothing worked? that's ok: return NULL without failure!
+  return NULL;
+
+} // XLALFileResolvePathLong()
+
+/** Simple wrapper to XLALFileResolvePathLong(), using hardcoded fallbackdir=PKG_DATA_DIR
+ */
+char *
+XLALFileResolvePath ( const char *fname	  //!< [in] filename or file-path to resolve
+                      )
+{
+  return XLALFileResolvePathLong ( fname, PKG_DATA_DIR );
+} // XLALFileResolvePath()
+
+/** Read a complete data-file into memory as a string
+ */
+char *
+XLALFileLoad ( const char *path		//!< [in] input filepath
+               )
+{
+  XLAL_CHECK_NULL ( path != NULL, XLAL_EINVAL );
+
+  // check that this is actually a regular file, rather than sth else (eg a directory)
+  size_t blobLen;
+  XLAL_CHECK_NULL ( XLALFileIsRegularAndGetSize ( path, &blobLen ) == 1, XLAL_EINVAL, "Path '%s' does not point to a regular file!\n", path );
+
+  char *dataBuffer = NULL;
+  size_t dataBufferLen = 0;
+  size_t numReadTotal = 0;
+  LALFILE *fp;
+  XLAL_CHECK_NULL ( (fp = XLALFileOpenRead (path)) != NULL, XLAL_EFUNC );
+
+  // read file in blobs the size of the (possibly compressed) file
+  int blobCounter = 0;
+  while ( ! XLALFileEOF( fp ) )
+    {
+      dataBufferLen += blobLen;
+      if ( (dataBuffer = XLALRealloc ( dataBuffer, dataBufferLen + 1)) == NULL ) {
+        XLALFileClose(fp);
+        XLAL_ERROR_NULL ( XLAL_ENOMEM, "Failed to XLALRealloc(%d)\n", dataBufferLen+1 );
+      }
+      size_t numRead = XLALFileRead ( dataBuffer + blobCounter*blobLen, sizeof(char), blobLen, fp );
+      if ( xlalErrno != XLAL_SUCCESS ) {
+        XLALFree ( dataBuffer );
+        XLALFileClose(fp);
+        XLAL_ERROR_NULL ( XLAL_EFUNC );
+      }
+
+      numReadTotal += numRead;
+
+      if ( numRead < blobLen ) {
+        break;
+      }
+      blobCounter ++;
+
+    } // while !eof
+
+  XLALFileClose(fp);
+
+  // adjust buffer to final size of data read
+  XLAL_CHECK_NULL ( (dataBuffer = XLALRealloc ( dataBuffer, numReadTotal + 1)) != NULL, XLAL_ENOMEM, "Failed to XLALRealloc(%d)\n", numReadTotal+1 );
+  dataBuffer[numReadTotal] = 0;
+
+  return dataBuffer;
+
+} // XLALFileLoad()
 
 int XLALFileIsCompressed( const char *path )
 {
@@ -522,6 +690,70 @@ int XLALFileEOF( LALFILE *file )
 #endif
   return c;
 }
+
+/** Check if path points to a 'regular file', rather than a directory or sth else.
+ * and also return the size of the given file.
+ *
+ * This is simply a wrapper to stat(), and S_ISREG()
+ * and could be easily generalized along those lines to test for directories etc.
+ *
+ * return an error if stat() was unavailable
+ * return 1 for true, 0 for false, -1 on error
+ */
+int
+XLALFileIsRegularAndGetSize ( const char *path,	//!< [in] path to file
+                              size_t *fileLen	//!< [out] size in bytes of file
+                              )
+{
+#ifndef HAVE_STAT
+  XLAL_ERROR ( XLAL_EFAILED, "No implementation of function stat() available, which is required here!\n");
+#else
+  XLAL_CHECK ( path != NULL, XLAL_EINVAL );
+
+  struct stat sb;
+  XLAL_CHECK ( stat( path, &sb) != -1, XLAL_EIO, "stat() failed: perror = '%s'\n", strerror(errno) );
+
+  if ( fileLen ) {	// optional output argument
+    (*fileLen) = (size_t)sb.st_size;
+  }
+
+  return (S_ISREG(sb.st_mode));
+#endif
+
+} // XLALFileIsRegularAndGetSize()
+
+
+/** Check if given file is 'regular' (rather than a directory or sth else)
+ *
+ * This is a simple wrapper to XLALFileIsRegularAndGetSize().
+ *
+ * Return 1 for true, 0 for false, -1 on error
+ */
+int
+XLALFileIsRegular ( const char *path	//!< [in] path to file
+                    )
+{
+  return XLALFileIsRegularAndGetSize ( path, NULL );
+} // XLALFileIsRegular()
+
+
+/** Return the size of given file in bytes.
+ *
+ * This is simply a wrapper to XLALFileIsRegularAndGetSize()
+ *
+ * Returns (size_t)-1 on error
+ */
+size_t
+XLALFileSize ( const char *path		//!< [in] path to file
+               )
+{
+  size_t size;
+
+  XLAL_CHECK ( XLALFileIsRegularAndGetSize ( path, &size ) != -1, XLAL_EFUNC );
+
+  return size;
+
+} // XLALFileSize()
 
 /**
  * \brief Use gzip to compress a text file

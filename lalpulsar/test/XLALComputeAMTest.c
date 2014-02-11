@@ -58,8 +58,6 @@
 extern char *optarg;
 
 static const LALStatus empty_status;
-static const AMCoeffsParams empty_AMCoeffsParams;
-static const AMCoeffs empty_AMCoeffs;
 
 
 /* ----- internal prototypes ---------- */

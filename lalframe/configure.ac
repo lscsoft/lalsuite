@@ -1,5 +1,5 @@
 AC_PREREQ([2.63])
-AC_INIT([lalframe],[1.1.0.1],[lal-discuss@ligo.org])
+AC_INIT([lalframe],[1.1.1.1],[lal-discuss@ligo.org])
 AC_CONFIG_HEADERS([src/config.h src/LALFrameConfig.h])
 AC_CONFIG_SRCDIR([src/LALFrameIO.c])
 AC_CONFIG_AUX_DIR([gnuscripts])
@@ -44,15 +44,12 @@ LALSUITE_DISTCHECK_CONFIGURE_FLAGS
 # 6. if any interfaces have been removed since the last public release,
 #    then set age to 0.
 AC_SUBST([LIBCURRENT],[7])
-AC_SUBST([LIBREVISION],[0])
+AC_SUBST([LIBREVISION],[1])
 AC_SUBST([LIBAGE],[0])
 AC_SUBST([LIBVERSION],[${LIBCURRENT}:${LIBREVISION}:${LIBAGE}])
 
 # nightly build
 LALSUITE_ENABLE_NIGHTLY
-
-# debug
-LALSUITE_ENABLE_DEBUG
 
 # enable check for inotify
 LALFRAME_ENABLE_INOTIFY
@@ -66,27 +63,8 @@ LALSUITE_ENABLE_SWIG
 # allow use of either FrameC or FrameL
 LALFRAME_WITH_FRAME_LIBRARY
 
-# put version/configure info in config header
-lalframe_version_major=`echo "$VERSION" | cut -d. -f1`
-lalframe_version_minor=`echo "$VERSION" | cut -d. -f2`
-lalframe_version_micro=`echo "$VERSION" | cut -d. -f3`
-lalframe_version_devel=`echo "$VERSION" | cut -d. -f4-`
-test -z "$lalframe_version_micro" && lalframe_version_micro=0
-test -z "$lalframe_version_devel" && lalframe_version_devel=0
-lalframe_configure_date=`date +"%Y-%m-%dT%H:%M:%S%z"`
-AC_DEFINE_UNQUOTED([LALFRAME_VERSION],["$VERSION"],[LALFrame Version])
-AC_DEFINE_UNQUOTED([LALFRAME_VERSION_MAJOR],[$lalframe_version_major],
-                   [LALFrame Version Major Number])
-AC_DEFINE_UNQUOTED([LALFRAME_VERSION_MINOR],[$lalframe_version_minor],
-                   [LALFrame Version Minor Number])
-AC_DEFINE_UNQUOTED([LALFRAME_VERSION_MICRO],[$lalframe_version_micro],
-                   [LALFrame Version Micro Number])
-AC_DEFINE_UNQUOTED([LALFRAME_VERSION_DEVEL],[$lalframe_version_devel],
-                   [LALFrame Version Devel Number])
-AC_DEFINE_UNQUOTED([LALFRAME_CONFIGURE_ARGS],["$ac_configure_args"],
-                   [LALFrame Configure Arguments])
-AC_DEFINE_UNQUOTED([LALFRAME_CONFIGURE_DATE],["$lalframe_configure_date"],
-                   [LALFrame Configure Date])
+# define version/configure info
+LALSUITE_VERSION_CONFIGURE_INFO
 
 # workaround broken libtool multilib support on sl6
 LALSUITE_MULTILIB_LIBTOOL_HACK
@@ -148,8 +126,8 @@ AS_IF([test "${framel}" = "true"],[
        FRAME_LIBRARY="FrameL"])
 
 # check for lal libraries and headers
-LALSUITE_CHECK_LIB([LAL],[6.11.0],[LALVersion],[lal/LALStdio.h])
-LALSUITE_CHECK_LIB([LALSupport],[6.11.0],[LALOpenDataFile],[lal/FileIO.h])
+LALSUITE_CHECK_LIB([LAL],[6.12.0],[LALVersion],[lal/LALStdio.h])
+LALSUITE_CHECK_LIB([LALSupport],[6.12.0],[XLALCacheImport],[lal/LALCache.h])
 
 # check for inotify
 if test "${inotify}" = "true"; then
@@ -175,7 +153,7 @@ AC_SUBST_FILE([LAL_HEADER_LINK])
 
 # output
 AC_OUTPUT
-echo "
+AC_MSG_NOTICE([
 ==================================================
 LALFrame has now been successfully configured:
 
@@ -191,7 +169,7 @@ ${prefix}
 Now run 'make' to build LALFrame,
 and run 'make install' to install LALFrame.
 ==================================================
-"
+])
 
 AS_IF([test "${FRAME_LIBRARY}" = "FrameC"],[
        echo "

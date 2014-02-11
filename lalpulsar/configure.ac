@@ -1,5 +1,5 @@
 AC_PREREQ([2.63])
-AC_INIT([lalpulsar],[1.8.0.1],[lal-discuss@ligo.org])
+AC_INIT([lalpulsar],[1.9.0.1],[lal-discuss@ligo.org])
 AC_CONFIG_HEADERS([src/config.h src/LALPulsarConfig.h])
 AC_CONFIG_SRCDIR([src/ComputeFstat.c])
 AC_CONFIG_AUX_DIR([gnuscripts])
@@ -42,7 +42,7 @@ LALSUITE_DISTCHECK_CONFIGURE_FLAGS
 #    then increment age.
 # 6. if any interfaces have been removed since the last public release,
 #    then set age to 0.
-AC_SUBST([LIBCURRENT],[8])
+AC_SUBST([LIBCURRENT],[9])
 AC_SUBST([LIBREVISION],[0])
 AC_SUBST([LIBAGE],[0])
 AC_SUBST([LIBVERSION],[${LIBCURRENT}:${LIBREVISION}:${LIBAGE}])
@@ -53,9 +53,6 @@ LALSUITE_ENABLE_NIGHTLY
 # enable LALXML support
 LALSUITE_ENABLE_LALXML
 
-# debug
-LALSUITE_ENABLE_DEBUG
-
 # boinc
 LALSUITE_ENABLE_BOINC
 
@@ -65,27 +62,8 @@ LALSUITE_ENABLE_GCC_FLAGS
 # enable SWIG wrapping modules
 LALSUITE_ENABLE_SWIG
 
-# put version/configure info in config header
-lalpulsar_version_major=`echo "$VERSION" | cut -d. -f1`
-lalpulsar_version_minor=`echo "$VERSION" | cut -d. -f2`
-lalpulsar_version_micro=`echo "$VERSION" | cut -d. -f3`
-lalpulsar_version_devel=`echo "$VERSION" | cut -d. -f4-`
-test -z "$lalpulsar_version_micro" && lalpulsar_version_micro=0
-test -z "$lalpulsar_version_devel" && lalpulsar_version_devel=0
-lalpulsar_configure_date=`date +"%Y-%m-%dT%H:%M:%S%z"`
-AC_DEFINE_UNQUOTED([LALPULSAR_VERSION],["$VERSION"],[LALPulsar Version])
-AC_DEFINE_UNQUOTED([LALPULSAR_VERSION_MAJOR],[$lalpulsar_version_major],
-                   [LALPulsar Version Major Number])
-AC_DEFINE_UNQUOTED([LALPULSAR_VERSION_MINOR],[$lalpulsar_version_minor],
-                   [LALPulsar Version Minor Number])
-AC_DEFINE_UNQUOTED([LALPULSAR_VERSION_MICRO],[$lalpulsar_version_micro],
-                   [LALPulsar Version Micro Number])
-AC_DEFINE_UNQUOTED([LALPULSAR_VERSION_DEVEL],[$lalpulsar_version_devel],
-                   [LALPulsar Version Devel Number])
-AC_DEFINE_UNQUOTED([LALPULSAR_CONFIGURE_ARGS],["$ac_configure_args"],
-                   [LALPulsar Configure Arguments])
-AC_DEFINE_UNQUOTED([LALPULSAR_CONFIGURE_DATE],["$lalpulsar_configure_date"],
-                   [LALPulsar Configure Date])
+# define version/configure info
+LALSUITE_VERSION_CONFIGURE_INFO
 
 # workaround broken libtool multilib support on sl6
 LALSUITE_MULTILIB_LIBTOOL_HACK
@@ -164,13 +142,13 @@ if test "${boinc}" = "true" ; then
 fi
 
 # check for lal libraries and headers
-LALSUITE_CHECK_LIB([LAL],[6.11.0],[LALVersion],[lal/LALStdio.h])
+LALSUITE_CHECK_LIB([LAL],[6.12.0],[LALVersion],[lal/LALStdio.h])
 
 # check that lal was built with BOINC support, if required
 LALSUITE_CHECK_BOINC
 
 # check for lalsupport, needed for test suite
-LALSUITE_CHECK_LIB([LALSupport],[6.11.0],[LALOpenDataFile],[lal/FileIO.h])
+LALSUITE_CHECK_LIB([LALSupport],[6.12.0],[XLALCacheImport],[lal/LALCache.h])
 
 # check for lalxml
 LALSUITE_CHECK_OPT_LIB([LALXML],[1.1.5],[XLALXMLFilePrintElements],[lal/LALXML.h])
@@ -196,7 +174,7 @@ AC_SUBST_FILE([LAL_HEADER_LINK])
 
 # output
 AC_OUTPUT
-echo "
+AC_MSG_NOTICE([
 ==================================================
 LALPulsar has now been successfully configured:
 
@@ -213,4 +191,4 @@ ${prefix}
 Now run 'make' to build LALPulsar,
 and run 'make install' to install LALPulsar.
 ==================================================
-"
+])

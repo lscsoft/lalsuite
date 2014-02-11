@@ -26,51 +26,62 @@
 #include <lalapps.h>
 #include <lal/LALMalloc.h>
 #include <lal/LALStatusMacros.h>
+#include <lal/LALBuildInfo.h>
 #include <lal/LALVCSInfo.h>
+#include <LALAppsBuildInfo.h>
 #include <LALAppsVCSInfo.h>
 
 #ifdef HAVE_LIBLALFRAME
 #include <lal/LALFrameConfig.h>
+#include <lal/LALFrameBuildInfo.h>
 #include <lal/LALFrameVCSInfo.h>
 #endif
 
 #ifdef HAVE_LIBLALMETAIO
 #include <lal/LALMetaIOConfig.h>
+#include <lal/LALMetaIOBuildInfo.h>
 #include <lal/LALMetaIOVCSInfo.h>
 #endif
 
 #ifdef HAVE_LIBLALXML
 #include <lal/LALXMLConfig.h>
+#include <lal/LALXMLBuildInfo.h>
 #include <lal/LALXMLVCSInfo.h>
 #endif
 
 #ifdef HAVE_LIBLALSIMULATION
 #include <lal/LALSimulationConfig.h>
+#include <lal/LALSimulationBuildInfo.h>
 #include <lal/LALSimulationVCSInfo.h>
 #endif
 
 #ifdef HAVE_LIBLALBURST
 #include <lal/LALBurstConfig.h>
+#include <lal/LALBurstBuildInfo.h>
 #include <lal/LALBurstVCSInfo.h>
 #endif
 
 #ifdef HAVE_LIBLALINSPIRAL
 #include <lal/LALInspiralConfig.h>
+#include <lal/LALInspiralBuildInfo.h>
 #include <lal/LALInspiralVCSInfo.h>
 #endif
 
 #ifdef HAVE_LIBLALPULSAR
 #include <lal/LALPulsarConfig.h>
+#include <lal/LALPulsarBuildInfo.h>
 #include <lal/LALPulsarVCSInfo.h>
 #endif
 
 #ifdef HAVE_LIBLALINFERENCE
 #include <lal/LALInferenceConfig.h>
+#include <lal/LALInferenceBuildInfo.h>
 #include <lal/LALInferenceVCSInfo.h>
 #endif
 
 #ifdef HAVE_LIBLALSTOCHASTIC
 #include <lal/LALStochasticConfig.h>
+#include <lal/LALStochasticBuildInfo.h>
 #include <lal/LALStochasticVCSInfo.h>
 #endif
 
@@ -422,8 +433,8 @@ XLALGetVersionString( int level )
           lalVCSInfo.vcsBranch,
           lalVCSInfo.vcsTag,
           lalVCSInfo.vcsStatus,
-          LAL_CONFIGURE_DATE ,
-          LAL_CONFIGURE_ARGS );
+          lalConfigureDate ,
+          lalConfigureArgs );
 
 #ifdef HAVE_LIBLALFRAME
       /* get lalframe info */
@@ -442,8 +453,8 @@ XLALGetVersionString( int level )
           lalFrameVCSInfo.vcsBranch,
           lalFrameVCSInfo.vcsTag,
           lalFrameVCSInfo.vcsStatus,
-          LALFRAME_CONFIGURE_DATE ,
-          LALFRAME_CONFIGURE_ARGS );
+          lalFrameConfigureDate ,
+          lalFrameConfigureArgs );
 #endif
 
 #ifdef HAVE_LIBLALMETAIO
@@ -463,8 +474,8 @@ XLALGetVersionString( int level )
           lalMetaIOVCSInfo.vcsBranch,
           lalMetaIOVCSInfo.vcsTag,
           lalMetaIOVCSInfo.vcsStatus,
-          LALMETAIO_CONFIGURE_DATE ,
-          LALMETAIO_CONFIGURE_ARGS );
+          lalMetaIOConfigureDate ,
+          lalMetaIOConfigureArgs );
 #endif
 
 #ifdef HAVE_LIBLALXML
@@ -484,8 +495,8 @@ XLALGetVersionString( int level )
           lalXMLVCSInfo.vcsBranch,
           lalXMLVCSInfo.vcsTag,
           lalXMLVCSInfo.vcsStatus,
-          LALXML_CONFIGURE_DATE ,
-          LALXML_CONFIGURE_ARGS );
+          lalXMLConfigureDate ,
+          lalXMLConfigureArgs );
 #endif
 
 #ifdef HAVE_LIBLALSIMULATION
@@ -505,8 +516,8 @@ XLALGetVersionString( int level )
           lalSimulationVCSInfo.vcsBranch,
           lalSimulationVCSInfo.vcsTag,
           lalSimulationVCSInfo.vcsStatus,
-          LALSIMULATION_CONFIGURE_DATE ,
-          LALSIMULATION_CONFIGURE_ARGS );
+          lalSimulationConfigureDate ,
+          lalSimulationConfigureArgs );
 #endif
 
 #ifdef HAVE_LIBLALBURST
@@ -526,8 +537,8 @@ XLALGetVersionString( int level )
           lalBurstVCSInfo.vcsBranch,
           lalBurstVCSInfo.vcsTag,
           lalBurstVCSInfo.vcsStatus,
-          LALBURST_CONFIGURE_DATE ,
-          LALBURST_CONFIGURE_ARGS );
+          lalBurstConfigureDate ,
+          lalBurstConfigureArgs );
 #endif
 
 #ifdef HAVE_LIBLALINSIRAL
@@ -547,8 +558,8 @@ XLALGetVersionString( int level )
           lalInspiralVCSInfo.vcsBranch,
           lalInspiralVCSInfo.vcsTag,
           lalInspiralVCSInfo.vcsStatus,
-          LALINSPIRAL_CONFIGURE_DATE ,
-          LALINSPIRAL_CONFIGURE_ARGS );
+          lalInspiralConfigureDate ,
+          lalInspiralConfigureArgs );
 #endif
 
 #ifdef HAVE_LIBLALPULSAR
@@ -568,8 +579,8 @@ XLALGetVersionString( int level )
           lalPulsarVCSInfo.vcsBranch,
           lalPulsarVCSInfo.vcsTag,
           lalPulsarVCSInfo.vcsStatus,
-          LALPULSAR_CONFIGURE_DATE ,
-          LALPULSAR_CONFIGURE_ARGS );
+          lalPulsarConfigureDate ,
+          lalPulsarConfigureArgs );
 #endif
 
 #ifdef HAVE_LIBLALINFERENCE
@@ -589,8 +600,8 @@ XLALGetVersionString( int level )
           lalInferenceVCSInfo.vcsBranch,
           lalInferenceVCSInfo.vcsTag,
           lalInferenceVCSInfo.vcsStatus,
-          LALINFERENCE_CONFIGURE_DATE ,
-          LALINFERENCE_CONFIGURE_ARGS );
+          lalInferenceConfigureDate ,
+          lalInferenceConfigureArgs );
 #endif
 
 #ifdef HAVE_LIBLALSTOCHASTIC
@@ -610,8 +621,8 @@ XLALGetVersionString( int level )
           lalStochasticVCSInfo.vcsBranch,
           lalStochasticVCSInfo.vcsTag,
           lalStochasticVCSInfo.vcsStatus,
-          LALSTOCHASTIC_CONFIGURE_DATE ,
-          LALSTOCHASTIC_CONFIGURE_ARGS );
+          lalStochasticConfigureDate ,
+          lalStochasticConfigureArgs );
 #endif
 
       /* add lalapps info */
@@ -630,8 +641,8 @@ XLALGetVersionString( int level )
           lalAppsVCSInfo.vcsBranch,
           lalAppsVCSInfo.vcsTag,
           lalAppsVCSInfo.vcsStatus,
-          LALAPPS_CONFIGURE_DATE ,
-          LALAPPS_CONFIGURE_ARGS );
+          lalAppsConfigureDate ,
+          lalAppsConfigureArgs );
 
       break;
   }

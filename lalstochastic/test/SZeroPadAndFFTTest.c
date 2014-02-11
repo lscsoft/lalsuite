@@ -164,6 +164,7 @@
 #include <lal/Units.h>
 
 #include "CheckStatus.h"
+#include "CheckStatus.c"
 
 #define SZEROPADANDFFTTESTC_LENGTH        8
 #define SZEROPADANDFFTTESTC_FULLLENGTH (2 * SZEROPADANDFFTTESTC_LENGTH - 1)

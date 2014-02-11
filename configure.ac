@@ -1,5 +1,5 @@
 AC_PREREQ([2.63])
-AC_INIT([LALSuite],[6.20.1],[lal-discuss@ligo.org])
+AC_INIT([LALSuite],[6.21.1],[lal-discuss@ligo.org])
 AC_CONFIG_SRCDIR([configure.ac])
 AC_CONFIG_AUX_DIR([gnuscripts])
 AC_CONFIG_MACRO_DIR([gnuscripts])
@@ -8,10 +8,6 @@ AC_CONFIG_FILES([Makefile])
 AM_INIT_AUTOMAKE([1.11 foreign subdir-objects color-tests parallel-tests])
 
 LALSUITE_DISTCHECK_CONFIGURE_FLAGS
-
-# always prefer uninstalled LAL libraries
-LALSUITE_PKG_SUFFIX="-uninstalled"
-export LALSUITE_PKG_SUFFIX
 
 # provide LAL library enable/disable options
 LALSUITE_ENABLE_ALL_LAL
@@ -69,7 +65,7 @@ lalsuite_config_subdir([lalapps])
 
 AC_SUBST([ac_configure_args])
 AC_OUTPUT
-echo "
+AC_MSG_NOTICE([
 ==================================================
 LALSuite has now been successfully configured:
 
@@ -92,4 +88,4 @@ ${prefix}
 Now run 'make' to build LALSuite,
 and run 'make install' to install LALSuite.
 ==================================================
-"
+])

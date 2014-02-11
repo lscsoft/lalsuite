@@ -111,6 +111,7 @@
  *
  */
 
+#include <lal/LALString.h>
 #include "HierarchicalSearch.h"
 
 typedef struct tagMultiSFTVectorSequence {
@@ -267,9 +268,6 @@ void GetXiInSingleStack (LALStatus         *status,
 			 HOUGHDemodPar     *par);
 
 /* default values for input variables */
-#define EARTHEPHEMERIS 		"earth00-19-DE405.dat"
-#define SUNEPHEMERIS 		"sun00-19-DE405.dat"
-
 #define BLOCKSRNGMED 		101 	/**< Default running median window size */
 #define FSTART 			310.0	/**< Default Start search frequency */
 
@@ -314,9 +312,6 @@ int MAIN( int argc, char *argv[]) {
 
   /* in general any variable ending with 1 is for the
      first stage, 2 for the second and so on */
-
-  /* ephemeris */
-  EphemerisData *edat = NULL;
 
   /* timestamp vectors */
   LIGOTimeGPSVector *midTstack=NULL;
@@ -441,8 +436,8 @@ int MAIN( int argc, char *argv[]) {
   INT4 uvar_gridType1 = GRID_METRIC;
   INT4 uvar_skyPointIndex = -1;
 
-  CHAR *uvar_ephemE = NULL;
-  CHAR *uvar_ephemS = NULL;
+  CHAR *uvar_ephemEarth = NULL;
+  CHAR *uvar_ephemSun = NULL;
 
   CHAR *uvar_skyRegion = NULL;
   CHAR *uvar_fnameout = NULL;
@@ -459,13 +454,8 @@ int MAIN( int argc, char *argv[]) {
 
 #ifdef EAH_LALDEBUGLEVEL
 #endif
-  uvar_ephemE = LALCalloc( alloc_len = strlen( EARTHEPHEMERIS ) + 1, sizeof(CHAR) );
-  XLAL_CHECK ( uvar_ephemE != NULL, XLAL_ENOMEM, "Failed to allocated memory LALCalloc(1, %d)\n", alloc_len );
-  strcpy(uvar_ephemE, EARTHEPHEMERIS);
-
-  uvar_ephemS = LALCalloc( alloc_len = strlen(SUNEPHEMERIS) + 1, sizeof(CHAR) );
-  XLAL_CHECK ( uvar_ephemS != NULL, XLAL_ENOMEM, "Failed to allocated memory LALCalloc(1, %d)\n", alloc_len );
-  strcpy(uvar_ephemS, SUNEPHEMERIS);
+  uvar_ephemEarth = XLALStringDuplicate("earth00-19-DE405.dat.gz");
+  uvar_ephemSun   = XLALStringDuplicate("sun00-19-DE405.dat.gz");
 
   uvar_skyRegion = LALCalloc( alloc_len = strlen(SKYREGION) + 1, sizeof(CHAR) );
   XLAL_CHECK ( uvar_skyRegion != NULL, XLAL_ENOMEM, "Failed to allocated memory LALCalloc(1, %d)\n", alloc_len );
@@ -517,8 +507,8 @@ int MAIN( int argc, char *argv[]) {
   LAL_CALL( LALRegisterREALUserVar(   &status, "threshold1",   0,  UVAR_OPTIONAL, "Threshold on significance for 1st stage (if no toplist)", &uvar_threshold1), &status);
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "printCand1",   0,  UVAR_OPTIONAL, "Print 1st stage candidates", &uvar_printCand1), &status);
   LAL_CALL( LALRegisterREALUserVar(   &status, "refTime",      0,  UVAR_OPTIONAL, "Ref. time for pulsar pars [Default: mid-time]", &uvar_refTime), &status);
-  LAL_CALL( LALRegisterSTRINGUserVar( &status, "ephemE",       0,  UVAR_OPTIONAL, "Location of Earth ephemeris file", &uvar_ephemE),  &status);
-  LAL_CALL( LALRegisterSTRINGUserVar( &status, "ephemS",       0,  UVAR_OPTIONAL, "Location of Sun ephemeris file", &uvar_ephemS),  &status);
+  LAL_CALL( LALRegisterSTRINGUserVar( &status, "ephemEarth",   0,  UVAR_OPTIONAL, "Location of Earth ephemeris file", &uvar_ephemEarth),  &status);
+  LAL_CALL( LALRegisterSTRINGUserVar( &status, "ephemSun",     0,  UVAR_OPTIONAL, "Location of Sun ephemeris file", &uvar_ephemSun),  &status);
   LAL_CALL( LALRegisterREALUserVar(   &status, "minStartTime1",0,  UVAR_OPTIONAL, "1st stage min start time of observation", &uvar_minStartTime1), &status);
   LAL_CALL( LALRegisterREALUserVar(   &status, "maxEndTime1",  0,  UVAR_OPTIONAL, "1st stage max end time of observation",   &uvar_maxEndTime1),   &status);
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "printFstat1",  0,  UVAR_OPTIONAL, "Print 1st stage Fstat vectors", &uvar_printFstat1), &status);
@@ -637,15 +627,8 @@ int MAIN( int argc, char *argv[]) {
   /*--------- Some initializations ----------*/
 
   /* initialize ephemeris info */
-
-  edat = LALCalloc(1, sizeof(EphemerisData));
-  XLAL_CHECK ( edat != NULL, XLAL_ENOMEM, "Error allocating memory LALCalloc ( 1, %d )\n", sizeof(EphemerisData) );
-
-  (*edat).ephiles.earthEphemeris = uvar_ephemE;
-  (*edat).ephiles.sunEphemeris = uvar_ephemS;
-
-  /* read in ephemeris data */
-  LAL_CALL( LALInitBarycenter( &status, edat), &status);
+  EphemerisData *edat;
+  XLAL_CHECK ( (edat = XLALInitBarycenter ( uvar_ephemEarth, uvar_ephemSun )) != NULL, XLAL_EFUNC );
 
   XLALGPSSetREAL8(&minStartTimeGPS, uvar_minStartTime1);
   XLALGPSSetREAL8(&maxEndTimeGPS, uvar_maxEndTime1);
@@ -1287,9 +1270,7 @@ int MAIN( int argc, char *argv[]) {
 
 
   /* free Vel/Pos vectors and ephemeris */
-  LALFree(edat->ephemE);
-  LALFree(edat->ephemS);
-  LALFree(edat);
+  XLALDestroyEphemerisData(edat);
   LAL_CALL( LALDDestroyVectorSequence (&status,  &velStack), &status);
   LAL_CALL( LALDDestroyVectorSequence (&status,  &posStack), &status);
 

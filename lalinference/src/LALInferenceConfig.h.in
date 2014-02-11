@@ -16,10 +16,4 @@
 /* LALInference Version Devel Number  */
 #undef LALINFERENCE_VERSION_DEVEL
 
-/* LALInference Configure Arguments */
-#undef LALINFERENCE_CONFIGURE_ARGS
-
-/* LALInference Configure Date */
-#undef LALINFERENCE_CONFIGURE_DATE
-
 #endif /* LALINFERENCE_VERSION */

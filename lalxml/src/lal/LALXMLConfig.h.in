@@ -1,0 +1,19 @@
+/* only include this file if LALXML's config.h has not been included */
+#ifndef LALXML_VERSION
+
+/* LALXML Version */
+#undef LALXML_VERSION
+
+/* LALXML Version Major Number  */
+#undef LALXML_VERSION_MAJOR
+
+/* LALXML Version Minor Number  */
+#undef LALXML_VERSION_MINOR
+
+/* LALXML Version Micro Number  */
+#undef LALXML_VERSION_MICRO
+
+/* LALXML Version Devel Number  */
+#undef LALXML_VERSION_DEVEL
+
+#endif /* LALXML_VERSION */

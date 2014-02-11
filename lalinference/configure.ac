@@ -1,5 +1,5 @@
 AC_PREREQ([2.63])
-AC_INIT([lalinference],[1.2.1.1],[lal-discuss@ligo.org])
+AC_INIT([lalinference],[1.3.0.1],[lal-discuss@ligo.org])
 AC_CONFIG_HEADERS([src/config.h src/LALInferenceConfig.h])
 AC_CONFIG_SRCDIR([src/LALInference.h])
 AC_CONFIG_AUX_DIR([gnuscripts])
@@ -11,6 +11,7 @@ AC_CONFIG_FILES([ \
   Makefile \
   gnuscripts/Makefile \
   debian/Makefile \
+  bin/Makefile \
   include/Makefile \
   include/lal/Makefile \
   src/Makefile \
@@ -43,16 +44,13 @@ LALSUITE_DISTCHECK_CONFIGURE_FLAGS
 #    then increment age.
 # 6. if any interfaces have been removed since the last public release,
 #    then set age to 0.
-AC_SUBST([LIBCURRENT],[6])
+AC_SUBST([LIBCURRENT],[7])
 AC_SUBST([LIBREVISION],[0])
 AC_SUBST([LIBAGE],[0])
 AC_SUBST([LIBVERSION],[${LIBCURRENT}:${LIBREVISION}:${LIBAGE}])
 
 # nightly build
 LALSUITE_ENABLE_NIGHTLY
-
-# debug
-LALSUITE_ENABLE_DEBUG
 
 # enable strict gcc flags
 LALSUITE_ENABLE_GCC_FLAGS
@@ -67,27 +65,8 @@ LALSUITE_ENABLE_LALXML
 # enable SWIG wrapping modules
 LALSUITE_ENABLE_SWIG
 
-# put version/configure info in config header
-lalinference_version_major=`echo "$VERSION" | cut -d. -f1`
-lalinference_version_minor=`echo "$VERSION" | cut -d. -f2`
-lalinference_version_micro=`echo "$VERSION" | cut -d. -f3`
-lalinference_version_devel=`echo "$VERSION" | cut -d. -f4-`
-test -z "$lalinference_version_micro" && lalinference_version_micro=0
-test -z "$lalinference_version_devel" && lalinference_version_devel=0
-lalinspiral_configure_date=`date +"%Y-%m-%dT%H:%M:%S%z"`
-AC_DEFINE_UNQUOTED([LALINFERENCE_VERSION],["$VERSION"],[LALInference Version])
-AC_DEFINE_UNQUOTED([LALINFERENCE_VERSION_MAJOR],[$lalinference_version_major],
-                   [LALInference Version Major Number])
-AC_DEFINE_UNQUOTED([LALINFERENCE_VERSION_MINOR],[$lalinference_version_minor],
-                   [LALInference Version Minor Number])
-AC_DEFINE_UNQUOTED([LALINFERENCE_VERSION_MICRO],[$lalinference_version_micro],
-                   [LALInference Version Micro Number])
-AC_DEFINE_UNQUOTED([LALINFERENCE_VERSION_DEVEL],[$lalinference_version_devel],
-                   [LALInference Version Devel Number])
-AC_DEFINE_UNQUOTED([LALINFERENCE_CONFIGURE_ARGS],["$ac_configure_args"],
-                   [LALInference Configure Arguments])
-AC_DEFINE_UNQUOTED([LALINFERENCE_CONFIGURE_DATE],["$lalinspiral_configure_date"],
-                   [LALInference Configure Date])
+# define version/configure info
+LALSUITE_VERSION_CONFIGURE_INFO
 
 # workaround broken libtool multilib support on sl6
 LALSUITE_MULTILIB_LIBTOOL_HACK
@@ -177,13 +156,13 @@ if test "$lalxml" = "true"; then
 fi
 
 # check for lal libraries and headers
-LALSUITE_CHECK_LIB([LAL],[6.11.0],[LALVersion],[lal/LALStdio.h])
-LALSUITE_CHECK_LIB([LALSupport],[6.11.0],[LALOpenDataFile],[lal/FileIO.h])
-LALSUITE_CHECK_LIB([LALMetaIO],[1.1.0],[XLALCreateMetaTableDir],[lal/LIGOLwXMLRead.h])
+LALSUITE_CHECK_LIB([LAL],[6.12.0],[LALVersion],[lal/LALStdio.h])
+LALSUITE_CHECK_LIB([LALSupport],[6.12.0],[XLALCacheImport],[lal/LALCache.h])
+LALSUITE_CHECK_LIB([LALMetaIO],[1.2.0],[XLALCreateMetaTableDir],[lal/LIGOLwXMLRead.h])
 LALSUITE_CHECK_LIB([LALFrame],[1.1.0],[LALFrOpen],[lal/LALFrameL.h])
-LALSUITE_CHECK_LIB([LALSimulation],[1.0.0],[XLALSimDetectorStrainREAL8TimeSeries],[lal/LALSimulation.h])
+LALSUITE_CHECK_LIB([LALSimulation],[1.1.0],[XLALSimDetectorStrainREAL8TimeSeries],[lal/LALSimulation.h])
 LALSUITE_CHECK_LIB([LALInspiral],[1.5.0],[LALInspiralParameterCalc],[lal/LALInspiral.h])
-LALSUITE_CHECK_LIB([LALPulsar],[1.8.0],[XLALComputeFstat],[lal/ComputeFstat.h])
+LALSUITE_CHECK_LIB([LALPulsar],[1.9.0],[XLALComputeFstat],[lal/ComputeFstat.h])
 
 # check for lalxml
 LALSUITE_CHECK_OPT_LIB([LALXML],[1.1.5],[XLALXMLFilePrintElements],[lal/LALXML.h])
@@ -223,7 +202,7 @@ AC_SUBST_FILE([LAL_HEADER_LINK])
 
 # output
 AC_OUTPUT
-echo "
+AC_MSG_NOTICE([
 ==================================================
 LALInference has now been successfully configured:
 
@@ -240,4 +219,4 @@ ${prefix}
 Now run 'make' to build LALInference,
 and run 'make install' to install LALInference.
 ==================================================
-"
+])

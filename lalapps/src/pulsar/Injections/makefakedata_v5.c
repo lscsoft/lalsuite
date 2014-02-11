@@ -126,10 +126,10 @@ typedef struct
   CHAR *SFTWindowType;		/**< Windowing function to apply to the SFT time series */
   REAL8 SFTWindowBeta;         	/**< 'beta' parameter required for certain window-types */
 
-  CHAR *ephemDir;		/**< Directory path for ephemeris files (optional), use LAL_DATA_PATH if unset. */
-  CHAR *ephemYear;		/**< Year (or range of years) of ephemeris files to be used */
+  CHAR *ephemEarth;		/**< Earth ephemeris file to use */
+  CHAR *ephemSun;		/**< Sun ephemeris file to use */
 
-  /* pulsar parameters [REQUIRED] */
+  /* pulsar parameters */
   CHAR *injectionSources;	///< either a file-specification ("@file-pattern") or a config-string defining the sources to inject
 
   BOOLEAN version;		/**< output version information */
@@ -146,7 +146,6 @@ typedef struct
 // ----- empty structs for initializations
 static const UserVariables_t empty_UserVariables;
 static const ConfigVars_t empty_GV;
-static const LALUnit empty_LALUnit;
 
 int XLALWriteREAL4TimeSeries2fp ( FILE *fp, const REAL4TimeSeries *TS );
 
@@ -179,8 +178,10 @@ main(int argc, char *argv[])
   MultiSFTVector *mSFTs = NULL;
   MultiREAL4TimeSeries *mTseries = NULL;
 
-  PulsarParamsVector *injectionSources;
-  XLAL_CHECK ( (injectionSources = XLALPulsarParamsFromUserInput ( uvar.injectionSources ) ) != NULL, XLAL_EFUNC );
+  PulsarParamsVector *injectionSources = NULL;
+  if ( uvar.injectionSources ) {
+    XLAL_CHECK ( (injectionSources = XLALPulsarParamsFromUserInput ( uvar.injectionSources ) ) != NULL, XLAL_EFUNC );
+  }
 
   CWMFDataParams DataParams   = empty_CWMFDataParams;
   DataParams.fMin               = uvar.fmin;
@@ -334,7 +335,6 @@ main(int argc, char *argv[])
 int
 XLALInitMakefakedata ( ConfigVars_t *cfg, UserVariables_t *uvar )
 {
-  int len;
   XLAL_CHECK ( cfg != NULL, XLAL_EINVAL, "Invalid NULL input 'cfg'\n" );
   XLAL_CHECK ( uvar != NULL, XLAL_EINVAL, "Invalid NULL input 'uvar'\n");
 
@@ -431,24 +431,8 @@ XLALInitMakefakedata ( ConfigVars_t *cfg, UserVariables_t *uvar )
     XLAL_ERROR (XLAL_EFAILED, "Something went wrong with my internal logic ..\n");
   }
 
-  /* -------------------- Prepare quantities for barycentering -------------------- */
-  CHAR *earthdata, *sundata;
-
-  len = strlen(uvar->ephemYear) + 20;
-  if ( uvar->ephemDir ) {
-    len += strlen ( uvar->ephemDir );
-  }
-  XLAL_CHECK ( (earthdata = XLALCalloc(1, len)) != NULL, XLAL_ENOMEM );
-  XLAL_CHECK ( (sundata   = XLALCalloc(1, len)) != NULL, XLAL_ENOMEM );
-  const char *sep = uvar->ephemDir ? "/" : "";
-  const char *ephemDir = uvar->ephemDir ? uvar->ephemDir : "";
-  sprintf ( earthdata, "%s%searth%s.dat", ephemDir, sep, uvar->ephemYear);
-  sprintf ( sundata,   "%s%ssun%s.dat",   ephemDir, sep, uvar->ephemYear);
-
-  XLAL_CHECK ( ( cfg->edat = XLALInitBarycenter ( earthdata, sundata ) ) != NULL, XLAL_EFUNC );
-  XLALFree(earthdata);
-  XLALFree(sundata);
-
+  /* Init ephemerides */
+  XLAL_CHECK ( (cfg->edat = XLALInitBarycenter ( uvar->ephemEarth, uvar->ephemSun )) != NULL, XLAL_EFUNC );
 
 #ifndef HAVE_LIBLALFRAME
   if ( uvar->TDDframedir ) {
@@ -473,10 +457,9 @@ XLALInitUserVars ( UserVariables_t *uvar, int argc, char *argv[] )
   XLAL_CHECK ( argv != NULL, XLAL_EINVAL, "Invalid NULL input 'argv'\n");
 
   // ---------- set a few defaults ----------
-#define EPHEM_YEARS  "00-19-DE405"
-  XLAL_CHECK ( (uvar->ephemYear = XLALStringDuplicate ( EPHEM_YEARS )) != NULL, XLAL_EFUNC );
+  uvar->ephemEarth = XLALStringDuplicate("earth00-19-DE405.dat.gz");
+  uvar->ephemSun = XLALStringDuplicate("sun00-19-DE405.dat.gz");
 
-  uvar->ephemDir = NULL;
   uvar->Tsft = 1800;
   uvar->fmin = 0;	/* no heterodyning by default */
   uvar->Band = 8192;	/* 1/2 LIGO sampling rate by default */
@@ -501,8 +484,8 @@ XLALInitUserVars ( UserVariables_t *uvar, int argc, char *argv[] )
   XLALregLISTUserStruct ( IFOs,			'I', UVAR_OPTIONAL, "CSV list of detectors, eg. \"H1,H2,L1,G1, ...\" ");
   XLALregLISTUserStruct ( sqrtSX,	 	 0,  UVAR_OPTIONAL, "Add Gaussian Noise: CSV list of detectors' noise-floors sqrt{Sn}");
 
-  XLALregSTRINGUserStruct ( ephemDir,           'E', UVAR_OPTIONAL, "Directory path for ephemeris files (use LAL_DATA_PATH if unspecified)");
-  XLALregSTRINGUserStruct ( ephemYear,          'y', UVAR_OPTIONAL, "Year-range string of ephemeris files to be used");
+  XLALregSTRINGUserStruct( ephemEarth, 	 	0,  UVAR_OPTIONAL, "Earth ephemeris file to use");
+  XLALregSTRINGUserStruct( ephemSun, 	 	0,  UVAR_OPTIONAL, "Sun ephemeris file to use");
 
   /* start + duration of timeseries */
   XLALregINTUserStruct (  startTime,            'G', UVAR_OPTIONAL, "Start-time of requested signal in detector-frame (GPS seconds)");
@@ -520,7 +503,7 @@ XLALInitUserVars ( UserVariables_t *uvar, int argc, char *argv[] )
   XLALregREALUserStruct (  SFTWindowBeta,        0, UVAR_OPTIONAL, "Window 'beta' parameter required for a few window-types (eg. 'tukey')");
 
   /* pulsar params */
-  XLALregSTRINGUserStruct( injectionSources,     0, UVAR_REQUIRED, "Either a file-specification (\"@file-pattern\") or a config-string defining the sources to inject" );
+  XLALregSTRINGUserStruct( injectionSources,     0, UVAR_OPTIONAL, "Either a file-specification (\"@file-pattern\") or a config-string defining the sources to inject" );
 
   /* noise */
   XLALregSTRINGUserStruct ( noiseSFTs,          'D', UVAR_OPTIONAL, "Noise-SFTs to be added to signal (Used also to set IFOs and timestamps)");

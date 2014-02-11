@@ -57,24 +57,14 @@ int main( void )
   char msg[16384];
   int verbose = 1;
 
-  if ( strcmp( LAL_VERSION, lalVersion ) ||
-       strcmp( LAL_CONFIGURE_ARGS, lalConfigureArgs ) ||
-       strcmp( LAL_CONFIGURE_DATE, lalConfigureDate ) )
+  if ( strcmp( LAL_VERSION, lalVersion ) )
   {
     fputs( "LAL Version Mismatch!\n\n", stderr );
     fputs( "Header Version ",           stderr );
     fputs( LAL_VERSION,                 stderr );
-    fputs( "\nCompiled on ",            stderr );
-    fputs( LAL_CONFIGURE_DATE,          stderr );
-    fputs( "\nWith arguments ",         stderr );
-    fputs( LAL_CONFIGURE_ARGS,          stderr );
     fputs( "\n\n",                      stderr );
     fputs( "Library Version ",          stderr );
     fputs( lalVersion,                  stderr );
-    fputs( "\nCompiled on ",            stderr );
-    fputs( lalConfigureDate,            stderr );
-    fputs( "\nWith arguments ",         stderr );
-    fputs( lalConfigureArgs,            stderr );
     fputs( "\n",                        stderr );
     return 1;
   }

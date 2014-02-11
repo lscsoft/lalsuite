@@ -1,4 +1,4 @@
-AM_CPPFLAGS = @AM_CPPFLAGS@ -I$(top_builddir)/include
+AM_CPPFLAGS = -I$(top_builddir)/include @AM_CPPFLAGS@
 
 pkgpython_PYTHON = \
 	__init__.py \

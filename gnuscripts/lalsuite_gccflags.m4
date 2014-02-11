@@ -1,7 +1,7 @@
 # -*- mode: autoconf; -*-
 # lalsuite_gccflags.m4 - macros to set strict gcc flags
 #
-# serial 17
+# serial 19
 
 AC_DEFUN([LALSUITE_ENABLE_GCC_FLAGS],[
   # $0: enable GCC warning flags
@@ -21,7 +21,7 @@ AC_DEFUN([LALSUITE_ADD_GCC_FLAGS],[
   # $0: add GCC warning flags
   AS_IF([test "x${GCC}" = xyes && test "x${enable_gcc_flags}" = xyes],[
 
-    gcc_flags="-g3 -Wall -W -Wmissing-prototypes -Wstrict-prototypes -Wshadow -Wpointer-arith -Wcast-qual -Wcast-align -Wwrite-strings -fno-common -Wnested-externs -Wno-format-zero-length -fno-strict-aliasing"
+    gcc_flags="-g3 -Wall -W -Werror -Wmissing-prototypes -Wstrict-prototypes -Wshadow -Wpointer-arith -Wcast-qual -Wcast-align -Wwrite-strings -fno-common -Wnested-externs -Wno-format-zero-length -fno-strict-aliasing"
 
     # check if compiler supports -Wno-unused-result
     LALSUITE_PUSH_UVARS
@@ -38,12 +38,6 @@ AC_DEFUN([LALSUITE_ADD_GCC_FLAGS],[
     ])
     LALSUITE_POP_UVARS
 
-    # don't use -Werror in LALApps
-    AS_CASE([${PACKAGE}],
-      [lalapps],[:],
-      [gcc_flags="${gcc_flags} -Werror"]
-    )
-
 # comment out usage of -pedantic flag due to gcc bug 7263
 # http://gcc.gnu.org/bugzilla/show_bug.cgi?id=7263
 #
@@ -55,6 +49,20 @@ AC_DEFUN([LALSUITE_ADD_GCC_FLAGS],[
     # add mac os x specific flags
     AS_IF([test "x${MACOSX_VERSION}" != "x"],[
       gcc_flags="${gcc_flags} -mmacosx-version-min=10.4"
+      # check if compiler supports -Wl,-no_compact_unwind
+      LALSUITE_PUSH_UVARS
+      LALSUITE_CLEAR_UVARS
+      LDFLAGS="-Wl,-no_compact_unwind"
+      AC_MSG_CHECKING([whether linker supports -Wl,-no_compact_unwind])
+      AC_LINK_IFELSE([
+        AC_LANG_PROGRAM([])
+      ],[
+        AC_MSG_RESULT([yes])
+        gcc_ldflags="-Wl,-no_compact_unwind"
+      ],[
+        AC_MSG_RESULT([no])
+      ])
+      LALSUITE_POP_UVARS
     ])
 
     gcc_cflags="${gcc_flags}"
@@ -74,6 +82,7 @@ AC_DEFUN([LALSUITE_ADD_GCC_FLAGS],[
     ],[
       LALSUITE_ADD_FLAGS([C],[${gcc_cflags}],[])
       LALSUITE_ADD_FLAGS([CXX],[${gcc_cxxflags}],[])
+      LALSUITE_ADD_FLAGS([LD],[${gcc_ldflags}],[])
     ])
 
   ])

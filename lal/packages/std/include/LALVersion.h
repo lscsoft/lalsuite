@@ -74,9 +74,6 @@ extern const int lalVersionMajor;
 extern const int lalVersionMinor;
 extern const int lalVersionMicro;
 extern const int lalVersionDevel;
-extern const char *const lalBuildDate;
-extern const char *const lalConfigureArgs;
-extern const char *const lalConfigureDate;
 
 
 void LALVersion(LALStatus * status, CHAR * message, UINT4 size,

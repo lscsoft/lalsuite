@@ -13,11 +13,11 @@ disp("PASSED module load");
 
 ## check object parent tracking
 disp("checking object parent tracking ...");
-a = lalinference.new_lalinferenceswig_test_parent_map_struct();
+a = lalinference.new_swig_lalinference_test_parent_map_struct();
 for i = 1:7
   b = a.s;
-  c = lalinferencecvar.lalinferenceswig_test_parent_map.s;
-  lalinferencecvar.lalinferenceswig_test_parent_map.s = lalcvar.lalswig_test_struct_const;
+  c = lalinferencecvar.swig_lalinference_test_parent_map.s;
+  lalinferencecvar.swig_lalinference_test_parent_map.s = lalcvar.swig_lal_test_struct_const;
 endfor
 clear ans a b c;
 CheckMemoryLeaks();

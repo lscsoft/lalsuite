@@ -20,10 +20,6 @@ pfs_path="${builddir}${pfs_code}"
 
 SFTdir="./testPredictFStat_sfts"
 
-if [ -n "${LALPULSAR_DATADIR}" ]; then
-    mfd_code="${mfd_code} -E ${LALPULSAR_DATADIR}"
-fi
-
 if [ -z "${LAL_DATA_PATH}" ]; then
     echo
     echo "Need environment-variable LAL_DATA_PATH to be set to include"

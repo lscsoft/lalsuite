@@ -1,0 +1,28 @@
+SUBDIRS = . swig
+
+if SWIG_BUILD
+
+swig_headers = $(pkginclude_HEADERS)
+swig_iface_headers = $(top_builddir)/swig/@PACKAGE@swig_headers.list
+
+all install .PHONY : swig-iface-headers
+swig-iface-headers :
+	@modified=false; \
+	newfile="src/lal: `echo $(swig_headers) | $(SED) 's|src/lal/||g'`"; \
+	if test -f $(swig_iface_headers); then \
+		oldfile=`cat $(swig_iface_headers)`; \
+		if test "x$${oldfile}" != "x$${newfile}"; then \
+			echo "$${newfile}" > $(swig_iface_headers); \
+			modified=true; \
+		fi; \
+	else \
+		echo "$${newfile}" > $(swig_iface_headers); \
+		modified=true; \
+	fi; \
+	if test "x$$modified" = xtrue; then \
+		for file in `find $(top_builddir)/swig -type f -name '*swig*.deps'`; do \
+			echo '#erased' > $$file; \
+		done; \
+	fi
+
+endif

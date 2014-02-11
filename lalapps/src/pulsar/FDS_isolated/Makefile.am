@@ -1,7 +1,7 @@
 ## Process this file with automake to produce Makefile.in
 
 
-AM_CPPFLAGS = @AM_CPPFLAGS@ -I$(top_srcdir)/src -I$(top_srcdir)/src/lalapps -DPKG_DATA_DIR='"$(pkgdatadir)/"'
+AM_CPPFLAGS = -I$(top_srcdir)/src -I$(top_srcdir)/src/lalapps -DPKG_DATA_DIR='"$(pkgdatadir)/"' @AM_CPPFLAGS@
 LDADD = $(top_builddir)/src/lalapps/liblalapps.la
 
 SUBDIRS = ResamplingFstat
@@ -18,13 +18,6 @@ bin_PROGRAMS = lalapps_ComputeFStatistic lalapps_FstatShapeTest lalapps_SemiAnal
 EXTRA_PROGRAMS = lalapps_CFSv3 eah_PredictFStat eah_ComputeFStatistic_v2
 
 
-# CFSv2 doesn't compile with Condor
-#if CONDOR_ENABLED
-#EXTRA_PROGRAMS += lalapps_ComputeFStatistic_v2
-#else
-#bin_PROGRAMS += lalapps_ComputeFStatistic_v2
-#endif
-
 LVsrc = ../GCT
 
 lalapps_zellepolka_SOURCES = zellepolka.c
@@ -35,10 +28,6 @@ CFSsources = 	ComputeFStatistic.h	\
 		HeapToplist.c HeapToplist.h
 
 lalapps_ComputeFStatistic_SOURCES = ComputeFStatistic.c CFSLALDemod.c $(CFSsources)
-
-##lalapps_FrComputeFStatistic_SOURCES = FrComputeFStatistic.c FrComputeFStatistic.h	\
-##	rngmed.c rngmed.h clusters.c clusters.h  			\
-##	DopplerScan.c DopplerScan.h NeighboringGridPoints.c
 
 lalapps_FstatShapeTest_SOURCES = FstatShapeTest.c
 lalapps_FstatShapeTestLAL_SOURCES = FstatShapeTestLAL.c
@@ -78,10 +67,10 @@ lalapps_synthesizeLVStats_SOURCES = synthesizeLVStats.c \
 lalapps_CFSv3_SOURCES = CFSv3.c
 
 
-EXTRA_DIST = testFStat.sh testCFSv2.sh testGridv2.sh Fstats.ref1 Fstats.ref2 testPredictFStat.sh testCFSv2_resamp.sh
+EXTRA_DIST = testCFSv2.sh testGridv2.sh Fstats.ref1 Fstats.ref2 testPredictFStat.sh testCFSv2_resamp.sh
 
 
-TESTS = testFStat.sh testPredictFStat.sh
+TESTS = testPredictFStat.sh
 
 if !CONDOR_ENABLED
 TESTS += testCFSv2.sh testCFSv2_resamp.sh testGridv2.sh

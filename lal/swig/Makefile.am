@@ -34,6 +34,7 @@ EXTRA_DIST = $(swig_generate_iface)
 
 # clean files
 CLEANFILES = \
+	$(builddir)/swig_config.h \
 	$(swig_iface_headers) \
 	$(swig_iface_preproc) \
 	$(swig_iface_preproc_xml) \
@@ -69,19 +70,29 @@ $(swig_iface_preproc) : $(swig_iface_headers) Makefile
 		fi; \
 	done
 
+# generate SWIG configuration header
+$(builddir)/swig_config.h : $(CONFIG_HEADER)
+	$(AM_V_GEN)echo '// $@: generated from $< by $(subdir)/Makefile' > $@; \
+	$(SED) -n 's/^#define  */#define SWIGLAL_/p' $< >> $@
+
 # include SWIG preprocessing interface dependencies file
 @am__include@ @am__quote@./$(DEPDIR)/@PACKAGE@swig_preproc.deps@am__quote@
 
 # generate SWIG parse tree of preprocessing interface file
-$(swig_iface_preproc_xml) : $(swig_iface_preproc)
+$(swig_iface_preproc_xml) : $(swig_iface_preproc) $(builddir)/swig_config.h
 	$(AM_V_GEN)$(SWIG) $(SWIG_SWIGFLAGS) $(swig_preprocflags) -MD -MF $(swig_iface_preproc_deps) -o $@ $< || $(rm_targets)
 
 # generate SWIG interface file
 $(swig_iface) : $(swig_iface_preproc_xml) $(swig_generate_iface)
-	$(AM_V_GEN)$(PYTHON) $(swig_generate_iface) -n "$(PACKAGE)" -d "$(SWIG_MODULE_DEPENDS)" -s "$(SWIG_SYMBOL_PREFIXES)" -p "$(swig_iface_preproc)" -x "$(swig_iface_preproc_xml)" -i "$(swig_iface)" || $(rm_targets)
-	@if test -d "$(top_builddir)/include/lal"; then \
+	$(AM_V_GEN)$(PYTHON) $(swig_generate_iface) -n "$(PACKAGE)" -d "$(SWIG_MODULE_DEPENDS)" -s "$(SWIG_SYMBOL_PREFIXES)" -p "$(swig_iface_preproc)" -x "$(swig_iface_preproc_xml)" -i "$(swig_iface)" || $(rm_targets); \
+	if test -f "$(top_srcdir)/include/Makefile.am"; then \
+		$(MKDIR_P) "$(top_builddir)/include/lal"; \
 		rm -f "$(top_builddir)/include/lal/$@"; \
 		$(LN_S) "$(abs_builddir)/$@" "$(top_builddir)/include/lal/$@"; \
+	else \
+		$(MKDIR_P) "$(top_builddir)/src/lal"; \
+		rm -f "$(top_builddir)/src/lal/$@"; \
+		$(LN_S) "$(abs_builddir)/$@" "$(top_builddir)/src/lal/$@"; \
 	fi
 
 endif

@@ -1,5 +1,5 @@
 AC_PREREQ([2.63])
-AC_INIT([lal],[6.11.0.1],[lal-discuss@ligo.org])
+AC_INIT([lal],[6.12.0.1],[lal-discuss@ligo.org])
 AC_CONFIG_HEADERS([include/config.h include/lal/LALConfig.h])
 AC_CONFIG_SRCDIR([packages/std/include/LALStdio.h])
 AC_CONFIG_AUX_DIR([gnuscripts])
@@ -112,7 +112,7 @@ LALSUITE_DISTCHECK_CONFIGURE_FLAGS
 #    then increment age.
 # 6. if any interfaces have been removed since the last public release,
 #    then set age to 0.
-AC_SUBST([LIBCURRENT],[7])
+AC_SUBST([LIBCURRENT],[8])
 AC_SUBST([LIBREVISION],[0])
 AC_SUBST([LIBAGE],[0])
 AC_SUBST([LIBVERSION],[${LIBCURRENT}:${LIBREVISION}:${LIBAGE}])
@@ -132,7 +132,7 @@ AC_SUBST([LIBVERSION],[${LIBCURRENT}:${LIBREVISION}:${LIBAGE}])
 # 6. if any interfaces have been removed since the last public release,
 #    then set age to 0.
 AC_SUBST([LIBCURRENT_SUPPORT],[4])
-AC_SUBST([LIBREVISION_SUPPORT],[0])
+AC_SUBST([LIBREVISION_SUPPORT],[1])
 AC_SUBST([LIBAGE_SUPPORT],[0])
 AC_SUBST([LIBVERSION_SUPPORT],[${LIBCURRENT_SUPPORT}:${LIBREVISION_SUPPORT}:${LIBAGE_SUPPORT}])
 
@@ -144,7 +144,7 @@ LALSUITE_WITH_NVCC_CFLAGS
 LALSUITE_ENABLE_BOINC
 LALSUITE_ENABLE_GCC_FLAGS
 
-LALSUITE_ENABLE_DEBUG
+LAL_ENABLE_DEBUG
 LAL_ENABLE_MACROS
 LAL_ENABLE_PTHREAD_LOCK
 LALSUITE_ENABLE_NIGHTLY
@@ -152,21 +152,8 @@ LALSUITE_ENABLE_NIGHTLY
 # enable SWIG wrapping modules
 LALSUITE_ENABLE_SWIG
 
-# get version
-lal_version_major=`echo "$VERSION" | cut -d. -f1`
-lal_version_minor=`echo "$VERSION" | cut -d. -f2`
-lal_version_micro=`echo "$VERSION" | cut -d. -f3`
-lal_version_devel=`echo "$VERSION" | cut -d. -f4-`
-test -z "$lal_version_micro" && lal_version_micro=0
-test -z "$lal_version_devel" && lal_version_devel=0
-lal_configure_date=`date +"%Y-%m-%dT%H:%M:%S%z"`
-AC_DEFINE_UNQUOTED([LAL_VERSION],["$VERSION"],[LAL Version])
-AC_DEFINE_UNQUOTED([LAL_VERSION_MAJOR],[$lal_version_major],[LAL Version Major Number])
-AC_DEFINE_UNQUOTED([LAL_VERSION_MINOR],[$lal_version_minor],[LAL Version Minor Number])
-AC_DEFINE_UNQUOTED([LAL_VERSION_MICRO],[$lal_version_micro],[LAL Version Micro Number])
-AC_DEFINE_UNQUOTED([LAL_VERSION_DEVEL],[$lal_version_devel],[LAL Version Devel Number])
-AC_DEFINE_UNQUOTED([LAL_CONFIGURE_ARGS],["$ac_configure_args"],[LAL Configure Arguments])
-AC_DEFINE_UNQUOTED([LAL_CONFIGURE_DATE],["$lal_configure_date"],[LAL Configure Date])
+# define version/configure info
+LALSUITE_VERSION_CONFIGURE_INFO
 
 # workaround broken libtool multilib support on sl6
 LALSUITE_MULTILIB_LIBTOOL_HACK
@@ -369,7 +356,7 @@ AC_SUBST_FILE([INCLUDEMKFILE])
 
 # output
 AC_OUTPUT
-echo "
+AC_MSG_NOTICE([
 ==================================================
 LAL has now been successfully configured:
 
@@ -385,4 +372,4 @@ ${prefix}
 Now run 'make' to build LAL,
 and run 'make install' to install LAL.
 ==================================================
-"
+])

@@ -168,12 +168,12 @@ void dumper(UNUSED int *nSamples, UNUSED int *nlive, UNUSED int *nPar, UNUSED do
     }
 
     /* Prints stats file with template and likelihood evaluation counts */
-    sprintf(outfile,"%srunstats.txt",root2);
+    /*sprintf(outfile,"%srunstats.txt",root2);
     fileout=fopen(outfile,"w");
     fprintf(fileout,"IFO templates likelihoods\n");
     for(LALInferenceIFOData *p=runStateGlobal->data;p;p=p->next)
         fprintf(fileout,"%s: %u %u\n",p->name,p->templa_counter,p->likeli_counter);
-    fclose(fileout);
+    fclose(fileout);*/
 }
 
 void getphysparams(double *Cube, UNUSED int *ndim, UNUSED int *nPar, void *context)

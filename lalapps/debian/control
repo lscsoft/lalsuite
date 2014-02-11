@@ -4,11 +4,11 @@ Priority: optional
 Maintainer: Steffen Grunewald <steffen.grunewald@aei.mpg.de>
 Build-Depends: debhelper (>= 7), pkg-config, python-all-dev,
   libgsl0-dev (>= 1.9), libfftw3-dev, zlib1g-dev,
-  libframe-dev (>= 8.0), libmetaio-dev (>= 8.2), lal-dev (>= 6.11.0~),
-  lalframe-dev (>= 1.1.0~), lalmetaio-dev (>= 1.1.0),
-  lalsimulation-dev (>= 1.0.0~), lalburst-dev (>= 1.2.0),
-  lalinspiral-dev (>= 1.5.0), lalpulsar-dev (>= 1.8.0~),
-  lalstochastic-dev (>= 1.1.4), lalinference-dev (>= 1.2.0~),
+  libframe-dev (>= 8.0), libmetaio-dev (>= 8.2), lal-dev (>= 6.12.0~),
+  lalframe-dev (>= 1.1.0~), lalmetaio-dev (>= 1.2.0~),
+  lalsimulation-dev (>= 1.1.0~), lalburst-dev (>= 1.2.0~),
+  lalinspiral-dev (>= 1.5.0~), lalpulsar-dev (>= 1.9.0~),
+  lalstochastic-dev (>= 1.1.4~), lalinference-dev (>= 1.3.0~),
   bc
 X-Python-Version: >= 2.6
 Standards-Version: 3.8.6
@@ -18,10 +18,10 @@ Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}, ${python:Depends},
   python-healpy,
   libgsl0 (>= 1.9) | libgsl0ldbl (>= 1.10), fftw3, zlib1g,
-  libframe1 (>= 8.0), libmetaio1 (>= 8.2), lal (>= 6.11.0~),
-  lalframe (>= 1.1.0~), lalmetaio (>= 1.1.0), lalsimulation (>= 1.0.0~),
-  lalburst (>= 1.2.0), lalinspiral (>= 1.5.0), lalpulsar (>= 1.8.0~),
-  lalstochastic (>= 1.1.4), lalinference (>= 1.2.0~)
+  libframe1 (>= 8.0), libmetaio1 (>= 8.2), lal (>= 6.12.0~),
+  lalframe (>= 1.1.0~), lalmetaio (>= 1.2.0~), lalsimulation (>= 1.1.0~),
+  lalburst (>= 1.2.0~), lalinspiral (>= 1.5.0~), lalpulsar (>= 1.9.0~),
+  lalstochastic (>= 1.1.4~), lalinference (>= 1.3.0~)
 Recommends: python (>= 2.6)
 Provides: python-bayestar-localization, python-bayestar
 Conflicts: python-bayestar-localization, python-bayestar

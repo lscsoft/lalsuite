@@ -24,11 +24,6 @@ cfs_code="${fdsdir}lalapps_ComputeFStatistic_v2"
 SFTdir="testCFSv2_singleF_sfts"
 SFTfiles="$SFTdir${dirsep}*"
 
-
-if [ -n "${LALPULSAR_DATADIR}" ]; then
-    mfd_code="${mfd_code} -E ${LALPULSAR_DATADIR}"
-fi
-
 if [ -z "${LAL_DATA_PATH}" ]; then
     echo
     echo "Need environment-variable LAL_DATA_PATH to be set to include"
@@ -81,7 +76,7 @@ else
 fi
 
 ## construct MFD cmdline
-mfd_CL=" --Tsft=$Tsft --startTime=$startTime --duration=$duration --fmin=$mfd_fmin --Band=$mfd_FreqBand --h0=$h0 --Freq=$Freq --outSFTbname=$SFTdir --f1dot=$f1dot --Alpha=$Alpha --Delta=$Delta --psi=$psi --phi0=$phi0 --cosi=$cosi --ephemYear=09-11 --generationMode=1 --refTime=$refTime --noiseSqrtSh=$noiseSqrtSh"
+mfd_CL=" --Tsft=$Tsft --startTime=$startTime --duration=$duration --fmin=$mfd_fmin --Band=$mfd_FreqBand --h0=$h0 --Freq=$Freq --outSFTbname=$SFTdir --f1dot=$f1dot --Alpha=$Alpha --Delta=$Delta --psi=$psi --phi0=$phi0 --cosi=$cosi --generationMode=1 --refTime=$refTime --noiseSqrtSh=$noiseSqrtSh"
 
 ## detector H1
 cmdline="$mfd_code $mfd_CL --IFO=H1 --randSeed=1000";
@@ -113,7 +108,7 @@ outfile_cfs_all="fstat_all.dat"
 timingsfile="cfs_timing.dat"
 
     ## construct ComputeFStatistic command lines
-    cfs_CL="-v1 --DataFiles='$SFTfiles' --TwoFthreshold=0.0 --ephemYear='09-11' --Alpha=$Alpha --Delta=$Delta --Freq=$cfs_fmin --FreqBand=$cfs_FreqBand --clusterOnScanline=2"
+    cfs_CL=" --DataFiles='$SFTfiles' --TwoFthreshold=0.0 --Alpha=$Alpha --Delta=$Delta --Freq=$cfs_fmin --FreqBand=$cfs_FreqBand --clusterOnScanline=2"
 
     ## multi-IFO
     cmdline="$cfs_code $cfs_CL --outputFstat='$outfile_cfs_all' --outputLoudest='$outfile_cfs_loudest' --outputTiming='$timingsfile'"

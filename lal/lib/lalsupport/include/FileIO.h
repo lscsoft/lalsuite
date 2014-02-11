@@ -77,6 +77,15 @@ long XLALFileTell( LALFILE *file );
 void XLALFileRewind( LALFILE *file );
 int XLALFileEOF( LALFILE *file );
 
+int XLALFileIsRegularAndGetSize ( const char *path, size_t *fileLen );
+int XLALFileIsRegular ( const char *path );
+size_t XLALFileSize ( const char *path );
+
+char *XLALFileResolvePathLong ( const char *fname, const char *fallbackdir );
+char *XLALFileResolvePath( const char *fname );
+
+char *XLALFileLoad ( const char *path );
+
 int XLALGzipTextFile( const char *path );
 int XLALGunzipTextFile( const char *filename );
 

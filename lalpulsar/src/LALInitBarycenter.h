@@ -35,6 +35,9 @@ void XLALDestroyEphemerisData ( EphemerisData *edat );
 TimeCorrectionData *XLALInitTimeCorrections ( const CHAR *timeCorrectionFile );
 void XLALDestroyTimeCorrectionData( TimeCorrectionData *tcd );
 
+char *XLALPulsarFileResolvePath ( const char *fname );
+
+
 /* ==================== deprecated LAL interface  ==================================================*/
 
 #define LALINITBARYCENTERH_EOPEN    1
