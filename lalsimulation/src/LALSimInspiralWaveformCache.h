@@ -33,7 +33,35 @@ extern "C" {
  * advantage of approximant- and parameter-specific opportunities for
  * accelerating waveform computation.
  */
-typedef struct tagLALSimInspiralWaveformCache LALSimInspiralWaveformCache;
+typedef struct
+tagLALSimInspiralWaveformCache {
+    REAL8TimeSeries *hplus;
+    REAL8TimeSeries *hcross;
+    COMPLEX16FrequencySeries *hptilde;
+    COMPLEX16FrequencySeries *hctilde;
+    REAL8 phiRef;
+    REAL8 deltaTF;
+    REAL8 m1;
+    REAL8 m2;
+    REAL8 S1x;
+    REAL8 S1y;
+    REAL8 S1z;
+    REAL8 S2x;
+    REAL8 S2y;
+    REAL8 S2z;
+    REAL8 f_min;
+    REAL8 f_ref_max;
+    REAL8 r;
+    REAL8 i;
+    REAL8 lambda1;
+    REAL8 lambda2;
+    LALSimInspiralWaveformFlags *waveFlags;
+    LALSimInspiralTestGRParam *nonGRparams; /* Non-NULL pointers here are not allowed b/c it's impossible to know which fields are present */
+    int amplitudeO;
+    int phaseO;
+    Approximant approximant;
+} LALSimInspiralWaveformCache;
+
 
 LALSimInspiralWaveformCache *XLALCreateSimInspiralWaveformCache(void);
 

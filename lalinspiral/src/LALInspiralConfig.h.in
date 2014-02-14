@@ -16,12 +16,6 @@
 /* LALInspiral Version Devel Number  */
 #undef LALINSPIRAL_VERSION_DEVEL
 
-/* LALInspiral Configure Arguments */
-#undef LALINSPIRAL_CONFIGURE_ARGS
-
-/* LALInspiral Configure Date */
-#undef LALINSPIRAL_CONFIGURE_DATE
-
 /* Define if using CUDA library */
 #undef LALINSPIRAL_CUDA_ENABLED
 

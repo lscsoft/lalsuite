@@ -33,7 +33,6 @@
  *-----------------------------------------------------------------------
  */
 
-#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/LALStdlib.h>
 
 /***************************************************/
@@ -298,8 +297,7 @@ int read_noise(LALStatus* status, int iSFT) {
 
   for (i=0;i<len2;i++){
 
-    fvec->data[i].realf_FIXME=norm*crealf(fvec->data[i]);
-    fvec->data[i].imagf_FIXME=norm*cimagf(fvec->data[i]);    
+    fvec->data[i] = (((REAL4) norm) * fvec->data[i]);
   }
 
 

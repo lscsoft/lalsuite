@@ -27,7 +27,6 @@
  *-----------------------------------------------------------------------
  */
 
-#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/TSData.h>
 #include <lal/TSSearch.h>
 #include <lal/LALStdlib.h>
@@ -547,8 +546,7 @@ LALTrackSearchWhitenREAL4TimeSeries(
 	 */
 	factor=2*sqrt(signalFFT->deltaF/signalPSD->data->data[i]);
 
-      signalFFT->data->data[i].realf_FIXME = crealf(signalFFT->data->data[i]) * factor;
-      signalFFT->data->data[i].imagf_FIXME = cimagf(signalFFT->data->data[i]) * factor;
+      signalFFT->data->data[i] = (signalFFT->data->data[i] * ((REAL4) factor));
     }
   /*
    * Manipulate the LALUnits structure to reflect above operation
@@ -656,8 +654,7 @@ LALTrackSearchWhitenCOMPLEX8FrequencySeries(
 	 */
 	factor=2*sqrt(fSeries->deltaF/PSD->data->data[i]);
 
-      fSeries->data->data[i].realf_FIXME = crealf(fSeries->data->data[i]) * factor;
-      fSeries->data->data[i].imagf_FIXME = cimagf(fSeries->data->data[i]) * factor;
+      fSeries->data->data[i] = (fSeries->data->data[i] * ((REAL4) factor));
     }
  /*
   * LALUnits manipulation
@@ -733,10 +730,7 @@ LALTrackSearchCalibrateREAL4TimeSeries(LALStatus               *status,
    */
   for (i=0;i<signalvec->data->length;i++)
     {
-      signalFFT->data->data[i].realf_FIXME=
-	crealf(response->data->data[i])*crealf(signalFFT->data->data[i]);
-      signalFFT->data->data[i].imagf_FIXME=
-	cimagf(response->data->data[i])*cimagf(signalFFT->data->data[i]);
+      signalFFT->data->data[i] = crectf( crealf(response->data->data[i])*crealf(signalFFT->data->data[i]), cimagf(response->data->data[i])*cimagf(signalFFT->data->data[i]) );
     }
   /*
    * Bring this back to the time domain
@@ -814,8 +808,7 @@ LALTrackSearchCalibrateCOMPLEX8FrequencySeries(
       c=crealf(response->data->data[i]);
       d=cimagf(response->data->data[i]);
       /*(a+bi)*(c+di)*/
-      fSeries->data->data[i].realf_FIXME=(a*c - b*d);
-      fSeries->data->data[i].imagf_FIXME=(a*d + b*c);
+      fSeries->data->data[i] = crectf( (a*c - b*d), (a*d + b*c) );
     }
   /*
    * Unit manipulation

@@ -56,8 +56,14 @@ int XLALInspiralGenerateIIRSet(REAL8Vector *amp, REAL8Vector *phase, double epsi
 		/* Reset j so that the delay will be an integar number of decimated rate */
 		//j = amp->length-1 - (int) floor((amp->length-1-j)/(double) decimationFactor + 0.5)*decimationFactor;
 
-		/* Get error term */
+		/* Get second derivative term */
 		phase_ddot = (phase->data[j-2] - 2.0 * phase->data[j-1] + phase->data[j]) / (2.0 * LAL_PI);
+		/* Avoid negative term and avoid infinite loop */
+		if (phase_ddot < 0 || phase_ddot > 8*epsilon){
+			j = j - 1;
+			continue;
+		}
+
 		jstep = (int) floor(sqrt(2.0 * epsilon / phase_ddot)+0.5);
 		k = (int ) floor((double ) j - alpha * (double ) jstep + 0.5);
 

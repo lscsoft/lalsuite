@@ -91,6 +91,96 @@ void LALInferenceInitCBCTemplate(LALInferenceRunState *runState)
   return;
 }
 
+/* Setup the glitch model */
+void LALInferenceInitGlitchVariables(LALInferenceRunState *runState)
+{
+  ProcessParamsTable    *commandLine   = runState->commandLine;
+  LALInferenceIFOData   *dataPtr       = runState->data;
+  LALInferenceVariables *priorArgs     = runState->priorArgs;
+  LALInferenceVariables *proposalArgs  = runState->proposalArgs;
+  LALInferenceVariables *currentParams = runState->currentParams;
+
+  UINT4 i,nifo;
+  UINT4 n = (UINT4)dataPtr->timeData->data->length;
+  UINT4 gflag  = 1;
+  REAL8 gmin   = 0.0;
+  REAL8 gmax   = 15.0;
+
+  //over-ride default gmax from command line
+  if(LALInferenceGetProcParamVal(commandLine, "--glitchNmax"))
+    gmax = (REAL8)atoi(LALInferenceGetProcParamVal(commandLine, "--glitchNmax")->value);
+
+  //count interferometers in network before allocating memory
+  //compute imin,imax for each IFO -- may be different
+  nifo=0;
+  dataPtr = runState->data;
+  while (dataPtr != NULL)
+  {
+    dataPtr = dataPtr->next;
+    nifo++;
+  }
+  dataPtr = runState->data;
+
+  UINT4Vector *gsize  = XLALCreateUINT4Vector(nifo);
+  //Meyer?? REAL8Vector *gprior = XLALCreateREAL8Vector((int)gmax+1);
+
+  //Morlet??
+  gsl_matrix *mAmp = gsl_matrix_alloc(nifo,(int)(gmax));
+  gsl_matrix *mf0  = gsl_matrix_alloc(nifo,(int)(gmax));
+  gsl_matrix *mQ   = gsl_matrix_alloc(nifo,(int)(gmax));
+  gsl_matrix *mt0  = gsl_matrix_alloc(nifo,(int)(gmax));
+  gsl_matrix *mphi = gsl_matrix_alloc(nifo,(int)(gmax));
+
+  double Amin,Amax;
+  double Qmin,Qmax;
+  double f_min,f_max;
+  double tmin,tmax;
+  double pmin,pmax;
+
+  REAL8 TwoDeltaToverN = 2.0 * dataPtr->timeData->deltaT / ((double) dataPtr->timeData->data->length);
+  Amin = 1.0   / sqrt(TwoDeltaToverN);
+  Amax = 100.0 / sqrt(TwoDeltaToverN);
+
+  Qmin = 3.0;
+  Qmax = 30.0;
+  tmin = 0.0;
+  tmax = dataPtr->timeData->data->length*dataPtr->timeData->deltaT;
+  f_min = dataPtr->fLow;
+  f_max = dataPtr->fHigh;
+  pmin = 0.0;
+  pmax = LAL_TWOPI;
+
+  gsl_matrix  *gFD       = gsl_matrix_alloc(nifo,(int)n); //store the Fourier-domain glitch signal
+  gsl_matrix  *gpower    = gsl_matrix_alloc(nifo,(int)n); //store the (normalized) wavelet power in each pixel
+  REAL8Vector *maxpower  = XLALCreateREAL8Vector(nifo);   //store the maximum power in any pixel for each ifo (for rejection sampling proposed wavelets)
+
+  for(i=0; i<nifo; i++) gsize->data[i]=0;
+
+  //Morlet wavelet parameters
+  LALInferenceAddVariable(currentParams, "morlet_FD",  &gFD,  LALINFERENCE_gslMatrix_t, LALINFERENCE_PARAM_LINEAR);
+  LALInferenceAddVariable(currentParams, "morlet_Amp", &mAmp, LALINFERENCE_gslMatrix_t, LALINFERENCE_PARAM_LINEAR);
+  LALInferenceAddVariable(currentParams, "morlet_f0" , &mf0,  LALINFERENCE_gslMatrix_t, LALINFERENCE_PARAM_LINEAR);
+  LALInferenceAddVariable(currentParams, "morlet_Q"  , &mQ,   LALINFERENCE_gslMatrix_t, LALINFERENCE_PARAM_LINEAR);
+  LALInferenceAddVariable(currentParams, "morlet_t0" , &mt0,  LALINFERENCE_gslMatrix_t, LALINFERENCE_PARAM_LINEAR);
+  LALInferenceAddVariable(currentParams, "morlet_phi", &mphi, LALINFERENCE_gslMatrix_t, LALINFERENCE_PARAM_LINEAR);
+
+  LALInferenceAddVariable(currentParams, "glitch_size",   &gsize, LALINFERENCE_UINT4Vector_t, LALINFERENCE_PARAM_LINEAR);
+  LALInferenceAddVariable(currentParams, "glitchFitFlag", &gflag, LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_FIXED);
+
+  LALInferenceAddMinMaxPrior(priorArgs, "morlet_Amp_prior", &Amin, &Amax, LALINFERENCE_REAL8_t);
+  LALInferenceAddMinMaxPrior(priorArgs, "morlet_f0_prior" , &f_min, &f_max, LALINFERENCE_REAL8_t);
+  LALInferenceAddMinMaxPrior(priorArgs, "morlet_Q_prior"  , &Qmin, &Qmax, LALINFERENCE_REAL8_t);
+  LALInferenceAddMinMaxPrior(priorArgs, "morlet_t0_prior" , &tmin, &tmax, LALINFERENCE_REAL8_t);
+  LALInferenceAddMinMaxPrior(priorArgs, "morlet_phi_prior", &pmin, &pmax, LALINFERENCE_REAL8_t);
+
+  LALInferenceAddMinMaxPrior(priorArgs, "glitch_dim", &gmin, &gmax, LALINFERENCE_REAL8_t);
+
+  //Meyer-wavelet based proposal distribution
+  LALInferenceAddVariable(proposalArgs, "glitch_max_power", &maxpower, LALINFERENCE_REAL8Vector_t, LALINFERENCE_PARAM_FIXED);
+  LALInferenceAddVariable(proposalArgs, "glitch_power", &gpower, LALINFERENCE_gslMatrix_t, LALINFERENCE_PARAM_FIXED);
+
+}
+
 void LALInferenceRegisterUniformVariableREAL8(LALInferenceRunState *state, LALInferenceVariables *var, const char name[VARNAME_MAX], REAL8 startval, REAL8 min, REAL8 max, LALInferenceParamVaryType varytype)
 {
   char minopt[VARNAME_MAX+7];
@@ -155,7 +245,7 @@ LALInferenceVariables *LALInferenceInitCBCVariables(LALInferenceRunState *state)
                                                                            SpinQuadTaylor, SpinTaylorFrameless, SpinTaylorT4, \n\
                                                                            PhenSpinTaylorRD, NumRel.\n\
                                                default modeldomain=\"frequency\": TaylorF1, TaylorF2, TaylorF2RedSpin, \n\
-                                                                                TaylorF2RedSpinTidal, IMRPhenomA, IMRPhenomB.\n\
+                                                                                TaylorF2RedSpinTidal, IMRPhenomA, IMRPhenomB, IMRPhenomP.\n\
                (--amporder PNorder)            Specify a PN order in amplitude to use (defaults: LALSimulation: max available; LALInspiral: newtownian).\n\
                (--fref fRef)                   Specify a reference frequency at which parameters are defined (default 0).\n\
                (--tidal)                       Enables tidal corrections, only with LALSimulation.\n\
@@ -214,6 +304,7 @@ LALInferenceVariables *LALInferenceInitCBCVariables(LALInferenceRunState *state)
                (--distance-min MIN)                    Minimum distance in Mpc (1).\n\
                (--distance-max MAX)                    Maximum distance in Mpc (100).\n\
                (--dt time)                             Width of time prior, centred around trigger (0.1s).\n\
+               (--malmquistPrior)              Rejection sample based on SNR of template \n\
                Equation of state parameters:\n\
                (--lambda1-min)                         Minimum lambda1 (0).\n\
                (--lambda1-max)                         Maximum lambda1 (3000).\n\
@@ -265,6 +356,7 @@ LALInferenceVariables *LALInferenceInitCBCVariables(LALInferenceRunState *state)
   int errnum;
   SimInspiralTable *injTable=NULL;
   LALInferenceVariables *priorArgs=state->priorArgs;
+  LALInferenceVariables *proposalArgs=state->proposalArgs;
   state->currentParams=XLALCalloc(1,sizeof(LALInferenceVariables));
   LALInferenceVariables *currentParams=state->currentParams;
   ProcessParamsTable *commandLine=state->commandLine;
@@ -340,6 +432,12 @@ LALInferenceVariables *LALInferenceInitCBCVariables(LALInferenceRunState *state)
   else if (LALInferenceGetProcParamVal(commandLine, "--rosenbrockLikelihood"))
   {
     return(LALInferenceInitVariablesReviewEvidence_banana(state));
+  }
+
+  if(LALInferenceGetProcParamVal(commandLine,"--malmquistPrior"))
+  {
+    UINT4 malmquistflag=1;
+    LALInferenceAddVariable(currentParams, "malmquistPrior",&malmquistflag,LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_FIXED);
   }
 
   if(LALInferenceGetProcParamVal(commandLine,"--skyLocPrior")){
@@ -761,7 +859,8 @@ LALInferenceVariables *LALInferenceInitCBCVariables(LALInferenceRunState *state)
   UINT4 nscale_block; //number of noise parameters per IFO (1 per frequency block)
   UINT4 nscale_bin;   //number of Fourier bins in each noise block
   REAL8 nscale_dflog; //logarithmic spacing for noise parameters
-
+  REAL8 nscale_min;   //minimum value for psd scale parameter
+  REAL8 nscale_max;   //maximum value for psd scale parameters
   UINT4 nscale_dim;   //total dimension of noise model (params X detectors)
   UINT4 nscale_flag;  //flag to tell likelihood function if psd fitting is in use
 
@@ -948,7 +1047,7 @@ LALInferenceVariables *LALInferenceInitCBCVariables(LALInferenceRunState *state)
       {
         printf(" %f-%f ",gsl_matrix_get(bands_min,i,j)*df,gsl_matrix_get(bands_max,i,j)*df);
       }
-
+      printf("\n");
       dataPtr = dataPtr->next;
       i++;
     }
@@ -956,8 +1055,8 @@ LALInferenceVariables *LALInferenceInitCBCVariables(LALInferenceRunState *state)
     nscale_bin   = (f_max+1-f_min)/nscale_block;
     nscale_dflog = log( (double)(f_max+1)/(double)f_min )/(double)nscale_block;
 
-    //nscale_min   = 0.00;
-    //nscale_max   = 10.0;
+    nscale_min   = 1.0e-1;
+    nscale_max   = 1.0e+1;
     nscale_dim   = nscale_block*nifo;
     nscale_flag  = 1;
 
@@ -966,20 +1065,14 @@ LALInferenceVariables *LALInferenceInitCBCVariables(LALInferenceRunState *state)
     nscale_sigma = XLALCreateREAL8Vector(nscale_block);
     for(i=0; i<nscale_block; i++)
     {
-      nscale_prior->data[i] = 1.0/sqrt( f_min*exp( (double)(i+1)*nscale_dflog ) );
+      nscale_prior->data[i] = 1.0/sqrt( gsl_matrix_get(bands_max,0,i)-gsl_matrix_get(bands_min,0,i) );
       nscale_sigma->data[i] = nscale_prior->data[i]/sqrt((double)(nifo*nscale_block));
-
     }
 
     gsl_matrix *nscale = gsl_matrix_alloc(nifo,nscale_block);
-    gsl_matrix *nstore = gsl_matrix_alloc(nifo,nscale_block);
-
     gsl_matrix_set_all(nscale, 1.0);
-    gsl_matrix_set_all(nstore, 1.0);
-
 
     LALInferenceAddVariable(currentParams, "psdscale", &nscale, LALINFERENCE_gslMatrix_t, LALINFERENCE_PARAM_LINEAR);
-    LALInferenceAddVariable(currentParams, "psdstore", &nstore, LALINFERENCE_gslMatrix_t, LALINFERENCE_PARAM_FIXED);
     LALInferenceAddVariable(currentParams, "logdeltaf", &nscale_dflog, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
 
     LALInferenceAddVariable(currentParams, "psdBandsMin", &bands_min, LALINFERENCE_gslMatrix_t, LALINFERENCE_PARAM_FIXED);
@@ -987,13 +1080,13 @@ LALInferenceVariables *LALInferenceInitCBCVariables(LALInferenceRunState *state)
 
     //Set up noise priors
     LALInferenceAddVariable(priorArgs,      "psddim",   &nscale_dim,  LALINFERENCE_INT4_t,  LALINFERENCE_PARAM_FIXED);
-    //LALInferenceAddMinMaxPrior(priorArgs,   "psdscale", &nscale_min,  &nscale_max,   LALINFERENCE_REAL8_t);
+    LALInferenceAddMinMaxPrior(priorArgs,   "psdrange", &nscale_min,  &nscale_max,   LALINFERENCE_REAL8_t);
     LALInferenceAddVariable(priorArgs,      "psdsigma", &nscale_prior, LALINFERENCE_REAL8Vector_t, LALINFERENCE_PARAM_FIXED);
 
     //Store meta data for noise model in proposal
-    LALInferenceAddVariable(state->proposalArgs, "psdblock", &nscale_block, LALINFERENCE_INT4_t,  LALINFERENCE_PARAM_FIXED);
-    LALInferenceAddVariable(state->proposalArgs, "psdbin",   &nscale_bin,   LALINFERENCE_INT4_t,  LALINFERENCE_PARAM_FIXED);
-    LALInferenceAddVariable(state->proposalArgs, "psdsigma", &nscale_sigma, LALINFERENCE_REAL8Vector_t, LALINFERENCE_PARAM_FIXED);
+    LALInferenceAddVariable(proposalArgs, "psdblock", &nscale_block, LALINFERENCE_INT4_t,  LALINFERENCE_PARAM_FIXED);
+    LALInferenceAddVariable(proposalArgs, "psdbin",   &nscale_bin,   LALINFERENCE_INT4_t,  LALINFERENCE_PARAM_FIXED);
+    LALInferenceAddVariable(proposalArgs, "psdsigma", &nscale_sigma, LALINFERENCE_REAL8Vector_t, LALINFERENCE_PARAM_FIXED);
 
 
   }//End of noise model initialization
@@ -1161,8 +1254,16 @@ LALInferenceVariables *LALInferenceInitCBCVariables(LALInferenceRunState *state)
   }//End of line-removal initialization
    
   LALInferenceAddVariable(currentParams, "removeLinesFlag", &lines_flag, LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_FIXED);
-  /*********************************************************************************/
+  if(LALInferenceGetProcParamVal(commandLine, "--glitchFit")) LALInferenceInitGlitchVariables(state);
 
+  UINT4 signal_flag=1;
+  ppt = LALInferenceGetProcParamVal(commandLine, "--noiseonly");
+  if(ppt)signal_flag=0;
+  LALInferenceAddVariable(currentParams, "signalModelFlag", &signal_flag,  LALINFERENCE_INT4_t,  LALINFERENCE_PARAM_FIXED);
+
+  //Only add waveform parameters to model if needed
+  if(signal_flag)
+  {
     ppt=LALInferenceGetProcParamVal(commandLine,"--fixMc");
     if(ppt){
       LALInferenceRegisterUniformVariableREAL8(state, currentParams, "chirpmass", start_mc, mcMin, mcMax, LALINFERENCE_PARAM_FIXED);
@@ -1403,6 +1504,14 @@ LALInferenceVariables *LALInferenceInitCBCVariables(LALInferenceRunState *state)
      fprintf(stdout,"\n\n---\t\t ---\n");
      fprintf(stdout,"Templates will run using Approximant %i (%s), phase order %i, amp order %i, spin order %i tidal order %i, in the %s domain.\n",approx,XLALGetStringFromApproximant(approx),PhaseOrder,AmpOrder,(int) spinO, (int) tideO, modelDomain==LAL_SIM_DOMAIN_TIME?"time":"frequency");
      fprintf(stdout,"---\t\t ---\n\n");
+  }//end of signal only flag
+  else
+  {
+    /* Print info about orders and waveflags used for templates */
+    fprintf(stdout,"\n\n------\n");
+    fprintf(stdout,"Noise only run\n");
+    fprintf(stdout,"------\n\n");
+  }
   return(currentParams);
 }
 

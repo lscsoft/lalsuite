@@ -476,6 +476,7 @@ tagLALInferenceIFOData
   LALInferenceVariables     *dataParams;    /* Optional data parameters */
   LALSimulationDomain        modelDomain;   /** Domain of model */
   REAL8FrequencySeries      *oneSidedNoisePowerSpectrum;  /** one-sided Noise Power Spectrum */
+  REAL8FrequencySeries      *noiseASD;  /** (one-sided Noise Power Spectrum)^{-1/2} */
 //  REAL8TimeSeries           *timeDomainNoiseWeights; /** Roughly, InvFFT(1/Noise PSD). */
   REAL8Window               *window;        /** A window */
   REAL8FFTPlan              *timeToFreqFFTPlan, *freqToTimeFFTPlan; /** Pre-calculated FFT plans for forward and reverse FFTs */

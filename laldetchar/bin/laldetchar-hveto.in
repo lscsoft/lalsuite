@@ -201,7 +201,7 @@ if opt.segment_database:
 elif opt.livetime_segments:
 	# Get segments from an XML file
 	try:
-		livesegs = query_segment_xml( opt.livetime_segments, opt.gps_start, opt.gps_end, opt.segment_definer)
+		livesegs = hveto.query_segments_xml( opt.livetime_segments, opt.gps_start, opt.gps_end, opt.segment_definer)
 	# Okay, try segwizard
 	except:
 		livesegs = fromsegwizard( open(opt.livetime_segments) ).coalesce()
@@ -215,7 +215,7 @@ if runlive == 0:
 	exit()
 lalsegl = gl.lalseg_from_seglist( livesegs )
 
-chanlist = sorted(get_chan_list( trig_seq ))
+chanlist = sorted(gl.get_chan_list( trig_seq ))
 print "Channels present:\n\t" + "\n\t".join(chanlist)
 
 # Preprocessing. Remove triggers which are outside the livetime segments or 

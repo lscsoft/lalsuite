@@ -54,6 +54,7 @@
 #include <gsl/gsl_rng.h>
 
 /* LAL-includes */
+#include <lal/LALString.h>
 #include <lal/SkyCoordinates.h>
 #include <lal/AVFactories.h>
 #include <lal/LALInitBarycenter.h>
@@ -73,7 +74,6 @@
 #include <lalapps.h>
 
 /*---------- DEFINES ----------*/
-#define EPHEM_YEARS  "00-19-DE405"	/**< default range, covering S5: override with --ephemYear */
 #define SQ(x) ((x)*(x))
 #define SQUARE(x) ( (x) * (x) )
 #define CUBE(x) ((x)*(x)*(x))
@@ -115,6 +115,8 @@ typedef struct {
 
   BOOLEAN computeLV;	/**< Also compute LineVeto-statistic */
   REAL8 LVrho;		/**< prior rho_max_line for LineVeto-statistic */
+  LALStringVector* LVlX; /**< Line-to-gauss prior ratios lX for LineVeto statistic */
+
   INT4 numDraws;	/**< number of random 'draws' to simulate for F-stat and B-stat */
 
   CHAR *outputStats;	/**< output file to write numDraw resulting statistics into */
@@ -124,7 +126,8 @@ typedef struct {
 
   BOOLEAN useFReg;	/**< use 'regularized' Fstat (1/D)*e^F for marginalization, or 'standard' e^F */
 
-  CHAR *ephemYear;	/**< date-range string on ephemeris-files to use */
+  CHAR *ephemEarth;	/**< Earth ephemeris file to use */
+  CHAR *ephemSun;	/**< Sun ephemeris file to use */
 
   BOOLEAN version;	/**< output version-info */
   INT4 randSeed;	/**< GSL random-number generator seed value to use */
@@ -148,6 +151,9 @@ typedef struct {
   gsl_rng *rng;			/**< gsl random-number generator */
   CHAR *logString;		/**< logstring for file-output, containing cmdline-options + code VCS version info */
 
+  REAL8 LVlogRhoTerm;		/**< For LineVeto statistic: extra term coming from prior normalization: log(rho_max_line^4/70) */
+  REAL8Vector *LVloglX;		/**< For LineVeto statistic: vector of logs of line prior ratios lX per detector */
+
 } ConfigVariables;
 
 /* ---------- local prototypes ---------- */
@@ -155,7 +161,6 @@ int main(int argc,char *argv[]);
 
 int XLALInitUserVars ( UserInput_t *uvar );
 int XLALInitCode ( ConfigVariables *cfg, const UserInput_t *uvar );
-EphemerisData * XLALInitEphemeris (const CHAR *ephemYear );
 int XLALInitAmplitudePrior ( AmplitudePrior_t *AmpPrior, const UserInput_t *uvar );
 MultiLIGOTimeGPSVector * XLALCreateMultiLIGOTimeGPSVector ( UINT4 numDetectors );
 int write_LV_candidate_to_fp ( FILE *fp, const LVcomponents *LVstat, const PulsarDopplerParams *dopplerParams_in );
@@ -220,6 +225,11 @@ int main(int argc,char *argv[])
   if ( XLALInitCode( &cfg, &uvar ) != XLAL_SUCCESS ) {
     LogPrintf (LOG_CRITICAL, "%s: XLALInitCode() failed with error = %d\n", __func__, xlalErrno );
     XLAL_ERROR ( XLAL_EFUNC );
+  }
+
+  REAL8 *loglX = NULL;
+  if ( cfg.LVloglX ) {
+    loglX = cfg.LVloglX->data;
   }
 
   /* ----- prepare stats output ----- */
@@ -291,16 +301,9 @@ int main(int argc,char *argv[])
         XLAL_ERROR ( XLAL_EFUNC );
       }
 
-      REAL8Vector *linepriorX;
-      if ( (linepriorX = XLALCreateREAL8Vector ( numDetectors )) == NULL ) {
-        XLALPrintError ("%s: failed to XLALCreateREAL8Vector( %d )\n", __func__, numDetectors );
-        XLAL_ERROR ( XLAL_EFUNC );
-      }
-
       /* compute F and LV statistics from atoms */
       UINT4 X;
       for ( X=0; X < numDetectors; X++ )    {
-        linepriorX->data[X] = 0.5;
         lvstats.TwoFX->data[X] = 2.0*XLALComputeFstatFromAtoms ( multiAtoms, X );
         if ( xlalErrno != 0 ) {
           XLALPrintError ("\nError in function %s, line %d : Failed call to XLALComputeFstatFromAtoms().\n\n", __func__, __LINE__);
@@ -316,7 +319,7 @@ int main(int argc,char *argv[])
 
       if ( uvar.computeLV ) {
         BOOLEAN useAllTerms = TRUE;
-        lvstats.LV = XLALComputeLineVeto ( (REAL4)lvstats.TwoF, (REAL4Vector*)lvstats.TwoFX, uvar.LVrho, linepriorX, useAllTerms );
+        lvstats.LV = XLALComputeLineVetoArray ( (REAL4)lvstats.TwoF, numDetectors, (REAL4*)lvstats.TwoFX->data, cfg.LVlogRhoTerm, loglX, useAllTerms );
         if ( xlalErrno != 0 ) {
           XLALPrintError ("\nError in function %s, line %d : Failed call to XLALComputeLineVeto().\n\n", __func__, __LINE__);
           XLAL_ERROR ( XLAL_EFUNC );
@@ -363,7 +366,6 @@ int main(int argc,char *argv[])
 
       /* ----- free Memory */
       XLALDestroyREAL4Vector ( lvstats.TwoFX );
-      XLALDestroyREAL8Vector ( linepriorX );
       XLALDestroyMultiFstatAtomVector ( multiAtoms );
       XLALDestroyMultiAMCoeffs ( multiAMBuffer.multiAM );
 
@@ -384,6 +386,8 @@ int main(int argc,char *argv[])
 
   if ( cfg.logString ) XLALFree ( cfg.logString );
   gsl_rng_free ( cfg.rng );
+
+  XLALDestroyREAL8Vector ( cfg.LVloglX );
 
   XLALDestroyUserVars();
 
@@ -414,14 +418,15 @@ XLALInitUserVars ( UserInput_t *uvar )
   uvar->dataStartGPS = 814838413;	/* 1 Nov 2005, ~ start of S5 */
   uvar->dataDuration = (INT4) round ( LAL_YRSID_SI ) ;	/* 1 year of data */
 
-  uvar->ephemYear = XLALCalloc (1, strlen(EPHEM_YEARS)+1);
-  strcpy (uvar->ephemYear, EPHEM_YEARS);
+  uvar->ephemEarth = XLALStringDuplicate("earth00-19-DE405.dat.gz");
+  uvar->ephemSun = XLALStringDuplicate("sun00-19-DE405.dat.gz");
 
   uvar->numDraws = 1;
   uvar->TAtom = 1800;
 
   uvar->computeLV = 0;
   uvar->LVrho = 0.0;
+  uvar->LVlX = NULL;
   uvar->useFReg = 0;
 
   uvar->fixedh0Nat = -1;
@@ -464,7 +469,8 @@ XLALInitUserVars ( UserInput_t *uvar )
 
   /* misc params */
   XLALregBOOLUserStruct ( computeLV,		 0, UVAR_OPTIONAL, "Also compute LineVeto-statistic");
-  XLALregREALUserStruct ( LVrho,		 0, UVAR_OPTIONAL, "prior rho_max_line for LineVeto-statistic");
+  XLALregREALUserStruct ( LVrho,		 0, UVAR_OPTIONAL, "LineVeto: prior rho_max_line for LineVeto-statistic");
+  XLALregLISTUserStruct ( LVlX,			 0, UVAR_OPTIONAL, "LineVeto: line-to-gauss prior ratios lX for different detectors X, length must be numDetectors. Defaults to lX=1,1,..");
 
   XLALregINTUserStruct  ( numDraws,		'N', UVAR_OPTIONAL,"Number of random 'draws' to simulate");
   XLALregINTUserStruct  ( randSeed,		 0, UVAR_OPTIONAL, "GSL random-number generator seed value to use");
@@ -476,7 +482,8 @@ XLALInitUserVars ( UserInput_t *uvar )
   XLALregBOOLUserStruct ( SignalOnly,        	'S', UVAR_OPTIONAL, "Signal only: generate pure signal without noise");
   XLALregBOOLUserStruct ( useFReg,        	 0,  UVAR_OPTIONAL, "use 'regularized' Fstat (1/D)*e^F (if TRUE) for marginalization, or 'standard' e^F (if FALSE)");
 
-  XLALregSTRINGUserStruct( ephemYear, 	        'y', UVAR_OPTIONAL, "Year (or range of years) of ephemeris files to be used");
+  XLALregSTRINGUserStruct ( ephemEarth, 	 0,  UVAR_OPTIONAL, "Earth ephemeris file to use");
+  XLALregSTRINGUserStruct ( ephemSun, 	 	 0,  UVAR_OPTIONAL, "Sun ephemeris file to use");
 
   XLALregBOOLUserStruct ( version,        	'V', UVAR_SPECIAL,  "Output code version");
 
@@ -547,21 +554,20 @@ XLALInitCode ( ConfigVariables *cfg, const UserInput_t *uvar )
   LogPrintf ( LOG_DEBUG, "seed = %lu\n", gsl_rng_default_seed );
 
   /* init ephemeris-data */
-  EphemerisData *edat;
-  if ( (edat = XLALInitEphemeris ( uvar->ephemYear )) == NULL ) {
-    LogPrintf ( LOG_CRITICAL, "%s: Failed to init ephemeris data for year-span '%s'\n", __func__, uvar->ephemYear );
+  EphemerisData *edat = XLALInitBarycenter( uvar->ephemEarth, uvar->ephemSun );
+  if ( !edat ) {
+    LogPrintf ( LOG_CRITICAL, "%s: XLALInitBarycenter failed: could not load Earth ephemeris '%s' and Sun ephemeris '%s'\n", __func__, uvar->ephemEarth, uvar->ephemSun);
     XLAL_ERROR ( XLAL_EFUNC );
   }
 
   UINT4 numDetectors = uvar->IFOs->length;
-  UINT4 X;
   MultiLALDetector *multiDet;
   if ( (multiDet = XLALCreateMultiLALDetector ( numDetectors )) == NULL ) {
     XLALPrintError ("%s: XLALCreateMultiLALDetector(1) failed with errno=%d\n", __func__, xlalErrno );
     XLAL_ERROR ( XLAL_EFUNC );
   }
   LALDetector *site = NULL;
-  for ( X=0; X < numDetectors; X++ )    {
+  for ( UINT4 X=0; X < numDetectors; X++ )    {
     if ( (site = XLALGetSiteInfo ( uvar->IFOs->data[X] )) == NULL ) {
       XLALPrintError ("%s: Failed to get site-info for detector '%s'\n", __func__, uvar->IFOs->data[X] );
       XLAL_ERROR ( XLAL_EFUNC );
@@ -577,7 +583,7 @@ XLALInitCode ( ConfigVariables *cfg, const UserInput_t *uvar )
      XLALPrintError ("%s: XLALCreateMultiLIGOTimeGPSVector(%d) failed.\n", __func__, numDetectors );
   }
 
-  for ( X=0; X < numDetectors; X++ )    {
+  for ( UINT4 X=0; X < numDetectors; X++ )    {
     if ( (multiTS->data[X] = XLALCreateTimestampVector (numSteps)) == NULL ) {
       XLALPrintError ("%s: XLALCreateTimestampVector(%d) failed.\n", __func__, numSteps );
     }
@@ -597,11 +603,58 @@ XLALInitCode ( ConfigVariables *cfg, const UserInput_t *uvar )
     XLAL_ERROR ( XLAL_EFUNC );
   }
 
+  /* process LV user vars */
+  if ( uvar->LVrho < 0.0 ) {
+    fprintf(stderr, "Invalid LV prior rho (given rho=%f, need rho>=0)!\n", uvar->LVrho);
+    return( XLAL_EINVAL );
+  }
+  else if ( uvar->LVrho > 0.0 ) {
+    cfg->LVlogRhoTerm = 4.0 * log(uvar->LVrho) - log(70.0);
+  }
+  else { /* if uvar_LVrho == 0.0, logRhoTerm should become irrelevant in summation */
+    cfg->LVlogRhoTerm = - LAL_REAL4_MAX;
+  }
+
+  /* set up line prior ratios: either given by user, then convert from string to REAL4 vector; else, pass NULL, which is interpreted as lX=1.0 for all X */
+  cfg->LVloglX = NULL;
+
+  if ( uvar->computeLV && uvar->LVlX ) {
+
+    if (  uvar->LVlX->length != numDetectors ) {
+      fprintf(stderr, "Length of LV prior ratio vector does not match number of detectors! (%d != %d)\n", uvar->LVlX->length, numDetectors);
+      XLAL_ERROR ( XLAL_EINVAL );
+    }
+
+    if ( (cfg->LVloglX = XLALCreateREAL8Vector ( numDetectors )) == NULL ) {
+      fprintf(stderr, "Failed call to XLALCreateREAL8Vector( %d )\n", numDetectors );
+      XLAL_ERROR ( XLAL_EFUNC );
+    }
+
+    for (UINT4 X = 0; X < numDetectors; X++) {
+
+      if ( 1 != sscanf ( uvar->LVlX->data[X], "%" LAL_REAL8_FORMAT, &cfg->LVloglX->data[X] ) ) {
+        fprintf(stderr, "Illegal REAL8 commandline argument to --LVlX[%d]: '%s'\n", X, uvar->LVlX->data[X]);
+        XLAL_ERROR ( XLAL_EINVAL );
+      }
+
+      if ( cfg->LVloglX->data[X] < 0.0 ) {
+        fprintf(stderr, "Negative input prior-ratio for detector X=%d lX[X]=%f\n", X, cfg->LVloglX->data[X] );
+        XLAL_ERROR ( XLAL_EINVAL );
+      }
+      else if ( cfg->LVloglX->data[X] > 0.0 ) {
+        cfg->LVloglX->data[X] = log(cfg->LVloglX->data[X]);
+      }
+      else { /* if zero prior ratio, approximate log(0)=-inf by -LAL_REA4_MAX to avoid raising underflow exceptions */
+        cfg->LVloglX->data[X] = - LAL_REAL8_MAX;
+      }
+
+    } /* for X < numDetectors */
+
+  } /* if ( uvar->computeLV && uvar->LVlX ) */
+
   /* get rid of all temporary memory allocated for this step */
   XLALDestroyMultiLALDetector ( multiDet );
-  XLALFree(edat->ephemE);
-  XLALFree(edat->ephemS);
-  XLALFree ( edat );
+  XLALDestroyEphemerisData ( edat );
   XLALDestroyMultiTimestamps ( multiTS );
   multiTS = NULL;
 
@@ -616,42 +669,7 @@ XLALInitCode ( ConfigVariables *cfg, const UserInput_t *uvar )
 } /* XLALInitCode() */
 
 
-/**
- * Load Ephemeris from ephemeris data-files
- */
-EphemerisData *
-XLALInitEphemeris (const CHAR *ephemYear )	/**< which years do we need? */
-{
-#define FNAME_LENGTH 1024
-  CHAR EphemEarth[FNAME_LENGTH];	/* filename of earth-ephemeris data */
-  CHAR EphemSun[FNAME_LENGTH];	/* filename of sun-ephemeris data */
-
-  /* check input consistency */
-  if ( !ephemYear ) {
-    XLALPrintError ("%s: invalid NULL input for 'ephemYear'\n", __func__ );
-    XLAL_ERROR_NULL ( XLAL_EINVAL );
-  }
-
-  snprintf(EphemEarth, FNAME_LENGTH, "earth%s.dat", ephemYear);
-  snprintf(EphemSun, FNAME_LENGTH, "sun%s.dat",  ephemYear);
-
-  EphemEarth[FNAME_LENGTH-1]=0;
-  EphemSun[FNAME_LENGTH-1]=0;
-
-  EphemerisData *edat;
-  if ( (edat = XLALInitBarycenter ( EphemEarth, EphemSun)) == NULL ) {
-    XLALPrintError ("%s: XLALInitBarycenter() failed.\n", __func__ );
-    XLAL_ERROR_NULL ( XLAL_EFUNC );
-  }
-
-  /* return ephemeris */
-  return edat;
-
-} /* XLALInitEphemeris() */
-
-
-/**
- * Initialize amplitude-prior pdfs from the user-input
+/** Initialize amplitude-prior pdfs from the user-input
  */
 int
 XLALInitAmplitudePrior ( AmplitudePrior_t *AmpPrior, const UserInput_t *uvar )

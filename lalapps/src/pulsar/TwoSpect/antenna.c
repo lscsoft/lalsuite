@@ -1,5 +1,5 @@
 /*
-*  Copyright (C) 2010, 2012, 2013 Evan Goetz
+*  Copyright (C) 2010, 2012, 2013, 2014 Evan Goetz
 *
 *  This program is free software; you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
@@ -27,53 +27,45 @@ static const LALStatus empty_status;
 // bin shift = f0*v*Tcoh
 // where f0 is frequency, v is velocity in units of c, and Tcoh is the SFT coherence length
 // an optional dopplerMultiplier value could be multiplied if desired (default value is 1.0)
-void CompBinShifts(INT4Vector *output, REAL8 freq, REAL4Vector *velocities, REAL8 Tcoh, REAL4 dopplerMultiplier)
+INT4 CompBinShifts(INT4Vector *output, REAL8 freq, REAL4Vector *velocities, REAL8 Tcoh, REAL4 dopplerMultiplier)
 {
-   
-   INT4 ii;
-   
-   for (ii=0; ii<(INT4)velocities->length; ii++) output->data[ii] = (INT4)round(dopplerMultiplier*freq*velocities->data[ii]*Tcoh);
-   
+   for (INT4 ii=0; ii<(INT4)velocities->length; ii++) output->data[ii] = (INT4)round(dopplerMultiplier*freq*velocities->data[ii]*Tcoh);
+   return 0;
 } /* CompBinShifts() */
 
 
 //Compute the antenna pattern weights
 //If linPolOn = 1, then the output weights are Fplus*Fplus for the given polarization angle
 //If linPolOn = 0, then the output weights are Fplus*Fplus + Fcross*Fcross
-void CompAntennaPatternWeights(REAL4Vector *output, REAL4 ra, REAL4 dec, REAL8 t0, REAL8 Tcoh, REAL8 SFToverlap, REAL8 Tobs, INT4 linPolOn, REAL8 polAngle, LALDetector det)
+INT4 CompAntennaPatternWeights(REAL4Vector *output, REAL4 ra, REAL4 dec, REAL8 t0, REAL8 Tcoh, REAL8 SFToverlap, REAL8 Tobs, INT4 linPolOn, REAL8 polAngle, LALDetector det)
 {
-   
-   INT4 ii;
+
    INT4 numffts = (INT4)floor(Tobs/(Tcoh-SFToverlap)-1);    //Number of FFTs
    REAL8 fplus, fcross;
    
-   for (ii=0; ii<numffts; ii++) {
+   for (INT4 ii=0; ii<numffts; ii++) {
       
-      LIGOTimeGPS gpstime = {0,0};
+      LIGOTimeGPS gpstime = LIGOTIMEGPSZERO;
       gpstime.gpsSeconds = (INT4)floor(t0 + ii*(Tcoh-SFToverlap) + 0.5*Tcoh);
       gpstime.gpsNanoSeconds = (INT4)floor((t0+ii*(Tcoh-SFToverlap)+0.5*Tcoh - floor(t0+ii*(Tcoh-SFToverlap)+0.5*Tcoh))*1e9);
       REAL8 gmst = XLALGreenwichMeanSiderealTime(&gpstime);
-      if (XLAL_IS_REAL8_FAIL_NAN(gmst)) {
-         fprintf(stderr,"%s: XLALGreenwichMeanSiderealTime(%.9d.%.9d) failed.\n", __func__, gpstime.gpsSeconds, gpstime.gpsNanoSeconds);
-         XLAL_ERROR_VOID(XLAL_EFUNC);
-      }
-      
+      XLAL_CHECK( xlalErrno == 0, XLAL_EFUNC );
+
       XLALComputeDetAMResponse(&fplus, &fcross, (const REAL4(*)[3])det.response, ra, dec, polAngle, gmst);
-      if (xlalErrno!=0) {
-         fprintf(stderr,"%s: XLALComputeDetAMResponse() failed.\n", __func__);
-         XLAL_ERROR_VOID(XLAL_EFUNC);
-      }
+      XLAL_CHECK( xlalErrno == 0, XLAL_EFUNC );
       
       if (!linPolOn) output->data[ii] = (REAL4)(fplus*fplus + fcross*fcross);
       else output->data[ii] = (REAL4)(fplus*fplus);
       
    } /* for ii < numffts */
 
+   return 0;
+
 } /* CompAntennaPatternWeights() */
 
 
 //Compute the antenna velocity
-void CompAntennaVelocity(REAL4Vector *output, REAL4 ra, REAL4 dec, REAL8 t0, REAL8 Tcoh, REAL8 SFToverlap, REAL8 Tobs, LALDetector det, EphemerisData *edat)
+INT4 CompAntennaVelocity(REAL4Vector *output, REAL4 ra, REAL4 dec, REAL8 t0, REAL8 Tcoh, REAL8 SFToverlap, REAL8 Tobs, LALDetector det, EphemerisData *edat)
 {
    
    INT4 ii;
@@ -83,19 +75,18 @@ void CompAntennaVelocity(REAL4Vector *output, REAL4 ra, REAL4 dec, REAL8 t0, REA
    REAL8 detvel[3];
    for (ii=0; ii<numffts; ii++) {
       
-      LIGOTimeGPS gpstime = {0,0};
+      LIGOTimeGPS gpstime = LIGOTIMEGPSZERO;
       gpstime.gpsSeconds = (INT4)floor(t0 + ii*(Tcoh-SFToverlap) + 0.5*Tcoh);
       gpstime.gpsNanoSeconds = (INT4)floor((t0+ii*(Tcoh-SFToverlap)+0.5*Tcoh - floor(t0+ii*(Tcoh-SFToverlap)+0.5*Tcoh))*1e9);
    
       LALDetectorVel(&status, detvel, &gpstime, det, edat);
-      if (status.statusCode!=0) {
-         fprintf(stderr,"%s: LALDetectorVel() failed with error code %d.\n", __func__, status.statusCode);
-         XLAL_ERROR_VOID(XLAL_EFUNC);
-      }
+      XLAL_CHECK( status.statusCode == 0, XLAL_EFUNC );
       
       output->data[ii] = (REAL4)(detvel[0]*cos(ra)*cos(dec) + detvel[1]*sin(ra)*cos(dec) + detvel[2]*sin(dec));
       
    } /* for ii < numffts */
+
+   return 0;
    
 } /* CompAntennaVelocity() */
 
@@ -113,22 +104,17 @@ REAL4 CompDetectorDeltaVmax(REAL8 t0, REAL8 Tcoh, REAL8 SFToverlap, REAL8 Tobs, 
    REAL8 dv[3];
    REAL4 deltaVmax = 0.0;
    for (ii=0; ii<numffts; ii++) {
-      LIGOTimeGPS gpstime = {0,0};
+      LIGOTimeGPS gpstime = LIGOTIMEGPSZERO;
       gpstime.gpsSeconds = (INT4)floor(t0 + ii*(Tcoh-SFToverlap) + 0.5*Tcoh);
       gpstime.gpsNanoSeconds = (INT4)floor((t0+ii*(Tcoh-SFToverlap)+0.5*Tcoh - floor(t0+ii*(Tcoh-SFToverlap)+0.5*Tcoh))*1e9);
    
       if (ii==0) {
          LALDetectorVel(&status, detvel0, &gpstime, det, edat);
-         if (status.statusCode!=0) {
-            fprintf(stderr,"%s: LALDetectorVel() failed with error code %d.\n", __func__, status.statusCode);
-            XLAL_ERROR_REAL4(XLAL_EFUNC);
-         }
+         XLAL_CHECK_REAL4( status.statusCode == 0, XLAL_EFUNC );
       } else {
          LALDetectorVel(&status, detvel, &gpstime, det, edat);
-         if (status.statusCode!=0) {
-            fprintf(stderr,"%s: LALDetectorVel() failed with error code %d.\n", __func__, status.statusCode);
-            XLAL_ERROR_REAL4(XLAL_EFUNC);
-         }
+         XLAL_CHECK_REAL4( status.statusCode == 0, XLAL_EFUNC );
+
          dv[0] = detvel[0] - detvel0[0];
          dv[1] = detvel[1] - detvel0[1];
          dv[2] = detvel[2] - detvel0[2];
@@ -153,23 +139,17 @@ REAL4 CompDetectorVmax(REAL8 t0, REAL8 Tcoh, REAL8 SFToverlap, REAL8 Tobs, LALDe
    REAL8 detvel[3];
    REAL4 Vmax = 0.0;
    for (ii=0; ii<numffts; ii++) {
-      LIGOTimeGPS gpstime = {0,0};
+      LIGOTimeGPS gpstime = LIGOTIMEGPSZERO;
       gpstime.gpsSeconds = (INT4)floor(t0 + ii*(Tcoh-SFToverlap) + 0.5*Tcoh);
       gpstime.gpsNanoSeconds = (INT4)floor((t0+ii*(Tcoh-SFToverlap)+0.5*Tcoh - floor(t0+ii*(Tcoh-SFToverlap)+0.5*Tcoh))*1e9);
       
       if (ii==0) {
          LALDetectorVel(&status, detvel, &gpstime, det, edat);
-         if (status.statusCode!=0) {
-            fprintf(stderr,"%s: LALDetectorVel() failed with error code %d.\n", __func__, status.statusCode);
-            XLAL_ERROR_REAL4(XLAL_EFUNC);
-         }
+         XLAL_CHECK_REAL4( status.statusCode == 0, XLAL_EFUNC );
          Vmax = (REAL4)sqrt(detvel[0]*detvel[0] + detvel[1]*detvel[1] + detvel[2]*detvel[2]);
       } else {
          LALDetectorVel(&status, detvel, &gpstime, det, edat);
-         if (status.statusCode!=0) {
-            fprintf(stderr,"%s: LALDetectorVel() failed with error code %d.\n", __func__, status.statusCode);
-            XLAL_ERROR_REAL4(XLAL_EFUNC);
-         }
+         XLAL_CHECK_REAL4( status.statusCode == 0, XLAL_EFUNC );
          REAL4 V = (REAL4)sqrt(detvel[0]*detvel[0] + detvel[1]*detvel[1] + detvel[2]*detvel[2]);
          if (V > Vmax) Vmax = V;
       } /* if ii==0 else ... */

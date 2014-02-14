@@ -85,8 +85,8 @@ typedef struct{
   /*  REAL8 start; epoch (GPSSeconds) Now read from file name */
   CHAR *inputdir; /* directory for .par files*/
   CHAR *gwfdir; /*directory for .gwf files*/
-  CHAR *outputdir; /*directory for CWINJ files */
-  CHAR *ephemDir; /*directory for ephemeris files*/
+  CHAR *ephemEarth;		/**< Earth ephemeris file to use */
+  CHAR *ephemSun;		/**< Sun ephemeris file to use */
   CHAR *IFO; /*detector */
   CHAR *logDir; /*directory for the log files */
 } UserInput_t;
@@ -94,8 +94,6 @@ typedef struct{
 UserInput_t uvar_struct;
 
 /* ---------- local function prototypes ---------- */
-EphemerisData * XLALInitEphemeris( const CHAR *ephemDir ); /*function to read ephemeris files*/
-
 int InitUserVars ( UserInput_t *uvar, int argc, char **argv ); /*Initiates user variables*/
 
 int XLALFrameFileName(char *fname, size_t size, const char *chname, const LIGOTimeGPS * epoch, double duration);
@@ -146,7 +144,7 @@ int main(int argc, char **argv)
   }
   else {
     fprintf (logfile, "\nsw_inj_frames.c version number: %s\nCurrent time: %s \n", version, asctime(btm));
-    fprintf (logfile, "User inputs:\n Sample rate: %f\n Pulsar file directory: %s\n Raw frame file directory: %s\n Output directory: %s\n Directory for ephemeris: %s\n Name of directory for log (w/in output dir): %s\n IFO: %s\n", uvar->srate, uvar->inputdir, uvar->gwfdir, uvar->outputdir, uvar->ephemDir, uvar->logDir, uvar->IFO);
+    fprintf (logfile, "User inputs:\n Sample rate: %f\n Pulsar file directory: %s\n Raw frame file directory: %s\n Output directory: %s\n \n Name of directory for log (w/in output dir): %s\n IFO: %s\n", uvar->srate, uvar->inputdir, uvar->gwfdir, uvar->outputdir, uvar->logDir, uvar->IFO);
     fclose(logfile);
   }
   /* </log file> */
@@ -159,10 +157,7 @@ int main(int argc, char **argv)
 
   /*init ephemeris-data */
   EphemerisData *edat;
-  if ( (edat = XLALInitEphemeris ( uvar->ephemDir )) == NULL ) {
-    XLALPrintError ( "%s: Failed to init ephemeris data\n", fn );
-    XLAL_ERROR ( XLAL_EFUNC );
-  }
+  XLAL_CHECK ( (edat = XLALInitBarycenter ( uvar->ephemEarth, uvar->ephemSun )) != NULL, XLAL_EFUNC );
 
   /*init detector info */
   LALDetector *site;
@@ -662,6 +657,8 @@ InitUserVars ( UserInput_t *uvar,      /**< [out] UserInput structure to be fill
 
   /* some defaults */
   uvar->srate=16384;
+  uvar->ephemEarth = XLALStringDuplicate("earth00-19-DE405.dat.gz");
+  uvar->ephemSun = XLALStringDuplicate("sun00-19-DE405.dat.gz");
 
   /* Register User Variables*/
   XLALregBOOLUserStruct( help,            'h', UVAR_HELP, "Print this message");
@@ -673,7 +670,8 @@ InitUserVars ( UserInput_t *uvar,      /**< [out] UserInput structure to be fill
   XLALregSTRINGUserStruct(inputdir,       'p', UVAR_OPTIONAL, "directory for .par files");
   XLALregSTRINGUserStruct(gwfdir,     'g', UVAR_OPTIONAL,"directory for .gwf files");
   XLALregSTRINGUserStruct(outputdir,  'c', UVAR_OPTIONAL, "directory for CWINJ files");
-  XLALregSTRINGUserStruct(ephemDir,   'e', UVAR_OPTIONAL,"Directory to find ephemeris files");
+  XLALregSTRINGUserStruct( ephemEarth,   0,  UVAR_OPTIONAL,     "Earth ephemeris file to use");
+  XLALregSTRINGUserStruct( ephemSun,     0,  UVAR_OPTIONAL,     "Sun ephemeris file to use");
   XLALregSTRINGUserStruct( IFO,       'I', UVAR_REQUIRED, "Detector: 'G1', 'L1', 'H1', 'H2', 'V1'...");
   XLALregSTRINGUserStruct( logDir, 'L', UVAR_OPTIONAL, "Directory to put .log file");
 
@@ -685,32 +683,6 @@ InitUserVars ( UserInput_t *uvar,      /**< [out] UserInput structure to be fill
   return XLAL_SUCCESS;
 
 } /* InitUserVars() */
-
-EphemerisData *
-XLALInitEphemeris (const CHAR *ephemDir)
-{
-  const char *fn = __func__;
-#define FNAME_LENGTH 1024
-  CHAR EphemEarth[FNAME_LENGTH]; /* filename of earth-ephemeris data */
-  CHAR EphemSun[FNAME_LENGTH]; /* filename of sun-ephemeris data */
-
-  /* default to using the new DE405 ephemeris files */
-  snprintf(EphemEarth, FNAME_LENGTH, "%s/earth00-19-DE405.dat.gz", ephemDir);
-  snprintf(EphemSun, FNAME_LENGTH, "%s/sun00-19-DE405.dat.gz", ephemDir);
-
-  EphemEarth[FNAME_LENGTH-1]=0;
-  EphemSun[FNAME_LENGTH-1]=0;
-
-  EphemerisData *edat;
-  if ( (edat = XLALInitBarycenter(EphemEarth, EphemSun)) == NULL ) {
-    XLALPrintError ("%s: XLALInitBarycenter() failed.\n", fn );
-    XLAL_ERROR_NULL ( XLAL_EFUNC );
-  }
-
-  /* return ephemeris */
-  return edat;
-
-} /* XLALInitEphemeris() */
 
 /* compare to chars - taken from LALFrameIO.c */
 static int charcmp(const void *c1, const void *c2){

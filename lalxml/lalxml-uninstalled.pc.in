@@ -1,0 +1,12 @@
+abs_top_srcdir=@abs_top_srcdir@
+abs_top_builddir=@abs_top_builddir@
+LAL_DATA_PATH=@abs_top_srcdir@/test:@abs_top_builddir@/test:@LAL_DATA_PATH@
+LAL_OCTAVE_PATH=@abs_top_builddir@/swig/octave/.libs:@LAL_OCTAVE_PATH@
+LAL_PYTHON_PATH=@abs_top_builddir@/swig/python/.libs:@LAL_PYTHON_PATH@
+
+Name: LALXML
+Description: (uninstalled)
+Version: @VERSION@
+Requires: gsl, libxml-2.0, lal >= @LAL_VERSION@
+Libs: ${abs_top_builddir}/src/liblalxml.la
+Cflags: -I${abs_top_srcdir}/src -I${abs_top_builddir}/src

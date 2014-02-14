@@ -3,12 +3,13 @@ exec_prefix=@exec_prefix@
 libdir=@libdir@
 includedir=@includedir@
 datarootdir=@datarootdir@
-datadir=@datadir@
-pkgdatadir=@datadir@/@PACKAGE@
+LAL_DATA_PATH=@datadir@/@PACKAGE@:@LAL_DATA_PATH@
+LAL_OCTAVE_PATH=@octexecdir@:@LAL_OCTAVE_PATH@
+LAL_PYTHON_PATH=@pyexecdir@:@LAL_PYTHON_PATH@
 
 Name: LALPulsar
 Description: LAL Pulsar Library
 Version: @VERSION@
-Requires: gsl lal
+Requires: gsl, lal >= @LAL_VERSION@
 Libs: -L${libdir} -llalpulsar
 Cflags: -I${includedir}

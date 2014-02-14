@@ -115,7 +115,6 @@
  *
  */
 
-#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/LALStdlib.h>
 
 /**\name Error Codes */ /*@{*/
@@ -697,10 +696,8 @@ int prepare_cwDetector(LALStatus* status){
   LALCCreateVector(status, &(transferFunction->data), 2);
 
   /* unit response function */
-  transferFunction->data->data[0].realf_FIXME = 1.0;
-  transferFunction->data->data[1].realf_FIXME = 1.0;
-  transferFunction->data->data[0].imagf_FIXME = 0.0;
-  transferFunction->data->data[1].imagf_FIXME = 0.0;
+  transferFunction->data->data[0] = 1.0;
+  transferFunction->data->data[1] = 1.0;
 
   cwDetector.transfer = transferFunction;
 
@@ -1013,8 +1010,7 @@ int read_noise(LALStatus* status, int iSFT) {
   norm=((REAL4)(fvec->length-1)*1.0/((REAL4)header.nsamples));
 
   for (i = 0; i < fvec->length; ++i) {
-    fvec->data[i].realf_FIXME += scale*crealf(fvecn->data[i])*norm;
-    fvec->data[i].imagf_FIXME += scale*cimagf(fvecn->data[i])*norm;
+    fvec->data[i] += crectf( scale*crealf(fvecn->data[i])*norm, scale*cimagf(fvecn->data[i])*norm );
   }
 
   return 0;

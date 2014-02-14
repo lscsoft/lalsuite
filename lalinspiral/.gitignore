@@ -5,6 +5,8 @@
 *.pc
 .deps
 .libs
+Makefile
+Makefile.in
 config.lt
 include/lal/*.h
 include/lal/*.i
@@ -14,6 +16,7 @@ libtool
 python/__init__.py
 python/git_version.py
 src/Chisq_GPU.cpp
+src/LALInspiralBuildInfo.c
 src/LALInspiralConfig.h
 src/LALInspiralVCSInfo.h
 src/config.h

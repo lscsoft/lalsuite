@@ -143,7 +143,6 @@
 #define STOCHASTICINVERSENOISETESTC_MSGEUSE "Bad user-entered data"
 
 
-#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/LALStdlib.h>
 
 #include <math.h>
@@ -166,6 +165,7 @@
 #include <lal/Units.h>
 
 #include "CheckStatus.h"
+#include "CheckStatus.c"
 
 #define STOCHASTICINVERSENOISETESTC_TRUE     1
 #define STOCHASTICINVERSENOISETESTC_FALSE    0
@@ -683,8 +683,7 @@ int main(int argc, char *argv[])
      f = i*STOCHASTICINVERSENOISETESTC_DELTAF;
 
      wNoise.data->data[i]     = f*f*f;
-     wFilter.data->data[i].realf_FIXME = f*f;
-     wFilter.data->data[i].imagf_FIXME = f*f;
+     wFilter.data->data[i] = crectf( f*f, f*f );
    }
 
    /* fill inverse noise input and output */

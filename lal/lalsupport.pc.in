@@ -2,10 +2,11 @@ prefix=@prefix@
 exec_prefix=@exec_prefix@
 libdir=@libdir@
 includedir=@includedir@
+no_header_library_mismatch_check=yes
 
 Name: LALSupport
 Description: LSC Algorithm Support Library (useful but non-conforming routines)
 Version: @VERSION@
-Requires: lal
-Libs: -L${libdir} -llalsupport @LALSUPPORT_LIBADD@
-Cflags: -I${includedir}
+Requires: lal = @VERSION@
+Libs: -L${libdir} -llalsupport @ZLIB_LIBS@
+Cflags: -I${includedir} @ZLIB_CFLAGS@

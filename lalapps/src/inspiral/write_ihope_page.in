@@ -601,7 +601,7 @@ def write_summary(page,opts,thisSearch='playground',injection = 'allinj',
   htmlAndPlot.append(section)
   titles[section] = "IFAR and loudest event tables with CAT2 vetoes applied (these include the CBC hardware injections)."
   tags[section] = '*plotifar*'+ifartag[0]+'*CAT_2*'+ifartag[1] + '*'
-  htmltags[section] = '*'+ifartag[0]+'*CAT_2_VETO__LOUDEST*'+ifartag[1]+'*_EVENTS_BY_COMBINED_FAR*'
+  htmltags[section] = '*'+ifartag[0]+'*CAT_2_VETO_LOUDEST*'+ifartag[1]+'*_EVENTS_BY_COMBINED_FAR*'
   imagetags[section] = ['cumhist_combined_ifar']
   captions[section] = "Combined and uncombined IFAR vs cumulative number of triggers (above). Loudest event tables as a function of combined FAR (below)."
   comments[section] = None
@@ -613,7 +613,7 @@ def write_summary(page,opts,thisSearch='playground',injection = 'allinj',
   htmlAndPlot.append(section)
   titles[section] = "IFAR and loudest event tables with CAT2 vetoes applied and CBC hardware injections removed."
   tags[section] = '*plotifar*'+ifartag[0]+'*CAT_3*'+ifartag[1] + '*'
-  htmltags[section] = '*'+ifartag[0]+'*CAT_3_VETO__LOUDEST*'+ifartag[1]+'*_EVENTS_BY_COMBINED_FAR*'
+  htmltags[section] = '*'+ifartag[0]+'*CAT_3_VETO_LOUDEST*'+ifartag[1]+'*_EVENTS_BY_COMBINED_FAR*'
   imagetags[section] = ['cumhist_combined_ifar']
   captions[section] = "Combined and uncombined IFAR vs cumulative number of triggers (above). Loudest event tables as a function of combined FAR (below)."
   comments[section] = None
@@ -625,7 +625,7 @@ def write_summary(page,opts,thisSearch='playground',injection = 'allinj',
   htmlAndPlot.append(section)
   titles[section] = "IFAR and loudest event tables with CAT2 and CAT3 vetoes applied and CBC hardware injections removed."
   tags[section] = '*plotifar*'+ifartag[0]+'*CAT_4*'+ifartag[1] + '*'
-  htmltags[section] = '*'+ifartag[0]+'*CAT_4_VETO__LOUDEST*'+ifartag[1]+'*_EVENTS_BY_COMBINED_FAR*'
+  htmltags[section] = '*'+ifartag[0]+'*CAT_4_VETO_LOUDEST*'+ifartag[1]+'*_EVENTS_BY_COMBINED_FAR*'
   imagetags[section] = ['cumhist_combined_ifar']
   captions[section] = "Combined and uncombined IFAR vs cumulative number of triggers (above). Loudest event tables as a function of combined FAR (below)."
   comments[section] = None
@@ -743,7 +743,7 @@ def write_datainfo(page,opts):
       summGlob = datadir + '/pipedown/' + coinc + '-FULL_DATA'
       if i != 1:
         summGlob += '_CAT_' + str(i) + '_VETO'
-      summGlob += '*LOUDEST_ALL_DATA_EVENTS_BY_COMBINED_FAR_SUMMARY-*.xml'
+      summGlob += '_LOUDEST_ALL_DATA_EVENTS_BY_COMBINED_FAR_SUMMARY-*.xml'
       summFiles = glob.glob(summGlob)
       if len(summFiles) == 1:
         xmldoc = utils.load_filename(summFiles[0])
@@ -919,8 +919,8 @@ def write_upperlimit(page, opts, thisSearch='playground', pipedown='pipedown'):
   sections.append(section)
   htmlAndPlot.append(section)
   titles[section] = "Combined Upper Limits as a Function of Total Mass."
-  tags[section] = '*combined_sink_by_total_mass_'+ifartag[0]+'_CAT_4_VETO*'
-  htmltags[section] = '*combined_sink_by_total_mass_combined_upper_limit_'+ifartag[0]+'_CAT_4_VETO*'
+  tags[section] = '*sink_by_total_mass_'+ifartag[0]+'_CAT_4_VETO*'
+  htmltags[section] = '*sink_by_total_mass_combined_upper_limit_'+ifartag[0]+'_CAT_4_VETO*'
   imagetags[section] = ['upper_limit_plot']
   captions[section] = """Combined upper limits on the CBC rate (in mergers/Mpc^3/yr) as a function of total mass. The plot shows the 90&#37; upper limits arising both from the prior and the posterior (CAT2 and CAT3 vetoes applied and CBC hardware injections removed)."""
   comments[section] = None
@@ -931,8 +931,8 @@ def write_upperlimit(page, opts, thisSearch='playground', pipedown='pipedown'):
   sections.append(section)
   htmlAndPlot.append(section)
   titles[section] = "Combined Upper Limits as a Function of Chirp Mass."
-  tags[section] = '*combined_sink_by_chirp_mass_'+ifartag[0]+'_CAT_4_VETO*'
-  htmltags[section] = '*combined_sink_by_chirp_mass_combined_upper_limit_'+ifartag[0]+'_CAT_4_VETO*'
+  tags[section] = '*sink_by_chirp_mass_'+ifartag[0]+'_CAT_4_VETO*'
+  htmltags[section] = '*sink_by_chirp_mass_combined_upper_limit_'+ifartag[0]+'_CAT_4_VETO*'
   imagetags[section] = ['upper_limit_plot']
   captions[section] = """Combined upper limits on the CBC rate (in mergers/Mpc^3/yr) as a function of chirp mass. The plot shows the 90&#37; upper limits arising both from the prior and the posterior (CAT2 and CAT3 vetoes applied and CBC hardware injections removed)."""
   comments[section] = None
@@ -943,8 +943,8 @@ def write_upperlimit(page, opts, thisSearch='playground', pipedown='pipedown'):
   sections.append(section)
   htmlAndPlot.append(section)
   titles[section] = "Combined Upper Limits as a Function of Component Masses."
-  tags[section] = '*combined_sink_by_component_mass_'+ifartag[0]+'_CAT_4_VETO*'
-  htmltags[section] = '*combined_sink_by_component_mass_combined_upper_limit_'+ifartag[0]+'_CAT_4_VETO*'
+  tags[section] = '*sink_by_component_mass_'+ifartag[0]+'_CAT_4_VETO*'
+  htmltags[section] = '*sink_by_component_mass_combined_upper_limit_'+ifartag[0]+'_CAT_4_VETO*'
   imagetags[section] = ['upper_limit_plot']
   captions[section] = """Combined upper limits on the CBC rate (in mergers/Mpc^3/yr) as a function of the component masses. The plot shows the 90&#37; upper limits arising both from the prior and the posterior (CAT2 and CAT3 vetoes applied and CBC hardware injections removed)."""
   comments[section] = None

@@ -26,7 +26,6 @@
  *-----------------------------------------------------------------------
  */
 
-#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <config.h>
 #include <stdlib.h>
 #include <math.h>
@@ -227,8 +226,7 @@ LALFindChirpPTFFilterSegment (
       x = crealf(PTFQtilde[i * (numPoints / 2 + 1) + k]);
       y = 0 - cimagf(PTFQtilde[i * (numPoints / 2 + 1) + k]); /* cplx conj */
 
-      qtilde[k].realf_FIXME = 2 * (r*x - s*y);
-      qtilde[k].imagf_FIXME = 2 * (r*y + s*x);
+      qtilde[k] = crectf( 2 * (r*x - s*y), 2 * (r*y + s*x) );
     }
 
     qVec.data = params->PTFqVec->data + (i * numPoints);
@@ -271,7 +269,7 @@ LALFindChirpPTFFilterSegment (
     }
     max_eigen = 0.5 * ( v1_dot_u1 + v2_dot_u2 + sqrt( (v1_dot_u1 - v2_dot_u2)
           * (v1_dot_u1 - v2_dot_u2) + 4 * v1_dot_u2 * v2_dot_u1 ));
-    pft_snr[j].realf_FIXME = 2.0 * sqrt(max_eigen) / N;
+    pft_snr[j] = crectf( 2.0 * sqrt(max_eigen) / N, cimagf(pft_snr[j]) );
   } /* End of main loop over time */
 
 

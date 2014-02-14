@@ -27,7 +27,6 @@
 #include <math.h>
 #include <gsl/gsl_math.h>
 
-#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/AVFactories.h>
 #include <lal/TimeSeries.h>
 #include <lal/SeqFactories.h>
@@ -406,8 +405,7 @@ XLALSignalToSFTs ( const REAL4TimeSeries *signalvec, 	/**< input time-series */
       COMPLEX8 *data = thisSFT->data->data;
       for ( UINT4 i = 0; i < numBins ; i ++ )
 	{
-	  data->realf_FIXME *= dt;
-	  data->imagf_FIXME *= dt;
+	  *(data) *= ((REAL4) dt);
 	  data ++;
 	} /* for i < numBins */
 
@@ -429,8 +427,7 @@ XLALSignalToSFTs ( const REAL4TimeSeries *signalvec, 	/**< input time-series */
 	  COMPLEX8 *noise = &( thisNoiseSFT->data->data[index0n] );
 	  for ( UINT4 j=0; j < numBins; j++ )
 	    {
-	      data->realf_FIXME += crealf(*noise);
-	      data->imagf_FIXME += cimagf(*noise);
+	      *(data) += *noise;
 	      data++;
 	      noise++;
 	    } /* for j < numBins */
@@ -807,8 +804,7 @@ LALFastGeneratePulsarSFTs (LALStatus *status,
       /* fill in the data */
       if (setToZero) {
         for (j=0; j<jStart; j++) {
-          thisSFT->data->data[j].realf_FIXME = 0.0;
-          thisSFT->data->data[j].imagf_FIXME = 0.0;
+          thisSFT->data->data[j] = 0.0;
         }
       }
       /* This is the same as the inner most loop over k in LALDemod */
@@ -827,13 +823,11 @@ LALFastGeneratePulsarSFTs (LALStatus *status,
           }
           realTmp = realQcc*realPcc - imagQcc*imagPcc;
           imagTmp = realQcc*imagPcc + imagQcc*realPcc;
-          thisSFT->data->data[j].realf_FIXME = (REAL4)(realTmp*realA - imagTmp*imagA);
-          thisSFT->data->data[j].imagf_FIXME = (REAL4)(realTmp*imagA + imagTmp*realA);
+          thisSFT->data->data[j] = crectf( (REAL4)(realTmp*realA - imagTmp*imagA), (REAL4)(realTmp*imagA + imagTmp*realA) );
       } /* END for (j=jStart; j<jEnd; j++) */
       if (setToZero) {
         for (j=jEnd; j<SFTlen; j++) {
-          thisSFT->data->data[j].realf_FIXME = 0.0;
-          thisSFT->data->data[j].imagf_FIXME = 0.0;
+          thisSFT->data->data[j] = 0.0;
         }
       }
       /* fill in SFT metadata */
@@ -847,8 +841,7 @@ LALFastGeneratePulsarSFTs (LALStatus *status,
         index0n = (INT4)( (thisSFT->f0 - thisNoiseSFT->f0)*tSFT + 0.5 );
         for (j=0; j < SFTlen; j++)
         {
-           thisSFT->data->data[j].realf_FIXME += crealf(thisNoiseSFT->data->data[index0n + j]);
-           thisSFT->data->data[j].imagf_FIXME += cimagf(thisNoiseSFT->data->data[index0n + j]);
+           thisSFT->data->data[j] += thisNoiseSFT->data->data[index0n + j];
         } /* for j < SFTlen */
       }
   } /* for iSFT < numSFTs */
@@ -1196,8 +1189,7 @@ XLALcorrect_phase ( SFTtype *sft, LIGOTimeGPS tHeterodyne )
       for (UINT4 i = 0; i < sft->data->length; i++ )
 	{
 	  COMPLEX8 fvec1 = sft->data->data[i];
-	  sft->data->data[i].realf_FIXME = crealf(fvec1) * cosx - cimagf(fvec1) * sinx;
-	  sft->data->data[i].imagf_FIXME = cimagf(fvec1) * cosx + crealf(fvec1) * sinx;
+	  sft->data->data[i] = crectf( crealf(fvec1) * cosx - cimagf(fvec1) * sinx, cimagf(fvec1) * cosx + crealf(fvec1) * sinx );
 	} /* for i < length */
 
     } /* if deltaFT not integer */

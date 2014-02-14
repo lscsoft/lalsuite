@@ -234,16 +234,20 @@ def query_segments_xml( xml_location, gps_start, gps_end, spec ):
 	"""
 	if spec is None:
 		spec = True
+	else:
+		#ifo, definer, version = spec.split(":")
+		definer = spec.split(":")
+		ifo, definer, version = definer[0], ":".join(definer[1:-1]), definer[-1]
 	xmldoc = utils.load_filename( xml_location )
 	segment_definer = table.get_table( xmldoc, lsctables.SegmentDefTable.tableName )
 	# FIXME: ifo in ifos? What does a segment for a set of ifos even mean?
 	seg_def_id = [ sd.segment_def_id for sd in segment_definer if spec and ifo in sd.get_ifos() and definer == sd.name ]
-	if len(seg_def_id) != 0:
+	if len(seg_def_id) != 1:
 		raise ValueError( "Need exactly one definer row for %s:%s:%s, got %d" % (ifo, definer, version, len(seg_def_id)) )
 	seg_def_id = seg_def_id[0]
 
 	segment = table.get_table( xmldoc, lsctables.SegmentTable.tableName )
-	return segmentlist([s.get_seg() for s in segment if s.segment_def_id == seg_def_id])
+	return segmentlist([s.get() for s in segment if s.segment_def_id == seg_def_id])
 
 def query_segments_db( db_location, gps_start, gps_end, spec ):
 	"""
@@ -255,7 +259,33 @@ def query_segments_db( db_location, gps_start, gps_end, spec ):
 	result = segmentdb_utils.query_segments( engine, "segment", definer_args )
 	return segmentlist(result[0])
 
-def write_round_xml( vetosegs, vetotrigs, winner, ifo, opts ):
+def append_summ_vars(xmldoc, procid, **summvars):
+  """
+  Append round information in the form of SummVars.
+  """
+
+  try:
+    summtable = table.get_table(xmldoc, lsctables.SearchSummVarsTable.tableName)
+    procid = summtable[0].process_id
+  except ValueError:
+    summtable = lsctables.New(lsctables.SearchSummVarsTable, lsctables.SearchSummVarsTable.validcolumns.keys())
+
+  for name, value in summvars.iteritems():
+    summvar = summtable.RowType()
+    summvar.name = name
+    if isinstance(value, str):
+      summvar.string = str(value)
+      summvar.value = -1.0
+    else:
+      summvar.string = str(value)
+      summvar.value = float(value)
+    summvar.process_id = procid
+    summvar.search_summvar_id = summtable.get_next_id()
+    summtable.append(summvar)
+
+  xmldoc.childNodes[0].appendChild(summtable)
+
+def write_round_xml( vetosegs, vetotrigs, ifo, opts ):
 	"""
 	Write out the products from this round of hveto: veto segments and the vetoed triggers.
 	"""

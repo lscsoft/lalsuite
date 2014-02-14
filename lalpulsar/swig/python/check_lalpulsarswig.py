@@ -11,11 +11,11 @@ print("PASSED module load")
 
 # check object parent tracking
 print("checking object parent tracking ...")
-a = lalpulsar.lalpulsarswig_test_parent_map_struct()
+a = lalpulsar.swig_lalpulsar_test_parent_map_struct()
 for i in range(0, 7):
     b = a.s
-    c = lalpulsarcvar.lalpulsarswig_test_parent_map.s
-    lalpulsarcvar.lalpulsarswig_test_parent_map.s = lalcvar.lalswig_test_struct_const
+    c = lalpulsarcvar.swig_lalpulsar_test_parent_map.s
+    lalpulsarcvar.swig_lalpulsar_test_parent_map.s = lalcvar.swig_lal_test_struct_const
 del a, b, c
 lal.CheckMemoryLeaks()
 print("PASSED object parent tracking")

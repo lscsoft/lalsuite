@@ -34,7 +34,6 @@
 /*                                UWM - November 2002                            */
 /*********************************************************************************/
 
-#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <unistd.h>
 #include <stdio.h>
 #include <string.h>
@@ -106,26 +105,6 @@ int Freemem(void);
 
 COMPLEX8 tmpa, tmpb, tmpc;
 REAL4 tmpx, tmpy;
-
-#define cmul( a, b ) \
-( tmpa = (a), tmpb = (b), \
-  tmpc.realf_FIXME = crealf(tmpa) * crealf(tmpb) - cimagf(tmpa) * cimagf(tmpb), \
-  tmpc.imagf_FIXME = crealf(tmpa) * cimagf(tmpb) + cimagf(tmpa) * crealf(tmpb), \
-  tmpc )
-
-#define cdiv( a, b ) \
-( tmpa = (a), tmpb = (b), \
-  fabs( crealf(tmpb) ) >= fabs( cimagf(tmpb) ) ? \
-    ( tmpx = cimagf(tmpb) / crealf(tmpb), \
-      tmpy = crealf(tmpb) + tmpx * cimagf(tmpb), \
-      tmpc.realf_FIXME = ( crealf(tmpa) + tmpx * cimagf(tmpa) ) / tmpy, \
-      tmpc.imagf_FIXME = ( cimagf(tmpa) - tmpx * crealf(tmpa) ) / tmpy, \
-      tmpc ) : \
-    ( tmpx = crealf(tmpb) / cimagf(tmpb), \
-      tmpy = cimagf(tmpb) + tmpx * crealf(tmpb), \
-      tmpc.realf_FIXME = ( crealf(tmpa) * tmpx + cimagf(tmpa) ) / tmpy, \
-      tmpc.imagf_FIXME = ( cimagf(tmpa) * tmpx - crealf(tmpa) ) / tmpy, \
-      tmpc ) )
 
 INT4 SFTno,RealSFTno;
 REAL4 *p,*pC;
@@ -384,27 +363,22 @@ int CalibrateSfts(struct CommandLineArgsTag CLA)
            int jre=2*j;
            int jim=jre+1;
 
-           R.realf_FIXME=Ro.re[j];
-           R.imagf_FIXME=Ro.im[j];
+           R = crectf( Ro.re[j], Ro.im[j] );
 
-           C.realf_FIXME=So.re[j];
-           C.imagf_FIXME=So.im[j];
+           C = crectf( So.re[j], So.im[j] );
 
            /* compute the reference open loop function H0 */
-           H = cmul(C, R);
-           H.realf_FIXME -= 1.0;
+           H = (C * R) - 1.0;
 
            /* update the open loop function */
-           H.realf_FIXME *= alpha_beta;
-           H.imagf_FIXME *= alpha_beta;
+           H *= ((REAL4) alpha_beta);
 
            /* update the sensing function */
-           C.realf_FIXME *= alpha;
-           C.imagf_FIXME *= alpha;
+           C *= ((REAL4) alpha);
 
            /* compute the updated response function */
-           H.realf_FIXME += 1.0;
-           R = cdiv( H, C );
+           H = crectf( crealf(H) + 1.0, cimagf(H) );
+           R = H / C;
 
            /* the jth elements of p and pC are th real parts and the (j+1)th the imaginary part */
            pC[jre]=crealf(R)*p[jre]-cimagf(R)*p[jim];

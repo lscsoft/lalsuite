@@ -26,12 +26,14 @@
  *-----------------------------------------------------------------------
  */
 
-#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/LALStdlib.h>
 #include <lal/AVFactories.h>
 #include <lal/LALInspiral.h>
 #include <lal/FindChirp.h>
 #include <lal/FindChirpBCVSpin.h>
+
+/* undefine complex number I, since it's used as a variable name in this file */
+#undef I
 
 /**
  * \author Brown, D. A., Spinning BCV-Modifications: Jones, G
@@ -296,8 +298,7 @@ LALFindChirpBCVSpinTemplate (
       /* XXX The sign of this is different than the SP filtering
        * because the data is conjugated instead of the template in the
        * BCV code */
-      expPsi[k].imagf_FIXME =   -sin(psi1);
-      expPsi[k].realf_FIXME =   cos(psi1);
+      expPsi[k] = crectf( cos(psi1), -sin(psi1) );
 
     }
 

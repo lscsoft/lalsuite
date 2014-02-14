@@ -160,7 +160,6 @@
  * @{
  */
 
-#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/LALStdlib.h>
 #include <lal/LALConstants.h>
 #include <lal/AVFactories.h>
@@ -730,8 +729,7 @@ LALStochasticOptimalFilter(
 
   /* Done with unit manipulation */
 
-  optimalFilter->data->data[0].realf_FIXME = 0;
-  optimalFilter->data->data[0].imagf_FIXME = 0;
+  optimalFilter->data->data[0] = 0.0;
 
   /* calculate optimal filter values */
   for (i = (f0 == 0 ? 1 : 0) ; i < length; ++i)
@@ -749,11 +747,7 @@ LALStochasticOptimalFilter(
 
     realFactor = (mygamma * omega * lambda->value) / f3;
 
-    cPtrOptimalFilter->realf_FIXME = realFactor * ((crealf(p1HWInv) * crealf(p2HWInv)) + \
-        (cimagf(p1HWInv) * cimagf(p2HWInv)));
-
-    cPtrOptimalFilter->imagf_FIXME = realFactor * ((crealf(p1HWInv) * cimagf(p2HWInv)) - \
-        (cimagf(p1HWInv) * crealf(p2HWInv)));
+    *(cPtrOptimalFilter) = crectf( realFactor * ((crealf(p1HWInv) * crealf(p2HWInv)) + (cimagf(p1HWInv) * cimagf(p2HWInv))), realFactor * ((crealf(p1HWInv) * cimagf(p2HWInv)) - (cimagf(p1HWInv) * crealf(p2HWInv))) );
   }
 
   DETATCHSTATUSPTR(status);

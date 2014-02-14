@@ -30,7 +30,7 @@ TESTS_ENVIRONMENT = \
 	if test "x$(SWIG_LD_LIBPATH_NAME)" != x; then \
 		$(SWIG_LD_LIBPATH_NAME)="$(SWIG_LD_LIBRARY_PATH)"; export $(SWIG_LD_LIBPATH_NAME); \
 	fi; \
-	PYTHONPATH="$(SWIG_PREINST_PATH):$(PYTHONPATH):$${PYTHONPATH}"; export PYTHONPATH; \
+	PYTHONPATH="$(SWIG_PREINST_PATH):$(LAL_PYTHON_PATH)"; export PYTHONPATH; \
 	LAL_DEBUG_LEVEL=error,memdbg; export LAL_DEBUG_LEVEL;
 
 # run Python for interactive testing

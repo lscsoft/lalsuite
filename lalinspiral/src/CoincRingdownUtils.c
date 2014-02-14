@@ -1739,7 +1739,7 @@ XLALCoincRingdownStat(
 {
   InterferometerNumber  ifoNumber;
   SnglRingdownTable    *snglRingdown;
-  REAL4                 statValues[LAL_NUM_IFO];
+  REAL4                 statValues[LAL_NUM_IFO]={0};
   REAL4 statValue = 0;
   INT4  i;
   INT4  ifoCounter = 0;

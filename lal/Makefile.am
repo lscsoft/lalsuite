@@ -29,6 +29,12 @@ pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = \
 	lal.pc \
 	lalsupport.pc
+noinst_DATA = \
+	lal-uninstalled.pc \
+	lalsupport-uninstalled.pc
+BUILT_SOURCES = \
+	lal-uninstalled.pc \
+	lalsupport-uninstalled.pc
 
 if HAVE_GIT_REPO
 vcs-clean: maintainer-clean

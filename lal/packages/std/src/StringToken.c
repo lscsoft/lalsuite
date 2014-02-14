@@ -162,98 +162,78 @@ LALCreateTokenList(LALStatus * stat,
     RETURN(stat);
 }
 
-
-
-/** See StringToken.c for documentation */
-int
-XLALCreateTokenList(TokenList ** list,
-                    const CHAR * string, const CHAR * delimiters)
+/** Split given input string into a list of 'tokens' separated by any
+ * of the characters given in 'delimiters'
+ */
+int XLALCreateTokenList(TokenList ** list,         //!< [out] list of tokens
+                        const CHAR * string,       //!< [in] string to split into tokens
+                        const CHAR * delimiters    //!< [in] set of token-delimiter characters
+                        )
 {
-    BOOLEAN delimiter = 1;      /* whether current character is a delimiter */
-    UINT4 i = 0, j = 0; /* indecies */
-    UINT4 nTokens = 0;  /* number of tokens */
-    UINT4 sLength;      /* length of string */
-    UINT4 tLength = 0;  /* length of token list */
-    CHAR *copy; /* working copy of token list */
+    XLAL_CHECK((list != NULL) && ((*list) == NULL), XLAL_EINVAL);
+    XLAL_CHECK(string != NULL, XLAL_EINVAL);
+    XLAL_CHECK(delimiters != NULL, XLAL_EINVAL);
 
-    /* Check for valid input arguments. */
-    if (!list || !string || !delimiters || *list != NULL) {
-        fprintf(stderr, STRINGINPUTH_MSGENUL);
-        return STRINGINPUTH_ENUL;
-    }
+    // prepare output TokenList structure
+    TokenList *ret;
+    XLAL_CHECK((ret = XLALCalloc(1, sizeof(*ret))) != NULL, XLAL_ENOMEM);
 
-    /* Create working copy of token list. */
-    sLength = strlen(string) + 1;
-    if (!(copy = (CHAR *) LALMalloc(sLength * sizeof(CHAR)))) {
-        fprintf(stderr, STRINGINPUTH_MSGENUL);
-        return STRINGINPUTH_ENUL;
+    size_t stringLen = strlen(string);
+    if ((ret->list = XLALCreateCHARVector(stringLen + 1)) == NULL) {
+        XLALFree(ret);
+        XLAL_ERROR(XLAL_ENOMEM);
     }
-    for (i = 0; i < sLength; i++) {
-        CHAR c = string[i];
-        if (strchr(delimiters, c)) {
-            copy[i] = '\0';
-            delimiter = 1;
-        } else {
-            copy[i] = c;
-            tLength++;
-            if (delimiter) {
-                delimiter = 0;
-                nTokens++;
+    strcpy(ret->list->data, string);
+
+    // initialize pointers to walk along local copy of input string
+    char *ptr = ret->list->data;
+    const char *endPtr = ptr + stringLen;
+
+    UINT4 nTokens = 0;
+    UINT4 nTokensAlloc = 0;
+
+    while ((ptr != NULL) && (ptr < endPtr)) {
+        // skip and nuke delimiter
+        size_t skip = strspn(ptr, delimiters);
+        memset(ptr, 0, skip);   // fill with '0'
+        ptr += skip;
+
+        if (ptr >= endPtr) {
+            break;
+        }
+        // 'ptr' points at next token
+        nTokens++;
+
+        // allocate next batch of token-pointers if required
+        if (nTokens > nTokensAlloc) {
+            nTokensAlloc = 2 * nTokens; // proceed by doubling current space
+            if ((ret->tokens = XLALRealloc(ret->tokens, nTokensAlloc * sizeof(char *))) == NULL) {
+                XLALDestroyTokenList(ret);
+                XLAL_ERROR(XLAL_ENOMEM);
             }
-        }
+        }       // if nTokens > nTokensAlloc
+
+        // enter new token-pointer into list
+        ret->tokens[nTokens - 1] = ptr;
+
+        // advance to next delimiter
+        ptr = strpbrk(ptr, delimiters);
+
+    }   // while ptr < endPtr
+
+    // reduce tokens-array to actual size
+    if ((ret->tokens = XLALRealloc(ret->tokens, nTokens * sizeof(char *))) == NULL) {
+        XLALDestroyTokenList(ret);
+        XLAL_ERROR(XLAL_ENOMEM);
     }
+    ret->nTokens = nTokens;
 
-    /* Create the token list. */
-    if (!(*list = (TokenList *) LALMalloc(sizeof(TokenList)))) {
-        LALFree(copy);
-        fprintf(stderr, STRINGINPUTH_MSGENUL);
-        return STRINGINPUTH_ENUL;
-    }
-    if (!((*list)->tokens =
-          (CHAR **) LALMalloc((nTokens + 1) * sizeof(CHAR *)))) {
-        LALFree(*list);
-        *list = NULL;
-        LALFree(copy);
-        fprintf(stderr, STRINGINPUTH_MSGENUL);
-        return STRINGINPUTH_ENUL;
-    }
-    (*list)->nTokens = nTokens;
-    (*list)->list = NULL;
+    // return result
+    (*list) = ret;
 
+    return XLAL_SUCCESS;
 
-    /* If tokens were found, copy them over and set up pointers. */
-    if (nTokens) {
-        CHAR *listData; /* pointer to token list data */
-        (*list)->list = XLALCreateCHARVector(nTokens + tLength);
-
-        if (!(*list)->list) {
-            LALFree((*list)->tokens);
-            LALFree(*list);
-            *list = NULL;
-            LALFree(copy);
-        }
-        listData = (*list)->list->data;
-        i = 0;
-        while (i < sLength) {
-            if (copy[i]) {
-                tLength = strlen(copy + i) + 1;
-                memcpy(listData, copy + i, tLength * sizeof(CHAR));
-                (*list)->tokens[j++] = listData;
-                i += tLength;
-                listData += tLength;
-            } else
-                i++;
-        }
-    }
-    (*list)->tokens[j] = NULL;
-
-    /* Clean up and exit. */
-    LALFree(copy);
-
-    return 0;
-}
-
-
+}       // XLALCreateTokenList()
 
 /**
  * \deprecated Use XLALDestroyTokenList() instead

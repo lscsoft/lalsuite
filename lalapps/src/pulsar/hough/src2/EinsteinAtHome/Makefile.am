@@ -1,7 +1,7 @@
 ## Process this file with automake to produce Makefile.in
 
 # for using lalapps-defines + functions
-AM_CPPFLAGS = -I$(top_srcdir)/src/lalapps -I$(top_srcdir)/src/pulsar/FDS_isolated -DPKG_DATA_DIR='"$(pkgdatadir)/"'
+AM_CPPFLAGS = -I$(top_srcdir)/src/lalapps -I$(top_srcdir)/src/pulsar/FDS_isolated -DPKG_DATA_DIR='"$(pkgdatadir)/"' @AM_CPPFLAGS@
 LDADD = $(top_builddir)/src/lalapps/liblalapps.la
 
 cfsHOME = @CFS_DIR@
@@ -48,7 +48,7 @@ if USE_OPENCL
     eah_sources += $(optHOME)/FStatOpenCLKernel.c $(optHOME)/ComputeFstatREAL4OpenCL.c
 endif
 eah_cppflags = -Wall -DEAH_BOINC -DUSE_BOINC -DBOINC_COMPRESS -DBOINC_APIV6 -DTARGET='"@BUILD_TARGET@"'
-eah_ldadd = @LAL_LIBS@ -lgsl -lgslcblas -lboinc_zip -lboinc_api -lboinc
+eah_ldadd = -lgsl -lgslcblas -lboinc_zip -lboinc_api -lboinc
 eah_ldflags = 
 
 ## ----------
@@ -100,7 +100,7 @@ cfsSCI_SOURCES = $(cfsHOME)/ComputeFStatistic.c $(lalappsDIR)/lalapps.c \
 
 ## Fstats-comparison code (useful for testing using testStandalone.sh)
 #compareFstats_SOURCES = $(cfsHOME)/compareFstats.c $(lalappsDIR)/lalapps.c
-#compareFstats_LDADD = @LAL_LIBS@ -lgsl -lgslcblas
+#compareFstats_LDADD = -lgsl -lgslcblas
 
 ## make sure rebuilding uses the right aclocal-switches
 ACLOCAL_AMFLAGS = -I m4

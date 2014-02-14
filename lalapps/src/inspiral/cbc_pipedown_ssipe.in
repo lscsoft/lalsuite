@@ -37,7 +37,7 @@ def get_veto_cat_from_tag( tag ):
   nothing for N=1.
   """
   if 'VETO' in tag:
-    cat_num = int(tag.split('_')[-3])
+    cat_num = int(tag.split('_')[-2])
   else:
     # is category 1 veto
     cat_num = 1
@@ -528,7 +528,7 @@ for tag in user_tags:
     dbaddinj_node.set_tmp_space( tmp_space )
     dbaddinj_node.set_database( result_db )
     dbaddinj_node.set_injection_file( inj_file )
-
+    dbaddinj_node.set_inj_tag(sim_tags[-1])
     dbaddinj_node.add_parent( last_node )
 
     dag.add_node( dbaddinj_node )
@@ -1026,17 +1026,18 @@ for result_db in result_dbs_cache:
           minifup_node.add_parent( printmissed_node )
           dag.add_node( minifup_node )
 
-        # create the plotfm node for each plotfm job
-        for plotfm_tag, plotfm_job in plotfm_jobs:
-          plotfm_node = inspiral.PlotFMNode( plotfm_job )
-          plotfm_node.set_category('plotfm')
-          plotfm_node.set_tmp_space( tmp_space )
-          plotfm_node.add_file_arg( result_db.path )
-          plotfm_node.set_sim_tag( sim_tag )
-          plotfm_node.set_user_tag( '_'.join([ plotfm_tag, sim_tag, veto_cat ]) )
-            
-          plotfm_node.add_parent( ccfar_node )
-          dag.add_node( plotfm_node )
+      # create the plotfm node for each plotfm job
+      # only do this once per sim_tag as a plotfm job covers all instrument sets
+      for plotfm_tag, plotfm_job in plotfm_jobs:
+        plotfm_node = inspiral.PlotFMNode( plotfm_job )
+        plotfm_node.set_category('plotfm')
+        plotfm_node.set_tmp_space( tmp_space )
+        plotfm_node.add_file_arg( result_db.path )
+        plotfm_node.set_sim_tag( sim_tag )
+        plotfm_node.set_user_tag( '_'.join([ plotfm_tag, sim_tag, veto_cat ]) )
+           
+        plotfm_node.add_parent( ccfar_node )
+        dag.add_node( plotfm_node )
 
 
 
@@ -1105,6 +1106,7 @@ print "Writing DAG and sub files..."
 dag.add_maxjobs_category('minifollowups', 15)
 
 dag.write_sub_files()
+dag.write_script()
 dag.write_dag()
 
 # write process end time to log file and write log file

@@ -54,7 +54,6 @@ Input shoud be from
    signals. 
 */
 
-#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include "./MCInjectHoughS2.h" /* proper path*/
 
 
@@ -783,8 +782,7 @@ int main(int argc, char *argv[]){
 	for (i=0; (UINT4)i < sftlength; i++)  {
 	  /* sumSFT->re = noise1SFT->re + h0scale *signal1SFT->re; */
 	  /* sumSFT->im = noise1SFT->im + h0scale *signal1SFT->im; */
-	  sumSFT->realf_FIXME = crealf(*noise1SFT) + h0scale *crealf(*signal1SFT);
-	  sumSFT->imagf_FIXME = cimagf(*noise1SFT) + h0scale *cimagf(*signal1SFT);
+	  *(sumSFT) = crectf( crealf(*noise1SFT) + h0scale *crealf(*signal1SFT), cimagf(*noise1SFT) + h0scale *cimagf(*signal1SFT) );
 	  ++noise1SFT;
 	  ++signal1SFT;
 	  ++sumSFT;

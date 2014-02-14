@@ -16,10 +16,4 @@
 /* LALPulsar Version Devel Number  */
 #undef LALPULSAR_VERSION_DEVEL
 
-/* LALPulsar Configure Arguments */
-#undef LALPULSAR_CONFIGURE_ARGS
-
-/* LALPulsar Configure Date */
-#undef LALPULSAR_CONFIGURE_DATE
-
 #endif /* LALPULSAR_VERSION */

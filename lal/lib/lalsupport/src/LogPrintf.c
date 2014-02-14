@@ -45,6 +45,10 @@
 
 #include <time.h>
 
+#ifndef HAVE_LOCALTIME_R
+#define localtime_r(timep, result) memcpy((result), localtime(timep), sizeof(struct tm))
+#endif
+
 #include "LogPrintf.h"
 
 /* output file for log messages, default to standard error */
@@ -154,7 +158,8 @@ LogTimeToString ( double t )
   static char buf[100];
   char finer[16];
   time_t x = (time_t)t;
-  struct tm tm = *localtime(&x);
+  struct tm tm;
+  localtime_r(&x, &tm);
 
   int hundreds_of_microseconds=(int)(10000*(t-(int)t));
 

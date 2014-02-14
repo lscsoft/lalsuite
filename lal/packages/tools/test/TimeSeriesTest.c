@@ -84,14 +84,11 @@ int main(void)
 	XLALDestroyREAL4TimeSeries(NULL);
 
 	/* Incompletely/Incorrectly initialized structure */
-	x = malloc(sizeof(*x));
-	x->data = NULL;
+	x = XLALCalloc(1, sizeof(*x));
 	XLALDestroyREAL4TimeSeries(x);
-	x = malloc(sizeof(*x));
-	x->data = malloc(sizeof(*x->data));
-	x->data->data = NULL;
+	x = XLALCalloc(1, sizeof(*x));
+	x->data = XLALCalloc(1, sizeof(*x->data));
 	XLALDestroyREAL4TimeSeries(x);
-
 
 	/*
 	 * Create

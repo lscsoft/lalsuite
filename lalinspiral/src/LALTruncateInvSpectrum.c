@@ -17,7 +17,6 @@
 *  MA  02111-1307  USA
 */
 
-#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/LALStdlib.h>
 #include <lal/RealFFT.h>
 #include <lal/LALNoiseModelsInspiral.h>
@@ -66,8 +65,7 @@ void LALTruncateInvSpectrum(
      */
     for (i=0; i<Hvec->length; i++){
         if (inputVec->data[i] > 0.0) {
-            Hvec->data[i].realf_FIXME = (REAL4) (1./sqrt(inputVec->data[i]));
-            Hvec->data[i].imagf_FIXME = 0.0;
+            Hvec->data[i] = crectf( (REAL4) (1./sqrt(inputVec->data[i])), 0.0 );
         } else{
             ABORT( status, LALNOISEMODELSH_ECHOICE, LALNOISEMODELSH_MSGECHOICE );
         }
@@ -90,8 +88,8 @@ void LALTruncateInvSpectrum(
 
     /* Set Nyquist and zero frequency components of the input spectrum to zero
      */
-    Hvec->data[Hvec->length - 1].realf_FIXME = 0.0;
-    Hvec->data[0].realf_FIXME                = 0.0;
+    Hvec->data[Hvec->length-1] = crectf( 0.0, cimagf(Hvec->data[Hvec->length-1]) );
+    Hvec->data[0] = crectf( 0.0, cimagf(Hvec->data[0]) );
 
     /* Inverse Fourier Transform to time domain
      */
@@ -144,9 +142,9 @@ void LALTruncateInvSpectrum(
     norm = 1.0 / (REAL4) (n);
     for ( i = 0; i < Hvec->length; i++ )
     {
-        Hvec->data[i].realf_FIXME *= norm;
-        Hvec->data[i].realf_FIXME *= crealf(Hvec->data[i]);
-        Hvec->data[i].imagf_FIXME  = 0.0;
+        Hvec->data[i] = crectf( crealf(Hvec->data[i]) * ( norm ), cimagf(Hvec->data[i]) );
+        Hvec->data[i] = crectf( crealf(Hvec->data[i]) * ( crealf(Hvec->data[i]) ), cimagf(Hvec->data[i]) );
+        Hvec->data[i] = crectf( crealf(Hvec->data[i]), 0.0 );
     }
 
     /* ---- If debugging print the inv sqrt spectrum in Fourier domain

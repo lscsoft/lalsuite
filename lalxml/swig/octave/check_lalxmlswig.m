@@ -13,11 +13,11 @@ disp("PASSED module load");
 
 ## check object parent tracking
 disp("checking object parent tracking ...");
-a = lalxml.new_lalxmlswig_test_parent_map_struct();
+a = lalxml.new_swig_lalxml_test_parent_map_struct();
 for i = 1:7
   b = a.s;
-  c = lalxmlcvar.lalxmlswig_test_parent_map.s;
-  lalxmlcvar.lalxmlswig_test_parent_map.s = lalcvar.lalswig_test_struct_const;
+  c = lalxmlcvar.swig_lalxml_test_parent_map.s;
+  lalxmlcvar.swig_lalxml_test_parent_map.s = lalcvar.swig_lal_test_struct_const;
 endfor
 clear ans a b c;
 CheckMemoryLeaks();

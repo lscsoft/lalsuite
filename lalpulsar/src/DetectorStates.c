@@ -39,7 +39,6 @@
 /*---------- internal types ----------*/
 
 /*---------- empty initializers ---------- */
-static const LALStatus empty_LALStatus;
 const MultiDetectorInfo empty_MultiDetectorInfo;
 
 /*---------- Global variables ----------*/

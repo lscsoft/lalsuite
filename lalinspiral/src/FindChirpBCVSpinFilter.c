@@ -108,7 +108,6 @@
  *
  */
 
-#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <math.h>
 #include <lal/LALErrno.h>
 #include <lal/XLALError.h>
@@ -119,6 +118,9 @@
 #include <lal/AVFactories.h>
 #include <lal/FindChirp.h>
 #include <lal/FindChirpBCVSpin.h>
+
+/* undefine complex number I, since it's used as a variable name in this file */
+#undef I
 
 #ifdef __GNUC__
 #define UNUSED __attribute__ ((unused))
@@ -386,8 +388,7 @@ LALFindChirpBCVSpinFilterSegment (
     	REAL4 x =  crealf(tmpltSignal[k]);
     	REAL4 y =  0. - cimagf(tmpltSignal[k]);
 
-    	qtilde[k].realf_FIXME        = r * x - s * y ;
-    	qtilde[k].imagf_FIXME        = s * x + r * y ;
+	qtilde[k] = crectf( r * x - s * y, s * x + r * y );
 
 /*      	qtilde[k].re *= wtilde[k].re;
       	qtilde[k].im *= wtilde[k].re; */
@@ -397,15 +398,15 @@ LALFindChirpBCVSpinFilterSegment (
 
     	/* real parts */
 
-     	qtilde[k].realf_FIXME         *= A1Vec[k];
-     	qtildeBCVSpin1[k].realf_FIXME *= A2Vec[k];
-     	qtildeBCVSpin2[k].realf_FIXME *= A3Vec[k];
+	qtilde[k] = crectf( crealf(qtilde[k]) * ( A1Vec[k] ), cimagf(qtilde[k]) );
+	qtildeBCVSpin1[k] = crectf( crealf(qtildeBCVSpin1[k]) * ( A2Vec[k] ), cimagf(qtildeBCVSpin1[k]) );
+	qtildeBCVSpin2[k] = crectf( crealf(qtildeBCVSpin2[k]) * ( A3Vec[k] ), cimagf(qtildeBCVSpin2[k]) );
 
     	/* imaginary parts */
 
-     	qtilde[k].imagf_FIXME         *= A1Vec[k];
-     	qtildeBCVSpin1[k].imagf_FIXME *= A2Vec[k];
-     	qtildeBCVSpin2[k].imagf_FIXME *= A3Vec[k];
+	qtilde[k] = crectf( crealf(qtilde[k]), cimagf(qtilde[k]) * ( A1Vec[k] ) );
+	qtildeBCVSpin1[k] = crectf( crealf(qtildeBCVSpin1[k]), cimagf(qtildeBCVSpin1[k]) * ( A2Vec[k] ) );
+	qtildeBCVSpin2[k] = crectf( crealf(qtildeBCVSpin2[k]), cimagf(qtildeBCVSpin2[k]) * ( A3Vec[k] ) );
   }
 
 

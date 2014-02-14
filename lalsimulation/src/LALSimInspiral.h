@@ -93,6 +93,7 @@ typedef enum {
    IMRPhenomFA,		/**< Frequency domain (non-spinning) inspiral-merger-ringdown templates of Ajith et al [Ajith_2007kx] with phenomenological coefficients defined in the Table I of [Ajith_2007xh]*/
    IMRPhenomFB,		/**< Frequency domain (non-precessing spins) inspiral-merger-ringdown templates of Ajith et al [Ajith_2009bn] */
    IMRPhenomC,		/**< Frequency domain (non-precessing spins) inspiral-merger-ringdown templates of Ajith et al [Santamaria:2010yb] with phenomenological coefficients defined in the Table II of [Santamaria:2010yb]*/
+   IMRPhenomP,		/**< Frequency domain (generic spins) inspiral-merger-ringdown templates of Hannam et al., arXiv:1308.3271 [gr-qc] */
    TaylorEt,		/**< UNDOCUMENTED */
    TaylorT4,		/**< UNDOCUMENTED */
    TaylorN,		/**< UNDOCUMENTED */
@@ -144,6 +145,22 @@ int XLALSimInspiralREAL8WaveTaper(
 		REAL8Vector              *signalvec,	/**< pointer to waveform vector */
 		LALSimInspiralApplyTaper  bookends	/**< taper type enumerator */
 		);
+
+
+/**
+ * Gives the default ending frequencies of the given approximant.
+ */
+double XLALSimInspiralGetFinalFreq(
+    REAL8 m1,                               /**< mass of companion 1 (kg) */
+    REAL8 m2,                               /**< mass of companion 2 (kg) */
+    REAL8 S1x,                              /**< x-component of the dimensionless spin of object 1 */
+    REAL8 S1y,                              /**< y-component of the dimensionless spin of object 1 */
+    REAL8 S1z,                              /**< z-component of the dimensionless spin of object 1 */
+    REAL8 S2x,                              /**< x-component of the dimensionless spin of object 2 */
+    REAL8 S2y,                              /**< y-component of the dimensionless spin of object 2 */
+    REAL8 S2z,                              /**< z-component of the dimensionless spin of object 2 */
+    Approximant approximant                 /**< post-Newtonian approximant to use for waveform production */
+    );
 
 /**
  * Compute the polarizations from all the -2 spin-weighted spherical harmonic

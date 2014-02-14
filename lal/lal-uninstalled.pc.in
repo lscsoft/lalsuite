@@ -1,0 +1,11 @@
+abs_top_srcdir=@abs_top_srcdir@
+abs_top_builddir=@abs_top_builddir@
+LAL_OCTAVE_PATH=@abs_top_builddir@/swig/octave/.libs
+LAL_PYTHON_PATH=@abs_top_builddir@/swig/python/.libs
+
+Name: LAL
+Description: (uninstalled)
+Version: @VERSION@
+Requires: gsl, fftw3, fftw3f
+Libs: ${abs_top_builddir}/lib/lal/liblal.la @CUDA_LIBS@ @BOINC_LIBS@
+Cflags: -I${abs_top_builddir}/include @CUDA_CFLAGS@ @BOINC_CFLAGS@

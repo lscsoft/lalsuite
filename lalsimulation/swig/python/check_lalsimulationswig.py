@@ -11,11 +11,11 @@ print("PASSED module load")
 
 # check object parent tracking
 print("checking object parent tracking ...")
-a = lalsimulation.lalsimulationswig_test_parent_map_struct()
+a = lalsimulation.swig_lalsimulation_test_parent_map_struct()
 for i in range(0, 7):
     b = a.s
-    c = lalsimulationcvar.lalsimulationswig_test_parent_map.s
-    lalsimulationcvar.lalsimulationswig_test_parent_map.s = lalcvar.lalswig_test_struct_const
+    c = lalsimulationcvar.swig_lalsimulation_test_parent_map.s
+    lalsimulationcvar.swig_lalsimulation_test_parent_map.s = lalcvar.swig_lal_test_struct_const
 del a, b, c
 lal.CheckMemoryLeaks()
 print("PASSED object parent tracking")

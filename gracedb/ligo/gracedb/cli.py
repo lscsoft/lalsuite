@@ -23,7 +23,7 @@ from ligo.gracedb.rest import GraceDb
 
 DEFAULT_SERVICE_URL = "https://gracedb.ligo.org/gracedb/api"
 
-GIT_TAG = 'gracedb-1.13-1'
+GIT_TAG = 'gracedb-1.14-1'
 
 DEFAULT_COLUMNS = "graceid,labels,group,analysisType,far,gpstime,created,dataurl"
  
@@ -214,7 +214,7 @@ Longer strings will be truncated.""" % {
                  )
 
     op.add_option("-l", "--ligolw", dest="ligolw",
-                  help="Download ligolw file of combined search results (not meaningful outside of search)",
+                  help="Download ligolw file of combined search results (not meaningful outside of search). NOTE: Produces an ERROR if any of the events returned by the search do not have coinc.xml files.",
                   action="store_true", default=False
                  )
     op.add_option("-t", "--tag-name", dest="tagName",
@@ -349,7 +349,7 @@ Longer strings will be truncated.""" % {
         query = " ".join(args[1:])
         
         columns = options.columns
-        columns.replace('DEFAULTS',DEFAULT_COLUMNS)
+        columns = columns.replace('DEFAULTS',DEFAULT_COLUMNS)
         columns = columns.split(',')
 
         count = None # XXX Let's just get rid of this?

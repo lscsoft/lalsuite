@@ -2,7 +2,6 @@
 /* And support functions */
 /* (C) John Veitch 2009 */
 
-#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/Units.h>
 #include <lal/LALStdlib.h>
 #include "LALInspiralMCMC.h"
@@ -122,8 +121,7 @@ void Inject2PN(LALMCMCParameter *parameter, LALMCMCInput *inputMCMC, double SNR)
 	if(SNR>=0.0) mul_factor = SNR/SNR1; /* Multiplicative factor to achieve desired SNR */
 	/* Inject the wave */
 	for(chisq=0.0,i=lowBin;i<Nmodel/2;i++){
-		inputMCMC->stilde[0]->data->data[i].real_FIXME+=mul_factor*(REAL8) model->data[i];
-		inputMCMC->stilde[0]->data->data[i].imag_FIXME+=mul_factor*(REAL8) model->data[Nmodel-i];
+		inputMCMC->stilde[0]->data->data[i] += crect( mul_factor*(REAL8) model->data[i], mul_factor*(REAL8) model->data[Nmodel-i] );
 		real=model->data[i]; imag=model->data[Nmodel-i];
 		chisq+=mul_factor*mul_factor*(real*real + imag*imag)*inputMCMC->invspec[0]->data->data[i];
 	}

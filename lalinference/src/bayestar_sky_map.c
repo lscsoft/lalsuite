@@ -333,8 +333,7 @@ typedef struct {
 static double log_radial_integrand(double r, double A, double B, int prior_distance_power)
 {
     const double onebyr = 1 / r;
-    const double onebyr2 = gsl_pow_2(onebyr);
-    return A * onebyr2 + B * onebyr + prior_distance_power * log(r);
+    return (A * onebyr + B) * onebyr + prior_distance_power * log(r);
 }
 
 
@@ -344,8 +343,7 @@ static double radial_integrand(double r, void *params)
     const inner_integrand_params *integrand_params = (const inner_integrand_params *) params;
 
     const double onebyr = 1 / r;
-    const double onebyr2 = gsl_pow_2(onebyr);
-    return exp(integrand_params->A * onebyr2 + integrand_params->B * onebyr - integrand_params->log_offset)
+    return exp((integrand_params->A * onebyr + integrand_params->B) * onebyr - integrand_params->log_offset)
         * gsl_pow_int(r, integrand_params->prior_distance_power);
 }
 

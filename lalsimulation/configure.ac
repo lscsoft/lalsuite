@@ -1,5 +1,5 @@
 AC_PREREQ([2.63])
-AC_INIT([lalsimulation],[1.0.0.1],[lal-discuss@ligo.org])
+AC_INIT([lalsimulation],[1.1.0.1],[lal-discuss@ligo.org])
 AC_CONFIG_HEADERS([src/config.h src/LALSimulationConfig.h])
 AC_CONFIG_SRCDIR([src/LALSimulation.c])
 AC_CONFIG_AUX_DIR([gnuscripts])
@@ -7,6 +7,7 @@ AC_CONFIG_MACRO_DIR([gnuscripts])
 AC_CONFIG_FILES([ \
   lalsimulation.spec \
   lalsimulation.pc \
+  lalsimulation-uninstalled.pc \
   Makefile \
   gnuscripts/Makefile \
   debian/Makefile \
@@ -24,10 +25,8 @@ AM_INIT_AUTOMAKE([1.11 foreign subdir-objects color-tests parallel-tests])
 
 AC_CANONICAL_HOST
 
-LALSUITE_ARG_VAR
 LALSUITE_CHECK_GIT_REPO
 LALSUITE_DISTCHECK_CONFIGURE_FLAGS
-LALSUITE_WITH_CFLAGS_LIBS
 
 # set library api info
 # 1. start with version information of "0:0:0" for each libtool library
@@ -43,7 +42,7 @@ LALSUITE_WITH_CFLAGS_LIBS
 #    then increment age.
 # 6. if any interfaces have been removed since the last public release,
 #    then set age to 0.
-AC_SUBST([LIBCURRENT],[8])
+AC_SUBST([LIBCURRENT],[9])
 AC_SUBST([LIBREVISION],[0])
 AC_SUBST([LIBAGE],[0])
 AC_SUBST([LIBVERSION],[${LIBCURRENT}:${LIBREVISION}:${LIBAGE}])
@@ -51,36 +50,14 @@ AC_SUBST([LIBVERSION],[${LIBCURRENT}:${LIBREVISION}:${LIBAGE}])
 # nightly build
 LALSUITE_ENABLE_NIGHTLY
 
-# debug
-LALSUITE_ENABLE_DEBUG
-
 # enable strict gcc flags
 LALSUITE_ENABLE_GCC_FLAGS
 
 # enable SWIG wrapping modules
 LALSUITE_ENABLE_SWIG
 
-# put version/configure info in config header
-lalsimulation_version_major=`echo "$VERSION" | cut -d. -f1`
-lalsimulation_version_minor=`echo "$VERSION" | cut -d. -f2`
-lalsimulation_version_micro=`echo "$VERSION" | cut -d. -f3`
-lalsimulation_version_devel=`echo "$VERSION" | cut -d. -f4-`
-test -z "$lalsimulation_version_micro" && lalsimulation_version_micro=0
-test -z "$lalsimulation_version_devel" && lalsimulation_version_devel=0
-lalsimulation_configure_date=`date +"%Y-%m-%dT%H:%M:%S%z"`
-AC_DEFINE_UNQUOTED([LALSIMULATION_VERSION],["$VERSION"],[LALSimulation Version])
-AC_DEFINE_UNQUOTED([LALSIMULATION_VERSION_MAJOR],[$lalsimulation_version_major],
-                   [LALSimulation Version Major Number])
-AC_DEFINE_UNQUOTED([LALSIMULATION_VERSION_MINOR],[$lalsimulation_version_minor],
-                   [LALSimulation Version Minor Number])
-AC_DEFINE_UNQUOTED([LALSIMULATION_VERSION_MICRO],[$lalsimulation_version_micro],
-                   [LALSimulation Version Micro Number])
-AC_DEFINE_UNQUOTED([LALSIMULATION_VERSION_DEVEL],[$lalsimulation_version_devel],
-                   [LALSimulation Version Devel Number])
-AC_DEFINE_UNQUOTED([LALSIMULATION_CONFIGURE_ARGS],["$ac_configure_args"],
-                   [LALSimulation Configure Arguments])
-AC_DEFINE_UNQUOTED([LALSIMULATION_CONFIGURE_DATE],["$lalsimulation_configure_date"],
-                   [LALSimulation Configure Date])
+# define version/configure info
+LALSUITE_VERSION_CONFIGURE_INFO
 
 # workaround broken libtool multilib support on sl6
 LALSUITE_MULTILIB_LIBTOOL_HACK
@@ -92,7 +69,7 @@ AM_SILENT_RULES([yes])
 LALSUITE_PROG_COMPILERS
 
 # checks for programs
-LALSUITE_PROG_INSTALL
+AC_PROG_INSTALL
 AC_PROG_LN_S
 AC_PROG_AWK
 AC_PROG_SED
@@ -119,8 +96,7 @@ AC_CHECK_LIB([m],[main],,[AC_MSG_ERROR([could not find the math library])])
 
 # check for gsl
 PKG_CHECK_MODULES([GSL],[gsl],[true],[false])
-LALSUITE_ADD_CFLAGS(${GSL_CFLAGS})
-LALSUITE_ADD_LIBS(${GSL_LIBS})
+LALSUITE_ADD_FLAGS([C],[${GSL_CFLAGS}],[${GSL_LIBS}])
 AC_CHECK_LIB([gslcblas],[main],,[AC_MSG_ERROR([could not find the gsl library])])
 AC_CHECK_LIB([gsl],[gsl_strerror],,[AC_MSG_ERROR([could not find the gsl library])])
 
@@ -128,8 +104,8 @@ AC_CHECK_LIB([gsl],[gsl_strerror],,[AC_MSG_ERROR([could not find the gsl library
 AC_CHECK_HEADERS([gsl/gsl_errno.h],,[AC_MSG_ERROR([could not find the gsl/gsl_errno.h header])])
 
 # check for lal libraries and headers
-LALSUITE_CHECK_LIB([LAL],[6.11.0],[LALVersion],[lal/LALStdio.h])
-LALSUITE_CHECK_LIB([LALSupport],[6.11.0],[LALOpenDataFile],[lal/FileIO.h])
+LALSUITE_CHECK_LIB([LAL],[6.12.0],[LALVersion],[lal/LALStdio.h])
+LALSUITE_CHECK_LIB([LALSupport],[6.12.0],[XLALCacheImport],[lal/LALCache.h])
 
 # configure SWIG wrapping modules
 LALSUITE_USE_SWIG([XLAL LAL])
@@ -142,15 +118,12 @@ LALSUITE_ADD_GCC_FLAGS
 # RedHat-derived systems.
 AC_SUBST([pkgpythondir], ["\${pkgpyexecdir}"])
 
-# ensure CPPFLAGS/CFLAGS and LDFLAGS/LIBS are in correct order
-LALSUITE_ADD_CFLAGS()
-LALSUITE_ADD_LIBS()
-
-# output
 LAL_HEADER_LINK=${ac_aux_dir}/header-link.mk
 AC_SUBST_FILE([LAL_HEADER_LINK])
+
+# output
 AC_OUTPUT
-echo "
+AC_MSG_NOTICE([
 ==================================================
 LALSimulation has now been successfully configured:
 
@@ -164,4 +137,4 @@ ${prefix}
 Now run 'make' to build LALSimulation,
 and run 'make install' to install LALSimulation.
 ==================================================
-"
+])

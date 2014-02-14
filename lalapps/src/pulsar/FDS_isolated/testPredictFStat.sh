@@ -20,12 +20,16 @@ pfs_path="${builddir}${pfs_code}"
 
 SFTdir="./testPredictFStat_sfts"
 
-if [ -n "${LALPULSAR_DATADIR}" ]; then
-    mfd_path="${mfd_path} -E ${LALPULSAR_DATADIR}"
-    saf_path="${saf_path} -E ${LALPULSAR_DATADIR}"
-    pfs_path="${pfs_path} -E ${LALPULSAR_DATADIR}"
+if [ -z "${LAL_DATA_PATH}" ]; then
+    echo
+    echo "Need environment-variable LAL_DATA_PATH to be set to include"
+    echo "your ephemeris-directory (e.g. /usr/local/share/lalpulsar)"
+    echo "This might indicate an incomplete LAL+LALPULSAR installation"
+    echo
+    exit 1
 fi
 
+Ftolerance=0.05
 # ---------- fixed parameter of our test-signal
 Tsft=1800;
 startTime=711595934

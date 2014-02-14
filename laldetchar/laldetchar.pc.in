@@ -3,12 +3,13 @@ exec_prefix=@exec_prefix@
 libdir=@libdir@
 includedir=@includedir@
 datarootdir=@datarootdir@
-datadir=@datadir@
-pkgdatadir=@datadir@/@PACKAGE@
+LAL_DATA_PATH=@datadir@/@PACKAGE@:@LAL_DATA_PATH@
+LAL_OCTAVE_PATH=@octexecdir@:@LAL_OCTAVE_PATH@
+LAL_PYTHON_PATH=@pyexecdir@:@LAL_PYTHON_PATH@
 
 Name: LALDetChar
 Description: LAL DetChar Library Support
 Version: @VERSION@
-Requires: glib-2.0 gsl lal libmetaio lalburst lalsimulation
+Requires: glib-2.0, gsl, lal >= @LAL_VERSION@, libmetaio, lalmetaio >= @LALMETAIO_VERSION@, lalburst >= @LALBURST_VERSION@
 Libs: -L${libdir} -llaldetchar
 Cflags: -I${includedir}

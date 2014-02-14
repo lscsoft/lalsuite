@@ -13,11 +13,11 @@ disp("PASSED module load");
 
 ## check object parent tracking
 disp("checking object parent tracking ...");
-a = lalmetaio.new_lalmetaioswig_test_parent_map_struct();
+a = lalmetaio.new_swig_lalmetaio_test_parent_map_struct();
 for i = 1:7
   b = a.s;
-  c = lalmetaiocvar.lalmetaioswig_test_parent_map.s;
-  lalmetaiocvar.lalmetaioswig_test_parent_map.s = lalcvar.lalswig_test_struct_const;
+  c = lalmetaiocvar.swig_lalmetaio_test_parent_map.s;
+  lalmetaiocvar.swig_lalmetaio_test_parent_map.s = lalcvar.swig_lal_test_struct_const;
 endfor
 clear ans a b c;
 CheckMemoryLeaks();

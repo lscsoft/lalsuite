@@ -226,6 +226,9 @@ void LALInferenceSkyRingProposal(LALInferenceRunState *runState, LALInferenceVar
 void NSFillMCMCVariables(LALInferenceVariables *proposedParams, LALInferenceVariables *priorArgs);
 void NSWrapMCMCLALProposal(LALInferenceRunState *runState, LALInferenceVariables *proposedParams);
 
+/* Noise model proposals. */
+void LALInferenceGlitchMorletProposal(LALInferenceRunState *runState, LALInferenceVariables *proposedParams);
+void LALInferenceGlitchMorletReverseJump(LALInferenceRunState *runState, LALInferenceVariables *proposedParams);
 void LALInferencePSDFitJump(LALInferenceRunState *runState, LALInferenceVariables *proposedParams);
 
 /** Rotate each spin by random angles about L. */
@@ -275,62 +278,6 @@ void LALInferenceUpdateAdaptiveJumps(LALInferenceRunState *runState, INT4 accept
 void LALInferenceSetupAdaptiveProposals(LALInferenceRunState *state);
 
 void LALInferenceSetupDefaultNSProposal(LALInferenceRunState *runState, LALInferenceVariables *proposedParams);
-
-void computeFisherMatrix(void *fisherMatrix, LALInferenceRunState *runState, COMPLEX16FrequencySeries ***outputDerivs);
-
-/*struct to hold waveform params, stolen from Evan's LALSimulation test folder*/
-typedef struct tagFIMParams {
-    Approximant approximant;  /**< waveform family or "approximant" */
-    LALSimulationDomain domain; /**< flag for time or frequency domain waveform */
-    int phaseO;               /**< twice PN order of the phase */
-    int ampO;                 /**< twice PN order of the amplitude */
-    REAL8 phiRef;             /**< phase at fRef */
-    REAL8 fRef;               /**< reference frequency */
-    REAL8 deltaT;             /**< sampling interval */
-    REAL8 deltaF;             /**< frequency resolution */
-    REAL8 m1;                 /**< mass of companion 1 */
-    REAL8 m2;                 /**< mass of companion 2 */
-    REAL8 f_min;              /**< start frequency */
-    REAL8 f_max;              /**< end frequency */
-    REAL8 distance;           /**< distance of source */
-    REAL8 inclination;        /**< inclination of L relative to line of sight */
-    REAL8 s1x;                /**< (x,y,z) components of spin of m1 body */
-    REAL8 s1y;                /**< z-axis along line of sight, L in x-z plane */
-    REAL8 s1z;                /**< dimensionless spin, Kerr bound: |s1| <= 1 */
-    REAL8 s2x;                /**< (x,y,z) component ofs spin of m2 body */
-    REAL8 s2y;                /**< z-axis along line of sight, L in x-z plane */
-    REAL8 s2z;                /**< dimensionless spin, Kerr bound: |s2| <= 1 */
-    REAL8 lambda1;            /**< (tidal deformability of mass 1) / (total mass)^5 (dimensionless) */
-    REAL8 lambda2;            /**< (tidal deformability of mass 2) / (total mass)^5 (dimensionless) */
-	REAL8 ra;                 /**< right ascension of source */
-	REAL8 dec;                 /**< declination of source */
-	REAL8 psi;                 /**< polarization of source */
-	REAL8 gmst;                 /**< greenwhich mean sideal time of coalescence */
-    LALSimInspiralWaveformFlags *waveFlags; /**< Set of flags to control special behavior of some waveform families */
-    LALSimInspiralTestGRParam *nonGRparams; /**< Linked list of non-GR parameters. Pass in NULL for standard GR waveforms */
-    int axisChoice;           /**< flag to choose reference frame for spin coordinates */
-    int inspiralOnly;         /**< flag to choose if generating only the the inspiral 1 or also merger and ring-down*/
-    int ampPhase;
-    int verbose;
-} FIMParams;
-
-typedef enum {    
-    LALINFERENCEFIM_MC,
-	LALINFERENCEFIM_Q,
-	LALINFERENCEFIM_PHIREF,
-	LALINFERENCEFIM_DIST,
-	LALINFERENCEFIM_INCL,
-	LALINFERENCEFIM_RA,
-	LALINFERENCEFIM_DEC,
-	LALINFERENCEFIM_PSI,
-	LALINFERENCEFIM_TIME
-} LALInferenceFIMParameters;
-
-void waveformDerivative(FIMParams *params, LALInferenceRunState *runState, double *h, COMPLEX16FrequencySeries ***outputDerivs);
-
-void drawFisherMatrix(LALInferenceRunState *runState);
-
-void parametersSetFIM(LALInferenceRunState *runState, FIMParams *params);
 
 /** Output proposal tracking header to file *fp */
 int LALInferencePrintProposalTrackingHeader(FILE *fp,LALInferenceVariables *params);

@@ -24,7 +24,6 @@
  */
 
 /* ---------- includes ---------- */
-#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lalapps.h>
 
 #include <lal/Date.h>
@@ -432,8 +431,7 @@ subtractSFTVectors (LALStatus *stat, SFTVector **ret, const SFTVector *sftvect1,
     {
       for (j=0; j < N; j++)
 	{
-	  vect->data[alpha].data->data[j].realf_FIXME = crealf(sftvect1->data[alpha].data->data[j]) - crealf(sftvect2->data[alpha].data->data[j]);
-	  vect->data[alpha].data->data[j].imagf_FIXME = cimagf(sftvect1->data[alpha].data->data[j]) - cimagf(sftvect2->data[alpha].data->data[j]);
+	  vect->data[alpha].data->data[j] = crectf( crealf(sftvect1->data[alpha].data->data[j]) - crealf(sftvect2->data[alpha].data->data[j]), cimagf(sftvect1->data[alpha].data->data[j]) - cimagf(sftvect2->data[alpha].data->data[j]) );
 	} /* for j < N */
 
     } /* for alpha < M */

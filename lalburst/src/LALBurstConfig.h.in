@@ -16,10 +16,4 @@
 /* LALBurst Version Devel Number  */
 #undef LALBURST_VERSION_DEVEL
 
-/* LALBurst Configure Arguments */
-#undef LALBURST_CONFIGURE_ARGS
-
-/* LALBurst Configure Date */
-#undef LALBURST_CONFIGURE_DATE
-
 #endif /* LALBURST_VERSION */

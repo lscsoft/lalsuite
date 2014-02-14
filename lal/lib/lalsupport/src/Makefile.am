@@ -1,4 +1,4 @@
-AM_CPPFLAGS = -I$(top_builddir)/include -I$(srcdir)/../include -DPKG_DATA_DIR='"$(pkgdatadir)/"'
+AM_CPPFLAGS = -I$(top_builddir)/include -I$(srcdir)/../include -DPKG_DATA_DIR='"$(pkgdatadir)/"' @AM_CPPFLAGS@
 
 lib_LTLIBRARIES = liblalsupport.la
 
@@ -30,8 +30,9 @@ liblalsupport_la_SOURCES = \
 	getopt.h \
 	getopt1.c
 
-liblalsupport_la_LIBADD = $(top_builddir)/lib/lal/liblal.la @LALSUPPORT_LIBADD@
-liblalsupport_la_LDFLAGS = -version-info $(LIBVERSION_SUPPORT)
+liblalsupport_la_LIBADD = $(top_builddir)/lib/lal/liblal.la $(ZLIB_LIBS)
+liblalsupport_la_CFLAGS = $(AM_CFLAGS) $(ZLIB_CFLAGS)
+liblalsupport_la_LDFLAGS = $(AM_LDFLAGS) -version-info $(LIBVERSION_SUPPORT)
 
 noinst_HEADERS = \
 	PrintFrequencySeries_source.c \

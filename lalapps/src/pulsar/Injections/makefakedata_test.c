@@ -123,7 +123,6 @@
  *
  */
 
-#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/LALStdlib.h>
 
 /* Error codes and messages */
@@ -395,16 +394,14 @@ int main(int argc,char *argv[]) {
   /* check that LAL header and library versions are consistent */
   if (
       strcmp(lalVersion,LAL_VERSION) ||
-      strcmp(lalConfigureArgs,LAL_CONFIGURE_ARGS) ||
-      strcmp(lalConfigureDate,LAL_CONFIGURE_DATE) ||
       fabs(lalVersionMajor-LAL_VERSION_MAJOR)>1.e-3 ||
       fabs(lalVersionMinor-LAL_VERSION_MINOR)>1.e-3
       ) {
     error( "Mismatch between compile time header versions and run-time library version:\n");
-    error( "LAL Version: %s\nMajor Version: %d\nMinor Version: %d\nConfig Args: %s\nBuild Date: %s\n",
-	    lalVersion,lalVersionMajor,lalVersionMinor,lalConfigureArgs,lalConfigureDate);
-    error( "LAL Headers: %s\nMajor Version: %d\nMinor Version: %d\nConfig Args: %s\nBuild Date: %s\n",
-	    LAL_VERSION, LAL_VERSION_MAJOR, LAL_VERSION_MINOR, LAL_CONFIGURE_ARGS, LAL_CONFIGURE_DATE);
+    error( "LAL Version: %s\nMajor Version: %d\nMinor Version: %d\n",
+	    lalVersion,lalVersionMajor,lalVersionMinor);
+    error( "LAL Headers: %s\nMajor Version: %d\nMinor Version: %d\n",
+	    LAL_VERSION, LAL_VERSION_MAJOR, LAL_VERSION_MINOR);
     exit(1);
   }
 
@@ -803,8 +800,7 @@ int correct_phase(void) {
   sinx=sin(x);
   for (i = 0; i < fvec->length; ++i){
     fvec1=fvec->data[i];
-    fvec->data[i].realf_FIXME=crealf(fvec1)*cosx-cimagf(fvec1)*sinx;
-    fvec->data[i].imagf_FIXME=cimagf(fvec1)*cosx+crealf(fvec1)*sinx;
+    fvec->data[i] = crectf( crealf(fvec1)*cosx-cimagf(fvec1)*sinx, cimagf(fvec1)*cosx+crealf(fvec1)*sinx );
   }
 
   return 0;
@@ -909,10 +905,8 @@ int prepare_cwDetector(LALStatus* status){
   LALCCreateVector(status, &(transferFunction->data), 2);
 
   /* unit response function */
-  transferFunction->data->data[0].realf_FIXME = 1.0;
-  transferFunction->data->data[1].realf_FIXME = 1.0;
-  transferFunction->data->data[0].imagf_FIXME = 0.0;
-  transferFunction->data->data[1].imagf_FIXME = 0.0;
+  transferFunction->data->data[0] = 1.0;
+  transferFunction->data->data[1] = 1.0;
 
   cwDetector.transfer = transferFunction;
 
@@ -1275,8 +1269,7 @@ int read_and_add_freq_domain_noise(LALStatus* status, UINT4 iSFT) {
   norm=((REAL4)(fvec->length)/((REAL4)header.nsamples));
 
   for (i = 0; i < fvec->length; ++i) {
-    fvec->data[i].realf_FIXME += norm * crealf(fvecn->data[i]);
-    fvec->data[i].imagf_FIXME += norm * cimagf(fvecn->data[i]);
+    fvec->data[i] += (((REAL4) norm) * fvecn->data[i]);
   }
 
   return 0;

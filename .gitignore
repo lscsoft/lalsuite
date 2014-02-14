@@ -3,10 +3,9 @@
 *~
 .DS_Store
 .dirstamp
+/Makefile
+/Makefile.in
 /_inst/
-/lalsuite-*.tar.gz
-Makefile
-Makefile.in
 TAGS
 aclocal.m4
 auto/
@@ -15,3 +14,4 @@ config.cache
 config.log
 config.status
 configure
+lalsuite-*.tar.gz

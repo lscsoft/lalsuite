@@ -84,12 +84,10 @@ int main(void)
 	XLALDestroyREAL4FrequencySeries(NULL);
 
 	/* Incompletely/Incorrectly initialized structure */
-	x = malloc(sizeof(*x));
-	x->data = NULL;
+	x = XLALCalloc(1, sizeof(*x));
 	XLALDestroyREAL4FrequencySeries(x);
-	x = malloc(sizeof(*x));
-	x->data = malloc(sizeof(*x->data));
-	x->data->data = NULL;
+	x = XLALCalloc(1, sizeof(*x));
+	x->data = XLALCalloc(1, sizeof(*x->data));
 	XLALDestroyREAL4FrequencySeries(x);
 
 

@@ -1,5 +1,5 @@
-AM_CFLAGS = $(LALSUPPORT_CFLAGS) -DTEST_DATA_DIR='"$(abs_srcdir)/"'
-AM_CPPFLAGS = -I$(top_builddir)/include -DSRCDIR=\"$(srcdir)\"
+AM_CFLAGS = $(LALSUPPORT_CFLAGS) -DTEST_DATA_DIR='"$(abs_srcdir)/"' @AM_CFLAGS@
+AM_CPPFLAGS = -I$(top_builddir)/include -DSRCDIR=\"$(srcdir)\" @AM_CPPFLAGS@
 LDADD = $(LALSUPPORT_LIBS) $(top_builddir)/src/liblalpulsar.la
 
 if LALXML
@@ -40,8 +40,9 @@ check_PROGRAMS = \
 	UniversalDopplerMetricTest \
 	NormalizeSFTRngMedTest \
 	XLALMultiNoiseWeightsTest \
+	FileIOTest \
 	$(XMLTEST)
-##	SFTCleanTest \
+#	SFTCleanTest
 
 TESTS = $(check_PROGRAMS)
 EXTRA_PROGRAMS = XLALLoadSFTsTest

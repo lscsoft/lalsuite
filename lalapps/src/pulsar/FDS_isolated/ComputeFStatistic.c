@@ -50,7 +50,7 @@
 #include <math.h>
 
 /* LAL-includes */
-#define LAL_USE_OLD_COMPLEX_STRUCTS
+#include <lal/LALString.h>
 #include <lal/AVFactories.h>
 #include <lal/RngMedBias.h>
 #include <lal/LALDemod.h>
@@ -228,8 +228,8 @@ REAL8 uvar_f1dot;
 REAL8 uvar_df1dot;
 REAL8 uvar_f1dotBand;
 REAL8 uvar_Fthreshold;
-CHAR *uvar_ephemDir;
-CHAR *uvar_ephemYear;
+CHAR *uvar_ephemEarth;
+CHAR *uvar_ephemSun;
 INT4  uvar_gridType;
 INT4  uvar_metricType;
 REAL8 uvar_metricMismatch;
@@ -346,7 +346,6 @@ extern "C" {
 /*----------------------------------------------------------------------*/
 /* some local defines */
 
-#define EPHEM_YEARS  "00-19-DE405"
 #define SFT_BNAME  "SFT"
 
 #ifndef TRUE 
@@ -1196,20 +1195,11 @@ initUserVars (LALStatus *status)
   uvar_dDelta   = 0.001;
   uvar_skyRegion = NULL;
 
-  uvar_ephemYear = (CHAR*)LALCalloc (1, strlen(EPHEM_YEARS)+1);
-
-#if USE_BOINC
-  strcpy (uvar_ephemYear, "");            /* the default year-string UNDER BOINC is empty! */
-#else
-  strcpy (uvar_ephemYear, EPHEM_YEARS);
-#endif
+  uvar_ephemEarth = XLALStringDuplicate("earth00-19-DE405.dat.gz");
+  uvar_ephemSun = XLALStringDuplicate("sun00-19-DE405.dat.gz");
 
   uvar_BaseName = (CHAR*)LALCalloc (1, strlen(SFT_BNAME)+1);
   strcpy (uvar_BaseName, SFT_BNAME);
-
-#define DEFAULT_EPHEMDIR "env LAL_DATA_PATH"
-  uvar_ephemDir = (CHAR*)LALCalloc (1, strlen(DEFAULT_EPHEMDIR)+1);
-  strcpy (uvar_ephemDir, DEFAULT_EPHEMDIR);
 
   uvar_SignalOnly = FALSE;
   uvar_EstimSigParam = FALSE;
@@ -1293,8 +1283,8 @@ initUserVars (LALStatus *status)
   LALregSTRINGUserVar(status,     DataDir,        'D', UVAR_OPTIONAL, "Directory where SFT's are located");
   LALregSTRINGUserVar(status,     BaseName,       'i', UVAR_OPTIONAL, "The base name of the input  file you want to read");
   LALregSTRINGUserVar(status,     DataFiles,	   0 , UVAR_OPTIONAL, "ALTERNATIVE: path+file-pattern specifying data SFT-files");
-  LALregSTRINGUserVar(status,     ephemDir,       'E', UVAR_OPTIONAL, "Directory where Ephemeris files are located");
-  LALregSTRINGUserVar(status,     ephemYear,      'y', UVAR_OPTIONAL, "Year (or range of years) of ephemeris files to be used");
+  LALregSTRINGUserVar(status,     ephemEarth,      0,  UVAR_OPTIONAL, "Earth ephemeris file to use");
+  LALregSTRINGUserVar(status,     ephemSun,        0,  UVAR_OPTIONAL, "Sun ephemeris file to use");
   LALregBOOLUserVar(status,       SignalOnly,     'S', UVAR_OPTIONAL, "Signal only flag");
   LALregBOOLUserVar(status,       EstimSigParam,  'p', UVAR_OPTIONAL, "Do Signal Parameter Estimation");
   LALregREALUserVar(status,       Fthreshold,     'F', UVAR_OPTIONAL, "Output-threshold on 2F");
@@ -2042,8 +2032,11 @@ int ReadSFTData(void)
       if (reverse_endian) {
         unsigned int cnt;
         for (cnt=0; cnt<ndeltaf; cnt++) {
-          swap4((char *)&(crealf(SFTData[filenum]->fft->data->data[cnt])));
-          swap4((char *)&(cimagf(SFTData[filenum]->fft->data->data[cnt])));
+          REAL4 re = crealf(SFTData[filenum]->fft->data->data[cnt]);
+          REAL4 im = cimagf(SFTData[filenum]->fft->data->data[cnt]);
+          swap4((char *)&re);
+          swap4((char *)&im);
+          SFTData[filenum]->fft->data->data[cnt] = crectf(re, im);
         }
       }
       
@@ -2153,7 +2146,7 @@ int UpsampleSFTData(void)
 
 	      if (SFTIndex < 0 || SFTIndex > ndeltaf-1)
 		{
-		  Xalpha_k.realf_FIXME= Xalpha_k.imagf_FIXME=0.0;
+		  Xalpha_k =0.0;
 		}else{
 		Xalpha_k=SFTData[filenum]->fft->data->data[SFTIndex];
 	      }
@@ -2166,8 +2159,7 @@ int UpsampleSFTData(void)
 	    }
      
 	  /* fill in the data here */
-	  UpSFTData[filenum]->fft->data->data[i].realf_FIXME= realXP;
-	  UpSFTData[filenum]->fft->data->data[i].imagf_FIXME= imagXP;
+	  UpSFTData[filenum]->fft->data->data[i] = crectf( realXP, imagXP );
 	  
 /*  	  fprintf(stdout,"%d %d %e %e\n", i, filenum, realXP, imagXP); */
 
@@ -2238,21 +2230,8 @@ InitFStat (LALStatus *status, ConfigVariables *cfg)
   /*----------------------------------------------------------------------
    * set up and check ephemeris-file locations, and SFT input data
    */
-#if USE_BOINC
-#define EPHEM_EXT ""
-#else
-#define EPHEM_EXT ".dat"
-#endif  
-  if (LALUserVarWasSet (&uvar_ephemDir) )
-    {
-      sprintf(cfg->EphemEarth, "%s/earth%s" EPHEM_EXT, uvar_ephemDir, uvar_ephemYear);
-      sprintf(cfg->EphemSun, "%s/sun%s" EPHEM_EXT, uvar_ephemDir, uvar_ephemYear);
-    }
-  else
-    {
-      sprintf(cfg->EphemEarth, "earth%s" EPHEM_EXT, uvar_ephemYear);
-      sprintf(cfg->EphemSun, "sun%s" EPHEM_EXT,  uvar_ephemYear);
-    }
+  strncpy(cfg->EphemEarth, uvar_ephemEarth, MAXFILENAMELENGTH-1);
+  strncpy(cfg->EphemSun, uvar_ephemSun, MAXFILENAMELENGTH-1);
   
 #if BOINC_COMPRESS
   /* logic: look for files 'earth.zip' and 'sun,zip'.  If found, use
@@ -2708,12 +2687,11 @@ InitFStat (LALStatus *status, ConfigVariables *cfg)
    * initialize Ephemeris-data 
    */
   {
-    cfg->edat = (EphemerisData*)LALCalloc(1, sizeof(EphemerisData));
-    cfg->edat->ephiles.earthEphemeris = cfg->EphemEarth;
-    cfg->edat->ephiles.sunEphemeris = cfg->EphemSun;
-
-    TRY (LALInitBarycenter(status->statusPtr, cfg->edat), status);               
-
+    cfg->edat = XLALInitBarycenter( cfg->EphemEarth, cfg->EphemSun );
+    if ( !cfg->edat ) {
+      XLALPrintError("XLALInitBarycenter failed: could not load Earth ephemeris '%s' and Sun ephemeris '%s'\n", cfg->EphemEarth, cfg->EphemSun);
+      ABORT (status, COMPUTEFSTAT_EINPUT, COMPUTEFSTAT_MSGEINPUT);
+    }
   } /* end: init ephemeris data */
 
   /* ----------------------------------------------------------------------
@@ -2784,12 +2762,6 @@ checkUserInputConsistency (LALStatus *lstat)
     {
       LogPrintf (LOG_CRITICAL,  "Cannot specify both 'DataDir' and 'mergedSFTfile'.\n"
                       "Try ./ComputeFStatistic -h \n\n" );
-      ABORT (lstat, COMPUTEFSTAT_EINPUT, COMPUTEFSTAT_MSGEINPUT);
-    }      
-
-  if (uvar_ephemYear == NULL)
-    {
-      LogPrintf (LOG_CRITICAL, "No ephemeris year specified (option 'ephemYear')\n\n");
       ABORT (lstat, COMPUTEFSTAT_EINPUT, COMPUTEFSTAT_MSGEINPUT);
     }      
 
@@ -3080,9 +3052,7 @@ void Freemem(LALStatus *status)
     LALFree ( GV.skyGridFile );
 
   /* Free ephemeris data */
-  LALFree(GV.edat->ephemE);
-  LALFree(GV.edat->ephemS);
-  LALFree(GV.edat);
+  XLALDestroyEphemerisData ( GV.edat );
   GV.edat = NULL;
 
   /* free buffer used for fstat.  Its safe to do this because we already did fclose(fpstat) earlier */
@@ -3586,8 +3556,7 @@ NormaliseSFTDataRngMdn(LALStatus *stat, INT4 windowSize)
         xim=cimagf(SFTData[i]->fft->data->data[j]);
         xreNorm=N[j]*xre; 
         ximNorm=N[j]*xim; 
-        SFTData[i]->fft->data->data[j].realf_FIXME = xreNorm;    
-        SFTData[i]->fft->data->data[j].imagf_FIXME = ximNorm;
+        SFTData[i]->fft->data->data[j] = crectf( xreNorm, ximNorm );
         Sp1[j]=Sp1[j]+xreNorm*xreNorm+ximNorm*ximNorm;
       }
       

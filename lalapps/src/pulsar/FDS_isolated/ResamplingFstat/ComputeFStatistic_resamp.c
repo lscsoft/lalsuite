@@ -32,6 +32,7 @@
  *
  */
 #include "config.h"
+#define FFTW_NO_Complex
 
 /* System includes */
 #include <math.h>
@@ -45,7 +46,7 @@
 int finite(double);
 
 /* LAL-includes */
-#define LAL_USE_OLD_COMPLEX_STRUCTS
+#include <lal/LALString.h>
 #include <lal/AVFactories.h>
 #include <lal/LALInitBarycenter.h>
 #include <lal/UserInput.h>
@@ -80,8 +81,6 @@ int finite(double);
 /*---------- DEFINES ----------*/
 
 #define MAXFILENAMELENGTH 256   /* Maximum # of characters of a SFT filename */
-
-#define EPHEM_YEARS  "00-19-DE405"	/**< default range: override with --ephemYear */
 
 #define TRUE (1==1)
 #define FALSE (1==0)
@@ -195,8 +194,8 @@ REAL8 uvar_df3dot;
 REAL8 uvar_f3dotBand;
 /* --- */
 REAL8 uvar_TwoFthreshold;
-CHAR *uvar_ephemDir;
-CHAR *uvar_ephemYear;
+CHAR *uvar_ephemEarth;
+CHAR *uvar_ephemSun;
 INT4  uvar_gridType;
 INT4  uvar_metricType;
 BOOLEAN uvar_projectMetric;
@@ -346,7 +345,6 @@ void Freemem(LALStatus *,  ConfigVariables *cfg);
 void WriteFStatLog (LALStatus *, CHAR *argv[], const CHAR *log_fname);
 void checkUserInputConsistency (LALStatus *);
 int outputBeamTS( const CHAR *fname, const AMCoeffs *amcoe, const DetectorStateSeries *detStates );
-void InitEphemeris (LALStatus *, EphemerisData *edat, const CHAR *ephemDir, const CHAR *ephemYear, BOOLEAN isLISA);
 void getUnitWeights ( LALStatus *, MultiNoiseWeights **multiWeights, const MultiSFTVector *multiSFTs );
 
 int write_FstatCandidate_to_fp ( FILE *fp, const FstatCandidate *thisFCand );
@@ -738,12 +736,8 @@ initUserVars (LALStatus *status)
   uvar_RA = NULL;
   uvar_Dec = NULL;
 
-  uvar_ephemYear = LALCalloc (1, strlen(EPHEM_YEARS)+1);
-  strcpy (uvar_ephemYear, EPHEM_YEARS);
-
-#define DEFAULT_EPHEMDIR "env LAL_DATA_PATH"
-  uvar_ephemDir = LALCalloc (1, strlen(DEFAULT_EPHEMDIR)+1);
-  strcpy (uvar_ephemDir, DEFAULT_EPHEMDIR);
+  uvar_ephemEarth = XLALStringDuplicate("earth00-19-DE405.dat.gz");
+  uvar_ephemSun = XLALStringDuplicate("sun00-19-DE405.dat.gz");
 
   uvar_SignalOnly = FALSE;
   uvar_UseNoiseWeights = TRUE;
@@ -833,8 +827,8 @@ initUserVars (LALStatus *status)
   LALregSTRINGUserVar(status,	skyRegion, 	'R', UVAR_OPTIONAL, "ALTERNATIVE: Specify sky-region by polygon (or use 'allsky')");
   LALregSTRINGUserVar(status,	DataFiles, 	'D', UVAR_REQUIRED, "File-pattern specifying (multi-IFO) input SFT-files");
   LALregSTRINGUserVar(status, 	IFO, 		'I', UVAR_OPTIONAL, "Detector: 'G1', 'L1', 'H1', 'H2' ...(useful for single-IFO v1-SFTs only!)");
-  LALregSTRINGUserVar(status,	ephemDir, 	'E', UVAR_OPTIONAL, "Directory where Ephemeris files are located");
-  LALregSTRINGUserVar(status,	ephemYear, 	'y', UVAR_OPTIONAL, "Year (or range of years) of ephemeris files to be used");
+  LALregSTRINGUserVar(status,   ephemEarth,      0,  UVAR_OPTIONAL, "Earth ephemeris file to use");
+  LALregSTRINGUserVar(status,   ephemSun,        0,  UVAR_OPTIONAL, "Sun ephemeris file to use");
   LALregBOOLUserVar(status, 	SignalOnly, 	'S', UVAR_OPTIONAL, "Signal only flag");
   LALregBOOLUserVar(status, 	UseNoiseWeights,'W', UVAR_OPTIONAL, "Use SFT-specific noise weights");
 
@@ -880,63 +874,7 @@ initUserVars (LALStatus *status)
   RETURN (status);
 } /* initUserVars() */
 
-/** Load Ephemeris from ephemeris data-files  */
-void
-InitEphemeris (LALStatus * status,	/**< pointer to LALStatus structure */
-	       EphemerisData *edat,	/**< [out] the ephemeris-data */
-	       const CHAR *ephemDir,	/**< directory containing ephems */
-	       const CHAR *ephemYear,	/**< which years do we need? */
-	       BOOLEAN isLISA		/**< hack this function for LISA ephemeris */
-	       )
-{
-#define FNAME_LENGTH 1024
-  CHAR EphemEarth[FNAME_LENGTH];	/* filename of earth-ephemeris data */
-  CHAR EphemSun[FNAME_LENGTH];	/* filename of sun-ephemeris data */
-
-  INITSTATUS(status);
-  ATTATCHSTATUSPTR (status);
-
-  ASSERT ( edat, status, COMPUTEFSTATISTIC_ENULL, COMPUTEFSTATISTIC_MSGENULL );
-  ASSERT ( ephemYear, status, COMPUTEFSTATISTIC_ENULL, COMPUTEFSTATISTIC_MSGENULL );
-
-  if ( ephemDir )
-    {
-      if ( isLISA )
-	snprintf(EphemEarth, FNAME_LENGTH, "%s/ephemMLDC.dat", ephemDir);
-      else
-	snprintf(EphemEarth, FNAME_LENGTH, "%s/earth%s.dat", ephemDir, ephemYear);
-
-      snprintf(EphemSun, FNAME_LENGTH, "%s/sun%s.dat", ephemDir, ephemYear);
-    }
-  else
-    {
-      if ( isLISA )
-	snprintf(EphemEarth, FNAME_LENGTH, "ephemMLDC.dat");
-      else
-	snprintf(EphemEarth, FNAME_LENGTH, "earth%s.dat", ephemYear);
-      snprintf(EphemSun, FNAME_LENGTH, "sun%s.dat",  ephemYear);
-    }
-
-  EphemEarth[FNAME_LENGTH-1]=0;
-  EphemSun[FNAME_LENGTH-1]=0;
-
-  /* NOTE: the 'ephiles' are ONLY ever used in LALInitBarycenter, which is
-   * why we can use local variables (EphemEarth, EphemSun) to initialize them.
-   */
-  edat->ephiles.earthEphemeris = EphemEarth;
-  edat->ephiles.sunEphemeris = EphemSun;
-
-  TRY (LALInitBarycenter(status->statusPtr, edat), status);
-
-  DETATCHSTATUSPTR ( status );
-  RETURN ( status );
-
-} /* InitEphemeris() */
-
-
-
-/**
- * Initialized Fstat-code: handle user-input and set everything up.
+/** Initialized Fstat-code: handle user-input and set everything up.
  * NOTE: the logical *order* of things in here is very important, so be careful
  */
 void
@@ -1077,20 +1015,11 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg )
     TRY ( LALDestroySFTCatalog ( status->statusPtr, &catalog ), status );
   }
   { /* ----- load ephemeris-data ----- */
-    CHAR *ephemDir;
-    BOOLEAN isLISA = FALSE;
-
-    cfg->ephemeris = LALCalloc(1, sizeof(EphemerisData));
-    if ( LALUserVarWasSet ( &uvar_ephemDir ) )
-      ephemDir = uvar_ephemDir;
-    else
-      ephemDir = NULL;
-
-    /* hack: if first detector is LISA, we load MLDC-ephemeris instead of 'earth' files */
-    if ( cfg->multiSFTs->data[0]->data[0].name[0] == 'Z' )
-      isLISA = TRUE;
-
-    TRY( InitEphemeris (status->statusPtr, cfg->ephemeris, ephemDir, uvar_ephemYear, isLISA ), status);
+    cfg->ephemeris = XLALInitBarycenter( uvar_ephemEarth, uvar_ephemSun );
+    if ( !cfg->ephemeris ) {
+      XLALPrintError("XLALInitBarycenter failed: could not load Earth ephemeris '%s' and Sun ephemeris '%s'\n", uvar_ephemEarth, uvar_ephemSun);
+      ABORT ( status,  COMPUTEFSTATISTIC_EINPUT,  COMPUTEFSTATISTIC_MSGEINPUT);
+    }
   }
 
   /* ----- obtain the (multi-IFO) 'detector-state series' for all SFTs ----- */
@@ -1416,9 +1345,7 @@ Freemem(LALStatus *status,  ConfigVariables *cfg)
     LALFree ( cfg->searchRegion.skyRegionString );
 
   /* Free ephemeris data */
-  LALFree(cfg->ephemeris->ephemE);
-  LALFree(cfg->ephemeris->ephemS);
-  LALFree(cfg->ephemeris);
+  XLALDestroyEphemerisData ( cfg->ephemeris );
 
   if ( cfg->logstring )
     LALFree ( cfg->logstring );
@@ -1439,12 +1366,6 @@ checkUserInputConsistency (LALStatus *status)
 {
 
   INITSTATUS(status);
-
-  if (uvar_ephemYear == NULL)
-    {
-      XLALPrintError ("\nNo ephemeris year specified (option 'ephemYear')\n\n");
-      ABORT (status, COMPUTEFSTATISTIC_EINPUT, COMPUTEFSTATISTIC_MSGEINPUT);
-    }
 
   /* check for negative stepsizes in Freq, Alpha, Delta */
   if ( LALUserVarWasSet(&uvar_dAlpha) && (uvar_dAlpha < 0) )
@@ -1924,8 +1845,7 @@ INT4 CombineSFTs(COMPLEX16Vector *L,SFTVector *sft_vect,REAL8 FMIN,INT4 number,I
   /*for(m = -number ; m < (number)*(if1-if0-1) ; m++ )*/
   for(m = -number; m < ((INT4)L->length)-number; m++)
   {
-    llSFT.real_FIXME =0.0;
-    llSFT.imag_FIXME =0.0;
+    llSFT = 0.0;
 
     /* Loop over SFTs that contribute to F-stat for a given frequency */
     for(alpha=0;alpha<number;alpha++)
@@ -1986,13 +1906,11 @@ INT4 CombineSFTs(COMPLEX16Vector *L,SFTVector *sft_vect,REAL8 FMIN,INT4 number,I
 	{
 	  REAL8 realQXP = realXP*realQ-imagXP*imagQ;
 	  REAL8 imagQXP = realXP*imagQ+imagXP*realQ;
-	  llSFT.real_FIXME += realQXP;
-	  llSFT.imag_FIXME += imagQXP;
+	  llSFT += crect( realQXP, imagQXP );
 	}
       }      
 
-    L->data[m+number].real_FIXME = creal(llSFT); 
-    L->data[m+number].imag_FIXME = cimag(llSFT); 
+    L->data[m+number] = llSFT;
     
   }
   XLALFree(sinVal);
@@ -2016,8 +1934,7 @@ void ApplyWindow(REAL8Window *Win, COMPLEX16Vector *X)
   /* Multiply it to both the Real and Imaginary Parts */
   for(i=0;i<Win->data->length;i++)
     {
-      X->data[i].real_FIXME = Win->data->data[i] * creal(X->data[i]); /* Real */
-      X->data[i].imag_FIXME = Win->data->data[i] * cimag(X->data[i]); /* Imag */
+      X->data[i] = (((REAL8) Win->data->data[i]) * X->data[i]);
     }
 
 }/*ApplyWindow*/
@@ -2041,23 +1958,20 @@ void Reshuffle(COMPLEX16Vector *X)
   Temp = (COMPLEX8*)XLALMalloc(sizeof(COMPLEX8)*length);
   for(i=0;i<length;i++)
     {
-      Temp[i].realf_FIXME = creal(X->data[i]); /* Real */
-      Temp[i].imagf_FIXME = cimag(X->data[i]); /* Imag */
+      Temp[i] = crectf( creal(X->data[i]), cimag(X->data[i]) );
     }
   
   /* Copy first half */
   for(i=M;i<length;i++)
     {
-      X->data[k].real_FIXME = crealf(Temp[i]);
-      X->data[k].imag_FIXME = cimagf(Temp[i]);
+      X->data[k] = crect( crealf(Temp[i]), cimagf(Temp[i]) );
       k++;
     }
 
   /* Copy Second half */
   for(i=0;i<M;i++)
     {
-      X->data[k].real_FIXME = crealf(Temp[i]);
-      X->data[k].imag_FIXME = cimagf(Temp[i]);
+      X->data[k] = crect( crealf(Temp[i]), cimagf(Temp[i]) );
       k++;
     }
 
@@ -2329,8 +2243,7 @@ MultiCOMPLEX8TimeSeries* CalcTimeSeries(MultiSFTVector *multiSFTs,FILE *Out,Resa
 	    {
 	      for(p=0;p<N;p++)
 		{
-		  L->data[p].real_FIXME = crealf(SFT_Vect->data[StartIndex].data->data[p+uvar_Dterms]);
-		  L->data[p].imag_FIXME = cimagf(SFT_Vect->data[StartIndex].data->data[p+uvar_Dterms]);
+		  L->data[p] = crect( crealf(SFT_Vect->data[StartIndex].data->data[p+uvar_Dterms]), cimagf(SFT_Vect->data[StartIndex].data->data[p+uvar_Dterms]) );
 		}
 	    }
 	 	  
@@ -2354,8 +2267,7 @@ MultiCOMPLEX8TimeSeries* CalcTimeSeries(MultiSFTVector *multiSFTs,FILE *Out,Resa
 	      REAL8 sinphis = -sin(LAL_TWOPI*(TSeries->f_het)*(C.StartTime[k]-StartTime));
 	      REAL8 Realpart = creal(SmallT->data[p]);
 	      REAL8 Imagpart = cimag(SmallT->data[p]);
-	      SmallT->data[p].real_FIXME = Realpart*cosphis - Imagpart*sinphis;
-	      SmallT->data[p].imag_FIXME = Realpart*sinphis + Imagpart*cosphis;
+	      SmallT->data[p] = crect( Realpart*cosphis - Imagpart*sinphis, Realpart*sinphis + Imagpart*cosphis );
 	    }
 	  
 	  /* Add into appropriate chunk */

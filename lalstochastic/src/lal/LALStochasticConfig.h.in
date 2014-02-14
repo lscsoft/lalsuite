@@ -1,0 +1,19 @@
+/* only include this file if LALStochastic's config.h has not been included */
+#ifndef LALSTOCHASTIC_VERSION
+
+/* LALStochastic Version */
+#undef LALSTOCHASTIC_VERSION
+
+/* LALStochastic Version Major Number  */
+#undef LALSTOCHASTIC_VERSION_MAJOR
+
+/* LALStochastic Version Minor Number  */
+#undef LALSTOCHASTIC_VERSION_MINOR
+
+/* LALStochastic Version Micro Number  */
+#undef LALSTOCHASTIC_VERSION_MICRO
+
+/* LALStochastic Version Devel Number  */
+#undef LALSTOCHASTIC_VERSION_DEVEL
+
+#endif /* LALSTOCHASTIC_VERSION */

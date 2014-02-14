@@ -148,7 +148,6 @@
 
 
 
-#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <math.h>
 #include <stdlib.h>
 #include <lal/LALStdio.h>
@@ -454,8 +453,7 @@ main(int argc, char **argv)
     /* Convert response function to a transfer function. */
     SUB( LALCCreateVector( &stat, &unity, response->length ), &stat );
     for ( i = 0; i < response->length; i++ ) {
-      unity->data[i].realf_FIXME = 1.0;
-      unity->data[i].imagf_FIXME = 0.0;
+      unity->data[i] = 1.0;
     }
     SUB( LALCCreateVector( &stat, &( detector.transfer->data ),
 			   response->length ), &stat );
@@ -472,10 +470,8 @@ main(int argc, char **argv)
     detector.transfer->deltaF = 1.5*FSTOP;
     SUB( LALCCreateVector( &stat, &( detector.transfer->data ), 2 ),
 	 &stat );
-    detector.transfer->data->data[0].realf_FIXME = 1.0;
-    detector.transfer->data->data[1].realf_FIXME = 1.0;
-    detector.transfer->data->data[0].imagf_FIXME = 0.0;
-    detector.transfer->data->data[1].imagf_FIXME = 0.0;
+    detector.transfer->data->data[0] = 1.0;
+    detector.transfer->data->data[1] = 1.0;
   }
 
 

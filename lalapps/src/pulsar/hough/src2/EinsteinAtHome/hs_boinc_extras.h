@@ -80,6 +80,7 @@
 extern "C" {
 #endif
 
+#ifndef HIERARCHSEARCHGCT /* used for Hough HierarchicalSearch, not GCT */
 /* use platform-specific optimized ComputeFStatFreqBand and ComputeFstatHoughMap functions */
 #define COMPUTEFSTATHOUGHMAP LocalComputeFstatHoughMap
 #define COMPUTEFSTATFREQBAND LocalComputeFStatFreqBand
@@ -104,7 +105,6 @@ LocalComputeFStatFreqBand ( LALStatus *status,
                             const MultiDetectorStateSeries *multiDetStates,
                             const ComputeFParams *params);
 
-#ifndef HIERARCHSEARCHGCT /* used for Hough HierarchicalSearch, not GCT */
 extern void
 LocalComputeFstatHoughMap ( LALStatus *status,
 			    SemiCohCandidateList  *out,   /* output candidates */

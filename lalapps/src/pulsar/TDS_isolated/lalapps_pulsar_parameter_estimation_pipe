@@ -203,6 +203,16 @@ try:
   cisteps = cp.get('input','cisteps')
 except:
   cisteps = None
+
+try:
+  chunkmin = cp.get('input','chunkmin')
+except:
+  chunkmin = None
+
+try:
+  chunkmax = cp.get('input','chunkmax')
+except:
+  chunkmax = None
   
 if do_ul:
   try:
@@ -540,6 +550,12 @@ while i < len(param_files):
               if ciwidth:
                 pulsarsCov[count2].set_ciwidth(ciwidth)
 
+              if chunkmin:
+                pulsarsCov[count2].set_chunk_min(chunkmin)
+
+              if chunkmax:
+                pulsarsCov[count2].set_chunk_max(chunkmax)
+
               if do_verbose:
                 pulsarsCov[count2].set_verbose()
 
@@ -625,6 +641,12 @@ while i < len(param_files):
           if ciwidth:
             pulsarsCov2[count3].set_ciwidth(ciwidth)
 
+          if chunkmin:
+            pulsarsCov2[count3].set_chunk_min(chunkmin)
+
+          if chunkmax:
+            pulsarsCov2[count3].set_chunk_max(chunkmax)
+
           # use cov
           pulsarsCov2[count3].set_usecov()
                 
@@ -703,6 +725,12 @@ while i < len(param_files):
         if ciwidth:
           pulsars[count1].set_ciwidth(ciwidth)
 
+        if chunkmin:
+          pulsars[count1].set_chunk_min(chunkmin)
+
+        if chunkmax:
+          pulsars[count1].set_chunk_max(chunkmax)
+
         dag.add_node(pulsars[count1])
         count1 = count1 + 1
 
@@ -726,6 +754,10 @@ while i < len(param_files):
         pulsars[j].set_cisteps(cisteps)
       if psisteps:
         pulsars[j].set_psisteps(psisteps)
+      if chunkmin:
+        pulsars[j].set_chunk_min(chunkmin)
+      if chunkmax:
+        pulsars[j].set_chunk_max(chunkmax)
 
       # set priors
       if do_priors:

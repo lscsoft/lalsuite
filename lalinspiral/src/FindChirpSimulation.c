@@ -62,7 +62,6 @@
  *
  */
 
-#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/Units.h>
 #include <lal/Date.h>
 #include <lal/AVFactories.h>
@@ -241,8 +240,7 @@ LALFindChirpInjectSignals (
   CHECKSTATUSPTR( status );
   for ( k = 0; k < resp->data->length; ++k )
   {
-    unity->data[k].realf_FIXME = 1.0;
-    unity->data[k].imagf_FIXME = 0.0;
+    unity->data[k] = 1.0;
   }
 
   LALCCVectorDivide( status->statusPtr, detector.transfer->data, unity,
@@ -1152,8 +1150,7 @@ XLALFindChirpBankSimInitialize (
   /* of the psd scale factor since S_h = |R|^2 S_v        */
   for ( k = 0; k < resp->data->length; ++k )
   {
-    resp->data->data[k].realf_FIXME = sqrt( psdScaleFac );
-    resp->data->data[k].imagf_FIXME = 0;
+    resp->data->data[k] = crectf( sqrt( psdScaleFac ), 0 );
   }
 
   return cut;

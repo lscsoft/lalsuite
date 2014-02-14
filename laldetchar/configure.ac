@@ -1,5 +1,5 @@
 AC_PREREQ([2.63])
-AC_INIT([laldetchar],[0.0.4.1],[lal-discuss@ligo.org])
+AC_INIT([laldetchar],[0.1.0.1],[lal-discuss@ligo.org])
 AC_CONFIG_HEADERS([src/config.h src/LALDetCharConfig.h])
 AC_CONFIG_SRCDIR([src/LALDetChar.h])
 AC_CONFIG_AUX_DIR([gnuscripts])
@@ -7,6 +7,7 @@ AC_CONFIG_MACRO_DIR([gnuscripts])
 AC_CONFIG_FILES([ \
   laldetchar.spec \
   laldetchar.pc \
+  laldetchar-uninstalled.pc \
   Makefile \
   gnuscripts/Makefile \
   debian/Makefile \
@@ -27,10 +28,8 @@ AM_INIT_AUTOMAKE([1.11 foreign subdir-objects color-tests parallel-tests])
 
 AC_CANONICAL_HOST
 
-LALSUITE_ARG_VAR
 LALSUITE_CHECK_GIT_REPO
 LALSUITE_DISTCHECK_CONFIGURE_FLAGS
-LALSUITE_WITH_CFLAGS_LIBS
 
 # set library api info
 # 1. start with version information of "0:0:0" for each libtool library
@@ -46,16 +45,13 @@ LALSUITE_WITH_CFLAGS_LIBS
 #    then increment age.
 # 6. if any interfaces have been removed since the last public release,
 #    then set age to 0.
-AC_SUBST([LIBCURRENT],[0])
+AC_SUBST([LIBCURRENT],[1])
 AC_SUBST([LIBREVISION],[0])
 AC_SUBST([LIBAGE],[0])
 AC_SUBST([LIBVERSION],[${LIBCURRENT}:${LIBREVISION}:${LIBAGE}])
 
 # nightly build
 LALSUITE_ENABLE_NIGHTLY
-
-# debug
-LALSUITE_ENABLE_DEBUG
 
 # enable strict gcc flags
 LALSUITE_ENABLE_GCC_FLAGS
@@ -66,27 +62,8 @@ LALSUITE_ENABLE_SWIG
 # optional lal libraries
 LALSUITE_ENABLE_LALFRAME
 
-# put version/configure info in config header
-laldetchar_version_major=`echo "$VERSION" | cut -d. -f1`
-laldetchar_version_minor=`echo "$VERSION" | cut -d. -f2`
-laldetchar_version_micro=`echo "$VERSION" | cut -d. -f3`
-laldetchar_version_devel=`echo "$VERSION" | cut -d. -f4-`
-test -z "$laldetchar_version_micro" && laldetchar_version_micro=0
-test -z "$laldetchar_version_devel" && laldetchar_version_devel=0
-laldetchar_configure_date=`date +"%Y-%m-%dT%H:%M:%S%z"`
-AC_DEFINE_UNQUOTED([LALDETCHAR_VERSION],["$VERSION"],[LALDetChar Version])
-AC_DEFINE_UNQUOTED([LALDETCHAR_VERSION_MAJOR],[$laldetchar_version_major],
-                   [LALDetChar Version Major Number])
-AC_DEFINE_UNQUOTED([LALDETCHAR_VERSION_MINOR],[$laldetchar_version_minor],
-                   [LALDetChar Version Minor Number])
-AC_DEFINE_UNQUOTED([LALDETCHAR_VERSION_MICRO],[$laldetchar_version_micro],
-                   [LALDetChar Version Micro Number])
-AC_DEFINE_UNQUOTED([LALDETCHAR_VERSION_DEVEL],[$laldetchar_version_devel],
-                   [LALDetChar Version Devel Number])
-AC_DEFINE_UNQUOTED([LALDETCHAR_CONFIGURE_ARGS],["$ac_configure_args"],
-                   [LALDetChar Configure Arguments])
-AC_DEFINE_UNQUOTED([LALDETCHAR_CONFIGURE_DATE],["$laldetchar_configure_date"],
-                   [LALDetChar Configure Date])
+# define version/configure info
+LALSUITE_VERSION_CONFIGURE_INFO
 
 # workaround broken libtool multilib support on sl6
 LALSUITE_MULTILIB_LIBTOOL_HACK
@@ -98,7 +75,7 @@ AM_SILENT_RULES([yes])
 LALSUITE_PROG_COMPILERS
 
 # checks for programs
-LALSUITE_PROG_INSTALL
+AC_PROG_INSTALL
 AC_PROG_LN_S
 AC_PROG_AWK
 AC_PROG_SED
@@ -118,8 +95,7 @@ AC_CHECK_LIB([m],[main],,[AC_MSG_ERROR([could not find the math library])])
 
 # check for gsl
 PKG_CHECK_MODULES([GSL],[gsl],[true],[false])
-LALSUITE_ADD_CFLAGS(${GSL_CFLAGS})
-LALSUITE_ADD_LIBS(${GSL_LIBS})
+LALSUITE_ADD_FLAGS([C],[${GSL_CFLAGS}],[${GSL_LIBS}])
 AC_CHECK_LIB([gslcblas],[main],,[AC_MSG_ERROR([could not find the gsl library])])
 AC_CHECK_LIB([gsl],[gsl_version],,[AC_MSG_ERROR([could not find the gsl library])])
 LALSUITE_ENABLE_FAST_GSL
@@ -129,15 +105,14 @@ AC_CHECK_HEADERS([gsl/gsl_errno.h],,[AC_MSG_ERROR([could not find the gsl/gsl_er
 
 # check for glib
 PKG_CHECK_MODULES([GLIB],[glib-2.0],[true],[false])
-LALSUITE_ADD_CFLAGS(${GLIB_CFLAGS})
-LALSUITE_ADD_LIBS(${GLIB_LIBS})
+LALSUITE_ADD_FLAGS([C],[${GLIB_CFLAGS}],[${GLIB_LIBS}])
 AC_CHECK_LIB([glib-2.0],[g_sequence_new],,[AC_MSG_ERROR([could not find the glib library])])
 AC_CHECK_HEADERS([glib.h],,[AC_MSG_ERROR([could not find the glib.h header])])
 
 # check for lal libraries and headers
-LALSUITE_CHECK_LIB([LAL],[6.11.0],[LALVersion],[lal/LALStdio.h])
-LALSUITE_CHECK_LIB([LALSupport],[6.11.0],[LALOpenDataFile],[lal/FileIO.h])
-LALSUITE_CHECK_LIB([LALMetaIO],[1.1.0],[XLALCreateMetaTableDir],[lal/LIGOLwXMLRead.h])
+LALSUITE_CHECK_LIB([LAL],[6.12.0],[LALVersion],[lal/LALStdio.h])
+LALSUITE_CHECK_LIB([LALSupport],[6.12.0],[XLALCacheImport],[lal/LALCache.h])
+LALSUITE_CHECK_LIB([LALMetaIO],[1.2.0],[XLALCreateMetaTableDir],[lal/LIGOLwXMLRead.h])
 LALSUITE_CHECK_LIB([LALBurst],[1.2.0],[XLALEPSearch],[lal/EPSearch.h])
 
 # configure SWIG wrapping modules
@@ -151,15 +126,12 @@ LALSUITE_ADD_GCC_FLAGS
 # RedHat-derived systems.
 AC_SUBST([pkgpythondir], ["\${pkgpyexecdir}"])
 
-# ensure CPPFLAGS/CFLAGS and LDFLAGS/LIBS are in correct order
-LALSUITE_ADD_CFLAGS()
-LALSUITE_ADD_LIBS()
-
-# output
 LAL_HEADER_LINK=${ac_aux_dir}/header-link.mk
 AC_SUBST_FILE([LAL_HEADER_LINK])
+
+# output
 AC_OUTPUT
-echo "
+AC_MSG_NOTICE([
 ==================================================
 LALDetChar has now been successfully configured:
 
@@ -173,4 +145,4 @@ ${prefix}
 Now run 'make' to build LALDetChar,
 and run 'make install' to install LALDetChar.
 ==================================================
-"
+])

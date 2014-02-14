@@ -1571,7 +1571,7 @@ def get_data_options(cp,ifo_name):
     data_opts = 'ligo-data'
     try:
       type = cp.get('input','ligo-type')
-      if (type == 'RDS_R_L4') or ('RDS_C' in type) or ('DMT_C' in type) or ('LDAS_C' in type) or ('NINJA' in type) or ('ER_' in type) or ('T1200307_' in type) or ('T0900288_' in type):
+      if (type == 'RDS_R_L4') or ('RDS_C' in type) or ('DMT_C' in type) or ('LDAS_C' in type) or ('NINJA' in type) or ('ER_' in type) or ('T1200307_' in type) or ('T0900288_' in type) or ('ILIGO_GAUSSIAN' in type):
         type = ifo_name + '_' + type
       if ("DMT_ERHOFT" in type):
         if (ifo_name == 'L1'): type = ifo_name + '_' + type

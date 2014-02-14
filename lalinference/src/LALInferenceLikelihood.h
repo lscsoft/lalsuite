@@ -69,8 +69,6 @@
 REAL8 LALInferenceUndecomposedFreqDomainLogLikelihood(LALInferenceVariables *currentParams, LALInferenceIFOData *data, 
                               LALInferenceTemplateFunction templt);
 
-REAL8 LALInferenceNoiseOnlyLogLikelihood(LALInferenceVariables *currentParams, LALInferenceIFOData *data, LALInferenceTemplateFunction templt);
-
 /**
  * For testing purposes (for instance sampling the prior),
  * likelihood that returns 0.0 = log(1) every

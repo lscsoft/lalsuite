@@ -1,5 +1,5 @@
-AM_CFLAGS = $(LALSUPPORT_CFLAGS) -DTEST_DATA_DIR='"$(abs_srcdir)/"'
-AM_CPPFLAGS = -I$(top_builddir)/include
+AM_CFLAGS = $(LALSUPPORT_CFLAGS) -DTEST_DATA_DIR='"$(abs_srcdir)/"' @AM_CFLAGS@
+AM_CPPFLAGS = -I$(top_builddir)/include @AM_CPPFLAGS@
 LDADD = $(LALSUPPORT_LIBS) $(top_builddir)/src/liblalburst.la
 
 check_PROGRAMS = \

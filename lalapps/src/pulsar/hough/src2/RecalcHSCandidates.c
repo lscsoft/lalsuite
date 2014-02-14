@@ -110,6 +110,7 @@
  *
  */
 
+#include <lal/LALString.h>
 #include "OptimizedCFS/ComputeFstatREAL4.h"
 #include "HierarchicalSearch.h"
 #include "../../GCT/LineVeto.h"
@@ -237,9 +238,6 @@ void RCComputeFstatHoughMap (LALStatus *status,
 
 
 /* default values for input variables */
-#define EARTHEPHEMERIS 		"earth00-19-DE405.dat"
-#define SUNEPHEMERIS 		"sun00-19-DE405.dat"
-
 #define BLOCKSRNGMED 		101 	/**< Default running median window size */
 
 #define NFDOT  			10    	/**< Default size of hough cylinder of look up tables */
@@ -400,8 +398,8 @@ int MAIN( int argc, char *argv[]) {
   INT4 uvar_SSBprecision = SSBPREC_RELATIVISTIC;
   INT4 uvar_sftUpsampling = 1;
 
-  CHAR *uvar_ephemE = NULL;
-  CHAR *uvar_ephemS = NULL;
+  CHAR *uvar_ephemEarth = NULL;
+  CHAR *uvar_ephemSun = NULL;
 
   CHAR *uvar_fnameout = NULL;
   CHAR *uvar_DataFiles1 = NULL;
@@ -423,14 +421,8 @@ int MAIN( int argc, char *argv[]) {
 
   BOOLEAN uvar_correctFreqs = TRUE;
 
-#ifdef EAH_LALDEBUGLEVEL
-#endif
-
-  uvar_ephemE = LALCalloc( strlen( EARTHEPHEMERIS ) + 1, sizeof(CHAR) );
-  strcpy(uvar_ephemE, EARTHEPHEMERIS);
-
-  uvar_ephemS = LALCalloc( strlen(SUNEPHEMERIS) + 1, sizeof(CHAR) );
-  strcpy(uvar_ephemS, SUNEPHEMERIS);
+  uvar_ephemEarth = XLALStringDuplicate("earth00-19-DE405.dat.gz");
+  uvar_ephemSun   = XLALStringDuplicate("sun00-19-DE405.dat.gz");
 
   uvar_fnameout = LALCalloc( strlen(FNAMEOUT) + 1, sizeof(CHAR) );
   strcpy(uvar_fnameout, FNAMEOUT);
@@ -469,8 +461,8 @@ int MAIN( int argc, char *argv[]) {
   LAL_CALL( LALRegisterSTRINGUserVar( &status, "fnameout",    'o', UVAR_REQUIRED, "Output fileneme", &uvar_fnameout), &status);
   LAL_CALL( LALRegisterREALUserVar(   &status, "peakThrF",     0,  UVAR_OPTIONAL, "Fstat Threshold", &uvar_peakThrF), &status);
   LAL_CALL( LALRegisterREALUserVar(   &status, "refTime",      0,  UVAR_OPTIONAL, "Ref. time for pulsar pars [Default: mid-time]", &uvar_refTime), &status);
-  LAL_CALL( LALRegisterSTRINGUserVar( &status, "ephemE",       0,  UVAR_OPTIONAL, "Location of Earth ephemeris file", &uvar_ephemE),  &status);
-  LAL_CALL( LALRegisterSTRINGUserVar( &status, "ephemS",       0,  UVAR_OPTIONAL, "Location of Sun ephemeris file", &uvar_ephemS),  &status);
+  LAL_CALL( LALRegisterSTRINGUserVar( &status, "ephemEarth",   0,  UVAR_OPTIONAL, "Location of Earth ephemeris file", &uvar_ephemEarth),  &status);
+  LAL_CALL( LALRegisterSTRINGUserVar( &status, "ephemSun",     0,  UVAR_OPTIONAL, "Location of Sun ephemeris file", &uvar_ephemSun),  &status);
   LAL_CALL( LALRegisterREALUserVar(   &status, "minStartTime1",0,  UVAR_OPTIONAL, "1st stage min start time of observation", &uvar_minStartTime1), &status);
   LAL_CALL( LALRegisterREALUserVar(   &status, "maxEndTime1",  0,  UVAR_OPTIONAL, "1st stage max end time of observation",   &uvar_maxEndTime1),   &status);
 
@@ -596,10 +588,7 @@ int MAIN( int argc, char *argv[]) {
 
   /* read in ephemeris data */
   EphemerisData * edat;
-  if ( (edat = XLALInitBarycenter ( uvar_ephemE, uvar_ephemS )) == NULL ) {
-    XLALPrintError ("%s: XLALInitBarycenter() failed to load ephemeris files '%s' or '%s'\n", __func__, uvar_ephemE, uvar_ephemS );
-    return HIERARCHICALSEARCH_ESUB;
-  }
+  XLAL_CHECK ( (edat = XLALInitBarycenter ( uvar_ephemEarth, uvar_ephemSun )) != NULL, XLAL_EFUNC );
 
   XLALGPSSetREAL8(&minStartTimeGPS, uvar_minStartTime1);
   XLALGPSSetREAL8(&maxEndTimeGPS, uvar_maxEndTime1);

@@ -18,6 +18,7 @@
 */
 
 #include <math.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
@@ -76,13 +77,12 @@ struct tagLALFrameUFrDetector {
  * design of tempnam(3), it is highly recommended that you use mkstemp(3)
  * instead. [-Wdeprecated-declarations]
  *
- * wrap mktemp() as a drop in replacement.
+ * wrap mkstemp() as a drop in replacement.
  */
-static char *mytmpnam(char *s)
+static int mytmpfd(char *tmpfname)
 {
-  char tmp[] = "XXXXXX";
-  snprintf(s, L_tmpnam, "%stmp.lal.%s", P_tmpdir, mktemp(tmp));
-  return s;
+    snprintf(tmpfname, L_tmpnam, "%s/tmp.lal.XXXXXX", P_tmpdir);
+    return mkstemp(tmpfname);
 }
 
 /* TODO: get XLAL error macros going! */
@@ -126,7 +126,7 @@ LALFrameUFrFile *XLALFrameUFrFileOpen(const char *filename, const char *mode)
 #define BUFSZ 16384
             char buf[BUFSZ];
 #undef BUFSZ
-            tmpfp = fopen(mytmpnam(tmpfname), "w");
+            tmpfp = fdopen(mytmpfd(tmpfname), "w");
             while (fwrite(buf, 1, fread(buf, 1, sizeof(buf), stdin),
                     tmpfp) == sizeof(buf)) ;
             fclose(tmpfp);

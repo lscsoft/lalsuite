@@ -31,7 +31,7 @@ extern "C" {
 
 #ifndef CMDLINE_PARSER_VERSION
 /** @brief the program version */
-#define CMDLINE_PARSER_VERSION "1.1.30"
+#define CMDLINE_PARSER_VERSION "1.1.32"
 #endif
 
 /** @brief Where the command line options are stored */
@@ -99,12 +99,14 @@ struct gengetopt_args_info
   char * sftFile_arg;	/**< @brief Path and filename of SFTs, e.g., /path/to/file/sftdata.sft (one of --sftDir/--timestampsFile).  */
   char * sftFile_orig;	/**< @brief Path and filename of SFTs, e.g., /path/to/file/sftdata.sft (one of --sftDir/--timestampsFile) original value given at command line.  */
   const char *sftFile_help; /**< @brief Path and filename of SFTs, e.g., /path/to/file/sftdata.sft (one of --sftDir/--timestampsFile) help description.  */
-  char * ephemDir_arg;	/**< @brief Path to ephemeris files, e.g. /path/to/ephemeris/files.  */
-  char * ephemDir_orig;	/**< @brief Path to ephemeris files, e.g. /path/to/ephemeris/files original value given at command line.  */
-  const char *ephemDir_help; /**< @brief Path to ephemeris files, e.g. /path/to/ephemeris/files help description.  */
-  char * ephemYear_arg;	/**< @brief Year or year range (e.g. 08-11) of ephemeris files.  */
-  char * ephemYear_orig;	/**< @brief Year or year range (e.g. 08-11) of ephemeris files original value given at command line.  */
-  const char *ephemYear_help; /**< @brief Year or year range (e.g. 08-11) of ephemeris files help description.  */
+  char * ephemEarth_arg;	/**< @brief Location of Earth ephemeris file (default='earth00-19-DE405.dat.gz').  */
+  char * ephemEarth_orig;	/**< @brief Location of Earth ephemeris file original value given at command line.  */
+  const char *ephemEarth_help; /**< @brief Location of Earth ephemeris file help description.  */
+  char * ephemSun_arg;	/**< @brief Location of Sun ephemeris file (default='sun00-19-DE405.dat.gz').  */
+  char * ephemSun_orig;	/**< @brief Location of Sun ephemeris file original value given at command line.  */
+  const char *ephemSun_help; /**< @brief Location of Sun ephemeris file help description.  */
+  int gaussNoiseWithSFTgaps_flag;	/**< @brief Use the same gaps as SFTs that are read-in from either --sftDir or --sftFile options (one is required!), but create Gaussian noise with noise equal to --avesqrtSh (option conflicts with --timestampsFile) (default=off).  */
+  const char *gaussNoiseWithSFTgaps_help; /**< @brief Use the same gaps as SFTs that are read-in from either --sftDir or --sftFile options (one is required!), but create Gaussian noise with noise equal to --avesqrtSh (option conflicts with --timestampsFile) help description.  */
   double Pmin_arg;	/**< @brief Minimum period to be searched (in seconds).  */
   char * Pmin_orig;	/**< @brief Minimum period to be searched (in seconds) original value given at command line.  */
   const char *Pmin_help; /**< @brief Minimum period to be searched (in seconds) help description.  */
@@ -129,6 +131,12 @@ struct gengetopt_args_info
   int harmonicNumToSearch_arg;	/**< @brief Number of harmonics of the Pmin to Pmax range to search (default='1').  */
   char * harmonicNumToSearch_orig;	/**< @brief Number of harmonics of the Pmin to Pmax range to search original value given at command line.  */
   const char *harmonicNumToSearch_help; /**< @brief Number of harmonics of the Pmin to Pmax range to search help description.  */
+  int periodHarmToCheck_arg;	/**< @brief Number of harmonics/sub-harmonics of the IHS candidates to test (default='5').  */
+  char * periodHarmToCheck_orig;	/**< @brief Number of harmonics/sub-harmonics of the IHS candidates to test original value given at command line.  */
+  const char *periodHarmToCheck_help; /**< @brief Number of harmonics/sub-harmonics of the IHS candidates to test help description.  */
+  int periodFracToCheck_arg;	/**< @brief Number of fractional periods to check in the sense of [(1...N)+1]/[(1...N)+2] (default='3').  */
+  char * periodFracToCheck_orig;	/**< @brief Number of fractional periods to check in the sense of [(1...N)+1]/[(1...N)+2] original value given at command line.  */
+  const char *periodFracToCheck_help; /**< @brief Number of fractional periods to check in the sense of [(1...N)+1]/[(1...N)+2] help description.  */
   int templateSearch_flag;	/**< @brief Flag for doing a pure template-based search on search region specified by (sky,f,fspan,hardcoded P, hardcoded asini) (default=off).  */
   const char *templateSearch_help; /**< @brief Flag for doing a pure template-based search on search region specified by (sky,f,fspan,hardcoded P, hardcoded asini) help description.  */
   int ihsfactor_arg;	/**< @brief Number of harmonics to sum in IHS algorithm (default='5').  */
@@ -186,9 +194,12 @@ struct gengetopt_args_info
   const char *useSSE_help; /**< @brief Use SSE functions (caution: user needs to have compiled for SSE or program fails) help description.  */
   int followUpOutsideULrange_flag;	/**< @brief Follow up outliers outside the range of the UL values (default=off).  */
   const char *followUpOutsideULrange_help; /**< @brief Follow up outliers outside the range of the UL values help description.  */
-  char * timestampsFile_arg;	/**< @brief File to read timestamps from (file-format: lines with <seconds> <nanoseconds>; conflicts with --sftDir/--sftFile options).  */
-  char * timestampsFile_orig;	/**< @brief File to read timestamps from (file-format: lines with <seconds> <nanoseconds>; conflicts with --sftDir/--sftFile options) original value given at command line.  */
-  const char *timestampsFile_help; /**< @brief File to read timestamps from (file-format: lines with <seconds> <nanoseconds>; conflicts with --sftDir/--sftFile options) help description.  */
+  char * timestampsFile_arg;	/**< @brief File to read timestamps from (file-format: lines with <seconds> <nanoseconds>; conflicts with --sftDir/--sftFile and --segmentFile options).  */
+  char * timestampsFile_orig;	/**< @brief File to read timestamps from (file-format: lines with <seconds> <nanoseconds>; conflicts with --sftDir/--sftFile and --segmentFile options) original value given at command line.  */
+  const char *timestampsFile_help; /**< @brief File to read timestamps from (file-format: lines with <seconds> <nanoseconds>; conflicts with --sftDir/--sftFile and --segmentFile options) help description.  */
+  char * segmentFile_arg;	/**< @brief File to read segments from (file-format: lines with <startGPSTime> <endGPSTime>; conflicts with --sftDir/--sftFile and --timestampsFile options).  */
+  char * segmentFile_orig;	/**< @brief File to read segments from (file-format: lines with <startGPSTime> <endGPSTime>; conflicts with --sftDir/--sftFile and --timestampsFile options) original value given at command line.  */
+  const char *segmentFile_help; /**< @brief File to read segments from (file-format: lines with <startGPSTime> <endGPSTime>; conflicts with --sftDir/--sftFile and --timestampsFile options) help description.  */
   char * injectionSources_arg;	/**< @brief File containing sources to inject with a required preceding @ symbol.  */
   char * injectionSources_orig;	/**< @brief File containing sources to inject with a required preceding @ symbol original value given at command line.  */
   const char *injectionSources_help; /**< @brief File containing sources to inject with a required preceding @ symbol help description.  */
@@ -230,12 +241,6 @@ struct gengetopt_args_info
   const char *noiseWeightOff_help; /**< @brief Turn off noise weighting if this flag is used help description.  */
   int gaussTemplatesOnly_flag;	/**< @brief Gaussian templates only throughout the pipeline if this flag is used (default=off).  */
   const char *gaussTemplatesOnly_help; /**< @brief Gaussian templates only throughout the pipeline if this flag is used help description.  */
-  int periodHarmToCheck_arg;	/**< @brief Number of harmonics/sub-harmonics of the IHS candidates to test (default='5').  */
-  char * periodHarmToCheck_orig;	/**< @brief Number of harmonics/sub-harmonics of the IHS candidates to test original value given at command line.  */
-  const char *periodHarmToCheck_help; /**< @brief Number of harmonics/sub-harmonics of the IHS candidates to test help description.  */
-  int periodFracToCheck_arg;	/**< @brief Number of fractional periods to check in the sense of [(1...N)+1]/[(1...N)+2] (default='3').  */
-  char * periodFracToCheck_orig;	/**< @brief Number of fractional periods to check in the sense of [(1...N)+1]/[(1...N)+2] original value given at command line.  */
-  const char *periodFracToCheck_help; /**< @brief Number of fractional periods to check in the sense of [(1...N)+1]/[(1...N)+2] help description.  */
   int ULoff_flag;	/**< @brief Turn off upper limits computation (default=off).  */
   const char *ULoff_help; /**< @brief Turn off upper limits computation help description.  */
   int printSFTtimes_flag;	/**< @brief Output a list <GPS sec> <GPS nanosec> of SFT start times of input SFTs (default=off).  */
@@ -247,8 +252,12 @@ struct gengetopt_args_info
   int printUninitialized_arg;	/**< @brief Print uninitialized values in TFdata_weighted and TSofPowers vectors at n-th sky location specified by option (if not enough sky locations exist, then these vectors don't get printed!).  */
   char * printUninitialized_orig;	/**< @brief Print uninitialized values in TFdata_weighted and TSofPowers vectors at n-th sky location specified by option (if not enough sky locations exist, then these vectors don't get printed!) original value given at command line.  */
   const char *printUninitialized_help; /**< @brief Print uninitialized values in TFdata_weighted and TSofPowers vectors at n-th sky location specified by option (if not enough sky locations exist, then these vectors don't get printed!) help description.  */
-  int printSignalData_flag;	/**< @brief Print f0 and h0 per SFT of the signal, used only with --injectionSources option (default=off).  */
+  char * printSignalData_arg;	/**< @brief Print f0 and h0 per SFT of the signal, used only with --injectionSources option (default='./signal.dat').  */
+  char * printSignalData_orig;	/**< @brief Print f0 and h0 per SFT of the signal, used only with --injectionSources option original value given at command line.  */
   const char *printSignalData_help; /**< @brief Print f0 and h0 per SFT of the signal, used only with --injectionSources option help description.  */
+  char * printMarginalizedSignalData_arg;	/**< @brief Print f0 and h0 per SFT of the signal, used only with --injectionSources option (default='./signal.dat').  */
+  char * printMarginalizedSignalData_orig;	/**< @brief Print f0 and h0 per SFT of the signal, used only with --injectionSources option original value given at command line.  */
+  const char *printMarginalizedSignalData_help; /**< @brief Print f0 and h0 per SFT of the signal, used only with --injectionSources option help description.  */
   int randSeed_arg;	/**< @brief Random seed value.  */
   char * randSeed_orig;	/**< @brief Random seed value original value given at command line.  */
   const char *randSeed_help; /**< @brief Random seed value help description.  */
@@ -277,8 +286,9 @@ struct gengetopt_args_info
   unsigned int normRMSoutput_given ;	/**< @brief Whether normRMSoutput was given.  */
   unsigned int sftDir_given ;	/**< @brief Whether sftDir was given.  */
   unsigned int sftFile_given ;	/**< @brief Whether sftFile was given.  */
-  unsigned int ephemDir_given ;	/**< @brief Whether ephemDir was given.  */
-  unsigned int ephemYear_given ;	/**< @brief Whether ephemYear was given.  */
+  unsigned int ephemEarth_given ;	/**< @brief Whether ephemEarth was given.  */
+  unsigned int ephemSun_given ;	/**< @brief Whether ephemSun was given.  */
+  unsigned int gaussNoiseWithSFTgaps_given ;	/**< @brief Whether gaussNoiseWithSFTgaps was given.  */
   unsigned int Pmin_given ;	/**< @brief Whether Pmin was given.  */
   unsigned int Pmax_given ;	/**< @brief Whether Pmax was given.  */
   unsigned int dfmin_given ;	/**< @brief Whether dfmin was given.  */
@@ -287,6 +297,8 @@ struct gengetopt_args_info
   unsigned int skyRegionFile_given ;	/**< @brief Whether skyRegionFile was given.  */
   unsigned int linPolAngle_given ;	/**< @brief Whether linPolAngle was given.  */
   unsigned int harmonicNumToSearch_given ;	/**< @brief Whether harmonicNumToSearch was given.  */
+  unsigned int periodHarmToCheck_given ;	/**< @brief Whether periodHarmToCheck was given.  */
+  unsigned int periodFracToCheck_given ;	/**< @brief Whether periodFracToCheck was given.  */
   unsigned int templateSearch_given ;	/**< @brief Whether templateSearch was given.  */
   unsigned int ihsfactor_given ;	/**< @brief Whether ihsfactor was given.  */
   unsigned int ihsfar_given ;	/**< @brief Whether ihsfar was given.  */
@@ -309,6 +321,7 @@ struct gengetopt_args_info
   unsigned int useSSE_given ;	/**< @brief Whether useSSE was given.  */
   unsigned int followUpOutsideULrange_given ;	/**< @brief Whether followUpOutsideULrange was given.  */
   unsigned int timestampsFile_given ;	/**< @brief Whether timestampsFile was given.  */
+  unsigned int segmentFile_given ;	/**< @brief Whether segmentFile was given.  */
   unsigned int injectionSources_given ;	/**< @brief Whether injectionSources was given.  */
   unsigned int injRandSeed_given ;	/**< @brief Whether injRandSeed was given.  */
   unsigned int weightedIHS_given ;	/**< @brief Whether weightedIHS was given.  */
@@ -326,14 +339,13 @@ struct gengetopt_args_info
   unsigned int antennaOff_given ;	/**< @brief Whether antennaOff was given.  */
   unsigned int noiseWeightOff_given ;	/**< @brief Whether noiseWeightOff was given.  */
   unsigned int gaussTemplatesOnly_given ;	/**< @brief Whether gaussTemplatesOnly was given.  */
-  unsigned int periodHarmToCheck_given ;	/**< @brief Whether periodHarmToCheck was given.  */
-  unsigned int periodFracToCheck_given ;	/**< @brief Whether periodFracToCheck was given.  */
   unsigned int ULoff_given ;	/**< @brief Whether ULoff was given.  */
   unsigned int printSFTtimes_given ;	/**< @brief Whether printSFTtimes was given.  */
   unsigned int printUsedSFTtimes_given ;	/**< @brief Whether printUsedSFTtimes was given.  */
   unsigned int printData_given ;	/**< @brief Whether printData was given.  */
   unsigned int printUninitialized_given ;	/**< @brief Whether printUninitialized was given.  */
   unsigned int printSignalData_given ;	/**< @brief Whether printSignalData was given.  */
+  unsigned int printMarginalizedSignalData_given ;	/**< @brief Whether printMarginalizedSignalData was given.  */
   unsigned int randSeed_given ;	/**< @brief Whether randSeed was given.  */
   unsigned int chooseSeed_given ;	/**< @brief Whether chooseSeed was given.  */
 

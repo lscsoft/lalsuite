@@ -674,6 +674,7 @@ void coh_PTF_create_time_slide_table(
       ifoNum = 0;
       for(ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++)
       {
+        currBaseIfoOffset[ifoNumber] = 0;
         if (params->haveTrig[ifoNumber])
         {
           currBaseIfoOffset[ifoNumber] = currBaseOffset * ifoNum;
@@ -746,7 +747,7 @@ void coh_PTF_create_time_slide_table(
             { /* Need to wrap */
               currIfoOffset -= params->strideDuration;
             }
-            shortTimeSlideList[shortSlideCount].timeSlideVectors[ifoNumber] = \
+            shortTimeSlideList[shortSlideCount].timeSlideVectors[ifoNumber] =
                 currIfoOffset;
             ifoCount++;
           }

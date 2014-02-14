@@ -18,11 +18,13 @@ cmp_code="${builddir}../lalapps_compareFstats"
 
 SFTdir="./testCFSv2_resamp_sfts"
 
-if [ -n "${LALPULSAR_DATADIR}" ]; then
-    mfd_code="${mfd_code} -E ${LALPULSAR_DATADIR}"
-    saf_code="${saf_code} -E ${LALPULSAR_DATADIR}"
-    cfs2_code="${cfs2_code} -E ${LALPULSAR_DATADIR}"
-    cfs_resamp_code="${cfs_resamp_code} -E ${LALPULSAR_DATADIR}"
+if [ -z "${LAL_DATA_PATH}" ]; then
+    echo
+    echo "Need environment-variable LAL_DATA_PATH to be set to include"
+    echo "your ephemeris-directory (e.g. /usr/local/share/lalpulsar)"
+    echo "This might indicate an incomplete LAL+LALPULSAR installation"
+    echo
+    exit 1
 fi
 
 Ftolerance=0.05

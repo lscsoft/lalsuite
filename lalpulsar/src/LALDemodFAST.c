@@ -17,7 +17,6 @@
 *  MA  02111-1307  USA
 */
 
-#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/LALStatusMacros.h>
 #include <lal/LALDemod.h>
 
@@ -171,10 +170,8 @@ void LALDemodFAST(LALStatus *status, LALFstat *Fstat, FFT **input, DemodPar *par
     REAL4 *bptr=params->amcoe->b->data;
     INT4 *tempInt1ptr = tempInt1;
 
-    Fa.real_FIXME = 0.0;
-    Fa.imag_FIXME = 0.0;
-    Fb.real_FIXME = 0.0;
-    Fb.imag_FIXME = 0.0;
+    Fa = 0.0;
+    Fb = 0.0;
 
     f = params->f0 + i*df;
 
@@ -204,10 +201,8 @@ void LALDemodFAST(LALStatus *status, LALFstat *Fstat, FFT **input, DemodPar *par
 	imagQXP = crealf(Xalpha_k)*imagQ+cimagf(Xalpha_k)*realQ;
 
 	/* amplitude demodulation */
-	Fa.real_FIXME += a*realQXP;
-	Fa.imag_FIXME += a*imagQXP;
-	Fb.real_FIXME += b*realQXP;
-	Fb.imag_FIXME += b*imagQXP;
+	Fa += crect( a*realQXP, a*imagQXP );
+	Fb += crect( b*realQXP, b*imagQXP );
 
 	/* advance pointers that are functions of alpha: a, b,
 	   tempInt1, xSum, ySum, input */
