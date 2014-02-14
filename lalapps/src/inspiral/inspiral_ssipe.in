@@ -81,7 +81,7 @@ def generate_segments(ifo1_data, ifo2_data, ifo3_data, ifo4_data):
 ##############################################################################
 # function to set up datafind, template bank and inspiral jobs for an ifo  
 def analyze_ifo(ifo_name,ifo_data,ifo_to_do,tmplt_job,insp_job,df_job,\
-  prev_df,dag, usertag=None, inspinjNode = None):
+  prev_df,dag, usertag=None, inspinjNode = None, insp_ckpt_job = None):
   """
   Analyze the data from a single IFO.  Since the way we treat all this data is
   the same, this function is the same for all interferometers. Returns the last
@@ -97,6 +97,7 @@ def analyze_ifo(ifo_name,ifo_data,ifo_to_do,tmplt_job,insp_job,df_job,\
   dag = the DAG to attach the nodes to
   usertag = the usertag to add to the job names
   inspinjNode = the inspinj node to be added as a parent to inspirals
+  insp_ckpt_job = a checkpoint restore job for the inspiral code
   """
 
   # add the non veto inspiral options
@@ -228,15 +229,52 @@ def analyze_ifo(ifo_name,ifo_data,ifo_to_do,tmplt_job,insp_job,df_job,\
             insp.set_bank(FixedBank)
           else:
             insp.set_bank(bank.get_output())
-          # XXX: ensure output is added to list of output files
-          output = insp.get_output()
+          
           if opts.datafind: insp.add_parent(df)
           if inspinjNode and opts.inspinj: insp.add_parent(inspinjNode) 
           if (opts.template_bank and not FixedBank): insp.add_parent(bank)
           if opts.inspiral: dag.add_node(insp)
 
-          # store this chunk in the list of filtered data
-          chunks_analyzed.append(AnalyzedIFOData(chunk,insp))         
+          if opts.data_checkpoint:
+            # make an inspiral checkpoint restore job
+            insp_job.set_universe("vanilla")
+            insp.set_data_checkpoint()
+            insp.set_post_script(cp.get('condor','checkpoint-post-script'))
+            insp.add_post_script_arg(os.path.join(os.getcwd(),insp.get_checkpoint_image()))
+            insp_ckpt = inspiral.InspiralCkptNode(insp_ckpt_job)
+            insp_ckpt.set_output(insp.get_output())
+            insp_ckpt.set_injections(insp.get_injections())
+            insp_ckpt.set_checkpoint_image(insp.get_checkpoint_image())
+
+            if cp.has_option('pipeline','condor-c-site'):
+              # additional requirements to launch jon on remote pool
+              insp_ckpt_job.set_universe("grid")
+              insp_ckpt.set_grid_start("pegasuslite")
+              insp_ckpt.add_pegasus_profile("condor","grid_resource","condor %s" % cp.get('pipeline','condor-c-site'))
+              insp_ckpt.add_pegasus_profile("condor","+remote_jobuniverse","5")
+              insp_ckpt.add_pegasus_profile("condor","+remote_requirements","True")
+              insp_ckpt.add_pegasus_profile("condor","+remote_ShouldTransferFiles","True")
+              insp_ckpt.add_pegasus_profile("condor","+remote_WhenToTransferOutput","ON_EXIT")
+              insp_ckpt.add_pegasus_profile("condor","+remote_TransferInputFiles",'"' + insp.get_checkpoint_image() + '"')
+              insp_ckpt.add_pegasus_profile("condor","+remote_PeriodicRelease",'( JobStatus == 5 && HoldReasonCode == 13 && NumSystemHolds < 3 )')
+            else:
+              insp_ckpt_job.set_universe("vanilla")
+
+            insp_ckpt.add_parent(insp)
+            if opts.inspiral: dag.add_node(insp_ckpt)
+
+            # ensure output is added to list of output files
+            output = insp_ckpt.get_output()
+
+            # store this chunk in the list of filtered data
+            chunks_analyzed.append(AnalyzedIFOData(chunk,insp_ckpt))
+
+          else:
+            # XXX: ensure output is added to list of output files
+            output = insp.get_output()
+
+            # store this chunk in the list of filtered data
+            chunks_analyzed.append(AnalyzedIFOData(chunk,insp))         
 
   return tuple([prev_df,chunks_analyzed])
 
@@ -531,6 +569,8 @@ parser.add_option("-x","--dax", action="store_true", default=False,\
 parser.add_option("-w", "--write-script", action="store_true", default=False,
       help="write the workflow to a locally executable script")
 
+parser.add_option("--data-checkpoint", action="store_true", default=False,\
+    help="checkpoint the inspiral code")
 
 command_line = sys.argv[1:]
 (opts,args) = parser.parse_args()
@@ -773,6 +813,11 @@ for ifo in ifo_list:
   insp_jobs[ifo] = inspiral.InspiralJob(cp,opts.dax)
   insp_jobs[ifo].set_sub_file( basename + '.inspiral_' + ifo + subsuffix )
 
+# create inspiral checkpoint job
+insp_ckpt_job = inspiral.InspiralCkptJob(cp,opts.dax)
+if cp.has_option('pipeline','remote-site'):
+  insp_ckpt_job.set_executable_installed(False)
+
 # ligolw_add:
 lladd_job = pipeline.LigolwAddJob('logs', cp, opts.dax)
 lladd_job.set_sub_file( basename + '.ligolw_add' + subsuffix )
@@ -801,6 +846,7 @@ if usertag:
       job.add_opt('user-tag',usertag)
 all_jobs.append(lladd_job)
 all_jobs.append(thinca_job)
+all_jobs.append(insp_ckpt_job)
 all_jobs.append(df_job)
 
 ##############################################################################

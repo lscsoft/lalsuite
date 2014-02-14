@@ -142,6 +142,15 @@ collapse-sire   = 50
 search-file-tag = INSPIRAL
 coinc-file-tag = THINCA
 time-column = end_time
+;
+; uncomment the following lines for remote data checkpointing
+; condor-c-site should specify the path to a condor pool and
+; pegasus-worker should specify the path to a pegasus worker package with
+; exec setarch x86_64 -L -R ${mypath}/pegasus-kickstart-exec $@
+; prepended to the pegasus-kickstart command
+;
+; condor-c-site = its-condor-submit.syr.edu 10.5.0.2
+; pegasus-worker = /path/to/pegasus-worker-4.1.0cvs-setarch-x86_64_rhel_5.tar.gz
 
 ;Set matplotlibdir to a local directory to avoid NFS issues with the TeX part 
 ;of matplotlib. Ensure this directory exists on all nodes!
