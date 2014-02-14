@@ -1,5 +1,5 @@
 AC_PREREQ([2.63])
-AC_INIT([lalinspiral],[1.5.2.1],[lal-discuss@ligo.org])
+AC_INIT([lalinspiral],[1.5.3.1],[lal-discuss@ligo.org])
 AC_CONFIG_HEADERS([src/config.h src/LALInspiralConfig.h])
 AC_CONFIG_SRCDIR([src/LALInspiral.h])
 AC_CONFIG_AUX_DIR([gnuscripts])
