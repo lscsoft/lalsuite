@@ -1,3 +1,9 @@
+lalinspiral (1.5.3-1) unstable; urgency=low
+
+  * LALInspiral 1.5.3
+
+ -- Adam Mercer <adam.mercer@ligo.org>  Fri, 14 Feb 2014 10:52:21 -0600
+
 lalinspiral (1.5.2-1) unstable; urgency=low
 
   * LALInspiral 1.5.2
