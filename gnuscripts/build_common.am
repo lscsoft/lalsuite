@@ -9,9 +9,7 @@ EXTRA_DIST =
 LDADD =
 MOSTLYCLEANFILES =
 SUFFIXES =
-TESTS =
 bin_PROGRAMS =
-check_PROGRAMS =
 lib_LTLIBRARIES =
 man_MANS =
 noinst_DATA =
@@ -39,6 +37,15 @@ BUILT_SOURCES += $(noinst_DATA)
 
 # Default include directories
 DEFAULT_INCLUDES = -I$(top_srcdir)/src -I$(top_builddir)/src
+
+# Use 'test_programs' for tests which need to be compiled,
+# 'test_scripts' for tests which are non-compiled scripts,
+# and 'test_helper_programs' for helper programs needed by tests
+test_programs =
+test_scripts =
+test_helper_programs =
+check_PROGRAMS = $(test_programs) $(test_helper_programs)
+TESTS = $(test_programs) $(test_scripts)
 
 # Always run tests with LAL_DATA_PATH as set by ./configure,
 # with memory debugging, and with error/warning printing
