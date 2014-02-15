@@ -123,7 +123,7 @@
  * <dt>sampleUnits:</dt><dd> \e value is string surrounded by
  * double-quotes; inside the quotes is a unit string corresponding to
  * <tt>series-\>sampleUnits</tt> as converted by the routine
- * LALUnitAsString().</dd>
+ * XLALUnitAsString().</dd>
  *
  * <dt>length:</dt><dd> \e value is a single \c UINT4
  * representing <tt>series-\>data-\>length</tt>.</dd>

@@ -30,6 +30,7 @@
 #include <lal/TSData.h>
 #include <lal/TSSearch.h>
 #include <lal/LALStdlib.h>
+#include <lal/Units.h>
 
 #ifdef __GNUC__
 #define UNUSED __attribute__ ((unused))
@@ -499,8 +500,7 @@ LALTrackSearchWhitenREAL4TimeSeries(
   const LIGOTimeGPS              gps_zero = LIGOTIMEGPSZERO;
   UINT4                      planLength=0;
   REAL8                     factor=0;
-  LALUnit                   tmpUnit1=lalDimensionlessUnit;
-  LALUnitPair               tmpUnitPair;
+  LALUnit                   tmpUnit1=lalDimensionlessUnit, tmpUnit2;
   RAT4                      exponent;
   INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
@@ -553,17 +553,13 @@ LALTrackSearchWhitenREAL4TimeSeries(
    */
   exponent.numerator=-1;
   exponent.denominatorMinusOne=1;/*2*/
-  LALUnitRaise(status->statusPtr,
-	       &tmpUnit1,
-	       &(signalPSD->sampleUnits),
-	       &exponent);
-  CHECKSTATUSPTR (status);
-  tmpUnitPair.unitOne=&tmpUnit1;
-  tmpUnitPair.unitTwo=&(signalFFT->sampleUnits);
-  LALUnitMultiply(status->statusPtr,
-		  &(signalFFT->sampleUnits),
-		  &tmpUnitPair);
-  CHECKSTATUSPTR (status);
+  if (XLALUnitRaiseRAT4(&tmpUnit1, &(signalPSD->sampleUnits), &exponent) == NULL) {
+    ABORTXLAL(status);
+  }
+  if (XLALUnitMultiply(&tmpUnit2, &tmpUnit1, &(signalFFT->sampleUnits)) == NULL) {
+    ABORTXLAL(status);
+  }
+  signalFFT->sampleUnits = tmpUnit2;
 #if 0
   /*
    * Diagnostic code
@@ -625,8 +621,7 @@ LALTrackSearchWhitenCOMPLEX8FrequencySeries(
 {
   UINT4         i=0;
   REAL8         factor=0;
-  LALUnit       tmpUnit1=lalDimensionlessUnit;
-  LALUnitPair   tmpUnitPair;
+  LALUnit       tmpUnit1=lalDimensionlessUnit, tmpUnit2;
   RAT4          exponent;
 
   INITSTATUS(status);
@@ -659,19 +654,15 @@ LALTrackSearchWhitenCOMPLEX8FrequencySeries(
  /*
   * LALUnits manipulation
   */
-   exponent.numerator=-1;
+  exponent.numerator=-1;
   exponent.denominatorMinusOne=1;/*2*/
-  LALUnitRaise(status->statusPtr,
-	       &tmpUnit1,
-	       &(PSD->sampleUnits),
-	       &exponent);
-  CHECKSTATUSPTR (status);
-  tmpUnitPair.unitOne=&tmpUnit1;
-  tmpUnitPair.unitTwo=&(fSeries->sampleUnits);
-  LALUnitMultiply(status->statusPtr,
-		  &(fSeries->sampleUnits),
-		  &tmpUnitPair);
-  CHECKSTATUSPTR (status);
+  if (XLALUnitRaiseRAT4(&tmpUnit1, &(PSD->sampleUnits), &exponent) == NULL) {
+    ABORTXLAL(status);
+  }
+  if (XLALUnitMultiply(&tmpUnit2, &tmpUnit1, &(fSeries->sampleUnits)) == NULL) {
+    ABORTXLAL(status);
+  }
+  fSeries->sampleUnits = tmpUnit2;
 
   DETATCHSTATUSPTR(status);
   RETURN(status);
@@ -781,7 +772,7 @@ LALTrackSearchCalibrateCOMPLEX8FrequencySeries(
 					       )
 {
   UINT4          i=0;
-  LALUnitPair    tmpUnitPair;
+  LALUnit        tmpUnit;
   REAL4          a=0;
   REAL4          b=0;
   REAL4          c=0;
@@ -813,12 +804,11 @@ LALTrackSearchCalibrateCOMPLEX8FrequencySeries(
   /*
    * Unit manipulation
    */
-  tmpUnitPair.unitOne=&(fSeries->sampleUnits);
-  tmpUnitPair.unitTwo=&(response->sampleUnits);
-  LALUnitMultiply(status->statusPtr,
-		  &(fSeries->sampleUnits),
-		  &tmpUnitPair);
-  CHECKSTATUSPTR (status);
+  if (XLALUnitMultiply(&tmpUnit, &(fSeries->sampleUnits), &(response->sampleUnits)) == NULL) {
+    ABORTXLAL(status);
+  }
+  fSeries->sampleUnits = tmpUnit;
+
   DETATCHSTATUSPTR(status);
   RETURN(status);
 }

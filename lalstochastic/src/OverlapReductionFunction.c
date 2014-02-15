@@ -175,7 +175,7 @@
  * ### Uses ###
  *
  * \code
- * LALUnitRaise()
+ * XLALUnitRaiseRAT4()
  * sin()
  * cos()
  * sqrt()
@@ -242,7 +242,6 @@ LALOverlapReductionFunction(
   REAL4 alpha, alpha0, deltaAlpha;
   REAL4 rho[3];
   REAL4 d1[3][3], d2[3][3];
-  RAT4 power;
 
   /* initialize status structure */
   INITSTATUS(status);
@@ -304,10 +303,9 @@ LALOverlapReductionFunction(
   /* everything okay here -------------------------------------------- */
 
   /* the overlap reduction function has units of strain^2 */
-  power.numerator = 2;
-  power.denominatorMinusOne = 0;
-  TRY(LALUnitRaise(status->statusPtr, &(output->sampleUnits), \
-				&lalStrainUnit, &power), status);
+  if (XLALUnitRaiseINT2(&(output->sampleUnits), &lalStrainUnit, 2) == NULL) {
+    ABORTXLAL(status);
+  }
 
   /* set parameters for output */
   strncpy(output->name, "Overlap reduction function", LALNameLength);

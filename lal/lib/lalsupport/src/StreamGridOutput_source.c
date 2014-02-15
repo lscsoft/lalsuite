@@ -57,91 +57,36 @@ FUNC ( LALStatus *stat, FILE *stream, GTYPE *grid )
 
   /* Print the sample units and dimension units. */
   {
-    CHARVector *unit = NULL; /* vector to store unit string */
-    CHAR *cData;             /* pointer to unit data */
-    CHAR c;                  /* value of *cData */
-    int code = 0;            /* return code from putc() */
-    BOOLEAN repeat;          /* whether a longer vector is needed */
+    CHAR unitString[LALUnitTextSize];
 
-    /* First, use LALUnitAsString() to generate unit string.  Repeat
-       if a longer vector is required. */
-    length = 64;
-    TRY( LALCHARCreateVector( stat->statusPtr, &unit, length ), stat );
-    memset( unit->data, 0, length*sizeof(CHAR) );
-    do {
-      LALUnitAsString( stat->statusPtr, unit, &(grid->sampleUnits) );
-      if ( stat->statusPtr->statusCode == UNITSH_ESTRINGSIZE ) {
-	repeat = 1;
-	length *= 2;
-	TRY( LALCHARDestroyVector( stat->statusPtr, &unit ), stat );
-	TRY( LALCHARCreateVector( stat->statusPtr, &unit, length ), stat );
-	memset( unit->data, 0, length*sizeof(CHAR) );
-#ifndef NDEBUG
-	if ( lalDebugLevel & LALERROR )
-	  LALPrintError( "\tCONTINUE: Dealt with preceding error\n" );
-#endif
-      } else {
-	repeat = 0;
-	BEGINFAIL( stat )
-	  TRY( LALCHARDestroyVector( stat->statusPtr, &unit ), stat );
-	ENDFAIL( stat );
-      }
-    } while ( repeat );
+    /* First, use XLALUnitAsString() to generate unit string. */
+    if ( XLALUnitAsString( unitString, LALUnitTextSize, &(grid->sampleUnits) ) == NULL ) {
+      ABORTXLAL(stat);
+    }
 
     /* Write the resulting unit string enclosed in quotes. */
-    cData = unit->data;
-    if ( fprintf( stream, "# sampleUnits = \"" ) < 0 ) {
-      TRY( LALCHARDestroyVector( stat->statusPtr, &unit ), stat );
+    if ( fprintf( stream, "# sampleUnits = \"%s\"\n", unitString ) < 0 ) {
       ABORT( stat, STREAMOUTPUTH_EPRN, STREAMOUTPUTH_MSGEPRN );
     }
-    while ( code != EOF && ( c = *(cData++) ) != '\0' && length-- )
-      code = putc( (int)c, stream );
-    if ( code == EOF || fprintf( stream, "\"\n" ) < 0 ) {
-      TRY( LALCHARDestroyVector( stat->statusPtr, &unit ), stat );
-      ABORT( stat, STREAMOUTPUTH_EPRN, STREAMOUTPUTH_MSGEPRN );
-    }
+  }
+  {
+    CHAR unitString[LALUnitTextSize];
 
-    /* Repeat above for all the units in grid->dimUnits. */
     if ( fprintf( stream, "# dimUnits =" ) < 0 ) {
-      TRY( LALCHARDestroyVector( stat->statusPtr, &unit ), stat );
       ABORT( stat, STREAMOUTPUTH_EPRN, STREAMOUTPUTH_MSGEPRN );
     }
     for ( i = 0; i < grid->offset->length; i++ ) {
-      memset( unit->data, 0, length*sizeof(CHAR) );
-      do {
-	LALUnitAsString( stat->statusPtr, unit, &(grid->sampleUnits) );
-	if ( stat->statusPtr->statusCode == UNITSH_ESTRINGSIZE ) {
-	  repeat = 1;
-	  length *= 2;
-	  TRY( LALCHARDestroyVector( stat->statusPtr, &unit ), stat );
-	  TRY( LALCHARCreateVector( stat->statusPtr, &unit, length ), stat );
-	  memset( unit->data, 0, length*sizeof(CHAR) );
-#ifndef NDEBUG
-	  if ( lalDebugLevel & LALERROR )
-	    LALPrintError( "\tCONTINUE: Dealt with preceding error\n" );
-#endif
-	} else {
-	  repeat = 0;
-	  BEGINFAIL( stat )
-	    TRY( LALCHARDestroyVector( stat->statusPtr, &unit ), stat );
-	  ENDFAIL( stat );
-	}
-      } while ( repeat );
-      cData = unit->data;
-      if ( fprintf( stream, " \"" ) < 0 ) {
-	TRY( LALCHARDestroyVector( stat->statusPtr, &unit ), stat );
-	ABORT( stat, STREAMOUTPUTH_EPRN, STREAMOUTPUTH_MSGEPRN );
+
+      /* First, use XLALUnitAsString() to generate unit string. */
+      if ( XLALUnitAsString( unitString, LALUnitTextSize, grid->dimUnits + i ) == NULL ) {
+        ABORTXLAL(stat);
       }
-      while ( code != EOF && ( c = *(cData++) ) != '\0' && length-- )
-	code = putc( (int)c, stream );
-      if ( code == EOF || fprintf( stream, "\"" ) < 0 ) {
-	TRY( LALCHARDestroyVector( stat->statusPtr, &unit ), stat );
-	ABORT( stat, STREAMOUTPUTH_EPRN, STREAMOUTPUTH_MSGEPRN );
+
+      /* Write the resulting unit string enclosed in quotes. */
+      if ( fprintf( stream, " \"%s\"\n", unitString ) < 0 ) {
+        ABORT( stat, STREAMOUTPUTH_EPRN, STREAMOUTPUTH_MSGEPRN );
       }
-    }
-    TRY( LALCHARDestroyVector( stat->statusPtr, &unit ), stat );
-    if ( fprintf( stream, "\n" ) < 0 ) {
-      ABORT( stat, STREAMOUTPUTH_EPRN, STREAMOUTPUTH_MSGEPRN );
+
     }
   }
 

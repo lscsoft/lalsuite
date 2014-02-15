@@ -140,9 +140,9 @@
  * ### Uses ###
  *
  * \code
- * LALUnitMultiply()
- * LALUnitRaise()
- * LALUnitCompare()
+ * XLALUnitMultiply()
+ * XLALUnitRaiseRAT4()
+ * XLALUnitCompare()
  * \endcode
  *
  * ### Notes ###
@@ -262,8 +262,6 @@ LALStochasticOptimalFilterNormalization(
 
   UINT4 length;
 
-  RAT4 power;
-  LALUnitPair unitPair;
   LALUnit tmpUnit1, tmpUnit2, checkUnit;
   REAL4WithUnits *lamPtr;
 
@@ -477,47 +475,43 @@ LALStochasticOptimalFilterNormalization(
 
   /* EVERYHTING OKAY HERE! ---------------------------------------------- */
 
-  /* All the powers we use are integers, so we can do this once here */
-  power.denominatorMinusOne = 0;
-
   /* check that units of gamma, Omega, P1 and P2 are consistent
    * we must have (gamma*Omega)^2 with the same units as f^2*P1*P2
    * up to a power of ten. We check this by constructing
    * checkUnit = f^2*P1*P2*(gamma*Omega)^-2 */
-  unitPair.unitOne = &(input->inverseNoisePSD1->sampleUnits);
-  unitPair.unitTwo = &(input->inverseNoisePSD2->sampleUnits);
-  TRY(LALUnitMultiply(status->statusPtr, &tmpUnit1, &unitPair), status);
+  if (XLALUnitMultiply(&tmpUnit1, &(input->inverseNoisePSD1->sampleUnits), &(input->inverseNoisePSD2->sampleUnits)) == NULL) {
+    ABORTXLAL(status);
+  }
 
   /* tmpUnit1 holds units of 1/(P1*P2) */
 
-  power.numerator = -1;
-  TRY(LALUnitRaise(status->statusPtr, &tmpUnit2, &tmpUnit1, &power), status);
+  if (XLALUnitRaiseINT2(&tmpUnit2, &tmpUnit1, -1) == NULL) {
+    ABORTXLAL(status);
+  }
 
   /* tmpUnit2 holds units of P1*P2 */
 
-  unitPair.unitOne = &(input->overlapReductionFunction->sampleUnits);
-  unitPair.unitTwo = &(input->omegaGW->sampleUnits);
-  TRY(LALUnitMultiply(status->statusPtr, &tmpUnit1, &unitPair), status);
+  if (XLALUnitMultiply(&tmpUnit1, &(input->overlapReductionFunction->sampleUnits), &(input->omegaGW->sampleUnits)) == NULL) {
+    ABORTXLAL(status);
+  }
 
   /* tmpUnit1 holds units of Omega*Gamma */
 
-  unitPair.unitOne = &tmpUnit1;
-  unitPair.unitTwo = &lalSecondUnit;
-  TRY(LALUnitMultiply(status->statusPtr, &checkUnit, &unitPair), status);
+  if (XLALUnitMultiply(&checkUnit, &tmpUnit1, &lalSecondUnit) == NULL) {
+    ABORTXLAL(status);
+  }
 
   /* checkUnit holds units of f^-1*Omega*Gamma */
 
-  power.numerator = -2;
-  TRY(LALUnitRaise(status->statusPtr, &tmpUnit1, &checkUnit, &power), status);
+  if (XLALUnitRaiseINT2(&tmpUnit1, &checkUnit, -2) == NULL) {
+    ABORTXLAL(status);
+  }
 
   /* tmpUnit1 holds units of f^2*(Omega*Gamma)^-2 */
 
-  /* unitPair.unitOne = &tmpUnit1; **/
-  /* Commented out because it's redundant with the last assignment **/
-
-  unitPair.unitTwo = &tmpUnit2;
-
-  TRY(LALUnitMultiply(status->statusPtr, &checkUnit, &unitPair), status);
+  if (XLALUnitMultiply(&checkUnit, &tmpUnit1, &tmpUnit2) == NULL) {
+    ABORTXLAL(status);
+  }
 
   /* checkUnit holds units of f^2*P1*P2(Omega*Gamma)^-2 */
 
@@ -542,28 +536,29 @@ LALStochasticOptimalFilterNormalization(
   tmpUnit1.powerOfTen -= 18;
 
   /* Now set tmpUnit2 to dims of H0^-2 */
-  power.numerator = -2;
-  TRY(LALUnitRaise(status->statusPtr, &tmpUnit2, &tmpUnit1, &power), status);
-  unitPair.unitOne = &(input->omegaGW->sampleUnits);
-  unitPair.unitTwo = &tmpUnit2;
-  TRY(LALUnitMultiply(status->statusPtr, &tmpUnit1, &unitPair), status);
+  if (XLALUnitRaiseINT2(&tmpUnit2, &tmpUnit1, -2) == NULL) {
+    ABORTXLAL(status);
+  }
+  if (XLALUnitMultiply(&tmpUnit1, &(input->omegaGW->sampleUnits), &tmpUnit2) == NULL) {
+    ABORTXLAL(status);
+  }
 
   /* Now tmpUnit1 has units of Omega/H0^2 */
 
   /* assign correct units to normalization constant ********/
   /* These are Omega/H0^2*f^5*P1*P2*(gamma*Omega)^-2
    * which is the same as tmpUnit1*f^3*checkUnit */
-  unitPair.unitOne = &tmpUnit1;
-  unitPair.unitTwo = &checkUnit;
-  TRY(LALUnitMultiply(status->statusPtr, &tmpUnit2, &unitPair), status);
+  if (XLALUnitMultiply(&tmpUnit2, &tmpUnit1, &checkUnit) == NULL) {
+    ABORTXLAL(status);
+  }
 
   /* tmpUnit2 has units of Omega/H0^2*f^2*P1*P2*(gamma*Omega)^-2 */
 
   /* Now that we've used checkUnit, we don't need it any more and */
   /* can use it for temp storage (of f^3) */
-  power.numerator = 3;
-  TRY(LALUnitRaise(status->statusPtr, &checkUnit, &lalHertzUnit, &power), \
-      status);
+  if (XLALUnitRaiseINT2(&checkUnit, &lalHertzUnit, 3) == NULL) {
+    ABORTXLAL(status);
+  }
 
   /* In case the normalization output was NULL, we need to allocate it
    * since we still use it as an intermediate; we do so here to
@@ -578,28 +573,18 @@ LALStochasticOptimalFilterNormalization(
     lamPtr = (REAL4WithUnits*)LALMalloc(sizeof(REAL4WithUnits));
   }
 
-  unitPair.unitOne = &tmpUnit2;
-
-  /* unitPair.unitTwo = &checkUnit; */
-  /* Commented out because it's redundant with the last assignment **/
-
-  LALUnitMultiply(status->statusPtr, &(lamPtr->units), &unitPair);
-
-  BEGINFAIL(status)
+  if (XLALUnitMultiply(&(lamPtr->units), &tmpUnit2, &checkUnit) == NULL) {
     if (output->normalization == NULL) LALFree(lamPtr);
-  ENDFAIL(status);
+    ABORTXLAL(status);
+  }
 
   if (output->variance != NULL)
   {
     /* assign correct units to variance per time of CC stat ********/
-    unitPair.unitOne = &(lamPtr->units);
-    unitPair.unitTwo = &tmpUnit1;
-
-    LALUnitMultiply(status->statusPtr, &(output->variance->units), &unitPair);
-
-    BEGINFAIL(status)
+    if (XLALUnitMultiply(&(output->variance->units), &(lamPtr->units), &tmpUnit1) == NULL) {
       if (output->normalization == NULL) LALFree(lamPtr);
-    ENDFAIL(status);
+      ABORTXLAL(status);
+    }
   }
 
   /* Calculate properties of windows */

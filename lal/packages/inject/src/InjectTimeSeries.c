@@ -107,16 +107,9 @@ LALSI2InjectTimeSeries( LALStatus       *stat,
   /* Check dimensions. */
   {
     CHAR newName[LALNameLength];
-    BOOLEAN unitsOK;
-    LALUnitPair pair;
 
-    pair.unitOne = &(signalvec->sampleUnits);
-    pair.unitTwo = &lalADCCountUnit;
-    TRY( LALUnitCompare( stat->statusPtr, &unitsOK, &pair ), stat );
-    ASSERT( unitsOK, stat, INJECTH_EUNIT, INJECTH_MSGEUNIT );
-    pair.unitOne = &(output->sampleUnits);
-    TRY( LALUnitCompare( stat->statusPtr, &unitsOK, &pair ), stat );
-    ASSERT( unitsOK, stat, INJECTH_EUNIT, INJECTH_MSGEUNIT );
+    ASSERT( XLALUnitCompare( &(signalvec->sampleUnits), &lalADCCountUnit ) == 0, stat, INJECTH_EUNIT, INJECTH_MSGEUNIT );
+    ASSERT( XLALUnitCompare( &(output->sampleUnits), &lalADCCountUnit ) == 0, stat, INJECTH_EUNIT, INJECTH_MSGEUNIT );
     snprintf( newName, LALNameLength, "%s plus %s", output->name,
 		 signalvec->name );
     memcpy( output->name, newName, LALNameLength*sizeof(CHAR) );
@@ -235,16 +228,9 @@ LALSSInjectTimeSeries( LALStatus       *stat,
   /* Check dimensions. */
   {
     CHAR newName[LALNameLength];
-    BOOLEAN unitsOK;
-    LALUnitPair pair;
 
-    pair.unitOne = &(signalvec->sampleUnits);
-    pair.unitTwo = &lalADCCountUnit;
-    TRY( LALUnitCompare( stat->statusPtr, &unitsOK, &pair ), stat );
-    ASSERT( unitsOK, stat, INJECTH_EUNIT, INJECTH_MSGEUNIT );
-    pair.unitOne = &(output->sampleUnits);
-    TRY( LALUnitCompare( stat->statusPtr, &unitsOK, &pair ), stat );
-    ASSERT( unitsOK, stat, INJECTH_EUNIT, INJECTH_MSGEUNIT );
+    ASSERT( XLALUnitCompare( &(signalvec->sampleUnits), &lalADCCountUnit ) == 0, stat, INJECTH_EUNIT, INJECTH_MSGEUNIT );
+    ASSERT( XLALUnitCompare( &(output->sampleUnits), &lalADCCountUnit ) == 0, stat, INJECTH_EUNIT, INJECTH_MSGEUNIT );
     snprintf( newName, LALNameLength, "%s plus %s", output->name,
 		 signalvec->name );
     memcpy( output->name, newName, LALNameLength*sizeof(CHAR) );

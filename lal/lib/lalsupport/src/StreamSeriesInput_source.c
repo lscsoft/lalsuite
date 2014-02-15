@@ -153,16 +153,12 @@ SFUNC ( LALStatus *stat, STYPE *series, FILE *stream )
       /* Parse sampleUnits field. */
       else if ( !strcmp( start, "sampleUnits" ) ) {
 	LALUnit unit;
-	CHARVector unitString;
 	endValue = ++startValue;
 	while ( *endValue != '"' && *endValue != '\n' &&
 		*endValue != '\0' )
 	  endValue++;
 	*endValue = '\0';
-	unitString.length = strlen( startValue ) + 1;
-	unitString.data = startValue;
-	LALParseUnitString( stat->statusPtr, &unit, &unitString );
-	if ( stat->statusPtr->statusCode == UNITSH_EPARSE ) {
+	if ( XLALParseUnitString( &unit, startValue ) == NULL ) {
 #ifndef NDEBUG
 	  if ( lalDebugLevel & LALERROR ) {
 	    LALPrintError( "\tCONTINUE: Ignoring preceding error\n" );
@@ -554,16 +550,12 @@ VFUNC ( LALStatus *stat, VTYPE *series, FILE *stream )
       /* Parse sampleUnits field. */
       else if ( !strcmp( start, "sampleUnits" ) ) {
 	LALUnit unit;
-	CHARVector unitString;
 	endValue = ++startValue;
 	while ( *endValue != '"' && *endValue != '\n' &&
 		*endValue != '\0' )
 	  endValue++;
 	*endValue = '\0';
-	unitString.length = strlen( startValue ) + 1;
-	unitString.data = startValue;
-	LALParseUnitString( stat->statusPtr, &unit, &unitString );
-	if ( stat->statusPtr->statusCode == UNITSH_EPARSE ) {
+	if ( XLALParseUnitString( &unit, startValue ) == NULL ) {
 #ifndef NDEBUG
 	  if ( lalDebugLevel & LALERROR ) {
 	    LALPrintError( "\tCONTINUE: Ignoring preceding error\n" );
@@ -1051,16 +1043,12 @@ AFUNC ( LALStatus *stat, ATYPE *series, FILE *stream )
       /* Parse sampleUnits field. */
       else if ( !strcmp( start, "sampleUnits" ) ) {
 	LALUnit unit;
-	CHARVector unitString;
 	endValue = ++startValue;
 	while ( *endValue != '"' && *endValue != '\n' &&
 		*endValue != '\0' )
 	  endValue++;
 	*endValue = '\0';
-	unitString.length = strlen( startValue ) + 1;
-	unitString.data = startValue;
-	LALParseUnitString( stat->statusPtr, &unit, &unitString );
-	if ( stat->statusPtr->statusCode == UNITSH_EPARSE ) {
+	if ( XLALParseUnitString( &unit, startValue ) == NULL ) {
 #ifndef NDEBUG
 	  if ( lalDebugLevel & LALERROR ) {
 	    LALPrintError( "\tCONTINUE: Ignoring preceding error\n" );
@@ -1594,16 +1582,12 @@ FFUNC ( LALStatus *stat, FTYPE *series, FILE *stream )
       /* Parse sampleUnits field. */
       else if ( !strcmp( start, "sampleUnits" ) ) {
 	LALUnit unit;
-	CHARVector unitString;
 	endValue = ++startValue;
 	while ( *endValue != '"' && *endValue != '\n' &&
 		*endValue != '\0' )
 	  endValue++;
 	*endValue = '\0';
-	unitString.length = strlen( startValue ) + 1;
-	unitString.data = startValue;
-	LALParseUnitString( stat->statusPtr, &unit, &unitString );
-	if ( stat->statusPtr->statusCode == UNITSH_EPARSE ) {
+	if ( XLALParseUnitString( &unit, startValue ) == NULL ) {
 #ifndef NDEBUG
 	  if ( lalDebugLevel & LALERROR ) {
 	    LALPrintError( "\tCONTINUE: Ignoring preceding error\n" );

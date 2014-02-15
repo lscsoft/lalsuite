@@ -2,17 +2,8 @@
 #include <lal/LALStdlib.h>
 #include <lal/LALStdio.h>
 #include <lal/LALDatatypes.h>
+#include <lal/Units.h>
 #include <lal/PrintFTSeries.h>
-
-void LALCHARCreateVector( LALStatus *, CHARVector **, UINT4 );
-void LALCHARDestroyVector( LALStatus *, CHARVector ** );
-void LALUnitAsString( LALStatus *status, CHARVector *output,
-                      const LALUnit *input );
-
-enum { LALUnitTextSize = sizeof("10^-32768 m^-32768/32767 kg^-32768/32767 "
-				"s^-32768/32767 A^-32768/32767 " 
-				"K^-32768/32767 strain^-32768/32767 "
-				"count^-32768/32767") };
 
 #define TYPECODE Z
 #define TYPE COMPLEX16

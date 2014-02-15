@@ -557,18 +557,10 @@ main(int argc, char **argv)
 
 
   /* Set up units for the above structures. */
-  {
-    RAT4 negOne = { -1, 0 }; /* -1 as a rational number */
-    LALUnit unit;            /* structures for defining response units */
-    LALUnitPair pair;
-    output.sampleUnits = lalADCCountUnit;
-    pair.unitOne = &lalADCCountUnit;
-    pair.unitTwo = &lalStrainUnit;
-    SUB( LALUnitRaise( &stat, &unit, pair.unitTwo,
-                       &negOne ), &stat );
-    pair.unitTwo = &unit;
-    SUB( LALUnitMultiply( &stat, &(transfer->sampleUnits),
-                          &pair ), &stat );
+  output.sampleUnits = lalADCCountUnit;
+  if (XLALUnitDivide( &(transfer->sampleUnits),
+                      &lalADCCountUnit, &lalStrainUnit ) == NULL) {
+    return LAL_EXLAL;
   }
 
   detector.transfer = transfer;

@@ -204,10 +204,7 @@ main( int argc, char *argv[] )
    REAL4FrequencySeries             goodInput;
    REAL4FrequencySeries     goodOutput;
 
-   BOOLEAN                result;
-   LALUnitPair            unitPair;
-
-   CHARVector             *unitString;
+   int                    result;
 
    FrequencySamplingParams     params;
 
@@ -599,55 +596,22 @@ main( int argc, char *argv[] )
    }
 
    /* check output units */
-   unitPair.unitOne = &(goodInput.sampleUnits);
-   unitPair.unitTwo = &(goodOutput.sampleUnits);
-   LALUnitCompare(&status, &result, &unitPair);
-   if ( ( code = CheckStatus(&status, 0 , "",
-			     SCOARSEGRAINFREQUENCYSERIESTESTC_EFLS,
-			     SCOARSEGRAINFREQUENCYSERIESTESTC_MSGEFLS) ) )
-   {
-     return code;
-   }
+   result = XLALUnitCompare( &(goodInput.sampleUnits), &(goodOutput.sampleUnits) );
 
    if (optVerbose)
    {
-     unitString = NULL;
-     LALCHARCreateVector(&status, &unitString, LALUnitTextSize);
-     if ( ( code = CheckStatus(&status, 0 , "",
-			       SCOARSEGRAINFREQUENCYSERIESTESTC_EFLS,
-			       SCOARSEGRAINFREQUENCYSERIESTESTC_MSGEFLS) ) )
-     {
-       return code;
+     CHAR unitString[LALUnitTextSize];
+     if ( XLALUnitAsString( unitString, LALUnitTextSize, &(goodOutput.sampleUnits)) == NULL ) {
+       return SCOARSEGRAINFREQUENCYSERIESTESTC_EFLS;
      }
-
-     LALUnitAsString( &status, unitString, unitPair.unitTwo );
-     if ( ( code = CheckStatus(&status, 0 , "",
-			       SCOARSEGRAINFREQUENCYSERIESTESTC_EFLS,
-			       SCOARSEGRAINFREQUENCYSERIESTESTC_MSGEFLS) ) )
-     {
-       return code;
+     printf( "Units are \"%s\", ", unitString );
+     if ( XLALUnitAsString( unitString, LALUnitTextSize, &(goodInput.sampleUnits)) == NULL ) {
+       return SCOARSEGRAINFREQUENCYSERIESTESTC_EFLS;
      }
-     printf( "Units are \"%s\", ", unitString->data );
-
-     LALUnitAsString( &status, unitString, unitPair.unitOne );
-     if ( ( code = CheckStatus(&status, 0 , "",
-			       SCOARSEGRAINFREQUENCYSERIESTESTC_EFLS,
-			       SCOARSEGRAINFREQUENCYSERIESTESTC_MSGEFLS) ) )
-     {
-       return code;
-     }
-     printf( "should be \"%s\"\n", unitString->data );
-
-     LALCHARDestroyVector(&status, &unitString);
-     if ( ( code = CheckStatus(&status, 0 , "",
-			       SCOARSEGRAINFREQUENCYSERIESTESTC_EFLS,
-			       SCOARSEGRAINFREQUENCYSERIESTESTC_MSGEFLS) ) )
-     {
-       return code;
-     }
+     printf( "should be \"%s\"\n", unitString );
    }
 
-   if (!result)
+   if (result != 0)
    {
      printf("  FAIL: Valid data test #1\n");
      if (optVerbose)
@@ -786,55 +750,22 @@ main( int argc, char *argv[] )
    }
 
    /* check output units */
-   unitPair.unitOne = &(goodInput.sampleUnits);
-   unitPair.unitTwo = &(goodOutput.sampleUnits);
-   LALUnitCompare(&status, &result, &unitPair);
-   if ( ( code = CheckStatus(&status, 0 , "",
-			     SCOARSEGRAINFREQUENCYSERIESTESTC_EFLS,
-			     SCOARSEGRAINFREQUENCYSERIESTESTC_MSGEFLS) ) )
-   {
-     return code;
-   }
+   result = XLALUnitCompare( &(goodInput.sampleUnits), &(goodOutput.sampleUnits) );
 
    if (optVerbose)
    {
-     unitString = NULL;
-     LALCHARCreateVector(&status, &unitString, LALUnitTextSize);
-     if ( ( code = CheckStatus(&status, 0 , "",
-			       SCOARSEGRAINFREQUENCYSERIESTESTC_EFLS,
-			       SCOARSEGRAINFREQUENCYSERIESTESTC_MSGEFLS) ) )
-     {
-       return code;
+     CHAR unitString[LALUnitTextSize];
+     if ( XLALUnitAsString( unitString, LALUnitTextSize, &(goodOutput.sampleUnits)) == NULL ) {
+       return SCOARSEGRAINFREQUENCYSERIESTESTC_EFLS;
      }
-
-     LALUnitAsString( &status, unitString, unitPair.unitTwo );
-     if ( ( code = CheckStatus(&status, 0 , "",
-			       SCOARSEGRAINFREQUENCYSERIESTESTC_EFLS,
-			       SCOARSEGRAINFREQUENCYSERIESTESTC_MSGEFLS) ) )
-     {
-       return code;
+     printf( "Units are \"%s\", ", unitString );
+     if ( XLALUnitAsString( unitString, LALUnitTextSize, &(goodInput.sampleUnits)) == NULL ) {
+       return SCOARSEGRAINFREQUENCYSERIESTESTC_EFLS;
      }
-     printf( "Units are \"%s\", ", unitString->data );
-
-     LALUnitAsString( &status, unitString, unitPair.unitOne );
-     if ( ( code = CheckStatus(&status, 0 , "",
-			       SCOARSEGRAINFREQUENCYSERIESTESTC_EFLS,
-			       SCOARSEGRAINFREQUENCYSERIESTESTC_MSGEFLS) ) )
-     {
-       return code;
-     }
-     printf( "should be \"%s\"\n", unitString->data );
-
-     LALCHARDestroyVector(&status, &unitString);
-     if ( ( code = CheckStatus(&status, 0 , "",
-			       SCOARSEGRAINFREQUENCYSERIESTESTC_EFLS,
-			       SCOARSEGRAINFREQUENCYSERIESTESTC_MSGEFLS) ) )
-     {
-       return code;
-     }
+     printf( "should be \"%s\"\n", unitString );
    }
 
-   if (!result)
+   if (result != 0)
    {
      printf("  FAIL: Valid data test #2\n");
      if (optVerbose)

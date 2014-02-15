@@ -16,8 +16,7 @@ void FUNC ( STYPE *series, const CHAR *filename )
   TYPE *data;
   FILE *fp;
   UINT4 i;
-  static LALStatus status;
-  CHARVector *unitString;
+  CHAR unitString[LALUnitTextSize];
 
   if (series==NULL) return;
 
@@ -34,12 +33,9 @@ void FUNC ( STYPE *series, const CHAR *filename )
   else {
     fprintf(fp,"# \n");
   }
-  unitString = NULL;
-  LALCHARCreateVector(&status, &unitString, LALUnitTextSize);
-  LALUnitAsString(&status, unitString, &(series->sampleUnits));
-  fprintf(fp,"# Units are (%s)\n",unitString->data);
+  XLALUnitAsString(unitString, LALUnitTextSize, &(series->sampleUnits));
+  fprintf(fp,"# Units are (%s)\n",unitString);
   fprintf(fp,HEADER);
-  LALCHARDestroyVector(&status, &unitString);
   for ( i = 0; i < series->data->length; ++i )
   {
     f = series->f0 + i * series->deltaF;

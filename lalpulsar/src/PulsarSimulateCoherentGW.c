@@ -398,34 +398,19 @@ LALPulsarSimulateCoherentGW( LALStatus        *stat,
 
   /* Check units on input, and set units on output. */
   {
-    BOOLEAN unitsOK;
-    LALUnitPair pair;
-
-    pair.unitOne = &(CWsignal->f->sampleUnits);
-    pair.unitTwo = &lalHertzUnit;
-    TRY( LALUnitCompare( stat->statusPtr, &unitsOK, &pair ), stat );
-    ASSERT( unitsOK, stat, SIMULATECOHERENTGWH_EUNIT,
-            SIMULATECOHERENTGWH_MSGEUNIT );
-    pair.unitOne = &(CWsignal->phi->sampleUnits);
-    pair.unitTwo = &lalDimensionlessUnit;
-    TRY( LALUnitCompare( stat->statusPtr, &unitsOK, &pair ), stat );
-    ASSERT( unitsOK, stat, SIMULATECOHERENTGWH_EUNIT,
-            SIMULATECOHERENTGWH_MSGEUNIT );
+    ASSERT( XLALUnitCompare( &(CWsignal->f->sampleUnits), &lalHertzUnit ) == 0, stat, SIMULATECOHERENTGWH_EUNIT, SIMULATECOHERENTGWH_MSGEUNIT );
+    ASSERT( XLALUnitCompare( &(CWsignal->phi->sampleUnits), &lalDimensionlessUnit ) == 0, stat, SIMULATECOHERENTGWH_EUNIT, SIMULATECOHERENTGWH_MSGEUNIT );
     if( CWsignal->shift ) {
-      pair.unitOne = &(CWsignal->shift->sampleUnits);
-      TRY( LALUnitCompare( stat->statusPtr, &unitsOK, &pair ), stat );
-      ASSERT( unitsOK, stat, SIMULATECOHERENTGWH_EUNIT,
-              SIMULATECOHERENTGWH_MSGEUNIT );
+      ASSERT( XLALUnitCompare( &(CWsignal->shift->sampleUnits), &lalDimensionlessUnit ) == 0, stat, SIMULATECOHERENTGWH_EUNIT, SIMULATECOHERENTGWH_MSGEUNIT );
     }
     if ( transfer ) {
-      pair.unitOne = &(CWsignal->a->sampleUnits);
-      pair.unitTwo = &(detector->transfer->sampleUnits);
-      TRY( LALUnitMultiply( stat->statusPtr, &(output->sampleUnits),
-                            &pair ), stat );
-    } else
+      if ( XLALUnitMultiply( &(output->sampleUnits), &(CWsignal->a->sampleUnits), &(detector->transfer->sampleUnits) ) == NULL ) {
+        ABORT( stat, SIMULATECOHERENTGWH_EUNIT, SIMULATECOHERENTGWH_MSGEUNIT );
+      }
+    } else {
       output->sampleUnits = CWsignal->a->sampleUnits;
-    snprintf( output->name, LALNameLength, "response to %s",
-              CWsignal->a->name );
+    }
+    snprintf( output->name, LALNameLength, "response to %s", CWsignal->a->name );
   }
 
   /* Define temporary variables to access the data of CWsignal->a,
