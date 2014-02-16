@@ -3,9 +3,9 @@
 *~
 .DS_Store
 .dirstamp
-/Makefile
-/Makefile.in
 /_inst/
+Makefile
+Makefile.in
 TAGS
 aclocal.m4
 auto/

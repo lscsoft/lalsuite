@@ -5,8 +5,6 @@
 *.pc
 .deps
 .libs
-Makefile
-Makefile.in
 config.lt
 include/lal/*.h
 include/lal/*.i

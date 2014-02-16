@@ -9,8 +9,6 @@
 .deps
 .dvi-dep
 .libs
-Makefile
-Makefile.in
 config.lt
 doc/README.install
 doc/autodoc/*.eps

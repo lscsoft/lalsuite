@@ -5,8 +5,6 @@
 *.pc
 .deps
 .libs
-/Makefile
-/Makefile.in
 config.lt
 lalstochastic-*.tar.gz
 lalstochastic-user-env.*

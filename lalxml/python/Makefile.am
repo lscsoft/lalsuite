@@ -1,0 +1,1 @@
+../../gnuscripts/Makefile.am
