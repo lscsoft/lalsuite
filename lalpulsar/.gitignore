@@ -26,6 +26,7 @@ src/stamp-h1
 src/stamp-h2
 test/BinarySSBTimesTest
 test/ExtrapolatePulsarSpinsTest
+test/FileIOTest
 test/FitToPulsarTest
 test/FlatMeshTest
 test/FoldAmplitudesTest
