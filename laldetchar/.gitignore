@@ -5,6 +5,8 @@
 *.pc
 .deps
 .libs
+Makefile
+Makefile.in
 bin/laldetchar-hveto
 bin/laldetchar-hveto-summary-page
 bin/laldetchar-segments-from-data

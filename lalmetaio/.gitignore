@@ -5,6 +5,8 @@
 *.pc
 .deps
 .libs
+/Makefile
+/Makefile.in
 config.lt
 lalmetaio-*.tar.gz
 lalmetaio-user-env.*

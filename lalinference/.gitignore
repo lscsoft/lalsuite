@@ -5,6 +5,8 @@
 *.pc
 .deps
 .libs
+Makefile
+Makefile.in
 bin/bayestar_aggregate_found_injections
 bin/bayestar_bin_samples
 bin/bayestar_lattice_tmpltbank

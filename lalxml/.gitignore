@@ -5,6 +5,8 @@
 *.pc
 .deps
 .libs
+/Makefile
+/Makefile.in
 config.lt
 lalxml-*.tar.gz
 lalxml-user-env.*

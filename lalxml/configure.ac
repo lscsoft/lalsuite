@@ -9,14 +9,10 @@ AC_CONFIG_FILES([ \
   lalxml-uninstalled.pc \
   lalxml.pc \
   lalxml.spec \
-  python/Makefile \
   python/__init__.py \
-  src/Makefile \
-  src/lal/Makefile \
   swig/Makefile \
   swig/octave/Makefile \
   swig/python/Makefile \
-  test/Makefile \
 ])
 AM_INIT_AUTOMAKE([1.11 foreign subdir-objects color-tests parallel-tests])
 
