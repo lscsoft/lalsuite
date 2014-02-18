@@ -332,7 +332,7 @@ int XLALSimAddInjectionREAL8TimeSeries(
 		start_sample_int += 1.0;
 	}
 
-	if(fabs(start_sample_frac) > noop_threshold) {
+	if(fabs(start_sample_frac) > noop_threshold || response) {
 		COMPLEX16FrequencySeries *tilde_h;
 		REAL8FFTPlan *plan;
 
@@ -560,7 +560,7 @@ int XLALSimAddInjectionREAL4TimeSeries(
 		start_sample_int += 1.0;
 	}
 
-	if(fabs(start_sample_frac) > noop_threshold) {
+	if(fabs(start_sample_frac) > noop_threshold || response) {
 		COMPLEX8FrequencySeries *tilde_h;
 		REAL4FFTPlan *plan;
 
