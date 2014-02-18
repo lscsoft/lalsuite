@@ -34,6 +34,10 @@
  */
 /*@{*/
 
+#ifdef SWIG /* SWIG interface directives */
+SWIGLAL(INPUT_SCALARS(REAL8*, min, max));
+#endif
+
 /**
  * Return the logarithmic prior density of the variables specified, for the non-spinning/spinning inspiral signal case.
  */
