@@ -3537,9 +3537,10 @@ void LALInferenceSetupClusteredKDEProposalsFromFile(LALInferenceRunState *runSta
 void LALInferenceInitClusteredKDEProposal(LALInferenceRunState *runState, LALInferenceClusteredKDE *kde, REAL8 *array, UINT4 nSamps, LALInferenceVariables *params, const char *name, REAL8 weight) {
 
     strcpy(kde->name, name);
-    INT4 dim = LALInferenceGetVariableDimensionNonFixed(params);
+    INT4 dim = LALInferenceGetVariableDimensionVarying(params);
 
     gsl_matrix_view mview = gsl_matrix_view_array(array, nSamps, dim);
+
     kde->kmeans = LALInferenceIncrementalKmeans(&mview.matrix, runState->GSLrandom);
 
     kde->dimension = kde->kmeans->dim;
@@ -3638,14 +3639,17 @@ void LALInferenceSetupClusteredKDEProposalFromRun(LALInferenceRunState *runState
     REAL8 weight=2.;
     INT4 i=0;
 
-    INT4 nPar = LALInferenceGetVariableDimensionNonFixed(runState->currentParams);
+    INT4 nPar = LALInferenceGetVariableDimensionVarying(runState->currentParams);
 
     /* If ACL can be estimated, thin DE buffer to only have independent samples */
     REAL8 bufferSize = (REAL8)runState->differentialPointsLength;
     REAL8 effSampleSize = (REAL8) LALInferenceComputeEffectiveSampleSize(runState);
+
+    /* Correlations wont effect the proposal much, so floor is taken instead of ceil
+     * when determining the step size */
     INT4 step = 1;
     if (effSampleSize > 0)
-        step = (INT4) ceil(bufferSize/effSampleSize);
+        step = (INT4) floor(bufferSize/effSampleSize);
     INT4 nPoints = (INT4) ceil(bufferSize/(REAL8)step);
 
     /* Get points to be clustered from the differential evolution buffer. */

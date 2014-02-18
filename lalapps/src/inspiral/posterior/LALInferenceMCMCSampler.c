@@ -230,7 +230,7 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
   }
 
   /* Clustered-KDE proposal updates */
-  UINT4 kde_update_interval = 100;  // rought number of effective samples between KDE udpates
+  UINT4 kde_update_interval = 100;  // rough number of effective samples between KDE udpates
   UINT4 last_kde_update = 0;        // effective sample size at last KDE update
 
 
@@ -580,7 +580,7 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
     if (*runPhase_p == LALINFERENCE_ONLY_PT || *runPhase_p == LALINFERENCE_TEMP_PT) {
 
       //ACL calculation during parallel tempering
-      if (i % (100*Nskip) == 0 && MPIrank == 0) {
+      if (i % (10*Nskip) == 0 && MPIrank == 0) {
         adapting = *((INT4 *)LALInferenceGetVariable(runState->proposalArgs, "adapting"));
 
         if (adapting)
