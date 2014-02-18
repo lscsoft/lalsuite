@@ -181,6 +181,37 @@ INT4 LALInferenceGetVariableDimensionNonFixed(LALInferenceVariables *vars)
   return count;
 }
 
+INT4 LALInferenceGetVariableDimensionVarying(LALInferenceVariables *vars)
+{
+  INT4 count=0;
+  gsl_matrix *m=NULL;
+  UINT4Vector *v=NULL;
+  LALInferenceVariableItem *ptr = vars->head;
+  if (ptr==NULL) return count;
+  else {
+    /* loop over entries: */
+    while (ptr != NULL) {
+      if (ptr->vary != LALINFERENCE_PARAM_FIXED && ptr->vary != LALINFERENCE_PARAM_OUTPUT)
+      {
+        //Generalize to allow for other data types
+        if(ptr->type == LALINFERENCE_gslMatrix_t)
+        {
+          m = *((gsl_matrix **)ptr->value);
+          count += (int)( (m->size1)*(m->size2) );
+        }
+        else if(ptr->type == LALINFERENCE_UINT4Vector_t)
+        {
+          v = *((UINT4Vector **)ptr->value);
+          count += (int)( v->length );
+        }
+        else count++;
+      }
+      ptr = ptr->next;
+    }
+  }
+  return count;
+}
+
 LALInferenceVariableType LALInferenceGetVariableType(const LALInferenceVariables *vars, const char *name)
 {
   return LALInferenceGetItem(vars,name)->type;
