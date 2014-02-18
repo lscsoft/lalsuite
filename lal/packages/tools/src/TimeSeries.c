@@ -29,6 +29,41 @@
 #include <lal/Units.h>
 #include <lal/XLALError.h>
 
+
+REAL4TimeSeries *XLALConvertREAL8TimeSeriesToREAL4(
+	const REAL8TimeSeries *series
+)
+{
+	REAL4TimeSeries *new = XLALCreateREAL4TimeSeries(series->name, &series->epoch, series->f0, series->deltaT, &series->sampleUnits, series->data->length);
+	unsigned i;
+
+	if(!new)
+		XLAL_ERROR_NULL(XLAL_EFUNC);
+
+	for(i = 0; i < new->data->length; i++)
+		new->data->data[i] = series->data->data[i];
+
+	return new;
+}
+
+
+REAL8TimeSeries *XLALConvertREAL4TimeSeriesToREAL8(
+	const REAL4TimeSeries *series
+)
+{
+	REAL8TimeSeries *new = XLALCreateREAL8TimeSeries(series->name, &series->epoch, series->f0, series->deltaT, &series->sampleUnits, series->data->length);
+	unsigned i;
+
+	if(!new)
+		XLAL_ERROR_NULL(XLAL_EFUNC);
+
+	for(i = 0; i < new->data->length; i++)
+		new->data->data[i] = series->data->data[i];
+
+	return new;
+}
+
+
 #define DATATYPE REAL4
 #include "TimeSeries_source.c"
 #undef DATATYPE
