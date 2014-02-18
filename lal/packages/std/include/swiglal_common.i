@@ -1175,8 +1175,7 @@ if (swiglal_release_parent(PTR)) {
 %enddef
 
 // Typemaps for pointers to primitive scalars. These are treated as output-only
-// arguments by default, by globally applying the SWIG OUTPUT typemaps. The INOUT
-// typemaps can be supplied as needed using the SWIGLAL(INOUT_SCALARS(TYPE, ...)) macro.
+// arguments by default, by globally applying the SWIG OUTPUT typemaps.
 %apply int* OUTPUT { enum SWIGTYPE* };
 %apply short* OUTPUT { short* };
 %apply unsigned short* OUTPUT { unsigned short* };
@@ -1200,10 +1199,20 @@ if (swiglal_release_parent(PTR)) {
 %apply gsl_complex* OUTPUT { gsl_complex* };
 %apply COMPLEX8* OUTPUT { COMPLEX8* };
 %apply COMPLEX16* OUTPUT { COMPLEX16* };
+// The INOUT typemaps can be applied instead using the macro SWIGLAL(INOUT_SCALARS(TYPE, ...)).
 %define %swiglal_public_INOUT_SCALARS(TYPE, ...)
 %swiglal_map_ab(%swiglal_apply, TYPE INOUT, TYPE, __VA_ARGS__);
 %enddef
 %define %swiglal_public_clear_INOUT_SCALARS(TYPE, ...)
+%swiglal_map_a(%swiglal_clear, TYPE, __VA_ARGS__);
+%enddef
+// The INPUT typemaps can be applied instead using the macro SWIGLAL(INPUT_SCALARS(TYPE, ...)).
+%typemap(argout, noblock=1) SWIGTYPE* SWIGLAL_INPUT_SCALAR "";
+%define %swiglal_public_INPUT_SCALARS(TYPE, ...)
+%swiglal_map_ab(%swiglal_apply, TYPE INPUT, TYPE, __VA_ARGS__);
+%swiglal_map_ab(%swiglal_apply, SWIGTYPE* SWIGLAL_INPUT_SCALAR, TYPE, __VA_ARGS__);
+%enddef
+%define %swiglal_public_clear_INPUT_SCALARS(TYPE, ...)
 %swiglal_map_a(%swiglal_clear, TYPE, __VA_ARGS__);
 %enddef
 
