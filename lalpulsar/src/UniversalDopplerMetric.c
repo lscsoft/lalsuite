@@ -1084,8 +1084,8 @@ XLALDopplerPhaseMetric ( const DopplerMetricParams *metricParams,  	/**< input p
        GSL integration fail to converge */
     intparams.epsrel /= 2;
     intparams.epsabs /= 2;
-    /* try also reducing the length of integration time segments */
-    intparams.Tseg /= 2;
+    /* try also reducing the length of integration time segments, but stop at 1800s */
+    intparams.Tseg = MYMAX(1800, intparams.Tseg / 2);
 
   }
 
