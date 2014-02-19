@@ -134,7 +134,7 @@ int XLALSimInspiralChooseTDWaveformFromCache(
     CacheVariableDiffersBitmask changedParams;
 
     // If nonGRparams are not NULL, don't even try to cache.
-    if ( nonGRparams != NULL)
+    if ( nonGRparams != NULL || (!cache) )
         return XLALSimInspiralChooseTDWaveform(hplus, hcross, phiRef, deltaT,
                 m1, m2, S1x, S1y, S1z, S2x, S2y, S2z, f_min, f_ref, r, i,
                 lambda1, lambda2, waveFlags, nonGRparams, amplitudeO, phaseO,
@@ -466,7 +466,7 @@ int XLALSimInspiralChooseFDWaveformFromCache(
     CacheVariableDiffersBitmask changedParams;
 
     // If nonGRparams are not NULL, don't even try to cache.
-    if ( nonGRparams != NULL)
+    if ( nonGRparams != NULL || (!cache) )
         return XLALSimInspiralChooseFDWaveform(hptilde, hctilde, phiRef, deltaF,
                 m1, m2, S1x, S1y, S1z, S2x, S2y, S2z, f_min, f_max, r, i,
                 lambda1, lambda2, waveFlags, nonGRparams, amplitudeO, phaseO,
