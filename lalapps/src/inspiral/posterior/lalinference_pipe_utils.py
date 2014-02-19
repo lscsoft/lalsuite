@@ -1350,12 +1350,13 @@ class GraceDBNode(pipeline.CondorDAGNode):
         res=respagenode
         #self.set_page_path(res.webpath.replace(self.job().basepath,self.job().baseurl))
         self.resultsurl=res.webpath.replace(self.job().basepath,self.job().baseurl)
+        self.webpath=res.webpath
         self.set_gid(gid)
     def finalize(self):
         if self.__finalized:
             return
-        self.add_var_arg('log')
+        self.add_var_arg('upload')
         self.add_var_arg(str(self.gid))
         #self.add_var_arg('"Parameter estimation finished. <a href=\"'+self.resultsurl+'/posplots.html\">'+self.resultsurl+'/posplots.html</a>"')
-        self.add_var_arg('Parameter estimation finished. '+self.resultsurl+'/posplots.html')
+        self.add_var_arg(self.webpath+'/posterior_samples.dat Parameter estimation finished. '+self.resultsurl+'/posplots.html')
         self.__finalized=True
