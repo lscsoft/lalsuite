@@ -146,7 +146,7 @@ typedef enum
   LALINFERENCE_FRAME_SYSTEM
 } LALInferenceFrame;
 
-extern size_t LALInferenceTypeSize[13];
+extern size_t LALInferenceTypeSize[14];
 
 /**
  * The LALInferenceVariableItem list node structure
