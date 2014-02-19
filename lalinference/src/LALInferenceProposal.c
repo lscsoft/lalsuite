@@ -130,6 +130,7 @@ LALInferenceAddProposalToCycle(LALInferenceRunState *runState, const char *propN
   LALInferenceProposalFunction *cycle = NULL;
   LALInferenceVariables *propArgs = runState->proposalArgs;
   LALInferenceVariables *propStats = runState->proposalStats;
+  UINT4 i;
 
   /* Quit without doing anything if weight = 0. */
   if (weight == 0) {
@@ -138,46 +139,24 @@ LALInferenceAddProposalToCycle(LALInferenceRunState *runState, const char *propN
 
   if (LALInferenceCheckVariable(propArgs, cycleArrayName) && LALInferenceCheckVariable(propArgs, cycleArrayLengthName)) {
     /* Have all the data in proposal args. */
-    UINT4 i;
 
     length = *((UINT4 *)LALInferenceGetVariable(propArgs, cycleArrayLengthName));
     cycle = *((LALInferenceProposalFunction **)LALInferenceGetVariable(propArgs, cycleArrayName));
-
-    cycle = XLALRealloc(cycle, (length+weight)*sizeof(LALInferenceProposalFunction));
-    if (cycle == NULL) {
-      XLALError(fname, __FILE__, __LINE__, XLAL_ENOMEM);
-      exit(1);
-    }
-
-    for (i = length; i < length + weight; i++) {
-      cycle[i] = prop;
-    }
-
-    length += weight;
-
-    LALInferenceSetVariable(propArgs, cycleArrayLengthName, &length);
-    LALInferenceSetVariable(propArgs, cycleArrayName, (void *)&cycle);
-  } else {
-    /* There are no data in proposal args.  Set some. */
-    UINT4 i;
-
-    length = weight;
-
-    cycle = XLALMalloc(length*sizeof(LALInferenceProposalFunction));
-    if (cycle == NULL) {
-      XLALError(fname, __FILE__, __LINE__, XLAL_ENOMEM);
-      exit(1);
-    }
-
-    for (i = 0; i < length; i++) {
-      cycle[i] = prop;
-    }
-
-    LALInferenceAddVariable(propArgs, cycleArrayLengthName, &length,
-LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_LINEAR);
-    LALInferenceAddVariable(propArgs, cycleArrayName, (void *)&cycle,
-LALINFERENCE_void_ptr_t, LALINFERENCE_PARAM_LINEAR);
   }
+  
+  cycle = XLALRealloc(cycle, (length+weight)*sizeof(LALInferenceProposalFunction));
+  if (cycle == NULL) {
+    XLALError(fname, __FILE__, __LINE__, XLAL_ENOMEM);
+    exit(1);
+  }
+  for (i = length; i < length + weight; i++) {
+    cycle[i] = prop;
+  }
+
+  length += weight;
+
+  LALInferenceAddVariable(propArgs, cycleArrayLengthName, &length, LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_LINEAR);
+  LALInferenceAddVariable(propArgs, cycleArrayName, (void *)&cycle, LALINFERENCE_void_ptr_t, LALINFERENCE_PARAM_LINEAR);
 
   /* If propStats is not NULL, add counters for proposal function if they aren't already there */
   if(propStats){
