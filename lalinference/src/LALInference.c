@@ -42,7 +42,7 @@
 #define UNUSED
 #endif
 
-size_t LALInferenceTypeSize[13] = {sizeof(INT4),
+size_t LALInferenceTypeSize[] = {sizeof(INT4),
                                    sizeof(INT8),
                                    sizeof(UINT4),
                                    sizeof(REAL4),
@@ -53,7 +53,7 @@ size_t LALInferenceTypeSize[13] = {sizeof(INT4),
                                    sizeof(REAL8Vector *),
                                    sizeof(UINT4Vector *),
                                    sizeof(CHAR *),
-				   sizeof(LALInferenceMCMCRunPhase *),
+                                   sizeof(LALInferenceMCMCRunPhase *),
                                    sizeof(void *)
 };
 

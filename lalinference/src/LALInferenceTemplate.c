@@ -331,16 +331,13 @@ void LALInferenceTemplatePSTRD(LALInferenceIFOData *IFOdata)
     phi_spin2= *(REAL8*) LALInferenceGetVariable(IFOdata->modelParams, "phi_spin2");
   }
 	
-  //double distance = *(REAL8*) LALInferenceGetVariable(IFOdata->modelParams,"logdistance");
-  //template.distance = exp(distance)*LAL_PC_SI*1.e6;  
-
   /* spin variables still need to be initialised */
 	
-  //double mc       = *(REAL8*) LALInferenceGetVariable(IFOdata->modelParams, "chirpmass");
   double logmc = *(REAL8*) LALInferenceGetVariable(IFOdata->modelParams, "logmc");
   double mc = exp(logmc);
   double phi      = *(REAL8*) LALInferenceGetVariable(IFOdata->modelParams, "phase");       /* here: startPhase !! */
   double iota     = *(REAL8*) LALInferenceGetVariable(IFOdata->modelParams, "inclination");
+  double distance = *(REAL8*) LALInferenceGetVariable(IFOdata->modelParams,"distance");
 
   double eta;	
   if (LALInferenceCheckVariable(IFOdata->modelParams,"asym_massratio")) {
@@ -353,7 +350,6 @@ void LALInferenceTemplatePSTRD(LALInferenceIFOData *IFOdata)
   REAL8 mtot=mc/pow(eta,3./5.);	
 	
   /* fill the template structure */
-  //double distance = *(REAL8*) LALInferenceGetVariable(IFOdata->modelParams,"logdistance");
   template.spin1[0]=a_spin1*sin(theta_spin1)*cos(phi_spin1);
   template.spin1[1]=a_spin1*sin(theta_spin1)*sin(phi_spin1);
   template.spin1[2]=a_spin1*cos(theta_spin1); 
@@ -371,8 +367,7 @@ void LALInferenceTemplatePSTRD(LALInferenceIFOData *IFOdata)
   template.startTime = 0.0;
   template.ieta = 1;
   template.inclination=iota;
-  //template.distance = exp(distance)*LAL_PC_SI*1.e6;
-  template.distance = LAL_PC_SI*1.e6;
+  template.distance = distance*LAL_PC_SI*1.e6;
   int order = *(INT4*) LALInferenceGetVariable(IFOdata->modelParams, "LAL_PNORDER");
   template.order= (LALPNOrder) order; //check order is set correctly
   if (LALInferenceCheckVariable(IFOdata->modelParams, "LAL_APPROXIMANT")){
@@ -490,6 +485,8 @@ void LALInferenceTemplateLAL(LALInferenceIFOData *IFOdata)
   double phi      = *(REAL8*) LALInferenceGetVariable(IFOdata->modelParams, "phase");       /* here: startPhase !! */
   double tc       = *(REAL8*) LALInferenceGetVariable(IFOdata->modelParams, "time");
   double iota     = *(REAL8*) LALInferenceGetVariable(IFOdata->modelParams, "inclination");
+  double distance = *(REAL8*) LALInferenceGetVariable(IFOdata->modelParams,"distance");
+
   double spin1    = 0.0;
   double spin2    = 0.0;
   /* Just two spins specified - assume they are the z-components */
@@ -593,7 +590,7 @@ void LALInferenceTemplateLAL(LALInferenceIFOData *IFOdata)
       || (params.approximant == TaylorT3)
       || (params.approximant == IMRPhenomA)
       || (params.approximant == TaylorF2RedSpin))
-    params.distance  = LAL_PC_SI * 1.0e6;        /* distance (1 Mpc) in units of metres */
+    params.distance  = distance * LAL_PC_SI * 1.0e6;        /* distance (1 Mpc) in units of metres */
   else if ((params.approximant == TaylorT1)
            || (params.approximant == TaylorT2)
            || (params.approximant == PadeT1)
@@ -1399,7 +1396,7 @@ void LALInferenceTemplateLALGenerateInspiral(LALInferenceIFOData *IFOdata)
   injParams.spin2y = (a_spin2 * sin(theta_spin2) * sin(phi_spin2));
   injParams.spin2z = (a_spin2 * cos(theta_spin2));
 	
-  injParams.distance	= 1.;																	/* distance set at 1 Mpc */
+  injParams.distance	= LALInferenceGetREAL8Variable(IFOdata->modelParams,"distance");
 	
   if (IFOdata->timeData==NULL) {
     XLALPrintError(" ERROR in templateLALGenerateInspiral(): encountered unallocated 'timeData'.\n");
@@ -1641,7 +1638,8 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveform(LALInferenceIFOData *IFOd
 /*                                                                                                                       */
 /*   ORIENTATION AND SPIN PARAMETERS                                                                                     */
 /*   - "phi0"               reference phase as per LALSimulation convention; REAL8                                       */
-/*   - if LALINFERENCE_FRAME == LALINFERENCE_FRAME_SYSTEM  (default)                                                          */
+/*   - "distance"           distance in Mpc                                                                              */
+/*   - if LALINFERENCE_FRAME == LALINFERENCE_FRAME_SYSTEM  (default)                                                     */
 /*      - "theta_JN");      zenith angle between J and N in radians;            REAL8                                    */
 /*      - "phi_JL");        azimuthal angle of L_N on its cone about J radians; REAL8                                    */
 /*      - "tilt_spin1");    zenith angle between S1 and LNhat in radians;       REAL8                                    */
@@ -1695,7 +1693,6 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveform(LALInferenceIFOData *IFOd
   REAL8TimeSeries *hplus=NULL;  /**< +-polarization waveform [returned] */
   REAL8TimeSeries *hcross=NULL; /**< x-polarization waveform [returned] */
   COMPLEX16FrequencySeries *hptilde=NULL, *hctilde=NULL;
-  
   REAL8 mc;
   REAL8 phi0, deltaT, m1, m2, spin1x, spin1y, spin1z, spin2x, spin2y, spin2z, f_low, f_start, distance, inclination;
   
@@ -1829,7 +1826,7 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveform(LALInferenceIFOData *IFOd
   if(LALInferenceCheckVariable(IFOdata->modelParams, "spin1"))		spin1z		= *(REAL8*) LALInferenceGetVariable(IFOdata->modelParams, "spin1");
   if(LALInferenceCheckVariable(IFOdata->modelParams, "spin2"))		spin2z		= *(REAL8*) LALInferenceGetVariable(IFOdata->modelParams, "spin2");
   
-  distance	= LAL_PC_SI * 1.0e6;        /* distance (1 Mpc) in units of metres */
+  distance	= LALInferenceGetREAL8Variable(IFOdata->modelParams,"distance")* LAL_PC_SI * 1.0e6;        /* distance (1 Mpc) in units of metres */
 	
   REAL8 lambda1 = 0.;
   if(LALInferenceCheckVariable(IFOdata->modelParams, "lambda1")) lambda1 = *(REAL8*) LALInferenceGetVariable(IFOdata->modelParams, "lambda1");
@@ -1864,11 +1861,11 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveform(LALInferenceIFOData *IFOd
 
     deltaF = IFOdata->freqData->deltaF;
     
-	XLAL_TRY(ret=XLALSimInspiralChooseFDWaveform(&hptilde, &hctilde, phi0,
+	XLAL_TRY(ret=XLALSimInspiralChooseFDWaveformFromCache(&hptilde, &hctilde, phi0,
             deltaF, m1*LAL_MSUN_SI, m2*LAL_MSUN_SI, spin1x, spin1y, spin1z,
             spin2x, spin2y, spin2z, f_start, f_max, distance, inclination,
             lambda1, lambda2, waveFlags, nonGRparams, amporder, order,
-            approximant), errnum);
+            approximant, IFOdata->waveformCache), errnum);
 
 	if (hptilde==NULL || hptilde->data==NULL || hptilde->data->data==NULL ) {
 	  XLALPrintError(" ERROR in LALInferenceTemplateXLALSimInspiralChooseWaveform(): encountered unallocated 'hptilde'.\n");
@@ -1908,16 +1905,16 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveform(LALInferenceIFOData *IFOd
     
   } else {
 
-    XLAL_TRY(ret=XLALSimInspiralChooseTDWaveform(&hplus, &hcross, phi0, deltaT,
+    XLAL_TRY(ret=XLALSimInspiralChooseTDWaveformFromCache(&hplus, &hcross, phi0, deltaT,
             m1*LAL_MSUN_SI, m2*LAL_MSUN_SI, spin1x, spin1y, spin1z,
             spin2x, spin2y, spin2z, f_start, fRef, distance,
             inclination, lambda1, lambda2, waveFlags, nonGRparams,
-            amporder, order, approximant), errnum);
+            amporder, order, approximant, IFOdata->waveformCache), errnum);
     XLALSimInspiralDestroyWaveformFlags(waveFlags);
     XLALSimInspiralDestroyTestGRParam(nonGRparams);
     if (ret == XLAL_FAILURE || hplus == NULL || hcross == NULL)
       {
-	XLALPrintError(" ERROR in XLALSimInspiralChooseWaveform(): error generating waveform. errnum=%d\n",errnum );
+	XLALPrintError(" ERROR in XLALSimInspiralChooseWaveformFromCache(): error generating waveform. errnum=%d\n",errnum );
 	for (i=0; i<IFOdata->timeData->data->length; i++){
 	  IFOdata->timeModelhPlus->data->data[i] = 0.0;
 	  IFOdata->timeModelhCross->data->data[i] = 0.0;

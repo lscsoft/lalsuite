@@ -1197,6 +1197,9 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
     if(fLows) XLALFree(fLows);
     if(fHighs) XLALFree(fHighs);
 
+    LALSimInspiralWaveformCache *cache=XLALCreateSimInspiralWaveformCache();
+    for(i=0;i<Nifo;i++) IFOdata[i].waveformCache=cache;
+
     return headIFO;
 }
 
