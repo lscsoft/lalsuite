@@ -105,7 +105,6 @@ typedef enum {
   LALINFERENCE_UINT4Vector_t,
   LALINFERENCE_string_t,
   LALINFERENCE_MCMCrunphase_ptr_t,
-  LALINFERENCE_WAVEFORM_CACHE_ptr_t,
   LALINFERENCE_void_ptr_t
 } LALInferenceVariableType;
 
@@ -144,7 +143,7 @@ typedef enum
   LALINFERENCE_FRAME_SYSTEM
 } LALInferenceFrame;
 
-extern size_t LALInferenceTypeSize[14];
+extern size_t LALInferenceTypeSize[13];
 
 /**
  * The LALInferenceVariableItem list node structure
