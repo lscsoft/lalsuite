@@ -2604,6 +2604,17 @@ void LALInferenceDistanceQuasiGibbsProposal(LALInferenceRunState *runState, LALI
     XLAL_ERROR_VOID(XLAL_FAILURE, "could not find 'distance' or 'logdistance' in current params");
   }
 
+  /* Get the prior range in d */
+  REAL8 dMin, dMax;
+  if (distParam == USES_DISTANCE_VARIABLE) {
+    LALInferenceGetMinMaxPrior(runState->priorArgs, "distance", &dMin, &dMax);
+  } else {
+    REAL8 logDMin, logDMax;
+    LALInferenceGetMinMaxPrior(runState->priorArgs, "logdistance", &logDMin, &logDMax);
+    dMin = exp(logDMin);
+    dMax = exp(logDMax);
+  }
+
   REAL8 d0;
   if (distParam == USES_DISTANCE_VARIABLE) {
     d0 = *(REAL8 *)LALInferenceGetVariable(proposedParams, "distance");
@@ -2659,8 +2670,6 @@ void LALInferenceDistanceQuasiGibbsProposal(LALInferenceRunState *runState, LALI
                          sigma2, weirdProposalCount);
     }
     if (distParam == USES_DISTANCE_VARIABLE) {
-      REAL8 dMax, dMin;
-      LALInferenceGetMinMaxPrior(runState->priorArgs, "distance", &dMin, &dMax);
       REAL8 dNew = dMin + (dMax-dMin)*gsl_rng_uniform(runState->GSLrandom);
 
       LALInferenceSetVariable(proposedParams, "distance", &dNew);
@@ -2668,7 +2677,10 @@ void LALInferenceDistanceQuasiGibbsProposal(LALInferenceRunState *runState, LALI
       return;
     } else {
       REAL8 logDMin, logDMax;
-      LALInferenceGetMinMaxPrior(runState->priorArgs, "logdistance", &logDMin, &logDMax);
+
+      logDMin = log(dMin);
+      logDMax = log(dMax);
+
       REAL8 logDNew = logDMin + (logDMax - logDMin)*gsl_rng_uniform(runState->GSLrandom);
 
       LALInferenceSetVariable(proposedParams, "logdistance", &logDNew);
@@ -2679,9 +2691,14 @@ void LALInferenceDistanceQuasiGibbsProposal(LALInferenceRunState *runState, LALI
 
   REAL8 sigma = sqrt(sigma2);
 
-  /* Draw new u from Gaussian, convert to d. */
-  REAL8 uNew = mu + sigma*gsl_ran_ugaussian(runState->GSLrandom);
-  REAL8 dNew = 1.0/uNew;
+  /* Ensure that we don't jump outside the distance limits dMin and
+     dMax. */
+  REAL8 dNew;
+  do {
+    /* Draw new u from Gaussian, convert to d. */
+    REAL8 uNew = mu + sigma*gsl_ran_ugaussian(runState->GSLrandom);
+    dNew = 1.0/uNew;
+  } while (dNew < dMin || dNew > dMax);
 
   if (distParam == USES_DISTANCE_VARIABLE) {
     LALInferenceSetVariable(proposedParams, "distance", &dNew);
