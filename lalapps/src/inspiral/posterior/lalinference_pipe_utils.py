@@ -1074,7 +1074,7 @@ class EngineNode(pipeline.CondorDAGNode):
     if parent is not None:
         self.add_parent(parent)
         df_output=parent.get_output()
-        self.set_cache(df_output)
+        self.set_cache(df_output,ifo)
         #self.cachefiles[ifo]=parent.get_output_files()[0]
         #self.add_input_file(self.cachefiles[ifo])
         self.timeslides[ifo]=timeslide
@@ -1082,7 +1082,7 @@ class EngineNode(pipeline.CondorDAGNode):
         return 1
     else: return 0
  
-  def set_cache(self,filename):
+  def set_cache(self,filename,ifo):
     """
     Add a cache file from LIGODataFind. Based on same method from pipeline.AnalysisNode
     """
