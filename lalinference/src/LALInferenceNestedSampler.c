@@ -986,7 +986,7 @@ LALInferenceVariables *LALInferenceComputeAutoCorrelation(LALInferenceRunState *
     {
       REAL8 newlogL=*(REAL8 *)LALInferenceGetVariable(&(variables_array[i]),"logL");
       if(newlogL==oldLogL) {j--; continue;}
-      cache=realloc(cache,(j+1)*sizeof(LALInferenceVariables) );
+      cache=XLALRealloc(cache,(j+1)*sizeof(LALInferenceVariables) );
       if(!cache) fprintf(stderr,"ERROR!!! Could not resize cache to %i!\n",j+1);
       memset(&(cache[j]),0,sizeof(LALInferenceVariables));
       LALInferenceCopyVariables(&(variables_array[i]),&(cache[j]));
@@ -1160,7 +1160,7 @@ void LALInferenceNestedSamplingCachedSampler(LALInferenceRunState *runState)
       }
       LALInferenceClearVariables(new);
       new=NULL;
-      cache=realloc(cache,sizeof(LALInferenceVariables) * (*Ncache-1));
+      cache=XLALRealloc(cache,sizeof(LALInferenceVariables) * (*Ncache-1));
       (*Ncache)--;
     } while (logL<=logLmin&&*Ncache>0);
   
