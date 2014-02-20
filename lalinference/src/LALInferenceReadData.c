@@ -2281,18 +2281,14 @@ void InjectFD(LALInferenceIFOData *IFOdata, SimInspiralTable *inj_table, Process
   freqModelhPlus=XLALCreateCOMPLEX16FrequencySeries("freqDatahP",&(IFOdata->timeData->epoch),0.0,IFOdata->freqData->deltaF,&lalDimensionlessUnit,IFOdata->freqData->data->length);
   IFOdata->freqModelhPlus=freqModelhPlus;
   IFOdata->freqModelhCross=freqModelhCross;
-  if(LALInferenceGetProcParamVal(commandLine,"--lalinspiralinjection")){
-    LALInferenceTemplateLAL(IFOdata);
-  }else{
-    IFOdata->modelDomain = LAL_SIM_DOMAIN_FREQUENCY;
-    LALInferenceTemplateXLALSimInspiralChooseWaveform(IFOdata);
+  IFOdata->modelDomain = LAL_SIM_DOMAIN_FREQUENCY;
+  LALInferenceTemplateXLALSimInspiralChooseWaveform(IFOdata);
 
-    /* Fail if injection waveform generation was not successful */
-    errnum = *XLALGetErrnoPtr();
-    if (errnum != XLAL_SUCCESS) {
-        XLALPrintError(" ERROR in InjectFD(): error encountered when injecting waveform. errnum=%d\n",errnum);
-        exit(1);
-    }
+  /* Fail if injection waveform generation was not successful */
+  errnum = *XLALGetErrnoPtr();
+  if (errnum != XLAL_SUCCESS) {
+    XLALPrintError(" ERROR in InjectFD(): error encountered when injecting waveform. errnum=%d\n",errnum);
+    exit(1);
   }
 
   double Fplus, Fcross;

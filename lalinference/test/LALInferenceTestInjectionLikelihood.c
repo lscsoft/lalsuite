@@ -138,7 +138,7 @@ Initialisation arguments:\n\
 void initializeTemplate(LALInferenceRunState *runState)
 {
 	char help[]="\
-(--template [LAL,PhenSpin,LALGenerateInspiral,LALSim]\tSpecify template (default LAL)\n";
+(--template [LALSim]\tSpecify template (default LALSim)\n";
 	ProcessParamsTable *ppt=NULL;
 	ProcessParamsTable *commandLine=runState->commandLine;
 	/* Print command line arguments if help requested */
@@ -152,19 +152,7 @@ void initializeTemplate(LALInferenceRunState *runState)
 	runState->templt=&LALInferenceTemplateLAL;
 	ppt=LALInferenceGetProcParamVal(commandLine,"--template");
 	if(ppt) {
-		if(!strcmp("LALSTPN",ppt->value)){
-			fprintf(stderr,"ERROR: --template LALSTPN is deprecated. Try LALGenerateInspiral instead...\n");
-			exit(1);
-		}
-		else if(!strcmp("PhenSpin",ppt->value))
-			runState->templt=&LALInferenceTemplatePSTRD;
-		else if(!strcmp("LALGenerateInspiral",ppt->value))
-			runState->templt=&LALInferenceTemplateLALGenerateInspiral;
-		else if(!strcmp("SpinTaylor",ppt->value))
-			runState->templt=&LALInferenceTemplateLALGenerateInspiral;
-		else if(!strcmp("LAL",ppt->value))
-			runState->templt=&LALInferenceTemplateLAL;
-        else if(!strcmp("LALSim",ppt->value))
+        if(!strcmp("LALSim",ppt->value))
             runState->templt=&LALInferenceTemplateXLALSimInspiralChooseWaveform;
 		else {
 			XLALPrintError("Error: unknown template %s\n",ppt->value);

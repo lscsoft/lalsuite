@@ -610,9 +610,9 @@ int main(int argc, char *argv[]){
  	initVariables(runState);
 	
     REAL8 loglikelihood=0.0;
-	loglikelihood = LALInferenceFreqDomainLogLikelihood(runState->currentParams, runState->data, &LALInferenceTemplateLALGenerateInspiral) - LALInferenceNullLogLikelihood(runState->data);
+	loglikelihood = LALInferenceFreqDomainLogLikelihood(runState->currentParams, runState->data, &LALInferenceTemplateXLALSimInspiralChooseWaveform) - LALInferenceNullLogLikelihood(runState->data);
 	printf("network LogLikelihood=%f\tSNR=%f\n",loglikelihood,sqrt(2*loglikelihood));
-    LALInferenceChiSquareTest(runState->currentParams, runState->data, &LALInferenceTemplateLALGenerateInspiral);
+    LALInferenceChiSquareTest(runState->currentParams, runState->data, &LALInferenceTemplateXLALSimInspiralChooseWaveform);
 
   return 0;
 }

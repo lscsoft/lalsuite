@@ -407,7 +407,6 @@ void NelderMeadAlgorithm(struct tagLALInferenceRunState *runState, LALInferenceV
 
 void LALVariablesTest(void);
 void DataTest(void);
-void TemplateStatPhaseTest(void);
 void SingleIFOLikelihoodTest(void);
 void BasicMCMCTest(void);
 void TemplateDumpTest(void);
@@ -1041,56 +1040,6 @@ printf("Likelihood %g NullLikelihood %g RelativeLikelihood %g\n", likelihood, nu
 }
 
 
-void TemplateStatPhaseTest(void)
-{
-    fprintf(stdout, " trying out 'templateStatPhase()'...\n");
-    REAL8 mc   = 4.0;
-    REAL8 eta  = 0.24;
-    REAL8 iota = 0.4;
-    REAL8 phi  = 2.0;
-    REAL8 tcoal   = XLALGPSGetREAL8(&(runstate->data->timeData->epoch)) + 
-		(((double)runstate->data->timeData->data->length) * runstate->data->timeData->deltaT) - 1.0;
-    printf("TCOAL: %f\n",tcoal);
-	REAL8 tc=*((REAL8 *) LALInferenceGetVariable(runstate->data->modelParams,"time"));
-	printf("t_c: %f\n", tc);
-    LALInferenceClearVariables(runstate->data->modelParams);
-    LALInferenceAddVariable(runstate->data->modelParams, "chirpmass",   &mc,    LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR);
-    LALInferenceAddVariable(runstate->data->modelParams, "massratio",   &eta,   LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR);
-    LALInferenceAddVariable(runstate->data->modelParams, "inclination", &iota,  LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR);
-    LALInferenceAddVariable(runstate->data->modelParams, "phase",       &phi,   LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR);
-    LALInferenceAddVariable(runstate->data->modelParams, "time",        &tcoal, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR);
-    LALInferencePrintVariables(runstate->data->modelParams);
-    LALInferenceTemplateStatPhase(runstate->data);
-    fprintf(stdout, " ...done.\n");
-
-	  
-	  // Parameters for which I am going to compute the likelihood
-	  
-	  REAL8 ra_current        = 0.0;	/* radian      */
-	  REAL8 dec_current       = 0.0;	/* radian      */
-	  REAL8 psi_current       = 0.8;	/* radian      */
-	  REAL8 distMpc_current   = 10.0;	/* Mpc         */
-	  
-    LALInferenceAddVariable(&currentParams, "chirpmass",       &mc,              LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR);
-    LALInferenceAddVariable(&currentParams, "massratio",       &eta,             LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR);
-    LALInferenceAddVariable(&currentParams, "inclination",     &iota,            LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR);
-    LALInferenceAddVariable(&currentParams, "phase",           &phi,             LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_CIRCULAR);
-    LALInferenceAddVariable(&currentParams, "time",            &tc   ,           LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR); 
-    LALInferenceAddVariable(&currentParams, "rightascension",  &ra_current,      LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_CIRCULAR);
-    LALInferenceAddVariable(&currentParams, "declination",     &dec_current,     LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR);
-    LALInferenceAddVariable(&currentParams, "polarisation",    &psi_current,     LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR);
-    LALInferenceAddVariable(&currentParams, "distance",        &distMpc_current, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR);
-    fprintf(stdout, " trying 'templateLAL' likelihood...\n");
-    numberI4 = TaylorT1;
-    LALInferenceAddVariable(&currentParams, "LAL_APPROXIMANT", &numberI4,        LALINFERENCE_INT4_t, LALINFERENCE_PARAM_FIXED);
-    numberI4 = LAL_PNORDER_TWO;
-    LALInferenceAddVariable(&currentParams, "LAL_PNORDER",     &numberI4,        LALINFERENCE_INT4_t, LALINFERENCE_PARAM_FIXED);
-    likelihood = LALInferenceFreqDomainLogLikelihood(&currentParams, runstate->data, LALInferenceTemplateLAL);
-    fprintf(stdout, " ...done.\n");
-    fprintf(stdout," templateLAL log-likelihood %f\n", likelihood);  
-    fprintf(stdout," ----------\n");
-}
-
 
 void SingleIFOLikelihoodTest(void)
 {
@@ -1101,7 +1050,7 @@ void SingleIFOLikelihoodTest(void)
     LALInferenceSetVariable(&currentParams, "LAL_PNORDER",     &numberI4);	
 	numberI4 = TaylorT1;
     LALInferenceSetVariable(&currentParams, "LAL_APPROXIMANT", &numberI4);														  																  
-	LALInferenceComputeFreqDomainResponse(&currentParams, runstate->data, LALInferenceTemplateLAL, freqModel1);
+	LALInferenceComputeFreqDomainResponse(&currentParams, runstate->data, LALInferenceTemplateXLALSimInspiralChooseWaveform, freqModel1);
 	freqModel2=runstate->data->freqData->data;
 	//ComputeFreqDomainResponse(&currentParams, runstate->data, templateLAL, freqModel2);
 	FILE * freqModelFile=fopen("freqModelFile.dat", "w");
@@ -1121,9 +1070,9 @@ void SingleIFOLikelihoodTest(void)
 			-0.5*LALInferenceComputeFrequencyDomainOverlap(runstate->data, freqModel1, freqModel1)
 		);				
 	fprintf(stdout, "likelihood %g\n",
-		LALInferenceFreqDomainLogLikelihood(&currentParams, runstate->data, LALInferenceTemplateLAL));
+		LALInferenceFreqDomainLogLikelihood(&currentParams, runstate->data, LALInferenceTemplateXLALSimInspiralChooseWaveform));
 	fprintf(stdout, "undecomposed likelihood %g \n", 
-		LALInferenceUndecomposedFreqDomainLogLikelihood(&currentParams, runstate->data, LALInferenceTemplateLAL));
+		LALInferenceUndecomposedFreqDomainLogLikelihood(&currentParams, runstate->data, LALInferenceTemplateXLALSimInspiralChooseWaveform));
 	fprintf(stdout, "null likelihood %g decomposed null likelihood %g\n",
 		LALInferenceNullLogLikelihood(runstate->data),
 		LALInferenceNullLogLikelihood(runstate->data));
@@ -1131,23 +1080,6 @@ void SingleIFOLikelihoodTest(void)
     //	XLALDestroyCOMPLEX16Vector(freqModel2);
 }
 
-//void BasicMCMCTest(void)
-//{
-	//fprintf(stdout, "Try MCMC basic Sampler test\n");
-	//runstate->algorithm=MCMCAlgorithm;
-	//runstate->evolve=BasicMCMCOneStep;
-	//runstate->prior=BasicUniformLALPrior;
-	//runstate->proposal=BasicMCMCLALProposal;
-        //runstate->proposalArgs = XLALMalloc(sizeof(LALInferenceVariables));
-        //runstate->proposalArgs->head=NULL;
-        //runstate->proposalArgs->dimension=0;
-	//runstate->likelihood=LALInferenceFreqDomainLogLikelihood;
-	////runstate->templt=templateLAL;
-	//runstate->templt=LALInferenceTemplateStatPhase;
-	//runstate->currentParams=&currentParams;
-	//MCMCAlgorithm(runstate);
-	//fprintf(stdout, "End of MCMC basic Sampler test\n");
-//}
 
 
 void TemplateDumpTest(void)
@@ -1155,10 +1087,10 @@ void TemplateDumpTest(void)
  /* NOTE: try out the "forceTimeLocation" flag within the "templateLAL()" function */
     /*       for aligning (time domain) templates.                                    */
     fprintf(stdout," generating templates & writing to files...:\n");
-    LALInferenceDumptemplateFreqDomain(&currentParams, runstate->data, LALInferenceTemplateStatPhase, "test_FTemplate25SP.csv");
-    LALInferenceDumptemplateTimeDomain(&currentParams, runstate->data, LALInferenceTemplateStatPhase, "test_TTemplate25SP.csv");
-    LALInferenceDumptemplateFreqDomain(&currentParams, runstate->data, LALInferenceTemplate3525TD, "test_FTemplate3525TD.csv");
-    LALInferenceDumptemplateTimeDomain(&currentParams, runstate->data, LALInferenceTemplate3525TD, "test_TTemplate3525TD.csv");
+    LALInferenceDumptemplateFreqDomain(&currentParams, runstate->data, LALInferenceTemplateXLALSimInspiralChooseWaveform, "test_FTemplate25SP.csv");
+    LALInferenceDumptemplateTimeDomain(&currentParams, runstate->data, LALInferenceTemplateXLALSimInspiralChooseWaveform, "test_TTemplate25SP.csv");
+    LALInferenceDumptemplateFreqDomain(&currentParams, runstate->data, LALInferenceTemplateXLALSimInspiralChooseWaveform, "test_FTemplate3525TD.csv");
+    LALInferenceDumptemplateTimeDomain(&currentParams, runstate->data, LALInferenceTemplateXLALSimInspiralChooseWaveform, "test_TTemplate3525TD.csv");
 
     fprintf(stdout," ----------\n");
 	 
@@ -1184,7 +1116,7 @@ void TemplateDumpTest(void)
 	  LALInferenceAddVariable(&currentParams, "coa_phase",    &coa_phase,           LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_CIRCULAR);	  
 	  double PNorder = 3.5;
 	  LALInferenceAddVariable(&currentParams, "PNorder",      &PNorder,             LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);	  
-	  LALInferenceDumptemplateTimeDomain(&currentParams, runstate->data, LALInferenceTemplateLALGenerateInspiral, "test_TTemplateLALSTPN.csv");
+	  LALInferenceDumptemplateTimeDomain(&currentParams, runstate->data, LALInferenceTemplateXLALSimInspiralChooseWaveform, "test_TTemplateXLALSimInspiralChooseWaveformSTPN.csv");
 
 	  
     /* These are the LAL templates that (...seem to...) work right now: */
@@ -1193,43 +1125,43 @@ void TemplateDumpTest(void)
     LALInferenceSetVariable(&currentParams, "LAL_PNORDER",     &numberI4);
     numberI4 = TaylorF2;
     LALInferenceSetVariable(&currentParams, "LAL_APPROXIMANT", &numberI4);
-    LALInferenceDumptemplateTimeDomain(&currentParams, runstate->data, LALInferenceTemplateLAL, "test_TTemplateLAL-TF2.csv");
+    LALInferenceDumptemplateTimeDomain(&currentParams, runstate->data, LALInferenceTemplateXLALSimInspiralChooseWaveform, "test_TTemplateXLALSimInspiralChooseWaveform-TF2.csv");
     numberI4 = TaylorT1;
     LALInferenceSetVariable(&currentParams, "LAL_APPROXIMANT", &numberI4);
-    LALInferenceDumptemplateTimeDomain(&currentParams, runstate->data, LALInferenceTemplateLAL, "test_TTemplateLAL-TT1.csv");
+    LALInferenceDumptemplateTimeDomain(&currentParams, runstate->data, LALInferenceTemplateXLALSimInspiralChooseWaveform, "test_TTemplateXLALSimInspiralChooseWaveform-TT1.csv");
     numberI4 = TaylorT2;
     LALInferenceSetVariable(&currentParams, "LAL_APPROXIMANT", &numberI4);
-    LALInferenceDumptemplateTimeDomain(&currentParams, runstate->data, LALInferenceTemplateLAL, "test_TTemplateLAL-TT2.csv");
+    LALInferenceDumptemplateTimeDomain(&currentParams, runstate->data, LALInferenceTemplateXLALSimInspiralChooseWaveform, "test_TTemplateXLALSimInspiralChooseWaveform-TT2.csv");
     numberI4 = TaylorT3;
     LALInferenceSetVariable(&currentParams, "LAL_APPROXIMANT", &numberI4);
-    LALInferenceDumptemplateTimeDomain(&currentParams, runstate->data, LALInferenceTemplateLAL, "test_TTemplateLAL-TT3.csv");
+    LALInferenceDumptemplateTimeDomain(&currentParams, runstate->data, LALInferenceTemplateXLALSimInspiralChooseWaveform, "test_TTemplateXLALSimInspiralChooseWaveform-TT3.csv");
 
     numberI4 = IMRPhenomA;
     LALInferenceSetVariable(&currentParams, "LAL_APPROXIMANT", &numberI4);
-    LALInferenceDumptemplateTimeDomain(&currentParams, runstate->data, LALInferenceTemplateLAL, "test_TTemplateLAL-Phenom.csv");
-    LALInferenceDumptemplateFreqDomain(&currentParams, runstate->data, LALInferenceTemplateLAL, "test_FTemplateLAL-Phenom.csv");
+    LALInferenceDumptemplateTimeDomain(&currentParams, runstate->data, LALInferenceTemplateXLALSimInspiralChooseWaveform, "test_TTemplateXLALSimInspiralChooseWaveform-Phenom.csv");
+    LALInferenceDumptemplateFreqDomain(&currentParams, runstate->data, LALInferenceTemplateXLALSimInspiralChooseWaveform, "test_FTemplateXLALSimInspiralChooseWaveform-Phenom.csv");
 
     numberI4 = PadeT1;
     LALInferenceSetVariable(&currentParams, "LAL_APPROXIMANT", &numberI4);
-    LALInferenceDumptemplateTimeDomain(&currentParams, runstate->data, LALInferenceTemplateLAL, "test_TTemplateLAL-PadeT1.csv");
+    LALInferenceDumptemplateTimeDomain(&currentParams, runstate->data, LALInferenceTemplateXLALSimInspiralChooseWaveform, "test_TTemplateXLALSimInspiralChooseWaveform-PadeT1.csv");
 
     numberI4 = EOB;
     LALInferenceSetVariable(&currentParams, "LAL_APPROXIMANT", &numberI4);
     numberI4 = LAL_PNORDER_PSEUDO_FOUR;
     LALInferenceSetVariable(&currentParams, "LAL_PNORDER", &numberI4);
-    LALInferenceDumptemplateTimeDomain(&currentParams, runstate->data, LALInferenceTemplateLAL, "test_TTemplateLAL-EOB.csv");
+    LALInferenceDumptemplateTimeDomain(&currentParams, runstate->data, LALInferenceTemplateXLALSimInspiralChooseWaveform, "test_TTemplateXLALSimInspiralChooseWaveform-EOB.csv");
 
     numberI4 = BCV;
     LALInferenceSetVariable(&currentParams, "LAL_APPROXIMANT", &numberI4);
     numberI4 = LAL_PNORDER_TWO;
     LALInferenceSetVariable(&currentParams, "LAL_PNORDER",     &numberI4);
-    LALInferenceDumptemplateTimeDomain(&currentParams, runstate->data, LALInferenceTemplateLAL, "test_TTemplateLAL-BCV.csv");
+    LALInferenceDumptemplateTimeDomain(&currentParams, runstate->data, LALInferenceTemplateXLALSimInspiralChooseWaveform, "test_TTemplateXLALSimInspiralChooseWaveform-BCV.csv");
 
     numberI4 = EOBNR;
     LALInferenceSetVariable(&currentParams, "LAL_APPROXIMANT", &numberI4);
     numberI4 = LAL_PNORDER_PSEUDO_FOUR;
     LALInferenceSetVariable(&currentParams, "LAL_PNORDER", &numberI4);
-    LALInferenceDumptemplateTimeDomain(&currentParams, runstate->data, LALInferenceTemplateLAL, "test_TTemplateLAL-EOBNR.csv");
+    LALInferenceDumptemplateTimeDomain(&currentParams, runstate->data, LALInferenceTemplateXLALSimInspiralChooseWaveform, "test_TTemplateXLALSimInspiralChooseWaveform-EOBNR.csv");
 
     fprintf(stdout," ----------\n");
 
@@ -1265,7 +1197,7 @@ void PTMCMCTest(void)
 	runstate->proposalArgs->dimension=0;
 	runstate->likelihood=LALInferenceFreqDomainLogLikelihood;
 	//runstate->likelihood=GaussianLikelihood;
-	runstate->templt=LALInferenceTemplateLAL;
+	runstate->templt=LALInferenceTemplateXLALSimInspiralChooseWaveform;
 	
 	
 	SimInspiralTable *injTable=NULL;

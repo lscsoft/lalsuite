@@ -59,21 +59,7 @@ void LALInferenceInitCBCTemplate(LALInferenceRunState *runState)
   runState->templt=&LALInferenceTemplateXLALSimInspiralChooseWaveform;
   ppt=LALInferenceGetProcParamVal(commandLine,"--template");
   if(ppt) {
-    if(!strcmp("LALSTPN",ppt->value)){
-      fprintf(stderr,"ERROR: --template LALSTPN is deprecated. Try LALGenerateInspiral instead...\n");
-      exit(1);
-    }
-    else if(!strcmp("PhenSpin",ppt->value))
-      runState->templt=&LALInferenceTemplatePSTRD;
-    else if(!strcmp("LALGenerateInspiral",ppt->value))
-      runState->templt=&LALInferenceTemplateLALGenerateInspiral;
-    else if(!strcmp("SpinTaylor",ppt->value))
-      runState->templt=&LALInferenceTemplateLALGenerateInspiral;
-    else if(!strcmp("LAL",ppt->value)){
-      fprintf(stderr,"Warning: --template LAL is deprecated. Please use --template LALSim in future runs.\n");
-      runState->templt=&LALInferenceTemplateLAL;
-    }
-    else if(!strcmp("LALSim",ppt->value))
+    if(!strcmp("LALSim",ppt->value))
       runState->templt=&LALInferenceTemplateXLALSimInspiralChooseWaveform;
     else {
       XLALPrintError("Error: unknown template %s\n",ppt->value);
@@ -238,7 +224,6 @@ LALInferenceVariables *LALInferenceInitCBCVariables(LALInferenceRunState *state)
                (--symMassRatio)                Jump in symmetric mass ratio eta, instead of q=m2/m1.\n\
                (--use-logdistance)             Jump in log(distance) instead of distance.\n\
                (--system-frame                 Jump in spin parameters defined in the system coordinates, relative to total angular momentum\n\
-               (--template)                    Specify template [LAL,PhenSpin,LALGenerateInspiral,LALSim] (default LALSim).\n\
                (--approx)                      Specify a template approximant and phase order to use.\n\
                                                (default TaylorF2threePointFivePN). Available approximants:\n\
                                                default modeldomain=\"time\": GeneratePPN, TaylorT1, TaylorT2, TaylorT3, TaylorT4, \n\
