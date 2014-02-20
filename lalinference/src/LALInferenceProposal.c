@@ -894,6 +894,8 @@ void LALInferenceDifferentialEvolutionNames(LALInferenceRunState *runState,
                                             LALInferenceVariables *proposedParams,
                                             const char **names) {
   size_t i,j;
+
+  LALInferenceCopyVariables(runState->currentParams, proposedParams);
   if (names == NULL) {
 
     size_t N = LALInferenceGetVariableDimension(runState->currentParams) + 1; /* More names than we need. */
