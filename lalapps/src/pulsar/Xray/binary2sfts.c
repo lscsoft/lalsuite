@@ -61,6 +61,8 @@
 #include <gsl/gsl_rng.h>           /* for random number generation */ 
 #include <gsl/gsl_randist.h>       /* for random number generation */ 
 
+#include "SemiCoherent.h"
+
 /** A structure that stores user input variables 
  */
 typedef struct { 
@@ -74,7 +76,7 @@ typedef struct {
   REAL8 freqband;                   /**< the band width */
   REAL8 highpassf;                  /**< the high pass filter frequency */
   BOOLEAN outSingleSFT;	            /**< use to output a single concatenated SFT */
-  REAL8 amp_inj;                /**< if set we inject a fake signal with this fractional amplitude */
+  REAL8 amp_inj;                    /**< if set we inject a fake signal with this fractional amplitude */
   INT4 seed;
   REAL8 f_inj;
   REAL8 asini_inj;
@@ -88,10 +90,7 @@ typedef struct {
 int main(int argc,char *argv[]);
 int XLALReadUserVars(int argc,char *argv[],UserInput_t *uvar);
 int compare_function(const void *a,const void *b);
-int XLALInitgslrand(gsl_rng **gslrnd,INT8 seed);
-int XLALCopySFT (SFTtype *dest, const SFTtype *src);
-int XLALAppendSFT2Vector (SFTVector *vect,const SFTtype *sft);
-			  
+	  
 /***********************************************************************************************/
 /* empty initializers */
 UserInput_t empty_UserInput;
@@ -383,93 +382,8 @@ int XLALReadUserVars(int argc,            /**< [in] the command line argument co
   
 }
 
-/** this function initialises the gsl random number generation
- *
- * If the input seed is zero then a random seed is drawn from
- * /dev/urandom.
- *
- */
-int XLALInitgslrand(gsl_rng **gslrnd,     /**< [out] the gsl random number generator */
-		    INT8 seed             /**< [in] the random number generator seed */
-		    )
-{
-  FILE *devrandom = NULL;      /* pointer to the /dev/urandom file */
-  
-  /* if the seed is 0 then we draw a random seed from /dev/urandom */
-  if (seed == 0) {
-    
-    /* open /dev/urandom */
-    if ((devrandom=fopen("/dev/urandom","r")) == NULL)  {
-      LogPrintf(LOG_CRITICAL,"%s: Error, unable to open device /dev/random\n",__func__);
-      XLAL_ERROR(XLAL_EINVAL);
-    }
-    
-    /* read a random seed */
-    if (fread((void*)&seed,sizeof(INT8),1,devrandom) != 1) {
-      LogPrintf(LOG_CRITICAL,"%s: Error, unable to read /dev/random\n",__func__);
-      XLAL_ERROR(XLAL_EINVAL);
-    }
-    fclose(devrandom);
-    
-  }
-  
-  /* setup gsl random number generation */
-  *gslrnd = gsl_rng_alloc(gsl_rng_taus2);
-  gsl_rng_set(*gslrnd,seed);
- 
-  LogPrintf(LOG_DEBUG,"%s : leaving.\n",__func__);
-  return XLAL_SUCCESS;
-  
-}
 
-/** Append the given SFTtype to the SFT-vector (no SFT-specific checks are done!) */
-int XLALAppendSFT2Vector (SFTVector *vect,		/**< destinatino SFTVector to append to */
-			  const SFTtype *sft            /**< the SFT to append */
-			  )	
-{
-  UINT4 oldlen = vect->length;
 
-  if ( (vect->data = LALRealloc ( vect->data, (oldlen + 1)*sizeof( *vect->data ) )) == NULL ) {
-     LogPrintf(LOG_CRITICAL,"%s: Error, unable to allocate memory\n",__func__);
-     XLAL_ERROR(XLAL_EINVAL);
-  }
-  memset ( &(vect->data[oldlen]), 0, sizeof( vect->data[0] ) );
-  vect->length ++;
 
-  XLALCopySFT(&vect->data[oldlen], sft );
-  
-  return XLAL_SUCCESS;
-  
-} /* XLALAppendSFT2Vector() */
-
-/** Copy an entire SFT-type into another.
- * We require the destination-SFT to have a NULL data-entry, as the
- * corresponding data-vector will be allocated here and copied into
- *
- * Note: the source-SFT is allowed to have a NULL data-entry,
- * in which case only the header is copied.
- */
-int XLALCopySFT (SFTtype *dest, 	/**< [out] copied SFT (needs to be allocated already) */
-		 const SFTtype *src	/**< input-SFT to be copied */
-		 )
-{
-
-  /* copy complete head (including data-pointer, but this will be separately alloc'ed and copied in the next step) */
-  memcpy ( dest, src, sizeof(*dest) );
-
-  /* copy data (if there's any )*/
-  if ( src->data )
-    {
-      UINT4 numBins = src->data->length;
-      if ( (dest->data = XLALCreateCOMPLEX8Vector ( numBins )) == NULL ) {
-	LogPrintf(LOG_CRITICAL,"%s: Error, unable to allocate memory\n",__func__);
-	XLAL_ERROR(XLAL_EINVAL);
-      }
-      memcpy (dest->data->data, src->data->data, numBins * sizeof (src->data->data[0]));
-    }
-
-   return XLAL_SUCCESS;
-
-} /* XLALCopySFT() */
 
 
