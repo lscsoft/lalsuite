@@ -157,7 +157,7 @@ INT4 LALInferenceGetVariableDimensionNonFixed(LALInferenceVariables *vars)
     while (ptr != NULL) {
       /* print name: */
       //TBL: LALInferenceGetVariableDimensionNonFixed had to be modified for noise-parameters, which are stored in a gsl_matrix
-      if (ptr->vary != LALINFERENCE_PARAM_FIXED)
+      if (LALInferenceCheckVariableNonFixed(vars,ptr->name))
       {
         //Generalize to allow for other data types
         if(ptr->type == LALINFERENCE_gslMatrix_t)
