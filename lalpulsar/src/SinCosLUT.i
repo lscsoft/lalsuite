@@ -1,3 +1,22 @@
+//
+// Copyright (C) 2009, 2010, 2011, 2012, 2013 Bernd Machenschalk, Reinhard Prix
+//
+// This program is free software; you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation; either version 2 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with with program; see the file COPYING. If not, write to the
+// Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
+// MA  02111-1307  USA
+//
+
 /*
   This file defines:
   - a macro SINCOS_TRIM_X(y,x) which trims the value x to interval [0..2)
@@ -18,6 +37,8 @@
   __BIG_ENDIAN__ : has the architecture big-endian byt order?
 */
 
+#include <lal/LALConstants.h>
+#include <lal/XLALError.h>
 
 /*
   Trimming macro
@@ -30,12 +51,12 @@
 #ifdef _MSC_VER /* no C99 rint() */
 #define SINCOS_TRIM_X(y,x) \
   { \
-    __asm FLD     QWORD PTR x 	\
-    __asm FRNDINT             	\
-    __asm FSUBR   QWORD PTR x 	\
-    __asm FLD1                	\
+    __asm FLD     QWORD PTR x   \
+    __asm FRNDINT               \
+    __asm FSUBR   QWORD PTR x   \
+    __asm FLD1                  \
     __asm FADDP   ST(1),ST	\
-    __asm FSTP    QWORD PTR y 	\
+    __asm FSTP    QWORD PTR y   \
     }
 #elif _ARCH_PPC
 /* floor() is actually faster here, as we don't have to set the rounding mode */
@@ -49,12 +70,12 @@
 #ifdef _MSC_VER /* no C99 rint() */
 #define SINCOS_TRIM_X(y,x) \
   { \
-    __asm FLD     DWORD PTR x 	\
-    __asm FRNDINT             	\
-    __asm FSUBR   DWORD PTR x 	\
-    __asm FLD1                	\
+    __asm FLD     DWORD PTR x   \
+    __asm FRNDINT               \
+    __asm FSUBR   DWORD PTR x   \
+    __asm FLD1                  \
     __asm FADDP   ST(1),ST	\
-    __asm FSTP    DWORD PTR y 	\
+    __asm FSTP    DWORD PTR y   \
     }
 #elif _ARCH_PPC
 /* floor() is actually faster here, as we don't have to set the rounding mode */
@@ -179,7 +200,7 @@ static union {
 
 /* Version 1 : with trimming of input argument to [0,2) */
 #define SINCOS_TRIM_P0A(alpha) \
-  SINCOS_FLD " %[" #alpha "] \n\t" /* st: alpha */ 			\
+  SINCOS_FLD " %[" #alpha "] \n\t" /* st: alpha */                      \
   "fistpll %[tmp]          \n\t" /* tmp=(INT8)(round((alpha)) */	\
   "fld1                    \n\t" /* st: 1.0 */				\
   "fildll  %[tmp]          \n\t" /* st: 1.0;(round((alpha))*/
@@ -193,7 +214,7 @@ static union {
 /* Version 2 : assumes input argument is already trimmed */
 #define SINCOS_P0(alpha)						\
   SINCOS_FLD " %[" #alpha "] \n\t" /*st:alpha */			\
-  "faddl   %[sincos_adds]  \n\t" /*st:alpha+A */	                \
+  "faddl   %[sincos_adds]  \n\t" /*st:alpha+A */                        \
   "fstpl   %[tmp]          \n\t"
 
 #define SINCOS_P1							\
@@ -211,7 +232,7 @@ static union {
   "fld     %%st            \n\t" /* st: n; n; */			\
   "fmuls   ("PAX","PDX",4) \n\t"					\
   "mov     %[scb], "PDI"   \n\t"
-#define SINCOS_P4A		 /* P4 w/o doubling, used when P6 is not */ \
+#define SINCOS_P4A               /* P4 w/o doubling, used when P6 is not */ \
   "fmuls   ("PAX","PDX",4) \n\t"					\
   "mov     %[scb], "PDI"   \n\t"
 #define SINCOS_P5(sin)							\
@@ -234,10 +255,10 @@ static int local_sin_cos_2PI_LUT_trimmed (REAL4 *s, REAL4 *c, REAL8 x) {
   /* check range of input only in DEBUG mode */
 #ifndef LAL_NDEBUG
   if(x > SINCOS_ADDS) {
-    LogPrintf(LOG_DEBUG,"sin_cos_LUT: x too large: %22f > %f\n",x,SINCOS_ADDS);
+    XLALPrintError("%s: x too large: %22f > %f\n", __func__, x, SINCOS_ADDS);
     return XLAL_FAILURE;
   } else if(x < -SINCOS_ADDS) {
-    LogPrintf(LOG_DEBUG,"sin_cos_LUT: x too small: %22f < %f\n",x,-SINCOS_ADDS);
+    XLALPrintError("%s: x too small: %22f < %f\n", __func__, x, -SINCOS_ADDS);
     return XLAL_FAILURE;
   }
 #endif
@@ -254,17 +275,3 @@ static int local_sin_cos_2PI_LUT_trimmed (REAL4 *s, REAL4 *c, REAL8 x) {
 
   return XLAL_SUCCESS;
 } /* local_sin_cos_2PI_LUT_trimmed */
-
-
-
-/* Macro to check return value of local_sin_cos_2PI_LUT_trimmed only in DEBUG mode */
-
-#ifndef LAL_NDEBUG
-#define SINCOS_2PI_TRIMMED(s,c,x)		\
-  if ( local_sin_cos_2PI_LUT_trimmed(s,c,x) ) {	\
-    XLAL_ERROR ( XLAL_EFUNC);			\
-  }
-#else
-#define SINCOS_2PI_TRIMMED(s,c,x)		\
-  local_sin_cos_2PI_LUT_trimmed(s,c,x)
-#endif

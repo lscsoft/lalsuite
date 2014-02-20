@@ -87,7 +87,7 @@
 #include <lal/LALConstants.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALString.h>
-#include <lal/ComputeFstat.h>
+#include <lal/SSBtimes.h>
 
 #ifdef __GNUC__
 #define UNUSED __attribute__ ((unused))

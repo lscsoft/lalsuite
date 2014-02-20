@@ -17,6 +17,7 @@ lalpulsarinclude_HEADERS = \
 	DopplerLatticeCovering.h \
 	DopplerScan.h \
 	ExtrapolatePulsarSpins.h \
+	CWFastMath.h \
 	FitToPulsar.h \
 	FlatLatticeTilingPulsar.h \
 	FlatMesh.h \
@@ -37,6 +38,7 @@ lalpulsarinclude_HEADERS = \
 	LALPulsarLibVCSInfo.h \
 	LALPulsarVCSInfo.h \
 	LALXMGRInterface.h \
+	LFTandTSutils.h \
 	LISAspecifics.h \
 	LUT.h \
 	LatticeCovering.h \
@@ -53,8 +55,9 @@ lalpulsarinclude_HEADERS = \
 	PulsarTimes.h \
 	SFTClean.h \
 	SFTfileIO.h \
-	SFTutils.h \
 	SFTutils-LAL.h \
+	SFTutils.h \
+	SSBtimes.h \
 	StackMetric.h \
 	Statistics.h \
 	SynthesizeCWDraws.h \
@@ -101,6 +104,7 @@ liblalpulsar_la_SOURCES = \
 	LALInitBarycenter.c \
 	LALPulsarVCSInfo.c \
 	LALXMGRInterface.c \
+	LFTandTSutils.c \
 	LISAspecifics.c \
 	LatticeCovering.c \
 	CWMakeFakeData.c \
@@ -121,7 +125,9 @@ liblalpulsar_la_SOURCES = \
 	SFTClean.c \
 	SFTfileIO.c \
 	SFTutils.c \
+	SSBtimes.c \
 	SimulatePulsarSignal.c \
+	SinCosLUT.c \
 	StackMetric.c \
 	Statistics.c \
 	Stereographic.c \
@@ -140,6 +146,15 @@ liblalpulsar_la_SOURCES = \
 nodist_liblalpulsar_la_SOURCES = LALPulsarBuildInfo.c
 
 EXTRA_liblalpulsar_la_SOURCES = \
+	ComputeFstat_Demod.c \
+	ComputeFstat_Demod_altivec.i \
+	ComputeFstat_Demod_autovect.i \
+	ComputeFstat_Demod_generic.i \
+	ComputeFstat_Demod_precalc.i \
+	ComputeFstat_Demod_sse.i \
+	ComputeFstat_Demod_sse_msc.i \
+	ComputeFstat_Resamp.c \
+	SinCosLUT.i \
 	SFTutils-LAL.c
 
 liblalpulsar_la_LDFLAGS = $(AM_LDFLAGS) -version-info $(LIBVERSION)

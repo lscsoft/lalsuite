@@ -179,7 +179,7 @@ outputv2_1="./Fstatv2_grid1.dat";
 outputv2_2="./Fstatv2_grid2.dat";
 outputv2_6="./Fstatv2_grid6.dat";
 
-cmdlinev2="$cfsv2_code $cfs_CL --TwoFthreshold=0 $extra_args";
+cmdlinev2="$cfsv2_code $cfs_CL --TwoFthreshold=0 --Dterms=16 $extra_args";
 
 ## ----- grid=0
 echo "CFSv2 using gridType=0:"

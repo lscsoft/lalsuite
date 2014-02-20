@@ -56,8 +56,11 @@ int finite(double);
 #include <lal/GSLSupport.h>
 
 #include <lal/NormalizeSFTRngMed.h>
-#include <lal/ComputeFstat.h>
 #include <lal/LALHough.h>
+
+// hack to prevent LALPulsar resampling code from being included
+#define _COMPUTEFSTAT_OLDRESAMPAPI_H
+#include <lal/ComputeFstat.h>
 
 #include <lal/LogPrintf.h>
 #include <lal/DopplerFullScan.h>
@@ -101,6 +104,20 @@ int finite(double);
 #define COMPUTEFSTATISTIC_MSGENONULL 	"Output pointer is non-NULL"
 #define COMPUTEFSTATISTIC_MSGEXLAL	"XLALFunction-call failed"
 
+#define COMPUTEFSTATC_ENULL 		1
+#define COMPUTEFSTATC_ENONULL 		2
+#define COMPUTEFSTATC_EINPUT   		3
+#define COMPUTEFSTATC_EMEM   		4
+#define COMPUTEFSTATC_EXLAL		5
+#define COMPUTEFSTATC_EIEEE		6
+#define COMPUTEFSTATC_MSGENULL 		"Arguments contained an unexpected null pointer"
+
+#define COMPUTEFSTATC_MSGENONULL 	"Output pointer is non-NULL"
+#define COMPUTEFSTATC_MSGEINPUT   	"Invalid input"
+#define COMPUTEFSTATC_MSGEMEM   	"Out of memory. Bad."
+#define COMPUTEFSTATC_MSGEXLAL		"XLAL function call failed"
+#define COMPUTEFSTATC_MSGEIEEE		"Floating point failure"
+
 /*----- Macros -----*/
 
 /* convert GPS-time to REAL8 */
@@ -115,13 +132,35 @@ UINT4 FactorialLookup[8] = {1,1,2,6,24,120,720,5040};
 
 /*---------- internal types ----------*/
 
+/* Type containing F-statistic proper plus the two complex amplitudes Fa and Fb (for ML-estimators) */
+typedef struct tagFcomponents {
+  REAL8 F;				/* F-statistic value */
+  REAL8 FX[PULSAR_MAX_DETECTORS];		/* vector of single-detector F-statistic values (array of fixed size) */
+  UINT4 numDetectors;			/* number of detectors = effective vector length. numDetectors=0 should make all code ignore the FX field. */
+  LIGOTimeGPS refTime;			/* 'internal' refTime used to compute the F-statistic: only relevant for phase of complex amplitudes {Fa,Fb} */
+  COMPLEX16 Fa;				/* complex amplitude Fa */
+  COMPLEX16 Fb;				/* complex amplitude Fb */
+  MultiFstatAtomVector *multiFstatAtoms;/* per-IFO, per-SFT arrays of F-stat 'atoms', ie quantities required to compute F-stat */
+} Fcomponents;
+
+/* Extra parameters controlling the actual computation of F */
+typedef struct tagComputeFParams {
+  UINT4 Dterms;		/* how many terms to keep in the Dirichlet kernel (~16 is usually fine) */
+  REAL8 upsampling;	/* frequency-upsampling applied to SFTs ==> dFreq != 1/Tsft ... */
+  SSBprecision SSBprec; /* whether to use full relativist SSB-timing, or just simple Newtonian */
+  BOOLEAN useRAA;        /* whether to use the frequency- and sky-position-dependent rigid adiabatic response tensor and not just the long-wavelength approximation */
+  BOOLEAN bufferedRAA;	/* approximate RAA by assuming constant response over (small) frequency band */
+  const EphemerisData *edat;   /* ephemeris data for re-computing multidetector states */
+  BOOLEAN returnAtoms;	/* whether or not to return the 'FstatAtoms' used to compute the F-statistic */
+  BOOLEAN returnSingleF; /* in multi-detector case, whether or not to also return the single-detector Fstats computed from the atoms */
+} ComputeFParams;
+
 /** What info do we want to store in our toplist? */
 typedef struct {
   PulsarDopplerParams doppler;		/**< Doppler params of this 'candidate' */
   Fcomponents  Fstat;			/**< the Fstat-value (plus Fa,Fb) for this candidate */
   CmplxAntennaPatternMatrix Mmunu;		/**< antenna-pattern matrix Mmunu = 0.5* Sinv*Tsft * [ Ad, Cd; Cd; Bd ] */
 } FstatCandidate;
-
 
 /**
  * moving 'Scanline window' of candidates on the scan-line,

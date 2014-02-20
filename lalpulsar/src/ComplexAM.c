@@ -43,7 +43,7 @@
 #include <lal/AVFactories.h>
 #include <lal/ComplexAM.h>
 #include <lal/LISAspecifics.h>
-#include <lal/ComputeFstat.h>
+#include <lal/CWFastMath.h>
 
 /*---------- local DEFINES ----------*/
 #define TRUE (1==1)
@@ -168,8 +168,12 @@ LALGetMultiCmplxAMCoeffs (LALStatus *status,				/**< pointer to LALStatus struct
     ABORT (status, COMPLEXAMC_EMEM, COMPLEXAMC_MSGEMEM);
   }
 
-  sin_cos_LUT (&sin1Delta, &cos1Delta, doppler.Delta );
-  sin_cos_LUT (&sin1Alpha, &cos1Alpha, doppler.Alpha );
+  if( XLALSinCosLUT (&sin1Delta, &cos1Delta, doppler.Delta ) != XLAL_SUCCESS )
+    ABORT( status->statusPtr, LAL_EXLAL, "XLALSinCosLUT (&sin1Delta, &cos1Delta, doppler.Delta ) failed" );
+
+  if( XLALSinCosLUT (&sin1Alpha, &cos1Alpha, doppler.Alpha ) != XLAL_SUCCESS )
+    ABORT( status->statusPtr, LAL_EXLAL, "XLALSinCosLUT (&sin1Alpha, &cos1Alpha, doppler.Alpha ) failed" );
+
 
   freq_skypos.skyposV[0] = cos1Delta * cos1Alpha;
   freq_skypos.skyposV[1] = cos1Delta * sin1Alpha;

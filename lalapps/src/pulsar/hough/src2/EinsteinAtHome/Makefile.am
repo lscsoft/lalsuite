@@ -39,7 +39,7 @@ eah_sources = 	$(lalappsDIR)/lalapps.c \
 		$(hsHOME)/HierarchicalSearch.c $(hsHOME)/StackSlideFstat.c \
 		$(hsHOME)/HoughFStatToplist.c \
 		$(cfsHOME)/HeapToplist.c $(optHOME)/ComputeFstatREAL4.c \
-		$(optHOME)/LocalComputeFstat.c $(eaHOME)/LocalComputeFstatHoughMap.c \
+		$(eaHOME)/LocalComputeFstatHoughMap.c \
 		$(eaHOME)/hs_boinc_extras.c $(eaHOME)/hs_boinc_options.cpp
 if USE_CUDA
     eah_sources += $(optHOME)/ComputeFstatREAL4CUDA.c $(optHOME)/FStatCUDA.cu

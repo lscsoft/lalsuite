@@ -1,5 +1,6 @@
 /*
- * Copyright (C) 2005 Reinhard Prix
+ *  Copyright (C) 2009 Chris Messenger
+ *  Copyright (C) 2005 Reinhard Prix
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -139,6 +140,8 @@ int XLALMultiSFTVectorAdd ( MultiSFTVector *a, const MultiSFTVector *b );
 int XLALSFTVectorAdd ( SFTVector *a, const SFTVector *b );
 int XLALSFTAdd ( SFTtype *a, const SFTtype *b );
 
+int XLALEarliestMultiSFTsample ( LIGOTimeGPS *out, MultiSFTVector *multisfts );
+int XLALLatestMultiSFTsample ( LIGOTimeGPS *out, MultiSFTVector *multisfts );
 
 // destructors
 void XLALDestroyPSDVector ( PSDVector *vect );
