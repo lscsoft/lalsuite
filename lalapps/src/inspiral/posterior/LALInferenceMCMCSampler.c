@@ -1785,7 +1785,7 @@ void LALInferencePrintPTMCMCInjectionSample(LALInferenceRunState *runState) {
     }
 
     LALInferenceSetVariable(runState->currentParams, "distance", &dist);
-    LALInferenceSetVariable(runState->currentParams, "inclination", &inclination);
+    LALInferenceSetVariable(runState->currentParams, "theta_JN", &inclination);
     LALInferenceSetVariable(runState->currentParams, "polarisation", &(psi));
     LALInferenceSetVariable(runState->currentParams, "declination", &dec);
     LALInferenceSetVariable(runState->currentParams, "rightascension", &ra);
