@@ -1645,7 +1645,7 @@ LALInferenceVariables *LALInferenceInitVariablesReviewEvidence_banana(LALInferen
     {.name="time", .val=0.0, .min=-2., .max=2.},
     {.name="m1", .val=16., .min=14., .max=18.},
     {.name="m2", .val=7., .min=5., .max=9.},
-    {.name="distance", .val=50., .min=48., .max=52.},
+    {.name="distance", .val=50., .min=45., .max=55.},
     {.name="inclination", .val=LAL_PI/2., .min=-0.429203673, .max=3.570796327},
     {.name="phase", .val=LAL_PI, .min=1.141592654, .max=5.141592654},
     {.name="polarisation", .val=LAL_PI/2., .min=-0.429203673, .max=3.570796327},
