@@ -95,6 +95,9 @@ typedef struct tagFstatInputData FstatInputData;
 /// \f$\mathcal{F}\f$-statistic for multiple segments.
 ///
 typedef struct tagFstatInputDataVector {
+#ifdef SWIG /* SWIG interface directives */
+  SWIGLAL(ARRAY_1D(FstatInputDataVector, FstatInputData*, data, UINT4, length));
+#endif /* SWIG */
   UINT4 length;				///< Number of elements in array.
   FstatInputData **data;		///< Pointer to the data array.
 } FstatInputDataVector;
@@ -150,6 +153,9 @@ typedef struct tagFstatAtom {
 /// the \f$\mathcal{F}\f$-statistic, for one detector X.
 ///
 typedef struct tagFstatAtomVector {
+#ifdef SWIG /* SWIG interface directives */
+  SWIGLAL(ARRAY_1D(FstatAtomVector, FstatAtom, data, UINT4, length));
+#endif /* SWIG */
   UINT4 length;				///< Number of per-SFT 'atoms'.
   FstatAtom *data;			///< Array of #FstatAtom pointers of given length.
   UINT4 TAtom;				///< Time-baseline of 'atoms', typically \f$T_{\mathrm{sft}}\f$.
@@ -159,6 +165,9 @@ typedef struct tagFstatAtomVector {
 /// A multi-detector vector of #FstatAtomVector.
 ///
 typedef struct tagMultiFstatAtomVector {
+#ifdef SWIG /* SWIG interface directives */
+  SWIGLAL(ARRAY_1D(MultiFstatAtomVector, FstatAtomVector*, data, UINT4, length));
+#endif /* SWIG */
   UINT4 length;				///< Number of detectors.
   FstatAtomVector **data;		///< Array of #FstatAtomVector pointers, one for each detector X.
 } MultiFstatAtomVector;
@@ -166,6 +175,10 @@ typedef struct tagMultiFstatAtomVector {
 ///
 /// XLALComputeFstat() computed results structure.
 ///
+#ifdef SWIG /* SWIG interface directives */
+SWIGLAL(IMMUTABLE_MEMBERS(tagFstatResults, internalalloclen));
+SWIGLAL(ARRAY_MULTIPLE_LENGTHS(tagFstatResults, numFreqBins, numDetectors));
+#endif /* SWIG */
 typedef struct tagFstatResults {
 
   /// Doppler parameters, including the starting frequency, at which the \f$2\mathcal{F}\f$ were
@@ -195,27 +208,42 @@ typedef struct tagFstatResults {
   /// If #whatWasComputed & FSTATQ_2F is true, the multi-detector \f$2\mathcal{F}\f$ values computed
   /// at #numFreqBins frequencies spaced #dFreq apart.  This array should not be accessed if
   /// #whatWasComputed & FSTATQ_2F is false.
+#ifdef SWIG /* SWIG interface directives */
+  SWIGLAL(ARRAY_1D(FstatResults, REAL4, twoF, UINT4, numFreqBins));
+#endif /* SWIG */
   REAL4 *twoF;
 
   /// If #whatWasComputed & FSTATQ_PARTS is true, the multi-detector \f$F_a\f$ and \f$F_b\f$
   /// computed at #numFreqBins frequencies spaced #dFreq apart.  This array should not be accessed
   /// if #whatWasComputed & FSTATQ_PARTS is false.
+#ifdef SWIG /* SWIG interface directives */
+  SWIGLAL(ARRAY_1D(FstatResults, FstatFaFb, FaFb, UINT4, numFreqBins));
+#endif /* SWIG */
   FstatFaFb *FaFb;
 
   /// If #whatWasComputed & FSTATQ_2F_PER_DET is true, the \f$2\mathcal{F}\f$ values computed at
   /// #numFreqBins frequencies spaced #dFreq apart, and for #numDetectors detectors.  Only the first
   /// #numDetectors entries will be valid.  This array should not be accessed if #whatWasComputed &
   /// FSTATQ_2F_PER_DET is false.
+#ifdef SWIG /* SWIG interface directives */
+  SWIGLAL(ARRAY_1D_PTR_1D(FstatResults, REAL4, twoFPerDet, UINT4, numDetectors, numFreqBins));
+#endif /* SWIG */
   REAL4 *twoFPerDet[PULSAR_MAX_DETECTORS];
 
   /// If #whatWasComputed & FSTATQ_PARTS_PER_DET is true, the \f$F_a\f$ and \f$F_b\f$ values
   /// computed at #numFreqBins frequencies spaced #dFreq apart, and for #numDetectors detectors.
   /// This array should not be accessed if #whatWasComputed & FSTATQ_PARTS_PER_DET is false.
+#ifdef SWIG /* SWIG interface directives */
+  SWIGLAL(ARRAY_1D_PTR_1D(FstatResults, FstatFaFb, FaFb, UINT4, numDetectors, numFreqBins));
+#endif /* SWIG */
   FstatFaFb *FaFbPerDet[PULSAR_MAX_DETECTORS];
 
   /// If #whatWasComputed & FSTATQ_ATOMS_PER_DET is true, the per-SFT \f$\mathcal{F}\f$-statistic
   /// multi-atoms computed at #numFreqBins frequencies spaced #dFreq apart.  This array should not
   /// be accessed if #whatWasComputed & FSTATQ_ATOMS_PER_DET is false.
+#ifdef SWIG /* SWIG interface directives */
+  SWIGLAL(ARRAY_1D(FstatResults, MultiFstatAtomVector*, multiFatoms, UINT4, numFreqBins));
+#endif /* SWIG */
   MultiFstatAtomVector** multiFatoms;
 
   /// \cond DONT_DOXYGEN
@@ -271,6 +299,12 @@ void
 XLALDestroyMultiFstatAtomVector(
   MultiFstatAtomVector *atoms			///< [in] #MultiFstatAtomVector structure to be freed.
   );
+
+#ifdef SWIG // SWIG interface directives
+SWIGLAL(INOUT_STRUCTS(MultiSFTVector**, multiSFTs));
+SWIGLAL(INOUT_STRUCTS(MultiNoiseWeights**, multiWeights));
+SWIGLAL(INOUT_STRUCTS(FstatResults**, Fstats));
+#endif
 
 ///
 /// Setup function for computing the \f$\mathcal{F}\f$-statistic using demodulation.  See description
