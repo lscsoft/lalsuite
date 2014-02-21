@@ -94,13 +94,6 @@ extern const PSDVector empty_PSDVector;
 extern const MultiPSDVector empty_MultiPSDVector;
 extern const MultiNoiseWeights empty_MultiNoiseWeights;
 
-
-// ---------- obsolete LAL-API was moved into external file
-#ifndef SWIG /* exclude from SWIG interface */
-#include "SFTutils-LAL.h"
-#endif
-// ------------------------------
-
 /*---------- exported prototypes [API] ----------*/
 /* ----------------------------------------------------------------------
  *  some prototypes for general functions handling these data-types
@@ -153,6 +146,10 @@ MultiNoiseWeights *XLALComputeMultiNoiseWeights ( const MultiPSDVector *rngmed, 
 void XLALDestroyMultiNoiseWeights ( MultiNoiseWeights *weights );
 
 /*@}*/
+
+// ---------- obsolete LAL-API was moved into external file
+#include <lal/SFTutils-LAL.h>
+// ------------------------------
 
 #ifdef  __cplusplus
 }
