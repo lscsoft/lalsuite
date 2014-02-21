@@ -925,8 +925,6 @@ void LALInferenceDifferentialEvolutionNames(LALInferenceRunState *runState,
   LALInferenceVariables **dePts = runState->differentialPoints;
   size_t nPts = runState->differentialPointsLength;
 
-  LALInferenceCopyVariables(runState->currentParams, proposedParams);
-
   if (dePts == NULL || nPts <= 1) {
     LALInferenceSetLogProposalRatio(runState, 0.0);
     return; /* Quit now, since we don't have any points to use. */
