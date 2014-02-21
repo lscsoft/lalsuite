@@ -245,6 +245,7 @@ static UINT4 UpdateNMCMC(LALInferenceRunState *runState){
         }
         LALInferenceSetVariable(runState->algorithmParams,"Nmcmc",&max);
     }
+    LALInferenceSetupClusteredKDEProposalFromRun(runState);
     return(max);
 }
 
@@ -504,6 +505,7 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
   /* Use the live points as differential evolution points */
   runState->differentialPoints=runState->livePoints;
   runState->differentialPointsLength=(size_t) Nlive;
+  runState->differentialPointsSkip=1;
   
   /* If there is not a proposal counter, put one into the variables, initialized to zero. */
   if (!LALInferenceCheckVariable(runState->proposalArgs, cycleArrayCounterName)) {
