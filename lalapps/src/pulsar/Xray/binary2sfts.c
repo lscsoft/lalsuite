@@ -94,7 +94,6 @@ int compare_function(const void *a,const void *b);
 /***********************************************************************************************/
 /* empty initializers */
 UserInput_t empty_UserInput;
-static const LALUnit empty_LALUnit;
 
 /** The main function of binary2sft.c
  *
@@ -102,8 +101,8 @@ static const LALUnit empty_LALUnit;
 int main( int argc, char *argv[] )  {
 
   UserInput_t uvar = empty_UserInput;           /* user input variables */
-  INT4 i,j,k;                                     /* counter */
-  INT4 sftcnt = 0;                              /* a counter for the number of SFTs */
+  INT4 i,j;                                     /* counter */
+  SFTVector *SFTvect = NULL;
 
   /**********************************************************************************/
   /* register and read all user-variables */
@@ -141,9 +140,6 @@ int main( int argc, char *argv[] )  {
     fscanf(cachefp,"%s %d %d",filenames[i],&(fileStart.data[i].gpsSeconds),&(fileStart.data[i].gpsNanoSeconds));
   }
   fclose(cachefp);
-  
-  /* initialise results vector */
-  SFTVector *SFTvect = LALCalloc(1,sizeof(SFTVector));
 
   /* initialise the random number generator */
   gsl_rng * r;
@@ -157,136 +153,14 @@ int main( int argc, char *argv[] )  {
   for (j=0;j<Nfiles;j++) {
 
     LogPrintf(LOG_DEBUG,"%s : working on file %s\n",__func__,filenames[j]);
-    
-    /**********************************************************************************/
-    /* open the binary file and count the number of elements */
-    FILE *binfp = NULL;                              /* file pointer for input file */
-    REAL4 dummy;                                  /* dummy variable */
-    if ((binfp = fopen(filenames[j],"r")) == NULL) {
-      LogPrintf(LOG_CRITICAL,"%s : failed to open binary input file %s\n",__func__,filenames[j]);
+
+    if (XLALBinaryToSFTVector(&SFTvect,filenames[j],&(fileStart.data[j]),uvar.tsft,uvar.freq,uvar.freqband,uvar.fsamp,uvar.highpassf)) {
+      LogPrintf(LOG_CRITICAL,"%s : failed to convert binary input file %s to sfts\n",__func__,filenames[j]);
       return 1;
     }
-    i = 0;
-    while (fread(&dummy,sizeof(REAL4),1,binfp)) i++;
-    INT4 N = i;
-    fclose(binfp);
-    LogPrintf(LOG_DEBUG,"%s : counted %d samples in the file.\n",__func__,N);
 
-    /* NOTE: a timeseries of length N*dT has no timestep at N*dT !! (convention) */
-    REAL8 dt = 1.0 / uvar.fsamp;
-    LIGOTimeGPS startTimeGPS;                     /* the start time of the observation */
-    startTimeGPS.gpsSeconds = fileStart.data[j].gpsSeconds;
-    startTimeGPS.gpsNanoSeconds = fileStart.data[j].gpsNanoSeconds;
-    LIGOTimeGPS endTimeGPS = startTimeGPS;
-    XLALGPSAdd(&endTimeGPS,N*dt);
-    REAL4TimeSeries *Tseries = XLALCreateREAL4TimeSeries ( "X1", &(startTimeGPS), 0, dt, &empty_LALUnit, N);
-    REAL8 sum = 0;
-
-    /* read in the data to the timeseries */
-    if ((binfp = fopen(filenames[j],"r")) == NULL) {
-      LogPrintf(LOG_CRITICAL,"%s : failed to open binary input file %s\n",__func__,filenames[j]);
-      return 1;
-    }
-    i = 0;
-    while (fread(&dummy,sizeof(REAL4),1,binfp)) {
-      Tseries->data->data[i] = (REAL4)dummy;
-      sum += Tseries->data->data[i];
-      /* fprintf(stdout,"%f\n",Tseries->data->data[i]); */
-      i++;
-    }
-    REAL8 rate = sum/N;    /* the rate per bin */
-    /* fprintf(stdout,"sft %d : counts/sec = %f\n",j,sum/(Tseries->data->length*dt)); */
-    fclose(binfp);
-  
-    /**********************************************************************************/
-    /* make timestamps */
-    LIGOTimeGPSVector timestamps;
-    INT4 Nsft = (INT4)floor(N*dt/uvar.tsft);        /* compute the number of SFTs */
-    timestamps.length = Nsft;
-    
-    /* only continue if we have any data in this SFT */
-    if (Nsft>0) {
-
-      timestamps.data = LALCalloc(Nsft,sizeof(LIGOTimeGPS));
-      for (i=0;i<Nsft;i++) {
-	timestamps.data[i] = startTimeGPS;
-	XLALGPSAdd(&(timestamps.data[i]),i*uvar.tsft);
-      }
-      
-      /* if we are injecting a signal */
-      if (uvar.amp_inj>0) {
-	
-	REAL8 nu = uvar.f_inj;
-	REAL8 a = uvar.asini_inj;
-	REAL8 tasc = uvar.tasc_inj;
-	REAL8 omega = LAL_TWOPI/uvar.P_inj;
-	REAL8 phi0 = uvar.phi_inj;
-
-	/* loop over time */
-	for (k=0;k<(INT4)Tseries->data->length;k++) {
-	  	  
-	  REAL8 t = k*dt + XLALGPSGetREAL8(&startTimeGPS);   
-	  REAL8 phase = phi0 + LAL_TWOPI*nu*(t - a*sin(omega*(t-tasc)));
-	  REAL8 lambda = rate + uvar.amp_inj*rate*sin(phase);
-	  INT4 temp = gsl_ran_poisson (r, lambda);
-	  Tseries->data->data[k] = (REAL4)temp;
-	  
-	}
-
-      }
-
-      /**********************************************************************************/
-      /* define the high pass filter params and high pass filter the data */
-      PassBandParamStruc filterpar;
-      char tmpname[] = "Butterworth High Pass";
-      filterpar.name  = tmpname;
-      filterpar.nMax  = 10;
-      filterpar.f2    = uvar.highpassf;
-      filterpar.a2    = 0.5;
-      filterpar.f1    = -1.0;
-      filterpar.a1    = -1.0;
-      XLALButterworthREAL4TimeSeries(Tseries, &filterpar);
-      
-      /**********************************************************************************/
-      /* compute SFTs from timeseries */
-      SFTParams sftParams = empty_SFTParams;
-      sftParams.Tsft = uvar.tsft;
-      sftParams.timestamps = &timestamps;
-      sftParams.noiseSFTs = NULL;       // not used here any more!
-      sftParams.window = NULL;
-      SFTVector *sftVect;
-      XLAL_CHECK ( (sftVect = XLALSignalToSFTs (Tseries, &sftParams)) != NULL, XLAL_EFUNC );
-      
-      /*  for (k=0;k<sftVect->data[0].data->length;k++) { */
-      /*       fprintf(stdout,"%f %f\n",crealf(sftVect->data[0].data->data[k]),cimagf(sftVect->data[0].data->data[k])); */
-      /*     } */
-      /*     exit(0); */
-      
-      /**********************************************************************************/
-      /* extract effective band from this, if neccessary (ie if faster-sampled output SFTs) */
-      SFTVector *tempSFTvect = XLALExtractBandFromSFTVector ( sftVect, uvar.freq, uvar.freqband );
-      XLALDestroySFTVector ( sftVect ); 
-      
-      /**********************************************************************************/
-      /* append these SFTs to the full list of SFTs */
-      for (k=0;k<Nsft;k++) XLALAppendSFT2Vector(SFTvect,&(tempSFTvect->data[k]));  
-      sftcnt += Nsft;
-      
-      /**********************************************************************************/
-      
-      XLALFree(timestamps.data);
-      XLALDestroySFTVector (tempSFTvect);
-
-    }
-    
-    /* free memory inside the loop */
-    XLALDestroyREAL4TimeSeries (Tseries);
-    
   }  /* end loop over input files */
 
- /*  for (i=0;i<sftcnt;i++) { */
-/*     fprintf(stdout,"%d %d\n",SFTvect->data[i].epoch.gpsSeconds,SFTvect->data[i].epoch.gpsNanoSeconds); */
-/*   } */
 
   /**********************************************************************************/
   /* generate comment string */

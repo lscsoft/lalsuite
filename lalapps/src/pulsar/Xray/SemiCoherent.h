@@ -21,81 +21,202 @@
 #define _SEMICOHERENT_H
 
 #include <lal/LALDatatypes.h>
-#include <lal/DetectorSite.h>
-#include <lal/LALBarycenter.h>
-#include <lal/LALDemod.h>
 #include <lal/Date.h>
+
+#define LAL_USE_OLD_COMPLEX_STRUCTS
+#include <math.h>
+#include <time.h>
+#include <stdio.h>
+#include <sys/stat.h>
+#include <gsl/gsl_interp.h>        /* needed for the gsl interpolation */
+#include <gsl/gsl_spline.h>        /* needed for the gsl interpolation */
+#include <gsl/gsl_rng.h>           /* for random number generation */
+#include <gsl/gsl_randist.h>       /* for random number generation */
+#include <gsl/gsl_sf_gamma.h>
+#include <gsl/gsl_cdf.h>
+#include <gsl/gsl_sort.h>
+#include <gsl/gsl_statistics.h>
+#include <gsl/gsl_sf_log.h>        /* for log computation */
+#include <lal/TimeSeries.h>
+#include <lal/FrequencySeries.h>
+#include <lal/LALDatatypes.h>
+#include <lal/Units.h>
+#include <lal/SFTutils.h>
+#include <lal/SFTfileIO.h>
+#include <lal/ComplexFFT.h>
+#include <lal/UserInput.h>
+#include <lal/LogPrintf.h>
+#include <lalapps.h>
+
+/* includes */
+#define LAL_USE_OLD_COMPLEX_STRUCTS
+#include <math.h>
+#include <time.h>
+#include <stdio.h>
+#include <lal/TimeSeries.h>
+#include <lal/LALDatatypes.h>
+#include <lal/Units.h>
+#include <lal/SFTutils.h>
+#include <lal/SFTfileIO.h>
+#include <lal/ComplexFFT.h>
+#include <lal/UserInput.h>
+#include <lal/LogPrintf.h>
+#include <lalapps.h>
+#include <lal/BandPassTimeSeries.h>
+
+#include <lal/LALDatatypes.h>
+#include <lal/LALStdlib.h>
+#include <lal/LALStdio.h>
+#include <lal/FileIO.h>
+#include <lal/LALConstants.h>
+#include <lal/BandPassTimeSeries.h>
+#include <lal/LALStdlib.h>
+#include <lal/LALConstants.h>
+#include <lal/AVFactories.h>
+#include <lal/RealFFT.h>
+
+#include <lal/TimeSeries.h>
+#include <lal/GeneratePulsarSignal.h>
+#include <lal/TransientCW_utils.h>
+#include <lal/LALString.h>
+#include <lal/StringVector.h>
+
+#include <gsl/gsl_rng.h>           /* for random number generation */ 
+#include <gsl/gsl_randist.h>       /* for random number generation */ 
+
 
 /* C++ protection. */
 #ifdef  __cplusplus
 extern "C" {
 #endif
- 
-#define NPARAMS 9
-#define NPARAMS_IL 3
   
- /** A single parameter dimensions boundaries
- */
-typedef struct {
-  REAL8 min;                        /**< the parameter space minimum */
-  REAL8 max;                        /**< the parameter space maximium */
-  REAL8 span;                       /**< the parameter space span */
-  CHAR name[LALNameLength];         /**< string containing the name of the dimension */
-} REAL8Dimension;
+#ifdef __GNUC__
+#define UNUSED __attribute__ ((unused))
+#else
+#define UNUSED
+#endif
 
-/** A vector of parameter space boundary information
- */
-typedef struct {
-  REAL8Dimension *data;             /**< the boundaries, span, etc for a single dimension */
-  UINT4 ndim;                       /**< the number of dimensions */
-} REAL8Space;
+  /***********************************************************************************************/
+  /* some global constants */
+  
+  /* #define STRINGLENGTH 256              /\* the length of general string *\/ */
+#define MINBAND 0.1                    /* the minimum amnount of bandwidth to read in */
+/* #define SAMPFREQ 8192                    /\* the orginal sampling frequency *\/ */
+#define LONGSTRINGLENGTH 1024         /* the length of general string */
+#define NFREQMAX 4                    /* the max dimensionality of the frequency derivitive grid */
+#define NBINMAX 4                        /* the number of binary parameter dimensions */ 
+#define NBINS 4                       /* the number of bins to add to each side of the fft for safety */
+#define WINGS_FACTOR 2                /* the safety factor in reading extra frequency from SFTs */
+  
+  /***********************************************************************************************/
+  /* structure definitions */
+  
+  /** A single parameter dimensions boundaries
+   */
+  typedef struct {
+    REAL8 min;                        /**< the parameter space minimum */
+    REAL8 max;                        /**< the parameter space maximium */
+    REAL8 span;                       /**< the parameter space span */
+    CHAR name[LALNameLength];         /**< string containing the name of the dimension */
+  } REAL8Dimension;
+  
+  /** A vector of parameter space boundary information
+   */
+  typedef struct {
+    REAL8Dimension *data;             /**< the boundaries, span, etc for a single dimension */
+    UINT4 ndim;                       /**< the number of dimensions */
+  } REAL8Space;
+  
+  /** Stores the gridding parameters for a single dimension
+   */
+  typedef struct {
+    REAL8 min;                        /**< the starting points of the grid */
+    REAL8 delta;                      /**< the grid spacings */
+    REAL8 oneoverdelta;               /**< the inverse of the spacing */
+    UINT4 length;                     /**< the number of templates in each dimension */
+    CHAR name[LALNameLength];         /**< string containing the name of the dimension */
+  } Grid;
+  
+  /** Stores the current location in a hyper-cubic parameter space
+   */
+  typedef struct {
+    REAL8 *x;                         /**< the location in parameter space */
+    INT4 *idx;                        /**< the index of each dimension for this template */
+    UINT4 ndim;                       /**< the dimension of the parameter space */
+    UINT4 currentidx;                 /**< the current index value of the template */
+  } Template;
+  
+  /** Stores the gridding parameters for a hypercubic grid of templates
+   */
+  typedef struct {
+    Grid *grid;                       /**< stores the parameters defining a single dimension */
+    UINT4 ndim;                       /**< the number of dimensions */
+    UINT4 *prod;                      /**< internal variable used to store the size of sub-dimensions */
+    UINT4 max;                        /**< the maximum (total) number of templates */
+    REAL8 mismatch;                   /**< the mismatch */
+    INT4 Nr;
+  } GridParameters;
+  
+   /** Stores the gridding parameters for a hypercubic grid of templates
+   */
+  typedef struct {
+    GridParameters **segment;             /**< stores the parameters defining a single dimension */
+    UINT4 length;                        /**< the number of dimensions */
+  } GridParametersVector;
 
-/** Stores the gridding parameters for a single dimension
- */
-typedef struct {
-  REAL8 min;                        /**< the starting points of the grid */
-  REAL8 delta;                      /**< the grid spacings */
-  REAL8 oneoverdelta;               /**< the inverse of the spacing */
-  UINT4 length;                     /**< the number of templates in each dimension */
-  CHAR name[LALNameLength];         /**< string containing the name of the dimension */
-} Grid;
+  /** Stores the gridding parameters for a hypercubic grid of templates
+   */
+  typedef struct {
+    COMPLEX8TimeSeries **data;             /**< stores the parameters defining a single dimension */
+    UINT4 length;                        /**< the number of dimensions */
+  } COMPLEX8TimeSeriesArray;
 
-/** Stores the current location in a hyper-cubic parameter space
- */
-typedef struct {
-  REAL8 *x;                         /**< the location in parameter space */
-  INT4 *idx;                        /**< the index of each dimension for this template */
-  UINT4 ndim;                       /**< the dimension of the parameter space */
-  UINT4 currentidx;                 /**< the current index value of the template */
-} Template;
+  /** Stores the gridding parameters for a hypercubic grid of templates
+   */
+  typedef struct {
+    REAL4Vector *data;             /**< stores the parameters defining a single dimension */
+    LIGOTimeGPS epoch;                        /**< the number of dimensions */
+  } REAL4DemodulatedPower;
 
-/** Stores the gridding parameters for a hypercubic grid of templates
- */
-typedef struct {
-  Grid *grid;                       /**< stores the parameters defining a single dimension */
-  UINT4 ndim;                       /**< the number of dimensions */
-  UINT4 *prod;                      /**< internal variable used to store the size of sub-dimensions */
-  UINT4 max;                        /**< the maximum (total) number of templates */
-  REAL8 mismatch;                   /**< the mismatch */
-  INT4 Nr;
-} GridParameters;
+  /** Stores the gridding parameters for a hypercubic grid of templates
+   */
+  typedef struct {
+    REAL4DemodulatedPower **segment;             /**< stores the parameters defining a single dimension */
+    UINT4 length;                        /**< the number of dimensions */
+  } REAL4DemodulatedPowerVector;
+  
+  /** Stores the gridding parameters for a hypercubic grid of templates
+   */
+  typedef struct {
+    REAL8Space *space;             /**< stores the parameters defining a single dimension */
+    REAL8 span;                        /**< the number of dimensions */
+    LIGOTimeGPS epoch;
+    REAL8 tseg;
+  } ParameterSpace;
 
-  /* LALDemod functions now put into CFSLALDemod.c */
-  void GenerateSideBandTemplate(LALStatus *,BinarySourceParams *,SideBandTemplateParams *,SideBandTemplate **);
-  void ComputeABCcoefficients (LALStatus *,ABCcoParams *,LALDetector *,ABCcoefficients **);
-  void ReadTimeStamps(LALStatus *,CHAR *,INT4, SideBandTemplateParams **);
-  void ComputeSideBandWindow(LALStatus *,ABCcoefficients *, CHAR *,SideBandTemplateParams **);
-  void ComputeSideBandLikelihood(LALStatus *,SideBandMCMCVector *,SideBandDataSet *,SideBandTemplate **,SideBandTemplateParams *);
-  void InitEphemeris(LALStatus *,EphemerisData *,const CHAR *,const CHAR *);
-  void ReadSideBandPriors(LALStatus *status,CHAR *,SideBandMCMCRanges *,SideBandMCMCJumpProbs *);
-  void SelectSideBandFrequencies (LALStatus *,SideBandDataSet **,SelectSideBandFrequencyParams *,SideBandDataSet **);
-  void ReadSideBandData (LALStatus *,ReadSideBandDataParams *,SideBandDataSet **);
-  void EstimateSideBandNoise (LALStatus *, SideBandDataSet **,EstimateSideBandNoiseParams *);
-  REAL4 bessj(INT4, REAL4);
-  REAL4 bessj1(REAL4);
-  REAL4 bessj0(REAL4);
-      
-
+  
+  int XLALReadSFTs(SFTVector**,CHAR *,REAL8,REAL8,INT4,INT4);
+  int XLALComputeFreqGridParamsVector(GridParametersVector**,REAL8Space*,SFTVector*,REAL8);
+  int XLALComputeFreqGridParams(GridParameters **freqgridparams,REAL8Space *pspace, REAL8 tmid,REAL8 tsft, REAL8 mu);
+  int XLALSFTVectorToCOMPLEX8TimeSeriesArray(COMPLEX8TimeSeriesArray **dstimevec, SFTVector *sftvec);
+  int XLALSFTToCOMPLEX8TimeSeries(COMPLEX8TimeSeries **ts, COMPLEX8FrequencySeries *sft,COMPLEX8FFTPlan **plan);
+  int XLALCOMPLEX8TimeSeriesToCOMPLEX8FrequencySeries(COMPLEX8FrequencySeries **fs,const COMPLEX8TimeSeries *ts,GridParameters **gridparams);
+  int XLALCOMPLEX8TimeSeriesArrayToDemodPowerVector(REAL4DemodulatedPowerVector**,COMPLEX8TimeSeriesArray*,GridParametersVector*,REAL8Vector*,FILE*);
+  int XLALApplyPhaseCorrection(COMPLEX8TimeSeries **outts, COMPLEX8TimeSeries *ints, Template *fn);
+  int XLALEstimateBackgroundFlux(REAL8Vector **background, SFTVector *sftvec);
+  int XLALComputeBinaryGridParams(GridParameters **binarygridparams,REAL8Space *space,REAL8 T,REAL8 DT,REAL8 mu,REAL8 coverage);
+  int XLALGetNextTemplate(Template **,GridParameters *, ParameterSpace *,UNUSED void *);
+  int XLALGetNextRandomBinaryTemplate(Template **,GridParameters *, ParameterSpace *,void *);
+  int XLALComputeBinaryFreqDerivitives(Template *fdots,Template *bintemp,REAL8 tmid);
+  int XLALFreeParameterSpace(ParameterSpace *pspace);
+  int XLALFreeREAL4DemodulatedPowerVector(REAL4DemodulatedPowerVector *power);
+  int XLALReplaceSFTVectornoise(SFTVector **sftvec,REAL8 background,INT4 seed);
+  int XLALInitgslrand(gsl_rng **gslrnd,INT8 seed);
+  int XLALCopySFT (SFTtype *dest, const SFTtype *src);
+  int XLALAppendSFT2Vector (SFTVector *vect,const SFTtype *sft);
+  int XLALBinaryToSFTVector(SFTVector **SFTvect,CHAR *filename,LIGOTimeGPS *fileStart,REAL8 tsft,REAL8 freq,REAL8 freqband,REAL8 fsample,REAL8 highpassf);
+  
+  
 #ifdef  __cplusplus
 }
 #endif  

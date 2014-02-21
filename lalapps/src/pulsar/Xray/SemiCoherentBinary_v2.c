@@ -59,29 +59,7 @@
 #include "SemiCoherent.h"
 
 /***********************************************************************************************/
-/* some global constants */
-
-/* #define STRINGLENGTH 256              /\* the length of general string *\/ */
-#define MINBAND 0.1                    /* the minimum amnount of bandwidth to read in */
-#define SAMPFREQ 2048                    /* the orginal sampling frequency */
-#define LONGSTRINGLENGTH 1024         /* the length of general string */
-#define NFREQMAX 4                    /* the max dimensionality of the frequency derivitive grid */
-#define NBINMAX 4                        /* the number of binary parameter dimensions */ 
-#define NBINS 4                       /* the number of bins to add to each side of the fft for safety */
-#define WINGS_FACTOR 2                /* the safety factor in reading extra frequency from SFTs */
-
-/***********************************************************************************************/
-/* some useful macros */
-
-#define MYMAX(x,y) ( (x) > (y) ? (x) : (y) )
-#define MYMIN(x,y) ( (x) < (y) ? (x) : (y) )
-
-/***********************************************************************************************/
 /* define internal structures */
-
-
-
-
 
 /** A structure that stores user input variables 
  */
@@ -111,18 +89,20 @@ typedef struct {
 /***********************************************************************************************/
 /* global variables */
 extern int vrbflg;	 	/**< defined in lalapps.c */
-gsl_rng * r;
 
 /***********************************************************************************************/
 /* define functions */
 int main(int argc,char *argv[]);
 int XLALReadUserVars(int argc,char *argv[],UserInput_t *uvar, CHAR **clargs);
 int XLALComputeSemiCoherentStat(FILE *fp,REAL4DemodulatedPowerVector *power,ParameterSpace *pspace,GridParametersVector *fgrid,GridParameters *bingrid,REAL8Vector *background,REAL8 top);
+int XLALDefineBinaryParameterSpace(REAL8Space **, LIGOTimeGPS, REAL8, UserInput_t *);
+int XLALOpenSemiCoherentResultsFile(FILE **,CHAR *,ParameterSpace *,CHAR *,UserInput_t *,INT4);
 
 /***********************************************************************************************/
 /* empty initializers */
 UserInput_t empty_UserInput;
 ParameterSpace empty_ParameterSpace;
+gsl_rng *r = NULL;
 
 /** The main function of semicoherentbinary.c
  *
@@ -161,7 +141,7 @@ int main( int argc, char *argv[] )  {
   LogPrintf(LOG_DEBUG,"%s : read in uservars\n",__func__);
 
   /* initialise the random number generator */
-  if (XLALInitgslrand(&r,0)) {
+  if (XLALInitgslrand(&r,uvar.seed)) {
     LogPrintf(LOG_CRITICAL,"%s: XLALinitgslrand() failed with error = %d\n",__func__,xlalErrno);
     XLAL_ERROR(XLAL_EFAULT);
   }
@@ -339,6 +319,7 @@ int main( int argc, char *argv[] )  {
       return 1;
     }
   }
+  LogPrintf(LOG_DEBUG,"%s : moved the results from the temp space.\n",__func__);
 
   /* clean up the parameter space */
   if (XLALFreeParameterSpace(&pspace)) {
@@ -542,7 +523,7 @@ int XLALComputeSemiCoherentStat(FILE *fp,                                /**< [i
   REAL8 thr = gsl_cdf_chisq_Qinv(frac,2*power->length);
   LogPrintf(LOG_DEBUG,"%s : computed the threshold as %f\n",__func__,thr);
 
-  int (*getnext)(Template **temp,GridParameters *gridparams, ParameterSpace *space);
+  int (*getnext)(Template **temp,GridParameters *gridparams, ParameterSpace *space,void *);
   INT4 newmax = bingrid->max;
   ParameterSpace *temppspace = NULL;
   if (bingrid->Nr>0) {
@@ -553,7 +534,7 @@ int XLALComputeSemiCoherentStat(FILE *fp,                                /**< [i
   else getnext = &XLALGetNextTemplate;
 
   /* single loop over binary templates */
-  while (getnext(&bintemp,bingrid,temppspace)) {
+  while (getnext(&bintemp,bingrid,temppspace,r)) {
 
     REAL8 logLratiosum = 0.0;                       /* initialise likelihood ratio */
 
@@ -577,17 +558,19 @@ int XLALComputeSemiCoherentStat(FILE *fp,                                /**< [i
       
       /* define the power at this location in this segment */
       logLratiosum += currentpower->data->data[idx]/norm;
+   /*    fprintf(stdout,"currentpower = %f norm = %f\n",currentpower->data->data[idx],norm); */
        
     } /* end loop over segments */
     /*************************************************************************************/
    
-    /* output semi-coherent statistic for this template if it exceeds the threshold */
+    /* output semi-coherent statistic for this template if it exceeds the threshold*/
     logLratiosum *= 2.0;     /* make it a true chi-squared variable */
+   /*  fprintf(stdout,"res = %e\n",logLratiosum); */
     if (logLratiosum>thr) {
       for (j=0;j<bingrid->ndim;j++) fprintf(fp,"%6.12f\t",bintemp->x[j]);
       fprintf(fp,"%6.12e\n",logLratiosum);
     }
-  
+   
     /* output status to screen */
     if (floor(100.0*(REAL8)bintemp->currentidx/(REAL8)newmax) > (REAL8)percent) {
       percent = (UINT4)floor(100*(REAL8)bintemp->currentidx/(REAL8)newmax);
@@ -606,10 +589,202 @@ int XLALComputeSemiCoherentStat(FILE *fp,                                /**< [i
 }
 
 
+/*******************************************************************************/
+/** Computes the binary parameter space boundaries given the user input args
+ *
+ * For each search dimension we define the min, max, mid, and span of that dimension
+ * plus we give each dimension a name.
+ *
+ */
+int XLALDefineBinaryParameterSpace(REAL8Space **space,                 /**< [out] the parameter space  */
+				   LIGOTimeGPS epoch,                  /**< [in] the observation start epoch */
+				   REAL8 span,                         /**< [in] the observation span */
+				   UserInput_t *uvar                   /**< [in] the user input variables */
+				   )
+{
+  REAL8 midpoint;              /* the midpoint of the observation */
+  REAL8 mintasc;               /* the minimum time of ascension */
+  REAL8 maxtasc;               /* the maximum time of ascension */
+
+  /* validate input variables */
+  if ((*space) != NULL) {
+    LogPrintf(LOG_CRITICAL,"%s : Invalid input, input REAL8Space boundary structure != NULL.\n",__func__);
+    XLAL_ERROR(XLAL_EINVAL);
+  }
+  if (uvar == NULL) {
+    LogPrintf(LOG_CRITICAL,"%s : Invalid input, input UserInput_t structure = NULL.\n",__func__);
+    XLAL_ERROR(XLAL_EINVAL);
+  }
+  if (epoch.gpsSeconds < 0) {
+    LogPrintf(LOG_CRITICAL,"%s : Invalid input, observation epoch < 0.\n",__func__);
+    XLAL_ERROR(XLAL_EINVAL);
+  }
+  if (span < 0) {
+    LogPrintf(LOG_CRITICAL,"%s : Invalid input, observation span < 0.\n",__func__);
+    XLAL_ERROR(XLAL_EINVAL);
+  }
+  
+  /* allocate memory for the parameter space */
+  if ( ((*space) = XLALCalloc(1,sizeof(REAL8Space))) == NULL) {
+    LogPrintf(LOG_CRITICAL,"%s: XLALCalloc() failed with error = %d\n",__func__,xlalErrno);
+    XLAL_ERROR(XLAL_ENOMEM);
+  }
+  (*space)->ndim = NBINMAX;
+  if ( ((*space)->data = XLALCalloc((*space)->ndim,sizeof(REAL8Dimension))) == NULL) {
+    LogPrintf(LOG_CRITICAL,"%s: XLALCalloc() failed with error = %d\n",__func__,xlalErrno);
+    XLAL_ERROR(XLAL_ENOMEM);
+  }
+
+  /* define observaton midpoint */
+  midpoint = XLALGPSGetREAL8(&epoch) + 0.5*span;
+
+  /* find the closest instance of ascension to the midpoint */
+  /* the midpoint is defined in the detector frame and the time of */
+  /* ascension is in the SSB frame but we only need to be roughly */
+  /* correct in the number of orbits we shift by */
+  if (uvar->tasc>0) {    
+    REAL8 meanperiod = 0.5*(uvar->maxorbperiod + uvar->minorbperiod);
+    INT4 n = (INT4)floor(0.5 + (midpoint - uvar->tasc)/meanperiod);
+    REAL8 newtasc = uvar->tasc + n*meanperiod;
+    mintasc = newtasc - 0.5*uvar->maxorbperiod*uvar->deltaorbphase;
+    maxtasc = newtasc + 0.5*uvar->maxorbperiod*uvar->deltaorbphase;
+    LogPrintf(LOG_DEBUG,"%s : shifted tasc by %d orbits\n",__func__,n);
+  }
+  else {   /* we have no orbital info so we search a full period at the midpoint */
+    mintasc = midpoint - 0.5*uvar->maxorbperiod;
+    maxtasc = midpoint + 0.5*uvar->maxorbperiod;
+  }
+  
+  /* this represents a hyper-cubic parameter space */
+  /* we make sure that parameter ranges are consistent i.e asini > 0 etc.. */
+  /* frequency */
+  snprintf((*space)->data[0].name,LALNameLength,"nu");
+  (*space)->data[0].min = uvar->freq;
+  (*space)->data[0].max = uvar->freq + uvar->freqband;
+  (*space)->data[0].span = (*space)->data[0].max - (*space)->data[0].min;
+
+  /* asini */
+  snprintf((*space)->data[1].name,LALNameLength,"asini");
+  (*space)->data[1].min = uvar->minasini;
+  (*space)->data[1].max = uvar->maxasini;
+  (*space)->data[1].span = (*space)->data[1].max - (*space)->data[1].min;
+  
+  /* orbphase */
+  snprintf((*space)->data[2].name,LALNameLength,"tasc");
+  (*space)->data[2].min = mintasc;
+  (*space)->data[2].max = maxtasc;
+  (*space)->data[2].span = (*space)->data[2].max - (*space)->data[2].min;
+  
+  /* omega */
+  snprintf((*space)->data[3].name,LALNameLength,"omega");
+  (*space)->data[3].min = LAL_TWOPI/uvar->maxorbperiod;
+  (*space)->data[3].max = LAL_TWOPI/uvar->minorbperiod;
+  (*space)->data[3].span = (*space)->data[3].max - (*space)->data[3].min;
+
+  /* output boundaries to screen */
+  LogPrintf(LOG_DEBUG,"%s : using flat priors on the following ranges\n",__func__);
+  LogPrintf(LOG_DEBUG,"%s : parameter space, %s = [%e -> %e]\n",__func__,(*space)->data[0].name,(*space)->data[0].min,(*space)->data[0].max);
+  LogPrintf(LOG_DEBUG,"%s : parameter space, %s = [%e -> %e]\n",__func__,(*space)->data[1].name,(*space)->data[1].min,(*space)->data[1].max);
+  LogPrintf(LOG_DEBUG,"%s : parameter space, %s = [%e -> %e]\n",__func__,(*space)->data[2].name,(*space)->data[2].min,(*space)->data[2].max);
+  LogPrintf(LOG_DEBUG,"%s : parameter space, %s = [%e -> %e]\n",__func__,(*space)->data[3].name,(*space)->data[3].min,(*space)->data[3].max);
+ 
+  LogPrintf(LOG_DEBUG,"%s : leaving.\n",__func__);
+  return XLAL_SUCCESS;
+  
+}
 
 
+/** Output the results to file
+ *
+ * We choose to output all results from a specific analysis to a single file
+ *
+ */
+int XLALOpenSemiCoherentResultsFile(FILE **fp,                  /**< [in] filepointer to output file */
+				    CHAR *outputdir,            /**< [in] the output directory name */
+				    ParameterSpace *pspace,     /**< [in] the parameter space */
+				    CHAR *clargs,               /**< [in] the command line args */
+				    UserInput_t *uvar,
+				    INT4 coherent               /**< [in] flag for outputting coherent results */
+				    )
+{
+  CHAR outputfile[LONGSTRINGLENGTH];    /* the output filename */
+  time_t curtime = time(NULL);          /* get the current time */
+  CHAR *time_string = NULL;             /* stores the current time */
+  CHAR *version_string = NULL;          /* pointer to a string containing the git version information */
 
+  /* validate input */
+  if (outputdir == NULL) {
+    LogPrintf(LOG_CRITICAL,"%s: Invalid input, output directory string == NULL.\n",__func__);
+    XLAL_ERROR(XLAL_EINVAL);
+  }
 
+  if (pspace == NULL) {
+    LogPrintf(LOG_CRITICAL,"%s: Invalid input, ParameterSpace structure == NULL.\n",__func__);
+    XLAL_ERROR(XLAL_EINVAL);
+  }
+  
+  /* define the output filename */
+  /* the format we adopt is the following SemiCoherentResults-<SOURCE>-<START>_<END>-<MIN_FREQ_INT>_<MIN_FREQ_mHZ>_ <MAX_FREQ_INT>_<MAX_FREQ_mHZ>.txt */
+  {
+    UINT4 min_freq_int = floor(pspace->space->data[0].min);
+    UINT4 max_freq_int = floor(pspace->space->data[0].max);
+    UINT4 min_freq_mhz = (UINT4)floor(0.5 + (pspace->space->data[0].min - (REAL8)min_freq_int)*1e3);
+    UINT4 max_freq_mhz = (UINT4)floor(0.5 + (pspace->space->data[0].max - (REAL8)max_freq_int)*1e3);
+    UINT4 end = (UINT4)ceil(XLALGPSGetREAL8(&(pspace->epoch)) + pspace->span);
+    if (coherent) snprintf(outputfile,LONGSTRINGLENGTH,"%s/CoherentResults-%s-%d_%d-%04d_%03d_%04d_%03d.txt",
+			   outputdir,(CHAR*)uvar->comment,pspace->epoch.gpsSeconds,end,min_freq_int,min_freq_mhz,max_freq_int,max_freq_mhz);
+    else snprintf(outputfile,LONGSTRINGLENGTH,"%s/SemiCoherentResults-%s-%d_%d-%04d_%03d_%04d_%03d.txt",
+		  outputdir,(CHAR*)uvar->comment,pspace->epoch.gpsSeconds,end,min_freq_int,min_freq_mhz,max_freq_int,max_freq_mhz);
+  }
+  LogPrintf(LOG_DEBUG,"%s : output %s\n",__func__,outputfile);
+
+  /* open the output file */
+  if (((*fp) = fopen(outputfile,"w")) == NULL) {
+    LogPrintf(LOG_CRITICAL,"%s: Error, failed to open file %s for writing.  Exiting.\n",__func__,outputfile);
+    XLAL_ERROR(XLAL_EINVAL);
+  }
+ 
+  /* Convert time to local time representation */
+  {
+    struct tm *loctime = localtime(&curtime);
+    CHAR *temp_time = asctime(loctime);
+    UINT4 n = strlen(temp_time);
+    time_string = XLALCalloc(n,sizeof(CHAR));
+    snprintf(time_string,n-1,"%s",temp_time);
+  }
+ 
+  /* get GIT version information */
+  {
+    CHAR *temp_version = XLALGetVersionString(0);
+    UINT4 n = strlen(temp_version);
+    version_string = XLALCalloc(n,sizeof(CHAR));
+    snprintf(version_string,n-1,"%s",temp_version);
+    XLALFree(temp_version);
+  }
+  
+  /* output header information */
+  fprintf((*fp),"%s \n",version_string);
+  fprintf((*fp),"%%%% command line args\t\t= %s\n",clargs);
+  fprintf((*fp),"%%%% filename\t\t\t\t= %s\n",outputfile);
+  fprintf((*fp),"%%%% date\t\t\t\t\t= %s\n",time_string);
+  fprintf((*fp),"%%%% start time (GPS sec)\t\t= %d\n",pspace->epoch.gpsSeconds);
+  fprintf((*fp),"%%%% observation span (sec)\t= %d\n",(UINT4)pspace->span);
+  fprintf((*fp),"%%%% coherent time (sec)\t\t= %d\n",(UINT4)pspace->tseg);
+ /*  fprintf(fp,"%%%% number of segments\t\t= %d\n",Bayes->nsegments); */
+/*   fprintf(fp,"%%%% number of dimensions\t= %d\n",Bayes->gridparams->ndim); */
+/*   if (pspace->ampspace) fprintf(fp,"%%%% amplitude dimension\t\t\t= 1\n"); */
+/*   else fprintf(fp,"%%%% amplitude dimension\t\t\t= 0\n"); */
+/*   fprintf(fp,"%%%% mismatch\t\t\t\t= %6.12f\n",Bayes->gridparams->mismatch); */
+  fprintf((*fp),"%%%%\n");
+
+  /* free memory */
+  XLALFree(time_string);
+  XLALFree(version_string);
+
+  LogPrintf(LOG_DEBUG,"%s : leaving.\n",__func__);
+  return XLAL_SUCCESS;
+
+}
 
 
 

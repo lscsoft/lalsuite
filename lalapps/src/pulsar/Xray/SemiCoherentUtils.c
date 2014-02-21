@@ -56,6 +56,15 @@
 #include <lal/LogPrintf.h>
 #include <lalapps.h>
 
+#include "SemiCoherent.h"
+
+
+/***********************************************************************************************/
+/* some useful macros */
+
+#define MYMAX(x,y) ( (x) > (y) ? (x) : (y) )
+#define MYMIN(x,y) ( (x) < (y) ? (x) : (y) )
+
 /** this function initialises the gsl random number generation
  *
  * If the input seed is zero then a random seed is drawn from
@@ -105,13 +114,6 @@ int XLALFreeREAL4DemodulatedPowerVector(REAL4DemodulatedPowerVector *power      
 
   /* free each segment */
   for (i=0;i<power->length;i++) {
-
-    /* if there is a non-null gridparams structure then free it aswell */
-   /*  if (power->segment[i]->gridparams) { */
-/*       XLALFree(power->segment[i]->gridparams->grid); */
-/*       XLALFree(power->segment[i]->gridparams->prod); */
-/*       XLALFree(power->segment[i]->gridparams); */
-/*     } */
     XLALDestroyREAL4Vector(power->segment[i]->data);
     XLALFree(power->segment[i]);
   }
@@ -129,39 +131,10 @@ int XLALFreeREAL4DemodulatedPowerVector(REAL4DemodulatedPowerVector *power      
 int XLALFreeParameterSpace(ParameterSpace *pspace            /**< [in] the parameter space to be freed */
 			   )
 {
- /*  UINT4 i;                     /\* counter *\/ */
 
   /* free parameter space */
   XLALFree(pspace->space->data);
   XLALFree(pspace->space);
-  
-  /* /\* free prior params *\/ */
-/*   for (i=0;i<pspace->gridparams->ndim;i++) { */
-/*     XLALDestroyREAL8Vector(pspace->priors->data[i].logpriors); */
-/*   } */
-/*   XLALFree(pspace->priors->data); */
-/*   XLALFree(pspace->priors); */
-/*   LogPrintf(LOG_DEBUG,"%s : freed the prior parameters\n",__func__); */
-  
-  /* free binary grid params */
- /*  XLALFree(pspace->gridparams->grid); */
-/*   XLALFree(pspace->gridparams->prod); */
-/*   XLALFree(pspace->gridparams); */
-/*   LogPrintf(LOG_DEBUG,"%s : freed the binary grid parameters\n",__func__); */
-
-  /* /\* free the injection parameters if used *\/ */
-/*   if (pspace->inj) { */
-/*     XLALFree(pspace->inj->temp.x); */
-/*     XLALFree(pspace->inj); */
-/*   } */
-
-  /* /\* free amplitude parameters *\/ */
-/*   if (pspace->ampspace) XLALFree(pspace->ampspace); */
-/*   if (pspace->ampgrid) XLALFree(pspace->ampgrid); */
-/*   if (pspace->amppriors) { */
-/*     XLALDestroyREAL8Vector(pspace->amppriors->logpriors); */
-/*     XLALFree(pspace->amppriors); */
-/*   } */
 
   LogPrintf(LOG_DEBUG,"%s : leaving.\n",__func__);
   return XLAL_SUCCESS;
@@ -169,97 +142,7 @@ int XLALFreeParameterSpace(ParameterSpace *pspace            /**< [in] the param
 }
 
 
-/** Output the results to file
- *
- * We choose to output all results from a specific analysis to a single file
- *
- */
-int XLALOpenSemiCoherentResultsFile(FILE **fp,                  /**< [in] filepointer to output file */
-				    CHAR *outputdir,            /**< [in] the output directory name */
-				    ParameterSpace *pspace,     /**< [in] the parameter space */
-				    CHAR *clargs,               /**< [in] the command line args */
-				    UserInput_t *uvar,
-				    INT4 coherent               /**< [in] flag for outputting coherent results */
-				    )
-{
-  CHAR outputfile[LONGSTRINGLENGTH];    /* the output filename */
-  time_t curtime = time(NULL);          /* get the current time */
-  CHAR *time_string = NULL;             /* stores the current time */
-  CHAR *version_string = NULL;          /* pointer to a string containing the git version information */
 
-  /* validate input */
-  if (outputdir == NULL) {
-    LogPrintf(LOG_CRITICAL,"%s: Invalid input, output directory string == NULL.\n",__func__);
-    XLAL_ERROR(XLAL_EINVAL);
-  }
-
-  if (pspace == NULL) {
-    LogPrintf(LOG_CRITICAL,"%s: Invalid input, ParameterSpace structure == NULL.\n",__func__);
-    XLAL_ERROR(XLAL_EINVAL);
-  }
-  
-  /* define the output filename */
-  /* the format we adopt is the following SemiCoherentResults-<SOURCE>-<START>_<END>-<MIN_FREQ_INT>_<MIN_FREQ_mHZ>_ <MAX_FREQ_INT>_<MAX_FREQ_mHZ>.txt */
-  {
-    UINT4 min_freq_int = floor(pspace->space->data[0].min);
-    UINT4 max_freq_int = floor(pspace->space->data[0].max);
-    UINT4 min_freq_mhz = (UINT4)floor(0.5 + (pspace->space->data[0].min - (REAL8)min_freq_int)*1e3);
-    UINT4 max_freq_mhz = (UINT4)floor(0.5 + (pspace->space->data[0].max - (REAL8)max_freq_int)*1e3);
-    UINT4 end = (UINT4)ceil(XLALGPSGetREAL8(&(pspace->epoch)) + pspace->span);
-    if (coherent) snprintf(outputfile,LONGSTRINGLENGTH,"%s/CoherentResults-%s-%d_%d-%04d_%03d_%04d_%03d.txt",
-	     outputdir,uvar->comment,pspace->epoch.gpsSeconds,end,min_freq_int,min_freq_mhz,max_freq_int,max_freq_mhz);
-    else snprintf(outputfile,LONGSTRINGLENGTH,"%s/SemiCoherentResults-%s-%d_%d-%04d_%03d_%04d_%03d.txt",
-             outputdir,uvar->comment,pspace->epoch.gpsSeconds,end,min_freq_int,min_freq_mhz,max_freq_int,max_freq_mhz);
-  }
-  LogPrintf(LOG_DEBUG,"%s : output %s\n",__func__,outputfile);
-
-  /* open the output file */
-  if (((*fp) = fopen(outputfile,"w")) == NULL) {
-    LogPrintf(LOG_CRITICAL,"%s: Error, failed to open file %s for writing.  Exiting.\n",__func__,outputfile);
-    XLAL_ERROR(XLAL_EINVAL);
-  }
- 
-  /* Convert time to local time representation */
-  {
-    struct tm *loctime = localtime(&curtime);
-    CHAR *temp_time = asctime(loctime);
-    UINT4 n = strlen(temp_time);
-    time_string = XLALCalloc(n,sizeof(CHAR));
-    snprintf(time_string,n-1,"%s",temp_time);
-  }
- 
-  /* get GIT version information */
-  {
-    CHAR *temp_version = XLALGetVersionString(0);
-    UINT4 n = strlen(temp_version);
-    version_string = XLALCalloc(n,sizeof(CHAR));
-    snprintf(version_string,n-1,"%s",temp_version);
-    XLALFree(temp_version);
-  }
-  
-  /* output header information */
-  fprintf((*fp),"%s \n",version_string);
-  fprintf((*fp),"%%%% command line args\t\t= %s\n",clargs);
-  fprintf((*fp),"%%%% filename\t\t\t\t= %s\n",outputfile);
-  fprintf((*fp),"%%%% date\t\t\t\t\t= %s\n",time_string);
-  fprintf((*fp),"%%%% start time (GPS sec)\t\t= %d\n",pspace->epoch.gpsSeconds);
-  fprintf((*fp),"%%%% observation span (sec)\t= %d\n",(UINT4)pspace->span);
-  fprintf((*fp),"%%%% coherent time (sec)\t\t= %d\n",(UINT4)pspace->tseg);
- /*  fprintf(fp,"%%%% number of segments\t\t= %d\n",Bayes->nsegments); */
-/*   fprintf(fp,"%%%% number of dimensions\t= %d\n",Bayes->gridparams->ndim); */
-/*   if (pspace->ampspace) fprintf(fp,"%%%% amplitude dimension\t\t\t= 1\n"); */
-/*   else fprintf(fp,"%%%% amplitude dimension\t\t\t= 0\n"); */
-/*   fprintf(fp,"%%%% mismatch\t\t\t\t= %6.12f\n",Bayes->gridparams->mismatch); */
-  fprintf((*fp),"%%%%\n");
-
-  /* free memory */
-  XLALFree(time_string);
-  XLALFree(version_string);
-
-  LogPrintf(LOG_DEBUG,"%s : leaving.\n",__func__);
-  return XLAL_SUCCESS;
-
-}
 
 /** Compute the instantaneous frequency derivitives for a given binary template and segment
  *
@@ -301,7 +184,8 @@ int XLALComputeBinaryFreqDerivitives(Template *fdots,                        /**
  */
 int XLALGetNextRandomBinaryTemplate(Template **temp,                        /**< [out] the signal model template parameters */
 				    GridParameters *gridparams,             /**< [in] the parameter space grid params */
-				    ParameterSpace *space
+				    ParameterSpace *space,
+				    void *r
 				    )
 {
   
@@ -352,13 +236,13 @@ int XLALGetNextRandomBinaryTemplate(Template **temp,                        /**<
   INT4 flag = 0;
   while (!flag) {
     
-    REAL8 temp1 = gsl_ran_flat(r,0,1);
+    REAL8 temp1 = gsl_ran_flat((gsl_rng*)r,0,1);
     nu = n2*pow((pow(n1/n2,4.0) + (1.0 - pow(n1/n2,4.0))*temp1),1.0/4.0);
-    REAL8 temp2 = gsl_ran_flat(r,0,1);
+    REAL8 temp2 = gsl_ran_flat((gsl_rng*)r,0,1);
     a = a2*pow((pow(a1/a2,3.0) + (1.0 - pow(a1/a2,3.0))*temp2),1.0/3.0);
-    REAL8 temp3 = gsl_ran_flat(r,0,1);
+    REAL8 temp3 = gsl_ran_flat((gsl_rng*)r,0,1);
     tasc = t1 + (t2-t1)*temp3;
-    REAL8 temp4 = gsl_ran_flat(r,0,1);
+    REAL8 temp4 = gsl_ran_flat((gsl_rng*)r,0,1);
     Om = O2*pow((pow(O1/O2,5.0) + (1.0 - pow(O1/O2,5.0))*temp4),1.0/5.0);
 
     /* fprintf(stdout,"%f (%f %f) %f (%f %f) %f (%f %f) %f (%f %f)\n",nu,n1,n2,a,a1,a2,tasc,t1,t2,Om,O1,O2); */
@@ -384,12 +268,12 @@ int XLALGetNextRandomBinaryTemplate(Template **temp,                        /**<
  */
 int XLALGetNextTemplate(Template **temp,                        /**< [out] the signal model template parameters */
 			GridParameters *gridparams,              /**< [in] the parameter space grid params */
-			ParameterSpace *space
+			ParameterSpace *space,
+			UNUSED void *r
 			)
 {
   UINT4 idx;                             /* the index variable */
   INT4 j;                                /* counters */
-
  
   /* check input */
   if (space != NULL) {
@@ -516,6 +400,10 @@ int XLALEstimateBackgroundFlux(REAL8Vector **background,     /**< [out] the back
     (*background)->data[i] = R; /* T*R/pow((REAL8)SAMPFREQ,2.0); */
     LogPrintf(LOG_DEBUG,"%s : Estimated the background for SFT starting at %d as %.3e cnts/s.\n",__func__,sftvec->data[i].epoch.gpsSeconds,R);
 
+    if (isinf(R)) {
+      for (j=0;j<sft->length;j++) fprintf(stdout,"%.12f %.12e %.12e\n",sftvec->data[i].f0 + j*sftvec->data[i].deltaF,crealf(sft->data[j]),cimagf(sft->data[j]));
+      exit(0);
+    }
     /* free the power */
     XLALFree(P);
     
@@ -735,7 +623,7 @@ int XLALCOMPLEX8TimeSeriesArrayToDemodPowerVector(REAL4DemodulatedPowerVector **
     XLAL_ERROR(XLAL_ENOMEM);
   }
   if ( ((*power)->segment = (REAL4DemodulatedPower**)XLALCalloc(dsdata->length,sizeof(REAL4DemodulatedPower*))) == NULL) {
-    LogPrintf(LOG_CRITICAL,"%s: unable to allocate memory for REAL4DemodulatedPower structure.\n",__func__);
+    LogPrintf(LOG_CRITICAL,"%s: unable to allocate memory for array of REAL4Vector structures.\n",__func__);
     XLAL_ERROR(XLAL_ENOMEM);
   }
   (*power)->length = dsdata->length;
@@ -788,7 +676,7 @@ int XLALCOMPLEX8TimeSeriesArrayToDemodPowerVector(REAL4DemodulatedPowerVector **
 
     /* loop over spin derivitive values - not over frequency */
     ParameterSpace *temp = NULL;
-    while (XLALGetNextTemplate(&spintemp,&tempgrid,temp)) {
+    while (XLALGetNextTemplate(&spintemp,&tempgrid,temp,NULL)) {
 
       /* reinitilaise the reused complex timeseries */
       fs = NULL;
@@ -1309,111 +1197,7 @@ int XLALReadSFTs(SFTVector **sftvec,        /**< [out] the input SFT data */
   
 }
 
-/*******************************************************************************/
-/** Computes the binary parameter space boundaries given the user input args
- *
- * For each search dimension we define the min, max, mid, and span of that dimension
- * plus we give each dimension a name.
- *
- */
-int XLALDefineBinaryParameterSpace(REAL8Space **space,                 /**< [out] the parameter space  */
-				   LIGOTimeGPS epoch,                  /**< [in] the observation start epoch */
-				   REAL8 span,                         /**< [in] the observation span */
-				   UserInput_t *uvar                   /**< [in] the user input variables */
-				   )
-{
-  REAL8 midpoint;              /* the midpoint of the observation */
- /*  REAL8 newtasc;               /\* shifted value of tasc *\/ */
-/*   REAL8 newdeltatasc;          /\* updated uncertainty on tasc after shifting *\/ */
-  REAL8 mintasc;               /* the minimum time of ascension */
-  REAL8 maxtasc;               /* the maximum time of ascension */
 
-  /* validate input variables */
-  if ((*space) != NULL) {
-    LogPrintf(LOG_CRITICAL,"%s : Invalid input, input REAL8Space boundary structure != NULL.\n",__func__);
-    XLAL_ERROR(XLAL_EINVAL);
-  }
-  if (uvar == NULL) {
-    LogPrintf(LOG_CRITICAL,"%s : Invalid input, input UserInput_t structure = NULL.\n",__func__);
-    XLAL_ERROR(XLAL_EINVAL);
-  }
-  if (epoch.gpsSeconds < 0) {
-    LogPrintf(LOG_CRITICAL,"%s : Invalid input, observation epoch < 0.\n",__func__);
-    XLAL_ERROR(XLAL_EINVAL);
-  }
-  if (span < 0) {
-    LogPrintf(LOG_CRITICAL,"%s : Invalid input, observation span < 0.\n",__func__);
-    XLAL_ERROR(XLAL_EINVAL);
-  }
-  
-  /* allocate memory for the parameter space */
-  if ( ((*space) = XLALCalloc(1,sizeof(REAL8Space))) == NULL) {
-    LogPrintf(LOG_CRITICAL,"%s: XLALCalloc() failed with error = %d\n",__func__,xlalErrno);
-    XLAL_ERROR(XLAL_ENOMEM);
-  }
-  (*space)->ndim = NBINMAX;
-  if ( ((*space)->data = XLALCalloc((*space)->ndim,sizeof(REAL8Dimension))) == NULL) {
-    LogPrintf(LOG_CRITICAL,"%s: XLALCalloc() failed with error = %d\n",__func__,xlalErrno);
-    XLAL_ERROR(XLAL_ENOMEM);
-  }
-
-  /* define observaton midpoint */
-  midpoint = XLALGPSGetREAL8(&epoch) + 0.5*span;
-
-  /* find the closest instance of ascension to the midpoint */
-  /* the midpoint is defined in the detector frame and the time of */
-  /* ascension is in the SSB frame but we only need to be roughly */
-  /* correct in the number of orbits we shift by */
-  if (uvar->tasc>0) {    
-    REAL8 meanperiod = 0.5*(uvar->maxorbperiod + uvar->minorbperiod);
-    INT4 n = (INT4)floor(0.5 + (midpoint - uvar->tasc)/meanperiod);
-    REAL8 newtasc = uvar->tasc + n*meanperiod;
-    mintasc = newtasc - 0.5*uvar->maxorbperiod*uvar->deltaorbphase;
-    maxtasc = newtasc + 0.5*uvar->maxorbperiod*uvar->deltaorbphase;
-    LogPrintf(LOG_DEBUG,"%s : shifted tasc by %d orbits\n",__func__,n);
-  }
-  else {   /* we have no orbital info so we search a full period at the midpoint */
-    mintasc = midpoint - 0.5*uvar->maxorbperiod;
-    maxtasc = midpoint + 0.5*uvar->maxorbperiod;
-  }
-  
-  /* this represents a hyper-cubic parameter space */
-  /* we make sure that parameter ranges are consistent i.e asini > 0 etc.. */
-  /* frequency */
-  snprintf((*space)->data[0].name,LALNameLength,"nu");
-  (*space)->data[0].min = uvar->freq;
-  (*space)->data[0].max = uvar->freq + uvar->freqband;
-  (*space)->data[0].span = (*space)->data[0].max - (*space)->data[0].min;
-
-  /* asini */
-  snprintf((*space)->data[1].name,LALNameLength,"asini");
-  (*space)->data[1].min = uvar->minasini;
-  (*space)->data[1].max = uvar->maxasini;
-  (*space)->data[1].span = (*space)->data[1].max - (*space)->data[1].min;
-  
-  /* orbphase */
-  snprintf((*space)->data[2].name,LALNameLength,"tasc");
-  (*space)->data[2].min = mintasc;
-  (*space)->data[2].max = maxtasc;
-  (*space)->data[2].span = (*space)->data[2].max - (*space)->data[2].min;
-  
-  /* omega */
-  snprintf((*space)->data[3].name,LALNameLength,"omega");
-  (*space)->data[3].min = LAL_TWOPI/uvar->maxorbperiod;
-  (*space)->data[3].max = LAL_TWOPI/uvar->minorbperiod;
-  (*space)->data[3].span = (*space)->data[3].max - (*space)->data[3].min;
-
-  /* output boundaries to screen */
-  LogPrintf(LOG_DEBUG,"%s : using flat priors on the following ranges\n",__func__);
-  LogPrintf(LOG_DEBUG,"%s : parameter space, %s = [%e -> %e]\n",__func__,(*space)->data[0].name,(*space)->data[0].min,(*space)->data[0].max);
-  LogPrintf(LOG_DEBUG,"%s : parameter space, %s = [%e -> %e]\n",__func__,(*space)->data[1].name,(*space)->data[1].min,(*space)->data[1].max);
-  LogPrintf(LOG_DEBUG,"%s : parameter space, %s = [%e -> %e]\n",__func__,(*space)->data[2].name,(*space)->data[2].min,(*space)->data[2].max);
-  LogPrintf(LOG_DEBUG,"%s : parameter space, %s = [%e -> %e]\n",__func__,(*space)->data[3].name,(*space)->data[3].min,(*space)->data[3].max);
- 
-  LogPrintf(LOG_DEBUG,"%s : leaving.\n",__func__);
-  return XLAL_SUCCESS;
-  
-}
 
 /** Compute the grid on binary parameters based on the semi-coherent metric
  *
@@ -1620,7 +1404,7 @@ int XLALCopySFT (SFTtype *dest, 	/**< [out] copied SFT (needs to be allocated al
  * 
  *
  */
-int XLALBinaryToSFTVector(SFTVector *SFTvect, 	/**< [out] copied SFT (needs to be allocated already) */
+int XLALBinaryToSFTVector(SFTVector **SFTvect, 	/**< [out] copied SFT (needs to be allocated already) */
 			  CHAR *filename,       /**< [in] the input filename */
 			  LIGOTimeGPS *fileStart, /**< [in] the file start time */
 			  REAL8 tsft,           /**< [in] the SFT length */
@@ -1631,8 +1415,24 @@ int XLALBinaryToSFTVector(SFTVector *SFTvect, 	/**< [out] copied SFT (needs to b
 			  )
 {
 
-  LogPrintf(LOG_DEBUG,"%s : working on file %s\n",__func__,filenames[j]);
+  INT4 i,k;
+  static const LALUnit empty_LALUnit;
+  LogPrintf(LOG_DEBUG,"%s : working on file %s\n",__func__,filename);
   
+  /* /\* validate input arguments *\/ */
+/*   if ((*SFTvect) != NULL) { */
+/*     LogPrintf(LOG_CRITICAL,"%s: Invalid input, output SFTVector structure != NULL.\n",__func__); */
+/*     XLAL_ERROR(XLAL_EINVAL); */
+/*   } */
+
+  /* initialise results vector */
+  if ((*SFTvect)==NULL) {
+    if (((*SFTvect) = LALCalloc(1,sizeof(SFTVector)))==NULL) {
+      LogPrintf(LOG_CRITICAL,"%s: Unable to allocate memory for SFTVector\n",__func__);
+      XLAL_ERROR(XLAL_ENOMEM);
+    }
+  }
+
   /**********************************************************************************/
   /* open the binary file and count the number of elements */
   FILE *binfp = NULL;                              /* file pointer for input file */
@@ -1658,8 +1458,8 @@ int XLALBinaryToSFTVector(SFTVector *SFTvect, 	/**< [out] copied SFT (needs to b
   REAL8 sum = 0;
   
   /* read in the data to the timeseries */
-  if ((binfp = fopen(filenames[j],"r")) == NULL) {
-    LogPrintf(LOG_CRITICAL,"%s : failed to open binary input file %s\n",__func__,filenames[j]);
+  if ((binfp = fopen(filename,"r")) == NULL) {
+    LogPrintf(LOG_CRITICAL,"%s : failed to open binary input file %s\n",__func__,filename);
     return 1;
   }
   i = 0;
@@ -1668,22 +1468,33 @@ int XLALBinaryToSFTVector(SFTVector *SFTvect, 	/**< [out] copied SFT (needs to b
     sum += Tseries->data->data[i];
     i++;
   }
-  REAL8 rate = sum/N;    /* the rate per bin */
   fclose(binfp);
+ /*  fprintf(stdout,"hello\n"); */
+/*   { */
+/*     FILE *tempfp = NULL; */
+/*     if ((tempfp = fopen("/Users/chrismessenger/temp/badfile.txt","w"))==NULL) { */
+/*       fprintf(stdout,"ERROR\n"); */
+/*       exit(0); */
+/*     } */
+/*     for (i=0;i<N;i++) fprintf(tempfp,"%.12e\n",(REAL8)Tseries->data->data[i]); */
+/*     fclose(tempfp); */
+/*     exit(0); */
+/*   } */
   
   /**********************************************************************************/
   /* make timestamps */
   LIGOTimeGPSVector timestamps;
   INT4 Nsft = (INT4)floor(N*dt/tsft);        /* compute the number of SFTs */
   timestamps.length = Nsft;
-  
+ /*  fprintf(stdout,"Nsft = %d\n",Nsft); */
   /* only continue if we have any data in this SFT */
   if (Nsft>0) {
     
     timestamps.data = LALCalloc(Nsft,sizeof(LIGOTimeGPS));
     for (i=0;i<Nsft;i++) {
       timestamps.data[i] = startTimeGPS;
-      XLALGPSAdd(&(timestamps.data[i]),i*uvar.tsft);
+      XLALGPSAdd(&(timestamps.data[i]),i*tsft);
+     /*  fprintf(stdout,"timestamps = %d %d\n",timestamps.data[i].gpsSeconds,timestamps.data[i].gpsNanoSeconds); */
     }
     
     /**********************************************************************************/
@@ -1701,7 +1512,7 @@ int XLALBinaryToSFTVector(SFTVector *SFTvect, 	/**< [out] copied SFT (needs to b
     /**********************************************************************************/
     /* compute SFTs from timeseries */
     SFTParams sftParams = empty_SFTParams;
-    sftParams.Tsft = uvar.tsft;
+    sftParams.Tsft = tsft;
     sftParams.timestamps = &timestamps;
     sftParams.noiseSFTs = NULL;       // not used here any more!
     sftParams.window = NULL;
@@ -1710,13 +1521,12 @@ int XLALBinaryToSFTVector(SFTVector *SFTvect, 	/**< [out] copied SFT (needs to b
     
     /**********************************************************************************/
     /* extract effective band from this, if neccessary (ie if faster-sampled output SFTs) */
-    SFTVector *tempSFTvect = XLALExtractBandFromSFTVector ( sftVect, freq, freqband );
+    SFTVector *tempSFTvect = XLALExtractBandFromSFTVector ( sftvect, freq, freqband );
     XLALDestroySFTVector(sftvect); 
     
     /**********************************************************************************/
     /* append these SFTs to the full list of SFTs */
-    for (k=0;k<Nsft;k++) XLALAppendSFT2Vector((*SFTvect),&(tempSFTvect->data[k]));  
-    sftcnt += Nsft;
+    for (k=0;k<Nsft;k++) XLALAppendSFT2Vector((*SFTvect),&(tempSFTvect->data[k]));
     
     /**********************************************************************************/
     
