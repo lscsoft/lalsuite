@@ -384,6 +384,13 @@ void LALInferenceSetupDefaultNSProposal(LALInferenceRunState *runState, LALInfer
     LALInferenceAddProposalToCycle (runState, PSDFitJumpName, *LALInferencePSDFitJump, SMALLWEIGHT);
   }
 
+  if(!LALInferenceGetProcParamVal(runState->commandLine,"--proposal-no-kde")){
+      LALInferenceAddProposalToCycle(runState, clusteredKDEProposalName, &LALInferenceClusteredKDEProposal, 2*BIGWEIGHT);
+      if (LALInferenceGetProcParamVal(runState->commandLine,"--ptmcmc-samples") || LALInferenceGetProcParamVal(runState->commandLine,"--ascii-samples")) {
+          LALInferenceSetupClusteredKDEProposalsFromFile(runState);
+      }
+  }
+
   LALInferenceRandomizeProposalCycle(runState);
   LALInferenceZeroProposalStats(runState);
 }
@@ -3765,7 +3772,6 @@ void LALInferenceClusteredKDEProposal(LALInferenceRunState *runState, LALInferen
 */
 void LALInferenceComputeMaxAutoCorrLen(LALInferenceRunState *runState, INT4* maxACL) {
   INT4 M=5, K=2;
-  INT4 Niter = *(INT4*) LALInferenceGetVariable(runState->algorithmParams, "Niter");
   INT4 nPar = LALInferenceGetVariableDimensionNonFixed(runState->currentParams);
   INT4 nPoints = runState->differentialPointsLength;
 
@@ -3776,7 +3782,10 @@ void LALInferenceComputeMaxAutoCorrLen(LALInferenceRunState *runState, INT4* max
   REAL8 cumACF, s;
 
   /* Determine the number of iterations between each entry in the DE buffer */
-  INT4 Nskip = *(INT4*) LALInferenceGetVariable(runState->algorithmParams, "Nskip");
+  INT4 Nskip = 1;
+  if (LALInferenceCheckVariable(runState->algorithmParams, "Nskip"))
+      Nskip = *(INT4*) LALInferenceGetVariable(runState->algorithmParams, "Nskip");
+
 
   if (nPoints > 1) {
     imax = nPoints/K;
@@ -3817,7 +3826,7 @@ void LALInferenceComputeMaxAutoCorrLen(LALInferenceRunState *runState, INT4* max
     XLALFree(temp);
     XLALFree(DEarray);
   } else {
-    max = Niter;
+    max = INFINITY;
   }
 
   *maxACL = (INT4)max;
@@ -3844,10 +3853,12 @@ void LALInferenceUpdateMaxAutoCorrLen(LALInferenceRunState *runState) {
  * @param      runState      The current LALInferenceRunState.
  */
 INT4 LALInferenceComputeEffectiveSampleSize(LALInferenceRunState *runState) {
-    /* Update the ACL estimate */
-    LALInferenceUpdateMaxAutoCorrLen(runState);
-
-    INT4 acl = *((INT4*) LALInferenceGetVariable(runState->algorithmParams, "acl"));
+    /* Update the ACL estimate, assuming a thinned DE buffer if ACL isn't available */
+    INT4 acl = 1;
+    if (LALInferenceCheckVariable(runState->algorithmParams, "acl")) {
+        LALInferenceUpdateMaxAutoCorrLen(runState);
+        acl = *((INT4*) LALInferenceGetVariable(runState->algorithmParams, "acl"));
+    }
 
     /* Estimate the total number of samples post-burnin based on samples in DE buffer */
     INT4 nPoints =  runState->differentialPointsLength * runState->differentialPointsSkip;
