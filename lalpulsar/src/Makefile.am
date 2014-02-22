@@ -54,6 +54,7 @@ lalpulsarinclude_HEADERS = \
 	PulsarSimulateCoherentGW.h \
 	PulsarTimes.h \
 	SFTClean.h \
+	SFTfileIO-LAL.h \
 	SFTfileIO.h \
 	SFTutils-LAL.h \
 	SFTutils.h \
@@ -155,6 +156,7 @@ EXTRA_liblalpulsar_la_SOURCES = \
 	ComputeFstat_Demod_sse_msc.i \
 	ComputeFstat_Resamp.c \
 	SinCosLUT.i \
+	SFTfileIO-LAL.c \
 	SFTutils-LAL.c
 
 liblalpulsar_la_LDFLAGS = $(AM_LDFLAGS) -version-info $(LIBVERSION)
