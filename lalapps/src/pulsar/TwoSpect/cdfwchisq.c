@@ -54,10 +54,11 @@ REAL8 twospect_log_1plusx_mx(REAL8 x)
 } /* twospect_log_1plusx_mx() */
 
 //count number of calls to errbound, truncation, coeff
-void counter(qfvars *vars)
-{
-   vars->count++;
-} /* counter() */
+// void counter(qfvars *vars);
+// void counter(qfvars *vars)
+//{
+//   vars->count++;
+//} /* counter() */
 
 
 //find order of absolute values of weights

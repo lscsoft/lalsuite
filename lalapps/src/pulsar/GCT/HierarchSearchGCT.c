@@ -170,7 +170,7 @@ int compareCoarseGridUindex( const void *a, const void *b );
 int compareFineGridNC( const void *a,const void *b );
 int compareFineGridsumTwoF( const void *a,const void *b );
 
-SFTCatalogSequence *XLALSetUpStacksFromSegmentList ( const SFTCatalog *SFTCatalog, const LALSegList *segList );
+SFTCatalogSequence *XLALSetUpStacksFromSegmentList ( const SFTCatalog *catalog, const LALSegList *segList );
 
 int XLALExtrapolateToplistPulsarSpins ( toplist_t *list,
 					const LIGOTimeGPS usefulParamsRefTime,
