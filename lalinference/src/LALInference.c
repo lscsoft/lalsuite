@@ -181,37 +181,6 @@ INT4 LALInferenceGetVariableDimensionNonFixed(LALInferenceVariables *vars)
   return count;
 }
 
-INT4 LALInferenceGetVariableDimensionVarying(LALInferenceVariables *vars)
-{
-  INT4 count=0;
-  gsl_matrix *m=NULL;
-  UINT4Vector *v=NULL;
-  LALInferenceVariableItem *ptr = vars->head;
-  if (ptr==NULL) return count;
-  else {
-    /* loop over entries: */
-    while (ptr != NULL) {
-      if (ptr->vary != LALINFERENCE_PARAM_FIXED && ptr->vary != LALINFERENCE_PARAM_OUTPUT)
-      {
-        //Generalize to allow for other data types
-        if(ptr->type == LALINFERENCE_gslMatrix_t)
-        {
-          m = *((gsl_matrix **)ptr->value);
-          count += (int)( (m->size1)*(m->size2) );
-        }
-        else if(ptr->type == LALINFERENCE_UINT4Vector_t)
-        {
-          v = *((UINT4Vector **)ptr->value);
-          count += (int)( v->length );
-        }
-        else count++;
-      }
-      ptr = ptr->next;
-    }
-  }
-  return count;
-}
-
 LALInferenceVariableType LALInferenceGetVariableType(const LALInferenceVariables *vars, const char *name)
 {
   return LALInferenceGetItem(vars,name)->type;
@@ -1267,23 +1236,23 @@ INT4 LALInferenceBufferToArray(LALInferenceRunState *state, REAL8** DEarray) {
 }
 
 
-void LALInferenceArrayToBuffer(LALInferenceRunState *runState, REAL8** DEarray) {
+void LALInferenceArrayToBuffer(LALInferenceRunState *runState, REAL8** DEarray, UINT4 nPoints) {
   LALInferenceVariableItem *ptr;
   UINT4 i=0,p=0;
-  UINT4 nPoints = sizeof(DEarray) / sizeof(REAL8*);
 
   /* Save last LALInferenceVariables item from buffer to keep fixed params consistent for chain */
   LALInferenceVariables templateParamSet;
   LALInferenceCopyVariables(runState->differentialPoints[runState->differentialPointsLength-1], &templateParamSet);
 
   /* Free old DE buffer */
+  for (i = 0; i < runState->differentialPointsLength; i++)
+      XLALFree(runState->differentialPoints[i]);
   XLALFree(runState->differentialPoints);
 
   /* Expand DE buffer */
-  size_t newSize = runState->differentialPointsSize;
-  while (nPoints > newSize) {
-    newSize = newSize*2;
-  }
+  size_t newSize = 1;
+  while (nPoints > newSize)
+    newSize *= 2;
 
   runState->differentialPoints = XLALCalloc(newSize, sizeof(LALInferenceVariables *));
   runState->differentialPointsLength = nPoints;
@@ -1292,6 +1261,7 @@ void LALInferenceArrayToBuffer(LALInferenceRunState *runState, REAL8** DEarray) 
   for (i=0; i<nPoints; i++) {
     runState->differentialPoints[i] = XLALCalloc(1, sizeof(LALInferenceVariables));
     LALInferenceCopyVariables(&templateParamSet, runState->differentialPoints[i]);
+    p = 0;
     ptr = runState->differentialPoints[i]->head;
     while(ptr!=NULL) {
       if (LALInferenceCheckVariableNonFixed(runState->differentialPoints[i], ptr->name) && ptr->type == LALINFERENCE_REAL8_t) {

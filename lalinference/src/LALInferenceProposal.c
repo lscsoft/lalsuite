@@ -556,6 +556,9 @@ SetupPostPTProposal(LALInferenceRunState *runState, LALInferenceVariables *curre
     LALInferenceAddProposalToCycle(runState, differentialEvolutionExtrinsicName, &LALInferenceDifferentialEvolutionExtrinsic, 4);
   }
 
+  if(!LALInferenceGetProcParamVal(runState->commandLine,"--proposal-no-kde"))
+      LALInferenceAddProposalToCycle(runState, clusteredKDEProposalName, &LALInferenceClusteredKDEProposal, 5);
+
   LALInferenceRandomizeProposalCycle(runState);
 }
 
@@ -3544,11 +3547,12 @@ void LALInferenceSetupClusteredKDEProposalsFromFile(LALInferenceRunState *runSta
 void LALInferenceInitClusteredKDEProposal(LALInferenceRunState *runState, LALInferenceClusteredKDE *kde, REAL8 *array, UINT4 nSamps, LALInferenceVariables *params, const char *name, REAL8 weight) {
 
     strcpy(kde->name, name);
-    INT4 dim = LALInferenceGetVariableDimensionVarying(params);
+    INT4 dim = LALInferenceGetVariableDimensionNonFixed(params);
 
     gsl_matrix_view mview = gsl_matrix_view_array(array, nSamps, dim);
 
     kde->kmeans = LALInferenceIncrementalKmeans(&mview.matrix, runState->GSLrandom);
+    printf("%i clusters found.\n", kde->kmeans->k);
 
     kde->dimension = kde->kmeans->dim;
     kde->params = params;
@@ -3646,7 +3650,7 @@ void LALInferenceSetupClusteredKDEProposalFromRun(LALInferenceRunState *runState
     REAL8 weight=2.;
     INT4 i=0;
 
-    INT4 nPar = LALInferenceGetVariableDimensionVarying(runState->currentParams);
+    INT4 nPar = LALInferenceGetVariableDimensionNonFixed(runState->currentParams);
 
     /* If ACL can be estimated, thin DE buffer to only have independent samples */
     REAL8 bufferSize = (REAL8)runState->differentialPointsLength;

@@ -235,9 +235,6 @@ INT4 LALInferenceGetVariableDimension(LALInferenceVariables *vars);
 /** Get number of dimensions in \c vars which are not fixed to a certain value */
 INT4 LALInferenceGetVariableDimensionNonFixed(LALInferenceVariables *vars);
 
-/** Get number of dimensions in \c vars which are varying */
-INT4 LALInferenceGetVariableDimensionVarying(LALInferenceVariables *vars);
-
 /**
  * Get the LALInferenceVariableType of the \c idx -th item in the \c vars
  * Indexing starts at 1
@@ -674,7 +671,7 @@ void LALInferenceSortVariablesByName(LALInferenceVariables *vars);
 INT4 LALInferenceThinnedBufferToArray(LALInferenceRunState *state, REAL8 **array, INT4 step);
 INT4 LALInferenceBufferToArray(LALInferenceRunState *state, REAL8 **array);
 
-void LALInferenceArrayToBuffer(LALInferenceRunState *state, REAL8 **array);
+void LALInferenceArrayToBuffer(LALInferenceRunState *state, REAL8 **array, UINT4 nPoints);
 
 /** LALInference variables to an array, and vica versa */
 REAL8Vector *LALInferenceCopyVariablesToArray(LALInferenceVariables *origin);
