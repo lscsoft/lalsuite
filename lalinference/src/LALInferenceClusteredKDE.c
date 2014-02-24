@@ -498,6 +498,7 @@ LALInferenceKmeans *LALInferenceKmeansExtractCluster(LALInferenceKmeans *kmeans,
 
     /* Create the kmeans */
     LALInferenceKmeans *sub_kmeans = LALInferenceCreateKmeans(1, masked_data, kmeans->rng);
+    gsl_matrix_free(masked_data);
 
     /* Initialize and assign all points to the only cluster */
     LALInferenceKmeansForgyInitialize(sub_kmeans);
@@ -652,8 +653,13 @@ REAL8 LALInferenceKmeansPDF(LALInferenceKmeans *kmeans, REAL8 *pt) {
     gsl_matrix *A = gsl_matrix_alloc(kmeans->dim, kmeans->dim);
     gsl_matrix_memcpy(A, kmeans->unwhitened_chol_dec_cov);
     gsl_linalg_HH_svx(A, y);
+    
+    REAL8 result = LALInferenceWhitenedKmeansPDF(kmeans, y->data);
 
-    return LALInferenceWhitenedKmeansPDF(kmeans, y->data);
+    gsl_matrix_free(A);
+    gsl_vector_free(y);
+
+    return result;
 }
 
 
@@ -889,11 +895,17 @@ void LALInferenceKmeansDestroy(LALInferenceKmeans *kmeans) {
 
     gsl_vector_free(kmeans->mean);
     gsl_matrix_free(kmeans->data);
-    gsl_matrix_free(kmeans->chol_dec_cov);
-    gsl_matrix_free(kmeans->centroids);
+    if (kmeans->chol_dec_cov) gsl_matrix_free(kmeans->chol_dec_cov);
+    if (kmeans->unwhitened_chol_dec_cov) gsl_matrix_free(kmeans->unwhitened_chol_dec_cov);
+    if (kmeans->centroids) gsl_matrix_free(kmeans->centroids);
+    if (kmeans->recursive_centroids) gsl_matrix_free(kmeans->recursive_centroids);
 
-    if (kmeans->KDEs != NULL)
+    if (kmeans->KDEs != NULL) {
+        UINT4 k;
+        for (k=0; k<kmeans->k; k++)
+            LALInferenceDestroyKDE(kmeans->KDEs[k]);
         XLALFree(kmeans->KDEs);
+    }
 
     XLALFree(kmeans);
 }

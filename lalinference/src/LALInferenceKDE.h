@@ -56,6 +56,9 @@ LALInferenceKDE *LALInferenceNewKDEfromMat(gsl_matrix *data, UINT4 *mask);
 /* Allocate, fill, and tune a Gaussian kernel density estimate given a matrix of points. */
 LALInferenceKDE *LALInferenceInitKDE(UINT4 npts, UINT4 dim);
 
+/* Free an allocated KDE structure. */
+void LALInferenceDestroyKDE(LALInferenceKDE *kde);
+
 /* Calculate the bandwidth and normalization factor for a KDE. */
 void LALInferenceSetKDEBandwidth(LALInferenceKDE *kde);
 

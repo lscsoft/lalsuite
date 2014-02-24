@@ -158,6 +158,28 @@ LALInferenceKDE *LALInferenceInitKDE(UINT4 npts, UINT4 dim) {
 
 
 /**
+ * Free an allocated KDE structure.
+ *
+ * Frees all memory allocated for a given KDE structure.
+ * @param[in] KDE The KDE structure to be freed.
+ * \sa LALInferenceKDE, LALInferenceInitKDE
+ */
+void LALInferenceDestroyKDE(LALInferenceKDE *kde) {
+    gsl_vector_free(kde->mean);
+    gsl_matrix_free(kde->cholesky_decomp_cov);
+    gsl_matrix_free(kde->cholesky_decomp_cov_lower);
+    gsl_matrix_free(kde->data);
+
+    if (kde->cov)
+        gsl_matrix_free(kde->cov);
+
+    XLALFree(kde);
+
+    return;
+}
+
+
+/**
  * Calculate the bandwidth and normalization factor for a KDE.
  *
  * Use Scott's rule to determine the bandwidth, and corresponding normalization factor, for a KDE.
@@ -232,7 +254,11 @@ REAL8 LALInferenceKDEEvaluatePoint(LALInferenceKDE *kde, REAL8 *point) {
 
     /* Normalize the result and return */
     REAL8 result = log_add_exps(results, npts) - kde->log_norm_factor;
+
+    gsl_vector_free(diff);
+    gsl_vector_free(tdiff);
     XLALFree(results);
+
     return result;
 }
 
@@ -366,6 +392,10 @@ gsl_matrix *LALInferenceComputeCovariance(gsl_matrix *data) {
             gsl_matrix_set(cov, i, j, var);
         }
     }
+
+    gsl_vector_free(adiff);
+    gsl_vector_free(bdiff);
+    gsl_vector_free(mean);
     return cov;
 }
 
