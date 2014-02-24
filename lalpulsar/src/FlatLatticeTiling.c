@@ -91,7 +91,8 @@ struct tagFlatLatticeTiling {
   gsl_vector* curr_lower_pad;                   ///< Current lower padding of parameter space
   gsl_vector* curr_upper_pad;                   ///< Current upper padding of parameter space
   gsl_vector* curr_phys_point;                  ///< Current physical parameter-space point
-  unsigned long count;                          ///< Total number of points generated so far
+  unsigned long count;                          ///< Number of points generated so far
+  unsigned long total_count;                    ///< Total number of points in parameter space
 };
 
 ///
@@ -625,6 +626,35 @@ unsigned long XLALGetFlatLatticePointCount(
 
 }
 
+unsigned long XLALCountFlatLatticePoints(
+  FlatLatticeTiling* tiling
+  )
+{
+
+  // Check tiling
+  XLAL_CHECK_VAL(0, tiling != NULL, XLAL_EFAULT);
+
+  // If templates have not already been counted, count them
+  if (tiling->total_count == 0) {
+
+    // Check tiling status
+    XLAL_CHECK_VAL(0, tiling->status != FLT_S_INCOMPLETE, XLAL_EFAILED);
+
+    // Iterate over all templates
+    while (XLALNextFlatLatticePoint(tiling) >= 0);
+    XLAL_CHECK_VAL(0, xlalErrno == 0, XLAL_EFUNC);
+    XLAL_CHECK_VAL(0, tiling->total_count > 0, XLAL_EFAILED);
+
+    // Restart tiling
+    XLALRestartFlatLatticeTiling(tiling);
+
+  }
+
+  // Return the template count
+  return tiling->total_count;
+
+}
+
 gsl_matrix* XLALGetFlatLatticeIncrements(
   FlatLatticeTiling* tiling
   )
@@ -832,6 +862,7 @@ int XLALNextFlatLatticePoint(
   // If started status, but no tiled dimensions, we're finished!
   if (tiling->status == FLT_S_STARTED && tiling->tiled_dimensions == 0) {
     tiling->status = FLT_S_FINISHED;
+    tiling->total_count = 1;   // Set total template count
     return -1;
   }
 
@@ -898,6 +929,7 @@ int XLALNextFlatLatticePoint(
     // If dimension index is now zero, we're done!
     if (i == 0) {
       tiling->status = FLT_S_FINISHED;
+      tiling->total_count = tiling->count;   // Save total template count
       return -1;
     }
 
@@ -1053,30 +1085,6 @@ int XLALRestartFlatLatticeTiling(
   tiling->count = 0;
 
   return XLAL_SUCCESS;
-
-}
-
-unsigned long XLALCountTotalFlatLatticePoints(
-  FlatLatticeTiling* tiling
-  )
-{
-
-  // Check tiling
-  XLAL_CHECK_VAL(0, tiling != NULL, XLAL_EFAULT);
-  XLAL_CHECK_VAL(0, tiling->status != FLT_S_INCOMPLETE, XLAL_EFAILED);
-
-  // Iterate over all templates
-  while (XLALNextFlatLatticePoint(tiling) >= 0);
-  XLAL_CHECK_VAL(0, xlalErrno == 0, XLAL_EFAILED);
-
-  // Save the template count
-  unsigned long count = tiling->count;
-
-  // Restart tiling
-  XLALRestartFlatLatticeTiling(tiling);
-
-  // Return the template count
-  return count;
 
 }
 

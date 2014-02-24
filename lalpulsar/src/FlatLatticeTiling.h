@@ -105,6 +105,13 @@ unsigned long XLALGetFlatLatticePointCount(
   );
 
 ///
+/// Calculate the total number of flat lattice tiling parameter space points
+///
+unsigned long XLALCountFlatLatticePoints(
+  FlatLatticeTiling* tiling                     ///< [in] Tiling state
+  );
+
+///
 /// Return the increment vectors which are used to generate the lattice.
 ///
 gsl_matrix* XLALGetFlatLatticeIncrements(
@@ -145,13 +152,6 @@ int XLALNextFlatLatticePoint(
 /// Return to the beginning of a flat lattice tiling
 ///
 int XLALRestartFlatLatticeTiling(
-  FlatLatticeTiling* tiling                     ///< [in] Tiling state
-  );
-
-///
-/// Calculate the total number of flat lattice tiling parameter space points
-///
-unsigned long XLALCountTotalFlatLatticePoints(
   FlatLatticeTiling* tiling                     ///< [in] Tiling state
   );
 
