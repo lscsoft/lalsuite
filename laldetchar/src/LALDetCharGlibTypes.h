@@ -47,6 +47,9 @@ LALGType XLALGetGSequenceType(LALGSequence* seq);
 size_t XLALGetGSequenceLength(LALGSequence* seq);
 
 void XLALDestroyGSequenceIter(LALGSequenceIter* itr);
+#ifdef SWIG   // SWIG interface directives
+SWIGLAL(RETURNS_PROPERTY(LALGSequenceIter*, XLALGSequenceBegin));
+#endif
 LALGSequenceIter* XLALGSequenceBegin(LALGSequence* seq);
 bool XLALGSequenceNext(LALGSequenceIter* itr);
 #ifndef SWIG   // exclude from SWIG interface
