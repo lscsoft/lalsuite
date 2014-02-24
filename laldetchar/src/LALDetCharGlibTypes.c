@@ -101,14 +101,10 @@ LALGSequenceIter* XLALGSequenceBegin(LALGSequence* seq) {
   }
 }
 
-LALGSequenceIter* XLALGSequenceNext(LALGSequenceIter* itr) {
+bool XLALGSequenceNext(LALGSequenceIter* itr) {
   XLAL_CHECK_NULL(itr, XLAL_EFAULT);
   itr->i = g_sequence_iter_next(itr->i);
-  if (g_sequence_iter_is_end(itr->i)) {
-    XLALDestroyGSequenceIter(itr);
-    return NULL;
-  }
-  return itr;
+  return !g_sequence_iter_is_end(itr->i);
 }
 
 GSequenceIter* XLALGSequenceBeginRaw(LALGSequence* seq, LALGType type) {
