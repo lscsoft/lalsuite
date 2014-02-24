@@ -31,23 +31,37 @@ import itertools
 _max_order = 30
 
 
+def nside2order(nside):
+    """Convert lateral HEALPix resolution to order.
+    FIXME: see https://github.com/healpy/healpy/issues/163"""
+    order = np.log2(nside)
+    int_order = int(order)
+    if order != int_order:
+        raise ValueError('not a valid value for nside: {0}'.format(nside))
+    return int_order
+
+
+def order2nside(order):
+    return 1 << order
+
+
 class _HEALPixNode(object):
     """Data structure used internally by the function
     adaptive_healpix_histogram()."""
 
-    def __init__(self, samples, max_samples_per_pixel, order=0, needs_sort=True):
+    def __init__(self, samples, max_samples_per_pixel, max_order, order=0, needs_sort=True):
         if needs_sort:
             samples = np.sort(samples)
-        if len(samples) > max_samples_per_pixel:
+        if len(samples) > max_samples_per_pixel and order < max_order:
             # All nodes have 4 children, except for the root node, which has 12.
             nchildren = 12 if order == 0 else 4
             self.samples = None
             self.children = [_HEALPixNode([], max_samples_per_pixel,
-                order=order + 1) for i in range(nchildren)]
+                max_order, order=order + 1) for i in range(nchildren)]
             for ipix, samples in itertools.groupby(samples,
                     self.key_for_order(order)):
                 self.children[np.uint64(ipix % nchildren)] = _HEALPixNode(
-                    list(samples), max_samples_per_pixel,
+                    list(samples), max_samples_per_pixel, max_order,
                     order=order + 1, needs_sort=False)
         else:
             # There are few enough samples that we can make this cell a leaf.
@@ -90,7 +104,7 @@ class _HEALPixNode(object):
         return hp.reorder(m, n2r=True)
 
 
-def adaptive_healpix_histogram(theta, phi, max_samples_per_pixel, nside=-1):
+def adaptive_healpix_histogram(theta, phi, max_samples_per_pixel, nside=-1, max_nside=-1):
     """Adaptively histogram the posterior samples represented by the
     (theta, phi) points using a recursively subdivided HEALPix tree. Nodes are
     subdivided until each leaf contains no more than max_samples_per_pixel
@@ -108,7 +122,15 @@ def adaptive_healpix_histogram(theta, phi, max_samples_per_pixel, nside=-1):
     ipix = hp.ang2pix(1 << _max_order, theta, phi, nest=True).astype(np.uint64)
 
     # Build tree structure.
-    tree = _HEALPixNode(ipix, max_samples_per_pixel)
+    if nside == -1 and max_nside == -1:
+        max_order = _max_order
+    elif nside == -1:
+        max_order = nside2order(max_nside)
+    elif max_nside == -1:
+        max_order = nside2order(nside)
+    else:
+        max_order = nside2order(min(nside, max_nside))
+    tree = _HEALPixNode(ipix, max_samples_per_pixel, max_order)
 
     # Compute a flattened bitmap representation of the tree.
     p = tree.flat_bitmap
