@@ -144,13 +144,13 @@ accumulateKDTreeSample(LALInferenceRunState *runState) {
 static void
 BcastDifferentialEvolutionPoints(LALInferenceRunState *runState, INT4 sourceTemp) {
   INT4 MPIrank;
-  INT4 i=0;
+  UINT4 i=0;
   REAL8** packedDEsamples;
   REAL8*  temp;
 
   MPI_Comm_rank(MPI_COMM_WORLD, &MPIrank);
-  INT4 nPar = LALInferenceGetVariableDimensionNonFixed(runState->currentParams);
-  INT4 nPoints = runState->differentialPointsLength;
+  UINT4 nPar = (UINT4)LALInferenceGetVariableDimensionNonFixed(runState->currentParams);
+  UINT4 nPoints = (UINT4)runState->differentialPointsLength;
 
   /* Prepare a DE buffer of the proper size */
   MPI_Bcast(&nPoints, 1, MPI_INT, sourceTemp, MPI_COMM_WORLD);
@@ -158,9 +158,8 @@ BcastDifferentialEvolutionPoints(LALInferenceRunState *runState, INT4 sourceTemp
   /* Prepare 2D array for DE points */
   packedDEsamples = (REAL8**) XLALMalloc(nPoints * sizeof(REAL8*));
   temp = (REAL8*) XLALMalloc(nPoints * nPar * sizeof(REAL8));
-  for (i=0; i < nPoints; i++) {
+  for (i=0; i < nPoints; i++)
     packedDEsamples[i] = temp + (i*nPar);
-  }
 
   /* Pack it up */
   if (MPIrank == sourceTemp)
@@ -171,7 +170,7 @@ BcastDifferentialEvolutionPoints(LALInferenceRunState *runState, INT4 sourceTemp
 
   /* Unpack it */
   if (MPIrank != sourceTemp)
-    LALInferenceArrayToBuffer(runState, packedDEsamples);
+    LALInferenceArrayToBuffer(runState, packedDEsamples, nPoints);
 
   /* Clean up */
   XLALFree(temp);
@@ -184,6 +183,7 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
   INT4 i,t,c; //indexes for for() loops
   INT4 nChain;
   INT4 MPIrank, MPIsize;
+  MPI_Status MPIstatus;
   LALStatus status;
   memset(&status,0,sizeof(status));
   INT4 runComplete=0;
@@ -215,6 +215,10 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
   REAL8 timestamp,timestamp_epoch=0.0;
   struct timeval tv;
 
+  MPI_Comm_size(MPI_COMM_WORLD, &MPIsize);
+  MPI_Comm_rank(MPI_COMM_WORLD, &MPIrank);
+  nChain = MPIsize;		//number of parallel chain
+
   LALInferenceMCMCRunPhase *runPhase_p = XLALCalloc(sizeof(LALInferenceMCMCRunPhase), 1);
   *runPhase_p = LALINFERENCE_ONLY_PT;
   LALInferenceAddVariable(runState->algorithmParams, "runPhase", &runPhase_p,  LALINFERENCE_MCMCrunphase_ptr_t, LALINFERENCE_PARAM_FIXED);
@@ -227,9 +231,21 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
   if (LALInferenceGetProcParamVal(runState->commandLine, "--anneal")) {
     annealingOn = 1;
     *runPhase_p = LALINFERENCE_TEMP_PT;
+
+    /* Non-blocking receive to accept change in state.
+     * Run phase changes are triggered by the coldest chain,
+     * then propogated from the top of the ladder down to avoid
+     * lockup from PT swaps */
+    if (MPIrank != 0) {
+        if (MPIrank == nChain-1)
+            MPI_Irecv(runPhase_p, 1, MPI_INT, 0, RUN_PHASE_COM, MPI_COMM_WORLD, &MPIrequest);
+        else
+            MPI_Irecv(runPhase_p, 1, MPI_INT, MPIrank+1, RUN_PHASE_COM, MPI_COMM_WORLD, &MPIrequest);
+    }
   }
 
   /* Clustered-KDE proposal updates */
+  UINT4 kde_update_start    = 100;  // rough number of effective samples to start KDE updates
   UINT4 kde_update_interval = 100;  // rough number of effective samples between KDE udpates
   UINT4 last_kde_update = 0;        // effective sample size at last KDE update
 
@@ -266,10 +282,6 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 
   ProcessParamsTable *ppt;
 
-  MPI_Comm_size(MPI_COMM_WORLD, &MPIsize);
-  MPI_Comm_rank(MPI_COMM_WORLD, &MPIrank);
-
-  nChain = MPIsize;		//number of parallel chain
   ladder = malloc(nChain * sizeof(REAL8));                  // Array of temperatures for parallel tempering.
   annealDecay = malloc(nChain * sizeof(REAL8));           			// Used by annealing scheme
 
@@ -596,8 +608,7 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
         } else if (*runPhase_p==LALINFERENCE_TEMP_PT) {
           /* Broadcast new run phase to other chains */
           *runPhase_p=LALINFERENCE_ANNEALING;
-          for (c=1; c<nChain; c++)
-            MPI_Send(&*runPhase_p, 1, MPI_INT, c, RUN_PHASE_COM, MPI_COMM_WORLD);
+          MPI_Send(runPhase_p, 1, MPI_INT, nChain-1, RUN_PHASE_COM, MPI_COMM_WORLD);
         }
       }
     }
@@ -607,6 +618,13 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
       if (!annealingStarted) {
         annealingStarted = 1;
         annealStartIter=i;
+
+        /* Propogate the change in runPhase down the ladder, waiting for the next attempted PT swap */
+        if (MPIrank > 1) {
+            MPI_Probe(MPIrank-1, PT_COM, MPI_COMM_WORLD, &MPIstatus);  // Completes when PT swap attempted
+            MPI_Send(runPhase_p, 1, MPI_INT, MPIrank-1, RUN_PHASE_COM, MPI_COMM_WORLD);  // Update runPhase
+            LALInferenceFlushPTswap();                                // Rejects the swap
+        }
 
         /* Broadcast the cold chain ACL from parallel tempering */
         PTacl = *((INT4*) LALInferenceGetVariable(runState->algorithmParams, "acl"));
@@ -621,6 +639,13 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
         /* Share DE buffer from cold chain */
         if (diffEvo)
           BcastDifferentialEvolutionPoints(runState, 0);
+
+        /* Build KDE proposal */
+        if (!LALInferenceGetProcParamVal(runState->commandLine,"--proposal-no-kde")) {
+            if (MPIrank!=0)
+              LALInferenceSetupClusteredKDEProposalFromRun(runState);
+          last_kde_update = 0;
+        }
 
         /* Force chains to re-adapt */
         if (adaptationOn)
@@ -686,6 +711,7 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 
       /* Update clustered-KDE proposal every time the buffer is expanded */
       if (!LALInferenceGetProcParamVal(runState->commandLine,"--proposal-no-kde")
+          && (iEff > kde_update_start)
           && ((iEff - last_kde_update) > kde_update_interval)) {
         LALInferenceSetupClusteredKDEProposalFromRun(runState);
         last_kde_update = iEff;
@@ -1056,11 +1082,10 @@ void LALInferenceFlushPTswap() {
     if (MPIrank==0) {
         return;
     } else {
-        MPI_Send(&swapRejection, 1, MPI_INT, MPIrank-1, PT_COM, MPI_COMM_WORLD);
         MPI_Iprobe(MPIrank-1, PT_COM, MPI_COMM_WORLD, &attemptingSwap, &MPIstatus);
         if (attemptingSwap) {
           MPI_Recv(&dummyLikelihood, 1, MPI_DOUBLE, MPIrank-1, PT_COM, MPI_COMM_WORLD, &MPIstatus);
-          //MPI_Send(&swapRejection, 1, MPI_INT, MPIrank-1, PT_COM, MPI_COMM_WORLD);
+          MPI_Send(&swapRejection, 1, MPI_INT, MPIrank-1, PT_COM, MPI_COMM_WORLD);
         }
     }
     return;
