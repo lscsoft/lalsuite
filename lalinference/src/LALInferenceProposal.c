@@ -75,7 +75,6 @@ const char *const PSDFitJumpName = "PSDFitJump";
 const char *const rotateSpinsName = "RotateSpins";
 const char *const polarizationPhaseJumpName = "PolarizationPhase";
 const char *const polarizationCorrPhaseJumpName = "CorrPolarizationPhase";
-const char *const distanceQuasiGibbsProposalName = "DistanceQuasiGibbs";
 const char *const extrinsicParamProposalName = "ExtrinsicParamProposal";
 const char *const KDNeighborhoodProposalName = "KDNeighborhood";
 const char *const frequencyBinJumpName = "FrequencyBin";
@@ -466,10 +465,6 @@ SetupDefaultProposal(LALInferenceRunState *runState, LALInferenceVariables *prop
     LALInferenceAddProposalToCycle(runState, KDNeighborhoodProposalName, &LALInferenceKDNeighborhoodProposal, SMALLWEIGHT);
   }
 
-  if(!LALInferenceGetProcParamVal(runState->commandLine,"--nogibbsproposal") && !LALInferenceGetProcParamVal(runState->commandLine,"--proposal-no-gibbs")){
-    LALInferenceAddProposalToCycle(runState, distanceQuasiGibbsProposalName, &LALInferenceDistanceQuasiGibbsProposal, SMALLWEIGHT);
-  }
-
   if (nDet >= 2 && !LALInferenceGetProcParamVal(runState->commandLine,"--noProposalSkyRing") && !LALInferenceGetProcParamVal(runState->commandLine,"--margtime") && !LALInferenceGetProcParamVal(runState->commandLine, "--margtimephi")) {
     LALInferenceAddProposalToCycle(runState, skyRingProposalName, &LALInferenceSkyRingProposal, SMALLWEIGHT);
   }
@@ -526,10 +521,6 @@ SetupRapidSkyLocProposal(LALInferenceRunState *runState, LALInferenceVariables *
   if (!LALInferenceGetProcParamVal(runState->commandLine, "--noDifferentialEvolution")) {
     LALInferenceAddProposalToCycle(runState, differentialEvolutionFullName, &LALInferenceDifferentialEvolutionFull, 10);
     LALInferenceAddProposalToCycle(runState, differentialEvolutionExtrinsicName, &LALInferenceDifferentialEvolutionExtrinsic, 5);
-  }
-
-  if(!LALInferenceGetProcParamVal(runState->commandLine,"--nogibbsproposal")){
-    LALInferenceAddProposalToCycle(runState, distanceQuasiGibbsProposalName, &LALInferenceDistanceQuasiGibbsProposal, 1);
   }
 
   LALInferenceRandomizeProposalCycle(runState);
@@ -2568,143 +2559,6 @@ typedef enum {
   USES_LOG_DISTANCE_VARIABLE
 } DistanceParam;
 
-void LALInferenceDistanceQuasiGibbsProposal(LALInferenceRunState *runState, LALInferenceVariables *proposedParams) {
-  const char *propName = distanceQuasiGibbsProposalName;
-  LALInferenceSetVariable(runState->proposalArgs, LALInferenceCurrentProposalName, &propName);
-  LALInferenceCopyVariables(runState->currentParams, proposedParams);
-
-  DistanceParam distParam;
-
-  if (LALInferenceCheckVariable(proposedParams, "distance")) {
-    distParam = USES_DISTANCE_VARIABLE;
-  } else if (LALInferenceCheckVariable(proposedParams, "logdistance")) {
-    distParam = USES_LOG_DISTANCE_VARIABLE;
-  } else {
-    XLAL_ERROR_VOID(XLAL_FAILURE, "could not find 'distance' or 'logdistance' in current params");
-  }
-
-  /* Get the prior range in d */
-  REAL8 dMin, dMax;
-  if (distParam == USES_DISTANCE_VARIABLE) {
-    LALInferenceGetMinMaxPrior(runState->priorArgs, "distance", &dMin, &dMax);
-  } else {
-    REAL8 logDMin, logDMax;
-    LALInferenceGetMinMaxPrior(runState->priorArgs, "logdistance", &logDMin, &logDMax);
-    dMin = exp(logDMin);
-    dMax = exp(logDMax);
-  }
-
-  REAL8 d0;
-  if (distParam == USES_DISTANCE_VARIABLE) {
-    d0 = *(REAL8 *)LALInferenceGetVariable(proposedParams, "distance");
-  } else {
-    d0 = exp(*(REAL8 *)LALInferenceGetVariable(proposedParams, "logdistance"));
-  }
-
-  REAL8 u0 = 1.0 / d0;
-  REAL8 L0 = runState->currentLikelihood;
-
-  /* We know that the likelihood surface looks like L(u) = A + B*u +
-     C*u^2, where u = 1/d is the inverse distance.  We can find these
-     coefficients by fitting the value of the likelihood at three
-     different points: u0, u0/2, and 2*u0. */
-  REAL8 u12 = u0/2.0;
-  REAL8 d2 = 1.0/u12;
-  if (distParam == USES_DISTANCE_VARIABLE) {
-    LALInferenceSetVariable(proposedParams, "distance", &d2);
-  } else {
-    REAL8 logD2 = log(d2);
-    LALInferenceSetVariable(proposedParams, "logdistance", &logD2);
-  }
-  REAL8 L12 = runState->likelihood(proposedParams, runState->data, runState->templt);
-
-  REAL8 u2 = u0*2.0;
-  REAL8 d12 = 1.0/u2;
-  if (distParam == USES_DISTANCE_VARIABLE) {
-    LALInferenceSetVariable(proposedParams, "distance", &d12);
-  } else {
-    REAL8 logD12 = log(d12);
-    LALInferenceSetVariable(proposedParams, "logdistance", &logD12);
-  }
-  REAL8 L2 = runState->likelihood(proposedParams, runState->data, runState->templt);
-
-  /* Coefficients of quadratic L(u) = A + B*u + C*u^2 */
-  REAL8 B = -(L2 + 4.0*L12 - 5.0*L0)/u0;
-  REAL8 C = (2.0*L2 + 4.0*L12 - 6.0*L0)/(3.0*u0*u0);
-
-  /* Convert quadratic log(L) in u to Gaussian parameters. */
-  REAL8 mu = -B / (2.0*C);
-  REAL8 sigma2 = 1.0 / (2.0*C);
-
-  static INT8 weirdProposalCount = 0;
-  static INT8 thresholdProposalCount = 1;
-
-  if (C<=0.0) {
-    /* Flat or linear likelihood, or negative curvature in the
-       gaussian---choose uniformly in prior range. */
-    weirdProposalCount++;
-    if (weirdProposalCount >= thresholdProposalCount) {
-      thresholdProposalCount *= 2;
-      XLAL_PRINT_WARNING("found infinite or negative sigma^2 (%g), using fallback proposal (for the %dth time overall)",
-                         sigma2, weirdProposalCount);
-    }
-    if (distParam == USES_DISTANCE_VARIABLE) {
-      REAL8 dNew = dMin + (dMax-dMin)*gsl_rng_uniform(runState->GSLrandom);
-
-      LALInferenceSetVariable(proposedParams, "distance", &dNew);
-      LALInferenceSetLogProposalRatio(runState, 0.0);
-      return;
-    } else {
-      REAL8 logDMin, logDMax;
-
-      logDMin = log(dMin);
-      logDMax = log(dMax);
-
-      REAL8 logDNew = logDMin + (logDMax - logDMin)*gsl_rng_uniform(runState->GSLrandom);
-
-      LALInferenceSetVariable(proposedParams, "logdistance", &logDNew);
-      LALInferenceSetLogProposalRatio(runState, 0.0);
-      return;
-    }
-  }
-
-  REAL8 sigma = sqrt(sigma2);
-
-  /* Ensure that we don't jump outside the distance limits dMin and
-     dMax. */
-  REAL8 dNew;
-  do {
-    /* Draw new u from Gaussian, convert to d. */
-    REAL8 uNew = mu + sigma*gsl_ran_ugaussian(runState->GSLrandom);
-    dNew = 1.0/uNew;
-  } while (dNew < dMin || dNew > dMax);
-
-  if (distParam == USES_DISTANCE_VARIABLE) {
-    LALInferenceSetVariable(proposedParams, "distance", &dNew);
-  } else {
-    REAL8 logDNew = log(dNew);
-    LALInferenceSetVariable(proposedParams, "logdistance", &logDNew);
-  }
-
-  REAL8 LNew = runState->likelihood(proposedParams, runState->data, runState->templt);
-
-  /* Store our new sample and set jump probability. */
-  if (distParam == USES_DISTANCE_VARIABLE) {
-    /* Since we jumped using the likelihood gaussian in u = 1/d, p(d)
-       = exp(L(u))/d^2. */
-    LALInferenceSetVariable(proposedParams, "distance", &dNew);
-    LALInferenceSetLogProposalRatio(runState, L0 - 2.0*log(d0) - LNew + 2.0*log(dNew));
-  } else {
-    /* Jump probability density is different if we jump in logs.  If
-       we jumped in log(d) = -log(u), then we have p(log(d)) = u
-       exp(L(u)) = exp(L(u))/d */
-    REAL8 logDNew = log(dNew);
-    LALInferenceSetVariable(proposedParams, "logdistance", &logDNew);
-    LALInferenceSetLogProposalRatio(runState, L0 - log(d0) - LNew + log(dNew));
-  }
-
-  return;
-}
 
 void LALInferenceKDNeighborhoodProposal(LALInferenceRunState *runState, LALInferenceVariables *proposedParams) {
   size_t NCell;
