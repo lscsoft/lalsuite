@@ -421,11 +421,11 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
             ifocombos.append(a)
     for ifos in ifocombos:
         self.engine_jobs[ifos] = EngineJob(self.config, os.path.join(self.basepath,'engine_%s.sub'%(reduce(lambda x,y:x+y, map(str,ifos)))),self.logpath ,dax=self.is_dax())
-        self.engine_jobs[ifos].set_grid_site('local')
+        self.engine_jobs[ifos].set_grid_site(site)
     self.results_page_job = ResultsPageJob(self.config,os.path.join(self.basepath,'resultspage.sub'),self.logpath,dax=self.is_dax())
     self.results_page_job.set_grid_site('local')
     self.cotest_results_page_job = ResultsPageJob(self.config,os.path.join(self.basepath,'resultspagecoherent.sub'),self.logpath,dax=self.is_dax())
-    self.cotest_results_page_job.set_grid_site
+    self.cotest_results_page_job.set_grid_site('local')
     self.merge_job = MergeNSJob(self.config,os.path.join(self.basepath,'merge_runs.sub'),self.logpath,dax=self.is_dax())
     self.merge_job.set_grid_site('local')
     self.coherence_test_job = CoherenceTestJob(self.config,os.path.join(self.basepath,'coherence_test.sub'),self.logpath,dax=self.is_dax())
