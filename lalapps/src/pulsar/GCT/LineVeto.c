@@ -249,7 +249,7 @@ int XLALComputeExtraStatsSemiCoherent ( LVcomponents *lineVeto,                 
   UINT4 numDetectors = detectorIDs->length;
 
   if ( lineVeto->TwoFX->length != numDetectors ) {
-    XLALPrintError ("\%s, line %d : Inconsistent number of detectors: TwoFX vector has length %d, while detectorID list contains %d elements!\n\n", __func__, __LINE__, lineVeto->TwoFX->length, numDetectors );
+    XLALPrintError ("%s, line %d : Inconsistent number of detectors: TwoFX vector has length %d, while detectorID list contains %d elements!\n\n", __func__, __LINE__, lineVeto->TwoFX->length, numDetectors );
     XLAL_ERROR ( XLAL_EBADLEN );
   }
 
