@@ -174,7 +174,7 @@ def gps_to_str(gps_time, form=None):
     return utc_str
 
 
-def tconvert(arg=None):
+def tconvert(arg=None, form=None):
     """Convert date/time strings to and from GPS times.
     If no argument is given, the current GPS time is returned.
 
@@ -203,7 +203,7 @@ def tconvert(arg=None):
     except ValueError:
         return str_to_gps(arg)
     else:
-        return gps_to_str(arg)
+        return gps_to_str(arg, form=form)
 
 
 ##@}
