@@ -819,3 +819,59 @@ XLALAmplitudeVect2Params(
   return XLAL_SUCCESS;
 
 }
+
+
+/** XLAL function to compute single-or multi-IFO Fstat from multi-IFO Atoms: */
+REAL8 XLALComputeFstatFromAtoms ( const MultiFstatAtomVector *multiFstatAtoms,   /**< multi-detector atoms */
+				  const INT4                 X                   /**< detector number, give -1 for multi-Fstat */
+				  )
+{
+  /* check input parameters and report errors */
+  XLAL_CHECK_REAL8 ( multiFstatAtoms && multiFstatAtoms->data && multiFstatAtoms->data[0]->data, XLAL_EFAULT, "Empty pointer as input parameter." );
+  XLAL_CHECK_REAL8 ( multiFstatAtoms->length > 0, XLAL_EBADLEN, "Input MultiFstatAtomVector has zero length. (i.e., no detectors)" );
+  XLAL_CHECK_REAL8 ( X >= -1, XLAL_EDOM, "Invalid detector number X=%d. Only nonnegative numbers, or -1 for multi-F, are allowed.", X );
+  XLAL_CHECK_REAL8 ( ( X < 0 ) || ( (UINT4)(X) <= multiFstatAtoms->length-1 ), XLAL_EDOM, "Requested X=%d, but FstatAtoms only have length %d.", X, multiFstatAtoms->length );
+
+  /* internal detector index Y to do both single- and multi-F case */
+  UINT4 Y, Ystart, Yend;
+  if ( X == -1 ) { /* loop through all detectors to get multi-Fstat */
+    Ystart = 0;
+    Yend   = multiFstatAtoms->length-1;
+  }
+  else { /* just compute single-Fstat for 1 IFO */
+    Ystart = X;
+    Yend   = X;
+  }
+
+  /* set up temporary Fatoms and matrix elements for summations */
+  REAL8 mmatrixA = 0.0, mmatrixB = 0.0, mmatrixC = 0.0;
+  REAL8 F = 0.0;
+  COMPLEX8 Fa, Fb;
+  Fa = 0.0;
+  Fb = 0.0;
+
+  for (Y = Ystart; Y <= Yend; Y++) {  /* loop through detectors */
+
+    UINT4 alpha, numSFTs;
+    numSFTs = multiFstatAtoms->data[Y]->length;
+    XLAL_CHECK_REAL8 ( numSFTs > 0, XLAL_EDOM, "Input FstatAtomVector has zero length. (i.e., no timestamps for detector X=%d)", Y );
+
+    for ( alpha = 0; alpha < numSFTs; alpha++) { /* loop through SFTs */
+      FstatAtom *thisAtom = &multiFstatAtoms->data[Y]->data[alpha];
+      /* sum up matrix elements and Fa, Fb */
+      mmatrixA += thisAtom->a2_alpha;
+      mmatrixB += thisAtom->b2_alpha;
+      mmatrixC += thisAtom->ab_alpha;
+      Fa += thisAtom->Fa_alpha;
+      Fb += thisAtom->Fb_alpha;
+    } /* loop through SFTs */
+
+  } /* loop through detectors */
+
+  /* compute determinant and final Fstat (not twoF!) */
+  REAL8 Dinv = 1.0 / ( mmatrixA * mmatrixB - SQ(mmatrixC) );
+  F = Dinv * ( mmatrixB * ( SQ(crealf(Fa)) + SQ(cimagf(Fa)) ) + mmatrixA * ( SQ(crealf(Fb)) + SQ(cimagf(Fb)) ) - 2.0 * mmatrixC * (crealf(Fa)*crealf(Fb) + cimagf(Fa)*cimagf(Fb)) );
+
+  return(F);
+
+} /* XLALComputeFstatFromAtoms() */

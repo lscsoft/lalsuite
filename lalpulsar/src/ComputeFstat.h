@@ -396,6 +396,10 @@ XLALAmplitudeVect2Params(
   const PulsarAmplitudeVect A_Mu                ///< [in] Canonical amplitude coordinates \f$A^\mu = (A_1, A_2, A_3, A_4)\f$.
   );
 
+REAL8
+XLALComputeFstatFromAtoms ( const MultiFstatAtomVector *multiFstatAtoms,
+			    const INT4 X );
+
 // @}
 
 #ifdef  __cplusplus

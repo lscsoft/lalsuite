@@ -84,10 +84,6 @@ XLALComputeExtraStatsSemiCoherent ( LVcomponents *lineVeto,
 				    const LIGOTimeGPSVector *startTstack,
 				    FILE *singleSegStatsFile );
 
-REAL8
-XLALComputeFstatFromAtoms ( const MultiFstatAtomVector *multiFstatAtoms,
-			    const INT4 X );
-
 REAL4
 XLALComputeLineVeto ( const REAL4 TwoF,
 		      const REAL4Vector *TwoFX,
