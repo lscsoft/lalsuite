@@ -484,7 +484,7 @@ XLALReadConfigBOOLVariable (BOOLEAN *varp,                 /**< [out] variable t
  * Read a signed integer value.
  *
  * Note: Rather than using the sscanf()-based LALReadConfigVariable() for the string-to-integer conversion,
- * we do our own parsing here using strtol(), to check for spurious extra characters at the end.
+ * we do our own parsing, in order to check for spurious extra characters at the end.
  * This allows us to catch user-input mistakes like specifying "1e3" for an int-variable, which
  * would silently be converted as '1' by sscanf("%ld").
  */
@@ -758,15 +758,17 @@ XLALParseStringValueToINT8 ( INT8 *valINT8,         //!< [out] return INT8 value
   errno = 0;
   char *endptr;
   int base10 = 10;
-  long int valLong = strtol ( valString, &endptr, base10 );
-  XLAL_CHECK ( errno == 0, XLAL_EFAILED, "strtol() failed to convert '%s' into long int!\n", valString );
-  XLAL_CHECK ( (*endptr) == '\0', XLAL_EFAILED, "strtol(): trailing garbage '%s' found after int-conversion of '%s'\n", endptr, valString );
+  long long valLLong = strtoll ( valString, &endptr, base10 );
+  XLAL_CHECK ( errno == 0, XLAL_EFAILED, "strtoll() failed to convert '%s' into long long!\n", valString );
+  XLAL_CHECK ( (*endptr) == '\0', XLAL_EFAILED, "strtoll(): trailing garbage '%s' found after int-conversion of '%s'\n", endptr, valString );
 
   //  check range and convert long-int into INT8
-  XLAL_CHECK ( (valLong > -LAL_INT8_MAX) && (valLong < LAL_INT8_MAX), XLAL_EDOM, "String-conversion '%s' --> '%ld' exceeds INT8 range of +-%d\n",
-               valString, valLong, LAL_INT8_MAX );
+  if ( sizeof(valLLong) > sizeof(INT8) ) { // avoid warning about trivial check
+    XLAL_CHECK ( (valLLong > -LAL_INT8_MAX) && (valLLong < LAL_INT8_MAX), XLAL_EDOM, "String-conversion '%s' --> '%ld' exceeds INT8 range of +-%d\n",
+                 valString, valLLong, LAL_INT8_MAX );
+  }
 
-  (*valINT8) = (INT8)valLong;
+  (*valINT8) = (INT8)valLLong;
 
   return XLAL_SUCCESS;
 
