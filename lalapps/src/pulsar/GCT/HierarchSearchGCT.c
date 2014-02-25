@@ -35,10 +35,10 @@
 /* ---------- Includes -------------------- */
 #include <lal/Segments.h>
 #include <lal/LALString.h>
+#include <lal/LineRobustStats.h>
+#include <RecalcToplistStats.h>
 
 #include "HierarchSearchGCT.h"
-
-#include "LineVeto.h"
 
 #ifdef GC_SSE2_OPT
 #include <gc_hotloop_sse2.h>
@@ -2289,7 +2289,7 @@ void UpdateSemiCohToplists ( LALStatus *status,
       line.LV *= NSegmentsInv; /* normalize by number of segments */
 
       if ( xlalErrno != 0 ) {
-        XLALPrintError ("%s line %d : XLALComputeLineVeto() failed with xlalErrno = %d.\n\n", __func__, __LINE__, xlalErrno );
+        XLALPrintError ("%s line %d : XLALComputeLineVetoArray() failed with xlalErrno = %d.\n\n", __func__, __LINE__, xlalErrno );
         ABORT ( status, HIERARCHICALSEARCH_EXLAL, HIERARCHICALSEARCH_MSGEXLAL );
       }
       if ( line.LV < -LAL_REAL4_MAX*0.1 )

@@ -8,7 +8,7 @@ AM_CPPFLAGS = -I$(top_srcdir)/src/lalapps -I$(CFSsrc) -I$(EAHsrc) -DPKG_DATA_DIR
 LDADD = $(top_builddir)/src/lalapps/liblalapps.la
 
 bin_PROGRAMS = lalapps_HierarchSearchGCT
-check_PROGRAMS = testLineVeto
+check_PROGRAMS =
 EXTRA_PROGRAMS = eah_HierarchSearchGCT \
 	         lalapps_HierarchSearchGCT_SSE2 lalapps_HierarchSearchGCT_SSE2_NONC
 
@@ -17,13 +17,9 @@ HSGCTSources = HierarchSearchGCT.c HierarchSearchGCT.h \
                           GCTtoplist.c GCTtoplist.h \
                           $(CFSsrc)/HeapToplist.c $(CFSsrc)/HeapToplist.h \
                           $(CFSsrc)/ComputeFStatistic.h \
-			  LineVeto.c LineVeto.h
+                          RecalcToplistStats.c RecalcToplistStats.h
 
 lalapps_HierarchSearchGCT_SOURCES = $(HSGCTSources)
-
-testLineVeto_SOURCES = testLineVeto.c \
-                   $(CFSsrc)/HeapToplist.c $(CFSsrc)/HeapToplist.h \
-                   LineVeto.c LineVeto.h
 
 lalapps_HierarchSearchGCT_SSE2_SOURCES = $(HSGCTSources)
 lalapps_HierarchSearchGCT_SSE2_CPPFLAGS = $(AM_CPPFLAGS) -DHS_OPTIMIZATION -DHIERARCHSEARCHGCT -DGC_SSE2_OPT
@@ -67,7 +63,7 @@ eah_HierarchSearchGCT_manual: eah_HierarchSearchGCT-HierarchSearchGCT.o \
     eah_HierarchSearchGCT-GCTtoplist.o \
     eah_HierarchSearchGCT-HeapToplist.o \
     eah_HierarchSearchGCT-ComputeFstat_RS.o \
-    eah_HierarchSearchGCT-LineVeto.o \
+    eah_HierarchSearchGCT-RecalcToplistStats.o \
     eah_HierarchSearchGCT-hs_boinc_extras.o \
     eah_HierarchSearchGCT-hs_boinc_options.o \
     eah_HierarchSearchGCT-win_lib.o \
@@ -77,7 +73,7 @@ eah_HierarchSearchGCT_manual: eah_HierarchSearchGCT-HierarchSearchGCT.o \
 
 EXTRA_DIST = testHS.sh
 
-TESTS = testHS.sh testLineVeto
+TESTS = testHS.sh
 
 TESTS_ENVIRONMENT = \
 	LAL_DEBUG_LEVEL=msglvl1,memdbg; export LAL_DEBUG_LEVEL; \

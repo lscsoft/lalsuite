@@ -182,7 +182,6 @@ src/pulsar/FDS_isolated/lalapps_synthesizeTransientStats
 src/pulsar/FDS_isolated/lalapps_uberpolka
 src/pulsar/FDS_isolated/lalapps_zellepolka
 src/pulsar/GCT/lalapps_HierarchSearchGCT
-src/pulsar/GCT/testLineVeto
 src/pulsar/Injections/Tseries_v2_*.dat
 src/pulsar/Injections/debug_phi_v2.dat
 src/pulsar/Injections/lalapps_Makefakedata_v4

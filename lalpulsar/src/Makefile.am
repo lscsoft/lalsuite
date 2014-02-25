@@ -38,6 +38,7 @@ lalpulsarinclude_HEADERS = \
 	LALPulsarVCSInfo.h \
 	LALXMGRInterface.h \
 	LFTandTSutils.h \
+	LineRobustStats.h \
 	LISAspecifics.h \
 	LUT.h \
 	LatticeCovering.h \
@@ -106,6 +107,7 @@ liblalpulsar_la_SOURCES = \
 	LALPulsarVCSInfo.c \
 	LALXMGRInterface.c \
 	LFTandTSutils.c \
+	LineRobustStats.c \
 	LISAspecifics.c \
 	LatticeCovering.c \
 	NDParamPLUT.c \

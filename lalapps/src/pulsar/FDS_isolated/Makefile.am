@@ -30,8 +30,6 @@ EXTRA_PROGRAMS = \
 	eah_PredictFStat \
 	eah_ComputeFStatistic_v2
 
-LVsrc = ../GCT
-
 lalapps_zellepolka_SOURCES = zellepolka.c
 
 CFSsources = \
@@ -69,9 +67,7 @@ lalapps_compareFstats_SOURCES = compareFstats.c
 ComputeFStatisticV2Sources = \
 	ComputeFStatistic_v2.c \
 	HeapToplist.c \
-	HeapToplist.h \
-	$(LVsrc)/LineVeto.c \
-	$(LVsrc)/LineVeto.h
+	HeapToplist.h
 
 lalapps_ComputeFStatistic_v2_SOURCES = $(ComputeFStatisticV2Sources)
 
@@ -91,12 +87,7 @@ lalapps_synthesizeBstatMC_SOURCES = synthesizeBstatMC.c
 
 lalapps_synthesizeTransientStats_SOURCES = synthesizeTransientStats.c
 
-lalapps_synthesizeLVStats_SOURCES = \
-	synthesizeLVStats.c \
-	HeapToplist.c \
-	HeapToplist.h \
-	$(LVsrc)/LineVeto.c \
-	$(LVsrc)/LineVeto.h
+lalapps_synthesizeLVStats_SOURCES = synthesizeLVStats.c
 
 lalapps_CFSv3_SOURCES = CFSv3.c
 

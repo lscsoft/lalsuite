@@ -68,13 +68,12 @@ int finite(double);
 #include <lal/BinaryPulsarTiming.h>
 
 #include <lal/TransientCW_utils.h>
+#include <lal/LineRobustStats.h>
 
 #include <lalapps.h>
 
 /* local includes */
 #include "HeapToplist.h"
-
-#include "../GCT/LineVeto.h"
 
 /*---------- DEFINES ----------*/
 

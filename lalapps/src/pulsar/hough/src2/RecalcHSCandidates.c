@@ -113,7 +113,7 @@
 
 #include <lal/LALString.h>
 #include "HierarchicalSearch.h"
-#include "../../GCT/LineVeto.h"
+#include <../../GCT/RecalcToplistStats.h>
 
 #define TRUE (1==1)
 #define FALSE (1==0)
@@ -1011,7 +1011,7 @@ int MAIN( int argc, char *argv[]) {
     XLALComputeExtraStatsForToplist ( semiCohToplist, "HoughFStat", Fstat_in_vec, usefulParams.detectorIDs,
                                       usefulParams.startTstack, refTimeGPS,  uvar_outputSingleSegStats );
     if ( xlalErrno != 0 ) {
-      XLALPrintError ("%s line %d : XLALComputeLineVetoForToplist() failed with xlalErrno = %d.\n\n", __func__, __LINE__, xlalErrno );
+      XLALPrintError ("%s line %d : XLALComputeExtraStatsForToplist() failed with xlalErrno = %d.\n\n", __func__, __LINE__, xlalErrno );
       return(HIERARCHICALSEARCH_EBAD);
     }
     LogPrintfVerbatim ( LOG_DEBUG, " done.\n");

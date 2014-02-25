@@ -17,6 +17,7 @@ check_PROGRAMS = \
 	GeneralMetricTest \
 	GeneratePulsarSignalTest \
 	GetAMCoeffsTest \
+	LineRobustStatsTest \
 	NewGetAMCoeffsTest \
 	XLALComputeAMTest \
 	PtoleMeshTest \

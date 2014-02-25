@@ -30,7 +30,7 @@ EXTRA_PROGRAMS = lalapps_HierarchicalSearch_sse lalapps_HierarchicalSearch_sse2 
 #endif
 
 FDSsrc = ../../FDS_isolated
-LVsrc = ../../GCT
+Recalcsrc = ../../GCT
 
 lalapps_HoughValidateAM_SOURCES = HoughValidateAM.c ../src/MCInjectHoughS2.h \
 	                  ../src/SFTbin.h ../src/SFTbin.c \
@@ -54,7 +54,7 @@ lalapps_RecalcHSCandidates_SOURCES = RecalcHSCandidates.c HierarchicalSearch.h \
 				  HoughFStatToplist.c HoughFStatToplist.h \
 				  $(FDSsrc)/HeapToplist.c $(FDSsrc)/HeapToplist.h \
 				  $(FDSsrc)/ComputeFStatistic.h \
-				  $(LVsrc)/LineVeto.c $(LVsrc)/LineVeto.h
+				  $(Recalcsrc)/RecalcToplistStats.c $(Recalcsrc)/RecalcToplistStats.h
 
 
 HSLocalSources = EinsteinAtHome/LocalComputeFstatHoughMap.c

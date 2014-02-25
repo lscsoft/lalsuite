@@ -67,7 +67,7 @@
 
 #include <lal/SynthesizeCWDraws.h>
 
-#include <../GCT/LineVeto.h>
+#include <lal/LineRobustStats.h>
 
 #include <lal/StringVector.h>
 
