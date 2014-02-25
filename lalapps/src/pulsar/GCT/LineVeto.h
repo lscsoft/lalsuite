@@ -43,6 +43,7 @@ extern "C" {
 #include <lal/ExtrapolatePulsarSpins.h>
 #include <lal/ComputeFstat.h>
 #include <lal/StringVector.h>
+#include <lal/CWFastMath.h> /* for XLALFastLog() and XLALFastNegExp() */
 
 /* lalapps includes */
 #include <lalapps.h>
@@ -105,13 +106,6 @@ XLALComputeLineVetoArray ( const REAL4 TwoF,
 
 LALStringVector *
 XLALGetDetectorIDs ( LALStringVector *IFOList, const SFTCatalog *SFTcatalog );
-
-/* these functions operate on the module-local lookup-table for logarithms,
- * which will dynamically be generated on first use of XLALFastLog(), and can
- * be destroyed at any time using XLALDestroyLogLUT()
- */
-REAL8 XLALFastLog ( REAL8 x );
-void XLALDestroyLogLUT( void );
 
 #ifdef  __cplusplus
 }

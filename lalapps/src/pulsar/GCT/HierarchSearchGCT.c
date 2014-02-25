@@ -37,7 +37,6 @@
 #include <lal/LALString.h>
 
 #include "HierarchSearchGCT.h"
-#include <lal/TransientCW_utils.h> /* for XLALFastNegExp */
 
 #include "LineVeto.h"
 

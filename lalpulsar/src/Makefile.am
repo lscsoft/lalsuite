@@ -84,6 +84,7 @@ liblalpulsar_la_SOURCES = \
 	DopplerScan.c \
 	DriveHough.c \
 	ExtrapolatePulsarSpins.c \
+	CWFastMath.c \
 	FitToPulsar.c \
 	FlatLatticeTiling.c \
 	FlatMesh.c \
