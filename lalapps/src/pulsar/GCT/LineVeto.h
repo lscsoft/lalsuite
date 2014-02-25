@@ -99,9 +99,6 @@ XLALComputeLineVetoArray ( const REAL4 TwoF,
                            const REAL8 *loglX,
                            const BOOLEAN useAllTerms );
 
-LALStringVector *
-XLALGetDetectorIDs ( LALStringVector *IFOList, const SFTCatalog *SFTcatalog );
-
 #ifdef  __cplusplus
 }
 #endif

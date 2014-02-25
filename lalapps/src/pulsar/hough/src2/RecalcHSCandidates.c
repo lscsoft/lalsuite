@@ -1174,7 +1174,7 @@ void SetUpSFTs( LALStatus *status,			/**< pointer to LALStatus structure */
   /* fill detector name vector with all detectors present in any data sements */
   in->detectorIDs = NULL;
   for (k = 0; k < in->nStacks; k++) {
-    if ( ( in->detectorIDs = XLALGetDetectorIDs ( in->detectorIDs, catalogSeq.data + k ) ) == NULL ) {
+    if ( ( in->detectorIDs = XLALGetDetectorIDsFromSFTCatalog ( in->detectorIDs, catalogSeq.data + k ) ) == NULL ) {
       ABORT ( status, HIERARCHICALSEARCH_ENULL, HIERARCHICALSEARCH_MSGENULL );
     }
   }

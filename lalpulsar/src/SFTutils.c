@@ -1505,3 +1505,40 @@ int XLALLatestMultiSFTsample ( LIGOTimeGPS *out,              /**< [out] latest 
   return XLAL_SUCCESS;
 
 } /* XLALLatestMultiSFTsample() */
+
+
+/**
+ * XLAL function to get a list of detector IDs from multi-segment multiSFT vectors
+ * returns all unique detector IDs for cases with some detectors switching on and off
+ */
+LALStringVector *
+XLALGetDetectorIDsFromSFTCatalog (
+  LALStringVector *IFOList,		///< IFO string vector for returning
+  const SFTCatalog *SFTcatalog		///< SFT catalog
+  )
+{
+
+  /* check input parameters and report errors */
+  XLAL_CHECK_NULL( SFTcatalog != NULL, XLAL_EFAULT );
+
+  for (UINT4 X = 0; X < SFTcatalog->length; X++) {
+    /* check for a new detector */
+    const char *thisIFO = SFTcatalog->data[X].header.name;
+
+    if ( XLALFindStringInVector ( thisIFO, IFOList ) >= 0 ) { // if already in list, do nothing
+      continue;
+    }
+    else {       // otherwise, append to IFOList
+      if ( (IFOList = XLALAppendString2Vector ( IFOList, thisIFO )) == NULL ) {
+        XLAL_ERROR_NULL ( XLAL_EFUNC );
+      }
+    }
+
+  } /* for X < number of detectors */
+
+  /* sort final list by detector-name */
+  XLAL_CHECK_NULL ( XLALSortStringVector ( IFOList ) == XLAL_SUCCESS, XLAL_EFUNC, "Failed call to XLALSortStringVector()." );
+
+  return IFOList;
+
+} /* XLALGetDetectorIDsFromSFTCatalog() */

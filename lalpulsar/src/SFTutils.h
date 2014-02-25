@@ -51,6 +51,7 @@ extern "C" {
 #include <lal/LALRunningMedian.h>
 #include <lal/Segments.h>
 #include <lal/SFTfileIO.h>
+#include <lal/StringVector.h>
 
 /*---------- DEFINES ----------*/
 
@@ -144,6 +145,9 @@ void XLALDestroyMultiPSDVector ( MultiPSDVector *multvect );
 MultiNoiseWeights *XLALComputeMultiNoiseWeights ( const MultiPSDVector *rngmed, UINT4 blocksRngMed, UINT4 excludePercentile);
 
 void XLALDestroyMultiNoiseWeights ( MultiNoiseWeights *weights );
+
+LALStringVector *
+XLALGetDetectorIDsFromSFTCatalog ( LALStringVector *IFOList, const SFTCatalog *SFTcatalog );
 
 /*@}*/
 
