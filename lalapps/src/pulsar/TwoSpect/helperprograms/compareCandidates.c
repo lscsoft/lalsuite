@@ -42,12 +42,12 @@ INT4 main(void) {
    gsl_set_error_handler_off();
 
    FILE *H1CANDS, *L1CANDS;
-   char *infile1 = "/Users/evgoet/Documents/MATLAB/pulsar/S6/400-501HzH1Candidates.dat";
-   char *infile2 = "/Users/evgoet/Documents/MATLAB/pulsar/S6/400-501HzL1Candidates.dat";
-   char *outfile1 = "/Users/evgoet/Documents/MATLAB/pulsar/S6/400-501HzCandidates_output1.dat";
-   char *outfile2 = "/Users/evgoet/Documents/MATLAB/pulsar/S6/400-501HzCandidates_output2.dat";
-   char *outfile3 = "/Users/evgoet/Documents/MATLAB/pulsar/S6/400-501HzCandidates_final.dat";
-   char *outfile4 = "/Users/evgoet/Documents/MATLAB/pulsar/S6/400-501HzCandidates_output3.dat";
+   char *infile1 = "/Users/evgoet/Documents/MATLAB/pulsar/S6/50-252HzL1Candidates.dat";
+   char *infile2 = "/Users/evgoet/Documents/MATLAB/pulsar/VSR2-3/20-100HzV1Candidates.dat";
+   char *outfile1 = "/Users/evgoet/Documents/MATLAB/pulsar/VSR2-3/20-100HzCandidates_output1.dat";
+   char *outfile2 = "/Users/evgoet/Documents/MATLAB/pulsar/VSR2-3/20-100HzCandidates_output2.dat";
+   char *outfile3 = "/Users/evgoet/Documents/MATLAB/pulsar/VSR2-3/20-100HzCandidates_final2.dat";
+   char *outfile4 = "/Users/evgoet/Documents/MATLAB/pulsar/VSR2-3/20-100HzCandidates_output3.dat";
 
    XLAL_CHECK( (H1CANDS = fopen(infile1,"r")) != NULL, XLAL_EIO, "Can't fopen %s", infile1 );
 
@@ -104,6 +104,9 @@ INT4 main(void) {
       fscanf(L1CANDS, "%la %la %la %la %la %la %la %la %la %d", &(alll1cands[ii*9]), &(alll1cands[ii*9+1]), &(alll1cands[ii*9+2]), &(alll1cands[ii*9+3]), &(alll1cands[ii*9+4]), &(alll1cands[ii*9+5]), &(alll1cands[ii*9+6]), &(alll1cands[ii*9+7]), &(alll1cands[ii*9+8]), &(alll1cands_job[ii]));
    }
 
+   //TODO: Remove this!
+   // for (ii=0; ii<l1count; ii++) alll1cands[ii*9] += 1.0;
+
    //Sort the array based on the frequency
    XLAL_CHECK( (sorted_index = (size_t*)XLALMalloc(sizeof(size_t)*l1count)) != NULL, XLAL_ENOMEM );
    double *alll1cands_sorted = NULL;
@@ -145,8 +148,8 @@ INT4 main(void) {
    for (ii=0; ii<h1count; ii++) {
 
       //Check that the frequency of the H1 candidate we look at is within the frequency span of the L1 candidates
-      if ( (allh1cands_sorted[ii*9] - alll1cands_sorted[0]) >= 0.0 && (allh1cands_sorted[ii*9] - alll1cands_sorted[(l1count-1)*9]) <= 0.0) {
-         if (foundIndex < 0.0 || status != GSL_SUCCESS || (status==GSL_SUCCESS && fabs(allh1cands_sorted[ii*9]-alll1cands_sorted[(int)round(gsl_root_fsolver_root(s))*9])>=1.05*fdiff_allowed)) {
+      if ( allh1cands_sorted[ii*9] >= alll1cands_sorted[0] && allh1cands_sorted[ii*9] <= alll1cands_sorted[(l1count-1)*9] ) {
+         if (foundIndex < 0.0 || status != GSL_SUCCESS || (status==GSL_SUCCESS && fabs(allh1cands_sorted[ii*9]-alll1cands_sorted[(int)round(gsl_root_fsolver_root(s))*9])>fdiff_allowed)) {
             //Do a root finding search for the closest L1 candidate in frequency to the H1 candidate frequency
             int iter = 0;
             struct solver_params params = {allh1cands_sorted[ii*9], alll1cands_sorted};
@@ -166,9 +169,6 @@ INT4 main(void) {
          if (status == GSL_SUCCESS) {
             jj = (int)round(foundIndex);   //start at the index of the L1 candidate found in the root finding
 
-            //int bestmatch = -1;
-            //double bestmatchprob = 0.0;
-
             //Step backwards in L1 candidates until we are definitely below the H1 candidate in frequency (or at the start of the L1 list)
             while (jj>0 && (allh1cands_sorted[ii*9]-alll1cands_sorted[jj*9])<1.05*fdiff_allowed) jj--;
 
@@ -178,102 +178,127 @@ INT4 main(void) {
             //Starting from the L1 candidate below the H1 candidate frequency
             for ( ; jj<l1count; jj++) {
                //Check that if the frequency of L1 candidate is above the H1 value by greater than the allowed value, break the loop
-               if (allh1cands_sorted[ii*9]-alll1cands_sorted[jj*9]<-1.05*fdiff_allowed) break;
+               if (alll1cands_sorted[jj*9]-allh1cands_sorted[ii*9] > 1.05*fdiff_allowed) break;
 
                //If the H1 and L1 frequency values are near enough, proceed with checking more parameter values
                if (fabs(allh1cands_sorted[ii*9]-alll1cands_sorted[jj*9])<=fdiff_allowed) {
                   //Check the modulation depth
                   if (fabs(allh1cands_sorted[ii*9+2]-alll1cands_sorted[jj*9+2])<=dfdiff_allowed) {
                      //Check the period and harmonic values
-                     double Pdiff_allowed = 1.5*allh1cands_sorted[ii*9+1]*allh1cands_sorted[ii*9+1]*sqrt(3.6e-3/allh1cands_sorted[ii*9+2])/(4.5*tobs);
-                     double Pdiff_allowed_2 = 1.5*alll1cands_sorted[jj*9+1]*alll1cands_sorted[jj*9+1]*sqrt(3.6e-3/alll1cands_sorted[jj*9+2])/(4.5*tobs);
-                     if (fabs(allh1cands_sorted[ii*9+1]-alll1cands_sorted[jj*9+1])<=Pdiff_allowed || fabs(allh1cands_sorted[ii*9+1]-alll1cands_sorted[jj*9+1])<=Pdiff_allowed_2 || fabs(allh1cands_sorted[ii*9+1]-2.0*alll1cands_sorted[jj*9+1])<=Pdiff_allowed || fabs(2.0*allh1cands_sorted[ii*9+1]-alll1cands_sorted[jj*9+1])<=Pdiff_allowed_2 || fabs(allh1cands_sorted[ii*9+1]-3.0*alll1cands_sorted[jj*9+1])<=Pdiff_allowed || fabs(3.0*allh1cands_sorted[ii*9+1]-alll1cands_sorted[jj*9+1])<=Pdiff_allowed_2 || fabs(allh1cands_sorted[ii*9+1]-4.0*alll1cands_sorted[jj*9+1])<=Pdiff_allowed || fabs(4.0*allh1cands_sorted[ii*9+1]-alll1cands_sorted[jj*9+1])<=Pdiff_allowed_2 || fabs(allh1cands_sorted[ii*9+1]-0.5*alll1cands_sorted[jj*9+1])<=Pdiff_allowed || fabs(0.5*allh1cands_sorted[ii*9+1]-alll1cands_sorted[jj*9+1])<=Pdiff_allowed_2 || fabs(allh1cands_sorted[ii*9+1]-alll1cands_sorted[jj*9+1]/3.0)<=Pdiff_allowed || fabs(allh1cands_sorted[ii*9+1]/3.0-alll1cands_sorted[jj*9+1])<=Pdiff_allowed_2 || fabs(allh1cands_sorted[ii*9+1]-0.25*alll1cands_sorted[jj*9+1])<=Pdiff_allowed || fabs(0.25*allh1cands_sorted[ii*9+1]-alll1cands_sorted[jj*9+1])<=Pdiff_allowed_2) {
-                     //if (fabs(allh1cands_sorted[ii*9+1]-alll1cands_sorted[jj*9+1])<=Pdiff_allowed || fabs(allh1cands_sorted[ii*9+1]-alll1cands_sorted[jj*9+1])<=Pdiff_allowed_2 || fabs(allh1cands_sorted[ii*9+1]-2.0*alll1cands_sorted[jj*9+1])<=Pdiff_allowed || fabs(2.0*allh1cands_sorted[ii*9+1]-alll1cands_sorted[jj*9+1])<=Pdiff_allowed_2 || fabs(allh1cands_sorted[ii*9+1]-3.0*alll1cands_sorted[jj*9+1])<=Pdiff_allowed || fabs(3.0*allh1cands_sorted[ii*9+1]-alll1cands_sorted[jj*9+1])<=Pdiff_allowed_2 || fabs(allh1cands_sorted[ii*9+1]-4.0*alll1cands_sorted[jj*9+1])<=Pdiff_allowed || fabs(4.0*allh1cands_sorted[ii*9+1]-alll1cands_sorted[jj*9+1])<=Pdiff_allowed_2 || fabs(allh1cands_sorted[ii*9+1]-0.5*alll1cands_sorted[jj*9+1])<=Pdiff_allowed || fabs(0.5*allh1cands_sorted[ii*9+1]-alll1cands_sorted[jj*9+1])<=Pdiff_allowed_2 || fabs(allh1cands_sorted[ii*9+1]-alll1cands_sorted[jj*9+1]/3.0)<=Pdiff_allowed || fabs(allh1cands_sorted[ii*9+1]/3.0-alll1cands_sorted[jj*9+1])<=Pdiff_allowed_2 || fabs(allh1cands_sorted[ii*9+1]-0.25*alll1cands_sorted[jj*9+1])<=Pdiff_allowed || fabs(0.25*allh1cands_sorted[ii*9+1]-alll1cands_sorted[jj*9+1])<=Pdiff_allowed_2 || fabs(allh1cands_sorted[ii*9+1]-0.75*alll1cands_sorted[jj*9+1])<=Pdiff_allowed || fabs(0.75*allh1cands_sorted[ii*9+1]-alll1cands_sorted[jj*9+1])<=Pdiff_allowed_2 || fabs(allh1cands_sorted[ii*9+1]-1.5*alll1cands_sorted[jj*9+1])<=Pdiff_allowed || fabs(1.5*allh1cands_sorted[ii*9+1]-alll1cands_sorted[jj*9+1])<=Pdiff_allowed_2 || fabs(allh1cands_sorted[ii*9+1]-2.0/3.0*alll1cands_sorted[jj*9+1])<=Pdiff_allowed || fabs(2.0/3.0*allh1cands_sorted[ii*9+1]-alll1cands_sorted[jj*9+1])<=Pdiff_allowed_2 || fabs(allh1cands_sorted[ii*9+1]-4.0/3.0*alll1cands_sorted[jj*9+1])<=Pdiff_allowed || fabs(4.0/3.0*allh1cands_sorted[ii*9+1]-alll1cands_sorted[jj*9+1])<=Pdiff_allowed_2) {
-                        //Check the sky location
-                        double absd1mPo2 = fabs(allh1cands_sorted[ii*9+4]-M_PI_2);
-                        double absd2mPo2 = fabs(alll1cands_sorted[jj*9+4]-M_PI_2);
-                        double dist = acos(sin(absd1mPo2)*sin(absd2mPo2)*cos(allh1cands_sorted[ii*9+3]-alll1cands_sorted[jj*9+3])+cos(absd1mPo2)*cos(absd2mPo2));
+                     double Pdiff_allowed = allh1cands_sorted[ii*9+1]*allh1cands_sorted[ii*9+1]*sqrt(3.6e-3/allh1cands_sorted[ii*9+2])/(4.5*tobs);
+                     double Pdiff_allowed_2 = alll1cands_sorted[jj*9+1]*alll1cands_sorted[jj*9+1]*sqrt(3.6e-3/alll1cands_sorted[jj*9+2])/(4.5*tobs);
+                     int foundmatch = 0;
+                     for (int kk=1; kk<=7; kk++) {
+                        double P1factor = 0.0;
+                        if (kk==1) P1factor = 1.0;
+                        else if (kk<5) P1factor = 1.0/kk;
+                        else P1factor = (double)(kk-3);
 
-                        if (dist<=2.0*skydiff_allowed/(allh1cands_sorted[ii*9]+alll1cands_sorted[jj*9])) {
-                          //if (bestmatchprob>alll1cands_sorted[jj*9+7]) {
-                          //  bestmatchprob = alll1cands_sorted[jj*9+7];
-                          //  bestmatch = jj;
-                          //}
-                           fprintf(CANDS, "%f %f %f %f %f %f %g %f %g %d %f %f %f %f %f %f %g %f %g %d\n",  (float)allh1cands_sorted[ii*9], (float)allh1cands_sorted[ii*9+1], (float)allh1cands_sorted[ii*9+2], (float)allh1cands_sorted[ii*9+3], (float)allh1cands_sorted[ii*9+4], (float)allh1cands_sorted[ii*9+5], allh1cands_sorted[ii*9+6], (float)allh1cands_sorted[ii*9+7], allh1cands_sorted[ii*9+8], allh1cands_job_sorted[ii], (float)alll1cands_sorted[jj*9], (float)alll1cands_sorted[jj*9+1], (float)alll1cands_sorted[jj*9+2], (float)alll1cands_sorted[jj*9+3], (float)alll1cands_sorted[jj*9+4], (float)alll1cands_sorted[jj*9+5], alll1cands_sorted[jj*9+6], (float)alll1cands_sorted[jj*9+7], alll1cands_sorted[jj*9+8], alll1cands_job_sorted[jj]);
-                        } //end sky check
-                     } //end period check
+                        for (int ll=1; ll<=7; ll++) {
+                           double P2factor = 0.0;
+                           if (ll==1) P2factor = 1.0;
+                           else if (ll<5) P2factor = 1.0/ll;
+                           else P2factor = (double)(ll-3);
+
+                           if (fabs(P1factor*allh1cands_sorted[ii*9+1]-P2factor*alll1cands_sorted[jj*9+1])<=Pdiff_allowed*(P1factor*P1factor) || fabs(P1factor*allh1cands_sorted[ii*9+1]-P2factor*alll1cands_sorted[jj*9+1])<=Pdiff_allowed_2*(P2factor*P2factor)) {
+                              //Check the sky location
+                              double absd1mPo2 = fabs(allh1cands_sorted[ii*9+4]-M_PI_2);
+                              double absd2mPo2 = fabs(alll1cands_sorted[jj*9+4]-M_PI_2);
+                              double dist = acos(sin(absd1mPo2)*sin(absd2mPo2)*cos(allh1cands_sorted[ii*9+3]-alll1cands_sorted[jj*9+3])+cos(absd1mPo2)*cos(absd2mPo2));
+
+                              if (dist<=2.0*skydiff_allowed/(allh1cands_sorted[ii*9]+alll1cands_sorted[jj*9])) {
+                                 foundmatch = 1;
+                                 fprintf(CANDS, "%f %f %f %f %f %f %g %f %g %d %f %f %f %f %f %f %g %f %g %d\n",  (float)allh1cands_sorted[ii*9], (float)allh1cands_sorted[ii*9+1], (float)allh1cands_sorted[ii*9+2], (float)allh1cands_sorted[ii*9+3], (float)allh1cands_sorted[ii*9+4], (float)allh1cands_sorted[ii*9+5], allh1cands_sorted[ii*9+6], (float)allh1cands_sorted[ii*9+7], allh1cands_sorted[ii*9+8], allh1cands_job_sorted[ii], (float)alll1cands_sorted[jj*9], (float)alll1cands_sorted[jj*9+1], (float)alll1cands_sorted[jj*9+2], (float)alll1cands_sorted[jj*9+3], (float)alll1cands_sorted[jj*9+4], (float)alll1cands_sorted[jj*9+5], alll1cands_sorted[jj*9+6], (float)alll1cands_sorted[jj*9+7], alll1cands_sorted[jj*9+8], alll1cands_job_sorted[jj]);
+                              } //end sky check
+                           } //end period check
+                           if (foundmatch) break;
+                        } //end test different P2factors
+                        if (foundmatch) break;
+                     } //end test different P1factors
                   } //end modulation depth check
                } //end frequency check
             } //end test against L1 values
-//if (bestmatch>=0) {
-//             fprintf(CANDS, "%f %f %f %f %f %f %g %f %g %d %f %f %f %f %f %f %g %f %g %d\n",  (float)allh1cands_sorted[ii*9], (float)allh1cands_sorted[ii*9+1], (float)allh1cands_sorted[ii*9+2], (float)allh1cands_sorted[ii*9+3], (float)allh1cands_sorted[ii*9+4], (float)allh1cands_sorted[ii*9+5], allh1cands_sorted[ii*9+6], (float)allh1cands_sorted[ii*9+7], allh1cands_sorted[ii*9+8], allh1cands_job_sorted[ii], (float)alll1cands_sorted[bestmatch*9], (float)alll1cands_sorted[bestmatch*9+1], (float)alll1cands_sorted[bestmatch*9+2], (float)alll1cands_sorted[bestmatch*9+3], (float)alll1cands_sorted[bestmatch*9+4], (float)alll1cands_sorted[bestmatch*9+5], alll1cands_sorted[bestmatch*9+6], (float)alll1cands_sorted[bestmatch*9+7], alll1cands_sorted[bestmatch*9+8], alll1cands_job_sorted[bestmatch]);
-//         }
          } //end successful search
-      } else if ((alll1cands_sorted[0]-allh1cands_sorted[ii*9])<=fdiff_allowed && (alll1cands_sorted[0]-allh1cands_sorted[ii*9])>=0.0) {
-         //int bestmatch = -1;
-         //double bestmatchprob = 0.0;
+      } else if ((alll1cands_sorted[0]-allh1cands_sorted[ii*9]) <= fdiff_allowed && allh1cands_sorted[ii*9] <= alll1cands_sorted[0]) {
 
          for (jj=0; jj<l1count; jj++) {
-            if (allh1cands_sorted[ii*9]-alll1cands_sorted[jj*9]<-1.05*fdiff_allowed) break;
+            if (alll1cands_sorted[jj*9]-allh1cands_sorted[ii*9] > 1.05*fdiff_allowed) break;
 
             if (fabs(allh1cands_sorted[ii*9]-alll1cands_sorted[jj*9])<=fdiff_allowed) {
                if (fabs(allh1cands_sorted[ii*9+2]-alll1cands_sorted[jj*9+2])<=dfdiff_allowed) {
                   double Pdiff_allowed = allh1cands_sorted[ii*9+1]*allh1cands_sorted[ii*9+1]*sqrt(3.6e-3/allh1cands_sorted[ii*9+2])/(4.5*tobs);
                   double Pdiff_allowed_2 = alll1cands_sorted[jj*9+1]*alll1cands_sorted[jj*9+1]*sqrt(3.6e-3/alll1cands_sorted[jj*9+2])/(4.5*tobs);
-                  if (fabs(allh1cands_sorted[ii*9+1]-alll1cands_sorted[jj*9+1])<=Pdiff_allowed || fabs(allh1cands_sorted[ii*9+1]-alll1cands_sorted[jj*9+1])<=Pdiff_allowed_2 || fabs(allh1cands_sorted[ii*9+1]-2.0*alll1cands_sorted[jj*9+1])<=Pdiff_allowed || fabs(2.0*allh1cands_sorted[ii*9+1]-alll1cands_sorted[jj*9+1])<=Pdiff_allowed_2 || fabs(allh1cands_sorted[ii*9+1]-3.0*alll1cands_sorted[jj*9+1])<=Pdiff_allowed || fabs(3.0*allh1cands_sorted[ii*9+1]-alll1cands_sorted[jj*9+1])<=Pdiff_allowed_2 || fabs(allh1cands_sorted[ii*9+1]-4.0*alll1cands_sorted[jj*9+1])<=Pdiff_allowed || fabs(4.0*allh1cands_sorted[ii*9+1]-alll1cands_sorted[jj*9+1])<=Pdiff_allowed_2 || fabs(allh1cands_sorted[ii*9+1]-0.5*alll1cands_sorted[jj*9+1])<=Pdiff_allowed || fabs(0.5*allh1cands_sorted[ii*9+1]-alll1cands_sorted[jj*9+1])<=Pdiff_allowed_2 || fabs(allh1cands_sorted[ii*9+1]-alll1cands_sorted[jj*9+1]/3.0)<=Pdiff_allowed || fabs(allh1cands_sorted[ii*9+1]/3.0-alll1cands_sorted[jj*9+1])<=Pdiff_allowed_2 || fabs(allh1cands_sorted[ii*9+1]-0.25*alll1cands_sorted[jj*9+1])<=Pdiff_allowed || fabs(0.25*allh1cands_sorted[ii*9+1]-alll1cands_sorted[jj*9+1])<=Pdiff_allowed_2) {
-                  //if (fabs(allh1cands_sorted[ii*9+1]-alll1cands_sorted[jj*9+1])<=Pdiff_allowed || fabs(allh1cands_sorted[ii*9+1]-alll1cands_sorted[jj*9+1])<=Pdiff_allowed_2 || fabs(allh1cands_sorted[ii*9+1]-2.0*alll1cands_sorted[jj*9+1])<=Pdiff_allowed || fabs(2.0*allh1cands_sorted[ii*9+1]-alll1cands_sorted[jj*9+1])<=Pdiff_allowed_2 || fabs(allh1cands_sorted[ii*9+1]-3.0*alll1cands_sorted[jj*9+1])<=Pdiff_allowed || fabs(3.0*allh1cands_sorted[ii*9+1]-alll1cands_sorted[jj*9+1])<=Pdiff_allowed_2 || fabs(allh1cands_sorted[ii*9+1]-4.0*alll1cands_sorted[jj*9+1])<=Pdiff_allowed || fabs(4.0*allh1cands_sorted[ii*9+1]-alll1cands_sorted[jj*9+1])<=Pdiff_allowed_2 || fabs(allh1cands_sorted[ii*9+1]-0.5*alll1cands_sorted[jj*9+1])<=Pdiff_allowed || fabs(0.5*allh1cands_sorted[ii*9+1]-alll1cands_sorted[jj*9+1])<=Pdiff_allowed_2 || fabs(allh1cands_sorted[ii*9+1]-alll1cands_sorted[jj*9+1]/3.0)<=Pdiff_allowed || fabs(allh1cands_sorted[ii*9+1]/3.0-alll1cands_sorted[jj*9+1])<=Pdiff_allowed_2 || fabs(allh1cands_sorted[ii*9+1]-0.25*alll1cands_sorted[jj*9+1])<=Pdiff_allowed || fabs(0.25*allh1cands_sorted[ii*9+1]-alll1cands_sorted[jj*9+1])<=Pdiff_allowed_2 || fabs(allh1cands_sorted[ii*9+1]-0.75*alll1cands_sorted[jj*9+1])<=Pdiff_allowed || fabs(0.75*allh1cands_sorted[ii*9+1]-alll1cands_sorted[jj*9+1])<=Pdiff_allowed_2 || fabs(allh1cands_sorted[ii*9+1]-1.5*alll1cands_sorted[jj*9+1])<=Pdiff_allowed || fabs(1.5*allh1cands_sorted[ii*9+1]-alll1cands_sorted[jj*9+1])<=Pdiff_allowed_2 || fabs(allh1cands_sorted[ii*9+1]-2.0/3.0*alll1cands_sorted[jj*9+1])<=Pdiff_allowed || fabs(2.0/3.0*allh1cands_sorted[ii*9+1]-alll1cands_sorted[jj*9+1])<=Pdiff_allowed_2 || fabs(allh1cands_sorted[ii*9+1]-4.0/3.0*alll1cands_sorted[jj*9+1])<=Pdiff_allowed || fabs(4.0/3.0*allh1cands_sorted[ii*9+1]-alll1cands_sorted[jj*9+1])<=Pdiff_allowed_2) {
-                     double absd1mPo2 = fabs(allh1cands_sorted[ii*9+4]-M_PI_2);
-                     double absd2mPo2 = fabs(alll1cands_sorted[jj*9+4]-M_PI_2);
-                     double dist = acos(sin(absd1mPo2)*sin(absd2mPo2)*cos(allh1cands_sorted[ii*9+3]-alll1cands_sorted[jj*9+3])+cos(absd1mPo2)*cos(absd2mPo2));
+                  int foundmatch = 0;
+                  for (int kk=1; kk<=7; kk++) {
+                     double P1factor = 0.0;
+                     if (kk==1) P1factor = 1.0;
+                     else if (kk<5) P1factor = 1.0/kk;
+                     else P1factor = (double)(kk-3);
 
-                     if (dist<=2.0*skydiff_allowed/(allh1cands_sorted[ii*9]+alll1cands_sorted[jj*9])) {
-                       //if (bestmatchprob>alll1cands_sorted[jj*9+7]) {
-                       //  bestmatchprob = alll1cands_sorted[jj*9+7];
-                       //  bestmatch = jj;
-                       //  }
-                        fprintf(CANDS, "%f %f %f %f %f %f %g %f %g %d %f %f %f %f %f %f %g %f %g %d\n",  (float)allh1cands_sorted[ii*9], (float)allh1cands_sorted[ii*9+1], (float)allh1cands_sorted[ii*9+2], (float)allh1cands_sorted[ii*9+3], (float)allh1cands_sorted[ii*9+4], (float)allh1cands_sorted[ii*9+5], allh1cands_sorted[ii*9+6], (float)allh1cands_sorted[ii*9+7], allh1cands_sorted[ii*9+8], allh1cands_job_sorted[ii], (float)alll1cands_sorted[jj*9], (float)alll1cands_sorted[jj*9+1], (float)alll1cands_sorted[jj*9+2], (float)alll1cands_sorted[jj*9+3], (float)alll1cands_sorted[jj*9+4], (float)alll1cands_sorted[jj*9+5], alll1cands_sorted[jj*9+6], (float)alll1cands_sorted[jj*9+7], alll1cands_sorted[jj*9+8], alll1cands_job_sorted[jj]);
-                     } //end sky check
-                  } //end period check
+                     for (int ll=1; ll<=7; ll++) {
+                        double P2factor = 0.0;
+                        if (ll==1) P2factor = 1.0;
+                        else if (ll<5) P2factor = 1.0/ll;
+                        else P2factor = (double)(ll-3);
+
+                        if (fabs(P1factor*allh1cands_sorted[ii*9+1]-P2factor*alll1cands_sorted[jj*9+1])<=Pdiff_allowed*(P1factor*P1factor) || fabs(P1factor*allh1cands_sorted[ii*9+1]-P2factor*alll1cands_sorted[jj*9+1])<=Pdiff_allowed_2*(P2factor*P2factor)) {
+                           //Check the sky location
+                           double absd1mPo2 = fabs(allh1cands_sorted[ii*9+4]-M_PI_2);
+                           double absd2mPo2 = fabs(alll1cands_sorted[jj*9+4]-M_PI_2);
+                           double dist = acos(sin(absd1mPo2)*sin(absd2mPo2)*cos(allh1cands_sorted[ii*9+3]-alll1cands_sorted[jj*9+3])+cos(absd1mPo2)*cos(absd2mPo2));
+
+                           if (dist<=2.0*skydiff_allowed/(allh1cands_sorted[ii*9]+alll1cands_sorted[jj*9])) {
+                              foundmatch = 1;
+                              fprintf(CANDS, "%f %f %f %f %f %f %g %f %g %d %f %f %f %f %f %f %g %f %g %d\n",  (float)allh1cands_sorted[ii*9], (float)allh1cands_sorted[ii*9+1], (float)allh1cands_sorted[ii*9+2], (float)allh1cands_sorted[ii*9+3], (float)allh1cands_sorted[ii*9+4], (float)allh1cands_sorted[ii*9+5], allh1cands_sorted[ii*9+6], (float)allh1cands_sorted[ii*9+7], allh1cands_sorted[ii*9+8], allh1cands_job_sorted[ii], (float)alll1cands_sorted[jj*9], (float)alll1cands_sorted[jj*9+1], (float)alll1cands_sorted[jj*9+2], (float)alll1cands_sorted[jj*9+3], (float)alll1cands_sorted[jj*9+4], (float)alll1cands_sorted[jj*9+5], alll1cands_sorted[jj*9+6], (float)alll1cands_sorted[jj*9+7], alll1cands_sorted[jj*9+8], alll1cands_job_sorted[jj]);
+                           } //end sky check
+                        } //end period check
+                        if (foundmatch) break;
+                     } //end test different P2factors
+                     if (foundmatch) break;
+                  } //end test different P1factors
                } //end modulation depth check
             } //end frequency check
          } //end test against L1 values
-         //if (bestmatch>=0) {
-         //fprintf(CANDS, "%f %f %f %f %f %f %g %f %g %d %f %f %f %f %f %f %g %f %g %d\n",  (float)allh1cands_sorted[ii*9], (float)allh1cands_sorted[ii*9+1], (float)allh1cands_sorted[ii*9+2], (float)allh1cands_sorted[ii*9+3], (float)allh1cands_sorted[ii*9+4], (float)allh1cands_sorted[ii*9+5], allh1cands_sorted[ii*9+6], (float)allh1cands_sorted[ii*9+7], allh1cands_sorted[ii*9+8], allh1cands_job_sorted[ii], (float)alll1cands_sorted[bestmatch*9], (float)alll1cands_sorted[bestmatch*9+1], (float)alll1cands_sorted[bestmatch*9+2], (float)alll1cands_sorted[bestmatch*9+3], (float)alll1cands_sorted[bestmatch*9+4], (float)alll1cands_sorted[bestmatch*9+5], alll1cands_sorted[bestmatch*9+6], (float)alll1cands_sorted[bestmatch*9+7], alll1cands_sorted[bestmatch*9+8], alll1cands_job_sorted[bestmatch]);
-         //}
-      } else if ((allh1cands_sorted[ii*9]-alll1cands_sorted[(l1count-1)*9])<=fdiff_allowed && (allh1cands_sorted[ii*9]-alll1cands_sorted[(l1count-1)*9])>=0.0) {
-        //int bestmatch = -1;
-        //double bestmatchprob = 0.0;
-
+      } else if ((allh1cands_sorted[ii*9]-alll1cands_sorted[(l1count-1)*9]) <= fdiff_allowed && allh1cands_sorted[ii*9] >= alll1cands_sorted[(l1count-1)*9]) {
          jj = l1count-1;
-         while (l1count>0 && (allh1cands_sorted[ii*9]-alll1cands_sorted[jj*9])<1.05*fdiff_allowed) jj--;
+         while (jj>0 && (allh1cands_sorted[ii*9]-alll1cands_sorted[jj*9])<1.05*fdiff_allowed) jj--;
 
          for ( ; jj<l1count; jj++) {
-            if (allh1cands_sorted[ii*9]-alll1cands_sorted[jj*9]<-1.05*fdiff_allowed) break;
-
             if (fabs(allh1cands_sorted[ii*9]-alll1cands_sorted[jj*9])<=fdiff_allowed) {
                if (fabs(allh1cands_sorted[ii*9+2]-alll1cands_sorted[jj*9+2])<=dfdiff_allowed) {
                   double Pdiff_allowed = allh1cands_sorted[ii*9+1]*allh1cands_sorted[ii*9+1]*sqrt(3.6e-3/allh1cands_sorted[ii*9+2])/(4.5*tobs);
                   double Pdiff_allowed_2 = alll1cands_sorted[jj*9+1]*alll1cands_sorted[jj*9+1]*sqrt(3.6e-3/alll1cands_sorted[jj*9+2])/(4.5*tobs);
-                  if (fabs(allh1cands_sorted[ii*9+1]-alll1cands_sorted[jj*9+1])<=Pdiff_allowed || fabs(allh1cands_sorted[ii*9+1]-alll1cands_sorted[jj*9+1])<=Pdiff_allowed_2 || fabs(allh1cands_sorted[ii*9+1]-2.0*alll1cands_sorted[jj*9+1])<=Pdiff_allowed || fabs(2.0*allh1cands_sorted[ii*9+1]-alll1cands_sorted[jj*9+1])<=Pdiff_allowed_2 || fabs(allh1cands_sorted[ii*9+1]-3.0*alll1cands_sorted[jj*9+1])<=Pdiff_allowed || fabs(3.0*allh1cands_sorted[ii*9+1]-alll1cands_sorted[jj*9+1])<=Pdiff_allowed_2 || fabs(allh1cands_sorted[ii*9+1]-4.0*alll1cands_sorted[jj*9+1])<=Pdiff_allowed || fabs(4.0*allh1cands_sorted[ii*9+1]-alll1cands_sorted[jj*9+1])<=Pdiff_allowed_2 || fabs(allh1cands_sorted[ii*9+1]-0.5*alll1cands_sorted[jj*9+1])<=Pdiff_allowed || fabs(0.5*allh1cands_sorted[ii*9+1]-alll1cands_sorted[jj*9+1])<=Pdiff_allowed_2 || fabs(allh1cands_sorted[ii*9+1]-alll1cands_sorted[jj*9+1]/3.0)<=Pdiff_allowed || fabs(allh1cands_sorted[ii*9+1]/3.0-alll1cands_sorted[jj*9+1])<=Pdiff_allowed_2 || fabs(allh1cands_sorted[ii*9+1]-0.25*alll1cands_sorted[jj*9+1])<=Pdiff_allowed || fabs(0.25*allh1cands_sorted[ii*9+1]-alll1cands_sorted[jj*9+1])<=Pdiff_allowed_2) {
-                  //if (fabs(allh1cands_sorted[ii*9+1]-alll1cands_sorted[jj*9+1])<=Pdiff_allowed || fabs(allh1cands_sorted[ii*9+1]-alll1cands_sorted[jj*9+1])<=Pdiff_allowed_2 || fabs(allh1cands_sorted[ii*9+1]-2.0*alll1cands_sorted[jj*9+1])<=Pdiff_allowed || fabs(2.0*allh1cands_sorted[ii*9+1]-alll1cands_sorted[jj*9+1])<=Pdiff_allowed_2 || fabs(allh1cands_sorted[ii*9+1]-3.0*alll1cands_sorted[jj*9+1])<=Pdiff_allowed || fabs(3.0*allh1cands_sorted[ii*9+1]-alll1cands_sorted[jj*9+1])<=Pdiff_allowed_2 || fabs(allh1cands_sorted[ii*9+1]-4.0*alll1cands_sorted[jj*9+1])<=Pdiff_allowed || fabs(4.0*allh1cands_sorted[ii*9+1]-alll1cands_sorted[jj*9+1])<=Pdiff_allowed_2 || fabs(allh1cands_sorted[ii*9+1]-0.5*alll1cands_sorted[jj*9+1])<=Pdiff_allowed || fabs(0.5*allh1cands_sorted[ii*9+1]-alll1cands_sorted[jj*9+1])<=Pdiff_allowed_2 || fabs(allh1cands_sorted[ii*9+1]-alll1cands_sorted[jj*9+1]/3.0)<=Pdiff_allowed || fabs(allh1cands_sorted[ii*9+1]/3.0-alll1cands_sorted[jj*9+1])<=Pdiff_allowed_2 || fabs(allh1cands_sorted[ii*9+1]-0.25*alll1cands_sorted[jj*9+1])<=Pdiff_allowed || fabs(0.25*allh1cands_sorted[ii*9+1]-alll1cands_sorted[jj*9+1])<=Pdiff_allowed_2 || fabs(allh1cands_sorted[ii*9+1]-0.75*alll1cands_sorted[jj*9+1])<=Pdiff_allowed || fabs(0.75*allh1cands_sorted[ii*9+1]-alll1cands_sorted[jj*9+1])<=Pdiff_allowed_2 || fabs(allh1cands_sorted[ii*9+1]-1.5*alll1cands_sorted[jj*9+1])<=Pdiff_allowed || fabs(1.5*allh1cands_sorted[ii*9+1]-alll1cands_sorted[jj*9+1])<=Pdiff_allowed_2 || fabs(allh1cands_sorted[ii*9+1]-2.0/3.0*alll1cands_sorted[jj*9+1])<=Pdiff_allowed || fabs(2.0/3.0*allh1cands_sorted[ii*9+1]-alll1cands_sorted[jj*9+1])<=Pdiff_allowed_2 || fabs(allh1cands_sorted[ii*9+1]-4.0/3.0*alll1cands_sorted[jj*9+1])<=Pdiff_allowed || fabs(4.0/3.0*allh1cands_sorted[ii*9+1]-alll1cands_sorted[jj*9+1])<=Pdiff_allowed_2) {
-                     double absd1mPo2 = fabs(allh1cands_sorted[ii*9+4]-M_PI_2);
-                     double absd2mPo2 = fabs(alll1cands_sorted[jj*9+4]-M_PI_2);
-                     double dist = acos(sin(absd1mPo2)*sin(absd2mPo2)*cos(allh1cands_sorted[ii*9+3]-alll1cands_sorted[jj*9+3])+cos(absd1mPo2)*cos(absd2mPo2));
+                  int foundmatch = 0;
+                  for (int kk=1; kk<=7; kk++) {
+                     double P1factor = 0.0;
+                     if (kk==1) P1factor = 1.0;
+                     else if (kk<5) P1factor = 1.0/kk;
+                     else P1factor = (double)(kk-3);
 
-                     if (dist<=2.0*skydiff_allowed/(allh1cands_sorted[ii*9]+alll1cands_sorted[jj*9])) {
-                       //if (bestmatchprob>alll1cands_sorted[jj*9+7]) {
-                       //bestmatchprob = alll1cands_sorted[jj*9+7];
-                       //bestmatch = jj;
-                       //}
-                        fprintf(CANDS, "%f %f %f %f %f %f %g %f %g %d %f %f %f %f %f %f %g %f %g %d\n",  (float)allh1cands_sorted[ii*9], (float)allh1cands_sorted[ii*9+1], (float)allh1cands_sorted[ii*9+2], (float)allh1cands_sorted[ii*9+3], (float)allh1cands_sorted[ii*9+4], (float)allh1cands_sorted[ii*9+5], allh1cands_sorted[ii*9+6], (float)allh1cands_sorted[ii*9+7], allh1cands_sorted[ii*9+8], allh1cands_job_sorted[ii], (float)alll1cands_sorted[jj*9], (float)alll1cands_sorted[jj*9+1], (float)alll1cands_sorted[jj*9+2], (float)alll1cands_sorted[jj*9+3], (float)alll1cands_sorted[jj*9+4], (float)alll1cands_sorted[jj*9+5], alll1cands_sorted[jj*9+6], (float)alll1cands_sorted[jj*9+7], alll1cands_sorted[jj*9+8], alll1cands_job_sorted[jj]);
-                     } //end sky check
-                  } //end period check
+                     for (int ll=1; ll<=7; ll++) {
+                        double P2factor = 0.0;
+                        if (ll==1) P2factor = 1.0;
+                        else if (ll<5) P2factor = 1.0/ll;
+                        else P2factor = (double)(ll-3);
+
+                        if (fabs(P1factor*allh1cands_sorted[ii*9+1]-P2factor*alll1cands_sorted[jj*9+1])<=Pdiff_allowed*(P1factor*P1factor) || fabs(P1factor*allh1cands_sorted[ii*9+1]-P2factor*alll1cands_sorted[jj*9+1])<=Pdiff_allowed_2*(P2factor*P2factor)) {
+                           //Check the sky location
+                           double absd1mPo2 = fabs(allh1cands_sorted[ii*9+4]-M_PI_2);
+                           double absd2mPo2 = fabs(alll1cands_sorted[jj*9+4]-M_PI_2);
+                           double dist = acos(sin(absd1mPo2)*sin(absd2mPo2)*cos(allh1cands_sorted[ii*9+3]-alll1cands_sorted[jj*9+3])+cos(absd1mPo2)*cos(absd2mPo2));
+
+                           if (dist<=2.0*skydiff_allowed/(allh1cands_sorted[ii*9]+alll1cands_sorted[jj*9])) {
+                              foundmatch = 1;
+                              fprintf(CANDS, "%f %f %f %f %f %f %g %f %g %d %f %f %f %f %f %f %g %f %g %d\n",  (float)allh1cands_sorted[ii*9], (float)allh1cands_sorted[ii*9+1], (float)allh1cands_sorted[ii*9+2], (float)allh1cands_sorted[ii*9+3], (float)allh1cands_sorted[ii*9+4], (float)allh1cands_sorted[ii*9+5], allh1cands_sorted[ii*9+6], (float)allh1cands_sorted[ii*9+7], allh1cands_sorted[ii*9+8], allh1cands_job_sorted[ii], (float)alll1cands_sorted[jj*9], (float)alll1cands_sorted[jj*9+1], (float)alll1cands_sorted[jj*9+2], (float)alll1cands_sorted[jj*9+3], (float)alll1cands_sorted[jj*9+4], (float)alll1cands_sorted[jj*9+5], alll1cands_sorted[jj*9+6], (float)alll1cands_sorted[jj*9+7], alll1cands_sorted[jj*9+8], alll1cands_job_sorted[jj]);
+                           } //end sky check
+                        } //end period check
+                        if (foundmatch) break;
+                     } //end test different P2factors
+                     if (foundmatch) break;
+                  } //end test different P1factors
                } //end modulation depth check
             } //end frequency check
          } //end check against L1 values
-         //if (bestmatch>=0) {
-         //fprintf(CANDS, "%f %f %f %f %f %f %g %f %g %d %f %f %f %f %f %f %g %f %g %d\n",  (float)allh1cands_sorted[ii*9], (float)allh1cands_sorted[ii*9+1], (float)allh1cands_sorted[ii*9+2], (float)allh1cands_sorted[ii*9+3], (float)allh1cands_sorted[ii*9+4], (float)allh1cands_sorted[ii*9+5], allh1cands_sorted[ii*9+6], (float)allh1cands_sorted[ii*9+7], allh1cands_sorted[ii*9+8], allh1cands_job_sorted[ii], (float)alll1cands_sorted[bestmatch*9], (float)alll1cands_sorted[bestmatch*9+1], (float)alll1cands_sorted[bestmatch*9+2], (float)alll1cands_sorted[bestmatch*9+3], (float)alll1cands_sorted[bestmatch*9+4], (float)alll1cands_sorted[bestmatch*9+5], alll1cands_sorted[bestmatch*9+6], (float)alll1cands_sorted[bestmatch*9+7], alll1cands_sorted[bestmatch*9+8], alll1cands_job_sorted[bestmatch]);
-         //}
       } //end if H1 candidate is barely outside L1 frequency range
    } //end loop over H1 values
 
@@ -295,7 +320,6 @@ INT4 main(void) {
    XLAL_CHECK( (CANDS = fopen(outfile1,"r")) != NULL, XLAL_EIO, "Couldn't fopen %s\n", outfile1 );
 
    //Determines number of candidates in the file
-   //int count = 0, ch, ii, jj;
    int count = 0;
    do {
       ch = fgetc(CANDS);
