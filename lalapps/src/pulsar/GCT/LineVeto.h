@@ -43,7 +43,6 @@ extern "C" {
 #include <lal/ExtrapolatePulsarSpins.h>
 #include <lal/ComputeFstat.h>
 #include <lal/StringVector.h>
-#include <lal/CWFastMath.h> /* for XLALFastLog() and XLALFastNegExp() */
 
 /* lalapps includes */
 #include <lalapps.h>

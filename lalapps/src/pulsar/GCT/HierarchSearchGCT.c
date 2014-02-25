@@ -1714,9 +1714,6 @@ int MAIN( int argc, char *argv[]) {
 
   XLALDestroyREAL8Vector ( usefulParams.LVloglX );
 
-  XLALDestroyExpLUT(); /* lookup table for fast exponential function, used in computeLV case */
-  XLALDestroyLogLUT(); /* lookup table for fast logarithm function, used in computeLV case */
-
   LAL_CALL (LALDestroyUserVars(&status), &status);
 
   XLALFree ( VCSInfoString );

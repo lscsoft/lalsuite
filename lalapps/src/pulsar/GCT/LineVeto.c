@@ -480,17 +480,14 @@ XLALComputeLineVetoArray ( const REAL4 TwoF,   /**< multi-detector Fstat */
     REAL4 extraSum=0;	/* will be:  e^[-(maxInSum - logRhoTerm)] + sum_X e^[ -(maxInSum - FXprior) ] >= 1 */
 
     /* need to treat (rho^4/70) term separately */
-//     extraSum += exp ( logRhoTerm - maxInSum );
-    extraSum += XLALFastNegExp ( - ( logRhoTerm - maxInSum ) );
+    extraSum += exp ( logRhoTerm - maxInSum );
 
     /* now add all FX-contributions */
     for (UINT4 X = 0; X < numDetectors; X++) {
-//       extraSum += exp ( FXprior[X] - maxInSum );
-      extraSum += XLALFastNegExp ( - ( FXprior[X] - maxInSum ) );
+      extraSum += exp ( FXprior[X] - maxInSum );
     }
 
-//     LV -= log ( extraSum );
-    LV -= XLALFastLog ( extraSum );
+    LV -= log ( extraSum );
 
   } /* if useAllTerms */
 
