@@ -72,7 +72,6 @@
 #include <string.h>
 
 #include <lal/DetResponse.h>
-#include <lal/LALSimulation.h>
 
 #include <chealpix.h>
 
