@@ -1447,9 +1447,9 @@ int MAIN( int argc, char *argv[]) {
                   return(HIERARCHICALSEARCH_ECG);
                 }
 
-                if (U1idx + finegrid.freqlength >= Fstat_res->numFreqBins) {
+                if (U1idx + finegrid.freqlength - 1 >= Fstat_res->numFreqBins) {
                   fprintf(stderr,"ERROR: Stepped outside the coarse grid (%d:%d:%d:%d)! \n",
-                          U1idx, finegrid.freqlength, U1idx + finegrid.freqlength, Fstat_res->numFreqBins);
+                          U1idx, finegrid.freqlength, U1idx + finegrid.freqlength - 1, Fstat_res->numFreqBins);
                   return(HIERARCHICALSEARCH_ECG);
                 }
 
