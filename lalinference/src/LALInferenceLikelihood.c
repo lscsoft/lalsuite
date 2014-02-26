@@ -1972,6 +1972,7 @@ REAL8 LALInferenceMarginalisedTimeLogLikelihood(LALInferenceVariables *currentPa
   UINT4 time_length = 2*(freq_length-1);
 
   /* Desired tc == final sample in the buffer. */
+  deltaT = dataPtr->timeData->deltaT;
   REAL8 desired_tc = XLALGPSGetREAL8(&(dataPtr->freqData->epoch)) + (time_length-1)*deltaT;
 
   COMPLEX16Vector * dh_S_tilde = XLALCreateCOMPLEX16Vector(freq_length);
@@ -2067,7 +2068,6 @@ REAL8 LALInferenceMarginalisedTimeLogLikelihood(LALInferenceVariables *currentPa
     dataPtr->fCross = Fcross;
 
     /* determine frequency range & loop over frequency bins: */
-    deltaT = dataPtr->timeData->deltaT;
     deltaF = 1.0 / (((double)dataPtr->timeData->data->length) * deltaT);
     lower = (UINT4)ceil(dataPtr->fLow / deltaF);
     upper = (UINT4)floor(dataPtr->fHigh / deltaF);
