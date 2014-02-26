@@ -31,7 +31,7 @@
 #   and this notice are preserved. This file is offered as-is, without any
 #   warranty.
 
-#serial 12
+#serial 13
 
 AC_DEFUN([AX_EXT],
 [
@@ -61,10 +61,6 @@ AC_DEFUN([AX_EXT],
       AC_REQUIRE([AX_GCC_X86_AVX_XGETBV])
 
       AX_GCC_X86_CPUID(0x00000001)
-      ## ----------------------------------------
-      ## repr: applied fix from https://pm.bsc.es/projects/mcxx/ticket/1201
-      ## to avoid configure --with-simd check failing on MacOSX10.5 PPC platform
-      ## or on any platform that returns 'unknown' for AX_GCC_X86_CPUID(0x00000001)
       ecx=0
       edx=0
       if test "$ax_cv_gcc_x86_cpuid_0x00000001" != "unknown";
@@ -72,7 +68,6 @@ AC_DEFUN([AX_EXT],
         ecx=`echo $ax_cv_gcc_x86_cpuid_0x00000001 | cut -d ":" -f 3`
         edx=`echo $ax_cv_gcc_x86_cpuid_0x00000001 | cut -d ":" -f 4`
       fi
-      ## ----------------------------------------
 
       AC_CACHE_CHECK([whether mmx is supported], [ax_cv_have_mmx_ext],
       [
