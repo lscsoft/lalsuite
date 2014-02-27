@@ -189,6 +189,9 @@ void LALInferenceDrawNameFromPrior( LALInferenceVariables *output,
                                     char *name, LALInferenceVariableType type, 
                                     gsl_rng *rdm );
 
+/* Switch reads true if parameters lie within Malmquist prior */
+UINT4 within_malmquist(LALInferenceRunState *runState, LALInferenceVariables *params);
+
 /** Prior that is 1 everywhere in component mass space. */
 REAL8 LALInferenceAnalyticNullPrior(LALInferenceRunState *runState, LALInferenceVariables *params);
 
