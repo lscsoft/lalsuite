@@ -1973,7 +1973,8 @@ REAL8 LALInferenceMarginalisedTimeLogLikelihood(LALInferenceVariables *currentPa
 
   /* Desired tc == final sample in the buffer. */
   deltaT = dataPtr->timeData->deltaT;
-  REAL8 desired_tc = XLALGPSGetREAL8(&(dataPtr->freqData->epoch)) + (time_length-1)*deltaT;
+  REAL8 epoch = XLALGPSGetREAL8(&(dataPtr->freqData->epoch));
+  REAL8 desired_tc = epoch + (time_length-1)*deltaT - 2.0;
 
   COMPLEX16Vector * dh_S_tilde = XLALCreateCOMPLEX16Vector(freq_length);
   COMPLEX16Vector * dh_S_tilde_im = NULL;
@@ -2050,7 +2051,12 @@ REAL8 LALInferenceMarginalisedTimeLogLikelihood(LALInferenceVariables *currentPa
     /* Time between arrival at geocenter and arrival at detector */
     timedelay = XLALTimeDelayFromEarthCenter(dataPtr->detector->location,
                                              ra, dec, &GPSlal);
-    timeshift = desired_tc - *(REAL8 *)LALInferenceGetVariable(dataPtr->modelParams, "time") + timedelay;
+
+    /* We want to shift (in freq domain) the template so that it has
+       t_C = epoch.  Then the zeroth sample of the IFFTed likelihood
+       series corresponds to t_C = epoch, the first sample to t_C =
+       epoch + dt, etc */
+    timeshift = epoch - *(REAL8 *)LALInferenceGetVariable(dataPtr->modelParams, "time") + timedelay;
     twopitimeshift = 2.0*M_PI*timeshift;
 
     /* determine beam pattern response (F_plus and F_cross) for given Ifo: */
