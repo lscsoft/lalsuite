@@ -24,8 +24,10 @@ specify the GraceDb ID on the command line, as in:
 
     $ bayestar_localize_lvalert T90713
 
-Or, `bayetar_localize_lvalert` can accept an LVAlert XML packet read from stdin.
-This is handy for quickly setting up automatic processing of events in response to LVAlert notifications. To do this, first subscribe to events of types that you are interested in (probably `cbc_lowmass` or `test_lowmass`):
+Or, `bayetar_localize_lvalert` can accept an LVAlert XML packet read from
+stdin. This is handy for quickly setting up automatic processing of events in
+response to LVAlert notifications. To do this, first subscribe to events of
+types that you are interested in (probably `cbc_lowmass` or `test_lowmass`):
 
     $ lvalert_admin --username albert.einstein --password supersecret --subscribe --node cbc_lowmass
     $ lvalert_admin --username albert.einstein --password supersecret --subscribe --node test_lowmass
