@@ -2274,7 +2274,7 @@ REAL8 *LALInferenceNetworkSNR(LALInferenceVariables *currentParams, LALInference
 /***************************************************************/
 {
   double Fplus, Fcross;
-  double dataReal, dataImag;
+  //double dataReal, dataImag;
   REAL8 plainTemplateReal, plainTemplateImag;
   REAL8 templateReal=0.0, templateImag=0.0;
   int i, lower, upper, ifo;
@@ -2294,7 +2294,7 @@ REAL8 *LALInferenceNetworkSNR(LALInferenceVariables *currentParams, LALInference
   LALInferenceVariables intrinsicParams;
 
   //different formats for storing glitch model for DWT, FFT, and integration
-  gsl_matrix *glitchFD=NULL;
+  //gsl_matrix *glitchFD=NULL;
 
   int signalFlag = 1;   //flag for including signal model
 
@@ -2307,8 +2307,8 @@ REAL8 *LALInferenceNetworkSNR(LALInferenceVariables *currentParams, LALInference
   int glitchFlag = 0;   //flag for including glitch model
   if(LALInferenceCheckVariable(currentParams,"glitchFitFlag"))
     glitchFlag = *((INT4 *)LALInferenceGetVariable(currentParams, "glitchFitFlag"));
-  if(glitchFlag)
-    glitchFD = *((gsl_matrix **)LALInferenceGetVariable(currentParams, "morlet_FD"));
+  //if(glitchFlag)
+  //  glitchFD = *((gsl_matrix **)LALInferenceGetVariable(currentParams, "morlet_FD"));
 
   //check if signal model is being used
   signalFlag=1;
@@ -2449,8 +2449,8 @@ REAL8 *LALInferenceNetworkSNR(LALInferenceVariables *currentParams, LALInference
 
     for (i=lower; i<=upper; ++i){
       //get local copy of data Fourier amplitudes
-      dataReal = creal(dataPtr->freqData->data->data[i]) / deltaT;
-      dataImag = cimag(dataPtr->freqData->data->data[i]) / deltaT;
+      //dataReal = creal(dataPtr->freqData->data->data[i]) / deltaT;
+      //dataImag = cimag(dataPtr->freqData->data->data[i]) / deltaT;
 
       //subtract GW model from residual
       if(signalFlag){
