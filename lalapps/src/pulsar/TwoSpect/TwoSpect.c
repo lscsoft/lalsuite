@@ -314,19 +314,17 @@ int main(int argc, char *argv[])
                MultiSFTVector *oneSignalSFTs = NULL;
                XLAL_CHECK( XLALCWMakeFakeMultiData(&oneSignalSFTs, NULL, oneSignal, &DataParams, edat) == XLAL_SUCCESS, XLAL_EFUNC );
                
-               REAL8Vector *oneSFTpowers = NULL;
-               XLAL_CHECK( (oneSFTpowers = XLALCreateREAL8Vector(sftvector->data[0]->data->data->length)) != NULL, XLAL_EFUNC );
+               REAL8Vector *aveSFTsPower = NULL;
+               XLAL_CHECK( (aveSFTsPower = XLALCreateREAL8Vector(sftvector->data[0]->data->data->length)) != NULL, XLAL_EFUNC );
+               memset(aveSFTsPower->data, 0, sizeof(REAL8)*aveSFTsPower->length);
                
-               for (INT4 kk=0; kk<(INT4)oneSignalSFTs->data[0]->length; kk++) {
-                  SFTtype *sft = &(oneSignalSFTs->data[0]->data[kk]);
-                  for (INT4 ll=0; ll<(INT4)oneSFTpowers->length; ll++) {
-                     oneSFTpowers->data[ll] = (2.0*(creal(sft->data->data[ll])*creal(sft->data->data[ll]) + cimag(sft->data->data[ll])*cimag(sft->data->data[ll]))/inputParams->Tcoh);
-                  }
-                  INT4 indexValOfMax = max_index_double(oneSFTpowers);
-                  fprintf(SIGNALOUT,"%.9g %.9g\n", DataParams.fMin+indexValOfMax/inputParams->Tcoh, oneSFTpowers->data[indexValOfMax]);
+               for (jj=0; jj<(INT4)oneSignalSFTs->data[0]->length; jj++) {
+                  SFTtype *sft = &(oneSignalSFTs->data[0]->data[jj]);
+                  for (INT4 kk=0; kk<(INT4)aveSFTsPower->length; kk++) aveSFTsPower->data[kk] += (2.0*(creal(sft->data->data[kk])*creal(sft->data->data[kk]) + cimag(sft->data->data[kk])*cimag(sft->data->data[kk]))/inputParams->Tcoh);
                }
+               for (jj=0; jj<(INT4)aveSFTsPower->length; jj++) fprintf(SIGNALOUT,"%.9g %.9g\n", DataParams.fMin+jj/inputParams->Tcoh, aveSFTsPower->data[jj]/sftvector->data[0]->length);
                XLALDestroyMultiSFTVector(oneSignalSFTs);
-               XLALDestroyREAL8Vector(oneSFTpowers);
+               XLALDestroyREAL8Vector(aveSFTsPower);
             }
             if (args_info.printMarginalizedSignalData_given) {
                REAL8Vector *marginalizedSignalData = NULL;
@@ -364,7 +362,7 @@ int main(int argc, char *argv[])
       XLALDestroyMultiSFTVector(sftvector);
 
    } //end load data or generate data
-   
+
    //Print SFT times, if requested by user
    if (args_info.printSFTtimes_given) {
       char w[1000];
@@ -377,7 +375,7 @@ int main(int argc, char *argv[])
       }
       fclose(INSFTTIMES);
    }
-   
+
    //Removing bad SFTs using K-S test and Kuiper's test
    if (inputParams->markBadSFTs!=0 && inputParams->signalOnly==0) {
       fprintf(stderr, "Marking and removing bad SFTs... ");
@@ -401,6 +399,35 @@ int main(int argc, char *argv[])
       fclose(USEDSFTTIMES);
    }
 
+   //If necessary, open the NORMRMSOUT file
+   if (args_info.normRMSoutput_given) {
+      snprintf(u, 1000, "%s/%s", args_info.outdirectory_arg, args_info.normRMSoutput_arg);
+      XLAL_CHECK( (NORMRMSOUT = fopen(u,"w")) != NULL, XLAL_EIO, "Couldn't open %s for writing normalized RMS data file\n", u );
+   }
+
+   //Line detection only if there is valid noise to be looking at
+   INT4Vector *lines = NULL;
+   INT4 heavilyContaminatedBand = 0;
+   if (args_info.lineDetection_given && inputParams->signalOnly==0) {
+      lines = detectLines_simple(tfdata, ffdata, inputParams);
+      XLAL_CHECK( xlalErrno == 0, XLAL_EFUNC );
+      if (lines!=NULL) {
+         fprintf(LOG, "WARNING: %d line(s) found.\n", lines->length);
+         fprintf(stderr, "WARNING: %d line(s) found.\n", lines->length);
+         if ((REAL4)lines->length/(ffdata->numfbins + 2*inputParams->maxbinshift) >= 0.1) {
+            heavilyContaminatedBand = 1;
+            fprintf(LOG, "WARNING: Band is heavily contaminated by artifacts.\n");
+            fprintf(stderr, "WARNING: Band is heavily contaminated by artifacts.\n");
+         }
+      }
+   }
+
+   //Close the NORMRMSOUT file, if necessary
+   if (args_info.normRMSoutput_given) fclose(NORMRMSOUT);
+
+   //If the band is heavily contaminated by lines, don't do any follow up.
+   if (heavilyContaminatedBand) args_info.IHSonly_given = 1;
+
    //Calculate the running mean values of the SFTs (output here is smaller than initialTFdata). Here,
    //numfbins needs to be the bins you expect to come out of the running means -- the band you are going
    //to search!
@@ -408,9 +435,17 @@ int main(int argc, char *argv[])
    fprintf(stderr, "Assessing background... ");
    REAL4Vector *background = NULL;
    XLAL_CHECK( (background = XLALCreateREAL4Vector(ffdata->numffts*(ffdata->numfbins + 2*inputParams->maxbinshift))) != NULL, XLAL_EFUNC );
-   if (inputParams->signalOnly==0) {
-      XLAL_CHECK( tfRngMeans(background, tfdata, ffdata->numffts, ffdata->numfbins + 2*inputParams->maxbinshift, inputParams->blksize) == XLAL_SUCCESS, XLAL_EFUNC );
-   } else memset(background->data, 0, sizeof(REAL4)*background->length);
+   if (inputParams->signalOnly==0) XLAL_CHECK( tfRngMeans(background, tfdata, ffdata->numffts, ffdata->numfbins + 2*inputParams->maxbinshift, inputParams->blksize) == XLAL_SUCCESS, XLAL_EFUNC );
+   else memset(background->data, 0, sizeof(REAL4)*background->length);
+
+   //TODO: Remove this! Try cleaning lines
+   /* XLAL_CHECK( cleanLines(tfdata, background, lines, inputParams) == XLAL_SUCCESS, XLAL_EFUNC ); */
+   /* if (lines!=NULL) { */
+   /*    if (inputParams->signalOnly==0) XLAL_CHECK( tfRngMeans(background, tfdata, ffdata->numffts, ffdata->numfbins + 2*inputParams->maxbinshift, inputParams->blksize) == XLAL_SUCCESS, XLAL_EFUNC ); */
+   /*    else memset(background->data, 0, sizeof(REAL4)*background->length); */
+   /* } */
+   /* XLALDestroyINT4Vector(lines); */
+   /* lines = NULL; */
    
    //Existing SFTs listed in this vector
    INT4Vector *sftexist = NULL;
@@ -444,35 +479,6 @@ int main(int argc, char *argv[])
    ffdata->tfnormalization *= backgroundmeannormfactor;
    fprintf(LOG, "done\n");
    fprintf(stderr, "done\n");
-   
-   //If necessary, open the NORMRMSOUT file
-   if (args_info.normRMSoutput_given) {
-      snprintf(u, 1000, "%s/%s", args_info.outdirectory_arg, args_info.normRMSoutput_arg);
-      XLAL_CHECK( (NORMRMSOUT = fopen(u,"w")) != NULL, XLAL_EIO, "Couldn't open %s for writing normalized RMS data file\n", u );
-   }
-   
-   //Line detection only if there is valid noise to be looking at
-   INT4Vector *lines = NULL;
-   INT4 heavilyContaminatedBand = 0;
-   if (args_info.lineDetection_given && inputParams->signalOnly==0) {
-      lines = detectLines_simple(tfdata, ffdata, inputParams);
-      XLAL_CHECK( xlalErrno == 0, XLAL_EFUNC );
-      if (lines!=NULL) {
-         fprintf(LOG, "WARNING: %d line(s) found.\n", lines->length);
-         fprintf(stderr, "WARNING: %d line(s) found.\n", lines->length);
-         if ((REAL4)lines->length/(ffdata->numfbins + 2*inputParams->maxbinshift) >= 0.1) {
-            heavilyContaminatedBand = 1;
-            fprintf(LOG, "WARNING: Band is heavily contaminated by artifacts.\n");
-            fprintf(stderr, "WARNING: Band is heavily contaminated by artifacts.\n");
-         }
-      }
-   }
-   
-   //Close the NORMRMSOUT file, if necessary
-   if (args_info.normRMSoutput_given) fclose(NORMRMSOUT);
-   
-   //If the band is heavily contaminated by lines, don't do any follow up.
-   if (heavilyContaminatedBand) args_info.IHSonly_given = 1;
    
    //Need to reduce the original TF data to remove the excess bins used for running median calculation. Normalize the TF as the same as the background was normalized
    REAL4Vector *usableTFdata = NULL;
@@ -1989,8 +1995,7 @@ REAL4VectorSequence * trackLines(INT4Vector *lines, INT4Vector *binshifts, input
    min_max_index_INT4Vector(binshifts, &minshiftindex, &maxshiftindex);
    INT4 maxshift = binshifts->data[maxshiftindex], minshift = binshifts->data[minshiftindex];
    
-   INT4 ii;
-   for (ii=0; ii<(INT4)lines->length; ii++) {
+   for (INT4 ii=0; ii<(INT4)lines->length; ii++) {
       output->data[ii*3] = lines->data[ii]*df + minfbin;
       //output->data[ii*3 + 1] = (lines->data[ii] + minshift)*df + minfbin;
       //output->data[ii*3 + 2] = (lines->data[ii] + maxshift)*df + minfbin;
@@ -2001,6 +2006,38 @@ REAL4VectorSequence * trackLines(INT4Vector *lines, INT4Vector *binshifts, input
    return output;
    
 }
+
+
+INT4 cleanLines(REAL4Vector *TFdata, REAL4Vector *background, INT4Vector *lines, inputParamsStruct *params)
+{
+
+   if (lines==NULL) return 0;
+
+   INT4 numffts = (INT4)floor(params->Tobs/(params->Tcoh-params->SFToverlap)-1);    //Number of FFTs
+   INT4 numfbins = (INT4)TFdata->length/numffts;     //Number of frequency bins
+
+   REAL8 prevnoiseval = 0.0;
+   for (INT4 ii=0; ii<(INT4)numffts; ii++) {
+      if (TFdata->data[ii*numfbins]!=0.0) {
+         for (INT4 jj=0; jj<(INT4)lines->length; jj++) {
+            if (lines->data[jj]-(params->blksize-1)/2>=0) {
+               REAL8 noiseval = expRandNum(background->data[ii*(numfbins-(params->blksize-1)) + lines->data[jj]], params->rng);
+               XLAL_CHECK( xlalErrno == 0, XLAL_EFUNC, "ii=%d, jj=%d, background=%g", ii, jj, background->data[ii*(numfbins-(params->blksize-1)) + lines->data[jj]] );
+               if (ii>0 && TFdata->data[(ii-1)*numfbins]!=0.0) {
+                  noiseval *= (1.0-0.167*0.167);
+                  noiseval += 0.167*prevnoiseval;
+               }
+               TFdata->data[ii*numfbins + lines->data[jj]] = noiseval;
+               prevnoiseval = noiseval;
+            }
+         } //end loop over vector of lines
+      } //if SFT exists
+   } //end loop over SFTs
+
+   return 0;
+
+}
+
 
 //Output a vector of zeros and ones; zero if SFT is missing, 1 if SFT is present
 INT4Vector * existingSFTs(REAL4Vector *tfdata, inputParamsStruct *params, INT4 numfbins, INT4 numffts)

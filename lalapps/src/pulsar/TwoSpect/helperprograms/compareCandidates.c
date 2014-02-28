@@ -19,7 +19,6 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-//#include <string.h>
 #include <math.h>
 
 #include <gsl/gsl_sort.h>
@@ -27,13 +26,15 @@
 
 #include <lal/LALStdlib.h>
 
+REAL8 f_diff(double indexval, void *params);
+
 struct solver_params {
    double fvalue;
    double *data_array;
 };
-REAL8 fdiff(double index, void *params) {
+double f_diff(double indexval, void *params) {
    struct solver_params *p = (struct solver_params *)params;
-   return p->fvalue - p->data_array[(int)round(index)*9];
+   return p->fvalue - p->data_array[(int)round(indexval)*9];
 }
  
 INT4 main(void) {
@@ -42,12 +43,12 @@ INT4 main(void) {
    gsl_set_error_handler_off();
 
    FILE *H1CANDS, *L1CANDS;
-   char *infile1 = "/Users/evgoet/Documents/MATLAB/pulsar/S6/50-252HzL1Candidates.dat";
-   char *infile2 = "/Users/evgoet/Documents/MATLAB/pulsar/VSR2-3/20-100HzV1Candidates.dat";
-   char *outfile1 = "/Users/evgoet/Documents/MATLAB/pulsar/VSR2-3/20-100HzCandidates_output1.dat";
-   char *outfile2 = "/Users/evgoet/Documents/MATLAB/pulsar/VSR2-3/20-100HzCandidates_output2.dat";
-   char *outfile3 = "/Users/evgoet/Documents/MATLAB/pulsar/VSR2-3/20-100HzCandidates_final2.dat";
-   char *outfile4 = "/Users/evgoet/Documents/MATLAB/pulsar/VSR2-3/20-100HzCandidates_output3.dat";
+   const char *infile1 = "/Users/evgoet/Documents/MATLAB/pulsar/VSR2-3/20-100HzV1Candidates.dat";
+   const char *infile2 = "/Users/evgoet/Documents/MATLAB/pulsar/S6/50-252HzL1Candidates.dat";
+   const char *outfile1 = "/Users/evgoet/Documents/MATLAB/pulsar/S6/50-100HzCandidates_output1.dat";
+   const char *outfile2 = "/Users/evgoet/Documents/MATLAB/pulsar/S6/50-100HzCandidates_output2.dat";
+   const char *outfile3 = "/Users/evgoet/Documents/MATLAB/pulsar/S6/50-100HzCandidates_final_V1L1.dat";
+   const char *outfile4 = "/Users/evgoet/Documents/MATLAB/pulsar/S6/50-100HzCandidates_output3.dat";
 
    XLAL_CHECK( (H1CANDS = fopen(infile1,"r")) != NULL, XLAL_EIO, "Can't fopen %s", infile1 );
 
@@ -136,7 +137,7 @@ INT4 main(void) {
    double x_lo = 0.0, x_hi = (double)(l1count-1);
    double foundIndex = -1.0;
    gsl_function F;
-   F.function = &fdiff;
+   F.function = &f_diff;
    const gsl_root_fsolver_type *T = gsl_root_fsolver_brent;
    gsl_root_fsolver *s = NULL;
    XLAL_CHECK( (s = gsl_root_fsolver_alloc(T)) != NULL, XLAL_EFUNC );
@@ -145,6 +146,7 @@ INT4 main(void) {
    double fdiff_allowed = 1.0/1800.0;
    double dfdiff_allowed = fdiff_allowed;
    double skydiff_allowed = 0.04*200.0;
+   int numpassingf = 0, numpassingdf = 0, numpassingP = 0, numpassingskyloc = 0;
    for (ii=0; ii<h1count; ii++) {
 
       //Check that the frequency of the H1 candidate we look at is within the frequency span of the L1 candidates
@@ -160,7 +162,7 @@ INT4 main(void) {
                status = gsl_root_fsolver_iterate(s);
                XLAL_CHECK( status == GSL_SUCCESS, XLAL_EFUNC );
                foundIndex = gsl_root_fsolver_root(s);
-               status = gsl_root_test_residual(fdiff(foundIndex, &params), 1.05*fdiff_allowed);
+               status = gsl_root_test_residual(f_diff(foundIndex, &params), 1.05*fdiff_allowed);
                XLAL_CHECK( status == GSL_SUCCESS || status == GSL_CONTINUE, XLAL_EFUNC );
             } while (status == GSL_CONTINUE && iter < max_iter);
          }
@@ -182,12 +184,14 @@ INT4 main(void) {
 
                //If the H1 and L1 frequency values are near enough, proceed with checking more parameter values
                if (fabs(allh1cands_sorted[ii*9]-alll1cands_sorted[jj*9])<=fdiff_allowed) {
+                  numpassingf++;
                   //Check the modulation depth
                   if (fabs(allh1cands_sorted[ii*9+2]-alll1cands_sorted[jj*9+2])<=dfdiff_allowed) {
+                     numpassingdf++;
                      //Check the period and harmonic values
                      double Pdiff_allowed = allh1cands_sorted[ii*9+1]*allh1cands_sorted[ii*9+1]*sqrt(3.6e-3/allh1cands_sorted[ii*9+2])/(4.5*tobs);
                      double Pdiff_allowed_2 = alll1cands_sorted[jj*9+1]*alll1cands_sorted[jj*9+1]*sqrt(3.6e-3/alll1cands_sorted[jj*9+2])/(4.5*tobs);
-                     int foundmatch = 0;
+                     int foundmatch = 0, passedtestP = 0;
                      for (int kk=1; kk<=7; kk++) {
                         double P1factor = 0.0;
                         if (kk==1) P1factor = 1.0;
@@ -201,6 +205,10 @@ INT4 main(void) {
                            else P2factor = (double)(ll-3);
 
                            if (fabs(P1factor*allh1cands_sorted[ii*9+1]-P2factor*alll1cands_sorted[jj*9+1])<=Pdiff_allowed*(P1factor*P1factor) || fabs(P1factor*allh1cands_sorted[ii*9+1]-P2factor*alll1cands_sorted[jj*9+1])<=Pdiff_allowed_2*(P2factor*P2factor)) {
+                              if (!passedtestP) {
+                                 numpassingP++;
+                                 passedtestP = 1;
+                              }
                               //Check the sky location
                               double absd1mPo2 = fabs(allh1cands_sorted[ii*9+4]-M_PI_2);
                               double absd2mPo2 = fabs(alll1cands_sorted[jj*9+4]-M_PI_2);
@@ -208,6 +216,7 @@ INT4 main(void) {
 
                               if (dist<=2.0*skydiff_allowed/(allh1cands_sorted[ii*9]+alll1cands_sorted[jj*9])) {
                                  foundmatch = 1;
+                                 numpassingskyloc++;
                                  fprintf(CANDS, "%f %f %f %f %f %f %g %f %g %d %f %f %f %f %f %f %g %f %g %d\n",  (float)allh1cands_sorted[ii*9], (float)allh1cands_sorted[ii*9+1], (float)allh1cands_sorted[ii*9+2], (float)allh1cands_sorted[ii*9+3], (float)allh1cands_sorted[ii*9+4], (float)allh1cands_sorted[ii*9+5], allh1cands_sorted[ii*9+6], (float)allh1cands_sorted[ii*9+7], allh1cands_sorted[ii*9+8], allh1cands_job_sorted[ii], (float)alll1cands_sorted[jj*9], (float)alll1cands_sorted[jj*9+1], (float)alll1cands_sorted[jj*9+2], (float)alll1cands_sorted[jj*9+3], (float)alll1cands_sorted[jj*9+4], (float)alll1cands_sorted[jj*9+5], alll1cands_sorted[jj*9+6], (float)alll1cands_sorted[jj*9+7], alll1cands_sorted[jj*9+8], alll1cands_job_sorted[jj]);
                               } //end sky check
                            } //end period check
@@ -225,10 +234,12 @@ INT4 main(void) {
             if (alll1cands_sorted[jj*9]-allh1cands_sorted[ii*9] > 1.05*fdiff_allowed) break;
 
             if (fabs(allh1cands_sorted[ii*9]-alll1cands_sorted[jj*9])<=fdiff_allowed) {
+               numpassingf++;
                if (fabs(allh1cands_sorted[ii*9+2]-alll1cands_sorted[jj*9+2])<=dfdiff_allowed) {
+                  numpassingdf++;
                   double Pdiff_allowed = allh1cands_sorted[ii*9+1]*allh1cands_sorted[ii*9+1]*sqrt(3.6e-3/allh1cands_sorted[ii*9+2])/(4.5*tobs);
                   double Pdiff_allowed_2 = alll1cands_sorted[jj*9+1]*alll1cands_sorted[jj*9+1]*sqrt(3.6e-3/alll1cands_sorted[jj*9+2])/(4.5*tobs);
-                  int foundmatch = 0;
+                  int foundmatch = 0, passedtestP = 0;
                   for (int kk=1; kk<=7; kk++) {
                      double P1factor = 0.0;
                      if (kk==1) P1factor = 1.0;
@@ -242,6 +253,10 @@ INT4 main(void) {
                         else P2factor = (double)(ll-3);
 
                         if (fabs(P1factor*allh1cands_sorted[ii*9+1]-P2factor*alll1cands_sorted[jj*9+1])<=Pdiff_allowed*(P1factor*P1factor) || fabs(P1factor*allh1cands_sorted[ii*9+1]-P2factor*alll1cands_sorted[jj*9+1])<=Pdiff_allowed_2*(P2factor*P2factor)) {
+                           if (!passedtestP) {
+                              numpassingP++;
+                              passedtestP = 1;
+                           }
                            //Check the sky location
                            double absd1mPo2 = fabs(allh1cands_sorted[ii*9+4]-M_PI_2);
                            double absd2mPo2 = fabs(alll1cands_sorted[jj*9+4]-M_PI_2);
@@ -249,6 +264,7 @@ INT4 main(void) {
 
                            if (dist<=2.0*skydiff_allowed/(allh1cands_sorted[ii*9]+alll1cands_sorted[jj*9])) {
                               foundmatch = 1;
+                              numpassingskyloc++;
                               fprintf(CANDS, "%f %f %f %f %f %f %g %f %g %d %f %f %f %f %f %f %g %f %g %d\n",  (float)allh1cands_sorted[ii*9], (float)allh1cands_sorted[ii*9+1], (float)allh1cands_sorted[ii*9+2], (float)allh1cands_sorted[ii*9+3], (float)allh1cands_sorted[ii*9+4], (float)allh1cands_sorted[ii*9+5], allh1cands_sorted[ii*9+6], (float)allh1cands_sorted[ii*9+7], allh1cands_sorted[ii*9+8], allh1cands_job_sorted[ii], (float)alll1cands_sorted[jj*9], (float)alll1cands_sorted[jj*9+1], (float)alll1cands_sorted[jj*9+2], (float)alll1cands_sorted[jj*9+3], (float)alll1cands_sorted[jj*9+4], (float)alll1cands_sorted[jj*9+5], alll1cands_sorted[jj*9+6], (float)alll1cands_sorted[jj*9+7], alll1cands_sorted[jj*9+8], alll1cands_job_sorted[jj]);
                            } //end sky check
                         } //end period check
@@ -265,10 +281,12 @@ INT4 main(void) {
 
          for ( ; jj<l1count; jj++) {
             if (fabs(allh1cands_sorted[ii*9]-alll1cands_sorted[jj*9])<=fdiff_allowed) {
+               numpassingf++;
                if (fabs(allh1cands_sorted[ii*9+2]-alll1cands_sorted[jj*9+2])<=dfdiff_allowed) {
+                  numpassingdf++;
                   double Pdiff_allowed = allh1cands_sorted[ii*9+1]*allh1cands_sorted[ii*9+1]*sqrt(3.6e-3/allh1cands_sorted[ii*9+2])/(4.5*tobs);
                   double Pdiff_allowed_2 = alll1cands_sorted[jj*9+1]*alll1cands_sorted[jj*9+1]*sqrt(3.6e-3/alll1cands_sorted[jj*9+2])/(4.5*tobs);
-                  int foundmatch = 0;
+                  int foundmatch = 0, passedtestP = 0;
                   for (int kk=1; kk<=7; kk++) {
                      double P1factor = 0.0;
                      if (kk==1) P1factor = 1.0;
@@ -282,6 +300,10 @@ INT4 main(void) {
                         else P2factor = (double)(ll-3);
 
                         if (fabs(P1factor*allh1cands_sorted[ii*9+1]-P2factor*alll1cands_sorted[jj*9+1])<=Pdiff_allowed*(P1factor*P1factor) || fabs(P1factor*allh1cands_sorted[ii*9+1]-P2factor*alll1cands_sorted[jj*9+1])<=Pdiff_allowed_2*(P2factor*P2factor)) {
+                           if (!passedtestP) {
+                              numpassingP++;
+                              passedtestP = 1;
+                           }
                            //Check the sky location
                            double absd1mPo2 = fabs(allh1cands_sorted[ii*9+4]-M_PI_2);
                            double absd2mPo2 = fabs(alll1cands_sorted[jj*9+4]-M_PI_2);
@@ -289,6 +311,7 @@ INT4 main(void) {
 
                            if (dist<=2.0*skydiff_allowed/(allh1cands_sorted[ii*9]+alll1cands_sorted[jj*9])) {
                               foundmatch = 1;
+                              numpassingskyloc++;
                               fprintf(CANDS, "%f %f %f %f %f %f %g %f %g %d %f %f %f %f %f %f %g %f %g %d\n",  (float)allh1cands_sorted[ii*9], (float)allh1cands_sorted[ii*9+1], (float)allh1cands_sorted[ii*9+2], (float)allh1cands_sorted[ii*9+3], (float)allh1cands_sorted[ii*9+4], (float)allh1cands_sorted[ii*9+5], allh1cands_sorted[ii*9+6], (float)allh1cands_sorted[ii*9+7], allh1cands_sorted[ii*9+8], allh1cands_job_sorted[ii], (float)alll1cands_sorted[jj*9], (float)alll1cands_sorted[jj*9+1], (float)alll1cands_sorted[jj*9+2], (float)alll1cands_sorted[jj*9+3], (float)alll1cands_sorted[jj*9+4], (float)alll1cands_sorted[jj*9+5], alll1cands_sorted[jj*9+6], (float)alll1cands_sorted[jj*9+7], alll1cands_sorted[jj*9+8], alll1cands_job_sorted[jj]);
                            } //end sky check
                         } //end period check
@@ -312,6 +335,7 @@ INT4 main(void) {
    XLALFree(allh1cands_job_sorted);
    XLALFree(alll1cands_job_sorted);
 
+   fprintf(stderr, "Passed f = %d, passed df = %d, passed P = %d, passed sky loc %d\n", numpassingf, numpassingdf, numpassingP, numpassingskyloc);
 
 
    /// PART TWO: ///
@@ -353,7 +377,7 @@ INT4 main(void) {
          double bestcandprob = allcands[ii*18+16];
          for (jj=0; jj<count; jj++) {
             if (jj==ii) continue;
-            if (allcands[jj*18]!=0.0 && allcands[jj*18] == allcands[ii*18] && allcands[jj*18+1] == allcands[ii*18+1] && allcands[jj*18+2] == allcands[ii*18+2]) {
+            if (allcands[jj*18]!=0.0 && allcands[jj*18] == allcands[ii*18] && allcands[jj*18+1] == allcands[ii*18+1] && allcands[jj*18+2] == allcands[ii*18+2] && allcands[jj*18+3] == allcands[ii*18+3] && allcands[jj*18+4] == allcands[ii*18+4]) {
                if (allcands[jj*18+16]<bestcandprob) {
                   bestcandprob = allcands[jj*18+16];
                   allcands[bestcand*18] = 0.0;
@@ -410,7 +434,7 @@ INT4 main(void) {
          double bestcandprob = allcands[ii*18+7];
          for (jj=0; jj<count; jj++) {
             if (jj==ii) continue;
-            if (allcands[jj*18]!=0.0 && allcands[jj*18+9] == allcands[ii*18+9] && allcands[jj*18+10] == allcands[ii*18+10] && allcands[jj*18+11] == allcands[ii*18+11]) {
+            if (allcands[jj*18]!=0.0 && allcands[jj*18+9] == allcands[ii*18+9] && allcands[jj*18+10] == allcands[ii*18+10] && allcands[jj*18+11] == allcands[ii*18+11] && allcands[jj*18+12] == allcands[ii*18+12] && allcands[jj*18+13] == allcands[ii*18+13]) {
                if (allcands[jj*18+7]<bestcandprob) {
                   bestcandprob = allcands[jj*18+7];
                   allcands[bestcand*18] = 0.0;
@@ -431,7 +455,7 @@ INT4 main(void) {
    XLALFree(allcands_job);
 
 
-   //Swap input values
+   //PART FOUR: Swap input values
    XLAL_CHECK( (CANDS = fopen(outfile1,"r")) != NULL, XLAL_EIO, "Couldn't fopen %s\n", outfile1 );
 
    count = 0;
@@ -466,7 +490,7 @@ INT4 main(void) {
          double bestcandprob = allcands[ii*18+7];
          for (jj=0; jj<count; jj++) {
             if (jj==ii) continue;
-            if (allcands[jj*18]!=0.0 && allcands[jj*18+9] == allcands[ii*18+9] && allcands[jj*18+10] == allcands[ii*18+10] && allcands[jj*18+11] == allcands[ii*18+11]) {
+            if (allcands[jj*18]!=0.0 && allcands[jj*18+9] == allcands[ii*18+9] && allcands[jj*18+10] == allcands[ii*18+10] && allcands[jj*18+11] == allcands[ii*18+11] && allcands[jj*18+12] == allcands[ii*18+12] && allcands[jj*18+13] == allcands[ii*18+13]) {
                if (allcands[jj*18+7]<bestcandprob) {
                   bestcandprob = allcands[jj*18+7];
                   allcands[bestcand*18] = 0.0;
@@ -520,7 +544,7 @@ INT4 main(void) {
          double bestcandprob = allcands[ii*18+16];
          for (jj=0; jj<count; jj++) {
             if (jj==ii) continue;
-            if (allcands[jj*18]!=0.0 && allcands[jj*18] == allcands[ii*18] && allcands[jj*18+1] == allcands[ii*18+1] && allcands[jj*18+2] == allcands[ii*18+2]) {
+            if (allcands[jj*18]!=0.0 && allcands[jj*18] == allcands[ii*18] && allcands[jj*18+1] == allcands[ii*18+1] && allcands[jj*18+2] == allcands[ii*18+2] && allcands[jj*18+3] == allcands[ii*18+3] && allcands[jj*18+4] == allcands[ii*18+4]) {
                if (allcands[jj*18+16]<bestcandprob) {
                   bestcandprob = allcands[jj*18+16];
                   allcands[bestcand*18] = 0.0;
