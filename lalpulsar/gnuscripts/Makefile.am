@@ -9,6 +9,7 @@ EXTRA_DIST = \
 	depcomp \
 	header-link.mk \
 	install-sh \
+	lalpulsar.m4 \
 	lalsuite_build.m4 \
 	libtool.m4 \
 	ltmain.sh \
