@@ -21,8 +21,6 @@ SUBDIRS = \
 	CreateEphemeris
 
 bin_PROGRAMS = \
-	lalapps_Calibrate60sSFTs \
-	lalapps_Calibrate1800SFTs \
 	lalapps_FreqAverager \
 	lalapps_psd \
 	lalapps_ComputePSD \
@@ -31,8 +29,6 @@ bin_PROGRAMS = \
 	lalapps_PrintDetectorState \
 	lalapps_ComputeAntennaPattern
 
-lalapps_Calibrate60sSFTs_SOURCES = Calibrate60sSFTs.c
-lalapps_Calibrate1800SFTs_SOURCES = Calibrate1800SFTs.c
 lalapps_FreqAverager_SOURCES = FreqAverager.c
 lalapps_psd_SOURCES = psd.c psd.h
 lalapps_ComputePSD_SOURCES = ComputePSD.c
@@ -42,8 +38,6 @@ lalapps_PrintDetectorState_SOURCES = PrintDetectorState.c
 lalapps_ComputeAntennaPattern_SOURCES = ComputeAntennaPattern.c
 
 EXTRA_DIST = \
-	Calibrate60sSFTs.c \
-	Calibrate1800SFTs.c \
 	FreqAverager.c \
 	psd.c \
 	psd.h \
