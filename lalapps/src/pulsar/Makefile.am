@@ -21,26 +21,17 @@ SUBDIRS = \
 	CreateEphemeris
 
 bin_PROGRAMS = \
-	lalapps_FreqAverager \
-	lalapps_psd \
 	lalapps_ComputePSD \
-	lalapps_FreqAverager_v2 \
 	lalapps_GetSFTVelocities \
 	lalapps_PrintDetectorState \
 	lalapps_ComputeAntennaPattern
 
-lalapps_FreqAverager_SOURCES = FreqAverager.c
-lalapps_psd_SOURCES = psd.c psd.h
 lalapps_ComputePSD_SOURCES = ComputePSD.c
-lalapps_FreqAverager_v2_SOURCES =  FreqAverager_v2.c
 lalapps_GetSFTVelocities_SOURCES = GetSFTVelocities.c
 lalapps_PrintDetectorState_SOURCES = PrintDetectorState.c
 lalapps_ComputeAntennaPattern_SOURCES = ComputeAntennaPattern.c
 
 EXTRA_DIST = \
-	FreqAverager.c \
-	psd.c \
-	psd.h \
 	testComputePSD.sh \
 	testComputeAntennaPattern.sh
 
