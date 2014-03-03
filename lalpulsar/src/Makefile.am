@@ -11,7 +11,6 @@ lalpulsarinclude_HEADERS = \
 	ComplexAM.h \
 	ComputeFstat.h \
 	ComputeSky.h \
-	ComputeSkyBinary.h \
 	DetectorStates.h \
 	DopplerFullScan.h \
 	DopplerLatticeCovering.h \
@@ -76,7 +75,6 @@ liblalpulsar_la_SOURCES = \
 	ComplexAM.c \
 	ComputeFstat.c \
 	ComputeSky.c \
-	ComputeSkyBinary.c \
 	ConstructPLUT.c \
 	DTEphemeris.c \
 	DetectorStates.c \

@@ -481,7 +481,7 @@ LALSignalToSFTs (LALStatus *status,		/**< pointer to LALStatus structure */
 
 
 /* 07/14/04 gam */
-/**
+/** /deprecated Move to attic?
  * Wrapper for LALComputeSky() and  LALComputeDetAMResponse() that finds the sky
  * constants and \f$F_+\f$ and \f$F_\times\f$ for use with LALFastGeneratePulsarSFTs().
  * Uses the output of LALComputeSkyAndZeroPsiAMResponse() and the same inputs as
@@ -500,7 +500,6 @@ LALComputeSkyAndZeroPsiAMResponse (LALStatus *status,		/**< pointer to LALStatus
   INT4 numSFTs;                      /* number of SFTs */
   BarycenterInput baryinput;         /* Stores detector location and other barycentering data */
   CSParams *csParams   = NULL;       /* ComputeSky parameters */
-  CSBParams *csbParams = NULL;       /* ComputeSkyBinary parameters */
   SkyPosition tmp;
   EarthState earth;
   EmissionTime emit;
@@ -530,34 +529,8 @@ LALComputeSkyAndZeroPsiAMResponse (LALStatus *status,		/**< pointer to LALStatus
   baryinput.dInv = 0.e0;      /* following makefakedata_v2 */
 
   if (params->pSigParams->orbit.asini > 0) {
-    /* LALComputeSkyBinary parameters */
-    csbParams=(CSBParams *)LALMalloc(sizeof(CSBParams));
-    csbParams->skyPos=(REAL8 *)LALMalloc(2*sizeof(REAL8));
-    if (params->pSigParams->pulsar.spindown) {
-       csbParams->spinDwnOrder=params->pSigParams->pulsar.spindown->length;
-    } else {
-       csbParams->spinDwnOrder=0;
-    }
-    csbParams->mObsSFT=numSFTs;
-    csbParams->tSFT=params->pSFTParams->Tsft;
-    csbParams->tGPS=params->pSFTParams->timestamps->data;
-    csbParams->skyPos[0]=params->pSigParams->pulsar.position.longitude;
-    csbParams->skyPos[1]=params->pSigParams->pulsar.position.latitude;
-    csbParams->OrbitalEccentricity = params->pSigParams->orbit.ecc; /* Orbital eccentricy */
-    csbParams->ArgPeriapse = params->pSigParams->orbit.argp;       /* argument of periapsis (radians) */
-    csbParams->TperiapseSSB = params->pSigParams->orbit.tp; /* time of periapsis passage (in SSB) */
-    /* compute semi-major axis and orbital period */
-    csbParams->SemiMajorAxis = params->pSigParams->orbit.asini;
-    csbParams->OrbitalPeriod = params->pSigParams->orbit.period;
-    csbParams->baryinput=&baryinput;
-    csbParams->emit = &emit;
-    csbParams->earth = &earth;
-    csbParams->edat=params->pSigParams->ephemerides;
-
-    /* Call LALComputeSkyBinary */
-    TRY ( LALComputeSkyBinary (status->statusPtr, output->skyConst, 0, csbParams), status);
-    LALFree(csbParams->skyPos);
-    LALFree(csbParams);
+    XLALPrintError ("Sorry, binary orbits (asini>0) not supported.\n");
+    ABORT (status, GENERATEPULSARSIGNALH_EINPUT, GENERATEPULSARSIGNALH_MSGEINPUT);
   } else {
     /* LALComputeSky parameters */
     csParams=(CSParams *)LALMalloc(sizeof(CSParams));

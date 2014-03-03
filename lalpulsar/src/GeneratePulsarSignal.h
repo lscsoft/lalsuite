@@ -34,7 +34,6 @@
 #include <lal/LALBarycenter.h>
 #include <lal/PulsarDataTypes.h>
 #include <lal/ComputeSky.h>
-#include <lal/ComputeSkyBinary.h>
 #include <lal/Window.h>
 
 /* C++ protection. */
