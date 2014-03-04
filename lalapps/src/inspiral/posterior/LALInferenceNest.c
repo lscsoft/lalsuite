@@ -41,9 +41,11 @@
 
 LALInferenceRunState *initialize(ProcessParamsTable *commandLine);
 void initializeNS(LALInferenceRunState *runState);
+void initializeMalmquistPrior(LALInferenceRunState *runState);
+
 void LogNSSampleAsMCMCSampleToArray(LALInferenceRunState *state, LALInferenceVariables *vars);                             
 void LogNSSampleAsMCMCSampleToFile(LALInferenceRunState *state, LALInferenceVariables *vars);                              
- 
+
 void LogNSSampleAsMCMCSampleToArray(LALInferenceRunState *state, LALInferenceVariables *vars)
 {
   NSFillMCMCVariables(vars,state->priorArgs);
@@ -193,6 +195,37 @@ Initialisation arguments:\n\
 	return(irs);
 }
 
+void initializeMalmquistPrior(LALInferenceRunState *runState)
+{
+  
+  REAL8 malmquist_loudest = 0.0;
+  REAL8 malmquist_second_loudest = 8.0;
+  REAL8 malmquist_network = 0.0;
+  ProcessParamsTable *commandLine=runState->commandLine;
+  ProcessParamsTable *ppt=NULL;
+  
+  ppt=LALInferenceGetProcParamVal(commandLine,"--malmquist-loudest-snr");
+  if(ppt)
+    malmquist_loudest = atof(ppt->value);
+  ppt=LALInferenceGetProcParamVal(commandLine,"--malmquist-second-loudest-snr");
+  if(ppt)
+    malmquist_second_loudest = atof(ppt->value);
+  ppt=LALInferenceGetProcParamVal(commandLine,"--malmquist-network-snr");
+  if(ppt)
+    malmquist_network = atof(ppt->value);
+  LALInferenceAddVariable(runState->priorArgs, "malmquist_loudest_snr", &malmquist_loudest, LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_FIXED);
+  LALInferenceAddVariable(runState->priorArgs, "malmquist_second_loudest_snr", &malmquist_second_loudest, LALINFERENCE_UINT4_t,LALINFERENCE_PARAM_FIXED);
+  LALInferenceAddVariable(runState->priorArgs, "malmquist_network_snr", &malmquist_network, LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_FIXED);
+  UINT4 malmquist=1;
+  LALInferenceAddVariable(runState->priorArgs, "malmquist", &malmquist, LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_FIXED);
+  runState->prior=&LALInferenceInspiralPrior;
+  fprintf(stdout,"\nUsing Malmquist Prior with limits:\n");
+  fprintf(stdout,"Loudest SNR >= %lf\n",malmquist_loudest);
+  fprintf(stdout,"Second Loudest SNR >= %lf\n",malmquist_second_loudest);
+  fprintf(stdout,"Network SNR >= %lf\n",malmquist_network);
+  
+}
+
 
 /***** Initialise Nested Sampling structures ****/
 /* Fill in samples from the prior distribution */
@@ -211,7 +244,7 @@ Nested sampling arguments:\n\
 (--Nruns R)\tNumber of parallel samples from logt to use(1)\n\
 (--tolerance dZ)\tTolerance of nested sampling algorithm (0.1)\n\
 (--randomseed seed)\tRandom seed of sampling distribution\n\
-(--prior_distr )\t Set the prior to use (for the moment the only possible choice is SkyLoc which will use the sky localization project prior. All other values or skipping this option select LALInferenceInspiralPriorNormalised)\n\n\
+(--prior )\t Set the prior to use (InspiralNormalised,SkyLoc,malmquist) default: InspiralNormalised\n\n\
 (--sampleprior N)\t For Testing: Draw N samples from the prior, will not perform the nested sampling integral\n\
   ---------------------------------------------------------------------------------------------------\n\
   --- Noise Model -----------------------------------------------------------------------------------\n\
@@ -257,14 +290,17 @@ Nested sampling arguments:\n\
 	/* Default likelihood is the frequency domain one */
 	runState->likelihood=&LALInferenceUndecomposedFreqDomainLogLikelihood;
 
-        /* Check whether to use the SkyLocalization prior. Otherwise uses the default LALInferenceInspiralPriorNormalised. That should probably be replaced with a swhich over the possible priors. */
-        ppt=LALInferenceGetProcParamVal(commandLine,"--prior_distr");
-        if(ppt){
-            if (!strcmp(ppt->value,"SkyLoc")) runState->prior = &LALInferenceInspiralSkyLocPrior;
-        }
-        else{
-            runState->prior = &LALInferenceInspiralPriorNormalised;
-        }
+    /* Check whether to use the SkyLocalization prior. Otherwise uses the default LALInferenceInspiralPriorNormalised. That should probably be replaced with a swhich over the possible priors. */
+    ppt=LALInferenceGetProcParamVal(commandLine,"--prior");
+    if(ppt){
+      if(!strcmp(ppt->value,"SkyLoc")) runState->prior = &LALInferenceInspiralSkyLocPrior;
+      if(!strcmp(ppt->value,"malmquist")) initializeMalmquistPrior(runState);
+    }
+    else{
+      runState->prior = &LALInferenceInspiralPriorNormalised;
+    }
+    /* For Compatibility with MCMC command line */
+    if(LALInferenceGetProcParamVal(commandLine,"--malmquistprior")) initializeMalmquistPrior(runState);
 	
 	/* Set up the prior for analytic tests if needed */
 	if(LALInferenceGetProcParamVal(commandLine,"--correlatedGaussianLikelihood")){
