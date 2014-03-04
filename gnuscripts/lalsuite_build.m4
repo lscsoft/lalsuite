@@ -1,7 +1,7 @@
 # -*- mode: autoconf; -*-
 # lalsuite_build.m4 - top level build macros
 #
-# serial 80
+# serial 81
 
 # not present in older versions of pkg.m4
 m4_pattern_allow([^PKG_CONFIG(_(PATH|LIBDIR|SYSROOT_DIR|ALLOW_SYSTEM_(CFLAGS|LIBS)))?$])
@@ -25,30 +25,6 @@ m4_append([AC_INIT],[
   m4_pushdef([uvar_prefix],uvar_prefix[]p_)
 ])
 
-AC_DEFUN([_LALSUITE_PRE_PROG_COMPILERS],[
-  # $0: just before LALSUITE_PROG_COMPILERS:
-  # save current values of user variables, then unset them
-  m4_foreach_w([uvar],uvar_list,[
-    uvar_prefix[]uvar="${uvar}"
-    AS_UNSET(uvar)
-  ])
-  m4_pushdef([uvar_prefix],uvar_prefix[]p_)
-  # end $0
-])
-
-AC_DEFUN([_LALSUITE_POST_PROG_COMPILERS],[
-  # $0: just after LALSUITE_PROG_COMPILERS:
-  # save current values of user variables, as set
-  # during compiler configuration
-  m4_popdef([uvar_prefix])
-  m4_foreach_w([uvar],uvar_list,[
-    lalsuite_compiler_[]uvar="${uvar}"
-   _AS_ECHO_LOG([compiler configuration set uvar=${uvar}])
-    uvar="${uvar_prefix[]uvar}"
-  ])
-  # end $0
-])
-
 m4_rename([AC_OUTPUT],[lalsuite_AC_OUTPUT])
 AC_DEFUN([AC_OUTPUT],[
   # just before AC_OUTPUT:
@@ -60,7 +36,7 @@ AC_DEFUN([AC_OUTPUT],[
   # prepend compiler configuration e.g. CFLAGS to AM_CFLAGS,
   # then restore original user-supplied values of user variables
   m4_foreach_w([uvar],uvar_list,[
-    AC_SUBST(AM_[]uvar,"${lalsuite_compiler_[]uvar} ${AM_[]uvar} ${sys_[]uvar}")
+    AC_SUBST(AM_[]uvar,"${AM_[]uvar} ${sys_[]uvar}")
     uvar="${uvar_prefix[]uvar}"
   ])
   # call original AC_OUTPUT
@@ -267,6 +243,34 @@ AC_DEFUN([LALSUITE_REQUIRE_F77],[
 m4_foreach([lang],[[C++],[Fortran 77],[Fortran]],[
   m4_defun([AC_LANG_COMPILER(]lang[)],[])
   m4_defun([AC_LANG_PREPROC(]lang[)],[])
+])
+
+AC_DEFUN([_LALSUITE_PRE_PROG_COMPILERS],[
+  # $0: just before LALSUITE_PROG_COMPILERS:
+  # save current values of user variables, then unset them
+  LALSUITE_PUSH_UVARS
+  LALSUITE_CLEAR_UVARS
+  # end $0
+])
+
+AC_DEFUN([_LALSUITE_POST_PROG_COMPILERS],[
+  # $0: just after LALSUITE_PROG_COMPILERS:
+  # save values of user variables set during compiler configuration,
+  # restore previous values of user variables, then add compiler values
+  # of user variables to then using LALSUITE_ADD_FLAGS
+  m4_foreach_w([uvar],uvar_list,[
+    lalsuite_compiler_[]uvar="${uvar}"
+  ])
+  LALSUITE_POP_UVARS
+  LALSUITE_ADD_FLAGS([C],[${lalsuite_compiler_CPPFLAGS} ${lalsuite_compiler_CFLAGS}],[${lalsuite_compiler_LDFLAGS}])
+  AS_IF([test "${lalsuite_require_cxx}" = true],[
+    LALSUITE_ADD_FLAGS([CXX],[${lalsuite_compiler_CXXFLAGS}],[])
+  ])
+  AS_IF([test "${lalsuite_require_f77}" = true],[
+    LALSUITE_ADD_FLAGS([FC],[${lalsuite_compiler_FCFLAGS}],[])
+    LALSUITE_ADD_FLAGS([F],[${lalsuite_compiler_FFLAGS}],[])
+  ])
+  # end $0
 ])
 
 AC_DEFUN([LALSUITE_PROG_COMPILERS],[
