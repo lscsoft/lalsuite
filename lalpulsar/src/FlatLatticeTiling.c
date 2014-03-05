@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2007, 2008, 2012 Karl Wette
+// Copyright (C) 2007, 2008, 2012, 2014 Karl Wette
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -32,11 +32,12 @@
 #include <gsl/gsl_nan.h>
 #include <gsl/gsl_sf.h>
 
+#include <lal/FlatLatticeTiling.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALMalloc.h>
 #include <lal/LALConstants.h>
 #include <lal/XLALError.h>
-#include <lal/FlatLatticeTiling.h>
+#include <lal/GSLSupport.h>
 
 #ifdef __GNUC__
 #define UNUSED __attribute__ ((unused))
@@ -48,9 +49,9 @@
 /// Flat lattice tiling bound info
 ///
 typedef struct tagFLT_Bound {
-  bool tiled;				///< Is the bound tiled, i.e. non-singular?
-  FlatLatticeBound func;		///< Parameter space bound function
-  void* data;				///< Arbitrary data describing parameter space
+  bool tiled;                                   ///< Is the bound tiled, i.e. non-singular?
+  FlatLatticeBound func;                        ///< Parameter space bound function
+  void* data;                                   ///< Arbitrary data describing parameter space
 } FLT_Bound;
 
 ///
@@ -72,25 +73,25 @@ typedef enum tagFLT_Status {
 /// Flat lattice tiling state structure
 ///
 struct tagFlatLatticeTiling {
-  size_t dimensions;			///< Dimension of the parameter space
-  size_t tiled_dimensions;		///< Tiled dimension of the parameter space
-  FLT_Status status;			///< Status of the tiling
-  FLT_Bound *bounds;			///< Array of parameter space bound info for each dimension
-  FlatLatticeGenerator generator;	///< Flat tiling lattice generator function
-  gsl_vector* phys_scale;		///< Normalised to physical coordinate scaling
-  gsl_vector* phys_offset;		///< Normalised to physical coordinate offset
-  gsl_vector* phys_incr;		///< Physical increments of the lattice tiling generator
-  gsl_vector* phys_bbox;		///< Physical metric ellipse bounding box extents
-  gsl_matrix* metric;			///< Normalised parameter space metric
-  gsl_matrix* increment;		///< Increment vectors of the lattice tiling generator
-  gsl_vector* curr_point;		///< Current lattice point
-  gsl_vector_uint* curr_bound;		///< Indices of current bound on parameter space
-  gsl_matrix* curr_lower;		///< Current lower bound on parameter space
-  gsl_matrix* curr_upper;		///< Current upper bound on parameter space
-  gsl_vector* curr_lower_pad;		///< Current lower padding of parameter space
-  gsl_vector* curr_upper_pad;		///< Current upper padding of parameter space
-  gsl_vector* curr_phys_point;		///< Current physical parameter-space point
-  unsigned long count;			///< Total number of points generated so far
+  size_t dimensions;                            ///< Dimension of the parameter space
+  size_t tiled_dimensions;                      ///< Tiled dimension of the parameter space
+  FLT_Status status;                            ///< Status of the tiling
+  FLT_Bound *bounds;                            ///< Array of parameter space bound info for each dimension
+  FlatLatticeGenerator generator;               ///< Flat tiling lattice generator function
+  gsl_vector* phys_scale;                       ///< Normalised to physical coordinate scaling
+  gsl_vector* phys_offset;                      ///< Normalised to physical coordinate offset
+  gsl_vector* phys_incr;                        ///< Physical increments of the lattice tiling generator
+  gsl_vector* phys_bbox;                        ///< Physical metric ellipse bounding box extents
+  gsl_matrix* metric;                           ///< Normalised parameter space metric
+  gsl_matrix* increment;                        ///< Increment vectors of the lattice tiling generator
+  gsl_vector* curr_point;                       ///< Current lattice point
+  gsl_vector_uint* curr_bound;                  ///< Indices of current bound on parameter space
+  gsl_matrix* curr_lower;                       ///< Current lower bound on parameter space
+  gsl_matrix* curr_upper;                       ///< Current upper bound on parameter space
+  gsl_vector* curr_lower_pad;                   ///< Current lower padding of parameter space
+  gsl_vector* curr_upper_pad;                   ///< Current upper padding of parameter space
+  gsl_vector* curr_phys_point;                  ///< Current physical parameter-space point
+  unsigned long count;                          ///< Total number of points generated so far
 };
 
 FlatLatticeTiling* XLALCreateFlatLatticeTiling(
@@ -100,7 +101,6 @@ FlatLatticeTiling* XLALCreateFlatLatticeTiling(
 
   // Check input
   XLAL_CHECK_NULL(dimensions > 0, XLAL_EINVAL);
-
   const size_t n = dimensions;
 
   // Allocate and initialise tiling structure
@@ -201,24 +201,36 @@ size_t XLALGetFlatLatticeDimensions(
   FlatLatticeTiling* tiling
   )
 {
+
+  // Check tiling
   XLAL_CHECK_VAL(0, tiling != NULL, XLAL_EFAULT);
+
   return tiling->dimensions;
+
 }
 
 const gsl_vector* XLALGetFlatLatticePoint(
   FlatLatticeTiling* tiling
   )
 {
+
+  // Check tiling
   XLAL_CHECK_NULL(tiling != NULL, XLAL_EFAULT);
+
   return tiling->status == FLT_S_STARTED ? tiling->curr_phys_point : NULL;
+
 }
 
 unsigned long XLALGetFlatLatticePointCount(
   FlatLatticeTiling* tiling
   )
 {
+
+  // Check tiling
   XLAL_CHECK_VAL(0, tiling != NULL, XLAL_EFAULT);
+
   return tiling->count;
+
 }
 
 gsl_matrix* XLALGetFlatLatticeIncrements(
@@ -276,14 +288,14 @@ int XLALSetFlatLatticeBound(
 /// Get physical bounds and padding for the specified dimension
 ///
 static void GetPhysBounds(
-  FlatLatticeTiling* tiling,		///< [in] Tiling state
-  const size_t dimension,		///< [in] Dimension on which bound applies
-  const gsl_vector_uint* curr_bound,	///< [in] Indices of current bounds
-  const gsl_vector* phys_point,		///< [in] Physical point at which to find bounds
-  gsl_vector* phys_lower,		///< [out] Physical lower bounds on point
-  gsl_vector* phys_upper,		///< [out] Physical upper bounds on point
-  double* phys_lower_pad,		///< [out] Physical padding of lower parameter space bounds (optional)
-  double* phys_upper_pad		///< [out] Physical padding of upper parameter space bounds (optional)
+  FlatLatticeTiling* tiling,                    ///< [in] Tiling state
+  const size_t dimension,                       ///< [in] Dimension on which bound applies
+  const gsl_vector_uint* curr_bound,            ///< [in] Indices of current bounds
+  const gsl_vector* phys_point,                 ///< [in] Physical point at which to find bounds
+  gsl_vector* phys_lower,                       ///< [out] Physical lower bounds on point
+  gsl_vector* phys_upper,                       ///< [out] Physical upper bounds on point
+  double* phys_lower_pad,                       ///< [out] Physical padding of lower parameter space bounds (optional)
+  double* phys_upper_pad                        ///< [out] Physical padding of upper parameter space bounds (optional)
   )
 {
 
@@ -497,11 +509,10 @@ int XLALNextFlatLatticePoint(
   )
 {
 
-  const size_t n = tiling->dimensions;
-
   // Check tiling
   XLAL_CHECK(tiling != NULL, XLAL_EFAULT);
   XLAL_CHECK(tiling->status != FLT_S_INCOMPLETE, XLAL_EFAILED);
+  const size_t n = tiling->dimensions;
 
   // If finished status, nothing more to be done!
   if (tiling->status == FLT_S_FINISHED) {
@@ -770,11 +781,10 @@ int XLALNearestFlatLatticePointToRandomPoints(
   )
 {
 
-  const size_t n = tiling->dimensions;
-
   // Check tiling
   XLAL_CHECK(tiling != NULL, XLAL_EFAULT);
   XLAL_CHECK(tiling->status != FLT_S_INCOMPLETE, XLAL_EFAILED);
+  const size_t n = tiling->dimensions;
 
   // Check input
   XLAL_CHECK(rng != NULL, XLAL_EFAULT);
@@ -1040,8 +1050,8 @@ gsl_vector* XLALMetricEllipseBoundingBox(
 /// Orthonormalise the columns of a matrix with respect to a metric (matrix is lower triangular)
 ///
 static int OrthonormaliseWRTMetric(
-  gsl_matrix* matrix,		///< [in] Matrix of columns to orthonormalise
-  const gsl_matrix* metric	///< [in] Metric to orthonormalise with respect to
+  gsl_matrix* matrix,                           ///< [in] Matrix of columns to orthonormalise
+  const gsl_matrix* metric                      ///< [in] Metric to orthonormalise with respect to
   )
 {
 
@@ -1095,7 +1105,7 @@ static int OrthonormaliseWRTMetric(
 /// Transform a lattice generator to a square lower triangular form
 ///
 static gsl_matrix* SquareLowerTriangularLatticeGenerator(
-  gsl_matrix* generator		///< [in] Generator matrix of lattice
+  gsl_matrix* generator                         ///< [in] Generator matrix of lattice
   )
 {
 
@@ -1183,9 +1193,9 @@ static gsl_matrix* SquareLowerTriangularLatticeGenerator(
 /// Normalise a lattice generator matrix to have a specified covering radius
 ///
 static int NormaliseLatticeGenerator(
-  gsl_matrix* generator,	///< [in] Generator matrix of lattice
-  const double norm_thickness,	///< [in] Normalised thickness of lattice
-  const double covering_radius	///< [in] Desired covering radius
+  gsl_matrix* generator,                        ///< [in] Generator matrix of lattice
+  const double norm_thickness,                  ///< [in] Normalised thickness of lattice
+  const double covering_radius                  ///< [in] Desired covering radius
   )
 {
 
