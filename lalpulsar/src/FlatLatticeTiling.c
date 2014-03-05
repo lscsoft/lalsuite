@@ -77,7 +77,7 @@ struct tagFlatLatticeTiling {
   size_t tiled_dimensions;                      ///< Tiled dimension of the parameter space
   FLT_Status status;                            ///< Status of the tiling
   FLT_Bound *bounds;                            ///< Array of parameter space bound info for each dimension
-  FlatLatticeGenerator generator;               ///< Flat tiling lattice generator function
+  FlatLatticeType lattice;                      ///< Type of lattice to generate flat tiling with
   gsl_vector* phys_scale;                       ///< Normalised to physical coordinate scaling
   gsl_vector* phys_offset;                      ///< Normalised to physical coordinate offset
   gsl_vector* phys_incr;                        ///< Physical increments of the lattice tiling generator
@@ -326,20 +326,20 @@ static int FLT_NormaliseLatticeGenerator(
 }
 
 ///
-/// Find the lattice increment vectors for a given metric and mismatch
+/// Find the lattice increment vectors for a given lattice, metric and mismatch
 ///
 static gsl_matrix* FLT_MetricLatticeIncrements(
-  const FlatLatticeGenerator generator,         ///< [in] Lattice generator function
+  const FlatLatticeType lattice,                ///< [in] Lattice type
   const gsl_matrix* metric,                     ///< [in] Parameter space metric
   const double max_mismatch                     ///< [in] Maximum prescribed mismatch
   )
 {
 
   // Check input
-  XLAL_CHECK_NULL(generator != NULL, XLAL_EFAULT);
   XLAL_CHECK_NULL(metric != NULL, XLAL_EFAULT);
   XLAL_CHECK_NULL(metric->size1 == metric->size2, XLAL_ESIZE);
   XLAL_CHECK_NULL(max_mismatch > 0.0, XLAL_EINVAL);
+  const size_t r = metric->size1;
 
   // Allocate memory
   gsl_matrix* directions = gsl_matrix_alloc(metric->size1, metric->size2);
@@ -361,7 +361,48 @@ static gsl_matrix* FLT_MetricLatticeIncrements(
   // Get lattice generator
   gsl_matrix* gen_matrix = NULL;
   double norm_thickness = 0.0;
-  XLAL_CHECK_NULL((generator)(metric->size1, &gen_matrix, &norm_thickness) == XLAL_SUCCESS, XLAL_EFAILED);
+  switch (lattice) {
+
+  case FLAT_LATTICE_TYPE_CUBIC:   // Cubic (\f$Z_n\f$) lattice
+
+    // Allocate memory
+    gen_matrix = gsl_matrix_alloc(r, r);
+    XLAL_CHECK_NULL(gen_matrix != NULL, XLAL_ENOMEM);
+
+    // Create generator
+    gsl_matrix_set_identity(gen_matrix);
+
+    // Calculate normalised thickness
+    norm_thickness = pow(sqrt(r)/2, r);
+
+    break;
+
+  case FLAT_LATTICE_TYPE_ANSTAR:   // An-star (\f$A_n^*\f$) lattice
+
+    // Allocate memory
+    gen_matrix = gsl_matrix_alloc(r + 1, r);
+    XLAL_CHECK_NULL(gen_matrix != NULL, XLAL_ENOMEM);
+
+    // Create generator in (r + 1) space
+    gsl_matrix_set_all(gen_matrix, 0.0);
+    {
+      gsl_vector_view first_row = gsl_matrix_row(gen_matrix, 0);
+      gsl_vector_view sub_diag = gsl_matrix_subdiagonal(gen_matrix, 1);
+      gsl_vector_view last_col = gsl_matrix_column(gen_matrix, r - 1);
+      gsl_vector_set_all(&first_row.vector, 1.0);
+      gsl_vector_set_all(&sub_diag.vector, -1.0);
+      gsl_vector_set_all(&last_col.vector, 1.0 / (r + 1.0));
+      gsl_vector_set(&last_col.vector, 0, -1.0 * r / (r + 1.0));
+    }
+
+    // Calculate normalised thickness
+    norm_thickness = sqrt(r + 1.0)*pow((1.0*r*(r + 2))/(12.0*(r + 1)), 0.5*r);
+
+    break;
+
+  default:
+    XLAL_ERROR_NULL(XLAL_EINVAL, "Invalid 'lattice'=%u", lattice);
+  }
 
   // Transform lattice generator to square lower triangular
   gsl_matrix* sqlwtr_gen_matrix = FLT_SquareLowerTriangularLatticeGenerator(gen_matrix);
@@ -460,7 +501,7 @@ FlatLatticeTiling* XLALCreateFlatLatticeTiling(
   tiling->dimensions = n;
   tiling->tiled_dimensions = 0;
   tiling->status = FLT_S_INCOMPLETE;
-  tiling->generator = NULL;
+  tiling->lattice = FLAT_LATTICE_TYPE_MAX;
   tiling->count = 0;
 
   // Allocate parameter space bounds info
@@ -635,40 +676,21 @@ int XLALSetFlatLatticeBound(
 
 }
 
-int XLALSetFlatLatticeGenerator(
+int XLALSetFlatLatticeTypeAndMetric(
   FlatLatticeTiling* tiling,
-  const FlatLatticeGenerator generator
-  )
-{
-
-  // Check tiling
-  XLAL_CHECK(tiling != NULL, XLAL_EFAULT);
-  XLAL_CHECK(tiling->status == FLT_S_INCOMPLETE, XLAL_EFAILED);
-
-  // Check input
-  XLAL_CHECK(generator != NULL, XLAL_EFAILED);
-
-  // Set the flat lattice tiling generator
-  tiling->generator = generator;
-
-  return XLAL_SUCCESS;
-
-}
-
-int XLALSetFlatLatticeMetric(
-  FlatLatticeTiling* tiling,
+  const FlatLatticeType lattice,
   const gsl_matrix* metric,
   const double max_mismatch
   )
 {
 
-  const size_t n = tiling->dimensions;
-
   // Check tiling
   XLAL_CHECK(tiling != NULL, XLAL_EFAULT);
   XLAL_CHECK(tiling->status == FLT_S_INCOMPLETE, XLAL_EFAILED);
+  const size_t n = tiling->dimensions;
 
   // Check input
+  XLAL_CHECK(lattice < FLAT_LATTICE_TYPE_MAX, XLAL_EINVAL, "'lattice'=%u must be in [0,%u)", lattice, FLAT_LATTICE_TYPE_MAX);
   XLAL_CHECK(metric != NULL, XLAL_EFAULT);
   XLAL_CHECK(metric->size1 == n && metric->size2 == n, XLAL_EINVAL);
   XLAL_CHECK(max_mismatch > 0, XLAL_EINVAL);
@@ -681,8 +703,8 @@ int XLALSetFlatLatticeMetric(
     tiling->tiled_dimensions += tiling->bounds[i].tiled ? 1 : 0;
   }
 
-  // Check that the flat lattice tiling generator has been set
-  XLAL_CHECK(tiling->generator != NULL, XLAL_EFAILED);
+  // Save the type of lattice to generate flat tiling with
+  tiling->lattice = lattice;
 
   // Initialise parameter space bound indices
   gsl_vector_uint_set_zero(tiling->curr_bound);
@@ -751,7 +773,7 @@ int XLALSetFlatLatticeMetric(
     }
 
     // Calculate metric lattice increment vectors
-    gsl_matrix* tincrement = FLT_MetricLatticeIncrements(tiling->generator, tmetric, max_mismatch);
+    gsl_matrix* tincrement = FLT_MetricLatticeIncrements(tiling->lattice, tmetric, max_mismatch);
     XLAL_CHECK(tincrement != NULL, XLAL_EFAILED);
 
     // Calculate metric ellipse bounding box
@@ -1288,69 +1310,6 @@ int XLALNearestFlatLatticePointToRandomPoints(
   gsl_vector_uint_free(curr_bound);
   gsl_vector_free(phys_lower);
   gsl_vector_free(phys_width);
-
-  return XLAL_SUCCESS;
-
-}
-
-int XLALCubicLatticeGenerator(
-  const size_t dimensions,
-  gsl_matrix** generator,
-  double* norm_thickness
-  )
-{
-
-  const size_t r = dimensions;
-
-  // Check input
-  XLAL_CHECK(generator != NULL, XLAL_EFAULT);
-  XLAL_CHECK(norm_thickness != NULL, XLAL_EFAULT);
-
-  // Allocate memory
-  *generator = gsl_matrix_alloc(r, r);
-  XLAL_CHECK(*generator != NULL, XLAL_ENOMEM);
-
-  // Create generator
-  gsl_matrix_set_identity(*generator);
-
-  // Calculate normalised thickness
-  *norm_thickness = pow(sqrt(r)/2, r);
-
-  return XLAL_SUCCESS;
-
-}
-
-int XLALAnstarLatticeGenerator(
-  const size_t dimensions,
-  gsl_matrix** generator,
-  double* norm_thickness
-  )
-{
-
-  const size_t r = dimensions;
-
-  // Check input
-  XLAL_CHECK(generator != NULL, XLAL_EFAULT);
-  XLAL_CHECK(norm_thickness != NULL, XLAL_EFAULT);
-
-  // Allocate memory
-  *generator = gsl_matrix_alloc(r + 1, r);
-  XLAL_CHECK(*generator != NULL, XLAL_ENOMEM);
-
-  // Create generator in (r + 1) space
-  gsl_matrix_set_all(*generator, 0.0);
-  {
-    gsl_vector_view first_row = gsl_matrix_row(*generator, 0);
-    gsl_vector_view sub_diag = gsl_matrix_subdiagonal(*generator, 1);
-    gsl_vector_view last_col = gsl_matrix_column(*generator, r - 1);
-    gsl_vector_set_all(&first_row.vector, 1.0);
-    gsl_vector_set_all(&sub_diag.vector, -1.0);
-    gsl_vector_set_all(&last_col.vector, 1.0 / (r + 1.0));
-    gsl_vector_set(&last_col.vector, 0, -1.0 * r / (r + 1.0));
-  }
-
-  // Calculate normalised thickness
-  *norm_thickness = sqrt(r + 1.0)*pow((1.0*r*(r + 2))/(12.0*(r + 1)), 0.5*r);
 
   return XLAL_SUCCESS;
 

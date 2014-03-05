@@ -53,13 +53,13 @@ typedef void (*FlatLatticeBound)(
   );
 
 ///
-/// Flat tiling lattice generator function
+/// Type of lattice to generate flat tiling with
 ///
-typedef int (*FlatLatticeGenerator)(
-  const size_t dimensions,                      ///< [in] Number of dimensions
-  gsl_matrix** generator,                       ///< [out] Generator matrix
-  double* norm_thickness                        ///< [out] Normalised thickness
-  );
+typedef enum tagFlatLatticeType {
+  FLAT_LATTICE_TYPE_CUBIC,                      ///< Cubic (\f$Z_n\f$) lattice
+  FLAT_LATTICE_TYPE_ANSTAR,                     ///< An-star (\f$A_n^*\f$) lattice
+  FLAT_LATTICE_TYPE_MAX
+} FlatLatticeType;
 
 ///
 /// Flat lattice tiling state structure
@@ -123,18 +123,11 @@ int XLALSetFlatLatticeBound(
   );
 
 ///
-/// Set the flat tiling lattice generator
+/// Set the flat tiling lattice type, metric and maximum mismatch
 ///
-int XLALSetFlatLatticeGenerator(
+int XLALSetFlatLatticeTypeAndMetric(
   FlatLatticeTiling* tiling,                    ///< [in] Tiling state
-  const FlatLatticeGenerator generator          ///< [in] Lattice generator function
-  );
-
-///
-/// Set the flat lattice tiling metric and maximum mismatch
-///
-int XLALSetFlatLatticeMetric(
-  FlatLatticeTiling* tiling,                    ///< [in] Tiling state
+  const FlatLatticeType lattice,                ///< [in] Lattice type
   const gsl_matrix* metric,                     ///< [in] Parameter space metric
   const double max_mismatch                     ///< [in] Maximum prescribed mismatch
   );
@@ -179,30 +172,6 @@ int XLALNearestFlatLatticePointToRandomPoints(
   gsl_vector_ulong** nearest_indices,           ///< [in/out] Pointer to vector of indices of nearest lattice point
   gsl_vector** nearest_distances,               ///< [in/out] Pointer to vector of distances to nearest lattice point
   gsl_matrix** workspace                        ///< [in/out] Pointer to workspace matrix for computing distances
-  );
-
-#ifdef SWIG // SWIG interface directives
-SWIGLAL(FUNCTION_POINTER(XLALCubicLatticeGenerator));
-#endif
-///
-/// Calculate the generator matrix for a cubic (\f$Z_n\f$) lattice
-///
-int XLALCubicLatticeGenerator(
-  const size_t dimensions,                      ///< [in] Number of dimensions
-  gsl_matrix** generator,                       ///< [out] Generator matrix
-  double* norm_thickness                        ///< [out] Normalised thickness
-  );
-
-#ifdef SWIG // SWIG interface directives
-SWIGLAL(FUNCTION_POINTER(XLALAnstarLatticeGenerator));
-#endif
-///
-/// Calculate the generator matrix for a \f$A_n^*\f$ lattice
-///
-int XLALAnstarLatticeGenerator(
-  const size_t dimensions,                      ///< [in] Number of dimensions
-  gsl_matrix** generator,                       ///< [out] Generator matrix
-  double* norm_thickness                        ///< [out] Normalised thickness
   );
 
 ///
