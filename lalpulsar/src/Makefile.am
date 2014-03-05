@@ -19,6 +19,7 @@ lalpulsarinclude_HEADERS = \
 	DopplerScan.h \
 	ExtrapolatePulsarSpins.h \
 	FitToPulsar.h \
+	FlatLatticeTiling.h \
 	FlatMesh.h \
 	FlatPulsarMetric.h \
 	FoldAmplitudes.h \
@@ -84,6 +85,7 @@ liblalpulsar_la_SOURCES = \
 	DriveHough.c \
 	ExtrapolatePulsarSpins.c \
 	FitToPulsar.c \
+	FlatLatticeTiling.c \
 	FlatMesh.c \
 	FlatPulsarMetric.c \
 	FoldAmplitudes.c \
