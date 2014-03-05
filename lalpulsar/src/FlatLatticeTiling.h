@@ -84,7 +84,7 @@ void XLALDestroyFlatLatticeTiling(
 /// Return the number of dimensions being tiled
 ///
 size_t XLALGetFlatLatticeDimensions(
-  FlatLatticeTiling* tiling                     ///< [in] Tiling state
+  const FlatLatticeTiling* tiling               ///< [in] Tiling state
   );
 
 #ifdef SWIG // SWIG interface directives
@@ -94,14 +94,14 @@ SWIGLAL(RETURNS_PROPERTY(XLALGetFlatLatticePoint));
 /// Return the current lattice tiling parameter space point
 ///
 const gsl_vector* XLALGetFlatLatticePoint(
-  FlatLatticeTiling* tiling                     ///< [in] Tiling state
+  const FlatLatticeTiling* tiling               ///< [in] Tiling state
   );
 
 ///
 /// Return the current number of flat lattice tiling parameter space points
 ///
 unsigned long XLALGetFlatLatticePointCount(
-  FlatLatticeTiling* tiling                     ///< [in] Tiling state
+  const FlatLatticeTiling* tiling               ///< [in] Tiling state
   );
 
 ///
@@ -115,7 +115,7 @@ unsigned long XLALCountFlatLatticePoints(
 /// Return the increment vectors which are used to generate the lattice.
 ///
 gsl_matrix* XLALGetFlatLatticeIncrements(
-  FlatLatticeTiling* tiling                     ///< [in] Tiling state
+  const FlatLatticeTiling* tiling               ///< [in] Tiling state
   );
 
 ///

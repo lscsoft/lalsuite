@@ -428,7 +428,7 @@ static gsl_matrix* FLT_MetricLatticeIncrements(
 /// Get physical bounds and padding for the specified dimension
 ///
 static void FLT_GetPhysBounds(
-  FlatLatticeTiling* tiling,                    ///< [in] Tiling state
+  const FlatLatticeTiling* tiling,              ///< [in] Tiling state
   const size_t dimension,                       ///< [in] Dimension on which bound applies
   const gsl_vector_uint* curr_bound,            ///< [in] Indices of current bounds
   const gsl_vector* phys_point,                 ///< [in] Physical point at which to find bounds
@@ -591,7 +591,7 @@ void XLALDestroyFlatLatticeTiling(
 }
 
 size_t XLALGetFlatLatticeDimensions(
-  FlatLatticeTiling* tiling
+  const FlatLatticeTiling* tiling
   )
 {
 
@@ -603,7 +603,7 @@ size_t XLALGetFlatLatticeDimensions(
 }
 
 const gsl_vector* XLALGetFlatLatticePoint(
-  FlatLatticeTiling* tiling
+  const FlatLatticeTiling* tiling
   )
 {
 
@@ -615,7 +615,7 @@ const gsl_vector* XLALGetFlatLatticePoint(
 }
 
 unsigned long XLALGetFlatLatticePointCount(
-  FlatLatticeTiling* tiling
+  const FlatLatticeTiling* tiling
   )
 {
 
@@ -656,7 +656,7 @@ unsigned long XLALCountFlatLatticePoints(
 }
 
 gsl_matrix* XLALGetFlatLatticeIncrements(
-  FlatLatticeTiling* tiling
+  const FlatLatticeTiling* tiling
   )
 {
 
