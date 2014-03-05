@@ -95,6 +95,50 @@ struct tagFlatLatticeTiling {
 };
 
 ///
+/// Find the bounding box of the mismatch ellipses of a metric
+///
+static gsl_vector* FLT_MetricEllipseBoundingBox(
+  const gsl_matrix* metric,                     ///< [in] Metric to bound
+  const double max_mismatch                     ///< [in] Maximum mismatch with respect to metric
+  )
+{
+
+  const size_t n = metric->size1;
+
+  // Check input
+  XLAL_CHECK_NULL(metric->size1 == metric->size2, XLAL_ESIZE);
+
+  // Allocate memory
+  gsl_matrix* LU_decomp = gsl_matrix_alloc(n, n);
+  XLAL_CHECK_NULL(LU_decomp != NULL, XLAL_ENOMEM);
+  gsl_permutation* LU_perm = gsl_permutation_alloc(n);
+  XLAL_CHECK_NULL(LU_perm != NULL, XLAL_ENOMEM);
+  gsl_matrix* inverse = gsl_matrix_alloc(n, n);
+  XLAL_CHECK_NULL(inverse != NULL, XLAL_ENOMEM);
+  gsl_vector* bound_box = gsl_vector_alloc(n);
+  XLAL_CHECK_NULL(bound_box != NULL, XLAL_ENOMEM);
+
+  // Compute metric inverse
+  int LU_sign = 0;
+  gsl_matrix_memcpy(LU_decomp, metric);
+  gsl_linalg_LU_decomp(LU_decomp, LU_perm, &LU_sign);
+  gsl_linalg_LU_invert(LU_decomp, LU_perm, inverse);
+
+  // Compute bounding box
+  for (size_t i = 0; i < n; ++i) {
+    gsl_vector_set(bound_box, i, sqrt(max_mismatch * gsl_matrix_get(inverse, i ,i)));
+  }
+
+  // Cleanup
+  gsl_matrix_free(LU_decomp);
+  gsl_permutation_free(LU_perm);
+  gsl_matrix_free(inverse);
+
+  return bound_box;
+
+}
+
+///
 /// Orthonormalise the columns of a matrix with respect to a metric (matrix is lower triangular)
 ///
 static int FLT_OrthonormaliseWRTMetric(
@@ -278,6 +322,63 @@ static int FLT_NormaliseLatticeGenerator(
   gsl_permutation_free(LU_perm);
 
   return XLAL_SUCCESS;
+
+}
+
+///
+/// Find the lattice increment vectors for a given metric and mismatch
+///
+static gsl_matrix* FLT_MetricLatticeIncrements(
+  const FlatLatticeGenerator generator,         ///< [in] Lattice generator function
+  const gsl_matrix* metric,                     ///< [in] Parameter space metric
+  const double max_mismatch                     ///< [in] Maximum prescribed mismatch
+  )
+{
+
+  // Check input
+  XLAL_CHECK_NULL(generator != NULL, XLAL_EFAULT);
+  XLAL_CHECK_NULL(metric != NULL, XLAL_EFAULT);
+  XLAL_CHECK_NULL(metric->size1 == metric->size2, XLAL_ESIZE);
+  XLAL_CHECK_NULL(max_mismatch > 0.0, XLAL_EINVAL);
+
+  // Allocate memory
+  gsl_matrix* directions = gsl_matrix_alloc(metric->size1, metric->size2);
+  XLAL_CHECK_NULL(directions != NULL, XLAL_ENOMEM);
+  gsl_matrix* increment = gsl_matrix_alloc(metric->size1, metric->size2);
+  XLAL_CHECK_NULL(increment != NULL, XLAL_ENOMEM);
+
+  // Check metric is positive definite, by trying to compute its Cholesky decomposition
+  gsl_matrix_memcpy(directions, metric);   // Make copy to preserve original
+  gsl_error_handler_t* old_handler = gsl_set_error_handler_off();
+  int retn = gsl_linalg_cholesky_decomp(directions);
+  gsl_set_error_handler(old_handler);
+  XLAL_CHECK_NULL(retn == 0, XLAL_EFAILED, "metric is not positive definite");
+
+  // Find orthonormalise directions with respect to tiling metric
+  gsl_matrix_set_identity(directions);
+  XLAL_CHECK_NULL(FLT_OrthonormaliseWRTMetric(directions, metric) == XLAL_SUCCESS, XLAL_EFAILED);
+
+  // Get lattice generator
+  gsl_matrix* gen_matrix = NULL;
+  double norm_thickness = 0.0;
+  XLAL_CHECK_NULL((generator)(metric->size1, &gen_matrix, &norm_thickness) == XLAL_SUCCESS, XLAL_EFAILED);
+
+  // Transform lattice generator to square lower triangular
+  gsl_matrix* sqlwtr_gen_matrix = FLT_SquareLowerTriangularLatticeGenerator(gen_matrix);
+  XLAL_CHECK_NULL(sqlwtr_gen_matrix != NULL, XLAL_EFAILED);
+
+  // Normalise lattice generator so covering radius is sqrt(mismatch)
+  XLAL_CHECK_NULL(FLT_NormaliseLatticeGenerator(sqlwtr_gen_matrix, norm_thickness, sqrt(max_mismatch)) == XLAL_SUCCESS, XLAL_EFAILED);
+
+  // Compute the increment vectors of the lattice generator along the orthogonal directions
+  gsl_blas_dgemm(CblasNoTrans, CblasNoTrans, 1.0, directions, sqlwtr_gen_matrix, 0.0, increment);
+
+  // Cleanup
+  gsl_matrix_free(directions);
+  gsl_matrix_free(gen_matrix);
+  gsl_matrix_free(sqlwtr_gen_matrix);
+
+  return increment;
 
 }
 
@@ -650,11 +751,11 @@ int XLALSetFlatLatticeMetric(
     }
 
     // Calculate metric lattice increment vectors
-    gsl_matrix* tincrement = XLALMetricLatticeIncrements(tiling->generator, tmetric, max_mismatch);
+    gsl_matrix* tincrement = FLT_MetricLatticeIncrements(tiling->generator, tmetric, max_mismatch);
     XLAL_CHECK(tincrement != NULL, XLAL_EFAILED);
 
     // Calculate metric ellipse bounding box
-    gsl_vector* tbounding_box = XLALMetricEllipseBoundingBox(tmetric, max_mismatch);
+    gsl_vector* tbounding_box = FLT_MetricEllipseBoundingBox(tmetric, max_mismatch);
     XLAL_CHECK(tbounding_box != NULL, XLAL_EFAILED);
 
     // Copy increment vectors and bounding box so that non-tiled dimensions are zero
@@ -1189,101 +1290,6 @@ int XLALNearestFlatLatticePointToRandomPoints(
   gsl_vector_free(phys_width);
 
   return XLAL_SUCCESS;
-
-}
-
-gsl_vector* XLALMetricEllipseBoundingBox(
-  const gsl_matrix* metric,
-  const double max_mismatch
-  )
-{
-
-  const size_t n = metric->size1;
-
-  // Check input
-  XLAL_CHECK_NULL(metric->size1 == metric->size2, XLAL_ESIZE);
-
-  // Allocate memory
-  gsl_matrix* LU_decomp = gsl_matrix_alloc(n, n);
-  XLAL_CHECK_NULL(LU_decomp != NULL, XLAL_ENOMEM);
-  gsl_permutation* LU_perm = gsl_permutation_alloc(n);
-  XLAL_CHECK_NULL(LU_perm != NULL, XLAL_ENOMEM);
-  gsl_matrix* inverse = gsl_matrix_alloc(n, n);
-  XLAL_CHECK_NULL(inverse != NULL, XLAL_ENOMEM);
-  gsl_vector* bound_box = gsl_vector_alloc(n);
-  XLAL_CHECK_NULL(bound_box != NULL, XLAL_ENOMEM);
-
-  // Compute metric inverse
-  int LU_sign = 0;
-  gsl_matrix_memcpy(LU_decomp, metric);
-  gsl_linalg_LU_decomp(LU_decomp, LU_perm, &LU_sign);
-  gsl_linalg_LU_invert(LU_decomp, LU_perm, inverse);
-
-  // Compute bounding box
-  for (size_t i = 0; i < n; ++i) {
-    gsl_vector_set(bound_box, i, sqrt(max_mismatch * gsl_matrix_get(inverse, i ,i)));
-  }
-
-  // Cleanup
-  gsl_matrix_free(LU_decomp);
-  gsl_permutation_free(LU_perm);
-  gsl_matrix_free(inverse);
-
-  return bound_box;
-
-}
-
-gsl_matrix* XLALMetricLatticeIncrements(
-  const FlatLatticeGenerator generator,
-  const gsl_matrix *metric,
-  const double max_mismatch
-  )
-{
-
-  // Check input
-  XLAL_CHECK_NULL(generator != NULL, XLAL_EFAULT);
-  XLAL_CHECK_NULL(metric != NULL, XLAL_EFAULT);
-  XLAL_CHECK_NULL(metric->size1 == metric->size2, XLAL_ESIZE);
-  XLAL_CHECK_NULL(max_mismatch > 0.0, XLAL_EINVAL);
-
-  // Allocate memory
-  gsl_matrix* directions = gsl_matrix_alloc(metric->size1, metric->size2);
-  XLAL_CHECK_NULL(directions != NULL, XLAL_ENOMEM);
-  gsl_matrix* increment = gsl_matrix_alloc(metric->size1, metric->size2);
-  XLAL_CHECK_NULL(increment != NULL, XLAL_ENOMEM);
-
-  // Check metric is positive definite, by trying to compute its Cholesky decomposition
-  gsl_matrix_memcpy(directions, metric);   // Make copy to preserve original
-  gsl_error_handler_t* old_handler = gsl_set_error_handler_off();
-  int retn = gsl_linalg_cholesky_decomp(directions);
-  gsl_set_error_handler(old_handler);
-  XLAL_CHECK_NULL(retn == 0, XLAL_EFAILED, "metric is not positive definite");
-
-  // Find orthonormalise directions with respect to tiling metric
-  gsl_matrix_set_identity(directions);
-  XLAL_CHECK_NULL(FLT_OrthonormaliseWRTMetric(directions, metric) == XLAL_SUCCESS, XLAL_EFAILED);
-
-  // Get lattice generator
-  gsl_matrix* gen_matrix = NULL;
-  double norm_thickness = 0.0;
-  XLAL_CHECK_NULL((generator)(metric->size1, &gen_matrix, &norm_thickness) == XLAL_SUCCESS, XLAL_EFAILED);
-
-  // Transform lattice generator to square lower triangular
-  gsl_matrix* sqlwtr_gen_matrix = FLT_SquareLowerTriangularLatticeGenerator(gen_matrix);
-  XLAL_CHECK_NULL(sqlwtr_gen_matrix != NULL, XLAL_EFAILED);
-
-  // Normalise lattice generator so covering radius is sqrt(mismatch)
-  XLAL_CHECK_NULL(FLT_NormaliseLatticeGenerator(sqlwtr_gen_matrix, norm_thickness, sqrt(max_mismatch)) == XLAL_SUCCESS, XLAL_EFAILED);
-
-  // Compute the increment vectors of the lattice generator along the orthogonal directions
-  gsl_blas_dgemm(CblasNoTrans, CblasNoTrans, 1.0, directions, sqlwtr_gen_matrix, 0.0, increment);
-
-  // Cleanup
-  gsl_matrix_free(directions);
-  gsl_matrix_free(gen_matrix);
-  gsl_matrix_free(sqlwtr_gen_matrix);
-
-  return increment;
 
 }
 

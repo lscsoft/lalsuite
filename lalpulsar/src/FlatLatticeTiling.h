@@ -181,23 +181,6 @@ int XLALNearestFlatLatticePointToRandomPoints(
   gsl_matrix** workspace                        ///< [in/out] Pointer to workspace matrix for computing distances
   );
 
-///
-/// Find the bounding box of the mismatch ellipses of a metric
-///
-gsl_vector* XLALMetricEllipseBoundingBox(
-  const gsl_matrix* metric,                     ///< [in] Metric to bound
-  const double max_mismatch                     ///< [in] Maximum mismatch with respect to metric
-  );
-
-///
-/// Find the lattice increment vectors for a given metric and mismatch
-///
-gsl_matrix* XLALMetricLatticeIncrements(
-  const FlatLatticeGenerator generator,         ///< [in] Lattice generator function
-  const gsl_matrix* metric,                     ///< [in] Parameter space metric
-  const double max_mismatch                     ///< [in] Maximum prescribed mismatch
-  );
-
 #ifdef SWIG // SWIG interface directives
 SWIGLAL(FUNCTION_POINTER(XLALCubicLatticeGenerator));
 #endif
