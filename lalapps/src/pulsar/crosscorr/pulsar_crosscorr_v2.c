@@ -602,7 +602,7 @@ int GetNextCrossCorrTemplate(BOOLEAN *binaryParamsFlag, PulsarDopplerParams *dop
 
   /* check spacings not negative */
 
-  if (new_freq <= freq_hi)                            /*loop over f at first*/
+  if (new_freq <= freq_hi)                        /*loop over f at first*/
     {	      
       new_freq = dopplerpos->fkdot[0] + dFreq;
       dopplerpos->fkdot[0] = new_freq;
@@ -622,7 +622,7 @@ int GetNextCrossCorrTemplate(BOOLEAN *binaryParamsFlag, PulsarDopplerParams *dop
 	}
       else
 	{
-	  if (new_tp <= tp_hi)                /*after looping the plane of f and a_p, initialize f, a_p and loop over T*/
+	  if (new_tp <= tp_hi)                    /*after looping the plane of f and a_p, initialize f, a_p and loop over T*/
 	    {
 	      new_tp = XLALGPSGetREAL8(XLALGPSAddGPS(&(dopplerpos->tp), &(binaryTemplateSpacings->tp)));
 	      XLALGPSSetREAL8(&(dopplerpos->tp),new_tp);
