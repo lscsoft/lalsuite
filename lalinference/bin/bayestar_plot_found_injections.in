@@ -90,6 +90,16 @@ elif opts.group_by == 'snr':
 # false alarm rate bin.
 pb.max = len(bin_edges) * 4
 
+if opts.cumulative:
+    histlabel = 'cumulative '
+else:
+    histlabel = ''
+if opts.normed:
+    histlabel += 'fraction'
+else:
+    histlabel += 'number'
+histlabel += ' of injections'
+
 # Loop over false alarm rate bins.
 for i, (bin_edge, subdir, title) in enumerate(zip(bin_edges, bin_names, bin_titles)):
     pb.update(text=subdir)
@@ -129,7 +139,7 @@ for i, (bin_edge, subdir, title) in enumerate(zip(bin_edges, bin_names, bin_titl
     plt.xscale('log')
     plt.subplots_adjust(bottom=0.15)
     plt.xlabel('searched area (deg$^2$)')
-    plt.ylabel('number of injections')
+    plt.ylabel(histlabel)
     plt.title(title)
 
     # Set up figure 3.
@@ -137,7 +147,7 @@ for i, (bin_edge, subdir, title) in enumerate(zip(bin_edges, bin_names, bin_titl
     plt.xscale('log')
     plt.subplots_adjust(bottom=0.15)
     plt.xlabel('angle between true location and mode of posterior')
-    plt.ylabel('number of injections')
+    plt.ylabel(histlabel)
     plt.title(title)
 
     # Set up figure 4.
@@ -145,7 +155,7 @@ for i, (bin_edge, subdir, title) in enumerate(zip(bin_edges, bin_names, bin_titl
     plt.xscale('log')
     plt.subplots_adjust(bottom=0.15)
     plt.xlabel('run time (s)')
-    plt.ylabel('number of injections')
+    plt.ylabel(histlabel)
 
     # Plot a histogram from each dataset onto each of the 5 figures.
     for (data, label) in zip(datasets, labels):
