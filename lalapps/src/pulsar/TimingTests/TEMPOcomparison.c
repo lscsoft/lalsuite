@@ -324,7 +324,7 @@ main(int argc, char *argv[]){
 
   }
   /* if a user has defined a sky position */
-  else if ((LALUserVarWasSet(uvar.RAJ))&&(LALUserVarWasSet(uvar.DECJ))) {
+  else if ((LALUserVarWasSet(&uvar.RAJ))&&(LALUserVarWasSet(&uvar.DECJ))) {
     if (lalDebugLevel) fprintf(stdout,"STATUS : User defined sky position - alpha = %s delta = %s (hms)\n",uvar.RAJ,uvar.DECJ);
     alpha = XLALhmsToRads(uvar.RAJ);
     delta = XLALdmsToRads(uvar.DECJ);
@@ -337,7 +337,7 @@ main(int argc, char *argv[]){
   
   /* define start time in an MJD structure */
   REAL8toMJD(&status,&TstartUTCMJD,uvar.TstartUTCMJD);
-  if (lalDebugLevel) fprintf(stdout,"STATUS : TstartUTCMJD converted to MJD days = %d fracdays = %6.12f\n",TstartUTCMJD.days,TstartUTCMJD.fracdays);
+  if (lalDebugLevel) fprintf(stdout,"STATUS : TstartUTCMJD=%f converted to MJD days = %d fracdays = %6.12f\n",uvar.TstartUTCMJD, TstartUTCMJD.days,TstartUTCMJD.fracdays);
   
   /* convert back to test conversions */
   MJDtoREAL8(&status,&TstartUTCMJDtest,TstartUTCMJD);
@@ -346,19 +346,19 @@ main(int argc, char *argv[]){
     fprintf(stderr,"ERROR : Time conversion gives discrepancy of %e sec. Exiting.\n",diff);
     return(TEMPOCOMPARISONC_ESUB);
   }
-  if (lalDebugLevel) fprintf(stdout,"STATUS : MJD conversion gives discrepancies of %e sec\n",diff);
+  XLALPrintInfo ( "STATUS : MJD conversion gives discrepancies of %e sec\n", diff);
 
   /* use start time to define an epoch for the leap seconds */
   /* Note that epochs are defined in TDB !!! but here we only need to be rough to get a leap second value */
   TDBMJDtoGPS(&epoch,TstartUTCMJD);
-  if (lalDebugLevel) fprintf(stdout,"STATUS : leap second epoch = %d %d\n",epoch.gpsSeconds,epoch.gpsNanoSeconds);
+  XLALPrintInfo ( "STATUS : leap second epoch = %d %d\n",epoch.gpsSeconds,epoch.gpsNanoSeconds);
 
   /* deal with ephemeris files and compute leap seconds */
   EphemerisData *edat;
   XLAL_CHECK ( (edat = XLALInitBarycenter( uvar.ephemEarth, uvar.ephemSun )) != NULL, XLAL_EFUNC );
 
   leap0 = XLALGPSLeapSeconds (epoch.gpsSeconds);
-  if (lalDebugLevel) fprintf(stdout,"STATUS : leap seconds = %d\n",leap0);
+  XLALPrintInfo ( "STATUS : leap seconds = %d\n",leap0);
 
   /* select detector location */
   if (strcmp(uvar.Observatory,"GBT")==0) {
@@ -479,12 +479,12 @@ main(int argc, char *argv[]){
     fprintf(stderr,"ERROR. Unknown Observatory %s. Exiting.\n",uvar.Observatory);
     return(TEMPOCOMPARISONC_EFILE);
   }
-  if (lalDebugLevel) fprintf(stdout,"STATUS : selected observatory %s - observatoryt code = %s\n",uvar.Observatory,detcode);
-  if (lalDebugLevel) fprintf(stdout,"STATUS : baryinput location = %6.12f %6.12f %6.12f\n",baryinput.site.location[0],baryinput.site.location[1],baryinput.site.location[2]);
+  XLALPrintInfo ( "STATUS : selected observatory %s - observatoryt code = %s\n",uvar.Observatory,detcode);
+  XLALPrintInfo ( "STATUS : baryinput location = %6.12f %6.12f %6.12f\n",baryinput.site.location[0],baryinput.site.location[1],baryinput.site.location[2]);
 
   /* convert start time to UTC GPS */
   UTCMJDtoGPS(&status,&TstartGPS,TstartUTCMJD,leap0);
-  if (lalDebugLevel) fprintf(stdout,"STATUS : TstartGPS = %d %d\n",TstartGPS.gpsSeconds,TstartGPS.gpsNanoSeconds);
+  XLALPrintInfo ( "STATUS : TstartGPS = %d %d\n",TstartGPS.gpsSeconds,TstartGPS.gpsNanoSeconds);
 
   /* convert back to test conversion */
   UTCGPStoMJD(&MJDtest,&TstartGPS,leap0);
@@ -494,15 +494,15 @@ main(int argc, char *argv[]){
     fprintf(stderr,"ERROR : Time conversion gives discrepancy of %e sec. Exiting.\n",diff);
     return(TEMPOCOMPARISONC_ESUB);
   }
-  if (lalDebugLevel) fprintf(stdout,"STATUS : MJD conversion gives discrepancies of %e sec\n",diff);
-  
+  XLALPrintInfo ( "STATUS : MJD conversion gives discrepancies of %e sec\n",diff);
+
   /* define reference time in an MJD structure */
   REAL8toMJD(&status,&TrefTDBMJD,uvar.TrefTDBMJD);
-  if (lalDebugLevel) fprintf(stdout,"STATUS : TrefTDBMJD converted to MJD days = %d fracdays = %6.12f\n",TrefTDBMJD.days,TrefTDBMJD.fracdays);
+  XLALPrintInfo ( "STATUS : TrefTDBMJD converted to MJD days = %d fracdays = %6.12f\n",TrefTDBMJD.days,TrefTDBMJD.fracdays);
 
   /* convert reference time to TDB GPS */
   TDBMJDtoGPS(&TrefSSB_TDB_GPS,TrefTDBMJD);
-  if (lalDebugLevel) fprintf(stdout,"STATUS : TrefSSB_TDB_GPS = %d %d\n",TrefSSB_TDB_GPS.gpsSeconds,TrefSSB_TDB_GPS.gpsNanoSeconds);
+  XLALPrintInfo ( "STATUS : TrefSSB_TDB_GPS = %d %d\n",TrefSSB_TDB_GPS.gpsSeconds,TrefSSB_TDB_GPS.gpsNanoSeconds);
 
   /* convert back to test conversion */
   TDBGPStoMJD(&MJDtest,TrefSSB_TDB_GPS,leap0);
@@ -512,7 +512,7 @@ main(int argc, char *argv[]){
     fprintf(stderr,"ERROR : Time conversion gives discrepancy of %e sec. Exiting.\n",diff);
     return(TEMPOCOMPARISONC_ESUB);
   }
-  if (lalDebugLevel) fprintf(stdout,"STATUS : MJD conversion gives discrepancies of %e sec\n",diff);
+  XLALPrintInfo ( "STATUS : MJD conversion gives discrepancies of %e sec\n",diff);
 
   /* fill in required pulsar params structure for Barycentering */
   LALDetector *site = NULL;
@@ -529,7 +529,7 @@ main(int argc, char *argv[]){
   
   /* generate SSB initial TOA in GPS */
   XLALConvertGPS2SSB ( &TstartSSB, TstartGPS, &pulsarparams);
-  if (lalDebugLevel) fprintf(stdout,"STATUS : TstartSSB = %d %d\n",TstartSSB.gpsSeconds,TstartSSB.gpsNanoSeconds);
+  XLALPrintInfo ( "STATUS : TstartSSB = %d %d\n",TstartSSB.gpsSeconds,TstartSSB.gpsNanoSeconds);
   
   /* force integer seconds */
   /* TstartSSB.gpsNanoSeconds = 0; */
@@ -539,11 +539,11 @@ main(int argc, char *argv[]){
   temp = uvar.DurationMJD*86400.0;
   TendGPS = TstartGPS;
   XLALGPSAdd(&TendGPS, temp);
-  if (lalDebugLevel) fprintf(stdout,"STATUS : GPS end time of TOAs = %d %d\n",TendGPS.gpsSeconds,TendGPS.gpsNanoSeconds);
+  XLALPrintInfo ( "STATUS : GPS end time of TOAs = %d %d\n",TendGPS.gpsSeconds,TendGPS.gpsNanoSeconds);
 
   /* generate SSB end time in GPS (force integer seconds) */
   XLALConvertGPS2SSB (&TendSSB,TendGPS,&pulsarparams);
-  if (lalDebugLevel) fprintf(stdout,"STATUS : TendSSB = %d %d\n",TendSSB.gpsSeconds,TendSSB.gpsNanoSeconds);
+  XLALPrintInfo  ( "STATUS : TendSSB = %d %d\n",TendSSB.gpsSeconds,TendSSB.gpsNanoSeconds);
   
   /* force integer seconds */
   /* TendSSB.gpsNanoSeconds = 0; */
@@ -552,8 +552,8 @@ main(int argc, char *argv[]){
   /* define TOA seperation in the SSB */ 
   dt = uvar.DeltaTMJD*86400.0;
   n = (INT4)ceil(uvar.DurationMJD/uvar.DeltaTMJD);
-  if (lalDebugLevel) fprintf(stdout,"STATUS : TOA seperation at SSB = %g sec\n",dt);
-  if (lalDebugLevel) fprintf(stdout,"STATUS : number of TOAs to generate = %d\n",n);
+  XLALPrintInfo ( "STATUS : TOA seperation at SSB = %g sec\n",dt);
+  XLALPrintInfo ( "STATUS : number of TOAs to generate = %d\n",n);
   
   /* allocate memory for artificial SSB TOAs */
   TSSB = (LIGOTimeGPS *)LALMalloc(n*sizeof(LIGOTimeGPS));
@@ -566,39 +566,39 @@ main(int argc, char *argv[]){
     LIGOTimeGPS tnow;
 
     /* define current interval */
-    if (lalDebugLevel) fprintf(stdout,"STATUS : current (t-tstart) = %g sec\n", i * dt);
+    XLALPrintInfo ( "STATUS : current (t-tstart) = %g sec\n", i * dt);
 
     /* define current t */
     tnow = TstartSSB;
     XLALGPSAdd(&tnow, i * dt);
-    if (lalDebugLevel) fprintf(stdout,"STATUS : current t = %d %d\n",tnow.gpsSeconds,tnow.gpsNanoSeconds);
+    XLALPrintInfo ( "STATUS : current t = %d %d\n",tnow.gpsSeconds,tnow.gpsNanoSeconds);
 
     /* define current t-tref */
     dtref = XLALGPSDiff(&tnow,&TrefSSB_TDB_GPS);
-    if (lalDebugLevel) fprintf(stdout,"STATUS : current (t - tref) = %9.12f\n",dtref);
+    XLALPrintInfo ( "STATUS : current (t - tref) = %9.12f\n",dtref);
 
     dtcor = 1;
     while (dtcor>1e-9) {
       
       /* define actual cycle fraction at requested time */
       cyclefrac = fmod(uvar.f0*dtref + 0.5*uvar.fdot*dtref*dtref,1.0);
-      if (lalDebugLevel) fprintf(stdout,"STATUS : cyclefrac = %9.12f\n",cyclefrac);
+      XLALPrintInfo ( "STATUS : cyclefrac = %9.12f\n",cyclefrac);
 
       /* define instantaneous frequency */
       fnow = uvar.f0 + uvar.fdot*dtref;
-      if (lalDebugLevel) fprintf(stdout,"STATUS : instananeous frequency = %9.12f\n",fnow);
+      XLALPrintInfo ( "STATUS : instananeous frequency = %9.12f\n",fnow);
 
       /* add correction to time */
       dtcor = cyclefrac/fnow;
       dtref -= dtcor;
-      if (lalDebugLevel) fprintf(stdout,"STATUS : timing correction = %9.12f\n",dtcor);
-      if (lalDebugLevel) fprintf(stdout,"STATUS : corrected dtref to = %9.12f\n",dtref);
+      XLALPrintInfo ( "STATUS : timing correction = %9.12f\n",dtcor);
+      XLALPrintInfo ( "STATUS : corrected dtref to = %9.12f\n",dtref);
     }
 
     /* define time of zero phase */
     TSSB[i] = TrefSSB_TDB_GPS;
     XLALGPSAdd(&TSSB[i], dtref);
-    if (lalDebugLevel) fprintf(stdout,"STATUS : TSSB[%d] = %d %d\n",i,TSSB[i].gpsSeconds,TSSB[i].gpsNanoSeconds);
+    XLALPrintInfo ( "STATUS : TSSB[%d] = %d %d\n",i,TSSB[i].gpsSeconds,TSSB[i].gpsNanoSeconds);
  
   }
   
@@ -615,7 +615,7 @@ main(int argc, char *argv[]){
 	return(TEMPOCOMPARISONC_ESUB);
       }
 
-      if (lalDebugLevel) fprintf(stdout,"STATUS : converted SSB TOA %d %d -> Detector TOA %d %d\n",TSSB[i].gpsSeconds,TSSB[i].gpsNanoSeconds,TDET.gpsSeconds,TDET.gpsNanoSeconds);
+      XLALPrintInfo ( "STATUS : converted SSB TOA %d %d -> Detector TOA %d %d\n",TSSB[i].gpsSeconds,TSSB[i].gpsNanoSeconds,TDET.gpsSeconds,TDET.gpsNanoSeconds);
       
       /* convert back for testing conversion */
       XLALConvertGPS2SSB (&TSSBtest,TDET,&pulsarparams);
@@ -624,7 +624,7 @@ main(int argc, char *argv[]){
 	fprintf(stderr,"ERROR : Time conversion gives discrepancy of %e sec. Exiting.\n",diff);
 	return(TEMPOCOMPARISONC_ESUB);
       }
-      if (lalDebugLevel) fprintf(stdout,"STATUS : SSB -> detector conversion gives discrepancies of %e sec\n",diff);
+      XLALPrintInfo ( "STATUS : SSB -> detector conversion gives discrepancies of %e sec\n",diff);
 
       /* recompute leap seconds incase they've changed */
       leap = XLALGPSLeapSeconds (TDET.gpsSeconds);
@@ -632,7 +632,7 @@ main(int argc, char *argv[]){
       /* must now convert to an MJD time for TEMPO */
       /* Using UTC conversion as used by Matt in his successful comparison */
       UTCGPStoMJD (&tempTOA,&TDET,leap);
-      if (lalDebugLevel) fprintf(stdout,"STATUS : output MJD time = %d %6.12f\n",tempTOA.days,tempTOA.fracdays);
+      XLALPrintInfo ( "STATUS : output MJD time = %d %6.12f\n",tempTOA.days,tempTOA.fracdays);
 
       /* convert back to test conversion */
       UTCMJDtoGPS (&status,&GPStest,tempTOA,leap);
@@ -641,7 +641,7 @@ main(int argc, char *argv[]){
 	fprintf(stderr,"ERROR. Time conversion gives discrepancy of %e sec. Exiting.\n",diff);
 	return(TEMPOCOMPARISONC_ESUB);
       }
-      if (lalDebugLevel) fprintf(stdout,"STATUS : MJD time conversion gives discrepancies of %e sec\n",diff);
+      XLALPrintInfo ( "STATUS : MJD time conversion gives discrepancies of %e sec\n",diff);
 
       /* fill in results */
       TOA[i].days = tempTOA.days;
@@ -657,18 +657,18 @@ main(int argc, char *argv[]){
   /* snprintf(tempstr,15,"%1.13f",TrefMJD.fracdays); */
 /*   tempstr2 = tempstr+2; */
 /*   snprintf(TrefMJDstr,19,"%d.%s",TrefMJD.days,tempstr2);  */
-/*   if (lalDebugLevel) fprintf(stdout,"STATUS : Converted reference MJD %d %6.12f to the string %s\n",TrefMJD.days,TrefMJD.fracdays,TrefMJDstr); */
+/*   XLALPrintInfo ( "STATUS : Converted reference MJD %d %6.12f to the string %s\n",TrefMJD.days,TrefMJD.fracdays,TrefMJDstr); */
 
   snprintf(tempstr,15,"%1.13f",TOA[0].fracdays);
   tempstr2 = tempstr+2;
   snprintf(TstartMJDstr,19,"%d.%s",TOA[0].days,tempstr2); 
-  if (lalDebugLevel) fprintf(stdout,"STATUS : Converted initial TOA MJD %d %6.12f to the string %s\n",TOA[0].days,TOA[0].fracdays,TstartMJDstr);
+  XLALPrintInfo ( "STATUS : Converted initial TOA MJD %d %6.12f to the string %s\n",TOA[0].days,TOA[0].fracdays,TstartMJDstr);
 
   snprintf(tempstr,15,"%1.13f",TOA[n-1].fracdays);
   tempstr2 = tempstr+2;
   snprintf(TfinishMJDstr,19,"%d.%s",TOA[n-1].days,tempstr2); 
-  if (lalDebugLevel) fprintf(stdout,"*** Converted MJD to a string %s\n",TfinishMJDstr);
-  if (lalDebugLevel) fprintf(stdout,"STATUS : Converted final TOA MJD %d %6.12f to the string %s\n",TOA[n-1].days,TOA[n-1].fracdays,TfinishMJDstr);
+  XLALPrintInfo ( "*** Converted MJD to a string %s\n",TfinishMJDstr);
+  XLALPrintInfo ( "STATUS : Converted final TOA MJD %d %6.12f to the string %s\n",TOA[n-1].days,TOA[n-1].fracdays,TfinishMJDstr);
 
   /* define output file names */
   sprintf(parfile,"%s.par",uvar.PSRJ);
@@ -719,7 +719,7 @@ main(int argc, char *argv[]){
     tempstr2 = tempstr+2;
     snprintf(TOAstr,22,"%d.%s",TOA[i].days,tempstr2);
     fprintf(fp,"blank.dat\t1000.0\t%s\t1.0\t%s\n",TOAstr,detcode);
-    if (lalDebugLevel) fprintf(stdout,"STATUS : Converting MJD time %d %6.16f to string %s\n",TOA[i].days,TOA[i].fracdays,TOAstr);
+    XLALPrintInfo ( "STATUS : Converting MJD time %d %6.16f to string %s\n",TOA[i].days,TOA[i].fracdays,TOAstr);
     
   }
   
