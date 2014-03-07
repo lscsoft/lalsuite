@@ -376,13 +376,12 @@ int XLALFindLMXBCrossCorrDiagMetric
    REAL8             *g_ff,          /*Output:metric elements*/
    REAL8             *g_aa, 
    REAL8             *g_TT, 
-   PulsarDopplerParams DopplerParams,   /* Input: binary orbit paramaters*/
-   REAL8             f,              /* Input: thisfrequency*/
-   REAL8Vector       *G_alpha,       /* Input: vector of sigma_alpha values */ 
-   SFTPairIndexList  *pairIndexList, /* Input: list of SFT pairs */
-   SFTIndexList      *indexList,     /* Input: list of SFTs */   
-   MultiSFTVector    *sfts           /* Input: set of per-detector SFT vectors */
-   /*REAL8             *devTsq,  */  /*Output: mean time deviation^2*/
+   PulsarDopplerParams DopplerParams, /* Input: pulsar/binary orbit paramaters*/
+   REAL8Vector       *G_alpha,        /* Input: vector of sigma_alpha values */ 
+   SFTPairIndexList  *pairIndexList,  /* Input: list of SFT pairs */
+   SFTIndexList      *indexList,      /* Input: list of SFTs */   
+   MultiSFTVector    *sfts            /* Input: set of per-detector SFT vectors */
+   /*REAL8             *devTsq,  */   /*Output: mean time deviation^2*/
    /*REAL8             *g_pp,*/
    )
 {
@@ -429,8 +428,8 @@ int XLALFindLMXBCrossCorrDiagMetric
   SinSquaWeightedAve =(sinSquare/denom);
   *hSens = sqrt(rhosum);
   *g_ff= TSquaWeightedAve* 2 * SQUARE(LAL_PI);
-  *g_aa= SinSquaWeightedAve* SQUARE(LAL_PI*f);
-  *g_TT= SinSquaWeightedAve* SQUARE(2*SQUARE(LAL_PI)*f*(DopplerParams.asini)/(DopplerParams.period));
+  *g_aa= SinSquaWeightedAve* SQUARE(LAL_PI*DopplerParams.fkdot[0]);
+  *g_TT= SinSquaWeightedAve* SQUARE(2*SQUARE(LAL_PI)*(DopplerParams.fkdot[0])*(DopplerParams.asini)/(DopplerParams.period));
 
   
   return XLAL_SUCCESS;
