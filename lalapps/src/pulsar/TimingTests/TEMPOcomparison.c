@@ -39,6 +39,7 @@
 #include <lal/BinaryPulsarTiming.h>
 #include <lal/GeneratePulsarSignal.h>
 #include <lal/Random.h>
+#include <lal/LALString.h>
 
 #include <lal/LogPrintf.h>
 
@@ -195,8 +196,8 @@ typedef struct
   REAL8 DeltaTMJD;
   REAL8 DurationMJD;
   CHAR *det;
-  CHAR *ephemyear;
-  CHAR *ephemdir;
+  CHAR *ephemEarth;		/* Earth ephemeris file to use */
+  CHAR *ephemSun;		/* Sun ephemeris file to use */
   REAL8 f0;
   REAL8 fdot;
   CHAR *PSRJ;
@@ -247,8 +248,6 @@ main(int argc, char *argv[]){
   FILE *fp = NULL;
   BarycenterInput baryinput = empty_BarycenterInput;
   REAL8 alpha, delta;
-  EphemerisData *edat = NULL;
-  CHAR EphemEarth[1024], EphemSun[1024];
   INT4 leap0,leap;
   LIGOTimeGPS epoch;
   LIGOTimeGPS TstartSSB, TendSSB, TendGPS;
@@ -355,19 +354,12 @@ main(int argc, char *argv[]){
   if (lalDebugLevel) fprintf(stdout,"STATUS : leap second epoch = %d %d\n",epoch.gpsSeconds,epoch.gpsNanoSeconds);
 
   /* deal with ephemeris files and compute leap seconds */
-  edat = LALCalloc(1, sizeof(EphemerisData));
-  snprintf(EphemEarth, 1024, "%s/earth%s.dat", uvar.ephemdir, uvar.ephemyear);
-  snprintf(EphemSun, 1024, "%s/sun%s.dat", uvar.ephemdir, uvar.ephemyear);
-  edat->ephiles.earthEphemeris = EphemEarth;
-  edat->ephiles.sunEphemeris = EphemSun;
-  leap0 = XLALGPSLeapSeconds (epoch.gpsSeconds);
+  EphemerisData *edat;
+  XLAL_CHECK ( (edat = XLALInitBarycenter( uvar.ephemEarth, uvar.ephemSun )) != NULL, XLAL_EFUNC );
 
+  leap0 = XLALGPSLeapSeconds (epoch.gpsSeconds);
   if (lalDebugLevel) fprintf(stdout,"STATUS : leap seconds = %d\n",leap0);
 
-  /* initialise the barycenter routines */
-  LALInitBarycenter(&status, edat);
-  if (lalDebugLevel) fprintf(stdout,"STATUS : Initiated Barycenter\n");
-  
   /* select detector location */
   if (strcmp(uvar.Observatory,"GBT")==0) {
     baryinput.site.location[0] = GBT_LOCATION_X;
@@ -738,9 +730,7 @@ main(int argc, char *argv[]){
   LALFree(TSSB);
   LALFree(TOA);
   LALFree(site);
-  LALFree(edat->ephemS);
-  LALFree(edat->ephemE);
-  LALFree(edat);
+  XLALDestroyEphemerisData ( edat );
   LALDestroyUserVars (&status);
   LALCheckMemoryLeaks(); 
   
@@ -770,9 +760,6 @@ initUserVars (LALStatus *status, int argc, char *argv[], UserVariables_t *uvar)
   uvar->DeltaTMJD = 1;
   uvar->DurationMJD = 1800;
 
-  uvar->ephemyear = (CHAR*)LALMalloc(512);
-  sprintf(uvar->ephemyear,"00-19-DE405");
-
   uvar->f0 = 1.0;
   uvar->fdot = 0.0;
 
@@ -785,12 +772,15 @@ initUserVars (LALStatus *status, int argc, char *argv[], UserVariables_t *uvar)
   uvar->randparams = FALSE;
   uvar->seed = 0;
 
+  uvar->ephemEarth = XLALStringDuplicate("earth00-19-DE405.dat.gz");
+  uvar->ephemSun = XLALStringDuplicate("sun00-19-DE405.dat.gz");
+
   /* register user input variables */
   LALregBOOLUserStruct ( status, 	help, 		'h', UVAR_HELP,    	"Print this message" );
   LALregSTRINGUserStruct ( status, 	RAJ, 	        'r', UVAR_OPTIONAL, 	"Right ascension hh:mm.ss.ssss [Default = 00:00.00.0000]");
   LALregSTRINGUserStruct ( status, 	DECJ, 	        'j', UVAR_OPTIONAL, 	"Declination dd:mm.ss.ssss [Default = 00:00.00.0000]");
-  LALregSTRINGUserStruct ( status,      ephemdir,       'e', UVAR_REQUIRED, 	"Name of ephemeris directory");
-  LALregSTRINGUserStruct ( status,      ephemyear,      'y', UVAR_OPTIONAL, 	"Ephemeris year [Default = 00-19-DE405]");
+  LALregSTRINGUserStruct(status,	ephemEarth, 	 0,  UVAR_OPTIONAL, 	"Earth ephemeris file to use");
+  LALregSTRINGUserStruct(status,	ephemSun, 	 0,  UVAR_OPTIONAL, 	"Sun ephemeris file to use");
   LALregREALUserStruct ( status, 	f0,     	'f', UVAR_OPTIONAL, 	"The signal frequency in Hz at SSB at the reference time [Default = 1.0]");
   LALregREALUserStruct ( status, 	fdot,     	'p', UVAR_OPTIONAL, 	"The signal frequency derivitive in Hz at SSB at the reference time [Default = 0.0]");
   LALregREALUserStruct ( status, 	TrefTDBMJD, 	'R', UVAR_OPTIONAL, 	"Reference time at the SSB in TDB in MJD [Default = 53400 ~ Jan 2005]");
