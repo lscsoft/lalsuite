@@ -23,12 +23,12 @@
  * \author Chris Messenger
  */
 
-#include <glob.h> 
+#include <glob.h>
 #include <stdlib.h>
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h> 
+#include <string.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALConstants.h>
 #include <lal/AVFactories.h>
@@ -69,12 +69,12 @@
 #define TRUE (1==1)
 #define FALSE (1==0)
 
-#define GBT_LOCATION_X 882589.65    
-#define GBT_LOCATION_Y -4924872.32    
+#define GBT_LOCATION_X 882589.65
+#define GBT_LOCATION_Y -4924872.32
 #define GBT_LOCATION_Z 3943729.348
 
 #define NARRABRI_LOCATION_X -4752329.7000
-#define NARRABRI_LOCATION_Y 2790505.9340 
+#define NARRABRI_LOCATION_Y 2790505.9340
 #define NARRABRI_LOCATION_Z -3200483.7470
 
 #define ARECIBO_LOCATION_X 2390490.0
@@ -86,7 +86,7 @@
 #define NANSHAN_LOCATION_Z 4367064.059
 
 #define DSS_43_LOCATION_X -4460892.6
-#define DSS_43_LOCATION_Y 2682358.9 
+#define DSS_43_LOCATION_Y 2682358.9
 #define DSS_43_LOCATION_Z -3674756.0
 
 #define PARKES_LOCATION_X  -4554231.5
@@ -106,7 +106,7 @@
 #define NANCAY_LOCATION_Z 4670132.83
 
 #define EFFELSBERG_LOCATION_X 4033949.5
-#define EFFELSBERG_LOCATION_Y 486989.4    
+#define EFFELSBERG_LOCATION_Y 486989.4
 #define EFFELSBERG_LOCATION_Z 4900430.8
 
 #define JODRELLM4_LOCATION_X 3822252.643
@@ -114,7 +114,7 @@
 #define JODRELLM4_LOCATION_Z 5086051.443
 
 #define GB300_LOCATION_X 881856.58
-#define GB300_LOCATION_Y -4925311.86 
+#define GB300_LOCATION_Y -4925311.86
 #define GB300_LOCATION_Z 3943459.70
 
 #define GB140_LOCATION_X 882872.57
@@ -185,8 +185,8 @@
 /* ---------- local types ---------- */
 
 /** user input variables */
-typedef struct 
-{ 
+typedef struct
+{
   BOOLEAN help;
 
   CHAR *RAJ;
@@ -209,8 +209,8 @@ typedef struct
 } UserVariables_t;
 
 /* a time structure to accurately store MJD times so as not to lose any precision */
-typedef struct 
-{ 
+typedef struct
+{
   INT4 days;       /* integer MJD days */
   REAL8 fracdays;  /* fractional day */
 } MJDTime;
@@ -240,10 +240,10 @@ void GPStoTDBMJD(MJDTime *TDBMJD,LIGOTimeGPS GPS);
  * FUNCTION definitions
  *============================================================*/
 
-int 
-main(int argc, char *argv[]){ 
+int
+main(int argc, char *argv[]){
 
-  static LALStatus       status;  /* LALStatus pointer */ 
+  static LALStatus       status;  /* LALStatus pointer */
   UserVariables_t uvar = empty_UserVariables;
   FILE *fp = NULL;
   BarycenterInput baryinput = empty_BarycenterInput;
@@ -283,11 +283,11 @@ main(int argc, char *argv[]){
   /* set log-level */
   LogSetLevel ( lalDebugLevel );
 
-  LAL_CALL (initUserVars (&status, argc, argv, &uvar), &status);	  
+  LAL_CALL (initUserVars (&status, argc, argv, &uvar), &status);
 
   /* exit if help was required */
   if (uvar.help)
-    exit(0); 
+    exit(0);
 
   /* define sky position and/or convert sky position to radians */
   /* first - if we want a random sky position */
@@ -299,10 +299,10 @@ main(int argc, char *argv[]){
 
     vector = XLALCreateREAL4Vector(2);
     LALCreateRandomParams( &status, &params, uvar.seed );
-    
+
     /* fill vector with uniform deviates */
     for (i=0;i<(INT4)vector->length;i++) LALUniformDeviate(&status,&(vector->data[i]),params);
-    
+
     alpha = LAL_TWOPI*vector->data[0];
     sindelta = -1.0 + 2.0*vector->data[1];
     delta = asin(sindelta);
@@ -317,7 +317,7 @@ main(int argc, char *argv[]){
     alphatest = XLALhmsToRads(RA);
     deltatest = XLALdmsToRads(DEC);
     if (lalDebugLevel) fprintf(stdout,"STATUS : Converted back to rads for testing - alpha = %6.12f delta = %6.12f (rads)\n",alphatest,deltatest);
-    
+
     /* free memory */
     XLALDestroyVector(vector);
     LALDestroyRandomParams(&status,&params);
@@ -334,11 +334,11 @@ main(int argc, char *argv[]){
     fprintf(stderr,"ERROR : must either set random params or define a sky position. Exiting.\n");
     return(TEMPOCOMPARISONC_EINPUT);
   }
-  
+
   /* define start time in an MJD structure */
   REAL8toMJD(&status,&TstartUTCMJD,uvar.TstartUTCMJD);
   if (lalDebugLevel) fprintf(stdout,"STATUS : TstartUTCMJD=%f converted to MJD days = %d fracdays = %6.12f\n",uvar.TstartUTCMJD, TstartUTCMJD.days,TstartUTCMJD.fracdays);
-  
+
   /* convert back to test conversions */
   MJDtoREAL8(&status,&TstartUTCMJDtest,TstartUTCMJD);
   diff = uvar.TstartUTCMJD - TstartUTCMJDtest;
@@ -365,115 +365,115 @@ main(int argc, char *argv[]){
     baryinput.site.location[0] = GBT_LOCATION_X;
     baryinput.site.location[1] = GBT_LOCATION_Y;
     baryinput.site.location[2] = GBT_LOCATION_Z;
-    sprintf(detcode,"gbt"); 
+    sprintf(detcode,"gbt");
   }
   else if (strcmp(uvar.Observatory,"NARRABRI")==0) {
     baryinput.site.location[0] = NARRABRI_LOCATION_X;
     baryinput.site.location[1] = NARRABRI_LOCATION_Y;
     baryinput.site.location[2] = NARRABRI_LOCATION_Z;
-    sprintf(detcode,"atca"); 
+    sprintf(detcode,"atca");
   }
    else if (strcmp(uvar.Observatory,"ARECIBO")==0) {
     baryinput.site.location[0] = ARECIBO_LOCATION_X;
     baryinput.site.location[1] = ARECIBO_LOCATION_Y;
     baryinput.site.location[2] = ARECIBO_LOCATION_Z;
-    sprintf(detcode,"ao"); 
+    sprintf(detcode,"ao");
   }
    else if (strcmp(uvar.Observatory,"NANSHAN")==0) {
     baryinput.site.location[0] = NANSHAN_LOCATION_X;
     baryinput.site.location[1] = NANSHAN_LOCATION_Y;
     baryinput.site.location[2] = NANSHAN_LOCATION_Z;
-    sprintf(detcode,"nanshan"); 
+    sprintf(detcode,"nanshan");
   }
    else if (strcmp(uvar.Observatory,"DSS_43")==0) {
     baryinput.site.location[0] = DSS_43_LOCATION_X;
     baryinput.site.location[1] = DSS_43_LOCATION_Y;
     baryinput.site.location[2] = DSS_43_LOCATION_Z;
-    sprintf(detcode,"tid43"); 
+    sprintf(detcode,"tid43");
   }
   else if (strcmp(uvar.Observatory,"PARKES")==0) {
     baryinput.site.location[0] = PARKES_LOCATION_X;
     baryinput.site.location[1] = PARKES_LOCATION_Y;
     baryinput.site.location[2] = PARKES_LOCATION_Z;
-    sprintf(detcode,"pks"); 
+    sprintf(detcode,"pks");
   }
    else if (strcmp(uvar.Observatory,"JODRELL")==0) {
     baryinput.site.location[0] = JODRELL_LOCATION_X;
     baryinput.site.location[1] = JODRELL_LOCATION_Y;
     baryinput.site.location[2] = JODRELL_LOCATION_Z;
-    sprintf(detcode,"jb"); 
+    sprintf(detcode,"jb");
   }
    else if (strcmp(uvar.Observatory,"VLA")==0) {
     baryinput.site.location[0] = VLA_LOCATION_X;
     baryinput.site.location[1] = VLA_LOCATION_Y;
     baryinput.site.location[2] = VLA_LOCATION_Z;
-    sprintf(detcode,"vla"); 
+    sprintf(detcode,"vla");
   }
    else if (strcmp(uvar.Observatory,"NANCAY")==0) {
     baryinput.site.location[0] = NANCAY_LOCATION_X;
     baryinput.site.location[1] = NANCAY_LOCATION_Y;
     baryinput.site.location[2] = NANCAY_LOCATION_Z;
-    sprintf(detcode,"ncy"); 
+    sprintf(detcode,"ncy");
   }
   else if (strcmp(uvar.Observatory,"EFFELSBERG")==0) {
     baryinput.site.location[0] = EFFELSBERG_LOCATION_X;
     baryinput.site.location[1] = EFFELSBERG_LOCATION_Y;
     baryinput.site.location[2] = EFFELSBERG_LOCATION_Z;
-    sprintf(detcode,"eff"); 
+    sprintf(detcode,"eff");
   }
   else if (strcmp(uvar.Observatory,"JODRELLM4")==0) {
     baryinput.site.location[0] = JODRELLM4_LOCATION_X;
     baryinput.site.location[1] = JODRELLM4_LOCATION_Y;
     baryinput.site.location[2] = JODRELLM4_LOCATION_Z;
-    sprintf(detcode,"jbm4"); 
+    sprintf(detcode,"jbm4");
   }
   else if (strcmp(uvar.Observatory,"GB300")==0) {
     baryinput.site.location[0] = GB300_LOCATION_X;
     baryinput.site.location[1] = GB300_LOCATION_Y;
     baryinput.site.location[2] = GB300_LOCATION_Z;
-    sprintf(detcode,"gb300"); 
+    sprintf(detcode,"gb300");
   }
   else if (strcmp(uvar.Observatory,"GB140")==0) {
     baryinput.site.location[0] = GB140_LOCATION_X;
     baryinput.site.location[1] = GB140_LOCATION_Y;
     baryinput.site.location[2] = GB140_LOCATION_Z;
-    sprintf(detcode,"gb140"); 
+    sprintf(detcode,"gb140");
   }
   else if (strcmp(uvar.Observatory,"GB853")==0) {
     baryinput.site.location[0] = GB853_LOCATION_X;
     baryinput.site.location[1] = GB853_LOCATION_Y;
     baryinput.site.location[2] = GB853_LOCATION_Z;
-    sprintf(detcode,"gb853"); 
+    sprintf(detcode,"gb853");
   }
   else if (strcmp(uvar.Observatory,"LA_PALMA")==0) {
     baryinput.site.location[0] = LA_PALMA_LOCATION_X;
     baryinput.site.location[1] = LA_PALMA_LOCATION_Y;
     baryinput.site.location[2] = LA_PALMA_LOCATION_Z;
-    sprintf(detcode,"lap"); 
+    sprintf(detcode,"lap");
   }
   else if (strcmp(uvar.Observatory,"Hobart")==0) {
     baryinput.site.location[0] = Hobart_LOCATION_X;
     baryinput.site.location[1] = Hobart_LOCATION_Y;
     baryinput.site.location[2] = Hobart_LOCATION_Z;
-    sprintf(detcode,"hob"); 
+    sprintf(detcode,"hob");
   }
   else if (strcmp(uvar.Observatory,"Hartebeesthoek")==0) {
     baryinput.site.location[0] = Hartebeesthoek_LOCATION_X;
     baryinput.site.location[1] = Hartebeesthoek_LOCATION_Y;
     baryinput.site.location[2] = Hartebeesthoek_LOCATION_Z;
-    sprintf(detcode,"hart"); 
+    sprintf(detcode,"hart");
   }
   else if (strcmp(uvar.Observatory,"WSRT")==0) {
     baryinput.site.location[0] = WSRT_LOCATION_X;
     baryinput.site.location[1] = WSRT_LOCATION_Y;
     baryinput.site.location[2] = WSRT_LOCATION_Z;
-    sprintf(detcode,"wsrt"); 
+    sprintf(detcode,"wsrt");
   }
   else if (strcmp(uvar.Observatory,"COE")==0) {
     baryinput.site.location[0] = COE_LOCATION_X;
     baryinput.site.location[1] = COE_LOCATION_Y;
     baryinput.site.location[2] = COE_LOCATION_Z;
-    sprintf(detcode,"coe"); 
+    sprintf(detcode,"coe");
   }
   else if (strcmp(uvar.Observatory,"SSB")!=0) {
     fprintf(stderr,"ERROR. Unknown Observatory %s. Exiting.\n",uvar.Observatory);
@@ -526,11 +526,11 @@ main(int argc, char *argv[]){
   pulsarparams.pulsar.position.latitude = delta;
   pulsarparams.pulsar.position.system = COORDINATESYSTEM_EQUATORIAL;
   pulsarparams.ephemerides = edat;
-  
+
   /* generate SSB initial TOA in GPS */
   XLALConvertGPS2SSB ( &TstartSSB, TstartGPS, &pulsarparams);
   XLALPrintInfo ( "STATUS : TstartSSB = %d %d\n",TstartSSB.gpsSeconds,TstartSSB.gpsNanoSeconds);
-  
+
   /* force integer seconds */
   /* TstartSSB.gpsNanoSeconds = 0; */
 /*   if (lalDebugLevel) fprintf(stdout,"STATUS : (after rounding down to integer seconds) TstartSSB = %d %d\n",TstartSSB.gpsSeconds,TstartSSB.gpsNanoSeconds); */
@@ -544,21 +544,21 @@ main(int argc, char *argv[]){
   /* generate SSB end time in GPS (force integer seconds) */
   XLALConvertGPS2SSB (&TendSSB,TendGPS,&pulsarparams);
   XLALPrintInfo  ( "STATUS : TendSSB = %d %d\n",TendSSB.gpsSeconds,TendSSB.gpsNanoSeconds);
-  
+
   /* force integer seconds */
   /* TendSSB.gpsNanoSeconds = 0; */
 /*   if (lalDebugLevel) fprintf(stdout,"STATUS : (after rounding down to integer seconds) TendSSB = %d %d\n",TendSSB.gpsSeconds,TendSSB.gpsNanoSeconds); */
 
-  /* define TOA seperation in the SSB */ 
+  /* define TOA seperation in the SSB */
   dt = uvar.DeltaTMJD*86400.0;
   n = (INT4)ceil(uvar.DurationMJD/uvar.DeltaTMJD);
   XLALPrintInfo ( "STATUS : TOA seperation at SSB = %g sec\n",dt);
   XLALPrintInfo ( "STATUS : number of TOAs to generate = %d\n",n);
-  
+
   /* allocate memory for artificial SSB TOAs */
   TSSB = (LIGOTimeGPS *)LALMalloc(n*sizeof(LIGOTimeGPS));
   TOA = (MJDTime *)LALMalloc(n*sizeof(MJDTime));
-  
+
   /* generate artificial SSB TOAs given the phase model phi = 2*pi*(f0*(t-tref) + 0.5*fdot*(t-tref)^2) */
   for  (i=0;i<n;i++) {
 
@@ -579,7 +579,7 @@ main(int argc, char *argv[]){
 
     dtcor = 1;
     while (dtcor>1e-9) {
-      
+
       /* define actual cycle fraction at requested time */
       cyclefrac = fmod(uvar.f0*dtref + 0.5*uvar.fdot*dtref*dtref,1.0);
       XLALPrintInfo ( "STATUS : cyclefrac = %9.12f\n",cyclefrac);
@@ -599,12 +599,12 @@ main(int argc, char *argv[]){
     TSSB[i] = TrefSSB_TDB_GPS;
     XLALGPSAdd(&TSSB[i], dtref);
     XLALPrintInfo ( "STATUS : TSSB[%d] = %d %d\n",i,TSSB[i].gpsSeconds,TSSB[i].gpsNanoSeconds);
- 
+
   }
-  
+
   /* loop over SSB time of arrivals and compute detector time of arrivals */
   for (i=0;i<n;i++) {
-    
+
       LIGOTimeGPS TSSBtest;
       LIGOTimeGPS GPStest;
 
@@ -616,7 +616,7 @@ main(int argc, char *argv[]){
       }
 
       XLALPrintInfo ( "STATUS : converted SSB TOA %d %d -> Detector TOA %d %d\n",TSSB[i].gpsSeconds,TSSB[i].gpsNanoSeconds,TDET.gpsSeconds,TDET.gpsNanoSeconds);
-      
+
       /* convert back for testing conversion */
       XLALConvertGPS2SSB (&TSSBtest,TDET,&pulsarparams);
       diff = XLALGPSDiff(&TSSBtest,&TSSB[i]);
@@ -646,9 +646,9 @@ main(int argc, char *argv[]){
       /* fill in results */
       TOA[i].days = tempTOA.days;
       TOA[i].fracdays = tempTOA.fracdays;
-       
+
   }
-     
+
   /* convert the start time of the TOAs to a TDB time for use as a reference time in the TEMPO par file */
   /* as we have a monochromatic signal this reference time is meaningless */
   /* GPStoTDBMJD(&status,&TrefMJD,TstartGPS); */
@@ -661,12 +661,12 @@ main(int argc, char *argv[]){
 
   snprintf(tempstr,15,"%1.13f",TOA[0].fracdays);
   tempstr2 = tempstr+2;
-  snprintf(TstartMJDstr,19,"%d.%s",TOA[0].days,tempstr2); 
+  snprintf(TstartMJDstr,19,"%d.%s",TOA[0].days,tempstr2);
   XLALPrintInfo ( "STATUS : Converted initial TOA MJD %d %6.12f to the string %s\n",TOA[0].days,TOA[0].fracdays,TstartMJDstr);
 
   snprintf(tempstr,15,"%1.13f",TOA[n-1].fracdays);
   tempstr2 = tempstr+2;
-  snprintf(TfinishMJDstr,19,"%d.%s",TOA[n-1].days,tempstr2); 
+  snprintf(TfinishMJDstr,19,"%d.%s",TOA[n-1].days,tempstr2);
   XLALPrintInfo ( "*** Converted MJD to a string %s\n",TfinishMJDstr);
   XLALPrintInfo ( "STATUS : Converted final TOA MJD %d %6.12f to the string %s\n",TOA[n-1].days,TOA[n-1].fracdays,TfinishMJDstr);
 
@@ -701,10 +701,10 @@ main(int argc, char *argv[]){
   fprintf(fp,"EPHEM\tDE405\n");
   fprintf(fp,"UNITS\tTDB\n");
   fprintf(fp,"MODE\t0\n");
-  
+
   /* close par file */
   fclose(fp);
-  
+
   /* output to tim file in format required by TEMPO 2 */
   if ((fp = fopen(timfile,"w")) == NULL) {
     fprintf(stderr,"ERROR. Could not open file %s. Exiting.\n",timfile);
@@ -713,16 +713,16 @@ main(int argc, char *argv[]){
 
   fprintf(fp,"FORMAT 1\n");
   for (i=0;i<n;i++) {
-    
-    /* convert each TOA to a string for output */ 
+
+    /* convert each TOA to a string for output */
     snprintf(tempstr,18,"%1.16f",TOA[i].fracdays);
     tempstr2 = tempstr+2;
     snprintf(TOAstr,22,"%d.%s",TOA[i].days,tempstr2);
     fprintf(fp,"blank.dat\t1000.0\t%s\t1.0\t%s\n",TOAstr,detcode);
     XLALPrintInfo ( "STATUS : Converting MJD time %d %6.16f to string %s\n",TOA[i].days,TOA[i].fracdays,TOAstr);
-    
+
   }
-  
+
   /* close tim file */
   fclose(fp);
 
@@ -732,10 +732,10 @@ main(int argc, char *argv[]){
   LALFree(site);
   XLALDestroyEphemerisData ( edat );
   LALDestroyUserVars (&status);
-  LALCheckMemoryLeaks(); 
-  
+  LALCheckMemoryLeaks();
+
   return TEMPOCOMPARISONC_ENORM;
-  
+
 } /* main() */
 
 
@@ -804,7 +804,7 @@ initUserVars (LALStatus *status, int argc, char *argv[], UserVariables_t *uvar)
 
 /* ------------------------------------------------------------------------------- */
 /* the following functions have been written to maintain a high level of precision */
-/* in storing MJD times */ 
+/* in storing MJD times */
 /* ------------------------------------------------------------------------------- */
 
 /* this function takes a REAL8 input MJD time and returns the same time */
@@ -840,7 +840,7 @@ void MJDtoREAL8(LALStatus *status,REAL8 *x,MJDTime MJD) {
 void deltaMJD(LALStatus *status,MJDTime *dMJD,MJDTime *x,MJDTime *y) {
 
   MJDTime z;
-  
+
   INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
@@ -874,9 +874,9 @@ void AddIntervaltoMJD(double interval,MJDTime *MJDout,MJDTime MJDin) {
   sfd = interval/86400.0;
 
   temp = MJDin.fracdays + sfd;
-  fracdays = fmod(temp,1.0); 
+  fracdays = fmod(temp,1.0);
   days = MJDin.days + (INT4)floor(temp);
- 
+
   MJDout->days = days;
   MJDout->fracdays = fracdays;
 
@@ -896,8 +896,8 @@ void GPStoTDBMJD(MJDTime *TDBMJD,LIGOTimeGPS GPS) {
   if(MJDtemp < 44244.){
     fprintf(stderr, "Input time is not in range.\n");
     exit(0);
-  } 
-  
+  }
+
   /* compute the relativistic effect in TDB */
   Tdiff = MJDtemp + (2400000.5-2451545.0);
   /* meanAnomaly = 357.53 + 0.98560028*Tdiff; */ /* mean anomaly in degrees */
@@ -925,7 +925,7 @@ void GPStoTDBMJD(MJDTime *TDBMJD,LIGOTimeGPS GPS) {
 }
 
 void TDBMJDtoGPS(LIGOTimeGPS *GPS,MJDTime MJD){
- 
+
   REAL8 Tdiff, TDBtoTT;
   REAL8 MJDtemp;
   LIGOTimeGPS GPStemp;
@@ -940,8 +940,8 @@ void TDBMJDtoGPS(LIGOTimeGPS *GPS,MJDTime MJD){
   if(MJDtemp < 44244.){
     fprintf(stderr, "Input time is not in range.\n");
     exit(0);
-  } 
-  
+  }
+
   Tdiff = MJDtemp + (2400000.5-2451545.0);
   /* meanAnomaly = 357.53 + 0.98560028*Tdiff; */ /* mean anomaly in degrees */
  /*  printf("\tmeanAnomaly (deg) = %6.12f\n",meanAnomaly); */
@@ -974,7 +974,7 @@ void TDBMJDtoGPS(LIGOTimeGPS *GPS,MJDTime MJD){
 }
 
 void UTCMJDtoGPS(LALStatus *status,LIGOTimeGPS *GPS,MJDTime MJD,INT4 leap){
- 
+
   REAL8 MJDtemp;
   INT4 tempsec, tempnano;
 
@@ -983,12 +983,12 @@ void UTCMJDtoGPS(LALStatus *status,LIGOTimeGPS *GPS,MJDTime MJD,INT4 leap){
 
   /* convert MJD to REAL8 for error checking */
   MJDtemp = (REAL8)MJD.days + MJD.fracdays;
- 
+
   /* Check not before the start of GPS time (MJD 44222) */
   if(MJDtemp < 44244.){
     fprintf(stderr, "Input time is not in range.\n");
     exit(0);
-  } 
+  }
 
   /* convert MJDtime to GPS with no corrections (yet) */
   tempsec = (MJD.days-44244)*86400 + leap;
@@ -1002,16 +1002,16 @@ void UTCMJDtoGPS(LALStatus *status,LIGOTimeGPS *GPS,MJDTime MJD,INT4 leap){
 
   DETATCHSTATUSPTR (status);
   RETURN (status);
-  
+
 }
 
 void UTCGPStoMJD(MJDTime *MJD,LIGOTimeGPS *GPS,INT4 leap){
- 
+
   LIGOTimeGPS tempGPS;
 
   /* compute integer MJD days */
   MJD->days = 44244 + (INT4)floor(((REAL8)GPS->gpsSeconds + 1e-9*(REAL8)GPS->gpsNanoSeconds - (REAL8)leap)/86400.0);
-  
+
   /* compute corresponding exact GPS for this integer days MJD */
   tempGPS.gpsSeconds = (MJD->days-44244)*86400 + leap;
   tempGPS.gpsNanoSeconds = 0;
@@ -1028,7 +1028,7 @@ void TDBGPStoMJD(MJDTime *MJD,LIGOTimeGPS GPS,INT4 leap) {
   MJDTime MJDrough;
   LIGOTimeGPS GPSguess;
   double diff;
-  
+
   /* do rough conversion to MJD */
   UTCGPStoMJD(&MJDrough,&GPS,leap);
 
@@ -1073,7 +1073,7 @@ void LALRadstoRA(LALStatus *status, CHAR *RA, REAL8 rads) {
 
   snprintf(RA,18,"%d:%02d:%02d.%08d",hours,mins,secs,fracsecs);
   printf("RA = %s\n",RA);
- 
+
   DETATCHSTATUSPTR (status);
   RETURN (status);
 
@@ -1105,7 +1105,7 @@ void LALRadstoDEC(LALStatus *status, CHAR *DEC, REAL8 rads) {
   printf("x = %6.12f\n",x);
   fracarcsecs = (INT4)floor(1e7*x + 0.5);
 
-  
+
 
   snprintf(DEC,18,"%d:%02d:%02d.%07d",sign*degs,arcmins,arcsecs,fracarcsecs);
   printf("DEC = %s\n",DEC);
