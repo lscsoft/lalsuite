@@ -490,7 +490,15 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveform(LALInferenceIFOData *IFOd
     spin2y=0.0;
     aligned_spins+=1;
   }
-    
+
+  /* Set inclination to something sensible now, because for spin aligned we won't enter in the blocks below, where theta_JN or inclination
+   *  are set for no-spin or precessing spins. We can set inclination to either theta_JN or iota, as for aligned spins they are the same,
+   * while for frecessing spins they will be eventually overwritten to the right value here below  */
+  if (frame==LALINFERENCE_FRAME_SYSTEM)
+      inclination       = *(REAL8*) LALInferenceGetVariable(IFOdata->modelParams, "theta_JN");           /* inclination in radian */
+  else
+      inclination       = *(REAL8*) LALInferenceGetVariable(IFOdata->modelParams, "inclination");           /* inclination in radian */
+
   if (aligned_spins==0){
     /* Template is not spin-aligned only.
      * Set the all other spins variables (that is an overkill. We can just check if there are spins in the first place, and if there aren't don't bother calculating them (they'll be zero) ) */
