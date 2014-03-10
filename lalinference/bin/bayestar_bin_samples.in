@@ -60,34 +60,10 @@ import numpy as np
 import healpy as hp
 import lalinference.bayestar.fits
 import lalinference.bayestar.postprocess
-import pylal.bayespputils
 
-# Read posterior chain.
-data = pylal.bayespputils.PEOutputParser('common')
-with open(infilename, 'r') as f:
-    dataObj0 = data.parse(f)
-posterior = pylal.bayespputils.Posterior(dataObj0)
-
-# Re-map parameter names.
-# FIXME: Which codes use rightascension & declination, and which use ra & dec?
-# Is this here to support a legacy code?
-if 'ra' and 'dec' not in posterior.names:
-    if 'rightascension' and 'declination' in posterior.names:
-        new_param_names = ('ra', 'dec')
-        post_names = ('rightascension', 'declination')
-        posterior.append_multiD_mapping(new_param_names,
-            (lambda *args: args), post_names)
-    else:
-        raise ValueError('param not found')
-
-# Read polar coordinates of samples.
-# FIXME: Could we just use np.recfromtxt() here?
-samples, header = posterior.samples()
-header = header.split()
-samples = [pylal.bayespputils.PosteriorSample(row, header, ['ra', 'dec'])
-    for row in samples]
-theta = 0.5*np.pi - np.asarray([sample['dec'] for sample in samples])
-phi = np.asarray([sample['ra'] for sample in samples])
+samples = np.recfromtxt(infilename, names=True)
+theta = 0.5*np.pi - samples['dec']
+phi = samples['ra']
 
 p = lalinference.bayestar.postprocess.adaptive_healpix_histogram(
     theta, phi, opts.samples_per_bin,
