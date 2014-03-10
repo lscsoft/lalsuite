@@ -29,7 +29,9 @@
 
 struct tagLALREAL8TimeSeriesInterp {
 	const REAL8TimeSeries *series;
-	int kernel_length_over_2;
+	int kernel_length;
+	double *cached_kernel;
+	double residual;
 };
 
 
@@ -52,12 +54,27 @@ struct tagLALREAL8TimeSeriesInterp {
 
 LALREAL8TimeSeriesInterp *XLALREAL8TimeSeriesInterpCreate(const REAL8TimeSeries *series, int kernel_length)
 {
-	LALREAL8TimeSeriesInterp *interp = XLALMalloc(sizeof(*interp));
-	if(!interp)
+	LALREAL8TimeSeriesInterp *interp;
+	double *cached_kernel;
+
+	if(kernel_length < 2)
+		XLAL_ERROR_NULL(XLAL_EDOM);
+	/* interpolator induces phase shifts unless this is even */
+	kernel_length -= kernel_length % 1;
+
+	interp = XLALMalloc(sizeof(*interp));
+	cached_kernel = XLALMalloc(kernel_length * sizeof(*cached_kernel));
+	if(!interp || !cached_kernel) {
+		XLALFree(interp);
+		XLALFree(cached_kernel);
 		XLAL_ERROR_NULL(XLAL_EFUNC);
+	}
 
 	interp->series = series;
-	interp->kernel_length_over_2 = kernel_length / 2.0;
+	interp->kernel_length = kernel_length;
+	interp->cached_kernel = cached_kernel;
+	/* >= 1 --> impossible.  forces kernel init on first eval */
+	interp->residual = 2.;
 
 	return interp;
 }
@@ -70,6 +87,8 @@ LALREAL8TimeSeriesInterp *XLALREAL8TimeSeriesInterpCreate(const REAL8TimeSeries 
 
 void XLALREAL8TimeSeriesInterpDestroy(LALREAL8TimeSeriesInterp *interp)
 {
+	if(interp)
+		XLALFree(interp->cached_kernel);
 	XLALFree(interp);
 }
 
@@ -79,42 +98,53 @@ void XLALREAL8TimeSeriesInterpDestroy(LALREAL8TimeSeriesInterp *interp)
  * XLAL_EDOM domain error if t is not in [epoch, epoch + length * deltaT)
  * where epoch, length, and deltaT are the start time, sample count, and
  * sample period, respectively, of the time series to which the
- * interpolator is attached.  A Hann-windowed sinc interpolating kernel is
- * used.
+ * interpolator is attached.  A top hat-windowed sinc interpolating kernel
+ * is used.
  */
 
 
 REAL8 XLALREAL8TimeSeriesInterpEval(LALREAL8TimeSeriesInterp *interp, const LIGOTimeGPS *t)
 {
-	const double noop_threshold = 1e-3;	/* samples */
+	const double noop_threshold = 1e-2;	/* samples */
 	const REAL8 *data = interp->series->data->data;
-	REAL8 val;
+	double *cached_kernel = interp->cached_kernel;
+	REAL8 val = 0.0;
 	double j = XLALGPSDiff(t, &interp->series->epoch) / interp->series->deltaT;
+	double residual = round(j) - j;
 	int start, stop;
-	double hann_rad_per_sample;
 	int i;
 
 	if(j < 0 || j >= interp->series->data->length)
 		XLAL_ERROR_REAL8(XLAL_EDOM);
 
-	if(fabs(round(j) - j) < noop_threshold)
+	if(fabs(residual) < noop_threshold)
 		return data[(int) round(j)];
 
-	start = round(j - interp->kernel_length_over_2);
-	stop = round(j + interp->kernel_length_over_2) + 1;
-	hann_rad_per_sample = LAL_TWOPI / (stop - 1 - start);
+	start = round(j - interp->kernel_length / 2.0);
+	stop = start + interp->kernel_length;
 
-	val = 0.0;
+	if(fabs(residual - interp->residual) >= noop_threshold) {
+		/* kernel is top hat-windowed sinc function.  don't check
+		 * for 0/0:  can only occur if j is an integer, which is
+		 * trapped by no-op path above */
+		for(i = start; i < stop; i++) {
+			double x = LAL_PI * (i - j);
+			*cached_kernel++ = sin(x) / x;
+		}
+		interp->residual = residual;
+		/* reset pointer */
+		cached_kernel = interp->cached_kernel;
+	}
+
 	if(interp->series->data->length < (unsigned) stop)
 		stop = interp->series->data->length;
-	for(i = start < 0 ? 0 : start; i < stop; i++) {
-		/* kernel is Hann-windowed sinc function.  don't check for
-		 * 0/0:  can only occur if j is an integer, which is
-		 * trapped by no-op path above */
-		double x = LAL_PI * (i - j);
-		double kernel = sin(x) / x * (0.5 - cos((i - start) * hann_rad_per_sample) / 2.0);
-		val += kernel * data[i];
-	}
+	if(start < 0) {
+		i = 0;
+		cached_kernel -= start;
+	} else
+		i = start;
+	for(; i < stop; i++)
+		val += *cached_kernel++ * data[i];
 
 	return val;
 }
