@@ -663,7 +663,7 @@ ranking-stat = snr
 rank-by = MAX
 ;   following are optional
 param-name = mchirp
-param-ranges = [0,3.48);[3.48,7.4);[7.4,20]
+param-ranges = [0,3.48);[3.48,5.23)
 group-by-ifos =
 ;exclude-coincs = [ALLinH1,H2];[H1,H2inALL];[H2,L1inH1,H2,L1]
 vacuum =
@@ -680,7 +680,7 @@ rank-by = MAX
 ;   the last, whether or not to bin by coincident
 ;   ifos
 param-name = mchirp
-param-ranges = [0,3.48);[3.48,7.4);[7.4,20]
+param-ranges = [0,3.48);[3.48,5.23)
 group-by-ifos =
 ;exclude-coincs = [ALLinH1,H2];[H1,H2inALL];[H2,L1inH1,H2,L1]
 
@@ -754,7 +754,7 @@ logy =
 logz =
 colorbar =
 ; add lines at each mass bin boundary
-plot-y-function = '3.48:$3.48$' --plot-y-function '7.4:$7.4$'
+plot-y-function = '3.48:$3.48$' --plot-y-function '5.23:$5.23$'
 ranking-stat = 'combined_far:Combined FAR (yr$^{-1}$)'
 rank-by = MIN
 simulation-table = sim_inspiral
@@ -775,7 +775,7 @@ logz =
 colorbar =
 ; split up by mass-bin
 param-name = injected_mchirp
-param-ranges = [0,3.48);[3.48,7.4);[7.4,20]
+param-ranges = [0,3.48);[3.48,5.23)
 simulation-table = sim_inspiral
 recovery-table = coinc_inspiral
 livetime-program = inspiral
@@ -836,7 +836,7 @@ square-stats =
 ;   set static options for plotifar jobs
 coinc-table = coinc_inspiral
 param-name = mchirp
-param-ranges = [0,3.48);[3.48,7.4);[7.4,20]
+param-ranges = [0,3.48);[3.48,5.23)
 plot-uncombined =
 group-by-ifos =
 plot-combined =
