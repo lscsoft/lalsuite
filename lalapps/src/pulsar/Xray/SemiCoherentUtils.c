@@ -340,79 +340,97 @@ int XLALGetNextTemplate(Template **temp,                        /**< [out] the s
  * This computes the median of the power to obtain the average counts per second
  *
  */
-int XLALEstimateBackgroundFlux(REAL8Vector **background,     /**< [out] the background flux estimate */
-			       SFTVector *sftvec             /**< [in/out] the SFTs */
-			       )
-{
-  LALStatus status = blank_status;        /* for use wih non-XLAL functions */
-  UINT4 i,j;                               /* counters */
+/* int XLALNormaliseSFTs(SFTVector **sftvec,             /\**< [in/out] the SFTs *\/ */
+/* 		      UINT4 blocksize                 /\**< [in] the running median block size *\/ */
+/* 		      ) */
+/* { */
+/*   LALStatus status = blank_status;        /\* for use wih non-XLAL functions *\/ */
+/*   UINT4 i,j;                               /\* counters *\/ */
+/*   LALRunningMedianPar param; */
+/*   param.blocksize = blocksize; */
 
-  /* validate input arguments */
-  if ((*background) != NULL) {
-    LogPrintf(LOG_CRITICAL,"%s: Invalid input, output REAL8Vector structure != NULL.\n",__func__);
-    XLAL_ERROR(XLAL_EINVAL);
-  }
-  if (sftvec == NULL) {
-    LogPrintf(LOG_CRITICAL,"%s: Invalid input, input SFTVector structure == NULL.\n",__func__);
-    XLAL_ERROR(XLAL_EINVAL);
-  }
+/*   /\* validate input arguments *\/ */
+/*   if (*sftvec == NULL) { */
+/*     LogPrintf(LOG_CRITICAL,"%s: Invalid input, input SFTVector structure == NULL.\n",__func__); */
+/*     XLAL_ERROR(XLAL_EINVAL); */
+/*   } */
 
-  /* allocate memory for background estaimte results */
-  if (((*background) = XLALCreateREAL8Vector(sftvec->length)) == NULL) {
-    LogPrintf(LOG_CRITICAL,"%s: XLALCreateREAL8Vector() failed with error = %d.\n",__func__,xlalErrno);
-    XLAL_ERROR(XLAL_ENOMEM);
-  }
+/*   /\* loop over each SFT *\/ */
+/*   for (i=0;i<(*sftvec)->length;i++) { */
 
-  /* loop over each SFT */
-  for (i=0;i<sftvec->length;i++) {
+/*     /\* COMPLEX8Sequence *sft = (*sftvec)->data[i].data; *\/ */
+/*     SFTtype *sft = (*sftvec)->data[i].data; */
+/*     REAL8 medianbias;                       /\* the bias from computing the median *\/ */
+/*     REAL4Sequence *background = NULL; */
 
-    COMPLEX8Sequence *sft = sftvec->data[i].data;
-    REAL8 *P = NULL;
-    REAL8 medianbias;                       /* the bias from computing the median */
-    REAL8 median;                           /* the median of the power */
-  /*   REAL8 T = 1.0/sftvec->data[i].deltaF; */
-    REAL8 R = 0.0;
+/*     /\* define the length of the running median vector *\/ */
+/*     UINT4 medianlength = sft->length - param.blocksize + 1; */
 
-    /* allocate temporary memory */
-    if ((P = XLALCalloc(sft->length,sizeof(REAL8))) == NULL) {
-      LogPrintf(LOG_CRITICAL,"%s: unable to allocate memory for gridparams->grid.\n",__func__);
-      XLAL_ERROR(XLAL_ENOMEM);
-    }
+/*     /\* allocate memory for the power input *\/ */
+/*     REAL4Sequence *P = NULL; */
+/*     P = XLALCreateREAL4Vector(sft->length); */
 
-    /* loop over each element in the SFT and record the power */
-    for (j=0;j<sft->length;j++) {
-      P[j] = (crealf(sft->data[j])*crealf(sft->data[j]) + cimagf(sft->data[j])*cimagf(sft->data[j]));
-      /* fprintf(stdout,"%.12f %.12f %.12f\n",sftvec->data[0].f0 + j*sftvec->data[i].deltaF,crealf(sft->data[j]),cimagf(sft->data[j])); */
-    }
-    
-    /* sort the data */
-    gsl_sort(P,1,sft->length);
- 
-    /* compute median */
-    median = gsl_stats_median_from_sorted_data(P,1,sft->length);
+/*     /\* loop over each element in the SFT and record the power *\/ */
+/*     for (j=0;j<sft->length;j++) { */
+/*       P->data[j] = (crealf(sft->data[j])*crealf(sft->data[j]) + cimagf(sft->data[j])*cimagf(sft->data[j])); */
+/*       /\* fprintf(stdout,"%.12f %.12f %.12f\n",sftvec->data[0].f0 + j*sftvec->data[i].deltaF,crealf(sft->data[j]),cimagf(sft->data[j])); *\/ */
+/*     }    */
+
+/*     /\* allocate memory for the running median results *\/ */
+/*     background = XLALCreateREAL4Vector(medianlength); */
+
+/*     /\* call running median *\/       */
+/*     LAL_CALL(LALSRunningMedian2(&status,background, P, param ),&status); */
+/*     LogPrintf(LOG_CRITICAL,"%s: LALRunningMedian failed.\n",__func__); */
+      
+/*     /\* compute the median bias *\/ */
+/*     LAL_CALL ( LALRngMedBias( &status, &medianbias, sft->length ), &status); */
+
+/*     /\* normalise the data by the running median *\/ */
+/*     for (j=0;j<background->length;j++) { */
+/*       REAL8 norm = 1.0/sqrt(background->data[j]/medianbias); */
+/*       /\* COMPLEX8 dum = sft->data[j+param.blocksize/2] + _Complex_I*norm; *\/ */
+/*       sft->data[j+param.blocksize/2] *= ((REAL4)norm); */
+/*       /\* sft->data[j+param.blocksize/2].im /= norm; *\/ */
+/*       /\* fprintf(stdout,"%.12f %.12f\n",P->data[j+param.blocksize/2],background->data[j]); *\/ */
+/*     } */
+/*     /\* make sure that the values in the wings are set to zero *\/ */
+/*     /\* for (j=0;j<param.blocksize/2;j++) { *\/ */
+/*     /\*   sft->data[j] = 0 + sqrt(-1)*0.0; *\/ */
+/*     /\*   /\\* sft->data[j].im = 0.0; *\\/ *\/ */
+/*     /\* } *\/ */
+/*     /\* for (j=medianlength+param.blocksize;j<sft->length;j++) { *\/ */
+/*     /\*   sft->data[j] = 0.0; *\/ */
+/*     /\*   /\\* sft->data[j].im = 0.0; *\\/ *\/ */
+/*     /\* } *\/ */
+/*     for (j=0;j<sft->length;j++) { */
+/*       fprintf(stdout,"%.12f\n",(crealf(sft->data[j])*crealf(sft->data[j]) + cimagf(sft->data[j])*cimagf(sft->data[j]))); */
+/*     } */
+/*     exit(0); */
    
-    /* compute the median bias */
-    LAL_CALL ( LALRngMedBias( &status, &medianbias, sft->length ), &status);
-   
-    /* record estimate - this is the expected mean of the power spectrum */
-    /* it is actually equal to R*T*(1+R*dt)*dt^2 ~ R*T*dt^2 since it is the average of a squared Poisson variable */
-    R = (median/medianbias);
-    (*background)->data[i] = R; /* T*R/pow((REAL8)SAMPFREQ,2.0); */
-    LogPrintf(LOG_DEBUG,"%s : Estimated the background for SFT starting at %d as %.3e cnts/s.\n",__func__,sftvec->data[i].epoch.gpsSeconds,R);
-
-    if (isinf(R)) {
-      for (j=0;j<sft->length;j++) fprintf(stdout,"%.12f %.12e %.12e\n",sftvec->data[i].f0 + j*sftvec->data[i].deltaF,crealf(sft->data[j]),cimagf(sft->data[j]));
-      exit(0);
-    }
-    /* free the power */
-    XLALFree(P);
     
-  }
+   
+/*     /\* record estimate - this is the expected mean of the power spectrum *\/ */
+/*     /\* it is actually equal to R*T*(1+R*dt)*dt^2 ~ R*T*dt^2 since it is the average of a squared Poisson variable *\/ */
+/*     /\* R = (median/medianbias); *\/ */
+/*     /\* (*background)->data[i] = R; /\\* T*R/pow((REAL8)SAMPFREQ,2.0); *\\/ *\/ */
+/*     /\* LogPrintf(LOG_DEBUG,"%s : Estimated the background for SFT starting at %d as %.3e cnts/s.\n",__func__,sftvec->data[i].epoch.gpsSeconds,R); *\/ */
 
-  LogPrintf(LOG_DEBUG,"%s : leaving.\n",__func__);
-  return XLAL_SUCCESS;
+/*     /\* if (isinf(R)) { *\/ */
+/*     /\*   for (j=0;j<sft->length;j++) fprintf(stdout,"%.12f %.12e %.12e\n",sftvec->data[i].f0 + j*sftvec->data[i].deltaF,crealf(sft->data[j]),cimagf(sft->data[j])); *\/ */
+/*     /\*   exit(0); *\/ */
+/*     /\* } *\/ */
+/*     /\* free the power *\/ */
+/*     XLALDestroyREAL4Vector(P); */
+/*     XLALDestroyREAL4Vector(background); */
+/*     /\* XLALFree(P); *\/ */
+    
+/*   } */
 
-}
+/*   LogPrintf(LOG_DEBUG,"%s : leaving.\n",__func__); */
+/*   return XLAL_SUCCESS; */
+
+/* } */
 
 /** Compute the demodulated power for a single SFT
  *
@@ -588,7 +606,7 @@ int XLALCOMPLEX8TimeSeriesToCOMPLEX8FrequencySeries(COMPLEX8FrequencySeries **fs
 int XLALCOMPLEX8TimeSeriesArrayToDemodPowerVector(REAL4DemodulatedPowerVector **power,     /**< [out] the spin derivitive demodulated power */
 						  COMPLEX8TimeSeriesArray *dsdata,         /**< [in] the downsampled SFT data */
 						  GridParametersVector *gridparams,         /**< [in/out] the spin derivitive gridding parameters */
-                                                  REAL8Vector *background,
+                                                  /* REAL4VectorArray *background, */
 					          FILE *fp
 	                                          )
 {
@@ -608,10 +626,10 @@ int XLALCOMPLEX8TimeSeriesArrayToDemodPowerVector(REAL4DemodulatedPowerVector **
     LogPrintf(LOG_CRITICAL,"%s: Invalid input, input GridParametersVector structure == NULL.\n",__func__);
     XLAL_ERROR(XLAL_EINVAL);
   }
-  if (background == NULL) {
-    LogPrintf(LOG_CRITICAL,"%s: Invalid input, input REAL8Vector structure == NULL.\n",__func__);
-    XLAL_ERROR(XLAL_EINVAL);
-  }
+  /* if (background == NULL) { */
+  /*   LogPrintf(LOG_CRITICAL,"%s: Invalid input, input REAL8Vector structure == NULL.\n",__func__); */
+  /*   XLAL_ERROR(XLAL_EINVAL); */
+  /* } */
   if (dsdata->length != gridparams->length) {
     LogPrintf(LOG_CRITICAL,"%s: Invalid input, length of downsampled data vector and grid parameters vector not equal.\n",__func__);
     XLAL_ERROR(XLAL_EINVAL);
@@ -720,7 +738,7 @@ int XLALCOMPLEX8TimeSeriesArrayToDemodPowerVector(REAL4DemodulatedPowerVector **
     /* output loudest segment candidate - normalise to be a chi-squared variable */
     fprintf(fp,"%d\t%d\t",ts->epoch.gpsSeconds,ts->epoch.gpsNanoSeconds);
     for (j=0;j<maxdim;j++) fprintf(fp,"%.12f\t",maxspintemp[j]);
-    fprintf(fp,"%.12f\n",2.0*maxpower/background->data[i]);
+    fprintf(fp,"%.12f\n",2.0*maxpower); /*/background->data[i]); */
 
     /* free memory */
     XLALDestroyCOMPLEX8TimeSeries(temp_ts);
@@ -1455,7 +1473,7 @@ int XLALBinaryToSFTVector(SFTVector **SFTvect, 	/**< [out] copied SFT (needs to 
   LIGOTimeGPS endTimeGPS = startTimeGPS;
   XLALGPSAdd(&endTimeGPS,N*dt);
   REAL4TimeSeries *Tseries = XLALCreateREAL4TimeSeries ( "X1", &(startTimeGPS), 0, dt, &empty_LALUnit, N);
-  REAL8 sum = 0;
+  /* REAL8 sum = 0; */
   
   /* read in the data to the timeseries */
   if ((binfp = fopen(filename,"r")) == NULL) {
@@ -1465,10 +1483,16 @@ int XLALBinaryToSFTVector(SFTVector **SFTvect, 	/**< [out] copied SFT (needs to 
   i = 0;
   while (fread(&dummy,sizeof(REAL4),1,binfp)) {
     Tseries->data->data[i] = (REAL4)dummy;
-    sum += Tseries->data->data[i];
+    /* sum += Tseries->data->data[i]; */
     i++;
   }
   fclose(binfp);
+  
+  /* TESTING */
+  /* for (i=0;i<100;i++) fprintf(stdout,"%.0f ",Tseries->data->data[i]); */
+  /* fprintf(stdout,"\n"); */
+  /* exit(0); */
+
  /*  fprintf(stdout,"hello\n"); */
 /*   { */
 /*     FILE *tempfp = NULL; */

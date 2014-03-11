@@ -37,6 +37,8 @@
 #include <gsl/gsl_sort.h>
 #include <gsl/gsl_statistics.h>
 #include <gsl/gsl_sf_log.h>        /* for log computation */
+#include <gsl/gsl_complex_math.h>
+#include <gsl/gsl_complex.h>
 #include <lal/TimeSeries.h>
 #include <lal/FrequencySeries.h>
 #include <lal/LALDatatypes.h>
@@ -80,6 +82,7 @@
 #include <lal/TransientCW_utils.h>
 #include <lal/LALString.h>
 #include <lal/StringVector.h>
+#include <lal/NormalizeSFTRngMed.h>
 
 #include <gsl/gsl_rng.h>           /* for random number generation */ 
 #include <gsl/gsl_randist.h>       /* for random number generation */ 
@@ -194,16 +197,22 @@ extern "C" {
     REAL8 tseg;
   } ParameterSpace;
 
-  
+  /** Stores an array of REAL4 vectors
+   */
+  typedef struct {
+    REAL4Vector **data;             /**< stores REAL4 Vectors */
+    UINT4 length;                        /**< the number of vectors */
+  } REAL4VectorArray;  
+
   int XLALReadSFTs(SFTVector**,CHAR *,REAL8,REAL8,INT4,INT4);
   int XLALComputeFreqGridParamsVector(GridParametersVector**,REAL8Space*,SFTVector*,REAL8);
   int XLALComputeFreqGridParams(GridParameters **freqgridparams,REAL8Space *pspace, REAL8 tmid,REAL8 tsft, REAL8 mu);
   int XLALSFTVectorToCOMPLEX8TimeSeriesArray(COMPLEX8TimeSeriesArray **dstimevec, SFTVector *sftvec);
   int XLALSFTToCOMPLEX8TimeSeries(COMPLEX8TimeSeries **ts, COMPLEX8FrequencySeries *sft,COMPLEX8FFTPlan **plan);
   int XLALCOMPLEX8TimeSeriesToCOMPLEX8FrequencySeries(COMPLEX8FrequencySeries **fs,const COMPLEX8TimeSeries *ts,GridParameters **gridparams);
-  int XLALCOMPLEX8TimeSeriesArrayToDemodPowerVector(REAL4DemodulatedPowerVector**,COMPLEX8TimeSeriesArray*,GridParametersVector*,REAL8Vector*,FILE*);
+  int XLALCOMPLEX8TimeSeriesArrayToDemodPowerVector(REAL4DemodulatedPowerVector**,COMPLEX8TimeSeriesArray*,GridParametersVector*,FILE*);
   int XLALApplyPhaseCorrection(COMPLEX8TimeSeries **outts, COMPLEX8TimeSeries *ints, Template *fn);
-  int XLALEstimateBackgroundFlux(REAL8Vector **background, SFTVector *sftvec);
+  /* int XLALNormaliseSFTs(SFTVector **sftvec,UINT4 blocksize); */
   int XLALComputeBinaryGridParams(GridParameters **binarygridparams,REAL8Space *space,REAL8 T,REAL8 DT,REAL8 mu,REAL8 coverage);
   int XLALGetNextTemplate(Template **,GridParameters *, ParameterSpace *,UNUSED void *);
   int XLALGetNextRandomBinaryTemplate(Template **,GridParameters *, ParameterSpace *,void *);

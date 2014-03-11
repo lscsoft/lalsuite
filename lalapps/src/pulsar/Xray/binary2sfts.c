@@ -209,7 +209,7 @@ int XLALReadUserVars(int argc,            /**< [in] the command line argument co
   uvar->outLabel = NULL; 
   uvar->outputdir = NULL;
   uvar->cachefile = NULL;
-  uvar->fsamp = 2048;
+  uvar->fsamp = 8192;
   uvar->tsft = 100;
   uvar->freq = 550;
   uvar->freqband = 1;
