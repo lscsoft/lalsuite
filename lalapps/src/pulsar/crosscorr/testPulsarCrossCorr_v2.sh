@@ -35,8 +35,8 @@ Ftolerance=0.05
 # ---------- fixed parameter of our test-signal
 Tsft=180;
 startTime=827884814
-duration=720
-endTime=827885534
+duration=86400
+endTime=827971214
 refTime=827884814
 
 # Sky coordinates of Sco X-1
