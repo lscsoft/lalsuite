@@ -132,11 +132,12 @@ void LALInferenceInitGlitchVariables(LALInferenceRunState *runState)
   double Anorm;
 
   REAL8 TwoDeltaToverN = 2.0 * dataPtr->timeData->deltaT / ((double) dataPtr->timeData->data->length);
-  Anorm = sqrt(TwoDeltaToverN);
   /*
-  Amin = 10.0   / sqrt(TwoDeltaToverN);
-  Amax = 10000.0 / sqrt(TwoDeltaToverN);
+  Amin = 1.0   / sqrt(TwoDeltaToverN);
+  Amax = 100.0 / sqrt(TwoDeltaToverN);
   */
+
+  Anorm = sqrt(TwoDeltaToverN);
   Amin = 10.0/Anorm;
   Amax = 10000.0/Anorm;
 
@@ -148,18 +149,6 @@ void LALInferenceInitGlitchVariables(LALInferenceRunState *runState)
   f_max = dataPtr->fHigh;
   pmin = 0.0;
   pmax = LAL_TWOPI;
-
-  /*runState->data->glitch_x = gsl_matrix_alloc(nifo,(int)n); //store the Fourier-domain glitch signal
-  runState->data->glitch_y = gsl_matrix_alloc(nifo,(int)n); //store the Fourier-domain glitch signal
-  //set glitch model to zero
-  for(i=0; i<(UINT4)n; i++)
-  {
-    for(j=0; j<nifo; j++)
-    {
-      gsl_matrix_set(runState->data->glitch_x,j,i,0.0);
-      gsl_matrix_set(runState->data->glitch_y,j,i,0.0);
-    }
-  }*/
 
   gsl_matrix  *gFD       = gsl_matrix_alloc(nifo,(int)n); //store the Fourier-domain glitch signal
   gsl_matrix  *gpower    = gsl_matrix_alloc(nifo,(int)n); //store the (normalized) wavelet power in each pixel

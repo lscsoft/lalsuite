@@ -177,7 +177,6 @@ BcastDifferentialEvolutionPoints(LALInferenceRunState *runState, INT4 sourceTemp
 
   /* Clean up */
   XLALFree(temp);
-  XLALFree(packedDEsamples);
   MPI_Barrier(MPI_COMM_WORLD);
 }
 
@@ -249,7 +248,6 @@ computeMaxAutoCorrLen(LALInferenceRunState *runState, INT4 startCycle, INT4 endC
         max=ACL;
     }
     XLALFree(temp);
-    XLALFree(DEarray);
   } else {
     max = Niter;
   }
@@ -1023,19 +1021,12 @@ void PTMCMCOneStep(LALInferenceRunState *runState)
   INT4 acceptanceCount;
   INT4 accepted = 0;
 
-  // check if we are using a glitch model
-  UINT4 glitchFlag = 0;
-  if(LALInferenceCheckVariable(runState->currentParams,"glitchFitFlag"))
-    glitchFlag = *((INT4 *)LALInferenceGetVariable(runState->currentParams, "glitchFitFlag"));
-
   // current values:
   logPriorCurrent      = runState->currentPrior;
   logLikelihoodCurrent = runState->currentLikelihood;
 
   temperature = *(REAL8*) LALInferenceGetVariable(runState->proposalArgs, "temperature");
   acceptanceCount = *(INT4*) LALInferenceGetVariable(runState->proposalArgs, "acceptanceCount");
-
-  //if(glitchFlag) gsl_matrix_memcpy (runState->data->glitch_y, runState->data->glitch_x);
 
   // generate proposal:
   proposedParams.head = NULL;
@@ -1067,15 +1058,10 @@ void PTMCMCOneStep(LALInferenceRunState *runState)
     + (logPriorProposed - logPriorCurrent)
     + logProposalRatio;
 
-  //printf("%g=(1/%g)*(%g-%g)+(%g-%g)+%g\n",logAcceptanceProbability,temperature,logLikelihoodProposed,logLikelihoodCurrent,logPriorProposed,logPriorCurrent,logProposalRatio);
-
   // accept/reject:
   if ((logAcceptanceProbability > 0)
       || (log(gsl_rng_uniform(runState->GSLrandom)) < logAcceptanceProbability)) {   //accept
     LALInferenceCopyVariables(&proposedParams, runState->currentParams);
-
-    //if(glitchFlag) gsl_matrix_memcpy (runState->data->glitch_x, runState->data->glitch_y);
-
     runState->currentLikelihood = logLikelihoodProposed;
     LALInferenceIFOData *headData = runState->data;
     while (headData != NULL) {
@@ -1201,22 +1187,6 @@ UINT4 LALInferencePTswap(LALInferenceRunState *runState, REAL8 *ladder, INT4 i, 
 
         /* Unpack parameters */
         LALInferenceCopyArrayToVariables(adjParameters, runState->currentParams);
-
-        /* Recompute glitch model
-        UINT4 glitchFlag = 0;
-        if(LALInferenceCheckVariable(runState->currentParams,"glitchFitFlag"))
-          glitchFlag = *((UINT4 *)LALInferenceGetVariable(runState->currentParams, "glitchFitFlag"));
-
-        if(glitchFlag)
-        {
-          UINT4Vector *gsize = *(UINT4Vector **) LALInferenceGetVariable(runState->currentParams, "glitch_size");
-          UINT4 ifo = 0;
-          UINT4 n   = 0;
-
-          // Remove wavlet form linear combination
-          for(ifo=0; ifo<gsize->length; ifo++) for(n=0; n<runState->data->glitch_x->size2; n++) gsl_matrix_set(runState->data->glitch_x, ifo, n, 0.0);
-          for(ifo=0; ifo<gsize->length; ifo++) for(n=0; n<gsize->data[ifo]; n++) UpdateWaveletSum(runState, runState->currentParams, runState->data->glitch_x, ifo, n, 1);
-        }*/
 
         XLALDestroyREAL8Vector(parameters);
         XLALDestroyREAL8Vector(adjParameters);
