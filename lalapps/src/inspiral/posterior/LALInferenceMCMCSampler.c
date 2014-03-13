@@ -245,9 +245,9 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
   }
 
   /* Clustered-KDE proposal updates */
-  UINT4 kde_update_start    = 100;  // rough number of effective samples to start KDE updates
-  UINT4 kde_update_interval = 100;  // rough number of effective samples between KDE udpates
-  UINT4 last_kde_update = 0;        // effective sample size at last KDE update
+  INT4 kde_update_start    = 100;  // rough number of effective samples to start KDE updates
+  INT4 kde_update_interval = 100;  // rough number of effective samples between KDE udpates
+  INT4 last_kde_update = 0;        // effective sample size at last KDE update
 
 
   UINT4 diffEvo = 1; // Differential evolution

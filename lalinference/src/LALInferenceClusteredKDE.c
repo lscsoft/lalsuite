@@ -63,6 +63,9 @@ LALInferenceKmeans *LALInferenceIncrementalKmeans(gsl_matrix *data, gsl_rng *rng
     /* Start at k=1 and increase k until the BIC stops increasing. */
     while (1) {
         kmeans = LALInferenceKmeansRunBestOf(k, data, iter, rng);
+        if (!kmeans)
+            return NULL;
+
         bic = LALInferenceKmeansBIC(kmeans);
 
         /* Stop if the BIC decreases */
@@ -102,6 +105,11 @@ LALInferenceKmeans *LALInferenceXmeans(gsl_matrix *data, gsl_rng *rng) {
     LALInferenceKmeans *sub_kmeans, *new_kmeans;
 
     LALInferenceKmeans *kmeans = LALInferenceCreateKmeans(2, data, rng);
+
+    /* If kmeans wasn't setup, return nothing */
+    if (!kmeans)
+        return NULL;
+
     LALInferenceKmeansForgyInitialize(kmeans);
     LALInferenceKmeansRun(kmeans);
 
@@ -141,6 +149,9 @@ LALInferenceKmeans *LALInferenceXmeans(gsl_matrix *data, gsl_rng *rng) {
         k = centroids->size1;
 
         new_kmeans = LALInferenceCreateKmeans(k, data, rng);
+        if (!new_kmeans)
+            return NULL;
+
         gsl_matrix_memcpy(new_kmeans->centroids, centroids);
         LALInferenceKmeansRun(new_kmeans);
 
@@ -177,8 +188,11 @@ LALInferenceKmeans *LALInferenceXmeans(gsl_matrix *data, gsl_rng *rng) {
 LALInferenceKmeans *LALInferenceRecursiveKmeans(gsl_matrix *data, gsl_rng *rng) {
     UINT4 k;
 
-    /* Perform recursive splitting */
+    /* Perform recursive splitting.  Return NULL if kmeans creation fails */
     LALInferenceKmeans *split_kmeans = LALInferenceCreateKmeans(1, data, rng);
+    if (!split_kmeans)
+        return NULL;
+
     LALInferenceKmeansForgyInitialize(split_kmeans);
     LALInferenceKmeansRecursiveSplit(split_kmeans);
 
@@ -187,6 +201,9 @@ LALInferenceKmeans *LALInferenceRecursiveKmeans(gsl_matrix *data, gsl_rng *rng) 
     k = centroids->size1;
 
     LALInferenceKmeans *kmeans = LALInferenceCreateKmeans(k, data, rng);
+    if (!kmeans)
+        return NULL;
+
     gsl_matrix_memcpy(kmeans->centroids, centroids);
     LALInferenceKmeansDestroy(split_kmeans);
 
@@ -283,6 +300,9 @@ LALInferenceKmeans *LALInferenceKmeansRunBestOf(UINT4 k, gsl_matrix *samples, UI
     REAL8 best_error = DBL_MAX;
     for (i = 0; i < iter; i++) {
         kmeans = LALInferenceCreateKmeans(k, samples, rng);
+        if (!kmeans)
+            continue;
+
         LALInferenceKmeansForgyInitialize(kmeans);
         LALInferenceKmeansRun(kmeans);
 
@@ -309,6 +329,7 @@ LALInferenceKmeans *LALInferenceKmeansRunBestOf(UINT4 k, gsl_matrix *samples, UI
  * @param[in] rng  A GSL random number generator used for initialization.
  */
 LALInferenceKmeans * LALInferenceCreateKmeans(UINT4 k, gsl_matrix *data, gsl_rng *rng) {
+    INT4 status;
     LALInferenceKmeans *kmeans = XLALMalloc(sizeof(LALInferenceKmeans));
 
     /* Store the unwhitened mean before whitening.  Needed for further transformation. */
@@ -326,9 +347,35 @@ LALInferenceKmeans * LALInferenceCreateKmeans(UINT4 k, gsl_matrix *data, gsl_rng
     kmeans->unwhitened_chol_dec_cov = LALInferenceComputeCovariance(data);
     kmeans->chol_dec_cov = LALInferenceComputeCovariance(kmeans->data);
 
+    /* Turn off default GSL error handling (i.e. aborting), and catch
+     * errors decomposing due to non-positive definite covariance matrices */
+    gsl_error_handler_t *default_gsl_error_handler = gsl_set_error_handler_off();
+
     /* Cholesky decompose the covariance matrix and decorrelate the data */
-    gsl_linalg_cholesky_decomp(kmeans->unwhitened_chol_dec_cov);
-    gsl_linalg_cholesky_decomp(kmeans->chol_dec_cov);
+    status = gsl_linalg_cholesky_decomp(kmeans->unwhitened_chol_dec_cov);
+    if (status) {
+        if (status == GSL_EDOM) {
+            fprintf(stderr, "Unwhitened covariance matrix not positive-definite.  No proposal has been built.\n");
+            return NULL;
+        } else {
+            fprintf(stderr, "ERROR: Unexpected problem decomposing covariance matrix.\n");
+            exit(-1);
+        }
+    }
+
+    status = gsl_linalg_cholesky_decomp(kmeans->chol_dec_cov);
+    if (status) {
+        if (status == GSL_EDOM) {
+            fprintf(stderr, "Whitened covariance matrix not positive-definite.  No proposal has been built.\n");
+            return NULL;
+        } else {
+            fprintf(stderr, "ERROR: Unexpected problem decomposing covariance matrix.\n");
+            exit(-1);
+        }
+    }
+
+    /* Return to default GSL error handling */
+    gsl_set_error_handler(default_gsl_error_handler);
 
     /* Zero out upper right triangle of decomposed covariance matrix, which contains the transpose */
     UINT4 i, j;

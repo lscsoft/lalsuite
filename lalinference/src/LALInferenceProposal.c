@@ -3514,6 +3514,16 @@ void LALInferenceSetupClusteredKDEProposalsFromFile(LALInferenceRunState *runSta
 
             /* Build the KDE estimate and add to the KDE proposal set */
             LALInferenceInitClusteredKDEProposal(runState, kde, sampleArray, nInSamps, clusterParams, propName, weight);
+
+            /* If kmeans construction failed, halt the run */
+            if (!kde->kmeans) {
+                fprintf(stderr, "\nERROR: Couldn't build kmeans clustering from the file specified.\n");
+                XLALFree(kde);
+                XLALFree(burnins);
+                XLALFree(weights);
+                exit(-1);
+            }
+
             LALInferenceAddClusteredKDEProposalToSet(runState, kde);
 
             LALInferenceClearVariables(backwardClusterParams);
@@ -3552,6 +3562,10 @@ void LALInferenceInitClusteredKDEProposal(LALInferenceRunState *runState, LALInf
     gsl_matrix_view mview = gsl_matrix_view_array(array, nSamps, dim);
 
     kde->kmeans = LALInferenceIncrementalKmeans(&mview.matrix, runState->GSLrandom);
+    /* kmeans setup failed, so return */
+    if (!kde->kmeans)
+        return;
+
     printf("%i clusters found.\n", kde->kmeans->k);
 
     kde->dimension = kde->kmeans->dim;
@@ -3677,7 +3691,12 @@ void LALInferenceSetupClusteredKDEProposalFromRun(LALInferenceRunState *runState
 
     /* Build the proposal */
     LALInferenceInitClusteredKDEProposal(runState, proposal, DEsamples[0], nPoints, clusterParams, clusteredKDEProposalName, weight);
-    LALInferenceAddClusteredKDEProposalToSet(runState, proposal);
+
+    /* Only add the kmeans was successfully setup */
+    if (proposal->kmeans)
+        LALInferenceAddClusteredKDEProposalToSet(runState, proposal);
+    else
+        XLALFree(proposal);
 
     /* The proposal copies the data, so the local array can be freed */
     XLALFree(temp);
