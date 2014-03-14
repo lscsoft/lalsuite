@@ -8,6 +8,8 @@ endif
 lalpulsarincludedir = $(includedir)/lal
 lalpulsarinclude_HEADERS = \
 	BinaryPulsarTiming.h \
+	CWFastMath.h \
+	CWMakeFakeData.h \
 	ComplexAM.h \
 	ComputeFstat.h \
 	ComputeSky.h \
@@ -16,14 +18,12 @@ lalpulsarinclude_HEADERS = \
 	DopplerLatticeCovering.h \
 	DopplerScan.h \
 	ExtrapolatePulsarSpins.h \
-	CWFastMath.h \
 	FitToPulsar.h \
 	FlatLatticeTilingPulsar.h \
 	FlatMesh.h \
 	FlatPulsarMetric.h \
 	FoldAmplitudes.h \
 	GeneratePulsarSignal.h \
-	SimulatePulsarSignal.h \
 	GenerateSpinOrbitCW.h \
 	GenerateTaylorCW.h \
 	HoughMap.h \
@@ -41,7 +41,6 @@ lalpulsarinclude_HEADERS = \
 	LISAspecifics.h \
 	LUT.h \
 	LatticeCovering.h \
-	CWMakeFakeData.h \
 	NormalizeSFTRngMed.h \
 	PHMD.h \
 	ProbabilityDensity.h \
@@ -58,6 +57,7 @@ lalpulsarinclude_HEADERS = \
 	SFTutils-LAL.h \
 	SFTutils.h \
 	SSBtimes.h \
+	SimulatePulsarSignal.h \
 	StackMetric.h \
 	Statistics.h \
 	SynthesizeCWDraws.h \
@@ -71,6 +71,7 @@ lalpulsarinclude_HEADERS = \
 lib_LTLIBRARIES = liblalpulsar.la
 liblalpulsar_la_SOURCES = \
 	BinaryPulsarTiming.c \
+	CWMakeFakeData.c \
 	CoherentMetric.c \
 	ComplexAM.c \
 	ComputeFstat.c \
@@ -106,7 +107,6 @@ liblalpulsar_la_SOURCES = \
 	LFTandTSutils.c \
 	LISAspecifics.c \
 	LatticeCovering.c \
-	CWMakeFakeData.c \
 	NDParamPLUT.c \
 	NormalizeSFTRngMed.c \
 	ParamPLUT.c \
@@ -133,8 +133,8 @@ liblalpulsar_la_SOURCES = \
 	SynthesizeCWDraws.c \
 	TBaryPtolemaic.c \
 	TComp.c \
-	TransientCW_utils.c \
 	TSpin.c \
+	TransientCW_utils.c \
 	TwoDMesh.c \
 	TwoDMeshInternal.c \
 	TwoDMeshMetrics.c \
