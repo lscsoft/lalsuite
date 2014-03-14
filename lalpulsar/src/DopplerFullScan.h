@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008 Karl Wette
+ * Copyright (C) 2007, 2008, 2012 Karl Wette
  * Copyright (C) 2006 Reinhard Prix
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -43,6 +43,7 @@ extern "C" {
 #include <lal/PulsarDataTypes.h>
 #include <lal/ComputeFstat.h>
 #include <lal/DopplerScan.h>
+#include <lal/FlatLatticeTiling.h>
 
 /*---------- DEFINES ----------*/
 
@@ -92,6 +93,30 @@ REAL8 XLALNumDopplerTemplates ( DopplerFullScanState *scan);
 int XLALGetDopplerSpinRange ( PulsarSpinRange *spinRange, const DopplerFullScanState *scan );
 
 /* ----- variout utility functions ----- */
+
+///
+/// Set a first spindown bound derived from spindown age and braking indices
+///
+int XLALSetFlatLatticeF1DotAgeBrakingBound(
+  FlatLatticeTiling* tiling,		///< [in] Tiling state
+  const size_t freq_dimension,		///< [in] Frequency dimension
+  const size_t f1dot_dimension,		///< [in] First spindown dimension
+  const double age,			///< [in] Spindown age
+  const double min_braking,		///< [in] Minimum braking index
+  const double max_braking		///< [in] Maximum braking index
+  );
+
+///
+/// Set a second spindown bound derived from braking indices
+///
+int XLALSetFlatLatticeF2DotBrakingBound(
+  FlatLatticeTiling* tiling,		///< [in] Tiling state
+  const size_t freq_dimension,		///< [in] Frequency dimension
+  const size_t f1dot_dimension,		///< [in] First spindown dimension
+  const size_t f2dot_dimension,		///< [in] Second spindown dimension
+  const double min_braking,		///< [in] Minimum braking index
+  const double max_braking		///< [in] Maximum braking index
+  );
 
 #ifdef  __cplusplus
 }
