@@ -310,6 +310,10 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 
   LALInferenceAddVariable(runState->algorithmParams, "acl", &acl,  LALINFERENCE_INT4_t, LALINFERENCE_PARAM_LINEAR);
 
+  /* burnin settings */
+  INT4  burninLength       =  (INT4)(0.25 * adaptLength);// Number of iterations to turn off proposal ratio
+  LALInferenceAddVariable(runState->proposalArgs, "burninLength", &burninLength,  LALINFERENCE_INT4_t, LALINFERENCE_PARAM_LINEAR);
+
   /* Standard parallel tempering */
   ladderMin = *(REAL8*) LALInferenceGetVariable(runState->algorithmParams, "tempMin");   // Min temp in ladder
   ladderMax = *(REAL8*) LALInferenceGetVariable(runState->algorithmParams, "tempMax");   // Max temp in ladder
@@ -862,6 +866,7 @@ INT4 PTMCMCOneStep(LALInferenceRunState *runState)
   REAL8 targetAcceptance = 0.234;
   INT4 acceptanceCount;
   INT4 accepted = 0;
+  INT4 burnin = 0;
 
   // current values:
   logPriorCurrent      = runState->currentPrior;
@@ -1332,9 +1337,17 @@ void LALInferenceAdaptation(LALInferenceRunState *runState, INT4 cycle)
 
   INT4 nPar = LALInferenceGetVariableDimensionNonFixed(runState->currentParams);
   INT4 adapting = *(INT4*) LALInferenceGetVariable(runState->proposalArgs, "adapting");
+  INT4 burnin = *(INT4*) LALInferenceGetVariable(runState->proposalArgs, "burnin");
+  INT4 burninLength = *(INT4*) LALInferenceGetVariable(runState->proposalArgs, "burninLength");
   INT4 adaptStart = *(INT4*) LALInferenceGetVariable(runState->proposalArgs, "adaptStart");
   INT4 adaptLength = *(INT4*) LALInferenceGetVariable(runState->proposalArgs, "adaptLength");
   REAL8 logLAtAdaptStart = *(REAL8*) LALInferenceGetVariable(runState->proposalArgs, "logLAtAdaptStart");
+
+  /* Only burnin at the beginning of the run */
+  if (burnin && (cycle > burninLength)) {
+      burnin = 0;
+      LALInferenceSetVariable(runState->proposalArgs, "burnin", &burnin);
+  }
 
   /* if maximum logL has increased by more than nParam/2, restart it */
   if (runState->currentLikelihood > logLAtAdaptStart+(REAL8)nPar/2) {
