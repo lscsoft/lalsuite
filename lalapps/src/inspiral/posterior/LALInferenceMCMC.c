@@ -504,9 +504,9 @@ void initializeMCMC(LALInferenceRunState *runState)
       if(ppt)
           malmquist_network = atof(ppt->value);
 
-      LALInferenceAddVariable(runState->priorArgs, "malmquist_loudest_snr", &malmquist_loudest, LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_FIXED);
-      LALInferenceAddVariable(runState->priorArgs, "malmquist_second_loudest_snr", &malmquist_second_loudest, LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_FIXED);
-      LALInferenceAddVariable(runState->priorArgs, "malmquist_network_snr", &malmquist_network, LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_FIXED);
+      LALInferenceAddVariable(runState->priorArgs, "malmquist_loudest_snr", &malmquist_loudest, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
+      LALInferenceAddVariable(runState->priorArgs, "malmquist_second_loudest_snr", &malmquist_second_loudest, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
+      LALInferenceAddVariable(runState->priorArgs, "malmquist_network_snr", &malmquist_network, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
   }
 
   ppt=LALInferenceGetProcParamVal(commandLine,"--verbose");

@@ -149,7 +149,9 @@ REAL8 LALInferenceInspiralPrior(LALInferenceRunState *runState, LALInferenceVari
        || *(REAL8 *)LALInferenceGetVariable(priorParams,"component_max") < m2)
       return -DBL_MAX;
 
-  if(LALInferenceCheckVariable(priorParams,"malmquist") && !within_malmquist(runState, params))
+  if(LALInferenceCheckVariable(priorParams,"malmquist") &&
+        LALInferenceCheckVariable(priorParams,"malmquist") &&
+        !within_malmquist(runState, params))
       return -DBL_MAX;
 
   return(logPrior);

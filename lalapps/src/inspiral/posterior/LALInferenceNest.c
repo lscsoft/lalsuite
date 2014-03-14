@@ -199,7 +199,7 @@ void initializeMalmquistPrior(LALInferenceRunState *runState)
 {
   
   REAL8 malmquist_loudest = 0.0;
-  REAL8 malmquist_second_loudest = 8.0;
+  REAL8 malmquist_second_loudest = 5.0;
   REAL8 malmquist_network = 0.0;
   ProcessParamsTable *commandLine=runState->commandLine;
   ProcessParamsTable *ppt=NULL;
@@ -213,9 +213,9 @@ void initializeMalmquistPrior(LALInferenceRunState *runState)
   ppt=LALInferenceGetProcParamVal(commandLine,"--malmquist-network-snr");
   if(ppt)
     malmquist_network = atof(ppt->value);
-  LALInferenceAddVariable(runState->priorArgs, "malmquist_loudest_snr", &malmquist_loudest, LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_FIXED);
-  LALInferenceAddVariable(runState->priorArgs, "malmquist_second_loudest_snr", &malmquist_second_loudest, LALINFERENCE_UINT4_t,LALINFERENCE_PARAM_FIXED);
-  LALInferenceAddVariable(runState->priorArgs, "malmquist_network_snr", &malmquist_network, LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_FIXED);
+  LALInferenceAddVariable(runState->priorArgs, "malmquist_loudest_snr", &malmquist_loudest, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
+  LALInferenceAddVariable(runState->priorArgs, "malmquist_second_loudest_snr", &malmquist_second_loudest, LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_FIXED);
+  LALInferenceAddVariable(runState->priorArgs, "malmquist_network_snr", &malmquist_network, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
   UINT4 malmquist=1;
   LALInferenceAddVariable(runState->priorArgs, "malmquist", &malmquist, LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_FIXED);
   runState->prior=&LALInferenceInspiralPrior;
@@ -300,7 +300,7 @@ Nested sampling arguments:\n\
       runState->prior = &LALInferenceInspiralPriorNormalised;
     }
     /* For Compatibility with MCMC command line */
-    if(LALInferenceGetProcParamVal(commandLine,"--malmquistprior")) initializeMalmquistPrior(runState);
+    if(LALInferenceGetProcParamVal(commandLine,"--malmquist-prior")) initializeMalmquistPrior(runState);
 	
 	/* Set up the prior for analytic tests if needed */
 	if(LALInferenceGetProcParamVal(commandLine,"--correlatedGaussianLikelihood")){
