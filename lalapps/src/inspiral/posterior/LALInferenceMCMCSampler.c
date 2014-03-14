@@ -311,7 +311,10 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
   LALInferenceAddVariable(runState->algorithmParams, "acl", &acl,  LALINFERENCE_INT4_t, LALINFERENCE_PARAM_LINEAR);
 
   /* burnin settings */
-  INT4  burninLength       =  (INT4)(0.25 * adaptLength);// Number of iterations to turn off proposal ratio
+  INT4 burnin       = 1;                           // Burnin phase where proposal ratio is ignored
+  INT4 burninLength = (INT4)(0.25 * adaptLength);  // Number of iterations to turn off proposal ratio
+
+  LALInferenceAddVariable(runState->proposalArgs, "burnin", &burnin,  LALINFERENCE_INT4_t, LALINFERENCE_PARAM_LINEAR);
   LALInferenceAddVariable(runState->proposalArgs, "burninLength", &burninLength,  LALINFERENCE_INT4_t, LALINFERENCE_PARAM_LINEAR);
 
   /* Standard parallel tempering */
