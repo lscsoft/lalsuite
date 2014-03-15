@@ -475,10 +475,12 @@ int XLALApplyPhaseCorrection(COMPLEX8TimeSeries **outts,            /**< [out] t
     /* compute real and imaginary parts of phase correction timeseries */
     REAL8 xr = cos(arg);
     REAL8 xi = sin(arg);
+    COMPLEX8 x = xr + I*xi;
     
     /* multiply data by phase correction - leave the zero-padding */
-    (*outts)->data->data[j].realf_FIXME = crealf(ints->data->data[j])*xr - cimagf(ints->data->data[j])*xi;
-    (*outts)->data->data[j].imagf_FIXME = crealf(ints->data->data[j])*xi + cimagf(ints->data->data[j])*xr;
+    (*outts)->data->data[j] = ints->data->data[j]*x;
+    /* (*outts)->data->data[j].realf_FIXME = crealf(ints->data->data[j])*xr - cimagf(ints->data->data[j])*xi; */
+    /* (*outts)->data->data[j].imagf_FIXME = crealf(ints->data->data[j])*xi + cimagf(ints->data->data[j])*xr; */
     
   }
   
@@ -523,7 +525,6 @@ int XLALCOMPLEX8TimeSeriesToCOMPLEX8FrequencySeries(COMPLEX8FrequencySeries **fs
   REAL8 deltaT = ts->deltaT;                          /* the fixed time sampling of the input data */
   REAL8 T = N*deltaT;                                 /* the intrinsic duration */
   REAL8 deltaF = 1.0/(ts->deltaT*ts->data->length);   /* the intrinsic deltaF */
-
   /* define new deltaF accounting for the fixed deltaT */
   REAL8 newdeltaF = (*gridparams)->grid[0].delta;
 /*   REAL8 oldmaxf = (*gridparams)->grid[0].min + (*gridparams)->grid[0].length*(*gridparams)->grid[0].delta; */
@@ -553,8 +554,8 @@ int XLALCOMPLEX8TimeSeriesToCOMPLEX8FrequencySeries(COMPLEX8FrequencySeries **fs
 
   /* put the input data into the temporary input structure and normalise it with deltaT */
   for (j=0;j<N;j++) {
-    temp_input->data[j].realf_FIXME = ts->data->data[j].realf_FIXME*deltaT;
-    temp_input->data[j].imagf_FIXME = ts->data->data[j].imagf_FIXME*deltaT;
+    temp_input->data[j] = ts->data->data[j]*deltaT;
+    /* temp_input->data[j].imagf_FIXME = ts->data->data[j].imagf_FIXME*deltaT; */
   }
 
   /* FFT the data */
@@ -583,8 +584,9 @@ int XLALCOMPLEX8TimeSeriesToCOMPLEX8FrequencySeries(COMPLEX8FrequencySeries **fs
   /*  extract desired frequencies */
   for (j=0;j<(*gridparams)->grid[0].length;j++) {
     INT4 k = j + binoffset;
-    (*fs)->data->data[j].realf_FIXME = temp_output->data[k].realf_FIXME;
-    (*fs)->data->data[j].imagf_FIXME = temp_output->data[k].imagf_FIXME;
+    (*fs)->data->data[j] = temp_output->data[k];
+    /* (*fs)->data->data[j].realf_FIXME = temp_output->data[k].realf_FIXME; */
+    /* (*fs)->data->data[j].imagf_FIXME = temp_output->data[k].imagf_FIXME; */
   }
 
   /* free memory */
@@ -699,12 +701,22 @@ int XLALCOMPLEX8TimeSeriesArrayToDemodPowerVector(REAL4DemodulatedPowerVector **
       /* reinitilaise the reused complex timeseries */
       fs = NULL;
 
+      /* for (j=0;j<temp_ts->data->length;j++) {
+        fprintf(stdout,"ts = %e %e\n",crealf(ts->data->data[j]),cimagf(ts->data->data[j]));
+      }
+      exit(0); */
+
       /* apply phase correction to complex timeseries */
       if (XLALApplyPhaseCorrection(&temp_ts,ts,spintemp)) {
 	LogPrintf(LOG_CRITICAL,"%s : XLALApplyPhseCorrection() failed with error = %d\n",__func__,xlalErrno);
 	XLAL_ERROR(XLAL_EINVAL);
       }
       LogPrintf(LOG_DEBUG,"%s : applied phase correction for template index %d/%d on segment %d/%d\n",__func__,spintemp->currentidx,tempgrid.max,i,dsdata->length);
+
+      /* for (j=0;j<temp_ts->data->length;j++) {
+        fprintf(stdout,"temp_ts = %e %e\n",crealf(temp_ts->data->data[j]),cimagf(temp_ts->data->data[j]));
+      }
+      exit(0); */
 
       /* convert to the complex frequency domain - on the frequency grid specified */
       if (XLALCOMPLEX8TimeSeriesToCOMPLEX8FrequencySeries(&fs,temp_ts,&(gridparams->segment[i]))) {
@@ -1062,8 +1074,9 @@ int XLALSFTToCOMPLEX8TimeSeries(COMPLEX8TimeSeries **ts,           /**< [out] th
 
   /* normalise outputs by multiplying by df */
   for (j=0;j<N;j++) {
-    temp_output.data[j].realf_FIXME = temp_output.data[j].realf_FIXME*deltaF;
-    temp_output.data[j].imagf_FIXME = temp_output.data[j].imagf_FIXME*deltaF;
+    temp_output.data[j] *= deltaF;
+    /* temp_output.data[j].realf_FIXME = temp_output.data[j].realf_FIXME*deltaF; */
+    /* temp_output.data[j].imagf_FIXME = temp_output.data[j].imagf_FIXME*deltaF; */
     /* fprintf(stdout,"%.12f %.12f %.12f\n",j*deltaT,temp_output.data[j].realf_FIXME,temp_output.data[j].imagf_FIXME); */
   }
   
@@ -1137,7 +1150,8 @@ int XLALReadSFTs(SFTVector **sftvec,        /**< [out] the input SFT data */
 		 REAL8 freq,                /**< [in] the starting frequency to read in */
 		 REAL8 freqband,            /**< [in] the bandwidth to read */
 		 INT4 start,                /**< [in] the min GPS time of the input data */
-		 INT4 end                   /**< [in] the max GPS time of the input data*/
+		 INT4 end,                  /**< [in] the max GPS time of the input data*/
+		 INT4 tsft
   		 )
 {
   static SFTConstraints constraints;
@@ -1207,6 +1221,12 @@ int XLALReadSFTs(SFTVector **sftvec,        /**< [out] the input SFT data */
   /* check if we found any SFTs */
   if ((*sftvec)->length == 0) {
     LogPrintf(LOG_CRITICAL,"%s : No SFTs found in specified frequency range.  Exiting.\n",__func__);
+    XLAL_ERROR(XLAL_EINVAL);
+  }
+  
+  /* check if the SFTs had the expected length */
+  if (fabs((*sftvec)->data[0].deltaF - 1.0/(REAL8)tsft)>1e-12) {
+    LogPrintf(LOG_CRITICAL,"%s : SFT length not as specified.  Exiting.\n",__func__);
     XLAL_ERROR(XLAL_EINVAL);
   }
   

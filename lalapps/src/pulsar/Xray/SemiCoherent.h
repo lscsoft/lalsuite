@@ -204,7 +204,7 @@ extern "C" {
     UINT4 length;                        /**< the number of vectors */
   } REAL4VectorArray;  
 
-  int XLALReadSFTs(SFTVector**,CHAR *,REAL8,REAL8,INT4,INT4);
+  int XLALReadSFTs(SFTVector**,CHAR *,REAL8,REAL8,INT4,INT4,INT4);
   int XLALComputeFreqGridParamsVector(GridParametersVector**,REAL8Space*,SFTVector*,REAL8);
   int XLALComputeFreqGridParams(GridParameters **freqgridparams,REAL8Space *pspace, REAL8 tmid,REAL8 tsft, REAL8 mu);
   int XLALSFTVectorToCOMPLEX8TimeSeriesArray(COMPLEX8TimeSeriesArray **dstimevec, SFTVector *sftvec);

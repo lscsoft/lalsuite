@@ -82,6 +82,7 @@ typedef struct {
   INT4 seed;                        /**< fix the random number generator seed */
   REAL8 coverage;                   /**< random template bank coverage */
   INT4 blocksize;                  /**< the running median blocksize */
+  INT4 tsft;			   /**< the length of the input sfts */
   CHAR *comment;
   CHAR *tempdir;                    /**< a temporary directory for keeping the results */
   BOOLEAN version;	            /**< output version-info */
@@ -122,7 +123,7 @@ int main( int argc, char *argv[] )  {
   CHAR newnewtemp[LONGSTRINGLENGTH];
  /*  REAL8Vector *SemiCo = NULL;                   /\* the semi-coherent statistic results *\/    */
   REAL8 fmin_read,fmax_read,fband_read;         /* the range of frequencies to be read from SFTs */
-  UINT4 i;                                      /* counter */
+  UINT4 i;                                      /* counters */
   FILE *sfp = NULL;
   FILE *cfp = NULL;
 
@@ -176,11 +177,11 @@ int main( int argc, char *argv[] )  {
     XLAL_ERROR(XLAL_EFAULT);
   }
 
-  /* make crude but safe estimate of the bandwidth required for the source */
+  /* make crude but safe estimate of the bandwidth required for the source - now includes running median wings */
   {
     REAL8 wings = LAL_TWOPI*uvar.maxasini/uvar.minorbperiod;
-    fmin_read = MINBAND*floor((uvar.freq - WINGS_FACTOR*uvar.freq*wings)/MINBAND);
-    fmax_read = MINBAND*ceil((uvar.freq + uvar.freqband + WINGS_FACTOR*(uvar.freq + uvar.freqband)*wings)/MINBAND);
+    fmin_read = MINBAND*floor((uvar.freq - WINGS_FACTOR*uvar.freq*wings - (REAL8)uvar.blocksize/(REAL8)uvar.tsft)/MINBAND);
+    fmax_read = MINBAND*ceil((uvar.freq + (REAL8)uvar.blocksize/(REAL8)uvar.tsft + uvar.freqband + WINGS_FACTOR*(uvar.freq + uvar.freqband)*wings)/MINBAND);
     fband_read = fmax_read - fmin_read;
     LogPrintf(LOG_DEBUG,"%s : reading in SFT frequency band [%f -> %f]\n",__func__,fmin_read,fmax_read); 
   }
@@ -196,7 +197,7 @@ int main( int argc, char *argv[] )  {
   /**********************************************************************************/
   
   /* load in the SFTs - also fill in the segment parameters structure */
-  if (XLALReadSFTs(&sftvec,uvar.sftbasename,fmin_read,fband_read,uvar.gpsstart,uvar.gpsend)) {
+  if (XLALReadSFTs(&sftvec,uvar.sftbasename,fmin_read,fband_read,uvar.gpsstart,uvar.gpsend,uvar.tsft)) {
     LogPrintf(LOG_CRITICAL,"%s : XLALReadSFTs() failed with error = %d\n",__func__,xlalErrno);
     return 1;
   }
@@ -219,6 +220,14 @@ int main( int argc, char *argv[] )  {
     return 1;
   }
   LogPrintf(LOG_DEBUG,"%s : normalised the SFTs\n",__func__); 
+
+  /* for (i=0;i<sftvec->length;i++) {
+    for (j=0;j<sftvec->data[i].data->length;j++) {
+      if (isnan(crealf(sftvec->data[i].data->data[j]))||isinf(crealf(sftvec->data[i].data->data[j]))||isnan(cimagf(sftvec->data[i].data->data[j]))||isinf(cimagf(sftvec->data[i].data->data[j]))) {
+        fprintf(stdout,"SFT %d : %f %e %e\n",i,sftvec->data[i].f0 + j*sftvec->data[i].deltaF,crealf(sftvec->data[i].data->data[j]),cimagf(sftvec->data[i].data->data[j]));
+      }
+    }
+  } */
 
   /**********************************************************************************/
   /* DEFINE THE BINARY PARAMETER SPACE */
@@ -391,6 +400,7 @@ int XLALReadUserVars(int argc,            /**< [in] the command line argument co
   uvar->frac = 0.01;
   uvar->coverage = -1;
   uvar->blocksize = 100;
+  uvar->tsft = 256;
   uvar->seed = 1;
   uvar->tempdir = NULL;
 
@@ -420,6 +430,7 @@ int XLALReadUserVars(int argc,            /**< [in] the command line argument co
   XLALregREALUserStruct(mismatch,        	'm', UVAR_OPTIONAL, "The grid mismatch (0->1)");
   XLALregREALUserStruct(coverage,        	'c', UVAR_OPTIONAL, "The random template coverage (0->1)");
   XLALregINTUserStruct(blocksize,        	'r', UVAR_OPTIONAL, "The running median block size");
+  XLALregINTUserStruct(tsft,                    'S', UVAR_OPTIONAL, "The length of the input SFTs in seconds");
   XLALregREALUserStruct(frac,                   'x', UVAR_OPTIONAL, "output this top fraction of results");
   XLALregINTUserStruct(seed,                    'X', UVAR_OPTIONAL, "The random number seed (0 = clock)");
   XLALregINTUserStruct(gpsstart,                's', UVAR_OPTIONAL, "The minimum start time (GPS sec)");
