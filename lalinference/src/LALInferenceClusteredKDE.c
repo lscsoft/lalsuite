@@ -63,12 +63,14 @@ LALInferenceKmeans *LALInferenceIncrementalKmeans(gsl_matrix *data, gsl_rng *rng
     /* Start at k=1 and increase k until the BIC stops increasing. */
     while (1) {
         kmeans = LALInferenceKmeansRunBestOf(k, data, iter, rng);
-        if (!kmeans)
-            return NULL;
 
-        bic = LALInferenceKmeansBIC(kmeans);
+        /* If kmeans creation failed, the cluster size was likely too small */
+        if (kmeans)
+            bic = LALInferenceKmeansBIC(kmeans);
+        else
+            bic = -INFINITY;
 
-        /* Stop if the BIC decreases */
+        /* Keep going until the BIC decreases */
         if (bic > best_bic) {
             if (best_clustering)
                 LALInferenceKmeansDestroy(best_clustering);
@@ -124,10 +126,17 @@ LALInferenceKmeans *LALInferenceXmeans(gsl_matrix *data, gsl_rng *rng) {
         /* For each existing centroid, attempt to split and see if the BIC increases locally */
         for (c = 0; c < kmeans->k; c++) {
             sub_kmeans = LALInferenceKmeansExtractCluster(kmeans, c);
-            old_bic = LALInferenceKmeansBIC(sub_kmeans);
 
-            new_kmeans = LALInferenceKmeansRunBestOf(split_size, sub_kmeans->data, iter, rng);
-            new_bic = LALInferenceKmeansBIC(new_kmeans);
+            /* If the cluster wasn't extracted successfully, reject the split.  */
+            if (sub_kmeans) {
+                old_bic = LALInferenceKmeansBIC(sub_kmeans);
+
+                new_kmeans = LALInferenceKmeansRunBestOf(split_size, sub_kmeans->data, iter, rng);
+                new_bic = LALInferenceKmeansBIC(new_kmeans);
+            } else {
+                old_bic = INFINITY;
+                new_bic = -INFINITY;
+            }
 
             if (new_bic > old_bic) {
                 /* BIC increased, so keep the new centroids */
@@ -149,14 +158,16 @@ LALInferenceKmeans *LALInferenceXmeans(gsl_matrix *data, gsl_rng *rng) {
         k = centroids->size1;
 
         new_kmeans = LALInferenceCreateKmeans(k, data, rng);
-        if (!new_kmeans)
-            return NULL;
+        if (new_kmeans) {
+            gsl_matrix_memcpy(new_kmeans->centroids, centroids);
+            LALInferenceKmeansRun(new_kmeans);
 
-        gsl_matrix_memcpy(new_kmeans->centroids, centroids);
-        LALInferenceKmeansRun(new_kmeans);
-
-        /* Store the BIC after all centroids have been attempted to be split */
-        ending_bic = LALInferenceKmeansBIC(new_kmeans);
+            /* Store the BIC after all centroids have been attempted to be split */
+            ending_bic = LALInferenceKmeansBIC(new_kmeans);
+        } else {
+            /* If new kmeans couldn't be created, reject it */
+            ending_bic = -INFINITY;
+        }
 
         if (ending_bic > starting_bic) {
             /* BIC improved, so update and continue */
@@ -198,15 +209,15 @@ LALInferenceKmeans *LALInferenceRecursiveKmeans(gsl_matrix *data, gsl_rng *rng) 
 
     /* Take the final centroids and make a fully self-consistent kmeans */
     gsl_matrix *centroids = split_kmeans->recursive_centroids;
-    k = centroids->size1;
+    LALInferenceKmeansDestroy(split_kmeans);
 
+    k = centroids->size1;
     LALInferenceKmeans *kmeans = LALInferenceCreateKmeans(k, data, rng);
+
     if (!kmeans)
         return NULL;
 
     gsl_matrix_memcpy(kmeans->centroids, centroids);
-    LALInferenceKmeansDestroy(split_kmeans);
-
     LALInferenceKmeansRun(kmeans);
 
     return kmeans;
@@ -217,7 +228,8 @@ LALInferenceKmeans *LALInferenceRecursiveKmeans(gsl_matrix *data, gsl_rng *rng) 
  * Recursively split a k=1 kmeans.
  *
  * Split a centroid in 2 recursively, evaluating the BIC to determine if the
- * split is kept.
+ * split is kept.  This is a cheap method, as the BIC becomes cheaper to
+ * compute after each split.
  * @param[in] kmeans A k=1 kmeans to be split recursively.
  * \sa LALInferenceRecursiveKmeans()
  */
@@ -237,7 +249,7 @@ void LALInferenceKmeansRecursiveSplit(LALInferenceKmeans *kmeans) {
     if (new_bic > current_bic) {
         for (cluster = 0; cluster < new_kmeans->k; cluster++) {
             LALInferenceKmeans *sub_kmeans = LALInferenceKmeansExtractCluster(new_kmeans, cluster);
-            LALInferenceKmeansRecursiveSplit(sub_kmeans);
+            if (sub_kmeans) LALInferenceKmeansRecursiveSplit(sub_kmeans);
 
             UINT4 n_new_centroids = sub_kmeans->recursive_centroids->size1;
             for (i = 0; i < n_new_centroids ; i++) {
@@ -319,7 +331,6 @@ LALInferenceKmeans *LALInferenceKmeansRunBestOf(UINT4 k, gsl_matrix *samples, UI
     return best_kmeans;
 }
 
-
 /**
  * Generate a new kmeans struct from a set of data.
  *
@@ -337,6 +348,10 @@ LALInferenceKmeans * LALInferenceCreateKmeans(UINT4 k, gsl_matrix *data, gsl_rng
 
     /* Whiten the data */
     kmeans->data = LALInferenceWhitenSamples(data);
+    if (!kmeans->data) {
+        fprintf(stderr, "Unable to whiten data.  No proposal has been built.\n");
+        return NULL;
+    }
 
     kmeans->k = k;
     kmeans->npts = data->size1;
@@ -347,37 +362,20 @@ LALInferenceKmeans * LALInferenceCreateKmeans(UINT4 k, gsl_matrix *data, gsl_rng
     kmeans->unwhitened_chol_dec_cov = LALInferenceComputeCovariance(data);
     kmeans->chol_dec_cov = LALInferenceComputeCovariance(kmeans->data);
 
-    /* Turn off default GSL error handling (i.e. aborting), and catch
-     * errors decomposing due to non-positive definite covariance matrices */
-    gsl_error_handler_t *default_gsl_error_handler = gsl_set_error_handler_off();
-
     /* Cholesky decompose the covariance matrix and decorrelate the data */
-    status = gsl_linalg_cholesky_decomp(kmeans->unwhitened_chol_dec_cov);
+    status = LALInferenceCholeskyDecompose(kmeans->unwhitened_chol_dec_cov);
     if (status) {
-        if (status == GSL_EDOM) {
-            fprintf(stderr, "Unwhitened covariance matrix not positive-definite.  No proposal has been built.\n");
-            return NULL;
-        } else {
-            fprintf(stderr, "ERROR: Unexpected problem decomposing covariance matrix.\n");
-            exit(-1);
-        }
+        fprintf(stderr, "Unwhitened covariance matrix not positive-definite.  No proposal has been built.\n");
+        return NULL;
     }
 
-    status = gsl_linalg_cholesky_decomp(kmeans->chol_dec_cov);
+    status = LALInferenceCholeskyDecompose(kmeans->chol_dec_cov);
     if (status) {
-        if (status == GSL_EDOM) {
-            fprintf(stderr, "Whitened covariance matrix not positive-definite.  No proposal has been built.\n");
-            return NULL;
-        } else {
-            fprintf(stderr, "ERROR: Unexpected problem decomposing covariance matrix.\n");
-            exit(-1);
-        }
+        fprintf(stderr, "Whitened covariance matrix not positive-definite.  No proposal has been built.\n");
+        return NULL;
     }
 
-    /* Return to default GSL error handling */
-    gsl_set_error_handler(default_gsl_error_handler);
-
-    /* Zero out upper right triangle of decomposed covariance matrix, which contains the transpose */
+   /* Zero out upper right triangle of decomposed covariance matrix, which contains the transpose */
     UINT4 i, j;
     for (i = 0; i < kmeans->dim; i++) {
         for (j = i+1; j < kmeans->dim; j++) {
@@ -547,9 +545,13 @@ LALInferenceKmeans *LALInferenceKmeansExtractCluster(LALInferenceKmeans *kmeans,
     LALInferenceKmeans *sub_kmeans = LALInferenceCreateKmeans(1, masked_data, kmeans->rng);
     gsl_matrix_free(masked_data);
 
-    /* Initialize and assign all points to the only cluster */
-    LALInferenceKmeansForgyInitialize(sub_kmeans);
-    LALInferenceKmeansRun(sub_kmeans);
+    /* If cluster was extracted successfully, then run it */
+    if (sub_kmeans) {
+        /* Initialize and assign all points to the only cluster */
+        LALInferenceKmeansForgyInitialize(sub_kmeans);
+        LALInferenceKmeansRun(sub_kmeans);
+    }
+
     return sub_kmeans;
 }
 
@@ -737,6 +739,36 @@ REAL8 LALInferenceWhitenedKmeansPDF(LALInferenceKmeans *kmeans, REAL8 *pt) {
 
 
 /**
+ * Compute the Cholesky decomposition of a matrix.
+ *
+ * A wrapper for gsl_linalg_cholesky_decomp() that avoids halting if the matrix
+ * is found not to be positive-definite.  This often happens when decomposing a
+ * covariance matrix that is poorly estimated due to low sample size.
+ * @param matrix The matrix to decompose (in place).
+ * @return Status of call to gsl_linalg_cholesky_decomp().
+ */
+INT4 LALInferenceCholeskyDecompose(gsl_matrix *mat) {
+    INT4 status;
+
+    /* Turn off default GSL error handling (i.e. aborting), and catch
+     * errors decomposing due to non-positive definite covariance matrices */
+    gsl_error_handler_t *default_gsl_error_handler = gsl_set_error_handler_off();
+
+    status = gsl_linalg_cholesky_decomp(mat);
+    if (status) {
+        if (status != GSL_EDOM) {
+            fprintf(stderr, "ERROR: Unexpected problem Cholesky-decomposing matrix.\n");
+            exit(-1);
+        }
+    }
+
+    /* Return to default GSL error handling */
+    gsl_set_error_handler(default_gsl_error_handler);
+    return status;
+}
+
+
+/**
  * Transform a data set to obtain a 0-mean and identity covariance matrix.
  *
  * Determine and execute the transformation of a data set to remove any global correlations
@@ -748,6 +780,7 @@ gsl_matrix * LALInferenceWhitenSamples(gsl_matrix *samples) {
     UINT4 i, j;
     UINT4 npts = samples->size1;
     UINT4 dim = samples->size2;
+    INT4 status;
 
     gsl_matrix *whitened_samples = gsl_matrix_alloc(npts, dim);
     gsl_matrix_memcpy(whitened_samples, samples);
@@ -759,7 +792,11 @@ gsl_matrix * LALInferenceWhitenSamples(gsl_matrix *samples) {
     /* Cholesky decompose the covariance matrix and decorrelate the data */
     gsl_matrix *cholesky_decomp_cov = gsl_matrix_alloc(dim, dim);
     gsl_matrix_memcpy(cholesky_decomp_cov, cov);
-    gsl_linalg_cholesky_decomp(cholesky_decomp_cov);
+    status = LALInferenceCholeskyDecompose(cholesky_decomp_cov);
+
+    /* If data couldn't be whitened, return NULL */
+    if (status)
+        return NULL;
 
     /* Zero out upper right triangle of decomposed covariance matrix, which contains the transpose */
     for (i = 0; i < dim; i++) {
@@ -935,24 +972,27 @@ REAL8 LALInferenceKmeansBIC(LALInferenceKmeans *kmeans) {
  * @param kmeans The kmeans instance to deallocate.
  */
 void LALInferenceKmeansDestroy(LALInferenceKmeans *kmeans) {
-    XLALFree(kmeans->assignments);
-    XLALFree(kmeans->mask);
-    XLALFree(kmeans->weights);
-    XLALFree(kmeans->sizes);
+    /* Only destroy when there is something to destroy */
+    if (kmeans) {
+        XLALFree(kmeans->assignments);
+        XLALFree(kmeans->mask);
+        XLALFree(kmeans->weights);
+        XLALFree(kmeans->sizes);
 
-    gsl_vector_free(kmeans->mean);
-    gsl_matrix_free(kmeans->data);
-    if (kmeans->chol_dec_cov) gsl_matrix_free(kmeans->chol_dec_cov);
-    if (kmeans->unwhitened_chol_dec_cov) gsl_matrix_free(kmeans->unwhitened_chol_dec_cov);
-    if (kmeans->centroids) gsl_matrix_free(kmeans->centroids);
-    if (kmeans->recursive_centroids) gsl_matrix_free(kmeans->recursive_centroids);
+        gsl_vector_free(kmeans->mean);
+        gsl_matrix_free(kmeans->data);
+        if (kmeans->chol_dec_cov) gsl_matrix_free(kmeans->chol_dec_cov);
+        if (kmeans->unwhitened_chol_dec_cov) gsl_matrix_free(kmeans->unwhitened_chol_dec_cov);
+        if (kmeans->centroids) gsl_matrix_free(kmeans->centroids);
+        if (kmeans->recursive_centroids) gsl_matrix_free(kmeans->recursive_centroids);
 
-    if (kmeans->KDEs != NULL) {
-        UINT4 k;
-        for (k=0; k<kmeans->k; k++)
-            LALInferenceDestroyKDE(kmeans->KDEs[k]);
-        XLALFree(kmeans->KDEs);
+        if (kmeans->KDEs != NULL) {
+            UINT4 k;
+            for (k=0; k<kmeans->k; k++)
+                LALInferenceDestroyKDE(kmeans->KDEs[k]);
+            XLALFree(kmeans->KDEs);
+        }
+
+        XLALFree(kmeans);
     }
-
-    XLALFree(kmeans);
 }
