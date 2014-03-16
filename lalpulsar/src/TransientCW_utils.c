@@ -356,7 +356,7 @@ XLALPulsarDopplerParams2String ( const PulsarDopplerParams *par )
 	}
     }
 
-  if ( par->orbit )
+  if ( par->asini > 0 )
     {
       LogPrintf(LOG_NORMAL, "%s: orbital params not supported in Doppler-filenames yet\n", __func__ );
     }

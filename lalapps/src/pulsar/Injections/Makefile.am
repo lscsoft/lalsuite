@@ -6,7 +6,7 @@ LDADD = $(top_builddir)/src/lalapps/liblalapps.la
 bin_PROGRAMS = lalapps_makefakedata_v2 lalapps_Makefakedata_v4 lalapps_Makefakedata_v5 lalapps_compareSFTs lalapps_compareTS \
 	lalapps_dumpSFT lalapps_makefakedatabinary lalapps_makefakedata_test
 
-EXTRA_PROGRAMS = eah_Makefakedata_v4
+EXTRA_PROGRAMS = eah_Makefakedata_v4 eah_Makefakedata_v5
 
 if LALFRAME
 EXTRA_PROGRAMS += lalapps_sw_inj_frames
@@ -18,6 +18,8 @@ lalapps_Makefakedata_v5_SOURCES = makefakedata_v5.c sft_extra.c sft_extra.h
 
 # force linking in C++ mode for E@H
 eah_Makefakedata_v4_SOURCES = $(lalapps_Makefakedata_v4_SOURCES) ../hough/src2/EinsteinAtHome/win_lib.cpp
+
+eah_Makefakedata_v5_SOURCES = $(lalapps_Makefakedata_v5_SOURCES) ../hough/src2/EinsteinAtHome/win_lib.cpp
 
 lalapps_makefakedata_v2_SOURCES =  makefakedata_v2.c sft_extra.c sft_extra.h
 

@@ -78,7 +78,7 @@ void free_candidateVector(candidateVector *vector)
 
 //////////////////////////////////////////////////////////////
 // Load candidate data
-void loadCandidateData(candidate* output, REAL8 fsig, REAL8 period, REAL8 moddepth, REAL4 ra, REAL4 dec, REAL8 stat, REAL8 h0, REAL8 prob, INT4 proberrcode, REAL8 normalization)
+void loadCandidateData(candidate* output, REAL8 fsig, REAL8 period, REAL8 moddepth, REAL4 ra, REAL4 dec, REAL8 statval, REAL8 h0, REAL8 prob, INT4 proberrcode, REAL8 normalization)
 {
    
    output->fsig = fsig;
@@ -86,7 +86,7 @@ void loadCandidateData(candidate* output, REAL8 fsig, REAL8 period, REAL8 moddep
    output->moddepth = moddepth;
    output->ra = ra;
    output->dec = dec;
-   output->stat = stat;
+   output->stat = statval;
    output->h0 = h0;
    output->prob = prob;
    output->proberrcode = proberrcode;

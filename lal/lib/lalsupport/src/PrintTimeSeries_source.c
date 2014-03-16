@@ -15,8 +15,7 @@ void FUNC ( STYPE *series, const CHAR *filename )
   TYPE *data;
   FILE *fp;
   UINT4 i;
-  static LALStatus status;
-  CHARVector *unitString;
+  CHAR unitString[LALUnitTextSize];
 
   if (series==NULL) return;
 
@@ -38,12 +37,9 @@ void FUNC ( STYPE *series, const CHAR *filename )
   }
   fprintf(fp,"# Epoch is %d seconds, %d nanoseconds\n",
           series->epoch.gpsSeconds,series->epoch.gpsNanoSeconds);
-  unitString = NULL;
-  LALCHARCreateVector(&status, &unitString, LALUnitTextSize);
-  LALUnitAsString(&status, unitString, &(series->sampleUnits));
-  fprintf(fp,"# Units are (%s)\n",unitString->data);
+  XLALUnitAsString(unitString, LALUnitTextSize, &(series->sampleUnits));
+  fprintf(fp,"# Units are (%s)\n",unitString);
   fprintf(fp,HEADER);
-  LALCHARDestroyVector(&status, &unitString);
   for ( i = 0; i < series->data->length; ++i )
   {
     t = i * series->deltaT;

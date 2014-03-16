@@ -328,18 +328,10 @@ main(int argc, char **argv)
   SUB( LALCreateRandomParams( &stat, &params, seed ), &stat );
 
   /* Set up units. */
-  {
-    RAT4 negOne = { -1, 0 };
-    LALUnit unit;
-    LALUnitPair pair;
-    output.sampleUnits = lalADCCountUnit;
-    pair.unitOne = &lalADCCountUnit;
-    pair.unitTwo = &lalStrainUnit;
-    SUB( LALUnitRaise( &stat, &unit, pair.unitTwo,
-		       &negOne ), &stat );
-    pair.unitTwo = &unit;
-    SUB( LALUnitMultiply( &stat, &(detector.transfer->sampleUnits),
-			  &pair ), &stat );
+  output.sampleUnits = lalADCCountUnit;
+  if (XLALUnitDivide( &(detector.transfer->sampleUnits),
+                      &lalADCCountUnit, &lalStrainUnit ) == NULL) {
+    return LAL_EXLAL;
   }
 
   /* Read response function. */

@@ -17,16 +17,6 @@
  *  MA  02111-1307  USA
  */
 
-/* Use more efficient trig routines for solaris, if available and
-   requested. */
-#include <config.h>
-#ifdef HAVE_SUNMATH_H
-#include <sunmath.h>
-#if defined HAVE_LIBSUNMATH && defined ONLINE
-#define USE_SINCOSP 1
-#endif
-#endif
-
 #include <math.h>
 #include <lal/LALStdio.h>
 #include <lal/LALStdlib.h>
@@ -41,6 +31,7 @@
 #include <lal/VectorOps.h>
 #include <lal/PulsarSimulateCoherentGW.h>
 #include <lal/SkyCoordinates.h>
+#include <lal/CWFastMath.h>
 
 /** \name Error Codes */
 /*@{*/
@@ -398,34 +389,19 @@ LALPulsarSimulateCoherentGW( LALStatus        *stat,
 
   /* Check units on input, and set units on output. */
   {
-    BOOLEAN unitsOK;
-    LALUnitPair pair;
-
-    pair.unitOne = &(CWsignal->f->sampleUnits);
-    pair.unitTwo = &lalHertzUnit;
-    TRY( LALUnitCompare( stat->statusPtr, &unitsOK, &pair ), stat );
-    ASSERT( unitsOK, stat, SIMULATECOHERENTGWH_EUNIT,
-            SIMULATECOHERENTGWH_MSGEUNIT );
-    pair.unitOne = &(CWsignal->phi->sampleUnits);
-    pair.unitTwo = &lalDimensionlessUnit;
-    TRY( LALUnitCompare( stat->statusPtr, &unitsOK, &pair ), stat );
-    ASSERT( unitsOK, stat, SIMULATECOHERENTGWH_EUNIT,
-            SIMULATECOHERENTGWH_MSGEUNIT );
+    ASSERT( XLALUnitCompare( &(CWsignal->f->sampleUnits), &lalHertzUnit ) == 0, stat, SIMULATECOHERENTGWH_EUNIT, SIMULATECOHERENTGWH_MSGEUNIT );
+    ASSERT( XLALUnitCompare( &(CWsignal->phi->sampleUnits), &lalDimensionlessUnit ) == 0, stat, SIMULATECOHERENTGWH_EUNIT, SIMULATECOHERENTGWH_MSGEUNIT );
     if( CWsignal->shift ) {
-      pair.unitOne = &(CWsignal->shift->sampleUnits);
-      TRY( LALUnitCompare( stat->statusPtr, &unitsOK, &pair ), stat );
-      ASSERT( unitsOK, stat, SIMULATECOHERENTGWH_EUNIT,
-              SIMULATECOHERENTGWH_MSGEUNIT );
+      ASSERT( XLALUnitCompare( &(CWsignal->shift->sampleUnits), &lalDimensionlessUnit ) == 0, stat, SIMULATECOHERENTGWH_EUNIT, SIMULATECOHERENTGWH_MSGEUNIT );
     }
     if ( transfer ) {
-      pair.unitOne = &(CWsignal->a->sampleUnits);
-      pair.unitTwo = &(detector->transfer->sampleUnits);
-      TRY( LALUnitMultiply( stat->statusPtr, &(output->sampleUnits),
-                            &pair ), stat );
-    } else
+      if ( XLALUnitMultiply( &(output->sampleUnits), &(CWsignal->a->sampleUnits), &(detector->transfer->sampleUnits) ) == NULL ) {
+        ABORT( stat, SIMULATECOHERENTGWH_EUNIT, SIMULATECOHERENTGWH_MSGEUNIT );
+      }
+    } else {
       output->sampleUnits = CWsignal->a->sampleUnits;
-    snprintf( output->name, LALNameLength, "response to %s",
-              CWsignal->a->name );
+    }
+    snprintf( output->name, LALNameLength, "response to %s", CWsignal->a->name );
   }
 
   /* Define temporary variables to access the data of CWsignal->a,
@@ -861,9 +837,7 @@ LALPulsarSimulateCoherentGW( LALStatus        *stat,
     REAL4 shift = 0.0;      /* current signal polarization shift */
     REAL4 aTrans, phiTrans; /* current values of the transfer function */
     REAL4 oPlus, oCross;    /* current output amplitudes */
-#if USE_SINCOSP
-    REAL8 sp, cp, ss, cs;   /* sine and cosine of shift and phase */
-#endif
+    REAL4 sp, cp, ss, cs;   /* sine and cosine of shift and phase */
 
     /* Interpolate the signal amplitude. */
     x = aOff + iCentre*aDt;
@@ -937,15 +911,16 @@ LALPulsarSimulateCoherentGW( LALStatus        *stat,
     }
 
     /* Compute components of output. */
-#if USE_SINCOSP
-    sincosp( shift, &ss, &cs );
-    sincosp( phi, &sp, &cp );
+    if ( XLALSinCosLUT(&ss, &cs, shift) != XLAL_SUCCESS ) {
+      ABORT( stat, LAL_EXLAL, "XLALSinCosLUT(&ss, &cs, shift) failed" );
+    }
+    if ( XLALSinCosLUT(&sp, &cp, phi) != XLAL_SUCCESS ) {
+      ABORT( stat, LAL_EXLAL, "XLALSinCosLUT(&sp, &cp, phi) failed" );
+    }
     oPlus  = a1*cs*cp - a2*ss*sp;
     oCross = a1*ss*cp + a2*cs*sp;
-#else
-    oPlus = a1*cos( shift )*cos( phi ) - a2*sin( shift )*sin( phi );
-    oCross = a1*sin( shift )*cos( phi ) + a2*cos( shift )*sin( phi );
-#endif
+    /* oPlus = a1*cos( shift )*cos( phi ) - a2*sin( shift )*sin( phi ); */
+    /* oCross = a1*sin( shift )*cos( phi ) + a2*cos( shift )*sin( phi ); */
 
     /* Interpolate the polarization response, and compute output. */
     x = polOff + i*polDt;

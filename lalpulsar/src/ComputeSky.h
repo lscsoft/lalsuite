@@ -40,7 +40,7 @@
  * \f}
  * The index \f$b\f$ defines the DeFT frequency bin, the index \f$\alpha\f$ loops through
  * the SFTs that build the DeFT, \f$k\f$ runs on all the SFT frequency bins, and \f$j\f$
- * is a time index that runs on each SFT.  As shown in \ref LALDemod.h, the next step in the development of the demodulation
+ * is a time index that runs on each SFT.  The next step in the development of the demodulation
  * technique involves Taylor expanding the phase model about the temporal
  * midpoint of each short segment of data, while retaining only first order
  * terms.  The Taylor expansion of \f$\Phi (t)\f$ about the temporal midpoint

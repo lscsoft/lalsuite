@@ -467,6 +467,7 @@ void initializeMCMC(LALInferenceRunState *runState)
 //    runState->likelihood=&LALInferenceTimeDomainLogLikelihood;
 //  } else
 
+  UINT4 malmquist = 0;
   if(LALInferenceGetProcParamVal(commandLine,"--skyLocPrior")){
     runState->prior=&LALInferenceInspiralSkyLocPrior;
   } else if (LALInferenceGetProcParamVal(commandLine, "--correlatedGaussianLikelihood") || 
@@ -476,10 +477,37 @@ void initializeMCMC(LALInferenceRunState *runState)
     runState->prior=&LALInferenceAnalyticNullPrior;
   } else if (LALInferenceGetProcParamVal(commandLine, "--nullprior")) {
     runState->prior=&LALInferenceNullPrior;
+  } else if (LALInferenceGetProcParamVal(commandLine, "--malmquistprior")) {
+    printf("Using malmquist prior.\n");
+    malmquist = 1;
+    LALInferenceAddVariable(runState->priorArgs, "malmquist", &malmquist, LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_FIXED);
+    runState->prior=&LALInferenceInspiralPrior;
   } else {
     runState->prior=&LALInferenceInspiralPriorNormalised;
   }
   //runState->prior=PTUniformGaussianPrior;
+
+  if (malmquist) {
+      REAL8 malmquist_loudest = 0.0;
+      REAL8 malmquist_second_loudest = 8.0;
+      REAL8 malmquist_network = 0.0;
+
+      ppt=LALInferenceGetProcParamVal(commandLine,"--malmquist-loudest-snr");
+      if(ppt)
+          malmquist_loudest = atof(ppt->value);
+
+      ppt=LALInferenceGetProcParamVal(commandLine,"--malmquist-second-loudest-snr");
+      if(ppt)
+          malmquist_second_loudest = atof(ppt->value);
+
+      ppt=LALInferenceGetProcParamVal(commandLine,"--malmquist-network-snr");
+      if(ppt)
+          malmquist_network = atof(ppt->value);
+
+      LALInferenceAddVariable(runState->priorArgs, "malmquist_loudest_snr", &malmquist_loudest, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
+      LALInferenceAddVariable(runState->priorArgs, "malmquist_second_loudest_snr", &malmquist_second_loudest, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
+      LALInferenceAddVariable(runState->priorArgs, "malmquist_network_snr", &malmquist_network, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
+  }
 
   ppt=LALInferenceGetProcParamVal(commandLine,"--verbose");
   if(ppt) {

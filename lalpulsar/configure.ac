@@ -74,6 +74,9 @@ AM_SILENT_RULES([yes])
 # check for required compilers
 LALSUITE_PROG_COMPILERS
 
+# check for SIMD extensions
+LALPULSAR_WITH_SIMD
+
 # checks for programs
 AC_PROG_INSTALL
 AC_PROG_LN_S
@@ -152,6 +155,7 @@ AC_MSG_NOTICE([
 ==================================================
 LALPulsar has now been successfully configured:
 
+* SIMD extensions are $SIMD_ENABLE_VAL
 * LALXML library support is $LALXML_ENABLE_VAL
 * BOINC support is $BOINC_ENABLE_VAL
 * SWIG wrapping module for Octave is $SWIG_OCTAVE_ENABLE_VAL

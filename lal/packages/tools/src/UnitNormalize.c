@@ -95,6 +95,7 @@ int XLALUnitNormalize( LALUnit *unit )
 void
 LALUnitNormalize (LALStatus *status, LALUnit *output, const LALUnit *input)
 {
+  XLAL_PRINT_DEPRECATION_WARNING("XLALUnitNormalize");
 
   INITSTATUS(status);
 

@@ -468,7 +468,7 @@ XLALInitCode ( ConfigVariables *cfg, const UserVariables_t *uvar, const char *ap
     dop->fkdot[1] = uvar->f1dot;
     dop->fkdot[2] = uvar->f2dot;
     dop->fkdot[3] = uvar->f3dot;
-    dop->orbit = NULL;
+    dop->asini = 0 /* isolated pulsar */;
   }
 
   /* ----- initialize IFOs and (Multi-)DetectorStateSeries  ----- */
@@ -588,15 +588,14 @@ XLALOutputDopplerMetric ( FILE *fp, const DopplerMetric *metric, const ResultHis
   fprintf ( fp, "refTime = %.1f;\n", XLALGPSGetREAL8 ( &doppler->refTime ) );
   fprintf ( fp, "Alpha   = %f;\nDelta = %f;\n", doppler->Alpha, doppler->Delta );
   fprintf ( fp, "fkdot   = [%f, %g, %g, %g ];\n", doppler->fkdot[0], doppler->fkdot[1], doppler->fkdot[2], doppler->fkdot[3] );
-  if ( doppler->orbit )
+  if ( doppler->asini > 0 )
     {
-      const BinaryOrbitParams *orbit = doppler->orbit;
       fprintf ( fp, "%%%% 	   orbit = { \n");
-      fprintf ( fp, "%%%% 		tp = {%d, %d}\n", orbit->tp.gpsSeconds, orbit->tp.gpsNanoSeconds );
-      fprintf ( fp, "%%%% 		argp  = %g\n", orbit->argp );
-      fprintf ( fp, "%%%% 		asini = %g\n", orbit->asini );
-      fprintf ( fp, "%%%% 		ecc = %g\n", orbit->ecc );
-      fprintf ( fp, "%%%% 		period = %g\n", orbit->period );
+      fprintf ( fp, "%%%% 		tp = {%d, %d}\n", doppler->tp.gpsSeconds, doppler->tp.gpsNanoSeconds );
+      fprintf ( fp, "%%%% 		argp  = %g\n", doppler->argp );
+      fprintf ( fp, "%%%% 		asini = %g\n", doppler->asini );
+      fprintf ( fp, "%%%% 		ecc = %g\n", doppler->ecc );
+      fprintf ( fp, "%%%% 		period = %g\n", doppler->period );
       fprintf ( fp, "%%%% 	   }\n");
     } /* if doppler->orbit */
   fprintf ( fp, "%%%% }\n");

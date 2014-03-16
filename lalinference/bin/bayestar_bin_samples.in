@@ -37,7 +37,9 @@ parser = OptionParser(
     usage = "%prog [options] [INPUT] -o OUTPUT.fits[.gz]",
     option_list = [
         Option("--nside", "-n", type=int, default=-1,
-            help="HEALPix lateral resolution [default: auto]"),
+            help="Write final sky map at this HEALPix lateral resolution [default: auto]"),
+        Option("--max-nside", "-m", type=int, default=-1,
+            help="Stop subdivision at this maximum HEALPix lateral resolution [default: max 64-bit]"),
         Option("-o", "--output", metavar="OUTPUT.fits[.gz]",
             help="name of output FITS file [required]"),
         Option("--samples-per-bin", type=int, default=30,
@@ -88,7 +90,8 @@ theta = 0.5*np.pi - np.asarray([sample['dec'] for sample in samples])
 phi = np.asarray([sample['ra'] for sample in samples])
 
 p = lalinference.bayestar.postprocess.adaptive_healpix_histogram(
-    theta, phi, opts.samples_per_bin, nside=opts.nside)
+    theta, phi, opts.samples_per_bin,
+    nside=opts.nside, max_nside=opts.max_nside)
 
 # Write output to FITS file.
 lalinference.bayestar.fits.write_sky_map(opts.output, p,

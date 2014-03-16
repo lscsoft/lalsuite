@@ -481,7 +481,7 @@ int main( int argc, char *argv[]){
   sftParams.noiseSFTs = inputSFTs;  
 
   /* signal generation parameters */
-  params.orbit = NULL;
+  params.orbit.asini = 0 /* isolated pulsar */;
   /* params.transferFunction = NULL; */
   params.site = &(detector);
   params.ephemerides = edat;

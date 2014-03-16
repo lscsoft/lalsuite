@@ -33,10 +33,10 @@ fi
 
 Ftolerance=0.05
 # ---------- fixed parameter of our test-signal
-Tsft=1800;
+Tsft=180;
 startTime=827884814
-duration=7200
-endTime=827892014
+duration=86400
+endTime=827971214
 refTime=827884814
 
 # Sky coordinates of Sco X-1
@@ -58,7 +58,7 @@ mfd_ifo2=L1
 
 pcc_fStart=149.9995
 pcc_fBand=.001
-pcc_maxLag=1800
+pcc_maxLag=180
 pcc_orbitAsiniSec=1.40
 pcc_orbitAsiniSecBand=0.10
 pcc_orbitPSec=68023.7136

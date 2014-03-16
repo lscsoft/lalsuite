@@ -21,6 +21,7 @@
  */
 
 #include <lal/LALInferencePrior.h>
+#include <lal/LALInferenceLikelihood.h>
 #include <math.h>
 #include <gsl/gsl_integration.h>
 #include <gsl/gsl_cdf.h>
@@ -146,6 +147,11 @@ REAL8 LALInferenceInspiralPrior(LALInferenceRunState *runState, LALInferenceVari
   if(LALInferenceCheckVariable(priorParams,"component_max"))
     if(*(REAL8 *)LALInferenceGetVariable(priorParams,"component_max") < m1
        || *(REAL8 *)LALInferenceGetVariable(priorParams,"component_max") < m2)
+      return -DBL_MAX;
+
+  if(LALInferenceCheckVariable(priorParams,"malmquist") &&
+        LALInferenceCheckVariable(priorParams,"malmquist") &&
+        !within_malmquist(runState, params))
       return -DBL_MAX;
 
   return(logPrior);
@@ -2701,6 +2707,46 @@ void LALInferenceDrawNameFromPrior( LALInferenceVariables *output,
       break;
   }
 }
+
+
+/* Switch reads true if parameters lie within Malmquist prior */
+UINT4 within_malmquist(LALInferenceRunState *runState, LALInferenceVariables *params) {
+    UINT4 i=0, nifo=0;
+
+    LALInferenceIFOData *ifo = runState->data;
+    while (ifo != NULL) {
+        nifo++;
+        ifo = ifo->next;
+    }
+
+    REAL8 *SNRs = LALInferenceNetworkSNR(params, runState->data, runState->templt);
+    REAL8 loudest_snr=0.0, second_loudest_snr=0.0, network_snr=0.0;
+    for (i=0; i<nifo; i++) {
+        if (SNRs[i] > second_loudest_snr) {
+            if (SNRs[i] > loudest_snr) {
+                second_loudest_snr = loudest_snr;
+                loudest_snr = SNRs[i];
+            } else {
+                second_loudest_snr = SNRs[i];
+            }
+        }
+        network_snr += SNRs[i]*SNRs[i];
+    }
+    XLALFree(SNRs);
+    network_snr = sqrt(network_snr);
+
+    REAL8 malmquist_loudest = (*(REAL8 *)LALInferenceGetVariable(runState->priorArgs,"malmquist_loudest_snr"));
+    REAL8 malmquist_second_loudest = (*(REAL8 *)LALInferenceGetVariable(runState->priorArgs,"malmquist_second_loudest_snr"));
+    REAL8 malmquist_network = (*(REAL8 *)LALInferenceGetVariable(runState->priorArgs,"malmquist_network_snr"));
+
+    if (loudest_snr < malmquist_loudest
+          || second_loudest_snr < malmquist_second_loudest
+          || network_snr < malmquist_network)
+        return(0);
+    else
+        return(1);
+}
+
 
 REAL8 LALInferenceAnalyticNullPrior(LALInferenceRunState UNUSED *runState, LALInferenceVariables *params) {
   REAL8 logPrior=0.0;

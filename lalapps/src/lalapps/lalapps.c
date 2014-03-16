@@ -541,7 +541,7 @@ XLALGetVersionString( int level )
           lalBurstConfigureArgs );
 #endif
 
-#ifdef HAVE_LIBLALINSIRAL
+#ifdef HAVE_LIBLALINSPIRAL
       /* get lalinspiral info */
       snprintf( lalinspiral_info, sizeof(lalinspiral_info),
           "%%%% LALInspiral-Version: %s\n"

@@ -54,7 +54,6 @@ void integrate_eg(qfvars *vars, INT4 nterm, REAL8 interv, REAL8 tausq, INT4 main
 void integrate_twospect(qfvars *vars, INT4 nterm, REAL8 interv, REAL8 tausq, INT4 mainx);
 void integrate_twospect2(qfvars *vars, INT4 nterm, REAL8 interv, REAL8 tausq, INT4 mainx);
 void sse_integrate_twospect2(qfvars *vars, INT4 nterm, REAL8 interv, REAL8 tausq, INT4 mainx);
-void counter(qfvars *vars);
 
 REAL8 exp1(REAL8 x);
 REAL8 twospect_log_1plusx(REAL8 x);

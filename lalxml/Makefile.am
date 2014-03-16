@@ -46,12 +46,9 @@ pkgpython_PYTHON += \
 	python/git_version.py \
 	$(EOL)
 
-TESTS += \
+test_programs += \
 	test/LALXMLTest \
 	$(EOL)
-
-check_PROGRAMS += \
-	$(TESTS)
 
 pkgdata_DATA += \
 	test/VOTable-1.1.xsd

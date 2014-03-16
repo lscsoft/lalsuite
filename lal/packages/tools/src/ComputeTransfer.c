@@ -462,10 +462,11 @@ LALResponseConvert(
    */
 
   /* determine if units need to be inverted or not (or if they are bad) */
-  LALUnitNormalize( status->statusPtr, &unitOne, &output->sampleUnits );
-  CHECKSTATUSPTR( status );
-  LALUnitNormalize( status->statusPtr, &unitTwo, &input->sampleUnits );
-  CHECKSTATUSPTR( status );
+  XLALUnitNormalize( &output->sampleUnits );
+  XLALUnitNormalize( &input->sampleUnits );
+  unitOne = output->sampleUnits;
+  unitTwo = input->sampleUnits;
+
   bad = 0;
   inv = -1;
   for ( i = 0; i < LALNumUnits; ++i )

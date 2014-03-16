@@ -364,6 +364,7 @@ LALUnitAsString( LALStatus *status,
 		 const LALUnit *input )
 
 {
+  XLAL_PRINT_DEPRECATION_WARNING("XLALUnitAsString");
   INITSTATUS(status);
   /* ATTATCHSTATUSPTR (status); */
 
@@ -584,6 +585,7 @@ LALParseUnitString ( LALStatus *status,
 		     const CHARVector *input )
 
 {
+  XLAL_PRINT_DEPRECATION_WARNING("XLALParseUnitString");
   CHAR         *charPtr, *charStopPtr;
 
   INITSTATUS(status);

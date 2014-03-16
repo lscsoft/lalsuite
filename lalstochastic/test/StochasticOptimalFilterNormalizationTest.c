@@ -122,8 +122,8 @@
  * LALCDestroyVector()
  * LALCHARCreateVector()
  * LALCHARDestroyVector()
- * LALUnitAsString()
- * LALUnitCompare()
+ * XLALUnitAsString()
+ * XLALUnitCompare()
  * getopt()
  * printf()
  * fprintf()
@@ -242,11 +242,9 @@ int main(int argc, char *argv[])
   INT4       i;
   REAL8      f;
 
-  LALUnitPair              unitPair;
   LALUnit                  expectedUnit;
-  BOOLEAN                  result;
-
-  CHARVector               *unitString = NULL;
+  int                      result;
+  CHAR                     unitString[LALUnitTextSize];
 
 
   ParseOptions (argc, argv);
@@ -824,54 +822,20 @@ int main(int argc, char *argv[])
   expectedUnit = lalDimensionlessUnit;
   expectedUnit.unitNumerator[LALUnitIndexSecond] = -1;
   expectedUnit.powerOfTen = -36;
-  unitPair.unitOne = &expectedUnit;
-  unitPair.unitTwo = &(normOut.units);
-  LALUnitCompare(&status, &result, &unitPair);
-  if ( ( code = CheckStatus(&status, 0 , "",
-                            STOCHASTICOPTIMALFILTERNORMALIZATIONTESTC_EFLS,
-                            STOCHASTICOPTIMALFILTERNORMALIZATIONTESTC_MSGEFLS) ) )
-  {
-    return code;
-  }
-
+  result = XLALUnitCompare(&expectedUnit, &(normOut.units));
   if (optVerbose)
   {
-    LALCHARCreateVector(&status, &unitString, LALUnitTextSize);
-    if ( ( code = CheckStatus(&status, 0 , "",
-                              STOCHASTICOPTIMALFILTERNORMALIZATIONTESTC_EFLS,
-                              STOCHASTICOPTIMALFILTERNORMALIZATIONTESTC_MSGEFLS) ) )
-    {
-      return code;
+    if ( XLALUnitAsString( unitString, LALUnitTextSize, &(normOut.units)) == NULL ) {
+      return STOCHASTICOPTIMALFILTERNORMALIZATIONTESTC_EFLS;
     }
-
-    LALUnitAsString( &status, unitString, unitPair.unitTwo );
-    if ( ( code = CheckStatus(&status, 0 , "",
-                              STOCHASTICOPTIMALFILTERNORMALIZATIONTESTC_EFLS,
-                              STOCHASTICOPTIMALFILTERNORMALIZATIONTESTC_MSGEFLS) ) )
-    {
-      return code;
+    printf( "Units are \"%s\", ", unitString );
+    if ( XLALUnitAsString( unitString, LALUnitTextSize, &expectedUnit) == NULL ) {
+      return STOCHASTICOPTIMALFILTERNORMALIZATIONTESTC_EFLS;
     }
-    printf( "Units are \"%s\", ", unitString->data );
-
-    LALUnitAsString( &status, unitString, unitPair.unitOne );
-    if ( ( code = CheckStatus(&status, 0 , "",
-                              STOCHASTICOPTIMALFILTERNORMALIZATIONTESTC_EFLS,
-                              STOCHASTICOPTIMALFILTERNORMALIZATIONTESTC_MSGEFLS) ) )
-    {
-      return code;
-    }
-    printf( "should be \"%s\"\n", unitString->data );
-
-    LALCHARDestroyVector(&status, &unitString);
-    if ( ( code = CheckStatus(&status, 0 , "",
-                              STOCHASTICOPTIMALFILTERNORMALIZATIONTESTC_EFLS,
-                              STOCHASTICOPTIMALFILTERNORMALIZATIONTESTC_MSGEFLS) ) )
-    {
-      return code;
-    }
+    printf( "should be \"%s\"\n", unitString );
   }
 
-  if (!result)
+  if (result != 0)
   {
     printf("  FAIL: Valid data test #1\n");
     if (optVerbose)
@@ -904,54 +868,20 @@ int main(int argc, char *argv[])
 
   /* check units of variance per unit time */
 
-  unitPair.unitOne = &lalSecondUnit;
-  unitPair.unitTwo = &(varOut.units);
-  LALUnitCompare(&status, &result, &unitPair);
-  if ( ( code = CheckStatus(&status, 0 , "",
-                            STOCHASTICOPTIMALFILTERNORMALIZATIONTESTC_EFLS,
-                            STOCHASTICOPTIMALFILTERNORMALIZATIONTESTC_MSGEFLS) ) )
-  {
-    return code;
-  }
-
+  result = XLALUnitCompare(&lalSecondUnit, &(varOut.units));
   if (optVerbose)
   {
-    LALCHARCreateVector(&status, &unitString, LALUnitTextSize);
-    if ( ( code = CheckStatus(&status, 0 , "",
-                              STOCHASTICOPTIMALFILTERNORMALIZATIONTESTC_EFLS,
-                              STOCHASTICOPTIMALFILTERNORMALIZATIONTESTC_MSGEFLS) ) )
-    {
-      return code;
+    if ( XLALUnitAsString( unitString, LALUnitTextSize, &(varOut.units)) == NULL ) {
+      return STOCHASTICOPTIMALFILTERNORMALIZATIONTESTC_EFLS;
     }
-
-    LALUnitAsString( &status, unitString, unitPair.unitTwo );
-    if ( ( code = CheckStatus(&status, 0 , "",
-                              STOCHASTICOPTIMALFILTERNORMALIZATIONTESTC_EFLS,
-                              STOCHASTICOPTIMALFILTERNORMALIZATIONTESTC_MSGEFLS) ) )
-    {
-      return code;
+    printf( "Units are \"%s\", ", unitString );
+    if ( XLALUnitAsString( unitString, LALUnitTextSize, &lalSecondUnit) == NULL ) {
+      return STOCHASTICOPTIMALFILTERNORMALIZATIONTESTC_EFLS;
     }
-    printf( "Units are \"%s\", ", unitString->data );
-
-    LALUnitAsString( &status, unitString, unitPair.unitOne );
-    if ( ( code = CheckStatus(&status, 0 , "",
-                              STOCHASTICOPTIMALFILTERNORMALIZATIONTESTC_EFLS,
-                              STOCHASTICOPTIMALFILTERNORMALIZATIONTESTC_MSGEFLS) ) )
-    {
-      return code;
-    }
-    printf( "should be \"%s\"\n", unitString->data );
-
-    LALCHARDestroyVector(&status, &unitString);
-    if ( ( code = CheckStatus(&status, 0 , "",
-                              STOCHASTICOPTIMALFILTERNORMALIZATIONTESTC_EFLS,
-                              STOCHASTICOPTIMALFILTERNORMALIZATIONTESTC_MSGEFLS) ) )
-    {
-      return code;
-    }
+    printf( "should be \"%s\"\n", unitString );
   }
 
-  if (!result)
+  if (result != 0)
   {
     printf("  FAIL: Valid data test #1\n");
     if (optVerbose)
@@ -1018,54 +948,20 @@ int main(int argc, char *argv[])
   expectedUnit = lalDimensionlessUnit;
   expectedUnit.unitNumerator[LALUnitIndexSecond] = -1;
   expectedUnit.powerOfTen = -36;
-  unitPair.unitOne = &expectedUnit;
-  unitPair.unitTwo = &(normOut.units);
-  LALUnitCompare(&status, &result, &unitPair);
-  if ( ( code = CheckStatus(&status, 0 , "",
-                            STOCHASTICOPTIMALFILTERNORMALIZATIONTESTC_EFLS,
-                            STOCHASTICOPTIMALFILTERNORMALIZATIONTESTC_MSGEFLS) ) )
-  {
-    return code;
-  }
-
+  result = XLALUnitCompare(&expectedUnit, &(normOut.units));
   if (optVerbose)
   {
-    LALCHARCreateVector(&status, &unitString, LALUnitTextSize);
-    if ( ( code = CheckStatus(&status, 0 , "",
-                              STOCHASTICOPTIMALFILTERNORMALIZATIONTESTC_EFLS,
-                              STOCHASTICOPTIMALFILTERNORMALIZATIONTESTC_MSGEFLS) ) )
-    {
-      return code;
+    if ( XLALUnitAsString( unitString, LALUnitTextSize, &(normOut.units)) == NULL ) {
+      return STOCHASTICOPTIMALFILTERNORMALIZATIONTESTC_EFLS;
     }
-
-    LALUnitAsString( &status, unitString, unitPair.unitTwo );
-    if ( ( code = CheckStatus(&status, 0 , "",
-                              STOCHASTICOPTIMALFILTERNORMALIZATIONTESTC_EFLS,
-                              STOCHASTICOPTIMALFILTERNORMALIZATIONTESTC_MSGEFLS) ) )
-    {
-      return code;
+    printf( "Units are \"%s\", ", unitString );
+    if ( XLALUnitAsString( unitString, LALUnitTextSize, &expectedUnit) == NULL ) {
+      return STOCHASTICOPTIMALFILTERNORMALIZATIONTESTC_EFLS;
     }
-    printf( "Units are \"%s\", ", unitString->data );
-
-    LALUnitAsString( &status, unitString, unitPair.unitOne );
-    if ( ( code = CheckStatus(&status, 0 , "",
-                              STOCHASTICOPTIMALFILTERNORMALIZATIONTESTC_EFLS,
-                              STOCHASTICOPTIMALFILTERNORMALIZATIONTESTC_MSGEFLS) ) )
-    {
-      return code;
-    }
-    printf( "should be \"%s\"\n", unitString->data );
-
-    LALCHARDestroyVector(&status, &unitString);
-    if ( ( code = CheckStatus(&status, 0 , "",
-                              STOCHASTICOPTIMALFILTERNORMALIZATIONTESTC_EFLS,
-                              STOCHASTICOPTIMALFILTERNORMALIZATIONTESTC_MSGEFLS) ) )
-    {
-      return code;
-    }
+    printf( "should be \"%s\"\n", unitString );
   }
 
-  if (!result)
+  if (result != 0)
   {
     printf("  FAIL: Valid data test #2\n");
     if (optVerbose)
@@ -1098,54 +994,20 @@ int main(int argc, char *argv[])
 
   /* check units of variance per unit time */
 
-  unitPair.unitOne = &lalSecondUnit;
-  unitPair.unitTwo = &(varOut.units);
-  LALUnitCompare(&status, &result, &unitPair);
-  if ( ( code = CheckStatus(&status, 0 , "",
-                            STOCHASTICOPTIMALFILTERNORMALIZATIONTESTC_EFLS,
-                            STOCHASTICOPTIMALFILTERNORMALIZATIONTESTC_MSGEFLS) ) )
-  {
-    return code;
-  }
-
+  result = XLALUnitCompare(&lalSecondUnit, &(varOut.units));
   if (optVerbose)
   {
-    LALCHARCreateVector(&status, &unitString, LALUnitTextSize);
-    if ( ( code = CheckStatus(&status, 0 , "",
-                              STOCHASTICOPTIMALFILTERNORMALIZATIONTESTC_EFLS,
-                              STOCHASTICOPTIMALFILTERNORMALIZATIONTESTC_MSGEFLS) ) )
-    {
-      return code;
+    if ( XLALUnitAsString( unitString, LALUnitTextSize, &(varOut.units)) == NULL ) {
+      return STOCHASTICOPTIMALFILTERNORMALIZATIONTESTC_EFLS;
     }
-
-    LALUnitAsString( &status, unitString, unitPair.unitTwo );
-    if ( ( code = CheckStatus(&status, 0 , "",
-                              STOCHASTICOPTIMALFILTERNORMALIZATIONTESTC_EFLS,
-                              STOCHASTICOPTIMALFILTERNORMALIZATIONTESTC_MSGEFLS) ) )
-    {
-      return code;
+    printf( "Units are \"%s\", ", unitString );
+    if ( XLALUnitAsString( unitString, LALUnitTextSize, &lalSecondUnit) == NULL ) {
+      return STOCHASTICOPTIMALFILTERNORMALIZATIONTESTC_EFLS;
     }
-    printf( "Units are \"%s\", ", unitString->data );
-
-    LALUnitAsString( &status, unitString, unitPair.unitOne );
-    if ( ( code = CheckStatus(&status, 0 , "",
-                              STOCHASTICOPTIMALFILTERNORMALIZATIONTESTC_EFLS,
-                              STOCHASTICOPTIMALFILTERNORMALIZATIONTESTC_MSGEFLS) ) )
-    {
-      return code;
-    }
-    printf( "should be \"%s\"\n", unitString->data );
-
-    LALCHARDestroyVector(&status, &unitString);
-    if ( ( code = CheckStatus(&status, 0 , "",
-                              STOCHASTICOPTIMALFILTERNORMALIZATIONTESTC_EFLS,
-                              STOCHASTICOPTIMALFILTERNORMALIZATIONTESTC_MSGEFLS) ) )
-    {
-      return code;
-    }
+    printf( "should be \"%s\"\n", unitString );
   }
 
-  if (!result)
+  if (result != 0)
   {
     printf("  FAIL: Valid data test #2\n");
     if (optVerbose)
@@ -1259,56 +1121,20 @@ int main(int argc, char *argv[])
     }
 
     /* Convert Unit Structure to String */
-    LALCHARCreateVector(&status, &unitString, LALUnitTextSize);
-    if ( ( code = CheckStatus(&status, 0 , "",
-                              STOCHASTICOPTIMALFILTERNORMALIZATIONTESTC_EFLS,
-                              STOCHASTICOPTIMALFILTERNORMALIZATIONTESTC_MSGEFLS) ) )
-    {
-      return code;
-    }
-
-    LALUnitAsString( &status, unitString, &(normOut.units) );
-    if ( ( code = CheckStatus(&status, 0 , "",
-                              STOCHASTICOPTIMALFILTERNORMALIZATIONTESTC_EFLS,
-                              STOCHASTICOPTIMALFILTERNORMALIZATIONTESTC_MSGEFLS) ) )
-    {
-      return code;
-    }
-    if ( ( code = CheckStatus(&status, 0 , "",
-                              STOCHASTICOPTIMALFILTERNORMALIZATIONTESTC_EFLS,
-                              STOCHASTICOPTIMALFILTERNORMALIZATIONTESTC_MSGEFLS) ) )
-    {
-      return code;
+    if ( XLALUnitAsString( unitString, LALUnitTextSize, &(normOut.units)) == NULL ) {
+      return STOCHASTICOPTIMALFILTERNORMALIZATIONTESTC_EFLS;
     }
 
     printf("=========== Optimal Filter Normalization for User-Specified Data Is =======\n");
-    printf("     %g %s\n", normOut.value, unitString->data);
+    printf("     %g %s\n", normOut.value, unitString);
 
     /* Convert Unit Structure to String */
-    LALCHARCreateVector(&status, &unitString, LALUnitTextSize);
-    if ( ( code = CheckStatus(&status, 0 , "",
-                              STOCHASTICOPTIMALFILTERNORMALIZATIONTESTC_EFLS,
-                              STOCHASTICOPTIMALFILTERNORMALIZATIONTESTC_MSGEFLS) ) )
-    {
-      return code;
-    }
-
-    LALUnitAsString( &status, unitString, &(varOut.units) );
-    if ( ( code = CheckStatus(&status, 0 , "",
-                              STOCHASTICOPTIMALFILTERNORMALIZATIONTESTC_EFLS,
-                              STOCHASTICOPTIMALFILTERNORMALIZATIONTESTC_MSGEFLS) ) )
-    {
-      return code;
-    }
-    if ( ( code = CheckStatus(&status, 0 , "",
-                              STOCHASTICOPTIMALFILTERNORMALIZATIONTESTC_EFLS,
-                              STOCHASTICOPTIMALFILTERNORMALIZATIONTESTC_MSGEFLS) ) )
-    {
-      return code;
+    if ( XLALUnitAsString( unitString, LALUnitTextSize, &(varOut.units)) == NULL ) {
+      return STOCHASTICOPTIMALFILTERNORMALIZATIONTESTC_EFLS;
     }
 
     printf("=========== Variance per Unit Time for User-Specified Data Is =======\n");
-    printf("     %g %s\n", varOut.value, unitString->data);
+    printf("     %g %s\n", varOut.value, unitString);
 
     /* clean up */
     LALSDestroyVector(&status, &(overlap.data));

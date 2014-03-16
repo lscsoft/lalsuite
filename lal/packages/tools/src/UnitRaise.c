@@ -161,6 +161,7 @@ LALUnit * XLALUnitInvert( LALUnit *output, const LALUnit *input )
 void
 LALUnitRaise (LALStatus *status, LALUnit *output, const LALUnit *input, const RAT4 *power)
 {
+  XLAL_PRINT_DEPRECATION_WARNING("XLALUnitRaiseRAT4");
   INITSTATUS(status);
 
   ASSERT( input != NULL, status, UNITSH_ENULLPIN, UNITSH_MSGENULLPIN );

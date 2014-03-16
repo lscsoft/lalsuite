@@ -36,9 +36,11 @@ src/stamp-h1
 src/stamp-h2
 test/GRFlagsTest
 test/GenerateSimulation
+test/PhenomP_Test1.dat
 test/ST2-dynamics.dat
 test/ST4-dynamics.dat
 test/TestEOBNRv2
+test/TestPhenomP
 test/TestPrecessWaveform
 test/TestPrecessWaveformEOBNR
 test/TestPrecessWaveformIMRPhenomB
@@ -46,6 +48,8 @@ test/TestSphHarmTS
 test/TestSpinTaylorT4Dynamics
 test/TestWaveformFromCache
 test/WaveformFlagsTest
+test/XLALSimIMRPhenomC.dat
+test/XLALSimIMRPhenomP.dat
 test/eobHPlusCross.dat
 test/h_ref.txt
 test/h_ref_EOBNR.txt

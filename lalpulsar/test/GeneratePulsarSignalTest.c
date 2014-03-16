@@ -344,7 +344,7 @@ void RunGeneratePulsarSignalTest(LALStatus *status)
     LALDCreateVector(status->statusPtr, &(pPulsarSignalParams->pulsar.spindown),((UINT4)numSpinDown));
     CHECKSTATUSPTR (status);
   }
-  pPulsarSignalParams->orbit = NULL;
+  pPulsarSignalParams->orbit.asini = 0 /* isolated pulsar */;
   pPulsarSignalParams->transfer = NULL;
   pPulsarSignalParams->dtDelayBy2 = 0;
   pPulsarSignalParams->dtPolBy2 = 0;

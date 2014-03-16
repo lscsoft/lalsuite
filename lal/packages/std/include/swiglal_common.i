@@ -123,6 +123,14 @@ MACRO(A, B, C, X);
 %feature(FEATURE, VALUE) NSPACE::NAME;
 %enddef
 
+// Suppress a SWIG warning.
+%define %swiglal_warnfilter(WARNING, NAME)
+%warnfilter(WARNING) NAME;
+%enddef
+%define %swiglal_warnfilter_nspace(WARNING, NSPACE, NAME)
+%warnfilter(WARNING) NSPACE::NAME;
+%enddef
+
 // Macros for allocating/copying new instances and arrays
 // Analogous to SWIG macros but using XLAL memory functions
 #define %swiglal_new_instance(TYPE...) \
@@ -715,6 +723,46 @@ if (swiglal_release_parent(PTR)) {
   %clear TYPE* DATA;
 
 %enddef // %swiglal_array_dynamic_1D()
+// a 1-D array of pointers to 1-D arrays:
+// * NI refer to the array of pointers, NJ/SJ refer to the arrays pointed to
+%define %swiglal_array_dynamic_1d_ptr_1d(NAME, TYPE, SIZET, DATA, NI, NJ, SJ)
+
+  // Typemaps which convert from the dynamically-allocated array, indexed by 'arg2'
+  %typemap(out, noblock=1) TYPE* DATA {
+    if (arg1) {
+      const size_t dims[] = {NJ};
+      const size_t strides[] = {SJ};
+      %swiglal_array_dynamic_check_strides(NAME, DATA, 1);
+      if (!(0 <= arg2 && arg2 < NI)) {
+        SWIG_exception_fail(SWIG_IndexError, "Index to "#NAME"."#DATA" is outside of range [0,"#NI"]");
+      }
+      $1 = %reinterpret_cast(arg1->DATA, TYPE*)[arg2];
+      // swiglal_array_typeid input type: $1_type
+      %set_output(%swiglal_array_viewout($1_type)(swiglal_self(), %as_voidptr($1),
+                                                  sizeof(TYPE), 1, dims, strides,
+                                                  $typemap(swiglal_dynarr_isptr, TYPE), $typemap(swiglal_dynarr_tinfo, TYPE),
+                                                  $owner | %newpointer_flags));
+    }
+  }
+
+  // Clear unneeded typemaps and features.
+  %typemap(memberin, noblock=1) TYPE* DATA "";
+  %typemap(argout, noblock=1) TYPE* DATA "";
+  %typemap(freearg, noblock=1) TYPE* DATA "";
+  %feature("action") DATA "";
+  %feature("except") DATA "";
+
+  // Create the array's indexed data member.
+  %extend {
+    TYPE *DATA(const SIZET index);
+  }
+
+  // Restore modified typemaps and features.
+  %feature("action", "") DATA;
+  %feature("except", "") DATA;
+  %clear TYPE* DATA;
+
+%enddef // %swiglal_array_dynamic_1d_ptr_1d()
 // 2-D arrays:
 %define %swiglal_array_dynamic_2D(NAME, TYPE, SIZET, DATA, NI, NJ, SI, SJ)
 
@@ -782,6 +830,18 @@ if (swiglal_release_parent(PTR)) {
   %ignore NI;
 %enddef
 #define %swiglal_public_clear_ARRAY_1D(NAME, TYPE, DATA, SIZET, NI)
+// a 1-D array of pointers to 1-D arrays, e.g.:
+//   SIZET NI;
+//   SIZET NJ;
+//   ATYPE* DATA[(NI members)];
+%define %swiglal_public_ARRAY_1D_PTR_1D(NAME, TYPE, DATA, SIZET, NI, NJ)
+  %swiglal_array_dynamic_size(SIZET, NI);
+  %swiglal_array_dynamic_size(SIZET, NJ);
+  %swiglal_array_dynamic_1d_ptr_1d(NAME, TYPE, SIZET, DATA, arg1->NI, arg1->NJ, 1);
+  %ignore DATA;
+  %ignore NJ;
+%enddef
+#define %swiglal_public_clear_ARRAY_1D_PTR_1D(NAME, TYPE, DATA, SIZET, NI, NJ)
 // 2-D arrays of fixed-length arrays, e.g:
 //   typedef ETYPE[NJ] ATYPE;
 //   SIZET NI;
@@ -805,6 +865,13 @@ if (swiglal_release_parent(PTR)) {
   %ignore NJ;
 %enddef
 #define %swiglal_public_clear_ARRAY_2D(NAME, TYPE, DATA, SIZET, NI, NJ)
+
+// If multiple arrays in the same struct use the same length parameter, this
+// directive is required before the struct definition to suppress warnings.
+%define %swiglal_public_ARRAY_MULTIPLE_LENGTHS(TAGNAME, ...)
+%swiglal_map_ab(%swiglal_warnfilter_nspace, SWIGWARN_PARSE_REDEFINED, TAGNAME, __VA_ARGS__);
+%enddef
+#define %swiglal_public_clear_ARRAY_MULTIPLE_LENGTHS(TAGNAME, ...)
 
 ////////// Include scripting-language-specific interface headers //////////
 
@@ -1175,8 +1242,7 @@ if (swiglal_release_parent(PTR)) {
 %enddef
 
 // Typemaps for pointers to primitive scalars. These are treated as output-only
-// arguments by default, by globally applying the SWIG OUTPUT typemaps. The INOUT
-// typemaps can be supplied as needed using the SWIGLAL(INOUT_SCALARS(TYPE, ...)) macro.
+// arguments by default, by globally applying the SWIG OUTPUT typemaps.
 %apply int* OUTPUT { enum SWIGTYPE* };
 %apply short* OUTPUT { short* };
 %apply unsigned short* OUTPUT { unsigned short* };
@@ -1200,10 +1266,20 @@ if (swiglal_release_parent(PTR)) {
 %apply gsl_complex* OUTPUT { gsl_complex* };
 %apply COMPLEX8* OUTPUT { COMPLEX8* };
 %apply COMPLEX16* OUTPUT { COMPLEX16* };
+// The INOUT typemaps can be applied instead using the macro SWIGLAL(INOUT_SCALARS(TYPE, ...)).
 %define %swiglal_public_INOUT_SCALARS(TYPE, ...)
 %swiglal_map_ab(%swiglal_apply, TYPE INOUT, TYPE, __VA_ARGS__);
 %enddef
 %define %swiglal_public_clear_INOUT_SCALARS(TYPE, ...)
+%swiglal_map_a(%swiglal_clear, TYPE, __VA_ARGS__);
+%enddef
+// The INPUT typemaps can be applied instead using the macro SWIGLAL(INPUT_SCALARS(TYPE, ...)).
+%typemap(argout, noblock=1) SWIGTYPE* SWIGLAL_INPUT_SCALAR "";
+%define %swiglal_public_INPUT_SCALARS(TYPE, ...)
+%swiglal_map_ab(%swiglal_apply, TYPE INPUT, TYPE, __VA_ARGS__);
+%swiglal_map_ab(%swiglal_apply, SWIGTYPE* SWIGLAL_INPUT_SCALAR, TYPE, __VA_ARGS__);
+%enddef
+%define %swiglal_public_clear_INPUT_SCALARS(TYPE, ...)
 %swiglal_map_a(%swiglal_clear, TYPE, __VA_ARGS__);
 %enddef
 

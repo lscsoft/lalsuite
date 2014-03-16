@@ -562,7 +562,7 @@ def slide_sanity(config, playOnly = False):
 def hipe_setup(hipeDir, config, ifos, logPath, injSeed=None, dataFind = False, \
     tmpltBank = False, playOnly = False, vetoCat = None, vetoFiles = None, \
     dax = False, tmpltbankCache = None, local_exec_dir = None, \
-    data_checkpoint = False):
+    data_checkpoint = False, static_pfn_cache=None, reuse_data=False):
   """
   run lalapps_inspiral_hipe and add job to dag
   hipeDir   = directory in which to run inspiral hipe
@@ -797,14 +797,14 @@ def hipe_setup(hipeDir, config, ifos, logPath, injSeed=None, dataFind = False, \
   make_external_call(hipeCommand)
 
   # link datafind
-  if not dataFind and not tmpltBank and not vetoCat > 1:
+  if not dax and not dataFind and not tmpltBank and not vetoCat > 1:
     try:
       os.rmdir("cache")
       os.symlink("../datafind/cache", "cache")
     except: pass
 
   # symlink in the template banks needed by the inspiral jobs
-  if tmpltbankCache:
+  if not dax and tmpltbankCache:
     symlinkedCache = symlink_tmpltbank(tmpltbankCache, hipeDir)
 
   iniBase = iniFile.rstrip("ini")
@@ -817,6 +817,14 @@ def hipe_setup(hipeDir, config, ifos, logPath, injSeed=None, dataFind = False, \
 
   hipeJob = pipeline.CondorDAGManJob(hipeDag, hipeDir, hipeDax)
   hipeNode = pipeline.CondorDAGManNode(hipeJob)
+
+  # pass a static pfn cache if we are given one
+  if static_pfn_cache:
+    hipeNode.set_static_pfn_cache(static_pfn_cache)
+
+  # set the reuse data option
+  if reuse_data:
+    hipeNode.set_reduce_dax = reuse_data
 
   # grab the tmpltbank from hipecp file if provided in input section
   if hipecp.has_section("input") and \
@@ -1505,7 +1513,7 @@ def omega_scan_setup(cp,ifos):
 # This function will...
 
 def create_frame_pfn_file(ifos, gpsstart, gpsend, server='internal_ldr_port'):
-	namer = "frame-cache_"+str(gpsstart)+"-"+ \
+	namer = "pegasus-pfn-cache-"+str(gpsstart)+"-"+ \
 		str(gpsend)
 	gwfname = namer+".pfn" # physical file location file
 	# Deletes the gwfname file if it exists prior to the execution of this

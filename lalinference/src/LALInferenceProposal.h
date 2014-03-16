@@ -106,7 +106,6 @@ extern const char *const drawApproxPriorName;
 extern const char *const skyReflectDetPlaneName;
 extern const char *const rotateSpinsName;
 extern const char *const polarizationPhaseJumpName;
-extern const char *const distanceQuasiGibbsProposalName;
 extern const char *const extrinsicParamProposalName;
 extern const char *const KDNeighborhoodProposalName;
 extern const char *const frequencyBinJumpName;
@@ -233,14 +232,6 @@ void LALInferencePSDFitJump(LALInferenceRunState *runState, LALInferenceVariable
 
 /** Rotate each spin by random angles about L. */
 void LALInferenceRotateSpins(LALInferenceRunState *runState, LALInferenceVariables *proposedParams);
-
-/**
- * Samples from the analytic likelihood distribution on u = 1/d with
- * all other variables fixed.  This behaves similarly to a Gibbs
- * sampler for distance (though a Gibbs sampler would sample from the
- * posterior* in d, not the likelihood in u = 1/d).
- */
-void LALInferenceDistanceQuasiGibbsProposal(LALInferenceRunState *runState, LALInferenceVariables *proposedParams);
 
 /**
  * Uses a kD tree containing the previously-output points to propose

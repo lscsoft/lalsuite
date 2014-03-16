@@ -17,7 +17,33 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #
 """
-Listen for new events from lvalert and perform sky localization.
+Listen for new events from LVAlert and perform sky localization.
+
+`bayestar_localize_lvalert` supports two modes of operation. You can explicitly
+specify the GraceDb ID on the command line, as in:
+
+    $ bayestar_localize_lvalert T90713
+
+Or, `bayetar_localize_lvalert` can accept an LVAlert XML packet read from
+stdin. This is handy for quickly setting up automatic processing of events in
+response to LVAlert notifications. To do this, first subscribe to events of
+types that you are interested in (probably `cbc_lowmass` or `test_lowmass`):
+
+    $ lvalert_admin --username albert.einstein --password supersecret --subscribe --node cbc_lowmass
+    $ lvalert_admin --username albert.einstein --password supersecret --subscribe --node test_lowmass
+
+Create a configuration file that will tell `lvalert_listen` what to do in
+response to those event types. For example, you might create a file called
+`lvalert_listen.ini` with the following contents:
+
+    [test_lowmass]
+    executable = bayestar_localize_lvalert
+    [cbc_lowmass]
+    executable = bayestar_localize_lvalert
+
+Finally, start `lvalert_listen`:
+
+    $ lvalert_listen  --username albert.einstein --password supersecret --config-file lvalert_listen.ini
 """
 __author__ = "Leo Singer <leo.singer@ligo.org>"
 
@@ -27,6 +53,7 @@ __author__ = "Leo Singer <leo.singer@ligo.org>"
 #
 
 from optparse import Option, OptionParser
+from lalinference.bayestar import command
 import logging
 import ligo.lvalert.utils
 import sys
@@ -35,6 +62,7 @@ logging.basicConfig(level=logging.DEBUG)
 log = logging.getLogger('BAYESTAR')
 
 parser = OptionParser(
+    formatter=command.NewlinePreservingHelpFormatter(),
     description=__doc__,
     usage="%prog [options] [GRACEID]"
 )
@@ -96,7 +124,9 @@ try:
 
     # perform sky localization
     log.info("starting sky localization")
-    sky_map, epoch, elapsed_time, instruments = gracedb_sky_map(coinc_file, psd_file, "TaylorF2threePointFivePN", 10, reference_frequency=120)
+    sky_map, epoch, elapsed_time, instruments = gracedb_sky_map(
+        coinc_file, psd_file, "TaylorF2threePointFivePN", 10,
+        reference_frequency=120)
     log.info("sky localization complete")
 
     # upload FITS file

@@ -276,7 +276,7 @@ class SignalModel(object):
         return np.exp(-fopt)
 
     def get_chapman_robbins_toa_uncert(self, snr):
-        return np.vectorize(self.__get_chapman_robbins_toa_uncert)(snr)
+        return np.frompyfunc(self.__get_chapman_robbins_toa_uncert, 1, 1)(snr)
 
     def get_cov(self, snr):
         """Always use the Barankin bound."""
@@ -288,7 +288,7 @@ class SignalModel(object):
     def __get_brb_toa_uncert(self, snr):
         return np.sqrt(self.get_brb(snr)[1, 1])
     def get_brb_toa_uncert(self, snr):
-        return np.vectorize(self.__get_brb_toa_uncert)(snr)
+        return np.frompyfunc(self.__get_brb_toa_uncert, 1, 1)(snr)
 
     # FIXME: np.vectorize doesn't work on unbound instance methods. The excluded
     # keyword, added in Numpy 1.7, could be used here to exclude the zeroth
@@ -296,7 +296,7 @@ class SignalModel(object):
     def __get_crb_toa_uncert(self, snr):
         return np.sqrt(self.get_crb(snr)[1, 1])
     def get_crb_toa_uncert(self, snr):
-        return np.vectorize(self.__get_crb_toa_uncert)(snr)
+        return np.frompyfunc(self.__get_crb_toa_uncert, 1, 1)(snr)
 
     def get_toa_uncert(self, snr):
         """Get timing uncertainty for a given signal to noise ratio. Always use

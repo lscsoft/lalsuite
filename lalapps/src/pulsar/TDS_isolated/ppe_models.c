@@ -7,6 +7,7 @@
  */
 
 #include "ppe_models.h"
+#include <lal/CWFastMath.h>
 
 #define SQUARE(x) ( (x) * (x) );
 
@@ -737,7 +738,7 @@ void get_pinsf_amplitude_model( BinaryPulsarParams pars, LALInferenceIFOData *da
   ePhi = cexp( pars.phi0 * I );
   e2Phi = cexp( 2. * pars.phi0 * I );
 
-  sin_cos_LUT( &sinlambda, &coslambda, pars.lambda );
+  XLAL_CHECK_VOID( XLALSinCosLUT( &sinlambda, &coslambda, pars.lambda ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   /* f^2 / r */
   f2_r = pars.f0 * pars.f0 / pars.dist;
@@ -1099,7 +1100,7 @@ REAL8 get_phase_mismatch( REAL8Vector *phi1, REAL8Vector *phi2, LIGOTimeGPSVecto
   for( i = 0; i < phi1->length-1; i++ ){
     if ( i == 0 ){
       dp1 = fmod( phi1->data[i] - phi2->data[i], 1. );
-      sin_cos_2PI_LUT( &sp, &cp1, dp1 );
+      XLAL_CHECK_REAL8( XLALSinCos2PiLUT( &sp, &cp1, dp1 ) == XLAL_SUCCESS, XLAL_EFUNC );
     }
     else{
       dp1 = dp2;
@@ -1110,7 +1111,7 @@ REAL8 get_phase_mismatch( REAL8Vector *phi1, REAL8Vector *phi2, LIGOTimeGPSVecto
 
     dt = XLALGPSGetREAL8(&t->data[i+1]) - XLALGPSGetREAL8(&t->data[i]);
 
-    sin_cos_2PI_LUT( &sp, &cp2, dp2 );
+    XLAL_CHECK_REAL8( XLALSinCos2PiLUT( &sp, &cp2, dp2 ) == XLAL_SUCCESS, XLAL_EFUNC );
 
     mismatch += (cp1 + cp2) * dt;
   }

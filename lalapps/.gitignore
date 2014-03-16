@@ -181,9 +181,6 @@ src/pulsar/FDS_isolated/lalapps_synthesizeLVStats
 src/pulsar/FDS_isolated/lalapps_synthesizeTransientStats
 src/pulsar/FDS_isolated/lalapps_uberpolka
 src/pulsar/FDS_isolated/lalapps_zellepolka
-src/pulsar/FDS_isolated/testFstat_v3
-src/pulsar/FDS_isolated/testFstat_v3-LFT.sft
-src/pulsar/FDS_isolated/testFstat_v3-timeseries.dat
 src/pulsar/GCT/lalapps_HierarchSearchGCT
 src/pulsar/GCT/testLineVeto
 src/pulsar/Injections/Tseries_v2_*.dat

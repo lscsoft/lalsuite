@@ -34,6 +34,10 @@
  */
 /*@{*/
 
+#ifdef SWIG /* SWIG interface directives */
+SWIGLAL(INPUT_SCALARS(REAL8*, min, max));
+#endif
+
 /**
  * Return the logarithmic prior density of the variables specified, for the non-spinning/spinning inspiral signal case.
  */
@@ -184,6 +188,9 @@ void LALInferenceDrawNameFromPrior( LALInferenceVariables *output,
                                     LALInferenceVariables *priorArgs, 
                                     char *name, LALInferenceVariableType type, 
                                     gsl_rng *rdm );
+
+/* Switch reads true if parameters lie within Malmquist prior */
+UINT4 within_malmquist(LALInferenceRunState *runState, LALInferenceVariables *params);
 
 /** Prior that is 1 everywhere in component mass space. */
 REAL8 LALInferenceAnalyticNullPrior(LALInferenceRunState *runState, LALInferenceVariables *params);

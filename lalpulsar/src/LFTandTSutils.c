@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2009 Chris Messenger, Reinhard Prix, Pinkesh Patel, Xavier Siemens, Holger Pletsch
+ *  Copyright (C) 2009 Chris Messenger, Reinhard Prix, Pinkesh Patel, Xavier Siemens, Holger Pletsch
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -17,25 +17,12 @@
  *  MA  02111-1307  USA
  */
 
-/**
- * \author Chris Messenger, Reinhard Prix, Pinkesh Patel, Xavier Siemens, Holger Pletsch
- * \ingroup pulsarCoherent
- * \file
- * \brief
- * Functions to calculate the so-called multi-detector F-statistic for a given
- * frequency band in parameter space using a resampling technique.
- *
- */
+#include "config.h"
 
-/*---------- INCLUDES ----------*/
-#define __USE_ISOC99 1
-#include <math.h>
-
-#include <lal/ExtrapolatePulsarSpins.h>
-#include <lal/FindRoot.h>
+/* System includes */
+#include <stdio.h>
 
 /* GSL includes */
-#include <lal/LALGSL.h>
 #include <gsl/gsl_vector.h>
 #include <gsl/gsl_matrix.h>
 #include <gsl/gsl_blas.h>
@@ -44,489 +31,671 @@
 #include <gsl/gsl_errno.h>
 #include <gsl/gsl_spline.h>
 
-#include <lal/AVFactories.h>
-#include <lal/ComplexFFT.h>
-#include "ComputeFstat_RS.h"
-#include "../FDS_isolated/Fstat_v3.h"
-#include <lal/ComplexAM.h>
+/* LAL-includes */
+#include <lal/LFTandTSutils.h>
+#include <lal/UserInput.h>
+#include <lal/SFTfileIO.h>
+#include <lal/LogPrintf.h>
 #include <lal/TimeSeries.h>
+#include <lal/ComplexFFT.h>
+#include <lal/ComputeFstat.h>
+#include <lal/CWFastMath.h>
 
-/*---------- local DEFINES ----------*/
-#define TRUE (1==1)
-#define FALSE (1==0)
-
-
-#define LD_SMALL4       (2.0e-4)		/**< "small" number for REAL4*/
-#define OOTWOPI         (1.0 / LAL_TWOPI)	/**< 1/2pi */
-
-#define TWOPI_FLOAT     6.28318530717958f  	/**< single-precision 2*pi */
-#define OOTWOPI_FLOAT   (1.0f / TWOPI_FLOAT)	/**< single-precision 1 / (2pi) */
-
-#define EA_ACC          1E-9                    /* the timing accuracy of LALGetBinaryTimes in seconds */
-
-/*----- Macros ----- */
-/** convert GPS-time to REAL8 */
-#define GPS2REAL8(gps) (1.0 * (gps).gpsSeconds + 1.e-9 * (gps).gpsNanoSeconds )
-
-#define MYSIGN(x) ( ((x) < 0) ? (-1.0):(+1.0) )
+/*---------- DEFINES ----------*/
 #define MYMAX(x,y) ( (x) > (y) ? (x) : (y) )
 #define MYMIN(x,y) ( (x) < (y) ? (x) : (y) )
 #define SQ(x) ((x)*(x))
 
-/** Simple Euklidean scalar product for two 3-dim vectors in cartesian coords */
-#define SCALAR(u,v) ((u)[0]*(v)[0] + (u)[1]*(v)[1] + (u)[2]*(v)[2])
-
 #define NhalfPosDC(N) ((UINT4)(ceil ( ((N)/2.0 - 1e-6 ))))	/* round up */
 #define NhalfNeg(N) ((UINT4)( (N) - NhalfPosDC(N) ))		/* round down (making sure N+ + N- = (N-1) */
 
-/*----- SWITCHES -----*/
-
-/*---------- internal types ----------*/
+#define GPS2REAL8(gps) (1.0 * (gps).gpsSeconds + 1.e-9 * (gps).gpsNanoSeconds )
 
 /*---------- Global variables ----------*/
-#define NUM_FACT 7
-static const REAL8 inv_fact[NUM_FACT] = { 1.0, 1.0, (1.0/2.0), (1.0/6.0), (1.0/24.0), (1.0/120.0), (1.0/720.0) };
 static LALUnit empty_LALUnit;
 
-/*---------- internal prototypes ----------*/
-int finite(double x);
+#define NUM_FACT 7
+static const REAL8 inv_fact[NUM_FACT] = { 1.0, 1.0, (1.0/2.0), (1.0/6.0), (1.0/24.0), (1.0/120.0), (1.0/720.0) };
 
-/*==================== FUNCTION DEFINITIONS ====================*/
+/* ---------- local prototypes ---------- */
+
+/*---------- empty initializers ---------- */
+
+/* ---------- function definitions ---------- */
+
+/**
+ * Turn the given multi-IFO SFTvectors into one long Fourier transform (LFT) over the total observation time
+ */
+SFTtype *
+XLALSFTVectorToLFT ( const SFTVector *sfts,	/**< input SFT vector */
+		     REAL8 upsampling )		/**< upsampling factor >= 1 */
+{
+  COMPLEX8FFTPlan *SFTplan, *LFTplan;
+
+  COMPLEX8TimeSeries *lTS = NULL;		/* long time-series corresponding to full set of SFTs */
+  COMPLEX8TimeSeries *sTS = NULL; 		/* short time-series corresponding to a single SFT */
+
+  REAL8 fHet;				/* heterodyning frequency */
+  LIGOTimeGPS epoch = {0,0};
+
+  /* constant quantities for all SFTs */
+  SFTtype *firstSFT;
+  SFTtype *outputLFT;
+  UINT4 numBinsSFT;
+  REAL8 dfSFT;
+  REAL8 Tsft;
+
+  REAL8 deltaT;
+
+  UINT4 numSFTs;
+  UINT4 n;
+  REAL8 Tspan;
+  UINT4 numTimeSamples;
+  UINT4 NnegSFT, NnegLFT;
+  REAL8 f0SFT, f0LFT;
+  UINT4 numSFTsFit;
+
+  if ( !sfts || (sfts->length == 0) )
+    {
+      XLALPrintError ("%s: empty SFT input!\n", __func__ );
+      XLAL_ERROR_NULL (XLAL_EINVAL);
+    }
+  if ( upsampling < 1 )
+    {
+      XLALPrintError ("%s: upsampling factor (%f) must be >= 1 \n", __func__, upsampling );
+      XLAL_ERROR_NULL (XLAL_EINVAL);
+    }
+
+  /* some useful shorthands */
+  numSFTs = sfts->length;
+  firstSFT = &(sfts->data[0]);
+  numBinsSFT = firstSFT->data->length;
+  dfSFT = firstSFT->deltaF;
+  Tsft = 1.0 / dfSFT;
+  deltaT = 1.0 / ( numBinsSFT * dfSFT );
+
+  f0SFT = firstSFT->f0;
+
+  /* ---------- determine time-span of the final long time-series */
+  Tspan = XLALGPSDiff ( &sfts->data[numSFTs-1].epoch, &sfts->data[0].epoch ) + Tsft;
+  Tspan *= upsampling;
+
+  /* NOTE: Tspan MUST be an integer multiple of Tsft,
+   * in order for the frequency bins of the final FFT
+   * to be commensurate with the SFT bins.
+   * This is required so that fHet is an exact
+   * frequency-bin in both cases
+   */
+  numSFTsFit = (UINT4)floor(Tspan / Tsft + 0.5);	/* round */
+  Tspan = numSFTsFit * Tsft;
+  numTimeSamples = (UINT4)floor(Tspan / deltaT + 0.5);	/* round */
+
+  /* determine the heterodyning frequency */
+  /* fHet = DC of our internal DFTs */
+  NnegSFT = NhalfNeg ( numBinsSFT );
+  fHet = f0SFT + 1.0 * NnegSFT * dfSFT;
+
+  /* translate this back into fmin for the LFT (counting down from DC==fHet) */
+  NnegLFT = NhalfNeg ( numTimeSamples );
+  f0LFT = fHet - NnegLFT / Tspan;
+
+  XLALPrintInfo ("NSFT = %d, NLFT = %d, fminSFT = %.9f, fHet = %.9f, fminLFT = %.9f\n",
+	  numBinsSFT, numTimeSamples, f0SFT, fHet, f0LFT );
+
+
+  /* ----- Prepare invFFT: compute plan for FFTW */
+  if ( (SFTplan = XLALCreateReverseCOMPLEX8FFTPlan( numBinsSFT, 0 )) == NULL )
+    {
+      XLALPrintError ( "%s: XLALCreateReverseCOMPLEX8FFTPlan(%d, ESTIMATE ) failed! errno = %d!\n", __func__, numBinsSFT, xlalErrno );
+      XLAL_ERROR_NULL ( XLAL_EFUNC );
+    }
+
+  /* ----- prepare long TimeSeries container ---------- */
+  if ( (lTS = XLALCreateCOMPLEX8TimeSeries ( firstSFT->name, &firstSFT->epoch, 0, deltaT, &empty_LALUnit, numTimeSamples )) == NULL )
+    {
+      XLALPrintError ("%s: XLALCreateCOMPLEX8TimeSeries() for %d timesteps failed! errno = %d!\n", __func__, numTimeSamples, xlalErrno );
+      XLAL_ERROR_NULL ( XLAL_EFUNC );
+    }
+  memset ( lTS->data->data, 0, numTimeSamples * sizeof(*lTS->data->data)); /* set all time-samples to zero */
+
+  /* ----- Prepare short time-series holding ONE invFFT of a single SFT */
+  if ( (sTS = XLALCreateCOMPLEX8TimeSeries ( "short timeseries", &epoch, 0, deltaT, &empty_LALUnit, numBinsSFT )) == NULL )
+    {
+      XLALPrintError ( "%s: XLALCreateCOMPLEX8TimeSeries() for %d timesteps failed! errno = %d!\n", __func__, numBinsSFT, xlalErrno );
+      XLAL_ERROR_NULL ( XLAL_EFUNC );
+    }
+
+  /* ----- prepare output LFT ---------- */
+  if ( (outputLFT = LALCalloc ( 1, sizeof(*outputLFT) )) == NULL )
+    {
+      XLALPrintError ( "%s: LALCalloc ( 1, %d ) failed!\n", __func__, sizeof(*outputLFT) );
+      XLAL_ERROR_NULL ( XLAL_ENOMEM );
+    }
+
+  /* prepare LFT header */
+  strcpy ( outputLFT->name, firstSFT->name );
+  strcat ( outputLFT->name, ":long Fourier transform");
+  outputLFT->epoch  = firstSFT->epoch;
+  outputLFT->f0     = f0LFT;
+  outputLFT->deltaF = 1.0 / Tspan;
+  outputLFT->sampleUnits = firstSFT->sampleUnits;
+
+  if ( (outputLFT->data = XLALCreateCOMPLEX8Vector ( numTimeSamples )) == NULL )
+    {
+      XLALPrintError ( "%s: XLALCreateCOMPLEX8Vector(%d) failed! xlalErrno = %d\n", __func__, numTimeSamples, xlalErrno );
+      XLAL_ERROR_NULL ( XLAL_ENOMEM );
+    }
+
+  /* ---------- loop over all SFTs and inverse-FFT them ---------- */
+  for ( n = 0; n < numSFTs; n ++ )
+    {
+      SFTtype *thisSFT = &(sfts->data[n]);
+      UINT4 bin0_n;
+      REAL8 offset_n, nudge_n;
+      UINT4 copyLen, binsLeft;
+
+      UINT4 k;
+      REAL8 offset0, offsetEff, hetCycles;
+      REAL4 hetCorr_re, hetCorr_im;
+      REAL4 fact_re, fact_im;
+      REAL4 norm = 1.0 / numBinsSFT;
+
+
+      /* find bin in long timeseries corresponding to starttime of *this* SFT */
+      offset_n = XLALGPSDiff ( &thisSFT->epoch, &firstSFT->epoch );
+      bin0_n = (UINT4) ( offset_n / deltaT + 0.5 );	/* round to closest bin */
+
+      nudge_n = bin0_n * deltaT - offset_n;		/* rounding error */
+      nudge_n = 1e-9 * (floor)(nudge_n * 1e9 + 0.5);	/* round to closest nanosecond */
+      {
+	REAL8 t0 = XLALGPSGetREAL8 ( &firstSFT->epoch );
+	XLALPrintInfo ("n = %d: t0_n = %f, sft_tn =(%d,%d), bin-offset = %g s, corresponding to %g timesteps\n",
+                       n, t0 + bin0_n * deltaT, sfts->data[n].epoch.gpsSeconds,  sfts->data[n].epoch.gpsNanoSeconds, nudge_n, nudge_n/deltaT );
+      }
+
+      if ( (nudge_n != 0) && (XLALTimeShiftSFT ( thisSFT, nudge_n ) != XLAL_SUCCESS) )
+	{
+	  XLALPrintError ( "%s: XLALTimeShiftSFT(sft-%d, %g) failed! errno = %d!\n", __func__, n, nudge_n, xlalErrno );
+	  XLAL_ERROR_NULL ( XLAL_EFUNC );
+	}
+
+
+      /* determine heterodyning phase-correction for this SFT */
+      offset0 = XLALGPSDiff ( &thisSFT->epoch, &firstSFT->epoch );
+      /* we know that fHet * Tsft = integer, so we only need the remainder of offset_t0 % Tsft */
+      offsetEff = fmod ( offset0, Tsft );
+      offsetEff = 1e-9 * (floor)( offsetEff * 1e9 + 0.5 );	/* round to closest integer multiple of nanoseconds */
+
+      hetCycles = fmod ( fHet * offsetEff, 1);	/* required heterodyning phase-correction for this SFT */
+
+      XLAL_CHECK_NULL( XLALSinCos2PiLUT (&hetCorr_im, &hetCorr_re, -hetCycles ) == XLAL_SUCCESS, XLAL_EFUNC );
+
+      /* apply all phase- and normalizing factors */
+      fact_re = norm * hetCorr_re;
+      fact_im = norm * hetCorr_im;
+
+      XLALPrintInfo ("SFT n = %d: (tn - t0) = %g s EQUIV %g s, hetCycles = %g, ==> fact = %g + i %g\n", n, offset0, offsetEff, hetCycles, fact_re, fact_im );
+
+      for ( k = 0; k < numBinsSFT; k ++ )
+	{
+	  REAL8 binReal, binImag;
+
+	  binReal = fact_re * crealf(thisSFT->data->data[k]) - fact_im * cimagf(thisSFT->data->data[k]);
+	  binImag = fact_re * cimagf(thisSFT->data->data[k]) + fact_im * crealf(thisSFT->data->data[k]);
+
+	  thisSFT->data->data[k] = crectf( binReal, binImag );
+	} /* k < numBins */
+
+      if ( XLALReorderSFTtoFFTW (thisSFT->data) != XLAL_SUCCESS )
+	{
+	  XLALPrintError ( "%s: XLALReorderSFTtoFFTW() failed! errno = %d!\n", __func__, xlalErrno );
+	  XLAL_ERROR_NULL ( XLAL_EFUNC );
+	}
+
+      if ( XLALCOMPLEX8VectorFFT( sTS->data, thisSFT->data, SFTplan ) != XLAL_SUCCESS )
+	{
+	  XLALPrintError ( "%s: XLALCOMPLEX8VectorFFT() failed! errno = %d!\n", __func__, xlalErrno );
+	  XLAL_ERROR_NULL ( XLAL_EFUNC );
+	}
+
+      /* copy short (shifted) timeseries into correct location within long timeseries */
+      binsLeft = numTimeSamples - bin0_n - 1;
+      copyLen = MYMIN ( numBinsSFT, binsLeft );		/* make sure not to write past the end of the long TS */
+      memcpy ( &lTS->data->data[bin0_n], sTS->data->data, copyLen * sizeof(lTS->data->data[0]) );
+
+    } /* for n < numSFTs */
+
+  /* ---------- now FFT the long timeseries ---------- */
+
+  /* ----- compute plan for FFTW */
+  if ( (LFTplan = XLALCreateForwardCOMPLEX8FFTPlan( numTimeSamples, 0 )) == NULL )
+    {
+      XLALPrintError ( "%s: XLALCreateForwardCOMPLEX8FFTPlan(%d, ESTIMATE ) failed! errno = %d!\n", __func__, numTimeSamples, xlalErrno );
+      XLAL_ERROR_NULL ( XLAL_EFUNC );
+    }
+
+  if ( XLALCOMPLEX8VectorFFT( outputLFT->data, lTS->data, LFTplan ) != XLAL_SUCCESS )
+    {
+      XLALPrintError ( "%s: XLALCOMPLEX8VectorFFT() failed! errno = %d!\n", __func__, xlalErrno );
+      XLAL_ERROR_NULL ( XLAL_EFUNC );
+    }
+
+  if ( XLALReorderFFTWtoSFT (outputLFT->data) != XLAL_SUCCESS )
+    {
+      XLALPrintError ( "%s: XLALReorderFFTWtoSFT() failed! errno = %d!\n", __func__, xlalErrno );
+      XLAL_ERROR_NULL ( XLAL_EFUNC );
+    }
+
+  /* cleanup memory */
+  XLALDestroyCOMPLEX8TimeSeries ( sTS );
+  XLALDestroyCOMPLEX8TimeSeries ( lTS );
+  XLALDestroyCOMPLEX8FFTPlan ( SFTplan );
+  XLALDestroyCOMPLEX8FFTPlan ( LFTplan );
+
+  return outputLFT;
+
+} /* XLALSFTVectorToLFT() */
 
 
 /**
- * Function to compute a vector of Fstatistic values for a number of frequency bins.
- * The output, i.e. fstatVector must be properly allocated
- * before this function is called.  The values of the start frequency, the step size
- * in the frequency and the number of frequency values for which the Fstatistic is
- * to be calculated are read from fstatVector.  The other parameters are not checked and
- * they must be correctly set outside this function.
+ * Turn the given SFTvector into one long time-series, properly dealing with gaps.
+ *
+ * NOTE: this function <b>modifies</b> the input SFTs in the process!
+ * If you need to reuse the SFTvector afterwards, you need to copy it before
+ * passing it into this function.
+ *
  */
-void ComputeFStatFreqBand_RS ( LALStatus *status,				/**< pointer to LALStatus structure */
-			       REAL4FrequencySeries *fstatVector, 		/**< [out] Vector of Fstat values */
-			       const PulsarDopplerParams *doppler,		/**< parameter-space point to compute F for */
-			       MultiSFTVector *multiSFTs, 		        /**< normalized (by DOUBLE-sided Sn!) data-SFTs of all IFOs */
-			       const MultiNoiseWeights *multiWeights,	        /**< noise-weights of all SFTs */
-			       ComputeFParams *params		                /**< addition computational params */
-			       )
+COMPLEX8TimeSeries *
+XLALSFTVectorToCOMPLEX8TimeSeries ( SFTVector *sfts,                /**< [in/out] SFT vector, gets modified! */
+				    const LIGOTimeGPS *start_in,    /**< [in] start time */
+				    const LIGOTimeGPS *end_in       /**< [in] input end time */
+				    )
 {
-  UINT4 numDetectors;
-  ComputeFBuffer_RS *cfBuffer = NULL;
-  MultiDetectorStateSeries *multiDetStates = NULL;
-  MultiSSBtimes *multiSSB = NULL;
-  MultiAMCoeffs *multiAMcoef = NULL;
-  MultiCOMPLEX8TimeSeries *multiTimeseries = NULL;
-  REAL8 Ad, Bd, Cd, Dd_inv, AdX, BdX, CdX, DdX_inv;
-  SkyPosition skypos;
-  UINT4 i,j,k;
-  MultiCOMPLEX8TimeSeries *multiFa_resampled = NULL;
-  MultiCOMPLEX8TimeSeries *multiFb_resampled = NULL;
-  COMPLEX8Vector *Faf_resampled = NULL;
-  COMPLEX8Vector *Fbf_resampled = NULL;
-  UINT4 numSamples, kmax;
-  REAL8 f0_shifted;
-  REAL8 f0_shifted_single;
-  REAL8 dt;
-  REAL8 df_out;
-  ComplexFFTPlan *pfwd = NULL;  /* this will store the FFT plan */
-  COMPLEX8Vector *outa = NULL;  /* this will contain the FFT output of Fa for this detector */
-  COMPLEX8Vector *outb = NULL;  /* this will contain the FFT output of Fb for this detector */
-  COMPLEX8Vector *outaSingle = NULL; /* this will contain Faf_resampled for a single IFO */
-  COMPLEX8Vector *outbSingle = NULL; /* this will contain Fbf_resampled for a single IFO */
+  COMPLEX8FFTPlan *SFTplan;
 
-  INITSTATUS(status);
-  ATTATCHSTATUSPTR (status);
+  COMPLEX8TimeSeries *lTS = NULL;		/* long time-series corresponding to full set of SFTs */
+  COMPLEX8TimeSeries *sTS = NULL; 		/* short time-series corresponding to a single SFT */
 
-  /* check that the input data and parameters structures don't point to NULL */
-  ASSERT ( multiSFTs, status, COMPUTEFSTATRSC_ENULL, COMPUTEFSTATRSC_MSGENULL );
-  ASSERT ( doppler, status, COMPUTEFSTATRSC_ENULL, COMPUTEFSTATRSC_MSGENULL );
-  ASSERT ( params, status, COMPUTEFSTATRSC_ENULL, COMPUTEFSTATRSC_MSGENULL );
+  REAL8 fHet;				/* heterodyning frequency */
+  LIGOTimeGPS epoch = {0,0};
+  LIGOTimeGPS start;
+  LIGOTimeGPS end;
+  
+  /* constant quantities for all SFTs */
+  SFTtype *firstSFT, *lastSFT;
+  UINT4 numBinsSFT;
+  REAL8 dfSFT;
+  REAL8 Tsft;
+  REAL8 deltaT;
+  UINT4 numSFTs;
+  UINT4 n;
+  REAL8 Tspan;
+  UINT4 numTimeSamples;
+  UINT4 NnegSFT;
+  REAL8 f0SFT;
+  REAL8 SFTFreqBand;
 
-  cfBuffer = params->buffer;                      /* set local pointer to the buffer location */
-  numDetectors = multiSFTs->length;               /* set the number of detectors to the number of sets of SFTs */
-  // unused: SFTtype * firstSFT = &(multiSFTs->data[0]->data[0]);      /* use data from the first SFT from the first detector to set other params */
-
-  /* check that the pre-allocated output vector doesn't point to NULL */
-  ASSERT ( fstatVector, status, COMPUTEFSTATRSC_ENULL, COMPUTEFSTATRSC_MSGENULL );
-  ASSERT ( fstatVector->data, status, COMPUTEFSTATRSC_ENULL, COMPUTEFSTATRSC_MSGENULL );
-  ASSERT ( fstatVector->data->data, status, COMPUTEFSTATRSC_ENULL, COMPUTEFSTATRSC_MSGENULL );
-  ASSERT ( fstatVector->data->length > 0, status, COMPUTEFSTATRSC_EINPUT, COMPUTEFSTATRSC_MSGEINPUT );
-
-  df_out = fstatVector->deltaF;                   /* the user defined frequency resolution */
-
-  /* check that the multidetector noise weights have the same length as the multiSFTs */
-  if ( multiWeights ) {
-    ASSERT ( multiWeights->length == numDetectors , status, COMPUTEFSTATRSC_EINPUT, COMPUTEFSTATRSC_MSGEINPUT );
-  }
-
-  /* first, if there is no buffer allocate space for one */
-  /* IMPORTANT - use Calloc here so that all pointers within the structure are NULL */
-  if ( cfBuffer == NULL ) {
-    if ( (cfBuffer = (ComputeFBuffer_RS*)XLALCalloc(1,sizeof(ComputeFBuffer_RS))) == NULL ) {
-      XLALPrintError("\nXLALMalloc() failed with error = %d\n\n", xlalErrno );
-      ABORT ( status, COMPUTEFSTATRSC_EXLAL, COMPUTEFSTATRSC_MSGEXLAL );
-    }
-  }
-
-  /************************************************************************************************************/
-  /* Dealing with the input SFT -> timeseries conversion and whether it has already been done and is buffered */
-
-  /* generate bandpassed and downsampled timeseries for each detector                         */
-  /* we only ever do this once for a given dataset so we read it from the buffer if it exists */
-  /* in future implementations we will pass this directly to the function instead of SFTs     */
-
-  /* check if there is an not existing timeseries and if the start time in the buffer does not match the start time of the SFTs */
-  if ( !cfBuffer->multiTimeseries || ( XLALGPSCmp(&cfBuffer->segstart,&multiSFTs->data[0]->data[0].epoch) != 0) ) {
-
-    XLALPrintInfo ("*** New segment : recomputing timeseries and detstates\n");
-    if ( !cfBuffer->multiTimeseries) XLALPrintInfo("timeseries pointer was null\n");
-    if ( XLALGPSCmp(&cfBuffer->segstart,&multiSFTs->data[0]->data[0].epoch) != 0)
-      XLALPrintInfo("segstart changed from %d to %d\n",cfBuffer->segstart.gpsSeconds,multiSFTs->data[0]->data[0].epoch.gpsSeconds);
-
-    /* if there was no existing timeseries we need to recompute the timeseries from the SFTs */
-    /* generate multiple coincident timeseries - one for each detector spanning start -> end */
-    /* we need each timeseries to span the exact same amount of time and to start at the same time */
-    /* because for the multi-detector Fstat we need frequency bins to be coincident */
-    /* The memory allocated here is freed when the buffer is cleared in the calling program */
-
-    /* generate a new timeseries from the input SFTs */
-    if ( ( multiTimeseries = XLALMultiSFTVectorToCOMPLEX8TimeSeries(multiSFTs)) == NULL ) {
-      XLALPrintError("\nXLALMultiSFTVectorToCOMPLEX8TimeSeries() failed with error = %d\n\n", xlalErrno );
-      ABORT ( status, COMPUTEFSTATRSC_EXLAL, COMPUTEFSTATRSC_MSGEXLAL );
-    }
-
-    /* recompute the multidetector states for the possibly time shifted SFTs */
-    /* the function XLALMultiSFTVectorToCOMPLEX8TimeSeries may have shifted the SFT start times around */
-    /* and since these times will be used later on for the resampling we also need to recompute the */
-    /* MultiDetectorStates because their timestamps are used later on to compute SSB times which we */
-    /* need to be accurate at the midpoints of the SFTs.  Understand ? */
-
-    /* recompute the multiDetStates for the new SFT start times */
-    TRY ( LALGetMultiDetectorStates ( status->statusPtr, &multiDetStates, multiSFTs, params->edat ), status );
-
-    /* set all other segment dependent quantity pointers to NULL */
-    /* this will basically mean that we will have to compute all sky dependent quantities again */
-    XLALEmptyComputeFBuffer_RS( cfBuffer );
-
-    /* buffer the multitimeseries, detstates and the current start time of the input data */
-    cfBuffer->multiTimeseries = multiTimeseries;
-    cfBuffer->multiDetStates = multiDetStates;
-    cfBuffer->segstart.gpsSeconds = multiSFTs->data[0]->data[0].epoch.gpsSeconds;
-    cfBuffer->segstart.gpsNanoSeconds = multiSFTs->data[0]->data[0].epoch.gpsNanoSeconds;
-
-  }  /* if (!cfBuffer->multiTimeseries || (buffered-start != SFT-start) ) */
-
-  /* End of the SFT -> timeseries buffering checks                                                            */
-  /************************************************************************************************************/
-
-  /************************************************************************************************************/
-  /* Dealing with sky position dependent quantities and buffering them                                        */
-
-  /* if the sky position has changed or if any of the sky position dependent quantities are not buffered
-     i.e the multiDetstates, the multiAMcoefficients, the multiSSB times and the resampled multiTimeSeries Fa and Fb,
-     then we need to recompute these and buffer them */
-  if ( (cfBuffer->Alpha != doppler->Alpha )                                 /* and alpha hasn't changed */
-       || ( cfBuffer->Delta != doppler->Delta )                             /* and delta hasn't changed */
-       || ( cfBuffer->multiAMcoef == NULL )                                 /* and we have a buffered multiAMcoefficents */
-       || ( cfBuffer->multiSSB == NULL )                                    /* and we have buffered multiSSB times */
-       || ( cfBuffer->multiFa_resampled == NULL )                           /* and we have buffered multiFa_resampled  */
-       || ( cfBuffer->multiFb_resampled == NULL )                           /* and we have multiFb_resampled */
-       )
+  /* check sanity of input */
+  if ( !sfts || (sfts->length == 0) )
     {
-
-      XLALPrintInfo("*** New sky position : recomputing SSB times, AM coefficients and Fa and Fb\n");
-
-      /* temporary timeseries used to store the unbarycentred antenna weighted Fa and Fb timeseries */
-      MultiCOMPLEX8TimeSeries *multiFa = NULL;
-      MultiCOMPLEX8TimeSeries *multiFb = NULL;
-
-      XLALPrintInfo("freeing all of the sky dependent buffered quantities\n");
-      /* free all of the non-null quantities we're about to regenerate and point them to NULL */
-      /* if ( cfBuffer->multiAMcoef ) XLALDestroyMultiAMCoeffs( cfBuffer->multiAMcoef ); */
-/*       if ( cfBuffer->multiSSB ) XLALDestroyMultiSSBtimes( cfBuffer->multiSSB ); */
-/*       if ( cfBuffer->multiFa_resampled) XLALDestroyMultiCOMPLEX8TimeSeries( cfBuffer->multiFa_resampled ); */
-/*       if ( cfBuffer->multiFb_resampled) XLALDestroyMultiCOMPLEX8TimeSeries( cfBuffer->multiFb_resampled ); */
-/*       cfBuffer->multiAMcoef = NULL; */
-/*       cfBuffer->multiSSB = NULL;  */
-/*       cfBuffer->multiFa_resampled = NULL;  */
-/*       cfBuffer->multiFb_resampled = NULL;  */
-
-      /* compute the SSB times corresponding to the midpoints of each SFT for the current sky position for all detectors */
-      skypos.system = COORDINATESYSTEM_EQUATORIAL;
-      skypos.longitude = doppler->Alpha;
-      skypos.latitude  = doppler->Delta;
-      if ( (multiSSB = XLALGetMultiSSBtimes ( cfBuffer->multiDetStates, skypos, doppler->refTime, params->SSBprec )) == NULL )
-        {
-          XLALPrintError("XLALGetMultiSSBtimes() failed with error = %d\n\n", xlalErrno );
-          ABORT ( status, COMPUTEFSTATC_EXLAL, COMPUTEFSTATC_MSGEXLAL );
-        }
-
-      /* compute the AM parameters for each detector */
-      LALGetMultiAMCoeffs ( status->statusPtr, &multiAMcoef, cfBuffer->multiDetStates, skypos );
-      BEGINFAIL ( status ) {
-	XLALDestroyMultiSSBtimes ( multiSSB );
-      } ENDFAIL (status);
-
-      /* noise-weight Antenna-patterns and compute A,B,C */
-      if ( XLALWeightMultiAMCoeffs ( multiAMcoef, multiWeights ) != XLAL_SUCCESS ) {
-	XLALPrintError("\nXLALWeightMultiAMCoeffs() failed with error = %d\n\n", xlalErrno );
-	ABORT ( status, COMPUTEFSTATRSC_EXLAL, COMPUTEFSTATRSC_MSGEXLAL );
-      }
-
-      /* Generate a(t) and b(t) weighted heterodyned downsampled timeseries */
-      if ( XLALAntennaWeightMultiCOMPLEX8TimeSeries ( &multiFa, &multiFb, cfBuffer->multiTimeseries,
-						      multiAMcoef, multiSFTs) != XLAL_SUCCESS ) {
-	XLALPrintError("\nXLALAntennaWeightMultiCOMPLEX8TimeSeries() failed with error = %d\n\n", xlalErrno );
-	ABORT ( status, COMPUTEFSTATRSC_EXLAL, COMPUTEFSTATRSC_MSGEXLAL );
-      }
-
-      /* Perform barycentric resampling on the multi-detector timeseries */
-      if ( XLALBarycentricResampleMultiCOMPLEX8TimeSeries ( &multiFa_resampled, &multiFb_resampled,
-							    multiFa, multiFb, multiSSB, multiSFTs,
-							    df_out) != XLAL_SUCCESS ) {
-	XLALPrintError("\nXLALBarycentricResampleMultiCOMPLEX8TimeSeries() failed with error = %d\n\n", xlalErrno );
-	ABORT ( status, COMPUTEFSTATRSC_EXLAL, COMPUTEFSTATRSC_MSGEXLAL );
-      }
-
-      /* free multiFa and MultiFb - we won't need them again since we're storing the resampled versions */
-      XLALDestroyMultiCOMPLEX8TimeSeries ( multiFa );
-      XLALDestroyMultiCOMPLEX8TimeSeries ( multiFb );
-
-      /* buffer all new sky position dependent values - after clearing them */
-      cfBuffer->Alpha = doppler->Alpha;
-      cfBuffer->Delta = doppler->Delta;
-
-      XLALDestroyMultiSSBtimes( cfBuffer->multiSSB );
-      cfBuffer->multiSSB = multiSSB;
-
-      XLALDestroyMultiAMCoeffs( cfBuffer->multiAMcoef );
-      cfBuffer->multiAMcoef = multiAMcoef;
-
-      XLALDestroyMultiCOMPLEX8TimeSeries( cfBuffer->multiFa_resampled );
-      XLALDestroyMultiCOMPLEX8TimeSeries( cfBuffer->multiFb_resampled );
-      cfBuffer->multiFa_resampled = multiFa_resampled;
-      cfBuffer->multiFb_resampled = multiFb_resampled;
-
-    } /* could not reuse previously buffered quantities */
-
-  /* End of the sky position dependent quantity buffering                                                     */
-  /************************************************************************************************************/
-
-  /* store AM coefficient integrals in local variables */
-  if ( cfBuffer->multiAMcoef ) {
-    Ad = cfBuffer->multiAMcoef->Mmunu.Ad;
-    Bd = cfBuffer->multiAMcoef->Mmunu.Bd;
-    Cd = cfBuffer->multiAMcoef->Mmunu.Cd;
-    Dd_inv = 1.0 / cfBuffer->multiAMcoef->Mmunu.Dd;
-  }
-  else {
-    XLALPrintError ( "Programming error: 'multiAMcoef' not available!\n");
-    ABORT ( status, COMPUTEFSTATRSC_ENULL, COMPUTEFSTATRSC_MSGENULL );
-  }
-
-  // *copy* complete resampled multi-complex8 timeseries so we can apply spindown-corrections to it
-  MultiCOMPLEX8TimeSeries *multiFa_spin, *multiFb_spin;
-  if ( ( multiFa_spin = XLALDuplicateMultiCOMPLEX8TimeSeries ( cfBuffer->multiFa_resampled ) ) == NULL )
-    ABORT ( status, COMPUTEFSTATRSC_EXLAL, COMPUTEFSTATRSC_MSGEXLAL );
-  if ( ( multiFb_spin = XLALDuplicateMultiCOMPLEX8TimeSeries ( cfBuffer->multiFb_resampled ) ) == NULL )
-    ABORT ( status, COMPUTEFSTATRSC_EXLAL, COMPUTEFSTATRSC_MSGEXLAL );
-
-
-  /* compute the fractional bin offset between the user requested initial frequency */
-  /* and the closest output frequency bin */
-  REAL8 diff = cfBuffer->multiTimeseries->data[0]->f0 - doppler->fkdot[0]; /* the difference between the new timeseries heterodyne frequency and the user requested lowest frequency */
-  INT4 bins = (INT4)round( diff / fstatVector->deltaF );           /* the rounded number of output frequency bins difference */
-  REAL8 shift = diff - fstatVector->deltaF * bins;                       /* the fractional bin frequency offset */
-
-  /* shift the timeseries by a fraction of a frequency bin so that user requested frequency is exactly resolved */
-  if (shift != 0.0) {
-    if ( XLALFrequencyShiftMultiCOMPLEX8TimeSeries ( &multiFa_spin, shift ) != XLAL_SUCCESS ) {
-      XLALPrintError("\nXLALMultiSFTVectorToCOMPLEX8TimeSeries() failed with error = %d\n\n", xlalErrno );
-      ABORT ( status, COMPUTEFSTATRSC_EXLAL, COMPUTEFSTATRSC_MSGEXLAL );
-    }
-    if ( XLALFrequencyShiftMultiCOMPLEX8TimeSeries ( &multiFb_spin, shift ) != XLAL_SUCCESS ) {
-      XLALPrintError("\nXLALMultiSFTVectorToCOMPLEX8TimeSeries() failed with error = %d\n\n", xlalErrno );
-      ABORT ( status, COMPUTEFSTATRSC_EXLAL, COMPUTEFSTATRSC_MSGEXLAL );
-    }
-  }
-
-  /* apply spin derivitive correction to resampled timeseries */
-  /* this function only applies a correction if there are any non-zero spin derivitives */
-  if ( XLALSpinDownCorrectionMultiFaFb ( &multiFa_spin, &multiFb_spin, doppler ) != XLAL_SUCCESS ) {
-    XLALPrintError("\nXLALSpinDownCorrectionMultiFaFb() failed with error = %d\n\n", xlalErrno );
-    ABORT ( status, COMPUTEFSTATRSC_EXLAL, COMPUTEFSTATRSC_MSGEXLAL );
-  }
-
-  /**********************************************************************************/
-  /* we now compute the FFTs of the resampled functions Fa and Fb for each detector */
-  /* and combine them into the multi-detector F-statistic */
-
-  /* we use the first detector Fa time series to obtain the number of time samples and the sampling time */
-  /* these should be the same for all Fa and Fb timeseries */
-  numSamples = multiFa_spin->data[0]->data->length;
-  dt = multiFa_spin->data[0]->deltaT;
-
-  /* allocate memory for Fa(f) and Fb(f) and individual detector FFT outputs */
-  if ( (Faf_resampled = XLALCreateCOMPLEX8Vector(numSamples)) == NULL )
-    ABORT ( status, xlalErrno, "XLALCreateCOMPLEX8Vector() failed!\n");
-  if ( (Fbf_resampled = XLALCreateCOMPLEX8Vector(numSamples)) == NULL )
-    ABORT ( status, xlalErrno, "XLALCreateCOMPLEX8Vector() failed!\n");
-  if ( (outa = XLALCreateCOMPLEX8Vector(numSamples)) == NULL )
-    ABORT ( status, xlalErrno, "XLALCreateCOMPLEX8Vector() failed!\n");
-  if ( (outb = XLALCreateCOMPLEX8Vector(numSamples)) == NULL )
-    ABORT ( status, xlalErrno, "XLALCOMPLEX8VectorFFT() failed!\n");
-  if ( params->returnSingleF ) {
-    if ( (outaSingle = XLALCreateCOMPLEX8Vector(numSamples)) == NULL )
-      ABORT ( status, xlalErrno, "XLALCreateCOMPLEX8Vector() failed!\n");
-    if ( (outbSingle = XLALCreateCOMPLEX8Vector(numSamples)) == NULL )
-      ABORT ( status, xlalErrno, "XLALCreateCOMPLEX8Vector() failed!\n");
-  }
-
-  /* initialise output vectors to zero since it will be added to */
-  memset(Faf_resampled->data,0,numSamples*sizeof(COMPLEX8));
-  memset(Fbf_resampled->data,0,numSamples*sizeof(COMPLEX8));
-
-   /* make forwards FFT plan - this will be re-used for each detector */
-  if ( (pfwd = XLALCreateCOMPLEX8FFTPlan(numSamples,1,0)) == NULL )
-    ABORT ( status, xlalErrno, "XLALCreateCOMPLEX8FFTPlan() failed!\n");
-
-  /* loop over detectors */
-  for (i=0;i<numDetectors;i++) {
-
-    COMPLEX8Vector *ina = multiFa_spin->data[i]->data; /* we point the input to the current detector Fa timeseries */
-    COMPLEX8Vector *inb = multiFb_spin->data[i]->data; /* we point the input to the current detector Fb timeseries */
-
-    /* initialise output vectors to zero for safety */
-    memset(outa->data,0,numSamples*sizeof(COMPLEX8));
-    memset(outb->data,0,numSamples*sizeof(COMPLEX8));
-    if ( params->returnSingleF ) {
-      memset(outaSingle->data,0,numSamples*sizeof(COMPLEX8));
-      memset(outbSingle->data,0,numSamples*sizeof(COMPLEX8));
+      XLALPrintError ("%s: empty SFT input!\n", __func__ );
+      XLAL_ERROR_NULL (XLAL_EINVAL);
     }
 
-    /* Fourier transform the resampled Fa(t) and Fb(t) */
-    if (XLALCOMPLEX8VectorFFT(outa,ina,pfwd)!= XLAL_SUCCESS)
-      ABORT ( status, xlalErrno, "XLALCOMPLEX8VectorFFT() failed!\n");
-    if (XLALCOMPLEX8VectorFFT(outb,inb,pfwd)!= XLAL_SUCCESS)
-      ABORT ( status, xlalErrno, "XLALCOMPLEX8VectorFFT() failed!\n");
+  /* define some useful shorthands */
+  numSFTs = sfts->length;
+  firstSFT = &(sfts->data[0]);
+  lastSFT = &(sfts->data[numSFTs-1]);
+  numBinsSFT = firstSFT->data->length;
+  dfSFT = firstSFT->deltaF;
+  Tsft = 1.0 / dfSFT;
+  SFTFreqBand = numBinsSFT * dfSFT;
+  deltaT = 1.0 / SFTFreqBand;	/* we'll put DC into the middle of [f0, f0+Band], so sampling at fSamp=Band is sufficient */
+  f0SFT = firstSFT->f0;
 
-    /*  add to summed Faf and Fbf and normalise by dt */
-    for (j=0;j<numSamples;j++) {
-      Faf_resampled->data[j] += (outa->data[j] * ((REAL4) dt));
-      Fbf_resampled->data[j] += (outb->data[j] * ((REAL4) dt));
+  /* if the start and end input pointers are NOT NULL then determine start and time-span of the final long time-series */
+  if (start_in && end_in) 
+    {
+      start.gpsSeconds = start_in->gpsSeconds;
+      start.gpsNanoSeconds = start_in->gpsNanoSeconds;
+      end.gpsSeconds = end_in->gpsSeconds;
+      end.gpsNanoSeconds = end_in->gpsNanoSeconds;
+
+      /* do sanity checks */
+      if ( (XLALGPSDiff ( &end, &firstSFT->epoch ) ) < 0 ) 
+	{
+	  XLALPrintError ("%s: end time before first SFT!\n", __func__ );
+	  XLAL_ERROR_NULL (XLAL_EINVAL);
+	}
+      if ( (XLALGPSDiff ( &start, &sfts->data[numSFTs-1].epoch) ) > Tsft ) 
+	{
+	  XLALPrintError ("%s: start time after end of data!\n", __func__ );
+	  XLAL_ERROR_NULL (XLAL_EINVAL);
+	}
+    }
+  else {   /* otherwise we use the start and end of the sft vector */
+    start.gpsSeconds = firstSFT->epoch.gpsSeconds;
+    start.gpsNanoSeconds = firstSFT->epoch.gpsNanoSeconds;
+    end.gpsSeconds = lastSFT->epoch.gpsSeconds;
+    end.gpsNanoSeconds = lastSFT->epoch.gpsNanoSeconds;
+    if ( XLALGPSAdd(&end,Tsft) == NULL )
+    {
+      XLALPrintError ("%s: NULL pointer returned from XLALGPSAdd()!\n", __func__ );
+      XLAL_ERROR_NULL (XLAL_EFAULT);
+    }
+    
+  }
+ 
+  /* determine output time span */
+  if ( (Tspan = XLALGPSDiff ( &end, &start ) ) < 0 ) 
+    {
+      XLALPrintError ("%s: start time after end time!\n", __func__ );
+      XLAL_ERROR_NULL (XLAL_EINVAL);
+    }
+  
+  numTimeSamples = (UINT4)floor(Tspan / deltaT + 0.5);	/* round */
+
+  /* determine the heterodyning frequency */
+  /* fHet = DC of our internal DFTs */
+  NnegSFT = NhalfNeg ( numBinsSFT );
+  fHet = f0SFT + 1.0 * NnegSFT * dfSFT;
+
+  /* ----- Prepare invFFT of SFTs: compute plan for FFTW */
+  if ( (SFTplan = XLALCreateReverseCOMPLEX8FFTPlan( numBinsSFT, 0 )) == NULL )
+    {
+      XLALPrintError ( "%s: XLALCreateReverseCOMPLEX8FFTPlan(%d, ESTIMATE ) failed! errno = %d!\n", __func__, numBinsSFT, xlalErrno );
+      goto failed;
     }
 
-    /* compute single-IFO F-stats, if requested */
-    if ( params->returnSingleF )
+  /* ----- Prepare short time-series holding ONE invFFT of a single SFT */
+  if ( (sTS = XLALCreateCOMPLEX8TimeSeries ( "short timeseries", &epoch, 0, deltaT, &empty_LALUnit, numBinsSFT )) == NULL )
+    {
+      XLALPrintError ( "%s: XLALCreateCOMPLEX8TimeSeries() for %d timesteps failed! errno = %d!\n", __func__, numBinsSFT, xlalErrno );
+      goto failed;
+    }
+
+  /* ----- prepare long TimeSeries container ---------- */
+  if ( (lTS = XLALCreateCOMPLEX8TimeSeries ( firstSFT->name, &start, fHet, deltaT, &empty_LALUnit, numTimeSamples )) == NULL )
+    {
+      XLALPrintError ("%s: XLALCreateCOMPLEX8TimeSeries() for %d timesteps failed! errno = %d!\n", __func__, numTimeSamples, xlalErrno );
+      goto failed;
+    }
+  memset ( lTS->data->data, 0, numTimeSamples * sizeof(*lTS->data->data)); 	/* set all time-samples to zero (in case there are gaps) */
+
+
+  /* ---------- loop over all SFTs and inverse-FFT them ---------- */
+  for ( n = 0; n < numSFTs; n ++ )
+    {
+      SFTtype *thisSFT = &(sfts->data[n]);
+      UINT4 bin0_n;
+      REAL8 offset_n, nudge_n;
+      UINT4 copyLen, binsLeft;
+
+      REAL8 offset0, offsetEff, hetCycles;
+      COMPLEX8 hetCorrection;
+
+      /* find bin in long timeseries corresponding to starttime of *this* SFT */
+      offset_n = XLALGPSDiff ( &thisSFT->epoch, &start );
+      bin0_n = (UINT4) ( offset_n / deltaT + 0.5 );	/* round to closest bin */
+
+      nudge_n = bin0_n * deltaT - offset_n;		/* rounding error */
+      nudge_n = 1e-9 * (floor)(nudge_n * 1e9 + 0.5);	/* round to closest nanosecond */
       {
-       if (params->buffer == NULL ) {
-         AdX = multiAMcoef->data[i]->A;
-         BdX = multiAMcoef->data[i]->B;
-         CdX = multiAMcoef->data[i]->C;
-         DdX_inv = 1.0 / multiAMcoef->data[i]->D;
-       } else {
-         AdX = cfBuffer->multiAMcoef->data[i]->A;
-         BdX = cfBuffer->multiAMcoef->data[i]->B;
-         CdX = cfBuffer->multiAMcoef->data[i]->C;
-         DdX_inv = 1.0 / cfBuffer->multiAMcoef->data[i]->D;
-       }
+	REAL8 t0 = XLALGPSGetREAL8 ( &start );
+	XLALPrintInfo ("n = %d: t0_n = %f, sft_tn =(%d,%d), bin-offset = %g s, corresponding to %g timesteps\n",
+		n, t0 + bin0_n * deltaT, sfts->data[n].epoch.gpsSeconds,  sfts->data[n].epoch.gpsNanoSeconds, nudge_n, nudge_n/deltaT );
+      }
+      
+      /* nudge SFT into integer timestep bin if necessary */
+      if ( nudge_n != 0 )
+	{
+	  if  ( XLALTimeShiftSFT ( thisSFT, nudge_n ) != XLAL_SUCCESS )
+	    {
+	      XLALPrintError ( "%s: XLALTimeShiftSFT(sft-%d, %g) failed! errno = %d!\n", __func__, n, nudge_n, xlalErrno );
+	      goto failed;
+	    }
+	}
 
-       /* normalize by dt */
-       for (UINT4 l=0; l < numSamples; l++) {
-         outaSingle->data[l] = (outa->data[l] * ((REAL4) dt));
-         outbSingle->data[l] = (outb->data[l] * ((REAL4) dt));
-       }
+      /* determine heterodyning phase-correction for this SFT */
+      offset0 = XLALGPSDiff ( &thisSFT->epoch, &start );
 
-       /* the complex FFT output is shifted such that the heterodyne frequency is at DC */
-       /* we need to shift the negative frequencies to before the positive ones */
-       if ( XLALFFTShiftCOMPLEX8Vector(&outaSingle) != XLAL_SUCCESS )
-         ABORT ( status, xlalErrno, "XLALCOMPLEX8VectorFFT() failed!\n");
-       if ( XLALFFTShiftCOMPLEX8Vector(&outbSingle) != XLAL_SUCCESS )
-         ABORT ( status, xlalErrno, "XLALCOMPLEX8VectorFFT() failed!\n");
-
-       /* define new initial frequency of the frequency domain representations of Fa and Fb */
-       /* before the shift the zero bin was the heterodyne frequency */
-       /* now we've shifted it by N - NhalfPosDC(N) bins */
-       f0_shifted_single = multiFa_spin->data[i]->f0 - NhalfNeg(numSamples) * df_out;
-
-       /* define number of bins offset from the internal start frequency bin to the user requested bin */
-       UINT4 offset_single = floor(0.5 + (doppler->fkdot[0] - f0_shifted_single)/fstatVector->deltaF);
-
-       /* compute final single-IFO F-stat */
-       UINT4 numFreqBins = (fstatVector->data->length)/(numDetectors + 1);
-       for (UINT4 m = 0; m < numFreqBins; m++) {
-         UINT4 idy = m + offset_single;
-         fstatVector->data->data[((i+1)*numFreqBins) + m] = DdX_inv * (  BdX * (SQ(crealf(outaSingle->data[idy])) + SQ(cimagf(outaSingle->data[idy])) )
-                                  + AdX * ( SQ(crealf(outbSingle->data[idy])) + SQ(cimagf(outbSingle->data[idy])) )
-                                  - 2.0 * CdX *( crealf(outaSingle->data[idy]) * crealf(outbSingle->data[idy]) + cimagf(outaSingle->data[idy]) * cimagf(outbSingle->data[idy]) )
-                                   );
-       } /* end loop over samples */
-    } /* if returnSingleF */
-
-  } /* end loop over detectors */
-
-/* the complex FFT output is shifted such that the heterodyne frequency is at DC */
-  /* we need to shift the negative frequencies to before the positive ones */
-  if ( XLALFFTShiftCOMPLEX8Vector(&Faf_resampled) != XLAL_SUCCESS )
-    ABORT ( status, xlalErrno, "XLALCOMPLEX8VectorFFT() failed!\n");
-  if ( XLALFFTShiftCOMPLEX8Vector(&Fbf_resampled) != XLAL_SUCCESS )
-    ABORT ( status, xlalErrno, "XLALCOMPLEX8VectorFFT() failed!\n");
-
-  /* define new initial frequency of the frequency domain representations of Fa and Fb */
-  /* before the shift the zero bin was the heterodyne frequency */
-  /* now we've shifted it by N - NhalfPosDC(N) bins */
-  f0_shifted = multiFa_spin->data[0]->f0 - NhalfNeg(numSamples) * df_out;
-
-  /* loop over requested output frequencies and construct F *NOT* 2F */
-  {
-
-    /* define number of bins offset from the internal start frequency bin to the user requested bin */
-    UINT4 offset = floor(0.5 + (doppler->fkdot[0] - f0_shifted)/fstatVector->deltaF);
-    if ( params->returnSingleF ) {
-      kmax = (fstatVector->data->length)/(numDetectors + 1);
-    } else {
-      kmax = fstatVector->data->length;
-    }
-    for (k=0; k < kmax; k++) {
-
-      UINT4 idx = k + offset;
-      /* ----- compute final Fstatistic-value ----- */
-
-      /* NOTE: the data MUST be normalized by the DOUBLE-SIDED PSD (using LALNormalizeMultiSFTVect),
-       * therefore there is a factor of 2 difference with respect to the equations in JKS, which
-       * where based on the single-sided PSD.
+      /* fHet * Tsft is an integer, because fHet is a frequency-bin of the input SFTs, so we only need the remainder offset_t0 % Tsft */
+      offsetEff = fmod ( offset0, Tsft );
+      offsetEff = 1e-9 * (floor)( offsetEff * 1e9 + 0.5 );	/* round to closest integer multiple of nanoseconds */
+      hetCycles = fmod ( fHet * offsetEff, 1);			/* required heterodyning phase-correction for this SFT */
+    
+      {
+        REAL4 hetCorrection_re, hetCorrection_im;
+        XLAL_CHECK_NULL( XLALSinCos2PiLUT( &hetCorrection_im, &hetCorrection_re, -hetCycles ) == XLAL_SUCCESS, XLAL_EFUNC );
+        hetCorrection = crectf( hetCorrection_re, hetCorrection_im );
+      }
+     
+      /* Note: we also bundle the overall normalization of 'df' into the het-correction.
+       * This ensures that the resulting timeseries will have the correct normalization, according to
+       * x_l = invFT[sft]_l = df * sum_{k=0}^{N-1} xt_k * e^(i 2pi k l / N )
+       * where x_l is the l-th timestamp, and xt_k is the k-th frequency bin of the SFT.
+       * See the LAL-conventions on FFTs:  http://www.ligo.caltech.edu/docs/T/T010095-00.pdf
+       * (the FFTw convention does not contain the factor of 'df', which is why we need to
+       * apply it ourselves)
+       *
        */
-      fstatVector->data->data[k] = Dd_inv * (
-                   Bd * (SQ(crealf(Faf_resampled->data[idx])) + SQ(cimagf(Faf_resampled->data[idx])))
-					       + Ad * (SQ(crealf(Fbf_resampled->data[idx])) + SQ(cimagf(Fbf_resampled->data[idx])))
-					       - 2.0 * Cd *( crealf(Faf_resampled->data[idx]) * crealf(Fbf_resampled->data[idx]) +
-							                 cimagf(Faf_resampled->data[idx]) * cimagf(Fbf_resampled->data[idx]) )
-					       );
+      hetCorrection *= ((REAL4) dfSFT);
+
+      /* FIXME: check how time-critical this step is, using proper profiling! */
+      if ( XLALMultiplySFTbyCOMPLEX8 ( thisSFT, hetCorrection ) != XLAL_SUCCESS )
+	{
+	  XLALPrintError ( "%s: XLALMultiplySFTbyCOMPLEX8(sft-%d) failed! errno = %d!\n", __func__, n, xlalErrno );
+	  goto failed;
+	}
+
+      XLALPrintInfo ("SFT n = %d: (tn - t0) = %g s EQUIV %g s, hetCycles = %g, ==> fact = %g + i %g\n",
+                     n, offset0, offsetEff, hetCycles, crealf(hetCorrection), cimagf(hetCorrection) );
+
+      /* FIXME: check if required */
+      if ( XLALReorderSFTtoFFTW (thisSFT->data) != XLAL_SUCCESS )
+	{
+	  XLALPrintError ( "%s: XLALReorderSFTtoFFTW() failed! errno = %d!\n", __func__, xlalErrno );
+	  goto failed;
+	}
+
+      if ( XLALCOMPLEX8VectorFFT( sTS->data, thisSFT->data, SFTplan ) != XLAL_SUCCESS )
+	{
+	  XLALPrintError ( "%s: XLALCOMPLEX8VectorFFT() failed! errno = %d!\n", __func__, xlalErrno );
+	  goto failed;
+	}
+
+      /* copy short (shifted) timeseries into correct location within long timeseries */
+      binsLeft = numTimeSamples - bin0_n - 1;
+      copyLen = MYMIN ( numBinsSFT, binsLeft );		/* make sure not to write past the end of the long TS */
+      memcpy ( &lTS->data->data[bin0_n], sTS->data->data, copyLen * sizeof(lTS->data->data[0]) );
+
+    } /* for n < numSFTs */
+
+  goto success;
+
+ failed:
+  /* cleanup memory */
+  XLALDestroyCOMPLEX8TimeSeries ( sTS );	/* short invSFT timeseries */
+  XLALDestroyCOMPLEX8FFTPlan ( SFTplan );
+  XLALDestroyCOMPLEX8TimeSeries ( lTS );
+
+  XLAL_ERROR_NULL ( XLAL_EFUNC );
+
+ success:
+  /* cleanup memory */
+  XLALDestroyCOMPLEX8TimeSeries ( sTS );	/* short invSFT timeseries */
+  XLALDestroyCOMPLEX8FFTPlan ( SFTplan );
+
+  return lTS;
+
+} /* XLALSFTVectorToCOMPLEX8TimeSeries() */
+
+
+/**
+ * Change frequency-bin order from fftw-convention to a 'SFT'
+ * ie. from FFTW: f[0], f[1],...f[N/2], f[-(N-1)/2], ... f[-2], f[-1]
+ * to: f[-(N-1)/2], ... f[-1], f[0], f[1], .... f[N/2]
+ */
+int
+XLALReorderFFTWtoSFT (COMPLEX8Vector *X)
+{
+  UINT4 N, Npos_and_DC, Nneg;
+
+  /* temporary storage for data */
+  COMPLEX8 *tmp;
+
+
+  if ( !X || (X->length==0) )
+    {
+      XLALPrintError ("%s: empty input vector 'X'!\n", __func__ );
+      XLAL_ERROR (XLAL_EINVAL);
     }
-  }
 
-  /* free memory not stored in the buffer */
-  XLALDestroyCOMPLEX8Vector( Faf_resampled );
-  XLALDestroyCOMPLEX8Vector( Fbf_resampled );
-  XLALDestroyCOMPLEX8Vector( outa );
-  XLALDestroyCOMPLEX8Vector( outb );
-  if ( params->returnSingleF ) {
-    XLALDestroyCOMPLEX8Vector ( outaSingle );
-    XLALDestroyCOMPLEX8Vector ( outbSingle );
-  }
-  XLALDestroyCOMPLEX8FFTPlan ( pfwd );
+  N = X -> length;
+  Npos_and_DC = NhalfPosDC ( N );
+  Nneg = NhalfNeg ( N );
 
-  XLALDestroyMultiCOMPLEX8TimeSeries ( multiFa_spin );
-  XLALDestroyMultiCOMPLEX8TimeSeries ( multiFb_spin );
+  /* allocate temporary storage for swap */
+  if ( (tmp = XLALMalloc ( N * sizeof(*tmp) )) == NULL )
+    {
+      XLALPrintError ("%s: Failed to allocate XLALMalloc(%d)\n", __func__, N * sizeof(*tmp));
+      XLAL_ERROR (XLAL_ENOMEM);
+    }
 
-  /* IMPORTANT - point the input buffer pointer to the buffered data */
-  params->buffer = cfBuffer;
+  memcpy ( tmp, X->data, N * sizeof(*tmp) );
 
-  DETATCHSTATUSPTR (status);
-  RETURN (status);
+  /* Copy second half from FFTW: 'negative' frequencies */
+  memcpy ( X->data, tmp + Npos_and_DC, Nneg * sizeof(*tmp) );
 
-} /* ComputeFStatFreqBand_RS() */
+  /* Copy first half from FFTW: 'DC + positive' frequencies */
+  memcpy ( X->data + Nneg, tmp, Npos_and_DC * sizeof(*tmp) );
 
+  XLALFree(tmp);
+
+  return XLAL_SUCCESS;
+
+}  /* XLALReorderFFTWtoSFT() */
+
+/**
+ * Change frequency-bin order from 'SFT' to fftw-convention
+ * ie. from f[-(N-1)/2], ... f[-1], f[0], f[1], .... f[N/2]
+ * to FFTW: f[0], f[1],...f[N/2], f[-(N-1)/2], ... f[-2], f[-1]
+ */
+int
+XLALReorderSFTtoFFTW (COMPLEX8Vector *X)
+{
+  UINT4 N, Npos_and_DC, Nneg;
+
+  /* temporary storage for data */
+  COMPLEX8 *tmp;
+
+
+  if ( !X || (X->length==0) )
+    {
+      XLALPrintError ("%s: empty input vector 'X'!\n", __func__ );
+      XLAL_ERROR (XLAL_EINVAL);
+    }
+
+  N = X->length;
+  Npos_and_DC = NhalfPosDC ( N );
+  Nneg = NhalfNeg ( N );
+
+  /* allocate temporary storage for swap */
+  if ( (tmp = XLALMalloc ( N * sizeof(*tmp) )) == NULL )
+    {
+      XLALPrintError ("%s: Failed to allocate XLALMalloc(%d)\n", __func__, N * sizeof(*tmp));
+      XLAL_ERROR (XLAL_ENOMEM);
+    }
+
+  memcpy ( tmp, X->data, N * sizeof(*tmp) );
+
+  /* Copy second half of FFTW: 'negative' frequencies */
+  memcpy ( X->data + Npos_and_DC, tmp, Nneg * sizeof(*tmp) );
+
+  /* Copy first half of FFTW: 'DC + positive' frequencies */
+  memcpy ( X->data, tmp + Nneg, Npos_and_DC * sizeof(*tmp) );
+
+  XLALFree(tmp);
+
+  return XLAL_SUCCESS;
+
+}  /* XLALReorderSFTtoFFTW() */
+
+
+/**
+ * Multiply SFT frequency bins by given complex factor.
+ *
+ * NOTE: this <b>modifies</b> the given SFT in place
+ */
+int
+XLALMultiplySFTbyCOMPLEX8 ( SFTtype *sft,	/**< [in/out] SFT */
+			    COMPLEX8 factor )	/**< [in] complex8 factor to multiply SFT by */
+{
+  UINT4 k;
+
+  if ( !sft || !sft->data )
+    {
+      XLALPrintError ("%s: empty input SFT!\n", __func__ );
+      XLAL_ERROR (XLAL_EINVAL);
+    }
+
+  for ( k=0; k < sft->data->length; k++)
+    {
+      REAL4 yRe, yIm;
+
+      yRe = crealf(factor) * crealf(sft->data->data[k]) - cimagf(factor) * cimagf(sft->data->data[k]);
+      yIm = crealf(factor) * cimagf(sft->data->data[k]) + cimagf(factor) * crealf(sft->data->data[k]);
+
+      sft->data->data[k] = crectf( yRe, yIm );
+
+    } /* for k < numBins */
+
+  return XLAL_SUCCESS;
+
+} /* XLALMultiplySFTbyCOMPLEX8() */
+
+
+/**
+ * Time-shift the given SFT by an amount of 'shift' seconds,
+ * using the frequency-domain expression y(f) = x(f) * e^(-i 2pi f tau),
+ * which shifts x(t) into y(t) = x(t - tau)
+ *
+ * NOTE: this <b>modifies</b> the SFT in place
+ */
+int
+XLALTimeShiftSFT ( SFTtype *sft,	/**< [in/out] SFT to time-shift */
+		   REAL8 shift )	/**< time-shift in seconds */
+{
+  UINT4 k;
+
+  if ( !sft || !sft->data )
+    {
+      XLALPrintError ("%s: empty input SFT!\n", __func__ );
+      XLAL_ERROR (XLAL_EINVAL);
+    }
+  
+  for ( k=0; k < sft->data->length; k++)
+    {
+      REAL8 fk = sft->f0 + k * sft->deltaF;	/* frequency of k-th bin */
+      REAL8 shiftCyles = shift * fk;
+      REAL4 fact_re, fact_im;			/* complex phase-shift factor e^(-2pi f tau) */
+      REAL4 yRe, yIm;
+
+      XLAL_CHECK( XLALSinCos2PiLUT ( &fact_im, &fact_re, shiftCyles ) == XLAL_SUCCESS, XLAL_EFUNC );
+
+      yRe = fact_re * crealf(sft->data->data[k]) - fact_im * cimagf(sft->data->data[k]);
+      yIm = fact_re * cimagf(sft->data->data[k]) + fact_im * crealf(sft->data->data[k]);
+
+      sft->data->data[k] = crectf( yRe, yIm );
+
+    } /* for k < numBins */
+
+  /* adjust SFTs epoch to the shift */
+  XLALGPSAdd( &sft->epoch, shift );
+
+  return XLAL_SUCCESS;
+
+} /* XLALTimeShiftSFT() */
 
 
 /**
@@ -604,119 +773,6 @@ MultiCOMPLEX8TimeSeries *XLALMultiSFTVectorToCOMPLEX8TimeSeries (
 } /* XLALMultiSFTVectorToCOMPLEX8TimeSeries() */
 
 
-
-/**
- * Finds the earliest timestamp in a multi-SFT data structure
- *
- */
-int XLALEarliestMultiSFTsample ( LIGOTimeGPS *out,              /**< [out] earliest GPS time */
-				 MultiSFTVector *multisfts      /**< [in] multi SFT vector */
-				 )
-{
-  UINT4 i,j;
-
-  /* check sanity of input */
-  if ( !multisfts || (multisfts->length == 0) )
-    {
-      XLALPrintError ("%s: empty multiSFT input!\n", __func__ );
-      XLAL_ERROR (XLAL_EINVAL);
-    }
-  for (i=0;i<multisfts->length;i++)
-    {
-      if ( !multisfts->data[i] || (multisfts->data[i]->length == 0) )
-	{
-	  XLALPrintError ("%s: empty multiSFT->data[%d] input!\n", __func__,i );
-	  XLAL_ERROR (XLAL_EINVAL);
-	}
-    }
-
-  /* initialise the earliest sample value */
-  out->gpsSeconds = multisfts->data[0]->data[0].epoch.gpsSeconds;
-  out->gpsNanoSeconds = multisfts->data[0]->data[0].epoch.gpsNanoSeconds;
-
-  /* loop over detectors */
-  for (i=0;i<multisfts->length;i++) {
-
-    /* loop over all SFTs to determine the earliest SFT epoch */
-    for (j=0;j<multisfts->data[i]->length;j++) {
-
-      /* compare current SFT epoch with current earliest */
-      if ( (XLALGPSCmp(out,&multisfts->data[i]->data[j].epoch) == 1 ) ) {
-	out->gpsSeconds = multisfts->data[i]->data[j].epoch.gpsSeconds;
-	out->gpsNanoSeconds = multisfts->data[i]->data[j].epoch.gpsNanoSeconds;
-      }
-
-    }
-
-  }
-
-  /* success */
-  return XLAL_SUCCESS;
-
-} /* XLALEarliestMultiSFTsample() */
-
-/**
- * Find the time of the end of the latest SFT in a multi-SFT data structure
- */
-int XLALLatestMultiSFTsample ( LIGOTimeGPS *out,              /**< [out] latest GPS time */
-			       MultiSFTVector *multisfts      /**< [in] multi SFT vector */
-			       )
-{
-  UINT4 i,j;
-  SFTtype *firstSFT;
-  REAL8 Tsft;
-
-  /* check sanity of input */
-  if ( !multisfts || (multisfts->length == 0) )
-    {
-      XLALPrintError ("%s: empty multiSFT input!\n", __func__ );
-      XLAL_ERROR (XLAL_EINVAL);
-    }
-  for (i=0;i<multisfts->length;i++)
-    {
-      if ( !multisfts->data[i] || (multisfts->data[i]->length == 0) )
-	{
-	  XLALPrintError ("%s: empty multiSFT->data[%d] input!\n", __func__,i );
-	  XLAL_ERROR (XLAL_EINVAL);
-	}
-    }
-
-  /* define some useful quantities */
-  firstSFT = (multisfts->data[0]->data);        /* a pointer to the first SFT of the first detector */
-  Tsft = 1.0 / firstSFT->deltaF;                /* the length of the SFTs in seconds assuming 1/T freq resolution */
-
-  /* initialise the latest sample value */
-  out->gpsSeconds = firstSFT->epoch.gpsSeconds;
-  out->gpsNanoSeconds = firstSFT->epoch.gpsNanoSeconds;
-
-  /* loop over detectors */
-  for (i=0;i<multisfts->length;i++) {
-
-    /* loop over all SFTs to determine the earliest SFT midpoint of the input data in the SSB frame */
-    for (j=0;j<multisfts->data[i]->length;j++) {
-
-      /* compare current SFT epoch with current earliest */
-      if ( (XLALGPSCmp(out,&multisfts->data[i]->data[j].epoch) == -1 ) ) {
-	out->gpsSeconds = multisfts->data[i]->data[j].epoch.gpsSeconds;
-	out->gpsNanoSeconds = multisfts->data[i]->data[j].epoch.gpsNanoSeconds;
-      }
-    }
-
-  }
-
-  /* add length of SFT to the result so that we output the end of the SFT */
-  if ( XLALGPSAdd(out,Tsft) == NULL )
-    {
-      XLALPrintError ("%s: NULL pointer returned from XLALGPSAdd()!\n", __func__ );
-      XLAL_ERROR (XLAL_EFAULT);
-    }
-
-  /* success */
-  return XLAL_SUCCESS;
-
-} /* XLALLatestMultiSFTsample() */
-
-
 /**
  * Computed the weighted timeseries Fa(t) = x(t).a(t) and Fb(t) = x(t).b(t) for a multi-detector timeseries
  */
@@ -780,6 +836,7 @@ int XLALAntennaWeightCOMPLEX8TimeSeries (
   return XLAL_SUCCESS;
 
 }
+
 
 /**
  * Computed the weighted timeseries Fa(t) = x(t).a(t) and Fb(t) = x(t).b(t) for a multi-detector timeseries
@@ -846,6 +903,7 @@ int XLALAntennaWeightMultiCOMPLEX8TimeSeries (
   return XLAL_SUCCESS;
 
 }
+
 
 /**
  * Performs barycentric resampling on a multi-detector timeseries
@@ -979,6 +1037,7 @@ int XLALBarycentricResampleMultiCOMPLEX8TimeSeries ( MultiCOMPLEX8TimeSeries **F
   return XLAL_SUCCESS;
 
 }
+
 
 /**
  * Performs barycentric resampling on a COMPLEX8TimeSeries
@@ -1160,7 +1219,7 @@ int XLALBarycentricResampleCOMPLEX8TimeSeries ( COMPLEX8TimeSeries **Faoft_RS,  
       REAL4 cosphase,sinphase;                                                                           /* the real and imaginary parts of the phase correction */
 
       /* use a look-up-table for speed to compute real and imaginary phase */
-      sin_cos_2PI_LUT ( &sinphase, &cosphase, -cycles );
+      XLAL_CHECK( XLALSinCos2PiLUT ( &sinphase, &cosphase, -cycles ) == XLAL_SUCCESS, XLAL_EFUNC );
 
       /* printf("j = %d t = %6.12f tb = %6.12f tDiff = %6.12f\n",j,detectortimes->data[k],start_SSB + idx*deltaT_SSB,tDiff); */
       (*Faoft_RS)->data->data[idx] = crectf( out_FaFb[0]->data[k]*cosphase - out_FaFb[1]->data[k]*sinphase, out_FaFb[1]->data[k]*cosphase + out_FaFb[0]->data[k]*sinphase );
@@ -1186,135 +1245,6 @@ int XLALBarycentricResampleCOMPLEX8TimeSeries ( COMPLEX8TimeSeries **Faoft_RS,  
 
 }
 
-/**
- * Find the earliest timestamp in a multi-SSB data structure
- */
-int XLALEarliestMultiSSBtime ( LIGOTimeGPS *out,              /**< output earliest GPS time */
-			       const MultiSSBtimes *multiSSB,      /**< input multi SSB SFT-midpoint timestamps */
-			       const REAL8 Tsft                    /**< the length of an SFT */
-			       )
-{
-  UINT4 i,j;
-  LIGOTimeGPS t;
-  REAL8 delta;
-
-  /* check sanity of input */
-  if ( !multiSSB || (multiSSB->length == 0) )
-    {
-      XLALPrintError ("%s: empty multiSSBtimes input!\n", __func__ );
-      XLAL_ERROR (XLAL_EINVAL);
-    }
-  if ( !multiSSB->data[0] || (multiSSB->data[0]->DeltaT->length == 0) )
-    {
-      XLALPrintError ("%s: empty multiSSBtimes input!\n", __func__ );
-      XLAL_ERROR (XLAL_EINVAL);
-    }
-
-
-  /* initialise the earliest and latest sample value */
-  out->gpsSeconds = multiSSB->data[0]->refTime.gpsSeconds;
-  out->gpsNanoSeconds = multiSSB->data[0]->refTime.gpsNanoSeconds;
-  delta = multiSSB->data[0]->DeltaT->data[0] - 0.5*Tsft*multiSSB->data[0]->Tdot->data[0];
-  if ( (XLALGPSAdd(out,delta)) == NULL) {
-    XLALPrintError ("%s: XLALGPSAdd() failed!  errno = %d!\n", __func__, xlalErrno );
-    XLAL_ERROR (XLAL_ENOMEM);
-  }
-  /* loop over detectors */
-  for (i=0;i<multiSSB->length;i++) {
-
-    /* loop over all SSB times and find the earliest SSB SFT start time */
-    for (j=0;j<multiSSB->data[i]->DeltaT->length;j++) {
-
-      /* reset the reference time */
-      t.gpsSeconds = multiSSB->data[i]->refTime.gpsSeconds;
-      t.gpsNanoSeconds = multiSSB->data[i]->refTime.gpsNanoSeconds;
-
-      /* compute SSB time - we approximate the SFT start time in the SSB as t_mid_SSB - 0.5*Tsft*dt_SSB/dt_det */
-      delta = multiSSB->data[i]->DeltaT->data[j] - 0.5*Tsft*multiSSB->data[i]->Tdot->data[j];
-      if ( (XLALGPSAdd(&t,delta)) == NULL) {
-	XLALPrintError ("%s: XLALGPSAdd() failed!  errno = %d!\n", __func__, xlalErrno );
-	XLAL_ERROR (XLAL_ENOMEM);
-      }
-
-      /* compare it to the existing earliest */
-      if ( (XLALGPSCmp(out,&t) == 1 ) ) {
-	out->gpsSeconds = t.gpsSeconds;
-	out->gpsNanoSeconds = t.gpsNanoSeconds;
-      }
-
-    }
-
-  }
-
-  /* success */
-  return XLAL_SUCCESS;
-
-} /* XLALEarliestMultiSSBtime() */
-
-/**
- * Find the latest timestamp in a multi-SSB data structure
- */
-int XLALLatestMultiSSBtime ( LIGOTimeGPS *out,                   /**< output latest GPS time */
-			     const MultiSSBtimes *multiSSB,      /**< input multi SSB SFT-midpoint timestamps */
-			     const REAL8 Tsft                    /**< the length of an SFT */
-			     )
-{
-  UINT4 i,j;
-  LIGOTimeGPS t;
-  REAL8 delta;
-
-  /* check sanity of input */
-  if ( !multiSSB || (multiSSB->length == 0) )
-    {
-      XLALPrintError ("%s: empty multiSSBtimes input!\n", __func__ );
-      XLAL_ERROR (XLAL_EINVAL);
-    }
-  if ( !multiSSB->data[0] || (multiSSB->data[0]->DeltaT->length == 0) )
-    {
-      XLALPrintError ("%s: empty multiSSBtimes input!\n", __func__ );
-      XLAL_ERROR (XLAL_EINVAL);
-    }
-
-
-  /* initialise the earliest and latest sample value */
-  out->gpsSeconds = multiSSB->data[0]->refTime.gpsSeconds;
-  out->gpsNanoSeconds = multiSSB->data[0]->refTime.gpsNanoSeconds;
-  delta = multiSSB->data[0]->DeltaT->data[0] + 0.5*Tsft*multiSSB->data[0]->Tdot->data[0];
-  if ( (XLALGPSAdd(out,delta)) == NULL) {
-    XLALPrintError ("%s: XLALGPSAdd() failed!  errno = %d!\n", __func__, xlalErrno );
-    XLAL_ERROR (XLAL_ENOMEM);
-  }
-  /* loop over detectors */
-  for (i=0;i<multiSSB->length;i++) {
-
-    /* loop over all SSB times and find the latest SSB SFT start time */
-    for (j=0;j<multiSSB->data[i]->DeltaT->length;j++) {
-
-      /* reset the reference time */
-      t.gpsSeconds = multiSSB->data[i]->refTime.gpsSeconds;
-      t.gpsNanoSeconds = multiSSB->data[i]->refTime.gpsNanoSeconds;
-
-      /* compute SSB time - we approximate the SFT end time in the SSB as t_mid_SSB + 0.5*Tsft*dt_SSB/dt_det */
-      delta = multiSSB->data[i]->DeltaT->data[j] + 0.5*Tsft*multiSSB->data[i]->Tdot->data[j];
-      if ( (XLALGPSAdd(&t,delta)) == NULL) {
-	XLALPrintError ("%s: XLALGPSAdd() failed!  errno = %d!\n", __func__, xlalErrno );
-	XLAL_ERROR (XLAL_ENOMEM);
-      }
-
-      /* compare it to the existing earliest */
-      if ( (XLALGPSCmp(out,&t) == -1 ) ) {
-	out->gpsSeconds = t.gpsSeconds;
-	out->gpsNanoSeconds = t.gpsNanoSeconds;
-      }
-
-    }
-
-  }
-
-  /* success */
-  return XLAL_SUCCESS;
-
-} /* XLALLatestMultiSSBtime() */
 
 /**
  * Find the latest timestamp in a multi-SSB data structure
@@ -1374,6 +1304,7 @@ int XLALGSLInitInterpolateREAL8Vector( gsl_spline **spline,
 
 }
 
+
 /**
  * Shifts an FFT output vector such that the Niquest frequency is the central bin
  */
@@ -1412,6 +1343,7 @@ int XLALFFTShiftCOMPLEX8Vector(COMPLEX8Vector **x)
 
 }
 
+
 /**
  * Multi-detector wrapper for XLALFrequencyShiftCOMPLEX8TimeSeries
  * NOTE: this <b>modifies</b> the MultiCOMPLEX8Timeseries in place
@@ -1443,6 +1375,7 @@ XLALFrequencyShiftMultiCOMPLEX8TimeSeries ( MultiCOMPLEX8TimeSeries **x,	/**< [i
   return XLAL_SUCCESS;
 
 } /* XLALFrequencyShiftMultiCOMPLEX8TimeSeries() */
+
 
 /**
  * Freq-shift the given COMPLEX8Timeseries by an amount of 'shift' Hz,
@@ -1476,7 +1409,7 @@ XLALFrequencyShiftCOMPLEX8TimeSeries ( COMPLEX8TimeSeries **x,	        /**< [in/
       REAL4 yRe, yIm;
 
       /* use a sin/cos look-up-table for speed */
-      sin_cos_2PI_LUT ( &fact_im, &fact_re, shiftCycles );
+      XLAL_CHECK( XLALSinCos2PiLUT ( &fact_im, &fact_re, shiftCycles ) == XLAL_SUCCESS, XLAL_EFUNC );
 
       /* apply the phase shift */
       yRe = fact_re * crealf((*x)->data->data[k]) - fact_im * cimagf((*x)->data->data[k]);
@@ -1491,6 +1424,7 @@ XLALFrequencyShiftCOMPLEX8TimeSeries ( COMPLEX8TimeSeries **x,	        /**< [in/
   return XLAL_SUCCESS;
 
 } /* XLALFrequencyShiftCOMPLEX8TimeSeries() */
+
 
 /**
  * Apply a spin-down correction to the Fa and Fb complex timeseries
@@ -1572,7 +1506,7 @@ XLALSpinDownCorrectionMultiFaFb ( MultiCOMPLEX8TimeSeries **Fa,	                
       REAL4 cosphase, sinphase;
 
       /* use look-up-table for speed to compute real and imaginary phase */
-      sin_cos_2PI_LUT (&sinphase, &cosphase, -cycles );
+      XLAL_CHECK( XLALSinCos2PiLUT (&sinphase, &cosphase, -cycles ) == XLAL_SUCCESS, XLAL_EFUNC );
 
       /* loop over detectors */
       for (i=0;i<numDetectors;i++) {
@@ -1595,7 +1529,6 @@ XLALSpinDownCorrectionMultiFaFb ( MultiCOMPLEX8TimeSeries **Fa,	                
   return XLAL_SUCCESS;
 
  } /* XLALSpinDownCorrectionMultiFaFb */
-
 
 
 /* ===== Object creation/destruction functions ===== */
@@ -1698,35 +1631,3 @@ XLALDuplicateCOMPLEX8TimeSeries ( COMPLEX8TimeSeries *times )
   return out;
 
 } /* XLALDuplicateCOMPLEX8TimeSeries() */
-
-/**
- * Destruction of a ComputeFBuffer *contents*,
- * i.e. the multiSSB and multiAMcoeff, while the
- * buffer-container is not freed (which is why it's passed
- * by value and not by reference...)
- */
-void
-XLALEmptyComputeFBuffer_RS ( ComputeFBuffer_RS *buffer)
-{
-
-  if ( buffer->multiSSB ) XLALDestroyMultiSSBtimes( buffer->multiSSB );
-  buffer->multiSSB = NULL;
-  if ( buffer->multiBinary ) XLALDestroyMultiSSBtimes( buffer->multiBinary );
-  buffer->multiBinary = NULL;
-  if ( buffer->multiAMcoef) XLALDestroyMultiAMCoeffs( buffer->multiAMcoef );
-  buffer->multiAMcoef = NULL;
-  if ( buffer->multiCmplxAMcoef) XLALDestroyMultiCmplxAMCoeffs( buffer->multiCmplxAMcoef );
-  buffer->multiCmplxAMcoef = NULL;
-  if ( buffer->multiTimeseries) XLALDestroyMultiCOMPLEX8TimeSeries( buffer->multiTimeseries );
-  buffer->multiTimeseries = NULL;
-  if ( buffer->multiFa_resampled) XLALDestroyMultiCOMPLEX8TimeSeries( buffer->multiFa_resampled );
-  buffer->multiFa_resampled = NULL;
-  if ( buffer->multiFb_resampled) XLALDestroyMultiCOMPLEX8TimeSeries( buffer->multiFb_resampled );
-  buffer->multiFb_resampled = NULL;
-  if ( buffer->multiDetStates) XLALDestroyMultiDetectorStateSeries( buffer->multiDetStates);
-  buffer->multiDetStates = NULL;
-  /* if ( buffer ) XLALFree(buffer); */
-
-  return;
-
-} /* XLALEmptyComputeFBuffer_RS() */

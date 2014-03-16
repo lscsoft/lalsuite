@@ -58,7 +58,7 @@ pkgpython_PYTHON += \
 	python/git_version.py \
 	$(EOL)
 
-TESTS += \
+test_programs += \
 	test/AstroOmegaTest \
 	test/CZeroPadAndFFTTest \
 	test/OverlapReductionFunctionTest \
@@ -73,9 +73,6 @@ TESTS += \
 	test/StochasticOptimalFilterNormalizationTest \
 	test/StochasticOptimalFilterTest \
 	$(EOL)
-
-check_PROGRAMS += \
-	$(TESTS)
 
 MOSTLYCLEANFILES += \
 	test/??_*.dat \

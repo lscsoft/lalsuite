@@ -36,249 +36,6 @@
 #define PULSARSPINSTR_MAXLEN    4
 #define NAMESTR_MAXLEN          256
 
-
-
-/**
- * \brief Serializes a \c BinaryOrbitParams structure into a VOTable XML %node
- *
- * This function takes a \c BinaryOrbitParams structure and serializes it into a VOTable
- * \c RESOURCE %node identified by the given name. The returned \c xmlNode can then be
- * embedded into an existing %node hierarchy or turned into a full VOTable document.
- *
- * \param bop [in] Pointer to the \c BinaryOrbitParams structure to be serialized
- * \param name [in] Unique identifier of this particular \c BinaryOrbitParams structure instance
- *
- * \return A pointer to a \c xmlNode that holds the VOTable fragment that represents
- * the \c BinaryOrbitParams structure.
- * In case of an error, a null-pointer is returned.\n
- * \b Important: the caller is responsible to free the allocated memory (when the
- * fragment isn't needed anymore) using \c xmlFreeNode. Alternatively, \c xmlFreeDoc
- * can be used later on when the returned fragment has been embedded in a XML document.
- *
- * \sa XLALCreateVOTParamNode
- * \sa XLALCreateVOTResourceNode
- * \sa XLALCreateVOTDocumentFromTree
- *
- * \author Oliver Bock\n
- * Albert-Einstein-Institute Hannover, Germany
- */
-xmlNodePtr
-XLALBinaryOrbitParams2VOTNode ( const BinaryOrbitParams *const bop, const char *name)
-{
-    /* set up local variables */
-    xmlNodePtr xmlParentNode = NULL;
-    xmlNodePtr xmlChildNode = NULL;
-    xmlNodePtr xmlChildNodeList = NULL;
-
-    CHAR argp[REAL8STR_MAXLEN] = {0};
-    CHAR asini[REAL8STR_MAXLEN] = {0};
-    CHAR ecc[REAL8STR_MAXLEN] = {0};
-    CHAR period[REAL8STR_MAXLEN] = {0};
-
-    /* check and prepare input parameters */
-    if(!bop || snprintf(argp, REAL8STR_MAXLEN, "%g", bop->argp) < 0) {
-        XLALPrintError("Invalid input parameter: BinaryOrbitParams->argp\n");
-        XLAL_ERROR_NULL(XLAL_EINVAL);
-    }
-    if(!bop || snprintf(asini, REAL8STR_MAXLEN, "%g", bop->asini) < 0) {
-        XLALPrintError("Invalid input parameter: BinaryOrbitParams->asini\n");
-        XLAL_ERROR_NULL(XLAL_EINVAL);
-    }
-    if(!bop || snprintf(ecc, REAL8STR_MAXLEN, "%g", bop->ecc) < 0) {
-        XLALPrintError("Invalid input parameter: BinaryOrbitParams->ecc\n");
-        XLAL_ERROR_NULL(XLAL_EINVAL);
-    }
-    if(!bop || snprintf(period, REAL8STR_MAXLEN, "%g", bop->period) < 0) {
-        XLALPrintError("Invalid input parameter: BinaryOrbitParams->period\n");
-        XLAL_ERROR_NULL(XLAL_EINVAL);
-    }
-    if(!name || strlen(name) <= 0) {
-        XLALPrintError("Invalid input parameter: name\n");
-        XLAL_ERROR_NULL(XLAL_EINVAL);
-    }
-
-    /* set up PARAM node (argp) */
-    xmlChildNode = XLALCreateVOTParamNode("argp",
-                                          "rad",
-                                          VOT_REAL8,
-                                          NULL,
-                                          argp);
-    if(!xmlChildNode) {
-        XLALPrintError("Couldn't create PARAM node: %s.argp\n", name);
-        XLAL_ERROR_NULL(XLAL_EFAILED);
-    }
-
-    /* initialize child node list with first node */
-    xmlChildNodeList = xmlChildNode;
-
-    /* set up PARAM node (asini) */
-    xmlChildNode = XLALCreateVOTParamNode("asini",
-                                          "s",
-                                          VOT_REAL8,
-                                          NULL,
-                                          asini);
-    if(!xmlChildNode) {
-        /* clean up */
-        xmlFreeNodeList(xmlChildNodeList);
-        XLALPrintError("Couldn't create PARAM node: %s.asini\n", name);
-        XLAL_ERROR_NULL(XLAL_EFAILED);
-    }
-
-    /* add child as first sibling to child node list */
-    xmlChildNodeList->next = xmlChildNode;
-
-    /* set up PARAM node (ecc) */
-    xmlChildNode = XLALCreateVOTParamNode("ecc",
-                                          NULL,
-                                          VOT_REAL8,
-                                          NULL,
-                                          ecc);
-    if(!xmlChildNode) {
-        /* clean up */
-        xmlFreeNodeList(xmlChildNodeList);
-        XLALPrintError("Couldn't create PARAM node: %s.ecc\n", name);
-        XLAL_ERROR_NULL(XLAL_EFAILED);
-    }
-
-    /* add child as second sibling to child node list */
-    xmlChildNodeList->next->next = xmlChildNode;
-
-    /* set up PARAM node (period) */
-    xmlChildNode = XLALCreateVOTParamNode("period",
-                                          "s",
-                                          VOT_REAL8,
-                                          NULL,
-                                          period);
-    if(!xmlChildNode) {
-        /* clean up */
-        xmlFreeNodeList(xmlChildNodeList);
-        XLALPrintError("Couldn't create PARAM node: %s.period\n", name);
-        XLAL_ERROR_NULL(XLAL_EFAILED);
-    }
-
-    /* add child as third sibling to child node list */
-    xmlChildNodeList->next->next->next = xmlChildNode;
-
-     /* set up RESOURCE node (tp)*/
-    xmlChildNode = XLALLIGOTimeGPS2VOTNode(&bop->tp, "tp");
-    if(!xmlChildNode) {
-        /* clean up */
-        xmlFreeNodeList(xmlChildNodeList);
-        XLALPrintError("Couldn't create RESOURCE node: tp\n");
-        XLAL_ERROR_NULL(XLAL_EFAILED);
-    }
-
-    /* add child as fourth sibling to child node list */
-    xmlChildNodeList->next->next->next->next = xmlChildNode;
-
-    /* set up parent RESOURCE node*/
-    xmlParentNode = XLALCreateVOTResourceNode("BinaryOrbitParams", name, xmlChildNodeList);
-    if(!xmlParentNode) {
-        /* clean up */
-        xmlFreeNodeList(xmlChildNodeList);
-        XLALPrintError("Couldn't create RESOURCE node: %s\n", name);
-        XLAL_ERROR_NULL(XLAL_EFAILED);
-    }
-
-    /* return RESOURCE node (needs to be xmlFreeNode'd or xmlFreeDoc'd by caller!!!) */
-    return xmlParentNode;
-
-} /* XLALBinaryOrbitParams2VOTNode() */
-
-
-/**
- * \brief Deserializes a \c BinaryOrbitParams structure from a VOTable XML document
- *
- * This function takes a VOTable XML document and deserializes (extracts)
- * the \c BinaryOrbitParams structure identified by the given name.
- *
- * \param xmlDocument [in] Pointer to the VOTable XML document containing the structure
- * \param name [in] Unique identifier of the particular \c BinaryOrbitParams structure to be deserialized
- * \param bop [out] Pointer to an empty \c  BinaryOrbitParams structure to store the deserialized instance
- *
- * \return \c XLAL_SUCCESS if the specified \c BinaryOrbitParams structure could be found and
- * deserialized successfully.
- *
- * \sa XLALVOTXML2BinaryOrbitParamsByName
- * \sa XLALGetSingleNodeContentByXPath
- *
- * \author Oliver Bock\n
- * Albert-Einstein-Institute Hannover, Germany
- */
-INT4
-XLALVOTDoc2BinaryOrbitParamsByName ( const xmlDocPtr xmlDocument, const char *name, BinaryOrbitParams *bop)
-{
-    /* set up local variables */
-    CHAR childName[NAMESTR_MAXLEN];
-    CHAR *nodeContent = NULL;
-
-    /* sanity checks */
-    if(!xmlDocument) {
-        XLALPrintError("Invalid input parameter: xmlDocument\n");
-        XLAL_ERROR(XLAL_EINVAL);
-    }
-    if(!name || strlen(name) <= 0) {
-        XLALPrintError("Invalid input parameter: name\n");
-        XLAL_ERROR(XLAL_EINVAL);
-    }
-    if(!bop) {
-        XLALPrintError("Invalid input parameter: bop\n");
-        XLAL_ERROR(XLAL_EINVAL);
-    }
-
-    /* compile child name attribute (tp) */
-    if ( snprintf ( childName, NAMESTR_MAXLEN, "%s.%s", name, "tp") >= NAMESTR_MAXLEN ) {
-      XLALPrintError("Child attribute preparation failed: BinaryOrbitParams.tp\n");
-      XLAL_ERROR(XLAL_EFAILED);
-    }
-
-    /* retrieve BinaryOrbitParams.tp */
-    if ( XLALVOTDoc2LIGOTimeGPSByName(xmlDocument, childName, &bop->tp)) {
-      XLALPrintError("Error parsing XML document content: %s.tp\n", childName);
-      XLAL_ERROR(XLAL_EFAILED);
-    }
-
-    /* retrieve BinaryOrbitParams.argp content */
-    nodeContent = XLALReadVOTAttributeFromNamedElement ( xmlDocument, name, "argp", VOT_PARAM, VOT_VALUE );
-    if( !nodeContent || sscanf( nodeContent, "%lf", &bop->argp) == EOF) {
-      if ( nodeContent ) XLALFree (nodeContent);
-      XLALPrintError("Invalid node content encountered: %s.argp\n", name);
-      XLAL_ERROR(XLAL_EDATA);
-    }
-    XLALFree (nodeContent);
-
-    /* retrieve BinaryOrbitParams.asini content */
-    nodeContent = XLALReadVOTAttributeFromNamedElement ( xmlDocument, name, "asini", VOT_PARAM, VOT_VALUE );
-    if( !nodeContent || sscanf( nodeContent, "%lf", &bop->asini) == EOF) {
-      if ( nodeContent ) XLALFree (nodeContent);
-      XLALPrintError("Invalid node content encountered: %s.asini\n", name);
-      XLAL_ERROR(XLAL_EDATA);
-    }
-    XLALFree (nodeContent);
-
-    /* retrieve PulsarDopplerParams.ecc content */
-    nodeContent = XLALReadVOTAttributeFromNamedElement ( xmlDocument, name, "ecc", VOT_PARAM, VOT_VALUE );
-    if( !nodeContent || sscanf( nodeContent, "%lf", &bop->ecc) == EOF) {
-      if ( nodeContent ) XLALFree (nodeContent);
-      XLALPrintError("Invalid node content encountered: %s.ecc\n", name);
-      XLAL_ERROR(XLAL_EDATA);
-    }
-    XLALFree (nodeContent);
-
-    /* retrieve PulsarDopplerParams.period content */
-    nodeContent = XLALReadVOTAttributeFromNamedElement ( xmlDocument, name, "period", VOT_PARAM, VOT_VALUE );
-    if(!nodeContent || sscanf( nodeContent, "%lf", &bop->period) == EOF ) {
-      if(nodeContent) XLALFree (nodeContent);
-      XLALPrintError("Invalid node content encountered: %s.period\n", name);
-      XLAL_ERROR(XLAL_EDATA);
-    }
-    XLALFree(nodeContent);
-
-    return XLAL_SUCCESS;
-
-} /* XLALVOTDoc2BinaryOrbitParamsByName() */
-
-
 /**
  * \brief Serializes a \c PulsarSpins array into a VOTable XML %node
  *
@@ -481,25 +238,48 @@ xmlNodePtr XLALPulsarDopplerParams2VOTNode(const PulsarDopplerParams *const pdp,
     xmlNodePtr xmlParentNode = NULL;
     xmlNodePtr xmlChildNode = NULL;
     xmlNodePtr xmlChildNodeList = NULL;
-
-    CHAR Alpha[REAL8STR_MAXLEN] = {0};
-    CHAR Delta[REAL8STR_MAXLEN] = {0};
+    xmlNodePtr xmlCurrentChildNode = NULL;
 
     /* check and convert input parameters */
-    if(!pdp || snprintf(Alpha, REAL8STR_MAXLEN, "%g", pdp->Alpha) < 0) {
+    XLAL_CHECK_NULL ( pdp != NULL, XLAL_EINVAL );
+
+    CHAR Alpha[REAL8STR_MAXLEN] = {0};
+    if( snprintf(Alpha, REAL8STR_MAXLEN, "%g", pdp->Alpha) < 0) {
         XLALPrintError("Invalid input parameter: PulsarDopplerParams->Alpha\n");
         XLAL_ERROR_NULL(XLAL_EINVAL);
     }
-    if(!pdp || snprintf(Delta, REAL8STR_MAXLEN, "%g", pdp->Delta) < 0) {
+    CHAR Delta[REAL8STR_MAXLEN] = {0};
+    if( snprintf(Delta, REAL8STR_MAXLEN, "%g", pdp->Delta) < 0) {
         XLALPrintError("Invalid input parameter: PulsarDopplerParams->Delta\n");
         XLAL_ERROR_NULL(XLAL_EINVAL);
     }
+    CHAR argp[REAL8STR_MAXLEN] = {0};
+    if( snprintf(argp, REAL8STR_MAXLEN, "%g", pdp->argp) < 0) {
+        XLALPrintError("Invalid input parameter: PulsarDopplerParams->argp\n");
+        XLAL_ERROR_NULL(XLAL_EINVAL);
+    }
+    CHAR asini[REAL8STR_MAXLEN] = {0};
+    if( snprintf(asini, REAL8STR_MAXLEN, "%g", pdp->asini) < 0) {
+        XLALPrintError("Invalid input parameter: PulsarDopplerParams->asini\n");
+        XLAL_ERROR_NULL(XLAL_EINVAL);
+    }
+    CHAR ecc[REAL8STR_MAXLEN] = {0};
+    if( snprintf(ecc, REAL8STR_MAXLEN, "%g", pdp->ecc) < 0) {
+        XLALPrintError("Invalid input parameter: PulsarDopplerParams->ecc\n");
+        XLAL_ERROR_NULL(XLAL_EINVAL);
+    }
+    CHAR period[REAL8STR_MAXLEN] = {0};
+    if( snprintf(period, REAL8STR_MAXLEN, "%g", pdp->period) < 0) {
+        XLALPrintError("Invalid input parameter: PulsarDopplerParams->period\n");
+        XLAL_ERROR_NULL(XLAL_EINVAL);
+    }
+
     if(!name || strlen(name) <= 0) {
         XLALPrintError("Invalid input parameter: name\n");
         XLAL_ERROR_NULL(XLAL_EINVAL);
     }
 
-    /* set up PARAM node (Alpha) */
+    /* ----- set up PARAM node (Alpha) */
     xmlChildNode = XLALCreateVOTParamNode("Alpha",
                                           "rad",
                                           VOT_REAL8,
@@ -512,8 +292,9 @@ xmlNodePtr XLALPulsarDopplerParams2VOTNode(const PulsarDopplerParams *const pdp,
 
     /* initialize child node list with first child */
     xmlChildNodeList = xmlChildNode;
+    xmlCurrentChildNode = xmlChildNodeList;
 
-    /* set up PARAM node (Delta) */
+    /* ----- set up PARAM node (Delta) */
     xmlChildNode = XLALCreateVOTParamNode("Delta",
                                           "rad",
                                           VOT_REAL8,
@@ -526,10 +307,11 @@ xmlNodePtr XLALPulsarDopplerParams2VOTNode(const PulsarDopplerParams *const pdp,
         XLAL_ERROR_NULL(XLAL_EFAILED);
     }
 
-    /* add child as first sibling to child node list */
-    xmlChildNodeList->next = xmlChildNode;
+    /* add child as next sibling to child node list */
+    xmlCurrentChildNode->next = xmlChildNode;
+    xmlCurrentChildNode = xmlCurrentChildNode->next;
 
-    /* set up PARAM node (fkdot) */
+    /* ----- set up PARAM node (fkdot) */
     xmlChildNode = XLALPulsarSpins2VOTNode(&pdp->fkdot, "fkdot");
     if(!xmlChildNode) {
         /* clean up */
@@ -538,10 +320,81 @@ xmlNodePtr XLALPulsarDopplerParams2VOTNode(const PulsarDopplerParams *const pdp,
         XLAL_ERROR_NULL(XLAL_EFAILED);
     }
 
-    /* add child as second sibling to child node list */
-    xmlChildNodeList->next->next = xmlChildNode;
+    /* add child as next sibling to child node list */
+    xmlCurrentChildNode->next = xmlChildNode;
+    xmlCurrentChildNode = xmlCurrentChildNode->next;
 
-    /* set up RESOURCE node (refTime)*/
+    // ---------- handle binary-orbital parameters ----------
+    /* ----- set up PARAM node (argp) */
+    xmlChildNode = XLALCreateVOTParamNode("argp",
+                                          "rad",
+                                          VOT_REAL8,
+                                          NULL,
+                                          argp);
+    if(!xmlChildNode) {
+        /* clean up */
+        xmlFreeNodeList(xmlChildNodeList);
+        XLALPrintError("Couldn't create PARAM node: %s.argp\n", name);
+        XLAL_ERROR_NULL(XLAL_EFAILED);
+    }
+
+    /* add child as next sibling to child node list */
+    xmlCurrentChildNode->next = xmlChildNode;
+    xmlCurrentChildNode = xmlCurrentChildNode->next;
+
+    /* ----- set up PARAM node (asini) */
+    xmlChildNode = XLALCreateVOTParamNode("asini",
+                                          "s",
+                                          VOT_REAL8,
+                                          NULL,
+                                          asini);
+    if(!xmlChildNode) {
+        /* clean up */
+        xmlFreeNodeList(xmlChildNodeList);
+        XLALPrintError("Couldn't create PARAM node: %s.asini\n", name);
+        XLAL_ERROR_NULL(XLAL_EFAILED);
+    }
+
+
+    /* add child as next sibling to child node list */
+    xmlCurrentChildNode->next = xmlChildNode;
+    xmlCurrentChildNode = xmlCurrentChildNode->next;
+
+    /* ----- set up PARAM node (ecc) */
+    xmlChildNode = XLALCreateVOTParamNode("ecc",
+                                          NULL,
+                                          VOT_REAL8,
+                                          NULL,
+                                          ecc);
+    if(!xmlChildNode) {
+        /* clean up */
+        xmlFreeNodeList(xmlChildNodeList);
+        XLALPrintError("Couldn't create PARAM node: %s.ecc\n", name);
+        XLAL_ERROR_NULL(XLAL_EFAILED);
+    }
+
+    /* add child as next sibling to child node list */
+    xmlCurrentChildNode->next = xmlChildNode;
+    xmlCurrentChildNode = xmlCurrentChildNode->next;
+
+    /* ----- set up PARAM node (period) */
+    xmlChildNode = XLALCreateVOTParamNode("period",
+                                          "s",
+                                          VOT_REAL8,
+                                          NULL,
+                                          period);
+    if(!xmlChildNode) {
+        /* clean up */
+        xmlFreeNodeList(xmlChildNodeList);
+        XLALPrintError("Couldn't create PARAM node: %s.period\n", name);
+        XLAL_ERROR_NULL(XLAL_EFAILED);
+    }
+
+    /* add child as next sibling to child node list */
+    xmlCurrentChildNode->next = xmlChildNode;
+    xmlCurrentChildNode = xmlCurrentChildNode->next;
+
+    /* ----- set up RESOURCE node (refTime)*/
     xmlChildNode = XLALLIGOTimeGPS2VOTNode(&pdp->refTime, "refTime" );
     if(!xmlChildNode) {
         /* clean up */
@@ -550,21 +403,24 @@ xmlNodePtr XLALPulsarDopplerParams2VOTNode(const PulsarDopplerParams *const pdp,
         XLAL_ERROR_NULL(XLAL_EFAILED);
     }
 
-    /* add child as third sibling to child node list */
-    xmlChildNodeList->next->next->next = xmlChildNode;
+    /* add child as next sibling to child node list */
+    xmlCurrentChildNode->next = xmlChildNode;
+    xmlCurrentChildNode = xmlCurrentChildNode->next;
 
 
-    /* set up RESOURCE node (orbit)*/
-    xmlChildNode = XLALBinaryOrbitParams2VOTNode(pdp->orbit, "orbit" );
+     /* ----- set up RESOURCE node (tp)*/
+    xmlChildNode = XLALLIGOTimeGPS2VOTNode(&pdp->tp, "tp");
     if(!xmlChildNode) {
         /* clean up */
         xmlFreeNodeList(xmlChildNodeList);
-        XLALPrintError("Couldn't create RESOURCE node: %s.orbit\n", name );
+        XLALPrintError("Couldn't create RESOURCE node: tp\n");
         XLAL_ERROR_NULL(XLAL_EFAILED);
     }
 
-    /* add child as fourth sibling to child node list */
-    xmlChildNodeList->next->next->next->next = xmlChildNode;
+    /* add child as next sibling to child node list */
+    xmlCurrentChildNode->next = xmlChildNode;
+    xmlCurrentChildNode = xmlCurrentChildNode->next;
+    // ---------- END: binary-orbital parameters ----------
 
     /* set up parent RESOURCE node*/
     xmlParentNode = XLALCreateVOTResourceNode("PulsarDopplerParams", name, xmlChildNodeList);
@@ -577,7 +433,8 @@ xmlNodePtr XLALPulsarDopplerParams2VOTNode(const PulsarDopplerParams *const pdp,
 
     /* return RESOURCE node (needs to be xmlFreeNode'd or xmlFreeDoc'd by caller!!!) */
     return xmlParentNode;
-}
+
+} // XLALPulsarDopplerParams2VOTNode()
 
 
 /**
@@ -607,7 +464,6 @@ XLALVOTDoc2PulsarDopplerParamsByName ( const xmlDocPtr xmlDocument,
 {
     /* set up local variables */
     CHAR childNameRefTime[NAMESTR_MAXLEN] = {0};
-    CHAR childNameOrbit[NAMESTR_MAXLEN] = {0};
     CHAR *nodeContent = NULL;
 
     /* sanity checks */
@@ -660,18 +516,55 @@ XLALVOTDoc2PulsarDopplerParamsByName ( const xmlDocPtr xmlDocument,
       XLAL_ERROR(XLAL_EFAILED);
     }
 
-    /* compile child name attribute (orbit) */
-    if(!strncpy(childNameOrbit, name, NAMESTR_MAXLEN) || !strncat(childNameOrbit, ".orbit", NAMESTR_MAXLEN)) {
-      XLALPrintError("Child attribute preparation failed: PulsarDopplerParams.orbit\n");
+
+    /* compile child name attribute (tp) */
+    CHAR childName[NAMESTR_MAXLEN];
+    if ( snprintf ( childName, NAMESTR_MAXLEN, "%s.%s", name, "tp") >= NAMESTR_MAXLEN ) {
+      XLALPrintError("Child attribute preparation failed: PulsarDopplerParams.tp\n");
       XLAL_ERROR(XLAL_EFAILED);
     }
-    /* retrieve PulsarDopplerParams.orbit */
-    if(XLALVOTDoc2BinaryOrbitParamsByName(xmlDocument, childNameOrbit, pdp->orbit)) {
-        /* clean up */
-        XLALFree(nodeContent);
-        XLALPrintError("Error parsing XML document content: %s.orbit\n", childNameOrbit);
-        XLAL_ERROR(XLAL_EFAILED);
+
+    /* retrieve PulsarDopplerParams.tp */
+    if ( XLALVOTDoc2LIGOTimeGPSByName(xmlDocument, childName, &pdp->tp)) {
+      XLALPrintError("Error parsing XML document content: %s.tp\n", childName);
+      XLAL_ERROR(XLAL_EFAILED);
     }
+
+    /* retrieve PulsarDopplerParams.argp content */
+    nodeContent = XLALReadVOTAttributeFromNamedElement ( xmlDocument, name, "argp", VOT_PARAM, VOT_VALUE );
+    if( !nodeContent || sscanf( nodeContent, "%lf", &pdp->argp) == EOF) {
+      if ( nodeContent ) XLALFree (nodeContent);
+      XLALPrintError("Invalid node content encountered: %s.argp\n", name);
+      XLAL_ERROR(XLAL_EDATA);
+    }
+    XLALFree (nodeContent);
+
+    /* retrieve PulsarDopplerParams.asini content */
+    nodeContent = XLALReadVOTAttributeFromNamedElement ( xmlDocument, name, "asini", VOT_PARAM, VOT_VALUE );
+    if( !nodeContent || sscanf( nodeContent, "%lf", &pdp->asini) == EOF) {
+      if ( nodeContent ) XLALFree (nodeContent);
+      XLALPrintError("Invalid node content encountered: %s.asini\n", name);
+      XLAL_ERROR(XLAL_EDATA);
+    }
+    XLALFree (nodeContent);
+
+    /* retrieve PulsarDopplerParams.ecc content */
+    nodeContent = XLALReadVOTAttributeFromNamedElement ( xmlDocument, name, "ecc", VOT_PARAM, VOT_VALUE );
+    if( !nodeContent || sscanf( nodeContent, "%lf", &pdp->ecc) == EOF) {
+      if ( nodeContent ) XLALFree (nodeContent);
+      XLALPrintError("Invalid node content encountered: %s.ecc\n", name);
+      XLAL_ERROR(XLAL_EDATA);
+    }
+    XLALFree (nodeContent);
+
+    /* retrieve PulsarDopplerParams.period content */
+    nodeContent = XLALReadVOTAttributeFromNamedElement ( xmlDocument, name, "period", VOT_PARAM, VOT_VALUE );
+    if(!nodeContent || sscanf( nodeContent, "%lf", &pdp->period) == EOF ) {
+      if(nodeContent) XLALFree (nodeContent);
+      XLALPrintError("Invalid node content encountered: %s.period\n", name);
+      XLAL_ERROR(XLAL_EDATA);
+    }
+    XLALFree(nodeContent);
 
     return XLAL_SUCCESS;
 

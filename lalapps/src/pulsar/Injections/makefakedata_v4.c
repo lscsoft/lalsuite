@@ -265,7 +265,11 @@ main(int argc, char *argv[])
 
   params.pulsar.f0		   = GV.pulsar.Doppler.fkdot[0];
   params.pulsar.spindown           = GV.spindown;
-  params.orbit                     = GV.pulsar.Doppler.orbit;
+  params.orbit.tp                  = GV.pulsar.Doppler.tp;
+  params.orbit.argp                = GV.pulsar.Doppler.argp;
+  params.orbit.asini               = GV.pulsar.Doppler.asini;
+  params.orbit.ecc                 = GV.pulsar.Doppler.ecc;
+  params.orbit.period              = GV.pulsar.Doppler.period;
 
   /* detector params */
   params.transfer = GV.transfer;	/* detector transfer function (NULL if not used) */
@@ -586,7 +590,6 @@ main(int argc, char *argv[])
 int
 XLALInitMakefakedata ( ConfigVars_t *cfg, UserVariables_t *uvar )
 {
-  int len;
   XLAL_CHECK ( cfg != NULL, XLAL_EINVAL, "Invalid NULL input 'cfg'\n" );
   XLAL_CHECK ( uvar != NULL, XLAL_EINVAL, "Invalid NULL input 'uvar'\n");
 
@@ -1119,7 +1122,6 @@ XLALInitMakefakedata ( ConfigVars_t *cfg, UserVariables_t *uvar )
     BOOLEAN set5 = XLALUserVarWasSet(&uvar->orbitTpSSBsec);
     BOOLEAN set6 = XLALUserVarWasSet(&uvar->orbitTpSSBnan);
     BOOLEAN set7 = XLALUserVarWasSet(&uvar->orbitTpSSBMJD);
-    BinaryOrbitParams *orbit = NULL;
 
     if (set1 || set2 || set3 || set4 || set5 || set6 || set7)
     {
@@ -1129,20 +1131,18 @@ XLALInitMakefakedata ( ConfigVars_t *cfg, UserVariables_t *uvar )
       if ( (uvar->orbitEcc < 0) || (uvar->orbitEcc > 1) ) {
         XLAL_ERROR ( XLAL_EINVAL, "\nEccentricity = %g has to lie within [0, 1]\n\n", uvar->orbitEcc );
       }
-      orbit = XLALCalloc ( 1, len = sizeof(BinaryOrbitParams) );
-      XLAL_CHECK ( orbit != NULL, XLAL_ENOMEM, "XLALCalloc (1, %d) failed.\n", len );
 
       if ( set7 && (!set5 && !set6) )
 	{
 	  /* convert MJD peripase to GPS using Matt Pitkins code found at lal/packages/pulsar/src/BinaryPulsarTimeing.c */
 	  REAL8 GPSfloat;
 	  GPSfloat = XLALTTMJDtoGPS(uvar->orbitTpSSBMJD);
-	  XLALGPSSetREAL8(&(orbit->tp),GPSfloat);
+	  XLALGPSSetREAL8(&(cfg->pulsar.Doppler.tp),GPSfloat);
 	}
       else if ( set5 && !set7 )
 	{
-	  orbit->tp.gpsSeconds = uvar->orbitTpSSBsec;
-	  orbit->tp.gpsNanoSeconds = uvar->orbitTpSSBnan;
+	  cfg->pulsar.Doppler.tp.gpsSeconds = uvar->orbitTpSSBsec;
+	  cfg->pulsar.Doppler.tp.gpsNanoSeconds = uvar->orbitTpSSBnan;
 	}
       else if ((set7 && set5) || (set7 && set6))
 	{
@@ -1150,15 +1150,14 @@ XLALInitMakefakedata ( ConfigVars_t *cfg, UserVariables_t *uvar )
 	}
 
       /* fill in orbital parameter structure */
-      orbit->period = uvar->orbitPeriod;
-      orbit->asini = uvar->orbitasini;
-      orbit->argp = uvar->orbitArgp;
-      orbit->ecc = uvar->orbitEcc;
+      cfg->pulsar.Doppler.period = uvar->orbitPeriod;
+      cfg->pulsar.Doppler.asini = uvar->orbitasini;
+      cfg->pulsar.Doppler.argp = uvar->orbitArgp;
+      cfg->pulsar.Doppler.ecc = uvar->orbitEcc;
 
-      cfg->pulsar.Doppler.orbit = orbit;     /* struct copy */
     } /* if one or more orbital parameters were set */
     else
-      cfg->pulsar.Doppler.orbit = NULL;
+      cfg->pulsar.Doppler.asini = 0 /* isolated pulsar */;
   } /* END: binary orbital params */
 
 
@@ -1424,8 +1423,6 @@ XLALFreeMem ( ConfigVars_t *cfg )
 
   /* free spindown-vector (REAL8) */
   XLALDestroyREAL8Vector ( cfg->spindown );
-
-  XLALFree ( cfg->pulsar.Doppler.orbit );
 
   /* free noise-SFTs */
   XLALDestroySFTVector( cfg->noiseSFTs );

@@ -108,8 +108,8 @@
  * LALCDestroyVector()
  * LALCHARCreateVector()
  * LALCHARDestroyVector()
- * LALUnitAsString()
- * LALUnitCompare()
+ * XLALUnitAsString()
+ * XLALUnitCompare()
  * getopt()
  * printf()
  * fprintf()
@@ -218,11 +218,10 @@ int main( int argc, char *argv[] )
   LIGOTimeGPS              epoch2 = {630720000,987654321};
   LIGOTimeGPS              epoch3 = {630722222,123456789};
 
-  LALUnitPair              unitPair;
-  BOOLEAN                  result;
+  int                      result;
 
-  CHARVector               *unitString = NULL;
-
+  CHAR                     unitString[LALUnitTextSize];
+  
   UINT4 i;
   REAL4 f, x;
   INT4 code;
@@ -715,54 +714,20 @@ int main( int argc, char *argv[] )
     return STOCHASTICCROSSCORRELATIONSTATISTICTESTC_EFLS;
   }
 
-  unitPair.unitOne = &(goodData1.sampleUnits);
-  unitPair.unitTwo = &(output.units);
-  LALUnitCompare(&status, &result, &unitPair);
-  if ( ( code = CheckStatus(&status, 0 , "",
-			    STOCHASTICCROSSCORRELATIONSTATISTICTESTC_EFLS,
-			    STOCHASTICCROSSCORRELATIONSTATISTICTESTC_MSGEFLS) ) )
-  {
-    return code;
-  }
-
+  result = XLALUnitCompare(&(goodData1.sampleUnits), &(output.units));
   if (optVerbose)
   {
-    LALCHARCreateVector(&status, &unitString, LALUnitTextSize);
-    if ( ( code = CheckStatus(&status, 0 , "",
-			      STOCHASTICCROSSCORRELATIONSTATISTICTESTC_EFLS,
-			      STOCHASTICCROSSCORRELATIONSTATISTICTESTC_MSGEFLS) ) )
-    {
-      return code;
+    if ( XLALUnitAsString( unitString, LALUnitTextSize, &(output.units)) == NULL ) {
+      return STOCHASTICCROSSCORRELATIONSTATISTICTESTC_EFLS;
     }
-
-    LALUnitAsString( &status, unitString, unitPair.unitTwo );
-    if ( ( code = CheckStatus(&status, 0 , "",
-			      STOCHASTICCROSSCORRELATIONSTATISTICTESTC_EFLS,
-			      STOCHASTICCROSSCORRELATIONSTATISTICTESTC_MSGEFLS) ) )
-    {
-      return code;
+    printf( "Units are \"%s\", ", unitString );
+    if ( XLALUnitAsString( unitString, LALUnitTextSize, &(goodData1.sampleUnits)) == NULL ) {
+      return STOCHASTICCROSSCORRELATIONSTATISTICTESTC_EFLS;
     }
-    printf( "Units are \"%s\", ", unitString->data );
-
-    LALUnitAsString( &status, unitString, unitPair.unitOne );
-    if ( ( code = CheckStatus(&status, 0 , "",
-			      STOCHASTICCROSSCORRELATIONSTATISTICTESTC_EFLS,
-			      STOCHASTICCROSSCORRELATIONSTATISTICTESTC_MSGEFLS) ) )
-    {
-      return code;
-    }
-    printf( "should be \"%s\"\n", unitString->data );
-
-    LALCHARDestroyVector(&status, &unitString);
-    if ( ( code = CheckStatus(&status, 0 , "",
-			      STOCHASTICCROSSCORRELATIONSTATISTICTESTC_EFLS,
-			      STOCHASTICCROSSCORRELATIONSTATISTICTESTC_MSGEFLS) ) )
-    {
-      return code;
-    }
+    printf( "should be \"%s\"\n", unitString );
   }
 
-  if (!result)
+  if (result != 0)
   {
     printf("  FAIL: Valid data test #1\n");
     if (optVerbose)
@@ -833,54 +798,20 @@ int main( int argc, char *argv[] )
     return STOCHASTICCROSSCORRELATIONSTATISTICTESTC_EFLS;
   }
 
-  unitPair.unitOne = &lalSecondUnit;
-  unitPair.unitTwo = &(output.units);
-  LALUnitCompare(&status, &result, &unitPair);
-  if ( ( code = CheckStatus(&status, 0 , "",
-			    STOCHASTICCROSSCORRELATIONSTATISTICTESTC_EFLS,
-			    STOCHASTICCROSSCORRELATIONSTATISTICTESTC_MSGEFLS) ) )
-  {
-    return code;
-  }
-
+  result = XLALUnitCompare(&lalSecondUnit, &(output.units));
   if (optVerbose)
   {
-    LALCHARCreateVector(&status, &unitString, LALUnitTextSize);
-    if ( ( code = CheckStatus(&status, 0 , "",
-			      STOCHASTICCROSSCORRELATIONSTATISTICTESTC_EFLS,
-			      STOCHASTICCROSSCORRELATIONSTATISTICTESTC_MSGEFLS) ) )
-    {
-      return code;
+    if ( XLALUnitAsString( unitString, LALUnitTextSize, &(output.units)) == NULL ) {
+      return STOCHASTICCROSSCORRELATIONSTATISTICTESTC_EFLS;
     }
-
-    LALUnitAsString( &status, unitString, unitPair.unitTwo );
-    if ( ( code = CheckStatus(&status, 0 , "",
-			      STOCHASTICCROSSCORRELATIONSTATISTICTESTC_EFLS,
-			      STOCHASTICCROSSCORRELATIONSTATISTICTESTC_MSGEFLS) ) )
-    {
-      return code;
+    printf( "Units are \"%s\", ", unitString );
+    if ( XLALUnitAsString( unitString, LALUnitTextSize, &lalSecondUnit) == NULL ) {
+      return STOCHASTICCROSSCORRELATIONSTATISTICTESTC_EFLS;
     }
-    printf( "Units are \"%s\", ", unitString->data );
-
-    LALUnitAsString( &status, unitString, unitPair.unitOne );
-    if ( ( code = CheckStatus(&status, 0 , "",
-			      STOCHASTICCROSSCORRELATIONSTATISTICTESTC_EFLS,
-			      STOCHASTICCROSSCORRELATIONSTATISTICTESTC_MSGEFLS) ) )
-    {
-      return code;
-    }
-    printf( "should be \"%s\"\n", unitString->data );
-
-    LALCHARDestroyVector(&status, &unitString);
-    if ( ( code = CheckStatus(&status, 0 , "",
-			      STOCHASTICCROSSCORRELATIONSTATISTICTESTC_EFLS,
-			      STOCHASTICCROSSCORRELATIONSTATISTICTESTC_MSGEFLS) ) )
-    {
-      return code;
-    }
+    printf( "should be \"%s\"\n", unitString );
   }
 
-  if (!result)
+  if (result != 0)
   {
     printf("  FAIL: Valid data test #2\n");
     if (optVerbose)
@@ -979,39 +910,14 @@ int main( int argc, char *argv[] )
     }
 
     /* Convert Unit Structure to String */
-    LALCHARCreateVector(&status, &unitString, LALUnitTextSize);
-    if ( ( code = CheckStatus(&status, 0 , "",
-			      STOCHASTICCROSSCORRELATIONSTATISTICTESTC_EFLS,
-			      STOCHASTICCROSSCORRELATIONSTATISTICTESTC_MSGEFLS) ) )
-    {
-      return code;
-    }
-
-    LALUnitAsString( &status, unitString, &(output.units) );
-    if ( ( code = CheckStatus(&status, 0 , "",
-			      STOCHASTICCROSSCORRELATIONSTATISTICTESTC_EFLS,
-			      STOCHASTICCROSSCORRELATIONSTATISTICTESTC_MSGEFLS) ) )
-    {
-      return code;
-    }
-    if ( ( code = CheckStatus(&status, 0 , "",
-			      STOCHASTICCROSSCORRELATIONSTATISTICTESTC_EFLS,
-			      STOCHASTICCROSSCORRELATIONSTATISTICTESTC_MSGEFLS) ) )
-    {
-      return code;
+    if ( XLALUnitAsString( unitString, LALUnitTextSize, &(output.units)) == NULL ) {
+      return STOCHASTICCROSSCORRELATIONSTATISTICTESTC_EFLS;
     }
 
     printf("=========== Cross-Correlation Statistic for User-Specified Data Is =======\n");
-    printf("     %g %s\n", output.value, unitString->data);
+    printf("     %g %s\n", output.value, unitString);
 
     /* Deallocate Memory */
-    LALCHARDestroyVector(&status, &unitString);
-    if ( ( code = CheckStatus(&status, 0 , "",
-			      STOCHASTICCROSSCORRELATIONSTATISTICTESTC_EFLS,
-			      STOCHASTICCROSSCORRELATIONSTATISTICTESTC_MSGEFLS) ) )
-    {
-      return code;
-    }
     LALCDestroyVector(&status, &(goodFilter.data));
     if ( ( code = CheckStatus(&status, 0 , "",
 			      STOCHASTICCROSSCORRELATIONSTATISTICTESTC_EFLS,

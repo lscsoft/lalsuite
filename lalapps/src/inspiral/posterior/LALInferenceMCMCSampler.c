@@ -475,14 +475,22 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
         !LALInferenceGetProcParamVal(runState->commandLine, "--malmquistPrior")) ) {
     LALInferenceIFOData *headData = runState->data;
     REAL8 d = *(REAL8 *)LALInferenceGetVariable(runState->currentParams, "distance");
-    REAL8 bigD = 1.0 / 0.0;
+    REAL8 bigD = INFINITY;
+
+    /* Don't store to cache, since distance scaling won't work */
+    LALSimInspiralWaveformCache *cache = headData->waveformCache;
+    while (headData != NULL) {
+      headData->waveformCache = NULL;
+      headData = headData->next;
+    }
+    headData = runState->data;
 
     LALInferenceSetVariable(runState->currentParams, "distance", &bigD);
-
     nullLikelihood = runState->likelihood(runState->currentParams, runState->data, runState->templt);
 
     while (headData != NULL) {
       headData->nullloglikelihood = headData->loglikelihood;
+      headData->waveformCache = cache;
       headData = headData->next;
     }
 
@@ -1785,7 +1793,7 @@ void LALInferencePrintPTMCMCInjectionSample(LALInferenceRunState *runState) {
     }
 
     LALInferenceSetVariable(runState->currentParams, "distance", &dist);
-    LALInferenceSetVariable(runState->currentParams, "inclination", &inclination);
+    LALInferenceSetVariable(runState->currentParams, "theta_JN", &inclination);
     LALInferenceSetVariable(runState->currentParams, "polarisation", &(psi));
     LALInferenceSetVariable(runState->currentParams, "declination", &dec);
     LALInferenceSetVariable(runState->currentParams, "rightascension", &ra);

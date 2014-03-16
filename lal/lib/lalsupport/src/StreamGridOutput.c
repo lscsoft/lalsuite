@@ -65,13 +65,13 @@
  * <dt> sampleUnits:</dt><dd> \e value is string surrounded by
  * double-quotes; inside the quotes is a unit string corresponding to
  * <tt>grid-\>sampleUnits</tt> as converted by the routine
- * <tt>LALUnitAsString()</tt>.</dd>
+ * <tt>XLALUnitAsString()</tt>.</dd>
  *
  * <dt> dimUnits:</dt><dd> \e value is a sequence of \f$m\f$ strings,
  * surrounded by double-quotes and separated by a space, where \f$m\f$ is
  * the grid dimension (number of grid axes); inside the quotes is a unit
  * string corresponding to the elements of the <tt>grid-\>dimUnits</tt>
- * array as converted by the routine <tt>LALUnitAsString()</tt>.</dd>
+ * array as converted by the routine <tt>XLALUnitAsString()</tt>.</dd>
  *
  * <dt> offset:</dt><dd> \e value is a sequence of \f$m\f$
  * REAL8 numbers separated by single spaces, representing the

@@ -376,13 +376,12 @@ int XLALFindLMXBCrossCorrDiagMetric
    REAL8             *g_ff,          /*Output:metric elements*/
    REAL8             *g_aa, 
    REAL8             *g_TT, 
-   BinaryOrbitParams BinaryParams,   /* Input: binary orbit paramaters*/
-   REAL8             f,              /* Input: thisfrequency*/
-   REAL8Vector       *G_alpha,       /* Input: vector of sigma_alpha values */ 
-   SFTPairIndexList  *pairIndexList, /* Input: list of SFT pairs */
-   SFTIndexList      *indexList,     /* Input: list of SFTs */   
-   MultiSFTVector    *sfts           /* Input: set of per-detector SFT vectors */
-   /*REAL8             *devTsq,  */  /*Output: mean time deviation^2*/
+   PulsarDopplerParams DopplerParams, /* Input: pulsar/binary orbit paramaters*/
+   REAL8Vector       *G_alpha,        /* Input: vector of sigma_alpha values */ 
+   SFTPairIndexList  *pairIndexList,  /* Input: list of SFT pairs */
+   SFTIndexList      *indexList,      /* Input: list of SFTs */   
+   MultiSFTVector    *sfts            /* Input: set of per-detector SFT vectors */
+   /*REAL8             *devTsq,  */   /*Output: mean time deviation^2*/
    /*REAL8             *g_pp,*/
    )
 {
@@ -417,7 +416,7 @@ int XLALFindLMXBCrossCorrDiagMetric
     T1 = &(sfts->data[detInd1]->data[sftInd1].epoch);
     T2 = &(sfts->data[detInd2]->data[sftInd2].epoch);
     T = XLALGPSDiff( T1, T2 );
-    sinSquare += sqrG_alpha*SQUARE(sin(LAL_PI*T/(BinaryParams.period)));/*(G_alpha)^2*(sin(\pi*T/T_orbit))^2*/
+    sinSquare += sqrG_alpha*SQUARE(sin(LAL_PI*T/(DopplerParams.period)));/*(G_alpha)^2*(sin(\pi*T/T_orbit))^2*/
     tSquare += sqrG_alpha*SQUARE( G_alpha->data[j]*T); /*(\curlyg_alpha*)^2*T^2*/
     denom += sqrG_alpha;                               /*calculate the denominator*/
     rhosum += 2*sqrG_alpha;
@@ -429,8 +428,8 @@ int XLALFindLMXBCrossCorrDiagMetric
   SinSquaWeightedAve =(sinSquare/denom);
   *hSens = sqrt(rhosum);
   *g_ff= TSquaWeightedAve* 2 * SQUARE(LAL_PI);
-  *g_aa= SinSquaWeightedAve* SQUARE(LAL_PI*f);
-  *g_TT= SinSquaWeightedAve* SQUARE(2*SQUARE(LAL_PI)*f*(BinaryParams.asini)/(BinaryParams.period));
+  *g_aa= SinSquaWeightedAve* SQUARE(LAL_PI*DopplerParams.fkdot[0]);
+  *g_TT= SinSquaWeightedAve* SQUARE(2*SQUARE(LAL_PI)*(DopplerParams.fkdot[0])*(DopplerParams.asini)/(DopplerParams.period));
 
   
   return XLAL_SUCCESS;

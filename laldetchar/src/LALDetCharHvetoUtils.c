@@ -36,21 +36,25 @@ int XLALCountUnmarkedSnglBurst(LALGSequence* seq) {
     if( sb->next == NULL ){
       unmarked++;
     }
-    itr = XLALGSequenceNext(itr);
+    if (!XLALGSequenceNext(itr)) {
+      XLALDestroyGSequenceIter(itr);
+      itr = NULL;
+    }
   }
-  XLALDestroyGSequenceIter(itr);
   return unmarked;
 }
 
 LALGHashTable* XLALGetChannelList(LALGSequence *trig_sequence) {
-  LALGSequenceIter* itr = XLALGSequenceBegin(trig_sequence);
   LALGHashTable* channellist = XLALCreateGHashTable(LALGTYPE_STR);
+  LALGSequenceIter* itr = XLALGSequenceBegin(trig_sequence);
   while( itr ){
     SnglBurst* sb = XLALGetGSeqSnglBurst(itr);
     XLALSetGHashTblStr(channellist, sb->channel, sb->channel);
-    itr = XLALGSequenceNext(itr);
+    if (!XLALGSequenceNext(itr)) {
+      XLALDestroyGSequenceIter(itr);
+      itr = NULL;
+    }
   }
-  XLALDestroyGSequenceIter(itr);
   return channellist;
 }
 
@@ -131,9 +135,11 @@ LALGSequence* XLALPopulateTrigSequenceFromFile( LALGSequence* trig_sequence, con
   while( itr ){
     SnglBurst* sb = XLALGetGSeqSnglBurst(itr);
     sb->next = NULL;
-    itr = XLALGSequenceNext(itr);
+    if (!XLALGSequenceNext(itr)) {
+      XLALDestroyGSequenceIter(itr);
+      itr = NULL;
+    }
   }
-  XLALDestroyGSequenceIter(itr);
 
   return trig_sequence;
 }

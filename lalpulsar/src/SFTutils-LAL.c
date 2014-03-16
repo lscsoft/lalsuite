@@ -1,3 +1,5 @@
+/** \cond DONT_DOXYGEN */
+
 /**
  * \deprecated Use XLALCreateSFT() instead
  * Allows for numBins == 0.
@@ -823,3 +825,5 @@ upsampleSFTVector (LALStatus *status,		/**< pointer to LALStatus structure */
   RETURN (status);
 
 } /* upsampleSFTVector() */
+
+/** \endcond */

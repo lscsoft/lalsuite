@@ -36,14 +36,14 @@ static COMPLEX8 swig_lal_test_COMPLEX8_vector[3];
 static COMPLEX8 swig_lal_test_COMPLEX8_matrix[2][3];
 
 // Test fixed and dynamic arrays typemaps.
-static void swig_lal_test_copyin_array1(REAL8 INPUT[3], REAL8 scale, REAL8 OUTPUT[3]);
-static void swig_lal_test_copyin_array2(INT4 INPUT[3][2], INT4 scale, INT4 OUTPUT[3][2]);
+void swig_lal_test_copyin_array1(REAL8 INPUT[3], REAL8 scale, REAL8 OUTPUT[3]);
+void swig_lal_test_copyin_array2(INT4 INPUT[3][2], INT4 scale, INT4 OUTPUT[3][2]);
 #ifdef SWIG
 %header %{
-  static void swig_lal_test_copyin_array1(REAL8 INPUT[3], REAL8 scale, REAL8 OUTPUT[3]) {
+  void swig_lal_test_copyin_array1(REAL8 INPUT[3], REAL8 scale, REAL8 OUTPUT[3]) {
     for (int i = 0; i < 3; ++i) OUTPUT[i] = scale * INPUT[i];
   }
-  static void swig_lal_test_copyin_array2(INT4 INPUT[3][2], INT4 scale, INT4 OUTPUT[3][2]) {
+  void swig_lal_test_copyin_array2(INT4 INPUT[3][2], INT4 scale, INT4 OUTPUT[3][2]) {
     for (int i = 0; i < 3; ++i) for (int j = 0; j < 2; ++j) OUTPUT[i][j] = scale * INPUT[i][j];
   }
 %}
@@ -64,11 +64,11 @@ typedef struct tagswig_lal_test_arrayofptrs {
   UINT4 length;
   swig_lal_test_arrayofdata **data;
 } swig_lal_test_arrayofptrs;
-static swig_lal_test_arrayofptrs* swig_lal_test_Create_arrayofptrs(UINT4);
-static void swig_lal_test_Destroy_arrayofptrs(swig_lal_test_arrayofptrs*);
+swig_lal_test_arrayofptrs* swig_lal_test_Create_arrayofptrs(UINT4);
+void swig_lal_test_Destroy_arrayofptrs(swig_lal_test_arrayofptrs*);
 #ifdef SWIG
 %header %{
-  static swig_lal_test_arrayofptrs* swig_lal_test_Create_arrayofptrs(UINT4 length) {
+  swig_lal_test_arrayofptrs* swig_lal_test_Create_arrayofptrs(UINT4 length) {
     swig_lal_test_arrayofptrs* ap = (swig_lal_test_arrayofptrs*)XLALMalloc(sizeof(swig_lal_test_arrayofptrs));
     XLAL_CHECK_NULL(ap != NULL, XLAL_ENOMEM);
     ap->length = length;
@@ -86,7 +86,7 @@ static void swig_lal_test_Destroy_arrayofptrs(swig_lal_test_arrayofptrs*);
     }
     return ap;
   }
-  static void swig_lal_test_Destroy_arrayofptrs(swig_lal_test_arrayofptrs* ap) {
+  void swig_lal_test_Destroy_arrayofptrs(swig_lal_test_arrayofptrs* ap) {
     if (ap) {
       if (ap->data) {
         for (UINT4 i = 0; i < ap->length; ++i) {
@@ -109,10 +109,10 @@ static void swig_lal_test_Destroy_arrayofptrs(swig_lal_test_arrayofptrs*);
 typedef struct tagswig_lal_test_gps {
   LIGOTimeGPS t;
 } swig_lal_test_gps;
-static REAL8 swig_lal_test_noptrgps(const LIGOTimeGPS gps);
+REAL8 swig_lal_test_noptrgps(const LIGOTimeGPS gps);
 #ifdef SWIG
 %header %{
-  static REAL8 swig_lal_test_noptrgps(const LIGOTimeGPS gps) {
+  REAL8 swig_lal_test_noptrgps(const LIGOTimeGPS gps) {
     return XLALGPSGetREAL8(&gps);
   }
 %}

@@ -285,7 +285,7 @@ def append_summ_vars(xmldoc, procid, **summvars):
 
   xmldoc.childNodes[0].appendChild(summtable)
 
-def write_round_xml( vetosegs, vetotrigs, ifo, opts ):
+def write_round_xml( vetosegs, vetotrigs, winner, ifo, opts ):
 	"""
 	Write out the products from this round of hveto: veto segments and the vetoed triggers.
 	"""

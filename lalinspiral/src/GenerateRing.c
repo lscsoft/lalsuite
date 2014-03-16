@@ -284,18 +284,9 @@ LALRingInjectSignals(
   }
 
   /* set up units for the transfer function */
-  {
-    RAT4 negOne = { -1, 0 };
-    LALUnit unit;
-    LALUnitPair pair;
-    pair.unitOne = &lalADCCountUnit;
-    pair.unitTwo = &lalStrainUnit;
-    LALUnitRaise( stat->statusPtr, &unit, pair.unitTwo, &negOne );
-    CHECKSTATUSPTR( stat );
-    pair.unitTwo = &unit;
-    LALUnitMultiply( stat->statusPtr, &(transfer->sampleUnits),
-        &pair );
-    CHECKSTATUSPTR( stat );
+  if (XLALUnitDivide( &(detector.transfer->sampleUnits),
+                      &lalADCCountUnit, &lalStrainUnit ) == NULL) {
+    ABORTXLAL(stat);
   }
 
   /* invert the response function to get the transfer function */

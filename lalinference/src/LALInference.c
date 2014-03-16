@@ -42,7 +42,7 @@
 #define UNUSED
 #endif
 
-size_t LALInferenceTypeSize[13] = {sizeof(INT4),
+size_t LALInferenceTypeSize[] = {sizeof(INT4),
                                    sizeof(INT8),
                                    sizeof(UINT4),
                                    sizeof(REAL4),
@@ -53,7 +53,7 @@ size_t LALInferenceTypeSize[13] = {sizeof(INT4),
                                    sizeof(REAL8Vector *),
                                    sizeof(UINT4Vector *),
                                    sizeof(CHAR *),
-				   sizeof(LALInferenceMCMCRunPhase *),
+                                   sizeof(LALInferenceMCMCRunPhase *),
                                    sizeof(void *)
 };
 
@@ -157,7 +157,7 @@ INT4 LALInferenceGetVariableDimensionNonFixed(LALInferenceVariables *vars)
     while (ptr != NULL) {
       /* print name: */
       //TBL: LALInferenceGetVariableDimensionNonFixed had to be modified for noise-parameters, which are stored in a gsl_matrix
-      if (ptr->vary != LALINFERENCE_PARAM_FIXED)
+      if (LALInferenceCheckVariableNonFixed(vars,ptr->name))
       {
         //Generalize to allow for other data types
         if(ptr->type == LALINFERENCE_gslMatrix_t)
@@ -1002,7 +1002,7 @@ INT4 LALInferenceBufferToArray(LALInferenceRunState *state, INT4 startCycle, INT
     ptr=state->differentialPoints[i]->head;
     p=0;
     while(ptr!=NULL) {
-      if (ptr->vary != LALINFERENCE_PARAM_FIXED && ptr->type == LALINFERENCE_REAL8_t) {
+      if (LALInferenceCheckVariableNonFixed(state->differentialPoints[i], ptr->name) && ptr->type == LALINFERENCE_REAL8_t) {
         DEarray[i-start][p]=*(REAL8 *)ptr->value;
         p++;
       }
@@ -1039,7 +1039,7 @@ void LALInferenceArrayToBuffer(LALInferenceRunState *runState, REAL8** DEarray) 
     LALInferenceCopyVariables(&templateParamSet, runState->differentialPoints[i]);
     ptr = runState->differentialPoints[i]->head;
     while(ptr!=NULL) {
-      if (ptr->vary != LALINFERENCE_PARAM_FIXED) {
+      if (LALInferenceCheckVariableNonFixed(runState->differentialPoints[i], ptr->name) && ptr->type == LALINFERENCE_REAL8_t) {
         *((REAL8 *)ptr->value) = (REAL8)DEarray[i][p];
         p++;
       }
@@ -1061,7 +1061,7 @@ REAL8Vector *LALInferenceCopyVariablesToArray(LALInferenceVariables *origin) {
   LALInferenceVariableItem *ptr=origin->head;
   INT4 p=0;
   while(ptr!=NULL) {
-    if (ptr->vary != LALINFERENCE_PARAM_FIXED) {
+    if (LALInferenceCheckVariableNonFixed(origin, ptr->name)) {
       //Generalized to allow for parameters stored in gsl_matrix or UINT4Vector
       if(ptr->type == LALINFERENCE_gslMatrix_t)
       {
@@ -1104,7 +1104,7 @@ void LALInferenceCopyArrayToVariables(REAL8Vector *origin, LALInferenceVariables
   LALInferenceVariableItem *ptr = target->head;
   INT4 p=0;
   while(ptr!=NULL) {
-    if (ptr->vary != LALINFERENCE_PARAM_FIXED)
+    if (LALInferenceCheckVariableNonFixed(target, ptr->name))
     {
       //Generalized to allow for parameters stored in gsl_matrix
       if(ptr->type == LALINFERENCE_gslMatrix_t)
@@ -2239,8 +2239,7 @@ void LALInferenceKDVariablesToREAL8(LALInferenceVariables *params, REAL8 *pt, LA
   LALInferenceVariableItem *templateItem = templt->head;
   size_t i = 0;
   while (templateItem != NULL) {
-    if (templateItem->vary != LALINFERENCE_PARAM_FIXED && 
-        templateItem->vary != LALINFERENCE_PARAM_OUTPUT ) {
+    if (LALInferenceCheckVariableNonFixed(templt, templateItem->name)) {
       pt[i] = *(REAL8 *)LALInferenceGetVariable(params, templateItem->name);
       i++;
     }
@@ -2252,8 +2251,7 @@ void LALInferenceKDREAL8ToVariables(LALInferenceVariables *params, REAL8 *pt, LA
   LALInferenceVariableItem *templateItem = templt->head;
   size_t i = 0;
   while (templateItem != NULL) {
-    if (templateItem->vary != LALINFERENCE_PARAM_FIXED && 
-        templateItem->vary != LALINFERENCE_PARAM_OUTPUT) {
+    if (LALInferenceCheckVariableNonFixed(templt, templateItem->name)) {
       LALInferenceSetVariable(params, templateItem->name, &(pt[i]));
       i++;
     }

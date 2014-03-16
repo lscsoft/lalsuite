@@ -52,11 +52,8 @@ pkgpython_PYTHON += \
 	python/git_version.py \
 	$(EOL)
 
-TESTS += \
+test_programs += \
 	$(EOL)
-
-check_PROGRAMS += \
-	$(TESTS)
 
 DISTCLEANFILES += \
 	config.lt \

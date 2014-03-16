@@ -645,8 +645,8 @@ test ".$release" = ".true" &&
     log_and_do cp "$EAH/eah_HierarchSearchGCT$acc$ext" "$EAH/${appname}_${appversion}_$platform$planclass$ext"
 
 log_and_do cd "$BUILD/lalapps/src/pulsar/Injections"
-log_and_do make eah_Makefakedata_v4$ext
-log_and_do cp eah_Makefakedata_v4$ext "$EAH"
+log_and_do make eah_Makefakedata_v5$ext
+log_and_do cp eah_Makefakedata_v5$ext "$EAH"
 log_and_do cd "$BUILD/lalapps/src/pulsar/FDS_isolated"
 log_and_do make eah_PredictFStat$ext eah_ComputeFStatistic_v2$ext
 log_and_do cp eah_PredictFStat$ext eah_ComputeFStatistic_v2$ext "$EAH"
@@ -668,7 +668,7 @@ if [ .$check = .true ]; then
     log_and_do mkdir Injections
     log_and_do ln -s Injections FDS_isolated
     log_and_do cd Injections
-    log_and_do cp ../eah_Makefakedata_v4$ext lalapps_Makefakedata_v4
+    log_and_do cp ../eah_Makefakedata_v5$ext lalapps_Makefakedata_v5
     log_and_do cp ../eah_PredictFStat$ext lalapps_PredictFStat
     log_and_do cp ../eah_ComputeFStatistic_v2$ext lalapps_ComputeFStatistic_v2
     LAL_DATA_PATH="$INSTALL/share/lalpulsar" NOCLEANUP=1 PATH="$PWD:$PATH" \

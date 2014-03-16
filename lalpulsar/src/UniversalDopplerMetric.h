@@ -181,6 +181,7 @@ typedef struct tagDopplerMetricParams
 
   MetricType_t metricType;			/**< switch controlling which types of metric to compute: 0 = PhaseMetric g_ij, 1 = Fmetrics gF.., 2=BOTH */
   BOOLEAN approxPhase;				/**< use an approximate phase-model, neglecting Roemer delay in spindown coordinates */
+  UINT4 nonposEigValThresh;			/**< if >0, and metric has this or more non-positive eigenvalues, recompute using smaller error tolerances */
 } DopplerMetricParams;
 
 
