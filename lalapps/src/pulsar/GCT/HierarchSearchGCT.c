@@ -66,10 +66,14 @@
 */
 #ifdef EAH_BOINC
 #include "hs_boinc_extras.h"
+// reserves 1% of progress for the last (toplist recaclculation) step
+#define SHOW_PROGRESS_RESERVE(rac,dec,count,total,freq,fband)\
+        SHOW_PROGRESS(rac, dec, (count) - 0.01 * (total), total, freq, fband)
 #else
 #define GET_GCT_CHECKPOINT read_gct_checkpoint // (cptname, semiCohToplist, NULL, &count)
 #define SET_GCT_CHECKPOINT write_gct_checkpoint
 #define SHOW_PROGRESS(rac,dec,skyGridCounter,tpl_total,freq,fband)
+#define SHOW_PROGRESS_RESERVE(rac,dec,count,total,freq,fband)
 #define MAIN  main
 char**global_argv;
 int global_argc;
@@ -1162,7 +1166,7 @@ int MAIN( int argc, char *argv[]) {
   /* ################## loop over SKY coarse-grid points ################## */
   while(thisScan.state != STATE_FINISHED)
     {
-      SHOW_PROGRESS(dopplerpos.Alpha, dopplerpos.Delta,
+      SHOW_PROGRESS_RESERVE(dopplerpos.Alpha, dopplerpos.Delta,
                     skyGridCounter * nf1dot + f1dotGridCounter,
                     thisScan.numSkyGridPoints * nf1dot, uvar_Freq, uvar_FreqBand);
 
@@ -1626,7 +1630,7 @@ int MAIN( int argc, char *argv[]) {
         } /* ########## End of loop over coarse-grid f2dot values (if2dot) ########## */
         ifdot++;  /* Increment ifdot counter BEFORE SET_GCT_CHECKPOINT */
 
-        SHOW_PROGRESS(dopplerpos.Alpha, dopplerpos.Delta,
+        SHOW_PROGRESS_RESERVE(dopplerpos.Alpha, dopplerpos.Delta,
                       skyGridCounter * nf1dot + ifdot,
                       thisScan.numSkyGridPoints * nf1dot, uvar_Freq, uvar_FreqBand);
 
@@ -1646,7 +1650,7 @@ int MAIN( int argc, char *argv[]) {
         skyGridCounter++;
 
         /* this is necessary here, because the checkpoint needs some information from here */
-        SHOW_PROGRESS(dopplerpos.Alpha, dopplerpos.Delta,
+        SHOW_PROGRESS_RESERVE(dopplerpos.Alpha, dopplerpos.Delta,
                       skyGridCounter * nf1dot,
                       thisScan.numSkyGridPoints * nf1dot, uvar_Freq, uvar_FreqBand);
 
@@ -1737,6 +1741,11 @@ int MAIN( int argc, char *argv[]) {
     }
 
   LogPrintfVerbatim ( LOG_DEBUG, "done.\n");
+
+  SHOW_PROGRESS(dopplerpos.Alpha, dopplerpos.Delta,
+                skyGridCounter * nf1dot,
+                skyGridCounter * nf1dot,
+                uvar_Freq, uvar_FreqBand);
 
   // in BOINC App the checkpoint is left behind to be cleaned up by the Core Client
 #ifndef EAH_BOINC
