@@ -150,18 +150,28 @@ static long indexof_confidence_level(long npix, double *P, double level, gsl_per
 
 
 /* Find error in time of arrival. */
-static double toa_error(
+static void toa_errors(
+    double *dt,
     double theta,
     double phi,
     double gmst,
-    const double *loc, /* Input: detector position. */
-    double toa /* Input: time of arrival. */
+    const double **locs, /* Input: detector position. */
+    const double *toas /* Input: time of arrival. */
 ) {
     /* Convert to Cartesian coordinates. */
     double n[3];
     ang2vec(theta, phi - gmst, n);
 
-    return toa + cblas_ddot(3, n, 1, loc, 1) / LAL_C_SI;
+    int i, j;
+    for (i = 0; i < nifos; i ++)
+    {
+        double dot;
+        for (dot = 0, j = 0; j < 3; j ++)
+        {
+            dot += locs[i][j] * n[j];
+        }
+        dt[i] = toas[i] + dot / LAL_C_SI;
+    }
 }
 
 
@@ -175,14 +185,8 @@ static double bayestar_log_posterior_toa(
     const double *toas, /* Input: array of times of arrival. */
     const double *w_toas /* Input: sum-of-squares weights, (1/TOA variance)^2. */
 ) {
-    int iifo;
-
-    /* Loop over detectors. */
     double dt[nifos];
-    for (iifo = 0; iifo < nifos; iifo ++)
-        dt[iifo] = toa_error(theta, phi, gmst, locs[iifo], toas[iifo]);
-
-    /* Evaluate the (un-normalized) Gaussian log likelihood. */
+    toa_errors(dt, theta, phi, gmst, nifos, locs, toas);
     return -0.5 * gsl_stats_wtss(w_toas, 1, dt, 1, nifos);
 }
 
@@ -764,11 +768,9 @@ double *bayestar_sky_map_toa_phoa_snr(
             /* Look up polar coordinates of this pixel */
             pix2ang_ring(nside, ipix, &theta, &phi);
 
+            toa_errors(dtau, theta, phi, gmst, nifos, locations, toas);
             for (iifo = 0; iifo < nifos; iifo ++)
-            {
-                dtau[iifo] = toa_error(theta, phi, gmst, locations[iifo], toas[iifo]);
                 exp_i_toaphoa[iifo] = exp_i_phoas[iifo] * exp_i(w1s[iifo] * dtau[iifo]);
-            }
 
             /* Find mean arrival time error */
             mean_dtau = gsl_stats_wmean(w_toas, 1, dtau, 1, nifos);
