@@ -68,6 +68,9 @@ REAL8 LALInferenceKDEEvaluatePoint(LALInferenceKDE *kde, REAL8 *point);
 /* Draw a sample from a kernel density estimate. */
 REAL8 *LALInferenceDrawKDESample(LALInferenceKDE *kde, gsl_rng *rng);
 
+/* Compute the Cholesky decomposition of a matrix. */
+INT4 LALInferenceCholeskyDecompose(gsl_matrix *mat);
+
 /* Calculate the covariance matrix of a data set. */
 gsl_matrix *LALInferenceComputeCovariance(gsl_matrix *pts);
 

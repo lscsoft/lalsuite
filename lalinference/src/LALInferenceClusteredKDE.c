@@ -739,36 +739,6 @@ REAL8 LALInferenceWhitenedKmeansPDF(LALInferenceKmeans *kmeans, REAL8 *pt) {
 
 
 /**
- * Compute the Cholesky decomposition of a matrix.
- *
- * A wrapper for gsl_linalg_cholesky_decomp() that avoids halting if the matrix
- * is found not to be positive-definite.  This often happens when decomposing a
- * covariance matrix that is poorly estimated due to low sample size.
- * @param matrix The matrix to decompose (in place).
- * @return Status of call to gsl_linalg_cholesky_decomp().
- */
-INT4 LALInferenceCholeskyDecompose(gsl_matrix *mat) {
-    INT4 status;
-
-    /* Turn off default GSL error handling (i.e. aborting), and catch
-     * errors decomposing due to non-positive definite covariance matrices */
-    gsl_error_handler_t *default_gsl_error_handler = gsl_set_error_handler_off();
-
-    status = gsl_linalg_cholesky_decomp(mat);
-    if (status) {
-        if (status != GSL_EDOM) {
-            fprintf(stderr, "ERROR: Unexpected problem Cholesky-decomposing matrix.\n");
-            exit(-1);
-        }
-    }
-
-    /* Return to default GSL error handling */
-    gsl_set_error_handler(default_gsl_error_handler);
-    return status;
-}
-
-
-/**
  * Transform a data set to obtain a 0-mean and identity covariance matrix.
  *
  * Determine and execute the transformation of a data set to remove any global correlations

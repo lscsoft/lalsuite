@@ -118,9 +118,6 @@ REAL8 LALInferenceKmeansPDF(LALInferenceKmeans *kmeans, REAL8 *pt);
 /* Evaluate the estimated (log) PDF from a clustered-KDE at an already whitened point. */
 REAL8 LALInferenceWhitenedKmeansPDF(LALInferenceKmeans *kmeans, REAL8 *pt);
 
-/* Compute the Cholesky decomposition of a matrix. */
-INT4 LALInferenceCholeskyDecompose(gsl_matrix *mat);
-
 /* Transform a data set to obtain a 0-mean and identity covariance matrix. */
 gsl_matrix * LALInferenceWhitenSamples(gsl_matrix *samples);
 
