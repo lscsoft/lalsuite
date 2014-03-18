@@ -79,6 +79,16 @@ double *bayestar_sky_map_toa(
     const double *w_toas /* Input: sum-of-squares weights, (1/TOA variance)^2. */
 );
 
+double bayestar_log_posterior_toa(
+    double ra,
+    double sin_dec,
+    double gmst, /* Greenwich mean sidereal time in radians. */
+    int nifos, /* Input: number of detectors. */
+    const double **locations, /* Pointers to locations of detectors in Cartesian geographic coordinates. */
+    const double *toas, /* Input: array of times of arrival with arbitrary relative offset. (Make toas[0] == 0.) */
+    const double *w_toas /* Input: sum-of-squares weights, (1/TOA variance)^2. */
+);
+
 double bayestar_log_posterior_toa_snr(
     double ra,
     double sin_dec,

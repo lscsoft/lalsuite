@@ -125,6 +125,35 @@ def ligolw_sky_map(sngl_inspirals, approximant, amplitude_order, phase_order, f_
         prob = sky_map.toa_snr(gmst, toas, snrs, w_toas, responses, locations, horizons, min_distance, max_distance, prior_distance_power, nside=nside)
     elif method == "toa_phoa_snr":
         prob = sky_map.toa_phoa_snr(gmst, toas, phoas, snrs, w_toas, w1s, w2s, responses, locations, horizons, min_distance, max_distance, prior_distance_power, nside=nside)
+    elif method == "toa_mcmc":
+        import emcee
+
+        ntemps = 20
+        nwalkers = 100
+        ndim = 2
+        sampler = emcee.PTSampler(
+            ntemps=ntemps,
+            nwalkers=nwalkers,
+            dim=ndim,
+            logl=(lambda args: sky_map.log_posterior_toa(*args,
+                gmst=gmst,
+                toas=toas,
+                w_toas=w_toas,
+                locations=locations)),
+            logp=(lambda (ra, sin_dec):
+                1 if 0 <= ra < 2*np.pi
+                and -1 <= sin_dec <= 1
+                else -np.inf))
+        p0 = np.random.uniform(
+            [0, -1],
+            [2*np.pi, 1], (ntemps, nwalkers, ndim))
+        sampler.run_mcmc(p0, 1000)
+        if chain_dump is not None:
+            np.save(chain_dump, sampler.chain)
+        ra, sin_dec = np.concatenate(sampler.chain[0, :, 100:]).T
+        theta = np.arccos(sin_dec)
+        phi = ra
+        prob = postprocess.adaptive_healpix_histogram(theta, phi, 30, nside=nside)
     elif method == "toa_snr_mcmc":
         import emcee
 

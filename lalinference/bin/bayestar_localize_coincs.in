@@ -48,7 +48,7 @@ __author__ = "Leo Singer <leo.singer@ligo.org>"
 from optparse import Option, OptionParser
 from lalinference.bayestar import command
 
-methods = ("toa", "toa_snr", "toa_phoa_snr", "toa_snr_mcmc")
+methods = ("toa", "toa_snr", "toa_phoa_snr", "toa_mcmc", "toa_snr_mcmc")
 default_method = "toa_phoa_snr"
 parser = OptionParser(
     formatter = command.NewlinePreservingHelpFormatter(),

@@ -155,6 +155,7 @@ static void toa_errors(
     double theta,
     double phi,
     double gmst,
+    int nifos,
     const double **locs, /* Input: detector position. */
     const double *toas /* Input: time of arrival. */
 ) {
@@ -176,7 +177,7 @@ static void toa_errors(
 
 
 /* Perform sky localization based on TDOAs alone. Returns log probability; not normalized. */
-static double bayestar_log_posterior_toa(
+double bayestar_log_posterior_toa(
     double theta,
     double phi,
     double gmst,

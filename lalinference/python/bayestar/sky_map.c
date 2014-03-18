@@ -671,6 +671,106 @@ fail:
 };
 
 
+static PyObject *log_posterior_toa(PyObject *module, PyObject *args, PyObject *kwargs)
+{
+    long i;
+    Py_ssize_t n;
+    long nifos = 0;
+    double ra, sin_dec, gmst;
+    PyObject *toas_obj, *w_toas_obj, *locations_obj;
+
+    PyArrayObject *toas_npy = NULL, *w_toas_npy = NULL, **locations_npy = NULL;
+
+    double *toas;
+    double *w_toas;
+    const double **locations = NULL;
+
+    PyObject *out = NULL;
+    double P;
+    gsl_error_handler_t *old_handler;
+
+    /* Names of arguments */
+    static const char *keywords[] = {"ra", "sin_dec", "gmst", "toas", "w_toas", "locations", NULL};
+
+    /* Silence warning about unused parameter. */
+    (void)module;
+
+    /* Parse arguments */
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "dddOOO", keywords,
+        &ra, &sin_dec, &gmst, &toas_obj, &w_toas_obj, &locations_obj))
+        goto fail;
+
+    toas_npy = (PyArrayObject *) PyArray_ContiguousFromAny(toas_obj, NPY_DOUBLE, 1, 1);
+    if (!toas_npy) goto fail;
+    nifos = PyArray_DIM(toas_npy, 0);
+    toas = PyArray_DATA(toas_npy);
+
+    w_toas_npy = (PyArrayObject *) PyArray_ContiguousFromAny(w_toas_obj, NPY_DOUBLE, 1, 1);
+    if (!w_toas_npy) goto fail;
+    if (PyArray_DIM(w_toas_npy, 0) != nifos)
+    {
+        PyErr_SetString(PyExc_ValueError, "toas and w_toas must have the same length");
+        goto fail;
+    }
+    w_toas = PyArray_DATA(w_toas_npy);
+
+    locations_npy = malloc(nifos * sizeof(PyObject *));
+    if (!locations_npy)
+    {
+        PyErr_SetNone(PyExc_MemoryError);
+        goto fail;
+    }
+    for (i = 0; i < nifos; i ++)
+        locations_npy[i] = NULL;
+    locations = malloc(nifos * sizeof(double *));
+    if (!locations)
+    {
+        PyErr_SetNone(PyExc_MemoryError);
+        goto fail;
+    }
+
+    n = PySequence_Length(locations_obj);
+    if (n < 0) goto fail;
+    if (n != nifos)
+    {
+        PyErr_SetString(PyExc_ValueError, "toas and locations must have the same length");
+        goto fail;
+    }
+    for (i = 0; i < nifos; i ++)
+    {
+        PyObject *obj = PySequence_GetItem(locations_obj, i);
+        if (!obj) goto fail;
+        locations_npy[i] = (PyArrayObject *) PyArray_ContiguousFromAny(obj, NPY_DOUBLE, 1, 1);
+        Py_XDECREF(obj);
+        if (!locations_npy[i]) goto fail;
+        if (PyArray_DIM(locations_npy[i], 0) != 3)
+        {
+            PyErr_SetString(PyExc_ValueError, "expected every element of locations to be a vector of length 3");
+            goto fail;
+        }
+        locations[i] = PyArray_DATA(locations_npy[i]);
+    }
+
+    old_handler = gsl_set_error_handler(my_gsl_error);
+    P = bayestar_log_posterior_toa(ra, sin_dec, gmst, nifos, locations, toas, w_toas);
+    gsl_set_error_handler(old_handler);
+
+    if (P == GSL_NAN)
+        goto fail;
+
+    out = PyFloat_FromDouble(P);
+fail:
+    Py_XDECREF(toas_npy);
+    Py_XDECREF(w_toas_npy);
+    if (locations_npy)
+        for (i = 0; i < nifos; i ++)
+            Py_XDECREF(locations_npy[i]);
+    free(locations_npy);
+    free(locations);
+    return out;
+};
+
+
 static PyObject *log_posterior_toa_snr(PyObject *module, PyObject *args, PyObject *kwargs)
 {
     long i;
@@ -846,6 +946,7 @@ static PyMethodDef methods[] = {
     {"toa", (PyCFunction)sky_map_toa, METH_VARARGS | METH_KEYWORDS, "fill me in"},
     {"toa_snr", (PyCFunction)sky_map_toa_snr, METH_VARARGS | METH_KEYWORDS, "fill me in"},
     {"toa_phoa_snr", (PyCFunction)sky_map_toa_phoa_snr, METH_VARARGS | METH_KEYWORDS, "fill me in"},
+    {"log_posterior_toa", (PyCFunction)log_posterior_toa, METH_VARARGS | METH_KEYWORDS, "fill me in"},
     {"log_posterior_toa_snr", (PyCFunction)log_posterior_toa_snr, METH_VARARGS | METH_KEYWORDS, "fill me in"},
     {NULL, NULL, 0, NULL}
 };
