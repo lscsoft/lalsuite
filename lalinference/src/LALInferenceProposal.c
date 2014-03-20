@@ -3398,16 +3398,25 @@ void LALInferenceSetupClusteredKDEProposalsFromFile(LALInferenceRunState *runSta
     fprintf(stdout, "Setting up cluster proposal...");
     fflush(stdout);
     LALInferenceVariableItem *item;
-    UINT4 i=0, j=0;
+    UINT4 i=0, j=0, k=0;
     UINT4 nBurnins=0, nWeights=0, nPostEsts=0;
+    UINT4 inChain;
     UINT4 burnin;
     REAL8 weight;
     ProcessParamsTable *command;
 
-    /* Loop once to get number of sample files and sanity check */
+    UINT4 chain = 0;
+    if (LALInferenceCheckVariable(runState->algorithmParams, "MPIrank"))
+        chain = *(UINT4 *)LALInferenceGetVariable(runState->algorithmParams, "MPIrank");
+
+    /* Loop once to get number of sample files and sanity check.
+     *   If PTMCMC files, only load this chain's file */
     nPostEsts=0;
     for(command=runState->commandLine; command; command=command->next) {
-        if(!strcmp(command->param, "--ptmcmc-samples") || !strcmp(command->param, "--ascii-samples")) {
+        if(!strcmp(command->param, "--ptmcmc-samples")) {
+            inChain = atoi(strrchr(command->value, '.')+1);
+            if (chain == inChain) nPostEsts++;
+        } else if (!strcmp(command->param, "--ascii-samples")) {
             nPostEsts++;
         }
     }
@@ -3451,6 +3460,17 @@ void LALInferenceSetupClusteredKDEProposalsFromFile(LALInferenceRunState *runSta
         if(!strcmp(command->param, "--ptmcmc-samples") || !strcmp(command->param, "--ascii-samples")) {
             void (*burnin_method)(FILE *, UINT4);
 
+            UINT4 ptmcmc = 0;
+            if (!strcmp(command->param, "--ptmcmc-samples")) {
+                inChain = atoi(strrchr(command->value, '.')+1);
+                if (inChain != chain)
+                    continue;
+
+                ptmcmc = 1;
+                burnin_method = &LALInferenceBurninPTMCMC;
+            } else
+                burnin_method = &LALInferenceBurninStream;
+
             LALInferenceClusteredKDE *kde = XLALMalloc(sizeof(LALInferenceClusteredKDE));
 
             weight = weights[i];
@@ -3469,12 +3489,8 @@ void LALInferenceSetupClusteredKDEProposalsFromFile(LALInferenceRunState *runSta
             UINT4 nCols;
             REAL8 *sampleArray;
 
-            if(!strcmp(command->param, "--ptmcmc-samples")) {
+            if (ptmcmc)
                 LALInferenceDiscardPTMCMCHeader(input);
-                burnin_method = &LALInferenceBurninPTMCMC;
-            } else {
-                burnin_method = &LALInferenceBurninStream;
-            }
 
             char params[128][VARNAME_MAX];
             LALInferenceReadAsciiHeader(input, params, &nCols);
@@ -3511,6 +3527,21 @@ void LALInferenceSetupClusteredKDEProposalsFromFile(LALInferenceRunState *runSta
             /* Burn in samples and parse the remainder */
             burnin_method(input, burnin);
             sampleArray = LALInferenceParseDelimitedAscii(input, nCols, validCols, &nInSamps);
+
+            /* Downsample PTMCMC file to have independent samples */
+            if (ptmcmc) {
+                INT4 acl = (INT4)LALInferenceComputeMaxAutoCorrLen(sampleArray, nInSamps, nValidCols);
+                UINT4 downsampled_size = ceil((REAL8)nInSamps/acl);
+                REAL8 *downsampled_array = (REAL8 *)XLALMalloc(downsampled_size * nValidCols * sizeof(REAL8));
+                printf("Downsampling to achieve %i samples.\n", downsampled_size);
+                for (k=0; k < downsampled_size; k++) {
+                    for (j=0; j < nValidCols; j++)
+                        downsampled_array[k*nValidCols + j] = sampleArray[k*nValidCols*acl + j];
+                }
+                XLALFree(sampleArray);
+                sampleArray = downsampled_array;
+                nInSamps = downsampled_size;
+            }
 
             /* Build the KDE estimate and add to the KDE proposal set */
             LALInferenceInitClusteredKDEProposal(runState, kde, sampleArray, nInSamps, clusterParams, propName, weight);
@@ -3779,6 +3810,41 @@ void LALInferenceClusteredKDEProposal(LALInferenceRunState *runState, LALInferen
 
 
 /**
+ * Compute the maximum ACL from the differential evolution buffer.
+ *
+ * Given the current differential evolution buffer, the maximum
+ * one-dimensional autocorrelation length is found.
+ * @param runState The run state containing the differential evolution buffer.
+*/
+void LALInferenceComputeMaxAutoCorrLenFromDE(LALInferenceRunState *runState, INT4* maxACL) {
+  INT4 nPar = LALInferenceGetVariableDimensionNonFixed(runState->currentParams);
+  INT4 nPoints = runState->differentialPointsLength;
+
+  REAL8** DEarray;
+  REAL8*  temp;
+  REAL8 ACL;
+  INT4 i=0;
+
+  /* Determine the number of iterations between each entry in the DE buffer */
+  INT4 Nskip = 1;
+  if (LALInferenceCheckVariable(runState->algorithmParams, "Nskip"))
+      Nskip = *(INT4*) LALInferenceGetVariable(runState->algorithmParams, "Nskip");
+
+  /* Prepare 2D array for DE points */
+  DEarray = (REAL8**) XLALMalloc(nPoints * sizeof(REAL8*));
+  temp = (REAL8*) XLALMalloc(nPoints * nPar * sizeof(REAL8));
+  for (i=0; i < nPoints; i++)
+    DEarray[i] = temp + (i*nPar);
+
+  LALInferenceBufferToArray(runState, DEarray);
+  ACL = Nskip * LALInferenceComputeMaxAutoCorrLen(DEarray[0], nPoints, nPar);
+
+  *maxACL = (INT4)ACL;
+  XLALFree(temp);
+  XLALFree(DEarray);
+}
+
+/**
  * Compute the maximum single-parameter autocorrelation length.
  *
  * 1 + 2*ACF(1) + 2*ACF(2) + ... + 2*ACF(M*s) < s,
@@ -3791,40 +3857,23 @@ void LALInferenceClusteredKDEProposal(LALInferenceRunState *runState, LALInferen
  * a safety precaution against relying on data near the
  * extreme of the lags in the ACF, where there is a lot
  * of noise.
- * @param      runState      The current LALInferenceRunState.
+ * @param array Array with rows containing samples.
+ * @return The maximum one-dimensional autocorrelation length
 */
-void LALInferenceComputeMaxAutoCorrLen(LALInferenceRunState *runState, INT4* maxACL) {
+REAL8 LALInferenceComputeMaxAutoCorrLen(REAL8 *array, INT4 nPoints, INT4 nPar) {
   INT4 M=5, K=2;
-  INT4 nPar = LALInferenceGetVariableDimensionNonFixed(runState->currentParams);
-  INT4 nPoints = runState->differentialPointsLength;
 
-  REAL8** DEarray;
-  REAL8*  temp;
-  REAL8 mean, ACL, ACF, max=0;
+  REAL8 mean, ACL, ACF, maxACL=0;
   INT4 par=0, lag=0, i=0, imax;
   REAL8 cumACF, s;
-
-  /* Determine the number of iterations between each entry in the DE buffer */
-  INT4 Nskip = 1;
-  if (LALInferenceCheckVariable(runState->algorithmParams, "Nskip"))
-      Nskip = *(INT4*) LALInferenceGetVariable(runState->algorithmParams, "Nskip");
-
 
   if (nPoints > 1) {
     imax = nPoints/K;
 
-    /* Prepare 2D array for DE points */
-    DEarray = (REAL8**) XLALMalloc(nPoints * sizeof(REAL8*));
-    temp = (REAL8*) XLALMalloc(nPoints * nPar * sizeof(REAL8));
-    for (i=0; i < nPoints; i++)
-      DEarray[i] = temp + (i*nPar);
-
-    LALInferenceBufferToArray(runState, DEarray);
-
     for (par=0; par<nPar; par++) {
-      mean = gsl_stats_mean(&DEarray[0][par], nPar, nPoints);
+      mean = gsl_stats_mean(array+par, nPar, nPoints);
       for (i=0; i<nPoints; i++)
-        DEarray[i][par] -= mean;
+        array[i*nPar + par] -= mean;
 
       lag=1;
       ACL=1.0;
@@ -3832,7 +3881,7 @@ void LALInferenceComputeMaxAutoCorrLen(LALInferenceRunState *runState, INT4* max
       s=1.0;
       cumACF=1.0;
       while (cumACF >= s) {
-        ACF = gsl_stats_correlation(&DEarray[0][par], nPar, &DEarray[lag][par], nPar, nPoints-lag);
+        ACF = gsl_stats_correlation(array + par, nPar, array + lag*nPar + par, nPar, nPoints-lag);
         cumACF += 2.0 * ACF;
         lag++;
         s = (REAL8)lag/(REAL8)M;
@@ -3841,18 +3890,15 @@ void LALInferenceComputeMaxAutoCorrLen(LALInferenceRunState *runState, INT4* max
           break;
         }
       }
-      ACL = s*Nskip;
-      if (ACL>max)
-        max=ACL;
+      ACL = s;
+      if (ACL>maxACL)
+        maxACL=ACL;
     }
-
-    XLALFree(temp);
-    XLALFree(DEarray);
   } else {
-    max = INFINITY;
+    maxACL = INFINITY;
   }
 
-  *maxACL = (INT4)max;
+  return maxACL;
 }
 
 /**
@@ -3864,7 +3910,7 @@ void LALInferenceUpdateMaxAutoCorrLen(LALInferenceRunState *runState) {
   // Calculate ACL with latter half of data to avoid ACL overestimation from chain equilibrating after adaptation
   INT4 acl;
 
-  LALInferenceComputeMaxAutoCorrLen(runState, &acl);
+  LALInferenceComputeMaxAutoCorrLenFromDE(runState, &acl);
   LALInferenceSetVariable(runState->algorithmParams, "acl", &acl);
 }
 

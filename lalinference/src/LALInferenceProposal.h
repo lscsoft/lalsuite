@@ -319,8 +319,11 @@ void LALInferenceClusteredKDEProposal(LALInferenceRunState *runState, LALInferen
 /* Initialize a clustered-KDE proposal. */
 void LALInferenceInitClusteredKDEProposal(LALInferenceRunState *runState, LALInferenceClusteredKDE *kde, REAL8 *array, UINT4 nSamps, LALInferenceVariables *params, const char *name, REAL8 weight);
 
+/* Compute the maximum ACL from the differential evolution buffer. */
+void LALInferenceComputeMaxAutoCorrLenFromDE(LALInferenceRunState *runState, INT4* maxACL);
+
 /* Compute the maximum single-parameter autocorrelation length. */
-void LALInferenceComputeMaxAutoCorrLen(LALInferenceRunState *runState, INT4* maxACL);
+REAL8 LALInferenceComputeMaxAutoCorrLen(REAL8 *array, INT4 nPoints, INT4 nPar);
 
 /* Update the estimatate of the autocorrelation length. */
 void LALInferenceUpdateMaxAutoCorrLen(LALInferenceRunState *runState);
