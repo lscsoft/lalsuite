@@ -165,7 +165,7 @@ LALInferenceKDE *LALInferenceInitKDE(UINT4 npts, UINT4 dim) {
  * \sa LALInferenceKDE, LALInferenceInitKDE
  */
 void LALInferenceDestroyKDE(LALInferenceKDE *kde) {
-    gsl_vector_free(kde->mean);
+    if (kde->mean) gsl_vector_free(kde->mean);
     gsl_matrix_free(kde->cholesky_decomp_cov);
     gsl_matrix_free(kde->cholesky_decomp_cov_lower);
     gsl_matrix_free(kde->data);
@@ -233,7 +233,8 @@ void LALInferenceSetKDEBandwidth(LALInferenceKDE *kde) {
 
     /* If cholesky decomposition failed, set the normalization to infinity */
     if (status) {
-        fprintf(stderr, "Non-positive-definite matrix encountered when setting KDE bandwidth.\n");
+        fprintf(stderr, "Non-positive-definite matrix encountered when setting KDE bandwidth.");
+        fprintf(stderr, " (number of samples = %i).\n", (INT4) kde->data->size1);
         kde->log_norm_factor = INFINITY;
         return;
     }
@@ -264,6 +265,10 @@ REAL8 LALInferenceKDEEvaluatePoint(LALInferenceKDE *kde, REAL8 *point) {
     UINT4 dim = kde->dim;
     UINT4 npts = kde->npts;
     UINT4 i, j;
+
+    /* If the normalization is inifinite, don't bother calculating anything */
+    if (isinf(kde->log_norm_factor))
+        return -INFINITY;
 
     gsl_vector_view x = gsl_vector_view_array(point, dim);
     gsl_vector_view d;
