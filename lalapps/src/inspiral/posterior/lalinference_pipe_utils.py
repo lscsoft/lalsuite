@@ -794,11 +794,11 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
       if len(ifos)==0:
         node.ifos=node.cachefiles.keys()
         for ifo in node.ifos:
-          prenode[ifo].ifos[ifo]=node.ifos[ifo]
+          prenode[ifo].ifos[0]=node.ifos[ifos.index(ifo)]
       else:
           node.ifos=ifos
           for ifo in node.ifos:
-            prenode[ifo].ifos[ifo]=node.ifos[ifo]
+            prenode[ifo].ifos[0]=node.ifos[ifos.index(ifo)]
       node.timeslides=dict([ (ifo,0) for ifo in node.ifos])
       gotdata=1
     if self.config.has_option('lalinference','psd-xmlfile'):
@@ -809,11 +809,11 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
       if len(ifos)==0:
         node.ifos=node.cachefiles.keys()
         for ifo in node.ifos:
-          prenode[ifo].ifos[ifo]=node.ifos[ifo]
+          prenode[ifo].ifos[0]=node.ifos[ifos.index(ifo)]
       else:
         node.ifos=ifos
         for ifo in node.ifos:
-          prenode[ifo].ifos[ifo]=node.ifos[ifo]
+          prenode[ifo].ifos[0]=node.ifos[ifos.index(ifo)]
       gotdata=1
     if self.config.has_option('input','gid'):
       if os.path.isfile(os.path.join(self.basepath,'psd.xml.gz')):
