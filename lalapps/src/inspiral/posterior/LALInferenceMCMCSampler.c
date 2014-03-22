@@ -599,7 +599,7 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
     if (*runPhase_p == LALINFERENCE_ONLY_PT || *runPhase_p == LALINFERENCE_TEMP_PT) {
 
       //ACL calculation during parallel tempering
-      if (i % (10*Nskip) == 0 && MPIrank == 0) {
+      if (i % (100*Nskip) == 0) {
         adapting = *((INT4 *)LALInferenceGetVariable(runState->proposalArgs, "adapting"));
 
         if (adapting)
@@ -723,7 +723,6 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
         LALInferenceSetupClusteredKDEProposalFromRun(runState);
         last_kde_update = iEff;
       }
-
 
       if (diffEvo) {
 	if (i % (runState->differentialPointsSkip) == 0) 

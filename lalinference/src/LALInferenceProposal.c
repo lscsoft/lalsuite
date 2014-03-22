@@ -3458,8 +3458,6 @@ void LALInferenceSetupClusteredKDEProposalsFromFile(LALInferenceRunState *runSta
     i=0;
     for(command=runState->commandLine; command; command=command->next) {
         if(!strcmp(command->param, "--ptmcmc-samples") || !strcmp(command->param, "--ascii-samples")) {
-            void (*burnin_method)(FILE *, UINT4);
-
             UINT4 ptmcmc = 0;
             if (!strcmp(command->param, "--ptmcmc-samples")) {
                 inChain = atoi(strrchr(command->value, '.')+1);
@@ -3467,9 +3465,7 @@ void LALInferenceSetupClusteredKDEProposalsFromFile(LALInferenceRunState *runSta
                     continue;
 
                 ptmcmc = 1;
-                burnin_method = &LALInferenceBurninPTMCMC;
-            } else
-                burnin_method = &LALInferenceBurninStream;
+            }
 
             LALInferenceClusteredKDE *kde = XLALMalloc(sizeof(LALInferenceClusteredKDE));
 
@@ -3503,7 +3499,13 @@ void LALInferenceSetupClusteredKDEProposalsFromFile(LALInferenceRunState *runSta
             for (j=0; j<nCols; j++)
                 validCols[j] = 0;
 
+            UINT4 logl_idx;
             for (j=0; j<nCols; j++) {
+                if (!strcmp("logl", params[j])) {
+                    logl_idx = j;
+                    continue;
+                }
+
                 char* internal_param_name = XLALMalloc(512*sizeof(char));
                 LALInferenceTranslateExternalToInternalParamName(internal_param_name, params[j]);
 
@@ -3525,7 +3527,11 @@ void LALInferenceSetupClusteredKDEProposalsFromFile(LALInferenceRunState *runSta
                 LALInferenceAddVariable(clusterParams, item->name, item->value, item->type, item->vary);
 
             /* Burn in samples and parse the remainder */
-            burnin_method(input, burnin);
+            if (ptmcmc)
+                LALInferenceBurninPTMCMC(input, logl_idx, nValidCols);
+            else
+                LALInferenceBurninStream(input, burnin);
+
             sampleArray = LALInferenceParseDelimitedAscii(input, nCols, validCols, &nInSamps);
 
             /* Downsample PTMCMC file to have independent samples */

@@ -640,7 +640,7 @@ void parseLine(char *record, const char *delim, char arr[][VARNAME_MAX], UINT4 *
 void LALInferenceDiscardPTMCMCHeader(FILE *filestream);
 
 /* Burn-in a PTMCMC output file. */
-void LALInferenceBurninPTMCMC(FILE *filestream, UINT4 burninCycle);
+void LALInferenceBurninPTMCMC(FILE *filestream, UINT4 logl_idx, UINT4 nPar);
 
 /* Burn-in a generic ASCII stream. */
 void LALInferenceBurninStream(FILE *filestream, UINT4 burnin);

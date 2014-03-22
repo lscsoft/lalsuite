@@ -841,23 +841,44 @@ void LALInferenceDiscardPTMCMCHeader(FILE *filestream) {
 
 
 /**
- * Burn-in a PTMCMC output file.
+ * Determine burnin cycle from delta-logl criteria.
  *
- * Read through a PTMCMC output file until the desired cycle is reached.
+ * Find the cycle where the log(likelihood) is within nPar/2 of the
+ * maximum log(likelihood) sampled by the chain.
  * @param     filestream  The PTMCMC input stream to be burned in.
- * @param[in] burninCycle The cycle for \a filestream to point to.
+ * @param[in] logl_idx    The column containing logl values.
+ * @return The cycle to be used for burnin.
  */
-void LALInferenceBurninPTMCMC(FILE *filestream, UINT4 burninCycle) {
+void LALInferenceBurninPTMCMC(FILE *filestream, UINT4 logl_idx, UINT4 nPar) {
     char str[STR_MAX];
     char row[COL_MAX][VARNAME_MAX];
     const char *delimiters = " \t";
     UINT4 nCols;
+    REAL8 loglike, maxLogL=-INFINITY;
 
-    fgets(str, sizeof(str), filestream);
-    parseLine(str, delimiters, row, &nCols);
-    while ((UINT4)atoi(row[0]) <= burninCycle && str != NULL) {
-        fgets(str, sizeof(str), filestream);
+    // Determine number of samples to be read
+    unsigned long startPostBurnin = ftell(filestream);
+
+    /* One pass to find max logl */
+    while (fgets(str, sizeof(str), filestream) != NULL) {
         parseLine(str, delimiters, row, &nCols);
+        loglike = (REAL8) atof(row[logl_idx]);
+        if (loglike > maxLogL)
+            maxLogL = loglike;
+    }
+
+    /* Reset stream */
+    fseek(filestream, startPostBurnin, SEEK_SET);
+
+    /* Assume nCol = nPar.  Burnin can be crude */
+    REAL8 deltaLogL = maxLogL - (REAL8)nPar/2.0;
+
+    /* Find the cycle where logl gets within nPar/2 of max */
+    while (fgets(str, sizeof(str), filestream) != NULL) {
+        parseLine(str, delimiters, row, &nCols);
+        loglike = (REAL8) atof(row[logl_idx]);
+        if (loglike > deltaLogL)
+            break;
     }
 
     if (str == NULL) {
