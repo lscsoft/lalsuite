@@ -188,6 +188,32 @@ def ligolw_sky_map(sngl_inspirals, approximant, amplitude_order, phase_order, f_
             xmin=[0, -1, min_distance, 0, 0],
             xmax=[2*np.pi, 1, max_distance, 1, 2*np.pi],
             nside=nside)
+    elif method == "toa_phoa_snr_mcmc":
+        max_abs_t = 0.5 * lal.LAL_REARTH_SI / lal.LAL_C_SI
+        prob = emcee_sky_map(
+            logl=(lambda args: sky_map.log_posterior_toa_phoa_snr(*args,
+                gmst=gmst,
+                toas=toas,
+                phoas=phoas,
+                snrs=snrs,
+                w_toas=w_toas,
+                w1s=w1s,
+                w2s=w2s,
+                responses=responses,
+                locations=locations,
+                horizons=horizons,
+                prior_distance_power=prior_distance_power)),
+            logp=(lambda (ra, sin_dec, distance, u, twopsi, t):
+                1 if 0 <= ra < 2*np.pi
+                and -1 <= sin_dec <= 1
+                and min_distance <= distance <= max_distance
+                and -1 <= u <= 1
+                and 0 <= twopsi < 2*np.pi
+                and -max_abs_t <= t <= max_abs_t
+                else -np.inf),
+            xmin=[0, -1, min_distance, -1, 0, -max_abs_t],
+            xmax=[2*np.pi, 1, max_distance, 1, 2*np.pi, max_abs_t],
+            nside=nside)
     else:
         raise ValueError("Unrecognized method: %s" % method)
     end_time = time.time()
