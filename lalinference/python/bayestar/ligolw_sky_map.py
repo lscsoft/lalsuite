@@ -160,7 +160,7 @@ def ligolw_sky_map(sngl_inspirals, approximant, amplitude_order, phase_order, f_
         ra, sin_dec, _, _, _ = np.concatenate(sampler.chain[0, :, 100:]).T
         theta = np.arccos(sin_dec)
         phi = ra
-        prob = postprocess.adaptive_healpix_histogram(theta, phi)
+        prob = postprocess.adaptive_healpix_histogram(theta, phi, 30, nside=nside)
     else:
         raise ValueError("Unrecognized method: %s" % method)
     end_time = time.time()
