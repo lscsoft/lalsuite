@@ -319,6 +319,12 @@ void LALInferenceClusteredKDEProposal(LALInferenceRunState *runState, LALInferen
 /* Initialize a clustered-KDE proposal. */
 void LALInferenceInitClusteredKDEProposal(LALInferenceRunState *runState, LALInferenceClusteredKDE *kde, REAL8 *array, UINT4 nSamps, LALInferenceVariables *params, const char *name, REAL8 weight);
 
+/* Dump clustered KDE information to file. */
+void LALInferenceDumpClusteredKDE(LALInferenceClusteredKDE *kde, char *outp_name, REAL8 *array);
+
+/* Dump draws from a KDE to file. */
+void LALInferenceDumpClusteredKDEDraws(LALInferenceClusteredKDE *kde, char *outp_name, UINT4 nSamps);
+
 /* Compute the maximum ACL from the differential evolution buffer. */
 void LALInferenceComputeMaxAutoCorrLenFromDE(LALInferenceRunState *runState, INT4* maxACL);
 

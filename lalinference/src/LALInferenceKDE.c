@@ -455,14 +455,16 @@ gsl_matrix *LALInferenceComputeCovariance(gsl_matrix *data) {
 REAL8 log_add_exps(REAL8 *vals, UINT4 size) {
     UINT4 i;
 
-    gsl_vector_view val_array_view = gsl_vector_view_array(vals, size);
-    REAL8 max_comp = gsl_vector_max(&val_array_view.vector);
-
-    gsl_vector_add_constant(&val_array_view.vector, -max_comp);
+    REAL8 max_comp = 0.;
+    for (i = 0; i < size; i++) {
+        if (max_comp < vals[i])
+            max_comp = vals[i];
+    }
 
     REAL8 result = 0.;
     for (i = 0; i < size; i++)
-        result += exp(vals[i]);
+        result += exp(vals[i]-max_comp);
+    result = max_comp + log(result);
 
-    return max_comp + log(result);
+    return result;
 }

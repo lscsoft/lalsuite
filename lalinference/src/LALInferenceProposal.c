@@ -3593,17 +3593,90 @@ void LALInferenceInitClusteredKDEProposal(LALInferenceRunState *runState, LALInf
     gsl_matrix_view mview = gsl_matrix_view_array(array, nSamps, dim);
 
     kde->kmeans = LALInferenceIncrementalKmeans(&mview.matrix, runState->GSLrandom);
-    /* kmeans setup failed, so return */
+
+    /* Return if kmeans setup failed */
     if (!kde->kmeans)
         return;
-
-    printf("%i clusters found.\n", kde->kmeans->k);
 
     kde->dimension = kde->kmeans->dim;
     kde->params = params;
 
     kde->weight = weight;
     kde->next = NULL;
+
+    /* Print out clustered samples, assignments, and PDF values if requested */
+    if (LALInferenceGetProcParamVal(runState->commandLine,"--cluster-verbose")) {
+        char outp_name[256];
+        char outp_draws_name[256];
+        UINT4 chain = 0;
+
+        if (LALInferenceCheckVariable(runState->algorithmParams, "MPIrank"))
+            chain = *(UINT4 *)LALInferenceGetVariable(runState->algorithmParams, "MPIrank");
+        printf("Chain %i found %i clusters.\n", chain, kde->kmeans->k);
+
+        sprintf(outp_name, "clustered_samples.%2.2d", chain);
+        sprintf(outp_draws_name, "clustered_draws.%2.2d", chain);
+        LALInferenceDumpClusteredKDE(kde, outp_name, array);
+        LALInferenceDumpClusteredKDEDraws(kde, outp_draws_name, 1000);
+    }
+}
+
+
+/**
+ * Dump draws from a KDE to file.
+ *
+ * Print out the samples used to estimate the distribution, along with their
+ * cluster assignments, and the PDF evaluated at each sample.
+ * @param[in] kde       The clustered KDE to dump the info of.
+ * @param[in] outp_name The name of the output file.
+ * @param[in] array     The array of samples used for the KDE (it only stores a whitened version).
+ */
+void LALInferenceDumpClusteredKDE(LALInferenceClusteredKDE *kde, char *outp_name, REAL8 *array) {
+    FILE *outp;
+    REAL8 PDF;
+    UINT4 i, j;
+
+    outp = fopen(outp_name, "w");
+    LALInferenceFprintParameterNonFixedHeaders(outp, kde->params);
+    fprintf(outp, "cluster\tPDF\n");
+
+    for (i=0; i<kde->kmeans->npts; i++) {
+        PDF = LALInferenceKmeansPDF(kde->kmeans, array + i*kde->dimension);
+        for (j=0; j<kde->dimension; j++)
+            fprintf(outp, "%g\t", array[i*kde->dimension + j]);
+        fprintf(outp, "%i\t%g\n", kde->kmeans->assignments[i], PDF);
+    }
+    fclose(outp);
+}
+
+
+/**
+ * Dump clustered KDE information to file.
+ *
+ * Dump a requested number of draws from a clustered-KDE to file,
+ * along with the value of the PDF at each point.
+ * @param[in] kde        The clustered-KDE proposal to draw from.
+ * @param[in] outp_name  The name of the file to write to.
+ * @param[in] nSamps     The number of draws to write.
+ */
+void LALInferenceDumpClusteredKDEDraws(LALInferenceClusteredKDE *kde, char *outp_name, UINT4 nSamps) {
+    FILE *outp;
+    UINT4 i, j;
+    REAL8 *draw, PDF;
+
+    outp = fopen(outp_name, "w");
+    LALInferenceFprintParameterNonFixedHeaders(outp, kde->params);
+    fprintf(outp, "PDF\n");
+
+    for (i=0; i<nSamps; i++) {
+        draw = LALInferenceKmeansDraw(kde->kmeans);
+        PDF = LALInferenceKmeansPDF(kde->kmeans, draw);
+        for (j=0; j<kde->dimension; j++)
+            fprintf(outp, "%g\t", draw[j]);
+        fprintf(outp, "%g\n", PDF);
+        XLALFree(draw);
+    }
+    fclose(outp);
 }
 
 
@@ -3893,6 +3966,9 @@ REAL8 LALInferenceComputeMaxAutoCorrLen(REAL8 *array, INT4 nPoints, INT4 nPar) {
       ACL = s;
       if (ACL>maxACL)
         maxACL=ACL;
+
+      for (i=0; i<nPoints; i++)
+        array[i*nPar + par] += mean;
     }
   } else {
     maxACL = INFINITY;

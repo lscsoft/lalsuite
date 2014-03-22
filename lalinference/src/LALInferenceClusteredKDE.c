@@ -288,7 +288,7 @@ void LALInferenceKmeansRun(LALInferenceKmeans *kmeans) {
     }
 
     for (i = 0; i < kmeans->k; i++)
-        kmeans->weights[i] = (REAL8)kmeans->sizes[i] / (REAL8)kmeans->npts;
+        kmeans->weights[i] = (REAL8)(kmeans->sizes[i]) / (REAL8)(kmeans->npts);
 }
 
 
