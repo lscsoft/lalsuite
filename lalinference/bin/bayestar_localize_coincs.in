@@ -72,6 +72,8 @@ parser = OptionParser(
         Option("--method", choices=methods, metavar='|'.join(methods), default=[], action="append",
             help="Sky localization method [may be specified multiple times, default: "
             + default_method + "]"),
+        Option("--chain-dump", default=False, action="store_true",
+            help="For MCMC methods, dump the sample chain to disk [default: no]"),
         Option("--keep-going", "-k", default=False, action="store_true",
             help="Keep processing events if a sky map fails to converge [default: no].")
     ]
@@ -145,13 +147,16 @@ for coinc, sngl_inspirals in ligolw_bayestar.coinc_and_sngl_inspirals_for_xmldoc
     # Loop over sky localization methods
     for method in opts.method:
         log.info("%s:method '%s':computing sky map", coinc.coinc_event_id, method)
+        if opts.chain_dump:
+            chain_dump = '%s.chain.npy' % int(coinc.coinc_event_id)
+        else:
+            chain_dump = None
         try:
             sky_map, epoch, elapsed_time = ligolw_sky_map.ligolw_sky_map(
                 sngl_inspirals, approximant, amplitude_order, phase_order, f_low,
                 opts.min_distance, opts.max_distance, opts.prior_distance_power,
                 psds=psds, reference_frequency=opts.reference_frequency,
-                method=method, nside=opts.nside,
-                chain_dump='%s.chain.npy' % int(coinc.coinc_event_id))
+                method=method, nside=opts.nside, chain_dump=chain_dump)
         except (ArithmeticError, ValueError):
             log.exception("%s:method '%s':sky localization failed", coinc.coinc_event_id, method)
             count_sky_maps_failed += 1
