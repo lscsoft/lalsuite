@@ -751,9 +751,7 @@ static PyObject *log_posterior_toa(PyObject *module, PyObject *args, PyObject *k
         locations[i] = PyArray_DATA(locations_npy[i]);
     }
 
-    old_handler = gsl_set_error_handler(my_gsl_error);
     P = bayestar_log_posterior_toa(ra, sin_dec, gmst, nifos, locations, toas, w_toas);
-    gsl_set_error_handler(old_handler);
 
     if (P == GSL_NAN)
         goto fail;
@@ -915,9 +913,7 @@ static PyObject *log_posterior_toa_snr(PyObject *module, PyObject *args, PyObjec
     }
     horizons = PyArray_DATA(horizons_npy);
 
-    old_handler = gsl_set_error_handler(my_gsl_error);
     P = bayestar_log_posterior_toa_snr(ra, sin_dec, distance, u, twopsi, gmst, nifos, responses, locations, toas, snrs, w_toas, horizons, prior_distance_power);
-    gsl_set_error_handler(old_handler);
 
     if (P == GSL_NAN)
         goto fail;
@@ -1116,9 +1112,7 @@ static PyObject *log_posterior_toa_phoa_snr(PyObject *module, PyObject *args, Py
     }
     horizons = PyArray_DATA(horizons_npy);
 
-    old_handler = gsl_set_error_handler(my_gsl_error);
     P = bayestar_log_posterior_toa_phoa_snr(ra, sin_dec, distance, u, twopsi, t, gmst, nifos, responses, locations, toas, phoas, snrs, w_toas, w1s, w2s, horizons, prior_distance_power);
-    gsl_set_error_handler(old_handler);
 
     if (P == GSL_NAN)
         goto fail;
