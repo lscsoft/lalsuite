@@ -1,6 +1,6 @@
 /*
  *
- * Copyright (C) 2007  Kipp Cannon
+ * Copyright (C) 2007  Kipp Cannon, Josh Willis
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -26,6 +26,7 @@
 #include <lal/LALError.h>
 #include <lal/Sequence.h>
 #include <lal/XLALError.h>
+#include <lal/LALConfig.h> /* So we know whether we're aligning memory */
 
 /*
  * Shift the bytes in the buffer buff, whose length is length, count bytes to
