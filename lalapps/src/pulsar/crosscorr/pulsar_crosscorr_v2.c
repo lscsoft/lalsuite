@@ -40,6 +40,8 @@
 #include <lal/NormalizeSFTRngMed.h>
 #include <lal/LALString.h>
 #include <lal/PulsarCrossCorr_v2.h>
+#include "CrossCorrToplist.h"
+
 /* introduce mismatch in f and all 5 binary parameters */
 
 /* user input variables */
@@ -70,6 +72,8 @@ typedef struct{
   REAL8   mismatchA;          /**< mismatch for spacing in semi-major axis */
   REAL8   mismatchT;          /**< mismatch for spacing in time of periapse passage */
   REAL8   mismatchP;          /**< mismatch for spacing in period */
+  INT4    numCand;            /**< number of candidates to keep in output toplist */
+  CHAR    *toplistFilename;   /**< output filename containing candidates in toplist */    
 } UserInput_t;
 
 /* struct to store useful variables */
@@ -132,6 +136,9 @@ int main(int argc, char *argv[]){
   REAL8 evSquared=0;
   REAL8 estSens=0; /*estimated sensitivity(4.13)*/
   BOOLEAN dopplerShiftFlag = FALSE;
+  toplist_t *ccToplist=NULL;
+  CrossCorrBinaryOutputEntry thisCandidate;
+
   /* initialize and register user variables */
   if ( XLALInitUserVars( &uvar ) != XLAL_SUCCESS ) {
     LogPrintf ( LOG_CRITICAL, "%s: XLALInitUserVars() failed with errno=%d\n", __func__, xlalErrno );
@@ -156,6 +163,8 @@ int main(int argc, char *argv[]){
   deltaF = config.catalog->data[0].header.deltaF;
   REAL8 Tsft = 1.0 / deltaF;
 
+  /* create the toplist */
+  create_crossCorrBinary_toplist( &ccToplist, uvar.numCand);
   /* now read the data */
 
   /* /\* get SFT parameters so that we can initialise search frequency resolutions *\/ */
@@ -414,9 +423,21 @@ int main(int argc, char *argv[]){
 	XLAL_ERROR( XLAL_EFUNC );
       }
 
-      /* check whether ccStat belongs in the toplist */
+      /* fill candidate struct and insert into toplist if necessary */      
+      thisCandidate.freq = dopplerpos.fkdot[0];
+      thisCandidate.tp = XLALGPSGetREAL8( &dopplerpos.tp );
+      thisCandidate.argp = dopplerpos.argp;
+      thisCandidate.asini = dopplerpos.asini;
+      thisCandidate.ecc = dopplerpos.ecc;
+      thisCandidate.period = dopplerpos.period;
+      thisCandidate.rho = ccStat;
+      
+      insert_into_crossCorrBinary_toplist(ccToplist, thisCandidate);
 
     } /* end while loop over templates */
+
+
+  /* write candidates to file */
 
   XLALDestroyREAL8Vector ( signalPhases );
   XLALDestroyREAL8Vector ( kappaValues );
@@ -440,6 +461,9 @@ int main(int argc, char *argv[]){
 
   /* de-allocate memory for user input variables */
   XLALDestroyUserVars();
+
+  /* free toplist memory */
+  free_crossCorr_toplist(&ccToplist);
 
   /* check memory leaks if we forgot to de-allocate anything */
   LALCheckMemoryLeaks();
@@ -491,33 +515,40 @@ int XLALInitUserVars (UserInput_t *uvar)
 
   uvar->sftLocation = XLALCalloc(1, MAXFILENAMELENGTH+1);
 
+  /* initialize number of candidates in toplist -- default is just to return the single best candidate */
+  uvar->numCand = 1;
+  uvar->toplistFilename = XLALStringDuplicate("toplist_crosscorr.dat");
+  
+
   /* register  user-variables */
-  XLALregBOOLUserStruct ( help, 	 'h',  UVAR_HELP, "Print this message");
-  XLALregINTUserStruct   ( startTime,     0,  UVAR_OPTIONAL, "Desired start time of analysis in GPS seconds");
-  XLALregINTUserStruct   ( endTime,       0,  UVAR_OPTIONAL, "Desired end time of analysis in GPS seconds");
-  XLALregREALUserStruct  ( maxLag,        0,  UVAR_OPTIONAL, "Maximum lag time in seconds between SFTs in correlation");
-  XLALregBOOLUserStruct  ( inclAutoCorr,  0,  UVAR_OPTIONAL, "Include auto-correlation terms (an SFT with itself)");
-  XLALregREALUserStruct  ( fStart,        0,  UVAR_OPTIONAL, "Start frequency in Hz");
-  XLALregREALUserStruct  ( fBand,         0,  UVAR_OPTIONAL, "Frequency band to search over in Hz ");
+  XLALregBOOLUserStruct ( help, 	   'h',  UVAR_HELP, "Print this message");
+  XLALregINTUserStruct   ( startTime,       0,  UVAR_OPTIONAL, "Desired start time of analysis in GPS seconds");
+  XLALregINTUserStruct   ( endTime,         0,  UVAR_OPTIONAL, "Desired end time of analysis in GPS seconds");
+  XLALregREALUserStruct  ( maxLag,          0,  UVAR_OPTIONAL, "Maximum lag time in seconds between SFTs in correlation");
+  XLALregBOOLUserStruct  ( inclAutoCorr,    0,  UVAR_OPTIONAL, "Include auto-correlation terms (an SFT with itself)");
+  XLALregREALUserStruct  ( fStart,          0,  UVAR_OPTIONAL, "Start frequency in Hz");
+  XLALregREALUserStruct  ( fBand,           0,  UVAR_OPTIONAL, "Frequency band to search over in Hz ");
   /* XLALregREALUserStruct  ( fdotStart,     0,  UVAR_OPTIONAL, "Start value of spindown in Hz/s"); */
   /* XLALregREALUserStruct  ( fdotBand,      0,  UVAR_OPTIONAL, "Band for spindown values in Hz/s"); */
-  XLALregREALUserStruct  ( alphaRad,      0,  UVAR_OPTIONAL, "Right ascension for directed search (radians)");
-  XLALregREALUserStruct  ( deltaRad,      0,  UVAR_OPTIONAL, "Declination for directed search (radians)");
-  XLALregREALUserStruct  ( refTime,       0,  UVAR_OPTIONAL, "SSB reference time for pulsar-parameters [Default: midPoint]");
-  XLALregREALUserStruct  ( orbitAsiniSec, 0,  UVAR_OPTIONAL, "Start of search band for projected semimajor axis (seconds) [0 means not a binary]");
+  XLALregREALUserStruct  ( alphaRad,        0,  UVAR_OPTIONAL, "Right ascension for directed search (radians)");
+  XLALregREALUserStruct  ( deltaRad,        0,  UVAR_OPTIONAL, "Declination for directed search (radians)");
+  XLALregREALUserStruct  ( refTime,         0,  UVAR_OPTIONAL, "SSB reference time for pulsar-parameters [Default: midPoint]");
+  XLALregREALUserStruct  ( orbitAsiniSec,   0,  UVAR_OPTIONAL, "Start of search band for projected semimajor axis (seconds) [0 means not a binary]");
   XLALregREALUserStruct  ( orbitAsiniSecBand, 0,  UVAR_OPTIONAL, "Width of search band for projected semimajor axis (seconds)");
-  XLALregREALUserStruct  ( orbitPSec,     0,  UVAR_OPTIONAL, "Binary orbital period (seconds) [0 means not a binary]");
-  XLALregREALUserStruct  ( orbitTimeAsc,  0,  UVAR_OPTIONAL, "Start of orbital time-of-ascension band in GPS seconds");
+  XLALregREALUserStruct  ( orbitPSec,       0,  UVAR_OPTIONAL, "Binary orbital period (seconds) [0 means not a binary]");
+  XLALregREALUserStruct  ( orbitTimeAsc,    0,  UVAR_OPTIONAL, "Start of orbital time-of-ascension band in GPS seconds");
   XLALregREALUserStruct  ( orbitTimeAscBand, 0,  UVAR_OPTIONAL, "Width of orbital time-of-ascension band (seconds)");
-  XLALregSTRINGUserStruct( ephemEarth,    0,  UVAR_OPTIONAL, "Earth ephemeris file to use");
-  XLALregSTRINGUserStruct( ephemSun,      0,  UVAR_OPTIONAL, "Sun ephemeris file to use");
-  XLALregSTRINGUserStruct( sftLocation,   0,  UVAR_REQUIRED, "Filename pattern for locating SFT data");
-  XLALregINTUserStruct   ( rngMedBlock,   0,  UVAR_OPTIONAL, "Running median block size for PSD estimation");
-  XLALregINTUserStruct   ( numBins,       0,  UVAR_OPTIONAL, "Number of frequency bins to include in calculation");
-  XLALregREALUserStruct  ( mismatchF,     0,  UVAR_OPTIONAL, "Desired mismatch for frequency spacing");
-  XLALregREALUserStruct  ( mismatchA,     0,  UVAR_OPTIONAL, "Desired mismatch for asini spacing");
-  XLALregREALUserStruct  ( mismatchT,     0,  UVAR_OPTIONAL, "Desired mismatch for periapse passage time spacing");
-  XLALregREALUserStruct  ( mismatchP,     0,  UVAR_OPTIONAL, "Desired mismatch for period spacing");
+  XLALregSTRINGUserStruct( ephemEarth,      0,  UVAR_OPTIONAL, "Earth ephemeris file to use");
+  XLALregSTRINGUserStruct( ephemSun,        0,  UVAR_OPTIONAL, "Sun ephemeris file to use");
+  XLALregSTRINGUserStruct( sftLocation,     0,  UVAR_REQUIRED, "Filename pattern for locating SFT data");
+  XLALregINTUserStruct   ( rngMedBlock,     0,  UVAR_OPTIONAL, "Running median block size for PSD estimation");
+  XLALregINTUserStruct   ( numBins,         0,  UVAR_OPTIONAL, "Number of frequency bins to include in calculation");
+  XLALregREALUserStruct  ( mismatchF,       0,  UVAR_OPTIONAL, "Desired mismatch for frequency spacing");
+  XLALregREALUserStruct  ( mismatchA,       0,  UVAR_OPTIONAL, "Desired mismatch for asini spacing");
+  XLALregREALUserStruct  ( mismatchT,       0,  UVAR_OPTIONAL, "Desired mismatch for periapse passage time spacing");
+  XLALregREALUserStruct  ( mismatchP,       0,  UVAR_OPTIONAL, "Desired mismatch for period spacing");
+  XLALregINTUserStruct   ( numCand,         0,  UVAR_OPTIONAL, "Number of candidates to keep in toplist");
+  XLALregSTRINGUserStruct( toplistFilename, 0,  UVAR_OPTIONAL, "Output filename containing candidates in toplist");
 
   if ( xlalErrno ) {
     XLALPrintError ("%s: user variable initialization failed with errno = %d.\n", __func__, xlalErrno );
