@@ -123,13 +123,13 @@ void *XLALAlignedMalloc(size_t n){
   return p;
 }
 
-void *XLALAlignedCalloc(size_t n){
+void *XLALAlignedCalloc(size_t m, size_t n){
   void *p;
   int retval;
 
-  retval = posix_memalign(&p,LAL_MEM_ALIGNMENT,n);
-  XLAL_TEST_POINTER_ALIGNED(p,n,retval);
-  p = memset(p,0,n);
+  retval = posix_memalign(&p,LAL_MEM_ALIGNMENT,m*n);
+  XLAL_TEST_POINTER_ALIGNED(p,m*n,retval);
+  p = memset(p,0,m*n);
   return p;
 }
 

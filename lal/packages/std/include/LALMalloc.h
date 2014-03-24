@@ -67,7 +67,7 @@ void XLALFree(void *p);
 /* Should be good for upt to AVX512; recommendation of M. Frigo (personal comm.) */
 #define LAL_MEM_ALIGNMENT 64 
 void *XLALAlignedMalloc(size_t n);
-void *XLALAlignedCalloc(size_t n);
+void *XLALAlignedCalloc(size_t m, size_t n);
 void *XLALAlignedRealloc(void *p, size_t n);
 #endif /* WHATEVER_CONFIG_FFTALIGNED */
 
