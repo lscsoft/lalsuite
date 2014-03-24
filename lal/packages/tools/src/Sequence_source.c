@@ -115,7 +115,7 @@ SEQUENCETYPE *RFUNC (
 		/* need to increase memory */
 
 #ifdef WHATEVER_CONFIG_FFTALIGNED
-		new_data = XLALReallocAligned(sequence->data, length * sizeof(*sequence->data));
+		new_data = XLALAlignedRealloc(sequence->data, length * sizeof(*sequence->data));
 #else
 		new_data = XLALRealloc(sequence->data, length * sizeof(*sequence->data));
 #endif /* WHATEVER_CONFIG_FFTALIGNED */
@@ -131,7 +131,7 @@ SEQUENCETYPE *RFUNC (
 		/* do not need to increase memory */
 		SFUNC (sequence, -first);
 #ifdef WHATEVER_CONFIG_FFTALIGNED
-		new_data = XLALReallocAligned(sequence->data, length * sizeof(*sequence->data));
+		new_data = XLALAlignedRealloc(sequence->data, length * sizeof(*sequence->data));
 #else
 		new_data = XLALRealloc(sequence->data, length * sizeof(*sequence->data));
 #endif /* WHATEVER_CONFIG_FFTALIGNED */
