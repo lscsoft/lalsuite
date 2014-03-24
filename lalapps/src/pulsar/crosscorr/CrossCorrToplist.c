@@ -627,7 +627,7 @@ int write_crossCorr_toplist_to_fp(toplist_t*tl, FILE*fp, UINT4*checksum) {
    if(checksum)
        *checksum = 0;
    for(i=0;i<tl->elems;i++)
-     if ((r = write_crossCorr_toplist_item_to_fp(*((CrossCorrOutputEntry*)(tl->heap[i])), fp, checksum)) < 0) {
+     if ((r = write_crossCorr_toplist_item_to_fp(*((CrossCorrOutputEntry*)(void*)(tl->heap[i])), fp, checksum)) < 0) {
        LogPrintf (LOG_CRITICAL, "Failed to write toplistitem to output fp: %d: %s\n",
 		  errno,strerror(errno));
 #ifdef _MSC_VER
@@ -646,7 +646,7 @@ int write_crossCorrBinary_toplist_to_fp(toplist_t*tl, FILE*fp, UINT4*checksum) {
    if(checksum)
        *checksum = 0;
    for(i=0;i<tl->elems;i++)
-     if ((r = write_crossCorrBinary_toplist_item_to_fp(*((CrossCorrBinaryOutputEntry*)(tl->heap[i])), fp, checksum)) < 0) {
+     if ((r = write_crossCorrBinary_toplist_item_to_fp(*((CrossCorrBinaryOutputEntry*)(void*)(tl->heap[i])), fp, checksum)) < 0) {
        LogPrintf (LOG_CRITICAL, "Failed to write toplistitem to output fp: %d: %s\n",
 		  errno,strerror(errno));
 #ifdef _MSC_VER
