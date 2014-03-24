@@ -1,5 +1,5 @@
 /*
-*  Copyright (C) 2007 Jolien Creighton, Kipp Cannon
+*  Copyright (C) 2007 Jolien Creighton, Kipp Cannon, Josh Willis
 *
 *  This program is free software; you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
@@ -61,6 +61,16 @@ void XLALFree(void *p);
 #define LALReallocLong( p, n, file, line ) realloc( p, n )
 #define LALFree                            free
 #define LALCheckMemoryLeaks()
+/* Note: aligned funcs excluded from swig, and only defined with
+   no debugging and when configured for alignement */
+#ifdef WHATEVER_CONFIG_FFTALIGNED 
+/* Should be good for upt to AVX512; recommendation of M. Frigo (personal comm.) */
+#define LAL_MEM_ALIGNMENT 64 
+void *XLALAlignedMalloc(size_t n);
+void *XLALAlignedCalloc(size_t n);
+void *XLALAlignedRealloc(void *p, size_t n);
+#endif /* WHATEVER_CONFIG_FFTALIGNED */
+
 #endif /* SWIG */
 
 #else

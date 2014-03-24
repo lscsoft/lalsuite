@@ -1,5 +1,5 @@
 /*
-*  Copyright (C) 2007 Jolien Creighton
+*  Copyright (C) 2007 Jolien Creighton, Josh Willis
 *
 *  This program is free software; you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
@@ -98,6 +98,82 @@ void XLALFree(void *p)
         LALFree(p);
     return;
 }
+
+/*
+ * Aligned memory routines.
+ *
+ */
+
+/* Only define these if configured to do so */
+
+#ifdef WHATEVER_CONFIG_FFTALIGNED
+
+#define XLAL_TEST_POINTER_ALIGNED( ptr, size, retval )	  \
+  if ( ! (ptr) && (size) && (retval) )			  \
+       XLAL_ERROR_NULL( XLAL_ENOMEM );                    \
+  else (void)(0)
+
+
+void *XLALAlignedMalloc(size_t n){
+  void *p;
+  int retval;
+
+  retval = posix_memalign(&p,LAL_MEM_ALIGNMENT,n);
+  XLAL_TEST_POINTER_ALIGNED(p,n,retval);
+  return p;
+}
+
+void *XLALAlignedCalloc(size_t n){
+  void *p;
+  int retval;
+
+  retval = posix_memalign(&p,LAL_MEM_ALIGNMENT,n);
+  XLAL_TEST_POINTER_ALIGNED(p,n,retval);
+  p = memset(p,0,n);
+  return p;
+}
+
+void *XLALAlignedRealloc(void *p, size_t n){
+  /* We don't really expect reallocing aligned memory to
+     be efficient, but we'd like it not to break.  Hence
+     we just save a copy and see if we either didn't change
+     the pointer, or if we did that the newptr is still
+     a multiple of LAL_MEM_ALIGNMENT.  Only if both of these
+     fail do we call posix_memalign and memcopy */
+  void *saveptr, *newptr;
+  int retval;
+
+  saveptr = p;
+  newptr = realloc(p,n);
+  XLAL_TEST_POINTER(newptr,n);
+  /* If n = 0 realloc should behave like free */
+  if (n) {
+    if (saveptr == newptr) {
+      /* If the pointer didn't change we're good */
+      return newptr;
+    } else if (! (int) (((uintptr_t) newptr) % LAL_MEM_ALIGNMENT)) {
+      /* If it did but is still a multiple of LAL_MEM_ALIGNMENT we're also good.
+         Note that realloc will already have freed p == saveptr */
+      return newptr;
+    } else {
+      /* If it changed but is NOT a multiple of LAL_MEM_ALIGNMENT, we've got to
+	 try a new allocation and copy over.  We reuse saveptr since it will
+	 have been freed by realloc when realloc returned a new location */
+      retval = posix_memalign(&saveptr,LAL_MEM_ALIGNMENT,n);
+      XLAL_TEST_POINTER_ALIGNED(p,n,retval);
+      saveptr = memcpy(saveptr,newptr,n);
+      /* Don't need newptr anymore */
+      free(newptr);
+      return saveptr;
+    }
+  } else {
+    /* Since n was zero, return our original pointer */
+    return p;
+  }
+
+}
+
+#endif /* WHATEVER_CONFIG_FFTALIGNED */
 
 
 /*
