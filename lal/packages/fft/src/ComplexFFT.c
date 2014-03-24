@@ -1,5 +1,5 @@
 /*
-*  Copyright (C) 2007 Jolien Creighton
+*  Copyright (C) 2007 Jolien Creighton, Josh Willis
 *
 *  This program is free software; you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
@@ -25,6 +25,7 @@
 #include <lal/AVFactories.h>
 #include <lal/ComplexFFT.h>
 #include <lal/FFTWMutex.h>
+#include <lal/LALConfig.h> /* Needed to know whether aligning memory */
 
 /**
  * \addtogroup ComplexFFT_h
@@ -149,7 +150,11 @@ COMPLEX8FFTPlan * XLALCreateCOMPLEX8FFTPlan( UINT4 size, int fwdflg, int measure
   COMPLEX8FFTPlan *plan;
   COMPLEX8 *tmp1;
   COMPLEX8 *tmp2;
+#ifdef WHATEVER_CONFIG_FFTALIGNED
+  int flags = 0;
+#else
   int flags = FFTW_UNALIGNED;
+#endif /* WHATEVER_CONFIG_FFTALIGNED */
 
   if ( ! size )
     XLAL_ERROR_NULL( XLAL_EBADLEN );
@@ -159,7 +164,11 @@ COMPLEX8FFTPlan * XLALCreateCOMPLEX8FFTPlan( UINT4 size, int fwdflg, int measure
   switch ( measurelvl )
   {
     case 0: /* estimate */
+#ifdef WHATEVER_CONFIG_FFTALIGNED
+      flags = FFTW_ESTIMATE;
+#else
       flags |= FFTW_ESTIMATE;
+#endif /* WHATEVER_CONFIG_FFTALIGNED */
       break;
     default: /* exhaustive measurement */
       flags |= FFTW_EXHAUSTIVE;
@@ -174,8 +183,13 @@ COMPLEX8FFTPlan * XLALCreateCOMPLEX8FFTPlan( UINT4 size, int fwdflg, int measure
 
   /* allocate memory for the plan and the temporary arrays */
   plan = XLALMalloc( sizeof( *plan ) );
+#ifdef WHATEVER_CONFIG_FFTALIGNED
+  tmp1 = XLALAlignedMalloc( size * sizeof( *tmp1 ) );
+  tmp2 = XLALAlignedMalloc( size * sizeof( *tmp2 ) );
+#else
   tmp1 = XLALMalloc( size * sizeof( *tmp1 ) );
   tmp2 = XLALMalloc( size * sizeof( *tmp2 ) );
+#endif /* WHATEVER_CONFIG_FFTALIGNED */
   if ( ! plan || ! tmp1 || ! tmp2 )
   {
     XLALFree( plan );
@@ -281,7 +295,11 @@ COMPLEX16FFTPlan * XLALCreateCOMPLEX16FFTPlan( UINT4 size, int fwdflg, int measu
   COMPLEX16FFTPlan *plan;
   COMPLEX16 *tmp1;
   COMPLEX16 *tmp2;
+#ifdef WHATEVER_CONFIG_FFTALIGNED
+  int flags = 0;
+#else
   int flags = FFTW_UNALIGNED;
+#endif /* WHATEVER_CONFIG_FFTALIGNED */
 
   if ( ! size )
     XLAL_ERROR_NULL( XLAL_EBADLEN );
@@ -291,7 +309,11 @@ COMPLEX16FFTPlan * XLALCreateCOMPLEX16FFTPlan( UINT4 size, int fwdflg, int measu
   switch ( measurelvl )
   {
     case 0: /* estimate */
+#ifdef WHATEVER_CONFIG_FFTALIGNED
+      flags = FFTW_ESTIMATE;
+#else
       flags |= FFTW_ESTIMATE;
+#endif /* WHATEVER_CONFIG_FFTALIGNED */
       break;
     default: /* exhaustive measurement */
       flags |= FFTW_EXHAUSTIVE;
@@ -306,8 +328,13 @@ COMPLEX16FFTPlan * XLALCreateCOMPLEX16FFTPlan( UINT4 size, int fwdflg, int measu
 
   /* allocate memory for the plan and the temporary arrays */
   plan = XLALMalloc( sizeof( *plan ) );
+#ifdef WHATEVER_CONFIG_FFTALIGNED
+  tmp1 = XLALAlignedMalloc( size * sizeof( *tmp1 ) );
+  tmp2 = XLALAlignedMalloc( size * sizeof( *tmp2 ) );
+#else
   tmp1 = XLALMalloc( size * sizeof( *tmp1 ) );
   tmp2 = XLALMalloc( size * sizeof( *tmp2 ) );
+#endif /* WHATEVER_CONFIG_FFTALIGNED */
   if ( ! plan || ! tmp1 || ! tmp2 )
   {
     XLALFree( plan );

@@ -1,5 +1,5 @@
 /*
-*  Copyright (C) 2007 Jolien Creighton, Kipp Cannon
+*  Copyright (C) 2007 Jolien Creighton, Kipp Cannon, Josh Willis
 *
 *  This program is free software; you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
@@ -26,6 +26,7 @@
 #include <lal/SeqFactories.h>
 #include <lal/RealFFT.h>
 #include <lal/FFTWMutex.h>
+#include <lal/LALConfig.h> /* Needed to know whether aligning memory */
 
 /**
  * \addtogroup RealFFT_h
@@ -178,7 +179,11 @@ REAL4FFTPlan * XLALCreateREAL4FFTPlan( UINT4 size, int fwdflg, int measurelvl )
   REAL4FFTPlan *plan;
   REAL4 *tmp1;
   REAL4 *tmp2;
+#ifdef WHATEVER_CONFIG_FFTALIGNED
+  int flags = 0;
+#else
   int flags = FFTW_UNALIGNED;
+#endif /* WHATEVER_CONFIG_FFTALIGNED */
 
   if ( ! size )
     XLAL_ERROR_NULL( XLAL_EBADLEN );
@@ -188,7 +193,11 @@ REAL4FFTPlan * XLALCreateREAL4FFTPlan( UINT4 size, int fwdflg, int measurelvl )
   switch ( measurelvl )
   {
     case 0: /* estimate */
+#ifdef WHATEVER_CONFIG_FFTALIGNED
+      flags = FFTW_ESTIMATE;
+#else
       flags |= FFTW_ESTIMATE;
+#endif /* WHATEVER_CONFIG_FFTALIGNED */
       break;
     default: /* exhaustive measurement */
       flags |= FFTW_EXHAUSTIVE;
@@ -203,8 +212,13 @@ REAL4FFTPlan * XLALCreateREAL4FFTPlan( UINT4 size, int fwdflg, int measurelvl )
 
   /* allocate memory for the plan and the temporary arrays */
   plan = XLALMalloc( sizeof( *plan ) );
+#ifdef WHATEVER_CONFIG_FFTALIGNED
+  tmp1 = XLALAlignedMalloc( size * sizeof( *tmp1 ) );
+  tmp2 = XLALAlignedMalloc( size * sizeof( *tmp2 ) );
+#else
   tmp1 = XLALMalloc( size * sizeof( *tmp1 ) );
   tmp2 = XLALMalloc( size * sizeof( *tmp2 ) );
+#endif /* WHATEVER_CONFIG_FFTALIGNED */
   if ( ! plan || ! tmp1 || ! tmp2 )
   {
     XLALFree( plan );
@@ -290,7 +304,11 @@ int XLALREAL4ForwardFFT( COMPLEX8Vector *output, const REAL4Vector *input, const
     XLAL_ERROR( XLAL_EBADLEN );
 
   /* create temporary storage space */
+#ifdef WHATEVER_CONFIG_FFTALIGNED
+  tmp = XLALAlignedMalloc( plan->size * sizeof( *tmp ) );
+#else
   tmp = XLALMalloc( plan->size * sizeof( *tmp ) );
+#endif /* WHATEVER_CONFIG_FFTALIGNED */
   if ( ! tmp )
     XLAL_ERROR( XLAL_ENOMEM );
 
@@ -334,7 +352,11 @@ int XLALREAL4ReverseFFT( REAL4Vector *output, const COMPLEX8Vector *input, const
     XLAL_ERROR( XLAL_EDOM );  /* imaginary part of Nyquist must be zero */
 
   /* create temporary storage space */
+#ifdef WHATEVER_CONFIG_FFTALIGNED
+  tmp = XLALAlignedMalloc( plan->size * sizeof( *tmp ) );
+#else
   tmp = XLALMalloc( plan->size * sizeof( *tmp ) );
+#endif /* WHATEVER_CONFIG_FFTALIGNED */
   if ( ! tmp )
     XLAL_ERROR( XLAL_ENOMEM );
 
@@ -395,7 +417,11 @@ int XLALREAL4PowerSpectrum( REAL4Vector * _LAL_RESTRICT_ spec, const REAL4Vector
     XLAL_ERROR( XLAL_EBADLEN );
 
   /* allocate temporary storage space */
+#ifdef WHATEVER_CONFIG_FFTALIGNED
+  tmp = XLALAlignedMalloc( plan->size * sizeof( *tmp ) );
+#else
   tmp = XLALMalloc( plan->size * sizeof( *tmp ) );
+#endif /* WHATEVER_CONFIG_FFTALIGNED */
   if ( ! tmp )
     XLAL_ERROR( XLAL_ENOMEM );
 
@@ -440,7 +466,11 @@ REAL8FFTPlan * XLALCreateREAL8FFTPlan( UINT4 size, int fwdflg, int measurelvl )
   REAL8FFTPlan *plan;
   REAL8 *tmp1;
   REAL8 *tmp2;
+#ifdef WHATEVER_CONFIG_FFTALIGNED
+  int flags = 0;
+#else
   int flags = FFTW_UNALIGNED;
+#endif /* WHATEVER_CONFIG_FFTALIGNED */
 
   if ( ! size )
     XLAL_ERROR_NULL( XLAL_EBADLEN );
@@ -450,7 +480,11 @@ REAL8FFTPlan * XLALCreateREAL8FFTPlan( UINT4 size, int fwdflg, int measurelvl )
   switch ( measurelvl )
   {
     case 0: /* estimate */
+#ifdef WHATEVER_CONFIG_FFTALIGNED
+      flags = FFTW_ESTIMATE;
+#else
       flags |= FFTW_ESTIMATE;
+#endif /* WHATEVER_CONFIG_FFTALIGNED */
       break;
     default: /* exhaustive measurement */
       flags |= FFTW_EXHAUSTIVE;
@@ -465,8 +499,13 @@ REAL8FFTPlan * XLALCreateREAL8FFTPlan( UINT4 size, int fwdflg, int measurelvl )
 
   /* allocate memory for the plan and the temporary arrays */
   plan = XLALMalloc( sizeof( *plan ) );
+#ifdef WHATEVER_CONFIG_FFTALIGNED
+  tmp1 = XLALAlignedMalloc( size * sizeof( *tmp1 ) );
+  tmp2 = XLALAlignedMalloc( size * sizeof( *tmp2 ) );
+#else
   tmp1 = XLALMalloc( size * sizeof( *tmp1 ) );
   tmp2 = XLALMalloc( size * sizeof( *tmp2 ) );
+#endif /* WHATEVER_CONFIG_FFTALIGNED */
   if ( ! plan || ! tmp1 || ! tmp2 )
   {
     XLALFree( plan );
@@ -552,7 +591,11 @@ int XLALREAL8ForwardFFT( COMPLEX16Vector *output, const REAL8Vector *input, cons
     XLAL_ERROR( XLAL_EBADLEN );
 
   /* create temporary storage space */
+#ifdef WHATEVER_CONFIG_FFTALIGNED
+  tmp = XLALAlignedMalloc( plan->size * sizeof( *tmp ) );
+#else
   tmp = XLALMalloc( plan->size * sizeof( *tmp ) );
+#endif /* WHATEVER_CONFIG_FFTALIGNED */
   if ( ! tmp )
     XLAL_ERROR( XLAL_ENOMEM );
 
@@ -596,7 +639,11 @@ int XLALREAL8ReverseFFT( REAL8Vector *output, const COMPLEX16Vector *input, cons
     XLAL_ERROR( XLAL_EDOM );  /* imaginary part of Nyquist must be zero */
 
   /* create temporary storage space */
+#ifdef WHATEVER_CONFIG_FFTALIGNED
+  tmp = XLALAlignedMalloc( plan->size * sizeof( *tmp ) );
+#else
   tmp = XLALMalloc( plan->size * sizeof( *tmp ) );
+#endif /* WHATEVER_CONFIG_FFTALIGNED */
   if ( ! tmp )
     XLAL_ERROR( XLAL_ENOMEM );
 
@@ -657,7 +704,11 @@ int XLALREAL8PowerSpectrum( REAL8Vector *_LAL_RESTRICT_ spec, const REAL8Vector 
     XLAL_ERROR( XLAL_EBADLEN );
 
   /* allocate temporary storage space */
+#ifdef WHATEVER_CONFIG_FFTALIGNED
+  tmp = XLALAlignedMalloc( plan->size * sizeof( *tmp ) );
+#else
   tmp = XLALMalloc( plan->size * sizeof( *tmp ) );
+#endif /* WHATEVER_CONFIG_FFTALIGNED */
   if ( ! tmp )
     XLAL_ERROR( XLAL_ENOMEM );
 
