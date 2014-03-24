@@ -138,6 +138,7 @@ int main(int argc, char *argv[]){
   BOOLEAN dopplerShiftFlag = FALSE;
   toplist_t *ccToplist=NULL;
   CrossCorrBinaryOutputEntry thisCandidate;
+  UINT4 checksum;
 
   /* initialize and register user variables */
   if ( XLALInitUserVars( &uvar ) != XLAL_SUCCESS ) {
@@ -438,6 +439,11 @@ int main(int argc, char *argv[]){
 
 
   /* write candidates to file */
+  sort_crossCorrBinary_toplist( ccToplist );
+  /* add error checking */
+  
+  final_write_crossCorrBinary_toplist_to_file( ccToplist, uvar.toplistFilename, &checksum);
+
 
   XLALDestroyREAL8Vector ( signalPhases );
   XLALDestroyREAL8Vector ( kappaValues );
