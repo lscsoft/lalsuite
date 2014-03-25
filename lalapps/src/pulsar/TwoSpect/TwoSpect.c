@@ -186,18 +186,17 @@ int main(int argc, char *argv[])
    else if (args_info.chooseSeed_given) inputParams->randSeed = IFOmultiplier*(UINT8)fabs(round(inputParams->fmin + inputParams->fspan + inputParams->Pmin + inputParams->Pmax + inputParams->dfmin + inputParams->dfmax + dopplerpos.Alpha + dopplerpos.Delta));
    else inputParams->randSeed = 0;
    gsl_rng_set(inputParams->rng, inputParams->randSeed);     //Set the random number generator with the given seed
-   
-   
+
    //Basic units
    REAL4 tempfspan = inputParams->fspan + 2.0*inputParams->dfmax + (inputParams->blksize-1 + 12)/inputParams->Tcoh;     //= fspan+2*dfmax+extrabins + running median blocksize-1 (Hz)
    INT4 tempnumfbins = (INT4)round(tempfspan*inputParams->Tcoh)+1;                        //= number of bins in tempfspan
    fprintf(LOG, "FAR for templates = %g\n", inputParams->templatefar);
    fprintf(stderr, "FAR for templates = %g\n", inputParams->templatefar);
-   
+
    //Allocate memory for ffdata structure
    ffdataStruct *ffdata = NULL;
    XLAL_CHECK( (ffdata = new_ffdata(inputParams)) != NULL, XLAL_EFUNC );
-   
+
    //Allocate lists of candidates with initially 100 available slots (will check and rescale later, if necessary)
    //Also allocate for an upperLimitVector of length 1
    candidateVector *gaussCandidates1 = NULL, *gaussCandidates2 = NULL, *gaussCandidates3 = NULL, *gaussCandidates4 = NULL, *exactCandidates1 = NULL, *exactCandidates2 = NULL, *ihsCandidates = NULL;
@@ -210,15 +209,15 @@ int main(int argc, char *argv[])
    XLAL_CHECK( (ihsCandidates = new_candidateVector(100)) != NULL, XLAL_EFUNC, "new_CandidateVector(%d) failed\n", 100 );
    UpperLimitVector *upperlimits = NULL;
    XLAL_CHECK( (upperlimits = new_UpperLimitVector(1)) != NULL, XLAL_EFUNC, "new_UpperLimitVector(%d) failed.\n", 1 );
-   
+
    //Second fft plan, only need to make this once for all the exact templates
    REAL4FFTPlan *secondFFTplan = NULL;
    XLAL_CHECK( (secondFFTplan = XLALCreateForwardREAL4FFTPlan(ffdata->numffts, inputParams->FFTplanFlag)) != NULL, XLAL_EFUNC );
-   
+
    //Maximum number of IHS values to sum = twice the maximum modulation depth
    //Minimum number of IHS values to sum = twice the minimum modulation depth
    INT4 maxrows = (INT4)round(2.0*inputParams->dfmax*inputParams->Tcoh)+1;
-   
+
    //Assume maximum bin shift possible
    inputParams->maxbinshift = (INT4)round(detectorVmax * (inputParams->fmin+0.5*inputParams->fspan) * inputParams->Tcoh)+1;
 
@@ -238,13 +237,10 @@ int main(int argc, char *argv[])
       fprintf(stderr, "done\n");
    } else {
       MultiLIGOTimeGPSVector *multiTimestamps = NULL;
-      if (args_info.sftDir_given || args_info.sftFile_given) {
-         XLAL_CHECK( (multiTimestamps = getMultiTimeStampsFromSFTs(inputParams)) != NULL, XLAL_EFUNC );
-      } else if (args_info.timestampsFile_given) {
-         XLAL_CHECK( (multiTimestamps = getMultiTimeStampsFromTimeStampsFile(args_info.timestampsFile_arg, inputParams)) != NULL, XLAL_EFUNC );
-      } else if (args_info.segmentFile_given) {
-         XLAL_CHECK( (multiTimestamps = getMultiTimeStampsFromSegmentsFile(args_info.segmentFile_arg, inputParams)) != NULL, XLAL_EFUNC );
-      } else {
+      if (args_info.sftDir_given || args_info.sftFile_given) XLAL_CHECK( (multiTimestamps = getMultiTimeStampsFromSFTs(inputParams)) != NULL, XLAL_EFUNC );
+      else if (args_info.timestampsFile_given) XLAL_CHECK( (multiTimestamps = getMultiTimeStampsFromTimeStampsFile(args_info.timestampsFile_arg, inputParams)) != NULL, XLAL_EFUNC );
+      else if (args_info.segmentFile_given) XLAL_CHECK( (multiTimestamps = getMultiTimeStampsFromSegmentsFile(args_info.segmentFile_arg, inputParams)) != NULL, XLAL_EFUNC );
+      else {
          LIGOTimeGPS tStart;
          XLALGPSSetREAL8 ( &tStart, inputParams->searchstarttime );
          XLAL_CHECK( xlalErrno == 0, XLAL_EFUNC, "XLALGPSSetREAL8 failed\n" );
@@ -265,15 +261,15 @@ int main(int argc, char *argv[])
 
       MultiSFTVector *signalSFTs = NULL, *sftvector = NULL;
       PulsarParamsVector *injectionSources = NULL;
+      //If injection sources then read them and make signal sfts
       if (args_info.injectionSources_given) {
          XLAL_CHECK( (injectionSources =  XLALPulsarParamsFromUserInput(args_info.injectionSources_arg)) != NULL, XLAL_EFUNC );
-         if (!inputParams->signalOnly) {
-            XLAL_CHECK( XLALCWMakeFakeMultiData(&signalSFTs, NULL, injectionSources, &DataParams, edat) == XLAL_SUCCESS, XLAL_EFUNC );
-         } else {
-            XLAL_CHECK( XLALCWMakeFakeMultiData(&sftvector, NULL, injectionSources, &DataParams, edat) == XLAL_SUCCESS, XLAL_EFUNC );
-         }
+
+         if (!inputParams->signalOnly) XLAL_CHECK( XLALCWMakeFakeMultiData(&signalSFTs, NULL, injectionSources, &DataParams, edat) == XLAL_SUCCESS, XLAL_EFUNC );
+         else XLAL_CHECK( XLALCWMakeFakeMultiData(&sftvector, NULL, injectionSources, &DataParams, edat) == XLAL_SUCCESS, XLAL_EFUNC );
       } // if there are injections
 
+      //If not signal only, create sfts that include noise or extract a band from real data
       if (!inputParams->signalOnly) {
          if (args_info.gaussNoiseWithSFTgaps_given || args_info.timestampsFile_given || args_info.segmentFile_given || !(args_info.sftDir_given || args_info.sftFile_given)) {
             DataParams.detInfo.sqrtSn[0] = args_info.avesqrtSh_arg;
@@ -289,8 +285,8 @@ int main(int argc, char *argv[])
          }
       } // if not signal only SFTs
 
+      //Add the SFT vectors together
       if (args_info.injectionSources_given && !inputParams->signalOnly) {
-         //Add the SFT vectors together
          XLAL_CHECK( XLALMultiSFTVectorAdd(sftvector, signalSFTs) == XLAL_SUCCESS, XLAL_EFUNC );
          XLALDestroyMultiSFTVector(signalSFTs);
       }
@@ -438,7 +434,7 @@ int main(int argc, char *argv[])
    if (inputParams->signalOnly==0) XLAL_CHECK( tfRngMeans(background, tfdata, ffdata->numffts, ffdata->numfbins + 2*inputParams->maxbinshift, inputParams->blksize) == XLAL_SUCCESS, XLAL_EFUNC );
    else memset(background->data, 0, sizeof(REAL4)*background->length);
 
-   //TODO: Remove this! Try cleaning lines
+   //TEST: Try cleaning lines
    /* XLAL_CHECK( cleanLines(tfdata, background, lines, inputParams) == XLAL_SUCCESS, XLAL_EFUNC ); */
    /* if (lines!=NULL) { */
    /*    if (inputParams->signalOnly==0) XLAL_CHECK( tfRngMeans(background, tfdata, ffdata->numffts, ffdata->numfbins + 2*inputParams->maxbinshift, inputParams->blksize) == XLAL_SUCCESS, XLAL_EFUNC ); */
@@ -472,10 +468,12 @@ int main(int argc, char *argv[])
    }
    
    //I wrote this to compensate for a bad input of the expected noise floor
-   REAL8 backgroundmeannormfactor = 0.0;
+   REAL8 backgroundmeannormfactor = 1.0;
    //if (inputParams->signalOnly==0) backgroundmeannormfactor = 1.0/calcMedian_ignoreZeros(background);
-   if (inputParams->signalOnly==0) backgroundmeannormfactor = calcHarmonicMean(background, ffdata->numfbins + 2*inputParams->maxbinshift, ffdata->numffts);
-   else backgroundmeannormfactor = 1.0;
+   if (inputParams->signalOnly==0) {
+      backgroundmeannormfactor = 1.0/calcHarmonicMean(background, ffdata->numfbins + 2*inputParams->maxbinshift, ffdata->numffts);
+      XLAL_CHECK( xlalErrno == 0, XLAL_EFUNC );
+   }
    ffdata->tfnormalization *= backgroundmeannormfactor;
    fprintf(LOG, "done\n");
    fprintf(stderr, "done\n");
