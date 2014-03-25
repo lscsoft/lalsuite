@@ -155,7 +155,8 @@ int XLALCalculatePulsarCrossCorrStatistic
    UINT4              numBins,
    SFTPairIndexList *sftPairs,
    SFTIndexList   *sftIndices,
-   MultiSFTVector  *inputSFTs
+   MultiSFTVector  *inputSFTs,
+   REAL8                 Tsft
   )
  ;
 

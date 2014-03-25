@@ -278,7 +278,8 @@ int XLALCalculatePulsarCrossCorrStatistic
  UINT4              numBins,   /* Input: Number of bins to include in calc */
  SFTPairIndexList *sftPairs,   /* Input: flat list of SFT pairs */
  SFTIndexList   *sftIndices,   /* Input: flat list of SFTs */
- MultiSFTVector  *inputSFTs    /* Input: SFT data */
+ MultiSFTVector  *inputSFTs,   /* Input: SFT data */
+ REAL8                 Tsft    /* Input: SFT duration */
  )
 {
 
@@ -295,7 +296,8 @@ int XLALCalculatePulsarCrossCorrStatistic
     XLALPrintError("Lengths of pair-indexed lists don't match!");
     XLAL_ERROR(XLAL_EBADLEN );
   }
-
+  REAL8 nume=0;
+  REAL8 curlyGSqr=0;
   *ccStat = 0.0;
   *evSquared = 0.0;
   for (UINT8 alpha=0; alpha < numPairs; alpha++) {
@@ -358,15 +360,16 @@ int XLALCalculatePulsarCrossCorrStatistic
       for (UINT8 k=0; k < numBins; k++) {
 	COMPLEX16 data2 = dataArray2[lowestBins->data[sftNum2]+k];
 	sincFactor *= gsl_sf_sinc(kappaValues->data[sftNum2]+k);
-	*ccStat += crealf ( GalphaCC * ccSign * sincFactor
-			    * conj(data1) * data2 );
+	nume += creal ( GalphaCC * ccSign * sincFactor * conj(data1) * data2 / SQUARE(Tsft) );
 	REAL8 GalphaAmp = curlyGAmp->data[alpha] * sincFactor;
-	*evSquared += SQUARE( GalphaAmp );
+	curlyGSqr += SQUARE( GalphaAmp );
 	ccSign *= -1;
       }
       baseCCSign *= -1;
     }
   }
+  *evSquared =sqrt(2*curlyGSqr);
+  *ccStat = nume/(*evSquared);
   return XLAL_SUCCESS;
 }
 /*calculate metric diagnol components, also include the estimation of sensitivity E[rho]/(h_0)^2*/
@@ -374,12 +377,12 @@ int XLALFindLMXBCrossCorrDiagMetric
   (
    REAL8             *hSens,         /*Output:sensitivity*/
    REAL8             *g_ff,          /*Output:metric elements*/
-   REAL8             *g_aa, 
-   REAL8             *g_TT, 
+   REAL8             *g_aa,
+   REAL8             *g_TT,
    PulsarDopplerParams DopplerParams, /* Input: pulsar/binary orbit paramaters*/
-   REAL8Vector       *G_alpha,        /* Input: vector of sigma_alpha values */ 
+   REAL8Vector       *G_alpha,        /* Input: vector of sigma_alpha values */
    SFTPairIndexList  *pairIndexList,  /* Input: list of SFT pairs */
-   SFTIndexList      *indexList,      /* Input: list of SFTs */   
+   SFTIndexList      *indexList,      /* Input: list of SFTs */
    MultiSFTVector    *sfts            /* Input: set of per-detector SFT vectors */
    /*REAL8             *devTsq,  */   /*Output: mean time deviation^2*/
    /*REAL8             *g_pp,*/
@@ -431,7 +434,7 @@ int XLALFindLMXBCrossCorrDiagMetric
   *g_aa= SinSquaWeightedAve* SQUARE(LAL_PI*DopplerParams.fkdot[0]);
   *g_TT= SinSquaWeightedAve* SQUARE(2*SQUARE(LAL_PI)*(DopplerParams.fkdot[0])*(DopplerParams.asini)/(DopplerParams.period));
 
-  
+
   return XLAL_SUCCESS;
 
 
