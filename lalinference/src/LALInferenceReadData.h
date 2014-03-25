@@ -53,8 +53,6 @@ struct tagLALInferenceIFOData * LALInferenceReadData (ProcessParamsTable * comma
  */
 void LALInferenceInjectInspiralSignal(struct tagLALInferenceIFOData *IFOdata, ProcessParamsTable *commandLine);
 
-void makeWhiteData(LALInferenceIFOData *IFOdata);
-
 /**
  * \brief Function to set up the ROQ structure
  * Sets up the ROQ sturtucture into a pre-existing \c IFOdata structure,
