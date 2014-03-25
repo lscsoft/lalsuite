@@ -34,6 +34,31 @@
 #include <lal/XLALError.h>
 #include "LALSimInspiralPNCoefficients.c"
 
+int XLALSimInspiralTaylorF2Phasing(
+        PNPhasingSeries **pn,
+        const REAL8 m1,
+        const REAL8 m2,
+        const REAL8 chi1L,
+        const REAL8 chi2L,
+        const LALSimInspiralSpinOrder spinO
+	)
+{
+    PNPhasingSeries *pfa;
+
+    if (!pn) XLAL_ERROR(XLAL_EFAULT);
+    if (*pn) XLAL_ERROR(XLAL_EFAULT);
+
+
+    pfa = (PNPhasingSeries *) LALMalloc(sizeof(PNPhasingSeries));
+
+    XLALSimInspiralPNPhasing_F2WithSO(pfa, m1, m2, chi1L, chi2L, spinO);
+
+    *pn = pfa;
+
+    return XLAL_SUCCESS;
+}
+
+
 /**
  * Computes the stationary phase approximation to the Fourier transform of
  * a chirp waveform with phase given by \eqref{eq_InspiralFourierPhase_f2}

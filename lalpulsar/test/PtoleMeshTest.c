@@ -23,7 +23,7 @@
  * \ingroup PtoleMetric_h
  * \brief Tests and showcases the combination of \ref PtoleMetric_h and \ref TwoDMesh_h modules.
  *
- * ### Program \c PtoleMeshTest ###
+ * ### Program PtoleMeshTest ###
  *
  *
  * ### Usage ###

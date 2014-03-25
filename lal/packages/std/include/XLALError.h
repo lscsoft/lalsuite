@@ -226,7 +226,17 @@ void XLALVPrintInfoMessage(const char *func, const char *file, int line,
 int XLALPrintProgressBar(double);
 
 /** Prints a deprecation warning at the "warning" verbosity level. */
-int XLALPrintDeprecationWarning(const char *old, const char *replacement);
+#define XLAL_PRINT_DEPRECATION_WARNING(replacement) \
+  do { \
+    static int _xlal_print_deprecation_warning_ = 1; \
+    if (_xlal_print_deprecation_warning_) { \
+      XLALPrintWarning( \
+        "\nDEPRECATION WARNING: program has invoked obsolete function %s(). " \
+        "Please see %s() for information about a replacement.\n", \
+        __func__, replacement); \
+      _xlal_print_deprecation_warning_ = 0; \
+    } \
+  } while(0)
 
 
 /*
@@ -275,14 +285,6 @@ int XLALPrintDeprecationWarning(const char *old, const char *replacement);
 	XLALPrintInfoMessage(__func__, __FILE__, __LINE__, __VA_ARGS__)
 
 
-
-/* silence gcc warnings about certain (possibly) unused symbols */
-#ifdef __GNUC__
-#define UNUSED __attribute__ ((unused))
-#else
-#define UNUSED
-#endif
-
 /*
  *
  * The LAL specification requires that XLAL functions that return a
@@ -318,7 +320,9 @@ int XLALPrintDeprecationWarning(const char *old, const char *replacement);
  */
 
 /** Returns the value of the XLAL <tt>REAL4</tt> failure NaN. */
-static REAL4 UNUSED XLALREAL4FailNaN(void)
+static _LAL_INLINE_ REAL4 XLALREAL4FailNaN(void);
+#ifndef SWIG    /* exclude from SWIG interface */
+static _LAL_INLINE_ REAL4 XLALREAL4FailNaN(void)
 {
     volatile const union {
         INT4 i;
@@ -327,9 +331,12 @@ static REAL4 UNUSED XLALREAL4FailNaN(void)
     XLAL_REAL4_FAIL_NAN_INT};
     return val.x;
 }
+#endif /* SWIG */
 
 /** Returns the value of the XLAL <tt>REAL8</tt> failure NaN. */
-static REAL8 UNUSED XLALREAL8FailNaN(void)
+static _LAL_INLINE_ REAL8 XLALREAL8FailNaN(void);
+#ifndef SWIG    /* exclude from SWIG interface */
+static _LAL_INLINE_ REAL8 XLALREAL8FailNaN(void)
 {
     volatile const union {
         INT8 i;
@@ -338,9 +345,12 @@ static REAL8 UNUSED XLALREAL8FailNaN(void)
     XLAL_REAL8_FAIL_NAN_INT};
     return val.x;
 }
+#endif /* SWIG */
 
 /** Tests if a value is an XLAL <tt>REAL4</tt> failure NaN. */
-static int UNUSED XLALIsREAL4FailNaN(REAL4 val)
+static _LAL_INLINE_ int XLALIsREAL4FailNaN(REAL4 val);
+#ifndef SWIG    /* exclude from SWIG interface */
+static _LAL_INLINE_ int XLALIsREAL4FailNaN(REAL4 val)
 {
     volatile const union {
         INT4 i;
@@ -358,9 +368,12 @@ static int UNUSED XLALIsREAL4FailNaN(REAL4 val)
             return 0;
     return 1;
 }
+#endif /* SWIG */
 
 /** Tests if a value is an XLAL <tt>REAL8</tt> failure NaN. */
-static int UNUSED XLALIsREAL8FailNaN(REAL8 val)
+static _LAL_INLINE_ int XLALIsREAL8FailNaN(REAL8 val);
+#ifndef SWIG    /* exclude from SWIG interface */
+static _LAL_INLINE_ int XLALIsREAL8FailNaN(REAL8 val)
 {
     volatile const union {
         INT8 i;
@@ -378,8 +391,7 @@ static int UNUSED XLALIsREAL8FailNaN(REAL8 val)
             return 0;
     return 1;
 }
-
-#undef UNUSED
+#endif /* SWIG */
 
 /* Here are the macro constants for the fail NaNs. */
 #define XLAL_REAL4_FAIL_NAN ( XLALREAL4FailNaN() ) /**< Floating-point value of the XLAL <tt>REAL4</tt> failure NaN. */

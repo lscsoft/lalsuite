@@ -27,11 +27,9 @@ else
     debug=0	## default=quiet
 fi
 
-if [ -n "${LALPULSAR_DATADIR}" ]; then
-    mfdCODE="${mfdCODE} -E ${LALPULSAR_DATADIR}"
-else
+if [ -z "${LAL_DATA_PATH}" ]; then
     echo
-    echo "Need environment-variable LALPULSAR_DATADIR to be set to"
+    echo "Need environment-variable LAL_DATA_PATH to be set to include"
     echo "your ephemeris-directory (e.g. /usr/local/share/lalpulsar)"
     echo "This might indicate an incomplete LAL+LALPULSAR installation"
     echo

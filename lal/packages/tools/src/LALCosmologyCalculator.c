@@ -223,7 +223,7 @@ double XLALIntegrateComovingVolumeDensity(LALCosmologicalParameters *omega, doub
 }
 /**
  * Creates a LALCosmologicalParameters structure from the values of the cosmological parameters.
- * Note that the boundary condition \Omega_m + \Omega_k + \Omega_\Lambda = 1 is imposed here.
+ * Note that the boundary condition \f$\Omega_m + \Omega_k + \Omega_\Lambda = 1\f$ is imposed here.
  */
 LALCosmologicalParameters *XLALCreateCosmologicalParameters(double h, double om, double ol, double w0, double w1, double w2)
 {

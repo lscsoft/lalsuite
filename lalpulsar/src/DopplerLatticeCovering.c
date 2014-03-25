@@ -497,7 +497,7 @@ XLALgetCurrentDopplerPos ( PulsarDopplerParams *pos, const DopplerLatticeScan *s
   pos->Alpha		= skypos.longitude;
   pos->Delta		= skypos.latitude;
   memcpy ( pos->fkdot, doppler.fkdot, sizeof(pos->fkdot) );
-  pos->orbit 		= NULL;		/* FIXME: not supported yet */
+  pos->asini		= 0;   // isolated pulsar
 
   return 0;
 } /* XLALgetCurrentDopplerPos() */

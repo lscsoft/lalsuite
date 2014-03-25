@@ -8,11 +8,9 @@ $(ACLOCAL_M4): $(am__aclocal_m4_deps)
 
 EXTRA_DIST = \
 	COPYING \
-	lalburst.pc.in \
-	lalburst.spec.in \
 	lalburst.spec \
-	aclocal.m4 \
-	doc
+	doc \
+	$(DATA)
 
 SUBDIRS = \
 	gnuscripts \
@@ -25,6 +23,8 @@ SUBDIRS = \
 
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = lalburst.pc
+noinst_DATA = lalburst-uninstalled.pc
+BUILT_SOURCES = lalburst-uninstalled.pc
 
 DISTCLEANFILES = config.lt
 

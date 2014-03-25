@@ -106,8 +106,8 @@
  * LALCReadFrequencySeries()
  * LALSPrintFrequencySeries()
  * LALCPrintFrequencySeries()
- * LALUnitAsString()
- * LALUnitCompare()
+ * XLALUnitAsString()
+ * XLALUnitCompare()
  * LALCheckMemoryLeaks()
  * \endcode
  *
@@ -143,7 +143,6 @@
 #define STOCHASTICINVERSENOISETESTC_MSGEUSE "Bad user-entered data"
 
 
-#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/LALStdlib.h>
 
 #include <math.h>
@@ -166,6 +165,7 @@
 #include <lal/Units.h>
 
 #include "CheckStatus.h"
+#include "CheckStatus.c"
 
 #define STOCHASTICINVERSENOISETESTC_TRUE     1
 #define STOCHASTICINVERSENOISETESTC_FALSE    0
@@ -213,11 +213,10 @@ int main(int argc, char *argv[])
   REAL4      expectedReal;
   REAL4      expectedImag;
 
-  LALUnitPair              unitPair;
   LALUnit                  expectedUnit;
-  BOOLEAN                  result;
+  int                      result;
 
-  CHARVector               *unitString = NULL;
+  CHAR                     unitString[LALUnitTextSize];
 
 
   ParseOptions (argc, argv);
@@ -683,8 +682,7 @@ int main(int argc, char *argv[])
      f = i*STOCHASTICINVERSENOISETESTC_DELTAF;
 
      wNoise.data->data[i]     = f*f*f;
-     wFilter.data->data[i].realf_FIXME = f*f;
-     wFilter.data->data[i].imagf_FIXME = f*f;
+     wFilter.data->data[i] = crectf( f*f, f*f );
    }
 
    /* fill inverse noise input and output */
@@ -748,54 +746,20 @@ int main(int argc, char *argv[])
    expectedUnit.unitNumerator[LALUnitIndexADCCount] = -1;
    expectedUnit.unitNumerator[LALUnitIndexStrain] = -1;
    expectedUnit.unitNumerator[LALUnitIndexSecond] = -1;
-   unitPair.unitOne = &expectedUnit;
-   unitPair.unitTwo = &(hwInvNoise.sampleUnits);
-   LALUnitCompare(&status, &result, &unitPair);
-   if ( ( code = CheckStatus(&status, 0 , "",
-			     STOCHASTICINVERSENOISETESTC_EFLS,
-			     STOCHASTICINVERSENOISETESTC_MSGEFLS) ) )
-   {
-     return code;
-   }
-
+   result = XLALUnitCompare(&expectedUnit, &(hwInvNoise.sampleUnits));
    if (optVerbose)
    {
-     LALCHARCreateVector(&status, &unitString, LALUnitTextSize);
-     if ( ( code = CheckStatus(&status, 0 , "",
-			       STOCHASTICINVERSENOISETESTC_EFLS,
-			       STOCHASTICINVERSENOISETESTC_MSGEFLS) ) )
-     {
-       return code;
+     if ( XLALUnitAsString( unitString, LALUnitTextSize, &(hwInvNoise.sampleUnits)) == NULL ) {
+       return STOCHASTICINVERSENOISETESTC_EFLS;
      }
-
-     LALUnitAsString( &status, unitString, unitPair.unitTwo );
-     if ( ( code = CheckStatus(&status, 0 , "",
-			       STOCHASTICINVERSENOISETESTC_EFLS,
-			       STOCHASTICINVERSENOISETESTC_MSGEFLS) ) )
-     {
-       return code;
+     printf( "Units are \"%s\", ", unitString );
+     if ( XLALUnitAsString( unitString, LALUnitTextSize, &expectedUnit) == NULL ) {
+       return STOCHASTICINVERSENOISETESTC_EFLS;
      }
-     printf( "Units of 1/PHW(f) are \"%s\", ", unitString->data );
-
-     LALUnitAsString( &status, unitString, unitPair.unitOne );
-     if ( ( code = CheckStatus(&status, 0 , "",
-			       STOCHASTICINVERSENOISETESTC_EFLS,
-			       STOCHASTICINVERSENOISETESTC_MSGEFLS) ) )
-     {
-       return code;
-     }
-     printf( "should be \"%s\"\n", unitString->data );
-
-     LALCHARDestroyVector(&status, &unitString);
-     if ( ( code = CheckStatus(&status, 0 , "",
-			       STOCHASTICINVERSENOISETESTC_EFLS,
-			       STOCHASTICINVERSENOISETESTC_MSGEFLS) ) )
-     {
-       return code;
-     }
+     printf( "should be \"%s\"\n", unitString );
    }
 
-   if (!result)
+   if (result != 0)
    {
      printf("  FAIL: Valid data test #1\n");
      if (optVerbose)
@@ -892,54 +856,20 @@ int main(int argc, char *argv[])
   expectedUnit = lalDimensionlessUnit;
   expectedUnit.unitNumerator[LALUnitIndexStrain] = -2;
   expectedUnit.unitNumerator[LALUnitIndexSecond] = -1;
-  unitPair.unitOne = &expectedUnit;
-  unitPair.unitTwo = &(invNoise.sampleUnits);
-  LALUnitCompare(&status, &result, &unitPair);
-  if ( ( code = CheckStatus(&status, 0 , "",
-			    STOCHASTICINVERSENOISETESTC_EFLS,
-			    STOCHASTICINVERSENOISETESTC_MSGEFLS) ) )
-  {
-    return code;
-  }
-
+  result = XLALUnitCompare(&expectedUnit, &(invNoise.sampleUnits));
   if (optVerbose)
   {
-    LALCHARCreateVector(&status, &unitString, LALUnitTextSize);
-    if ( ( code = CheckStatus(&status, 0 , "",
-			      STOCHASTICINVERSENOISETESTC_EFLS,
-			      STOCHASTICINVERSENOISETESTC_MSGEFLS) ) )
-    {
-      return code;
+    if ( XLALUnitAsString( unitString, LALUnitTextSize, &(invNoise.sampleUnits)) == NULL ) {
+      return STOCHASTICINVERSENOISETESTC_EFLS;
     }
-
-    LALUnitAsString( &status, unitString, unitPair.unitTwo );
-  if ( ( code = CheckStatus(&status, 0 , "",
-			    STOCHASTICINVERSENOISETESTC_EFLS,
-			    STOCHASTICINVERSENOISETESTC_MSGEFLS) ) )
-    {
-      return code;
+    printf( "Units are \"%s\", ", unitString );
+    if ( XLALUnitAsString( unitString, LALUnitTextSize, &expectedUnit) == NULL ) {
+      return STOCHASTICINVERSENOISETESTC_EFLS;
     }
-    printf( "Units of 1/P(f) are \"%s\", ", unitString->data );
-
-    LALUnitAsString( &status, unitString, unitPair.unitOne );
-  if ( ( code = CheckStatus(&status, 0 , "",
-			    STOCHASTICINVERSENOISETESTC_EFLS,
-			    STOCHASTICINVERSENOISETESTC_MSGEFLS) ) )
-    {
-      return code;
-    }
-    printf( "should be \"%s\"\n", unitString->data );
-
-    LALCHARDestroyVector(&status, &unitString);
-  if ( ( code = CheckStatus(&status, 0 , "",
-			    STOCHASTICINVERSENOISETESTC_EFLS,
-			    STOCHASTICINVERSENOISETESTC_MSGEFLS) ) )
-    {
-      return code;
-    }
+    printf( "should be \"%s\"\n", unitString );
   }
 
-  if (!result)
+  if (result != 0)
   {
     printf("  FAIL: Valid data test #1\n");
     if (optVerbose)

@@ -87,7 +87,7 @@
 #include <lal/LALConstants.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALString.h>
-#include <lal/ComputeFstat.h>
+#include <lal/SSBtimes.h>
 
 #ifdef __GNUC__
 #define UNUSED __attribute__ ((unused))
@@ -982,6 +982,9 @@ XLALReadTEMPOParFile( BinaryPulsarParams *output,
   output->phi21Err=0.;
 
   output->wave_omErr = 0.0;
+
+  output->cgw = 0.0; /* initialise the GW speed to be the speed of light */
+  output->cgwErr = 0.;
 
   output->units = NULL;
   output->ephem = NULL;
@@ -1916,6 +1919,15 @@ XLALReadTEMPOParFile( BinaryPulsarParams *output,
 
       if(atoi(val[i+2])==1 && i+2<k){
         output->phi21Err = atof(val[i+3]);
+        j+=2;
+      }
+    }
+    else if( !strcmp(val[i],"cgw") || !strcmp(val[i],"CGW") ) {
+      output->cgw = atof(val[i+1]);
+      j++;
+
+      if(atoi(val[i+2])==1 && i+2<k){
+        output->cgwErr = atof(val[i+3]);
         j+=2;
       }
     }

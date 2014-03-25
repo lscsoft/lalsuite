@@ -162,7 +162,6 @@
 #define SIMULATETAYLORCWTESTC_MSGEPRINT "Wrote past end of message string"
 
 
-#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <math.h>
 #include <stdlib.h>
 #include <lal/LALStdio.h>
@@ -493,8 +492,7 @@ main(int argc, char **argv)
     /* Convert response function to a transfer function. */
     SUB( LALCCreateVector( &stat, &unity, response->length ), &stat );
     for ( i = 0; i < response->length; i++ ) {
-      unity->data[i].realf_FIXME = 1.0;
-      unity->data[i].imagf_FIXME = 0.0;
+      unity->data[i] = 1.0;
     }
     SUB( LALCCreateVector( &stat, &( transfer->data ),
                            response->length ), &stat );
@@ -510,10 +508,8 @@ main(int argc, char **argv)
     transfer->deltaF = FSTOP;
     SUB( LALCCreateVector( &stat, &( transfer->data ), 2 ),
          &stat );
-    transfer->data->data[0].realf_FIXME = 1.0;
-    transfer->data->data[1].realf_FIXME = 1.0;
-    transfer->data->data[0].imagf_FIXME = 0.0;
-    transfer->data->data[1].imagf_FIXME = 0.0;
+    transfer->data->data[0] = 1.0;
+    transfer->data->data[1] = 1.0;
   }
   LALDetector *lsite = NULL;
   EphemerisData *lephem = NULL;
@@ -561,18 +557,10 @@ main(int argc, char **argv)
 
 
   /* Set up units for the above structures. */
-  {
-    RAT4 negOne = { -1, 0 }; /* -1 as a rational number */
-    LALUnit unit;            /* structures for defining response units */
-    LALUnitPair pair;
-    output.sampleUnits = lalADCCountUnit;
-    pair.unitOne = &lalADCCountUnit;
-    pair.unitTwo = &lalStrainUnit;
-    SUB( LALUnitRaise( &stat, &unit, pair.unitTwo,
-                       &negOne ), &stat );
-    pair.unitTwo = &unit;
-    SUB( LALUnitMultiply( &stat, &(transfer->sampleUnits),
-                          &pair ), &stat );
+  output.sampleUnits = lalADCCountUnit;
+  if (XLALUnitDivide( &(transfer->sampleUnits),
+                      &lalADCCountUnit, &lalStrainUnit ) == NULL) {
+    return LAL_EXLAL;
   }
 
   detector.transfer = transfer;

@@ -11,7 +11,7 @@ def compute_weights(data, Nlive):
     log_wts=zeros(data.shape[0])
 
     log_vol_factor=log1p(-1.0/Nlive)
-    log_dvol = -1.0/Nlive# -log(Nlive)
+    log_dvol = -1.0/Nlive
 
     log_vol = 0.0
     log_ev = -float('inf')
@@ -21,15 +21,14 @@ def compute_weights(data, Nlive):
         log_wts[i] = log_like+log_this_vol
         log_ev = logaddexp(log_ev, log_wts[i])
         log_vol += log_vol_factor
-        #log_vol+=log_dvol
 
     avg_log_like_end = -float('inf')
     for i,log_l in enumerate(end_data):
         avg_log_like_end = logaddexp(avg_log_like_end, log_l)
     avg_log_like_end-=log(Nlive)
 
-    # Each remaining live point contributes Vol/Nlive*like to
-    # integral.
+    # Each remaining live point contributes (Vol/Nlive)*like to
+    # integral, but have posterior weights Vol relative to the other samples
     log_wts[-Nlive:] = log_vol+end_data
 
     log_ev = logaddexp(log_ev, avg_log_like_end + log_vol)

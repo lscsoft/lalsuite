@@ -102,6 +102,8 @@ extern const transientWindowRange_t empty_transientWindowRange;
 extern const transientFstatMap_t empty_transientFstatMap;
 
 /* ---------- exported API prototypes ---------- */
+int XLALParseTransientWindowName ( const char *windowName );
+
 int XLALGetTransientWindowTimespan ( UINT4 *t0, UINT4 *t1, transientWindow_t transientWindow );
 
 int XLALApplyTransientWindow ( REAL4TimeSeries *series, transientWindow_t TransientWindowParams );

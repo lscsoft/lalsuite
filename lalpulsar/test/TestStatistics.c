@@ -36,7 +36,7 @@
  * \ingroup Statistics_h
  * \brief Tests the statistics and the histogram number count of a given total Hough map.
  *
- * ### Program \ref TestStatistics.c ###
+ * ### Program TestStatistics.c ###
  *
  *
  * ### Usage ###

@@ -37,6 +37,7 @@
 #include <lal/LALInitBarycenter.h>
 #include <lal/AVFactories.h>
 #include <lal/SFTutils.h>
+#include <lal/LALString.h>
 
 #include <lal/FlatPulsarMetric.h>
 #include <lal/DopplerScan.h>
@@ -75,8 +76,10 @@ typedef struct {
   REAL8 Delta;		/**< skyposition Delta: radians, equatorial coords. */
   REAL8 Freq;		/**< target-frequency */
   REAL8 f1dot;		/**< target 1. spindown-value df/dt */
-  CHAR *ephemDir;	/**< directory of ephemeris-files */
-  CHAR *ephemYear;	/**< year-range of ephemeris-file to use */
+
+  CHAR *ephemEarth;	/**< Earth ephemeris file to use */
+  CHAR *ephemSun;	/**< Sun ephemeris file to use */
+
   INT4  metricType;	/**< Metric function to use: ptole_analytic, ptole-numeric, ... */
   REAL8 startTime;	/**< GPS start time of observation */
   REAL8 duration;	/**< length of observation in seconds */
@@ -84,8 +87,6 @@ typedef struct {
 } UserInput;
 
 typedef struct {
-  CHAR EphemEarth[512];		/**< filename of earth-ephemeris data */
-  CHAR EphemSun[512];		/**< filename of sun-ephemeris data */
   LALDetector *site;     	/**< detector of data to be searched */
   EphemerisData *ephemeris;/**< ephemeris data (from LALInitBarycenter()) */
   LIGOTimeGPS startTimeGPS;	/**< starttime of observation */
@@ -139,12 +140,7 @@ main(int argc, char *argv[])
   LAL_CALL ( LALDestroyUserVars (&status), &status);
 
 
-  if ( config.ephemeris )   /* Free ephemeris data */
-    {
-      LALFree(config.ephemeris->ephemE);
-      LALFree(config.ephemeris->ephemS);
-      LALFree(config.ephemeris);
-    }
+  XLALDestroyEphemerisData ( config.ephemeris );   /* Free ephemeris data */
   LALFree ( config.site );
 
   LALCheckMemoryLeaks(); 
@@ -166,13 +162,8 @@ initUserVars (LALStatus *status, UserInput *uvar, int argc, char *argv[])
   uvar->help = FALSE;
   uvar->IFO = NULL;
 
-#define EPHEM_YEARS  "00-19-DE405"
-  uvar->ephemYear = (CHAR*)LALCalloc (1, strlen(EPHEM_YEARS)+1);
-  strcpy (uvar->ephemYear, EPHEM_YEARS);
-
-#define DEFAULT_EPHEMDIR "env LAL_DATA_PATH"
-  uvar->ephemDir = (CHAR*)LALCalloc (1, strlen(DEFAULT_EPHEMDIR)+1);
-  strcpy (uvar->ephemDir, DEFAULT_EPHEMDIR);
+  uvar->ephemEarth = XLALStringDuplicate("earth00-19-DE405.dat.gz");
+  uvar->ephemSun = XLALStringDuplicate("sun00-19-DE405.dat.gz");
 
   uvar->f1dot = 0.0;
   uvar->metricType = LAL_PMETRIC_COH_PTOLE_ANALYTIC;
@@ -182,36 +173,23 @@ initUserVars (LALStatus *status, UserInput *uvar, int argc, char *argv[])
 
   /* ----- register all our user-variable ----- */
 
-  LALRegisterBOOLUserVar(status->statusPtr,	"help",		'h', UVAR_HELP,     
-			 "Print this help/usage message", &(uvar->help));
-  LALRegisterSTRINGUserVar(status->statusPtr,	"IFO",		'I', UVAR_REQUIRED, 
-			   "Detector: H1, H2, L1, G1, ...", &(uvar->IFO));
+  XLALregBOOLUserStruct (  help,		'h', UVAR_HELP,     "Print this help/usage message" );
+  XLALregSTRINGUserStruct (IFO,			'I', UVAR_REQUIRED, "Detector: H1, H2, L1, G1, ..." );
 
-  LALRegisterREALUserVar(status->statusPtr,	"Alpha",		'a', UVAR_REQUIRED,
-			 "skyposition Alpha in radians, equatorial coords.", &(uvar->Alpha));
-  LALRegisterREALUserVar(status->statusPtr,	"Delta", 		'd', UVAR_REQUIRED,
-			 "skyposition Delta in radians, equatorial coords.", &(uvar->Delta));
-  LALRegisterREALUserVar(status->statusPtr,	"Freq", 		'f', UVAR_REQUIRED, 
-			 "target frequency", &(uvar->Freq) );
-  LALRegisterREALUserVar(status->statusPtr,	"f1dot", 		's', UVAR_OPTIONAL, 
-			 "first spindown-value df/dt", &(uvar->f1dot));
-  LALRegisterINTUserVar(status->statusPtr,        "metricType",     'M', UVAR_OPTIONAL, 
-			"Metric: 0=none,1=Ptole-analytic,2=Ptole-numeric, 3=exact, 4=FLAT[old]", 
-			&(uvar->metricType));
-  LALRegisterBOOLUserVar(status->statusPtr,	"projectMetric",	 0,  UVAR_OPTIONAL,
-			 "Project metric onto frequency-surface", &(uvar->projectMetric));
-  LALRegisterREALUserVar(status->statusPtr,       "startTime",      't', UVAR_OPTIONAL, 
-			 "GPS start time of observation", &(uvar->startTime));
-  LALRegisterREALUserVar(status->statusPtr,	"duration",	'T', UVAR_REQUIRED, 
-			 "Duration of observation in seconds", &(uvar->duration));
-  
-  LALRegisterSTRINGUserVar(status->statusPtr,     "ephemDir",       'E', UVAR_OPTIONAL, 
-			   "Directory where Ephemeris files are located", &(uvar->ephemDir) );
-  LALRegisterSTRINGUserVar(status->statusPtr,     "ephemYear",      'y', UVAR_OPTIONAL, 
-			   "Year (or range of years) of ephemeris files to be used", &(uvar->ephemYear));
-  
-  /* read cmdline & cfgfile  */	
-  TRY (LALUserVarReadAllInput (status->statusPtr, argc, argv), status);  
+  XLALregREALUserStruct (  Alpha,		'a', UVAR_REQUIRED,  "skyposition Alpha in radians, equatorial coords." );
+  XLALregREALUserStruct (  Delta, 		'd', UVAR_REQUIRED,  "skyposition Delta in radians, equatorial coords." );
+  XLALregREALUserStruct (  Freq, 		'f', UVAR_REQUIRED,  "target frequency" );
+  XLALregREALUserStruct (  f1dot, 		's', UVAR_OPTIONAL,  "first spindown-value df/dt" );
+  XLALregINTUserStruct  (  metricType,   	'M', UVAR_OPTIONAL,  "Metric: 0=none,1=Ptole-analytic,2=Ptole-numeric, 3=exact, 4=FLAT[old]" );
+  XLALregBOOLUserStruct (  projectMetric,   	 0, UVAR_OPTIONAL,  "Project metric onto frequency-surface" );
+  XLALregREALUserStruct (  startTime,    	't', UVAR_OPTIONAL,  "GPS start time of observation" );
+  XLALregREALUserStruct (  duration,		'T', UVAR_REQUIRED,  "Duration of observation in seconds" );
+
+  XLALregSTRINGUserStruct (ephemEarth,   	 0,  UVAR_OPTIONAL,     "Earth ephemeris file to use");
+  XLALregSTRINGUserStruct (ephemSun,     	 0,  UVAR_OPTIONAL,     "Sun ephemeris file to use");
+
+  /* read cmdline & cfgfile  */
+  TRY (LALUserVarReadAllInput (status->statusPtr, argc, argv), status);
 
   DETATCHSTATUSPTR (status);
   RETURN (status);
@@ -234,25 +212,11 @@ initGeneral (LALStatus *status, ConfigVariables *cfg, const UserInput *uvar)
   /* ---------- init ephemeris if needed ---------- */
   if ( uvar->metricType ==  LAL_PMETRIC_COH_EPHEM )
     {
-      if (LALUserVarWasSet (&uvar->ephemDir) )
-	{
-	  sprintf(cfg->EphemEarth, "%s/earth%s.dat", uvar->ephemDir, uvar->ephemYear);
-	  sprintf(cfg->EphemSun, "%s/sun%s.dat", uvar->ephemDir, uvar->ephemYear);
-	}
-      else
-	{
-	  sprintf(cfg->EphemEarth, "earth%s.dat", uvar->ephemYear);
-	  sprintf(cfg->EphemSun, "sun%s.dat", uvar->ephemYear);
-	}
-
-      cfg->ephemeris = (EphemerisData*) LALCalloc( 1, sizeof(EphemerisData) );
-      cfg->ephemeris->ephiles.earthEphemeris = cfg->EphemEarth;
-      cfg->ephemeris->ephiles.sunEphemeris = cfg->EphemSun;
-
-      TRY (LALInitBarycenter (status->statusPtr, cfg->ephemeris), status);
-
-  } /* end: init ephemeris data */
-
+      /* Init ephemerides */
+      if ( (cfg->ephemeris = XLALInitBarycenter ( uvar->ephemEarth, uvar->ephemSun )) == NULL ) {
+        ABORT (status, GETMETRIC_EFILE, GETMETRIC_MSGEFILE);
+      }
+    } /* end: init ephemeris data */
 
   /* ---------- initialize detector ---------- */
   if ( (cfg->site = XLALGetSiteInfo ( uvar->IFO )) == NULL ) {

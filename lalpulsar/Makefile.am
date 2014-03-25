@@ -9,10 +9,8 @@ $(ACLOCAL_M4): $(am__aclocal_m4_deps)
 EXTRA_DIST = \
 	COPYING \
 	doc \
-	lalpulsar.pc.in \
-	lalpulsar.spec.in \
 	lalpulsar.spec \
-	aclocal.m4
+	$(DATA)
 
 SUBDIRS = \
 	gnuscripts \
@@ -25,6 +23,8 @@ SUBDIRS = \
 
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = lalpulsar.pc
+noinst_DATA = lalpulsar-uninstalled.pc
+BUILT_SOURCES = lalpulsar-uninstalled.pc
 
 DISTCLEANFILES = config.lt
 

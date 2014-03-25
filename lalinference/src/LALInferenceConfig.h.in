@@ -1,7 +1,5 @@
 /* only include this file if LALInference's config.h has not been included */
-
-#ifndef _LALINFERENCECONFIG_H
-#define _LALINFERENCECONFIG_H
+#ifndef LALINFERENCE_VERSION
 
 /* LALInference Version */
 #undef LALINFERENCE_VERSION
@@ -18,10 +16,4 @@
 /* LALInference Version Devel Number  */
 #undef LALINFERENCE_VERSION_DEVEL
 
-/* LALInference Configure Arguments */
-#undef LALINFERENCE_CONFIGURE_ARGS
-
-/* LALInference Configure Date */
-#undef LALINFERENCE_CONFIGURE_DATE
-
-#endif /* _LALINFERENCECONFIG_H */
+#endif /* LALINFERENCE_VERSION */

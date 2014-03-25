@@ -8,6 +8,7 @@ __author__ = 'Duncan Brown <duncan@gravity.phys.uwm.edu>'
 __date__ = '$Date$'
 __version__ = '$Revision$'
 
+import copy
 import string
 import exceptions
 import sys, os, re, subprocess
@@ -43,11 +44,21 @@ class InspiralAnalysisJob(pipeline.AnalysisJob, pipeline.CondorDAGJob):
     pipeline.CondorDAGJob.__init__(self,universe,executable)
     pipeline.AnalysisJob.__init__(self,cp,dax)
     self.add_condor_cmd('copy_to_spool','False')
+    self.set_grid_site('local')
     self.__use_gpus = cp.has_option('condor', 'use-gpus')
 
+    mycp = copy.deepcopy(cp)
     for sec in sections:
-      if cp.has_section(sec):
-        self.add_ini_opts(cp, sec)
+      if mycp.has_section(sec):
+        # check to see if the job should run on a remote site
+        if mycp.has_option(sec,'remote-sites'):
+          remotesites = mycp.get(sec,'remote-sites')
+          mycp.remove_option(sec,'remote-sites')
+          self.set_grid_site(remotesites)
+
+        # add all the other options as arguments to the code
+        self.add_ini_opts(mycp, sec)
+
       else:
         print >>sys.stderr, "warning: config file is missing section [" + sec + "]"
 
@@ -124,7 +135,17 @@ class TmpltBankJob(InspiralAnalysisJob):
     exec_name = 'tmpltbank'
     extension = 'xml'
     sections = ['data','tmpltbank']
+
+    have_pycbc = False
+    if cp.has_option('tmpltbank', 'pycbc'):
+         have_pycbc=True
+         cp.set('condor', 'universe', 'vanilla')
+
     InspiralAnalysisJob.__init__(self,cp,sections,exec_name,extension,dax)
+
+    if have_pycbc:
+        self.add_condor_cmd('getenv', 'True')
+
 
 
 class InspInjJob(InspiralAnalysisJob):
@@ -418,7 +439,8 @@ class ThincaToCoincJob(InspiralAnalysisJob):
   """
   def __init__(self, cp, dax = False):
     """
-    @cp: ConfigParser object from which options are read.
+    @param cp: ConfigParser object from which options are read.
+    @param dax UNDOCUMENTED
     """
     exec_name = 'thinca_to_coinc'
     sections = ['thinca_to_coinc']
@@ -434,7 +456,7 @@ class ThincaToCoincJob(InspiralAnalysisJob):
   def set_experiment_start_time(self, experiment_start_time):
     """
     Sets the experiment-start-time option. This is a required option.
-    @experiment_start_time: gps start time of the experiment the thinca_to_coinc
+    @param experiment_start_time: gps start time of the experiment the thinca_to_coinc
     job is in.
     """
     self.add_opt('experiment-start-time', experiment_start_time)
@@ -443,7 +465,7 @@ class ThincaToCoincJob(InspiralAnalysisJob):
   def set_experiment_end_time(self, experiment_end_time):
     """
     Sets the experiment-end-time option. This is a required option.
-    @experiment_end_time: gps end time of the experiment the thinca_to_coinc
+    @param experiment_end_time: gps end time of the experiment the thinca_to_coinc
     job is in.
     """
     self.add_opt('experiment-end-time', experiment_end_time)
@@ -474,7 +496,8 @@ class HWinjPageJob(InspiralAnalysisJob):
   """
   def __init__(self, cp, dax = False):
     """
-    @cp: ConfigParser object from which options are read.
+    @param cp: ConfigParser object from which options are read.
+    @param dax UNDOCUMENTED
     """
     exec_name = "hardware_inj_page"
     universe = "vanilla"
@@ -496,7 +519,8 @@ class SireJob(InspiralAnalysisJob):
   """
   def __init__(self,cp,dax=False):
     """
-    cp = ConfigParser object from which options are read.
+    @param cp = ConfigParser object from which options are read.
+    @param dax UNDOCUMENTED
     """
     exec_name = 'sire'
     sections = ['sire']
@@ -516,7 +540,8 @@ class CoireJob(InspiralAnalysisJob):
   """
   def __init__(self,cp,dax=False):
     """
-    cp = ConfigParser object from which options are read.
+    @param cp = ConfigParser object from which options are read.
+    @param dax UNDOCUMENTED
     """
     exec_name = 'coire'
     sections = ['coire']
@@ -535,7 +560,8 @@ class FrJoinJob(InspiralAnalysisJob):
   """
   def __init__(self,cp,dax=False):
     """
-    cp = ConfigParser object from which options are read.
+    @param cp = ConfigParser object from which options are read.
+    @param dax UNDOCUMENTED
     """
     exec_name = 'frjoin'
     sections = []
@@ -556,7 +582,8 @@ class CohBankJob(InspiralAnalysisJob):
   """
   def __init__(self,cp,dax=False):
     """
-    cp = ConfigParser object from which options are read.
+    @param cp = ConfigParser object from which options are read.
+    @param dax UNDOCUMENTED
     """
     exec_name = 'cohbank'
     sections = ['cohbank']
@@ -574,7 +601,8 @@ class InspiralCoherentJob(InspiralAnalysisJob):
   """
   def __init__(self,cp,dax=False):
     """
-    cp = ConfigParser object from which options are read.
+    @param cp = ConfigParser object from which options are read.
+    @param dax UNDOCUMENTED
     """
     exec_name = 'inspiral'
     sections = ['data']
@@ -592,7 +620,8 @@ class CohInspBankJob(InspiralAnalysisJob):
   """
   def __init__(self,cp,dax=False):
     """
-    cp = ConfigParser object from which options are read.
+    @param cp = ConfigParser object from which options are read.
+    @param dax UNDOCUMENTED
     """
     exec_name = 'cohinspbank'
     sections = ['cohinspbank']
@@ -609,7 +638,8 @@ class ChiaJob(InspiralAnalysisJob):
   """
   def __init__(self,cp,dax=False):
     """
-    cp = ConfigParser object from which options are read.
+    @param cp = ConfigParser object from which options are read.
+    @param dax UNDOCUMENTED
     """
     exec_name = 'chia'
     sections = ['chia']
@@ -625,7 +655,8 @@ class CohireJob(InspiralAnalysisJob):
   """
   def __init__(self,cp,dax=False):
     """
-    cp = ConfigParser object from which options are read.
+    @param cp = ConfigParser object from which options are read.
+    @param dax UNDOCUMENTED
     """
     exec_name = 'cohire'
     sections = ['cohire']
@@ -644,7 +675,8 @@ class InjFindJob(InspiralAnalysisJob):
   """
   def __init__(self, cp, dax = False):
     """
-    @cp: a ConfigParser object from which the options are read.
+    @param cp: a ConfigParser object from which the options are read.
+    @param dax UNDOCUMENTED
     """
     exec_name = 'injfind'
     sections = ['injfind']
@@ -1410,7 +1442,7 @@ class ThincaToCoincNode(InspiralAnalysisNode):
   """
   def __init__(self, job):
     """
-    @job: A ThincaToCoincJob.
+    @param job: A ThincaToCoincJob.
     """
     InspiralAnalysisNode.__init__(self, job)
     self.__input_cache = None
@@ -1422,7 +1454,7 @@ class ThincaToCoincNode(InspiralAnalysisNode):
 
   def set_input_cache(self, input_cache_name):
     """
-    @input_cache_name: cache file for thinca_to_coinc to
+    @param input_cache_name: cache file for thinca_to_coinc to
       read.
     """
     self.add_file_opt( 'ihope-cache', input_cache_name )
@@ -1455,7 +1487,7 @@ class ThincaToCoincNode(InspiralAnalysisNode):
 
   def set_instruments(self, instruments):
     """
-    @instruments: instruments that are on for the
+    @param instruments: instruments that are on for the
      THINCA files thinca_to_coinc is operating on.
     """
     self.add_var_opt('instruments', instruments)
@@ -1469,7 +1501,7 @@ class ThincaToCoincNode(InspiralAnalysisNode):
 
   def set_veto_segments(self, veto_segments):
     """
-    @veto_segments: name of xml file containing the vetoes to apply
+    @param veto_segments: name of xml file containing the vetoes to apply
     """
     self.add_var_opt('veto-segments', veto_segments)
     self.__veto_segments = veto_segments
@@ -1482,7 +1514,7 @@ class ThincaToCoincNode(InspiralAnalysisNode):
 
   def set_veto_segments_name(self, veto_segments_name):
     """
-    @veto_segments_name: name of vetoes in the vetoes xml file to
+    @param veto_segments_name: name of vetoes in the vetoes xml file to
     apply.
     """
     self.add_var_opt('veto-segments-name', veto_segments_name)
@@ -1527,7 +1559,7 @@ class HWinjPageNode(InspiralAnalysisNode):
   """
   def __init__(self, job):
     """
-    @job: A HWinjPageJob.
+    @param job: A HWinjPageJob.
     """
     InspiralAnalysisNode.__init__(self, job)
     self.__input_cache = None
@@ -1538,7 +1570,7 @@ class HWinjPageNode(InspiralAnalysisNode):
 
   def set_input_cache(self, input_cache_name):
     """
-    @input_cache_name: cache file for ligolw_cbc_hardware_inj_page
+    @param input_cache_name: cache file for ligolw_cbc_hardware_inj_page
     to read.
     """
     self.add_var_opt('cache-file',input_cache_name)
@@ -1546,29 +1578,28 @@ class HWinjPageNode(InspiralAnalysisNode):
 
   def set_source_xml(self, source_xml):
     """
-    @input_cache_name: cache file for ligolw_cbc_hardware_inj_page
-    to read.
+    input_cache_name: cache file for ligolw_cbc_hardware_inj_page to read.
     """
     self.add_var_opt('source-xml',source_xml)
     self.__source_xml = source_xml
 
   def set_cache_string(self,cache_string):
     """
-    @cache_string: pattern to match files within cache
+    @param cache_string: pattern to match files within cache
     """
     self.add_var_opt('cache-pattern',cache_string)
     self.__cache_string=cache_string
 
   def set_output_file(self,outfile_name):
     """
-    @outfile_name: Name of hw injection page
+    @param outfile_name: Name of hw injection page
     """
     self.add_var_opt('outfile',outfile_name)
     self.__outfile=outfile_name
 
   def set_segment_dir(self,dir):
     """
-    @dir: directory in which to find hwinj segments
+    @param dir: directory in which to find hwinj segments
     """
     self.add_var_opt('segment-dir',dir)
 
@@ -2228,7 +2259,7 @@ class InspInjFindNode( InspiralAnalysisNode ):
   """
   def __init__(self, job):
     """
-    @job: A CondorDAGJob that can run an instance of ligolw_inspinjfind.
+    @param job: A CondorDAGJob that can run an instance of ligolw_inspinjfind.
     """
     InspiralAnalysisNode.__init__(self, job)
 
@@ -2245,7 +2276,8 @@ class PlotInspiralrangeJob(InspiralPlottingJob):
   """
   def __init__(self,cp,dax=False):
     """
-    cp = ConfigParser object from which options are read.
+    @param cp = ConfigParser object from which options are read.
+    @param dax UNDOCUMENTED
     """
     exec_name = 'plotinspiralrange'
     sections = ['plotinspiralrange']
@@ -2274,7 +2306,8 @@ class PlotInspiralJob(InspiralPlottingJob):
   """
   def __init__(self,cp,dax=False):
     """
-    cp = ConfigParser object from which options are read.
+    @param cp = ConfigParser object from which options are read.
+    @param dax UNDOCUMENTED
     """
     exec_name = 'plotinspiral'
     sections = ['plotinspiral']
@@ -2302,13 +2335,14 @@ class PlotThincaJob(InspiralPlottingJob):
   """
   def __init__(self,cp,dax=False):
     """
-    cp = ConfigParser object from which options are read.
+    @param cp = ConfigParser object from which options are read.
+    @param dax UNDOCUMENTED
     """
     exec_name = 'plotthinca'
     sections = ['plotthinca']
     extension = 'html'
     InspiralPlottingJob.__init__(self,cp,sections,exec_name,extension,dax)
-    self.add_condor_cmd('request_memory', '2000')
+    self.add_condor_cmd('request_memory', '2500')
  
 class PlotThincaNode(InspiralPlottingNode):
   """
@@ -2332,7 +2366,8 @@ class PlotCohsnrJob(InspiralPlottingJob):
   """
   def __init__(self,cp,dax=False):
     """
-    cp = ConfigParser object from which options are read.
+    @param cp = ConfigParser object from which options are read.
+    @param dax UNDOCUMENTED
     """
     exec_name = 'plotcohsnr'
     sections = ['plotcohsnr']
@@ -2361,7 +2396,8 @@ class PlotNumtemplatesJob(InspiralPlottingJob):
   """
   def __init__(self,cp,dax=False):
     """
-    cp = ConfigParser object from which options are read.
+    @param cp = ConfigParser object from which options are read.
+    @param dax UNDOCUMENTED
     """
     exec_name = 'plotnumtemplates'
     sections = ['plotnumtemplates']
@@ -2389,13 +2425,14 @@ class PlotEthincaJob(InspiralPlottingJob):
   """
   def __init__(self,cp,dax=False):
     """
-    cp = ConfigParser object from which options are read.
+    @param cp = ConfigParser object from which options are read.
+    @param dax UNDOCUMENTED
     """
     exec_name = 'plotethinca'
     sections = ['plotethinca']
     extension = 'html'
     InspiralPlottingJob.__init__(self,cp,sections,exec_name,extension,dax)
-    self.add_condor_cmd('request_memory', '2000')
+    self.add_condor_cmd('request_memory', '2500')
 
 class PlotEthincaNode(InspiralPlottingNode):
   """
@@ -2418,7 +2455,8 @@ class PlotInspmissedJob(InspiralPlottingJob):
   """
   def __init__(self,cp,dax=False):
     """
-    cp = ConfigParser object from which options are read.
+    @param cp = ConfigParser object from which options are read.
+    @param dax UNDOCUMENTED
     """
     exec_name = 'plotinspmissed'
     sections = ['plotinspmissed']
@@ -2446,7 +2484,8 @@ class PlotEffdistcutJob(InspiralPlottingJob):
   """
   def __init__(self,cp,dax=False):
     """
-    cp = ConfigParser object from which options are read.
+    @param cp = ConfigParser object from which options are read.
+    @param dax UNDOCUMENTED
     """
     exec_name = 'ploteffdistcut'
     sections = ['ploteffdistcut']
@@ -2475,13 +2514,14 @@ class PlotInspinjJob(InspiralPlottingJob):
   """
   def __init__(self,cp,dax=False):
     """
-    cp = ConfigParser object from which options are read.
+    @param cp = ConfigParser object from which options are read.
+    @param dax UNDOCUMENTED
     """
     exec_name = 'plotinspinj'
     sections = ['plotinspinj']
     extension = 'html'
     InspiralPlottingJob.__init__(self,cp,sections,exec_name,extension,dax)
-    self.add_condor_cmd('request_memory', '2000')
+    self.add_condor_cmd('request_memory', '2500')
 
 class PlotInspinjNode(InspiralPlottingNode):
   """
@@ -2504,13 +2544,14 @@ class PlotSnrchiJob(InspiralPlottingJob):
   """
   def __init__(self,cp,dax=False):
     """
-    cp = ConfigParser object from which options are read.
+    @param cp = ConfigParser object from which options are read.
+    @param dax UNDOCUMENTED
     """
     exec_name = 'plotsnrchi'
     sections = ['plotsnrchi']
     extension = 'html'
     InspiralPlottingJob.__init__(self,cp,sections,exec_name,extension,dax)
-    self.add_condor_cmd('request_memory', '2000')
+    self.add_condor_cmd('request_memory', '2500')
 
 class PlotSnrchiNode(InspiralPlottingNode):
   """
@@ -2533,7 +2574,8 @@ class PlotGRBtimeslideStatsJob(InspiralAnalysisJob):
   """
   def __init__(self,cp,dax=False):
     """
-    cp = ConfigParser object from which options are read.
+    @param cp = ConfigParser object from which options are read.
+    @param dax UNDOCUMENTED
     """
     exec_name = 'pylal_grbtimeslide_stats'
     sections = ['grbtimeslidestats']
@@ -2560,13 +2602,14 @@ class MiniFollowupsJob(InspiralPlottingJob):
   """
   def __init__(self, cp, dax = False):
     """
-    @cp: ConfigParser object from which options are read.
+    @param cp: ConfigParser object from which options are read.
+    @param dax UNDOCUMENTED
     """
     exec_name = 'minifollowups'
     sections = ['minifollowups','omega-scans']
     extension = None
     InspiralPlottingJob.__init__(self, cp, sections, exec_name, extension, dax)
-    self.add_condor_cmd('request_memory', '2000')
+    self.add_condor_cmd('request_memory', '2500')
 
   def set_time_slides(self):
     """
@@ -2581,7 +2624,7 @@ class MiniFollowupsNode(InspiralPlottingNode):
   """
   def __init__(self, job):
     """
-    @job: a MiniFollowupsJob
+    @param job: a MiniFollowupsJob
     """
     InspiralAnalysisNode.__init__(self, job)
     self.__cache_file = None
@@ -2708,7 +2751,8 @@ class DBSimplifyJob(pipeline.SqliteJob):
   """
   def __init__(self, cp, dax = False):
     """
-    @cp: ConfigParser object from which options are read.
+    @param cp: ConfigParser object from which options are read.
+    @param dax UNDOCUMENTED
     """
     exec_name = 'dbsimplify'
     sections = ['dbsimplify']
@@ -2721,7 +2765,7 @@ class DBSimplifyNode(pipeline.SqliteNode):
   """
   def __init__(self, job):
     """
-    @job: a DBSimplifyJob
+    @param job: a DBSimplifyJob
     """
     pipeline.SqliteNode.__init__(self, job)
 
@@ -2733,7 +2777,8 @@ class ComputeDurationsJob(pipeline.SqliteJob):
   """
   def __init__(self, cp, dax = False):
     """
-    @cp: ConfigParser object from which options are read.
+    @param cp: ConfigParser object from which options are read.
+    @param dax UNDOCUMENTED
     """
     exec_name = 'compute_durations'
     sections = ['compute_durations']
@@ -2746,7 +2791,7 @@ class ComputeDurationsNode(pipeline.SqliteNode):
   """
   def __init__(self, job):
     """
-    @job: a ComputeDurationsJob
+    @param job: a ComputeDurationsJob
     """
     pipeline.SqliteNode.__init__(self, job)
 
@@ -2758,7 +2803,8 @@ class DBAddInjJob(pipeline.SqliteJob):
   """
   def __init__(self, cp, dax = False):
     """
-    @cp: ConfigParser object from which options are read.
+    @param cp: ConfigParser object from which options are read.
+    @param dax UNDOCUMENTED
     """
     exec_name = 'dbaddinj'
     sections = ['dbaddinj']
@@ -2771,7 +2817,7 @@ class DBAddInjNode(pipeline.SqliteNode):
   """
   def __init__(self, job ):
     """
-    @job: a DBAddInj job
+    @param job: a DBAddInj job
     """
     pipeline.SqliteNode.__init__(self, job)
     self.__injection_file = None
@@ -2779,7 +2825,7 @@ class DBAddInjNode(pipeline.SqliteNode):
 
   def set_injection_file( self, injection_file ):
     """
-    @injection_file: Injection file for dbaddinj to
+    @param injection_file: Injection file for dbaddinj to
     add to the database.
     """
     self.add_file_opt( 'injection-file', injection_file )
@@ -2793,7 +2839,7 @@ class DBAddInjNode(pipeline.SqliteNode):
 
   def set_inj_tag( self, inj_tag):
     """
-    @inj_tag: Injection tag used to name the injection files
+    @param inj_tag: Injection tag used to name the injection files
     """
     self.add_var_opt( 'sim-tag', inj_tag )
     self.__inj_tag = inj_tag
@@ -2811,7 +2857,8 @@ class RepopCoincJob(pipeline.SqliteJob):
   """
   def __init__(self, cp, dax = False):
     """
-    @cp: ConfigParser object from which options are read.
+    @param cp: ConfigParser object from which options are read.
+    @param dax UNDOCUMENTED
     """  
     exec_name = 'repop_coinc'
     sections = ['repop_coinc']
@@ -2824,7 +2871,7 @@ class RepopCoincNode(pipeline.SqliteNode):
   """
   def __init__(self, job):
     """
-    @job: a RepopCoincJob
+    @param job: a RepopCoincJob
     """
     pipeline.SqliteNode.__init__(self, job)
 
@@ -2836,7 +2883,8 @@ class DBInjFindJob(pipeline.SqliteJob):
   """
   def __init__(self, cp, dax = False):
     """
-    @cp: ConfigParser object from which options are read.
+    @param cp: ConfigParser object from which options are read.
+    @param dax UNDOCUMENTED
     """  
     exec_name = 'dbinjfind'
     sections = ['dbinjfind']
@@ -2849,7 +2897,7 @@ class DBInjFindNode(pipeline.SqliteNode):
   """
   def __init__(self, job):
     """
-    @job: a DBInjFindJob
+    @param job: a DBInjFindJob
     """
     pipeline.SqliteNode.__init__(self, job)
 
@@ -2861,7 +2909,8 @@ class ClusterCoincsJob(pipeline.SqliteJob):
   """
   def __init__(self, cp, dax = False):
     """
-    @cp: ConfigParser object from which options are read.
+    @param cp: ConfigParser object from which options are read.
+    @param dax UNDOCUMENTED
     """
     exec_name = 'cluster_coincs'
     sections = ['cluster_coincs']
@@ -2874,7 +2923,7 @@ class ClusterCoincsNode(pipeline.SqliteNode):
   """
   def __init__(self, job):
     """
-    @job: a ClusterCoincsJob
+    @param job: a ClusterCoincsJob
     """
     pipeline.SqliteNode.__init__(self, job)
 
@@ -2886,8 +2935,9 @@ class CFarJob(pipeline.SqliteJob):
   """
   def __init__(self, cp, sections, dax = False):
     """
-    @cp: ConfigParser object from which options are read.
-    @sections: list of sections for cp to read from
+    @param cp: ConfigParser object from which options are read.
+    @param sections: list of sections for cp to read from
+    @param dax UNDOCUMENTED
     """
     exec_name = 'cfar'
     pipeline.SqliteJob.__init__(self, cp, sections, exec_name, dax)
@@ -2899,7 +2949,7 @@ class CFarNode(pipeline.SqliteNode):
   """
   def __init__(self, job):
     """
-    @job: a CFarJob
+    @param job: a CFarJob
     """
     pipeline.SqliteNode.__init__(self, job)
 
@@ -2910,8 +2960,10 @@ class LigolwCBCPrintJob(pipeline.SqliteJob):
   """
   def __init__(self, cp, exec_name, sections, dax = False):
     """
-    @cp: ConfigParser object from which options are read.
-    @sections: list of sections for cp to read from
+    @param cp: ConfigParser object from which options are read.
+    @param exec_name UNDOCUMENTED
+    @param sections: list of sections for cp to read from
+    @param dax UNDOCUMENTED
     """
     pipeline.SqliteJob.__init__(self, cp, sections, exec_name, dax)
 
@@ -2923,7 +2975,7 @@ class LigolwCBCPrintNode(pipeline.SqliteNode):
   """
   def __init__(self, job):
     """
-    @job: a PrintLCJob
+    @param job: a PrintLCJob
     """
     pipeline.SqliteNode.__init__(self, job)
     self.__extract_to_xml = None
@@ -3033,7 +3085,7 @@ class PrintLCNode(LigolwCBCPrintNode):
   """
   def __init__(self, job):
     """
-    @job: a LigolwCBCPrintJob
+    @param job: a LigolwCBCPrintJob
     """
     LigolwCBCPrintNode.__init__(self, job)
     self.__datatype = None
@@ -3057,7 +3109,7 @@ class PrintSimsNode(LigolwCBCPrintNode):
   """
   def __init__(self, job):
     """
-    @job: a LigolwCBCPrintJob
+    @param job: a LigolwCBCPrintJob
     """
     LigolwCBCPrintNode.__init__(self, job)
     self.__comparison_datatype = None
@@ -3084,7 +3136,7 @@ class PrintMissedNode(LigolwCBCPrintNode):
   """
   def __init__(self, job):
     """
-    @job: a LigolwCBCPrintJob
+    @param job: a LigolwCBCPrintJob
     """
     LigolwCBCPrintNode.__init__(self, job)
 
@@ -3096,7 +3148,8 @@ class PlotSlidesJob(pipeline.SqliteJob):
   """
   def __init__(self, cp, dax = False):
     """
-    @cp: ConfigParser object from which options are read.
+    @param cp: ConfigParser object from which options are read.
+    @param dax UNDOCUMENTED
     """
     exec_name = 'plotslides'
     sections = ['plot_input', 'plotslides']
@@ -3115,7 +3168,7 @@ class PlotSlidesNode(pipeline.SqliteNode):
   """
   def __init__(self, job):
     """
-    @job: a PlotSlidesJob
+    @param job: a PlotSlidesJob
     """
     pipeline.SqliteNode.__init__(self, job)
 
@@ -3127,7 +3180,8 @@ class PlotCumhistJob(pipeline.SqliteJob):
   """
   def __init__(self, cp, dax = False):
     """
-    @cp: ConfigParser object from which options are read.
+    @param cp: ConfigParser object from which options are read.
+    @param dax UNDOCUMENTED
     """
     exec_name = 'plotcumhist'
     sections = ['plot_input', 'plotcumhist']
@@ -3146,7 +3200,7 @@ class PlotCumhistNode(pipeline.SqliteNode):
   """
   def __init__(self, job):
     """
-    @job: a PlotCumhist Job
+    @param job: a PlotCumhist Job
     """
     pipeline.SqliteNode.__init__(self, job)
 
@@ -3157,7 +3211,8 @@ class PlotIfarJob(pipeline.SqliteJob):
   """
   def __init__(self, cp, dax = False):
     """
-    @cp: ConfigParser object from which options are read.
+    @param cp: ConfigParser object from which options are read.
+    @param dax UNDOCUMENTED
     """
     exec_name = 'plotifar'
     sections = ['plot_input','plotifar']
@@ -3170,7 +3225,7 @@ class PlotIfarNode(pipeline.SqliteNode):
   """
   def __init__(self, job):
     """
-    @job: a PlotIfarJob
+    @param job: a PlotIfarJob
     """
     pipeline.SqliteNode.__init__(self, job)
     self.__datatype = None
@@ -3194,7 +3249,8 @@ class PlotFMJob(pipeline.SqliteJob):
   """
   def __init__(self, cp, dax = False):
     """
-    @cp: ConfigParser object from which objects are read.
+    @param cp: ConfigParser object from which objects are read.
+    @param dax UNDOCUMENTED
     """
     exec_name = 'plotfm'
     sections = ['plot_input', 'plotfm']
@@ -3206,7 +3262,7 @@ class PlotFMNode(pipeline.SqliteNode):
   """
   def __init__(self, job):
     """
-    @job: a PlotFMJob
+    @param job: a PlotFMJob
     """
     pipeline.SqliteNode.__init__(self, job)
     self.__sim_tag = None
@@ -3259,7 +3315,8 @@ class SearchVolumeJob(pipeline.SqliteJob):
   """
   def __init__(self, cp, dax = False):
     """
-    @cp: ConfigParser object from which options are read.
+    @param cp: ConfigParser object from which options are read.
+    @param dax UNDOCUMENTED
     """
     exec_name = 'search_volume'
     pipeline.SqliteJob.__init__(self, cp, ['search-volume'], exec_name, dax)
@@ -3297,8 +3354,9 @@ class SearchUpperLimitJob(pipeline.SqliteJob):
   """
   def __init__(self, cp, dax = False):
     """
-    @cp: ConfigParser object from which options are read.
-    @sections: list of sections for cp to read from
+    @param cp: ConfigParser object from which options are read.
+    sections: list of sections for cp to read from
+    @param dax UNDOCUMENTED
     """
     exec_name = 'search_upper_limit'
     pipeline.SqliteJob.__init__(self, cp, ['upper-limit'], exec_name, dax)
@@ -3310,7 +3368,7 @@ class SearchUpperLimitNode(pipeline.SqliteNode):
   """
   def __init__(self, job):
     """
-    @job: a SearchUpperLimitJob
+    @param job: a SearchUpperLimitJob
     """
     pipeline.SqliteNode.__init__(self, job)
     self.open_box = False
@@ -3335,7 +3393,8 @@ class MVSCDagGenerationJob(InspiralAnalysisJob):
   """
   def __init__(self, cp, dax = False):
     """
-    @cp: ConfigParser object from which options are read.
+    @param cp: ConfigParser object from which options are read.
+    @param dax UNDOCUMENTED
     """
     exec_name = "mvsc_dag"
     universe = "vanilla"

@@ -31,17 +31,17 @@ else
     debug=0	## default=quiet
 fi
 
-
-if [ -n "${LALPULSAR_DATADIR}" ]; then
-    v2_code="${v2_code} -E ${LALPULSAR_DATADIR}"
-    v4_code="${v4_code} -E ${LALPULSAR_DATADIR}"
-else
+if [ -z "${LAL_DATA_PATH}" ]; then
     echo
-    echo "Need environment-variable LALPULSAR_DATADIR to be set to"
+    echo "Need environment-variable LAL_DATA_PATH to be set to include"
     echo "your ephemeris-directory (e.g. /usr/local/share/lalpulsar)"
     echo "This might indicate an incomplete LAL+LALPULSAR installation"
     echo
     exit 1
+fi
+
+if [ -n "${LALPULSAR_DATADIR}" ]; then
+    v2_code="${v2_code} -E ${LALPULSAR_DATADIR}"
 fi
 
 #prepare test subdirectory

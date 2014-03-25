@@ -1,4 +1,4 @@
-AM_CPPFLAGS = -I$(top_builddir)/include -I$(srcdir)/../include
+AM_CPPFLAGS = -I$(top_builddir)/include -I$(srcdir)/../include @AM_CPPFLAGS@
 
 noinst_LTLIBRARIES = libtools.la
 
@@ -14,12 +14,13 @@ libtools_la_SOURCES = \
 	EllipsoidOverlapTools.c \
 	FlatLatticeTiling.c \
 	FrequencySeries.c \
-    LALCosmologyCalculator.c \
-    ResampleTimeSeries.c \
+	LALCosmologyCalculator.c \
+	ResampleTimeSeries.c \
 	Segments.c \
 	Sequence.c \
 	Skymap.c \
 	TimeSeries.c \
+	TimeSeriesInterp.c \
 	TriggerInterpolation.c \
 	UnitCompare.c \
 	UnitDefs.c \

@@ -635,7 +635,7 @@ void LALCreateDetector( LALStatus *status, LALDetector *output, const LALFrDetec
 #define LAL_NIOBE_AXIS_DIRECTION_Z            	0.84866411101	/**< NIOBE z-component of unit vector pointing along axis in Earth-centered frame */
 /*@}*/
 
-/*@}*//* end: DetectorConstants */
+/*@}*/ /* end: DetectorConstants */
 
 #ifdef __cplusplus
 }

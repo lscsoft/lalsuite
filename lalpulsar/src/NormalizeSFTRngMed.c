@@ -18,7 +18,6 @@
 *  MA  02111-1307  USA
 */
 
-#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/NormalizeSFTRngMed.h>
 
 static const LALStatus empty_LALStatus;
@@ -92,8 +91,7 @@ XLALNormalizeSFT ( REAL8FrequencySeries *rngmed, 	/**< [out] rng-median smoothed
       REAL8 Tsft_Sn_b2 = rngmed->data->data[j];		/* Wiener-Kinchine: E[|data|^2] = Tsft * Sn / 2 */
       REAL8 norm = 1.0 / sqrt(Tsft_Sn_b2);
       /* frequency domain normalization */
-      sft->data->data[j].realf_FIXME *= norm;
-      sft->data->data[j].imagf_FIXME *= norm;
+      sft->data->data[j] *= ((REAL4) norm);
     } // for j < length
 
   return XLAL_SUCCESS;

@@ -77,6 +77,13 @@ ${GRACEDB} search $GRACEID >$OUTFILE 2>&1
 recordTest "search $GRACEID" "$?" "$(cat $OUTFILE)"
 rm $OUTFILE
 
+# Try a simple search with ligolw output.
+#
+OUTFILE=$(mktemp /tmp/tmp.XXXXXXXXX)
+${GRACEDB} search $GRACEID --ligolw >$OUTFILE 2>&1
+recordTest "search $GRACEID --ligolw" "$?" "$(cat $OUTFILE)"
+rm $OUTFILE
+
 # Make sure FAR of created LM event is correct.
 #
 OUTFILE=$(mktemp /tmp/tmp.XXXXXXXXX)

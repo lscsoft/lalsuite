@@ -29,7 +29,7 @@ extern "C" {
 }       /* so that editors will match preceding brace */
 #endif
 
-/** \addtogroup LALMalloc_h *//*@{ */
+/** \addtogroup LALMalloc_h */ /*@{ */
 void *XLALMalloc(size_t n);
 void *XLALMallocLong(size_t n, const char *file, int line);
 void *XLALCalloc(size_t m, size_t n);
@@ -83,7 +83,7 @@ extern int lalIsMemDbgPtr;      /* ( lalMemDbgUsrPtr == lalMemDbgPtr ) */
 #endif /* SWIG */
 
 
-/** \addtogroup LALMalloc_h *//*@{ */
+/** \addtogroup LALMalloc_h */ /*@{ */
 void *LALMallocShort(size_t n);
 void *LALMallocLong(size_t n, const char *file, int line);
 void *LALCallocShort(size_t m, size_t n);

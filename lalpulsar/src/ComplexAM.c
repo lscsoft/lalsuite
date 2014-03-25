@@ -31,7 +31,6 @@
 #include <math.h>
 
 /* GSL includes */
-#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/LALGSL.h>
 #include <gsl/gsl_vector.h>
 #include <gsl/gsl_matrix.h>
@@ -44,7 +43,7 @@
 #include <lal/AVFactories.h>
 #include <lal/ComplexAM.h>
 #include <lal/LISAspecifics.h>
-#include <lal/ComputeFstat.h>
+#include <lal/CWFastMath.h>
 
 /*---------- local DEFINES ----------*/
 #define TRUE (1==1)
@@ -116,11 +115,9 @@ LALGetCmplxAMCoeffs(LALStatus *status,				/**< pointer to LALStatus structure */
 	ABORT ( status, COMPLEXAMC_EXLAL, COMPLEXAMC_MSGEXLAL );
       }
 
-      ai.realf_FIXME = XLALContractSymmTensor3s ( &d.re, &(freq_skypos->ePlus) );
-      ai.imagf_FIXME = XLALContractSymmTensor3s ( &d.im, &(freq_skypos->ePlus) );
+      ai = crectf( XLALContractSymmTensor3s ( &d.re, &(freq_skypos->ePlus) ), XLALContractSymmTensor3s ( &d.im, &(freq_skypos->ePlus) ) );
 
-      bi.realf_FIXME = XLALContractSymmTensor3s ( &d.re, &(freq_skypos->eCross) );
-      bi.imagf_FIXME = XLALContractSymmTensor3s ( &d.im, &(freq_skypos->eCross) );
+      bi = crectf( XLALContractSymmTensor3s ( &d.re, &(freq_skypos->eCross) ), XLALContractSymmTensor3s ( &d.im, &(freq_skypos->eCross) ) );
 
       coeffs->a->data[i] = ai;
       coeffs->b->data[i] = bi;
@@ -171,8 +168,12 @@ LALGetMultiCmplxAMCoeffs (LALStatus *status,				/**< pointer to LALStatus struct
     ABORT (status, COMPLEXAMC_EMEM, COMPLEXAMC_MSGEMEM);
   }
 
-  sin_cos_LUT (&sin1Delta, &cos1Delta, doppler.Delta );
-  sin_cos_LUT (&sin1Alpha, &cos1Alpha, doppler.Alpha );
+  if( XLALSinCosLUT (&sin1Delta, &cos1Delta, doppler.Delta ) != XLAL_SUCCESS )
+    ABORT( status->statusPtr, LAL_EXLAL, "XLALSinCosLUT (&sin1Delta, &cos1Delta, doppler.Delta ) failed" );
+
+  if( XLALSinCosLUT (&sin1Alpha, &cos1Alpha, doppler.Alpha ) != XLAL_SUCCESS )
+    ABORT( status->statusPtr, LAL_EXLAL, "XLALSinCosLUT (&sin1Alpha, &cos1Alpha, doppler.Alpha ) failed" );
+
 
   freq_skypos.skyposV[0] = cos1Delta * cos1Alpha;
   freq_skypos.skyposV[1] = cos1Delta * sin1Alpha;
@@ -330,16 +331,12 @@ XLALWeightMultiCmplxAMCoeffs (  MultiCmplxAMCoeffs *multiAMcoef, const MultiNois
 	      REAL8 Sqwi = sqrt ( weightsX->data[alpha] );
 	      COMPLEX16 ahat;
 	      COMPLEX16 bhat;
-	      ahat.real_FIXME = Sqwi * crealf(amcoeX->a->data[alpha]);
-	      ahat.imag_FIXME = Sqwi * cimagf(amcoeX->a->data[alpha]);
-	      bhat.real_FIXME= Sqwi * crealf(amcoeX->b->data[alpha]);
-	      bhat.imag_FIXME= Sqwi * cimagf(amcoeX->b->data[alpha]);
+	      ahat = crect( Sqwi * crealf(amcoeX->a->data[alpha]), Sqwi * cimagf(amcoeX->a->data[alpha]) );
+	      bhat = crect( Sqwi * crealf(amcoeX->b->data[alpha]), Sqwi * cimagf(amcoeX->b->data[alpha]) );
 
 	      /* *replace* original a(t), b(t) by noise-weighed version! */
-	      amcoeX->a->data[alpha].realf_FIXME = creal(ahat);
-	      amcoeX->a->data[alpha].imagf_FIXME = cimag(ahat);
-	      amcoeX->b->data[alpha].realf_FIXME = creal(bhat);
-	      amcoeX->b->data[alpha].imagf_FIXME = cimag(bhat);
+	      amcoeX->a->data[alpha] = crectf( creal(ahat), cimag(ahat) );
+	      amcoeX->b->data[alpha] = crectf( creal(bhat), cimag(bhat) );
 
 	      /* sum A, B, C, E on the fly */
 	      Ad += creal(ahat) * creal(ahat) + cimag(ahat) * cimag(ahat);
@@ -361,10 +358,8 @@ XLALWeightMultiCmplxAMCoeffs (  MultiCmplxAMCoeffs *multiAMcoef, const MultiNois
 	    {
 	      COMPLEX16 ahat;
 	      COMPLEX16 bhat;
-	      ahat.real_FIXME = crealf(amcoeX->a->data[alpha]);
-	      ahat.imag_FIXME = cimagf(amcoeX->a->data[alpha]);
-	      bhat.real_FIXME = crealf(amcoeX->b->data[alpha]);
-	      bhat.imag_FIXME = cimagf(amcoeX->b->data[alpha]);
+	      ahat = crect( crealf(amcoeX->a->data[alpha]), cimagf(amcoeX->a->data[alpha]) );
+	      bhat = crect( crealf(amcoeX->b->data[alpha]), cimagf(amcoeX->b->data[alpha]) );
 
 	      /* sum A, B, C, E on the fly */
 	      Ad += creal(ahat) * creal(ahat) + cimag(ahat) * cimag(ahat);

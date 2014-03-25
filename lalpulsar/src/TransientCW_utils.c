@@ -33,11 +33,11 @@
 #include <math.h>
 
 /* LAL-includes */
-#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/XLALError.h>
 #include <lal/Date.h>
 #include <lal/AVFactories.h>
 #include <lal/LogPrintf.h>
+#include <lal/LALString.h>
 
 #include <lal/ProbabilityDensity.h>
 #include <lal/TransientCW_utils.h>
@@ -67,8 +67,47 @@ static gsl_vector *expLUT = NULL; 	/**< module-global lookup-table for negative 
 
 static int XLALCreateExpLUT ( void );	/* only ever used internally, destructor is in exported API */
 
+static const char *transientWindowNames[TRANSIENT_LAST] =
+  {
+    [TRANSIENT_NONE]	 	= "none",
+    [TRANSIENT_RECTANGULAR]	= "rect",
+    [TRANSIENT_EXPONENTIAL]	= "exp"
+  };
 
 /* ==================== function definitions ==================== */
+/// Parse a transient window name string into the corresponding transientWindowType
+int
+XLALParseTransientWindowName ( const char *windowName )
+{
+  XLAL_CHECK ( windowName != NULL, XLAL_EINVAL );
+
+  // convert input window-name into lower-case first
+  char windowNameLC [ strlen(windowName) + 1 ];
+  strcpy ( windowNameLC, windowName );
+  XLALStringToLowerCase ( windowNameLC );
+
+  int winType = -1;
+  for ( UINT4 j=0; j < TRANSIENT_LAST; j ++ )
+    {
+      if ( !strcmp ( windowNameLC, transientWindowNames[j] ) ) {
+        winType = j;
+        break;
+      }
+    } // j < TRANSIENT_LAST
+
+  if ( winType == -1 )
+    {
+      XLALPrintError ("Invalid transient Window-name '%s', allowed are (case-insensitive): [%s", windowName, transientWindowNames[0] );
+      for ( UINT4 j = 1; j < TRANSIENT_LAST; j ++ ) {
+        XLALPrintError (", %s", transientWindowNames[j] );
+      }
+      XLALPrintError ("]\n");
+      XLAL_ERROR ( XLAL_EINVAL );
+    } // if windowName not valid
+
+  return winType;
+
+} // XLALParseTransientWindowName()
 
 /**
  * Helper-function to determine the total timespan of
@@ -158,8 +197,9 @@ XLALApplyTransientWindow ( REAL4TimeSeries *series,		/**< input timeseries to ap
       for ( i = 0; i < ts_length; i ++ )
         {
           UINT4 ti = (UINT4) ( ts_t0 + i * ts_dt + 0.5 );	// integer round: floor(x+0.5)
-          REAL8 win = XLALGetRectangularTransientWindowValue ( ti, t0, t1 );
-          series->data->data[i] *= win;
+          if ( ti < t0 || ti > t1 ) { // outside rectangular window: set to zero
+            series->data->data[i] = 0;
+          } // otherwise do nothing
         } /* for i < length */
       break;
 
@@ -316,7 +356,7 @@ XLALPulsarDopplerParams2String ( const PulsarDopplerParams *par )
 	}
     }
 
-  if ( par->orbit )
+  if ( par->asini > 0 )
     {
       LogPrintf(LOG_NORMAL, "%s: orbital params not supported in Doppler-filenames yet\n", __func__ );
     }
@@ -910,10 +950,8 @@ XLALmergeMultiFstatAtomsBinned ( const MultiFstatAtomVector *multiAtoms, UINT4 d
           destAtom->a2_alpha += atom_X_i->a2_alpha;
           destAtom->b2_alpha += atom_X_i->b2_alpha;
           destAtom->ab_alpha += atom_X_i->ab_alpha;
-          destAtom->Fa_alpha.realf_FIXME += crealf(atom_X_i->Fa_alpha);
-          destAtom->Fa_alpha.imagf_FIXME += cimagf(atom_X_i->Fa_alpha);
-          destAtom->Fb_alpha.realf_FIXME += crealf(atom_X_i->Fb_alpha);
-          destAtom->Fb_alpha.imagf_FIXME += cimagf(atom_X_i->Fb_alpha);
+          destAtom->Fa_alpha += atom_X_i->Fa_alpha;
+          destAtom->Fb_alpha += atom_X_i->Fb_alpha;
 
         } /* for i < numAtomsX */
     } /* for X < numDet */

@@ -17,7 +17,6 @@
 *  MA  02111-1307  USA
 */
 
-#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <math.h>
 #include <string.h>
 #include <stdio.h>
@@ -655,27 +654,18 @@ LALSSSimStochBGTimeSeries( LALStatus                    *status,
 	  wFilter1 = input->whiteningFilter1->data->data[i];
 	  wFilter2 = input->whiteningFilter2->data->data[i];
 
-	  ccountsTmp[0]->data[i].realf_FIXME=factor3*gaussdevsX1->data[i];
-	  ccountsTmp[0]->data[i].imagf_FIXME=factor3*gaussdevsY1->data[i];
-	  ccountsTmp[1]->data[i].realf_FIXME=crealf(ccountsTmp[0]->data[i])*gamma12/gamma11+factor2*gaussdevsX2->data[i];
-	  ccountsTmp[1]->data[i].imagf_FIXME=cimagf(ccountsTmp[0]->data[i])*gamma12/gamma11+factor2*gaussdevsY2->data[i];
+	  ccountsTmp[0]->data[i] = crectf( factor3*gaussdevsX1->data[i], factor3*gaussdevsY1->data[i] );
+	  ccountsTmp[1]->data[i] = crectf( crealf(ccountsTmp[0]->data[i])*gamma12/gamma11+factor2*gaussdevsX2->data[i], cimagf(ccountsTmp[0]->data[i])*gamma12/gamma11+factor2*gaussdevsY2->data[i] );
 
-	  ccounts[0]->data[i].realf_FIXME = crealf(wFilter1) * crealf(ccountsTmp[0]->data[i]) -
-	    cimagf(wFilter1) * cimagf(ccountsTmp[0]->data[i]);
-	  ccounts[0]->data[i].imagf_FIXME = crealf(wFilter1) * cimagf(ccountsTmp[0]->data[i]) +
-	    cimagf(wFilter1) * crealf(ccountsTmp[0]->data[i]);
-	  ccounts[1]->data[i].realf_FIXME = crealf(wFilter2) * crealf(ccountsTmp[1]->data[i]) -
-	    cimagf(wFilter2) * cimagf(ccountsTmp[1]->data[i]);
-	  ccounts[1]->data[i].imagf_FIXME = crealf(wFilter2) * cimagf(ccountsTmp[1]->data[i]) +
-	    cimagf(wFilter2) * crealf(ccountsTmp[1]->data[i]);
+	  ccounts[0]->data[i] = crectf( crealf(wFilter1) * crealf(ccountsTmp[0]->data[i]) - cimagf(wFilter1) * cimagf(ccountsTmp[0]->data[i]), crealf(wFilter1) * cimagf(ccountsTmp[0]->data[i]) + cimagf(wFilter1) * crealf(ccountsTmp[0]->data[i]) );
+	  ccounts[1]->data[i] = crectf( crealf(wFilter2) * crealf(ccountsTmp[1]->data[i]) - cimagf(wFilter2) * cimagf(ccountsTmp[1]->data[i]), crealf(wFilter2) * cimagf(ccountsTmp[1]->data[i]) + cimagf(wFilter2) * crealf(ccountsTmp[1]->data[i]) );
 	}
 
       /* Set DC, Nyquist (imaginary) components to zero */
       for (i=0;i<2;++i)
 	{
-	  ccounts[i]->data[0].realf_FIXME=0.0;
-	  ccounts[i]->data[0].imagf_FIXME=0.0;
-	  ccountsTmp[i]->data[length/2].imagf_FIXME=0.0;
+	  ccounts[i]->data[0] = 0.0;
+	  ccountsTmp[i]->data[length/2] = crectf( crealf(ccountsTmp[i]->data[length/2]), 0.0 );
 	}
 
       /* Compute the whitened Nyquist (real) component */
@@ -709,22 +699,14 @@ LALSSSimStochBGTimeSeries( LALStatus                    *status,
       factor2 = sqrt(gamma22-gamma12*gamma12/gamma11)*factor;
       factor3 = sqrt(gamma11)*factor;
 
-      ccountsTmp[0]->data[length/2].realf_FIXME=factor3*gaussdevsX1->data[length/2];
+      ccountsTmp[0]->data[length/2] = crectf( factor3*gaussdevsX1->data[length/2], cimagf(ccountsTmp[0]->data[length/2]) );
 
-      ccountsTmp[1]->data[length/2].realf_FIXME=
-	(crealf(ccountsTmp[0]->data[length/2])*gamma12/gamma11 +
-	 factor2*gaussdevsX2->data[length/2]);
+      ccountsTmp[1]->data[length/2] = crectf( (crealf(ccountsTmp[0]->data[length/2])*gamma12/gamma11 + factor2*gaussdevsX2->data[length/2]), cimagf(ccountsTmp[1]->data[length/2]) );
 
-      ccounts[0]->data[length/2].realf_FIXME =
-	(crealf(wFilter1) * crealf(ccountsTmp[0]->data[length/2]) -
-	 cimagf(wFilter1) * cimagf(ccountsTmp[0]->data[length/2]));
-      ccounts[0]->data[length/2].imagf_FIXME = 0;
+      ccounts[0]->data[length/2] = crectf( (crealf(wFilter1) * crealf(ccountsTmp[0]->data[length/2]) - cimagf(wFilter1) * cimagf(ccountsTmp[0]->data[length/2])), 0 );
 
 
-      ccounts[1]->data[length/2].realf_FIXME =
-	(crealf(wFilter2) * crealf(ccountsTmp[1]->data[length/2]) -
-	 cimagf(wFilter2) * cimagf(ccountsTmp[1]->data[length/2]));
-      ccounts[1]->data[length/2].imagf_FIXME = 0;
+      ccounts[1]->data[length/2] = crectf( (crealf(wFilter2) * crealf(ccountsTmp[1]->data[length/2]) - cimagf(wFilter2) * cimagf(ccountsTmp[1]->data[length/2])), 0 );
 
       LALSDestroyVector(status->statusPtr, &(overlap11.data));
       LALSDestroyVector(status->statusPtr, &(overlap12.data));
@@ -1304,10 +1286,8 @@ LALSSSimStochBGStrainTimeSeries( LALStatus              *status,
 	  factor2 = sqrt(gamma22-gamma12*gamma12/gamma11)*factor;
 	  factor3 = sqrt(gamma11)*factor;
 
-	  cstrainsTmp[0]->data[i].realf_FIXME=factor3*gaussdevsX1->data[i];
-	  cstrainsTmp[0]->data[i].imagf_FIXME=factor3*gaussdevsY1->data[i];
-	  cstrainsTmp[1]->data[i].realf_FIXME=crealf(cstrainsTmp[0]->data[i])*gamma12/gamma11+factor2*gaussdevsX2->data[i];
-	  cstrainsTmp[1]->data[i].imagf_FIXME=cimagf(cstrainsTmp[0]->data[i])*gamma12/gamma11+factor2*gaussdevsY2->data[i];
+	  cstrainsTmp[0]->data[i] = crectf( factor3*gaussdevsX1->data[i], factor3*gaussdevsY1->data[i] );
+	  cstrainsTmp[1]->data[i] = crectf( crealf(cstrainsTmp[0]->data[i])*gamma12/gamma11+factor2*gaussdevsX2->data[i], cimagf(cstrainsTmp[0]->data[i])*gamma12/gamma11+factor2*gaussdevsY2->data[i] );
 	}
 
       for (i = 1; i < freqlen1; ++i)
@@ -1318,18 +1298,16 @@ LALSSSimStochBGStrainTimeSeries( LALStatus              *status,
 
 
       /* Set DC, Nyquist (imaginary) components to zero */
-      cstrain1->data[0].realf_FIXME=0.0;
-      cstrain1->data[0].imagf_FIXME=0.0;
-      cstrain2->data[0].realf_FIXME=0.0;
-      cstrain2->data[0].imagf_FIXME=0.0;
+      cstrain1->data[0] = 0.0;
+      cstrain2->data[0] = 0.0;
 
 
       /* Compute the whitened Nyquist (real) component */
 
       /* detector 1 */
 
-      cstrainsTmp[0]->data[length1/2].imagf_FIXME=0.0;
-      cstrainsTmp[1]->data[length1/2].imagf_FIXME=0.0;
+      cstrainsTmp[0]->data[length1/2] = crectf( crealf(cstrainsTmp[0]->data[length1/2]), 0.0 );
+      cstrainsTmp[1]->data[length1/2] = crectf( crealf(cstrainsTmp[1]->data[length1/2]), 0.0 );
       gamma11 = overlap11.data->data[length1/2];
       gamma12 = overlap12.data->data[length1/2];
       gamma22 = overlap22.data->data[length1/2];
@@ -1343,19 +1321,16 @@ LALSSSimStochBGStrainTimeSeries( LALStatus              *status,
       factor2 = sqrt(gamma22-gamma12*gamma12/gamma11)*factor;
       factor3 = sqrt(gamma11)*factor;
 
-      cstrainsTmp[0]->data[length1/2].realf_FIXME=factor3*gaussdevsX1->data[length1/2];
+      cstrainsTmp[0]->data[length1/2] = crectf( factor3*gaussdevsX1->data[length1/2], cimagf(cstrainsTmp[0]->data[length1/2]) );
 
-      cstrainsTmp[1]->data[length1/2].realf_FIXME=
-	(crealf(cstrainsTmp[0]->data[length1/2])*gamma12/gamma11 +
-	 factor2*gaussdevsX2->data[length1/2]);
+      cstrainsTmp[1]->data[length1/2] = crectf( (crealf(cstrainsTmp[0]->data[length1/2])*gamma12/gamma11 + factor2*gaussdevsX2->data[length1/2]), cimagf(cstrainsTmp[1]->data[length1/2]) );
 
-      cstrain1->data[length1/2].realf_FIXME = crealf(cstrainsTmp[0]->data[length1/2]);
-      cstrain1->data[length1/2].imagf_FIXME = 0;
+      cstrain1->data[length1/2] = crectf( crealf(cstrainsTmp[0]->data[length1/2]), 0 );
 
        /* detector 2 */
 
-      cstrainsTmp[0]->data[length2/2].imagf_FIXME=0.0;
-      cstrainsTmp[1]->data[length2/2].imagf_FIXME=0.0;
+      cstrainsTmp[0]->data[length2/2] = crectf( crealf(cstrainsTmp[0]->data[length2/2]), 0.0 );
+      cstrainsTmp[1]->data[length2/2] = crectf( crealf(cstrainsTmp[1]->data[length2/2]), 0.0 );
       gamma11 = overlap11.data->data[length2/2];
       gamma12 = overlap12.data->data[length2/2];
       gamma22 = overlap22.data->data[length2/2];
@@ -1370,14 +1345,11 @@ LALSSSimStochBGStrainTimeSeries( LALStatus              *status,
       factor2 = sqrt(gamma22-gamma12*gamma12/gamma11)*factor;
       factor3 = sqrt(gamma11)*factor;
 
-      cstrainsTmp[0]->data[length2/2].realf_FIXME=factor3*gaussdevsX1->data[length2/2];
+      cstrainsTmp[0]->data[length2/2] = crectf( factor3*gaussdevsX1->data[length2/2], cimagf(cstrainsTmp[0]->data[length2/2]) );
 
-      cstrainsTmp[1]->data[length2/2].realf_FIXME=
-	(crealf(cstrainsTmp[0]->data[length2/2])*gamma12/gamma11 +
-	 factor2*gaussdevsX2->data[length/2]);
+      cstrainsTmp[1]->data[length2/2] = crectf( (crealf(cstrainsTmp[0]->data[length2/2])*gamma12/gamma11 + factor2*gaussdevsX2->data[length/2]), cimagf(cstrainsTmp[1]->data[length2/2]) );
 
-      cstrain2->data[length2/2].realf_FIXME = crealf(cstrainsTmp[1]->data[length2/2]);
-      cstrain2->data[length2/2].imagf_FIXME = 0;
+      cstrain2->data[length2/2] = crectf( crealf(cstrainsTmp[1]->data[length2/2]), 0 );
 
       LALSDestroyVector(status->statusPtr, &(overlap11.data));
       LALSDestroyVector(status->statusPtr, &(overlap12.data));

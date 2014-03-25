@@ -97,7 +97,7 @@ extern "C" {
 REAL8 XLALRngMedBias ( INT4 blkSize );
 
 
-// ------------------------------ obsolte and deprecated LAL-interface functions --------------------
+/* ------------------------------ obsolte and deprecated LAL-interface functions -------------------- */
 void LALRngMedBias (LALStatus   *status,
                     REAL8       *biasFactor,
                     INT4        blkSize

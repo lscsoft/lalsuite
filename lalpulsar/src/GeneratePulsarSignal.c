@@ -27,7 +27,6 @@
 #include <math.h>
 #include <gsl/gsl_math.h>
 
-#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/AVFactories.h>
 #include <lal/TimeSeries.h>
 #include <lal/SeqFactories.h>
@@ -88,7 +87,7 @@ XLALGeneratePulsarSignal ( const PulsarSignalParams *params /**< input params */
   XLALNormalizeSkyPosition ( &(sourceParams.position.longitude), &(sourceParams.position.latitude) );
 
   /* if pulsar is in binary-orbit, set binary parameters */
-  if (params->orbit)
+  if (params->orbit.asini > 0)
     {
       /*------------------------------------------------------------ */
       /* temporary fix for comparison with Chris' code */
@@ -96,12 +95,12 @@ XLALGeneratePulsarSignal ( const PulsarSignalParams *params /**< input params */
 	TRY (LALConvertGPS2SSB (status->statusPtr, &tmpTime, params->orbit->orbitEpoch, params), status);
 	sourceParams.orbitEpoch = tmpTime;
       */
-      sourceParams.orbitEpoch =  params->orbit->tp;
-      sourceParams.omega = params->orbit->argp;
+      sourceParams.orbitEpoch =  params->orbit.tp;
+      sourceParams.omega = params->orbit.argp;
       /* ------- here we do conversion to Teviets preferred variables -------*/
-      sourceParams.rPeriNorm = params->orbit->asini*(1.0 - params->orbit->ecc);
-      sourceParams.oneMinusEcc = 1.0 - params->orbit->ecc;
-      sourceParams.angularSpeed = (LAL_TWOPI/params->orbit->period)*sqrt((1.0 +params->orbit->ecc)/pow((1.0 - params->orbit->ecc),3.0));
+      sourceParams.rPeriNorm = params->orbit.asini*(1.0 - params->orbit.ecc);
+      sourceParams.oneMinusEcc = 1.0 - params->orbit.ecc;
+      sourceParams.angularSpeed = (LAL_TWOPI/params->orbit.period)*sqrt((1.0 +params->orbit.ecc)/pow((1.0 - params->orbit.ecc),3.0));
     }
   else
     {
@@ -126,7 +125,7 @@ XLALGeneratePulsarSignal ( const PulsarSignalParams *params /**< input params */
    * This does not seem to affect performance a lot (~4% in makefakedata),
    * but we'll nevertheless make this sampling faster for binaries and slower
    * for isolated pulsars */
-  if (params->orbit)
+  if (params->orbit.asini > 0)
     sourceParams.deltaT = 5;	/* for binaries */
   else
     sourceParams.deltaT = 60;	/* for isolated pulsars */
@@ -406,8 +405,7 @@ XLALSignalToSFTs ( const REAL4TimeSeries *signalvec, 	/**< input time-series */
       COMPLEX8 *data = thisSFT->data->data;
       for ( UINT4 i = 0; i < numBins ; i ++ )
 	{
-	  data->realf_FIXME *= dt;
-	  data->imagf_FIXME *= dt;
+	  *(data) *= ((REAL4) dt);
 	  data ++;
 	} /* for i < numBins */
 
@@ -429,8 +427,7 @@ XLALSignalToSFTs ( const REAL4TimeSeries *signalvec, 	/**< input time-series */
 	  COMPLEX8 *noise = &( thisNoiseSFT->data->data[index0n] );
 	  for ( UINT4 j=0; j < numBins; j++ )
 	    {
-	      data->realf_FIXME += crealf(*noise);
-	      data->imagf_FIXME += cimagf(*noise);
+	      *(data) += *noise;
 	      data++;
 	      noise++;
 	    } /* for j < numBins */
@@ -484,7 +481,7 @@ LALSignalToSFTs (LALStatus *status,		/**< pointer to LALStatus structure */
 
 
 /* 07/14/04 gam */
-/**
+/** /deprecated Move to attic?
  * Wrapper for LALComputeSky() and  LALComputeDetAMResponse() that finds the sky
  * constants and \f$F_+\f$ and \f$F_\times\f$ for use with LALFastGeneratePulsarSFTs().
  * Uses the output of LALComputeSkyAndZeroPsiAMResponse() and the same inputs as
@@ -503,7 +500,6 @@ LALComputeSkyAndZeroPsiAMResponse (LALStatus *status,		/**< pointer to LALStatus
   INT4 numSFTs;                      /* number of SFTs */
   BarycenterInput baryinput;         /* Stores detector location and other barycentering data */
   CSParams *csParams   = NULL;       /* ComputeSky parameters */
-  CSBParams *csbParams = NULL;       /* ComputeSkyBinary parameters */
   SkyPosition tmp;
   EarthState earth;
   EmissionTime emit;
@@ -532,35 +528,9 @@ LALComputeSkyAndZeroPsiAMResponse (LALStatus *status,		/**< pointer to LALStatus
   baryinput.delta = tmp.latitude;
   baryinput.dInv = 0.e0;      /* following makefakedata_v2 */
 
-  if (params->pSigParams->orbit) {
-    /* LALComputeSkyBinary parameters */
-    csbParams=(CSBParams *)LALMalloc(sizeof(CSBParams));
-    csbParams->skyPos=(REAL8 *)LALMalloc(2*sizeof(REAL8));
-    if (params->pSigParams->pulsar.spindown) {
-       csbParams->spinDwnOrder=params->pSigParams->pulsar.spindown->length;
-    } else {
-       csbParams->spinDwnOrder=0;
-    }
-    csbParams->mObsSFT=numSFTs;
-    csbParams->tSFT=params->pSFTParams->Tsft;
-    csbParams->tGPS=params->pSFTParams->timestamps->data;
-    csbParams->skyPos[0]=params->pSigParams->pulsar.position.longitude;
-    csbParams->skyPos[1]=params->pSigParams->pulsar.position.latitude;
-    csbParams->OrbitalEccentricity = params->pSigParams->orbit->ecc; /* Orbital eccentricy */
-    csbParams->ArgPeriapse = params->pSigParams->orbit->argp;       /* argument of periapsis (radians) */
-    csbParams->TperiapseSSB = params->pSigParams->orbit->tp; /* time of periapsis passage (in SSB) */
-    /* compute semi-major axis and orbital period */
-    csbParams->SemiMajorAxis = params->pSigParams->orbit->asini;
-    csbParams->OrbitalPeriod = params->pSigParams->orbit->period;
-    csbParams->baryinput=&baryinput;
-    csbParams->emit = &emit;
-    csbParams->earth = &earth;
-    csbParams->edat=params->pSigParams->ephemerides;
-
-    /* Call LALComputeSkyBinary */
-    TRY ( LALComputeSkyBinary (status->statusPtr, output->skyConst, 0, csbParams), status);
-    LALFree(csbParams->skyPos);
-    LALFree(csbParams);
+  if (params->pSigParams->orbit.asini > 0) {
+    XLALPrintError ("Sorry, binary orbits (asini>0) not supported.\n");
+    ABORT (status, GENERATEPULSARSIGNALH_EINPUT, GENERATEPULSARSIGNALH_MSGEINPUT);
   } else {
     /* LALComputeSky parameters */
     csParams=(CSParams *)LALMalloc(sizeof(CSParams));
@@ -807,8 +777,7 @@ LALFastGeneratePulsarSFTs (LALStatus *status,
       /* fill in the data */
       if (setToZero) {
         for (j=0; j<jStart; j++) {
-          thisSFT->data->data[j].realf_FIXME = 0.0;
-          thisSFT->data->data[j].imagf_FIXME = 0.0;
+          thisSFT->data->data[j] = 0.0;
         }
       }
       /* This is the same as the inner most loop over k in LALDemod */
@@ -827,13 +796,11 @@ LALFastGeneratePulsarSFTs (LALStatus *status,
           }
           realTmp = realQcc*realPcc - imagQcc*imagPcc;
           imagTmp = realQcc*imagPcc + imagQcc*realPcc;
-          thisSFT->data->data[j].realf_FIXME = (REAL4)(realTmp*realA - imagTmp*imagA);
-          thisSFT->data->data[j].imagf_FIXME = (REAL4)(realTmp*imagA + imagTmp*realA);
+          thisSFT->data->data[j] = crectf( (REAL4)(realTmp*realA - imagTmp*imagA), (REAL4)(realTmp*imagA + imagTmp*realA) );
       } /* END for (j=jStart; j<jEnd; j++) */
       if (setToZero) {
         for (j=jEnd; j<SFTlen; j++) {
-          thisSFT->data->data[j].realf_FIXME = 0.0;
-          thisSFT->data->data[j].imagf_FIXME = 0.0;
+          thisSFT->data->data[j] = 0.0;
         }
       }
       /* fill in SFT metadata */
@@ -847,8 +814,7 @@ LALFastGeneratePulsarSFTs (LALStatus *status,
         index0n = (INT4)( (thisSFT->f0 - thisNoiseSFT->f0)*tSFT + 0.5 );
         for (j=0; j < SFTlen; j++)
         {
-           thisSFT->data->data[j].realf_FIXME += crealf(thisNoiseSFT->data->data[index0n + j]);
-           thisSFT->data->data[j].imagf_FIXME += cimagf(thisNoiseSFT->data->data[index0n + j]);
+           thisSFT->data->data[j] += thisNoiseSFT->data->data[index0n + j];
         } /* for j < SFTlen */
       }
   } /* for iSFT < numSFTs */
@@ -1196,8 +1162,7 @@ XLALcorrect_phase ( SFTtype *sft, LIGOTimeGPS tHeterodyne )
       for (UINT4 i = 0; i < sft->data->length; i++ )
 	{
 	  COMPLEX8 fvec1 = sft->data->data[i];
-	  sft->data->data[i].realf_FIXME = crealf(fvec1) * cosx - cimagf(fvec1) * sinx;
-	  sft->data->data[i].imagf_FIXME = cimagf(fvec1) * cosx + crealf(fvec1) * sinx;
+	  sft->data->data[i] = crectf( crealf(fvec1) * cosx - cimagf(fvec1) * sinx, cimagf(fvec1) * cosx + crealf(fvec1) * sinx );
 	} /* for i < length */
 
     } /* if deltaFT not integer */

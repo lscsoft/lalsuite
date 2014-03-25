@@ -107,8 +107,7 @@ LALInspiralStationaryPhaseApprox1 (
    )
 {  
   /* Print Deprecation Warning */
-  XLALPrintDeprecationWarning("LALInspiralStationaryPhaseApprox1",
-			      "XLALInspiralStationaryPhaseApprox1");
+  XLAL_PRINT_DEPRECATION_WARNING("XLALInspiralStationaryPhaseApprox1");
 
   /* Initialize the status pointer */
   INITSTATUS(status);

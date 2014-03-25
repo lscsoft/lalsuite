@@ -229,13 +229,13 @@ typedef struct tagREAL8Window {
 } REAL8Window;
 
 
-#ifdef SWIG   // SWIG interface directives
+#ifdef SWIG   /* SWIG interface directives */
 SWIGLAL(ACQUIRES_OWNERSHIP(REAL4Sequence*, sequence));
 SWIGLAL(ACQUIRES_OWNERSHIP(REAL8Sequence*, sequence));
 #endif
 REAL4Window *XLALCreateREAL4WindowFromSequence(REAL4Sequence *sequence);
 REAL8Window *XLALCreateREAL8WindowFromSequence(REAL8Sequence *sequence);
-#ifdef SWIG   // SWIG interface directives
+#ifdef SWIG   /* SWIG interface directives */
 SWIGLAL_CLEAR(ACQUIRES_OWNERSHIP(REAL4Sequence*, sequence));
 SWIGLAL_CLEAR(ACQUIRES_OWNERSHIP(REAL8Sequence*, sequence));
 #endif

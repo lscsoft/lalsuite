@@ -5,20 +5,20 @@
 am__depfiles_maybe = depfiles
 
 # SWIG interface file
-swig_iface = @PACKAGE_NAME@swig.i
+swig_iface = @PACKAGE@swig.i
 
 # SWIG interface dependencies file
-swig_iface_deps = ./$(DEPDIR)/@PACKAGE_NAME@swig.deps
+swig_iface_deps = ./$(DEPDIR)/@PACKAGE@swig.deps
 
 # test script for the SWIG wrapping module
-swig_modl_check = check_@PACKAGE_NAME@swig
+swig_modl_check = check_@PACKAGE@swig
 
 # automake libtool variables for SWIG wrapping module
 swig_lt_nodist_sources = $(swig_modl_src)
 swig_lt_sources =
-swig_lt_cppflags = $(AM_CPPFLAGS) -shared
-swig_lt_cflags = $(AM_CFLAGS)
-swig_lt_cxxflags = $(AM_CXXFLAGS)
+swig_lt_cppflags = -I$(top_builddir)/swig -I$(top_srcdir)/include -I$(top_srcdir)/src -I$(top_builddir)/include -I$(top_builddir)/src $(AM_CPPFLAGS) -shared
+swig_lt_cflags = -I$(top_srcdir)/include -I$(top_srcdir)/src -I$(top_builddir)/include -I$(top_builddir)/src
+swig_lt_cxxflags = -I$(top_srcdir)/include -I$(top_srcdir)/src -I$(top_builddir)/include -I$(top_builddir)/src $(AM_CXXFLAGS)
 swig_lt_libadd =
 swig_lt_ldflags = $(AM_LDFLAGS) -module -avoid-version -version-info 0:0:0
 swig_lt_libtoolflags = --tag=disable-static
@@ -50,11 +50,11 @@ rm_targets = { rm -f $@; exit 1; }
 	@cd .. && $(MAKE) $(swig_iface)
 
 # include SWIG interface dependencies file
-@am__include@ @am__quote@./$(DEPDIR)/@PACKAGE_NAME@swig.deps@am__quote@
+@am__include@ @am__quote@./$(DEPDIR)/@PACKAGE@swig.deps@am__quote@
 
 # generate SWIG wrapping module source
 $(swig_modl_src) : ../$(swig_iface)
 	@$(MKDIR_P) $(SWIG_OUTDIR)
-	$(AM_V_GEN)$(SWIG) $(SWIG_SWIGFLAGS) $(CPPFLAGS) $(swig_langflags) -MD -MF $(swig_iface_deps) -o $@ $< || $(rm_targets)
+	$(AM_V_GEN)$(SWIG) -I$(top_builddir)/swig $(SWIG_SWIGFLAGS) $(CPPFLAGS) $(swig_langflags) -MD -MF $(swig_iface_deps) -o $@ $< || $(rm_targets)
 
 endif # SWIG_BUILD

@@ -142,6 +142,7 @@ int XLALUnitCompare( const LALUnit *unit1, const LALUnit *unit2 )
 void
 LALUnitCompare (LALStatus *status, BOOLEAN *output, const LALUnitPair *input)
 {
+  XLAL_PRINT_DEPRECATION_WARNING("XLALUnitCompare");
   int code;
 
   INITSTATUS(status);
@@ -149,7 +150,7 @@ LALUnitCompare (LALStatus *status, BOOLEAN *output, const LALUnitPair *input)
   ASSERT( input != NULL, status, UNITSH_ENULLPIN, UNITSH_MSGENULLPIN );
 
   ASSERT( output != NULL, status, UNITSH_ENULLPOUT, UNITSH_MSGENULLPOUT );
-  XLALPrintDeprecationWarning( "LALUnitCompare", "XLALUnitCompare" );
+  XLAL_PRINT_DEPRECATION_WARNING("XLALUnitCompare");
 
   code = XLALUnitCompare( input->unitOne, input->unitTwo );
   if ( code < 0 )

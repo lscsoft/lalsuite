@@ -21,7 +21,7 @@
  * \author Jolien D. E. Creighton
  * \file
  *
- * ### Program \ref FrameStreamTest.c ###
+ * ### Program FrameStreamTest.c ###
  *
  * Tests the low-level frame stream routines.
  *

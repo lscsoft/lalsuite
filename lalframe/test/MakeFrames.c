@@ -21,7 +21,7 @@
  * \author Jolien D. E. Creighton
  * \file
  *
- * ### Program \ref MakeFrames.c ###
+ * ### Program MakeFrames.c ###
  *
  * Make some frames with random Gaussian noise.
  *

@@ -62,8 +62,8 @@
  * ### Uses ###
  *
  * \code
- * LALUnitRaise()
- * LALUnitMultiply()
+ * XLALUnitRaiseRAT4()
+ * XLALUnitMultiply()
  * strncpy()
  * \endcode
  *
@@ -116,7 +116,6 @@ LALStochasticInverseNoiseCal(
   COMPLEX8 *cPtrR, *cPtrIPHC;
 
   RAT4 power;
-  LALUnitPair unitPair;
   LALUnit wInvNoiseUnits;
 
   COMPLEX8FrequencySeries *hcInvNoise;
@@ -253,20 +252,20 @@ LALStochasticInverseNoiseCal(
   /* Find units of uncalibrated inverse power spectrum */
   power.numerator = -1;
   power.denominatorMinusOne = 0;
-  TRY(LALUnitRaise(status->statusPtr, &wInvNoiseUnits, \
-        &(wNoise->sampleUnits), &power), status);
+  if (XLALUnitRaiseRAT4(&wInvNoiseUnits, &(wNoise->sampleUnits), &power) == NULL) {
+    ABORTXLAL(status);
+  }
 
   /* multiply by response function units to get half-calibrated inv noise
    * units */
-  unitPair.unitOne = &(wFilter->sampleUnits);
-  unitPair.unitTwo = &wInvNoiseUnits;
-  TRY(LALUnitMultiply(status->statusPtr, &(hcInvNoise->sampleUnits), \
-        &unitPair), status);
+  if (XLALUnitMultiply(&(hcInvNoise->sampleUnits), &(wFilter->sampleUnits), &wInvNoiseUnits) == NULL) {
+    ABORTXLAL(status);
+  }
 
   /* multiply by response function units to get calibrated inv noise units */
-  unitPair.unitTwo = &(hcInvNoise->sampleUnits);
-  TRY(LALUnitMultiply(status->statusPtr, &(invNoise->sampleUnits), \
-        &unitPair), status);
+  if (XLALUnitMultiply(&(invNoise->sampleUnits), &(wFilter->sampleUnits), &(hcInvNoise->sampleUnits)) == NULL) {
+    ABORTXLAL(status);
+  }
 
 
   sStopPtr = wNoise->data->data + length;
@@ -317,7 +316,6 @@ LALStochasticInverseNoise(
   COMPLEX8 *cPtrR, *cPtrIPHC;
 
   RAT4 power;
-  LALUnitPair unitPair;
   LALUnit wInvNoiseUnits;
 
   /* initialize status structure */
@@ -465,20 +463,20 @@ LALStochasticInverseNoise(
   /* Find units of uncalibrated inverse power spectrum */
   power.numerator = -1;
   power.denominatorMinusOne = 0;
-  TRY(LALUnitRaise(status->statusPtr, &wInvNoiseUnits, \
-        &(wNoise->sampleUnits), &power), status);
+  if (XLALUnitRaiseRAT4(&wInvNoiseUnits, &(wNoise->sampleUnits), &power) == NULL) {
+    ABORTXLAL(status);
+  }
 
   /* multiply by response function units to get half-calibrated inv noise
    * units */
-  unitPair.unitOne = &(wFilter->sampleUnits);
-  unitPair.unitTwo = &wInvNoiseUnits;
-  TRY(LALUnitMultiply(status->statusPtr, &(hwInvNoise->sampleUnits), \
-        &unitPair), status);
+  if (XLALUnitMultiply(&(hwInvNoise->sampleUnits), &(wFilter->sampleUnits), &wInvNoiseUnits) == NULL) {
+    ABORTXLAL(status);
+  }
 
   /* multiply by response function units to get calibrated inv noise units */
-  unitPair.unitTwo = &(hwInvNoise->sampleUnits);
-  TRY(LALUnitMultiply(status->statusPtr, &(invNoise->sampleUnits), \
-        &unitPair), status);
+  if (XLALUnitMultiply(&(invNoise->sampleUnits), &(wFilter->sampleUnits), &(hwInvNoise->sampleUnits)) == NULL) {
+    ABORTXLAL(status);
+  }
 
   sStopPtr = wNoise->data->data + length;
 

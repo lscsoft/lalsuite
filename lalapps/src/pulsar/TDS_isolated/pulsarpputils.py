@@ -945,6 +945,7 @@ def h0ul_from_prior_file(priorfile, ulval=0.95):
     h0marg.append(np.trapz(histarr[:][i], x=cibins))
 
   # normalise h0 posterior
+  h0bins = h0bins-(h0bins[1]-h0bins[0])/2
   h0area = np.trapz(h0marg, x=h0bins)
   h0margnorm = map(lambda x: x/h0area, h0marg)
 
@@ -1644,7 +1645,7 @@ def heterodyned_pulsar_signal(starttime, duration, dt, detector, pardict):
   s = [] # signal
   ts = [] # times
 
-  if C21 != 0.:
+  if 'C21' in pardict and 'C22' in pardict and 'h0' not in pardict:
     freqs = [1., 2.]
   else:
     freqs = [2.]
@@ -1917,7 +1918,8 @@ def inject_pulsar_signal(starttime, duration, dt, detectors, pardict, \
 
   # add noise and rescale signals if necessary
   if snrscale is not None:
-    snrscale = snrscale / snrtot
+    if snrscale != 0:
+      snrscale = snrscale / snrtot
     # print snrscale
   else:
     snrscale = 1

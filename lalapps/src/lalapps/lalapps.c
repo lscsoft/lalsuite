@@ -26,51 +26,62 @@
 #include <lalapps.h>
 #include <lal/LALMalloc.h>
 #include <lal/LALStatusMacros.h>
+#include <lal/LALBuildInfo.h>
 #include <lal/LALVCSInfo.h>
+#include <LALAppsBuildInfo.h>
 #include <LALAppsVCSInfo.h>
 
 #ifdef HAVE_LIBLALFRAME
 #include <lal/LALFrameConfig.h>
+#include <lal/LALFrameBuildInfo.h>
 #include <lal/LALFrameVCSInfo.h>
 #endif
 
 #ifdef HAVE_LIBLALMETAIO
 #include <lal/LALMetaIOConfig.h>
+#include <lal/LALMetaIOBuildInfo.h>
 #include <lal/LALMetaIOVCSInfo.h>
 #endif
 
 #ifdef HAVE_LIBLALXML
 #include <lal/LALXMLConfig.h>
+#include <lal/LALXMLBuildInfo.h>
 #include <lal/LALXMLVCSInfo.h>
 #endif
 
 #ifdef HAVE_LIBLALSIMULATION
 #include <lal/LALSimulationConfig.h>
+#include <lal/LALSimulationBuildInfo.h>
 #include <lal/LALSimulationVCSInfo.h>
 #endif
 
 #ifdef HAVE_LIBLALBURST
 #include <lal/LALBurstConfig.h>
+#include <lal/LALBurstBuildInfo.h>
 #include <lal/LALBurstVCSInfo.h>
 #endif
 
 #ifdef HAVE_LIBLALINSPIRAL
 #include <lal/LALInspiralConfig.h>
+#include <lal/LALInspiralBuildInfo.h>
 #include <lal/LALInspiralVCSInfo.h>
 #endif
 
 #ifdef HAVE_LIBLALPULSAR
 #include <lal/LALPulsarConfig.h>
+#include <lal/LALPulsarBuildInfo.h>
 #include <lal/LALPulsarVCSInfo.h>
 #endif
 
 #ifdef HAVE_LIBLALINFERENCE
 #include <lal/LALInferenceConfig.h>
+#include <lal/LALInferenceBuildInfo.h>
 #include <lal/LALInferenceVCSInfo.h>
 #endif
 
 #ifdef HAVE_LIBLALSTOCHASTIC
 #include <lal/LALStochasticConfig.h>
+#include <lal/LALStochasticBuildInfo.h>
 #include <lal/LALStochasticVCSInfo.h>
 #endif
 
@@ -312,7 +323,7 @@ XLALGetVersionString( int level )
       tree_status = orig_tree_status = strdup(lalVCSInfo.vcsStatus);
       snprintf(lal_info, sizeof(lal_info),
           "%%%% LAL: %s (%s %s)\n", lalVCSInfo.version, \
-          strsep(&tree_status, delim), lalVCSInfo.vcsId);
+          strtok(tree_status, delim), lalVCSInfo.vcsId);
       free(orig_tree_status);
 
 #ifdef HAVE_LIBLALFRAME
@@ -320,7 +331,7 @@ XLALGetVersionString( int level )
       tree_status = orig_tree_status = strdup(lalFrameVCSInfo.vcsStatus);
       snprintf(lalframe_info, sizeof(lalframe_info),
           "%%%% LALFrame: %s (%s %s)\n", lalFrameVCSInfo.version, \
-          strsep(&tree_status, delim), lalFrameVCSInfo.vcsId);
+          strtok(tree_status, delim), lalFrameVCSInfo.vcsId);
       free(orig_tree_status);
 #endif
 
@@ -329,7 +340,7 @@ XLALGetVersionString( int level )
       tree_status = orig_tree_status = strdup(lalMetaIOVCSInfo.vcsStatus);
       snprintf(lalmetaio_info, sizeof(lalmetaio_info),
           "%%%% LALMetaIO: %s (%s %s)\n", lalMetaIOVCSInfo.version, \
-          strsep(&tree_status, delim), lalMetaIOVCSInfo.vcsId);
+          strtok(tree_status, delim), lalMetaIOVCSInfo.vcsId);
       free(orig_tree_status);
 #endif
 
@@ -338,7 +349,7 @@ XLALGetVersionString( int level )
       tree_status = orig_tree_status = strdup(lalXMLVCSInfo.vcsStatus);
       snprintf(lalxml_info, sizeof(lalxml_info),
           "%%%% LALXML: %s (%s %s)\n", lalXMLVCSInfo.version, \
-          strsep(&tree_status, delim), lalXMLVCSInfo.vcsId);
+          strtok(tree_status, delim), lalXMLVCSInfo.vcsId);
       free(orig_tree_status);
 #endif
 
@@ -347,7 +358,7 @@ XLALGetVersionString( int level )
       tree_status = orig_tree_status = strdup(lalSimulationVCSInfo.vcsStatus);
       snprintf(lalsimulation_info, sizeof(lalsimulation_info),
           "%%%% LALSimulation: %s (%s %s)\n", lalSimulationVCSInfo.version, \
-          strsep(&tree_status, delim), lalSimulationVCSInfo.vcsId);
+          strtok(tree_status, delim), lalSimulationVCSInfo.vcsId);
       free(orig_tree_status);
 #endif
 
@@ -356,7 +367,7 @@ XLALGetVersionString( int level )
       tree_status = orig_tree_status = strdup(lalBurstVCSInfo.vcsStatus);
       snprintf(lalburst_info, sizeof(lalburst_info),
           "%%%% LALBurst: %s (%s %s)\n", lalBurstVCSInfo.version, \
-          strsep(&tree_status, delim), lalBurstVCSInfo.vcsId);
+          strtok(tree_status, delim), lalBurstVCSInfo.vcsId);
       free(orig_tree_status);
 #endif
 
@@ -365,7 +376,7 @@ XLALGetVersionString( int level )
       tree_status = orig_tree_status = strdup(lalInspiralVCSInfo.vcsStatus);
       snprintf(lalinspiral_info, sizeof(lalinspiral_info),
           "%%%% LALInspiral: %s (%s %s)\n", lalInspiralVCSInfo.version, \
-          strsep(&tree_status, delim), lalInspiralVCSInfo.vcsId);
+          strtok(tree_status, delim), lalInspiralVCSInfo.vcsId);
       free(orig_tree_status);
 #endif
 
@@ -374,7 +385,7 @@ XLALGetVersionString( int level )
       tree_status = orig_tree_status = strdup(lalPulsarVCSInfo.vcsStatus);
       snprintf(lalpulsar_info, sizeof(lalpulsar_info),
           "%%%% LALPulsar: %s (%s %s)\n", lalPulsarVCSInfo.version, \
-          strsep(&tree_status, delim), lalPulsarVCSInfo.vcsId);
+          strtok(tree_status, delim), lalPulsarVCSInfo.vcsId);
       free(orig_tree_status);
 #endif
 
@@ -383,7 +394,7 @@ XLALGetVersionString( int level )
       tree_status = orig_tree_status = strdup(lalInferenceVCSInfo.vcsStatus);
       snprintf(lalinference_info, sizeof(lalinference_info),
           "%%%% LALInference: %s (%s %s)\n", lalInferenceVCSInfo.version, \
-          strsep(&tree_status, delim), lalInferenceVCSInfo.vcsId);
+          strtok(tree_status, delim), lalInferenceVCSInfo.vcsId);
       free(orig_tree_status);
 #endif
 
@@ -392,7 +403,7 @@ XLALGetVersionString( int level )
       tree_status = orig_tree_status = strdup(lalStochasticVCSInfo.vcsStatus);
       snprintf(lalstochastic_info, sizeof(lalstochastic_info),
           "%%%% LALStochastic: %s (%s %s)\n", lalStochasticVCSInfo.version, \
-          strsep(&tree_status, delim), lalStochasticVCSInfo.vcsId);
+          strtok(tree_status, delim), lalStochasticVCSInfo.vcsId);
       free(orig_tree_status);
 #endif
 
@@ -400,7 +411,7 @@ XLALGetVersionString( int level )
       tree_status = orig_tree_status = strdup(lalAppsVCSInfo.vcsStatus);
       snprintf(lalapps_info, sizeof(lalapps_info),
           "%%%% LALApps: %s (%s %s)\n", lalAppsVCSInfo.version, \
-          strsep(&tree_status, delim), lalAppsVCSInfo.vcsId);
+          strtok(tree_status, delim), lalAppsVCSInfo.vcsId);
       free(orig_tree_status);
 
       break;
@@ -422,8 +433,8 @@ XLALGetVersionString( int level )
           lalVCSInfo.vcsBranch,
           lalVCSInfo.vcsTag,
           lalVCSInfo.vcsStatus,
-          LAL_CONFIGURE_DATE ,
-          LAL_CONFIGURE_ARGS );
+          lalConfigureDate ,
+          lalConfigureArgs );
 
 #ifdef HAVE_LIBLALFRAME
       /* get lalframe info */
@@ -442,8 +453,8 @@ XLALGetVersionString( int level )
           lalFrameVCSInfo.vcsBranch,
           lalFrameVCSInfo.vcsTag,
           lalFrameVCSInfo.vcsStatus,
-          LALFRAME_CONFIGURE_DATE ,
-          LALFRAME_CONFIGURE_ARGS );
+          lalFrameConfigureDate ,
+          lalFrameConfigureArgs );
 #endif
 
 #ifdef HAVE_LIBLALMETAIO
@@ -463,8 +474,8 @@ XLALGetVersionString( int level )
           lalMetaIOVCSInfo.vcsBranch,
           lalMetaIOVCSInfo.vcsTag,
           lalMetaIOVCSInfo.vcsStatus,
-          LALMETAIO_CONFIGURE_DATE ,
-          LALMETAIO_CONFIGURE_ARGS );
+          lalMetaIOConfigureDate ,
+          lalMetaIOConfigureArgs );
 #endif
 
 #ifdef HAVE_LIBLALXML
@@ -484,8 +495,8 @@ XLALGetVersionString( int level )
           lalXMLVCSInfo.vcsBranch,
           lalXMLVCSInfo.vcsTag,
           lalXMLVCSInfo.vcsStatus,
-          LALXML_CONFIGURE_DATE ,
-          LALXML_CONFIGURE_ARGS );
+          lalXMLConfigureDate ,
+          lalXMLConfigureArgs );
 #endif
 
 #ifdef HAVE_LIBLALSIMULATION
@@ -505,8 +516,8 @@ XLALGetVersionString( int level )
           lalSimulationVCSInfo.vcsBranch,
           lalSimulationVCSInfo.vcsTag,
           lalSimulationVCSInfo.vcsStatus,
-          LALSIMULATION_CONFIGURE_DATE ,
-          LALSIMULATION_CONFIGURE_ARGS );
+          lalSimulationConfigureDate ,
+          lalSimulationConfigureArgs );
 #endif
 
 #ifdef HAVE_LIBLALBURST
@@ -526,11 +537,11 @@ XLALGetVersionString( int level )
           lalBurstVCSInfo.vcsBranch,
           lalBurstVCSInfo.vcsTag,
           lalBurstVCSInfo.vcsStatus,
-          LALBURST_CONFIGURE_DATE ,
-          LALBURST_CONFIGURE_ARGS );
+          lalBurstConfigureDate ,
+          lalBurstConfigureArgs );
 #endif
 
-#ifdef HAVE_LIBLALINSIRAL
+#ifdef HAVE_LIBLALINSPIRAL
       /* get lalinspiral info */
       snprintf( lalinspiral_info, sizeof(lalinspiral_info),
           "%%%% LALInspiral-Version: %s\n"
@@ -547,8 +558,8 @@ XLALGetVersionString( int level )
           lalInspiralVCSInfo.vcsBranch,
           lalInspiralVCSInfo.vcsTag,
           lalInspiralVCSInfo.vcsStatus,
-          LALINSPIRAL_CONFIGURE_DATE ,
-          LALINSPIRAL_CONFIGURE_ARGS );
+          lalInspiralConfigureDate ,
+          lalInspiralConfigureArgs );
 #endif
 
 #ifdef HAVE_LIBLALPULSAR
@@ -568,8 +579,8 @@ XLALGetVersionString( int level )
           lalPulsarVCSInfo.vcsBranch,
           lalPulsarVCSInfo.vcsTag,
           lalPulsarVCSInfo.vcsStatus,
-          LALPULSAR_CONFIGURE_DATE ,
-          LALPULSAR_CONFIGURE_ARGS );
+          lalPulsarConfigureDate ,
+          lalPulsarConfigureArgs );
 #endif
 
 #ifdef HAVE_LIBLALINFERENCE
@@ -589,8 +600,8 @@ XLALGetVersionString( int level )
           lalInferenceVCSInfo.vcsBranch,
           lalInferenceVCSInfo.vcsTag,
           lalInferenceVCSInfo.vcsStatus,
-          LALINFERENCE_CONFIGURE_DATE ,
-          LALINFERENCE_CONFIGURE_ARGS );
+          lalInferenceConfigureDate ,
+          lalInferenceConfigureArgs );
 #endif
 
 #ifdef HAVE_LIBLALSTOCHASTIC
@@ -610,8 +621,8 @@ XLALGetVersionString( int level )
           lalStochasticVCSInfo.vcsBranch,
           lalStochasticVCSInfo.vcsTag,
           lalStochasticVCSInfo.vcsStatus,
-          LALSTOCHASTIC_CONFIGURE_DATE ,
-          LALSTOCHASTIC_CONFIGURE_ARGS );
+          lalStochasticConfigureDate ,
+          lalStochasticConfigureArgs );
 #endif
 
       /* add lalapps info */
@@ -630,8 +641,8 @@ XLALGetVersionString( int level )
           lalAppsVCSInfo.vcsBranch,
           lalAppsVCSInfo.vcsTag,
           lalAppsVCSInfo.vcsStatus,
-          LALAPPS_CONFIGURE_DATE ,
-          LALAPPS_CONFIGURE_ARGS );
+          lalAppsConfigureDate ,
+          lalAppsConfigureArgs );
 
       break;
   }

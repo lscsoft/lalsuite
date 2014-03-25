@@ -1,4 +1,3 @@
-#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/LIGOMetadataTables.h>
 #include <lal/LIGOMetadataUtils.h>
 #include <lal/LALStdlib.h>
@@ -130,8 +129,7 @@ static void initBankVetoData( FindChirpBankVetoData *bankVetoData,REAL4Vector *a
     bankVetoData->spec = XLALCreateREAL4Vector(templateLength);
     for (sampleIndex = 0; sampleIndex < templateLength; sampleIndex++)
     {
-	bankVetoData->resp->data[sampleIndex].realf_FIXME = 1;
-	bankVetoData->resp->data[sampleIndex].imagf_FIXME = 0;
+	bankVetoData->resp->data[sampleIndex] = 1.0;
 	bankVetoData->spec->data[sampleIndex] = 1;
 	ampVec->data[sampleIndex] = 1;
     }
@@ -174,10 +172,7 @@ static void makeDeltaFunctionTemplates(FindChirpBankVetoData *bankVetoData,UINT4
 	for (sampleIndex = 0; sampleIndex < templateLength; sampleIndex++)
 	{
 	    phase = 2*LAL_PI*( (REAL4) (templateIndex*sampleIndex) ) / ( (REAL4) templateLength );
-	    bankVetoData->fcInputArray[templateIndex]->fcTmplt->data->data[sampleIndex].realf_FIXME =
-	      cos(phase);
-	    bankVetoData->fcInputArray[templateIndex]->fcTmplt->data->data[sampleIndex].imagf_FIXME =
-	      sin(phase);
+	    bankVetoData->fcInputArray[templateIndex]->fcTmplt->data->data[sampleIndex] = crectf( cos(phase), sin(phase) );
 	}
 	bankVetoData->fcInputArray[templateIndex]->fcTmplt->tmplt.fFinal =
 	  (REAL4) (deltaF*templateLength-FLOW);

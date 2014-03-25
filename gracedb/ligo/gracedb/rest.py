@@ -304,8 +304,8 @@ class GraceDb(GsiRest):
             uri += "?" + urllib.urlencode(qdict)
         while uri:
             response = self.get(uri).json()
-            events = response['events']
-            uri = response['links'].get('next')
+            events = response.get('events',[])
+            uri = response.get('links',{}).get('next')
             for event in events:
                  yield event
 

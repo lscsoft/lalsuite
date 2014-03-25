@@ -1,5 +1,5 @@
 package "skygridsetup"
-version "1.0.2"
+version "1.0.3"
 purpose "Helper program to output the skygrid"
 
 args "--file-name=cmdline_skygridsetup --conf-parser --show-required=[required]"
@@ -13,8 +13,8 @@ option "fmin"  - "Minimum frequency of band" double required
 option "fspan" - "Frequency span of band" double required
 option "IFO"   - "Interferometer of whose data is being analyzed" string typestr="IFO code" values="H1","L1","V1" required
 option "outfilename"   - "Output file name" string default="skygrid.dat" optional
-option "ephemDir"      - "Path to ephemeris files" string default="/opt/lscsoft/lalpulsar/share/lalpulsar" optional
-option "ephemYear"     - "Year or year range (e.g. 08-11) of ephemeris files" string default="08-11" optional
+option "ephemEarth"     - "Location of Earth ephemeris file" string typestr="path/filename" default="earth00-19-DE405.dat.gz" optional
+option "ephemSun"       - "Location of Sun ephemeris file" string typestr="path/filename" default="sun00-19-DE405.dat.gz" optional
 option "skyRegion"     - "Region of the sky to search (e.g. (ra1,dec1),(ra2,dec2),(ra3,dec3)...) or allsky" string default="allsky" optional
 option "v2"    - "Flag to use the newer style of CompDetectorVmax input arguments (always specify this unless you know what you are doing!)" flag off
 

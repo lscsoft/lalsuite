@@ -1,3 +1,9 @@
+laldetchar (0.1.0-1) unstable; urgency=low
+
+  * LALDetChat 0.1.0
+
+ -- Adam Mercer <adam.mercer@ligo.org>  Fri, 03 Jan 2014 12:12:00 -0600
+
 laldetchar (0.0.4-1) unstable; urgency=low
 
   * LALDetChar 0.0.4

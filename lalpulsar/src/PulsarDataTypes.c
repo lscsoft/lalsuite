@@ -36,7 +36,6 @@
 /*---------- Global variables ----------*/
 
 /* empty struct initializers */
-const BinaryOrbitParams empty_BinaryOrbitParams;
 const PulsarAmplitudeParams empty_PulsarAmplitudeParams;
 const PulsarSpinRange empty_PulsarSpinRange;
 const PulsarDopplerParams empty_PulsarDopplerParams;

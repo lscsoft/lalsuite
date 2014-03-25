@@ -12,7 +12,7 @@ swig_lt_cppflags += $(PYTHON_CPPFLAGS)
 swig_lt_cxxflags += $(PYTHON_CFLAGS)
 
 # SWIG Python wrapping module source file
-swig_modl_src = @PACKAGE_NAME@swig_python.c
+swig_modl_src = @PACKAGE@swig_python.c
 
 # extra Python distribution files
 EXTRA_DIST += $(swig_modl_check).py
@@ -20,15 +20,17 @@ EXTRA_DIST += $(swig_modl_check).py
 if SWIG_BUILD_PYTHON
 
 # SWIG Python generated source files
-nodist_pkgpyexec_PYTHON = $(SWIG_OUTDIR)/$(PACKAGE_NAME).py
+nodist_pkgpyexec_PYTHON = $(SWIG_OUTDIR)/$(PACKAGE).py
 
 # run SWIG wrapping module test script
 TESTS = $(swig_modl_check).py
 PY_LOG_COMPILER = $(PYTHON)
 PY_LOG_FLAGS =
 TESTS_ENVIRONMENT = \
-	$(SWIG_LD_LIBPATH_NAME)="$(SWIG_LD_LIBRARY_PATH)"; export $(SWIG_LD_LIBPATH_NAME); \
-	PYTHONPATH="$(SWIG_PREINST_PATH):$${PYTHONPATH}"; export PYTHONPATH; \
+	if test "x$(SWIG_LD_LIBPATH_NAME)" != x; then \
+		$(SWIG_LD_LIBPATH_NAME)="$(SWIG_LD_LIBRARY_PATH)"; export $(SWIG_LD_LIBPATH_NAME); \
+	fi; \
+	PYTHONPATH="$(SWIG_PREINST_PATH):$(LAL_PYTHON_PATH)"; export PYTHONPATH; \
 	LAL_DEBUG_LEVEL=error,memdbg; export LAL_DEBUG_LEVEL;
 
 # run Python for interactive testing

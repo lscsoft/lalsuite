@@ -22,7 +22,7 @@
  * \file
  * \ingroup pulsarTODO
  *
- * ### Module \ref PulsarCatInput.c ###
+ * ### Module PulsarCatInput.c ###
  *
  * Parses a catalogue of pulsar data.
  *

@@ -34,6 +34,10 @@
  */
 /*@{*/
 
+#ifdef SWIG /* SWIG interface directives */
+SWIGLAL(INPUT_SCALARS(REAL8*, min, max));
+#endif
+
 /**
  * Return the logarithmic prior density of the variables specified, for the non-spinning/spinning inspiral signal case.
  */
@@ -101,8 +105,6 @@ REAL8 LALInferenceInspiralPriorNormalised(LALInferenceRunState *runState, LALInf
  * for the non-spinning/spinning inspiral signal case.
  */
 UINT4 LALInferenceInspiralPriorNormalisedCubeToPrior(LALInferenceRunState *runState, LALInferenceVariables *params, double *Cube, void *context);
-
-REAL8 LALInferenceInspiralNoiseOnlyPrior(LALInferenceRunState *runState, LALInferenceVariables *params);
 
 /**
  * Function to add the minimum and maximum values for the uniform prior onto the \c priorArgs.
@@ -187,6 +189,9 @@ void LALInferenceDrawNameFromPrior( LALInferenceVariables *output,
                                     char *name, LALInferenceVariableType type, 
                                     gsl_rng *rdm );
 
+/* Switch reads true if parameters lie within Malmquist prior */
+UINT4 within_malmquist(LALInferenceRunState *runState, LALInferenceVariables *params);
+
 /** Prior that is 1 everywhere in component mass space. */
 REAL8 LALInferenceAnalyticNullPrior(LALInferenceRunState *runState, LALInferenceVariables *params);
 
@@ -215,6 +220,8 @@ REAL8 LALInferenceComputePriorMassNorm(const double MMin, const double MMax, con
  */
 REAL8 LALInferenceFlatBoundedPrior(LALInferenceRunState *runState, LALInferenceVariables *params);
 
+UINT4 LALInferenceCubeToPSDScaleParams(LALInferenceVariables *priorParams, LALInferenceVariables *params, INT4 *idx, double *Cube, void *context);
+
 /**
  * Prior that converts from a Cube parameter in [0,1] to the flat prior bounded by x1 and x2.
  */
@@ -229,6 +236,17 @@ REAL8 LALInferenceCubeToLogFlatPrior(double r, double x1, double x2);
  * Prior that converts from a Cube parameter in [0,1] to the power prior bounded by x1 and x2 with power p.
  */
 REAL8 LALInferenceCubeToPowerPrior(double p, double r, double x1, double x2);
+
+/**
+ * Prior that converts from a Cube parameter in [0,1] to the Gaussian prior with given mean and standard deviation.
+ */
+REAL8 LALInferenceCubeToGaussianPrior(double r, double mean, double sigma);
+
+/**
+ * Prior that converts from a Cube parameter in [0,1] to the sine prior with given
+ * min (x1) and max (x2) values
+ */
+REAL8 LALInferenceCubeToSinPrior(double r, double x1, double x2);
 
 /*@}*/
 

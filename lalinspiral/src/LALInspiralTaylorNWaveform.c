@@ -305,8 +305,7 @@ void LALTaylorNWaveform (
    InspiralTemplate *params
    )
 {
-   XLALPrintDeprecationWarning("LALTaylorNWaveform", 
-         "XLALTaylorNWaveform");
+   XLAL_PRINT_DEPRECATION_WARNING("XLALTaylorNWaveform");
    INITSTATUS(status);
    ATTATCHSTATUSPTR(status);
 

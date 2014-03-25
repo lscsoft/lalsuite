@@ -3,12 +3,13 @@ exec_prefix=@exec_prefix@
 libdir=@libdir@
 includedir=@includedir@
 datarootdir=@datarootdir@
-datadir=@datadir@
-pkgdatadir=@datadir@/@PACKAGE@
+LAL_DATA_PATH=@datadir@/@PACKAGE@:@LAL_DATA_PATH@
+LAL_OCTAVE_PATH=@octexecdir@:@LAL_OCTAVE_PATH@
+LAL_PYTHON_PATH=@pyexecdir@:@LAL_PYTHON_PATH@
 
 Name: LALInference
 Description: LAL Inference Library Support
 Version: @VERSION@
-Requires: gsl lal libmetaio lalmetaio lalinspiral lalpulsar
+Requires: gsl, lal >= @LAL_VERSION@, libmetaio, lalmetaio >= @LALMETAIO_VERSION@, lalinspiral >= @LALINSPIRAL_VERSION@, lalpulsar >= @LALPULSAR_VERSION@
 Libs: -L${libdir} -llalinference
-Cflags: -I${includedir} -std=gnu99
+Cflags: -I${includedir} @OPENMP_CFLAGS@

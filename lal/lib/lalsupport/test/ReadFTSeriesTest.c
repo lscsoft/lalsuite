@@ -57,7 +57,6 @@
 #define READFTSERIESTESTC_MSGEFLS "Subroutine returned unexpected results"
 
 
-#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/Units.h>
 #include <lal/ReadFTSeries.h>
 #include <lal/PrintFTSeries.h>
@@ -114,8 +113,6 @@ int main( void )
 
   /* variables for units */
   RAT4        raise;
-  LALUnitPair unitPair;
-  LALUnitPair inputUnits;
   LALUnit     strainToMinus2;
   LALUnit     adcToMinus2;
   LALUnit     adcStrain;
@@ -155,8 +152,7 @@ int main( void )
   }
   for ( i=1, cData=cSequenceIn->data; i<=READFTSERIESTEST_LEN ; i++, cData++ )
   {
-    cData->realf_FIXME = i;
-    cData->imagf_FIXME = i+1;
+    *(cData) = crectf( i, i+1 );
     }
 
   strncpy(cFrequencySeries.name,"Complex frequency series",LALNameLength);
@@ -230,17 +226,9 @@ int main( void )
 	    READFTSERIESTESTC_MSGEFLS);
     return READFTSERIESTESTC_EFLS;
   }
-  inputUnits.unitOne = &cFrequencySeries.sampleUnits;
-  inputUnits.unitTwo = &cFrequencySeries2.sampleUnits;
-  LALUnitCompare(&status,&unitComp,&inputUnits);
-  if (status.statusCode != 0)
-  {
-    fprintf(stderr,"[%i]: %s [ReadFTSeriesTest:%s]\n",status.statusCode,
-	    status.statusDescription, READFTSERIESTESTC_MSGEFUN);
-    return READFTSERIESTESTC_EFUN;
-  }
+  unitComp = XLALUnitCompare(&cFrequencySeries.sampleUnits,&cFrequencySeries2.sampleUnits);
 
-  if (!unitComp)
+  if (unitComp != 0)
   {
     fprintf(stderr,"Units Mismatch [ReadFTSeriesTest:%s]\n",
 	    READFTSERIESTESTC_MSGEFLS);
@@ -292,8 +280,7 @@ int main( void )
 
   for ( i=1, zData=zSequenceIn->data; i<=READFTSERIESTEST_LEN ; i++, zData++ )
   {
-    zData->real_FIXME = i/4.0;
-    zData->imag_FIXME = (i+1)/5.0;
+    *(zData) = crect( i/4.0, (i+1)/5.0 );
   }
   zFrequencySeries.sampleUnits = lalDimensionlessUnit;
   strncpy(zFrequencySeries.name,"Complex frequency series",LALNameLength);
@@ -364,17 +351,9 @@ int main( void )
 	    READFTSERIESTESTC_MSGEFLS);
     return READFTSERIESTESTC_EFLS;
   }
-  inputUnits.unitOne = &zFrequencySeries.sampleUnits;
-  inputUnits.unitTwo = &zFrequencySeries2.sampleUnits;
-  LALUnitCompare(&status,&unitComp,&inputUnits);
-  if (status.statusCode != 0)
-  {
-    fprintf(stderr,"[%i]: %s [ReadFTSeriesTest:%s]\n",status.statusCode,
-	    status.statusDescription, READFTSERIESTESTC_MSGEFUN);
-    return READFTSERIESTESTC_EFUN;
-  }
+  unitComp = XLALUnitCompare(&zFrequencySeries.sampleUnits,&zFrequencySeries2.sampleUnits);
 
-  if (!unitComp)
+  if (unitComp != 0)
   {
     fprintf(stderr,"Units Mismatch [ReadFTSeriesTest:%s]\n",
 	    READFTSERIESTESTC_MSGEFLS);
@@ -431,36 +410,28 @@ int main( void )
   /* set units */
   raise.numerator = -2;
   raise.denominatorMinusOne = 0;
-  LALUnitRaise(&status, &strainToMinus2, &lalStrainUnit, &raise);
-  if (status.statusCode != 0)
+  if (XLALUnitRaiseRAT4(&strainToMinus2, &lalStrainUnit, &raise) == NULL)
   {
     fprintf(stderr,"[%i]: %s [ReadFTSeriesTest:%s]\n",status.statusCode,
 	    status.statusDescription, READFTSERIESTESTC_MSGEFUN);
     return READFTSERIESTESTC_EFUN;
   }
 
-  LALUnitRaise(&status, &adcToMinus2, &lalADCCountUnit, &raise);
-  if (status.statusCode != 0)
+  if (XLALUnitRaiseRAT4(&adcToMinus2, &lalADCCountUnit, &raise) == NULL)
   {
     fprintf(stderr,"[%i]: %s [ReadFTSeriesTest:%s]\n",status.statusCode,
 	    status.statusDescription, READFTSERIESTESTC_MSGEFUN);
     return READFTSERIESTESTC_EFUN;
   }
 
-  unitPair.unitOne = &strainToMinus2;
-  unitPair.unitTwo = &adcToMinus2;
-  LALUnitMultiply(&status, &(adcStrain), &unitPair);
-  if (status.statusCode != 0)
+  if (XLALUnitMultiply(&(adcStrain), &strainToMinus2, &adcToMinus2) == NULL)
   {
     fprintf(stderr,"[%i]: %s [ReadFTSeriesTest:%s]\n",status.statusCode,
 	    status.statusDescription, READFTSERIESTESTC_MSGEFUN);
     return READFTSERIESTESTC_EFUN;
   }
 
-  unitPair.unitOne = &adcStrain;
-  unitPair.unitTwo = &lalHertzUnit;
-  LALUnitMultiply(&status, &dFrequencySeries.sampleUnits, &unitPair);
-  if (status.statusCode != 0)
+  if (XLALUnitMultiply(&dFrequencySeries.sampleUnits, &adcStrain, &lalHertzUnit) == NULL)
   {
     fprintf(stderr,"[%i]: %s [ReadFTSeriesTest:%s]\n",status.statusCode,
 	    status.statusDescription, READFTSERIESTESTC_MSGEFUN);
@@ -537,18 +508,9 @@ int main( void )
     return READFTSERIESTESTC_EFLS;
   }
 
-  inputUnits.unitOne = &dFrequencySeries.sampleUnits;
-  inputUnits.unitTwo = &dFrequencySeries2.sampleUnits;
-  LALUnitCompare(&status,&unitComp,&inputUnits);
-  if (status.statusCode != 0)
-  {
-    fprintf(stderr,"[%i]: %s [ReadFTSeriesTest:%s]\n",status.statusCode,
-	    status.statusDescription, READFTSERIESTESTC_MSGEFUN);
-    return READFTSERIESTESTC_EFUN;
-  }
+  unitComp = XLALUnitCompare(&dFrequencySeries.sampleUnits,&dFrequencySeries2.sampleUnits);
 
-
-  if (!unitComp)
+  if (unitComp != 0)
   {
     fprintf(stderr,"Unit Mismatch [ReadFTSeriesTest:%s]\n",
 	    READFTSERIESTESTC_MSGEFLS);
@@ -599,36 +561,28 @@ int main( void )
   /* set units */
   raise.numerator = -2;
   raise.denominatorMinusOne = 0;
-  LALUnitRaise(&status, &strainToMinus2, &lalStrainUnit, &raise);
-  if (status.statusCode != 0)
+  if (XLALUnitRaiseRAT4(&strainToMinus2, &lalStrainUnit, &raise) == NULL)
   {
     fprintf(stderr,"[%i]: %s [ReadFTSeriesTest:%s]\n",status.statusCode,
 	    status.statusDescription, READFTSERIESTESTC_MSGEFUN);
     return READFTSERIESTESTC_EFUN;
   }
 
-  LALUnitRaise(&status, &adcToMinus2, &lalADCCountUnit, &raise);
-  if (status.statusCode != 0)
+  if (XLALUnitRaiseRAT4(&adcToMinus2, &lalADCCountUnit, &raise) == NULL)
   {
     fprintf(stderr,"[%i]: %s [ReadFTSeriesTest:%s]\n",status.statusCode,
 	    status.statusDescription, READFTSERIESTESTC_MSGEFUN);
     return READFTSERIESTESTC_EFUN;
   }
 
-  unitPair.unitOne = &strainToMinus2;
-  unitPair.unitTwo = &adcToMinus2;
-  LALUnitMultiply(&status, &(adcStrain), &unitPair);
-  if (status.statusCode != 0)
+  if (XLALUnitMultiply(&(adcStrain), &strainToMinus2, &adcToMinus2) == NULL)
   {
     fprintf(stderr,"[%i]: %s [ReadFTSeriesTest:%s]\n",status.statusCode,
 	    status.statusDescription, READFTSERIESTESTC_MSGEFUN);
     return READFTSERIESTESTC_EFUN;
   }
 
-  unitPair.unitOne = &adcStrain;
-  unitPair.unitTwo = &lalHertzUnit;
-  LALUnitMultiply(&status, &sFrequencySeries.sampleUnits, &unitPair);
-  if (status.statusCode != 0)
+  if (XLALUnitMultiply(&sFrequencySeries.sampleUnits, &adcStrain, &lalHertzUnit) == NULL)
   {
     fprintf(stderr,"[%i]: %s [ReadFTSeriesTest:%s]\n",status.statusCode,
 	    status.statusDescription, READFTSERIESTESTC_MSGEFUN);
@@ -706,17 +660,9 @@ int main( void )
     return READFTSERIESTESTC_EFLS;
   }
 
-  inputUnits.unitOne = &sFrequencySeries.sampleUnits;
-  inputUnits.unitTwo = &sFrequencySeries2.sampleUnits;
-  LALUnitCompare(&status,&unitComp,&inputUnits);
-  if (status.statusCode != 0)
-  {
-    fprintf(stderr,"[%i]: %s [ReadFTSeriesTest:%s]\n",status.statusCode,
-	    status.statusDescription, READFTSERIESTESTC_MSGEFUN);
-    return READFTSERIESTESTC_EFUN;
-  }
+  unitComp = XLALUnitCompare(&sFrequencySeries.sampleUnits,&sFrequencySeries2.sampleUnits);
 
-  if (!unitComp)
+  if (unitComp != 0)
   {
     fprintf(stderr,"Unit Mismatch [ReadFTSeriesTest:%s]\n",
 	    READFTSERIESTESTC_MSGEFLS);
@@ -811,36 +757,28 @@ int main( void )
 
   raise.numerator = -2;
   raise.denominatorMinusOne = 0;
-  LALUnitRaise(&status, &strainToMinus2, &lalStrainUnit, &raise);
-  if (status.statusCode != 0)
+  if (XLALUnitRaiseRAT4(&strainToMinus2, &lalStrainUnit, &raise) == NULL)
   {
     fprintf(stderr,"[%i]: %s [ReadFTSeriesTest:%s]\n",status.statusCode,
 	    status.statusDescription, READFTSERIESTESTC_MSGEFUN);
     return READFTSERIESTESTC_EFUN;
   }
 
-  LALUnitRaise(&status, &adcToMinus2, &lalADCCountUnit, &raise);
-  if (status.statusCode != 0)
+  if (XLALUnitRaiseRAT4(&adcToMinus2, &lalADCCountUnit, &raise) == NULL)
   {
     fprintf(stderr,"[%i]: %s [ReadFTSeriesTest:%s]\n",status.statusCode,
 	    status.statusDescription, READFTSERIESTESTC_MSGEFUN);
     return READFTSERIESTESTC_EFUN;
   }
 
-  unitPair.unitOne = &strainToMinus2;
-  unitPair.unitTwo = &adcToMinus2;
-  LALUnitMultiply(&status, &(adcStrain), &unitPair);
-  if (status.statusCode != 0)
+  if (XLALUnitMultiply(&(adcStrain), &strainToMinus2, &adcToMinus2) == NULL)
   {
     fprintf(stderr,"[%i]: %s [ReadFTSeriesTest:%s]\n",status.statusCode,
 	    status.statusDescription, READFTSERIESTESTC_MSGEFUN);
     return READFTSERIESTESTC_EFUN;
   }
 
-  unitPair.unitOne = &adcStrain;
-  unitPair.unitTwo = &lalHertzUnit;
-  LALUnitMultiply(&status, &sTimeSeries.sampleUnits, &unitPair);
-  if (status.statusCode != 0)
+  if (XLALUnitMultiply(&sTimeSeries.sampleUnits, &adcStrain, &lalHertzUnit) == NULL)
   {
     fprintf(stderr,"[%i]: %s [ReadFTSeriesTest:%s]\n",status.statusCode,
 	    status.statusDescription, READFTSERIESTESTC_MSGEFUN);
@@ -935,17 +873,9 @@ int main( void )
     return READFTSERIESTESTC_EFLS;
   }
 
-  inputUnits.unitOne = &sTimeSeries.sampleUnits;
-  inputUnits.unitTwo = &sTimeSeries2.sampleUnits;
-  LALUnitCompare(&status,&unitComp,&inputUnits);
-  if (status.statusCode != 0)
-  {
-    fprintf(stderr,"[%i]: %s [ReadFTSeriesTest:%s]\n",status.statusCode,
-	    status.statusDescription, READFTSERIESTESTC_MSGEFUN);
-    return READFTSERIESTESTC_EFUN;
-  }
+  unitComp = XLALUnitCompare(&sTimeSeries.sampleUnits,&sTimeSeries2.sampleUnits);
 
-  if (!unitComp)
+  if (unitComp != 0)
   {
     fprintf(stderr,"Units Mismatch [ReadFTSeriesTest:%s]\n",
 	    READFTSERIESTESTC_MSGEFLS);
@@ -973,36 +903,28 @@ int main( void )
 
   raise.numerator = -2;
   raise.denominatorMinusOne = 0;
-  LALUnitRaise(&status, &strainToMinus2, &lalStrainUnit, &raise);
-  if (status.statusCode != 0)
+  if (XLALUnitRaiseRAT4(&strainToMinus2, &lalStrainUnit, &raise) == NULL)
   {
     fprintf(stderr,"[%i]: %s [ReadFTSeriesTest:%s]\n",status.statusCode,
 	    status.statusDescription, READFTSERIESTESTC_MSGEFUN);
     return READFTSERIESTESTC_EFUN;
   }
 
-  LALUnitRaise(&status, &adcToMinus2, &lalADCCountUnit, &raise);
-  if (status.statusCode != 0)
+  if (XLALUnitRaiseRAT4(&adcToMinus2, &lalADCCountUnit, &raise) == NULL)
   {
     fprintf(stderr,"[%i]: %s [ReadFTSeriesTest:%s]\n",status.statusCode,
 	    status.statusDescription, READFTSERIESTESTC_MSGEFUN);
     return READFTSERIESTESTC_EFUN;
   }
 
-  unitPair.unitOne = &strainToMinus2;
-  unitPair.unitTwo = &adcToMinus2;
-  LALUnitMultiply(&status, &(adcStrain), &unitPair);
-  if (status.statusCode != 0)
+  if (XLALUnitMultiply(&(adcStrain), &strainToMinus2, &adcToMinus2) == NULL)
   {
     fprintf(stderr,"[%i]: %s [ReadFTSeriesTest:%s]\n",status.statusCode,
 	    status.statusDescription, READFTSERIESTESTC_MSGEFUN);
     return READFTSERIESTESTC_EFUN;
   }
 
-  unitPair.unitOne = &adcStrain;
-  unitPair.unitTwo = &lalHertzUnit;
-  LALUnitMultiply(&status, &zTimeSeries.sampleUnits, &unitPair);
-  if (status.statusCode != 0)
+  if (XLALUnitMultiply(&zTimeSeries.sampleUnits, &adcStrain, &lalHertzUnit) == NULL)
   {
     fprintf(stderr,"[%i]: %s [ReadFTSeriesTest:%s]\n",status.statusCode,
 	    status.statusDescription, READFTSERIESTESTC_MSGEFUN);
@@ -1024,8 +946,7 @@ int main( void )
 
   for ( i=1, zData=zSequenceIn->data; i<=READFTSERIESTEST_LEN ; i++, zData++ )
   {
-    zData->real_FIXME = 0.005;
-    zData->imag_FIXME = 1;
+    *(zData) = crect( 0.005, 1 );
   }
   strncpy(zTimeSeries.name,"Complex16 Time series",LALNameLength);
   zTimeSeries.deltaT = 1.3;
@@ -1099,17 +1020,9 @@ int main( void )
     return READFTSERIESTESTC_EFLS;
   }
 
-  inputUnits.unitOne = &zTimeSeries.sampleUnits;
-  inputUnits.unitTwo = &zTimeSeries2.sampleUnits;
-  LALUnitCompare(&status,&unitComp,&inputUnits);
-  if (status.statusCode != 0)
-  {
-    fprintf(stderr,"[%i]: %s [ReadFTSeriesTest:%s]\n",status.statusCode,
-	    status.statusDescription, READFTSERIESTESTC_MSGEFUN);
-    return READFTSERIESTESTC_EFUN;
-  }
+  unitComp = XLALUnitCompare(&zTimeSeries.sampleUnits,&zTimeSeries2.sampleUnits);
 
-  if (!unitComp)
+  if (unitComp != 0)
   {
     fprintf(stderr,"Unit Mismatch [ReadFTSeriesTest:%s]\n",
 	    READFTSERIESTESTC_MSGEFLS);
@@ -1148,35 +1061,27 @@ int main( void )
 
   raise.numerator = -2;
   raise.denominatorMinusOne = 0;
-  LALUnitRaise(&status, &strainToMinus2, &lalStrainUnit, &raise);
-  if (status.statusCode != 0)
+  if (XLALUnitRaiseRAT4(&strainToMinus2, &lalStrainUnit, &raise) == NULL)
   {
     fprintf(stderr,"[%i]: %s [ReadFTSeriesTest:%s]\n",status.statusCode,
 	    status.statusDescription, READFTSERIESTESTC_MSGEFUN);
     return READFTSERIESTESTC_EFUN;
   }
-  LALUnitRaise(&status, &adcToMinus2, &lalADCCountUnit, &raise);
-  if (status.statusCode != 0)
-  {
-    fprintf(stderr,"[%i]: %s [ReadFTSeriesTest:%s]\n",status.statusCode,
-	    status.statusDescription, READFTSERIESTESTC_MSGEFUN);
-    return READFTSERIESTESTC_EFUN;
-  }
-
-  unitPair.unitOne = &strainToMinus2;
-  unitPair.unitTwo = &adcToMinus2;
-  LALUnitMultiply(&status, &(adcStrain), &unitPair);
-  if (status.statusCode != 0)
+  if (XLALUnitRaiseRAT4(&adcToMinus2, &lalADCCountUnit, &raise) == NULL)
   {
     fprintf(stderr,"[%i]: %s [ReadFTSeriesTest:%s]\n",status.statusCode,
 	    status.statusDescription, READFTSERIESTESTC_MSGEFUN);
     return READFTSERIESTESTC_EFUN;
   }
 
-  unitPair.unitOne = &adcStrain;
-  unitPair.unitTwo = &lalHertzUnit;
-  LALUnitMultiply(&status, &sTimeSeries.sampleUnits, &unitPair);
-  if (status.statusCode != 0)
+  if (XLALUnitMultiply(&(adcStrain), &strainToMinus2, &adcToMinus2) == NULL)
+  {
+    fprintf(stderr,"[%i]: %s [ReadFTSeriesTest:%s]\n",status.statusCode,
+	    status.statusDescription, READFTSERIESTESTC_MSGEFUN);
+    return READFTSERIESTESTC_EFUN;
+  }
+
+  if (XLALUnitMultiply(&sTimeSeries.sampleUnits, &adcStrain, &lalHertzUnit) == NULL)
   {
     fprintf(stderr,"[%i]: %s [ReadFTSeriesTest:%s]\n",status.statusCode,
 	    status.statusDescription, READFTSERIESTESTC_MSGEFUN);
@@ -1272,17 +1177,9 @@ int main( void )
     return READFTSERIESTESTC_EFLS;
   }
 
-  inputUnits.unitOne = &dTimeSeries.sampleUnits;
-  inputUnits.unitTwo = &dTimeSeries2.sampleUnits;
-  LALUnitCompare(&status,&unitComp,&inputUnits);
-  if (status.statusCode != 0)
-  {
-    fprintf(stderr,"[%i]: %s [ReadFTSeriesTest:%s]\n",status.statusCode,
-	    status.statusDescription, READFTSERIESTESTC_MSGEFUN);
-    return READFTSERIESTESTC_EFUN;
-  }
+  unitComp = XLALUnitCompare(&dTimeSeries.sampleUnits,&dTimeSeries2.sampleUnits);
 
-  if (!unitComp)
+  if (unitComp != 0)
   {
     fprintf(stderr,"Unit Mismatch [ReadFTSeriesTest:%s]\n",
 	    READFTSERIESTESTC_MSGEFLS);
@@ -1311,36 +1208,28 @@ int main( void )
 
   raise.numerator = -2;
   raise.denominatorMinusOne = 0;
-  LALUnitRaise(&status, &strainToMinus2, &lalStrainUnit, &raise);
-  if (status.statusCode != 0)
+  if (XLALUnitRaiseRAT4(&strainToMinus2, &lalStrainUnit, &raise) == NULL)
   {
     fprintf(stderr,"[%i]: %s [ReadFTSeriesTest:%s]\n",status.statusCode,
 	    status.statusDescription, READFTSERIESTESTC_MSGEFUN);
     return READFTSERIESTESTC_EFUN;
   }
 
-  LALUnitRaise(&status, &adcToMinus2, &lalADCCountUnit, &raise);
-  if (status.statusCode != 0)
+  if (XLALUnitRaiseRAT4(&adcToMinus2, &lalADCCountUnit, &raise) == NULL)
   {
     fprintf(stderr,"[%i]: %s [ReadFTSeriesTest:%s]\n",status.statusCode,
 	    status.statusDescription, READFTSERIESTESTC_MSGEFUN);
     return READFTSERIESTESTC_EFUN;
   }
 
-  unitPair.unitOne = &strainToMinus2;
-  unitPair.unitTwo = &adcToMinus2;
-  LALUnitMultiply(&status, &(adcStrain), &unitPair);
-  if (status.statusCode != 0)
+  if (XLALUnitMultiply(&(adcStrain), &strainToMinus2, &adcToMinus2) == NULL)
   {
     fprintf(stderr,"[%i]: %s [ReadFTSeriesTest:%s]\n",status.statusCode,
 	    status.statusDescription, READFTSERIESTESTC_MSGEFUN);
     return READFTSERIESTESTC_EFUN;
   }
 
-  unitPair.unitOne = &adcStrain;
-  unitPair.unitTwo = &lalHertzUnit;
-  LALUnitMultiply(&status, &cTimeSeries.sampleUnits, &unitPair);
-  if (status.statusCode != 0)
+  if (XLALUnitMultiply(&cTimeSeries.sampleUnits, &adcStrain, &lalHertzUnit) == NULL)
   {
     fprintf(stderr,"[%i]: %s [ReadFTSeriesTest:%s]\n",status.statusCode,
 	    status.statusDescription, READFTSERIESTESTC_MSGEFUN);
@@ -1361,8 +1250,7 @@ int main( void )
 
   for ( i=1, cData=cSequenceIn->data; i<=READFTSERIESTEST_LEN ; i++, cData++ )
   {
-    cData->realf_FIXME = 0.005;
-    cData->imagf_FIXME = 1;
+    *(cData) = crectf( 0.005, 1 );
   }
   strncpy(cTimeSeries.name,"Complex8 Time series",LALNameLength);
   cTimeSeries.deltaT = 1.3;
@@ -1431,17 +1319,9 @@ int main( void )
     return READFTSERIESTESTC_EFLS;
   }
 
-  inputUnits.unitOne = &cTimeSeries.sampleUnits;
-  inputUnits.unitTwo = &cTimeSeries2.sampleUnits;
-  LALUnitCompare(&status,&unitComp,&inputUnits);
-  if (status.statusCode != 0)
-  {
-    fprintf(stderr,"[%i]: %s [ReadFTSeriesTest:%s]\n",status.statusCode,
-	    status.statusDescription, READFTSERIESTESTC_MSGEFUN);
-    return READFTSERIESTESTC_EFUN;
-  }
+  unitComp = XLALUnitCompare(&cTimeSeries.sampleUnits,&cTimeSeries2.sampleUnits);
 
-  if (!unitComp)
+  if (unitComp != 0)
   {
     fprintf(stderr,"Units Mismatch [ReadFTSeriesTest:%s]\n",
 	    READFTSERIESTESTC_MSGEFLS);

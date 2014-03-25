@@ -1,47 +1,16 @@
 # lal.m4 - lal specific macros
 #
-# serial 16
+# serial 18
 
-AC_DEFUN([LAL_WITH_EXTRA_CPPFLAGS],
-[AC_ARG_WITH(
-  [extra_cppflags],
-  AC_HELP_STRING([--with-extra-cppflags=CPPFLAGS],[additional C preprocessor flags]),
-  AS_IF([test -n "${with_extra_cppflags}"],[CPPFLAGS="$CPPFLAGS ${with_extra_cppflags}"]),)
-])
-
-AC_DEFUN([LAL_WITH_CFLAGS],
-[AC_ARG_WITH(
-  [cflags],
-  AC_HELP_STRING([--with-cflags=CFLAGS],[C compiler flags]),
-  AS_IF([test -n "${with_cflags}"],[CFLAGS="${with_cflags}"]),)
-])
-
-AC_DEFUN([LAL_WITH_EXTRA_CFLAGS],
-[AC_ARG_WITH(
-  [extra_cflags],
-  AC_HELP_STRING([--with-extra-cflags=CFLAGS],[additional C compiler flags]),
-  AS_IF([test -n "${with_extra_cflags}"],[CFLAGS="$CFLAGS ${with_extra_cflags}"]),)
-])
-
-AC_DEFUN([LAL_WITH_EXTRA_LDFLAGS],
-[AC_ARG_WITH(
-  [extra_ldflags],
-  AC_HELP_STRING([--with-extra-ldflags=LDFLAGS],[additional linker flags]),
-  AS_IF([test -n "${with_extra_ldflags}"],[LDFLAGS="$LDFLAGS ${with_extra_ldflags}"]),)
-])
-
-AC_DEFUN([LAL_WITH_EXTRA_LIBS],
-[AC_ARG_WITH(
-  [extra_libs],
-  AC_HELP_STRING([--with-extra-libs=LIBS],[additional -l and -L linker flags]),
-  AS_IF([test -n "${with_extra_libs}"],[LIBS="$LIBS ${with_extra_libs}"]),)
-])
-
-AC_DEFUN([LAL_WITH_CC],
-[AC_ARG_WITH(
-  [cc],
-  AC_HELP_STRING([--with-cc=CC],[use the CC C compiler]),
-  AS_IF([test -n "${with_cc}"],[CC="${with_cc}"]),)
+AC_DEFUN([LAL_ENABLE_DEBUG],
+[AC_ARG_ENABLE(
+  [debug],
+  AC_HELP_STRING([--enable-debug],[include standard LAL debugging code [default=yes]]),
+  [AS_CASE(["${enableval}"],
+    [yes],,
+    [no],AC_DEFINE(LAL_NDEBUG, 1, Suppress debugging code),
+    AC_MSG_ERROR(bad value for ${enableval} for --enable-debug))
+  ], )
 ])
 
 AC_DEFUN([LAL_ENABLE_INTELFFT],

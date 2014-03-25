@@ -125,8 +125,8 @@
  * LALCDestroyVector()
  * LALCHARCreateVector()
  * LALCHARDestroyVector()
- * LALUnitAsString()
- * LALUnitCompare()
+ * XLALUnitAsString()
+ * XLALUnitCompare()
  * getopt()
  * printf()
  * fprintf()
@@ -166,7 +166,6 @@
 #define STOCHASTICOPTIMALFILTERTESTC_MSGEFLS "Incorrect answer for valid data"
 #define STOCHASTICOPTIMALFILTERTESTC_MSGEUSE "Bad user-entered data"
 
-#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/LALStdlib.h>
 #include <lal/LALConstants.h>
 
@@ -190,6 +189,7 @@
 #include <lal/Units.h>
 
 #include "CheckStatus.h"
+#include "CheckStatus.c"
 
 #define STOCHASTICOPTIMALFILTERTESTC_TRUE     1
 #define STOCHASTICOPTIMALFILTERTESTC_FALSE    0
@@ -249,11 +249,9 @@ int main(int argc, char *argv[])
   REAL8      muTest;  /*refers to the calculated mu to test normalization*/
   REAL8      testNum;     /*temporary value used to check optimal output */
 
-  LALUnitPair              unitPair;
-  LALUnit                  expectedUnit;
-  BOOLEAN                  result;
-
-  CHARVector               *unitString = NULL;
+  int                    result;
+  LALUnit                expectedUnit;
+  CHAR                   unitString[LALUnitTextSize];
 
   REAL4WithUnits           lambda;
 
@@ -870,10 +868,8 @@ int main(int argc, char *argv[])
   omegaGW.data->data[0] = 0;
   invNoise1.data->data[0] = 0;
   invNoise2.data->data[0] = 0;
-  hcInvNoise1.data->data[0].realf_FIXME = 0;
-  hcInvNoise1.data->data[0].imagf_FIXME = 0;
-  hcInvNoise2.data->data[0].realf_FIXME = 0;
-  hcInvNoise2.data->data[0].imagf_FIXME = 0;
+  hcInvNoise1.data->data[0] = 0.0;
+  hcInvNoise2.data->data[0] = 0.0;
 
   /** Test 1 **/
   for (i=1; i < STOCHASTICOPTIMALFILTERTESTC_LENGTH; i++)
@@ -884,10 +880,8 @@ int main(int argc, char *argv[])
     omegaGW.data->data[i] = 1;
     invNoise1.data->data[i] = 1;
     invNoise2.data->data[i] = 1;
-    hcInvNoise1.data->data[i].realf_FIXME = 1;
-    hcInvNoise1.data->data[i].imagf_FIXME = 0;
-    hcInvNoise2.data->data[i].realf_FIXME = 1;
-    hcInvNoise2.data->data[i].imagf_FIXME = 0;
+    hcInvNoise1.data->data[i] = 1.0;
+    hcInvNoise2.data->data[i] = 1.0;
   }
 
   /* fill normalization output */
@@ -973,54 +967,20 @@ int main(int argc, char *argv[])
 
   expectedUnit = lalDimensionlessUnit;
   expectedUnit.unitNumerator[LALUnitIndexADCCount] = -2;
-  unitPair.unitOne = &expectedUnit;
-  unitPair.unitTwo = &(optimal.sampleUnits);
-  LALUnitCompare(&status, &result, &unitPair);
-  if ( ( code = CheckStatus(&status, 0 , "",
-                            STOCHASTICOPTIMALFILTERTESTC_EFLS,
-                            STOCHASTICOPTIMALFILTERTESTC_MSGEFLS) ) )
-  {
-    return code;
-  }
-
+  result = XLALUnitCompare(&expectedUnit, &(optimal.sampleUnits));
   if (optVerbose)
   {
-    LALCHARCreateVector(&status, &unitString, LALUnitTextSize);
-    if ( ( code = CheckStatus(&status, 0 , "",
-                              STOCHASTICOPTIMALFILTERTESTC_EFLS,
-                              STOCHASTICOPTIMALFILTERTESTC_MSGEFLS) ) )
-    {
-      return code;
+    if ( XLALUnitAsString( unitString, LALUnitTextSize, &(optimal.sampleUnits)) == NULL ) {
+      return STOCHASTICOPTIMALFILTERTESTC_EFLS;
     }
-
-    LALUnitAsString( &status, unitString, unitPair.unitTwo );
-    if ( ( code = CheckStatus(&status, 0 , "",
-                              STOCHASTICOPTIMALFILTERTESTC_EFLS,
-                              STOCHASTICOPTIMALFILTERTESTC_MSGEFLS) ) )
-    {
-      return code;
+    printf( "Units are \"%s\", ", unitString );
+    if ( XLALUnitAsString( unitString, LALUnitTextSize, &expectedUnit) == NULL ) {
+      return STOCHASTICOPTIMALFILTERTESTC_EFLS;
     }
-    printf( "Units are \"%s\", ", unitString->data );
-
-    LALUnitAsString( &status, unitString, unitPair.unitOne );
-    if ( ( code = CheckStatus(&status, 0 , "",
-                              STOCHASTICOPTIMALFILTERTESTC_EFLS,
-                              STOCHASTICOPTIMALFILTERTESTC_MSGEFLS) ) )
-    {
-      return code;
-    }
-    printf( "should be \"%s\"\n", unitString->data );
-
-    LALCHARDestroyVector(&status, &unitString);
-    if ( ( code = CheckStatus(&status, 0 , "",
-                              STOCHASTICOPTIMALFILTERTESTC_EFLS,
-                              STOCHASTICOPTIMALFILTERTESTC_MSGEFLS) ) )
-    {
-      return code;
-    }
+    printf( "should be \"%s\"\n", unitString );
   }
 
-  if (!result)
+  if (result != 0)
   {
     printf("  FAIL: Valid data test #1\n");
     if (optVerbose)
@@ -1104,10 +1064,8 @@ int main(int argc, char *argv[])
     omegaGW.data->data[i] = pow(f,3);
     invNoise1.data->data[i] = 1;
     invNoise2.data->data[i] = 1;
-    hcInvNoise1.data->data[i].realf_FIXME = 1;
-    hcInvNoise1.data->data[i].imagf_FIXME = 0;
-    hcInvNoise2.data->data[i].realf_FIXME = 1;
-    hcInvNoise2.data->data[i].imagf_FIXME = 0;
+    hcInvNoise1.data->data[i] = 1.0;
+    hcInvNoise2.data->data[i] = 1.0;
   }
 
   /* fill normalization output */
@@ -1190,54 +1148,21 @@ int main(int argc, char *argv[])
   /* check output units */
   expectedUnit = lalDimensionlessUnit;
   expectedUnit.unitNumerator[LALUnitIndexADCCount] = -2;
-  unitPair.unitOne = &expectedUnit;
-  unitPair.unitTwo = &(optimal.sampleUnits);
-  LALUnitCompare(&status, &result, &unitPair);
-  if ( ( code = CheckStatus(&status, 0 , "",
-                            STOCHASTICOPTIMALFILTERTESTC_EFLS,
-                            STOCHASTICOPTIMALFILTERTESTC_MSGEFLS) ) )
-  {
-    return code;
-  }
+  result = XLALUnitCompare(&expectedUnit, &(optimal.sampleUnits));
 
   if (optVerbose)
   {
-    LALCHARCreateVector(&status, &unitString, LALUnitTextSize);
-    if ( ( code = CheckStatus(&status, 0 , "",
-                              STOCHASTICOPTIMALFILTERTESTC_EFLS,
-                              STOCHASTICOPTIMALFILTERTESTC_MSGEFLS) ) )
-    {
-      return code;
+    if ( XLALUnitAsString( unitString, LALUnitTextSize, &(optimal.sampleUnits)) == NULL ) {
+      return STOCHASTICOPTIMALFILTERTESTC_EFLS;
     }
-
-    LALUnitAsString( &status, unitString, unitPair.unitTwo );
-    if ( ( code = CheckStatus(&status, 0 , "",
-                              STOCHASTICOPTIMALFILTERTESTC_EFLS,
-                              STOCHASTICOPTIMALFILTERTESTC_MSGEFLS) ) )
-    {
-      return code;
+    printf( "Units are \"%s\", ", unitString );
+    if ( XLALUnitAsString( unitString, LALUnitTextSize, &expectedUnit) == NULL ) {
+      return STOCHASTICOPTIMALFILTERTESTC_EFLS;
     }
-    printf( "Units are \"%s\", ", unitString->data );
-
-    LALUnitAsString( &status, unitString, unitPair.unitOne );
-    if ( ( code = CheckStatus(&status, 0 , "",
-                              STOCHASTICOPTIMALFILTERTESTC_EFLS,
-                              STOCHASTICOPTIMALFILTERTESTC_MSGEFLS) ) )
-    {
-      return code;
-    }
-    printf( "should be \"%s\"\n", unitString->data );
-
-    LALCHARDestroyVector(&status, &unitString);
-    if ( ( code = CheckStatus(&status, 0 , "",
-                              STOCHASTICOPTIMALFILTERTESTC_EFLS,
-                              STOCHASTICOPTIMALFILTERTESTC_MSGEFLS) ) )
-    {
-      return code;
-    }
+    printf( "should be \"%s\"\n", unitString );
   }
 
-  if (!result)
+  if (result != 0)
   {
     printf("  FAIL: Valid data test #2\n");
     if (optVerbose)

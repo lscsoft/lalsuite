@@ -72,8 +72,6 @@ REAL8 LALInferenceUndecomposedFreqDomainLogLikelihood(LALInferenceVariables *cur
 REAL8 LALInferenceROQLogLikelihood(LALInferenceVariables *currentParams, LALInferenceIFOData * data,
                               LALInferenceTemplateFunction templt);
 
-REAL8 LALInferenceNoiseOnlyLogLikelihood(LALInferenceVariables *currentParams, LALInferenceIFOData *data, LALInferenceTemplateFunction templt);
-
 /**
  * For testing purposes (for instance sampling the prior),
  * likelihood that returns 0.0 = log(1) every
@@ -224,6 +222,9 @@ LALInferenceVariables LALInferenceGetInstrinsicParams(LALInferenceVariables *cur
 /** Switch for controlling the removal of lines */
 INT4 LALInferenceLineSwitch(INT4 lineFlag, INT4 Nlines, INT4 *lines_array, INT4 *widths_array, INT4 i);
 
+/** Calculate the SNR across the network */
+REAL8 *LALInferenceNetworkSNR(LALInferenceVariables *currentParams, LALInferenceIFOData * data, 
+                              LALInferenceTemplateFunction templt);
 /*@}*/
 
 #endif

@@ -11,6 +11,10 @@ export LAL_DEBUG_LEVEL="${LAL_DEBUG_LEVEL},memdbg"
 LC_ALL_old=$LC_ALL
 export LC_ALL=C
 
+if [ -n "$DEBUG" -a -z "$LAL_DEBUG_LEVEL" ]; then
+    export LAL_DEBUG_LEVEL=1
+fi
+
 # The only thing where 'dirsep' can and should be used is in paths of the SFT files,
 # as in fact SFTfileIO is the only code that requires it to be set properly. Other
 # file references should be handled by the shell (or wine) and converted if necessary.
@@ -29,7 +33,7 @@ if [ "`echo $1 | sed 's%.*/%%'`" = "wine" ]; then
 fi
 
 ##---------- names of codes and input/output files
-mfd_code="${injectdir}lalapps_Makefakedata_v4"
+mfd_code="${injectdir}lalapps_Makefakedata_v5"
 cfs_code="${fdsdir}lalapps_ComputeFStatistic_v2"
 if test $# -eq 0 ; then
     gct_code="${builddir}lalapps_HierarchSearchGCT"
@@ -39,20 +43,14 @@ fi
 
 if [ -n "${LALPULSAR_DATADIR}" ]; then
     export LAL_DATA_PATH=${LAL_DATA_PATH}:${LALPULSAR_DATADIR}
-else
-    echo
-    echo "Need environment-variable LALPULSAR_DATADIR to be set to"
-    echo "your ephemeris-directory (e.g. /usr/local/share/lalpulsar)"
-    echo "This might indicate an incomplete LAL+LALPULSAR installation"
-    echo
-    exit 1
 fi
 
 testDirBase="testHS_dir"
 testDir="./${testDirBase}";
-if [ ! -d "$testDir" ]; then
-    mkdir -p "$testDir"
+if [ -d "$testDir" ]; then
+    rm -rf $testDir
 fi
+mkdir -p "$testDir"
 
 SFTdir="${testDirBase}"
 SFTfiles="$SFTdir${dirsep}*.sft"
@@ -83,7 +81,7 @@ echo "$AlphaSearch $DeltaSearch" > $skygridfile
 
 mfd_FreqBand=0.20;
 mfd_fmin=100;
-numFreqBands=4;	## produce 'frequency-split' SFTs used in E@H
+numFreqBands=2;	## produce 'frequency-split' SFTs used in E@H
 
 Dterms=8
 RngMedWindow=50
@@ -108,7 +106,12 @@ Tsft=1800
 startTime=852443819
 refTime=862999869
 Tsegment=90000
-Nsegments=14
+if [ -n "$NSEGMENTS" ]; then
+    Nsegments=${NSEGMENTS}
+else
+    Nsegments=3
+fi
+
 
 seggap=$(echo ${Tsegment} | awk '{printf "%.0f", $1 * 1.12345}')
 
@@ -116,41 +119,30 @@ tsFile_H1="${testDir}/timestampsH1.dat"  # for makefakedata
 tsFile_L1="${testDir}/timestampsL1.dat"  # for makefakedata
 segFile="${testDir}/segments.dat"
 
-if [ -r "$tsFile_H1" -a -r "$tsFile_L1" -a -r "$segFile" ]; then
-    reuseSegFiles=true
-    echo "Reusing '$tsFile_H1', '$tsFile_L1' and '$segFile'"
-    echo
-fi
-
 tmpTime=$startTime
 iSeg=1
 while [ $iSeg -le $Nsegments ]; do
     t0=$tmpTime
-    ## only write segment-file if we can re-use from previous runs
-    if [ "$reuseSegFiles" != "true" ]; then
-        t1=$(($t0 + $Tsegment))
-        TspanHours=`echo $Tsegment | awk '{printf "%.7f", $1 / 3600.0 }'`
+    t1=$(($t0 + $Tsegment))
+    TspanHours=`echo $Tsegment | awk '{printf "%.7f", $1 / 3600.0 }'`
         ## first and last segment will be single-IFO only
-        if [ $iSeg -eq 1 -o $iSeg -eq $Nsegments ]; then
-            NSFT=`echo $Tsegment $Tsft |  awk '{print int(1.0 * $1 / $2 + 0.5) }'`
-        else	## while all other segments are 2-IFO
-            NSFT=`echo $Tsegment $Tsft |  awk '{print int(2.0 * $1 / $2 + 0.5) }'`
-        fi
-        echo "$t0 $t1 $TspanHours $NSFT" >> $segFile
+    if [ $iSeg -eq 1 -o $iSeg -eq $Nsegments ]; then
+        NSFT=`echo $Tsegment $Tsft |  awk '{print int(1.0 * $1 / $2 + 0.5) }'`
+    else	## while all other segments are 2-IFO
+        NSFT=`echo $Tsegment $Tsft |  awk '{print int(2.0 * $1 / $2 + 0.5) }'`
     fi
+    echo "$t0 $t1 $TspanHours $NSFT" >> $segFile
+
     segs[$iSeg]=$tmpTime # save seg's beginning for later use
     echo "Segment: $iSeg of $Nsegments	GPS start time: ${segs[$iSeg]}"
 
     Tseg=$Tsft
     while [ $Tseg -le $Tsegment ]; do
-        ## only write timestamps-file if it is not found already
-        if [ "$reuseSegFiles" != "true" ]; then	            ## we skip segment 1 for H1
-            if [ $iSeg -ne 1 ]; then
-	        echo "${tmpTime} 0" >> $tsFile_H1
-            fi
-            if [ $iSeg -ne $Nsegments ]; then	            ## we skip segment N for L1
-	        echo "${tmpTime} 0" >> $tsFile_L1
-            fi
+        if [ $iSeg -ne 1 ]; then
+	    echo "${tmpTime} 0" >> $tsFile_H1
+        fi
+        if [ $iSeg -ne $Nsegments ]; then	            ## we skip segment N for L1
+	    echo "${tmpTime} 0" >> $tsFile_L1
         fi
 	tmpTime=$(($tmpTime + $Tsft))
 	Tseg=$(($Tseg + $Tsft))
@@ -165,58 +157,31 @@ echo "----------------------------------------------------------------------"
 echo " STEP 1: Generate Fake Signal"
 echo "----------------------------------------------------------------------"
 echo
-if [ ! -d "$SFTdir" ]; then
-    mkdir -p $SFTdir;
-fi
 
 FreqStep=`echo $mfd_FreqBand $numFreqBands |  awk '{print $1 / $2}'`
 mfd_fBand=`echo $FreqStep $Tsft |  awk '{print ($1 - 1.5 / $2)}'`	## reduce by 1/2 a bin to avoid including last freq-bins
 
 # construct common MFD cmd
-mfd_CL_common="--Band=${mfd_fBand} --Freq=$Freq --f1dot=$f1dot --f2dot=$f2dot --Alpha=$Alpha --Delta=$Delta --psi=$psi --phi0=$phi0 --h0=$h0 --cosi=$cosi --generationMode=1 --refTime=$refTime --Tsft=$Tsft --randSeed=1000 --outSingleSFT"
+mfd_CL_common="--Band=${mfd_fBand} --injectionSources=\"Freq=$Freq; f1dot=$f1dot; f2dot=$f2dot; Alpha=$Alpha; Delta=$Delta; psi=$psi; phi0=$phi0; h0=$h0; cosi=$cosi; refTime=$refTime\" --Tsft=$Tsft --randSeed=1000 --outSingleSFT --IFOs=H1,L1 --timestampsFiles=${tsFile_H1},${tsFile_L1}"
 
 if [ "$sqrtSh" != "0" ]; then
-    mfd_CL_common="$mfd_CL_common --noiseSqrtSh=$sqrtSh";
+    mfd_CL_common="$mfd_CL_common --sqrtSX=${sqrtSh},${sqrtSh}";
 fi
 
 iFreq=1
 while [ $iFreq -le $numFreqBands ]; do
     mfd_fi=`echo $mfd_fmin $iFreq $FreqStep | awk '{print $1 + ($2 - 1) * $3}'`
 
-    # for H1:
-    SFTname="${SFTdir}/H1-${mfd_fi}_${FreqStep}.sft"
-    if [ ! -r $SFTname ]; then
-        cmdline="$mfd_code $mfd_CL_common --fmin=$mfd_fi --IFO=H1 --outSFTbname='$SFTname' --timestampsFile='$tsFile_H1'"
-        if [ -n "$DEBUG" ]; then
-            cmdline="$cmdline"
-        else
-            cmdline="$cmdline &> /dev/null"
-        fi
-        echo "$cmdline";
-        if ! eval "$cmdline"; then
-            echo "Error.. something failed when running '$mfd_code' ..."
-            exit 1
-        fi
+    cmdline="$mfd_code $mfd_CL_common --fmin=$mfd_fi --outSFTdir=${SFTdir}"
+    if [ -n "$DEBUG" ]; then
+        cmdline="$cmdline"
     else
-        echo "SFT '$SFTname' exists already ... reusing it"
+        cmdline="$cmdline &> /dev/null"
     fi
-
-    # for L1:
-    SFTname="${SFTdir}/L1-${mfd_fi}_${FreqStep}.sft"
-    if [ ! -r $SFTname ]; then
-        cmdline="$mfd_code $mfd_CL_common --fmin=$mfd_fi --IFO=L1 --outSFTbname='$SFTname' --timestampsFile='$tsFile_L1'";
-        if [ -n "$DEBUG" ]; then
-            cmdline="$cmdline"
-        else
-            cmdline="$cmdline &> /dev/null"
-        fi
-        echo "$cmdline";
-        if ! eval "$cmdline"; then
-            echo "Error.. something failed when running '$mfd_code' ..."
-            exit 1
-        fi
-    else
-        echo "SFT '$SFTname' exists already ... reusing it"
+    echo "$cmdline";
+    if ! eval "$cmdline"; then
+        echo "Error.. something failed when running '$mfd_code' ..."
+        exit 1
     fi
 
     iFreq=$(( $iFreq + 1 ))
@@ -449,7 +414,7 @@ awk_isgtr='{if($1>$2) {print "1"}}'
 echo
 echo "--------- Timings ------------------------------------------------------------------------------------------------"
 awk_timing='BEGIN { sumTau = 0; sumTauCoh = 0; sumTauSC = 0; sumTauF0 = 0; sumTauS0 = 0; counter=0; } \
-           { sumTau = sumTau + $8; sumTauCoh = sumTauCoh + $9; sumTauSC = sumTauSC + $10; sumTauF0 = sumTauF0 + $12; sumTauS0 = sumTauS0 + $13; counter=counter+1; } \
+           { sumTau = sumTau + $6; sumTauCoh = sumTauCoh + $7; sumTauSC = sumTauSC + $8; sumTauF0 = sumTauF0 + $10; sumTauS0 = sumTauS0 + $11; counter=counter+1; } \
            END {printf "tau = %6.3g s, tauCoh = %6.3g s, tauSC = %6.3g s;  tauF0 = %6.3g s, tauS0 = %6.3g s",
                 sumTau/counter, sumTauCoh/counter, sumTauSC/counter, sumTauF0 / counter, sumTauS0 / counter}'
 timing_DM=$(sed '/^%.*/d' $timingsfile_DM | awk "$awk_timing")

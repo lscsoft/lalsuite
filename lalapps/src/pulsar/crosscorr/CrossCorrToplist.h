@@ -35,6 +35,21 @@ typedef struct {
   REAL8 Rho; 		/**< Crosscorr statistic */
 } CrossCorrOutputEntry;
 
+/** Type to hold the fields that will be kept in a "toplist" -- for a directed binary search */
+/* add field for sensitivity estimate */
+typedef struct {
+  REAL8 freq;		/**< Frequency */
+  REAL8 tp; 		/**< time of periapse passage */
+  REAL8 argp;		/**< argument of periapse */
+  REAL8 asini;		/**< projected semi-major axis */
+  REAL8 ecc;     	/**< eccentricity */
+  REAL8 period; 	/**< bperiod */
+  REAL8 rho; 		/**< Crosscorr statistic */
+} CrossCorrBinaryOutputEntry;
+
+
+
+
 
 
 /**
@@ -42,6 +57,7 @@ typedef struct {
  * returns -1 on error (usually out of memory), else 0
  */
 extern int create_crossCorr_toplist(toplist_t**list, UINT8 length);
+extern int create_crossCorrBinary_toplist(toplist_t**list, UINT8 length);
 
 /** frees the space occupied by the toplist */
 extern void free_crossCorr_toplist(toplist_t**list);
@@ -54,6 +70,8 @@ extern void free_crossCorr_toplist(toplist_t**list);
  */
 extern int insert_into_crossCorr_toplist(toplist_t*list, CrossCorrOutputEntry line);
 
+extern int insert_into_crossCorrBinary_toplist(toplist_t*list, CrossCorrBinaryOutputEntry line);
+
 /**
  * Writes the toplist to an (already open) filepointer
  * Returns the number of written charactes
@@ -61,6 +79,8 @@ extern int insert_into_crossCorr_toplist(toplist_t*list, CrossCorrOutputEntry li
  * Returns something <0 on error
  */
 extern int write_crossCorr_toplist_to_fp(toplist_t*list, FILE*fp, UINT4*checksum);
+
+extern int write_crossCorrBinary_toplist_to_fp(toplist_t*list, FILE*fp, UINT4*checksum);
 
 /**
  * reads a (created!) toplist from an open filepointer
@@ -71,7 +91,9 @@ extern int write_crossCorr_toplist_to_fp(toplist_t*list, FILE*fp, UINT4*checksum
  * -1 if the file contained a syntax error,
  * -2 if given an improper toplist
  */
-extern int read_crossCorr_toplist_from_fp(toplist_t*list, FILE*fp, UINT4*checksum, UINT4 maxbytes);
+/* extern int read_crossCorr_toplist_from_fp(toplist_t*list, FILE*fp, UINT4*checksum, UINT4 maxbytes); */
+
+/* extern int read_crossCorrBinary_toplist_from_fp(toplist_t*list, FILE*fp, UINT4*checksum, UINT4 maxbytes); */
 
 /**
  * sorts the toplist with an internal sorting function,
@@ -79,7 +101,7 @@ extern int read_crossCorr_toplist_from_fp(toplist_t*list, FILE*fp, UINT4*checksu
  */
 extern void sort_crossCorr_toplist(toplist_t*list);
 
-
+extern void sort_crossCorrBinary_toplist(toplist_t*list);
 
 
 /** File IO */
@@ -91,6 +113,8 @@ extern void sort_crossCorr_toplist(toplist_t*list);
  */
 extern int write_crossCorr_toplist_item_to_fp(CrossCorrOutputEntry line, FILE*fp, UINT4*checksum);
 
+extern int write_crossCorrBinary_toplist_item_to_fp(CrossCorrBinaryOutputEntry line, FILE*fp, UINT4*checksum);
+
 /**
  * writes the given toplitst to a temporary file, then renames the
  * temporary file to filename. The name of the temporary file is
@@ -98,6 +122,8 @@ extern int write_crossCorr_toplist_item_to_fp(CrossCorrOutputEntry line, FILE*fp
  * of chars written or -1 if the temp file could not be opened.
  */
 extern int atomic_write_crossCorr_toplist_to_file(toplist_t*list, const char*filename, UINT4*checksum);
+
+extern int atomic_write_crossCorrBinary_toplist_to_file(toplist_t*list, const char*filename, UINT4*checksum);
 
 /**
  * meant for the final writing of the toplist
@@ -107,7 +133,7 @@ extern int atomic_write_crossCorr_toplist_to_file(toplist_t*list, const char*fil
  */
 extern int final_write_crossCorr_toplist_to_file(toplist_t*list, const char*filename, UINT4*checksum);
 
-
+extern int final_write_crossCorrBinary_toplist_to_file(toplist_t*list, const char*filename, UINT4*checksum);
 
 
 /**
@@ -145,6 +171,6 @@ extern int read_cc_checkpoint(const char*filename, toplist_t*tl, UINT4*counter);
  * - write out the toplist in ASCII format with end marker to a temporary file
  * - rename the file to the final name
  */
-extern int write_cc_oputput(const char*filename, toplist_t*tl);
+extern int write_cc_output(const char*filename, toplist_t*tl);
 
 #endif /* CROSSCORRTOPLIST_H - double inclusion protection */

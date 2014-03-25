@@ -40,7 +40,7 @@
  * \ingroup HoughMap_h
  * \brief Tests the construction of Hough maps.
  *
- * ### Program \ref TestNDHoughMap.c ###
+ * ### Program TestNDHoughMap.c ###
  *
  *
  * ### Usage ###

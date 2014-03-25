@@ -106,8 +106,6 @@ typedef TwoDMeshParamStruc meshPARAMS;
 static const meshPARAMS empty_meshpar;
 
 static const PtoleMetricIn empty_metricpar;
-static const MetricParamStruc empty_MetricParamStruc;
-static const PulsarTimesParamStruc empty_PulsarTimesParamStruc;
 
 const DopplerSkyGrid empty_DopplerSkyGrid;
 const DopplerSkyScanState empty_DopplerSkyScanState;

@@ -282,6 +282,7 @@ def find_online_cache(start, end, ifo, mask='DOWNSELECT',
         description tag of KW ASCII to search
     @param check_files
         check that the returned files can be read on disk, default False
+    @param kwargs UNDOCUMENTED
     """
     out = Cache()
 
@@ -350,8 +351,10 @@ def find_dmt_cache(start, end, ifo, extension="xml", check_files=False,
         GPS end time for search
     @param ifo
         observatory for search
+    @param extension UNDOCUMENTED
     @param check_files
         check that the returned files can be read on disk, default False
+    @param kwargs UNDOCUMENTED
     """
     out = Cache()
 

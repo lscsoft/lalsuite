@@ -136,7 +136,7 @@ extern "C" {
  * the signal frequency and its time derivatives, and the frequency (period)
  * epoch.
  */
-#define NUMFREQPARS 7
+#define NUMFREQPARS 8
 
 /**
  * The total number of sky position parameters that can define a signal e.g.
@@ -163,7 +163,7 @@ static const CHAR amppars[NUMAMPPARS][VARNAME_MAX] = { "h0", "phi0", "psi",
  * recognised within the code.
  */
 static const CHAR freqpars[NUMFREQPARS][VARNAME_MAX] = { "f0", "f1", "f2", "f3",
-"f4", "f5", "pepoch" };
+"f4", "f5", "pepoch", "cgw" };
 
 /**
  * A list of the sky position parameters. The names given here are those that
@@ -262,6 +262,8 @@ TimeCorrectionType XLALAutoSetEphemerisFiles( CHAR *efile, CHAR *sfile,
                                               CHAR *tfile,
                                               BinaryPulsarParams pulsar,
                                               INT4 gpsstart, INT4 gpsend );
+
+void remove_variable_and_prior( LALInferenceRunState *runState, LALInferenceIFOData *data, const CHAR *var );
 
 void samples_prior( LALInferenceRunState *runState );
 

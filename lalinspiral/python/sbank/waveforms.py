@@ -168,6 +168,7 @@ class Template(object):
             # whiten
             arr_view[:] /= ASD[:wf.data.length]
             arr_view[:int(self.bank.flow / df)] = 0.
+            arr_view[int(self._f_final/df) : wf.data.length] = 0.
 
             # normalize
             self.sigmasq = compute_sigmasq(arr_view, df)
@@ -238,7 +239,7 @@ class TaylorF2RedSpinTemplate(Template):
 
         wf = lalsim.SimInspiralTaylorF2ReducedSpin(
             0, df, self.m1 * LAL_MSUN_SI, self.m2 * LAL_MSUN_SI, self.chi,
-            self.bank.flow, 0, 1000000 * LAL_PC_SI, 7, 3)
+            self.bank.flow, 0, 1000000 * LAL_PC_SI, 7, 7)
         # have to resize wf to next pow 2 for FFT plan caching
         wf = lal.ResizeCOMPLEX16FrequencySeries( wf, 0, ceil_pow_2(wf.data.length) )
         return wf
@@ -596,7 +597,7 @@ class SpinTaylorT4Template(Template):
             7, # twice PN spin order
             0, # twice PN tidal order
             7, # twice PN phase order
-            3 # twice PN amplitude order
+            0 # twice PN amplitude order
         )
 
         # project onto detector

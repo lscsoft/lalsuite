@@ -1,7 +1,7 @@
 ## Process this file with automake to produce Makefile.in
 
 # for using lalapps-defines + functions
-AM_CPPFLAGS = -I$(top_srcdir)/src/lalapps -I$(top_srcdir)/src/pulsar/FDS_isolated -DPKG_DATA_DIR='"$(pkgdatadir)/"'
+AM_CPPFLAGS = -I$(top_srcdir)/src/lalapps -I$(top_srcdir)/src/pulsar/FDS_isolated -DPKG_DATA_DIR='"$(pkgdatadir)/"' @AM_CPPFLAGS@
 LDADD = $(top_builddir)/src/lalapps/liblalapps.la
 
 cfsHOME = @CFS_DIR@
@@ -39,7 +39,7 @@ eah_sources = 	$(lalappsDIR)/lalapps.c \
 		$(hsHOME)/HierarchicalSearch.c $(hsHOME)/StackSlideFstat.c \
 		$(hsHOME)/HoughFStatToplist.c \
 		$(cfsHOME)/HeapToplist.c $(optHOME)/ComputeFstatREAL4.c \
-		$(optHOME)/LocalComputeFstat.c $(eaHOME)/LocalComputeFstatHoughMap.c \
+		$(eaHOME)/LocalComputeFstatHoughMap.c \
 		$(eaHOME)/hs_boinc_extras.c $(eaHOME)/hs_boinc_options.cpp
 if USE_CUDA
     eah_sources += $(optHOME)/ComputeFstatREAL4CUDA.c $(optHOME)/FStatCUDA.cu
@@ -48,7 +48,7 @@ if USE_OPENCL
     eah_sources += $(optHOME)/FStatOpenCLKernel.c $(optHOME)/ComputeFstatREAL4OpenCL.c
 endif
 eah_cppflags = -Wall -DEAH_BOINC -DUSE_BOINC -DBOINC_COMPRESS -DBOINC_APIV6 -DTARGET='"@BUILD_TARGET@"'
-eah_ldadd = @LAL_LIBS@ -lgsl -lgslcblas -lboinc_zip -lboinc_api -lboinc
+eah_ldadd = -lgsl -lgslcblas -lboinc_zip -lboinc_api -lboinc
 eah_ldflags = 
 
 ## ----------
@@ -76,7 +76,7 @@ endif
 ## There are three possible ways in which we can build the E@H application
 ## BOINC_GRAPHICS = 0: completely non-graphical (USE_GRAPHICS=false)
 
-eah_cppflags += -DNO_BOINC_GRAPHICS -DBOINC_GRAPHICS=0 @CUDA_CPPFLAGS@
+eah_cppflags += -DNO_BOINC_GRAPHICS -DBOINC_GRAPHICS=0 @CUDA_CFLAGS@
 eah_ldadd += @CUDA_LIBS@
 
 bin_PROGRAMS = cfsBOINC
@@ -100,7 +100,7 @@ cfsSCI_SOURCES = $(cfsHOME)/ComputeFStatistic.c $(lalappsDIR)/lalapps.c \
 
 ## Fstats-comparison code (useful for testing using testStandalone.sh)
 #compareFstats_SOURCES = $(cfsHOME)/compareFstats.c $(lalappsDIR)/lalapps.c
-#compareFstats_LDADD = @LAL_LIBS@ -lgsl -lgslcblas
+#compareFstats_LDADD = -lgsl -lgslcblas
 
 ## make sure rebuilding uses the right aclocal-switches
 ACLOCAL_AMFLAGS = -I m4

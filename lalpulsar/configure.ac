@@ -1,5 +1,5 @@
 AC_PREREQ([2.63])
-AC_INIT([lalpulsar],[1.8.0.1],[lal-discuss@ligo.org])
+AC_INIT([lalpulsar],[1.9.0.1],[lal-discuss@ligo.org])
 AC_CONFIG_HEADERS([src/config.h src/LALPulsarConfig.h])
 AC_CONFIG_SRCDIR([src/ComputeFstat.c])
 AC_CONFIG_AUX_DIR([gnuscripts])
@@ -7,6 +7,7 @@ AC_CONFIG_MACRO_DIR([gnuscripts])
 AC_CONFIG_FILES([ \
   lalpulsar.spec \
   lalpulsar.pc \
+  lalpulsar-uninstalled.pc \
   Makefile \
   gnuscripts/Makefile \
   debian/Makefile \
@@ -20,11 +21,11 @@ AC_CONFIG_FILES([ \
   swig/python/Makefile \
   test/Makefile
 ])
-AM_INIT_AUTOMAKE([1.11 foreign color-tests parallel-tests])
+AM_INIT_AUTOMAKE([1.11 foreign subdir-objects color-tests parallel-tests])
 
 AC_CANONICAL_HOST
 
-LALSUITE_ARG_VAR
+LALSUITE_CHECK_GIT_REPO
 LALSUITE_DISTCHECK_CONFIGURE_FLAGS
 
 # set library api info
@@ -41,22 +42,16 @@ LALSUITE_DISTCHECK_CONFIGURE_FLAGS
 #    then increment age.
 # 6. if any interfaces have been removed since the last public release,
 #    then set age to 0.
-AC_SUBST([LIBCURRENT],[8])
+AC_SUBST([LIBCURRENT],[9])
 AC_SUBST([LIBREVISION],[0])
 AC_SUBST([LIBAGE],[0])
 AC_SUBST([LIBVERSION],[${LIBCURRENT}:${LIBREVISION}:${LIBAGE}])
-
-# check for git repo
-LALSUITE_CHECK_GIT_REPO
 
 # nightly build
 LALSUITE_ENABLE_NIGHTLY
 
 # enable LALXML support
 LALSUITE_ENABLE_LALXML
-
-# debug
-LALSUITE_ENABLE_DEBUG
 
 # boinc
 LALSUITE_ENABLE_BOINC
@@ -67,27 +62,8 @@ LALSUITE_ENABLE_GCC_FLAGS
 # enable SWIG wrapping modules
 LALSUITE_ENABLE_SWIG
 
-# put version/configure info in config header
-lalpulsar_version_major=`echo "$VERSION" | cut -d. -f1`
-lalpulsar_version_minor=`echo "$VERSION" | cut -d. -f2`
-lalpulsar_version_micro=`echo "$VERSION" | cut -d. -f3`
-lalpulsar_version_devel=`echo "$VERSION" | cut -d. -f4-`
-test -z "$lalpulsar_version_micro" && lalpulsar_version_micro=0
-test -z "$lalpulsar_version_devel" && lalpulsar_version_devel=0
-lalpulsar_configure_date=`date +"%Y-%m-%dT%H:%M:%S%z"`
-AC_DEFINE_UNQUOTED([LALPULSAR_VERSION],["$VERSION"],[LALPulsar Version])
-AC_DEFINE_UNQUOTED([LALPULSAR_VERSION_MAJOR],[$lalpulsar_version_major],
-                   [LALPulsar Version Major Number])
-AC_DEFINE_UNQUOTED([LALPULSAR_VERSION_MINOR],[$lalpulsar_version_minor],
-                   [LALPulsar Version Minor Number])
-AC_DEFINE_UNQUOTED([LALPULSAR_VERSION_MICRO],[$lalpulsar_version_micro],
-                   [LALPulsar Version Micro Number])
-AC_DEFINE_UNQUOTED([LALPULSAR_VERSION_DEVEL],[$lalpulsar_version_devel],
-                   [LALPulsar Version Devel Number])
-AC_DEFINE_UNQUOTED([LALPULSAR_CONFIGURE_ARGS],["$ac_configure_args"],
-                   [LALPulsar Configure Arguments])
-AC_DEFINE_UNQUOTED([LALPULSAR_CONFIGURE_DATE],["$lalpulsar_configure_date"],
-                   [LALPulsar Configure Date])
+# define version/configure info
+LALSUITE_VERSION_CONFIGURE_INFO
 
 # workaround broken libtool multilib support on sl6
 LALSUITE_MULTILIB_LIBTOOL_HACK
@@ -97,6 +73,9 @@ AM_SILENT_RULES([yes])
 
 # check for required compilers
 LALSUITE_PROG_COMPILERS
+
+# check for SIMD extensions
+LALPULSAR_WITH_SIMD
 
 # checks for programs
 AC_PROG_INSTALL
@@ -119,8 +98,7 @@ AC_CHECK_LIB([m],[main],,[AC_MSG_ERROR([could not find the math library])])
 
 # check for gsl
 PKG_CHECK_MODULES([GSL],[gsl],[true],[false])
-CPPFLAGS="$CPPFLAGS $GSL_CFLAGS"
-LIBS="$LIBS $GSL_LIBS"
+LALSUITE_ADD_FLAGS([C],[${GSL_CFLAGS}],[${GSL_LIBS}])
 AC_CHECK_LIB([gslcblas],[main],,[AC_MSG_ERROR([could not find the gsl library])])
 AC_CHECK_LIB([gsl],[gsl_strerror],,[AC_MSG_ERROR([could not find the gsl library])])
 LALSUITE_ENABLE_FAST_GSL
@@ -131,8 +109,7 @@ AC_CHECK_HEADERS([gsl/gsl_errno.h],,[AC_MSG_ERROR([could not find the gsl/gsl_er
 if test "$lalxml" = "true"; then
   # check for libxml2
   PKG_CHECK_MODULES([LIBXML2],[libxml-2.0 >= 2.6],[true],[false])
-  CPPFLAGS="$CPPFLAGS $LIBXML2_CFLAGS"
-  LIBS="$LIBS $LIBXML2_LIBS"
+  LALSUITE_ADD_FLAGS([C],[${LIBXML2_CFLAGS}],[${LIBXML2_LIBS}])
   AC_CHECK_LIB([xml2],[xmlInitParser],,[AC_MSG_WARN([cannot find the xml2 library])])
 fi
 
@@ -142,23 +119,21 @@ if test "${boinc}" = "true" ; then
 fi
 
 # check for lal libraries and headers
-LALSUITE_CHECK_LIB([LAL],[6.11.0],[LALVersion],[lal/LALStdio.h])
+LALSUITE_CHECK_LIB([LAL],[6.12.0],[LALVersion],[lal/LALStdio.h])
 
-# check that lal has been buil with boinc support, for boinc build
-if test "${boinc}" = "true" ; then
-  LALSUITE_CHECK_BOINC
-fi
+# check that lal was built with BOINC support, if required
+LALSUITE_CHECK_BOINC
 
 # check for lalsupport, needed for test suite
-LALSUITE_CHECK_LIB([LALSupport],[6.11.0],[LALOpenDataFile],[lal/FileIO.h])
+LALSUITE_CHECK_LIB([LALSupport],[6.12.0],[XLALCacheImport],[lal/LALCache.h])
+
+# check for lalxml
+LALSUITE_CHECK_OPT_LIB([LALXML],[1.1.5],[XLALXMLFilePrintElements],[lal/LALXML.h])
 
 # back to c mode
 if test "${boinc}" = "true" ; then
   AC_LANG_POP([C++])
 fi
-
-# check for lalxml
-LALSUITE_CHECK_OPT_LIB([LALXML],[1.1.5],[XLALXMLFilePrintElements],[lal/LALXML.h])
 
 # configure SWIG wrapping modules
 LALSUITE_USE_SWIG([XLAL LAL])
@@ -171,16 +146,18 @@ LALSUITE_ADD_GCC_FLAGS
 # RedHat-derived systems.
 AC_SUBST([pkgpythondir], ["\${pkgpyexecdir}"])
 
-# output
 LAL_HEADER_LINK=${ac_aux_dir}/header-link.mk
 AC_SUBST_FILE([LAL_HEADER_LINK])
-AC_PROG_MAKE_SET
+
+# output
 AC_OUTPUT
-echo "
+AC_MSG_NOTICE([
 ==================================================
 LALPulsar has now been successfully configured:
 
+* SIMD extensions are $SIMD_ENABLE_VAL
 * LALXML library support is $LALXML_ENABLE_VAL
+* BOINC support is $BOINC_ENABLE_VAL
 * SWIG wrapping module for Octave is $SWIG_OCTAVE_ENABLE_VAL
 * SWIG wrapping module for Python is $SWIG_PYTHON_ENABLE_VAL
 
@@ -191,4 +168,4 @@ ${prefix}
 Now run 'make' to build LALPulsar,
 and run 'make install' to install LALPulsar.
 ==================================================
-"
+])

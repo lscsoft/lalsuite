@@ -8,10 +8,8 @@ $(ACLOCAL_M4): $(am__aclocal_m4_deps)
 
 EXTRA_DIST = \
 	COPYING \
-	laldetchar.pc.in \
-	laldetchar.spec.in \
 	laldetchar.spec \
-	aclocal.m4
+	$(DATA)
 
 SUBDIRS = \
 	gnuscripts \
@@ -25,6 +23,8 @@ SUBDIRS = \
 
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = laldetchar.pc
+noinst_DATA = laldetchar-uninstalled.pc
+BUILT_SOURCES = laldetchar-uninstalled.pc
 
 DISTCLEANFILES = config.lt
 

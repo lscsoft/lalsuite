@@ -134,7 +134,7 @@ extern "C" {
  * ### Types ###
  *
  *
- * ### Structure \c DemodPar ###
+ * ### Structure DemodPar ###
  *
  * This structure contains the parameters for the demodulation routine.   The parameters are:
  *
@@ -153,7 +153,7 @@ extern "C" {
  * <dt><tt>BOOLEAN returnFaFb</tt></dt><dd> Wether or not to include the values Fa/Fb in the return-structure Fstat.</dd>
  * </dl>
  *
- * ### Structure \c LALFstat ###
+ * ### Structure LALFstat ###
  *
  * This structure contains the results from LALDemod: either
  * only the value of the \f$\mathcal{F}\f$-statistic \f$F\f$, or also the values

@@ -251,6 +251,9 @@ computeMaxAutoCorrLen(LALInferenceRunState *runState, INT4 startCycle, INT4 endC
     max = Niter;
   }
 
+  /* Account for any thinning of the DE buffer that has happend */
+  max *= runState->differentialPointsSkip;
+
   *maxACL = (INT4)max;
 }
 
@@ -293,7 +296,6 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
   REAL8 *ladder = NULL;			//the ladder
   REAL8 *annealDecay = NULL;
   INT4 parameter=0;
-  INT4 *intVec = NULL;
   INT4 annealStartIter = 0;
   INT4 iEffStart = 0;
   UINT4 hotChain = 0;                 // Affects proposal setup
@@ -304,6 +306,7 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
   LALInferenceMPIswapAcceptance swapReturn;
   LALInferenceVariables *propStats = runState->proposalStats; // Print proposal acceptance rates to file
   LALInferenceProposalStatistics *propStat;
+  UINT4 propTrack = 0;
   UINT4 (*parallelSwap)(LALInferenceRunState *, REAL8 *, INT4, FILE *);
   INT4 nPar = LALInferenceGetVariableDimensionNonFixed(runState->currentParams);
   INT4 Niter = *(INT4*) LALInferenceGetVariable(runState->algorithmParams, "Niter");
@@ -374,7 +377,6 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
   nChain = MPIsize;		//number of parallel chain
   ladder = malloc(nChain * sizeof(REAL8));                  // Array of temperatures for parallel tempering.
   annealDecay = malloc(nChain * sizeof(REAL8));           			// Used by annealing scheme
-  intVec = malloc(nChain * sizeof(INT4));
 
   /* If not specified otherwise, set effective sample size to total number of iterations */
   if (!Neff) {
@@ -466,21 +468,29 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
   }
 
   if (runState->likelihood==&LALInferenceUndecomposedFreqDomainLogLikelihood ||
-      runState->likelihood==&LALInferenceFreqDomainLogLikelihood ||
-      runState->likelihood==&LALInferenceNoiseOnlyLogLikelihood){
+      runState->likelihood==&LALInferenceFreqDomainLogLikelihood){
     nullLikelihood = LALInferenceNullLogLikelihood(runState->data);
   } else if (runState->likelihood==&LALInferenceFreqDomainStudentTLogLikelihood || 
-	     runState->likelihood==&LALInferenceMarginalisedTimeLogLikelihood) {
+	     (runState->likelihood==&LALInferenceMarginalisedTimeLogLikelihood &&
+        !LALInferenceGetProcParamVal(runState->commandLine, "--malmquistPrior")) ) {
     LALInferenceIFOData *headData = runState->data;
     REAL8 d = *(REAL8 *)LALInferenceGetVariable(runState->currentParams, "distance");
-    REAL8 bigD = 1.0 / 0.0;
+    REAL8 bigD = INFINITY;
+
+    /* Don't store to cache, since distance scaling won't work */
+    LALSimInspiralWaveformCache *cache = headData->waveformCache;
+    while (headData != NULL) {
+      headData->waveformCache = NULL;
+      headData = headData->next;
+    }
+    headData = runState->data;
 
     LALInferenceSetVariable(runState->currentParams, "distance", &bigD);
-
     nullLikelihood = runState->likelihood(runState->currentParams, runState->data, runState->templt);
 
     while (headData != NULL) {
       headData->nullloglikelihood = headData->loglikelihood;
+      headData->waveformCache = cache;
       headData = headData->next;
     }
 
@@ -493,6 +503,12 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
       headData = headData->next;
     }
   }
+
+  //null log likelihood logic doesn't work with noise parameters
+  if(runState->likelihood==&LALInferenceMarginalisedTimeLogLikelihood &&
+     (LALInferenceGetProcParamVal(runState->commandLine,"--psdFit") ||
+      LALInferenceGetProcParamVal(runState->commandLine,"--glitchFit") ) )
+    nullLikelihood = 0.0;
 
   LALInferenceAddVariable(runState->algorithmParams, "nChain", &nChain,  LALINFERENCE_INT4_t, LALINFERENCE_PARAM_FIXED);
   LALInferenceAddVariable(runState->algorithmParams, "nPar", &nPar,  LALINFERENCE_INT4_t, LALINFERENCE_PARAM_FIXED);
@@ -536,9 +552,11 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
   FILE * chainoutput = NULL;
   FILE *statfile = NULL;
   FILE *propstatfile = NULL;
+  FILE *proptrackfile = NULL;
   FILE *swapfile = NULL;
   char statfilename[256];
   char propstatfilename[256];
+  char proptrackfilename[256];
   char swapfilename[256];
   if (tempVerbose && MPIrank > 0) {
     sprintf(swapfilename,"PTMCMC.tempswaps.%u.%2.2d",randomseed,MPIrank);
@@ -572,6 +590,17 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
   if (propStats) {
     sprintf(propstatfilename,"PTMCMC.propstats.%u.%2.2d",randomseed,MPIrank);
     propstatfile = fopen(propstatfilename, "w");
+  }
+
+  if (LALInferenceGetProcParamVal(runState->commandLine, "--propTrack")){
+    propTrack=1;
+    runState->preProposalParams = XLALCalloc(1, sizeof(LALInferenceVariableItem));
+    runState->proposedParams = XLALCalloc(1, sizeof(LALInferenceVariableItem));
+
+    UINT4 a=0;
+    LALInferenceAddVariable(runState->proposalArgs, "accepted", &a, LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_OUTPUT);
+    sprintf(proptrackfilename,"PTMCMC.proptrack.%u.%2.2d",randomseed,MPIrank);
+    proptrackfile = fopen(proptrackfilename, "w");
   }
 
   // initialize starting likelihood value:
@@ -779,10 +808,18 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
     runState->evolve(runState); //evolve the chain at temperature ladder[t]
     acceptanceCount = *(INT4*) LALInferenceGetVariable(runState->proposalArgs, "acceptanceCount");
 
-    if (i==1 && propStats){
-      fprintf(propstatfile, "cycle\t");
-      LALInferencePrintProposalStatsHeader(propstatfile, runState->proposalStats);
-      fflush(propstatfile);
+    if (i==1){
+      if (propStats) {
+          fprintf(propstatfile, "cycle\t");
+          LALInferencePrintProposalStatsHeader(propstatfile, runState->proposalStats);
+          fflush(propstatfile);
+      }
+
+      if (propTrack) {
+          fprintf(proptrackfile, "cycle\t");
+          LALInferencePrintProposalTrackingHeader(proptrackfile, runState->currentParams);
+          fflush(proptrackfile);
+      }
     }
 
     if ((i % Nskip) == 0) {
@@ -847,6 +884,11 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
         LALInferencePrintProposalStats(propstatfile,runState->proposalStats);
         fflush(propstatfile);
       }
+
+      if (propTrack) {
+        fprintf(proptrackfile, "%d\t", i);
+        LALInferencePrintProposalTracking(proptrackfile, runState->proposalArgs, runState->preProposalParams, runState->proposedParams);
+      }
     }
 
     /* Excute swap proposal. */
@@ -887,6 +929,9 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
     }
     if (propStats) {
       fclose(propstatfile);
+    }
+    if (propTrack) {
+      fclose(proptrackfile);
     }
   }
 
@@ -952,6 +997,12 @@ void PTMCMCOneStep(LALInferenceRunState *runState)
   else
     logLikelihoodProposed = -DBL_MAX;
 
+  if (runState->preProposalParams != NULL)
+    LALInferenceCopyVariables(runState->currentParams, runState->preProposalParams);
+
+  if (runState->proposedParams != NULL)
+    LALInferenceCopyVariables(&proposedParams, runState->proposedParams);
+
   //REAL8 nullLikelihood = *(REAL8*) LALInferenceGetVariable(runState->proposalArgs, "nullLikelihood");
   //printf("%10.10f\t%10.10f\t%10.10f\n", logPriorProposed-logPriorCurrent, logLikelihoodProposed-nullLikelihood, logProposalRatio);
   //LALInferencePrintVariables(&proposedParams);
@@ -978,17 +1029,9 @@ void PTMCMCOneStep(LALInferenceRunState *runState)
 
   }
 
-  /* special (clumsy) treatment for noise parameters */
-  //???: Is there a better way to deal with accept/reject of noise parameters?
-  if(LALInferenceCheckVariable(runState->currentParams,"psdscale"))
-  {
-    gsl_matrix *nx = *((gsl_matrix **)LALInferenceGetVariable(runState->currentParams, "psdstore"));
-    gsl_matrix *ny = *((gsl_matrix **)LALInferenceGetVariable(runState->currentParams, "psdscale"));
-    if(accepted == 1) gsl_matrix_memcpy(nx,ny);
-    else              gsl_matrix_memcpy(ny,nx);
-  }
+  if (LALInferenceCheckVariable(runState->proposalArgs, "accepted"))
+    LALInferenceSetVariable(runState->proposalArgs, "accepted", &accepted);
 
-  LALInferenceTrackProposalAcceptance(runState, accepted);
   LALInferenceUpdateAdaptiveJumps(runState, accepted, targetAcceptance);
   LALInferenceClearVariables(&proposedParams);
 }
@@ -1420,7 +1463,7 @@ void LALInferenceAdaptationRestart(LALInferenceRunState *runState, INT4 cycle)
   MPI_Comm_rank(MPI_COMM_WORLD, &MPIrank);
 
   for(LALInferenceVariableItem *item=runState->currentParams->head;item;item=item->next){
-    if (item->vary != LALINFERENCE_PARAM_FIXED) {
+    if (item->vary != LALINFERENCE_PARAM_FIXED && item->vary != LALINFERENCE_PARAM_OUTPUT) {
       char tmpname[MAX_STRLEN]="";
 
       sprintf(tmpname,"%s_%s",item->name,ACCEPTSUFFIX);
@@ -1755,7 +1798,7 @@ void LALInferencePrintPTMCMCInjectionSample(LALInferenceRunState *runState) {
     }
 
     LALInferenceSetVariable(runState->currentParams, "distance", &dist);
-    LALInferenceSetVariable(runState->currentParams, "inclination", &inclination);
+    LALInferenceSetVariable(runState->currentParams, "theta_JN", &inclination);
     LALInferenceSetVariable(runState->currentParams, "polarisation", &(psi));
     LALInferenceSetVariable(runState->currentParams, "declination", &dec);
     LALInferenceSetVariable(runState->currentParams, "rightascension", &ra);

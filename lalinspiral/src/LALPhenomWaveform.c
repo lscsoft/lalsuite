@@ -1183,7 +1183,7 @@ void LALBBHPhenWaveFreqDom(
     InspiralTemplate *params) {
   INITSTATUS(status);
   ATTATCHSTATUSPTR(status);
-  XLALPrintDeprecationWarning(__func__, "XLALBBHPhenWaveFreqDom");
+  XLAL_PRINT_DEPRECATION_WARNING("XLALBBHPhenWaveFreqDom");
   switch (params->approximant) {
     case IMRPhenomA:
       if (XLALBBHPhenWaveAFreqDom(signalvec, params)) ABORTXLAL(status);
@@ -1205,7 +1205,7 @@ void LALBBHPhenWaveFreqDomTemplates(
     InspiralTemplate *params) {
   INITSTATUS(status);
   ATTATCHSTATUSPTR(status);
-  XLALPrintDeprecationWarning(__func__, "XLALBBHPhenWaveFreqDomTemplates");
+  XLAL_PRINT_DEPRECATION_WARNING("XLALBBHPhenWaveFreqDomTemplates");
   switch (params->approximant) {
     case IMRPhenomA:
       if (XLALBBHPhenWaveAFreqDomTemplates(signalvec1, signalvec2, params)) ABORTXLAL(status);
@@ -1226,7 +1226,7 @@ void LALBBHPhenWaveTimeDom(
     InspiralTemplate *insp_template) {
   INITSTATUS(status);
   ATTATCHSTATUSPTR(status);
-  XLALPrintDeprecationWarning(__func__, "XLALBBHPhenWaveTimeDom");
+  XLAL_PRINT_DEPRECATION_WARNING("XLALBBHPhenWaveTimeDom");
   if (XLALBBHPhenWaveTimeDom(signalvec1, insp_template)) ABORTXLAL(status);
   CHECKSTATUSPTR(status);
   DETATCHSTATUSPTR(status);
@@ -1240,7 +1240,7 @@ void LALBBHPhenWaveTimeDomTemplates(
     InspiralTemplate *insp_template) {
   INITSTATUS(status);
   ATTATCHSTATUSPTR(status);
-  XLALPrintDeprecationWarning(__func__, "XLALBBHPhenWaveTimeDomTemplates");
+  XLAL_PRINT_DEPRECATION_WARNING("XLALBBHPhenWaveTimeDomTemplates");
   if (XLALBBHPhenWaveTimeDomTemplates(signalvec1, signalvec2, insp_template))
     ABORTXLAL(status);
   CHECKSTATUSPTR(status);
@@ -1260,7 +1260,7 @@ void LALBBHPhenTimeDomEngine(
     InspiralTemplate *params) {
   INITSTATUS(status);
   ATTATCHSTATUSPTR(status);
-  XLALPrintDeprecationWarning(__func__, "XLALBBHPhenTimeDomEngine");
+  XLAL_PRINT_DEPRECATION_WARNING("XLALBBHPhenTimeDomEngine");
   if (XLALBBHPhenTimeDomEngine(signalvec1, signalvec2, h, aVec,
     freqVec, phiVec, countback, params)) ABORTXLAL(status);
   DETATCHSTATUSPTR(status);
@@ -1274,7 +1274,7 @@ void LALBBHPhenWaveTimeDomForInjection(
     PPNParamStruc    *ppnParams) {
   INITSTATUS(status);
   ATTATCHSTATUSPTR(status);
-  XLALPrintDeprecationWarning(__func__, "XLALBBHPhenWaveTimeDomForInjection");
+  XLAL_PRINT_DEPRECATION_WARNING("XLALBBHPhenWaveTimeDomForInjection");
   if (XLALBBHPhenWaveTimeDomForInjection(waveform, params, ppnParams))
     ABORTXLAL(status);
   DETATCHSTATUSPTR(status);

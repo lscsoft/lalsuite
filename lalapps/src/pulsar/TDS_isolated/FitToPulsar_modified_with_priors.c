@@ -20,7 +20,7 @@
 /**
  * \author Dupuis, R. J.
  *
- * ### Module \ref FitToPulsar.c ###
+ * ### Module FitToPulsar.c ###
  *
  *
  * ### Algorithm ###

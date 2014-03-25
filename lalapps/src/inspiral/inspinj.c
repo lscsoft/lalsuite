@@ -3794,6 +3794,7 @@ int main( int argc, char *argv[] )
       {
         if ( !strncmp(waveform, "IMRPhenomB", 10) || 
              !strncmp(waveform, "IMRPhenomC", 10) ||
+             !strncmp(waveform, "SpinTaylorT5", 12) ||
              !strncmp(waveform, "SEOBNR", 6) )
           alignInj = alongzAxis;
         else if ( !strncmp(waveform, "SpinTaylor", 10) )

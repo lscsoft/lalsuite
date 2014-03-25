@@ -1229,6 +1229,7 @@ LALFrameUFrDetector *XLALFrameUFrDetectorRead(LALFrameUFrFile * stream,
 /**
  * @brief Allocate memory for a new detector FrDetector structure.
  * @param name Name for this FrDetector structure.
+ * @param prefix UNDOCUMENTED
  * @param latitude Latitude North of the equator of detector in radians.
  * @param longitude Longitude East of Greenwich meridian of detector in radians.
  * @param elevation Elevation of detector above WGS84 ellipsoid in meters.

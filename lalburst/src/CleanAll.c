@@ -44,7 +44,6 @@
  *-----------------------------------------------------------------------
  */
 
-#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/CLR.h>
 
 /**
@@ -161,21 +160,18 @@ void LALCleanAll (LALStatus     *status,/**< LAL status pointer */
   /*     Removing the fundamental harmonic         */
   /* -------------------------------------------   */
 
-  rhon.real_FIXME = 0.0;
-  rhon.imag_FIXME = 0.0;
+  rhon = 0.0;
   rhod    = 0.0;
 
   for (i=0; i<n; ++i) {
     mr = crealf(m[i]);
     mi = cimagf(m[i]);
 
-    rhon.real_FIXME +=  x[i]*mr;
-    rhon.imag_FIXME += -x[i]*mi;
+    rhon += crect( x[i]*mr, -x[i]*mi );
     rhod    +=  mr*mr + mi*mi;
   }
 
-  rho.real_FIXME = creal(rhon) / rhod;
-  rho.imag_FIXME = cimag(rhon) / rhod;
+  rho = (rhon / ((REAL8) rhod));
 
   for (i=0; i<n; ++i) {
     xc[i] = x[i] - 2.0*(creal(rho) * crealf(m[i]) - cimag(rho) * cimagf(m[i]) );
@@ -211,26 +207,22 @@ void LALCleanAll (LALStatus     *status,/**< LAL status pointer */
     }
 
     for(j=2; j<= maxH; ++j) {
-      rhon.real_FIXME = 0.0;
-      rhon.imag_FIXME = 0.0;
+      rhon = 0.0;
       rhod    = 0.0;
 
       for (i=0; i<n; ++i) {
 	/* calculation of m^j(t) for a fixed t */
 	amj = pow( ampM2->data[i], 0.5*j);
 	phj = j * phaM->data[i];
-	mj->data[i].real_FIXME = amj * cos(phj);
+	mj->data[i] = crect( amj * cos(phj), amj * sin(phj) );
 	mr =  creal(mj->data[i]);
-	mj->data[i].imag_FIXME = amj * sin(phj);
 	mi =  cimag(mj->data[i]);
 
-	rhon.real_FIXME +=  xc[i]*mr;
-	rhon.imag_FIXME += -xc[i]*mi;
+	rhon += crect( xc[i]*mr, -xc[i]*mi );
 	rhod    +=  mr*mr + mi*mi;
       }
 
-      rho.real_FIXME = creal(rhon) / rhod;
-      rho.imag_FIXME = cimag(rhon) / rhod;
+      rho = (rhon / ((REAL8) rhod));
 
      for (i=0; i<n; ++i) {
        xc[i] += - 2.0*(creal(rho) * creal(mj->data[i]) - cimag(rho) * cimag(mj->data[i]) );

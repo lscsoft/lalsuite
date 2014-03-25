@@ -148,6 +148,7 @@ def parse_command_line():
     #
     parser.add_option("--flow", type="float", help="Required. Set the low-frequency cutoff to use for the match caluclation.")
     parser.add_option("--match-min",help="Set minimum match of the bank. Note that since this is a stochastic process, the requested minimal match may not be strictly guaranteed but should be fulfilled on a statistical basis. Default: 0.95.", type="float", default=0.95)
+    parser.add_option("--convergence-threshold", metavar="N", help="Set the criterion for convergence of the stochastic bank. The code terminates when there are N rejected proposals for each accepted proposal, averaged over the last ten acceptances. Default 1000.", type="int", default=1000)
 
     #
     # output options
@@ -204,10 +205,13 @@ def parse_command_line():
 
     if opts.mchirp_boundaries_file:
         boundaries = [float(line) for line in open(opts.mchirp_boundaries_file)]
-        if opts.mchirp_boundaries_index + 1 >= len(boundaries):
+        if opts.mchirp_boundaries_index + 1 > len(boundaries):
             raise ValueError("mchirp boundaries file not long enough for requested index")
-        opts.mchirp_min = float(boundaries[opts.mchirp_boundaries_index])
-        opts.mchirp_max = float(boundaries[opts.mchirp_boundaries_index + 1])
+
+        if opts.mchirp_boundaries_index > 0:
+            opts.mchirp_min = float(boundaries[opts.mchirp_boundaries_index])
+        if opts.mchirp_boundaries_index + 1 < len(boundaries):
+            opts.mchirp_max = float(boundaries[opts.mchirp_boundaries_index + 1])
 
     return opts, args
 
@@ -285,12 +289,11 @@ proposal = proposals[opts.approximant](opts.flow, **params)
 # For robust convergence, ensure that an average of kmax/len(ks) of
 # the last len(ks) proposals have been rejected by SBank.
 ks = deque(10*[0], maxlen=10)
-kmax = 5000
 
 k = 0 # k is nprop per iteration
 nprop = 1  # count total number of proposed templates
 status_format = "bank size: %d\tproposed: %d\t" + "\t".join("%s: %s" % name_format for name_format in zip(waveform.param_names, waveform.param_formats))
-while (k + float(sum(ks)))/len(ks) < kmax:
+while (k + float(sum(ks)))/len(ks) < opts.convergence_threshold:
     tmplt = waveform(*proposal.next(), bank=bank)
     k += 1
     nprop += 1

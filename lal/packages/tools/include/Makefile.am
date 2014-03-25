@@ -14,6 +14,7 @@ pkginclude_HEADERS = \
 	Sequence.h \
 	Skymap.h \
 	TimeSeries.h \
+	TimeSeriesInterp.h \
 	TriggerInterpolation.h \
 	Units.h
 

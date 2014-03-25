@@ -1,7 +1,5 @@
 /* only include this file if LALSimulation's config.h has not been included */
-
-#ifndef _LALSIMULATIONCONFIG_H
-#define _LALSIMULATIONCONFIG_H
+#ifndef LALSIMULATION_VERSION
 
 /* LALFrame Version */
 #undef LALSIMULATION_VERSION
@@ -18,10 +16,4 @@
 /* LALFrame Version Devel Number  */
 #undef LALSIMULATION_VERSION_DEVEL
 
-/* LALFrame Configure Arguments */
-#undef LALSIMULATION_CONFIGURE_ARGS
-
-/* LALFrame Configure Date */
-#undef LALSIMULATION_CONFIGURE_DATE
-
-#endif /* _LALSIMULATIONCONFIG_H */
+#endif /* LALSIMULATION_VERSION */

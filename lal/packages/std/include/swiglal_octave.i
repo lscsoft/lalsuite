@@ -22,22 +22,12 @@
 
 ////////// General SWIG directives and interface code //////////
 
-// Improved version of segfault-on-exit prevention hack.
-#if SWIG_VERSION < 0x020008
-%begin %{
-#include <cstdlib>
-#define SWIG_OCTAVE_NO_SEGFAULT_HACK
-%}
-%init %{
-  octave_exit = ::_Exit;
-%}
-#endif
-
 // Include SWIG Octave headers.
 %include <octcomplex.swg>
 
 // Include Octave headers.
-%header %{extern "C++" {
+%header %{
+extern "C++" {
 #include <octave/ov-cell.h>
 #include <octave/ov-int-traits.h>
 #include <octave/ov-flt-re-mat.h>
@@ -45,7 +35,8 @@
 #include <octave/ov-flt-cx-mat.h>
 #include <octave/ov-cx-mat.h>
 #include <octave/toplev.h>
-}%}
+}
+%}
 
 // Name of octave_value containing the SWIG wrapping of the struct whose members are being accessed.
 %header %{
@@ -56,6 +47,11 @@
 // Name of octave_value containing the SWIG wrapping of the first argument to a function.
 %header %{
 #define swiglal_1starg()  (args.length() > 0 ? args(0) : octave_value())
+%}
+
+// Return a reference to the supplied octave_value; since Octave handles reference counting, just return it.
+%header %{
+#define swiglal_get_reference(v) (v)
 %}
 
 // Append an argument to the output argument list of an Octave SWIG-wrapped function, if the list is empty.
@@ -102,8 +98,8 @@
 %typemaps_primitive(%checkcode(CPLXDBL), gsl_complex);
 
 // SWIG conversion fragments and typemaps for LAL complex numbers.
-%swig_cplxflt_convn(COMPLEX8, COMPLEX8, std::real, std::imag);
-%swig_cplxdbl_convn(COMPLEX16, COMPLEX16, std::real, std::imag);
+%swig_cplxflt_convn(COMPLEX8, crectf, crealf, cimagf);
+%swig_cplxdbl_convn(COMPLEX16, crect, creal, cimag);
 %typemaps_primitive(%checkcode(CPLXFLT), COMPLEX8);
 %typemaps_primitive(%checkcode(CPLXDBL), COMPLEX16);
 

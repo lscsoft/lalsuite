@@ -1,7 +1,5 @@
 /* only include this file if LALFrame's config.h has not been included */
-
-#ifndef _LALFRAMECONFIG_H
-#define _LALFRAMECONFIG_H
+#ifndef LALFRAME_VERSION
 
 /* LALFrame Version */
 #undef LALFRAME_VERSION
@@ -18,12 +16,6 @@
 /* LALFrame Version Devel Number  */
 #undef LALFRAME_VERSION_DEVEL
 
-/* LALFrame Configure Arguments */
-#undef LALFRAME_CONFIGURE_ARGS
-
-/* LALFrame Configure Date */
-#undef LALFRAME_CONFIGURE_DATE
-
 /* Define if you have inotify */
 #undef HAVE_INOTIFY
 
@@ -33,4 +25,4 @@
 /* Define to use FrameL */
 #undef USE_FRAMEL
 
-#endif /* _LALFRAMECONFIG_H */
+#endif /* LALFRAME_VERSION */

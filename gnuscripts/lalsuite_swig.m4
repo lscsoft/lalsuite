@@ -1,7 +1,8 @@
-# SWIG configuration
+# -*- mode: autoconf; -*-
+# lalsuite_swig.m4 - SWIG configuration
 # Author: Karl Wette, 2011, 2012
 #
-# serial 41
+# serial 58
 
 # enable SWIG wrapping modules
 AC_DEFUN([LALSUITE_ENABLE_SWIG],[
@@ -26,8 +27,8 @@ AC_DEFUN([LALSUITE_ENABLE_SWIG],[
   # options to enable/disable languages
   swig_build_any=false
   swig_min_version=0.0
-  LALSUITE_ENABLE_SWIG_LANGUAGE([Octave],[false],[2.0.7],[LALSUITE_REQUIRE_CXX])
-  LALSUITE_ENABLE_SWIG_LANGUAGE([Python],[false],[2.0.7])
+  LALSUITE_ENABLE_SWIG_LANGUAGE([Octave],[false],[2.0.11],[LALSUITE_REQUIRE_CXX])
+  LALSUITE_ENABLE_SWIG_LANGUAGE([Python],[false],[2.0.11])
 
 ])
 
@@ -99,7 +100,7 @@ AC_DEFUN([LALSUITE_USE_SWIG],[
   AC_REQUIRE([AC_PROG_SED])
 
   # if we are wrapping the LAL library (instead of one of the LAL* libraries)
-  AS_IF([test "x${PACKAGE_NAME}" = xlal],[
+  AS_IF([test "x${PACKAGE}" = xlal],[
     lalswig=true
   ],[
     lalswig=false
@@ -138,38 +139,17 @@ AC_DEFUN([LALSUITE_USE_SWIG],[
     AC_SUBST(SWIG_SYMBOL_PREFIXES,["$1"])
 
     # flags for preprocessing/generating SWIG wrapping module sources
-    AC_SUBST(SWIG_SWIGFLAGS,["-Wextra -Werror -I\$(abs_top_builddir)/include"])
+    AC_SUBST(SWIG_SWIGFLAGS,["-Wextra -Werror -I\$(top_srcdir)/include -I\$(top_srcdir)/src -I\$(top_builddir)/include -I\$(top_builddir)/src"])
 
-    # add -MP option if SWIG is greater than version 2.0.9
-    AS_VERSION_COMPARE([${swig_version}],[2.0.9],[],[],[
-      SWIG_SWIGFLAGS="${SWIG_SWIGFLAGS} -MP"
-    ])
+    # add -MP option
+    SWIG_SWIGFLAGS="${SWIG_SWIGFLAGS} -MP"
 
     # send language-specific SWIG output files to libtool directory
     AC_SUBST(SWIG_OUTDIR,["\$(abs_builddir)/${objdir}"])
     SWIG_SWIGFLAGS="${SWIG_SWIGFLAGS} -outdir \$(SWIG_OUTDIR)"
 
     # flags for generating/compiling SWIG wrapping module sources
-    AC_SUBST(SWIG_CPPFLAGS,["-I\$(abs_top_builddir)/include"])
-    for flag in ${swig_save_CPPFLAGS}; do
-      AS_CASE([${flag}],
-        [-I*],[SWIG_CPPFLAGS="${SWIG_CPPFLAGS} ${flag} `echo ${flag} | ${SED} 's|/include$|/swig|'`"],
-        [*],[SWIG_CPPFLAGS="${SWIG_CPPFLAGS} ${flag}"]
-      )
-    done
-    SWIG_CPPFLAGS="${SWIG_CPPFLAGS} -I/usr/include"
-
-    # are we (not) in debugging mode?
-    AS_IF([test "x${enable_debug}" = xno],[
-      SWIG_SWIGFLAGS="${SWIG_SWIGFLAGS} -DNDEBUG"
-      SWIG_CPPFLAGS="${SWIG_CPPFLAGS} -DNDEBUG"
-    ])
-
-    # is GSL available?
-    AS_IF([test "x${GSL_LIBS}" != x],[
-      SWIG_SWIGFLAGS="${SWIG_SWIGFLAGS} -DHAVE_LIBGSL"
-      SWIG_CPPFLAGS="${SWIG_CPPFLAGS} -DHAVE_LIBGSL"
-    ])
+    AC_SUBST(SWIG_CPPFLAGS,["-I\$(top_srcdir)/include -I\$(top_srcdir)/src -I\$(top_builddir)/include -I\$(top_builddir)/src ${swig_save_CPPFLAGS} ${LAL_SYSTEM_INCLUDES}"])
 
     # flags for compiling SWIG wrapping module sources
     AC_SUBST(SWIG_CFLAGS,[])
@@ -184,9 +164,6 @@ AC_DEFUN([LALSUITE_USE_SWIG],[
         [-g*|-O*],[SWIG_CXXFLAGS="${SWIG_CXXFLAGS} ${arg}"]
       )
     done
-
-    # define C99 constant and limit macros for C++ sources
-    SWIG_CXXFLAGS="${SWIG_CXXFLAGS} -D__STDC_CONSTANT_MACROS -D__STDC_LIMIT_MACROS"
 
     # make SWIG use C++ casts in typemaps in C++ mode
     SWIG_CXXFLAGS="${SWIG_CXXFLAGS} -DSWIG_CPLUSPLUS_CAST"
@@ -224,7 +201,7 @@ AC_DEFUN([LALSUITE_USE_SWIG],[
     AS_IF([test ${lalswig} = true],[
       SWIG_LIBS="\$(abs_top_builddir)/lib/lalsupport/src/liblalsupport.la \$(abs_top_builddir)/lib/lal/liblal.la"
     ],[
-      SWIG_LIBS="\$(abs_top_builddir)/src/lib${PACKAGE_NAME}.la"
+      SWIG_LIBS="\$(abs_top_builddir)/src/lib${PACKAGE}.la"
     ])
 
     # dynamic linker search path for pre-installed LAL libraries
@@ -243,7 +220,7 @@ AC_DEFUN([LALSUITE_USE_SWIG],[
     # list of other LAL SWIG modules that this module depends on
     AC_MSG_CHECKING([for SWIG module dependencies])
     AC_SUBST(SWIG_MODULE_DEPENDS,[""])
-    for arg in ${LALSUITE_CHECKED_LIBS}; do
+    for arg in ${lalsuite_libs}; do
       AS_IF([test "x`echo ${arg} | ${SED} -n '/^lalsupport$/d;/^lal/p'`" != x],[
         SWIG_MODULE_DEPENDS="${SWIG_MODULE_DEPENDS} ${arg}"
       ])
@@ -256,11 +233,6 @@ AC_DEFUN([LALSUITE_USE_SWIG],[
 
     # scripting-language path to search for pre-installed SWIG modules
     AC_SUBST(SWIG_PREINST_PATH,["\$(SWIG_OUTDIR)"])
-    AS_IF([test "x${LALSUITE_BUILD}" = xtrue],[
-      for dir in ${LALSUITE_SUBDIRS}; do
-        SWIG_PREINST_PATH="${SWIG_PREINST_PATH}:\$(abs_top_builddir)/../${dir}/\$(subdir)/${objdir}"
-      done
-    ])
 
   ])
 
@@ -473,5 +445,20 @@ EOD`]
     ])
     CPPFLAGS=
     AC_LANG_POP([C])
+
+    # remove deprecated code in NumPy API >= 1.7
+    PYTHON_CPPFLAGS="${PYTHON_CPPFLAGS} -DNPY_NO_DEPRECATED_API=NPY_1_7_API_VERSION"
+
+    # check for declarations which may need compatibility code for NumPy API < 1.7
+    CPPFLAGS=${PYTHON_CPPFLAGS}
+    AC_LANG_PUSH([C])
+    AC_CHECK_DECLS([NPY_ARRAY_WRITEABLE,PyArray_SetBaseObject],,,[
+      AC_INCLUDES_DEFAULT
+      #include <Python.h>
+      #include <numpy/arrayobject.h>
+    ])
+    CPPFLAGS=
+    AC_LANG_POP([C])
+
   ])
 ])

@@ -20,7 +20,6 @@
  * Author: Torres Cristina 
  */
 
-#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include "tracksearch.h"
 #include <lal/LALFrStream.h>
 
@@ -3159,8 +3158,8 @@ void LALappsTrackSearchCalibrate( REAL4TimeSeries    *dataSet,
    */
   fprintf(stderr,"Hack on Response function...Don't forget\n");
   fprintf(stderr,"Will cause memory leak for some reason?\n");
-  dataSetFFT->data->data[dataSetFFT->data->length-1].imagf_FIXME=0;
-  dataSetFFT->data->data[dataSetFFT->data->length].imagf_FIXME=0;
+  dataSetFFT->data->data[dataSetFFT->data->length-1] = crectf( crealf(dataSetFFT->data->data[dataSetFFT->data->length-1]), 0 );
+  dataSetFFT->data->data[dataSetFFT->data->length] = crectf( crealf(dataSetFFT->data->data[dataSetFFT->data->length]), 0 );
       
   dataSetPlan=XLALCreateReverseREAL4FFTPlan(dataSet->data->length,0);
 
@@ -3439,8 +3438,7 @@ void LALappsTracksearchRemoveHarmonics(
 
 	      for (i=0;i<referenceSignal->length;i++)
 		{
-		  referenceSignal->data[i].realf_FIXME=0;
-		  referenceSignal->data[i].imagf_FIXME=0;
+		  referenceSignal->data[i] = 0.0;
 		}
 	      harmonicIndex=XLALCreateINT4Vector(tmpHarmonicCount);
 	      if  (harmonicIndex == NULL)

@@ -30,12 +30,9 @@ fi
 
 SFTdir="./testCFSv2_resamp_sfts"
 
-if [ -n "${LALPULSAR_DATADIR}" ]; then
-    mfd_code="${mfd_code} -E ${LALPULSAR_DATADIR}"
-    cfs_code="${cfs_code} -E ${LALPULSAR_DATADIR}"
-else
+if [ -z "${LAL_DATA_PATH}" ]; then
     echo
-    echo "Need environment-variable LALPULSAR_DATADIR to be set to"
+    echo "Need environment-variable LAL_DATA_PATH to be set to include"
     echo "your ephemeris-directory (e.g. /usr/local/share/lalpulsar)"
     echo "This might indicate an incomplete LAL+LALPULSAR installation"
     echo
@@ -129,7 +126,7 @@ echo "----------------------------------------------------------------------"
 echo "STEP 2: run directed CFS_v2 with LALDemod method"
 echo "----------------------------------------------------------------------"
 echo
-cfs_CL=" --refTime=${refTime} --Alpha=$Alpha --Delta=$Delta  --AlphaBand=$AlphaBand --DeltaBand=$DeltaBand --dAlpha=$dAlpha --dDelta=$dDelta --Freq=$cfs_Freq --FreqBand=$cfs_FreqBand --dFreq=$cfs_dFreq --f1dot=$cfs_f1dot --f1dotBand=$cfs_f1dotBand --df1dot=${cfs_df1dot} --DataFiles='$SFTdir/*.sft' --NumCandidatesToKeep=${cfs_nCands}"
+cfs_CL=" --refTime=${refTime} --Dterms=16 --Alpha=$Alpha --Delta=$Delta  --AlphaBand=$AlphaBand --DeltaBand=$DeltaBand --dAlpha=$dAlpha --dDelta=$dDelta --Freq=$cfs_Freq --FreqBand=$cfs_FreqBand --dFreq=$cfs_dFreq --f1dot=$cfs_f1dot --f1dotBand=$cfs_f1dotBand --df1dot=${cfs_df1dot} --DataFiles='$SFTdir/*.sft' --NumCandidatesToKeep=${cfs_nCands}"
 if [ "$haveNoise" = false ]; then
     cfs_CL="$cfs_CL --SignalOnly"
 fi
@@ -152,7 +149,7 @@ outfile_RS="Fstat_RS.dat";
 
 cmdline="$cfs_code $cfs_CL  --outputFstat=$outfile_RS --useResamp=1"
 echo $cmdline;
-if ! eval "$cmdline &> /dev/null"; then
+if ! eval "$cmdline 2> /dev/null"; then
     echo "Error.. something failed when running '$cfs_code' ..."
     exit 1;
 fi

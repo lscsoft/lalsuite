@@ -25,15 +25,9 @@ code_MFD="${injectdir}lalapps_Makefakedata_v4"
 code_HS="${builddir}/lalapps_HierarchicalSearch"
 code_RC="${builddir}/lalapps_RecalcHSCandidates"
 
-if [ -n "${LALPULSAR_DATADIR}" ]; then
-    EEPHEM="${LALPULSAR_DATADIR}/earth00-19-DE405.dat"
-    SEPHEM="${LALPULSAR_DATADIR}/sun00-19-DE405.dat"
-    code_MFD="${code_MFD} -E ${LALPULSAR_DATADIR}"
-    code_HS="${code_HS} --ephemE=${EEPHEM} --ephemS=${SEPHEM}"
-    code_RC="${code_RC} --ephemE=${EEPHEM} --ephemS=${SEPHEM}"
-else
+if [ -z "${LAL_DATA_PATH}" ]; then
     echo
-    echo "Need environment-variable LALPULSAR_DATADIR to be set to"
+    echo "Need environment-variable LAL_DATA_PATH to be set to include"
     echo "your ephemeris-directory (e.g. /usr/local/share/lalpulsar)"
     echo "This might indicate an incomplete LAL+LALPULSAR installation"
     echo

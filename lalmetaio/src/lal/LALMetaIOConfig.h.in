@@ -1,0 +1,19 @@
+/* only include this file if LALMetaIO's config.h has not been included */
+#ifndef LALMETAIO_VERSION
+
+/* LALMetaIO Version */
+#undef LALMETAIO_VERSION
+
+/* LALMetaIO Version Major Number  */
+#undef LALMETAIO_VERSION_MAJOR
+
+/* LALMetaIO Version Minor Number  */
+#undef LALMETAIO_VERSION_MINOR
+
+/* LALMetaIO Version Micro Number  */
+#undef LALMETAIO_VERSION_MICRO
+
+/* LALMetaIO Version Devel Number  */
+#undef LALMETAIO_VERSION_DEVEL
+
+#endif /* LALMETAIO_VERSION */

@@ -4,7 +4,7 @@
 if SWIG_BUILD
 
 # SWIG interface header list
-swig_iface_headers = $(top_builddir)/swig/@PACKAGE_NAME@swig_headers.list
+swig_iface_headers = $(top_builddir)/swig/@PACKAGE@swig_headers.list
 
 # generate SWIG interface header list
 all install .PHONY : swig-iface-headers

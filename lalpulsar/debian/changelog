@@ -1,3 +1,9 @@
+lalpulsar (1.9.0-1) unstable; urgency=low
+
+  * LALPulsar 1.9.0
+
+ -- Adam Mercer <adam.mercer@ligo.org>  Fri, 03 Jan 2014 12:15:05 -0600
+
 lalpulsar (1.8.0-1) unstable; urgency=low
 
   * LALPulsar 1.8.0

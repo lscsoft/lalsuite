@@ -1,5 +1,6 @@
 /*
- * Copyright (C) 2005 Reinhard Prix
+ *  Copyright (C) 2009 Chris Messenger
+ *  Copyright (C) 2005 Reinhard Prix
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -93,11 +94,6 @@ extern const PSDVector empty_PSDVector;
 extern const MultiPSDVector empty_MultiPSDVector;
 extern const MultiNoiseWeights empty_MultiNoiseWeights;
 
-
-// ---------- obsolete LAL-API was moved into external file
-#include "SFTutils-LAL.h"
-// ------------------------------
-
 /*---------- exported prototypes [API] ----------*/
 /* ----------------------------------------------------------------------
  *  some prototypes for general functions handling these data-types
@@ -122,6 +118,8 @@ MultiLIGOTimeGPSVector *XLALExtractMultiTimestampsFromSFTs ( const MultiSFTVecto
 LIGOTimeGPSVector *XLALTimestampsFromSFTCatalog ( const SFTCatalog *catalog );
 MultiLIGOTimeGPSVector *XLALTimestampsFromMultiSFTCatalogView ( const MultiSFTCatalogView *multiView );
 
+LIGOTimeGPSVector *XLALTimestampsFromSegmentFile( const char *filename, REAL8 Tsft, REAL8 Toverlap, INT4 adjustSegExtraTime, INT4 synchronize );
+
 void XLALDestroyTimestampVector (LIGOTimeGPSVector *vect);
 void XLALDestroyMultiTimestamps ( MultiLIGOTimeGPSVector *multiTS );
 
@@ -135,6 +133,8 @@ int XLALMultiSFTVectorAdd ( MultiSFTVector *a, const MultiSFTVector *b );
 int XLALSFTVectorAdd ( SFTVector *a, const SFTVector *b );
 int XLALSFTAdd ( SFTtype *a, const SFTtype *b );
 
+int XLALEarliestMultiSFTsample ( LIGOTimeGPS *out, MultiSFTVector *multisfts );
+int XLALLatestMultiSFTsample ( LIGOTimeGPS *out, MultiSFTVector *multisfts );
 
 // destructors
 void XLALDestroyPSDVector ( PSDVector *vect );
@@ -146,6 +146,10 @@ MultiNoiseWeights *XLALComputeMultiNoiseWeights ( const MultiPSDVector *rngmed, 
 void XLALDestroyMultiNoiseWeights ( MultiNoiseWeights *weights );
 
 /*@}*/
+
+// ---------- obsolete LAL-API was moved into external file
+#include <lal/SFTutils-LAL.h>
+// ------------------------------
 
 #ifdef  __cplusplus
 }

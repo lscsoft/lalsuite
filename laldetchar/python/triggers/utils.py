@@ -211,7 +211,8 @@ def time_column(table, ifo=None):
         return numpy.asarray(map(func_name, table))
 
 
-def from_ligolw(filepath, table_name, columns=None, start=None, end=None):
+def from_ligolw(filepath, table_name, columns=None, start=None, end=None,
+                **kwargs):
     """Load a LIGO_LW table from a file.
 
     @param filepath
@@ -262,6 +263,7 @@ def from_ascii(filepath, etg, columns=None, start=None, end=None, **kwargs):
         minimum GPS time for returned triggers
     @param end
         maximum GPS time for returned triggers
+    @param kwargs UNDOCUMENTED
 
     @returns a LIGO_LW table containing the triggers
     """
@@ -294,6 +296,7 @@ def from_root(filepath, etg, columns=None, start=None, end=None, **kwargs):
         minimum GPS time for returned triggers
     @param end
         maximum GPS time for returned triggers
+    @param kwargs UNDOCUMENTED
 
     @returns a `LIGO_LW` table containing the triggers
     """
@@ -312,4 +315,4 @@ def from_root(filepath, etg, columns=None, start=None, end=None, **kwargs):
     return out
 
 # close doxygen
-#@}
+##@}

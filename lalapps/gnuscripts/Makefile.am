@@ -1,6 +1,7 @@
 EXTRA_DIST = \
-        ax_blas.m4 \
-        ax_lapack.m4 \
+	ax_blas.m4 \
+	ax_lapack.m4 \
+	ax_cblas.m4 \
 	ax_mpi.m4 \
 	compile \
 	config.guess \
@@ -10,7 +11,6 @@ EXTRA_DIST = \
 	install-sh \
 	lalapps.m4 \
 	lalsuite_build.m4 \
-	lalsuite_gccflags.m4 \
 	libtool.m4 \
 	ltmain.sh \
 	ltoptions.m4 \

@@ -48,6 +48,7 @@ def find_daily_cache(start, end, ifo, clustering=None, check_files=False,
         tag for clustering stage to search, default: unclustered
     @param check_files
         check that the returned files can be read on disk, default False
+    @param kwargs UNDOCUMENTED
     """
     out = Cache()
 
@@ -107,6 +108,7 @@ def find_daily_cache(start, end, ifo, clustering=None, check_files=False,
 def from_file(fileobj, start=None, end=None, columns=None):
     """@returns a SnglInspiralTable of events from the given fileobj
 
+    @param fileobj UNDOCUMENTED
     @param start
         GPS start time after which to restrict returned events
     @param end

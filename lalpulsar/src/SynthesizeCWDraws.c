@@ -37,7 +37,6 @@
 #include <gsl/gsl_blas.h>
 #include <gsl/gsl_linalg.h>
 
-#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/SynthesizeCWDraws.h>
 
 /*---------- DEFINES ----------*/
@@ -282,10 +281,8 @@ XLALAddNoiseToFstatAtomVector ( FstatAtomVector *atoms,	/**< input atoms-vector,
 
       /* add this to Fstat-atom */
       /* relation Fa,Fb <--> x_mu: see Eq.(72) in CFSv2-LIGO-T0900149-v2.pdf */
-      atoms->data[alpha].Fa_alpha.realf_FIXME +=   x1;
-      atoms->data[alpha].Fa_alpha.imagf_FIXME += - x3;
-      atoms->data[alpha].Fb_alpha.realf_FIXME +=   x2;
-      atoms->data[alpha].Fb_alpha.imagf_FIXME += - x4;
+      atoms->data[alpha].Fa_alpha += crectf( x1, - x3 );
+      atoms->data[alpha].Fb_alpha += crectf( x2, - x4 );
 
     } /* for i < numAtoms */
 
@@ -441,10 +438,8 @@ XLALAddSignalToFstatAtomVector ( FstatAtomVector* atoms,	 /**< [in/out] atoms ve
       s3 = sh_mu[2];
       s4 = sh_mu[3];
 
-      atoms->data[alpha].Fa_alpha.realf_FIXME +=   s1;
-      atoms->data[alpha].Fa_alpha.imagf_FIXME += - s3;
-      atoms->data[alpha].Fb_alpha.realf_FIXME +=   s2;
-      atoms->data[alpha].Fb_alpha.imagf_FIXME += - s4;
+      atoms->data[alpha].Fa_alpha += crectf( s1, - s3 );
+      atoms->data[alpha].Fb_alpha += crectf( s2, - s4 );
 
     } /* for alpha < numAtoms */
 
@@ -717,11 +712,9 @@ XLALRescaleMultiFstatAtomVector ( MultiFstatAtomVector* multiAtoms,	/**< [in/out
         {
           FstatAtom *thisAtom = &atoms->data[i];
 
-          thisAtom->Fa_alpha.realf_FIXME *= rescale;
-          thisAtom->Fa_alpha.imagf_FIXME *= rescale;
+          thisAtom->Fa_alpha *= ((REAL4) rescale);
 
-          thisAtom->Fb_alpha.realf_FIXME *= rescale;
-          thisAtom->Fb_alpha.imagf_FIXME *= rescale;
+          thisAtom->Fb_alpha *= ((REAL4) rescale);
 
         } /* for i < numAtoms */
 

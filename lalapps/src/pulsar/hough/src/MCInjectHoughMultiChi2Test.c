@@ -47,7 +47,6 @@
    signals. 
 */
 
-#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include "./MCInjectHoughMulti.h" /* proper path*/
 
 
@@ -640,7 +639,7 @@ int main(int argc, char *argv[]){
   sftParams.Tsft = timeBase;
   sftParams.noiseSFTs = NULL;       
   
-  params.orbit = NULL;
+  params.orbit.asini = 0 /* isolated pulsar */;
   /* params.transferFunction = NULL; */
   params.ephemerides = edat;
   params.startTimeGPS.gpsSeconds = firstTimeStamp.gpsSeconds;   /* start time of output time series */
@@ -752,8 +751,7 @@ int main(int argc, char *argv[]){
 	 /* initialize data to zero */
          for ( iSFT = 0; iSFT < numsft; iSFT++){	   
 	   for (j=0; j < binsSFT; j++) {
-	     signalSFTs->data[iIFO]->data[iSFT].data->data[j].realf_FIXME = 0.0;
-	     signalSFTs->data[iIFO]->data[iSFT].data->data[j].imagf_FIXME = 0.0;	    
+	     signalSFTs->data[iIFO]->data[iSFT].data->data[j] = 0.0;
 	   }	 
          }
      	  	 
@@ -864,8 +862,7 @@ int main(int argc, char *argv[]){
 	  sumSFT    = sumSFTs->data[iIFO]->data[iSFT].data->data;
 	  	  
 	  for (j=0; j < binsSFT; j++) {
-	    sumSFT->realf_FIXME = crealf(*noiseSFT) + h0scale *crealf(*signalSFT);
-	    sumSFT->imagf_FIXME = cimagf(*noiseSFT) + h0scale *cimagf(*signalSFT);
+	    *(sumSFT) = crectf( crealf(*noiseSFT) + h0scale *crealf(*signalSFT), cimagf(*noiseSFT) + h0scale *cimagf(*signalSFT) );
 	    ++noiseSFT;
 	    ++signalSFT;
 	    ++sumSFT;

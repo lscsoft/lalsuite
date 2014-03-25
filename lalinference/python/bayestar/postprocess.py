@@ -25,83 +25,125 @@ __author__ = "Leo Singer <leo.singer@ligo.org>"
 import numpy as np
 import healpy as hp
 import collections
-import scipy.stats
-import scipy.optimize
+import itertools
 
 
-def _healpix_pvalue(ipix, hist):
-    D, pvalue = scipy.stats.kstest(ipix, np.cumsum(hist).__getitem__)
-    return pvalue
+_max_order = 30
 
 
-def _smoothed_hist(fwhm, hist):
-    # Smooth the histogram (assumes ring indexing).
-    hist = hp.smoothing(hist, fwhm, regression=False)
-    # Reorder to nested indexing.
-    hist = hp.reorder(hist, r2n=True)
-    # Done!
-    return hist
+def nside2order(nside):
+    """Convert lateral HEALPix resolution to order.
+    FIXME: see https://github.com/healpy/healpy/issues/163"""
+    order = np.log2(nside)
+    int_order = int(order)
+    if order != int_order:
+        raise ValueError('not a valid value for nside: {0}'.format(nside))
+    return int_order
 
 
-def _smoothing_kstest(fwhm, target_pvalue, ipix, hist):
-    pvalue = _healpix_pvalue(ipix, _smoothed_hist(fwhm, hist))
-    return target_pvalue - pvalue
+def order2nside(order):
+    return 1 << order
 
 
-def adaptive_healpix_histogram(theta, phi, nside=-1, max_nside=512):
-    npix = hp.nside2npix(max_nside)
-    ipix = hp.ang2pix(max_nside, theta, phi)
+class _HEALPixNode(object):
+    """Data structure used internally by the function
+    adaptive_healpix_histogram()."""
 
-    # Count up number of samples in each pixel
-    hist = np.zeros(npix, dtype=np.intp)
-    for i in ipix:
-        hist[i] += 1
+    def __init__(self, samples, max_samples_per_pixel, max_order, order=0, needs_sort=True):
+        if needs_sort:
+            samples = np.sort(samples)
+        if len(samples) > max_samples_per_pixel and order < max_order:
+            # All nodes have 4 children, except for the root node, which has 12.
+            nchildren = 12 if order == 0 else 4
+            self.samples = None
+            self.children = [_HEALPixNode([], max_samples_per_pixel,
+                max_order, order=order + 1) for i in range(nchildren)]
+            for ipix, samples in itertools.groupby(samples,
+                    self.key_for_order(order)):
+                self.children[np.uint64(ipix % nchildren)] = _HEALPixNode(
+                    list(samples), max_samples_per_pixel, max_order,
+                    order=order + 1, needs_sort=False)
+        else:
+            # There are few enough samples that we can make this cell a leaf.
+            self.samples = list(samples)
+            self.children = None
 
-    # Divide by the total number of samples. WARNING: '/=' would not work here
-    # because Numpy does not do true division on assignment!
-    hist = hist / len(ipix)
+    @staticmethod
+    def key_for_order(order):
+        """Create a function that downsamples full-resolution pixel indices."""
+        return lambda ipix: ipix >> np.uint64(2 * (_max_order - order))
 
-    # Convert to nested indices for KS test.
-    ipix = hp.ring2nest(max_nside, ipix)
+    @property
+    def order(self):
+        """Return the maximum HEALPix order required to represent this tree,
+        which is the same as the tree depth."""
+        if self.children is None:
+            return 0
+        else:
+            return 1 + max(child.order for child in self.children)
 
-    # Find smoothing kernel size such that a one-sample KS test fails to reject
-    # the null hypothesis that the samples are drawn from the smoothed
-    # distribution.
-    # FIXME: use rtol= keyword argument to prevent overkill accuracy. rtol= is
-    # currently ignored in scipy.optimize.brentq.
-    # See <https://github.com/scipy/scipy/pull/2462>.
-    fwhm = scipy.optimize.brentq(_smoothing_kstest, 0, np.pi/2, args=(0.8, ipix, hist))
+    def _flat_bitmap(self, order, full_order, ipix, m):
+        if self.children is None:
+            nside = 1 << order
+            ipix0 = ipix << 2 * (full_order - order)
+            ipix1 = (ipix + 1) << 2 * (full_order - order)
+            m[ipix0:ipix1] = len(self.samples) / hp.nside2pixarea(nside)
+        else:
+            for i, child in enumerate(self.children):
+                child._flat_bitmap(order + 1, full_order, (ipix << 2) + i, m)
 
-    # Smooth the histogram.
-    hist = _smoothed_hist(fwhm, hist)
+    @property
+    def flat_bitmap(self):
+        """Return flattened HEALPix representation."""
+        order = self.order
+        nside = 1 << order
+        npix = hp.nside2npix(nside)
+        m = np.empty(npix)
+        for ipix, child in enumerate(self.children):
+            child._flat_bitmap(0, order, ipix, m)
+        return hp.reorder(m, n2r=True)
 
-    # Correct for any negative values due to FFT convolution.
-    hist[hist < 0] = 0
-    hist /= hist.sum()
 
-    if nside == -1:
-        # Find the lowest resolution at which a one-sample KS test fails to
-        # reject the null hypothesis that the samples are drawn from the
-        # smoothed, downsampled distribution.
-        for order in range(1, int(1 + np.log2(max_nside))):
-            new_nside = 1 << order
-            new_hist = hp.ud_grade(hist, new_nside,
-                order_in='NESTED', order_out='NESTED')
-            pvalue = _healpix_pvalue(ipix, hp.ud_grade(new_hist, max_nside,
-                order_in='NESTED', order_out='NESTED'))
-            if pvalue >= 0.4:
-                break
+def adaptive_healpix_histogram(theta, phi, max_samples_per_pixel, nside=-1, max_nside=-1):
+    """Adaptively histogram the posterior samples represented by the
+    (theta, phi) points using a recursively subdivided HEALPix tree. Nodes are
+    subdivided until each leaf contains no more than max_samples_per_pixel
+    samples. Finally, the tree is flattened to a fixed-resolution HEALPix image
+    with a resolution appropriate for the depth of the tree. If nside is
+    specified, the result is resampled to another desired HEALPix resolution."""
+    # Calculate pixel index of every sample, at the maximum 64-bit resolution.
+    #
+    # At this resolution, each pixel is only 0.2 mas across; we'll use the
+    # 64-bit pixel indices as a proxy for the true sample coordinates so that
+    # we don't have to do any trigonometry (aside from the initial hp.ang2pix
+    # call).
+    #
+    # FIXME: Cast to uint64 needed because Healpy returns signed indices.
+    ipix = hp.ang2pix(1 << _max_order, theta, phi, nest=True).astype(np.uint64)
 
-        # Convert back to ring indexing.
-        hist = hp.reorder(new_hist, n2r=True)
-
-        # Re-normalize.
-        hist /= hist.sum()
+    # Build tree structure.
+    if nside == -1 and max_nside == -1:
+        max_order = _max_order
+    elif nside == -1:
+        max_order = nside2order(max_nside)
+    elif max_nside == -1:
+        max_order = nside2order(nside)
     else:
-        hist = hp.ud_grade(new_hist, nside, order_in='NESTED', order_out='RING')
+        max_order = nside2order(min(nside, max_nside))
+    tree = _HEALPixNode(ipix, max_samples_per_pixel, max_order)
+
+    # Compute a flattened bitmap representation of the tree.
+    p = tree.flat_bitmap
+
+    # If requested, resample the tree to the output resolution.
+    if nside != -1:
+        p = hp.ud_grade(p, nside)
+
+    # Normalize.
+    p /= np.sum(p)
 
     # Done!
-    return hist
+    return p
 
 
 def flood_fill(nside, ipix, m):

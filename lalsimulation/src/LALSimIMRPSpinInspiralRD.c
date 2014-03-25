@@ -71,7 +71,7 @@ typedef struct tagLALSimInspiralPhenSpinTaylorT4Coeffs {
   REAL8 eta; ///< symmetric mass ratio
   REAL8 m1ByM; ///< m1 / M
   REAL8 m2ByM; ///< m2 / M
-  REAL8 dt;
+  REAL8 dt; ///< UNDOCUMENTED
   REAL8 wdotnewt; ///< leading order coefficient of wdot = \f$\dot{\omega}\f$
   REAL8 wdotcoeff[LAL_MAX_PN_ORDER]; ///< coeffs. of PN corrections to wdot
   REAL8 wdotlogcoeff; ///< coefficient of log term in wdot
@@ -103,10 +103,10 @@ typedef struct tagLALSimInspiralPhenSpinTaylorT4Coeffs {
   REAL8 wdottidal6pn;	///< next to leading order tidal correction
   REAL8 Etidal5pn; ///< leading order tidal correction to energy
   REAL8 Etidal6pn; ///< next to leading order tidal correction to energy
-  REAL8 S1dot15, S2dot15;
-  REAL8 Sdot2S1S2,Sdot2LS1LS2;
-  REAL8 S1dot2LS1LS1,S2dot2LS2LS2;
-  REAL8 S1dot25, S2dot25;
+  REAL8 S1dot15, S2dot15;  ///< UNDOCUMENTED
+  REAL8 Sdot2S1S2,Sdot2LS1LS2;  ///< UNDOCUMENTED
+  REAL8 S1dot2LS1LS1,S2dot2LS2LS2;  ///< UNDOCUMENTED
+  REAL8 S1dot25, S2dot25;  ///< UNDOCUMENTED
   REAL8 fStart; ///< starting GW frequency of integration
   REAL8 fEnd; ///< ending GW frequency of integration
 } LALSimInspiralPhenSpinTaylorT4Coeffs;
@@ -156,15 +156,15 @@ static REAL8 fracRD(REAL8 LNhS1, REAL8 LNhS2, REAL8 S1S1, REAL8 S1S2, REAL8 S2S2
 /**
  * Convenience function to set up XLALSimInspiralSpinTaylotT4Coeffs struct
  */
-static INT4 XLALSimIMRPhenSpinParamsSetup(LALSimInspiralPhenSpinTaylorT4Coeffs  *params, /** PN params [returned] */
-                                         REAL8 dt,                                      /** Sampling in secs */
-                                         REAL8 fStart,                                  /** Starting frequency of integration*/
-                                         REAL8 fEnd,                                    /** Ending frequency of integration*/
-                                         REAL8 mass1,                                   /** Mass 1 in solar mass units */
-                                         REAL8 mass2,                                   /** Mass 2 in solar mass units */
-                                         LALSimInspiralSpinOrder spinO,                 /** Spin interaction */
-                                         LALSimInspiralTestGRParam *testGR,             /** Test GR param */
-                                         UINT4 order                                    /** twice PN Order in Phase */
+static INT4 XLALSimIMRPhenSpinParamsSetup(LALSimInspiralPhenSpinTaylorT4Coeffs  *params, /**< PN params [returned] */
+                                         REAL8 dt,                                      /**< Sampling in secs */
+                                         REAL8 fStart,                                  /**< Starting frequency of integration*/
+                                         REAL8 fEnd,                                    /**< Ending frequency of integration*/
+                                         REAL8 mass1,                                   /**< Mass 1 in solar mass units */
+                                         REAL8 mass2,                                   /**< Mass 2 in solar mass units */
+                                         LALSimInspiralSpinOrder spinO,                 /**< Spin interaction */
+                                         LALSimInspiralTestGRParam *testGR,             /**< Test GR param */
+                                         UINT4 order                                    /**< twice PN Order in Phase */
 )
 {
   /* Zero the coefficients */
@@ -863,10 +863,11 @@ static INT4 XLALSimInspiralSpinTaylorT4Engine(REAL8TimeSeries **omega,      /**<
                                              REAL8TimeSeries **S2y,        /**< "    "    "  y component [returned]*/
                                              REAL8TimeSeries **S2z,        /**< "    "    "  z component [returned]*/
                                              REAL8TimeSeries **Energy,     /**< Energy                   [returned]*/
-                                             const REAL8 yinit[],
-                                             const INT4  lengthH,
-                                             const Approximant approx,     /** Allow to choose w/o ringdown */
-                                             LALSimInspiralPhenSpinTaylorT4Coeffs *params)
+                                             const REAL8 yinit[],          /**< UNDOCUMENTED */
+                                             const INT4  lengthH,          /**< UNDOCUMENTED */
+                                             const Approximant approx,     /**< Allow to choose w/o ringdown */
+                                             LALSimInspiralPhenSpinTaylorT4Coeffs *params /**< UNDOCUMENTED */
+                                             )
 {
   UINT4 idx;
   INT4 jdx;
@@ -1633,15 +1634,15 @@ INT4 XLALSimIMRPhenSpinFinalMassSpin(REAL8 *finalMass,
 } /* End of XLALSimIMRPhenSpinFinalMassSpin*/
 
 static INT4 XLALSimIMRHybridRingdownWave(
-    REAL8Vector                 *rdwave1,   /**<< Real part of ringdown */
-    REAL8Vector                 *rdwave2,   /**<< Imaginary part of ringdown */
-    const REAL8                 dt,         /**<< Sampling interval */
-    const REAL8                 mass1,      /**<< First component mass (in Solar masses) */
-    const REAL8                 mass2,      /**<< Second component mass (in Solar masses) */
-    REAL8VectorSequence         *inspwave1, /**<< Values and derivatives of real part of inspiral waveform */
-    REAL8VectorSequence         *inspwave2, /**<< Values and derivatives of Imaginary part of inspiral waveform */
-    COMPLEX16Vector             *modefreqs, /**<< Complex frequencies of ringdown (scaled by total mass) */
-    REAL8Vector                 *matchrange /**<< Times which determine the comb size for ringdown attachment */
+    REAL8Vector                 *rdwave1,   /**< Real part of ringdown */
+    REAL8Vector                 *rdwave2,   /**< Imaginary part of ringdown */
+    const REAL8                 dt,         /**< Sampling interval */
+    const REAL8                 mass1,      /**< First component mass (in Solar masses) */
+    const REAL8                 mass2,      /**< Second component mass (in Solar masses) */
+    REAL8VectorSequence         *inspwave1, /**< Values and derivatives of real part of inspiral waveform */
+    REAL8VectorSequence         *inspwave2, /**< Values and derivatives of Imaginary part of inspiral waveform */
+    COMPLEX16Vector             *modefreqs, /**< Complex frequencies of ringdown (scaled by total mass) */
+    REAL8Vector                 *matchrange /**< Times which determine the comb size for ringdown attachment */
 )
 {
 

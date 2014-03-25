@@ -1,0 +1,36 @@
+#!/bin/sh
+
+## function to print error message and exit
+fail () {
+  echo "!!! $0: $1" >&2
+  exit 1
+}
+
+## check script is being run from top-level source directory
+test "$0" = "./00boot" || fail "must be run from top-level source directory"
+
+## remove M4 cache files
+rm -rf autom4te.cache/
+rm -f aclocal.m4
+
+# FIXME: autoreconf from Ubuntu 9.10 (and probably also from recent
+# Debian versions) automatically run libtoolize with the --copy option
+# therefore over writing the supplied libtool scripts with system
+# version. This can lead to unexpected build failures therefore to work
+# round this "feature" we set the LIBTOOLIZE enviroment variable to
+# point to the the true executable which bypasses the running of
+# libtoolize, this will not effect the vast majority of users and those
+# it will effect will know how to run libtoolize, if required.
+
+## run autoreconf
+AUTORECONF=${AUTORECONF:-"autoreconf"}
+echo "00boot: running ${AUTORECONF}"
+LIBTOOLIZE=true ${AUTORECONF} || fail "${AUTORECONF} failed"
+
+echo "
+==================================================
+00boot has been run successfully.
+Now run './configure' with appropriate options
+to configure LALSuite Doxygen.
+==================================================
+"

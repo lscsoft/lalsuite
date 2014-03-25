@@ -130,10 +130,11 @@ FUNC ( LALStatus* status,
       TRY( LALCHARDestroyVector( status->statusPtr, &string ), status );
       ABORT( status, READFTSERIESH_EPARSE, READFTSERIESH_MSGEPARSE );
     }
-    LALParseUnitString(status->statusPtr, &tempUnit, string);
-    BEGINFAIL( status ) 
+    if ( XLALParseUnitString(&tempUnit, string->data) == NULL )
+    {
       TRY( LALCHARDestroyVector( status->statusPtr, &string ), status );
-    ENDFAIL( status ); 
+      ABORT( status, READFTSERIESH_EPARSE, READFTSERIESH_MSGEPARSE );
+    }
     series->sampleUnits = tempUnit;
   }
 

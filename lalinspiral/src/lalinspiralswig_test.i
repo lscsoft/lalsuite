@@ -5,7 +5,7 @@
 #include <lal/lalswig_test.i>
 
 // Test object parent tracking between modules
-typedef struct taglalinspiralswig_test_parent_map {
-  lalswig_test_struct s;
-} lalinspiralswig_test_parent_map_struct;
-lalinspiralswig_test_parent_map_struct lalinspiralswig_test_parent_map;
+typedef struct tagswig_lalinspiral_test_parent_map {
+  swig_lal_test_struct s;
+} swig_lalinspiral_test_parent_map_struct;
+swig_lalinspiral_test_parent_map_struct swig_lalinspiral_test_parent_map;

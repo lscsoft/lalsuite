@@ -124,7 +124,6 @@
  * @{
  */
 
-#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/LALStdlib.h>
 #include <lal/StochasticCrossCorrelation.h>
 #include <lal/AVFactories.h>
@@ -449,8 +448,7 @@ LALCZeroPadAndFFT(
         windowPtr = parameters->window->data->data ; cPtr < cStopPtr ; \
         ++cPtr, ++hBarPtr, ++windowPtr )
     {
-      hBarPtr->realf_FIXME = crealf(*cPtr) * *(windowPtr);
-      hBarPtr->imagf_FIXME = cimagf(*cPtr) * *(windowPtr);
+      *(hBarPtr) = (*cPtr * ((REAL4) *(windowPtr)));
     }
   }
 

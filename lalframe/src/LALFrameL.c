@@ -18,6 +18,7 @@
 */
 
 #include <math.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
@@ -65,6 +66,25 @@ struct tagLALFrameUFrDetector {
     char prefix[3];
 };
 
+/* local helper functions */
+
+/*
+ * Mac OS X 10.9 (Mavericks) displays the following warning regarding
+ * the usage of tempnam():
+ *
+ * warning: 'tempnam' is deprecated: This function is provided for
+ * compatibility reasons only. Due to security concerns inherent in the
+ * design of tempnam(3), it is highly recommended that you use mkstemp(3)
+ * instead. [-Wdeprecated-declarations]
+ *
+ * wrap mkstemp() as a drop in replacement.
+ */
+static int mytmpfd(char *tmpfname)
+{
+    snprintf(tmpfname, L_tmpnam, "%s/tmp.lal.XXXXXX", P_tmpdir);
+    return mkstemp(tmpfname);
+}
+
 /* TODO: get XLAL error macros going! */
 
 /*
@@ -106,7 +126,7 @@ LALFrameUFrFile *XLALFrameUFrFileOpen(const char *filename, const char *mode)
 #define BUFSZ 16384
             char buf[BUFSZ];
 #undef BUFSZ
-            tmpfp = fopen(tmpnam(tmpfname), "w");
+            tmpfp = fdopen(mytmpfd(tmpfname), "w");
             while (fwrite(buf, 1, fread(buf, 1, sizeof(buf), stdin),
                     tmpfp) == sizeof(buf)) ;
             fclose(tmpfp);

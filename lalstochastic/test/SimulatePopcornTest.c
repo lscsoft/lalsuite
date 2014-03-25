@@ -105,7 +105,7 @@ int main ( void )
   REAL4 deltat=(1./LALPOPCORN_SRATE);
   REAL4 deltaf=(1./LALPOPCORN_LENGTH);
 
-  char fname[50];
+  char fname[2048];
   FILE *pfzero,*pfone;
 
 
@@ -227,9 +227,9 @@ int main ( void )
 
  /*ascii*/
 
-  snprintf(fname,50,POPCORN_FILENAMEOUT0"%d.dat",start);
+  snprintf(fname,sizeof(fname),TEST_OUTPUT_DIR POPCORN_FILENAMEOUT0"%d.dat",start);
   pfzero=LALFopen(fname,"w");
-  snprintf(fname,50,POPCORN_FILENAMEOUT1"%d.dat",start);
+  snprintf(fname,sizeof(fname),TEST_OUTPUT_DIR POPCORN_FILENAMEOUT1"%d.dat",start);
   pfone=LALFopen(fname,"w");
 
    for(i=0;i<n;i++)
@@ -242,9 +242,9 @@ int main ( void )
 
 /*omega spectrum*/
 
-    snprintf(fname,50,POPCORN_FILENAMEOUT0"%d_omega.dat",start);
+    snprintf(fname,sizeof(fname),TEST_OUTPUT_DIR POPCORN_FILENAMEOUT0"%d_omega.dat",start);
   pfzero=LALFopen(fname,"w");
-    snprintf(fname,50,POPCORN_FILENAMEOUT1"%d_omega.dat",start);
+    snprintf(fname,sizeof(fname),TEST_OUTPUT_DIR POPCORN_FILENAMEOUT1"%d_omega.dat",start);
   pfone=LALFopen(fname,"w");
 
    for(i=0;i<n/2;i++)

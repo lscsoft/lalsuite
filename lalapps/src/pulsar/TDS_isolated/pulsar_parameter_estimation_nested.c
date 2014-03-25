@@ -205,19 +205,22 @@ LALStringVector *corlist = NULL;
 " --randomseed        seed for random number generator\n"\
 "\n"\
 " MCMC proposal parameters:\n"\
-" --covariance        (REAL8) relative weigth of using covariance matrix\n\
+" --covariance        (UINT4) relative weight of using covariance matrix\n\
                      of the live points as the proposal (DEFAULT = 14,\n\
                      e.g. 70%%)\n"\
 " --temperature       (REAL8) temperature for covariance proposal\n\
                      distribution (DEFAULT = 0.1)\n"\
-" --kDTree            (REAL8) relative weigth of using a k-D tree of the live\n\
+" --kDTree            (UINT4) relative weight of using a k-D tree of the live\n\
                      points to use as a proposal (DEFAULT = 3, e.g. 15%%)\n"\
 " --kDNCell           (INT4) maximum number of samples in a k-D tree cell\n"\
 " --kDUpdateFactor    (REAL8) how often the k-D tree gets updated as a\n\
                      factor of the number of live points\n"\
-" --diffev            (REAL8) relative weight of using differential evolution\n\
+" --diffev            (UINT4) relative weight of using differential evolution\n\
                      of the live points as the proposal (DEFAULT = 3, e.g.\n\
                      15%%)\n"\
+" --freqBinJump       (UINT4) relative weight of using jumps to adjacent\n\
+                     frequency bins as a proposal (DEFAULT = 0, e.g. this is\n\
+                     not required unless searching over frequency)\n"\
 "\n"\
 " Signal injection parameters:\n"\
 " --inject-file       a pulsar parameter (par) file containing the parameters\n\
@@ -280,6 +283,9 @@ LALStringVector *corlist = NULL;
 " --oldChunks        Set if using fixed chunk sizes for dividing the data as\n\
                     in the old code, rather than the calculating chunks\n\
                     using the change point method.\n"\
+" --jones-model      Set if using both 1 and 2 multiples of the frequency and\n\
+                    requiring the use of the original signal model parameters\n\
+                    from Jones, MNRAS, 402 (2010).\n"\
 "\n"
 
 INT4 main( INT4 argc, CHAR *argv[] ){
@@ -1232,6 +1238,7 @@ void setupFromParFile( LALInferenceRunState *runState )
   ProcessParamsTable *ppt = NULL;
   UINT4 mmfactor = 0;
   REAL8 mm = 0;
+  REAL8 DeltaT = 0.; /* maximum data time span */
 
   ppt = LALInferenceGetProcParamVal( runState->commandLine, "--par-file" );
   if( ppt == NULL ) { fprintf(stderr,"Must specify --par-file!\n"); exit(1); }
@@ -1265,6 +1272,10 @@ void setupFromParFile( LALInferenceRunState *runState )
   while( data ){
     REAL8Vector *freqFactors = NULL;
     UINT4 j = 0;
+    REAL8 dt = XLALGPSGetREAL8( &data->dataTimes->data[data->dataTimes->length-1] ) -
+      XLALGPSGetREAL8( &data->dataTimes->data[0] );
+
+    if ( dt > DeltaT ){ DeltaT = dt; }
 
     freqFactors = *(REAL8Vector **)LALInferenceGetVariable( data->dataParams,
                                                             "freqfactors" );
@@ -1273,6 +1284,13 @@ void setupFromParFile( LALInferenceRunState *runState )
       UINT4 i = 0;
       LALInferenceVariableItem *scaleitem = scaletemp->head;
       REAL8Vector *dts = NULL, *bdts = NULL;
+
+      /* check whether using original Jones (2010) signal model */
+      if ( freqFactors->length == 2 && LALInferenceGetProcParamVal( runState->commandLine, "--jones-model" ) ){
+        UINT4 jones = 1;
+        LALInferenceAddVariable( data->dataParams, "jones-model", &jones, LALINFERENCE_UINT4_t,
+                                 LALINFERENCE_PARAM_FIXED );
+      }
 
       dts = get_ssb_delay( pulsar, data->dataTimes, data->ephem, data->tdat, data->ttype, data->detector, 0. );
 
@@ -1328,6 +1346,10 @@ void setupFromParFile( LALInferenceRunState *runState )
       data = data->next;
     }
   }
+
+  /* set frequency bin step from longest data time span */
+  REAL8 df = 1./(2.*DeltaT);
+  LALInferenceAddVariable( runState->currentParams, "df", &df, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED );
 
   return;
 }
@@ -1474,11 +1496,11 @@ void add_initial_variables( LALInferenceVariables *ini,  LALInferenceVariables *
   add_variable_scale( ini, scaleFac, "cosiota", pars.cosiota );
   add_variable_scale( ini, scaleFac, "psi", pars.psi );
 
-  /* amplitude model parameters for l=2, m=1 and 2 harmonic emission */
-  /* add_variable_scale( ini, scaleFac, "I21", pars.I21 );
+  /* amplitude model parameters for l=2, m=1 and 2 harmonic emission from Jones (2010) */
+  add_variable_scale( ini, scaleFac, "I21", pars.I21 );
   add_variable_scale( ini, scaleFac, "I31", pars.I31 );
   add_variable_scale( ini, scaleFac, "lambda", pars.lambda );
-  add_variable_scale( ini, scaleFac, "costheta", pars.costheta ); */
+  add_variable_scale( ini, scaleFac, "costheta", pars.costheta );
 
   /* amplitude model parameters in phase and amplitude form */
   add_variable_scale( ini, scaleFac, "C22", pars.C22 );
@@ -1495,6 +1517,7 @@ void add_initial_variables( LALInferenceVariables *ini,  LALInferenceVariables *
   add_variable_scale( ini, scaleFac, "f4", pars.f4 );
   add_variable_scale( ini, scaleFac, "f5", pars.f5 );
   add_variable_scale( ini, scaleFac, "pepoch", pars.pepoch );
+  add_variable_scale( ini, scaleFac, "cgw", pars.cgw );
 
   /* sky position */
   add_variable_scale( ini, scaleFac, "ra", pars.ra );
@@ -1694,6 +1717,14 @@ void initialisePrior( LALInferenceRunState *runState )
       if ( scale/LAL_TWOPI > 0.99 && scale/LAL_TWOPI < 1.01 ) { phidef = 1; }
     }
 
+    /* if a (fractional) gravitational wave speed is specified then check it's between 0 and 1 */
+    if( !strcmp(tempPar, "cgw") ){
+      if( high > 1. || high <= 0. || low > 1. || low <= 0. || low > high ){
+        fprintf(stderr, "Error... The GW speed range is non-physical.\n");
+        exit(3);
+      }
+    }
+
     /* if psi is covering the range -pi/4 to pi/4, i.e. as used in the triaxial
      * model, set psidef, so re-parameterisation can take place */
     //if( !strcmp(tempPar, "psi") )
@@ -1758,7 +1789,7 @@ void initialisePrior( LALInferenceRunState *runState )
 
   /* If source physical parameters (rather than amplitude/phase parameters) have been defined in the prior file then
    * convert to amplitude/phase parameters. Only do this for the l=m=2 model of emission at 2f for a triaxial star.
-   * For other modes the phase/amplitude parameters most be defined in the prior file. */
+   * For other modes the phase/amplitude parameters must be defined in the prior file. */
   REAL8Vector *freqFactors = *(REAL8Vector **)LALInferenceGetVariable( data->dataParams, "freqfactors" );
 
   if ( freqFactors->length == 1 && freqFactors->data[0] == 2. ){
@@ -1877,73 +1908,32 @@ void initialisePrior( LALInferenceRunState *runState )
     }
   }
 
-  /* if phi0 and psi have been given in the prop-file and defined at the limits of their range (for a triaxial star, so
-   * -pi/4 <= psi <= pi/4 and 0 <= phi0 <= 2pi) then remove them and add the phi0' and psi' coordinates */
-  //if( phidef && psidef && !strcmp( "triaxial", *(CHAR **)LALInferenceGetVariable( runState->data->dataParams,
-  //                                       "modeltype" ) ) ){
-  //  LALInferenceIFOData *datatemp = data;
-  //
-  //  REAL8 phi0 = *(REAL8*)LALInferenceGetVariable( runState->currentParams, "phi0" );
-  //  REAL8 phi0scale = *(REAL8*)LALInferenceGetVariable( data->dataParams, "phi0_scale" );
-  //  REAL8 phi0min = *(REAL8*)LALInferenceGetVariable( data->dataParams, "phi0_scale_min" );
-  //  REAL8 psi = *(REAL8*)LALInferenceGetVariable( runState->currentParams,  "psi" );
-  //  REAL8 psiscale = *(REAL8*)LALInferenceGetVariable( data->dataParams, "psi_scale" );
-  //  REAL8 psimin = *(REAL8*)LALInferenceGetVariable( data->dataParams, "psi_scale_min" );
-  //  REAL8 theta = atan2(1.,2.);
-  //  REAL8 primemin = -LAL_PI_2*cos(theta);
-  //  REAL8 primescale = 2.*fabs(primemin);
-  //  REAL8 phi0prime = 0., psiprime = 0.;
-  //
-  //  phi0 = phi0*phi0scale + phi0min;
-  //  psi = psi*psiscale + psimin;
-  //
-  //  /* convert to phi0' and psi' */
-  //  phi0_psi_transform( phi0, psi, &phi0prime, &psi );
-  //
-  //  /* scale phi0' and psi' */
-  //  phi0prime = (phi0prime - primemin)/primescale;
-  //  psiprime = (psiprime - primemin)/primescale;
-  //
-  //  /* remove phi0 and psi */
-  //  LALInferenceRemoveVariable( runState->currentParams, "phi0" );
-  //  LALInferenceRemoveVariable( runState->currentParams, "psi" );
-  //
-  //  /* add new variables */
-  //  LALInferenceAddVariable( runState->currentParams, "phi0prime", &phi0prime, LALINFERENCE_REAL8_t,
-  //                           LALINFERENCE_PARAM_CIRCULAR );
-  //
-  //  LALInferenceAddVariable( runState->currentParams, "psiprime", &psiprime, LALINFERENCE_REAL8_t,
-  //                           LALINFERENCE_PARAM_CIRCULAR );
-  //
-  //  /* remove old scale factors and add new ones */
-  //  while( datatemp ){
-  //    LALInferenceRemoveVariable( datatemp->dataParams, "phi0_scale" );
-  //    LALInferenceRemoveVariable( datatemp->dataParams, "phi0_scale_min" );
-  //
-  //    LALInferenceRemoveVariable( datatemp->dataParams, "psi_scale" );
-  //    LALInferenceRemoveVariable( datatemp->dataParams, "psi_scale_min" );
-  //
-  //    LALInferenceAddVariable( datatemp->dataParams, "phi0prime_scale", &primescale, LALINFERENCE_REAL8_t,
-  //                             LALINFERENCE_PARAM_FIXED );
-  //    LALInferenceAddVariable( datatemp->dataParams, "phi0prime_scale_min", &primemin, LALINFERENCE_REAL8_t,
-  //                             LALINFERENCE_PARAM_FIXED );
-  //    LALInferenceAddVariable( datatemp->dataParams, "psiprime_scale", &primescale, LALINFERENCE_REAL8_t,
-  //                             LALINFERENCE_PARAM_FIXED );
-  //    LALInferenceAddVariable( datatemp->dataParams, "psiprime_scale_min", &primemin, LALINFERENCE_REAL8_t,
-  //                             LALINFERENCE_PARAM_FIXED );
-  //
-  //    datatemp = datatemp->next;
-  //  }
-  //
-  //  /* change prior */
-  //  low = 0.;
-  //  high = 1.;
-  //  LALInferenceRemoveMinMaxPrior( runState->priorArgs, "phi0" );
-  //  LALInferenceAddMinMaxPrior( runState->priorArgs, "phi0prime", &low, &high, LALINFERENCE_REAL8_t );
-  //
-  //  LALInferenceRemoveMinMaxPrior( runState->priorArgs, "psi" );
-  //  LALInferenceAddMinMaxPrior( runState->priorArgs, "psiprime", &low, &high, LALINFERENCE_REAL8_t );
-  //}
+  if( freqFactors->length == 2 ){
+    if( LALInferenceGetProcParamVal( runState->commandLine, "--jones-model" ) ){
+      /* if using Jones (2010) model then remove superfluous parameters */
+      remove_variable_and_prior( runState, data, "h0" );
+      remove_variable_and_prior( runState, data, "C22" );
+      remove_variable_and_prior( runState, data, "C21" );
+      remove_variable_and_prior( runState, data, "phi22" );
+      remove_variable_and_prior( runState, data, "phi21" );
+    }
+    else if( LALInferenceGetVariableVaryType( runState->currentParams, "phi22" ) == LALINFERENCE_PARAM_FIXED &&
+      *(REAL8*)LALInferenceGetVariable( runState->currentParams, "phi22" ) == 0. &&
+      ( LALInferenceGetVariableVaryType( runState->currentParams, "phi21" ) == LALINFERENCE_PARAM_CIRCULAR ||
+        LALInferenceGetVariableVaryType( runState->currentParams, "phi21" ) == LALINFERENCE_PARAM_LINEAR ) ){
+      /* check if using a prior range that corresponds to a biaxial star */
+      remove_variable_and_prior( runState, data, "phi22" );
+
+      /* add biaxial variable */
+      LALInferenceIFOData *datatemp = data;
+      while( datatemp ){
+        UINT4 biaxial = 1;
+        LALInferenceAddVariable( datatemp->dataParams, "biaxial", &biaxial, LALINFERENCE_UINT4_t,
+                                 LALINFERENCE_PARAM_FIXED );
+        datatemp = datatemp->next;
+      }
+    }
+  }
 
   /* now check for a parameter correlation coefficient matrix file */
   ppt = LALInferenceGetProcParamVal( runState->commandLine, "--cor-file" );
@@ -1992,7 +1982,7 @@ void initialisePrior( LALInferenceRunState *runState )
  */
 void initialiseProposal( LALInferenceRunState *runState ){
   ProcessParamsTable *ppt = NULL;
-  UINT4 covfrac = 0, defrac = 0, kdfrac = 0;
+  UINT4 covfrac = 0, defrac = 0, kdfrac = 0, freqfrac = 0;
   REAL8 temperature = 0.;
   const CHAR *defaultPropName = NULL;
   defaultPropName = XLALStringDuplicate( "none" );
@@ -2008,6 +1998,9 @@ void initialiseProposal( LALInferenceRunState *runState ){
   ppt = LALInferenceGetProcParamVal( runState->commandLine, "--kDTree" );
   if( ppt ) { kdfrac = atoi( ppt->value ); }
   else { kdfrac = 3; } /* default value */
+
+  ppt = LALInferenceGetProcParamVal( runState->commandLine, "--freqBinJump" );
+  if( ppt ) { freqfrac = atoi( ppt->value ); }
 
   if( !covfrac && !defrac && !kdfrac ){
     XLALPrintError("All proposal weights are zero!\n");
@@ -2041,6 +2034,10 @@ void initialiseProposal( LALInferenceRunState *runState ){
     LALInferenceAddProposalToCycle( runState, KDNeighborhoodProposalName, &LALInferenceKDNeighborhoodProposal, kdfrac );
 
     LALInferenceSetupkDTreeNSLivePoints( runState );
+  }
+
+  if ( freqfrac ){
+    LALInferenceAddProposalToCycle( runState, frequencyBinJumpName, &LALInferenceFrequencyBinJump, freqfrac );
   }
 
   LALInferenceRandomizeProposalCycle( runState );
@@ -2704,8 +2701,8 @@ UINT4Vector *chop_data( COMPLEX16Vector *data, INT4 chunkMin ){
  * points at which the statistics of the data change. It is based on calculating evidence, or odds, ratios. The
  * function first computes the marginal likelihood (or evidence) that the whole of the data is described by a single
  * Gaussian (with mean of zero). This comes from taking a Gaussian likelihood function and analytically marginalising
- * over the standard deviation (using a prior on the standard deviation of \f$1/\sigma\f$), giving (see [\ref
- * DupuisWoan2005]) a Students-t distribution (see
+ * over the standard deviation (using a prior on the standard deviation of \f$1/\sigma\f$), giving (see
+ * [\cite DupuisWoan2005]) a Students-t distribution (see
  * <a href="https://wiki.ligo.org/foswiki/pub/CW/PulsarParameterEstimationNestedSampling/studentst.pdf">here</a>).
  * Following this the data is split into two segments (with lengths greater than, or equal to the minimum chunk length)
  * for all possible combinations, and the joint evidence for each of the two segments consisting of independent
@@ -3595,6 +3592,61 @@ TimeCorrectionType XLALAutoSetEphemerisFiles( CHAR *efile, CHAR *sfile, CHAR *tf
   }
 
   return ttype;
+}
+
+
+/**
+ * \brief Remove a variable from the current parameters and remove it's scaling and prior values
+ *
+ * This function will clear out a variable from the \c currentParams and also remove it's scale
+ * factors and prior ranges.
+ *
+ * \param runState [in] The analysis information structure
+ * \param data [in] The IFO data structure
+ * \param var [in] The variable to remove
+ *
+ */
+void remove_variable_and_prior( LALInferenceRunState *runState, LALInferenceIFOData *data, const CHAR *var ){
+  /* remove variable from currentParams */
+  if( LALInferenceCheckVariable( runState->currentParams, var ) ){
+    LALInferenceRemoveVariable( runState->currentParams, var );
+  }
+  else{
+    fprintf(stderr, "Error... variable %s cannot be removed as it does not exist!\n", var);
+    exit(3);
+  }
+
+  /* remove variable scale parameters from data */
+  LALInferenceIFOData *datatemp = data;
+  while ( datatemp ){
+    CHAR *varscale = XLALStringDuplicate( var );
+    varscale = XLALStringAppend( varscale, "_scale" );
+
+    if( LALInferenceCheckVariable( datatemp->dataParams, varscale ) ){
+      LALInferenceRemoveVariable( datatemp->dataParams, varscale );
+    }
+    else{
+      fprintf(stderr, "Error... variable %s cannot be removed as it does not exist!\n", varscale);
+      exit(3);
+    }
+
+    varscale = XLALStringAppend( varscale, "_min" );
+    if( LALInferenceCheckVariable( datatemp->dataParams, varscale ) ){
+      LALInferenceRemoveVariable( datatemp->dataParams, varscale );
+    }
+    else{
+      fprintf(stderr, "Error... variable %s cannot be removed as it does not exist!\n", varscale);
+      exit(3);
+    }
+
+    datatemp = datatemp->next;
+  }
+
+  /* remove prior */
+  if ( LALInferenceCheckGaussianPrior( runState->priorArgs, var ) ){
+    LALInferenceRemoveGaussianPrior( runState->priorArgs, var );
+  }
+  else { LALInferenceRemoveMinMaxPrior( runState->priorArgs, var ); }
 }
 
 

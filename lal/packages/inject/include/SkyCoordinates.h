@@ -176,11 +176,11 @@ LALConvertSkyCoordinates( LALStatus        *,
 
 void LALNormalizeSkyPosition (LALStatus *status, SkyPosition *posOut, const SkyPosition *posIn);
 
-#ifdef SWIG // SWIG interface directives
+#ifdef SWIG /* SWIG interface directives */
 SWIGLAL(INOUT_SCALARS(double*, longitude, latitude));
 #endif
 
-void XLALNormalizeSkyPosition ( double *restrict longitude, double *restrict latitude );
+void XLALNormalizeSkyPosition ( double *_LAL_RESTRICT_ longitude, double *_LAL_RESTRICT_ latitude );
 
 #ifdef  __cplusplus
 }

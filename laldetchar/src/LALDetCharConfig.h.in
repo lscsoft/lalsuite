@@ -1,7 +1,5 @@
 /* only include this file if LALDetChar's config.h has not been included */
-
-#ifndef _LALDETCHARCONFIG_H
-#define _LALDETCHARCONFIG_H
+#ifndef LALDETCHAR_VERSION
 
 /* LALDetChar Version */
 #undef LALDETCHAR_VERSION
@@ -18,10 +16,4 @@
 /* LALDetChar Version Devel Number  */
 #undef LALDETCHAR_VERSION_DEVEL
 
-/* LALDetChar Configure Arguments */
-#undef LALDETCHAR_CONFIGURE_ARGS
-
-/* LALDetChar Configure Date */
-#undef LALDETCHAR_CONFIGURE_DATE
-
-#endif /* _LALDETCHARCONFIG_H */
+#endif /* LALDETCHAR_VERSION */

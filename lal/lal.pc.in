@@ -3,12 +3,13 @@ exec_prefix=@exec_prefix@
 libdir=@libdir@
 includedir=@includedir@
 datarootdir=@datarootdir@
-datadir=@datadir@
-pkgdatadir=@datadir@/@PACKAGE@
+LAL_DATA_PATH=@datadir@/@PACKAGE@
+LAL_OCTAVE_PATH=@octexecdir@
+LAL_PYTHON_PATH=@pyexecdir@
 
 Name: LAL
 Description: LSC Algorithm Library
 Version: @VERSION@
-Requires: gsl fftw3 fftw3f
+Requires: gsl, fftw3, fftw3f
 Libs: -L${libdir} -llal @CUDA_LIBS@ @BOINC_LIBS@
-Cflags: -I${includedir} @CUDA_CPPFLAGS@ @BOINC_CFLAGS@
+Cflags: -I${includedir} @CUDA_CFLAGS@ @BOINC_CFLAGS@

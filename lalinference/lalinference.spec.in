@@ -83,10 +83,12 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}
 
 %files python
 %defattr(-,root,root)
+%{_bindir}/bayestar_*
 %{_libdir}/python*/site-packages/lalinference/*.py
 %{_libdir}/python*/site-packages/lalinference/*.pyc
 %{_libdir}/python*/site-packages/lalinference/bayestar/*.py
 %{_libdir}/python*/site-packages/lalinference/bayestar/*.pyc
+%{_libdir}/python*/site-packages/lalinference/bayestar/ne_simplified_coastline.json
 %{_libdir}/python*/site-packages/lalinference/bayestar/sky_map.so*
 %{_libdir}/python*/site-packages/lalinference/_lalinference.so*
 %exclude %{_libdir}/python*/site-packages/lalinference/*.pyo

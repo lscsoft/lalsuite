@@ -115,7 +115,7 @@ extern "C" {
  */
 /*@{*/
 
-/** \name Error Codes *//*@{ */
+/** \name Error Codes */ /*@{ */
 #define STRINGINPUTH_ENUL 1     /**< Unexpected null pointer in arguments */
 #define STRINGINPUTH_EOUT 2     /**< Output handle points to a non-null pointer */
 #define STRINGINPUTH_EMEM 3     /**< Memory allocation error */

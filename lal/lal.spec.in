@@ -13,7 +13,7 @@ URL: https://www.lsc-group.phys.uwm.edu/daswg/projects/lalsuite.html
 Packager: Jolien Creighton <jolien@uwm.edu>
 BuildRoot: %{_tmppath}/%{name}-%{version}-root
 BuildRequires: swig python-devel octave-devel
-Requires: gsl fftw3
+Requires: gsl fftw
 Prefix: %{_prefix}
 
 %description
@@ -25,7 +25,7 @@ that use the LAL library.
 Summary: Files and documentation needed for compiling programs that use LAL
 Group: LAL
 Requires: %{name} = %{version}
-Requires: gsl-devel fftw3-devel fftw3-static
+Requires: gsl-devel fftw-devel fftw-static
 %description devel
 The LSC Algorithm Library for gravitational wave data analysis.
 This package contains files needed build applications that use the LAL library
@@ -87,8 +87,14 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}
 %{_libdir}/python*/site-packages/lal/*.py
 %{_libdir}/python*/site-packages/lal/*.pyc
 %{_libdir}/python*/site-packages/lal/_lal.so*
+%{_libdir}/python*/site-packages/lal/spectrum/*.py
+%{_libdir}/python*/site-packages/lal/spectrum/*.pyc
+%{_libdir}/python*/site-packages/lal/utils/*.py
+%{_libdir}/python*/site-packages/lal/utils/*.pyc
 %exclude %{_libdir}/python*/site-packages/lal/*.pyo
 %exclude %{_libdir}/python*/site-packages/lal/*.la
+%exclude %{_libdir}/python*/site-packages/lal/spectrum/*.pyo
+%exclude %{_libdir}/python*/site-packages/lal/utils/*.pyo
 
 %files octave
 %defattr(-,root,root)

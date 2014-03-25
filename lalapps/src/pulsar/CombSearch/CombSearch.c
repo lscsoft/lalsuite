@@ -48,7 +48,6 @@
 #endif
 
 /* LAL-includes */
-#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/LALConfig.h>
 #include <lal/LALMalloc.h>
 #include <lal/LALStdio.h>
@@ -643,8 +642,7 @@ int ComputeCstat(VectorStruct *template, VectorStruct *Fstat, VectorStruct *Csta
 
   /* Perform convolution of fstat with template by multiplication in Fourier time domain */
   for (i=0;i<(N/2 +1); i++)	{
-    c_out->data[i].real_FIXME = (creal(f_out->data[i]) * creal(t_out->data[i])) - (cimag(f_out->data[i]) * cimag(t_out->data[i])); /* real part of c_out */
-    c_out->data[i].imag_FIXME = (creal(f_out->data[i]) * cimag(t_out->data[i])) + (cimag(f_out->data[i]) * creal(t_out->data[i])); /* imaginary part of c_out */
+    c_out->data[i] = crect( (creal(f_out->data[i]) * creal(t_out->data[i])) - (cimag(f_out->data[i]) * cimag(t_out->data[i])), (creal(f_out->data[i]) * cimag(t_out->data[i])) + (cimag(f_out->data[i]) * creal(t_out->data[i])) );
    }
 
   /* Inverse FFT back to frequency domain to retrieve Cstat */

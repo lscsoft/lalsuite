@@ -1,5 +1,5 @@
 /*
-*  Copyright (C) 2010, 2011 Evan Goetz
+*  Copyright (C) 2010, 2011, 2014 Evan Goetz
 *
 *  This program is free software; you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
@@ -54,10 +54,11 @@ REAL8 twospect_log_1plusx_mx(REAL8 x)
 } /* twospect_log_1plusx_mx() */
 
 //count number of calls to errbound, truncation, coeff
-void counter(qfvars *vars)
-{
-   vars->count++;
-} /* counter() */
+// void counter(qfvars *vars);
+// void counter(qfvars *vars)
+//{
+//   vars->count++;
+//} /* counter() */
 
 
 //find order of absolute values of weights
@@ -65,10 +66,7 @@ void order(qfvars *vars)
 {
    
    INT4 ascend = 1;     //To sort descending, set ascend to zero
-   if ( XLALHeapIndex(vars->sorting->data, vars->weights->data, vars->weights->length, sizeof(REAL8), &ascend, compar) != 0) {
-      fprintf(stderr,"%s: XLALHeapIndex() failed.\n", __func__);
-      XLAL_ERROR_VOID(XLAL_EFUNC);
-   }
+   XLAL_CHECK_VOID( XLALHeapIndex(vars->sorting->data, vars->weights->data, vars->weights->length, sizeof(REAL8), &ascend, compar) == XLAL_SUCCESS, XLAL_EFUNC );
    
    vars->ndtsrt = 0; //Signify that we have done the sorting
    
@@ -533,11 +531,8 @@ void sse_integrate_twospect2(qfvars *vars, INT4 nterm, REAL8 interv, REAL8 tausq
 
    INT4 ii, jj;
    
-   REAL8Vector *scaledweightvector = XLALCreateREAL8Vector(vars->weights->length);
-   if (scaledweightvector==NULL) {
-      fprintf(stderr, "%s: XLALCreateREAL8Vector(%d) failed.\n", __func__, vars->weights->length);
-      XLAL_ERROR_VOID(XLAL_EFUNC);
-   }
+   REAL8Vector *scaledweightvector = NULL;
+   XLAL_CHECK_VOID( (scaledweightvector = XLALCreateREAL8Vector(vars->weights->length)) != NULL, XLAL_EFUNC );
    
    for (ii=nterm; ii>=0; ii--) {
       REAL8 u = (ii + 0.5)*interv;
@@ -545,10 +540,7 @@ void sse_integrate_twospect2(qfvars *vars, INT4 nterm, REAL8 interv, REAL8 tausq
       
       REAL8 exptermarguementsum = 0.0, logofproductterm = 0.0, sinetermargumentsum = 0.0, sumofabssinesumargs = 0.0;
       scaledweightvector = sseScaleREAL8Vector(scaledweightvector, vars->weights, 2.0*u);
-      if (xlalErrno!=0) {
-         fprintf(stderr, "%s: sseScaleREAL8Vector() failed.\n", __func__);
-         XLAL_ERROR_VOID(XLAL_EFUNC);
-      }
+      XLAL_CHECK_VOID( xlalErrno == 0, XLAL_EFUNC );
       
       for (jj=(INT4)vars->weights->length-1; jj>=0; jj--) {
          REAL8 twoUtimesWeight = scaledweightvector->data[jj];
@@ -972,10 +964,7 @@ REAL8 cdfwchisq_twospect(qfvars *vars, REAL8 sigma, REAL8 acc, INT4 *ifault)
                if (!vars->useSSE) integrate_twospect2(vars, ntm, intv1, tausq, 0);
                else {
                   sse_integrate_twospect2(vars, ntm, intv1, tausq, 0);
-                  if (xlalErrno!=0) {
-                     fprintf(stderr, "%s: sse_integrate_twospect2() failed.\n", __func__);
-                     XLAL_ERROR_REAL8(XLAL_EFUNC);
-                  }
+                  XLAL_CHECK_REAL8( xlalErrno == 0, XLAL_EFUNC );
                }
                xlim -= xntm;
                vars->sigsq += tausq;
@@ -999,10 +988,7 @@ REAL8 cdfwchisq_twospect(qfvars *vars, REAL8 sigma, REAL8 acc, INT4 *ifault)
    if (!vars->useSSE) integrate_twospect2(vars, nt, intv, 0.0, 1);
    else {
       sse_integrate_twospect2(vars, nt, intv, 0.0, 1);
-      if (xlalErrno!=0) {
-         fprintf(stderr, "%s: sse_integrate_twospect2() failed.\n", __func__);
-         XLAL_ERROR_REAL8(XLAL_EFUNC);
-      }
+      XLAL_CHECK_REAL8( xlalErrno == 0, XLAL_EFUNC );
    }
    qfval = 0.5 - vars->intl;
    

@@ -46,6 +46,7 @@
 
 #include <errno.h>
 
+#include <lal/LALString.h>
 #include <lal/AVFactories.h>
 #include <lal/UserInput.h>
 #include <lal/LALStdio.h>
@@ -92,12 +93,12 @@ struct CommandLineArgsTag {
   CHAR  *IFO;
   CHAR  *timestamps;
   INT4  gpsStart;
-  CHAR  *efiles;
   REAL8 phi0;
   REAL8 psi;
   REAL8 sqrtSh;
   REAL8 duration;
-  CHAR  *ephemYear;
+  CHAR  *ephemEarth;
+  CHAR  *ephemSun;
   REAL8 aPlus;
   REAL8 aCross;
   REAL8 h0;
@@ -219,17 +220,11 @@ InitUserVars (LALStatus *status, struct CommandLineArgsTag *CLA)
   CLA->nTsft=0;            
   CLA->timestamps=NULL;
   CLA->gpsStart=-1;
-  CLA->efiles=NULL;
   CLA->sqrtSh=1.0;
   
   /** Default year-span of ephemeris-files to be used */
-#define EPHEM_YEARS  "00-19-DE405"
-  CLA->ephemYear = LALCalloc(1, strlen(EPHEM_YEARS)+1);
-  strcpy (CLA->ephemYear, EPHEM_YEARS);
-  
-#define DEFAULT_EPHEMDIR "env LAL_DATA_PATH"
-  CLA->efiles = LALCalloc(1, strlen(DEFAULT_EPHEMDIR)+1);
-  strcpy (CLA->efiles, DEFAULT_EPHEMDIR);
+  CLA->ephemEarth = XLALStringDuplicate("earth00-19-DE405.dat.gz");
+  CLA->ephemSun = XLALStringDuplicate("sun00-19-DE405.dat.gz");
   
   CLA->help = FALSE;
   
@@ -279,10 +274,6 @@ InitUserVars (LALStatus *status, struct CommandLineArgsTag *CLA)
   TRY( LALRegisterINTUserVar(status->statusPtr, "nTsft", 'n', UVAR_OPTIONAL, 
 			     "Number of SFTs", &(CLA->nTsft)), status);
   
-  TRY( LALRegisterSTRINGUserVar(status->statusPtr, "ephemDir", 'E', UVAR_OPTIONAL, 
-				"Directory where Ephemeris files are located", 
-				&(CLA->efiles)), status);
-
   TRY( LALRegisterSTRINGUserVar(status->statusPtr, "IFO", 'D', UVAR_OPTIONAL, 
 				"Detector: H1, H2, L1, G1, ... ",
 				&(CLA->IFO)), status);
@@ -290,14 +281,18 @@ InitUserVars (LALStatus *status, struct CommandLineArgsTag *CLA)
 				"[DEPRECATED] Use --IFO instead!",
 				&(CLA->detector)), status);
   
+  TRY( LALRegisterSTRINGUserVar(status->statusPtr, "ephemEarth", 0, UVAR_OPTIONAL, 
+				"Earth ephemeris file to use", 
+				&(CLA->ephemEarth)), status);
+
+  TRY( LALRegisterSTRINGUserVar(status->statusPtr, "ephemSun", 0, UVAR_OPTIONAL, 
+				"Sun ephemeris file to use", 
+				&(CLA->ephemSun)), status);
+
   /* ----- added for mfd_v4 compatibility ---------- */
   TRY ( LALRegisterREALUserVar(status->statusPtr, "duration", 0, UVAR_OPTIONAL,
 			       "Duration of requested signal in seconds", 
 			       &(CLA->duration)), status); 
-  
-  TRY ( LALRegisterSTRINGUserVar(status->statusPtr, "ephemYear", 0, UVAR_OPTIONAL,
-				 "Year (or range of years) of ephemeris files to be used",
-				 &(CLA->ephemYear)), status);
   
   TRY ( LALRegisterREALUserVar(status->statusPtr, "aPlus", 0, UVAR_OPTIONAL, 
 			       "Plus polarization amplitude aPlus", 
@@ -373,32 +368,12 @@ Initialize (LALStatus *status, struct CommandLineArgsTag *CLA)
   }
 
   /* ---------- load ephemeris-files ---------- */
-#define MAXFILENAME 256
   {
-    CHAR filenameE[MAXFILENAME], filenameS[MAXFILENAME];
-
-    /* don't use absolute path if none was given, this
-     * allows LAL to find the ephemeris in LAL_DATA_PATH */
-    if ( LALUserVarWasSet (&(CLA->efiles)) ) 
-      {
-	snprintf (filenameE, MAXFILENAME, "%s/earth%s.dat", CLA->efiles, CLA->ephemYear );
-	snprintf (filenameS, MAXFILENAME, "%s/sun%s.dat", CLA->efiles, CLA->ephemYear );
-      }
-    else
-      {
-	snprintf (filenameE, MAXFILENAME, "earth%s.dat", CLA->ephemYear );
-	snprintf (filenameS, MAXFILENAME, "sun%s.dat", CLA->ephemYear );
-      }
-    filenameE[MAXFILENAME-1] = 0;
-    filenameS[MAXFILENAME-1] = 0;
-
-    edat = (EphemerisData *)LALMalloc(sizeof(EphemerisData));
-    (*edat).ephiles.earthEphemeris = filenameE;     
-    (*edat).ephiles.sunEphemeris = filenameS;         
-
-    /* Reads in ephemeris files */
-    TRY( LALInitBarycenter (status->statusPtr, edat), status );
-
+    edat = XLALInitBarycenter( CLA->ephemEarth, CLA->ephemSun );
+    if ( !edat ) {
+      XLALPrintError("XLALInitBarycenter failed: could not load Earth ephemeris '%s' and Sun ephemeris '%s'\n", CLA->ephemEarth, CLA->ephemSun);
+      ABORT (status, SEMIANALYTIC_EINPUT, SEMIANALYTIC_MSGEINPUT);
+    }
   } /* ephemeris-reading */
 
 
@@ -458,9 +433,7 @@ Initialize (LALStatus *status, struct CommandLineArgsTag *CLA)
 
   LALFree(midTS);
   LALFree(Detector);
-  LALFree(edat->ephemE);
-  LALFree(edat->ephemS);
-  LALFree(edat);
+  XLALDestroyEphemerisData(edat);
 
   LALFree(amParams->das->pSource);
   LALFree(amParams->das);

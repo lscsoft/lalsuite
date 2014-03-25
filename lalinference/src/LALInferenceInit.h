@@ -62,6 +62,11 @@ LALInferenceVariables *LALInferenceInitCBCVariables(LALInferenceRunState *state)
 void LALInferenceInitCBCTemplate(LALInferenceRunState *runState);
 
 /**
+ Initialise the glitch fitting parameters
+ */
+void LALInferenceInitGlitchVariables(LALInferenceRunState *runState);
+
+/**
  * Review functions
  *
  * 
@@ -70,6 +75,12 @@ void LALInferenceInitCBCTemplate(LALInferenceRunState *runState);
 LALInferenceVariables *LALInferenceInitVariablesReviewEvidence(LALInferenceRunState *state);
 LALInferenceVariables *LALInferenceInitVariablesReviewEvidence_bimod(LALInferenceRunState *state);
 LALInferenceVariables *LALInferenceInitVariablesReviewEvidence_banana(LALInferenceRunState *state);
+
+/**
+ * Check options consistency 
+ **/
+void LALInferenceCheckOptionsConsistency(ProcessParamsTable *commandLine);
+
 
 #endif
 

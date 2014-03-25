@@ -57,7 +57,6 @@
  *
  */
 
-#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/LALStdlib.h>
 #include <lal/AVFactories.h>
 #include <lal/LALInspiral.h>
@@ -221,8 +220,7 @@ LALFindChirpBCVTemplate (
       }
 
       /* compute sine and cosine of psi1 */
-      expPsi[k].imagf_FIXME =   -sin(psi1);
-      expPsi[k].realf_FIXME =   cos(psi1);
+      expPsi[k] = crectf( cos(psi1), -sin(psi1) );
       /* very expensive computation method */
     }
 

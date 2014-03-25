@@ -98,7 +98,7 @@ LALInspiralWave1(
    InspiralTemplate *params
    )
 {
-   XLALPrintDeprecationWarning("LALInspiralWave1", "XLALInspiralWave1");
+   XLAL_PRINT_DEPRECATION_WARNING("XLALInspiralWave1");
    INITSTATUS(status);
    ATTATCHSTATUSPTR(status);
 
@@ -168,7 +168,7 @@ LALInspiralWave1Templates(
    InspiralTemplate *params
    )
 {
-   XLALPrintDeprecationWarning("LALInspiralWave1Templates", "XLALInspiralWave1Templates");
+   XLAL_PRINT_DEPRECATION_WARNING("XLALInspiralWave1Templates");
    INITSTATUS(status);
    ATTATCHSTATUSPTR(status);
 
@@ -244,7 +244,7 @@ LALInspiralWave1ForInjection(
   PPNParamStruc  *ppnParams
   )
 {
-  XLALPrintDeprecationWarning("LALInspiralWave1ForInjection", "XLALInspiralWave1ForInjection");
+  XLAL_PRINT_DEPRECATION_WARNING("XLALInspiralWave1ForInjection");
   INITSTATUS(status);
   ATTATCHSTATUSPTR(status);
 

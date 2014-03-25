@@ -1132,7 +1132,7 @@ LALEOBPPWaveform (
 
    INITSTATUS(status);
 
-   XLALPrintDeprecationWarning( "LALEOBPPWaveform", "XLALEOBPPWaveform" );
+   XLAL_PRINT_DEPRECATION_WARNING("XLALEOBPPWaveform");
 
    if ( XLALEOBPPWaveform( signalvec, params ) == XLAL_FAILURE )
    {
@@ -1148,7 +1148,7 @@ XLALEOBPPWaveform(
     InspiralTemplate *params
     )
 {
-   XLALPrintDeprecationWarning( "lalinspiral/XLALEOBPPWaveform", "lalsimulation/XLALSimIMREOBNRv2AllModes or lalsimulation/XLALSimIMREOBNRv2DominantMode" );
+   XLAL_PRINT_DEPRECATION_WARNING("lalsimulation/XLALSimIMREOBNRv2AllModes or lalsimulation/XLALSimIMREOBNRv2DominantMode");
    XLALPrintWarning( "WARNING: The lalinspiral version of EOBNRv2 and EOBNRv2HM are not reviewed or maintained and will be removed in the future. The lalsimulation versions of these waveforms should be used.\n" );
 
    UINT4 count;
@@ -1224,7 +1224,7 @@ LALEOBPPWaveformTemplates (
 
    INITSTATUS(status);
 
-   XLALPrintDeprecationWarning( "LALEOBPPWaveformTemplates", "XLALEOBPPWaveformTemplates" );
+   XLAL_PRINT_DEPRECATION_WARNING("XLALEOBPPWaveformTemplates");
 
    if ( XLALEOBPPWaveformTemplates( signalvec1, signalvec2, params ) == XLAL_FAILURE )
    {
@@ -1328,7 +1328,7 @@ LALEOBPPWaveformForInjection (
 {
   INITSTATUS(status);
 
-  XLALPrintDeprecationWarning( "LALEOBPPWaveformForInjection", "XLALEOBPPWaveformForInjection" );
+  XLAL_PRINT_DEPRECATION_WARNING("XLALEOBPPWaveformForInjection");
 
   if ( XLALEOBPPWaveformForInjection( waveform, params, ppnParams ) == XLAL_FAILURE )
   {

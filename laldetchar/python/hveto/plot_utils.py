@@ -13,7 +13,7 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, write to the Free Software Foundation,.
 
-## \addtogroup pkg_py_laldetchar_hveto
+## addtogroup pkg_py_laldetchar_hveto
 """Some plotting utilities for HVeto based analyses."""
 # \author Chris Pankow (<chris.pankow@ligo.org>)
 # \heading{Synopsis}
@@ -93,6 +93,4 @@ def plot_sigdrop(chansig_prev, chansig_cur, rnd):
 	fig.savefig("drop_round_%d.png" % (rnd-1))
 
 # close doxygen
-##
-#	\defgroup	pkg_py_laldetchar_triggers_glib_utils   Glib Utils
-#@}
+##@}

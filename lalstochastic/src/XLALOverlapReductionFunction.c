@@ -180,7 +180,7 @@ static REAL4 cartesianInnerProduct(REAL4 a[3], REAL4 b[3]);
  * ### Uses ###
  *
  * \code
- * LALUnitRaise()
+ * XLALUnitRaiseRAT4()
  * sin()
  * cos()
  * sqrt()

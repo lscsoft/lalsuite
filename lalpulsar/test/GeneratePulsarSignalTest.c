@@ -89,7 +89,6 @@
 /* #define INCLUDE_RANDVAL_MISMATCH */
 
 
-#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -345,7 +344,7 @@ void RunGeneratePulsarSignalTest(LALStatus *status)
     LALDCreateVector(status->statusPtr, &(pPulsarSignalParams->pulsar.spindown),((UINT4)numSpinDown));
     CHECKSTATUSPTR (status);
   }
-  pPulsarSignalParams->orbit = NULL;
+  pPulsarSignalParams->orbit.asini = 0 /* isolated pulsar */;
   pPulsarSignalParams->transfer = NULL;
   pPulsarSignalParams->dtDelayBy2 = 0;
   pPulsarSignalParams->dtPolBy2 = 0;
@@ -682,8 +681,7 @@ void RunGeneratePulsarSignalTest(LALStatus *status)
        /* 09/07/05 gam; Initialize fastOutputSFTs since only 2*Dterms bins are changed by LALFastGeneratePulsarSFTs */
        for (i = 0; i < numSFTs; i++) {
           for(j=0;j<nBinsSFT;j++) {
-             fastOutputSFTs->data[i].data->data[j].realf_FIXME = 0.0;
-             fastOutputSFTs->data[i].data->data[j].imagf_FIXME = 0.0;
+             fastOutputSFTs->data[i].data->data[j] = 0.0;
           }
        }
 

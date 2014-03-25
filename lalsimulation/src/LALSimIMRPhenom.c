@@ -242,6 +242,28 @@ double XLALSimIMRPhenomBComputeChi(
 }
 
 /**
+ * Compute the default final frequency 
+ */
+double XLALSimIMRPhenomAGetFinalFreq(
+    const REAL8 m1,
+    const REAL8 m2
+) {
+    BBHPhenomParams *phenomParams;
+    phenomParams = ComputeIMRPhenomAParams(m1, m2);
+    return phenomParams->fCut;
+}
+
+double XLALSimIMRPhenomBGetFinalFreq(
+    const REAL8 m1,
+    const REAL8 m2,
+    const REAL8 chi
+) {
+    BBHPhenomParams *phenomParams;
+    phenomParams = ComputeIMRPhenomBParams(m1, m2, chi);
+    return phenomParams->fCut;
+}
+
+/**
  * Driver routine to compute the spin-aligned, inspiral-merger-ringdown
  * phenomenological waveform IMRPhenomB in the time domain.
  *
@@ -558,7 +580,7 @@ static BBHPhenomParams *ComputeIMRPhenomBParams(const REAL8 m1, const REAL8 m2, 
 }
 
 /**
- * Return tau0, the Newtonian chirp length estimate.
+ * Return tau0, the Newtonian chirp length estimate. Ref. Eq.(6) of B. S. Sathyaprakash, http://arxiv.org/abs/gr-qc/9411043v1
  */
 static REAL8 ComputeTau0(const REAL8 m1, const REAL8 m2, const REAL8 f_min) {
   const REAL8 totalMass = m1 + m2;
@@ -594,7 +616,8 @@ static REAL8 EstimateSafeFMinForTD(const REAL8 m1, const REAL8 m2, const REAL8 f
 }
 
 /**
- * Find a higher value of f_max so that we can safely apply a window later.
+ * Find a higher value of f_max so that we can safely apply a window later. 
+ * The safety factor 1.025 is an empirical estimation 
  */
 static REAL8 EstimateSafeFMaxForTD(const REAL8 f_max, const REAL8 deltaT) {
   REAL8 temp_f_max = 1.025 * f_max;
@@ -895,8 +918,9 @@ static size_t find_instant_freq(const REAL8TimeSeries *hp, const REAL8TimeSeries
   size_t k = start + 1;
   const size_t n = hp->data->length - 1;
 
-  /* Use second order differencing to find the instantaneous frequency as
-   * h = A e^(2 pi i f t) ==> f = d/dt(h) / (2*pi*h) */
+  /* complex_h := hp - i hc := A e^{i \phi}. Hence \phi = arctan(-hc/hp) 
+  and F = d \phi/dt = (-hp hc' + hc hp') / (2 \pi A^2)
+  We use first order finite difference to compute the derivatives hp' and hc'*/
   for (; k < n; k++) {
     const REAL8 hpDot = (hp->data->data[k+1] - hp->data->data[k-1]) / (2 * hp->deltaT);
     const REAL8 hcDot = (hc->data->data[k+1] - hc->data->data[k-1]) / (2 * hc->deltaT);
@@ -941,6 +965,12 @@ static int apply_phase_shift(const REAL8TimeSeries *hp, const REAL8TimeSeries *h
     return 0;
 }
 
+/** Apply the inclination-angle weighting to the two polarizations 
+* Ref. Eq.(63) of B.S. Sathyaprakash and Bernard F. Schutz,
+* “Physics, Astrophysics and Cosmology with Gravitational Waves”, 
+* Living Rev. Relativity, 12, (2009), 2. [Online Article]: cited 27 Nov 2013,
+* http://www.livingreviews.org/lrr-2009-2
+*/
 static int apply_inclination(const REAL8TimeSeries *hp, const REAL8TimeSeries *hc, const REAL8 inclination) {
   REAL8 inclFacPlus, inclFacCross;
   REAL8 *hpdata = hp->data->data;

@@ -17,22 +17,25 @@
 *  MA  02111-1307  USA
 */
 
-// ---------- SEE LALDatatypes.dox for doxygen documentation ----------
+/* ---------- SEE LALDatatypes.dox for doxygen documentation ---------- */
 
 #ifndef _LALATOMICDATATYPES_H
 #define _LALATOMICDATATYPES_H
 
 #include <stdint.h>
-
-#ifndef LAL_USE_OLD_COMPLEX_STRUCTS
-#if defined(__cplusplus)
-#include <complex>
-#else
-#include <complex.h>
-#endif
-#endif /* LAL_USE_OLD_COMPLEX_STRUCTS */
-
 #include <lal/LALConfig.h>
+
+/* macros for certain keywords */
+#if __STDC_VERSION__ >= 199901L
+# define _LAL_RESTRICT_ restrict
+# define _LAL_INLINE_ inline
+#elif defined __GNUC__
+# define _LAL_RESTRICT_ __restrict__
+# define _LAL_INLINE_ __inline__
+#else
+# define _LAL_RESTRICT_
+# define _LAL_INLINE_
+#endif
 
 #if defined(__cplusplus)
 extern "C" {
@@ -97,44 +100,76 @@ typedef uint64_t UINT8;		/**< Eight-byte unsigned integer; on some platforms thi
 typedef float REAL4;    /**< Single precision real floating-point number (4 bytes). */
 typedef double REAL8;   /**< Double precision real floating-point number (8 bytes). */
 
+/* Complex types */
 #ifndef SWIG /* exclude from SWIG interface */
 
-#ifndef LAL_USE_OLD_COMPLEX_STRUCTS
-
-/* Complex types */
-#if defined(__cplusplus)
-typedef std::complex<float> COMPLEX8;
-typedef std::complex<double> COMPLEX16;
-#else
-typedef float complex COMPLEX8;     /**< Single-precision floating-point complex number (8 bytes total) */
-typedef double complex COMPLEX16;   /**< Double-precision floating-point complex number (16 bytes total) */
+/* Use C99 complex numbers where available: C99, gcc with non-ANSI extensions */
+#if !defined(__cplusplus)
+# if __STDC_VERSION__ >= 199901L || (defined(__GNUC__) && !defined(__STRICT_ANSI__))
+#  define _LAL_C99_COMPLEX_NUMBERS_
+# endif
 #endif
 
-/* Complex type constructors */
-#if !defined(__cplusplus)
+#ifdef _LAL_C99_COMPLEX_NUMBERS_
+
+#include <complex.h>
+
+typedef float  complex COMPLEX8;	/**< Single-precision floating-point complex number (8 bytes total) */
+typedef double complex COMPLEX16;	/**< Double-precision floating-point complex number (16 bytes total) */
+
 #define crectf(re, im) (((REAL4)(re)) + _Complex_I*((REAL4)(im)))	/**< Construct a COMPLEX8 from real and imaginary parts */
 #define crect(re, im)  (((REAL8)(re)) + _Complex_I*((REAL8)(im)))	/**< Construct a COMPLEX16 from real and imaginary parts */
 #define cpolarf(r, th) (((REAL4)(r)) * cexpf(crectf(0, th)))		/**< Construct a COMPLEX8 from polar modulus and argument */
 #define cpolar(r, th)  (((REAL8)(r)) * cexp(crect(0, th)))		/**< Construct a COMPLEX16 from polar modulus and argument */
-#endif
 
-#else /* LAL_USE_OLD_COMPLEX_STRUCTS */
-
+#else /* !_LAL_C99_COMPLEX_NUMBERS_ */
 /** \cond DONT_DOXYGEN */
-/* Old LAL complex structs, being phased out ... */
-typedef struct tagCOMPLEX8 { REAL4 realf_FIXME; REAL4 imagf_FIXME; } COMPLEX8;
-#define crealf(z) ((z).realf_FIXME)
-#define cimagf(z) ((z).imagf_FIXME)
-typedef struct tagCOMPLEX16 { REAL8 real_FIXME; REAL8 imag_FIXME; } COMPLEX16;
-#define creal(z) ((z).real_FIXME)
-#define cimag(z) ((z).imag_FIXME)
+
+/****************************************************************************/
+/* Fall back to GSL complex number types if C99 complex numbers are not     */
+/* available.  GSL complex numbers are implemented as a struct containing   */
+/* an array of 2 elements of the corresponding real type.  The C99 standard */
+/* should guarantee that GSL complex numbers are binary-compatible with C99 */
+/* complex numbers; 6.2.5 point 13 of the standard states that C99 complex  */
+/* numbers are equivalent to an array of 2 elements of the corresponding    */
+/* real type, and 6.7.2.1 point 13 states that padding is never added to    */
+/* the beginning of a struct.                                               */
+/****************************************************************************/
+
+#include <math.h>
+#include <gsl/gsl_complex.h>
+
+typedef gsl_complex_float COMPLEX8;
+typedef gsl_complex       COMPLEX16;
+
+static _LAL_INLINE_ COMPLEX8 crectf(const REAL4 re, const REAL4 im);
+static _LAL_INLINE_ COMPLEX8 crectf(const REAL4 re, const REAL4 im) {
+  COMPLEX8 z; GSL_SET_COMPLEX(&z, re, im); return z;
+}
+static _LAL_INLINE_ COMPLEX16 crect(const REAL8 re, const REAL8 im);
+static _LAL_INLINE_ COMPLEX16 crect(const REAL8 re, const REAL8 im) {
+  COMPLEX16 z; GSL_SET_COMPLEX(&z, re, im); return z;
+}
+static _LAL_INLINE_ COMPLEX8 cpolarf(const REAL4 r, const REAL4 th);
+static _LAL_INLINE_ COMPLEX8 cpolarf(const REAL4 r, const REAL4 th) {
+  COMPLEX8 z; GSL_SET_COMPLEX(&z, r*cos(th), r*sin(th)); return z;
+}
+static _LAL_INLINE_ COMPLEX16 cpolar(const REAL8 r, const REAL8 th);
+static _LAL_INLINE_ COMPLEX16 cpolar(const REAL8 r, const REAL8 th) {
+  COMPLEX16 z; GSL_SET_COMPLEX(&z, r*cos(th), r*sin(th)); return z;
+}
+
+#define crealf(z) GSL_REAL(z)
+#define cimagf(z) GSL_IMAG(z)
+#define creal(z)  GSL_REAL(z)
+#define cimag(z)  GSL_IMAG(z)
+
 /** \endcond */
-
-#endif /* LAL_USE_OLD_COMPLEX_STRUCTS */
-
-/*@}*/
+#endif /* _LAL_C99_COMPLEX_NUMBERS_ */
 
 #endif /* SWIG */
+
+/*@}*/
 
 #if 0
 { /* so that editors will match succeeding brace */

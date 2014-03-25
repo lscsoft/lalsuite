@@ -1,5 +1,5 @@
 AC_PREREQ([2.63])
-AC_INIT([lalapps],[6.13.2.1],[lal-discuss@ligo.org])
+AC_INIT([lalapps],[6.14.0.1],[lal-discuss@ligo.org])
 AC_CONFIG_HEADERS([src/config.h])
 AC_CONFIG_SRCDIR([src/lalapps/lalapps.c])
 AC_CONFIG_AUX_DIR([gnuscripts])
@@ -22,19 +22,17 @@ AC_CONFIG_FILES([\
   src/string/Makefile \
   src/pulsar/Makefile \
   src/pulsar/FDS_isolated/Makefile \
-  src/pulsar/FDS_isolated/OptimizedCFS/Makefile \
   src/pulsar/FDS_isolated/ResamplingFstat/Makefile \
   src/pulsar/Injections/Makefile \
   src/pulsar/hough/Makefile \
   src/pulsar/hough/src/Makefile \
-  src/pulsar/FDS_binary/Makefile \
   src/pulsar/SideBand/Makefile \
   src/pulsar/CombSearch/Makefile \
   src/pulsar/templateBanks/Makefile \
   src/pulsar/TimingTests/Makefile \
   src/pulsar/TDS_isolated/Makefile \
+  src/pulsar/CreateEphemeris/Makefile \
   src/inspiral/Makefile \
-  src/inspiral/bayestar/Makefile \
   src/inspiral/posterior/Makefile \
   src/inspiral/posterior/SPINspiral/Makefile \
   src/inspiral/posterior/mpi/Makefile \
@@ -53,30 +51,11 @@ AC_CONFIG_FILES([\
 # subdir-objects in automake-1.14+. this will be the default, and only,
 # behaviour in automake-2.0+ so this is only a temporary measure
 AM_INIT_AUTOMAKE([1.11 foreign color-tests parallel-tests -Wno-unsupported])
-AH_TOP([
-#ifndef CONFIG_H
-#define CONFIG_H])
-AH_BOTTOM([
-#endif /* CONFIG_H */
-])
 
 AC_CANONICAL_HOST
 
-LALSUITE_ARG_VAR
-LALSUITE_DISTCHECK_CONFIGURE_FLAGS
-
-# check for git repo
 LALSUITE_CHECK_GIT_REPO
-
-LALAPPS_WITH_CC
-
-LALAPPS_WITH_LAL_PREFIX
-LALAPPS_WITH_EXTRA_CPPFLAGS
-LALAPPS_WITH_EXTRA_CFLAGS
-LALAPPS_WITH_EXTRA_LDFLAGS
-LALAPPS_WITH_EXTRA_LIBS
-
-LALSUITE_ENABLE_DEBUG
+LALSUITE_DISTCHECK_CONFIGURE_FLAGS
 
 LALSUITE_WITH_CUDA
 
@@ -106,36 +85,8 @@ LALSUITE_ENABLE_LALPULSAR
 LALSUITE_ENABLE_LALINFERENCE
 LALSUITE_ENABLE_LALSTOCHASTIC
 
-# put version/configure info in config header
-lalapps_version_major=`echo "$VERSION" | cut -d. -f1`
-lalapps_version_minor=`echo "$VERSION" | cut -d. -f2`
-lalapps_version_micro=`echo "$VERSION" | cut -d. -f3`
-lalapps_version_devel=`echo "$VERSION" | cut -d. -f4-`
-test -z "$lalapps_version_micro" && lalapps_version_micro=0
-test -z "$lalapps_version_devel" && lalapps_version_devel=0
-lalapps_configure_date=`date +"%Y-%m-%dT%H:%M:%S%z"`
-AC_DEFINE_UNQUOTED([LALAPPS_VERSION],["$VERSION"],[LALApps Version])
-AC_DEFINE_UNQUOTED([LALAPPS_VERSION_MAJOR],[$lalapps_version_major],
-                   [LALApps Version Major Number])
-AC_DEFINE_UNQUOTED([LALAPPS_VERSION_MINOR],[$lalapps_version_minor],
-                   [LALApps Version Minor Number])
-AC_DEFINE_UNQUOTED([LALAPPS_VERSION_MICRO],[$lalapps_version_micro],
-                   [LALApps Version Micro Number])
-AC_DEFINE_UNQUOTED([LALAPPS_VERSION_DEVEL],[$lalapps_version_devel],
-                   [LALApps Version Devel Number])
-AC_DEFINE_UNQUOTED([LALAPPS_CONFIGURE_ARGS],["$ac_configure_args"],
-                   [LALApps Configure Arguments])
-AC_DEFINE_UNQUOTED([LALAPPS_CONFIGURE_DATE],["$lalapps_configure_date"],
-                   [LALApps Configure Date])
-
-# remove -all-static from ldflags, breaks tests
-allstatic=`echo $LDFLAGS | sed '/-all-static/!d'`
-if test "x$allstatic" = "x" ; then
-  allstatic="false"
-else
-  LDFLAGS=`echo $LDFLAGS | sed s/-all-static//g`
-  allstatic="true"
-fi
+# define version/configure info
+LALSUITE_VERSION_CONFIGURE_INFO
 
 # workaround broken libtool multilib support on sl6
 LALSUITE_MULTILIB_LIBTOOL_HACK
@@ -165,14 +116,17 @@ if test "x$mpi" = "xtrue"; then
     AC_LANG([C])
     MPILIBS="${MPILIBS_SAVE}"
   ])
+  AC_LANG([C])
 fi
-LALSUITE_ENABLE_MODULE([MPI],[mpi])
+LALSUITE_ENABLE_MODULE([MPI])
 
 # checks for programs
 AC_PROG_INSTALL
 AC_PROG_LN_S
 AC_PROG_AWK
 AC_PROG_SED
+AM_PATH_PYTHON([2.6],,[:])
+AM_CONDITIONAL([HAVE_PYTHON],[test "$PYTHON" != :])
 
 # check for condor_compile
 AC_ENABLE_SHARED
@@ -195,13 +149,10 @@ CONDOR_ENABLE_VAL="`eval test x$condor = xtrue && echo "ENABLED" || echo "DISABL
 AM_CONDITIONAL([CONDOR_ENABLED],[test "$CONDOR_ENABLE_VAL" = "ENABLED"])
 
 # further program checks
-LT_INIT
 AC_CHECK_PROGS([LATEX],[pdflatex latex],[echo])
 AC_CHECK_PROGS([MKIND],[makeindex],[echo])
 AC_CHECK_PROGS([DVIPS],[dvips],[echo])
 AC_CHECK_PROGS([BIBTEX],[bibtex],[echo])
-AM_PATH_PYTHON([2.6],,[:])
-AM_CONDITIONAL([HAVE_PYTHON],[test "$PYTHON" != :])
 
 # check for supported mac os x version
 LALSUITE_OSX_VERSION_CHECK
@@ -220,36 +171,9 @@ AC_CHECK_HEADERS([glob.h])
 AC_CHECK_HEADERS([punistd.h])
 AC_CHECK_HEADERS([getopt.h])
 
-# check for boinc
-if test "${boinc}" = "true" ; then
-  if test -n "$BOINC_PREFIX}" ; then
-    # do compilation checks with c++
-    AC_LANG_PUSH([C++])
-
-    # has lal build built with boinc support
-    LALSUITE_CHECK_BOINC
-
-    # point to boinc headers and libraries
-    CPPFLAGS="$CPPFLAGS -I$BOINC_PREFIX/include"
-    LDFLAGS="$LDFLAGS -L$BOINC_PREFIX/lib"
-
-    # check for boinc libraries
-    AC_CHECK_LIB([boinc],[boinc_fopen],[true],[boinc=false])
-    AC_CHECK_LIB([boinc_api],[boinc_finish],[true],[boinc=false],[-lboinc])
-
-    # check for boinc headers
-    AC_CHECK_HEADERS([boinc/boinc_api.h],,[boinc=false])
-
-    # go back to c
-    AC_LANG_POP([C++])
-  fi
-fi
-BOINC_ENABLE_VAL="`eval test x$boinc = xtrue && echo "ENABLED" || echo "DISABLED"`"
-
 # check for gsl
 PKG_CHECK_MODULES([GSL],[gsl],[true],[false])
-CPPFLAGS="$CPPFLAGS $GSL_CFLAGS"
-LIBS="$GSL_LIBS $LIBS"
+LALSUITE_ADD_FLAGS([C],[${GSL_CFLAGS}],[${GSL_LIBS}])
 AC_CHECK_LIB([gslcblas],[main],,[AC_MSG_ERROR([could not find the gsl library])])
 AC_CHECK_LIB([gsl],[gsl_version],,[AC_MSG_ERROR([could not find the gsl library])])
 LALSUITE_ENABLE_FAST_GSL
@@ -260,8 +184,7 @@ AC_CHECK_HEADERS([gsl/gsl_errno.h],,[AC_MSG_ERROR([could not find the gsl/gsl_er
 # check for fftw libraries
 if test "${fftw}" = "true"; then
   PKG_CHECK_MODULES([FFTW3],[fftw3 fftw3f],[true],[false])
-  CPPFLAGS="$CPPFLAGS $FFTW3_CFLAGS"
-  LIBS="$LIBS $FFTW3_LIBS"
+  LALSUITE_ADD_FLAGS([C],[${FFTW3_CFLAGS}],[${FFTW3_LIBS}])
   AC_CHECK_LIB([fftw3f],[fftwf_execute_dft],,[AC_MSG_WARN([could not find the fftw3f library])],[-lm])
   AC_CHECK_LIB([fftw3],[fftw_execute_dft],,[AC_MSG_WARN([could not find the fftw3 library])],[-lm])
 fi
@@ -270,7 +193,7 @@ fi
 if test "${fftw}" = "true"; then
   AC_CHECK_HEADERS([fftw3.h],,[AC_MSG_WARN([could not find the fftw3.h header])])
 fi
-LALSUITE_ENABLE_MODULE([FFTW],[fftw])
+LALSUITE_ENABLE_MODULE([FFTW])
 
 # check for GDS system: we check if we can link against libawg which is in GDS
 # GDS is a requirements for building 'online_psinject', which is used for hardware injections
@@ -278,13 +201,13 @@ if test "${gds}" = "true"; then
   AC_CHECK_LIB([awg],[awgGetChannelNames],,[gds="false"])
   AC_CHECK_HEADERS([gdstype.h],,[gds="false"])
 fi
-LALSUITE_ENABLE_MODULE([GDS],[gds])
+LALSUITE_ENABLE_MODULE([GDS])
 
 # check for libFrame
 if test "${frame}" = "true"; then
   PKG_CHECK_MODULES([FRAME],[libframe],[true],[false])
   lal_pre_frame_LIBS="$LIBS"
-  LIBS="$LIBS $FRAME_LIBS"
+  LALSUITE_ADD_FLAGS([C],[],[${FRAME_LIBS}])
   AC_SEARCH_LIBS([FrLibIni],[Frame],,
                  [AC_MSG_WARN([could not find the frame library])]
                  [frame="false"]
@@ -295,20 +218,20 @@ fi
 # check for libFrame headers
 if test "${frame}" = "true"; then
   lal_pre_frame_CPPFLAGS="$CPPFLAGS"
-  CPPFLAGS="$CPPFLAGS $FRAME_CFLAGS"
+  LALSUITE_ADD_FLAGS([C],[${FRAME_CFLAGS}],[])
   AC_CHECK_HEADERS([FrameL.h],,
                    [AC_MSG_WARN([could not find the FrameL.h header])]
                    [frame="false"]
                    [lalframe="false"]
                    [CPPFLAGS="$lal_pre_frame_CPPFLAGS"])
 fi
-LALSUITE_ENABLE_MODULE([FRAME],[frame])
+LALSUITE_ENABLE_MODULE([FRAME])
 
 # check for libmetaio
 if test "${metaio}" = "true"; then
   PKG_CHECK_MODULES([METAIO],[libmetaio],[true],[false])
   lal_pre_metaio_LIBS="$LIBS"
-  LIBS="$LIBS $METAIO_LIBS"
+  LALSUITE_ADD_FLAGS([C],[],[${METAIO_LIBS}])
   AC_SEARCH_LIBS([MetaioOpen],[metaio],,
                  [AC_MSG_WARN([could not find the metaio library])]
                  [metaio="false"]
@@ -319,20 +242,20 @@ fi
 # check for libmetaio headers
 if test "${metaio}" = "true"; then
   lal_pre_metaio_CPPFLAGS="$CPPFLAGS"
-  CPPFLAGS="$CPPFLAGS $METAIO_CFLAGS"
+  LALSUITE_ADD_FLAGS([C],[${METAIO_CFLAGS}],[])
   AC_CHECK_HEADERS([metaio.h],,
                    [AC_MSG_WARN([could not find the metaio.h header])]
                    [metaio="false"]
                    [lalmetaio="false"]
                    [CPPFLAGS="$lal_pre_metaio_CPPFLAGS"])
 fi
-LALSUITE_ENABLE_MODULE([METAIO],[metaio])
+LALSUITE_ENABLE_MODULE([METAIO])
 
 # check for libxml2
 if test "$lalxml" = "true"; then
   PKG_CHECK_MODULES([LIBXML2],[libxml-2.0 >= 2.6],[true],[false])
   lal_pre_libxml2_LIBS="$LIBS"
-  LIBS="$LIBS $LIBXML2_LIBS"
+  LALSUITE_ADD_FLAGS([C],[],[${LIBXML2_LIBS}])
   AC_SEARCH_LIBS([xmlInitParser],[xml2],,
                  [AC_MSG_WARN([cannot find the xml2 library])]
                  [lalxml="false"]
@@ -342,7 +265,7 @@ fi
 # check for libxml2 headers
 if test "$lalxml" = "true"; then
   lal_pre_libxml2_CPPFLAGS="$CPPFLAGS"
-  CPPFLAGS="$CPPFLAGS $LIBXML2_CFLAGS"
+  LALSUITE_ADD_FLAGS([C],[${LIBXML2_CFLAGS}],[])
   AC_CHECK_HEADERS([libxml/tree.h],,
                    [AC_MSG_WARN([could not the libxml/tree.h header])]
                    [lalxml="false"]
@@ -353,7 +276,7 @@ fi
 if test "${cfitsio}" = "true"; then
   PKG_CHECK_MODULES([CFITSIO],[cfitsio],[true],[false])
   lal_pre_cfitsio_libs="$LIBS"
-  LIBS="$CFITSIO_LIBS $LIBS"
+  LALSUITE_ADD_FLAGS([C],[],[${CFITSIO_LIBS}])
   AC_SEARCH_LIBS([ffopen],[cfitsio],,
                  [cfitsio="false"]
                  [LIBS="$lal_pre_cfitsio_LIBS"])
@@ -362,18 +285,18 @@ fi
 # check for libcfitsio headers
 if test "${cfitsio}" = "true"; then
   lal_pre_cfitsio_CPPFLAGS="$CPPFLAGS"
-  CPPFLAGS="$CPPFLAGS $CFITSIO_CFLAGS"
+  LALSUITE_ADD_FLAGS([C],[${CFITSIO_CFLAGS}],[])
   AC_CHECK_HEADERS([fitsio.h],,
                    [cfitsio="false"]
                    [CPPFLAGS="$lal_pre_cfitsio_CPPFLAGS"])
 fi
-LALSUITE_ENABLE_MODULE([CFITSIO],[cfitsio])
+LALSUITE_ENABLE_MODULE([CFITSIO])
 
 # check for pss
 if test "${pss}" = "true"; then
   PKG_CHECK_MODULES([PSS],[pss],[true],[false])
   lal_pre_pss_LIBS="$LIBS"
-  LIBS="$PSS_LIBS $LIBS"
+  LALSUITE_ADD_FLAGS([C],[],[${PSS_LIBS}])
   AC_SEARCH_LIBS([crea_sfdbheader],[psssfdb],,
                  [pss="false"]
                  [LIBS="$lal_pre_pss_LIBS"])
@@ -392,7 +315,7 @@ fi
 # check for pss headers
 if test "${pss}" = "true"; then
   lal_pre_pss_CPPFLAGS="$CPPFLAGS"
-  CPPFLAGS="$PSS_CFLAGS $CPPFLAGS"
+  LALSUITE_ADD_FLAGS([C],[${PSS_CFLAGS}],[])
   AC_CHECK_HEADERS([pss_sfdb.h],,
                    [pss="false"]
                    [CPPFLAGS="$lal_pre_pss_CPPFLAGS"])
@@ -406,7 +329,7 @@ if test "${pss}" = "true"; then
                    [pss="false"]
                    [CPPFLAGS="$lal_pre_pss_CPPFLAGS"])
 fi
-LALSUITE_ENABLE_MODULE([PSS],[pss])
+LALSUITE_ENABLE_MODULE([PSS])
 
 # check for libbambi
 # Note:  if done in AS_IF() then AC_REQUIRE'd checks are done when not wanted, causing problems
@@ -424,17 +347,20 @@ if test "${boinc}" = "true" ; then
 fi
 
 # check for lal libararies and headers
-LALSUITE_CHECK_LIB([LAL],[6.11.0],[LALVersion],[lal/LALStdio.h])
-LALSUITE_CHECK_LIB([LALSupport],[6.11.0],[LALOpenDataFile],[lal/FileIO.h])
+LALSUITE_CHECK_LIB([LAL],[6.12.0],[LALVersion],[lal/LALStdio.h])
+LALSUITE_CHECK_LIB([LALSupport],[6.12.0],[XLALCacheImport],[lal/LALCache.h])
 LALSUITE_CHECK_OPT_LIB([LALFrame],[1.1.0],[LALFrOpen],[lal/LALFrameL.h])
-LALSUITE_CHECK_OPT_LIB([LALMetaIO],[1.1.0],[XLALCreateMetaTableDir],[lal/LIGOLwXMLRead.h])
+LALSUITE_CHECK_OPT_LIB([LALMetaIO],[1.2.0],[XLALCreateMetaTableDir],[lal/LIGOLwXMLRead.h])
 LALSUITE_CHECK_OPT_LIB([LALXML],[1.1.3],[XLALXMLFilePrintElements],[lal/LALXML.h])
-LALSUITE_CHECK_OPT_LIB([LALSimulation],[1.0.0],[XLALSimDetectorStrainREAL8TimeSeries],[lal/LALSimulation.h])
+LALSUITE_CHECK_OPT_LIB([LALSimulation],[1.1.0],[XLALSimDetectorStrainREAL8TimeSeries],[lal/LALSimulation.h])
 LALSUITE_CHECK_OPT_LIB([LALBurst],[1.2.0],[XLALEPSearch],[lal/EPSearch.h])
 LALSUITE_CHECK_OPT_LIB([LALInspiral],[1.5.0],[LALInspiralParameterCalc],[lal/LALInspiral.h])
-LALSUITE_CHECK_OPT_LIB([LALPulsar],[1.8.0],[XLALComputeFaFb],[lal/ComputeFstat.h])
-LALSUITE_CHECK_OPT_LIB([LALInference],[1.2.0],[LALInferenceAddVariable],[lal/LALInference.h])
+LALSUITE_CHECK_OPT_LIB([LALPulsar],[1.9.0],[XLALComputeFstat],[lal/ComputeFstat.h])
+LALSUITE_CHECK_OPT_LIB([LALInference],[1.3.0],[LALInferenceAddVariable],[lal/LALInference.h])
 LALSUITE_CHECK_OPT_LIB([LALStochastic],[1.1.4],[LALStochasticOptimalFilter],[lal/StochasticCrossCorrelation.h])
+
+# check that lal was built with BOINC support, if required
+LALSUITE_CHECK_BOINC
 
 # back to c mode
 if test "${boinc}" = "true" ; then
@@ -467,22 +393,15 @@ fi
 # enable condor compile
 if test "x${condor}" = "xtrue" ; then
   CC="$CONDOR_COMPILE $CC"
-  AM_LDFLAGS="$AM_LDFLAGS -all-static"
+  LALSUITE_ADD_FLAGS([],[],[-all-static])
   AC_DISABLE_SHARED
-  AC_SUBST([AM_LDFLAGS])
   AC_DEFINE([LALAPPS_CONDOR],[1],[LALApps is condor compiled])
 fi
 
 # add -all-static to AM_LDFLAGS for --enable-static-binaries
 if test "${static_binaries}" = "true"; then
-  AM_LDFLAGS="$AM_LDFLAGS -all-static"
+  LALSUITE_ADD_FLAGS([],[],[-all-static])
   AC_DISABLE_SHARED
-  AC_SUBST([AM_LDFLAGS])
-fi
-
-# restore all static to ldflags
-if test "${allstatic}" = "true" ; then
-  LDFLAGS="-static -all-static $LDFLAGS"
 fi
 
 # force all python modules into the exec dir to prevent mixed C and
@@ -490,8 +409,9 @@ fi
 # RedHat-derived systems.
 AC_SUBST([pkgpythondir], ["\${pkgpyexecdir}"])
 
+# output
 AC_OUTPUT
-echo "
+AC_MSG_NOTICE([
 ==================================================
 LALApps has now been successfully configured:
 
@@ -523,4 +443,4 @@ ${prefix}
 Now run 'make' to build LALApps,
 and run 'make install' to install LALApps.
 ==================================================
-"
+])

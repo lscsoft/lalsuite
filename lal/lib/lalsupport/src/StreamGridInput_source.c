@@ -95,7 +95,6 @@ FUNC ( LALStatus *stat, GTYPE **grid, FILE *stream )
 
       /* Parse sampleUnits field. */
       else if ( !strcmp( start, "sampleUnits" ) ) {
-	CHARVector unitString;
 	if ( *startValue != '"' )
 	  LALWarning( stat, LALREADGRIDC_HEADER "name" );
 	else {
@@ -107,10 +106,7 @@ FUNC ( LALStatus *stat, GTYPE **grid, FILE *stream )
 	    LALWarning( stat, LALREADGRIDC_HEADER "name" );
 	  else {
 	    *endValue = '\0';
-	    unitString.length = strlen( startValue ) + 1;
-	    unitString.data = startValue;
-	    LALParseUnitString( stat->statusPtr, &sampleUnits, &unitString );
-	    if ( stat->statusPtr->statusCode == UNITSH_EPARSE ) {
+            if ( XLALParseUnitString( &sampleUnits, startValue ) == NULL ) {
 #ifndef NDEBUG
 	      if ( lalDebugLevel & LALERROR ) {
 		LALPrintError( "\tCONTINUE: Ignoring preceding error\n" );
@@ -337,7 +333,6 @@ FUNC ( LALStatus *stat, GTYPE **grid, FILE *stream )
 
       /* Parse dimUnits field. */
       else if ( !strcmp( start, "dimUnits" ) ) {
-	CHARVector unitString;
 	LALUnit *data;
 	UnitBuffer *here, *head;
 	here = head = (UnitBuffer *)LALMalloc( sizeof(UnitBuffer) );
@@ -358,10 +353,7 @@ FUNC ( LALStatus *stat, GTYPE **grid, FILE *stream )
 	  while ( *startValue == '"' && *endValue == '"' && n-- ) {
 	    *endValue = '\0';
 	    startValue++;
-	    unitString.length = strlen( startValue ) + 1;
-	    unitString.data = startValue;
-	    LALParseUnitString( stat->statusPtr, data++, &unitString );
-	    if ( stat->statusPtr->statusCode == UNITSH_EPARSE ) {
+            if ( XLALParseUnitString( data++, startValue ) == NULL ) {
 #ifndef NDEBUG
 	      if ( lalDebugLevel & LALERROR ) {
 		LALPrintError( "\tCONTINUE: Ignoring preceding error\n" );

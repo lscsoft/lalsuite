@@ -202,7 +202,7 @@ LALOpenLIGOLwXMLFile (
 
 {
   LIGOLwXMLStream *new;
-  XLALPrintDeprecationWarning("LALOpenLIGOLwXMLFile", "XLALOpenLIGOLwXMLFile");
+  XLAL_PRINT_DEPRECATION_WARNING("XLALOpenLIGOLwXMLFile");
   INITSTATUS(status);
   ASSERT( xml, status, LIGOLWXMLH_ENULL, LIGOLWXMLH_MSGENULL );
   ASSERT( ! xml->fp, status, LIGOLWXMLH_ENNUL, LIGOLWXMLH_MSGENNUL );
@@ -258,7 +258,7 @@ LALCloseLIGOLwXMLFile (
 
 {
   LIGOLwXMLStream *copy;
-  XLALPrintDeprecationWarning("LALCloseLIGOLwXMLFile", "XLALCloseLIGOLwXMLFile");
+  XLAL_PRINT_DEPRECATION_WARNING("XLALCloseLIGOLwXMLFile");
   /* print the xml footer and close the file handle */
   INITSTATUS(status);
   ASSERT( xml, status, LIGOLWXMLH_ENULL, LIGOLWXMLH_MSGENULL );

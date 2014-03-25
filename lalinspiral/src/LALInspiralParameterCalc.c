@@ -118,7 +118,7 @@ LALInspiralParameterCalc (
    InspiralTemplate *params
    )
 {
-   XLALPrintDeprecationWarning("LALInspiralParameterCalc", "XLALInspiralParameterCalc");
+   XLAL_PRINT_DEPRECATION_WARNING("XLALInspiralParameterCalc");
 
    INITSTATUS(status);
    ATTATCHSTATUSPTR(status);

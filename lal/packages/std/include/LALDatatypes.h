@@ -17,14 +17,14 @@
 *  MA  02111-1307  USA
 */
 
-// ---------- SEE LALDatatypes.dox for doxygen documentation ----------
+/* ---------- SEE LALDatatypes.dox for doxygen documentation ---------- */
 
 #ifndef _LALDATATYPES_H
 #define _LALDATATYPES_H
 
 #include <lal/LALAtomicDatatypes.h>
 
-/** \addtogroup LALDatatypes *//*@{ */
+/** \addtogroup LALDatatypes */ /*@{ */
 
 /* ---------- constants ---------- */
 
@@ -935,7 +935,7 @@ typedef struct tagCOMPLEX16ZPGFilter {
     COMPLEX16 gain;
 } COMPLEX16ZPGFilter;
 
-           /*@} */// end of LALDatatypes documentation group
+           /*@} */ /* end of LALDatatypes documentation group */
 
 
 #ifndef SWIG    /* exclude from SWIG interface */

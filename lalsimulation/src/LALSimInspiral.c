@@ -35,6 +35,7 @@
 #include <lal/TimeFreqFFT.h>
 #include <lal/Units.h>
 #include <lal/SphericalHarmonics.h>
+#include <lal/LALSimBlackHoleRingdown.h>
 
 #include "check_series_macros.h"
 
@@ -250,411 +251,155 @@ static int checkTidesZero(REAL8 lambda1, REAL8 lambda2)
 	XLAL_ERROR_NULL(XLAL_EINVAL);\
 	} while (0)
 
-/* 
- * Structure to carry a collection of spherical harmonic modes in COMPLEX16
- * time series. Contains convenience getter and setter functions, as well as
- * a convenience "maximum l mode" function. Implemented as a singly forward
- * linked list.
- */
-struct
-tagSphHarmTimeSeries
-{
-    COMPLEX16TimeSeries*            mode; /**< The sequences of sampled data. */
-    UINT4                           l; /**< Node mode l  */
-    INT4                            m; /**< Node submode m  */
-	REAL8Sequence*					tdata; /**< Timestamp values */
-    struct tagSphHarmTimeSeries*    next; /**< next pointer */
-};
-
-struct
-tagSphHarmFrequencySeries
-{
-    COMPLEX16FrequencySeries*            mode; /**< The sequences of sampled data. */
-    UINT4                           l; /**< Node mode l  */
-    INT4                            m; /**< Node submode m  */
-	REAL8Sequence*					fdata; /**< Frequency values */
-    struct tagSphHarmFrequencySeries*    next; /**< next pointer */
-};
-
 /**
- * Prepend a node to a linked list of SphHarmTimeSeries, or create a new head
- */
-SphHarmTimeSeries* XLALSphHarmTimeSeriesAddMode(
-            SphHarmTimeSeries *appended, /**< Linked list to be prepended */
-            const COMPLEX16TimeSeries* inmode, /**< Time series of h_lm mode being prepended */
-            UINT4 l, /**< l index of h_lm mode being prepended */
-            INT4 m /**< m index of h_lm mode being prepended */
-            )
-{
-    SphHarmTimeSeries* ts;
-
-	// Check if the node with this l, m already exists
-	ts = appended;
-	while( ts ){
-		if( l == ts->l && m == ts->m ){
-			break;
-		}
-		ts = ts->next;
-	}
-
-	if( ts ){
-		XLALDestroyCOMPLEX16TimeSeries( ts->mode );
-		ts->mode = XLALCutCOMPLEX16TimeSeries( inmode, 0, inmode->data->length);
-		return appended;
-	} else {
-    	ts = XLALMalloc( sizeof(SphHarmTimeSeries) );
-	}
-
-    ts->l = l;
-    ts->m = m;
-	// Cut returns a new series using a slice of the original. I ask it to
-	// return a new one for the full data length --- essentially a duplication
-	if( inmode ){
-		ts->mode = XLALCutCOMPLEX16TimeSeries( inmode, 0, inmode->data->length);
-	} else {
-		ts->mode = NULL;
-	}
-
-    if( appended ){
-        ts->next = appended;
-		ts->tdata = appended->tdata;
-    } else {
-        ts->next = NULL;
-		ts->tdata = NULL;
-    }
-
-    return ts;
-}
-
-/**
- * Set the tdata member for *all* nodes in the list.
- */
-void XLALSphHarmTimeSeriesSetTData(
-            SphHarmTimeSeries *ts, /**< Linked list to be prepended */
-            REAL8Sequence* tdata /**< series of time data*/
-            )
-{
-	while( ts ){
-		ts->tdata = tdata;
-		ts = ts->next;
-	}
-}
-
-/**
- * Get the tdata member for nodes in the list.
- */
-REAL8Sequence* XLALSphHarmTimeSeriesGetTData(
-            SphHarmTimeSeries *ts /**< Get tdata from this list */
-            )
-{
-	if( ts ){
-		return ts->tdata;
-	}
-	return NULL;
-}
-
-/** Delete list from current pointer to the end of the list */
-void XLALDestroySphHarmTimeSeries(
-            SphHarmTimeSeries* ts /**< Head of linked list to destroy */
-            )
-{
-    SphHarmTimeSeries* pop;
-    while( (pop = ts) ){
-		if( pop->mode ){
-        	XLALDestroyCOMPLEX16TimeSeries( pop->mode );
-		}
-		// The tdata pointer is shared so we delete on the last node
-		if( pop->next == NULL && pop->tdata ){
-        	XLALDestroyREAL8Sequence( pop->tdata );
-		}
-        ts = pop->next;
-        XLALFree( pop );
-    }
-}
-
-/**
- * Get the time series of a waveform's (l,m) spherical harmonic mode from a
- * SphHarmTimeSeries linked list. Returns a pointer to its COMPLEX16TimeSeries
- */
-COMPLEX16TimeSeries* XLALSphHarmTimeSeriesGetMode(
-            SphHarmTimeSeries *ts, /** linked list to extract mode from */
-            UINT4 l, /**< l index of h_lm mode to get */
-            INT4 m /**< m index of h_lm mode to get */
-            )
-{
-    if( !ts ) return NULL;
-
-    SphHarmTimeSeries *itr = ts;
-    while( itr->l != l || itr->m != m ){
-        itr = itr->next;
-        if( !itr ) return NULL;
-    }
-    return itr->mode;
-}
-
-/**
- * Get the largest l index of any mode in the SphHarmTimeSeries linked list
- */
-UINT4 XLALSphHarmTimeSeriesGetMaxL( SphHarmTimeSeries* ts ){
-    SphHarmTimeSeries *itr = ts;
-	UINT4 maxl=0;
-
-    while( itr ){
-		maxl = itr->l > maxl ? itr->l : maxl;
-		itr = itr ->next;
-    }
-    return maxl;
-}
-
-/**
- * For every (l,m) node in the SphHarmTimeSeries linked list,
- * call XLALResizeCOMPLEX16TimeSeries(ts->mode, first, length)
+ * Function that gives the default ending frequencies of the given approximant.
  *
- * The TimeSeries of each (l,m) mode will have the given length,
- * and its contents will consist of that part of the original time series
- * that started at sample first. If first is negative, then the new time
- * series is padded at the start by that many samples. The time series' epoch
- * is adjusted appropriately.
  */
-SphHarmTimeSeries *XLALResizeSphHarmTimeSeries(
-        SphHarmTimeSeries *ts, /**< SphHarmTimeSeries to be resized */
-        int first, /**< index of first time sample to be copied over */
-        size_t length /**< length to resize all COMPLEX16TimeSeries to */
-        )
+double XLALSimInspiralGetFinalFreq(
+    REAL8 m1,                               /**< mass of companion 1 (kg) */
+    REAL8 m2,                               /**< mass of companion 2 (kg) */
+    const REAL8 S1x,                              /**< x-component of the dimensionless spin of object 1 */
+    const REAL8 S1y,                              /**< y-component of the dimensionless spin of object 1 */
+    const REAL8 S1z,                              /**< z-component of the dimensionless spin of object 1 */
+    const REAL8 S2x,                              /**< x-component of the dimensionless spin of object 2 */
+    const REAL8 S2y,                              /**< y-component of the dimensionless spin of object 2 */
+    const REAL8 S2z,                              /**< z-component of the dimensionless spin of object 2 */
+    Approximant approximant                 /**< post-Newtonian approximant to use for waveform production */
+    )
 {
-    SphHarmTimeSeries *this = ts;
-    while( this ) {
-        this->mode = XLALResizeCOMPLEX16TimeSeries(this->mode, first, length);
-        this = this->next;
-    }
+    double  freq;   /* The return value */
 
-    return ts;
-}
+    /* internal variables */
+    /* we will use m1, m2 in solar masses */
+    m1 /= LAL_MSUN_SI;
+    m2 /= LAL_MSUN_SI;
 
-/**
- * Create a SphHarmFrequencySeries from a SphHarmTimeSeries
- * by performing an FFT on each mode in the SphHarmTimeSeries.
- */
-SphHarmFrequencySeries *XLALSphHarmFrequencySeriesFromSphHarmTimeSeries(
-        SphHarmTimeSeries *hlms_TD /**< SphHarmTimeSeries to be FFT'd */
-        )
-{
-    UINT4 l, Lmax, length;
-    int m;
-    COMPLEX16TimeSeries *ht;
-    COMPLEX16FrequencySeries *hf;
-    SphHarmFrequencySeries *hlms_FD = NULL;
-    REAL8 deltaF;
-    if( !hlms_TD ) // Check head of linked list is valid
-        XLAL_ERROR_NULL(XLAL_EINVAL);
+    /* needed for Phenom */
+    double chi;
 
-    Lmax = XLALSphHarmTimeSeriesGetMaxL(hlms_TD);
-    length = hlms_TD->mode->data->length; // N.B. Assuming all hlms same length
-    deltaF = 1./hlms_TD->mode->deltaT/length;
-    COMPLEX16FFTPlan *fwdplan = XLALCreateForwardCOMPLEX16FFTPlan(length, 0);
-    hf = XLALCreateCOMPLEX16FrequencySeries( "FD Mode", &hlms_TD->mode->epoch,
-            0., deltaF, &lalHertzUnit, length);
-    // Loop over TD modes, FFT, add to SphHarmFrequencySeries
-    for(l = 2; l <= Lmax; l++) {
-        for(m = -l; m <= (int) l; m++) {
-            ht = XLALSphHarmTimeSeriesGetMode(hlms_TD, l, m);
-            if( ht ) {
-                XLALCOMPLEX16TimeFreqFFT(hf, ht, fwdplan);
-                hlms_FD = XLALSphHarmFrequencySeriesAddMode(hlms_FD, hf, l, m);
+    /* Needed for EOBNR */
+    REAL8 spin1[3];
+    REAL8 spin2[3];
+    int     modeL;
+    int     modeM;
+    COMPLEX16Vector modefreqVec;
+    COMPLEX16      modeFreq;
+
+    switch (approximant)
+    {
+        /* non-spinning inspiral-only models */
+        // CHECKME: do they really all use Schwarzschild ISCO? */
+        case TaylorEt:
+        case TaylorT1:
+        case TaylorT2:
+        case TaylorT3:
+        case TaylorT4:
+        case TaylorF2:
+            /* Check that spins are zero */
+            if( !checkSpinsZero(S1x, S1y, S1z, S2x, S2y, S2z) )
+            {
+                XLALPrintError("Non-zero spins were given, but this is a non-spinning approximant.\n");
+                XLAL_ERROR(XLAL_EINVAL);
             }
-        }
-    }
+        case TaylorF2RedSpin:
+        case TaylorF2RedSpinTidal:
+            /* Schwarzschild ISCO */
+	        freq = pow(LAL_C_SI,3) / (pow(6.,3./2.)*LAL_PI*(m1+m2)*LAL_MSUN_SI*LAL_G_SI);
+            break;
 
-    return hlms_FD;
-
-}
-
-SphHarmTimeSeries *XLALSphHarmTimeSeriesFromSphHarmFrequencySeriesDataAndPSD(
-                                                                             SphHarmFrequencySeries *hlms, 
-                                                                             COMPLEX16FrequencySeries* data,
-                                                                             COMPLEX16FrequencySeries* psd
-        )
-{
-  UINT4 l, Lmax, length,i;
-    int m;
-    COMPLEX16TimeSeries *rhoT;
-    COMPLEX16FrequencySeries *hf,*hfBuffer;
-    SphHarmTimeSeries *rhoTlm = NULL;
-    REAL8 deltaF;
-    COMPLEX16 wt;
-    if( !hlms ) // Check head of linked list is valid
-        XLAL_ERROR_NULL(XLAL_EINVAL);
-
-    Lmax = XLALSphHarmFrequencySeriesGetMaxL(hlms);
-    length = hlms->mode->data->length; // N.B. Assuming all hlms same length
-    deltaF = hlms->mode->deltaF;
-    COMPLEX16FFTPlan *revplan = XLALCreateReverseCOMPLEX16FFTPlan(length, 0);
-    // Output working buffer : should be copied
-    rhoT = XLALCreateCOMPLEX16TimeSeries( "rhoTD", &hlms->mode->epoch,
-            0., deltaF, &lalDimensionlessUnit, length);
-    hfBuffer = XLALCreateCOMPLEX16FrequencySeries( "FD Mode", &hlms->mode->epoch,
-            0., deltaF, &lalHertzUnit, length);
-    // Loop over TD modes, FFT, add to SphHarmFrequencySeries
-    for(l = 2; l <= Lmax; l++) {
-        for(m = -l; m <= (int) l; m++) {
-            hf = XLALSphHarmFrequencySeriesGetMode(hlms, l, m);
-            if( hf ) {
-              hfBuffer->epoch = hf->epoch;
-              hfBuffer->deltaF = hf->deltaF;
-              for (i =0; i<length; i++) {
-                if (psd->data->data[i]) {
-                  wt = 1./psd->data->data[i];
-                } else {
-                  wt = 0;
-                    }
-                hfBuffer->data->data[i] = conj(hf->data->data[i])* data->data->data[i]*wt;
-              }
-              XLALCOMPLEX16FreqTimeFFT(rhoT, hfBuffer, revplan);
-              rhoTlm = XLALSphHarmTimeSeriesAddMode(rhoTlm, rhoT, l, m);
+        /* IMR models */
+        /* EOBNR models all call the same code, just with different inputs */
+        case EOBNRv2HM:
+        case EOBNRv2:
+        case SEOBNRv1:
+            // FIXME: Probably shouldn't hard code the modes.
+            if ( approximant == EOBNRv2HM )
+            {
+                modeL = 5;
+                modeM = 5;
             }
-        }
+            else
+            {
+                modeL = 2;
+                modeM = 2;
+            }
+            if ( approximant == EOBNRv2 || approximant == EOBNRv2HM )
+            {
+                /* Check that spins are zero */
+                if( !checkSpinsZero(S1x, S1y, S1z, S2x, S2y, S2z) )
+                {
+                    XLALPrintError("Non-zero spins were given, but this is a non-spinning approximant.\n");
+                    XLAL_ERROR(XLAL_EINVAL);
+                spin1[0] = 0.; spin1[1] = 0.; spin1[2] = 0.;
+                spin2[0] = 0.; spin2[1] = 0.; spin2[2] = 0.;
+                }
+            }
+            else
+            {
+                spin1[0] = S1x; spin1[1] = S1y; spin1[2] = S1z;
+                spin2[0] = S2x; spin2[1] = S2y; spin2[2] = S2z;
+            }
+
+            modefreqVec.length = 1;
+            modefreqVec.data   = &modeFreq;
+            if ( XLALSimIMREOBGenerateQNMFreqV2( &modefreqVec, m1, m2, spin1, spin2, modeL, modeM, 1, approximant) != XLAL_SUCCESS )
+            {
+                XLAL_ERROR( XLAL_EFUNC );
+            }
+
+            freq = creal(modeFreq) / (2 * LAL_PI);
+            break;
+
+        case IMRPhenomA:
+            /* Check that spins are zero */
+            if( !checkSpinsZero(S1x, S1y, S1z, S2x, S2y, S2z) )
+            {
+                XLALPrintError("Non-zero spins were given, but this is a non-spinning approximant.\n");
+                XLAL_ERROR(XLAL_EINVAL);
+            }
+            freq = XLALSimIMRPhenomAGetFinalFreq(m1, m2);
+            break;
+
+        case IMRPhenomB:
+            chi = XLALSimIMRPhenomBComputeChi(m1, m2, S1z, S2z);
+            freq = XLALSimIMRPhenomBGetFinalFreq(m1, m2, chi);
+            break;
+
+        case IMRPhenomC:
+            chi = XLALSimIMRPhenomBComputeChi(m1, m2, S1z, S2z);
+            freq = XLALSimIMRPhenomCGetFinalFreq(m1, m2, chi);
+            break;
+
+
+        // FIXME: Following I don't know how to calculate */
+        /* Spinning inspiral-only time domain */
+        case SpinTaylorT2:
+        case SpinTaylorT4:
+        case PhenSpinTaylor:
+        /* Spinning with ringdown attachment */
+        case PhenSpinTaylorRD:
+        /* Spinning inspiral-only frequency domain */
+        case SpinTaylorF2:
+            XLALPrintError("I don't know how to calculate final freq. for this approximant, sorry!\n");
+            XLAL_ERROR(XLAL_EINVAL);
+            break;
+
+
+        default:
+            XLALPrintError("Unsupported approximant\n");
+            XLAL_ERROR(XLAL_EINVAL);
     }
-    return rhoTlm;
+
+    return freq;
 }
-
-
-/**
- * Prepend a node to a linked list of SphHarmFrequencySeries, or create a new head
- */
-SphHarmFrequencySeries* XLALSphHarmFrequencySeriesAddMode(
-            SphHarmFrequencySeries *appended, /**< Linked list to be prepended */
-            const COMPLEX16FrequencySeries* inmode, /**< Time series of h_lm mode being prepended */
-            UINT4 l, /**< l index of h_lm mode being prepended */
-            INT4 m /**< m index of h_lm mode being prepended */
-            )
-{
-    SphHarmFrequencySeries* ts;
-
-	// Check if the node with this l, m already exists
-	ts = appended;
-	while( ts ){
-		if( l == ts->l && m == ts->m ){
-			break;
-		}
-		ts = ts->next;
-	}
-
-	if( ts ){
-		XLALDestroyCOMPLEX16FrequencySeries( ts->mode );
-		ts->mode = XLALCutCOMPLEX16FrequencySeries( inmode, 0, inmode->data->length);
-		return appended;
-	} else {
-    	ts = XLALMalloc( sizeof(SphHarmFrequencySeries) );
-	}
-
-    ts->l = l;
-    ts->m = m;
-	// Cut returns a new series using a slice of the original. I ask it to
-	// return a new one for the full data length --- essentially a duplication
-	if( inmode ){
-		ts->mode = XLALCutCOMPLEX16FrequencySeries( inmode, 0, inmode->data->length);
-	} else {
-		ts->mode = NULL;
-	}
-
-    if( appended ){
-        ts->next = appended;
-		ts->fdata = appended->fdata;
-    } else {
-        ts->next = NULL;
-		ts->fdata = NULL;
-    }
-
-    return ts;
-}
-
-/**
- * Set the tdata member for *all* nodes in the list.
- */
-void XLALSphHarmFrequencySeriesSetFData(
-            SphHarmFrequencySeries *ts, /**< Linked list to be prepended */
-            REAL8Sequence* fdata /**< series of frequency data*/
-            )
-{
-	while( ts ){
-		ts->fdata = fdata;
-		ts = ts->next;
-	}
-}
-
-/**
- * Get the fdata member.
- */
-REAL8Sequence* XLALSphHarmFrequencySeriesGetFData(
-            SphHarmFrequencySeries *ts /**< Get tdata from this list */
-            )
-{
-	if( ts ){
-		return ts->fdata;
-	}
-	return NULL;
-}
-
-/** Delete list from current pointer to the end of the list */
-void XLALDestroySphHarmFrequencySeries(
-            SphHarmFrequencySeries* ts /**< Head of linked list to destroy */
-            )
-{
-    SphHarmFrequencySeries* pop;
-    while( (pop = ts) ){
-		if( pop->mode ){
-        	XLALDestroyCOMPLEX16FrequencySeries( pop->mode );
-		}
-		// The fdata pointer is shared so we delete on the last node
-		if( pop->next == NULL && pop->fdata ){
-        	XLALDestroyREAL8Sequence( pop->fdata );
-		}
-        ts = pop->next;
-        XLALFree( pop );
-    }
-}
-
-/**
- * Get the time series of a waveform's (l,m) spherical harmonic mode from a
- * SphHarmFrequencySeries linked list. Returns a pointer to its COMPLEX16FrequencySeries
- */
-COMPLEX16FrequencySeries* XLALSphHarmFrequencySeriesGetMode(
-            SphHarmFrequencySeries *ts, /** linked list to extract mode from */
-            UINT4 l, /**< l index of h_lm mode to get */
-            INT4 m /**< m index of h_lm mode to get */
-            )
-{
-    if( !ts ) return NULL;
-
-    SphHarmFrequencySeries *itr = ts;
-    while( itr->l != l || itr->m != m ){
-        itr = itr->next;
-        if( !itr ) return NULL;
-    }
-    return itr->mode;
-}
-
-/**
- * Get the largest l index of any mode in the SphHarmFrequencySeries linked list
- */
-UINT4 XLALSphHarmFrequencySeriesGetMaxL( SphHarmFrequencySeries* ts ){
-    SphHarmFrequencySeries *itr = ts;
-	UINT4 maxl=0;
-
-    while( itr ){
-		maxl = itr->l > maxl ? itr->l : maxl;
-		itr = itr ->next;
-    }
-    return maxl;
-}
-
+    
 
 /**
  * Compute the polarizations from all the -2 spin-weighted spherical harmonic
  * modes stored in 'hlms'. Be sure that 'hlms' is the head of the linked list!
  *
  * The computation done is:
- * hp(t) - i hc(t) = \sum_l \sum_m h_lm(t) -2Y_lm(iota,psi)
+ * \f$hp(t) - i hc(t) = \sum_l \sum_m h_lm(t) -2Y_lm(iota,psi)\f$
  *
  * iota and psi are the inclination and polarization angle of the observer
  * relative to the source of GWs.
@@ -985,7 +730,7 @@ int XLALSimInspiralPNPolarizationWaveforms(
             /* case LAL_PNORDER_THREE_POINT_FIVE: */
             case 7:
                 XLALPrintError("XLAL Error - %s: Amp. corrections not known "
-                        "to PN order %s\n", __func__, ampO );
+                        "to PN order %d\n", __func__, ampO );
                 XLAL_ERROR(XLAL_EINVAL);
                 break;
             case -1: // Highest known PN order - move if higher terms added!
@@ -1846,8 +1591,7 @@ int XLALSimInspiralChooseWaveform(
     Approximant approximant                     /**< post-Newtonian approximant to use for waveform production */
     )
 {
-    XLALPrintDeprecationWarning("XLALSimInspiralChooseWaveform", 
-            "XLALSimInspiralChooseTDWaveform");
+    XLAL_PRINT_DEPRECATION_WARNING("XLALSimInspiralChooseTDWaveform");
 
     return XLALSimInspiralChooseTDWaveform(hplus, hcross, phiRef, deltaT, m1,
         m2, S1x, S1y, S1z, S2x, S2y, S2z, f_min, f_ref, r, i, lambda1, lambda2,
@@ -2121,7 +1865,7 @@ int XLALSimInspiralChooseTDWaveform(
                     phaseO, amplitudeO);
             break;
 
-        /* spinning inspiral-merger-ringdown models */
+        /* spin aligned inspiral-merger-ringdown models */
         case IMRPhenomB:
             /* Waveform-specific sanity checks */
             if( !XLALSimInspiralWaveformFlagsIsDefault(waveFlags) )
@@ -2469,6 +2213,34 @@ int XLALSimInspiralChooseFDWaveform(
             }
             break;
 
+        case IMRPhenomP:
+            /* Waveform-specific sanity checks */
+            if( !XLALSimInspiralFrameAxisIsDefault(
+                    XLALSimInspiralGetFrameAxis(waveFlags) ) ) /* Default is LAL_SIM_INSPIRAL_FRAME_AXIS_VIEW : z-axis along direction of GW propagation (line of sight). */
+                ABORT_NONDEFAULT_FRAME_AXIS(waveFlags);
+            if( !XLALSimInspiralModesChoiceIsDefault(          /* Default is (2,2) or l=2 modes. */
+                    XLALSimInspiralGetModesChoice(waveFlags) ) )
+                ABORT_NONDEFAULT_MODES_CHOICE(waveFlags);
+            if( !checkTidesZero(lambda1, lambda2) )
+                ABORT_NONZERO_TIDES(waveFlags);
+            LNhatx = sin(i);
+            LNhaty = 0.;
+            LNhatz = cos(i);
+            /* Tranform to model parameters */
+            REAL8 chi_eff, chip, eta, thetaJ, phiJ, alpha0;
+            XLALSimIMRPhenomPCalculateModelParameters(
+                &chi_eff, &chip, &eta, &thetaJ, &phiJ, &alpha0,
+                m1, m2, f_min,
+                LNhatx, LNhaty, LNhatz,
+                S1x, S1y, S1z,
+                S2x, S2y, S2z);
+            /* Call the waveform driver routine */
+            ret = XLALSimIMRPhenomP(hptilde, hctilde,
+              chi_eff, chip, eta, thetaJ, phiJ,
+              m1+m2, r, alpha0, phiRef, deltaF, f_min, f_max);
+            if (ret == XLAL_FAILURE) XLAL_ERROR(XLAL_EFUNC);
+            break;
+
         default:
             XLALPrintError("FD version of approximant not implemented in lalsimulation\n");
             XLAL_ERROR(XLAL_EINVAL);
@@ -2809,6 +2581,7 @@ int XLALSimInspiralImplementedFDApproximants(
         case IMRPhenomA:
         case IMRPhenomB:
         case IMRPhenomC:
+        case IMRPhenomP:
         //case TaylorR2F4:
         case TaylorF2:
         case SpinTaylorF2:
@@ -2911,6 +2684,10 @@ int XLALGetApproximantFromString(const CHAR *inString)
   else if ( strstr(inString, "IMRPhenomC" ) )
   {
     return IMRPhenomC;
+  }
+  else if ( strstr(inString, "IMRPhenomP" ) )
+  {
+    return IMRPhenomP;
   }
   else if ( strstr(inString, "IMRPhenomFA" ) )
   {
@@ -3063,6 +2840,8 @@ char* XLALGetStringFromApproximant(Approximant approximant)
       return strdup("IMRPhenomB");
     case IMRPhenomC:
       return strdup("IMRPhenomC");
+    case IMRPhenomP:
+      return strdup("IMRPhenomP");
     case IMRPhenomFA:
       return strdup("IMRPhenomFA");
     case IMRPhenomFB:
@@ -3290,4 +3069,57 @@ int XLALGetHigherModesFromString(const CHAR *inString)
     XLALPrintError(" Error: invalid value %s for mode choice\n",inString);
     return 0;
   }
+}
+
+int XLALSimInspiralGetSpinSupportFromApproximant(Approximant approx){
+
+  SpinSupport spin_support=LAL_SIM_INSPIRAL_NUMSPINSUPPORT;
+  switch (approx)
+  {
+    case SpinTaylor:
+    case SpinTaylorFrameless:
+    case SpinTaylorT4:
+    case SpinTaylorT2:
+    case PhenSpinTaylor:
+    case PhenSpinTaylorRD:
+    case SpinTaylorT3:
+    case IMRPhenomP:
+      spin_support=LAL_SIM_INSPIRAL_PRECESSINGSPIN;
+      break;
+    case SpinTaylorF2:
+    case FindChirpPTF:
+      spin_support=LAL_SIM_INSPIRAL_SINGLESPIN;
+      break;
+    case TaylorF2:
+    case TaylorF2RedSpin:
+    case TaylorF2RedSpinTidal:
+    case IMRPhenomB:
+    case IMRPhenomC:
+    case SEOBNRv1:
+    case TaylorR2F4:
+    case IMRPhenomFB:
+    case FindChirpSP:
+      spin_support=LAL_SIM_INSPIRAL_ALIGNEDSPIN;
+      break;
+    case TaylorEt:
+    case TaylorT1:
+    case TaylorT2:
+    case TaylorT3:
+    case TaylorT4:
+    case IMRPhenomA:
+    case EOBNRv2HM:
+    case EOBNRv2:
+    case EOBNR:
+    case EOB:
+    case IMRPhenomFA:
+    case GeneratePPN:
+      spin_support=LAL_SIM_INSPIRAL_SPINLESS;
+      break;
+    default:
+      XLALPrintError("Approximant not supported by lalsimuation TD/FD routines \n");
+      XLAL_ERROR(XLAL_EINVAL);
+    }
+
+    return spin_support;
+
 }

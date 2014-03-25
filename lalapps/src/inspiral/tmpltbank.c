@@ -254,7 +254,6 @@ int main ( int argc, char *argv[] )
   UINT4 cut, i, j, k;
   const LALUnit strainPerCount = {0,{0,0,0,0,0,1,-1},{0,0,0,0,0,0,0}};
   CHAR  fname[256];
-  LALUnitPair pair;
   REAL8 respRe, respIm;
   REAL8 shf;
   REAL8 inputLengthNS;
@@ -875,10 +874,9 @@ int main ( int argc, char *argv[] )
   bankIn.shf.deltaF = spec.deltaF;
   bankIn.shf.f0 = spec.f0;
   bankIn.shf.data = NULL;
-  pair.unitOne = &(spec.sampleUnits);
-  pair.unitTwo = &(resp.sampleUnits);
-  LAL_CALL( LALUnitMultiply( &status, &(bankIn.shf.sampleUnits), &pair ),
-      &status );
+  if (XLALUnitMultiply( &(bankIn.shf.sampleUnits), &(spec.sampleUnits), &(resp.sampleUnits) ) == NULL) {
+    return LAL_EXLAL;
+  }
   LAL_CALL( LALDCreateVector( &status, &(bankIn.shf.data), spec.data->length ),
       &status );
   memset( bankIn.shf.data->data, 0,

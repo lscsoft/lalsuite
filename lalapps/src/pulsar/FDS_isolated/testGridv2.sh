@@ -24,13 +24,9 @@ cmp_code="${builddir}lalapps_compareFstats"
 
 SFTdir="./testGridv2_sfts"
 
-if [ -n "${LALPULSAR_DATADIR}" ]; then
-    mfd_code="${mfd_code} -E ${LALPULSAR_DATADIR}"
-    cfs_code="${cfs_code} -E ${LALPULSAR_DATADIR}"
-    cfsv2_code="${cfsv2_code} -E ${LALPULSAR_DATADIR}"
-else
+if [ -z "${LAL_DATA_PATH}" ]; then
     echo
-    echo "Need environment-variable LALPULSAR_DATADIR to be set to"
+    echo "Need environment-variable LAL_DATA_PATH to be set to include"
     echo "your ephemeris-directory (e.g. /usr/local/share/lalpulsar)"
     echo "This might indicate an incomplete LAL+LALPULSAR installation"
     echo
@@ -183,7 +179,7 @@ outputv2_1="./Fstatv2_grid1.dat";
 outputv2_2="./Fstatv2_grid2.dat";
 outputv2_6="./Fstatv2_grid6.dat";
 
-cmdlinev2="$cfsv2_code $cfs_CL --TwoFthreshold=0 $extra_args";
+cmdlinev2="$cfsv2_code $cfs_CL --TwoFthreshold=0 --Dterms=16 $extra_args";
 
 ## ----- grid=0
 echo "CFSv2 using gridType=0:"

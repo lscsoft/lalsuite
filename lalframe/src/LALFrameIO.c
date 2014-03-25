@@ -17,6 +17,7 @@
 *  MA  02111-1307  USA
 */
 
+#include <config.h>
 #include <ctype.h>
 #include <math.h>
 #include <stdio.h>
@@ -33,6 +34,10 @@
 
 #include <lal/LALFrameU.h>
 #include <lal/LALFrameIO.h>
+
+#ifndef HAVE_LOCALTIME_R
+#define localtime_r(timep, result) memcpy((result), localtime(timep), sizeof(struct tm))
+#endif
 
 struct tagLALFrFile {
     LALFrameUFrFile *file;
@@ -366,7 +371,7 @@ static int XLALLocalTime(char site, int gpssec)
     setenv("TZ", zone, 1);
     tzset();
 
-    loc = *localtime(&tutc);
+    localtime_r(&tutc, &loc);
     tloc = XLALSecondsSinceUnixEpoch(&loc);
 
     if (orig) {

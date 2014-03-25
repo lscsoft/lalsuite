@@ -241,7 +241,7 @@ def generate_veto_cat_files(config, vetoDefFile, generateVetoes):
 	"--gps-end-time", end ])
   
   if generateVetoes:
-    print "Generating veto category xml files... this may take some time`..."
+    print "Generating veto category xml files... this may take some time..."
     make_external_call(genVetoCall)
 
 ##############################################################################
@@ -259,7 +259,7 @@ def convert_veto_cat_xml_to_txt(config, veto_cat_file, output_file):
   """
   
   if not (os.path.isfile(veto_cat_file) and os.access(veto_cat_file,os.R_OK) ):
-      print 'Veto file not found or unreadble, skipping %s'%(veto_cat_file)
+      print 'Veto file not found or unreadable, skipping %s'%(veto_cat_file)
       return False
 
   print "Converting veto-category xml file %s to txt file %s" \
@@ -464,8 +464,9 @@ def findSegmentsToAnalyze(config, ifo, veto_categories, generate_segments=True,\
   """
   generate segments for the given ifo
 
-  @param ifo         : name of the ifo
   @param config      : the configParser object with analysis details
+  @param ifo         : name of the ifo
+  @param veto_categories UNDOCUMENTED
   @param generate_segments: whether the segment files should be generated
   @param use_available_data: restrict segments to data which actually available
   @param data_quality_vetoes: generate the cat2,3,4 DQ veto segments
@@ -561,7 +562,7 @@ def slide_sanity(config, playOnly = False):
 def hipe_setup(hipeDir, config, ifos, logPath, injSeed=None, dataFind = False, \
     tmpltBank = False, playOnly = False, vetoCat = None, vetoFiles = None, \
     dax = False, tmpltbankCache = None, local_exec_dir = None, \
-    data_checkpoint = False):
+    data_checkpoint = False, static_pfn_cache=None, reuse_data=False):
   """
   run lalapps_inspiral_hipe and add job to dag
   hipeDir   = directory in which to run inspiral hipe
@@ -590,7 +591,7 @@ def hipe_setup(hipeDir, config, ifos, logPath, injSeed=None, dataFind = False, \
       hipeSections.extend(["geo-data", "tmpltbank", \
           "tmpltbank-1", "tmpltbank-2", "h1-tmpltbank", "h2-tmpltbank", \
           "l1-tmpltbank", "v1-tmpltbank", "g1-tmpltbank"])
-  elif vetoCat:
+  elif vetoCat > 1:
     hipeSections = ["condor", "pipeline", "input", "data", "datafind", \
         "ligo-data", "virgo-data", "geo-data", "calibration", "tmpltbank", \
         "inspiral", "veto-inspiral", "g1-inspiral", "h1-inspiral", \
@@ -642,20 +643,21 @@ def hipe_setup(hipeDir, config, ifos, logPath, injSeed=None, dataFind = False, \
     hipecp.set("tmpltbank","user-tag","")
 
   if vetoCat:
-    # set the old usertag in inspiral and inspinj, 
-    # so that we pick up the correct xml inputs
-    sections = ["inspiral"]
-    for section in ["inspiral","inspinj"]:
-      hipecp.set(section, "user-tag",usertag)
+    if vetoCat > 1:
+      # set the old usertag in inspiral and inspinj, 
+      # so that we pick up the correct xml inputs
+      sections = ["inspiral"]
+      for section in ["inspiral","inspinj"]:
+        hipecp.set(section, "user-tag",usertag)
 
-    # set the correct pipeline usertag
-    usertag += "_CAT_" + str(vetoCat) + "_VETO"
+      # set the correct pipeline usertag
+      usertag += "_CAT_" + str(vetoCat) + "_VETO"
 
-    for cat in range(2, vetoCat+1):
-      section = "coire-2-cat-" + str(cat)
-      if config.has_section(section):
-        for opt, arg in config.items(section):
-          hipecp.set("coire-2",opt,arg)
+      for cat in range(2, vetoCat+1):
+        section = "coire-2-cat-" + str(cat)
+        if config.has_section(section):
+          for opt, arg in config.items(section):
+            hipecp.set("coire-2",opt,arg)
 
     # add the veto files in the thinca section
     if hipecp.has_section("thinca-2"):
@@ -717,17 +719,22 @@ def hipe_setup(hipeDir, config, ifos, logPath, injSeed=None, dataFind = False, \
   os.chdir(hipeDir)
   iniFile = "inspiral_hipe_"
   iniFile += hipeDir 
-  if vetoCat: iniFile += "_cat" + str(vetoCat) + "_veto"
+  if vetoCat > 1:
+    iniFile += "_cat" + str(vetoCat) + "_veto"
   iniFile += ".ini"
 
   hipecp.write(file(iniFile,"w"))
 
   print "Running hipe in directory " + hipeDir
-  if dataFind or tmpltBank: print "Running datafind / template bank generation"
-  elif injSeed: print "Injection seed: " + injSeed
-  else: print "No injections, " + str(hipecp.get("input","num-slides")) + \
-      " time slides"
-  if vetoCat: print "Running the category " + str(vetoCat) + " vetoes"
+  if dataFind or tmpltBank:
+    print "Running datafind / template bank generation"
+  elif injSeed:
+    print "Injection seed: " + injSeed
+  else:
+    print "No injections, " + str(hipecp.get("input","num-slides")) + \
+          " time slides"
+  if vetoCat:
+    print "Running the category " + str(vetoCat) + " vetoes"
   print
 
   # work out the hipe call:
@@ -756,7 +763,7 @@ def hipe_setup(hipeDir, config, ifos, logPath, injSeed=None, dataFind = False, \
     if tmpltBank:
       for hipe_arg in ["template-bank","ringdown","write-script"]:
         hipeCommand = test_and_add_hipe_arg(hipeCommand,hipe_arg)
-  elif vetoCat:
+  elif vetoCat > 1:
     if config.has_option("hipe-arguments","ringdown"):
       hipe_args = ["coincidence", "ringdown","coire-coincidence",
         "summary-first-coinc-triggers","write-script"]
@@ -790,14 +797,14 @@ def hipe_setup(hipeDir, config, ifos, logPath, injSeed=None, dataFind = False, \
   make_external_call(hipeCommand)
 
   # link datafind
-  if not dataFind and not tmpltBank and not vetoCat:
+  if not dax and not dataFind and not tmpltBank and not vetoCat > 1:
     try:
       os.rmdir("cache")
       os.symlink("../datafind/cache", "cache")
     except: pass
 
   # symlink in the template banks needed by the inspiral jobs
-  if tmpltbankCache:
+  if not dax and tmpltbankCache:
     symlinkedCache = symlink_tmpltbank(tmpltbankCache, hipeDir)
 
   iniBase = iniFile.rstrip("ini")
@@ -811,12 +818,19 @@ def hipe_setup(hipeDir, config, ifos, logPath, injSeed=None, dataFind = False, \
   hipeJob = pipeline.CondorDAGManJob(hipeDag, hipeDir, hipeDax)
   hipeNode = pipeline.CondorDAGManNode(hipeJob)
 
+  # pass a static pfn cache if we are given one
+  if static_pfn_cache:
+    hipeNode.set_static_pfn_cache(static_pfn_cache)
+
+  # set the reuse data option
+  if reuse_data:
+    hipeNode.set_reduce_dax = reuse_data
+
   # grab the tmpltbank from hipecp file if provided in input section
   if hipecp.has_section("input") and \
       hipecp.has_option("input", "fixed-bank"):
     tmpltbankfile = hipecp.get("input", "fixed-bank")
-    hipeJob.add_pfn_cache(os.path.join( os.getcwd(), hipe_pfn_list_cache(
-      [tmpltbankfile] )))
+    hipeJob.add_pfn_cache(hipe_pfn_list_cache( [tmpltbankfile] ))
 
   # add the maxjob categories to the dagman node class
   # FIXME pegasus should handle this in the dax schema itself
@@ -1138,32 +1152,6 @@ def zeroSlidePlots(dag, plotDir, config, logPath, zerolagSuffix, slideSuffix,
     for thisDag in parentDags: 
       plotNode.add_parent(thisDag)
 
-  # second stage (require DQ) 
-  for cat in vetoCat:
-    vetoString = "_CAT_" + str(cat) + "_VETO"
-    plotcp = copy.deepcopy(config)
-    plotcp.add_section("plot-arguments")
-    plotcp.set("plot-arguments","plotinspiral","")
-    plotcp.set("plot-arguments","plotthinca","")
-    plotcp.set("plot-arguments","write-script","")
-    if zerolagSuffix == "PLAYGROUND" and slideSuffix == "FULL_DATA":
-      plotcp.set("plotthinca","zero-lag-playground","")
-    plotVetoNode = plot_setup(plotDir, plotcp, logPath, "second", \
-        "", zerolagSuffix + vetoString, slideSuffix + vetoString, \
-        slideSuffix + vetoString, cacheFile, "", \
-        tag=vetoString[1:], ifos=ifos, cat=cat)
-    if doDagCategories:
-      plotVetoNode.set_category('plotting')
-    dag.add_node(plotVetoNode)
-    if parentDags:
-      for thisDag in parentDags: 
-        plotVetoNode.add_parent(thisDag)
-    if vetoParentDags:
-      for thisDag in vetoParentDags:
-        plotVetoNode.add_parent(thisDag[cat])
-    if not doDagCategories:
-      plotVetoNode.add_parent(plotNode)
-
   return dag
 
 ##############################################################################
@@ -1203,36 +1191,6 @@ def injZeroSlidePlots(dag, plotDir, config, logPath, injectionSuffix,
   if parentDags:
     for thisDag in parentDags:
       injPlotNode.add_parent(thisDag)
-
-  # second stage
-  for cat in vetoCat:
-    vetoString = "_CAT_" + str(cat) + "_VETO"
-    plotcp = copy.deepcopy(config)
-    plotcp.add_section("plot-arguments")
-    plotcp.set("plot-arguments","plotinspinj","")
-    plotcp.set("plot-arguments","plotsnrchi","")
-    plotcp.set("plot-arguments","plotethinca","")
-    plotcp.set("plot-arguments","plotinspmissed","")
-    plotcp.set("plot-arguments","ploteffdistcut","")
-    plotcp.set("plot-arguments","write-script","")
-    injPlotVetoNode = plot_setup( plotDir, \
-        plotcp, logPath, "second", injectionSuffix + vetoString, \
-        zerolagSuffix + vetoString, slideSuffix + vetoString, \
-        injectionSuffix + vetoString, cacheFile, injectionSuffix, \
-        tag=vetoString[1:], ifos=ifos, cat=cat)
-    if doDagCategories:
-      injPlotVetoNode.set_category('plotting')
-    dag.add_node(injPlotVetoNode)
- 
-    if parentDags:
-      for thisDag in parentDags:
-        injPlotVetoNode.add_parent(thisDag)
-    if vetoParentDags:
-      for thisDag in vetoParentDags:
-        injPlotVetoNode.add_parent(thisDag)
-
-    if not doDagCategories:
-      injPlotVetoNode.add_parent(injPlotNode)
 
   return dag
 
@@ -1319,7 +1277,7 @@ def followup_setup(followupDir, config, opts, hipeDir):
   followupcp.set("hipe-cache", "science-run", "S5")
 
   for path in ["tmpltbank-path", "trigbank-path", "first-inspiral-path", \
-      "second-inspiral-path", "first-coinc-path", "second-coinc-path"]:
+       "first-coinc-path"]:
     followupcp.set("hipe-cache", path, "../" + hipeDir)
 
   # set the xml-glob
@@ -1554,8 +1512,8 @@ def omega_scan_setup(cp,ifos):
 ###############################################################################
 # This function will...
 
-def create_frame_pfn_file(ifos, gpsstart, gpsend):
-	namer = "frame-cache_"+str(gpsstart)+"-"+ \
+def create_frame_pfn_file(ifos, gpsstart, gpsend, server='internal_ldr_port'):
+	namer = "pegasus-pfn-cache-"+str(gpsstart)+"-"+ \
 		str(gpsend)
 	gwfname = namer+".pfn" # physical file location file
 	# Deletes the gwfname file if it exists prior to the execution of this
@@ -1570,8 +1528,10 @@ def create_frame_pfn_file(ifos, gpsstart, gpsend):
 	for v in ifos.keys():
 		# Calls a system command to create the file.
 		ldfcommand = "ligo_data_find --gps-start-time "+str(gpsstart)+ \
-		" --gps-end-time "+str(gpsend)+" --observatory "+v[0]+" --type "+ ifos[v] + \
-		" --url-type=file >> "+ gwfname
+		" --gps-end-time "+str(gpsend)+" --observatory "+v[0]+" --type "+ ifos[v]
+		if server != 'internal_ldr_port':
+			ldfcommand += " --server "+ server
+		ldfcommand +=" --url-type=file >> "+ gwfname
 		make_external_call(ldfcommand)
 
 	return gwfname
@@ -1619,7 +1579,7 @@ def get_data_options(cp,ifo_name):
     data_opts = 'ligo-data'
     try:
       type = cp.get('input','ligo-type')
-      if (type == 'RDS_R_L4') or ('RDS_C' in type) or ('DMT_C' in type) or ('LDAS_C' in type) or ('NINJA' in type) or ('ER_' in type) or ('T1200307_' in type) or ('T0900288_' in type):
+      if (type == 'RDS_R_L4') or ('RDS_C' in type) or ('DMT_C' in type) or ('LDAS_C' in type) or ('NINJA' in type) or ('ER_' in type) or ('T1200307_' in type) or ('T0900288_' in type) or ('ILIGO_GAUSSIAN' in type):
         type = ifo_name + '_' + type
       if ("DMT_ERHOFT" in type):
         if (ifo_name == 'L1'): type = ifo_name + '_' + type

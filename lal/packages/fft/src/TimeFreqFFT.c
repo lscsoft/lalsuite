@@ -459,7 +459,7 @@ LALTimeFreqRealFFT(
     )
 {
   INITSTATUS(status);
-  XLALPrintDeprecationWarning("LALTimeFreqRealFFT", "XLALREAL4TimeFreqFFT");
+  XLAL_PRINT_DEPRECATION_WARNING("XLALREAL4TimeFreqFFT");
 
   ASSERT( plan, status, TIMEFREQFFTH_ENULL, TIMEFREQFFTH_MSGENULL );
   ASSERT( freq, status, TIMEFREQFFTH_ENULL, TIMEFREQFFTH_MSGENULL );
@@ -490,7 +490,7 @@ LALFreqTimeRealFFT(
     )
 {
   INITSTATUS(status);
-  XLALPrintDeprecationWarning("LALFreqTimeRealFFT", "XLALREAL4FreqTimeFFT");
+  XLAL_PRINT_DEPRECATION_WARNING("XLALREAL4FreqTimeFFT");
   ATTATCHSTATUSPTR( status );
 
   ASSERT( plan, status, TIMEFREQFFTH_ENULL, TIMEFREQFFTH_MSGENULL );
@@ -609,11 +609,10 @@ LALREAL4AverageSpectrum (
   REAL4                *s;                /* work space for computing mean   */
   REAL4                *psdSeg = NULL;    /* storage for individual specta   */
   LALUnit               unit;
-  LALUnitPair           pair;
   /* RAT4                  negRootTwo = { -1, 1 }; */
 
   INITSTATUS(status);
-  XLALPrintDeprecationWarning("LALREAL4AverageSpectrum", "XLALREAL4AverageSpectrumWelch");
+  XLAL_PRINT_DEPRECATION_WARNING("XLALREAL4AverageSpectrumWelch");
   ATTATCHSTATUSPTR (status);
 
   /* check the input and output data pointers are non-null */
@@ -669,14 +668,12 @@ LALREAL4AverageSpectrum (
   fSeries->epoch = tSeries->epoch;
   fSeries->f0 = tSeries->f0;
   fSeries->deltaF = 1.0 / ( (REAL8) tLength * tSeries->deltaT );
-  pair.unitOne = &(tSeries->sampleUnits);
-  pair.unitTwo = &(tSeries->sampleUnits);
-  LALUnitMultiply( status->statusPtr, &unit, &pair );
-  CHECKSTATUSPTR( status );
-  pair.unitOne = &unit;
-  pair.unitTwo = &lalSecondUnit;
-  LALUnitMultiply( status->statusPtr, &(fSeries->sampleUnits), &pair );
-  CHECKSTATUSPTR( status );
+  if ( XLALUnitMultiply( &unit, &(tSeries->sampleUnits), &(tSeries->sampleUnits) ) == NULL ) {
+    ABORTXLAL(status);
+  }
+  if ( XLALUnitMultiply( &(fSeries->sampleUnits), &unit, &lalSecondUnit ) == NULL ) {
+    ABORTXLAL(status);
+  }
 
   /* if this is a unit spectrum, just set the conents to unity and return */
   if ( params->method == useUnity )
@@ -834,11 +831,10 @@ LALCOMPLEX8AverageSpectrum (
   REAL4                 psdNorm = 0;      /* factor to multiply windows data */
   REAL4                 fftRe0, fftIm0, fftRe1, fftIm1;
   LALUnit               unit;
-  LALUnitPair           pair;
   /* RAT4                  negRootTwo = { -1, 1 }; */
 
   INITSTATUS(status);
-  XLALPrintDeprecationWarning("LALCOMPLEX8AverageSpectrum", "XLALREAL8AverageSpectrumWelch");
+  XLAL_PRINT_DEPRECATION_WARNING("XLALREAL8AverageSpectrumWelch");
   ATTATCHSTATUSPTR (status);
 
   /* check the input and output data pointers are non-null */
@@ -900,14 +896,12 @@ LALCOMPLEX8AverageSpectrum (
   fSeries->epoch = tSeries0->epoch;
   fSeries->f0 = tSeries0->f0;
   fSeries->deltaF = 1.0 / ( (REAL8) tLength * tSeries0->deltaT );
-  pair.unitOne = &(tSeries0->sampleUnits);
-  pair.unitTwo = &(tSeries0->sampleUnits);
-  LALUnitMultiply( status->statusPtr, &unit, &pair );
-  CHECKSTATUSPTR( status );
-  pair.unitOne = &unit;
-  pair.unitTwo = &lalSecondUnit;
-  LALUnitMultiply( status->statusPtr, &(fSeries->sampleUnits), &pair );
-  CHECKSTATUSPTR( status );
+  if ( XLALUnitMultiply( &unit, &(tSeries0->sampleUnits), &(tSeries0->sampleUnits) ) == NULL ) {
+    ABORTXLAL(status);
+  }
+  if ( XLALUnitMultiply( &(fSeries->sampleUnits), &unit, &lalSecondUnit ) == NULL ) {
+    ABORTXLAL(status);
+  }
 
   /* create temporary storage for the dummy time domain segment */
   for (l = 0; l < 2; l ++){
@@ -996,7 +990,7 @@ LALTimeFreqComplexFFT(
     )
 {
   INITSTATUS(status);
-  XLALPrintDeprecationWarning("LALTimeFreqComplexFFT", "XLALCOMPLEX8TimeFreqFFT");
+  XLAL_PRINT_DEPRECATION_WARNING("XLALCOMPLEX8TimeFreqFFT");
 
   ASSERT( plan, status, TIMEFREQFFTH_ENULL, TIMEFREQFFTH_MSGENULL );
   ASSERT( freq, status, TIMEFREQFFTH_ENULL, TIMEFREQFFTH_MSGENULL );
@@ -1026,7 +1020,7 @@ LALFreqTimeComplexFFT(
     )
 {
   INITSTATUS(status);
-  XLALPrintDeprecationWarning("LALFreqTimeComplexFFT", "XLALCOMPLEX8FreqTimeFFT");
+  XLAL_PRINT_DEPRECATION_WARNING("XLALCOMPLEX8FreqTimeFFT");
 
   ASSERT( plan, status, TIMEFREQFFTH_ENULL, TIMEFREQFFTH_MSGENULL );
   ASSERT( time, status, TIMEFREQFFTH_ENULL, TIMEFREQFFTH_MSGENULL );

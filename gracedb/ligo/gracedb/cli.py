@@ -20,10 +20,13 @@ import os, sys, shutil, urllib
 import json
 from ligo.gracedb.rest import GraceDb
 
+
 DEFAULT_SERVICE_URL = "https://gracedb.ligo.org/gracedb/api"
 
-GIT_TAG = 'gracedb-1.13-1'
+GIT_TAG = 'gracedb-1.14-1'
 
+DEFAULT_COLUMNS = "graceid,labels,group,analysisType,far,gpstime,created,dataurl"
+ 
 #-----------------------------------------------------------------
 # Util routines
 
@@ -38,6 +41,16 @@ def warning(*message):
 def output(*message):
     message = "".join(message) + "\n"
     sys.stdout.write(message)
+
+def defaultAccess(e,a):
+    if a.find('.') < 0:
+        return str(e.get(a,""))
+    rv = e
+    attrs = a.split('.')
+    while attrs and rv:
+        rv = rv.get(attrs[0],"")
+        attrs = attrs[1:]
+    return str(rv)
 
 #-----------------------------------------------------------------
 # HTTP upload encoding
@@ -197,11 +210,11 @@ Longer strings will be truncated.""" % {
 
     op.add_option("-c", "--columns", dest="columns",
                   help="Comma separated list of event attributes to include in results (only meaningful in search)",
-                  default=None
+                  default=DEFAULT_COLUMNS
                  )
 
     op.add_option("-l", "--ligolw", dest="ligolw",
-                  help="Download ligolw file of combined search results (not meaningful outside of search)",
+                  help="Download ligolw file of combined search results (not meaningful outside of search). NOTE: Produces an ERROR if any of the events returned by the search do not have coinc.xml files.",
                   action="store_true", default=False
                  )
     op.add_option("-t", "--tag-name", dest="tagName",
@@ -214,6 +227,18 @@ Longer strings will be truncated.""" % {
                  )
 
     options, args = op.parse_args()
+
+    try:
+        from glue.ligolw import ligolw
+        from glue.ligolw import lsctables
+        from glue.ligolw import utils
+        from glue.ligolw.utils import ligolw_add
+    except:
+        if options.ligolw:
+            error("ligolw modules not found")
+            exit(1)
+        else:
+            pass
 
     proxy = options.proxy or os.environ.get('HTTP_PROXY', None)
     service = options.service or \
@@ -322,42 +347,44 @@ Longer strings will be truncated.""" % {
         response = client.writeLabel(graceid, label)
     elif args[0] == 'search':
         query = " ".join(args[1:])
+        
         columns = options.columns
-        headers = {'connection' : 'keep-alive'}
-        if options.ligolw:
-            headers['Accept'] = 'application/xml'
-        else:
-            headers['Accept'] = 'text/tab-separated-values'
+        columns = columns.replace('DEFAULTS',DEFAULT_COLUMNS)
+        columns = columns.split(',')
 
-        # NOTE: count will be limited to 1000 on the server side (if ligolw)
         count = None # XXX Let's just get rid of this?
         orderby = None # XXX Should we implement this?
 
-        uri = client.links['events']
-        qdict = {}
-        if query:   qdict['query'] = query
-        if count:   qdict['count'] = count
-        if orderby: qdict['orderby'] = orderby
-        if columns: qdict['columns'] = columns 
-        if qdict:
-            uri += "?" + urllib.urlencode(qdict)
+        events = client.events(query, orderby, count, columns)
 
-        try:
-            response = client.get(uri,headers=headers)
-            status = response.status
-            rv = response.read()
-            if status >= 400:
-                exitCode=1
-                error(rv)
-                exit(1)
-            # This probably came from apache, so 
-            if "Authorization Required" in rv:
-                error('Credentials not accepted') 
-                exit(1)
-        except Exception, e:
-            error("client send exception: " + str(e))
-            exit(1)
-        print(rv)
+        if options.ligolw:
+            xmldoc = ligolw.Document()
+            for e in events:
+                graceid = e['graceid']
+                try:
+                    r = client.files(graceid, "coinc.xml")
+                    utils.load_fileobj(r, xmldoc = xmldoc)
+                except:
+                    error("Missing coinc.xml for %s. Cannot build ligolw output." % graceid)
+                    exit(1)
+            ligolw_add.reassign_ids(xmldoc)
+            ligolw_add.merge_ligolws(xmldoc)
+            ligolw_add.merge_compatible_tables(xmldoc)
+            xmldoc.write()
+        else:
+            accessFun = {
+                "labels" : lambda e: \
+                    ",".join(e['labels'].keys()),
+                "dataurl" : lambda e: e['links']['files'],
+            }
+
+            header = "#" + "\t".join(columns)
+            output(header)
+            for e in events:
+                row = [ accessFun.get(column, lambda e: defaultAccess(e,column))(e) for column in columns ]
+                row = "\t".join(row)
+                output(row)
+        
         return 0
     elif args[0] == 'replace':
         if len(args) != 3:
@@ -451,9 +478,4 @@ Longer strings will be truncated.""" % {
 
 if __name__ == "__main__":
     code = main()
-#    try:
-#        code = main()
-#    except Exception, e:
-#        error(str(e))
-#        sys.exit(1)
     sys.exit(code)

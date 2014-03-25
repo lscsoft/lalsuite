@@ -121,7 +121,7 @@ LALDPolynomialInterpolation (
 {
   INITSTATUS(status);
 
-  XLALPrintDeprecationWarning("LALDPolynomialInterpolation", "XLALDPolynomialInterpolation");
+  XLAL_PRINT_DEPRECATION_WARNING("XLALDPolynomialInterpolation");
 
   ASSERT (output, status, INTERPOLATEH_ENULL, INTERPOLATEH_MSGENULL);
   ASSERT (params, status, INTERPOLATEH_ENULL, INTERPOLATEH_MSGENULL);

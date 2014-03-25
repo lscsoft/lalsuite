@@ -8,12 +8,11 @@ $(ACLOCAL_M4): $(am__aclocal_m4_deps)
 
 EXTRA_DIST = \
 	COPYING \
-	lalinference.pc.in \
-	lalinference.spec.in \
 	lalinference.spec \
-	aclocal.m4
+	$(DATA)
 
 SUBDIRS = \
+	bin \
 	gnuscripts \
 	debian \
 	include \
@@ -24,6 +23,8 @@ SUBDIRS = \
 
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = lalinference.pc
+noinst_DATA = lalinference-uninstalled.pc
+BUILT_SOURCES = lalinference-uninstalled.pc
 
 DISTCLEANFILES = config.lt
 

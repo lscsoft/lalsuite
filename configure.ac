@@ -1,23 +1,18 @@
 AC_PREREQ([2.63])
-AC_INIT([lalsuite],[6.20.1],[lal-discuss@ligo.org])
+AC_INIT([LALSuite],[6.23.1],[lal-discuss@ligo.org])
 AC_CONFIG_SRCDIR([configure.ac])
 AC_CONFIG_AUX_DIR([gnuscripts])
 AC_CONFIG_MACRO_DIR([gnuscripts])
-AC_CONFIG_FILES([
-  Makefile \
-  gnuscripts/Makefile \
-  doxygen/Makefile \
-  doxygen/src/Makefile
-])
-AM_INIT_AUTOMAKE([1.11 foreign color-tests parallel-tests])
+AC_PREFIX_DEFAULT(["`pwd`/_inst"])
+AC_CONFIG_FILES([Makefile])
+AM_INIT_AUTOMAKE([1.11 foreign subdir-objects color-tests parallel-tests])
 
 LALSUITE_DISTCHECK_CONFIGURE_FLAGS
 
-# for building doxygen
-LALSUITE_CHECK_GIT_REPO
-AC_PROG_LN_S
-
+# provide LAL library enable/disable options
 LALSUITE_ENABLE_ALL_LAL
+doxygen=true
+lal=true
 LALSUITE_ENABLE_LALFRAME
 LALSUITE_ENABLE_LALMETAIO
 LALSUITE_ENABLE_LALXML
@@ -30,137 +25,67 @@ LALSUITE_ENABLE_LALPULSAR
 LALSUITE_ENABLE_LALINFERENCE
 LALSUITE_ENABLE_LALAPPS
 
-lalsuite_top_builddir='$(top_builddir)/..'
-lalsuite_top_srcdir='$(top_srcdir)/..'
+# determine subdirectories to configure/build
+AC_DEFUN([lalsuite_config_subdir],[
+  m4_pushdef([lowercase],m4_translit([[$1]], [A-Z], [a-z]))
+  m4_pushdef([uppercase],m4_translit([[$1]], [a-z], [A-Z]))
 
-LALSUITE_BUILD="true"
-LALSUITE_SUBDIRS="`echo ${ac_subdirs_all}`"
-export LALSUITE_BUILD LALSUITE_SUBDIRS
+  # if $1 is enabled
+  AS_IF([test "x${lowercase}" = xtrue],[
 
-LAL_LIBS="-L${libdir} ${lalsuite_top_builddir}/lal/lib/lal/liblal.la"
-LAL_CFLAGS="-I${lalsuite_top_builddir}/lal/include"
-LAL_DATADIR="${lalsuite_top_srcdir}/lal/test"
-export LAL_LIBS LAL_CFLAGS LAL_DATADIR
+    # add $1 build directory to PKG_CONFIG_PATH
+    LALSUITE_ADD_PATH(PKG_CONFIG_PATH,"`pwd`/lowercase")
+    export PKG_CONFIG_PATH
 
-LALSUPPORT_LIBS="-L${libdir} ${lalsuite_top_builddir}/lal/lib/lalsupport/src/liblalsupport.la"
-LALSUPPORT_CFLAGS="-I${lalsuite_top_builddir}/lal/include"
-export LALSUPPORT_LIBS LALSUPPORT_CFLAGS
+    # configure $1
+    AC_CONFIG_SUBDIRS(lowercase)
 
-if test "$lalframe" = "true"; then
-  LALFRAME_LIBS="-L${libdir} ${lalsuite_top_builddir}/lalframe/src/liblalframe.la"
-  LALFRAME_CFLAGS="-I${lalsuite_top_builddir}/lalframe/include"
-  LALFRAME_DATADIR="${lalsuite_top_srcdir}/lalframe/test"
-  export LALFRAME_LIBS LALFRAME_CFLAGS LALFRAME_DATADIR
-fi
+    # set enable/disable string
+    uppercase[]_ENABLE_VAL=ENABLED
+  ],[
+    uppercase[]_ENABLE_VAL=DISABLED
+  ])
 
-if test "$lalmetaio" = "true"; then
-  LALMETAIO_LIBS="-L${libdir} ${lalsuite_top_builddir}/lalmetaio/src/liblalmetaio.la"
-  LALMETAIO_CFLAGS="-I${lalsuite_top_builddir}/lalmetaio/include"
-  LALMETAIO_DATADIR="${lalsuite_top_srcdir}/lalmetaio/test"
-  export LALMETAIO_LIBS LALMETAIO_CFLAGS LALMETAIO_DATADIR
-fi
-
-if test "$lalxml" = "true"; then
-  LALXML_LIBS="-L${libdir} ${lalsuite_top_builddir}/lalxml/src/liblalxml.la"
-  LALXML_CFLAGS="-I${lalsuite_top_builddir}/lalxml/include"
-  LALXML_DATADIR="${lalsuite_top_srcdir}/lalxml/test"
-  export LALXML_LIBS LALXML_CFLAGS LALXML_DATADIR
-fi
-
-if test "$lalsimulation" = "true"; then
-  LALSIMULATION_LIBS="-L${libdir} ${lalsuite_top_builddir}/lalsimulation/src/liblalsimulation.la"
-  LALSIMULATION_CFLAGS="-I${lalsuite_top_builddir}/lalsimulation/include"
-  LALSIMULATION_DATADIR="${lalsuite_top_srcdir}/lalsimulation/test"
-  export LALSIMULATION_LIBS LALSIMULATION_CFLAGS LALSIMULATION_DATADIR
-fi
-
-if test "$lalburst" = "true"; then
-  LALBURST_LIBS="-L${libdir} ${lalsuite_top_builddir}/lalburst/src/liblalburst.la"
-  LALBURST_CFLAGS="-I${lalsuite_top_builddir}/lalburst/include"
-  LALBURST_DATADIR="${lalsuite_top_srcdir}/lalburst/test"
-  export LALBURST_LIBS LALBURST_CFLAGS LALBURST_DATADIR
-fi
-
-if test "$laldetchar" = "true"; then
-  LALDETCHAR_LIBS="-L${libdir} ${lalsuite_top_builddir}/laldetchar/src/liblaldetchar.la"
-  LALDETCHAR_CFLAGS="-I${lalsuite_top_builddir}/laldetchar/include"
-  LALDETCHAR_DATADIR="${lalsuite_top_srcdir}/laldetchar/test"
-  export LALDETCHAR_LIBS LALDETCHAR_CFLAGS LALDETCHAR_DATADIR
-fi
-
-if test "$lalinspiral" = "true"; then
-  LALINSPIRAL_LIBS="-L${libdir} ${lalsuite_top_builddir}/lalinspiral/src/liblalinspiral.la"
-  LALINSPIRAL_CFLAGS="-I${lalsuite_top_builddir}/lalinspiral/include"
-  LALINSPIRAL_DATADIR="${lalsuite_top_srcdir}/lalinspiral/test"
-  export LALINSPIRAL_LIBS LALINSPIRAL_CFLAGS LALINSPIRAL_DATADIR
-fi
-
-if test "$lalstochastic" = "true"; then
-  LALSTOCHASTIC_LIBS="-L${libdir} ${lalsuite_top_builddir}/lalstochastic/src/liblalstochastic.la"
-  LALSTOCHASTIC_CFLAGS="-I${lalsuite_top_builddir}/lalstochastic/include"
-  LALSTOCHASTIC_DATADIR="${lalsuite_top_srcdir}/lalstochastic/test"
-  export LALSTOCHASTIC_LIBS LALSTOCHASTIC_CFLAGS LALSTOCHASTIC_DATADIR
-fi
-
-if test "$lalpulsar" = "true"; then
-  LALPULSAR_LIBS="-L${libdir} ${lalsuite_top_builddir}/lalpulsar/src/liblalpulsar.la"
-  LALPULSAR_CFLAGS="-I${lalsuite_top_builddir}/lalpulsar/include"
-  LALPULSAR_DATADIR="${lalsuite_top_srcdir}/lalpulsar/test"
-  export LALPULSAR_LIBS LALPULSAR_CFLAGS LALPULSAR_DATADIR
-fi
-
-if test "$lalinference" = "true"; then
-  LALINFERENCE_LIBS="-L${libdir} ${lalsuite_top_builddir}/lalinference/src/liblalinference.la"
-  LALINFERENCE_CFLAGS="-I${lalsuite_top_builddir}/lalinference/include"
-  LALINFERENCE_DATADIR="${lalsuite_top_srcdir}/lalinference/test"
-  export LALINFERENCE_LIBS LALINFERENCE_CFLAGS LALINFERENCE_DATADIR
-fi
-
-AC_CONFIG_SUBDIRS([lal])
-
-if test "$lalframe" = "true"; then
-  AC_CONFIG_SUBDIRS([lalframe])
-fi
-
-if test "$lalmetaio" = "true"; then
-  AC_CONFIG_SUBDIRS([lalmetaio])
-fi
-
-if test "$lalxml" = "true"; then
-  AC_CONFIG_SUBDIRS([lalxml])
-fi
-
-if test "$lalsimulation" = "true"; then
-  AC_CONFIG_SUBDIRS([lalsimulation])
-fi
-
-if test "$lalburst" = "true"; then
-  AC_CONFIG_SUBDIRS([lalburst])
-fi
-
-if test "$laldetchar" = "true"; then
-  AC_CONFIG_SUBDIRS([laldetchar])
-fi
-
-if test "$lalinspiral" = "true"; then
-  AC_CONFIG_SUBDIRS([lalinspiral])
-fi
-
-if test "$lalstochastic" = "true"; then
-  AC_CONFIG_SUBDIRS([lalstochastic])
-fi
-
-if test "$lalpulsar" = "true"; then
-  AC_CONFIG_SUBDIRS([lalpulsar])
-fi
-
-if test "$lalinference" = "true"; then
-  AC_CONFIG_SUBDIRS([lalinference])
-fi
-
-if test "$lalapps" = "true"; then
-  AC_CONFIG_SUBDIRS([lalapps])
-fi
+  m4_popdef([lowercase])
+  m4_popdef([uppercase])
+])
+lalsuite_config_subdir([doxygen])
+lalsuite_config_subdir([lal])
+lalsuite_config_subdir([lalframe])
+lalsuite_config_subdir([lalmetaio])
+lalsuite_config_subdir([lalxml])
+lalsuite_config_subdir([lalsimulation])
+lalsuite_config_subdir([lalburst])
+lalsuite_config_subdir([laldetchar])
+lalsuite_config_subdir([lalinspiral])
+lalsuite_config_subdir([lalstochastic])
+lalsuite_config_subdir([lalpulsar])
+lalsuite_config_subdir([lalinference])
+lalsuite_config_subdir([lalapps])
 
 AC_SUBST([ac_configure_args])
 AC_OUTPUT
+AC_MSG_NOTICE([
+==================================================
+LALSuite has now been successfully configured:
+
+* LALFrame library support is $LALFRAME_ENABLE_VAL
+* LALMetaIO library support is $LALMETAIO_ENABLE_VAL
+* LALXML library support is $LALXML_ENABLE_VAL
+* LALSimulation library support is $LALSIMULATION_ENABLE_VAL
+* LALBurst library support is $LALBURST_ENABLE_VAL
+* LALDetChar library support is $LALDETCHAR_ENABLE_VAL
+* LALInspiral library support is $LALINSPIRAL_ENABLE_VAL
+* LALStochastic library support is $LALSTOCHASTIC_ENABLE_VAL
+* LALPulsar library support is $LALPULSAR_ENABLE_VAL
+* LALInference library support is $LALINFERENCE_ENABLE_VAL
+* LALApps library support is $LALAPPS_ENABLE_VAL
+
+and will be installed under the directory:
+
+${prefix}
+
+Now run 'make' to build LALSuite,
+and run 'make install' to install LALSuite.
+==================================================
+])

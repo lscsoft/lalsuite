@@ -471,6 +471,13 @@ void XLALDetCharTrigsToVetoList( LALSegList* vetoes, LALGSequence* trig_sequence
  * function given the expected number of triggers.
  */
 double XLALDetCharHvetoSignificance( double mu, int k ){
+	if( mu < 0 ){
+		XLALPrintError( "%s(): attempt to calculate significance with a negative mu (%f)", __func__, mu );
+	}
+	if( k < 0 ){
+		XLALPrintWarning( "%s(): attempt to calculate significance with a negative k (%d)", __func__, k );
+	}
+
 	double sig = gsl_sf_gamma_inc_P(k, mu);
 	if( sig != 0.0 ){
 		return -log10(sig);

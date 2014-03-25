@@ -54,7 +54,7 @@ LALInspiralPhiofVIntegrand (
    void       *params
    )
 {
-  XLALPrintDeprecationWarning("LALInspiralPhiofVIntegrand", "XLALInspiralPhiofVIntegrand");
+  XLAL_PRINT_DEPRECATION_WARNING("XLALInspiralPhiofVIntegrand");
 
   INITSTATUS(status);
   ATTATCHSTATUSPTR(status);

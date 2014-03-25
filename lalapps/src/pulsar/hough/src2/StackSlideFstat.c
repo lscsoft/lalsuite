@@ -196,7 +196,7 @@ void StackSlideVecF(LALStatus *status,			/**< pointer to LALStatus structure */
 
   /* The input parameter space point */
   inputPoint.refTime = refTimeGPS;
-  inputPoint.orbit = NULL;
+  inputPoint.asini = 0 /* isolated pulsar */;
   INIT_MEM ( inputPoint.fkdot );
   inputPoint.fkdot[0] = fmid;
   inputPoint.fkdot[1] = fdot;
@@ -205,12 +205,12 @@ void StackSlideVecF(LALStatus *status,			/**< pointer to LALStatus structure */
 
   /* Values for output parameter space point that do not change */  
   outputPoint.refTime = refTimeGPS;
-  outputPoint.orbit = NULL;
+  outputPoint.asini = 0 /* isolated pulsar */;
   INIT_MEM ( outputPoint.fkdot );
 
   /* uncertainties in the output parameter space point */
   outputPointUnc.refTime = refTimeGPS;
-  outputPointUnc.orbit = NULL;
+  outputPointUnc.asini = 0 /* isolated pulsar */;
   INIT_MEM ( outputPointUnc.fkdot );
   outputPointUnc.fkdot[0] = deltaF;
   outputPointUnc.fkdot[1] = dfdot;

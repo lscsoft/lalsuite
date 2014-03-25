@@ -45,6 +45,9 @@
 #define LAL_ST5_ABSOLUTE_TOLERANCE 1.e-12
 #define LAL_ST5_RELATIVE_TOLERANCE 1.e-12
 
+/* terminate the ODE integration at or below this value of the PN parameter */
+#define PN_V_MAX 0.6 
+
 /**
  * Structure containing the non-dynamical coefficients needed
  * to evolve a spinning, precessing binary and produce a waveform.
@@ -64,24 +67,24 @@ typedef struct SpinTaylorT5StructParams {
     double mSqr;
     double etaSqr;
     double deltaEta;
-	double dEbF0nonSpin;
-	double dEbF1nonSpin;
-	double dEbF2nonSpin;
-	double dEbF3nonSpin;
-	double dEbF4nonSpin;
-	double dEbF5nonSpin;
-	double dEbF6nonSpin;
+	double dEbF0NonSpin;
+	double dEbF1NonSpin;
+	double dEbF2NonSpin;
+	double dEbF3NonSpin;
+	double dEbF4NonSpin;
+	double dEbF5NonSpin;
+	double dEbF6NonSpin;
 	double dEbF6LogNonSpin;
-	double dEbF7nonSpin;
-	double phiOrb0nonSpin;
-    double phiOrb1nonSpin;
-    double phiOrb2nonSpin;
-	double phiOrb3nonSpin;
-	double phiOrb4nonSpin;
-	double phiOrb5nonSpin;
-	double phiOrb6nonSpin;
-	double phiOrb6LognonSpin;
-    double phiOrb7nonSpin;
+	double dEbF7NonSpin;
+	double phiOrb0NonSpin;
+    double phiOrb1NonSpin;
+    double phiOrb2NonSpin;
+	double phiOrb3NonSpin;
+	double phiOrb4NonSpin;
+	double phiOrb5LogNonSpin;
+	double phiOrb6NonSpin;
+	double phiOrb6LogNonSpin;
+    double phiOrb7NonSpin;
     double v0;
     double vMax;
 	double phiRef; 
@@ -196,37 +199,11 @@ int XLALSimInspiralSpinTaylorT5 (
         return XLAL_FAILURE; 
 	}
 		
-    /* Estimate length of waveform using Newtonian chirp time formula. */
-	UINT4 dataLength = pow(2, ceil(log2(5*mParams->totalMass/(256.*pow(mParams->v0,8.)*mParams->eta)/deltaT)));
+    /* Estimate length of waveform using Newtonian chirp time formula. give 10% extra time */
+	UINT4 dataLength = pow(2, ceil(log2(1.1*5*mParams->totalMass/(256.*pow(mParams->v0,8.)*mParams->eta)/deltaT)));
 
 	/* Adjust tStart so last sample is at time=0 */
     XLALGPSAdd(&tStart, -1.0*(dataLength-1)*deltaT);
-
-	/* allocate memory for vectors storing the PN parameter, orbital phase
-	and the unit vector along the Newtonian orbital angular momentum  */
-    V = XLALCreateREAL8TimeSeries( "PN Parameter", &tStart, 0.0, deltaT, &lalStrainUnit, dataLength);
-    orbPhase = XLALCreateREAL8TimeSeries( "Orbital Phase", &tStart, 0.0, deltaT, &lalStrainUnit, dataLength);
-    LNhxVec = XLALCreateREAL8TimeSeries( "Unit vec along Newt. ang. mom (X comp)", &tStart, 0., deltaT, &lalStrainUnit, dataLength);
-    LNhyVec = XLALCreateREAL8TimeSeries( "Unit vec along Newt. ang. mom (Y comp)", &tStart, 0., deltaT, &lalStrainUnit, dataLength);
-    LNhzVec = XLALCreateREAL8TimeSeries( "Unit vec along Newt. ang. mom (Z comp)", &tStart, 0., deltaT, &lalStrainUnit, dataLength);
-    S1xVec = XLALCreateREAL8TimeSeries( "Spin ang mom of body 1 (X comp)", &tStart, 0., deltaT, &lalStrainUnit, dataLength);
-    S1yVec = XLALCreateREAL8TimeSeries( "Spin ang mom of body 1 (Y comp)", &tStart, 0., deltaT, &lalStrainUnit, dataLength);
-    S1zVec = XLALCreateREAL8TimeSeries( "Spin ang mom of body 1 (Z comp)", &tStart, 0., deltaT, &lalStrainUnit, dataLength);
-    S2xVec = XLALCreateREAL8TimeSeries( "Spin ang mom of body 2 (X comp)", &tStart, 0., deltaT, &lalStrainUnit, dataLength);
-    S2yVec = XLALCreateREAL8TimeSeries( "Spin ang mom of body 2 (Y comp)", &tStart, 0., deltaT, &lalStrainUnit, dataLength);
-    S2zVec = XLALCreateREAL8TimeSeries( "Spin ang mom of body 2 (Z comp)", &tStart, 0., deltaT, &lalStrainUnit, dataLength);
-
-	memset(V->data->data, 0, dataLength*sizeof(REAL8));
-	memset(orbPhase->data->data, 0, dataLength*sizeof(REAL8));
-	memset(LNhxVec->data->data, 0, dataLength*sizeof(REAL8));
-	memset(LNhyVec->data->data, 0, dataLength*sizeof(REAL8));
-	memset(LNhzVec->data->data, 0, dataLength*sizeof(REAL8));
-	memset(S1xVec->data->data, 0, dataLength*sizeof(REAL8));
-	memset(S1yVec->data->data, 0, dataLength*sizeof(REAL8));
-	memset(S1zVec->data->data, 0, dataLength*sizeof(REAL8));
-	memset(S2xVec->data->data, 0, dataLength*sizeof(REAL8));
-	memset(S2yVec->data->data, 0, dataLength*sizeof(REAL8));
-	memset(S2zVec->data->data, 0, dataLength*sizeof(REAL8));
 
     /* binary parameters in a coordinate system whose z axis is along the initial 
     orbital angular momentum  */
@@ -314,6 +291,32 @@ int XLALSimInspiralSpinTaylorT5 (
 				__func__, intStatus, m1/LAL_MSUN_SI, m2/LAL_MSUN_SI, S1[0], S1[1], S1[2], S2[0], 
 				S2[1], S2[2], LNh[0], LNh[1], LNh[2]);
     }
+
+	/* allocate memory for vectors storing the PN parameter, orbital phase
+	and the unit vector along the Newtonian orbital angular momentum  */
+    V = XLALCreateREAL8TimeSeries( "PN Parameter", &tStart, 0.0, deltaT, &lalStrainUnit, lenReturn);
+    orbPhase = XLALCreateREAL8TimeSeries( "Orbital Phase", &tStart, 0.0, deltaT, &lalStrainUnit, lenReturn);
+    LNhxVec = XLALCreateREAL8TimeSeries( "Uvec along Newt ang mom (X comp)", &tStart, 0., deltaT, &lalStrainUnit, lenReturn);
+    LNhyVec = XLALCreateREAL8TimeSeries( "Uvec along Newt ang mom (Y comp)", &tStart, 0., deltaT, &lalStrainUnit, lenReturn);
+    LNhzVec = XLALCreateREAL8TimeSeries( "Uvec along Newt ang mom (Z comp)", &tStart, 0., deltaT, &lalStrainUnit, lenReturn);
+    S1xVec = XLALCreateREAL8TimeSeries( "Spin ang mom of body 1 (X comp)", &tStart, 0., deltaT, &lalStrainUnit, lenReturn);
+    S1yVec = XLALCreateREAL8TimeSeries( "Spin ang mom of body 1 (Y comp)", &tStart, 0., deltaT, &lalStrainUnit, lenReturn);
+    S1zVec = XLALCreateREAL8TimeSeries( "Spin ang mom of body 1 (Z comp)", &tStart, 0., deltaT, &lalStrainUnit, lenReturn);
+    S2xVec = XLALCreateREAL8TimeSeries( "Spin ang mom of body 2 (X comp)", &tStart, 0., deltaT, &lalStrainUnit, lenReturn);
+    S2yVec = XLALCreateREAL8TimeSeries( "Spin ang mom of body 2 (Y comp)", &tStart, 0., deltaT, &lalStrainUnit, lenReturn);
+    S2zVec = XLALCreateREAL8TimeSeries( "Spin ang mom of body 2 (Z comp)", &tStart, 0., deltaT, &lalStrainUnit, lenReturn);
+
+	memset(V->data->data, 0, lenReturn*sizeof(REAL8));
+	memset(orbPhase->data->data, 0, lenReturn*sizeof(REAL8));
+	memset(LNhxVec->data->data, 0, lenReturn*sizeof(REAL8));
+	memset(LNhyVec->data->data, 0, lenReturn*sizeof(REAL8));
+	memset(LNhzVec->data->data, 0, lenReturn*sizeof(REAL8));
+	memset(S1xVec->data->data, 0, lenReturn*sizeof(REAL8));
+	memset(S1yVec->data->data, 0, lenReturn*sizeof(REAL8));
+	memset(S1zVec->data->data, 0, lenReturn*sizeof(REAL8));
+	memset(S2xVec->data->data, 0, lenReturn*sizeof(REAL8));
+	memset(S2yVec->data->data, 0, lenReturn*sizeof(REAL8));
+	memset(S2zVec->data->data, 0, lenReturn*sizeof(REAL8));
 
 	/* Copy dynamical variables from yout array to output time series.
 	note that yout[0:dataLength=1] is time */
@@ -488,6 +491,7 @@ static REAL8 XLALdEnergyByFluxSpinPrec(
 	REAL8 eta = params->eta; 
 	REAL8 delta = params->delta; 
 	UINT4 phaseO = params->phaseO;
+	REAL8 eta_p2 = eta*eta;
 
     /* symmetric and anti-symmetric combinations of spin vectors */
 	chi_s[0] = 0.5*(chi1[0]+chi2[0]);
@@ -508,34 +512,28 @@ static REAL8 XLALdEnergyByFluxSpinPrec(
 		case -1: 	/* highest available PN order */
 		case 8: 	/* pseudo 4PN */
 		case 7: 	/* 3.5 PN */
-			dEbF7 = params->dEbF7nonSpin; 
+			dEbF7 = params->dEbF7NonSpin; 
 		case 6: 	/* 3 PN */
-			dEbF6 = params->dEbF6nonSpin; 
+			dEbF6 = params->dEbF6NonSpin; 
 			dEbF6L = params->dEbF6LogNonSpin; 
 		case 5: 	/* 2.5 PN */
-			dEbF5 = -((7729*LAL_PI)/672. - (13*LAL_PI*eta)/8. + delta*(-72.96676587301587 - (13*eta)/4.)*chiaDotLNh 
-				+ delta*(-0.46875 + (15*eta)/32.)*chiaDotLNh*chiaDotLNh*chiaDotLNh 
-				+ delta*(-0.28125 + (9*eta)/32.)*chiaDotLNh*chiaSqr 
-				+ (-72.96676587301587 + (2453*eta)/36. + (17*eta*eta)/2.)*chisDotLNh + (-1.40625 
-				+ (135*eta)/32.)*chiaDotLNh*chiaDotLNh*chisDotLNh + (-0.28125 + (27*eta)/32.)*chiaSqr*chisDotLNh
-				+ delta*(-1.40625 + (45*eta)/32.)*chiaDotLNh*chisDotLNh*chisDotLNh + (-0.46875 
-				+ (45*eta)/32.)*chisDotLNh*chisDotLNh*chisDotLNh + (-0.5625 + (27*eta)/16.)*chiaDotLNh*chisDotChia 
-				+ delta*(-0.5625 + (9*eta)/16.)*chisDotLNh*chisDotChia + delta*(-0.28125
-				+ (9*eta)/32.)*chiaDotLNh*chisSqr + (-0.28125 + (27*eta)/32.)*chisDotLNh*chisSqr);
-
+			dEbF5 = params->dEbF5NonSpin
+					+ chiaDotLNh*delta*(72.71676587301587 + (7*eta)/2.) 
+					+ chisDotLNh*(72.71676587301587 - (1213*eta)/18. - (17*eta_p2)/2.);
 		case 4: 	/* 2 PN */
-			dEbF4 = 3.010315295099521 + (233*chisDotChia*delta)/48. - (719*chiaDotLNh*chisDotLNh*delta)/48. 
-				+ chiaSqr*(2.4270833333333335 - 10*eta) + chisDotLNh*chisDotLNh*(-7.489583333333333 - eta/24.) 
-				+ chisSqr*(2.4270833333333335 + (7*eta)/24.) + (5429*eta)/1008. + (617*eta*eta)/144. 
-				+ chiaDotLNh*chiaDotLNh*(-7.489583333333333 + 30*eta); 
+			dEbF4 = params->dEbF4NonSpin
+					+ (233*chisDotChia*delta)/48. - (719*chiaDotLNh*chisDotLNh*delta)/48. 
+					+ chiaSqr*(2.4270833333333335 - 10*eta) + chisDotLNh*chisDotLNh*(-7.489583333333333 - eta/24.) 
+					+ chisSqr*(2.4270833333333335 + (7*eta)/24.) + chiaDotLNh*chiaDotLNh*(-7.489583333333333 + 30*eta);
 		case 3: 	/* 1.5 PN */
-			dEbF3 = (113*chiaDotLNh*delta)/12. + chisDotLNh*(9.416666666666666 - (19*eta)/3.) - 4*LAL_PI; 
+			dEbF3 = params->dEbF3NonSpin
+					+ (113*chiaDotLNh*delta)/12. + chisDotLNh*(9.416666666666666 - (19*eta)/3.);
 		case 2: 	/* 1 PN */
-			dEbF2 = params->dEbF2nonSpin; 
+			dEbF2 = params->dEbF2NonSpin; 
 		case 1: 	/* 0.5 PN */
-			dEbF1 = params->dEbF1nonSpin;
+			dEbF1 = params->dEbF1NonSpin;
 		case 0: 	/* Newtonian */
-			dEbF0 = params->dEbF0nonSpin; 
+			dEbF0 = params->dEbF0NonSpin; 
 			break; 
 		default: 
             XLALPrintError("XLAL Error - %s: Invalid phase. PN order %s\n", __func__, phaseO);
@@ -547,7 +545,7 @@ static REAL8 XLALdEnergyByFluxSpinPrec(
 
 	/* compute the re-expanded dEnerby/Flux function */
 	return (dEbF0/v9)*(1. + dEbF1*v + dEbF2*v2 + dEbF3*v3 + dEbF4*v4 + dEbF5*v5 
-			+ (dEbF6 + dEbF6L*log(4.*v))*v6 + dEbF7*v7);
+			+ (dEbF6 + dEbF6L*log(v))*v6 + dEbF7*v7);
 
 }
 
@@ -619,7 +617,6 @@ static int polarizationsInRadiationFrame(
     
         if (V->data->data[i]) {
 
-          //REAL8 alpha = alphaVec->data[i]; // Warning: set-but-not-used!
             LNx = LNhxVec->data->data[i];
             LNy = LNhyVec->data->data[i];
             LNz = LNhzVec->data->data[i];
@@ -666,6 +663,7 @@ static int polarizationsInRadiationFrame(
 
 /**
  * Compute the orbital phase as an explicit function of v (TaylorT2 approximant)
+ * Ref. Eq.(3.4) of http://arxiv.org/abs/1107.1267 
  */
 static int computeOrbitalPhase(
         SpinTaylorT5Params *params, 
@@ -691,9 +689,8 @@ static int computeOrbitalPhase(
 
 	REAL8 eta = params->eta; 
 	REAL8 delta = params->delta; 
-	REAL8 phiOrb0 = params->phiRef/2. - orbPhase->data->data[0]; 
 	UINT4 phaseO = params->phaseO;
-
+	REAL8 eta_p2 = eta*eta;
 
 	for (i = 0; i<V->data->length; i++) {
 
@@ -710,7 +707,7 @@ static int computeOrbitalPhase(
 			LNh[0] = LNhxVec->data->data[i];
 			LNh[1] = LNhyVec->data->data[i];
 			LNh[2] = LNhzVec->data->data[i];
-
+			
 			/* dot products */
 			chisDotLNh  = dotProduct(chi_s, LNh);
 			chiaDotLNh  = dotProduct(chi_a, LNh);
@@ -724,26 +721,28 @@ static int computeOrbitalPhase(
 				case -1: 	/* highest available PN order */
 				case 8: 	/* pseudo 4PN */
 				case 7: 	/* 3.5 PN */
-					phi7 = params->phiOrb7nonSpin; 
+					phi7 = params->phiOrb7NonSpin; 
 				case 6: 	/* 3 PN */
-					phi6 = params->phiOrb6nonSpin; 
-					phi6L = params->phiOrb6LognonSpin; 
+					phi6 = params->phiOrb6NonSpin; 
+					phi6L = params->phiOrb6LogNonSpin; 
 				case 5: 	/* 2.5 PN */
-					phi5 = (chiaDotLNh*delta*(-363.58382936507934 - (35*eta)/2.) + chisDotLNh*(-363.58382936507934 + 
-						(6065*eta)/18. + (85*eta*eta)/2.) + (38645*LAL_PI)/672. - (65*eta*LAL_PI)/8.)*log(v);
+					phi5 = params->phiOrb5LogNonSpin
+							+ chiaDotLNh*((-732985*delta)/2016. - (35*delta*eta)/2.) 
+							+ chisDotLNh*(-363.58382936507934 + (6065*eta)/18. + (85*eta_p2)/2.);
 				case 4: 	/* 2 PN */
-					phi4 = 15.051576475497606 + (1165*chisDotChia*delta)/48. - (3595*chiaDotLNh*chisDotLNh*delta)/48. + 
-						chiaSqr*(12.135416666666666 - 50*eta) + 
-						chisDotLNh*chisDotLNh*(-37.447916666666664 - (5*eta)/24.) + (27145*eta)/1008. + (3085*eta*eta)/144. + 
-						chisSqr*(12.135416666666666 + (35*eta)/24.) + chiaDotLNh*chiaDotLNh*(-37.447916666666664 + 150*eta); 
+					phi4 = params->phiOrb4NonSpin
+							+ (1165*chisDotChia*delta)/48. - (3595*chiaDotLNh*chisDotLNh*delta)/48. 
+							+ chiaSqr*(12.135416666666666 - 50*eta) + chisDotLNh*chisDotLNh*(-37.447916666666664 - (5*eta)/24.) 
+							+ chisSqr*(12.135416666666666 + (35*eta)/24.) + chiaDotLNh*chiaDotLNh*(-37.447916666666664 + 150*eta);
 				case 3: 	/* 1.5 PN */
-					phi3 = (565*chiaDotLNh*delta)/24. + chisDotLNh*(23.541666666666668 - (95*eta)/6.) - 10*LAL_PI; 
+					phi3 = params->phiOrb3NonSpin
+							+ (565*chiaDotLNh*delta)/24. + chisDotLNh*(23.541666666666668 - (95*eta)/6.);
 				case 2: 	/* 1 PN */
-					phi2 = params->phiOrb2nonSpin; 
+					phi2 = params->phiOrb2NonSpin; 
 				case 1: 	/* 0.5 PN */
-					phi1 = params->phiOrb1nonSpin;
+					phi1 = params->phiOrb1NonSpin;
 				case 0: 	/* Newtonian */
-					phi0 = params->phiOrb0nonSpin; 
+					phi0 = params->phiOrb0NonSpin; 
 					break; 
 				default: 
 					XLALPrintError("XLAL Error - %s: Invalid phase. PN order %s\n", __func__, phaseO);
@@ -753,12 +752,15 @@ static int computeOrbitalPhase(
 
 			v2 = v*v; v3 = v2*v; v4 = v2*v2; v5 = v4*v; v6 = v3*v3; v7 = v6*v;
 
-			/* compute the re-expanded dEnerby/Flux function */
-			orbPhase->data->data[i] = (phi0/v5)*(1. + phi1*v + phi2*v2 + phi3*v3 + phi4*v4 + phi5*v5 
-					+ (phi6 + phi6L*log(4.*v))*v6 + phi7*v7)  + phiOrb0;
-
+			/* compute the orbital phase */
+			orbPhase->data->data[i] = (phi0/v5)*(1. + phi1*v + phi2*v2 + phi3*v3 + phi4*v4 + phi5*log(v)*v5 
+					+ (phi6 + phi6L*log(v))*v6 + phi7*v7);
 		}
 	}
+			
+	/* apply a constant phase-shift such that phi_orb(v) = phiRef/2 at v = v_0 */
+	REAL8 phiOrb0 = orbPhase->data->data[0]-params->phiRef/2.;
+	for (i = 0; i<orbPhase->data->length; i++) orbPhase->data->data[i] -=  phiOrb0;
     
 	return XLAL_SUCCESS; 
 }
@@ -790,35 +792,37 @@ static int spinTaylorT5Init(
     mParams->etaSqr = mParams->eta*mParams->eta; 								/* eta^2 */
     mParams->deltaEta = mParams->delta*mParams->eta; 							/* delta * eta */
 	mParams->v0 = cbrt(LAL_PI*mParams->totalMass*fStart);						/* starting value for the PN parameter */
-    mParams->vMax = cbrt(0.45*LAL_PI*mParams->totalMass/deltaT);				/* set an emperical maximum on the PN parameter (0.9 f_Nyquist) */
+    mParams->vMax = cbrt(0.4*LAL_PI*mParams->totalMass/deltaT);				/* set an emperical maximum on the PN parameter (0.9 f_Nyquist) */
 	mParams->phiRef = phiRef; 
 
-	/* coefficients of the reexpanded dEnergy/flux function */
-	mParams->dEbF0nonSpin = -5./(32.*mParams->eta);
-	mParams->dEbF1nonSpin = 0.;
-	mParams->dEbF2nonSpin = 2.2113095238095237 + (11*mParams->eta)/4.; 
-	mParams->dEbF3nonSpin = 0.;					/* currently spinning and non-spinning terms are not separated FIXME*/
-	mParams->dEbF4nonSpin = 0.;					/* currently spinning and non-spinning terms are not separated FIXME*/
-	mParams->dEbF5nonSpin = 0.;					/* currently spinning and non-spinning terms are not separated FIXME*/
-	mParams->dEbF6nonSpin = -115.2253249962622 - (15211*mParams->etaSqr)/6912. 
-			+ (25565*mParams->etaSqr*mParams->eta)/5184. 
-			+ (32*LAL_PISQR)/3. + mParams->eta*(258.1491854023631 
-			- (451*LAL_PISQR)/48.) + (1712*LAL_GAMMA)/105.; 
-	mParams->dEbF6LogNonSpin = -1712./105.; 	/* coefficient of log(4v) at 3PN */
-	mParams->dEbF7nonSpin = (-15419335*LAL_PI)/1.016064e6 
-			- (75703*mParams->eta*LAL_PI)/6048. + (14809*mParams->etaSqr*LAL_PI)/3024.; 
+	/* coefficients of the reexpanded dEnergy/flux function (non-spinning) */
+	mParams->dEbF0NonSpin = -5./(32.*mParams->eta);
+	mParams->dEbF1NonSpin = 0.;
+	mParams->dEbF2NonSpin = 2.2113095238095237 + (11*mParams->eta)/4.;
+	mParams->dEbF3NonSpin = -4*LAL_PI; 
+	mParams->dEbF4NonSpin = 3.010315295099521 + (5429*mParams->eta)/1008. + (617*mParams->etaSqr)/144.;
+	mParams->dEbF5NonSpin = (-7729*LAL_PI)/672. + (13*mParams->eta*LAL_PI)/8.;
+	mParams->dEbF6NonSpin = -115.2253249962622 + (3147553127*mParams->eta)/1.2192768e7 - (15211*mParams->etaSqr)/6912. 
+							+ (25565*mParams->etaSqr*mParams->eta)/5184. + (1712*LAL_GAMMA)/105. + (32*LAL_PISQR)/3. 
+							- (451*mParams->eta*LAL_PISQR)/48. + (1712*log(4))/105.; 
+	mParams->dEbF6LogNonSpin = 16.304761904761904;
+	mParams->dEbF7NonSpin = (-15419335*LAL_PI)/1.016064e6 - (75703*mParams->eta*LAL_PI)/6048. 
+							+ (14809*mParams->etaSqr*LAL_PI)/3024.;
 
-	mParams->phiOrb0nonSpin = -1./(32.*mParams->eta);
-    mParams->phiOrb1nonSpin = 0.;
-    mParams->phiOrb2nonSpin = 3.685515873015873 + (55*mParams->eta)/12.; 
-	mParams->phiOrb3nonSpin = 0.;
-	mParams->phiOrb4nonSpin = 0.;
-	mParams->phiOrb5nonSpin = 0.;
-	mParams->phiOrb6nonSpin = 657.6504345051205 - (15737765635*mParams->eta)/1.2192768e7 + (76055*mParams->etaSqr)/6912. - 
-                (127825*mParams->etaSqr*mParams->eta)/5184. - (160*LAL_PISQR)/3. + 
-                (2255*mParams->eta*LAL_PISQR)/48. - (1712*LAL_GAMMA)/21.;
-	mParams->phiOrb6LognonSpin = -1712/21.;
-    mParams->phiOrb7nonSpin = (77096675*LAL_PI)/2.032128e6 + (378515*mParams->eta*LAL_PI)/12096. - (74045*mParams->etaSqr*LAL_PI)/6048.; 
+	/* coefficients of the PN expansion of the orbital phase (non-spinning) */
+	mParams->phiOrb0NonSpin = -1/(32.*mParams->eta);
+	mParams->phiOrb1NonSpin = 0.;
+	mParams->phiOrb2NonSpin = 3.685515873015873 + (55*mParams->eta)/12.;
+	mParams->phiOrb3NonSpin = -10*LAL_PI;
+	mParams->phiOrb4NonSpin = 15.051576475497606 + (27145*mParams->eta)/1008. + (3085*mParams->etaSqr)/144.;
+	mParams->phiOrb5LogNonSpin = (38645*LAL_PI)/672. - (65*mParams->eta*LAL_PI)/8.;
+	mParams->phiOrb6NonSpin = 657.6504345051205 - (15737765635*mParams->eta)/1.2192768e7 
+								+ (76055*mParams->etaSqr)/6912. - (127825*mParams->etaSqr*mParams->eta)/5184. 
+								- (1712*LAL_GAMMA)/21. - (160*LAL_PISQR)/3. + (2255*mParams->eta*LAL_PISQR)/48. 
+								- (1712*log(4))/21.;
+	mParams->phiOrb6LogNonSpin = -81.52380952380952; 
+	mParams->phiOrb7NonSpin = (77096675*LAL_PI)/2.032128e6 + (378515*mParams->eta*LAL_PI)/12096. 
+								- (74045*mParams->etaSqr*LAL_PI)/6048.;
 
 	return XLAL_SUCCESS; 
 }
@@ -869,7 +873,7 @@ static int XLALSimInspiralSpinTaylorT5StoppingTest(
         return LALSIMINSPIRAL_ST5_TEST_VDOT;		
     else if (isnan(v) || isinf(v))		 			/* v is nan! */
         return LALSIMINSPIRAL_ST5_TEST_VNAN;
-    else if ((v < params->v0) || (v > params->vMax) || (v < 0.) || (v >= 1.))
+    else if ((v < params->v0) || (v > params->vMax) || (v < 0.) || (v >= PN_V_MAX))
         return LALSIMINSPIRAL_ST5_TEST_FREQBOUND;
     else 											/* Step successful, continue integrating */
         return GSL_SUCCESS;

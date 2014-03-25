@@ -115,6 +115,30 @@ void XLALDestroyUINT8TimeSeries ( UINT8TimeSeries *series );
 
 
 /**
+ * \name Conversion Functions
+ *
+ * ### Synopsis ###
+ *
+ * \code
+ * #include <lal/TimeSeries.h>
+ *
+ * XLALConvertREAL8TimeSeriesToREAL4()
+ * XLALConvertREAL4TimeSeriesToREAL8()
+ * \endcode
+ *
+ * ### Description ###
+ *
+ * These functions create a new REAL8 or REAL4 time series, initialized
+ * from a REAL4 or REAL8 time series, respectively.  The source time series
+ * is not deallocated.
+ */
+/*@{*/
+REAL4TimeSeries *XLALConvertREAL8TimeSeriesToREAL4 ( const REAL8TimeSeries *series );
+REAL8TimeSeries *XLALConvertREAL4TimeSeriesToREAL8 ( const REAL4TimeSeries *series );
+/*@}*/
+
+
+/**
  * \name Cutting Functions
  *
  * ### Synopsis ###

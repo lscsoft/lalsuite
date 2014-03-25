@@ -20,7 +20,7 @@
 /**
  * \author Dupuis, R.J.
  *
- * ### Header \ref FitToPulsar.h ###
+ * ### Header FitToPulsar.h ###
  *
  * Provides routines for finding the best fit of the measured data to the strain expected from
  * non-precessing pulsar.

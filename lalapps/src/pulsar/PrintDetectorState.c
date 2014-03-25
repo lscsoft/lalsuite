@@ -35,6 +35,7 @@
 #include <lal/UserInput.h>
 #include <lal/LALInitBarycenter.h>
 #include <lal/ComputeFstat.h>
+#include <lal/LALString.h>
 
 #include <lalapps.h>
 
@@ -66,8 +67,8 @@ typedef struct
   REAL8 Alpha;		/**< skyposition Alpha: radians, equatorial coords. */
   REAL8 Delta;		/**< skyposition Delta: radians, equatorial coords. */
 
-  CHAR *ephemDir;	/**< directory to look for ephemeris files */
-  CHAR *ephemYear;	/**< date-range string on ephemeris-files to use */
+  CHAR *ephemEarth;	/**< Earth ephemeris file to use */
+  CHAR *ephemSun;	/**< Sun ephemeris file to use */
 
   REAL8 timeGPS;	/**< GPS time to compute detector state for (REAL8 format) */
 
@@ -87,8 +88,6 @@ extern int vrbflg;
 /* ---------- local prototypes ---------- */
 int XLALInitUserVars ( UserVariables_t *uvar );
 int XLALInitCode ( ConfigVariables *cfg, const UserVariables_t *uvar, const char *app_name);
-
-EphemerisData *InitEphemeris (const CHAR *ephemDir, const CHAR *ephemYear );
 
 int XLALDestroyConfig ( ConfigVariables *cfg );
 
@@ -256,9 +255,8 @@ XLALInitUserVars ( UserVariables_t *uvar )
   /* set a few defaults */
   uvar->help = 0;
 
-#define EPHEM_YEAR  "00-19-DE405"
-  XLAL_CHECK ( (uvar->ephemYear = XLALCalloc (1, strlen(EPHEM_YEAR)+1)) != NULL, XLAL_ENOMEM );
-  strcpy (uvar->ephemYear, EPHEM_YEAR);
+  uvar->ephemEarth = XLALStringDuplicate("earth00-19-DE405.dat.gz");
+  uvar->ephemSun = XLALStringDuplicate("sun00-19-DE405.dat.gz");
 
   uvar->timeGPS = 714180733;
 
@@ -272,8 +270,8 @@ XLALInitUserVars ( UserVariables_t *uvar )
 
   XLALregREALUserStruct( 	timeGPS,        't', UVAR_OPTIONAL, 	"GPS time at which to compute detector state");
 
-  XLALregSTRINGUserStruct(	ephemDir, 	'E', UVAR_OPTIONAL,     "Directory where Ephemeris files are located");
-  XLALregSTRINGUserStruct(	ephemYear, 	'y', UVAR_OPTIONAL,     "Year (or range of years) of ephemeris files to be used");
+  XLALregSTRINGUserStruct (	ephemEarth,   	 0,  UVAR_OPTIONAL,     "Earth ephemeris file to use");
+  XLALregSTRINGUserStruct (	ephemSun,     	 0,  UVAR_OPTIONAL,     "Sun ephemeris file to use");
 
   XLALregBOOLUserStruct(	version,        'V', UVAR_SPECIAL,      "Output code version");
 
@@ -294,10 +292,7 @@ XLALInitCode ( ConfigVariables *cfg, const UserVariables_t *uvar, const char *ap
   }
 
   /* init ephemeris data */
-  if ( (cfg->edat = InitEphemeris ( uvar->ephemDir, uvar->ephemYear)) == NULL ) {
-    XLALPrintError ("%s: InitEphemeris() Failed to initialize ephemeris data!\n\n", __func__);
-    XLAL_ERROR ( XLAL_EINVAL );
-  }
+  XLAL_CHECK ( (cfg->edat = XLALInitBarycenter ( uvar->ephemEarth, uvar->ephemSun )) != NULL, XLAL_EFUNC );
 
   /* convert input REAL8 time into LIGOTimeGPS */
   if ( XLALGPSSetREAL8( &cfg->timeGPS, uvar->timeGPS ) == NULL ) {
@@ -358,39 +353,3 @@ XLALDestroyConfig ( ConfigVariables *cfg )
   return XLAL_SUCCESS;
 
 } /* XLALDestroyConfig() */
-
-
-
-/** Load Ephemeris from ephemeris data-files  */
-EphemerisData *
-InitEphemeris (const CHAR *ephemDir,	/**< directory containing ephems */
-	       const CHAR *ephemYear	/**< which years do we need? */
-	       )
-{
-#define FNAME_LENGTH 1024
-  EphemerisData *edat;
-  CHAR EphemEarth[FNAME_LENGTH];	/* filename of earth-ephemeris data */
-  CHAR EphemSun[FNAME_LENGTH];	/* filename of sun-ephemeris data */
-
-  XLAL_CHECK_NULL ( ephemYear != NULL, XLAL_EINVAL );
-
-  if ( ephemDir )
-    {
-      snprintf(EphemEarth, FNAME_LENGTH, "%s/earth%s.dat", ephemDir, ephemYear);
-      snprintf(EphemSun, FNAME_LENGTH, "%s/sun%s.dat", ephemDir, ephemYear);
-    }
-  else
-    {
-      snprintf(EphemEarth, FNAME_LENGTH, "earth%s.dat", ephemYear);
-      snprintf(EphemSun, FNAME_LENGTH, "sun%s.dat",  ephemYear);
-    }
-
-  EphemEarth[FNAME_LENGTH-1] = 0;
-  EphemSun[FNAME_LENGTH-1] = 0;
-
-  XLAL_CHECK_NULL ( ( edat = XLALInitBarycenter ( EphemEarth, EphemSun )) != NULL, XLAL_EFUNC );
-
-  return edat;
-
-} /* InitEphemeris() */
-

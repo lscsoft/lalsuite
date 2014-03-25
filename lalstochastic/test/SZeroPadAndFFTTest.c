@@ -100,8 +100,8 @@
  * LALCHARDestroyVector()
  * LALCreateForwardRealFFTPlan()
  * LALDestroyRealFFTPlan()
- * LALUnitAsString()
- * LALUnitCompare()
+ * XLALUnitAsString()
+ * XLALUnitCompare()
  * getopt()
  * printf()
  * fprintf()
@@ -141,7 +141,6 @@
 #define SZEROPADANDFFTTESTC_MSGEUSE "Bad user-entered data"
 
 
-#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/LALStdlib.h>
 #include <lal/Window.h>
 
@@ -165,6 +164,7 @@
 #include <lal/Units.h>
 
 #include "CheckStatus.h"
+#include "CheckStatus.c"
 
 #define SZEROPADANDFFTTESTC_LENGTH        8
 #define SZEROPADANDFFTTESTC_FULLLENGTH (2 * SZEROPADANDFFTTESTC_LENGTH - 1)
@@ -226,22 +226,21 @@ main( int argc, char *argv[] )
                      = {1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0};
 
    COMPLEX8 expectedOutputDataData[SZEROPADANDFFTTESTC_LENGTH]
-                     = {{+3.600000000000000e+01, 0.0},
-                        {-1.094039137097177e+01, -2.279368601990178e+01},
-                        {+3.693524635113721e-01, +9.326003289238411e+00},
-                        {-8.090169943749448e-01, -7.918722831227928e+00},
-                        {+3.502214272222959e-01, +5.268737078678177e+00},
-                        {+5.329070518200751e-15, -5.196152422706625e+00},
-                        {+3.090169943749475e-01, +4.306254604896173e+00},
-                        {+2.208174802380956e-01, -4.325962305777781e+00}};
+                     = {crectf(+3.600000000000000e+01, 0.0),
+                        crectf(-1.094039137097177e+01, -2.279368601990178e+01),
+                        crectf(+3.693524635113721e-01, +9.326003289238411e+00),
+                        crectf(-8.090169943749448e-01, -7.918722831227928e+00),
+                        crectf(+3.502214272222959e-01, +5.268737078678177e+00),
+                        crectf(+5.329070518200751e-15, -5.196152422706625e+00),
+                        crectf(+3.090169943749475e-01, +4.306254604896173e+00),
+                        crectf(+2.208174802380956e-01, -4.325962305777781e+00)};
 
    REAL4TimeSeries             goodInput;
    COMPLEX8FrequencySeries     goodOutput;
 
-   BOOLEAN                result;
-   LALUnitPair            unitPair;
+   int                    result;
    LALUnit                expectedUnit;
-   CHARVector             *unitString;
+   CHAR                   unitString[LALUnitTextSize];
 
    SZeroPadAndFFTParameters   goodParams;
 
@@ -260,8 +259,7 @@ main( int argc, char *argv[] )
 
    for (i=0; i<SZEROPADANDFFTTESTC_LENGTH; ++i)
    {
-     expectedOutputDataData[i].realf_FIXME *= SZEROPADANDFFTTESTC_DELTAT;
-     expectedOutputDataData[i].imagf_FIXME *= SZEROPADANDFFTTESTC_DELTAT;
+     expectedOutputDataData[i] *= SZEROPADANDFFTTESTC_DELTAT;
    }
 
    ParseOptions( argc, argv );
@@ -606,55 +604,20 @@ main( int argc, char *argv[] )
    expectedUnit = lalDimensionlessUnit;
    expectedUnit.unitNumerator[LALUnitIndexADCCount] = 1;
    expectedUnit.unitNumerator[LALUnitIndexSecond] = 1;
-   unitPair.unitOne = &expectedUnit;
-   unitPair.unitTwo = &(goodOutput.sampleUnits);
-   LALUnitCompare(&status, &result, &unitPair);
-   if ( ( code = CheckStatus( &status, 0 , "",
-			      SZEROPADANDFFTTESTC_EFLS,
-			      SZEROPADANDFFTTESTC_MSGEFLS ) ) )
-   {
-     return code;
-   }
-
+   result = XLALUnitCompare(&expectedUnit, &(goodOutput.sampleUnits));
    if (optVerbose)
    {
-     unitString = NULL;
-     LALCHARCreateVector(&status, &unitString, LALUnitTextSize);
-     if ( ( code = CheckStatus(&status, 0 , "",
-			       SZEROPADANDFFTTESTC_EFLS,
-			       SZEROPADANDFFTTESTC_MSGEFLS) ) )
-     {
-       return code;
+     if ( XLALUnitAsString( unitString, LALUnitTextSize, &(goodOutput.sampleUnits)) == NULL ) {
+       return SZEROPADANDFFTTESTC_EFLS;
      }
-
-     LALUnitAsString( &status, unitString, unitPair.unitTwo );
-     if ( ( code = CheckStatus( &status, 0 , "",
-				SZEROPADANDFFTTESTC_EFLS,
-				SZEROPADANDFFTTESTC_MSGEFLS ) ) )
-     {
-       return code;
+     printf( "Units are \"%s\", ", unitString );
+     if ( XLALUnitAsString( unitString, LALUnitTextSize, &expectedUnit) == NULL ) {
+       return SZEROPADANDFFTTESTC_EFLS;
      }
-     printf( "Units are \"%s\", ", unitString->data );
-
-     LALUnitAsString( &status, unitString, unitPair.unitOne );
-     if ( ( code = CheckStatus(&status, 0 , "",
-			       SZEROPADANDFFTTESTC_EFLS,
-			       SZEROPADANDFFTTESTC_MSGEFLS) ) )
-     {
-       return code;
-     }
-     printf( "should be \"%s\"\n", unitString->data );
-
-     LALCHARDestroyVector(&status, &unitString);
-     if ( ( code = CheckStatus(&status, 0 , "",
-			       SZEROPADANDFFTTESTC_EFLS,
-			       SZEROPADANDFFTTESTC_MSGEFLS) ) )
-     {
-       return code;
-     }
+     printf( "should be \"%s\"\n", unitString );
    }
 
-   if (!result)
+   if (result != 0)
    {
      printf("  FAIL: Valid data test #1\n");
      if (optVerbose)

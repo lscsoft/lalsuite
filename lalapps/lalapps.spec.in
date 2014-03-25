@@ -14,8 +14,8 @@ Source: %{name}-%{version}.tar.gz
 URL: https://www.lsc-group.phys.uwm.edu/daswg/projects/lalsuite.html
 Packager: Duncan Brown <dbrown@ligo.caltech.edu>
 BuildRoot: %{_tmppath}/%{name}-%{version}-root
-BuildRequires: gsl-devel fftw3-devel libframe-devel libmetaio-devel lal-devel lalframe-devel lalmetaio-devel lalsimulation-devel lalburst-devel lalinspiral-devel lalstochastic-devel lalpulsar-devel lalinference-devel
-Requires: healpy gsl fftw3 libframe libmetaio lal lalframe lalmetaio lalsimulation lalburst lalinspiral lalstochastic lalpulsar lalinference python
+BuildRequires: gsl-devel fftw-devel libframe-devel libmetaio-devel lal-devel lalframe-devel lalmetaio-devel lalsimulation-devel lalburst-devel lalinspiral-devel lalstochastic-devel lalpulsar-devel lalinference-devel
+Requires: healpy gsl fftw libframe libmetaio lal lalframe lalmetaio lalsimulation lalburst lalinspiral lalstochastic lalpulsar lalinference python
 Prefix: %{_prefix}
 
 %description

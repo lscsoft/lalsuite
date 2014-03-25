@@ -34,7 +34,6 @@
 #endif
 
 /* LAL-includes */
-#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/AVFactories.h>
 #include <lal/LALBarycenter.h>
 #include <lal/LALInitBarycenter.h>
@@ -195,10 +194,8 @@ void ComputeSideBandWindow(LALStatus *status,
   for (j=0;j<2*(*TParams)->windowrange;j++) {
       
     /* initialise */
-    (*TParams)->wa->data[j].real_FIXME = 0.0;
-    (*TParams)->wa->data[j].imag_FIXME = 0.0;
-    (*TParams)->wb->data[j].real_FIXME = 0.0;
-    (*TParams)->wb->data[j].imag_FIXME = 0.0;
+    (*TParams)->wa->data[j] = 0.0;
+    (*TParams)->wb->data[j] = 0.0;
     
     /* define frequency */
     x = (-1.0)*LAL_TWOPI*(REAL8)(*TParams)->windowrange*(*TParams)->dfwindow + LAL_TWOPI*(REAL8)j*(*TParams)->dfwindow;
@@ -214,87 +211,45 @@ void ComputeSideBandWindow(LALStatus *status,
 
 	if ((fabs(k*W-x)>ddf)&&(fabs(k*W+x)>ddf)) {
 	  
-	  ae.real_FIXME = -0.5*(1.0/(k*W+x))*(-ABCco->apco[k]*cos(k*(w0-W*et)-x*et)+ABCco->aco[k]*sin(k*(w0-W*et)-x*et))
-	    -0.5*(1.0/(k*W-x))*(-ABCco->apco[k]*cos(k*(w0-W*et)+x*et)+ABCco->aco[k]*sin(k*(w0-W*et)+x*et));
-	  ae.imag_FIXME = -0.5*(1.0/(k*W+x))*(-ABCco->aco[k]*cos(k*(w0-W*et)-x*et)-ABCco->apco[k]*sin(k*(w0-W*et)-x*et))
-	    -0.5*(1.0/(k*W-x))*(ABCco->aco[k]*cos(k*(w0-W*et)+x*et)+ABCco->apco[k]*sin(k*(w0-W*et)+x*et));	    
-	  as.real_FIXME = -0.5*(1.0/(k*W+x))*(-ABCco->apco[k]*cos(k*(w0-W*st)-x*st)+ABCco->aco[k]*sin(k*(w0-W*st)-x*st))
-	    -0.5*(1.0/(k*W-x))*(-ABCco->apco[k]*cos(k*(w0-W*st)+x*st)+ABCco->aco[k]*sin(k*(w0-W*st)+x*st));
-	  as.imag_FIXME =-0.5*(1.0/(k*W+x))*(-ABCco->aco[k]*cos(k*(w0-W*st)-x*st)-ABCco->apco[k]*sin(k*(w0-W*st)-x*st))
-	    -0.5*(1.0/(k*W-x))*(ABCco->aco[k]*cos(k*(w0-W*st)+x*st)+ABCco->apco[k]*sin(k*(w0-W*st)+x*st));
+	  ae = crect( -0.5*(1.0/(k*W+x))*(-ABCco->apco[k]*cos(k*(w0-W*et)-x*et)+ABCco->aco[k]*sin(k*(w0-W*et)-x*et)) -0.5*(1.0/(k*W-x))*(-ABCco->apco[k]*cos(k*(w0-W*et)+x*et)+ABCco->aco[k]*sin(k*(w0-W*et)+x*et)), -0.5*(1.0/(k*W+x))*(-ABCco->aco[k]*cos(k*(w0-W*et)-x*et)-ABCco->apco[k]*sin(k*(w0-W*et)-x*et)) -0.5*(1.0/(k*W-x))*(ABCco->aco[k]*cos(k*(w0-W*et)+x*et)+ABCco->apco[k]*sin(k*(w0-W*et)+x*et)) );
+	  as = crect( -0.5*(1.0/(k*W+x))*(-ABCco->apco[k]*cos(k*(w0-W*st)-x*st)+ABCco->aco[k]*sin(k*(w0-W*st)-x*st)) -0.5*(1.0/(k*W-x))*(-ABCco->apco[k]*cos(k*(w0-W*st)+x*st)+ABCco->aco[k]*sin(k*(w0-W*st)+x*st)), -0.5*(1.0/(k*W+x))*(-ABCco->aco[k]*cos(k*(w0-W*st)-x*st)-ABCco->apco[k]*sin(k*(w0-W*st)-x*st)) -0.5*(1.0/(k*W-x))*(ABCco->aco[k]*cos(k*(w0-W*st)+x*st)+ABCco->apco[k]*sin(k*(w0-W*st)+x*st)) );
 	  
-	  be.real_FIXME = -0.5*(1.0/(k*W+x))*(-ABCco->bpco[k]*cos(k*(w0-W*et)-x*et)+ABCco->bco[k]*sin(k*(w0-W*et)-x*et))
-	    -0.5*(1.0/(k*W-x))*(-ABCco->bpco[k]*cos(k*(w0-W*et)+x*et)+ABCco->bco[k]*sin(k*(w0-W*et)+x*et));
-	  be.imag_FIXME = -0.5*(1.0/(k*W+x))*(-ABCco->bco[k]*cos(k*(w0-W*et)-x*et)-ABCco->bpco[k]*sin(k*(w0-W*et)-x*et))
-	    -0.5*(1.0/(k*W-x))*(ABCco->bco[k]*cos(k*(w0-W*et)+x*et)+ABCco->bpco[k]*sin(k*(w0-W*et)+x*et));	    
-	  bs.real_FIXME = -0.5*(1.0/(k*W+x))*(-ABCco->bpco[k]*cos(k*(w0-W*st)-x*st)+ABCco->bco[k]*sin(k*(w0-W*st)-x*st))
-	    -0.5*(1.0/(k*W-x))*(-ABCco->bpco[k]*cos(k*(w0-W*st)+x*st)+ABCco->bco[k]*sin(k*(w0-W*st)+x*st));
-	  bs.imag_FIXME = -0.5*(1.0/(k*W+x))*(-ABCco->bco[k]*cos(k*(w0-W*st)-x*st)-ABCco->bpco[k]*sin(k*(w0-W*st)-x*st))
-	    -0.5*(1.0/(k*W-x))*(ABCco->bco[k]*cos(k*(w0-W*st)+x*st)+ABCco->bpco[k]*sin(k*(w0-W*st)+x*st));
+	  be = crect( -0.5*(1.0/(k*W+x))*(-ABCco->bpco[k]*cos(k*(w0-W*et)-x*et)+ABCco->bco[k]*sin(k*(w0-W*et)-x*et)) -0.5*(1.0/(k*W-x))*(-ABCco->bpco[k]*cos(k*(w0-W*et)+x*et)+ABCco->bco[k]*sin(k*(w0-W*et)+x*et)), -0.5*(1.0/(k*W+x))*(-ABCco->bco[k]*cos(k*(w0-W*et)-x*et)-ABCco->bpco[k]*sin(k*(w0-W*et)-x*et)) -0.5*(1.0/(k*W-x))*(ABCco->bco[k]*cos(k*(w0-W*et)+x*et)+ABCco->bpco[k]*sin(k*(w0-W*et)+x*et)) );
+	  bs = crect( -0.5*(1.0/(k*W+x))*(-ABCco->bpco[k]*cos(k*(w0-W*st)-x*st)+ABCco->bco[k]*sin(k*(w0-W*st)-x*st)) -0.5*(1.0/(k*W-x))*(-ABCco->bpco[k]*cos(k*(w0-W*st)+x*st)+ABCco->bco[k]*sin(k*(w0-W*st)+x*st)), -0.5*(1.0/(k*W+x))*(-ABCco->bco[k]*cos(k*(w0-W*st)-x*st)-ABCco->bpco[k]*sin(k*(w0-W*st)-x*st)) -0.5*(1.0/(k*W-x))*(ABCco->bco[k]*cos(k*(w0-W*st)+x*st)+ABCco->bpco[k]*sin(k*(w0-W*st)+x*st)) );
 	  
 	}
 	else if ((fabs(k*W-x)<ddf)&&(fabs(k*W+x)>ddf)) {
 	 
 	  
-	  ae.real_FIXME = -0.5*(1.0/(k*W+x))*(-ABCco->apco[k]*cos(k*(w0-W*et)-x*et)+ABCco->aco[k]*sin(k*(w0-W*et)-x*et))
-	    -0.5*et*(-ABCco->apco[k]*sin(k*w0)-ABCco->aco[k]*cos(k*w0));
-	  ae.imag_FIXME = -0.5*(1.0/(k*W+x))*(-ABCco->aco[k]*cos(k*(w0-W*et)-x*et)-ABCco->apco[k]*sin(k*(w0-W*et)-x*et))
-	    -0.5*et*(ABCco->aco[k]*sin(k*w0)-ABCco->apco[k]*cos(k*w0));
-	  as.real_FIXME =-0.5*(1.0/(k*W+x))*(-ABCco->apco[k]*cos(k*(w0-W*st)-x*st)+ABCco->aco[k]*sin(k*(w0-W*st)-x*st))
-	    -0.5*st*(-ABCco->apco[k]*sin(k*w0)-ABCco->aco[k]*cos(k*w0));
-	  as.imag_FIXME = -0.5*(1.0/(k*W+x))*(-ABCco->aco[k]*cos(k*(w0-W*st)-x*st)-ABCco->apco[k]*sin(k*(w0-W*st)-x*st))
-	    -0.5*st*(ABCco->aco[k]*sin(k*w0)-ABCco->apco[k]*cos(k*w0));
+	  ae = crect( -0.5*(1.0/(k*W+x))*(-ABCco->apco[k]*cos(k*(w0-W*et)-x*et)+ABCco->aco[k]*sin(k*(w0-W*et)-x*et)) -0.5*et*(-ABCco->apco[k]*sin(k*w0)-ABCco->aco[k]*cos(k*w0)), -0.5*(1.0/(k*W+x))*(-ABCco->aco[k]*cos(k*(w0-W*et)-x*et)-ABCco->apco[k]*sin(k*(w0-W*et)-x*et)) -0.5*et*(ABCco->aco[k]*sin(k*w0)-ABCco->apco[k]*cos(k*w0)) );
+	  as = crect( -0.5*(1.0/(k*W+x))*(-ABCco->apco[k]*cos(k*(w0-W*st)-x*st)+ABCco->aco[k]*sin(k*(w0-W*st)-x*st)) -0.5*st*(-ABCco->apco[k]*sin(k*w0)-ABCco->aco[k]*cos(k*w0)), -0.5*(1.0/(k*W+x))*(-ABCco->aco[k]*cos(k*(w0-W*st)-x*st)-ABCco->apco[k]*sin(k*(w0-W*st)-x*st)) -0.5*st*(ABCco->aco[k]*sin(k*w0)-ABCco->apco[k]*cos(k*w0)) );
 	  
-	  be.real_FIXME = -0.5*(1.0/(k*W+x))*(-ABCco->bpco[k]*cos(k*(w0-W*et)-x*et)+ABCco->bco[k]*sin(k*(w0-W*et)-x*et))
-	    -0.5*et*(-ABCco->bpco[k]*sin(k*w0)-ABCco->bco[k]*cos(k*w0));
-	  be.imag_FIXME = -0.5*(1.0/(k*W+x))*(-ABCco->bco[k]*cos(k*(w0-W*et)-x*et)-ABCco->bpco[k]*sin(k*(w0-W*et)-x*et))
-	    -0.5*et*(ABCco->bco[k]*sin(k*w0)-ABCco->bpco[k]*cos(k*w0));
-	  bs.real_FIXME =-0.5*(1.0/(k*W+x))*(-ABCco->bpco[k]*cos(k*(w0-W*st)-x*st)+ABCco->bco[k]*sin(k*(w0-W*st)-x*st))
-	    -0.5*st*(-ABCco->bpco[k]*sin(k*w0)-ABCco->bco[k]*cos(k*w0));
-	  bs.imag_FIXME = -0.5*(1.0/(k*W+x))*(-ABCco->bco[k]*cos(k*(w0-W*st)-x*st)-ABCco->bpco[k]*sin(k*(w0-W*st)-x*st))
-	    -0.5*st*(ABCco->bco[k]*sin(k*w0)-ABCco->bpco[k]*cos(k*w0));
+	  be = crect( -0.5*(1.0/(k*W+x))*(-ABCco->bpco[k]*cos(k*(w0-W*et)-x*et)+ABCco->bco[k]*sin(k*(w0-W*et)-x*et)) -0.5*et*(-ABCco->bpco[k]*sin(k*w0)-ABCco->bco[k]*cos(k*w0)), -0.5*(1.0/(k*W+x))*(-ABCco->bco[k]*cos(k*(w0-W*et)-x*et)-ABCco->bpco[k]*sin(k*(w0-W*et)-x*et)) -0.5*et*(ABCco->bco[k]*sin(k*w0)-ABCco->bpco[k]*cos(k*w0)) );
+	  bs = crect( -0.5*(1.0/(k*W+x))*(-ABCco->bpco[k]*cos(k*(w0-W*st)-x*st)+ABCco->bco[k]*sin(k*(w0-W*st)-x*st)) -0.5*st*(-ABCco->bpco[k]*sin(k*w0)-ABCco->bco[k]*cos(k*w0)), -0.5*(1.0/(k*W+x))*(-ABCco->bco[k]*cos(k*(w0-W*st)-x*st)-ABCco->bpco[k]*sin(k*(w0-W*st)-x*st)) -0.5*st*(ABCco->bco[k]*sin(k*w0)-ABCco->bpco[k]*cos(k*w0)) );
 	  
 	}
 	else if ((fabs(k*W-x)>ddf)&&(fabs(k*W+x)<ddf)) {
 	 
 	  
-	  ae.real_FIXME = -0.5*et*(-ABCco->apco[k]*sin(k*w0)-ABCco->aco[k]*cos(k*w0))
-	    -0.5*(1.0/(k*W-x))*(-ABCco->apco[k]*cos(k*(w0-W*et)+x*et)+ABCco->aco[k]*sin(k*(w0-W*et)+x*et));
-	  ae.imag_FIXME = -0.5*et*(-ABCco->aco[k]*sin(k*w0)+ABCco->apco[k]*cos(k*w0))
-	    -0.5*(1.0/(k*W-x))*(ABCco->aco[k]*cos(k*(w0-W*et)+x*et)+ABCco->apco[k]*sin(k*(w0-W*et)+x*et));	    
-	  as.real_FIXME = -0.5*st*(-ABCco->apco[k]*sin(k*w0)-ABCco->aco[k]*cos(k*w0))
-	    -0.5*(1.0/(k*W-x))*(-ABCco->apco[k]*cos(k*(w0-W*st)+x*st)+ABCco->aco[k]*sin(k*(w0-W*st)+x*st));
-	  as.imag_FIXME = -0.5*st*(-ABCco->aco[k]*sin(k*w0)+ABCco->apco[k]*cos(k*w0))
-	    -0.5*(1.0/(k*W-x))*(ABCco->aco[k]*cos(k*(w0-W*st)+x*st)+ABCco->apco[k]*sin(k*(w0-W*st)+x*st));
+	  ae = crect( -0.5*et*(-ABCco->apco[k]*sin(k*w0)-ABCco->aco[k]*cos(k*w0)) -0.5*(1.0/(k*W-x))*(-ABCco->apco[k]*cos(k*(w0-W*et)+x*et)+ABCco->aco[k]*sin(k*(w0-W*et)+x*et)), -0.5*et*(-ABCco->aco[k]*sin(k*w0)+ABCco->apco[k]*cos(k*w0)) -0.5*(1.0/(k*W-x))*(ABCco->aco[k]*cos(k*(w0-W*et)+x*et)+ABCco->apco[k]*sin(k*(w0-W*et)+x*et)) );
+	  as = crect( -0.5*st*(-ABCco->apco[k]*sin(k*w0)-ABCco->aco[k]*cos(k*w0)) -0.5*(1.0/(k*W-x))*(-ABCco->apco[k]*cos(k*(w0-W*st)+x*st)+ABCco->aco[k]*sin(k*(w0-W*st)+x*st)), -0.5*st*(-ABCco->aco[k]*sin(k*w0)+ABCco->apco[k]*cos(k*w0)) -0.5*(1.0/(k*W-x))*(ABCco->aco[k]*cos(k*(w0-W*st)+x*st)+ABCco->apco[k]*sin(k*(w0-W*st)+x*st)) );
 	  
-	  be.real_FIXME = -0.5*et*(-ABCco->bpco[k]*sin(k*w0)-ABCco->bco[k]*cos(k*w0))
-	    -0.5*(1.0/(k*W-x))*(-ABCco->bpco[k]*cos(k*(w0-W*et)+x*et)+ABCco->bco[k]*sin(k*(w0-W*et)+x*et));
-	  be.imag_FIXME = -0.5*et*(-ABCco->bco[k]*sin(k*w0)+ABCco->bpco[k]*cos(k*w0))
-	    -0.5*(1.0/(k*W-x))*(ABCco->bco[k]*cos(k*(w0-W*et)+x*et)+ABCco->bpco[k]*sin(k*(w0-W*et)+x*et));	    
-	  bs.real_FIXME = -0.5*st*(-ABCco->bpco[k]*sin(k*w0)-ABCco->bco[k]*cos(k*w0))
-	    -0.5*(1.0/(k*W-x))*(-ABCco->bpco[k]*cos(k*(w0-W*st)+x*st)+ABCco->bco[k]*sin(k*(w0-W*st)+x*st));
-	  bs.imag_FIXME = -0.5*st*(-ABCco->bco[k]*sin(k*w0)+ABCco->bpco[k]*cos(k*w0))
-	    -0.5*(1.0/(k*W-x))*(ABCco->bco[k]*cos(k*(w0-W*st)+x*st)+ABCco->bpco[k]*sin(k*(w0-W*st)+x*st));
+	  be = crect( -0.5*et*(-ABCco->bpco[k]*sin(k*w0)-ABCco->bco[k]*cos(k*w0)) -0.5*(1.0/(k*W-x))*(-ABCco->bpco[k]*cos(k*(w0-W*et)+x*et)+ABCco->bco[k]*sin(k*(w0-W*et)+x*et)), -0.5*et*(-ABCco->bco[k]*sin(k*w0)+ABCco->bpco[k]*cos(k*w0)) -0.5*(1.0/(k*W-x))*(ABCco->bco[k]*cos(k*(w0-W*et)+x*et)+ABCco->bpco[k]*sin(k*(w0-W*et)+x*et)) );
+	  bs = crect( -0.5*st*(-ABCco->bpco[k]*sin(k*w0)-ABCco->bco[k]*cos(k*w0)) -0.5*(1.0/(k*W-x))*(-ABCco->bpco[k]*cos(k*(w0-W*st)+x*st)+ABCco->bco[k]*sin(k*(w0-W*st)+x*st)), -0.5*st*(-ABCco->bco[k]*sin(k*w0)+ABCco->bpco[k]*cos(k*w0)) -0.5*(1.0/(k*W-x))*(ABCco->bco[k]*cos(k*(w0-W*st)+x*st)+ABCco->bpco[k]*sin(k*(w0-W*st)+x*st)) );
 	  
 	}
 	else {
 		  
-	  ae.real_FIXME = -et*(-ABCco->apco[k]*sin(k*w0)-ABCco->aco[k]*cos(k*w0));
-	  ae.imag_FIXME = 0.0;
-	  as.real_FIXME = -st*(-ABCco->apco[k]*sin(k*w0)-ABCco->aco[k]*cos(k*w0));
-	  as.imag_FIXME = 0.0;
+	  ae = crect( -et*(-ABCco->apco[k]*sin(k*w0)-ABCco->aco[k]*cos(k*w0)), 0.0 );
+	  as = crect( -st*(-ABCco->apco[k]*sin(k*w0)-ABCco->aco[k]*cos(k*w0)), 0.0 );
 	  
-	  be.real_FIXME = -et*(-ABCco->bpco[k]*sin(k*w0)-ABCco->bco[k]*cos(k*w0));
-	  be.imag_FIXME = 0.0;
-	  bs.real_FIXME = -st*(-ABCco->bpco[k]*sin(k*w0)-ABCco->bco[k]*cos(k*w0));
-	  bs.imag_FIXME = 0.0;
+	  be = crect( -et*(-ABCco->bpco[k]*sin(k*w0)-ABCco->bco[k]*cos(k*w0)), 0.0 );
+	  bs = crect( -st*(-ABCco->bpco[k]*sin(k*w0)-ABCco->bco[k]*cos(k*w0)), 0.0 );
 	  
 	}	  
 	
-	(*TParams)->wa->data[j].real_FIXME += creal(ae) - creal(as);
-	(*TParams)->wa->data[j].imag_FIXME += cimag(ae) - cimag(as);
-	(*TParams)->wb->data[j].real_FIXME += creal(be) - creal(bs);
-	(*TParams)->wb->data[j].imag_FIXME += cimag(be) - cimag(bs);
+	(*TParams)->wa->data[j] += crect( creal(ae) - creal(as), cimag(ae) - cimag(as) );
+	(*TParams)->wb->data[j] += crect( creal(be) - creal(bs), cimag(be) - cimag(bs) );
 	
       }
       
@@ -679,8 +634,7 @@ void SelectSideBandFrequencies (LALStatus * status,
 	/* if within a range then record it */
 	if ((f>sfparams->minf->data[i])&&(f<=sfparams->maxf->data[i])) {
 	  (*reddata)->freq->data[k] = (*fulldata)->freq->data[j];
-	  (*reddata)->fourier->data[k].real_FIXME = x;
-	  (*reddata)->fourier->data[k].imag_FIXME = y;
+	  (*reddata)->fourier->data[k] = crect( x, y );
 
 	  printf("found %6.12f between %6.12f -> %6.12f\n",(*reddata)->freq->data[k],sfparams->minf->data[i],sfparams->maxf->data[i]);
 
@@ -817,8 +771,7 @@ void ReadSideBandData (LALStatus * status,
 	(*fulldata)->freq->data[i] = ftemp1;
 
 	/* normalise data by the input sqrt noise spectral density */
-	(*fulldata)->fourier->data[i].real_FIXME = fre*norm;
-	(*fulldata)->fourier->data[i].imag_FIXME = fim*norm;
+	(*fulldata)->fourier->data[i] = crect( fre*norm, fim*norm );
 	/* printf("Reading data : %6.12e %6.12e\n",(*fulldata)->fourier->data[i].re,(*fulldata)->fourier->data[i].im); */
 	sum += (fre*fre+fim*fim)*norm*norm;
 	i++;
@@ -1050,8 +1003,7 @@ void GenerateSideBandTemplate (LALStatus *status,   			/**< pointer to LALStatus
   
   /* initialise the results vectors */
   for (i=0;i<(INT4)(*Template)->fourier->length;i++) {
-    (*Template)->fourier->data[i].real_FIXME = 0.0;
-    (*Template)->fourier->data[i].imag_FIXME = 0.0;
+    (*Template)->fourier->data[i] = 0.0;
   }
   
   if (lalDebugLevel) printf ("\nInitialised results vectors in BinaryFDTemplate.\n");
@@ -1116,16 +1068,7 @@ void GenerateSideBandTemplate (LALStatus *status,   			/**< pointer to LALStatus
 	/* printf("winindex = %d TParams->windowrange = %d\n",winindex,TParams->windowrange); */ 
 	/* compute Rn and Sn */  
 	if ((winindex<2*TParams->windowrange)&&(winindex>=0)) {
-	  (*Template)->fourier->data[i].real_FIXME = creal((*Template)->fourier->data[i]) 
-	    + 0.5*b*(creal(TParams->wa->data[winindex])*(A1*cosy + A3*siny) 
-		     + cimag(TParams->wa->data[winindex])*(A3*cosy - A1*siny)
-		     + creal(TParams->wb->data[winindex])*(A2*cosy + A4*siny) 
-		     + cimag(TParams->wb->data[winindex])*(A4*cosy - A2*siny));
-	  (*Template)->fourier->data[i].imag_FIXME = cimag((*Template)->fourier->data[i]) 
-	    + 0.5*b*(creal(TParams->wa->data[winindex])*(A1*siny - A3*cosy) 
-		     + cimag(TParams->wa->data[winindex])*(A1*cosy + A3*siny)
-		     + creal(TParams->wb->data[winindex])*(A2*siny - A4*cosy) 
-		     + cimag(TParams->wb->data[winindex])*(A2*cosy + A4*siny));
+	  (*Template)->fourier->data[i] = crect( creal((*Template)->fourier->data[i]) + 0.5*b*(creal(TParams->wa->data[winindex])*(A1*cosy + A3*siny) + cimag(TParams->wa->data[winindex])*(A3*cosy - A1*siny) + creal(TParams->wb->data[winindex])*(A2*cosy + A4*siny) + cimag(TParams->wb->data[winindex])*(A4*cosy - A2*siny)), cimag((*Template)->fourier->data[i]) + 0.5*b*(creal(TParams->wa->data[winindex])*(A1*siny - A3*cosy) + cimag(TParams->wa->data[winindex])*(A1*cosy + A3*siny) + creal(TParams->wb->data[winindex])*(A2*siny - A4*cosy) + cimag(TParams->wb->data[winindex])*(A2*cosy + A4*siny)) );
 	}	
 	
       } /* end loop over first order eccentricity terms */

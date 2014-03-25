@@ -154,6 +154,7 @@
 #include <lal/Units.h>
 
 #include "CheckStatus.h"
+#include "CheckStatus.c"
 
 #define OVERLAPREDUCTIONFUNCTIONTESTC_LENGTH    8
 #define OVERLAPREDUCTIONFUNCTIONTESTC_F0        0.0

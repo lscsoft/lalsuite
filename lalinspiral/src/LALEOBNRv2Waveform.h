@@ -370,26 +370,26 @@ int XLALGetCalibratedNQCCoeffs( EOBNonQCCoeffs *coeffs,
                                 );
 
 int  XLALEOBNonQCCorrection(
-                      COMPLEX16      * restrict nqc,
-                      REAL8Vector    * restrict values,
+                      COMPLEX16      * _LAL_RESTRICT_ nqc,
+                      REAL8Vector    * _LAL_RESTRICT_ values,
                       const REAL8               omega,
-                      EOBNonQCCoeffs * restrict coeffs
+                      EOBNonQCCoeffs * _LAL_RESTRICT_ coeffs
                      );
 
 int XLALCalculateNQCCoefficients(
-                 REAL8Vector    * restrict amplitude,
-                 REAL8Vector    * restrict phase,
-                 REAL8Vector    * restrict q1,
-                 REAL8Vector    * restrict q2,
-                 REAL8Vector    * restrict q3,
-                 REAL8Vector    * restrict p1,
-                 REAL8Vector    * restrict p2,
+                 REAL8Vector    * _LAL_RESTRICT_ amplitude,
+                 REAL8Vector    * _LAL_RESTRICT_ phase,
+                 REAL8Vector    * _LAL_RESTRICT_ q1,
+                 REAL8Vector    * _LAL_RESTRICT_ q2,
+                 REAL8Vector    * _LAL_RESTRICT_ q3,
+                 REAL8Vector    * _LAL_RESTRICT_ p1,
+                 REAL8Vector    * _LAL_RESTRICT_ p2,
                  INT4                      l,
                  INT4                      m,
                  REAL8                     timePeak,
                  REAL8                     deltaT,
                  REAL8                     eta,
-                 EOBNonQCCoeffs * restrict coeffs );
+                 EOBNonQCCoeffs * _LAL_RESTRICT_ coeffs );
 
 REAL8 XLALGetNRPeakDeltaT( INT4 l, INT4 m, REAL8 eta );
 

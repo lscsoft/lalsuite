@@ -7,6 +7,7 @@
  */
 
 #include "ppe_models.h"
+#include <lal/CWFastMath.h>
 
 #define SQUARE(x) ( (x) * (x) );
 
@@ -51,17 +52,29 @@ void get_pulsar_model( LALInferenceIFOData *data ){
   //  pars.phi0 = rescale_parameter( data, "phi0" );
   //}
 
-  /*pinned superfluid parameters*/
-  //pars.I21 = rescale_parameter( data, "I21" );
-  //pars.I31 = rescale_parameter( data, "I31" );
-  //pars.r = rescale_parameter( data, "r" );
-  //pars.lambda = rescale_parameter( data, "lambda" );
-  //pars.costheta = rescale_parameter( data, "costheta" );
+  if( LALInferenceCheckVariable( data->dataParams, "jones-model" ) ){
+    /* use parameterisation from Ian Jones's original model */
+    pars.I21 = rescale_parameter( data, "I21" );
+    pars.I31 = rescale_parameter( data, "I31" );
+    pars.lambda = rescale_parameter( data, "lambda" );
+    pars.costheta = rescale_parameter( data, "costheta" );
+    pars.phi0 = rescale_parameter( data, "phi0" );
 
-  pars.C21 = rescale_parameter( data, "C21" );
-  pars.C22 = rescale_parameter( data, "C22" );
-  pars.phi21 = rescale_parameter( data, "phi21" );
-  pars.phi22 = rescale_parameter( data, "phi22" );
+    invert_source_params( &pars );
+  }
+  else{
+    pars.C21 = rescale_parameter( data, "C21" );
+    pars.C22 = rescale_parameter( data, "C22" );
+    pars.phi21 = rescale_parameter( data, "phi21" );
+
+    if( LALInferenceCheckVariable( data->dataParams, "biaxial" ) ){
+      /* use complex amplitude parameterisation, but set up for a biaxial star */
+      pars.phi22 = 2.*pars.phi21;
+    }
+    else{
+      pars.phi22 = rescale_parameter( data, "phi22" );
+    }
+  }
 
   /* set the potentially variable parameters */
   pars.pepoch = rescale_parameter( data, "pepoch" );
@@ -78,6 +91,9 @@ void get_pulsar_model( LALInferenceIFOData *data ){
   pars.f3 = rescale_parameter( data, "f3" );
   pars.f4 = rescale_parameter( data, "f4" );
   pars.f5 = rescale_parameter( data, "f5" );
+
+  /* speed of GWs as a fraction of speed of light LAL_C_SI */
+  pars.cgw = rescale_parameter( data, "cgw" );
 
   /* check if there are binary parameters */
   if( LALInferenceCheckVariable(data->modelParams, "model") ){
@@ -269,7 +285,7 @@ void pulsar_model( BinaryPulsarParams params, LALInferenceIFOData *data ){
 
             dphit = -fmod(dphi->data[i] - data->timeData->data->data[i], 1.);
 
-            expp = cexp( dphit );
+            expp = cexp( LAL_TWOPI * I * dphit );
 
             M = data->compModelData->data->data[i];
 
@@ -360,14 +376,16 @@ REAL8Vector *get_phase_model( BinaryPulsarParams params, LALInferenceIFOData *da
   }
 
   for( i=0; i<length; i++){
-    REAL8 realT = XLALGPSGetREAL8( &data->dataTimes->data[i] );/*time of data*/
+    REAL8 realT = XLALGPSGetREAL8( &data->dataTimes->data[i] ); /*time of data*/
 
-    T0 = params.pepoch;/*time of ephem info*/
+    T0 = params.pepoch; /*time of ephem info*/
 
-    DT = realT - T0;/*time diff between data and ephem info*/
+    DT = realT - T0; /*time diff between data and ephem info*/
 
     if ( params.model != NULL ) { deltat = DT + dts->data[i] + bdts->data[i]; }
     else { deltat = DT + dts->data[i]; }
+
+    deltat /= (1.-params.cgw); /* correct for speed of GW compared to speed of light */
 
     /* work out phase */
     deltat2 = deltat*deltat;
@@ -545,8 +563,8 @@ REAL8Vector *get_bsb_delay( BinaryPulsarParams pars, LIGOTimeGPSVector *datatime
 /**
  * \brief The amplitude model of a complex heterodyned triaxial neutron star
  *
- * This function calculates the complex heterodyned time series model for a triaxial neutron star (see [\ref
- * DupuisWoan2005]). It is defined as:
+ * This function calculates the complex heterodyned time series model for a triaxial neutron star (see
+ * [\cite DupuisWoan2005]). It is defined as:
  * \f{eqnarray}{
  * y(t) & = & \frac{h_0}{2} \left( \frac{1}{2}F_+(t,\psi)
  * (1+\cos^2\iota)\exp{i\phi_0} - iF_{\times}(t,\psi)\cos{\iota}\exp{i\phi_0}
@@ -720,7 +738,7 @@ void get_pinsf_amplitude_model( BinaryPulsarParams pars, LALInferenceIFOData *da
   ePhi = cexp( pars.phi0 * I );
   e2Phi = cexp( 2. * pars.phi0 * I );
 
-  sin_cos_LUT( &sinlambda, &coslambda, pars.lambda );
+  XLAL_CHECK_VOID( XLALSinCosLUT( &sinlambda, &coslambda, pars.lambda ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   /* f^2 / r */
   f2_r = pars.f0 * pars.f0 / pars.dist;
@@ -916,7 +934,7 @@ void get_amplitude_model( BinaryPulsarParams pars, LALInferenceIFOData *data ){
       /* the l=2, m=1 harmonic at the rotation frequency */
       expPhi = cexp( I * pars.phi21 );
       Cplus = -0.25 * pars.C21 * siniota * pars.cosiota * expPhi;
-      Ccross = -0.25 * I * pars.C21 * siniota * expPhi;
+      Ccross = 0.25 * I * pars.C21 * siniota * expPhi;
     }
     else if( freqFactors->data[j] == 2. ){
       /* the l=2, m=2 harmonic at twice the rotation frequency */
@@ -977,7 +995,7 @@ void get_amplitude_model( BinaryPulsarParams pars, LALInferenceIFOData *data ){
  * The evidence is obtained from the joint likelihood given in \c pulsar_log_likelihood with the model term \f$y\f$ set
  * to zero.
  *
- * \param runData [in] The algorithm run state
+ * \param runState [in] The algorithm run state
  *
  * \return The natural logarithm of the noise only evidence
  */
@@ -1082,7 +1100,7 @@ REAL8 get_phase_mismatch( REAL8Vector *phi1, REAL8Vector *phi2, LIGOTimeGPSVecto
   for( i = 0; i < phi1->length-1; i++ ){
     if ( i == 0 ){
       dp1 = fmod( phi1->data[i] - phi2->data[i], 1. );
-      sin_cos_2PI_LUT( &sp, &cp1, dp1 );
+      XLAL_CHECK_REAL8( XLALSinCos2PiLUT( &sp, &cp1, dp1 ) == XLAL_SUCCESS, XLAL_EFUNC );
     }
     else{
       dp1 = dp2;
@@ -1093,7 +1111,7 @@ REAL8 get_phase_mismatch( REAL8Vector *phi1, REAL8Vector *phi2, LIGOTimeGPSVecto
 
     dt = XLALGPSGetREAL8(&t->data[i+1]) - XLALGPSGetREAL8(&t->data[i]);
 
-    sin_cos_2PI_LUT( &sp, &cp2, dp2 );
+    XLAL_CHECK_REAL8( XLALSinCos2PiLUT( &sp, &cp2, dp2 ) == XLAL_SUCCESS, XLAL_EFUNC );
 
     mismatch += (cp1 + cp2) * dt;
   }
@@ -1273,43 +1291,37 @@ void inverse_phi0_psi_transform( REAL8 phi0prime, REAL8 psiprime, REAL8 *phi0, R
  * 76-79 of LIGO T1200265-v3.
  */
 void invert_source_params( BinaryPulsarParams *params ){
-  /* if h0 is defined then we have a triaxial source (l=m=2) emitting just at twice the rotation frequency */
-  if ( !params->C22 && !params->phi22 ){
-    params->C22 = params->h0 / 2.;
-    params->phi22 = params->phi0 - LAL_PI;
-  }
-  /* otherwise we have a more general source model that can include m=1,2 emission */
-  else if ( !params->C22 && !params->C21 && !params->phi22 && !params->phi21 ) {
-    REAL8 sinlambda, coslambda, sinlambda2, coslambda2, sin2lambda;
-    REAL8 sintheta, costheta, costheta2, sintheta2, sin2theta;
+  REAL8 sinlambda, coslambda, sinlambda2, coslambda2, sin2lambda;
+  REAL8 theta, sintheta, costheta, costheta2, sintheta2, sin2theta;
+  REAL8 phi0 = params->phi0;
 
-    sinlambda = sin( params->lambda );
-    coslambda = cos( params->lambda );
-    sin2lambda = sin( 2. * params->lambda );
-    sinlambda2 = SQUARE( sinlambda );
-    coslambda2 = SQUARE( coslambda );
+  sinlambda = sin( params->lambda );
+  coslambda = cos( params->lambda );
+  sin2lambda = sin( 2. * params->lambda );
+  sinlambda2 = SQUARE( sinlambda );
+  coslambda2 = SQUARE( coslambda );
 
-    sintheta = sin( acos( params->costheta ) );
-    costheta = params->costheta;
-    sin2theta = sin( 2. * acos( params->costheta ) );
-    sintheta2 = SQUARE( sintheta );
-    costheta2 = SQUARE( costheta );
+  theta = acos( params->costheta );
+  sintheta = sin( theta );
+  costheta = params->costheta;
+  sin2theta = sin( 2. * theta );
+  sintheta2 = SQUARE( sintheta );
+  costheta2 = SQUARE( costheta );
 
-    REAL8 A22 = params->I21 * ( sinlambda2 - coslambda2 * costheta2 ) - params->I31 * sintheta2;
-    REAL8 B22 = params->I21 * sin2lambda * costheta;
-    REAL8 A222 = SQUARE( A22 );
-    REAL8 B222 = SQUARE( B22 );
+  REAL8 A22 = params->I21 * ( sinlambda2 - coslambda2 * costheta2 ) - params->I31 * sintheta2;
+  REAL8 B22 = params->I21 * sin2lambda * costheta;
+  REAL8 A222 = SQUARE( A22 );
+  REAL8 B222 = SQUARE( B22 );
 
-    REAL8 A21 = params->I21 * sin2lambda * sintheta;
-    REAL8 B21 = sin2theta * ( params->I21 * coslambda2 - params->I31 );
-    REAL8 A212 = SQUARE( A21 );
-    REAL8 B212 = SQUARE( B21 );
+  REAL8 A21 = params->I21 * sin2lambda * sintheta;
+  REAL8 B21 = sin2theta * ( params->I21 * coslambda2 - params->I31 );
+  REAL8 A212 = SQUARE( A21 );
+  REAL8 B212 = SQUARE( B21 );
 
-    params->C22 = 2.*sqrt( A222 + B222 );
-    params->C21 = 2.*sqrt( A212 + B212 );
+  params->C22 = 2.*sqrt( A222 + B222 );
+  params->C21 = 2.*sqrt( A212 + B212 );
 
-    params->phi22 = atan2( B22, A22 );
-    params->phi21 = atan2( B21, A21 );
-  }
+  params->phi22 = fmod( phi0 - atan2( B22, A22 ), LAL_TWOPI );
+  params->phi21 = fmod( ( phi0/2. ) - atan2( B21, A21 ), LAL_TWOPI );
 }
 

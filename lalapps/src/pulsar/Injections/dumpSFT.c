@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2004, 2005 Reinhard Prix
+ * Copyright (C) 2004, 2005, 2013 Reinhard Prix
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -12,15 +12,15 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with with program; see the file COPYING. If not, write to the 
- *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, 
+ *  along with with program; see the file COPYING. If not, write to the
+ *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
  *  MA  02111-1307  USA
  */
 
 
 /**
  * \author Reinhard Prix
- * \date 2005
+ * \date 2005, 2013
  * \file
  * \ingroup pulsarApps
  * \brief Code to dump various SFT-info in human-readable form to stdout.
@@ -32,152 +32,169 @@
 #include <lal/UserInput.h>
 #include <lal/SFTfileIO.h>
 #include <lal/SFTutils.h>
-#include "sft_extra.h"
-
-/** \name Error codes */
-/*@{*/
-#define MAKEFAKEDATAC_ENORM 	0
-#define MAKEFAKEDATAC_ESUB  	1
-#define MAKEFAKEDATAC_EARG  	2
-#define MAKEFAKEDATAC_EBAD  	3
-#define MAKEFAKEDATAC_EFILE 	4
-#define MAKEFAKEDATAC_ENOARG 	5
-
-
-#define MAKEFAKEDATAC_MSGENORM "Normal exit"
-#define MAKEFAKEDATAC_MSGESUB  "Subroutine failed"
-#define MAKEFAKEDATAC_MSGEARG  "Error parsing arguments"
-#define MAKEFAKEDATAC_MSGEBAD  "Bad argument values"
-#define MAKEFAKEDATAC_MSGEFILE "File IO error"
-#define MAKEFAKEDATAC_MSGENOARG "Missing argument"
-/*@}*/
-
 
 /*---------- DEFINES ----------*/
 
-#define TRUE    (1==1)
-#define FALSE   (1==0)
-
 /*----- Macros ----- */
-/*---------- internal types ----------*/
+#define INIT_MEM(x) memset(&(x), 0, sizeof((x)))
 
+/*---------- internal types ----------*/
 /*---------- empty initializers ---------- */
-static const LALStatus empty_status;
-static const SFTConstraints empty_constraints;
 /*---------- Global variables ----------*/
 
 /* User variables */
-BOOLEAN uvar_help;
-CHAR *uvar_SFTfiles;
-BOOLEAN uvar_headerOnly;
-BOOLEAN uvar_noHeader;
+typedef struct
+{
+  BOOLEAN help;
+  CHAR *SFTfiles;
+  BOOLEAN headerOnly;
+  BOOLEAN noHeader;
+} UserVariables_t;
 
 /*---------- internal prototypes ----------*/
-void initUserVars (LALStatus *stat);
+int XLALprintDescriptor ( const SFTDescriptor *ptr );
+int XLALprintHeader ( const SFTtype *header );
+int XLALprintData ( const SFTtype *sft );
+
+int XLALReadUserInput ( int argc, char *argv[], UserVariables_t *uvar );
 
 /*==================== FUNCTION DEFINITIONS ====================*/
 
 /*----------------------------------------------------------------------
- * main function 
+ * main function
  *----------------------------------------------------------------------*/
 int
-main(int argc, char *argv[]) 
+main(int argc, char *argv[])
 {
-  LALStatus status = empty_status;	/* initialize status */
-  SFTConstraints constraints = empty_constraints;
+  /* register all our user-variable */
+  UserVariables_t uvar; INIT_MEM ( uvar );
+  XLAL_CHECK ( XLALReadUserInput ( argc, argv, &uvar ) == XLAL_SUCCESS, XLAL_EFUNC );
+
+  SFTConstraints constraints; INIT_MEM ( constraints );
   CHAR detector[2] = "??";	/* allow reading v1-SFTs without detector-info */
-  SFTCatalog *catalog = NULL;
-  SFTVector *sfts = NULL;
-  UINT4 i;
+  constraints.detector = detector;
+  SFTCatalog *catalog;
+  XLAL_CHECK ( (catalog = XLALSFTdataFind ( uvar.SFTfiles, &constraints )) != NULL, XLAL_EFUNC, "No SFTs matched your --SFTfiles query\n" );
 
-
-  /* set LAL error-handler */
-  lal_errhandler = LAL_ERR_EXIT;	/* exit with returned status-code on error */
-
-  /* register all user-variables */
-  LAL_CALL (initUserVars (&status), &status);	  
-
-  /* read cmdline & cfgfile  */	
-  LAL_CALL (LALUserVarReadAllInput (&status, argc,argv), &status);  
-
-  if (uvar_help) 	/* help requested: we're done */
-    exit (0);
-
-
-  constraints.detector = detector;  /* set '??' detector-constraint, as we don't care about detector-info */
-  LAL_CALL ( LALSFTdataFind (&status, &catalog, uvar_SFTfiles, &constraints ), &status );
-
-  if ( !catalog )
+  if ( uvar.headerOnly )
     {
-      XLALPrintError ("\nNo SFTs seemed to have matched your query!\n\n");
-      return 1;
-    }
+      for ( UINT4 i=0; i < catalog->length; i ++ )
+        {
+          SFTDescriptor *ptr = &(catalog->data[i]);
 
-  if ( !uvar_headerOnly ) {
-    LAL_CALL ( LALLoadSFTs ( &status, &sfts, catalog, -1, -1 ), &status );
-  }
+          XLALprintHeader ( &(ptr->header) );
+          XLALprintDescriptor ( ptr );
 
-  for ( i=0; i < catalog->length; i ++ )
+        } // for i < catalog->length
+    } // if header
+  else
     {
-      SFTDescriptor *ptr = &(catalog->data[i]);
+      SFTVector *sfts;
+      XLAL_CHECK ( (sfts = XLALLoadSFTs ( catalog, -1, -1 )) != NULL, XLAL_EFUNC );
 
-      if ( ! uvar_noHeader )
-	{
-	  printf ("\n");
-	  printf ( "Locator:     '%s'\n", XLALshowSFTLocator ( ptr->locator ) );
-	  printf ( "Name:        '%s'\n", ptr->header.name );
-	  printf ( "epoch:       [%d, %d]\n", ptr->header.epoch.gpsSeconds, ptr->header.epoch.gpsNanoSeconds ); 
-	  printf ( "f0:          %.9f\n", ptr->header.f0 );
-	  printf ( "deltaF:      %.9g\n", ptr->header.deltaF );
-	  printf ( "comment:     %s\n", (ptr->comment)?(ptr->comment) : "<none>" );
-	  printf ( "numBins:     %d\n", ptr->numBins );
-	  printf ("\n");
-	}
+      BOOLEAN segmentedSFTs = 0;
+      if ( sfts->length < catalog->length ) {
+        segmentedSFTs = 1;
+        printf ("\n");
+        printf ("%%%% Frequency-segmented SFTs: len(catalog) = %d, len(sft-vector) = %d\n", catalog->length, sfts->length );
+        if ( !uvar.noHeader ) {
+          printf ("%%%% For segmented SFTS we can't output SFT 'descriptors' + data. Use --headerOnly if you need the descriptor fields\n\n");
+        }
+      } // if we're dealing with 'segmented SFTs': currently can't map them to catalog-descriptors
 
-      if ( !uvar_headerOnly )
-	{
-	  UINT4 k;
-	  SFTtype *sft = &(sfts->data[i]);;
-	  if ( ! uvar_noHeader ) printf (" Frequency_Hz     Real           Imaginary \n");
-	  for ( k=0; k < sft->data->length; k ++ )
-	    printf ( "%.9f      % 6e  % 6e  \n", sft->f0 + k * sft->deltaF, crealf(sft->data->data[k]), cimagf(sft->data->data[k]) );
-	  
-	  printf ("\n");
-	  
-	} /* if !headerOnly */
+      for ( UINT4 i=0; i < sfts->length; i ++ )
+        {
+          SFTtype *sft_i = &(sfts->data[i]);;
 
-    } /* for i < numSFTs */
+          if ( !uvar.noHeader ) {
+            XLALprintHeader ( sft_i );
+            if ( !segmentedSFTs ) {	// skip descriptor fields for segmented SFTs (as we can't map them to SFTs)
+              XLALprintDescriptor ( &(catalog->data[i]) );
+            }
+          } // output header info
 
-  if ( sfts ) {
-    LAL_CALL ( LALDestroySFTVector (&status, &sfts ), &status );
-  }
+          XLALprintData ( sft_i );
+
+        } // for i < num_sfts
+
+      XLALDestroySFTVector ( sfts );
+    } /* if !headerOnly */
 
   /* free memory */
-  LAL_CALL (LALDestroySFTCatalog (&status, &catalog), &status );
-  LAL_CALL (LALDestroyUserVars (&status), &status);
+  XLALDestroySFTCatalog (catalog);
+  XLALDestroyUserVars();
 
-  LALCheckMemoryLeaks(); 
+  LALCheckMemoryLeaks();
 
   return 0;
 } /* main */
 
-
-/*----------------------------------------------------------------------*/
-/* register all our "user-variables" */
-void
-initUserVars (LALStatus *stat)
+int
+XLALprintDescriptor ( const SFTDescriptor *desc )
 {
-  INITSTATUS(stat);
-  ATTATCHSTATUSPTR (stat);
+  XLAL_CHECK ( desc != NULL, XLAL_EINVAL );
 
-  /* now register all our user-variable */
-  LALregBOOLUserVar(stat,   help,	'h', UVAR_HELP,     "Print this help/usage message");
-  LALregSTRINGUserVar(stat, SFTfiles,	'i', UVAR_REQUIRED, "File-pattern for input SFTs");
-  LALregBOOLUserVar(stat,   headerOnly,	'H', UVAR_OPTIONAL, "Output only header-info");
-  LALregBOOLUserVar(stat,   noHeader,	'n', UVAR_OPTIONAL, "Output only data, no header");
-  
-  DETATCHSTATUSPTR (stat);
-  RETURN (stat);
+  printf ("%%%% ----- Descriptor:\n");
+  printf ( "Locator:     '%s'\n", XLALshowSFTLocator ( desc->locator ) );
+  printf ( "SFT version: %d\n", desc->version );
+  printf ( "numBins:     %d\n", desc->numBins );
+  printf ( "crc64:       %" LAL_UINT8_FORMAT "\n", desc->crc64 );
+  printf ( "comment:     %s\n", (desc->comment)?(desc->comment) : "<none>" );
 
-} /* initUserVars() */
+  return XLAL_SUCCESS;
 
+} // XLALprintDescriptor()
+
+
+int
+XLALprintHeader ( const SFTtype *header )
+{
+  XLAL_CHECK ( header != NULL, XLAL_EINVAL );
+
+  printf ("%%%% ----- Header:\n");
+  printf ( "Name:        '%s'\n", header->name );
+  printf ( "epoch:       [%d, %d]\n", header->epoch.gpsSeconds, header->epoch.gpsNanoSeconds );
+  printf ( "f0:          %.9f\n", header->f0 );
+  printf ( "deltaF:      %.9g\n", header->deltaF );
+  if ( header->data ) {
+    printf ("numBins:     %d\n", header->data->length );
+  }
+
+  return XLAL_SUCCESS;
+} // XLALprintHeader()
+
+int
+XLALprintData ( const SFTtype *sft )
+{
+  XLAL_CHECK ( (sft != NULL) && (sft->data != NULL), XLAL_EINVAL );
+
+  printf ("%%%% ----- Data x(f):\n");
+  printf ("%%%% Frequency f[Hz]     Real(x)           Imag(x) \n");
+  for ( UINT4 k=0; k < sft->data->length; k ++ ) {
+            printf ( "%.9f      % 6e  % 6e  \n", sft->f0 + k * sft->deltaF, crealf(sft->data->data[k]), cimagf(sft->data->data[k]) );
+  }
+
+  return XLAL_SUCCESS;
+
+} // XLALprintData()
+
+
+int
+XLALReadUserInput ( int argc, char *argv[], UserVariables_t *uvar )
+{
+  XLALregBOOLUserStruct ( 	help,		'h', UVAR_HELP,     "Print this help/usage message");
+  XLALregSTRINGUserStruct (	SFTfiles,	'i', UVAR_REQUIRED, "File-pattern for input SFTs");
+  XLALregBOOLUserStruct (	headerOnly,	'H', UVAR_OPTIONAL, "Output only header-info");
+  XLALregBOOLUserStruct (	noHeader,	'n', UVAR_OPTIONAL, "Output only data, no header");
+
+  /* read cmdline & cfgfile  */
+  XLAL_CHECK ( XLALUserVarReadAllInput ( argc, argv ) == XLAL_SUCCESS, XLAL_EFUNC );
+
+  if (uvar->help) { 	/* help requested: we're done */
+    exit (0);
+  }
+
+  XLAL_CHECK ( !(uvar->headerOnly && uvar->noHeader), XLAL_EINVAL, "Contradictory input --headerOnly --noHeader\n" );
+
+  return XLAL_SUCCESS;
+}

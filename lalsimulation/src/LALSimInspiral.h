@@ -23,6 +23,7 @@
 #include <lal/LALDatatypes.h>
 #include <lal/LALSimInspiralWaveformFlags.h>
 #include <lal/LALSimInspiralTestGRParams.h>
+#include <lal/LALSimInspiralSphHarmSeries.h>
 #include <lal/TimeSeries.h>
 #include <gsl/gsl_matrix.h>
 
@@ -92,6 +93,7 @@ typedef enum {
    IMRPhenomFA,		/**< Frequency domain (non-spinning) inspiral-merger-ringdown templates of Ajith et al [Ajith_2007kx] with phenomenological coefficients defined in the Table I of [Ajith_2007xh]*/
    IMRPhenomFB,		/**< Frequency domain (non-precessing spins) inspiral-merger-ringdown templates of Ajith et al [Ajith_2009bn] */
    IMRPhenomC,		/**< Frequency domain (non-precessing spins) inspiral-merger-ringdown templates of Ajith et al [Santamaria:2010yb] with phenomenological coefficients defined in the Table II of [Santamaria:2010yb]*/
+   IMRPhenomP,		/**< Frequency domain (generic spins) inspiral-merger-ringdown templates of Hannam et al., arXiv:1308.3271 [gr-qc] */
    TaylorEt,		/**< UNDOCUMENTED */
    TaylorT4,		/**< UNDOCUMENTED */
    TaylorN,		/**< UNDOCUMENTED */
@@ -144,147 +146,28 @@ int XLALSimInspiralREAL8WaveTaper(
 		LALSimInspiralApplyTaper  bookends	/**< taper type enumerator */
 		);
 
-/* 
- * Structure to carry a collection of spherical harmonic modes in COMPLEX16 
- * time series. Contains convenience getter and setter functions, as well as
- * a convienence "maximum l mode" function. Implemented as a singly forward
- * linked list.
+
+/**
+ * Gives the default ending frequencies of the given approximant.
  */
-typedef struct tagSphHarmTimeSeries SphHarmTimeSeries;
-
-typedef struct tagSphHarmFrequencySeries SphHarmFrequencySeries;
-
-/* 
- * Create a SphHarmTimeSeries. If appended is not NULL, this will prepend a new
- * structure to the list by duplicating the mode inmode, mode numbers l, and m, 
- * and then set the next pointer to the appended structure.
- */
-SphHarmTimeSeries* XLALSphHarmTimeSeriesAddMode( 
-		SphHarmTimeSeries *appended,  /**< List structure to prepend to */
-		const COMPLEX16TimeSeries* inmode,  /**< mode series to contain */
-		UINT4 l, /**< major mode number */
-		INT4 m  /**< minor mode number */
-);
-
-/* 
- * Set the tdata pointer to a REAL8Sequence for all members of the 
- * SphHarmTimeSeries linked list. This is mainly intended for use with
- * unevenly sampled time series data
- */
-void XLALSphHarmTimeSeriesSetTData( 
-		SphHarmTimeSeries *ts,  /**< List structure to set tdata */
-		REAL8Sequence* fdata  /**< sequence of timestamps */
-);
-
-/* 
- * Get the tdata pointer.
- */
-REAL8Sequence* XLALSphHarmTimeSeriesGetTData( 
-		SphHarmTimeSeries *ts  /**< List structure to get tdata */
-);
-
-/* 
- * Destroy a SphHarmTimeSeries. Note that this will destroy any 
- * COMPLEX16TimeSeries which it has references to.
- */
-void XLALDestroySphHarmTimeSeries( SphHarmTimeSeries* ts );
-
-/* 
- * Destroy a SphHarmTimeSeries. Note that this will destroy any 
- * COMPLEX16TimeSeries which it has references to.
- */
-UINT4 XLALSphHarmTimeSeriesGetMaxL( SphHarmTimeSeries* ts );
-
-#ifdef SWIG   // SWIG interface directives
-SWIGLAL(RETURNS_PROPERTY(COMPLEX16TimeSeries*, XLALSphHarmTimeSeriesGetMode));
-#endif
-
-/* 
- * Get the mode-decomposed time series corresponding to l,m.
- */
-COMPLEX16TimeSeries* XLALSphHarmTimeSeriesGetMode( 
-				SphHarmTimeSeries *ts, 
-				UINT4 l, 
-				INT4 m 
-);
-
-SphHarmTimeSeries *XLALResizeSphHarmTimeSeries(
-        SphHarmTimeSeries *ts,
-        int first,
-        size_t length
-        );
-
-SphHarmFrequencySeries *XLALSphHarmFrequencySeriesFromSphHarmTimeSeries(
-        SphHarmTimeSeries *hlms_TD
-        );
-
-/* 
- * Create a SphHarmFrequencySeries. If appended is not NULL, this will prepend a new
- * structure to the list by duplicating the mode inmode, mode numbers l, and m, 
- * and then set the next pointer to the appended structure.
- */
-SphHarmFrequencySeries* XLALSphHarmFrequencySeriesAddMode( 
-		SphHarmFrequencySeries *appended,  /**< List structure to prepend to */
-		const COMPLEX16FrequencySeries* inmode,  /**< mode series to contain */
-		UINT4 l, /**< major mode number */
-		INT4 m  /**< minor mode number */
-);
-
-SphHarmTimeSeries *XLALSphHarmTimeSeriesFromSphHarmFrequencySeriesDataAndPSD(
-                                                                             SphHarmFrequencySeries *hlms, 
-                                                                             COMPLEX16FrequencySeries* data,
-                                                                             COMPLEX16FrequencySeries* psd
-                                                                             );
-
-
-/* 
- * Set the tdata pointer to a REAL8Sequence for all members of the 
- * SphHarmFrequencySeries linked list. This is mainly intended for use with
- * unevenly sampled time series data
- */
-void XLALSphHarmFrequencySeriesSetFData( 
-		SphHarmFrequencySeries *ts,  /**< List structure to add tdata */
-		REAL8Sequence* tdata  /**< sequence of timestamps */
-);
-
-/* 
- * Get the fdata pointer.
- */
-REAL8Sequence* XLALSphHarmFrequencySeriesGetFData( 
-		SphHarmFrequencySeries *ts  /**< List structure to get fdata */
-);
-
-/* 
- * Destroy a SphHarmFrequencySeries. Note that this will destroy any 
- * COMPLEX16TimeSeries which it has references to.
- */
-void XLALDestroySphHarmFrequencySeries( SphHarmFrequencySeries* ts );
-
-/* 
- * Destroy a SphHarmFrequencySeries. Note that this will destroy any 
- * COMPLEX16FrequencySeries which it has references to.
- */
-UINT4 XLALSphHarmFrequencySeriesGetMaxL( SphHarmFrequencySeries* ts );
-
-#ifdef SWIG   // SWIG interface directives
-SWIGLAL(RETURNS_PROPERTY(COMPLEX16FrequencySeries*, XLALSphHarmFrequencySeriesGetMode));
-#endif
-
-/* 
- * Get the mode-decomposed frequency series corresponding to l,m.
- */
-COMPLEX16FrequencySeries* XLALSphHarmFrequencySeriesGetMode( 
-				SphHarmFrequencySeries *ts, 
-				UINT4 l, 
-				INT4 m 
-);
+double XLALSimInspiralGetFinalFreq(
+    REAL8 m1,                               /**< mass of companion 1 (kg) */
+    REAL8 m2,                               /**< mass of companion 2 (kg) */
+    REAL8 S1x,                              /**< x-component of the dimensionless spin of object 1 */
+    REAL8 S1y,                              /**< y-component of the dimensionless spin of object 1 */
+    REAL8 S1z,                              /**< z-component of the dimensionless spin of object 1 */
+    REAL8 S2x,                              /**< x-component of the dimensionless spin of object 2 */
+    REAL8 S2y,                              /**< y-component of the dimensionless spin of object 2 */
+    REAL8 S2z,                              /**< z-component of the dimensionless spin of object 2 */
+    Approximant approximant                 /**< post-Newtonian approximant to use for waveform production */
+    );
 
 /**
  * Compute the polarizations from all the -2 spin-weighted spherical harmonic
  * modes stored in 'hlms'. Be sure that 'hlms' is the head of the linked list!
  *
  * The computation done is:
- * hp(t) - i hc(t) = \sum_l \sum_m h_lm(t) -2Y_lm(iota,psi)
+ * \f$hp(t) - i hc(t) = \sum_l \sum_m h_lm(t) -2Y_lm(iota,psi)\f$
  *
  * iota and psi are the inclination and polarization angle of the observer
  * relative to the source of GWs.
@@ -1817,6 +1700,30 @@ int XLALSimInspiralTaylorEtPNRestricted(
 	       	int O                     /**< twice post-Newtonian phase order */
 		);
 
+
+/**
+ * Structure for passing around PN phasing coefficients.
+ * For use with the TaylorF2 waveform.
+ */
+#define PN_PHASING_SERIES_MAX_ORDER 12
+typedef struct tagPNPhasingSeries
+{
+    REAL8 v[PN_PHASING_SERIES_MAX_ORDER+1];        /**< */ 
+    REAL8 vlogv[PN_PHASING_SERIES_MAX_ORDER+1];
+    REAL8 vlogvsq[PN_PHASING_SERIES_MAX_ORDER+1];
+}
+PNPhasingSeries;
+
+int XLALSimInspiralTaylorF2Phasing(
+	PNPhasingSeries **pfa,
+	const REAL8 m1,
+	const REAL8 m2,
+	const REAL8 chi1L,
+	const REAL8 chi2L,
+	const LALSimInspiralSpinOrder spinO
+	);
+
+
 /**
  * Computes the stationary phase approximation to the Fourier transform of
  * a chirp waveform with phase given by \eqref{eq_InspiralFourierPhase_f2}
@@ -2383,6 +2290,20 @@ void XLALSimInspiralTaylorF2RedSpinMchirpEtaChiFromChirpTimes(
     double theta3s, /**< dimensionless parameter related to the chirp time by theta3s = 2 pi fLow tau3s */
     double fLow     /**< low-frequency cutoff (Hz) */
 );
+
+typedef enum {
+
+   LAL_SIM_INSPIRAL_SPINLESS, /** These approximants cannot include spin terms */
+   LAL_SIM_INSPIRAL_SINGLESPIN, /** These approximants support a signle spin (by default that is the object 1)*/
+   LAL_SIM_INSPIRAL_ALIGNEDSPIN, /** These approximants can include spins aligned with L_N */
+   LAL_SIM_INSPIRAL_PRECESSINGSPIN, /** These approximant support fully precessing spins */
+   LAL_SIM_INSPIRAL_NUMSPINSUPPORT	/**< Number of elements in enum, useful for checking bounds */
+
+ } SpinSupport;
+
+/* check if the given approximant supports precessing spins */
+
+int XLALSimInspiralGetSpinSupportFromApproximant(Approximant approx);
 
 #if 0
 { /* so that editors will match succeeding brace */

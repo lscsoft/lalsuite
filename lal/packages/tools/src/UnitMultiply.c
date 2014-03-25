@@ -124,6 +124,7 @@ void
 LALUnitMultiply (LALStatus *status, LALUnit *output, const LALUnitPair *input)
 
 {
+  XLAL_PRINT_DEPRECATION_WARNING("XLALUnitMultiply");
   INITSTATUS(status);
 
   ASSERT( input != NULL, status, UNITSH_ENULLPIN, UNITSH_MSGENULLPIN );

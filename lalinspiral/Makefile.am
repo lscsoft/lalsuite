@@ -8,11 +8,9 @@ $(ACLOCAL_M4): $(am__aclocal_m4_deps)
 
 EXTRA_DIST = \
 	COPYING \
-	lalinspiral.pc.in \
-	lalinspiral.spec.in \
 	lalinspiral.spec \
-	aclocal.m4 \
-	doc
+	doc \
+	$(DATA)
 
 SUBDIRS = \
 	gnuscripts \
@@ -25,6 +23,8 @@ SUBDIRS = \
 
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = lalinspiral.pc
+noinst_DATA = lalinspiral-uninstalled.pc
+BUILT_SOURCES = lalinspiral-uninstalled.pc
 
 DISTCLEANFILES = config.lt
 

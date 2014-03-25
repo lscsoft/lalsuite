@@ -3,12 +3,13 @@ exec_prefix=@exec_prefix@
 libdir=@libdir@
 includedir=@includedir@
 datarootdir=@datarootdir@
-datadir=@datadir@
-pkgdatadir=@datadir@/@PACKAGE@
+LAL_DATA_PATH=@datadir@/@PACKAGE@:@LAL_DATA_PATH@
+LAL_OCTAVE_PATH=@octexecdir@:@LAL_OCTAVE_PATH@
+LAL_PYTHON_PATH=@pyexecdir@:@LAL_PYTHON_PATH@
 
 Name: LALMetaIO
 Description: LAL MetaIO Library Support
 Version: @VERSION@
-Requires: lal libmetaio
+Requires: lal >= @LAL_VERSION@, libmetaio
 Libs: -L${libdir} -llalmetaio
 Cflags: -I${includedir}

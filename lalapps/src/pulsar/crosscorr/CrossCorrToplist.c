@@ -76,6 +76,8 @@ int finite(double);
 
 
 
+
+
 /* define min macro if not already defined */
 #ifndef min
 #define min(a,b) ((a)<(b)?(a):(b))
@@ -87,7 +89,10 @@ int finite(double);
 /* local prototypes */
 static void reduce_crossCorr_toplist_precision(toplist_t *l);
 static int _atomic_write_crossCorr_toplist_to_file(toplist_t *l, const char *filename, UINT4*checksum, int write_done);
+static int _atomic_write_crossCorrBinary_toplist_to_file(toplist_t *l, const char *filename, UINT4*checksum, int write_done);
+
 static int print_crossCorrline_to_str(CrossCorrOutputEntry fline, char* buf, int buflen);
+static int print_crossCorrBinaryline_to_str(CrossCorrBinaryOutputEntry fline, char* buf, int buflen);
 
 
 /* ordering function for sorting the list */
@@ -120,6 +125,38 @@ static int crossCorr_toplist_qsort_function(const void *a, const void *b) {
 	return 0;
 }
 
+
+/* ordering function for sorting the list */
+static int crossCorrBinary_toplist_qsort_function(const void *a, const void *b) {
+    if      (((const CrossCorrBinaryOutputEntry*)a)->freq  < ((const CrossCorrBinaryOutputEntry*)b)->freq)
+	return -1;
+    else if (((const CrossCorrBinaryOutputEntry*)a)->freq  > ((const CrossCorrBinaryOutputEntry*)b)->freq)
+	return 1;
+    if      (((const CrossCorrBinaryOutputEntry*)a)->tp  < ((const CrossCorrBinaryOutputEntry*)b)->tp)
+	return -1;
+    else if (((const CrossCorrBinaryOutputEntry*)a)->tp  > ((const CrossCorrBinaryOutputEntry*)b)->tp)
+	return 1;
+    if      (((const CrossCorrBinaryOutputEntry*)a)->argp  < ((const CrossCorrBinaryOutputEntry*)b)->argp)
+	return -1;
+    else if (((const CrossCorrBinaryOutputEntry*)a)->argp  > ((const CrossCorrBinaryOutputEntry*)b)->argp)
+	return 1;
+    if      (((const CrossCorrBinaryOutputEntry*)a)->asini  < ((const CrossCorrBinaryOutputEntry*)b)->asini)
+	return -1;
+    else if (((const CrossCorrBinaryOutputEntry*)a)->asini  > ((const CrossCorrBinaryOutputEntry*)b)->asini)
+	return 1;
+    else if (((const CrossCorrBinaryOutputEntry*)a)->ecc < ((const CrossCorrBinaryOutputEntry*)b)->ecc)
+	return -1;
+    else if (((const CrossCorrBinaryOutputEntry*)a)->ecc > ((const CrossCorrBinaryOutputEntry*)b)->ecc)
+	return 1;
+    else if (((const CrossCorrBinaryOutputEntry*)a)->period < ((const CrossCorrBinaryOutputEntry*)b)->period)
+	return -1;
+    else if (((const CrossCorrBinaryOutputEntry*)a)->period > ((const CrossCorrBinaryOutputEntry*)b)->period)
+	return 1;
+    else
+	return 0;
+}
+
+
 /* ordering function defining the toplist */
 static int crossCorr_smaller(const void*a, const void*b) {
   if     (((const CrossCorrOutputEntry*)a)->Rho < ((const CrossCorrOutputEntry*)b)->Rho)
@@ -131,10 +168,25 @@ static int crossCorr_smaller(const void*a, const void*b) {
 }
 
 
+static int crossCorrBinary_smaller(const void*a, const void*b) {
+  if     (((const CrossCorrBinaryOutputEntry*)a)->rho < ((const CrossCorrBinaryOutputEntry*)b)->rho)
+    return(1);
+  else if(((const CrossCorrBinaryOutputEntry*)a)->rho > ((const CrossCorrBinaryOutputEntry*)b)->rho)
+    return(-1);
+  else
+    return(crossCorrBinary_toplist_qsort_function(a,b));
+}
+
+
+
 /* creates a toplist with length elements,
    returns -1 on error (usually out of memory), else 0 */
 int create_crossCorr_toplist(toplist_t**tl, UINT8 length) {
   return(create_toplist(tl, length, sizeof(CrossCorrOutputEntry), crossCorr_smaller));
+}
+
+int create_crossCorrBinary_toplist(toplist_t**tl, UINT8 length) {
+  return(create_toplist(tl, length, sizeof(CrossCorrBinaryOutputEntry), crossCorrBinary_smaller));
 }
 
 
@@ -157,147 +209,284 @@ int insert_into_crossCorr_toplist(toplist_t*tl, CrossCorrOutputEntry elem) {
 }
 
 
+int insert_into_crossCorrBinary_toplist(toplist_t*tl, CrossCorrBinaryOutputEntry elem) {
+  if ( !tl )
+    return 0;
+  else
+    return(insert_into_toplist(tl, (void*)&elem));
+}
+
+
+
+
 /* (q)sort the toplist according to the sorting function. */
 void sort_crossCorr_toplist(toplist_t*l) {
   qsort_toplist(l,crossCorr_toplist_qsort_function);
 }
 
 
-/* reads a (created!) toplist from an open filepointer
-   returns the number of bytes read,
-    0 if we found a %DONE marker at the end,
-   -1 if the file contained a syntax error,
-   -2 if given an improper toplist */
-int read_crossCorr_toplist_from_fp(toplist_t*l, FILE*fp, UINT4*checksum, UINT4 maxbytes) {
-    CHAR line[256];       /* buffer for reading a line */
-    UINT4 items, lines;   /* number of items read from a line, linecounter */
-    UINT4 len, chars = 0; /* length of a line, total characters read from the file */
-    UINT4 i;              /* loop counter */
-    CHAR lastchar;        /* last character of a line read, should be newline */
-    CrossCorrOutputEntry CrossCorrLine;
-    REAL8 epsilon=1e-5;
+void sort_crossCorrBinary_toplist(toplist_t*l) {
+  qsort_toplist(l,crossCorrBinary_toplist_qsort_function);
+}
 
-    /* basic check that the list argument is valid */
-    if(!l)
-	return -2;
+/* /\* reads a (created!) toplist from an open filepointer */
+/*    returns the number of bytes read, */
+/*     0 if we found a %DONE marker at the end, */
+/*    -1 if the file contained a syntax error, */
+/*    -2 if given an improper toplist *\/ */
+/* int read_crossCorr_toplist_from_fp(toplist_t*l, FILE*fp, UINT4*checksum, UINT4 maxbytes) { */
+/*     CHAR line[256];       /\* buffer for reading a line *\/ */
+/*     UINT4 items, lines;   /\* number of items read from a line, linecounter *\/ */
+/*     UINT4 len, chars = 0; /\* length of a line, total characters read from the file *\/ */
+/*     UINT4 i;              /\* loop counter *\/ */
+/*     CHAR lastchar;        /\* last character of a line read, should be newline *\/ */
+/*     CrossCorrOutputEntry CrossCorrLine; */
+/*     REAL8 epsilon=1e-5; */
 
-    /* make sure the line buffer is terminated correctly */
-    line[sizeof(line)-1]='\0';
+/*     /\* basic check that the list argument is valid *\/ */
+/*     if(!l) */
+/* 	return -2; */
 
-    /* init the checksum if given */
-    if(checksum)
-	*checksum = 0;
+/*     /\* make sure the line buffer is terminated correctly *\/ */
+/*     line[sizeof(line)-1]='\0'; */
 
-    /* set maxbytes to maximum if zero */
-    if (maxbytes == 0)
-	maxbytes--;
+/*     /\* init the checksum if given *\/ */
+/*     if(checksum) */
+/* 	*checksum = 0; */
 
-    lines=1;
-    while(fgets(line,sizeof(line)-1, fp)) {
+/*     /\* set maxbytes to maximum if zero *\/ */
+/*     if (maxbytes == 0) */
+/* 	maxbytes--; */
 
-        if (!strncmp(line,"%DONE\n",strlen("%DONE\n"))) {
-	  LogPrintf(LOG_NORMAL,"WARNING: found end marker - the task was already finished\n");
-	  return(0);
-        }
+/*     lines=1; */
+/*     while(fgets(line,sizeof(line)-1, fp)) { */
 
-	len = strlen(line);
-	chars += len;
+/*         if (!strncmp(line,"%DONE\n",strlen("%DONE\n"))) { */
+/* 	  LogPrintf(LOG_NORMAL,"WARNING: found end marker - the task was already finished\n"); */
+/* 	  return(0); */
+/*         } */
 
-	if (len==0) {
-	  LogPrintf (LOG_CRITICAL, "Line %d is empty.\n", lines);
-	    return -1;
-	}
-	else if (line[len-1] != '\n') {
-	  LogPrintf (LOG_CRITICAL, 
-		     "Line %d is too long or has no NEWLINE. First %d chars are:\n'%s'\n",
-		     lines,sizeof(line)-1, line);
-	  return -1;
-	}
+/* 	len = strlen(line); */
+/* 	chars += len; */
+
+/* 	if (len==0) { */
+/* 	  LogPrintf (LOG_CRITICAL, "Line %d is empty.\n", lines); */
+/* 	    return -1; */
+/* 	} */
+/* 	else if (line[len-1] != '\n') { */
+/* 	  LogPrintf (LOG_CRITICAL,  */
+/* 		     "Line %d is too long or has no NEWLINE. First %d chars are:\n'%s'\n", */
+/* 		     lines,sizeof(line)-1, line); */
+/* 	  return -1; */
+/* 	} */
       
-	items = sscanf (line,
-			 "%" LAL_REAL8_FORMAT
-			" %" LAL_REAL8_FORMAT
-			" %" LAL_REAL8_FORMAT
-			" %" LAL_REAL8_FORMAT
-			" %" LAL_REAL8_FORMAT
-			" %" LAL_REAL8_FORMAT "%c",
-			&CrossCorrLine.Freq,
-			&CrossCorrLine.Q1,
-			&CrossCorrLine.Q2,
-			&CrossCorrLine.BrakingIndex
-			&CrossCorrLine.Alpha,
-			&CrossCorrLine.Delta,
-			&CrossCorrLine.Rho,
-			&lastchar);
+/* 	items = sscanf (line, */
+/* 			 "%" LAL_REAL8_FORMAT */
+/* 			" %" LAL_REAL8_FORMAT */
+/* 			" %" LAL_REAL8_FORMAT */
+/* 			" %" LAL_REAL8_FORMAT */
+/* 			" %" LAL_REAL8_FORMAT */
+/* 			" %" LAL_REAL8_FORMAT */
+/* 			" %" LAL_REAL8_FORMAT */
+/* 			" %" LAL_REAL8_FORMAT "%c", */
+/* 			&CrossCorrLine.Freq, */
+/* 			&CrossCorrLine.Q1, */
+/* 			&CrossCorrLine.Q2, */
+/* 			&CrossCorrLine.BrakingIndex, */
+/* 			&CrossCorrLine.Alpha, */
+/* 			&CrossCorrLine.Delta, */
+/* 			&CrossCorrLine.Rho, */
+/* 			&lastchar); */
 
-	/* check the values scanned */
-	if (
-	    items != 7 ||
+/* 	/\* check the values scanned *\/ */
+/* 	if ( */
+/* 	    items != 7 || */
 
-	    !finite(CrossCorrLine.Freq)	||
-	    !finite(CrossCorrLine.Q1)	||
-	    !finite(CrossCorrLine.Q2)	||
-	    !finite(CrossCorrLine.BrakingIndex)	||
-	    !finite(CrossCorrLine.Alpha)	||
-	    !finite(CrossCorrLine.Delta)	||
-	    !finite(CrossCorrLine.Rho)	||
+/* 	    !finite(CrossCorrLine.Freq)	|| */
+/* 	    !finite(CrossCorrLine.Q1)	|| */
+/* 	    !finite(CrossCorrLine.Q2)	|| */
+/* 	    !finite(CrossCorrLine.BrakingIndex)	|| */
+/* 	    !finite(CrossCorrLine.Alpha)	|| */
+/* 	    !finite(CrossCorrLine.Delta)	|| */
+/* 	    !finite(CrossCorrLine.Rho)	|| */
 
-	    CrossCorrLine.Freq  < 0.0                    ||
-	    CrossCorrLine.Alpha <         0.0 - epsilon  ||
-	    CrossCorrLine.Alpha >   LAL_TWOPI + epsilon  ||
-	    CrossCorrLine.Delta < -0.5*LAL_PI - epsilon  ||
-	    CrossCorrLine.Delta >  0.5*LAL_PI + epsilon  ||
+/* 	    CrossCorrLine.Freq  < 0.0                    || */
+/* 	    CrossCorrLine.Alpha <         0.0 - epsilon  || */
+/* 	    CrossCorrLine.Alpha >   LAL_TWOPI + epsilon  || */
+/* 	    CrossCorrLine.Delta < -0.5*LAL_PI - epsilon  || */
+/* 	    CrossCorrLine.Delta >  0.5*LAL_PI + epsilon  || */
 
-	    lastchar != '\n'
-	    ) {
-	    LogPrintf (LOG_CRITICAL, 
-		       "Line %d has invalid values.\n"
-		       "First %d chars are:\n"
-		       "%s\n"
-		       "All fields should be finite\n"
-		       "1st field should be positive.\n" 
-		       "2nd field should lie between 0 and %1.15f.\n" 
-		       "3rd field should lie between %1.15f and %1.15f.\n",
-		       lines, sizeof(line)-1, line,
-		       (double)LAL_TWOPI, (double)-LAL_PI/2.0, (double)LAL_PI/2.0);
-	    return -1;
-        }
+/* 	    lastchar != '\n' */
+/* 	    ) { */
+/* 	    LogPrintf (LOG_CRITICAL,  */
+/* 		       "Line %d has invalid values.\n" */
+/* 		       "First %d chars are:\n" */
+/* 		       "%s\n" */
+/* 		       "All fields should be finite\n" */
+/* 		       "1st field should be positive.\n"  */
+/* 		       "2nd field should lie between 0 and %1.15f.\n"  */
+/* 		       "3rd field should lie between %1.15f and %1.15f.\n", */
+/* 		       lines, sizeof(line)-1, line, */
+/* 		       (double)LAL_TWOPI, (double)-LAL_PI/2.0, (double)LAL_PI/2.0); */
+/* 	    return -1; */
+/*         } */
 
-	if (checksum)
-	    for(i=0;i<len;i++)
-		*checksum += line[i];
+/* 	if (checksum) */
+/* 	    for(i=0;i<len;i++) */
+/* 		*checksum += line[i]; */
 	
-	insert_into_toplist(l, &CrossCorrLine);
-	lines++;
+/* 	insert_into_toplist(l, &CrossCorrLine); */
+/* 	lines++; */
 
-	/* NOTE: it *CAN* happen (and on Linux it DOES) that the fully buffered CrossCorr stream
-	 * gets written to the File at program termination.
-	 * This does not seem to happen on Mac though, most likely due to different
-	 * exit()-calls used (_exit() vs exit() etc.....)
-	 *
-	 * The bottom-line is: the File-contents CAN legally extend beyond maxbytes,
-	 * which is why we'll ensure here that we don't actually read more than 
-	 * maxbytes.
-	 */
-	if ( chars == maxbytes )
-	  {
-	    LogPrintf (LOG_DEBUG, "Read exactly %d == maxbytes from CrossCorr-file, that's enough.\n", 
-		       chars);
-	    break;
-	  }
-	/* however, if we've read more than maxbytes, something is gone wrong */
-	if ( chars > maxbytes )
-	  {
-	    LogPrintf (LOG_CRITICAL, "Read %d bytes > maxbytes %d from CrossCorr-file ... corrupted.\n",
-		       chars, maxbytes );
-	    return -1;
-	  }
+/* 	/\* NOTE: it *CAN* happen (and on Linux it DOES) that the fully buffered CrossCorr stream */
+/* 	 * gets written to the File at program termination. */
+/* 	 * This does not seem to happen on Mac though, most likely due to different */
+/* 	 * exit()-calls used (_exit() vs exit() etc.....) */
+/* 	 * */
+/* 	 * The bottom-line is: the File-contents CAN legally extend beyond maxbytes, */
+/* 	 * which is why we'll ensure here that we don't actually read more than  */
+/* 	 * maxbytes. */
+/* 	 *\/ */
+/* 	if ( chars == maxbytes ) */
+/* 	  { */
+/* 	    LogPrintf (LOG_DEBUG, "Read exactly %d == maxbytes from CrossCorr-file, that's enough.\n",  */
+/* 		       chars); */
+/* 	    break; */
+/* 	  } */
+/* 	/\* however, if we've read more than maxbytes, something is gone wrong *\/ */
+/* 	if ( chars > maxbytes ) */
+/* 	  { */
+/* 	    LogPrintf (LOG_CRITICAL, "Read %d bytes > maxbytes %d from CrossCorr-file ... corrupted.\n", */
+/* 		       chars, maxbytes ); */
+/* 	    return -1; */
+/* 	  } */
 
-    } /* while (fgets() ) */
+/*     } /\* while (fgets() ) *\/ */
 
-    return chars;
+/*     return chars; */
 
-} /* read_crossCorr_toplist_from_fp() */
+/* } /\* read_crossCorr_toplist_from_fp() *\/ */
+
+
+/* int read_crossCorrBinary_toplist_from_fp(toplist_t*l, FILE*fp, UINT4*checksum, UINT4 maxbytes) { */
+/*     CHAR line[256];       /\* buffer for reading a line *\/ */
+/*     UINT4 items, lines;   /\* number of items read from a line, linecounter *\/ */
+/*     UINT4 len, chars = 0; /\* length of a line, total characters read from the file *\/ */
+/*     UINT4 i;              /\* loop counter *\/ */
+/*     CHAR lastchar;        /\* last character of a line read, should be newline *\/ */
+/*     CrossCorrBinaryOutputEntry CrossCorrLine; */
+/*     REAL8 epsilon=1e-5; */
+
+/*     /\* basic check that the list argument is valid *\/ */
+/*     if(!l) */
+/* 	return -2; */
+
+/*     /\* make sure the line buffer is terminated correctly *\/ */
+/*     line[sizeof(line)-1]='\0'; */
+
+/*     /\* init the checksum if given *\/ */
+/*     if(checksum) */
+/* 	*checksum = 0; */
+
+/*     /\* set maxbytes to maximum if zero *\/ */
+/*     if (maxbytes == 0) */
+/* 	maxbytes--; */
+
+/*     lines=1; */
+/*     while(fgets(line,sizeof(line)-1, fp)) { */
+
+/*         if (!strncmp(line,"%DONE\n",strlen("%DONE\n"))) { */
+/* 	  LogPrintf(LOG_NORMAL,"WARNING: found end marker - the task was already finished\n"); */
+/* 	  return(0); */
+/*         } */
+
+/* 	len = strlen(line); */
+/* 	chars += len; */
+
+/* 	if (len==0) { */
+/* 	  LogPrintf (LOG_CRITICAL, "Line %d is empty.\n", lines); */
+/* 	    return -1; */
+/* 	} */
+/* 	else if (line[len-1] != '\n') { */
+/* 	  LogPrintf (LOG_CRITICAL,  */
+/* 		     "Line %d is too long or has no NEWLINE. First %d chars are:\n'%s'\n", */
+/* 		     lines,sizeof(line)-1, line); */
+/* 	  return -1; */
+/* 	} */
+      
+/* 	items = sscanf (line, */
+/* 			 "%" LAL_REAL8_FORMAT */
+/* 			" %" LAL_REAL8_FORMAT */
+/* 			" %" LAL_REAL8_FORMAT */
+/* 			" %" LAL_REAL8_FORMAT */
+/* 			" %" LAL_REAL8_FORMAT */
+/* 			" %" LAL_REAL8_FORMAT "%c", */
+/* 			&CrossCorrBinaryLine.freq, */
+/* 			&CrossCorrBinaryLine.tp, */
+/* 			&CrossCorrBinaryLine.argp, */
+/* 			&CrossCorrBinaryLine.asini, */
+/* 			&CrossCorrBinaryLine.ecc, */
+/* 			&CrossCorrBinaryLine.period, */
+/* 			&CrossCorrBinaryLine.rho, */
+/* 			&lastchar); */
+
+/* 	/\* check the values scanned *\/ */
+/* 	if ( */
+/* 	    items != 7 || */
+
+/* 	    !finite(CrossCorrBinaryLine.freq)	|| */
+/* 	    !finite(CrossCorrBinaryLine.tp)	|| */
+/* 	    !finite(CrossCorrBinaryLine.argp)	|| */
+/* 	    !finite(CrossCorrBinaryLine.asini)	|| */
+/* 	    !finite(CrossCorrBinaryLine.ecc)	|| */
+/* 	    !finite(CrossCorrBinaryLine.period)	|| */
+/* 	    !finite(CrossCorrBinaryLine.rho)	|| */
+
+/* 	    CrossCorrBinaryLine.Freq  < 0.0                    || */
+
+/* 	    lastchar != '\n' */
+/* 	    ) { */
+/* 	    LogPrintf (LOG_CRITICAL, "Line %d has invalid values.\n",lines); */
+/* 	    return -1; */
+/*         } */
+
+/* 	if (checksum) */
+/* 	    for(i=0;i<len;i++) */
+/* 		*checksum += line[i]; */
+	
+/* 	insert_into_toplist(l, &CrossCorrBinaryLine); */
+/* 	lines++; */
+
+/* 	/\* NOTE: it *CAN* happen (and on Linux it DOES) that the fully buffered CrossCorr stream */
+/* 	 * gets written to the File at program termination. */
+/* 	 * This does not seem to happen on Mac though, most likely due to different */
+/* 	 * exit()-calls used (_exit() vs exit() etc.....) */
+/* 	 * */
+/* 	 * The bottom-line is: the File-contents CAN legally extend beyond maxbytes, */
+/* 	 * which is why we'll ensure here that we don't actually read more than  */
+/* 	 * maxbytes. */
+/* 	 *\/ */
+/* 	if ( chars == maxbytes ) */
+/* 	  { */
+/* 	    LogPrintf (LOG_DEBUG, "Read exactly %d == maxbytes from CrossCorr-file, that's enough.\n",  */
+/* 		       chars); */
+/* 	    break; */
+/* 	  } */
+/* 	/\* however, if we've read more than maxbytes, something is gone wrong *\/ */
+/* 	if ( chars > maxbytes ) */
+/* 	  { */
+/* 	    LogPrintf (LOG_CRITICAL, "Read %d bytes > maxbytes %d from CrossCorr-file ... corrupted.\n", */
+/* 		       chars, maxbytes ); */
+/* 	    return -1; */
+/* 	  } */
+
+/*     } /\* while (fgets() ) *\/ */
+
+/*     return chars; */
+
+/* } /\* read_crossCorr_toplist_from_fp() *\/ */
+
+
 
 
 /* Prints a Toplist line to a string buffer.
@@ -318,6 +507,21 @@ static int print_crossCorrline_to_str(CrossCorrOutputEntry fline, char* buf, int
 		     fline.Alpha,
 		     fline.Delta,
 		     fline.Rho));
+}
+
+
+static int print_crossCorrBinaryline_to_str(CrossCorrBinaryOutputEntry fline, char* buf, int buflen) {
+  return(snprintf(buf, buflen,
+		  /* output precision: choose to 10 for no real reason -- FIXME:
+		   */
+		     "%.10g %.10g %.10g %.10g %.10g %.10g %.10g\n",
+		     fline.freq,
+		     fline.tp,
+		     fline.argp,
+		     fline.asini,
+		     fline.ecc,
+		     fline.period,
+		     fline.rho));
 }
 
 
@@ -344,6 +548,25 @@ int write_crossCorr_toplist_item_to_fp(CrossCorrOutputEntry fline, FILE*fp, UINT
 }
 
 
+int write_crossCorrBinary_toplist_item_to_fp(CrossCorrBinaryOutputEntry fline, FILE*fp, UINT4*checksum) {
+    char linebuf[256];
+    UINT4 i;
+
+    UINT4 length = print_crossCorrBinaryline_to_str(fline, linebuf, sizeof(linebuf)-1);
+    
+    if(length>sizeof(linebuf)-1) {
+       return -1;
+    }
+
+    if (checksum)
+	for(i=0;i<length;i++)
+	    *checksum += linebuf[i];
+
+    linebuf[sizeof(linebuf)-1] = '\0';
+
+    return(fprintf(fp,"%s",linebuf));
+}
+
 /* Reduces the precision of all elements in the toplist which influence the sorting order.
    To be called before sorting and finally writing out the list */
 static void reduce_crossCorrline_precision(void*line) {
@@ -365,8 +588,33 @@ static void reduce_crossCorrline_precision(void*line) {
 	 &((*(CrossCorrOutputEntry*)line).Delta));
 }
 
+static void reduce_crossCorrBinaryline_precision(void*line) {
+  char linebuf[256];
+  print_crossCorrBinaryline_to_str((*(CrossCorrBinaryOutputEntry*)line), linebuf, sizeof(linebuf));
+  sscanf(linebuf,
+	 "%" LAL_REAL8_FORMAT
+	 " %" LAL_REAL8_FORMAT
+	 " %" LAL_REAL8_FORMAT
+	 " %" LAL_REAL8_FORMAT
+	 " %" LAL_REAL8_FORMAT
+	 " %" LAL_REAL8_FORMAT
+	 "%*s\n",
+	 &((*(CrossCorrBinaryOutputEntry*)line).freq),
+	 &((*(CrossCorrBinaryOutputEntry*)line).tp),
+	 &((*(CrossCorrBinaryOutputEntry*)line).argp),
+	 &((*(CrossCorrBinaryOutputEntry*)line).asini),
+	 &((*(CrossCorrBinaryOutputEntry*)line).ecc),
+	 &((*(CrossCorrBinaryOutputEntry*)line).period));
+}
+
+
 static void reduce_crossCorr_toplist_precision(toplist_t *l) {
   go_through_toplist(l,reduce_crossCorrline_precision);
+}
+
+
+static void reduce_crossCorrBinary_toplist_precision(toplist_t *l) {
+  go_through_toplist(l,reduce_crossCorrBinaryline_precision);
 }
 
 
@@ -379,7 +627,26 @@ int write_crossCorr_toplist_to_fp(toplist_t*tl, FILE*fp, UINT4*checksum) {
    if(checksum)
        *checksum = 0;
    for(i=0;i<tl->elems;i++)
-     if ((r = write_crossCorr_toplist_item_to_fp(*((CrossCorrOutputEntry*)(tl->heap[i])), fp, checksum)) < 0) {
+     if ((r = write_crossCorr_toplist_item_to_fp(*((CrossCorrOutputEntry*)(void*)(tl->heap[i])), fp, checksum)) < 0) {
+       LogPrintf (LOG_CRITICAL, "Failed to write toplistitem to output fp: %d: %s\n",
+		  errno,strerror(errno));
+#ifdef _MSC_VER
+       LogPrintf (LOG_CRITICAL, "Windows system call returned: %d\n", _doserrno);
+#endif
+      return(r);
+     } else
+       c += r;
+   return(c);
+}
+
+
+int write_crossCorrBinary_toplist_to_fp(toplist_t*tl, FILE*fp, UINT4*checksum) {
+   UINT8 c=0,i;
+   INT8 r;
+   if(checksum)
+       *checksum = 0;
+   for(i=0;i<tl->elems;i++)
+     if ((r = write_crossCorrBinary_toplist_item_to_fp(*((CrossCorrBinaryOutputEntry*)(void*)(tl->heap[i])), fp, checksum)) < 0) {
        LogPrintf (LOG_CRITICAL, "Failed to write toplistitem to output fp: %d: %s\n",
 		  errno,strerror(errno));
 #ifdef _MSC_VER
@@ -398,6 +665,10 @@ int write_crossCorr_toplist_to_fp(toplist_t*tl, FILE*fp, UINT4*checksum) {
    This just calls _atomic_write_crossCorr_toplist_to_file() telling it not to write a %DONE marker*/
 int atomic_write_crossCorr_toplist_to_file(toplist_t *l, const char *filename, UINT4*checksum) {
   return(_atomic_write_crossCorr_toplist_to_file(l, filename, checksum, 0));
+}
+
+int atomic_write_crossCorrBinary_toplist_to_file(toplist_t *l, const char *filename, UINT4*checksum) {
+  return(_atomic_write_crossCorrBinary_toplist_to_file(l, filename, checksum, 0));
 }
 
 /* function that does the actual work of atomic_write_crossCorr_toplist_to_file(),
@@ -467,6 +738,71 @@ static int _atomic_write_crossCorr_toplist_to_file(toplist_t *l, const char *fil
 }
 
 
+static int _atomic_write_crossCorrBinary_toplist_to_file(toplist_t *l, const char *filename, UINT4*checksum, int write_done) {
+    char* tempname;
+    INT4 length;
+    FILE * fpnew;
+    UINT4 s;
+
+#define TEMP_EXT ".tmp"
+    s = strlen(filename)+strlen(TEMP_EXT)+1;
+    tempname = (char*)malloc(s);
+    if(!tempname) {
+      LogPrintf (LOG_CRITICAL, "Could not allocate new filename\n");
+      return(-1);
+    }
+    strncpy(tempname,filename,s);
+    strncat(tempname,TEMP_EXT,s);
+
+    fpnew=fopen(tempname, "wb");
+    if(!fpnew) {
+      LogPrintf (LOG_CRITICAL, "Failed to open temp CrossCorr file \"%s\" for writing: %d: %s\n",
+		 tempname,errno,strerror(errno));
+#ifdef _MSC_VER
+      LogPrintf (LOG_CRITICAL, "Windows system call returned: %d\n", _doserrno);
+#endif
+      free(tempname);
+      return -1;
+    }
+    length = write_crossCorrBinary_toplist_to_fp(l,fpnew,checksum);
+
+    if ((write_done) && (length >= 0)) {
+      int ret;
+      ret = fprintf(fpnew,"%%DONE\n");
+      if (ret < 0)
+	length = ret;
+      else
+	length += ret;
+    }
+
+    fclose(fpnew);
+    
+    if (length < 0) {
+      LogPrintf (LOG_CRITICAL, "Failed to write temp CrossCorr file \"%s\": %d: %s\n",
+		 tempname,errno,strerror(errno));
+#ifdef _MSC_VER
+      LogPrintf (LOG_CRITICAL, "Windows system call returned: %d\n", _doserrno);
+#endif
+      free(tempname);
+      return(length);
+    }
+
+    if(rename(tempname, filename)) {
+      LogPrintf (LOG_CRITICAL, "Failed to rename CrossCorr file to \"%s\": %d: %s\n",
+		 filename,errno,strerror(errno));
+#ifdef _MSC_VER
+      LogPrintf (LOG_CRITICAL, "Windows system call returned: %d\n", _doserrno);
+#endif 
+      free(tempname);
+      return -1;
+    }
+
+    free(tempname);
+    return length;
+}
+
+
+
 /* meant for the final writing of the toplist
    - reduces toplist precision
    - sorts the toplist
@@ -478,6 +814,11 @@ int final_write_crossCorr_toplist_to_file(toplist_t *l, const char *filename, UI
 }
 
 
+int final_write_crossCorrBinary_toplist_to_file(toplist_t *l, const char *filename, UINT4*checksum) {
+  reduce_crossCorrBinary_toplist_precision(l);
+  sort_crossCorrBinary_toplist(l);
+  return(atomic_write_crossCorrBinary_toplist_to_file(l,filename,checksum));
+}
 
 
 /* New easier checkpointing - simply dump the whole toplist (plus a counter and

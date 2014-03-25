@@ -24,7 +24,6 @@
 
 #include <math.h>
 #include <stdlib.h>
-#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/LALStdio.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALConstants.h>
@@ -329,18 +328,10 @@ main(int argc, char **argv)
   SUB( LALCreateRandomParams( &stat, &params, seed ), &stat );
 
   /* Set up units. */
-  {
-    RAT4 negOne = { -1, 0 };
-    LALUnit unit;
-    LALUnitPair pair;
-    output.sampleUnits = lalADCCountUnit;
-    pair.unitOne = &lalADCCountUnit;
-    pair.unitTwo = &lalStrainUnit;
-    SUB( LALUnitRaise( &stat, &unit, pair.unitTwo,
-		       &negOne ), &stat );
-    pair.unitTwo = &unit;
-    SUB( LALUnitMultiply( &stat, &(detector.transfer->sampleUnits),
-			  &pair ), &stat );
+  output.sampleUnits = lalADCCountUnit;
+  if (XLALUnitDivide( &(detector.transfer->sampleUnits),
+                      &lalADCCountUnit, &lalStrainUnit ) == NULL) {
+    return LAL_EXLAL;
   }
 
   /* Read response function. */
@@ -383,8 +374,7 @@ main(int argc, char **argv)
     /* Convert response function to a transfer function. */
     SUB( LALCCreateVector( &stat, &unity, response->length ), &stat );
     for ( i = 0; i < response->length; i++ ) {
-      unity->data[i].realf_FIXME = 1.0;
-      unity->data[i].imagf_FIXME = 0.0;
+      unity->data[i] = 1.0;
     }
     SUB( LALCCreateVector( &stat, &( detector.transfer->data ),
 			   response->length ), &stat );
@@ -401,10 +391,8 @@ main(int argc, char **argv)
     detector.transfer->deltaF = 1.5*fstop;
     SUB( LALCCreateVector( &stat, &( detector.transfer->data ), 2 ),
 	 &stat );
-    detector.transfer->data->data[0].realf_FIXME = 1.0;
-    detector.transfer->data->data[1].realf_FIXME = 1.0;
-    detector.transfer->data->data[0].imagf_FIXME = 0.0;
-    detector.transfer->data->data[1].imagf_FIXME = 0.0;
+    detector.transfer->data->data[0] = 1.0;
+    detector.transfer->data->data[1] = 1.0;
   }
 
 

@@ -110,6 +110,7 @@ def root_sngl_trigger(root_event, instrument, columns=CWB_SNGL_COLUMNS):
 
     @param root_event
         `ROOT` `TChain` object
+    @param instrument UNDOCUMENTED
     @param columns
         a list of valid `LIGO_LW` column names to load (defaults to all)
 

@@ -73,7 +73,7 @@ LALGetInspiralMoments (
 {
   INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
-  XLALPrintDeprecationWarning("LALGetInspiralMoments", "XLALGetInspiralMoments");
+  XLAL_PRINT_DEPRECATION_WARNING("XLALGetInspiralMoments");
 
   if (XLALGetInspiralMoments(moments, params->fLower, params->fCutoff, psd)!= XLAL_SUCCESS){
      ABORTXLAL( status );
@@ -281,7 +281,7 @@ LALInspiralMoments(
 
 {
   INITSTATUS(status);
-  XLALPrintDeprecationWarning("LALInspiralMoments", "XLALInspiralMoments");
+  XLAL_PRINT_DEPRECATION_WARNING("XLALInspiralMoments");
 
   *moment = XLALInspiralMoments(pars.xmin, pars.xmax, pars.ndx, pars.norm, pars.shf);
   if (XLAL_IS_REAL8_FAIL_NAN(*moment)){

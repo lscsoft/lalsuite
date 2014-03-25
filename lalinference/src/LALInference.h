@@ -58,6 +58,7 @@
 #include <lal/Window.h>
 #include <lal/LALString.h>
 #include <lal/LALSimInspiral.h>
+#include <lal/LALSimInspiralWaveformCache.h>
 
 #include <lal/SFTutils.h>
 #include <lal/SFTfileIO.h>
@@ -209,39 +210,47 @@ int LALInferenceFprintParameterHeaders(FILE *out, LALInferenceVariables *params)
  */
 INT4 LALInferenceFprintParameterNonFixedHeaders(FILE *out, LALInferenceVariables *params);
 
+/**
+ * Print the parameters which do not vary to a file as a tab-separated ASCII line, adding the given suffix
+ * \param out [in] pointer to output file
+ * \param params [in] LALInferenceVaraibles structure to print
+ * \param suffix [in] Suffix string to add to each parameter name
+ */
+INT4 LALInferenceFprintParameterNonFixedHeadersWithSuffix(FILE *out, LALInferenceVariables *params, const char *suffix);
+
 /** Prints a variable item to a string (must be pre-allocated!) */
 void LALInferencePrintVariableItem(char *out, LALInferenceVariableItem *ptr);
 
 /**
- * Return a pointer to the memory the variable \param vars is stored in specified by \param name
+ * Return a pointer to the memory the variable \c vars is stored in specified by \c name
  * User must cast this pointer to the expected type before dereferencing
  * it to get the value of the variable.
  */
 void *LALInferenceGetVariable(const LALInferenceVariables * vars, const char * name);
 
-/** Get number of dimensions in variable \param vars */
+/** Get number of dimensions in variable \c vars */
 INT4 LALInferenceGetVariableDimension(LALInferenceVariables *vars);
 
-/** Get number of dimensions in \param vars which are not fixed to a certain value */
+/** Get number of dimensions in \c vars which are not fixed to a certain value */
 INT4 LALInferenceGetVariableDimensionNonFixed(LALInferenceVariables *vars);
 
 /**
- * Get the LALInferenceVariableType of the \param idx -th item in the \param vars
+ * Get the LALInferenceVariableType of the \c idx -th item in the \c vars
  * Indexing starts at 1
  */
 INT4 LALInferenceGetVariableTypeByIndex(LALInferenceVariables *vars, int idx);
 
-/** Get the LALInferenceVariableType of the parameter named \param name in \param vars */
+/** Get the LALInferenceVariableType of the parameter named \c name in \c vars */
 LALInferenceVariableType LALInferenceGetVariableType(const LALInferenceVariables *vars, const char *name);
 
 /**
- * Get the LALInferenceParamVaryType of the parameter named \param name in \param vars
+ * Get the LALInferenceParamVaryType of the parameter named \c name in \c vars
  * see the declaration of LALInferenceParamVaryType for possibilities
  */
 LALInferenceParamVaryType LALInferenceGetVariableVaryType(LALInferenceVariables *vars, const char *name);
 
 /**
- * Set the LALInferenceParamVaryType of the parameter named \param name in \param vars
+ * Set the LALInferenceParamVaryType of the parameter named \c name in \c vars,
  * see the declaration of LALInferenceParamVaryType for possibilities
  */
 void LALInferenceSetParamVaryType(LALInferenceVariables *vars, const char *name, LALInferenceParamVaryType vary);
@@ -253,35 +262,38 @@ void LALInferenceSetParamVaryType(LALInferenceVariables *vars, const char *name,
 char *LALInferenceGetVariableName(LALInferenceVariables *vars, int idx);
 
 /**
- * Set a variable named \param name in \param vars with a value.
- * Pass a void * in \param value to the value you wish to set,
+ * Set a variable named \c name in \c vars with a value.
+ * Pass a void * in \c value to the value you wish to set,
  * i.e. LALInferenceSetVariable(vars, "mu", (void *)&mu);
  */
 void LALInferenceSetVariable(LALInferenceVariables * vars, const char * name, void * value);
 
 /**
- * Add a variable named \param name to \param vars with initial value referenced by \param value
+ * Add a variable named \c name to \c vars with initial value referenced by \c value
  * \param type is a LALInferenceVariableType (enumerated above)
  * \param vary is a LALInferenceParamVaryType (enumerated above)
+ * \param vars UNDOCUMENTED
+ * \param name UNDOCUMENTED
+ * \param value UNDOCUMENTED
  * If the variable already exists it will be over-written UNLESS IT HAS A CONFLICTING TYPE
  */
 void LALInferenceAddVariable(LALInferenceVariables * vars, const char * name, void * value, 
 	LALInferenceVariableType type, LALInferenceParamVaryType vary);
 
 /**
- * Remove \param name from \param vars
- * Frees the memory for the \param name structure and its contents
+ * Remove \c name from \c vars
+ * Frees the memory for the \c name structure and its contents
  */
 void LALInferenceRemoveVariable(LALInferenceVariables *vars,const char *name);
 
 /**
- * Checks for \param name being present in \param vars
+ * Checks for \c name being present in \c vars
  * returns 1(==true) or 0
  */
 int  LALInferenceCheckVariable(LALInferenceVariables *vars,const char *name);
 
 /**
- * Checks for \param name being present in \param vars and having type LINEAR or CIRCULAR.
+ * Checks for \c name being present in \c vars and having type LINEAR or CIRCULAR.
  * returns 1 or 0
  */
 int LALInferenceCheckVariableNonFixed(LALInferenceVariables *vars, const char *name);
@@ -308,15 +320,15 @@ int LALInferenceCompareVariables(LALInferenceVariables *var1, LALInferenceVariab
 //typedef void (LALTemplateFunction) (LALInferenceVariables *currentParams, struct tagLALInferenceIFOData *data); //Parameter Set is modelParams of LALInferenceIFOData
 /**
  * Type declaration for template function, which operates on
- * a LALInferenceIFOData structure \param *data
+ * a LALInferenceIFOData structure \c *data
  */
 typedef void (*LALInferenceTemplateFunction) (struct tagLALInferenceIFOData *data);
 
 
 /**
  * Jump proposal distribution
- * Computes \param proposedParams based on \param currentParams
- * and additional variables stored as proposalArgs inside \param runState,
+ * Computes \c proposedParams based on \c currentParams
+ * and additional variables stored as proposalArgs inside \c runState,
  * which could include correlation matrix, etc.,
  * as well as forward and reverse proposal probability.
  * A jump proposal distribution function could call other jump proposal
@@ -340,8 +352,8 @@ tagLALInferenceProposalStatistics
 } LALInferenceProposalStatistics;
 
 /**
- * Type declaration for prior function which returns p(\param params)
- * Can depend on \param runState ->priorArgs
+ * Type declaration for prior function which returns p(\c params)
+ * Can depend on \c runState ->priorArgs
  */
 typedef REAL8 (*LALInferencePriorFunction) (struct tagLALInferenceRunState *runState,
 	LALInferenceVariables *params);
@@ -349,7 +361,7 @@ typedef REAL8 (*LALInferencePriorFunction) (struct tagLALInferenceRunState *runS
 /**
  * Type declaration for CubeToPrior function which converts parameters in unit hypercube
  * to their corresponding physical values according to the prior.
- * Can depend on \param runState ->priorArgs
+ * Can depend on \c runState ->priorArgs
  */
 typedef UINT4 (*LALInferenceCubeToPriorFunction) (struct tagLALInferenceRunState *runState,
   LALInferenceVariables *params, double *cube, void *context);
@@ -360,13 +372,13 @@ typedef UINT4 (*LALInferenceCubeToPriorFunction) (struct tagLALInferenceRunState
 //have different data lengths or sampling rates 
 /**
  * Type declaration for likelihood function
- * Computes p(\param data | \param currentParams, \param templt)
- * \param templt is a LALInferenceTemplateFunction defined below
+ * Computes p(\c data | \c currentParams, \c templt )
+ * templt is a LALInferenceTemplateFunction defined below
  */
 typedef REAL8 (*LALInferenceLikelihoodFunction) (LALInferenceVariables *currentParams,
         struct tagLALInferenceIFOData * data, LALInferenceTemplateFunction templt);
 
-/** Perform one step of an algorithm, replaces \param runState ->currentParams */
+/** Perform one step of an algorithm, replaces \c runState ->currentParams */
 typedef void (*LALInferenceEvolveOneStepFunction) (struct tagLALInferenceRunState *runState);
 
 /**
@@ -382,7 +394,7 @@ typedef void (*LALInferenceLogFunction) (struct tagLALInferenceRunState *runStat
 /**
  * Type declaration for variables init function, can be user-declared.
  * The function returns a pointer to a new LALInferenceVariables instance
- * Reads \param runState->commandLine to get user config
+ * Reads \c runState->commandLine to get user config
  */
 typedef LALInferenceVariables * (*LALInferenceInitVariablesFunction) (struct tagLALInferenceRunState *runState);
 
@@ -409,7 +421,9 @@ tagLALInferenceRunState
     *priorArgs,                                      /** Any special arguments for the prior function */
     *proposalArgs,                                   /** Any special arguments for the proposal function */
     *proposalStats,                                  /** Set of structs containing statistics for each proposal*/
-    *algorithmParams;                                /** Parameters which control the running of the algorithm*/
+    *algorithmParams,                                /** Parameters which control the running of the algorithm*/
+    *preProposalParams,                              /** Current location going into jump proposal */
+    *proposedParams;                                 /** Parameters proposed */
   LALInferenceVariables				**livePoints; /** Array of live points for Nested Sampling */
   LALInferenceVariables **differentialPoints;        /** Array of points for differential evolution */
   size_t differentialPointsLength;                   /** Length of the current differential points stored in 
@@ -464,6 +478,7 @@ tagLALInferenceIFOData
   LALInferenceVariables     *dataParams;    /* Optional data parameters */
   LALSimulationDomain        modelDomain;   /** Domain of model */
   REAL8FrequencySeries      *oneSidedNoisePowerSpectrum;  /** one-sided Noise Power Spectrum */
+  REAL8FrequencySeries      *noiseASD;  /** (one-sided Noise Power Spectrum)^{-1/2} */
 //  REAL8TimeSeries           *timeDomainNoiseWeights; /** Roughly, InvFFT(1/Noise PSD). */
   REAL8Window               *window;        /** A window */
   REAL8FFTPlan              *timeToFreqFFTPlan, *freqToTimeFFTPlan; /** Pre-calculated FFT plans for forward and reverse FFTs */
@@ -476,6 +491,8 @@ tagLALInferenceIFOData
   LIGOTimeGPS		    epoch;              /** The epoch of this observation (the time of the first sample) */
   REAL8                     SNR;                /** IF INJECTION ONLY, E(SNR) of the injection in the detector.*/
   REAL8                     STDOF;              /** Degrees of freedom for IFO to be used in Student-T Likelihood. */
+  LALSimInspiralWaveformFlags *waveFlags;   /** A pointer to the WF flag. Will store here tide and spin order, as well as frame */
+  LALSimInspiralWaveformCache *waveformCache;   /** Waveform cache */
   struct tagLALInferenceROQData       *roqData; /** ROQ data */
 
   struct tagLALInferenceIFOData      *next;     /** A pointer to the next set of data for linked list */
@@ -503,26 +520,29 @@ ProcessParamsTable *LALInferenceGetProcParamVal(ProcessParamsTable *procparams,c
 
 /**
  * parses a character string (passed as one of the options) and decomposes
- * it into individual parameter character strings. \param input is of the form
+ * it into individual parameter character strings. \c input is of the form
  * input   :  \"[one,two,three]\"
- * and the resulting output \param strings is
+ * and the resulting output \c strings is
  * strings :  {\"one\", \"two\", \"three\"}
  * length of parameter names is for now limited to 512 characters.
  * (should 'theoretically' (untested) be able to digest white space as well.
  * Irrelevant for command line options, though.)
- * \param n UNDOCUMENTED
+ * \c n UNDOCUMENTED
  */
 void LALInferenceParseCharacterOptionString(char *input, char **strings[], UINT4 *n);
 
 /** Return a ProcessParamsTable from the command line arguments */
 ProcessParamsTable *LALInferenceParseCommandLine(int argc, char *argv[]);
 
-/** Output the command line based on the ProcessParamsTable \param procparams */
+/** Return a ProcessParamsTable from the command line arguments (SWIG version) */
+ProcessParamsTable *LALInferenceParseCommandLineStringVector(LALStringVector *args);
+
+/** Output the command line based on the ProcessParamsTable \c procparams */
 char* LALInferencePrintCommandLine(ProcessParamsTable *procparams);
 
-/** Execute FFT for data in \param IFOdata */
+/** Execute FFT for data in \c IFOdata */
 void LALInferenceExecuteFT(LALInferenceIFOData *IFOdata);
-/** Execute Inverse FFT for data in \param IFOdata */
+/** Execute Inverse FFT for data in \c IFOdata */
 void LALInferenceExecuteInvFT(LALInferenceIFOData *IFOdata);
 
 /** Return the list node for "name" - do not rely on this */
@@ -691,16 +711,16 @@ double LALInferenceKDLogCellEigenVolume(LALInferenceKDTree *cell);
 /**
  * Fills in the given REAL8 array with the parameter values from
  * params; the ordering of the variables is taken from the order of
- * the non-fixed variables in \param templt.  It is an error if pt does
+ * the non-fixed variables in \c templt.  It is an error if pt does
  * not point to enough storage to store all the non-fixed parameters
- * from \param templt and params.
+ * from \c templt and \c params.
  */
 void LALInferenceKDVariablesToREAL8(LALInferenceVariables *params, REAL8 *pt, LALInferenceVariables *templt);
 
 /**
  * Fills in the non-fixed variables in params from the given REAL8
  * array.  The ordering of variables is given by the order of the
- * non-fixed variables in \param templt.
+ * non-fixed variables in \c templt.
  */
 void LALInferenceKDREAL8ToVariables(LALInferenceVariables *params, REAL8 *pt, LALInferenceVariables *templt);
 
@@ -797,7 +817,78 @@ int LALInferenceWriteRunStateBinary(FILE *file, LALInferenceRunState *state);
 int LALInferenceReadRunStateBinary(FILE *file, LALInferenceRunState *state);
 
 
+void LALInferenceAddINT4Variable(LALInferenceVariables * vars, const char * name, INT4 value, LALInferenceParamVaryType vary);
+
+INT4 LALInferenceGetINT4Variable(LALInferenceVariables * vars, const char * name);
+
+void LALInferenceSetINT4Variable(LALInferenceVariables* vars,const char* name,INT4 value);
+
+void LALInferenceAddINT8Variable(LALInferenceVariables * vars, const char * name, INT8 value, LALInferenceParamVaryType vary);
+
+INT8 LALInferenceGetINT8Variable(LALInferenceVariables * vars, const char * name);
+
+void LALInferenceSetINT8Variable(LALInferenceVariables* vars,const char* name,INT8 value);
+
+void LALInferenceAddUINT4Variable(LALInferenceVariables * vars, const char * name, UINT4 value, LALInferenceParamVaryType vary);
+
+UINT4 LALInferenceGetUINT4Variable(LALInferenceVariables * vars, const char * name);
+
+void LALInferenceSetUINT4Variable(LALInferenceVariables* vars,const char* name,UINT4 value);
+
+void LALInferenceAddREAL4Variable(LALInferenceVariables * vars, const char * name, REAL4 value, LALInferenceParamVaryType vary);
+
+REAL4 LALInferenceGetREAL4Variable(LALInferenceVariables * vars, const char * name);
+
+void LALInferenceSetREAL4Variable(LALInferenceVariables* vars,const char* name,REAL4 value);
+
+void LALInferenceAddREAL8Variable(LALInferenceVariables * vars, const char * name, REAL8 value, LALInferenceParamVaryType vary);
+
+REAL8 LALInferenceGetREAL8Variable(LALInferenceVariables * vars, const char * name);
+
+void LALInferenceSetREAL8Variable(LALInferenceVariables* vars,const char* name,REAL8 value);
+
+void LALInferenceAddCOMPLEX8Variable(LALInferenceVariables * vars, const char * name, COMPLEX8 value, LALInferenceParamVaryType vary);
+
+COMPLEX8 LALInferenceGetCOMPLEX8Variable(LALInferenceVariables * vars, const char * name);
+
+void LALInferenceSetCOMPLEX8Variable(LALInferenceVariables* vars,const char* name,COMPLEX8 value);
+
+void LALInferenceAddCOMPLEX16Variable(LALInferenceVariables * vars, const char * name, COMPLEX16 value, LALInferenceParamVaryType vary);
+
+COMPLEX16 LALInferenceGetCOMPLEX16Variable(LALInferenceVariables * vars, const char * name);
+
+void LALInferenceSetCOMPLEX16Variable(LALInferenceVariables* vars,const char* name,COMPLEX16 value);
+
+void LALInferenceAddgslMatrixVariable(LALInferenceVariables * vars, const char * name, gsl_matrix* value, LALInferenceParamVaryType vary);
+
+gsl_matrix* LALInferenceGetgslMatrixVariable(LALInferenceVariables * vars, const char * name);
+
+void LALInferenceSetgslMatrixVariable(LALInferenceVariables* vars,const char* name,gsl_matrix* value);
+
+void LALInferenceAddREAL8VectorVariable(LALInferenceVariables * vars, const char * name, REAL8Vector* value, LALInferenceParamVaryType vary);
+
+REAL8Vector* LALInferenceGetREAL8VectorVariable(LALInferenceVariables * vars, const char * name);
+
+void LALInferenceSetREAL8VectorVariable(LALInferenceVariables* vars,const char* name,REAL8Vector* value);
+
+void LALInferenceAddUINT4VectorVariable(LALInferenceVariables * vars, const char * name, UINT4Vector* value, LALInferenceParamVaryType vary);
+
+UINT4Vector* LALInferenceGetUINT4VectorVariable(LALInferenceVariables * vars, const char * name);
+
+void LALInferenceSetUINT4VectorVariable(LALInferenceVariables* vars,const char* name,UINT4Vector* value);
+
+void LALInferenceAddMCMCrunphase_ptrVariable(LALInferenceVariables * vars, const char * name, LALInferenceMCMCRunPhase* value, LALInferenceParamVaryType vary);
+
+LALInferenceMCMCRunPhase* LALInferenceGetMCMCrunphase_ptrVariable(LALInferenceVariables * vars, const char * name);
+
+void LALInferenceSetMCMCrunphase_ptrVariable(LALInferenceVariables* vars,const char* name,LALInferenceMCMCRunPhase* value);
+
+void LALInferenceAddstringVariable(LALInferenceVariables * vars, const char * name, CHAR* value, LALInferenceParamVaryType vary);
+
+CHAR* LALInferenceGetstringVariable(LALInferenceVariables * vars, const char * name);
+
+void LALInferenceSetstringVariable(LALInferenceVariables* vars,const char* name,CHAR* value);
+
 /*@}*/
 
 #endif
-

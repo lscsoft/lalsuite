@@ -225,7 +225,7 @@
  * LALCCVectorMultiplyConjugate()
  * LALCDestroyVector()
  * LALCCoarseGrainFrequencySeries()
- * LALUnitMultiply()
+ * XLALUnitMultiply()
  * \endcode
  *
  * <tt>LALStochasticCrossCorrelationStatistic()</tt> and
@@ -235,7 +235,7 @@
  * LALCCreateVector()
  * LALStochasticCrossCorrelationSpectrum()
  * LALCDestroyVector()
- * LALUnitMultiply()
+ * XLALUnitMultiply()
  * \endcode
  *
  * ### Notes ###
@@ -268,7 +268,6 @@
  * @{
  */
 
-#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/LALStdlib.h>
 #include <lal/StochasticCrossCorrelation.h>
 #include <lal/CoarseGrainFrequencySeries.h>
@@ -284,7 +283,6 @@ LALStochasticCrossCorrelationStatisticCal(
     BOOLEAN                                  epochsMatch)
 {
   COMPLEX8FrequencySeries ccSpec;
-  LALUnitPair unitPair;
 
   COMPLEX8 *cPtr;
   COMPLEX8 *cStopPtr;
@@ -528,10 +526,9 @@ LALStochasticCrossCorrelationStatisticCal(
   TRY(LALCDestroyVector(status->statusPtr, &(ccSpec.data)), status);
 
   /* Set output units */
-  unitPair.unitOne = &ccSpec.sampleUnits;
-  unitPair.unitTwo = &lalHertzUnit;
-  TRY(LALUnitMultiply(status->statusPtr, &(output->units), &unitPair), \
-      status);
+  if (XLALUnitMultiply(&(output->units), &ccSpec.sampleUnits, &lalHertzUnit) == NULL) {
+    ABORTXLAL(status);
+  }
 
   DETATCHSTATUSPTR(status);
   RETURN(status);
@@ -547,7 +544,6 @@ LALStochasticHeterodynedCrossCorrelationStatisticCal(
     BOOLEAN                                  epochsMatch)
 {
   COMPLEX8FrequencySeries ccSpec;
-  LALUnitPair unitPair;
 
   COMPLEX8 *cPtr;
   COMPLEX8 *cStopPtr;
@@ -758,7 +754,7 @@ LALStochasticHeterodynedCrossCorrelationStatisticCal(
     TRY(LALCDestroyVector(status->statusPtr, &(ccSpec.data)), status);
   ENDFAIL(status);
 
-  output->value.realf_FIXME = output->value.imagf_FIXME = 0.0;
+  output->value = 0.0;
 
   /* initialize pointers */
   cPtr = ccSpec.data->data;
@@ -768,21 +764,18 @@ LALStochasticHeterodynedCrossCorrelationStatisticCal(
   /* contributions from positive and (negative) frequency components */
   for (; cPtr < cStopPtr; ++cPtr)
   {
-    output->value.realf_FIXME += crealf(*cPtr);
-    output->value.imagf_FIXME += cimagf(*cPtr);
+    output->value += *cPtr;
   }
 
   /* normalize */
-  output->value.realf_FIXME *= ccSpec.deltaF;
-  output->value.imagf_FIXME *= ccSpec.deltaF;
+  output->value *= ((REAL4) ccSpec.deltaF);
 
   TRY(LALCDestroyVector(status->statusPtr, &(ccSpec.data)), status);
 
   /* Set output units */
-  unitPair.unitOne = &ccSpec.sampleUnits;
-  unitPair.unitTwo = &lalHertzUnit;
-  TRY(LALUnitMultiply(status->statusPtr, &(output->units), &unitPair), \
-      status);
+  if (XLALUnitMultiply(&(output->units), &ccSpec.sampleUnits, &lalHertzUnit) == NULL) {
+    ABORTXLAL(status);
+  }
 
   DETATCHSTATUSPTR(status);
   RETURN(status);
@@ -796,7 +789,6 @@ LALStochasticCrossCorrelationSpectrumCal(
     const StochasticCrossCorrelationCalInput *input,
     BOOLEAN                                  epochsMatch)
 {
-  LALUnitPair unitPair;
   LALUnit h1H2Units, hc1Hc2Units, r1R2Units, invR1R2Units;
 
   COMPLEX8FrequencySeries h1StarH2, h1StarH2Coarse, hc1StarHc2Coarse;
@@ -1177,12 +1169,12 @@ LALStochasticCrossCorrelationSpectrumCal(
       LALNameLength );
 
   /* Set output units */
-  unitPair.unitOne = &(input->hBarTildeOne->sampleUnits);
-  unitPair.unitTwo = &(input->hBarTildeTwo->sampleUnits);
-  TRY(LALUnitMultiply(status->statusPtr, &h1H2Units, &unitPair), status);
-  unitPair.unitOne = &(input->responseFunctionOne->sampleUnits);
-  unitPair.unitTwo = &(input->responseFunctionTwo->sampleUnits);
-  TRY(LALUnitMultiply(status->statusPtr, &r1R2Units, &unitPair), status);
+  if (XLALUnitMultiply(&h1H2Units, &(input->hBarTildeOne->sampleUnits), &(input->hBarTildeTwo->sampleUnits)) == NULL) {
+    ABORTXLAL(status);
+  }
+  if (XLALUnitMultiply(&r1R2Units, &(input->responseFunctionOne->sampleUnits), &(input->responseFunctionTwo->sampleUnits)) == NULL) {
+    ABORTXLAL(status);
+  }
 
   invR1R2Units.powerOfTen = -r1R2Units.powerOfTen;
   for (i = 0; i < LALNumUnits; ++i)
@@ -1190,13 +1182,12 @@ LALStochasticCrossCorrelationSpectrumCal(
     invR1R2Units.unitNumerator[i] = -r1R2Units.unitNumerator[i];
     invR1R2Units.unitDenominatorMinusOne[i] = r1R2Units.unitDenominatorMinusOne[i];
    }
-  unitPair.unitOne = &h1H2Units;
-  unitPair.unitTwo = &invR1R2Units;
-  TRY(LALUnitMultiply(status->statusPtr, &hc1Hc2Units, &unitPair), status);
-  unitPair.unitOne = &hc1Hc2Units;
-  unitPair.unitTwo = &(input->optimalFilter->sampleUnits);
-  TRY(LALUnitMultiply(status->statusPtr, &(output->sampleUnits), &unitPair), \
-      status);
+  if (XLALUnitMultiply(&hc1Hc2Units, &h1H2Units, &invR1R2Units) == NULL) {
+    ABORTXLAL(status);
+  }
+  if (XLALUnitMultiply(&(output->sampleUnits), &hc1Hc2Units, &(input->optimalFilter->sampleUnits)) == NULL) {
+    ABORTXLAL(status);
+  }
 
   DETATCHSTATUSPTR(status);
   RETURN(status);
@@ -1212,7 +1203,6 @@ LALStochasticCrossCorrelationStatistic(
 
 {
   COMPLEX8FrequencySeries ccSpec;
-  LALUnitPair unitPair;
 
   COMPLEX8 *cPtr;
   COMPLEX8 *cStopPtr;
@@ -1387,10 +1377,9 @@ LALStochasticCrossCorrelationStatistic(
   TRY(LALCDestroyVector(status->statusPtr, &(ccSpec.data)), status);
 
   /* Set output units */
-  unitPair.unitOne = &ccSpec.sampleUnits;
-  unitPair.unitTwo = &lalHertzUnit;
-  TRY(LALUnitMultiply(status->statusPtr, &(output->units), &unitPair), \
-      status);
+  if (XLALUnitMultiply(&(output->units), &ccSpec.sampleUnits, &lalHertzUnit) == NULL) {
+    ABORTXLAL(status);
+  }
 
   DETATCHSTATUSPTR(status);
   RETURN(status);
@@ -1407,7 +1396,6 @@ LALStochasticHeterodynedCrossCorrelationStatistic(
 
 {
   COMPLEX8FrequencySeries ccSpec;
-  LALUnitPair unitPair;
 
   COMPLEX8 *cPtr;
   COMPLEX8 *cStopPtr;
@@ -1550,7 +1538,7 @@ LALStochasticHeterodynedCrossCorrelationStatistic(
     TRY(LALCDestroyVector(status->statusPtr, &(ccSpec.data)), status);
   ENDFAIL(status);
 
-  output->value.realf_FIXME = output->value.imagf_FIXME = 0.0;
+  output->value = 0.0;
 
   /* initialize pointers */
   cPtr = ccSpec.data->data;
@@ -1559,20 +1547,18 @@ LALStochasticHeterodynedCrossCorrelationStatistic(
   /* contributions from positive and (negative) frequency components */
   for (; cPtr < cStopPtr; ++cPtr)
   {
-    output->value.realf_FIXME += crealf(*cPtr);
-    output->value.imagf_FIXME += cimagf(*cPtr);
+    output->value += *cPtr;
   }
 
   /* normalize */
-  output->value.realf_FIXME *= ccSpec.deltaF;
-  output->value.imagf_FIXME *= ccSpec.deltaF;
+  output->value *= ((REAL4) ccSpec.deltaF);
 
   TRY(LALCDestroyVector(status->statusPtr, &(ccSpec.data)), status);
 
   /* Set output units */
-  unitPair.unitOne = &ccSpec.sampleUnits;
-  unitPair.unitTwo = &lalHertzUnit;
-  TRY(LALUnitMultiply(status->statusPtr, &(output->units), &unitPair), status);
+  if (XLALUnitMultiply(&(output->units), &ccSpec.sampleUnits, &lalHertzUnit) == NULL) {
+    ABORTXLAL(status);
+  }
 
   DETATCHSTATUSPTR(status);
   RETURN(status);
@@ -1589,7 +1575,6 @@ LALStochasticCrossCorrelationSpectrum(
     BOOLEAN                               epochsMatch)
 
 {
-  LALUnitPair unitPair;
   LALUnit h1H2Units;
 
   COMPLEX8FrequencySeries h1StarH2, h1StarH2Coarse;
@@ -1855,13 +1840,12 @@ LALStochasticCrossCorrelationSpectrum(
       LALNameLength);
 
   /* Set output units */
-  unitPair.unitOne = &(input->hBarTildeOne->sampleUnits);
-  unitPair.unitTwo = &(input->hBarTildeTwo->sampleUnits);
-  TRY(LALUnitMultiply(status->statusPtr, &h1H2Units, &unitPair), status);
-  unitPair.unitOne = &h1H2Units;
-  unitPair.unitTwo = &(input->optimalFilter->sampleUnits);
-  TRY(LALUnitMultiply(status->statusPtr, &(output->sampleUnits), \
-        &unitPair), status );
+  if (XLALUnitMultiply(&h1H2Units, &(input->hBarTildeOne->sampleUnits), &(input->hBarTildeTwo->sampleUnits)) == NULL) {
+    ABORTXLAL(status);
+  }
+  if (XLALUnitMultiply(&(output->sampleUnits), &h1H2Units, &(input->optimalFilter->sampleUnits)) == NULL) {
+    ABORTXLAL(status);
+  }
 
   DETATCHSTATUSPTR(status);
   RETURN(status);
@@ -1877,7 +1861,6 @@ LALStochasticCrossCorrelationStatisticStrain(
 
 {
   COMPLEX8FrequencySeries ccSpec;
-  LALUnitPair unitPair;
 
   COMPLEX8 *cPtr;
   COMPLEX8 *cStopPtr;
@@ -2052,10 +2035,9 @@ LALStochasticCrossCorrelationStatisticStrain(
   TRY(LALCDestroyVector(status->statusPtr, &(ccSpec.data)), status);
 
   /* Set output units */
-  unitPair.unitOne = &ccSpec.sampleUnits;
-  unitPair.unitTwo = &lalHertzUnit;
-  TRY(LALUnitMultiply(status->statusPtr, &(output->units), &unitPair), \
-      status);
+  if (XLALUnitMultiply(&(output->units), &ccSpec.sampleUnits, &lalHertzUnit) == NULL) {
+    ABORTXLAL(status);
+  }
 
   DETATCHSTATUSPTR(status);
   RETURN(status);
@@ -2072,7 +2054,6 @@ LALStochasticHeterodynedCrossCorrelationStatisticStrain(
 
 {
   COMPLEX8FrequencySeries ccSpec;
-  LALUnitPair unitPair;
 
   COMPLEX8 *cPtr;
   COMPLEX8 *cStopPtr;
@@ -2215,7 +2196,7 @@ LALStochasticHeterodynedCrossCorrelationStatisticStrain(
     TRY(LALCDestroyVector(status->statusPtr, &(ccSpec.data)), status);
   ENDFAIL(status);
 
-  output->value.realf_FIXME = output->value.imagf_FIXME = 0.0;
+  output->value = 0.0;
 
   /* initialize pointers */
   cPtr = ccSpec.data->data;
@@ -2224,20 +2205,18 @@ LALStochasticHeterodynedCrossCorrelationStatisticStrain(
   /* contributions from positive and (negative) frequency components */
   for (; cPtr < cStopPtr; ++cPtr)
   {
-    output->value.realf_FIXME += crealf(*cPtr);
-    output->value.imagf_FIXME += cimagf(*cPtr);
+    output->value += *cPtr;
   }
 
   /* normalize */
-  output->value.realf_FIXME *= ccSpec.deltaF;
-  output->value.imagf_FIXME *= ccSpec.deltaF;
+  output->value *= ((REAL4) ccSpec.deltaF);
 
   TRY(LALCDestroyVector(status->statusPtr, &(ccSpec.data)), status);
 
   /* Set output units */
-  unitPair.unitOne = &ccSpec.sampleUnits;
-  unitPair.unitTwo = &lalHertzUnit;
-  TRY(LALUnitMultiply(status->statusPtr, &(output->units), &unitPair), status);
+  if (XLALUnitMultiply(&(output->units), &ccSpec.sampleUnits, &lalHertzUnit) == NULL) {
+    ABORTXLAL(status);
+  }
 
   DETATCHSTATUSPTR(status);
   RETURN(status);
@@ -2254,7 +2233,6 @@ LALStochasticCrossCorrelationSpectrumStrain(
     BOOLEAN                               epochsMatch)
 
 {
-  LALUnitPair unitPair;
   LALUnit h1H2Units;
 
   COMPLEX8FrequencySeries h1StarH2, h1StarH2Coarse;
@@ -2523,13 +2501,12 @@ LALStochasticCrossCorrelationSpectrumStrain(
       LALNameLength);
 
   /* Set output units */
-  unitPair.unitOne = &(input->hBarTildeOne->sampleUnits);
-  unitPair.unitTwo = &(input->hBarTildeTwo->sampleUnits);
-  TRY(LALUnitMultiply(status->statusPtr, &h1H2Units, &unitPair), status);
-  unitPair.unitOne = &h1H2Units;
-  unitPair.unitTwo = &(input->optimalFilter->sampleUnits);
-  TRY(LALUnitMultiply(status->statusPtr, &(output->sampleUnits), \
-        &unitPair), status );
+  if (XLALUnitMultiply(&h1H2Units, &(input->hBarTildeOne->sampleUnits), &(input->hBarTildeTwo->sampleUnits)) == NULL) {
+    ABORTXLAL(status);
+  }
+  if (XLALUnitMultiply(&(output->sampleUnits), &h1H2Units, &(input->optimalFilter->sampleUnits)) == NULL) {
+    ABORTXLAL(status);
+  }
 
   DETATCHSTATUSPTR(status);
   RETURN(status);

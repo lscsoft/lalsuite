@@ -4,17 +4,9 @@
 #include <lal/FileIO.h>
 #include <string.h>
 #include <lal/LALDatatypes.h>
+#include <lal/Units.h>
+#include <lal/AVFactories.h>
 #include <lal/ReadFTSeries.h>
-
-void LALCHARCreateVector( LALStatus *, CHARVector **, UINT4 );
-void LALCHARDestroyVector( LALStatus *, CHARVector ** );
-void LALDCreateVector( LALStatus *, REAL8Vector **, UINT4 );
-void LALDDestroyVector( LALStatus *, REAL8Vector ** );
-void LALParseUnitString ( LALStatus *status,
-	       	          LALUnit *output,
-		          const CHARVector *input );
-static const LALUnit lalDimensionlessUnit 
-	= {  0, { 0, 0, 0, 0, 0, 0, 0}, { 0, 0, 0, 0, 0, 0, 0} };
 
 /* Change the first instance of the target to '\0'; returns 0 on success,
    1 on failure */

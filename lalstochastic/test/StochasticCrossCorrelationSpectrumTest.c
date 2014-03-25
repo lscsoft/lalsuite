@@ -100,8 +100,8 @@
  * LALCDestroyVector()
  * LALCHARCreateVector()
  * LALCHARDestroyVector()
- * LALUnitAsString()
- * LALUnitCompare()
+ * XLALUnitAsString()
+ * XLALUnitCompare()
  * getopt()
  * printf()
  * fprintf()
@@ -141,7 +141,6 @@
 #define STOCHASTICCROSSCORRELATIONSPECTRUMTESTC_MSGEUSE "Bad user-entered data"
 
 
-#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/LALStdlib.h>
 
 #include <math.h>
@@ -164,6 +163,7 @@
 #include <lal/Units.h>
 
 #include "CheckStatus.h"
+#include "CheckStatus.c"
 
 #define STOCHASTICCROSSCORRELATIONSPECTRUMTESTC_LENGTH    9
 #define STOCHASTICCROSSCORRELATIONSPECTRUMTESTC_F0        80.0
@@ -651,21 +651,15 @@ int main( int argc, char *argv[] )
 
   goodData1.f0 = goodData2.f0 = goodFilter.f0 = 0.0;
 
-  goodData1.data->data[0].realf_FIXME = goodData1.data->data[0].imagf_FIXME
-    = goodData2.data->data[0].realf_FIXME = goodData2.data->data[0].imagf_FIXME
-    = goodFilter.data->data[0].realf_FIXME = goodFilter.data->data[0].imagf_FIXME
-    = 0.0;
+  goodData1.data->data[0] = goodData2.data->data[0] = goodFilter.data->data[0] = 0.0;
 
   for (i=1; i<STOCHASTICCROSSCORRELATIONSPECTRUMTESTC_LENGTH; ++i)
   {
     f = i * STOCHASTICCROSSCORRELATIONSPECTRUMTESTC_DELTAF;
     x = f / (STOCHASTICCROSSCORRELATIONSPECTRUMTESTC_FLIM / 2.0);
-    goodData1.data->data[i].realf_FIXME = x*x;
-    goodData1.data->data[i].imagf_FIXME = x;
-    goodData2.data->data[i].realf_FIXME = 1.0/crealf(goodData1.data->data[i]);
-    goodData2.data->data[i].imagf_FIXME = -1.0/cimagf(goodData1.data->data[i]);
-    goodFilter.data->data[i].realf_FIXME = x * (2-x);
-    goodFilter.data->data[i].imagf_FIXME = 0.0;
+    goodData1.data->data[i] = crectf( x*x, x );
+    goodData2.data->data[i] = crectf( 1.0/crealf(goodData1.data->data[i]), -1.0/cimagf(goodData1.data->data[i]) );
+    goodFilter.data->data[i] = crectf( x * (2-x), 0.0 );
   }
 
   LALStochasticCrossCorrelationSpectrum(&status, &goodOutput, &input,  STOCHASTICCROSSCORRELATIONSPECTRUMTESTC_TRUE);

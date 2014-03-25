@@ -140,7 +140,7 @@ extern "C" {
  */
 /*@{*/
 
-/** \name Error Codes *//*@{ */
+/** \name Error Codes */ /*@{ */
 #define GRIDH_ENUL 1    /**< Unexpected null pointer in arguments */
 #define GRIDH_EOUT 2    /**< Output handle points to a non-null pointer */
 #define GRIDH_EMEM 3    /**< Memory allocation error */

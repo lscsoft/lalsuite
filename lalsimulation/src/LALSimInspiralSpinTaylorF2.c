@@ -34,7 +34,7 @@
 #include <lal/XLALError.h>
 #include "LALSimInspiralPNCoefficients.c"
 #include <stdio.h>
-
+#include <stdbool.h>
 
 typedef struct tagLALSimInspiralSF2Orientation
 {
@@ -52,7 +52,10 @@ typedef struct tagLALSimInspiralSF2Coeffs
     REAL8 dtdv2, dtdv3, dtdv4, dtdv5;
 } LALSimInspiralSF2Coeffs;
 
-// Prototypes 
+// Prototypes
+
+REAL8 safe_atan2(REAL8 val1, REAL8 val2);
+
 void XLALSimInspiralSF2CalculateOrientation(
     LALSimInspiralSF2Orientation *orientation,
     REAL8 m1, REAL8 m2, REAL8 f_ref,
@@ -73,6 +76,13 @@ COMPLEX16 XLALSimInspiralSF2Polarization(
 COMPLEX16 XLALSimInspiralSF2Emission(
     REAL8 beta, int mm);
 
+REAL8 safe_atan2(REAL8 val1, REAL8 val2)
+{
+    if (val1 == 0. && val2 == 0.)
+    { return 0.; }
+    else
+    { return atan2(val1, val2); }
+}
 
 void XLALSimInspiralSF2CalculateOrientation(
     LALSimInspiralSF2Orientation *orientation,
@@ -89,13 +99,13 @@ void XLALSimInspiralSF2CalculateOrientation(
     const REAL8 Jz0 = m1*m2*lnhatz/v_ref + m1*m1*s1z;
     const REAL8 thetaJ = acos(Jz0 / sqrt(Jx0*Jx0+Jy0*Jy0+Jz0*Jz0));
     orientation->thetaJ = thetaJ;
-    const REAL8 psiJ = atan2(Jy0, -Jx0); /* FIXME: check that Jy0 and Jx0 are not both 0 */
+    const REAL8 psiJ = safe_atan2(Jy0, -Jx0);
     orientation->psiJ = psiJ;
 
     /* Rotate Lnhat back to frame where J is along z, to figure out initial alpha */
     const REAL8 rotLx = lnhatx*cos(thetaJ)*cos(psiJ) - lnhaty*cos(thetaJ)*sin(psiJ) + lnhatz*sin(thetaJ);
     const REAL8 rotLy = lnhatx*sin(psiJ) + lnhaty*cos(psiJ);
-    orientation->alpha0 = atan2(rotLy, rotLx); /* FIXME: check that rotLy and rotLx are not both 0 */
+    orientation->alpha0 = safe_atan2(rotLy, rotLx);
 }
 
 void XLALSimInspiralSF2CalculateCoeffs(
@@ -326,6 +336,7 @@ int XLALSimInspiralSpinTaylorF2(
 
     REAL8 alpha, alpha_ref, zeta, zeta_ref, beta;
     COMPLEX16 prec_fac;
+    bool enable_precession = true; /* Handle the non-spinning case separately */
 
     LALSimInspiralSF2Orientation orientation;
     XLALSimInspiralSF2CalculateOrientation(&orientation, m1, m2, v0, lnhatx, lnhaty, lnhatz, s1x, s1y, s1z);
@@ -342,9 +353,10 @@ int XLALSimInspiralSpinTaylorF2(
 
     LALSimInspiralSF2Coeffs coeffs;
     XLALSimInspiralSF2CalculateCoeffs(&coeffs, m1, m2, orientation.chi, orientation.kappa);
+    enable_precession = orientation.chi != 0. && orientation.kappa != 1.;
 
-    alpha_ref = XLALSimInspiralSF2Alpha(v0, coeffs) - orientation.alpha0;
-    zeta_ref = XLALSimInspiralSF2Zeta(v0, coeffs);
+    alpha_ref = enable_precession ? XLALSimInspiralSF2Alpha(v0, coeffs) - orientation.alpha0 : 0.;
+    zeta_ref = enable_precession ? XLALSimInspiralSF2Zeta(v0, coeffs) : 0.;
  
     COMPLEX16 SBfac[5]; /* complex sideband factors, mm=2 is first entry */
     for(mm = -2; mm <= 2; mm++)
@@ -484,9 +496,18 @@ int XLALSimInspiralSpinTaylorF2(
         flux *= FTaN * v10;
         dEnergy *= dETaN * v;
 
-        alpha = XLALSimInspiralSF2Alpha(v, coeffs) - alpha_ref;
-        beta = XLALSimInspiralSF2Beta(v, coeffs);
-        zeta = XLALSimInspiralSF2Zeta(v, coeffs) - zeta_ref;
+        if (enable_precession)
+        {
+            alpha = XLALSimInspiralSF2Alpha(v, coeffs) - alpha_ref;
+            beta = XLALSimInspiralSF2Beta(v, coeffs);
+            zeta = XLALSimInspiralSF2Zeta(v, coeffs) - zeta_ref;
+        }
+        else
+        {
+            alpha = 0.;
+            beta = 0.;
+            zeta = 0.;
+        }
 
         prec_fac = 0.j;
         for(mm = -2; mm <= 2; mm++)

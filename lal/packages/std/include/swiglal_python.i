@@ -34,6 +34,16 @@
   import_array();
 %}
 
+// Include compatibility code for NumPy API < 1.7
+%header %{
+#if !SWIGLAL_HAVE_DECL_NPY_ARRAY_WRITEABLE
+#define NPY_ARRAY_WRITEABLE NPY_WRITEABLE
+#endif
+#if !SWIGLAL_HAVE_DECL_PYARRAY_SETBASEOBJECT
+#define PyArray_SetBaseObject(arr, obj) do { (arr)->base = (obj); } while(0)
+#endif
+%}
+
 // Name of PyObject containing the SWIG wrapping of the struct whose members are being accessed.
 %header %{
 #define swiglal_self()    (self)
@@ -43,6 +53,11 @@
 // Name of PyObject containing the SWIG wrapping of the first argument to a function.
 %header %{
 #define swiglal_1starg()  (obj0)
+%}
+
+// Return a reference to the supplied PyObject; increment its reference count, then return it.
+%header %{
+static inline PyObject* swiglal_get_reference(PyObject* v) { Py_XINCREF(v); return v; }
 %}
 
 // Append an argument to the output argument list of an Python SWIG-wrapped function, if the list is empty.
@@ -402,19 +417,19 @@
     // Check input.
     assert(arr != NULL);
     PyArrayObject* nparr = (PyArrayObject*)arr;
-    assert(nparr->descr != NULL);
+    assert(PyArray_DESCR(nparr) != NULL);
 
     // Copy array element.
     if (src != NULL) {
-      memcpy(dst, src, nparr->descr->elsize);
+      memcpy(dst, src, PyArray_DESCR(nparr)->elsize);
     }
 
     // Byte-swap array element, if required.
     if (swap) {
-      const size_t n = nparr->descr->elsize / 2;
+      const size_t n = PyArray_DESCR(nparr)->elsize / 2;
       char *a, *b, c;
       a = (char *)dst;
-      b = a + (nparr->descr->elsize-1);
+      b = a + (PyArray_DESCR(nparr)->elsize-1);
       for (size_t i = 0; i < n; i++) {
         c = *a;
         *a++ = *b;
@@ -456,17 +471,17 @@
     assert(elemptr != NULL);
     assert(arr != NULL);
     PyArrayObject* nparr = (PyArrayObject*)arr;
-    assert(nparr->descr != NULL);
+    assert(PyArray_DESCR(nparr) != NULL);
 
     // Look up the SWIG type descriptor for this array.
     bool isptr;
     swig_type_info* tinfo = NULL;
-    swiglal_py_array_tinfo_from_descr(&isptr, &tinfo, nparr->descr);
+    swiglal_py_array_tinfo_from_descr(&isptr, &tinfo, PyArray_DESCR(nparr));
     assert(tinfo != NULL);
 
     // Get the Python object wrapping the C array element.
     const int tflags = 0;
-    PyObject* parent = nparr->base;
+    PyObject* parent = PyArray_BASE(nparr);
     return OUTCALL;
 
   }
@@ -478,18 +493,18 @@
     assert(elemptr != NULL);
     assert(arr != NULL);
     PyArrayObject* nparr = (PyArrayObject*)arr;
-    assert(nparr->descr != NULL);
+    assert(PyArray_DESCR(nparr) != NULL);
 
     // Look up the SWIG type descriptor for this array.
     bool isptr;
     swig_type_info* tinfo = NULL;
-    swiglal_py_array_tinfo_from_descr(&isptr, &tinfo, nparr->descr);
+    swiglal_py_array_tinfo_from_descr(&isptr, &tinfo, PyArray_DESCR(nparr));
     assert(tinfo != NULL);
 
     // Set the C array element to the supplied Python object.
     const int tflags = 0;
-    const size_t esize = nparr->descr->elsize;
-    PyObject* parent = nparr->base;
+    const size_t esize = PyArray_DESCR(nparr)->elsize;
+    PyObject* parent = PyArray_BASE(nparr);
     int ecode = INCALL;
     if (!SWIG_IsOK(ecode)) {
       SWIG_Error(ecode, "failure in swiglal_py_array_objview_" #ACFTYPE "_setitem()");
@@ -505,13 +520,13 @@
     // Check input.
     assert(fromarr != NULL);
     PyArrayObject* npfromarr = (PyArrayObject*)fromarr;
-    assert(npfromarr->descr != NULL);
+    assert(PyArray_DESCR(npfromarr) != NULL);
     assert(toarr != NULL);
     PyArrayObject* nptoarr = (PyArrayObject*)toarr;
-    assert(nptoarr->descr != NULL);
+    assert(PyArray_DESCR(nptoarr) != NULL);
 
     // toarr should be an array of pointers to PyObjects.
-    assert(nptoarr->descr->elsize == sizeof(PyObject*));
+    assert(PyArray_DESCR(nptoarr)->elsize == sizeof(PyObject*));
 
     // Loop over n elements, and assign each element of toarr
     // the Python object wrapping the corresponding element of fromarr.
@@ -519,7 +534,7 @@
     PyObject** toelem = (PyObject**)to;
     while (--n >= 0) {
       *toelem = swiglal_py_array_objview_##ACFTYPE##_getitem(fromelem, fromarr);
-      fromelem += npfromarr->descr->elsize;
+      fromelem += PyArray_DESCR(npfromarr)->elsize;
       ++toelem;
     }
 
@@ -624,6 +639,7 @@
                                                        swig_type_info *tinfo,
                                                        const int tflags)
     {
+      PyArrayObject* nparr = NULL;
       int ecode = 0;
       npy_intp idx[ndims];
 
@@ -633,8 +649,7 @@
       }
 
       // Convert the input Python object to a NumPy array.
-      PyObject* nparr = NULL;
-      if (PyArray_Converter(obj, &nparr) != NPY_SUCCEED) {
+      if (PyArray_Converter(obj, (PyObject**)&nparr) != NPY_SUCCEED) {
         ecode = SWIG_ValueError;
         goto end;
       }
@@ -696,7 +711,7 @@
                                                               swig_type_info *tinfo,
                                                               const int tflags)
     {
-      PyObject* nparr = NULL;
+      PyArrayObject* nparr = NULL;
       npy_intp objdims[ndims];
       npy_intp idx[ndims];
 
@@ -713,7 +728,7 @@
       }
 
       // Create new NumPy array.
-      nparr = PyArray_EMPTY(ndims, objdims, NPYTYPE, 0);
+      nparr = (PyArrayObject*)PyArray_EMPTY(ndims, objdims, NPYTYPE, 0);
       if (nparr == NULL) {
         goto fail;
       }
@@ -734,7 +749,7 @@
 
       }
 
-      return nparr;
+      return (PyObject*)nparr;
 
     fail:
       Py_CLEAR(nparr);
@@ -758,7 +773,7 @@
                                                               swig_type_info *tinfo,
                                                               const int tflags)
     {
-      PyObject* nparr = NULL;
+      PyArrayObject* nparr = NULL;
       npy_intp objdims[ndims];
       npy_intp objstrides[ndims];
 
@@ -773,7 +788,7 @@
       if (descr == NULL) {
         goto fail;
       }
-      nparr = PyArray_NewFromDescr(&PyArray_Type, descr, ndims, objdims, objstrides, ptr, NPY_WRITEABLE, NULL);
+      nparr = (PyArrayObject*)PyArray_NewFromDescr(&PyArray_Type, descr, ndims, objdims, objstrides, ptr, NPY_ARRAY_WRITEABLE, NULL);
       if (nparr == NULL) {
         goto fail;
       }
@@ -781,10 +796,10 @@
       // Set the NumPy array view parent, if given.
       if (parent) {
         Py_INCREF(parent);
-        ((PyArrayObject*)nparr)->base = parent;
+        PyArray_SetBaseObject(nparr, parent);
       }
 
-      return nparr;
+      return (PyObject*)nparr;
 
     fail:
       Py_CLEAR(nparr);

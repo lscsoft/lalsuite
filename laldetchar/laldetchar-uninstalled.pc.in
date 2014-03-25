@@ -1,0 +1,12 @@
+abs_top_srcdir=@abs_top_srcdir@
+abs_top_builddir=@abs_top_builddir@
+LAL_DATA_PATH=@abs_top_srcdir@/test:@abs_top_builddir@/test:@LAL_DATA_PATH@
+LAL_OCTAVE_PATH=@abs_top_builddir@/swig/octave/.libs:@LAL_OCTAVE_PATH@
+LAL_PYTHON_PATH=@abs_top_builddir@/swig/python/.libs:@LAL_PYTHON_PATH@
+
+Name: LALDetChar
+Description: (uninstalled)
+Version: @VERSION@
+Requires: glib-2.0, gsl, lal >= @LAL_VERSION@, libmetaio, lalmetaio >= @LALMETAIO_VERSION@, lalburst >= @LALBURST_VERSION@
+Libs: ${abs_top_builddir}/src/liblaldetchar.la
+Cflags: -I${abs_top_builddir}/include

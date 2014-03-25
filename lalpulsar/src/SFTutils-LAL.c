@@ -1,3 +1,5 @@
+/** \cond DONT_DOXYGEN */
+
 /**
  * \deprecated Use XLALCreateSFT() instead
  * Allows for numBins == 0.
@@ -180,7 +182,7 @@ LALDestroyMultiSFTVector (LALStatus *status,		/**< pointer to LALStatus structur
 } /* LALDestroyMultiSFTVector() */
 
 /**
- * \deprecate Use XLALDestroyMultiPSDVector() instead.
+ * \deprecated Use XLALDestroyMultiPSDVector() instead.
  */
 void
 LALDestroyMultiPSDVector (LALStatus *status,		/**< pointer to LALStatus structure */
@@ -316,8 +318,7 @@ LALSubtractSFTVectors (LALStatus *status,	/**< pointer to LALStatus structure */
 
       for (j=0; j < numBins1; j++)
 	{
-	  ret->data[i].data->data[j].realf_FIXME = crealf(inVect1->data[i].data->data[j]) - crealf(inVect2->data[i].data->data[j]);
-	  ret->data[i].data->data[j].imagf_FIXME = cimagf(inVect1->data[i].data->data[j]) - cimagf(inVect2->data[i].data->data[j]);
+	  ret->data[i].data->data[j] = crectf( crealf(inVect1->data[i].data->data[j]) - crealf(inVect2->data[i].data->data[j]), cimagf(inVect1->data[i].data->data[j]) - cimagf(inVect2->data[i].data->data[j]) );
 	}  /* for j < numBins1 */
 
       snprintf ( name1Trunc, halfNameLength, "%s", inVect1->data[i].name );
@@ -394,12 +395,7 @@ LALLinearlyCombineSFTVectors
 
       for (k=0; k < numBins1; k++)
 	{
-	  ret->data[i].data->data[k].realf_FIXME
-	    = creal(weights->data[0]) * crealf(inVects[0]->data[i].data->data[k])
-	    - cimag(weights->data[0]) * cimagf(inVects[0]->data[i].data->data[k]);
-	  ret->data[i].data->data[k].imagf_FIXME
-	    = creal(weights->data[0]) * cimagf(inVects[0]->data[i].data->data[k])
-	    + cimag(weights->data[0]) * crealf(inVects[0]->data[i].data->data[k]);
+	  ret->data[i].data->data[k] = crectf( creal(weights->data[0]) * crealf(inVects[0]->data[i].data->data[k]) - cimag(weights->data[0]) * cimagf(inVects[0]->data[i].data->data[k]), creal(weights->data[0]) * cimagf(inVects[0]->data[i].data->data[k]) + cimag(weights->data[0]) * crealf(inVects[0]->data[i].data->data[k]) );
 	}  /* for k < numBins1 */
 
       /* add in the other SFTs one-by-one */
@@ -430,12 +426,7 @@ LALLinearlyCombineSFTVectors
 
 	  for (k=0; k < numBins1; k++)
 	    {
-	      ret->data[i].data->data[k].realf_FIXME
-		+= creal(weights->data[j]) * crealf(inVects[j]->data[i].data->data[k])
-		- cimag(weights->data[j]) * cimagf(inVects[j]->data[i].data->data[k]);
-	      ret->data[i].data->data[k].imagf_FIXME
-		+= creal(weights->data[j]) * cimagf(inVects[j]->data[i].data->data[k])
-		+ cimag(weights->data[j]) * crealf(inVects[j]->data[i].data->data[k]);
+	      ret->data[i].data->data[k] += crectf( creal(weights->data[j]) * crealf(inVects[j]->data[i].data->data[k]) - cimag(weights->data[j]) * cimagf(inVects[j]->data[i].data->data[k]), creal(weights->data[j]) * cimagf(inVects[j]->data[i].data->data[k]) + cimag(weights->data[j]) * crealf(inVects[j]->data[i].data->data[k]) );
 	    }  /* for k < numBins1 */
 
 	} /* for j < numSFTVects */
@@ -834,3 +825,5 @@ upsampleSFTVector (LALStatus *status,		/**< pointer to LALStatus structure */
   RETURN (status);
 
 } /* upsampleSFTVector() */
+
+/** \endcond */
