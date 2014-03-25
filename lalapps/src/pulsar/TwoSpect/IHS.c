@@ -1068,7 +1068,8 @@ REAL8 ihs2h0(REAL8 ihsval, inputParamsStruct *params)
    
    if (ihsval<=0.0) return 0.0;
    REAL8 prefact = 1.0;
-   prefact = 7.2;
+   //prefact = 7.2;  //old value for when IHS --> h0 when in the upper limits, the value of the noise subtracted was incorrectly calculated and for >99.999% CL
+   prefact = 44.7; //new value for IHS --> h0
    return prefact*pow(ihsval/(params->Tcoh*params->Tobs),0.25);
    
 }
