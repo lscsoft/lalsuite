@@ -397,7 +397,7 @@ int XLALReadUserVars(int argc,            /**< [in] the command line argument co
   uvar->gpsstart = -1;
   uvar->gpsend = -1;
   uvar->mismatch = 0.2;
-  uvar->frac = 0.01;
+  uvar->frac = 0.001;
   uvar->coverage = -1;
   uvar->blocksize = 100;
   uvar->tsft = 256;
@@ -568,7 +568,7 @@ int XLALComputeSemiCoherentStat(FILE *fp,                                /**< [i
       
       /* define the power at this location in this segment */
       logLratiosum += currentpower->data->data[idx]; /* /norm; */
-   /*    fprintf(stdout,"currentpower = %f norm = %f\n",currentpower->data->data[idx],norm); */
+      fprintf(stdout,"currentpower = %f idx = %d\n",currentpower->data->data[idx],idx);
        
     } /* end loop over segments */
     /*************************************************************************************/
