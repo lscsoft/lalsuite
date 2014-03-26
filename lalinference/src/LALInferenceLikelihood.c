@@ -324,8 +324,6 @@ REAL8 LALInferenceUndecomposedFreqDomainLogLikelihood(LALInferenceVariables *cur
         }
         else timeTmp = GPSdouble;
 
-        /* "different" now may also mean that "dataPtr->modelParams" */
-
         LALInferenceCopyVariables(currentParams, dataPtr->modelParams);
         LALInferenceAddVariable(dataPtr->modelParams, "time", &timeTmp, LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_LINEAR);
         templt(dataPtr);
