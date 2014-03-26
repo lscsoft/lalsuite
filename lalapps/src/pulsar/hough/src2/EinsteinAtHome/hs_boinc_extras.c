@@ -415,7 +415,9 @@ int BOINC_LAL_ErrHand (LALStatus  *status,
 #include <ucontext.h>
 /* see https://bugzilla.redhat.com/show_bug.cgi?id=234560 */
 #ifdef __x86_64__
+#ifdef  REG_RIP
 #define REG_EIP REG_RIP
+#endif
 #define FP_SW swd
 #else  /*  __x86_64__ */
 #define FP_SW sw
@@ -497,7 +499,12 @@ static void sighandler(int sig)
     fputs(myltoa(nostackframes, buf, sizeof(buf)), stderr);
     fputs(" stack frames obtained for this thread:\n", stderr);
     /* overwrite sigaction with caller's address */
+#ifndef REWRITE_STACK_SIGACTION
+#define REWRITE_STACK_SIGACTION 1
+#endif
+#if REWRITE_STACK_SIGACTION && defined(REG_EIP)
     stackframes[1] = (void *) uc->uc_mcontext.gregs[REG_EIP];
+#endif
     fputs("Use gdb command: 'info line *0xADDRESS' to print corresponding line numbers.\n",stderr);
     backtrace_symbols_fd(stackframes, nostackframes, fileno(stderr));
 #if defined(__i386__) && defined(EXT_STACKTRACE)
