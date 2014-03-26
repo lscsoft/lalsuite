@@ -2146,8 +2146,8 @@ REAL8 LALInferenceMarginalisedTimeLogLikelihood(LALInferenceVariables *currentPa
 }
 
 
-REAL8 *LALInferenceNetworkSNR(LALInferenceVariables *currentParams, LALInferenceIFOData * data, 
-                              LALInferenceTemplateFunction templt)
+void LALInferenceNetworkSNR(LALInferenceVariables *currentParams, LALInferenceIFOData * data, 
+                              LALInferenceTemplateFunction templt, REAL8 *SNRs)
 /***************************************************************/
 /* Calculate the SNR across the network.                       */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
@@ -2225,7 +2225,6 @@ REAL8 *LALInferenceNetworkSNR(LALInferenceVariables *currentParams, LALInference
       nifos++;
       dataPtr = dataPtr->next;
   }
-  REAL8 *SNRs = XLALMalloc(nifos * sizeof(REAL8));
 
   ifo=0;
   dataPtr = data;
@@ -2334,9 +2333,8 @@ REAL8 *LALInferenceNetworkSNR(LALInferenceVariables *currentParams, LALInference
     }
 
     SNRs[ifo] = sqrt(signal2noise);
+    dataPtr->currentSNR = SNRs[ifo];
     ifo++; //increment IFO counter for noise parameters
     dataPtr = dataPtr->next;
   }
-
-  return(SNRs);
 }

@@ -838,6 +838,16 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
         headIFO = headIFO->next;
       }
 
+      REAL8 networkSNR = 0.0;
+      headIFO = runState->data;
+      while (headIFO != NULL) {
+        fprintf(chainoutput, "%f\t", headIFO->acceptedSNR);
+        networkSNR += headIFO->acceptedSNR * headIFO->acceptedSNR;
+        headIFO = headIFO->next;
+      }
+      networkSNR = sqrt(networkSNR);
+      fprintf(chainoutput, "%f\t", networkSNR);
+
       if (benchmark) {
         gettimeofday(&tv, NULL);
         timestamp = tv.tv_sec + tv.tv_usec/1E6 - timestamp_epoch;
@@ -1015,6 +1025,7 @@ void PTMCMCOneStep(LALInferenceRunState *runState)
     LALInferenceIFOData *headData = runState->data;
     while (headData != NULL) {
       headData->acceptedloglikelihood = headData->loglikelihood;
+      headData->acceptedSNR = headData->currentSNR;
       headData = headData->next;
     }
     runState->currentPrior = logPriorProposed;
@@ -1640,6 +1651,15 @@ void LALInferencePrintPTMCMCHeaderFile(LALInferenceRunState *runState, FILE *cha
       fprintf(chainoutput, "\t");
       headIFO = headIFO->next;
     }
+    headIFO = runState->data;
+    while (headIFO != NULL) {
+      fprintf(chainoutput, "SNR");
+      fprintf(chainoutput, "%s",headIFO->name);
+      fprintf(chainoutput, "\t");
+      headIFO = headIFO->next;
+    }
+    fprintf(chainoutput, "SNR\t");
+
     if (benchmark)
       fprintf(chainoutput, "timestamp\t");
     fprintf(chainoutput,"\n");
@@ -1666,6 +1686,7 @@ static void setIFOAcceptedLikelihoods(LALInferenceRunState *runState) {
 
   for (ifo = data; ifo != NULL; ifo = ifo->next) {
     ifo->acceptedloglikelihood = ifo->loglikelihood;
+    ifo->acceptedSNR = ifo->currentSNR;
   }
 }
 
