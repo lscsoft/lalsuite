@@ -2181,18 +2181,6 @@ void LALInferenceNetworkSNR(LALInferenceVariables *currentParams, LALInferenceIF
 
   int signalFlag = 1;   //flag for including signal model
 
-  //check if psd parameters are included in the model
-  int psdFlag = 0;           //flag for including psd fitting
-  if(LALInferenceCheckVariable(currentParams, "psdScaleFlag"))
-    psdFlag = *((INT4 *)LALInferenceGetVariable(currentParams, "psdScaleFlag"));
-
-  //check if glitch model is being used
-  int glitchFlag = 0;   //flag for including glitch model
-  if(LALInferenceCheckVariable(currentParams,"glitchFitFlag"))
-    glitchFlag = *((INT4 *)LALInferenceGetVariable(currentParams, "glitchFitFlag"));
-  //if(glitchFlag)
-  //  glitchFD = *((gsl_matrix **)LALInferenceGetVariable(currentParams, "morlet_FD"));
-
   //check if signal model is being used
   signalFlag=1;
   if(LALInferenceCheckVariable(currentParams, "signalModelFlag"))
