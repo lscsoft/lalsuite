@@ -979,7 +979,7 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
 
 
 class EngineJob(pipeline.CondorDAGJob,pipeline.AnalysisJob):
-  def __init__(self,cp,submitFile,logdir,dax=False,site=None):
+  def __init__(self,cp,submitFile,logdir,ispreengine=False,dax=False,site=None):
     self.ispreengine=ispreengine
     self.engine=cp.get('analysis','engine')
     basepath=cp.get('paths','basedir')
@@ -1558,13 +1558,14 @@ class GraceDBNode(pipeline.CondorDAGNode):
         self.add_var_arg(self.webpath+'/posterior_samples.dat Parameter estimation finished. '+self.resultsurl+'/posplots.html')
         self.__finalized=True
 
-class ROMJob(pipeline.CondorDAGJob):
+class ROMJob(pipeline.CondorDAGJob,pipeline.AnalysisJob):
   """
   Class for a ROM compute weights job
   """
-  def __init__(self,cp,submitFile,logdir):
+  def __init__(self,cp,submitFile,logdir,dax=False):
     exe=cp.get('condor','romweights')
     pipeline.CondorDAGJob.__init__(self,"vanilla",exe)
+    pipeline.AnalysisJob.__init__(self,cp,dax=dax)
     self.set_sub_file(submitFile)
     self.set_stdout_file(os.path.join(logdir,'romweights-$(cluster)-$(process).out'))
     self.set_stderr_file(os.path.join(logdir,'romweights-$(cluster)-$(process).err'))
