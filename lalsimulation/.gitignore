@@ -47,6 +47,7 @@ test/TestPrecessWaveformIMRPhenomB
 test/TestSphHarmTS
 test/TestSpinTaylorT4Dynamics
 test/TestWaveformFromCache
+test/TestXLALSimAddInjection
 test/WaveformFlagsTest
 test/XLALSimIMRPhenomC.dat
 test/XLALSimIMRPhenomP.dat
