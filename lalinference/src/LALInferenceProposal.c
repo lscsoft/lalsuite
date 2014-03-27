@@ -3395,7 +3395,7 @@ void LALInferenceUpdateAdaptiveJumps(LALInferenceRunState *runState, INT4 accept
  * @param runState The LALInferenceRunState to get command line options from and to the proposal cycle of.
  */
 void LALInferenceSetupClusteredKDEProposalsFromFile(LALInferenceRunState *runState) {
-    fprintf(stdout, "Setting up cluster proposal...");
+    fprintf(stdout, "Setting up cluster proposal...\n");
     fflush(stdout);
     LALInferenceVariableItem *item;
     UINT4 i=0, j=0, k=0;
@@ -3539,7 +3539,7 @@ void LALInferenceSetupClusteredKDEProposalsFromFile(LALInferenceRunState *runSta
                 INT4 acl = (INT4)LALInferenceComputeMaxAutoCorrLen(sampleArray, nInSamps, nValidCols);
                 UINT4 downsampled_size = ceil((REAL8)nInSamps/acl);
                 REAL8 *downsampled_array = (REAL8 *)XLALMalloc(downsampled_size * nValidCols * sizeof(REAL8));
-                printf("Downsampling to achieve %i samples.\n", downsampled_size);
+                printf("Chain %i downsampling to achieve %i samples.\n", chain, downsampled_size);
                 for (k=0; k < downsampled_size; k++) {
                     for (j=0; j < nValidCols; j++)
                         downsampled_array[k*nValidCols + j] = sampleArray[k*nValidCols*acl + j];
