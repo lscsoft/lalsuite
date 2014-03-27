@@ -298,7 +298,6 @@ REAL8 LALInferenceUndecomposedFreqDomainLogLikelihood(LALInferenceVariables *cur
   gmst=XLALGreenwichMeanSiderealTime(&GPSlal);
   }
 
-  signal2noise = 0.0; //for Malmquist prior
   chisquared = 0.0;
   /* loop over data (different interferometers): */
   dataPtr = data;
@@ -422,6 +421,7 @@ REAL8 LALInferenceUndecomposedFreqDomainLogLikelihood(LALInferenceVariables *cur
       }
     }
 
+    signal2noise = 0.0;
     for (i=lower; i<=upper; ++i){
       //get local copy of data Fourier amplitudes
       dataReal = creal(dataPtr->freqData->data->data[i]) / deltaT;
@@ -495,12 +495,11 @@ REAL8 LALInferenceUndecomposedFreqDomainLogLikelihood(LALInferenceVariables *cur
       im = newIm;
       }
     }
+    dataPtr->currentSNR = sqrt(signal2noise);
     ifo++; //increment IFO counter for noise parameters
     dataPtr = dataPtr->next;
   }
   loglikeli = -1.0 * chisquared; // note (again): the log-likelihood is unnormalised!
-  //rejection sample on SNR if using Malmquist prior
-  if(LALInferenceCheckVariable(currentParams, "malmquistPrior") && signal2noise < 25.0) loglikeli = -1.0e30;
   return(loglikeli);
 }
 
@@ -1769,7 +1768,7 @@ REAL8 LALInferenceMarginalisedTimeLogLikelihood(LALInferenceVariables *currentPa
   double ra, dec, psi, gmst;
   LIGOTimeGPS GPSlal;
   double chisquared;
-  double signal2noise = 0.0; //For Malmquist prior
+  double signal2noise = 0.0;
   double loglike;
   double deltaT=0.0, TwoDeltaToverN, deltaF;
   double timedelay, timeshift, twopitimeshift;
@@ -2014,6 +2013,7 @@ REAL8 LALInferenceMarginalisedTimeLogLikelihood(LALInferenceVariables *currentPa
       }
     }
 
+    signal2noise = 0.0;
     for (i=lower; i<=upper; ++i){
       if(LALInferenceLineSwitch(lineFlag, Nlines, lines_array, widths_array, i)) {
           REAL8 alph=0.0, lnalph=0.0;
@@ -2094,6 +2094,7 @@ REAL8 LALInferenceMarginalisedTimeLogLikelihood(LALInferenceVariables *currentPa
     }
 
     loglike -= 0.5 * chisquared;
+    dataPtr->currentSNR = sqrt(signal2noise);
 
     ifo++; //increment IFO counter for noise parameters
     dataPtr = dataPtr->next;
@@ -2127,9 +2128,6 @@ REAL8 LALInferenceMarginalisedTimeLogLikelihood(LALInferenceVariables *currentPa
   size_t imax;
   REAL8 imean;
   loglike += integrate_interpolated_log(deltaT, dh_S->data + istart, n, &imean, &imax) - log(n*deltaT);
-
-  //rejection sample on SNR if using Malmquist prior
-  if(LALInferenceCheckVariable(currentParams, "malmquistPrior") && signal2noise < 25.0) loglike = -1.0e30;
 
   XLALDestroyCOMPLEX16Vector(dh_S_tilde);
   XLALDestroyREAL8Vector(dh_S);
@@ -2224,7 +2222,7 @@ void LALInferenceNetworkSNR(LALInferenceVariables *currentParams, LALInferenceIF
 	/* t_c corresponds to the "time" parameter in                    */
 	/* IFOdata->modelParams (set, e.g., from the trigger value).     */
     
-    signal2noise = 0.0; //for Malmquist prior
+    signal2noise = 0.0;
     if(signalFlag){
         /* Compare parameter values with parameter values corresponding  */
         /* to currently stored template; ignore "time" variable:         */
