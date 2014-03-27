@@ -285,8 +285,6 @@ int XLALSimAddInjectionREAL8TimeSeries(
 	 * suppress aperiodicity artifacts, and 1/2 this many samples is
 	 * clipped from the start and end afterwards */
 	const unsigned aperiodicity_suppression_buffer = 32768;
-	REAL8Window *window;
-	unsigned i;
 	double start_sample_int;
 	double start_sample_frac;
 
@@ -301,20 +299,6 @@ int XLALSimAddInjectionREAL8TimeSeries(
 		XLALPrintError("%s(): error: input sample rates or heterodyne frequencies do not match\n", __func__);
 		XLAL_ERROR(XLAL_EINVAL);
 	}
-
-	/* extend the source time series by adding the "aperiodicity
-	 * padding" to the start and end.  for efficiency's sake, make sure
-	 * the new length is a power of two. */
-
-	i = round_up_to_power_of_two(h->data->length + 2 * aperiodicity_suppression_buffer);
-	if(i < h->data->length) {
-		/* integer overflow */
-		XLALPrintError("%s(): error: source time series too long\n", __func__);
-		XLAL_ERROR(XLAL_EBADLEN);
-	}
-	i -= h->data->length;
-	if(!XLALResizeREAL8TimeSeries(h, -(int) (i / 2), h->data->length + i))
-		XLAL_ERROR(XLAL_EFUNC);
 
 	/* compute the integer and fractional parts of the sample index in
 	 * the target time series on which the source time series begins.
@@ -334,9 +318,28 @@ int XLALSimAddInjectionREAL8TimeSeries(
 		start_sample_int += 1.0;
 	}
 
+	/* perform sub-sample interpolation if needed */
+
 	if(fabs(start_sample_frac) > noop_threshold || response) {
 		COMPLEX16FrequencySeries *tilde_h;
 		REAL8FFTPlan *plan;
+		REAL8Window *window;
+		unsigned i;
+
+		/* extend the source time series by adding the "aperiodicity
+		 * padding" to the start and end.  for efficiency's sake, make sure
+		 * the new length is a power of two, and don't forget to adjust the
+		 * start index in the target time series. */
+
+		i = round_up_to_power_of_two(h->data->length + 2 * aperiodicity_suppression_buffer);
+		if(i < h->data->length) {
+			/* integer overflow */
+			XLALPrintError("%s(): error: source time series too long\n", __func__);
+			XLAL_ERROR(XLAL_EBADLEN);
+		}
+		start_sample_int -= (i - h->data->length) / 2;
+		if(!XLALResizeREAL8TimeSeries(h, -(int) (i - h->data->length) / 2, i))
+			XLAL_ERROR(XLAL_EFUNC);
 
 		/* transform source time series to frequency domain.  the FFT
 		 * function populates the frequency series' metadata with the
@@ -445,31 +448,31 @@ int XLALSimAddInjectionREAL8TimeSeries(
 			XLAL_ERROR(XLAL_EERR);
 		}
 		h->deltaT = target->deltaT;
+
+		/* set source epoch from target epoch and integer sample offset */
+
+		h->epoch = target->epoch;
+		XLALGPSAdd(&h->epoch, start_sample_int * target->deltaT);
+
+		/* clip half of the "aperiodicity padding" from the start and end
+		 * of the source time series in a continuing effort to suppress
+		 * aperiodicity artifacts. */
+
+		if(!XLALResizeREAL8TimeSeries(h, aperiodicity_suppression_buffer / 2, h->data->length - aperiodicity_suppression_buffer))
+			XLAL_ERROR(XLAL_EFUNC);
+
+		/* apply a Tukey window whose tapers lie within the remaining
+		 * aperiodicity padding. leaving one sample of the aperiodicty
+		 * padding untouched on each side of the original time series
+		 * because the data might have been shifted into it */
+
+		window = XLALCreateTukeyREAL8Window(h->data->length, (double) (aperiodicity_suppression_buffer - 2) / h->data->length);
+		if(!window)
+			XLAL_ERROR(XLAL_EFUNC);
+		for(i = 0; i < h->data->length; i++)
+			h->data->data[i] *= window->data->data[i];
+		XLALDestroyREAL8Window(window);
 	}
-
-	/* set source epoch from target epoch and integer sample offset */
-
-	h->epoch = target->epoch;
-	XLALGPSAdd(&h->epoch, start_sample_int * target->deltaT);
-
-	/* clip half of the "aperiodicity padding" from the start and end
-	 * of the source time series in a continuing effort to suppress
-	 * aperiodicity artifacts. */
-
-	if(!XLALResizeREAL8TimeSeries(h, aperiodicity_suppression_buffer / 2, h->data->length - aperiodicity_suppression_buffer))
-		XLAL_ERROR(XLAL_EFUNC);
-
-	/* apply a Tukey window whose tapers lie within the remaining
-	 * aperiodicity padding. leaving one sample of the aperiodicty
-	 * padding untouched on each side of the original time series
-	 * because the data might have been shifted into it */
-
-	window = XLALCreateTukeyREAL8Window(h->data->length, (double) (aperiodicity_suppression_buffer - 2) / h->data->length);
-	if(!window)
-		XLAL_ERROR(XLAL_EFUNC);
-	for(i = 0; i < h->data->length; i++)
-		h->data->data[i] *= window->data->data[i];
-	XLALDestroyREAL8Window(window);
 
 	/* add source time series to target time series */
 
@@ -508,13 +511,11 @@ int XLALSimAddInjectionREAL4TimeSeries(
 {
 	/* 1 ns is about 10^-5 samples at 16384 Hz */
 	const double noop_threshold = 1e-4;	/* samples */
-	REAL4Window *window;
 	/* the source time series is padded with at least this many 0's at
 	 * the start and end before re-interpolation in an attempt to
 	 * suppress aperiodicity artifacts, and 1/2 this many samples is
 	 * clipped from the start and end afterwards */
 	const unsigned aperiodicity_suppression_buffer = 32768;
-	unsigned i;
 	double start_sample_int;
 	double start_sample_frac;
 
@@ -529,20 +530,6 @@ int XLALSimAddInjectionREAL4TimeSeries(
 		XLALPrintError("%s(): error: input sample rates or heterodyne frequencies do not match\n", __func__);
 		XLAL_ERROR(XLAL_EINVAL);
 	}
-
-	/* extend the source time series by adding the "aperiodicity
-	 * padding" to the start and end.  for efficiency's sake, make sure
-	 * the new length is a power of two. */
-
-	i = round_up_to_power_of_two(h->data->length + 2 * aperiodicity_suppression_buffer);
-	if(i < h->data->length) {
-		/* integer overflow */
-		XLALPrintError("%s(): error: source time series too long\n", __func__);
-		XLAL_ERROR(XLAL_EBADLEN);
-	}
-	i -= h->data->length;
-	if(!XLALResizeREAL4TimeSeries(h, -(int) (i / 2), h->data->length + i))
-		XLAL_ERROR(XLAL_EFUNC);
 
 	/* compute the integer and fractional parts of the sample index in
 	 * the target time series on which the source time series begins.
@@ -562,9 +549,28 @@ int XLALSimAddInjectionREAL4TimeSeries(
 		start_sample_int += 1.0;
 	}
 
+	/* perform sub-sample interpolation if needed */
+
 	if(fabs(start_sample_frac) > noop_threshold || response) {
 		COMPLEX8FrequencySeries *tilde_h;
 		REAL4FFTPlan *plan;
+		REAL4Window *window;
+		unsigned i;
+
+		/* extend the source time series by adding the "aperiodicity
+		 * padding" to the start and end.  for efficiency's sake, make sure
+		 * the new length is a power of two, and don't forget to adjust the
+		 * start index in the target time series. */
+
+		i = round_up_to_power_of_two(h->data->length + 2 * aperiodicity_suppression_buffer);
+		if(i < h->data->length) {
+			/* integer overflow */
+			XLALPrintError("%s(): error: source time series too long\n", __func__);
+			XLAL_ERROR(XLAL_EBADLEN);
+		}
+		start_sample_int -= (i - h->data->length) / 2;
+		if(!XLALResizeREAL4TimeSeries(h, -(int) (i - h->data->length) / 2, i))
+			XLAL_ERROR(XLAL_EFUNC);
 
 		/* transform source time series to frequency domain.  the FFT
 		 * function populates the frequency series' metadata with the
@@ -673,31 +679,31 @@ int XLALSimAddInjectionREAL4TimeSeries(
 			XLAL_ERROR(XLAL_EERR);
 		}
 		h->deltaT = target->deltaT;
+
+		/* set source epoch from target epoch and integer sample offset */
+
+		h->epoch = target->epoch;
+		XLALGPSAdd(&h->epoch, start_sample_int * target->deltaT);
+
+		/* clip half of the "aperiodicity padding" from the start and end
+		 * of the source time series in a continuing effort to suppress
+		 * aperiodicity artifacts. */
+
+		if(!XLALResizeREAL4TimeSeries(h, aperiodicity_suppression_buffer / 2, h->data->length - aperiodicity_suppression_buffer))
+			XLAL_ERROR(XLAL_EFUNC);
+
+		/* apply a Tukey window whose tapers lie within the remaining
+		 * aperiodicity padding. leaving one sample of the aperiodicty
+		 * padding untouched on each side of the original time series
+		 * because the data might have been shifted into it */
+
+		window = XLALCreateTukeyREAL4Window(h->data->length, (double) (aperiodicity_suppression_buffer - 2) / h->data->length);
+		if(!window)
+			XLAL_ERROR(XLAL_EFUNC);
+		for(i = 0; i < h->data->length; i++)
+			h->data->data[i] *= window->data->data[i];
+		XLALDestroyREAL4Window(window);
 	}
-
-	/* set source epoch from target epoch and integer sample offset */
-
-	h->epoch = target->epoch;
-	XLALGPSAdd(&h->epoch, start_sample_int * target->deltaT);
-
-	/* clip half of the "aperiodicity padding" from the start and end
-	 * of the source time series in a continuing effort to suppress
-	 * aperiodicity artifacts. */
-
-	if(!XLALResizeREAL4TimeSeries(h, aperiodicity_suppression_buffer / 2, h->data->length - aperiodicity_suppression_buffer))
-		XLAL_ERROR(XLAL_EFUNC);
-
-	/* apply a Tukey window whose tapers lie within the remaining
-	 * aperiodicity padding. leaving one sample of the aperiodicty
-	 * padding untouched on each side of the original time series
-	 * because the data might have been shifted into it */
-
-	window = XLALCreateTukeyREAL4Window(h->data->length, (double) (aperiodicity_suppression_buffer - 2) / h->data->length);
-	if(!window)
-		XLAL_ERROR(XLAL_EFUNC);
-	for(i = 0; i < h->data->length; i++)
-		h->data->data[i] *= window->data->data[i];
-	XLALDestroyREAL4Window(window);
 
 	/* add source time series to target time series */
 
