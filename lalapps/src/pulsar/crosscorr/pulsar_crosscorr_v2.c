@@ -332,7 +332,7 @@ int main(int argc, char *argv[]){
   thisBinaryTemplate.fkdot[0]=0.5*(minBinaryTemplate.fkdot[0] + maxBinaryTemplate.fkdot[0]);
 
   /*Get metric diagonal components, also estimate sensitivity i.e. E[rho]/(h0)^2 (4.13)*/
-  if ( (XLALFindLMXBCrossCorrDiagMetric(&estSens, &diagff, &diagaa, &diagTT, thisBinaryTemplate, curlyGUnshifted, sftPairs, sftIndices, inputSFTs)  != XLAL_SUCCESS ) ) {
+  if ( (XLALFindLMXBCrossCorrDiagMetric(&estSens, &diagff, &diagaa, &diagTT, thisBinaryTemplate, curlyGUnshifted, sftPairs, sftIndices, inputSFTs/*, kappaValues*/)  != XLAL_SUCCESS ) ) {
     LogPrintf ( LOG_CRITICAL, "%s: XLALFindLMXBCrossCorrDiagMetric() failed with errno=%d\n", __func__, xlalErrno );
     XLAL_ERROR( XLAL_EFUNC );
   }

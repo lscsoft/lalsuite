@@ -368,22 +368,24 @@ int XLALCalculatePulsarCrossCorrStatistic
       baseCCSign *= -1;
     }
   }
-  *evSquared =sqrt(2*curlyGSqr);
-  *ccStat = nume/(*evSquared);
+  *evSquared =2 * curlyGSqr;
+  *ccStat = nume / sqrt(*evSquared);
   return XLAL_SUCCESS;
 }
 /*calculate metric diagnol components, also include the estimation of sensitivity E[rho]/(h_0)^2*/
 int XLALFindLMXBCrossCorrDiagMetric
   (
    REAL8             *hSens,         /*Output:sensitivity*/
-   REAL8             *g_ff,          /*Output:metric elements*/
-   REAL8             *g_aa,
-   REAL8             *g_TT,
+   REAL8             *g_ff,          /*Output:metric elements */
+   REAL8             *g_aa,          /*binary projected semimajor axis*/
+   REAL8             *g_TT,          /*reference time*/
    PulsarDopplerParams DopplerParams, /* Input: pulsar/binary orbit paramaters*/
-   REAL8Vector       *G_alpha,        /* Input: vector of sigma_alpha values */
+   REAL8Vector       *G_alpha,        /* Input: vector of curlyGunshifted values */
    SFTPairIndexList  *pairIndexList,  /* Input: list of SFT pairs */
    SFTIndexList      *indexList,      /* Input: list of SFTs */
    MultiSFTVector    *sfts            /* Input: set of per-detector SFT vectors */
+   /* REAL8Vector       *kappaValues */    /* Input: Fractional offset of signal freq from best bin center */
+
    /*REAL8             *devTsq,  */   /*Output: mean time deviation^2*/
    /*REAL8             *g_pp,*/
    )
@@ -408,8 +410,8 @@ int XLALFindLMXBCrossCorrDiagMetric
 
    UINT8 numalpha = G_alpha->length;
 
-  for (j=0; j < numalpha; j++) {
-    REAL8 sqrG_alpha=SQUARE(G_alpha->data[j]);
+
+   for (j=0; j < numalpha; j++) {
     sftNum1 = pairIndexList->data[j].sftNum[0];
     sftNum2 = pairIndexList->data[j].sftNum[1];
     UINT8 detInd1 = indexList->data[sftNum1].detInd;
@@ -419,8 +421,11 @@ int XLALFindLMXBCrossCorrDiagMetric
     T1 = &(sfts->data[detInd1]->data[sftInd1].epoch);
     T2 = &(sfts->data[detInd2]->data[sftInd2].epoch);
     T = XLALGPSDiff( T1, T2 );
-    sinSquare += sqrG_alpha*SQUARE(sin(LAL_PI*T/(DopplerParams.period)));/*(G_alpha)^2*(sin(\pi*T/T_orbit))^2*/
-    tSquare += sqrG_alpha*SQUARE( G_alpha->data[j]*T); /*(\curlyg_alpha*)^2*T^2*/
+    /* REAL8 sincFactor1 = gsl_sf_sinc(kappaValues->data[sftNum1] );
+       REAL8 sincFactor2 = gsl_sf_sinc(kappaValues->data[sftNum2] );*/
+    REAL8 sqrG_alpha = SQUARE(G_alpha->data[j]/* * sincFactor1 * sincFactor2*/);/*(curlyG_\alpha)^2*/
+    sinSquare += sqrG_alpha*SQUARE(sin(LAL_PI*T/(DopplerParams.period)));/*(G_\alpha)^2*(sin(\pi*T/T_orbit))^2*/
+    tSquare += sqrG_alpha*SQUARE(T); /*(\curlyg_alpha*)^2*T^2*/
     denom += sqrG_alpha;                               /*calculate the denominator*/
     rhosum += 2*sqrG_alpha;
     /*hfT=0.5*T;

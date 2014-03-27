@@ -171,7 +171,7 @@ int XLALFindLMXBCrossCorrDiagMetric
    SFTPairIndexList  *pairIndexList,
    SFTIndexList      *indexList,
    MultiSFTVector    *sfts
-  
+   /* REAL8Vector       *kappaValues*/
    /*REAL8             *g_pp,*/
    )
   ;
