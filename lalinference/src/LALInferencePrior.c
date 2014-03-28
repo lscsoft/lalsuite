@@ -2722,7 +2722,8 @@ UINT4 within_malmquist(LALInferenceRunState *runState, LALInferenceVariables *pa
         ifo = ifo->next;
     }
 
-    REAL8 *SNRs = LALInferenceNetworkSNR(params, runState->data, runState->templt);
+    REAL8 *SNRs = XLALMalloc(nifo * sizeof(REAL8));
+    LALInferenceNetworkSNR(params, runState->data, runState->templt, SNRs);
     REAL8 loudest_snr=0.0, second_loudest_snr=0.0, network_snr=0.0;
     for (i=0; i<nifo; i++) {
         if (SNRs[i] > second_loudest_snr) {

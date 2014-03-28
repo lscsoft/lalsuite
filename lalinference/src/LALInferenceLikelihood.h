@@ -216,15 +216,12 @@ REAL8 LALInferenceMarginalisedTimeLogLikelihood(LALInferenceVariables *currentPa
  */
 void LALInferenceInitLikelihood(LALInferenceRunState *runState);
 
-/** Get the intrinsic parameters from currentParams */
-LALInferenceVariables LALInferenceGetInstrinsicParams(LALInferenceVariables *currentParams);
-
 /** Switch for controlling the removal of lines */
 INT4 LALInferenceLineSwitch(INT4 lineFlag, INT4 Nlines, INT4 *lines_array, INT4 *widths_array, INT4 i);
 
 /** Calculate the SNR across the network */
-REAL8 *LALInferenceNetworkSNR(LALInferenceVariables *currentParams, LALInferenceIFOData * data, 
-                              LALInferenceTemplateFunction templt);
+void LALInferenceNetworkSNR(LALInferenceVariables *currentParams, LALInferenceIFOData * data, 
+                              LALInferenceTemplateFunction templt, REAL8 *SNRs);
 /*@}*/
 
 #endif

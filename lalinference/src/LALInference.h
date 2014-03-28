@@ -466,7 +466,7 @@ tagLALInferenceIFOData
      model in freqModel... or timeModel....  When a jump is accepted,
      that value is copied into acceptedloglikelihood, which is the
      quantity that is actually output in the output files. */
-  REAL8                      nullloglikelihood, loglikelihood, acceptedloglikelihood; 
+  REAL8                      nullloglikelihood, loglikelihood, acceptedloglikelihood, currentSNR, acceptedSNR; 
   REAL8                      fPlus, fCross; /** Detector responses */
   REAL8                      timeshift;     /** What is this? */
   COMPLEX16FrequencySeries  *freqData,      /** Buffer for frequency domain data */

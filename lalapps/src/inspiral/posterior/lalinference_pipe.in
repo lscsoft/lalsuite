@@ -103,7 +103,8 @@ if opts.grid_site is not None:
     site='local,'+opts.grid_site
 else:
     site=None
-dag.prepare_dax(tmp_exec_dir=execdir,grid_site=site,peg_frame_cache=peg_frame_cache)
+if opts.dax:
+  dag.prepare_dax(tmp_exec_dir=execdir,grid_site=site,peg_frame_cache=peg_frame_cache)
 dag.write_sub_files()
 dag.write_dag()
 dag.write_script()
