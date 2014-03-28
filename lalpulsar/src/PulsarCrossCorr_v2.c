@@ -337,7 +337,7 @@ int XLALCalculatePulsarCrossCorrStatistic
       * cexp( I * ( signalPhases->data[sftNum1]
 		   - signalPhases->data[sftNum2] )
 	      );
-    UINT4 baseCCSign = 1; /* Alternating sign is (-1)**(k1-k2) */
+    INT4 baseCCSign = 1; /* Alternating sign is (-1)**(k1-k2) */
     if ( ( (lowestBins->data[sftNum1]-lowestBins->data[sftNum2]) % 2) != 0 ) {
       baseCCSign = -1;
     }
@@ -351,7 +351,7 @@ int XLALCalculatePulsarCrossCorrStatistic
       COMPLEX16 data1 = dataArray1[lowestBin1+j];
       REAL8 sincFactor = gsl_sf_sinc(kappaValues->data[sftNum1]+j);
       /* Normalized sinc, i.e., sin(pi*x)/(pi*x) */
-      UINT8 ccSign = baseCCSign;
+      INT4 ccSign = baseCCSign;
       UINT4 lowestBin2 = lowestBins->data[sftNum2];
       XLAL_CHECK ( (lowestBin2 + numBins - 1 < lenDataArray2),
 		   XLAL_EINVAL,
@@ -421,9 +421,7 @@ int XLALFindLMXBCrossCorrDiagMetric
     T1 = &(sfts->data[detInd1]->data[sftInd1].epoch);
     T2 = &(sfts->data[detInd2]->data[sftInd2].epoch);
     T = XLALGPSDiff( T1, T2 );
-    /* REAL8 sincFactor1 = gsl_sf_sinc(kappaValues->data[sftNum1] );
-       REAL8 sincFactor2 = gsl_sf_sinc(kappaValues->data[sftNum2] );*/
-    REAL8 sqrG_alpha = SQUARE(G_alpha->data[j]/* * sincFactor1 * sincFactor2*/);/*(curlyG_\alpha)^2*/
+    REAL8 sqrG_alpha = SQUARE(G_alpha->data[j]);/*(curlyG_\alpha)^2*/
     sinSquare += sqrG_alpha*SQUARE(sin(LAL_PI*T/(DopplerParams.period)));/*(G_\alpha)^2*(sin(\pi*T/T_orbit))^2*/
     tSquare += sqrG_alpha*SQUARE(T); /*(\curlyg_alpha*)^2*T^2*/
     denom += sqrG_alpha;                               /*calculate the denominator*/
