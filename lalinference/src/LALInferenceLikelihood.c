@@ -443,7 +443,7 @@ REAL8 LALInferenceUndecomposedFreqDomainLogLikelihood(LALInferenceVariables *cur
       /* (also un-do 1/deltaT scaling): */
       templateReal = (plainTemplateReal*re - plainTemplateImag*im) / deltaT;
       templateImag = (plainTemplateReal*im + plainTemplateImag*re) / deltaT;
-      signal2noise += TwoDeltaToverN * ( templateReal*templateReal + templateImag*templateImag ) / dataPtr->oneSidedNoisePowerSpectrum->data->data[i];
+      signal2noise += 2.0 * TwoDeltaToverN * ( templateReal*templateReal + templateImag*templateImag ) / dataPtr->oneSidedNoisePowerSpectrum->data->data[i];
 
       /* compute squared difference & 'chi-squared': */
       diffRe -= templateReal;         // Difference in real parts...
@@ -2041,7 +2041,7 @@ REAL8 LALInferenceMarginalisedTimeLogLikelihood(LALInferenceVariables *currentPa
 	  templateReal = reshift*plainTemplateReal - imshift*plainTemplateImag;
 	  templateImag = imshift*plainTemplateReal + reshift*plainTemplateImag;
 
-        signal2noise += TwoDeltaToverN * ( templateReal*templateReal + templateImag*templateImag ) / dataPtr->oneSidedNoisePowerSpectrum->data->data[i];
+        signal2noise += 2.0 * TwoDeltaToverN * ( templateReal*templateReal + templateImag*templateImag ) / dataPtr->oneSidedNoisePowerSpectrum->data->data[i];
 
           dataReal     = creal(dataPtr->freqData->data->data[i]) / deltaT;
           dataImag     = cimag(dataPtr->freqData->data->data[i]) / deltaT;
@@ -2303,7 +2303,7 @@ void LALInferenceNetworkSNR(LALInferenceVariables *currentParams, LALInferenceIF
       /* (also un-do 1/deltaT scaling): */
       templateReal = (plainTemplateReal*re - plainTemplateImag*im) / deltaT;
       templateImag = (plainTemplateReal*im + plainTemplateImag*re) / deltaT;
-      signal2noise += TwoDeltaToverN * ( templateReal*templateReal + templateImag*templateImag ) / dataPtr->oneSidedNoisePowerSpectrum->data->data[i];
+      signal2noise += 2.0 * TwoDeltaToverN * ( templateReal*templateReal + templateImag*templateImag ) / dataPtr->oneSidedNoisePowerSpectrum->data->data[i];
 
       /* compute squared difference & 'chi-squared': */
       }//end signal subtraction
