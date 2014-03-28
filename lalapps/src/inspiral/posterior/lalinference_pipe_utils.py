@@ -463,7 +463,7 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
 
     self.dagfilename="lalinference_%s-%s"%(self.config.get('input','gps-start-time'),self.config.get('input','gps-end-time'))
     self.set_dag_file(self.dagfilename)
-    if self.dax:
+    if self.is_dax():
       self.set_dax_file(self.dagfilename)
   
   def create_frame_pfn_file(self):
