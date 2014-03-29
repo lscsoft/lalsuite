@@ -20,8 +20,6 @@
 /* C++ -> C interface for BOINC_OPTION handling etc.
 */
 
-#include "boinc/boinc_api.h"
-
 #define EAH_SHMEM_APP_NAME "EinsteinHS"
 #define EAH_SHMEM_SIZE 1024
 

@@ -33,6 +33,7 @@ using namespace std;
 #include "hs_boinc_options.h"
 #include <boinc/util.h> /* for BOINC's dtime() */
 #include <boinc/svn_version.h>
+#include "boinc/boinc_api.h"
 
 BOINC_OPTIONS eah_boinc_options;
 APP_INIT_DATA eah_app_init_data;
