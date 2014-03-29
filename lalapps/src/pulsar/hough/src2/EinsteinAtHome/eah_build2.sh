@@ -230,6 +230,24 @@ SOURCE="$EAH/source"
 BUILD="$EAH/build$acc"
 INSTALL="$EAH/install$acc"
 
+# Jenkins build info
+if [ ".$BUILD_INFO" = "." ]; then
+  test ".$BUILD_TAG" = "." || BUILD_INFO="Build $BUILD_TAG"
+  test ".$NODE_NAME" = "." || BUILD_INFO="$BUILD_INFO on $NODE_NAME"
+  test ".$BUILD_ID" = "."  || BUILD_INFO="$BUILD_INFO at $BUILD_ID"
+fi
+if [ -n "$BUILD_INFO" ]; then
+  LOGFILE="$EAH/${appname}_`echo build_$BUILD_INFO | sed 's%/%_%g;s/ on /./;s/  */_/g'`.log"
+  CPPFLAGS="$CPPFLAGS -DHAVE_BUILD_INFO_H"
+fi
+
+# make sure the E@H directory exists (for logging)
+mkdir -p "$EAH" || fail
+
+echo " " >> "$LOGFILE"
+log_and_show "==========================================="
+log_and_show "Build start `date`"
+
 missing_wine_warning=false
 if [ ."$build_win32" = ."true" ] ; then
     BUILD="${BUILD}_win32"
@@ -310,17 +328,6 @@ if echo "$LDFLAGS" | grep -e -m64 >/dev/null; then
     LDFLAGS="-L$INSTALL/lib64 $LDFLAGS"
 fi
 
-# Jenkins build info
-if [ ".$BUILD_INFO" = "." ]; then
-  test ".$BUILD_TAG" = "." || BUILD_INFO="Build $BUILD_TAG"
-  test ".$NODE_NAME" = "." || BUILD_INFO="$BUILD_INFO on $NODE_NAME"
-  test ".$BUILD_ID" = "."  || BUILD_INFO="$BUILD_INFO at $BUILD_ID"
-fi
-if [ -n "$BUILD_INFO" ]; then
-  LOGFILE="$EAH/${appname}_`echo build_$BUILD_INFO | sed 's%/%_%g;s/ on /./;s/  */_/g'`.log"
-  CPPFLAGS="$CPPFLAGS -DHAVE_BUILD_INFO_H"
-fi
-
 # export environment variables
 export CPPFLAGS="-DPULSAR_MAX_DETECTORS=2 -DUSEXLALLOADSFTS -DBOINC_APIV6 -D__NO_CTYPE -DUSE_BOINC -DEAH_BOINC -I$INSTALL/include $CPPFLAGS"
 export LDFLAGS
@@ -328,13 +335,6 @@ export LD_LIBRARY_PATH="$INSTALL/lib:$LD_LIBRARY_PATH"
 export DYLD_LIBRARY_PATH="$INSTALL/lib:$DYLD_LIBRARY_PATH"
 export PKG_CONFIG_PATH="$INSTALL/lib/pkgconfig:$PKG_CONFIG_PATH"
 export BOINC_PREFIX="$INSTALL"
-
-# make sure the E@H directory exists (for logging)
-mkdir -p "$EAH" || fail
-
-echo " " >> "$LOGFILE"
-log_and_show "==========================================="
-log_and_show "Build start `date`"
 
 # log environment variables
 echo "$0" "$@" >> "$LOGFILE"
