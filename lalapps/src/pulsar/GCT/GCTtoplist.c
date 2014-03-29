@@ -32,6 +32,7 @@
 #if defined(USE_BOINC) || defined(EAH_BOINC)
 #include "hs_boinc_options.h"
 #ifdef _WIN32
+#include "win_lib.h" // for eah_rename()
 /* On MS Windows boinc_rename() is not as atomic as rename()
    on POSIX systems. We therefore use our own implementation
    eah_rename (in win_lib.h) */
