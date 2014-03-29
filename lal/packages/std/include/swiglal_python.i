@@ -858,3 +858,7 @@ static inline PyObject* swiglal_get_reference(PyObject* v) { Py_XINCREF(v); retu
 %swiglal_py_array_asvalfrom_frags(gsl_complex, NPY_CDOUBLE);
 %swiglal_py_array_asvalfrom_frags(COMPLEX8, NPY_CFLOAT);
 %swiglal_py_array_asvalfrom_frags(COMPLEX16, NPY_CDOUBLE);
+
+// Local Variables:
+// mode: c
+// End:

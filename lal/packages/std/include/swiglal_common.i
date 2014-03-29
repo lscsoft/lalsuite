@@ -1365,3 +1365,7 @@ typedef struct {} NAME;
 }
 %enddef
 #define %swiglal_public_clear_EXTERNAL_STRUCT(NAME, DTORFUNC)
+
+// Local Variables:
+// mode: c
+// End:
