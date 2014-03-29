@@ -303,6 +303,9 @@ typedef struct tagPulsarSignalParams {
 /**
  * Parameters defining the SFTs to be returned from LALSignalToSFTs().
  */
+#ifdef SWIG /* SWIG interface directives */
+SWIGLAL(IMMUTABLE_MEMBERS(tagSFTParams, timestamps, noiseSFTs, window));
+#endif /* SWIG */
 typedef struct tagSFTParams {
   REAL8 Tsft;			 /**< length of each SFT in seconds */
   const LIGOTimeGPSVector *timestamps; /**< timestamps to produce SFTs for (can be NULL) */

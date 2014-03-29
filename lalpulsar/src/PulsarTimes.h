@@ -162,6 +162,9 @@ extern "C" {
  * discussion of those fields must be deferred to the documentation of
  * the individual modules that use those particular fields.
  */
+#ifdef SWIG /* SWIG interface directives */
+SWIGLAL(IMMUTABLE_MEMBERS(tagPulsarTimesParamStruc, ephemeris, site));
+#endif /* SWIG */
 typedef struct tagPulsarTimesParamStruc {
   LIGOTimeGPS epoch; 	/**< A reference detector time; all
                          * other times in the transformation are represented as \c REAL8

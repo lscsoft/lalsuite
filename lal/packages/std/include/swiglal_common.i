@@ -1087,10 +1087,17 @@ if (swiglal_release_parent(PTR)) {
     return SWIG_AsLALcharPtrAndSize(obj, pstr, 0, &alloc);
   }
 }
+#if SWIG_VERSION >= 0x030000
+%typemaps_string_alloc(%checkcode(STRING), %checkcode(char), char, LALchar,
+                       SWIG_AsLALcharPtrAndSize, SWIG_FromLALcharPtrAndSize,
+                       strlen, SWIG_strnlen, %swiglal_new_copy_array, XLALFree,
+                       "<limits.h>", CHAR_MIN, CHAR_MAX);
+#else
 %typemaps_string_alloc(%checkcode(STRING), %checkcode(char), char, LALchar,
                        SWIG_AsLALcharPtrAndSize, SWIG_FromLALcharPtrAndSize,
                        strlen, %swiglal_new_copy_array, XLALFree,
                        "<limits.h>", CHAR_MIN, CHAR_MAX);
+#endif
 
 // Typemaps for string pointers.  By default, treat arguments of type char**
 // as output-only arguments, which do not require a scripting-language input
