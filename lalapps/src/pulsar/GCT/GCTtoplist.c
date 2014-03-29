@@ -50,7 +50,9 @@
 
 /* errno */
 extern int errno;
+#ifndef _doserrno
 extern int _doserrno;
+#endif
 
 /* snprintf */
 #define snprintf _snprintf
