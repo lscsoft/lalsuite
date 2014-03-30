@@ -508,7 +508,7 @@ void initializeMCMC(LALInferenceRunState *runState)
 
   if (malmquist) {
       REAL8 malmquist_loudest = 0.0;
-      REAL8 malmquist_second_loudest = 8.0;
+      REAL8 malmquist_second_loudest = 5.0;
       REAL8 malmquist_network = 0.0;
 
       ppt=LALInferenceGetProcParamVal(commandLine,"--malmquist-loudest-snr");
