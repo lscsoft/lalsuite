@@ -262,8 +262,9 @@ LALInferenceCyclicProposal(LALInferenceRunState *runState, LALInferenceVariables
   /* Call proposal. */
   REAL8 logPropRatio = (cycle[i])(runState, currentParams, proposedParams);
 
-  /* Increment counter for the next time around. */
-  i = (i+1) % length;
+      /* Increment counter for the next time around. */
+      i = (i+1) % length;
+  }
   LALInferenceSetVariable(propArgs, cycleArrayCounterName, &i);
   
   return logPropRatio;
@@ -3832,14 +3833,13 @@ void LALInferenceClusteredKDEProposal(LALInferenceRunState *runState, LALInferen
 
     LALInferenceVariableItem *item;
     LALInferenceVariables *propArgs = runState->proposalArgs;
-    LALInferenceCopyVariables(runState->currentParams, proposedParams);
 
     if (!LALInferenceCheckVariable(propArgs, clusteredKDEProposalName)) {
-        propName = (const char *) nullProposalName;
-        LALInferenceSetVariable(runState->proposalArgs, LALInferenceCurrentProposalName, &propName);
-        LALInferenceSetLogProposalRatio(runState, 0.0);
+        LALInferenceClearVariables(proposedParams);
         return; /* Quit now, since there is no proposal to call */
     }
+
+    LALInferenceCopyVariables(runState->currentParams, proposedParams);
 
     /* Clustered KDE estimates are stored in a linked list, with possibly different weights */
     LALInferenceClusteredKDE *kdes = *((LALInferenceClusteredKDE **)LALInferenceGetVariable(propArgs, clusteredKDEProposalName));
@@ -3916,7 +3916,7 @@ void LALInferenceComputeMaxAutoCorrLenFromDE(LALInferenceRunState *runState, INT
     DEarray[i] = temp + (i*nPar);
 
   LALInferenceBufferToArray(runState, DEarray);
-  ACL = Nskip * LALInferenceComputeMaxAutoCorrLen(DEarray[0], nPoints, nPar);
+  ACL = Nskip * LALInferenceComputeMaxAutoCorrLen(DEarray[nPoints/2], nPoints-nPoints/2, nPar);
 
   *maxACL = (INT4)ACL;
   XLALFree(temp);
