@@ -2157,25 +2157,18 @@ void LALInferenceNetworkSNR(LALInferenceVariables *currentParams, LALInferenceIF
 /***************************************************************/
 {
   double Fplus, Fcross;
-  //double dataReal, dataImag;
   REAL8 plainTemplateReal, plainTemplateImag;
-  REAL8 templateReal=0.0, templateImag=0.0;
   int i, lower, upper, ifo;
   LALInferenceIFOData *dataPtr;
   double ra=0.0, dec=0.0, psi=0.0, gmst=0.0;
   double GPSdouble=0.0;
   LIGOTimeGPS GPSlal;
   double signal2noise=0.0;
-  double timedelay;  /* time delay b/w iterferometer & geocenter w.r.t. sky location */
-  double timeshift=0;  /* time shift (not necessarily same as above)                   */
-  double deltaT, TwoDeltaToverN, deltaF, twopit=0.0, re, im, dre, dim, newRe, newIm;
+  double deltaT, TwoOverNDeltaT, deltaF;
   double timeTmp;
   double mc;
   LALStatus status;
   memset(&status,0,sizeof(status));
-
-  //different formats for storing glitch model for DWT, FFT, and integration
-  //gsl_matrix *glitchFD=NULL;
 
   int signalFlag = 1;   //flag for including signal model
 
@@ -2183,6 +2176,18 @@ void LALInferenceNetworkSNR(LALInferenceVariables *currentParams, LALInferenceIF
   signalFlag=1;
   if(LALInferenceCheckVariable(currentParams, "signalModelFlag"))
     signalFlag = *((INT4 *)LALInferenceGetVariable(currentParams, "signalModelFlag"));
+
+  dataPtr = data;
+  if (!signalFlag) {
+      ifo = 0;
+      while (dataPtr != NULL) {
+          SNRs[ifo] = 0.0;
+          dataPtr->currentSNR = SNRs[ifo];
+          ifo++;
+          dataPtr = dataPtr->next;
+      }
+      return;
+  }
 
   if(LALInferenceCheckVariable(currentParams, "logdistance")){
     REAL8 distMpc = exp(*(REAL8*)LALInferenceGetVariable(currentParams,"logdistance"));
@@ -2213,8 +2218,7 @@ void LALInferenceNetworkSNR(LALInferenceVariables *currentParams, LALInferenceIF
   gmst=XLALGreenwichMeanSiderealTime(&GPSlal);
 
   /* loop over data (different interferometers): */
-  dataPtr = data;
-  INT4 nifos = 0;
+  INT4 nifos=0;
   while (dataPtr != NULL) {
       nifos++;
       dataPtr = dataPtr->next;
@@ -2231,104 +2235,52 @@ void LALInferenceNetworkSNR(LALInferenceVariables *currentParams, LALInferenceIF
 	/* IFOdata->modelParams (set, e.g., from the trigger value).     */
     
     signal2noise = 0.0;
-    if(signalFlag){
-        /* Compare parameter values with parameter values corresponding  */
-        /* to currently stored template; ignore "time" variable:         */
-        if (LALInferenceCheckVariable(dataPtr->modelParams, "time")) {
-            timeTmp = *(REAL8 *) LALInferenceGetVariable(dataPtr->modelParams, "time");
-            LALInferenceRemoveVariable(dataPtr->modelParams, "time");
-        }
-        else timeTmp = GPSdouble;
-
-        LALInferenceCopyVariables(currentParams, dataPtr->modelParams);
-        LALInferenceAddVariable(dataPtr->modelParams, "time", &timeTmp, LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_LINEAR);
-        if (!LALInferenceCheckVariable(dataPtr->modelParams, "phase")) {
-            double pi2 = M_PI / 2.0;
-            LALInferenceAddVariable(dataPtr->modelParams, "phase", &pi2, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR);
-        }
-
-        templt(dataPtr);
-
-        if (dataPtr->modelDomain == LAL_SIM_DOMAIN_TIME) {
-            /* TD --> FD. */
-            LALInferenceExecuteFT(dataPtr);
-        }
-
-        /* Template is now in dataPtr->timeFreqModelhPlus and hCross */
-
-        /* determine beam pattern response (F_plus and F_cross) for given Ifo: */
-        XLALComputeDetAMResponse(&Fplus, &Fcross, (const REAL4(*)[3])dataPtr->detector->response, ra, dec, psi, gmst);
-
-        /* signal arrival time (relative to geocenter); */
-        timedelay = XLALTimeDelayFromEarthCenter(dataPtr->detector->location, ra, dec, &GPSlal);
-        /* (negative timedelay means signal arrives earlier at Ifo than at geocenter, etc.) */
-        /* amount by which to time-shift template (not necessarily same as above "timedelay"): */
-        timeshift =  (GPSdouble - (*(REAL8*) LALInferenceGetVariable(dataPtr->modelParams, "time"))) + timedelay;
-
-        twopit    = LAL_TWOPI * timeshift;
-
-        dataPtr->fPlus = Fplus;
-        dataPtr->fCross = Fcross;
-        dataPtr->timeshift = timeshift;
+    /* to currently stored template; ignore "time" variable:         */
+    if (LALInferenceCheckVariable(dataPtr->modelParams, "time")) {
+        timeTmp = *(REAL8 *) LALInferenceGetVariable(dataPtr->modelParams, "time");
+        LALInferenceRemoveVariable(dataPtr->modelParams, "time");
     }
+    else timeTmp = GPSdouble;
+
+    LALInferenceCopyVariables(currentParams, dataPtr->modelParams);
+    LALInferenceAddVariable(dataPtr->modelParams, "time", &timeTmp, LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_LINEAR);
+    if (!LALInferenceCheckVariable(dataPtr->modelParams, "phase")) {
+        double pi2 = M_PI / 2.0;
+        LALInferenceAddVariable(dataPtr->modelParams, "phase", &pi2, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR);
+    }
+
+    templt(dataPtr);
+
+    if (dataPtr->modelDomain == LAL_SIM_DOMAIN_TIME) {
+        /* TD --> FD. */
+        LALInferenceExecuteFT(dataPtr);
+    }
+
+    /* Template is now in dataPtr->timeFreqModelhPlus and hCross */
+
+    /* determine beam pattern response (F_plus and F_cross) for given Ifo: */
+    XLALComputeDetAMResponse(&Fplus, &Fcross, (const REAL4(*)[3])dataPtr->detector->response, ra, dec, psi, gmst);
+
+    dataPtr->fPlus = Fplus;
+    dataPtr->fCross = Fcross;
 
     /* determine frequency range & loop over frequency bins: */
     deltaT = dataPtr->timeData->deltaT;
     deltaF = 1.0 / (((double)dataPtr->timeData->data->length) * deltaT);
     lower = (UINT4)ceil(dataPtr->fLow / deltaF);
     upper = (UINT4)floor(dataPtr->fHigh / deltaF);
-    TwoDeltaToverN = 2.0 * deltaT / ((double) dataPtr->timeData->data->length);
-
-    re=im=0.0;
-    dre=dim=0.0;
-    newRe=newIm=0.0;
-    if(signalFlag){
-    /* Employ a trick here for avoiding cos(...) and sin(...) in time
-       shifting.  We need to multiply each template frequency bin by
-       exp(-J*twopit*deltaF*i) = exp(-J*twopit*deltaF*(i-1)) +
-       exp(-J*twopit*deltaF*(i-1))*(exp(-J*twopit*deltaF) - 1) .  This
-       recurrance relation has the advantage that the error growth is
-       O(sqrt(N)) for N repetitions. */
-    
-    /* Values for the first iteration: */
-    re = cos(twopit*deltaF*lower);
-    im = -sin(twopit*deltaF*lower);
-
-    /* Incremental values, using cos(theta) - 1 = -2*sin(theta/2)^2 */
-    dim = -sin(twopit*deltaF);
-    dre = -2.0*sin(0.5*twopit*deltaF)*sin(0.5*twopit*deltaF);
-    }//end signalFlag
+    TwoOverNDeltaT = 2.0 / (deltaT * ((double) dataPtr->timeData->data->length));
 
     for (i=lower; i<=upper; ++i){
-      //get local copy of data Fourier amplitudes
-      //dataReal = creal(dataPtr->freqData->data->data[i]) / deltaT;
-      //dataImag = cimag(dataPtr->freqData->data->data[i]) / deltaT;
-
       //subtract GW model from residual
-      if(signalFlag){
       /* derive template (involving location/orientation parameters) from given plus/cross waveforms: */
       plainTemplateReal = Fplus * creal(dataPtr->freqModelhPlus->data->data[i])  
                           +  Fcross * creal(dataPtr->freqModelhCross->data->data[i]);
       plainTemplateImag = Fplus * cimag(dataPtr->freqModelhPlus->data->data[i])  
                           +  Fcross * cimag(dataPtr->freqModelhCross->data->data[i]);
 
-      /* do time-shifting...             */
-      /* (also un-do 1/deltaT scaling): */
-      templateReal = (plainTemplateReal*re - plainTemplateImag*im) / deltaT;
-      templateImag = (plainTemplateReal*im + plainTemplateImag*re) / deltaT;
-      signal2noise += 2.0 * TwoDeltaToverN * ( templateReal*templateReal + templateImag*templateImag ) / dataPtr->oneSidedNoisePowerSpectrum->data->data[i];
-
-      /* compute squared difference & 'chi-squared': */
-      }//end signal subtraction
-
-      /* Now update re and im for the next iteration. */
-      if(signalFlag){
-      newRe = re + re*dre - im*dim;
-      newIm = im + re*dim + im*dre;
-
-      re = newRe;
-      im = newIm;
-      }
+      /* un-do 1/deltaT scaling: */
+      signal2noise += 2.0 * TwoOverNDeltaT * ( plainTemplateReal*plainTemplateReal + plainTemplateImag*plainTemplateImag ) / dataPtr->oneSidedNoisePowerSpectrum->data->data[i];
     }
 
     SNRs[ifo] = sqrt(signal2noise);
