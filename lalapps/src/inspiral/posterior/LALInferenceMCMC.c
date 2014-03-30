@@ -94,7 +94,20 @@ void LALInferenceInitMCMCState(LALInferenceRunState *state)
   /* Initialize variable that will store the name of the last proposal function used */
   const char *initPropName = "INITNAME";
   LALInferenceAddVariable(state->proposalArgs, LALInferenceCurrentProposalName, &initPropName, LALINFERENCE_string_t, LALINFERENCE_PARAM_LINEAR);
-  
+
+  /* If using a malmquist prior, force a strict prior window on distance for starting point, otherwise
+   * the approximate prior draws are very unlikely to be within the malmquist prior */
+  REAL8 dist_low, dist_high;
+  REAL8 restricted_dist_low = 10.0;
+  REAL8 restricted_dist_high = 100.0;
+  INT4 changed_dist = 0;
+  if (LALInferenceCheckVariable(state->priorArgs, "malmquist") && LALInferenceCheckVariableNonFixed(currentParams, "distance")) {
+      changed_dist = 1;
+      LALInferenceGetMinMaxPrior(state->priorArgs, "distance", &dist_low, &dist_high);
+      LALInferenceRemoveMinMaxPrior(state->priorArgs, "distance");
+      LALInferenceAddMinMaxPrior(state->priorArgs, "distance", &restricted_dist_low, &restricted_dist_high, LALINFERENCE_REAL8_t);
+  }
+
   /* If the currentParams are not in the prior, overwrite and pick paramaters from the priors. OVERWRITE EVEN USER CHOICES.
    *     (necessary for complicated prior shapes where LALInferenceCyclicReflectiveBound() is not enough */
   while(state->prior(state, currentParams)<=-DBL_MAX){
@@ -109,6 +122,12 @@ void LALInferenceInitMCMCState(LALInferenceRunState *state)
    *     prior-supported volume. */
   LALInferenceCyclicReflectiveBound(currentParams, priorArgs);
   
+  /* Replace distance prior if changed for initial sample draw */
+  if (changed_dist) {
+      LALInferenceRemoveMinMaxPrior(state->priorArgs, "distance");
+      LALInferenceAddMinMaxPrior(state->priorArgs, "distance", &dist_low, &dist_high, LALINFERENCE_REAL8_t);
+  }
+
   /* Init covariance matrix, if specified.  The given file
    *     should contain the desired covariance matrix for the jump
    *     proposal, in row-major (i.e. C) order. */
