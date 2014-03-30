@@ -2198,7 +2198,15 @@ void LALInferenceNetworkSNR(LALInferenceVariables *currentParams, LALInferenceIF
   ra        = *(REAL8*) LALInferenceGetVariable(currentParams, "rightascension"); /* radian      */
   dec       = *(REAL8*) LALInferenceGetVariable(currentParams, "declination");    /* radian      */
   psi       = *(REAL8*) LALInferenceGetVariable(currentParams, "polarisation");   /* radian      */
-  GPSdouble = *(REAL8*) LALInferenceGetVariable(currentParams, "time");           /* GPS seconds */
+
+  if (LALInferenceCheckVariable(currentParams,"time"))
+      GPSdouble = *(REAL8*) LALInferenceGetVariable(currentParams, "time");           /* GPS seconds */
+  else {
+      UINT4 freq_length = data->freqData->data->length;
+      UINT4 time_length = 2*(freq_length-1);
+      REAL8 epoch = XLALGPSGetREAL8(&(data->freqData->epoch));
+      GPSdouble = epoch + (time_length-1)*data->timeData->deltaT - 2.0;
+  }
 
   /* figure out GMST: */
   XLALGPSSetREAL8(&GPSlal, GPSdouble);
@@ -2234,6 +2242,11 @@ void LALInferenceNetworkSNR(LALInferenceVariables *currentParams, LALInferenceIF
 
         LALInferenceCopyVariables(currentParams, dataPtr->modelParams);
         LALInferenceAddVariable(dataPtr->modelParams, "time", &timeTmp, LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_LINEAR);
+        if (!LALInferenceCheckVariable(dataPtr->modelParams, "phase")) {
+            double pi2 = M_PI / 2.0;
+            LALInferenceAddVariable(dataPtr->modelParams, "phase", &pi2, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR);
+        }
+
         templt(dataPtr);
 
         if (dataPtr->modelDomain == LAL_SIM_DOMAIN_TIME) {
