@@ -31,15 +31,20 @@ from . import sky_map
 import lal, lalsimulation
 
 
-def ligolw_sky_map(sngl_inspirals, approximant, amplitude_order, phase_order, f_low, min_distance=None, max_distance=None, prior_distance_power=None, method="toa_phoa_snr", reference_frequency=None, psds=None, nside=-1, chain_dump=None):
+def ligolw_sky_map(sngl_inspirals, approximant, amplitude_order, phase_order, f_low, min_distance=None, max_distance=None, prior_distance_power=None, method="toa_phoa_snr", psds=None, nside=-1, chain_dump=None):
     """Convenience function to produce a sky map from LIGO-LW rows. Note that
     min_distance and max_distance should be in Mpc."""
 
     ifos = [sngl_inspiral.ifo for sngl_inspiral in sngl_inspirals]
 
     # Extract masses from the table.
-    mass1s = np.asarray([sngl_inspiral.mass1 for sngl_inspiral in sngl_inspirals])
-    mass2s = np.asarray([sngl_inspiral.mass2 for sngl_inspiral in sngl_inspirals])
+    mass1 = sngl_inspirals[0].mass1
+    if any(sngl_inspiral.mass1 != mass1 for sngl_inspiral in sngl_inspirals[1:]):
+        raise ValueError('mass1 field is not the same for all detectors')
+
+    mass2 = sngl_inspirals[0].mass2
+    if any(sngl_inspiral.mass2 != mass2 for sngl_inspiral in sngl_inspirals[1:]):
+        raise ValueError('mass2 field is not the same for all detectors')
 
     # Extract SNRs from table.
     # FIXME: should get complex SNR, but MBTAOnline events don't populate the
@@ -49,15 +54,6 @@ def ligolw_sky_map(sngl_inspirals, approximant, amplitude_order, phase_order, f_
     # Extract TOAs from table.
     toas_ns = np.asarray([sngl_inspiral.get_end().ns()
         for sngl_inspiral in sngl_inspirals], dtype=np.int64)
-
-    # Optionally apply reference frequency shift.
-    if reference_frequency is not None:
-        toas_ns -= [int(round(1e9 * lalsimulation.
-            SimInspiralTaylorF2ReducedSpinChirpTime(
-            reference_frequency,
-            m1 * lal.LAL_MSUN_SI,
-            m2 * lal.LAL_MSUN_SI,
-            0, 4))) for m1, m2 in zip(mass1s, mass2s)]
 
     # Find average Greenwich mean sidereal time of event.
     mean_toa_ns = sum(toas_ns) // len(toas_ns)
@@ -77,7 +73,7 @@ def ligolw_sky_map(sngl_inspirals, approximant, amplitude_order, phase_order, f_
 
     # Signal models for each detector.
     signal_models = [timing.SignalModel(mass1, mass2, psd, f_low, approximant, amplitude_order, phase_order)
-        for mass1, mass2, psd in zip(mass1s, mass2s, psds)]
+        for psd in psds]
 
     # Get SNR=1 horizon distances for each detector.
     horizons = [signal_model.get_horizon_distance()
@@ -201,7 +197,7 @@ def ligolw_sky_map(sngl_inspirals, approximant, amplitude_order, phase_order, f_
     return prob, epoch, elapsed_time
 
 
-def gracedb_sky_map(coinc_file, psd_file, waveform, f_low, min_distance=None, max_distance=None, prior_distance_power=None, reference_frequency=None, nside=-1):
+def gracedb_sky_map(coinc_file, psd_file, waveform, f_low, min_distance=None, max_distance=None, prior_distance_power=None, nside=-1):
     # LIGO-LW XML imports.
     from glue.ligolw import table as ligolw_table
     from glue.ligolw import utils as ligolw_utils
@@ -248,6 +244,6 @@ def gracedb_sky_map(coinc_file, psd_file, waveform, f_low, min_distance=None, ma
     prob, epoch, elapsed_time = ligolw_sky_map(sngl_inspirals, approximant,
         amplitude_order, phase_order, f_low,
         min_distance, max_distance, prior_distance_power,
-        reference_frequency=reference_frequency, nside=nside, psds=psds)
+        nside=nside, psds=psds)
 
     return prob, epoch, elapsed_time, instruments
