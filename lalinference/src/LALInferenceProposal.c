@@ -3786,6 +3786,9 @@ void LALInferenceSetupClusteredKDEProposalFromRun(LALInferenceRunState *runState
     INT4 step = 1;
     if (effSampleSize > 0)
         step = (INT4) floor(bufferSize/effSampleSize);
+
+    if (step == 0)
+        step = 1;
     INT4 nPoints = (INT4) ceil(bufferSize/(REAL8)step);
 
     /* Get points to be clustered from the differential evolution buffer. */
