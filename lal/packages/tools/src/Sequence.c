@@ -53,21 +53,33 @@ static void memshift(void *buff, size_t length, int count)
 
 #define DATATYPE REAL4
 #define SQUAREDATATYPE REAL4
+#ifdef LAL_FFTW3_MEMALIGN_ENABLED
+#define USE_ALIGNED_MEMORY_ROUTINES
+#endif
 #include "Sequence_source.c"
+#undef USE_ALIGNED_MEMORY_ROUTINES
 #undef DATATYPE
 #undef SQUAREDATATYPE
 
 #define DATATYPE REAL8
 #define SQUAREDATATYPE REAL8
+#ifdef LAL_FFTW3_MEMALIGN_ENABLED
+#define USE_ALIGNED_MEMORY_ROUTINES
+#endif
 #include "Sequence_source.c"
+#undef USE_ALIGNED_MEMORY_ROUTINES
 #undef DATATYPE
 #undef SQUAREDATATYPE
 
 #define DATATYPE COMPLEX8
 #define SQUAREDATATYPE REAL4
 #define CONJ conjf
+#ifdef LAL_FFTW3_MEMALIGN_ENABLED
+#define USE_ALIGNED_MEMORY_ROUTINES
+#endif
 #include "Sequence_source.c"
 #include "SequenceComplex_source.c"
+#undef USE_ALIGNED_MEMORY_ROUTINES
 #undef DATATYPE
 #undef SQUAREDATATYPE
 #undef CONJ
@@ -75,8 +87,12 @@ static void memshift(void *buff, size_t length, int count)
 #define DATATYPE COMPLEX16
 #define SQUAREDATATYPE REAL8
 #define CONJ conj
+#ifdef LAL_FFTW3_MEMALIGN_ENABLED
+#define USE_ALIGNED_MEMORY_ROUTINES
+#endif
 #include "Sequence_source.c"
 #include "SequenceComplex_source.c"
+#undef USE_ALIGNED_MEMORY_ROUTINES
 #undef DATATYPE
 #undef SQUAREDATATYPE
 #undef CONJ

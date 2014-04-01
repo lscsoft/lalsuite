@@ -1,6 +1,6 @@
 # lal.m4 - lal specific macros
 #
-# serial 18
+# serial 19
 
 AC_DEFUN([LAL_ENABLE_DEBUG],
 [AC_ARG_ENABLE(
@@ -11,6 +11,17 @@ AC_DEFUN([LAL_ENABLE_DEBUG],
     [no],AC_DEFINE(LAL_NDEBUG, 1, Suppress debugging code),
     AC_MSG_ERROR(bad value for ${enableval} for --enable-debug))
   ], )
+])
+
+AC_DEFUN([LAL_ENABLE_FFTW3_MEMALIGN],
+[AC_ARG_ENABLE(
+  [fftw3_memalign],
+  AC_HELP_STRING([--enable-fftw3-memalign],[use aligned memory optimizations with fftw3 [default=no]]),
+  AS_CASE(["${enableval}"],
+    [yes],[fftw3_memalign=true],
+    [no],[fftw3_memalign=false],
+    AC_MSG_ERROR([bad value for ${enableval} for --enable-fftw3-memalign])
+  ),[fftw3_memalign=false])
 ])
 
 AC_DEFUN([LAL_ENABLE_INTELFFT],

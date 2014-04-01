@@ -27,7 +27,11 @@ VTYPE * XFUNC ( VTYPE * vector, UINT4 length )
     XDFUNC ( vector );
     return NULL;
   }
+#ifdef USE_ALIGNED_MEMORY_ROUTINES
+  vector->data = XLALReallocAligned( vector->data, length * sizeof( *vector->data ) );
+#else
   vector->data = LALRealloc( vector->data, length * sizeof( *vector->data ) );
+#endif
   if ( ! vector->data )
   {
     vector->length = 0;

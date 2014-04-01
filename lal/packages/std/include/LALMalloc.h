@@ -46,6 +46,26 @@ void XLALFree(void *p);
 #endif /* SWIG */
 /*@}*/
 
+/** \addtogroup LALMalloc_h */ /*@{ */
+/* presently these are only here if needed */
+#ifdef LAL_FFTW3_MEMALIGN_ENABLED
+#define LAL_MEM_ALIGNMENT 0x40
+int XLALIsMemoryAligned(void *ptr);
+void *XLALMallocAlignedLong(size_t size, const char *file, int line);
+void *XLALMallocAligned(size_t size);
+void *XLALCallocAlignedLong(size_t nelem, size_t elsize, const char *file, int line);
+void *XLALCallocAligned(size_t nelem, size_t elsize);
+void *XLALReallocAlignedLong(void *ptr, size_t size, const char *file, int line);
+void *XLALReallocAligned(void *ptr, size_t size);
+void XLALFreeAligned(void *ptr);
+#ifndef SWIG    /* exclude from SWIG interface */
+#define LAL_IS_MEMORY_ALIGNED(ptr) (((size_t)(ptr) % LAL_MEM_ALIGNMENT) == 0)
+#define XLALMallocAligned(size) XLALMallocAlignedLong(size, __FILE__, __LINE__)
+#define XLALCallocAligned(nelem, elsize) XLALCallocAlignedLong(nelem, elsize, __FILE__, __LINE__)
+#define XLALReallocAligned(ptr, size) XLALReallocAlignedLong(ptr, size, __FILE__, __LINE__)
+#endif /* SWIG */
+#endif /* LAL_FFTW3_MEMALIGN_ENABLED */
+/*@}*/
 
 #if defined NDEBUG || defined LAL_NDEBUG
 
@@ -61,16 +81,6 @@ void XLALFree(void *p);
 #define LALReallocLong( p, n, file, line ) realloc( p, n )
 #define LALFree                            free
 #define LALCheckMemoryLeaks()
-/* Note: aligned funcs excluded from swig, and only defined with
-   no debugging and when configured for alignement */
-#ifdef WHATEVER_CONFIG_FFTALIGNED 
-/* Should be good for upt to AVX512; recommendation of M. Frigo (personal comm.) */
-#define LAL_MEM_ALIGNMENT 64 
-void *XLALAlignedMalloc(size_t n);
-void *XLALAlignedCalloc(size_t m, size_t n);
-void *XLALAlignedRealloc(void *p, size_t n);
-#endif /* WHATEVER_CONFIG_FFTALIGNED */
-
 #endif /* SWIG */
 
 #else

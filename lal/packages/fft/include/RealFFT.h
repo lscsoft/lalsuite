@@ -566,7 +566,8 @@ void XLALDestroyREAL8FFTPlan( REAL8FFTPlan *plan );
  * - [\c XLAL_ENOMEM] Insufficient storage space is available.
  * .
  */
-int XLALREAL8ForwardFFT( COMPLEX16Vector *output, const REAL8Vector *input, const REAL8FFTPlan *plan );
+int XLALREAL8ForwardFFT( COMPLEX16Vector *output, const REAL8Vector *input,
+    const REAL8FFTPlan *plan );
 
 /**
  * Performs a reverse FFT of REAL8 data
@@ -602,7 +603,8 @@ int XLALREAL8ForwardFFT( COMPLEX16Vector *output, const REAL8Vector *input, cons
  * component of the input data, z[N/2], is not purely real.
  * .
  */
-int XLALREAL8ReverseFFT( REAL8Vector *output, const COMPLEX16Vector *input, const REAL8FFTPlan *plan );
+int XLALREAL8ReverseFFT( REAL8Vector *output, const COMPLEX16Vector *input,
+    const REAL8FFTPlan *plan );
 
 /**
  * Perform a REAL8Vector to REAL8Vector FFT
@@ -630,7 +632,8 @@ int XLALREAL8ReverseFFT( REAL8Vector *output, const COMPLEX16Vector *input, cons
  * - [\c XLAL_ENOMEM] Insufficient storage space is available.
  * .
  */
-int XLALREAL8VectorFFT( REAL8Vector * _LAL_RESTRICT_ output, const REAL8Vector * _LAL_RESTRICT_ input, const REAL8FFTPlan *plan );
+int XLALREAL8VectorFFT( REAL8Vector *output, const REAL8Vector *input,
+    const REAL8FFTPlan *plan );
 
 /**
  * Computes the power spectrum of REAL8 data
@@ -654,7 +657,8 @@ int XLALREAL8VectorFFT( REAL8Vector * _LAL_RESTRICT_ output, const REAL8Vector *
  * - [\c XLAL_ENOMEM] Insufficient storage space is available.
  * .
  */
-int XLALREAL8PowerSpectrum( REAL8Vector *_LAL_RESTRICT_ spec, const REAL8Vector * _LAL_RESTRICT_ data, const REAL8FFTPlan *plan );
+int XLALREAL8PowerSpectrum( REAL8Vector *spec, const REAL8Vector *data,
+    const REAL8FFTPlan *plan );
 
 /*
  *

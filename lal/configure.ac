@@ -137,6 +137,7 @@ AC_SUBST([LIBAGE_SUPPORT],[0])
 AC_SUBST([LIBVERSION_SUPPORT],[${LIBCURRENT_SUPPORT}:${LIBREVISION_SUPPORT}:${LIBAGE_SUPPORT}])
 
 LAL_ENABLE_INTELFFT
+LAL_ENABLE_FFTW3_MEMALIGN
 
 LALSUITE_WITH_CUDA
 LALSUITE_WITH_NVCC_CFLAGS
@@ -310,6 +311,9 @@ if test "${cuda}" = "true"; then
 fi
 if test "${fftw3}" = "true"; then
   AC_DEFINE([LAL_FFTW3_ENABLED],[1],[Define if using fftw3 library])
+  if test "${fftw3_memalign}" = "true"; then
+    AC_DEFINE([LAL_FFTW3_MEMALIGN_ENABLED],[1],[Define if using fftw3 library])
+  fi
 fi
 if test "${boinc}" = "true"; then
   AC_DEFINE([LAL_BOINC_ENABLED],[1],[Define if using boinc library])
@@ -334,6 +338,7 @@ AC_CHECK_FUNCS([stat],,[AC_MSG_ERROR([could not find the stat() function])])
 AC_CHECK_FUNCS([getopt],,[AC_MSG_ERROR([could not find the getopt() function])])
 AC_CHECK_FUNCS([getopt_long],,[AC_MSG_ERROR([could not find the getopt_long() function])])
 AC_CHECK_FUNCS([putenv])
+AC_CHECK_FUNCS([posix_memalign])
 
 # set package documentation install path
 pkgdocdir="\${prefix}/share/doc/${PACKAGE}-${VERSION}"

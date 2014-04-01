@@ -20,8 +20,13 @@ void XFUNC ( VTYPE *vector )
     return;
   if ( ( ! vector->length || ! vector->data ) && ( vector->length || vector->data  ) )
     XLAL_ERROR_VOID( XLAL_EINVAL );
+#ifdef USE_ALIGNED_MEMORY_ROUTINES
   if ( vector->data )
-    LALFree( vector->data );
+    XLALFreeAligned( vector->data );
+#else
+  if ( vector->data )
+    XLALFree( vector->data );
+#endif
   vector->data = NULL; /* leave length non-zero to detect repeated frees */
   LALFree( vector );
   return;

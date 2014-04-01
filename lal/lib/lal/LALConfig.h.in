@@ -28,6 +28,9 @@
 /* Define if using fftw3 library */
 #undef LAL_FFTW3_ENABLED
 
+/* Define if using fftw3 aligned memory optimizations */
+#undef LAL_FFTW3_MEMALIGN_ENABLED
+
 /* Define if using boinc library */
 #undef LAL_BOINC_ENABLED
 

@@ -22,7 +22,7 @@
 #include <string.h>
 #include <signal.h>
 
-#include <lal/LALConfig.h>
+#include <config.h>
 #include <lal/LALMalloc.h>
 #include <lal/LALStdio.h>
 #include <lal/LALError.h>
@@ -43,6 +43,17 @@ size_t lalMallocTotalPeak = 0;	/**< peak amount of memory allocated so far */
     else (void)(0)
 #define XLAL_TEST_POINTER_LONG( ptr, size, file, line )                   \
     if ( ! (ptr) && (size) )                                              \
+    {                                                                     \
+       XLALPrintError( "XLALError - %s in %s:%d", __func__, file, line ); \
+       XLAL_ERROR_NULL( XLAL_ENOMEM );                                    \
+    }                                                                     \
+    else (void)(0)
+#define XLAL_TEST_POINTER_ALIGNED( ptr, size, retval )                    \
+    if ( ! (ptr) && (size) && (retval) )                                  \
+       XLAL_ERROR_NULL( XLAL_ENOMEM );                                    \
+    else (void)(0)
+#define XLAL_TEST_POINTER_ALIGNED_LONG( ptr, size, retval, file, line )   \
+    if ( ! (ptr) && (size) && (retval) )                                  \
     {                                                                     \
        XLALPrintError( "XLALError - %s in %s:%d", __func__, file, line ); \
        XLAL_ERROR_NULL( XLAL_ENOMEM );                                    \
@@ -101,80 +112,99 @@ void XLALFree(void *p)
 
 /*
  * Aligned memory routines.
- *
  */
 
-/* Only define these if configured to do so */
+#if LAL_FFTW3_MEMALIGN_ENABLED
 
-#ifdef WHATEVER_CONFIG_FFTALIGNED
+#ifndef HAVE_POSIX_MEMALIGN
+#error no posix_memalign available
+#endif
 
-#define XLAL_TEST_POINTER_ALIGNED( ptr, size, retval )	  \
-  if ( ! (ptr) && (size) && (retval) )			  \
-       XLAL_ERROR_NULL( XLAL_ENOMEM );                    \
-  else (void)(0)
-
-
-void *XLALAlignedMalloc(size_t n){
-  void *p;
-  int retval;
-
-  retval = posix_memalign(&p,LAL_MEM_ALIGNMENT,n);
-  XLAL_TEST_POINTER_ALIGNED(p,n,retval);
-  return p;
+int XLALIsMemoryAligned(void *ptr)
+{
+	return LAL_IS_MEMORY_ALIGNED(ptr);
 }
 
-void *XLALAlignedCalloc(size_t m, size_t n){
-  void *p;
-  int retval;
-
-  retval = posix_memalign(&p,LAL_MEM_ALIGNMENT,m*n);
-  XLAL_TEST_POINTER_ALIGNED(p,m*n,retval);
-  p = memset(p,0,m*n);
-  return p;
+void *XLALMallocAlignedLong(size_t size, const char *file, int line)
+{
+	void *p;
+	int retval;
+	retval = posix_memalign(&p, LAL_MEM_ALIGNMENT, size);
+	XLAL_TEST_POINTER_ALIGNED_LONG(p, size, retval, file, line);
+	return p;
 }
 
-void *XLALAlignedRealloc(void *p, size_t n){
-  /* We don't really expect reallocing aligned memory to
-     be efficient, but we'd like it not to break.  Hence
-     we just save a copy and see if we either didn't change
-     the pointer, or if we did that the newptr is still
-     a multiple of LAL_MEM_ALIGNMENT.  Only if both of these
-     fail do we call posix_memalign and memcopy */
-  void *saveptr, *newptr;
-  int retval;
-
-  saveptr = p;
-  newptr = realloc(p,n);
-  XLAL_TEST_POINTER(newptr,n);
-  /* If n = 0 realloc should behave like free */
-  if (n) {
-    if (saveptr == newptr) {
-      /* If the pointer didn't change we're good */
-      return newptr;
-    } else if (! (int) (((uintptr_t) newptr) % LAL_MEM_ALIGNMENT)) {
-      /* If it did but is still a multiple of LAL_MEM_ALIGNMENT we're also good.
-         Note that realloc will already have freed p == saveptr */
-      return newptr;
-    } else {
-      /* If it changed but is NOT a multiple of LAL_MEM_ALIGNMENT, we've got to
-	 try a new allocation and copy over.  We reuse saveptr since it will
-	 have been freed by realloc when realloc returned a new location */
-      retval = posix_memalign(&saveptr,LAL_MEM_ALIGNMENT,n);
-      XLAL_TEST_POINTER_ALIGNED(p,n,retval);
-      saveptr = memcpy(saveptr,newptr,n);
-      /* Don't need newptr anymore */
-      free(newptr);
-      return saveptr;
-    }
-  } else {
-    /* Since n was zero, return our original pointer */
-    return p;
-  }
-
+void *(XLALMallocAligned)(size_t size)
+{
+	void *p;
+	int retval;
+	retval = posix_memalign(&p, LAL_MEM_ALIGNMENT, size);
+	XLAL_TEST_POINTER_ALIGNED(p, size, retval);
+	return p;
 }
 
-#endif /* WHATEVER_CONFIG_FFTALIGNED */
+void *XLALCallocAlignedLong(size_t nelem, size_t elsize, const char *file, int line)
+{
+	size_t size = nelem * elsize;
+	void *p = XLALMallocAlignedLong(size, file, line);
+	XLAL_TEST_POINTER_LONG(p, size, file, line);
+	memset(p, 0, size);
+	return p;
+}
 
+void *(XLALCallocAligned)(size_t nelem, size_t elsize)
+{
+	size_t size = nelem * elsize;
+	void *p = (XLALMallocAligned)(size);
+	XLAL_TEST_POINTER(p, size);
+	memset(p, 0, size);
+	return p;
+}
+
+void *XLALReallocAlignedLong(void *ptr, size_t size, const char *file, int line)
+{
+	void *p;
+	if (ptr == NULL)
+		return XLALMallocAlignedLong(size, file, line);
+	if (size == 0) {
+		XLALFreeAligned(ptr);
+		return NULL;
+	}
+	p = realloc(ptr, size); /* use ordinary realloc */
+	if (XLALIsMemoryAligned(p))
+		return p;
+	/* need to do a new allocation and a memcpy, inefficient... */
+	ptr = XLALMallocAlignedLong(size, file, line);
+	memcpy(ptr, p, size);
+	XLALFree(p);
+	return ptr;
+}
+
+void *(XLALReallocAligned)(void *ptr, size_t size)
+{
+	void *p;
+	if (ptr == NULL)
+		return XLALMallocAligned(size);
+	if (size == 0) {
+		XLALFreeAligned(ptr);
+		return NULL;
+	}
+	p = realloc(ptr, size); /* use ordinary realloc */
+	if (XLALIsMemoryAligned(p))
+		return p;
+	/* need to do a new allocation and a memcpy, inefficient... */
+	ptr = XLALMallocAligned(size);
+	memcpy(ptr, p, size);
+	XLALFree(p);
+	return ptr;
+}
+
+void XLALFreeAligned(void *ptr)
+{
+	free(ptr); /* use ordinary free */
+}
+
+#endif /* LAL_FFTW3_MEMALIGN_ENABLED */
 
 /*
  *

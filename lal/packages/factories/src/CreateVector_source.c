@@ -25,7 +25,11 @@ VTYPE * XFUNC ( UINT4 length )
     vector->data = NULL;
   else /* non-zero length: allocate memory for data */
   {
+#ifdef USE_ALIGNED_MEMORY_ROUTINES
+    vector->data = XLALMallocAligned( length * sizeof( *vector->data ) );
+#else
     vector->data = LALMalloc( length * sizeof( *vector->data ) );
+#endif
     if ( ! vector->data )
     {
       LALFree( vector );
