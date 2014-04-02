@@ -4,6 +4,11 @@
 export LAL_DEBUG_LEVEL="${LAL_DEBUG_LEVEL},msglvl1,memdbg"
 echo "LAL_DEBUG_LEVEL=${LAL_DEBUG_LEVEL}"
 
+## allow 'make test' to work from builddir != srcdir
+if [ -z "${srcdir}" ]; then
+    srcdir=`dirname $0`
+fi
+
 builddir="./";
 injectdir="../Injections/"
 
@@ -98,7 +103,7 @@ echo
 
 ## compare --gridType=8
 echo "Comparing gridType=8:"
-cmdline="$cmp_code -1 ${gridFile8}.test -2 ${gridFile8}.ref.gz --clusterFiles=0 --Ftolerance=0.1";
+cmdline="$cmp_code -1 ${gridFile8}.test -2 ${srcdir}/${gridFile8}.ref.gz --clusterFiles=0 --Ftolerance=0.1";
 echo $cmdline
 if ! eval $cmdline; then
     echo "OUCH... files differ. Something might be wrong..."
@@ -109,7 +114,7 @@ fi
 
 ## compare --gridType=9
 echo "Comparing gridType=9:"
-cmdline="$cmp_code -1 ${gridFile9}.test -2 ${gridFile9}.ref.gz --clusterFiles=0 --Ftolerance=0.1";
+cmdline="$cmp_code -1 ${gridFile9}.test -2 ${srcdir}/${gridFile9}.ref.gz --clusterFiles=0 --Ftolerance=0.1";
 echo $cmdline
 if ! eval $cmdline; then
     echo "OUCH... files differ. Something might be wrong..."
