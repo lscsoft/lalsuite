@@ -67,7 +67,7 @@ lalapps_synthesizeLVStats_SOURCES = synthesizeLVStats.c \
 lalapps_CFSv3_SOURCES = CFSv3.c
 
 
-EXTRA_DIST = testCFSv2.sh testGridv2.sh Fstats.ref1 Fstats.ref2 testPredictFStat.sh testCFSv2_resamp.sh testCFSv2_binary.sh
+EXTRA_DIST = testCFSv2.sh testGridv2.sh Fstats.ref1 Fstats.ref2 testPredictFStat.sh testCFSv2_resamp.sh testCFSv2_binary.sh testCFSv2_FLTgrids.sh
 
 
 TESTS = testPredictFStat.sh
