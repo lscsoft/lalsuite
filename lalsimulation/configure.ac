@@ -94,6 +94,9 @@ AC_DEFINE([HAVE_GETHOSTNAME_PROTOTYPE],[1],
 # check for required libraries
 AC_CHECK_LIB([m],[main],,[AC_MSG_ERROR([could not find the math library])])
 
+# check for OpenMP
+AC_OPENMP
+
 # check for gsl
 PKG_CHECK_MODULES([GSL],[gsl],[true],[false])
 LALSUITE_ADD_FLAGS([C],[${GSL_CFLAGS}],[${GSL_LIBS}])
@@ -109,6 +112,25 @@ LALSUITE_CHECK_LIB([LALSupport],[6.12.0],[XLALCacheImport],[lal/LALCache.h])
 
 # configure SWIG wrapping modules
 LALSUITE_USE_SWIG([XLAL LAL])
+
+# Disable OpenMP by default.
+# FIXME: OpenMP should be on by default, but it breaks condor_compiling lalapps.
+AS_IF(
+  [test "x$enable_openmp" = "x"],
+  [OPENMP_CFLAGS=]
+)
+# add compiler flags for OpenMP
+AS_IF(
+  [test "x$OPENMP_CFLAGS" = "x"],
+  [
+    OPENMP_ENABLE_VAL="DISABLED"
+    LALSUITE_ADD_FLAGS([C],[-Wno-unknown-pragmas],[])
+  ],
+  [
+    OPENMP_ENABLE_VAL="ENABLED"
+    LALSUITE_ADD_FLAGS([C],[${OPENMP_CFLAGS}],[])
+  ]
+)
 
 # add gcc specific flags
 LALSUITE_ADD_GCC_FLAGS
@@ -129,6 +151,7 @@ LALSimulation has now been successfully configured:
 
 * SWIG wrapping module for Octave is $SWIG_OCTAVE_ENABLE_VAL
 * SWIG wrapping module for Python is $SWIG_PYTHON_ENABLE_VAL
+* OpenMP acceleration is $OPENMP_ENABLE_VAL
 
 and will be installed under the directory:
 

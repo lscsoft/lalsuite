@@ -16,6 +16,7 @@ override_dh_auto_install:
 	    --sysconfdir=/etc \
 	    --mandir=\$${prefix}/share/man --infodir=\$${prefix}/share/info \
 	    --enable-swig \
+	    --enable-openmp \
 	    --disable-gcc-flags && \
 	$(MAKE) V=1 && \
 	$(MAKE) V=1 check && \

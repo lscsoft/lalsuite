@@ -9,4 +9,4 @@ Description: (uninstalled)
 Version: @VERSION@
 Requires: lal >= @LAL_VERSION@
 Libs: ${abs_top_builddir}/src/liblalsimulation.la
-Cflags: -I${abs_top_builddir}/include
+Cflags: -I${abs_top_builddir}/include @OPENMP_CFLAGS@
