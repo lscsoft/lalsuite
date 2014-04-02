@@ -117,8 +117,8 @@ TESTS += \
 	testCFSv2.sh \
 	testCFSv2_resamp.sh \
 	testGridv2.sh \
-	testCFSv2_binary.sh \
-	testCFSv2_FLTgrids.sh
+	testCFSv2_binary.sh
+#	testCFSv2_FLTgrids.sh
 endif
 
 TESTS_ENVIRONMENT = \
