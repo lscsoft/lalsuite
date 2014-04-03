@@ -508,6 +508,7 @@ class createresultspageJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
     self.add_arg('$(macrom)') # macro for MCMC directories
     self.add_arg('$(macrobk)') # macro for Bk (fine heterodyne file) directories
     self.add_arg('$(macroi)') # macro for IFOs
+    self.add_arg('$(macrof)') # macro for nested sampling files
 
 class createresultspageNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
   """
@@ -551,18 +552,20 @@ class createresultspageNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
       macroval = '%s-m %s ' % (macroval, f)
 
     self.add_macro('macrom', macroval)
+    self.add_macro('macrof', '') # empty macro for nested files
     self.__mcmcdirs = val
   def set_donested(self):
     # set to say using nested sampling results as input
-    self.add_var_opt('N', '', short=True)
+    self.add_var_opt('nested', '')
     self.__donested = True
   def set_nestedfiles(self,val):
     # set the nested sampling files
     macroval = ''
     for f in val:
-      macroval = '%s-f %s' % (macroval, f)
-
-    self.add_macro('macrof', macroval)
+      macroval = '%s-f %s ' % (macroval, f)
+    
+    self.add_macro('macrof', macroval) 
+    self.add_macro('macrom', '') # empty macro for mcmc directories
     self.__nestedfiles = val
   def set_nlive(self,val):
     # set number of nested sampling live points
@@ -604,7 +607,7 @@ class createresultspageNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
     # set to say that analysing software injection
     self.add_var_opt('s', '', short=True)
     self.__swinj = True
-  def set_swinj(self):
+  def set_hwinj(self):
     # set to say that analysing hardware injection
     self.add_var_opt('w', '', short=True)
     self.__hwinj = True

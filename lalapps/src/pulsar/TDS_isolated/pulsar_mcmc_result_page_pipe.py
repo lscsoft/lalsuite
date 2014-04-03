@@ -187,10 +187,22 @@ if __name__=='__main__':
   except:
     bkdirs = None
 
-  if len(bkdirs) != len(ifosr):
-    print >> sys.stderr, "Heterodyned data directories and IFOs not consistent!"
-    sys.exit(1)
+  if len(ifosr) == 1 or mcmcdirs:
+    if len(bkdirs) != len(ifosr):
+      print >> sys.stderr, "Heterodyned data directories and IFOs not consistent!"
+      sys.exit(1)
 
+  if len(ifosr) > 1 and nesteddirs:
+    # there's no Bk dir for joint data, so check that one less directory exists if a Joint IFO is given
+    for ifo in ifosr:
+      if ifo == 'Joint':
+        nifos = len(ifosr)-1
+        break
+        
+    if len(bkdirs) != nifos:
+      print >> sys.stderr, "Heterodyned data directories and IFOs not consistent!"
+      sys.exit(1)
+      
   try:
     # a directory containing prior parameter files
     priordir = cp.get('resultspages', 'priordir')
@@ -371,6 +383,7 @@ if __name__=='__main__':
     else:
       print >> sys.stderr, "Invalid sort type %s - using default" % sorttype
 
+  
   for ifo in ifolist:
     # check ifos are in the individual results page list
     if ifo != 'Joint': # ifosr should not contain 'Joint'
@@ -419,7 +432,7 @@ if __name__=='__main__':
         if notfile:
           nfilestmp.append(os.path.join(ndir, f))
 
-      nestedfiles.append(nfiles)
+      nestedfiles.append(nfilestmp)
 
   # loop over pulsars in par file directory
   for pfile in param_files:
@@ -457,6 +470,7 @@ if __name__=='__main__':
             sys.exit(1)
 
       # assume that the nested sampling file for a pulsar contains its name
+      ifofilelist = []
       for filelist in nestedfiles:
         # find all files containing the pulsar name
         shortlist = []
@@ -464,8 +478,10 @@ if __name__=='__main__':
           if name in ff:
             shortlist.append(ff)
 
-        # join list of nested sample files for the pulsar
-        resultsmode.set_nestedfile(','.join(shortlist))
+        ifofilelist.append(','.join(shortlist))
+         
+      # join list of nested sample files for the pulsar
+      resultsnode.set_nestedfiles(ifofilelist)
 
     for bkdir in bkdirs:
       if not os.path.isdir(bkdir):

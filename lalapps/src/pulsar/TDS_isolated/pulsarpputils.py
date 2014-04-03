@@ -44,7 +44,7 @@ from scipy.integrate import cumtrapz
 from scipy.interpolate import interp1d
 from scipy.stats import hmean
 
-from pylal import date
+#from pylal import date
 from pylal import bayespputils as bppu
 
 from types import StringType, FloatType
@@ -2294,7 +2294,7 @@ def pulsar_nest_to_posterior(nestfiles, nlive):
 
     if posphi22 != None:
       phi0pos = None
-      phi0pos = bppu.PosteriorOneDPDF('phi0', pos['phi22'].samples + math.pi)
+      phi0pos = bppu.PosteriorOneDPDF('phi0', np.fmod(pos['phi22'].samples + math.pi, 2.*math.pi))
 
       pos.append(phi0pos)
       pos.pop('phi22')
