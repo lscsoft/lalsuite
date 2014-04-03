@@ -360,12 +360,12 @@ int main(int argc, char *argv[]){
   dopplerpos.argp = thisBinaryTemplate.argp;
 
   /* spacing in frequency from diagff */ /* set spacings in new dopplerparams struct */
-  binaryTemplateSpacings.fkdot[0] = uvar.mismatchF/sqrt(diagff);
-  binaryTemplateSpacings.asini = uvar.mismatchA/sqrt(diagaa);
-  binaryTemplateSpacings.period = uvar.mismatchP/sqrt(diagpp);
+  binaryTemplateSpacings.fkdot[0] = sqrt(uvar.mismatchF / diagff);
+  binaryTemplateSpacings.asini = sqrt(uvar.mismatchA / diagaa);
+  binaryTemplateSpacings.period = sqrt(uvar.mismatchP / diagpp);
   /* this is annoying: tp is a GPS time while we want a difference
      in time which should be just REAL8 */
-  XLALGPSSetREAL8( &binaryTemplateSpacings.tp, uvar.mismatchT/sqrt(diagTT));
+  XLALGPSSetREAL8( &binaryTemplateSpacings.tp, sqrt(uvar.mismatchT / diagTT));
   /* metric elements for eccentric case not considered? */
 
   /* Calculate SSB times (can do this once since search is currently only for one sky position, and binary doppler shift is added later) */
@@ -432,7 +432,9 @@ int main(int argc, char *argv[]){
       thisCandidate.ecc = dopplerpos.ecc;
       thisCandidate.period = dopplerpos.period;
       thisCandidate.rho = ccStat;
-      
+      thisCandidate.evSquared = evSquared;
+      thisCandidate.estSens = estSens;
+
       insert_into_crossCorrBinary_toplist(ccToplist, thisCandidate);
 
     } /* end while loop over templates */

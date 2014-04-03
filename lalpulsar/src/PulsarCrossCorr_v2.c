@@ -360,7 +360,7 @@ int XLALCalculatePulsarCrossCorrStatistic
       for (UINT8 k=0; k < numBins; k++) {
 	COMPLEX16 data2 = dataArray2[lowestBins->data[sftNum2]+k];
 	sincFactor *= gsl_sf_sinc(kappaValues->data[sftNum2]+k);
-	nume += creal ( GalphaCC * ccSign * sincFactor * conj(data1) * data2 / SQUARE(Tsft) );
+	nume += 2* creal ( GalphaCC * ccSign * sincFactor * conj(data1) * data2 *SQUARE(Tsft) / SQUARE(Tsft) );
 	REAL8 GalphaAmp = curlyGAmp->data[alpha] * sincFactor;
 	curlyGSqr += SQUARE( GalphaAmp );
 	ccSign *= -1;
