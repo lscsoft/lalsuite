@@ -104,7 +104,7 @@ typedef struct tagLALFrStreamPos {
 
 LALFrStream *XLALFrStreamCacheOpen(LALCache * cache);
 LALFrStream *XLALFrStreamOpen(const char *dirname, const char *pattern);
-int XLALFrStreamClose(LALFrStream * stream);
+void XLALFrStreamClose(LALFrStream * stream);
 int XLALFrStreamGetMode(LALFrStream * stream);
 int XLALFrStreamSetMode(LALFrStream * stream, int mode);
 int XLALFrStreamState(LALFrStream * stream);

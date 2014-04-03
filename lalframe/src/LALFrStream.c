@@ -151,14 +151,13 @@ static int XLALFrStreamFileOpen(LALFrStream * stream, UINT4 fnum)
 
 /* EXPORTED ROUTINES */
 
-int XLALFrStreamClose(LALFrStream * stream)
+void XLALFrStreamClose(LALFrStream * stream)
 {
     if (stream) {
         XLALDestroyCache(stream->cache);
         XLALFrStreamFileClose(stream);
         LALFree(stream);
     }
-    return 0;
 }
 
 LALFrStream *XLALFrStreamCacheOpen(LALCache * cache)
