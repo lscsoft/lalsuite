@@ -113,15 +113,15 @@ else
 fi
 
 ## compare --gridType=9
-echo "Comparing gridType=9:"
-cmdline="$cmp_code -1 ${gridFile9}.test -2 ${srcdir}/${gridFile9}.ref.gz --clusterFiles=0 --Ftolerance=0.1";
-echo $cmdline
-if ! eval $cmdline; then
-    echo "OUCH... files differ. Something might be wrong..."
-    exit 2
-else
-    echo "OK."
-fi
+# echo "Comparing gridType=9:"
+# cmdline="$cmp_code -1 ${gridFile9}.test -2 ${srcdir}/${gridFile9}.ref.gz --clusterFiles=0 --Ftolerance=0.1";
+# echo $cmdline
+# if ! eval $cmdline; then
+#     echo "OUCH... files differ. Something might be wrong..."
+#     exit 2
+# else
+#     echo "OK."
+# fi
 
 echo
 echo "----------------------------------------"

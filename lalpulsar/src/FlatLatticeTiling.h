@@ -37,22 +37,6 @@ extern "C" {
 ///
 
 ///
-/// Flat lattice tiling bound function
-///
-typedef void (*FlatLatticeBound)(
-  const size_t dimension,                       ///< [in] Dimension on which bound applies
-  const gsl_vector_uint* bound,                 ///< [in] Indices of current bounds
-  const gsl_vector* point,                      ///< [in] Point on which to find bounds
-  const void* data,                             ///< [in] Arbitrary data describing parameter space
-  const gsl_vector* incr,                       ///< [in] Increments of the lattice tiling generator
-  const gsl_vector* bbox,                       ///< [in] Metric ellipse bounding box extents
-  gsl_vector* lower,                            ///< [out] Lower bounds on point in dimension
-  gsl_vector* upper,                            ///< [out] Upper bounds on point in dimension
-  double* lower_pad,                            ///< [out] Padding of lower parameter space bounds
-  double* upper_pad                             ///< [out] Padding of upper parameter space bounds
-  );
-
-///
 /// Type of lattice to generate flat tiling with
 ///
 typedef enum tagFlatLatticeType {
@@ -70,7 +54,7 @@ typedef struct tagFlatLatticeTiling FlatLatticeTiling;
 /// Create a new flat lattice tiling state structure
 ///
 FlatLatticeTiling* XLALCreateFlatLatticeTiling(
-  const size_t dimensions                       ///< [in] Number of parameter space dimensions
+  const size_t dimensions                       ///< [in] Number of parameter-space dimensions
   );
 
 ///
@@ -87,25 +71,23 @@ size_t XLALGetFlatLatticeDimensions(
   const FlatLatticeTiling* tiling               ///< [in] Tiling state
   );
 
-#ifdef SWIG // SWIG interface directives
-SWIGLAL(RETURNS_PROPERTY(XLALGetFlatLatticePoint));
-#endif
 ///
-/// Return the current lattice tiling parameter space point
+/// Return the current lattice tiling parameter-space point
 ///
-const gsl_vector* XLALGetFlatLatticePoint(
-  const FlatLatticeTiling* tiling               ///< [in] Tiling state
+gsl_vector* XLALGetFlatLatticePoint(
+  const FlatLatticeTiling* tiling,              ///< [in] Tiling state
+  gsl_vector* point
   );
 
 ///
-/// Return the current number of flat lattice tiling parameter space points
+/// Return the current number of flat lattice tiling parameter-space points
 ///
 unsigned long XLALGetFlatLatticePointCount(
   const FlatLatticeTiling* tiling               ///< [in] Tiling state
   );
 
 ///
-/// Calculate the total number of flat lattice tiling parameter space points
+/// Calculate the total number of flat lattice tiling parameter-space points
 ///
 unsigned long XLALCountFlatLatticePoints(
   FlatLatticeTiling* tiling                     ///< [in] Tiling state
@@ -119,14 +101,48 @@ gsl_matrix* XLALGetFlatLatticeIncrements(
   );
 
 ///
-/// Set a parameter space bound on the flat lattice tiling
+/// Set a parameter-space bound on the \f$n\f$th dimension of the flat lattice tiling.
+///
+/// Each parameter-space dimension may have multiple pairs of lower and upper bounds. The bounds \f$b_n\f$
+/// given the current parameter-space point \f$x = (x_0,\cdots,x_{n-1})\f$ are specified by the expression
+/// \f[
+/// b_n - a_n = c_N \left[ \sum_{i=0}^{N-1} c_i \prod_{j=0}^{n-1} (x_j - a_j)^{m_{ni+j}} \right]^{m_{nN}}
+/// \f]
+/// where \f$a = (a_0,\cdots,a_n)\f$ is a vector of \f$n + 1 > 0\f$ offsets, \f$c = (c_0,\cdots,c_N)\f$ is a
+/// vector of \f$N + 1 > 0\f$ coefficients, and \f$m = (m_0,\cdots,m_{nM})\f$ is a vector of \f$nM + 1 > 0\f$
+/// exponents.
 ///
 int XLALSetFlatLatticeBound(
   FlatLatticeTiling* tiling,                    ///< [in] Tiling state
+  const size_t dimension,                       ///< [in] Dimension on which bound applies (\f$n\f$)
+  const gsl_vector* a,                          ///< [in] Vector of offsets (\f$a\f$)
+  const gsl_matrix* c_lower,                    ///< [in] Column vectors of coefficients (\f$c\f$) for the lower bound of each bound pair
+  const gsl_matrix* m_lower,                    ///< [in] Column vectors of exponents (\f$m\f$) for the lower bound of each bound pair
+  const gsl_matrix* c_upper,                    ///< [in] Column vectors of coefficients (\f$c\f$) for the upper bound of each bound pair
+  const gsl_matrix* m_upper                     ///< [in] Column vectors of exponents (\f$m\f$) for the upper bound of each bound pair
+  );
+
+///
+/// Set a constant parameter-space bound, given by the minimum and
+/// maximum of the two supplied bounds, on the flat lattice tiling
+///
+int XLALSetFlatLatticeConstantBound(
+  FlatLatticeTiling* tiling,                    ///< [in] Tiling state
   const size_t dimension,                       ///< [in] Dimension on which bound applies
-  const bool singular,                          ///< [in] Is bound composed of single points?
-  const FlatLatticeBound func,                  ///< [in] Parameter space bound function
-  void* data                                    ///< [in] Arbitrary data describing parameter space
+  const double bound1,                          ///< [in] First bound on dimension
+  const double bound2                           ///< [in] Second bound on dimension
+  );
+
+///
+/// Set elliptical bounds in two dimensions on the flat lattice tiling
+///
+int XLALSetFlatLatticeEllipticalBounds(
+  FlatLatticeTiling* tiling,                    ///< [in] Tiling state
+  const size_t dimension,                       ///< [in] Dimension of X bound (Y bound is one higher)
+  const double x_centre,                        ///< [in] X centre of ellipse
+  const double y_centre,                        ///< [in] Y centre of ellipse
+  const double x_semi,                          ///< [in] Length of X semi-diameter
+  const double y_semi                           ///< [in] Length of Y semi-diameter
   );
 
 ///
@@ -135,7 +151,7 @@ int XLALSetFlatLatticeBound(
 int XLALSetFlatLatticeTypeAndMetric(
   FlatLatticeTiling* tiling,                    ///< [in] Tiling state
   const FlatLatticeType lattice,                ///< [in] Lattice type
-  const gsl_matrix* metric,                     ///< [in] Parameter space metric
+  const gsl_matrix* metric,                     ///< [in] parameter-space metric
   const double max_mismatch                     ///< [in] Maximum prescribed mismatch
   );
 
@@ -164,38 +180,15 @@ SWIGLAL(INOUT_STRUCTS(gsl_vector_ulong**, nearest_indices));
 /// Generate random points within the flat lattice tiling parameter space,
 /// then calculate the nearest flat lattice point to each random point
 ///
-int XLALNearestFlatLatticePointToRandomPoints(
-  FlatLatticeTiling* tiling,                    ///< [in] Tiling state
-  RandomParams* rng,                            ///< [in] Random number generator
-  const size_t num_random_points,               ///< [in] Number of random points to generate
-  gsl_matrix** random_points,                   ///< [in/out] Pointer to matrix of random points
-  gsl_vector_ulong** nearest_indices,           ///< [in/out] Pointer to vector of indices of nearest lattice point
-  gsl_vector** nearest_distances,               ///< [in/out] Pointer to vector of distances to nearest lattice point
-  gsl_matrix** workspace                        ///< [in/out] Pointer to workspace matrix for computing distances
-  );
-
-///
-/// Set a constant parameter space bound, given by the minimum and
-/// maximum of the two supplied bounds, on the flat lattice tiling
-///
-int XLALSetFlatLatticeConstantBound(
-  FlatLatticeTiling* tiling,                    ///< [in] Tiling state
-  const size_t dimension,                       ///< [in] Dimension on which bound applies
-  const double bound1,                          ///< [in] First bound on dimension
-  const double bound2                           ///< [in] Second bound on dimension
-  );
-
-///
-/// Set elliptical bounds in two dimensions on the flat lattice tiling
-///
-int XLALSetFlatLatticeEllipticalBounds(
-  FlatLatticeTiling* tiling,                    ///< [in] Tiling state
-  const size_t dimension,                       ///< [in] Dimension of X bound (Y bound is one higher)
-  const double x_centre,                        ///< [in] X centre of ellipse
-  const double y_centre,                        ///< [in] Y centre of ellipse
-  const double x_semi,                          ///< [in] Length of X semi-diameter
-  const double y_semi                           ///< [in] Length of Y semi-diameter
-  );
+/* int XLALNearestFlatLatticePointToRandomPoints( */
+/*   FlatLatticeTiling* tiling,                    ///< [in] Tiling state */
+/*   RandomParams* rng,                            ///< [in] Random number generator */
+/*   const size_t num_random_points,               ///< [in] Number of random points to generate */
+/*   gsl_matrix** random_points,                   ///< [in/out] Pointer to matrix of random points */
+/*   gsl_vector_ulong** nearest_indices,           ///< [in/out] Pointer to vector of indices of nearest lattice point */
+/*   gsl_vector** nearest_distances,               ///< [in/out] Pointer to vector of distances to nearest lattice point */
+/*   gsl_matrix** workspace                        ///< [in/out] Pointer to workspace matrix for computing distances */
+/*   ); */
 
 #ifdef __cplusplus
 }
