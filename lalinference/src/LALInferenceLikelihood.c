@@ -148,6 +148,35 @@ void LALInferenceInitLikelihood(LALInferenceRunState *runState)
                               {-0.00334987648531921, 0.007465228985669282, -0.006204169580739178, -0.005873218251875899, -0.009241221870695395, 0.003330357760641278, -0.008466566781233205, 0.011126783289057604, -0.0031735521631824654, -0.005619012077114915, -0.007137012700864866, -0.006482422704208912, 0.0033872675386130632, -0.000256550861960499, 0.05380987317762257}};
 
 
+const char *non_intrinsic_params[] = {"rightascension", "declination", "polarisation", "time",
+                                "deltaLogL", "logL", "deltaloglH1", "deltaloglL1", "deltaloglV1",
+                                "logw", "logPrior", NULL};
+
+LALInferenceVariables LALInferenceGetInstrinsicParams(LALInferenceVariables *currentParams)
+/***************************************************************/
+/* Return a variables structure containing only intrinsic      */
+/* parameters.                                                 */
+/***************************************************************/
+{
+    // TODO: add pointer to template function here.
+    // (otherwise same parameters but different template will lead to no re-computation!!)
+    LALInferenceVariables intrinsicParams;
+    const char **non_intrinsic_param = non_intrinsic_params;
+
+    intrinsicParams.head      = NULL;
+    intrinsicParams.dimension = 0;
+    LALInferenceCopyVariables(currentParams, &intrinsicParams);
+
+    while (*non_intrinsic_param) {
+        if (LALInferenceCheckVariable(&intrinsicParams, *non_intrinsic_param))
+            LALInferenceRemoveVariable(&intrinsicParams, *non_intrinsic_param);
+        non_intrinsic_param++;
+    }
+
+    return intrinsicParams;
+}
+
+
 INT4 LALInferenceLineSwitch(INT4 lineFlag, INT4 Nlines, INT4 *lines_array, INT4 *widths_array, INT4 i)
 {
     INT4 lineimin = 0;
