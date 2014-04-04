@@ -110,7 +110,7 @@ gsl_matrix* XLALGetFlatLatticeIncrements(
 /// \f]
 /// where \f$a = (a_0,\cdots,a_n)\f$ is a vector of \f$n + 1 > 0\f$ offsets, \f$c = (c_0,\cdots,c_N)\f$ is a
 /// vector of \f$N + 1 > 0\f$ coefficients, and \f$m = (m_0,\cdots,m_{nM})\f$ is a vector of \f$nM + 1 > 0\f$
-/// exponents.
+/// exponents. Note that \f$x^m \rightarrow 0\f$ if the result is not finite and real-valued.
 ///
 int XLALSetFlatLatticeBound(
   FlatLatticeTiling* tiling,                    ///< [in] Tiling state

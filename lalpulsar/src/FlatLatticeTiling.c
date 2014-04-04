@@ -424,7 +424,8 @@ static gsl_matrix* FLT_MetricLatticeIncrements(
 /// Special power function used when calculating bounds
 ///
 static inline double FLT_pow(double x, double y) {
-  return y == 0.0 ? 1.0 : creal(cpow(x, y));
+  double z = pow(x, y);
+  return isfinite(z) ? z : 0.0;
 }
 
 ///
