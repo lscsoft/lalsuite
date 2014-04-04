@@ -2,35 +2,38 @@
 
 use strict;
 use warnings;
+use Getopt::Long;
 
-my $directory = $ARGV[0];
-my $analysisdate = $ARGV[1];
-my @jobfolders = <$directory/$analysisdate/output/*>;
+my $directory = '';
+
+GetOptions('dir=s' => \$directory);
+
+my @jobfolders = <$directory/output/*>;
 my $numberofjobs = @jobfolders;
 
-open(MISSING, ">$directory/$analysisdate/missingbands.dat") or die "Cannot write to $directory/$analysisdate/missingbands.dat $!";
-open(CANDIDATES, ">$directory/$analysisdate/candidates.dat") or die "Cannot write to $directory/$analysisdate/candidates.dat $!";
+open(MISSING, ">$directory/missingbands.dat") or die "Cannot write to $directory/missingbands.dat $!";
+open(CANDIDATES, ">$directory/candidates.dat") or die "Cannot write to $directory/candidates.dat $!";
 
 for(my $ii=0; $ii<$numberofjobs; $ii++) {
-   my $ulfilename = "$directory/$analysisdate/output/$ii/uls.dat";
+   my $ulfilename = "$directory/output/$ii/uls.dat";
    if (-e $ulfilename) {
-      system("cat $ulfilename >> $directory/$analysisdate/ULresults.dat");
+      system("cat $ulfilename >> $directory/ULresults.dat");
       die "cat failed: $?" if $?;
       
-      open(LOGFILE, "$directory/$analysisdate/output/$ii/logfile.txt") or die "Cannot open $directory/$analysisdate/output/$ii/logfile.txt $!";
-      if (-z "$directory/$analysisdate/output/$ii/logfile.txt") {
+      open(LOGFILE, "$directory/output/$ii/logfile.txt") or die "Cannot open $directory/output/$ii/logfile.txt $!";
+      if (-z "$directory/output/$ii/logfile.txt") {
          print STDERR "Missing $ii!\n";
-         system("echo JOB A$ii $directory/$analysisdate/condor >> $directory/$analysisdate/dag4missing");
+         system("echo JOB A$ii $directory/condor >> $directory/dag4missing");
          die "echo failed: $?" if $?;
-         system("echo VARS A$ii PID=\\\"$ii\\\" >> $directory/$analysisdate/dag4missing");
+         system("echo VARS A$ii PID=\\\"$ii\\\" >> $directory/dag4missing");
          die "echo failed: $?" if $?;
       } else {
          my @lines = reverse <LOGFILE>;
          if ( $lines[0] !~ /^Program finished/ ) {
             print STDERR "Missing $ii!\n";
-            system("echo JOB A$ii $directory/$analysisdate/condor >> $directory/$analysisdate/dag4missing");
+            system("echo JOB A$ii $directory/condor >> $directory/dag4missing");
             die "echo failed: $?" if $?;
-            system("echo VARS A$ii PID=\\\"$ii\\\" >> $directory/$analysisdate/dag4missing");
+            system("echo VARS A$ii PID=\\\"$ii\\\" >> $directory/dag4missing");
             die "echo failed: $?" if $?;
          } else {
             my $jj = 1;
@@ -43,7 +46,7 @@ for(my $ii=0; $ii<$numberofjobs; $ii++) {
       close(LOGFILE);
 
    } else {
-      open(CONFIG, "$directory/$analysisdate/output/$ii/input_values.conf") or die "Cannot open $directory/$analysisdate/output/$ii/input_values.conf $!";
+      open(CONFIG, "$directory/output/$ii/input_values.conf") or die "Cannot open $directory/output/$ii/input_values.conf $!";
       my $ulfmin = 0.0;
       my $ulfspan = 0.0;
       while (my $line=<CONFIG>) {

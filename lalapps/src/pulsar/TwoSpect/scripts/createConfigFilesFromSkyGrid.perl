@@ -3,45 +3,58 @@
 use strict;
 use warnings;
 use POSIX;
+use Getopt::Long;
 
-my $band = $ARGV[0];
-my $fstart = $ARGV[1];
-my $fstep = $ARGV[2];
-my $numberBands = $ARGV[3];
-my $ifo = $ARGV[4];
-my $outputPathBase = $ARGV[5];
-my $analysisdate = $ARGV[6];
-my $sftVersion = $ARGV[7];
-my $Tcoh = 1800;
+my $band = '';
+my $fstart = 0.0;
+my $fstep = 0.0;
+my $numberBands = 0;
+my $ifo = '';
+my $outputPathBase = '';
+my $analysisdate = '';
+my $sftVersion = 0;
+my $Tcoh = 1800.0;
 my $Tobs = 40551300;
 my $Pmin = 7200.0;
 my $Pmax = 8110260.0;
 my $dfmin = 0.0002;
 my $dfmax = 0.1;
-my $fspan = 0.25;
 my $ihsfar = 1.0e-14;
 my $ihsfomfar = 1.0;
 my $tmplfar = 1.0e-18;
-my $t0 = 0.0;
-my $ifokey = "";
-if ($ifo eq "LHO" || $ifo eq "H1") {
-   $t0 = 931081500;  #H1 start
-   $ifo = "LHO";
-   $ifokey = "H1";
-} elsif ($ifo eq "LLO" || $ifo eq "L1") {
-   $t0 = 931113900;  #L1 start
-   $ifo = "LLO";
-   $ifokey = "L1";
-} elsif ($ifo eq "Virgo" || $ifo eq "V1") {
-   $t0 = 931131900;
-   $ifo = "Virgo";
-   $ifokey = "V1";
-}
 my $blksize = 101;
 my $minTemplateLength = 1;
 my $maxTemplateLength = 500;
 my $avesqrtSh = 1.0e-22;
 my $sftOverlap = 900;
+my $FFTplanFlag = 3;
+my $ephemDir = "/home/egoetz/TwoSpect/S6";
+my $ephemYear = "08-11-DE405";
+my $maxnumperdag = 200;
+my $linedetection = -1.0;
+my $keepTopIHS = -1;
+my $nofastchisq = 0;
+my $noSSE = 0;
+my $noMarkBadSFTs =0;
+my $t0 = 0.0;
+#LHO t0 S6 = 931081500
+#LLO t0 S6 = 931113900
+#Virgo t0 VSR2/3 = 931131900
+
+GetOptions('band=s' => \$band, 'fstart=f' => \$fstart, 'fstep=f' => \$fstep, 'numberBands=i' => \$numberBands, 'ifo=s' => \$ifo, 'outputPathBase=s' => \$outputPathBase, 'analysisDate=s' => \$analysisdate, 'sftVersion=i' => \$sftVersion, 'Tcoh=:f' => \$Tcoh, 'Tobs:f' => \$Tobs, 'Pmin=:f' => \$Pmin, 'Pmax=:f' => \$Pmax, 'dfmin=:f' => \$dfmin, 'dfmax=:f' => \$dfmax, 'ihsfar=:f' => \$ihsfar, 'ihsfomfar:f' => \$ihsfomfar, 'tmplfar:f' => \$tmplfar, 'blksize:i' => \$blksize, 'minTemplateL:i' => \$minTemplateLength, 'maxTemplateL:i' => \$maxTemplateLength, 'avesqrtSh:f' => \$avesqrtSh, 'sftOverlap:f' => \$sftOverlap, 'FFTplan:i' => \$FFTplanFlag, 'maxnumperdag:i' => \$maxnumperdag, 'linedetection:f' => \$linedetection, 'keepTopIHS:i' => \$keepTopIHS, 'nofastchisq' => $nofastchisq, 'noSSE' => \$noSSE, 'noMarkBadSFTs' => \$noMarkBadSFTs, 't0=f' => \$t0);
+
+my $fspan = $fstep;
+my $ifokey = "";
+if ($ifo eq "LHO" || $ifo eq "H1") {
+   $ifo = "LHO";
+   $ifokey = "H1";
+} elsif ($ifo eq "LLO" || $ifo eq "L1") {
+   $ifo = "LLO";
+   $ifokey = "L1";
+} elsif ($ifo eq "Virgo" || $ifo eq "V1") {
+   $ifo = "Virgo";
+   $ifokey = "V1";
+}
 my $sfttype = "";
 if ($sftVersion==1) {
    $sfttype = "vladimir";
@@ -52,9 +65,7 @@ if ($sftVersion==1) {
 } else {
    die "sftVersion must equal 1 or 2, but input was $sftVersion";
 }
-my $FFTplanFlag = 3;
-my $ephemDir = "/home/egoetz/TwoSpect/S6";
-my $ephemYear = "08-11-DE405";
+
 my $directorynumber = 0;
 my $outdirectory0 = "$outputPathBase/$band\_$ifokey/$analysisdate/output/";
 
@@ -68,8 +79,6 @@ system("mkdir $outputPathBase/$band\_$ifokey/$analysisdate/err");
 die "mkdir $outputPathBase/$band\_$ifokey/$analysisdate/err failed: $?" if $?;
 system("mkdir $outputPathBase/$band\_$ifokey/$analysisdate/output");
 die "mkdir $outputPathBase/$band\_$ifokey/$analysisdate/output failed: $?" if $?;
-
-my $maxnumperdag = 200;
 
 open(CONDORFILE,">>$outputPathBase/$band\_$ifokey/$analysisdate/condor") or die "Cannot write to $outputPathBase/$band\_$ifokey/$analysisdate/condor $!";
 print CONDORFILE<<EOF;
@@ -147,15 +156,26 @@ ephemYear $ephemYear
 outdirectory $outdirectory
 sftType $sfttype
 IFO $ifokey
-markBadSFTs
 skyRegionFile $skyregionfile
 FFTplanFlag $FFTplanFlag
-fastchisqinv
-useSSE
-lineDetection 1.5
 randSeed $randseedval
-keepOnlyTopNumIHS 5
 EOF
+
+            if ($linedetection>=0.0) {
+               print OUT "lineDetection $linedetection\n";
+            }
+            if ($keepTopIHS>=0) {
+               print OUT "keepOnlyTopNumIHS $keepTopIHS\n";
+            }
+            if ($noMarkBadSFTs==0) {
+               print OUT "markBadSFTs\n";
+            }
+            if ($noSSE==0) {
+               print OUT "useSSE\n";
+            }
+            if ($nofastchisq==0) {
+               print OUT "fastchisqinv\n";
+            }
             close(OUT);
             
             print DAG "JOB A$directorynumber $outputPathBase/$band\_$ifokey/$analysisdate/condor\n";
@@ -212,15 +232,26 @@ ephemYear $ephemYear
 outdirectory $outdirectory
 sftType $sfttype
 IFO $ifokey
-markBadSFTs
 skyRegionFile $skyregionfile
 FFTplanFlag $FFTplanFlag
-fastchisqinv
-useSSE
-lineDetection 1.5
 randSeed $randseedval
-keepOnlyTopNumIHS 5
 EOF
+
+      if ($linedetection>=0.0) {
+         print OUT "lineDetection $linedetection\n";
+      }
+      if ($keepTopIHS>=0) {
+         print OUT "keepOnlyTopNumIHS $keepTopIHS\n";
+      }
+      if ($noMarkBadSFTs==0) {
+         print OUT "markBadSFTs\n";
+      }
+      if ($noSSE==0) {
+         print OUT "useSSE\n";
+      }
+      if ($nofastchisq==0) {
+         print OUT "fastchisqinv\n";
+      }
       close(OUT);
       
       print DAG "JOB A$directorynumber $outputPathBase/$band\_$ifokey/$analysisdate/condor\n";
