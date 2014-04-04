@@ -43,12 +43,12 @@ INT4 main(void) {
    gsl_set_error_handler_off();
 
    FILE *H1CANDS, *L1CANDS;
-   const char *infile1 = "/Users/evgoet/Documents/MATLAB/pulsar/S6/500-510HzH1Candidates.dat";
-   const char *infile2 = "/Users/evgoet/Documents/MATLAB/pulsar/S6/500-510HzL1Candidates.dat";
-   const char *outfile1 = "/Users/evgoet/Documents/MATLAB/pulsar/S6/500-510HzCandidates_output1.dat";
-   const char *outfile2 = "/Users/evgoet/Documents/MATLAB/pulsar/S6/500-510HzCandidates_output2.dat";
-   const char *outfile3 = "/Users/evgoet/Documents/MATLAB/pulsar/S6/500-510HzCandidates_final_H1L1.dat";
-   const char *outfile4 = "/Users/evgoet/Documents/MATLAB/pulsar/S6/500-510HzCandidates_output3.dat";
+   const char *infile1 = "/Users/evgoet/Documents/MATLAB/pulsar/S6/500-520HzH1Candidates.dat";
+   const char *infile2 = "/Users/evgoet/Documents/MATLAB/pulsar/S6/500-520HzL1Candidates.dat";
+   const char *outfile1 = "/Users/evgoet/Documents/MATLAB/pulsar/S6/500-520HzCandidates_output1.dat";
+   const char *outfile2 = "/Users/evgoet/Documents/MATLAB/pulsar/S6/500-520HzCandidates_output2.dat";
+   const char *outfile3 = "/Users/evgoet/Documents/MATLAB/pulsar/S6/500-520HzCandidates_final_H1L1.dat";
+   const char *outfile4 = "/Users/evgoet/Documents/MATLAB/pulsar/S6/500-520HzCandidates_output3.dat";
 
    XLAL_CHECK( (H1CANDS = fopen(infile1,"r")) != NULL, XLAL_EIO, "Can't fopen %s", infile1 );
 
