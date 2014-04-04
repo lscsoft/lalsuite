@@ -50,13 +50,13 @@
 ///
 typedef struct tagFLT_Bound {
   bool tiled;                                   ///< Is the bound tiled, i.e. not a single point?
-  size_t num_bounds;
-  size_t num_coeffs;
-  gsl_vector* a;
-  gsl_matrix* c_lower;
-  gsl_matrix* m_lower;
-  gsl_matrix* c_upper;
-  gsl_matrix* m_upper;
+  size_t num_bounds;                            ///< Number of bound pieces in this dimension
+  size_t num_coeffs;                            ///< Number of bound coefficients (\f$N\f$)
+  gsl_vector* a;                                ///< Vector of offsets (\f$a\f$)
+  gsl_matrix* c_lower;                          ///< Column vectors of coefficients (\f$c\f$) for the lower bound of each bound pair
+  gsl_matrix* m_lower;                          ///< Column vectors of exponents (\f$m\f$) for the lower bound of each bound pair
+  gsl_matrix* c_upper;                          ///< Column vectors of coefficients (\f$c\f$) for the upper bound of each bound pair
+  gsl_matrix* m_upper;                          ///< Column vectors of exponents (\f$m\f$) for the upper bound of each bound pair
 } FLT_Bound;
 
 ///
