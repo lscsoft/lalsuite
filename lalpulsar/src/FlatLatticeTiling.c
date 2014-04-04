@@ -757,7 +757,17 @@ int XLALSetFlatLatticeBound(
              "m_{lower|upper} has %u rows, should have %u", m_lower->size1, num_exponents);
 
   // Determine if bound is tiled, i.e. not a single point
-  const bool tiled = !gsl_matrix_equal(c_lower, c_upper) || !gsl_matrix_equal(m_lower, m_upper);
+  bool tiled = false;
+  for (size_t i = 0; i < c_lower->size1; ++i) {
+    for (size_t j = 0; j < c_lower->size2; ++j) {
+      tiled |= gsl_matrix_get(c_lower, i, j) != gsl_matrix_get(c_upper, i, j);
+    }
+  }
+  for (size_t i = 0; i < m_lower->size1; ++i) {
+    for (size_t j = 0; j < m_lower->size2; ++j) {
+      tiled |= gsl_matrix_get(m_lower, i, j) != gsl_matrix_get(m_upper, i, j);
+    }
+  }
 
   // Allocate memory
   tiling->bounds[dimension].a = gsl_vector_alloc(a->size);
