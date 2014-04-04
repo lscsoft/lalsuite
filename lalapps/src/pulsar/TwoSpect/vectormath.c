@@ -193,9 +193,9 @@ INT4 sseSSVectorSum(REAL4Vector *output, REAL4Vector *input1, REAL4Vector *input
 
    return XLAL_SUCCESS;
 #else
-   (void*)output;
-   (void*)input1;
-   (void*)input2;
+   (void)output;
+   (void)input1;
+   (void)input2;
    fprintf(stderr, "%s: Failed because SSE is not supported, possibly because -msse flag wasn't used for compiling.\n", __func__);
    XLAL_ERROR(XLAL_EFAILED);
 #endif
@@ -267,9 +267,9 @@ INT4 avxSSVectorSum(REAL4Vector *output, REAL4Vector *input1, REAL4Vector *input
 
    return XLAL_SUCCESS;
 #else
-   output = (void*)output;
-   input1 = (void*)input1;
-   input2 = (void*)input2;
+   (void)output;
+   (void)input1;
+   (void)input2;
    fprintf(stderr, "%s: Failed because AVX is not supported, possibly because -mavx flag wasn't used for compiling.\n", __func__);
    XLAL_ERROR(XLAL_EFAILED);
 #endif
@@ -341,9 +341,9 @@ INT4 sseSSVectorMultiply(REAL4Vector *output, REAL4Vector *input1, REAL4Vector *
 
    return XLAL_SUCCESS;
 #else
-   (void*)output;
-   (void*)input1;
-   (void*)input2;
+   (void)output;
+   (void)input1;
+   (void)input2;
    fprintf(stderr, "%s: Failed because SSE is not supported, possibly because -msse flag wasn't used for compiling.\n", __func__);
    XLAL_ERROR(XLAL_EFAILED);
 #endif
@@ -415,9 +415,9 @@ INT4 avxSSVectorMultiply(REAL4Vector *output, REAL4Vector *input1, REAL4Vector *
 
    return XLAL_SUCCESS;
 #else
-   output = (void*)output;
-   input1 = (void*)input1;
-   input2 = (void*)input2;
+   (void)output;
+   (void)input1;
+   (void)input2;
    fprintf(stderr, "%s: Failed because AVX is not supported, possibly because -mavx flag wasn't used for compiling.\n", __func__);
    XLAL_ERROR(XLAL_EFAILED);
 #endif
@@ -478,8 +478,8 @@ INT4 sseAddScalarToREAL4Vector(REAL4Vector *output, REAL4Vector *input, REAL4 sc
 
    return XLAL_SUCCESS;
 #else
-   (void*)output;
-   (void*)input;
+   (void)output;
+   (void)input;
    (void)scalar;
    fprintf(stderr, "%s: Failed because SSE is not supported, possibly because -msse flag wasn't used for compiling.\n", __func__);
    XLAL_ERROR(XLAL_EFAILED);
@@ -541,9 +541,9 @@ INT4 avxAddScalarToREAL4Vector(REAL4Vector *output, REAL4Vector *input, REAL4 sc
 
    return XLAL_SUCCESS;
 #else
-   output = (void*)output;
-   input = (void*)input;
-   scalar = scalar;
+   (void)output;
+   (void)input;
+   (void)scalar;
    fprintf(stderr, "%s: Failed because AVX is not supported, possibly because -mavx flag wasn't used for compiling.\n", __func__);
    XLAL_ERROR(XLAL_EFAILED);
 #endif
@@ -604,8 +604,8 @@ INT4 sseAddScalarToREAL8Vector(REAL8Vector *output, REAL8Vector *input, REAL8 sc
 
    return XLAL_SUCCESS;
 #else
-   (void*)output;
-   (void*)input;
+   (void)output;
+   (void)input;
    (void)scalar;
    fprintf(stderr, "%s: Failed because SSE2 is not supported, possibly because -msse2 flag wasn't used for compiling.\n", __func__);
    XLAL_ERROR(XLAL_EFAILED);
@@ -667,9 +667,9 @@ INT4 avxAddScalarToREAL8Vector(REAL8Vector *output, REAL8Vector *input, REAL8 sc
 
    return XLAL_SUCCESS;
 #else
-   output = (void*)output;
-   input = (void*)input;
-   scalar = scalar;
+   (void)output;
+   (void)input;
+   (void)scalar;
    fprintf(stderr, "%s: Failed because AVX is not supported, possibly because -mavx flag wasn't used for compiling.\n", __func__);
    XLAL_ERROR(XLAL_EFAILED);
 #endif
@@ -730,8 +730,8 @@ INT4 sseScaleREAL4Vector(REAL4Vector *output, REAL4Vector *input, REAL4 scale)
 
    return XLAL_SUCCESS;
 #else
-   (void*)output;
-   (void*)input;
+   (void)output;
+   (void)input;
    (void)scale;
    fprintf(stderr, "%s: Failed because SSE is not supported, possibly because -msse flag wasn't used for compiling.\n", __func__);
    XLAL_ERROR(XLAL_EFAILED);
@@ -793,9 +793,9 @@ INT4 avxScaleREAL4Vector(REAL4Vector *output, REAL4Vector *input, REAL4 scale)
 
    return XLAL_SUCCESS;
 #else
-   output = (void*)output;
-   input = (void*)input;
-   scale = scale;
+   (void)output;
+   (void)input;
+   (void)scale;
    fprintf(stderr, "%s: Failed because AVX is not supported, possibly because -mavx flag wasn't used for compiling.\n", __func__);
    XLAL_ERROR(XLAL_EFAILED);
 #endif
@@ -856,8 +856,8 @@ INT4 sseScaleREAL8Vector(REAL8Vector *output, REAL8Vector *input, REAL8 scale)
 
    return XLAL_SUCCESS;
 #else
-   (void*)output;
-   (void*)input;
+   (void)output;
+   (void)input;
    (void)scale;
    fprintf(stderr, "%s: Failed because SSE2 is not supported, possibly because -msse2 flag wasn't used for compiling.\n", __func__);
    XLAL_ERROR(XLAL_EFAILED);
@@ -919,9 +919,9 @@ INT4 avxScaleREAL8Vector(REAL8Vector *output, REAL8Vector *input, REAL8 scale)
 
    return XLAL_SUCCESS;
 #else
-   output = (void*)output;
-   input = (void*)input;
-   scale = scale;
+   (void)output;
+   (void)input;
+   (void)scale;
    fprintf(stderr, "%s: Failed because SSE2 is not supported, possibly because -msse2 flag wasn't used for compiling.\n", __func__);
    XLAL_ERROR(XLAL_EFAILED);
 #endif
@@ -998,9 +998,9 @@ INT4 sseSSVectorSequenceSum(REAL4VectorSequence *output, REAL4VectorSequence *in
 
    return XLAL_SUCCESS;
 #else
-   (void*)output;
-   (void*)input1;
-   (void*)input2;
+   (void)output;
+   (void)input1;
+   (void)input2;
    (void)vectorpos1;
    (void)vectorpos2;
    (void)outputvectorpos;
@@ -1081,13 +1081,13 @@ INT4 avxSSVectorSequenceSum(REAL4VectorSequence *output, REAL4VectorSequence *in
 
    return XLAL_SUCCESS;
 #else
-   output = (void*)output;
-   input1 = (void*)input1;
-   input2 = (void*)input2;
-   vectorpos1 = vectorpos1;
-   vectorpos2 = vectorpos2;
-   outputvectorpos = outputvectorpos;
-   numvectors = numvectors;
+   (void)output;
+   (void)input1;
+   (void)input2;
+   (void)vectorpos1;
+   (void)vectorpos2;
+   (void)outputvectorpos;
+   (void)numvectors;
    fprintf(stderr, "%s: Failed because AVX is not supported, possibly because -mavx flag wasn't used for compiling.\n", __func__);
    XLAL_ERROR(XLAL_EFAILED);
 #endif
@@ -1165,9 +1165,9 @@ INT4 sseSSVectorSequenceSubtract(REAL4Vector *output, REAL4VectorSequence *input
 
    return XLAL_SUCCESS;
 #else
-   (void*)output;
-   (void*)input1;
-   (void*)input2;
+   (void)output;
+   (void)input1;
+   (void)input2;
    (void)vectorpos1;
    fprintf(stderr, "%s: Failed because SSE is not supported, possibly because -msse flag wasn't used for compiling.\n", __func__);
    XLAL_ERROR(XLAL_EFAILED);
@@ -1246,10 +1246,10 @@ INT4 avxSSVectorSequenceSubtract(REAL4Vector *output, REAL4VectorSequence *input
 
    return XLAL_SUCCESS;
 #else
-   output = (void*)output;
-   input1 = (void*)input1;
-   input2 = (void*)input2;
-   vectorpos1 = vectorpos1;
+   (void)output;
+   (void)input1;
+   (void)input2;
+   (void)vectorpos1;
    fprintf(stderr, "%s: Failed because AVX is not supported, possibly because -mavx flag wasn't used for compiling.\n", __func__);
    XLAL_ERROR(XLAL_EFAILED);
 #endif
@@ -1385,9 +1385,9 @@ INT4 sse_sin_cos_2PI_LUT_REAL8Vector(REAL8Vector *sin2pix_vector, REAL8Vector *c
 
    return XLAL_SUCCESS;
 #else
-   (void*)sin2pix_vector;
-   (void*)cos2pix_vector;
-   (void*)x;
+   (void)sin2pix_vector;
+   (void)cos2pix_vector;
+   (void)x;
    fprintf(stderr, "%s: Failed because SSE2 is not supported, possibly because -msse2 flag wasn't used for compiling.\n", __func__);
    XLAL_ERROR(XLAL_EFAILED);
 #endif
@@ -1528,9 +1528,9 @@ INT4 sse_sin_cos_2PI_LUT_REAL4Vector(REAL4Vector *sin2pix_vector, REAL4Vector *c
 
    return XLAL_SUCCESS;
 #else
-   (void*)sin2pix_vector;
-   (void*)cos2pix_vector;
-   (void*)x;
+   (void)sin2pix_vector;
+   (void)cos2pix_vector;
+   (void)x;
    fprintf(stderr, "%s: Failed because SSE2 is not supported, possibly because -msse2 flag wasn't used for compiling.\n", __func__);
    XLAL_ERROR(XLAL_EFAILED);
 #endif
@@ -1683,8 +1683,8 @@ INT4 sse_exp_REAL8Vector(REAL8Vector *output, REAL8Vector *input)
 
    return XLAL_SUCCESS;
 #else
-   (void*)output;
-   (void*)input;
+   (void)output;
+   (void)input;
    fprintf(stderr, "%s: Failed because SSE2 is not supported, possibly because -msse2 flag wasn't used for compiling.\n", __func__);
    XLAL_ERROR(XLAL_EFAILED);
 #endif
@@ -1831,8 +1831,8 @@ INT4 sse_exp_REAL4Vector(REAL4Vector *output, REAL4Vector *input)
 
    return XLAL_SUCCESS;
 #else
-   (void*)output;
-   (void*)input;
+   (void)output;
+   (void)input;
    fprintf(stderr, "%s: Failed because SSE2 is not supported, possibly because -msse2 flag wasn't used for compiling.\n", __func__);
    XLAL_ERROR(XLAL_EFAILED);
 #endif
