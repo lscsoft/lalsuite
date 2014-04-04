@@ -130,17 +130,17 @@ REAL8 cdf_gamma_Pinv(REAL8 P, REAL8 a, REAL8 b)
 
    XLAL_CHECK_REAL8( P < 1.0, XLAL_EFPOVRFLW, "Input P of 1.0 or larger returns infinity\n" );
    if (P == 0.0) return 0.0;
-   
+
    /* Consider, small, large and intermediate cases separately.  The
     boundaries at 0.05 and 0.95 have not been optimised, but seem ok
     for an initial approximation.
-    
+
     BJG: These approximations aren't really valid, the relevant
     criterion is P*gamma(a+1) < 1. Need to rework these routines and
     use a single bisection style solver for all the inverse
     functions.
     */
-   
+
    if (P < 0.05) x = exp((lgamma(a) + log(P))/a);
    else if (P > 0.95) x = -log1p(-P) + lgamma(a);
    else {
@@ -148,59 +148,59 @@ REAL8 cdf_gamma_Pinv(REAL8 P, REAL8 a, REAL8 b)
       XLAL_CHECK_REAL8( xlalErrno == 0, XLAL_EFUNC );
       x = (xg < -0.5*sqrt(a)) ? a : sqrt(a) * xg + a;
    }
-   
+
    /* Use Lagrange's interpolation for E(x)/phi(x0) to work backwards
-    to an improved value of x (Abramowitz & Stegun, 3.6.6) 
-    
+    to an improved value of x (Abramowitz & Stegun, 3.6.6)
+
     where E(x)=P-integ(phi(u),u,x0,x) and phi(u) is the pdf.
     */
-   
+
    REAL8 lambda, dP, phi;
    UINT4 n = 0;
-   
+
    INT4 keepgoing = 1;
    while (keepgoing == 1) {
       REAL8 val = cdf_gamma_P(x, a, 1.0);
       XLAL_CHECK_REAL8( xlalErrno == 0, XLAL_EFUNC );
       dP = P - val;
       phi = ran_gamma_pdf(x, a, 1.0);
-      
+
       if (dP == 0.0 || n++ > 32) {
          XLAL_CHECK_REAL8( fabs(dP) <= sqrt(LAL_REAL4_EPS) * P, XLAL_EFPINEXCT, "Inverse failed to converge\n" );
          return b * x;
       }
-      
+
       lambda = dP / fmax (2.0 * fabs (dP / x), phi);
-      
-      
+
+
       REAL8 step0 = lambda;
       REAL8 step1 = -((a - 1.0) / x - 1.0) * lambda * lambda / 4.0;
-      
+
       REAL8 step = step0;
       if (fabs (step1) < 0.5 * fabs (step0)) step += step1;
-      
+
       if (x + step > 0) x += step;
       else x *= 0.5;
-      
+
       if (fabs (step0) > 1e-6 * x || fabs(step0 * phi) > 1e-6 * P) keepgoing = 1;
       else keepgoing = 0;
    }
 
    XLAL_CHECK_REAL8( fabs(dP) <= sqrt(LAL_REAL4_EPS) * P, XLAL_EFPINEXCT, "Inverse failed to converge\n" );
    return b * x;
-   
+
 }
 REAL8 cdf_gamma_Qinv(REAL8 Q, REAL8 a, REAL8 b)
 {
    REAL8 x;
-   
+
    if (Q == 1.0) return 0.0;
    XLAL_CHECK_REAL8( Q > 0.0 && Q < 1.0, XLAL_EFPOVRFLW, "Input P of 0.0 returns infinity\n" );
-   
+
    /* Consider, small, large and intermediate cases separately.  The
     boundaries at 0.05 and 0.95 have not been optimised, but seem ok
     for an initial approximation. */
-   
+
    if (Q < 0.05) x = -log(Q) + lgamma(a);
    else if (Q > 0.95) x = exp((lgamma(a) + log1p(-Q)) / a);
    else {
@@ -208,88 +208,88 @@ REAL8 cdf_gamma_Qinv(REAL8 Q, REAL8 a, REAL8 b)
       XLAL_CHECK_REAL8( xlalErrno == 0, XLAL_EFUNC );
       x = (xg < -0.5*sqrt (a)) ? a : sqrt (a) * xg + a;
    }
-   
+
    /* Use Lagrange's interpolation for E(x)/phi(x0) to work backwards
-    to an improved value of x (Abramowitz & Stegun, 3.6.6) 
-    
+    to an improved value of x (Abramowitz & Stegun, 3.6.6)
+
     where E(x)=P-integ(phi(u),u,x0,x) and phi(u) is the pdf.
     */
-   
+
    REAL8 lambda, dQ, phi;
    UINT4 n = 0;
-   
+
    INT4 keepgoing = 1;
    while (keepgoing == 1) {
       REAL8 val = cdf_gamma_Q(x, a, 1.0);
       XLAL_CHECK_REAL8( xlalErrno == 0, XLAL_EFUNC );
       dQ = Q - val;
       phi = ran_gamma_pdf(x, a, 1.0);
-      
+
       if (dQ == 0.0 || n++ > 32) return b * x;
-      
+
       lambda = -dQ / fmax (2 * fabs (dQ / x), phi);
-      
+
       REAL8 step0 = lambda;
       REAL8 step1 = -((a - 1) / x - 1) * lambda * lambda / 4.0;
-      
+
       REAL8 step = step0;
       if (fabs (step1) < 0.5 * fabs (step0)) step += step1;
-      
+
       if (x + step > 0) x += step;
       else x /= 2.0;
-      
+
       if (fabs (step0) > 1e-6 * x) keepgoing = 1;
       else keepgoing = 0;
    }
-   
+
    return b * x;
 }
 REAL8 cdf_ugaussian_Pinv(REAL8 P)
 {
    REAL8 r, x, pp;
-   
+
    REAL8 dP = P - 0.5;
 
    XLAL_CHECK_REAL8( P != 1.0, XLAL_EFPOVRFLW );
    XLAL_CHECK_REAL8( P != 0.0, XLAL_EFPOVRFLW );
-   
+
    if (fabsf(dP) <= 0.425) {
       x = twospect_small(dP);
       return x;
    }
-   
+
    pp = (P < 0.5) ? P : 1.0 - P;
-   
+
    r = sqrt(-log(pp));
-   
+
    if (r <= 5.0) x = twospect_intermediate(r);
    else x = twospect_tail(r);
-   
+
    if (P < 0.5) return -x;
    else return x;
-   
+
 }
 REAL8 cdf_ugaussian_Qinv(REAL8 Q)
 {
    REAL8 r, x, pp;
-   
+
    REAL8 dQ = Q - 0.5;
-   
+
    XLAL_CHECK_REAL8( Q != 1.0, XLAL_EFPOVRFLW );
    XLAL_CHECK_REAL8( Q != 0.0, XLAL_EFPOVRFLW );
-   
+
    if (fabs(dQ) <= 0.425) {
       x = twospect_small(dQ);
       return -x;
    }
-   
+
    pp = (Q < 0.5) ? Q : 1.0 - Q;
-   
+
    r = sqrt(-log(pp));
-   
+
    if (r <= 5.0) x = twospect_intermediate(r);
    else x = twospect_tail(r);
-   
+
    if (Q < 0.5) return x;
    else return -x;
 }
@@ -300,17 +300,17 @@ REAL8 twospect_small(REAL8 q)
       45921.953931549871457, 67265.770927008700853,
       33430.575583588128105, 2509.0809287301226727
    };
-   
+
    const REAL8 b[8] = { 1.0, 42.313330701600911252,
       687.1870074920579083, 5394.1960214247511077,
       21213.794301586595867, 39307.89580009271061,
       28729.085735721942674, 5226.495278852854561
    };
-   
+
    REAL8 r = 0.180625 - q * q;
-   
+
    REAL8 x = q * rat_eval(a, 8, b, 8, r);
-   
+
    return x;
 }
 REAL8 twospect_intermediate(REAL8 r)
@@ -320,15 +320,15 @@ REAL8 twospect_intermediate(REAL8 r)
       1.27045825245236838258, 0.24178072517745061177,
       0.0227238449892691845833, 7.7454501427834140764e-4
    };
-   
+
    const REAL8 b[] = { 1.0, 2.05319162663775882187,
       1.6763848301838038494, 0.68976733498510000455,
       0.14810397642748007459, 0.0151986665636164571966,
       5.475938084995344946e-4, 1.05075007164441684324e-9
    };
-   
+
    REAL8 x = rat_eval(a, 8, b, 8, (r - 1.6));
-   
+
    return x;
 }
 REAL8 twospect_tail(REAL8 r)
@@ -338,41 +338,41 @@ REAL8 twospect_tail(REAL8 r)
       0.026532189526576123093, 0.0012426609473880784386,
       2.71155556874348757815e-5, 2.01033439929228813265e-7
    };
-   
+
    const REAL8 b[] = { 1.0, 0.59983220655588793769,
       0.13692988092273580531, 0.0148753612908506148525,
       7.868691311456132591e-4, 1.8463183175100546818e-5,
       1.4215117583164458887e-7, 2.04426310338993978564e-15
    };
-   
+
    REAL8 x = rat_eval(a, 8, b, 8, (r - 5.0));
-   
+
    return x;
 }
 REAL8 rat_eval(const REAL8 a[], const size_t na, const REAL8 b[], const size_t nb, const REAL8 x)
 {
    size_t i, j;
    REAL8 u, v, r;
-   
+
    u = a[na - 1];
-   
+
    for (i = na - 1; i > 0; i--) u = x * u + a[i - 1];
-   
+
    v = b[nb - 1];
-   
+
    for (j = nb - 1; j > 0; j--) v = x * v + b[j - 1];
-   
+
    r = u / v;
-   
+
    return r;
 }
 REAL8 cdf_gamma_P(REAL8 x, REAL8 a, REAL8 b)
 {
    REAL8 P;
    REAL8 y = x / b;
-   
+
    if (x <= 0.0) return 0.0;
-   
+
    if (y > a) {
       REAL8 val = sf_gamma_inc_Q(a, y);
       XLAL_CHECK_REAL8( xlalErrno == 0, XLAL_EFUNC );
@@ -381,33 +381,33 @@ REAL8 cdf_gamma_P(REAL8 x, REAL8 a, REAL8 b)
       P = sf_gamma_inc_P(a, y);
       XLAL_CHECK_REAL8( xlalErrno == 0, XLAL_EFUNC );
    }
-   
+
    return P;
 }
 REAL8 cdf_gamma_P_usingmatlab(REAL8 x, REAL8 a, REAL8 b)
 {
-   
+
    REAL8 P;
    REAL8 y = x / b;
-   
+
    if (x <= 0.0) return 0.0;
-   
+
    if (y > a) {
       REAL8 val = matlab_gamma_inc(y, a, 1);
       P = 1.0 - val;
    } else {
       P = matlab_gamma_inc(y, a, 0);
    }
-   
+
    return P;
 }
 REAL8 cdf_gamma_Q(REAL8 x, REAL8 a, REAL8 b)
 {
    REAL8 Q;
    REAL8 y = x / b;
-   
+
    if (x <= 0.0) return 1.0;
-   
+
    if (y < a) {
       REAL8 val = sf_gamma_inc_P(a, y);
       XLAL_CHECK_REAL8( xlalErrno == 0, XLAL_EFUNC );
@@ -416,24 +416,24 @@ REAL8 cdf_gamma_Q(REAL8 x, REAL8 a, REAL8 b)
       Q = sf_gamma_inc_Q(a, y);
       XLAL_CHECK_REAL8( xlalErrno == 0, XLAL_EFUNC );
    }
-   
+
    return Q;
 }
 REAL8 cdf_gamma_Q_usingmatlab(REAL8 x, REAL8 a, REAL8 b)
 {
-   
+
    REAL8 Q;
    REAL8 y = x / b;
-   
+
    if (x <= 0.0) return 1.0;
-   
+
    if (y < a) {
       REAL8 val = matlab_gamma_inc(y, a, 0);
       Q = 1.0 - val;
    } else {
       Q = matlab_gamma_inc(y, a, 1);
    }
-   
+
    return Q;
 }
 REAL8 ran_gamma_pdf(REAL8 x, REAL8 a, REAL8 b)
@@ -499,7 +499,7 @@ REAL8 matlab_gamma_inc(REAL8 x, REAL8 a, INT4 upper)
       if (upper==0) return 1.0-b;
       else return b;
    }
-   
+
 }
 REAL8 sf_gamma_inc_P(REAL8 a, REAL8 x)
 {
@@ -615,68 +615,68 @@ REAL8 sf_gamma_inc_Q(REAL8 a, REAL8 x)
 }
 REAL8 gamma_inc_P_series(REAL8 a, REAL8 x)
 {
-   
+
    INT4 nmax = 10000;
-   
+
    REAL8 D = gamma_inc_D(a, x);
    XLAL_CHECK_REAL8( xlalErrno == 0, XLAL_EFUNC );
-   
+
    /* Approximating the terms of the series using Stirling's
     approximation gives t_n = (x/a)^n * exp(-n(n+1)/(2a)), so the
     convergence condition is n^2 / (2a) + (1-(x/a) + (1/2a)) n >>
     -log(GSL_DBL_EPS) if we want t_n < O(1e-16) t_0. The condition
     below detects cases where the minimum value of n is > 5000 */
-   
+
    if (x > 0.995 * a && a > 1.0e5) { /* Difficult case: try continued fraction */
       REAL8 cf_res = sf_exprel_n_CF(a, x);
       XLAL_CHECK_REAL8( xlalErrno == 0, XLAL_EFUNC );
       return D * cf_res;
    }
-   
+
    /* Series would require excessive number of terms */
 
    XLAL_CHECK_REAL8( x <= (a + nmax), XLAL_EMAXITER, "gamma_inc_P_series x>>a exceeds range\n" );
-   
+
    /* Normal case: sum the series */
    REAL8 sum  = 1.0;
    REAL8 term = 1.0;
    REAL8 remainderval;
    INT4 n;
-   
+
    /* Handle lower part of the series where t_n is increasing, |x| > a+n */
-   
+
    INT4 nlow = (x > a) ? (x - a): 0;
-   
+
    for (n=1; n < nlow; n++) {
       term *= x/(a+n);
       sum  += term;
    }
-   
+
    /* Handle upper part of the series where t_n is decreasing, |x| < a+n */
-   
+
    for (/* n = previous n */ ; n<nmax; n++)  {
       term *= x/(a+n);
       sum  += term;
       if (fabs(term/sum) < LAL_REAL4_EPS) break;
    }
-   
+
    /*  Estimate remainder of series ~ t_(n+1)/(1-x/(a+n+1)) */
    REAL8 tnp1 = (x/(a+n)) * term;
    remainderval =  tnp1 / (1.0 - x/(a + n + 1.0));
-   
+
    REAL8 val = D * sum;
 
    XLAL_CHECK_REAL8( !(n == nmax && fabs(remainderval/sum) > sqrt(LAL_REAL4_EPS)), XLAL_EMAXITER, "gamma_inc_P_series_float failed to converge\n" );
-   
+
    return val;
-   
+
 }
 REAL8 gamma_inc_Q_series(REAL8 a, REAL8 x)
 {
    REAL8 term1;  /* 1 - x^a/Gamma(a+1) */
    REAL8 sum;    /* 1 + (a+1)/(a+2)(-x)/2! + (a+1)/(a+3)(-x)^2/3! + ... */
    REAL8 term2;  /* a temporary variable used at the end */
-   
+
    {
       /* Evaluate series for 1 - x^a/Gamma(a+1), small a
        */
@@ -742,10 +742,10 @@ REAL8 gamma_inc_Q_series(REAL8 a, REAL8 x)
       * ( 1.7702236517651670 + lnx)
       * ( 4.1231539047474080 + lnx)
       * ( 10.342627908148680 + lnx);
-      
+
       term1 = a*(c1+a*(c2+a*(c3+a*(c4+a*(c5+a*(c6+a*(c7+a*(c8+a*(c9+a*c10)))))))));
    }
-   
+
    {
       /* Evaluate the sum.
        */
@@ -753,7 +753,7 @@ REAL8 gamma_inc_Q_series(REAL8 a, REAL8 x)
       REAL8 t = 1.0;
       INT4 n;
       sum = 1.0;
-      
+
       for (n=1; n<nmax; n++) {
          t *= -x/(n+1.0);
          sum += (a+1.0)/(a+n+1.0)*t;
@@ -762,37 +762,37 @@ REAL8 gamma_inc_Q_series(REAL8 a, REAL8 x)
 
       XLAL_CHECK_REAL8( n != nmax, XLAL_EMAXITER, "Maximum iterations reached\n" );
    }
-   
+
    term2 = (1.0 - term1) * a/(a+1.0) * x * sum;
    return (term1 + term2);
-   
+
 }
 REAL8 twospect_cheb_eval(const cheb_series * cs, REAL8 x)
 {
-   
+
    INT4 j;
    REAL8 d  = 0.0;
    REAL8 dd = 0.0;
-   
+
    REAL8 y  = (2.0*x - cs->a - cs->b) / (cs->b - cs->a);
    REAL8 y2 = 2.0 * y;
-   
+
    for (j = cs->order; j>=1; j--) {
       REAL8 temp = d;
       d = y2*d - dd + cs->c[j];
       dd = temp;
    }
-   
+
    {
       d = y*d - dd + 0.5 * cs->c[0];
    }
-   
+
    return d;
-   
+
 }
 REAL8 gamma_inc_D(REAL8 a, REAL8 x)
 {
-   
+
    if (a < 10.0) {
       REAL8 lnr = a * log(x) - x - lgamma(a+1.0);
       return exp(lnr);
@@ -801,7 +801,7 @@ REAL8 gamma_inc_D(REAL8 a, REAL8 x)
       REAL8 ln_term;
       REAL8 term1;
       if (x < 0.5*a) {
-         REAL8 u = x/a;   
+         REAL8 u = x/a;
          REAL8 ln_u = log(u);
          ln_term = ln_u - u + 1.0;
       } else {
@@ -814,7 +814,7 @@ REAL8 gamma_inc_D(REAL8 a, REAL8 x)
       term1 = exp(a*ln_term)/sqrt(2.0*LAL_PI*a);
       return term1/gstar;
    }
-   
+
 }
 REAL8 twospect_sf_gammastar(REAL8 x)
 {
@@ -846,13 +846,13 @@ REAL8 twospect_sf_gammastar(REAL8 x)
       REAL8 xi = 1.0/x;
       return 1.0 + xi/12.0*(1.0 + xi/24.0*(1.0 - xi*(139.0/180.0 + 571.0/8640.0*xi)));
    } else return 1.0;
-   
+
 }
 REAL8 gammastar_ser(REAL8 x)
 {
    /* Use the Stirling series for the correction to Log(Gamma(x)),
     * which is better behaved and easier to compute than the
-    * regular Stirling series for Gamma(x). 
+    * regular Stirling series for Gamma(x).
     */
    const REAL8 y = 1.0/(x*x);
    const REAL8 c0 =  1.0/12.0;
@@ -880,12 +880,12 @@ REAL8 sf_exprel_n_CF(REAL8 N, REAL8 x)
    REAL8 a2 = -x;
    REAL8 b2 = N+1;
    REAL8 an, bn;
-   
+
    REAL8 fn;
-   
+
    REAL8 An = b1*Anm1 + a1*Anm2;   /* A1 */
    REAL8 Bn = b1*Bnm1 + a1*Bnm2;   /* B1 */
-   
+
    /* One explicit step, before we get to the main pattern. */
    n++;
    Anm2 = Anm1;
@@ -894,9 +894,9 @@ REAL8 sf_exprel_n_CF(REAL8 N, REAL8 x)
    Bnm1 = Bn;
    An = b2*Anm1 + a2*Anm2;   /* A2 */
    Bn = b2*Bnm1 + a2*Bnm2;   /* B2 */
-   
+
    fn = An/Bn;
-   
+
    while(n < maxiter) {
       REAL8 old_fn;
       REAL8 del;
@@ -909,7 +909,7 @@ REAL8 sf_exprel_n_CF(REAL8 N, REAL8 x)
       bn = N + n - 1;
       An = bn*Anm1 + an*Anm2;
       Bn = bn*Bnm1 + an*Bnm2;
-      
+
       if(fabs(An) > RECUR_BIG || fabs(Bn) > RECUR_BIG) {
          An /= RECUR_BIG;
          Bn /= RECUR_BIG;
@@ -918,33 +918,33 @@ REAL8 sf_exprel_n_CF(REAL8 N, REAL8 x)
          Anm2 /= RECUR_BIG;
          Bnm2 /= RECUR_BIG;
       }
-      
+
       old_fn = fn;
       fn = An/Bn;
       del = old_fn/fn;
-      
+
       if (fabs(del - 1.0) < 2.0*LAL_REAL4_EPS) break;
    }
 
    XLAL_CHECK_REAL8( n < maxiter, XLAL_EMAXITER, "Reached maximum number of iterations (5000)\n" );
-   
+
    return fn;
-   
+
 }
 REAL8 gamma_inc_Q_asymp_unif(REAL8 a, REAL8 x)
 {
-   
+
    REAL8 rta = sqrt(a);
    REAL8 eps = (x-a)/a;
-   
+
    REAL8 ln_term = gsl_sf_log_1plusx_mx(eps);  /* log(1+eps) - eps */
    REAL8 eta  = GSL_SIGN(eps) * sqrt(-2.0*ln_term);
-   
+
    REAL8 R;
    REAL8 c0, c1;
-   
+
    REAL8 erfcval = erfc(eta*rta/LAL_SQRT2);
-   
+
    if(fabs(eps) < 7.4009597974140505e-04) {
       c0 = -1.0/3.0 + eps*(1.0/12.0 - eps*(23.0/540.0 - eps*(353.0/12960.0 - eps*589.0/30240.0)));
       c1 = -1.0/540.0 - eps/288.0;
@@ -954,11 +954,11 @@ REAL8 gamma_inc_Q_asymp_unif(REAL8 a, REAL8 x)
       c0 = (1.0 - 1.0/rt_term)/eps;
       c1 = -(eta*eta*eta * (lam*lam + 10.0*lam + 1.0) - 12.0 * eps*eps*eps) / (12.0 * eta*eta*eta*eps*eps*eps);
    }
-   
+
    R = exp(-0.5*a*eta*eta)/(LAL_SQRT2*M_SQRTPI*rta) * (c0 + c1/a);
-   
+
    return (0.5 * erfcval + R);
-   
+
 }
 REAL8 gamma_inc_Q_CF(REAL8 a, REAL8 x)
 {
@@ -966,29 +966,29 @@ REAL8 gamma_inc_Q_CF(REAL8 a, REAL8 x)
    XLAL_CHECK_REAL8( xlalErrno == 0, XLAL_EFUNC );
    REAL8 F = gamma_inc_F_CF(a, x);
    XLAL_CHECK_REAL8( xlalErrno == 0, XLAL_EFUNC );
-   
+
    return (D * (a/x) * F);
-   
+
 }
 REAL8 gamma_inc_F_CF(REAL8 a, REAL8 x)
 {
    INT4 nmax  =  5000;
    const REAL8 smallval =  LAL_REAL8_EPS*LAL_REAL8_EPS*LAL_REAL8_EPS;
-   
+
    REAL8 hn = 1.0;           /* convergent */
    REAL8 Cn = 1.0 / smallval;
    REAL8 Dn = 1.0;
    INT4 n;
-   
+
    /* n == 1 has a_1, b_1, b_0 independent of a,x,
     so that has been done by hand                */
    for ( n = 2 ; n < nmax ; n++ ) {
       REAL8 an;
       REAL8 delta;
-      
+
       if(GSL_IS_ODD(n)) an = 0.5*(n-1)/x;
       else an = (0.5*n-a)/x;
-      
+
       Dn = 1.0 + an * Dn;
       if ( fabs(Dn) < smallval ) Dn = smallval;
       Cn = 1.0 + an/Cn;
@@ -1000,16 +1000,16 @@ REAL8 gamma_inc_F_CF(REAL8 a, REAL8 x)
    }
 
    XLAL_CHECK_REAL8( n < nmax, XLAL_EMAXITER );
-   
+
    return hn;
-   
+
 }
 REAL8 gamma_inc_Q_large_x(REAL8 a, REAL8 x)
 {
    const INT4 nmax = 100000;
-   
+
    REAL8 D = gamma_inc_D(a, x);
-   
+
    REAL8 sum  = 1.0;
    REAL8 term = 1.0;
    REAL8 last = 1.0;
@@ -1023,8 +1023,7 @@ REAL8 gamma_inc_Q_large_x(REAL8 a, REAL8 x)
    }
 
    XLAL_CHECK_REAL8( n < nmax, XLAL_EMAXITER );
-   
-   return (D * (a/x) * sum);
-   
-}
 
+   return (D * (a/x) * sum);
+
+}

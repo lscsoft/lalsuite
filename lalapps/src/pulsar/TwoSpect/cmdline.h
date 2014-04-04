@@ -31,7 +31,7 @@ extern "C" {
 
 #ifndef CMDLINE_PARSER_VERSION
 /** @brief the program version */
-#define CMDLINE_PARSER_VERSION "1.1.32"
+#define CMDLINE_PARSER_VERSION "1.2.0"
 #endif
 
 /** @brief Where the command line options are stored */
@@ -43,9 +43,6 @@ struct gengetopt_args_info
   char * config_arg;	/**< @brief Configuration file in gengetopt format for passing parameters.  */
   char * config_orig;	/**< @brief Configuration file in gengetopt format for passing parameters original value given at command line.  */
   const char *config_help; /**< @brief Configuration file in gengetopt format for passing parameters help description.  */
-  int laldebug_arg;	/**< @brief LAL debug level (default='0').  */
-  char * laldebug_orig;	/**< @brief LAL debug level original value given at command line.  */
-  const char *laldebug_help; /**< @brief LAL debug level help description.  */
   double Tobs_arg;	/**< @brief Total observation time (in seconds).  */
   char * Tobs_orig;	/**< @brief Total observation time (in seconds) original value given at command line.  */
   const char *Tobs_help; /**< @brief Total observation time (in seconds) help description.  */
@@ -192,6 +189,8 @@ struct gengetopt_args_info
   const char *fastchisqinv_help; /**< @brief Use a faster central chi-sq inversion function (roughly float precision instead of double) help description.  */
   int useSSE_flag;	/**< @brief Use SSE functions (caution: user needs to have compiled for SSE or program fails) (default=off).  */
   const char *useSSE_help; /**< @brief Use SSE functions (caution: user needs to have compiled for SSE or program fails) help description.  */
+  int useAVX_flag;	/**< @brief Use AVX functions (caution: user needs to have compiled for AVX or program fails) (default=off).  */
+  const char *useAVX_help; /**< @brief Use AVX functions (caution: user needs to have compiled for AVX or program fails) help description.  */
   int followUpOutsideULrange_flag;	/**< @brief Follow up outliers outside the range of the UL values (default=off).  */
   const char *followUpOutsideULrange_help; /**< @brief Follow up outliers outside the range of the UL values help description.  */
   char * timestampsFile_arg;	/**< @brief File to read timestamps from (file-format: lines with <seconds> <nanoseconds>; conflicts with --sftDir/--sftFile and --segmentFile options).  */
@@ -268,7 +267,6 @@ struct gengetopt_args_info
   unsigned int full_help_given ;	/**< @brief Whether full-help was given.  */
   unsigned int version_given ;	/**< @brief Whether version was given.  */
   unsigned int config_given ;	/**< @brief Whether config was given.  */
-  unsigned int laldebug_given ;	/**< @brief Whether laldebug was given.  */
   unsigned int Tobs_given ;	/**< @brief Whether Tobs was given.  */
   unsigned int Tcoh_given ;	/**< @brief Whether Tcoh was given.  */
   unsigned int SFToverlap_given ;	/**< @brief Whether SFToverlap was given.  */
@@ -319,6 +317,7 @@ struct gengetopt_args_info
   unsigned int FFTplanFlag_given ;	/**< @brief Whether FFTplanFlag was given.  */
   unsigned int fastchisqinv_given ;	/**< @brief Whether fastchisqinv was given.  */
   unsigned int useSSE_given ;	/**< @brief Whether useSSE was given.  */
+  unsigned int useAVX_given ;	/**< @brief Whether useAVX was given.  */
   unsigned int followUpOutsideULrange_given ;	/**< @brief Whether followUpOutsideULrange was given.  */
   unsigned int timestampsFile_given ;	/**< @brief Whether timestampsFile was given.  */
   unsigned int segmentFile_given ;	/**< @brief Whether segmentFile was given.  */

@@ -36,7 +36,6 @@ const char *gengetopt_args_info_full_help[] = {
   "      --full-help               Print help, including hidden options, and exit",
   "  -V, --version                 Print version and exit",
   "      --config=filename         Configuration file in gengetopt format for \n                                  passing parameters",
-  "  -d, --laldebug=INT            LAL debug level  (default=`0')",
   "\nObservational parameters:",
   "      --Tobs=DOUBLE             Total observation time (in seconds) [required]",
   "      --Tcoh=DOUBLE             SFT coherence time (in seconds) [required]",
@@ -94,6 +93,7 @@ const char *gengetopt_args_info_full_help[] = {
   "      --FFTplanFlag=INT         0=Estimate, 1=Measure, 2=Patient, 3=Exhaustive  \n                                  (possible values=\"0\", \"1\", \"2\", \"3\" \n                                  default=`1')",
   "      --fastchisqinv            Use a faster central chi-sq inversion function \n                                  (roughly float precision instead of double)  \n                                  (default=off)",
   "      --useSSE                  Use SSE functions (caution: user needs to have \n                                  compiled for SSE or program fails)  \n                                  (default=off)",
+  "      --useAVX                  Use AVX functions (caution: user needs to have \n                                  compiled for AVX or program fails)  \n                                  (default=off)",
   "      --followUpOutsideULrange  Follow up outliers outside the range of the UL \n                                  values  (default=off)",
   "\nInjection options:",
   "      --timestampsFile=path/filename\n                                File to read timestamps from (file-format: \n                                  lines with <seconds> <nanoseconds>; conflicts \n                                  with --sftDir/--sftFile and --segmentFile \n                                  options)",
@@ -263,7 +263,6 @@ void clear_given (struct gengetopt_args_info *args_info)
   args_info->full_help_given = 0 ;
   args_info->version_given = 0 ;
   args_info->config_given = 0 ;
-  args_info->laldebug_given = 0 ;
   args_info->Tobs_given = 0 ;
   args_info->Tcoh_given = 0 ;
   args_info->SFToverlap_given = 0 ;
@@ -314,6 +313,7 @@ void clear_given (struct gengetopt_args_info *args_info)
   args_info->FFTplanFlag_given = 0 ;
   args_info->fastchisqinv_given = 0 ;
   args_info->useSSE_given = 0 ;
+  args_info->useAVX_given = 0 ;
   args_info->followUpOutsideULrange_given = 0 ;
   args_info->timestampsFile_given = 0 ;
   args_info->segmentFile_given = 0 ;
@@ -351,8 +351,6 @@ void clear_args (struct gengetopt_args_info *args_info)
   FIX_UNUSED (args_info);
   args_info->config_arg = NULL;
   args_info->config_orig = NULL;
-  args_info->laldebug_arg = 0;
-  args_info->laldebug_orig = NULL;
   args_info->Tobs_orig = NULL;
   args_info->Tcoh_orig = NULL;
   args_info->SFToverlap_orig = NULL;
@@ -424,6 +422,7 @@ void clear_args (struct gengetopt_args_info *args_info)
   args_info->FFTplanFlag_orig = NULL;
   args_info->fastchisqinv_flag = 0;
   args_info->useSSE_flag = 0;
+  args_info->useAVX_flag = 0;
   args_info->followUpOutsideULrange_flag = 0;
   args_info->timestampsFile_arg = NULL;
   args_info->timestampsFile_orig = NULL;
@@ -473,59 +472,59 @@ void init_args_info(struct gengetopt_args_info *args_info)
   args_info->full_help_help = gengetopt_args_info_full_help[1] ;
   args_info->version_help = gengetopt_args_info_full_help[2] ;
   args_info->config_help = gengetopt_args_info_full_help[3] ;
-  args_info->laldebug_help = gengetopt_args_info_full_help[4] ;
-  args_info->Tobs_help = gengetopt_args_info_full_help[6] ;
-  args_info->Tcoh_help = gengetopt_args_info_full_help[7] ;
-  args_info->SFToverlap_help = gengetopt_args_info_full_help[8] ;
-  args_info->t0_help = gengetopt_args_info_full_help[9] ;
-  args_info->fmin_help = gengetopt_args_info_full_help[10] ;
-  args_info->fspan_help = gengetopt_args_info_full_help[11] ;
-  args_info->IFO_help = gengetopt_args_info_full_help[12] ;
+  args_info->Tobs_help = gengetopt_args_info_full_help[5] ;
+  args_info->Tcoh_help = gengetopt_args_info_full_help[6] ;
+  args_info->SFToverlap_help = gengetopt_args_info_full_help[7] ;
+  args_info->t0_help = gengetopt_args_info_full_help[8] ;
+  args_info->fmin_help = gengetopt_args_info_full_help[9] ;
+  args_info->fspan_help = gengetopt_args_info_full_help[10] ;
+  args_info->IFO_help = gengetopt_args_info_full_help[11] ;
   args_info->IFO_min = 1;
   args_info->IFO_max = 1;
-  args_info->avesqrtSh_help = gengetopt_args_info_full_help[13] ;
-  args_info->blksize_help = gengetopt_args_info_full_help[14] ;
-  args_info->sftType_help = gengetopt_args_info_full_help[15] ;
-  args_info->outdirectory_help = gengetopt_args_info_full_help[17] ;
-  args_info->outfilename_help = gengetopt_args_info_full_help[18] ;
-  args_info->configCopy_help = gengetopt_args_info_full_help[19] ;
-  args_info->ULfilename_help = gengetopt_args_info_full_help[20] ;
-  args_info->normRMSoutput_help = gengetopt_args_info_full_help[21] ;
-  args_info->sftDir_help = gengetopt_args_info_full_help[22] ;
-  args_info->sftFile_help = gengetopt_args_info_full_help[23] ;
-  args_info->ephemEarth_help = gengetopt_args_info_full_help[24] ;
-  args_info->ephemSun_help = gengetopt_args_info_full_help[25] ;
-  args_info->gaussNoiseWithSFTgaps_help = gengetopt_args_info_full_help[26] ;
-  args_info->Pmin_help = gengetopt_args_info_full_help[28] ;
-  args_info->Pmax_help = gengetopt_args_info_full_help[29] ;
-  args_info->dfmin_help = gengetopt_args_info_full_help[30] ;
-  args_info->dfmax_help = gengetopt_args_info_full_help[31] ;
-  args_info->skyRegion_help = gengetopt_args_info_full_help[32] ;
-  args_info->skyRegionFile_help = gengetopt_args_info_full_help[33] ;
-  args_info->linPolAngle_help = gengetopt_args_info_full_help[34] ;
-  args_info->harmonicNumToSearch_help = gengetopt_args_info_full_help[35] ;
-  args_info->periodHarmToCheck_help = gengetopt_args_info_full_help[36] ;
-  args_info->periodFracToCheck_help = gengetopt_args_info_full_help[37] ;
-  args_info->templateSearch_help = gengetopt_args_info_full_help[38] ;
-  args_info->ihsfactor_help = gengetopt_args_info_full_help[40] ;
-  args_info->ihsfar_help = gengetopt_args_info_full_help[41] ;
-  args_info->ihsfom_help = gengetopt_args_info_full_help[42] ;
-  args_info->ihsfomfar_help = gengetopt_args_info_full_help[43] ;
-  args_info->keepOnlyTopNumIHS_help = gengetopt_args_info_full_help[44] ;
-  args_info->tmplfar_help = gengetopt_args_info_full_help[45] ;
-  args_info->minTemplateLength_help = gengetopt_args_info_full_help[46] ;
-  args_info->maxTemplateLength_help = gengetopt_args_info_full_help[47] ;
-  args_info->ULfmin_help = gengetopt_args_info_full_help[49] ;
-  args_info->ULfspan_help = gengetopt_args_info_full_help[50] ;
-  args_info->ULminimumDeltaf_help = gengetopt_args_info_full_help[51] ;
-  args_info->ULmaximumDeltaf_help = gengetopt_args_info_full_help[52] ;
-  args_info->allULvalsPerSkyLoc_help = gengetopt_args_info_full_help[53] ;
-  args_info->markBadSFTs_help = gengetopt_args_info_full_help[55] ;
-  args_info->simpleBandRejection_help = gengetopt_args_info_full_help[56] ;
-  args_info->lineDetection_help = gengetopt_args_info_full_help[57] ;
-  args_info->FFTplanFlag_help = gengetopt_args_info_full_help[59] ;
-  args_info->fastchisqinv_help = gengetopt_args_info_full_help[60] ;
-  args_info->useSSE_help = gengetopt_args_info_full_help[61] ;
+  args_info->avesqrtSh_help = gengetopt_args_info_full_help[12] ;
+  args_info->blksize_help = gengetopt_args_info_full_help[13] ;
+  args_info->sftType_help = gengetopt_args_info_full_help[14] ;
+  args_info->outdirectory_help = gengetopt_args_info_full_help[16] ;
+  args_info->outfilename_help = gengetopt_args_info_full_help[17] ;
+  args_info->configCopy_help = gengetopt_args_info_full_help[18] ;
+  args_info->ULfilename_help = gengetopt_args_info_full_help[19] ;
+  args_info->normRMSoutput_help = gengetopt_args_info_full_help[20] ;
+  args_info->sftDir_help = gengetopt_args_info_full_help[21] ;
+  args_info->sftFile_help = gengetopt_args_info_full_help[22] ;
+  args_info->ephemEarth_help = gengetopt_args_info_full_help[23] ;
+  args_info->ephemSun_help = gengetopt_args_info_full_help[24] ;
+  args_info->gaussNoiseWithSFTgaps_help = gengetopt_args_info_full_help[25] ;
+  args_info->Pmin_help = gengetopt_args_info_full_help[27] ;
+  args_info->Pmax_help = gengetopt_args_info_full_help[28] ;
+  args_info->dfmin_help = gengetopt_args_info_full_help[29] ;
+  args_info->dfmax_help = gengetopt_args_info_full_help[30] ;
+  args_info->skyRegion_help = gengetopt_args_info_full_help[31] ;
+  args_info->skyRegionFile_help = gengetopt_args_info_full_help[32] ;
+  args_info->linPolAngle_help = gengetopt_args_info_full_help[33] ;
+  args_info->harmonicNumToSearch_help = gengetopt_args_info_full_help[34] ;
+  args_info->periodHarmToCheck_help = gengetopt_args_info_full_help[35] ;
+  args_info->periodFracToCheck_help = gengetopt_args_info_full_help[36] ;
+  args_info->templateSearch_help = gengetopt_args_info_full_help[37] ;
+  args_info->ihsfactor_help = gengetopt_args_info_full_help[39] ;
+  args_info->ihsfar_help = gengetopt_args_info_full_help[40] ;
+  args_info->ihsfom_help = gengetopt_args_info_full_help[41] ;
+  args_info->ihsfomfar_help = gengetopt_args_info_full_help[42] ;
+  args_info->keepOnlyTopNumIHS_help = gengetopt_args_info_full_help[43] ;
+  args_info->tmplfar_help = gengetopt_args_info_full_help[44] ;
+  args_info->minTemplateLength_help = gengetopt_args_info_full_help[45] ;
+  args_info->maxTemplateLength_help = gengetopt_args_info_full_help[46] ;
+  args_info->ULfmin_help = gengetopt_args_info_full_help[48] ;
+  args_info->ULfspan_help = gengetopt_args_info_full_help[49] ;
+  args_info->ULminimumDeltaf_help = gengetopt_args_info_full_help[50] ;
+  args_info->ULmaximumDeltaf_help = gengetopt_args_info_full_help[51] ;
+  args_info->allULvalsPerSkyLoc_help = gengetopt_args_info_full_help[52] ;
+  args_info->markBadSFTs_help = gengetopt_args_info_full_help[54] ;
+  args_info->simpleBandRejection_help = gengetopt_args_info_full_help[55] ;
+  args_info->lineDetection_help = gengetopt_args_info_full_help[56] ;
+  args_info->FFTplanFlag_help = gengetopt_args_info_full_help[58] ;
+  args_info->fastchisqinv_help = gengetopt_args_info_full_help[59] ;
+  args_info->useSSE_help = gengetopt_args_info_full_help[60] ;
+  args_info->useAVX_help = gengetopt_args_info_full_help[61] ;
   args_info->followUpOutsideULrange_help = gengetopt_args_info_full_help[62] ;
   args_info->timestampsFile_help = gengetopt_args_info_full_help[64] ;
   args_info->segmentFile_help = gengetopt_args_info_full_help[65] ;
@@ -692,7 +691,6 @@ cmdline_parser_release (struct gengetopt_args_info *args_info)
 
   free_string_field (&(args_info->config_arg));
   free_string_field (&(args_info->config_orig));
-  free_string_field (&(args_info->laldebug_orig));
   free_string_field (&(args_info->Tobs_orig));
   free_string_field (&(args_info->Tcoh_orig));
   free_string_field (&(args_info->SFToverlap_orig));
@@ -854,8 +852,6 @@ cmdline_parser_dump(FILE *outfile, struct gengetopt_args_info *args_info)
     write_into_file(outfile, "version", 0, 0 );
   if (args_info->config_given)
     write_into_file(outfile, "config", args_info->config_orig, 0);
-  if (args_info->laldebug_given)
-    write_into_file(outfile, "laldebug", args_info->laldebug_orig, 0);
   if (args_info->Tobs_given)
     write_into_file(outfile, "Tobs", args_info->Tobs_orig, 0);
   if (args_info->Tcoh_given)
@@ -955,6 +951,8 @@ cmdline_parser_dump(FILE *outfile, struct gengetopt_args_info *args_info)
     write_into_file(outfile, "fastchisqinv", 0, 0 );
   if (args_info->useSSE_given)
     write_into_file(outfile, "useSSE", 0, 0 );
+  if (args_info->useAVX_given)
+    write_into_file(outfile, "useAVX", 0, 0 );
   if (args_info->followUpOutsideULrange_given)
     write_into_file(outfile, "followUpOutsideULrange", 0, 0 );
   if (args_info->timestampsFile_given)
@@ -1685,7 +1683,6 @@ cmdline_parser_internal (
         { "full-help",	0, NULL, 0 },
         { "version",	0, NULL, 'V' },
         { "config",	1, NULL, 0 },
-        { "laldebug",	1, NULL, 'd' },
         { "Tobs",	1, NULL, 0 },
         { "Tcoh",	1, NULL, 0 },
         { "SFToverlap",	1, NULL, 0 },
@@ -1736,6 +1733,7 @@ cmdline_parser_internal (
         { "FFTplanFlag",	1, NULL, 0 },
         { "fastchisqinv",	0, NULL, 0 },
         { "useSSE",	0, NULL, 0 },
+        { "useAVX",	0, NULL, 0 },
         { "followUpOutsideULrange",	0, NULL, 0 },
         { "timestampsFile",	1, NULL, 0 },
         { "segmentFile",	1, NULL, 0 },
@@ -1768,7 +1766,7 @@ cmdline_parser_internal (
         { 0,  0, 0, 0 }
       };
 
-      c = getopt_long (argc, argv, "hVd:", long_options, &option_index);
+      c = getopt_long (argc, argv, "hV", long_options, &option_index);
 
       if (c == -1) break;	/* Exit from `while (1)' loop.  */
 
@@ -1784,18 +1782,6 @@ cmdline_parser_internal (
           cmdline_parser_free (&local_args_info);
           exit (EXIT_SUCCESS);
 
-        case 'd':	/* LAL debug level.  */
-        
-        
-          if (update_arg( (void *)&(args_info->laldebug_arg), 
-               &(args_info->laldebug_orig), &(args_info->laldebug_given),
-              &(local_args_info.laldebug_given), optarg, 0, "0", ARG_INT,
-              check_ambiguity, override, 0, 0,
-              "laldebug", 'd',
-              additional_error))
-            goto failure;
-        
-          break;
 
         case 0:	/* Long option with no short option */
           if (strcmp (long_options[option_index].name, "full-help") == 0) {
@@ -2499,6 +2485,18 @@ cmdline_parser_internal (
             if (update_arg((void *)&(args_info->useSSE_flag), 0, &(args_info->useSSE_given),
                 &(local_args_info.useSSE_given), optarg, 0, 0, ARG_FLAG,
                 check_ambiguity, override, 1, 0, "useSSE", '-',
+                additional_error))
+              goto failure;
+          
+          }
+          /* Use AVX functions (caution: user needs to have compiled for AVX or program fails).  */
+          else if (strcmp (long_options[option_index].name, "useAVX") == 0)
+          {
+          
+          
+            if (update_arg((void *)&(args_info->useAVX_flag), 0, &(args_info->useAVX_given),
+                &(local_args_info.useAVX_given), optarg, 0, 0, ARG_FLAG,
+                check_ambiguity, override, 1, 0, "useAVX", '-',
                 additional_error))
               goto failure;
           
