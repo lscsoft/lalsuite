@@ -305,7 +305,9 @@ static const LALStatus swiglal_empty_LALStatus = {0, NULL, NULL, NULL, NULL, 0, 
 // to check whether PTR own its own memory (and release any parents).
 %define %swiglal_call_dtor(DTORFUNC, PTR)
 if (swiglal_release_parent(PTR)) {
-  DTORFUNC(PTR);
+  XLALClearErrno();
+  (void)DTORFUNC(PTR);
+  XLALClearErrno();
 }
 %enddef
 
@@ -1367,7 +1369,7 @@ typedef struct {} NAME;
 %ignore DTORFUNC;
 %extend NAME {
   ~NAME() {
-    DTORFUNC($self);
+    (void)DTORFUNC($self);
   }
 }
 %enddef
