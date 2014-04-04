@@ -410,6 +410,7 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
     else:
       self.dataseed=None
     # Set up necessary job files.
+    self.prenodes={}
     self.datafind_job = pipeline.LSCDataFindJob(self.cachepath,self.logpath,self.config,dax=self.is_dax())
     self.datafind_job.set_universe('vanilla')
     self.datafind_job.add_opt('url-type','file')
@@ -795,19 +796,19 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
       ifos=event.ifos
     if ifos is None:
       ifos=self.ifos
-    prenode={}
+    #prenode={}
     romweightsnode={}
-    for ifo in ifos:
-      prenode[ifo]=self.EngineNode(self.preengine_job)
+      #for ifo in ifos:
+    prenode=self.EngineNode(self.preengine_job)
     node=self.EngineNode(self.engine_jobs[tuple(ifos)])
     end_time=event.trig_time
     node.set_trig_time(end_time)
-    for ifo in ifos:
-      prenode[ifo].set_trig_time(end_time)
+      #for ifo in ifos:
+    prenode.set_trig_time(end_time)
     randomseed=random.randint(1,2**31)
     node.set_seed(randomseed)
-    for ifo in ifos:
-      prenode[ifo].set_seed(randomseed)
+      #for ifo in ifos:
+    prenode.set_seed(randomseed)
     srate=0
     if event.srate:
       srate=event.srate
@@ -815,14 +816,14 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
       srate=ast.literal_eval(self.config.get('lalinference','srate'))
     if srate is not 0:
       node.set_srate(srate)
-      for ifo in ifos:
-        prenode[ifo].set_srate(srate)
+        #for ifo in ifos:
+      prenode.set_srate(srate)
     if event.trigSNR:
       node.set_trigSNR(event.trigSNR)
     if self.dataseed:
       node.set_dataseed(self.dataseed+event.event_id)
-      for ifo in ifos:
-        prenode[ifo].set_dataseed(self.dataseed+event.event_id)
+        #for ifo in ifos:
+      prenode.set_dataseed(self.dataseed+event.event_id)
     gotdata=0
     for ifo in ifos:
       if event.timeslides.has_key(ifo):
@@ -831,80 +832,98 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
         slide=0
       for seg in self.segments[ifo]:
         if end_time >= seg.start() and end_time < seg.end():
-            if not self.config.has_option('lalinference','fake-cache'):
-              prenode[ifo].add_ifo_data(ifo,seg,self.channels[ifo],timeslide=slide)
-              romweightsnode[ifo]=self.add_rom_weights_node(ifo,prenode[ifo])
-              if self.config.has_option('lalinference','roq'):
-                gotdata+=node.add_ifo_romweights(ifo,seg,self.channels[ifo],timeslide=slide,weightsnode=romweightsnode[ifo])
-              else:
-                gotdata+=node.add_ifo_data(ifo,seg,self.channels[ifo],timeslide=slide)
-            else:
-              fakecachefiles=ast.literal_eval(self.config.get('lalinference','fake-cache'))
-              prenode[ifo].add_fake_ifo_data(ifo,seg,fakecachefiles[ifo],timeslide=slide)
-              gotdata+=node.add_fake_ifo_data(ifo,seg,fakecachefiles[ifo],timeslide=slide)
+          if not self.config.has_option('lalinference','fake-cache'):
+            if self.config.has_option('lalinference','roq'):
+              prenode.add_ifo_data(ifo,seg,self.channels[ifo],timeslide=slide)
+            gotdata+=node.add_ifo_data(ifo,seg,self.channels[ifo],timeslide=slide)
+          else:
+            fakecachefiles=ast.literal_eval(self.config.get('lalinference','fake-cache'))
+            if self.config.has_option('lalinference','roq'):
+              prenode.add_fake_ifo_data(ifo,seg,fakecachefiles[ifo],timeslide=slide)
+            gotdata+=node.add_fake_ifo_data(ifo,seg,fakecachefiles[ifo],timeslide=slide)
     if self.config.has_option('lalinference','psd-xmlfile'):
       psdpath=os.path.realpath(self.config.get('lalinference','psd-xmlfile'))
       node.psds=get_xml_psds(psdpath,ifos,os.path.join(self.basepath,'PSDs'),end_time=end_time)
-      for ifo in ifos:
-        prenode[ifo].psds=get_xml_psds(psdpath,ifos,os.path.join(self.basepath,'PSDs'),end_time=end_time)
+      #for ifo in ifos:
+      prenode.psds=get_xml_psds(psdpath,ifos,os.path.join(self.basepath,'PSDs'),end_time=end_time)
       if len(ifos)==0:
         node.ifos=node.cachefiles.keys()
-        for ifo in node.ifos:
-          prenode[ifo].ifos[0]=node.ifos[ifos.index(ifo)]
+        prenode.ifos=prenode.cachefiles.keys()
+          #for ifo in node.ifos:
+          #prenode[ifo].ifos[0]=node.ifos[ifos.index(ifo)]
       else:
         node.ifos=ifos
-        for ifo in node.ifos:
-          prenode[ifo].ifos[0]=node.ifos[ifos.index(ifo)]
+          #for ifo in node.ifos:
+#prenode[ifo].ifos[0]=node.ifos[ifos.index(ifo)]
+        prenode.ifos=ifos
       gotdata=1
     if self.config.has_option('input','gid'):
       if os.path.isfile(os.path.join(self.basepath,'psd.xml.gz')):
         psdpath=os.path.join(self.basepath,'psd.xml.gz')
         node.psds=get_xml_psds(psdpath,ifos,os.path.join(self.basepath,'PSDs'),end_time=None)
-        for ifo in ifos:
-          prenode[ifo].psds=get_xml_psds(psdpath,ifos,os.path.join(self.basepath,'PSDs'),end_time=None)
+          #for ifo in ifos:
+        prenode.psds=get_xml_psds(psdpath,ifos,os.path.join(self.basepath,'PSDs'),end_time=None)
     if self.config.has_option('lalinference','flow'):
       node.flows=ast.literal_eval(self.config.get('lalinference','flow'))
-      for ifo in ifos:
-        prenode[ifo].flows[ifo]=node.flows[ifo]
+        #for ifo in ifos:
+#prenode[ifo].flows[ifo]=node.flows[ifo]
+      prenode.flows=ast.literal_eval(self.config.get('lalinference','flow'))
     if event.fhigh:
       for ifo in ifos:
         node.fhighs[ifo]=str(event.fhigh)
-        prenode[ifo].fhighs[ifo]=str(event.fhigh)
+        prenode.fhighs[ifo]=str(event.fhigh)
     if self.config.has_option('lalinference','fhigh'):
       node.fhighs=ast.literal_eval(self.config.get('lalinference','fhigh'))
-      for ifo in ifos:
-        prenode[ifo].fhighs[ifo]=node.fhighs[ifo]
-    for ifo in ifos:
-      prenode[ifo].set_max_psdlength(self.config.getint('input','max-psd-length'))
-      prenode[ifo].set_padding(self.config.getint('input','padding'))
+      prenode.fhighs=ast.literal_eval(self.config.get('lalinference','fhigh'))
+#for ifo in ifos:
+      prenode.set_max_psdlength(self.config.getint('input','max-psd-length'))
+      prenode.set_padding(self.config.getint('input','padding'))
       #prenode[ifo].set_output_file('/dev/null')
-      prenode[ifo].add_var_arg('--Niter 1')
-      prenode[ifo].add_var_arg('--data-dump')
+      prenode.add_var_arg('--Niter 1')
+      prenode.add_var_arg('--data-dump')
       if self.config.has_option('lalinference','seglen'):
-        prenode[ifo].set_seglen(self.config.getint('lalinference','seglen'))
+        prenode.set_seglen(self.config.getint('lalinference','seglen'))
       elif self.config.has_option('engine','seglen'):
-        prenode[ifo].set_seglen(self.config.getint('engine','seglen'))
+        prenode.set_seglen(self.config.getint('engine','seglen'))
       else:
-        prenode[ifo].set_seglen(event.duration)
+        prenode.set_seglen(event.duration)
     # Add the nodes it depends on
     for seg in node.scisegs.values():
       dfnode=seg.get_df_node()
-      if dfnode is not None and dfnode not in self.get_nodes() and not self.config.has_option('lalinference','fake-cache'):
-        self.add_node(dfnode)
+      if dfnode is not None and dfnode not in self.get_nodes():
+        if not self.config.has_option('lalinference','fake-cache'):
+          self.add_node(dfnode)
+        print node.scisegs.keys()
+        print seg.id()
+        print self.prenodes.keys()
+        #if self.config.has_option('lalinference','roq') and gotdata and prenode not in self.get_nodes():
         if self.config.has_option('lalinference','roq'):
-          ifo_index=str(dfnode.get_observatory())+'1'
-          self.add_node(prenode[ifo_index])
-          self.add_node(romweightsnode[ifo_index])
-          if self.config.has_option('input','injection-file'):
-            freqDataFile=os.path.join(self.basepath,ifo_index+'-freqDataWithInjection.dat')
-          else:
-            freqDataFile=os.path.join(self.basepath,ifo_index+'-freqData.dat')
-          prenode[ifo_index].add_output_file(freqDataFile)
-          prenode[ifo_index].add_output_file(os.path.join(self.basepath,ifo_index+'-PDS.dat'))
-          romweightsnode[ifo_index].add_var_arg('-d '+freqDataFile)
-          romweightsnode[ifo_index].add_input_file(freqDataFile)
-          romweightsnode[ifo_index].add_var_arg('-p '+os.path.join(self.basepath,ifo_index+'-PSD.dat'))
-          romweightsnode[ifo_index].add_input_file(os.path.join(self.basepath,ifo_index+'-PSD.dat'))
+          if gotdata and seg.id() not in self.prenodes.keys():
+            if prenode not in self.get_nodes():
+              print "add prenode"
+              self.add_node(prenode)
+              for ifo in ifos:
+                romweightsnode[ifo]=self.add_rom_weights_node(ifo,prenode)
+                self.add_node(romweightsnode[ifo])
+                if self.config.has_option('input','injection-file'):
+                  freqDataFile=os.path.join(self.basepath,ifo+'-freqDataWithInjection.dat')
+                else:
+                  freqDataFile=os.path.join(self.basepath,ifo+'-freqData.dat')
+                prenode.add_output_file(freqDataFile)
+                prenode.add_output_file(os.path.join(self.basepath,ifo+'-PSD.dat'))
+                romweightsnode[ifo].add_var_arg('-d '+freqDataFile)
+                romweightsnode[ifo].add_input_file(freqDataFile)
+                romweightsnode[ifo].add_var_arg('-p '+os.path.join(self.basepath,ifo+'-PSD.dat'))
+                romweightsnode[ifo].add_input_file(os.path.join(self.basepath,ifo+'-PSD.dat'))
+                romweightsnode[ifo].add_output_file(os.path.join(self.basepath,'weights_'+ifo+'.dat'))
+        #node.add_parent(romweightsnode[ifo])
+            self.prenodes[seg.id()]=(prenode,romweightsnode)
+          print self.prenodes[seg.id()][1].keys()
+            #if prenode not in self.get_nodes():
+          for ifo in ifos:
+            print "add parent "+ifo
+            node.add_parent(self.prenodes[seg.id()][1][ifo])
+
     if gotdata:
       self.add_node(node)
     else:
@@ -1193,21 +1212,6 @@ class EngineNode(pipeline.CondorDAGNode):
           "LDR did not return any LFNs for query: check ifo and frame type"
         for lfn in filename:
             self.lfns.append(lfn)
-        
-  
-
-  def add_ifo_romweights(self,ifo,sciseg,channelname,timeslide=0,weightsnode=None):
-    self.ifos.append(ifo)
-    self.scisegs[ifo]=sciseg
-    df_node=sciseg.get_df_node()
-    if df_node is not None and weightsnode is not None:
-      self.add_parent(weightsnode)
-      self.cachefiles[ifo]=df_node.get_output_files()[0]
-      self.add_input_file(self.cachefiles[ifo])
-      self.timeslides[ifo]=timeslide
-      self.channels[ifo]=channelname
-      return 1
-    else: return 0
 
   def finalize(self):
     if not self.__finaldata:
