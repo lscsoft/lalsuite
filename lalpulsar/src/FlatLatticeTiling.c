@@ -967,15 +967,6 @@ int XLALSetFlatLatticeTypeAndMetric(
     }
   }
 
-  for (size_t i = 0; i < n; ++i) {
-    double phys_lower = 0, phys_upper = 0;
-    FLT_GetBounds(tiling, i, 0, tiling->phys_offset, &phys_lower, &phys_upper);
-    phys_lower *= gsl_vector_get(tiling->phys_scale, i);
-    phys_lower += gsl_vector_get(tiling->phys_offset, i);
-    phys_upper *= gsl_vector_get(tiling->phys_scale, i);
-    phys_upper += gsl_vector_get(tiling->phys_offset, i);
-  }
-
   // Check metric is symmetric, and copy rescaled metric
   for (size_t i = 0; i < n; ++i) {
     const double scale_i = gsl_vector_get(tiling->phys_scale, i);
