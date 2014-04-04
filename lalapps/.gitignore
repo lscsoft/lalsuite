@@ -240,6 +240,7 @@ src/pulsar/Tools/lalapps_PrintDetectorState
 src/pulsar/TwoSpect/lalapps_TwoSpect
 src/pulsar/crosscorr/lalapps_pulsar_crosscorr
 src/pulsar/crosscorr/lalapps_pulsar_crosscorr_v2
+src/pulsar/crosscorr/toplist_crosscorr.dat
 src/pulsar/fscan/lalapps_spec_avg
 src/pulsar/hough/src/lalapps_DriveHoughMulti
 src/pulsar/hough/src/lalapps_DriveHough_v3
