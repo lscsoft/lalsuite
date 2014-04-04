@@ -796,18 +796,14 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
       ifos=event.ifos
     if ifos is None:
       ifos=self.ifos
-    #prenode={}
     romweightsnode={}
-      #for ifo in ifos:
     prenode=self.EngineNode(self.preengine_job)
     node=self.EngineNode(self.engine_jobs[tuple(ifos)])
     end_time=event.trig_time
     node.set_trig_time(end_time)
-      #for ifo in ifos:
     prenode.set_trig_time(end_time)
     randomseed=random.randint(1,2**31)
     node.set_seed(randomseed)
-      #for ifo in ifos:
     prenode.set_seed(randomseed)
     srate=0
     if event.srate:
@@ -816,13 +812,11 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
       srate=ast.literal_eval(self.config.get('lalinference','srate'))
     if srate is not 0:
       node.set_srate(srate)
-        #for ifo in ifos:
       prenode.set_srate(srate)
     if event.trigSNR:
       node.set_trigSNR(event.trigSNR)
     if self.dataseed:
       node.set_dataseed(self.dataseed+event.event_id)
-        #for ifo in ifos:
       prenode.set_dataseed(self.dataseed+event.event_id)
     gotdata=0
     for ifo in ifos:
@@ -844,29 +838,21 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
     if self.config.has_option('lalinference','psd-xmlfile'):
       psdpath=os.path.realpath(self.config.get('lalinference','psd-xmlfile'))
       node.psds=get_xml_psds(psdpath,ifos,os.path.join(self.basepath,'PSDs'),end_time=end_time)
-      #for ifo in ifos:
       prenode.psds=get_xml_psds(psdpath,ifos,os.path.join(self.basepath,'PSDs'),end_time=end_time)
       if len(ifos)==0:
         node.ifos=node.cachefiles.keys()
         prenode.ifos=prenode.cachefiles.keys()
-          #for ifo in node.ifos:
-          #prenode[ifo].ifos[0]=node.ifos[ifos.index(ifo)]
       else:
         node.ifos=ifos
-          #for ifo in node.ifos:
-#prenode[ifo].ifos[0]=node.ifos[ifos.index(ifo)]
         prenode.ifos=ifos
       gotdata=1
     if self.config.has_option('input','gid'):
       if os.path.isfile(os.path.join(self.basepath,'psd.xml.gz')):
         psdpath=os.path.join(self.basepath,'psd.xml.gz')
         node.psds=get_xml_psds(psdpath,ifos,os.path.join(self.basepath,'PSDs'),end_time=None)
-          #for ifo in ifos:
         prenode.psds=get_xml_psds(psdpath,ifos,os.path.join(self.basepath,'PSDs'),end_time=None)
     if self.config.has_option('lalinference','flow'):
       node.flows=ast.literal_eval(self.config.get('lalinference','flow'))
-        #for ifo in ifos:
-#prenode[ifo].flows[ifo]=node.flows[ifo]
       prenode.flows=ast.literal_eval(self.config.get('lalinference','flow'))
     if event.fhigh:
       for ifo in ifos:
@@ -875,7 +861,6 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
     if self.config.has_option('lalinference','fhigh'):
       node.fhighs=ast.literal_eval(self.config.get('lalinference','fhigh'))
       prenode.fhighs=ast.literal_eval(self.config.get('lalinference','fhigh'))
-#for ifo in ifos:
       prenode.set_max_psdlength(self.config.getint('input','max-psd-length'))
       prenode.set_padding(self.config.getint('input','padding'))
       #prenode[ifo].set_output_file('/dev/null')
@@ -888,19 +873,14 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
       else:
         prenode.set_seglen(event.duration)
     # Add the nodes it depends on
-    for seg in node.scisegs.values():
+    for ifokey, seg in node.scisegs.items():
       dfnode=seg.get_df_node()
       if dfnode is not None and dfnode not in self.get_nodes():
         if not self.config.has_option('lalinference','fake-cache'):
           self.add_node(dfnode)
-        print node.scisegs.keys()
-        print seg.id()
-        print self.prenodes.keys()
-        #if self.config.has_option('lalinference','roq') and gotdata and prenode not in self.get_nodes():
         if self.config.has_option('lalinference','roq'):
           if gotdata and seg.id() not in self.prenodes.keys():
             if prenode not in self.get_nodes():
-              print "add prenode"
               self.add_node(prenode)
               for ifo in ifos:
                 romweightsnode[ifo]=self.add_rom_weights_node(ifo,prenode)
@@ -916,13 +896,8 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
                 romweightsnode[ifo].add_var_arg('-p '+os.path.join(self.basepath,ifo+'-PSD.dat'))
                 romweightsnode[ifo].add_input_file(os.path.join(self.basepath,ifo+'-PSD.dat'))
                 romweightsnode[ifo].add_output_file(os.path.join(self.basepath,'weights_'+ifo+'.dat'))
-        #node.add_parent(romweightsnode[ifo])
             self.prenodes[seg.id()]=(prenode,romweightsnode)
-          print self.prenodes[seg.id()][1].keys()
-            #if prenode not in self.get_nodes():
-          for ifo in ifos:
-            print "add parent "+ifo
-            node.add_parent(self.prenodes[seg.id()][1][ifo])
+          node.add_parent(self.prenodes[seg.id()][1][ifokey])
 
     if gotdata:
       self.add_node(node)
