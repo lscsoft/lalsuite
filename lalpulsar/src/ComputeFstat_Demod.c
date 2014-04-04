@@ -196,10 +196,10 @@ XLALComputeFaFb ( Fcomponents *FaFb,		      	/* [out] Fa,Fb (and possibly atoms)
       XLAL_ERROR ( XLAL_EINVAL);
     }
 
-  if ( PULSAR_MAX_SPINS > NUM_FACT )
+  if ( PULSAR_MAX_SPINS > LAL_FACT_MAX )
     {
       XLALPrintError ("\nInverse factorials table only up to order s=%d, can't handle %d spin-order\n\n",
-		     NUM_FACT, PULSAR_MAX_SPINS - 1 );
+		     LAL_FACT_MAX, PULSAR_MAX_SPINS - 1 );
       XLAL_ERROR ( XLAL_EINVAL);
     }
 #endif
@@ -286,9 +286,9 @@ XLALComputeFaFb ( Fcomponents *FaFb,		      	/* [out] Fa,Fb (and possibly atoms)
 	for (s=0; s <= spdnOrder; s++)
 	  {
 	    REAL8 fsdot = fkdot[s];
-	    Dphi_alpha += fsdot * Tas * inv_fact[s]; 	/* here: DT^s/s! */
+	    Dphi_alpha += fsdot * Tas * LAL_FACT_INV[s]; 	/* here: DT^s/s! */
 	    Tas *= DT_al;				/* now: DT^(s+1) */
-	    phi_alpha += fsdot * Tas * inv_fact[s+1];
+	    phi_alpha += fsdot * Tas * LAL_FACT_INV[s+1];
 	  } /* for s <= spdnOrder */
 
 	/* Step 3: apply global factors to complete Dphi_alpha */
@@ -477,10 +477,10 @@ XLALComputeFaFbCmplx ( Fcomponents *FaFb,		/* [out] Fa,Fb (and possibly atoms) r
       XLAL_ERROR ( XLAL_EINVAL);
     }
 
-  if ( PULSAR_MAX_SPINS > NUM_FACT )
+  if ( PULSAR_MAX_SPINS > LAL_FACT_MAX )
     {
       XLALPrintError ("\nInverse factorials table only up to order s=%d, can't handle %d spin-order\n\n",
-		     NUM_FACT, PULSAR_MAX_SPINS - 1 );
+		     LAL_FACT_MAX, PULSAR_MAX_SPINS - 1 );
       XLAL_ERROR ( XLAL_EINVAL);
     }
   if ( params->upsampling > 1 ) {
@@ -550,9 +550,9 @@ XLALComputeFaFbCmplx ( Fcomponents *FaFb,		/* [out] Fa,Fb (and possibly atoms) r
 	for (s=0; s <= spdnOrder; s++)
 	  {
 	    REAL8 fsdot = fkdot[s];
-	    Dphi_alpha += fsdot * Tas * inv_fact[s]; 	/* here: DT^s/s! */
+	    Dphi_alpha += fsdot * Tas * LAL_FACT_INV[s]; 	/* here: DT^s/s! */
 	    Tas *= DT_al;				/* now: DT^(s+1) */
-	    phi_alpha += fsdot * Tas * inv_fact[s+1];
+	    phi_alpha += fsdot * Tas * LAL_FACT_INV[s+1];
 	  } /* for s <= spdnOrder */
 
 	/* Step 3: apply global factors to complete Dphi_alpha */
@@ -729,10 +729,10 @@ XLALComputeFaFbXavie ( Fcomponents *FaFb,		/* [out] Fa,Fb (and possibly atoms) r
       XLAL_ERROR ( XLAL_EINVAL);
     }
 
-  if ( PULSAR_MAX_SPINS > NUM_FACT )
+  if ( PULSAR_MAX_SPINS > LAL_FACT_MAX )
     {
       XLALPrintError ("\nInverse factorials table only up to order s=%d, can't handle %d spin-order\n\n",
-		     NUM_FACT, PULSAR_MAX_SPINS - 1 );
+		     LAL_FACT_MAX, PULSAR_MAX_SPINS - 1 );
       XLAL_ERROR ( XLAL_EINVAL);
     }
   if ( params->returnAtoms )
@@ -797,9 +797,9 @@ XLALComputeFaFbXavie ( Fcomponents *FaFb,		/* [out] Fa,Fb (and possibly atoms) r
 	for (s=0; s <= spdnOrder; s++)
 	  {
 	    REAL8 fsdot = fkdot[s];
-	    Dphi_alpha += fsdot * Tas * inv_fact[s]; 	/* here: DT^s/s! */
+	    Dphi_alpha += fsdot * Tas * LAL_FACT_INV[s]; 	/* here: DT^s/s! */
 	    Tas *= DT_al;				/* now: DT^(s+1) */
-	    phi_alpha += fsdot * Tas * inv_fact[s+1];
+	    phi_alpha += fsdot * Tas * LAL_FACT_INV[s+1];
 	  } /* for s <= spdnOrder */
 
 	/* Step 3: apply global factors to complete Dphi_alpha */
@@ -1274,13 +1274,13 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
           Dphi_alpha += fsdot * TAS_invfact_s;  /* here: DT^s/s! */
 #ifdef EAH_CHECK_FINITE_DPHI
           if (!finite(Dphi_alpha)) {
-            LogPrintf(LOG_CRITICAL, "non-finite Dphi_alpha:%e, alpha:%d, spind#:%d, fkdot:%e, Tas:%e, inv_fact[s]:%e, inv_fact[s+1]:%e, phi_alpha:%e. DT_al:%e\n",
-                      Dphi_alpha, alpha, s, fkdot[s], Tas, inv_fact[s], inv_fact[s+1], phi_alpha, DT_al);
+            LogPrintf(LOG_CRITICAL, "non-finite Dphi_alpha:%e, alpha:%d, spind#:%d, fkdot:%e, Tas:%e, LAL_FACT_INV[s]:%e, LAL_FACT_INV[s+1]:%e, phi_alpha:%e. DT_al:%e\n",
+                      Dphi_alpha, alpha, s, fkdot[s], Tas, LAL_FACT_INV[s], LAL_FACT_INV[s+1], phi_alpha, DT_al);
             XLAL_ERROR("LocalXLALComputeFaFb", XLAL_EDOM);
           }
 #endif
           Tas *= DT_al;				/* now: DT^(s+1) */
-          TAS_invfact_s= Tas * inv_fact[s+1];
+          TAS_invfact_s= Tas * LAL_FACT_INV[s+1];
           phi_alpha += fsdot * TAS_invfact_s;
         } /* for s <= spdnOrder */
 
