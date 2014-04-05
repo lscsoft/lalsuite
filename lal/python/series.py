@@ -64,11 +64,11 @@ def _build_series(series, dim_names, comment, delta_name, delta_unit):
     else:
         data = np.row_stack((np.arange(len(series.data.data)) * delta, series.data.data))
     a = ligolw_array.from_array(series.name, data, dim_names=dim_names)
-    a.setAttribute(u"Unit", unicode(lal.UnitToString(series.sampleUnits)))
+    a.Unit = lal.UnitToString(series.sampleUnits)
     dim0 = a.getElementsByTagName(ligolw.Dim.tagName)[0]
-    dim0.setAttribute(u"Unit", delta_unit)
-    dim0.setAttribute(u"Start", ligolw_types.FormatFunc[u"real_8"](series.f0))
-    dim0.setAttribute(u"Scale", ligolw_types.FormatFunc[u"real_8"](delta))
+    dim0.Unit = delta_unit
+    dim0.Start = ligolw_types.FormatFunc[u"real_8"](series.f0)
+    dim0.Scale = ligolw_types.FormatFunc[u"real_8"](delta)
     elem.appendChild(a)
     return elem
 
@@ -90,22 +90,22 @@ def _parse_series(elem, creatorfunc, delta_target_unit_string):
 
     # Parse units of f0 field
     f0_unit = lal.Unit()
-    f0_unit = lal.ParseUnitString(f0_unit, str(f0.get_unit()))
+    f0_unit = lal.ParseUnitString(f0_unit, str(f0.Unit))
 
     # Parse units of deltaF field
     delta_unit = lal.Unit()
-    delta_unit = lal.ParseUnitString(delta_unit, str(dims[0].getAttribute(u"Unit")))
+    delta_unit = lal.ParseUnitString(delta_unit, str(dims[0].Unit))
 
     # Parse units of data
     sample_unit = lal.Unit()
-    sample_unit = lal.ParseUnitString(sample_unit, str(a.getAttribute(u"Unit")))
+    sample_unit = lal.ParseUnitString(sample_unit, str(a.Unit))
 
     # Initialize data structure
     series = creatorfunc(
-        str(a.getAttribute(u"Name")),
+        str(a.Name),
         epoch,
         float(f0.pcdata) * lal.UnitRatio(f0_unit, inverse_seconds_unit),
-        float(dims[0].getAttribute(u"Scale")) * lal.UnitRatio(delta_unit, delta_target_unit),
+        float(dims[0].Scale) * lal.UnitRatio(delta_unit, delta_target_unit),
         sample_unit,
         len(a.array.T)
     )
@@ -235,7 +235,7 @@ def read_psd_xmldoc(xmldoc):
         parse_REAL8FrequencySeries(elem))
         for elem in xmldoc.getElementsByTagName(ligolw.LIGO_LW.tagName)
         if elem.hasAttribute(u"Name")
-        and elem.getAttribute(u"Name") == u"REAL8FrequencySeries")
+        and elem.Name == u"REAL8FrequencySeries")
     # Interpret empty frequency series as None
     for k in out:
         if len(out[k].data.data) == 0:
