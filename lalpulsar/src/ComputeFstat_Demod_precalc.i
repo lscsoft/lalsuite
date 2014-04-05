@@ -49,8 +49,8 @@
     __asm __volatile
       (
        "movaps %[D7766],%%xmm0    \n\t"
-       "movaps %[D5544],%%xmm1	\n\t"
-       "movups (%[Xa]),%%xmm2	\n\t"
+       "movaps %[D5544],%%xmm1  \n\t"
+       "movups (%[Xa]),%%xmm2   \n\t"
        "movups 0x10(%[Xa]),%%xmm3 \n\t"
        "movss  %[kappa_s],%%xmm7  \n\t"
        "shufps $0x0,%%xmm7,%%xmm7 \n\t"

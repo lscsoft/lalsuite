@@ -66,10 +66,10 @@ SetupFstat_Common(
 
 // Common input data for F-statistic algorithms
 typedef struct {
-  UINT4 numDetectors;					// Number of detectors
-  CHAR detectorNames[PULSAR_MAX_DETECTORS][3];		// Names of detectors
-  REAL8 Fnorm;						// F-statistic normalisation factor
-  MultiNoiseWeights *multiWeights;			// Multi-detector noise weights
+  UINT4 numDetectors;                                   // Number of detectors
+  CHAR detectorNames[PULSAR_MAX_DETECTORS][3];          // Names of detectors
+  REAL8 Fnorm;                                          // F-statistic normalisation factor
+  MultiNoiseWeights *multiWeights;                      // Multi-detector noise weights
 } FstatInputData_Common;
 
 // Input data specific to F-statistic algorithms
@@ -78,9 +78,9 @@ typedef struct tagFstatInputData_Resamp FstatInputData_Resamp;
 
 // Internal definition of input data structure
 struct tagFstatInputData {
-  FstatInputData_Common common;				// Common input data
-  FstatInputData_Demod* demod;				// Demodulation input data
-  FstatInputData_Resamp* resamp;			// Resampling input data
+  FstatInputData_Common common;                         // Common input data
+  FstatInputData_Demod* demod;                          // Demodulation input data
+  FstatInputData_Resamp* resamp;                        // Resampling input data
 };
 
 ///// Include F-statistic algorithm implementations /////
@@ -522,7 +522,7 @@ XLALEstimatePulsarAmplitudeParams(
   Ed = Mmunu->Ed;
   Dd = Ad * Bd - Cd * Cd - Ed * Ed;
 
-  normAmu = 2.0 / sqrt(2.0 * Mmunu->Sinv_Tsft);	/* generally *very* small!! */
+  normAmu = 2.0 / sqrt(2.0 * Mmunu->Sinv_Tsft); /* generally *very* small!! */
 
   /* ----- GSL memory allocation ----- */
   XLAL_CHECK ( ( x_mu = gsl_vector_calloc (4) ) != NULL, XLAL_ENOMEM );
@@ -535,10 +535,10 @@ XLALEstimatePulsarAmplitudeParams(
   XLAL_CHECK ( ( tmp2 = gsl_matrix_calloc (4, 4) ) != NULL, XLAL_ENOMEM );
 
   /* ----- fill vector x_mu */
-  gsl_vector_set (x_mu, 0,   creal(Fa) );	/* x_1 */
+  gsl_vector_set (x_mu, 0,   creal(Fa) );       /* x_1 */
   gsl_vector_set (x_mu, 1,   creal(Fb) );        /* x_2 */
-  gsl_vector_set (x_mu, 2, - cimag(Fa) );	/* x_3 */
-  gsl_vector_set (x_mu, 3, - cimag(Fb) );	/* x_4 */
+  gsl_vector_set (x_mu, 2, - cimag(Fa) );       /* x_3 */
+  gsl_vector_set (x_mu, 3, - cimag(Fb) );       /* x_4 */
 
   /* ----- fill matrix M^{mu,nu} [symmetric: use UPPER HALF ONLY!!]*/
   gsl_matrix_set (M_Mu_Nu, 0, 0,   Bd / Dd );
@@ -575,7 +575,7 @@ XLALEstimatePulsarAmplitudeParams(
   disc = sqrt ( SQ(Asq) - 4.0 * SQ(Da) );
 
   Ap2  = 0.5 * ( Asq + disc );
-  aPlus = sqrt(Ap2);		/* not yet normalized */
+  aPlus = sqrt(Ap2);            /* not yet normalized */
 
   Ac2 = 0.5 * ( Asq - disc );
   aCross = sqrt( Ac2 );
@@ -587,8 +587,8 @@ XLALEstimatePulsarAmplitudeParams(
   b2 =   A3h + beta * A2h;
   b3 = - A1h + beta * A4h ;
 
-  psi  = 0.5 * atan ( b1 /  b2 );	/* in [-pi/4,pi/4] (gauge used also by TDS) */
-  phi0 =       atan ( b2 / b3 );	/* in [-pi/2,pi/2] */
+  psi  = 0.5 * atan ( b1 /  b2 );       /* in [-pi/4,pi/4] (gauge used also by TDS) */
+  phi0 =       atan ( b2 / b3 );        /* in [-pi/2,pi/2] */
 
   /* Fix remaining sign-ambiguity by checking sign of reconstructed A1 */
   A1check = aPlus * cos(phi0) * cos(2.0*psi) - aCross * sin(phi0) * sin(2*psi);
@@ -633,28 +633,28 @@ XLALEstimatePulsarAmplitudeParams(
     REAL8 A4hat = - aCross * sinphi0 * sin2psi + h0 * cosphi0 * cos2psi;
 
     /* ----- A1 =   aPlus * cosphi0 * cos2psi - aCross * sinphi0 * sin2psi; ----- */
-    gsl_matrix_set (Jh_Mu_nu, 0, 0,   A1h / h0 );	/* dA1/h0 */
+    gsl_matrix_set (Jh_Mu_nu, 0, 0,   A1h / h0 );       /* dA1/h0 */
     gsl_matrix_set (Jh_Mu_nu, 0, 1,   A1hat );          /* dA1/dcosi */
-    gsl_matrix_set (Jh_Mu_nu, 0, 2,   A3h );		/* dA1/dphi0 */
-    gsl_matrix_set (Jh_Mu_nu, 0, 3, - 2.0 * A2h );	/* dA1/dpsi */
+    gsl_matrix_set (Jh_Mu_nu, 0, 2,   A3h );            /* dA1/dphi0 */
+    gsl_matrix_set (Jh_Mu_nu, 0, 3, - 2.0 * A2h );      /* dA1/dpsi */
 
     /* ----- A2 =   aPlus * cosphi0 * sin2psi + aCross * sinphi0 * cos2psi; ----- */
-    gsl_matrix_set (Jh_Mu_nu, 1, 0,   A2h / h0 );	/* dA2/h0 */
+    gsl_matrix_set (Jh_Mu_nu, 1, 0,   A2h / h0 );       /* dA2/h0 */
     gsl_matrix_set (Jh_Mu_nu, 1, 1,   A2hat );          /* dA2/dcosi */
-    gsl_matrix_set (Jh_Mu_nu, 1, 2,   A4h );		/* dA2/dphi0 */
-    gsl_matrix_set (Jh_Mu_nu, 1, 3,   2.0 * A1h );	/* dA2/dpsi */
+    gsl_matrix_set (Jh_Mu_nu, 1, 2,   A4h );            /* dA2/dphi0 */
+    gsl_matrix_set (Jh_Mu_nu, 1, 3,   2.0 * A1h );      /* dA2/dpsi */
 
     /* ----- A3 = - aPlus * sinphi0 * cos2psi - aCross * cosphi0 * sin2psi; ----- */
-    gsl_matrix_set (Jh_Mu_nu, 2, 0,   A3h / h0 );	/* dA3/h0 */
+    gsl_matrix_set (Jh_Mu_nu, 2, 0,   A3h / h0 );       /* dA3/h0 */
     gsl_matrix_set (Jh_Mu_nu, 2, 1,   A3hat );          /* dA3/dcosi */
-    gsl_matrix_set (Jh_Mu_nu, 2, 2, - A1h );		/* dA3/dphi0 */
-    gsl_matrix_set (Jh_Mu_nu, 2, 3, - 2.0 * A4h );	/* dA3/dpsi */
+    gsl_matrix_set (Jh_Mu_nu, 2, 2, - A1h );            /* dA3/dphi0 */
+    gsl_matrix_set (Jh_Mu_nu, 2, 3, - 2.0 * A4h );      /* dA3/dpsi */
 
     /* ----- A4 = - aPlus * sinphi0 * sin2psi + aCross * cosphi0 * cos2psi; ----- */
-    gsl_matrix_set (Jh_Mu_nu, 3, 0,   A4h / h0 );	/* dA4/h0 */
+    gsl_matrix_set (Jh_Mu_nu, 3, 0,   A4h / h0 );       /* dA4/h0 */
     gsl_matrix_set (Jh_Mu_nu, 3, 1,   A4hat );          /* dA4/dcosi */
-    gsl_matrix_set (Jh_Mu_nu, 3, 2, - A2h );		/* dA4/dphi0 */
-    gsl_matrix_set (Jh_Mu_nu, 3, 3,   2.0 * A3h );	/* dA4/dpsi */
+    gsl_matrix_set (Jh_Mu_nu, 3, 2, - A2h );            /* dA4/dphi0 */
+    gsl_matrix_set (Jh_Mu_nu, 3, 3,   2.0 * A3h );      /* dA4/dpsi */
   }
 
   /* ----- compute inverse matrices Jh^{-1} by LU-decomposition ----- */
