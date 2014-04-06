@@ -3512,7 +3512,7 @@ void LALInferenceSetupClusteredKDEProposalsFromFile(LALInferenceRunState *runSta
 
                 for (item = runState->currentParams->head; item; item = item->next) {
                     if (!strcmp(item->name, internal_param_name) &&
-                        (item->vary == LALINFERENCE_PARAM_LINEAR || item->vary == LALINFERENCE_PARAM_CIRCULAR)) {
+                        LALInferenceCheckVariableNonFixed(runState->currentParams, item->name)) {
                         nValidCols++;
                         validCols[j] = 1;
                         LALInferenceAddVariable(backwardClusterParams, item->name, item->value, item->type, item->vary);
@@ -3538,6 +3538,7 @@ void LALInferenceSetupClusteredKDEProposalsFromFile(LALInferenceRunState *runSta
             /* Downsample PTMCMC file to have independent samples */
             if (ptmcmc) {
                 INT4 acl = (INT4)LALInferenceComputeMaxAutoCorrLen(sampleArray, nInSamps, nValidCols);
+                if (acl < 1) acl = 1;
                 UINT4 downsampled_size = ceil((REAL8)nInSamps/acl);
                 REAL8 *downsampled_array = (REAL8 *)XLALMalloc(downsampled_size * nValidCols * sizeof(REAL8));
                 printf("Chain %i downsampling to achieve %i samples.\n", chain, downsampled_size);
@@ -3800,8 +3801,14 @@ void LALInferenceSetupClusteredKDEProposalFromRun(LALInferenceRunState *runState
     LALInferenceThinnedBufferToArray(runState, DEsamples, step);
 
     /* Keep track of clustered parameter names */
+    LALInferenceVariables *backwardClusterParams = XLALCalloc(1, sizeof(LALInferenceVariables));
     LALInferenceVariables *clusterParams = XLALCalloc(1, sizeof(LALInferenceVariables));
-    LALInferenceCopyVariables(runState->currentParams, clusterParams);
+    LALInferenceVariableItem *item;
+    for (item = runState->currentParams->head; item; item = item->next)
+        if (LALInferenceCheckVariableNonFixed(runState->currentParams, item->name))
+            LALInferenceAddVariable(backwardClusterParams, item->name, item->value, item->type, item->vary);
+    for (item = backwardClusterParams->head; item; item = item->next)
+        LALInferenceAddVariable(clusterParams, item->name, item->value, item->type, item->vary);
 
     /* Build the proposal */
     LALInferenceInitClusteredKDEProposal(runState, proposal, DEsamples[0], nPoints, clusterParams, clusteredKDEProposalName, weight);
@@ -3811,6 +3818,9 @@ void LALInferenceSetupClusteredKDEProposalFromRun(LALInferenceRunState *runState
         LALInferenceAddClusteredKDEProposalToSet(runState, proposal);
     else
         XLALFree(proposal);
+
+    LALInferenceClearVariables(backwardClusterParams);
+    XLALFree(backwardClusterParams);
 
     /* The proposal copies the data, so the local array can be freed */
     XLALFree(temp);
