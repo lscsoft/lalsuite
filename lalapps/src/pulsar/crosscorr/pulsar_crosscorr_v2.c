@@ -112,7 +112,7 @@ int main(int argc, char *argv[]){
   SFTIndexList *sftIndices = NULL;
   SFTPairIndexList *sftPairs = NULL;
   REAL8Vector *shiftedFreqs = NULL;
-  UINT4Vector *lowestBins = NULL;
+  INT4Vector *lowestBins = NULL;
   REAL8Vector *kappaValues = NULL;
   REAL8Vector *signalPhases = NULL;
 
@@ -385,7 +385,7 @@ int main(int argc, char *argv[]){
     LogPrintf ( LOG_CRITICAL, "%s: XLALCreateREAL8Vector() failed with errno=%d\n", __func__, xlalErrno );
     XLAL_ERROR( XLAL_EFUNC );
   }
-  if ((lowestBins = XLALCreateUINT4Vector ( numSFTs ) ) == NULL){
+  if ((lowestBins = XLALCreateINT4Vector ( numSFTs ) ) == NULL){
     LogPrintf ( LOG_CRITICAL, "%s: XLALCreateUINT4Vector() failed with errno=%d\n", __func__, xlalErrno );
     XLAL_ERROR( XLAL_EFUNC );
   }
@@ -449,7 +449,7 @@ int main(int argc, char *argv[]){
 
   XLALDestroyREAL8Vector ( signalPhases );
   XLALDestroyREAL8Vector ( kappaValues );
-  XLALDestroyUINT4Vector ( lowestBins );
+  XLALDestroyINT4Vector ( lowestBins );
   XLALDestroyREAL8Vector ( shiftedFreqs );
   XLALDestroyMultiSSBtimes ( multiBinaryTimes );
   XLALDestroyMultiSSBtimes ( multiSSBTimes );
