@@ -92,6 +92,7 @@ import glue.lal
 import lal
 import lal.series
 import lalsimulation
+import pylal.progress
 
 # BAYESTAR imports.
 from lalinference.bayestar import filter
@@ -101,7 +102,10 @@ from lalinference.bayestar import timing
 import numpy as np
 
 
+progress = pylal.progress.ProgressBar()
+
 # Open output file.
+progress.update(-1, 'setting up output document')
 out_xmldoc = ligolw.Document()
 out_xmldoc.appendChild(ligolw.LIGO_LW())
 
@@ -117,6 +121,7 @@ summary = ligolw_search_summary.append_search_summary(out_xmldoc, process,
     inseg=all_time, outseg=all_time)
 
 # Read PSDs.
+progress.update(-1, 'reading ' + opts.reference_psd)
 xmldoc = ligolw_utils.load_filename(opts.reference_psd)
 psds = lal.series.read_psd_xmldoc(xmldoc)
 psds = dict(
@@ -124,6 +129,7 @@ psds = dict(
     for key, psd in psds.iteritems() if psd is not None)
 
 # Read injection file.
+progress.update(-1, 'reading ' + infilename)
 xmldoc = ligolw_utils.load_filename(infilename)
 
 # Extract simulation table from injection file.
@@ -164,7 +170,7 @@ detectors = [lalsimulation.DetectorPrefixToLALDetector(ifo)
 responses = [det.response for det in detectors]
 locations = [det.location for det in detectors]
 
-for sim_inspiral in sim_inspiral_table:
+for sim_inspiral in progress.iterate(sim_inspiral_table):
 
     # Unpack some values from the row in the table.
     m1 = sim_inspiral.mass1
@@ -294,6 +300,7 @@ for sim_inspiral in sim_inspiral_table:
 
 
 # Record process end time.
+progress.update(-1, 'writing ' + opts.output)
 ligolw_process.set_process_end_time(process)
 
 # Write output file.
