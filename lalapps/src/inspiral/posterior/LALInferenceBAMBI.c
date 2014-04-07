@@ -679,7 +679,7 @@ void initializeMN(LALInferenceRunState *runState)
     /* Set up the appropriate functions for MultiNest */
     runState->algorithm=&LALInferenceMultiNestAlgorithm;
 
-
+    UINT4 malmquist = 0;
     /* Set up the prior function */
     if(LALInferenceGetProcParamVal(commandLine,"--skyLocPrior")){
         runState->prior=&LALInferenceInspiralSkyLocPrior;
@@ -690,6 +690,10 @@ void initializeMN(LALInferenceRunState *runState)
     } else if (LALInferenceGetProcParamVal(commandLine, "--AnalyticPrior")) {
         runState->prior = &LALInferenceAnalyticNullPrior;
         runState->CubeToPrior = &LALInferenceAnalyticCubeToPrior;
+    } else if (LALInferenceGetProcParamVal(commandLine, "--MalmquistPrior")){
+        runState->prior = &LALInferenceInspiralPrior;
+        runState->CubeToPrior = &LALInferenceInspiralPriorCubeToPrior;
+        initializeMalmquistPrior(runState);
     } else {
         runState->prior = &LALInferenceInspiralPriorNormalised;
         runState->CubeToPrior = &LALInferenceInspiralPriorNormalisedCubeToPrior;
