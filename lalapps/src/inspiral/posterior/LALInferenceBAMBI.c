@@ -582,6 +582,37 @@ Initialisation arguments:\n\
     return(irs);
 }
 
+void initializeMalmquistPrior(LALInferenceRunState *runState)
+{
+  
+  REAL8 malmquist_loudest = 0.0;
+  REAL8 malmquist_second_loudest = 5.0;
+  REAL8 malmquist_network = 0.0;
+  ProcessParamsTable *commandLine=runState->commandLine;
+  ProcessParamsTable *ppt=NULL;
+  
+  ppt=LALInferenceGetProcParamVal(commandLine,"--malmquist-loudest-snr");
+  if(ppt)
+    malmquist_loudest = atof(ppt->value);
+  ppt=LALInferenceGetProcParamVal(commandLine,"--malmquist-second-loudest-snr");
+  if(ppt)
+    malmquist_second_loudest = atof(ppt->value);
+  ppt=LALInferenceGetProcParamVal(commandLine,"--malmquist-network-snr");
+  if(ppt)
+    malmquist_network = atof(ppt->value);
+  LALInferenceAddVariable(runState->priorArgs, "malmquist_loudest_snr", &malmquist_loudest, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
+  LALInferenceAddVariable(runState->priorArgs, "malmquist_second_loudest_snr", &malmquist_second_loudest, LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_FIXED);
+  LALInferenceAddVariable(runState->priorArgs, "malmquist_network_snr", &malmquist_network, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
+  UINT4 malmquist=1;
+  LALInferenceAddVariable(runState->priorArgs, "malmquist", &malmquist, LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_FIXED);
+  runState->prior=&LALInferenceInspiralPrior;
+  fprintf(stdout,"\nUsing Malmquist Prior with limits:\n");
+  fprintf(stdout,"Loudest SNR >= %lf\n",malmquist_loudest);
+  fprintf(stdout,"Second Loudest SNR >= %lf\n",malmquist_second_loudest);
+  fprintf(stdout,"Network SNR >= %lf\n",malmquist_network);
+  
+}
+
 /***** Initialise MultiNest structures *****/
 /************************************************/
 void initializeMN(LALInferenceRunState *runState)
