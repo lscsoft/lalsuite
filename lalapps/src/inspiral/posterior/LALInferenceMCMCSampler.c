@@ -318,7 +318,7 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
   INT4 aclCheckCounter=1;
   INT4 iEff=0;
   REAL8 ladderMin,ladderMax;
-  REAL8 timestamp,timestamp_epoch;
+  REAL8 timestamp,timestamp_epoch=0.0;
   struct timeval tv;
 
   LALInferenceMCMCRunPhase *runPhase_p = XLALCalloc(sizeof(LALInferenceMCMCRunPhase), 1);
