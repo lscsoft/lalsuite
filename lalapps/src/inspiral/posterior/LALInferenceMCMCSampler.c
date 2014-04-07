@@ -1952,7 +1952,7 @@ void LALInferenceMCMCResumeRead(LALInferenceRunState *runState, FILE *resumeFile
   char *last_line = NULL;
   long flen, line_length;
   int cycle;
-  float logl, logp;  
+  float loglike, logprior;  
 
   fseek(resumeFile, 0L, SEEK_END);
   flen = ftell(resumeFile);
@@ -1975,7 +1975,7 @@ void LALInferenceMCMCResumeRead(LALInferenceRunState *runState, FILE *resumeFile
   /* Go to the beginning of the last line. */
   fseek(resumeFile, -line_length, SEEK_END);
 
-  fscanf(resumeFile, "%d %f %f", &cycle, &logl, &logp);
+  fscanf(resumeFile, "%d %f %f", &cycle, &loglike, &logprior);
 
   LALInferenceReadSampleNonFixed(resumeFile, runState->currentParams);
 }
