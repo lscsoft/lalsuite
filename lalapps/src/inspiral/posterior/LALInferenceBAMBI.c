@@ -56,6 +56,7 @@
        #error Do not know how to link to Fortran libraries, check symbol table for your platform (nm libnest3.a | grep nestrun) & edit example_eggbox_C++/eggbox.cc
 #endif
 
+void initializeMalmquistPrior(LALInferenceRunState *runState);
 LALInferenceRunState *initialize(ProcessParamsTable *commandLine);
 void initializeMN(LALInferenceRunState *runState);
 void initStudentt(LALInferenceRunState *state);
@@ -584,13 +585,12 @@ Initialisation arguments:\n\
 
 void initializeMalmquistPrior(LALInferenceRunState *runState)
 {
-  
   REAL8 malmquist_loudest = 0.0;
   REAL8 malmquist_second_loudest = 5.0;
   REAL8 malmquist_network = 0.0;
   ProcessParamsTable *commandLine=runState->commandLine;
   ProcessParamsTable *ppt=NULL;
-  
+
   ppt=LALInferenceGetProcParamVal(commandLine,"--malmquist-loudest-snr");
   if(ppt)
     malmquist_loudest = atof(ppt->value);
@@ -610,7 +610,6 @@ void initializeMalmquistPrior(LALInferenceRunState *runState)
   fprintf(stdout,"Loudest SNR >= %lf\n",malmquist_loudest);
   fprintf(stdout,"Second Loudest SNR >= %lf\n",malmquist_second_loudest);
   fprintf(stdout,"Network SNR >= %lf\n",malmquist_network);
-  
 }
 
 /***** Initialise MultiNest structures *****/
@@ -679,7 +678,6 @@ void initializeMN(LALInferenceRunState *runState)
     /* Set up the appropriate functions for MultiNest */
     runState->algorithm=&LALInferenceMultiNestAlgorithm;
 
-    UINT4 malmquist = 0;
     /* Set up the prior function */
     if(LALInferenceGetProcParamVal(commandLine,"--skyLocPrior")){
         runState->prior=&LALInferenceInspiralSkyLocPrior;
@@ -692,7 +690,7 @@ void initializeMN(LALInferenceRunState *runState)
         runState->CubeToPrior = &LALInferenceAnalyticCubeToPrior;
     } else if (LALInferenceGetProcParamVal(commandLine, "--MalmquistPrior")){
         runState->prior = &LALInferenceInspiralPrior;
-        runState->CubeToPrior = &LALInferenceInspiralPriorCubeToPrior;
+        runState->CubeToPrior = &LALInferenceInspiralCubeToPrior;
         initializeMalmquistPrior(runState);
     } else {
         runState->prior = &LALInferenceInspiralPriorNormalised;
