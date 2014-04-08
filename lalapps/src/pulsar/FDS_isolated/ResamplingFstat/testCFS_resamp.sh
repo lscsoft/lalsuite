@@ -138,15 +138,15 @@ outfile_resampNWon="Fstat_resampNWon.dat";
 cmdlineNoiseWeightsOn="$cfs_resamp_code $cfs_CL --outputFstat=$outfile_resampNWon --TwoFthreshold=0 --UseNoiseWeights=true $extra_args";
 echo $cmdlineNoiseWeightsOn;
 if ! eval $cmdlineNoiseWeightsOn; then
-    echo "Error.. something failed when running '$cfs_code' ..."
+    echo "Error.. something failed when running '$cfs_resamp_code' ..."
     exit 1;
 fi
 
 outfile_resampNWoff="Fstat_resampNWoff.dat";
-cmdlineNoiseWeightsOff="$cfs2_code $cfs_CL --outputFstat=$outfile_resampNWoff --TwoFthreshold=0 --UseNoiseWeights=false $extra_args";
+cmdlineNoiseWeightsOff="$cfs_resamp_code $cfs_CL --outputFstat=$outfile_resampNWoff --TwoFthreshold=0 --UseNoiseWeights=false $extra_args";
 echo $cmdlineNoiseWeightsOff;
 if ! eval $cmdlineNoiseWeightsOff; then
-    echo "Error.. something failed when running '$cfs_code' ..."
+    echo "Error.. something failed when running '$cfs_resamp_code' ..."
     exit 1;
 fi
 
