@@ -37,6 +37,7 @@ typedef struct
    INT4 ndtsrt;      //Not Done The SoRT (terrible coding)
    INT4 fail;        //Fail flag if integration failes
    INT4 useSSE;      //Flag to specify use SSE integration function
+   INT4 useAVX;      //Flag to specify use AVX integration function
    INT4Vector *dofs;     //Array to hold values of the d.o.f. for each chi-squared variable
    INT4Vector *sorting;      //Array to hold the sorted element values for weights*noise
    REAL8Vector *weights;         //Array of weights in front of each chi-squared variable to sum (in my case, weight*noise/2.0)
@@ -53,7 +54,7 @@ void integrate(qfvars *vars, INT4 nterm, REAL8 interv, REAL8 tausq, INT4 mainx);
 void integrate_eg(qfvars *vars, INT4 nterm, REAL8 interv, REAL8 tausq, INT4 mainx);
 void integrate_twospect(qfvars *vars, INT4 nterm, REAL8 interv, REAL8 tausq, INT4 mainx);
 void integrate_twospect2(qfvars *vars, INT4 nterm, REAL8 interv, REAL8 tausq, INT4 mainx);
-void sse_integrate_twospect2(qfvars *vars, INT4 nterm, REAL8 interv, REAL8 tausq, INT4 mainx);
+INT4 fast_integrate_twospect2(qfvars *vars, INT4 nterm, REAL8 interv, REAL8 tausq, INT4 mainx);
 
 REAL8 exp1(REAL8 x);
 REAL8 twospect_log_1plusx(REAL8 x);

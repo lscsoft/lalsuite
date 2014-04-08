@@ -1198,7 +1198,7 @@ class EngineNode(pipeline.CondorDAGNode):
       Add final list of IFOs and data to analyse to command line arguments.
       """
       for ifo in self.ifos:
-        self.add_var_opt('ifo',ifo)
+        self.add_var_arg('--ifo '+ifo)
         if self.fakedata:
             self.add_var_opt('%s-cache'%(ifo),self.cachefiles[ifo])
         elif not self.lfns:

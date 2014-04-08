@@ -16,7 +16,7 @@ if [ -z "${srcdir}" ]; then
 fi
 
 builddir="./";
-injectdir="./Injections/"
+injectdir="../Injections/"
 
 if [ -z "${LAL_DATA_PATH}" ]; then
     echo
@@ -126,7 +126,6 @@ fi
 
 ## clean up files
 if [ -z "$NOCLEANUP" ]; then
-    rm $outPSD
     rm $outSFT
     rm $outPSD_band
     rm $outPSD_full

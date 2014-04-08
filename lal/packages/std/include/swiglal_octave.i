@@ -944,3 +944,7 @@ extern "C++" {
 %swiglal_oct_array_asvalfrom_frags(gsl_complex, octave_complex_matrix, ComplexMatrix, complex_matrix_value);
 %swiglal_oct_array_asvalfrom_frags(COMPLEX8, octave_float_complex_matrix, FloatComplexMatrix, float_complex_matrix_value);
 %swiglal_oct_array_asvalfrom_frags(COMPLEX16, octave_complex_matrix, ComplexMatrix, complex_matrix_value);
+
+// Local Variables:
+// mode: c
+// End:

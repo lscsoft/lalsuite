@@ -38,6 +38,9 @@ extern "C" {
 /*---------- DEFINES ----------*/
 
 /*---------- external types ----------*/
+#ifdef SWIG /* SWIG interface directives */
+SWIGLAL(IMMUTABLE_MEMBERS(tagDopplerLatticeInit, ephemeris));
+#endif /* SWIG */
 typedef struct tagDopplerLatticeInit {
   DopplerRegion searchRegion;		/**< Doppler-space region to be covered + scanned */
   REAL8 metricMismatch;			/**< for GRID_METRIC and GRID_ISOTROPIC */

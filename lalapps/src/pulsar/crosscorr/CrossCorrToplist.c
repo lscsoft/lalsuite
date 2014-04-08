@@ -514,14 +514,16 @@ static int print_crossCorrBinaryline_to_str(CrossCorrBinaryOutputEntry fline, ch
   return(snprintf(buf, buflen,
 		  /* output precision: choose to 10 for no real reason -- FIXME:
 		   */
-		     "%.10g %.10g %.10g %.10g %.10g %.10g %.10g\n",
+		     "%.10g %.10g %.10g %.10g %.10g %.10g %.10g %.10g %.10g\n",
 		     fline.freq,
 		     fline.tp,
 		     fline.argp,
 		     fline.asini,
 		     fline.ecc,
 		     fline.period,
-		     fline.rho));
+		     fline.rho,
+		     fline.evSquared,
+		     fline.estSens));
 }
 
 

@@ -23,12 +23,12 @@
  * \author Chris Messenger
  */
 
-#include <glob.h> 
+#include <glob.h>
 #include <stdlib.h>
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h> 
+#include <string.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALConstants.h>
 #include <lal/AVFactories.h>
@@ -39,6 +39,7 @@
 #include <lal/BinaryPulsarTiming.h>
 #include <lal/GeneratePulsarSignal.h>
 #include <lal/Random.h>
+#include <lal/LALString.h>
 
 #include <lal/LogPrintf.h>
 
@@ -68,12 +69,12 @@
 #define TRUE (1==1)
 #define FALSE (1==0)
 
-#define GBT_LOCATION_X 882589.65    
-#define GBT_LOCATION_Y -4924872.32    
+#define GBT_LOCATION_X 882589.65
+#define GBT_LOCATION_Y -4924872.32
 #define GBT_LOCATION_Z 3943729.348
 
 #define NARRABRI_LOCATION_X -4752329.7000
-#define NARRABRI_LOCATION_Y 2790505.9340 
+#define NARRABRI_LOCATION_Y 2790505.9340
 #define NARRABRI_LOCATION_Z -3200483.7470
 
 #define ARECIBO_LOCATION_X 2390490.0
@@ -85,7 +86,7 @@
 #define NANSHAN_LOCATION_Z 4367064.059
 
 #define DSS_43_LOCATION_X -4460892.6
-#define DSS_43_LOCATION_Y 2682358.9 
+#define DSS_43_LOCATION_Y 2682358.9
 #define DSS_43_LOCATION_Z -3674756.0
 
 #define PARKES_LOCATION_X  -4554231.5
@@ -105,7 +106,7 @@
 #define NANCAY_LOCATION_Z 4670132.83
 
 #define EFFELSBERG_LOCATION_X 4033949.5
-#define EFFELSBERG_LOCATION_Y 486989.4    
+#define EFFELSBERG_LOCATION_Y 486989.4
 #define EFFELSBERG_LOCATION_Z 4900430.8
 
 #define JODRELLM4_LOCATION_X 3822252.643
@@ -113,7 +114,7 @@
 #define JODRELLM4_LOCATION_Z 5086051.443
 
 #define GB300_LOCATION_X 881856.58
-#define GB300_LOCATION_Y -4925311.86 
+#define GB300_LOCATION_Y -4925311.86
 #define GB300_LOCATION_Z 3943459.70
 
 #define GB140_LOCATION_X 882872.57
@@ -184,8 +185,8 @@
 /* ---------- local types ---------- */
 
 /** user input variables */
-typedef struct 
-{ 
+typedef struct
+{
   BOOLEAN help;
 
   CHAR *RAJ;
@@ -195,8 +196,8 @@ typedef struct
   REAL8 DeltaTMJD;
   REAL8 DurationMJD;
   CHAR *det;
-  CHAR *ephemyear;
-  CHAR *ephemdir;
+  CHAR *ephemEarth;		/* Earth ephemeris file to use */
+  CHAR *ephemSun;		/* Sun ephemeris file to use */
   REAL8 f0;
   REAL8 fdot;
   CHAR *PSRJ;
@@ -208,8 +209,8 @@ typedef struct
 } UserVariables_t;
 
 /* a time structure to accurately store MJD times so as not to lose any precision */
-typedef struct 
-{ 
+typedef struct
+{
   INT4 days;       /* integer MJD days */
   REAL8 fracdays;  /* fractional day */
 } MJDTime;
@@ -239,16 +240,14 @@ void GPStoTDBMJD(MJDTime *TDBMJD,LIGOTimeGPS GPS);
  * FUNCTION definitions
  *============================================================*/
 
-int 
-main(int argc, char *argv[]){ 
+int
+main(int argc, char *argv[]){
 
-  static LALStatus       status;  /* LALStatus pointer */ 
+  static LALStatus       status;  /* LALStatus pointer */
   UserVariables_t uvar = empty_UserVariables;
   FILE *fp = NULL;
   BarycenterInput baryinput = empty_BarycenterInput;
   REAL8 alpha, delta;
-  EphemerisData *edat = NULL;
-  CHAR EphemEarth[1024], EphemSun[1024];
   INT4 leap0,leap;
   LIGOTimeGPS epoch;
   LIGOTimeGPS TstartSSB, TendSSB, TendGPS;
@@ -284,11 +283,11 @@ main(int argc, char *argv[]){
   /* set log-level */
   LogSetLevel ( lalDebugLevel );
 
-  LAL_CALL (initUserVars (&status, argc, argv, &uvar), &status);	  
+  LAL_CALL (initUserVars (&status, argc, argv, &uvar), &status);
 
   /* exit if help was required */
   if (uvar.help)
-    exit(0); 
+    exit(0);
 
   /* define sky position and/or convert sky position to radians */
   /* first - if we want a random sky position */
@@ -300,10 +299,10 @@ main(int argc, char *argv[]){
 
     vector = XLALCreateREAL4Vector(2);
     LALCreateRandomParams( &status, &params, uvar.seed );
-    
+
     /* fill vector with uniform deviates */
     for (i=0;i<(INT4)vector->length;i++) LALUniformDeviate(&status,&(vector->data[i]),params);
-    
+
     alpha = LAL_TWOPI*vector->data[0];
     sindelta = -1.0 + 2.0*vector->data[1];
     delta = asin(sindelta);
@@ -318,14 +317,14 @@ main(int argc, char *argv[]){
     alphatest = XLALhmsToRads(RA);
     deltatest = XLALdmsToRads(DEC);
     if (lalDebugLevel) fprintf(stdout,"STATUS : Converted back to rads for testing - alpha = %6.12f delta = %6.12f (rads)\n",alphatest,deltatest);
-    
+
     /* free memory */
     XLALDestroyVector(vector);
     LALDestroyRandomParams(&status,&params);
 
   }
   /* if a user has defined a sky position */
-  else if ((LALUserVarWasSet(uvar.RAJ))&&(LALUserVarWasSet(uvar.DECJ))) {
+  else if ((LALUserVarWasSet(&uvar.RAJ))&&(LALUserVarWasSet(&uvar.DECJ))) {
     if (lalDebugLevel) fprintf(stdout,"STATUS : User defined sky position - alpha = %s delta = %s (hms)\n",uvar.RAJ,uvar.DECJ);
     alpha = XLALhmsToRads(uvar.RAJ);
     delta = XLALdmsToRads(uvar.DECJ);
@@ -335,11 +334,11 @@ main(int argc, char *argv[]){
     fprintf(stderr,"ERROR : must either set random params or define a sky position. Exiting.\n");
     return(TEMPOCOMPARISONC_EINPUT);
   }
-  
+
   /* define start time in an MJD structure */
   REAL8toMJD(&status,&TstartUTCMJD,uvar.TstartUTCMJD);
-  if (lalDebugLevel) fprintf(stdout,"STATUS : TstartUTCMJD converted to MJD days = %d fracdays = %6.12f\n",TstartUTCMJD.days,TstartUTCMJD.fracdays);
-  
+  if (lalDebugLevel) fprintf(stdout,"STATUS : TstartUTCMJD=%f converted to MJD days = %d fracdays = %6.12f\n",uvar.TstartUTCMJD, TstartUTCMJD.days,TstartUTCMJD.fracdays);
+
   /* convert back to test conversions */
   MJDtoREAL8(&status,&TstartUTCMJDtest,TstartUTCMJD);
   diff = uvar.TstartUTCMJD - TstartUTCMJDtest;
@@ -347,152 +346,145 @@ main(int argc, char *argv[]){
     fprintf(stderr,"ERROR : Time conversion gives discrepancy of %e sec. Exiting.\n",diff);
     return(TEMPOCOMPARISONC_ESUB);
   }
-  if (lalDebugLevel) fprintf(stdout,"STATUS : MJD conversion gives discrepancies of %e sec\n",diff);
+  XLALPrintInfo ( "STATUS : MJD conversion gives discrepancies of %e sec\n", diff);
 
   /* use start time to define an epoch for the leap seconds */
   /* Note that epochs are defined in TDB !!! but here we only need to be rough to get a leap second value */
   TDBMJDtoGPS(&epoch,TstartUTCMJD);
-  if (lalDebugLevel) fprintf(stdout,"STATUS : leap second epoch = %d %d\n",epoch.gpsSeconds,epoch.gpsNanoSeconds);
+  XLALPrintInfo ( "STATUS : leap second epoch = %d %d\n",epoch.gpsSeconds,epoch.gpsNanoSeconds);
 
   /* deal with ephemeris files and compute leap seconds */
-  edat = LALCalloc(1, sizeof(EphemerisData));
-  snprintf(EphemEarth, 1024, "%s/earth%s.dat", uvar.ephemdir, uvar.ephemyear);
-  snprintf(EphemSun, 1024, "%s/sun%s.dat", uvar.ephemdir, uvar.ephemyear);
-  edat->ephiles.earthEphemeris = EphemEarth;
-  edat->ephiles.sunEphemeris = EphemSun;
+  EphemerisData *edat;
+  XLAL_CHECK ( (edat = XLALInitBarycenter( uvar.ephemEarth, uvar.ephemSun )) != NULL, XLAL_EFUNC );
+
   leap0 = XLALGPSLeapSeconds (epoch.gpsSeconds);
+  XLALPrintInfo ( "STATUS : leap seconds = %d\n",leap0);
 
-  if (lalDebugLevel) fprintf(stdout,"STATUS : leap seconds = %d\n",leap0);
-
-  /* initialise the barycenter routines */
-  LALInitBarycenter(&status, edat);
-  if (lalDebugLevel) fprintf(stdout,"STATUS : Initiated Barycenter\n");
-  
   /* select detector location */
   if (strcmp(uvar.Observatory,"GBT")==0) {
     baryinput.site.location[0] = GBT_LOCATION_X;
     baryinput.site.location[1] = GBT_LOCATION_Y;
     baryinput.site.location[2] = GBT_LOCATION_Z;
-    sprintf(detcode,"gbt"); 
+    sprintf(detcode,"gbt");
   }
   else if (strcmp(uvar.Observatory,"NARRABRI")==0) {
     baryinput.site.location[0] = NARRABRI_LOCATION_X;
     baryinput.site.location[1] = NARRABRI_LOCATION_Y;
     baryinput.site.location[2] = NARRABRI_LOCATION_Z;
-    sprintf(detcode,"atca"); 
+    sprintf(detcode,"atca");
   }
    else if (strcmp(uvar.Observatory,"ARECIBO")==0) {
     baryinput.site.location[0] = ARECIBO_LOCATION_X;
     baryinput.site.location[1] = ARECIBO_LOCATION_Y;
     baryinput.site.location[2] = ARECIBO_LOCATION_Z;
-    sprintf(detcode,"ao"); 
+    sprintf(detcode,"ao");
   }
    else if (strcmp(uvar.Observatory,"NANSHAN")==0) {
     baryinput.site.location[0] = NANSHAN_LOCATION_X;
     baryinput.site.location[1] = NANSHAN_LOCATION_Y;
     baryinput.site.location[2] = NANSHAN_LOCATION_Z;
-    sprintf(detcode,"nanshan"); 
+    sprintf(detcode,"nanshan");
   }
    else if (strcmp(uvar.Observatory,"DSS_43")==0) {
     baryinput.site.location[0] = DSS_43_LOCATION_X;
     baryinput.site.location[1] = DSS_43_LOCATION_Y;
     baryinput.site.location[2] = DSS_43_LOCATION_Z;
-    sprintf(detcode,"tid43"); 
+    sprintf(detcode,"tid43");
   }
   else if (strcmp(uvar.Observatory,"PARKES")==0) {
     baryinput.site.location[0] = PARKES_LOCATION_X;
     baryinput.site.location[1] = PARKES_LOCATION_Y;
     baryinput.site.location[2] = PARKES_LOCATION_Z;
-    sprintf(detcode,"pks"); 
+    sprintf(detcode,"pks");
   }
    else if (strcmp(uvar.Observatory,"JODRELL")==0) {
     baryinput.site.location[0] = JODRELL_LOCATION_X;
     baryinput.site.location[1] = JODRELL_LOCATION_Y;
     baryinput.site.location[2] = JODRELL_LOCATION_Z;
-    sprintf(detcode,"jb"); 
+    sprintf(detcode,"jb");
   }
    else if (strcmp(uvar.Observatory,"VLA")==0) {
     baryinput.site.location[0] = VLA_LOCATION_X;
     baryinput.site.location[1] = VLA_LOCATION_Y;
     baryinput.site.location[2] = VLA_LOCATION_Z;
-    sprintf(detcode,"vla"); 
+    sprintf(detcode,"vla");
   }
    else if (strcmp(uvar.Observatory,"NANCAY")==0) {
     baryinput.site.location[0] = NANCAY_LOCATION_X;
     baryinput.site.location[1] = NANCAY_LOCATION_Y;
     baryinput.site.location[2] = NANCAY_LOCATION_Z;
-    sprintf(detcode,"ncy"); 
+    sprintf(detcode,"ncy");
   }
   else if (strcmp(uvar.Observatory,"EFFELSBERG")==0) {
     baryinput.site.location[0] = EFFELSBERG_LOCATION_X;
     baryinput.site.location[1] = EFFELSBERG_LOCATION_Y;
     baryinput.site.location[2] = EFFELSBERG_LOCATION_Z;
-    sprintf(detcode,"eff"); 
+    sprintf(detcode,"eff");
   }
   else if (strcmp(uvar.Observatory,"JODRELLM4")==0) {
     baryinput.site.location[0] = JODRELLM4_LOCATION_X;
     baryinput.site.location[1] = JODRELLM4_LOCATION_Y;
     baryinput.site.location[2] = JODRELLM4_LOCATION_Z;
-    sprintf(detcode,"jbm4"); 
+    sprintf(detcode,"jbm4");
   }
   else if (strcmp(uvar.Observatory,"GB300")==0) {
     baryinput.site.location[0] = GB300_LOCATION_X;
     baryinput.site.location[1] = GB300_LOCATION_Y;
     baryinput.site.location[2] = GB300_LOCATION_Z;
-    sprintf(detcode,"gb300"); 
+    sprintf(detcode,"gb300");
   }
   else if (strcmp(uvar.Observatory,"GB140")==0) {
     baryinput.site.location[0] = GB140_LOCATION_X;
     baryinput.site.location[1] = GB140_LOCATION_Y;
     baryinput.site.location[2] = GB140_LOCATION_Z;
-    sprintf(detcode,"gb140"); 
+    sprintf(detcode,"gb140");
   }
   else if (strcmp(uvar.Observatory,"GB853")==0) {
     baryinput.site.location[0] = GB853_LOCATION_X;
     baryinput.site.location[1] = GB853_LOCATION_Y;
     baryinput.site.location[2] = GB853_LOCATION_Z;
-    sprintf(detcode,"gb853"); 
+    sprintf(detcode,"gb853");
   }
   else if (strcmp(uvar.Observatory,"LA_PALMA")==0) {
     baryinput.site.location[0] = LA_PALMA_LOCATION_X;
     baryinput.site.location[1] = LA_PALMA_LOCATION_Y;
     baryinput.site.location[2] = LA_PALMA_LOCATION_Z;
-    sprintf(detcode,"lap"); 
+    sprintf(detcode,"lap");
   }
   else if (strcmp(uvar.Observatory,"Hobart")==0) {
     baryinput.site.location[0] = Hobart_LOCATION_X;
     baryinput.site.location[1] = Hobart_LOCATION_Y;
     baryinput.site.location[2] = Hobart_LOCATION_Z;
-    sprintf(detcode,"hob"); 
+    sprintf(detcode,"hob");
   }
   else if (strcmp(uvar.Observatory,"Hartebeesthoek")==0) {
     baryinput.site.location[0] = Hartebeesthoek_LOCATION_X;
     baryinput.site.location[1] = Hartebeesthoek_LOCATION_Y;
     baryinput.site.location[2] = Hartebeesthoek_LOCATION_Z;
-    sprintf(detcode,"hart"); 
+    sprintf(detcode,"hart");
   }
   else if (strcmp(uvar.Observatory,"WSRT")==0) {
     baryinput.site.location[0] = WSRT_LOCATION_X;
     baryinput.site.location[1] = WSRT_LOCATION_Y;
     baryinput.site.location[2] = WSRT_LOCATION_Z;
-    sprintf(detcode,"wsrt"); 
+    sprintf(detcode,"wsrt");
   }
   else if (strcmp(uvar.Observatory,"COE")==0) {
     baryinput.site.location[0] = COE_LOCATION_X;
     baryinput.site.location[1] = COE_LOCATION_Y;
     baryinput.site.location[2] = COE_LOCATION_Z;
-    sprintf(detcode,"coe"); 
+    sprintf(detcode,"coe");
   }
   else if (strcmp(uvar.Observatory,"SSB")!=0) {
     fprintf(stderr,"ERROR. Unknown Observatory %s. Exiting.\n",uvar.Observatory);
     return(TEMPOCOMPARISONC_EFILE);
   }
-  if (lalDebugLevel) fprintf(stdout,"STATUS : selected observatory %s - observatoryt code = %s\n",uvar.Observatory,detcode);
-  if (lalDebugLevel) fprintf(stdout,"STATUS : baryinput location = %6.12f %6.12f %6.12f\n",baryinput.site.location[0],baryinput.site.location[1],baryinput.site.location[2]);
+  XLALPrintInfo ( "STATUS : selected observatory %s - observatoryt code = %s\n",uvar.Observatory,detcode);
+  XLALPrintInfo ( "STATUS : baryinput location = %6.12f %6.12f %6.12f\n",baryinput.site.location[0],baryinput.site.location[1],baryinput.site.location[2]);
 
   /* convert start time to UTC GPS */
   UTCMJDtoGPS(&status,&TstartGPS,TstartUTCMJD,leap0);
-  if (lalDebugLevel) fprintf(stdout,"STATUS : TstartGPS = %d %d\n",TstartGPS.gpsSeconds,TstartGPS.gpsNanoSeconds);
+  XLALPrintInfo ( "STATUS : TstartGPS = %d %d\n",TstartGPS.gpsSeconds,TstartGPS.gpsNanoSeconds);
 
   /* convert back to test conversion */
   UTCGPStoMJD(&MJDtest,&TstartGPS,leap0);
@@ -502,15 +494,15 @@ main(int argc, char *argv[]){
     fprintf(stderr,"ERROR : Time conversion gives discrepancy of %e sec. Exiting.\n",diff);
     return(TEMPOCOMPARISONC_ESUB);
   }
-  if (lalDebugLevel) fprintf(stdout,"STATUS : MJD conversion gives discrepancies of %e sec\n",diff);
-  
+  XLALPrintInfo ( "STATUS : MJD conversion gives discrepancies of %e sec\n",diff);
+
   /* define reference time in an MJD structure */
   REAL8toMJD(&status,&TrefTDBMJD,uvar.TrefTDBMJD);
-  if (lalDebugLevel) fprintf(stdout,"STATUS : TrefTDBMJD converted to MJD days = %d fracdays = %6.12f\n",TrefTDBMJD.days,TrefTDBMJD.fracdays);
+  XLALPrintInfo ( "STATUS : TrefTDBMJD converted to MJD days = %d fracdays = %6.12f\n",TrefTDBMJD.days,TrefTDBMJD.fracdays);
 
   /* convert reference time to TDB GPS */
   TDBMJDtoGPS(&TrefSSB_TDB_GPS,TrefTDBMJD);
-  if (lalDebugLevel) fprintf(stdout,"STATUS : TrefSSB_TDB_GPS = %d %d\n",TrefSSB_TDB_GPS.gpsSeconds,TrefSSB_TDB_GPS.gpsNanoSeconds);
+  XLALPrintInfo ( "STATUS : TrefSSB_TDB_GPS = %d %d\n",TrefSSB_TDB_GPS.gpsSeconds,TrefSSB_TDB_GPS.gpsNanoSeconds);
 
   /* convert back to test conversion */
   TDBGPStoMJD(&MJDtest,TrefSSB_TDB_GPS,leap0);
@@ -520,7 +512,7 @@ main(int argc, char *argv[]){
     fprintf(stderr,"ERROR : Time conversion gives discrepancy of %e sec. Exiting.\n",diff);
     return(TEMPOCOMPARISONC_ESUB);
   }
-  if (lalDebugLevel) fprintf(stdout,"STATUS : MJD conversion gives discrepancies of %e sec\n",diff);
+  XLALPrintInfo ( "STATUS : MJD conversion gives discrepancies of %e sec\n",diff);
 
   /* fill in required pulsar params structure for Barycentering */
   LALDetector *site = NULL;
@@ -534,11 +526,11 @@ main(int argc, char *argv[]){
   pulsarparams.pulsar.position.latitude = delta;
   pulsarparams.pulsar.position.system = COORDINATESYSTEM_EQUATORIAL;
   pulsarparams.ephemerides = edat;
-  
+
   /* generate SSB initial TOA in GPS */
   XLALConvertGPS2SSB ( &TstartSSB, TstartGPS, &pulsarparams);
-  if (lalDebugLevel) fprintf(stdout,"STATUS : TstartSSB = %d %d\n",TstartSSB.gpsSeconds,TstartSSB.gpsNanoSeconds);
-  
+  XLALPrintInfo ( "STATUS : TstartSSB = %d %d\n",TstartSSB.gpsSeconds,TstartSSB.gpsNanoSeconds);
+
   /* force integer seconds */
   /* TstartSSB.gpsNanoSeconds = 0; */
 /*   if (lalDebugLevel) fprintf(stdout,"STATUS : (after rounding down to integer seconds) TstartSSB = %d %d\n",TstartSSB.gpsSeconds,TstartSSB.gpsNanoSeconds); */
@@ -547,26 +539,26 @@ main(int argc, char *argv[]){
   temp = uvar.DurationMJD*86400.0;
   TendGPS = TstartGPS;
   XLALGPSAdd(&TendGPS, temp);
-  if (lalDebugLevel) fprintf(stdout,"STATUS : GPS end time of TOAs = %d %d\n",TendGPS.gpsSeconds,TendGPS.gpsNanoSeconds);
+  XLALPrintInfo ( "STATUS : GPS end time of TOAs = %d %d\n",TendGPS.gpsSeconds,TendGPS.gpsNanoSeconds);
 
   /* generate SSB end time in GPS (force integer seconds) */
   XLALConvertGPS2SSB (&TendSSB,TendGPS,&pulsarparams);
-  if (lalDebugLevel) fprintf(stdout,"STATUS : TendSSB = %d %d\n",TendSSB.gpsSeconds,TendSSB.gpsNanoSeconds);
-  
+  XLALPrintInfo  ( "STATUS : TendSSB = %d %d\n",TendSSB.gpsSeconds,TendSSB.gpsNanoSeconds);
+
   /* force integer seconds */
   /* TendSSB.gpsNanoSeconds = 0; */
 /*   if (lalDebugLevel) fprintf(stdout,"STATUS : (after rounding down to integer seconds) TendSSB = %d %d\n",TendSSB.gpsSeconds,TendSSB.gpsNanoSeconds); */
 
-  /* define TOA seperation in the SSB */ 
+  /* define TOA seperation in the SSB */
   dt = uvar.DeltaTMJD*86400.0;
   n = (INT4)ceil(uvar.DurationMJD/uvar.DeltaTMJD);
-  if (lalDebugLevel) fprintf(stdout,"STATUS : TOA seperation at SSB = %g sec\n",dt);
-  if (lalDebugLevel) fprintf(stdout,"STATUS : number of TOAs to generate = %d\n",n);
-  
+  XLALPrintInfo ( "STATUS : TOA seperation at SSB = %g sec\n",dt);
+  XLALPrintInfo ( "STATUS : number of TOAs to generate = %d\n",n);
+
   /* allocate memory for artificial SSB TOAs */
   TSSB = (LIGOTimeGPS *)LALMalloc(n*sizeof(LIGOTimeGPS));
   TOA = (MJDTime *)LALMalloc(n*sizeof(MJDTime));
-  
+
   /* generate artificial SSB TOAs given the phase model phi = 2*pi*(f0*(t-tref) + 0.5*fdot*(t-tref)^2) */
   for  (i=0;i<n;i++) {
 
@@ -574,45 +566,45 @@ main(int argc, char *argv[]){
     LIGOTimeGPS tnow;
 
     /* define current interval */
-    if (lalDebugLevel) fprintf(stdout,"STATUS : current (t-tstart) = %g sec\n", i * dt);
+    XLALPrintInfo ( "STATUS : current (t-tstart) = %g sec\n", i * dt);
 
     /* define current t */
     tnow = TstartSSB;
     XLALGPSAdd(&tnow, i * dt);
-    if (lalDebugLevel) fprintf(stdout,"STATUS : current t = %d %d\n",tnow.gpsSeconds,tnow.gpsNanoSeconds);
+    XLALPrintInfo ( "STATUS : current t = %d %d\n",tnow.gpsSeconds,tnow.gpsNanoSeconds);
 
     /* define current t-tref */
     dtref = XLALGPSDiff(&tnow,&TrefSSB_TDB_GPS);
-    if (lalDebugLevel) fprintf(stdout,"STATUS : current (t - tref) = %9.12f\n",dtref);
+    XLALPrintInfo ( "STATUS : current (t - tref) = %9.12f\n",dtref);
 
     dtcor = 1;
     while (dtcor>1e-9) {
-      
+
       /* define actual cycle fraction at requested time */
       cyclefrac = fmod(uvar.f0*dtref + 0.5*uvar.fdot*dtref*dtref,1.0);
-      if (lalDebugLevel) fprintf(stdout,"STATUS : cyclefrac = %9.12f\n",cyclefrac);
+      XLALPrintInfo ( "STATUS : cyclefrac = %9.12f\n",cyclefrac);
 
       /* define instantaneous frequency */
       fnow = uvar.f0 + uvar.fdot*dtref;
-      if (lalDebugLevel) fprintf(stdout,"STATUS : instananeous frequency = %9.12f\n",fnow);
+      XLALPrintInfo ( "STATUS : instananeous frequency = %9.12f\n",fnow);
 
       /* add correction to time */
       dtcor = cyclefrac/fnow;
       dtref -= dtcor;
-      if (lalDebugLevel) fprintf(stdout,"STATUS : timing correction = %9.12f\n",dtcor);
-      if (lalDebugLevel) fprintf(stdout,"STATUS : corrected dtref to = %9.12f\n",dtref);
+      XLALPrintInfo ( "STATUS : timing correction = %9.12f\n",dtcor);
+      XLALPrintInfo ( "STATUS : corrected dtref to = %9.12f\n",dtref);
     }
 
     /* define time of zero phase */
     TSSB[i] = TrefSSB_TDB_GPS;
     XLALGPSAdd(&TSSB[i], dtref);
-    if (lalDebugLevel) fprintf(stdout,"STATUS : TSSB[%d] = %d %d\n",i,TSSB[i].gpsSeconds,TSSB[i].gpsNanoSeconds);
- 
+    XLALPrintInfo ( "STATUS : TSSB[%d] = %d %d\n",i,TSSB[i].gpsSeconds,TSSB[i].gpsNanoSeconds);
+
   }
-  
+
   /* loop over SSB time of arrivals and compute detector time of arrivals */
   for (i=0;i<n;i++) {
-    
+
       LIGOTimeGPS TSSBtest;
       LIGOTimeGPS GPStest;
 
@@ -623,8 +615,8 @@ main(int argc, char *argv[]){
 	return(TEMPOCOMPARISONC_ESUB);
       }
 
-      if (lalDebugLevel) fprintf(stdout,"STATUS : converted SSB TOA %d %d -> Detector TOA %d %d\n",TSSB[i].gpsSeconds,TSSB[i].gpsNanoSeconds,TDET.gpsSeconds,TDET.gpsNanoSeconds);
-      
+      XLALPrintInfo ( "STATUS : converted SSB TOA %d %d -> Detector TOA %d %d\n",TSSB[i].gpsSeconds,TSSB[i].gpsNanoSeconds,TDET.gpsSeconds,TDET.gpsNanoSeconds);
+
       /* convert back for testing conversion */
       XLALConvertGPS2SSB (&TSSBtest,TDET,&pulsarparams);
       diff = XLALGPSDiff(&TSSBtest,&TSSB[i]);
@@ -632,7 +624,7 @@ main(int argc, char *argv[]){
 	fprintf(stderr,"ERROR : Time conversion gives discrepancy of %e sec. Exiting.\n",diff);
 	return(TEMPOCOMPARISONC_ESUB);
       }
-      if (lalDebugLevel) fprintf(stdout,"STATUS : SSB -> detector conversion gives discrepancies of %e sec\n",diff);
+      XLALPrintInfo ( "STATUS : SSB -> detector conversion gives discrepancies of %e sec\n",diff);
 
       /* recompute leap seconds incase they've changed */
       leap = XLALGPSLeapSeconds (TDET.gpsSeconds);
@@ -640,7 +632,7 @@ main(int argc, char *argv[]){
       /* must now convert to an MJD time for TEMPO */
       /* Using UTC conversion as used by Matt in his successful comparison */
       UTCGPStoMJD (&tempTOA,&TDET,leap);
-      if (lalDebugLevel) fprintf(stdout,"STATUS : output MJD time = %d %6.12f\n",tempTOA.days,tempTOA.fracdays);
+      XLALPrintInfo ( "STATUS : output MJD time = %d %6.12f\n",tempTOA.days,tempTOA.fracdays);
 
       /* convert back to test conversion */
       UTCMJDtoGPS (&status,&GPStest,tempTOA,leap);
@@ -649,14 +641,14 @@ main(int argc, char *argv[]){
 	fprintf(stderr,"ERROR. Time conversion gives discrepancy of %e sec. Exiting.\n",diff);
 	return(TEMPOCOMPARISONC_ESUB);
       }
-      if (lalDebugLevel) fprintf(stdout,"STATUS : MJD time conversion gives discrepancies of %e sec\n",diff);
+      XLALPrintInfo ( "STATUS : MJD time conversion gives discrepancies of %e sec\n",diff);
 
       /* fill in results */
       TOA[i].days = tempTOA.days;
       TOA[i].fracdays = tempTOA.fracdays;
-       
+
   }
-     
+
   /* convert the start time of the TOAs to a TDB time for use as a reference time in the TEMPO par file */
   /* as we have a monochromatic signal this reference time is meaningless */
   /* GPStoTDBMJD(&status,&TrefMJD,TstartGPS); */
@@ -665,18 +657,18 @@ main(int argc, char *argv[]){
   /* snprintf(tempstr,15,"%1.13f",TrefMJD.fracdays); */
 /*   tempstr2 = tempstr+2; */
 /*   snprintf(TrefMJDstr,19,"%d.%s",TrefMJD.days,tempstr2);  */
-/*   if (lalDebugLevel) fprintf(stdout,"STATUS : Converted reference MJD %d %6.12f to the string %s\n",TrefMJD.days,TrefMJD.fracdays,TrefMJDstr); */
+/*   XLALPrintInfo ( "STATUS : Converted reference MJD %d %6.12f to the string %s\n",TrefMJD.days,TrefMJD.fracdays,TrefMJDstr); */
 
   snprintf(tempstr,15,"%1.13f",TOA[0].fracdays);
   tempstr2 = tempstr+2;
-  snprintf(TstartMJDstr,19,"%d.%s",TOA[0].days,tempstr2); 
-  if (lalDebugLevel) fprintf(stdout,"STATUS : Converted initial TOA MJD %d %6.12f to the string %s\n",TOA[0].days,TOA[0].fracdays,TstartMJDstr);
+  snprintf(TstartMJDstr,19,"%d.%s",TOA[0].days,tempstr2);
+  XLALPrintInfo ( "STATUS : Converted initial TOA MJD %d %6.12f to the string %s\n",TOA[0].days,TOA[0].fracdays,TstartMJDstr);
 
   snprintf(tempstr,15,"%1.13f",TOA[n-1].fracdays);
   tempstr2 = tempstr+2;
-  snprintf(TfinishMJDstr,19,"%d.%s",TOA[n-1].days,tempstr2); 
-  if (lalDebugLevel) fprintf(stdout,"*** Converted MJD to a string %s\n",TfinishMJDstr);
-  if (lalDebugLevel) fprintf(stdout,"STATUS : Converted final TOA MJD %d %6.12f to the string %s\n",TOA[n-1].days,TOA[n-1].fracdays,TfinishMJDstr);
+  snprintf(TfinishMJDstr,19,"%d.%s",TOA[n-1].days,tempstr2);
+  XLALPrintInfo ( "*** Converted MJD to a string %s\n",TfinishMJDstr);
+  XLALPrintInfo ( "STATUS : Converted final TOA MJD %d %6.12f to the string %s\n",TOA[n-1].days,TOA[n-1].fracdays,TfinishMJDstr);
 
   /* define output file names */
   sprintf(parfile,"%s.par",uvar.PSRJ);
@@ -709,10 +701,10 @@ main(int argc, char *argv[]){
   fprintf(fp,"EPHEM\tDE405\n");
   fprintf(fp,"UNITS\tTDB\n");
   fprintf(fp,"MODE\t0\n");
-  
+
   /* close par file */
   fclose(fp);
-  
+
   /* output to tim file in format required by TEMPO 2 */
   if ((fp = fopen(timfile,"w")) == NULL) {
     fprintf(stderr,"ERROR. Could not open file %s. Exiting.\n",timfile);
@@ -721,16 +713,16 @@ main(int argc, char *argv[]){
 
   fprintf(fp,"FORMAT 1\n");
   for (i=0;i<n;i++) {
-    
-    /* convert each TOA to a string for output */ 
+
+    /* convert each TOA to a string for output */
     snprintf(tempstr,18,"%1.16f",TOA[i].fracdays);
     tempstr2 = tempstr+2;
     snprintf(TOAstr,22,"%d.%s",TOA[i].days,tempstr2);
     fprintf(fp,"blank.dat\t1000.0\t%s\t1.0\t%s\n",TOAstr,detcode);
-    if (lalDebugLevel) fprintf(stdout,"STATUS : Converting MJD time %d %6.16f to string %s\n",TOA[i].days,TOA[i].fracdays,TOAstr);
-    
+    XLALPrintInfo ( "STATUS : Converting MJD time %d %6.16f to string %s\n",TOA[i].days,TOA[i].fracdays,TOAstr);
+
   }
-  
+
   /* close tim file */
   fclose(fp);
 
@@ -738,14 +730,12 @@ main(int argc, char *argv[]){
   LALFree(TSSB);
   LALFree(TOA);
   LALFree(site);
-  LALFree(edat->ephemS);
-  LALFree(edat->ephemE);
-  LALFree(edat);
+  XLALDestroyEphemerisData ( edat );
   LALDestroyUserVars (&status);
-  LALCheckMemoryLeaks(); 
-  
+  LALCheckMemoryLeaks();
+
   return TEMPOCOMPARISONC_ENORM;
-  
+
 } /* main() */
 
 
@@ -770,9 +760,6 @@ initUserVars (LALStatus *status, int argc, char *argv[], UserVariables_t *uvar)
   uvar->DeltaTMJD = 1;
   uvar->DurationMJD = 1800;
 
-  uvar->ephemyear = (CHAR*)LALMalloc(512);
-  sprintf(uvar->ephemyear,"00-19-DE405");
-
   uvar->f0 = 1.0;
   uvar->fdot = 0.0;
 
@@ -785,12 +772,15 @@ initUserVars (LALStatus *status, int argc, char *argv[], UserVariables_t *uvar)
   uvar->randparams = FALSE;
   uvar->seed = 0;
 
+  uvar->ephemEarth = XLALStringDuplicate("earth00-19-DE405.dat.gz");
+  uvar->ephemSun = XLALStringDuplicate("sun00-19-DE405.dat.gz");
+
   /* register user input variables */
   LALregBOOLUserStruct ( status, 	help, 		'h', UVAR_HELP,    	"Print this message" );
   LALregSTRINGUserStruct ( status, 	RAJ, 	        'r', UVAR_OPTIONAL, 	"Right ascension hh:mm.ss.ssss [Default = 00:00.00.0000]");
   LALregSTRINGUserStruct ( status, 	DECJ, 	        'j', UVAR_OPTIONAL, 	"Declination dd:mm.ss.ssss [Default = 00:00.00.0000]");
-  LALregSTRINGUserStruct ( status,      ephemdir,       'e', UVAR_REQUIRED, 	"Name of ephemeris directory");
-  LALregSTRINGUserStruct ( status,      ephemyear,      'y', UVAR_OPTIONAL, 	"Ephemeris year [Default = 00-19-DE405]");
+  LALregSTRINGUserStruct(status,	ephemEarth, 	 0,  UVAR_OPTIONAL, 	"Earth ephemeris file to use");
+  LALregSTRINGUserStruct(status,	ephemSun, 	 0,  UVAR_OPTIONAL, 	"Sun ephemeris file to use");
   LALregREALUserStruct ( status, 	f0,     	'f', UVAR_OPTIONAL, 	"The signal frequency in Hz at SSB at the reference time [Default = 1.0]");
   LALregREALUserStruct ( status, 	fdot,     	'p', UVAR_OPTIONAL, 	"The signal frequency derivitive in Hz at SSB at the reference time [Default = 0.0]");
   LALregREALUserStruct ( status, 	TrefTDBMJD, 	'R', UVAR_OPTIONAL, 	"Reference time at the SSB in TDB in MJD [Default = 53400 ~ Jan 2005]");
@@ -814,7 +804,7 @@ initUserVars (LALStatus *status, int argc, char *argv[], UserVariables_t *uvar)
 
 /* ------------------------------------------------------------------------------- */
 /* the following functions have been written to maintain a high level of precision */
-/* in storing MJD times */ 
+/* in storing MJD times */
 /* ------------------------------------------------------------------------------- */
 
 /* this function takes a REAL8 input MJD time and returns the same time */
@@ -850,7 +840,7 @@ void MJDtoREAL8(LALStatus *status,REAL8 *x,MJDTime MJD) {
 void deltaMJD(LALStatus *status,MJDTime *dMJD,MJDTime *x,MJDTime *y) {
 
   MJDTime z;
-  
+
   INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
@@ -884,9 +874,9 @@ void AddIntervaltoMJD(double interval,MJDTime *MJDout,MJDTime MJDin) {
   sfd = interval/86400.0;
 
   temp = MJDin.fracdays + sfd;
-  fracdays = fmod(temp,1.0); 
+  fracdays = fmod(temp,1.0);
   days = MJDin.days + (INT4)floor(temp);
- 
+
   MJDout->days = days;
   MJDout->fracdays = fracdays;
 
@@ -906,8 +896,8 @@ void GPStoTDBMJD(MJDTime *TDBMJD,LIGOTimeGPS GPS) {
   if(MJDtemp < 44244.){
     fprintf(stderr, "Input time is not in range.\n");
     exit(0);
-  } 
-  
+  }
+
   /* compute the relativistic effect in TDB */
   Tdiff = MJDtemp + (2400000.5-2451545.0);
   /* meanAnomaly = 357.53 + 0.98560028*Tdiff; */ /* mean anomaly in degrees */
@@ -935,7 +925,7 @@ void GPStoTDBMJD(MJDTime *TDBMJD,LIGOTimeGPS GPS) {
 }
 
 void TDBMJDtoGPS(LIGOTimeGPS *GPS,MJDTime MJD){
- 
+
   REAL8 Tdiff, TDBtoTT;
   REAL8 MJDtemp;
   LIGOTimeGPS GPStemp;
@@ -950,8 +940,8 @@ void TDBMJDtoGPS(LIGOTimeGPS *GPS,MJDTime MJD){
   if(MJDtemp < 44244.){
     fprintf(stderr, "Input time is not in range.\n");
     exit(0);
-  } 
-  
+  }
+
   Tdiff = MJDtemp + (2400000.5-2451545.0);
   /* meanAnomaly = 357.53 + 0.98560028*Tdiff; */ /* mean anomaly in degrees */
  /*  printf("\tmeanAnomaly (deg) = %6.12f\n",meanAnomaly); */
@@ -984,7 +974,7 @@ void TDBMJDtoGPS(LIGOTimeGPS *GPS,MJDTime MJD){
 }
 
 void UTCMJDtoGPS(LALStatus *status,LIGOTimeGPS *GPS,MJDTime MJD,INT4 leap){
- 
+
   REAL8 MJDtemp;
   INT4 tempsec, tempnano;
 
@@ -993,12 +983,12 @@ void UTCMJDtoGPS(LALStatus *status,LIGOTimeGPS *GPS,MJDTime MJD,INT4 leap){
 
   /* convert MJD to REAL8 for error checking */
   MJDtemp = (REAL8)MJD.days + MJD.fracdays;
- 
+
   /* Check not before the start of GPS time (MJD 44222) */
   if(MJDtemp < 44244.){
     fprintf(stderr, "Input time is not in range.\n");
     exit(0);
-  } 
+  }
 
   /* convert MJDtime to GPS with no corrections (yet) */
   tempsec = (MJD.days-44244)*86400 + leap;
@@ -1012,16 +1002,16 @@ void UTCMJDtoGPS(LALStatus *status,LIGOTimeGPS *GPS,MJDTime MJD,INT4 leap){
 
   DETATCHSTATUSPTR (status);
   RETURN (status);
-  
+
 }
 
 void UTCGPStoMJD(MJDTime *MJD,LIGOTimeGPS *GPS,INT4 leap){
- 
+
   LIGOTimeGPS tempGPS;
 
   /* compute integer MJD days */
   MJD->days = 44244 + (INT4)floor(((REAL8)GPS->gpsSeconds + 1e-9*(REAL8)GPS->gpsNanoSeconds - (REAL8)leap)/86400.0);
-  
+
   /* compute corresponding exact GPS for this integer days MJD */
   tempGPS.gpsSeconds = (MJD->days-44244)*86400 + leap;
   tempGPS.gpsNanoSeconds = 0;
@@ -1038,7 +1028,7 @@ void TDBGPStoMJD(MJDTime *MJD,LIGOTimeGPS GPS,INT4 leap) {
   MJDTime MJDrough;
   LIGOTimeGPS GPSguess;
   double diff;
-  
+
   /* do rough conversion to MJD */
   UTCGPStoMJD(&MJDrough,&GPS,leap);
 
@@ -1083,7 +1073,7 @@ void LALRadstoRA(LALStatus *status, CHAR *RA, REAL8 rads) {
 
   snprintf(RA,18,"%d:%02d:%02d.%08d",hours,mins,secs,fracsecs);
   printf("RA = %s\n",RA);
- 
+
   DETATCHSTATUSPTR (status);
   RETURN (status);
 
@@ -1115,7 +1105,7 @@ void LALRadstoDEC(LALStatus *status, CHAR *DEC, REAL8 rads) {
   printf("x = %6.12f\n",x);
   fracarcsecs = (INT4)floor(1e7*x + 0.5);
 
-  
+
 
   snprintf(DEC,18,"%d:%02d:%02d.%07d",sign*degs,arcmins,arcsecs,fracarcsecs);
   printf("DEC = %s\n",DEC);

@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2007, 2008 Karl Wette
+ *  Copyright (C) 2007, 2008, 2012 Karl Wette
  *  Copyright (C) 2006, 2007 Reinhard Prix
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -40,8 +40,6 @@
 #include <lal/FlatPulsarMetric.h>
 #include <lal/DopplerFullScan.h>
 #include <lal/DopplerLatticeCovering.h>
-#include <lal/FlatLatticeTiling.h>
-#include <lal/FlatLatticeTilingPulsar.h>
 
 /*---------- DEFINES ----------*/
 #define MIN(x,y) (x < y ? x : y)
@@ -51,6 +49,12 @@
 #define FALSE (1==0)
 
 #define INIT_MEM(x) memset(&(x), 0, sizeof((x)))
+
+#ifdef __GNUC__
+#define UNUSED __attribute__ ((unused))
+#else
+#define UNUSED
+#endif
 
 /*---------- internal types ----------*/
 typedef struct {
@@ -74,6 +78,7 @@ struct tagDopplerFullScanState {
   DopplerLatticeScan *latticeScan;	/**< state of lattice Scan */
   /* spindown lattice tiling */
   FlatLatticeTiling *spindownTiling;    /**< state of spindown lattice tiling */
+  gsl_vector *spindownTilingPoint;      /**< current point in spindown lattice tiling */
 
   /* ----- emulate old-style factored grids */
   factoredGridScan_t *factoredScan;	/**< only used to emulate FACTORED grids sky x Freq x f1dot */
@@ -200,6 +205,7 @@ InitDopplerFullScan(LALStatus *status,			/**< pointer to LALStatus structure */
 	  XLALPrintError("\nGRID_SPINDOWN_{SQUARE,AGEBRK}: XLALCreateFlatLatticeTiling failed\n");
 	  ABORT(status, DOPPLERSCANH_EXLAL, DOPPLERSCANH_MSGEXLAL);
 	}
+        thisScan->spindownTilingPoint = NULL;
 
 	/* Parse the sky region string and check that it consists of only one point, and set bounds on it */
  	TRY(ParseSkyRegionString(status->statusPtr, &sky, init->searchRegion.skyRegionString), status);
@@ -268,13 +274,7 @@ InitDopplerFullScan(LALStatus *status,			/**< pointer to LALStatus structure */
 
 	}
 
-	/* Set Anstar lattice */
-	if (XLAL_SUCCESS != XLALSetFlatLatticeGenerator(thisScan->spindownTiling, XLALAnstarLatticeGenerator)) {
-	  XLALPrintError("\nGRID_SPINDOWN_{SQUARE,AGEBRK}: XLALSetFlatTilingAnstarLattice failed\n");
-	  ABORT(status, DOPPLERSCANH_EXLAL, DOPPLERSCANH_MSGEXLAL);
-	}
-
-	/* Set spindown metric */
+	/* Set Anstar lattice and spindown metric */
         gsl_matrix* metric = gsl_matrix_alloc(2 + PULSAR_MAX_SPINS, 2 + PULSAR_MAX_SPINS);
         if (metric == NULL) {
 	  XLALPrintError("\nGRID_SPINDOWN_{SQUARE,AGEBRK}: metric == NULL\n");
@@ -286,7 +286,7 @@ InitDopplerFullScan(LALStatus *status,			/**< pointer to LALStatus structure */
 	  XLALPrintError("\nGRID_SPINDOWN_{SQUARE,AGEBRK}: XLALSpindownMetric() failed\n");
 	  ABORT(status, DOPPLERSCANH_EXLAL, DOPPLERSCANH_MSGEXLAL);
         }
-        if (XLALSetFlatLatticeMetric(thisScan->spindownTiling, metric, init->metricMismatch) != XLAL_SUCCESS) {
+        if (XLALSetFlatLatticeTypeAndMetric(thisScan->spindownTiling, FLAT_LATTICE_TYPE_ANSTAR, metric, init->metricMismatch) != XLAL_SUCCESS) {
 	  XLALPrintError("\nGRID_SPINDOWN_{SQUARE,AGEBRK}: XLALSetFlatLatticeMetric() failed\n");
 	  ABORT(status, DOPPLERSCANH_EXLAL, DOPPLERSCANH_MSGEXLAL);
         }
@@ -437,7 +437,7 @@ XLALNumDopplerTemplates ( DopplerFullScanState *scan)
 	case GRID_SPINDOWN_SQUARE: /* square parameter space */
 	case GRID_SPINDOWN_AGEBRK: /* age-braking index parameter space */
 	  LogPrintf(LOG_DEBUG, "Counting spindown lattice templates ... ");
-	  scan->numTemplates = (REAL8)XLALCountTotalFlatLatticePoints(scan->spindownTiling);
+	  scan->numTemplates = (REAL8)XLALCountFlatLatticePoints(scan->spindownTiling);
 	  LogPrintfVerbatim(LOG_DEBUG, "%0.0f\n", scan->numTemplates);
 	  break;
 
@@ -548,7 +548,7 @@ XLALNextDopplerPos(PulsarDopplerParams *pos, DopplerFullScanState *scan)
         if (retn >= 0) {
 
 	  /* Found a point */
-          const gsl_vector* current = XLALGetFlatLatticePoint(scan->spindownTiling);
+          gsl_vector* current = scan->spindownTilingPoint = XLALGetFlatLatticePoint(scan->spindownTiling, scan->spindownTilingPoint);
           pos->Alpha      = gsl_vector_get(current, 0);
           pos->Delta      = gsl_vector_get(current, 1);
           pos->fkdot[0]   = gsl_vector_get(current, 2);
@@ -684,6 +684,10 @@ FreeDopplerFullScan (LALStatus *status, DopplerFullScanState **scan)
 
   if ((*scan)->spindownTiling) {
     XLALDestroyFlatLatticeTiling((*scan)->spindownTiling);
+  }
+
+  if ((*scan)->spindownTilingPoint) {
+    gsl_vector_free((*scan)->spindownTilingPoint);
   }
 
   if ( (*scan)->skyRegion.vertices)
@@ -866,3 +870,112 @@ loadFullGridFile ( LALStatus *status,
   RETURN ( status );
 
 } /* loadFullGridFile() */
+
+int XLALSetFlatLatticeF1DotAgeBrakingBound(
+  FlatLatticeTiling* tiling,
+  const size_t freq_dimension,
+  const size_t f1dot_dimension,
+  const double age,
+  const double min_braking,
+  const double max_braking
+  )
+{
+
+  // Check input
+  XLAL_CHECK(tiling != NULL, XLAL_EFAULT);
+  XLAL_CHECK(freq_dimension < f1dot_dimension, XLAL_EINVAL);
+  XLAL_CHECK(age > 0.0, XLAL_EINVAL);
+  XLAL_CHECK(min_braking > 1.0, XLAL_EINVAL);
+  XLAL_CHECK(max_braking > 1.0, XLAL_EINVAL);
+  XLAL_CHECK(min_braking <= max_braking, XLAL_EINVAL);
+
+  // Allocate zeroed memory
+  gsl_vector* a = gsl_vector_calloc(f1dot_dimension + 1);
+  XLAL_CHECK(a != NULL, XLAL_EFAULT);
+  gsl_matrix* c_lower = gsl_matrix_calloc(2, 1);
+  XLAL_CHECK(c_lower != NULL, XLAL_EFAULT);
+  gsl_matrix* m_lower = gsl_matrix_calloc(f1dot_dimension + 1, 1);
+  XLAL_CHECK(m_lower != NULL, XLAL_EFAULT);
+  gsl_matrix* c_upper = gsl_matrix_calloc(c_lower->size1, c_lower->size2);
+  XLAL_CHECK(c_upper != NULL, XLAL_EFAULT);
+  gsl_matrix* m_upper = gsl_matrix_calloc(m_lower->size1, m_lower->size2);
+  XLAL_CHECK(m_upper != NULL, XLAL_EFAULT);
+
+  // Set bounds data: -freq / ((min_braking - 1) * age) <= f1dot <= -freq / ((max_braking - 1) * age)
+  gsl_vector_set_zero(a);
+  gsl_matrix_set(c_lower, 0, 0, 1);
+  gsl_matrix_set(c_lower, 1, 0, -1.0 / ((min_braking - 1.0) * age));
+  gsl_matrix_set(c_upper, 0, 0, 1);
+  gsl_matrix_set(c_upper, 1, 0, -1.0 / ((max_braking - 1.0) * age));
+  gsl_matrix_set(m_lower, freq_dimension, 0, 1);
+  gsl_matrix_set(m_lower, f1dot_dimension, 0, 1);
+  gsl_matrix_memcpy(m_upper, m_lower);
+
+  // Set parameter-space bound
+  XLAL_CHECK(XLALSetFlatLatticeBound(tiling, f1dot_dimension, a, c_lower, m_lower, c_upper, m_upper) == XLAL_SUCCESS, XLAL_EFAILED);
+
+  // Cleanup
+  gsl_vector_free(a);
+  gsl_matrix_free(c_lower);
+  gsl_matrix_free(m_lower);
+  gsl_matrix_free(c_upper);
+  gsl_matrix_free(m_upper);
+
+  return XLAL_SUCCESS;
+
+}
+
+int XLALSetFlatLatticeF2DotBrakingBound(
+  FlatLatticeTiling* tiling,
+  const size_t freq_dimension,
+  const size_t f1dot_dimension,
+  const size_t f2dot_dimension,
+  const double min_braking,
+  const double max_braking
+  )
+{
+
+  // Check input
+  XLAL_CHECK(tiling != NULL, XLAL_EFAULT);
+  XLAL_CHECK(freq_dimension < f1dot_dimension, XLAL_EINVAL);
+  XLAL_CHECK(f1dot_dimension < f2dot_dimension, XLAL_EINVAL);
+  XLAL_CHECK(min_braking > 0.0, XLAL_EINVAL);
+  XLAL_CHECK(max_braking > 0.0, XLAL_EINVAL);
+  XLAL_CHECK(min_braking <= max_braking, XLAL_EINVAL);
+
+  // Allocate zeroed memory
+  gsl_vector* a = gsl_vector_calloc(f2dot_dimension + 1);
+  XLAL_CHECK(a != NULL, XLAL_EFAULT);
+  gsl_matrix* c_lower = gsl_matrix_calloc(2, 1);
+  XLAL_CHECK(c_lower != NULL, XLAL_EFAULT);
+  gsl_matrix* m_lower = gsl_matrix_calloc(f2dot_dimension + 1, 1);
+  XLAL_CHECK(m_lower != NULL, XLAL_EFAULT);
+  gsl_matrix* c_upper = gsl_matrix_calloc(c_lower->size1, c_lower->size2);
+  XLAL_CHECK(c_upper != NULL, XLAL_EFAULT);
+  gsl_matrix* m_upper = gsl_matrix_calloc(m_lower->size1, m_lower->size2);
+  XLAL_CHECK(m_upper != NULL, XLAL_EFAULT);
+
+  // Set bounds data: min_braking * f1dot^2 / freq <= f2dot <= max_braking * f2dot^2 / freq
+  gsl_vector_set_zero(a);
+  gsl_matrix_set(c_lower, 0, 0, 1);
+  gsl_matrix_set(c_lower, 1, 0, min_braking);
+  gsl_matrix_set(c_upper, 0, 0, 1);
+  gsl_matrix_set(c_upper, 1, 0, max_braking);
+  gsl_matrix_set(m_lower, freq_dimension, 0, -1);
+  gsl_matrix_set(m_lower, f1dot_dimension, 0, 2);
+  gsl_matrix_set(m_lower, f2dot_dimension, 0, 1);
+  gsl_matrix_memcpy(m_upper, m_lower);
+
+  // Set parameter-space bound
+  XLAL_CHECK(XLALSetFlatLatticeBound(tiling, f2dot_dimension, a, c_lower, m_lower, c_upper, m_upper) == XLAL_SUCCESS, XLAL_EFAILED);
+
+  // Cleanup
+  gsl_vector_free(a);
+  gsl_matrix_free(c_lower);
+  gsl_matrix_free(m_lower);
+  gsl_matrix_free(c_upper);
+  gsl_matrix_free(m_upper);
+
+  return XLAL_SUCCESS;
+
+}

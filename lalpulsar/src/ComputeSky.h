@@ -125,6 +125,9 @@ extern "C" {
 /**
  * This structure contains the parameters for the LALComputeSky() routine.
  */
+#ifdef SWIG /* SWIG interface directives */
+SWIGLAL(IMMUTABLE_MEMBERS(tagCSParams, edat));
+#endif /* SWIG */
 typedef struct
 tagCSParams
 {

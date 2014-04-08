@@ -119,6 +119,9 @@ LALSource;
  * LALComputeDetAMResponse() and
  * LALComputeDetAMResponseSeries().
  */
+#ifdef SWIG /* SWIG interface directives */
+SWIGLAL(IMMUTABLE_MEMBERS(tagLALDetAndSource, pDetector));
+#endif /* SWIG */
 typedef struct
 tagLALDetAndSource
 {
