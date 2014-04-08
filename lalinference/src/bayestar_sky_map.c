@@ -75,10 +75,10 @@
 
 #include <chealpix.h>
 
-#include <gsl/gsl_cblas.h>
 #include <gsl/gsl_errno.h>
 #include <gsl/gsl_integration.h>
 #include <gsl/gsl_sf_bessel.h>
+#include <gsl/gsl_sf_exp.h>
 #include <gsl/gsl_sort_vector_double.h>
 #include <gsl/gsl_statistics_double.h>
 #include <gsl/gsl_vector.h>
@@ -92,6 +92,59 @@ my_gsl_error (const char *reason, const char *file, int line, int gsl_errno)
 {
     (void)gsl_errno;
     fprintf(stderr, "gsl: %s:%d: %s: %s\n", file, line, "ERROR", reason);
+}
+
+
+/*
+ * Catmull-Rom cubic spline interpolant of x(t) for regularly gridded
+ * samples x_i(t_i), assuming:
+ *
+ *     t_0 = -1, x_0 = x[0],
+ *     t_1 = 0,  x_1 = x[1],
+ *     t_2 = 1,  x_2 = x[2],
+ *     t_3 = 2,  x_3 = x[3].
+ */
+static double complex catrom(
+    double complex x0,
+    double complex x1,
+    double complex x2,
+    double complex x3,
+    double t
+) {
+    return x1
+        + t*(-0.5*x0 + 0.5*x2
+        + t*(x0 - 2.5*x1 + 2.*x2 - 0.5*x3
+        + t*(-0.5*x0 + 1.5*x1 - 1.5*x2 + 0.5*x3)));
+}
+
+
+static double complex eval_acor(
+    const double complex *x,
+    size_t nsamples,
+    double t
+) {
+    /* Break |t| into integer and fractional parts. */
+    size_t i;
+    double f;
+    double complex y;
+
+    {
+        double dbl_i;
+        f = modf(fabs(t), &dbl_i);
+        i = dbl_i;
+    }
+
+    if (i == 0)
+        y = catrom(conj(x[1]), x[0], x[1], x[2], f);
+    else if (i < nsamples - 2)
+        y = catrom(x[i-1], x[i], x[i+1], x[i+2], f);
+    else
+        y = 0;
+
+    if (t < 0)
+        y = conj(y);
+
+    return y;
 }
 
 
@@ -136,7 +189,8 @@ static void exp_normalize(long npix, double *P, gsl_permutation *pix_perm)
 }
 
 
-static long indexof_confidence_level(long npix, double *P, double level, gsl_permutation *pix_perm)
+static long indexof_confidence_level(
+    long npix, double *P, double level, gsl_permutation *pix_perm)
 {
     double accum;
     long maxpix;
@@ -162,11 +216,10 @@ static void toa_errors(
     double n[3];
     ang2vec(theta, phi - gmst, n);
 
-    int i, j;
-    for (i = 0; i < nifos; i ++)
+    for (int i = 0; i < nifos; i ++)
     {
-        double dot;
-        for (dot = 0, j = 0; j < 3; j ++)
+        double dot = 0;
+        for (int j = 0; j < 3; j ++)
         {
             dot += locs[i][j] * n[j];
         }
@@ -175,31 +228,31 @@ static void toa_errors(
 }
 
 
-/* Perform sky localization based on TDOAs alone. Returns log probability; not normalized. */
-double bayestar_log_posterior_toa(
-    double theta,
-    double phi,
-    double gmst,
-    int nifos, /* Input: number of detectors. */
-    const double **locs, /* Input: array of detector positions. */
-    const double *toas, /* Input: array of times of arrival. */
-    const double *w_toas /* Input: sum-of-squares weights, (1/TOA variance)^2. */
+/* Expression for complex amplitude on arrival (without 1/distance factor) */
+static double complex signal_amplitude_model(
+    double complex F,               /* Antenna factor */
+    double complex exp_i_twopsi,    /* e^(i*2*psi), for polarization angle psi */
+    double u,                       /* cos(inclination) */
+    double u2                       /* cos^2(inclination */
 ) {
-    double dt[nifos];
-    toa_errors(dt, theta, phi, gmst, nifos, locs, toas);
-    return -0.5 * gsl_stats_wtss(w_toas, 1, dt, 1, nifos);
+    const double complex tmp = F * exp_i_twopsi;
+    return 0.5 * (1 + u2) * creal(tmp) + I * u * cimag(tmp);
 }
 
 
-/* Perform sky localization based on TDOAs alone. Returns log probability; not normalized. */
 static int bayestar_sky_map_toa_not_normalized_log(
-    long npix, /* Input: number of HEALPix pixels. */
-    double *P, /* Output: pre-allocated array of length npix to store posterior map. */
-    double gmst, /* Greenwich mean sidereal time in radians. */
-    int nifos, /* Input: number of detectors. */
-    const double **locs, /* Input: array of detector positions. */
-    const double *toas, /* Input: array of times of arrival. */
-    const double *w_toas /* Input: sum-of-squares weights, (1/TOA variance)^2. */
+    long npix,                      /* Number of HEALPix pixels */
+    double *P,                      /* Preallocated posterior pixel map */
+    /* Detector network */
+    double gmst,                    /* GMST (rad) */
+    unsigned int nifos,             /* Number of detectors */
+    unsigned long nsamples,         /* Length of autocorrelation sequence */
+    double sample_rate,             /* Sample rate in seconds */
+    const double complex **acors,   /* Autocorrelation sequences */
+    const double **locations,       /* Barycentered Cartesian geographic detector positions (m) */
+    /* Observations */
+    const double *toas,             /* Arrival time differences relative to network barycenter (s) */
+    const double *snrs              /* SNRs */
 ) {
     long nside;
 
@@ -209,14 +262,38 @@ static int bayestar_sky_map_toa_not_normalized_log(
         GSL_ERROR("output is not a valid HEALPix array", GSL_EINVAL);
 
     /* Loop over pixels. */
+    #pragma omp parallel for
     for (long i = 0; i < npix; i ++)
     {
-        /* Determine polar coordinates of this pixel. */
-        double theta, phi;
-        pix2ang_ring(nside, i, &theta, &phi);
+        double log_posterior = -INFINITY;
+        double dt[nifos];
 
-        /* Evaluate the (un-normalized) Gaussian log likelihood. */
-        P[i] = bayestar_log_posterior_toa(theta, phi, gmst, nifos, locs, toas, w_toas);
+        /* Compute time of arrival errors */
+        {
+            double theta, phi;
+            pix2ang_ring(nside, i, &theta, &phi);
+            toa_errors(dt, theta, phi, gmst, nifos, locations, toas);
+        }
+
+        /* Loop over arrival time */
+        for (long isample = 1 - (long)nsamples; isample < (long)nsamples; isample++)
+        {
+            double product = 1;
+            double scale = 0;
+
+            /* Loop over detectors */
+            for (unsigned int iifo = 0; iifo < nifos; iifo++)
+            {
+                const double I0arg = gsl_pow_2(snrs[iifo]) * cabs(eval_acor(
+                    acors[iifo], nsamples, dt[iifo] * sample_rate + isample));
+                product *= gsl_sf_bessel_I0_scaled(I0arg);
+                scale += I0arg;
+            }
+
+            log_posterior = logaddexp(log_posterior, scale + log(product));
+        }
+
+        P[i] = log_posterior;
     }
 
     /* Done! */
@@ -227,19 +304,25 @@ static int bayestar_sky_map_toa_not_normalized_log(
 static const double autoresolution_confidence_level = 0.9999;
 static const long autoresolution_count_pix_toa_snr = 3072;
 static const long autoresolution_count_pix_toa_phoa_snr = 12288;
+static const unsigned int nu = 16;
+static const unsigned int ntwopsi = 16;
 
 
-/* Perform sky localization based on TDOAs alone. */
 static double *bayestar_sky_map_toa_adapt_resolution(
     gsl_permutation **pix_perm,
     long *maxpix,
-    long *npix, /* In/out: number of HEALPix pixels. */
-    double gmst, /* Greenwich mean sidereal time in radians. */
-    int nifos, /* Input: number of detectors. */
-    const double **locs, /* Input: array of detector positions. */
-    const double *toas, /* Input: array of times of arrival. */
-    const double *w_toas, /* Input: sum-of-squares weights, (1/TOA variance)^2. */
-	long autoresolution_count_pix
+    long *npix,
+    long autoresolution_count_pix,
+    /* Detector network */
+    double gmst,                    /* GMST (rad) */
+    unsigned int nifos,             /* Number of detectors */
+    unsigned long nsamples,         /* Length of autocorrelation sequence */
+    double sample_rate,             /* Sample rate in seconds */
+    const double complex **acors,   /* Autocorrelation sequences */
+    const double **locations,       /* Barycentered Cartesian geographic detector positions (m) */
+    /* Observations */
+    const double *toas,             /* Arrival time differences relative to network barycenter (s) */
+    const double *snrs              /* SNRs */
 ) {
     int ret;
     double *P = NULL;
@@ -259,7 +342,8 @@ static double *bayestar_sky_map_toa_adapt_resolution(
             P = malloc(my_npix * sizeof(double));
             if (!P)
                 GSL_ERROR_NULL("failed to allocate output array", GSL_ENOMEM);
-            ret = bayestar_sky_map_toa_not_normalized_log(my_npix, P, gmst, nifos, locs, toas, w_toas);
+            ret = bayestar_sky_map_toa_not_normalized_log(my_npix, P, gmst,
+                nifos, nsamples, sample_rate, acors, locations, toas, snrs);
             if (ret != GSL_SUCCESS)
             {
                 free(P);
@@ -275,13 +359,15 @@ static double *bayestar_sky_map_toa_adapt_resolution(
             }
             exp_normalize(my_npix, P, my_pix_perm);
 
-            my_maxpix = indexof_confidence_level(my_npix, P, autoresolution_confidence_level, my_pix_perm);
+            my_maxpix = indexof_confidence_level(my_npix, P,
+                autoresolution_confidence_level, my_pix_perm);
         } while (my_maxpix < autoresolution_count_pix);
     } else {
         P = malloc(my_npix * sizeof(double));
         if (!P)
             GSL_ERROR_NULL("failed to allocate output array", GSL_ENOMEM);
-        ret = bayestar_sky_map_toa_not_normalized_log(my_npix, P, gmst, nifos, locs, toas, w_toas);
+        ret = bayestar_sky_map_toa_not_normalized_log(my_npix, P, gmst,
+            nifos, nsamples, sample_rate, acors, locations, toas, snrs);
         if (ret != GSL_SUCCESS)
         {
             free(P);
@@ -309,47 +395,26 @@ fail:
 }
 
 
-/* Perform sky localization based on TDOAs alone. */
 double *bayestar_sky_map_toa(
-    long *npix, /* In/out: number of HEALPix pixels. */
-    double gmst, /* Greenwich mean sidereal time in radians. */
-    int nifos, /* Input: number of detectors. */
-    const double **locs, /* Input: array of detector positions. */
-    const double *toas, /* Input: array of times of arrival. */
-    const double *w_toas /* Input: sum-of-squares weights, (1/TOA variance)^2. */
+    long *npix,
+    /* Detector network */
+    double gmst,                    /* GMST (rad) */
+    unsigned int nifos,             /* Number of detectors */
+    unsigned long nsamples,         /* Length of autocorrelation sequence */
+    double sample_rate,             /* Sample rate in seconds */
+    const double complex **acors,   /* Autocorrelation sequences */
+    const double **locations,       /* Barycentered Cartesian geographic detector positions (m) */
+    /* Observations */
+    const double *toas,             /* Arrival time differences relative to network barycenter (s) */
+    const double *snrs              /* SNRs */
 ) {
     long maxpix;
     gsl_permutation *pix_perm = NULL;
-    double *ret = bayestar_sky_map_toa_adapt_resolution(&pix_perm, &maxpix, npix, gmst, nifos, locs, toas, w_toas, autoresolution_count_pix_toa_snr);
+    double *ret = bayestar_sky_map_toa_adapt_resolution(&pix_perm, &maxpix,
+        npix, autoresolution_count_pix_toa_snr, gmst, nifos, nsamples,
+        sample_rate, acors, locations, toas, snrs);
     gsl_permutation_free(pix_perm);
     return ret;
-}
-
-
-typedef struct {
-    double A;
-    double B;
-    double log_offset;
-    int prior_distance_power;
-} inner_integrand_params;
-
-
-/* Logarithm of radial integrand, without log offset. */
-static double log_radial_integrand(double r, double A, double B, int prior_distance_power)
-{
-    const double onebyr = 1 / r;
-    return (A * onebyr + B) * onebyr + prior_distance_power * log(r);
-}
-
-
-/* Radial integrand. */
-static double radial_integrand(double r, void *params)
-{
-    const inner_integrand_params *integrand_params = (const inner_integrand_params *) params;
-
-    const double onebyr = 1 / r;
-    return exp((integrand_params->A * onebyr + integrand_params->B) * onebyr - integrand_params->log_offset)
-        * gsl_pow_int(r, integrand_params->prior_distance_power);
 }
 
 
@@ -362,25 +427,220 @@ static double cabs2(double complex z) {
     return gsl_pow_2(creal(z)) + gsl_pow_2(cimag(z));
 }
 
+typedef struct {
+    int prior_distance_power;
+    double A;
+    double B;
+    double C;
+} base_radial_integrand_params;
+
+
+typedef struct {
+    base_radial_integrand_params base;
+    unsigned int n;
+    double *I0args_times_r;
+} toa_snr_radial_integrand_params;
+
+
+typedef struct {
+    base_radial_integrand_params base;
+    double I0arg_times_r;
+} toa_phoa_snr_radial_integrand_params;
+
+
+static double base_log_radial_integrand(
+    double r,
+    const base_radial_integrand_params *p
+) {
+    const double one_by_r = 1 / r;
+
+    return (p->A * one_by_r + p->B) * one_by_r + p->C
+        + p->prior_distance_power * log(r);
+}
+
+
+static double toa_snr_log_radial_integrand(double r, void *params)
+{
+    const toa_snr_radial_integrand_params *p = params;
+    double product = 1;
+    double one_by_r = 1 / r;
+
+    for (unsigned int i = 0; i < p->n; i ++)
+        product *= gsl_sf_bessel_I0_scaled(p->I0args_times_r[i] * one_by_r);
+
+    return base_log_radial_integrand(r, &p->base) + log(product);
+}
+
+
+static double toa_phoa_snr_log_radial_integrand(double r, void *params)
+{
+    const toa_phoa_snr_radial_integrand_params *p = params;
+    return base_log_radial_integrand(r, &p->base)
+        + log(gsl_sf_bessel_I0_scaled(p->I0arg_times_r / r));
+}
+
+
+static double base_radial_integrand(
+    double r,
+    const base_radial_integrand_params *p
+) {
+    const double one_by_r = 1 / r;
+    return gsl_sf_exp_mult((p->A * one_by_r + p->B) * one_by_r + p->C,
+        gsl_pow_int(r, p->prior_distance_power));
+}
+
+
+static double toa_snr_radial_integrand(double r, void *params)
+{
+    const toa_snr_radial_integrand_params *p = params;
+    double product = 1;
+    double one_by_r = 1 / r;
+
+    for (unsigned int i = 0; i < p->n; i ++)
+        product *= gsl_sf_bessel_I0_scaled(p->I0args_times_r[i] * one_by_r);
+
+    return base_radial_integrand(r, &p->base) * product;
+}
+
+
+static double toa_phoa_snr_radial_integrand(double r, void *params)
+{
+    const toa_phoa_snr_radial_integrand_params *p = params;
+    return base_radial_integrand(r, &p->base)
+        * gsl_sf_bessel_I0_scaled(p->I0arg_times_r / r);
+}
+
+
+static int log_radial_integral(
+    double *result,
+    base_radial_integrand_params *p,
+    double (*radial_integrand) (double, void *),
+    double (*log_radial_integrand) (double, void *),
+    double min_distance,
+    double max_distance
+) {
+    double breakpoints[5];
+    unsigned char nbreakpoints = 0;
+    double integral, log_offset = -INFINITY;
+    int ret;
+
+    {
+        /* Calculate the approximate distance at which the integrand attains a
+         * maximum (middle) and a fraction eta of the maximum (left and right).
+         * This neglects the scaled Bessel function factors and the power-law
+         * distance prior. It assumes that the likelihood is approximately of
+         * the form
+         *
+         *    A/r^2 + B/r.
+         *
+         * Then the middle breakpoint occurs at 1/r = -B/2A, and the left and
+         * right breakpoints occur when
+         *
+         *   A/r^2 + B/r = log(eta) - B^2/4A.
+         */
+
+        static const double eta = 0.01;
+        const double middle = -2 * p->A / p->B;
+        const double left = 1 / (1 / middle + sqrt(log(eta) / p->A));
+        const double right = 1 / (1 / middle - sqrt(log(eta) / p->A));
+
+        /* Use whichever of the middle, left, and right points lie within the
+         * integration limits as initial subdivisions for the adaptive
+         * integrator. */
+
+        breakpoints[nbreakpoints++] = min_distance;
+        if(left > breakpoints[nbreakpoints-1] && left < max_distance)
+            breakpoints[nbreakpoints++] = left;
+        if(middle > breakpoints[nbreakpoints-1] && middle < max_distance)
+            breakpoints[nbreakpoints++] = middle;
+        if(right > breakpoints[nbreakpoints-1] && right < max_distance)
+            breakpoints[nbreakpoints++] = right;
+        breakpoints[nbreakpoints++] = max_distance;
+    }
+
+    /* Re-scale the integrand so that the maximum value at any of the
+     * breakpoints is 1. Note that the initial value of the constant term
+     * is overwritten. */
+
+    for (unsigned char i = 0; i < nbreakpoints; i++)
+    {
+        double new_log_offset = log_radial_integrand(breakpoints[i], p);
+        if (new_log_offset > log_offset)
+            log_offset = new_log_offset;
+    }
+
+    /* If the largets value of the log integrand was -INFINITY, then the
+     * integrand is 0 everywhere. Set log_offset to 0, because subtracting
+     * -INFINITY would make the integrand infinite. */
+    if (log_offset == -INFINITY)
+        log_offset = 0;
+
+    p->C -= log_offset;
+
+    {
+        /* Maximum number of subdivisions for adaptive integration. */
+        static const size_t n = 64;
+
+        /* Allocate workspace on stack. Hopefully, a little bit faster than
+         * using the heap in multi-threaded code. */
+
+        double alist[n];
+        double blist[n];
+        double rlist[n];
+        double elist[n];
+        size_t order[n];
+        size_t level[n];
+        gsl_integration_workspace workspace = {
+            .alist = alist,
+            .blist = blist,
+            .rlist = rlist,
+            .elist = elist,
+            .order = order,
+            .level = level,
+            .limit = n
+        };
+
+        /* Set up integrand data structure. */
+        const gsl_function func = {radial_integrand, p};
+
+        /* FIXME: do we care to keep the error estimate around? */
+        double abserr;
+
+        /* Perform adaptive Gaussian quadrature. */
+        ret = gsl_integration_qagp(&func, breakpoints, nbreakpoints,
+            DBL_MIN, 0.05, n, &workspace, &integral, &abserr);
+    }
+
+    /* If integrator succceeded, then restore scale factor and write output. */
+    if (ret == GSL_SUCCESS)
+        *result = log(integral) + log_offset;
+
+    /* Done! */
+    return ret;
+}
+
 
 double *bayestar_sky_map_toa_snr(
-    long *npix, /* Input: number of HEALPix pixels. */
-    double gmst, /* Greenwich mean sidereal time in radians. */
-    int nifos, /* Input: number of detectors. */
-    const float (**responses)[3], /* Pointers to detector responses. */
-    const double **locations, /* Pointers to locations of detectors in Cartesian geographic coordinates. */
-    const double *toas, /* Input: array of times of arrival with arbitrary relative offset. (Make toas[0] == 0.) */
-    const double *snrs, /* Input: array of SNRs. */
-    const double *w_toas, /* Input: sum-of-squares weights, (1/TOA variance)^2. */
-    const double *horizons, /* Distances at which a source would produce an SNR of 1 in each detector. */
-    double min_distance,
-    double max_distance,
-    int prior_distance_power) /* Use a prior of (distance)^(prior_distance_power) */
-{
+    long *npix,
+    /* Prior */
+    double min_distance,            /* Minimum distance */
+    double max_distance,            /* Maximum distance */
+    int prior_distance_power,       /* Power of distance in prior */
+    /* Detector network */
+    double gmst,                    /* GMST (rad) */
+    unsigned int nifos,             /* Number of detectors */
+    unsigned long nsamples,         /* Length of autocorrelation sequence */
+    double sample_rate,             /* Sample rate in seconds */
+    const double complex **acors,   /* Autocorrelation sequences */
+    const float (**responses)[3],   /* Detector responses */
+    const double **locations,       /* Barycentered Cartesian geographic detector positions (m) */
+    const double *horizons,         /* SNR=1 horizon distances for each detector */
+    /* Observations */
+    const double *toas,             /* Arrival time differences relative to network barycenter (s) */
+    const double *snrs              /* SNRs */
+) {
     long nside;
     long maxpix;
-    long i;
-    double d1[nifos];
     double *P;
     gsl_permutation *pix_perm;
 
@@ -390,34 +650,10 @@ double *bayestar_sky_map_toa_snr(
     /* Storage for old GSL error handler. */
     gsl_error_handler_t *old_handler;
 
-    /* Maximum number of subdivisions for adaptive integration. */
-    static const size_t subdivision_limit = 64;
-
-    /* Subdivide radial integral where likelihood is this fraction of the maximum,
-     * will be used in solving the quadratic to find the breakpoints */
-    static const double eta = 0.01;
-
-    /* Use this many integration steps in 2*psi  */
-    static const int ntwopsi = 16;
-
-    /* Number of integration steps in cos(inclination) */
-    static const int nu = 16;
-
-    /* Rescale distances so that furthest horizon distance is 1. */
-    {
-        double d1max;
-        memcpy(d1, horizons, sizeof(d1));
-        for (d1max = d1[0], i = 1; i < nifos; i ++)
-            if (d1[i] > d1max)
-                d1max = d1[i];
-        for (i = 0; i < nifos; i ++)
-            d1[i] /= d1max;
-        min_distance /= d1max;
-        max_distance /= d1max;
-    }
-
     /* Evaluate posterior term only first. */
-    P = bayestar_sky_map_toa_adapt_resolution(&pix_perm, &maxpix, npix, gmst, nifos, locations, toas, w_toas, autoresolution_count_pix_toa_snr);
+    P = bayestar_sky_map_toa_adapt_resolution(&pix_perm, &maxpix, npix,
+        autoresolution_count_pix_toa_snr, gmst, nifos, nsamples, sample_rate,
+        acors, locations, toas, snrs);
     if (!P)
         return NULL;
 
@@ -425,12 +661,7 @@ double *bayestar_sky_map_toa_snr(
     nside = npix2nside(*npix);
 
     /* Zero pixels that didn't meet the TDOA cut. */
-    for (i = 0; i < maxpix; i ++)
-    {
-        long ipix = gsl_permutation_get(pix_perm, i);
-        P[ipix] = log(P[ipix]);
-    }
-    for (; i < *npix; i ++)
+    for (long i = maxpix; i < *npix; i ++)
     {
         long ipix = gsl_permutation_get(pix_perm, i);
         P[ipix] = -INFINITY;
@@ -443,7 +674,7 @@ double *bayestar_sky_map_toa_snr(
 
     /* Compute posterior factor for amplitude consistency. */
     #pragma omp parallel for firstprivate(gsl_errno) lastprivate(gsl_errno)
-    for (i = 0; i < maxpix; i ++)
+    for (long i = 0; i < maxpix; i ++)
     {
         /* Cancel further computation if a GSL error condition has occurred.
          *
@@ -463,127 +694,81 @@ double *bayestar_sky_map_toa_snr(
 
         {
             long ipix = gsl_permutation_get(pix_perm, i);
-            double F[nifos][2];
-            double theta, phi;
-            int itwopsi, iu, iifo;
+            double complex F[nifos];
+            double dt[nifos];
             double accum = -INFINITY;
 
-            /* Prepare workspace for adaptive integrator. */
-            gsl_integration_workspace *workspace = gsl_integration_workspace_alloc(subdivision_limit);
-
-            /* If the workspace could not be allocated, then record the GSL
-             * error value for later reporting when we leave the parallel
-             * section. Then, skip to the next loop iteration. */
-            if (!workspace)
             {
-                gsl_errno = GSL_ENOMEM;
-                goto skip;
-            }
+                double theta, phi;
+                pix2ang_ring(nside, ipix, &theta, &phi);
 
-            /* Look up polar coordinates of this pixel */
-            pix2ang_ring(nside, ipix, &theta, &phi);
+                /* Look up antenna factors */
+                for (unsigned int iifo = 0; iifo < nifos; iifo++)
+                {
+                    XLALComputeDetAMResponse(
+                        (double *)&F[iifo],     /* Type-punned real part */
+                        1 + (double *)&F[iifo], /* Type-punned imag part */
+                        responses[iifo], phi, M_PI_2 - theta, 0, gmst);
+                    F[iifo] *= horizons[iifo];
+                }
 
-            /* Look up antenna factors */
-            for (iifo = 0; iifo < nifos; iifo ++)
-            {
-                XLALComputeDetAMResponse(&F[iifo][0], &F[iifo][1], responses[iifo], phi, M_PI_2 - theta, 0, gmst);
-                F[iifo][0] *= d1[iifo];
-                F[iifo][1] *= d1[iifo];
+                toa_errors(dt, theta, phi, gmst, nifos, locations, toas);
             }
 
             /* Integrate over 2*psi */
-            for (itwopsi = 0; itwopsi < ntwopsi; itwopsi++)
+            for (unsigned int itwopsi = 0; itwopsi < ntwopsi; itwopsi++)
             {
                 const double twopsi = (2 * M_PI / ntwopsi) * itwopsi;
-                const double costwopsi = cos(twopsi);
-                const double sintwopsi = sin(twopsi);
+                const double complex exp_i_twopsi = exp_i(twopsi);
 
                 /* Integrate over u; since integrand only depends on u^2 we only
                  * have to go from u=0 to u=1. We want to include u=1, so the upper
                  * limit has to be <= */
-                for (iu = 0; iu <= nu; iu++)
+                for (unsigned int iu = 0; iu <= nu; iu++)
                 {
                     const double u = (double)iu / nu;
                     const double u2 = gsl_pow_2(u);
-                    const double u4 = gsl_pow_2(u2);
+                    double rho2_times_r2[nifos];
+                    double A = 0;
 
-                    double A = 0, B = 0;
-                    double breakpoints[5];
-                    int num_breakpoints = 0;
-                    double log_offset = -INFINITY;
-
-                    /* The log-likelihood is quadratic in the estimated and true
-                     * values of the SNR, and in 1/r. It is of the form A/r^2 + B/r,
-                     * where A depends only on the true values of the SNR and is
-                     * strictly negative and B depends on both the true values and
-                     * the estimates and is strictly positive.
-                     *
-                     * The middle breakpoint is at the maximum of the log-likelihood,
-                     * occurring at 1/r=-B/2A. The lower and upper breakpoints occur
-                     * when the likelihood becomes eta times its maximum value. This
-                     * occurs when
-                     *
-                     *   A/r^2 + B/r = log(eta) - B^2/4A.
-                     *
-                     */
-
-                    /* Loop over detectors */
-                    for (iifo = 0; iifo < nifos; iifo++)
+                    for (unsigned int iifo = 0; iifo < nifos; iifo ++)
                     {
-                        const double Fp = F[iifo][0]; /* `plus' antenna factor times r */
-                        const double Fx = F[iifo][1]; /* `cross' antenna factor times r */
-                        const double FpFx = Fp * Fx;
-                        const double FpFp = gsl_pow_2(Fp);
-                        const double FxFx = gsl_pow_2(Fx);
-                        const double rhotimesr2 = 0.125 * ((FpFp + FxFx) * (1 + 6*u2 + u4) - gsl_pow_2(1 - u2) * ((FpFp - FxFx) * costwopsi + 2 * FpFx * sintwopsi));
-                        const double rhotimesr = sqrt(rhotimesr2);
-
-                        /* FIXME: due to roundoff, rhotimesr2 can be very small and
-                         * negative rather than simply zero. If this happens, don't
-                         accumulate the log-likelihood terms for this detector. */
-                        if (rhotimesr2 > 0)
-                        {
-                            A += rhotimesr2;
-                            B += rhotimesr * snrs[iifo];
-                        }
+                        A += rho2_times_r2[iifo] = cabs2(signal_amplitude_model(
+                            F[iifo], exp_i_twopsi, u, u2));
                     }
                     A *= -0.5;
 
+                    for (long isample = 1 - (long)nsamples;
+                        isample < (long)nsamples; isample++)
                     {
-                        const double middle_breakpoint = -2 * A / B;
-                        const double lower_breakpoint = 1 / (1 / middle_breakpoint + sqrt(log(eta) / A));
-                        const double upper_breakpoint = 1 / (1 / middle_breakpoint - sqrt(log(eta) / A));
-                        breakpoints[num_breakpoints++] = min_distance;
-                        if(lower_breakpoint > breakpoints[num_breakpoints-1] && lower_breakpoint < max_distance)
-                            breakpoints[num_breakpoints++] = lower_breakpoint;
-                        if(middle_breakpoint > breakpoints[num_breakpoints-1] && middle_breakpoint < max_distance)
-                            breakpoints[num_breakpoints++] = middle_breakpoint;
-                        if(upper_breakpoint > breakpoints[num_breakpoints-1] && upper_breakpoint < max_distance)
-                            breakpoints[num_breakpoints++] = upper_breakpoint;
-                        breakpoints[num_breakpoints++] = max_distance;
-                    }
+                        double B = 0;
+                        double I0args_times_r[nifos];
 
-                    {
-                        /*
-                         * Set log_offset to the maximum of the logarithm of the
-                         * radial integrand evaluated at all of the breakpoints. */
-                        int ibreakpoint;
-                        for (ibreakpoint = 0; ibreakpoint < num_breakpoints; ibreakpoint++)
+                        for (unsigned int iifo = 0; iifo < nifos; iifo ++)
                         {
-                            const double new_log_offset = log_radial_integrand(
-                                breakpoints[ibreakpoint], A, B, prior_distance_power);
-                            if (new_log_offset < INFINITY && new_log_offset > log_offset)
-                                log_offset = new_log_offset;
+                            const double acor2 = cabs2(eval_acor(acors[iifo],
+                                nsamples, dt[iifo] * sample_rate + isample));
+                            const double I0arg_times_r = snrs[iifo]
+                                * sqrt(acor2 * rho2_times_r2[iifo]);
+                            B += I0args_times_r[iifo] = I0arg_times_r;
                         }
-                    }
 
-                    {
-                        /* Perform adaptive integration. Stop when a relative
-                         * accuracy of 0.05 has been reached. */
-                        inner_integrand_params integrand_params = {A, B, log_offset, prior_distance_power};
-                        const gsl_function func = {radial_integrand, &integrand_params};
-                        double result, abserr;
-                        int ret = gsl_integration_qagp(&func, &breakpoints[0], num_breakpoints, DBL_MIN, 0.05, subdivision_limit, workspace, &result, &abserr);
+                        double result;
+                        toa_snr_radial_integrand_params params = {
+                            .base = {
+                                .A = A,
+                                .B = B,
+                                .C = 0,
+                                .prior_distance_power = prior_distance_power
+                            },
+                            .I0args_times_r = I0args_times_r,
+                            .n = nifos
+                        };
+                        int ret = log_radial_integral(
+                            &result, &params.base,
+                            toa_snr_radial_integrand,
+                            toa_snr_log_radial_integrand,
+                            min_distance, max_distance);
 
                         /* If the integrator failed, then record the GSL error
                          * value for later reporting when we leave the parallel
@@ -591,20 +776,13 @@ double *bayestar_sky_map_toa_snr(
                         if (ret != GSL_SUCCESS)
                         {
                             gsl_errno = ret;
-                            gsl_integration_workspace_free(workspace);
                             goto skip;
                         }
 
-                        /* Take the logarithm and put the log-normalization back in. */
-                        result = log(result) + integrand_params.log_offset;
-
-                        /* Accumulate result. */
                         accum = logaddexp(accum, result);
                     }
                 }
             }
-            /* Discard workspace for adaptive integrator. */
-            gsl_integration_workspace_free(workspace);
 
             /* Accumulate (log) posterior terms for SNR and TDOA. */
             P[ipix] += accum;
@@ -642,29 +820,29 @@ double *bayestar_sky_map_toa_snr(
 
 
 double *bayestar_sky_map_toa_phoa_snr(
-    long *npix, /* Input: number of HEALPix pixels. */
-    double gmst, /* Greenwich mean sidereal time in radians. */
-    int nifos, /* Input: number of detectors. */
-    const float (**responses)[3], /* Pointers to detector responses. */
-    const double **locations, /* Pointers to locations of detectors in Cartesian geographic coordinates. */
-    const double *toas, /* Input: array of times of arrival with arbitrary relative offset. (Make toas[0] == 0.) */
-    const double *phoas, /* Input: array of phases of arrival with arbitrary relative offset. (Make phoas[0] == 0.) */
-    const double *snrs, /* Input: array of SNRs. */
-    const double *w_toas, /* Input: sum-of-squares weights, (1/TOA variance)^2. */
-    const double *w1s, /* Input: first moments of angular frequency. */
-    const double *w2s, /* Input: second moments of angular frequency. */
-    const double *horizons, /* Distances at which a source would produce an SNR of 1 in each detector. */
-    double min_distance,
-    double max_distance,
-    int prior_distance_power) /* Use a prior of (distance)^(prior_distance_power) */
-{
+    long *npix,
+    /* Prior */
+    double min_distance,            /* Minimum distance */
+    double max_distance,            /* Maximum distance */
+    int prior_distance_power,       /* Power of distance in prior */
+    /* Detector network */
+    double gmst,                    /* GMST (rad) */
+    unsigned int nifos,             /* Number of detectors */
+    unsigned long nsamples,         /* Length of autocorrelation sequence */
+    double sample_rate,             /* Sample rate in seconds */
+    const double complex **acors,   /* Autocorrelation sequences */
+    const float (**responses)[3],   /* Detector responses */
+    const double **locations,       /* Barycentered Cartesian geographic detector positions (m) */
+    const double *horizons,         /* SNR=1 horizon distances for each detector */
+    /* Observations */
+    const double *toas,             /* Arrival time differences relative to network barycenter (s) */
+    const double *phoas,            /* Phases on arrival */
+    const double *snrs              /* SNRs */
+) {
     long nside;
     long maxpix;
-    long i;
-    double d1[nifos];
     double *P;
     gsl_permutation *pix_perm;
-    double complex exp_i_phoas[nifos];
 
     /* Hold GSL return values for any thread that fails. */
     int gsl_errno = GSL_SUCCESS;
@@ -672,50 +850,22 @@ double *bayestar_sky_map_toa_phoa_snr(
     /* Storage for old GSL error handler. */
     gsl_error_handler_t *old_handler;
 
-    /* Maximum number of subdivisions for adaptive integration. */
-    static const size_t subdivision_limit = 64;
-
-    /* Subdivide radial integral where likelihood is this fraction of the maximum,
-     * will be used in solving the quadratic to find the breakpoints */
-    static const double eta = 0.01;
-
-    /* Use this many integration steps in 2*psi  */
-    static const int ntwopsi = 16;
-
-    /* Number of integration steps in cos(inclination) */
-    static const int nu = 16;
-
-    /* Number of integration steps in arrival time */
-    static const int nt = 16;
-
-    /* Rescale distances so that furthest horizon distance is 1. */
-    {
-        double d1max;
-        memcpy(d1, horizons, sizeof(d1));
-        for (d1max = d1[0], i = 1; i < nifos; i ++)
-            if (d1[i] > d1max)
-                d1max = d1[i];
-        for (i = 0; i < nifos; i ++)
-            d1[i] /= d1max;
-        min_distance /= d1max;
-        max_distance /= d1max;
-    }
-
-    (void)w2s; /* FIXME: remove unused parameter */
-
-    for (i = 0; i < nifos; i ++)
-        exp_i_phoas[i] = exp_i(phoas[i]);
+    double complex exp_i_phoas[nifos];
+    for (unsigned int iifo = 0; iifo < nifos; iifo ++)
+        exp_i_phoas[iifo] = exp_i(phoas[iifo]);
 
     /* Evaluate posterior term only first. */
-    P = bayestar_sky_map_toa_adapt_resolution(&pix_perm, &maxpix, npix, gmst, nifos, locations, toas, w_toas, autoresolution_count_pix_toa_phoa_snr);
+    P = bayestar_sky_map_toa_adapt_resolution(&pix_perm, &maxpix, npix,
+        autoresolution_count_pix_toa_phoa_snr, gmst, nifos, nsamples,
+        sample_rate, acors, locations, toas, snrs);
     if (!P)
         return NULL;
 
     /* Determine the lateral HEALPix resolution. */
     nside = npix2nside(*npix);
 
-    /* Zero all pixels that didn't meet the TDOA cut. */
-    for (i = maxpix; i < *npix; i ++)
+    /* Zero pixels that didn't meet the TDOA cut. */
+    for (long i = maxpix; i < *npix; i ++)
     {
         long ipix = gsl_permutation_get(pix_perm, i);
         P[ipix] = -INFINITY;
@@ -728,20 +878,20 @@ double *bayestar_sky_map_toa_phoa_snr(
 
     /* Compute posterior factor for amplitude consistency. */
     #pragma omp parallel for firstprivate(gsl_errno) lastprivate(gsl_errno)
-    for (i = 0; i < maxpix; i ++)
+    for (long i = 0; i < maxpix; i ++)
     {
-       /* Cancel further computation if a GSL error condition has occurred.
-        *
-        * Note: if one thread sets gsl_errno, not necessarily all thread will
-        * get the updated value. That's OK, because most failure modes will
-        * cause GSL error conditions on all threads. If we cared to have any
-        * failure on any thread terminate all of the other threads as quickly
-        * as possible, then we would want to insert the following pragma here:
-        *
-        *     #pragma omp flush(gsl_errno)
-        *
-        * and likewise before any point where we set gsl_errno.
-        */
+        /* Cancel further computation if a GSL error condition has occurred.
+         *
+         * Note: if one thread sets gsl_errno, not necessarily all thread will
+         * get the updated value. That's OK, because most failure modes will
+         * cause GSL error conditions on all threads. If we cared to have any
+         * failure on any thread terminate all of the other threads as quickly
+         * as possible, then we would want to insert the following pragma here:
+         *
+         *     #pragma omp flush(gsl_errno)
+         *
+         * and likewise before any point where we set gsl_errno.
+         */
 
         if (gsl_errno != GSL_SUCCESS)
             goto skip;
@@ -749,149 +899,77 @@ double *bayestar_sky_map_toa_phoa_snr(
         {
             long ipix = gsl_permutation_get(pix_perm, i);
             double complex F[nifos];
-            double theta, phi;
-            int itwopsi, iu, it, iifo;
+            double dt[nifos];
             double accum = -INFINITY;
-            double complex exp_i_toaphoa[nifos];
-            double dtau[nifos], mean_dtau;
 
-            /* Prepare workspace for adaptive integrator. */
-            gsl_integration_workspace *workspace = gsl_integration_workspace_alloc(subdivision_limit);
-
-            /* If the workspace could not be allocated, then record the GSL
-             * error value for later reporting when we leave the parallel
-             * section. Then, skip to the next loop iteration. */
-            if (!workspace)
             {
-               gsl_errno = GSL_ENOMEM;
-               goto skip;
-            }
+                double theta, phi;
+                pix2ang_ring(nside, ipix, &theta, &phi);
 
-            /* Look up polar coordinates of this pixel */
-            pix2ang_ring(nside, ipix, &theta, &phi);
+                /* Look up antenna factors */
+                for (unsigned int iifo = 0; iifo < nifos; iifo++)
+                {
+                    XLALComputeDetAMResponse(
+                        (double *)&F[iifo],     /* Type-punned real part */
+                        1 + (double *)&F[iifo], /* Type-punned imag part */
+                        responses[iifo], phi, M_PI_2 - theta, 0, gmst);
+                    F[iifo] *= horizons[iifo];
+                }
 
-            toa_errors(dtau, theta, phi, gmst, nifos, locations, toas);
-            for (iifo = 0; iifo < nifos; iifo ++)
-                exp_i_toaphoa[iifo] = exp_i_phoas[iifo] * exp_i(w1s[iifo] * dtau[iifo]);
-
-            /* Find mean arrival time error */
-            mean_dtau = gsl_stats_wmean(w_toas, 1, dtau, 1, nifos);
-
-            /* Look up antenna factors */
-            for (iifo = 0; iifo < nifos; iifo++)
-            {
-                XLALComputeDetAMResponse(
-                    (double *)&F[iifo],     /* Type-punned real part */
-                    1 + (double *)&F[iifo], /* Type-punned imag part */
-                    responses[iifo], phi, M_PI_2 - theta, 0, gmst);
-                F[iifo] *= d1[iifo];
+                toa_errors(dt, theta, phi, gmst, nifos, locations, toas);
             }
 
             /* Integrate over 2*psi */
-            for (itwopsi = 0; itwopsi < ntwopsi; itwopsi++)
+            for (unsigned int itwopsi = 0; itwopsi < ntwopsi; itwopsi++)
             {
                 const double twopsi = (2 * M_PI / ntwopsi) * itwopsi;
                 const double complex exp_i_twopsi = exp_i(twopsi);
 
                 /* Integrate over u from u=-1 to u=1. */
-                for (iu = -nu; iu <= nu; iu++)
+                for (int iu = -(int)nu; iu <= (int)nu; iu++)
                 {
                     const double u = (double)iu / nu;
                     const double u2 = gsl_pow_2(u);
+                    double complex z_times_r[nifos];
+                    double A = 0;
 
-                    double A = 0, B = 0;
-                    double breakpoints[5];
-                    int num_breakpoints = 0;
-                    double log_offset = -INFINITY;
-
-                    /* The log-likelihood is quadratic in the estimated and true
-                     * values of the SNR, and in 1/r. It is of the form A/r^2 + B/r,
-                     * where A depends only on the true values of the SNR and is
-                     * strictly negative and B depends on both the true values and
-                     * the estimates and is strictly positive.
-                     *
-                     * The middle breakpoint is at the maximum of the log-likelihood,
-                     * occurring at 1/r=-B/2A. The lower and upper breakpoints occur
-                     * when the likelihood becomes eta times its maximum value. This
-                     * occurs when
-                     *
-                     *   A/r^2 + B/r = log(eta) - B^2/4A.
-                     *
-                     */
-
-                    /* Perform arrival time integral */
-                    double accum1 = -INFINITY;
-                    for (it = -nt/2; it <= nt/2; it++)
+                    for (unsigned int iifo = 0; iifo < nifos; iifo ++)
                     {
-                        const double t = mean_dtau + LAL_REARTH_SI / LAL_C_SI * it / nt;
-                        double complex i0arg_complex = 0;
-                        for (iifo = 0; iifo < nifos; iifo++)
-                        {
-                            const double complex tmp = F[iifo] * exp_i_twopsi;
-                            /* FIXME: could use - sign here to avoid conj below, but
-                             * this probably just sets our sign convention relative to
-                             * detection pipeline */
-                            double complex phase_rhotimesr = 0.5 * (1 + u2) * creal(tmp) + I * u * cimag(tmp);
-                            const double abs_rhotimesr_2 = cabs2(phase_rhotimesr);
-                            const double abs_rhotimesr = sqrt(abs_rhotimesr_2);
-                            phase_rhotimesr /= abs_rhotimesr;
-                            i0arg_complex += exp_i_toaphoa[iifo] * exp_i(-w1s[iifo] * t) * phase_rhotimesr * gsl_pow_2(snrs[iifo]);
-                        }
-                        const double i0arg = cabs(i0arg_complex);
-                        accum1 = logaddexp(accum1, log(gsl_sf_bessel_I0_scaled(i0arg)) + i0arg - 0.5 * gsl_stats_wtss_m(w_toas, 1, dtau, 1, nifos, t));
-                    }
-
-                    /* Loop over detectors */
-                    for (iifo = 0; iifo < nifos; iifo++)
-                    {
-                        const double complex tmp = F[iifo] * exp_i_twopsi;
-                        /* FIXME: could use - sign here to avoid conj below, but
-                         * this probably just sets our sign convention relative to
-                         * detection pipeline */
-                        double complex phase_rhotimesr = 0.5 * (1 + u2) * creal(tmp) + I * u * cimag(tmp);
-                        const double abs_rhotimesr_2 = cabs2(phase_rhotimesr);
-                        const double abs_rhotimesr = sqrt(abs_rhotimesr_2);
-
-                        A += abs_rhotimesr_2;
-                        B += abs_rhotimesr * snrs[iifo];
+                        A += cabs2(
+                            z_times_r[iifo] = signal_amplitude_model(
+                                F[iifo], exp_i_twopsi, u, u2));
                     }
                     A *= -0.5;
 
+                    for (long isample = 1 - (long)nsamples;
+                        isample < (long)nsamples; isample++)
                     {
-                        const double middle_breakpoint = -2 * A / B;
-                        const double lower_breakpoint = 1 / (1 / middle_breakpoint + sqrt(log(eta) / A));
-                        const double upper_breakpoint = 1 / (1 / middle_breakpoint - sqrt(log(eta) / A));
-                        breakpoints[num_breakpoints++] = min_distance;
-                        if(lower_breakpoint > breakpoints[num_breakpoints-1] && lower_breakpoint < max_distance)
-                            breakpoints[num_breakpoints++] = lower_breakpoint;
-                        if(middle_breakpoint > breakpoints[num_breakpoints-1] && middle_breakpoint < max_distance)
-                            breakpoints[num_breakpoints++] = middle_breakpoint;
-                        if(upper_breakpoint > breakpoints[num_breakpoints-1] && upper_breakpoint < max_distance)
-                            breakpoints[num_breakpoints++] = upper_breakpoint;
-                        breakpoints[num_breakpoints++] = max_distance;
-                    }
+                        double complex I0arg_complex_times_r = 0;
 
-                    {
-                        /*
-                         * Set log_offset to the maximum of the logarithm of the
-                         * radial integrand evaluated at all of the breakpoints. */
-                        int ibreakpoint;
-                        for (ibreakpoint = 0; ibreakpoint < num_breakpoints; ibreakpoint++)
+                        for (unsigned int iifo = 0; iifo < nifos; iifo ++)
                         {
-                            const double new_log_offset = log_radial_integrand(
-                                breakpoints[ibreakpoint], A, B, prior_distance_power);
-                            if (new_log_offset < INFINITY && new_log_offset > log_offset)
-                                log_offset = new_log_offset;
+                            I0arg_complex_times_r += snrs[iifo]
+                                * z_times_r[iifo] * exp_i_phoas[iifo]
+                                * eval_acor(acors[iifo], nsamples,
+                                    dt[iifo] * sample_rate + isample);
                         }
-                    }
 
-                    {
-                        /* Perform adaptive integration. Stop when a relative
-                         * accuracy of 0.05 has been reached. */
-                        inner_integrand_params integrand_params = {A, B, log_offset, prior_distance_power};
-                        const gsl_function func = {radial_integrand, &integrand_params};
-                        double result, abserr;
-                        int ret = gsl_integration_qagp(&func, &breakpoints[0], num_breakpoints, DBL_MIN, 0.05, subdivision_limit, workspace, &result, &abserr);
+                        double result;
+                        double I0arg_times_r = cabs(I0arg_complex_times_r);
+                        toa_phoa_snr_radial_integrand_params params = {
+                            .base = {
+                                .A = A,
+                                .B = I0arg_times_r,
+                                .C = 0,
+                                .prior_distance_power = prior_distance_power
+                            },
+                            .I0arg_times_r = I0arg_times_r,
+                        };
+                        int ret = log_radial_integral(
+                            &result, &params.base,
+                            toa_phoa_snr_radial_integrand,
+                            toa_phoa_snr_log_radial_integrand,
+                            min_distance, max_distance);
 
                         /* If the integrator failed, then record the GSL error
                          * value for later reporting when we leave the parallel
@@ -899,23 +977,16 @@ double *bayestar_sky_map_toa_phoa_snr(
                         if (ret != GSL_SUCCESS)
                         {
                             gsl_errno = ret;
-                            gsl_integration_workspace_free(workspace);
                             goto skip;
                         }
 
-                        /* Take the logarithm and put the log-normalization back in. */
-                        result = log(result) + integrand_params.log_offset + accum1;
-
-                        /* Accumulate result. */
                         accum = logaddexp(accum, result);
                     }
                 }
             }
-            /* Discard workspace for adaptive integrator. */
-            gsl_integration_workspace_free(workspace);
 
-            /* Store log posterior. */
-            P[ipix] = accum;
+            /* Accumulate (log) posterior terms for SNR and TDOA. */
+            P[ipix] += accum;
         }
 
         skip: /* this statement intentionally left blank */;
@@ -949,140 +1020,165 @@ double *bayestar_sky_map_toa_phoa_snr(
 }
 
 
-double bayestar_log_posterior_toa_snr(
-    double ra,
-    double sin_dec,
-    double distance,
-    double u,
-    double twopsi,
-    double gmst, /* Greenwich mean sidereal time in radians. */
-    int nifos, /* Input: number of detectors. */
-    const float (**responses)[3], /* Pointers to detector responses. */
-    const double **locations, /* Pointers to locations of detectors in Cartesian geographic coordinates. */
-    const double *toas, /* Input: array of times of arrival with arbitrary relative offset. (Make toas[0] == 0.) */
-    const double *snrs, /* Input: array of SNRs. */
-    const double *w_toas, /* Input: sum-of-squares weights, (1/TOA variance)^2. */
-    const double *horizons, /* Distances at which a source would produce an SNR of 1 in each detector. */
-    int prior_distance_power) /* Use a prior of (distance)^(prior_distance_power) */
-{
-    int iifo;
+double bayestar_log_likelihood_toa(
+    /* Parameters */
+    double ra,                      /* Right ascension (rad) */
+    double sin_dec,                 /* Sin(declination) */
+    double t,                       /* Barycentered arrival time (s) */
+    /* Detector network */
+    double gmst,                    /* GMST (rad) */
+    unsigned int nifos,             /* Number of detectors */
+    unsigned long nsamples,         /* Length of autocorrelation sequence */
+    double sample_rate,             /* Sample rate in seconds */
+    const double complex **acors,   /* Autocorrelation sequences */
+    const double **locations,       /* Barycentered Cartesian geographic detector positions (m) */
+    /* Observations */
+    const double *toas,             /* Arrival time differences relative to network barycenter (s) */
+    const double *snrs              /* SNRs */
+) {
     const double dec = asin(sin_dec);
-    const double u2 = gsl_pow_2(u);
-    const double u4 = gsl_pow_2(u2);
-    const double costwopsi = cos(twopsi);
-    const double sintwopsi = sin(twopsi);
-
-    double logp = bayestar_log_posterior_toa(M_PI_2 - dec, ra, gmst, nifos, locations, toas, w_toas);
-
-    /* Loop over detectors */
-    for (iifo = 0; iifo < nifos; iifo++)
-    {
-        double Fp, Fx;
-        XLALComputeDetAMResponse(&Fp, &Fx, responses[iifo], ra, dec, 0, gmst);
-
-        const double FpFx = Fp * Fx;
-        const double FpFp = gsl_pow_2(Fp);
-        const double FxFx = gsl_pow_2(Fx);
-        const double rho2 = 0.125 * ((FpFp + FxFx) * (1 + 6*u2 + u4) - gsl_pow_2(1 - u2) * ((FpFp - FxFx) * costwopsi + 2 * FpFx * sintwopsi));
-        double residual = snrs[iifo];
-
-        /* FIXME: due to roundoff, rhotimesr2 can be very small and
-         * negative rather than simply zero. If this happens, don't
-         accumulate the log-likelihood terms for this detector. */
-        if (rho2 > 0)
-            residual -= sqrt(rho2) * horizons[iifo] / distance;
-        logp += -0.5 * gsl_pow_2(residual);
-    }
-
-    if (prior_distance_power != 0)
-        logp += prior_distance_power * log(distance);
-
-    return logp;
-}
-
-
-double bayestar_log_posterior_toa_phoa_snr(
-    double ra,
-    double sin_dec,
-    double distance,
-    double u,
-    double twopsi,
-    double t,
-    double gmst, /* Greenwich mean sidereal time in radians. */
-    int nifos, /* Input: number of detectors. */
-    const float (**responses)[3], /* Pointers to detector responses. */
-    const double **locations, /* Pointers to locations of detectors in Cartesian geographic coordinates. */
-    const double *toas, /* Input: array of times of arrival with arbitrary relative offset. (Make toas[0] == 0.) */
-    const double *phoas, /* Input: array of times of arrival with arbitrary relative offset. (Make toas[0] == 0.) */
-    const double *snrs, /* Input: array of SNRs. */
-    const double *w_toas, /* Input: sum-of-squares weights, (1/TOA variance)^2. */
-    const double *w1s, /* Input: first moments of angular frequency. */
-    const double *w2s, /* Input: second moments of angular frequency. */
-    const double *horizons, /* Distances at which a source would produce an SNR of 1 in each detector. */
-    int prior_distance_power) /* Use a prior of (distance)^(prior_distance_power) */
-{
-    int iifo;
-    const double dec = asin(sin_dec);
-    const double u2 = gsl_pow_2(u);
-    const double complex exp_i_twopsi = exp_i(twopsi);
-
-    (void)w2s; /* FIXME: remove unused parameter */
 
     /* Compute time of arrival errors */
     double dt[nifos];
     toa_errors(dt, M_PI_2 - dec, ra, gmst, nifos, locations, toas);
+    for (unsigned int iifo = 0; iifo < nifos; iifo++)
+        dt[iifo] -= t;
 
-    {
-        double mean_dt = gsl_stats_wmean(w_toas, 1, dt, 1, nifos);
-        for (iifo = 0; iifo < nifos; iifo++)
-            dt[iifo] += t - mean_dt;
-    }
-
-    /* Rescale distances so that furthest horizon distance is 1. */
-    double d1[nifos];
-    {
-        const double d1max = gsl_stats_max(horizons, 1, nifos);
-        for (iifo = 0; iifo < nifos; iifo ++)
-            d1[iifo] = horizons[iifo] / d1max;
-        distance /= d1max;
-    }
-
-    double logp = 0;
-    double complex i0arg_complex = 0;
-    double A = 0;
-    double B = 0;
+    double product = 1;
+    double scale = 0;
 
     /* Loop over detectors */
-    for (iifo = 0; iifo < nifos; iifo++)
+    for (unsigned int iifo = 0; iifo < nifos; iifo++)
+    {
+        const double I0arg = gsl_pow_2(snrs[iifo]) * cabs(eval_acor(
+            acors[iifo], nsamples, dt[iifo] * sample_rate));
+        product *= gsl_sf_bessel_I0_scaled(I0arg);
+        scale += I0arg;
+    }
+
+    return log(product) + scale;
+}
+
+
+double bayestar_log_likelihood_toa_snr(
+    /* Parameters */
+    double ra,                      /* Right ascension (rad) */
+    double sin_dec,                 /* Sin(declination) */
+    double distance,                /* Distance */
+    double u,                       /* Cos(inclination) */
+    double twopsi,                  /* Twice polarization angle (rad) */
+    double t,                       /* Barycentered arrival time (s) */
+    /* Detector network */
+    double gmst,                    /* GMST (rad) */
+    unsigned int nifos,             /* Number of detectors */
+    unsigned long nsamples,         /* Length of autocorrelation sequence */
+    double sample_rate,             /* Sample rate in seconds */
+    const double complex **acors,   /* Autocorrelation sequences */
+    const float (**responses)[3],   /* Detector responses */
+    const double **locations,       /* Barycentered Cartesian geographic detector positions (m) */
+    const double *horizons,         /* SNR=1 horizon distances for each detector */
+    /* Observations */
+    const double *toas,             /* Arrival time differences relative to network barycenter (s) */
+    const double *snrs              /* SNRs */
+) {
+    const double dec = asin(sin_dec);
+    const double u2 = gsl_pow_2(u);
+    const double complex exp_i_twopsi = exp_i(twopsi);
+    const double one_by_r = 1 / distance;
+
+    /* Compute time of arrival errors */
+    double dt[nifos];
+    toa_errors(dt, M_PI_2 - dec, ra, gmst, nifos, locations, toas);
+    for (unsigned int iifo = 0; iifo < nifos; iifo++)
+        dt[iifo] -= t;
+
+    double A = 0, B = 0, product = 1;
+
+    /* Loop over detectors */
+    for (unsigned int iifo = 0; iifo < nifos; iifo++)
     {
         double complex F;
         XLALComputeDetAMResponse(
             (double *)&F,     /* Type-punned real part */
             1 + (double *)&F, /* Type-punned imag part */
             responses[iifo], ra, dec, 0, gmst);
-        F *= d1[iifo];
+        F *= horizons[iifo];
 
-        const double complex tmp = F * exp_i_twopsi;
-        double complex phase_rhotimesr = 0.5 * (1 + u2) * creal(tmp) + I * u * cimag(tmp);
-        const double abs_rhotimesr_2 = cabs2(phase_rhotimesr);
-        const double abs_rhotimesr = sqrt(abs_rhotimesr_2);
-        phase_rhotimesr /= abs_rhotimesr;
-        i0arg_complex += exp_i(phoas[iifo] + w1s[iifo] * dt[iifo]) * phase_rhotimesr * gsl_pow_2(snrs[iifo]);
-        logp += -0.5 * w_toas[iifo] * gsl_pow_2(dt[iifo]);
+        const double complex z_times_r =
+            signal_amplitude_model(F, exp_i_twopsi, u, u2);
+        const double rho2_times_r2 = cabs2(z_times_r);
+        const double acor2 =
+            cabs2(eval_acor(acors[iifo], nsamples, dt[iifo] * sample_rate));
+        const double i0arg_times_r = snrs[iifo] * sqrt(rho2_times_r2 * acor2);
 
-        A += abs_rhotimesr_2;
-        B += abs_rhotimesr * snrs[iifo];
+        A += rho2_times_r2;
+        B += i0arg_times_r;
+        product *= gsl_sf_bessel_I0_scaled(i0arg_times_r * one_by_r);
     }
     A *= -0.5;
 
-    const double i0arg = cabs(i0arg_complex);
+    return (A * one_by_r + B) * one_by_r + log(product);
+}
 
-    /* Should be equivalent to, but more accurate than:
-         logp += log(gsl_sf_bessel_I0(i0arg))
-     */
-    logp += log(gsl_sf_bessel_I0_scaled(i0arg)) + i0arg;
 
-    logp += log_radial_integrand(distance, A, B, prior_distance_power);
+double bayestar_log_likelihood_toa_phoa_snr(
+    /* Parameters */
+    double ra,                      /* Right ascension (rad) */
+    double sin_dec,                 /* Sin(declination) */
+    double distance,                /* Distance */
+    double u,                       /* Cos(inclination) */
+    double twopsi,                  /* Twice polarization angle (rad) */
+    double t,                       /* Barycentered arrival time (s) */
+    /* Detector network */
+    double gmst,                    /* GMST (rad) */
+    unsigned int nifos,             /* Number of detectors */
+    unsigned long nsamples,         /* Length of autocorrelation sequence */
+    double sample_rate,             /* Sample rate in seconds */
+    const double complex **acors,   /* Autocorrelation sequences */
+    const float (**responses)[3],   /* Detector responses */
+    const double **locations,       /* Barycentered Cartesian geographic detector positions (m) */
+    const double *horizons,         /* SNR=1 horizon distances for each detector */
+    /* Observations */
+    const double *toas,             /* Arrival time differences relative to network barycenter (s) */
+    const double *phoas,            /* Phases on arrival */
+    const double *snrs              /* SNRs */
+) {
+    const double dec = asin(sin_dec);
+    const double u2 = gsl_pow_2(u);
+    const double complex exp_i_twopsi = exp_i(twopsi);
+    const double one_by_r = 1 / distance;
 
-    return logp;
+    /* Compute time of arrival errors */
+    double dt[nifos];
+    toa_errors(dt, M_PI_2 - dec, ra, gmst, nifos, locations, toas);
+    for (unsigned int iifo = 0; iifo < nifos; iifo++)
+        dt[iifo] -= t;
+
+    double complex i0arg_complex_times_r = 0;
+    double A = 0;
+
+    /* Loop over detectors */
+    for (unsigned int iifo = 0; iifo < nifos; iifo++)
+    {
+        double complex F;
+        XLALComputeDetAMResponse(
+            (double *)&F,     /* Type-punned real part */
+            1 + (double *)&F, /* Type-punned imag part */
+            responses[iifo], ra, dec, 0, gmst);
+        F *= horizons[iifo];
+
+        const double complex z_times_r =
+             signal_amplitude_model(F, exp_i_twopsi, u, u2);
+        const double complex zhat = snrs[iifo] * exp_i(phoas[iifo]);
+
+        i0arg_complex_times_r += zhat * z_times_r
+            * eval_acor(acors[iifo], nsamples, dt[iifo] * sample_rate);
+        A += cabs2(z_times_r);
+    }
+    A *= -0.5;
+
+    const double i0arg_times_r = cabs(i0arg_complex_times_r);
+
+    return (A * one_by_r + i0arg_times_r) * one_by_r
+        + log(gsl_sf_bessel_I0_scaled(i0arg_times_r * one_by_r));
 }
