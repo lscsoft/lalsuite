@@ -1465,6 +1465,7 @@ void LALInferenceInjectInspiralSignal(LALInferenceIFOData *IFOdata, ProcessParam
 	if(XLALSimInspiralImplementedFDApproximants(XLALGetApproximantFromString(injEvent->waveform)))
 	{
 	 InjectFD(IFOdata, injTable, commandLine);
+	 LALInferencePrintDataWithInjection(IFOdata,commandLine);
 	 return;
 	}
 	/* Begin loop over interferometers */
