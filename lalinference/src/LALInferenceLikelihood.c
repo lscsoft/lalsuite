@@ -258,7 +258,14 @@ REAL8 LALInferenceROQLogLikelihood(LALInferenceVariables *currentParams, LALInfe
   else
     distMpc = *(REAL8*) LALInferenceGetVariable(currentParams, "distance");       /* Mpc         */
   
-  double iota	= *(REAL8*) LALInferenceGetVariable(currentParams, "inclination");
+  double iota	= 0.0;
+  if(LALInferenceCheckVariable(currentParams,"inclination")){
+    iota = *(REAL8*) LALInferenceGetVariable(currentParams, "inclination");
+  }
+  else if(LALInferenceCheckVariable(currentParams,"theta_JN")){
+    iota = *(REAL8*) LALInferenceGetVariable(currentParams, "theta_JN");
+  }
+  
   double cosiota = cos(iota);
   double plusCoef  = 0.5 * (1.0 + cosiota*cosiota);
   double crossCoef = cosiota;
