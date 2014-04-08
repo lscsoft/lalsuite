@@ -1,3 +1,4 @@
+
 #flow DAG Class definitions for LALInference Pipeline
 # (C) 2012 John Veitch, Vivien Raymond, Kiersten Ruisard, Kan Wang
 
@@ -910,6 +911,7 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
     # Add control options
     if self.config.has_option('input','injection-file'):
        node.set_injection(self.config.get('input','injection-file'),event.event_id)
+       prenode.set_injection(self.config.get('input','injection-file'),event.event_id)
     if self.config.has_option('lalinference','seglen'):
       node.set_seglen(self.config.getint('lalinference','seglen'))
     elif  self.config.has_option('engine','seglen'):
