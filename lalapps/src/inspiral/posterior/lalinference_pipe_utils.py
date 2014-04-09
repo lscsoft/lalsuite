@@ -418,8 +418,9 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
     self.datafind_job.set_sub_file(os.path.join(self.basepath,'datafind.sub'))
     self.preengine_job = EngineJob(self.config, os.path.join(self.basepath,'prelalinference.sub'),self.logpath,ispreengine=True,dax=self.is_dax())
     self.preengine_job.set_grid_site('local')
-    self.romweights_job = ROMJob(self.config,os.path.join(self.basepath,'romweights.sub'),self.logpath,dax=self.is_dax())
-    self.romweights_job.set_grid_site('local')
+    if cp.has_option('lalinference','roq'):
+      self.romweights_job = ROMJob(self.config,os.path.join(self.basepath,'romweights.sub'),self.logpath,dax=self.is_dax())
+      self.romweights_job.set_grid_site('local')
     # Need to create a job file for each IFO combination
     self.engine_jobs={}
     ifocombos=[]
