@@ -63,6 +63,9 @@ extern "C" {
  * \author Oliver Bock\n
  * Albert-Einstein-Institute Hannover, Germany
  */
+#ifdef SWIG /* SWIG interface directives */
+SWIGLAL(IMMUTABLE_MEMBERS(tagXML_NAMESPACE, prefix, url));
+#endif /* SWIG */
 typedef struct tagXML_NAMESPACE {
     const xmlChar *prefix;
     const xmlChar *url;
@@ -78,6 +81,9 @@ typedef struct tagXML_NAMESPACE {
  * \author Oliver Bock\n
  * Albert-Einstein-Institute Hannover, Germany
  */
+#ifdef SWIG /* SWIG interface directives */
+SWIGLAL(IMMUTABLE_MEMBERS(tagXML_NAMESPACE_VECTOR, items, count));
+#endif /* SWIG */
 typedef struct tagXML_NAMESPACE_VECTOR {
     const XML_NAMESPACE *items;
     const int count;

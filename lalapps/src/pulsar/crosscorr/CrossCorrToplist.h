@@ -45,6 +45,8 @@ typedef struct {
   REAL8 ecc;     	/**< eccentricity */
   REAL8 period; 	/**< bperiod */
   REAL8 rho; 		/**< Crosscorr statistic */
+  REAL8 evSquared;      /**< E[rho]/h0^2)^2 */
+  REAL8 estSens;        /**< average template E[rho]/h0^2)^2*/
 } CrossCorrBinaryOutputEntry;
 
 

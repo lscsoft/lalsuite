@@ -197,12 +197,7 @@ def angle_distance(theta0, phi0, theta1, phi1):
     """Angular separation in radians between two points on the unit sphere."""
     cos_angle_distance = (np.cos(phi1 - phi0) * np.sin(theta0) * np.sin(theta1)
         + np.cos(theta0) * np.cos(theta1))
-    if cos_angle_distance > 1:
-        return 0.
-    elif cos_angle_distance < -1:
-        return np.pi
-    else:
-        return np.arccos(cos_angle_distance)
+    return np.arccos(np.clip(cos_angle_distance, -1, 1))
 
 
 # Class to hold return value of find_injection method

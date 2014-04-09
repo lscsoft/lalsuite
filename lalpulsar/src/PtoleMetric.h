@@ -107,6 +107,9 @@ typedef enum
  * those under \ref StackMetric_h; it contains the bare
  * necessities, not needing function pointers etc.
  */
+#ifdef SWIG /* SWIG interface directives */
+SWIGLAL(IMMUTABLE_MEMBERS(tagPtoleMetricIn, site, ephemeris));
+#endif /* SWIG */
 typedef struct
 tagPtoleMetricIn
 {

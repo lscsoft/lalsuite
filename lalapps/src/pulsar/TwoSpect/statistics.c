@@ -132,12 +132,12 @@ void sumseries(REAL8 *computedprob, REAL8 P, REAL8 C, REAL8 E, INT8 counter, REA
    while (counterint!=-1) {
       REAL8 pplus = Pint*Cint;
       *(computedprob) += pplus;
-      
+
       if (pplus > *(computedprob)*err) j = 1;
       else j = 0;
       if (countdown!=0 && counterint<0) j = 0;
       if (j==0) return;
-      
+
       if (countdown!=0) {
          counterint--;
          Pint *= (counterint+1.0)/halfdelta;
@@ -166,14 +166,14 @@ void sumseries_eg(REAL8 *computedprob, REAL8 P, REAL8 C, REAL8 E, INT8 counter, 
    REAL8 oneoverhalfdelta = 1.0/halfdelta;   //pre-compute
    REAL8 halfdof = 0.5*dof;                  //pre-compute
    REAL8 halfx = 0.5*x;                      //pre-compute
-   
+
    if (countdown!=0) {
       if (counterint>=0) {
          Pint *= (counterint+1.0)*oneoverhalfdelta;
          Cint += E;
       } else counterint = -1;
    }
-   
+
    if (counterint==-1) return;
    else if (countdown!=0) {
       REAL8 oneoverhalfx = 1.0/halfx;
@@ -333,9 +333,9 @@ REAL4 ncx2cdf_float_withouttinyprob(REAL4 x, REAL4 dof, REAL4 delta)
 //This is ncx2cdf function like in Matlab, but using the Matlab version of the central chi square calculation instead of the GSL version
 REAL8 ncx2cdf_withouttinyprob_withmatlabchi2cdf(REAL8 x, REAL8 dof, REAL8 delta)
 {
-   
+
    REAL8 prob = 0.0;
-   
+
    //Fail for bad inputs or return 0 if x<=0
    XLAL_CHECK_REAL8( dof >= 0.0 && delta >= 0.0, XLAL_EINVAL );
    if (x<=0.0) return prob;
@@ -369,7 +369,7 @@ REAL4 ncx2cdf_float_withouttinyprob_withmatlabchi2cdf(REAL4 x, REAL4 dof, REAL4 
    //Fail for bad inputs or return 0 if x<=0
    XLAL_CHECK_REAL4( dof >= 0.0 && delta >= 0.0, XLAL_EINVAL );
    if (x<=0.0) return (REAL4)prob;
-   
+
    REAL8 err = (REAL8)LAL_REAL4_EPS;
    REAL8 halfdelta = 0.5*delta;
    INT8 counter = (INT8)floor(halfdelta);
@@ -563,7 +563,7 @@ REAL4 ncx2inv_float(REAL8 p, REAL8 dof, REAL8 delta)
    XLAL_CHECK_REAL4( delta >= 0.0, XLAL_EINVAL );
 
    if (delta==0.0) return (REAL4)gsl_cdf_chisq_Pinv(p, dof);
-   
+
    REAL8 pk = p;
    INT4 count_limit = 100;
    INT4 count = 0;
@@ -627,26 +627,26 @@ REAL8 unitGaussianSNR(REAL8 value, REAL8 dof)
  alpha=0.01
  n       10      20      30      40      50      60      80      n>80
  .489    .352    .290    .252    .226    .207    .179    1.628/(sqrt(n)+0.12+0.11/sqrt(n))
- 
+
  alpha=0.05
  n       10      20      30      40      50      60      80      n>80
  .409    .294    .242    .210    .188    .172    .150    1.358/(sqrt(n)+0.12+0.11/sqrt(n))
  */
 REAL8 ks_test_exp(REAL4Vector *vector)
 {
-   
+
    INT4 ii;
-   
+
    //First the mean value needs to be calculated from the median value
    REAL4Vector *tempvect = NULL;
    XLAL_CHECK_REAL8( (tempvect = XLALCreateREAL4Vector(vector->length)) != NULL, XLAL_EFUNC );
    memcpy(tempvect->data, vector->data, sizeof(REAL4)*vector->length);
-   sort_float_ascend(tempvect);  //tempvect becomes sorted  
+   sort_float_ascend(tempvect);  //tempvect becomes sorted
    REAL4 vector_median = 0.0;
    if (tempvect->length % 2 != 1) vector_median = 0.5*(tempvect->data[(INT4)(0.5*tempvect->length)-1] + tempvect->data[(INT4)(0.5*tempvect->length)]);
    else vector_median = tempvect->data[(INT4)(0.5*tempvect->length)];
    REAL4 vector_mean = (REAL4)(vector_median/LAL_LN2);
-   
+
    //Now start doing the K-S testing
    REAL8 ksvalue = 0.0, testval1, testval2, testval;
    REAL8 oneoverlength = 1.0/tempvect->length;
@@ -657,12 +657,12 @@ REAL8 ks_test_exp(REAL4Vector *vector)
       testval = fmax(testval1, testval2);
       if (testval>ksvalue) ksvalue = testval;
    }
-   
+
    //Destroy stuff
    XLALDestroyREAL4Vector(tempvect);
-   
+
    return ksvalue;
-   
+
 }
 
 
@@ -676,22 +676,22 @@ n                                                               n>80
                                                                 1.620/(sqrt(n)+0.155+0.24/sqrt(n)) */
 REAL8 kuipers_test_exp(REAL4Vector *vector)
 {
-   
+
    INT4 ii;
-   
+
    REAL4Vector *tempvect = NULL;
    XLAL_CHECK_REAL8( (tempvect = XLALCreateREAL4Vector(vector->length)) != NULL, XLAL_EFUNC );
-   
+
    memcpy(tempvect->data, vector->data, sizeof(REAL4)*vector->length);
 
    sort_float_ascend(tempvect);
-   
+
    REAL4 vector_median = 0.0;
    if (tempvect->length % 2 != 1) vector_median = 0.5*(tempvect->data[(INT4)(0.5*tempvect->length)-1] + tempvect->data[(INT4)(0.5*tempvect->length)]);
    else vector_median = tempvect->data[(INT4)(0.5*tempvect->length)];
-   
+
    REAL4 vector_mean = (REAL4)(vector_median/LAL_LN2);
-   
+
    //Now the Kuiper's test calculation is made
    REAL8 loval = 0.0, hival = 0.0;
    REAL8 oneoverlength = 1.0/tempvect->length;
@@ -706,11 +706,11 @@ REAL8 kuipers_test_exp(REAL4Vector *vector)
       if (loval<-testval2) loval = -testval2;
    }
    REAL8 kuiperval2 = hival + loval;
-   
+
    XLALDestroyREAL4Vector(tempvect);
-   
+
    return kuiperval2;
-   
+
 }
 
 //Sort a REAL4Vector, keeping the largest of the values in the output vector
@@ -720,15 +720,15 @@ void sort_float_largest(REAL4Vector *output, REAL4Vector *input)
    REAL4Vector *tempvect = NULL;
    XLAL_CHECK_VOID( (tempvect = XLALCreateREAL4Vector(input->length)) != NULL, XLAL_EFUNC );
    memcpy(tempvect->data, input->data, sizeof(REAL4)*input->length);
-   
+
    //qsort rearranges original vector, so sort the copy of the input vector
    qsort(tempvect->data, tempvect->length, sizeof(REAL4), qsort_REAL4_compar);
-   
+
    INT4 ii;
    for (ii=0; ii<(INT4)output->length; ii++) output->data[ii] = tempvect->data[tempvect->length-1-ii];
-   
+
    XLALDestroyREAL4Vector(tempvect);
-   
+
 }
 
 //Sort a REAL4Vector, keeping the smallest of the values in the output vector
@@ -738,14 +738,14 @@ void sort_float_smallest(REAL4Vector *output, REAL4Vector *input)
    REAL4Vector *tempvect = NULL;
    XLAL_CHECK_VOID( (tempvect = XLALCreateREAL4Vector(input->length)) != NULL, XLAL_EFUNC );
    memcpy(tempvect->data, input->data, sizeof(REAL4)*input->length);
-   
+
    //qsort rearranges original vector, so sort the copy of the input vector
    qsort(tempvect->data, tempvect->length, sizeof(REAL4), qsort_REAL4_compar);
-   
+
    memcpy(output->data, tempvect->data, sizeof(REAL4)*output->length);
-   
+
    XLALDestroyREAL4Vector(tempvect);
-   
+
 }
 
 //Sort a REAL8Vector from highest to lowest
@@ -765,9 +765,9 @@ void sort_double_descend(REAL8Vector *vector)
 
    //This does the descending part
    for (ii=0; ii<(INT4)vector->length; ii++) vector->data[ii] = tempvect->data[tempvect->length-1-ii];
-   
+
    XLALDestroyREAL8Vector(tempvect);
-   
+
 }
 
 //Sort a REAL8Vector from lowest to highest
@@ -791,12 +791,12 @@ REAL4Vector * sampleREAL4Vector(REAL4Vector *input, INT4 sampleSize, gsl_rng *rn
 
    REAL4Vector *output = NULL;
    XLAL_CHECK_NULL( (output = XLALCreateREAL4Vector(sampleSize)) != NULL, XLAL_EFUNC );
-   
+
    INT4 ii;
    for (ii=0; ii<sampleSize; ii++) output->data[ii] = input->data[(INT4)floor(gsl_rng_uniform(rng)*input->length)];
-   
+
    return output;
-   
+
 }
 
 //Sample a number (sampleSize) of values from a REAL4VectorSequence (input) randomly from vector 0 up to numberofvectors
@@ -843,15 +843,15 @@ REAL4 calcMean(REAL4Vector *vector)
    INT4 ii;
    REAL8 meanval = 0.0;
    for (ii=0; ii<(INT4)vector->length; ii++) meanval += (vector->data[ii] - meanval)/(ii+1);
-   
+
    return (REAL4)meanval;
-   
+
 } /* calcMean() */
 
 
 REAL4 calcMean_ignoreZeros(REAL4Vector *vector)
 {
-   
+
    INT4 ii, values = 0;
    REAL8 meanval = 0.0;
    for (ii=0; ii<(INT4)vector->length; ii++) {
@@ -968,7 +968,7 @@ REAL8 calcStddevD(REAL8Vector *vector)
 //Return the index value of the maximum value in a REAL4Vector
 INT4 max_index(REAL4Vector *vector)
 {
-   
+
    INT4 ii = 0, indexval = 0;
    REAL4 maxval = vector->data[0];
 
@@ -1089,7 +1089,7 @@ REAL4 calcMedian_ignoreZeros(REAL4Vector *vector)
    REAL4Vector *tempvect = NULL;
    XLAL_CHECK_REAL4( (tempvect = XLALCreateREAL4Vector(vector->length)) != NULL, XLAL_EFUNC );
    memcpy(tempvect->data, vector->data, sizeof(REAL4)*vector->length);
-   
+
    //qsort() on copied data
    qsort(tempvect->data, tempvect->length, sizeof(REAL4), qsort_REAL4_compar);
 
@@ -1130,4 +1130,3 @@ INT4 qsort_REAL8_compar(const void *a, const void *b)
    if ( *y > *z ) return 1;
    return 0;
 } /* qsort_REAL8_compar() */
-

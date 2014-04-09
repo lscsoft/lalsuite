@@ -283,6 +283,9 @@ typedef struct tagPulsarCoherentGW {
  * This structure contains information required to determine the response
  * of a detector to a gravitational waveform.
  */
+#ifdef SWIG /* SWIG interface directives */
+SWIGLAL(IMMUTABLE_MEMBERS(tagPulsarDetectorResponse, transfer, site, ephemerides));
+#endif /* SWIG */
 typedef struct tagPulsarDetectorResponse {
   const COMPLEX8FrequencySeries *transfer;    /**< The frequency-dependent transfer function of the interferometer, in ADC counts per unit strain amplitude at any given frequency;
                                          * if absent, the response will be given in raw strain rather than ADC output */

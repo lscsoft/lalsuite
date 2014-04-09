@@ -463,7 +463,8 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
 
     self.dagfilename="lalinference_%s-%s"%(self.config.get('input','gps-start-time'),self.config.get('input','gps-end-time'))
     self.set_dag_file(self.dagfilename)
-    self.set_dax_file(self.dagfilename)
+    if self.is_dax():
+      self.set_dax_file(self.dagfilename)
   
   def create_frame_pfn_file(self):
     """
@@ -1109,7 +1110,7 @@ class EngineNode(pipeline.CondorDAGNode):
       Add final list of IFOs and data to analyse to command line arguments.
       """
       for ifo in self.ifos:
-        self.add_var_opt('ifo',ifo)
+        self.add_var_arg('--ifo '+ifo)
         if self.fakedata:
             self.add_var_opt('%s-cache'%(ifo),self.cachefiles[ifo])
         elif not self.lfns:

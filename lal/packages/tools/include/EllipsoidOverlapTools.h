@@ -52,6 +52,9 @@ Author: Robinson, C. A. and Sengupta, A. S.
 extern "C" {
 #endif
 
+#ifdef SWIG /* SWIG interface directives */
+SWIGLAL(IMMUTABLE_MEMBERS(tagfContactWorkSpace, invQ1, invQ2));
+#endif /* SWIG */
 typedef struct tagfContactWorkSpace
 {
     /* Dimension of the matrices & vectors */

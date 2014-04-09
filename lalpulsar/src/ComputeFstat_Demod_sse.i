@@ -41,11 +41,11 @@
 
   #define VEC_LOOP_AV(a)\
        "MOVUPS " #a "(%[Xa]),%%xmm3       \n\t" \
-       "SUBPS	%%xmm4,%%xmm2           \n\t" \
-       "MULPS	%%xmm0,%%xmm3           \n\t" \
-       "MULPS	%%xmm2,%%xmm1           \n\t" \
-       "MULPS	%%xmm2,%%xmm0           \n\t" \
-       "ADDPS	%%xmm3,%%xmm1           \n\t"
+       "SUBPS   %%xmm4,%%xmm2           \n\t" \
+       "MULPS   %%xmm0,%%xmm3           \n\t" \
+       "MULPS   %%xmm2,%%xmm1           \n\t" \
+       "MULPS   %%xmm2,%%xmm0           \n\t" \
+       "ADDPS   %%xmm3,%%xmm1           \n\t"
 
 
   #ifdef EAH_HOTLOOP_INTERLEAVED
@@ -110,14 +110,14 @@
        /* -------------------------------------------------------------------; */
        /* Prepare common divisor method for 4 values ( two Re-Im pair ) */
        /*  Im1, Re1, Im0, Re0 */
-       "MOVAPS	%[V0011],%%xmm6         \n\t"
-       "MOVSS	%[kappa_m],%%xmm2       \n\t"	/* X2:  -   -   -   C */
-       "MOVUPS	(%[Xa]),%%xmm1          \n\t"	/* X1: Y01 X01 Y00 X00 */
-       "SHUFPS	$0,%%xmm2,%%xmm2        \n\t"	/* X2:  C   C   C   C */
-       "MOVAPS	%[V2222],%%xmm4         \n\t"	/* X7:  2   2   2   2 */
-       "SUBPS	%%xmm6,%%xmm2           \n\t"	/* X2: C-1 C-1  C   C */
+       "MOVAPS  %[V0011],%%xmm6         \n\t"
+       "MOVSS   %[kappa_m],%%xmm2       \n\t"   /* X2:  -   -   -   C */
+       "MOVUPS  (%[Xa]),%%xmm1          \n\t"   /* X1: Y01 X01 Y00 X00 */
+       "SHUFPS  $0,%%xmm2,%%xmm2        \n\t"   /* X2:  C   C   C   C */
+       "MOVAPS  %[V2222],%%xmm4         \n\t"   /* X7:  2   2   2   2 */
+       "SUBPS   %%xmm6,%%xmm2           \n\t"   /* X2: C-1 C-1  C   C */
        /* -------------------------------------------------------------------; */
-       "MOVAPS	%%xmm2,%%xmm0           \n\t"	/* X0: C-1 C-1  C   C */
+       "MOVAPS  %%xmm2,%%xmm0           \n\t"   /* X0: C-1 C-1  C   C */
        /* -------------------------------------------------------------------; */
        /* xmm0: collected denumerators -> a new element will multiply by this */
        /* xmm1: collected numerators -> we will divide it by the denumerator last */
@@ -151,47 +151,47 @@
 
   #if EAH_HOTLOOP_DIVS == EAH_HOTLOOP_DIVS_RECIPROCAL
        "movhlps %%xmm0,%%xmm2     \n\t"
-       "mulss %%xmm0,%%xmm2	\n\t"
+       "mulss %%xmm0,%%xmm2     \n\t"
 
   #ifdef EAH_HOTLOOP_RENR
-       "RCPSS %%xmm2,%%xmm6	\n\t"
-       "MULSS %%xmm6,%%xmm2	\n\t"
-       "MULSS %%xmm6,%%xmm2	\n\t"
+       "RCPSS %%xmm2,%%xmm6     \n\t"
+       "MULSS %%xmm6,%%xmm2     \n\t"
+       "MULSS %%xmm6,%%xmm2     \n\t"
   LIN_SIN_COS_TRIM_P0B(_lambda_alpha)
-       "ADDSS %%xmm6,%%xmm6	\n\t"
-       "SUBSS %%xmm2,%%xmm6	\n\t"
+       "ADDSS %%xmm6,%%xmm6     \n\t"
+       "SUBSS %%xmm2,%%xmm6     \n\t"
   #else
-       "divss %%xmm2,%%xmm6	\n\t"
+       "divss %%xmm2,%%xmm6     \n\t"
   LIN_SIN_COS_TRIM_P0B(_lambda_alpha)
 
   #endif
 
        "shufps $78,%%xmm0,%%xmm0  \n\t"
        "mulps  %%xmm1,%%xmm0      \n\t"
-       "movhlps %%xmm0,%%xmm4	\n\t"
-       "addps %%xmm0,%%xmm4	\n\t"
+       "movhlps %%xmm0,%%xmm4   \n\t"
+       "addps %%xmm0,%%xmm4     \n\t"
 
        "shufps $160,%%xmm6,%%xmm6   \n\t"
-       "mulps %%xmm6,%%xmm4	\n\t"
+       "mulps %%xmm6,%%xmm4     \n\t"
   #else
        /* -------------------------------------------------------------------; */
        /* Four divisions at once ( two for real parts and two for imaginary parts ) */
   #ifdef EAH_HOTLOOP_RENR
-       "RCPPS %%xmm0,%%xmm6	\n\t"
-       "MULPS %%xmm6,%%xmm0	\n\t"
-       "MULPS %%xmm6,%%xmm0	\n\t"
+       "RCPPS %%xmm0,%%xmm6     \n\t"
+       "MULPS %%xmm6,%%xmm0     \n\t"
+       "MULPS %%xmm6,%%xmm0     \n\t"
   LIN_SIN_COS_TRIM_P0B(_lambda_alpha)
-       "ADDPS %%xmm6,%%xmm6	\n\t"
-       "SUBPS %%xmm0,%%xmm6	\n\t"
-       "MULPS %%xmm6,%%xmm1	\n\t"
+       "ADDPS %%xmm6,%%xmm6     \n\t"
+       "SUBPS %%xmm0,%%xmm6     \n\t"
+       "MULPS %%xmm6,%%xmm1     \n\t"
   #else
-       "DIVPS	%%xmm0,%%xmm1           \n\t"	/* X1: Y0G X0G Y1F X1F */
+       "DIVPS   %%xmm0,%%xmm1           \n\t"   /* X1: Y0G X0G Y1F X1F */
   LIN_SIN_COS_TRIM_P0B(_lambda_alpha)
   #endif
        /* -------------------------------------------------------------------; */
        /* So we have to add the two real and two imaginary parts */
-       "MOVHLPS   %%xmm1,%%xmm4           \n\t"	/* X4:  -   -  Y0G X0G */
-       "ADDPS	%%xmm1,%%xmm4           \n\t"	/* X4:  -   -  YOK XOK */
+       "MOVHLPS   %%xmm1,%%xmm4           \n\t" /* X4:  -   -  Y0G X0G */
+       "ADDPS   %%xmm1,%%xmm4           \n\t"   /* X4:  -   -  YOK XOK */
        /* -------------------------------------------------------------------; */
   #endif
 
@@ -219,8 +219,8 @@
           "addss %%xmm5,%%xmm2 \n\t"
           "subss %%xmm6,%%xmm1 \n\t"
   LIN_SIN_COS_P5(Qreal)
-          "MOVss	%%xmm2,%[XPimag]        \n\t"	/*  */
-          "MOVss	%%xmm1,%[XPreal]        \n\t"	/*  */
+          "MOVss        %%xmm2,%[XPimag]        \n\t"   /*  */
+          "MOVss        %%xmm1,%[XPreal]        \n\t"   /*  */
 
        /* interface */
        :

@@ -59,6 +59,7 @@ typedef struct
    REAL8 ULmindf;
    REAL8 ULmaxdf;
    REAL8 lineDetection;
+   REAL8 avesqrtSh;
    INT4 ihsfactor;
    INT4 harmonicNumToSearch;
    INT4 keepOnlyTopNumIHS;
@@ -79,6 +80,7 @@ typedef struct
    INT4 printAllULvalues;
    INT4 fastchisqinv;
    INT4 useSSE;
+   INT4 useAVX;
    INT4 followUpOutsideULrange;
    INT4 randSeed;
    INT4 ULsolver;

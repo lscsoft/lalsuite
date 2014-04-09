@@ -153,7 +153,7 @@ REAL8 LALInferenceInspiralPrior(LALInferenceRunState *runState, LALInferenceVari
       return -DBL_MAX;
 
   if(LALInferenceCheckVariable(priorParams,"malmquist") &&
-        LALInferenceCheckVariable(priorParams,"malmquist") &&
+        *(UINT4 *)LALInferenceGetVariable(priorParams,"malmquist") &&
         !within_malmquist(runState, params))
       return -DBL_MAX;
 
@@ -624,6 +624,11 @@ UINT4 LALInferenceInspiralCubeToPrior(LALInferenceRunState *runState, LALInferen
     if(LALInferenceCheckVariable(priorParams,"MTotMax"))
         if(*(REAL8 *)LALInferenceGetVariable(priorParams,"MTotMax") < m1+m2)
             return 0;
+
+    if(LALInferenceCheckVariable(priorParams,"malmquist") &&
+        *(UINT4 *)LALInferenceGetVariable(priorParams,"malmquist") &&
+        !within_malmquist(runState, params))
+      return 0;
 
     return 1;
 }
@@ -2722,7 +2727,8 @@ UINT4 within_malmquist(LALInferenceRunState *runState, LALInferenceVariables *pa
         ifo = ifo->next;
     }
 
-    REAL8 *SNRs = LALInferenceNetworkSNR(params, runState->data, runState->templt);
+    REAL8 *SNRs = XLALMalloc(nifo * sizeof(REAL8));
+    LALInferenceNetworkSNR(params, runState->data, runState->templt, SNRs);
     REAL8 loudest_snr=0.0, second_loudest_snr=0.0, network_snr=0.0;
     for (i=0; i<nifo; i++) {
         if (SNRs[i] > second_loudest_snr) {

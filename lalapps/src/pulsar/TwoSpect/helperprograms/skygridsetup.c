@@ -55,7 +55,7 @@ int main(int argc, char *argv[])
       XLAL_ERROR(XLAL_FAILURE);
    }
    
-   XLAL_CHECK( snprintf(s, 20000, "%s", args_info.outfilename_arg) == strlen(args_info.outfilename_arg), XLAL_EFUNC );
+   snprintf(s, 20000, "%s", args_info.outfilename_arg);
    XLAL_CHECK( (OUTPUT = fopen(s,"w")) != NULL, XLAL_EIO, "Output file %s could not be opened\n", s );
    
    //Interferometer

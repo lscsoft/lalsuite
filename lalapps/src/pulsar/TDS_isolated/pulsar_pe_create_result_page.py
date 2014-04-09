@@ -473,16 +473,17 @@ def output_fig(myfig, outpath, fname, ftypes):
 if __name__=='__main__':
   description = \
 """This script is for creating a results output page and plots for the known
-   pulsar analysis. It uses inputs from the old MCMC code
-   lalapps_pulsar_parameter_estimation."""
+   pulsar analysis. It can use either the inputs from the old MCMC code
+   lalapps_pulsar_parameter_estimation, or the nested sampling code
+   lalapps_pulsar_parameter_estimation_nested, as requested."""
 
   epilog = \
 """
-An example of usage for a case when three nested sampling runs have been
+An example of usage for a case when two MCMC runs have been
 performed for two interferometers (H1 and L1):
   %s --ifo H1 --Bkfiles /home/me/hetdata/H1 --ifo L1 --Bkfiles
 /home/me/hetdata/L1 --parfile /home/me/pardir/pulsar.par --priorfile priors.txt
---histbins 50 --mcmcdirs /home/me/MCMCchains/pdfs1
+--histbins 50 --mcmc --mcmcdirs /home/me/MCMCchains/pdfs1
 --mcmcdirs /home/me/MCMCchains/pdfs2 --outpath /home/me/public_html/results
 """ % os.path.basename(sys.argv[0])
   usage = "Usage: %prog [options]"
@@ -504,9 +505,27 @@ performed for two interferometers (H1 and L1):
      --mcmcdirs /home/user/pdfs2
      --mcmcdirs /home/user/pdfs3
   """
-  parser.add_option("-m","--mcmcdirs", dest="mcmcdirs",\
-                    action="append", help="A list "\
-                    "of MCMC directories containing chain for all IFOs")
+  parser.add_option("-M", "--mcmc", dest="usemcmc",
+                    help="Input files will be from the MCMC code.",
+                    action="store_true", default=False)
+
+  parser.add_option("-m", "--mcmcdirs", dest="mcmcdirs",\
+                    action="append", help="If using the MCMC inputs supply an \
+MCMC directory containing chains for each IFO.")
+
+  parser.add_option("-N", "--nested", dest="usenested",
+                    help="Input files will be from the nested sampling code.",
+                    action="store_true", default=False)
+
+  parser.add_option("-f", "--nestedfiles", dest="nestedfiles",
+                    action="append", help="If using nested sampling inputs \
+supply a comma separated list of nested sample files for each IFO. [Note: \
+there must be at least one accompanying header file list the parameters, \
+which has the suffix \"_params.txt\"")
+
+  parser.add_option("-l", "--Nlive", dest="nlive",
+                    type="int", help="If using nested sampling inputs \
+supply the number of live points used in their generation.")
 
   # get pulsar .par file
   parser.add_option("-p", "--parfile", dest="parfile", help="An "
@@ -549,6 +568,11 @@ performed for two interferometers (H1 and L1):
                     "pulsars are hardware injections", action="store_true", \
                     default=False)
 
+  # get confidence interval
+  parser.add_option("-c", "--confidence-interval", dest="ci", help="Set the \
+ % confidence interval to calculate [default: %default %].", type="float",
+                    default=95.)
+
   p_args=''
   for arg in sys.argv:
     p_args += arg + ' '
@@ -566,9 +590,34 @@ performed for two interferometers (H1 and L1):
   else:
     outpath = opts.outpath
 
+  usemcmc = opts.usemcmc
+  usenested = opts.usenested
+
   # check that some data has been given
-  if not opts.__dict__['mcmcdirs']:
-    print >> sys.stderr, "Must specify MCMC chain directories"
+  if usemcmc:
+    if not opts.__dict__['mcmcdirs']:
+      print >> sys.stderr, "Must specify MCMC chain directories"
+      parser.print_help()
+      sys.exit(0)
+    else:
+      # split MCMC directories
+      mcmcdirs = opts.mcmcdirs
+  elif usenested:
+    if not opts.__dict__['nestedfiles']:
+      print >> sys.stderr, "Must specify nested sampling files."
+      parser.print_help()
+      sys.exit(0)
+    else:
+      nestedfiles = opts.nestedfiles
+
+    if not opts.__dict__['nlive']:
+      print >> sys.stderr, "Must specify number of live points."
+      parser.print_help()
+      sys.exit(0)
+    else:
+      nlive = opts.nlive
+  else:
+    print >> sys.stderr, "Must specify using either the MCMC or nested sampling inputs."
     parser.print_help()
     sys.exit(0)
 
@@ -613,20 +662,31 @@ performed for two interferometers (H1 and L1):
       print >> sys.stderr, "Cannot create output directory %s" % outpath
       sys.exit(0)
 
-  # check that number of ifos is the same as the number of data lists
+  # check that number of ifos is the same as the number of data lists (for MCMC)
   nifos = len(ifos)
   ndata = len(Bkfiles)
 
+  ifosNew = list(ifos)
+  if usemcmc:
+    if nifos > 1:
+      ifosNew.append('Joint')
+  if usenested:
+    ifostmp = []
+
+    # create shortened list of ifos removing the Joint one if specified
+    if nifos > 1:
+      for i in ifos:
+        if 'Joint' in i:
+          continue
+        else:
+          ifostmp.append(i)
+    ifos = ifostmp
+    nifos = len(ifos)
+
+  # check that number of ifos is the same as the number of data lists (for MCMC)
   if nifos != ndata:
     print >> sys.stderr, "Number of IFOs and data lists are not equal"
     sys.exit(0)
-
-  ifosNew = list(ifos)
-  if nifos > 1:
-    ifosNew.append('Joint')
-
-  # split MCMC directories
-  mcmcdirs = opts.mcmcdirs
 
   # check if parfile is a single file or a directory
   if os.path.isfile(opts.parfile):
@@ -671,13 +731,30 @@ performed for two interferometers (H1 and L1):
 
   # check that MCMC chains exist for this pulsar and each detector (including
   # joint)
-  for ifo in ifosNew:
-    for chaindir in mcmcdirs:
-      cfile = os.path.join(chaindir, 'MCMCchain_' + pname + '_' + ifo)
+  if usemcmc:
+    for ifo in ifosNew:
+      for chaindir in mcmcdirs:
+        cfile = os.path.join(chaindir, 'MCMCchain_' + pname + '_' + ifo)
 
-      if not os.path.isfile(cfile):
-        print >> sys.stderr, "No MCMC file %s" % cfile
-        sys.exit(0)
+        if not os.path.isfile(cfile):
+          print >> sys.stderr, "No MCMC file %s" % cfile
+          sys.exit(0)
+  if usenested:
+    nfileslist = []
+
+    if len(ifosNew) != len(nestedfiles):
+      print >> sys.stderr, "Number of nested sampling file lists must be equal to number of IFOs."
+      sys.exit(-1)
+
+    for filelist in nestedfiles:
+      nfiles = filelist.split(',')
+
+      nfileslist.append(nfiles)
+
+      for nfile in nfiles:
+        if not os.path.isfile(nfile):
+          print >> sys.stderr, "No nested sampling file %s" % nfile
+          sys.exit(0)
 
   # check required parameters
   f0 = par['F0']
@@ -953,32 +1030,46 @@ asdtime, plotpsds=plotpsds, plotfscan=plotfscan, removeoutlier=50 )
   medvals = []
   corrcoefs = []
   corrcoefsheader = []
+  evidence = []
+  confidenceinterval = []
+
+  if swinj or hwinj:
+    confidenceregion = []
 
   for i, ifo in enumerate(ifosNew):
-    # read in MCMC chains
-    chainfiles = []
-    for chaindir in mcmcdirs:
-      chainfiles.append(chaindir + '/' + 'MCMCchain_' + pname + '_' + ifo)
+    if usemcmc:
+      # read in MCMC chains
+      chainfiles = []
 
-    pos, neffs, grr, cl = pppu.pulsar_mcmc_to_posterior(chainfiles)
+      for chaindir in mcmcdirs:
+        chainfiles.append(os.path.join(chaindir, 'MCMCchain_'+pname+'_'+ifo))
 
-    if pos == None or neffs == None or grr == None or cl == None:
-      outerrfile = os.path.join(outpath, 'mcmc_chain_errors.txt')
-      errfile = open(outerrfile, 'a') # append to file
-      errfile.write('MCMC files for %s and %s could not be read in\n' % (pname, ifo))
-      errfile.close()
-      print >> sys.stderr, "Error in MCMC chain reading!"
+      pos, neffs, grr, cl = pppu.pulsar_mcmc_to_posterior(chainfiles)
 
-      try:
-        shutil.rmtree(puldir)
-      except:
-        os.system('rm -rf %s' % puldir)
+      if pos == None or neffs == None or grr == None or cl == None:
+        outerrfile = os.path.join(outpath, 'mcmc_chain_errors.txt')
+        errfile = open(outerrfile, 'a') # append to file
+        errfile.write('MCMC files for %s and %s could not be read in\n' % (pname, ifo))
+        errfile.close()
+        print >> sys.stderr, "Error in MCMC chain reading!"
 
-      sys.exit(0)
+        try:
+          shutil.rmtree(puldir)
+        except:
+          os.system('rm -rf %s' % puldir)
 
-    nefflist.append(math.fsum(neffs))
-    chainlens.append(np.mean(cl))
-    mcmcgr.append(grr)
+        sys.exit(0)
+
+      nefflist.append(math.fsum(neffs))
+      chainlens.append(np.mean(cl))
+      mcmcgr.append(grr)
+
+    if usenested:
+      pos, ev = pppu.pulsar_nest_to_posterior(nfileslist[i], nlive)
+      evidence.append(ev)
+      mcmcgr = None
+    else:
+      evidence.append(None)
 
     # get from info about the posteriors
     mP, mL = pos.maxL # maximum likelihood/posterior point
@@ -996,6 +1087,75 @@ asdtime, plotpsds=plotpsds, plotfscan=plotfscan, removeoutlier=50 )
     medvals.append(md)
     corrcoefs.append(cc)
     corrcoefsheader.append(hn)
+
+    # get confidence interval
+    cidict = {} # dictionary of confidence intervals
+    if swinj or hwinj:
+      ciregion = {} # dictionary of confidence interval containing injection value
+    pnames = pos.names
+    # remove 'logL', 'deltalogl', 'deltalogL', 'logw' or 'logPrior'
+    for pn in pnames:
+      pl = pn.lower()
+      if 'logl' in pl or 'deltalogl' in pl or 'logw' in pl or 'logprior' in pl:
+        continue
+      else:
+        # DONT NEED TO USE KDTREE STUFF FOR THIS (BUT KEEP HERE FOR REFERENCE)
+        #leaves, intArea, injInfo = bppu.kdtree_bin2step(pos, [pn], [opts.ci/100.], samples_per_bin=64)
+
+        #lowbound = np.inf
+        #highbound = -np.inf
+
+        #for j in range(len(leaves)):
+        #  if leaves[j][4] > opts.ci/100.:
+        #    break # found edge of bound
+        #  else:
+        #    lowbound = np.amin([leaves[j][0][0][0], leaves[j][0][1][0], lowbound])
+        #    highbound = np.amax([leaves[j][0][0][0], leaves[j][0][1][0], highbound])
+
+        psamples = np.squeeze(pos[pn].samples).tolist()
+        psamples.sort() # sort samples into ascending order
+        lowbound = min(psamples)
+        highbound = max(psamples)
+        cregion = highbound - lowbound
+        lsam = len(psamples)
+        cllen = int(lsam*opts.ci/100.)
+        for j in range(lsam-cllen):
+          if psamples[j+cllen]-psamples[j] < cregion:
+            lowbound = psamples[j]
+            highbound = psamples[j+cllen]
+            cregion = highbound - lowbound
+
+        # get confidence region containing the injection
+        if swinj or hwinj:
+          # loop over difference confidence intervals until finding the smallest one
+          # that contains the injection
+          cifound = False
+          for ci in range(1,101):
+            lowr = min(psamples)
+            highr = max(psamples)
+            cregion = highr - lowr
+            cllen = int(lsam*ci/100.)
+            for j in range(lsam-cllen):
+              if psamples[j+cllen]-psamples[j] < cregion:
+                lowr = psamples[j]
+                highr = psamples[j+cllen]
+                cregion = highr - lowr
+
+            if par[pn.upper()] >= lowr and par[pn.upper()] <= highr:
+              # found injection confidence region
+              cifound = True
+              ciregion[pn] = ci
+              break
+
+          if not cifound:
+            ciregion[pn] = 101. # injection is outside of posterior!
+
+        cidict[pn] = [lowbound, highbound]
+
+    confidenceinterval.append(cidict)
+
+    if swinj or hwinj:
+      confidenceregion.append(ciregion)
 
   # set whether to attempt to output injection parameter on plot
   parinj = None
@@ -1040,10 +1200,11 @@ asdtime, plotpsds=plotpsds, plotfscan=plotfscan, removeoutlier=50 )
   if sdlim == None:
     sdlimtxt = ''
   else:
+
     sdlimtxt = \
 """\
 <tr>
-  <td colspan="5" style="text-align: center;">h<sub>0</sub> spin-down = %s%s</td>
+  <td colspan="6" style="text-align: center;">h<sub>0</sub> spin-down = %s%s</td>
 </tr>\
 """ % (exp_str(sdlim), sdtext)
 
@@ -1057,6 +1218,7 @@ asdtime, plotpsds=plotpsds, plotfscan=plotfscan, removeoutlier=50 )
   <th>&#949;</th>
   <th>Q<sub>22</sub></th>
   <th>ratio</th>
+  <th>log(evidence ratio)</th>
 </tr>
 """ % sdlimtxt )
 
@@ -1078,6 +1240,14 @@ asdtime, plotpsds=plotpsds, plotfscan=plotfscan, removeoutlier=50 )
       q22htmlstr = '*'
       sdratstr = '*'
 
+    if usenested:
+      if evidence[i] > 100. or evidence[i] < -100.:
+        evidencestr = '%s' % exp_str(evidence[i])
+      else:
+        evidencestr = '%.2f' % evidence[i]
+    else:
+      evidencestr = '*'
+
     # output values to pulsar page table
     limittable.append( \
 """
@@ -1087,8 +1257,9 @@ asdtime, plotpsds=plotpsds, plotfscan=plotfscan, removeoutlier=50 )
   <td class="%s">%s</td>
   <td class="%s">%s</td>
   <td class="%s">%s</td>
+  <td class="%s">%s</td>
 </tr>
-""" % (ifo, ifo, ifo, exp_str(ulvals[i]), ifo, ellhtmlstr, ifo, q22htmlstr, ifo, sdratstr) )
+""" % (ifo, ifo, ifo, exp_str(ulvals[i]), ifo, ellhtmlstr, ifo, q22htmlstr, ifo, sdratstr, ifo, evidencestr) )
 
   limittable.append('</table>')
 
@@ -1096,6 +1267,12 @@ asdtime, plotpsds=plotpsds, plotfscan=plotfscan, removeoutlier=50 )
   psrshelf['q22'] = dict(zip(ifosNew, q22))
   psrshelf['sdrat'] = dict(zip(ifosNew, sdrat))
   psrshelf['sdpowrat'] = dict(zip(ifosNew, sdpowrat))
+  psrshelf['evidence'] = dict(zip(ifosNew, evidence))
+  psrshelf['confidenceinterval'] = dict(zip(ifosNew, confidenceinterval))
+  psrshelf['ci'] = opts.ci # the percentage confidence interval
+
+  if swinj or hwinj:
+    psrshelf['confidenceregion'] = dict(zip(ifosNew, confidenceregion))
 
   # phi0
   bounds = [0, 2*math.pi]
@@ -1127,8 +1304,8 @@ asdtime, plotpsds=plotpsds, plotfscan=plotfscan, removeoutlier=50 )
   gci = ax[-1].axis()
   h0cibounds = [[gh0[0], gh0[1]], [gci[1], gci[0]]]
 
-  h0ciFig = pppu.plot_posterior_hist2D([poslist[-1]], ['h0', 'cosiota'], \
-[ifosNew[-1]], bounds=h0cibounds, nbins=[30, 30], parfile=parinj)
+  h0ciFig = pppu.plot_posterior_hist2D(poslist, ['h0', 'cosiota'], \
+ifosNew, bounds=h0cibounds, nbins=[30, 30], parfile=parinj, overplot=True)
   h0cifigname = output_fig(h0ciFig[0], puldir, 'h0cipost', ftypes)
 
   # get phi0 vs psi 2D posterior histogram
@@ -1138,8 +1315,8 @@ asdtime, plotpsds=plotpsds, plotfscan=plotfscan, removeoutlier=50 )
   gpsi = ax[-1].axis()
   phi0psibounds = [[gphi0[0], gphi0[1]], [gpsi[1], gpsi[0]]]
 
-  phi0psiFig = pppu.plot_posterior_hist2D([poslist[-1]], ['phi0', 'psi'], \
-[ifosNew[-1]], bounds=phi0psibounds, nbins=[30, 30], parfile=parinj)
+  phi0psiFig = pppu.plot_posterior_hist2D(poslist, ['phi0', 'psi'], \
+ifosNew, bounds=phi0psibounds, nbins=[30, 30], parfile=parinj, overplot=True)
   phi0psifigname = output_fig(phi0psiFig[0], puldir, 'phi0psipost', ftypes)
 
   # produce output table of posterior plots
@@ -1294,8 +1471,10 @@ fscanfigname[i]['png']) )
   # output MCMC chains and statistics
   mcmctabletext = None
   mcmctabletext = []
-  mcmctabletext.append('<h2>MCMC chains</h2>')
-  mcmctabletext.append( \
+
+  if usemcmc:
+    mcmctabletext.append('<h2>MCMC chains</h2>')
+    mcmctabletext.append( \
 """<table>
   <tr>
     <th colspan=4>MCMC chain information</th>
@@ -1308,8 +1487,8 @@ fscanfigname[i]['png']) )
   </tr>
 """ )
 
-  for i, ifo in enumerate(ifosNew):
-    mcmctabletext.append( \
+    for i, ifo in enumerate(ifosNew):
+      mcmctabletext.append( \
 """
   <tr>
     <td class="%s">%s</td>
@@ -1318,18 +1497,28 @@ fscanfigname[i]['png']) )
     <td>%d</td>
   </tr>
 """ % (ifo, ifo, len(mcmcdirs), chainlens[i], nefflist[i]) )
-  mcmctabletext.append('</table>')
+    mcmctabletext.append('</table>')
+
+    fnamepostfix = '_mcmcchain'
+
+  if usenested:
+    mcmctabletext.append('<h2>Posterior samples</h2>')
+    fnamepostfix = '_postchain'
 
   mcmctabletext.append('<table>')
   parlist = None
   parlist = poslist[0].names
-  for par in parlist:
-    if par != 'post' and par != 'logl':
+  for param in parlist:
+    pl = param.lower()
+
+    if 'post' in pl or 'logl' in pl or 'logw' in pl or 'logprior' in pl:
+      continue
+    else:
       chainfig = None
-      chainfig = pppu.plot_posterior_chain(poslist, par, ifosNew, mcmcgr, \
+      chainfig = pppu.plot_posterior_chain(poslist, param, ifosNew, mcmcgr, \
                                            withhist=30)
       if chainfig:
-        figname = output_fig(chainfig, puldir, par+'_mcmcchain', ftypes)
+        figname = output_fig(chainfig, puldir, param+fnamepostfix, ftypes)
         mcmctabletext.append( \
 """
 <tr>
@@ -1362,15 +1551,31 @@ fscanfigname[i]['png']) )
 """\
   <tr>
     <th>&nbsp;</th>
-    <th>&nbsp;</th>
+""" )
+
+  if (swinj or hwinj) and parinj:
+    poststatstext.append('<th>Inj. value</th>')
+
+  poststatstext.append( \
+"""\
+    <th>IFO</th>
     <th>max. posterior</th>
     <th>mean</th>
     <th>median</th>
     <th>&sigma;</th>
-  </tr>\
-""" )
+    <th>%d%% confidence interval</th>
+""" % int(opts.ci))
+
+  if (swinj or hwinj) and parinj:
+    poststatstext.append('<th>Inj. interval</th></tr>')
+  else:
+    poststatstext.append('</tr>')
 
   for j, param in enumerate(corrcoefsheader[0].split()):
+    pl = param.lower()
+    if 'post' in pl or 'logl' in pl or 'logw' in pl or 'logprior' in pl:
+      continue
+
     try:
       pdisp = paramtextdisp[param.upper()]
     except:
@@ -1384,6 +1589,10 @@ pdisp) )
     except:
       dispfunc = paramdisp2.__dict__['DEFAULT']
 
+    if (swinj or hwinj) and parinj:
+      poststatstext.append('<td rowspan="%d">%s</td>' % (len(ifosNew), \
+ dispfunc(str(par[param.upper()]))))
+
     for i, ifo in enumerate(ifosNew):
       poststatstext.append('<td class="%s">%s</td>' % (ifo, ifo) )
 
@@ -1393,6 +1602,12 @@ pdisp) )
 dispfunc(str(medvals[i][param])))
       poststatstext.append('<td>%s</td>' % \
 dispfunc(str(stddevvals[i][param])))
+      poststatstext.append('<td>(%s, %s)</td>' % \
+(dispfunc(str(confidenceinterval[i][param][0])), dispfunc(str(confidenceinterval[i][param][1]))))
+
+      if (swinj or hwinj) and parinj:
+        poststatstext.append('<td>%.1f</td>' % confidenceregion[i][param])
+
       poststatstext.append('</tr>')
 
   poststatstext.append('</table>\n</div>')

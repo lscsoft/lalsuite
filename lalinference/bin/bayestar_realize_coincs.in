@@ -56,17 +56,22 @@ parser = OptionParser(
         Option("--detector", metavar='|'.join(available_ifos), action="append",
             help="Detectors to use.  May be specified multiple times.",
             choices=available_ifos),
-        Option("--snr-threshold", type=float, default=8.,
+        Option("--waveform",
+            help="Waveform to use for injections (overrides values in sim_inspiral table)"),
+        Option("--snr-threshold", type=float, default=4.,
             help="Single-detector SNR threshold [default: %default]"),
-        Option("--min-triggers", type=int, default=3,
+        Option("--min-triggers", type=int, default=2,
             help="Emit coincidences only when at least this many triggers are found [default: %default]"),
         Option("--measurement-error", choices=measurement_error_choices,
             default=measurement_error_choices[0], metavar='|'.join(measurement_error_choices),
-            help="How to compute the measurement error [default: %default]")
+            help="How to compute the measurement error [default: %default]"),
+        Option("--reference-psd", metavar="PSD.xml[.gz]",
+            help="Name of PSD file (required)")
     ]
 )
 opts, args = parser.parse_args()
 infilename = command.get_input_filename(parser, args)
+command.check_required_arguments(parser, opts, 'reference_psd')
 
 
 # Python standard library imports.
@@ -84,16 +89,23 @@ from glue.ligolw import lsctables
 # glue, LAL and pylal imports.
 from glue import segments
 import glue.lal
-import lal, lalsimulation
+import lal
+import lal.series
+import lalsimulation
+import pylal.progress
 
 # BAYESTAR imports.
+from lalinference.bayestar import filter
 from lalinference.bayestar import timing
 
 # Other imports.
 import numpy as np
 
 
+progress = pylal.progress.ProgressBar()
+
 # Open output file.
+progress.update(-1, 'setting up output document')
 out_xmldoc = ligolw.Document()
 out_xmldoc.appendChild(ligolw.LIGO_LW())
 
@@ -108,7 +120,16 @@ out_xmldoc.childNodes[0].appendChild(search_summary_table)
 summary = ligolw_search_summary.append_search_summary(out_xmldoc, process,
     inseg=all_time, outseg=all_time)
 
+# Read PSDs.
+progress.update(-1, 'reading ' + opts.reference_psd)
+xmldoc = ligolw_utils.load_filename(opts.reference_psd)
+psds = lal.series.read_psd_xmldoc(xmldoc)
+psds = dict(
+    (key, timing.InterpolatedPSD(filter.abscissa(psd), psd.data.data))
+    for key, psd in psds.iteritems() if psd is not None)
+
 # Read injection file.
+progress.update(-1, 'reading ' + infilename)
 xmldoc = ligolw_utils.load_filename(infilename)
 
 # Extract simulation table from injection file.
@@ -149,7 +170,7 @@ detectors = [lalsimulation.DetectorPrefixToLALDetector(ifo)
 responses = [det.response for det in detectors]
 locations = [det.location for det in detectors]
 
-for sim_inspiral in sim_inspiral_table:
+for sim_inspiral in progress.iterate(sim_inspiral_table):
 
     # Unpack some values from the row in the table.
     m1 = sim_inspiral.mass1
@@ -163,7 +184,8 @@ for sim_inspiral in sim_inspiral_table:
     psi = sim_inspiral.polarization
     epoch = lal.LIGOTimeGPS(sim_inspiral.geocent_end_time, sim_inspiral.geocent_end_time_ns)
     gmst = lal.GreenwichMeanSiderealTime(epoch)
-    approximant, amplitude_order, phase_order = timing.get_approximant_and_orders_from_string(sim_inspiral.waveform)
+    waveform = sim_inspiral.waveform if opts.waveform is None else opts.waveform
+    approximant, amplitude_order, phase_order = timing.get_approximant_and_orders_from_string(waveform)
 
     # Pre-evaluate some trigonometric functions that we will need.
     cosinc = np.cos(inc)
@@ -179,7 +201,7 @@ for sim_inspiral in sim_inspiral_table:
     M *= ((cospsi, sinpsi), (-sinpsi, cospsi))
 
     # Signal models for each detector.
-    signal_models = [timing.SignalModel(m1, m2, timing.get_noise_psd_func(ifo), f_low, approximant, amplitude_order, phase_order)
+    signal_models = [timing.SignalModel(m1, m2, psds[ifo], f_low, approximant, amplitude_order, phase_order)
         for ifo in opts.detector]
 
     # Get SNR=1 horizon distances for each detector.
@@ -278,6 +300,7 @@ for sim_inspiral in sim_inspiral_table:
 
 
 # Record process end time.
+progress.update(-1, 'writing ' + opts.output)
 ligolw_process.set_process_end_time(process)
 
 # Write output file.

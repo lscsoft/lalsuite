@@ -27,16 +27,16 @@
 /* Also returns the signal phase according to eqn 2.4 */
 int XLALGetDopplerShiftedFrequencyInfo
   (
-   REAL8Vector         *shiftedFreqs, /**< Output list of shifted frequencies */
-   UINT4Vector         *lowestBins,   /**< Output list of bin indices */
-   REAL8Vector         *kappaValues,  /**< Output list of bin offsets */
-   REAL8Vector         *signalPhases, /**< Output list of signal phases */
-   UINT4               numBins,       /**< Number of frequency bins to use */
-   PulsarDopplerParams *dopp,         /**< Doppler parameters for signal */
-   SFTIndexList        *sftIndices,   /**< List of indices for SFTs */
-   MultiSFTVector      *inputSFTs,    /**< SFT data (needed for f0) */
-   MultiSSBtimes       *multiTimes,   /**< SSB or Binary times */
-   REAL8               Tsft           /**< SFT duration */
+   REAL8Vector        *shiftedFreqs, /**< Output list of shifted frequencies */
+   INT4Vector           *lowestBins, /**< Output list of bin indices */
+   REAL8Vector         *kappaValues, /**< Output list of bin offsets */
+   REAL8Vector        *signalPhases, /**< Output list of signal phases */
+   INT4                     numBins, /**< Number of frequency bins to use */
+   PulsarDopplerParams        *dopp, /**< Doppler parameters for signal */
+   SFTIndexList         *sftIndices, /**< List of indices for SFTs */
+   MultiSFTVector        *inputSFTs, /**< SFT data (needed for f0) */
+   MultiSSBtimes        *multiTimes, /**< SSB or Binary times */
+   REAL8                       Tsft  /**< SFT duration */
   )
 {
   UINT8 numSFTs;
@@ -273,12 +273,13 @@ int XLALCalculatePulsarCrossCorrStatistic
  REAL8           *evSquared,   /* Output: (E[rho]/h0^2)^2 */
  REAL8Vector     *curlyGAmp,   /* Input: Amplitude of curly G for each pair */
  REAL8Vector  *signalPhases,   /* Input: Phase of signal for each SFT */
- UINT4Vector    *lowestBins,   /* Input: Bin index to start with for each SFT */
+ INT4Vector     *lowestBins,   /* Input: Bin index to start with for each SFT */
  REAL8Vector   *kappaValues,   /* Input: Fractional offset of signal freq from best bin center */
- UINT4              numBins,   /* Input: Number of bins to include in calc */
+ INT4               numBins,   /* Input: Number of bins to include in calc */
  SFTPairIndexList *sftPairs,   /* Input: flat list of SFT pairs */
  SFTIndexList   *sftIndices,   /* Input: flat list of SFTs */
- MultiSFTVector  *inputSFTs    /* Input: SFT data */
+ MultiSFTVector  *inputSFTs,   /* Input: SFT data */
+ REAL8                 Tsft    /* Input: SFT duration */
  )
 {
 
@@ -295,7 +296,8 @@ int XLALCalculatePulsarCrossCorrStatistic
     XLALPrintError("Lengths of pair-indexed lists don't match!");
     XLAL_ERROR(XLAL_EBADLEN );
   }
-
+  REAL8 nume=0;
+  REAL8 curlyGSqr=0;
   *ccStat = 0.0;
   *evSquared = 0.0;
   for (UINT8 alpha=0; alpha < numPairs; alpha++) {
@@ -329,58 +331,61 @@ int XLALCalculatePulsarCrossCorrStatistic
 
     COMPLEX8 *dataArray1 = inputSFTs->data[detInd1]->data[sftInd1].data->data;
     COMPLEX8 *dataArray2 = inputSFTs->data[detInd2]->data[sftInd2].data->data;
-    UINT4 lenDataArray1 = inputSFTs->data[detInd1]->data[sftInd1].data->length;
-    UINT4 lenDataArray2 = inputSFTs->data[detInd2]->data[sftInd2].data->length;
+    INT4 lenDataArray1 = inputSFTs->data[detInd1]->data[sftInd1].data->length;
+    INT4 lenDataArray2 = inputSFTs->data[detInd2]->data[sftInd2].data->length;
     COMPLEX16 GalphaCC = curlyGAmp->data[alpha]
       * cexp( I * ( signalPhases->data[sftNum1]
 		   - signalPhases->data[sftNum2] )
 	      );
-    UINT4 baseCCSign = 1; /* Alternating sign is (-1)**(k1-k2) */
+    INT4 baseCCSign = 1; /* Alternating sign is (-1)**(k1-k2) */
     if ( ( (lowestBins->data[sftNum1]-lowestBins->data[sftNum2]) % 2) != 0 ) {
       baseCCSign = -1;
     }
 
-    UINT4 lowestBin1 = lowestBins->data[sftNum1];
-    XLAL_CHECK ( (lowestBin1 + numBins - 1 < lenDataArray1),
+    INT4 lowestBin1 = lowestBins->data[sftNum1];
+    XLAL_CHECK ( ((lowestBin1 + numBins - 1) < lenDataArray1),
 		 XLAL_EINVAL,
 		 "Loop would run off end of array:\n lowestBin1=%d, numBins=%d, len(dataArray1)=%d\n",
 		 lowestBin1, numBins, lenDataArray1 );
-    for (UINT8 j=0; j < numBins; j++) {
+    for (INT8 j=0; j < numBins; j++) {
       COMPLEX16 data1 = dataArray1[lowestBin1+j];
       REAL8 sincFactor = gsl_sf_sinc(kappaValues->data[sftNum1]+j);
       /* Normalized sinc, i.e., sin(pi*x)/(pi*x) */
-      UINT8 ccSign = baseCCSign;
-      UINT4 lowestBin2 = lowestBins->data[sftNum2];
-      XLAL_CHECK ( (lowestBin2 + numBins - 1 < lenDataArray2),
+      INT4 ccSign = baseCCSign;
+      INT4 lowestBin2 = lowestBins->data[sftNum2];
+      XLAL_CHECK ( ((lowestBin2 + numBins - 1) < lenDataArray2),
 		   XLAL_EINVAL,
 		   "Loop would run off end of array:\n lowestBin2=%d, numBins=%d, len(dataArray2)=%d\n",
 		   lowestBin2, numBins, lenDataArray2 );
-      for (UINT8 k=0; k < numBins; k++) {
+      for (INT8 k=0; k < numBins; k++) {
 	COMPLEX16 data2 = dataArray2[lowestBins->data[sftNum2]+k];
 	sincFactor *= gsl_sf_sinc(kappaValues->data[sftNum2]+k);
-	*ccStat += crealf ( GalphaCC * ccSign * sincFactor
-			    * conj(data1) * data2 );
+	nume += 2* creal ( GalphaCC * ccSign * sincFactor * conj(data1) * data2 *SQUARE(Tsft) / SQUARE(Tsft) );
 	REAL8 GalphaAmp = curlyGAmp->data[alpha] * sincFactor;
-	*evSquared += SQUARE( GalphaAmp );
+	curlyGSqr += SQUARE( GalphaAmp );
 	ccSign *= -1;
       }
       baseCCSign *= -1;
     }
   }
+  *evSquared =2 * curlyGSqr;
+  *ccStat = nume / sqrt(*evSquared);
   return XLAL_SUCCESS;
 }
 /*calculate metric diagnol components, also include the estimation of sensitivity E[rho]/(h_0)^2*/
 int XLALFindLMXBCrossCorrDiagMetric
   (
    REAL8             *hSens,         /*Output:sensitivity*/
-   REAL8             *g_ff,          /*Output:metric elements*/
-   REAL8             *g_aa, 
-   REAL8             *g_TT, 
+   REAL8             *g_ff,          /*Output:metric elements */
+   REAL8             *g_aa,          /*binary projected semimajor axis*/
+   REAL8             *g_TT,          /*reference time*/
    PulsarDopplerParams DopplerParams, /* Input: pulsar/binary orbit paramaters*/
-   REAL8Vector       *G_alpha,        /* Input: vector of sigma_alpha values */ 
+   REAL8Vector       *G_alpha,        /* Input: vector of curlyGunshifted values */
    SFTPairIndexList  *pairIndexList,  /* Input: list of SFT pairs */
-   SFTIndexList      *indexList,      /* Input: list of SFTs */   
+   SFTIndexList      *indexList,      /* Input: list of SFTs */
    MultiSFTVector    *sfts            /* Input: set of per-detector SFT vectors */
+   /* REAL8Vector       *kappaValues */    /* Input: Fractional offset of signal freq from best bin center */
+
    /*REAL8             *devTsq,  */   /*Output: mean time deviation^2*/
    /*REAL8             *g_pp,*/
    )
@@ -405,8 +410,8 @@ int XLALFindLMXBCrossCorrDiagMetric
 
    UINT8 numalpha = G_alpha->length;
 
-  for (j=0; j < numalpha; j++) {
-    REAL8 sqrG_alpha=SQUARE(G_alpha->data[j]);
+
+   for (j=0; j < numalpha; j++) {
     sftNum1 = pairIndexList->data[j].sftNum[0];
     sftNum2 = pairIndexList->data[j].sftNum[1];
     UINT8 detInd1 = indexList->data[sftNum1].detInd;
@@ -416,8 +421,9 @@ int XLALFindLMXBCrossCorrDiagMetric
     T1 = &(sfts->data[detInd1]->data[sftInd1].epoch);
     T2 = &(sfts->data[detInd2]->data[sftInd2].epoch);
     T = XLALGPSDiff( T1, T2 );
-    sinSquare += sqrG_alpha*SQUARE(sin(LAL_PI*T/(DopplerParams.period)));/*(G_alpha)^2*(sin(\pi*T/T_orbit))^2*/
-    tSquare += sqrG_alpha*SQUARE( G_alpha->data[j]*T); /*(\curlyg_alpha*)^2*T^2*/
+    REAL8 sqrG_alpha = SQUARE(G_alpha->data[j]);/*(curlyG_\alpha)^2*/
+    sinSquare += sqrG_alpha*SQUARE(sin(LAL_PI*T/(DopplerParams.period)));/*(G_\alpha)^2*(sin(\pi*T/T_orbit))^2*/
+    tSquare += sqrG_alpha*SQUARE(T); /*(\curlyg_alpha*)^2*T^2*/
     denom += sqrG_alpha;                               /*calculate the denominator*/
     rhosum += 2*sqrG_alpha;
     /*hfT=0.5*T;
@@ -431,7 +437,7 @@ int XLALFindLMXBCrossCorrDiagMetric
   *g_aa= SinSquaWeightedAve* SQUARE(LAL_PI*DopplerParams.fkdot[0]);
   *g_TT= SinSquaWeightedAve* SQUARE(2*SQUARE(LAL_PI)*(DopplerParams.fkdot[0])*(DopplerParams.asini)/(DopplerParams.period));
 
-  
+
   return XLAL_SUCCESS;
 
 

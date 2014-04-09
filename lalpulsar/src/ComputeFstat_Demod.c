@@ -43,12 +43,12 @@ static int firstcall = 1; /* for sin/cos lookup table initialization */
 
 /* Macro to check return value of local_sin_cos_2PI_LUT_trimmed only in DEBUG mode */
 #ifndef LAL_NDEBUG
-#define SINCOS_2PI_TRIMMED(s,c,x)		\
-  if ( local_sin_cos_2PI_LUT_trimmed(s,c,x) ) {	\
-    XLAL_ERROR ( XLAL_EFUNC);			\
+#define SINCOS_2PI_TRIMMED(s,c,x)               \
+  if ( local_sin_cos_2PI_LUT_trimmed(s,c,x) ) { \
+    XLAL_ERROR ( XLAL_EFUNC);                   \
   }
 #else
-#define SINCOS_2PI_TRIMMED(s,c,x)		\
+#define SINCOS_2PI_TRIMMED(s,c,x)               \
   local_sin_cos_2PI_LUT_trimmed(s,c,x)
 #endif
 
@@ -72,32 +72,32 @@ const UINT4 OptimisedHotloopDterms = DTERMS;
 /* record which optimized hotloop variant was selected for use in LocalXLALComputeFaFb() */
 const char *const OptimisedHotloopSource = OPT_DEMOD_SOURCE;
 
-#define COMPUTEFSTATC_ENULL 		1
-#define COMPUTEFSTATC_ENONULL 		2
-#define COMPUTEFSTATC_EINPUT   		3
-#define COMPUTEFSTATC_EMEM   		4
-#define COMPUTEFSTATC_EXLAL		5
-#define COMPUTEFSTATC_EIEEE		6
-#define COMPUTEFSTATC_MSGENULL 		"Arguments contained an unexpected null pointer"
-#define COMPUTEFSTATC_MSGENONULL 	"Output pointer is non-NULL"
-#define COMPUTEFSTATC_MSGEINPUT   	"Invalid input"
-#define COMPUTEFSTATC_MSGEMEM   	"Out of memory. Bad."
-#define COMPUTEFSTATC_MSGEXLAL		"XLAL function call failed"
-#define COMPUTEFSTATC_MSGEIEEE		"Floating point failure"
+#define COMPUTEFSTATC_ENULL             1
+#define COMPUTEFSTATC_ENONULL           2
+#define COMPUTEFSTATC_EINPUT            3
+#define COMPUTEFSTATC_EMEM              4
+#define COMPUTEFSTATC_EXLAL             5
+#define COMPUTEFSTATC_EIEEE             6
+#define COMPUTEFSTATC_MSGENULL          "Arguments contained an unexpected null pointer"
+#define COMPUTEFSTATC_MSGENONULL        "Output pointer is non-NULL"
+#define COMPUTEFSTATC_MSGEINPUT         "Invalid input"
+#define COMPUTEFSTATC_MSGEMEM           "Out of memory. Bad."
+#define COMPUTEFSTATC_MSGEXLAL          "XLAL function call failed"
+#define COMPUTEFSTATC_MSGEIEEE          "Floating point failure"
 
-#define LD_SMALL4       (2.0e-4)		/* "small" number for REAL4*/
-#define OOTWOPI         (1.0 / LAL_TWOPI)	/* 1/2pi */
-#define TWOPI_FLOAT     6.28318530717958f  	/* single-precision 2*pi */
-#define OOTWOPI_FLOAT   (1.0f / TWOPI_FLOAT)	/* single-precision 1 / (2pi) */
+#define LD_SMALL4       (2.0e-4)                /* "small" number for REAL4*/
+#define OOTWOPI         (1.0 / LAL_TWOPI)       /* 1/2pi */
+#define TWOPI_FLOAT     6.28318530717958f       /* single-precision 2*pi */
+#define OOTWOPI_FLOAT   (1.0f / TWOPI_FLOAT)    /* single-precision 1 / (2pi) */
 
 /* Type containing F-statistic proper plus the two complex amplitudes Fa and Fb (for ML-estimators) */
 typedef struct tagFcomponents {
-  REAL8 F;				/* F-statistic value */
-  REAL8 FX[PULSAR_MAX_DETECTORS];		/* vector of single-detector F-statistic values (array of fixed size) */
-  UINT4 numDetectors;			/* number of detectors = effective vector length. numDetectors=0 should make all code ignore the FX field. */
-  LIGOTimeGPS refTime;			/* 'internal' refTime used to compute the F-statistic: only relevant for phase of complex amplitudes {Fa,Fb} */
-  COMPLEX16 Fa;				/* complex amplitude Fa */
-  COMPLEX16 Fb;				/* complex amplitude Fb */
+  REAL8 F;                              /* F-statistic value */
+  REAL8 FX[PULSAR_MAX_DETECTORS];               /* vector of single-detector F-statistic values (array of fixed size) */
+  UINT4 numDetectors;                   /* number of detectors = effective vector length. numDetectors=0 should make all code ignore the FX field. */
+  LIGOTimeGPS refTime;                  /* 'internal' refTime used to compute the F-statistic: only relevant for phase of complex amplitudes {Fa,Fb} */
+  COMPLEX16 Fa;                         /* complex amplitude Fa */
+  COMPLEX16 Fb;                         /* complex amplitude Fb */
   MultiFstatAtomVector *multiFstatAtoms;/* per-IFO, per-SFT arrays of F-stat 'atoms', ie quantities required to compute F-stat */
 } Fcomponents;
 
@@ -106,14 +106,14 @@ typedef struct tagComputeFBuffer_RS ComputeFBuffer_RS;
 
 /* Extra parameters controlling the actual computation of F */
 typedef struct tagComputeFParams {
-  UINT4 Dterms;		/* how many terms to keep in the Dirichlet kernel (~16 is usually fine) */
-  REAL8 upsampling;	/* frequency-upsampling applied to SFTs ==> dFreq != 1/Tsft ... */
+  UINT4 Dterms;         /* how many terms to keep in the Dirichlet kernel (~16 is usually fine) */
+  REAL8 upsampling;     /* frequency-upsampling applied to SFTs ==> dFreq != 1/Tsft ... */
   SSBprecision SSBprec; /* whether to use full relativist SSB-timing, or just simple Newtonian */
   BOOLEAN useRAA;        /* whether to use the frequency- and sky-position-dependent rigid adiabatic response tensor and not just the long-wavelength approximation */
-  BOOLEAN bufferedRAA;	/* approximate RAA by assuming constant response over (small) frequency band */
+  BOOLEAN bufferedRAA;  /* approximate RAA by assuming constant response over (small) frequency band */
   ComputeFBuffer_RS *buffer; /* buffer for storing pre-resampled timeseries (used for resampling implementation) */
   const EphemerisData *edat;   /* ephemeris data for re-computing multidetector states */
-  BOOLEAN returnAtoms;	/* whether or not to return the 'FstatAtoms' used to compute the F-statistic */
+  BOOLEAN returnAtoms;  /* whether or not to return the 'FstatAtoms' used to compute the F-statistic */
   BOOLEAN returnSingleF; /* in multi-detector case, whether or not to also return the single-detector Fstats computed from the atoms */
 } ComputeFParams;
 
@@ -123,7 +123,7 @@ typedef struct tagComputeFParams {
  */
 typedef struct tagComputeFBuffer {
   const MultiDetectorStateSeries *multiDetStates;/* buffer for each detStates (store pointer) and skypos */
-  REAL8 Alpha, Delta;				/* skyposition of candidate */
+  REAL8 Alpha, Delta;                           /* skyposition of candidate */
   MultiSSBtimes *multiSSB;
   MultiSSBtimes *multiBinary;
   MultiAMCoeffs *multiAMcoef;
@@ -156,24 +156,24 @@ XLALEmptyComputeFBuffer ( ComputeFBuffer *cfb)
  * Compute JKS's Fa and Fb, which are ingredients for calculating the F-statistic.
  */
 static int
-XLALComputeFaFb ( Fcomponents *FaFb,		      	/* [out] Fa,Fb (and possibly atoms) returned */
-		  const SFTVector *sfts,		/* [in] input SFTs */
-		  const PulsarSpins fkdot,		/* [in] frequency and derivatives fkdot = d^kf/dt^k */
-		  const SSBtimes *tSSB,			/* [in] SSB timing series for particular sky-direction */
-		  const AMCoeffs *amcoe,		/* [in] antenna-pattern coefficients for this sky-direction */
-		  const ComputeFParams *params )       	/* addition computational params */
+XLALComputeFaFb ( Fcomponents *FaFb,                    /* [out] Fa,Fb (and possibly atoms) returned */
+                  const SFTVector *sfts,                /* [in] input SFTs */
+                  const PulsarSpins fkdot,              /* [in] frequency and derivatives fkdot = d^kf/dt^k */
+                  const SSBtimes *tSSB,                 /* [in] SSB timing series for particular sky-direction */
+                  const AMCoeffs *amcoe,                /* [in] antenna-pattern coefficients for this sky-direction */
+                  const ComputeFParams *params )        /* addition computational params */
 {
-  UINT4 alpha;                 	/* loop index over SFTs */
-  UINT4 spdnOrder;		/* maximal spindown-orders */
-  UINT4 numSFTs;		/* number of SFTs (M in the Notes) */
+  UINT4 alpha;                  /* loop index over SFTs */
+  UINT4 spdnOrder;              /* maximal spindown-orders */
+  UINT4 numSFTs;                /* number of SFTs (M in the Notes) */
   COMPLEX16 Fa, Fb;
-  REAL8 Tsft; 			/* length of SFTs in seconds */
-  INT4 freqIndex0;		/* index of first frequency-bin in SFTs */
-  INT4 freqIndex1;		/* index of last frequency-bin in SFTs */
+  REAL8 Tsft;                   /* length of SFTs in seconds */
+  INT4 freqIndex0;              /* index of first frequency-bin in SFTs */
+  INT4 freqIndex1;              /* index of last frequency-bin in SFTs */
 
-  REAL4 *a_al, *b_al;		/* pointer to alpha-arrays over a and b */
-  REAL8 *DeltaT_al, *Tdot_al;	/* pointer to alpha-arrays of SSB-timings */
-  SFTtype *SFT_al;		/* SFT alpha  */
+  REAL4 *a_al, *b_al;           /* pointer to alpha-arrays over a and b */
+  REAL8 *DeltaT_al, *Tdot_al;   /* pointer to alpha-arrays of SSB-timings */
+  SFTtype *SFT_al;              /* SFT alpha  */
   UINT4 Dterms = params->Dterms;
 
   REAL8 norm = OOTWOPI;
@@ -196,10 +196,10 @@ XLALComputeFaFb ( Fcomponents *FaFb,		      	/* [out] Fa,Fb (and possibly atoms)
       XLAL_ERROR ( XLAL_EINVAL);
     }
 
-  if ( PULSAR_MAX_SPINS > NUM_FACT )
+  if ( PULSAR_MAX_SPINS > LAL_FACT_MAX )
     {
       XLALPrintError ("\nInverse factorials table only up to order s=%d, can't handle %d spin-order\n\n",
-		     NUM_FACT, PULSAR_MAX_SPINS - 1 );
+                     LAL_FACT_MAX, PULSAR_MAX_SPINS - 1 );
       XLAL_ERROR ( XLAL_EINVAL);
     }
 #endif
@@ -222,20 +222,20 @@ XLALComputeFaFb ( Fcomponents *FaFb,		      	/* [out] Fa,Fb (and possibly atoms)
   if ( params->returnAtoms )
     {
       if ( (FaFb->multiFstatAtoms = LALMalloc ( sizeof(*FaFb->multiFstatAtoms) )) == NULL ){
-	XLAL_ERROR ( XLAL_ENOMEM );
+        XLAL_ERROR ( XLAL_ENOMEM );
       }
-      FaFb->multiFstatAtoms->length = 1;	/* in this function: single-detector only */
+      FaFb->multiFstatAtoms->length = 1;        /* in this function: single-detector only */
       if ( (FaFb->multiFstatAtoms->data = LALMalloc ( 1 * sizeof( *FaFb->multiFstatAtoms->data) )) == NULL ){
-	LALFree (FaFb->multiFstatAtoms);
-	XLAL_ERROR ( XLAL_ENOMEM );
+        LALFree (FaFb->multiFstatAtoms);
+        XLAL_ERROR ( XLAL_ENOMEM );
       }
       if ( (FaFb->multiFstatAtoms->data[0] = XLALCreateFstatAtomVector ( numSFTs )) == NULL ) {
-	LALFree ( FaFb->multiFstatAtoms->data );
-	LALFree ( FaFb->multiFstatAtoms );
-	XLAL_ERROR( XLAL_ENOMEM );
+        LALFree ( FaFb->multiFstatAtoms->data );
+        LALFree ( FaFb->multiFstatAtoms );
+        XLAL_ERROR( XLAL_ENOMEM );
       }
 
-      FaFb->multiFstatAtoms->data[0]->TAtom = Tsft;	/* time-baseline of returned atoms is Tsft */
+      FaFb->multiFstatAtoms->data[0]->TAtom = Tsft;     /* time-baseline of returned atoms is Tsft */
 
     } /* if returnAtoms */
 
@@ -247,7 +247,7 @@ XLALComputeFaFb ( Fcomponents *FaFb,		      	/* [out] Fa,Fb (and possibly atoms)
   Fa = 0.0f;
   Fb = 0.0f;
 
-  a_al = amcoe->a->data;	/* point to beginning of alpha-arrays */
+  a_al = amcoe->a->data;        /* point to beginning of alpha-arrays */
   b_al = amcoe->b->data;
   DeltaT_al = tSSB->DeltaT->data;
   Tdot_al = tSSB->Tdot->data;
@@ -258,62 +258,62 @@ XLALComputeFaFb ( Fcomponents *FaFb,		      	/* [out] Fa,Fb (and possibly atoms)
     {
       REAL4 a_alpha, b_alpha;
 
-      INT4 kstar;		/* central frequency-bin k* = round(xhat_alpha) */
+      INT4 kstar;               /* central frequency-bin k* = round(xhat_alpha) */
       INT4 k0, k1;
 
       COMPLEX8 *Xalpha = SFT_al->data->data; /* pointer to current SFT-data */
-      COMPLEX8 *Xalpha_l; 	/* pointer to frequency-bin k in current SFT */
+      COMPLEX8 *Xalpha_l;       /* pointer to frequency-bin k in current SFT */
       REAL4 s_alpha=0, c_alpha=0;/* sin(2pi kappa_alpha) and (cos(2pi kappa_alpha)-1) */
-      REAL4 realQ, imagQ;	/* Re and Im of Q = e^{-i 2 pi lambda_alpha} */
-      REAL4 realXP, imagXP;	/* Re/Im of sum_k X_ak * P_ak */
-      REAL4 realQXP, imagQXP;	/* Re/Im of Q_alpha R_alpha */
+      REAL4 realQ, imagQ;       /* Re and Im of Q = e^{-i 2 pi lambda_alpha} */
+      REAL4 realXP, imagXP;     /* Re/Im of sum_k X_ak * P_ak */
+      REAL4 realQXP, imagQXP;   /* Re/Im of Q_alpha R_alpha */
 
       REAL8 lambda_alpha, kappa_max, kappa_star;
       COMPLEX8 Fa_alpha, Fb_alpha;
 
       /* ----- calculate kappa_max and lambda_alpha */
       {
-	UINT4 s; 		/* loop-index over spindown-order */
-	REAL8 phi_alpha, Dphi_alpha, DT_al;
-	REAL8 Tas;	/* temporary variable to calculate (DeltaT_alpha)^s */
+        UINT4 s;                /* loop-index over spindown-order */
+        REAL8 phi_alpha, Dphi_alpha, DT_al;
+        REAL8 Tas;      /* temporary variable to calculate (DeltaT_alpha)^s */
 
-	/* init for s=0 */
-	phi_alpha = 0.0;
-	Dphi_alpha = 0.0;
-	DT_al = (*DeltaT_al);
-	Tas = 1.0;		/* DeltaT_alpha ^ 0 */
+        /* init for s=0 */
+        phi_alpha = 0.0;
+        Dphi_alpha = 0.0;
+        DT_al = (*DeltaT_al);
+        Tas = 1.0;              /* DeltaT_alpha ^ 0 */
 
-	for (s=0; s <= spdnOrder; s++)
-	  {
-	    REAL8 fsdot = fkdot[s];
-	    Dphi_alpha += fsdot * Tas * inv_fact[s]; 	/* here: DT^s/s! */
-	    Tas *= DT_al;				/* now: DT^(s+1) */
-	    phi_alpha += fsdot * Tas * inv_fact[s+1];
-	  } /* for s <= spdnOrder */
+        for (s=0; s <= spdnOrder; s++)
+          {
+            REAL8 fsdot = fkdot[s];
+            Dphi_alpha += fsdot * Tas * LAL_FACT_INV[s];        /* here: DT^s/s! */
+            Tas *= DT_al;                               /* now: DT^(s+1) */
+            phi_alpha += fsdot * Tas * LAL_FACT_INV[s+1];
+          } /* for s <= spdnOrder */
 
-	/* Step 3: apply global factors to complete Dphi_alpha */
-	Dphi_alpha *= Tsft * (*Tdot_al);		/* guaranteed > 0 ! */
+        /* Step 3: apply global factors to complete Dphi_alpha */
+        Dphi_alpha *= Tsft * (*Tdot_al);                /* guaranteed > 0 ! */
 
-	lambda_alpha = phi_alpha - 0.5 * Dphi_alpha;
+        lambda_alpha = phi_alpha - 0.5 * Dphi_alpha;
 
-	/* real- and imaginary part of e^{-i 2 pi lambda_alpha } */
-	if ( XLALSinCos2PiLUT ( &imagQ, &realQ, - lambda_alpha ) ) {
-	  XLAL_ERROR ( XLAL_EFUNC);
-	}
+        /* real- and imaginary part of e^{-i 2 pi lambda_alpha } */
+        if ( XLALSinCos2PiLUT ( &imagQ, &realQ, - lambda_alpha ) ) {
+          XLAL_ERROR ( XLAL_EFUNC);
+        }
 
-	kstar = (INT4) (Dphi_alpha);	/* k* = floor(Dphi_alpha) for positive Dphi */
-	kappa_star = Dphi_alpha - 1.0 * kstar;	/* remainder of Dphi_alpha: >= 0 ! */
-	kappa_max = kappa_star + 1.0 * Dterms - 1.0;
+        kstar = (INT4) (Dphi_alpha);    /* k* = floor(Dphi_alpha) for positive Dphi */
+        kappa_star = Dphi_alpha - 1.0 * kstar;  /* remainder of Dphi_alpha: >= 0 ! */
+        kappa_max = kappa_star + 1.0 * Dterms - 1.0;
 
-	/* ----- check that required frequency-bins are found in the SFTs ----- */
-	k0 = kstar - Dterms + 1;
-	k1 = k0 + 2 * Dterms - 1;
-	if ( (k0 < freqIndex0) || (k1 > freqIndex1) )
-	  {
-	    XLALPrintError ("Required frequency-bins [%d, %d] not covered by SFT-interval [%d, %d]\n\n",
-			   k0, k1, freqIndex0, freqIndex1 );
-	    XLAL_ERROR(XLAL_EDOM);
-	  }
+        /* ----- check that required frequency-bins are found in the SFTs ----- */
+        k0 = kstar - Dterms + 1;
+        k1 = k0 + 2 * Dterms - 1;
+        if ( (k0 < freqIndex0) || (k1 > freqIndex1) )
+          {
+            XLALPrintError ("Required frequency-bins [%d, %d] not covered by SFT-interval [%d, %d]\n\n",
+                           k0, k1, freqIndex0, freqIndex1 );
+            XLAL_ERROR(XLAL_EDOM);
+          }
 
       } /* compute kappa_star, lambda_alpha */
 
@@ -343,31 +343,31 @@ XLALComputeFaFb ( Fcomponents *FaFb,		      	/* [out] Fa,Fb (and possibly atoms)
 
       /* if no danger of denominator -> 0 */
       if ( ( kappa_star > LD_SMALL4 ) && (kappa_star < 1.0 - LD_SMALL4) )
-	{
-	  /* improved hotloop algorithm by Fekete Akos:
-	   * take out repeated divisions into a single common denominator,
-	   * plus use extra cleverness to compute the nominator efficiently...
-	   */
-	  REAL4 Sn = crealf(*Xalpha_l);
-	  REAL4 Tn = cimagf(*Xalpha_l);
-	  REAL4 pn = kappa_max;
-	  REAL4 qn = pn;
-	  REAL4 U_alpha, V_alpha;
+        {
+          /* improved hotloop algorithm by Fekete Akos:
+           * take out repeated divisions into a single common denominator,
+           * plus use extra cleverness to compute the nominator efficiently...
+           */
+          REAL4 Sn = crealf(*Xalpha_l);
+          REAL4 Tn = cimagf(*Xalpha_l);
+          REAL4 pn = kappa_max;
+          REAL4 qn = pn;
+          REAL4 U_alpha, V_alpha;
 
-	  /* recursion with 2*Dterms steps */
-	  UINT4 l;
-	  for ( l = 1; l < 2*Dterms; l ++ )
-	    {
-	      Xalpha_l ++;
+          /* recursion with 2*Dterms steps */
+          UINT4 l;
+          for ( l = 1; l < 2*Dterms; l ++ )
+            {
+              Xalpha_l ++;
 
-	      pn = pn - 1.0f; 			/* p_(n+1) */
-	      Sn = pn * Sn + qn * crealf(*Xalpha_l);	/* S_(n+1) */
-	      Tn = pn * Tn + qn * cimagf(*Xalpha_l);	/* T_(n+1) */
-	      qn *= pn;				/* q_(n+1) */
-	    } /* for l <= 2*Dterms */
+              pn = pn - 1.0f;                   /* p_(n+1) */
+              Sn = pn * Sn + qn * crealf(*Xalpha_l);    /* S_(n+1) */
+              Tn = pn * Tn + qn * cimagf(*Xalpha_l);    /* T_(n+1) */
+              qn *= pn;                         /* q_(n+1) */
+            } /* for l <= 2*Dterms */
 
-	  U_alpha = Sn / qn;
-	  V_alpha = Tn / qn;
+          U_alpha = Sn / qn;
+          V_alpha = Tn / qn;
 
 #ifndef LAL_NDEBUG
           if ( !isfinite(U_alpha) || !isfinite(V_alpha) || !isfinite(pn) || !isfinite(qn) || !isfinite(Sn) || !isfinite(Tn) ) {
@@ -377,18 +377,18 @@ XLALComputeFaFb ( Fcomponents *FaFb,		      	/* [out] Fa,Fb (and possibly atoms)
           }
 #endif
 
-	  realXP = s_alpha * U_alpha - c_alpha * V_alpha;
-	  imagXP = c_alpha * U_alpha + s_alpha * V_alpha;
+          realXP = s_alpha * U_alpha - c_alpha * V_alpha;
+          imagXP = c_alpha * U_alpha + s_alpha * V_alpha;
 
-	} /* if |remainder| > LD_SMALL4 */
+        } /* if |remainder| > LD_SMALL4 */
       else
-	{ /* otherwise: lim_{rem->0}P_alpha,k  = 2pi delta_{k,kstar} */
-	  UINT4 ind0;
-  	  if ( kappa_star <= LD_SMALL4 ) ind0 = Dterms - 1;
-  	  else ind0 = Dterms;
-	  realXP = TWOPI_FLOAT * crealf(Xalpha_l[ind0]);
-	  imagXP = TWOPI_FLOAT * cimagf(Xalpha_l[ind0]);
-	} /* if |remainder| <= LD_SMALL4 */
+        { /* otherwise: lim_{rem->0}P_alpha,k  = 2pi delta_{k,kstar} */
+          UINT4 ind0;
+          if ( kappa_star <= LD_SMALL4 ) ind0 = Dterms - 1;
+          else ind0 = Dterms;
+          realXP = TWOPI_FLOAT * crealf(Xalpha_l[ind0]);
+          imagXP = TWOPI_FLOAT * cimagf(Xalpha_l[ind0]);
+        } /* if |remainder| <= LD_SMALL4 */
 
       realQXP = realQ * realXP - imagQ * imagXP;
       imagQXP = realQ * imagXP + imagQ * realXP;
@@ -405,14 +405,14 @@ XLALComputeFaFb ( Fcomponents *FaFb,		      	/* [out] Fa,Fb (and possibly atoms)
 
       /* store per-SFT F-stat 'atoms' for transient-CW search */
       if ( params->returnAtoms )
-	{
-	  FaFb->multiFstatAtoms->data[0]->data[alpha].timestamp = (UINT4)XLALGPSGetREAL8( &SFT_al->epoch );
-	  FaFb->multiFstatAtoms->data[0]->data[alpha].a2_alpha   = a_alpha * a_alpha;
-	  FaFb->multiFstatAtoms->data[0]->data[alpha].b2_alpha   = b_alpha * b_alpha;
-	  FaFb->multiFstatAtoms->data[0]->data[alpha].ab_alpha   = a_alpha * b_alpha;
-	  FaFb->multiFstatAtoms->data[0]->data[alpha].Fa_alpha   = norm * Fa_alpha;
-	  FaFb->multiFstatAtoms->data[0]->data[alpha].Fb_alpha   = norm * Fb_alpha;
-	}
+        {
+          FaFb->multiFstatAtoms->data[0]->data[alpha].timestamp = (UINT4)XLALGPSGetREAL8( &SFT_al->epoch );
+          FaFb->multiFstatAtoms->data[0]->data[alpha].a2_alpha   = a_alpha * a_alpha;
+          FaFb->multiFstatAtoms->data[0]->data[alpha].b2_alpha   = b_alpha * b_alpha;
+          FaFb->multiFstatAtoms->data[0]->data[alpha].ab_alpha   = a_alpha * b_alpha;
+          FaFb->multiFstatAtoms->data[0]->data[alpha].Fa_alpha   = norm * Fa_alpha;
+          FaFb->multiFstatAtoms->data[0]->data[alpha].Fb_alpha   = norm * Fb_alpha;
+        }
 
       /* advance pointers over alpha */
       a_al ++;
@@ -437,24 +437,24 @@ XLALComputeFaFb ( Fcomponents *FaFb,		      	/* [out] Fa,Fb (and possibly atoms)
  * calculating the F-statistic.
  */
 static int
-XLALComputeFaFbCmplx ( Fcomponents *FaFb,		/* [out] Fa,Fb (and possibly atoms) returned */
-		  const SFTVector *sfts,               	/* [in] input SFTs */
-		  const PulsarSpins fkdot,             	/* [in] frequency and derivatives fkdot = d^kf/dt^k */
-		  const SSBtimes *tSSB,                	/* [in] SSB timing series for particular sky-direction */
-		  const CmplxAMCoeffs *amcoe,          	/* [in] antenna-pattern coefficients for this sky-direction */
-		  const ComputeFParams *params)      	/* addition computational params */
+XLALComputeFaFbCmplx ( Fcomponents *FaFb,               /* [out] Fa,Fb (and possibly atoms) returned */
+                  const SFTVector *sfts,                /* [in] input SFTs */
+                  const PulsarSpins fkdot,              /* [in] frequency and derivatives fkdot = d^kf/dt^k */
+                  const SSBtimes *tSSB,                 /* [in] SSB timing series for particular sky-direction */
+                  const CmplxAMCoeffs *amcoe,           /* [in] antenna-pattern coefficients for this sky-direction */
+                  const ComputeFParams *params)         /* addition computational params */
 {
-  UINT4 alpha;                 	/* loop index over SFTs */
-  UINT4 spdnOrder;		/* maximal spindown-orders */
-  UINT4 numSFTs;		/* number of SFTs (M in the Notes) */
+  UINT4 alpha;                  /* loop index over SFTs */
+  UINT4 spdnOrder;              /* maximal spindown-orders */
+  UINT4 numSFTs;                /* number of SFTs (M in the Notes) */
   COMPLEX16 Fa, Fb;
-  REAL8 Tsft; 			/* length of SFTs in seconds */
-  INT4 freqIndex0;		/* index of first frequency-bin in SFTs */
-  INT4 freqIndex1;		/* index of last frequency-bin in SFTs */
+  REAL8 Tsft;                   /* length of SFTs in seconds */
+  INT4 freqIndex0;              /* index of first frequency-bin in SFTs */
+  INT4 freqIndex1;              /* index of last frequency-bin in SFTs */
 
-  COMPLEX8 *a_al, *b_al;	/* pointer to alpha-arrays over a and b */
-  REAL8 *DeltaT_al, *Tdot_al;	/* pointer to alpha-arrays of SSB-timings */
-  SFTtype *SFT_al;		/* SFT alpha  */
+  COMPLEX8 *a_al, *b_al;        /* pointer to alpha-arrays over a and b */
+  REAL8 *DeltaT_al, *Tdot_al;   /* pointer to alpha-arrays of SSB-timings */
+  SFTtype *SFT_al;              /* SFT alpha  */
   UINT4 Dterms = params->Dterms;
 
   REAL8 norm = OOTWOPI;
@@ -477,10 +477,10 @@ XLALComputeFaFbCmplx ( Fcomponents *FaFb,		/* [out] Fa,Fb (and possibly atoms) r
       XLAL_ERROR ( XLAL_EINVAL);
     }
 
-  if ( PULSAR_MAX_SPINS > NUM_FACT )
+  if ( PULSAR_MAX_SPINS > LAL_FACT_MAX )
     {
       XLALPrintError ("\nInverse factorials table only up to order s=%d, can't handle %d spin-order\n\n",
-		     NUM_FACT, PULSAR_MAX_SPINS - 1 );
+                     LAL_FACT_MAX, PULSAR_MAX_SPINS - 1 );
       XLAL_ERROR ( XLAL_EINVAL);
     }
   if ( params->upsampling > 1 ) {
@@ -512,7 +512,7 @@ XLALComputeFaFbCmplx ( Fcomponents *FaFb,		/* [out] Fa,Fb (and possibly atoms) r
   Fa = 0.0f;
   Fb = 0.0f;
 
-  a_al = amcoe->a->data;	/* point to beginning of alpha-arrays */
+  a_al = amcoe->a->data;        /* point to beginning of alpha-arrays */
   b_al = amcoe->b->data;
   DeltaT_al = tSSB->DeltaT->data;
   Tdot_al = tSSB->Tdot->data;
@@ -523,61 +523,61 @@ XLALComputeFaFbCmplx ( Fcomponents *FaFb,		/* [out] Fa,Fb (and possibly atoms) r
     {
       COMPLEX8 a_alpha, b_alpha;
 
-      INT4 kstar;		/* central frequency-bin k* = round(xhat_alpha) */
+      INT4 kstar;               /* central frequency-bin k* = round(xhat_alpha) */
       INT4 k0, k1;
 
       COMPLEX8 *Xalpha = SFT_al->data->data; /* pointer to current SFT-data */
-      COMPLEX8 *Xalpha_l; 	/* pointer to frequency-bin k in current SFT */
+      COMPLEX8 *Xalpha_l;       /* pointer to frequency-bin k in current SFT */
       REAL4 s_alpha=0, c_alpha=0;/* sin(2pi kappa_alpha) and (cos(2pi kappa_alpha)-1) */
-      REAL4 realQ, imagQ;	/* Re and Im of Q = e^{-i 2 pi lambda_alpha} */
-      REAL4 realXP, imagXP;	/* Re/Im of sum_k X_ak * P_ak */
-      REAL4 realQXP, imagQXP;	/* Re/Im of Q_alpha R_alpha */
+      REAL4 realQ, imagQ;       /* Re and Im of Q = e^{-i 2 pi lambda_alpha} */
+      REAL4 realXP, imagXP;     /* Re/Im of sum_k X_ak * P_ak */
+      REAL4 realQXP, imagQXP;   /* Re/Im of Q_alpha R_alpha */
 
       REAL8 lambda_alpha, kappa_max, kappa_star;
 
       /* ----- calculate kappa_max and lambda_alpha */
       {
-	UINT4 s; 		/* loop-index over spindown-order */
-	REAL8 phi_alpha, Dphi_alpha, DT_al;
-	REAL8 Tas;	/* temporary variable to calculate (DeltaT_alpha)^s */
+        UINT4 s;                /* loop-index over spindown-order */
+        REAL8 phi_alpha, Dphi_alpha, DT_al;
+        REAL8 Tas;      /* temporary variable to calculate (DeltaT_alpha)^s */
 
-	/* init for s=0 */
-	phi_alpha = 0.0;
-	Dphi_alpha = 0.0;
-	DT_al = (*DeltaT_al);
-	Tas = 1.0;		/* DeltaT_alpha ^ 0 */
+        /* init for s=0 */
+        phi_alpha = 0.0;
+        Dphi_alpha = 0.0;
+        DT_al = (*DeltaT_al);
+        Tas = 1.0;              /* DeltaT_alpha ^ 0 */
 
-	for (s=0; s <= spdnOrder; s++)
-	  {
-	    REAL8 fsdot = fkdot[s];
-	    Dphi_alpha += fsdot * Tas * inv_fact[s]; 	/* here: DT^s/s! */
-	    Tas *= DT_al;				/* now: DT^(s+1) */
-	    phi_alpha += fsdot * Tas * inv_fact[s+1];
-	  } /* for s <= spdnOrder */
+        for (s=0; s <= spdnOrder; s++)
+          {
+            REAL8 fsdot = fkdot[s];
+            Dphi_alpha += fsdot * Tas * LAL_FACT_INV[s];        /* here: DT^s/s! */
+            Tas *= DT_al;                               /* now: DT^(s+1) */
+            phi_alpha += fsdot * Tas * LAL_FACT_INV[s+1];
+          } /* for s <= spdnOrder */
 
-	/* Step 3: apply global factors to complete Dphi_alpha */
-	Dphi_alpha *= Tsft * (*Tdot_al);		/* guaranteed > 0 ! */
+        /* Step 3: apply global factors to complete Dphi_alpha */
+        Dphi_alpha *= Tsft * (*Tdot_al);                /* guaranteed > 0 ! */
 
-	lambda_alpha = phi_alpha - 0.5 * Dphi_alpha;
+        lambda_alpha = phi_alpha - 0.5 * Dphi_alpha;
 
-	/* real- and imaginary part of e^{-i 2 pi lambda_alpha } */
-	if ( XLALSinCos2PiLUT ( &imagQ, &realQ, - lambda_alpha ) ) {
-	  XLAL_ERROR ( XLAL_EFUNC);
-	}
+        /* real- and imaginary part of e^{-i 2 pi lambda_alpha } */
+        if ( XLALSinCos2PiLUT ( &imagQ, &realQ, - lambda_alpha ) ) {
+          XLAL_ERROR ( XLAL_EFUNC);
+        }
 
-	kstar = (INT4) (Dphi_alpha);	/* k* = floor(Dphi_alpha) for positive Dphi */
-	kappa_star = Dphi_alpha - 1.0 * kstar;	/* remainder of Dphi_alpha: >= 0 ! */
-	kappa_max = kappa_star + 1.0 * Dterms - 1.0;
+        kstar = (INT4) (Dphi_alpha);    /* k* = floor(Dphi_alpha) for positive Dphi */
+        kappa_star = Dphi_alpha - 1.0 * kstar;  /* remainder of Dphi_alpha: >= 0 ! */
+        kappa_max = kappa_star + 1.0 * Dterms - 1.0;
 
-	/* ----- check that required frequency-bins are found in the SFTs ----- */
-	k0 = kstar - Dterms + 1;
-	k1 = k0 + 2 * Dterms - 1;
-	if ( (k0 < freqIndex0) || (k1 > freqIndex1) )
-	  {
-	    XLALPrintError ("Required frequency-bins [%d, %d] not covered by SFT-interval [%d, %d]\n\n",
-			   k0, k1, freqIndex0, freqIndex1 );
-	    XLAL_ERROR(XLAL_EDOM);
-	  }
+        /* ----- check that required frequency-bins are found in the SFTs ----- */
+        k0 = kstar - Dterms + 1;
+        k1 = k0 + 2 * Dterms - 1;
+        if ( (k0 < freqIndex0) || (k1 > freqIndex1) )
+          {
+            XLALPrintError ("Required frequency-bins [%d, %d] not covered by SFT-interval [%d, %d]\n\n",
+                           k0, k1, freqIndex0, freqIndex1 );
+            XLAL_ERROR(XLAL_EDOM);
+          }
 
       } /* compute kappa_star, lambda_alpha */
 
@@ -607,31 +607,31 @@ XLALComputeFaFbCmplx ( Fcomponents *FaFb,		/* [out] Fa,Fb (and possibly atoms) r
 
       /* if no danger of denominator -> 0 */
       if ( ( kappa_star > LD_SMALL4 ) && (kappa_star < 1.0 - LD_SMALL4) )
-	{
-	  /* improved hotloop algorithm by Fekete Akos:
-	   * take out repeated divisions into a single common denominator,
-	   * plus use extra cleverness to compute the nominator efficiently...
-	   */
-	  REAL4 Sn = crealf(*Xalpha_l);
-	  REAL4 Tn = cimagf(*Xalpha_l);
-	  REAL4 pn = kappa_max;
-	  REAL4 qn = pn;
-	  REAL4 U_alpha, V_alpha;
+        {
+          /* improved hotloop algorithm by Fekete Akos:
+           * take out repeated divisions into a single common denominator,
+           * plus use extra cleverness to compute the nominator efficiently...
+           */
+          REAL4 Sn = crealf(*Xalpha_l);
+          REAL4 Tn = cimagf(*Xalpha_l);
+          REAL4 pn = kappa_max;
+          REAL4 qn = pn;
+          REAL4 U_alpha, V_alpha;
 
-	  /* recursion with 2*Dterms steps */
-	  UINT4 l;
-	  for ( l = 1; l < 2*Dterms; l ++ )
-	    {
-	      Xalpha_l ++;
+          /* recursion with 2*Dterms steps */
+          UINT4 l;
+          for ( l = 1; l < 2*Dterms; l ++ )
+            {
+              Xalpha_l ++;
 
-	      pn = pn - 1.0f; 			/* p_(n+1) */
-	      Sn = pn * Sn + qn * crealf(*Xalpha_l);	/* S_(n+1) */
-	      Tn = pn * Tn + qn * cimagf(*Xalpha_l);	/* T_(n+1) */
-	      qn *= pn;				/* q_(n+1) */
-	    } /* for l <= 2*Dterms */
+              pn = pn - 1.0f;                   /* p_(n+1) */
+              Sn = pn * Sn + qn * crealf(*Xalpha_l);    /* S_(n+1) */
+              Tn = pn * Tn + qn * cimagf(*Xalpha_l);    /* T_(n+1) */
+              qn *= pn;                         /* q_(n+1) */
+            } /* for l <= 2*Dterms */
 
-	  U_alpha = Sn / qn;
-	  V_alpha = Tn / qn;
+          U_alpha = Sn / qn;
+          V_alpha = Tn / qn;
 
 #ifndef LAL_NDEBUG
           if ( !isfinite(U_alpha) || !isfinite(V_alpha) || !isfinite(pn) || !isfinite(qn) || !isfinite(Sn) || !isfinite(Tn) ) {
@@ -641,18 +641,18 @@ XLALComputeFaFbCmplx ( Fcomponents *FaFb,		/* [out] Fa,Fb (and possibly atoms) r
           }
 #endif
 
-	  realXP = s_alpha * U_alpha - c_alpha * V_alpha;
-	  imagXP = c_alpha * U_alpha + s_alpha * V_alpha;
+          realXP = s_alpha * U_alpha - c_alpha * V_alpha;
+          imagXP = c_alpha * U_alpha + s_alpha * V_alpha;
 
-	} /* if |remainder| > LD_SMALL4 */
+        } /* if |remainder| > LD_SMALL4 */
       else
-	{ /* otherwise: lim_{rem->0}P_alpha,k  = 2pi delta_{k,kstar} */
-	  UINT4 ind0;
-  	  if ( kappa_star <= LD_SMALL4 ) ind0 = Dterms - 1;
-  	  else ind0 = Dterms;
-	  realXP = TWOPI_FLOAT * crealf(Xalpha_l[ind0]);
-	  imagXP = TWOPI_FLOAT * cimagf(Xalpha_l[ind0]);
-	} /* if |remainder| <= LD_SMALL4 */
+        { /* otherwise: lim_{rem->0}P_alpha,k  = 2pi delta_{k,kstar} */
+          UINT4 ind0;
+          if ( kappa_star <= LD_SMALL4 ) ind0 = Dterms - 1;
+          else ind0 = Dterms;
+          realXP = TWOPI_FLOAT * crealf(Xalpha_l[ind0]);
+          imagXP = TWOPI_FLOAT * cimagf(Xalpha_l[ind0]);
+        } /* if |remainder| <= LD_SMALL4 */
 
       realQXP = realQ * realXP - imagQ * imagXP;
       imagQXP = realQ * imagXP + imagQ * realXP;
@@ -689,25 +689,25 @@ XLALComputeFaFbCmplx ( Fcomponents *FaFb,		/* [out] Fa,Fb (and possibly atoms) r
  * Compute JKS's Fa and Fb, which are ingredients for calculating the F-statistic.
  */
 static int
-XLALComputeFaFbXavie ( Fcomponents *FaFb,		/* [out] Fa,Fb (and possibly atoms) returned */
-		       const SFTVector *sfts,          	/* [in] input SFTs */
-		       const PulsarSpins fkdot,        	/* [in] frequency and derivatives fkdot = d^kf/dt^k */
-		       const SSBtimes *tSSB,           	/* [in] SSB timing series for particular sky-direction */
-		       const AMCoeffs *amcoe,          	/* [in] antenna-pattern coefficients for this sky-direction */
-		       const ComputeFParams *params    	/* additional computational params */
+XLALComputeFaFbXavie ( Fcomponents *FaFb,               /* [out] Fa,Fb (and possibly atoms) returned */
+                       const SFTVector *sfts,           /* [in] input SFTs */
+                       const PulsarSpins fkdot,         /* [in] frequency and derivatives fkdot = d^kf/dt^k */
+                       const SSBtimes *tSSB,            /* [in] SSB timing series for particular sky-direction */
+                       const AMCoeffs *amcoe,           /* [in] antenna-pattern coefficients for this sky-direction */
+                       const ComputeFParams *params     /* additional computational params */
                        )
 {
-  UINT4 alpha;                 	/* loop index over SFTs */
-  UINT4 spdnOrder;		/* maximal spindown-orders */
-  UINT4 numSFTs;		/* number of SFTs (M in the Notes) */
+  UINT4 alpha;                  /* loop index over SFTs */
+  UINT4 spdnOrder;              /* maximal spindown-orders */
+  UINT4 numSFTs;                /* number of SFTs (M in the Notes) */
   COMPLEX16 Fa, Fb;
-  REAL8 Tsft; 			/* length of SFTs in seconds */
-  INT4 freqIndex0;		/* index of first frequency-bin in SFTs */
-  INT4 freqIndex1;		/* index of last frequency-bin in SFTs */
+  REAL8 Tsft;                   /* length of SFTs in seconds */
+  INT4 freqIndex0;              /* index of first frequency-bin in SFTs */
+  INT4 freqIndex1;              /* index of last frequency-bin in SFTs */
 
-  REAL4 *a_al, *b_al;		/* pointer to alpha-arrays over a and b */
-  REAL8 *DeltaT_al, *Tdot_al;	/* pointer to alpha-arrays of SSB-timings */
-  SFTtype *SFT_al;		/* SFT alpha  */
+  REAL4 *a_al, *b_al;           /* pointer to alpha-arrays over a and b */
+  REAL8 *DeltaT_al, *Tdot_al;   /* pointer to alpha-arrays of SSB-timings */
+  SFTtype *SFT_al;              /* SFT alpha  */
 
   REAL4 Upsampling;
 
@@ -729,10 +729,10 @@ XLALComputeFaFbXavie ( Fcomponents *FaFb,		/* [out] Fa,Fb (and possibly atoms) r
       XLAL_ERROR ( XLAL_EINVAL);
     }
 
-  if ( PULSAR_MAX_SPINS > NUM_FACT )
+  if ( PULSAR_MAX_SPINS > LAL_FACT_MAX )
     {
       XLALPrintError ("\nInverse factorials table only up to order s=%d, can't handle %d spin-order\n\n",
-		     NUM_FACT, PULSAR_MAX_SPINS - 1 );
+                     LAL_FACT_MAX, PULSAR_MAX_SPINS - 1 );
       XLAL_ERROR ( XLAL_EINVAL);
     }
   if ( params->returnAtoms )
@@ -762,7 +762,7 @@ XLALComputeFaFbXavie ( Fcomponents *FaFb,		/* [out] Fa,Fb (and possibly atoms) r
   Fa = 0.0f;
   Fb = 0.0f;
 
-  a_al = amcoe->a->data;	/* point to beginning of alpha-arrays */
+  a_al = amcoe->a->data;        /* point to beginning of alpha-arrays */
   b_al = amcoe->b->data;
   DeltaT_al = tSSB->DeltaT->data;
   Tdot_al = tSSB->Tdot->data;
@@ -773,54 +773,54 @@ XLALComputeFaFbXavie ( Fcomponents *FaFb,		/* [out] Fa,Fb (and possibly atoms) r
     {
       REAL4 a_alpha, b_alpha;
 
-      INT4 kstar;		/* central frequency-bin k* = round(xhat_alpha) */
+      INT4 kstar;               /* central frequency-bin k* = round(xhat_alpha) */
 
       COMPLEX8 *Xalpha = SFT_al->data->data; /* pointer to current SFT-data */
-      COMPLEX8 Xalpha_l; 	/* frequency-bin k in current SFT */
-      REAL4 realQ, imagQ;	/* Re and Im of Q = e^{-i 2 pi lambda_alpha} */
-      REAL4 realQXP, imagQXP;	/* Re/Im of Q_alpha R_alpha */
+      COMPLEX8 Xalpha_l;        /* frequency-bin k in current SFT */
+      REAL4 realQ, imagQ;       /* Re and Im of Q = e^{-i 2 pi lambda_alpha} */
+      REAL4 realQXP, imagQXP;   /* Re/Im of Q_alpha R_alpha */
 
-      REAL8 lambda_alpha;	/* !NOTE!: this MUST be REAL8!!! otherwise you lose the signal! */
+      REAL8 lambda_alpha;       /* !NOTE!: this MUST be REAL8!!! otherwise you lose the signal! */
 
       /* ----- calculate kappa_max and lambda_alpha */
       {
-	UINT4 s; 		/* loop-index over spindown-order */
-	REAL8 phi_alpha, Dphi_alpha, DT_al;
-	REAL8 Tas;	/* temporary variable to calculate (DeltaT_alpha)^s */
+        UINT4 s;                /* loop-index over spindown-order */
+        REAL8 phi_alpha, Dphi_alpha, DT_al;
+        REAL8 Tas;      /* temporary variable to calculate (DeltaT_alpha)^s */
 
-	/* init for s=0 */
-	phi_alpha = 0.0;
-	Dphi_alpha = 0.0;
-	DT_al = (*DeltaT_al);
-	Tas = 1.0;		/* DeltaT_alpha ^ 0 */
+        /* init for s=0 */
+        phi_alpha = 0.0;
+        Dphi_alpha = 0.0;
+        DT_al = (*DeltaT_al);
+        Tas = 1.0;              /* DeltaT_alpha ^ 0 */
 
-	for (s=0; s <= spdnOrder; s++)
-	  {
-	    REAL8 fsdot = fkdot[s];
-	    Dphi_alpha += fsdot * Tas * inv_fact[s]; 	/* here: DT^s/s! */
-	    Tas *= DT_al;				/* now: DT^(s+1) */
-	    phi_alpha += fsdot * Tas * inv_fact[s+1];
-	  } /* for s <= spdnOrder */
+        for (s=0; s <= spdnOrder; s++)
+          {
+            REAL8 fsdot = fkdot[s];
+            Dphi_alpha += fsdot * Tas * LAL_FACT_INV[s];        /* here: DT^s/s! */
+            Tas *= DT_al;                               /* now: DT^(s+1) */
+            phi_alpha += fsdot * Tas * LAL_FACT_INV[s+1];
+          } /* for s <= spdnOrder */
 
-	/* Step 3: apply global factors to complete Dphi_alpha */
-	Dphi_alpha *= Tsft * (*Tdot_al);		/* guaranteed > 0 ! */
+        /* Step 3: apply global factors to complete Dphi_alpha */
+        Dphi_alpha *= Tsft * (*Tdot_al);                /* guaranteed > 0 ! */
 
-	lambda_alpha = phi_alpha - 0.5 * Dphi_alpha;
+        lambda_alpha = phi_alpha - 0.5 * Dphi_alpha;
 
-	/* real- and imaginary part of e^{-i 2 pi lambda_alpha } */
-	if ( XLALSinCos2PiLUT ( &imagQ, &realQ, - lambda_alpha ) ) {
-	  XLAL_ERROR (XLAL_EFUNC);
-	}
+        /* real- and imaginary part of e^{-i 2 pi lambda_alpha } */
+        if ( XLALSinCos2PiLUT ( &imagQ, &realQ, - lambda_alpha ) ) {
+          XLAL_ERROR (XLAL_EFUNC);
+        }
 
-	kstar = (INT4) (Dphi_alpha * Upsampling + 0.5f - freqIndex0);	/* k* = round(Dphi_alpha*chi) for positive Dphi */
+        kstar = (INT4) (Dphi_alpha * Upsampling + 0.5f - freqIndex0);   /* k* = round(Dphi_alpha*chi) for positive Dphi */
 
-	/* ----- check that required frequency-bins are found in the SFTs ----- */
-	if ( (kstar < 0) || (kstar > freqIndex1 - freqIndex0) )
-	  {
-	    XLALPrintError ("Required frequency-bin [%d] not covered by SFT-interval [%d, %d]\n\n",
-			   freqIndex0 + kstar, freqIndex0, freqIndex1 );
-	    XLAL_ERROR(XLAL_EDOM);
-	  }
+        /* ----- check that required frequency-bins are found in the SFTs ----- */
+        if ( (kstar < 0) || (kstar > freqIndex1 - freqIndex0) )
+          {
+            XLALPrintError ("Required frequency-bin [%d] not covered by SFT-interval [%d, %d]\n\n",
+                           freqIndex0 + kstar, freqIndex0, freqIndex1 );
+            XLAL_ERROR(XLAL_EDOM);
+          }
 
       } /* compute kstar, lambda_alpha */
 
@@ -881,12 +881,12 @@ XLALComputeFaFbXavie ( Fcomponents *FaFb,		/* [out] Fa,Fb (and possibly atoms) r
  *
  */
 static void
-ComputeFStat ( LALStatus *status,				/* pointer to LALStatus structure */
+ComputeFStat ( LALStatus *status,                               /* pointer to LALStatus structure */
                Fcomponents *Fstat,                              /* [out] Fstatistic + Fa, Fb */
                const PulsarDopplerParams *doppler,              /* parameter-space point to compute F for */
                const MultiSFTVector *multiSFTs,                 /* normalized (by DOUBLE-sided Sn!) data-SFTs of all IFOs */
-               const MultiNoiseWeights *multiWeights,		/* noise-weights of all SFTs */
-               const MultiDetectorStateSeries *multiDetStates,	/* 'trajectories' of the different IFOs */
+               const MultiNoiseWeights *multiWeights,           /* noise-weights of all SFTs */
+               const MultiDetectorStateSeries *multiDetStates,  /* 'trajectories' of the different IFOs */
                const ComputeFParams *params,                    /* addition computational params */
                ComputeFBuffer *cfBuffer                         /* CF-internal buffering structure */
                )
@@ -1066,7 +1066,7 @@ ComputeFStat ( LALStatus *status,				/* pointer to LALStatus structure */
   /* ----- loop over detectors and compute all detector-specific quantities ----- */
   for ( X=0; X < numDetectors; X ++)
     {
-      Fcomponents FcX = empty_Fcomponents;	/* for detector-specific FaX, FbX */
+      Fcomponents FcX = empty_Fcomponents;      /* for detector-specific FaX, FbX */
 
       if ( params->useRAA )
         {
@@ -1093,7 +1093,7 @@ ComputeFStat ( LALStatus *status,				/* pointer to LALStatus structure */
             }
           if ( params->returnAtoms )
             {
-              retF.multiFstatAtoms->data[X] = FcX.multiFstatAtoms->data[0];	/* copy pointer to IFO-specific Fstat-atoms 'contents' */
+              retF.multiFstatAtoms->data[X] = FcX.multiFstatAtoms->data[0];     /* copy pointer to IFO-specific Fstat-atoms 'contents' */
               /* free 'container', but not *contents*, which have been linked above */
               LALFree ( FcX.multiFstatAtoms->data );
               LALFree ( FcX.multiFstatAtoms );
@@ -1179,16 +1179,16 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
                        const ComputeFParams *params)       /* addition computational params */
 {
   UINT4 alpha;                  /* loop index over SFTs */
-  UINT4 spdnOrder;		/* maximal spindown-orders */
-  UINT4 numSFTs;		/* number of SFTs (M in the Notes) */
+  UINT4 spdnOrder;              /* maximal spindown-orders */
+  UINT4 numSFTs;                /* number of SFTs (M in the Notes) */
   COMPLEX16 Fa, Fb;
   REAL8 Tsft;                   /* length of SFTs in seconds */
-  INT4 freqIndex0;		/* index of first frequency-bin in SFTs */
-  INT4 freqIndex1;		/* index of last frequency-bin in SFTs */
+  INT4 freqIndex0;              /* index of first frequency-bin in SFTs */
+  INT4 freqIndex1;              /* index of last frequency-bin in SFTs */
 
-  REAL4 *a_al, *b_al;		/* pointer to alpha-arrays over a and b */
-  REAL8 *DeltaT_al, *Tdot_al;	/* pointer to alpha-arrays of SSB-timings */
-  SFTtype *SFT_al;		/* SFT alpha  */
+  REAL4 *a_al, *b_al;           /* pointer to alpha-arrays over a and b */
+  REAL8 *DeltaT_al, *Tdot_al;   /* pointer to alpha-arrays of SSB-timings */
+  SFTtype *SFT_al;              /* SFT alpha  */
 
   REAL8 norm = OOTWOPI;
 
@@ -1233,7 +1233,7 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
   Fa = 0.0f;
   Fb = 0.0f;
 
-  a_al = amcoe->a->data;	/* point to beginning of alpha-arrays */
+  a_al = amcoe->a->data;        /* point to beginning of alpha-arrays */
   b_al = amcoe->b->data;
   DeltaT_al = tSSB->DeltaT->data;
   Tdot_al = tSSB->Tdot->data;
@@ -1244,14 +1244,14 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
     {
       REAL4 a_alpha, b_alpha;
 
-      INT4 kstar;		/* central frequency-bin k* = round(xhat_alpha) */
+      INT4 kstar;               /* central frequency-bin k* = round(xhat_alpha) */
       INT4 k0, k1;
 
       COMPLEX8 *Xalpha = SFT_al->data->data; /* pointer to current SFT-data */
-      REAL4 s_alpha, c_alpha;	/* sin(2pi kappa_alpha) and (cos(2pi kappa_alpha)-1) */
-      REAL4 realQ, imagQ;	/* Re and Im of Q = e^{-i 2 pi lambda_alpha} */
+      REAL4 s_alpha, c_alpha;   /* sin(2pi kappa_alpha) and (cos(2pi kappa_alpha)-1) */
+      REAL4 realQ, imagQ;       /* Re and Im of Q = e^{-i 2 pi lambda_alpha} */
       REAL4 realXP, imagXP;     /* re/im of sum_k X_ak * P_ak */
-      REAL4 realQXP, imagQXP;	/* Re/Im of Q_alpha R_alpha */
+      REAL4 realQXP, imagQXP;   /* Re/Im of Q_alpha R_alpha */
 
       REAL8 lambda_alpha, kappa_star;
 
@@ -1259,14 +1259,14 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
       {
         UINT4 s;                /* loop-index over spindown-order */
         REAL8 phi_alpha, Dphi_alpha, DT_al;
-        REAL8 Tas;	/* temporary variable to calculate (DeltaT_alpha)^s */
+        REAL8 Tas;      /* temporary variable to calculate (DeltaT_alpha)^s */
         REAL8 TAS_invfact_s;
 
         /* init for s=0 */
         phi_alpha = 0.0;
         Dphi_alpha = 0.0;
         DT_al = (*DeltaT_al);
-        Tas = 1.0;		/* DeltaT_alpha ^ 0 */
+        Tas = 1.0;              /* DeltaT_alpha ^ 0 */
         TAS_invfact_s=1.0;    /* TAS / s! */
 
         for (s=0; s <= spdnOrder; s++) {
@@ -1274,18 +1274,18 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
           Dphi_alpha += fsdot * TAS_invfact_s;  /* here: DT^s/s! */
 #ifdef EAH_CHECK_FINITE_DPHI
           if (!finite(Dphi_alpha)) {
-            LogPrintf(LOG_CRITICAL, "non-finite Dphi_alpha:%e, alpha:%d, spind#:%d, fkdot:%e, Tas:%e, inv_fact[s]:%e, inv_fact[s+1]:%e, phi_alpha:%e. DT_al:%e\n",
-                      Dphi_alpha, alpha, s, fkdot[s], Tas, inv_fact[s], inv_fact[s+1], phi_alpha, DT_al);
+            LogPrintf(LOG_CRITICAL, "non-finite Dphi_alpha:%e, alpha:%d, spind#:%d, fkdot:%e, Tas:%e, LAL_FACT_INV[s]:%e, LAL_FACT_INV[s+1]:%e, phi_alpha:%e. DT_al:%e\n",
+                      Dphi_alpha, alpha, s, fkdot[s], Tas, LAL_FACT_INV[s], LAL_FACT_INV[s+1], phi_alpha, DT_al);
             XLAL_ERROR("LocalXLALComputeFaFb", XLAL_EDOM);
           }
 #endif
-          Tas *= DT_al;				/* now: DT^(s+1) */
-          TAS_invfact_s= Tas * inv_fact[s+1];
+          Tas *= DT_al;                         /* now: DT^(s+1) */
+          TAS_invfact_s= Tas * LAL_FACT_INV[s+1];
           phi_alpha += fsdot * TAS_invfact_s;
         } /* for s <= spdnOrder */
 
         /* Step 3: apply global factors to complete Dphi_alpha */
-        Dphi_alpha *= Tsft * (*Tdot_al);		/* guaranteed > 0 ! */
+        Dphi_alpha *= Tsft * (*Tdot_al);                /* guaranteed > 0 ! */
 #ifndef EAH_NO_CHECK_FINITE_DPHI
         if (!finite(Dphi_alpha)) {
           LogPrintf(LOG_CRITICAL, "non-finite Dphi_alpha:%e, alpha:%d, Tsft:%e, Tkdot_al:%e Tas:%e, DT_al:%e\n",
@@ -1296,8 +1296,8 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
         lambda_alpha = 0.5 * Dphi_alpha - phi_alpha;
 
         /* FIXME: that might be possible to do faster */
-        kstar = (INT4) (Dphi_alpha);	/* k* = floor(Dphi_alpha*chi) for positive Dphi */
-        kappa_star = Dphi_alpha - 1.0 * kstar;	/* remainder of Dphi_alpha: >= 0 ! */
+        kstar = (INT4) (Dphi_alpha);    /* k* = floor(Dphi_alpha*chi) for positive Dphi */
+        kappa_star = Dphi_alpha - 1.0 * kstar;  /* remainder of Dphi_alpha: >= 0 ! */
 
         /* ----- check that required frequency-bins are found in the SFTs ----- */
         k0 = kstar - DTERMS + 1;
@@ -1531,7 +1531,7 @@ LocalComputeFStat ( LALStatus *status,          /* pointer to LALStatus structur
   /* ----- loop over detectors and compute all detector-specific quantities ----- */
   for ( X=0; X < numDetectors; X ++)
     {
-      Fcomponents FcX = empty_Fcomponents;	/* for detector-specific FaX, FbX */
+      Fcomponents FcX = empty_Fcomponents;      /* for detector-specific FaX, FbX */
 
       if ( params->upsampling > 1)
         {
@@ -1612,10 +1612,10 @@ LocalComputeFStat ( LALStatus *status,          /* pointer to LALStatus structur
 ///////////////////////////////////////////////////////////////////
 
 struct tagFstatInputData_Demod {
-  MultiSFTVector *multiSFTs;			// Input multi-detector SFTs
-  MultiDetectorStateSeries *multiDetStates;	// Multi-detector state series
-  ComputeFParams params;			// Additional parameters for ComputeFStat()
-  ComputeFBuffer buffer;			// Internal buffer for ComputeFStat()
+  MultiSFTVector *multiSFTs;                    // Input multi-detector SFTs
+  MultiDetectorStateSeries *multiDetStates;     // Multi-detector state series
+  ComputeFParams params;                        // Additional parameters for ComputeFStat()
+  ComputeFBuffer buffer;                        // Internal buffer for ComputeFStat()
 };
 
 static inline void

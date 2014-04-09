@@ -12,7 +12,8 @@ check_PROGRAMS = \
 	TestPrecessWaveform \
 	TestPrecessWaveformIMRPhenomB \
 	TestPrecessWaveformEOBNR \
-	TestPhenomP
+	TestPhenomP \
+	TestXLALSimAddInjection
 TESTS = $(check_PROGRAMS)
 
 # disable test programs

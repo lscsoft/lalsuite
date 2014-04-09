@@ -94,6 +94,9 @@ extern "C"
  * ::LIGOTimeGPS. Its sole purpose is to aggregate these
  * structures for passing to functions.
  */
+#ifdef SWIG /* SWIG interface directives */
+SWIGLAL(IMMUTABLE_MEMBERS(tagLALPlaceAndGPS, p_detector));
+#endif /* SWIG */
 typedef struct
 tagLALPlaceAndGPS
 {
