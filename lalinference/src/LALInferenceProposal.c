@@ -315,7 +315,7 @@ void LALInferenceSetupDefaultNSProposal(LALInferenceRunState *runState, LALInfer
   if (LALInferenceCheckVariable(runState->currentParams, "LALINFERENCE_FRAME"))
     frame = *(LALInferenceFrame*) LALInferenceGetVariable(runState->currentParams, "LALINFERENCE_FRAME");
 
-  if (nDet >= 3 && !LALInferenceGetProcParamVal(runState->commandLine,"--proposal-no-extrinsicparam") && frame == LALINFERENCE_FRAME_RADIATION && !LALInferenceGetProcParamVal(runState->commandLine,"--margtime") && !LALInferenceGetProcParamVal(runState->commandLine, "--margtimephi")) {
+  if (nDet >= 3 && !LALInferenceGetProcParamVal(runState->commandLine,"--proposal-no-extrinsicparam") && frame == LALINFERENCE_FRAME_RADIATION ) {
     LALInferenceAddProposalToCycle(runState, extrinsicParamProposalName, &LALInferenceExtrinsicParamProposal, SMALLWEIGHT);
   }
 
@@ -325,7 +325,7 @@ void LALInferenceSetupDefaultNSProposal(LALInferenceRunState *runState, LALInfer
         if(nDet<3) LALInferenceAddProposalToCycle(runState, skyLocWanderJumpName, &LALInferenceSkyLocWanderJump, BIGWEIGHT);
         else LALInferenceAddProposalToCycle(runState, skyLocWanderJumpName, &LALInferenceSkyLocWanderJump, 3.0*SMALLWEIGHT);
     }
-    if (nDet >= 3 && !LALInferenceGetProcParamVal(runState->commandLine,"--proposal-no-skyreflect") && !LALInferenceGetProcParamVal(runState->commandLine,"--margtime") && !LALInferenceGetProcParamVal(runState->commandLine, "--margtimephi")) {
+    if (nDet >= 3 && !LALInferenceGetProcParamVal(runState->commandLine,"--proposal-no-skyreflect")) {
       LALInferenceAddProposalToCycle(runState, skyReflectDetPlaneName, &LALInferenceSkyReflectDetPlane, TINYWEIGHT);
     }
     if (nDet>=2 && !LALInferenceGetProcParamVal(runState->commandLine,"--noProposalSkyRing")) {
@@ -417,7 +417,7 @@ SetupDefaultProposal(LALInferenceRunState *runState, LALInferenceVariables *prop
   if (LALInferenceCheckVariable(runState->currentParams, "LALINFERENCE_FRAME"))
     frame = *(LALInferenceFrame*) LALInferenceGetVariable(runState->currentParams, "LALINFERENCE_FRAME");
 
-  if (nDet >= 3 && !LALInferenceGetProcParamVal(runState->commandLine,"--proposal-no-extrinsicparam") && frame == LALINFERENCE_FRAME_RADIATION && !LALInferenceGetProcParamVal(runState->commandLine,"--margtime") && !LALInferenceGetProcParamVal(runState->commandLine, "--margtimephi")) {
+  if (nDet >= 3 && !LALInferenceGetProcParamVal(runState->commandLine,"--proposal-no-extrinsicparam") && frame == LALINFERENCE_FRAME_RADIATION ) {
     LALInferenceAddProposalToCycle(runState, extrinsicParamProposalName, &LALInferenceExtrinsicParamProposal, SMALLWEIGHT);
   }
 
@@ -425,7 +425,7 @@ SetupDefaultProposal(LALInferenceRunState *runState, LALInferenceVariables *prop
     if(!LALInferenceGetProcParamVal(runState->commandLine,"--proposal-no-skywander"))
       LALInferenceAddProposalToCycle(runState, skyLocWanderJumpName, &LALInferenceSkyLocWanderJump, SMALLWEIGHT);
 
-    if (nDet == 3 && !LALInferenceGetProcParamVal(runState->commandLine,"--proposal-no-skyreflect") && !LALInferenceGetProcParamVal(runState->commandLine,"--margtime") && !LALInferenceGetProcParamVal(runState->commandLine, "--margtimephi")) {
+    if (nDet == 3 && !LALInferenceGetProcParamVal(runState->commandLine,"--proposal-no-skyreflect") ) {
       LALInferenceAddProposalToCycle(runState, skyReflectDetPlaneName, &LALInferenceSkyReflectDetPlane, TINYWEIGHT);
     }
 
@@ -465,7 +465,7 @@ SetupDefaultProposal(LALInferenceRunState *runState, LALInferenceVariables *prop
     LALInferenceAddProposalToCycle(runState, KDNeighborhoodProposalName, &LALInferenceKDNeighborhoodProposal, SMALLWEIGHT);
   }
 
-  if (nDet >= 2 && !LALInferenceGetProcParamVal(runState->commandLine,"--noProposalSkyRing") && !LALInferenceGetProcParamVal(runState->commandLine,"--margtime") && !LALInferenceGetProcParamVal(runState->commandLine, "--margtimephi")) {
+  if (nDet >= 2 && !LALInferenceGetProcParamVal(runState->commandLine,"--noProposalSkyRing")) {
     LALInferenceAddProposalToCycle(runState, skyRingProposalName, &LALInferenceSkyRingProposal, SMALLWEIGHT);
   }
 
@@ -1604,6 +1604,7 @@ void LALInferenceSkyRingProposal(LALInferenceRunState *runState, LALInferenceVar
 
 void LALInferenceSkyReflectDetPlane(LALInferenceRunState *runState, LALInferenceVariables *proposedParams) {
   const char *propName = skyReflectDetPlaneName;
+  int timeflag=0;
   LALInferenceSetVariable(runState->proposalArgs, LALInferenceCurrentProposalName, &propName);
   LALInferenceCopyVariables(runState->currentParams, proposedParams);
 
@@ -1627,7 +1628,15 @@ void LALInferenceSkyReflectDetPlane(LALInferenceRunState *runState, LALInference
 
   REAL8 ra = *(REAL8 *)LALInferenceGetVariable(proposedParams, "rightascension");
   REAL8 dec = *(REAL8 *)LALInferenceGetVariable(proposedParams, "declination");
-  REAL8 baryTime = *(REAL8 *)LALInferenceGetVariable(proposedParams, "time");
+  REAL8 baryTime;
+  if(LALInferenceCheckVariable(proposedParams,"time")){
+    baryTime = *(REAL8 *)LALInferenceGetVariable(proposedParams, "time");
+    timeflag=1;
+  }
+  else
+  {
+    baryTime = XLALGPSGetREAL8(&(runState->data->epoch));
+  }
 
   REAL8 newRA, newDec, newTime;
   reflected_position_and_time(runState, ra, dec, baryTime, &newRA, &newDec, &newTime);
@@ -1663,7 +1672,7 @@ void LALInferenceSkyReflectDetPlane(LALInferenceRunState *runState, LALInference
 
   LALInferenceSetVariable(proposedParams, "rightascension", &newRA);
   LALInferenceSetVariable(proposedParams, "declination", &newDec);
-  LALInferenceSetVariable(proposedParams, "time", &newTime);
+  if(timeflag) LALInferenceSetVariable(proposedParams, "time", &newTime);
   LALInferenceSetLogProposalRatio(runState, log(pReverse/pForward));
 }
 
@@ -2779,6 +2788,8 @@ reflected_extrinsic_parameters(LALInferenceRunState *runState, const REAL8 ra, c
 
 void LALInferenceExtrinsicParamProposal(LALInferenceRunState *runState, LALInferenceVariables *proposedParams) {
   const char *propName = extrinsicParamProposalName;
+  int timeflag=0;
+  REAL8 baryTime;
   LALInferenceSetVariable(runState->proposalArgs, LALInferenceCurrentProposalName, &propName);
   LALInferenceCopyVariables(runState->currentParams, proposedParams);
   int USES_THETA_JN=0;
@@ -2812,7 +2823,14 @@ void LALInferenceExtrinsicParamProposal(LALInferenceRunState *runState, LALInfer
 
   REAL8 ra = *(REAL8 *)LALInferenceGetVariable(proposedParams, "rightascension");
   REAL8 dec = *(REAL8 *)LALInferenceGetVariable(proposedParams, "declination");
-  REAL8 baryTime = *(REAL8 *)LALInferenceGetVariable(proposedParams, "time");
+  if(LALInferenceCheckVariable(proposedParams,"time")){
+    baryTime = *(REAL8 *)LALInferenceGetVariable(proposedParams, "time");
+    timeflag=1;
+  }
+  else
+  {
+    baryTime = XLALGPSGetREAL8(&(runState->data->epoch));
+  }
   REAL8 iota=0.;
   
   if(LALInferenceCheckVariable(proposedParams,"inclination"))
@@ -2878,7 +2896,7 @@ void LALInferenceExtrinsicParamProposal(LALInferenceRunState *runState, LALInfer
 
   LALInferenceSetVariable(proposedParams, "rightascension", &newRA);
   LALInferenceSetVariable(proposedParams, "declination", &newDec);
-  LALInferenceSetVariable(proposedParams, "time", &newTime);
+  if(timeflag) LALInferenceSetVariable(proposedParams, "time", &newTime);
   if (distParam == USES_DISTANCE_VARIABLE) {
     LALInferenceSetVariable(proposedParams, "distance", &newDist);
   } else {
