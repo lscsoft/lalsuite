@@ -1415,8 +1415,9 @@ static REAL8 evaluate_morlet_proposal(LALInferenceRunState *runState, UNUSED LAL
 
 void LALInferenceSkyRingProposal(LALInferenceRunState *runState, LALInferenceVariables *proposedParams)
 {
-  UINT4 i,j,l,ifo,nifo;
+  UINT4 i,j,l,ifo,nifo,timeflag=0;
   const char *propName = skyRingProposalName;
+  REAL8 baryTime;
   LALInferenceSetVariable(runState->proposalArgs, LALInferenceCurrentProposalName, &propName);
   LALInferenceCopyVariables(runState->currentParams, proposedParams);
 
@@ -1429,7 +1430,14 @@ void LALInferenceSkyRingProposal(LALInferenceRunState *runState, LALInferenceVar
   REAL8 ra       = *(REAL8 *)LALInferenceGetVariable(proposedParams, "rightascension");
   REAL8 dec      = *(REAL8 *)LALInferenceGetVariable(proposedParams, "declination");
   REAL8 psi      = *(REAL8 *)LALInferenceGetVariable(proposedParams, "polarisation");
-  REAL8 baryTime = *(REAL8 *)LALInferenceGetVariable(proposedParams, "time");
+  if(LALInferenceCheckVariable(proposedParams,"time")){
+    baryTime = *(REAL8 *)LALInferenceGetVariable(proposedParams, "time");
+    timeflag=1;
+  }
+  else
+  {
+    baryTime = XLALGPSGetREAL8(&(runState->data->epoch));
+  }
 
   REAL8 newRA, newDec, newTime, newPsi, newDL;
 
@@ -1585,7 +1593,7 @@ void LALInferenceSkyRingProposal(LALInferenceRunState *runState, LALInferenceVar
   LALInferenceSetVariable(proposedParams, "polarisation",   &newPsi);
   LALInferenceSetVariable(proposedParams, "rightascension", &newRA);
   LALInferenceSetVariable(proposedParams, "declination",    &newDec);
-  LALInferenceSetVariable(proposedParams, "time",           &newTime);
+  if(timeflag) LALInferenceSetVariable(proposedParams, "time",           &newTime);
 
   REAL8 pForward, pReverse;
   pForward = cos(newDec);
