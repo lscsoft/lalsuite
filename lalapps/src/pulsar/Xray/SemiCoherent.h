@@ -204,6 +204,24 @@ extern "C" {
     UINT4 length;                        /**< the number of vectors */
   } REAL4VectorArray;  
 
+  /** Parameters for BinaryToSFT function
+   */
+  typedef struct {
+    REAL8 fsamp;                      /**< the sampling frequency of the data */
+    INT4 tsft;                        /**< the length of the SFTs */
+    REAL8 freq;                       /**< the starting frequency */
+    REAL8 freqband;                   /**< the band width */
+    REAL8 highpassf;                  /**< the high pass filter frequency */
+    REAL8 amp_inj;                    /**< if set we inject a fake signal with this fractional amplitude */
+    LIGOTimeGPS tref;
+    REAL8 f_inj;
+    REAL8 asini_inj;
+    LIGOTimeGPS tasc_inj;
+    REAL8 P_inj;
+    REAL8 phi_inj;  
+    gsl_rng *r;
+  } BinaryToSFTparams;
+
   int XLALReadSFTs(SFTVector**,CHAR *,REAL8,REAL8,INT4,INT4,INT4);
   int XLALComputeFreqGridParamsVector(GridParametersVector**,REAL8Space*,SFTVector*,REAL8);
   int XLALComputeFreqGridParams(GridParameters **freqgridparams,REAL8Space *pspace, REAL8 tmid,REAL8 tsft, REAL8 mu);
@@ -223,7 +241,7 @@ extern "C" {
   int XLALInitgslrand(gsl_rng **gslrnd,INT8 seed);
   int XLALCopySFT (SFTtype *dest, const SFTtype *src);
   int XLALAppendSFT2Vector (SFTVector *vect,const SFTtype *sft);
-  int XLALBinaryToSFTVector(SFTVector **SFTvect,CHAR *filename,LIGOTimeGPS *fileStart,REAL8 tsft,REAL8 freq,REAL8 freqband,REAL8 fsample,REAL8 highpassf);
+  int XLALBinaryToSFTVector(SFTVector **SFTvect,CHAR *filename,LIGOTimeGPS *fileStart,BinaryToSFTparams *par,long int *nphotons);
   
   
 #ifdef  __cplusplus

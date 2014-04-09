@@ -1442,14 +1442,11 @@ int XLALCopySFT (SFTtype *dest, 	/**< [out] copied SFT (needs to be allocated al
  * 
  *
  */
-int XLALBinaryToSFTVector(SFTVector **SFTvect, 	/**< [out] copied SFT (needs to be allocated already) */
-			  CHAR *filename,       /**< [in] the input filename */
-			  LIGOTimeGPS *fileStart, /**< [in] the file start time */
-			  REAL8 tsft,           /**< [in] the SFT length */
-			  REAL8 freq,
-			  REAL8 freqband,
-			  REAL8 fsample,        /**< [in] the sampling frequency */
-			  REAL8 highpassf       /**< [in] the high pass filter frequency */
+int XLALBinaryToSFTVector(SFTVector **SFTvect, 	   /**< [out] copied SFT (needs to be allocated already) */
+			  CHAR *filename,          /**< [in] the input filename */
+			  LIGOTimeGPS *fileStart,  /**< [in] the file start time */
+ 			  BinaryToSFTparams *par,  /**< [in] the required parameters  */
+			  long int *nphotons
 			  )
 {
 
@@ -1457,12 +1454,6 @@ int XLALBinaryToSFTVector(SFTVector **SFTvect, 	/**< [out] copied SFT (needs to 
   static const LALUnit empty_LALUnit;
   LogPrintf(LOG_DEBUG,"%s : working on file %s\n",__func__,filename);
   
-  /* /\* validate input arguments *\/ */
-/*   if ((*SFTvect) != NULL) { */
-/*     LogPrintf(LOG_CRITICAL,"%s: Invalid input, output SFTVector structure != NULL.\n",__func__); */
-/*     XLAL_ERROR(XLAL_EINVAL); */
-/*   } */
-
   /* initialise results vector */
   if ((*SFTvect)==NULL) {
     if (((*SFTvect) = LALCalloc(1,sizeof(SFTVector)))==NULL) {
@@ -1486,14 +1477,14 @@ int XLALBinaryToSFTVector(SFTVector **SFTvect, 	/**< [out] copied SFT (needs to 
   LogPrintf(LOG_DEBUG,"%s : counted %d samples in the file.\n",__func__,N);
   
   /* NOTE: a timeseries of length N*dT has no timestep at N*dT !! (convention) */
-  REAL8 dt = 1.0/fsample;
+  REAL8 dt = 1.0/par->fsamp;
   LIGOTimeGPS startTimeGPS;                     /* the start time of the observation */
   startTimeGPS.gpsSeconds = fileStart->gpsSeconds;
   startTimeGPS.gpsNanoSeconds = fileStart->gpsNanoSeconds;
   LIGOTimeGPS endTimeGPS = startTimeGPS;
   XLALGPSAdd(&endTimeGPS,N*dt);
   REAL4TimeSeries *Tseries = XLALCreateREAL4TimeSeries ( "X1", &(startTimeGPS), 0, dt, &empty_LALUnit, N);
-  /* REAL8 sum = 0; */
+  REAL8 sum = 0;
   
   /* read in the data to the timeseries */
   if ((binfp = fopen(filename,"r")) == NULL) {
@@ -1503,11 +1494,30 @@ int XLALBinaryToSFTVector(SFTVector **SFTvect, 	/**< [out] copied SFT (needs to 
   i = 0;
   while (fread(&dummy,sizeof(REAL4),1,binfp)) {
     Tseries->data->data[i] = (REAL4)dummy;
-    /* sum += Tseries->data->data[i]; */
+    sum += Tseries->data->data[i];
     i++;
   }
+  *nphotons = sum;
+  fprintf(stdout,"the total number of photons in this file = %.2f\n",sum);
+  sum /= (REAL8)N;
   fclose(binfp);
   
+  /* inject signal if requested */
+  if (par->amp_inj>0) {
+    LogPrintf(LOG_DEBUG,"%s : injecting signal into the data with fractional amplitude %f.\n",__func__,par->amp_inj);
+    REAL8 Om = LAL_TWOPI/par->P_inj;
+    for (i=0;i<N;i++) {
+      LIGOTimeGPS t = startTimeGPS;
+      XLALGPSAdd(&t,dt*i);                              /* the current sample GPS time */
+      REAL8 tmtref = XLALGPSDiff(&t,&(par->tref));         /* t - t_ref */
+      REAL8 tmtasc = XLALGPSDiff(&t,&(par->tasc_inj));     /* t - t_asc */
+      REAL8 phase = par->phi_inj + LAL_TWOPI*par->f_inj*(tmtref - par->asini_inj*sin(Om*tmtasc));
+      REAL8 x = sum*(1.0 + par->amp_inj*sin(phase));
+      Tseries->data->data[i] = (REAL4)gsl_ran_poisson(par->r,x);
+      /* fprintf(stdout,"%d %d %.12f %.12f %.12f %.12f %d %.2f\n",t.gpsSeconds,t.gpsNanoSeconds,tmtref,tmtasc,phase,x,y,Tseries->data->data[i]); */
+    }
+  }
+
   /* TESTING */
   /* for (i=0;i<100;i++) fprintf(stdout,"%.0f ",Tseries->data->data[i]); */
   /* fprintf(stdout,"\n"); */
@@ -1528,7 +1538,7 @@ int XLALBinaryToSFTVector(SFTVector **SFTvect, 	/**< [out] copied SFT (needs to 
   /**********************************************************************************/
   /* make timestamps */
   LIGOTimeGPSVector timestamps;
-  INT4 Nsft = (INT4)floor(N*dt/tsft);        /* compute the number of SFTs */
+  INT4 Nsft = (INT4)floor(N*dt/par->tsft);        /* compute the number of SFTs */
   timestamps.length = Nsft;
  /*  fprintf(stdout,"Nsft = %d\n",Nsft); */
   /* only continue if we have any data in this SFT */
@@ -1537,7 +1547,7 @@ int XLALBinaryToSFTVector(SFTVector **SFTvect, 	/**< [out] copied SFT (needs to 
     timestamps.data = LALCalloc(Nsft,sizeof(LIGOTimeGPS));
     for (i=0;i<Nsft;i++) {
       timestamps.data[i] = startTimeGPS;
-      XLALGPSAdd(&(timestamps.data[i]),i*tsft);
+      XLALGPSAdd(&(timestamps.data[i]),i*par->tsft);
      /*  fprintf(stdout,"timestamps = %d %d\n",timestamps.data[i].gpsSeconds,timestamps.data[i].gpsNanoSeconds); */
     }
     
@@ -1547,7 +1557,7 @@ int XLALBinaryToSFTVector(SFTVector **SFTvect, 	/**< [out] copied SFT (needs to 
     char tmpname[] = "Butterworth High Pass";
     filterpar.name  = tmpname;
     filterpar.nMax  = 10;
-    filterpar.f2    = highpassf;
+    filterpar.f2    = par->highpassf;
     filterpar.a2    = 0.5;
     filterpar.f1    = -1.0;
     filterpar.a1    = -1.0;
@@ -1556,7 +1566,7 @@ int XLALBinaryToSFTVector(SFTVector **SFTvect, 	/**< [out] copied SFT (needs to 
     /**********************************************************************************/
     /* compute SFTs from timeseries */
     SFTParams sftParams = empty_SFTParams;
-    sftParams.Tsft = tsft;
+    sftParams.Tsft = par->tsft;
     sftParams.timestamps = &timestamps;
     sftParams.noiseSFTs = NULL;       // not used here any more!
     sftParams.window = NULL;
@@ -1565,7 +1575,7 @@ int XLALBinaryToSFTVector(SFTVector **SFTvect, 	/**< [out] copied SFT (needs to 
     
     /**********************************************************************************/
     /* extract effective band from this, if neccessary (ie if faster-sampled output SFTs) */
-    SFTVector *tempSFTvect = XLALExtractBandFromSFTVector ( sftvect, freq, freqband );
+    SFTVector *tempSFTvect = XLALExtractBandFromSFTVector ( sftvect, par->freq, par->freqband );
     XLALDestroySFTVector(sftvect); 
     
     /**********************************************************************************/

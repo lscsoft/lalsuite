@@ -568,7 +568,6 @@ int XLALComputeSemiCoherentStat(FILE *fp,                                /**< [i
       
       /* define the power at this location in this segment */
       logLratiosum += currentpower->data->data[idx]; /* /norm; */
-      fprintf(stdout,"currentpower = %f idx = %d\n",currentpower->data->data[idx],idx);
        
     } /* end loop over segments */
     /*************************************************************************************/
