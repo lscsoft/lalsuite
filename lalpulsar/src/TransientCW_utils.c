@@ -142,7 +142,7 @@ XLALGetTransientWindowTimespan ( UINT4 *t0,				/**< [out] window start-time */
        * with the e-folding factor chosen such that the window-value
        * is practically negligible after that, where it will be set to 0
        */
-      (*t1) = (UINT4)( win_t0 + TRANSIENT_EXP_EFOLDING * win_tau + 0.5 );
+      (*t1) = lround( win_t0 + TRANSIENT_EXP_EFOLDING * win_tau);
       break;
     case TRANSIENT_RECTANGULAR:
       (*t0) = win_t0;
@@ -196,7 +196,7 @@ XLALApplyTransientWindow ( REAL4TimeSeries *series,		/**< input timeseries to ap
     case TRANSIENT_RECTANGULAR:
       for ( i = 0; i < ts_length; i ++ )
         {
-          UINT4 ti = (UINT4) ( ts_t0 + i * ts_dt + 0.5 );	// integer round: floor(x+0.5)
+          UINT4 ti = lround ( ts_t0 + i * ts_dt );
           if ( ti < t0 || ti > t1 ) { // outside rectangular window: set to zero
             series->data->data[i] = 0;
           } // otherwise do nothing
@@ -206,7 +206,7 @@ XLALApplyTransientWindow ( REAL4TimeSeries *series,		/**< input timeseries to ap
     case TRANSIENT_EXPONENTIAL:
       for ( i = 0; i < ts_length; i ++ )
         {
-          UINT4 ti = (UINT4) ( ts_t0 + i * ts_dt + 0.5 );
+          UINT4 ti = lround ( ts_t0 + i * ts_dt );
           REAL8 win = XLALGetExponentialTransientWindowValue ( ti, t0, t1, transientWindow.tau );
           series->data->data[i] *= win;
         } /* for i < length */
@@ -1119,7 +1119,7 @@ XLALFastNegExp ( REAL8 mx )
   }
 
   /* find index of closest point xp in LUT to xm */
-  UINT4 i0 = (UINT4) ( mx * EXPLUT_DXINV + 0.5 );
+  UINT4 i0 = lround ( mx * EXPLUT_DXINV );
 
   return gsl_vector_get ( expLUT, i0 );
 

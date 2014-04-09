@@ -79,10 +79,6 @@
 #define GPSEQUAL(gps1,gps2) (((gps1).gpsSeconds == (gps2).gpsSeconds) && ((gps1).gpsNanoSeconds == (gps2).gpsNanoSeconds))
 
 #define GPSZERO(gps) (((gps).gpsSeconds == 0) && ((gps).gpsNanoSeconds == 0))
-
-/* rounding for positive numbers! */
-#define MYROUND(x) ( floor( (x) + 0.5 ) )
-
 /*---------- internal types ----------*/
 
 /* NOTE: the locator is implemented as an OPAQUE type in order to enforce encapsulation
@@ -565,7 +561,7 @@ read_sft_bins_from_fp ( SFTtype *ret, UINT4 *firstBinRead, UINT4 firstBin2read, 
   }
 
   tmp = ret->f0 / ret->deltaF;
-  firstSFTbin = MYROUND ( tmp );
+  firstSFTbin = lround ( tmp );
   lastSFTbin = firstSFTbin + numSFTbins - 1;
 
   /* limit the interval to be read to what's actually in the SFT */
@@ -723,10 +719,10 @@ XLALLoadSFTs (const SFTCatalog *catalog,   /**< The 'catalogue' of SFTs to load 
   LIGOTimeGPS epoch = catalog->data[0].header.epoch;
   catalog->data[0].locator->isft = nSFTs - 1;
   deltaF = catalog->data[0].header.deltaF; /* Hz/bin */
-  minbin = firstbin = MYROUND( catalog->data[0].header.f0 / deltaF );
+  minbin = firstbin = lround ( catalog->data[0].header.f0 / deltaF );
   maxbin = lastbin = firstbin + catalog->data[0].numBins - 1;
   for(catPos = 1; catPos < catalog->length; catPos++) {
-    firstbin = MYROUND( catalog->data[catPos].header.f0 / deltaF );
+    firstbin = lround ( catalog->data[catPos].header.f0 / deltaF );
     lastbin = firstbin + catalog->data[catPos].numBins - 1;
     if (firstbin < minbin)
       minbin = firstbin;
@@ -803,7 +799,7 @@ XLALLoadSFTs (const SFTCatalog *catalog,   /**< The 'catalogue' of SFTs to load 
 	 copy the relevant part to thisSFT */
 
       volatile REAL8 tmp = locatalog.data[catPos].header.f0 / deltaF;
-      UINT4 firstSFTbin = MYROUND ( tmp );
+      UINT4 firstSFTbin = lround ( tmp );
       UINT4 lastSFTbin = firstSFTbin + locatalog.data[catPos].numBins - 1;
       UINT4 firstBin2read = firstbin;
       UINT4 lastBin2read = lastbin;
@@ -1213,7 +1209,7 @@ XLALWriteSFT2fp ( const SFTtype *sft,	/**< SFT to write to disk */
   rawheader.gps_sec        		= sft->epoch.gpsSeconds;
   rawheader.gps_nsec       		= sft->epoch.gpsNanoSeconds;
   rawheader.tbase          		= 1.0 / sft->deltaF;
-  rawheader.first_frequency_index 	= MYROUND( sft->f0 / sft->deltaF );
+  rawheader.first_frequency_index 	= lround ( sft->f0 / sft->deltaF );
   rawheader.nsamples       		= sft->data->length;
   rawheader.crc64          		= 0;	/* set to 0 for crc-calculation */
   rawheader.detector[0]    		= sft->name[0];

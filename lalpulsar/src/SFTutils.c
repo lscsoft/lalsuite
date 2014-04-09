@@ -1034,7 +1034,7 @@ XLALrefineCOMPLEX8Vector (const COMPLEX8Vector *in,
       REAL8 Yk_re, Yk_im, Xd_re, Xd_im;
 
       kstarREAL = 1.0 * l  / refineby;
-      kstar = (INT4)( kstarREAL + 0.5);	/* round to closest bin */
+      kstar = lround( kstarREAL );	/* round to closest bin */
       kstar = MIN ( kstar, oldLen - 1 );	/* stay within the old SFT index-bounds */
       remain = kstarREAL - kstar;
 

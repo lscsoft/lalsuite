@@ -205,7 +205,7 @@ XLALComputeFaFb ( Fcomponents *FaFb,                    /* [out] Fa,Fb (and poss
   Tsft = 1.0 / sfts->data[0].deltaF;
   {
     REAL8 dFreq = sfts->data[0].deltaF;
-    freqIndex0 = (UINT4) ( sfts->data[0].f0 / dFreq + 0.5); /* lowest freqency-index */
+    freqIndex0 = lround ( sfts->data[0].f0 / dFreq ); /* lowest freqency-index */
     freqIndex1 = freqIndex0 + sfts->data[0].data->length;
   }
 
@@ -668,7 +668,7 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
   Tsft = 1.0 / sfts->data[0].deltaF;
   {
     REAL8 dFreq = sfts->data[0].deltaF;
-    freqIndex0 = (UINT4) ( sfts->data[0].f0 / dFreq + 0.5); /* lowest freqency-index */
+    freqIndex0 = lround ( sfts->data[0].f0 / dFreq ); /* lowest freqency-index */
     freqIndex1 = freqIndex0 + sfts->data[0].data->length;
   }
 

@@ -363,10 +363,7 @@ LALUpdatePulsarCatNode( LALStatus      *stat,
     dt = (1.0e-9)*(REAL8)( t2 - t1 );
     n = dt/here->p;
     n -= 0.5*(here->pDot)*n*n;
-    if ( n > 0.0 )
-      nInt = (INT4)( n + 0.5 );
-    else
-      nInt = (INT4)( n - 0.5 );
+    nInt = lround( n );
     dt = (here->p)*nInt*( 1.0 + 0.5*(here->pDot)*nInt );
     t2 = t1 + (INT8)( 1.0e9*dt );
     XLALINT8NSToGPS( &(here->epoch), t2 );
