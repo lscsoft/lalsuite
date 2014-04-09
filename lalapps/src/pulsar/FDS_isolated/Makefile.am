@@ -111,6 +111,11 @@ EXTRA_DIST = \
 	testCFSv2_FLTgrids.sh
 
 EXTRA_DIST += \
+	testCFSv2.dat.ref.gz \
+	testGridv2_grid0.dat.ref.gz \
+	testGridv2_grid1.dat.ref.gz \
+	testGridv2_grid2.dat.ref.gz \
+	testGridv2_grid6.dat.ref.gz \
 	testCFSv2_FLTgrids_8.dat.ref.gz \
 	testCFSv2_FLTgrids_9.dat.ref.gz
 

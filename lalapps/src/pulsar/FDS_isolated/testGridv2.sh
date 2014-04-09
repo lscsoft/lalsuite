@@ -3,6 +3,11 @@
 ## run all LALApps programs with memory debugging
 export LAL_DEBUG_LEVEL="${LAL_DEBUG_LEVEL},memdbg"
 
+## allow 'make test' to work from builddir != srcdir
+if [ -z "${srcdir}" ]; then
+    srcdir=`dirname $0`
+fi
+
 ## take user-arguments for CFS-v2:
 extra_args="$@"
 
@@ -18,7 +23,6 @@ fi
 
 ##---------- names of codes and input/output files
 mfd_code="${injectdir}lalapps_Makefakedata_v4"
-cfs_code="${builddir}lalapps_ComputeFStatistic"
 cfsv2_code="${builddir}lalapps_ComputeFStatistic_v2"
 cmp_code="${builddir}lalapps_compareFstats"
 
@@ -119,19 +123,20 @@ echo
 ##res2F=`echo $resF | awk '{printf "%g", 2.0 * $1}'`
 ##echo "The SemiAnalyticF calculations predicts: 2F = $res2F"
 
+
 echo
 echo "----------------------------------------------------------------------"
-echo "STEP 2: run CFS_v1 with various grid-type"
+echo " STEP 2: run CFS_v2 for various grid-types"
 echo "----------------------------------------------------------------------"
 echo
 gridType0=" --gridType=0";	## flat grid
 gridType1=" --gridType=1";	## isotropic
 gridType2=" --gridType=2 --metricType=1 --metricMismatch=0.1";	## metric grid
-outputv1_0="./Fstatv1_grid0.dat";
-outputv1_1="./Fstatv1_grid1.dat";
-outputv1_2="./Fstatv1_grid2.dat";
+output_0="./testGridv2_grid0.dat";
+output_1="./testGridv2_grid1.dat";
+output_2="./testGridv2_grid2.dat";
+output_6="./testGridv2_grid6.dat";
 
-## common cmdline-options for v1 and v2
 sky_CL="--Alpha=$Alpha --AlphaBand=$AlphaBand --dAlpha=$dAlpha --Delta=$Delta --DeltaBand=$DeltaBand --dDelta=$dDelta"
 spin_CL="--Freq=$Freq --FreqBand=$FreqBand --dFreq=$dFreq --f1dot=$f1dot --f1dotBand=$f1dotBand --df1dot=$df1dot"
 cfs_CL="--IFO=$IFO --DataFiles='$SFTdir/testSFT*'"
@@ -139,51 +144,11 @@ if [ "$haveNoise" = false ]; then
     cfs_CL="$cfs_CL --SignalOnly"
 fi
 
-cmdlinev1="$cfs_code $cfs_CL --expLALDemod=1 --Fthreshold=0 ${sky_CL} ${spin_CL}"
-
-## ----- grid=0
-echo "CFSv1 using gridType=0:"
-cmd0="$cmdlinev1 $gridType0 --outputFstat=$outputv1_0";
-echo $cmd0
-if ! eval $cmd0; then
-    echo "Error.. something failed when running '$cmd0' ..."
-    exit 1
-fi
-
-## ----- grid=1
-echo "CFSv1 using gridType=1:"
-cmd0="$cmdlinev1 $gridType1 --outputFstat=$outputv1_1";
-echo $cmd0
-if ! eval $cmd0; then
-    echo "Error.. something failed when running '$cmd0' ..."
-    exit 1
-fi
-
-## ----- grid=2
-echo "CFSv1 using gridType=2:"
-cmd0="$cmdlinev1 $gridType2 --outputFstat=$outputv1_2";
-echo $cmd0
-if ! eval $cmd0; then
-    echo "Error.. something failed when running '$cmd0' ..."
-    exit 1
-fi
-
-
-echo
-echo "----------------------------------------------------------------------"
-echo " STEP 3: run CFS_v2 for various grid-types"
-echo "----------------------------------------------------------------------"
-echo
-outputv2_0="./Fstatv2_grid0.dat";
-outputv2_1="./Fstatv2_grid1.dat";
-outputv2_2="./Fstatv2_grid2.dat";
-outputv2_6="./Fstatv2_grid6.dat";
-
-cmdlinev2="$cfsv2_code $cfs_CL --TwoFthreshold=0 --Dterms=16 $extra_args";
+cmdline="$cfsv2_code $cfs_CL --TwoFthreshold=0 --Dterms=16 $extra_args";
 
 ## ----- grid=0
 echo "CFSv2 using gridType=0:"
-cmd0="$cmdlinev2 ${sky_CL} ${spin_CL} $gridType0 --outputFstat=$outputv2_0";
+cmd0="$cmdline ${sky_CL} ${spin_CL} $gridType0 --outputFstat=$output_0";
 echo $cmd0
 if ! eval $cmd0; then
     echo "Error.. something failed when running '$cmd0' ..."
@@ -192,7 +157,7 @@ fi
 
 ## ----- grid=1
 echo "CFSv2 using gridType=1:"
-cmd0="$cmdlinev2 ${sky_CL} ${spin_CL} $gridType1 --outputFstat=$outputv2_1";
+cmd0="$cmdline ${sky_CL} ${spin_CL} $gridType1 --outputFstat=$output_1";
 echo $cmd0
 if ! eval $cmd0; then
     echo "Error.. something failed when running '$cmd0' ..."
@@ -201,7 +166,7 @@ fi
 
 ## ----- grid=2
 echo "CFSv2 using gridType=2:"
-cmd0="$cmdlinev2 ${sky_CL} ${spin_CL} $gridType2 --outputFstat=$outputv2_2";
+cmd0="$cmdline ${sky_CL} ${spin_CL} $gridType2 --outputFstat=$output_2";
 echo $cmd0
 if ! eval $cmd0; then
     echo "Error.. something failed when running '$cmd2' ..."
@@ -214,10 +179,10 @@ echo "recompute with CFSv2 using gridType=6:"
 gridFile="gridv2_2.dat";
 rm -f ${gridFile};
 awk_extract6='{printf "%s %s %s %s %s %s\n", $1, $2, $3, $4, $5, $6 >> "gridv2_2.dat" }'
-grid_line=$(sed '/^%.*/d' ${outputv2_2} | awk "$awk_extract6")
+grid_line=$(sed '/^%.*/d' ${output_2} | awk "$awk_extract6")
 
 
-cmd0="$cmdlinev2 --gridType=6 --gridFile=./${gridFile} --outputFstat=$outputv2_6";
+cmd0="$cmdline --gridType=6 --gridFile=./${gridFile} --outputFstat=$output_6";
 echo $cmd0
 if ! eval $cmd0; then
     echo "Error.. something failed when running '$cmd2' ..."
@@ -227,14 +192,14 @@ fi
 
 echo
 echo "----------------------------------------"
-echo " STEP 4: Comparing results: "
+echo " STEP 3: Compare to reference results: "
 echo "----------------------------------------"
 echo
 
 ## ----- grid=0
 echo "Comparing gridType=0:"
+cmd0="$cmp_code -1 ${output_0} -2 ${srcdir}/${output_0}.ref.gz --clusterFiles=0 --Ftolerance=0.1";
 echo $cmd0
-cmd0="$cmp_code -1 ./$outputv1_0  -2 ./$outputv2_0 --clusterFiles=0 --Ftolerance=0.1";
 if ! eval $cmd0; then
     echo "OUCH... files differ. Something might be wrong..."
     exit 2
@@ -244,8 +209,8 @@ fi
 
 ## ----- grid=1
 echo "Comparing gridType=1:"
+cmd0="$cmp_code -1 ${output_1} -2 ${srcdir}/${output_1}.ref.gz --clusterFiles=0 --Ftolerance=0.1";
 echo $cmd0
-cmd0="$cmp_code -1 ./$outputv1_1  -2 ./$outputv2_1 --clusterFiles=0 --Ftolerance=0.1";
 if ! eval $cmd0; then
     echo "OUCH... files differ. Something might be wrong..."
     exit 2
@@ -256,8 +221,8 @@ fi
 
 ## ----- grid=2
 echo "Comparing gridType=2:"
+cmd0="$cmp_code -1 ${output_2} -2 ${srcdir}/${output_2}.ref.gz --clusterFiles=0 --Ftolerance=0.1";
 echo $cmd0
-cmd0="$cmp_code -1 ./$outputv1_2  -2 ./$outputv2_2 --clusterFiles=0 --Ftolerance=0.1";
 if ! eval $cmd0; then
     echo "OUCH... files differ. Something might be wrong..."
     exit 2
@@ -267,8 +232,8 @@ fi
 
 ## ----- grid=6
 echo "Comparing gridType=6:"
+cmd0="$cmp_code -1 ${output_6} -2 ${srcdir}/${output_6}.ref.gz --clusterFiles=0 --Ftolerance=0.01";
 echo $cmd0
-cmd0="$cmp_code -1 ./$outputv2_2 -2 ./$outputv2_6 --clusterFiles=0 --Ftolerance=0.01";
 if ! eval $cmd0; then
     echo "OUCH... files differ. Something might be wrong..."
     exit 2
@@ -279,5 +244,5 @@ fi
 
 ## clean up files
 if [ -z "$NOCLEANUP" ]; then
-    rm -rf $SFTdir $outputv2_0 $outputv2_1 $outputv2_2 $outputv1_0 $outputv1_1 $outputv1_2 Fstats Fstats.log ${gridFile} ${outputv2_6}
+    rm -rf $SFTdir $output_0 $output_1 $output_2 $output_6 Fstats Fstats.log $gridFile
 fi
