@@ -72,8 +72,8 @@ echo "----------------------------------------------------------------------"
 echo
 
 ## build CFS_v2 command line for --gridType=8
-gridFile8="./testCFSv2_FLTgrids_8"
-cfsv2_CL="--Alpha=6.1 --Delta=1.2 --Freq=100.4 --FreqBand=5e-4 --f1dot=-1e-10 --f1dotBand=1e-10 --DataFiles='${SFTdir}/*.sft' --TwoFthreshold=0 --gridType=8 --metricMismatch=0.5 --outputFstat=${gridFile8}.test"
+gridFile8="./testCFSv2_FLTgrids_8.dat"
+cfsv2_CL="--Alpha=6.1 --Delta=1.2 --Freq=100.4 --FreqBand=5e-4 --f1dot=-1e-10 --f1dotBand=1e-10 --DataFiles='${SFTdir}/*.sft' --TwoFthreshold=0 --gridType=8 --metricMismatch=0.5 --outputFstat=${gridFile8}"
 
 ## run CFS_v2
 cmdline="$cfsv2_code $cfsv2_CL";
@@ -84,8 +84,8 @@ if ! eval $cmdline; then
 fi
 
 ## build CFS_v2 command line for --gridType=9
-gridFile9="./testCFSv2_FLTgrids_9"
-cfsv2_CL="--Alpha=6.1 --Delta=1.2 --Freq=100.4 --FreqBand=5e-6 --spindownAge=1e10 --minBraking=2 --maxBraking=5 --DataFiles='${SFTdir}/*.sft' --TwoFthreshold=0 --gridType=9 --metricMismatch=0.5 --outputFstat=${gridFile9}.test"
+gridFile9="./testCFSv2_FLTgrids_9.dat"
+cfsv2_CL="--Alpha=6.1 --Delta=1.2 --Freq=100.4 --FreqBand=5e-6 --spindownAge=1e10 --minBraking=2 --maxBraking=5 --DataFiles='${SFTdir}/*.sft' --TwoFthreshold=0 --gridType=9 --metricMismatch=0.5 --outputFstat=${gridFile9}"
 
 ## run CFS_v2
 cmdline="$cfsv2_code $cfsv2_CL";
@@ -103,7 +103,7 @@ echo
 
 ## compare --gridType=8
 echo "Comparing gridType=8:"
-cmdline="$cmp_code -1 ${gridFile8}.test -2 ${srcdir}/${gridFile8}.ref.gz --clusterFiles=0 --Ftolerance=0.1";
+cmdline="$cmp_code -1 ${gridFile8} -2 ${srcdir}/${gridFile8}.ref.gz --clusterFiles=0 --Ftolerance=0.1";
 echo $cmdline
 if ! eval $cmdline; then
     echo "OUCH... files differ. Something might be wrong..."
@@ -114,7 +114,7 @@ fi
 
 ## compare --gridType=9
 echo "Comparing gridType=9:"
-cmdline="$cmp_code -1 ${gridFile9}.test -2 ${srcdir}/${gridFile9}.ref.gz --clusterFiles=0 --Ftolerance=0.1";
+cmdline="$cmp_code -1 ${gridFile9} -2 ${srcdir}/${gridFile9}.ref.gz --clusterFiles=0 --Ftolerance=0.1";
 echo $cmdline
 if ! eval $cmdline; then
     echo "OUCH... files differ. Something might be wrong..."
@@ -131,5 +131,5 @@ echo
 
 ## clean up files
 if [ -z "$NOCLEANUP" ]; then
-    rm -rf ${SFTdir} ${gridFile8}.test ${gridFile9}.test
+    rm -rf ${SFTdir} ${gridFile8} ${gridFile9}
 fi

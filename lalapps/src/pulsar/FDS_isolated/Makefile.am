@@ -111,8 +111,8 @@ EXTRA_DIST = \
 	testCFSv2_FLTgrids.sh
 
 EXTRA_DIST += \
-	testCFSv2_FLTgrids_8.ref.gz \
-	testCFSv2_FLTgrids_9.ref.gz
+	testCFSv2_FLTgrids_8.dat.ref.gz \
+	testCFSv2_FLTgrids_9.dat.ref.gz
 
 TESTS = testPredictFStat.sh
 
