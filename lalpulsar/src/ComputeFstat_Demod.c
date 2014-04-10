@@ -90,6 +90,8 @@ const char *const OptimisedHotloopSource = OPT_DEMOD_SOURCE;
 #define TWOPI_FLOAT     6.28318530717958f       /* single-precision 2*pi */
 #define OOTWOPI_FLOAT   (1.0f / TWOPI_FLOAT)    /* single-precision 1 / (2pi) */
 
+#define INIT_MEM(x) memset(&(x), 0, sizeof((x)))
+
 /* Type containing F-statistic proper plus the two complex amplitudes Fa and Fb (for ML-estimators) */
 typedef struct tagFcomponents {
   REAL8 F;                              /* F-statistic value */
@@ -688,9 +690,8 @@ XLALComputeFaFbCmplx ( Fcomponents *FaFb,               /* [out] Fa,Fb (and poss
  * it not implemented yet.
  *
  */
-static void
-ComputeFStat ( LALStatus *status,                               /* pointer to LALStatus structure */
-               Fcomponents *Fstat,                              /* [out] Fstatistic + Fa, Fb */
+static int
+ComputeFStat ( Fcomponents *Fstat,                              /* [out] Fstatistic + Fa, Fb */
                const PulsarDopplerParams *doppler,              /* parameter-space point to compute F for */
                const MultiSFTVector *multiSFTs,                 /* normalized (by DOUBLE-sided Sn!) data-SFTs of all IFOs */
                const MultiNoiseWeights *multiWeights,           /* noise-weights of all SFTs */
@@ -699,44 +700,32 @@ ComputeFStat ( LALStatus *status,                               /* pointer to LA
                ComputeFBuffer *cfBuffer                         /* CF-internal buffering structure */
                )
 {
+  /* check input */
+  XLAL_CHECK ( Fstat != NULL, XLAL_EINVAL );
+  XLAL_CHECK ( multiSFTs != NULL, XLAL_EINVAL );
+  XLAL_CHECK ( doppler != NULL, XLAL_EINVAL );
+  XLAL_CHECK ( multiDetStates != NULL, XLAL_EINVAL );
+  XLAL_CHECK ( params != NULL, XLAL_EINVAL );
+
   Fcomponents retF = empty_Fcomponents;
-  UINT4 X, numDetectors;
   MultiSSBtimes *multiSSB = NULL;
   MultiSSBtimes *multiBinary = NULL;
   const MultiSSBtimes *multiSSBTotal = NULL;
   MultiAMCoeffs *multiAMcoef = NULL;
   MultiCmplxAMCoeffs *multiCmplxAMcoef = NULL;
   REAL8 Ad, Bd, Cd, Dd_inv, Ed;
+
   SkyPosition skypos;
-
-  INITSTATUS(status);
-  ATTATCHSTATUSPTR (status);
-
-  /* check input */
-  ASSERT ( Fstat, status, COMPUTEFSTATC_ENULL, COMPUTEFSTATC_MSGENULL );
-  ASSERT ( multiSFTs, status, COMPUTEFSTATC_ENULL, COMPUTEFSTATC_MSGENULL );
-  ASSERT ( doppler, status, COMPUTEFSTATC_ENULL, COMPUTEFSTATC_MSGENULL );
-  ASSERT ( multiDetStates, status, COMPUTEFSTATC_ENULL, COMPUTEFSTATC_MSGENULL );
-  ASSERT ( params, status, COMPUTEFSTATC_ENULL, COMPUTEFSTATC_MSGENULL );
-
-  numDetectors = multiSFTs->length;
-  ASSERT ( multiDetStates->length == numDetectors, status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT );
-  if ( multiWeights ) {
-    ASSERT ( multiWeights->length == numDetectors , status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT );
-  }
+  UINT4 numDetectors = multiSFTs->length;
+  XLAL_CHECK ( multiDetStates->length == numDetectors, XLAL_EINVAL );
+  XLAL_CHECK ( multiWeights==NULL || (multiWeights->length == numDetectors), XLAL_EINVAL );
 
   /* ----- prepare return of 'FstatAtoms' if requested */
   if ( params->returnAtoms )
     {
-      if ( (retF.multiFstatAtoms = LALMalloc ( sizeof(*retF.multiFstatAtoms) )) == NULL ){
-        ABORT (status, COMPUTEFSTATC_EMEM, COMPUTEFSTATC_MSGEMEM);
-      }
+      XLAL_CHECK ( (retF.multiFstatAtoms = XLALMalloc ( sizeof(*retF.multiFstatAtoms) )) != NULL, XLAL_ENOMEM );
       retF.multiFstatAtoms->length = numDetectors;
-      if ( (retF.multiFstatAtoms->data = LALMalloc ( numDetectors * sizeof(*retF.multiFstatAtoms->data) )) == NULL ) {
-        LALFree ( retF.multiFstatAtoms );
-        ABORT (status, COMPUTEFSTATC_EMEM, COMPUTEFSTATC_MSGEMEM);
-      }
-
+      XLAL_CHECK ( (retF.multiFstatAtoms->data = XLALMalloc ( numDetectors * sizeof(*retF.multiFstatAtoms->data) )) != NULL, XLAL_ENOMEM );
     } /* if returnAtoms */
 
   /* ----- check if that skyposition SSB+AMcoef were already buffered */
@@ -762,11 +751,7 @@ ComputeFStat ( LALStatus *status,                               /* pointer to LA
       skypos.system =   COORDINATESYSTEM_EQUATORIAL;
       skypos.longitude = doppler->Alpha;
       skypos.latitude  = doppler->Delta;
-      if ( (multiSSB = XLALGetMultiSSBtimes ( multiDetStates, skypos, doppler->refTime, params->SSBprec )) == NULL )
-        {
-          XLALPrintError("XLALGetMultiSSBtimes() failed with error = %d\n\n", xlalErrno );
-          ABORT ( status, COMPUTEFSTATC_EXLAL, COMPUTEFSTATC_MSGEXLAL );
-        }
+      XLAL_CHECK ( (multiSSB = XLALGetMultiSSBtimes ( multiDetStates, skypos, doppler->refTime, params->SSBprec )) != NULL, XLAL_EFUNC );
       if ( cfBuffer )
         {
           XLALDestroyMultiSSBtimes ( cfBuffer->multiSSB );
@@ -778,34 +763,27 @@ ComputeFStat ( LALStatus *status,                               /* pointer to LA
 
     } /* could not reuse previously buffered quantites */
 
-    /* new orbital parameter corrections if not already buffered */
+  /* new orbital parameter corrections if not already buffered */
   if ( doppler->asini > 0 )
     {
       /* compute binary time corrections to the SSB time delays and SSB time derivitive */
-      if ( XLALAddMultiBinaryTimes ( &multiBinary, multiSSB, doppler ) != XLAL_SUCCESS )
-        {
-          XLALPrintError("XLALAddMultiBinaryTimes() failed with xlalErrno = %d\n\n", xlalErrno );
-          ABORTXLAL ( status );
-        }
+      XLAL_CHECK ( XLALAddMultiBinaryTimes ( &multiBinary, multiSSB, doppler ) == XLAL_SUCCESS, XLAL_EFUNC );
       multiSSBTotal = multiBinary;
     }
-  else
+  else {
     multiSSBTotal = multiSSB;
+  }
 
   /* special treatment of AM coefficients */
   if ( params->useRAA && !multiCmplxAMcoef )
     {
+      LALStatus status; INIT_MEM ( status );
       /* compute new RAA AM-coefficients */
-      LALGetMultiCmplxAMCoeffs ( status->statusPtr, &multiCmplxAMcoef, multiDetStates, *doppler );
-      BEGINFAIL ( status ) {
-        XLALDestroyMultiSSBtimes ( multiSSB );
-      } ENDFAIL (status);
+      LALGetMultiCmplxAMCoeffs ( &status, &multiCmplxAMcoef, multiDetStates, *doppler );
+      XLAL_CHECK ( status.statusCode == 0, XLAL_EFAILED, "LALGetMultiCmplxAMCoeffs() failed with statusCode = %d\n", status.statusCode );
 
       /* noise-weight Antenna-patterns and compute A,B,C */
-      if ( XLALWeightMultiCmplxAMCoeffs ( multiCmplxAMcoef, multiWeights ) != XLAL_SUCCESS ) {
-        XLALPrintError("\nXLALWeightMultiCmplxAMCoeffs() failed with error = %d\n\n", xlalErrno );
-        ABORT ( status, COMPUTEFSTATC_EXLAL, COMPUTEFSTATC_MSGEXLAL );
-      }
+      XLAL_CHECK ( XLALWeightMultiCmplxAMCoeffs ( multiCmplxAMcoef, multiWeights ) == XLAL_SUCCESS, XLAL_EFUNC );
 
       /* store in buffer if available */
       if ( cfBuffer )
@@ -819,16 +797,7 @@ ComputeFStat ( LALStatus *status,                               /* pointer to LA
   if ( !params->useRAA && !multiAMcoef )
     {
       /* compute new AM-coefficients */
-      LALGetMultiAMCoeffs ( status->statusPtr, &multiAMcoef, multiDetStates, skypos );
-      BEGINFAIL ( status ) {
-        XLALDestroyMultiSSBtimes ( multiSSB );
-      } ENDFAIL (status);
-
-      /* noise-weight Antenna-patterns and compute A,B,C */
-      if ( XLALWeightMultiAMCoeffs ( multiAMcoef, multiWeights ) != XLAL_SUCCESS ) {
-        XLALPrintError("\nXLALWeightMultiAMCoeffs() failed with error = %d\n\n", xlalErrno );
-        ABORT ( status, COMPUTEFSTATC_EXLAL, COMPUTEFSTATC_MSGEXLAL );
-      }
+      XLAL_CHECK ( (multiAMcoef = XLALComputeMultiAMCoeffs ( multiDetStates, multiWeights, skypos )) != NULL, XLAL_EFUNC );
 
       /* store these in buffer if available */
       if ( cfBuffer )
@@ -857,40 +826,28 @@ ComputeFStat ( LALStatus *status,                               /* pointer to LA
     }
   else
     {
-      XLALPrintError ( "Programming error: neither 'multiAMcoef' nor 'multiCmplxAMcoef' are available!\n");
-      ABORT ( status, COMPUTEFSTATC_ENULL, COMPUTEFSTATC_MSGENULL );
+      XLAL_ERROR ( XLAL_EFAILED, "Programming error: neither 'multiAMcoef' nor 'multiCmplxAMcoef' are available!\n");
     }
 
   /* if requested, prepare for returning single-IFO F-stat vector */
   if ( params->returnSingleF )
     {
       retF.numDetectors = numDetectors;
-      if ( numDetectors > PULSAR_MAX_DETECTORS ) {
-        XLALPrintError ("%s: numDetectors = %d exceeds currently allowed upper limit of detectors (%d) for returnSingleF=TRUE\n", __func__, numDetectors, PULSAR_MAX_DETECTORS );
-        ABORT ( status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT );
-      }
+      XLAL_CHECK ( numDetectors <= PULSAR_MAX_DETECTORS, XLAL_EINVAL, "numDetectors = %d exceeds currently allowed upper value (%d) for returnSingleF=TRUE\n", numDetectors, PULSAR_MAX_DETECTORS );
     }
 
   /* ----- loop over detectors and compute all detector-specific quantities ----- */
-  for ( X=0; X < numDetectors; X ++)
+  for ( UINT4 X=0; X < numDetectors; X ++)
     {
       Fcomponents FcX = empty_Fcomponents;      /* for detector-specific FaX, FbX */
 
       if ( params->useRAA )
         {
-          if ( XLALComputeFaFbCmplx (&FcX, multiSFTs->data[X], doppler->fkdot, multiSSBTotal->data[X], multiCmplxAMcoef->data[X], params) != 0)
-            {
-              XLALPrintError ("\nXALComputeFaFbCmplx() failed\n");
-              ABORT ( status, COMPUTEFSTATC_EXLAL, COMPUTEFSTATC_MSGEXLAL );
-            }
+          XLAL_CHECK ( XLALComputeFaFbCmplx (&FcX, multiSFTs->data[X], doppler->fkdot, multiSSBTotal->data[X], multiCmplxAMcoef->data[X], params) == XLAL_SUCCESS, XLAL_EFUNC );
         }
       else
         {
-          if ( XLALComputeFaFb (&FcX, multiSFTs->data[X], doppler->fkdot, multiSSBTotal->data[X], multiAMcoef->data[X], params) != 0)
-            {
-              XLALPrintError ("\nXALComputeFaFb() failed\n");
-              ABORT ( status, COMPUTEFSTATC_EXLAL, COMPUTEFSTATC_MSGEXLAL );
-            }
+          XLAL_CHECK ( XLALComputeFaFb (&FcX, multiSFTs->data[X], doppler->fkdot, multiSSBTotal->data[X], multiAMcoef->data[X], params) == XLAL_SUCCESS, XLAL_EFUNC );
           if ( params->returnAtoms )
             {
               retF.multiFstatAtoms->data[X] = FcX.multiFstatAtoms->data[0];     /* copy pointer to IFO-specific Fstat-atoms 'contents' */
@@ -900,13 +857,7 @@ ComputeFStat ( LALStatus *status,                               /* pointer to LA
             }
         }
 
-#ifndef LAL_NDEBUG
-      if ( !isfinite(creal(FcX.Fa)) || !isfinite(cimag(FcX.Fa)) || !isfinite(creal(FcX.Fb)) || !isfinite(cimag(FcX.Fb)) ) {
-        XLALPrintError("XLALComputeFaFb() returned non-finite: Fa=(%f,%f), Fb=(%f,%f)\n",
-                      creal(FcX.Fa), cimag(FcX.Fa), creal(FcX.Fb), cimag(FcX.Fb) );
-        ABORT (status,  COMPUTEFSTATC_EIEEE,  COMPUTEFSTATC_MSGEIEEE);
-      }
-#endif
+      XLAL_CHECK ( isfinite(creal(FcX.Fa)) && isfinite(cimag(FcX.Fa)) && isfinite(creal(FcX.Fb)) && isfinite(cimag(FcX.Fb)), XLAL_EFPOVRFLW );
 
       /* compute single-IFO F-stats, if requested */
       if ( params->returnSingleF )
@@ -942,8 +893,9 @@ ComputeFStat ( LALStatus *status,                               /* pointer to LA
                        - 2.0 * Cd *( creal(retF.Fa) * creal(retF.Fb) + cimag(retF.Fa) * cimag(retF.Fb) )
                        );
 
-  if ( Ed != 0 ) /* extra term in RAA case */
+  if ( Ed != 0 ) { /* extra term in RAA case */
     retF.F += - 2.0 * Dd_inv * Ed *( - creal(retF.Fa) * cimag(retF.Fb) + cimag(retF.Fa) * creal(retF.Fb) ); /* -2 E Im(Fa Fb^* ) / D */
+  }
 
   /* set correct F-stat reference time (taken from template 'doppler') [relevant only for phase of {Fa,Fb}] */
   retF.refTime = doppler->refTime;
@@ -962,8 +914,7 @@ ComputeFStat ( LALStatus *status,                               /* pointer to LA
   /* return final Fstat result */
   (*Fstat) = retF;
 
-  DETATCHSTATUSPTR (status);
-  RETURN (status);
+  return XLAL_SUCCESS;
 
 } /* ComputeFStat() */
 
@@ -1503,10 +1454,7 @@ ComputeFstat_Demod(
     {
       LALStatus status = empty_status;
       if ( (demod->params.Dterms != DTERMS) || (whatToCompute & FSTATQ_ATOMS_PER_DET) || (thisPoint.asini > 0) ) {
-        ComputeFStat(&status, &Fcomp, &thisPoint, demod->multiSFTs, common->multiWeights, demod->multiDetStates, &demod->params, &demod->buffer);
-        if (status.statusCode) {
-          XLAL_ERROR(XLAL_EFAILED, "ComputeFStat() failed: %s (statusCode=%i)", status.statusDescription, status.statusCode);
-        }
+        XLAL_CHECK ( ComputeFStat( &Fcomp, &thisPoint, demod->multiSFTs, common->multiWeights, demod->multiDetStates, &demod->params, &demod->buffer) == XLAL_SUCCESS, XLAL_EFUNC );
       } else {
         LocalComputeFStat(&status, &Fcomp, &thisPoint, demod->multiSFTs, common->multiWeights, demod->multiDetStates, &demod->params, &demod->buffer);
         if (status.statusCode) {
