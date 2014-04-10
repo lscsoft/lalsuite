@@ -35,6 +35,7 @@
 #include <lal/PulsarDataTypes.h>
 #include <lal/ComputeSky.h>
 #include <lal/Window.h>
+#include <lal/SFTutils.h>
 
 /* C++ protection. */
 #ifdef  __cplusplus

@@ -37,6 +37,8 @@ extern "C" {
 /*---------- exported INCLUDES ----------*/
 #include <lal/PulsarDataTypes.h>
 #include <lal/SeqFactories.h>
+#include <lal/LALBarycenter.h>
+#include <lal/SFTutils.h>
 
 /*---------- exported DEFINES ----------*/
 

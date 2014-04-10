@@ -44,12 +44,7 @@ extern "C" {
 #include <gsl/gsl_matrix.h>
 
 #include <lal/LALDatatypes.h>
-#include <lal/DetectorSite.h>
-#include <lal/Date.h>
 #include <lal/SkyCoordinates.h>
-#include <lal/LALBarycenter.h>
-
-#include <lal/SFTutils.h>
 
 /** maximal number of spin-parameters (Freq + spindowns) we can handle */
 #define PULSAR_MAX_SPINS	7
@@ -168,8 +163,6 @@ extern const PulsarCandidate empty_PulsarCandidate;
 
 /* initializers for frequently used non-pulsar types */
 extern const LIGOTimeGPS empty_LIGOTimeGPS;
-extern const BarycenterInput empty_BarycenterInput;
-extern const EphemerisData empty_EphemerisData;
 extern const SkyPosition empty_SkyPosition;
 /*@}*/
 

@@ -24,6 +24,7 @@
  */
 
 #include <lal/SFTClean.h>
+#include <lal/SFTutils.h>
 #include <glob.h> 
 #include <lalapps.h>
 

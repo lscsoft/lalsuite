@@ -79,7 +79,6 @@ REAL8 maxErrInEmissionTime ( const EmissionTime *demit );
 
 
 // empty local initializers
-static const BarycenterInput empty_BarycenterInput;
 static const EmissionTime empty_EmissionTime;
 
 const INT4 t2000 = 630720013; 		/* gps time at Jan 1, 2000 00:00:00 UTC */
