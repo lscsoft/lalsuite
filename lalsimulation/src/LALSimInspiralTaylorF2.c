@@ -141,6 +141,12 @@ int XLALSimInspiralTaylorF2(
     REAL8 qm_def1 = 1; /* The QM deformability parameters */
     REAL8 qm_def2 = 1; /* This is 1 for black holes and larger for neutron stars */
 
+    /* Validate expansion order arguments.
+     * This must be done here instead of in the OpenMP parallel loop
+     * because when OpenMP parallelization is turned on, early exits
+     * from loops (via return or break statements) are not permitted.
+     */
+
     /* Validate phase PN order. */
     switch (phaseO)
     {
@@ -154,8 +160,7 @@ int XLALSimInspiralTaylorF2(
         case 0:
             break;
         default:
-            XLAL_PRINT_ERROR("Invalid phase PN order %s", phaseO);
-            XLAL_ERROR(XLAL_ETYPE);
+            XLAL_ERROR(XLAL_ETYPE, "Invalid phase PN order %s", phaseO);
     }
 
     /* Validate amplitude PN order. */
@@ -171,8 +176,7 @@ int XLALSimInspiralTaylorF2(
         case 0:
             break;
         default:
-            XLAL_PRINT_ERROR("Invalid amplitude PN order %s", amplitudeO);
-            XLAL_ERROR(XLAL_ETYPE);
+            XLAL_ERROR(XLAL_ETYPE, "Invalid amplitude PN order %s", amplitudeO);
     }
 
     switch( spinO )
@@ -211,9 +215,7 @@ int XLALSimInspiralTaylorF2(
         case LAL_SIM_INSPIRAL_SPIN_ORDER_0PN:
             break;
         default:
-            XLAL_PRINT_ERROR("Invalid spin PN order %s", spinO);
-            XLAL_ERROR(XLAL_EINVAL);
-            break;
+            XLAL_ERROR(XLAL_EINVAL, "Invalid spin PN order %s", spinO);
     }
 
     /* Tidal coefficients for phasing, fluz, and energy */
@@ -233,9 +235,7 @@ int XLALSimInspiralTaylorF2(
         case LAL_SIM_INSPIRAL_TIDAL_ORDER_0PN:
             break;
         default:
-            XLAL_PRINT_ERROR("Invalid tidal PN order %s", tideO);
-            XLAL_ERROR(XLAL_EINVAL);
-            break;
+            XLAL_ERROR(XLAL_EINVAL, "Invalid tidal PN order %s", tideO);
     }
 
     /* flux coefficients */
