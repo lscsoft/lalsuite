@@ -132,6 +132,10 @@ AS_IF(
   ]
 )
 
+# create Automake conditional so that we know whether we need to build
+# OpenMP-specific tests
+AM_CONDITIONAL([HAVE_OPENMP],[test "x$OPENMP_ENABLE_VAL" = "xENABLED"])
+
 # add gcc specific flags
 LALSUITE_ADD_GCC_FLAGS
 
