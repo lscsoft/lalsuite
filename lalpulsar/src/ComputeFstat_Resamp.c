@@ -589,7 +589,6 @@ XLALSetupFstat_Resamp(
   resamp->params.buffer = NULL;
   resamp->params.bufferedRAA = 0;
   resamp->params.edat = edat;
-  resamp->params.upsampling = 1;
   resamp->params.useRAA = 0;
 
   // Initialise output array of *F* values to NULL
