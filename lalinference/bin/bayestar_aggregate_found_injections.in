@@ -112,8 +112,8 @@ def process(fitsfilename):
 
 
 if __name__ == '__main__':
-    import pylal.progress
-    progress = pylal.progress.ProgressBar()
+    from glue.text_progress_bar import ProgressBar
+    progress = ProgressBar()
 
     progress.update(-1, 'spawning {0} workers'.format(opts.jobs))
     if opts.jobs == 1:
