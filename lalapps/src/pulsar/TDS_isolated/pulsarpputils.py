@@ -2244,13 +2244,19 @@ def read_pulsar_mcmc_file(cf):
 def pulsar_nest_to_posterior(nestfiles, nlive):
   # combine multiple nested sample files for an IFO into a single posterior (copied from lalapps_nest2pos)
   peparser = bppu.PEOutputParser('ns')
-  nsResultsObject = peparser.parse(nestfiles, Nlive=nlive)
+
+  # generate a random string for the posterior output file
+  import random
+  import string  
+  posfilename = 'posterior_samples_'+''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(8))+'.dat'
+
+  nsResultsObject = peparser.parse(nestfiles, Nlive=nlive, posfilename=posfilename)
 
   pos = bppu.Posterior( nsResultsObject, SimInspiralTableEntry=None, votfile=None )
 
   # remove posterior samples file created by parser
-  if os.path.isfile('posterior_samples.dat'):
-    os.remove('posterior_samples.dat')
+  if os.path.isfile(posfilename):
+    os.remove(posfilename)
 
   # convert iota back to cos(iota)
   # create 1D posterior class of cos(iota) values
