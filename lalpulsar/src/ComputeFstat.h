@@ -200,7 +200,7 @@ typedef struct tagFstatResults {
   CHAR detectorNames[PULSAR_MAX_DETECTORS][3];
 
   /// Antenna pattern matrix \f$M_{\mu\nu}\f$, used in computing \f$2\mathcal{F}\f$.
-  CmplxAntennaPatternMatrix Mmunu;
+  AntennaPatternMatrix Mmunu;
 
   /// Bit-field of which \f$\mathcal{F}\f$-statistic quantities were computed.
   FstatQuantities whatWasComputed;
@@ -384,7 +384,7 @@ XLALEstimatePulsarAmplitudeParams(
   const LIGOTimeGPS* FaFb_refTime,              ///< [in] Reference time of \f$F_a\f$ and \f$F_b\f$, may differ from pulsar candidate reference time.
   const COMPLEX16 Fa,                           ///< [in] Complex \f$\mathcal{F}\f$-statistic amplitude \f$F_a\f$.
   const COMPLEX16 Fb,                           ///< [in] Complex \f$\mathcal{F}\f$-statistic amplitude \f$F_b\f$.
-  const CmplxAntennaPatternMatrix *Mmunu        ///< [in] Antenna pattern matrix \f$M_{\mu\nu}\f$.
+  const AntennaPatternMatrix *Mmunu        	///< [in] Antenna pattern matrix \f$M_{\mu\nu}\f$.
   );
 
 ///

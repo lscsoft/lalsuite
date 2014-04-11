@@ -34,6 +34,7 @@
 #include <lal/DetectorSite.h>
 #include <lal/LALBarycenter.h>
 #include <lal/DetectorStates.h>
+#include <lal/LALComputeAM.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -84,47 +85,11 @@ typedef struct tagFreqSkypos_t
   SymmTensor3 eCross;	/**< eCross polarization tensor (skypos-dependent) */
 } FreqSkypos_t;
 
-/**
- * Struct holding the "antenna-pattern" matrix \f$\mathcal{M}_{\mu\nu} \equiv \left( \mathbf{h}_\mu|\mathbf{h}_\nu\right)\f$,
- * in terms of the multi-detector scalar product. This matrix can be shown to be expressible, in the case of complex AM co\"{e}fficients, as
- * \f{equation}{
- * \mathcal{M}_{\mu\nu} = \mathcal{S}^{-1}\,T_\mathrm{SFT}\,\left( \begin{array}{c c c c}
- * \widehat{A} & \widehat{C} & 0 & -\widehat{E} \\
- * \widehat{C} & \widehat{B} & \widehat{E} & 0 \\
- * 0 & \widehat{E} & \widehat{A} & \widehat{C} \\
- * -\widehat{E} & 0 & \widehat{C} & \widehat{B} \\
- * \end{array}\right)\,,
- * \f}
- * where (here) \f$\mathcal{S} \equiv \frac{1}{N_\mathrm{SFT}}\sum_{X,\alpha} S_{X\alpha}\f$ characterizes the multi-detector noise-floor, and
- * \f{equation}{
- * \widehat{A} \equiv \mathrm{Re} \sum_{X,\alpha} \widehat{a}^X_\alpha{}^* \widehat{a}^X_\alpha\,,\quad
- * \widehat{B} \equiv \mathrm{Re} \sum_{X,\alpha} \widehat{b}^X_\alpha{}^* \widehat{b}^X_\alpha \,,\quad
- * \widehat{C} \equiv \mathrm{Re} \sum_{X,\alpha} \widehat{a}^X_\alpha{}^* \widehat{b}^X_\alpha \,,
- * \widehat{E} \equiv \mathrm{Im} \sum_{X,\alpha} \widehat{a}^X_\alpha{}^* \widehat{b}^X_\alpha \,,
- * \f}
- * and the noise-weighted atenna-functions \f$\widehat{a}^X_\alpha = \sqrt{w^X_\alpha}\,a^X_\alpha\f$,
- * \f$\widehat{b}^X_\alpha = \sqrt{w^X_\alpha}\,b^X_\alpha\f$, and noise-weights
- * \f$w^X_\alpha \equiv S^{-1}_{X\alpha}/{\mathcal{S}^{-1}}\f$.
- *
- * \note One reason for storing the un-normalized \a Ad, \a Bd, \a Cd, \a Ed and the normalization-factor \a Sinv_Tsft separately
- * is that the former are of order unity, while \a Sinv_Tsft is very large, and it has numerical advantages for parameter-estimation
- * to use that fact.
- */
-typedef struct tagCmplxAntennaPatternMatrix {
-  REAL8 Ad; 		/**<  \f$\widehat{A} \equiv \mathrm{Re} \sum_{X,\alpha} \widehat{a}^X_\alpha{}^* \widehat{a}^X_\alpha\f$ */
-  REAL8 Bd; 		/**<  \f$\widehat{B} \equiv \mathrm{Re} \sum_{X,\alpha} \widehat{b}^X_\alpha{}^* \widehat{b}^X_\alpha\f$ */
-  REAL8 Cd; 		/**<  \f$\widehat{C} \equiv \mathrm{Re} \sum_{X,\alpha} \widehat{a}^X_\alpha{}^* \widehat{b}^X_\alpha\f$ */
-  REAL8 Ed; 		/**<  \f$\widehat{E} \equiv \mathrm{Im} \sum_{X,\alpha} \widehat{a}^X_\alpha{}^* \widehat{b}^X_\alpha\f$ */
-  REAL8 Dd; 		/**<  determinant \f$\widehat{D} \equiv \widehat{A} \widehat{B} - \widehat{C}^2 -\widehat{E}^2 \f$ */
-  REAL8 Sinv_Tsft;	/**< normalization-factor \f$\mathcal{S}^{-1}\,T_\mathrm{SFT}\f$ (wrt single-sided PSD!) */
-} CmplxAntennaPatternMatrix;
-
-
 /** Multi-IFO container for antenna-pattern coefficients a^X(t), b^X(t) and atenna-pattern matrix M_mu_nu */
 typedef struct tagMultiCmplxAMCoeffs {
-  UINT4 length;		/**< number of IFOs */
-  CmplxAMCoeffs **data;	/**< noise-weighted am-coeffs \f$\widehat{a}_{X\alpha}\f$, and \f$\widehat{b}_{X\alpha}\f$ */
-  CmplxAntennaPatternMatrix Mmunu;	/**< antenna-pattern matrix \f$\mathcal{M}_{\mu\nu}\f$ */
+  UINT4 length;			//!< number of IFOs
+  CmplxAMCoeffs **data;		//!< noise-weighted am-coeffs \f$\ah_{X\alpha}\f$, and \f$\bh_{X\alpha}\f$
+  AntennaPatternMatrix Mmunu; 	//!< antenna-pattern matrix \f$\M_{\mu\nu}\f$
 } MultiCmplxAMCoeffs;
 
 /*---------- exported prototypes [API] ----------*/

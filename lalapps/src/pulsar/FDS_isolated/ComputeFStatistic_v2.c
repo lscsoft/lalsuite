@@ -125,7 +125,7 @@ typedef struct {
   LIGOTimeGPS FaFb_refTime;		/**< reference time of Fa and Fb */
   COMPLEX16 Fa;				/**< complex amplitude Fa */
   COMPLEX16 Fb;				/**< complex amplitude Fb */
-  CmplxAntennaPatternMatrix Mmunu;	/**< antenna-pattern matrix Mmunu = Sinv*Tsft * [ Ad, Cd; Cd; Bd ] */
+  AntennaPatternMatrix Mmunu;		/**< antenna-pattern matrix Mmunu = (h_mu|h_nu) */
   REAL4 LVstat;				/**< Line Veto statistic */
 } FstatCandidate;
 

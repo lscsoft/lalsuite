@@ -485,7 +485,7 @@ XLALEstimatePulsarAmplitudeParams(
   const LIGOTimeGPS* FaFb_refTime,
   const COMPLEX16 Fa,
   const COMPLEX16 Fb,
-  const CmplxAntennaPatternMatrix *Mmunu
+  const AntennaPatternMatrix *Mmunu
   )
 {
 

@@ -642,6 +642,7 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
 
   REAL8 norm = OOTWOPI;
 
+  XLAL_CHECK ( params->Dterms == DTERMS, XLAL_EDOM );
 #ifndef LAL_NDEBUG
   /* ----- check validity of input */
   if ( !FaFb ) {
