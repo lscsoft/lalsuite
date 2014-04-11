@@ -112,7 +112,7 @@ int main(int argc, char *argv[]){
   SFTIndexList *sftIndices = NULL;
   SFTPairIndexList *sftPairs = NULL;
   REAL8Vector *shiftedFreqs = NULL;
-  INT4Vector *lowestBins = NULL;
+  UINT4Vector *lowestBins = NULL;
   REAL8Vector *kappaValues = NULL;
   REAL8Vector *signalPhases = NULL;
 
@@ -230,8 +230,9 @@ int main(int argc, char *argv[]){
   /* FIXME: need to correct fMin and fMax for Doppler shift, rngmedian bins and spindown range */
   /* this is essentially just a place holder for now */
   /* FIXME: this running median buffer is overkill, since the running median block need not be centered on the search frequency */
-  fMin = uvar.fStart - 0.5 * uvar.rngMedBlock * deltaF;
-  fMax = uvar.fStart + 0.5 * uvar.rngMedBlock * deltaF + uvar.fBand;
+  REAL8 vMax=(LAL_TWOPI * uvar.orbitAsiniSec /uvar.orbitPSec + LAL_TWOPI * LAL_REARTH_SI / (LAL_DAYSID_SI * LAL_C_SI)); /*calculate the maximum relative velocity in speed of light*/
+  fMin = uvar.fStart * (1 - vMax) - 0.5 * uvar.rngMedBlock * deltaF;
+  fMax = uvar.fStart * (1 + vMax) + 0.5 * uvar.rngMedBlock * deltaF + uvar.fBand;
 
   /* read the SFTs*/
   if ((inputSFTs = XLALLoadMultiSFTs ( config.catalog, fMin, fMax)) == NULL){
@@ -341,7 +342,7 @@ int main(int argc, char *argv[]){
   XLALGPSSetREAL8(&dopplerpos.refTime, uvar.refTime);
   dopplerpos.Alpha = uvar.alphaRad;
   dopplerpos.Delta = uvar.deltaRad;
-  dopplerpos.fkdot[0] = uvar.fStart;
+  dopplerpos.fkdot[0] = uvar.fStart - sqrt(uvar.mismatchF / diagff);/*minus a  frequency spacing for testing convenience to search at true parameter, may need to modify*/
   /* set all spindowns to zero */
   for (k=1; k < PULSAR_MAX_SPINS; k++)
     dopplerpos.fkdot[k] = 0.0;
@@ -385,7 +386,7 @@ int main(int argc, char *argv[]){
     LogPrintf ( LOG_CRITICAL, "%s: XLALCreateREAL8Vector() failed with errno=%d\n", __func__, xlalErrno );
     XLAL_ERROR( XLAL_EFUNC );
   }
-  if ((lowestBins = XLALCreateINT4Vector ( numSFTs ) ) == NULL){
+  if ((lowestBins = XLALCreateUINT4Vector ( numSFTs ) ) == NULL){
     LogPrintf ( LOG_CRITICAL, "%s: XLALCreateUINT4Vector() failed with errno=%d\n", __func__, xlalErrno );
     XLAL_ERROR( XLAL_EFUNC );
   }
@@ -449,7 +450,7 @@ int main(int argc, char *argv[]){
 
   XLALDestroyREAL8Vector ( signalPhases );
   XLALDestroyREAL8Vector ( kappaValues );
-  XLALDestroyINT4Vector ( lowestBins );
+  XLALDestroyUINT4Vector ( lowestBins );
   XLALDestroyREAL8Vector ( shiftedFreqs );
   XLALDestroyMultiSSBtimes ( multiBinaryTimes );
   XLALDestroyMultiSSBtimes ( multiSSBTimes );
@@ -640,7 +641,7 @@ int GetNextCrossCorrTemplate(BOOLEAN *binaryParamsFlag, PulsarDopplerParams *dop
 
   /* check spacings not negative */
 
-  if (new_freq <= maxBinaryTemplate->fkdot[0])    /*loop over f at first*/
+  if (new_freq < maxBinaryTemplate->fkdot[0])    /*loop over f at first*/
     {
       new_freq = dopplerpos->fkdot[0] + binaryTemplateSpacings->fkdot[0];
       dopplerpos->fkdot[0] = new_freq;
@@ -649,7 +650,7 @@ int GetNextCrossCorrTemplate(BOOLEAN *binaryParamsFlag, PulsarDopplerParams *dop
     }
   else
     {
-      if (new_asini <= maxBinaryTemplate->asini)  /*after looping all f, initialize f and loop over a_p*/
+      if (new_asini < maxBinaryTemplate->asini)  /*after looping all f, initialize f and loop over a_p*/
 	{
 	  new_asini = dopplerpos->asini + binaryTemplateSpacings->asini;
 	  dopplerpos->asini = new_asini;
@@ -660,7 +661,7 @@ int GetNextCrossCorrTemplate(BOOLEAN *binaryParamsFlag, PulsarDopplerParams *dop
 	}
       else
 	{
-	  if (new_tp <= tp_hi)                    /*after looping the plane of f and a_p, initialize f, a_p and loop over T*/
+	  if (new_tp < tp_hi)                    /*after looping the plane of f and a_p, initialize f, a_p and loop over T*/
 	    {
 	      new_tp = XLALGPSGetREAL8(XLALGPSAddGPS(&(dopplerpos->tp), &(binaryTemplateSpacings->tp)));
 	      XLALGPSSetREAL8(&(dopplerpos->tp),new_tp);
