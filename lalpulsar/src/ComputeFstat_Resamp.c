@@ -54,7 +54,6 @@ struct tagComputeFBuffer_RS {
   MultiSSBtimes *multiSSB;
   MultiSSBtimes *multiBinary;
   MultiAMCoeffs *multiAMcoef;
-  MultiCmplxAMCoeffs *multiCmplxAMcoef;
   MultiCOMPLEX8TimeSeries *multiTimeseries;                   /* the buffered unweighted multi-detector timeseries */
   MultiCOMPLEX8TimeSeries *multiFa_resampled;                 /* the buffered multi-detector resampled timeseries weighted by a(t) */
   MultiCOMPLEX8TimeSeries *multiFb_resampled;                 /* the buffered multi-detector resampled timeseries weighted by b(t) */
@@ -82,8 +81,6 @@ XLALEmptyComputeFBuffer_RS ( ComputeFBuffer_RS *buffer)
   buffer->multiBinary = NULL;
   if ( buffer->multiAMcoef) XLALDestroyMultiAMCoeffs( buffer->multiAMcoef );
   buffer->multiAMcoef = NULL;
-  if ( buffer->multiCmplxAMcoef) XLALDestroyMultiCmplxAMCoeffs( buffer->multiCmplxAMcoef );
-  buffer->multiCmplxAMcoef = NULL;
   if ( buffer->multiTimeseries) XLALDestroyMultiCOMPLEX8TimeSeries( buffer->multiTimeseries );
   buffer->multiTimeseries = NULL;
   if ( buffer->multiFa_resampled) XLALDestroyMultiCOMPLEX8TimeSeries( buffer->multiFa_resampled );
@@ -587,9 +584,7 @@ XLALSetupFstat_Resamp(
   resamp->params.Dterms = OptimisedHotloopDterms;   // Use fixed Dterms for single frequency bin demodulation
   resamp->params.SSBprec = SSBprec;
   resamp->params.buffer = NULL;
-  resamp->params.bufferedRAA = 0;
   resamp->params.edat = edat;
-  resamp->params.useRAA = 0;
 
   // Initialise output array of *F* values to NULL
   resamp->Fout = NULL;
@@ -766,9 +761,7 @@ ComputeFstat_Resamp_demod:
   } // for k < Fstats->numFreqBins
 
   // Return amplitude modulation coefficients
-  if (resamp->buffer.multiCmplxAMcoef != NULL) {
-    Fstats->Mmunu = resamp->buffer.multiCmplxAMcoef->Mmunu;
-  } else if (resamp->buffer.multiAMcoef != NULL) {
+  if (resamp->buffer.multiAMcoef != NULL) {
     Fstats->Mmunu.Ad = resamp->buffer.multiAMcoef->Mmunu.Ad;
     Fstats->Mmunu.Bd = resamp->buffer.multiAMcoef->Mmunu.Bd;
     Fstats->Mmunu.Cd = resamp->buffer.multiAMcoef->Mmunu.Cd;
