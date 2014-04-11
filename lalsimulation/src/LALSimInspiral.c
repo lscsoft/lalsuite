@@ -294,15 +294,20 @@ double XLALSimInspiralGetFinalFreq(
         case TaylorT2:
         case TaylorT3:
         case TaylorT4:
-        case TaylorF2:
             /* Check that spins are zero */
             if( !checkSpinsZero(S1x, S1y, S1z, S2x, S2y, S2z) )
             {
                 XLALPrintError("Non-zero spins were given, but this is a non-spinning approximant.\n");
                 XLAL_ERROR(XLAL_EINVAL);
             }
+        case TaylorF2:
         case TaylorF2RedSpin:
         case TaylorF2RedSpinTidal:
+            if( !checkTransverseSpinsZero(S1x, S1y, S2x, S2y) )
+            {
+	            XLALPrintError("Non-zero transverse spins were given, but this is a non-precessing approximant.\n");
+                XLAL_ERROR(XLAL_EINVAL);
+            }
             /* Schwarzschild ISCO */
 	        freq = pow(LAL_C_SI,3) / (pow(6.,3./2.)*LAL_PI*(m1+m2)*LAL_MSUN_SI*LAL_G_SI);
             break;
@@ -336,6 +341,12 @@ double XLALSimInspiralGetFinalFreq(
             }
             else
             {
+                /* Check that the transverse spins are zero */
+                if( !checkTransverseSpinsZero(S1x, S1y, S2x, S2y) )
+                {
+                    XLALPrintError("Non-zero transverse spins were given, but this is a non-precessing approximant.\n");
+                    XLAL_ERROR(XLAL_EINVAL);
+                }
                 spin1[0] = S1x; spin1[1] = S1y; spin1[2] = S1z;
                 spin2[0] = S2x; spin2[1] = S2y; spin2[2] = S2z;
             }
@@ -361,11 +372,21 @@ double XLALSimInspiralGetFinalFreq(
             break;
 
         case IMRPhenomB:
+            if( !checkTransverseSpinsZero(S1x, S1y, S2x, S2y) )
+            {
+                XLALPrintError("Non-zero transverse spins were given, but this is a non-precessing approximant.\n");
+                XLAL_ERROR(XLAL_EINVAL);
+            }
             chi = XLALSimIMRPhenomBComputeChi(m1, m2, S1z, S2z);
             freq = XLALSimIMRPhenomBGetFinalFreq(m1, m2, chi);
             break;
 
         case IMRPhenomC:
+            if( !checkTransverseSpinsZero(S1x, S1y, S2x, S2y) )
+            {
+                XLALPrintError("Non-zero transverse spins were given, but this is a non-precessing approximant.\n");
+                XLAL_ERROR(XLAL_EINVAL);
+            }
             chi = XLALSimIMRPhenomBComputeChi(m1, m2, S1z, S2z);
             freq = XLALSimIMRPhenomCGetFinalFreq(m1, m2, chi);
             break;
