@@ -54,6 +54,7 @@
 #define CVS_NAME_STRING "$Name$"
 
 const char *const parallelSwapProposalName = "ParallelSwap";
+const char *const clusteredKDEProposalName = "ClusteredKDEProposal";
 
 static void
 thinDifferentialEvolutionPoints(LALInferenceRunState *runState) {
@@ -246,7 +247,7 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 
   /* Clustered-KDE proposal updates */
   INT4 kde_update_start    = 100;  // rough number of effective samples to start KDE updates
-  INT4 kde_update_interval = 100;  // rough number of effective samples between KDE udpates
+  INT4 kde_update_interval = kde_update_start;  // proposal will be updated 10 times per decade, so this interval will change
   INT4 last_kde_update = 0;        // effective sample size at last KDE update
 
 
@@ -721,6 +722,17 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
           && (iEff > kde_update_start)
           && ((iEff - last_kde_update) > kde_update_interval)) {
         LALInferenceSetupClusteredKDEProposalFromRun(runState);
+
+        /* Update 10 times each decade.  This keeps hot chains (with lower ACLs) under control */
+        kde_update_interval = (INT4) pow(10.0, floor(log10((REAL8) iEff)));
+
+        /* Reset proposal counting */
+        if (propStats && LALInferenceCheckVariable(propStats, clusteredKDEProposalName)) {
+            propStat = (LALInferenceProposalStatistics *)LALInferenceGetVariable(propStats, clusteredKDEProposalName);
+            propStat->proposed = 0;
+            propStat->accepted = 0;
+        }
+
         last_kde_update = iEff;
       }
 
