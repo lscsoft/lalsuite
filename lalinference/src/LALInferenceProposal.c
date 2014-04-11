@@ -386,7 +386,7 @@ void LALInferenceSetupDefaultNSProposal(LALInferenceRunState *runState, LALInfer
   }
 
   if(!LALInferenceGetProcParamVal(runState->commandLine,"--proposal-no-kde")){
-      LALInferenceAddProposalToCycle(runState, clusteredKDEProposalName, &LALInferenceClusteredKDEProposal, 2*BIGWEIGHT);
+      LALInferenceAddProposalToCycle(runState, clusteredKDEProposalName, &LALInferenceClusteredKDEProposal, BIGWEIGHT);
       if (LALInferenceGetProcParamVal(runState->commandLine,"--ptmcmc-samples") || LALInferenceGetProcParamVal(runState->commandLine,"--ascii-samples")) {
           LALInferenceSetupClusteredKDEProposalsFromFile(runState);
       }
@@ -507,7 +507,7 @@ SetupDefaultProposal(LALInferenceRunState *runState, LALInferenceVariables *curr
   }
 
   if(!LALInferenceGetProcParamVal(runState->commandLine,"--proposal-no-kde")){
-      LALInferenceAddProposalToCycle(runState, clusteredKDEProposalName, &LALInferenceClusteredKDEProposal, 2*BIGWEIGHT);
+      LALInferenceAddProposalToCycle(runState, clusteredKDEProposalName, &LALInferenceClusteredKDEProposal, BIGWEIGHT);
       if (LALInferenceGetProcParamVal(runState->commandLine,"--ptmcmc-samples") || LALInferenceGetProcParamVal(runState->commandLine,"--ascii-samples")) {
           LALInferenceSetupClusteredKDEProposalsFromFile(runState);
       }
@@ -3594,13 +3594,25 @@ void LALInferenceSetupClusteredKDEProposalsFromFile(LALInferenceRunState *runSta
  * @param[in]  weight   The relative weight this proposal is to have against other KDE proposals.
  */
 void LALInferenceInitClusteredKDEProposal(LALInferenceRunState *runState, LALInferenceClusteredKDE *kde, REAL8 *array, UINT4 nSamps, LALInferenceVariables *params, const char *name, REAL8 weight) {
+    INT4 i;
 
     strcpy(kde->name, name);
     INT4 dim = LALInferenceGetVariableDimensionNonFixed(params);
 
-    gsl_matrix_view mview = gsl_matrix_view_array(array, nSamps, dim);
+    /* Downsample to avoid proposal becoming too expensive */
+    INT4 nDownsample = 1000;
+    INT4 step = (INT4)((REAL8)nSamps/(REAL8)nDownsample);
+    if (step == 0) step = 1;
+    INT4 downsampled_size = (INT4)ceil((REAL8)nSamps/(REAL8)step);
 
-    kde->kmeans = LALInferenceIncrementalKmeans(&mview.matrix, runState->GSLrandom);
+    gsl_matrix_view mview = gsl_matrix_view_array(array, nSamps, dim);
+    gsl_matrix *downsampled_array = gsl_matrix_alloc(downsampled_size, dim);
+    for (i=0; i<downsampled_size; i++) {
+        gsl_vector_view row = gsl_matrix_row(&mview.matrix, i*step);
+        gsl_matrix_set_row(downsampled_array, i, &row.vector);
+    }
+
+    kde->kmeans = LALInferenceIncrementalKmeans(downsampled_array, runState->GSLrandom);
 
     /* Return if kmeans setup failed */
     if (!kde->kmeans)
@@ -3624,9 +3636,11 @@ void LALInferenceInitClusteredKDEProposal(LALInferenceRunState *runState, LALInf
 
         sprintf(outp_name, "clustered_samples.%2.2d", chain);
         sprintf(outp_draws_name, "clustered_draws.%2.2d", chain);
-        LALInferenceDumpClusteredKDE(kde, outp_name, array);
+        LALInferenceDumpClusteredKDE(kde, outp_name, downsampled_array->data);
         LALInferenceDumpClusteredKDEDraws(kde, outp_draws_name, 1000);
     }
+
+    gsl_matrix_free(downsampled_array);
 }
 
 
