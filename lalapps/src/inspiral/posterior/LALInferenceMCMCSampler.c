@@ -246,8 +246,8 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
   }
 
   /* Clustered-KDE proposal updates */
-  INT4 kde_update_start    = 100;  // rough number of effective samples to start KDE updates
-  INT4 kde_update_interval = kde_update_start;  // proposal will be updated 10 times per decade, so this interval will change
+  INT4 kde_update_start    = 200;  // rough number of effective samples to start KDE updates
+  INT4 kde_update_interval = 0;    // proposal will be updated 10 times per decade, so this interval will change
   INT4 last_kde_update = 0;        // effective sample size at last KDE update
 
 
@@ -720,7 +720,8 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
       /* Update clustered-KDE proposal every time the buffer is expanded */
       if (!LALInferenceGetProcParamVal(runState->commandLine,"--proposal-no-kde")
           && (iEff > kde_update_start)
-          && ((iEff - last_kde_update) > kde_update_interval)) {
+          && (((iEff - last_kde_update) > kde_update_interval) ||
+              ((last_kde_update - iEff) > kde_update_interval))) {
         LALInferenceSetupClusteredKDEProposalFromRun(runState);
 
         /* Update 10 times each decade.  This keeps hot chains (with lower ACLs) under control */
