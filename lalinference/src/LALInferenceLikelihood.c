@@ -32,9 +32,11 @@
 #include <lal/Sequence.h>
 #include <lal/FrequencySeries.h>
 #include <lal/TimeFreqFFT.h>
+
 #include <gsl/gsl_sf_bessel.h>
 #include <gsl/gsl_sf_dawson.h>
 #include <gsl/gsl_sf_erf.h>
+
 #include <lal/LALInferenceTemplate.h>
 
 #ifdef __GNUC__
@@ -229,6 +231,8 @@ REAL8 LALInferenceUndecomposedFreqDomainLogLikelihood(LALInferenceVariables *cur
 
   //different formats for storing glitch model for DWT, FFT, and integration
   gsl_matrix *glitchFD=NULL;
+  //gsl_matrix *glitch_x = NULL;
+  //gsl_matrix *glitch_y = NULL;
 
   int Nblock = 1;            //number of frequency blocks per IFO
   int Nlines = 1;            //number of lines to be removed
@@ -1853,7 +1857,11 @@ REAL8 LALInferenceMarginalisedTimeLogLikelihood(LALInferenceVariables *currentPa
   if(LALInferenceCheckVariable(currentParams,"glitchFitFlag"))
     glitchFlag = *((INT4 *)LALInferenceGetVariable(currentParams, "glitchFitFlag"));
   if(glitchFlag)
+  {
     glitchFD = *((gsl_matrix **)LALInferenceGetVariable(currentParams, "morlet_FD"));
+    //glitch_x = data->glitch_x;
+    //glitch_y = data->glitch_y;
+  }
 
   if(LALInferenceCheckVariable(currentParams, "logdistance")){
     REAL8 distMpc = exp(*(REAL8*)LALInferenceGetVariable(currentParams,"logdistance"));
@@ -2065,6 +2073,10 @@ REAL8 LALInferenceMarginalisedTimeLogLikelihood(LALInferenceVariables *currentPa
         if(glitchFlag)
         {
           /* fourier amplitudes of glitches */
+
+          //glitchReal = gsl_matrix_get(glitch_y,ifo,2*i);
+          //glitchImag = gsl_matrix_get(glitch_y,ifo,2*i+1);
+
           glitchReal = gsl_matrix_get(glitchFD,ifo,2*i);
           glitchImag = gsl_matrix_get(glitchFD,ifo,2*i+1);
 

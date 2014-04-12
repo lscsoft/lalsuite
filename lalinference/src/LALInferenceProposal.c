@@ -44,6 +44,7 @@
 #include <lal/LALSimInspiral.h>
 #include <lal/LALSimNoise.h>
 #include <lal/XLALError.h>
+
 #include <lal/LALStdlib.h>
 
 #ifdef __GNUC__
@@ -257,6 +258,7 @@ LALInferenceCyclicProposal(LALInferenceRunState *runState, LALInferenceVariables
     XLALError(fname, __FILE__, __LINE__, XLAL_FAILURE);
     exit(1);
   }
+
   /* Call proposal. */
   (cycle[i])(runState, proposedParams);
 
@@ -365,13 +367,7 @@ void LALInferenceSetupDefaultNSProposal(LALInferenceRunState *runState, LALInfer
     LALInferenceAddProposalToCycle (runState, PSDFitJumpName, *LALInferencePSDFitJump, SMALLWEIGHT);
   }
 
-  /* Add glitch-fitting proposals to cycle */
-  if(LALInferenceGetProcParamVal(runState->commandLine, "--glitchFit"))
-  {
-    //Morlet wavelet propposals
-    LALInferenceAddProposalToCycle(runState, GlitchMorletJumpName, *LALInferenceGlitchMorletProposal, SMALLWEIGHT);
-    LALInferenceAddProposalToCycle(runState, GlitchMorletReverseJumpName, *LALInferenceGlitchMorletReverseJump, SMALLWEIGHT);
-  }
+
 
   /********** TURNED OFF - very small acceptance with nested sampling, slows everything down ****************/
   /*
@@ -1820,7 +1816,6 @@ static void UpdateWaveletSum(LALInferenceRunState *runState, LALInferenceVariabl
 {
   UINT4 i=0,j=0;
   LALInferenceIFOData *dataPtr = runState->data;
-
   REAL8FrequencySeries *noiseASD = NULL;
 
   /* get dataPtr pointing to correct IFO */
@@ -2002,6 +1997,7 @@ static void MaximizeGlitchParameters(LALInferenceVariables *currentParams, LALIn
   /* Get parameters for new wavelet */
   UINT4Vector *gsize   = *(UINT4Vector **) LALInferenceGetVariable(currentParams, "glitch_size");
 
+  //gsl_matrix *glitchFD = runState->data->glitch_y;//*(gsl_matrix **)LALInferenceGetVariable(currentParams, "morlet_FD");
   gsl_matrix *glitchFD = *(gsl_matrix **)LALInferenceGetVariable(currentParams, "morlet_FD");
   gsl_matrix *glitch_A = *(gsl_matrix **)LALInferenceGetVariable(currentParams, "morlet_Amp");
   gsl_matrix *glitch_t = *(gsl_matrix **)LALInferenceGetVariable(currentParams, "morlet_t0");
@@ -2217,6 +2213,7 @@ void LALInferenceGlitchMorletProposal(LALInferenceRunState *runState, LALInferen
   /* Get glitch meta paramters (dimnsion, proposal) */
   UINT4Vector *gsize = *(UINT4Vector **) LALInferenceGetVariable(proposedParams, "glitch_size");
 
+  //gsl_matrix *glitchFD = runState->data->glitch_y;
   gsl_matrix *glitchFD = *(gsl_matrix **)LALInferenceGetVariable(proposedParams, "morlet_FD");
   gsl_matrix *glitch_f = *(gsl_matrix **)LALInferenceGetVariable(proposedParams, "morlet_f0");
   gsl_matrix *glitch_Q = *(gsl_matrix **)LALInferenceGetVariable(proposedParams, "morlet_Q");
@@ -2363,6 +2360,9 @@ void LALInferenceGlitchMorletReverseJump(LALInferenceRunState *runState, LALInfe
 
   UINT4Vector *gsize = *(UINT4Vector **)LALInferenceGetVariable(proposedParams, "glitch_size");
   gsl_matrix *glitchFD = *(gsl_matrix **)LALInferenceGetVariable(proposedParams, "morlet_FD");
+  //gsl_matrix *glitchFD = runState->data->glitch_y;//*(gsl_matrix **)LALInferenceGetVariable(proposedParams, "morlet_FD");
+
+  //REAL8 Anorm = *(REAL8 *)LALInferenceGetVariable(runState->priorArgs,"glitch_norm");
 
   UINT4 nmin = (UINT4)(*(REAL8 *)LALInferenceGetVariable(runState->priorArgs,"glitch_dim_min"));
   UINT4 nmax = (UINT4)(*(REAL8 *)LALInferenceGetVariable(runState->priorArgs,"glitch_dim_max"));
