@@ -229,7 +229,6 @@ void NSWrapMCMCLALProposal(LALInferenceRunState *runState, LALInferenceVariables
 void LALInferenceGlitchMorletProposal(LALInferenceRunState *runState, LALInferenceVariables *proposedParams);
 void LALInferenceGlitchMorletReverseJump(LALInferenceRunState *runState, LALInferenceVariables *proposedParams);
 void LALInferencePSDFitJump(LALInferenceRunState *runState, LALInferenceVariables *proposedParams);
-void UpdateWaveletSum(LALInferenceRunState *runState, LALInferenceVariables *proposedParams, gsl_matrix *glitchFD, UINT4 ifo, UINT4 n, UINT4 flag);
 
 /** Rotate each spin by random angles about L. */
 void LALInferenceRotateSpins(LALInferenceRunState *runState, LALInferenceVariables *proposedParams);
