@@ -241,8 +241,8 @@ typedef struct tagMultiSFTVector {
 typedef struct tagSFTConstraints
 {
   CHAR *detector;			/**< 2-char channel-prefix describing the detector (eg 'H1', 'H2', 'L1', 'G1' etc) */
-  LIGOTimeGPS *startTime;		/**< only include SFTs starting >= startTime */
-  LIGOTimeGPS *endTime;			/**< only include SFTs starting <= endTime */
+  LIGOTimeGPS *minStartTime;		/**< only include SFTs where epoch >= startTime */
+  LIGOTimeGPS *maxEndTime;		/**< only include SFTs where epoch+Tsft <= endTime */
   LIGOTimeGPSVector *timestamps;	/**< list of timestamps  */
 } SFTConstraints;
 
@@ -305,6 +305,8 @@ extern const MultiLIGOTimeGPSVector empty_MultiLIGOTimeGPSVector;
 /*
  * Functions Declarations (i.e., prototypes).
  */
+
+BOOLEAN XLALSFTinGPSrange( const SFTtype *sft, const LIGOTimeGPS *start, const LIGOTimeGPS *end );
 
 LALStringVector *XLALFindFiles (const CHAR *globstring);
 

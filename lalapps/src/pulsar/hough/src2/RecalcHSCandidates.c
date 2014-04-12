@@ -1139,8 +1139,8 @@ void SetUpSFTs( LALStatus *status,			/**< pointer to LALStatus structure */
   ATTATCHSTATUSPTR (status);
 
   /* get sft catalog */
-  constraints.startTime = &(in->minStartTimeGPS);
-  constraints.endTime = &(in->maxEndTimeGPS);
+  constraints.minStartTime = &(in->minStartTimeGPS);
+  constraints.maxEndTime = &(in->maxEndTimeGPS);
   TRY( LALSFTdataFind( status->statusPtr, &catalog, in->sftbasename, &constraints), status);
 
   /* check CRC sums of SFTs */

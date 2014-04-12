@@ -931,9 +931,9 @@ XLALInitMakefakedata ( ConfigVars_t *cfg, UserVariables_t *uvar )
 	if ( haveStart && haveDuration )
 	  {
 	    XLALGPSSetREAL8 ( &minStartTime, uvar->startTime );
-	    constraints.startTime = &minStartTime;
+	    constraints.minStartTime = &minStartTime;
 	    XLALGPSSetREAL8 ( &maxEndTime, uvar->startTime + uvar->duration );
-	    constraints.endTime = &maxEndTime;
+	    constraints.maxEndTime = &maxEndTime;
             XLALPrintWarning ( "\nWARNING: only noise-SFTs between GPS [%d, %d] will be used!\n", uvar->startTime, uvar->startTime + uvar->duration );
 	  } /* if start+duration given */
 	if ( cfg->timestamps )
