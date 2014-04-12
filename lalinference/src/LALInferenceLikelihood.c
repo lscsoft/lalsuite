@@ -202,7 +202,6 @@ REAL8 LALInferenceUndecomposedFreqDomainLogLikelihood(LALInferenceVariables *cur
   LIGOTimeGPS GPSlal;
   double chisquared;
   double signal2noise=0.0;
-  //double glitch2noise=0.0;
   double timedelay;  /* time delay b/w iterferometer & geocenter w.r.t. sky location */
   double timeshift=0;  /* time shift (not necessarily same as above)                   */
   double deltaT, TwoDeltaToverN, deltaF, twopit=0.0, re, im, dre, dim, newRe, newIm;
@@ -210,14 +209,6 @@ REAL8 LALInferenceUndecomposedFreqDomainLogLikelihood(LALInferenceVariables *cur
 	double mc;
   LALStatus status;
   memset(&status,0,sizeof(status));
-
-  //gsl_matrix *glitchFD = runState->data->glitch_y;
-  //gsl_matrix *glitch_f = *(gsl_matrix **)LALInferenceGetVariable(currentParams, "morlet_f0");
-  //gsl_matrix *glitch_Q = *(gsl_matrix **)LALInferenceGetVariable(currentParams, "morlet_Q");
-  //gsl_matrix *glitch_A = *(gsl_matrix **)LALInferenceGetVariable(currentParams, "morlet_Amp");
-  //gsl_matrix *glitch_t = *(gsl_matrix **)LALInferenceGetVariable(currentParams, "morlet_t0");
-  //gsl_matrix *glitch_p = *(gsl_matrix **)LALInferenceGetVariable(currentParams, "morlet_phi");
-  //UINT4Vector *gsize = *(UINT4Vector **) LALInferenceGetVariable(currentParams, "glitch_size");
 
   if(data==NULL) {XLAL_ERROR_REAL8(XLAL_EINVAL,"ERROR: Encountered NULL data pointer in likelihood\n");}
 
@@ -467,8 +458,6 @@ REAL8 LALInferenceUndecomposedFreqDomainLogLikelihood(LALInferenceVariables *cur
         /* fourier amplitudes of glitches */
         glitchReal = gsl_matrix_get(glitchFD,ifo,2*i);
         glitchImag = gsl_matrix_get(glitchFD,ifo,2*i+1);
-
-        //glitch2noise += TwoDeltaToverN * ( glitchReal*glitchReal + glitchImag*glitchImag ) / dataPtr->oneSidedNoisePowerSpectrum->data->data[i];
 
         //glitchReal = gsl_matrix_get(glitch_y,ifo,2*i);
         //glitchImag = gsl_matrix_get(glitch_y,ifo,2*i+1);
