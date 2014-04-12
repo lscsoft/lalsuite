@@ -1404,11 +1404,11 @@ static REAL8 evaluate_morlet_proposal(LALInferenceRunState *runState, LALInferen
   component_max = (*(REAL8 *)LALInferenceGetVariable(runState->priorArgs,"morlet_Q_prior_max"));
   prior -= log(component_max-component_min);
 
-
+/*
   component_min = (*(REAL8 *)LALInferenceGetVariable(runState->priorArgs,"morlet_Amp_prior_min"));
   component_max = (*(REAL8 *)LALInferenceGetVariable(runState->priorArgs,"morlet_Amp_prior_max"));
   prior -= log(component_max-component_min);
-
+*/
 
   component_min = (*(REAL8 *)LALInferenceGetVariable(runState->priorArgs,"morlet_t0_prior_min"));
   component_max = (*(REAL8 *)LALInferenceGetVariable(runState->priorArgs,"morlet_t0_prior_max"));
@@ -1419,7 +1419,6 @@ static REAL8 evaluate_morlet_proposal(LALInferenceRunState *runState, LALInferen
   prior -= log(component_max-component_min);
 
   //"Malmquist" prior on A
-  /*
   gsl_matrix *glitch_f = *(gsl_matrix **)LALInferenceGetVariable(proposedParams, "morlet_f0");
   gsl_matrix *glitch_Q = *(gsl_matrix **)LALInferenceGetVariable(proposedParams, "morlet_Q");
   gsl_matrix *glitch_A = *(gsl_matrix **)LALInferenceGetVariable(proposedParams, "morlet_Amp");
@@ -1429,18 +1428,17 @@ static REAL8 evaluate_morlet_proposal(LALInferenceRunState *runState, LALInferen
   Q = gsl_matrix_get(glitch_Q,ifo,k);
   f = gsl_matrix_get(glitch_f,ifo,k);
 
-
+  /*
   prior += logGlitchAmplitudeDensity(A,Q,f);
-
+  */
 
   REAL8 Anorm = *(REAL8 *)LALInferenceGetVariable(runState->priorArgs,"glitch_norm");
 
   prior += logGlitchAmplitudeDensity(A*Anorm,Q,f);
-   */
+
   return prior;
 }
 
-/*
 static REAL8 glitchAmplitudeDraw(REAL8 Q, REAL8 f, gsl_rng *r)
 {
   REAL8 SNR;
@@ -1478,7 +1476,7 @@ static REAL8 glitchAmplitudeDraw(REAL8 Q, REAL8 f, gsl_rng *r)
 
   return SNR/sqrt( (PIterm*Q/f) );
 }
-*/
+
 void LALInferenceSkyRingProposal(LALInferenceRunState *runState, LALInferenceVariables *proposedParams)
 {
   UINT4 i,j,l,ifo,nifo,timeflag=0;
@@ -1872,7 +1870,7 @@ static void UpdateWaveletSum(LALInferenceRunState *runState, LALInferenceVariabl
       gIm = gsl_matrix_get(glitchFD,ifo,2*j+1);
       amparg = ((REAL8)j*deltaF - f0)*LAL_PI*tau;
       phiarg = LAL_PI*(REAL8)j + ph0 - LAL_TWOPI*(REAL8)j*deltaF*(t0-Tobs/2.);//TODO: SIMPLIFY PHASE FOR SINEGAUSSIAN
-      Ai = Amp*tau*0.5*sqrt(LAL_PI)*exp(-amparg*amparg)*noiseASD->data->data[j]/sqrt(Tobs);
+      Ai = Amp*tau*0.5*sqrt(LAL_PI)*exp(-amparg*amparg)*noiseASD->data->data[j];
 
       switch(flag)
       {
@@ -2094,7 +2092,7 @@ static void MaximizeGlitchParameters(LALInferenceVariables *currentParams, LALIn
   max *= 4.0;
 
   /* Use max correlation to rescale amplitude */
-  //REAL8 dAmplitude = max/rho;
+  REAL8 dAmplitude = max/rho;
 
   /* Get phase shift at max correlation */
   REAL8 dPhase = atan2(AF[imax],AC[imax]);
@@ -2106,9 +2104,9 @@ static void MaximizeGlitchParameters(LALInferenceVariables *currentParams, LALIn
 
   /* Shift template parameters accordingly */
   //printf("%g %g %g %g %g %g\n",dTime,dPhase,dAmplitude,max/rho, max, rho);
-  //printf("max amp: %g->%g  max time:  %g->%g, %g\n",Amp,Amp*dAmplitude,t0,t0+dTime,sqTwoDeltaToverN);
+  //printf("max amp: %g->%g  max time:  %g->%g\n",Amp,Amp*dAmplitude,t0,t0+dTime);
   t0  += dTime;
-  //Amp *= dAmplitude;
+  Amp *= dAmplitude;
   ph0 -= dPhase;
 
   /* Map time & phase back in range if necessary */
@@ -2221,8 +2219,6 @@ void LALInferenceGlitchMorletProposal(LALInferenceRunState *runState, LALInferen
   gsl_matrix *glitch_t = *(gsl_matrix **)LALInferenceGetVariable(proposedParams, "morlet_t0");
   gsl_matrix *glitch_p = *(gsl_matrix **)LALInferenceGetVariable(proposedParams, "morlet_phi");
 
-  REAL8 Anorm = *(REAL8 *)LALInferenceGetVariable(runState->priorArgs,"glitch_norm");
-
   /* Choose which IFO */
   ifo = (UINT4)floor( gsl_rng_uniform(runState->GSLrandom)*(REAL8)(gsize->length) );
 
@@ -2253,11 +2249,12 @@ void LALInferenceGlitchMorletProposal(LALInferenceRunState *runState, LALInferen
   Amp  = gsl_matrix_get(glitch_A,ifo,n); //Amplitude
   phi0 = gsl_matrix_get(glitch_p,ifo,n); //Centroid phase
 
+
   /* Map to params Vector and compute Fisher */
   params_x->data[0] = t0;
   params_x->data[1] = f0;
   params_x->data[2] = Q;
-  params_x->data[3] = Amp*(0.25*Anorm);
+  params_x->data[3] = Amp;
   params_x->data[4] = phi0;
 
   MorletDiagonalFisherMatrix(params_x, sigmas_x);
@@ -2273,7 +2270,7 @@ void LALInferenceGlitchMorletProposal(LALInferenceRunState *runState, LALInferen
   t0   = params_y->data[0];
   f0   = params_y->data[1];
   Q    = params_y->data[2];
-  Amp  = params_y->data[3]/(0.25*Anorm);
+  Amp  = params_y->data[3];
   phi0 = params_y->data[4];
 
   gsl_matrix_set(glitch_t,ifo,n,t0);
@@ -2351,7 +2348,7 @@ void LALInferenceGlitchMorletReverseJump(LALInferenceRunState *runState, LALInfe
   REAL8 pForward; //combined p() & q() probabilities for ...
   REAL8 pReverse; //...RJMCMC hastings ratio
 
-  REAL8 temperature = *(REAL8*) LALInferenceGetVariable(runState->proposalArgs, "temperature");
+  //REAL8 temperature = *(REAL8*) LALInferenceGetVariable(runState->proposalArgs, "temperature");
 
   gsl_matrix *params = NULL;
 
@@ -2361,8 +2358,6 @@ void LALInferenceGlitchMorletReverseJump(LALInferenceRunState *runState, LALInfe
   UINT4Vector *gsize = *(UINT4Vector **)LALInferenceGetVariable(proposedParams, "glitch_size");
   gsl_matrix *glitchFD = *(gsl_matrix **)LALInferenceGetVariable(proposedParams, "morlet_FD");
   //gsl_matrix *glitchFD = runState->data->glitch_y;//*(gsl_matrix **)LALInferenceGetVariable(proposedParams, "morlet_FD");
-
-  //REAL8 Anorm = *(REAL8 *)LALInferenceGetVariable(runState->priorArgs,"glitch_norm");
 
   UINT4 nmin = (UINT4)(*(REAL8 *)LALInferenceGetVariable(runState->priorArgs,"glitch_dim_min"));
   UINT4 nmax = (UINT4)(*(REAL8 *)LALInferenceGetVariable(runState->priorArgs,"glitch_dim_max"));
@@ -2426,14 +2421,13 @@ void LALInferenceGlitchMorletReverseJump(LALInferenceRunState *runState, LALInfe
 
       //Amplitude
       params = *(gsl_matrix **)LALInferenceGetVariable(proposedParams, "morlet_Amp");
-
-      val    = draw_flat(runState, "morlet_Amp_prior");
-      gsl_matrix_set(params,ifo,nx,val);
       /*
-      val    = glitchAmplitudeDraw(Q, f, runState->GSLrandom)/Anorm;
+      val    = draw_flat(runState, "morlet_Amp_prior");
+      */
+      val    = glitchAmplitudeDraw(Q, f, runState->GSLrandom);
       gsl_matrix_set(params,ifo,nx,val);
       A=val;
-       */
+
       //Centroid phase
       params = *(gsl_matrix **)LALInferenceGetVariable(proposedParams, "morlet_phi");
       val    = draw_flat(runState, "morlet_phi_prior");
@@ -2451,7 +2445,7 @@ void LALInferenceGlitchMorletReverseJump(LALInferenceRunState *runState, LALInfe
       //Compute reverse probability of dismissing k
       qxy = 0.0;//-log((double)runState->data->freqData->data->length);//-log( (REAL8)ny );
 
-      if(adapting) qy += 10.0/temperature;
+      //if(adapting) qy += 5.0;//temperature;
 
       break;
 
@@ -2501,7 +2495,7 @@ void LALInferenceGlitchMorletReverseJump(LALInferenceRunState *runState, LALInfe
       //Compute forward probability of dismissing k
       qyx = 0.0;//-log((double)runState->data->freqData->data->length);//0.0;//-log( (REAL8)nx );
 
-      if(adapting) qx += 10.0/temperature;
+      //if(adapting) qx += 5.0;//temperature;
 
       break;
 
