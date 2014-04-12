@@ -285,9 +285,6 @@ typedef struct {
   REAL8 internalRefTime;	/**< which reference time to use internally for template-grid */
   INT4 SSBprecision;		/**< full relativistic timing or Newtonian */
 
-  BOOLEAN useRAA;               /**< use rigid adiabatic response instead of long-wavelength */
-  BOOLEAN bufferedRAA;		/**< approximate RAA by using only middle frequency */
-
   INT4 minStartTime;		/**< earliest start-time to use data from */
   INT4 maxEndTime;		/**< latest end-time to use data from */
   CHAR *workingDir;		/**< directory to use for output files */
@@ -1097,9 +1094,6 @@ initUserVars (LALStatus *status, UserInput_t *uvar)
 
   uvar->SSBprecision = SSBPREC_RELATIVISTIC;
 
-  uvar->useRAA = FALSE;
-  uvar->bufferedRAA = FALSE;
-
   uvar->minStartTime = 0;
   uvar->maxEndTime = LAL_INT4_MAX;
 
@@ -1220,9 +1214,6 @@ initUserVars (LALStatus *status, UserInput_t *uvar)
   LALregSTRINGUserStruct(status,ephemSun, 	 0,  UVAR_DEVELOPER, "Sun ephemeris file to use");
 
   LALregINTUserStruct (status, 	SSBprecision,	 0,  UVAR_DEVELOPER, "Precision to use for time-transformation to SSB: 0=Newtonian 1=relativistic");
-
-  LALregBOOLUserStruct(status, 	useRAA, 	 0,  UVAR_DEVELOPER, "Use rigid adiabatic approximation (RAA) for detector response");
-  LALregBOOLUserStruct(status, 	bufferedRAA, 	 0,  UVAR_DEVELOPER, "Approximate RAA by using only middle-frequency");
 
   LALregINTUserStruct(status, 	RngMedWindow,	'k', UVAR_DEVELOPER, "Running-Median window size");
   LALregINTUserStruct(status,	Dterms,		't', UVAR_DEVELOPER, "Number of terms to keep in Dirichlet kernel sum");
@@ -1582,14 +1573,7 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg, const UserInput_t *uvar )
 
   } else {			// use demodulation
 
-    // determine which amplitude modulation coefficient type to use
-    const DemodAMType demodAM = (
-      uvar->bufferedRAA ? DEMODAM_BUFFERED_RIGID_ADIABATIC : (
-        uvar->useRAA ? DEMODAM_RIGID_ADIABATIC : DEMODAM_LONG_WAVELENGTH
-        )
-      );
-
-    cfg->Fstat_in = XLALSetupFstat_Demod( &multiSFTs, &multiNoiseWeights, cfg->ephemeris, uvar->SSBprecision, demodAM, uvar->Dterms );
+    cfg->Fstat_in = XLALSetupFstat_Demod( &multiSFTs, &multiNoiseWeights, cfg->ephemeris, uvar->SSBprecision, uvar->Dterms );
     if ( cfg->Fstat_in == NULL ) {
       XLALPrintError("%s: XLALSetupFstat_Demod() failed with errno=%d", __func__, xlalErrno);
       ABORT ( status, COMPUTEFSTATISTIC_EXLAL, COMPUTEFSTATISTIC_MSGEXLAL );

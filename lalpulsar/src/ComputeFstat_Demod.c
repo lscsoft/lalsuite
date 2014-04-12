@@ -1071,13 +1071,11 @@ XLALSetupFstat_Demod(
   MultiNoiseWeights **multiWeights,
   const EphemerisData *edat,
   const SSBprecision SSBprec,
-  const DemodAMType demodAM,
   const UINT4 Dterms
   )
 {
 
   // Check non-common input
-  XLAL_CHECK_NULL(demodAM < DEMODAM_LAST, XLAL_EINVAL);
   XLAL_CHECK_NULL(Dterms > 0, XLAL_EINVAL);
 
   // Check common input and allocate input data struct

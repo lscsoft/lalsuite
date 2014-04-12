@@ -2007,10 +2007,7 @@ void SetUpSFTs( LALStatus *status,			/**< pointer to LALStatus structure */
 
     } else {			// use demodulation
 
-      // determine which amplitude modulation coefficient type to use
-      const DemodAMType demodAM = DEMODAM_LONG_WAVELENGTH;
-
-      (*p_Fstat_in_vec)->data[k] = XLALSetupFstat_Demod( &multiSFTs, &multiNoiseWeights, in->edat, in->SSBprec, demodAM, in->Dterms );
+      (*p_Fstat_in_vec)->data[k] = XLALSetupFstat_Demod( &multiSFTs, &multiNoiseWeights, in->edat, in->SSBprec, in->Dterms );
       if ( (*p_Fstat_in_vec)->data[k] == NULL ) {
         XLALPrintError("%s: XLALSetupFstat_Demod() failed with errno=%d", __func__, xlalErrno);
         ABORT ( status, HIERARCHICALSEARCH_EXLAL, HIERARCHICALSEARCH_MSGEXLAL );

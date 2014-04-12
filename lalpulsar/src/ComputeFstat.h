@@ -117,17 +117,6 @@ typedef enum tagFstatQuantities {
 } FstatQuantities;
 
 ///
-/// Amplitude modulation coefficient type to use when computing the \f$\mathcal{F}\f$-statistic.
-/// Not all options are supported by all \f$\mathcal{F}\f$-statistic algorithms.
-///
-typedef enum tagDemodAMType {
-  DEMODAM_LONG_WAVELENGTH,              ///< Long-wavelength limit approximation.
-  DEMODAM_RIGID_ADIABATIC,              ///< Frequency- and sky-position-dependent rigid adiabatic response tensor (demodulation only).
-  DEMODAM_BUFFERED_RIGID_ADIABATIC,     ///< Approximated rigid adiabatic by assuming constant response over (small) frequency band.
-  DEMODAM_LAST
-} DemodAMType;
-
-///
 /// Complex \f$\mathcal{F}\f$-statistic amplitudes \f$F_a\f$ and \f$F_b\f$.
 ///
 typedef struct tagFstatFaFb {
@@ -316,7 +305,6 @@ XLALSetupFstat_Demod(
   MultiNoiseWeights **multiWeights,             ///< [in/out] Address of multi-detector noise weights array.
   const EphemerisData *edat,                    ///< [in] Ephemerides over SFT time-span.
   const SSBprecision SSBprec,                   ///< [in] Barycentric transformation precision.
-  const DemodAMType demodAM,                    ///< [in] Amplitude modulation coefficient type to use.
   const UINT4 Dterms                            ///< [in] Number of terms to keep in Dirichlet kernel. If equal to #OptimisedHotloopDterms, optimised versions of the demodulation hotloop will be used, if available.
   );
 
