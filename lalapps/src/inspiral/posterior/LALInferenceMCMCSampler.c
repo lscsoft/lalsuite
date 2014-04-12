@@ -247,7 +247,6 @@ computeMaxAutoCorrLen(LALInferenceRunState *runState, INT4 startCycle, INT4 endC
         max=ACL;
     }
     XLALFree(temp);
-    //XLALFree(DEarray);
   } else {
     max = Niter;
   }
@@ -1018,13 +1017,10 @@ void PTMCMCOneStep(LALInferenceRunState *runState)
     + (logPriorProposed - logPriorCurrent)
     + logProposalRatio;
 
-  //printf("%g=(1/%g)*(%g-%g)+(%g-%g)+%g\n",logAcceptanceProbability,temperature,logLikelihoodProposed,logLikelihoodCurrent,logPriorProposed,logPriorCurrent,logProposalRatio);
-
   // accept/reject:
   if ((logAcceptanceProbability > 0)
       || (log(gsl_rng_uniform(runState->GSLrandom)) < logAcceptanceProbability)) {   //accept
     LALInferenceCopyVariables(&proposedParams, runState->currentParams);
-    gsl_matrix_memcpy (runState->data->glitch_x, runState->data->glitch_y);
     runState->currentLikelihood = logLikelihoodProposed;
     LALInferenceIFOData *headData = runState->data;
     while (headData != NULL) {
@@ -1163,8 +1159,7 @@ UINT4 LALInferencePTswap(LALInferenceRunState *runState, REAL8 *ladder, INT4 i, 
           UINT4 n   = 0;
 
           /* Remove wavlet form linear combination */
-          for(ifo=0; ifo<gsize->length; ifo++) for(n=0; n<runState->data->glitch_x->size2; n++) gsl_matrix_set(runState->data->glitch_x, ifo, n, 0.0);
-          for(ifo=0; ifo<gsize->length; ifo++) for(n=0; n<gsize->data[ifo]; n++) UpdateWaveletSum(runState, runState->currentParams, runState->data->glitch_x, ifo, n, 1);
+          for(ifo=0; ifo<gsize->length; ifo++) for(n=0; n<gsize->data[ifo]; n++) UpdateWaveletSum(runState, runState->currentParams, runState->data->glitchModel, ifo, n, 0);
         }
 
         XLALDestroyREAL8Vector(parameters);
