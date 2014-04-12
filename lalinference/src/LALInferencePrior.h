@@ -39,11 +39,6 @@ SWIGLAL(INPUT_SCALARS(REAL8*, min, max));
 #endif
 
 /**
- * Return the log Prior for the glitch amplitude
-*/
-REAL8 logGlitchAmplitudeDensity(REAL8 A, REAL8 Q, REAL8 f);
-
-/**
  * Return the logarithmic prior density of the variables specified, for the non-spinning/spinning inspiral signal case.
  */
 REAL8 LALInferenceInspiralPrior(LALInferenceRunState *runState, LALInferenceVariables *variables);
