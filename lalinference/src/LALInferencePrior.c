@@ -1749,7 +1749,7 @@ LALInferenceVariableItem *item=params->head;
           }
           logPrior+=prior;
         }
-
+              /*
         else if(!strcmp(item->name,"morlet_Amp"))
         {
           UINT4 nifo,nglitch;
@@ -1771,14 +1771,17 @@ LALInferenceVariableItem *item=params->head;
               Q = gsl_matrix_get(glitch_Q,nifo,nglitch);
               f = gsl_matrix_get(glitch_f,nifo,nglitch);
 
+
+              logPrior += logGlitchAmplitudeDensity(A,Q,f);
+
               logPrior += logGlitchAmplitudeDensity(A*Anorm,Q,f);
             }
           }
-        }
+        }*/
 
-        //else if(!strcmp(item->name,"morlet_Amp") || !strcmp(item->name,"morlet_f0" ) || !strcmp(item->name,"morlet_Q"  ) || !strcmp(item->name,"morlet_t0" ) || !strcmp(item->name,"morlet_phi") )
+        else if(!strcmp(item->name,"morlet_Amp") || !strcmp(item->name,"morlet_f0" ) || !strcmp(item->name,"morlet_Q"  ) || !strcmp(item->name,"morlet_t0" ) || !strcmp(item->name,"morlet_phi") )
 
-        else if(!strcmp(item->name,"morlet_f0" ) || !strcmp(item->name,"morlet_Q"  ) || !strcmp(item->name,"morlet_t0" ) || !strcmp(item->name,"morlet_phi") )
+        //else if(!strcmp(item->name,"morlet_f0" ) || !strcmp(item->name,"morlet_Q"  ) || !strcmp(item->name,"morlet_t0" ) || !strcmp(item->name,"morlet_phi") )
         {
           REAL8 prior = 0.0;
           gsl_matrix *gparams = *((gsl_matrix **)(item->value));
