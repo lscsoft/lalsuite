@@ -1414,16 +1414,11 @@ LALInferenceVariableItem *item=params->head;
     char massRatioName[VARNAME_MAX];
     REAL8 norm=0.0;
 
-  UINT4 signalFlag=1;
-  if(LALInferenceCheckVariable(params, "signalModelFlag"))
-    signalFlag = *((UINT4 *)LALInferenceGetVariable(params, "signalModelFlag"));
-
   if (!S6PEpriorWarning) {
     S6PEpriorWarning = 1;
     fprintf(stderr, "S6PEpaper priors are being used. (in %s, line %d)\n", __FILE__, __LINE__);
   }
 
-  if(signalFlag){
     if(LALInferenceCheckVariable(params,"asym_massratio")){
       LALInferenceGetMinMaxPrior(priorParams, "asym_massratio", (void *)&massRatioMin, (void *)&massRatioMax);
       strcpy(massRatioName,"asym_massratio");
@@ -1431,12 +1426,11 @@ LALInferenceVariableItem *item=params->head;
       LALInferenceGetMinMaxPrior(priorParams, "massratio", (void *)&massRatioMin, (void *)&massRatioMax);
       strcpy(massRatioName,"massratio");
     }
-  }
     /* Check boundaries */
     for(;item;item=item->next)
     {
         if(item->vary==LALINFERENCE_PARAM_FIXED || item->vary==LALINFERENCE_PARAM_OUTPUT) continue;
-        if(item->type!=LALINFERENCE_REAL8_t && item->type!=LALINFERENCE_gslMatrix_t) continue;
+        if(item->type!=LALINFERENCE_REAL8_t && item->type!=LALINFERENCE_gslMatrix_t && item->type!=LALINFERENCE_UINT4Vector_t) continue;
         else
         {
 
