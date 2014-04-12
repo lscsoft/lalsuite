@@ -258,7 +258,7 @@ void ComputeFStatFreqBand_RS ( LALStatus *status,                               
     if ( (multiSSB = XLALGetMultiSSBtimes ( cfBuffer->multiDetStates, skypos, doppler->refTime, params->SSBprec )) == NULL )
     {
       XLALPrintError("XLALGetMultiSSBtimes() failed with error = %d\n\n", xlalErrno );
-      ABORT ( status, COMPUTEFSTATC_EXLAL, COMPUTEFSTATC_MSGEXLAL );
+      ABORT ( status, COMPUTEFSTATRSC_EXLAL, COMPUTEFSTATRSC_MSGEXLAL );
     }
 
     /* compute the AM parameters for each detector */
@@ -721,13 +721,7 @@ ComputeFstat_Resamp_demod:
 
     // Call ComputeFStat()
     Fcomponents Fcomp;
-    {
-      LALStatus status = empty_status;
-      LocalComputeFStat(&status, &Fcomp, &thisPoint, resamp->multiSFTs, common->multiWeights, resamp->multiDetStates, &resamp->params, &resamp->buffer);
-      if (status.statusCode) {
-        XLAL_ERROR(XLAL_EFAILED, "LocalComputeFStat() failed: %s (statusCode=%i)", status.statusDescription, status.statusCode);
-      }
-    }
+    XLAL_CHECK ( ComputeFStat( &Fcomp, &thisPoint, resamp->multiSFTs, common->multiWeights, resamp->multiDetStates, &resamp->params, &resamp->buffer) == XLAL_SUCCESS, XLAL_EFUNC );
 
     // Return multi-detector 2F
     if (whatToCompute & FSTATQ_2F) {
