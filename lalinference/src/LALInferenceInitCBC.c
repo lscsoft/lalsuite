@@ -568,6 +568,8 @@ LALInferenceVariables *LALInferenceInitCBCVariables(LALInferenceRunState *state)
   if(ppt)	mMax=atof(ppt->value);
   LALInferenceAddVariable(priorArgs,"component_max",&mMax,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_FIXED);
   
+  // Update qMin according to the new masses.
+  qMin=mMin/mMax;
   
   /* Over-ride Mass priors if specified */
   ppt=LALInferenceGetProcParamVal(commandLine,"--mc-min");
