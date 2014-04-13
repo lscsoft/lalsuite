@@ -641,8 +641,8 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
       return False
     myifos=enginenodes[0].get_ifos()
     # Merge the results together
-    #pagedir=os.path.join(self.webdir,evstring,myifos)
-    pagedir=os.path.join(self.basepath,evstring,myifos)
+    pagedir=os.path.join(self.webdir,evstring,myifos)
+    #pagedir=os.path.join(self.basepath,evstring,myifos)
     mkdirs(pagedir)
     mergenode=MergeNSNode(self.merge_job,parents=enginenodes)
     mergenode.set_pos_output_file(os.path.join(self.posteriorpath,'posterior_%s_%s.dat'%(myifos,evstring)))
