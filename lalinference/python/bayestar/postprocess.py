@@ -205,7 +205,7 @@ FoundInjection = collections.namedtuple('FoundInjection',
     'searched_area searched_prob offset searched_modes contour_areas contour_modes')
 
 
-def find_injection(sky_map, true_ra, true_dec, contours=()):
+def find_injection(sky_map, true_ra, true_dec, contours=(), modes=False):
     """
     Given a sky map and the true right ascension and declination (in radians),
     find the smallest area in deg^2 that would have to be searched to find the
@@ -261,10 +261,14 @@ def find_injection(sky_map, true_ra, true_dec, contours=()):
     offset = np.rad2deg(angle_distance(true_theta, true_phi,
         mode_theta, mode_phi))
 
-    # Count up the number of modes in each of the given contours.
-    searched_modes = count_modes(indicator(npix, indices[:idx+1]))
-    contour_modes = [count_modes(indicator(npix, indices[:i+1]))
-        for i in ipix]
+    if modes:
+        # Count up the number of modes in each of the given contours.
+        searched_modes = count_modes(indicator(npix, indices[:idx+1]))
+        contour_modes = [count_modes(indicator(npix, indices[:i+1]))
+            for i in ipix]
+    else:
+        searched_modes = None
+        contour_modes = None
 
     # Done.
     return FoundInjection(searched_area, searched_prob, offset, searched_modes, contour_areas, contour_modes)
