@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014 Karl Wette (XLALified)
+ * Copyright (C) 2014 Karl Wette
  * Copyright (C) 2005, 2006 Reinhard Prix
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -217,6 +217,63 @@ XLALExtrapolatePulsarPhase(
   return XLAL_SUCCESS;
 
 } /* XLALExtrapolatePulsarPhase() */
+
+
+/**
+ * Determines a frequency band which covers the frequency evolution of a band of CW signals between two GPS times.
+ * The calculation accounts for the spin evolution of the signals, and the maximum possible Dopper modulation
+ * due to detector motion, and (for binary signals) binary orbital motion.
+ */
+int XLALCWSignalCoveringBand(
+  REAL8 *minCoverFreq,                          /**< [out] Minimum frequency of the covering band */
+  REAL8 *maxCoverFreq,                          /**< [out] Maximum frequency of the covering band */
+  const LIGOTimeGPS *time1,                     /**< [in] One end of the GPS time range */
+  const LIGOTimeGPS *time2,                     /**< [in] The other end of the GPS time range */
+  const PulsarSpinRange *spinRange,             /**< [in] Frequency and spindown range of the CW signals */
+  const REAL8 binaryMaxAsini,                   /**< [in] For binary signals, maximum value of projected, normalized
+                                                   orbital semi-major axis (s); =0 for isolated signals */
+  const REAL8 binaryMinPeriod                   /**< [in] For binary signals, minimum orbital period (s); =0 for isolated signals */
+  )
+{
+
+  // Check input
+  XLAL_CHECK( minCoverFreq != NULL, XLAL_EFAULT );
+  XLAL_CHECK( maxCoverFreq != NULL, XLAL_EFAULT );
+  XLAL_CHECK( time1 != NULL, XLAL_EFAULT );
+  XLAL_CHECK( time2 != NULL, XLAL_EFAULT );
+  XLAL_CHECK( spinRange != NULL, XLAL_EFAULT );
+  XLAL_CHECK( binaryMaxAsini >= 0, XLAL_EINVAL );
+  XLAL_CHECK( binaryMinPeriod >= 0, XLAL_EINVAL );
+
+  // Extrapolate frequency and spindown range to each end of GPS time range
+  PulsarSpinRange spin1, spin2;
+  const REAL8 DeltaT1 = XLALGPSDiff(time1, &spinRange->refTime);
+  const REAL8 DeltaT2 = XLALGPSDiff(time2, &spinRange->refTime);
+  XLAL_CHECK( XLALExtrapolatePulsarSpinRange(&spin1, spinRange, DeltaT1) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( XLALExtrapolatePulsarSpinRange(&spin2, spinRange, DeltaT2) == XLAL_SUCCESS, XLAL_EFUNC );
+
+  // Determine the minimum and maximum frequencies covered
+  *minCoverFreq = MYMIN( spin1.fkdot[0], spin2.fkdot[0] );
+  *maxCoverFreq = MYMAX( spin1.fkdot[0] + spin1.fkdotBand[0], spin2.fkdot[0] + spin2.fkdotBand[0] );
+
+  // Extra frequency range needed due to detector motion, per unit frequency
+  // * Maximum value of the time derivative of the diurnal and (Ptolemaic) orbital phase, plus 5% for luck
+  REAL8 extraPerFreq = 1.05 * LAL_TWOPI / LAL_C_SI * ( (LAL_AU_SI/LAL_YRSID_SI) + (LAL_REARTH_SI/LAL_DAYSID_SI) );
+
+  // Extra frequency range needed due to binary orbital motion, per unit frequency
+  // * Maximum value of the time derivative of the small-eccentricity-limit binary phase, plus 5% for luck
+  if (binaryMaxAsini > 0) {
+    XLAL_CHECK( binaryMinPeriod > 0, XLAL_EINVAL );
+    extraPerFreq += 1.05 * LAL_TWOPI * binaryMaxAsini / binaryMinPeriod;
+  }
+
+  // Expand frequency range
+  *minCoverFreq *= 1.0 - extraPerFreq;
+  *maxCoverFreq *= 1.0 + extraPerFreq;
+
+  return XLAL_SUCCESS;
+
+} /* XLALCWSignalCoveringBand() */
 
 
 void
