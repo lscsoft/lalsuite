@@ -13,19 +13,14 @@ if [ -z "${srcdir}" ]; then
 fi
 
 builddir="./";
-injectdir="./Injections/"
-fdsdir="./FDS_isolated/"
+injectdir="../Injections/"
+fdsdir="../FDS_isolated/"
 
 ##---------- names of codes
 cap_code="${builddir}lalapps_ComputeAntennaPattern"
 pds_code="${builddir}lalapps_PrintDetectorState"
-mfd_code="${injectdir}lalapps_Makefakedata_v4 -E ${LALPULSAR_DATADIR}"
+mfd_code="${injectdir}lalapps_Makefakedata_v4"
 pfs_code="${fdsdir}lalapps_PredictFStat"
-
-## finding ephemeris
-if [ -n "${LALPULSAR_DATADIR}" ]; then
-    export LAL_DATA_PATH=${LAL_DATA_PATH}:${LALPULSAR_DATADIR}
-fi
 
 tolerance=1e-3
 Tsft=1800
