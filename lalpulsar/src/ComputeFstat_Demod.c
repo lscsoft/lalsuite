@@ -100,6 +100,7 @@ typedef struct tagComputeFParams {
   const EphemerisData *edat;   /* ephemeris data for re-computing multidetector states */
   BOOLEAN returnAtoms;  /* whether or not to return the 'FstatAtoms' used to compute the F-statistic */
   BOOLEAN returnSingleF; /* in multi-detector case, whether or not to also return the single-detector Fstats computed from the atoms */
+  DemodHLType demodHL; 	//!< which hotloop variant to use in Demod: 'vanilla', 'generic', 'autovect', 'SIMD', ...
 } ComputeFParams;
 
 /* Struct holding buffered ComputeFStat()-internal quantities to avoid unnecessarily
@@ -121,7 +122,6 @@ static int ComputeFStat ( Fcomponents *Fstat, const PulsarDopplerParams *doppler
 static inline void DestroyFstatInputData_Demod ( FstatInputData_Demod* demod );
 
 // ----- NEW F-stat Demod API ----------
-FstatInputData* XLALSetupFstat_Demod ( MultiSFTVector **multiSFTs, MultiNoiseWeights **multiWeights, const EphemerisData *edat, const SSBprecision SSBprec, const UINT4 Dterms );
 static int ComputeFstat_Demod ( FstatResults* Fstats, const FstatInputData_Common *common, FstatInputData_Demod* demod );
 
 static void XLALEmptyComputeFBuffer ( ComputeFBuffer *cfb);
@@ -891,7 +891,8 @@ XLALSetupFstat_Demod(
   MultiNoiseWeights **multiWeights,
   const EphemerisData *edat,
   const SSBprecision SSBprec,
-  const UINT4 Dterms
+  const UINT4 Dterms,
+  const DemodHLType demodHL
   )
 {
 
@@ -924,6 +925,7 @@ XLALSetupFstat_Demod(
   demod->params.SSBprec = SSBprec;
   demod->params.buffer = NULL;
   demod->params.edat = edat;
+  demod->params.demodHL = demodHL;
 
   // Save pointer to demodulation input data
   input->demod = demod;

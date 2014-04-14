@@ -2003,7 +2003,7 @@ void SetUpSFTs( LALStatus *status,			/**< pointer to LALStatus structure */
 
     } else {			// use demodulation
 
-      (*p_Fstat_in_vec)->data[k] = XLALSetupFstat_Demod( &multiSFTs, &multiNoiseWeights, in->edat, in->SSBprec, in->Dterms );
+      (*p_Fstat_in_vec)->data[k] = XLALSetupFstat_Demod( &multiSFTs, &multiNoiseWeights, in->edat, in->SSBprec, in->Dterms, DEMODHL_BEST );
       if ( (*p_Fstat_in_vec)->data[k] == NULL ) {
         XLALPrintError("%s: XLALSetupFstat_Demod() failed with errno=%d", __func__, xlalErrno);
         ABORT ( status, HIERARCHICALSEARCH_EXLAL, HIERARCHICALSEARCH_MSGEXLAL );

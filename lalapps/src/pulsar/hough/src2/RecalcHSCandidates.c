@@ -1314,7 +1314,7 @@ void SetUpSFTs( LALStatus *status,			/**< pointer to LALStatus structure */
     /* create Fstat input data struct for demodulation */
     // HACK since XLALSetupFstat_Demod() erases the multi-noise weights pointer, but we still need it
     MultiNoiseWeights* multiNoiseWeights = stackMultiNoiseWeights->data[k];
-    (*p_Fstat_in_vec)->data[k] = XLALSetupFstat_Demod( &multiSFTs, &multiNoiseWeights, in->edat, in->SSBprec, in->Dterms );
+    (*p_Fstat_in_vec)->data[k] = XLALSetupFstat_Demod( &multiSFTs, &multiNoiseWeights, in->edat, in->SSBprec, in->Dterms, DEMODHL_BEST );
     if ( (*p_Fstat_in_vec)->data[k] == NULL ) {
       XLALPrintError("%s: XLALSetupFstat_Demod() failed with errno=%d", __func__, xlalErrno);
       ABORT ( status, HIERARCHICALSEARCH_EXLAL, HIERARCHICALSEARCH_MSGEXLAL );
