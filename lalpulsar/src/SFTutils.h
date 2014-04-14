@@ -1,4 +1,5 @@
 /*
+ *  Copyright (C) 2014 Karl Wette
  *  Copyright (C) 2009 Chris Messenger
  *  Copyright (C) 2005 Reinhard Prix
  *
@@ -148,6 +149,9 @@ void XLALDestroyMultiNoiseWeights ( MultiNoiseWeights *weights );
 
 LALStringVector *
 XLALGetDetectorIDsFromSFTCatalog ( LALStringVector *IFOList, const SFTCatalog *SFTcatalog );
+
+SFTCatalog *XLALAddToFakeSFTCatalog( SFTCatalog *catalog, const CHAR *detector, const LIGOTimeGPSVector *timestamps );
+SFTCatalog *XLALMultiAddToFakeSFTCatalog( SFTCatalog *catalog, const LALStringVector *detectors, const MultiLIGOTimeGPSVector *timestamps );
 
 /*@}*/
 

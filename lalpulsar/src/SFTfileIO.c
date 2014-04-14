@@ -160,7 +160,7 @@ static int read_sft_header_from_fp (FILE *fp, SFTtype  *header, UINT4 *version, 
 static int read_v2_header_from_fp ( FILE *fp, SFTtype *header, UINT4 *nsamples, UINT8 *header_crc64, UINT8 *ref_crc64, CHAR **SFTcomment, BOOLEAN swapEndian);
 static int read_v1_header_from_fp ( FILE *fp, SFTtype *header, UINT4 *nsamples, BOOLEAN swapEndian);
 
-static int compareSFTdesc(const void *ptr1, const void *ptr2);
+int compareSFTdesc(const void *ptr1, const void *ptr2);
 static int compareSFTloc(const void *ptr1, const void *ptr2);
 static int compareDetNameCatalogs ( const void *ptr1, const void *ptr2 );
 
@@ -2796,7 +2796,7 @@ calc_crc64(const CHAR *data, UINT4 length, UINT8 crc)
 
 
 /* compare two SFT-descriptors by their GPS-epoch, then starting frequency */
-static int
+int
 compareSFTdesc(const void *ptr1, const void *ptr2)
 {
   const SFTDescriptor *desc1 = ptr1;
