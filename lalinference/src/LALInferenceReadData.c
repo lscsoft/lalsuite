@@ -543,7 +543,7 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
             dof=atof(ppt->value);
 
         IFOdata[i].STDOF = dof;
-        fprintf(stderr, "Detector %s will run with %g DOF if Student's T likelihood used.\n",
+        XLALPrintInfo("Detector %s will run with %g DOF if Student's T likelihood used.\n",
                 IFOdata[i].name, IFOdata[i].STDOF);
     }
 
