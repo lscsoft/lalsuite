@@ -626,31 +626,6 @@ size_t XLALGetFlatLatticeDimensions(
 
 }
 
-gsl_vector* XLALGetFlatLatticePoint(
-  const FlatLatticeTiling* tiling,
-  gsl_vector* point
-  )
-{
-
-  // Check tiling
-  XLAL_CHECK_NULL(tiling != NULL, XLAL_EFAULT);
-  XLAL_CHECK_NULL(tiling->status > FLT_S_INITIALISED, XLAL_EFAILED);
-
-  // Allocate physical point vector if needed
-  if (point == NULL) {
-    point = gsl_vector_alloc(tiling->dimensions);
-    XLAL_CHECK_NULL(point != NULL, XLAL_ENOMEM);
-  }
-
-  // Copy current point and transform from normalised to physical coordinates
-  gsl_vector_memcpy(point, tiling->point);
-  gsl_vector_mul(point, tiling->phys_scale);
-  gsl_vector_add(point, tiling->phys_offset);
-
-  return point;
-
-}
-
 unsigned long XLALGetFlatLatticePointCount(
   const FlatLatticeTiling* tiling
   )
@@ -677,7 +652,7 @@ unsigned long XLALCountFlatLatticePoints(
   if (tiling->total_count == 0) {
 
     // Iterate over all templates
-    while (XLALNextFlatLatticePoint(tiling) >= 0);
+    while (XLALNextFlatLatticePoint(tiling, NULL) >= 0);
     XLAL_CHECK_VAL(0, xlalErrno == 0, XLAL_EFUNC);
     XLAL_CHECK_VAL(0, tiling->total_count > 0, XLAL_EFAILED);
 
@@ -1043,26 +1018,23 @@ int XLALSetFlatLatticeTypeAndMetric(
 }
 
 int XLALNextFlatLatticePoint(
-  FlatLatticeTiling* tiling
+  FlatLatticeTiling* tiling,
+  gsl_vector* curr_point
   )
 {
 
   // Check tiling
   XLAL_CHECK(tiling != NULL, XLAL_EFAULT);
-  XLAL_CHECK(tiling->status > FLT_S_INCOMPLETE, XLAL_EFAILED);
+  XLAL_CHECK(tiling->status > FLT_S_INCOMPLETE, XLAL_EINVAL);
   const size_t n = tiling->dimensions;
+  XLAL_CHECK(curr_point == NULL || curr_point->size == n, XLAL_EINVAL);
 
   // If finished status, nothing more to be done!
   if (tiling->status == FLT_S_FINISHED) {
     return -1;
   }
 
-  // If started status, but no tiled dimensions, we're finished!
-  if (tiling->status == FLT_S_STARTED && tiling->tiled_dimensions == 0) {
-    tiling->status = FLT_S_FINISHED;
-    tiling->total_count = 1;   // Set total template count
-    return -1;
-  }
+  size_t i;
 
   // If initialised status, set and return starting point
   if (tiling->status == FLT_S_INITIALISED) {
@@ -1071,138 +1043,152 @@ int XLALNextFlatLatticePoint(
     gsl_vector_uint_set_zero(tiling->bound_idx);
 
     // Set parameter-space bounds and starting point
-    for (size_t i = 0; i < n; ++i) {
+    for (size_t j = 0; j < n; ++j) {
 
       // Get normalised bounds at bound index
-      const size_t bound = gsl_vector_uint_get(tiling->bound_idx, i);
+      const size_t bound = gsl_vector_uint_get(tiling->bound_idx, j);
       double lower = 0, upper = 0;
-      FLT_GetBounds(tiling, i, bound, tiling->phys_offset, &lower, &upper);
+      FLT_GetBounds(tiling, j, bound, tiling->phys_offset, &lower, &upper);
 
       // Set parameter-space bounds
-      gsl_vector_set(tiling->lower, i, lower);
-      gsl_vector_set(tiling->upper, i, upper);
+      gsl_vector_set(tiling->lower, j, lower);
+      gsl_vector_set(tiling->upper, j, upper);
 
       // Initialise current point
-      const double point = lower - gsl_vector_get(tiling->padding, i);
-      gsl_vector_set(tiling->point, i, point);
+      const double point = lower - gsl_vector_get(tiling->padding, j);
+      gsl_vector_set(tiling->point, j, point);
 
     }
 
     // Initialise count
     tiling->count = 1;
 
-    // Tiling has been started.
+    // Tiling has been started
     tiling->status = FLT_S_STARTED;
 
-    // All dimensions of point have changed.
-    return 0;
+    // All dimensions of point have changed
+    i = 0;
 
-  }
+  } else {
 
-  // Otherwise started status: loop until the next point is found
-  size_t i = n, ir;
-  while (true) {
+    // Otherwise started status: loop until the next point is found
+    size_t ir;
+    i = n;
+    while (true) {
 
-    // If dimension index is now zero, we're done!
-    if (i == 0) {
-      tiling->status = FLT_S_FINISHED;
-      tiling->total_count = tiling->count;   // Save total template count
-      return -1;
-    }
+      // If dimension index is now zero, we're done!
+      if (i == 0) {
 
-    // Decrement current dimension index
-    --i;
+        // Tiling is now finished
+        tiling->status = FLT_S_FINISHED;
 
-    // Return point to lower bound in higher dimensions
-    ir = i + 1;
+        // Save total template count
+        tiling->total_count = tiling->count;
 
-    // Get current bound index
-    size_t bound = gsl_vector_uint_get(tiling->bound_idx, i);
+        return -1;
 
-    // If dimension is tiled...
-    if (tiling->bounds[i].tiled) {
+      }
 
-      // Get increment vector
-      gsl_vector_view increment = gsl_matrix_column(tiling->increment, i);
+      // Decrement current dimension index
+      --i;
 
-      // Increment current point along index
-      gsl_vector_add(tiling->point, &increment.vector);
+      // Return point to lower bound in higher dimensions
+      ir = i + 1;
 
-      // If point is not out of bounds, we have found a template point
-      const double point = gsl_vector_get(tiling->point, i);
-      const double upper = gsl_vector_get(tiling->upper, i);
-      const double padding = gsl_vector_get(tiling->padding, i);
-      if (point <= upper + padding) {
+      // Get current bound index
+      size_t bound = gsl_vector_uint_get(tiling->bound_idx, i);
+
+      if (tiling->bounds[i].tiled) {
+
+        // Get increment vector
+        gsl_vector_view increment = gsl_matrix_column(tiling->increment, i);
+
+        // Increment current point along index
+        gsl_vector_add(tiling->point, &increment.vector);
+
+        // If point is not out of bounds, we have found a template point
+        const double point = gsl_vector_get(tiling->point, i);
+        const double upper = gsl_vector_get(tiling->upper, i);
+        const double padding = gsl_vector_get(tiling->padding, i);
+        if (point <= upper + padding) {
+          break;
+        }
+
+      }
+
+      // Increment bound index
+      ++bound;
+
+      if (bound < tiling->bounds[i].num_bounds) {
+
+        // Set current bound index
+        gsl_vector_uint_set(tiling->bound_idx, i, bound);
+
+        // Return point to new lower bound in this dimension
+        ir = i;
+
+        // Found a template point
         break;
+
+      } else {
+
+        // If no more bounds, reset bound index in this and higher dimensions
+        for (size_t j = i; j < n; ++j) {
+          gsl_vector_uint_set(tiling->bound_idx, j, 0);
+        }
+
+      }
+
+      // Move on to lower dimensions
+      continue;
+
+    }
+
+    // Return point to lower bound in appropriate dimensions
+    for (; ir < n; ++ir) {
+
+      // Get normalised bounds at bound index
+      const size_t bound = gsl_vector_uint_get(tiling->bound_idx, ir);
+      double lower = 0, upper = 0;
+      FLT_GetBounds(tiling, ir, bound, tiling->phys_offset, &lower, &upper);
+
+      // Set parameter-space bounds
+      gsl_vector_set(tiling->lower, ir, lower);
+      gsl_vector_set(tiling->upper, ir, upper);
+
+      if (tiling->bounds[ir].tiled) {
+
+        // Get increment vector
+        gsl_vector_view increment = gsl_matrix_column(tiling->increment, ir);
+
+        // Calculate the distance from current point to the lower bound, in integer number of increments
+        const double padding = gsl_vector_get(tiling->padding, ir);
+        const double point = gsl_vector_get(tiling->point, ir);
+        const double dist = ceil((lower - padding - point) / gsl_vector_get(&increment.vector, ir));
+
+        // Move point back to lower bound
+        gsl_blas_daxpy(dist, &increment.vector, tiling->point);
+
+      } else {
+
+        // Otherwise set point to lower bound
+        gsl_vector_set(tiling->point, ir, lower);
+
       }
 
     }
 
-    // Increment bound index
-    ++bound;
-
-    if (bound < tiling->bounds[i].num_bounds) {
-
-      // Set current bound index
-      gsl_vector_uint_set(tiling->bound_idx, i, bound);
-
-      // Return point to new lower bound in this dimension
-      ir = i;
-
-      // Found a template point
-      break;
-
-    } else {
-
-      // If no more bounds, reset bound index in this and higher dimensions
-      for (size_t j = i; j < n; ++j) {
-        gsl_vector_uint_set(tiling->bound_idx, j, 0);
-      }
-
-    }
-
-    // Move on to lower dimensions
-    continue;
+    // Template was found, so increase count
+    ++tiling->count;
 
   }
 
-  // Return point to lower bound in appropriate dimensions
-  for (; ir < n; ++ir) {
-
-    // Get normalised bounds at bound index
-    const size_t bound = gsl_vector_uint_get(tiling->bound_idx, ir);
-    double lower = 0, upper = 0;
-    FLT_GetBounds(tiling, ir, bound, tiling->phys_offset, &lower, &upper);
-
-    // Set parameter-space bounds
-    gsl_vector_set(tiling->lower, ir, lower);
-    gsl_vector_set(tiling->upper, ir, upper);
-
-    // If dimension is tiled...
-    if (tiling->bounds[ir].tiled) {
-
-      // Get increment vector
-      gsl_vector_view increment = gsl_matrix_column(tiling->increment, ir);
-
-      // Calculate the distance from current point to the lower bound, in integer number of increments
-      const double padding = gsl_vector_get(tiling->padding, ir);
-      const double point = gsl_vector_get(tiling->point, ir);
-      const double dist = ceil((lower - padding - point) / gsl_vector_get(&increment.vector, ir));
-
-      // Move point back to lower bound
-      gsl_blas_daxpy(dist, &increment.vector, tiling->point);
-
-    } else {
-
-      // Otherwise set point to lower bound
-      gsl_vector_set(tiling->point, ir, lower);
-
-    }
-
+  // Optionally, copy current point and transform from normalised to physical coordinates
+  if (curr_point != NULL) {
+    gsl_vector_memcpy(curr_point, tiling->point);
+    gsl_vector_mul(curr_point, tiling->phys_scale);
+    gsl_vector_add(curr_point, tiling->phys_offset);
   }
-
-  // Template was found, so increase count
-  ++tiling->count;
 
   // Return lowest dimension where point has changed
   return i;
