@@ -551,7 +551,6 @@ XLALNextDopplerPos(PulsarDopplerParams *pos, DopplerFullScanState *scan)
         if (retn >= 0) {
 
 	  /* Found a point */
-          XLALfprintfGSLvector(stderr, "%g", scan->spindownTilingPoint);
           pos->Alpha      = gsl_vector_get(scan->spindownTilingPoint, 0);
           pos->Delta      = gsl_vector_get(scan->spindownTilingPoint, 1);
           pos->fkdot[0]   = gsl_vector_get(scan->spindownTilingPoint, 2);
