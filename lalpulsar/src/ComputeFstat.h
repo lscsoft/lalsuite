@@ -116,33 +116,26 @@ typedef enum tagFstatQuantities {
   FSTATQ_LAST           = 0x20
 } FstatQuantities;
 
-
 ///
-/// Demod hotloop variants directly selectables by user
+/// Demodulation hotloop variants directly selectable by the user.
 ///
 typedef enum tagDemodHLType {
-  DEMODHL_AKOSGENERIC20 = 0,	//!< generic C hotloop using Akos' algorithm, works for Dterms <~20
-  DEMODHL_VANILLA = 1,		//!< old 'vanilla' C hotloop, works for all values of Dterms
-  DEMODHL_AKOS8 = 2,		//!< Akos C hotloop algorithm with hardcoded Dterms=8
-  DEMODHL_AUTOVECT8 = 3,	//!< C compiler autovectorizable Akos hotloop, hardcoded Dterms=8
-  DEMODHL_SIMD_SSE = 4,		//!< SSE generic hotloop
-  DEMODHL_SIMD_SSE_PRECALC = 5,	//!< SSE hotloop with precalc divisors
-  DEMODHL_SIMD_SSE_MSC = 6,	//!< SSE hotloop for MSC compiler
-  DEMODHL_SIMD_ALTIVEC = 7,	//!< Altivec hotloop variant
+  DEMODHL_AKOSGENERIC20 = 0,            ///< Generic C hotloop using Akos' algorithm, works for Dterms <~20
+  DEMODHL_VANILLA = 1,                  ///< Old 'vanilla' C hotloop, works for all values of Dterms
+  DEMODHL_AKOS8 = 2,                    ///< Akos C hotloop algorithm with hardcoded Dterms=8
+  DEMODHL_AUTOVECT8 = 3,                ///< C compiler autovectorizable Akos hotloop, hardcoded Dterms=8
+  DEMODHL_SIMD_SSE = 4,                 ///< SSE generic hotloop
+  DEMODHL_SIMD_SSE_PRECALC = 5,         ///< SSE hotloop with precalc divisors
+  DEMODHL_SIMD_SSE_MSC = 6,             ///< SSE hotloop for MSC compiler
+  DEMODHL_SIMD_ALTIVEC = 7,             ///< Altivec hotloop variant
   DEMODHL_LAST
 } DemodHLType;
 
-/// provide 'best guess' heuristic as to which available hotloop variant will be fastest
-/// can be used as user default value
-#if defined(__SSE__) && defined(_MSC_VER)
-#define DEMODHL_BEST DEMODHL_SIMD_SSE_MSC
-#elif defined(__SSE__)
-#define DEMODHL_BEST DEMODHL_SIMD_SSE_PRECALC
-#elif defined(__ALTIVEC__)
-#define DEMODHL_BEST DEMODHL_SIMD_ALTIVEC
-#else
-#define DEMODHL_BEST DEMODHL_AKOSGENERIC20
-#endif
+///
+/// Provide a 'best guess' heuristic as to which available demodulation hotloop variant will be fastest.
+/// Can be used as a user default value.
+///
+extern const int DEMODHL_BEST;
 
 ///
 /// Complex \f$\mathcal{F}\f$-statistic amplitudes \f$F_a\f$ and \f$F_b\f$.

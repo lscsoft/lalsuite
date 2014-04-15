@@ -68,6 +68,16 @@ const UINT4 OptimisedHotloopDterms = DTERMS;
 #define OPT_DEMOD_SOURCE "ComputeFstat_Demod_generic.i"
 #endif
 
+#if defined(__SSE__) && defined(_MSC_VER)
+const int DEMODHL_BEST = DEMODHL_SIMD_SSE_MSC;
+#elif defined(__SSE__)
+const int DEMODHL_BEST = DEMODHL_SIMD_SSE_PRECALC;
+#elif defined(__ALTIVEC__)
+const int DEMODHL_BEST = DEMODHL_SIMD_ALTIVEC;
+#else
+const int DEMODHL_BEST = DEMODHL_AKOSGENERIC20;
+#endif
+
 /* record which optimized hotloop variant was selected for use in LocalXLALComputeFaFb() */
 const char *const OptimisedHotloopSource = OPT_DEMOD_SOURCE;
 
