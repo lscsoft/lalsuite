@@ -8,8 +8,9 @@
 ## We use S5 pulsar0 parameters for the test.
 ##
 
-## run all LALApps programs with memory debugging
-export LAL_DEBUG_LEVEL="${LAL_DEBUG_LEVEL},memdbg"
+## set LAL debug level
+echo "Setting LAL_DEBUG_LEVEL=${LAL_DEBUG_LEVEL:-msglvl1,memdbg}"
+export LAL_DEBUG_LEVEL
 
 ## allow 'make test' to work from builddir != srcdir
 builddir="./";

@@ -23,7 +23,7 @@ TESTS = \
 #	testComputeAntennaPattern.sh
 
 TESTS_ENVIRONMENT = \
-	LAL_DEBUG_LEVEL=memdbg; export LAL_DEBUG_LEVEL; \
+	LAL_DEBUG_LEVEL=msglvl1,memdbg; export LAL_DEBUG_LEVEL; \
 	LAL_DATA_PATH="$(LAL_DATA_PATH)"; export LAL_DATA_PATH;
 
 ## make sure lalapps.la is rebuilt when appropriate

@@ -80,7 +80,7 @@ EXTRA_DIST = testHS.sh
 TESTS = testHS.sh testLineVeto
 
 TESTS_ENVIRONMENT = \
-	LAL_DEBUG_LEVEL=memdbg; export LAL_DEBUG_LEVEL; \
+	LAL_DEBUG_LEVEL=msglvl1,memdbg; export LAL_DEBUG_LEVEL; \
 	LAL_DATA_PATH="$(LAL_DATA_PATH)"; export LAL_DATA_PATH;
 
 CLEANFILES =

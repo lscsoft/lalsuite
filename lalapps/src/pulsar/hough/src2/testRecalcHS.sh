@@ -4,8 +4,9 @@
 ## namely by feeding it the HS output candidate-file as input and verifying that it correctly reproduces these
 ## candidates
 
-## run all LALApps programs with memory debugging
-export LAL_DEBUG_LEVEL="${LAL_DEBUG_LEVEL},memdbg"
+## set LAL debug level
+echo "Setting LAL_DEBUG_LEVEL=${LAL_DEBUG_LEVEL:-msglvl1,memdbg}"
+export LAL_DEBUG_LEVEL
 
 ## take user-arguments:
 extra_args="$@"
