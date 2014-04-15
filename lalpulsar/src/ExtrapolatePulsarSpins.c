@@ -216,7 +216,7 @@ XLALExtrapolatePulsarPhase(
 
   return XLAL_SUCCESS;
 
-} /* LALExtrapolatePulsarPhase() */
+} /* XLALExtrapolatePulsarPhase() */
 
 
 void
