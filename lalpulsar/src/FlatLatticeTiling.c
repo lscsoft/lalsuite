@@ -353,7 +353,7 @@ static gsl_matrix* FLT_MetricLatticeIncrements(
 
   // Find orthonormalise directions with respect to tiling metric
   gsl_matrix_set_identity(directions);
-  XLAL_CHECK_NULL(FLT_OrthonormaliseWRTMetric(directions, metric) == XLAL_SUCCESS, XLAL_EFAILED);
+  XLAL_CHECK_NULL(FLT_OrthonormaliseWRTMetric(directions, metric) == XLAL_SUCCESS, XLAL_EFUNC);
 
   // Get lattice generator
   gsl_matrix* gen_matrix = NULL;
@@ -406,7 +406,7 @@ static gsl_matrix* FLT_MetricLatticeIncrements(
   XLAL_CHECK_NULL(sqlwtr_gen_matrix != NULL, XLAL_EFAILED);
 
   // Normalise lattice generator so covering radius is sqrt(mismatch)
-  XLAL_CHECK_NULL(FLT_NormaliseLatticeGenerator(sqlwtr_gen_matrix, norm_thickness, sqrt(max_mismatch)) == XLAL_SUCCESS, XLAL_EFAILED);
+  XLAL_CHECK_NULL(FLT_NormaliseLatticeGenerator(sqlwtr_gen_matrix, norm_thickness, sqrt(max_mismatch)) == XLAL_SUCCESS, XLAL_EFUNC);
 
   // Compute the increment vectors of the lattice generator along the orthogonal directions
   gsl_blas_dgemm(CblasNoTrans, CblasNoTrans, 1.0, directions, sqlwtr_gen_matrix, 0.0, increment);
@@ -633,7 +633,7 @@ unsigned long XLALGetFlatLatticePointCount(
 
   // Check tiling
   XLAL_CHECK_VAL(0, tiling != NULL, XLAL_EFAULT);
-  XLAL_CHECK_VAL(0, tiling->status >= FLT_S_INITIALISED, XLAL_EFAILED);
+  XLAL_CHECK_VAL(0, tiling->status >= FLT_S_INITIALISED, XLAL_EINVAL);
 
   return tiling->count;
 
@@ -646,7 +646,7 @@ unsigned long XLALCountFlatLatticePoints(
 
   // Check tiling
   XLAL_CHECK_VAL(0, tiling != NULL, XLAL_EFAULT);
-  XLAL_CHECK_VAL(0, tiling->status > FLT_S_INCOMPLETE, XLAL_EFAILED);
+  XLAL_CHECK_VAL(0, tiling->status > FLT_S_INCOMPLETE, XLAL_EINVAL);
 
   // If templates have not already been counted, count them
   if (tiling->total_count == 0) {
@@ -673,7 +673,7 @@ gsl_matrix* XLALGetFlatLatticeIncrements(
 
   // Check tiling
   XLAL_CHECK_NULL(tiling != NULL, XLAL_EFAULT);
-  XLAL_CHECK_NULL(tiling->status >= FLT_S_INITIALISED, XLAL_EFAILED);
+  XLAL_CHECK_NULL(tiling->status >= FLT_S_INITIALISED, XLAL_EINVAL);
 
   // Allocate increment vector
   gsl_matrix* increment = gsl_matrix_alloc(tiling->increment->size1, tiling->increment->size2);
@@ -704,7 +704,7 @@ int XLALSetFlatLatticeBound(
 
   // Check tiling
   XLAL_CHECK(tiling != NULL, XLAL_EFAULT);
-  XLAL_CHECK(tiling->status == FLT_S_INCOMPLETE, XLAL_EFAILED);
+  XLAL_CHECK(tiling->status == FLT_S_INCOMPLETE, XLAL_EINVAL);
 
   // Check input
   XLAL_CHECK(dimension < tiling->dimensions, XLAL_ESIZE);
@@ -801,7 +801,7 @@ int XLALSetFlatLatticeConstantBound(
   gsl_matrix_set(c_upper, 0, 0, GSL_MAX(bound1, bound2));
 
   // Set parameter-space bound
-  XLAL_CHECK(XLALSetFlatLatticeBound(tiling, dimension, a, c_lower, m_lower, c_upper, m_upper) == XLAL_SUCCESS, XLAL_EFAILED);
+  XLAL_CHECK(XLALSetFlatLatticeBound(tiling, dimension, a, c_lower, m_lower, c_upper, m_upper) == XLAL_SUCCESS, XLAL_EFUNC);
 
   // Cleanup
   gsl_vector_free(a);
@@ -831,7 +831,7 @@ int XLALSetFlatLatticeEllipticalBounds(
   const size_t y_dimension = x_dimension + 1;
 
   // Set parameter-space x bound
-  XLAL_CHECK(XLALSetFlatLatticeConstantBound(tiling, x_dimension, x_centre - x_semi, x_centre + x_semi) == XLAL_SUCCESS, XLAL_EFAILED);
+  XLAL_CHECK(XLALSetFlatLatticeConstantBound(tiling, x_dimension, x_centre - x_semi, x_centre + x_semi) == XLAL_SUCCESS, XLAL_EFUNC);
 
   // Allocate zeroed memory
   gsl_vector* a = gsl_vector_calloc(y_dimension + 1);
@@ -859,7 +859,7 @@ int XLALSetFlatLatticeEllipticalBounds(
   gsl_matrix_memcpy(m_upper, m_lower);
 
   // Set parameter-space y bound
-  XLAL_CHECK(XLALSetFlatLatticeBound(tiling, y_dimension, a, c_lower, m_lower, c_upper, m_upper) == XLAL_SUCCESS, XLAL_EFAILED);
+  XLAL_CHECK(XLALSetFlatLatticeBound(tiling, y_dimension, a, c_lower, m_lower, c_upper, m_upper) == XLAL_SUCCESS, XLAL_EFUNC);
 
   // Cleanup
   gsl_vector_free(a);
@@ -882,7 +882,7 @@ int XLALSetFlatLatticeTypeAndMetric(
 
   // Check tiling
   XLAL_CHECK(tiling != NULL, XLAL_EFAULT);
-  XLAL_CHECK(tiling->status == FLT_S_INCOMPLETE, XLAL_EFAILED);
+  XLAL_CHECK(tiling->status == FLT_S_INCOMPLETE, XLAL_EINVAL);
   const size_t n = tiling->dimensions;
 
   // Check input
@@ -982,11 +982,11 @@ int XLALSetFlatLatticeTypeAndMetric(
 
     // Calculate metric lattice increment vectors
     gsl_matrix* increment = FLT_MetricLatticeIncrements(tiling->lattice, tiled_metric, max_mismatch);
-    XLAL_CHECK(increment != NULL, XLAL_EFAILED);
+    XLAL_CHECK(increment != NULL, XLAL_EFUNC);
 
     // Calculate metric ellipse bounding box
     gsl_vector* bounding_box = FLT_MetricEllipseBoundingBox(tiled_metric, max_mismatch);
-    XLAL_CHECK(bounding_box != NULL, XLAL_EFAILED);
+    XLAL_CHECK(bounding_box != NULL, XLAL_EFUNC);
 
     // Copy increment vectors and padding so that non-tiled dimensions are zero
     for (size_t i = 0, ti = 0; i < n; ++i) {
@@ -1202,7 +1202,7 @@ int XLALRestartFlatLatticeTiling(
 
   // Check tiling
   XLAL_CHECK(tiling != NULL, XLAL_EFAULT);
-  XLAL_CHECK(tiling->status > FLT_S_INCOMPLETE, XLAL_EFAILED);
+  XLAL_CHECK(tiling->status > FLT_S_INCOMPLETE, XLAL_EINVAL);
 
   // Restart tiling
   tiling->status = FLT_S_INITIALISED;
