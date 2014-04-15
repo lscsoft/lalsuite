@@ -265,6 +265,9 @@ typedef struct tagSFTDescriptor
 /** An "SFT-catalogue": a vector of SFTdescriptors, as returned by LALSFTdataFind() */
 typedef struct tagSFTCatalog
 {
+#ifdef SWIG /* SWIG interface directives */
+  SWIGLAL(ARRAY_1D(SFTCatalog, SFTDescriptor, data, UINT4, length));
+#endif /* SWIG */
   UINT4 length;			/**< number of SFTs in catalog */
   SFTDescriptor *data;		/**< array of data-entries describing matched SFTs */
 } SFTCatalog;
@@ -280,6 +283,9 @@ typedef struct tagSFTCatalog
  */
 typedef struct tagMultiSFTCatalogView
 {
+#ifdef SWIG /* SWIG interface directives */
+  SWIGLAL(ARRAY_1D(MultiSFTCatalogView, SFTCatalog, data, UINT4, length));
+#endif /* SWIG */
   UINT4 length;			/**< number of detectors */
   SFTCatalog *data;		/**< array of SFT-catalog pointers */
 } MultiSFTCatalogView;
