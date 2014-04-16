@@ -171,7 +171,6 @@
 #include <lal/Units.h>
 
 #include "CheckStatus.h"
-#include "CheckStatus.c"
 
 #define STOCHASTICCROSSCORRELATIONSTATISTICTESTC_LENGTH    9
 #define STOCHASTICCROSSCORRELATIONSTATISTICTESTC_F0        80.0

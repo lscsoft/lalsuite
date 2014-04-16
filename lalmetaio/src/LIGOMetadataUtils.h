@@ -296,3 +296,4 @@ LALTimeSortSummValue (
 #endif
 
 #endif /* _LIGOMETADATAUTILS_H */
+

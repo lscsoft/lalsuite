@@ -188,7 +188,6 @@
 #include <lal/Units.h>
 
 #include "CheckStatus.h"
-#include "CheckStatus.c"
 
 #define STOCHASTICOPTIMALFILTERNORMALIZATIONTESTC_TRUE     1
 #define STOCHASTICOPTIMALFILTERNORMALIZATIONTESTC_FALSE    0

@@ -1,80 +1,56 @@
-include $(top_srcdir)/gnuscripts/topdir_common.am
-
 ACLOCAL_AMFLAGS = -I gnuscripts
 
-git_generated_sources += \
-	python/git_version.py \
-	src/lal/LALMetaIOVCSInfo.h \
-	$(EOL)
+# Override automake's default rule for rebuilding aclocal.m4, to ensure that
+# ./configure is successfully recreated after certain build system changes which
+# require other autotools (e.g. autoheader) to be re-run. See Redmine issue #728.
+$(ACLOCAL_M4): $(am__aclocal_m4_deps)
+	$(am__cd) $(srcdir) && $(SHELL) ./00boot
 
-noswig_pkginclude_HEADERS += \
-	src/lal/LALMetaIOVCSInfo.h \
-	$(EOL)
-
-pkginclude_HEADERS += \
-	src/lal/LALMetaIOBuildInfo.h \
-	src/lal/LALMetaIOConfig.h \
-	src/lal/LALMetaIOLibVCSInfo.h \
-	src/lal/LIGOLwXML.h \
-	src/lal/LIGOLwXMLArray.h \
-	src/lal/LIGOLwXMLHeaders.h \
-	src/lal/LIGOLwXMLInspiralHeaders.h \
-	src/lal/LIGOLwXMLRead.h \
-	src/lal/LIGOMetadataTables.h \
-	src/lal/LIGOMetadataUtils.h \
-	src/lal/lalmetaioswig_test.i \
-	$(EOL)
-
-pkgconfig_DATA += lalmetaio.pc
-noinst_DATA += lalmetaio-uninstalled.pc
-
-lib_LTLIBRARIES += src/liblalmetaio.la
-
-src_liblalmetaio_la_SOURCES = \
-	src/CreateMetaTableDir.c \
-	src/LALMetaIOVCSInfo.c \
-	src/LIGOLwXML.c \
-	src/LIGOLwXMLArray.c \
-	src/LIGOLwXMLRead.c \
-	src/LIGOMetadataUtils.c
-	$(EOL)
-
-nodist_src_liblalmetaio_la_SOURCES = \
-	src/build_info.c \
-	$(EOL)
-
-src_liblalmetaio_la_LDFLAGS = $(AM_LDFLAGS) -version-info $(LIBVERSION)
-
-LDADD += $(top_builddir)/src/liblalmetaio.la
-
-pkgpython_PYTHON += \
-	python/__init__.py \
-	python/git_version.py \
-	$(EOL)
-
-test_programs += \
-	$(EOL)
-
-DISTCLEANFILES += \
-	config.lt \
-	src/config.h \
-	$(EOL)
-
-EXTRA_DIST += \
-	debian/changelog \
-	debian/compat \
-	debian/control \
-	debian/copyright \
-	debian/docs \
-	debian/lalmetaio-dev.dirs \
-	debian/lalmetaio-dev.install \
-	debian/lalmetaio-octave.install \
-	debian/lalmetaio-python.install \
-	debian/lalmetaio.dirs \
-	debian/lalmetaio.install \
-	debian/rules \
-	debian/source/format \
+EXTRA_DIST = \
+	COPYING \
 	lalmetaio.spec \
-	$(EOL)
+	$(DATA)
 
-include $(top_srcdir)/gnuscripts/swig_common.am
+SUBDIRS = \
+	gnuscripts \
+	debian \
+	include \
+	src \
+	swig \
+	python
+
+pkgconfigdir = $(libdir)/pkgconfig
+pkgconfig_DATA = lalmetaio.pc
+noinst_DATA = lalmetaio-uninstalled.pc
+BUILT_SOURCES = lalmetaio-uninstalled.pc
+
+DISTCLEANFILES = config.lt
+
+if HAVE_GIT_REPO
+vcs-clean: maintainer-clean
+	-cd $(top_srcdir) && $(GIT) clean -Xdf
+endif
+
+all-local:
+	@echo "";\
+	echo "==================================================";\
+	echo "LALMetaIO has now been successfully built.";\
+	echo "Now run 'make install' to install LALMetaIO.";\
+	echo "==================================================";\
+	echo ""
+
+install-exec-local:
+	@echo "";\
+	echo "==================================================";\
+	echo "LALMetaIO has now been successfully installed.";\
+	echo "Now you may want to setup your environment:";\
+	echo "";\
+	echo "* Bourne shell [bash] users: please add the line";\
+	echo "  . $(sysconfdir)/lalmetaio-user-env.sh";\
+	echo "  to your .profile file.";\
+	echo "";\
+	echo "* C-shell [tcsh] users: please add the line";\
+	echo "  source $(sysconfdir)/lalmetaio-user-env.csh";\
+	echo "  to your .login file.";\
+	echo "==================================================";\
+	echo ""

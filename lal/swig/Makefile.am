@@ -84,15 +84,10 @@ $(swig_iface_preproc_xml) : $(swig_iface_preproc) $(builddir)/swig_config.h
 
 # generate SWIG interface file
 $(swig_iface) : $(swig_iface_preproc_xml) $(swig_generate_iface)
-	$(AM_V_GEN)$(PYTHON) $(swig_generate_iface) -n "$(PACKAGE)" -d "$(SWIG_MODULE_DEPENDS)" -s "$(SWIG_SYMBOL_PREFIXES)" -p "$(swig_iface_preproc)" -x "$(swig_iface_preproc_xml)" -i "$(swig_iface)" || $(rm_targets); \
-	if test -f "$(top_srcdir)/include/Makefile.am"; then \
-		$(MKDIR_P) "$(top_builddir)/include/lal"; \
+	$(AM_V_GEN)$(PYTHON) $(swig_generate_iface) -n "$(PACKAGE)" -d "$(SWIG_MODULE_DEPENDS)" -s "$(SWIG_SYMBOL_PREFIXES)" -p "$(swig_iface_preproc)" -x "$(swig_iface_preproc_xml)" -i "$(swig_iface)" || $(rm_targets)
+	@if test -d "$(top_builddir)/include/lal"; then \
 		rm -f "$(top_builddir)/include/lal/$@"; \
 		$(LN_S) "$(abs_builddir)/$@" "$(top_builddir)/include/lal/$@"; \
-	else \
-		$(MKDIR_P) "$(top_builddir)/src/lal"; \
-		rm -f "$(top_builddir)/src/lal/$@"; \
-		$(LN_S) "$(abs_builddir)/$@" "$(top_builddir)/src/lal/$@"; \
 	fi
 
 endif

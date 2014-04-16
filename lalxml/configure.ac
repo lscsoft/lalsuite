@@ -1,18 +1,25 @@
 AC_PREREQ([2.63])
-AC_INIT([LALXML],[1.1.10.1],[lal-discuss@ligo.org])
-AC_CONFIG_HEADERS([src/config.h src/lal/LALXMLConfig.h])
+AC_INIT([lalxml],[1.1.10.1],[lal-discuss@ligo.org])
+AC_CONFIG_HEADERS([src/config.h src/LALXMLConfig.h])
 AC_CONFIG_SRCDIR([src/LALXML.c])
 AC_CONFIG_AUX_DIR([gnuscripts])
 AC_CONFIG_MACRO_DIR([gnuscripts])
 AC_CONFIG_FILES([ \
-  Makefile \
-  lalxml-uninstalled.pc \
-  lalxml.pc \
   lalxml.spec \
+  lalxml.pc \
+  lalxml-uninstalled.pc \
+  Makefile \
+  gnuscripts/Makefile \
+  debian/Makefile \
+  include/Makefile \
+  include/lal/Makefile \
+  src/Makefile \
+  python/Makefile \
   python/__init__.py \
   swig/Makefile \
   swig/octave/Makefile \
   swig/python/Makefile \
+  test/Makefile
 ])
 AM_INIT_AUTOMAKE([1.11 foreign subdir-objects color-tests parallel-tests])
 
@@ -114,10 +121,8 @@ LALSUITE_ADD_GCC_FLAGS
 # RedHat-derived systems.
 AC_SUBST([pkgpythondir], ["\${pkgpyexecdir}"])
 
-# extra preprocessor flags
-LALSUITE_ADD_FLAGS([C],["-DPKG_DATA_DIR='\"\$(pkgdatadir)/\"'"])
-LALSUITE_ADD_FLAGS([C],["-DTEST_DATA_DIR='\"\$(abs_top_srcdir)/test/\"'"])
-LALSUITE_ADD_FLAGS([C],["-DTEST_OUTPUT_DIR='\"\$(abs_top_builddir)/test/\"'"])
+LAL_HEADER_LINK=${ac_aux_dir}/header-link.mk
+AC_SUBST_FILE([LAL_HEADER_LINK])
 
 # output
 AC_OUTPUT

@@ -169,7 +169,6 @@
 #include <lal/Units.h>
 
 #include "CheckStatus.h"
-#include "CheckStatus.c"
 
 #define STOCHASTICOMEGAGWTESTC_OMEGAREF  1e-6
 #define STOCHASTICOMEGAGWTESTC_FREF      100.0

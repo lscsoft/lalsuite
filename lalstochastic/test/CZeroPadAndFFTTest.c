@@ -159,7 +159,6 @@
 #include <lal/Units.h>
 
 #include "CheckStatus.h"
-#include "CheckStatus.c"
 
 #define CZEROPADANDFFTTESTC_LENGTH        8
 #define CZEROPADANDFFTTESTC_FULLLENGTH (2 * CZEROPADANDFFTTESTC_LENGTH - 1)
