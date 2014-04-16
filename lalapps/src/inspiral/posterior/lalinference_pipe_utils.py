@@ -420,8 +420,7 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
         for a in combinations(self.ifos,N):
             ifocombos.append(a)
     for ifos in ifocombos:
-        self.engine_jobs[ifos] = EngineJob(self.config, os.path.join(self.basepath,'engine_%s.sub'%(reduce(lambda x,y:x+y, map(str,ifos)))),self.logpath ,dax=self.is_dax())
-        self.engine_jobs[ifos].set_grid_site(site)
+        self.engine_jobs[ifos] = EngineJob(self.config, os.path.join(self.basepath,'engine_%s.sub'%(reduce(lambda x,y:x+y, map(str,ifos)))),self.logpath ,dax=self.is_dax(), site=site)
     self.results_page_job = ResultsPageJob(self.config,os.path.join(self.basepath,'resultspage.sub'),self.logpath,dax=self.is_dax())
     self.results_page_job.set_grid_site('local')
     self.cotest_results_page_job = ResultsPageJob(self.config,os.path.join(self.basepath,'resultspagecoherent.sub'),self.logpath,dax=self.is_dax())
@@ -913,7 +912,7 @@ class EngineJob(pipeline.CondorDAGJob,pipeline.AnalysisJob):
       self.write_sub_file=self.__write_sub_file_mcmc_mpi
     else:
       exe=cp.get('condor',self.engine)
-      if True: # FIXME: Select only for grid jobs
+      if self.site is not None and self.self!='local':
         universe='vanilla'
       else: universe="standard"
     pipeline.CondorDAGJob.__init__(self,universe,exe)
@@ -951,7 +950,17 @@ class EngineJob(pipeline.CondorDAGJob,pipeline.AnalysisJob):
     #self.add_opt('snrpath',snrpath)
     self.set_stdout_file(os.path.join(logdir,'lalinference-$(cluster)-$(process)-$(node).out'))
     self.set_stderr_file(os.path.join(logdir,'lalinference-$(cluster)-$(process)-$(node).err'))
-  
+ 
+  def set_grid_site(self,site=None):
+    """
+    Over-load base class method to choose condor universe properly
+    """
+    if site is not None and site!='local':
+      self.set_universe('vanilla')
+    else:
+      self.set_universe('standard')
+    pipeline.CondorDAGJob.set_grid_site(site)
+ 
   def __write_sub_file_mcmc_mpi(self):
     """
     Nasty hack to insert the MPI stuff into the arguments
