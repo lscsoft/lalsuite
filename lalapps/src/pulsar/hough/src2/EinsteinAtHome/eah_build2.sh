@@ -438,7 +438,7 @@ else
         log_and_do cd boinc
     fi
     log_and_do git fetch --tags
-    log_and_do git checkout "$boinc_rev"
+    log_and_do git checkout -f "$boinc_rev"
     log_and_do cd "$SOURCE"
 fi
 
