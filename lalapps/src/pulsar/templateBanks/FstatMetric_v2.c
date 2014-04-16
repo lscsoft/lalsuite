@@ -479,7 +479,7 @@ XLALInitCode ( ConfigVariables *cfg, const UserVariables_t *uvar, const char *ap
   XLAL_CHECK ( numDet >= 1, XLAL_EINVAL );
 
   if ( uvar->IFOs ) {
-    XLAL_CHECK ( XLALParseMultiNoiseFloor ( &cfg->multiNoiseFloor, uvar->IFOs ) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK ( XLALParseMultiNoiseFloor ( &cfg->multiNoiseFloor, uvar->sqrtSX ) == XLAL_SUCCESS, XLAL_EFUNC );
     XLAL_CHECK ( numDet == cfg->multiNoiseFloor.length, XLAL_EINVAL );
   }
 
