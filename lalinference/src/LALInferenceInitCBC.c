@@ -1223,18 +1223,22 @@ LALInferenceVariables *LALInferenceInitCBCVariables(LALInferenceRunState *state)
       }
     }
   
-    if(!LALInferenceGetProcParamVal(commandLine,"--margtime") && !LALInferenceGetProcParamVal(commandLine, "--margtimephi")){
-      ppt=LALInferenceGetProcParamVal(commandLine,"--fixTime");
-      if(ppt){
-        LALInferenceRegisterUniformVariableREAL8(state, currentParams, "time", timeParam, timeMin, timeMax, LALINFERENCE_PARAM_FIXED);
-        if(lalDebugLevel>0) fprintf(stdout,"time fixed and set to %f\n",timeParam);
-      }else{
-        LALInferenceRegisterUniformVariableREAL8(state, currentParams, "time", timeParam, timeMin, timeMax, LALINFERENCE_PARAM_LINEAR);
-      }
-    } else {
-      LALInferenceAddMinMaxPrior(currentParams, "time" , &timeMin, &timeMax, LALINFERENCE_REAL8_t);
-//      LALInferenceAddVariable(currentParams, "time_prior_low", &timeMin, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
-//      LALInferenceAddVariable(currentParams, "time_prior_high", &timeMax, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
+    ppt=LALInferenceGetProcParamVal(commandLine,"--fixTime");
+    if(ppt){
+      LALInferenceRegisterUniformVariableREAL8(state, currentParams, "time", timeParam, timeMin, timeMax, LALINFERENCE_PARAM_FIXED);
+      if(lalDebugLevel>0) fprintf(stdout,"time fixed and set to %f\n",timeParam);
+    }else{
+      LALInferenceRegisterUniformVariableREAL8(state, currentParams, "time", timeParam, timeMin, timeMax, LALINFERENCE_PARAM_LINEAR);
+    }
+
+    /* If we are marginalising over the time, remove that variable from the model (having set the prior above) */
+    /* Also set the prior in currentParams, since Likelihood can't access the state! (ugly hack) */
+    if(LALInferenceGetProcParamVal(commandLine,"--margtime") || LALInferenceGetProcParamVal(commandLine, "--margtimephi")){
+        LALInferenceVariableItem *p=LALInferenceGetItem(state->priorArgs,"time_min");
+        LALInferenceAddVariable(state->currentParams,"time_min",p->value,p->type,p->vary);
+        p=LALInferenceGetItem(state->priorArgs,"time_max");
+        LALInferenceAddVariable(state->currentParams,"time_max",p->value,p->type,p->vary);
+        LALInferenceRemoveVariable(state->currentParams,"time");
     }
 
     if(!LALInferenceGetProcParamVal(commandLine,"--margphi") && !LALInferenceGetProcParamVal(commandLine, "--margtimephi")){
