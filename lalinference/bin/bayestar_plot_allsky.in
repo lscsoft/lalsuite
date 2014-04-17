@@ -129,7 +129,7 @@ if opts.geo:
         geojson = json.load(geojson_file)
     for shape in geojson['geometries']:
         verts = np.deg2rad(shape['coordinates'])
-        plt.plot(verts[:, 0], verts[:, 1], color='black', linewidth=1, alpha=0.5)
+        plt.plot(verts[:, 0], verts[:, 1], color='black', linewidth=1, alpha=0.25)
 
 # Add markers (e.g., for injections or external triggers).
 for ra, dec in np.deg2rad(opts.radec):
