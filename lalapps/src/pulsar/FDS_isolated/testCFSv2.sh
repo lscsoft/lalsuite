@@ -143,7 +143,7 @@ echo "STEP 2: run CFS_v2 with perfect match"
 echo "----------------------------------------------------------------------"
 echo
 
-cfs_CL="--IFO=$IFO --Alpha=$Alpha --Delta=$Delta --Freq=$cfs_Freq --dFreq=$cfs_dFreq --f1dot=$cfs_f1dot --f1dotBand=$cfs_f1dotBand --df1dot=$cfs_df1dot --DataFiles='$SFTdir/testSFT*' --Dterms=${Dterms} --NumCandidatesToKeep=${cfs_nCands}"
+cfs_CL="--IFO=$IFO --Alpha=$Alpha --Delta=$Delta --Freq=$cfs_Freq --dFreq=$cfs_dFreq --f1dot=$cfs_f1dot --f1dotBand=$cfs_f1dotBand --df1dot=$cfs_df1dot --DataFiles='$SFTdir/testSFT*' --Dterms=${Dterms} --NumCandidatesToKeep=${cfs_nCands} --outputLoudest=Fstat_loudest"
 if [ "$haveNoise" = false ]; then
     cfs_CL="$cfs_CL --SignalOnly"
 fi
@@ -158,9 +158,9 @@ fi
 
 
 echo
-echo "----------------------------------------"
+echo "----------------------------------------------------------------------"
 echo " STEP 3: Compare to reference results: "
-echo "----------------------------------------"
+echo "----------------------------------------------------------------------"
 
 ## work around toplist-sorting bugs in CFSv2: manually sort before comparing
 sort $outfile > __tmp_sorted && mv __tmp_sorted $outfile
@@ -176,11 +176,36 @@ else
 fi
 echo
 
+
+echo
+echo "----------------------------------------------------------------------"
+echo " STEP 4: Sanity-check parameter estimation: "
+echo "----------------------------------------------------------------------"
+echo
+
+if grep -q 'nan;' Fstat_loudest; then
+    echo "ERROR: Fstat_loudest contains NaNs!"
+    exit 2
+fi
+
+esth0=$(grep '^h0' Fstat_loudest | awk -F '[ ;]*' '{print $3}')
+estdh0=$(grep '^dh0' Fstat_loudest | awk -F '[ ;]*' '{print $3}')
+
+echo "Estimated h0 = $esth0 +/- $estdh0"
+h0inrange=$(echo $h0 $esth0 $estdh0 | awk '{printf "%i\n", (($1 - $2)^2 < $3^2)}')
+if test x$h0inrange != x1; then
+    echo "ERROR: estimated h0 was not within error of injected h0!"
+    exit 2
+else
+    echo "OK: Estimated h0 is within error of injected h0"
+fi
+
+
 ## -------------------------------------------
 ## clean up files
 ## -------------------------------------------
 if [ -z "$NOCLEANUP" ]; then
-    rm -rf $SFTdir $outfile Fstats Fstats.log
+    rm -rf $SFTdir $outfile Fstats Fstats.log Fstat_loudest
 fi
 
 ## restore original locale, just in case someone source'd this file

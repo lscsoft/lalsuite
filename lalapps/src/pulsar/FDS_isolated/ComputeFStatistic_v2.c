@@ -1580,6 +1580,9 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg, const UserInput_t *uvar )
 
   }
   cfg->Fstat_what = FSTATQ_2F;   // always calculate multi-detector 2F
+  if ( LALUserVarWasSet( &uvar->outputLoudest ) ) {
+    cfg->Fstat_what |= FSTATQ_FAFB;   // also calculate Fa,b parts for parameter estimation
+  }
 
   /* internal refTime is used for computing the F-statistic at, to avoid large (t - tRef)^2 values */
   if ( LALUserVarWasSet ( &uvar->internalRefTime ) ) {

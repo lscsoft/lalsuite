@@ -514,6 +514,11 @@ XLALEstimatePulsarAmplitudeParams(
   int signum;
 
   XLAL_CHECK ( pulsarParams != NULL, XLAL_EFAULT );
+  XLAL_CHECK ( FaFb_refTime != NULL, XLAL_EFAULT );
+  XLAL_CHECK ( isfinite(creal(Fa)) && isfinite(cimag(Fb)), XLAL_EDOM,
+               "Fa = (%g, %g) is not finite", creal(Fa), cimag(Fa) );
+  XLAL_CHECK ( isfinite(creal(Fb)) && isfinite(cimag(Fb)), XLAL_EDOM,
+               "Fb = (%g, %g) is not finite", creal(Fb), cimag(Fb) );
   XLAL_CHECK ( Mmunu != NULL, XLAL_EFAULT );
 
   Ad = Mmunu->Ad;
