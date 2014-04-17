@@ -71,4 +71,5 @@ p = lalinference.bayestar.postprocess.adaptive_healpix_histogram(
 
 # Write output to FITS file.
 lalinference.bayestar.fits.write_sky_map(opts.output, p,
-    creator=parser.get_prog_name(), objid=opts.objid)
+    creator=parser.get_prog_name(), objid=opts.objid,
+    gps_time=samples['time'].mean())
