@@ -93,25 +93,24 @@ gsl_matrix* XLALGetFlatLatticeIncrements(
   );
 
 ///
-/// Set a parameter-space bound on the \f$n\f$th dimension of the flat lattice tiling.
+/// Set the parameter-space bounds on dimension \f$n\f$ of the flat lattice tiling.
 ///
-/// Each parameter-space dimension may have multiple pairs of lower and upper bounds. The bounds \f$b_n\f$
-/// given the current parameter-space point \f$x = (x_0,\cdots,x_{n-1})\f$ are specified by the expression
+/// The lower/upper bound \f$X_n\f$ is specified by
 /// \f[
-/// b_n - a_n = c_N \left[ \sum_{i=0}^{N-1} c_i \prod_{j=0}^{n-1} (x_j - a_j)^{m_{ni+j}} \right]^{m_{nN}}
+/// X_n - a_n = \sum_{k=0}^{P-1} c_{N,k} \left[ \sum_{j=0}^{N-1} c_{j,k} \prod_{i=0}^{n-1} (x_i - a_i)^{m_{nj+i,k}} \right]^{m_{nN,k}}
 /// \f]
-/// where \f$a = (a_0,\cdots,a_n)\f$ is a vector of \f$n + 1 > 0\f$ offsets, \f$c = (c_0,\cdots,c_N)\f$ is a
-/// vector of \f$N + 1 > 0\f$ coefficients, and \f$m = (m_0,\cdots,m_{nM})\f$ is a vector of \f$nM + 1 > 0\f$
-/// exponents. Note that \f$x^m \rightarrow 0\f$ if the result is not finite and real-valued.
+/// where \f$x = (x_0,\cdots,x_{n-1})\f$ is the current parameter-space point, \f$a\f$ is a vector of \f$n + 1 > 0\f$ offsets,
+/// \f$c\f$ is a matrix of \f$N + 1 \times P\f$ coefficients, and \f$m\f$ is a matrix of \f$nM + 1 \times P\f$ exponents.
+/// Note that \f$x^m \rightarrow 0\f$ if the result is not finite and real-valued.
 ///
 int XLALSetFlatLatticeBound(
   FlatLatticeTiling* tiling,                    ///< [in] Tiling state
   const size_t dimension,                       ///< [in] Dimension on which bound applies (\f$n\f$)
   const gsl_vector* a,                          ///< [in] Vector of offsets (\f$a\f$)
-  const gsl_matrix* c_lower,                    ///< [in] Column vectors of coefficients (\f$c\f$) for the lower bound of each bound pair
-  const gsl_matrix* m_lower,                    ///< [in] Column vectors of exponents (\f$m\f$) for the lower bound of each bound pair
-  const gsl_matrix* c_upper,                    ///< [in] Column vectors of coefficients (\f$c\f$) for the upper bound of each bound pair
-  const gsl_matrix* m_upper                     ///< [in] Column vectors of exponents (\f$m\f$) for the upper bound of each bound pair
+  const gsl_matrix* c_lower,                    ///< [in] Matrix of coefficients (\f$c\f$) for the lower bound
+  const gsl_matrix* m_lower,                    ///< [in] Matrix of exponents (\f$m\f$) for the lower bound
+  const gsl_matrix* c_upper,                    ///< [in] Matrix of coefficients (\f$c\f$) for the upper bound
+  const gsl_matrix* m_upper                     ///< [in] Matrix of exponents (\f$m\f$) for the upper bound
   );
 
 ///
