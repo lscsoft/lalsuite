@@ -159,8 +159,8 @@ int main(void)
    XLAL_CHECK( avxScaleREAL8Vector(doubleresult_scale, doublevalues1, 100.0) == XLAL_SUCCESS, XLAL_EFUNC );
    XLAL_CHECK( avxSSVectorSequenceSum(sequencesumresult, floatvalues, floatvalues, 0, 1, 0, 1) == XLAL_SUCCESS, XLAL_EFUNC );
    XLAL_CHECK( avxSSVectorSequenceSubtract(sequencesubtractresult, floatvalues, floatvalues2, 0) == XLAL_SUCCESS, XLAL_EFUNC );
-   REAL4 maxfloatdiff_vecsum = 0.0, maxfloatrelerr_vecsum = 0.0, maxfloatdiff_vecmult = 0.0, maxfloatrelerr_vecmult = 0.0, maxfloatdiff_addscalar = 0.0, maxfloatrelerr_addscalar = 0.0, maxfloatdiff_scale = 0.0, maxfloatrelerr_scale = 0.0, maxfloatdiff_seqsum = 0.0, maxfloatrelerr_seqsum = 0.0, maxfloatdiff_seqsub = 0.0, maxfloatrelerr_seqsub = 0.0;
-   REAL8 maxdoublediff_addscalar = 0.0, maxdoublerelerr_addscalar = 0.0, maxdoublediff_scale = 0.0, maxdoublerelerr_scale = 0.0;
+   //REAL4 maxfloatdiff_vecsum = 0.0, maxfloatrelerr_vecsum = 0.0, maxfloatdiff_vecmult = 0.0, maxfloatrelerr_vecmult = 0.0, maxfloatdiff_addscalar = 0.0, maxfloatrelerr_addscalar = 0.0, maxfloatdiff_scale = 0.0, maxfloatrelerr_scale = 0.0, maxfloatdiff_seqsum = 0.0, maxfloatrelerr_seqsum = 0.0, maxfloatdiff_seqsub = 0.0, maxfloatrelerr_seqsub = 0.0;
+   //REAL8 maxdoublediff_addscalar = 0.0, maxdoublerelerr_addscalar = 0.0, maxdoublediff_scale = 0.0, maxdoublerelerr_scale = 0.0;
    for (ii=0; ii<length; ii++) {
       REAL4 floatdiff = fabsf(floatresult_vecsum->data[ii] - (REAL4)(floatvalues1->data[ii] + floatvalues2->data[ii]));
       REAL4 floatrelerr = fabsf((REAL4)(1.0 - floatresult_vecsum->data[ii]/(REAL4)(floatvalues1->data[ii] + floatvalues2->data[ii])));

@@ -49,7 +49,7 @@ int main(int argc, char *argv[])
       XLAL_ERROR(XLAL_FAILURE);
    }
    if (args_info.v2_given && !args_info.t0_given) {
-      fprintf(stderr, "%s: Tobs must be specified.\n", __func__);
+      fprintf(stderr, "%s: t0 must be specified.\n", __func__);
       XLAL_ERROR(XLAL_FAILURE);
    }
    
