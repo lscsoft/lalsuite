@@ -36,7 +36,6 @@ SFTCatalog * findSFTdata(inputParamsStruct *input);
 MultiSFTVector * extractSFTband(inputParamsStruct *input, SFTCatalog *catalog);
 REAL4Vector * convertSFTdataToPowers(MultiSFTVector *sfts, inputParamsStruct *input, REAL8 normalization);
 REAL4Vector * readInSFTs(inputParamsStruct *input, REAL8 *normalization);
-REAL4Vector * simpleTFdata(REAL8 fsig, REAL8 period, REAL8 moddepth, REAL8 Tcoh, REAL8 Tobs, REAL8 SFToverlap, REAL8 fminimum, REAL8 fmaximum, REAL8 sqrtSh);
 
 MultiLIGOTimeGPSVector * getMultiTimeStampsFromSFTCatalog(SFTCatalog *catalog);
 MultiLIGOTimeGPSVector * getMultiTimeStampsFromSFTs(inputParamsStruct *params);
@@ -62,7 +61,6 @@ INT4 cleanLines(REAL4Vector *TFdata, REAL4Vector *background, INT4Vector *lines,
 INT4 slideTFdata(REAL4Vector *output, inputParamsStruct *input, REAL4Vector *tfdata, INT4Vector *binshifts);
 void tfMeanSubtract(REAL4Vector *tfdata, REAL4Vector *rngMeans, INT4 numffts, INT4 numfbins);
 INT4 tfWeight(REAL4Vector *output, REAL4Vector *tfdata, REAL4Vector *rngMeans, REAL4Vector *antPatternWeights, INT4Vector *indexValuesOfExistingSFTs, inputParamsStruct *input);
-void tfWeightMeanSubtract(REAL4Vector *output, REAL4Vector *tfdata, REAL4Vector *rngMeans, REAL4Vector *antPatternWeights, inputParamsStruct *input);
 INT4 tfRngMeans(REAL4Vector *output, REAL4Vector *tfdata, INT4 numffts, INT4 numfbins, INT4 blksize);
 INT4 makeSecondFFT(ffdataStruct *ffdata, REAL4Vector *tfdata, REAL4FFTPlan *plan);
 INT4 ffPlaneNoise(REAL4Vector *aveNoise, inputParamsStruct *input, INT4Vector *sftexist, REAL4Vector *backgrnd, REAL4Vector *antweights, REAL4FFTPlan *plan, REAL8 *normalization);

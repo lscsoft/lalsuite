@@ -448,6 +448,7 @@ int main(int argc, char *argv[])
    INT4 totalincludedsftnumber = 0;
    for (ii=0; ii<(INT4)sftexist->length; ii++) if (sftexist->data[ii]==1) totalincludedsftnumber++;
    REAL4 frac_tobs_complete = (REAL4)totalincludedsftnumber/(REAL4)sftexist->length;
+   fprintf(LOG, "Duty factor of usable SFTs = %f\n", frac_tobs_complete);
    fprintf(stderr, "Duty factor of usable SFTs = %f\n", frac_tobs_complete);
    if (frac_tobs_complete<0.1) {
       fprintf(stderr, "%s: The useable SFTs cover less than 10 percent of the total observation time\n", __func__);
@@ -2179,70 +2180,6 @@ INT4 tfWeight(REAL4Vector *output, REAL4Vector *tfdata, REAL4Vector *rngMeans, R
 } /* tfWeight() */
 
 
-
-//////////////////////////////////////////////////////////////
-// Do the weighting by noise variance (from tfRngMeans), mean subtraction, and antenna pattern weights  -- done
-void tfWeightMeanSubtract(REAL4Vector *output, REAL4Vector *tfdata, REAL4Vector *rngMeans, REAL4Vector *antPatternWeights, inputParamsStruct *input)
-{
-
-   INT4 ii, jj;
-
-   INT4 numffts = (INT4)floor(input->Tobs/(input->Tcoh-input->SFToverlap)-1);    //Number of FFTs
-   INT4 numfbins = (INT4)(round(input->fspan*input->Tcoh*2.0*input->dfmax*input->Tcoh)+12+1);                    //Number of frequency bins
-
-   REAL4Vector *antweightssq = XLALCreateREAL4Vector(numffts);
-   REAL4Vector *rngMeanssq = XLALCreateREAL4Vector(numffts);
-   if (antweightssq==NULL) {
-      fprintf(stderr,"%s: XLALCreateREAL4Vector(%d) failed.\n", __func__, numffts);
-      XLAL_ERROR_VOID(XLAL_EFUNC);
-   } else if (rngMeanssq==NULL) {
-      fprintf(stderr,"%s: XLALCreateREAL4Vector(%d) failed.\n", __func__, numffts);
-      XLAL_ERROR_VOID(XLAL_EFUNC);
-   }
-
-   for (ii=0; ii<(INT4)rngMeanssq->length; ii++) rngMeanssq->data[ii] = 0.0;
-
-   //for (ii=0; ii<numffts; ii++) antweightssq->data[ii] = antPatternWeights->data[ii]*antPatternWeights->data[ii];
-   //antweightssq = XLALSSVectorMultiply(antweightssq, antPatternWeights, antPatternWeights);
-   fastSSVectorMultiply_with_stride_and_offset(antweightssq, antPatternWeights, antPatternWeights, 1, 1, 0, 0);
-
-   for (ii=0; ii<numfbins; ii++) {
-
-      fastSSVectorMultiply_with_stride_and_offset(rngMeanssq, rngMeans, rngMeans, numfbins, numfbins, ii, ii);
-
-      //If noiseWeightOff is given, then set all the noise weights to be 1.0
-      if (input->noiseWeightOff) {
-         for (jj=0; jj<(INT4)rngMeanssq->length; jj++) {
-            if (rngMeanssq->data[jj]!=0.0) {
-               rngMeanssq->data[jj] = 1.0;
-            }
-         }
-      }
-
-      //Get sum of antenna pattern weight/variances for each frequency bin as a function of time (only for existant SFTs)
-      REAL8 sumofweights = 0.0;
-      for (jj=0; jj<numffts; jj++) if (rngMeanssq->data[jj] != 0.0) sumofweights += antweightssq->data[jj]/rngMeanssq->data[jj];
-      REAL8 invsumofweights = 1.0/sumofweights;
-
-      //Now do mean subtraction, noise weighting, antenna pattern weighting
-      for (jj=0; jj<numffts; jj++) {
-         if (rngMeanssq->data[jj] != 0.0) {
-            output->data[jj*numfbins+ii] = (REAL4)(invsumofweights*antPatternWeights->data[jj]*(tfdata->data[jj*numfbins+ii] - rngMeans->data[jj*numfbins+ii])/rngMeanssq->data[jj]);
-         } else {
-            output->data[jj*numfbins+ii] = 0.0;
-         }
-      } /* for jj < numffts */
-   } /* for ii < numfbins */
-
-   //Destroy stuff
-   XLALDestroyREAL4Vector(antweightssq);
-   XLALDestroyREAL4Vector(rngMeanssq);
-
-   //fprintf(stderr,"TF after weighting, mean subtraction = %g\n",calcMean(output));
-
-} /* tfWeightMeanSubtract() */
-
-
 //Determine the sum of the weights
 REAL8 determineSumOfWeights(REAL4Vector *antweightssq, REAL4Vector *rngMeanssq)
 {
@@ -2531,50 +2468,6 @@ INT4 ffPlaneNoise(REAL4Vector *aveNoise, inputParamsStruct *input, INT4Vector *s
 
 
 
-//For testing purposes only!!!! Don't use
-REAL4Vector * simpleTFdata(REAL8 fsig, REAL8 period, REAL8 moddepth, REAL8 Tcoh, REAL8 Tobs, REAL8 SFToverlap, REAL8 fminimum, REAL8 fmaximum, REAL8 sqrtSh)
-{
-
-   INT4 numfbins = (INT4)(round((fmaximum-fminimum)*Tcoh)+1);   //Number of frequency bins
-   INT4 numffts = (INT4)floor(Tobs/(Tcoh-SFToverlap)-1); //Number of FFTs
-
-   REAL4Vector *output = XLALCreateREAL4Vector(numfbins*numffts);
-
-   //Initialize the random number generator
-   gsl_rng *rng = gsl_rng_alloc(gsl_rng_mt19937);
-   if (rng==NULL) {
-      fprintf(stderr,"%s: gsl_rng_alloc() failed.\n", __func__);
-      XLAL_ERROR_NULL(XLAL_EFUNC);
-   }
-   gsl_rng_set(rng, 0);
-
-   INT4 ii, jj;
-   REAL8 correlationfactor = 0.167, corrfactorsquared = correlationfactor*correlationfactor;
-   for (ii=0; ii<numffts; ii++) {
-      for (jj=0; jj<numfbins; jj++) {
-         if (ii==0) {
-            output->data[jj] = expRandNum(sqrtSh, rng);
-         } else {
-            output->data[ii*numfbins + jj] = corrfactorsquared*output->data[(ii-1)*numfbins + jj] + (1.0-corrfactorsquared)*expRandNum(sqrtSh, rng);
-         }
-
-      }
-   }
-
-   for (ii=0; ii<numffts; ii++) {
-      REAL8 fbin = fsig + moddepth*sin(LAL_TWOPI*((ii+1)*SFToverlap)/period) - fminimum;
-      for (jj=0; jj<numfbins; jj++) output->data[ii*numfbins + jj] += 0.03*(2.0/3.0)*Tcoh*sqsincxoverxsqminusone(fbin*Tcoh-(REAL8)jj);
-   }
-
-   //Destroy stuff
-   gsl_rng_free(rng);
-
-   return output;
-
-}
-
-
-
 //Convert the gengetopt_args_info struct into something less complicated and select appropriate IFO(s)
 INT4 readTwoSpectInputParams(inputParamsStruct *params, struct gengetopt_args_info args_info)
 {
@@ -2596,7 +2489,7 @@ INT4 readTwoSpectInputParams(inputParamsStruct *params, struct gengetopt_args_in
    params->printAllULvalues = args_info.allULvalsPerSkyLoc_given;                //Output all UL values at each sky location (default = 0)
    params->fastchisqinv = args_info.fastchisqinv_given;                          //Use faster chi-sq inversion (default = 0)
    params->useSSE = args_info.useSSE_given;                                      //Use SSE optimized functions (dafualt = 0)
-   params->useAVX = args_info.useSSE_given;                                      //Use AVX optimized functions (dafualt = 0)
+   params->useAVX = args_info.useAVX_given;                                      //Use AVX optimized functions (dafualt = 0)
    params->followUpOutsideULrange = args_info.followUpOutsideULrange_given;      //Follow up outliers outside of UL range (default = 0)
    params->noNotchHarmonics = args_info.noNotchHarmonics_given;                  //Do not notch the daily/sidereal harmonics (default = 0)
    params->harmonicNumToSearch = args_info.harmonicNumToSearch_arg;              //Search the number of harmonics specified by the Pmin-->Pmax range (default = 1 meaning search only the range of Pmin-->Pmax)
