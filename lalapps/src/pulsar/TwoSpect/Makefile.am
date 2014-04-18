@@ -15,7 +15,8 @@ EXTRA_PROGRAMS = skygridsetup compareCandidates testVectorMath
 skygridsetup_SOURCES = helperprograms/skygridsetup.c helperprograms/cmdline_skygridsetup.c antenna.c \
                        helperprograms/cmdline_skygridsetup.h antenna.h
 
-compareCandidates_SOURCES = helperprograms/compareCandidates.c
+compareCandidates_SOURCES = helperprograms/compareCandidates.c helperprograms/cmdline_compareCandidates.c \
+                            helperprograms/cmdline_compareCandidates.h
 
 testVectorMath_SOURCES = helperprograms/testVectorMath.c vectormath.c templates.c candidates.c statistics.c \
                          fastchisqinv.c cdfwchisq.c vectormath.h templates.h candidates.h statistics.h \
