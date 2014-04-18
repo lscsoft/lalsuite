@@ -86,13 +86,6 @@ unsigned long XLALCountFlatLatticePoints(
   );
 
 ///
-/// Return the increment vectors which are used to generate the lattice.
-///
-gsl_matrix* XLALGetFlatLatticeIncrements(
-  const FlatLatticeTiling* tiling               ///< [in] Tiling state
-  );
-
-///
 /// Set the parameter-space bounds on dimension \f$n\f$ of the flat lattice tiling.
 ///
 /// The lower/upper bound \f$X_n\f$ is specified by

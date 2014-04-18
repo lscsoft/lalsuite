@@ -658,31 +658,6 @@ unsigned long XLALCountFlatLatticePoints(
 
 }
 
-gsl_matrix* XLALGetFlatLatticeIncrements(
-  const FlatLatticeTiling* tiling
-  )
-{
-
-  // Check tiling
-  XLAL_CHECK_NULL(tiling != NULL, XLAL_EFAULT);
-  XLAL_CHECK_NULL(tiling->status >= FLT_S_INITIALISED, XLAL_EINVAL);
-
-  // Allocate increment vector
-  gsl_matrix* increment = gsl_matrix_alloc(tiling->increment->size1, tiling->increment->size2);
-  XLAL_CHECK_NULL(tiling->increment != NULL, XLAL_ENOMEM);
-
-  // Copy increments, rescaled to physical coordinates
-  for (size_t i = 0; i < increment->size2; ++i) {
-    gsl_vector_view tiling_increment_i = gsl_matrix_column(tiling->increment, i);
-    gsl_vector_view increment_i = gsl_matrix_column(increment, i);
-    gsl_vector_memcpy(&increment_i.vector, &tiling_increment_i.vector);
-    gsl_vector_mul(&increment_i.vector, tiling->phys_scale);
-  }
-
-  return increment;
-
-}
-
 int XLALSetFlatLatticeBound(
   FlatLatticeTiling* tiling,
   const size_t dimension,
