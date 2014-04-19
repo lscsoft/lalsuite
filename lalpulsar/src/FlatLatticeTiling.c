@@ -73,9 +73,9 @@ typedef enum tagFLT_Status {
 ///
 struct tagFlatLatticeTiling {
   size_t dimensions;                            ///< Dimension of the parameter space
-  size_t tiled_dimensions;                      ///< Tiled dimension of the parameter space
   FLT_Status status;                            ///< Status of the tiling
   FLT_Bound *bounds;                            ///< Array of parameter-space bound info for each dimension
+  gsl_vector_uint* tiled_idx;                   ///< Indices of the tiled dimensions of the parameter space
   FlatLatticeType lattice;                      ///< Type of lattice to generate flat tiling with
   gsl_vector* phys_scale;                       ///< Normalised to physical coordinate scaling
   gsl_vector* phys_offset;                      ///< Normalised to physical coordinate offset
@@ -590,6 +590,7 @@ void XLALDestroyFlatLatticeTiling(
     XLALFree(tiling->bounds);
 
     // Free vectors and matrices
+    gsl_vector_uint_free(tiling->tiled_idx);
     gsl_vector_free(tiling->phys_scale);
     gsl_vector_free(tiling->phys_offset);
     gsl_matrix_free(tiling->metric);
@@ -856,11 +857,22 @@ int XLALSetFlatLatticeTypeAndMetric(
   XLAL_CHECK(metric->size1 == n && metric->size2 == n, XLAL_EINVAL);
   XLAL_CHECK(max_mismatch > 0, XLAL_EINVAL);
 
-  // Check that all parameter-space dimensions are bounded, and count number of tiles dimensions
-  tiling->tiled_dimensions = 0;
+  // Check that all parameter-space dimensions are bounded, and record indices of tiled dimensions
+  size_t tn = 0;
   for (size_t i = 0; i < tiling->dimensions; ++i) {
     XLAL_CHECK(tiling->bounds[i].a != NULL, XLAL_EFAILED, "Dimension #%i is unbounded", i);
-    tiling->tiled_dimensions += tiling->bounds[i].tiled ? 1 : 0;
+    if (tiling->bounds[i].tiled) {
+      ++tn;
+    }
+  }
+  if (tn > 0) {
+    tiling->tiled_idx = gsl_vector_uint_alloc(tn);
+    for (size_t i = 0, ti = 0; i < tiling->dimensions; ++i) {
+      if (tiling->bounds[i].tiled) {
+        gsl_vector_uint_set(tiling->tiled_idx, ti, i);
+        ++ti;
+      }
+    }
   }
 
   // Save the type of lattice to generate flat tiling with
@@ -909,24 +921,18 @@ int XLALSetFlatLatticeTypeAndMetric(
   gsl_matrix_set_zero(tiling->increment);
   gsl_vector_set_zero(tiling->padding);
 
-  if (tiling->tiled_dimensions > 0) {
-
-    const size_t tn = tiling->tiled_dimensions;
+  if (tn > 0) {
 
     // Allocate memory
     gsl_matrix* tiled_metric = gsl_matrix_alloc(tn, tn);
     XLAL_CHECK(tiled_metric != NULL, XLAL_ENOMEM);
 
     // Copy tiled dimensions of metric
-    for (size_t i = 0, ti = 0; i < n; ++i) {
-      if (tiling->bounds[i].tiled) {
-        for (size_t j = 0, tj = 0; j < n; ++j) {
-          if (tiling->bounds[j].tiled) {
-            gsl_matrix_set(tiled_metric, ti, tj, gsl_matrix_get(tiling->metric, i, j));
-            ++tj;
-          }
-        }
-        ++ti;
+    for (size_t ti = 0; ti < tn; ++ti) {
+      const size_t i = gsl_vector_uint_get(tiling->tiled_idx, ti);
+      for (size_t tj = 0; tj < tn; ++tj) {
+        const size_t j = gsl_vector_uint_get(tiling->tiled_idx, tj);
+        gsl_matrix_set(tiled_metric, ti, tj, gsl_matrix_get(tiling->metric, i, j));
       }
     }
 
@@ -939,16 +945,12 @@ int XLALSetFlatLatticeTypeAndMetric(
     XLAL_CHECK(bounding_box != NULL, XLAL_EFUNC);
 
     // Copy increment vectors and padding so that non-tiled dimensions are zero
-    for (size_t i = 0, ti = 0; i < n; ++i) {
-      if (tiling->bounds[i].tiled) {
-        gsl_vector_set(tiling->padding, i, gsl_vector_get(bounding_box, ti));
-        for (size_t j = 0, tj = 0; j < n; ++j) {
-          if (tiling->bounds[j].tiled) {
-            gsl_matrix_set(tiling->increment, i, j, gsl_matrix_get(increment, ti, tj));
-            ++tj;
-          }
-        }
-        ++ti;
+    for (size_t ti = 0; ti < tn; ++ti) {
+      const size_t i = gsl_vector_uint_get(tiling->tiled_idx, ti);
+      gsl_vector_set(tiling->padding, i, gsl_vector_get(bounding_box, ti));
+      for (size_t tj = 0; tj < tn; ++tj) {
+        const size_t j = gsl_vector_uint_get(tiling->tiled_idx, tj);
+        gsl_matrix_set(tiling->increment, i, j, gsl_matrix_get(increment, ti, tj));
       }
     }
 
