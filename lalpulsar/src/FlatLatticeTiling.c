@@ -98,10 +98,10 @@ static gsl_vector* FLT_MetricEllipseBoundingBox(
   )
 {
 
-  const size_t n = metric->size1;
-
   // Check input
+  XLAL_CHECK_NULL(metric != NULL, XLAL_EFAULT);
   XLAL_CHECK_NULL(metric->size1 == metric->size2, XLAL_ESIZE);
+  const size_t n = metric->size1;
 
   // Allocate memory
   gsl_matrix* LU_decomp = gsl_matrix_alloc(n, n);
@@ -334,7 +334,7 @@ static gsl_matrix* FLT_MetricLatticeIncrements(
   XLAL_CHECK_NULL(metric != NULL, XLAL_EFAULT);
   XLAL_CHECK_NULL(metric->size1 == metric->size2, XLAL_ESIZE);
   XLAL_CHECK_NULL(max_mismatch > 0.0, XLAL_EINVAL);
-  const size_t r = metric->size1;
+  const size_t n = metric->size1;
 
   // Allocate memory
   gsl_matrix* directions = gsl_matrix_alloc(metric->size1, metric->size2);
@@ -362,14 +362,14 @@ static gsl_matrix* FLT_MetricLatticeIncrements(
   {
 
     // Allocate memory
-    gen_matrix = gsl_matrix_alloc(r, r);
+    gen_matrix = gsl_matrix_alloc(n, n);
     XLAL_CHECK_NULL(gen_matrix != NULL, XLAL_ENOMEM);
 
     // Create generator
     gsl_matrix_set_identity(gen_matrix);
 
     // Calculate normalised thickness
-    norm_thickness = pow(sqrt(r)/2, r);
+    norm_thickness = pow(sqrt(n)/2, n);
 
   }
   break;
@@ -378,21 +378,21 @@ static gsl_matrix* FLT_MetricLatticeIncrements(
   {
 
     // Allocate memory
-    gen_matrix = gsl_matrix_alloc(r + 1, r);
+    gen_matrix = gsl_matrix_alloc(n + 1, n);
     XLAL_CHECK_NULL(gen_matrix != NULL, XLAL_ENOMEM);
 
-    // Create generator in (r + 1) space
+    // Create generator in (n + 1) space
     gsl_matrix_set_all(gen_matrix, 0.0);
     gsl_vector_view first_row = gsl_matrix_row(gen_matrix, 0);
     gsl_vector_view sub_diag = gsl_matrix_subdiagonal(gen_matrix, 1);
-    gsl_vector_view last_col = gsl_matrix_column(gen_matrix, r - 1);
+    gsl_vector_view last_col = gsl_matrix_column(gen_matrix, n - 1);
     gsl_vector_set_all(&first_row.vector, 1.0);
     gsl_vector_set_all(&sub_diag.vector, -1.0);
-    gsl_vector_set_all(&last_col.vector, 1.0 / (r + 1.0));
-    gsl_vector_set(&last_col.vector, 0, -1.0 * r / (r + 1.0));
+    gsl_vector_set_all(&last_col.vector, 1.0 / (n + 1.0));
+    gsl_vector_set(&last_col.vector, 0, -1.0 * n / (n + 1.0));
 
     // Calculate normalised thickness
-    norm_thickness = sqrt(r + 1.0)*pow((1.0*r*(r + 2))/(12.0*(r + 1)), 0.5*r);
+    norm_thickness = sqrt(n + 1.0)*pow((1.0*n*(n + 2))/(12.0*(n + 1)), 0.5*n);
 
   }
   break;
