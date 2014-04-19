@@ -39,6 +39,9 @@
 
 #include <lal/LALInferenceTemplate.h>
 
+#include "logaddexp.h"
+
+
 #ifdef __GNUC__
 #define UNUSED __attribute__ ((unused))
 #else
@@ -1657,17 +1660,6 @@ REAL8 LALInferenceMarginalisedPhaseLogLikelihood(LALInferenceVariables *currentP
   REAL8 thislogL=-(S+D) + log(I0x) + R ;
   loglikeli=thislogL;
   return(loglikeli);
-}
-
-static double logaddexp(double x, double y) {
-  if (x == -INFINITY && y == -INFINITY) {
-    /* 0 + 0 == 0 */
-    return -INFINITY;
-  } else if (x > y) {
-    return x + log1p(exp(y-x));
-  } else {
-    return y + log1p(exp(x-y));
-  }
 }
 
 static double log_quadratic_integral_log(double h, double lx0, double lx1, double lx2) {
