@@ -359,6 +359,7 @@ static gsl_matrix* FLT_MetricLatticeIncrements(
   switch (lattice) {
 
   case FLAT_LATTICE_TYPE_CUBIC:   // Cubic (\f$Z_n\f$) lattice
+  {
 
     // Allocate memory
     gen_matrix = gsl_matrix_alloc(r, r);
@@ -370,9 +371,11 @@ static gsl_matrix* FLT_MetricLatticeIncrements(
     // Calculate normalised thickness
     norm_thickness = pow(sqrt(r)/2, r);
 
-    break;
+  }
+  break;
 
   case FLAT_LATTICE_TYPE_ANSTAR:   // An-star (\f$A_n^*\f$) lattice
+  {
 
     // Allocate memory
     gen_matrix = gsl_matrix_alloc(r + 1, r);
@@ -380,20 +383,19 @@ static gsl_matrix* FLT_MetricLatticeIncrements(
 
     // Create generator in (r + 1) space
     gsl_matrix_set_all(gen_matrix, 0.0);
-    {
-      gsl_vector_view first_row = gsl_matrix_row(gen_matrix, 0);
-      gsl_vector_view sub_diag = gsl_matrix_subdiagonal(gen_matrix, 1);
-      gsl_vector_view last_col = gsl_matrix_column(gen_matrix, r - 1);
-      gsl_vector_set_all(&first_row.vector, 1.0);
-      gsl_vector_set_all(&sub_diag.vector, -1.0);
-      gsl_vector_set_all(&last_col.vector, 1.0 / (r + 1.0));
-      gsl_vector_set(&last_col.vector, 0, -1.0 * r / (r + 1.0));
-    }
+    gsl_vector_view first_row = gsl_matrix_row(gen_matrix, 0);
+    gsl_vector_view sub_diag = gsl_matrix_subdiagonal(gen_matrix, 1);
+    gsl_vector_view last_col = gsl_matrix_column(gen_matrix, r - 1);
+    gsl_vector_set_all(&first_row.vector, 1.0);
+    gsl_vector_set_all(&sub_diag.vector, -1.0);
+    gsl_vector_set_all(&last_col.vector, 1.0 / (r + 1.0));
+    gsl_vector_set(&last_col.vector, 0, -1.0 * r / (r + 1.0));
 
     // Calculate normalised thickness
     norm_thickness = sqrt(r + 1.0)*pow((1.0*r*(r + 2))/(12.0*(r + 1)), 0.5*r);
 
-    break;
+  }
+  break;
 
   default:
     XLAL_ERROR_NULL(XLAL_EINVAL, "Invalid 'lattice'=%u", lattice);
