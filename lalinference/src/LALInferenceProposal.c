@@ -3612,7 +3612,7 @@ void LALInferenceInitClusteredKDEProposal(LALInferenceRunState *runState, LALInf
         gsl_matrix_set_row(downsampled_array, i, &row.vector);
     }
 
-    kde->kmeans = LALInferenceIncrementalKmeans(downsampled_array, runState->GSLrandom);
+    kde->kmeans = LALInferenceOptimizedKmeans(downsampled_array, runState->GSLrandom);
 
     /* Return if kmeans setup failed */
     if (!kde->kmeans)

@@ -88,6 +88,124 @@ LALInferenceKmeans *LALInferenceIncrementalKmeans(gsl_matrix *data, gsl_rng *rng
 
 
 /**
+ * Kmeans cluster data, find k that maximizes BIC assuming BIC(k) is concave-down.
+ *
+ * Run the kmeans clustering algorithm, searching for the k that maximizes the
+ *   Bayes Information Criteria (BIC).  The BIC is calculated by estimating the
+ *   distribution in each cluster with a Gaussian kernel density estimate, then
+ *   weighing that clusters contribution to the likelihood by the fraction of
+ *   total samples in that cluster.
+ * @param[in] data A GSL matrix containing the data to be clustered.
+ * @param[in] rng  A GSL random number generator used by the kmeans algorithm.
+ * @result A kmeans structure containing the clustering that maximizes the BIC.
+ */
+LALInferenceKmeans *LALInferenceOptimizedKmeans(gsl_matrix *data, gsl_rng *rng) {
+    UINT4 iter = 50;
+    UINT4 k, low_k = 1, mid_k = 2, high_k = 4;
+    REAL8 bic, low_bic, mid_bic, high_bic;
+    LALInferenceKmeans *low_kmeans, *mid_kmeans, *high_kmeans;
+    LALInferenceKmeans *kmeans = NULL;
+
+    /* Calculate starting clusters and BIC's */
+    low_kmeans = LALInferenceKmeansRunBestOf(low_k, data, 1, rng);
+    mid_kmeans = LALInferenceKmeansRunBestOf(mid_k, data, iter, rng);
+    high_kmeans = LALInferenceKmeansRunBestOf(high_k, data, iter, rng);
+
+    low_bic = LALInferenceKmeansBIC(low_kmeans);
+    mid_bic = LALInferenceKmeansBIC(mid_kmeans);
+    high_bic = LALInferenceKmeansBIC(high_kmeans);
+
+    /* Keep doubling the highest sample until the peak is passed */
+    while (high_bic > mid_bic) {
+        low_k = mid_k;
+        mid_k = high_k;
+        high_k *= 2;
+
+        low_bic = mid_bic;
+        mid_bic = high_bic;
+
+        LALInferenceKmeansDestroy(low_kmeans);
+        low_kmeans = mid_kmeans;
+        mid_kmeans = high_kmeans;
+
+        while (1) {
+            high_kmeans = LALInferenceKmeansRunBestOf(high_k, data, iter, rng);
+            if (!high_kmeans) {
+                high_k = mid_k + (high_k - mid_k)/2;
+                if (high_k < mid_k + 1)
+                    high_bic = -INFINITY;
+                else
+                    continue;
+            }
+            high_bic = LALInferenceKmeansBIC(high_kmeans);
+            break;
+        }
+    }
+
+    /* Perform bisection search to find maximum */
+    while (high_k - low_k > 2) {
+        if (high_k - mid_k > mid_k - low_k) {
+            k = mid_k + (high_k - mid_k)/2;
+            if (kmeans)
+                LALInferenceKmeansDestroy(kmeans);
+            kmeans = LALInferenceKmeansRunBestOf(k, data, iter, rng);
+            bic = LALInferenceKmeansBIC(kmeans);
+
+            if (bic > mid_bic) {
+                low_k = mid_k;
+                mid_k = k;
+                low_bic = mid_bic;
+                mid_bic = bic;
+                LALInferenceKmeansDestroy(low_kmeans);
+                low_kmeans = mid_kmeans;
+                mid_kmeans = kmeans;
+                kmeans = NULL;
+            } else {
+                high_k = k;
+                high_bic = bic;
+                LALInferenceKmeansDestroy(high_kmeans);
+                high_kmeans = kmeans;
+                kmeans = NULL;
+            }
+        } else {
+            k = low_k + (mid_k - low_k)/2;
+            if (kmeans)
+                LALInferenceKmeansDestroy(kmeans);
+            kmeans = LALInferenceKmeansRunBestOf(k, data, iter, rng);
+            bic = LALInferenceKmeansBIC(kmeans);
+
+            if (bic > mid_bic) {
+                high_k = mid_k;
+                mid_k = k;
+                high_bic = mid_bic;
+                mid_bic = bic;
+
+                LALInferenceKmeansDestroy(high_kmeans);
+                high_kmeans = mid_kmeans;
+                mid_kmeans = kmeans;
+                kmeans = NULL;
+            } else {
+                low_k = k;
+                low_bic = bic;
+                LALInferenceKmeansDestroy(low_kmeans);
+                low_kmeans = kmeans;
+                kmeans = NULL;
+            }
+        }
+    }
+
+    /* Cleanup and return the best clustering */
+    if (low_kmeans != mid_kmeans)
+        LALInferenceKmeansDestroy(low_kmeans);
+    if (high_kmeans != mid_kmeans)
+        LALInferenceKmeansDestroy(high_kmeans);
+    if (kmeans != mid_kmeans)
+        LALInferenceKmeansDestroy(kmeans);
+    return mid_kmeans;
+}
+
+
+/**
  * Xmeans cluster data, splitting centroids in kmeans according to the Bayes Information Criteria.
  *
  * Run an xmeans-style clustering, increasing a kmeans clustering starting from k=1 by splitting each

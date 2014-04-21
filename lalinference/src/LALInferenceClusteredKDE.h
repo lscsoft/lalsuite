@@ -64,6 +64,9 @@ tagkmeans
 /* Kmeans cluster data, increasing k until the Bayes Information Criteria stop increasing. */
 LALInferenceKmeans *LALInferenceIncrementalKmeans(gsl_matrix *data, gsl_rng *rng);
 
+/* Kmeans cluster data, find k that maximizes BIC assuming BIC(k) is concave-down. */
+LALInferenceKmeans *LALInferenceOptimizedKmeans(gsl_matrix *data, gsl_rng *rng);
+
 /* Xmeans cluster data, splitting centroids in kmeans according to the Bayes Information Criteria. */
 LALInferenceKmeans *LALInferenceXmeans(gsl_matrix *data, gsl_rng *rng);
 
