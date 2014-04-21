@@ -140,10 +140,9 @@ int XLALSetFlatLatticeTypeAndMetric(
   );
 
 ///
-/// Move to the next point in the flat lattice tiling parameter space.
-/// Returns the index of the lowest dimension where the point has changed,
-/// or a negative number when the template bank is exhausted.
-/// Optionally, return the current flat lattice point.
+/// Move to the next point in the flat lattice tiling parameter space. Returns a
+/// positive number while the template bank is being generated, or -1 once the
+/// template bank is exhausted. Optionally, return the current flat lattice point.
 ///
 int XLALNextFlatLatticePoint(
   FlatLatticeTiling* tiling,                    ///< [in] Tiling state
