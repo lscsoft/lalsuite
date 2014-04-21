@@ -150,6 +150,18 @@ int XLALNextFlatLatticePoint(
   );
 
 ///
+/// Fast-forward the flat lattice tiling through the highest tiled dimension of
+/// the parameter space, so that then calling XLALNextFlatticePoint() will
+/// advance the next highest tiled dimension. Optionally, return the count of
+/// and spacing between the points fast-forwarded over.
+///
+int XLALFastForwardFlatLatticeTiling(
+  FlatLatticeTiling* tiling,                    ///< [in] Tiling state
+  UINT8 *point_count,                           ///< [in/out] Count of points fast-forwarded over
+  double *point_spacing                         ///< [in/out] Spacing between points fast-forwarded over
+  );
+
+///
 /// Return to the beginning of a flat lattice tiling
 ///
 int XLALRestartFlatLatticeTiling(

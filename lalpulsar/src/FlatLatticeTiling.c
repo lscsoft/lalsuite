@@ -643,11 +643,13 @@ UINT8 XLALCountFlatLatticePoints(
   XLAL_CHECK_VAL(0, tiling != NULL, XLAL_EFAULT);
   XLAL_CHECK_VAL(0, tiling->status > FLT_S_INCOMPLETE, XLAL_EINVAL);
 
-  // If templates have not already been counted, count them
+  // If points have not already been counted, count them
   if (tiling->total_count == 0) {
 
-    // Iterate over all templates
-    while (XLALNextFlatLatticePoint(tiling, NULL) >= 0);
+    // Iterate over all points
+    while (XLALNextFlatLatticePoint(tiling, NULL) >= 0) {
+      XLAL_CHECK_VAL(0, XLALFastForwardFlatLatticeTiling(tiling, NULL, NULL) == XLAL_SUCCESS, XLAL_EFUNC);
+    }
     XLAL_CHECK_VAL(0, xlalErrno == 0, XLAL_EFUNC);
     XLAL_CHECK_VAL(0, tiling->total_count > 0, XLAL_EFAILED);
 
@@ -656,7 +658,7 @@ UINT8 XLALCountFlatLatticePoints(
 
   }
 
-  // Return the template count
+  // Return the point count
   return tiling->total_count;
 
 }
@@ -1103,6 +1105,56 @@ int XLALNextFlatLatticePoint(
 
   // Return lowest dimension where point has changed
   return ti;
+
+}
+
+int XLALFastForwardFlatLatticeTiling(
+  FlatLatticeTiling* tiling,                    ///< [in] Tiling state
+  UINT8 *point_count,                           ///< [in/out] Count of points fast-forwarded over
+  double *point_spacing                         ///< [in/out] Spacing between points fast-forwarded over
+  )
+{
+
+  // Check tiling
+  XLAL_CHECK(tiling != NULL, XLAL_EFAULT);
+  XLAL_CHECK(tiling->status == FLT_S_STARTED, XLAL_EINVAL);
+  const size_t tn = (tiling->tiled_idx != NULL) ? tiling->tiled_idx->size : 0;
+
+  // If no tiled dimensions, nothing to fast-forward
+  UINT8 count = 0;
+  double spacing = 0.0;
+
+  // If there are tiled dimensions:
+  if (tn > 0) {
+
+    // Get index of highest tiled dimension
+    const size_t i = gsl_vector_uint_get(tiling->tiled_idx, tn - 1);
+
+    // Get current point, spacing, upper bound, and padding
+    const double point = gsl_vector_get(tiling->point, i);
+    spacing = gsl_matrix_get(tiling->increment, i, i);
+    const double upper = gsl_vector_get(tiling->upper, i);
+    const double padding = gsl_vector_get(tiling->padding, i);
+
+    // Calculate number of points to fast-forward, so that then calling
+    // XLALNextFlatticePoint() will advance the next highest tiled dimension
+    count = floor((upper + padding - point) / spacing);
+
+    // Fast-forward over dimension
+    gsl_vector_set(tiling->point, i, point + count*spacing);
+    tiling->count += count;
+
+  }
+
+  // Return count and spacing
+  if (point_count != NULL) {
+    *point_count = count;
+  }
+  if (point_spacing != NULL) {
+    *point_spacing = spacing;
+  }
+
+  return XLAL_SUCCESS;
 
 }
 
