@@ -52,7 +52,7 @@
  * @result A kmeans structure containing the clustering that maximizes the BIC.
  */
 LALInferenceKmeans *LALInferenceIncrementalKmeans(gsl_matrix *data, gsl_rng *rng) {
-    UINT4 iter = 20;
+    UINT4 iter = 50;
     UINT4 k = 1;
     REAL8 best_bic = -INFINITY;
     REAL8 bic;
