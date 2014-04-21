@@ -72,10 +72,10 @@ REAL8 *LALInferenceDrawKDESample(LALInferenceKDE *kde, gsl_rng *rng);
 INT4 LALInferenceCholeskyDecompose(gsl_matrix *mat);
 
 /* Calculate the covariance matrix of a data set. */
-gsl_matrix *LALInferenceComputeCovariance(gsl_matrix *pts);
+void LALInferenceComputeCovariance(gsl_matrix *cov, gsl_matrix *pts);
 
 /* Calculate the mean of a data set. */
-gsl_vector *LALInferenceComputeMean(gsl_matrix *points);
+void LALInferenceComputeMean(gsl_vector *mean, gsl_matrix *points);
 
 /* Calculate the determinant of a matrix. */
 REAL8 LALInferenceMatrixDet(gsl_matrix *mat);

@@ -350,8 +350,33 @@ LALInferenceKmeans * LALInferenceCreateKmeans(UINT4 k, gsl_matrix *data, gsl_rng
     INT4 status;
     LALInferenceKmeans *kmeans = XLALMalloc(sizeof(LALInferenceKmeans));
 
+    kmeans->k = k;
+    kmeans->npts = data->size1;
+    kmeans->dim = data->size2;
+    kmeans->has_changed = 1;
+    kmeans->rng = rng;
+
+    /* Allocate GSL matrices and vectors */
+    kmeans->mean = gsl_vector_alloc(kmeans->dim);
+    kmeans->data = gsl_matrix_alloc(kmeans->npts, kmeans->dim);
+    kmeans->chol_dec_cov = gsl_matrix_alloc(kmeans->dim, kmeans->dim);
+    kmeans->unwhitened_chol_dec_cov = gsl_matrix_alloc(kmeans->dim, kmeans->dim);
+    kmeans->centroids = gsl_matrix_alloc(kmeans->k, kmeans->dim);
+    kmeans->recursive_centroids = NULL;
+
+    /* Allocate everything else */
+    kmeans->assignments = XLALMalloc(kmeans->npts * sizeof(UINT4));
+    kmeans->sizes = XLALMalloc(kmeans->k * sizeof(UINT4));
+    kmeans->mask = XLALMalloc(kmeans->npts * sizeof(UINT4));
+    kmeans->weights = XLALMalloc(kmeans->k * sizeof(REAL8));
+    kmeans->KDEs = NULL;
+
+    /* Set distance and centroid calculators */
+    kmeans->dist = &euclidean_dist_squared;
+    kmeans->centroid = &euclidean_centroid;
+
     /* Store the unwhitened mean before whitening.  Needed for further transformation. */
-    kmeans->mean = LALInferenceComputeMean(data);
+    LALInferenceComputeMean(kmeans->mean, data);
 
     /* Whiten the data */
     kmeans->data = LALInferenceWhitenSamples(data);
@@ -360,14 +385,8 @@ LALInferenceKmeans * LALInferenceCreateKmeans(UINT4 k, gsl_matrix *data, gsl_rng
         return NULL;
     }
 
-    kmeans->k = k;
-    kmeans->npts = data->size1;
-    kmeans->dim = data->size2;
-    kmeans->has_changed = 1;
-    kmeans->rng = rng;
-
-    kmeans->unwhitened_chol_dec_cov = LALInferenceComputeCovariance(data);
-    kmeans->chol_dec_cov = LALInferenceComputeCovariance(kmeans->data);
+    LALInferenceComputeCovariance(kmeans->unwhitened_chol_dec_cov, data);
+    LALInferenceComputeCovariance(kmeans->chol_dec_cov, kmeans->data);
 
     /* Cholesky decompose the covariance matrix and decorrelate the data */
     status = LALInferenceCholeskyDecompose(kmeans->unwhitened_chol_dec_cov);
@@ -390,17 +409,6 @@ LALInferenceKmeans * LALInferenceCreateKmeans(UINT4 k, gsl_matrix *data, gsl_rng
             gsl_matrix_set(kmeans->chol_dec_cov, i, j, 0.);
         }
     }
-
-    kmeans->assignments = XLALMalloc(kmeans->npts * sizeof(UINT4));
-    kmeans->sizes = XLALMalloc(kmeans->k * sizeof(UINT4));
-    kmeans->mask = XLALMalloc(kmeans->npts * sizeof(UINT4));
-    kmeans->weights = XLALMalloc(kmeans->k * sizeof(REAL8));
-    kmeans->centroids = gsl_matrix_alloc(kmeans->k, kmeans->dim);
-    kmeans->recursive_centroids = NULL;
-
-    kmeans->dist = &euclidean_dist_squared;
-    kmeans->centroid = &euclidean_centroid;
-    kmeans->KDEs = NULL;
 
     return kmeans;
 }
@@ -763,8 +771,10 @@ gsl_matrix * LALInferenceWhitenSamples(gsl_matrix *samples) {
     gsl_matrix_memcpy(whitened_samples, samples);
 
     /* Calculate the mean and covariance matrix */
-    gsl_vector *mean = LALInferenceComputeMean(samples);
-    gsl_matrix *cov = LALInferenceComputeCovariance(samples);
+    gsl_vector *mean = gsl_vector_alloc(dim);
+    gsl_matrix *cov = gsl_matrix_alloc(dim, dim);
+    LALInferenceComputeMean(mean, samples);
+    LALInferenceComputeCovariance(cov, samples);
 
     /* Cholesky decompose the covariance matrix and decorrelate the data */
     gsl_matrix *cholesky_decomp_cov = gsl_matrix_alloc(dim, dim);
@@ -795,7 +805,7 @@ gsl_matrix * LALInferenceWhitenSamples(gsl_matrix *samples) {
 
     gsl_matrix_free(cholesky_decomp_cov);
     gsl_matrix_free(A);
-    XLALFree(mean);
+    gsl_vector_free(mean);
     gsl_matrix_free(cov);
 
     return whitened_samples;
@@ -961,22 +971,25 @@ REAL8 LALInferenceKmeansBIC(LALInferenceKmeans *kmeans) {
 void LALInferenceKmeansDestroy(LALInferenceKmeans *kmeans) {
     /* Only destroy when there is something to destroy */
     if (kmeans) {
+        /* Free GSL matrices and vectors */
+        gsl_vector_free(kmeans->mean);
+        gsl_matrix_free(kmeans->data);
+        gsl_matrix_free(kmeans->chol_dec_cov);
+        gsl_matrix_free(kmeans->unwhitened_chol_dec_cov);
+        gsl_matrix_free(kmeans->centroids);
+        gsl_matrix_free(kmeans->recursive_centroids);
+
+        /* Free non-GSL arrays */
         XLALFree(kmeans->assignments);
         XLALFree(kmeans->mask);
         XLALFree(kmeans->weights);
         XLALFree(kmeans->sizes);
 
-        gsl_vector_free(kmeans->mean);
-        gsl_matrix_free(kmeans->data);
-        if (kmeans->chol_dec_cov) gsl_matrix_free(kmeans->chol_dec_cov);
-        if (kmeans->unwhitened_chol_dec_cov) gsl_matrix_free(kmeans->unwhitened_chol_dec_cov);
-        if (kmeans->centroids) gsl_matrix_free(kmeans->centroids);
-        if (kmeans->recursive_centroids) gsl_matrix_free(kmeans->recursive_centroids);
-
+        /* If KDEs are defined, free all of them */
         if (kmeans->KDEs != NULL) {
             UINT4 k;
             for (k=0; k<kmeans->k; k++)
-                LALInferenceDestroyKDE(kmeans->KDEs[k]);
+                if (kmeans->KDEs[k]) LALInferenceDestroyKDE(kmeans->KDEs[k]);
             XLALFree(kmeans->KDEs);
         }
 

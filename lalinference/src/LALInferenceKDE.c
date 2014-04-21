@@ -150,8 +150,11 @@ LALInferenceKDE *LALInferenceInitKDE(UINT4 npts, UINT4 dim) {
     kde->mean = gsl_vector_calloc(dim);
     kde->cholesky_decomp_cov = gsl_matrix_calloc(dim, dim);
     kde->cholesky_decomp_cov_lower = gsl_matrix_calloc(dim, dim);
+    kde->cov = gsl_matrix_calloc(dim, dim);
 
-    kde->data = gsl_matrix_alloc(npts, dim);
+
+    if (npts > 0)
+        kde->data = gsl_matrix_alloc(npts, dim);
 
     return kde;
 }
@@ -165,17 +168,16 @@ LALInferenceKDE *LALInferenceInitKDE(UINT4 npts, UINT4 dim) {
  * \sa LALInferenceKDE, LALInferenceInitKDE
  */
 void LALInferenceDestroyKDE(LALInferenceKDE *kde) {
-    if (kde->mean) gsl_vector_free(kde->mean);
-    gsl_matrix_free(kde->cholesky_decomp_cov);
-    gsl_matrix_free(kde->cholesky_decomp_cov_lower);
-    gsl_matrix_free(kde->data);
+    if (kde) {
+        if (kde->mean) gsl_vector_free(kde->mean);
+        if (kde->cholesky_decomp_cov) gsl_matrix_free(kde->cholesky_decomp_cov);
+        if (kde->cholesky_decomp_cov_lower) gsl_matrix_free(kde->cholesky_decomp_cov_lower);
+        if (kde->npts > 0) gsl_matrix_free(kde->data);
 
-    if (kde->cov)
-        gsl_matrix_free(kde->cov);
+        if (kde->cov != NULL) gsl_matrix_free(kde->cov);
 
-    XLALFree(kde);
-
-    return;
+        XLALFree(kde);
+    }
 }
 
 
@@ -221,9 +223,15 @@ void LALInferenceSetKDEBandwidth(LALInferenceKDE *kde) {
     UINT4 i, j;
     INT4 status;
 
+    /* If data set is empty, set the normalization to infinity */
+    if (kde->npts == 0) {
+        kde->log_norm_factor = INFINITY;
+        return;
+    }
+
     /* Calculate average and coveriance */
-    kde->mean = LALInferenceComputeMean(kde->data);
-    kde->cov = LALInferenceComputeCovariance(kde->data);
+    LALInferenceComputeMean(kde->mean, kde->data);
+    LALInferenceComputeCovariance(kde->cov, kde->data);
 
     cov_factor = pow((REAL8)kde->npts, -1./(REAL8)(kde->dim + 4));
     gsl_matrix_scale(kde->cov, cov_factor*cov_factor);
@@ -266,7 +274,7 @@ REAL8 LALInferenceKDEEvaluatePoint(LALInferenceKDE *kde, REAL8 *point) {
     UINT4 npts = kde->npts;
     UINT4 i, j;
 
-    /* If the normalization is inifinite, don't bother calculating anything */
+    /* If the normalization is infinite, don't bother calculating anything */
     if (isinf(kde->log_norm_factor))
         return -INFINITY;
 
@@ -374,24 +382,23 @@ REAL8 LALInferenceMatrixDet(gsl_matrix *mat) {
  *
  * Calculate the mean vector of a data set contained in the rows of a
  * GSL matrix.
- * @param[in] data GSL matrix data set to compute the mean of.
- * @return A vector containing the mean of \a data.
+ * @param[out] data GSL vector containing the mean.
+ * @param[in]  data GSL matrix data set to compute the mean of.
  */
-gsl_vector *LALInferenceComputeMean(gsl_matrix *data) {
+void LALInferenceComputeMean(gsl_vector *mean, gsl_matrix *data) {
     UINT4 i;
     UINT4 npts = data->size1;
-    UINT4 dim = data->size2;
 
-    gsl_vector *mean = gsl_vector_calloc(dim);
+    /* Zero out mean vector */
+    for (i = 0; i < mean->size; i++)
+        gsl_vector_set(mean, i, 0.0);
+
     gsl_vector_view x;
-
     for (i = 0; i < npts; i++) {
         x = gsl_matrix_row(data, i);
         gsl_vector_add(mean, &x.vector);
     }
     gsl_vector_scale(mean, 1./(REAL8)npts);
-
-    return mean;
 }
 
 
@@ -401,10 +408,10 @@ gsl_vector *LALInferenceComputeMean(gsl_matrix *data) {
  *
  * Calculate the covariance matrix of a data set contained in the rows of a
  * GSL matrix.
- * @param[in] data GSL matrix data set to compute the covariance matrix of.
- * @return The covariance matrix of \a data.
+ * @param[out] data GSL matrix containing the covariance matrix of \a data.
+ * @param[in]  data GSL matrix data set to compute the covariance matrix of.
  */
-gsl_matrix *LALInferenceComputeCovariance(gsl_matrix *data) {
+void LALInferenceComputeCovariance(gsl_matrix *cov, gsl_matrix *data) {
     UINT4 i, j, k;
     REAL8 var;
 
@@ -413,9 +420,9 @@ gsl_matrix *LALInferenceComputeCovariance(gsl_matrix *data) {
 
     gsl_vector *adiff = gsl_vector_alloc(npts);
     gsl_vector *bdiff = gsl_vector_alloc(npts);
-    gsl_matrix *cov = gsl_matrix_alloc(dim, dim);
 
-    gsl_vector *mean = LALInferenceComputeMean(data);
+    gsl_vector *mean = gsl_vector_alloc(dim);
+    LALInferenceComputeMean(mean, data);
     for (i = 0; i < dim; i++) {
         gsl_vector_view a = gsl_matrix_column(data, i);
         gsl_vector_memcpy(adiff, &a.vector);
@@ -439,7 +446,6 @@ gsl_matrix *LALInferenceComputeCovariance(gsl_matrix *data) {
     gsl_vector_free(adiff);
     gsl_vector_free(bdiff);
     gsl_vector_free(mean);
-    return cov;
 }
 
 
