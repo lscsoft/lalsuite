@@ -78,7 +78,7 @@ int XLALSQTPNFillCoefficients(LALSQTPNWaveformParams * const params) {
 				+ etaPow2 * 59. / 18.;
 			params->coeff.domegaSSselfConst = 0.;
 			params->coeff.domegaQMConst = 0.;
-			if ((params->interaction & LAL_SIM_INSPIRAL_INTERACTION_SPIN_SPIN_2PN) == LAL_SIM_INSPIRAL_INTERACTION_SPIN_SPIN_2PN) {
+			if ((params->interaction & LAL_INSPIRAL_INTERACTION_SPIN_SPIN_2PN) == LAL_INSPIRAL_INTERACTION_SPIN_SPIN_2PN) {
 				params->coeff.dchihSS[0] = spin_MPow2[1] / 2.;
 				params->coeff.dchihSS[1] = spin_MPow2[0] / 2.;
 				params->coeff.domegaSS[0] = 721. * params->eta
@@ -89,7 +89,7 @@ int XLALSQTPNFillCoefficients(LALSQTPNWaveformParams * const params) {
 				params->coeff.mecoSS = -spin_MPow2[0] 
 					* spin_MPow2[1];
 			}
-			if ((params->interaction & LAL_SIM_INSPIRAL_INTERACTION_SPIN_SPIN_SELF_2PN) == LAL_SIM_INSPIRAL_INTERACTION_SPIN_SPIN_SELF_2PN) {
+			if ((params->interaction & LAL_INSPIRAL_INTERACTION_SPIN_SPIN_SELF_2PN) == LAL_INSPIRAL_INTERACTION_SPIN_SPIN_SELF_2PN) {
 				for (i = 0; i < 2; i++) {
 					params->coeff.domegaSSself[i] 
 						= -spin_MPow2[i] 
@@ -98,7 +98,7 @@ int XLALSQTPNFillCoefficients(LALSQTPNWaveformParams * const params) {
 						* params->coeff.domegaSSself[i];
 				}
 			}
-			if ((params->interaction & LAL_SIM_INSPIRAL_INTERACTION_QUAD_MONO_2PN) == LAL_SIM_INSPIRAL_INTERACTION_QUAD_MONO_2PN) {
+			if ((params->interaction & LAL_INSPIRAL_INTERACTION_QUAD_MONO_2PN) == LAL_INSPIRAL_INTERACTION_QUAD_MONO_2PN) {
 				for (i = 0; i < 2; i++) {
 					params->coeff.domegaQM[i] 
 						= spin_MPow2[i] 
@@ -202,8 +202,8 @@ int XLALSQTPNDerivator(UNUSED REAL8 t, const REAL8 values[], REAL8 dvalues[],
 					* omegaPowi_3[LAL_PNORDER_THREE];
 		case LAL_PNORDER_TWO_POINT_FIVE:
 		case LAL_PNORDER_TWO:
-			if ((params->interaction & LAL_SIM_INSPIRAL_INTERACTION_SPIN_SPIN_2PN) 
-					== LAL_SIM_INSPIRAL_INTERACTION_SPIN_SPIN_2PN) {
+			if ((params->interaction & LAL_INSPIRAL_INTERACTION_SPIN_SPIN_2PN)
+					== LAL_INSPIRAL_INTERACTION_SPIN_SPIN_2PN) {
 				// SS for domega
 				SS_Omega = params->coeff.domegaSS[0] 
 					* LNhchih[0] * LNhchih[1]
@@ -232,8 +232,8 @@ int XLALSQTPNDerivator(UNUSED REAL8 t, const REAL8 values[], REAL8 dvalues[],
 					}
 				}
 			}
-			if ((params->interaction & LAL_SIM_INSPIRAL_INTERACTION_SPIN_SPIN_SELF_2PN) 
-					== LAL_SIM_INSPIRAL_INTERACTION_SPIN_SPIN_SELF_2PN) {
+			if ((params->interaction & LAL_INSPIRAL_INTERACTION_SPIN_SPIN_SELF_2PN)
+					== LAL_INSPIRAL_INTERACTION_SPIN_SPIN_SELF_2PN) {
 				// SSself for domega
 				SSself_Omega = params->coeff.domegaSSselfConst;
 				for (i = 0; i < 2; i++) {
@@ -242,8 +242,8 @@ int XLALSQTPNDerivator(UNUSED REAL8 t, const REAL8 values[], REAL8 dvalues[],
 						* SQT_SQR(LNhchih[i]);
 				}
 			}
-			if ((params->interaction & LAL_SIM_INSPIRAL_INTERACTION_QUAD_MONO_2PN) 
-					== LAL_SIM_INSPIRAL_INTERACTION_QUAD_MONO_2PN) {
+			if ((params->interaction & LAL_INSPIRAL_INTERACTION_QUAD_MONO_2PN)
+					== LAL_INSPIRAL_INTERACTION_QUAD_MONO_2PN) {
 				QM_Omega = params->coeff.domegaQMConst;
 				for (i = 0; i < 2; i++) {
 					QM_Omega += params->coeff.domegaQM[i] 

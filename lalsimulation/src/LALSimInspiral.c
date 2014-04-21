@@ -197,18 +197,6 @@ static int checkTidesZero(REAL8 lambda1, REAL8 lambda2)
 
 /**
  * Macro procedure for aborting if non-default value of
- * LALSimInspiralInteraction is given for an approximant
- * which does not use that flag
- */
-#define ABORT_NONDEFAULT_INTERACTION(waveFlags)\
-	do {\
-	XLALSimInspiralDestroyWaveformFlags(waveFlags);\
-	XLALPrintError("XLAL Error - %s: Non-default LALSimInspiralInteraction provided, but this approximant does not use that flag.\n", __func__);\
-	XLAL_ERROR(XLAL_EINVAL);\
-	} while (0)
-
-/**
- * Macro procedure for aborting if non-default value of
  * LALSimInspiralFrameAxis is given for an approximant
  * which does not use that flag
  */
@@ -2995,42 +2983,6 @@ int XLALGetTaperFromString(const CHAR *inString)
   else
   {
     XLALPrintError( "Invalid injection tapering option specified: %s\n", inString );
-    XLAL_ERROR( XLAL_EINVAL );
-  }
-}
-
-/**
- * XLAL function to determine LALSimInspiralInteraction from a string.
- *
- * TODO: return the bit sum if the string is a concatenation of several
- * interaction terms. Also make names match cases of enum.
- */
-int XLALGetInteractionFromString(const CHAR *inString) 
-{
-  if (strstr(inString, "NO")) {
-    return LAL_SIM_INSPIRAL_INTERACTION_NONE;
-  } else if (strstr(inString, "SO15")) {
-    return LAL_SIM_INSPIRAL_INTERACTION_SPIN_ORBIT_15PN;
-  } else if (strstr(inString,"SS")) {
-    return LAL_SIM_INSPIRAL_INTERACTION_SPIN_SPIN_2PN;
-  } else if (strstr(inString,"SELF")) {
-    return LAL_SIM_INSPIRAL_INTERACTION_SPIN_SPIN_SELF_2PN;
-  } else if (strstr(inString, "QM")) {
-    return LAL_SIM_INSPIRAL_INTERACTION_QUAD_MONO_2PN;
-  } else if (strstr(inString, "SO25")) {
-    return LAL_SIM_INSPIRAL_INTERACTION_SPIN_ORBIT_25PN;
-  } else if (strstr(inString, "SO")) {
-    return LAL_SIM_INSPIRAL_INTERACTION_SPIN_ORBIT_3PN;
-  } else if (strstr(inString, "ALL_SPIN")) {
-    return LAL_SIM_INSPIRAL_INTERACTION_ALL_SPIN;
-  } else if (strstr(inString, "TIDAL5PN")) {
-    return LAL_SIM_INSPIRAL_INTERACTION_TIDAL_5PN;
-  } else if (strstr(inString, "TIDAL")) {
-    return LAL_SIM_INSPIRAL_INTERACTION_TIDAL_6PN;
-  } else if (strstr(inString, "ALL")){
-    return LAL_SIM_INSPIRAL_INTERACTION_ALL;
-  } else {
-    XLALPrintError( "Cannot parse LALSimInspiralInteraction from string: %s\n Please add 'ALL' to the above string for including all spin interactions\n", inString );
     XLAL_ERROR( XLAL_EINVAL );
   }
 }
