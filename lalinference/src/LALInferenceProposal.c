@@ -3552,7 +3552,8 @@ void LALInferenceSetupClusteredKDEProposalsFromFile(LALInferenceRunState *runSta
             }
 
             /* Build the KDE estimate and add to the KDE proposal set */
-            LALInferenceInitClusteredKDEProposal(runState, kde, sampleArray, nInSamps, clusterParams, propName, weight);
+            UINT4 ntrials = 50;  // Number of trials at fixed-k to find optimal BIC
+            LALInferenceInitClusteredKDEProposal(runState, kde, sampleArray, nInSamps, clusterParams, propName, weight, LALInferenceOptimizedKmeans, ntrials);
 
             /* If kmeans construction failed, halt the run */
             if (!kde->kmeans) {
@@ -3592,8 +3593,10 @@ void LALInferenceSetupClusteredKDEProposalsFromFile(LALInferenceRunState *runSta
  * @param[in]  params   The parameters contained in \a array.
  * @param[in]  name     The name of the proposal being constructed.
  * @param[in]  weight   The relative weight this proposal is to have against other KDE proposals.
+ * @param[in]  cluster_method A pointer to the clustering function to be used.
+ * @param[in]  ntrials  Number of kmeans attempts at fixed k to find optimal BIC.
  */
-void LALInferenceInitClusteredKDEProposal(LALInferenceRunState *runState, LALInferenceClusteredKDE *kde, REAL8 *array, UINT4 nSamps, LALInferenceVariables *params, const char *name, REAL8 weight) {
+void LALInferenceInitClusteredKDEProposal(LALInferenceRunState *runState, LALInferenceClusteredKDE *kde, REAL8 *array, UINT4 nSamps, LALInferenceVariables *params, const char *name, REAL8 weight, LALInferenceKmeans* (*cluster_method)(gsl_matrix*, UINT4, gsl_rng*), UINT4 ntrials) {
     INT4 i;
 
     strcpy(kde->name, name);
@@ -3612,7 +3615,7 @@ void LALInferenceInitClusteredKDEProposal(LALInferenceRunState *runState, LALInf
         gsl_matrix_set_row(downsampled_array, i, &row.vector);
     }
 
-    kde->kmeans = LALInferenceOptimizedKmeans(downsampled_array, runState->GSLrandom);
+    kde->kmeans = (*cluster_method)(downsampled_array, ntrials, runState->GSLrandom);
 
     /* Return if kmeans setup failed */
     if (!kde->kmeans)
@@ -3825,7 +3828,8 @@ void LALInferenceSetupClusteredKDEProposalFromRun(LALInferenceRunState *runState
         LALInferenceAddVariable(clusterParams, item->name, item->value, item->type, item->vary);
 
     /* Build the proposal */
-    LALInferenceInitClusteredKDEProposal(runState, proposal, DEsamples[0], nPoints, clusterParams, clusteredKDEProposalName, weight);
+    UINT4 ntrials = 5;  // Number of trials at fixed-k to find optimal BIC
+    LALInferenceInitClusteredKDEProposal(runState, proposal, DEsamples[0], nPoints, clusterParams, clusteredKDEProposalName, weight, LALInferenceOptimizedKmeans, ntrials);
 
     /* Only add the kmeans was successfully setup */
     if (proposal->kmeans)

@@ -62,25 +62,25 @@ tagkmeans
 } LALInferenceKmeans;
 
 /* Kmeans cluster data, increasing k until the Bayes Information Criteria stop increasing. */
-LALInferenceKmeans *LALInferenceIncrementalKmeans(gsl_matrix *data, gsl_rng *rng);
+LALInferenceKmeans *LALInferenceIncrementalKmeans(gsl_matrix *data, UINT4 ntrials, gsl_rng *rng);
 
 /* Kmeans cluster data, find k that maximizes BIC assuming BIC(k) is concave-down. */
-LALInferenceKmeans *LALInferenceOptimizedKmeans(gsl_matrix *data, gsl_rng *rng);
+LALInferenceKmeans *LALInferenceOptimizedKmeans(gsl_matrix *data, UINT4 ntrials, gsl_rng *rng);
 
 /* Xmeans cluster data, splitting centroids in kmeans according to the Bayes Information Criteria. */
-LALInferenceKmeans *LALInferenceXmeans(gsl_matrix *data, gsl_rng *rng);
+LALInferenceKmeans *LALInferenceXmeans(gsl_matrix *data, UINT4 ntrials, gsl_rng *rng);
 
 /* Run kmeans recursively, splitting each centroid recursively, accepting if the BIC increases. */
-LALInferenceKmeans *LALInferenceRecursiveKmeans(gsl_matrix *data, gsl_rng *rng);
+LALInferenceKmeans *LALInferenceRecursiveKmeans(gsl_matrix *data, UINT4 ntrials, gsl_rng *rng);
 
 /* Recursively split a k=1 kmeans. */
-void LALInferenceKmeansRecursiveSplit(LALInferenceKmeans *kmeans);
+void LALInferenceKmeansRecursiveSplit(LALInferenceKmeans *kmeans, UINT4 ntrials, gsl_rng *rng);
 
 /* Run the kmeans algorithm until cluster assignments don't change. */
 void LALInferenceKmeansRun(LALInferenceKmeans *kmeans);
 
 /* Run a kmeans several times and return the best. */
-LALInferenceKmeans *LALInferenceKmeansRunBestOf(UINT4 k, gsl_matrix *samples, UINT4 iter, gsl_rng *rng);
+LALInferenceKmeans *LALInferenceKmeansRunBestOf(UINT4 k, gsl_matrix *samples, UINT4 ntrials, gsl_rng *rng);
 
 /* Generate a new kmeans struct from a set of data. */
 LALInferenceKmeans * LALInferenceCreateKmeans(UINT4 k, gsl_matrix *data, gsl_rng *rng);
