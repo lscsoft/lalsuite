@@ -888,12 +888,11 @@ int XLALSetFlatLatticeTypeAndMetric(
   // Check diagonal elements of tiled dimensions are positive, and calculate
   // physical parameter-space scaling from metric diagonal elements
   gsl_vector_set_all(tiling->phys_scale, 1.0);
-  for (size_t i = 0; i < n; ++i) {
-    if (tiling->bounds[i].tiled) {
-      const double metric_i_i = gsl_matrix_get(metric, i, i);
-      XLAL_CHECK(metric_i_i > 0, XLAL_EINVAL, "metric(%zu,%zu) <= 0", i, i);
-      gsl_vector_set(tiling->phys_scale, i, 1.0 / sqrt(metric_i_i));
-    }
+  for (size_t ti = 0; ti < tn; ++ti) {
+    const size_t i = gsl_vector_uint_get(tiling->tiled_idx, ti);
+    const double metric_i_i = gsl_matrix_get(metric, i, i);
+    XLAL_CHECK(metric_i_i > 0, XLAL_EINVAL, "metric(%zu,%zu) <= 0", i, i);
+    gsl_vector_set(tiling->phys_scale, i, 1.0 / sqrt(metric_i_i));
   }
 
   // Transform parameter-space bounds from physical to normalised coordinates
@@ -921,6 +920,7 @@ int XLALSetFlatLatticeTypeAndMetric(
   gsl_matrix_set_zero(tiling->increment);
   gsl_vector_set_zero(tiling->padding);
 
+  // If there are tiled dimensions:
   if (tn > 0) {
 
     // Allocate memory
