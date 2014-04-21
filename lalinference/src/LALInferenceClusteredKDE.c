@@ -54,7 +54,7 @@
 LALInferenceKmeans *LALInferenceIncrementalKmeans(gsl_matrix *data, gsl_rng *rng) {
     UINT4 iter = 20;
     UINT4 k = 1;
-    REAL8 best_bic = -DBL_MAX;
+    REAL8 best_bic = -INFINITY;
     REAL8 bic;
 
     LALInferenceKmeans *kmeans;
@@ -296,20 +296,21 @@ void LALInferenceKmeansRun(LALInferenceKmeans *kmeans) {
  * Run a kmeans several times and return the best.
  *
  * The kmeans is run \a iter times, each time with a new random initialization.  The one that results
- * in the lowest error (cumulative sum of the squared distance between points and their assigned centroids)
- * is returned.
+ * in the highest Bayes Information Criteria (BIC) is returned.
  * @param[in]  k       The number of clusters to use.
  * @param[in]  samples The (unwhitened) data to cluster.
  * @param[in]  iter    The number of random initialization to run.
  * @param[in]  rng     The GSL random number generator to use for random initializations.
- * @return The kmeans with the lowest error of \a iter attempts.
+ * @return The kmeans with the highest BIC of \a iter attempts.
  */
 LALInferenceKmeans *LALInferenceKmeansRunBestOf(UINT4 k, gsl_matrix *samples, UINT4 iter, gsl_rng *rng) {
     UINT4 i;
+    REAL8 error = -INFINITY;
 
     LALInferenceKmeans *kmeans;
     LALInferenceKmeans *best_kmeans = NULL;
-    REAL8 best_error = DBL_MAX;
+    REAL8 bic = 0;
+    REAL8 best_bic = -INFINITY;
     for (i = 0; i < iter; i++) {
         kmeans = LALInferenceCreateKmeans(k, samples, rng);
         if (!kmeans)
@@ -318,10 +319,16 @@ LALInferenceKmeans *LALInferenceKmeansRunBestOf(UINT4 k, gsl_matrix *samples, UI
         LALInferenceKmeansForgyInitialize(kmeans);
         LALInferenceKmeansRun(kmeans);
 
-        if (kmeans->error < best_error) {
+        /* Assume BIC hasn't changed if error (summed-dist^2 from assigned centroids) hasn't */
+        if (error != kmeans->error) {
+            error = kmeans->error;
+            bic = LALInferenceKmeansBIC(kmeans);
+        }
+
+        if (bic > best_bic) {
             if (best_kmeans)
                 LALInferenceKmeansDestroy(best_kmeans);
-            best_error = kmeans->error;
+            best_bic = bic;
             best_kmeans = kmeans;
         } else {
             LALInferenceKmeansDestroy(kmeans);
@@ -456,7 +463,7 @@ void LALInferenceKmeansAssignment(LALInferenceKmeans *kmeans) {
         gsl_vector_view c;
 
         UINT4 best_cluster;
-        REAL8 best_dist = DBL_MAX;
+        REAL8 best_dist = INFINITY;
         REAL8 dist;
 
         /* Find the closest centroid */
@@ -931,7 +938,17 @@ REAL8 LALInferenceKmeansBIC(LALInferenceKmeans *kmeans) {
         log_l += LALInferenceWhitenedKmeansPDF(kmeans, (&pt.vector)->data);
     }
 
-    return log_l - k * (d + d * (d + 1.)/2.) * log(N);
+    /* Determine the total number of parameters in clustered-KDE */
+    /* Account for centroid locations */
+    REAL8 nparams = k * d;
+
+    /* One weight for each cluster, minus one for constraint that all sum to unity */
+    nparams += k - 1;
+
+    /* Separate kernel covariances for each cluster */
+    nparams += k*(d+1)*d/2.0;
+
+    return log_l - nparams/2.0 * log(N);
 }
 
 
