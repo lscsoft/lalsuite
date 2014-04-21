@@ -241,8 +241,6 @@ void LALInferenceSetKDEBandwidth(LALInferenceKDE *kde) {
 
     /* If cholesky decomposition failed, set the normalization to infinity */
     if (status) {
-        fprintf(stderr, "Non-positive-definite matrix encountered when setting KDE bandwidth.");
-        fprintf(stderr, " (number of samples = %i).\n", (INT4) kde->data->size1);
         kde->log_norm_factor = INFINITY;
         return;
     }
