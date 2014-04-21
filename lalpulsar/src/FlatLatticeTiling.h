@@ -74,14 +74,14 @@ size_t XLALGetFlatLatticeDimensions(
 ///
 /// Return the current number of flat lattice tiling parameter-space points
 ///
-unsigned long XLALGetFlatLatticePointCount(
+UINT8 XLALGetFlatLatticePointCount(
   const FlatLatticeTiling* tiling               ///< [in] Tiling state
   );
 
 ///
 /// Calculate the total number of flat lattice tiling parameter-space points
 ///
-unsigned long XLALCountFlatLatticePoints(
+UINT8 XLALCountFlatLatticePoints(
   FlatLatticeTiling* tiling                     ///< [in] Tiling state
   );
 

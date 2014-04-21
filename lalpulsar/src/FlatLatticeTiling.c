@@ -85,8 +85,8 @@ struct tagFlatLatticeTiling {
   gsl_vector* point;                            ///< Current lattice point
   gsl_vector* lower;                            ///< Current lower bound on parameter space
   gsl_vector* upper;                            ///< Current upper bound on parameter space
-  unsigned long count;                          ///< Number of points generated so far
-  unsigned long total_count;                    ///< Total number of points in parameter space
+  UINT8 count;                                  ///< Number of points generated so far
+  UINT8 total_count;                            ///< Total number of points in parameter space
 };
 
 ///
@@ -621,7 +621,7 @@ size_t XLALGetFlatLatticeDimensions(
 
 }
 
-unsigned long XLALGetFlatLatticePointCount(
+UINT8 XLALGetFlatLatticePointCount(
   const FlatLatticeTiling* tiling
   )
 {
@@ -634,7 +634,7 @@ unsigned long XLALGetFlatLatticePointCount(
 
 }
 
-unsigned long XLALCountFlatLatticePoints(
+UINT8 XLALCountFlatLatticePoints(
   FlatLatticeTiling* tiling
   )
 {
