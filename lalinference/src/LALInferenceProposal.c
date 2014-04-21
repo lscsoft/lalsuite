@@ -3603,7 +3603,7 @@ void LALInferenceInitClusteredKDEProposal(LALInferenceRunState *runState, LALInf
     INT4 dim = LALInferenceGetVariableDimensionNonFixed(params);
 
     /* Downsample to avoid proposal becoming too expensive */
-    INT4 nDownsample = 1000;
+    INT4 nDownsample = 2000;
     INT4 step = (INT4)((REAL8)nSamps/(REAL8)nDownsample);
     if (step == 0) step = 1;
     INT4 downsampled_size = (INT4)ceil((REAL8)nSamps/(REAL8)step);
