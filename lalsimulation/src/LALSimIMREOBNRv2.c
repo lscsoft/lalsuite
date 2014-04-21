@@ -1641,8 +1641,8 @@ XLALSimIMREOBNRv2Generator(
 
   } /* End loop over modes */
 
-  /* clip the parts below f_min */
-  if (flag_fLower_extend == 1)
+  /* If returning polarizations, clip the parts below f_min */
+  if (flag_fLower_extend == 1 && hplus && hcross)
   {
     if ( cos(inclination) < 0.0 )
     {
