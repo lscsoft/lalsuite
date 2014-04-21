@@ -744,7 +744,7 @@ REAL8 *LALInferenceParseDelimitedAscii(FILE *input, UINT4 nCols, UINT4 *wantedCo
         nWantedCols += wantedCols[col];
 
     // Determine number of samples to be read
-    unsigned long startPostBurnin = ftell(input);
+    unsigned long starting_pos = ftell(input);
     UINT4 nSamples=0;
 
     INT4 ch;
@@ -752,7 +752,7 @@ REAL8 *LALInferenceParseDelimitedAscii(FILE *input, UINT4 nCols, UINT4 *wantedCo
         if (ch=='\n')
             ++nSamples;
     }
-    fseek(input,startPostBurnin,SEEK_SET);
+    fseek(input,starting_pos,SEEK_SET);
 
     // Read in samples
     REAL8 *sampleArray;
