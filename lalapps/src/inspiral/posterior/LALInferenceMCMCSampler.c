@@ -575,9 +575,11 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
     }
   }
 
-  /* Setup non-blocking recieve that will succeed when chain 0 is complete. */
-  if (MPIrank!=0)
+  /* Setup non-blocking recieve that will trigger from chain 0 and propigate down the ladder */
+  if (MPIrank == nChain-1)
     MPI_Irecv(&runComplete, 1, MPI_INT, 0, RUN_COMPLETE, MPI_COMM_WORLD, &MPIrequest);
+  else if (MPIrank != 0)
+    MPI_Irecv(&runComplete, 1, MPI_INT, MPIrank+1, RUN_COMPLETE, MPI_COMM_WORLD, &MPIrequest);
 
   fflush(stdout);
   MPI_Barrier(MPI_COMM_WORLD);
@@ -835,16 +837,11 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
     if (MPIrank==0 && i > Niter)
       runComplete=1;
 
-    if (MPIrank==0 && runComplete==1) {
-      for (c=1; c<nChain; c++) {
-        MPI_Send(&runComplete, 1, MPI_INT, c, RUN_COMPLETE, MPI_COMM_WORLD);
-      }
-    }
   }// while (!runComplete)
   
-  /* Flush any remaining PT swap attempts before moving on */
-  LALInferenceFlushPTswap();
-  MPI_Barrier(MPI_COMM_WORLD);
+  /* Send complete message to hottest chain, and it will propogate down to ensure no
+   * hanging swap proposals happen */
+  LALInferenceShutdownLadder();
 
   fclose(chainoutput);
 
@@ -1094,7 +1091,7 @@ UINT4 LALInferencePTswap(LALInferenceRunState *runState, REAL8 *ladder, INT4 i, 
 void LALInferenceFlushPTswap() {
     INT4 MPIrank;
     INT4 attemptingSwap=0;
-    INT4 swapRejection=0;
+    INT4 swapRejection = 0;
     REAL8 dummyLikelihood;
     MPI_Status MPIstatus;
     MPI_Comm_rank(MPI_COMM_WORLD, &MPIrank);
@@ -1102,12 +1099,41 @@ void LALInferenceFlushPTswap() {
     if (MPIrank==0) {
         return;
     } else {
-        MPI_Iprobe(MPIrank-1, PT_COM, MPI_COMM_WORLD, &attemptingSwap, &MPIstatus);
-        if (attemptingSwap) {
-          MPI_Recv(&dummyLikelihood, 1, MPI_DOUBLE, MPIrank-1, PT_COM, MPI_COMM_WORLD, &MPIstatus);
-          MPI_Send(&swapRejection, 1, MPI_INT, MPIrank-1, PT_COM, MPI_COMM_WORLD);
-        }
+        printf("Chain %i waiting for PT comm.\n", MPIrank);
+        while (!attemptingSwap)
+            MPI_Iprobe(MPIrank-1, PT_COM, MPI_COMM_WORLD, &attemptingSwap, &MPIstatus);
+        printf("Chain %i flushing swap proposed by %i.\n", MPIrank, MPIrank-1);
+        MPI_Recv(&dummyLikelihood, 1, MPI_DOUBLE, MPIrank-1, PT_COM, MPI_COMM_WORLD, &MPIstatus);
+        MPI_Send(&swapRejection, 1, MPI_INT, MPIrank-1, PT_COM, MPI_COMM_WORLD);
     }
+    return;
+}
+
+/* Function to shut down the ladder */
+void LALInferenceShutdownLadder() {
+    INT4 MPIrank, MPIsize;
+    INT4 attemptingSwap = 0;
+    INT4 swapRejection = 0;
+    INT4 runComplete = 1;
+    REAL8 dummyLikelihood;
+    MPI_Status MPIstatus;
+
+    MPI_Comm_rank(MPI_COMM_WORLD, &MPIrank);
+    MPI_Comm_size(MPI_COMM_WORLD, &MPIsize);
+
+    if (MPIrank == 0)
+        MPI_Send(&runComplete, 1, MPI_INT, MPIsize-1, RUN_COMPLETE, MPI_COMM_WORLD);
+    else if (MPIrank != 1){
+        printf("Chain %i waiting for PT comm.\n", MPIrank);
+        while (!attemptingSwap)
+            MPI_Iprobe(MPIrank-1, PT_COM, MPI_COMM_WORLD, &attemptingSwap, &MPIstatus);
+        MPI_Send(&runComplete, 1, MPI_INT, MPIrank-1, RUN_COMPLETE, MPI_COMM_WORLD);
+        printf("Chain %i flushing swap proposed by %i.\n", MPIrank, MPIrank-1);
+        MPI_Recv(&dummyLikelihood, 1, MPI_DOUBLE, MPIrank-1, PT_COM, MPI_COMM_WORLD, &MPIstatus);
+        MPI_Send(&swapRejection, 1, MPI_INT, MPIrank-1, PT_COM, MPI_COMM_WORLD);
+    }
+
+    MPI_Barrier(MPI_COMM_WORLD);
     return;
 }
 
