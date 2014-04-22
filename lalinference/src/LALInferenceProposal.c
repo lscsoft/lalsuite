@@ -3781,6 +3781,7 @@ void LALInferenceDestroyClusteredKDEProposal(LALInferenceClusteredKDE *proposal)
     return;
 }
 
+
 /**
  * Setup a clustered-KDE proposal from the differential evolution buffer.
  *
@@ -3788,12 +3789,8 @@ void LALInferenceDestroyClusteredKDEProposal(LALInferenceClusteredKDE *proposal)
  * jump proposal from its clustered kernel density estimate.
  * @param runState The LALInferenceRunState to get the buffer from and add the proposal to.
  */
-void LALInferenceSetupClusteredKDEProposalFromRun(LALInferenceRunState *runState) {
-    LALInferenceClusteredKDE *proposal = XLALMalloc(sizeof(LALInferenceClusteredKDE));
-    REAL8 weight=2.;
-    INT4 i=0;
-
-    INT4 nPar = LALInferenceGetVariableDimensionNonFixed(runState->currentParams);
+void LALInferenceSetupClusteredKDEProposalFromDEBuffer(LALInferenceRunState *runState) {
+    INT4 i;
 
     /* If ACL can be estimated, thin DE buffer to only have independent samples */
     REAL8 bufferSize = (REAL8)runState->differentialPointsLength;
@@ -3810,12 +3807,36 @@ void LALInferenceSetupClusteredKDEProposalFromRun(LALInferenceRunState *runState
     INT4 nPoints = (INT4) ceil(bufferSize/(REAL8)step);
 
     /* Get points to be clustered from the differential evolution buffer. */
+    INT4 nPar = LALInferenceGetVariableDimensionNonFixed(runState->currentParams);
     REAL8** DEsamples = (REAL8**) XLALMalloc(nPoints * sizeof(REAL8*));
     REAL8*  temp = (REAL8*) XLALMalloc(nPoints * nPar * sizeof(REAL8));
     for (i=0; i < nPoints; i++)
       DEsamples[i] = temp + (i*nPar);
 
     LALInferenceThinnedBufferToArray(runState, DEsamples, step);
+
+    UINT4 ntrials = 5;
+    LALInferenceSetupClusteredKDEProposalFromRun(runState, DEsamples[0], nPoints, ntrials);
+
+    /* The proposal copies the data, so the local array can be freed */
+    XLALFree(temp);
+    XLALFree(DEsamples);
+}
+
+/**
+ * Setup a clustered-KDE proposal from the parameters in a run.
+ *
+ * Reads the samples currently in the differential evolution buffer and construct a
+ * jump proposal from its clustered kernel density estimate.
+ * @param runState The LALInferenceRunState to get the buffer from and add the proposal to.
+ * @param samples  The samples to estimate the distribution of.  Column order expected to match
+ *                     the order in \a runState->currentParams.
+ * @param size     Number of samples in \a samples.
+ * @param ntrials  Number of tirals at fixed-k to find optimal BIC
+ */
+void LALInferenceSetupClusteredKDEProposalFromRun(LALInferenceRunState *runState, REAL8 *samples, INT4 size, UINT4 ntrials) {
+    LALInferenceClusteredKDE *proposal = XLALMalloc(sizeof(LALInferenceClusteredKDE));
+    REAL8 weight=2.;
 
     /* Keep track of clustered parameter names */
     LALInferenceVariables *backwardClusterParams = XLALCalloc(1, sizeof(LALInferenceVariables));
@@ -3828,8 +3849,7 @@ void LALInferenceSetupClusteredKDEProposalFromRun(LALInferenceRunState *runState
         LALInferenceAddVariable(clusterParams, item->name, item->value, item->type, item->vary);
 
     /* Build the proposal */
-    UINT4 ntrials = 5;  // Number of trials at fixed-k to find optimal BIC
-    LALInferenceInitClusteredKDEProposal(runState, proposal, DEsamples[0], nPoints, clusterParams, clusteredKDEProposalName, weight, LALInferenceOptimizedKmeans, ntrials);
+    LALInferenceInitClusteredKDEProposal(runState, proposal, samples, size, clusterParams, clusteredKDEProposalName, weight, LALInferenceOptimizedKmeans, ntrials);
 
     /* Only add the kmeans was successfully setup */
     if (proposal->kmeans)
@@ -3839,12 +3859,6 @@ void LALInferenceSetupClusteredKDEProposalFromRun(LALInferenceRunState *runState
 
     LALInferenceClearVariables(backwardClusterParams);
     XLALFree(backwardClusterParams);
-
-    /* The proposal copies the data, so the local array can be freed */
-    XLALFree(temp);
-    XLALFree(DEsamples);
-
-    return;
 }
 
 

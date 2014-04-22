@@ -245,7 +245,7 @@ static UINT4 UpdateNMCMC(LALInferenceRunState *runState){
         }
         LALInferenceSetVariable(runState->algorithmParams,"Nmcmc",&max);
     }
-    LALInferenceSetupClusteredKDEProposalFromRun(runState);
+    LALInferenceSetupClusteredKDEProposalFromDEBuffer(runState);
     return(max);
 }
 

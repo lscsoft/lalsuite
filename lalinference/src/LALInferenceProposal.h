@@ -311,7 +311,10 @@ void LALInferenceAddClusteredKDEProposalToSet(LALInferenceRunState *runState, LA
 void LALInferenceDestroyClusteredKDEProposal(LALInferenceClusteredKDE *proposal);
 
 /* Setup a clustered-KDE proposal from the differential evolution buffer. */
-void LALInferenceSetupClusteredKDEProposalFromRun(LALInferenceRunState *runState);
+void LALInferenceSetupClusteredKDEProposalFromDEBuffer(LALInferenceRunState *runState);
+
+/* Setup a clustered-KDE proposal from the parameters in a run. */
+void LALInferenceSetupClusteredKDEProposalFromRun(LALInferenceRunState *runState, REAL8 *samples, INT4 size, UINT4 ntrials);
 
 /* A proposal based on the clustered kernal density estimate of a set of samples. */
 REAL8 LALInferenceClusteredKDEProposal(LALInferenceRunState *runState, LALInferenceVariables *currentParams, LALInferenceVariables *proposedParams);

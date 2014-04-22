@@ -653,7 +653,7 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
         /* Build KDE proposal */
         if (!LALInferenceGetProcParamVal(runState->commandLine,"--proposal-no-kde")) {
             if (MPIrank!=0)
-              LALInferenceSetupClusteredKDEProposalFromRun(runState);
+              LALInferenceSetupClusteredKDEProposalFromDEBuffer(runState);
           last_kde_update = 0;
         }
 
@@ -724,7 +724,7 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
           && (iEff > kde_update_start)
           && (((iEff - last_kde_update) > kde_update_interval) ||
               ((last_kde_update - iEff) > kde_update_interval))) {
-        LALInferenceSetupClusteredKDEProposalFromRun(runState);
+        LALInferenceSetupClusteredKDEProposalFromDEBuffer(runState);
 
         /* Update 5 times each decade.  This keeps hot chains (with lower ACLs) under control */
         kde_update_interval = 2 * ((INT4) pow(10.0, floor(log10((REAL8) iEff))));
