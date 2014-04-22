@@ -156,7 +156,7 @@ int XLALCalculatePulsarCrossCorrStatistic
    SFTPairIndexList *sftPairs,
    SFTIndexList   *sftIndices,
    MultiSFTVector  *inputSFTs,
-   REAL8                 Tsft
+   MultiNoiseWeights *multiWeights
   )
  ;
 

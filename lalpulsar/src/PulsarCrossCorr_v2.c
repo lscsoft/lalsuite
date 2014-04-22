@@ -279,7 +279,7 @@ int XLALCalculatePulsarCrossCorrStatistic
  SFTPairIndexList *sftPairs,   /* Input: flat list of SFT pairs */
  SFTIndexList   *sftIndices,   /* Input: flat list of SFTs */
  MultiSFTVector  *inputSFTs,   /* Input: SFT data */
- REAL8                 Tsft    /* Input: SFT duration */
+ MultiNoiseWeights *multiWeights  /* Input: nomalizeation factor S^-1 & weights for each SFT */
  )
 {
 
@@ -360,16 +360,16 @@ int XLALCalculatePulsarCrossCorrStatistic
       for (UINT8 k=0; k < numBins; k++) {
 	COMPLEX16 data2 = dataArray2[lowestBins->data[sftNum2]+k];
 	sincFactor *= gsl_sf_sinc(kappaValues->data[sftNum2]+k);
-	nume += 2* creal ( GalphaCC * ccSign * sincFactor * conj(data1) * data2 *SQUARE(Tsft) / SQUARE(Tsft) );
-	REAL8 GalphaAmp = curlyGAmp->data[alpha] * sincFactor;
+	nume += /*multiWeights->data[detInd1]->data[sftNum1] *  multiWeights->data[detInd2]->data[sftNum2] **/ creal ( GalphaCC * ccSign * sincFactor * conj(data1) * data2  );
+	REAL8 GalphaAmp = curlyGAmp->data[alpha] /** multiWeights->data[detInd1]->data[sftNum1] *  multiWeights->data[detInd2]->data[sftNum2]*/ * sincFactor;
 	curlyGSqr += SQUARE( GalphaAmp );
 	ccSign *= -1;
       }
       baseCCSign *= -1;
     }
   }
-  *evSquared =2 * curlyGSqr;
-  *ccStat = nume / sqrt(*evSquared);
+  *evSquared = 8 * SQUARE(multiWeights->Sinv_Tsft) * curlyGSqr;
+  *ccStat = 4 * multiWeights->Sinv_Tsft * nume / sqrt(*evSquared);
   return XLAL_SUCCESS;
 }
 /*calculate metric diagnol components, also include the estimation of sensitivity E[rho]/(h_0)^2*/
