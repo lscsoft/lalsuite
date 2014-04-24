@@ -1,5 +1,7 @@
 #!/bin/sh
 
+exit 77;
+
 ## set LAL debug level
 echo "Setting LAL_DEBUG_LEVEL=${LAL_DEBUG_LEVEL:-msglvl1,memdbg}"
 export LAL_DEBUG_LEVEL
@@ -51,7 +53,7 @@ fi
 ## create timestamps file
 cat <<EOF >"${SFTdir}/timestamps.txt"
 800000000 0
-800864000 0
+800432000 0
 EOF
 
 ## build MFD_v5 command line
@@ -85,7 +87,7 @@ fi
 
 ## build CFS_v2 command line for --gridType=9
 gridFile9="./testCFSv2_FLTgrids_9.dat"
-cfsv2_CL="--Alpha=6.1 --Delta=1.2 --Freq=100.4 --FreqBand=5e-6 --spindownAge=1e10 --minBraking=2 --maxBraking=5 --DataFiles='${SFTdir}/*.sft' --TwoFthreshold=0 --gridType=9 --metricMismatch=0.5 --outputFstat=${gridFile9}"
+cfsv2_CL="--Alpha=6.1 --Delta=1.2 --Freq=100.4 --FreqBand=8e-5 --spindownAge=1e11 --minBraking=2 --maxBraking=5 --DataFiles='${SFTdir}/*.sft' --TwoFthreshold=0 --gridType=9 --metricMismatch=0.5 --outputFstat=${gridFile9}"
 
 ## run CFS_v2
 cmdline="$cfsv2_code $cfsv2_CL";
