@@ -502,29 +502,27 @@ static void FLT_TransformBound(
 }
 
 ///
-/// Sets the lower and upper parameter-space bounds, based on the current point
+/// Returns the lower and upper parameter-space bounds
 ///
-static void FLT_SetBounds(
+static void FLT_GetBounds(
   const FlatLatticeTiling* tiling,		///< [in] Tiling state
-  const size_t dimension			///< [in] Dimension on which bound applies
+  const size_t dimension,			///< [in] Dimension on which bound applies
+  const gsl_vector* point,			///< [in] Point at which to find bounds
+  double* lower,				///< [out] Lower bound on point
+  double* upper					///< [out] Upper bound on point
   )
 {
 
-  // Calculate lower and upper bounds, based on current point
+  // Calculate lower and upper bounds
   const FLT_Bound* bound = &tiling->bounds[dimension];
-  double lower = 0, upper = 0;
   if (dimension == 0) {
-    lower = FLT_GetBound(dimension, NULL, bound->N, bound->a, bound->c_lower, bound->m_lower);
-    upper = FLT_GetBound(dimension, NULL, bound->N, bound->a, bound->c_upper, bound->m_upper);
+    *lower = FLT_GetBound(dimension, NULL, bound->N, bound->a, bound->c_lower, bound->m_lower);
+    *upper = FLT_GetBound(dimension, NULL, bound->N, bound->a, bound->c_upper, bound->m_upper);
   } else {
-    gsl_vector_const_view point = gsl_vector_const_subvector(tiling->point, 0, dimension);
-    lower = FLT_GetBound(dimension, &point.vector, bound->N, bound->a, bound->c_lower, bound->m_lower);
-    upper = FLT_GetBound(dimension, &point.vector, bound->N, bound->a, bound->c_upper, bound->m_upper);
+    gsl_vector_const_view point_n = gsl_vector_const_subvector(point, 0, dimension);
+    *lower = FLT_GetBound(dimension, &point_n.vector, bound->N, bound->a, bound->c_lower, bound->m_lower);
+    *upper = FLT_GetBound(dimension, &point_n.vector, bound->N, bound->a, bound->c_upper, bound->m_upper);
   }
-
-  // Set lower and upper bounds
-  gsl_vector_set(tiling->lower, dimension, lower);
-  gsl_vector_set(tiling->upper, dimension, upper);
 
 }
 
@@ -888,13 +886,12 @@ int XLALSetFlatLatticeTypeAndMetric(
     gsl_vector_set(tiling->phys_scale, i, 1.0 / sqrt(metric_i_i));
   }
 
-  // Set physical parameter-space offset from physical parameter-space bounds
+  // Set physical parameter-space offset
   for (size_t i = 0; i < n; ++i) {
-    FLT_SetBounds(tiling, i);
-    const double phys_lower = gsl_vector_get(tiling->lower, i);
-    gsl_vector_set(tiling->point, i, phys_lower);
+    double phys_lower = 0, phys_upper = 0;
+    FLT_GetBounds(tiling, i, tiling->phys_offset, &phys_lower, &phys_upper);
+    gsl_vector_set(tiling->phys_offset, i, phys_lower);
   }
-  gsl_vector_memcpy(tiling->phys_offset, tiling->point);
 
   // Transform parameter-space bounds from physical to normalised coordinates
   for (size_t i = 0; i < n; ++i) {
@@ -996,11 +993,15 @@ int XLALNextFlatLatticePoint(
     // Set parameter-space bounds and starting point
     for (size_t i = 0; i < n; ++i) {
 
-      // Set normalised bounds
-      FLT_SetBounds(tiling, i);
+      // Get normalised bounds
+      double lower = 0, upper = 0;
+      FLT_GetBounds(tiling, i, tiling->point, &lower, &upper);
+
+      // Set parameter-space bounds
+      gsl_vector_set(tiling->lower, i, lower);
+      gsl_vector_set(tiling->upper, i, upper);
 
       // Initialise current point
-      const double lower = gsl_vector_get(tiling->lower, i);
       const double point = lower - gsl_vector_get(tiling->padding, i);
       gsl_vector_set(tiling->point, i, point);
 
@@ -1065,14 +1066,18 @@ int XLALNextFlatLatticePoint(
       // Get index of tiled dimension
       const size_t j = gsl_vector_uint_get(tiling->tiled_idx, tj);
 
-      // Set normalised bounds
-      FLT_SetBounds(tiling, j);
+      // Get normalised bounds
+      double lower = 0, upper = 0;
+      FLT_GetBounds(tiling, j, tiling->point, &lower, &upper);
+
+      // Set parameter-space bounds
+      gsl_vector_set(tiling->lower, j, lower);
+      gsl_vector_set(tiling->upper, j, upper);
 
       // Get increment vector
       gsl_vector_view increment = gsl_matrix_column(tiling->increment, j);
 
       // Calculate the distance from current point to the lower bound, in integer number of increments
-      const double lower = gsl_vector_get(tiling->lower, j);
       const double padding = gsl_vector_get(tiling->padding, j);
       const double point = gsl_vector_get(tiling->point, j);
       const double dist = ceil( (lower - padding - point) / gsl_vector_get(&increment.vector, j) );
