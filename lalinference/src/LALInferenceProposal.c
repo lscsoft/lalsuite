@@ -3893,8 +3893,10 @@ void LALInferenceClusteredKDEProposal(LALInferenceRunState *runState, LALInferen
     }
 
     /* Update the current proposal name for tracking purposes */
-    propName = (const char *) kde->name;
-    LALInferenceSetVariable(runState->proposalArgs, LALInferenceCurrentProposalName, &propName);
+    if(LALInferenceCheckVariable(runState->proposalArgs, LALInferenceCurrentProposalName)) {
+        propName = (const char *) kde->name;
+        LALInferenceSetVariable(runState->proposalArgs, LALInferenceCurrentProposalName, &propName);
+    }
 
     /* Draw a sample and fill the proposedParams variable with the parameters described by the KDE */
     REAL8 *current = XLALMalloc(kde->dimension * sizeof(REAL8));

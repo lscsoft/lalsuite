@@ -104,15 +104,40 @@ LALInferenceKmeans *LALInferenceOptimizedKmeans(gsl_matrix *data, UINT4 ntrials,
     UINT4 k, low_k = 1, mid_k = 2, high_k = 4;
     REAL8 bic, low_bic, mid_bic, high_bic;
     LALInferenceKmeans *low_kmeans, *mid_kmeans, *high_kmeans;
-    LALInferenceKmeans *kmeans = NULL;
 
-    /* Calculate starting clusters and BIC's */
-    low_kmeans = LALInferenceKmeansRunBestOf(low_k, data, 1, rng);
-    mid_kmeans = LALInferenceKmeansRunBestOf(mid_k, data, ntrials, rng);
-    high_kmeans = LALInferenceKmeansRunBestOf(high_k, data, ntrials, rng);
-
+    /* Calculate starting clusters and BICs */
+    low_kmeans = LALInferenceKmeansRunBestOf(low_k, data, ntrials, rng);
+    if (!low_kmeans) {
+        fprintf(stderr, "Can't build basic KDE.  Perhaps sample size (%i) is too small.\n",
+                (INT4)data->size1);
+        if (mid_kmeans) LALInferenceKmeansDestroy(mid_kmeans);
+        if (high_kmeans) LALInferenceKmeansDestroy(high_kmeans);
+        return NULL;
+    }
     low_bic = LALInferenceKmeansBIC(low_kmeans);
+
+    mid_kmeans = LALInferenceKmeansRunBestOf(mid_k, data, ntrials, rng);
+    if (!mid_kmeans) {
+        printf("Can't cluster, even with k=2.  Falling back to standard KDE.\n");
+        return low_kmeans;
+    }
     mid_bic = LALInferenceKmeansBIC(mid_kmeans);
+
+    /* If high-k fails, try shrinking before giving up */
+    high_kmeans = LALInferenceKmeansRunBestOf(high_k, data, ntrials, rng);
+    if (!high_kmeans) {
+        high_k--;
+        high_kmeans = LALInferenceKmeansRunBestOf(high_k, data, ntrials, rng);
+        if (!high_kmeans) {
+            if (mid_bic > low_bic) {
+                LALInferenceKmeansDestroy(low_kmeans);
+                return mid_kmeans;
+            } else {
+                LALInferenceKmeansDestroy(mid_kmeans);
+                return low_kmeans;
+            }
+        }
+    }
     high_bic = LALInferenceKmeansBIC(high_kmeans);
 
     /* Keep doubling the highest sample until the peak is passed */
@@ -143,6 +168,7 @@ LALInferenceKmeans *LALInferenceOptimizedKmeans(gsl_matrix *data, UINT4 ntrials,
     }
 
     /* Perform bisection search to find maximum */
+    LALInferenceKmeans *kmeans = NULL;
     while (high_k - low_k > 2) {
         if (high_k - mid_k > mid_k - low_k) {
             k = mid_k + (high_k - mid_k)/2;
@@ -199,7 +225,7 @@ LALInferenceKmeans *LALInferenceOptimizedKmeans(gsl_matrix *data, UINT4 ntrials,
         LALInferenceKmeansDestroy(low_kmeans);
     if (high_kmeans != mid_kmeans)
         LALInferenceKmeansDestroy(high_kmeans);
-    if (kmeans != mid_kmeans)
+    if (kmeans && kmeans != mid_kmeans)
         LALInferenceKmeansDestroy(kmeans);
     return mid_kmeans;
 }
@@ -1070,6 +1096,11 @@ REAL8 LALInferenceKmeansMaxLogL(LALInferenceKmeans *kmeans) {
  * @return The value of the Bayes Information Criterian of the \a kmeans clustering.
  */
 REAL8 LALInferenceKmeansBIC(LALInferenceKmeans *kmeans) {
+
+    /* Return -infinity if kmeans isn't allocated */
+    if (!kmeans)
+        return -INFINITY;
+
     UINT4 i;
     REAL8 log_l;
     REAL8 k = (REAL8) kmeans->k;
