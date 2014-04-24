@@ -81,6 +81,8 @@ struct tagFlatLatticeTiling {
   gsl_vector* phys_offset;			///< Normalised to physical coordinate offset
   gsl_matrix* metric;				///< Normalised parameter-space metric
   gsl_matrix* increment;			///< Increment vectors of the lattice tiling generator
+  gsl_matrix* eye_increment;			///< Increment vectors of the lattice tiling generator, with ones on diagonal
+  gsl_matrix* tiled_increment;			///< Increment vectors of tiled dimensions of the lattice generator
   gsl_vector* padding;				///< Padding at edges of parameter-space bounds
   gsl_vector* point;				///< Current lattice point
   gsl_vector* lower;				///< Current lower bound on parameter space
@@ -88,6 +90,17 @@ struct tagFlatLatticeTiling {
   uint64_t count;				///< Number of points generated so far
   uint64_t total_count;				///< Total number of points in parameter space
 };
+
+///
+/// Zero out the strictly upper triangular part of the matrix A
+///
+static void FLT_ZeroStrictUpperTriangle(gsl_matrix* A) {
+  for (size_t i = 0; i < A->size1; ++i) {
+    for (size_t j = i + 1; j < A->size2; ++j) {
+      gsl_matrix_set(A, i, j, 0.0);
+    }
+  }
+}
 
 ///
 /// Find the bounding box of the mismatch ellipses of a metric
@@ -182,6 +195,9 @@ static int FLT_OrthonormaliseWRTMetric(
 
   }
 
+  // Matrix will be lower triangular, so zero out upper triangle
+  FLT_ZeroStrictUpperTriangle(matrix);
+
   // Cleanup
   gsl_vector_free(temp);
 
@@ -257,11 +273,7 @@ static gsl_matrix* FLT_SquareLowerTriangularLatticeGenerator(
   gsl_blas_dgemm(CblasNoTrans, CblasNoTrans, 1.0, left, temp, 0.0, result);
 
   // Generator will be lower triangular, so zero out upper triangle
-  for (size_t i = 0; i < n; ++i) {
-    for (size_t j = i + 1; j < n; ++j) {
-      gsl_matrix_set(result, i, j, 0.0);
-    }
-  }
+  FLT_ZeroStrictUpperTriangle(result);
 
   // Cleanup
   gsl_matrix_free(QR_decomp);
@@ -411,6 +423,9 @@ static gsl_matrix* FLT_MetricLatticeIncrements(
   // Compute the increment vectors of the lattice generator along the orthogonal directions
   gsl_blas_dgemm(CblasNoTrans, CblasNoTrans, 1.0, directions, sqlwtr_gen_matrix, 0.0, increment);
 
+  // Increments will be lower triangular, so zero out upper triangle
+  FLT_ZeroStrictUpperTriangle(increment);
+
   // Cleanup
   gsl_matrix_free(directions);
   gsl_matrix_free(gen_matrix);
@@ -555,6 +570,8 @@ FlatLatticeTiling* XLALCreateFlatLatticeTiling(
   XLAL_CHECK_NULL(tiling->metric != NULL, XLAL_ENOMEM);
   tiling->increment = gsl_matrix_alloc(n, n);
   XLAL_CHECK_NULL(tiling->increment != NULL, XLAL_ENOMEM);
+  tiling->eye_increment = gsl_matrix_alloc(n, n);
+  XLAL_CHECK_NULL(tiling->eye_increment != NULL, XLAL_ENOMEM);
   tiling->padding = gsl_vector_alloc(n);
   XLAL_CHECK_NULL(tiling->padding != NULL, XLAL_ENOMEM);
   tiling->point = gsl_vector_alloc(n);
@@ -593,6 +610,8 @@ void XLALDestroyFlatLatticeTiling(
     gsl_vector_free(tiling->phys_offset);
     gsl_matrix_free(tiling->metric);
     gsl_matrix_free(tiling->increment);
+    gsl_matrix_free(tiling->eye_increment);
+    gsl_matrix_free(tiling->tiled_increment);
     gsl_vector_free(tiling->padding);
     gsl_vector_free(tiling->point);
     gsl_vector_free(tiling->lower);
@@ -855,6 +874,15 @@ int XLALSetFlatLatticeTypeAndMetric(
   XLAL_CHECK(metric->size1 == n && metric->size2 == n, XLAL_EINVAL);
   XLAL_CHECK(max_mismatch > 0, XLAL_EINVAL);
 
+  // Save the type of lattice to generate flat tiling with
+  tiling->lattice = lattice;
+
+  // Initialise for no tiled dimensions; 'increment' and 'padding' are
+  // zero, 'eye_increment' has unit diagonal so that it is invertible
+  gsl_matrix_set_zero(tiling->increment);
+  gsl_matrix_set_identity(tiling->eye_increment);
+  gsl_vector_set_zero(tiling->padding);
+
   // Check that all parameter-space dimensions are bounded, and record indices of tiled dimensions
   size_t tn = 0;
   for (size_t i = 0; i < tiling->dimensions; ++i) {
@@ -872,9 +900,6 @@ int XLALSetFlatLatticeTypeAndMetric(
       }
     }
   }
-
-  // Save the type of lattice to generate flat tiling with
-  tiling->lattice = lattice;
 
   // Check diagonal elements of tiled dimensions are positive, and calculate
   // physical parameter-space scale from metric diagonal elements
@@ -914,10 +939,6 @@ int XLALSetFlatLatticeTypeAndMetric(
     }
   }
 
-  // Initialise for zero-dimensional parameter space
-  gsl_matrix_set_zero(tiling->increment);
-  gsl_vector_set_zero(tiling->padding);
-
   // If there are tiled dimensions:
   if (tn > 0) {
 
@@ -935,27 +956,33 @@ int XLALSetFlatLatticeTypeAndMetric(
     }
 
     // Calculate metric lattice increment vectors
-    gsl_matrix* increment = FLT_MetricLatticeIncrements(tiling->lattice, tiled_metric, max_mismatch);
-    XLAL_CHECK(increment != NULL, XLAL_EFUNC);
+    tiling->tiled_increment = FLT_MetricLatticeIncrements(tiling->lattice, tiled_metric, max_mismatch);
+    XLAL_CHECK(tiling->tiled_increment != NULL, XLAL_EFUNC);
 
-    // Calculate metric ellipse bounding box
-    gsl_vector* bounding_box = FLT_MetricEllipseBoundingBox(tiled_metric, max_mismatch);
-    XLAL_CHECK(bounding_box != NULL, XLAL_EFUNC);
-
-    // Copy increment vectors and padding so that non-tiled dimensions are zero
+    // Copy lower triangular part of increment vectors to tiled dimensions (strict upper triangle is zero)
     for (size_t ti = 0; ti < tn; ++ti) {
       const size_t i = gsl_vector_uint_get(tiling->tiled_idx, ti);
-      gsl_vector_set(tiling->padding, i, gsl_vector_get(bounding_box, ti));
-      for (size_t tj = 0; tj < tn; ++tj) {
+      for (size_t tj = 0; tj <= ti; ++tj) {
         const size_t j = gsl_vector_uint_get(tiling->tiled_idx, tj);
-        gsl_matrix_set(tiling->increment, i, j, gsl_matrix_get(increment, ti, tj));
+        const double tiled_increment_ti_tj = gsl_matrix_get(tiling->tiled_increment, ti, tj);
+        gsl_matrix_set(tiling->increment, i, j, tiled_increment_ti_tj);
+        gsl_matrix_set(tiling->eye_increment, i, j, tiled_increment_ti_tj);
       }
+    }
+
+    // Set padding to metric ellipse bounding box
+    gsl_vector* tiled_padding = FLT_MetricEllipseBoundingBox(tiled_metric, max_mismatch);
+    XLAL_CHECK(tiled_padding != NULL, XLAL_EFUNC);
+
+    // Copy padding to tiled dimensions
+    for (size_t ti = 0; ti < tn; ++ti) {
+      const size_t i = gsl_vector_uint_get(tiling->tiled_idx, ti);
+      gsl_vector_set(tiling->padding, i, gsl_vector_get(tiled_padding, ti));
     }
 
     // Cleanup
     gsl_matrix_free(tiled_metric);
-    gsl_matrix_free(increment);
-    gsl_vector_free(bounding_box);
+    gsl_vector_free(tiled_padding);
 
   }
 
