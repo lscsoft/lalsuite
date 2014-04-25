@@ -1066,6 +1066,8 @@ void LALInferenceTranslateExternalToInternalParamName(char *outName, const char 
     strcpy(outName, "inclination");
   } else if (!strcmp(inName, "theta_jn")) {
     strcpy(outName, "theta_JN");
+  } else if (!strcmp(inName, "phi_jl")) {
+    strcpy(outName, "phi_JL");
   } else if (!strcmp(inName, "dist")) {
     strcpy(outName, "distance");
   } else if (!strcmp(inName, "f_ref")) {
