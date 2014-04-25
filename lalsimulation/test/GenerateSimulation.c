@@ -81,6 +81,7 @@ const char * usage =
 "                             TaylorEt\n"
 "                             IMRPhenomA\n"
 "                             IMRPhenomB\n"
+"                             IMRPhenomC\n"
 "                             EOBNRv2\n"
 "                             EOBNRv2HM\n"
 "                             SEOBNRv1\n"
