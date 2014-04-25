@@ -58,6 +58,8 @@ static size_t find_peak_amp(const REAL8TimeSeries *hp, const REAL8TimeSeries *hc
 static int apply_phase_shift(const REAL8TimeSeries *hp, const REAL8TimeSeries *hc, const REAL8 shift);
 static int apply_inclination(const REAL8TimeSeries *hp, const REAL8TimeSeries *hc, const REAL8 inclination);
 
+static REAL8 PlanckTaper(const REAL8 t, const REAL8 t1, const REAL8 t2);
+
 
 /**
  * Driver routine to compute the spin-aligned, inspiral-merger-ringdown
@@ -488,7 +490,7 @@ static REAL8 EstimateSafeFMinForTD(const REAL8 m1, const REAL8 m2, const REAL8 f
 	const REAL8 totalMass = m1 + m2;
 	const REAL8 eta = m1 * m2 / (totalMass * totalMass);
 	const REAL8 fISCO = 0.022 / (totalMass * LAL_MTSUN_SI);
-	REAL8 tau0 = deltaT * NextPow2(1.025 * EstimateIMRLength(m1, m2, f_min, deltaT));
+	REAL8 tau0 = deltaT * NextPow2(1.5 * EstimateIMRLength(m1, m2, f_min, deltaT));
 	REAL8 temp_f_min = pow((tau0 * 256. * eta * pow(totalMass * LAL_MTSUN_SI, 5./3.) / 5.), -3./8.) / LAL_PI;
 	if (temp_f_min > f_min) temp_f_min = f_min;
 	if (temp_f_min < 0.5) temp_f_min = 0.5;
@@ -524,8 +526,10 @@ static int FDToTD(REAL8TimeSeries **signalTD, const COMPLEX16FrequencySeries *si
         //const size_t exp_nf = (exp_nt / 2) + 1;
 
 	const REAL8 windowLength = 20. * totalMass * LAL_MTSUN_SI / deltaT;
-	const REAL8 winFLo = (f_min + f_min_wide) / 2.;
-	REAL8 winFHi = (f_max + f_max_wide) / 2.;
+	const REAL8 winFLo = 0.2*f_min_wide + 0.8*f_min;
+	/* frequency used for tapering, slightly less than f_min to minimize FFT artifacts
+	 * equivalent to winFLo = f_min_wide + 0.8*(f_min - f_min_wide) */
+	REAL8 winFHi = f_max_wide;
 	COMPLEX16 *FDdata = signalFD->data->data;
 	REAL8FFTPlan *revPlan;
 	REAL8 *TDdata;
@@ -538,8 +542,7 @@ static int FDToTD(REAL8TimeSeries **signalTD, const COMPLEX16FrequencySeries *si
 	if (winFHi > 0.5 / deltaT) winFHi = 0.5 / deltaT;
 	for (k = nf;k--;) {
 		const REAL8 f = k / (deltaT * nt);
-		REAL8 softWin = (1. + tanh(f - winFLo))
-		* (1. - tanh(f - winFHi)) / 4.;
+		REAL8 softWin = PlanckTaper(f, f_min_wide, winFLo) * (1.0 - PlanckTaper(f, f_max, winFHi));
 		FDdata[k] *= softWin;
 	}
 
@@ -645,3 +648,19 @@ static int apply_inclination(const REAL8TimeSeries *hp, const REAL8TimeSeries *h
 
 	return XLAL_SUCCESS;
 }
+
+static REAL8 PlanckTaper(const REAL8 t, const REAL8 t1, const REAL8 t2)
+	{
+	REAL8 taper;
+	if (t <= t1) {
+		taper = 0.;
+	}
+	else if (t >= t2) {
+		taper = 1.;
+	}
+	else {
+		taper = 1. / (exp((t2 - t1)/(t - t1) + (t2 - t1)/(t - t2)) + 1.);
+	}
+
+	return taper;
+	}
