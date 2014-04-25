@@ -56,94 +56,102 @@ void LALInferenceInitEnsemble(LALInferenceRunState *state) {
     REAL8 *sampleArray = NULL;
     UINT4 i=0;
 
+    INT4 walker;
+    MPI_Comm_rank(MPI_COMM_WORLD, &walker);
+
     INT4 ndim = LALInferenceGetVariableDimensionNonFixed(state->currentParams);
     INT4 *col_order = XLALMalloc(ndim *sizeof(INT4));
-    INT4 walker = *(INT4*)LALInferenceGetVariable(state->algorithmParams, "walker");
-    INT4 nwalkers = *(INT4*)LALInferenceGetVariable(state->algorithmParams, "nwalkers");
 
-    if (walker == 0) {
-        ppt = LALInferenceGetProcParamVal(state->commandLine, "--init-samples");
-        if (!ppt) {
-            fprintf(stderr, "This sampler is in its enfancy, and needs to be spoon fed.\n");
-            fprintf(stderr, "Please specify a file containing a list of samples to start with.\n");
-            exit(1);
-        }
+    ppt = LALInferenceGetProcParamVal(state->commandLine, "--init-samples");
+    if (ppt) {
+        if (walker == 0) {
+            if (!ppt) {
+                fprintf(stderr, "This sampler is in its enfancy, and needs to be spoon fed.\n");
+                fprintf(stderr, "Please specify a file containing a list of samples to start with.\n");
+                exit(1);
+            }
 
-        char *infile = ppt->value;
-        FILE *input = fopen(infile, "r");
+            char *infile = ppt->value;
+            FILE *input = fopen(infile, "r");
 
-        char params[128][128];
-        UINT4 ncols, nsamps;
+            char params[128][128];
+            UINT4 ncols, nsamps;
 
-        /* Parse parameter names */
-        LALInferenceReadAsciiHeader(input, params, &ncols);
+            /* Parse parameter names */
+            LALInferenceReadAsciiHeader(input, params, &ncols);
 
-        LALInferenceVariables *backward_params = XLALCalloc(1, sizeof(LALInferenceVariables));
+            LALInferenceVariables *backward_params = XLALCalloc(1, sizeof(LALInferenceVariables));
 
-        /* Only cluster parameters that are being sampled */
-        UINT4 nvalid_cols=0, j=0;
-        UINT4 *valid_cols = XLALMalloc(ncols * sizeof(UINT4));
-        for (j=0; j<ncols; j++)
-            valid_cols[j] = 0;
+            /* Only cluster parameters that are being sampled */
+            UINT4 nvalid_cols=0, j=0;
+            UINT4 *valid_cols = XLALMalloc(ncols * sizeof(UINT4));
+            for (j=0; j<ncols; j++)
+                valid_cols[j] = 0;
 
-        UINT4 logl_idx;
-        for (j=0; j<ncols; j++) {
-            char* internal_param_name = XLALMalloc(512*sizeof(char));
-            LALInferenceTranslateExternalToInternalParamName(internal_param_name, params[j]);
+            UINT4 logl_idx;
+            for (j=0; j<ncols; j++) {
+                char* internal_param_name = XLALMalloc(512*sizeof(char));
+                LALInferenceTranslateExternalToInternalParamName(internal_param_name, params[j]);
 
-            i=0;
-            for (item = state->currentParams->head; item; item = item->next) {
-                if (LALInferenceCheckVariableNonFixed(state->currentParams, item->name)) {
-                    if (!strcmp(item->name, internal_param_name)) {
-                        col_order[i] = nvalid_cols;
-                        nvalid_cols++;
-                        valid_cols[j] = 1;
-                        LALInferenceAddVariable(backward_params, item->name, item->value, item->type, item->vary);
-                        break;
+                i=0;
+                for (item = state->currentParams->head; item; item = item->next) {
+                    if (LALInferenceCheckVariableNonFixed(state->currentParams, item->name)) {
+                        if (!strcmp(item->name, internal_param_name)) {
+                            col_order[i] = nvalid_cols;
+                            nvalid_cols++;
+                            valid_cols[j] = 1;
+                            LALInferenceAddVariable(backward_params, item->name, item->value, item->type, item->vary);
+                            break;
+                        }
+                        i++;
                     }
-                    i++;
                 }
             }
+
+            /* Double check dimensions */
+            if (nvalid_cols != ndim) {
+                fprintf(stderr, "Inconsistent dimensions for starting state!\n");
+                fprintf(stderr, "Sampling in %i dimensions, %i read from file!\n", ndim, nvalid_cols);
+                exit(1);
+            }
+
+            /* LALInferenceAddVariable() builds the array backwards, so reverse it. */
+            LALInferenceVariables *input_params = XLALCalloc(1, sizeof(LALInferenceVariables));
+
+            for (item = backward_params->head; item; item = item->next)
+                LALInferenceAddVariable(input_params, item->name, item->value, item->type, item->vary);
+
+            sampleArray = LALInferenceParseDelimitedAscii(input, ncols, valid_cols, &nsamps);
+
+            /* Choose unique samples to intialize ensemble */
+            gsl_ran_shuffle(state->GSLrandom, sampleArray, nsamps, ndim*sizeof(REAL8));
+
+            /* Cleanup */
+            LALInferenceClearVariables(backward_params);
+            XLALFree(backward_params);
         }
 
-        /* Double check dimensions */
-        if (nvalid_cols != ndim) {
-            fprintf(stderr, "Inconsistent dimensions for starting state!\n");
-            exit(1);
-        }
+        /* Broadcast parameter order */
+        MPI_Bcast(col_order, ndim, MPI_INT, 0, MPI_COMM_WORLD);
 
-        /* LALInferenceAddVariable() builds the array backwards, so reverse it. */
-        LALInferenceVariables *input_params = XLALCalloc(1, sizeof(LALInferenceVariables));
+        REAL8Vector *parameters = XLALCreateREAL8Vector(ndim);
+        MPI_Scatter(sampleArray, ndim, MPI_DOUBLE, parameters->data, ndim, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 
-        for (item = backward_params->head; item; item = item->next)
-            LALInferenceAddVariable(input_params, item->name, item->value, item->type, item->vary);
+        REAL8Vector *reordered_parameters = XLALCreateREAL8Vector(ndim);
+        for (i=0; i<ndim; i++)
+            reordered_parameters->data[i] = parameters->data[col_order[i]];
 
-        sampleArray = LALInferenceParseDelimitedAscii(input, ncols, valid_cols, &nsamps);
+        LALInferenceCopyArrayToVariables(reordered_parameters, state->currentParams);
 
-        /* Choose unique samples to intialize ensemble */
-        gsl_ran_shuffle(state->GSLrandom, sampleArray, nsamps, ndim*sizeof(REAL8));
-
-        /* Cleanup */
-        LALInferenceClearVariables(backward_params);
-        XLALFree(backward_params);
+        XLALDestroyREAL8Vector(parameters);
+        XLALDestroyREAL8Vector(reordered_parameters);
+        if (walker == 0)
+            XLALFree(sampleArray);
+    } else {
+        LALInferenceDrawApproxPrior(state, state->currentParams);
+        while (state->prior(state, state->currentParams) <= -DBL_MAX)
+            LALInferenceDrawApproxPrior(state, state->currentParams);
     }
-
-    /* Broadcast parameter order */
-    MPI_Bcast(col_order, ndim, MPI_INT, 0, MPI_COMM_WORLD);
-
-    REAL8Vector *parameters = XLALCreateREAL8Vector(ndim);
-    MPI_Scatter(sampleArray, ndim, MPI_DOUBLE, parameters->data, ndim, MPI_DOUBLE, 0, MPI_COMM_WORLD);
-
-    REAL8Vector *reordered_parameters = XLALCreateREAL8Vector(ndim);
-    for (i=0; i<ndim; i++)
-        reordered_parameters->data[i] = parameters->data[col_order[i]];
-
-    LALInferenceCopyArrayToVariables(reordered_parameters, state->currentParams);
-
-    XLALDestroyREAL8Vector(parameters);
-    XLALDestroyREAL8Vector(reordered_parameters);
-    if (walker == 0)
-        XLALFree(sampleArray);
 
     /* Determine null loglikelihood that will be subtracted from printed likelihoods */
     REAL8 null_likelihood = 0.0;
@@ -203,10 +211,6 @@ LALInferenceRunState *initialize(ProcessParamsTable *commandLine)
 {
     LALInferenceRunState *irs=NULL;
     LALInferenceIFOData *ifoPtr, *ifoListStart;
-  
-    INT4 walker, nwalkers;
-    MPI_Comm_rank(MPI_COMM_WORLD, &walker);
-    MPI_Comm_size(MPI_COMM_WORLD, &nwalkers);
   
     /* read data from files: */
     irs = XLALCalloc(1, sizeof(LALInferenceRunState));
@@ -361,9 +365,8 @@ void initializeMCMC(LALInferenceRunState *runState) {
                  (--propTrack)                    Output useful info for track proposal behavior.\n\
                  (--outfile file)                 Write output files <file>.<chain_number> (PTMCMC.output.<random_seed>.<chain_number>).\n";
 
-    INT4 walker, nwalkers, i;
+    INT4 walker, i;
     MPI_Comm_rank(MPI_COMM_WORLD, &walker);
-    MPI_Comm_size(MPI_COMM_WORLD, &nwalkers);
 
     /* Print command line arguments if runState was not allocated */
     if(runState==NULL) {
@@ -508,9 +511,8 @@ void initializeMCMC(LALInferenceRunState *runState) {
 int main(int argc, char *argv[]){
     MPI_Init(&argc, &argv);
 
-    INT4 walker, nwalkers;
+    INT4 walker;
     MPI_Comm_rank(MPI_COMM_WORLD, &walker);
-    MPI_Comm_size(MPI_COMM_WORLD, &nwalkers);
 
     if (walker == 0) fprintf(stdout," ========== lalinference_ensemble ==========\n");
 
@@ -526,12 +528,6 @@ int main(int argc, char *argv[]){
     /* Set up structures for MCMC */
     initializeMCMC(runState);
 
-    /* Save walker number for future reference */
-    LALInferenceAddVariable(runState->algorithmParams,"walker", &walker, LALINFERENCE_UINT4_t,
-                            LALINFERENCE_PARAM_FIXED);
-    LALInferenceAddVariable(runState->algorithmParams,"nwalkers", &nwalkers, LALINFERENCE_UINT4_t,
-                            LALINFERENCE_PARAM_FIXED);
-
     /* Set up currentParams with variables to be used */
     LALInferenceInitCBCVariables(runState);
 
@@ -546,7 +542,6 @@ int main(int argc, char *argv[]){
                 __FILE__, __LINE__);
         exit(1);
     }
-    printf(" ==== This is walker %d of %d ====\n", walker, nwalkers);
     MPI_Barrier(MPI_COMM_WORLD);
 
     /* Call MCMC algorithm */
