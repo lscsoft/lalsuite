@@ -465,6 +465,16 @@ void initializeMCMC(LALInferenceRunState *runState) {
     LALInferenceAddVariable(runState->algorithmParams, "skip", &skip,
                             LALINFERENCE_UINT4_t,LALINFERENCE_PARAM_FIXED);
 
+    /* Update ensemble every *update_interval* iterations */
+    UINT4 update_interval = 1000;
+    ppt = LALInferenceGetProcParamVal(commandLine,"--update-interval");
+    if(ppt)
+        update_interval = atoi(ppt->value);
+
+    LALInferenceAddVariable(runState->algorithmParams, "update_interval", &update_interval,
+                            LALINFERENCE_UINT4_t,LALINFERENCE_PARAM_FIXED);
+
+
     gsl_rng_env_setup();
     runState->GSLrandom = gsl_rng_alloc(gsl_rng_mt19937);
 

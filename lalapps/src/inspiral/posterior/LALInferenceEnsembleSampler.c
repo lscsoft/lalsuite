@@ -63,12 +63,13 @@ void ensemble_sampler(struct tagLALInferenceRunState *runState) {
     LALStatus status;
     memset(&status,0,sizeof(status));
 
-    MPI_Comm_size(MPI_COMM_WORLD, &walker);      // This walker's index
-    MPI_Comm_rank(MPI_COMM_WORLD, &nwalkers);    // Size of the ensemble
+    MPI_Comm_rank(MPI_COMM_WORLD, &walker);      // This walker's index
+    MPI_Comm_size(MPI_COMM_WORLD, &nwalkers);    // Size of the ensemble
 
     /* Parameters controlling output and ensemble update frequency */
     INT4 nsteps = *(INT4*) LALInferenceGetVariable(runState->algorithmParams, "nsteps");
     INT4 skip = *(INT4*) LALInferenceGetVariable(runState->algorithmParams, "skip");
+    INT4 update_interval = *(INT4*) LALInferenceGetVariable(runState->algorithmParams, "update_interval");
 
     /* Keep track of time if benchmarking */
     UINT4 benchmark = 0;
@@ -81,29 +82,29 @@ void ensemble_sampler(struct tagLALInferenceRunState *runState) {
     ensemble_update(runState);
 
     // iterate:
-    UINT4 step_counter = 0;
-    while (step_counter < nsteps) {
+    UINT4 step = 0;
+    while (step < nsteps) {
         /* Increment iteration counter */
-        step_counter++;
+        step++;
 
         /* Update the proposal from the current state of the ensemble */
-        if ((step_counter % 100*skip) == 0)
+        if ((step % update_interval) == 0)
             ensemble_update(runState);
 
         walker_step(runState); //evolve the walker
 
         /* Print current sample to file */
-        if ((step_counter % skip) == 0)
-            LALInferencePrintEnsembleSample(runState, walker_output, step_counter);
+        if ((step % skip) == 0)
+            LALInferencePrintEnsembleSample(runState, walker_output, step);
     }
     
     fclose(walker_output);
 }
 
 void walker_step(LALInferenceRunState *runState) {
-    REAL8 logPriorProposed, logLikelihoodProposed;
+    REAL8 log_prior_proposed, log_likelihood_proposed;
     REAL8 log_proposal_ratio = 0.0;
-    REAL8 logAcceptanceProbability;
+    REAL8 log_acceptance_probability;
     LALInferenceIFOData *headData;
   
     /* Propose a new sample */
@@ -119,23 +120,23 @@ void walker_step(LALInferenceRunState *runState) {
     log_proposal_ratio = *(REAL8*) LALInferenceGetVariable(runState->proposalArgs, "logProposalRatio");
   
     /* Only bother calculating likelihood if sample within prior boundaries */
-    logPriorProposed = runState->prior(runState, &proposedParams);
-    if (logPriorProposed > -DBL_MAX)
-        logLikelihoodProposed = runState->likelihood(&proposedParams, runState->data, runState->templt);
+    log_prior_proposed = runState->prior(runState, &proposedParams);
+    if (log_prior_proposed > -DBL_MAX)
+        log_likelihood_proposed = runState->likelihood(&proposedParams, runState->data, runState->templt);
     else
-        logLikelihoodProposed = -INFINITY;
+        log_likelihood_proposed = -INFINITY;
   
     /* Find jump acceptance probability */
-    logAcceptanceProbability = (logLikelihoodProposed - runState->currentLikelihood)
-                                + (logPriorProposed - runState->currentPrior)
+    log_acceptance_probability = (log_prior_proposed + log_likelihood_proposed)
+                                - (runState->currentPrior + runState->currentLikelihood)
                                 + log_proposal_ratio;
   
     /* Accept the jump with the calculated probability */
-    if (logAcceptanceProbability > 0
-            || (log(gsl_rng_uniform(runState->GSLrandom)) < logAcceptanceProbability)) {
+    if (log_acceptance_probability > 0
+            || (log(gsl_rng_uniform(runState->GSLrandom)) < log_acceptance_probability)) {
         LALInferenceCopyVariables(&proposedParams, runState->currentParams);
-        runState->currentLikelihood = logLikelihoodProposed;
-        runState->currentPrior = logPriorProposed;
+        runState->currentLikelihood = log_likelihood_proposed;
+        runState->currentPrior = log_prior_proposed;
 
         headData = runState->data;
         while (headData != NULL) {
