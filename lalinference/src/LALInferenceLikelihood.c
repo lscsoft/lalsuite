@@ -168,6 +168,22 @@ INT4 LALInferenceLineSwitch(INT4 lineFlag, INT4 Nlines, INT4 *lines_array, INT4 
     return lineSwitch;
 }
 
+/* Check to see if item is in the NULL-terminated array.
+ If so, return 1. Otherwise, add it to the array and return 0
+ */
+static int checkItemAndAdd(void *item, void **array);
+static int checkItemAndAdd(void *item, void **array)
+{
+  UINT4 i=0;
+  if(!array || !item) return 0;
+  while(array[i])
+  {
+    if(array[i++]==item) return 1;
+  }
+  array[i]=item;
+  return 0;
+}
+
 /* ============ Likelihood computations: ========== */
 
 /**
@@ -209,12 +225,17 @@ REAL8 LALInferenceUndecomposedFreqDomainLogLikelihood(LALInferenceVariables *cur
   double timeshift=0;  /* time shift (not necessarily same as above)                   */
   double deltaT, TwoDeltaToverN, deltaF, twopit=0.0, re, im, dre, dim, newRe, newIm;
   double timeTmp;
-	double mc;
+  double mc;
   LALStatus status;
   memset(&status,0,sizeof(status));
 
   if(data==NULL) {XLAL_ERROR_REAL8(XLAL_EINVAL,"ERROR: Encountered NULL data pointer in likelihood\n");}
 
+  int Nifos=0;
+  for(dataPtr=data;dataPtr;dataPtr=dataPtr->next) Nifos++;
+  void **generatedFreqModels=alloca((1+Nifos)*sizeof(void *));
+  for(i=0;i<=Nifos;i++) generatedFreqModels[i]=NULL;
+  
   //noise model meta parameters
   gsl_matrix *lines   = NULL;//pointer to matrix holding line centroids
   gsl_matrix *widths  = NULL;//pointer to matrix holding line widths
@@ -328,13 +349,21 @@ REAL8 LALInferenceUndecomposedFreqDomainLogLikelihood(LALInferenceVariables *cur
 
         LALInferenceCopyVariables(currentParams, dataPtr->modelParams);
         LALInferenceAddVariable(dataPtr->modelParams, "time", &timeTmp, LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_LINEAR);
-        templt(dataPtr);
-        if(XLALGetBaseErrno()==XLAL_FAILURE) /* Template generation failed in a known way, set -Inf likelihood */
+      
+      
+        /* Check to see if this buffer has already been filled with the signal.
+           Different dataPtrs can share the same signal buffer to avoid repeated
+           calls to template */
+        if(!checkItemAndAdd((void *)(dataPtr->freqModelhPlus), generatedFreqModels))
+        {
+          templt(dataPtr);
+          if(XLALGetBaseErrno()==XLAL_FAILURE) /* Template generation failed in a known way, set -Inf likelihood */
             return(-DBL_MAX);
 
-        if (dataPtr->modelDomain == LAL_SIM_DOMAIN_TIME) {
+          if (dataPtr->modelDomain == LAL_SIM_DOMAIN_TIME) {
             /* TD --> FD. */
             LALInferenceExecuteFT(dataPtr);
+          }
         }
 
         /* Template is now in dataPtr->timeFreqModelhPlus and hCross */
@@ -558,7 +587,11 @@ REAL8 LALInferenceFreqDomainStudentTLogLikelihood(LALInferenceVariables *current
   double timeTmp;
   LALStatus status;
   memset(&status,0,sizeof(status));
-  
+  int Nifos=0;
+  for(dataPtr=data;dataPtr;dataPtr=dataPtr->next) Nifos++;
+  void **generatedFreqModels=alloca((1+Nifos)*sizeof(void *));
+  for(i=0;i<=Nifos;i++) generatedFreqModels[i]=NULL;
+
   if(LALInferenceCheckVariable(currentParams, "logdistance")){
     REAL8 distMpc = exp(*(REAL8*)LALInferenceGetVariable(currentParams,"logdistance"));
     LALInferenceAddVariable(currentParams,"distance",&distMpc,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
@@ -603,11 +636,20 @@ REAL8 LALInferenceFreqDomainStudentTLogLikelihood(LALInferenceVariables *current
 
     LALInferenceCopyVariables(currentParams, dataPtr->modelParams);
     LALInferenceAddVariable(dataPtr->modelParams, "time", &timeTmp, LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_LINEAR);
-    templt(dataPtr);
-
-    if (dataPtr->modelDomain == LAL_SIM_DOMAIN_TIME) {
+    
+    /* Check to see if this buffer has already been filled with the signal.
+     Different dataPtrs can share the same signal buffer to avoid repeated
+     calls to template */
+    if(!checkItemAndAdd((void *)(dataPtr->freqModelhPlus), generatedFreqModels))
+    {
+      templt(dataPtr);
+      if(XLALGetBaseErrno()==XLAL_FAILURE) /* Template generation failed in a known way, set -Inf likelihood */
+        return(-DBL_MAX);
+      
+      if (dataPtr->modelDomain == LAL_SIM_DOMAIN_TIME) {
         /* TD --> FD. */
         LALInferenceExecuteFT(dataPtr);
+      }
     }
 
     /* Template is now in dataPtr->freqModelhPlus hCross. */
@@ -1385,6 +1427,12 @@ REAL8 LALInferenceMarginalisedPhaseLogLikelihood(LALInferenceVariables *currentP
   double deltaT, TwoDeltaToverN, deltaF, twopit, re, im, dre, dim, newRe, newIm;
   double timeTmp;
   double mc;
+  int Nifos=0;
+  for(dataPtr=data;dataPtr;dataPtr=dataPtr->next) Nifos++;
+  void **generatedFreqModels=alloca((1+Nifos)*sizeof(void *));
+  for(i=0;i<=Nifos;i++) generatedFreqModels[i]=NULL;
+
+  
   //noise model meta parameters
   gsl_matrix *lines   = NULL;//pointer to matrix holding line centroids
   gsl_matrix *widths  = NULL;//pointer to matrix holding line widths
@@ -1499,15 +1547,22 @@ REAL8 LALInferenceMarginalisedPhaseLogLikelihood(LALInferenceVariables *currentP
     
     LALInferenceCopyVariables(currentParams, dataPtr->modelParams);
     LALInferenceAddVariable(dataPtr->modelParams, "time", &timeTmp, LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_LINEAR);
-    templt(dataPtr);
-    if(XLALGetBaseErrno()==XLAL_FAILURE) /* Template generation failed in a known way, set -Inf likelihood */
-        return(-DBL_MAX);
-    if (dataPtr->modelDomain == LAL_SIM_DOMAIN_TIME) {
-        LALInferenceExecuteFT(dataPtr);
-        /* note that the dataPtr->modelParams "time" element may have changed here!! */
-        /* (during "template()" computation)  */
-    }
     
+    /* Check to see if this buffer has already been filled with the signal.
+     Different dataPtrs can share the same signal buffer to avoid repeated
+     calls to template */
+    if(!checkItemAndAdd((void *)(dataPtr->freqModelhPlus), generatedFreqModels))
+    {
+      templt(dataPtr);
+      if(XLALGetBaseErrno()==XLAL_FAILURE) /* Template generation failed in a known way, set -Inf likelihood */
+        return(-DBL_MAX);
+      
+      if (dataPtr->modelDomain == LAL_SIM_DOMAIN_TIME) {
+        /* TD --> FD. */
+        LALInferenceExecuteFT(dataPtr);
+      }
+    }
+
     /*-- Template is now in dataPtr->freqModelhPlus and dataPtr->freqModelhCross. --*/
     /*-- (Either freshly computed or inherited.)                            --*/
     
@@ -1768,9 +1823,16 @@ REAL8 LALInferenceMarginalisedTimeLogLikelihood(LALInferenceVariables *currentPa
   LALStatus status;
   memset(&status,0,sizeof(status));
   int margphi;
+  
 
   if(data==NULL) {XLAL_ERROR_REAL8(XLAL_EINVAL,"ERROR: Encountered NULL data pointer in likelihood\n");}
 
+  UINT4 Nifos=0;
+  for(dataPtr=data;dataPtr;dataPtr=dataPtr->next) Nifos++;
+  void **generatedFreqModels=alloca((1+Nifos)*sizeof(void *));
+  for(i=0;i<=Nifos;i++) generatedFreqModels[i]=NULL;
+
+  
   //noise model meta parameters
   gsl_matrix *lines   = NULL;//pointer to matrix holding line centroids
   gsl_matrix *widths  = NULL;//pointer to matrix holding line widths
@@ -1914,13 +1976,20 @@ REAL8 LALInferenceMarginalisedTimeLogLikelihood(LALInferenceVariables *currentPa
         double pi2 = M_PI / 2.0;
         LALInferenceAddVariable(dataPtr->modelParams, "phase", &pi2, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR);
     }
-    templt(dataPtr);
-    if(XLALGetBaseErrno()==XLAL_FAILURE) /* Template generation failed in a known way, set -Inf likelihood */
+    
+    /* Check to see if this buffer has already been filled with the signal.
+     Different dataPtrs can share the same signal buffer to avoid repeated
+     calls to template */
+    if(!checkItemAndAdd((void *)(dataPtr->freqModelhPlus), generatedFreqModels))
+    {
+      templt(dataPtr);
+      if(XLALGetBaseErrno()==XLAL_FAILURE) /* Template generation failed in a known way, set -Inf likelihood */
         return(-DBL_MAX);
-
-    if (dataPtr->modelDomain == LAL_SIM_DOMAIN_TIME) {
+      
+      if (dataPtr->modelDomain == LAL_SIM_DOMAIN_TIME) {
         /* TD --> FD. */
         LALInferenceExecuteFT(dataPtr);
+      }
     }
 
     /* Template is now in dataPtr->timeFreqModelhPlus and hCross */
@@ -2163,6 +2232,11 @@ void LALInferenceNetworkSNR(LALInferenceVariables *currentParams, LALInferenceIF
   memset(&status,0,sizeof(status));
 
   int signalFlag = 1;   //flag for including signal model
+  
+  int Nifos=0;
+  for(dataPtr=data;dataPtr;dataPtr=dataPtr->next) Nifos++;
+  void **generatedFreqModels=alloca((1+Nifos)*sizeof(void *));
+  for(i=0;i<=Nifos;i++) generatedFreqModels[i]=NULL;
 
   //check if signal model is being used
   signalFlag=1;
@@ -2241,11 +2315,17 @@ void LALInferenceNetworkSNR(LALInferenceVariables *currentParams, LALInferenceIF
         LALInferenceAddVariable(dataPtr->modelParams, "phase", &pi2, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR);
     }
 
-    templt(dataPtr);
-
-    if (dataPtr->modelDomain == LAL_SIM_DOMAIN_TIME) {
+    /* Check to see if this buffer has already been filled with the signal.
+     Different dataPtrs can share the same signal buffer to avoid repeated
+     calls to template */
+    if(!checkItemAndAdd((void *)(dataPtr->freqModelhPlus), generatedFreqModels))
+    {
+      templt(dataPtr);
+      
+      if (dataPtr->modelDomain == LAL_SIM_DOMAIN_TIME) {
         /* TD --> FD. */
         LALInferenceExecuteFT(dataPtr);
+      }
     }
 
     /* Template is now in dataPtr->timeFreqModelhPlus and hCross */
