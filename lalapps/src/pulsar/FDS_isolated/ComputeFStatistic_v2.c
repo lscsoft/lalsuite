@@ -340,10 +340,8 @@ int compareFstatCandidates ( const void *candA, const void *candB );
 int compareFstatCandidates_LV ( const void *candA, const void *candB );
 
 void WriteFStatLog ( LALStatus *status, const CHAR *log_fname, const CHAR *logstr );
-void getLogString ( LALStatus *status, CHAR **logstr, const ConfigVariables *cfg );
+CHAR *XLALGetLogString ( const ConfigVariables *cfg );
 
-
-CHAR *append_string ( CHAR *str1, const CHAR *append );
 int write_TimingInfo_to_fp ( FILE * fp, const timingInfo_t *ti );
 
 /* ---------- scanline window functions ---------- */
@@ -431,7 +429,10 @@ int main(int argc,char *argv[])
   LAL_CALL ( InitFStat(&status, &GV, &uvar), &status);
 
   /* ----- produce a log-string describing the specific run setup ----- */
-  LAL_CALL ( getLogString ( &status, &(GV.logstring), &GV ), &status );
+  if ( (GV.logstring = XLALGetLogString ( &GV )) == NULL ) {
+    XLALPrintError ( "XLALGetLogString() failed!\n");
+    return COMPUTEFSTATISTIC_EXLAL;
+  }
   LogPrintfVerbatim( LOG_DEBUG, "%s", GV.logstring );
 
   /* keep a log-file recording all relevant parameters of this search-run */
@@ -1749,74 +1750,61 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg, const UserInput_t *uvar )
 /**
  * Produce a log-string describing the present run-setup
  */
-void
-getLogString ( LALStatus *status, CHAR **logstr, const ConfigVariables *cfg )
+CHAR *
+XLALGetLogString ( const ConfigVariables *cfg )
 {
-  struct tm utc;
-  time_t tp;
+  XLAL_CHECK_NULL ( cfg != NULL, XLAL_EINVAL );
+
+  CHAR *logstr = NULL;
+  XLAL_CHECK_NULL ( (logstr = XLALStringAppend ( logstr, "%% cmdline: " )) != NULL, XLAL_EFUNC );
+  CHAR *cmdline;
+  XLAL_CHECK_NULL ( (cmdline = XLALUserVarGetLog ( UVAR_LOGFMT_CMDLINE )) != NULL, XLAL_EFUNC );
+  XLAL_CHECK_NULL ( (logstr = XLALStringAppend ( logstr, cmdline )) != NULL, XLAL_EFUNC );
+  XLALFree ( cmdline );
+  XLAL_CHECK_NULL ( (logstr = XLALStringAppend ( logstr, "\n" )) != NULL, XLAL_EFUNC );
+  XLAL_CHECK_NULL ( (logstr = XLALStringAppend ( logstr, cfg->VCSInfoString )) != NULL, XLAL_EFUNC );
+
+  XLAL_CHECK_NULL ( (logstr = XLALStringAppend ( logstr, "%% Started search: " )) != NULL, XLAL_EFUNC );
+  time_t tp = time(NULL);
+  XLAL_CHECK_NULL ( (logstr = XLALStringAppend ( logstr, asctime( gmtime( &tp ) ))) != NULL, XLAL_EFUNC );
+  XLAL_CHECK_NULL ( (logstr = XLALStringAppend ( logstr, "%% Loaded SFTs: [ " )) != NULL, XLAL_EFUNC );
+
 #define BUFLEN 1024
-  CHAR dateStr[BUFLEN];
-  CHAR line[BUFLEN];
-  CHAR *cmdline = NULL;
-  UINT4 i, numDet, numSpins = PULSAR_MAX_SPINS;
-  CHAR *ret = NULL;
+  CHAR buf[BUFLEN];
 
-  INITSTATUS(status);
-  ATTATCHSTATUSPTR (status);
-
-  /* get full commandline describing search*/
-  TRY ( LALUserVarGetLog (status->statusPtr, &cmdline,  UVAR_LOGFMT_CMDLINE ), status );
-  sprintf (line, "%%%% cmdline: %s\n", cmdline );
-  LALFree ( cmdline );
-  ret = append_string ( ret, line );
-
-  ret = append_string ( ret, cfg->VCSInfoString );
-
-  numDet = cfg->detectorIDs->length;
-  tp = time(NULL);
-  sprintf (line, "%%%% Started search: %s", asctime( gmtime( &tp ) ) );
-  ret = append_string ( ret, line );
-  ret = append_string ( ret, "%% Loaded SFTs: [ " );
-  for ( i=0; i < numDet; i ++ )
+  UINT4 numDet = cfg->detectorIDs->length;
+  for ( UINT4 X=0; X < numDet; X ++ )
     {
-      sprintf (line, "%s:%d%s",  cfg->detectorIDs->data[i],
-	       cfg->numSFTsPerDet->data[i],
-	       (i < numDet - 1)?", ":" ]\n");
-      ret = append_string ( ret, line );
+      XLAL_CHECK_NULL ( snprintf ( buf, BUFLEN, "%s:%d%s",  cfg->detectorIDs->data[X], cfg->numSFTsPerDet->data[X], (X < numDet - 1) ? ", " : " ]\n" ) < BUFLEN, XLAL_EBADLEN );
+      XLAL_CHECK_NULL ( (logstr = XLALStringAppend ( logstr, buf )) != NULL, XLAL_EFUNC );
     }
-  utc = *XLALGPSToUTC( &utc, (INT4)GPS2REAL8(cfg->startTime) );
-  strcpy ( dateStr, asctime(&utc) );
-  dateStr[ strlen(dateStr) - 1 ] = 0;
-  sprintf (line, "%%%% Start GPS time tStart = %12.3f    (%s GMT)\n",
-	   GPS2REAL8(cfg->startTime), dateStr);
-  ret = append_string ( ret, line );
-  sprintf (line, "%%%% Total time spanned    = %12.3f s  (%.1f hours)\n",
-	   cfg->Tspan, cfg->Tspan/3600 );
-  ret = append_string ( ret, line );
-  sprintf (line, "%%%% InternalRefTime       = %12.3f \n", XLALGPSGetREAL8 ( &(cfg->internalRefTime)) );
-  ret = append_string ( ret, line );
-  sprintf (line, "%%%% Pulsar-params refTime = %12.3f \n", XLALGPSGetREAL8 ( &(cfg->searchRegion.refTime) ));
-  ret = append_string ( ret, line );
-  sprintf (line, "%%%% Spin-range at refTime: " );
-  ret = append_string ( ret, line );
-
-  ret = append_string (ret, "fkdot = [ " );
-  for (i=0; i < numSpins; i ++ )
+  INT4 startTimeSeconds = cfg->startTime.gpsSeconds;
+  struct tm startTimeUTC = *XLALGPSToUTC ( &startTimeUTC, startTimeSeconds );
+  {
+    CHAR *startTimeUTCString = XLALStringDuplicate ( asctime(&startTimeUTC) );
+    startTimeUTCString[strlen(startTimeUTCString)-2] = 0;	// kill trailing newline
+    XLAL_CHECK_NULL ( snprintf ( buf, BUFLEN, "%%%% GPS starttime         = %d (%s GMT)\n", startTimeSeconds, startTimeUTCString ) < BUFLEN, XLAL_EBADLEN );
+    XLALFree ( startTimeUTCString );
+  }
+  XLAL_CHECK_NULL ( (logstr = XLALStringAppend ( logstr, buf )) != NULL, XLAL_EFUNC );
+  XLAL_CHECK_NULL ( snprintf ( buf, BUFLEN, "%%%% Total time spanned    = %.0f s (%.2f hours)\n", cfg->Tspan, cfg->Tspan/3600.0 ) < BUFLEN, XLAL_EBADLEN );
+  XLAL_CHECK_NULL ( (logstr = XLALStringAppend ( logstr, buf )) != NULL, XLAL_EFUNC );
+  XLAL_CHECK_NULL ( snprintf (buf, BUFLEN, "%%%% InternalRefTime       = %.16g \n", XLALGPSGetREAL8 ( &(cfg->internalRefTime)) ) < BUFLEN, XLAL_EBADLEN );
+  XLAL_CHECK_NULL ( (logstr = XLALStringAppend ( logstr, buf )) != NULL, XLAL_EFUNC );
+  XLAL_CHECK_NULL ( snprintf (buf, BUFLEN, "%%%% Pulsar-params refTime = %.16g \n", XLALGPSGetREAL8 ( &(cfg->searchRegion.refTime) )) < BUFLEN, XLAL_EBADLEN );
+  XLAL_CHECK_NULL ( (logstr = XLALStringAppend ( logstr, buf )) != NULL, XLAL_EFUNC );
+  XLAL_CHECK_NULL ( (logstr = XLALStringAppend ( logstr, "%% Spin-range at refTime: fkdot = [ " )) != NULL, XLAL_EFUNC );
+  for (UINT4 k=0; k < PULSAR_MAX_SPINS; k ++ )
     {
-      sprintf (line, "%.16g:%.16g%s",
-	       cfg->searchRegion.fkdot[i],
-	       cfg->searchRegion.fkdot[i] + cfg->searchRegion.fkdotBand[i],
-	       (i < numSpins - 1)?", ":" ]\n");
-      ret = append_string ( ret, line );
+      XLAL_CHECK_NULL ( snprintf(buf, BUFLEN, "%.16g:%.16g%s", cfg->searchRegion.fkdot[k], cfg->searchRegion.fkdot[k] + cfg->searchRegion.fkdotBand[k],
+                                 (k < PULSAR_MAX_SPINS - 1)?", ":" ]\n") < BUFLEN, XLAL_EBADLEN );
+      XLAL_CHECK_NULL ( (logstr = XLALStringAppend ( logstr, buf )) != NULL, XLAL_EFUNC );
     }
 
   /* return result */
-  (*logstr) = ret;
+  return logstr;
 
-  DETATCHSTATUSPTR (status);
-  RETURN (status);
-
-} /* getLogString() */
+} // XLALGetLogString()
 
 
 
@@ -2394,36 +2382,6 @@ XLALCenterIsLocalMax ( const scanlineWindow_t *scanWindow, const UINT4 rankingSt
   return TRUE;
 
 } /* XLALCenterIsLocalMax() */
-
-/**
- * Mini helper-function: append string 'str2' to string 'str1',
- * returns pointer to new concatenated string
- */
-CHAR *append_string ( CHAR *str1, const CHAR *str2 )
-{
-  UINT4 len1 = 0, len2 = 0;
-  CHAR *outstr;
-
-  if ( str1 )
-    len1 = strlen(str1);
-  if ( str2 )
-    len2 = strlen(str2);
-
-  if ( ( outstr = LALRealloc ( str1, len1 + len2 + 1 ) ) == NULL )
-    {
-      XLALPrintError ("Seems like we're out of memory!\n");
-      return NULL;
-    }
-
-  if ( len1 == 0 )
-    outstr[0] = 0;
-
-  if ( str2 )
-    outstr = strcat ( outstr, str2 );
-
-  return outstr;
-
-} /* append_string() */
 
 /**
  * Function to append one timing-info line to open output file.
