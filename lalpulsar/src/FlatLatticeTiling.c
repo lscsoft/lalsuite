@@ -523,6 +523,7 @@ static void FLT_GetBounds(
   const FlatLatticeTiling* tiling,		///< [in] Tiling state
   const size_t dimension,			///< [in] Dimension on which bound applies
   const gsl_vector* point,			///< [in] Point at which to find bounds
+  const gsl_vector* padding,			///< [in] Optional padding to add to parameter-space bounds
   double* lower,				///< [out] Lower bound on point
   double* upper					///< [out] Upper bound on point
   )
@@ -537,6 +538,13 @@ static void FLT_GetBounds(
     gsl_vector_const_view point_n = gsl_vector_const_subvector(point, 0, dimension);
     *lower = FLT_GetBound(dimension, &point_n.vector, bound->N, bound->a, bound->c_lower, bound->m_lower);
     *upper = FLT_GetBound(dimension, &point_n.vector, bound->N, bound->a, bound->c_upper, bound->m_upper);
+  }
+
+  // Optionally add padding
+  if (padding != NULL) {
+    const double pad = gsl_vector_get(padding, dimension);
+    *lower -= pad;
+    *upper += pad;
   }
 
 }
@@ -914,7 +922,7 @@ int XLALSetFlatLatticeTypeAndMetric(
   // Set physical parameter-space offset
   for (size_t i = 0; i < n; ++i) {
     double phys_lower = 0, phys_upper = 0;
-    FLT_GetBounds(tiling, i, tiling->phys_offset, &phys_lower, &phys_upper);
+    FLT_GetBounds(tiling, i, tiling->phys_offset, NULL, &phys_lower, &phys_upper);
     gsl_vector_set(tiling->phys_offset, i, phys_lower);
   }
 
@@ -1020,17 +1028,16 @@ int XLALNextFlatLatticePoint(
     // Set parameter-space bounds and starting point
     for (size_t i = 0; i < n; ++i) {
 
-      // Get normalised bounds
+      // Get normalised bounds, with padding
       double lower = 0, upper = 0;
-      FLT_GetBounds(tiling, i, tiling->point, &lower, &upper);
+      FLT_GetBounds(tiling, i, tiling->point, tiling->padding, &lower, &upper);
 
       // Set parameter-space bounds
       gsl_vector_set(tiling->lower, i, lower);
       gsl_vector_set(tiling->upper, i, upper);
 
-      // Initialise current point
-      const double point = lower - gsl_vector_get(tiling->padding, i);
-      gsl_vector_set(tiling->point, i, point);
+      // Initialise starting point
+      gsl_vector_set(tiling->point, i, lower);
 
     }
 
@@ -1077,8 +1084,7 @@ int XLALNextFlatLatticePoint(
       // If point is not out of bounds, we have found a point
       const double point = gsl_vector_get(tiling->point, i);
       const double upper = gsl_vector_get(tiling->upper, i);
-      const double padding = gsl_vector_get(tiling->padding, i);
-      if (point <= upper + padding) {
+      if (point <= upper) {
         break;
       }
 
@@ -1093,9 +1099,9 @@ int XLALNextFlatLatticePoint(
       // Get index of tiled dimension
       const size_t j = gsl_vector_uint_get(tiling->tiled_idx, tj);
 
-      // Get normalised bounds
+      // Get normalised bounds, with padding
       double lower = 0, upper = 0;
-      FLT_GetBounds(tiling, j, tiling->point, &lower, &upper);
+      FLT_GetBounds(tiling, j, tiling->point, tiling->padding, &lower, &upper);
 
       // Set parameter-space bounds
       gsl_vector_set(tiling->lower, j, lower);
@@ -1105,9 +1111,8 @@ int XLALNextFlatLatticePoint(
       gsl_vector_view increment = gsl_matrix_column(tiling->increment, j);
 
       // Calculate the distance from current point to the lower bound, in integer number of increments
-      const double padding = gsl_vector_get(tiling->padding, j);
       const double point = gsl_vector_get(tiling->point, j);
-      const double dist = ceil( (lower - padding - point) / gsl_vector_get(&increment.vector, j) );
+      const double dist = ceil( (lower - point) / gsl_vector_get(&increment.vector, j) );
 
       // Move point back to lower bound
       gsl_blas_daxpy(dist, &increment.vector, tiling->point);
@@ -1157,11 +1162,10 @@ int XLALFastForwardFlatLatticeTiling(
     const double point = gsl_vector_get(tiling->point, i);
     spacing = gsl_matrix_get(tiling->increment, i, i);
     const double upper = gsl_vector_get(tiling->upper, i);
-    const double padding = gsl_vector_get(tiling->padding, i);
 
     // Calculate number of points to fast-forward, so that then calling
     // XLALNextFlatticePoint() will advance the next highest tiled dimension
-    count = floor((upper + padding - point) / spacing);
+    count = floor((upper - point) / spacing);
 
     // Fast-forward over dimension
     gsl_vector_set(tiling->point, i, point + count*spacing);
