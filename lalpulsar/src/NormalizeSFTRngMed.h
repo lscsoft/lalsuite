@@ -66,6 +66,7 @@ extern "C" {
 #include <lal/SFTutils.h>
 #include <lal/RngMedBias.h>
 #include <lal/LALRunningMedian.h>
+#include <lal/DetectorStates.h>
 
 /*
  * 7. Error codes and messages. This must be auto-extracted for
@@ -109,9 +110,9 @@ extern "C" {
 int XLALSFTtoRngmed ( REAL8FrequencySeries *rngmed, const SFTtype *sft, UINT4 blockSize );
 int XLALSFTtoPeriodogram ( REAL8FrequencySeries *periodo, const COMPLEX8FrequencySeries  *SFT );
 int XLALPeriodoToRngmed ( REAL8FrequencySeries  *rngmed, const REAL8FrequencySeries  *periodo, UINT4 blockSize );
-int XLALNormalizeSFT ( REAL8FrequencySeries *rngmed, SFTtype *sft, UINT4 blockSize );
-int XLALNormalizeSFTVect ( SFTVector  *sftVect,	UINT4 blockSize );
-MultiPSDVector * XLALNormalizeMultiSFTVect ( MultiSFTVector *multsft, UINT4 blockSize );
+int XLALNormalizeSFT ( REAL8FrequencySeries *rngmed, SFTtype *sft, UINT4 blockSize, const REAL8 assumeSqrtS );
+int XLALNormalizeSFTVect ( SFTVector  *sftVect,	UINT4 blockSize, const REAL8 assumeSqrtS );
+MultiPSDVector * XLALNormalizeMultiSFTVect ( MultiSFTVector *multsft, UINT4 blockSize, const MultiNoiseFloor *assumeSqrtSX );
 int XLALSFTstoCrossPeriodogram ( REAL8FrequencySeries *periodo, const COMPLEX8FrequencySeries *sft1, const COMPLEX8FrequencySeries *sft2 );
 
 // ****************************** OBSOLETE + DEPRECATED LAL-INTERFACE FUNCTIONS ******************************

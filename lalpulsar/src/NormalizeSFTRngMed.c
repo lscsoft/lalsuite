@@ -69,21 +69,33 @@ static const LALStatus empty_LALStatus;
 int
 XLALNormalizeSFT ( REAL8FrequencySeries *rngmed, 	/**< [out] rng-median smoothed periodogram over SFT (Tsft*Sn/2) (must be allocated) */
                    SFTtype              *sft,		/**< SFT to be normalized */
-                   UINT4                blockSize	/**< Running median block size for rngmed calculation */
+                   UINT4                blockSize,	/**< Running median block size for rngmed calculation */
+                   const REAL8          assumeSqrtS	/**< If >0, instead assume sqrt(S) value *instead* of calculating PSD from running median */
                    )
 {
   /* check input argments */
-  XLAL_CHECK (sft && sft->data && sft->data->data && sft->data->length > 0,
-              XLAL_EINVAL, "Invalid NULL or zero-length input in 'sft'" );
+  XLAL_CHECK (sft && sft->data && sft->data->data && sft->data->length > 0, XLAL_EINVAL, "Invalid NULL or zero-length input in 'sft'" );
 
-  XLAL_CHECK ( rngmed && rngmed->data && rngmed->data->data && rngmed->data->length > 0,
-               XLAL_EINVAL, "Invalid NULL or zero-length input in 'rngmed'" );
+  XLAL_CHECK ( rngmed && rngmed->data && rngmed->data->data && rngmed->data->length > 0, XLAL_EINVAL, "Invalid NULL or zero-length input in 'rngmed'" );
   /* make sure there is no size mismatch */
   UINT4 length = sft->data->length;
   XLAL_CHECK ( length == rngmed->data->length, XLAL_EINVAL, "SFT length (%d) differs from rngmed length (%d)", length, rngmed->data->length );
 
-  /* calculate the rngmed */
-  XLAL_CHECK ( XLALSFTtoRngmed (rngmed, sft, blockSize) == XLAL_SUCCESS, XLAL_EFUNC, "XLALSFTtoRngmed() failed" );
+  XLAL_CHECK ( assumeSqrtS >= 0.0, XLAL_EINVAL );
+
+  if ( assumeSqrtS == 0)
+    { /* calculate the rngmed */
+      XLAL_CHECK ( XLALSFTtoRngmed (rngmed, sft, blockSize) == XLAL_SUCCESS, XLAL_EFUNC, "XLALSFTtoRngmed() failed" );
+    }
+  else
+    {
+      /* set PSD to constant value: Tsft * S / 2 = Tsft * (sqrt(S))^2 / 2 */
+      const REAL8 Tsft = 1.0 / sft->deltaF;
+      const REAL8 assume_Tsft_Sn_b2 = Tsft * assumeSqrtS*assumeSqrtS / 2;
+      for (UINT4 j = 0; j < length; j++) {
+        rngmed->data->data[j] = assume_Tsft_Sn_b2;
+      }
+    }
 
   /* loop over sft and normalize */
   for (UINT4 j = 0; j < length; j++)
@@ -103,16 +115,15 @@ XLALNormalizeSFT ( REAL8FrequencySeries *rngmed, 	/**< [out] rng-median smoothed
  * Function for normalizing a vector of SFTs.
  */
 int
-XLALNormalizeSFTVect ( SFTVector  *sftVect,	/**< [in/out] pointer to a vector of SFTs which will be normalized */
-                       UINT4     blockSize	/**< Running median window size */
+XLALNormalizeSFTVect ( SFTVector  *sftVect,		/**< [in/out] pointer to a vector of SFTs which will be normalized */
+                       UINT4     blockSize,		/**< Running median window size */
+                       const REAL8 assumeSqrtS		/**< If >0, instead assume sqrt(S) value *instead* of calculating PSD from running median */
                        )
 {
   /* check input argments */
-  XLAL_CHECK ( sftVect && sftVect->data && sftVect->length > 0,
-               XLAL_EINVAL, "Invalid NULL or zero-length input in 'sftVect'");
+  XLAL_CHECK ( sftVect && sftVect->data && sftVect->length > 0, XLAL_EINVAL, "Invalid NULL or zero-length input in 'sftVect'");
 
-  /* memory allocation of rngmed using length of first sft
-     -- assume all sfts have the same length*/
+  /* memory allocation of rngmed using length of first sft -- assume all sfts have the same length*/
   UINT4 lengthsft = sftVect->data->data->length;
 
   /* allocate memory for a single rngmed */
@@ -126,7 +137,7 @@ XLALNormalizeSFTVect ( SFTVector  *sftVect,	/**< [in/out] pointer to a vector of
       SFTtype *sft = &sftVect->data[j];
 
       /* call sft normalization function */
-      XLAL_CHECK ( XLALNormalizeSFT ( rngmed, sft, blockSize ) == XLAL_SUCCESS, XLAL_EFUNC, "XLALNormalizeSFT() failed." );
+      XLAL_CHECK ( XLALNormalizeSFT ( rngmed, sft, blockSize, assumeSqrtS ) == XLAL_SUCCESS, XLAL_EFUNC, "XLALNormalizeSFT() failed." );
 
     } /* for j < sftVect->length */
 
@@ -145,12 +156,13 @@ XLALNormalizeSFTVect ( SFTVector  *sftVect,	/**< [in/out] pointer to a vector of
  */
 MultiPSDVector *
 XLALNormalizeMultiSFTVect ( MultiSFTVector *multsft,		/**< [in/out] multi-vector of SFTs which will be normalized */
-                            UINT4          blockSize		/**< Running median window size */
+                            UINT4 blockSize,			/**< Running median window size */
+                            const MultiNoiseFloor *assumeSqrtSX	/**< If !NULL, instead assume sqrt(S^X) values *instead* of calculating PSD from running median */
                             )
 {
   /* check input argments */
-  XLAL_CHECK_NULL (multsft && multsft->data && multsft->length > 0,
-              XLAL_EINVAL, "Invalid NULL or zero-length input 'multsft'");
+  XLAL_CHECK_NULL ( multsft && multsft->data && multsft->length > 0, XLAL_EINVAL, "Invalid NULL or zero-length input 'multsft'");
+  XLAL_CHECK_NULL ( assumeSqrtSX == NULL || assumeSqrtSX->length == multsft->length, XLAL_EINVAL );
 
   /* allocate multipsd structure */
   MultiPSDVector *multiPSD;
@@ -161,7 +173,7 @@ XLALNormalizeMultiSFTVect ( MultiSFTVector *multsft,		/**< [in/out] multi-vector
   XLAL_CHECK_NULL ( ( multiPSD->data = XLALCalloc ( numifo, sizeof(*multiPSD->data))) != NULL, XLAL_ENOMEM, "Failed to XLALCalloc ( %d, %d)", numifo, sizeof(*multiPSD->data) );
 
   /* loop over ifos */
-  for ( UINT4 X = 0; X < numifo; X++)
+  for ( UINT4 X = 0; X < numifo; X++ )
     {
       UINT4 numsft = multsft->data[X]->length;
 
@@ -172,7 +184,7 @@ XLALNormalizeMultiSFTVect ( MultiSFTVector *multsft,		/**< [in/out] multi-vector
       XLAL_CHECK_NULL ( (multiPSD->data[X]->data = XLALCalloc ( numsft, sizeof(*(multiPSD->data[X]->data)))) != NULL, XLAL_ENOMEM, "Failed to XLALCalloc ( %d, size)", numsft );
 
       /* loop over sfts for this IFO X */
-      for (UINT4 j = 0; j < numsft; j++)
+      for ( UINT4 j = 0; j < numsft; j++ )
         {
           SFTtype *sft = &multsft->data[X]->data[j];
 
@@ -180,7 +192,10 @@ XLALNormalizeMultiSFTVect ( MultiSFTVector *multsft,		/**< [in/out] multi-vector
           UINT4 lengthsft = sft->data->length;
           XLAL_CHECK_NULL ( (multiPSD->data[X]->data[j].data = XLALCreateREAL8Vector ( lengthsft ) ) != NULL, XLAL_EFUNC, "XLALCreateREAL8Vector(%d) failed.", lengthsft );
 
-          XLAL_CHECK_NULL( XLALNormalizeSFT ( &multiPSD->data[X]->data[j], sft, blockSize ) == XLAL_SUCCESS, XLAL_EFUNC, "XLALNormalizeSFT() failed");
+          /* if assumeSqrtSX is not given, pass 0.0 to calculate PSD from running median */
+          const REAL8 assumeSqrtS = (assumeSqrtSX != NULL) ? assumeSqrtSX->sqrtSn[X] : 0.0;
+
+          XLAL_CHECK_NULL( XLALNormalizeSFT ( &multiPSD->data[X]->data[j], sft, blockSize, assumeSqrtS ) == XLAL_SUCCESS, XLAL_EFUNC, "XLALNormalizeSFT() failed");
 
         } /* for j < numsft */
 
@@ -478,7 +493,7 @@ LALNormalizeSFT (LALStatus           *status,		/**< pointer to LALStatus structu
 {
   INITSTATUS(status);
 
-  if ( XLALNormalizeSFT ( rngmed, sft, blockSize) != XLAL_SUCCESS )
+  if ( XLALNormalizeSFT ( rngmed, sft, blockSize, 0.0 ) != XLAL_SUCCESS )
     ABORT ( status, NORMALIZESFTRNGMEDH_EVAL, NORMALIZESFTRNGMEDH_MSGEVAL );
 
   /* normal exit */
@@ -498,7 +513,7 @@ LALNormalizeSFTVect (LALStatus  *status,		/**< pointer to LALStatus structure */
 {
   INITSTATUS(status);
 
-  if ( XLALNormalizeSFTVect ( sftVect, blockSize ) != XLAL_SUCCESS )
+  if ( XLALNormalizeSFTVect ( sftVect, blockSize, 0.0 ) != XLAL_SUCCESS )
     ABORT ( status, NORMALIZESFTRNGMEDH_EVAL, NORMALIZESFTRNGMEDH_MSGEVAL );
 
   /* normal exit */
@@ -524,7 +539,7 @@ LALNormalizeMultiSFTVect (LALStatus      *status,		/**< pointer to LALStatus str
   if ( (*multiRngmed) != NULL ) ABORT ( status, NORMALIZESFTRNGMEDH_ENULL, NORMALIZESFTRNGMEDH_MSGENULL);
 
   MultiPSDVector *ret;
-  if ( (ret = XLALNormalizeMultiSFTVect ( multsft, blockSize )) == NULL )
+  if ( (ret = XLALNormalizeMultiSFTVect ( multsft, blockSize, NULL )) == NULL )
     ABORT ( status, NORMALIZESFTRNGMEDH_EVAL, NORMALIZESFTRNGMEDH_MSGEVAL );
 
   (*multiRngmed) = ret;
