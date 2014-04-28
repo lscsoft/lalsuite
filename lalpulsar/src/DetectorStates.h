@@ -180,7 +180,7 @@ DetectorStateSeries* XLALGetDetectorStates ( const LIGOTimeGPSVector *timestamps
 MultiDetectorStateSeries* XLALGetMultiDetectorStates( const MultiLIGOTimeGPSVector *multiTS, const MultiLALDetector *multiIFO, const EphemerisData *edat, REAL8 tOffset );
 
 int XLALParseMultiLALDetector ( MultiLALDetector *multiIFO, const LALStringVector *detNames );
-int XLALParseMultiNoiseFloor ( MultiNoiseFloor *multiNoiseFloor, const LALStringVector *sqrtSX );
+int XLALParseMultiNoiseFloor ( MultiNoiseFloor *multiNoiseFloor, const LALStringVector *sqrtSX, UINT4 numDetectors );
 int XLALMultiLALDetectorFromMultiSFTCatalogView ( MultiLALDetector *multiIFO, const MultiSFTCatalogView *multiView );
 int XLALMultiLALDetectorFromMultiSFTs ( MultiLALDetector *multiIFO, const MultiSFTVector *multiSFTs );
 

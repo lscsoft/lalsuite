@@ -127,7 +127,7 @@ test_XLALDopplerFstatMetric ( void )
   XLALDestroyStringVector ( detNames );
 
   MultiNoiseFloor multiNoiseFloor;
-  XLAL_CHECK ( XLALParseMultiNoiseFloor ( &multiNoiseFloor, sqrtSX ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK ( XLALParseMultiNoiseFloor ( &multiNoiseFloor, sqrtSX, multiIFO.length ) == XLAL_SUCCESS, XLAL_EFUNC );
   XLALDestroyStringVector ( sqrtSX );
 
   // prepare metric parameters for modern XLALDopplerFstatMetric() and mid-old XLALOldDopplerFstatMetric()

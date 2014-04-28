@@ -478,9 +478,8 @@ XLALInitCode ( ConfigVariables *cfg, const UserVariables_t *uvar, const char *ap
   UINT4 numDet = cfg->multiIFO.length;
   XLAL_CHECK ( numDet >= 1, XLAL_EINVAL );
 
-  if ( uvar->IFOs ) {
-    XLAL_CHECK ( XLALParseMultiNoiseFloor ( &cfg->multiNoiseFloor, uvar->sqrtSX ) == XLAL_SUCCESS, XLAL_EFUNC );
-    XLAL_CHECK ( numDet == cfg->multiNoiseFloor.length, XLAL_EINVAL );
+  if ( uvar->sqrtSX ) {
+    XLAL_CHECK ( XLALParseMultiNoiseFloor ( &cfg->multiNoiseFloor, uvar->sqrtSX, numDet ) == XLAL_SUCCESS, XLAL_EFUNC );
   }
 
   /* ---------- translate coordinate system into internal representation ---------- */

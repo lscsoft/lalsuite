@@ -435,7 +435,7 @@ XLALInitMakefakedata ( ConfigVars_t *cfg, UserVariables_t *uvar )
 
   // check if the user asked for Gaussian white noise to be produced (sqrtSn[X]!=0), otherwise leave noise-floors at 0
   if ( uvar->sqrtSX != NULL ) {
-    XLAL_CHECK ( XLALParseMultiNoiseFloor ( &(cfg->multiNoiseFloor), uvar->sqrtSX ) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK ( XLALParseMultiNoiseFloor ( &(cfg->multiNoiseFloor), uvar->sqrtSX, cfg->multiIFO.length ) == XLAL_SUCCESS, XLAL_EFUNC );
   } else {
     cfg->multiNoiseFloor.length = cfg->multiIFO.length;
     // values remain at their default sqrtSn[X] = 0;
