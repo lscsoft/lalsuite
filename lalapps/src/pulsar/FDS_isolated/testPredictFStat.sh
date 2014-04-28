@@ -42,6 +42,8 @@ Alpha=2.0
 Delta=-0.5
 
 h0=1
+noiseSqrtSh=0.5
+h0Double=2  ## same SNR for noiseSqrtSh=1 as assumed in SignalOnly
 cosi=-0.3
 
 psi=0.6
@@ -50,7 +52,7 @@ phi0=1.5
 Freq=100.12345
 mfd_fmin=$(echo $Freq $mfd_FreqBand | awk '{printf "%g", $1 - $2 / 2.0}');
 
-noiseSqrtSh=1
+
 
 IFO=H1
 
@@ -98,10 +100,10 @@ else
 fi
 resSAF=`echo $tmp | awk '{printf "%g", 2.0 * $1}'`
 
-pfs_CL_common=" --Alpha=$Alpha --Delta=$Delta --IFO=$IFO --h0=$h0 --cosi=$cosi --psi=$psi --Freq=$Freq --DataFiles=\"${SFTdir}/*.sft\""
+pfs_CL_common=" --Alpha=$Alpha --Delta=$Delta --IFO=$IFO --cosi=$cosi --psi=$psi --Freq=$Freq --DataFiles=\"${SFTdir}/*.sft\""
 ## ---------- Run PredictFStat{NoiseWeights} ----------
 outfile_pfs1="__tmp_PFS1.dat";
-pfs_CL="${pfs_CL_common} --outputFstat=$outfile_pfs1"
+pfs_CL="${pfs_CL_common} --h0=$h0 --outputFstat=$outfile_pfs1"
 cmdline="$pfs_path $pfs_CL"
 if [ "$DEBUG" ]; then echo $cmdline; fi
 echo -n "Running ${pfs_code}{NoiseWeights} ... "
@@ -116,7 +118,7 @@ resPFS1=`echo $tmp | awk '{printf "%g", $1}'`
 
 ## ---------- Run PredictFStat{SignalOnly} ----------
 outfile_pfs0="__tmp_PFS0.dat";
-pfs_CL="${pfs_CL_common} --outputFstat=$outfile_pfs0 --SignalOnly"
+pfs_CL="${pfs_CL_common} --h0=$h0Double --outputFstat=$outfile_pfs0 --SignalOnly"
 cmdline="$pfs_path $pfs_CL"
 if [ "$DEBUG" ]; then echo $cmdline; fi
 echo -n "Running ${pfs_code}{SignalOnly} ... "
@@ -139,7 +141,7 @@ echo
 awk_reldevPercent='{printf "%.1f", 100.0 * sqrt(($1-$2)*($1-$2))/(0.5*($1+$2)) }'
 awk_isgtr='{if($1>$2) {print "1"}}'
 tolerance0=1	## percent
-tolerance1=15	## percent
+tolerance1=20	## percent
 
 eps0=$(echo $resSAF $resPFS0 | awk "$awk_reldevPercent");
 eps1=$(echo $resSAF $resPFS1 | awk "$awk_reldevPercent");
