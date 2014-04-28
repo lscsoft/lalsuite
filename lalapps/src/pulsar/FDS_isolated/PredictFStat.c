@@ -84,6 +84,7 @@
 #define MYMIN(x,y) ( (x) < (y) ? (x) : (y) )
 
 #define SQ(x) ((x)*(x))
+#define INIT_MEM(x) memset(&(x), 0, sizeof((x)))
 
 #define LAL_INT4_MAX 2147483647
 
@@ -119,7 +120,8 @@ typedef struct {
   REAL8 Alpha;		/**< sky-position angle 'alpha', which is right ascencion in equatorial coordinates */
   REAL8 Delta;		/**< sky-position angle 'delta', which is declination in equatorial coordinates */
 
-  BOOLEAN SignalOnly;	/**< switch wheter to assume Sh=1 instead of estimating noise-floors from SFTs */
+  LALStringVector* assumeSqrtSX;/**< Assume stationary Gaussian noise with detector noise-floors sqrt{SX}" */
+  BOOLEAN SignalOnly;	/**< DEPRECATED: ALTERNATIVE switch to assume Sh=1 instead of estimating noise-floors from SFTs */
 
   CHAR *IFO;		/**< GW detector short-name, only useful if not using v2-SFTs as input */
 
@@ -291,6 +293,9 @@ initUserVars (LALStatus *status, UserInput_t *uvar )
   uvar->minStartTime = 0;
   uvar->maxEndTime = LAL_INT4_MAX;
 
+  uvar->assumeSqrtSX = NULL;
+  uvar->SignalOnly = 0;
+
   uvar->phi0 = 0;
 
 #define DEFAULT_TRANSIENT "none"
@@ -322,9 +327,10 @@ initUserVars (LALStatus *status, UserInput_t *uvar )
   LALregINTUserStruct ( status,	minStartTime, 	 0,  UVAR_OPTIONAL, "Earliest SFT-timestamp to include");
   LALregINTUserStruct ( status,	maxEndTime, 	 0,  UVAR_OPTIONAL, "Latest SFT-timestamps to include");
 
-  LALregBOOLUserStruct(status,	SignalOnly,	'S', UVAR_OPTIONAL, "Assume Sh=1 instead of estimating noise-floor from SFTs");
+  LALregLISTUserStruct(status,  assumeSqrtSX,	 0,  UVAR_OPTIONAL, "Don't estimate noise-floors but assume (stationary) per-IFO sqrt{SX} (if single value: use for all IFOs)");
+  LALregBOOLUserStruct(status,	SignalOnly,	'S', UVAR_DEVELOPER,"DEPRECATED ALTERNATIVE: Don't estimate noise-floors but assume sqrtSX=1 instead");
 
-  LALregBOOLUserStruct(status,	version,        'V', UVAR_SPECIAL,   "Output code version");
+  LALregBOOLUserStruct(status,	version,        'V', UVAR_SPECIAL,  "Output code version");
 
   LALregINTUserStruct(status,	RngMedWindow,	'k', UVAR_DEVELOPER, "Running-Median window size");
   LALregREALUserStruct(status,	cosiota,	 0 , UVAR_DEVELOPER, "[DEPRECATED] Use --cosi instead!");
@@ -349,18 +355,11 @@ InitPFS ( LALStatus *status, ConfigVariables *cfg, const UserInput_t *uvar )
   SFTConstraints constraints = empty_SFTConstraints;
   SkyPosition skypos;
 
-  LIGOTimeGPS startTime, endTime;
-  REAL8 duration, Tsft;
   LIGOTimeGPS minStartTimeGPS, maxEndTimeGPS;
 
   EphemerisData *edat = NULL;		    	/* ephemeris data */
   MultiAMCoeffs *multiAMcoef = NULL;
-  MultiPSDVector *multiRngmed = NULL;
-  MultiNoiseWeights *multiNoiseWeights = NULL;
-  MultiSFTVector *multiSFTs = NULL;	    	/* multi-IFO SFT-vectors */
   MultiDetectorStateSeries *multiDetStates = NULL; /* pos, vel and LMSTs for detector at times t_i */
-  UINT4 X, i;
-
 
   INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
@@ -446,14 +445,12 @@ InitPFS ( LALStatus *status, ConfigVariables *cfg, const UserInput_t *uvar )
     }
 
   /* ----- deduce start- and end-time of the observation spanned by the data */
-  {
-    GV.numSFTs = catalog->length;	/* total number of SFTs */
-    Tsft = 1.0 / catalog->data[0].header.deltaF;
-    startTime = catalog->data[0].header.epoch;
-    endTime   = catalog->data[GV.numSFTs-1].header.epoch;
-    XLALGPSAdd(&endTime, Tsft);
-    duration = GPS2REAL8(endTime) - GPS2REAL8 (startTime);
-  }
+  GV.numSFTs = catalog->length;	/* total number of SFTs */
+  REAL8 Tsft = 1.0 / catalog->data[0].header.deltaF;
+  LIGOTimeGPS startTime = catalog->data[0].header.epoch;
+  LIGOTimeGPS endTime   = catalog->data[GV.numSFTs-1].header.epoch;
+  XLALGPSAdd(&endTime, Tsft);
+  REAL8 duration = GPS2REAL8(endTime) - GPS2REAL8 (startTime);
 
   { /* ----- load ephemeris-data ----- */
     edat = XLALInitBarycenter( uvar->ephemEarth, uvar->ephemSun );
@@ -463,37 +460,126 @@ InitPFS ( LALStatus *status, ConfigVariables *cfg, const UserInput_t *uvar )
     }
   }
 
-  {/* ----- load the multi-IFO SFT-vectors ----- */
-    UINT4 wings = uvar->RngMedWindow/2 + 10;   /* extra frequency-bins needed for rngmed */
-    REAL8 fMax = uvar->Freq + 1.0 * wings / Tsft;
-    REAL8 fMin = uvar->Freq - 1.0 * wings / Tsft;
+  MultiSFTCatalogView *multiCatalogView;
+  if ( (multiCatalogView = XLALGetMultiSFTCatalogView ( catalog )) == NULL ) {
+    XLALPrintError ("%s: XLALGetMultiSFTCatalogView() failed with errno=%d\n", __func__, xlalErrno );
+    ABORT ( status, PREDICTFSTAT_EXLAL, PREDICTFSTAT_MSGEXLAL );
+  }
+  UINT4 numDetectors = multiCatalogView->length;
 
-    LogPrintf (LOG_DEBUG, "Loading SFTs ... ");
-    TRY ( LALLoadMultiSFTs ( status->statusPtr, &multiSFTs, catalog, fMin, fMax ), status );
-    LogPrintfVerbatim (LOG_DEBUG, "done.\n");
-    TRY ( LALDestroySFTCatalog ( status->statusPtr, &catalog ), status );
+  // ----- get the (multi-IFO) 'detector-state series' for given catalog
+  MultiLIGOTimeGPSVector *mTS;
+  if ( (mTS = XLALTimestampsFromMultiSFTCatalogView ( multiCatalogView )) == NULL ) {
+    XLALPrintError ("%s: XLALTimestampsFromMultiSFTCatalogView() failed with errno=%d\n", __func__, xlalErrno );
+    ABORT ( status, PREDICTFSTAT_EXLAL, PREDICTFSTAT_MSGEXLAL );
+  }
+  MultiLALDetector multiIFO; INIT_MEM(multiIFO);
+  if ( XLALMultiLALDetectorFromMultiSFTCatalogView ( &multiIFO, multiCatalogView ) != XLAL_SUCCESS ) {
+    XLALPrintError ("%s: XLALMultiLALDetectorFromMultiSFTCatalogView() failed with errno=%d\n", __func__, xlalErrno );
+    ABORT ( status, PREDICTFSTAT_EXLAL, PREDICTFSTAT_MSGEXLAL );
   }
 
-  TRY ( LALNormalizeMultiSFTVect (status->statusPtr, &multiRngmed, multiSFTs, uvar->RngMedWindow ), status);
-  TRY ( LALComputeMultiNoiseWeights (status->statusPtr, &multiNoiseWeights, multiRngmed, uvar->RngMedWindow, 0 ), status );
+  REAL8 tOffset = 0.5 * Tsft;
+  if ( ( multiDetStates = XLALGetMultiDetectorStates( mTS, &multiIFO, edat, tOffset )) == NULL ) {
+    XLALPrintError ("%s: XLALGetMultiDetectorStates() failed with code %d\n", __func__, xlalErrno );
+    ABORT ( status, PREDICTFSTAT_EXLAL, PREDICTFSTAT_MSGEXLAL );
+  }
 
-  /* correctly handle the --SignalOnly case:
-   * set noise-weights to 1, and
-   * set Sh->1 (single-sided)
-   */
-  if ( uvar->SignalOnly )
+  // ----- compute or estimate multiNoiseWeights ----------
+  MultiNoiseWeights *multiNoiseWeights = NULL;
+
+  // noise-sqrtSX provided by user ==> don't need to load the SFTs at all
+  if ( uvar->SignalOnly || (uvar->assumeSqrtSX != NULL) )
     {
-      multiNoiseWeights->Sinv_Tsft = Tsft;
-      for ( X=0; X < multiNoiseWeights->length; X ++ )
-        for ( i=0; i < multiNoiseWeights->data[X]->length; i ++ )
-          multiNoiseWeights->data[X]->data[i] = 1.0;
-    }
+      if ( uvar->SignalOnly && (uvar->assumeSqrtSX != NULL) ) {
+        XLALPrintError ("Cannot pass --SignalOnly AND --assumeSqrtSX at the same time!\n");
+        ABORT ( status, PREDICTFSTAT_EINPUT, PREDICTFSTAT_MSGEINPUT );
+      }
+      LALStringVector *assumeSqrtSX_input;
+      if ( uvar->SignalOnly ) {
+        assumeSqrtSX_input = XLALCreateStringVector ( "1", NULL );
+      } else {
+        assumeSqrtSX_input = uvar->assumeSqrtSX;
+      }
+
+      MultiNoiseFloor assumeSqrtSX; INIT_MEM(assumeSqrtSX);
+      if ( XLALParseMultiNoiseFloor ( &assumeSqrtSX, assumeSqrtSX_input, numDetectors ) != XLAL_SUCCESS ) {
+        XLALPrintError ("%s: XLALParseMultiNoiseFloor() failed with errno=%d\n", __func__, xlalErrno );
+        ABORT ( status, PREDICTFSTAT_EXLAL, PREDICTFSTAT_MSGEXLAL );
+      }
+
+      if ( uvar->SignalOnly ) {
+        XLALDestroyStringVector ( assumeSqrtSX_input );
+      }
+
+      if ( (multiNoiseWeights = XLALCalloc(1,sizeof(*multiNoiseWeights))) == NULL ) {
+        ABORT ( status, PREDICTFSTAT_EMEM, PREDICTFSTAT_MSGEMEM );
+      }
+      if ( (multiNoiseWeights->data = XLALCalloc ( numDetectors, sizeof(*multiNoiseWeights->data) )) == NULL ) {
+        ABORT ( status, PREDICTFSTAT_EMEM, PREDICTFSTAT_MSGEMEM );
+      }
+      multiNoiseWeights->length = numDetectors;
+
+      REAL8 Sinv = 0;
+      UINT4 numSFTs = 0;
+      for ( UINT4 X = 0; X < numDetectors; X ++ )
+        {
+          UINT4 numSFTsX = mTS->data[X]->length;
+          numSFTs += numSFTsX;
+          if ( (multiNoiseWeights->data[X] = XLALCreateREAL8Vector ( numSFTsX )) == NULL ) {
+            ABORT ( status, PREDICTFSTAT_EMEM, PREDICTFSTAT_MSGEMEM );
+          }
+          REAL8 SXinv = 1.0  / ( SQ(assumeSqrtSX.sqrtSn[X]) );
+          Sinv += numSFTsX * SXinv;
+          for ( UINT4 j = 0; j < numSFTsX; j ++ ) {
+            multiNoiseWeights->data[X]->data[j] = SXinv;
+          } // for j < numSFTsX
+        }  // for X < numDetectors
+
+      // ----- now properly normalize this
+      Sinv /= 1.0 * numSFTs;
+      for ( UINT4 X = 0; X < numDetectors; X ++ )
+        {
+          UINT4 numSFTsX = mTS->data[X]->length;
+          for ( UINT4 j = 0; j < numSFTsX; j ++ ) {
+            multiNoiseWeights->data[X]->data[j] /= Sinv;
+          } // for j < numSFTsX
+        } // for X < numDetectors
+
+      multiNoiseWeights->Sinv_Tsft = Sinv * Tsft;
+
+    } // if SignalOnly OR assumeSqrtSX given
+  else
+    {// load the multi-IFO SFT-vectors for noise estimation
+      UINT4 wings = uvar->RngMedWindow/2 + 10;   /* extra frequency-bins needed for rngmed */
+      REAL8 fMax = uvar->Freq + 1.0 * wings / Tsft;
+      REAL8 fMin = uvar->Freq - 1.0 * wings / Tsft;
+
+      LogPrintf (LOG_DEBUG, "Loading SFTs ... ");
+      MultiSFTVector *multiSFTs = NULL;	    	/* multi-IFO SFT-vectors */
+      if ( (multiSFTs = XLALLoadMultiSFTsFromView ( multiCatalogView, fMin, fMax )) == NULL ) {
+        XLALPrintError ("%s: XLALLoadMultiSFTsFromView() failed with errno=%d\n", __func__, xlalErrno );
+        ABORT ( status, PREDICTFSTAT_EXLAL, PREDICTFSTAT_MSGEXLAL );
+      }
+      LogPrintfVerbatim (LOG_DEBUG, "done.\n");
+
+      MultiPSDVector *multiRngmed = NULL;
+      if ( (multiRngmed = XLALNormalizeMultiSFTVect ( multiSFTs, uvar->RngMedWindow, NULL )) == NULL ) {
+        XLALPrintError ("%s: XLALNormalizeMultiSFTVect() failed with errno=%d\n", __func__, xlalErrno );
+        ABORT ( status, PREDICTFSTAT_EXLAL, PREDICTFSTAT_MSGEXLAL );
+      }
+      TRY ( LALDestroyMultiSFTVector (status->statusPtr, &multiSFTs ), status );
+      if ( (multiNoiseWeights = XLALComputeMultiNoiseWeights ( multiRngmed, uvar->RngMedWindow, 0 )) == NULL ) {
+        XLALPrintError ("%s: XLALComputeMultiNoiseWeights() failed with errno=%d\n", __func__, xlalErrno );
+        ABORT ( status, PREDICTFSTAT_EXLAL, PREDICTFSTAT_MSGEXLAL );
+      }
+      TRY ( LALDestroyMultiPSDVector (status->statusPtr, &multiRngmed ), status );
+    } // if noise-estimation done from SFTs
 
   /* ----- handle transient-signal window if given ----- */
   if ( LALUserVarWasSet ( &uvar->transientWindowType ) && strcmp ( uvar->transientWindowType, "none") )
     {
       transientWindow_t transientWindow;	/**< properties of transient-signal window */
-      MultiLIGOTimeGPSVector *mTS;
 
       if ( !strcmp ( uvar->transientWindowType, "rect" ) )
         transientWindow.type = TRANSIENT_RECTANGULAR;		/* rectangular window [t0, t0+tau] */
@@ -512,23 +598,13 @@ InitPFS ( LALStatus *status, ConfigVariables *cfg, const UserInput_t *uvar )
 
       transientWindow.tau  = uvar->transientTauDays;
 
-      if ( (mTS = XLALExtractMultiTimestampsFromSFTs ( multiSFTs )) == NULL ) {
-        XLALPrintError ("%s: failed to XLALExtractMultiTimestampsFromSFTs() from SFTs. xlalErrno = %d.\n", fn, xlalErrno );
-        ABORT ( status, PREDICTFSTAT_EXLAL, PREDICTFSTAT_MSGEXLAL );
-      }
-
       if ( XLALApplyTransientWindow2NoiseWeights ( multiNoiseWeights, mTS, transientWindow ) != XLAL_SUCCESS ) {
         XLALPrintError ("%s: XLALApplyTransientWindow2NoiseWeights() failed! xlalErrno = %d\n", fn, xlalErrno );
         ABORT ( status, PREDICTFSTAT_EXLAL, PREDICTFSTAT_MSGEXLAL );
       }
 
-      XLALDestroyMultiTimestamps ( mTS );
-
     } /* apply transient window to noise-weights */
 
-
-  /* ----- obtain the (multi-IFO) 'detector-state series' for all SFTs ----- */
-  TRY (LALGetMultiDetectorStates( status->statusPtr, &multiDetStates, multiSFTs, edat), status );
 
   /* normalize skyposition: correctly map into [0,2pi]x[-pi/2,pi/2] */
   skypos.longitude = uvar->Alpha;
@@ -551,14 +627,11 @@ InitPFS ( LALStatus *status, ConfigVariables *cfg, const UserInput_t *uvar )
     struct tm utc;
     time_t tp;
     CHAR dateStr[512], line[512], summary[1024];
-    UINT4 j, numDet;
-    numDet = multiSFTs->length;
     tp = time(NULL);
     sprintf (summary, "%%%% Date: %s", asctime( gmtime( &tp ) ) );
     strcat (summary, "%% Loaded SFTs: [ " );
-    for ( j=0; j < numDet; j ++ ) {
-      sprintf (line, "%s:%d%s",  multiSFTs->data[j]->data->name, multiSFTs->data[j]->length,
-	       (j < numDet - 1)?", ":" ]\n");
+    for ( UINT4 X = 0; X < numDetectors; X ++ ) {
+      sprintf (line, "%s:%d%s",  multiIFO.sites[X].frDetector.name, mTS->data[X]->length, (X < numDetectors - 1)?", ":" ]\n");
       strcat ( summary, line );
     }
     utc = *XLALGPSToUTC( &utc, (INT4)GPS2REAL8(startTime) );
@@ -578,9 +651,10 @@ InitPFS ( LALStatus *status, ConfigVariables *cfg, const UserInput_t *uvar )
   } /* write dataSummary string */
 
   /* free everything not needed any more */
-  TRY ( LALDestroyMultiPSDVector (status->statusPtr, &multiRngmed ), status );
+  XLALDestroyMultiTimestamps ( mTS );
+  TRY ( LALDestroySFTCatalog ( status->statusPtr, &catalog ), status );
+  XLALDestroyMultiSFTCatalogView ( multiCatalogView );
   TRY ( LALDestroyMultiNoiseWeights (status->statusPtr, &multiNoiseWeights ), status );
-  TRY ( LALDestroyMultiSFTVector (status->statusPtr, &multiSFTs ), status );
   XLALDestroyMultiDetectorStateSeries ( multiDetStates );
   XLALDestroyMultiAMCoeffs ( multiAMcoef );
 
