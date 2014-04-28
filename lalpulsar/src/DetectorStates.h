@@ -116,12 +116,6 @@ typedef struct tagMultiNoiseFloor
   REAL8 sqrtSn[PULSAR_MAX_DETECTORS];       	//!< per-IFO sqrt(PSD) values \f$\sqrt{S_X}\f$, where
                                                 //!< \f$S_X^{-1}\equiv\frac{1}{N_{\mathrm{sft}}^X} \sum_{\alpha=0}^{N_{\mathrm{sft}}^X-1} S_{X\alpha}^{-1}\f$
                                                 //!< with \f$N_{\mathrm{sft}}^X\f$ the number of SFTs (labeled by \f$\alpha\f$) from detector \f$X\f$
-  REAL8 sqrtSnTotal;				//!< overall 'noise-floor': harmonic mean
-                                                //!< \f$\mathcal{S}^{-1}\equiv\frac{1}{N_{\mathrm{sft}}}\sum_{X\alpha}^{N_{\mathrm{sft}}-1} S_{X\alpha}^{-1}\f$
-                                                //!< with \f$N_{\mathrm{sft}} = \sum_{X=0}^{N_{\mathrm{det}}-1} N_{\mathrm{sft}}^X\f$ the total number of SFTs.
-                                                //!< Note: only equals the harmonic mean over the \f$S_X\f$ if \f$N_{\mathrm{sft}}^X=N_{\mathrm{sft}}/N_{\mathrm{det}}\f$ for all \f$X\f$,
-                                                //!< while generally: \f$S^{-1} = \frac{1}{N_{\mathrm{det}}}\sum_X \frac{N_{\mathrm{det}} N_{\mathrm{sft}}^X}{N_{\mathrm{sft}}} S_X^{-1}\f$
-
 } MultiNoiseFloor;
 
 /* ----- Output types for LALGetDetectorStates() */

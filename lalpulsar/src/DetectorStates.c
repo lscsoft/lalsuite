@@ -768,7 +768,6 @@ XLALParseMultiNoiseFloor ( MultiNoiseFloor *multiNoiseFloor,	/**< [out] parsed m
   multiNoiseFloor->length = numDet;
 
   /* parse input strings and fill multiNoiseFloor */
-  REAL8 calSInvNdet = 0;
   for ( UINT4 X = 0; X < numDet; X ++ )
     {
       const char *sqrtSnStr = sqrtSX->data[X];
@@ -776,10 +775,7 @@ XLALParseMultiNoiseFloor ( MultiNoiseFloor *multiNoiseFloor,	/**< [out] parsed m
       XLAL_CHECK ( sscanf ( sqrtSnStr , "%lf", &sqrtSn ) == 1, XLAL_EINVAL, "Failed to parse '%s' into REAL8\n", sqrtSnStr );
       XLAL_CHECK ( sqrtSn >= 0, XLAL_EDOM );
       multiNoiseFloor->sqrtSn[X] = sqrtSn;
-      calSInvNdet += 1 / SQUARE ( sqrtSn );
     } /* for X < numDet */
-
-  multiNoiseFloor->sqrtSnTotal = sqrt ( numDet / calSInvNdet );	// SnTotal = harmonicMean{S_X} assuming equal number of SFT per detector
 
   return XLAL_SUCCESS;
 
