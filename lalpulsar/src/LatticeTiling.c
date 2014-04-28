@@ -32,7 +32,7 @@
 #include <gsl/gsl_nan.h>
 #include <gsl/gsl_sf.h>
 
-#include <lal/FlatLatticeTiling.h>
+#include <lal/LatticeTiling.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALMalloc.h>
 #include <lal/LALConstants.h>
@@ -48,17 +48,17 @@
 ///
 /// Flat lattice tiling status
 ///
-typedef enum tagFLT_Status {
-  FLT_S_INCOMPLETE,
-  FLT_S_INITIALISED,
-  FLT_S_STARTED,
-  FLT_S_FINISHED
-} FLT_Status;
+typedef enum tagLT_Status {
+  LT_S_INCOMPLETE,
+  LT_S_INITIALISED,
+  LT_S_STARTED,
+  LT_S_FINISHED
+} LT_Status;
 
 ///
 /// Flat lattice tiling bound info
 ///
-typedef struct tagFLT_Bound {
+typedef struct tagLT_Bound {
   bool tiled;					///< Is the bound tiled, i.e. not a single point?
   size_t N;					///< Number of bound coefficients (\f$N\f$)
   gsl_vector* a;				///< Vector of offsets (\f$a\f$)
@@ -66,17 +66,17 @@ typedef struct tagFLT_Bound {
   gsl_matrix* m_lower;				///< Matrix of exponents (\f$m\f$) for the lower bound
   gsl_matrix* c_upper;				///< Matrix of coefficients (\f$c\f$) for the upper bound
   gsl_matrix* m_upper;				///< Matrix of exponents (\f$m\f$) for the upper bound
-} FLT_Bound;
+} LT_Bound;
 
 ///
 /// Flat lattice tiling state structure
 ///
-struct tagFlatLatticeTiling {
+struct tagLatticeTiling {
   size_t dimensions;				///< Dimension of the parameter space
-  FLT_Status status;				///< Status of the tiling
-  FLT_Bound *bounds;				///< Array of parameter-space bound info for each dimension
+  LT_Status status;				///< Status of the tiling
+  LT_Bound *bounds;				///< Array of parameter-space bound info for each dimension
   gsl_vector_uint* tiled_idx;			///< Indices of the tiled dimensions of the parameter space
-  FlatLatticeType lattice;			///< Type of lattice to generate flat tiling with
+  LatticeType lattice;				///< Type of lattice to generate flat tiling with
   gsl_vector* phys_scale;			///< Normalised to physical coordinate scale
   gsl_vector* phys_offset;			///< Normalised to physical coordinate offset
   gsl_matrix* metric;				///< Normalised parameter-space metric
@@ -94,7 +94,7 @@ struct tagFlatLatticeTiling {
 ///
 /// Zero out the strictly upper triangular part of the matrix A
 ///
-static void FLT_ZeroStrictUpperTriangle(gsl_matrix* A) {
+static void LT_ZeroStrictUpperTriangle(gsl_matrix* A) {
   for (size_t i = 0; i < A->size1; ++i) {
     for (size_t j = i + 1; j < A->size2; ++j) {
       gsl_matrix_set(A, i, j, 0.0);
@@ -105,7 +105,7 @@ static void FLT_ZeroStrictUpperTriangle(gsl_matrix* A) {
 ///
 /// Find the bounding box of the mismatch ellipses of a metric
 ///
-static gsl_vector* FLT_MetricEllipseBoundingBox(
+static gsl_vector* LT_MetricEllipseBoundingBox(
   const gsl_matrix* metric,			///< [in] Metric to bound
   const double max_mismatch			///< [in] Maximum mismatch with respect to metric
   )
@@ -149,7 +149,7 @@ static gsl_vector* FLT_MetricEllipseBoundingBox(
 ///
 /// Orthonormalise the columns of a matrix with respect to a metric (matrix is lower triangular)
 ///
-static int FLT_OrthonormaliseWRTMetric(
+static int LT_OrthonormaliseWRTMetric(
   gsl_matrix* matrix,				///< [in] Matrix of columns to orthonormalise
   const gsl_matrix* metric			///< [in] Metric to orthonormalise with respect to
   )
@@ -196,7 +196,7 @@ static int FLT_OrthonormaliseWRTMetric(
   }
 
   // Matrix will be lower triangular, so zero out upper triangle
-  FLT_ZeroStrictUpperTriangle(matrix);
+  LT_ZeroStrictUpperTriangle(matrix);
 
   // Cleanup
   gsl_vector_free(temp);
@@ -208,7 +208,7 @@ static int FLT_OrthonormaliseWRTMetric(
 ///
 /// Transform a lattice generator to a square lower triangular form
 ///
-static gsl_matrix* FLT_SquareLowerTriangularLatticeGenerator(
+static gsl_matrix* LT_SquareLowerTriangularLatticeGenerator(
   gsl_matrix* generator				///< [in] Generator matrix of lattice
   )
 {
@@ -273,7 +273,7 @@ static gsl_matrix* FLT_SquareLowerTriangularLatticeGenerator(
   gsl_blas_dgemm(CblasNoTrans, CblasNoTrans, 1.0, left, temp, 0.0, result);
 
   // Generator will be lower triangular, so zero out upper triangle
-  FLT_ZeroStrictUpperTriangle(result);
+  LT_ZeroStrictUpperTriangle(result);
 
   // Cleanup
   gsl_matrix_free(QR_decomp);
@@ -292,7 +292,7 @@ static gsl_matrix* FLT_SquareLowerTriangularLatticeGenerator(
 ///
 /// Normalise a lattice generator matrix to have a specified covering radius
 ///
-static int FLT_NormaliseLatticeGenerator(
+static int LT_NormaliseLatticeGenerator(
   gsl_matrix* generator,			///< [in] Generator matrix of lattice
   const double norm_thickness,			///< [in] Normalised thickness of lattice
   const double covering_radius			///< [in] Desired covering radius
@@ -335,8 +335,8 @@ static int FLT_NormaliseLatticeGenerator(
 ///
 /// Find the lattice increment vectors for a given lattice, metric and mismatch
 ///
-static gsl_matrix* FLT_MetricLatticeIncrements(
-  const FlatLatticeType lattice,		///< [in] Lattice type
+static gsl_matrix* LT_MetricLatticeIncrements(
+  const LatticeType lattice,			///< [in] Lattice type
   const gsl_matrix* metric,			///< [in] parameter-space metric
   const double max_mismatch			///< [in] Maximum prescribed mismatch
   )
@@ -363,14 +363,14 @@ static gsl_matrix* FLT_MetricLatticeIncrements(
 
   // Find orthonormalise directions with respect to tiling metric
   gsl_matrix_set_identity(directions);
-  XLAL_CHECK_NULL(FLT_OrthonormaliseWRTMetric(directions, metric) == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_NULL(LT_OrthonormaliseWRTMetric(directions, metric) == XLAL_SUCCESS, XLAL_EFUNC);
 
   // Get lattice generator
   gsl_matrix* gen_matrix = NULL;
   double norm_thickness = 0.0;
   switch (lattice) {
 
-  case FLAT_LATTICE_TYPE_CUBIC:	  // Cubic (\f$Z_n\f$) lattice
+  case LATTICE_TYPE_CUBIC:   // Cubic (\f$Z_n\f$) lattice
   {
 
     // Allocate memory
@@ -386,7 +386,7 @@ static gsl_matrix* FLT_MetricLatticeIncrements(
   }
   break;
 
-  case FLAT_LATTICE_TYPE_ANSTAR:   // An-star (\f$A_n^*\f$) lattice
+  case LATTICE_TYPE_ANSTAR:   // An-star (\f$A_n^*\f$) lattice
   {
 
     // Allocate memory
@@ -414,17 +414,17 @@ static gsl_matrix* FLT_MetricLatticeIncrements(
   }
 
   // Transform lattice generator to square lower triangular
-  gsl_matrix* sqlwtr_gen_matrix = FLT_SquareLowerTriangularLatticeGenerator(gen_matrix);
+  gsl_matrix* sqlwtr_gen_matrix = LT_SquareLowerTriangularLatticeGenerator(gen_matrix);
   XLAL_CHECK_NULL(sqlwtr_gen_matrix != NULL, XLAL_EFAILED);
 
   // Normalise lattice generator so covering radius is sqrt(mismatch)
-  XLAL_CHECK_NULL(FLT_NormaliseLatticeGenerator(sqlwtr_gen_matrix, norm_thickness, sqrt(max_mismatch)) == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_NULL(LT_NormaliseLatticeGenerator(sqlwtr_gen_matrix, norm_thickness, sqrt(max_mismatch)) == XLAL_SUCCESS, XLAL_EFUNC);
 
   // Compute the increment vectors of the lattice generator along the orthogonal directions
   gsl_blas_dgemm(CblasNoTrans, CblasNoTrans, 1.0, directions, sqlwtr_gen_matrix, 0.0, increment);
 
   // Increments will be lower triangular, so zero out upper triangle
-  FLT_ZeroStrictUpperTriangle(increment);
+  LT_ZeroStrictUpperTriangle(increment);
 
   // Cleanup
   gsl_matrix_free(directions);
@@ -438,15 +438,15 @@ static gsl_matrix* FLT_MetricLatticeIncrements(
 ///
 /// Special power function used when calculating bounds
 ///
-static inline double FLT_BoundPow(double x, double y) {
+static inline double LT_BoundPow(double x, double y) {
   double z = pow(x, y);
   return isfinite(z) ? z : 0.0;
 }
 
 ///
-/// Returns the parameter-space bound \f$X_n\f$ on dimension \f$n\f$; see XLALSetFlatLatticeBound().
+/// Returns the parameter-space bound \f$X_n\f$ on dimension \f$n\f$; see XLALSetLatticeBound().
 ///
-static double FLT_GetBound(
+static double LT_GetBound(
   const size_t n,				///< [in] Dimension on which bound applies (\f$n\f$)
   const gsl_vector* x,				///< [in] Point at which to find bounds (\f$x\f$)
   const size_t N,				///< [in] Number of coefficients (\f$N\f$)
@@ -463,12 +463,12 @@ static double FLT_GetBound(
       if (n > 0) {
         for (size_t i = 0; i < n; ++i) {
           const double dx_i = gsl_vector_get(x, i) - gsl_vector_get(a, i);
-          bound_j *= FLT_BoundPow(dx_i, gsl_matrix_get(m, n*j + i, k));
+          bound_j *= LT_BoundPow(dx_i, gsl_matrix_get(m, n*j + i, k));
         }
       }
       bound_k += bound_j;
     }
-    bound_k = FLT_BoundPow(bound_k, gsl_matrix_get(m, n*N, k));
+    bound_k = LT_BoundPow(bound_k, gsl_matrix_get(m, n*N, k));
     bound_k = gsl_matrix_get(c, N, k) * bound_k + gsl_vector_get(a, n);
     bound += bound_k;
   }
@@ -480,13 +480,13 @@ static double FLT_GetBound(
 /// bounds on coordinates \f$\bar{x}\f$, represented by \f$(\bar{a},\bar{c},\bar{m})\f$, where the
 /// relationship between coordinates is \f$x = s \bar{x} + u\f$, where \f$s\f$ is a vector of scales,
 /// and \f$u\f$ is a vector of offsets. Substituting \f$x = s \bar{x} + u\f$ into the equation given
-/// in the documentation for XLALSetFlatLatticeBound() gives the transformation rules:
+/// in the documentation for XLALSetLatticeBound() gives the transformation rules:
 /// \f{eqnarray*}{
 /// \bar{a} &=& \frac{a - u}{s} &\quad \bar{m} &=& m \\{}
 /// \bar{c}_{j,k} &=& c_{j,k} \prod_{i=0}^{n-1} s_i^{m_{nj+i,k}} &\quad \bar{c}_{N,k} &=& \frac{c_{N,k}}{s_n}
 /// \f}
 ///
-static void FLT_TransformBound(
+static void LT_TransformBound(
   const size_t n,				///< [in] Dimension on which bound applies (\f$n\f$)
   const gsl_vector* s,				///< [in] Vector of scales (\f$s\f$)
   const gsl_vector* u,				///< [in] Vector of offsets (\f$u\f$)
@@ -505,7 +505,7 @@ static void FLT_TransformBound(
       for (size_t j = 0; j < N; ++j) {
         double c_j = gsl_matrix_get(c, j, k);
         for (size_t i = 0; i < n; ++i) {
-          c_j *= FLT_BoundPow(gsl_vector_get(s, i), gsl_matrix_get(m, n*j + i, k));
+          c_j *= LT_BoundPow(gsl_vector_get(s, i), gsl_matrix_get(m, n*j + i, k));
         }
         gsl_matrix_set(c, j, k, c_j);
       }
@@ -519,8 +519,8 @@ static void FLT_TransformBound(
 ///
 /// Returns the lower and upper parameter-space bounds
 ///
-static void FLT_GetBounds(
-  const FlatLatticeTiling* tiling,		///< [in] Tiling state
+static void LT_GetBounds(
+  const LatticeTiling* tiling,			///< [in] Tiling state
   const size_t dimension,			///< [in] Dimension on which bound applies
   const gsl_vector* point,			///< [in] Point at which to find bounds
   const gsl_vector* padding,			///< [in] Optional padding to add to parameter-space bounds
@@ -530,14 +530,14 @@ static void FLT_GetBounds(
 {
 
   // Calculate lower and upper bounds
-  const FLT_Bound* bound = &tiling->bounds[dimension];
+  const LT_Bound* bound = &tiling->bounds[dimension];
   if (dimension == 0) {
-    *lower = FLT_GetBound(dimension, NULL, bound->N, bound->a, bound->c_lower, bound->m_lower);
-    *upper = FLT_GetBound(dimension, NULL, bound->N, bound->a, bound->c_upper, bound->m_upper);
+    *lower = LT_GetBound(dimension, NULL, bound->N, bound->a, bound->c_lower, bound->m_lower);
+    *upper = LT_GetBound(dimension, NULL, bound->N, bound->a, bound->c_upper, bound->m_upper);
   } else {
     gsl_vector_const_view point_n = gsl_vector_const_subvector(point, 0, dimension);
-    *lower = FLT_GetBound(dimension, &point_n.vector, bound->N, bound->a, bound->c_lower, bound->m_lower);
-    *upper = FLT_GetBound(dimension, &point_n.vector, bound->N, bound->a, bound->c_upper, bound->m_upper);
+    *lower = LT_GetBound(dimension, &point_n.vector, bound->N, bound->a, bound->c_lower, bound->m_lower);
+    *upper = LT_GetBound(dimension, &point_n.vector, bound->N, bound->a, bound->c_upper, bound->m_upper);
   }
 
   // Optionally add padding
@@ -549,7 +549,7 @@ static void FLT_GetBounds(
 
 }
 
-FlatLatticeTiling* XLALCreateFlatLatticeTiling(
+LatticeTiling* XLALCreateLatticeTiling(
   const size_t dimensions
   )
 {
@@ -559,14 +559,14 @@ FlatLatticeTiling* XLALCreateFlatLatticeTiling(
   const size_t n = dimensions;
 
   // Allocate and initialise tiling structure
-  FlatLatticeTiling* tiling = XLALCalloc(1, sizeof(FlatLatticeTiling));
+  LatticeTiling* tiling = XLALCalloc(1, sizeof(*tiling));
   XLAL_CHECK_NULL(tiling != NULL, XLAL_ENOMEM);
   tiling->dimensions = n;
-  tiling->status = FLT_S_INCOMPLETE;
-  tiling->lattice = FLAT_LATTICE_TYPE_MAX;
+  tiling->status = LT_S_INCOMPLETE;
+  tiling->lattice = LATTICE_TYPE_MAX;
 
   // Allocate parameter-space bounds info
-  tiling->bounds = XLALCalloc(n, sizeof(FLT_Bound));
+  tiling->bounds = XLALCalloc(n, sizeof(*tiling->bounds));
   XLAL_CHECK_NULL(tiling->bounds != NULL, XLAL_ENOMEM);
 
   // Allocate vectors and matrices
@@ -593,8 +593,8 @@ FlatLatticeTiling* XLALCreateFlatLatticeTiling(
 
 }
 
-void XLALDestroyFlatLatticeTiling(
-  FlatLatticeTiling* tiling
+void XLALDestroyLatticeTiling(
+  LatticeTiling* tiling
   )
 {
 
@@ -603,14 +603,16 @@ void XLALDestroyFlatLatticeTiling(
     const size_t n = tiling->dimensions;
 
     // Free bounds data
-    for (size_t i = 0; i < n; ++i) {
-      gsl_vector_free(tiling->bounds[i].a);
-      gsl_matrix_free(tiling->bounds[i].c_lower);
-      gsl_matrix_free(tiling->bounds[i].m_lower);
-      gsl_matrix_free(tiling->bounds[i].c_upper);
-      gsl_matrix_free(tiling->bounds[i].m_upper);
+    if (tiling->bounds != NULL) {
+      for (size_t i = 0; i < n; ++i) {
+        gsl_vector_free(tiling->bounds[i].a);
+        gsl_matrix_free(tiling->bounds[i].c_lower);
+        gsl_matrix_free(tiling->bounds[i].m_lower);
+        gsl_matrix_free(tiling->bounds[i].c_upper);
+        gsl_matrix_free(tiling->bounds[i].m_upper);
+      }
+      XLALFree(tiling->bounds);
     }
-    XLALFree(tiling->bounds);
 
     // Free vectors and matrices
     gsl_vector_uint_free(tiling->tiled_idx);
@@ -632,8 +634,8 @@ void XLALDestroyFlatLatticeTiling(
 
 }
 
-size_t XLALGetFlatLatticeDimensions(
-  const FlatLatticeTiling* tiling
+size_t XLALGetLatticeDimensions(
+  const LatticeTiling* tiling
   )
 {
 
@@ -644,40 +646,40 @@ size_t XLALGetFlatLatticeDimensions(
 
 }
 
-uint64_t XLALGetFlatLatticePointCount(
-  const FlatLatticeTiling* tiling
+uint64_t XLALGetLatticePointCount(
+  const LatticeTiling* tiling
   )
 {
 
   // Check tiling
   XLAL_CHECK_VAL(0, tiling != NULL, XLAL_EFAULT);
-  XLAL_CHECK_VAL(0, tiling->status >= FLT_S_INITIALISED, XLAL_EINVAL);
+  XLAL_CHECK_VAL(0, tiling->status >= LT_S_INITIALISED, XLAL_EINVAL);
 
   return tiling->count;
 
 }
 
-uint64_t XLALCountFlatLatticePoints(
-  FlatLatticeTiling* tiling
+uint64_t XLALCountLatticePoints(
+  LatticeTiling* tiling
   )
 {
 
   // Check tiling
   XLAL_CHECK_VAL(0, tiling != NULL, XLAL_EFAULT);
-  XLAL_CHECK_VAL(0, tiling->status > FLT_S_INCOMPLETE, XLAL_EINVAL);
+  XLAL_CHECK_VAL(0, tiling->status > LT_S_INCOMPLETE, XLAL_EINVAL);
 
   // If points have not already been counted, count them
   if (tiling->total_count == 0) {
 
     // Iterate over all points
-    while (XLALNextFlatLatticePoint(tiling, NULL) >= 0) {
-      XLAL_CHECK_VAL(0, XLALFastForwardFlatLatticeTiling(tiling, NULL, NULL) == XLAL_SUCCESS, XLAL_EFUNC);
+    while (XLALNextLatticePoint(tiling, NULL) >= 0) {
+      XLAL_CHECK_VAL(0, XLALFastForwardLatticeTiling(tiling, NULL, NULL) == XLAL_SUCCESS, XLAL_EFUNC);
     }
     XLAL_CHECK_VAL(0, xlalErrno == 0, XLAL_EFUNC);
     XLAL_CHECK_VAL(0, tiling->total_count > 0, XLAL_EFAILED);
 
     // Restart tiling
-    XLAL_CHECK_VAL(0, XLALRestartFlatLatticeTiling(tiling) == XLAL_SUCCESS, XLAL_EFUNC);
+    XLAL_CHECK_VAL(0, XLALRestartLatticeTiling(tiling) == XLAL_SUCCESS, XLAL_EFUNC);
 
   }
 
@@ -686,8 +688,8 @@ uint64_t XLALCountFlatLatticePoints(
 
 }
 
-int XLALSetFlatLatticeBound(
-  FlatLatticeTiling* tiling,
+int XLALSetLatticeBound(
+  LatticeTiling* tiling,
   const size_t dimension,
   const gsl_vector* a,
   const gsl_matrix* c_lower,
@@ -699,7 +701,7 @@ int XLALSetFlatLatticeBound(
 
   // Check tiling
   XLAL_CHECK(tiling != NULL, XLAL_EFAULT);
-  XLAL_CHECK(tiling->status == FLT_S_INCOMPLETE, XLAL_EINVAL);
+  XLAL_CHECK(tiling->status == LT_S_INCOMPLETE, XLAL_EINVAL);
 
   // Check input
   XLAL_CHECK(dimension < tiling->dimensions, XLAL_ESIZE);
@@ -725,7 +727,7 @@ int XLALSetFlatLatticeBound(
              "'m_{lower|upper}' should have %u rows", dimension * N + 1);
 
   // Allocate memory
-  FLT_Bound* bound = &tiling->bounds[dimension];
+  LT_Bound* bound = &tiling->bounds[dimension];
   bound->a = gsl_vector_alloc(a->size);
   XLAL_CHECK(bound->a != NULL, XLAL_EFAULT);
   bound->c_lower = gsl_matrix_alloc(c_lower->size1, c_lower->size2);
@@ -762,8 +764,8 @@ int XLALSetFlatLatticeBound(
 
 }
 
-int XLALSetFlatLatticeConstantBound(
-  FlatLatticeTiling* tiling,
+int XLALSetLatticeConstantBound(
+  LatticeTiling* tiling,
   const size_t dimension,
   const double bound1,
   const double bound2
@@ -792,7 +794,7 @@ int XLALSetFlatLatticeConstantBound(
   gsl_matrix_set(c_upper, 0, 0, GSL_MAX(bound1, bound2));
 
   // Set parameter-space bound
-  XLAL_CHECK(XLALSetFlatLatticeBound(tiling, dimension, a, c_lower, m_lower, c_upper, m_upper) == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK(XLALSetLatticeBound(tiling, dimension, a, c_lower, m_lower, c_upper, m_upper) == XLAL_SUCCESS, XLAL_EFUNC);
 
   // Cleanup
   gsl_vector_free(a);
@@ -805,8 +807,8 @@ int XLALSetFlatLatticeConstantBound(
 
 }
 
-int XLALSetFlatLatticeEllipticalBounds(
-  FlatLatticeTiling* tiling,
+int XLALSetLatticeEllipticalBounds(
+  LatticeTiling* tiling,
   const size_t x_dimension,
   const double x_centre,
   const double y_centre,
@@ -822,7 +824,7 @@ int XLALSetFlatLatticeEllipticalBounds(
   const size_t y_dimension = x_dimension + 1;
 
   // Set parameter-space x bound
-  XLAL_CHECK(XLALSetFlatLatticeConstantBound(tiling, x_dimension, x_centre - x_semi, x_centre + x_semi) == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK(XLALSetLatticeConstantBound(tiling, x_dimension, x_centre - x_semi, x_centre + x_semi) == XLAL_SUCCESS, XLAL_EFUNC);
 
   // Allocate zeroed memory
   gsl_vector* a = gsl_vector_calloc(y_dimension + 1);
@@ -850,7 +852,7 @@ int XLALSetFlatLatticeEllipticalBounds(
   gsl_matrix_memcpy(m_upper, m_lower);
 
   // Set parameter-space y bound
-  XLAL_CHECK(XLALSetFlatLatticeBound(tiling, y_dimension, a, c_lower, m_lower, c_upper, m_upper) == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK(XLALSetLatticeBound(tiling, y_dimension, a, c_lower, m_lower, c_upper, m_upper) == XLAL_SUCCESS, XLAL_EFUNC);
 
   // Cleanup
   gsl_vector_free(a);
@@ -863,9 +865,9 @@ int XLALSetFlatLatticeEllipticalBounds(
 
 }
 
-int XLALSetFlatLatticeTypeAndMetric(
-  FlatLatticeTiling* tiling,
-  const FlatLatticeType lattice,
+int XLALSetLatticeTypeAndMetric(
+  LatticeTiling* tiling,
+  const LatticeType lattice,
   const gsl_matrix* metric,
   const double max_mismatch
   )
@@ -873,11 +875,11 @@ int XLALSetFlatLatticeTypeAndMetric(
 
   // Check tiling
   XLAL_CHECK(tiling != NULL, XLAL_EFAULT);
-  XLAL_CHECK(tiling->status == FLT_S_INCOMPLETE, XLAL_EINVAL);
+  XLAL_CHECK(tiling->status == LT_S_INCOMPLETE, XLAL_EINVAL);
   const size_t n = tiling->dimensions;
 
   // Check input
-  XLAL_CHECK(lattice < FLAT_LATTICE_TYPE_MAX, XLAL_EINVAL, "'lattice'=%u must be in [0,%u)", lattice, FLAT_LATTICE_TYPE_MAX);
+  XLAL_CHECK(lattice < LATTICE_TYPE_MAX, XLAL_EINVAL, "'lattice'=%u must be in [0,%u)", lattice, LATTICE_TYPE_MAX);
   XLAL_CHECK(metric != NULL, XLAL_EFAULT);
   XLAL_CHECK(metric->size1 == n && metric->size2 == n, XLAL_EINVAL);
   XLAL_CHECK(max_mismatch > 0, XLAL_EINVAL);
@@ -901,7 +903,7 @@ int XLALSetFlatLatticeTypeAndMetric(
   }
   if (tn > 0) {
     tiling->tiled_idx = gsl_vector_uint_alloc(tn);
-    for (size_t i = 0, ti = 0; i < tiling->dimensions; ++i) {
+    for (unsigned int i = 0, ti = 0; i < tiling->dimensions; ++i) {
       if (tiling->bounds[i].tiled) {
         gsl_vector_uint_set(tiling->tiled_idx, ti, i);
         ++ti;
@@ -919,20 +921,20 @@ int XLALSetFlatLatticeTypeAndMetric(
     gsl_vector_set(tiling->phys_scale, i, 1.0 / sqrt(metric_i_i));
   }
 
-  // Set physical parameter-space offset
+  // Set physical parameter-space offset from parameter-space bounds
   for (size_t i = 0; i < n; ++i) {
-    double phys_lower = 0, phys_upper = 0;
-    FLT_GetBounds(tiling, i, tiling->phys_offset, NULL, &phys_lower, &phys_upper);
-    gsl_vector_set(tiling->phys_offset, i, phys_lower);
+    double phys_lower_i = 0, phys_upper_i = 0;
+    LT_GetBounds(tiling, i, tiling->phys_offset, NULL, &phys_lower_i, &phys_upper_i);
+    gsl_vector_set(tiling->phys_offset, i, phys_lower_i);
   }
 
   // Transform parameter-space bounds from physical to normalised coordinates
   for (size_t i = 0; i < n; ++i) {
-    const FLT_Bound* bound = &tiling->bounds[i];
+    const LT_Bound* bound = &tiling->bounds[i];
     gsl_vector_view phys_scale = gsl_vector_subvector(tiling->phys_scale, 0, i+1);
     gsl_vector_view phys_offset = gsl_vector_subvector(tiling->phys_offset, 0, i+1);
-    FLT_TransformBound(i, &phys_scale.vector, &phys_offset.vector, bound->N, bound->a, bound->c_lower, bound->m_lower);
-    FLT_TransformBound(i, &phys_scale.vector, &phys_offset.vector, bound->N,     NULL, bound->c_upper, bound->m_upper);
+    LT_TransformBound(i, &phys_scale.vector, &phys_offset.vector, bound->N, bound->a, bound->c_lower, bound->m_lower);
+    LT_TransformBound(i, &phys_scale.vector, &phys_offset.vector, bound->N,     NULL, bound->c_upper, bound->m_upper);
   }
 
   // Check metric is symmetric, and copy rescaled metric
@@ -964,7 +966,7 @@ int XLALSetFlatLatticeTypeAndMetric(
     }
 
     // Calculate metric lattice increment vectors
-    tiling->tiled_increment = FLT_MetricLatticeIncrements(tiling->lattice, tiled_metric, max_mismatch);
+    tiling->tiled_increment = LT_MetricLatticeIncrements(tiling->lattice, tiled_metric, max_mismatch);
     XLAL_CHECK(tiling->tiled_increment != NULL, XLAL_EFUNC);
 
     // Copy lower triangular part of increment vectors to tiled dimensions (strict upper triangle is zero)
@@ -979,7 +981,7 @@ int XLALSetFlatLatticeTypeAndMetric(
     }
 
     // Set padding to metric ellipse bounding box
-    gsl_vector* tiled_padding = FLT_MetricEllipseBoundingBox(tiled_metric, max_mismatch);
+    gsl_vector* tiled_padding = LT_MetricEllipseBoundingBox(tiled_metric, max_mismatch);
     XLAL_CHECK(tiled_padding != NULL, XLAL_EFUNC);
 
     // Copy padding to tiled dimensions
@@ -995,49 +997,49 @@ int XLALSetFlatLatticeTypeAndMetric(
   }
 
   // Tiling has been fully initialised
-  tiling->status = FLT_S_INITIALISED;
-  XLAL_CHECK(XLALRestartFlatLatticeTiling(tiling) == XLAL_SUCCESS, XLAL_EFUNC);
+  tiling->status = LT_S_INITIALISED;
+  XLAL_CHECK(XLALRestartLatticeTiling(tiling) == XLAL_SUCCESS, XLAL_EFUNC);
 
   return XLAL_SUCCESS;
 
 }
 
-int XLALNextFlatLatticePoint(
-  FlatLatticeTiling* tiling,
+int XLALNextLatticePoint(
+  LatticeTiling* tiling,
   gsl_vector* curr_point
   )
 {
 
   // Check tiling
   XLAL_CHECK(tiling != NULL, XLAL_EFAULT);
-  XLAL_CHECK(tiling->status > FLT_S_INCOMPLETE, XLAL_EINVAL);
+  XLAL_CHECK(tiling->status > LT_S_INCOMPLETE, XLAL_EINVAL);
   const size_t n = tiling->dimensions;
   const size_t tn = (tiling->tiled_idx != NULL) ? tiling->tiled_idx->size : 0;
   XLAL_CHECK(curr_point == NULL || curr_point->size == n, XLAL_EINVAL);
 
   // If finished status, nothing more to be done!
-  if (tiling->status == FLT_S_FINISHED) {
+  if (tiling->status == LT_S_FINISHED) {
     return -1;
   }
 
   size_t ti;
 
   // If initialised status, set and return starting point
-  if (tiling->status == FLT_S_INITIALISED) {
+  if (tiling->status == LT_S_INITIALISED) {
 
     // Set parameter-space bounds and starting point
     for (size_t i = 0; i < n; ++i) {
 
       // Get normalised bounds, with padding
-      double lower = 0, upper = 0;
-      FLT_GetBounds(tiling, i, tiling->point, tiling->padding, &lower, &upper);
+      double lower_i = 0, upper_i = 0;
+      LT_GetBounds(tiling, i, tiling->point, tiling->padding, &lower_i, &upper_i);
 
       // Set parameter-space bounds
-      gsl_vector_set(tiling->lower, i, lower);
-      gsl_vector_set(tiling->upper, i, upper);
+      gsl_vector_set(tiling->lower, i, lower_i);
+      gsl_vector_set(tiling->upper, i, upper_i);
 
-      // Initialise starting point
-      gsl_vector_set(tiling->point, i, lower);
+      // Set starting point to lower bound
+      gsl_vector_set(tiling->point, i, lower_i);
 
     }
 
@@ -1045,7 +1047,7 @@ int XLALNextFlatLatticePoint(
     tiling->count = 1;
 
     // Tiling has been started
-    tiling->status = FLT_S_STARTED;
+    tiling->status = LT_S_STARTED;
 
     // All dimensions of point have changed
     ti = 0;
@@ -1060,7 +1062,7 @@ int XLALNextFlatLatticePoint(
       if (ti == 0) {
 
         // Tiling is now finished
-        tiling->status = FLT_S_FINISHED;
+        tiling->status = LT_S_FINISHED;
 
         // Save total point count
         tiling->total_count = tiling->count;
@@ -1082,9 +1084,9 @@ int XLALNextFlatLatticePoint(
       gsl_vector_add(tiling->point, &increment.vector);
 
       // If point is not out of bounds, we have found a point
-      const double point = gsl_vector_get(tiling->point, i);
-      const double upper = gsl_vector_get(tiling->upper, i);
-      if (point <= upper) {
+      const double point_i = gsl_vector_get(tiling->point, i);
+      const double upper_i = gsl_vector_get(tiling->upper, i);
+      if (point_i <= upper_i) {
         break;
       }
 
@@ -1100,19 +1102,19 @@ int XLALNextFlatLatticePoint(
       const size_t j = gsl_vector_uint_get(tiling->tiled_idx, tj);
 
       // Get normalised bounds, with padding
-      double lower = 0, upper = 0;
-      FLT_GetBounds(tiling, j, tiling->point, tiling->padding, &lower, &upper);
+      double lower_j = 0, upper_j = 0;
+      LT_GetBounds(tiling, j, tiling->point, tiling->padding, &lower_j, &upper_j);
 
       // Set parameter-space bounds
-      gsl_vector_set(tiling->lower, j, lower);
-      gsl_vector_set(tiling->upper, j, upper);
+      gsl_vector_set(tiling->lower, j, lower_j);
+      gsl_vector_set(tiling->upper, j, upper_j);
 
       // Get increment vector
       gsl_vector_view increment = gsl_matrix_column(tiling->increment, j);
 
       // Calculate the distance from current point to the lower bound, in integer number of increments
-      const double point = gsl_vector_get(tiling->point, j);
-      const double dist = ceil( (lower - point) / gsl_vector_get(&increment.vector, j) );
+      const double point_j = gsl_vector_get(tiling->point, j);
+      const double dist = ceil( (lower_j - point_j) / gsl_vector_get(&increment.vector, j) );
 
       // Move point back to lower bound
       gsl_blas_daxpy(dist, &increment.vector, tiling->point);
@@ -1136,21 +1138,21 @@ int XLALNextFlatLatticePoint(
 
 }
 
-int XLALFastForwardFlatLatticeTiling(
-  FlatLatticeTiling* tiling,			///< [in] Tiling state
-  uint64_t *point_count,			///< [in/out] Count of points fast-forwarded over
-  double *point_spacing				///< [in/out] Spacing between points fast-forwarded over
+int XLALFastForwardLatticeTiling(
+  LatticeTiling* tiling,
+  uint32_t *point_count,
+  double *point_spacing
   )
 {
 
   // Check tiling
   XLAL_CHECK(tiling != NULL, XLAL_EFAULT);
-  XLAL_CHECK(tiling->status == FLT_S_STARTED, XLAL_EINVAL);
+  XLAL_CHECK(tiling->status == LT_S_STARTED, XLAL_EINVAL);
   const size_t tn = (tiling->tiled_idx != NULL) ? tiling->tiled_idx->size : 0;
 
   // If no tiled dimensions, nothing to fast-forward
-  uint64_t count = 0;
-  double spacing = 0.0;
+  uint32_t count_i = 0;
+  double spacing_i = 0.0;
 
   // If there are tiled dimensions:
   if (tn > 0) {
@@ -1158,44 +1160,44 @@ int XLALFastForwardFlatLatticeTiling(
     // Get index of highest tiled dimension
     const size_t i = gsl_vector_uint_get(tiling->tiled_idx, tn - 1);
 
-    // Get current point, spacing, upper bound, and padding
-    const double point = gsl_vector_get(tiling->point, i);
-    spacing = gsl_matrix_get(tiling->increment, i, i);
-    const double upper = gsl_vector_get(tiling->upper, i);
+    // Get point, spacing, and upper bound in this dimension
+    const double point_i = gsl_vector_get(tiling->point, i);
+    spacing_i = gsl_matrix_get(tiling->increment, i, i);
+    const double upper_i = gsl_vector_get(tiling->upper, i);
 
     // Calculate number of points to fast-forward, so that then calling
     // XLALNextFlatticePoint() will advance the next highest tiled dimension
-    count = floor((upper - point) / spacing);
+    count_i = (uint32_t)floor((upper_i - point_i) / spacing_i);
 
     // Fast-forward over dimension
-    gsl_vector_set(tiling->point, i, point + count*spacing);
-    tiling->count += count;
+    gsl_vector_set(tiling->point, i, point_i + count_i * spacing_i);
+    tiling->count += count_i;
 
   }
 
   // Return count and spacing
   if (point_count != NULL) {
-    *point_count = count;
+    *point_count = count_i;
   }
   if (point_spacing != NULL) {
-    *point_spacing = spacing;
+    *point_spacing = spacing_i;
   }
 
   return XLAL_SUCCESS;
 
 }
 
-int XLALRestartFlatLatticeTiling(
-  FlatLatticeTiling* tiling
+int XLALRestartLatticeTiling(
+  LatticeTiling* tiling
   )
 {
 
   // Check tiling
   XLAL_CHECK(tiling != NULL, XLAL_EFAULT);
-  XLAL_CHECK(tiling->status > FLT_S_INCOMPLETE, XLAL_EINVAL);
+  XLAL_CHECK(tiling->status > LT_S_INCOMPLETE, XLAL_EINVAL);
 
   // Restart tiling
-  tiling->status = FLT_S_INITIALISED;
+  tiling->status = LT_S_INITIALISED;
   tiling->count = 0;
 
   return XLAL_SUCCESS;

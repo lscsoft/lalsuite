@@ -18,7 +18,6 @@ lalpulsarinclude_HEADERS = \
 	DopplerScan.h \
 	ExtrapolatePulsarSpins.h \
 	FitToPulsar.h \
-	FlatLatticeTiling.h \
 	FlatMesh.h \
 	FlatPulsarMetric.h \
 	GeneratePulsarSignal.h \
@@ -35,6 +34,7 @@ lalpulsarinclude_HEADERS = \
 	LALPulsarLibVCSInfo.h \
 	LALPulsarVCSInfo.h \
 	LALXMGRInterface.h \
+	LatticeTiling.h \
 	LFTandTSutils.h \
 	LineRobustStats.h \
 	LISAspecifics.h \
@@ -82,7 +82,6 @@ liblalpulsar_la_SOURCES = \
 	DTEphemeris.c \
 	ExtrapolatePulsarSpins.c \
 	FitToPulsar.c \
-	FlatLatticeTiling.c \
 	FlatMesh.c \
 	FlatPulsarMetric.c \
 	GenerateEllipticSpinOrbitCW.c \
@@ -100,6 +99,7 @@ liblalpulsar_la_SOURCES = \
 	LALInitBarycenter.c \
 	LALPulsarVCSInfo.c \
 	LALXMGRInterface.c \
+	LatticeTiling.c \
 	LFTandTSutils.c \
 	LineRobustStats.c \
 	LISAspecifics.c \

@@ -39,54 +39,54 @@ extern "C" {
 ///
 /// Type of lattice to generate flat tiling with
 ///
-typedef enum tagFlatLatticeType {
-  FLAT_LATTICE_TYPE_CUBIC,			///< Cubic (\f$Z_n\f$) lattice
-  FLAT_LATTICE_TYPE_ANSTAR,			///< An-star (\f$A_n^*\f$) lattice
-  FLAT_LATTICE_TYPE_MAX
-} FlatLatticeType;
+typedef enum tagLatticeType {
+  LATTICE_TYPE_CUBIC,				///< Cubic (\f$Z_n\f$) lattice
+  LATTICE_TYPE_ANSTAR,				///< An-star (\f$A_n^*\f$) lattice
+  LATTICE_TYPE_MAX
+} LatticeType;
 
 ///
 /// Flat lattice tiling state structure
 ///
-typedef struct tagFlatLatticeTiling FlatLatticeTiling;
+typedef struct tagLatticeTiling LatticeTiling;
 
 ///
-/// Create a new flat lattice tiling state structure
+/// Create a new lattice tiling state structure
 ///
-FlatLatticeTiling* XLALCreateFlatLatticeTiling(
+LatticeTiling* XLALCreateLatticeTiling(
   const size_t dimensions			///< [in] Number of parameter-space dimensions
   );
 
 ///
-/// Destroy a flat lattice tiling state structure
+/// Destroy a lattice tiling state structure
 ///
-void XLALDestroyFlatLatticeTiling(
-  FlatLatticeTiling* tiling			///< [in] Tiling state
+void XLALDestroyLatticeTiling(
+  LatticeTiling* tiling				///< [in] Tiling state
   );
 
 ///
 /// Return the number of dimensions being tiled
 ///
-size_t XLALGetFlatLatticeDimensions(
-  const FlatLatticeTiling* tiling		///< [in] Tiling state
+size_t XLALGetLatticeDimensions(
+  const LatticeTiling* tiling			///< [in] Tiling state
   );
 
 ///
-/// Return the current number of flat lattice tiling parameter-space points
+/// Return the current number of lattice tiling parameter-space points
 ///
-uint64_t XLALGetFlatLatticePointCount(
-  const FlatLatticeTiling* tiling		///< [in] Tiling state
+uint64_t XLALGetLatticePointCount(
+  const LatticeTiling* tiling			///< [in] Tiling state
   );
 
 ///
-/// Calculate the total number of flat lattice tiling parameter-space points
+/// Calculate the total number of lattice tiling parameter-space points
 ///
-uint64_t XLALCountFlatLatticePoints(
-  FlatLatticeTiling* tiling			///< [in] Tiling state
+uint64_t XLALCountLatticePoints(
+  LatticeTiling* tiling				///< [in] Tiling state
   );
 
 ///
-/// Set the parameter-space bounds on dimension \f$n\f$ of the flat lattice tiling.
+/// Set the parameter-space bounds on dimension \f$n\f$ of the lattice tiling.
 ///
 /// The lower/upper bound \f$X_n\f$ is specified by
 /// \f[
@@ -96,8 +96,8 @@ uint64_t XLALCountFlatLatticePoints(
 /// \f$c\f$ is a matrix of \f$N + 1 \times P\f$ coefficients, and \f$m\f$ is a matrix of \f$nM + 1 \times P\f$ exponents.
 /// Note that \f$x^m \rightarrow 0\f$ if the result is not finite and real-valued.
 ///
-int XLALSetFlatLatticeBound(
-  FlatLatticeTiling* tiling,			///< [in] Tiling state
+int XLALSetLatticeBound(
+  LatticeTiling* tiling,			///< [in] Tiling state
   const size_t dimension,			///< [in] Dimension on which bound applies (\f$n\f$)
   const gsl_vector* a,				///< [in] Vector of offsets (\f$a\f$)
   const gsl_matrix* c_lower,			///< [in] Matrix of coefficients (\f$c\f$) for the lower bound
@@ -108,20 +108,20 @@ int XLALSetFlatLatticeBound(
 
 ///
 /// Set a constant parameter-space bound, given by the minimum and
-/// maximum of the two supplied bounds, on the flat lattice tiling
+/// maximum of the two supplied bounds, on the lattice tiling
 ///
-int XLALSetFlatLatticeConstantBound(
-  FlatLatticeTiling* tiling,			///< [in] Tiling state
+int XLALSetLatticeConstantBound(
+  LatticeTiling* tiling,			///< [in] Tiling state
   const size_t dimension,			///< [in] Dimension on which bound applies
   const double bound1,				///< [in] First bound on dimension
   const double bound2				///< [in] Second bound on dimension
   );
 
 ///
-/// Set elliptical bounds in two dimensions on the flat lattice tiling
+/// Set elliptical bounds in two dimensions on the lattice tiling
 ///
-int XLALSetFlatLatticeEllipticalBounds(
-  FlatLatticeTiling* tiling,			///< [in] Tiling state
+int XLALSetLatticeEllipticalBounds(
+  LatticeTiling* tiling,			///< [in] Tiling state
   const size_t dimension,			///< [in] Dimension of X bound (Y bound is one higher)
   const double x_centre,			///< [in] X centre of ellipse
   const double y_centre,			///< [in] Y centre of ellipse
@@ -132,40 +132,40 @@ int XLALSetFlatLatticeEllipticalBounds(
 ///
 /// Set the flat tiling lattice type, metric and maximum mismatch
 ///
-int XLALSetFlatLatticeTypeAndMetric(
-  FlatLatticeTiling* tiling,			///< [in] Tiling state
-  const FlatLatticeType lattice,		///< [in] Lattice type
+int XLALSetLatticeTypeAndMetric(
+  LatticeTiling* tiling,			///< [in] Tiling state
+  const LatticeType lattice,			///< [in] Lattice type
   const gsl_matrix* metric,			///< [in] parameter-space metric
   const double max_mismatch			///< [in] Maximum prescribed mismatch
   );
 
 ///
-/// Move to the next point in the flat lattice tiling parameter space. Returns a
+/// Move to the next point in the lattice tiling parameter space. Returns a
 /// positive number while the template bank is being generated, or -1 once the
-/// template bank is exhausted. Optionally, return the current flat lattice point.
+/// template bank is exhausted. Optionally, return the current lattice point.
 ///
-int XLALNextFlatLatticePoint(
-  FlatLatticeTiling* tiling,			///< [in] Tiling state
-  gsl_vector* curr_point			///< [in/out] Current flat lattice point
+int XLALNextLatticePoint(
+  LatticeTiling* tiling,			///< [in] Tiling state
+  gsl_vector* curr_point			///< [in/out] Current lattice point
   );
 
 ///
-/// Fast-forward the flat lattice tiling through the highest tiled dimension of
+/// Fast-forward the lattice tiling through the highest tiled dimension of
 /// the parameter space, so that then calling XLALNextFlatticePoint() will
 /// advance the next highest tiled dimension. Optionally, return the count of
 /// and spacing between the points fast-forwarded over.
 ///
-int XLALFastForwardFlatLatticeTiling(
-  FlatLatticeTiling* tiling,			///< [in] Tiling state
-  uint64_t *point_count,			///< [in/out] Count of points fast-forwarded over
-  double *point_spacing				///< [in/out] Spacing between points fast-forwarded over
+int XLALFastForwardLatticeTiling(
+  LatticeTiling* tiling,			///< [in] Tiling state
+  uint32_t *point_count,			///< [out] Count of points fast-forwarded over
+  double *point_spacing				///< [out] Spacing between points fast-forwarded over
   );
 
 ///
-/// Return to the beginning of a flat lattice tiling
+/// Return to the beginning of a lattice tiling
 ///
-int XLALRestartFlatLatticeTiling(
-  FlatLatticeTiling* tiling			///< [in] Tiling state
+int XLALRestartLatticeTiling(
+  LatticeTiling* tiling				///< [in] Tiling state
   );
 
 #ifdef __cplusplus
