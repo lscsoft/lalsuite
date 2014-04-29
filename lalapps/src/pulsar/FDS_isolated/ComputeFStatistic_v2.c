@@ -187,7 +187,7 @@ typedef struct {
   UINT4 NSFTs;				    /**< total number of all SFTs used */
   UINT4Vector *numSFTsPerDet;		    /**< number of SFTs per detector, for log strings, etc. */
   LALStringVector *detectorIDs;		    /**< detector ID names, for column headings string */
-  FstatInputData *Fstat_in;		    /**< Fstat input data struct */
+  FstatInput *Fstat_in;		    /**< Fstat input data struct */
   FstatQuantities Fstat_what;		    /**< Fstat quantities to compute */
   toplist_t* FstatToplist;		    /**< sorted 'toplist' of the NumCandidatesToKeep loudest candidates */
   scanlineWindow_t *scanlineWindow;         /**< moving window of candidates on scanline to find local maxima */
@@ -580,6 +580,13 @@ int main(int argc,char *argv[])
       if ( retn != XLAL_SUCCESS ) {
         XLALPrintError ("%s: XLALComputeFstat() failed with errno=%d\n", __func__, xlalErrno );
         return xlalErrno;
+      }
+      /* if single-only flag is given, add +4 to F-statistic */
+      if ( uvar.SignalOnly ) {
+        if (XLALAdd4ToFstatResults(Fstat_res) != XLAL_SUCCESS) {
+          XLALPrintError ("%s: XLALAdd4ToFstatResults() failed with errno=%d\n", __func__, xlalErrno );
+          return xlalErrno;
+        }
       }
 
       toc = GETTIME();
@@ -1505,29 +1512,80 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg, const UserInput_t *uvar )
     fCoverMax = MYMAX ( fmaxStart, fmaxEnd );
     fCoverMin = MYMIN ( fminStart, fminEnd );
 
+    /* correct for doppler-shift */
+    fCoverMax *= 1.0 + uvar->dopplermax;
+    fCoverMin *= 1.0 - uvar->dopplermax;
+
   } /* extrapolate spin-range */
 
-  /* ----- load the multi-IFO SFT-vectors ----- */
-  MultiSFTVector *multiSFTs = NULL;
-  {
-    UINT4 wings = MYMAX(uvar->Dterms, uvar->RngMedWindow/2 +1);	/* extra frequency-bins needed for rngmed, and Dterms */
-    REAL8 fMaxSFT = (1.0 + uvar->dopplermax) * fCoverMax + wings / cfg->Tsft; /* correct for doppler-shift and wings */
-    REAL8 fMinSFT = (1.0 - uvar->dopplermax) * fCoverMin - wings / cfg->Tsft;
+  /* ----- set computational parameters for F-statistic from User-input ----- */
+  if ( uvar->useResamp ) {	// use resampling
 
-    LogPrintf (LOG_DEBUG, "Loading SFTs ... ");
-    TRY ( LALLoadMultiSFTs ( status->statusPtr, &(multiSFTs), catalog, fMinSFT, fMaxSFT ), status );
-    LogPrintfVerbatim (LOG_DEBUG, "done.\n");
-    TRY ( LALDestroySFTCatalog ( status->statusPtr, &catalog ), status );
-    /* count total number of SFTs loaded */
-    UINT4 X, NSFTs = 0;
-    for ( X=0; X < multiSFTs->length; X ++)
-      NSFTs += multiSFTs->data[X]->length;
-    cfg->NSFTs = NSFTs;
+    cfg->Fstat_in = XLALCreateFstatInput_Resamp();
+    if ( cfg->Fstat_in == NULL ) {
+      XLALPrintError("%s: XLALCreateFstatInput_Resamp() failed with errno=%d", __func__, xlalErrno);
+      ABORT ( status, COMPUTEFSTATISTIC_EXLAL, COMPUTEFSTATISTIC_MSGEXLAL );
+    }
+
+  } else {			// use demodulation
+
+    cfg->Fstat_in = XLALCreateFstatInput_Demod( uvar->Dterms, DEMODHL_BEST );
+    if ( cfg->Fstat_in == NULL ) {
+      XLALPrintError("%s: XLALCreateFstatInput_Demod() failed with errno=%d", __func__, xlalErrno);
+      ABORT ( status, COMPUTEFSTATISTIC_EXLAL, COMPUTEFSTATISTIC_MSGEXLAL );
+    }
+
+  }
+
+  /* if single-only flag is given, assume a PSD with sqrt(S) = 1.0 */
+  MultiNoiseFloor assumeSqrtSX, *p_assumeSqrtSX;
+  if ( uvar->SignalOnly ) {
+    assumeSqrtSX.length = XLALCountIFOsInCatalog(catalog);
+    for (UINT4 X = 0; X < assumeSqrtSX.length; ++X) {
+      assumeSqrtSX.sqrtSn[X] = 1.0;
+    }
+    p_assumeSqrtSX = &assumeSqrtSX;
+  } else {
+    p_assumeSqrtSX = NULL;
+  }
+
+  PulsarParamsVector *injectSources = NULL;
+  MultiNoiseFloor *p_injectSqrtSX = NULL;
+  if ( XLALSetupFstatInput( cfg->Fstat_in, catalog, fCoverMin, fCoverMax,
+                                injectSources, p_injectSqrtSX, p_assumeSqrtSX,
+                                uvar->RngMedWindow, cfg->ephemeris, uvar->SSBprecision, 0 ) != XLAL_SUCCESS ) {
+    XLALPrintError("%s: XLALSetupFstatInput() failed with errno=%d", __func__, xlalErrno);
+    ABORT ( status, COMPUTEFSTATISTIC_EXLAL, COMPUTEFSTATISTIC_MSGEXLAL );
+  }
+
+  XLALDestroySFTCatalog(catalog);
+
+  cfg->Fstat_what = FSTATQ_2F;   // always calculate multi-detector 2F
+  if ( LALUserVarWasSet( &uvar->outputLoudest ) ) {
+    cfg->Fstat_what |= FSTATQ_FAFB;   // also calculate Fa,b parts for parameter estimation
+  }
+
+  /* get SFT detectors and timestamps */
+  const MultiLALDetector *multiIFO = XLALGetFstatInputDetectors( cfg->Fstat_in );
+  if ( multiIFO == NULL ) {
+    XLALPrintError("%s: XLALGetFstatInputDetectors() failed with errno=%d", __func__, xlalErrno);
+    ABORT ( status, COMPUTEFSTATISTIC_EXLAL, COMPUTEFSTATISTIC_MSGEXLAL );
+  }
+  const MultiLIGOTimeGPSVector *multiTS = XLALGetFstatInputTimestamps( cfg->Fstat_in );
+  if ( multiTS == NULL ) {
+    XLALPrintError("%s: XLALGetFstatInputTimestamps() failed with errno=%d", __func__, xlalErrno);
+    ABORT ( status, COMPUTEFSTATISTIC_EXLAL, COMPUTEFSTATISTIC_MSGEXLAL );
+  }
+
+  /* count total number of SFTs loaded */
+  cfg->NSFTs = 0;
+  for ( UINT4 X = 0; X < multiTS->length; X++ ) {
+    cfg->NSFTs += multiTS->data[X]->length;
   }
 
   /* for column headings string, get number of detectors, detector name vector, and SFTs per detector vector */
   {
-    const UINT4 numDetectors = multiSFTs->length;
+    const UINT4 numDetectors = multiIFO->length;
     cfg->numSFTsPerDet = XLALCreateUINT4Vector( numDetectors );
     if ( cfg->numSFTsPerDet == NULL ) {
       XLALPrintError ("%s: XLALCreateUINT4Vector( %u ) failed with errno=%d\n", __func__, numDetectors, xlalErrno );
@@ -1535,54 +1593,12 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg, const UserInput_t *uvar )
     }
     cfg->detectorIDs = NULL;
     for (UINT4 X = 0; X < numDetectors; X++) {
-      cfg->numSFTsPerDet->data[X] = multiSFTs->data[X]->length;
-      if ( (cfg->detectorIDs = XLALAppendString2Vector ( cfg->detectorIDs, multiSFTs->data[X]->data[0].name )) == NULL ) {
+      cfg->numSFTsPerDet->data[X] = multiTS->data[X]->length;
+      if ( (cfg->detectorIDs = XLALAppendString2Vector ( cfg->detectorIDs, multiIFO->sites[X].frDetector.prefix )) == NULL ) {
         XLALPrintError ("%s: XLALAppendString2Vector() failed with errno=%d\n", __func__, xlalErrno );
         ABORT ( status, COMPUTEFSTATISTIC_EXLAL, COMPUTEFSTATISTIC_MSGEXLAL );
       }
     } /* for X < numDetectors */
-    /* NOTE: we do not actively sort this vector here, but rather keep the sorting of GV.multiSFTs,
-     * as this is the same used by the actual F-stat computation, and should already be alphabetical.
-     */
-  }
-
-  /* ----- normalize SFTs and calculate noise-weights ----- */
-  MultiNoiseWeights *multiNoiseWeights = NULL;
-  /* SignalOnly: noiseWeights == NULL is equivalent to unit noise-weights in XLALComputeFstat() */
-  if ( !uvar->SignalOnly )
-    {
-      UINT4 X, alpha;
-      MultiPSDVector *rngmed = NULL;
-      TRY ( LALNormalizeMultiSFTVect (status->statusPtr, &rngmed, multiSFTs, uvar->RngMedWindow ), status );
-      TRY ( LALComputeMultiNoiseWeights  (status->statusPtr, &multiNoiseWeights, rngmed, uvar->RngMedWindow, 0 ), status );
-      TRY ( LALDestroyMultiPSDVector (status->statusPtr, &rngmed ), status );
-      if ( !uvar->UseNoiseWeights )	/* in that case simply set weights to 1.0 */
-	for ( X = 0; X < multiNoiseWeights->length; X ++ )
-	  for ( alpha = 0; alpha < multiNoiseWeights->data[X]->length; alpha ++ )
-	    multiNoiseWeights->data[X]->data[alpha] = 1.0;
-    } /* if ! SignalOnly */
-
-  /* ----- set computational parameters for F-statistic from User-input ----- */
-  if ( uvar->useResamp ) {	// use resampling
-
-    cfg->Fstat_in = XLALSetupFstat_Resamp( &multiSFTs, &multiNoiseWeights, cfg->ephemeris, uvar->SSBprecision );
-    if ( cfg->Fstat_in == NULL ) {
-      XLALPrintError("%s: XLALSetupFstat_Resamp() failed with errno=%d", __func__, xlalErrno);
-      ABORT ( status, COMPUTEFSTATISTIC_EXLAL, COMPUTEFSTATISTIC_MSGEXLAL );
-    }
-
-  } else {			// use demodulation
-
-    cfg->Fstat_in = XLALSetupFstat_Demod( &multiSFTs, &multiNoiseWeights, cfg->ephemeris, uvar->SSBprecision, uvar->Dterms, DEMODHL_BEST );
-    if ( cfg->Fstat_in == NULL ) {
-      XLALPrintError("%s: XLALSetupFstat_Demod() failed with errno=%d", __func__, xlalErrno);
-      ABORT ( status, COMPUTEFSTATISTIC_EXLAL, COMPUTEFSTATISTIC_MSGEXLAL );
-    }
-
-  }
-  cfg->Fstat_what = FSTATQ_2F;   // always calculate multi-detector 2F
-  if ( LALUserVarWasSet( &uvar->outputLoudest ) ) {
-    cfg->Fstat_what |= FSTATQ_FAFB;   // also calculate Fa,b parts for parameter estimation
   }
 
   /* internal refTime is used for computing the F-statistic at, to avoid large (t - tRef)^2 values */
@@ -1701,7 +1717,7 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg, const UserInput_t *uvar )
 
   if ( uvar->computeLV && uvar->LVlX )
     {
-      const UINT4 numDetectors = multiSFTs->length;
+      const UINT4 numDetectors = multiIFO->length;
       if (  uvar->LVlX->length != numDetectors ) {
         XLALPrintError( "Length of LV prior ratio vector does not match number of detectors! (%d != %d)\n", uvar->LVlX->length, numDetectors);
         ABORT (status, COMPUTEFSTATISTIC_EINPUT, COMPUTEFSTATISTIC_MSGEINPUT);
@@ -1734,13 +1750,6 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg, const UserInput_t *uvar )
       // FIXME: probably should check a few more things, can't think of any right now ...
       // let's hope users are sensible
     }
-
-  // ----- if user compiled special SSE-tuned code, check that SSE is actually available, otherwise fail!
-  // in order to avoid 'unexpected' behaviour, ie the 'SSE-code' falling back on the non-SSE hotloop functions
-#if defined(CFS_SSE_OPT) && !defined(__SSE__)
-  XLALPrintError ( "\n\nThis code was compiled for use of SSE-optimized LALDemod-hotloop, but no SSE extension present!\n\n");
-  ABORT (status, COMPUTEFSTATISTIC_EINPUT, COMPUTEFSTATISTIC_MSGEINPUT);
-#endif
 
   DETATCHSTATUSPTR (status);
   RETURN (status);
@@ -1853,7 +1862,7 @@ Freemem(LALStatus *status,  ConfigVariables *cfg)
   XLALDestroyUINT4Vector ( cfg->numSFTsPerDet );
   XLALDestroyStringVector ( cfg->detectorIDs );
 
-  XLALDestroyFstatInputData ( cfg->Fstat_in );
+  XLALDestroyFstatInput ( cfg->Fstat_in );
 
   /* destroy FstatToplist if any */
   if ( cfg->FstatToplist )

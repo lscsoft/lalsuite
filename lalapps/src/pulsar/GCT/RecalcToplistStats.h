@@ -57,7 +57,7 @@ extern "C" {
 int
 XLALComputeExtraStatsForToplist ( toplist_t *list,
 				  const char *listEntryTypeName,
-				  const FstatInputDataVector *Fstat_in_vec,
+				  const FstatInputVector *Fstat_in_vec,
 				  const LALStringVector *detectorIDs,
 				  const LIGOTimeGPSVector *startTstack,
 				  const LIGOTimeGPS refTimeGPS,
@@ -66,7 +66,7 @@ XLALComputeExtraStatsForToplist ( toplist_t *list,
 int
 XLALComputeExtraStatsSemiCoherent ( LVcomponents *lineVeto,
 				    const PulsarDopplerParams *dopplerParams,
-				    const FstatInputDataVector *Fstat_in_vec,
+				    const FstatInputVector *Fstat_in_vec,
 				    const LALStringVector *detectorIDs,
 				    const LIGOTimeGPSVector *startTstack,
 				    FILE *singleSegStatsFile );

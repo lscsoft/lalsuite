@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2012, 2013 Karl Wette
+// Copyright (C) 2012, 2013, 2014 Karl Wette
 // Copyright (C) 2007, 2008, 2009, 2010, 2012 Bernd Machenschalk
 // Copyright (C) 2007 Chris Messenger
 // Copyright (C) 2006 John T. Whelan, Badri Krishnan
@@ -86,8 +86,6 @@ const char *const OptimisedHotloopSource = OPT_DEMOD_SOURCE;
 #define TWOPI_FLOAT     6.28318530717958f       /* single-precision 2*pi */
 #define OOTWOPI_FLOAT   (1.0f / TWOPI_FLOAT)    /* single-precision 1 / (2pi) */
 
-#define INIT_MEM(x) memset(&(x), 0, sizeof((x)))
-
 /* Type containing F-statistic proper plus the two complex amplitudes Fa and Fb (for ML-estimators) */
 typedef struct tagFcomponents {
   REAL8 F;                              /* F-statistic value */
@@ -129,10 +127,10 @@ typedef struct tagComputeFBuffer {
 static int LocalXLALComputeFaFb ( Fcomponents *FaFb, const SFTVector *sfts, const PulsarSpins fkdot, const SSBtimes *tSSB, const AMCoeffs *amcoe, const ComputeFParams *params);
 static int XLALComputeFaFb ( Fcomponents *FaFb, const SFTVector *sfts, const PulsarSpins fkdot, const SSBtimes *tSSB, const AMCoeffs *amcoe, const ComputeFParams *params );
 static int ComputeFStat ( Fcomponents *Fstat, const PulsarDopplerParams *doppler, const MultiSFTVector *multiSFTs, const MultiNoiseWeights *multiWeights, const MultiDetectorStateSeries *multiDetStates, const ComputeFParams *params, ComputeFBuffer *cfBuffer );
-static inline void DestroyFstatInputData_Demod ( FstatInputData_Demod* demod );
+static inline void DestroyFstatInput_Demod ( FstatInput_Demod* demod );
 
 // ----- NEW F-stat Demod API ----------
-static int ComputeFstat_Demod ( FstatResults* Fstats, const FstatInputData_Common *common, FstatInputData_Demod* demod );
+static int ComputeFstat_Demod ( FstatResults* Fstats, const FstatInput_Common *common, FstatInput_Demod* demod );
 
 static void XLALEmptyComputeFBuffer ( ComputeFBuffer *cfb);
 
@@ -877,78 +875,95 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
 //////////////////// New demodulation API code ////////////////////
 ///////////////////////////////////////////////////////////////////
 
-struct tagFstatInputData_Demod {
+struct tagFstatInput_Demod {
+  UINT4 Dterms;                                 // Number of terms to keep in Dirichlet kernel
+  DemodHLType demodHL; 	                        // Which hotloop variant to use
   MultiSFTVector *multiSFTs;                    // Input multi-detector SFTs
-  MultiDetectorStateSeries *multiDetStates;     // Multi-detector state series
   ComputeFParams params;                        // Additional parameters for ComputeFStat()
   ComputeFBuffer buffer;                        // Internal buffer for ComputeFStat()
 };
 
 static inline void
-DestroyFstatInputData_Demod(
-  FstatInputData_Demod* demod
+DestroyFstatInput_Demod(
+  FstatInput_Demod* demod
   )
 {
   XLALDestroyMultiSFTVector(demod->multiSFTs);
-  XLALDestroyMultiDetectorStateSeries(demod->multiDetStates);
   XLALEmptyComputeFBuffer(&demod->buffer);
   XLALFree(demod);
-} // DestroyFstatInputData_Demod()
+} // DestroyFstatInput_Demod()
 
-FstatInputData*
-XLALSetupFstat_Demod(
-  MultiSFTVector **multiSFTs,
-  MultiNoiseWeights **multiWeights,
-  const EphemerisData *edat,
-  const SSBprecision SSBprec,
+FstatInput*
+XLALCreateFstatInput_Demod(
   const UINT4 Dterms,
   const DemodHLType demodHL
   )
 {
 
-  // Check non-common input
+  // Check input
   XLAL_CHECK_NULL(Dterms > 0, XLAL_EINVAL);
 
-  // Check common input and allocate input data struct
-  FstatInputData* input = SetupFstat_Common(multiSFTs, multiWeights, edat, SSBprec);
-  XLAL_CHECK_NULL(input != NULL, XLAL_EFUNC);
+  // Allocate input data struct
+  FstatInput* input = XLALCalloc(1, sizeof(FstatInput));
+  XLAL_CHECK_NULL(input != NULL, XLAL_ENOMEM);
+  input->demod = XLALCalloc(1, sizeof(FstatInput_Demod));
+  XLAL_CHECK_NULL(input->demod != NULL, XLAL_ENOMEM);
 
-  // Allocate demodulation input data struct
-  FstatInputData_Demod *demod = XLALCalloc(1, sizeof(FstatInputData_Demod));
-  XLAL_CHECK_NULL(demod != NULL, XLAL_ENOMEM);
-
-  // Save pointer to input SFTs, set supplied pointer to NULL
-  demod->multiSFTs = *multiSFTs;
-  *multiSFTs = NULL;
-
-  // Calculate the detector states from the SFTs
-  {
-    LALStatus status = empty_status;
-    LALGetMultiDetectorStates(&status, &demod->multiDetStates, demod->multiSFTs, edat);
-    if (status.statusCode) {
-      XLAL_ERROR_NULL(XLAL_EFAILED, "LALGetMultiDetectorStates() failed: %s (statusCode=%i)", status.statusDescription, status.statusCode);
-    }
-  }
-
-  // Set parameters to pass to ComputeFStat()
-  demod->params.Dterms = Dterms;
-  demod->params.SSBprec = SSBprec;
-  demod->params.buffer = NULL;
-  demod->params.edat = edat;
-  demod->params.demodHL = demodHL;
-
-  // Save pointer to demodulation input data
-  input->demod = demod;
+  // Save parameters
+  input->demod->Dterms = Dterms;
+  input->demod->demodHL = demodHL;
 
   return input;
+
+}
+
+static int
+SetupFstatInput_Demod(
+  FstatInput_Demod *demod,
+  const FstatInput_Common *common,
+  MultiSFTVector *multiSFTs
+  )
+{
+
+  // Check input
+  XLAL_CHECK(common != NULL, XLAL_EFAULT);
+  XLAL_CHECK(demod != NULL, XLAL_EFAULT);
+  XLAL_CHECK(multiSFTs != NULL, XLAL_EFAULT);
+
+  // Save pointer to SFTs
+  demod->multiSFTs = multiSFTs;
+
+  // Set parameters to pass to ComputeFStat()
+  demod->params.Dterms = demod->Dterms;
+  demod->params.SSBprec = common->SSBprec;
+  demod->params.buffer = NULL;
+  demod->params.edat = common->ephemerides;
+  demod->params.demodHL = demod->demodHL;
+
+  return XLAL_SUCCESS;
+
+}
+
+static int
+GetFstatExtraBins_Demod(
+  FstatInput_Demod* demod
+  )
+{
+
+
+  // Check input
+  XLAL_CHECK(demod != NULL, XLAL_EFAULT);
+
+  // Demodulation requires 'Dterms' extra frequency bins
+  return demod->Dterms;
 
 } // XLALSetupFstat_Demod()
 
 static int
 ComputeFstat_Demod(
   FstatResults* Fstats,
-  const FstatInputData_Common *common,
-  FstatInputData_Demod* demod
+  const FstatInput_Common *common,
+  FstatInput_Demod* demod
   )
 {
 
@@ -979,7 +994,7 @@ ComputeFstat_Demod(
 
     // Call ComputeFStat()
     Fcomponents Fcomp;
-    XLAL_CHECK ( ComputeFStat( &Fcomp, &thisPoint, demod->multiSFTs, common->multiWeights, demod->multiDetStates, &demod->params, &demod->buffer) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK ( ComputeFStat( &Fcomp, &thisPoint, demod->multiSFTs, common->noiseWeights, common->detectorStates, &demod->params, &demod->buffer) == XLAL_SUCCESS, XLAL_EFUNC );
 
     // Return multi-detector 2F
     if (whatToCompute & FSTATQ_2F) {

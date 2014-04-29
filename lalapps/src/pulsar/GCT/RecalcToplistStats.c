@@ -43,7 +43,7 @@
 /** XLAL function to go through a (Hough or GCT) toplist and compute line-robust statistics for each candidate */
 int XLALComputeExtraStatsForToplist ( toplist_t *list,                                        /**< list of cancidates with f, sky position etc. - no output so far */
 				      const char *listEntryTypeName,                          /**< type of toplist entries, give as name string */
-				      const FstatInputDataVector *Fstat_in_vec,               /**< vector of input data for XLALComputeFstat() */
+				      const FstatInputVector *Fstat_in_vec,               /**< vector of input data for XLALComputeFstat() */
 				      const LALStringVector *detectorIDs,                     /**< detector name vector with all detectors present in any data sements */
 				      const LIGOTimeGPSVector *startTstack,                   /**< starting GPS time of each stack */
 				      const LIGOTimeGPS refTimeGPS,                           /**< reference time for fkdot values in toplist */
@@ -178,7 +178,7 @@ int XLALComputeExtraStatsForToplist ( toplist_t *list,                          
  */
 int XLALComputeExtraStatsSemiCoherent ( LVcomponents *lineVeto,                                 /**< [out] structure containing multi TwoF, single TwoF, LV stat */
 					const PulsarDopplerParams *dopplerParams,               /**< sky position, frequency and fdot for a given candidate */
-					const FstatInputDataVector *Fstat_in_vec,               /**< vector of input data for XLALComputeFstat() */
+					const FstatInputVector *Fstat_in_vec,               /**< vector of input data for XLALComputeFstat() */
 					const LALStringVector *detectorIDs,                     /**< detector name vector with all detectors present in any data sements */
 					const LIGOTimeGPSVector *startTstack,                   /**< starting GPS time of each stack */
 					FILE *singleSegStatsFile                                /**< pointer to file to output Fstats for each segment individually */

@@ -114,23 +114,6 @@
 #include <lal/LALString.h>
 #include "HierarchicalSearch.h"
 
-typedef struct tagMultiSFTVectorSequence {
-  UINT4 length;     		/**< number of segments */
-  MultiSFTVector **data; 	/**< the SFT vectors */
-} MultiSFTVectorSequence;
-
-/** sequence of Multi-noise weights vectors -- for each segment */
-typedef struct tagMultiNoiseWeightsSequence {
-  UINT4 length;     		/**< number of segments */
-  MultiNoiseWeights **data; 	/**< the noise weights */
-} MultiNoiseWeightsSequence;
-
-/** sequence of Multi-detector state vectors -- for each segment */
-typedef struct tagMultiDetectorStateSeriesSequence {
-  UINT4 length;     		/**< number of segments */
-  MultiDetectorStateSeries **data; /**< the detector state series */
-} MultiDetectorStateSeriesSequence;
-
 /* This need to go here after HierarchicalSearch.h is included;
    StackSlideFstat.h needs SemiCohCandidateList defined. */
 #include "StackSlideFstat.h"
@@ -230,17 +213,15 @@ static int smallerHough(const void *a,const void *b) {
 }
 
 /* functions for printing various stuff */
-void ComputeStackNoiseWeights( LALStatus *status, REAL8Vector **out, MultiNoiseWeightsSequence *in );
+void ComputeStackNoiseWeights( LALStatus *status, REAL8Vector **out, FstatInputVector* Fstat_in_vec );
 
-void ComputeStackNoiseAndAMWeights( LALStatus *status, REAL8Vector *out, MultiNoiseWeightsSequence *inNoise,
-				    MultiDetectorStateSeriesSequence *inDetStates, SkyPosition skypos);
+void ComputeStackNoiseAndAMWeights( LALStatus *status, REAL8Vector *out, FstatInputVector* Fstat_in_vec, SkyPosition skypos);
 
 void GetStackVelPos( LALStatus *status, REAL8VectorSequence **velStack, REAL8VectorSequence **posStack,
-		     MultiDetectorStateSeriesSequence *stackMultiDetStates);
+		     FstatInputVector* Fstat_in_vec );
 
 
-void SetUpSFTs( LALStatus *status, MultiNoiseWeightsSequence *stackMultiNoiseWeights, MultiDetectorStateSeriesSequence *stackMultiDetStates,
-                FstatInputDataVector** p_Fstat_in_vec, UsefulStageVariables *in );
+void SetUpSFTs( LALStatus *status, FstatInputVector** p_Fstat_in_vec, UsefulStageVariables *in );
 
 void PrintFstatVec (LALStatus *status, REAL4FrequencySeries *in, FILE *fp, PulsarDopplerParams *thisPoint,
 		    LIGOTimeGPS  refTime, INT4 stackIndex);
@@ -334,8 +315,6 @@ int MAIN( int argc, char *argv[]) {
   REAL8 tStack;
 
   /* sft related stuff */
-  static MultiNoiseWeightsSequence stackMultiNoiseWeights;
-  static MultiDetectorStateSeriesSequence stackMultiDetStates;
   static LIGOTimeGPS minStartTimeGPS, maxEndTimeGPS;
 
 
@@ -350,7 +329,7 @@ int MAIN( int argc, char *argv[]) {
 
   /* F-statistic computation related stuff */
   static REAL4FrequencySeriesVector fstatVector;	/* Fstatistic vectors for each stack */
-  FstatInputDataVector* Fstat_in_vec = NULL;		// Vector of Fstat input data structures for XLALComputeFstat(), one per stack
+  FstatInputVector* Fstat_in_vec = NULL;		// Vector of Fstat input data structures for XLALComputeFstat(), one per stack
   FstatResults* Fstat_res = NULL;			// Pointer to Fstat results structure, will be allocated by XLALComputeFstat()
   FstatQuantities Fstat_what = FSTATQ_2F;		// Quantities to be computed by XLALComputeFstat()
   UINT4 binsFstat1, binsFstatSearch;
@@ -696,7 +675,7 @@ int MAIN( int argc, char *argv[]) {
 
   /* for 1st stage: read sfts, calculate multi-noise weights and detector states */
   LogPrintf (LOG_DEBUG, "Reading SFTs and setting up stacks ... ");
-  LAL_CALL( SetUpSFTs( &status, &stackMultiNoiseWeights, &stackMultiDetStates, &Fstat_in_vec, &usefulParams ), &status);
+  LAL_CALL( SetUpSFTs( &status, &Fstat_in_vec, &usefulParams ), &status);
   LogPrintfVerbatim (LOG_DEBUG, "done\n");
 
   /* some useful params computed by SetUpSFTs */
@@ -756,7 +735,7 @@ int MAIN( int argc, char *argv[]) {
   /*---------- compute noise weight for each stack and initialize total weights vector
      -- for debugging purposes only -- we will calculate noise and AM weights later ----------*/
   if (lalDebugLevel) {
-    LAL_CALL( ComputeStackNoiseWeights( &status, &weightsNoise, &stackMultiNoiseWeights), &status);
+    LAL_CALL( ComputeStackNoiseWeights( &status, &weightsNoise, Fstat_in_vec), &status);
   }
 
   /* weightsV is the actual weights vector used */
@@ -831,7 +810,7 @@ int MAIN( int argc, char *argv[]) {
   /* semiCohPar.refTime = tStartGPS; */
   semiCohPar.refTime = tMidGPS;
   /* calculate detector velocity and positions */
-  LAL_CALL( GetStackVelPos( &status, &velStack, &posStack, &stackMultiDetStates), &status);
+  LAL_CALL( GetStackVelPos( &status, &velStack, &posStack, Fstat_in_vec), &status);
   semiCohPar.vel = velStack;
   semiCohPar.pos = posStack;
 
@@ -883,7 +862,7 @@ int MAIN( int argc, char *argv[]) {
   scanInit.projectMetric = TRUE;
   scanInit.obsDuration = tStack;
   scanInit.obsBegin = tMidGPS;
-  scanInit.Detector = &(stackMultiDetStates.data[0]->data[0]->detector);
+  scanInit.Detector = &XLALGetFstatInputDetectorStates(Fstat_in_vec->data[0])->data[0]->detector;
   scanInit.ephemeris = edat;
   scanInit.skyGridFile = uvar_skyGridFile;
   scanInit.skyRegionString = LALCalloc(1, alloc_len = strlen(uvar_skyRegion)+1);
@@ -976,8 +955,7 @@ int MAIN( int argc, char *argv[]) {
       LAL_CALL( LALHOUGHInitializeWeights( &status, weightsV), &status);
 
       if (uvar_useWeights) {
-	LAL_CALL( ComputeStackNoiseAndAMWeights( &status, weightsV, &stackMultiNoiseWeights,
-						 &stackMultiDetStates, skypos), &status);
+	LAL_CALL( ComputeStackNoiseAndAMWeights( &status, weightsV, Fstat_in_vec, skypos), &status);
       }
       semiCohPar.weightsV = weightsV;
 
@@ -1246,14 +1224,7 @@ int MAIN( int argc, char *argv[]) {
     }
 
   /* free first stage memory */
-  for ( k = 0; k < nStacks; k++) {
-    // DO NOT destroy multi-noise weights here, they will be destroyed by XLALDestroyFstatInputDataVector()
-    XLALDestroyMultiDetectorStateSeries ( stackMultiDetStates.data[k] );
-  }
-  LALFree(stackMultiNoiseWeights.data);
-  LALFree(stackMultiDetStates.data);
-
-  XLALDestroyFstatInputDataVector( Fstat_in_vec );
+  XLALDestroyFstatInputVector( Fstat_in_vec );
   XLALDestroyFstatResults( Fstat_res );
 
   XLALDestroyTimestampVector(midTstack);
@@ -1306,9 +1277,7 @@ int MAIN( int argc, char *argv[]) {
  * detector-state
  */
 void SetUpSFTs( LALStatus *status,			/**< pointer to LALStatus structure */
-		MultiNoiseWeightsSequence *stackMultiNoiseWeights, /**< output multi noise weights for each stack */
-		MultiDetectorStateSeriesSequence *stackMultiDetStates, /**< output multi detector states for each stack */
-		FstatInputDataVector** p_Fstat_in_vec,	/**< pointer to vector of Fstat input data structures for XLALComputeFstat(), one per stack */
+		FstatInputVector** p_Fstat_in_vec,	/**< pointer to vector of Fstat input data structures for XLALComputeFstat(), one per stack */
 		UsefulStageVariables *in /**< input params */)
 {
 
@@ -1323,7 +1292,6 @@ void SetUpSFTs( LALStatus *status,			/**< pointer to LALStatus structure */
   REAL8 startTime_freqLo, startTime_freqHi;
   REAL8 endTime_freqLo, endTime_freqHi;
   REAL8 freqLo, freqHi;
-  INT4 extraBins;
 
   INT4 sft_check_result = 0;
 
@@ -1430,27 +1398,12 @@ void SetUpSFTs( LALStatus *status,			/**< pointer to LALStatus structure */
   freqLo = HSMIN ( startTime_freqLo, endTime_freqLo );
   freqHi = HSMAX ( startTime_freqHi, endTime_freqHi );
   doppWings = freqHi * in->dopplerMax;    /* maximum Doppler wing -- probably larger than it has to be */
-  extraBins = HSMAX ( in->blocksRngMed/2 + 1, in->Dterms );
 
-  fMin = freqLo - doppWings - extraBins * deltaFsft;
-  fMax = freqHi + doppWings + extraBins * deltaFsft;
-
-  stackMultiNoiseWeights->length = in->nStacks;
-  stackMultiNoiseWeights->data = LALCalloc(1, alloc_len = in->nStacks * sizeof(MultiNoiseWeights *));
-  if ( stackMultiNoiseWeights->data == NULL ) {
-    XLALPrintError ("Failed to LALCalloc ( 1, %d )\n", alloc_len );
-    ABORT ( status, HIERARCHICALSEARCH_EMEM, HIERARCHICALSEARCH_MSGEMEM );
-  }
-
-  stackMultiDetStates->length = in->nStacks;
-  stackMultiDetStates->data = LALCalloc(1, alloc_len = in->nStacks * sizeof(MultiDetectorStateSeries *));
-  if ( stackMultiDetStates->data == NULL ) {
-    XLALPrintError ("Failed to LALCalloc ( 1, %d )\n", alloc_len );
-    ABORT ( status, HIERARCHICALSEARCH_EMEM, HIERARCHICALSEARCH_MSGEMEM );
-  }
+  fMin = freqLo - doppWings;
+  fMax = freqHi + doppWings;
 
   /* set up vector of Fstat input data structs */
-  (*p_Fstat_in_vec) = XLALCreateFstatInputDataVector( in->nStacks );
+  (*p_Fstat_in_vec) = XLALCreateFstatInputVector( in->nStacks );
   if ( (*p_Fstat_in_vec) == NULL ) {
     ABORT ( status, HIERARCHICALSEARCH_EMEM, HIERARCHICALSEARCH_MSGEMEM );
   }
@@ -1464,47 +1417,43 @@ void SetUpSFTs( LALStatus *status,			/**< pointer to LALStatus structure */
   /* loop over stacks and read sfts */
   for (k = 0; k < in->nStacks; k++) {
 
-    MultiSFTVector* multiSFTs = NULL;
-    MultiPSDVector *psd = NULL;
-
-    /* load the sfts */
-    TRY( LALLoadMultiSFTs ( status->statusPtr, &multiSFTs, catalogSeq.data + k,
-			    fMin, fMax ), status);
-
-#ifdef OUTPUT_TIMING
-    /* need to count the total number of SFTs */
-    for ( UINT4 X=0; X < multiSFTs->length; X ++ ) {
-      nSFTs += multiSFTs->data[X]->length;
+    /* create Fstat input data struct for demodulation */
+    (*p_Fstat_in_vec)->data[k] = XLALCreateFstatInput_Demod( in->Dterms, DEMODHL_BEST );
+    if ( (*p_Fstat_in_vec)->data[k] == NULL ) {
+      XLALPrintError("%s: XLALCreateFstatInput_Demod() failed with errno=%d", __func__, xlalErrno);
+      ABORT ( status, HIERARCHICALSEARCH_EXLAL, HIERARCHICALSEARCH_MSGEXLAL );
     }
-#endif
+    if ( XLALSetupFstatInput( (*p_Fstat_in_vec)->data[k], &catalogSeq.data[k], fMin, fMax, NULL,
+                                  NULL, NULL, in->blocksRngMed, in->edat, in->SSBprec, 0 ) != XLAL_SUCCESS ) {
+      XLALPrintError("%s: XLALSetupFstatInput() failed with errno=%d", __func__, xlalErrno);
+      ABORT ( status, HIERARCHICALSEARCH_EXLAL, HIERARCHICALSEARCH_MSGEXLAL );
+    }
+
+    /* get SFT detectors and timestamps */
+    const MultiLALDetector *multiIFO = XLALGetFstatInputDetectors( (*p_Fstat_in_vec)->data[k] );
+    if ( multiIFO == NULL ) {
+      XLALPrintError("%s: XLALGetFstatInputDetectors() failed with errno=%d", __func__, xlalErrno);
+      ABORT ( status, HIERARCHICALSEARCH_EXLAL, HIERARCHICALSEARCH_MSGEXLAL );
+    }
+    const MultiLIGOTimeGPSVector *multiTS = XLALGetFstatInputTimestamps( (*p_Fstat_in_vec)->data[k] );
+    if ( multiTS == NULL ) {
+      XLALPrintError("%s: XLALGetFstatInputTimestamps() failed with errno=%d", __func__, xlalErrno);
+      ABORT ( status, HIERARCHICALSEARCH_EXLAL, HIERARCHICALSEARCH_MSGEXLAL );
+    }
 
     /* print debug info about this stack */
     LogPrintf(LOG_DETAIL, "Stack %d ", k);
-    for ( UINT4 j = 0; j < multiSFTs->length; j++) {
-      LogPrintfVerbatim(LOG_DETAIL, "%s: %d  ", multiSFTs->data[j]->data[0].name, multiSFTs->data[j]->length);
+    for ( UINT4 j = 0; j < multiTS->length; j++) {
+      LogPrintfVerbatim(LOG_DETAIL, "%s: %d  ", multiIFO->sites[j].frDetector.prefix, multiTS->data[j]->length);
     } /* loop over ifos */
     LogPrintfVerbatim(LOG_DETAIL, "\n");
 
-    /* normalize sfts and compute noise weights */
-    TRY( LALNormalizeMultiSFTVect ( status->statusPtr, &psd, multiSFTs,
-				    in->blocksRngMed ), status );
-
-    TRY( LALComputeMultiNoiseWeights  ( status->statusPtr, stackMultiNoiseWeights->data + k,
-					psd, in->blocksRngMed, 0 ), status );
-
-    TRY ( LALGetMultiDetectorStates ( status->statusPtr, stackMultiDetStates->data + k,
-				      multiSFTs, in->edat ), status );
-
-    TRY ( LALDestroyMultiPSDVector ( status->statusPtr, &psd ), status );
-
-    /* create Fstat input data struct for demodulation */
-    // HACK since XLALSetupFstat_Demod() erases the multi-noise weights pointer, but we still need it
-    MultiNoiseWeights* multiNoiseWeights = stackMultiNoiseWeights->data[k];
-    (*p_Fstat_in_vec)->data[k] = XLALSetupFstat_Demod( &multiSFTs, &multiNoiseWeights, in->edat, in->SSBprec, in->Dterms, DEMODHL_BEST );
-    if ( (*p_Fstat_in_vec)->data[k] == NULL ) {
-      XLALPrintError("%s: XLALSetupFstat_Demod() failed with errno=%d", __func__, xlalErrno);
-      ABORT ( status, HIERARCHICALSEARCH_EXLAL, HIERARCHICALSEARCH_MSGEXLAL );
+#ifdef OUTPUT_TIMING
+    /* need to count the total number of SFTs */
+    for ( UINT4 X = 0; X < multiTS->length; X++ ) {
+      nSFTs += multiTS->data[X]->length;
     }
+#endif
 
   } /* loop over k */
 
@@ -3208,7 +3157,7 @@ void GetChkPointIndex( LALStatus *status,
 void GetStackVelPos( LALStatus *status,
 		     REAL8VectorSequence **velStack,
 		     REAL8VectorSequence **posStack,
-		     MultiDetectorStateSeriesSequence *stackMultiDetStates)
+		     FstatInputVector* Fstat_in_vec)
 {
   UINT4 k, j, m, nStacks;
   INT4 counter, numifo;
@@ -3218,13 +3167,13 @@ void GetStackVelPos( LALStatus *status,
   ATTATCHSTATUSPTR (status);
 
 
-  ASSERT ( stackMultiDetStates != NULL, status, HIERARCHICALSEARCH_ENULL, HIERARCHICALSEARCH_MSGENULL );
-  ASSERT ( stackMultiDetStates->length > 0, status, HIERARCHICALSEARCH_EVAL, HIERARCHICALSEARCH_MSGEVAL );
-  ASSERT ( stackMultiDetStates->data != NULL, status, HIERARCHICALSEARCH_ENULL, HIERARCHICALSEARCH_MSGENULL );
+  ASSERT ( Fstat_in_vec != NULL, status, HIERARCHICALSEARCH_ENULL, HIERARCHICALSEARCH_MSGENULL );
+  ASSERT ( Fstat_in_vec->length > 0, status, HIERARCHICALSEARCH_EVAL, HIERARCHICALSEARCH_MSGEVAL );
+  ASSERT ( Fstat_in_vec->data != NULL, status, HIERARCHICALSEARCH_ENULL, HIERARCHICALSEARCH_MSGENULL );
   ASSERT ( velStack != NULL, status, HIERARCHICALSEARCH_ENULL, HIERARCHICALSEARCH_MSGENULL );
   ASSERT ( posStack != NULL, status, HIERARCHICALSEARCH_ENULL, HIERARCHICALSEARCH_MSGENULL );
 
-  nStacks = stackMultiDetStates->length;
+  nStacks = Fstat_in_vec->length;
 
   /* create velocity and position vectors */
   createPar.length = nStacks; /* number of vectors */
@@ -3245,8 +3194,9 @@ void GetStackVelPos( LALStatus *status,
 
   for (k = 0; k < nStacks; k++)
     {
+      const MultiDetectorStateSeries *multiDetStates = XLALGetFstatInputDetectorStates(Fstat_in_vec->data[k]);
       counter=0;
-      numifo = stackMultiDetStates->data[k]->length;
+      numifo = multiDetStates->length;
 
       /* initialize velocities and positions */
       velStack[0]->data[3*k] = 0;
@@ -3259,17 +3209,17 @@ void GetStackVelPos( LALStatus *status,
 
       for ( j = 0; (INT4)j < numifo; j++)
 	{
-	  INT4 numsft = stackMultiDetStates->data[k]->data[j]->length;
+	  INT4 numsft = multiDetStates->data[j]->length;
 	  for ( m = 0; (INT4)m < numsft; m++)
 	    {
 	      /* sum velocity components */
-	      velStack[0]->data[3*k] += stackMultiDetStates->data[k]->data[j]->data[m].vDetector[0];
-	      velStack[0]->data[3*k+1] += stackMultiDetStates->data[k]->data[j]->data[m].vDetector[1];
-	      velStack[0]->data[3*k+2] += stackMultiDetStates->data[k]->data[j]->data[m].vDetector[2];
+	      velStack[0]->data[3*k] += multiDetStates->data[j]->data[m].vDetector[0];
+	      velStack[0]->data[3*k+1] += multiDetStates->data[j]->data[m].vDetector[1];
+	      velStack[0]->data[3*k+2] += multiDetStates->data[j]->data[m].vDetector[2];
 	      /* sum position components */
-	      posStack[0]->data[3*k] += stackMultiDetStates->data[k]->data[j]->data[m].rDetector[0];
-	      posStack[0]->data[3*k+1] += stackMultiDetStates->data[k]->data[j]->data[m].rDetector[1];
-	      posStack[0]->data[3*k+2] += stackMultiDetStates->data[k]->data[j]->data[m].rDetector[2];
+	      posStack[0]->data[3*k] += multiDetStates->data[j]->data[m].rDetector[0];
+	      posStack[0]->data[3*k+1] += multiDetStates->data[j]->data[m].rDetector[1];
+	      posStack[0]->data[3*k+2] += multiDetStates->data[j]->data[m].rDetector[2];
 
 	      counter++;
 
@@ -3297,32 +3247,31 @@ void GetStackVelPos( LALStatus *status,
 /** Calculate noise weight for each stack*/
 void ComputeStackNoiseWeights( LALStatus *status,
 			       REAL8Vector **out,
-			       MultiNoiseWeightsSequence *in )
+			       FstatInputVector* Fstat_in_vec )
 {
 
   INT4 nStacks, k, j, i, numifo, numsft;
   REAL8Vector *weightsVec=NULL;
-  MultiNoiseWeights *multNoiseWts;
 
 
   INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
-  ASSERT ( in != NULL, status, HIERARCHICALSEARCH_ENULL, HIERARCHICALSEARCH_MSGENULL );
-  ASSERT ( in->length > 0, status, HIERARCHICALSEARCH_EVAL, HIERARCHICALSEARCH_MSGEVAL );
-  ASSERT ( in->data != NULL, status, HIERARCHICALSEARCH_ENULL, HIERARCHICALSEARCH_MSGENULL );
+  ASSERT ( Fstat_in_vec != NULL, status, HIERARCHICALSEARCH_ENULL, HIERARCHICALSEARCH_MSGENULL );
+  ASSERT ( Fstat_in_vec->length > 0, status, HIERARCHICALSEARCH_EVAL, HIERARCHICALSEARCH_MSGEVAL );
+  ASSERT ( Fstat_in_vec->data != NULL, status, HIERARCHICALSEARCH_ENULL, HIERARCHICALSEARCH_MSGENULL );
 
   ASSERT ( out != NULL, status, HIERARCHICALSEARCH_ENULL, HIERARCHICALSEARCH_MSGENULL );
   ASSERT ( *out == NULL, status, HIERARCHICALSEARCH_ENONULL, HIERARCHICALSEARCH_MSGENONULL );
 
-  nStacks = in->length;
+  nStacks = Fstat_in_vec->length;
 
   TRY( LALDCreateVector( status->statusPtr, &weightsVec, nStacks), status);
 
 
   for (k=0; k<nStacks; k++) {
 
-    multNoiseWts = in->data[k];
+    const MultiNoiseWeights *multNoiseWts = XLALGetFstatInputNoiseWeights(Fstat_in_vec->data[k]);
     ASSERT ( multNoiseWts != NULL, status, HIERARCHICALSEARCH_ENULL, HIERARCHICALSEARCH_MSGENULL );
 
     numifo = multNoiseWts->length;
@@ -3361,29 +3310,22 @@ void ComputeStackNoiseWeights( LALStatus *status,
 /** Calculate noise and AM weight for each stack for a given sky position*/
 void ComputeStackNoiseAndAMWeights( LALStatus *status,
 				    REAL8Vector *out,
-				    MultiNoiseWeightsSequence *inNoise,
-				    MultiDetectorStateSeriesSequence *inDetStates,
+				    FstatInputVector* Fstat_in_vec,
 				    SkyPosition skypos)
 {
 
   UINT4 nStacks, iStack, iIFO, iSFT, numifo, numsft;
   REAL8 a, b, n;
-  MultiNoiseWeights *multNoiseWts;
-  MultiDetectorStateSeries *multDetStates;
   MultiAMCoeffs *multiAMcoef = NULL;
 
   INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
-  ASSERT ( inNoise != NULL, status, HIERARCHICALSEARCH_ENULL, HIERARCHICALSEARCH_MSGENULL );
-  ASSERT ( inNoise->length > 0, status, HIERARCHICALSEARCH_EVAL, HIERARCHICALSEARCH_MSGEVAL );
-  ASSERT ( inNoise->data != NULL, status, HIERARCHICALSEARCH_ENULL, HIERARCHICALSEARCH_MSGENULL );
+  ASSERT ( Fstat_in_vec != NULL, status, HIERARCHICALSEARCH_ENULL, HIERARCHICALSEARCH_MSGENULL );
+  ASSERT ( Fstat_in_vec->length > 0, status, HIERARCHICALSEARCH_EVAL, HIERARCHICALSEARCH_MSGEVAL );
+  ASSERT ( Fstat_in_vec->data != NULL, status, HIERARCHICALSEARCH_ENULL, HIERARCHICALSEARCH_MSGENULL );
 
-  nStacks = inNoise->length;
-
-  ASSERT ( inDetStates != NULL, status, HIERARCHICALSEARCH_ENULL, HIERARCHICALSEARCH_MSGENULL );
-  ASSERT ( inDetStates->length == nStacks, status, HIERARCHICALSEARCH_EVAL, HIERARCHICALSEARCH_MSGEVAL );
-  ASSERT ( inDetStates->data != NULL, status, HIERARCHICALSEARCH_ENULL, HIERARCHICALSEARCH_MSGENULL );
+  nStacks = Fstat_in_vec->length;
 
   ASSERT ( out != NULL, status, HIERARCHICALSEARCH_ENULL, HIERARCHICALSEARCH_MSGENULL );
   ASSERT ( out->length == nStacks, status, HIERARCHICALSEARCH_EVAL, HIERARCHICALSEARCH_MSGEVAL );
@@ -3392,10 +3334,10 @@ void ComputeStackNoiseAndAMWeights( LALStatus *status,
 
   for (iStack=0; iStack<nStacks; iStack++) {
 
-    multNoiseWts = inNoise->data[iStack];
+    const MultiNoiseWeights *multNoiseWts = XLALGetFstatInputNoiseWeights(Fstat_in_vec->data[iStack]);
     ASSERT ( multNoiseWts != NULL, status, HIERARCHICALSEARCH_ENULL, HIERARCHICALSEARCH_MSGENULL );
 
-    multDetStates = inDetStates->data[iStack];
+    const MultiDetectorStateSeries *multDetStates = XLALGetFstatInputDetectorStates(Fstat_in_vec->data[iStack]);
     ASSERT ( multDetStates != NULL, status, HIERARCHICALSEARCH_ENULL, HIERARCHICALSEARCH_MSGENULL );
 
     numifo = multNoiseWts->length;

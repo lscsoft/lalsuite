@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2012, 2013 Karl Wette
+// Copyright (C) 2012, 2013, 2014 Karl Wette
 // Copyright (C) 2009 Chris Messenger, Reinhard Prix, Pinkesh Patel, Xavier Siemens, Holger Pletsch
 //
 // This program is free software; you can redistribute it and/or modify
@@ -528,21 +528,19 @@ void ComputeFStatFreqBand_RS ( LALStatus *status,                               
 //////////////////// New resampling API code ////////////////////
 /////////////////////////////////////////////////////////////////
 
-struct tagFstatInputData_Resamp {
+struct tagFstatInput_Resamp {
   MultiSFTVector *multiSFTs;                    // Input multi-detector SFTs
-  MultiDetectorStateSeries *multiDetStates;     // Multi-detector state series
   ComputeFParams params;                        // Additional parameters for ComputeFStat() and ComputeFStatFreqBand_RS()
   ComputeFBuffer buffer;                        // Internal buffer for ComputeFStat()
   REAL4 *Fout;                                  // Output array of *F* values passed to ComputeFStatFreqBand_RS()
 };
 
 static inline void
-DestroyFstatInputData_Resamp(
-  FstatInputData_Resamp* resamp
+DestroyFstatInput_Resamp(
+  FstatInput_Resamp* resamp
   )
 {
   XLALDestroyMultiSFTVector(resamp->multiSFTs);
-  XLALDestroyMultiDetectorStateSeries(resamp->multiDetStates);
   XLALEmptyComputeFBuffer_RS(resamp->params.buffer);
   XLALFree(resamp->params.buffer);
   XLALEmptyComputeFBuffer(&resamp->buffer);
@@ -550,57 +548,72 @@ DestroyFstatInputData_Resamp(
   XLALFree(resamp);
 }
 
-FstatInputData*
-XLALSetupFstat_Resamp(
-  MultiSFTVector **multiSFTs,
-  MultiNoiseWeights **multiWeights,
-  const EphemerisData *edat,
-  const SSBprecision SSBprec
+FstatInput*
+XLALCreateFstatInput_Resamp(
+  void
   )
 {
 
-  // Check common input and allocate input data struct
-  FstatInputData* input = SetupFstat_Common(multiSFTs, multiWeights, edat, SSBprec);
-  XLAL_CHECK_NULL(input != NULL, XLAL_EFUNC);
-
-  // Allocate resampling input data struct
-  FstatInputData_Resamp *resamp = XLALCalloc(1, sizeof(FstatInputData_Resamp));
-  XLAL_CHECK_NULL(resamp != NULL, XLAL_ENOMEM);
-
-  // Save pointer to input SFTs, set supplied pointer to NULL
-  resamp->multiSFTs = *multiSFTs;
-  multiSFTs = NULL;
-
-  // Calculate the detector states from the SFTs
-  {
-    LALStatus status = empty_status;
-    LALGetMultiDetectorStates(&status, &resamp->multiDetStates, resamp->multiSFTs, edat);
-    if (status.statusCode) {
-      XLAL_ERROR_NULL(XLAL_EFAILED, "LALGetMultiDetectorStates() failed: %s (statusCode=%i)", status.statusDescription, status.statusCode);
-    }
-  }
-
-  // Set parameters to pass to ComputeFStatFreqBand_RS()
-  resamp->params.Dterms = OptimisedHotloopDterms;   // Use fixed Dterms for single frequency bin demodulation
-  resamp->params.SSBprec = SSBprec;
-  resamp->params.buffer = NULL;
-  resamp->params.edat = edat;
-
-  // Initialise output array of *F* values to NULL
-  resamp->Fout = NULL;
-
-  // Save pointer to resampling input data
-  input->resamp = resamp;
+  // Allocate input data struct
+  FstatInput* input = XLALCalloc(1, sizeof(FstatInput));
+  XLAL_CHECK_NULL(input != NULL, XLAL_ENOMEM);
+  input->resamp = XLALCalloc(1, sizeof(FstatInput_Resamp));
+  XLAL_CHECK_NULL(input->resamp != NULL, XLAL_ENOMEM);
 
   return input;
 
 }
 
 static int
+SetupFstatInput_Resamp(
+  FstatInput_Resamp *resamp,
+  const FstatInput_Common *common,
+  MultiSFTVector *multiSFTs
+  )
+{
+
+  // Check input
+  XLAL_CHECK(common != NULL, XLAL_EFAULT);
+  XLAL_CHECK(resamp != NULL, XLAL_EFAULT);
+  XLAL_CHECK(multiSFTs != NULL, XLAL_EFAULT);
+
+  // Save pointer to SFTs
+  resamp->multiSFTs = multiSFTs;
+
+  // Set parameters to pass to ComputeFStatFreqBand_RS()
+  resamp->params.Dterms = OptimisedHotloopDterms;   // Use fixed Dterms for single frequency bin demodulation
+  resamp->params.SSBprec = common->SSBprec;
+  resamp->params.buffer = NULL;
+  resamp->params.edat = common->ephemerides;
+
+  // Initialise output array of *F* values to NULL
+  resamp->Fout = NULL;
+
+  return XLAL_SUCCESS;
+
+}
+
+static int
+GetFstatExtraBins_Resamp(
+  FstatInput_Resamp* resamp
+  )
+{
+
+
+  // Check input
+  XLAL_CHECK(resamp != NULL, XLAL_EFAULT);
+
+  // FIXME: resampling should not require extra frequency bins, however
+  // the following is required to get 'testCFSv2_resamp.sh' to pass
+  return OptimisedHotloopDterms;
+
+}
+
+static int
 ComputeFstat_Resamp(
   FstatResults* Fstats,
-  const FstatInputData_Common *common,
-  FstatInputData_Resamp* resamp
+  const FstatInput_Common *common,
+  FstatInput_Resamp* resamp
   )
 {
 
@@ -647,7 +660,7 @@ ComputeFstat_Resamp(
   // Call ComputeFStatFreqBand_RS()
   {
     LALStatus status = empty_status;
-    ComputeFStatFreqBand_RS(&status, &CFSFB_RS, &thisPoint, resamp->multiSFTs, common->multiWeights, &resamp->params);
+    ComputeFStatFreqBand_RS(&status, &CFSFB_RS, &thisPoint, resamp->multiSFTs, common->noiseWeights, &resamp->params);
     if (status.statusCode) {
       XLAL_ERROR(XLAL_EFAILED, "ComputeFStatFreqBand_RS() failed: %s (statusCode=%i)", status.statusDescription, status.statusCode);
     }
@@ -721,7 +734,7 @@ ComputeFstat_Resamp_demod:
 
     // Call ComputeFStat()
     Fcomponents Fcomp;
-    XLAL_CHECK ( ComputeFStat( &Fcomp, &thisPoint, resamp->multiSFTs, common->multiWeights, resamp->multiDetStates, &resamp->params, &resamp->buffer) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK ( ComputeFStat( &Fcomp, &thisPoint, resamp->multiSFTs, common->noiseWeights, common->detectorStates, &resamp->params, &resamp->buffer) == XLAL_SUCCESS, XLAL_EFUNC );
 
     // Return multi-detector 2F
     if (whatToCompute & FSTATQ_2F) {
