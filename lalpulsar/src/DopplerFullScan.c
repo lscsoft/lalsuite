@@ -33,13 +33,11 @@
 #include <lal/FileIO.h>
 #include <lal/DetectorSite.h>
 #include <lal/LALError.h>
-#include <lal/LatticeCovering.h>
 #include <lal/ConfigFile.h>
 #include <lal/LogPrintf.h>
 
 #include <lal/FlatPulsarMetric.h>
 #include <lal/DopplerFullScan.h>
-#include <lal/DopplerLatticeCovering.h>
 
 /*---------- DEFINES ----------*/
 #define MIN(x,y) (x < y ? x : y)
@@ -62,6 +60,15 @@ typedef struct {
   DopplerSkyScanState skyScan;	/**< keep track of sky-grid stepping */
 } factoredGridScan_t;
 
+/** doubly linked list of REAL8-vectors (physical vectors) */
+typedef struct tagREAL8VectorList
+{
+  REAL8Vector entry;
+  struct tagREAL8VectorList *next;
+  struct tagREAL8VectorList *prev;
+} REAL8VectorList;
+REAL8VectorList empty_REAL8VectorList;
+
 /** ----- internal [opaque] type to store the state of a FULL multidimensional grid-scan ----- */
 struct tagDopplerFullScanState {
   INT2 state;  			/**< idle, ready or finished */
@@ -71,11 +78,11 @@ struct tagDopplerFullScanState {
   SkyRegion skyRegion;		/**< sky-range covered by template bank */
 
   /* ----- full multi-dim parameter-space grid stuff ----- */
-  gsl_matrix *gij;			/**< flat parameter-space metric */
+  /* gsl_matrix *gij;			flat parameter-space metric */
   REAL8VectorList *covering;		/**< multi-dimensional covering */
   REAL8VectorList *thisGridPoint; 	/**< pointer to current grid-point */
   /* lattice scan state */
-  DopplerLatticeScan *latticeScan;	/**< state of lattice Scan */
+  /* DopplerLatticeScan *latticeScan;	state of lattice Scan */
   /* spindown lattice tiling */
   FlatLatticeTiling *spindownTiling;    /**< state of spindown lattice tiling */
   gsl_vector *spindownTilingPoint;      /**< current point in spindown lattice tiling */
@@ -170,21 +177,19 @@ InitDopplerFullScan(LALStatus *status,			/**< pointer to LALStatus structure */
       TRY ( loadFullGridFile ( status->statusPtr, thisScan, init ), status );
       break;
 
-    case GRID_METRIC_LATTICE:
+    /* case GRID_METRIC_LATTICE: */
       /* NOTE: experimental und under construction */
-      {
-	DopplerLatticeInit latticeInit;
-	latticeInit.searchRegion = init->searchRegion;
-	latticeInit.metricMismatch = init->metricMismatch;
-	latticeInit.startTime = init->startTime;
-	latticeInit.Tspan = init->Tspan;
-	latticeInit.ephemeris = init->ephemeris;
-
-	TRY ( InitDopplerLatticeScan ( status->statusPtr, &(thisScan->latticeScan), &latticeInit ), status );
-	thisScan->state = STATE_READY;
-      }
-
-      break;
+      /* { */
+      /*   DopplerLatticeInit latticeInit; */
+      /*   latticeInit.searchRegion = init->searchRegion; */
+      /*   latticeInit.metricMismatch = init->metricMismatch; */
+      /*   latticeInit.startTime = init->startTime; */
+      /*   latticeInit.Tspan = init->Tspan; */
+      /*   latticeInit.ephemeris = init->ephemeris; */
+      /*   TRY ( InitDopplerLatticeScan ( status->statusPtr, &(thisScan->latticeScan), &latticeInit ), status ); */
+      /*   thisScan->state = STATE_READY; */
+      /* } */
+      /* break; */
 
     case GRID_SPINDOWN_SQUARE: /* square parameter space */
     case GRID_SPINDOWN_AGEBRK: /* age-braking index parameter space */
@@ -431,11 +436,11 @@ XLALNumDopplerTemplates ( DopplerFullScanState *scan)
     {
       switch ( scan->gridType )
 	{
-	case GRID_METRIC_LATTICE:
-	  LogPrintf ( LOG_DEBUG, "Now counting number of templates in lattice ... ");
-	  scan->numTemplates = XLALCountLatticeTemplates ( scan->latticeScan );
-	  LogPrintfVerbatim( LOG_DEBUG, " done. (%.0f)\n", scan->numTemplates );
-	  break;
+	/* case GRID_METRIC_LATTICE: */
+	/*   LogPrintf ( LOG_DEBUG, "Now counting number of templates in lattice ... "); */
+	/*   scan->numTemplates = XLALCountLatticeTemplates ( scan->latticeScan ); */
+	/*   LogPrintfVerbatim( LOG_DEBUG, " done. (%.0f)\n", scan->numTemplates ); */
+	/*   break; */
 
 	case GRID_SPINDOWN_SQUARE: /* square parameter space */
 	case GRID_SPINDOWN_AGEBRK: /* age-braking index parameter space */
@@ -465,7 +470,6 @@ XLALNumDopplerTemplates ( DopplerFullScanState *scan)
 int
 XLALNextDopplerPos(PulsarDopplerParams *pos, DopplerFullScanState *scan)
 {
-  int ret;
 
   /* This traps coding errors in the calling routine. */
   if ( pos == NULL || scan == NULL ) {
@@ -512,28 +516,28 @@ XLALNextDopplerPos(PulsarDopplerParams *pos, DopplerFullScanState *scan)
 
       break;
 
-    case GRID_METRIC_LATTICE:
-      if ( XLALgetCurrentDopplerPos ( pos, scan->latticeScan, COORDINATESYSTEM_EQUATORIAL ) ) {
-	XLAL_ERROR ( XLAL_EFUNC );
-      }
-      /* advance to next point */
-      ret = XLALadvanceLatticeIndex ( scan->latticeScan );
-      if ( ret < 0 ) {
-	XLAL_ERROR ( XLAL_EFUNC );
-      }
-      else if ( ret == 1 )
-	{
-	  XLALPrintError ( "\n\nXLALadvanceLatticeIndex(): this was the last lattice points!\n\n");
-	  scan->state = STATE_FINISHED;
-	}
-#if 0
-      { /* debugging */
-	gsl_vector_int *lal_index = NULL;
-	XLALgetCurrentLatticeIndex ( &lal)index, scan->latticeScan );
-	XLALfprintfGSLvector_int ( stderr, "%d", lal_index );
-	gsl_vector_int_free ( lal_index );
-      }
-#endif
+/*     case GRID_METRIC_LATTICE: */
+/*       if ( XLALgetCurrentDopplerPos ( pos, scan->latticeScan, COORDINATESYSTEM_EQUATORIAL ) ) { */
+/* 	XLAL_ERROR ( XLAL_EFUNC ); */
+/*       } */
+/*       /\* advance to next point *\/ */
+/*       ret = XLALadvanceLatticeIndex ( scan->latticeScan ); */
+/*       if ( ret < 0 ) { */
+/* 	XLAL_ERROR ( XLAL_EFUNC ); */
+/*       } */
+/*       else if ( ret == 1 ) */
+/* 	{ */
+/* 	  XLALPrintError ( "\n\nXLALadvanceLatticeIndex(): this was the last lattice points!\n\n"); */
+/* 	  scan->state = STATE_FINISHED; */
+/* 	} */
+/* #if 0 */
+/*       { /\* debugging *\/ */
+/* 	gsl_vector_int *lal_index = NULL; */
+/* 	XLALgetCurrentLatticeIndex ( &lal)index, scan->latticeScan ); */
+/* 	XLALfprintfGSLvector_int ( stderr, "%d", lal_index ); */
+/* 	gsl_vector_int_free ( lal_index ); */
+/*       } */
+/* #endif */
 
       break;
 
@@ -659,6 +663,31 @@ nextPointInFactoredGrid (PulsarDopplerParams *pos, DopplerFullScanState *scan)
 
 } /* nextPointInFactoredGrid() */
 
+static void
+XLALREAL8VectorListDestroy (REAL8VectorList *head)
+{
+  REAL8VectorList *ptr, *next;
+
+  if ( !head )
+    return;
+
+  next = head;
+
+  do
+    {
+      /* step to next element */
+      ptr = next;
+      /* remember pointer to next element */
+      next = ptr->next;
+      /* free current element */
+      LALFree (ptr->entry.data);
+      LALFree (ptr);
+
+    } while ( (ptr = next) != NULL );
+
+  return;
+} /* XLALREAL8VectorListDestroy() */
+
 /**
  * Destroy the a full DopplerFullScanState structure
  */
@@ -681,9 +710,9 @@ FreeDopplerFullScan (LALStatus *status, DopplerFullScanState **scan)
   if ( (*scan)->covering )
     XLALREAL8VectorListDestroy ( (*scan)->covering );
 
-  if ( (*scan)->latticeScan ) {
-    XLALFreeDopplerLatticeScan ( &((*scan)->latticeScan) );
-  }
+  /* if ( (*scan)->latticeScan ) { */
+  /*   XLALFreeDopplerLatticeScan ( &((*scan)->latticeScan) ); */
+  /* } */
 
   if ((*scan)->spindownTiling) {
     XLALDestroyFlatLatticeTiling((*scan)->spindownTiling);
@@ -706,6 +735,39 @@ FreeDopplerFullScan (LALStatus *status, DopplerFullScanState **scan)
 } /* FreeDopplerSkyScan() */
 
 
+static REAL8VectorList *
+XLALREAL8VectorListAddEntry (REAL8VectorList *head, const REAL8Vector *entry)
+{
+  UINT4 dim;
+  REAL8VectorList *ptr = NULL;	/* running list-pointer */
+  REAL8VectorList *newElement = NULL;	/* new list-element */
+  /* check illegal input */
+  if ( (head == NULL) || (entry == NULL) )
+    return NULL;
+
+  /* find tail of list */
+  ptr = head;
+  while ( ptr->next )
+    ptr = ptr->next;
+
+  /* construct new list-element */
+  dim = entry->length;
+  if ( (newElement = LALCalloc (1, sizeof (*newElement))) == NULL)
+    return NULL;
+  if ( (newElement->entry.data = LALCalloc (dim, sizeof(entry->data[0]))) == NULL ) {
+    LALFree (newElement);
+    return NULL;
+  }
+  newElement->entry.length = dim;
+  memcpy (newElement->entry.data, entry->data, dim * sizeof(entry->data[0]) );
+
+  /* link this to the tail of list */
+  ptr->next = newElement;
+  newElement->prev = ptr;
+
+  return newElement;
+
+} /* XLALREAL8VectorListAddEntry() */
 
 /**
  * load a full multi-dim template grid from the file init->gridFile,

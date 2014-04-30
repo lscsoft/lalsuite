@@ -1318,5 +1318,3 @@ fprintf_vect2Dlist ( FILE *fp, const vect2Dlist_t *list, hemisphere_t hemi )
 
   return 0;
 }
-
-

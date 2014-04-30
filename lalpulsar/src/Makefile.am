@@ -15,7 +15,6 @@ lalpulsarinclude_HEADERS = \
 	CWMakeFakeData.h \
 	DetectorStates.h \
 	DopplerFullScan.h \
-	DopplerLatticeCovering.h \
 	DopplerScan.h \
 	ExtrapolatePulsarSpins.h \
 	FitToPulsar.h \
@@ -37,7 +36,6 @@ lalpulsarinclude_HEADERS = \
 	LALPulsarLibVCSInfo.h \
 	LALPulsarVCSInfo.h \
 	LALXMGRInterface.h \
-	LatticeCovering.h \
 	LFTandTSutils.h \
 	LineRobustStats.h \
 	LISAspecifics.h \
@@ -81,7 +79,6 @@ liblalpulsar_la_SOURCES = \
 	CWMakeFakeData.c \
 	DetectorStates.c \
 	DopplerFullScan.c \
-	DopplerLatticeCovering.c \
 	DopplerScan.c \
 	DriveHough.c \
 	DTEphemeris.c \
@@ -106,7 +103,6 @@ liblalpulsar_la_SOURCES = \
 	LALInitBarycenter.c \
 	LALPulsarVCSInfo.c \
 	LALXMGRInterface.c \
-	LatticeCovering.c \
 	LFTandTSutils.c \
 	LineRobustStats.c \
 	LISAspecifics.c \
