@@ -79,7 +79,6 @@ struct tagLatticeTiling {
   LatticeType lattice;				///< Type of lattice to generate flat tiling with
   gsl_vector* phys_scale;			///< Normalised to physical coordinate scale
   gsl_vector* phys_offset;			///< Normalised to physical coordinate offset
-  gsl_matrix* metric;				///< Normalised parameter-space metric
   gsl_matrix* increment;			///< increment matrix of the lattice tiling generator
   gsl_matrix* inv_increment;			///< Inverse of increment matrix of the lattice tiling generator
   gsl_matrix* tiled_increment;			///< increment matrix of tiled dimensions of the lattice generator
@@ -574,8 +573,6 @@ LatticeTiling* XLALCreateLatticeTiling(
   XLAL_CHECK_NULL(tiling->phys_scale != NULL, XLAL_ENOMEM);
   tiling->phys_offset = gsl_vector_alloc(n);
   XLAL_CHECK_NULL(tiling->phys_offset != NULL, XLAL_ENOMEM);
-  tiling->metric = gsl_matrix_alloc(n, n);
-  XLAL_CHECK_NULL(tiling->metric != NULL, XLAL_ENOMEM);
   tiling->padding = gsl_vector_alloc(n);
   XLAL_CHECK_NULL(tiling->padding != NULL, XLAL_ENOMEM);
   tiling->point = gsl_vector_alloc(n);
@@ -614,7 +611,6 @@ void XLALDestroyLatticeTiling(
     gsl_vector_uint_free(tiling->tiled_idx);
     gsl_vector_free(tiling->phys_scale);
     gsl_vector_free(tiling->phys_offset);
-    gsl_matrix_free(tiling->metric);
     gsl_matrix_free(tiling->increment);
     gsl_matrix_free(tiling->inv_increment);
     gsl_matrix_free(tiling->tiled_increment);
@@ -914,13 +910,21 @@ int XLALSetLatticeTypeAndMetric(
     }
   }
 
-  // Check diagonal elements of tiled dimensions are positive, and calculate
-  // physical parameter-space scale from metric diagonal elements
+  // Check metric is symmetric and has positive diagonal elements
+  for (size_t i = 0; i < n; ++i) {
+    XLAL_CHECK(gsl_matrix_get(metric, i, i) > 0,
+               XLAL_EINVAL, "metric(%zu,%zu) <= 0", i, i);
+    for (size_t j = i + 1; j < n; ++j) {
+      XLAL_CHECK(gsl_matrix_get(metric, i, j) == gsl_matrix_get(metric, j, i),
+                 XLAL_EINVAL, "metric(%zu,%zu) != metric(%zu,%zu)", i, j, j, i);
+    }
+  }
+
+  // Calculate physical parameter-space scale from metric diagonal elements
   gsl_vector_set_all(tiling->phys_scale, 1.0);
   for (size_t ti = 0; ti < tn; ++ti) {
     const size_t i = gsl_vector_uint_get(tiling->tiled_idx, ti);
     const double metric_i_i = gsl_matrix_get(metric, i, i);
-    XLAL_CHECK(metric_i_i > 0, XLAL_EINVAL, "metric(%zu,%zu) <= 0", i, i);
     gsl_vector_set(tiling->phys_scale, i, 1.0 / sqrt(metric_i_i));
   }
 
@@ -940,18 +944,6 @@ int XLALSetLatticeTypeAndMetric(
     LT_TransformBound(i, &phys_scale.vector, &phys_offset.vector, bound->N,     NULL, bound->c_upper, bound->m_upper);
   }
 
-  // Check metric is symmetric, and copy rescaled metric
-  for (size_t i = 0; i < n; ++i) {
-    const double scale_i = gsl_vector_get(tiling->phys_scale, i);
-    for (size_t j = 0; j < n; ++j) {
-      const double scale_j = gsl_vector_get(tiling->phys_scale, j);
-      double metric_i_j = gsl_matrix_get(metric, i, j);
-      XLAL_CHECK(metric_i_j == gsl_matrix_get(metric, j, i), XLAL_EINVAL, "metric(%zu,%zu) != metric(%zu,%zu)", i, j, j, i);
-      metric_i_j *= scale_i * scale_j;
-      gsl_matrix_set(tiling->metric, i, j, metric_i_j);
-    }
-  }
-
   // Initialise padding for no tiled dimensions
   gsl_vector_set_zero(tiling->padding);
 
@@ -968,12 +960,15 @@ int XLALSetLatticeTypeAndMetric(
     gsl_matrix* inv_tiled_increment = gsl_matrix_alloc(tn, tn);
     XLAL_CHECK(inv_tiled_increment != NULL, XLAL_ENOMEM);
 
-    // Copy tiled dimensions of metric
+    // Copy and rescale tiled dimensions of metric
     for (size_t ti = 0; ti < tn; ++ti) {
       const size_t i = gsl_vector_uint_get(tiling->tiled_idx, ti);
+      const double scale_i = gsl_vector_get(tiling->phys_scale, i);
       for (size_t tj = 0; tj < tn; ++tj) {
         const size_t j = gsl_vector_uint_get(tiling->tiled_idx, tj);
-        gsl_matrix_set(tiled_metric, ti, tj, gsl_matrix_get(tiling->metric, i, j));
+        const double scale_j = gsl_vector_get(tiling->phys_scale, j);
+        const double metric_i_j = gsl_matrix_get(metric, i, j);
+        gsl_matrix_set(tiled_metric, ti, tj, metric_i_j * scale_i * scale_j);
       }
     }
 
