@@ -19,8 +19,8 @@ EXTRA_DIST = \
 	testComputeAntennaPattern.sh
 
 TESTS = \
-	testComputePSD.sh
-#	testComputeAntennaPattern.sh
+	testComputePSD.sh \
+	testComputeAntennaPattern.sh
 
 TESTS_ENVIRONMENT = \
 	LAL_DEBUG_LEVEL=msglvl1,memdbg; export LAL_DEBUG_LEVEL; \

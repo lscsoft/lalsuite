@@ -32,7 +32,7 @@ awk_isgtr='{if($1>$2) {print "1"}}'
 awk_print_wo_headers='!/%%/ && /[0-9]/ {print $col}'
 ## awk line filtering: !/%%/ filters out header lines and /[0-9]/ filters out blank lines (require at least one number)
 awk_avg='!/%%/ && /[0-9]/ { total += $col; count++ } END { print total/count }'
-awk_avg_sq='!/%%/ && /[0-9]/ { total += $col**2; count++ } END { print total/count }'
+awk_avg_sq='!/%%/ && /[0-9]/ { total += $col*$col; count++ } END { print total/count }'
 awk_avg_prod='!/%%/ && /[0-9]/ { total += $col1*$col2; count++ } END { print total/count }'
 
 # ---------- common test parameters
@@ -443,7 +443,7 @@ echo "--------------------------------------------------------------------------
 ## compute harmonic mean of ShX
 SqrtShH=3e-23
 SqrtShL=6e-23
-Sinv=$(echo $SqrtShH $SqrtShL | awk '{print (1/$1**2+1/$2**2)/2}')
+Sinv=$(echo $SqrtShH $SqrtShL | awk '{print (1/($1*$1)+1/($2*$2)/2}')
 
 ## need more timestamps to get decent statistics for PFS
 rm $timestampsfile_H1
