@@ -27,7 +27,7 @@ mfd_code="${injectdir}lalapps_Makefakedata_v4"
 cfsv2_code="${builddir}lalapps_ComputeFStatistic_v2"
 cmp_code="${builddir}lalapps_compareFstats"
 
-SFTdir="./testGridv2_sfts"
+SFTdir="./testCFSv2_sfts"
 
 if [ -z "${LAL_DATA_PATH}" ]; then
     echo
@@ -133,10 +133,10 @@ echo
 gridType0=" --gridType=0";	## flat grid
 gridType1=" --gridType=1";	## isotropic
 gridType2=" --gridType=2 --metricType=1 --metricMismatch=0.1";	## metric grid
-output_0="./testGridv2_grid0.dat";
-output_1="./testGridv2_grid1.dat";
-output_2="./testGridv2_grid2.dat";
-output_6="./testGridv2_grid6.dat";
+output_0="./testCFSv2_grid0.dat";
+output_1="./testCFSv2_grid1.dat";
+output_2="./testCFSv2_grid2.dat";
+output_6="./testCFSv2_grid6.dat";
 
 sky_CL="--Alpha=$Alpha --AlphaBand=$AlphaBand --dAlpha=$dAlpha --Delta=$Delta --DeltaBand=$DeltaBand --dDelta=$dDelta"
 spin_CL="--Freq=$Freq --FreqBand=$FreqBand --dFreq=$dFreq --f1dot=$f1dot --f1dotBand=$f1dotBand --df1dot=$df1dot"
