@@ -200,6 +200,15 @@ int XLALRestartLatticeTiling(
   LatticeTiling* tiling				///< [in] Tiling state
   );
 
+///
+/// Generate random points within the lattice tiling parameter space
+///
+int XLALRandomLatticePoints(
+  const LatticeTiling* tiling,			///< [in] Tiling state
+  RandomParams* rng,				///< [in] Random number generator
+  gsl_matrix* random_points			///< [in/out] Matrix whose columns are the random points
+  );
+
 #ifdef __cplusplus
 }
 #endif

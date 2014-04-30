@@ -1170,3 +1170,52 @@ int XLALRestartLatticeTiling(
   return XLAL_SUCCESS;
 
 }
+
+int XLALRandomLatticePoints(
+  const LatticeTiling* tiling,
+  RandomParams* rng,
+  gsl_matrix* random_points
+  )
+{
+
+  // Check tiling
+  XLAL_CHECK(tiling != NULL, XLAL_EFAULT);
+  XLAL_CHECK(tiling->status > LT_S_INCOMPLETE, XLAL_EFAILED);
+  const size_t n = tiling->dimensions;
+
+  // Check input
+  XLAL_CHECK(rng != NULL, XLAL_EFAULT);
+  XLAL_CHECK(random_points != NULL, XLAL_EFAULT);
+  XLAL_CHECK(random_points->size1 == n, XLAL_ESIZE);
+
+  // Create random points in lattice tiling parameter space, in normalised coordinates
+  for (size_t k = 0; k < random_points->size2; ++k) {
+    gsl_vector_view point = gsl_matrix_column(random_points, k);
+    for (size_t i = 0; i < n; ++i) {
+
+      // Get normalised bounds
+      double lower_i = 0, upper_i = 0;
+      LT_GetBounds(tiling, i, &point.vector, NULL, &lower_i, &upper_i);
+
+      // Generate random number
+      const double u = XLALUniformDeviate(rng);
+
+      // Set parameter space point
+      gsl_vector_set(&point.vector, i, lower_i + u*(upper_i - lower_i));
+
+    }
+
+  }
+
+  // Transform given points from normalised to physical coordinates
+  for (size_t i = 0; i < n; ++i) {
+    const double phys_scale = gsl_vector_get(tiling->phys_scale, i);
+    const double phys_offset = gsl_vector_get(tiling->phys_offset, i);
+    gsl_vector_view row = gsl_matrix_row(random_points, i);
+    gsl_vector_scale(&row.vector, phys_scale);
+    gsl_vector_add_constant(&row.vector, phys_offset);
+  }
+
+  return XLAL_SUCCESS;
+
+}
