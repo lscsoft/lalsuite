@@ -43,7 +43,6 @@ lalpulsarinclude_HEADERS = \
 	PHMD.h \
 	ProbabilityDensity.h \
 	PtoleMetric.h \
-	PulsarCat.h \
 	PulsarCrossCorr.h \
 	PulsarCrossCorr_v2.h \
 	PulsarDataTypes.h \
@@ -112,8 +111,6 @@ liblalpulsar_la_SOURCES = \
 	ProbabilityDensity.c \
 	ProjectMetric.c \
 	PtoleMetric.c \
-	PulsarCat.c \
-	PulsarCatInput.c \
 	PulsarCrossCorr.c \
 	PulsarCrossCorr_v2.c \
 	PulsarDataTypes.c \

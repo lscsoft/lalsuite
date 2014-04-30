@@ -21,7 +21,6 @@ check_PROGRAMS = \
 	XLALComputeAMTest \
 	PtoleMeshTest \
 	PtoleMetricTest \
-	PulsarCatTest \
 	SFTfileIOTest \
 	SimulateTaylorCWTest \
 	SkyMetricTest \

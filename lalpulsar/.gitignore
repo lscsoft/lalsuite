@@ -51,7 +51,6 @@ test/OutHistogram.asc
 test/OutHough.asc
 test/PtoleMeshTest
 test/PtoleMetricTest
-test/PulsarCatTest
 test/ResampleTest
 test/SFTCleanTest
 test/SFTfileIOTest
