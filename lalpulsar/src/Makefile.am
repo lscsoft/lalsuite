@@ -8,11 +8,11 @@ endif
 lalpulsarincludedir = $(includedir)/lal
 lalpulsarinclude_HEADERS = \
 	BinaryPulsarTiming.h \
-	CWFastMath.h \
-	CWMakeFakeData.h \
 	ComplexAM.h \
 	ComputeFstat.h \
 	ComputeSky.h \
+	CWFastMath.h \
+	CWMakeFakeData.h \
 	DetectorStates.h \
 	DopplerFullScan.h \
 	DopplerLatticeCovering.h \
@@ -37,11 +37,11 @@ lalpulsarinclude_HEADERS = \
 	LALPulsarLibVCSInfo.h \
 	LALPulsarVCSInfo.h \
 	LALXMGRInterface.h \
+	LatticeCovering.h \
 	LFTandTSutils.h \
 	LineRobustStats.h \
 	LISAspecifics.h \
 	LUT.h \
-	LatticeCovering.h \
 	NormalizeSFTRngMed.h \
 	PHMD.h \
 	ProbabilityDensity.h \
@@ -57,8 +57,8 @@ lalpulsarinclude_HEADERS = \
 	SFTfileIO.h \
 	SFTutils-LAL.h \
 	SFTutils.h \
-	SSBtimes.h \
 	SimulatePulsarSignal.h \
+	SSBtimes.h \
 	StackMetric.h \
 	Statistics.h \
 	SynthesizeCWDraws.h \
@@ -72,20 +72,20 @@ lalpulsarinclude_HEADERS = \
 lib_LTLIBRARIES = liblalpulsar.la
 liblalpulsar_la_SOURCES = \
 	BinaryPulsarTiming.c \
-	CWMakeFakeData.c \
 	CoherentMetric.c \
 	ComplexAM.c \
 	ComputeFstat.c \
 	ComputeSky.c \
 	ConstructPLUT.c \
-	DTEphemeris.c \
+	CWFastMath.c \
+	CWMakeFakeData.c \
 	DetectorStates.c \
 	DopplerFullScan.c \
 	DopplerLatticeCovering.c \
 	DopplerScan.c \
 	DriveHough.c \
+	DTEphemeris.c \
 	ExtrapolatePulsarSpins.c \
-	CWFastMath.c \
 	FitToPulsar.c \
 	FlatLatticeTiling.c \
 	FlatMesh.c \
@@ -106,10 +106,10 @@ liblalpulsar_la_SOURCES = \
 	LALInitBarycenter.c \
 	LALPulsarVCSInfo.c \
 	LALXMGRInterface.c \
+	LatticeCovering.c \
 	LFTandTSutils.c \
 	LineRobustStats.c \
 	LISAspecifics.c \
-	LatticeCovering.c \
 	NDParamPLUT.c \
 	NormalizeSFTRngMed.c \
 	ParamPLUT.c \
@@ -127,17 +127,17 @@ liblalpulsar_la_SOURCES = \
 	SFTClean.c \
 	SFTfileIO.c \
 	SFTutils.c \
-	SSBtimes.c \
 	SimulatePulsarSignal.c \
 	SinCosLUT.c \
+	SSBtimes.c \
 	StackMetric.c \
 	Statistics.c \
 	Stereographic.c \
 	SynthesizeCWDraws.c \
 	TBaryPtolemaic.c \
 	TComp.c \
-	TSpin.c \
 	TransientCW_utils.c \
+	TSpin.c \
 	TwoDMesh.c \
 	TwoDMeshInternal.c \
 	TwoDMeshMetrics.c \
