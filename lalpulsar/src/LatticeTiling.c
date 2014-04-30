@@ -940,7 +940,7 @@ int XLALSetLatticeTypeAndMetric(
   for (size_t i = 0; i < n; ++i) {
     double phys_lower_i = 0, phys_upper_i = 0;
     LT_GetBounds(tiling, i, tiling->phys_offset, NULL, &phys_lower_i, &phys_upper_i);
-    gsl_vector_set(tiling->phys_offset, i, phys_lower_i);
+    gsl_vector_set(tiling->phys_offset, i, 0.5*(phys_lower_i + phys_upper_i));
   }
 
   // Transform parameter-space bounds from physical to normalised coordinates
@@ -1050,6 +1050,7 @@ int XLALNextLatticePoint(
   if (tiling->status == LT_S_INITIALISED) {
 
     // Set parameter-space bounds and starting point
+    gsl_vector_set_zero(tiling->point);
     for (size_t i = 0; i < n; ++i) {
 
       // Get normalised bounds, with padding
@@ -1062,6 +1063,21 @@ int XLALNextLatticePoint(
 
       // Set starting point to lower bound
       gsl_vector_set(tiling->point, i, lower_i);
+
+      if (tiling->bounds[i].tiled) {
+
+        // Transform point from normalised coordinates to generating integer space,
+        // by multiplying by the inverse of the lattice increments matrix
+        gsl_blas_dtrmv(CblasLower, CblasNoTrans, CblasNonUnit, tiling->inv_increment, tiling->point);
+
+        // Round starting point up to the nearest integer
+        gsl_vector_set(tiling->point, i, ceil(gsl_vector_get(tiling->point, i)));
+
+        // Transform point from generating integer space back to normalised coordinates,
+        // by multiplying by the lattice increments matrix
+        gsl_blas_dtrmv(CblasLower, CblasNoTrans, CblasNonUnit, tiling->increment, tiling->point);
+
+      }
 
     }
 
