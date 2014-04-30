@@ -80,9 +80,9 @@ struct tagLatticeTiling {
   gsl_vector* phys_scale;			///< Normalised to physical coordinate scale
   gsl_vector* phys_offset;			///< Normalised to physical coordinate offset
   gsl_matrix* metric;				///< Normalised parameter-space metric
-  gsl_matrix* increment;			///< Increment vectors of the lattice tiling generator
-  gsl_matrix* eye_increment;			///< Increment vectors of the lattice tiling generator, with ones on diagonal
-  gsl_matrix* tiled_increment;			///< Increment vectors of tiled dimensions of the lattice generator
+  gsl_matrix* increment;			///< increment matrix of the lattice tiling generator
+  gsl_matrix* inv_increment;			///< Inverse of increment matrix of the lattice tiling generator
+  gsl_matrix* tiled_increment;			///< increment matrix of tiled dimensions of the lattice generator
   gsl_vector* padding;				///< Padding at edges of parameter-space bounds
   gsl_vector* point;				///< Current lattice point
   gsl_vector* lower;				///< Current lower bound on parameter space
@@ -333,7 +333,7 @@ static int LT_NormaliseLatticeGenerator(
 }
 
 ///
-/// Find the lattice increment vectors for a given lattice, metric and mismatch
+/// Find the lattice increment matrix for a given lattice, metric and mismatch
 ///
 static gsl_matrix* LT_MetricLatticeIncrements(
   const LatticeType lattice,			///< [in] Lattice type
@@ -420,7 +420,7 @@ static gsl_matrix* LT_MetricLatticeIncrements(
   // Normalise lattice generator so covering radius is sqrt(mismatch)
   XLAL_CHECK_NULL(LT_NormaliseLatticeGenerator(sqlwtr_gen_matrix, norm_thickness, sqrt(max_mismatch)) == XLAL_SUCCESS, XLAL_EFUNC);
 
-  // Compute the increment vectors of the lattice generator along the orthogonal directions
+  // Compute the increment matrix of the lattice generator along the orthogonal directions
   gsl_blas_dgemm(CblasNoTrans, CblasNoTrans, 1.0, directions, sqlwtr_gen_matrix, 0.0, increment);
 
   // Increments will be lower triangular, so zero out upper triangle
@@ -576,10 +576,6 @@ LatticeTiling* XLALCreateLatticeTiling(
   XLAL_CHECK_NULL(tiling->phys_offset != NULL, XLAL_ENOMEM);
   tiling->metric = gsl_matrix_alloc(n, n);
   XLAL_CHECK_NULL(tiling->metric != NULL, XLAL_ENOMEM);
-  tiling->increment = gsl_matrix_alloc(n, n);
-  XLAL_CHECK_NULL(tiling->increment != NULL, XLAL_ENOMEM);
-  tiling->eye_increment = gsl_matrix_alloc(n, n);
-  XLAL_CHECK_NULL(tiling->eye_increment != NULL, XLAL_ENOMEM);
   tiling->padding = gsl_vector_alloc(n);
   XLAL_CHECK_NULL(tiling->padding != NULL, XLAL_ENOMEM);
   tiling->point = gsl_vector_alloc(n);
@@ -620,7 +616,7 @@ void XLALDestroyLatticeTiling(
     gsl_vector_free(tiling->phys_offset);
     gsl_matrix_free(tiling->metric);
     gsl_matrix_free(tiling->increment);
-    gsl_matrix_free(tiling->eye_increment);
+    gsl_matrix_free(tiling->inv_increment);
     gsl_matrix_free(tiling->tiled_increment);
     gsl_vector_free(tiling->padding);
     gsl_vector_free(tiling->point);
@@ -900,12 +896,6 @@ int XLALSetLatticeTypeAndMetric(
   // Save the type of lattice to generate flat tiling with
   tiling->lattice = lattice;
 
-  // Initialise for no tiled dimensions; 'increment' and 'padding' are
-  // zero, 'eye_increment' has unit diagonal so that it is invertible
-  gsl_matrix_set_zero(tiling->increment);
-  gsl_matrix_set_identity(tiling->eye_increment);
-  gsl_vector_set_zero(tiling->padding);
-
   // Check that all parameter-space dimensions are bounded, and record indices of tiled dimensions
   size_t tn = 0;
   for (size_t i = 0; i < tiling->dimensions; ++i) {
@@ -962,12 +952,21 @@ int XLALSetLatticeTypeAndMetric(
     }
   }
 
+  // Initialise padding for no tiled dimensions
+  gsl_vector_set_zero(tiling->padding);
+
   // If there are tiled dimensions:
   if (tn > 0) {
 
     // Allocate memory
+    tiling->increment = gsl_matrix_alloc(n, n);
+    XLAL_CHECK(tiling->increment != NULL, XLAL_ENOMEM);
+    tiling->inv_increment = gsl_matrix_alloc(n, n);
+    XLAL_CHECK(tiling->inv_increment != NULL, XLAL_ENOMEM);
     gsl_matrix* tiled_metric = gsl_matrix_alloc(tn, tn);
     XLAL_CHECK(tiled_metric != NULL, XLAL_ENOMEM);
+    gsl_matrix* inv_tiled_increment = gsl_matrix_alloc(tn, tn);
+    XLAL_CHECK(inv_tiled_increment != NULL, XLAL_ENOMEM);
 
     // Copy tiled dimensions of metric
     for (size_t ti = 0; ti < tn; ++ti) {
@@ -978,18 +977,24 @@ int XLALSetLatticeTypeAndMetric(
       }
     }
 
-    // Calculate metric lattice increment vectors
+    // Calculate metric lattice increment matrix
     tiling->tiled_increment = LT_MetricLatticeIncrements(tiling->lattice, tiled_metric, max_mismatch);
     XLAL_CHECK(tiling->tiled_increment != NULL, XLAL_EFUNC);
 
-    // Copy lower triangular part of increment vectors to tiled dimensions (strict upper triangle is zero)
+    // Calculate inverse of lattice increment matrix; set 'inv_tiled_increment'
+    // to identity matrix, then multiply by inverse of lattice increment matrix
+    gsl_matrix_set_identity(inv_tiled_increment);
+    gsl_blas_dtrsm(CblasLeft, CblasLower, CblasNoTrans, CblasNonUnit, 1.0, tiling->tiled_increment, inv_tiled_increment);
+
+    // Copy lower triangular part of increment matrix to tiled dimensions (strict upper triangle is zero)
+    gsl_matrix_set_zero(tiling->increment);
+    gsl_matrix_set_zero(tiling->inv_increment);
     for (size_t ti = 0; ti < tn; ++ti) {
       const size_t i = gsl_vector_uint_get(tiling->tiled_idx, ti);
       for (size_t tj = 0; tj <= ti; ++tj) {
         const size_t j = gsl_vector_uint_get(tiling->tiled_idx, tj);
-        const double tiled_increment_ti_tj = gsl_matrix_get(tiling->tiled_increment, ti, tj);
-        gsl_matrix_set(tiling->increment, i, j, tiled_increment_ti_tj);
-        gsl_matrix_set(tiling->eye_increment, i, j, tiled_increment_ti_tj);
+        gsl_matrix_set(tiling->increment, i, j, gsl_matrix_get(tiling->tiled_increment, ti, tj));
+        gsl_matrix_set(tiling->inv_increment, i, j, gsl_matrix_get(inv_tiled_increment, ti, tj));
       }
     }
 
@@ -1005,6 +1010,7 @@ int XLALSetLatticeTypeAndMetric(
 
     // Cleanup
     gsl_matrix_free(tiled_metric);
+    gsl_matrix_free(inv_tiled_increment);
     gsl_vector_free(tiled_padding);
 
   }
