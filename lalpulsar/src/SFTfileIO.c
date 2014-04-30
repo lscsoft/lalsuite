@@ -142,8 +142,6 @@ static REAL8 fudge_down = 1 - 10 * LAL_REAL8_EPS;	// about ~1 - 2e-15
 
 
 /*---------- internal prototypes ----------*/
-static BOOLEAN interval_in_GPS_range( const REAL8 t, const REAL8 dt, const LIGOTimeGPS* start, const LIGOTimeGPS* end );
-
 static void endian_swap(CHAR * pdata, size_t dsize, size_t nelements);
 static int amatch(char *str, char *p);	/* glob pattern-matcher (public domain)*/
 static BOOLEAN is_pattern(const char*c); /* filename string is a glob-style pattern */
@@ -172,18 +170,6 @@ static int read_SFTversion_from_fp ( UINT4 *version, BOOLEAN *need_swap, FILE *f
 // ---------- obsolete LAL-API was moved into external file
 #include "SFTfileIO-LAL.c"
 // ------------------------------
-
-static BOOLEAN interval_in_GPS_range( const REAL8 t0, const REAL8 dt, const LIGOTimeGPS* start, const LIGOTimeGPS* end ) {
-  return ( (start == NULL) ? 1 : ( GPS2REAL8(*start) <= t0 ) ) && ( (end == NULL) ? 1 : ( t0 + dt <= GPS2REAL8(*end) ) );
-}
-
-/**
- * Returns whether an SFT, represented by the interval [\c sft.epoch, \c sft.epoch + 1 / \c sft.deltaF),
- * is considered to be within the GPS time range [\c start, \c end)
- */
-BOOLEAN XLALSFTinGPSrange( const SFTtype *sft, const LIGOTimeGPS *start, const LIGOTimeGPS *end ) {
-  return (sft == NULL) ? 0 : interval_in_GPS_range( GPS2REAL8(sft->epoch), 1.0/sft->deltaF, start, end );
-}
 
 /**
  * Find the list of SFTs matching the \a file_pattern and satisfying the given \a constraints,
@@ -328,7 +314,11 @@ XLALSFTdataFind ( const CHAR *file_pattern,		/**< which SFT-files */
                   }
 		}
 
-              if ( ! XLALSFTinGPSrange( &this_header, constraints->minStartTime, constraints->maxEndTime ) ) {
+	      if ( constraints->startTime && ( GPS2REAL8(this_header.epoch) < GPS2REAL8( *constraints->startTime))) {
+		want_this_block = FALSE;
+              }
+
+	      if ( constraints->endTime && ( GPS2REAL8(this_header.epoch) >= GPS2REAL8( *constraints->endTime ) ) ) {
 		want_this_block = FALSE;
               }
 
@@ -433,13 +423,25 @@ XLALSFTdataFind ( const CHAR *file_pattern,		/**< which SFT-files */
   if ( constraints && constraints->timestamps )
     {
       LIGOTimeGPSVector *ts = constraints->timestamps;
+      REAL8 t0, t1;
+      if ( constraints->startTime ) {
+	t0 = GPS2REAL8 ( (*constraints->startTime) );
+      }
+      else {
+	t0 = 0;
+      }
+      if ( constraints->endTime ) {
+	t1 = GPS2REAL8 ( (*constraints->endTime) );
+      }
+      else {
+	t1 = LAL_REAL4_MAX;	/* large enough */
+      }
 
-      const REAL8 dt = ts->deltaT;
       for ( UINT4 i = 0; i < ts->length; i ++ )
 	{
           const LIGOTimeGPS *ts_i = &(ts->data[i]);
 	  REAL8 ti = GPS2REAL8((*ts_i));
-          if ( interval_in_GPS_range( ti, dt, constraints->minStartTime, constraints->maxEndTime ) )
+	  if ( (t0 <= ti) && ( ti < t1 ) )
             {
               UINT4 j;
               for ( j = 0; j < ret->length; j ++ )

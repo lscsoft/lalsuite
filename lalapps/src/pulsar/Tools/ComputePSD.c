@@ -985,12 +985,12 @@ XLALReadSFTs ( ConfigVariables_t *cfg,		/**< [out] return derived configuration 
 
   if ( XLALUserVarWasSet( &uvar->startTime ) ) {
     XLALGPSSetREAL8 ( &startTimeGPS, uvar->startTime);
-    constraints.minStartTime = &startTimeGPS;
+    constraints.startTime = &startTimeGPS;
   }
 
   if ( XLALUserVarWasSet( &uvar->endTime ) ) {
     XLALGPSSetREAL8 ( &endTimeGPS, uvar->endTime);
-    constraints.maxEndTime = &endTimeGPS;
+    constraints.endTime = &endTimeGPS;
   }
 
   if ( XLALUserVarWasSet( &uvar->timeStampsFile ) ) {

@@ -1172,8 +1172,8 @@ SFTCatalog * findSFTdata(inputParamsStruct *input)
    //Setup the constraints
    SFTConstraints constraints = empty_constraints;
    constraints.detector = input->det[0].frDetector.prefix;
-   constraints.minStartTime = &start;
-   constraints.maxEndTime = &end;
+   constraints.startTime = &start;
+   constraints.endTime = &end;
 
    //Find SFT files
    XLAL_CHECK_NULL( (catalog = XLALSFTdataFind(sft_dir_file, &constraints)) != NULL, XLAL_EFUNC );
@@ -1278,8 +1278,8 @@ REAL4Vector * readInSFTs(inputParamsStruct *input, REAL8 *normalization)
    //Setup the constraints
    SFTConstraints constraints = empty_constraints;
    constraints.detector = input->det[0].frDetector.prefix;
-   constraints.minStartTime = &start;
-   constraints.maxEndTime = &end;
+   constraints.startTime = &start;
+   constraints.endTime = &end;
 
    //Find SFT files
    XLAL_CHECK_NULL( (catalog = XLALSFTdataFind(sft_dir_file, &constraints)) != NULL, XLAL_EFUNC );
@@ -1371,8 +1371,8 @@ REAL4VectorSequence * readInMultiSFTs(inputParamsStruct *input, REAL8 *normaliza
    }
 
    SFTConstraints constraints = empty_constraints;
-   constraints.minStartTime = &start;
-   constraints.maxEndTime = &end;
+   constraints.startTime = &start;
+   constraints.endTime = &end;
 
    //Find SFT files
    LALSFTdataFind(&status, &catalog, sft_dir_file, &constraints);

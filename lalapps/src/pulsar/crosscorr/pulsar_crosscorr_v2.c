@@ -579,15 +579,15 @@ int XLALInitializeConfigVars (ConfigVariables *config, const UserInput_t *uvar)
   /* set sft catalog constraints */
   constraints.detector = NULL;
   constraints.timestamps = NULL;
-  constraints.minStartTime = &startTime;
-  constraints.maxEndTime = &endTime;
-  XLALGPSSet( constraints.minStartTime, uvar->startTime, 0);
-  XLALGPSSet( constraints.maxEndTime, uvar->endTime,0);
+  constraints.startTime = &startTime;
+  constraints.endTime = &endTime;
+  XLALGPSSet( constraints.startTime, uvar->startTime, 0);
+  XLALGPSSet( constraints.endTime, uvar->endTime,0);
 
   /* This check doesn't seem to work, since XLALGPSSet doesn't set its
      first argument.
 
-     if ( (constraints.minStartTime == NULL)&& (constraints.maxEndTime == NULL) ) {
+     if ( (constraints.startTime == NULL)&& (constraints.endTime == NULL) ) {
      LogPrintf ( LOG_CRITICAL, "%s: XLALGPSSet() failed with errno=%d\n", __func__, xlalErrno );
      XLAL_ERROR( XLAL_EFUNC );
      }

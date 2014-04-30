@@ -116,8 +116,8 @@ int main(int argc,char *argv[])
   /* get an sft catalog */
   start.gpsSeconds = (INT4)uvar_tstart;
   end.gpsSeconds = (INT4)uvar_tstart + (INT4)uvar_duration;
-  constraints.minStartTime = &start;
-  constraints.maxEndTime = &end;
+  constraints.startTime = &start;
+  constraints.endTime = &end;
   LALSFTdataFind(&status,&catalog,uvar_sftdir,&constraints);
   
   /* output timestamps to file */

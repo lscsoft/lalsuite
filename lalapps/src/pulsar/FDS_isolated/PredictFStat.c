@@ -429,8 +429,8 @@ InitPFS ( LALStatus *status, ConfigVariables *cfg, const UserInput_t *uvar )
   minStartTimeGPS.gpsNanoSeconds = 0;
   maxEndTimeGPS.gpsSeconds = uvar->maxEndTime;
   maxEndTimeGPS.gpsNanoSeconds = 0;
-  constraints.minStartTime = &minStartTimeGPS;
-  constraints.maxEndTime = &maxEndTimeGPS;
+  constraints.startTime = &minStartTimeGPS;
+  constraints.endTime = &maxEndTimeGPS;
 
   /* ----- get full SFT-catalog of all matching (multi-IFO) SFTs */
   LogPrintf (LOG_DEBUG, "Finding all SFTs to load ... ");

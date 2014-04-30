@@ -385,12 +385,12 @@ int main(int argc, char *argv[]){
     
     if ( LALUserVarWasSet( &uvar_startTime ) ) {
       XLALGPSSetREAL8(&startTimeGPS, uvar_startTime);
-      constraints.minStartTime = &startTimeGPS;
+      constraints.startTime = &startTimeGPS;
     }
 
     if ( LALUserVarWasSet( &uvar_endTime ) ) {
       XLALGPSSetREAL8(&endTimeGPS, uvar_endTime);
-      constraints.maxEndTime = &endTimeGPS;
+      constraints.endTime = &endTimeGPS;
     }
 
    if ( LALUserVarWasSet( &uvar_timeStampsFile ) ) {

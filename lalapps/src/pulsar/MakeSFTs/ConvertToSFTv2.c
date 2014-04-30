@@ -135,8 +135,8 @@ main(int argc, char *argv[])
 
   minStartTimeGPS.gpsSeconds = uvar_minStartTime;
   maxEndTimeGPS.gpsSeconds = uvar_maxEndTime;
-  constraints.minStartTime = &minStartTimeGPS;
-  constraints.maxEndTime = &maxEndTimeGPS;
+  constraints.startTime = &minStartTimeGPS;
+  constraints.endTime = &maxEndTimeGPS;
 
   /* get full SFT-catalog of all matching (multi-IFO) SFTs */
   LAL_CALL ( LALSFTdataFind ( &status, &FullCatalog, uvar_inputSFTs, &constraints ), &status);

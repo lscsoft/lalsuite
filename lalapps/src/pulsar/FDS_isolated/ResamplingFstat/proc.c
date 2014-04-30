@@ -322,11 +322,11 @@ int main(int argc, char **argv)
   /****** Assigning arguments and creating SFT constraints ******/
   startTime.gpsSeconds = atoi(argv[1]);
   startTime.gpsNanoSeconds = 0;
-  constraints.minStartTime = &startTime;
+  constraints.startTime = &startTime;
   
   endTime.gpsSeconds = atoi(argv[2]);
   endTime.gpsNanoSeconds = 0;
-  constraints.maxEndTime = &endTime;
+  constraints.endTime = &endTime;
   constraints.detector = argv[3];
   
   InputST = atof(argv[7]);

@@ -356,8 +356,8 @@ int main(int argc, char *argv[]){
   /* set sft catalog constraints */
   constraints.detector = NULL;
   constraints.timestamps = NULL;
-  constraints.minStartTime = NULL;
-  constraints.maxEndTime = NULL;
+  constraints.startTime = NULL;
+  constraints.endTime = NULL;
 
   XLALGPSSet(&startTimeGPS, 0, 0);
   XLALGPSSet(&endTimeGPS, LAL_INT4_MAX, 0); 
@@ -365,12 +365,12 @@ int main(int argc, char *argv[]){
   if ( LALUserVarWasSet( &uvar_startTime ) ) {
     XLALGPSSetREAL8(&startTimeGPS, uvar_startTime);
 
-    constraints.minStartTime = &startTimeGPS;
+    constraints.startTime = &startTimeGPS;
   }
 
   if ( LALUserVarWasSet( &uvar_endTime ) ) {
     XLALGPSSetREAL8(&endTimeGPS, uvar_endTime);
-    constraints.maxEndTime = &endTimeGPS;
+    constraints.endTime = &endTimeGPS;
   }
 
   /* get sft catalog */
