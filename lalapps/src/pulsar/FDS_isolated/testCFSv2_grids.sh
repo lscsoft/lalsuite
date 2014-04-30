@@ -23,11 +23,10 @@ else
 fi
 
 ##---------- names of codes and input/output files
-mfd_code="${injectdir}lalapps_Makefakedata_v4"
+mfdv4_code="${injectdir}lalapps_Makefakedata_v4"
+mfdv5_code="${injectdir}lalapps_Makefakedata_v5"
 cfsv2_code="${builddir}lalapps_ComputeFStatistic_v2"
 cmp_code="${builddir}lalapps_compareFstats"
-
-SFTdir="./testCFSv2_sfts"
 
 if [ -z "${LAL_DATA_PATH}" ]; then
     echo
@@ -88,108 +87,128 @@ IFO=LLO
 
 echo
 echo "----------------------------------------------------------------------"
-echo " STEP 1: Generate Fake Signal"
+echo " STEP 1: Generate Fake SFTs"
 echo "----------------------------------------------------------------------"
 echo
-if [ ! -d "$SFTdir" ]; then
-    mkdir $SFTdir;
-else
-    rm -f $SFTdir/*;
-fi
 
-# this part of the command-line is compatible with SemiAnalyticF:
-saf_CL=" --Alpha=$Alpha --Delta=$Delta --IFO=$IFO --Tsft=$Tsft --startTime=$startTime --duration=$duration --h0=$h0 --cosi=$cosi --psi=$psi --phi0=$phi0"
-# concatenate this with the mfd-specific switches:
-mfd_CL="${saf_CL} --fmin=$mfd_fmin --Band=$mfd_FreqBand --Freq=$Freq --outSFTbname=$SFTdir/testSFT --f1dot=$f1dot --outSFTv1"
+## --- for grid types 0,1,2,6, generate 40 hours of contiguous SFTs
+
+## create SFT directory
+SFTdir_40h="./testCFSv2_grids_SFTs_40h"
+rm -rf $SFTdir_40h
+mkdir $SFTdir_40h
+
+# build MFD_v4 command line
+mfd_CL=" --Alpha=$Alpha --Delta=$Delta --IFO=$IFO --Tsft=$Tsft --startTime=$startTime --duration=$duration --h0=$h0 --cosi=$cosi --psi=$psi --phi0=$phi0"
+mfd_CL="${mfd_CL} --fmin=$mfd_fmin --Band=$mfd_FreqBand --Freq=$Freq --outSFTbname=$SFTdir_40h/testSFT --f1dot=$f1dot --outSFTv1"
 if [ "$haveNoise" = true ]; then
     mfd_CL="$mfd_CL --noiseSqrtSh=$sqrtSh";
 fi
 
-cmdline="$mfd_code $mfd_CL";
+## generate SFTs
+cmdline="$mfdv4_code $mfd_CL";
 echo $cmdline;
 if ! eval $cmdline; then
-    echo "Error.. something failed when running '$mfd_code' ..."
+    echo "Error.. something failed when running '$mfdv4_code' ..."
     exit 1
 fi
 
-echo
-##echo -n "Running '$saf_code' ... "
-##cmdline="$saf_code $saf_CL --sqrtSh=$sqrtSh"
-##echo $cmdline
-##if ! resF=`eval $cmdline 2> /dev/null`; then
-##    echo "Error ... something failed running '$saf_code' ..."
-##    exit 1;
-##fi
-##echo  "ok."
-##res2F=`echo $resF | awk '{printf "%g", 2.0 * $1}'`
-##echo "The SemiAnalyticF calculations predicts: 2F = $res2F"
+## --- for grid types 8,9, generate 2 SFTs spaced 5 days apart
 
+## create SFT directory
+SFTdir_5d="./testCFSv2_grids_SFTs_5d"
+rm -rf $SFTdir_5d
+mkdir $SFTdir_5d
+
+## create timestamps file
+cat <<EOF >"${SFTdir_5d}/timestamps.txt"
+800000000 0
+800432000 0
+EOF
+
+## build MFD_v5 command line
+mfd_CL="--outSingleSFT=true --outSFTdir=${SFTdir_5d} --IFOs=H1 --sqrtSX=1.0 --timestampsFiles=${SFTdir_5d}/timestamps.txt --fmin=100 --Band=1.0 --randSeed=12345"
+
+## generate SFTs
+cmdline="$mfdv5_code $mfd_CL";
+echo $cmdline;
+if ! eval $cmdline; then
+    echo "Error: something failed when running '$mfdv5_code' ..."
+    exit 1
+fi
 
 echo
 echo "----------------------------------------------------------------------"
 echo " STEP 2: run CFS_v2 for various grid-types"
 echo "----------------------------------------------------------------------"
 echo
-gridType0=" --gridType=0";	## flat grid
-gridType1=" --gridType=1";	## isotropic
-gridType2=" --gridType=2 --metricType=1 --metricMismatch=0.1";	## metric grid
-output_0="./testCFSv2_grid0.dat";
-output_1="./testCFSv2_grid1.dat";
-output_2="./testCFSv2_grid2.dat";
-output_6="./testCFSv2_grid6.dat";
 
+## common arguments for grid types 0,1,2,6
 sky_CL="--Alpha=$Alpha --AlphaBand=$AlphaBand --dAlpha=$dAlpha --Delta=$Delta --DeltaBand=$DeltaBand --dDelta=$dDelta"
 spin_CL="--Freq=$Freq --FreqBand=$FreqBand --dFreq=$dFreq --f1dot=$f1dot --f1dotBand=$f1dotBand --df1dot=$df1dot"
-cfs_CL="--IFO=$IFO --DataFiles='$SFTdir/testSFT*'"
+cfs_CL="--IFO=$IFO --DataFiles='${SFTdir_40h}/testSFT*' --TwoFthreshold=0 --Dterms=16 $extra_args"
 if [ "$haveNoise" = false ]; then
     cfs_CL="$cfs_CL --SignalOnly"
 fi
 
-cmdline="$cfsv2_code $cfs_CL --TwoFthreshold=0 --Dterms=16 $extra_args";
-
-## ----- grid=0
+## ----- grid=0 : flat grid
 echo "CFSv2 using gridType=0:"
-cmd0="$cmdline ${sky_CL} ${spin_CL} $gridType0 --outputFstat=$output_0";
-echo $cmd0
-if ! eval $cmd0; then
-    echo "Error.. something failed when running '$cmd0' ..."
+cmdline="$cfsv2_code $sky_CL $spin_CL $cfs_CL --gridType=0 --outputFstat=./testCFSv2_grid0.dat";
+echo $cmdline
+if ! eval $cmdline; then
+    echo "Error.. something failed when running '$cmdline' ..."
     exit 1
 fi
 
-## ----- grid=1
+## ----- grid=1 : isotropic
 echo "CFSv2 using gridType=1:"
-cmd0="$cmdline ${sky_CL} ${spin_CL} $gridType1 --outputFstat=$output_1";
-echo $cmd0
-if ! eval $cmd0; then
-    echo "Error.. something failed when running '$cmd0' ..."
+cmdline="$cfsv2_code $sky_CL $spin_CL $cfs_CL --gridType=1 --outputFstat=./testCFSv2_grid1.dat";
+echo $cmdline
+if ! eval $cmdline; then
+    echo "Error.. something failed when running '$cmdline' ..."
     exit 1
 fi
 
-## ----- grid=2
+## ----- grid=2 : metric grid
 echo "CFSv2 using gridType=2:"
-cmd0="$cmdline ${sky_CL} ${spin_CL} $gridType2 --outputFstat=$output_2";
-echo $cmd0
-if ! eval $cmd0; then
-    echo "Error.. something failed when running '$cmd2' ..."
+cmdline="$cfsv2_code $sky_CL $spin_CL $cfs_CL --gridType=2 --metricType=1 --metricMismatch=0.1 --outputFstat=./testCFSv2_grid2.dat";
+echo $cmdline
+if ! eval $cmdline; then
+    echo "Error.. something failed when running '$cmdline' ..."
     exit 1
 fi
 
-## ----- recompute with --gridFile option --gridType=6
-echo "recompute with CFSv2 using gridType=6:"
+## ----- grid=6 : recompute metric grid with --gridFile option
+echo "recompute gridType=2 with CFSv2 using gridType=6:"
 ## extract a 6-column gridFile from the previous result output-file
-gridFile="gridv2_2.dat";
-rm -f ${gridFile};
-awk_extract6='{printf "%s %s %s %s %s %s\n", $1, $2, $3, $4, $5, $6 >> "gridv2_2.dat" }'
-grid_line=$(sed '/^%.*/d' ${output_2} | awk "$awk_extract6")
+gridFile="testCFSv2_grid2_grid.dat";
+awk_extract6='{printf "%s %s %s %s %s %s\n", $1, $2, $3, $4, $5, $6 }'
+sed '/^%.*/d' ./testCFSv2_grid2.dat | awk "$awk_extract6" >${gridFile}
 
-
-cmd0="$cmdline --gridType=6 --gridFile=./${gridFile} --outputFstat=$output_6";
-echo $cmd0
-if ! eval $cmd0; then
-    echo "Error.. something failed when running '$cmd2' ..."
+cmdline="$cfsv2_code $cfs_CL --gridType=6 --gridFile=./${gridFile} --outputFstat=./testCFSv2_grid6.dat";
+echo $cmdline
+if ! eval $cmdline; then
+    echo "Error.. something failed when running '$cmdline' ..."
     exit 1
 fi
 
+## --- grid=8 : lattice tiling grid, square parameter space
+echo "CFSv2 using gridType=8:"
+cmdline="$cfsv2_code --Alpha=6.1 --Delta=1.2 --Freq=100.4 --FreqBand=5e-4 --f1dot=-1e-10 --f1dotBand=1e-10 --DataFiles='${SFTdir_5d}/*.sft' --TwoFthreshold=0 --gridType=8 --metricMismatch=0.5 --outputFstat=./testCFSv2_grid8.dat"
+echo $cmdline
+if ! eval $cmdline; then
+    echo "Error.. something failed when running '$cmdline' ..."
+    exit 1
+fi
+
+## --- grid=9 : lattice tiling grid, age-spindown-index parameter space
+echo "CFSv2 using gridType=9:"
+cmdline="$cfsv2_code --Alpha=6.1 --Delta=1.2 --Freq=100.4 --FreqBand=8e-5 --spindownAge=1e11 --minBraking=2 --maxBraking=5 --DataFiles='${SFTdir_5d}/*.sft' --TwoFthreshold=0 --gridType=9 --metricMismatch=0.5 --outputFstat=./testCFSv2_grid9.dat"
+echo $cmdline
+if ! eval $cmdline; then
+    echo "Error.. something failed when running '$cmdline' ..."
+    exit 1
+fi
 
 echo
 echo "----------------------------------------"
@@ -197,53 +216,33 @@ echo " STEP 3: Compare to reference results: "
 echo "----------------------------------------"
 echo
 
-## ----- grid=0
-echo "Comparing gridType=0:"
-cmd0="$cmp_code -1 ${output_0} -2 ${srcdir}/${output_0}.ref.gz --clusterFiles=0 --Ftolerance=0.1";
-echo $cmd0
-if ! eval $cmd0; then
-    echo "OUCH... files differ. Something might be wrong..."
-    exit 2
-else
-    echo "OK."
-fi
+for n in 0 1 2 6 8 9; do
 
-## ----- grid=1
-echo "Comparing gridType=1:"
-cmd0="$cmp_code -1 ${output_1} -2 ${srcdir}/${output_1}.ref.gz --clusterFiles=0 --Ftolerance=0.1";
-echo $cmd0
-if ! eval $cmd0; then
-    echo "OUCH... files differ. Something might be wrong..."
-    exit 2
-else
-    echo "OK."
-fi
+    ## set F-statistic comparison tolerance
+    if [ $n -eq 6 ]; then
+        Ftolerance=0.01
+    else
+        Ftolerance=0.1
+    fi
 
+    ## compare results
+    echo "Comparing gridType=${n}:"
+    cmdline="$cmp_code -1 ./testCFSv2_grid${n}.dat -2 ${srcdir}/testCFSv2_grid${n}.dat.ref.gz --clusterFiles=0 --Ftolerance=$Ftolerance";
+    echo $cmdline
+    if ! eval $cmdline; then
+        echo "OUCH... files differ. Something might be wrong..."
+        exit 2
+    else
+        echo "OK."
+    fi
 
-## ----- grid=2
-echo "Comparing gridType=2:"
-cmd0="$cmp_code -1 ${output_2} -2 ${srcdir}/${output_2}.ref.gz --clusterFiles=0 --Ftolerance=0.1";
-echo $cmd0
-if ! eval $cmd0; then
-    echo "OUCH... files differ. Something might be wrong..."
-    exit 2
-else
-    echo "OK."
-fi
-
-## ----- grid=6
-echo "Comparing gridType=6:"
-cmd0="$cmp_code -1 ${output_6} -2 ${srcdir}/${output_6}.ref.gz --clusterFiles=0 --Ftolerance=0.01";
-echo $cmd0
-if ! eval $cmd0; then
-    echo "OUCH... files differ. Something might be wrong..."
-    exit 2
-else
-    echo "OK."
-fi
-
+done
 
 ## clean up files
 if [ -z "$NOCLEANUP" ]; then
-    rm -rf $SFTdir $output_0 $output_1 $output_2 $output_6 Fstats Fstats.log $gridFile
+    rm -rf $SFTdir_40h $SFTdir_5d
+    rm -f $gridFile Fstats Fstats.log
+    for n in 0 1 2 6 8 9; do
+        rm -f testCFSv2_grid${n}.dat
+    done
 fi
