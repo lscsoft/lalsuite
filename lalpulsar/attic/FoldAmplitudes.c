@@ -112,22 +112,22 @@
 
 void
 LALFoldAmplitudes( LALStatus                      *status,
-		     REAL4Vector         	  *output,
-		     const FoldAmplitudesInput    *input,
-		     const FoldAmplitudesParams   *params )
+                     REAL4Vector                  *output,
+                     const FoldAmplitudesInput    *input,
+                     const FoldAmplitudesParams   *params )
 
 
 {
   /* ****** DECLARE VARIABLES ************/
 
-  	const REAL4Vector 	*amplitudeVec;   /* pointer to input vector of amplitudes */
-   	const REAL4Vector  	*phaseVec;       /* pointer to input vector of phases */
-   	REAL4			phase;           /* individual reduced phase  */
-   	REAL4			binRange;        /* the range of phase bins, e.g., [0,2*pi]  */
-   	REAL4			binSize;   	 /* the size of each bin */
-   	INT4			binIndex;   	 /* individual bin index an amplitude belongs to */
-   	INT4			i;               /* generic integer index */
-/*   	INT4			n;     */          /* generic integer */
+        const REAL4Vector       *amplitudeVec;   /* pointer to input vector of amplitudes */
+        const REAL4Vector       *phaseVec;       /* pointer to input vector of phases */
+        REAL4			phase;           /* individual reduced phase  */
+        REAL4			binRange;        /* the range of phase bins, e.g., [0,2*pi]  */
+        REAL4			binSize;         /* the size of each bin */
+        INT4			binIndex;        /* individual bin index an amplitude belongs to */
+        INT4			i;               /* generic integer index */
+/*      INT4			n;     */          /* generic integer */
 
   INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
@@ -167,19 +167,19 @@ LALFoldAmplitudes( LALStatus                      *status,
   /* Fold amplitudes into phase bins; store results in output  */
   /* Function is more efficient if binRange == 1 */
   if (binRange == 1.0) {
-  	for ( i = 0 ; i < (INT4)amplitudeVec->length ; ++i )
-  	{
-  		phase = phaseVec->data[i] - floor( phaseVec->data[i] );
-  		binIndex = (INT4) floor( phase/binSize );
-  		output->data[binIndex] += amplitudeVec->data[i];
-  	}
+        for ( i = 0 ; i < (INT4)amplitudeVec->length ; ++i )
+        {
+                phase = phaseVec->data[i] - floor( phaseVec->data[i] );
+                binIndex = (INT4) floor( phase/binSize );
+                output->data[binIndex] += amplitudeVec->data[i];
+        }
   } else {
-  	for ( i = 0 ; i < (INT4)amplitudeVec->length ; ++i )
-  	{
-  		phase = phaseVec->data[i] - floor( phaseVec->data[i]/binRange ) * binRange;
-  		binIndex = (INT4) floor( phase/binSize );
-  		output->data[binIndex] += amplitudeVec->data[i];
-  	}
+        for ( i = 0 ; i < (INT4)amplitudeVec->length ; ++i )
+        {
+                phase = phaseVec->data[i] - floor( phaseVec->data[i]/binRange ) * binRange;
+                binIndex = (INT4) floor( phase/binSize );
+                output->data[binIndex] += amplitudeVec->data[i];
+        }
   }
 
   /* ****** CONSTRUCT OUTPUT ************/

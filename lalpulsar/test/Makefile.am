@@ -12,7 +12,6 @@ check_PROGRAMS = \
 	ExtrapolatePulsarSpinsTest \
 	FitToPulsarTest \
 	FlatMeshTest \
-	FoldAmplitudesTest \
 	GeneralMeshTest \
 	GeneralMetricTest \
 	GeneratePulsarSignalTest \

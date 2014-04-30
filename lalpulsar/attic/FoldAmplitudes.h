@@ -57,8 +57,8 @@ extern "C" {
  * typedef struct tagFoldAmplitudesInput
  * {
  *
- * REAL4Vector 	*amplitudeVec;  input vector of amplitudes
- * REAL4Vector  	*phaseVec;      input vector of phases
+ * REAL4Vector  *amplitudeVec;  input vector of amplitudes
+ * REAL4Vector          *phaseVec;      input vector of phases
  *
  * } FoldAmplitudesInput;
  *
@@ -78,13 +78,13 @@ extern "C" {
 
 /**\name Error Codes */
 /*@{*/
-#define FOLDAMPLITUDESH_ENULLP        	1
-#define FOLDAMPLITUDESH_EVECSIZE   	2
+#define FOLDAMPLITUDESH_ENULLP          1
+#define FOLDAMPLITUDESH_EVECSIZE        2
 #define FOLDAMPLITUDESH_ENUMBINS        3
 #define FOLDAMPLITUDESH_EBINSIZE        4
 #define FOLDAMPLITUDESH_EBINMIN         5
 
-#define FOLDAMPLITUDESH_MSGENULLP      	"Null pointer!"
+#define FOLDAMPLITUDESH_MSGENULLP       "Null pointer!"
 #define FOLDAMPLITUDESH_MSGEVECSIZE     "Input vectors were not the same length!"
 #define FOLDAMPLITUDESH_MSGENUMBINS     "Number of bins was less than 1!"
 #define FOLDAMPLITUDESH_MSGEBINSIZE     "Bin max was less than bin min!"
@@ -98,8 +98,8 @@ extern "C" {
 typedef struct tagFoldAmplitudesInput
 {
 
-  REAL4Vector 	*amplitudeVec;  /* input vector of amplitudes */
-  REAL4Vector  	*phaseVec;      /* input vector of phases */
+  REAL4Vector   *amplitudeVec;  /* input vector of amplitudes */
+  REAL4Vector   *phaseVec;      /* input vector of phases */
 
 } FoldAmplitudesInput;
 
@@ -126,9 +126,9 @@ output: a vector of folded amplitudes; component i is the folded amplitude for p
 
 void
 LALFoldAmplitudes( LALStatus                      *status,
-		     REAL4Vector         	  *output,
-		     const FoldAmplitudesInput    *input,
-		     const FoldAmplitudesParams   *params );
+                     REAL4Vector                  *output,
+                     const FoldAmplitudesInput    *input,
+                     const FoldAmplitudesParams   *params );
 
 /*@}*/
 

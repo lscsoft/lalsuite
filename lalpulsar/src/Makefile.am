@@ -21,7 +21,6 @@ lalpulsarinclude_HEADERS = \
 	FlatLatticeTiling.h \
 	FlatMesh.h \
 	FlatPulsarMetric.h \
-	FoldAmplitudes.h \
 	GeneratePulsarSignal.h \
 	GenerateSpinOrbitCW.h \
 	GenerateTaylorCW.h \
@@ -87,7 +86,6 @@ liblalpulsar_la_SOURCES = \
 	FlatLatticeTiling.c \
 	FlatMesh.c \
 	FlatPulsarMetric.c \
-	FoldAmplitudes.c \
 	GenerateEllipticSpinOrbitCW.c \
 	GenerateHyperbolicSpinOrbitCW.c \
 	GenerateParabolicSpinOrbitCW.c \

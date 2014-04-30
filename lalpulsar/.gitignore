@@ -31,7 +31,6 @@ test/ExtrapolatePulsarSpinsTest
 test/FileIOTest
 test/FitToPulsarTest
 test/FlatMeshTest
-test/FoldAmplitudesTest
 test/GeneralMeshTest
 test/GeneralMetricTest
 test/GeneratePulsarSignalTest

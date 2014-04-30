@@ -69,13 +69,13 @@
 /*@}*/
 
 /* Define parameters and expected results for test cases here. */
-#define FOLDAMPLITUDESTESTC_TOL    		1.0e-3
-#define FOLDAMPLITUDESTESTC_LENGTH  		10
-#define FOLDAMPLITUDESTESTC_BADLENGTH  		1
-#define FOLDAMPLITUDESTESTC_TIMESTEP           	0.01
-#define FOLDAMPLITUDESTESTC_NUMBINS  	        10
-#define FOLDAMPLITUDESTESTC_FREQ      		33.2
-#define FOLDAMPLITUDESTESTC_FREQDOT  		2.5
+#define FOLDAMPLITUDESTESTC_TOL                 1.0e-3
+#define FOLDAMPLITUDESTESTC_LENGTH              10
+#define FOLDAMPLITUDESTESTC_BADLENGTH           1
+#define FOLDAMPLITUDESTESTC_TIMESTEP            0.01
+#define FOLDAMPLITUDESTESTC_NUMBINS             10
+#define FOLDAMPLITUDESTESTC_FREQ                33.2
+#define FOLDAMPLITUDESTESTC_FREQDOT             2.5
 /* ****** DECLARE AND SET GLOBAL lalDebugLevel ************/
 
 /** \cond DONT_DOXYGEN */
@@ -94,15 +94,15 @@ int main( void )
   FoldAmplitudesParams  param;
 
   /* Declare other variables */
-  REAL4 		f = FOLDAMPLITUDESTESTC_FREQ;  /* A frequency for producing test amplitudes */
-  REAL4 		fDot = FOLDAMPLITUDESTESTC_FREQDOT;    /* A frequency for producing test phases */
+  REAL4                 f = FOLDAMPLITUDESTESTC_FREQ;  /* A frequency for producing test amplitudes */
+  REAL4                 fDot = FOLDAMPLITUDESTESTC_FREQDOT;    /* A frequency for producing test phases */
   REAL4			delT = FOLDAMPLITUDESTESTC_TIMESTEP;       /* A time step for producing test data */
   REAL4			twoPi = (REAL4) LAL_TWOPI;                 /* For phase bins between 0 an 2*pi    */
-  REAL4			binRange;				   /* binMax - binMin */
+  REAL4			binRange;                                  /* binMax - binMin */
   INT4                  lengthAmpVec = FOLDAMPLITUDESTESTC_LENGTH; /* length of the vector of amplitudes */
   INT4			i;                                         /* generic integer index */
   INT4			j;                                         /* generic integer index */
-  INT4			k;					   /* generic integer index */
+  INT4			k;                                         /* generic integer index */
   INT2			gotError = 0;                                /* Set nonzero if error condition occurs */
 
 
@@ -225,66 +225,66 @@ int main( void )
     param.numBins = 4;
     param.binMin = 0.0;
     if (k == 0) {
-    	param.binMax = 1.0;      /* test phase measured in cycles */
+        param.binMax = 1.0;      /* test phase measured in cycles */
     } else {
-    	param.binMax = twoPi;   /* test phase measured in radians */
+        param.binMax = twoPi;   /* test phase measured in radians */
     }
     binRange = param.binMax - param.binMin;
 
     for (j = -8; j <= 8; ++j) {
 
-  	for ( i = 0 ; i < (INT4)input.amplitudeVec->length ; ++i )
-  	{
-		input.amplitudeVec->data[i] = 1.0;
+        for ( i = 0 ; i < (INT4)input.amplitudeVec->length ; ++i )
+        {
+                input.amplitudeVec->data[i] = 1.0;
                 /* Set the phase:  Add in a multiple of twoPi to check that values bin correctly */
-		input.phaseVec->data[i] = j*(binRange/8.0) + j*j*j*binRange + .001;
-  	}
+                input.phaseVec->data[i] = j*(binRange/8.0) + j*j*j*binRange + .001;
+        }
 
-  	/* Initialize the output vector */
-  	for ( i = 0 ; i < (INT4)output->length ; ++i )
-  	{
-		output->data[i] = 0.0;
-  	}
+        /* Initialize the output vector */
+        for ( i = 0 ; i < (INT4)output->length ; ++i )
+        {
+                output->data[i] = 0.0;
+        }
 
-  	/*
-  	printf("\n");
-  	for ( i = 0 ; i < input.amplitudeVec->length ; ++i )
-  	{
-		printf("Index %i  Input Amplitude %f \n",i, input.amplitudeVec->data[i]);
-  	}
+        /*
+        printf("\n");
+        for ( i = 0 ; i < input.amplitudeVec->length ; ++i )
+        {
+                printf("Index %i  Input Amplitude %f \n",i, input.amplitudeVec->data[i]);
+        }
 
-  	printf("\n");
-  	for ( i = 0 ; i < input.phaseVec->length ; ++i )
-  	{
-		printf("Index %i  Input Phase %f \n",i, input.phaseVec->data[i]);
-  	}
+        printf("\n");
+        for ( i = 0 ; i < input.phaseVec->length ; ++i )
+        {
+                printf("Index %i  Input Phase %f \n",i, input.phaseVec->data[i]);
+        }
         */
 
-  	LALFoldAmplitudes( &status, output, &input, &param );
+        LALFoldAmplitudes( &status, output, &input, &param );
 
-  	if ( status.statusCode )
-  	{
-    		printf( "Unexpectedly got error code %d and message %s\n",
-	    		status.statusCode, status.statusDescription );
-    		return FOLDAMPLITUDESTESTC_EFLS;
-  	}
+        if ( status.statusCode )
+        {
+                printf( "Unexpectedly got error code %d and message %s\n",
+                        status.statusCode, status.statusDescription );
+                return FOLDAMPLITUDESTESTC_EFLS;
+        }
 
-  	printf("\n");
-  	for ( i = 0 ; i < param.numBins ; ++i )
-  	{
-  	        printf("Constant phase test binRange %g, index %i, Bin %i, Output Amplitude %f \n",binRange,j,i,output->data[i]);
-		if (i == (j + 8)/2 % param.numBins) {
-		    if (output->data[i] != lengthAmpVec*1.0) {
-		    	printf ("For binRange %g expected all the amplitudes to fold into bin %i but instead got %g in this bin. \n",binRange, i,output->data[i]);
-		    	gotError = 1;
-		    }
-		} else  {
-		    if (output->data[i] != 0.0) {
-		    	printf ("For binRange %g expected no amplitudes to fold into bin %i but instead got %g in this bin. \n",binRange, i,output->data[i]);
-		    	gotError = 1;
-		    }
-		}
-	}
+        printf("\n");
+        for ( i = 0 ; i < param.numBins ; ++i )
+        {
+                printf("Constant phase test binRange %g, index %i, Bin %i, Output Amplitude %f \n",binRange,j,i,output->data[i]);
+                if (i == (j + 8)/2 % param.numBins) {
+                    if (output->data[i] != lengthAmpVec*1.0) {
+                        printf ("For binRange %g expected all the amplitudes to fold into bin %i but instead got %g in this bin. \n",binRange, i,output->data[i]);
+                        gotError = 1;
+                    }
+                } else  {
+                    if (output->data[i] != 0.0) {
+                        printf ("For binRange %g expected no amplitudes to fold into bin %i but instead got %g in this bin. \n",binRange, i,output->data[i]);
+                        gotError = 1;
+                    }
+                }
+        }
 
     }  /* end for (j = -8; j < 8; ++j) */
 
@@ -292,10 +292,10 @@ int main( void )
 
   printf("\n");
   if  (gotError > 0) {
-  	printf("Test 1 in FoldAmplitudesTest.c Failed. \n");
-  	return FOLDAMPLITUDESTESTC_EFLS;
+        printf("Test 1 in FoldAmplitudesTest.c Failed. \n");
+        return FOLDAMPLITUDESTESTC_EFLS;
   } else {
-  	printf("Test 1 in FoldAmplitudesTest.c Passed. \n");
+        printf("Test 1 in FoldAmplitudesTest.c Passed. \n");
   }
 
   /* Test 2: Constant amplitudes, simple phases */
@@ -308,27 +308,27 @@ int main( void )
 
   for ( i = 0 ; i < (INT4)input.amplitudeVec->length ; ++i )
   {
-	input.amplitudeVec->data[i] = 1;
-	input.phaseVec->data[i] = twoPi*i/10.0 + .0001;
+        input.amplitudeVec->data[i] = 1;
+        input.phaseVec->data[i] = twoPi*i/10.0 + .0001;
   }
 
   /* Initialize the output vector */
   for ( i = 0 ; i < (INT4)output->length ; ++i )
   {
-	output->data[i] = 0.0;
+        output->data[i] = 0.0;
   }
 
   /*
   printf("\n");
   for ( i = 0 ; i < input.amplitudeVec->length ; ++i )
   {
-	printf("Index %i  Input Amplitude %f \n",i, input.amplitudeVec->data[i]);
+        printf("Index %i  Input Amplitude %f \n",i, input.amplitudeVec->data[i]);
   }
 
   printf("\n");
   for ( i = 0 ; i < input.phaseVec->length ; ++i )
   {
-	printf("Index %i  Input Phase %f \n",i, input.phaseVec->data[i]);
+        printf("Index %i  Input Phase %f \n",i, input.phaseVec->data[i]);
   }
   */
 
@@ -337,27 +337,27 @@ int main( void )
   if ( status.statusCode )
   {
     printf( "Unexpectedly got error code %d and message %s\n",
-	    status.statusCode, status.statusDescription );
+            status.statusCode, status.statusDescription );
     return FOLDAMPLITUDESTESTC_EFLS;
   }
 
   printf("\n");
   for ( i = 0 ; i < param.numBins ; ++i )
   {
-	printf("Bin %i  Output Amplitude %f \n",i,output->data[i]);
-	if (output->data[i] != 1.0) {
-		printf ("In bin %i expected 1 but instead got %g in this bin. \n",i,output->data[i]);
-		gotError = 1;
-	}
+        printf("Bin %i  Output Amplitude %f \n",i,output->data[i]);
+        if (output->data[i] != 1.0) {
+                printf ("In bin %i expected 1 but instead got %g in this bin. \n",i,output->data[i]);
+                gotError = 1;
+        }
 
   }
 
   printf("\n");
   if  (gotError > 0) {
-  	printf("Test 2 in FoldAmplitudesTest.c Failed. \n");
-  	return FOLDAMPLITUDESTESTC_EFLS;
+        printf("Test 2 in FoldAmplitudesTest.c Failed. \n");
+        return FOLDAMPLITUDESTESTC_EFLS;
   } else {
-  	printf("Test 2 in FoldAmplitudesTest.c Passed. \n");
+        printf("Test 2 in FoldAmplitudesTest.c Passed. \n");
   }
 
 
@@ -370,27 +370,27 @@ int main( void )
 
   for ( i = 0 ; i < (INT4)input.amplitudeVec->length ; ++i )
   {
-	input.amplitudeVec->data[i] = sin(twoPi*i/10.0 + .0001);
-	input.phaseVec->data[i] = twoPi*i/10.0 + .0001;
+        input.amplitudeVec->data[i] = sin(twoPi*i/10.0 + .0001);
+        input.phaseVec->data[i] = twoPi*i/10.0 + .0001;
   }
 
   /* Initialize the output vector */
   for ( i = 0 ; i < (INT4)output->length ; ++i )
   {
-	output->data[i] = 0.0;
+        output->data[i] = 0.0;
   }
 
   /*
   printf("\n");
   for ( i = 0 ; i < input.amplitudeVec->length ; ++i )
   {
-	printf("Index %i  Input Amplitude %f \n",i, input.amplitudeVec->data[i]);
+        printf("Index %i  Input Amplitude %f \n",i, input.amplitudeVec->data[i]);
   }
 
   printf("\n");
   for ( i = 0 ; i < input.phaseVec->length ; ++i )
   {
-	printf("Index %i  Input Phase %f \n",i, input.phaseVec->data[i]);
+        printf("Index %i  Input Phase %f \n",i, input.phaseVec->data[i]);
   }
   */
 
@@ -399,27 +399,27 @@ int main( void )
   if ( status.statusCode )
   {
     printf( "Unexpectedly got error code %d and message %s\n",
-	    status.statusCode, status.statusDescription );
+            status.statusCode, status.statusDescription );
     return FOLDAMPLITUDESTESTC_EFLS;
   }
 
   printf("\n");
   for ( i = 0 ; i < param.numBins ; ++i )
   {
-	printf("Bin %i  Output Amplitude %f \n",i,output->data[i]);
-	if (fabs(output->data[i] - sin(twoPi*i/10.0 + .0001)) > fabs(output->data[i]*FOLDAMPLITUDESTESTC_TOL)) {
-		printf ("In bin %i expected %g but instead got %g in this bin. \n",i,sin(twoPi*i/10.0 + .0001),output->data[i]);
-		gotError = 1;
-	}
+        printf("Bin %i  Output Amplitude %f \n",i,output->data[i]);
+        if (fabs(output->data[i] - sin(twoPi*i/10.0 + .0001)) > fabs(output->data[i]*FOLDAMPLITUDESTESTC_TOL)) {
+                printf ("In bin %i expected %g but instead got %g in this bin. \n",i,sin(twoPi*i/10.0 + .0001),output->data[i]);
+                gotError = 1;
+        }
 
   }
 
   printf("\n");
   if  (gotError > 0) {
-  	printf("Test 3 in FoldAmplitudesTest.c Failed. \n");
-  	return FOLDAMPLITUDESTESTC_EFLS;
+        printf("Test 3 in FoldAmplitudesTest.c Failed. \n");
+        return FOLDAMPLITUDESTESTC_EFLS;
   } else {
-  	printf("Test 3 in FoldAmplitudesTest.c Passed. \n");
+        printf("Test 3 in FoldAmplitudesTest.c Passed. \n");
   }
 
 
@@ -433,26 +433,26 @@ int main( void )
 
   for ( i = 0 ; i < (INT4)input.amplitudeVec->length ; ++i )
   {
-	input.amplitudeVec->data[i] = sin(2.0*twoPi*i/5.0 + .001);
-	input.phaseVec->data[i] = i/5.0 + .001;
+        input.amplitudeVec->data[i] = sin(2.0*twoPi*i/5.0 + .001);
+        input.phaseVec->data[i] = i/5.0 + .001;
   }
 
   /* Initialize the output vector */
   for ( i = 0 ; i < (INT4)output->length ; ++i )
   {
-	output->data[i] = 0.0;
+        output->data[i] = 0.0;
   }
 
   printf("\n");
   for ( i = 0 ; i < (INT4)input.amplitudeVec->length ; ++i )
   {
-	printf("Index %i  Input Amplitude %f \n",i, input.amplitudeVec->data[i]);
+        printf("Index %i  Input Amplitude %f \n",i, input.amplitudeVec->data[i]);
   }
 
   printf("\n");
   for ( i = 0 ; i < (INT4)input.phaseVec->length ; ++i )
   {
-	printf("Index %i  Input Phase in Cycles %f \n",i, input.phaseVec->data[i]);
+        printf("Index %i  Input Phase in Cycles %f \n",i, input.phaseVec->data[i]);
   }
 
   LALFoldAmplitudes( &status, output, &input, &param );
@@ -460,27 +460,27 @@ int main( void )
   if ( status.statusCode )
   {
     printf( "Unexpectedly got error code %d and message %s\n",
-	    status.statusCode, status.statusDescription );
+            status.statusCode, status.statusDescription );
     return FOLDAMPLITUDESTESTC_EFLS;
   }
 
   printf("\n");
   for ( i = 0 ; i < param.numBins ; ++i )
   {
-	printf("Bin %i  Output Amplitude %f \n",i,output->data[i]);
-	if (fabs(output->data[i] - 2.0*sin(2.0*twoPi*i/5.0 + .001)) > fabs(output->data[i]*FOLDAMPLITUDESTESTC_TOL)) {
-		printf ("In bin %i expected %g but instead got %g in this bin. \n",i,2.0*sin(2.0*twoPi*i/5.0 + .001),output->data[i]);
-		gotError = 1;
-	}
+        printf("Bin %i  Output Amplitude %f \n",i,output->data[i]);
+        if (fabs(output->data[i] - 2.0*sin(2.0*twoPi*i/5.0 + .001)) > fabs(output->data[i]*FOLDAMPLITUDESTESTC_TOL)) {
+                printf ("In bin %i expected %g but instead got %g in this bin. \n",i,2.0*sin(2.0*twoPi*i/5.0 + .001),output->data[i]);
+                gotError = 1;
+        }
 
   }
 
   printf("\n");
   if  (gotError > 0) {
-  	printf("Test 4 in FoldAmplitudesTest.c Failed. \n");
-  	return FOLDAMPLITUDESTESTC_EFLS;
+        printf("Test 4 in FoldAmplitudesTest.c Failed. \n");
+        return FOLDAMPLITUDESTESTC_EFLS;
   } else {
-  	printf("Test 4 in FoldAmplitudesTest.c Passed. \n");
+        printf("Test 4 in FoldAmplitudesTest.c Passed. \n");
   }
 
 
@@ -495,25 +495,25 @@ int main( void )
 
   for ( i = 0 ; i < (INT4)input.amplitudeVec->length ; ++i )
   {
-	input.amplitudeVec->data[i] = sin(twoPi*f*i*delT + 0.5*fDot*i*delT*i*delT - 10.001);
-	input.phaseVec->data[i] = twoPi*f*i*delT + 0.5*fDot*i*delT*i*delT - 10.001;
+        input.amplitudeVec->data[i] = sin(twoPi*f*i*delT + 0.5*fDot*i*delT*i*delT - 10.001);
+        input.phaseVec->data[i] = twoPi*f*i*delT + 0.5*fDot*i*delT*i*delT - 10.001;
   }
 
   for ( i = 0 ; i < (INT4)output->length ; ++i )
   {
-	output->data[i] = 0.0;
+        output->data[i] = 0.0;
   }
 
   printf("\n");
   for ( i = 0 ; i < (INT4)input.amplitudeVec->length ; ++i )
   {
-	printf("Index %i  Input Amplitude %f \n",i, input.amplitudeVec->data[i]);
+        printf("Index %i  Input Amplitude %f \n",i, input.amplitudeVec->data[i]);
   }
 
   printf("\n");
   for ( i = 0 ; i < (INT4)input.phaseVec->length ; ++i )
   {
-	printf("Index %i  Input Phase %f \n",i, input.phaseVec->data[i]);
+        printf("Index %i  Input Phase %f \n",i, input.phaseVec->data[i]);
   }
 
   LALFoldAmplitudes( &status, output, &input, &param );
@@ -521,22 +521,22 @@ int main( void )
   if ( status.statusCode )
   {
     printf( "Unexpectedly got error code %d and message %s\n",
-	    status.statusCode, status.statusDescription );
+            status.statusCode, status.statusDescription );
     return FOLDAMPLITUDESTESTC_EFLS;
   }
 
   printf("\n");
   for ( i = 0 ; i < param.numBins ; ++i )
   {
-	printf("Bin %i  Output Amplitude %f \n",i,output->data[i]);
+        printf("Bin %i  Output Amplitude %f \n",i,output->data[i]);
   }
 
   printf("\n");
   if  (gotError > 0) {
-  	printf("Test 5in FoldAmplitudesTest.c Failed. \n");
-  	return FOLDAMPLITUDESTESTC_EFLS;
+        printf("Test 5in FoldAmplitudesTest.c Failed. \n");
+        return FOLDAMPLITUDESTESTC_EFLS;
   } else {
-  	printf("Test 5 in FoldAmplitudesTest.c Passed. \n");
+        printf("Test 5 in FoldAmplitudesTest.c Passed. \n");
   }
 
 
