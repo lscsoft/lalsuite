@@ -634,7 +634,7 @@ void XLALDestroyLatticeTiling(
 
 }
 
-size_t XLALGetLatticeDimensions(
+size_t XLALGetLatticeTotalDimensions(
   const LatticeTiling* tiling
   )
 {
@@ -643,6 +643,19 @@ size_t XLALGetLatticeDimensions(
   XLAL_CHECK_VAL(0, tiling != NULL, XLAL_EFAULT);
 
   return tiling->dimensions;
+
+}
+
+size_t XLALGetLatticeTiledDimensions(
+  const LatticeTiling* tiling
+  )
+{
+
+  // Check tiling
+  XLAL_CHECK_VAL(0, tiling != NULL, XLAL_EFAULT);
+  XLAL_CHECK_VAL(0, tiling->status > LT_S_INCOMPLETE, XLAL_EINVAL);
+
+  return (tiling->tiled_idx != NULL) ? tiling->tiled_idx->size : 0;
 
 }
 

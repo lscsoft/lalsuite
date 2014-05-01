@@ -65,9 +65,17 @@ void XLALDestroyLatticeTiling(
   );
 
 ///
-/// Return the number of dimensions being tiled
+/// Return the total number of dimensions of the lattice tiling
 ///
-size_t XLALGetLatticeDimensions(
+size_t XLALGetLatticeTotalDimensions(
+  const LatticeTiling* tiling			///< [in] Tiling state
+  );
+
+///
+/// Return the number of tiled dimensions of the lattice,
+/// i.e. exclusing dimensions containing only a single point
+///
+size_t XLALGetLatticeTiledDimensions(
   const LatticeTiling* tiling			///< [in] Tiling state
   );
 
