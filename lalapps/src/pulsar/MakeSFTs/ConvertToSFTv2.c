@@ -76,7 +76,7 @@ REAL8 uvar_fmax;
 REAL8 uvar_mysteryFactor;
 
 INT4 uvar_minStartTime;
-INT4 uvar_maxEndTime;
+INT4 uvar_maxStartTime;
 
 
 /*---------- internal prototypes ----------*/
@@ -94,7 +94,7 @@ main(int argc, char *argv[])
   LALStatus status = blank_status;	/* initialize status */
   SFTConstraints constraints = empty_SFTConstraints;
   LIGOTimeGPS minStartTimeGPS = empty_LIGOTimeGPS;
-  LIGOTimeGPS maxEndTimeGPS = empty_LIGOTimeGPS;
+  LIGOTimeGPS maxStartTimeGPS = empty_LIGOTimeGPS;
   SFTCatalog *FullCatalog = NULL;
   CHAR *add_comment = NULL;
   UINT4 i;
@@ -134,9 +134,9 @@ main(int argc, char *argv[])
   }
 
   minStartTimeGPS.gpsSeconds = uvar_minStartTime;
-  maxEndTimeGPS.gpsSeconds = uvar_maxEndTime;
-  constraints.startTime = &minStartTimeGPS;
-  constraints.endTime = &maxEndTimeGPS;
+  maxStartTimeGPS.gpsSeconds = uvar_maxStartTime;
+  constraints.minStartTime = &minStartTimeGPS;
+  constraints.maxStartTime = &maxStartTimeGPS;
 
   /* get full SFT-catalog of all matching (multi-IFO) SFTs */
   LAL_CALL ( LALSFTdataFind ( &status, &FullCatalog, uvar_inputSFTs, &constraints ), &status);
@@ -263,7 +263,7 @@ initUserVars (LALStatus *status)
   uvar_IFO = NULL;
 
   uvar_minStartTime = 0;
-  uvar_maxEndTime = LAL_INT4_MAX;
+  uvar_maxStartTime = LAL_INT4_MAX;
 
   uvar_mysteryFactor = 1.0;
 
@@ -282,8 +282,8 @@ initUserVars (LALStatus *status)
   LALregREALUserVar(status,   fmax,		'F', UVAR_OPTIONAL, "Highest frequency to extract from SFTs. [Default: highest in inputSFTs]");
 
 
-  LALregINTUserVar ( status, 	minStartTime, 	 0,  UVAR_OPTIONAL, "Earliest GPS start-time to include");
-  LALregINTUserVar ( status, 	maxEndTime, 	 0,  UVAR_OPTIONAL, "Latest GPS end-time to include");
+  LALregINTUserVar ( status, 	minStartTime, 	 0,  UVAR_OPTIONAL, "Only use SFTs with timestamps starting from (including) this GPS time");
+  LALregINTUserVar ( status, 	maxStartTime, 	 0,  UVAR_OPTIONAL, "Only use SFTs with timestamps up to (excluding) this GPS time");
 
 
   /* developer-options */

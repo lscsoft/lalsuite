@@ -205,9 +205,9 @@ if [ ! -r "$outfile_cfs" ]; then
     TwoFsum_H1=0
 
     for ((iSeg=1; iSeg <= $Nsegments; iSeg++)); do
-        startGPS=${segs[$iSeg]}
-        endGPS=$(($startGPS + $Tsegment))
-        cfs_CL="$cfs_code $cfs_CL_common --minStartTime=$startGPS --maxEndTime=$endGPS"
+        minStartGPS=${segs[$iSeg]}
+        maxStartGPS=$(($minStartGPS + $Tsegment))
+        cfs_CL="$cfs_code $cfs_CL_common --minStartTime=$minStartGPS --maxStartTime=$maxStartGPS"
 
         # ----- get multi-IFO + single-IFO F-stat values
         cmdline="$cfs_CL --DataFiles='$SFTfiles'"

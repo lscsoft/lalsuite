@@ -394,11 +394,11 @@ XLALInitMakefakedata ( ConfigVars_t *cfg, UserVariables_t *uvar )
       SFTConstraints constraints = empty_SFTConstraints;
       if ( have_startTime && have_duration )	 // use optional (startTime+duration) as constraints,
         {
-          LIGOTimeGPS minStartTime, maxEndTime;
+          LIGOTimeGPS minStartTime, maxStartTime;
           XLALGPSSetREAL8 ( &minStartTime, uvar->startTime );
-          XLALGPSSetREAL8 ( &maxEndTime, uvar->startTime + uvar->duration );
-          constraints.startTime = &minStartTime;
-          constraints.endTime   = &maxEndTime;
+          XLALGPSSetREAL8 ( &maxStartTime, uvar->startTime + uvar->duration );
+          constraints.minStartTime = &minStartTime;
+          constraints.maxStartTime   = &maxStartTime;
           XLALPrintWarning ( "Only noise-SFTs between GPS [%d, %d] will be used!\n", uvar->startTime, uvar->startTime + uvar->duration );
         } /* if start+duration given */
       XLAL_CHECK ( (cfg->noiseCatalog = XLALSFTdataFind ( uvar->noiseSFTs, &constraints )) != NULL, XLAL_EFUNC );

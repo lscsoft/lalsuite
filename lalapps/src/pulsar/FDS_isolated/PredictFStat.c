@@ -131,8 +131,8 @@ typedef struct {
   CHAR *DataFiles;	/**< SFT input-files to use to determine startTime, duration, IFOs and for noise-floor estimation */
   CHAR *outputFstat;	/**< output file to write F-stat estimation results into */
   BOOLEAN printFstat;	/**< print F-stat estimation results to terminal? */
-  INT4 minStartTime;	/**< limit start-time of input SFTs to use */
-  INT4 maxEndTime;	/**< limit end-time of input SFTs to use */
+  INT4 minStartTime;	/**< Only use SFTs with timestamps starting from (including) this GPS time */
+  INT4 maxStartTime;	/**< Only use SFTs with timestamps up to (excluding) this GPS time */
 
   CHAR *transientWindowType;	/**< name of transient window ('rect', 'exp',...) */
   REAL8 transientStartTime;	/**< GPS start-time of transient window */
@@ -291,7 +291,7 @@ initUserVars (LALStatus *status, UserInput_t *uvar )
   uvar->printFstat = TRUE;
 
   uvar->minStartTime = 0;
-  uvar->maxEndTime = LAL_INT4_MAX;
+  uvar->maxStartTime = LAL_INT4_MAX;
 
   uvar->assumeSqrtSX = NULL;
   uvar->SignalOnly = 0;
@@ -324,8 +324,8 @@ initUserVars (LALStatus *status, UserInput_t *uvar )
   LALregSTRINGUserStruct(status,outputFstat,     0,  UVAR_OPTIONAL, "Output-file for predicted F-stat value" );
   LALregBOOLUserStruct(status,printFstat,	 0,  UVAR_OPTIONAL, "Print predicted F-stat value to terminal" );
 
-  LALregINTUserStruct ( status,	minStartTime, 	 0,  UVAR_OPTIONAL, "Earliest SFT-timestamp to include");
-  LALregINTUserStruct ( status,	maxEndTime, 	 0,  UVAR_OPTIONAL, "Latest SFT-timestamps to include");
+  LALregINTUserStruct ( status,	minStartTime, 	 0,  UVAR_OPTIONAL, "Only use SFTs with timestamps starting from (including) this GPS time");
+  LALregINTUserStruct ( status,	maxStartTime, 	 0,  UVAR_OPTIONAL, "Only use SFTs with timestamps up to (excluding) this GPS time");
 
   LALregLISTUserStruct(status,  assumeSqrtSX,	 0,  UVAR_OPTIONAL, "Don't estimate noise-floors but assume (stationary) per-IFO sqrt{SX} (if single value: use for all IFOs)");
   LALregBOOLUserStruct(status,	SignalOnly,	'S', UVAR_DEVELOPER,"DEPRECATED ALTERNATIVE: Don't estimate noise-floors but assume sqrtSX=1 instead");
@@ -355,7 +355,7 @@ InitPFS ( LALStatus *status, ConfigVariables *cfg, const UserInput_t *uvar )
   SFTConstraints constraints = empty_SFTConstraints;
   SkyPosition skypos;
 
-  LIGOTimeGPS minStartTimeGPS, maxEndTimeGPS;
+  LIGOTimeGPS minStartTimeGPS, maxStartTimeGPS;
 
   EphemerisData *edat = NULL;		    	/* ephemeris data */
   MultiAMCoeffs *multiAMcoef = NULL;
@@ -426,10 +426,10 @@ InitPFS ( LALStatus *status, ConfigVariables *cfg, const UserInput_t *uvar )
 
   minStartTimeGPS.gpsSeconds = uvar->minStartTime;
   minStartTimeGPS.gpsNanoSeconds = 0;
-  maxEndTimeGPS.gpsSeconds = uvar->maxEndTime;
-  maxEndTimeGPS.gpsNanoSeconds = 0;
-  constraints.startTime = &minStartTimeGPS;
-  constraints.endTime = &maxEndTimeGPS;
+  maxStartTimeGPS.gpsSeconds = uvar->maxStartTime;
+  maxStartTimeGPS.gpsNanoSeconds = 0;
+  constraints.minStartTime = &minStartTimeGPS;
+  constraints.maxStartTime = &maxStartTimeGPS;
 
   /* ----- get full SFT-catalog of all matching (multi-IFO) SFTs */
   LogPrintf (LOG_DEBUG, "Finding all SFTs to load ... ");

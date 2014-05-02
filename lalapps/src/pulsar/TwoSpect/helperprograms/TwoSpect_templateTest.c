@@ -995,11 +995,11 @@ REAL4Vector * readInSFTs(inputParamsStruct *input, REAL8 *normalization)
    //Setup the constraints
    SFTConstraints constraints;
    constraints.detector = NULL;
-   constraints.startTime = constraints.endTime = NULL;
+   constraints.minStartTime = constraints.maxStartTime = NULL;
    constraints.timestamps = NULL;
    constraints.detector = input->det[0].frDetector.prefix;
-   constraints.startTime = &start;
-   constraints.endTime = &end;
+   constraints.minStartTime = &start;
+   constraints.maxStartTime = &end;
    
    //Find SFT files
    LALSFTdataFind(&status, &catalog, sft_dir_file, &constraints);

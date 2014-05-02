@@ -262,7 +262,7 @@ REAL8 uvar_internalRefTime;
 INT4 uvar_SSBprecision;
 
 INT4 uvar_minStartTime;
-INT4 uvar_maxEndTime;
+INT4 uvar_maxStartTime;
 CHAR *uvar_workingDir;
 REAL8 uvar_timerCount;
 INT4 uvar_upsampleSFTs;
@@ -823,7 +823,7 @@ initUserVars (LALStatus *status)
   uvar_SSBprecision = SSBPREC_RELATIVISTIC;
 
   uvar_minStartTime = 0;
-  uvar_maxEndTime = LAL_INT4_MAX;
+  uvar_maxStartTime = LAL_INT4_MAX;
 
   uvar_workingDir = (CHAR*)LALMalloc(512);
   strcpy(uvar_workingDir, ".");
@@ -890,8 +890,8 @@ initUserVars (LALStatus *status)
   LALregINTUserVar(status,      clusterOnScanline, 0, UVAR_OPTIONAL, "Neighbors on each side for finding 1D local maxima on scanline");
 
 
-  LALregINTUserVar ( status, 	minStartTime, 	 0,  UVAR_OPTIONAL, "Earliest SFT-timestamp to include");
-  LALregINTUserVar ( status, 	maxEndTime, 	 0,  UVAR_OPTIONAL, "Latest SFT-timestamps to include");
+  LALregINTUserVar ( status, 	minStartTime, 	 0,  UVAR_OPTIONAL, "Only use SFTs with timestamps starting from (including) this GPS time");
+  LALregINTUserVar ( status, 	maxStartTime, 	 0,  UVAR_OPTIONAL, "Only use SFTs with timestamps up to (excluding) this GPS time");
   LALregREALUserVar(status, 	WinFrac,  0,  UVAR_OPTIONAL, "Fraction of Window to use as transition (0 -> Rectangular window , 1-> Hann Window) [Default: 0.01]");
   LALregREALUserVar(status, 	BandFrac,  0,  UVAR_OPTIONAL, "Extra Fracion of Band to use, to minimize interpolation losses (1.0 -> Use Full Band , 2.0 -> Double the Band, 3.0 -> Triple the band) [Default: 1.0]");
 
@@ -923,7 +923,7 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg )
   SFTCatalog *catalog = NULL;
   SFTConstraints constraints = empty_SFTConstraints;
   LIGOTimeGPS minStartTimeGPS = empty_LIGOTimeGPS;
-  LIGOTimeGPS maxEndTimeGPS = empty_LIGOTimeGPS;
+  LIGOTimeGPS maxStartTimeGPS = empty_LIGOTimeGPS;
   PulsarSpinRange spinRangeRef = empty_PulsarSpinRange;
 
   UINT4 numSFTs;
@@ -945,9 +945,9 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg )
       ABORT ( status,  COMPUTEFSTATISTIC_EINPUT,  COMPUTEFSTATISTIC_MSGEINPUT);
     }
   minStartTimeGPS.gpsSeconds = uvar_minStartTime;
-  maxEndTimeGPS.gpsSeconds = uvar_maxEndTime;
-  constraints.startTime = &minStartTimeGPS;
-  constraints.endTime = &maxEndTimeGPS;
+  maxStartTimeGPS.gpsSeconds = uvar_maxStartTime;
+  constraints.minStartTime = &minStartTimeGPS;
+  constraints.maxStartTime = &maxStartTimeGPS;
 
   /* get full SFT-catalog of all matching (multi-IFO) SFTs */
   LogPrintf (LOG_DEBUG, "Finding all SFTs to load ... ");

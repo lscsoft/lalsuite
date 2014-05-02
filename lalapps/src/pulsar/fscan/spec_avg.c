@@ -122,11 +122,11 @@ int main(int argc, char **argv)
     
     startTime.gpsSeconds = startGPS;/*cg; startTime is a structure, and gpsSeconds is a member of that structure*/
     startTime.gpsNanoSeconds = 0;/*cg; gps NanoSeconds is also a member of the startTime structure */
-    constraints.startTime = &startTime; /*cg; & operator gets the address of variable, &a is a pointer to a.  This line puts the startTime structure into the structure constraints*/
+    constraints.minStartTime = &startTime; /*cg; & operator gets the address of variable, &a is a pointer to a.  This line puts the startTime structure into the structure constraints*/
     
     endTime.gpsSeconds = endGPS;
     endTime.gpsNanoSeconds = 0;
-    constraints.endTime = &endTime;/*cg; This line puts the end time into the structure constraints*/
+    constraints.maxStartTime = &endTime;/*cg; This line puts the end time into the structure constraints*/
     constraints.detector = IFO;/*cg; this adds the interferometer into the contraints structure*/
     LALSFTdataFind ( &status, &catalog, SFTpatt, &constraints );/*cg; creates SFT catalog, uses the constraints structure*/
 

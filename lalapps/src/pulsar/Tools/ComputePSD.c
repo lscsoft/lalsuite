@@ -985,12 +985,12 @@ XLALReadSFTs ( ConfigVariables_t *cfg,		/**< [out] return derived configuration 
 
   if ( XLALUserVarWasSet( &uvar->startTime ) ) {
     XLALGPSSetREAL8 ( &startTimeGPS, uvar->startTime);
-    constraints.startTime = &startTimeGPS;
+    constraints.minStartTime = &startTimeGPS;
   }
 
   if ( XLALUserVarWasSet( &uvar->endTime ) ) {
     XLALGPSSetREAL8 ( &endTimeGPS, uvar->endTime);
-    constraints.endTime = &endTimeGPS;
+    constraints.maxStartTime = &endTimeGPS;
   }
 
   if ( XLALUserVarWasSet( &uvar->timeStampsFile ) ) {
@@ -1266,19 +1266,14 @@ XLALComputeSegmentDataQ ( const MultiPSDVector *multiPSDVect, 	/**< input PSD ma
             XLAL_ERROR_NULL ( XLAL_EDOM );
           }
 
-          LIGOTimeGPS gpsStart = thisPSD->epoch;
-          LIGOTimeGPS gpsEnd   = gpsStart;
-          XLALGPSAdd( &gpsEnd, Tsft - 1e-3 );	/* subtract 1ms from end: segments are half-open intervals [t0, t1) */
+          int cmp = XLALCWGPSinRange( thisPSD->epoch, &segment.start, &segment.end );
 
-          int cmp1 = XLALGPSInSeg ( &gpsStart, &segment );
-          int cmp2 = XLALGPSInSeg ( &gpsEnd, &segment );
-
-          if ( cmp2 < 0 )	/* SFT-end before segment => advance to the next one */
+          if ( cmp < 0 )	/* SFT-end before segment => advance to the next one */
             continue;
-          if ( cmp1 > 0 )	/* SFT-start past end of segment: ==> terminate loop */
+          if ( cmp > 0 )	/* SFT-start past end of segment: ==> terminate loop */
             break;
 
-          if ( (cmp1 == 0) && (cmp2 == 0) )	/* this SFT is inside segment */
+          if ( (cmp == 0) )	/* this SFT is inside segment */
             {
               numSFTsInSeg ++;
               /* add SXinv(f) += 1/SX_i(f) over all frequencies */
