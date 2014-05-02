@@ -57,8 +57,6 @@ typedef struct tagLVcomponents {
 } LVcomponents;
 
 /*---------- exported Global variables ----------*/
-/* empty init-structs for the types defined in here */
-extern const LVcomponents empty_LVcomponents;
 
 /*---------- exported prototypes [API] ----------*/
 REAL4

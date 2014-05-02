@@ -284,8 +284,6 @@ HoughCandidateList *XLALLoadHoughCandidateList ( const char *fname, REAL8 FreqSh
 HoughCandidateList *XLALCreateHoughCandidateList ( UINT4 length );
 void XLALDestroyHoughCandidateList ( HoughCandidateList * list );
 
-const SemiCohCandidate empty_SemiCohCandidate;
-
 /* ==================== ==================== */
 
 int MAIN( int argc, char *argv[]) {
@@ -302,8 +300,8 @@ int MAIN( int argc, char *argv[]) {
   LIGOTimeGPSVector *startTstack=NULL;
 
 
-  LIGOTimeGPS refTimeGPS = empty_LIGOTimeGPS;
-  LIGOTimeGPS tMidGPS = empty_LIGOTimeGPS;
+  LIGOTimeGPS XLAL_INIT_DECL(refTimeGPS);
+  LIGOTimeGPS XLAL_INIT_DECL(tMidGPS);
 
   /* velocities and positions at midTstack */
   REAL8VectorSequence *velStack=NULL;
@@ -1736,7 +1734,7 @@ RCComputeFstatHoughMap(LALStatus *status,		/**< pointer to LALStatus structure *
 	  TRY( LALHOUGHConstructHMT_W(status->statusPtr, &ht, &freqInd, &phmdVS),status );
 
 	  /* get top candidate from Hough skypatch */
-          SemiCohCandidate topCand =  empty_SemiCohCandidate;
+          SemiCohCandidate XLAL_INIT_DECL(topCand);
           TRY( GetHoughPatchTopCandidate ( status->statusPtr, &topCand, &ht, &patch, &parDem ), status);
 
           /* append this to candidate list */
@@ -2450,7 +2448,7 @@ GetHoughPatchTopCandidate (LALStatus            *status,
   REAL8 deltaF, f0, fdot, dFdot, patchSizeX, patchSizeY;
   INT8 f0Bin;
   INT4 i,j, xSide, ySide;
-  SemiCohCandidate thisCandidate = empty_SemiCohCandidate;
+  SemiCohCandidate XLAL_INIT_DECL(thisCandidate);
 
   INITSTATUS(status);
   ATTATCHSTATUSPTR (status);

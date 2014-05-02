@@ -72,11 +72,10 @@ extern "C" {
  *   REAL8 specialGeekSwitch;
  * } UserInput_t;
  *
- * UserInput_t empty_UserInput;    // this is zero-intialized!
  *
  * int main(int argc,char *argv[])
  * {
- *   UserInput_t UserVariables = empty_UserInput; // initializes this struct to {0}
+ *   UserInput_t XLAL_INIT_DECL(UserVariables); // initializes this struct to {0}
  *   UserInput_t *uvar = &UserVariables;          // struct-pointer allows us to use the XLALreg<TYPE>UserStruct() macros...
  *
  *   // 1. step: set default-values for optional user-input variables

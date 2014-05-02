@@ -98,7 +98,7 @@ int main(int argc, char *argv[]) {
   gsl_matrix *mism_hist = NULL;
   SFTCatalog *catalog = NULL;
   MultiSFTVector *sfts = NULL;
-  EphemerisData ephemeris = empty_EphemerisData;
+  EphemerisData XLAL_INIT_DECL(ephemeris);
   MultiDetectorStateSeries *detector_states = NULL;
   MultiPSDVector *rng_med = NULL;
   MultiNoiseWeights *noise_weights = NULL;
@@ -228,7 +228,7 @@ int main(int argc, char *argv[]) {
 
   /* Load the SFTs */
   {
-    SFTConstraints constraints = empty_SFTConstraints;
+    SFTConstraints XLAL_INIT_DECL(constraints);
     REAL8 extra = 0.0, f_min = 0.0, f_max = 0.0;
     
     /* Load the catalog */
@@ -631,7 +631,7 @@ BOOLEAN calc_AM_coeffs(
 {
   
   MultiAMCoeffs *AM_coeffs = NULL;
-  SkyPosition sky = empty_SkyPosition;
+  SkyPosition XLAL_INIT_DECL(sky);
   
   /* Generate a random sky position */
   sky.system = COORDINATESYSTEM_EQUATORIAL;

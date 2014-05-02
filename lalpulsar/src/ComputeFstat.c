@@ -50,8 +50,6 @@
 #define UNUSED
 #endif
 
-static const LALStatus empty_status;
-
 ///// Internal struct definitions /////
 
 // Common input data for F-statistic algorithms

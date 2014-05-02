@@ -317,10 +317,6 @@ typedef struct {
 /*---------- Global variables ----------*/
 extern int vrbflg;		/**< defined in lalapps.c */
 
-/* empty initializers */
-static UserInput_t empty_UserInput;
-static timingInfo_t empty_timingInfo;
-
 /* ---------- local prototypes ---------- */
 int main(int argc,char *argv[]);
 void initUserVars (LALStatus *, UserInput_t *uvar);
@@ -348,10 +344,6 @@ void XLALDestroyScanlineWindow ( scanlineWindow_t *scanlineWindow );
 int XLALAdvanceScanlineWindow ( const FstatCandidate *nextCand, scanlineWindow_t *scanWindow );
 BOOLEAN XLALCenterIsLocalMax ( const scanlineWindow_t *scanWindow, const UINT4 sortingStatistic );
 
-/*---------- empty initializers ---------- */
-static const ConfigVariables empty_ConfigVariables;
-static const FstatCandidate empty_FstatCandidate;
-
 /* ----- which timing function to use ----- */
 #ifdef HIGHRES_TIMING
 REAL8 XLALGetUserCPUTime ( void );
@@ -376,13 +368,14 @@ int main(int argc,char *argv[])
   FILE *fpFstat = NULL, *fpTransientStats = NULL;
   REAL8 numTemplates, templateCounter;
   time_t clock0;
-  PulsarDopplerParams dopplerpos = empty_PulsarDopplerParams;		/* current search-parameters */
-  FstatCandidate loudestFCand = empty_FstatCandidate, thisFCand = empty_FstatCandidate;
+  PulsarDopplerParams XLAL_INIT_DECL(dopplerpos);
+  FstatCandidate XLAL_INIT_DECL(loudestFCand);
+  FstatCandidate XLAL_INIT_DECL(thisFCand);
   FILE *fpLogPrintf = NULL;
   gsl_vector_int *Fstat_histogram = NULL;
 
-  UserInput_t uvar = empty_UserInput;
-  ConfigVariables GV = empty_ConfigVariables;		/**< global container for various derived configuration settings */
+  UserInput_t XLAL_INIT_DECL(uvar);
+  ConfigVariables XLAL_INIT_DECL(GV);
 
   vrbflg = 1;	/* verbose error-messages */
 
@@ -535,7 +528,7 @@ int main(int argc,char *argv[])
   clock0 = time(NULL);
 
   REAL8 tic0, tic, toc, timeOfLastProgressUpdate = 0;	// high-precision timing counters
-  timingInfo_t timing = empty_timingInfo;	// timings of Fstatistic computation, transient Fstat-map, transient Bayes factor
+  timingInfo_t XLAL_INIT_DECL(timing);			// timings of Fstatistic computation, transient Fstat-map, transient Bayes factor
   timing.NSFTs = GV.NSFTs;
 
   /* fixed time-offset between internalRefTime and refTime */
@@ -791,7 +784,7 @@ int main(int argc,char *argv[])
       /* ----- compute transient-CW statistics if their output was requested  ----- */
       if ( fpTransientStats )
         {
-          transientCandidate_t transientCand = empty_transientCandidate;
+          transientCandidate_t XLAL_INIT_DECL(transientCand);
 
           /* compute Fstat map F_mn over {t0, tau} */
           tic = GETTIME();
@@ -946,7 +939,7 @@ int main(int argc,char *argv[])
   if ( uvar.outputLoudest )
     {
       FILE *fpLoudest;
-      PulsarCandidate pulsarParams = empty_PulsarCandidate;
+      PulsarCandidate XLAL_INIT_DECL(pulsarParams);
       pulsarParams.Doppler = loudestFCand.doppler;
 
       if ( XLALEstimatePulsarAmplitudeParams ( &pulsarParams, &loudestFCand.FaFb_refTime, loudestFCand.Fa, loudestFCand.Fb, &loudestFCand.Mmunu )
@@ -1255,9 +1248,9 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg, const UserInput_t *uvar )
 {
   REAL8 fCoverMin, fCoverMax;	/* covering frequency-band to read from SFTs */
   SFTCatalog *catalog = NULL;
-  SFTConstraints constraints = empty_SFTConstraints;
-  LIGOTimeGPS minStartTimeGPS = empty_LIGOTimeGPS;
-  LIGOTimeGPS maxStartTimeGPS = empty_LIGOTimeGPS;
+  SFTConstraints XLAL_INIT_DECL(constraints);
+  LIGOTimeGPS XLAL_INIT_DECL(minStartTimeGPS);
+  LIGOTimeGPS XLAL_INIT_DECL(maxStartTimeGPS);
 
   LIGOTimeGPS endTime;
   size_t toplist_length = uvar->NumCandidatesToKeep;

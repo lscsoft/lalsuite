@@ -81,7 +81,6 @@ typedef struct tagCWMFDataParams
 } CWMFDataParams;
 
 // ---------- Global variables ----------
-extern const CWMFDataParams empty_CWMFDataParams;
 
 // ---------- exported prototypes [API] ----------
 

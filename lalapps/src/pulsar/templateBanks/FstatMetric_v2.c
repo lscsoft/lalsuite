@@ -174,11 +174,6 @@ typedef struct
 
 } UserVariables_t;
 
-
-/*---------- empty structs for initializations ----------*/
-ConfigVariables empty_ConfigVariables;
-PulsarTimesParamStruc empty_PulsarTimesParamStruc;
-UserVariables_t empty_UserVariables;
 /* ---------- global variables ----------*/
 extern int vrbflg;
 
@@ -198,9 +193,9 @@ void XLALDestroyResultHistory ( ResultHistory_t * history );
 int
 main(int argc, char *argv[])
 {
-  ConfigVariables config = empty_ConfigVariables;
-  UserVariables_t uvar = empty_UserVariables;
-  DopplerMetricParams metricParams = empty_DopplerMetricParams;
+  ConfigVariables XLAL_INIT_DECL(config);
+  UserVariables_t XLAL_INIT_DECL(uvar);
+  DopplerMetricParams XLAL_INIT_DECL(metricParams);
 
   vrbflg = 1;	/* verbose error-messages */
 
@@ -462,7 +457,7 @@ XLALInitCode ( ConfigVariables *cfg, const UserVariables_t *uvar, const char *ap
 
   {
     PulsarDopplerParams *dop = &(cfg->signalParams.Doppler);
-    (*dop) = empty_PulsarDopplerParams;
+    XLAL_INIT_MEM((*dop));
     dop->refTime = refTimeGPS;
     dop->Alpha = uvar->Alpha;
     dop->Delta = uvar->Delta;

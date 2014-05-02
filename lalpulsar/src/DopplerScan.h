@@ -167,14 +167,6 @@ typedef struct tagMetricEllipse {
   REAL8 angle;
 } MetricEllipse;
 
-/*---------- Global variables ----------*/
-/* some empty structs for initializations */
-extern const DopplerSkyGrid empty_DopplerSkyGrid;
-extern const DopplerSkyScanState empty_DopplerSkyScanState;
-extern const DopplerSkyScanInit empty_DopplerSkyScanInit;
-extern const DopplerRegion empty_DopplerRegion;
-extern const SkyRegion empty_SkyRegion;
-
 /*---------- external prototypes [API] ----------*/
 
 /* ------ functions to handle factored grids: 'sky x freq x f1dot...' covering ----- */

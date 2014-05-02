@@ -39,10 +39,6 @@
 
 /*---------- Global variables ----------*/
 
-/* empty initializers  */
-const SSBtimes empty_SSBtimes;
-const MultiSSBtimes empty_MultiSSBtimes;
-
 /*---------- internal prototypes ----------*/
 
 static double gsl_E_solver ( double E, void *p );
@@ -550,7 +546,7 @@ XLALGetSSBtimes ( const DetectorStateSeries *DetectorStates,	/**< [in] detector-
   REAL8 delta = pos.latitude;
   REAL8 refTimeREAL8 = XLALGPSGetREAL8 ( &refTime );
 
-  BarycenterInput baryinput = empty_BarycenterInput;
+  BarycenterInput XLAL_INIT_DECL(baryinput);
 
   /*----- now calculate the SSB transformation in the precision required */
   switch (precision)

@@ -46,11 +46,6 @@
 static REAL8 fudge_up   = 1 + 10 * LAL_REAL8_EPS;	// about ~1 + 2e-15
 static REAL8 fudge_down = 1 - 10 * LAL_REAL8_EPS;	// about ~1 - 2e-15
 
-/* empty struct initializers */
-const PSDVector empty_PSDVector;
-const MultiPSDVector empty_MultiPSDVector;
-const MultiNoiseWeights empty_MultiNoiseWeights;
-
 /*---------- internal prototypes ----------*/
 
 int compareSFTdesc(const void *ptr1, const void *ptr2);     // defined in SFTfileIO.c

@@ -48,11 +48,6 @@
 #define LAL_INT4_MAX 2147483647
 
 /* ---------- internal prototypes ---------- */
-/* empty struct initializers */
-const transientCandidate_t empty_transientCandidate;
-const transientWindow_t empty_transientWindow;
-const transientWindowRange_t empty_transientWindowRange;
-const transientFstatMap_t empty_transientFstatMap;
 
 static const char *transientWindowNames[TRANSIENT_LAST] =
   {

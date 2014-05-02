@@ -57,9 +57,6 @@
 
 extern char *optarg;
 
-static const LALStatus empty_status;
-
-
 /* ----- internal prototypes ---------- */
 int XLALCompareMultiAMCoeffs ( MultiAMCoeffs *multiAM1, MultiAMCoeffs *multiAM2, REAL8 tolerance );
 
@@ -163,7 +160,7 @@ int main(int argc, char *argv[])
   /* ========== MAIN LOOP: N-trials of comparisons XLAL <--> LAL multiAM functions ========== */
   while ( numChecks-- )
     {
-      LALStatus status = empty_status;
+      LALStatus XLAL_INIT_DECL(status);
 
       /* ----- pick skyposition at random ----- */
       SkyPosition skypos;

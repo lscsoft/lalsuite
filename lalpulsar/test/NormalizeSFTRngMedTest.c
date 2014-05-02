@@ -26,15 +26,11 @@
 
 /* Default parameters. */
 
-LALStatus empty_status;
-
 REAL8 tol = LAL_REAL4_EPS;
 
 int main ( void )
 {
   const char *fn = __func__;
-
-  //LALStatus status = empty_status;
 
   SFTtype *mySFT;
   LIGOTimeGPS epoch = { 731210229, 0 };
@@ -67,8 +63,7 @@ int main ( void )
     mySFT->data->data[iBin] = vals[iBin];
 
   /* get memory for running-median vector */
-  REAL8FrequencySeries rngmed;
-  XLAL_INIT_MEM ( rngmed );
+  REAL8FrequencySeries XLAL_INIT_DECL(rngmed);
   XLAL_CHECK ( (rngmed.data = XLALCreateREAL8Vector ( numBins )) != NULL, XLAL_EFUNC, "Failed  XLALCreateREAL8Vector ( %d )", numBins );
 
   // ---------- Test running-median PSD estimation in simple blocksize cases

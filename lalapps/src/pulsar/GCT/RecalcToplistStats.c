@@ -66,7 +66,7 @@ int XLALComputeExtraStatsForToplist ( toplist_t *list,                          
   XLAL_CHECK ( listEntryType != 0, XLAL_EBADLEN, "Unsupported entry type for input toplist! Supported types currently are: GCTtop, HoughFStat." );
 
   /* set up temporary variables and structs */
-  PulsarDopplerParams candidateDopplerParams = empty_PulsarDopplerParams; /* struct containing sky position, frequency and fdot for the current candidate */
+  PulsarDopplerParams XLAL_INIT_DECL(candidateDopplerParams); /* struct containing sky position, frequency and fdot for the current candidate */
   UINT4 X;
 
   /* initialize doppler parameters */
@@ -75,7 +75,7 @@ int XLALComputeExtraStatsForToplist ( toplist_t *list,                          
   UINT4 numDetectors = detectorIDs->length;
 
   /* initialise LVcomponents structure and allocate memory */
-  LVcomponents   lineVeto = empty_LVcomponents; /* struct containing multi-detector Fstat, single-detector Fstats, Line Veto stat */
+  LVcomponents   XLAL_INIT_DECL(lineVeto); /* struct containing multi-detector Fstat, single-detector Fstats, Line Veto stat */
   XLAL_CHECK ( (lineVeto.TwoFX = XLALCreateREAL4Vector ( numDetectors )) != NULL, XLAL_EFUNC, "Failed call to XLALCreateREAL4Vector( %d ).", numDetectors );
 
   UINT4 j;
@@ -210,7 +210,7 @@ int XLALComputeExtraStatsSemiCoherent ( LVcomponents *lineVeto,                 
   XLAL_CHECK ( ( twoFXseg = XLALCreateREAL4Vector ( numDetectors )) != NULL, XLAL_EFUNC, "Failed call to XLALCreateREAL4Vector( %d ).", numDetectors );
 
   /* internal dopplerParams structure, for extrapolating to correct reftimes for each segment */
-  PulsarDopplerParams dopplerParams_temp = empty_PulsarDopplerParams; /* struct containing sky position, frequency and fdot for the current candidate */
+  PulsarDopplerParams XLAL_INIT_DECL(dopplerParams_temp); /* struct containing sky position, frequency and fdot for the current candidate */
   dopplerParams_temp.Alpha = dopplerParams->Alpha;
   dopplerParams_temp.Delta = dopplerParams->Delta;
   XLAL_INIT_MEM( dopplerParams_temp.fkdot );

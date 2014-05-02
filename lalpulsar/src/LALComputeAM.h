@@ -170,10 +170,6 @@ typedef struct tagMultiAMCoeffs {
 
 
 /*---------- exported Global variables ----------*/
-/* empty init-structs for the types defined in here */
-extern const AntennaPatternMatrix empty_AntennaPatternMatrix;
-extern const MultiAMCoeffs empty_MultiAMCoeffs;
-
 
 /*---------- exported prototypes [API] ----------*/
 

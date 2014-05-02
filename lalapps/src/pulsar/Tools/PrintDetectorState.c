@@ -76,12 +76,6 @@ typedef struct
 
 } UserVariables_t;
 
-
-/*---------- empty structs for initializations ----------*/
-static ConfigVariables empty_ConfigVariables;
-static UserVariables_t empty_UserVariables;
-static AMCoeffsParams empty_AMCoeffsParams;
-
 /* ---------- global variables ----------*/
 extern int vrbflg;
 
@@ -100,9 +94,8 @@ main(int argc, char *argv[])
 {
   LALStatus status = blank_status;
 
-  ConfigVariables config = empty_ConfigVariables;
-  UserVariables_t uvar = empty_UserVariables;
-
+  ConfigVariables XLAL_INIT_DECL(config);
+  UserVariables_t XLAL_INIT_DECL(uvar);
 
   /* register user-variables */
 
@@ -144,8 +137,8 @@ main(int argc, char *argv[])
   XLAL_CHECK ( tSSB != NULL, XLAL_EFUNC, "XLALGetSSBtimes() failed with xlalErrno = %d\n", xlalErrno );
 
   /* ===== 1) compute AM-coeffs the 'old way': [used in CFSv1] ===== */
-  BarycenterInput baryinput = empty_BarycenterInput;
-  AMCoeffsParams amParams = empty_AMCoeffsParams;
+  BarycenterInput XLAL_INIT_DECL(baryinput);
+  AMCoeffsParams XLAL_INIT_DECL(amParams);
   EarthState earth;
 
   baryinput.site.location[0] = config.det->location[0]/LAL_C_SI;

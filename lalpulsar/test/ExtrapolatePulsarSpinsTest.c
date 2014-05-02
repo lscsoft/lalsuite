@@ -75,14 +75,13 @@ do {                                                                 \
 } while (0)
 
 
-static LALStatus empty_status;
 /**
  * Very simple test: given spin-params at \f$\tau_0\f$, extrapolate them to
  * \f$\tau_1\f$ and compare to reference-result...
  */
 int main(int argc, char *argv[])
 {
-  LALStatus status = empty_status;
+  LALStatus XLAL_INIT_DECL(status);
   PulsarSpins result;
   PulsarSpins fkdot0, fkdot1;
   REAL8 tolerance = 1.0e-12;

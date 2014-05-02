@@ -20,9 +20,6 @@
 #include <math.h>
 #include "antenna.h"
 
-
-static const LALStatus empty_status;
-
 //Compute the number of integer bin shifts per SFT
 // bin shift = f0*v*Tcoh
 // where f0 is frequency, v is velocity in units of c, and Tcoh is the SFT coherence length
@@ -70,7 +67,7 @@ INT4 CompAntennaVelocity(REAL4Vector *output, REAL4 ra, REAL4 dec, REAL8 t0, REA
 
    INT4 ii;
    INT4 numffts = (INT4)floor(Tobs/(Tcoh-SFToverlap)-1);    //Number of FFTs
-   LALStatus status = empty_status;
+   LALStatus XLAL_INIT_DECL(status);
 
    REAL8 detvel[3];
    for (ii=0; ii<numffts; ii++) {
@@ -97,7 +94,7 @@ REAL4 CompDetectorDeltaVmax(REAL8 t0, REAL8 Tcoh, REAL8 SFToverlap, REAL8 Tobs, 
 
    INT4 ii;
    INT4 numffts = (INT4)floor(Tobs/(Tcoh-SFToverlap)-1);    //Number of FFTs
-   LALStatus status = empty_status;
+   LALStatus XLAL_INIT_DECL(status);
 
    REAL8 detvel[3];
    REAL8 detvel0[3];
@@ -134,7 +131,7 @@ REAL4 CompDetectorVmax(REAL8 t0, REAL8 Tcoh, REAL8 SFToverlap, REAL8 Tobs, LALDe
 
    INT4 ii;
    INT4 numffts = (INT4)floor(Tobs/(Tcoh-SFToverlap)-1);    //Number of FFTs
-   LALStatus status = empty_status;
+   LALStatus XLAL_INIT_DECL(status);
 
    REAL8 detvel[3];
    REAL4 Vmax = 0.0;

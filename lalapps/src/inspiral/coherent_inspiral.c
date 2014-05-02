@@ -274,8 +274,8 @@ int main( int argc, char *argv[] )
 
   CHAR nameArrayCData[6][LALNameLength];
 
-  DopplerSkyScanInit scanInit = empty_DopplerSkyScanInit; /* init-structure for DopperScanner */
-  DopplerSkyScanState thisScan = empty_DopplerSkyScanState; /* current state of the Doppler-scan */
+  DopplerSkyScanInit XLAL_INIT_DECL(scanInit); /* init-structure for DopperScanner */
+  DopplerSkyScanState XLAL_INIT_DECL(thisScan); /* current state of the Doppler-scan */
   const DopplerSkyGrid *skyGrid;
   UINT4 threeSiteCase = 0;
 

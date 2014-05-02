@@ -51,7 +51,6 @@
 //Global variables
 FILE *LOG = NULL, *ULFILE = NULL, *NORMRMSOUT = NULL;
 CHAR *earth_ephemeris = NULL, *sun_ephemeris = NULL, *sft_dir_file = NULL;
-static const LALStatus empty_status;
 
 //prototypes
 void readInFFdata(REAL4Vector *output, const CHAR *filename, inputParamsStruct *input);
@@ -61,7 +60,7 @@ int main(int argc, char *argv[])
 {
    
    INT4 ii, jj;               //counter variables
-   LALStatus status = empty_status;          //LALStatus structure
+   LALStatus XLAL_INIT_DECL(status);         //LALStatus structure
    char s[1000], t[1000], u[1000];   //Path and file name to LOG, ULFILE, and NORMRMSOUT
    time_t programstarttime, programendtime;
    struct tm *ptm;
@@ -188,8 +187,8 @@ int main(int argc, char *argv[])
       fprintf(LOG, "Sky file = %s\n", sky);
       fprintf(stderr, "Sky file = %s\n", sky);
    }
-   DopplerSkyScanInit scanInit = empty_DopplerSkyScanInit;
-   DopplerSkyScanState scan = empty_DopplerSkyScanState;
+   DopplerSkyScanInit XLAL_INIT_DECL(scanInit);
+   DopplerSkyScanState XLAL_INIT_DECL(scan);
    PulsarDopplerParams dopplerpos;
    if (args_info.skyRegion_given) {
       scanInit.gridType = GRID_ISOTROPIC;     //Default value for an approximate-isotropic grid
@@ -976,7 +975,7 @@ REAL4Vector * readInSFTs(inputParamsStruct *input, REAL8 *normalization)
 {
    
    INT4 ii, jj;
-   LALStatus status = empty_status;
+   LALStatus XLAL_INIT_DECL(status);
    SFTCatalog *catalog = NULL;
    
    //Set the start and end times in the LIGO GPS format
@@ -1112,7 +1111,7 @@ void slideTFdata(REAL4Vector *output, inputParamsStruct *input, REAL4Vector *tfd
 void tfRngMeans(REAL4Vector *output, REAL4Vector *tfdata, INT4 numffts, INT4 numfbins, INT4 blksize)
 {
    
-   LALStatus status = empty_status;
+  LALStatus XLAL_INIT_DECL(status);
    REAL8 bias;
    INT4 ii, jj;
    INT4 totalfbins = numfbins + blksize - 1;
@@ -1288,7 +1287,7 @@ void removeBadSFTs(REAL4Vector *tfdata, INT4Vector *badsfts)
 INT4Vector * detectLines_simple(REAL4Vector *TFdata, ffdataStruct *ffdata, inputParamsStruct *params)
 {
    
-   LALStatus status = empty_status;
+  LALStatus XLAL_INIT_DECL(status);
    
    INT4 blksize = 11, ii, jj;
    

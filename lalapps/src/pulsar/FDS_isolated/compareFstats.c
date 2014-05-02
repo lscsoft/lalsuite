@@ -29,6 +29,7 @@
 
 #include <lal/UserInput.h>
 #include <lal/LALConstants.h>
+#include <lal/PulsarDataTypes.h>
 
 // ----- defines & macros ----------
 #define TRUE (1==1)

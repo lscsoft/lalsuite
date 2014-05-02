@@ -96,12 +96,6 @@ typedef struct tagtransientCandidate_t {
   REAL8 tau_MP;				/**< maximum-posterior estimate for tau */
 } transientCandidate_t;
 
-/* empty struct initializers */
-extern const transientCandidate_t empty_transientCandidate;
-extern const transientWindow_t empty_transientWindow;
-extern const transientWindowRange_t empty_transientWindowRange;
-extern const transientFstatMap_t empty_transientFstatMap;
-
 /* ---------- exported API prototypes ---------- */
 int XLALParseTransientWindowName ( const char *windowName );
 

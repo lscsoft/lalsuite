@@ -86,12 +86,9 @@ int XLALCompareMultiSSBtimes ( REAL8 *err_DeltaT, REAL8 *err_Tdot, const MultiSS
 int
 main ( int argc, char *argv[] )
 {
-  LALStatus status;
-  UserInput_t uvar_s;
+  LALStatus XLAL_INIT_DECL(status);
+  UserInput_t XLAL_INIT_DECL(uvar_s);
   UserInput_t *uvar = &uvar_s;
-
-  XLAL_INIT_MEM ( status );
-  XLAL_INIT_MEM ( uvar_s );
 
   struct tms buf;
   uvar->randSeed = times(&buf);

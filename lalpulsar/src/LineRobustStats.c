@@ -33,9 +33,6 @@
 
 /*---------- Global variables ----------*/
 
-/* empty initializers  */
-const LVcomponents empty_LVcomponents;
-
 /*---------- internal prototypes ----------*/
 
 /*==================== FUNCTION DEFINITIONS ====================*/

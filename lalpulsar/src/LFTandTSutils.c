@@ -52,7 +52,7 @@
 #define GPS2REAL8(gps) (1.0 * (gps).gpsSeconds + 1.e-9 * (gps).gpsNanoSeconds )
 
 /*---------- Global variables ----------*/
-static LALUnit empty_LALUnit;
+static LALUnit emptyLALUnit;
 
 #define NUM_FACT 7
 static const REAL8 inv_fact[NUM_FACT] = { 1.0, 1.0, (1.0/2.0), (1.0/6.0), (1.0/24.0), (1.0/120.0), (1.0/720.0) };
@@ -151,7 +151,7 @@ XLALSFTVectorToLFT ( const SFTVector *sfts,	/**< input SFT vector */
     }
 
   /* ----- prepare long TimeSeries container ---------- */
-  if ( (lTS = XLALCreateCOMPLEX8TimeSeries ( firstSFT->name, &firstSFT->epoch, 0, deltaT, &empty_LALUnit, numTimeSamples )) == NULL )
+  if ( (lTS = XLALCreateCOMPLEX8TimeSeries ( firstSFT->name, &firstSFT->epoch, 0, deltaT, &emptyLALUnit, numTimeSamples )) == NULL )
     {
       XLALPrintError ("%s: XLALCreateCOMPLEX8TimeSeries() for %d timesteps failed! errno = %d!\n", __func__, numTimeSamples, xlalErrno );
       XLAL_ERROR_NULL ( XLAL_EFUNC );
@@ -159,7 +159,7 @@ XLALSFTVectorToLFT ( const SFTVector *sfts,	/**< input SFT vector */
   memset ( lTS->data->data, 0, numTimeSamples * sizeof(*lTS->data->data)); /* set all time-samples to zero */
 
   /* ----- Prepare short time-series holding ONE invFFT of a single SFT */
-  if ( (sTS = XLALCreateCOMPLEX8TimeSeries ( "short timeseries", &epoch, 0, deltaT, &empty_LALUnit, numBinsSFT )) == NULL )
+  if ( (sTS = XLALCreateCOMPLEX8TimeSeries ( "short timeseries", &epoch, 0, deltaT, &emptyLALUnit, numBinsSFT )) == NULL )
     {
       XLALPrintError ( "%s: XLALCreateCOMPLEX8TimeSeries() for %d timesteps failed! errno = %d!\n", __func__, numBinsSFT, xlalErrno );
       XLAL_ERROR_NULL ( XLAL_EFUNC );
@@ -408,14 +408,14 @@ XLALSFTVectorToCOMPLEX8TimeSeries ( SFTVector *sfts,                /**< [in/out
     }
 
   /* ----- Prepare short time-series holding ONE invFFT of a single SFT */
-  if ( (sTS = XLALCreateCOMPLEX8TimeSeries ( "short timeseries", &epoch, 0, deltaT, &empty_LALUnit, numBinsSFT )) == NULL )
+  if ( (sTS = XLALCreateCOMPLEX8TimeSeries ( "short timeseries", &epoch, 0, deltaT, &emptyLALUnit, numBinsSFT )) == NULL )
     {
       XLALPrintError ( "%s: XLALCreateCOMPLEX8TimeSeries() for %d timesteps failed! errno = %d!\n", __func__, numBinsSFT, xlalErrno );
       goto failed;
     }
 
   /* ----- prepare long TimeSeries container ---------- */
-  if ( (lTS = XLALCreateCOMPLEX8TimeSeries ( firstSFT->name, &start, fHet, deltaT, &empty_LALUnit, numTimeSamples )) == NULL )
+  if ( (lTS = XLALCreateCOMPLEX8TimeSeries ( firstSFT->name, &start, fHet, deltaT, &emptyLALUnit, numTimeSamples )) == NULL )
     {
       XLALPrintError ("%s: XLALCreateCOMPLEX8TimeSeries() for %d timesteps failed! errno = %d!\n", __func__, numTimeSamples, xlalErrno );
       goto failed;
@@ -799,11 +799,11 @@ int XLALAntennaWeightCOMPLEX8TimeSeries (
   UINT4 nbins = (UINT4)floor(0.5 + Tsft/deltaT);
 
   /* create empty timeseries structures for Fa(t) and Fb(t) */
-  if ( ((*Faoft) = XLALCreateCOMPLEX8TimeSeries ( sfts->data[0].name, &(timeseries->epoch), fHet, deltaT, &empty_LALUnit, numTimeSamples )) == NULL ) {
+  if ( ((*Faoft) = XLALCreateCOMPLEX8TimeSeries ( sfts->data[0].name, &(timeseries->epoch), fHet, deltaT, &emptyLALUnit, numTimeSamples )) == NULL ) {
     XLALPrintError ("%s: XLALCreateCOMPLEX8TimeSeries() for %d timesteps failed! errno = %d!\n", __func__, numTimeSamples, xlalErrno );
     XLAL_ERROR (XLAL_ENOMEM);
   }
-  if ( ((*Fboft) = XLALCreateCOMPLEX8TimeSeries ( sfts->data[0].name,&(timeseries->epoch) , fHet, deltaT, &empty_LALUnit, numTimeSamples )) == NULL ) {
+  if ( ((*Fboft) = XLALCreateCOMPLEX8TimeSeries ( sfts->data[0].name,&(timeseries->epoch) , fHet, deltaT, &emptyLALUnit, numTimeSamples )) == NULL ) {
     XLALPrintError ("%s: XLALCreateCOMPLEX8TimeSeries() for %d timesteps failed! errno = %d!\n", __func__, numTimeSamples, xlalErrno );
     XLAL_ERROR (XLAL_ENOMEM);
   }
@@ -1014,11 +1014,11 @@ int XLALBarycentricResampleMultiCOMPLEX8TimeSeries ( MultiCOMPLEX8TimeSeries **F
     COMPLEX8TimeSeries *Fb = Fboft->data[i];
 
     /* create empty timeseries structures for the resampled Fa(t) and Fb(t) */
-    if ( ((*Faoft_RS)->data[i] = XLALCreateCOMPLEX8TimeSeries ( Faoft->data[i]->name, &earliest, fHet, deltaT, &empty_LALUnit, numTimeSamples )) == NULL ) {
+    if ( ((*Faoft_RS)->data[i] = XLALCreateCOMPLEX8TimeSeries ( Faoft->data[i]->name, &earliest, fHet, deltaT, &emptyLALUnit, numTimeSamples )) == NULL ) {
       XLALPrintError ("%s: XLALCreateCOMPLEX8TimeSeries() for %d timesteps failed! errno = %d!\n", __func__, numTimeSamples, xlalErrno );
       XLAL_ERROR (XLAL_ENOMEM);
     }
-    if ( ((*Fboft_RS)->data[i] = XLALCreateCOMPLEX8TimeSeries ( Fboft->data[i]->name, &earliest , fHet, deltaT, &empty_LALUnit, numTimeSamples )) == NULL ) {
+    if ( ((*Fboft_RS)->data[i] = XLALCreateCOMPLEX8TimeSeries ( Fboft->data[i]->name, &earliest , fHet, deltaT, &emptyLALUnit, numTimeSamples )) == NULL ) {
       XLALPrintError ("%s: XLALCreateCOMPLEX8TimeSeries() for %d timesteps failed! errno = %d!\n", __func__, numTimeSamples, xlalErrno );
       XLAL_ERROR (XLAL_ENOMEM);
     }

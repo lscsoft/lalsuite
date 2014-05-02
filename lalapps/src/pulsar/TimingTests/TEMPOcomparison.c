@@ -215,12 +215,8 @@ typedef struct
   REAL8 fracdays;  /* fractional day */
 } MJDTime;
 
-/*---------- empty structs for initializations ----------*/
-UserVariables_t empty_UserVariables;
 /* ---------- global variables ----------*/
-
 extern int vrbflg;
-
 
 /* ---------- local prototypes ---------- */
 void initUserVars (LALStatus *status, int argc, char *argv[], UserVariables_t *uvar);
@@ -244,9 +240,9 @@ int
 main(int argc, char *argv[]){
 
   static LALStatus       status;  /* LALStatus pointer */
-  UserVariables_t uvar = empty_UserVariables;
+  UserVariables_t XLAL_INIT_DECL(uvar);
   FILE *fp = NULL;
-  BarycenterInput baryinput = empty_BarycenterInput;
+  BarycenterInput XLAL_INIT_DECL(baryinput);
   REAL8 alpha, delta;
   INT4 leap0,leap;
   LIGOTimeGPS epoch;

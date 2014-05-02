@@ -77,10 +77,6 @@ int diffEmissionTime  ( EmissionTime  *diff, const EmissionTime *emit1, const Em
 int absmaxEmissionTime ( EmissionTime *absmax, const EmissionTime *demit1, const EmissionTime *demit2 );
 REAL8 maxErrInEmissionTime ( const EmissionTime *demit );
 
-
-// empty local initializers
-static const EmissionTime empty_EmissionTime;
-
 const INT4 t2000 = 630720013; 		/* gps time at Jan 1, 2000 00:00:00 UTC */
 const INT4 t1998 = 630720013-730*86400-1;	/* gps at Jan 1,1998 00:00:00 UTC*/
 
@@ -156,7 +152,7 @@ main( void )
   LALDetector cachedDetector;
   cachedDetector = lalCachedDetectors[LALDetectorIndexGEO600DIFF];
 
-  BarycenterInput baryinput = empty_BarycenterInput;
+  BarycenterInput XLAL_INIT_DECL(baryinput);
   baryinput.site.location[0]=cachedDetector.location[0]/LAL_C_SI;
   baryinput.site.location[1]=cachedDetector.location[1]/LAL_C_SI;
   baryinput.site.location[2]=cachedDetector.location[2]/LAL_C_SI;
@@ -194,8 +190,8 @@ main( void )
   }
 
   /* ---------- Now running program w/o errors, to illustrate proper use. ---------- */
-  EmissionTime maxDiff 		= empty_EmissionTime;
-  EmissionTime maxDiffOpt	= empty_EmissionTime;
+  EmissionTime XLAL_INIT_DECL(maxDiff);
+  EmissionTime XLAL_INIT_DECL(maxDiffOpt);
   REAL8 tic, toc;
   UINT4 NRepeat = 1;
   UINT4 counter = 0;

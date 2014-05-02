@@ -92,9 +92,9 @@ int
 main(int argc, char *argv[])
 {
   LALStatus status = blank_status;	/* initialize status */
-  SFTConstraints constraints = empty_SFTConstraints;
-  LIGOTimeGPS minStartTimeGPS = empty_LIGOTimeGPS;
-  LIGOTimeGPS maxStartTimeGPS = empty_LIGOTimeGPS;
+  SFTConstraints XLAL_INIT_DECL(constraints);
+  LIGOTimeGPS XLAL_INIT_DECL(minStartTimeGPS);
+  LIGOTimeGPS XLAL_INIT_DECL(maxStartTimeGPS);
   SFTCatalog *FullCatalog = NULL;
   CHAR *add_comment = NULL;
   UINT4 i;

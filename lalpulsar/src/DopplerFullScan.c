@@ -65,7 +65,6 @@ typedef struct tagREAL8VectorList
   struct tagREAL8VectorList *next;
   struct tagREAL8VectorList *prev;
 } REAL8VectorList;
-REAL8VectorList empty_REAL8VectorList;
 
 /** ----- internal [opaque] type to store the state of a FULL multidimensional grid-scan ----- */
 struct tagDopplerFullScanState {
@@ -89,11 +88,6 @@ struct tagDopplerFullScanState {
   factoredGridScan_t *factoredScan;	/**< only used to emulate FACTORED grids sky x Freq x f1dot */
 
 } /* struct DopplerFullScanState */;
-
-
-/*---------- empty initializers ---------- */
-/* some empty structs for initializations */
-const DopplerFullScanState empty_DopplerFullScanState;
 
 /*---------- internal prototypes ----------*/
 void initFactoredGrid (LALStatus *, DopplerFullScanState *scan,	const DopplerFullScanInit *init);
@@ -194,7 +188,7 @@ InitDopplerFullScan(LALStatus *status,			/**< pointer to LALStatus structure */
       {
 
 	int i;
-	SkyRegion sky = empty_SkyRegion;
+	SkyRegion XLAL_INIT_DECL(sky);
 
 	/* Check that the reference time is the same as the start time */
 	if (XLALGPSCmp(&thisScan->spinRange.refTime, &init->startTime) != 0) {
@@ -351,7 +345,7 @@ initFactoredGrid (LALStatus *status,				/**< pointer to LALStatus structure */
 		  const DopplerFullScanInit *init		/**< [in] initialization parameters */
 		  )
 {
-  DopplerSkyScanInit skyScanInit = empty_DopplerSkyScanInit;
+  DopplerSkyScanInit XLAL_INIT_DECL(skyScanInit);
   SkyPosition skypos;
   factoredGridScan_t *fscan = NULL;
   UINT4 i;
@@ -592,7 +586,7 @@ XLALNextDopplerPos(PulsarDopplerParams *pos, DopplerFullScanState *scan)
 int
 nextPointInFactoredGrid (PulsarDopplerParams *pos, DopplerFullScanState *scan)
 {
-  PulsarDopplerParams nextPos = empty_PulsarDopplerParams;
+  PulsarDopplerParams XLAL_INIT_DECL(nextPos);
   factoredGridScan_t *fscan;
   PulsarSpinRange *range;
   PulsarSpins fkdotMax;
@@ -790,7 +784,7 @@ loadFullGridFile ( LALStatus *status,
 		   const DopplerFullScanInit *init
 		   )
 {
-  REAL8VectorList head = empty_REAL8VectorList;
+  REAL8VectorList XLAL_INIT_DECL(head);
   REAL8VectorList *tail = NULL;
   REAL8Vector *entry = NULL;
   UINT4 numTemplates;

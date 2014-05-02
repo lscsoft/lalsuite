@@ -134,12 +134,6 @@ static int ComputeFstat_Demod ( FstatResults* Fstats, const FstatInput_Common *c
 
 static void XLALEmptyComputeFBuffer ( ComputeFBuffer *cfb);
 
-// ----- empty initializers ----------
-static const Fcomponents empty_Fcomponents;
-static const ComputeFParams empty_ComputeFParams;
-static const ComputeFBuffer empty_ComputeFBuffer;
-
-
 // ----- function definitions ----------
 /* Destruction of a ComputeFBuffer *contents*,
  * i.e. the multiSSB and multiAMcoeff, while the
@@ -191,7 +185,7 @@ ComputeFStat ( Fcomponents *Fstat,                              /* [out] Fstatis
   XLAL_CHECK ( multiDetStates->length == numDetectors, XLAL_EINVAL );
   XLAL_CHECK ( multiWeights==NULL || (multiWeights->length == numDetectors), XLAL_EINVAL );
 
-  Fcomponents retF = empty_Fcomponents;
+  Fcomponents XLAL_INIT_DECL(retF);
   MultiSSBtimes *multiSSB = NULL;
   MultiSSBtimes *multiBinary = NULL;
   const MultiSSBtimes *multiSSBTotal = NULL;
@@ -266,7 +260,7 @@ ComputeFStat ( Fcomponents *Fstat,                              /* [out] Fstatis
   /* ----- loop over detectors and compute all detector-specific quantities ----- */
   for ( UINT4 X=0; X < numDetectors; X ++)
     {
-      Fcomponents FcX = empty_Fcomponents;      /* for detector-specific FaX, FbX */
+      Fcomponents XLAL_INIT_DECL(FcX);      /* for detector-specific FaX, FbX */
 
       if ( (params->Dterms != DTERMS) || params->returnAtoms ) {
         XLAL_CHECK ( XLALComputeFaFb      (&FcX, multiSFTs->data[X], doppler->fkdot, multiSSBTotal->data[X], multiAMcoef->data[X], params) == XLAL_SUCCESS, XLAL_EFUNC );

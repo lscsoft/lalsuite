@@ -198,7 +198,7 @@ typedef struct {
   scanlineWindow_t *scanlineWindow;         /**< moving window of candidates on scanline to find local maxima */
 } ConfigVariables;
 
-LALUnit empty_Unit;
+LALUnit emptyUnit;
 
 /*---------- Global variables ----------*/
 extern UINT4 vrbflg;		/**< defined in lalapps.c */
@@ -398,12 +398,6 @@ void XLALDestroyScanlineWindow ( scanlineWindow_t *scanlineWindow );
 int XLALAdvanceScanlineWindow ( const FstatCandidate *nextCand, scanlineWindow_t *scanWindow );
 BOOLEAN XLALCenterIsLocalMax ( const scanlineWindow_t *scanWindow );
 
-
-/*---------- empty initializers ---------- */
-static const ConfigVariables empty_ConfigVariables;
-static const FstatCandidate empty_FstatCandidate;
-static const ReSampBuffer empty_ReSampBuffer;
-
 /*----------------------------------------------------------------------*/
 /* Function definitions start here */
 /*----------------------------------------------------------------------*/
@@ -420,14 +414,15 @@ int main(int argc,char *argv[])
 
   FILE *fpFstat = NULL;
   FILE *fpTSeries = NULL;
-  ReSampBuffer Buffer = empty_ReSampBuffer;
+  ReSampBuffer XLAL_INIT_DECL(Buffer);
   REAL8 numTemplates, templateCounter;
   REAL8 tickCounter;
   time_t clock0;
-  PulsarDopplerParams dopplerpos = empty_PulsarDopplerParams;		/* current search-parameters */
-  FstatCandidate loudestFCand = empty_FstatCandidate, thisFCand = empty_FstatCandidate;
+  PulsarDopplerParams XLAL_INIT_DECL(dopplerpos);		/* current search-parameters */
+  FstatCandidate XLAL_INIT_DECL(loudestFCand);
+  FstatCandidate XLAL_INIT_DECL(thisFCand);
   UINT4 k;
-  ConfigVariables GV = empty_ConfigVariables;		/**< global container for various derived configuration settings */
+  ConfigVariables XLAL_INIT_DECL(GV);		/**< global container for various derived configuration settings */
   REAL8FrequencySeries *fstatVector = Buffer.fstatVector;
   Resamp_Variables Vars;
   gsl_vector_int *Fstat_histogram = NULL;
@@ -677,7 +672,7 @@ int main(int argc,char *argv[])
   if ( uvar_outputLoudest )
     {
       FILE *fpLoudest;
-      PulsarCandidate pulsarParams = empty_PulsarCandidate;
+      PulsarCandidate XLAL_INIT_DECL(pulsarParams);
       pulsarParams.Doppler = loudestFCand.doppler;
 
       // deactivated the following call, which is defunct: this function requires {Fa,Fb} in loudestFCand.Fstat, but this is not
@@ -921,10 +916,10 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg )
 {
   REAL8 fCoverMin, fCoverMax;	/* covering frequency-band to read from SFTs */
   SFTCatalog *catalog = NULL;
-  SFTConstraints constraints = empty_SFTConstraints;
-  LIGOTimeGPS minStartTimeGPS = empty_LIGOTimeGPS;
-  LIGOTimeGPS maxStartTimeGPS = empty_LIGOTimeGPS;
-  PulsarSpinRange spinRangeRef = empty_PulsarSpinRange;
+  SFTConstraints XLAL_INIT_DECL(constraints);
+  LIGOTimeGPS XLAL_INIT_DECL(minStartTimeGPS);
+  LIGOTimeGPS XLAL_INIT_DECL(maxStartTimeGPS);
+  PulsarSpinRange XLAL_INIT_DECL(spinRangeRef);
 
   UINT4 numSFTs;
   LIGOTimeGPS startTime, endTime;
@@ -1112,8 +1107,8 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg )
   }
  
   { /* ----- set up Doppler region (at internalRefTime) to scan ----- */
-    LIGOTimeGPS internalRefTime = empty_LIGOTimeGPS;
-    PulsarSpinRange spinRangeInt = empty_PulsarSpinRange;
+    LIGOTimeGPS XLAL_INIT_DECL(internalRefTime);
+    PulsarSpinRange XLAL_INIT_DECL(spinRangeInt);
     BOOLEAN haveAlphaDelta = (LALUserVarWasSet(&uvar_Alpha) && LALUserVarWasSet(&uvar_Delta)) || (LALUserVarWasSet(&uvar_RA) && LALUserVarWasSet(&uvar_Dec));
 
     /* define sky position variables from user input */
@@ -2666,7 +2661,7 @@ void ComputeFStat_resamp(LALStatus *status, const PulsarDopplerParams *doppler, 
       UINT4 numFreqBins = floor(uvar_FreqBand/dF_closest + 0.5);
       if(Buffer->fstatVector)
 	XLALDestroyREAL8FrequencySeries(Buffer->fstatVector);
-      fstatVector = XLALCreateREAL8FrequencySeries ("Fstat vector", &doppler->refTime, doppler->fkdot[0], dF_closest, &empty_Unit, numFreqBins );
+      fstatVector = XLALCreateREAL8FrequencySeries ("Fstat vector", &doppler->refTime, doppler->fkdot[0], dF_closest, &emptyUnit, numFreqBins );
       Buffer->fstatVector = fstatVector;
     }
       

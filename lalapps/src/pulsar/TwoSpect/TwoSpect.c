@@ -54,15 +54,13 @@
 //Global variables
 FILE *LOG = NULL, *NORMRMSOUT = NULL;
 CHAR *sft_dir_file = NULL;
-static const LALStatus empty_status;
-static const SFTConstraints empty_constraints;
 
 //Main program
 int main(int argc, char *argv[])
 {
 
    INT4 ii, jj;               //counter variables
-   LALStatus status = empty_status;  //LALStatus structure
+   LALStatus XLAL_INIT_DECL(status);
    char s[1000], t[1000], u[1000];   //Path and file name to LOG, ULFILE, and NORMRMSOUT
    time_t programstarttime, programendtime;
    struct tm *ptm;
@@ -147,8 +145,8 @@ int main(int argc, char *argv[])
       fprintf(stderr, "%s: You must choose either the the sky region (point or polygon) *or* a file.\n", __func__);
       XLAL_ERROR(XLAL_EINVAL);
    }
-   DopplerSkyScanInit scanInit = empty_DopplerSkyScanInit;
-   DopplerSkyScanState scan = empty_DopplerSkyScanState;
+   DopplerSkyScanInit XLAL_INIT_DECL(scanInit);
+   DopplerSkyScanState XLAL_INIT_DECL(scan);
    PulsarDopplerParams dopplerpos;
    if (args_info.skyRegion_given) {
       scanInit.gridType = GRID_ISOTROPIC;     //Default value for an approximate-isotropic grid
@@ -276,7 +274,7 @@ int main(int argc, char *argv[])
             DataParams.multiNoiseFloor.sqrtSn[0] = args_info.avesqrtSh_arg;
             XLAL_CHECK( XLALCWMakeFakeMultiData(&sftvector, NULL, NULL, &DataParams, edat) == XLAL_SUCCESS, XLAL_EFUNC );
          } else {
-            SFTConstraints constraints = empty_constraints;
+           SFTConstraints XLAL_INIT_DECL(constraints);
             constraints.detector = inputParams->det[0].frDetector.prefix;
             constraints.timestamps = multiTimestamps->data[0];
             SFTCatalog *catalog = NULL;
@@ -1170,7 +1168,7 @@ SFTCatalog * findSFTdata(inputParamsStruct *input)
    XLAL_CHECK_NULL( xlalErrno == 0, XLAL_EFUNC );
 
    //Setup the constraints
-   SFTConstraints constraints = empty_constraints;
+   SFTConstraints XLAL_INIT_DECL(constraints);
    constraints.detector = input->det[0].frDetector.prefix;
    constraints.minStartTime = &start;
    constraints.maxStartTime = &end;
@@ -1276,7 +1274,7 @@ REAL4Vector * readInSFTs(inputParamsStruct *input, REAL8 *normalization)
    XLAL_CHECK_NULL( xlalErrno == 0, XLAL_EFUNC );
 
    //Setup the constraints
-   SFTConstraints constraints = empty_constraints;
+   SFTConstraints XLAL_INIT_DECL(constraints);
    constraints.detector = input->det[0].frDetector.prefix;
    constraints.minStartTime = &start;
    constraints.maxStartTime = &end;
@@ -1355,7 +1353,7 @@ REAL4VectorSequence * readInMultiSFTs(inputParamsStruct *input, REAL8 *normaliza
 {
 
    INT4 ii, jj, kk;
-   LALStatus status = empty_status;
+   LALStatus XLAL_INIT_DECL(status);
    SFTCatalog *catalog = NULL;
 
    LIGOTimeGPS start = LIGOTIMEGPSZERO, end = LIGOTIMEGPSZERO;
@@ -1370,7 +1368,7 @@ REAL4VectorSequence * readInMultiSFTs(inputParamsStruct *input, REAL8 *normaliza
       XLAL_ERROR_NULL(XLAL_EFUNC);
    }
 
-   SFTConstraints constraints = empty_constraints;
+   SFTConstraints XLAL_INIT_DECL(constraints);
    constraints.minStartTime = &start;
    constraints.maxStartTime = &end;
 
@@ -1597,7 +1595,7 @@ INT4 slideTFdata(REAL4Vector *output, inputParamsStruct *input, REAL4Vector *tfd
 INT4 tfRngMeans(REAL4Vector *output, REAL4Vector *tfdata, INT4 numffts, INT4 numfbins, INT4 blksize)
 {
 
-   LALStatus status = empty_status;
+  LALStatus XLAL_INIT_DECL(status);
    REAL8 bias;
    INT4 ii, jj;
    INT4 totalfbins = numfbins + blksize - 1;
@@ -1656,7 +1654,7 @@ INT4 tfRngMeans(REAL4Vector *output, REAL4Vector *tfdata, INT4 numffts, INT4 num
 void multiTFRngMeans(REAL4VectorSequence *output, REAL4VectorSequence *multiTFdata, INT4 numffts, INT4 numfbins, INT4 blksize)
 {
 
-   LALStatus status = empty_status;
+  LALStatus XLAL_INIT_DECL(status);
    REAL8 bias;
    INT4 ii, jj, kk;
    INT4 totalfbins = numfbins + blksize - 1;
@@ -1912,7 +1910,7 @@ void removeBadMultiSFTs(REAL4VectorSequence *multiTFdata, INT4VectorSequence *ba
 INT4Vector * detectLines_simple(REAL4Vector *TFdata, ffdataStruct *ffdata, inputParamsStruct *params)
 {
 
-   LALStatus status = empty_status;
+  LALStatus XLAL_INIT_DECL(status);
 
    INT4 blksize = 11, ii, jj;
 

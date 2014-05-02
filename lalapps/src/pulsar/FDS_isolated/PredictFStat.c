@@ -143,8 +143,6 @@ typedef struct {
 
 } UserInput_t;
 
-static UserInput_t empty_UserInput;
-
 /* ---------- local prototypes ---------- */
 int main(int argc,char *argv[]);
 
@@ -166,7 +164,7 @@ int main(int argc,char *argv[])
   LALStatus status = blank_status;	/* initialize status */
   REAL8 rho2;	/* SNR^2 */
 
-  UserInput_t uvar = empty_UserInput;
+  UserInput_t XLAL_INIT_DECL(uvar);
   CHAR *VCSInfoString;          /**< LAL + LALapps Git version string */
 
   vrbflg = 1;	/* verbose error-messages */
@@ -351,7 +349,7 @@ InitPFS ( LALStatus *status, ConfigVariables *cfg, const UserInput_t *uvar )
   static const char *fn = "InitPFS()";
 
   SFTCatalog *catalog = NULL;
-  SFTConstraints constraints = empty_SFTConstraints;
+  SFTConstraints XLAL_INIT_DECL(constraints);
   SkyPosition skypos;
 
   LIGOTimeGPS minStartTimeGPS, maxStartTimeGPS;

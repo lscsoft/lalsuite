@@ -125,11 +125,6 @@ typedef struct
   DopplerRegion searchRegion;	/**< Doppler parameter-space to search */
 } ConfigVariables;
 
-
-/*---------- empty structs for initializations ----------*/
-static const UserVariables_t empty_UserVariables;
-static const ConfigVariables empty_ConfigVariables;
-
 /* ---------- local prototypes ---------- */
 void initUserVars (LALStatus *, UserVariables_t *uvar);
 
@@ -148,10 +143,10 @@ int
 main(int argc, char *argv[])
 {
   LALStatus status = blank_status;
-  ConfigVariables config = empty_ConfigVariables;
-  UserVariables_t uvar = empty_UserVariables;
-  DopplerSkyScanInit scanInit = empty_DopplerSkyScanInit; /* init-structure for DopperScanner */
-  DopplerSkyScanState thisScan = empty_DopplerSkyScanState; /* current state of the Doppler-scan */
+  ConfigVariables XLAL_INIT_DECL(config);
+  UserVariables_t XLAL_INIT_DECL(uvar);
+  DopplerSkyScanInit XLAL_INIT_DECL(scanInit);
+  DopplerSkyScanState XLAL_INIT_DECL(thisScan);
   UINT4 nFreq, nf1dot;
 
   vrbflg = 1;	/* verbose error-messages */
@@ -193,7 +188,7 @@ main(int argc, char *argv[])
   scanInit.partitionIndex = uvar.partitionIndex;
 
   /* figure out searchRegion from UserInput and possibly --searchNeighbors */
-  config.searchRegion = empty_DopplerRegion;	/* set to empty first */
+  XLAL_INIT_MEM(config.searchRegion);	/* set to empty first */
   LAL_CALL ( getSearchRegion(&status, &(config.searchRegion), &scanInit, &uvar ), &status);
   scanInit.skyRegionString = config.searchRegion.skyRegionString;
   scanInit.Freq = config.searchRegion.fkdot[0] + config.searchRegion.fkdotBand[0];
@@ -576,7 +571,7 @@ getSearchRegion (LALStatus *status,		/**< pointer to LALStatus structure */
 		 )
 {
 
-  DopplerRegion ret = empty_DopplerRegion;
+  DopplerRegion XLAL_INIT_DECL(ret);
 
   INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
@@ -612,8 +607,8 @@ getSearchRegion (LALStatus *status,		/**< pointer to LALStatus structure */
    */
   if ( LALUserVarWasSet(&uvar->searchNeighbors) )
     {
-      DopplerRegion cube = empty_DopplerRegion;
-      PulsarDopplerParams signal_params = empty_PulsarDopplerParams;
+      DopplerRegion XLAL_INIT_DECL(cube);
+      PulsarDopplerParams XLAL_INIT_DECL(signal_params);
 
       signal_params.Alpha = uvar->Alpha;
       signal_params.Delta = uvar->Delta;

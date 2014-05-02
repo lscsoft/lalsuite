@@ -194,11 +194,11 @@ int MAIN( int argc, char *argv[]) {
   LIGOTimeGPSVector *endTstack = NULL;
 
   /* General GPS times */
-  LIGOTimeGPS refTimeGPS = empty_LIGOTimeGPS;
-  LIGOTimeGPS tMidGPS = empty_LIGOTimeGPS;
+  LIGOTimeGPS XLAL_INIT_DECL(refTimeGPS);
+  LIGOTimeGPS XLAL_INIT_DECL(tMidGPS);
 
   /* GPS time used for each segment's midpoint */
-  LIGOTimeGPS midTstackGPS = empty_LIGOTimeGPS;
+  LIGOTimeGPS XLAL_INIT_DECL(midTstackGPS);
   REAL8 timeDiffSeg; /* Difference to tMidGPS (midpoint) of Tobs */
 
   /* pos, vel, acc at midpoint of segments */
@@ -280,7 +280,7 @@ int MAIN( int argc, char *argv[]) {
 
   /* template and grid variables */
   static DopplerSkyScanInit scanInit;   /* init-structure for DopperScanner */
-  DopplerSkyScanState thisScan = empty_DopplerSkyScanState; /* current state of the Doppler-scan */
+  DopplerSkyScanState XLAL_INIT_DECL(thisScan); /* current state of the Doppler-scan */
   static PulsarDopplerParams dopplerpos;               /* current search-parameters */
   static PulsarDopplerParams thisPoint;
   UINT4 oldcg=0, oldfg=0;

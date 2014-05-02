@@ -125,18 +125,6 @@ typedef struct {
 } SFTReadSegment;
 
 /*---------- Global variables ----------*/
-/* empty struct initializers */
-static LALStatus empty_status;
-const SFTConstraints empty_SFTConstraints;
-const SFTCatalog empty_SFTCatalog;
-const SFTtype empty_SFTtype;
-const SFTVector empty_SFTVector;
-const MultiSFTVector empty_MultiSFTVector;
-const MultiREAL4TimeSeries empty_MultiREAL4TimeSeries;
-const LIGOTimeGPSVector empty_LIGOTimeGPSVector;
-const MultiLIGOTimeGPSVector empty_MultiLIGOTimeGPSVector;
-
-
 static REAL8 fudge_up   = 1 + 10 * LAL_REAL8_EPS;	// about ~1 + 2e-15
 static REAL8 fudge_down = 1 - 10 * LAL_REAL8_EPS;	// about ~1 - 2e-15
 
@@ -463,7 +451,7 @@ XLALSFTdataFind ( const CHAR *file_pattern,		/**< which SFT-files */
 
     } /* if constraints->timestamps */
 
-  SFTtype first_header = empty_SFTtype;
+  SFTtype XLAL_INIT_DECL(first_header);
   /* have all matched SFTs identical dFreq values ? */
   for ( UINT4 i = 0; i < ret->length; i ++ )
     {
@@ -1999,7 +1987,7 @@ consistent_mSFT_header ( SFTtype header1, UINT4 version1, UINT4 nsamples1, SFTty
 static int
 read_sft_header_from_fp (FILE *fp, SFTtype *header, UINT4 *version, UINT8 *crc64, BOOLEAN *swapEndian, CHAR **SFTcomment, UINT4 *numBins )
 {
-  SFTtype head = empty_SFTtype;
+  SFTtype XLAL_INIT_DECL(head);
   UINT4 nsamples;
   CHAR *comm = NULL;
   UINT8 ref_crc = 0;
@@ -2032,7 +2020,7 @@ read_sft_header_from_fp (FILE *fp, SFTtype *header, UINT4 *version, UINT8 *crc64
 
 
   /* read this SFT-header with version-specific code */
-  head = empty_SFTtype;
+  XLAL_INIT_MEM(head);
 
   switch( ver )
     {

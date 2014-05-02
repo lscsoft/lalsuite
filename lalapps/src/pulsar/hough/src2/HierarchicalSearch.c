@@ -297,8 +297,8 @@ int MAIN( int argc, char *argv[]) {
   LIGOTimeGPSVector *startTstack=NULL;
 
 
-  LIGOTimeGPS refTimeGPS = empty_LIGOTimeGPS;
-  LIGOTimeGPS tMidGPS = empty_LIGOTimeGPS;
+  LIGOTimeGPS XLAL_INIT_DECL(refTimeGPS);
+  LIGOTimeGPS XLAL_INIT_DECL(tMidGPS);
   REAL8 tObs;
 
   /* velocities and positions at midTstack */
@@ -343,7 +343,7 @@ int MAIN( int argc, char *argv[]) {
 
   /* template and grid variables */
   static DopplerSkyScanInit scanInit;   /* init-structure for DopperScanner */
-  DopplerSkyScanState thisScan = empty_DopplerSkyScanState; /* current state of the Doppler-scan */
+  DopplerSkyScanState XLAL_INIT_DECL(thisScan);
   static PulsarDopplerParams dopplerpos;	       /* current search-parameters */
   static PulsarDopplerParams thisPoint;
 

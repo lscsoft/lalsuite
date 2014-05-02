@@ -26,8 +26,6 @@
 #include "cmdline_skygridsetup.h"
 #include "../antenna.h"
 
-static const LALStatus empty_status;
-
 //Main program
 int main(int argc, char *argv[])
 {
@@ -35,7 +33,7 @@ int main(int argc, char *argv[])
    FILE *OUTPUT;
    char s[20000];
    LALDetector det;
-   LALStatus status = empty_status;  //LALStatus structure
+   LALStatus XLAL_INIT_DECL(status);
    
    struct gengetopt_args_info args_info;
    struct cmdline_parser_params *configparams;
@@ -75,8 +73,8 @@ int main(int argc, char *argv[])
    
    //Parameters for the sky-grid
    fprintf(stderr, "Sky region = %s\n", args_info.skyRegion_arg);
-   DopplerSkyScanInit scanInit = empty_DopplerSkyScanInit;
-   DopplerSkyScanState scan = empty_DopplerSkyScanState;
+   DopplerSkyScanInit XLAL_INIT_DECL(scanInit);
+   DopplerSkyScanState XLAL_INIT_DECL(scan);
    PulsarDopplerParams dopplerpos;
    scanInit.gridType = GRID_ISOTROPIC;     //Default value for an approximate-isotropic grid
    scanInit.skyRegionString = args_info.skyRegion_arg;      //"allsky" = Default value for all-sky search

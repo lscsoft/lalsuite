@@ -47,7 +47,6 @@ INT4 qsort_REAL4_compar(const void *a, const void *b);
 
 //Global variables
 CHAR *earth_ephemeris = NULL, *sun_ephemeris = NULL, *sft_dir_file = NULL;
-static const LALStatus empty_status;
 
 //Main program
 int main(int argc, char *argv[])

@@ -92,11 +92,6 @@ typedef struct
 
 } UserVariables_t;
 
-
-/*---------- empty structs for initializations ----------*/
-static ConfigVariables empty_ConfigVariables;
-static UserVariables_t empty_UserVariables;
-
 /* ---------- global variables ----------*/
 extern int vrbflg;
 
@@ -113,9 +108,8 @@ int
 main(int argc, char *argv[])
 {
 
-  ConfigVariables config = empty_ConfigVariables;
-  UserVariables_t uvar = empty_UserVariables;
-
+  ConfigVariables XLAL_INIT_DECL(config);
+  UserVariables_t XLAL_INIT_DECL(uvar);
 
   /* register user-variables */
 

@@ -146,14 +146,8 @@ typedef struct
   LALSeg dataSegment;		/**< the data-segment for which PSD was computed */
 } ConfigVariables_t;
 
-
-/*---------- empty structs for initializations ----------*/
-UserVariables_t empty_UserVariables;
-ConfigVariables_t empty_ConfigVariables;
 /* ---------- global variables ----------*/
-
 extern int vrbflg;
-
 
 /* ---------- local prototypes ---------- */
 int initUserVars (int argc, char *argv[], UserVariables_t *uvar);
@@ -173,8 +167,8 @@ int
 main(int argc, char *argv[])
 {
   static LALStatus       status;  /* LALStatus pointer */
-  UserVariables_t uvar = empty_UserVariables;
-  ConfigVariables_t cfg = empty_ConfigVariables;
+  UserVariables_t XLAL_INIT_DECL(uvar);
+  ConfigVariables_t XLAL_INIT_DECL(cfg);
 
   UINT4 k, numBins, numIFOs, maxNumSFTs, X, alpha;
   REAL8 Freq0, dFreq, normPSD;
@@ -963,7 +957,7 @@ XLALReadSFTs ( ConfigVariables_t *cfg,		/**< [out] return derived configuration 
                )
 {
   SFTCatalog *catalog = NULL;
-  SFTConstraints constraints = empty_SFTConstraints;
+  SFTConstraints XLAL_INIT_DECL(constraints);
   LIGOTimeGPS startTimeGPS = {0,0}, endTimeGPS = {0,0};
   LIGOTimeGPSVector *inputTimeStampsVector = NULL;
 

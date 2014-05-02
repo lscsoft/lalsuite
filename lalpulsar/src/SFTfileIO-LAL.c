@@ -693,7 +693,7 @@ LALCheckSFTs ( LALStatus *status,			/**< pointer to LALStatus structure */
 	       SFTConstraints *constraints   /**< additional constraints for SFT-selection */
 	       )
 {
-  LALStatus sft_status = empty_status;
+  LALStatus XLAL_INIT_DECL(sft_status);
   SFTCatalog *catalog = NULL;
 
   INITSTATUS(status);

@@ -58,9 +58,6 @@ typedef struct {
   REAL8 Tspan;
 } cov_params_t;
 
-/*---------- empty initializers ---------- */
-LALStatus empty_status;
-
 /*---------- Global variables ----------*/
 
 
@@ -161,7 +158,7 @@ Phi_i ( double tt, void *params )
 
   if ( par->comp < 0 )	  /* rX, rY */
     {
-      LALStatus status = empty_status;
+      LALStatus XLAL_INIT_DECL(status);
       EarthState earth;
       LIGOTimeGPS tGPS;
       REAL8 rX, rY;

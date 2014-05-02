@@ -91,10 +91,6 @@ typedef struct tagMultiNoiseWeights {
 } MultiNoiseWeights;
 
 /*---------- Global variables ----------*/
-/* empty init-structs for the types defined in here */
-extern const PSDVector empty_PSDVector;
-extern const MultiPSDVector empty_MultiPSDVector;
-extern const MultiNoiseWeights empty_MultiNoiseWeights;
 
 /*---------- exported prototypes [API] ----------*/
 /* ----------------------------------------------------------------------

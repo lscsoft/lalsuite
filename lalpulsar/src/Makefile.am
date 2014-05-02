@@ -113,7 +113,6 @@ liblalpulsar_la_SOURCES = \
 	PtoleMetric.c \
 	PulsarCrossCorr.c \
 	PulsarCrossCorr_v2.c \
-	PulsarDataTypes.c \
 	PulsarSimulateCoherentGW.c \
 	SFTClean.c \
 	SFTfileIO.c \

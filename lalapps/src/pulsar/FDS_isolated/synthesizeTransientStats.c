@@ -167,10 +167,6 @@ int XLALInitAmplitudePrior ( AmplitudePrior_t *AmpPrior, const UserInput_t *uvar
 /*---------- Global variables ----------*/
 extern int vrbflg;		/**< defined in lalapps.c */
 
-/*---------- empty initializers ---------- */
-ConfigVariables empty_ConfigVariables;
-UserInput_t empty_UserInput;
-
 /*----------------------------------------------------------------------*/
 /* Main Function starts here */
 /*----------------------------------------------------------------------*/
@@ -180,8 +176,8 @@ UserInput_t empty_UserInput;
  */
 int main(int argc,char *argv[])
 {
-  UserInput_t uvar = empty_UserInput;
-  ConfigVariables cfg = empty_ConfigVariables;		/**< various derived configuration settings */
+  UserInput_t XLAL_INIT_DECL(uvar);
+  ConfigVariables XLAL_INIT_DECL(cfg);		/**< various derived configuration settings */
 
   vrbflg = 1;	/* verbose error-messages */
   LogSetLevel(lalDebugLevel);
@@ -255,12 +251,12 @@ int main(int argc,char *argv[])
     } /* if outputInjParams */
 
   /* ----- main MC loop over numDraws trials ---------- */
-  multiAMBuffer_t multiAMBuffer = empty_multiAMBuffer;	  /* prepare AM-buffer */
+  multiAMBuffer_t XLAL_INIT_DECL(multiAMBuffer);	  /* prepare AM-buffer */
   INT4 i;
 
   for ( i=0; i < uvar.numDraws; i ++ )
     {
-      InjParams_t injParamsDrawn = empty_InjParams_t;
+      InjParams_t XLAL_INIT_DECL(injParamsDrawn);
 
       /* ----- generate signal random draws from ranges and generate Fstat atoms */
       MultiFstatAtomVector *multiAtoms;
@@ -277,7 +273,7 @@ int main(int argc,char *argv[])
 
 
       /* ----- add meta-info on current transient-CW candidate */
-      transientCandidate_t cand = empty_transientCandidate;
+      transientCandidate_t XLAL_INIT_DECL(cand);
       cand.doppler.Alpha = multiAMBuffer.skypos.longitude;
       cand.doppler.Delta = multiAMBuffer.skypos.latitude;
       cand.windowRange   = cfg.transientSearchRange;
@@ -342,7 +338,7 @@ int main(int argc,char *argv[])
         {
           transientFstatMap_t *FtotalMap;
           /* prepare special window to cover all the data with one F-stat calculation == Ftotal */
-          transientWindowRange_t winRangeAll = empty_transientWindowRange;
+          transientWindowRange_t XLAL_INIT_DECL(winRangeAll);
           winRangeAll.type = TRANSIENT_NONE;
 
           BOOLEAN useFReg = false;
@@ -737,7 +733,7 @@ XLALInitCode ( ConfigVariables *cfg, const UserInput_t *uvar )
 
 
   /* ---------- initialize transient window ranges, for injection ... ---------- */
-  transientWindowRange_t InjectRange = empty_transientWindowRange;
+  transientWindowRange_t XLAL_INIT_DECL(InjectRange);
   int twtype;
   XLAL_CHECK ( (twtype = XLALParseTransientWindowName ( uvar->injectWindow_type )) >= 0, XLAL_EFUNC );
   InjectRange.type = twtype;
@@ -771,7 +767,7 @@ XLALInitCode ( ConfigVariables *cfg, const UserInput_t *uvar )
   cfg->transientInjectRange = InjectRange;
 
   /* ---------- ... and for search -------------------- */
-  transientWindowRange_t SearchRange = empty_transientWindowRange;
+  transientWindowRange_t XLAL_INIT_DECL(SearchRange);
   XLAL_CHECK ( (twtype = XLALParseTransientWindowName ( uvar->searchWindow_type )) >= 0, XLAL_EFUNC );
   SearchRange.type = twtype;
 

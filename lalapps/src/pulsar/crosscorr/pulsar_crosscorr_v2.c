@@ -87,9 +87,6 @@ typedef struct{
 #define FALSE (1==0)
 #define MAXFILENAMELENGTH 512
 
-/* empty user input struct for initialization */
-UserInput_t empty_UserInput;
-
 /* local function prototypes */
 int XLALInitUserVars ( UserInput_t *uvar );
 int XLALInitializeConfigVars (ConfigVariables *config, const UserInput_t *uvar);
@@ -99,7 +96,7 @@ int GetNextCrossCorrTemplate(BOOLEAN *binaryParamsFlag, PulsarDopplerParams *dop
 
 int main(int argc, char *argv[]){
 
-  UserInput_t uvar = empty_UserInput;
+  UserInput_t XLAL_INIT_DECL(uvar);
   static ConfigVariables config;
 
   /* sft related variables */
@@ -117,10 +114,10 @@ int main(int argc, char *argv[]){
   REAL8Vector *kappaValues = NULL;
   REAL8Vector *signalPhases = NULL;
 
-  PulsarDopplerParams dopplerpos = empty_PulsarDopplerParams;
+  PulsarDopplerParams XLAL_INIT_DECL(dopplerpos);
   PulsarDopplerParams thisBinaryTemplate, binaryTemplateSpacings;
   PulsarDopplerParams minBinaryTemplate, maxBinaryTemplate;
-  SkyPosition skyPos = empty_SkyPosition;
+  SkyPosition XLAL_INIT_DECL(skyPos);
   MultiSSBtimes *multiSSBTimes = NULL;
   MultiSSBtimes *multiBinaryTimes = NULL;
 
@@ -307,10 +304,10 @@ int main(int argc, char *argv[]){
     XLAL_ERROR( XLAL_EFUNC );
   }
   /*initialize binary parameters structure*/
-  minBinaryTemplate=empty_PulsarDopplerParams;
-  maxBinaryTemplate=empty_PulsarDopplerParams;
-  thisBinaryTemplate=empty_PulsarDopplerParams;
-  binaryTemplateSpacings=empty_PulsarDopplerParams;
+  XLAL_INIT_MEM(minBinaryTemplate);
+  XLAL_INIT_MEM(maxBinaryTemplate);
+  XLAL_INIT_MEM(thisBinaryTemplate);
+  XLAL_INIT_MEM(binaryTemplateSpacings);
   /*fill in minbinaryOrbitParams*/
   XLALGPSSetREAL8( &minBinaryTemplate.tp, uvar.orbitTimeAsc);
   minBinaryTemplate.argp = 0.0;

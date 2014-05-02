@@ -100,10 +100,6 @@ typedef struct tagInjParams_t
 
 /*---------- Global variables ----------*/
 
-/* empty struct initializers */
-extern multiAMBuffer_t empty_multiAMBuffer;
-extern InjParams_t empty_InjParams_t;
-
 /*---------- exported prototypes [API] ----------*/
 int XLALDrawCorrelatedNoise ( PulsarAmplitudeVect n_mu, const gsl_matrix *L, gsl_rng * rng );
 

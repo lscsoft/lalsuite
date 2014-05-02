@@ -342,12 +342,6 @@ typedef struct tagSkyConstAndZeroPsiAMResponse {
 } SkyConstAndZeroPsiAMResponse;
 
 /*---------- Global variables ----------*/
-/** \name Empty init-structs for the types defined in here */
-/*@{*/
-extern const PulsarSignalParams empty_PulsarSignalParams;
-extern const SFTParams empty_SFTParams;
-extern const SFTandSignalParams empty_SFTandSignalParams;
-/*@}*/
 
 /* ---------- Function prototypes ---------- */
 REAL4TimeSeries *XLALGeneratePulsarSignal ( const PulsarSignalParams *params );

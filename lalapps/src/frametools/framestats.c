@@ -123,8 +123,6 @@ int XLALReadFrameHistory(CHAR **history_string, FrFile *file);
 int XLALReadXTEFrameINT4Keyword(INT4 *value, CHAR *filename, const CHAR *keyword);
 
 /***********************************************************************************************/
-/* empty initializers */
-UserInput_t empty_UserInput;
 
 /**
  * The main function of framestats.c
@@ -135,7 +133,7 @@ UserInput_t empty_UserInput;
 int main( int argc, char *argv[] )
 {
   LALStatus status = blank_status;              /* empty LAL status structure */
-  UserInput_t uvar = empty_UserInput;           /* user input variables */
+  UserInput_t XLAL_INIT_DECL(uvar);           /* user input variables */
   glob_t filelist;                              /* stores the matching frame file names */
   StatsVector stats;                            /* a structure containing statistical info */
   INT4 i;                                       /* counter */

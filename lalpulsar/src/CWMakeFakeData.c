@@ -46,9 +46,6 @@
 #define SQ(x) ( (x) * (x) )
 // ---------- local type definitions
 
-// ---------- empty initializers
-const CWMFDataParams empty_CWMFDataParams;
-
 // ---------- Global variables
 
 // ---------- local prototypes
@@ -115,7 +112,7 @@ XLALCWMakeFakeMultiData ( MultiSFTVector **multiSFTs,			///< [out] pointer to op
       dataParamsX.multiIFO.sites[0] = dataParams->multiIFO.sites[X];
       dataParamsX.multiNoiseFloor.length = 1;
       dataParamsX.multiNoiseFloor.sqrtSn[0] = dataParams->multiNoiseFloor.sqrtSn[X];
-      MultiLIGOTimeGPSVector mTimestamps = empty_MultiLIGOTimeGPSVector;
+      MultiLIGOTimeGPSVector XLAL_INIT_DECL(mTimestamps);
       mTimestamps.length = 1;
       mTimestamps.data = &(multiTimestamps->data[X]); // such that pointer mTimestamps.data[0] = multiTimestamps->data[X]
       dataParamsX.multiTimestamps = mTimestamps;
@@ -303,7 +300,7 @@ XLALCWMakeFakeData ( SFTVector **SFTvect,
           XLAL_CHECK ( (window = XLALCreateNamedREAL4Window ( dataParams->SFTWindowType, dataParams->SFTWindowBeta, numTimesteps )) != NULL, XLAL_EFUNC );
         } // if uvar->SFTwindowName
 
-      SFTParams sftParams = empty_SFTParams;
+      SFTParams XLAL_INIT_DECL(sftParams);
       sftParams.Tsft = Tsft;
       sftParams.timestamps = timestamps;
       sftParams.noiseSFTs = NULL;	// not used here any more!
@@ -391,7 +388,7 @@ XLALGenerateCWSignalTS ( const PulsarParams *pulsarParams,	///< input CW pulsar-
   /*----------------------------------------
    * fill old-style PulsarSignalParams struct
    *----------------------------------------*/
-  PulsarSignalParams params = empty_PulsarSignalParams;
+  PulsarSignalParams XLAL_INIT_DECL(params);
   params.pulsar.refTime            = pulsarParams->Doppler.refTime;
   params.pulsar.position.system    = COORDINATESYSTEM_EQUATORIAL;
   params.pulsar.position.longitude = pulsarParams->Doppler.Alpha;

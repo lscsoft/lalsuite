@@ -65,7 +65,7 @@ int main(int argc, char **argv)
     SFTVector *sft_vect = NULL;
     INT4 i,j,k,l;
     INT4 numBins, nSFT;
-    SFTConstraints constraints=empty_SFTConstraints;
+    SFTConstraints XLAL_INIT_DECL(constraints);
     LIGOTimeGPS startTime, endTime; 
     REAL8 avg =0;
     REAL4 *timeavg =NULL;

@@ -292,15 +292,6 @@ typedef struct tagMultiSFTCatalogView
 
 
 /*---------- Global variables ----------*/
-/* empty init-structs for the types defined in here */
-extern const SFTConstraints empty_SFTConstraints;
-extern const SFTCatalog empty_SFTCatalog;
-extern const SFTtype empty_SFTtype;
-extern const SFTVector empty_SFTVector;
-extern const MultiSFTVector empty_MultiSFTVector;
-extern const MultiREAL4TimeSeries empty_MultiREAL4TimeSeries;
-extern const LIGOTimeGPSVector empty_LIGOTimeGPSVector;
-extern const MultiLIGOTimeGPSVector empty_MultiLIGOTimeGPSVector;
 
 /*
  * Functions Declarations (i.e., prototypes).

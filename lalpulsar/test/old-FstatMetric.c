@@ -121,9 +121,6 @@ typedef struct
   PhaseType_t phaseType;
 } ConfigVariables;
 
-/*---------- empty structs for initializations ----------*/
-ConfigVariables empty_ConfigVariables;
-PulsarTimesParamStruc empty_PulsarTimesParamStruc;
 /* ---------- global variables ----------*/
 
 /* ---------- local prototypes ---------- */
@@ -193,7 +190,7 @@ XLALOldDopplerFstatMetric ( const DopplerMetricParams *metricParams,  	/**< inpu
   DopplerMetric *metric;
   XLAL_CHECK_NULL ( (metric = XLALCalloc ( 1, sizeof(*metric) )) != NULL, XLAL_ENOMEM );
 
-  ConfigVariables config = empty_ConfigVariables;
+  ConfigVariables XLAL_INIT_DECL(config);
 
   /* basic setup and initializations */
   metric->gF_ij = gsl_matrix_calloc ( METRIC_DIM, METRIC_DIM );
@@ -803,7 +800,7 @@ getMultiPhaseDerivs ( const MultiDetectorStateSeries *multiDetStates,
   REAL8 refTime = XLALGPSGetREAL8 ( &refTimeGPS );
 
   /* get tAutumn */
-  PulsarTimesParamStruc times = empty_PulsarTimesParamStruc;
+  PulsarTimesParamStruc XLAL_INIT_DECL(times);
   times.epoch = refTimeGPS;
   XLAL_CHECK_NULL ( XLALGetEarthTimes ( &(times.epoch), &(times.tMidnight), &(times.tAutumn) ) == XLAL_SUCCESS, XLAL_EFUNC );
 

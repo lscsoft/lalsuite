@@ -66,6 +66,7 @@
 /* ---------- local types ---------- */
 
 /*---------- Global variables ----------*/
+static LALUnit emptyLALUnit;
 
 /* ----- User-variables: can be set from config-file or command-line */
 /* ---------- local prototypes ---------- */
@@ -75,11 +76,6 @@ int test_XLALSFTVectorToCOMPLEX8TimeSeries(void);
 int XLALgenerateRandomData ( REAL4TimeSeries **ts, SFTVector **sfts );
 
 void write_timeSeriesR4 (FILE *fp, const REAL4TimeSeries *series);
-
-/*---------- empty initializers ---------- */
-static LALUnit empty_LALUnit;
-static LALStatus empty_LALStatus;
-
 
 /*----------------------------------------------------------------------*/
 /* Main Function starts here */
@@ -126,7 +122,7 @@ test_XLALSFTVectorToCOMPLEX8TimeSeries(void)
   COMPLEX8TimeSeries *tsTest = NULL;
 
   COMPLEX8FFTPlan *LFTplanC8;
-  LALStatus status = empty_LALStatus;
+  LALStatus XLAL_INIT_DECL(status);
   UINT4 numSamples;
 
   if ( XLALgenerateRandomData ( &tsOrig, &sfts ) != XLAL_SUCCESS ) {
@@ -143,7 +139,7 @@ test_XLALSFTVectorToCOMPLEX8TimeSeries(void)
   numSamples = tsTest->data->length;	/* number of (complex) time- or frequency samples */
 
   /* ----- prepare long-timebaseline FFT ---------- */
-  status = empty_LALStatus;
+  XLAL_INIT_MEM(status);
   LALCreateSFTtype (&status, &lftTest, numSamples);
   if ( status.statusCode ) {
     XLALPrintError("\n%s: LALCreateSFTtype() failed, with LAL error %d\n", __func__, status.statusCode );
@@ -196,7 +192,7 @@ test_XLALSFTVectorToCOMPLEX8TimeSeries(void)
     }
     */
 
-    status = empty_LALStatus;
+    XLAL_INIT_MEM(status);
     LALWriteSFT2file ( &status, lftTest, fnameLFT, "test data LFT from SFTs");
     if ( status.statusCode ) {
       XLALPrintError("\n%s: LALWriteSFT2file() failed, with LAL error %d\n", __func__, status.statusCode );
@@ -212,7 +208,7 @@ test_XLALSFTVectorToCOMPLEX8TimeSeries(void)
   XLALDestroySFTVector ( sfts );
   XLALDestroyCOMPLEX8FFTPlan ( LFTplanC8 );
 
-  status = empty_LALStatus;
+  XLAL_INIT_MEM(status);
   LALDestroySFTtype ( &status, &lftTest );
 
   return TEST_PASSED;
@@ -294,7 +290,7 @@ XLALgenerateRandomData ( REAL4TimeSeries **ts, SFTVector **sfts )
   numSamplesTS = numSFTs * numSamplesSFT + numBinsGap1 + numBinsGap2;
 
   /* ----- allocate timeseries ----- */
-  if ( (outTS = XLALCreateREAL4TimeSeries ("H1:test timeseries", &epoch0, 0, deltaT, &empty_LALUnit, numSamplesTS )) == NULL )
+  if ( (outTS = XLALCreateREAL4TimeSeries ("H1:test timeseries", &epoch0, 0, deltaT, &emptyLALUnit, numSamplesTS )) == NULL )
     {
       XLALPrintError ("%s: XLALCreateREAL4TimeSeries() failed for numSamples = %d\n", numSamplesTS );
       XLAL_ERROR ( XLAL_EFUNC );
@@ -346,8 +342,8 @@ XLALgenerateRandomData ( REAL4TimeSeries **ts, SFTVector **sfts )
 
   /* ----- generate SFTs from this timeseries ---------- */
   {
-    SFTParams sftParams = empty_SFTParams;
-    LALStatus status = empty_LALStatus;
+    SFTParams XLAL_INIT_DECL(sftParams);
+    LALStatus XLAL_INIT_DECL(status);
 
     sftParams.Tsft = Tsft;
     sftParams.timestamps = timestampsSFT;

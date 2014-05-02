@@ -1139,8 +1139,8 @@ void SetUpRadiometerSkyPatches(LALStatus           *status,	/**< pointer to LALS
 			       REAL8               dDelta)  /**< delta resolution (if isotropic grid is to be constructed) */
 {
 
-  DopplerSkyScanInit scanInit = empty_DopplerSkyScanInit;   /* init-structure for DopperScanner */
-  DopplerSkyScanState thisScan = empty_DopplerSkyScanState; /* current state of the Doppler-scan */
+  DopplerSkyScanInit XLAL_INIT_DECL(scanInit);   /* init-structure for DopperScanner */
+  DopplerSkyScanState XLAL_INIT_DECL(thisScan); /* current state of the Doppler-scan */
   UINT4 nSkyPatches, skyCounter;
   PulsarDopplerParams dopplerpos;
 

@@ -119,9 +119,6 @@ do { 											\
 
 #define GPS2REAL8(gps) (1.0 * (gps).gpsSeconds + 1.e-9 * (gps).gpsNanoSeconds )
 
-/*---------- empty initializers ---------- */
-LALStatus empty_status;
-SFTConstraints empty_constraints;
 /*---------- Global variables ----------*/
 
 /* ----------------------------------------------------------------------*/
@@ -184,9 +181,9 @@ static int CompareSFTVectors(SFTVector *sft_vect, SFTVector *sft_vect2)
 
 int main(int argc, char *argv[])
 {
-  LALStatus status = empty_status;
+  LALStatus XLAL_INIT_DECL(status);
   SFTCatalog *catalog = NULL;
-  SFTConstraints constraints = empty_constraints;
+  SFTConstraints XLAL_INIT_DECL(constraints);
   SFTVector *sft_vect = NULL;
   SFTVector *sft_vect2 = NULL;
   REAL8 fMin = -1.0;

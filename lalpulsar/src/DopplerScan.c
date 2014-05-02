@@ -99,18 +99,6 @@ typedef REAL4	meshREAL;
 typedef TwoDMeshNode meshNODE;
 typedef TwoDMeshParamStruc meshPARAMS;
 
-/*---------- empty initializers ---------- */
-/* some empty structs for initializations */
-static const meshPARAMS empty_meshpar;
-
-static const PtoleMetricIn empty_metricpar;
-
-const DopplerSkyGrid empty_DopplerSkyGrid;
-const DopplerSkyScanState empty_DopplerSkyScanState;
-const DopplerSkyScanInit empty_DopplerSkyScanInit;
-const DopplerRegion empty_DopplerRegion;
-const SkyRegion empty_SkyRegion;
-
 /*---------- internal prototypes ----------*/
 void getRange( LALStatus *, meshREAL y[2], meshREAL x, void *params );
 void getMetric( LALStatus *, meshREAL g[3], meshREAL skypos[2], void *params );
@@ -297,8 +285,8 @@ InitDopplerSkyScan( LALStatus *status,			/**< pointer to LALStatus structure */
    * are sufficiently independent of the phase-parameters
    * ----------*/
   {
-    PulsarDopplerParams gridpoint = empty_PulsarDopplerParams;
-    PulsarDopplerParams gridSpacings = empty_PulsarDopplerParams;
+    PulsarDopplerParams XLAL_INIT_DECL(gridpoint);
+    PulsarDopplerParams XLAL_INIT_DECL(gridSpacings);
 
     gridpoint.Alpha = skyScan->skyGrid->Alpha;
     gridpoint.Delta = skyScan->skyGrid->Delta;
@@ -446,7 +434,7 @@ void getMetric( LALStatus *status, meshREAL g[3], meshREAL skypos[2], void *para
 {
   REAL8Vector   *metric = NULL;  /* for output of metric */
   DopplerSkyScanInit *par = (DopplerSkyScanInit*) params;
-  PtoleMetricIn metricpar = empty_metricpar;
+  PtoleMetricIn XLAL_INIT_DECL(metricpar);
 
   /* Set up shop. */
   INITSTATUS(status);
@@ -781,7 +769,7 @@ ConvertTwoDMesh2SkyGrid ( LALStatus *status,
 		       const SkyRegion *region )   	/* a sky-region for clipping */
 {
   const meshNODE *meshpoint;
-  DopplerSkyGrid head = empty_DopplerSkyGrid;
+  DopplerSkyGrid XLAL_INIT_DECL(head);
   DopplerSkyGrid *node = NULL;
   SkyPosition point;
 
@@ -849,7 +837,7 @@ buildFlatSkyGrid (LALStatus *status,
 	       REAL8 dDelta)
 {
   SkyPosition thisPoint;
-  DopplerSkyGrid head = empty_DopplerSkyGrid;  /* empty head to start grid-list */
+  DopplerSkyGrid XLAL_INIT_DECL(head);
   DopplerSkyGrid *node = NULL;
 
   INITSTATUS(status);
@@ -913,7 +901,7 @@ void
 buildIsotropicSkyGrid (LALStatus *status, DopplerSkyGrid **skyGrid, const SkyRegion *skyRegion, REAL8 dAlpha, REAL8 dDelta)
 {
   SkyPosition thisPoint;
-  DopplerSkyGrid head = empty_DopplerSkyGrid;  /* empty head to start grid-list */
+  DopplerSkyGrid XLAL_INIT_DECL(head);
   DopplerSkyGrid *node = NULL;
   REAL8 step_Alpha, step_Delta, cos_Delta;
 
@@ -991,8 +979,8 @@ buildMetricSkyGrid (LALStatus *status,
 		    const DopplerSkyScanInit *init)
 {
   meshNODE *mesh2d = NULL;
-  meshPARAMS meshpar = empty_meshpar;
-  PtoleMetricIn metricpar = empty_metricpar;
+  meshPARAMS XLAL_INIT_DECL(meshpar);
+  PtoleMetricIn XLAL_INIT_DECL(metricpar);
   DopplerSkyScanInit params = (*init);
 
   INITSTATUS(status);
@@ -1068,9 +1056,10 @@ loadSkyGridFile (LALStatus *status,
 		 )
 {
   LALParsedDataFile *data = NULL;
-  DopplerSkyGrid *node, head = empty_DopplerSkyGrid;
+  DopplerSkyGrid *node;
+  DopplerSkyGrid XLAL_INIT_DECL(head);
   UINT4 i;
-  SkyPosition thisPoint = empty_SkyPosition;
+  SkyPosition XLAL_INIT_DECL(thisPoint);
 
   INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
@@ -1471,7 +1460,7 @@ getGridSpacings( LALStatus *status,			/**< pointer to LALStatus structure */
 {
   REAL8Vector *metric = NULL;
   REAL8 g_f0_f0 = 0, gamma_f1_f1 = 0, gamma_a_a, gamma_d_d;
-  PtoleMetricIn metricpar = empty_metricpar;
+  PtoleMetricIn XLAL_INIT_DECL(metricpar);
   UINT4 s;
 
   INITSTATUS(status);
@@ -1588,7 +1577,7 @@ getMCDopplerCube (LALStatus *status,		/**< pointer to LALStatus structure */
 		  UINT4 PointsPerDim,		/**< desired number of grid-points per dim. */
 		  const DopplerSkyScanInit *params)/**< search+metric parameters */
 {
-  PulsarDopplerParams spacings = empty_PulsarDopplerParams;
+  PulsarDopplerParams XLAL_INIT_DECL(spacings);
   REAL8 Alpha, Delta, Freq, f1dot;
   REAL8 dAlpha, dDelta, dFreq, df1dot;
   REAL8 AlphaBand, DeltaBand, FreqBand, f1dotBand;
@@ -1629,7 +1618,7 @@ getMCDopplerCube (LALStatus *status,		/**< pointer to LALStatus structure */
     { /* choose large-enough FreqBand if projecting */
       REAL8 DopplerFreqBand;
       REAL8 fB = FreqBand;
-      PtoleMetricIn metricpar = empty_metricpar;/* we need to know metric for this..:( */
+      PtoleMetricIn XLAL_INIT_DECL(metricpar);
       MetricEllipse ellipse;
       REAL8Vector *metric = NULL;
 
@@ -1771,7 +1760,8 @@ XLALEquiPartitionSkygrid ( const DopplerSkyGrid *skygrid, UINT4 partitionIndex, 
   UINT4 iMin, numPoints;
   UINT4 counter;
   const DopplerSkyGrid *node;
-  DopplerSkyGrid *newNode, newGrid = empty_DopplerSkyGrid;
+  DopplerSkyGrid *newNode;
+  DopplerSkyGrid XLAL_INIT_DECL(newGrid);
 
   if ( !skygrid || (numPartitions == 0) || (partitionIndex >= numPartitions) )
     XLAL_ERROR_NULL( XLAL_EINVAL );

@@ -185,10 +185,6 @@ double BstatIntegrand ( double A[], size_t dim, void *p );
 
 REAL8 XLALComputeBhatCorrection ( const gsl_vector * A_Mu, const gsl_matrix *M_mu_nu );
 
-/*---------- empty initializers ---------- */
-ConfigVariables empty_ConfigVariables;
-UserInput_t empty_UserInput;
-
 /*----------------------------------------------------------------------*/
 /* Main Function starts here */
 /*----------------------------------------------------------------------*/
@@ -199,8 +195,8 @@ UserInput_t empty_UserInput;
 int main(int argc,char *argv[])
 {
   LALStatus status = blank_status;
-  UserInput_t uvar = empty_UserInput;
-  ConfigVariables GV = empty_ConfigVariables;		/**< various derived configuration settings */
+  UserInput_t XLAL_INIT_DECL(uvar);
+  ConfigVariables XLAL_INIT_DECL(GV);	/**< various derived configuration settings */
   UINT4 i;
   CHAR *version_string;
 

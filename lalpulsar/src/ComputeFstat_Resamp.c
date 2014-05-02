@@ -648,18 +648,16 @@ ComputeFstat_Resamp(
   XLAL_CHECK(resamp->Fout != NULL, XLAL_ENOMEM);
 
   // Create REAL4FrequencySeries to receive 2F values
-  static const REAL4Sequence empty_REAL4Sequence;
-  REAL4Sequence CFSFB_RS_data = empty_REAL4Sequence;
+  REAL4Sequence XLAL_INIT_DECL(CFSFB_RS_data);
   CFSFB_RS_data.length = Fstats->numFreqBins * FoutN;
   CFSFB_RS_data.data = resamp->Fout;
-  static const REAL4FrequencySeries empty_REAL4FrequencySeries;
-  REAL4FrequencySeries CFSFB_RS = empty_REAL4FrequencySeries;
+  REAL4FrequencySeries XLAL_INIT_DECL(CFSFB_RS);
   CFSFB_RS.deltaF = Fstats->dFreq;
   CFSFB_RS.data = &CFSFB_RS_data;
 
   // Call ComputeFStatFreqBand_RS()
   {
-    LALStatus status = empty_status;
+    LALStatus XLAL_INIT_DECL(status);
     ComputeFStatFreqBand_RS(&status, &CFSFB_RS, &thisPoint, resamp->multiSFTs, common->noiseWeights, &resamp->params);
     if (status.statusCode) {
       XLAL_ERROR(XLAL_EFAILED, "ComputeFStatFreqBand_RS() failed: %s (statusCode=%i)", status.statusDescription, status.statusCode);
