@@ -1273,7 +1273,7 @@ XLALComputeSegmentDataQ ( const MultiPSDVector *multiPSDVect, 	/**< input PSD ma
           if ( cmp > 0 )	/* SFT-start past end of segment: ==> terminate loop */
             break;
 
-          if ( (cmp == 0) )	/* this SFT is inside segment */
+          if ( cmp == 0 )	/* this SFT is inside segment */
             {
               numSFTsInSeg ++;
               /* add SXinv(f) += 1/SX_i(f) over all frequencies */
