@@ -276,8 +276,8 @@ XLALSignalToSFTs ( const REAL4TimeSeries *signalvec, 	/**< input time-series */
     }
 
   /* make sure that number of timesamples/SFT is an integer (up to possible rounding errors) */
-  REAL8 REALnumTimesteps = params->Tsft / dt;		/* this is a float!*/
-  UINT4 numTimesteps = (UINT4) (REALnumTimesteps + 0.5);		/* number of time-samples in an Tsft, round to closest int */
+  REAL8 REALnumTimesteps = params->Tsft / dt;			/* this is a float!*/
+  UINT4 numTimesteps = lround ( REALnumTimesteps );		/* number of time-samples in an Tsft, round to closest int */
   XLAL_CHECK_NULL ( fabs ( REALnumTimesteps - numTimesteps ) / REALnumTimesteps < eps, XLAL_ETOL,
                     "Inconsistent sampling-step (dt=%g) and Tsft=%g: must be integer multiple Tsft/dt = %g >= %g\n",
                     dt, params->Tsft, REALnumTimesteps, eps );
@@ -290,7 +290,7 @@ XLALSignalToSFTs ( const REAL4TimeSeries *signalvec, 	/**< input time-series */
   LIGOTimeGPS tStart = signalvec->epoch;	/* start-time of time-series */
 
   /* get last possible start-time for an SFT */
-  REAL8 duration =  (UINT4) (1.0* signalvec->data->length * dt + 0.5); /* total duration rounded to seconds */
+  REAL8 duration =  round (1.0* signalvec->data->length * dt ); /* total duration rounded to seconds */
   LIGOTimeGPS tLast = tStart;
   XLALGPSAdd( &tLast, duration - params->Tsft );
   XLAL_CHECK_NULL ( xlalErrno == XLAL_SUCCESS, XLAL_EFUNC );
@@ -353,7 +353,7 @@ XLALSignalToSFTs ( const REAL4TimeSeries *signalvec, 	/**< input time-series */
       REAL8 delay = XLALGPSDiff ( &(timestamps->data[iSFT]), &tPrev );
 
       /* round properly: picks *closest* timestep (==> "nudging") !!  */
-      INT4 relIndexShift = (INT4) ( delay / signalvec->deltaT + 0.5 );
+      INT4 relIndexShift = lround ( delay / signalvec->deltaT );
       totalIndex += relIndexShift;
 
       REAL4Vector timeStretch;
@@ -647,9 +647,9 @@ LALFastGeneratePulsarSFTs (LALStatus *status,
   tSFT = params->pSFTParams->Tsft;                  /* SFT duration */
   deltaF = 1.0/tSFT;                                /* frequency resolution */
   f0 = params->pSigParams->fHeterodyne;             /* start frequency */
-  k0 = (INT4)(f0*tSFT + 0.5);                       /* index of start frequency */
+  k0 = lround ( f0*tSFT );                       /* index of start frequency */
   band = 0.5*params->pSigParams->samplingRate;      /* frequency band */
-  SFTlen = (INT4)(band*tSFT + 0.5);                 /* number of frequency-bins */
+  SFTlen = lround ( band*tSFT );                 /* number of frequency-bins */
   numSFTs = params->pSFTParams->timestamps->length; /* number of SFTs */
 
   if ( (params->Dterms < 1) || (params->Dterms > SFTlen) ) {
@@ -729,7 +729,7 @@ LALFastGeneratePulsarSFTs (LALStatus *status,
         yTmp = phi0Signal/real8TwoPi + f0Signal*input->skyConst[tmpInt-1] + ySum;
         varTmp = yTmp-(INT4)yTmp;
         /* indexTrig=(INT4)(varTmp*params->resTrig+0.5); */ /* 10/08/04 gam */
-        indexTrig=(INT4)((varTmp + 1.0)*halfResTrig + 0.5);
+        indexTrig = lround ((varTmp + 1.0)*halfResTrig );
         dTmp = real8TwoPi*varTmp - params->trigArg[indexTrig];
         dTmp2 = 0.5*dTmp*dTmp;
         sinTmp = params->sinVal[indexTrig];
@@ -741,7 +741,7 @@ LALFastGeneratePulsarSFTs (LALStatus *status,
         /* Using LUT to find sin(2*pi*kappa) and 1 - cos(2*pi*kappa) */
         varTmp = kappa-(INT4)kappa;
         /* indexTrig=(INT4)(varTmp*params->resTrig+0.5); */
-        indexTrig=(INT4)((varTmp + 1.0)*halfResTrig + 0.5); /* 10/08/04 gam */
+        indexTrig= lround((varTmp + 1.0)*halfResTrig); /* 10/08/04 gam */
         dTmp = real8TwoPi*varTmp - params->trigArg[indexTrig];
         dTmp2 = 0.5*dTmp*dTmp;
         sinTmp = params->sinVal[indexTrig];
@@ -811,7 +811,7 @@ LALFastGeneratePulsarSFTs (LALStatus *status,
       /* Now add the noise-SFTs if given */
       if (params->pSFTParams->noiseSFTs) {
         thisNoiseSFT = &(params->pSFTParams->noiseSFTs->data[iSFT]);
-        index0n = (INT4)( (thisSFT->f0 - thisNoiseSFT->f0)*tSFT + 0.5 );
+        index0n = lround( (thisSFT->f0 - thisNoiseSFT->f0)*tSFT );
         for (j=0; j < SFTlen; j++)
         {
            thisSFT->data->data[j] += thisNoiseSFT->data->data[index0n + j];

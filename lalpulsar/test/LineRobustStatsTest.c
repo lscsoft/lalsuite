@@ -18,15 +18,10 @@
  */
 
 /* ---------- Includes -------------------- */
-// #include "HierarchSearchGCT.h"
-#include <lalapps.h>
-#include <lal/UserInput.h>
-// #include <lal/TransientCW_utils.h> /* for XLALFastNegExp */
+#include <lal/AVFactories.h>
+#include <lal/LineRobustStats.h>
 #include <lal/LogPrintf.h>
-// #include "HierarchSearchGCT.h"
-#include "HeapToplist.h"
-#include "GCTtoplist.h"
-#include "LineVeto.h"
+#include <lal/UserInput.h>
 
 /******************************************************
  *  Error codes and messages.

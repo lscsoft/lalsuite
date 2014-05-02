@@ -1637,6 +1637,8 @@ XLALSimIMREOBNRv2Generator(
        *h_lms = XLALSphHarmTimeSeriesAddMode(*h_lms, sigMode, modeL, modeM);
      }
 
+     XLALDestroyCOMPLEX16TimeSeries( sigMode );
+
   } /* End loop over modes */
 
   /* clip the parts below f_min */
@@ -1663,7 +1665,6 @@ XLALSimIMREOBNRv2Generator(
   XLALDestroyREAL8Array( dynamicsHi );
   XLALDestroyREAL8Vector ( sigReHi );
   XLALDestroyREAL8Vector ( sigImHi );
-  XLALDestroyCOMPLEX16TimeSeries( sigMode );
   XLALDestroyREAL8Vector ( phseHi );
   XLALDestroyREAL8Vector ( omegaHi );
   XLALDestroyREAL8Vector( ampNQC );

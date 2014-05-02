@@ -26,6 +26,27 @@
 
 #include <lal/LALInference.h>
 
+
+#ifdef SWIG // SWIG interface directives
+SWIGLAL(
+	FUNCTION_POINTER(
+			 LALInferenceUndecomposedFreqDomainLogLikelihood,
+			 LALInferenceNoiseOnlyLogLikelihood,
+			 LALInferenceZeroLogLikelihood,
+			 LALInferenceFreqDomainLogLikelihood,
+			 LALInferenceNullLogLikelihood,
+			 LALInferenceFreqDomainStudentTLogLikelihood,
+			 LALInferenceCorrelatedAnalyticLogLikelihood,
+			 LALInferenceBimodalCorrelatedAnalyticLogLikelihood,
+			 LALInferenceRosenbrockLogLikelihood,
+			 LALInferenceMarginalisedPhaseLogLikelihood,
+			 LALInferenceMarginalisedTimeLogLikelihood
+			 )
+);
+#endif
+
+
+
 /**
  * \defgroup LALInferenceLikelihood_h Header LALInferenceLikelihood.h
  * \ingroup pkg_LALInference

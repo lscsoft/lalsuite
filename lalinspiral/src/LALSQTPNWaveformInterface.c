@@ -330,7 +330,7 @@ void XLALSQTPNFillParams(LALSQTPNWaveformParams *wave, InspiralTemplate *params)
 	wave->order = params->order;
 	wave->interaction = params->interaction;
 	if (wave->interaction) {
-		wave->interaction = (LALSimInspiralInteraction) ( wave->interaction | LAL_SIM_INSPIRAL_INTERACTION_SPIN_ORBIT_15PN );
+		wave->interaction = (LALInspiralInteraction) ( wave->interaction | LAL_INSPIRAL_INTERACTION_SPIN_ORBIT_15PN );
 	}
 	/*printf("masses: %lg %lg\n", wave->mass[0], wave->mass[1]);
 	printf("chis1: %lg %lg %lg\n", wave->chi[0][0], wave->chi[0][1], wave->chi[0][2]);

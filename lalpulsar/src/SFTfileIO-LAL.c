@@ -160,7 +160,7 @@ LALLoadSFTs ( LALStatus *status,	/**< pointer to LALStatus structure */
       */
       deltaF = catalog->data[catFile].header.deltaF; /* Hz/bin */
       if (fMin < 0)
-	firstbin = MYROUND( catalog->data[catFile].header.f0 / deltaF );
+	firstbin = lround ( catalog->data[catFile].header.f0 / deltaF );
       else
 	firstbin = floor(fMin / deltaF);
       if (fMax < 0)
@@ -209,7 +209,7 @@ LALLoadSFTs ( LALStatus *status,	/**< pointer to LALStatus structure */
 	    ABORT ( status, SFTFILEIO_EFILE, SFTFILEIO_MSGEFILE );
 	  }
 
-	  firstInSFT = MYROUND( catalog->data[catFile].header.f0 / deltaF );
+	  firstInSFT = lround( catalog->data[catFile].header.f0 / deltaF );
 	  lastInSFT  = firstInSFT + catalog->data[catFile].numBins - 1;
 
 #ifdef SFTFILEIO_DEBUG
@@ -1202,7 +1202,7 @@ LALWriteSFTfile (LALStatus  *status,			/**< pointer to LALStatus structure */
   header.gpsSeconds = sft->epoch.gpsSeconds;
   header.gpsNanoSeconds = sft->epoch.gpsNanoSeconds;
   header.timeBase = 1.0 / sft->deltaF;
-  header.fminBinIndex = (INT4) floor (sft->f0 / sft->deltaF + 0.5);	/* round to closest int! */
+  header.fminBinIndex = lround (sft->f0 / sft->deltaF );
   header.length = sft->data->length;
 
   /* build raw header for writing to disk */
@@ -1632,7 +1632,7 @@ lal_read_sft_bins_from_fp ( LALStatus *status, SFTtype **sft, UINT4 *binsread, U
     }
 
   tmp = ret->f0 / ret->deltaF;
-  firstSFTbin = MYROUND ( tmp );
+  firstSFTbin = lround ( tmp );
   lastSFTbin = firstSFTbin + numSFTbins - 1;
 
   if ( firstBin2read > lastBin2read )

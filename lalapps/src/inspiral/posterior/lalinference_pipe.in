@@ -92,7 +92,6 @@ if(opts.dax):
   peg_frame_cache = inspiralutils.create_pegasus_cache_file(pfnfile)
 else:
   peg_frame_cache = '/dev/null'
-# Create the dax scripts
 
 # A directory to store the DAX temporary files
 import uuid
@@ -103,6 +102,7 @@ if opts.grid_site is not None:
     site='local,'+opts.grid_site
 else:
     site=None
+# Create the DAX scripts
 if opts.dax:
   dag.prepare_dax(tmp_exec_dir=execdir,grid_site=site,peg_frame_cache=peg_frame_cache)
 dag.write_sub_files()

@@ -205,7 +205,10 @@ InitDopplerFullScan(LALStatus *status,			/**< pointer to LALStatus structure */
 	  XLALPrintError("\nGRID_SPINDOWN_{SQUARE,AGEBRK}: XLALCreateFlatLatticeTiling failed\n");
 	  ABORT(status, DOPPLERSCANH_EXLAL, DOPPLERSCANH_MSGEXLAL);
 	}
-        thisScan->spindownTilingPoint = NULL;
+	if (NULL == (thisScan->spindownTilingPoint = gsl_vector_alloc(2 + PULSAR_MAX_SPINS))) {
+	  XLALPrintError("\nGRID_SPINDOWN_{SQUARE,AGEBRK}: gsl_vector_alloc failed\n");
+	  ABORT(status, DOPPLERSCANH_EXLAL, DOPPLERSCANH_MSGEXLAL);
+	}
 
 	/* Parse the sky region string and check that it consists of only one point, and set bounds on it */
  	TRY(ParseSkyRegionString(status->statusPtr, &sky, init->searchRegion.skyRegionString), status);
@@ -539,7 +542,7 @@ XLALNextDopplerPos(PulsarDopplerParams *pos, DopplerFullScanState *scan)
       {
 
 	/* Advance to next tile */
-        int retn = XLALNextFlatLatticePoint(scan->spindownTiling);
+        int retn = XLALNextFlatLatticePoint(scan->spindownTiling, scan->spindownTilingPoint);
         if (xlalErrno != 0) {
 	  XLALPrintError("\nGRID_SPINDOWN_{SQUARE,AGEBRK}: XLALNextFlatLatticeTile failed\n");
 	  return -1;
@@ -548,12 +551,12 @@ XLALNextDopplerPos(PulsarDopplerParams *pos, DopplerFullScanState *scan)
         if (retn >= 0) {
 
 	  /* Found a point */
-          gsl_vector* current = scan->spindownTilingPoint = XLALGetFlatLatticePoint(scan->spindownTiling, scan->spindownTilingPoint);
-          pos->Alpha      = gsl_vector_get(current, 0);
-          pos->Delta      = gsl_vector_get(current, 1);
-          pos->fkdot[0]   = gsl_vector_get(current, 2);
-          for (size_t i = 1; i < PULSAR_MAX_SPINS; ++i)
-            pos->fkdot[i] = gsl_vector_get(current, i + 2);
+          pos->Alpha      = gsl_vector_get(scan->spindownTilingPoint, 0);
+          pos->Delta      = gsl_vector_get(scan->spindownTilingPoint, 1);
+          pos->fkdot[0]   = gsl_vector_get(scan->spindownTilingPoint, 2);
+          for (size_t i = 1; i < PULSAR_MAX_SPINS; ++i) {
+            pos->fkdot[i] = gsl_vector_get(scan->spindownTilingPoint, i + 2);
+          }
 
           return 0;
 

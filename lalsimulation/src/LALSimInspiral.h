@@ -890,14 +890,6 @@ int XLALGetOrderFromString(const CHAR *inString);
  */
 int XLALGetTaperFromString(const CHAR *inString);
 
-/**
- * XLAL function to determine LALSimInspiralInteraction from a string.
- *
- * TODO: return the bit sum if the string is a concatenation of several
- * interaction terms. Also make names match cases of enum.
- */
-int XLALGetInteractionFromString(const CHAR *inString);
-
 /** XLAL function to determine axis choice flag from a string */
 int XLALGetFrameAxisFromString(const CHAR *inString);
 

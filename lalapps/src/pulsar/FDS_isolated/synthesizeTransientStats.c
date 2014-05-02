@@ -697,12 +697,9 @@ XLALInitCode ( ConfigVariables *cfg, const UserInput_t *uvar )
     XLALPrintError ("%s: Failed to get site-info for detector '%s'\n", __func__, uvar->IFO );
     XLAL_ERROR ( XLAL_EFUNC );
   }
-  MultiLALDetector *multiDet;
-  if ( (multiDet = XLALCreateMultiLALDetector ( 1 )) == NULL ) {   /* currently only implemented for single-IFO case */
-    XLALPrintError ("%s: XLALCreateMultiLALDetector(1) failed with errno=%d\n", __func__, xlalErrno );
-    XLAL_ERROR ( XLAL_EFUNC );
-  }
-  multiDet->data[0] = (*site); 	/* copy! */
+  MultiLALDetector multiDet;
+  multiDet.length = 1;
+  multiDet.sites[0] = (*site); 	/* copy! */
   XLALFree ( site );
 
   /* init timestamps vector covering observation time */
@@ -728,13 +725,12 @@ XLALInitCode ( ConfigVariables *cfg, const UserInput_t *uvar )
     }
 
   /* get detector states */
-  if ( (cfg->multiDetStates = XLALGetMultiDetectorStates ( multiTS, multiDet, edat, 0.5 * uvar->TAtom )) == NULL ) {
+  if ( (cfg->multiDetStates = XLALGetMultiDetectorStates ( multiTS, &multiDet, edat, 0.5 * uvar->TAtom )) == NULL ) {
     XLALPrintError ( "%s: XLALGetMultiDetectorStates() failed.\n", __func__ );
     XLAL_ERROR ( XLAL_EFUNC );
   }
 
   /* get rid of all temporary memory allocated for this step */
-  XLALDestroyMultiLALDetector ( multiDet );
   XLALDestroyEphemerisData ( edat );
   XLALDestroyMultiTimestamps ( multiTS );
   multiTS = NULL;

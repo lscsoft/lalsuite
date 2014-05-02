@@ -428,8 +428,7 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
         for a in combinations(self.ifos,N):
             ifocombos.append(a)
     for ifos in ifocombos:
-        self.engine_jobs[ifos] = EngineJob(self.config, os.path.join(self.basepath,'engine_%s.sub'%(reduce(lambda x,y:x+y, map(str,ifos)))),self.logpath ,dax=self.is_dax())
-        self.engine_jobs[ifos].set_grid_site(site)
+        self.engine_jobs[ifos] = EngineJob(self.config, os.path.join(self.basepath,'engine_%s.sub'%(reduce(lambda x,y:x+y, map(str,ifos)))),self.logpath ,dax=self.is_dax(), site=site)
     self.results_page_job = ResultsPageJob(self.config,os.path.join(self.basepath,'resultspage.sub'),self.logpath,dax=self.is_dax())
     self.results_page_job.set_grid_site('local')
     self.cotest_results_page_job = ResultsPageJob(self.config,os.path.join(self.basepath,'resultspagecoherent.sub'),self.logpath,dax=self.is_dax())
@@ -649,8 +648,8 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
       return False
     myifos=enginenodes[0].get_ifos()
     # Merge the results together
-    #pagedir=os.path.join(self.webdir,evstring,myifos)
-    pagedir=os.path.join(self.basepath,evstring,myifos)
+    pagedir=os.path.join(self.webdir,evstring,myifos)
+    #pagedir=os.path.join(self.basepath,evstring,myifos)
     mkdirs(pagedir)
     mergenode=MergeNSNode(self.merge_job,parents=enginenodes)
     mergenode.set_pos_output_file(os.path.join(self.posteriorpath,'posterior_%s_%s.dat'%(myifos,evstring)))
@@ -1004,7 +1003,9 @@ class EngineJob(pipeline.CondorDAGJob,pipeline.AnalysisJob):
     else:
       self.engine=='lalinferencemcmc'
       exe=cp.get('condor',self.engine)
-      universe="vanilla"
+      if self.site is not None and self.self!='local':
+        universe='vanilla'
+      else: universe="standard"
     pipeline.CondorDAGJob.__init__(self,universe,exe)
     pipeline.AnalysisJob.__init__(self,cp,dax=dax)
     # Set grid site if needed
@@ -1042,7 +1043,17 @@ class EngineJob(pipeline.CondorDAGJob,pipeline.AnalysisJob):
     #self.add_opt('snrpath',snrpath)
     self.set_stdout_file(os.path.join(logdir,'lalinference-$(cluster)-$(process)-$(node).out'))
     self.set_stderr_file(os.path.join(logdir,'lalinference-$(cluster)-$(process)-$(node).err'))
-  
+ 
+  def set_grid_site(self,site=None):
+    """
+    Over-load base class method to choose condor universe properly
+    """
+    if site is not None and site!='local':
+      self.set_universe('vanilla')
+    else:
+      self.set_universe('standard')
+    pipeline.CondorDAGJob.set_grid_site(site)
+ 
   def __write_sub_file_mcmc_mpi(self):
     """
     Nasty hack to insert the MPI stuff into the arguments

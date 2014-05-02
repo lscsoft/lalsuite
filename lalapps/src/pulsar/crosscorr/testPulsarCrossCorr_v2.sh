@@ -1,7 +1,8 @@
 #!/bin/sh
 
-## run all LALApps programs with memory debugging
-export LAL_DEBUG_LEVEL="${LAL_DEBUG_LEVEL},memdbg"
+## set LAL debug level
+echo "Setting LAL_DEBUG_LEVEL=${LAL_DEBUG_LEVEL:-msglvl1,memdbg}"
+export LAL_DEBUG_LEVEL
 
 ## test of lalapps_pulsar_crosscorr_v2; currently just makes sure it runs without errors
 extra_args="$@"

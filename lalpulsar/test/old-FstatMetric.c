@@ -678,7 +678,7 @@ InitCode ( ConfigVariables *cfg,
   XLALDestroyREAL8Vector ( ti );
 
   /* ----- initialize IFOs and (Multi-)DetectorStateSeries  ----- */
-  UINT4 numDet = metricParams->detInfo.length;
+  UINT4 numDet = metricParams->multiIFO.length;
 
   XLAL_CHECK ( (cfg->multiDetStates = XLALCalloc ( 1, sizeof( *(cfg->multiDetStates) ))) != NULL, XLAL_ENOMEM );
   XLAL_CHECK ( (cfg->multiDetStates->data = XLALCalloc (numDet, sizeof( *(cfg->multiDetStates->data)))) != NULL, XLAL_ENOMEM );
@@ -688,7 +688,7 @@ InitCode ( ConfigVariables *cfg,
 
   for ( UINT4 X=0; X < numDet; X ++ )
     {
-      const LALDetector *ifo = &(metricParams->detInfo.sites[X]);
+      const LALDetector *ifo = &(metricParams->multiIFO.sites[X]);
       /* obtain detector positions and velocities, together with LMSTs */
       cfg->multiDetStates->data[X] = XLALGetDetectorStates ( GLtimestamps, ifo, edat, 0 );
       XLAL_CHECK ( cfg->multiDetStates->data[X] != NULL, XLAL_EFUNC );
@@ -699,7 +699,7 @@ InitCode ( ConfigVariables *cfg,
 
   for ( UINT4 X=0; X < numDet ; X ++ )
     {
-      detWeights->data[X] = metricParams->detInfo.detWeights[X];
+      detWeights->data[X] = metricParams->multiNoiseFloor.sqrtSn[X];
     }
 
   /* ---------- combine relative detector-weights with GL-weights ----------*/

@@ -26,6 +26,25 @@
 
 #include <lal/LALInference.h>
 
+#ifdef SWIG // SWIG interface directives
+SWIGLAL(
+    FUNCTION_POINTER(
+        LALInferenceTemplate3525TD,
+        LALInferenceTemplateASinOmegaT,
+        LALInferenceTemplateDampedSinusoid,
+        LALInferenceTemplateLAL,
+        LALInferenceTemplateLALGenerateInspiral,
+        LALInferenceTemplateNullFreqdomain,
+        LALInferenceTemplateNullTimedomain,
+        LALInferenceTemplatePSTRD,
+        LALInferenceTemplateSinc,
+        LALInferenceTemplateSineGaussian,
+        LALInferenceTemplateStatPhase,
+        LALInferenceTemplateXLALSimInspiralChooseWaveform
+    )
+);
+#endif
+
 /**
  * \defgroup LALInferenceTemplate_h Header LALInferenceTemplate.h
  * \ingroup pkg_LALInference

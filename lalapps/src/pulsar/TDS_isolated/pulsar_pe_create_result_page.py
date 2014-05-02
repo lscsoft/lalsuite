@@ -680,8 +680,8 @@ supply the number of live points used in their generation.")
           continue
         else:
           ifostmp.append(i)
-    ifos = ifostmp
-    nifos = len(ifos)
+      ifos = ifostmp
+      nifos = len(ifos)
 
   # check that number of ifos is the same as the number of data lists (for MCMC)
   if nifos != ndata:

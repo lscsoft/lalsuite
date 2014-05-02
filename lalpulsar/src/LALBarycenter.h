@@ -334,6 +334,9 @@ void LALBarycenterEarth ( LALStatus *status, EarthState *earth, const LIGOTimeGP
 void LALBarycenter ( LALStatus *status, EmissionTime *emit, const BarycenterInput *baryinput, const EarthState *earth);
 
 
+extern const BarycenterInput empty_BarycenterInput;
+extern const EphemerisData empty_EphemerisData;
+
 /*@}*/
 
 #ifdef  __cplusplus

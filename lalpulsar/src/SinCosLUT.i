@@ -40,6 +40,13 @@
 #include <lal/LALConstants.h>
 #include <lal/XLALError.h>
 
+#ifdef __GNUC__
+#define UNUSED __attribute__ ((unused))
+#else
+#define UNUSED
+#endif
+static void local_sin_cos_2PI_LUT_init (void) UNUSED;
+
 /*
   Trimming macro
 */
@@ -130,8 +137,6 @@ static void local_sin_cos_2PI_LUT_init (void)
     start = end;
   }
 }
-
-
 
 
 /*

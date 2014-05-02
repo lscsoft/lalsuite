@@ -62,7 +62,7 @@ import healpy as hp
 import lal
 from lalinference.bayestar import fits
 from lalinference.bayestar import plot
-import pylal.progress
+from glue.text_progress_bar import ProgressBar
 
 
 fig = plt.figure(figsize=(opts.figure_width, opts.figure_height), frameon=False)
@@ -70,7 +70,7 @@ ax = plt.subplot(111, projection='mollweide')
 ax.cla()
 ax.grid()
 
-progress = pylal.progress.ProgressBar()
+progress = ProgressBar()
 
 progress.update(-1, 'obtaining filenames of sky maps')
 fitsfilenames = tuple(command.chainglob(args))

@@ -30,8 +30,6 @@ EXTRA_PROGRAMS = \
 	eah_PredictFStat \
 	eah_ComputeFStatistic_v2
 
-LVsrc = ../GCT
-
 lalapps_zellepolka_SOURCES = zellepolka.c
 
 CFSsources = \
@@ -69,9 +67,7 @@ lalapps_compareFstats_SOURCES = compareFstats.c
 ComputeFStatisticV2Sources = \
 	ComputeFStatistic_v2.c \
 	HeapToplist.c \
-	HeapToplist.h \
-	$(LVsrc)/LineVeto.c \
-	$(LVsrc)/LineVeto.h
+	HeapToplist.h
 
 lalapps_ComputeFStatistic_v2_SOURCES = $(ComputeFStatisticV2Sources)
 
@@ -91,42 +87,40 @@ lalapps_synthesizeBstatMC_SOURCES = synthesizeBstatMC.c
 
 lalapps_synthesizeTransientStats_SOURCES = synthesizeTransientStats.c
 
-lalapps_synthesizeLVStats_SOURCES = \
-	synthesizeLVStats.c \
-	HeapToplist.c \
-	HeapToplist.h \
-	$(LVsrc)/LineVeto.c \
-	$(LVsrc)/LineVeto.h
+lalapps_synthesizeLVStats_SOURCES = synthesizeLVStats.c
 
 lalapps_CFSv3_SOURCES = CFSv3.c
 
 EXTRA_DIST = \
-	testCFSv2.sh \
-	testGridv2.sh \
 	Fstats.ref1 \
 	Fstats.ref2 \
 	testPredictFStat.sh \
+	testCFSv2.sh \
+	testCFSv2_grids.sh \
 	testCFSv2_resamp.sh \
-	testCFSv2_binary.sh \
-	testCFSv2_FLTgrids.sh
+	testCFSv2_binary.sh
 
 EXTRA_DIST += \
-	testCFSv2_FLTgrids_8.ref.gz \
-	testCFSv2_FLTgrids_9.ref.gz
+	testCFSv2.dat.ref.gz \
+	testCFSv2_grid0.dat.ref.gz \
+	testCFSv2_grid1.dat.ref.gz \
+	testCFSv2_grid2.dat.ref.gz \
+	testCFSv2_grid6.dat.ref.gz \
+	testCFSv2_grid8.dat.ref.gz \
+	testCFSv2_grid9.dat.ref.gz
 
 TESTS = testPredictFStat.sh
 
 if !CONDOR_ENABLED
 TESTS += \
 	testCFSv2.sh \
+	testCFSv2_grids.sh \
 	testCFSv2_resamp.sh \
-	testGridv2.sh \
-	testCFSv2_binary.sh \
-	testCFSv2_FLTgrids.sh
+	testCFSv2_binary.sh
 endif
 
 TESTS_ENVIRONMENT = \
-	LAL_DEBUG_LEVEL=memdbg; export LAL_DEBUG_LEVEL; \
+	LAL_DEBUG_LEVEL=msglvl1,memdbg; export LAL_DEBUG_LEVEL; \
 	LAL_DATA_PATH="$(LAL_DATA_PATH)"; export LAL_DATA_PATH;
 
 # how to compile CUDA files (.cu)

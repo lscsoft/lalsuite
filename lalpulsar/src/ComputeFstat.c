@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2012, 2013 Karl Wette
+// Copyright (C) 2012, 2013, 2014 Karl Wette
 // Copyright (C) 2007 Chris Messenger
 // Copyright (C) 2006 John T. Whelan, Badri Krishnan
 // Copyright (C) 2005, 2006, 2007, 2010 Reinhard Prix
@@ -39,6 +39,9 @@
 #include <lal/ExtrapolatePulsarSpins.h>
 #include <lal/LFTandTSutils.h>
 #include <lal/CWFastMath.h>
+#include <lal/NormalizeSFTRngMed.h>
+
+#define INIT_MEM(x) memset(&(x), 0, sizeof((x)))
 
 #define MYSIGN(x) ( ((x) < 0) ? (-1.0):(+1.0) )
 #define SQ(x) ( (x) * (x) )
@@ -51,36 +54,27 @@
 
 static const LALStatus empty_status;
 
-///// Internal function prototypes /////
-
-// Performs some common input sanity checks, and allocate a FstatInputData* struct
-static FstatInputData*
-SetupFstat_Common(
-  MultiSFTVector **multiSFTs,
-  MultiNoiseWeights **multiWeights,
-  const EphemerisData *edat,
-  const SSBprecision SSBprec
-  );
-
 ///// Internal struct definitions /////
 
 // Common input data for F-statistic algorithms
 typedef struct {
-  UINT4 numDetectors;                                   // Number of detectors
-  CHAR detectorNames[PULSAR_MAX_DETECTORS][3];          // Names of detectors
-  REAL8 Fnorm;                                          // F-statistic normalisation factor
-  MultiNoiseWeights *multiWeights;                      // Multi-detector noise weights
-} FstatInputData_Common;
+  MultiLALDetector detectors;                           // List of detectors
+  MultiLIGOTimeGPSVector *timestamps;                   // Multi-detector list of SFT timestamps
+  MultiNoiseWeights *noiseWeights;                      // Multi-detector noise weights
+  MultiDetectorStateSeries *detectorStates;             // Multi-detector state series
+  const EphemerisData *ephemerides;                     // Ephemerides for the time-span of the SFTs
+  SSBprecision SSBprec;                                 // Barycentric transformation precision
+} FstatInput_Common;
 
 // Input data specific to F-statistic algorithms
-typedef struct tagFstatInputData_Demod FstatInputData_Demod;
-typedef struct tagFstatInputData_Resamp FstatInputData_Resamp;
+typedef struct tagFstatInput_Demod FstatInput_Demod;
+typedef struct tagFstatInput_Resamp FstatInput_Resamp;
 
 // Internal definition of input data structure
-struct tagFstatInputData {
-  FstatInputData_Common common;                         // Common input data
-  FstatInputData_Demod* demod;                          // Demodulation input data
-  FstatInputData_Resamp* resamp;                        // Resampling input data
+struct tagFstatInput {
+  FstatInput_Common* common;                        // Common input data
+  FstatInput_Demod* demod;                          // Demodulation input data
+  FstatInput_Resamp* resamp;                        // Resampling input data
 };
 
 ///// Include F-statistic algorithm implementations /////
@@ -90,94 +84,14 @@ struct tagFstatInputData {
 
 ///// Function definitions /////
 
-static FstatInputData*
-SetupFstat_Common(
-  MultiSFTVector **multiSFTs,
-  MultiNoiseWeights **multiWeights,
-  const EphemerisData *edat,
-  const SSBprecision SSBprec
-  )
-{
-
-  // Check input
-  XLAL_CHECK_NULL(multiSFTs != NULL, XLAL_EFAULT);
-  XLAL_CHECK_NULL(*multiSFTs != NULL, XLAL_EFAULT);
-  XLAL_CHECK_NULL(multiWeights != NULL, XLAL_EFAULT);
-  XLAL_CHECK_NULL(edat != NULL, XLAL_EFAULT);
-  XLAL_CHECK_NULL(SSBprec < SSBPREC_LAST, XLAL_EINVAL);
-
-  // Check number of SFTs
-  XLAL_CHECK_NULL((*multiSFTs)->length > 0, XLAL_EINVAL, "Found no SFTs!");
-  XLAL_CHECK_NULL((*multiSFTs)->length <= PULSAR_MAX_DETECTORS, XLAL_EINVAL, "Supports only up to PULSAR_MAX_DETECTORS=%u detectors", PULSAR_MAX_DETECTORS);
-  for (UINT4 X = 0; X < (*multiSFTs)->length; ++X) {
-
-    // Check number of SFTs for each detector
-    XLAL_CHECK_NULL((*multiSFTs)->data[X]->length > 0, XLAL_EINVAL, "Found no SFTs from detector %u", X);
-    for (UINT4 alpha = 0; alpha < (*multiSFTs)->data[X]->length; ++alpha) {
-
-      // Check length of SFTs
-      XLAL_CHECK_NULL((*multiSFTs)->data[X]->data[alpha].data->length > 0, XLAL_EINVAL,
-                      "Found zero-length SFT from detector %u, position %u", X, alpha);
-
-    }
-
-  }
-
-  // If noise weights were supplied ...
-  if (*multiWeights != NULL) {
-
-    // Check numbers of noise weights match SFTs
-    XLAL_CHECK_NULL((*multiWeights)->length == (*multiSFTs)->length, XLAL_EINVAL,
-                    "Number of noise weight detectors does not match SFTS: %u != %u",
-                    (*multiWeights)->length, (*multiSFTs)->length);
-    for (UINT4 X = 0; X < (*multiSFTs)->length; ++X) {
-
-      // Check number of noise weights for each detector
-      XLAL_CHECK_NULL((*multiWeights)->data[X]->length == (*multiSFTs)->data[X]->length, XLAL_EINVAL,
-                      "Number of noise weights from detector %u does not match SFTS: %u != %u",
-                      X, (*multiWeights)->data[X]->length, (*multiSFTs)->data[X]->length);
-
-    }
-
-  }
-
-  // Allocate input data struct
-  FstatInputData* input = XLALCalloc(1, sizeof(*input));
-  XLAL_CHECK_NULL(input != NULL, XLAL_ENOMEM);
-
-  // Save number of detectors, and copy name of each detector
-  input->common.numDetectors = (*multiSFTs)->length;
-  for (UINT4 X = 0; X < (*multiSFTs)->length; ++X) {
-    strncpy(input->common.detectorNames[X], (*multiSFTs)->data[X]->data[0].name, 2);
-  }
-
-  // If no noise weights were supplied ...
-  if (*multiWeights == NULL) {
-
-    // Correction to F-statistic quantities computed by XLALComputeFstat() without noise weights
-    const REAL8 Tsft = 1.0 / (*multiSFTs)->data[0]->data[0].deltaF;
-    input->common.Fnorm = 1.0 / sqrt( 0.5 * Tsft );
-
-  } else {
-    input->common.Fnorm = 0.0;
-  }
-
-  // Save pointer to input noise weights, set supplied pointer to NULL
-  input->common.multiWeights = *multiWeights;
-  *multiWeights = NULL;
-
-  return input;
-
-}
-
-FstatInputDataVector*
-XLALCreateFstatInputDataVector(
+FstatInputVector*
+XLALCreateFstatInputVector(
   const UINT4 length
   )
 {
 
   // Allocate and initialise vector container
-  FstatInputDataVector* inputs = XLALCalloc(1, sizeof(*inputs));
+  FstatInputVector* inputs = XLALCalloc(1, sizeof(*inputs));
   XLAL_CHECK_NULL(inputs != NULL, XLAL_ENOMEM);
   inputs->length = length;
 
@@ -192,13 +106,13 @@ XLALCreateFstatInputDataVector(
 }
 
 void
-XLALDestroyFstatInputDataVector(
-  FstatInputDataVector* inputs
+XLALDestroyFstatInputVector(
+  FstatInputVector* inputs
   )
 {
   if (inputs != NULL) {
     for (UINT4 i = 0; i < inputs->length; ++i) {
-      XLALDestroyFstatInputData(inputs->data[i]);
+      XLALDestroyFstatInput(inputs->data[i]);
     }
     XLALFree(inputs->data);
     XLALFree(inputs);
@@ -273,9 +187,234 @@ XLALDestroyMultiFstatAtomVector(
 }
 
 int
+XLALSetupFstatInput(
+  FstatInput *input,
+  const SFTCatalog *SFTcatalog,
+  const REAL8 minCoverFreq,
+  const REAL8 maxCoverFreq,
+  const PulsarParamsVector *injectSources,
+  const MultiNoiseFloor *injectSqrtSX,
+  const MultiNoiseFloor *assumeSqrtSX,
+  const UINT4 runningMedianWindow,
+  const EphemerisData *ephemerides,
+  const SSBprecision SSBprec,
+  const UINT4 randSeed
+  )
+{
+
+  // Check Fstat input data
+  XLAL_CHECK( input != NULL, XLAL_EFAULT );
+  XLAL_CHECK( input->common == NULL, XLAL_EINVAL, "'input' has already been set up" );
+
+  // Check catalog
+  XLAL_CHECK( SFTcatalog != NULL, XLAL_EFAULT );
+  XLAL_CHECK( SFTcatalog->length > 0, XLAL_EINVAL );
+  XLAL_CHECK( SFTcatalog->data != NULL, XLAL_EFAULT );
+  for (UINT4 i = 1; i < SFTcatalog->length; ++i) {
+    XLAL_CHECK( (SFTcatalog->data[0].locator == NULL) == (SFTcatalog->data[i].locator == NULL), XLAL_EINVAL,
+                "All 'locator' fields of SFTDescriptors in 'SFTcatalog' must be either NULL or !NULL." );
+  }
+
+  // Create a multi-view of SFT catalog
+  MultiSFTCatalogView *multiSFTcatalog = XLALGetMultiSFTCatalogView(SFTcatalog);
+  XLAL_CHECK( multiSFTcatalog != NULL, XLAL_EFUNC );
+  const UINT4 numDetectors = multiSFTcatalog->length;
+
+  // Check remaining parameters
+  XLAL_CHECK( isfinite(minCoverFreq) && minCoverFreq > 0, XLAL_EINVAL );
+  XLAL_CHECK( isfinite(maxCoverFreq) && maxCoverFreq > 0, XLAL_EINVAL );
+  XLAL_CHECK( maxCoverFreq > minCoverFreq, XLAL_EINVAL );
+  XLAL_CHECK( injectSources == NULL || injectSources->length > 0, XLAL_EINVAL );
+  XLAL_CHECK( injectSources == NULL || injectSources->data != NULL, XLAL_EFAULT );
+  XLAL_CHECK( injectSqrtSX == NULL || injectSqrtSX->length == numDetectors, XLAL_EINVAL );
+  XLAL_CHECK( assumeSqrtSX == NULL || assumeSqrtSX->length == numDetectors, XLAL_EINVAL );
+  XLAL_CHECK( ephemerides != NULL, XLAL_EFAULT );
+  XLAL_CHECK( SSBprec < SSBPREC_LAST, XLAL_EINVAL );
+
+  // Determine whether to load and/or generate SFTs
+  const BOOLEAN loadSFTs = (SFTcatalog->data[0].locator != NULL);
+  const BOOLEAN generateSFTs = (injectSources != NULL) || (injectSqrtSX != NULL);
+  XLAL_CHECK( loadSFTs || generateSFTs, XLAL_EINVAL, "Can neither load nor generate SFTs with given parameters" );
+
+  // Allocate common input data struct
+  input->common = XLALCalloc(1, sizeof(*input->common));
+  XLAL_CHECK(input->common != NULL, XLAL_ENOMEM);
+  FstatInput_Common *const common = input->common;
+
+  // Determine the time baseline of an SFT
+  const REAL8 Tsft = 1.0 / SFTcatalog->data[0].header.deltaF;
+
+  // Determine the frequency band to load or generate SFTs over
+  REAL8 minFreq = minCoverFreq, maxFreq = maxCoverFreq;
+  {
+
+    // Determine whether the algorithm being used requires extra frequency bins
+    int extraBins = 0;
+    if (input->demod != NULL) {
+      extraBins = GetFstatExtraBins_Demod(input->demod);
+    } else if (input->resamp != NULL) {
+      extraBins = GetFstatExtraBins_Resamp(input->resamp);
+    } else {
+      XLAL_ERROR(XLAL_EFAILED, "Invalid FstatInput struct passed to %s()", __func__);
+    }
+    XLAL_CHECK( extraBins >= 0, XLAL_EFAILED );
+
+    // Add number of extra frequency bins required by running median
+    extraBins += runningMedianWindow/2 + 1;
+
+    // Extend frequency range by number of extra bins times SFT bin width
+    const REAL8 extraFreq = extraBins / Tsft;
+    minFreq -= extraFreq;
+    maxFreq += extraFreq;
+
+  }
+
+  // Extract detectors and timestamps from multi-view of SFT catalog
+  XLAL_CHECK( XLALMultiLALDetectorFromMultiSFTCatalogView( &common->detectors, multiSFTcatalog ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( ( common->timestamps = XLALTimestampsFromMultiSFTCatalogView(multiSFTcatalog) ) != NULL,  XLAL_EFUNC );
+
+  // Generate SFTs with injections and noise, if required
+  MultiSFTVector *multiSFTs = NULL;
+  if (generateSFTs) {
+
+    // Initialise parameters struct for XLALCWMakeFakeMultiData()
+    CWMFDataParams MFDparams;
+    INIT_MEM(MFDparams);
+    MFDparams.fMin = minFreq;
+    MFDparams.Band = maxFreq - minFreq;
+    MFDparams.multiIFO = common->detectors;
+    MFDparams.multiTimestamps = *common->timestamps;
+    MFDparams.randSeed = randSeed;
+
+    // Set noise floors if sqrtSX is given; otherwise noise floors are zero
+    if ( injectSqrtSX != NULL ) {
+      MFDparams.multiNoiseFloor = *injectSqrtSX;
+    } else {
+      MFDparams.multiNoiseFloor.length = numDetectors;
+    }
+
+    // Generate SFTs with injections
+    XLAL_CHECK( XLALCWMakeFakeMultiData( &multiSFTs, NULL, injectSources, &MFDparams, ephemerides ) == XLAL_SUCCESS, XLAL_EFUNC );
+
+  }
+
+  // Load SFTs, if required
+  if (loadSFTs) {
+
+    // If no SFTs have been generated, then load all SFTs at once
+    if (multiSFTs == NULL) {
+      XLAL_CHECK( ( multiSFTs = XLALLoadMultiSFTs(SFTcatalog, minFreq, maxFreq) ) != NULL, XLAL_EFUNC );
+    } else {
+
+      // Otherwise, to minimize memory usage, loop over detectors, load SFTs and add them to generated SFTs
+      for (UINT4 X = 0; X < numDetectors; ++X) {
+        SFTVector *loadedSFTs = NULL;
+        XLAL_CHECK( ( loadedSFTs = XLALLoadSFTs(&multiSFTcatalog->data[X], minFreq, maxFreq) ) != NULL, XLAL_EFUNC );
+        XLAL_CHECK( XLALSFTVectorAdd( multiSFTs->data[X], loadedSFTs ) == XLAL_SUCCESS, XLAL_EFUNC );
+        XLALDestroySFTVector(loadedSFTs);
+      }
+
+    }
+
+  }
+
+  // Normalise SFTs using either running median or assumed PSDs
+  MultiPSDVector *runningMedian = XLALNormalizeMultiSFTVect(multiSFTs, runningMedianWindow, assumeSqrtSX);
+  XLAL_CHECK( runningMedian != NULL, XLAL_EFUNC );
+
+  // Calculate SFT noise weights from PSD
+  common->noiseWeights = XLALComputeMultiNoiseWeights(runningMedian, runningMedianWindow, 0);
+  XLAL_CHECK( common->noiseWeights != NULL, XLAL_EFUNC );
+
+  // Get detector states, with a timestamp shift of Tsft/2
+  const REAL8 tOffset = 0.5 * Tsft;
+  common->detectorStates = XLALGetMultiDetectorStates(common->timestamps, &common->detectors, ephemerides, tOffset);
+  XLAL_CHECK( common->detectorStates != NULL, XLAL_EFUNC );
+
+  // Save ephemerides and SSB precision
+  common->ephemerides = ephemerides;
+  common->SSBprec = SSBprec;
+
+  // Call the appropriate algorithm function to setup their input data structures
+  // - The algorithm input data structures are expected to take ownership of the
+  //   SFTs, which is why 'input->common' does not retain a pointer to them
+  if (input->demod != NULL) {
+    XLAL_CHECK(SetupFstatInput_Demod(input->demod, common, multiSFTs) == XLAL_SUCCESS, XLAL_EFUNC);
+  } else if (input->resamp != NULL) {
+    XLAL_CHECK(SetupFstatInput_Resamp(input->resamp, common, multiSFTs) == XLAL_SUCCESS, XLAL_EFUNC);
+  } else {
+    XLAL_ERROR(XLAL_EFAILED, "Invalid FstatInput struct passed to %s()", __func__);
+  }
+  multiSFTs = NULL;
+
+  // Cleanup
+  XLALDestroyMultiSFTCatalogView(multiSFTcatalog);
+  XLALDestroyMultiPSDVector(runningMedian);
+
+  return XLAL_SUCCESS;
+
+}
+
+const MultiLALDetector*
+XLALGetFstatInputDetectors(
+  const FstatInput* input
+  )
+{
+
+  // Check input
+  XLAL_CHECK_NULL(input != NULL, XLAL_EFAULT);
+  XLAL_CHECK_NULL(input->common != NULL, XLAL_EINVAL, "'input' has not yet been set up");
+
+  return &input->common->detectors;
+
+}
+
+const MultiLIGOTimeGPSVector*
+XLALGetFstatInputTimestamps(
+  const FstatInput* input
+  )
+{
+
+  // Check input
+  XLAL_CHECK_NULL(input != NULL, XLAL_EFAULT);
+  XLAL_CHECK_NULL(input->common != NULL, XLAL_EINVAL, "'input' has not yet been set up");
+
+  return input->common->timestamps;
+
+}
+
+const MultiNoiseWeights*
+XLALGetFstatInputNoiseWeights(
+  const FstatInput* input
+  )
+{
+
+  // Check input
+  XLAL_CHECK_NULL(input != NULL, XLAL_EFAULT);
+  XLAL_CHECK_NULL(input->common != NULL, XLAL_EINVAL, "'input' has not yet been set up");
+
+  return input->common->noiseWeights;
+
+}
+
+const MultiDetectorStateSeries*
+XLALGetFstatInputDetectorStates(
+  const FstatInput* input
+  )
+{
+
+  // Check input
+  XLAL_CHECK_NULL(input != NULL, XLAL_EFAULT);
+  XLAL_CHECK_NULL(input->common != NULL, XLAL_EINVAL, "'input' has not yet been set up");
+
+  return input->common->detectorStates;
+
+}
+
+int
 XLALComputeFstat(
   FstatResults **Fstats,
-  FstatInputData *input,
+  FstatInput *input,
   const PulsarDopplerParams *doppler,
   const REAL8 dFreq,
   const UINT4 numFreqBins,
@@ -286,6 +425,7 @@ XLALComputeFstat(
   // Check input
   XLAL_CHECK(Fstats != NULL, XLAL_EFAULT);
   XLAL_CHECK(input != NULL, XLAL_EFAULT);
+  XLAL_CHECK(input->common != NULL, XLAL_EINVAL, "'input' has not yet been set up");
   XLAL_CHECK(doppler != NULL, XLAL_EFAULT);
   XLAL_CHECK(doppler->asini >= 0, XLAL_EINVAL);
   XLAL_CHECK(dFreq > 0 || (numFreqBins == 1 && dFreq >= 0), XLAL_EINVAL);
@@ -299,8 +439,8 @@ XLALComputeFstat(
   }
 
   // Get constant pointer to common input data
-  const FstatInputData_Common *common = &(input->common);
-  const UINT4 numDetectors = common->numDetectors;
+  const FstatInput_Common *common = input->common;
+  const UINT4 numDetectors = common->detectors.length;
 
   // Enlarge result arrays if they are too small
   const bool moreFreqBins = (numFreqBins > (*Fstats)->internalalloclen);
@@ -366,7 +506,10 @@ XLALComputeFstat(
   (*Fstats)->dFreq = dFreq;
   (*Fstats)->numFreqBins = numFreqBins;
   (*Fstats)->numDetectors = numDetectors;
-  memcpy((*Fstats)->detectorNames, common->detectorNames, sizeof(common->detectorNames));
+  memset((*Fstats)->detectorNames, 0, sizeof((*Fstats)->detectorNames));
+  for (UINT4 X = 0; X < numDetectors; ++X) {
+    strncpy((*Fstats)->detectorNames[X], common->detectors.sites[X].frDetector.prefix, 2);
+  }
   (*Fstats)->whatWasComputed = whatToCompute;
 
   // Call the appropriate algorithm function to compute the F-statistic
@@ -375,83 +518,29 @@ XLALComputeFstat(
   } else if (input->resamp != NULL) {
     XLAL_CHECK(ComputeFstat_Resamp(*Fstats, common, input->resamp) == XLAL_SUCCESS, XLAL_EFUNC);
   } else {
-    XLAL_ERROR(XLAL_EFAILED, "Invalid FstatInputData struct passed to %s()", __func__);
+    XLAL_ERROR(XLAL_EFAILED, "Invalid FstatInput struct passed to %s()", __func__);
   }
-
-  // Correct F-statistic quantities when no noise weights are given
-  if (common->Fnorm != 0.0) {
-    const REAL8 Fnorm = common->Fnorm;
-    const REAL8 Fnorm_sqr = Fnorm * Fnorm;
-
-    // Correct antenna pattern matrix
-    (*Fstats)->Mmunu.Sinv_Tsft = 2.0 / Fnorm_sqr;   // equivalent to Tsft
-
-    // Correct multi-detector 2F array
-    if (whatToCompute & FSTATQ_2F) {
-      for (UINT4 k = 0; k < (*Fstats)->numFreqBins; ++k) {
-        (*Fstats)->twoF[k] *= Fnorm_sqr;
-        (*Fstats)->twoF[k] += 4;
-      }
-    }
-
-    // Correct multi-detector F-parts array
-    if (whatToCompute & FSTATQ_FAFB) {
-      for (UINT4 k = 0; k < (*Fstats)->numFreqBins; ++k) {
-        (*Fstats)->FaFb[k].Fa *= Fnorm;
-        (*Fstats)->FaFb[k].Fb *= Fnorm;
-      }
-    }
-
-    // Correct 2F per detector arrays
-    if (whatToCompute & FSTATQ_2F_PER_DET) {
-      for (UINT4 X = 0; X < numDetectors; ++X) {
-        for (UINT4 k = 0; k < (*Fstats)->numFreqBins; ++k) {
-          (*Fstats)->twoFPerDet[X][k] *= Fnorm_sqr;
-          (*Fstats)->twoFPerDet[X][k] += 4;
-        }
-      }
-    }
-
-    // Correct F-parts per detector arrays
-    if (whatToCompute & FSTATQ_FAFB_PER_DET) {
-      for (UINT4 X = 0; X < numDetectors; ++X) {
-        for (UINT4 k = 0; k < (*Fstats)->numFreqBins; ++k) {
-          (*Fstats)->FaFbPerDet[X][k].Fa *= Fnorm;
-          (*Fstats)->FaFbPerDet[X][k].Fb *= Fnorm;
-        }
-      }
-    }
-
-    // Correct F-atoms per detector arrays, and initialise to NULL
-    if (whatToCompute & FSTATQ_ATOMS_PER_DET) {
-      for (UINT4 k = 0; k < (*Fstats)->numFreqBins; ++k) {
-        for (UINT4 X = 0; X < numDetectors; ++X) {
-          FstatAtomVector *atomX = (*Fstats)->multiFatoms[k]->data[X];
-          for (UINT4 alpha = 0; alpha < atomX->length; ++alpha) {
-            atomX->data[alpha].Fa_alpha *= Fnorm;
-            atomX->data[alpha].Fb_alpha *= Fnorm;
-          }
-        }
-      }
-    }
-
-  } // if (common->Fnorm != 0.0)
 
   return XLAL_SUCCESS;
 
 }
 
 void
-XLALDestroyFstatInputData(
-  FstatInputData* input
+XLALDestroyFstatInput(
+  FstatInput* input
   )
 {
   if (input != NULL) {
-    XLALDestroyMultiNoiseWeights(input->common.multiWeights);
+    if (input->common != NULL) {
+      XLALDestroyMultiTimestamps(input->common->timestamps);
+      XLALDestroyMultiNoiseWeights(input->common->noiseWeights);
+      XLALDestroyMultiDetectorStateSeries(input->common->detectorStates);
+      XLALFree(input->common);
+    }
     if (input->demod != NULL) {
-      DestroyFstatInputData_Demod(input->demod);
+      DestroyFstatInput_Demod(input->demod);
     } else if (input->resamp != NULL) {
-      DestroyFstatInputData_Resamp(input->resamp);
+      DestroyFstatInput_Resamp(input->resamp);
     }
     XLALFree(input);
   }
@@ -480,12 +569,41 @@ XLALDestroyFstatResults(
 }
 
 int
+XLALAdd4ToFstatResults(
+  FstatResults* Fstats
+  )
+{
+
+  // Check input
+  XLAL_CHECK( Fstats != NULL, XLAL_EFAULT );
+
+  // Add +4 to multi-detector 2F array
+  if (Fstats->whatWasComputed & FSTATQ_2F) {
+    for (UINT4 k = 0; k < Fstats->numFreqBins; ++k) {
+      Fstats->twoF[k] += 4;
+    }
+  }
+
+  // Add +4 to 2F per detector arrays
+  if (Fstats->whatWasComputed & FSTATQ_2F_PER_DET) {
+    for (UINT4 X = 0; X < Fstats->numDetectors; ++X) {
+      for (UINT4 k = 0; k < Fstats->numFreqBins; ++k) {
+        Fstats->twoFPerDet[X][k] += 4;
+      }
+    }
+  }
+
+  return XLAL_SUCCESS;
+
+}
+
+int
 XLALEstimatePulsarAmplitudeParams(
   PulsarCandidate *pulsarParams,
   const LIGOTimeGPS* FaFb_refTime,
   const COMPLEX16 Fa,
   const COMPLEX16 Fb,
-  const CmplxAntennaPatternMatrix *Mmunu
+  const AntennaPatternMatrix *Mmunu
   )
 {
 
@@ -514,6 +632,11 @@ XLALEstimatePulsarAmplitudeParams(
   int signum;
 
   XLAL_CHECK ( pulsarParams != NULL, XLAL_EFAULT );
+  XLAL_CHECK ( FaFb_refTime != NULL, XLAL_EFAULT );
+  XLAL_CHECK ( isfinite(creal(Fa)) && isfinite(cimag(Fb)), XLAL_EDOM,
+               "Fa = (%g, %g) is not finite", creal(Fa), cimag(Fa) );
+  XLAL_CHECK ( isfinite(creal(Fb)) && isfinite(cimag(Fb)), XLAL_EDOM,
+               "Fb = (%g, %g) is not finite", creal(Fb), cimag(Fb) );
   XLAL_CHECK ( Mmunu != NULL, XLAL_EFAULT );
 
   Ad = Mmunu->Ad;
@@ -819,3 +942,59 @@ XLALAmplitudeVect2Params(
   return XLAL_SUCCESS;
 
 }
+
+
+/** XLAL function to compute single-or multi-IFO Fstat from multi-IFO Atoms: */
+REAL8 XLALComputeFstatFromAtoms ( const MultiFstatAtomVector *multiFstatAtoms,   /**< multi-detector atoms */
+				  const INT4                 X                   /**< detector number, give -1 for multi-Fstat */
+				  )
+{
+  /* check input parameters and report errors */
+  XLAL_CHECK_REAL8 ( multiFstatAtoms && multiFstatAtoms->data && multiFstatAtoms->data[0]->data, XLAL_EFAULT, "Empty pointer as input parameter." );
+  XLAL_CHECK_REAL8 ( multiFstatAtoms->length > 0, XLAL_EBADLEN, "Input MultiFstatAtomVector has zero length. (i.e., no detectors)" );
+  XLAL_CHECK_REAL8 ( X >= -1, XLAL_EDOM, "Invalid detector number X=%d. Only nonnegative numbers, or -1 for multi-F, are allowed.", X );
+  XLAL_CHECK_REAL8 ( ( X < 0 ) || ( (UINT4)(X) <= multiFstatAtoms->length-1 ), XLAL_EDOM, "Requested X=%d, but FstatAtoms only have length %d.", X, multiFstatAtoms->length );
+
+  /* internal detector index Y to do both single- and multi-F case */
+  UINT4 Y, Ystart, Yend;
+  if ( X == -1 ) { /* loop through all detectors to get multi-Fstat */
+    Ystart = 0;
+    Yend   = multiFstatAtoms->length-1;
+  }
+  else { /* just compute single-Fstat for 1 IFO */
+    Ystart = X;
+    Yend   = X;
+  }
+
+  /* set up temporary Fatoms and matrix elements for summations */
+  REAL8 mmatrixA = 0.0, mmatrixB = 0.0, mmatrixC = 0.0;
+  REAL8 F = 0.0;
+  COMPLEX8 Fa, Fb;
+  Fa = 0.0;
+  Fb = 0.0;
+
+  for (Y = Ystart; Y <= Yend; Y++) {  /* loop through detectors */
+
+    UINT4 alpha, numSFTs;
+    numSFTs = multiFstatAtoms->data[Y]->length;
+    XLAL_CHECK_REAL8 ( numSFTs > 0, XLAL_EDOM, "Input FstatAtomVector has zero length. (i.e., no timestamps for detector X=%d)", Y );
+
+    for ( alpha = 0; alpha < numSFTs; alpha++) { /* loop through SFTs */
+      FstatAtom *thisAtom = &multiFstatAtoms->data[Y]->data[alpha];
+      /* sum up matrix elements and Fa, Fb */
+      mmatrixA += thisAtom->a2_alpha;
+      mmatrixB += thisAtom->b2_alpha;
+      mmatrixC += thisAtom->ab_alpha;
+      Fa += thisAtom->Fa_alpha;
+      Fb += thisAtom->Fb_alpha;
+    } /* loop through SFTs */
+
+  } /* loop through detectors */
+
+  /* compute determinant and final Fstat (not twoF!) */
+  REAL8 Dinv = 1.0 / ( mmatrixA * mmatrixB - SQ(mmatrixC) );
+  F = Dinv * ( mmatrixB * ( SQ(crealf(Fa)) + SQ(cimagf(Fa)) ) + mmatrixA * ( SQ(crealf(Fb)) + SQ(cimagf(Fb)) ) - 2.0 * mmatrixC * (crealf(Fa)*crealf(Fb) + cimagf(Fa)*cimagf(Fb)) );
+
+  return(F);
+
+} /* XLALComputeFstatFromAtoms() */

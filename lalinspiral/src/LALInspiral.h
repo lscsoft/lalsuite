@@ -106,6 +106,33 @@ extern "C" {
 #define LALINSPIRALH_MSGEMASSCHOICE   "Improper choice for massChoice"
 /** \endcond */
 
+#define LAL_INSPIRAL_INTERACTION_DEFAULT LAL_INSPIRAL_INTERACTION_ALL
+
+/**
+ * XLAL function to determine LALInspiralInteraction from a string.
+ * DEPRECATED: USE LALSimInspiralSpinOrder, LALSimInspiralTidalOrder INSTEAD
+ */
+int XLALGetInteractionFromString(const CHAR *inString);
+
+/**
+ * Enumeration to specify which interaction will be used in the waveform
+ * generation. Their combination also can be used by the bitwise or.
+ * DEPRECATED: USE LALSimInspiralSpinOrder, LALSimInspiralTidalOrder INSTEAD
+ */
+typedef enum {
+    LAL_INSPIRAL_INTERACTION_NONE = 0, /**< No spin, tidal or other interactions */
+    LAL_INSPIRAL_INTERACTION_SPIN_ORBIT_15PN = 1, /**< Leading order spin-orbit interaction */
+    LAL_INSPIRAL_INTERACTION_SPIN_SPIN_2PN = 1 << 1,  /**< Spin-spin interaction */
+    LAL_INSPIRAL_INTERACTION_SPIN_SPIN_SELF_2PN = 1 << 2,     /**<  Spin-spin-self interaction */
+    LAL_INSPIRAL_INTERACTION_QUAD_MONO_2PN = 1 << 3,     /**< Quadrupole-monopole interaction */
+    LAL_INSPIRAL_INTERACTION_SPIN_ORBIT_25PN = 1 << 4,     /**<  Next-to-leading-order spin-orbit interaction */
+    LAL_INSPIRAL_INTERACTION_SPIN_ORBIT_3PN = 1 << 5,  /**< Spin-spin interaction */
+    LAL_INSPIRAL_INTERACTION_TIDAL_5PN = 1 << 6, /**< Leading-order tidal interaction */
+    LAL_INSPIRAL_INTERACTION_TIDAL_6PN = 1 << 7, /**< Next-to-leading-order tidal interaction */
+    LAL_INSPIRAL_INTERACTION_ALL_SPIN = (1 << 6) - 1, /**< all spin interactions, no tidal interactions */
+    LAL_INSPIRAL_INTERACTION_ALL = (1 << 8) - 1 /**< all spin and tidal interactions */
+} LALInspiralInteraction;
+
 
 /**
  * These are the input structures needed to solve for the mass
@@ -317,7 +344,7 @@ tagInspiralTemplate
                                    * For spinBCV searches, (in 4 dimensions) Gamma[0,...,9] would be required
                                    */
   REAL4  qmParameter[2];	/**< UNDOCUMENTED */
-  LALSimInspiralInteraction	interaction;	/**< UNDOCUMENTED */
+  LALInspiralInteraction	interaction;	/**< UNDOCUMENTED */
 
   UINT4 fixedStep;		/**< UNDOCUMENTED */
   UINT4 inspiralOnly;		/**< UNDOCUMENTED */

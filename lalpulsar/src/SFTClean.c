@@ -16,7 +16,9 @@
  *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
  *  MA  02111-1307  USA
  */
+
 #include <lal/SFTClean.h>
+#include <lal/SFTutils.h>
 
 /**
  * \author Badri Krishnan, Alicia Sintes, Greg Mendell
@@ -502,7 +504,7 @@ void LALCheckLines ( LALStatus           *status, /**< pointer to LALStatus stru
  * Function for cleaning a SFT given a set of known spectral disturbances.
  * The algorithm is the following.  For each
  * spectral line, first the central frequency of the line is converted to a
- * bin index by floor(tBase * freq + 0.5).  If the wings are set to zero, then only this
+ * bin index by round(tBase * freq).  If the wings are set to zero, then only this
  * central bin is cleaned.  Note that if the frequency lies between two exactly
  * resolved frequencies, then only one of these bins is cleaned.  The user must
  * know about the SFT timebase and make sure that the central frequency is an
@@ -629,7 +631,7 @@ void LALCleanCOMPLEX8SFT (LALStatus          *status,/**< pointer to LALStatus s
   deltaF = sft->deltaF;
   tBase = 1.0/deltaF;
   f0 = sft->f0;
-  minBin = floor(f0/deltaF + 0.5);
+  minBin = lround(f0/deltaF);
   maxBin = minBin + length - 1;
 
   /* allocate memory for storing sft power */
@@ -665,7 +667,7 @@ void LALCleanCOMPLEX8SFT (LALStatus          *status,/**< pointer to LALStatus s
   for (count = 0; count < nLines; count++){
 
     /* find frequency bins for line frequency and wings */
-    lineBin = floor(tBase * lineFreq[count] + 0.5);
+    lineBin = lround(tBase * lineFreq[count]);
     leftWingBins = floor(tBase * leftWing[count]);
     rightWingBins = floor(tBase * rightWing[count]);
 

@@ -60,7 +60,7 @@ int XLALSimInspiralTaylorF2ReducedSpinTidal(
     const REAL8 mSevenBySix = -7./6.;
     const REAL8 vISCO = 1. / sqrt(6.);
     const REAL8 fISCO = vISCO * vISCO * vISCO / piM;
-    REAL8 v0 = cbrt(piM * fStart);
+    REAL8 v0 = 1.0; /* v0=c */
     REAL8 shft, amp0, f_max;
     REAL8 psiNewt, psi2, psi3, psi4, psi5, psi6, psi6L, psi7, psi3S, psi4S, psi5S, psi10T1, psi10T2, psi10, psi12T1, psi12T2, psi12;
     REAL8 alpha2, alpha3, alpha4, alpha5, alpha6, alpha6L, alpha7, alpha3S, alpha4S, alpha5S;

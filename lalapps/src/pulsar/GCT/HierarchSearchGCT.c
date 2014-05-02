@@ -35,11 +35,10 @@
 /* ---------- Includes -------------------- */
 #include <lal/Segments.h>
 #include <lal/LALString.h>
+#include <lal/LineRobustStats.h>
+#include <RecalcToplistStats.h>
 
 #include "HierarchSearchGCT.h"
-#include <lal/TransientCW_utils.h> /* for XLALFastNegExp */
-
-#include "LineVeto.h"
 
 #ifdef GC_SSE2_OPT
 #include <gc_hotloop_sse2.h>
@@ -154,7 +153,7 @@ typedef struct {
 
 
 /* ------------------------ Functions -------------------------------- */
-void SetUpSFTs( LALStatus *status, FstatInputDataVector** p_Fstat_in_vec, UsefulStageVariables *in );
+void SetUpSFTs( LALStatus *status, FstatInputVector** p_Fstat_in_vec, UsefulStageVariables *in );
 void PrintFstatVec( LALStatus *status, FstatResults *in, FILE *fp, PulsarDopplerParams *thisPoint,
                     LIGOTimeGPS refTime, INT4 stackIndex);
 void PrintCatalogInfo( LALStatus *status, const SFTCatalog *catalog, FILE *fp );
@@ -227,7 +226,7 @@ int MAIN( int argc, char *argv[]) {
   UsefulStageVariables usefulParams;
 
   /* F-statistic computation related stuff */
-  FstatInputDataVector* Fstat_in_vec = NULL;		// Vector of Fstat input data structures for XLALComputeFstat(), one per stack
+  FstatInputVector* Fstat_in_vec = NULL;		// Vector of Fstat input data structures for XLALComputeFstat(), one per stack
   FstatResults* Fstat_res = NULL;			// Pointer to Fstat results structure, will be allocated by XLALComputeFstat()
   FstatQuantities Fstat_what = FSTATQ_2F;		// Quantities to be computed by XLALComputeFstat()
   UINT4 binsFstat1, binsFstatSearch=0;
@@ -1364,6 +1363,13 @@ int MAIN( int argc, char *argv[]) {
                     XLALPrintError ("%s: XLALComputeFstat() failed with errno=%d\n", __func__, xlalErrno );
                     return xlalErrno;
                   }
+                  /* if single-only flag is given, add +4 to F-statistic */
+                  if ( uvar_SignalOnly ) {
+                    if (XLALAdd4ToFstatResults(Fstat_res) != XLAL_SUCCESS) {
+                      XLALPrintError ("%s: XLALAdd4ToFstatResults() failed with errno=%d\n", __func__, xlalErrno );
+                      return xlalErrno;
+                    }
+                  }
 
                   /* Loop over coarse-grid frequency bins */
                   for (ifreq = 0; ifreq < Fstat_res->numFreqBins; ifreq++) {
@@ -1668,7 +1674,7 @@ int MAIN( int argc, char *argv[]) {
     LALFree( fnameFstatVec1 );
   }
 
-  XLALDestroyFstatInputDataVector(Fstat_in_vec);
+  XLALDestroyFstatInputVector(Fstat_in_vec);
   XLALDestroyFstatResults(Fstat_res);
 
   XLALDestroyTimestampVector(startTstack);
@@ -1715,9 +1721,6 @@ int MAIN( int argc, char *argv[]) {
 
   XLALDestroyREAL8Vector ( usefulParams.LVloglX );
 
-  XLALDestroyExpLUT(); /* lookup table for fast exponential function, used in computeLV case */
-  XLALDestroyLogLUT(); /* lookup table for fast logarithm function, used in computeLV case */
-
   LAL_CALL (LALDestroyUserVars(&status), &status);
 
   XLALFree ( VCSInfoString );
@@ -1738,7 +1741,7 @@ int MAIN( int argc, char *argv[]) {
  * detector-state
  */
 void SetUpSFTs( LALStatus *status,			/**< pointer to LALStatus structure */
-                FstatInputDataVector** p_Fstat_in_vec,	/**< pointer to vector of Fstat input data structures for XLALComputeFstat(), one per stack */
+                FstatInputVector** p_Fstat_in_vec,	/**< pointer to vector of Fstat input data structures for XLALComputeFstat(), one per stack */
                 UsefulStageVariables *in		/**< input params */
                 )
 {
@@ -1755,7 +1758,6 @@ void SetUpSFTs( LALStatus *status,			/**< pointer to LALStatus structure */
   REAL8 startTime_freqLo, startTime_freqHi;
   REAL8 endTime_freqLo, endTime_freqHi;
   REAL8 freqLo, freqHi;
-  INT4 extraBins;
 
   INT4 sft_check_result = 0;
 
@@ -1914,27 +1916,26 @@ void SetUpSFTs( LALStatus *status,			/**< pointer to LALStatus structure */
   freqLo = HSMIN ( startTime_freqLo, endTime_freqLo );
   freqHi = HSMAX ( startTime_freqHi, endTime_freqHi );
   doppWings = freqHi * in->dopplerMax;    /* maximum Doppler wing -- probably larger than it has to be */
-  extraBins = HSMAX ( in->blocksRngMed/2 + 1, in->Dterms );
 
   if (in->useWholeSFTs) {
     freqmin = freqmax = -1;
   }
   else {
-    freqmin = freqLo - doppWings - extraBins * deltaFsft - in->extraBinsFstat * in->dFreqStack;
-    freqmax = freqHi + doppWings + extraBins * deltaFsft + in->extraBinsFstat * in->dFreqStack;
+    freqmin = freqLo - doppWings - in->extraBinsFstat * in->dFreqStack;
+    freqmax = freqHi + doppWings + in->extraBinsFstat * in->dFreqStack;
   }
 
   /* fill detector name vector with all detectors present in any data sements */
   in->detectorIDs = NULL;
   for (k = 0; k < in->nStacks; k++) {
-    if ( ( in->detectorIDs = XLALGetDetectorIDs ( in->detectorIDs, catalogSeq.data + k ) ) == NULL ) {
+    if ( ( in->detectorIDs = XLALGetDetectorIDsFromSFTCatalog ( in->detectorIDs, catalogSeq.data + k ) ) == NULL ) {
       ABORT ( status, HIERARCHICALSEARCH_ENULL, HIERARCHICALSEARCH_MSGENULL );
     }
   }
   const UINT4 numDetectors = in->detectorIDs->length;
 
   /* set up vector of Fstat input data structs */
-  (*p_Fstat_in_vec) = XLALCreateFstatInputDataVector( in->nStacks );
+  (*p_Fstat_in_vec) = XLALCreateFstatInputVector( in->nStacks );
   if ( (*p_Fstat_in_vec) == NULL ) {
     ABORT ( status, HIERARCHICALSEARCH_EMEM, HIERARCHICALSEARCH_MSGEMEM );
   }
@@ -1947,35 +1948,81 @@ void SetUpSFTs( LALStatus *status,			/**< pointer to LALStatus structure */
   }
   for (k = 0; k < in->nStacks; k++) {
 
-    /* ----- load the multi-IFO SFT-vectors ----- */
-    MultiSFTVector* multiSFTs = XLALLoadMultiSFTs( catalogSeq.data + k, freqmin, freqmax );
-    if ( multiSFTs == NULL ) {
-      ABORT ( status, HIERARCHICALSEARCH_ENULL, HIERARCHICALSEARCH_MSGENULL );
+    /* ----- create Fstat input data struct ----- */
+    if ( in->useResamp ) {	// use resampling
+
+      (*p_Fstat_in_vec)->data[k] = XLALCreateFstatInput_Resamp();
+      if ( (*p_Fstat_in_vec)->data[k] == NULL ) {
+        XLALPrintError("%s: XLALCreateFstatInput_Resamp() failed with errno=%d", __func__, xlalErrno);
+        ABORT ( status, HIERARCHICALSEARCH_EXLAL, HIERARCHICALSEARCH_MSGEXLAL );
+      }
+
+    } else {			// use demodulation
+
+      (*p_Fstat_in_vec)->data[k] = XLALCreateFstatInput_Demod( in->Dterms, DEMODHL_BEST );
+      if ( (*p_Fstat_in_vec)->data[k] == NULL ) {
+        XLALPrintError("%s: XLALCreateFstatInput_Demod() failed with errno=%d", __func__, xlalErrno);
+        ABORT ( status, HIERARCHICALSEARCH_EXLAL, HIERARCHICALSEARCH_MSGEXLAL );
+      }
+
+    }
+
+    /* if single-only flag is given, assume a PSD with sqrt(S) = 1.0 */
+    MultiNoiseFloor assumeSqrtSX, *p_assumeSqrtSX;
+    if ( in->SignalOnly ) {
+      assumeSqrtSX.length = XLALCountIFOsInCatalog(catalog);
+      for (UINT4 X = 0; X < assumeSqrtSX.length; ++X) {
+        assumeSqrtSX.sqrtSn[X] = 1.0;
+      }
+      p_assumeSqrtSX = &assumeSqrtSX;
+    } else {
+      p_assumeSqrtSX = NULL;
+    }
+
+    PulsarParamsVector *injectSources = NULL;
+    MultiNoiseFloor *p_injectSqrtSX = NULL;
+    if ( XLALSetupFstatInput( (*p_Fstat_in_vec)->data[k], &catalogSeq.data[k], freqmin, freqmax,
+                                  injectSources, p_injectSqrtSX, p_assumeSqrtSX,
+                                  in->blocksRngMed, in->edat, in->SSBprec, 0 ) != XLAL_SUCCESS ) {
+      XLALPrintError("%s: XLALSetupFstatInput() failed with errno=%d", __func__, xlalErrno);
+      ABORT ( status, HIERARCHICALSEARCH_EXLAL, HIERARCHICALSEARCH_MSGEXLAL );
+    }
+
+    /* get SFT detectors and timestamps */
+    const MultiLALDetector *multiIFO = XLALGetFstatInputDetectors( (*p_Fstat_in_vec)->data[k] );
+    if ( multiIFO == NULL ) {
+      XLALPrintError("%s: XLALGetFstatInputDetectors() failed with errno=%d", __func__, xlalErrno);
+      ABORT ( status, HIERARCHICALSEARCH_EXLAL, HIERARCHICALSEARCH_MSGEXLAL );
+    }
+    const MultiLIGOTimeGPSVector *multiTS = XLALGetFstatInputTimestamps( (*p_Fstat_in_vec)->data[k] );
+    if ( multiTS == NULL ) {
+      XLALPrintError("%s: XLALGetFstatInputTimestamps() failed with errno=%d", __func__, xlalErrno);
+      ABORT ( status, HIERARCHICALSEARCH_EXLAL, HIERARCHICALSEARCH_MSGEXLAL );
     }
 
     /* ----- get effective inverse number of segments per detector (needed for correct averaging in single-IFO F calculation) ----- */
     for (UINT4 X = 0; X < numDetectors; X++) {
       /* for each detector, check if present in each segment, and save the number of segments where it is */
-      for (UINT4 Y = 0; Y < multiSFTs->length; Y++) {
-        if ( strcmp( multiSFTs->data[Y]->data[0].name, in->detectorIDs->data[X] ) == 0 )
+      for (UINT4 Y = 0; Y < multiTS->length; Y++) {
+        if ( strcmp( multiIFO->sites[Y].frDetector.prefix, in->detectorIDs->data[X] ) == 0 )
           in->NSegmentsInvX[X] += 1;
       } /* for Y < numDetectors */
     } /* for X < numDetectors */
 
     /* ----- print debug info about SFTs in this stack ----- */
     LogPrintf(LOG_DETAIL, "Segment %d ", k+1);
-    for ( UINT4 j = 0; j < multiSFTs->length; j++) {
-      LogPrintfVerbatim(LOG_DETAIL, "%s: %d  ", multiSFTs->data[j]->data[0].name, multiSFTs->data[j]->length);
+    for ( UINT4 j = 0; j < multiIFO->length; j++) {
+      LogPrintfVerbatim(LOG_DETAIL, "%s: %d  ", multiIFO->sites[j].frDetector.prefix, multiTS->data[j]->length);
     }
     LogPrintfVerbatim(LOG_DETAIL, "\n");
 
     /* ----- count the total and per-segment number of SFTs used ----- */
     UINT4 nSFTsInSeg = 0;
-    for ( UINT4 X = 0; X < multiSFTs->length; ++X ) {
-      nSFTsInSeg += multiSFTs->data[X]->length;
+    for ( UINT4 X = 0; X < multiTS->length; ++X ) {
+      nSFTsInSeg += multiTS->data[X]->length;
     }
     in->nSFTs += nSFTsInSeg;
-    
+
     /* ----- if we have a segment-list: double-check number of SFTs ----- */
     if ( in->segmentList ) {
       /* check the number of SFTs we found in this segment against the nominal value, stored in the segment list field 'id' */
@@ -1985,38 +2032,6 @@ void SetUpSFTs( LALStatus *status,			/**< pointer to LALStatus structure */
         ABORT ( status, HIERARCHICALSEARCH_EBAD, HIERARCHICALSEARCH_MSGEBAD );
       }
     } /* if have segmentList */
-
-    /* ----- normalize sfts and compute noise weights ----- */
-    MultiNoiseWeights *multiNoiseWeights = NULL;
-    /* SignalOnly: noiseWeights == NULL is equivalent to unit noise-weights in XLALComputeFstat() */
-    if ( !in->SignalOnly ) {
-      MultiPSDVector *psd = NULL;
-      TRY( LALNormalizeMultiSFTVect ( status->statusPtr, &psd, multiSFTs, in->blocksRngMed ), status );
-      TRY( LALComputeMultiNoiseWeights ( status->statusPtr, &multiNoiseWeights, psd, in->blocksRngMed, 0 ), status );
-      TRY( LALDestroyMultiPSDVector ( status->statusPtr, &psd ), status );
-    } /* if ( in->SignalOnly )  */
-
-    /* ----- create Fstat input data struct ----- */
-    if ( in->useResamp ) {	// use resampling
-
-      (*p_Fstat_in_vec)->data[k] = XLALSetupFstat_Resamp( &multiSFTs, &multiNoiseWeights, in->edat, in->SSBprec );
-      if ( (*p_Fstat_in_vec)->data[k] == NULL ) {
-        XLALPrintError("%s: XLALSetupFstat_Resamp() failed with errno=%d", __func__, xlalErrno);
-        ABORT ( status, HIERARCHICALSEARCH_EXLAL, HIERARCHICALSEARCH_MSGEXLAL );
-      }
-
-    } else {			// use demodulation
-
-      // determine which amplitude modulation coefficient type to use
-      const DemodAMType demodAM = DEMODAM_LONG_WAVELENGTH;
-
-      (*p_Fstat_in_vec)->data[k] = XLALSetupFstat_Demod( &multiSFTs, &multiNoiseWeights, in->edat, in->SSBprec, demodAM, in->Dterms );
-      if ( (*p_Fstat_in_vec)->data[k] == NULL ) {
-        XLALPrintError("%s: XLALSetupFstat_Demod() failed with errno=%d", __func__, xlalErrno);
-        ABORT ( status, HIERARCHICALSEARCH_EXLAL, HIERARCHICALSEARCH_MSGEXLAL );
-      }
-
-    }
 
   } /* loop over k */
   for (UINT4 X = 0; X < numDetectors; X++) {
@@ -2296,7 +2311,7 @@ void UpdateSemiCohToplists ( LALStatus *status,
       line.LV *= NSegmentsInv; /* normalize by number of segments */
 
       if ( xlalErrno != 0 ) {
-        XLALPrintError ("%s line %d : XLALComputeLineVeto() failed with xlalErrno = %d.\n\n", __func__, __LINE__, xlalErrno );
+        XLALPrintError ("%s line %d : XLALComputeLineVetoArray() failed with xlalErrno = %d.\n\n", __func__, __LINE__, xlalErrno );
         ABORT ( status, HIERARCHICALSEARCH_EXLAL, HIERARCHICALSEARCH_MSGEXLAL );
       }
       if ( line.LV < -LAL_REAL4_MAX*0.1 )

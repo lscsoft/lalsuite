@@ -1,7 +1,8 @@
 #!/bin/bash
 
-## run all LALApps programs with memory debugging
-export LAL_DEBUG_LEVEL="${LAL_DEBUG_LEVEL},memdbg"
+## set LAL debug level
+echo "Setting LAL_DEBUG_LEVEL=${LAL_DEBUG_LEVEL:-msglvl1,memdbg}"
+export LAL_DEBUG_LEVEL
 
 ## make sure we work in 'C' locale here to avoid awk sillyness
 LC_ALL_old=$LC_ALL
@@ -74,7 +75,7 @@ mfd_CL1="--refTime=${refTime} --Alpha=$Alpha --Delta=$Delta --Tsft=$Tsft --start
 mfd_CL="${mfd_CL1} --fmin=$mfd_fmin --Band=$mfd_FreqBand --Freq=$Freq --outSFTbname=$SFTdir/catsft.sft --outSingleSFT --IFO=$IFO"
 cmdline="$mfd_code $mfd_CL"
 if [ "$DEBUG" ]; then echo $cmdline; fi
-echo -n "Running Makefakedata_v4 ... "
+echo -n "Running $cmdline ... "
 if ! eval "$cmdline &> /dev/null"; then
     echo "lalapps_Makefakedata_v4 failed"
     exit;
@@ -84,7 +85,7 @@ echo "done."
 ## ---------- predict F-stat value 'PFS'
 cmdline="${pfs_code} --Alpha=$Alpha --Delta=$Delta --Freq=$Freq --h0=$h0 --cosi=$cosi --psi=$psi --phi0=$phi0 --IFO=$IFO --DataFiles='$SFTdir/*.sft' --SignalOnly"
 if [ "$DEBUG" ]; then echo $cmdline; fi
-echo -n "Running PredictFstat ... "
+echo -n "Running $cmdline ... "
 resPFS0=`$cmdline`
 resPFS=`echo $resPFS0 | awk '{printf "%g", $1}'`
 echo "done:         2F_PFS = $resPFS"
@@ -93,7 +94,7 @@ echo "done:         2F_PFS = $resPFS"
 cfs_CL=" --refTime=${refTime} --Alpha=$Alpha --Delta=$Delta  --Freq=$Freq --f1dot=$f1dot --orbitasini=$orbitasini --orbitPeriod=$orbitPeriod --orbitEcc=$orbitEcc --orbitArgp=$orbitArgp --orbitTpSSBsec=$TpSec --orbitTpSSBnan=$TpNS --DataFiles='$SFTdir/*.sft' --SignalOnly --dopplermax=$dopplermax"
 cmdline="$cfs_code $cfs_CL  --outputLoudest=$outfileCFS"
 if [ "$DEBUG" ]; then echo $cmdline; fi
-echo -n "Running ComputeFStatistic_v2 ... "
+echo -n "Running $cmdline ... "
 if ! eval "$cmdline &> /dev/null"; then
     echo "Error.. something failed when running '$cfs_code' ..."
     exit 1

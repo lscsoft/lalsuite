@@ -31,6 +31,7 @@ from glue import segments
 from glue import segmentsUtils
 from glue import pipeline
 from pylal import grbsummary
+from pylal import exttrig_dataquery
 from lalapps import inspiralutils
 
 ##############################################################################
@@ -533,30 +534,21 @@ parser = optparse.OptionParser(usage, version="$Id$")
 parser.add_option("-v", "--verbose", action="store_true",default=False,\
   help="make things verbose" )
 
-# what data?
-parser.add_option("-G","--g1-segments",action="store",type="string",\
-  default=None, metavar=" G1_SEGMENTS", help="G1 input segment to read" )
-parser.add_option("-H","--h1-segments",action="store",type="string",\
-  default=None, metavar=" H1_SEGMENTS", help="H1 input segment to read" )
-parser.add_option("-K","--h2-segments",action="store",type="string",\
-  default=None, metavar=" H2_SEGMENTS", help="H2 input segment to read" )
-parser.add_option("-L","--l1-segments",action="store",type="string",\
-  default=None, metavar=" L1_SEGMENTS", help="L1 input segment to read" )
-parser.add_option("-V","--v1-segments",action="store",type="string",\
-  default=None, metavar=" V1_SEGMENTS", help="V1 input segment to read" )
-parser.add_option("-T","--grb",action="append", default=[],
-  help="name of the GRB to be analyzed")
-parser.add_option("-l","--list",action="store",type="string",\
-    default=None, metavar=" GRB LIST",\
-    help="path to the file with GRB data stored")
+# read GRB information
+parser.add_option("", "--name", action="append",
+  default=[], help="Name of the GRB (e.g. 100122A).")
+parser.add_option("", "--time", action="store", type="int",
+  default=None, help="GPS time of the GRB trigger.")
+parser.add_option("", "--ra", action="store", type="float",
+  default=None, help="Right ascension of the GRB in degrees.")
+parser.add_option("", "--dec", action="store", type="float",
+  default=None, help="Declination of the GRB in degrees.")
+parser.add_option("", "--grb-file", action="store", type="string",
+  default=None, metavar=" FILE", help="Full path to GRB xml file.")
 
 # what parameters?
-parser.add_option("-a","--onsource-left",action="store",type="int",\
-    default=120, metavar=" ONLEFT",\
-    help="Specifies the left on-source time window in seconds (default: 120)")
-parser.add_option("-b","--onsource-right",action="store",type="int",\
-    default=60, metavar=" ONRIGHT",\
-    help="Specifies the right on-source time window in seconds (default:60)")
+parser.add_option("--offset",action="store",type="int",\
+    default=2500, help="Length of time to query for segments in both directions (seconds).")
 parser.add_option("-c","--number-buffer-left",action="store",type="int",\
     default=0, metavar=" BUFFERLEFT",\
     help="Specifies the number of buffer trials to the left of the on-source "\
@@ -599,35 +591,60 @@ parser.add_option("", "--do-coh-PTF", action="store_true", default=False,
   dest="do_coh_PTF", help="Use this flag if doing a coh PTF analysis")
 parser.add_option("", "--ipn", action="store_true", default=False,\
   dest="ipn", help="Use this flag if analysing a GRB detected by the IPN, default: %default")
+parser.add_option("", "--extend", action="store_true", default=False,
+  help="")
+parser.add_option("", "--useold", action="store_true", default=False,
+  help="")
+parser.add_option("", "--make-plots", action="store_true", default=False,
+  help="")
+parser.add_option("", "--make-xml", action="store_true", default=False,
+  help="")
 
 ( opts , args ) = parser.parse_args()
 
-required_opts = ["list", "onsource_right", "onsource_left", "padding_time",
-    "num_trials", "config_file", "injection_config", "log_path"]
+required_opts = ["name", "time", "padding_time", "config_file", "injection_config", "log_path"]
 for opt in required_opts:
     if getattr(opts, opt) is None:
         raise ValueError, "--%s is a required option" % opt
+if not opts.grb_file and (not opts.time or not opts.name):
+    raise ValueError, "Either a valid GRB xml file must be specified or the GPS time and name of the GRB!"
 
 ##############################################################################
-# create the config parser object and read in the ini file
+# find available data
+
+if opts.grb_file:
+  xmldoc    = utils.load_filename(opts.grb_file, gz=opts.grb_file.endswith('.gz'))
+  ext_table = table.get_table(xmldoc,lsctables.ExtTriggersTable.tableName)
+  grb_time  = ext_table[0].start_time
+  grb_name  = os.path.basename(opts.grb_file)[3:-4]
+  grb_ra    = ext_table[0].event_ra
+  grb_dec   = ext_table[0].event_dec
+else:
+  grb_name = opts.name[0]
+  grb_time = int(opts.time)
+  grb_ra   = float(opts.ra)
+  grb_dec  = float(opts.dec)
+
+exttrig_config_file, grb_ifolist, onSourceSegment, offSourceSegment = exttrig_dataquery.exttrig_dataquery(grb_name, grb_time, grb_ra, grb_dec, opts.offset, opts.config_file, opts.extend, opts.useold, opts.make_plots, opts.make_xml)
+
+##############################################################################
+# create the config parser object and exttrig_dataquery ini file
 cp = ConfigParser.ConfigParser()
-cp.read(opts.config_file)
+cp.read(exttrig_config_file)
 
-##############################################################################
-# read in the GRB data from the list
-ext_trigs = grbsummary.load_external_triggers(opts.list)
+ext_trigs = grbsummary.load_external_triggers('grb%s.xml'%opts.name[0])
 
 if ext_trigs is None:
   print >>sys.stderr, "No external triggers found.  Nothing to do."
   sys.exit()
 
-if len(opts.grb) > 0:
-  temp_list = filter(lambda row: row.event_number_grb in opts.grb, ext_trigs)
+if len(opts.name) > 0:
+  temp_list = filter(lambda row: row.event_number_grb in opts.name, ext_trigs)
   ext_trigs = table.new_from_template(ext_trigs)
   ext_trigs.extend(temp_list)
 
-  if len(ext_trigs) != len(opts.grb):
-    missing = set(opts.grb) - set([row.event_number_grb for row in ext_trigs])
+  if len(ext_trigs) != len(opts.name):
+    missing = set(opts.name) - set([row.event_number_grb for row in ext_trigs])
     raise ValueError, "could not find the following requested GRBs: " \
       + "".join(missing)
 
@@ -642,42 +659,6 @@ if opts.do_coh_PTF:
       cp.set(program,'declination',ext_trigs[0].event_dec)
     cp.set(program,'trigger-time',ext_trigs[0].start_time)
     cp.set(program,'trigger-time-ns',ext_trigs[0].start_time_ns)
-
-##############################################################################
-# get the pad and chunk lengths from the values in the ini file
-paddata = int(cp.get('data', 'pad-data'))
-if cp.has_option('data', 'segment-length'):
-  n = int(cp.get('data', 'segment-length'))
-  s = int(cp.get('data', 'number-of-segments'))
-  r = int(cp.get('data', 'sample-rate'))
-  o = int(cp.get('inspiral', 'segment-overlap'))
-  length = ( n * s - ( s - 1 ) * o ) / r
-  overlap = o / r
-elif cp.has_option('data','block-duration'):
-  length = int(cp.get('data','block-duration'))
-  overlap = int(cp.get('data','segment-duration'))/2
-else:
-  raise NameError("Cannot find segment-length or block-duration in data section")
-
-minsciseg = length + 2 * paddata
-
-trial_len = opts.onsource_left + opts.onsource_right
-if (opts.num_trials * trial_len + 2*opts.padding_time) < minsciseg:
-    print >>sys.stderr, "requested number of trials too small; require at "\
-        " least %d" \
-        % int(math.ceil((minsciseg - 2*opts.padding_time) / trial_len))
-
-##############################################################################
-# Read in all the segment lists, filtering for sufficiently long segments
-segdict = segments.segmentlistdict()
-
-for ifo in ["G1", "H1", "H2", "L1", "V1"]:
-  ifo_segfile = getattr(opts, "%s_segments" % ifo.lower())
-  if ifo_segfile is not None:
-    tmplist = segmentsUtils.fromsegwizard(open(ifo_segfile))
-    segdict[ifo] = segments.segmentlist([s for s in tmplist if abs(s) >= minsciseg])
-ifolist = segdict.keys()
-ifolist.sort()
 
 ############################################################################
 # set up the über dag for all intervals and all injections
@@ -702,11 +683,6 @@ for grb in ext_trigs:
   mkdir(idirectory, opts.overwrite_dir)
 
   ##############################################################################
-  # set up the on source segment
-  trigger = int(grb.start_time)
-  onSourceSegment = segments.segment(trigger - opts.onsource_left,
-                                     trigger + opts.onsource_right)
-
   # create the source-file which contains data about the position and time
   # and place it into the corresponding directory, also set the IPN file for the
   # very same purpose when analysing IPN GRBs
@@ -716,10 +692,6 @@ for grb in ext_trigs:
   ##############################################################################
   # set up the segment including the off-source segment
 
-  offSourceSegment, grb_ifolist = \
-    grbsummary.multi_ifo_compute_offsource_segment(segdict, onSourceSegment,
-      padding_time=opts.padding_time, max_trials=opts.num_trials,
-      min_trials=opts.num_trials, symmetric=opts.symmetric)
   grb_ifolist.sort()
   ifo_times = "".join(grb_ifolist)
 

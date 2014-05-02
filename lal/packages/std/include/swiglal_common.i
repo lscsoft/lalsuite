@@ -1343,6 +1343,40 @@ if (swiglal_release_parent(PTR)) {
   (const char *format, ...), (const char *fmt, ...)
 };
 
+// Specialised input typemap for C file pointers. Generally it is not possible to
+// convert scripting-language file objects into FILE*, since the scripting language
+// may not provide access to the FILE*, or even be using FILE* internally for I/O.
+// The FILE* will therefore have to be supplied from another SWIG-wrapped C function.
+// For convenience, however, we allow the user to pass integers 0, 1, or 2 in place
+// of a FILE*, as an instruction to use standard input, output, or error respectively.
+%typemap(in, noblock=1, fragment=SWIG_AsVal_frag(int)) FILE* (void *argp = 0, int res = 0) {
+  res = SWIG_ConvertPtr($input, &argp, $descriptor, $disown | %convertptr_flags);
+  if (!SWIG_IsOK(res)) {
+    int val = 0;
+    res = SWIG_AsVal(int)($input, &val);
+    if (!SWIG_IsOK(res)) {
+      %argument_fail(res, "$type", $symname, $argnum);
+    } else {
+      switch (val) {
+      case 0:
+        $1 = stdin;
+        break;
+      case 1:
+        $1 = stdout;
+        break;
+      case 2:
+        $1 = stderr;
+        break;
+      default:
+        %argument_fail(SWIG_ValueError, "$type", $symname, $argnum);
+      }
+    }
+  } else {
+    $1 = %reinterpret_cast(argp, $ltype);
+  }
+}
+%typemap(freearg) FILE* "";
+
 // This macro supports functions which require a variable-length
 // list of arguments of type TYPE, i.e. a list of strings. It
 // generates SWIG "compact" default arguments, i.e. only one

@@ -96,7 +96,7 @@ main (  void )
   XLAL_CHECK ( ( multiSFTs = XLALLoadMultiSFTs ( catalog, -1, -1 ) ) != NULL, XLAL_EFUNC, " XLALLoadMultiSFTs failed\n" );
 
   /* calculate the psd and normalize the SFTs */
-  XLAL_CHECK ( ( multiPSDs = XLALNormalizeMultiSFTVect ( multiSFTs, rngmedBins ) ) != NULL, XLAL_EFUNC, " XLALNormalizeMultiSFTVect failed\n" );
+  XLAL_CHECK ( ( multiPSDs = XLALNormalizeMultiSFTVect ( multiSFTs, rngmedBins, NULL ) ) != NULL, XLAL_EFUNC, " XLALNormalizeMultiSFTVect failed\n" );
 
   /* Get weights using LAL function */
   LALComputeMultiNoiseWeights ( &status, &(multiWeightsLAL), multiPSDs, rngmedBins, 0 );
