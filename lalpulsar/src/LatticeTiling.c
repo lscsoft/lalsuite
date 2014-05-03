@@ -70,6 +70,18 @@ typedef struct tagLT_Bound {
 } LT_Bound;
 
 ///
+/// Flat lattice tiling nearest point index lookup trie
+///
+typedef struct tagLT_IndexLookup {
+  int32_t min;					///< Minimum integer point value in this dimension
+  int32_t max;					///< Maximum integer point value in this dimension
+  union {
+    struct tagLT_IndexLookup* next;		///< Pointer to array of trie structures for the next-highest dimension
+    uint64_t index;				///< Flat lattice tiling index in the highest dimension
+  };
+} LT_IndexLookup;
+
+///
 /// Flat lattice tiling state structure
 ///
 struct tagLatticeTiling {
@@ -89,6 +101,7 @@ struct tagLatticeTiling {
   gsl_vector* upper;				///< Current upper bound on parameter space
   uint64_t count;				///< Number of points generated so far
   uint64_t total_count;				///< Total number of points in parameter space
+  LT_IndexLookup* lookup_base;			///< Lookup trie for finding index of nearest point
 };
 
 ///
@@ -224,6 +237,106 @@ static void LT_GetBounds(
     const double pad = gsl_vector_get(padding, dimension);
     *lower -= pad;
     *upper += pad;
+  }
+
+}
+
+///
+/// Destroy a lattice tiling nearest point index lookup trie
+///
+static void LT_DestroyLookup(
+  const size_t ti,				///< [in] Current depth of the trie
+  const size_t tn,				///< [in] Total depth of the trie
+  LT_IndexLookup *lookup			///< [in] Pointer to array of trie structures
+  )
+{
+
+  // If at least two dimensions below the highest dimension, call recursively to free memory
+  // allocated in higher dimensions. No need to do this for second-highest dimension, since
+  // highest dimension does not allocate memory ('index' is used instead of 'next').
+  if (ti + 2 < tn) {
+    LT_IndexLookup *next = lookup->next;
+    for (int32_t i = lookup->min; i <= lookup->max; ++i) {
+      LT_DestroyLookup(ti + 1, tn, next++);
+    }
+  }
+
+  // If at least one dimension below the highest dimension, free memory allocated in this
+  // dimension. This will not be called if tn == 1, since then 'next' is never used.
+  if (ti + 1 < tn) {
+    XLALFree(lookup->next);
+  }
+
+}
+
+///
+/// Print a lattice tiling nearest point index lookup trie
+///
+static void LT_PrintLookup(
+  const LatticeTiling* tiling,			///< [in] Tiling state
+  FILE* fp,					///< [in] File pointer to print trie to
+  const size_t ti,				///< [in] Current depth of the trie
+  const size_t tn,				///< [in] Total depth of the trie
+  const LT_IndexLookup *lookup,			///< [in] Pointer to array of trie structures
+  gsl_vector *int_point				///< [in] Temporary point used in printing
+  )
+{
+
+  // Print indentation
+  for (size_t s = 0; s < ti; ++s) {
+    fprintf(fp, "   ");
+  }
+
+  // If lookup is NULL (which should never happen), print error and return
+  if (lookup == NULL) {
+    fprintf(fp, "ERROR: lookup is NULL\n");
+    return;
+  }
+
+  // Set (i)th dimension of point to minimum, then transform from generating integer
+  // space, by multiplying by the lattice increments matrix, to get lower bound
+  // in normalised coordinates
+  gsl_vector_set(int_point, ti, lookup->min);
+  gsl_vector_view tiled_increment_row = gsl_matrix_row(tiling->tiled_increment, ti);
+  double lower = 0;
+  gsl_blas_ddot(int_point, &tiled_increment_row.vector, &lower);
+
+  // Get upper bound by adding increment to lower bound
+  const double spacing = gsl_matrix_get(tiling->tiled_increment, ti, ti);
+  double upper = lower + (lookup->max - lookup->min + 1) * spacing;
+
+  // Transform lower/upper bounds from normalised to physical coordinates
+  double phys_lower = 0, phys_upper = 0;
+  {
+    const size_t i = gsl_vector_uint_get(tiling->tiled_idx, ti);
+    const double phys_scale = gsl_vector_get(tiling->phys_scale, i);
+    const double phys_offset = gsl_vector_get(tiling->phys_offset, i);
+    phys_lower = lower * phys_scale + phys_offset;
+    phys_upper = upper * phys_scale + phys_offset;
+  }
+
+  // Print information on the current lookup trie dimension
+  fprintf(fp, "dim #%zu/%zu   min %+5i   max %+5i   lower %+10e   upper %+10e",
+          ti + 1, tn, lookup->min, lookup->max, phys_lower, phys_upper);
+
+  // If this is the highest dimension, print index and return
+  if (ti + 1 == tn) {
+    fprintf(fp, "   index %lu\n", lookup->index);
+  } else {
+
+    // Otherwise, loop over this dimension
+    fprintf(fp, "\n");
+    LT_IndexLookup *next = lookup->next;
+    for (int32_t p = lookup->min; p <= lookup->max; ++p, ++next) {
+
+      // Set (i)th dimension of integer point
+      gsl_vector_set(int_point, ti, p);
+
+      // Print higher dimensions
+      LT_PrintLookup(tiling, fp, ti + 1, tn, next, int_point);
+
+    }
+
   }
 
 }
@@ -509,6 +622,7 @@ void XLALDestroyLatticeTiling(
   if (tiling) {
 
     const size_t n = tiling->dimensions;
+    const size_t tn = (tiling->tiled_idx != NULL) ? tiling->tiled_idx->size : 0;
 
     // Free bounds data
     if (tiling->bounds != NULL) {
@@ -520,6 +634,12 @@ void XLALDestroyLatticeTiling(
         gsl_matrix_free(tiling->bounds[i].m_upper);
       }
       XLALFree(tiling->bounds);
+    }
+
+    // Free lookup trie
+    if (tiling->lookup_base != NULL) {
+      LT_DestroyLookup(0, tn, tiling->lookup_base);
+      XLALFree(tiling->lookup_base);
     }
 
     // Free vectors and matrices
@@ -1215,6 +1335,164 @@ int XLALRandomLatticePoints(
     gsl_vector_scale(&row.vector, phys_scale);
     gsl_vector_add_constant(&row.vector, phys_offset);
   }
+
+  return XLAL_SUCCESS;
+
+}
+
+int XLALBuildLatticeIndexLookup(
+  LatticeTiling* tiling
+  )
+{
+
+  // Check tiling
+  XLAL_CHECK(tiling != NULL, XLAL_EFAULT);
+  XLAL_CHECK(tiling->status == LT_S_INITIALISED, XLAL_EFAILED);
+  const size_t n = tiling->dimensions;
+  const size_t tn = (tiling->tiled_idx != NULL) ? tiling->tiled_idx->size : 0;
+
+  // If lookup has already been built, or there are no tiled dimensions, we're done!
+  if (tiling->lookup_base != NULL || tn == 0) {
+    return XLAL_SUCCESS;
+  }
+
+  // Allocate temporary vector
+  gsl_vector *int_point = gsl_vector_alloc(n);
+  XLAL_CHECK(int_point != NULL, XLAL_ENOMEM);
+
+  // Initialise pointer to the base lookup trie struct
+  LT_IndexLookup *lookup_base = NULL;
+
+  // Allocate array of pointers to the next lookup trie struct
+  LT_IndexLookup *next[tn];
+  memset(next, 0, sizeof(next));
+
+  // Ensure tiling is restarted
+  XLAL_CHECK(XLALRestartLatticeTiling(tiling) == XLAL_SUCCESS, XLAL_EFUNC);
+
+  // Iterate over all points; while tiling is in progress, XLALNextLatticePoint()
+  // returns the index of the lowest dimension where the current point has changed
+  int ti;
+  while ( (ti = XLALNextLatticePoint(tiling, NULL)) >= 0 ) {
+
+    // Transform current point from normalised coordinates to generating integer space,
+    // by multiplying by the inverse of the lattice increments matrix.
+    gsl_vector_memcpy(int_point, tiling->point);
+    gsl_blas_dtrmv(CblasLower, CblasNoTrans, CblasNonUnit, tiling->inv_increment, int_point);
+
+    // Iterate over all dimensions where the current point has changed
+    for (size_t tj = ti; tj < tn; ++tj) {
+
+      // Get index of tiled dimension
+      const size_t j = gsl_vector_uint_get(tiling->tiled_idx, tj);
+
+      // If next lookup struct pointer is NULL, it needs to be initialised
+      if (next[tj] == NULL) {
+
+        // Get a pointer to the lookup struct which needs to be built:
+        // - if tj is non-zero, we should use the struct pointed to by 'next' in the lower dimension
+        // - otherwise, this is the first point of the tiling, so initialise the base lookup struct
+        LT_IndexLookup *lookup = NULL;
+        if (tj > 0) {
+          lookup = next[tj - 1];
+        } else {
+          lookup_base = lookup = XLALCalloc(1, sizeof(*lookup));
+          XLAL_CHECK( lookup_base != NULL, XLAL_ENOMEM );
+        }
+
+        // Get point, spacing, and upper bound in (j)th dimension
+        const double point_j = gsl_vector_get(tiling->point, j);
+        const double spacing_j = gsl_matrix_get(tiling->increment, j, j);
+        const double upper_j = gsl_vector_get(tiling->upper, j);
+
+        // Calculate the number of points at this point in (j)th dimension
+        const long long num_points_j = 1 + (long long)floor((upper_j - point_j) / spacing_j);
+
+        // Set the minimum and maximum integer point values
+        // - Note that the llround() here is important! Even though the elements of 'int_point'
+        //   should be very close to integers, they are not guaranteed to be exactly integers,
+        //   so llround() is needed to make this safe against numerical errors.
+        const long long min_j = llround(gsl_vector_get(int_point, j));
+        const long long max_j = min_j + num_points_j - 1;
+        XLAL_CHECK( INT32_MIN < min_j && max_j < INT32_MAX, XLAL_EDOM,
+                    "Integer point range [%i,%i] is outside int32_t range", min_j, max_j );
+        lookup->min = min_j;
+        lookup->max = max_j;
+
+        // If we are below the highest dimension:
+        if (tj + 1 < tn) {
+
+          // Allocate a new array of lookup structs for the next highest dimension
+          lookup->next = XLALCalloc(num_points_j, sizeof(*lookup->next));
+          XLAL_CHECK( lookup->next != NULL, XLAL_ENOMEM );
+
+          // Point 'next' to this array in this dimension, for higher dimensions to use
+          next[tj] = lookup->next;
+
+        } else {
+
+          // In the highest dimension, we instead saves an index to the current point
+          lookup->index = tiling->count - 1;
+
+        }
+
+      } else {
+
+        // Otherwise, advance to the next lookup struct in the array
+        ++next[tj];
+
+      }
+
+      // If we are below the highest dimension, set 'next' in the next highest
+      // dimension to NULL, so that on the next loop a new array will be created
+      if (tj + 1 < tn) {
+        next[tj + 1] = NULL;
+      }
+
+    }
+
+    // Fast-forward the lattice tiling through the highest dimension
+    XLAL_CHECK(XLALFastForwardLatticeTiling(tiling, NULL, NULL) == XLAL_SUCCESS, XLAL_EFUNC);
+
+  }
+
+  // Restart tiling
+  XLAL_CHECK(XLALRestartLatticeTiling(tiling) == XLAL_SUCCESS, XLAL_EFUNC);
+
+  // Save lookup trie
+  tiling->lookup_base = lookup_base;
+
+  // Cleanup
+  gsl_vector_free(int_point);
+
+  return XLAL_SUCCESS;
+
+}
+
+int XLALPrintLatticeIndexLookup(
+  const LatticeTiling* tiling,
+  FILE* file
+  )
+{
+
+
+  // Check tiling
+  XLAL_CHECK(tiling != NULL, XLAL_EFAULT);
+  XLAL_CHECK(tiling->lookup_base != NULL, XLAL_EFAULT);
+  const size_t tn = (tiling->tiled_idx != NULL) ? tiling->tiled_idx->size : 0;
+
+  // Check input
+  XLAL_CHECK(file != NULL, XLAL_EFAULT);
+
+  // Allocate zeroed temporary vector
+  gsl_vector *int_point = gsl_vector_calloc(tn);
+  XLAL_CHECK(int_point != NULL, XLAL_ENOMEM);
+
+  // Print lookup trie
+  LT_PrintLookup(tiling, file, 0, tn, tiling->lookup_base, int_point);
+
+  // Cleanup
+  gsl_vector_free(int_point);
 
   return XLAL_SUCCESS;
 
