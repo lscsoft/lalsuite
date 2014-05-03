@@ -174,22 +174,22 @@ static int LT_OrthonormaliseWRTMetric(
     for (ssize_t j = n - 1; j > i; --j) {
       gsl_vector_view col_j = gsl_matrix_column(matrix, j);
 
-      // Compute inner product of jth and ith columns with the metric
+      // Compute inner product of (j)th and (i)th columns with the metric
       gsl_blas_dgemv(CblasNoTrans, 1.0, metric, &col_j.vector, 0.0, temp);
       gsl_blas_ddot(&col_i.vector, temp, &inner_prod);
 
-      // Subtract component of jth column from ith column
+      // Subtract component of (j)th column from (i)th column
       gsl_vector_memcpy(temp, &col_j.vector);
       gsl_vector_scale(temp, inner_prod);
       gsl_vector_sub(&col_i.vector, temp);
 
     }
 
-    // Compute inner product of ith column with itself
+    // Compute inner product of (i)th column with itself
     gsl_blas_dgemv(CblasNoTrans, 1.0, metric, &col_i.vector, 0.0, temp);
     gsl_blas_ddot(&col_i.vector, temp, &inner_prod);
 
-    // Normalise ith column
+    // Normalise (i)th column
     gsl_vector_scale(&col_i.vector, 1.0 / sqrt(inner_prod));
 
   }
