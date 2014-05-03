@@ -33,7 +33,6 @@
 // ----- defines & macros ----------
 #define TRUE (1==1)
 #define FALSE (1==0)
-#define INIT_MEM(x) memset(&(x), 0, sizeof((x)))
 
 /* (possible) fields of the output Fstat-file */
 typedef struct {
@@ -72,7 +71,7 @@ int
 main (int argc, char *argv[] )
 {
   /* register all user-variables */
-  UserVariables_t uvar; INIT_MEM ( uvar );
+  UserVariables_t XLAL_INIT_DECL(uvar);
   XLAL_CHECK ( XLALinitUserVars ( &uvar ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   /* read cmdline & cfgfile  */
@@ -240,8 +239,8 @@ XLALcompareFstatFiles ( UINT4 *diff, const LALParsedDataFile *f1, const LALParse
   XLAL_CHECK ( (diff != NULL) && (f1 != NULL) && ( f2 != NULL ) && (Ftol > 0), XLAL_EINVAL );
 
   REAL4 eps4 = 100.0 * LAL_REAL4_EPS;
-  FstatLine_t parsed1; INIT_MEM ( parsed1 );
-  FstatLine_t parsed2; INIT_MEM ( parsed2 );
+  FstatLine_t XLAL_INIT_DECL(parsed1);
+  FstatLine_t XLAL_INIT_DECL(parsed2);
 
   UINT4 nlines1 = f1->lines->nTokens;
   UINT4 nlines2 = f2->lines->nTokens;

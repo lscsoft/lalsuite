@@ -84,7 +84,6 @@
 #define MYMIN(x,y) ( (x) < (y) ? (x) : (y) )
 
 #define SQ(x) ((x)*(x))
-#define INIT_MEM(x) memset(&(x), 0, sizeof((x)))
 
 #define LAL_INT4_MAX 2147483647
 
@@ -473,7 +472,7 @@ InitPFS ( LALStatus *status, ConfigVariables *cfg, const UserInput_t *uvar )
     XLALPrintError ("%s: XLALTimestampsFromMultiSFTCatalogView() failed with errno=%d\n", __func__, xlalErrno );
     ABORT ( status, PREDICTFSTAT_EXLAL, PREDICTFSTAT_MSGEXLAL );
   }
-  MultiLALDetector multiIFO; INIT_MEM(multiIFO);
+  MultiLALDetector XLAL_INIT_DECL(multiIFO);
   if ( XLALMultiLALDetectorFromMultiSFTCatalogView ( &multiIFO, multiCatalogView ) != XLAL_SUCCESS ) {
     XLALPrintError ("%s: XLALMultiLALDetectorFromMultiSFTCatalogView() failed with errno=%d\n", __func__, xlalErrno );
     ABORT ( status, PREDICTFSTAT_EXLAL, PREDICTFSTAT_MSGEXLAL );
@@ -502,7 +501,7 @@ InitPFS ( LALStatus *status, ConfigVariables *cfg, const UserInput_t *uvar )
         assumeSqrtSX_input = uvar->assumeSqrtSX;
       }
 
-      MultiNoiseFloor assumeSqrtSX; INIT_MEM(assumeSqrtSX);
+      MultiNoiseFloor XLAL_INIT_DECL(assumeSqrtSX);
       if ( XLALParseMultiNoiseFloor ( &assumeSqrtSX, assumeSqrtSX_input, numDetectors ) != XLAL_SUCCESS ) {
         XLALPrintError ("%s: XLALParseMultiNoiseFloor() failed with errno=%d\n", __func__, xlalErrno );
         ABORT ( status, PREDICTFSTAT_EXLAL, PREDICTFSTAT_MSGEXLAL );

@@ -107,8 +107,6 @@ CHAR 	 *uvar_debugOut=NULL;
 #define SQUARE(x) ((x)*(x))
 #define CUBE(x) ((x)*(x)*(x))
 
-#define INIT_MEM(x) memset(&(x), 0, sizeof((x)))
-
 #define N_SPINDOWN_DERIVS 6
 
 void initUserVars (LALStatus *status);
@@ -581,9 +579,9 @@ int main(int argc, char *argv[]){
     fdotsMax->length = N_SPINDOWN_DERIVS;
     fdotsMax->data = (REAL8 *)LALCalloc(fdotsMax->length, sizeof(REAL8));
 
-    INIT_MEM(spinRange_startTime);
-    INIT_MEM(spinRange_endTime);
-    INIT_MEM(spinRange_refTime);
+    XLAL_INIT_MEM(spinRange_startTime);
+    XLAL_INIT_MEM(spinRange_endTime);
+    XLAL_INIT_MEM(spinRange_refTime);
 
     spinRange_refTime.refTime = refTime;
     spinRange_refTime.fkdot[0] = uvar_f0;
@@ -1279,7 +1277,7 @@ void InitDoppParams(LALStatus *status,
    
 	    /* initialize Doppler parameters of the potential source */
 
-	    INIT_MEM( thisPoint->fkdot );
+	    XLAL_INIT_MEM( thisPoint->fkdot );
 	    thisPoint->fkdot[0] = f_current;
 	    thisPoint->fkdot[1] = fdot_current; 
 	    thisPoint->fkdot[2] = fddot_current;

@@ -53,8 +53,6 @@
 #define MIN(x,y) (x < y ? x : y)
 #define MAX(x,y) (x > y ? x : y)
 
-#define INIT_MEM(x) memset(&(x), 0, sizeof((x)))
-
 #define TRUE (1==1)
 #define FALSE (1==0)
 
@@ -305,7 +303,7 @@ InitDopplerSkyScan( LALStatus *status,			/**< pointer to LALStatus structure */
     gridpoint.Alpha = skyScan->skyGrid->Alpha;
     gridpoint.Delta = skyScan->skyGrid->Delta;
 
-    INIT_MEM ( gridpoint.fkdot );
+    XLAL_INIT_MEM ( gridpoint.fkdot );
     gridpoint.fkdot[0] = init->Freq;
 
     TRY ( getGridSpacings( status->statusPtr, &gridSpacings, gridpoint, init), status);

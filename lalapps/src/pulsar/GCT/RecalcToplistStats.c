@@ -27,7 +27,6 @@
 #define FALSE (1==0)
 
 /*----- Macros ----- */
-#define INIT_MEM(x) memset(&(x), 0, sizeof((x)))
 
 /*----- SWITCHES -----*/
 
@@ -214,7 +213,7 @@ int XLALComputeExtraStatsSemiCoherent ( LVcomponents *lineVeto,                 
   PulsarDopplerParams dopplerParams_temp = empty_PulsarDopplerParams; /* struct containing sky position, frequency and fdot for the current candidate */
   dopplerParams_temp.Alpha = dopplerParams->Alpha;
   dopplerParams_temp.Delta = dopplerParams->Delta;
-  INIT_MEM( dopplerParams_temp.fkdot );
+  XLAL_INIT_MEM( dopplerParams_temp.fkdot );
 
   /* compute single- and multi-detector Fstats for each data segment and sum up */
   UINT4 k;

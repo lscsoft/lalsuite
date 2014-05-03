@@ -28,7 +28,6 @@
 
 /** Simple Euklidean scalar product for two 3-dim vectors in cartesian coords */
 #define SCALAR(u,v) ((u)[0]*(v)[0] + (u)[1]*(v)[1] + (u)[2]*(v)[2])
-#define INIT_MEM(x) memset(&(x), 0, sizeof((x)))
 
 // ----- global variables, initializers
 static LALUnit emptyUnit;
@@ -212,11 +211,11 @@ XLALSimulateExactPulsarSignal ( const PulsarSignalParams *params )
       REAL8 refTime0 = XLALGPSGetREAL8 ( &(params->pulsar.refTime) );
       REAL8 deltaRef = startTimeSSB - refTime0;
       LIGOTimeGPS newEpoch;
-      PulsarSpins fkdotOld, fkdotNew;
+      PulsarSpins fkdotNew;
 
       XLALGPSSetREAL8( &newEpoch, startTimeSSB );
 
-      INIT_MEM ( fkdotOld );
+      PulsarSpins XLAL_INIT_DECL(fkdotOld);
       fkdotOld[0] = f0;
       fkdotOld[1] = f1dot;
       fkdotOld[2] = f2dot;

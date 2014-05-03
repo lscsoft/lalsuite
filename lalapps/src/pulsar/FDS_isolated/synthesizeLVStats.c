@@ -82,8 +82,6 @@
 #define FALSE (1==0)
 
 /*----- Macros ----- */
-#define INIT_MEM(x) memset(&(x), 0, sizeof((x)))
-
 
 /* ---------- local types ---------- */
 
@@ -842,7 +840,7 @@ write_LV_candidate_to_fp ( FILE *fp, const LVcomponents *LVstat, const PulsarDop
   }
 
   PulsarDopplerParams dopplerParams = empty_PulsarDopplerParams;
-  INIT_MEM( dopplerParams.fkdot );
+  XLAL_INIT_MEM( dopplerParams.fkdot );
   if ( dopplerParams_in == NULL ) { /* just write zeros */
     dopplerParams.Alpha = 0.0;
     dopplerParams.Delta = 0.0;

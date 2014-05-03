@@ -44,7 +44,6 @@
 
 // ---------- local macro definitions
 #define SQ(x) ( (x) * (x) )
-#define INIT_MEM(x) memset(&(x), 0, sizeof((x)))
 // ---------- local type definitions
 
 // ---------- empty initializers
@@ -250,7 +249,7 @@ XLALCWMakeFakeData ( SFTVector **SFTvect,
       XLAL_CHECK ( XLALGetTransientWindowTimespan ( &t0, &t1, pulsarParams->Transient ) == XLAL_SUCCESS, XLAL_EFUNC );
 
       // use latest possible start-time: max(t0,firstGPS), but not later than than lastGPS
-      LIGOTimeGPS signalStartGPS; INIT_MEM ( signalStartGPS );
+      LIGOTimeGPS XLAL_INIT_DECL(signalStartGPS);
       if ( t0 <= firstGPS_REAL8 ) {
         signalStartGPS = firstGPS;
       } else if ( t0 >= lastGPS_REAL8 ) {
@@ -261,7 +260,7 @@ XLALCWMakeFakeData ( SFTVector **SFTvect,
       }
 
       // use earliest possible end-time: min(t1,lastGPS), but not earlier than firstGPS
-      LIGOTimeGPS signalEndGPS; INIT_MEM ( signalEndGPS );
+      LIGOTimeGPS XLAL_INIT_DECL(signalEndGPS);
       if ( t1 >= lastGPS_REAL8 ) {
         signalEndGPS = lastGPS;
       } else if ( t1 <= firstGPS_REAL8 ) {
@@ -653,7 +652,7 @@ XLALReadPulsarParams ( PulsarParams *pulsarParams,	///< [out] pulsar parameters 
   XLAL_CHECK ( pulsarParams != NULL, XLAL_EINVAL );
   XLAL_CHECK ( cfgdata != NULL, XLAL_EINVAL );
 
-  INIT_MEM ( (*pulsarParams) );	// wipe input struct clean
+  XLAL_INIT_MEM ( (*pulsarParams) );	// wipe input struct clean
 
   // ---------- PulsarAmplitudeParams ----------
   // ----- h0, cosi

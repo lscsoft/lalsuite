@@ -171,8 +171,6 @@ BOOLEAN uvar_validateLUT = FALSE;
 #define HSMAX(x,y) ( (x) > (y) ? (x) : (y) )
 #define HSMIN(x,y) ( (x) < (y) ? (x) : (y) )
 
-#define INIT_MEM(x) memset(&(x), 0, sizeof((x)))
-
 #define BLOCKSIZE_REALLOC 50
 
 /** Useful stuff for a single stage of the Hierarchical search */
@@ -638,7 +636,7 @@ int MAIN( int argc, char *argv[]) {
 
   /*------------ Set up stacks, noise weights, detector states etc. */
   /* initialize spin range vectors */
-  INIT_MEM(spinRange_Temp);
+  XLAL_INIT_MEM(spinRange_Temp);
 
   /* some useful first stage params */
   usefulParams.sftbasename = uvar_DataFiles1;
@@ -646,10 +644,10 @@ int MAIN( int argc, char *argv[]) {
   usefulParams.tStack = uvar_tStack;
   usefulParams.SSBprec = uvar_SSBprecision;
 
-  INIT_MEM ( usefulParams.spinRange_startTime );
-  INIT_MEM ( usefulParams.spinRange_endTime );
-  INIT_MEM ( usefulParams.spinRange_refTime );
-  INIT_MEM ( usefulParams.spinRange_midTime );
+  XLAL_INIT_MEM ( usefulParams.spinRange_startTime );
+  XLAL_INIT_MEM ( usefulParams.spinRange_endTime );
+  XLAL_INIT_MEM ( usefulParams.spinRange_refTime );
+  XLAL_INIT_MEM ( usefulParams.spinRange_midTime );
 
   /* copy user specified spin variables at reftime  */
   /* the reference time value in spinRange_refTime will be set in SetUpSFTs() */
@@ -801,7 +799,7 @@ int MAIN( int argc, char *argv[]) {
   thisPoint.refTime = tMidGPS;
   /* binary orbit and higher spindowns not considered */
   thisPoint.asini = 0 /* isolated pulsar */;
-  INIT_MEM ( thisPoint.fkdot );
+  XLAL_INIT_MEM ( thisPoint.fkdot );
 
 
   /* set up some semiCoherent parameters */
@@ -2893,8 +2891,8 @@ void PrintSemiCohCandidates(LALStatus *status,
   INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
-  INIT_MEM ( fkdotIn );
-  INIT_MEM ( fkdotOut );
+  XLAL_INIT_MEM ( fkdotIn );
+  XLAL_INIT_MEM ( fkdotOut );
 
   for (k=0; k < in->nCandidates; k++) {
     /*     fprintf(fp, "%e %e %e %g %g %g %g %e %e\n", in->list[k].significance, in->list[k].freq,  */
@@ -2931,7 +2929,7 @@ void PrintSemiCohCandidates(LALStatus *status,
   INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
-  INIT_MEM(fkdot);
+  XLAL_INIT_MEM(fkdot);
 
   fprintf(fp, "## Fstat values from stack %d (reftime -- %d %d)\n", stackIndex, refTime.gpsSeconds, refTime.gpsNanoSeconds);
 
@@ -3399,7 +3397,7 @@ void GetSemiCohToplist(LALStatus            *status,
   ASSERT ( in != NULL, status, HIERARCHICALSEARCH_ENULL, HIERARCHICALSEARCH_MSGENULL );
   ASSERT ( in->length >= in->nCandidates, status, HIERARCHICALSEARCH_EVAL, HIERARCHICALSEARCH_MSGEVAL );
 
-  INIT_MEM ( line );
+  XLAL_INIT_MEM ( line );
 
   /* go through candidates and insert into toplist if necessary */
   for ( k = 0; k < in->nCandidates; k++) {

@@ -111,8 +111,6 @@ int finite(double);
 
 #define LAL_INT4_MAX 2147483647
 
-#define INIT_MEM(x) memset(&(x), 0, sizeof((x)))
-
 /*---------- internal types ----------*/
 
 /** What info do we want to store in our toplist? */
@@ -456,7 +454,7 @@ int main(int argc,char *argv[])
       char colum_headings_string_base[] = "freq alpha delta f1dot f2dot f3dot 2F";
       UINT4 column_headings_string_length = sizeof(colum_headings_string_base);
       char column_headings_string[column_headings_string_length];
-      INIT_MEM( column_headings_string );
+      XLAL_INIT_MEM( column_headings_string );
       strcat ( column_headings_string, colum_headings_string_base );
       if ( uvar.computeLV )
         {

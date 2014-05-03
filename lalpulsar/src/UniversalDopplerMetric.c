@@ -48,8 +48,6 @@
  */
 
 /*---------- SCALING FACTORS ----------*/
-#define INIT_MEM(x) memset(&(x), 0, sizeof((x)))
-
 /** shortcuts for integer powers */
 #define POW2(a)  ( (a) * (a) )
 #define POW3(a)  ( (a) * (a) * (a) )

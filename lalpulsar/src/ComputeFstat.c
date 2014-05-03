@@ -41,8 +41,6 @@
 #include <lal/CWFastMath.h>
 #include <lal/NormalizeSFTRngMed.h>
 
-#define INIT_MEM(x) memset(&(x), 0, sizeof((x)))
-
 #define MYSIGN(x) ( ((x) < 0) ? (-1.0):(+1.0) )
 #define SQ(x) ( (x) * (x) )
 
@@ -278,8 +276,7 @@ XLALSetupFstatInput(
   if (generateSFTs) {
 
     // Initialise parameters struct for XLALCWMakeFakeMultiData()
-    CWMFDataParams MFDparams;
-    INIT_MEM(MFDparams);
+    CWMFDataParams XLAL_INIT_DECL(MFDparams);
     MFDparams.fMin = minFreq;
     MFDparams.Band = maxFreq - minFreq;
     MFDparams.multiIFO = common->detectors;

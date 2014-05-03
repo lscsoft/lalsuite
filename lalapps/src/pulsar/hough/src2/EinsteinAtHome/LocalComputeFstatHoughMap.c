@@ -27,8 +27,6 @@
 
 #define HSMAX(x,y) ( (x) > (y) ? (x) : (y) )
 #define HSMIN(x,y) ( (x) < (y) ? (x) : (y) )
-#define INIT_MEM(x) memset(&(x), 0, sizeof((x)))
-
 
 #ifdef OUTPUT_TIMING
 extern time_t clock0;

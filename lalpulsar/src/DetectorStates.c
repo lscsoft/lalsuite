@@ -33,7 +33,6 @@
 
 /*----- Macros ----- */
 #define SQUARE(x) ((x) * (x))
-#define INIT_MEM(x) memset(&(x), 0, sizeof((x)))
 
 /*----- SWITCHES -----*/
 

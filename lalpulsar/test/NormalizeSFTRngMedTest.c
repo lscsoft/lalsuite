@@ -22,7 +22,6 @@
 #include <lal/NormalizeSFTRngMed.h>
 #include <lal/Units.h>
 
-#define INIT_MEM(x) memset(&(x), 0, sizeof((x)))
 #define REL_ERR(x,y) ( fabs((x) - (y)) / fabs( (x) ) )
 
 /* Default parameters. */
@@ -69,7 +68,7 @@ int main ( void )
 
   /* get memory for running-median vector */
   REAL8FrequencySeries rngmed;
-  INIT_MEM ( rngmed );
+  XLAL_INIT_MEM ( rngmed );
   XLAL_CHECK ( (rngmed.data = XLALCreateREAL8Vector ( numBins )) != NULL, XLAL_EFUNC, "Failed  XLALCreateREAL8Vector ( %d )", numBins );
 
   // ---------- Test running-median PSD estimation in simple blocksize cases

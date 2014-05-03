@@ -31,8 +31,6 @@
 #include <lal/PulsarDataTypes.h>
 #include <lal/ExtrapolatePulsarSpins.h>
 
-#define INIT_MEM(x) memset(&(x), 0, sizeof((x)))
-
 /** \name Error codes */
 /*@{*/
 #define PULSARSPINTESTC_ENORM 	0
@@ -101,14 +99,14 @@ int main(int argc, char *argv[])
     argc = 1;	/* avoid warning */
 
   /* set up initial spin-values */
-  INIT_MEM( fkdot0 );
+  XLAL_INIT_MEM( fkdot0 );
   fkdot0[0] = 300.0;
   fkdot0[1] = -1.e-7;
   fkdot0[2] = 1e-15;
   fkdot0[3] = -1e-22;
 
   /* Result: (from ExtrPulsarSpins.m) */
-  INIT_MEM ( result );
+  XLAL_INIT_MEM ( result );
   result[0] =  2.809011145986047e+02;
   result[1] = -4.529256832000000e-07;
   result[2] = -8.460800000000001e-15;
@@ -164,13 +162,13 @@ int main(int argc, char *argv[])
   /* ----- now test LALExtrapolatePulsarSpinRange() ----- */
   /* set up initial spin-range */
   range0.refTime = epoch0;
-  INIT_MEM ( range0.fkdot );
+  XLAL_INIT_MEM ( range0.fkdot );
   range0.fkdot[0] = fkdot0[0];
   range0.fkdot[1] = fkdot0[1];
   range0.fkdot[2] = fkdot0[2];
   range0.fkdot[3] = fkdot0[3];
 
-  INIT_MEM ( range0.fkdotBand );
+  XLAL_INIT_MEM ( range0.fkdotBand );
   range0.fkdotBand[0] = 0;
   range0.fkdotBand[1] = -1.0e-7;
   range0.fkdotBand[2] =  1.0e-15;
@@ -180,13 +178,13 @@ int main(int argc, char *argv[])
   rangeResult.refTime.gpsSeconds = 619572733;
   rangeResult.refTime.gpsNanoSeconds = 0;
 
-  INIT_MEM ( rangeResult.fkdot );
+  XLAL_INIT_MEM ( rangeResult.fkdot );
   rangeResult.fkdot[0] =  3.280495590653952e+02;
   rangeResult.fkdot[1] = -1.284283366400000e-06;
   rangeResult.fkdot[2] =  1.046080000000000e-14;
   rangeResult.fkdot[3] = -2.000000000000000e-22;
 
-  INIT_MEM ( rangeResult.fkdotBand );
+  XLAL_INIT_MEM ( rangeResult.fkdotBand );
   rangeResult.fkdotBand[0] =  2.804955906539521e+01;
   rangeResult.fkdotBand[1] =  6.421416832000000e-07;
   rangeResult.fkdotBand[2] =  1.046080000000000e-14;

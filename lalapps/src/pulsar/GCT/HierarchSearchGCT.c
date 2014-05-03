@@ -107,7 +107,6 @@ int global_argc;
 /* ---------- Macros -------------------- */
 #define HSMAX(x,y) ( (x) > (y) ? (x) : (y) )
 #define HSMIN(x,y) ( (x) < (y) ? (x) : (y) )
-#define INIT_MEM(x) memset(&(x), 0, sizeof((x)))
 
 
 /* ---------- Exported types ---------- */
@@ -672,7 +671,7 @@ int MAIN( int argc, char *argv[]) {
 
   /*------------ Set up stacks, detector states etc. */
   /* initialize spin range vectors */
-  INIT_MEM( spinRange_Temp );
+  XLAL_INIT_MEM( spinRange_Temp );
 
   /* some useful first stage params */
   usefulParams.sftbasename = uvar_DataFiles1;
@@ -703,10 +702,10 @@ int MAIN( int argc, char *argv[]) {
   /* ----- */
 
 
-  INIT_MEM ( usefulParams.spinRange_startTime );
-  INIT_MEM ( usefulParams.spinRange_endTime );
-  INIT_MEM ( usefulParams.spinRange_refTime );
-  INIT_MEM ( usefulParams.spinRange_midTime );
+  XLAL_INIT_MEM ( usefulParams.spinRange_startTime );
+  XLAL_INIT_MEM ( usefulParams.spinRange_endTime );
+  XLAL_INIT_MEM ( usefulParams.spinRange_refTime );
+  XLAL_INIT_MEM ( usefulParams.spinRange_midTime );
 
   /* copy user specified spin variables at reftime  */
   /* the reference time value in spinRange_refTime will be set in SetUpSFTs() */
@@ -912,7 +911,7 @@ int MAIN( int argc, char *argv[]) {
 
   /* binary orbit and higher spindowns not considered */
   thisPoint.asini = 0 /* isolated pulsar */;
-  INIT_MEM ( thisPoint.fkdot );
+  XLAL_INIT_MEM ( thisPoint.fkdot );
 
   /*---------- set up stuff for semi-coherent part ---------*/
   /* set up some semiCoherent parameters */
@@ -950,7 +949,7 @@ int MAIN( int argc, char *argv[]) {
     column_headings_string_length += 6 + numDetectors*9; /* 6 for " <2Fr>" and 9 per detector for " <2Fr_XY>" */
   }
   char column_headings_string[column_headings_string_length];
-  INIT_MEM( column_headings_string );
+  XLAL_INIT_MEM( column_headings_string );
   strcat ( column_headings_string, colum_headings_string_base );
   if ( uvar_computeLV ) {
     strcat ( column_headings_string, " LV" );
@@ -2652,8 +2651,7 @@ int XLALExtrapolateToplistPulsarSpins ( toplist_t *list,              /**< [out/
   if  ( deltaTau == 0 )
     return XLAL_SUCCESS; /* can skip this step if reftimes are equal */
 
-  PulsarSpins fkdot;
-  INIT_MEM ( fkdot );
+  PulsarSpins XLAL_INIT_DECL(fkdot);
 
   UINT4 numElements = list->elems;
   for (UINT4 j = 0; j < numElements; j++ ) /* loop over toplist */

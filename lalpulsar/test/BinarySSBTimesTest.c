@@ -53,7 +53,6 @@
 
 // ----- macros
 #define GPS2REAL8(gps) (1.0 * (gps).gpsSeconds + 1.e-9 * (gps).gpsNanoSeconds )
-#define INIT_MEM(x) memset(&(x), 0, sizeof((x)))
 
 // ----- global variables
 static REAL8 A,B;          /* binary time delay coefficients (need to be global so that the LAL root finding procedure can see them) */
@@ -91,8 +90,8 @@ main ( int argc, char *argv[] )
   UserInput_t uvar_s;
   UserInput_t *uvar = &uvar_s;
 
-  INIT_MEM ( status );
-  INIT_MEM ( uvar_s );
+  XLAL_INIT_MEM ( status );
+  XLAL_INIT_MEM ( uvar_s );
 
   struct tms buf;
   uvar->randSeed = times(&buf);

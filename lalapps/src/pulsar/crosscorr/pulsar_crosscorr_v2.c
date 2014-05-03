@@ -219,9 +219,9 @@ int main(int argc, char *argv[]){
   /*   fdotsMax->length = N_SPINDOWN_DERIVS; */
   /*   fdotsMax->data = (REAL8 *)LALCalloc(fdotsMax->length, sizeof(REAL8)); */
 
-  /*   INIT_MEM(spinRange_startTime); */
-  /*   INIT_MEM(spinRange_endTime); */
-  /*   INIT_MEM(spinRange_refTime); */
+  /*   XLAL_INIT_MEM(spinRange_startTime); */
+  /*   XLAL_INIT_MEM(spinRange_endTime); */
+  /*   XLAL_INIT_MEM(spinRange_refTime); */
 
   /*   spinRange_refTime.refTime = refTime; */
   /*   spinRange_refTime.fkdot[0] = uvar_f0; */
