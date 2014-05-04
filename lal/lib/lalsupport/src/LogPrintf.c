@@ -32,15 +32,26 @@
 
 #include <lal/XLALError.h>
 #include <lal/LALMalloc.h>
+#include <lal/LALDebugLevel.h>
 
 #ifdef _MSC_VER
 #include <Windows.h>
 #include <process.h>
 #define getpid _getpid
 #else
+#ifdef HAVE_SYS_TIME_H
 #include <sys/time.h>
+#endif
+#ifdef HAVE_SYS_TYPES_H
 #include <sys/types.h>
+#endif
+#ifdef HAVE_UNISTD_H
 #include <unistd.h>
+#endif
+#endif
+
+#ifdef HAVE_SYS_RESOURCE_H
+#include <sys/resource.h>
 #endif
 
 #include <time.h>
@@ -177,6 +188,39 @@ LogTimeToString ( double t )
 
 } /* LogTimeToString() */
 
+///
+/// Returns the peak amount of memory (in MB) allocated on the heap so far
+/// using either lalMallocTotalPeak if memory-debugging is active or getrusage (if available),
+/// otherwise returns -1 (without error) for "dont know"
+///
+/// \note the reported number always refers to the 'nominal' memory usage *not* including any extra "padding"
+/// that would have been added by LALMalloc(), which typically doubles memory usage.
+///
+REAL8
+XLALGetPeakHeapUsageMB ( void )
+{
+  // first see if lal's memory-debugging can be used
+  if ( lalDebugLevel & LALMEMPADBIT ) {
+    return lalMallocTotalPeak / (1024.0 * 1024.0);	// lalMallocTotalMax counts bytes, doesn't inlude 'padding'
+  }
+
+  // otherwise  try using getrusage
+#ifdef HAVE_SYS_RESOURCE_H
+  struct rusage usage;
+  XLAL_CHECK_REAL8 ( getrusage ( RUSAGE_SELF, &usage ) == 0, XLAL_ESYS, "call to getrusage() failed with errno = %d\n", errno );
+  REAL8 peakHeapMB = usage.ru_maxrss / 1024.0;	// maxrss is in KB
+  if ( lalDebugLevel & LALMEMPADBIT ) {
+    peakHeapMB /= 2.0;	// try to correct for memory-padding added by LALMalloc(), which seems ~factor of 2
+  }
+  // we're suspicious of a value of '0', which can also indicate that ru_maxrss is unsupported on this platform
+  if ( usage.ru_maxrss > 0 ) {
+    return peakHeapMB;
+  }
+#endif
+
+  return -1;	// fallback answer: "dont know"
+
+} // XLALGetMaxHeapUsageMB()
 
 /**
  * Return time of day (seconds since 1970) as a double.
