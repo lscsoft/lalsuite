@@ -30,6 +30,8 @@ extern "C" {
 #endif
 
 /** \addtogroup LALMalloc_h */ /*@{ */
+extern size_t lalMallocTotal;
+extern size_t lalMallocTotalPeak;
 void *XLALMalloc(size_t n);
 void *XLALMallocLong(size_t n, const char *file, int line);
 void *XLALCalloc(size_t m, size_t n);
