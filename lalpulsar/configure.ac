@@ -1,5 +1,5 @@
 AC_PREREQ([2.63])
-AC_INIT([lalpulsar],[1.9.0.1],[lal-discuss@ligo.org])
+AC_INIT([LALPulsar],[1.9.0.1],[lal-discuss@ligo.org])
 AC_CONFIG_HEADERS([src/config.h src/LALPulsarConfig.h])
 AC_CONFIG_SRCDIR([src/ComputeFstat.c])
 AC_CONFIG_AUX_DIR([gnuscripts])
