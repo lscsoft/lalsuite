@@ -479,9 +479,6 @@ int main(void)
 
   /*******  TEST RESPONSE OF LALCoarseFitToPulsar TO INVALID DATA  ************/
 
-#ifndef LAL_NDEBUG
-if ( ! lalNoDebug ) {
-
  /* Test that all the error conditions are correctly detected by the function */
 
  LALCoarseFitToPulsar(&status, NULL, &input, &params);
@@ -535,9 +532,6 @@ if ( ! lalNoDebug ) {
   }
 
   input.var->length = FITTOPULSARTEST_LENGTH;
-
-} /* if ( ! lalNoDebug ) */
-#endif /* LAL_NDEBUG */
 
   /*******  CLEAN UP  ************/
 

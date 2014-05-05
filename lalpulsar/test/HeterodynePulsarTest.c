@@ -242,9 +242,6 @@ int main(void)
   /*******  TEST RESPONSE OF LALCoarseHeterodyne TO INVALID DATA  ************/
 /* Test that all the error conditions are correctly detected by the function */
 
-#ifndef LAL_NDEBUG
-if ( ! lalNoDebug ) {
-
  LALCoarseHeterodyne(&status, NULL, &coarseInput, &coarseParams);
 
   if (status.statusCode != HETERODYNEPULSARH_ENULLOUTPUT
@@ -310,9 +307,6 @@ if ( ! lalNoDebug ) {
 	    HETERODYNEPULSARH_EINVALIDF0, HETERODYNEPULSARH_MSGEINVALIDF0);
     return HETERODYNEPULSARTESTC_ECHK;
   }
-
-} /* if ( ! lalNoDebug ) */
-#endif /* LAL_NDEBUG */
 
   /*******  TEST RESPONSE OF LALFineHeterodyneToPulsar TO VALID DATA  ************/
 
@@ -409,8 +403,6 @@ if ( ! lalNoDebug ) {
   }
 
  /*******  TEST RESPONSE OF LALFineHeterodyneToPulsar TO INVALID DATA  ************/
-#ifndef LAL_NDEBUG
-if ( ! lalNoDebug ) {
 
  LALFineHeterodyneToPulsar(&status, NULL, &fineInput, &fineParams);
 
@@ -477,9 +469,6 @@ if ( ! lalNoDebug ) {
 	    HETERODYNEPULSARH_ELENGTH, HETERODYNEPULSARH_MSGELENGTH);
     return HETERODYNEPULSARTESTC_ECHK;
   }
-
-} /* if ( ! lalNoDebug ) */
-#endif /* LAL_NDEBUG */
 
  /*******  CLEAN UP  ************/
  LALDestroyVector(&status, &coarseInput.V.data);
