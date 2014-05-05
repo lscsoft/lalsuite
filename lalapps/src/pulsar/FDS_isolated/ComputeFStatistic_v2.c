@@ -111,6 +111,8 @@ int finite(double);
 
 #define LAL_INT4_MAX 2147483647
 
+// NOTE: LAL's nan is more portable than either of libc or gsl !
+#define LAL_NAN XLALREAL4FailNaN()
 /*---------- internal types ----------*/
 
 /** What info do we want to store in our toplist? */
@@ -619,7 +621,7 @@ int main(int argc,char *argv[])
           thisFCand.Fa = Fstat_res->FaFb[iFreq].Fa;
           thisFCand.Fb = Fstat_res->FaFb[iFreq].Fb;
         } else {
-          thisFCand.Fa = thisFCand.Fb = crect(NAN,NAN);
+          thisFCand.Fa = thisFCand.Fb = crect(LAL_NAN,LAL_NAN);
         }
         thisFCand.Mmunu = Fstat_res->Mmunu;
         MultiFstatAtomVector* thisFAtoms = NULL;
@@ -659,7 +661,7 @@ int main(int argc,char *argv[])
         }
       else
         {
-          thisFCand.LVstat = NAN; /* in non-LV case, block field with NAN, needed for output checking in write_PulsarCandidate_to_fp() */
+          thisFCand.LVstat = LAL_NAN; /* in non-LV case, block field with NAN, needed for output checking in write_PulsarCandidate_to_fp() */
         }
 
       /* push new value onto scan-line buffer */
@@ -2193,7 +2195,7 @@ write_PulsarCandidate_to_fp ( FILE *fp,  const PulsarCandidate *pulsarParams, co
   for ( X = 0; X < numDet ; X ++ )
     fprintf (fp, "twoF%d    = % .6g;\n", X, Fcand->twoFX[X] );
   /* LVstat */
-  if ( !isnan(Fcand->LVstat) ) /* if --computeLV=FALSE, the LV field was initialised to NAN - do not output LV */
+  if ( !XLALIsREAL4FailNaN(Fcand->LVstat) ) /* if --computeLV=FALSE, the LV field was initialised to NAN - do not output LV */
     fprintf (fp, "LV       = % .6g;\n", Fcand->LVstat );
 
   fprintf (fp, "\nAmpFisher = \\\n" );
@@ -2248,8 +2250,9 @@ write_FstatCandidate_to_fp ( FILE *fp, const FstatCandidate *thisFCand )
   char extraStatsStr[256] = "";     /* defaults to empty */
   char buf0[256];
   /* LVstat */
-  if ( !isnan(thisFCand->LVstat) ) /* if --computeLV=FALSE, the LV field was initialised to NAN - do not output LV */
+  if ( !XLALIsREAL4FailNaN(thisFCand->LVstat) ) { /* if --computeLV=FALSE, the LV field was initialised to NAN - do not output LV */
       snprintf ( extraStatsStr, sizeof(extraStatsStr), " %.9g", thisFCand->LVstat );
+  }
   if ( thisFCand->numDetectors > 0 )
     {
       for ( UINT4 X = 0; X < thisFCand->numDetectors; X ++ )
