@@ -22,7 +22,6 @@
 
 #include <stdlib.h>
 #include <stdio.h>
-#include <stdbool.h>
 #include <math.h>
 
 #include <gsl/gsl_vector.h>
@@ -438,8 +437,8 @@ XLALComputeFstat(
   const UINT4 numDetectors = common->detectors.length;
 
   // Enlarge result arrays if they are too small
-  const bool moreFreqBins = (numFreqBins > (*Fstats)->internalalloclen);
-  const bool moreDetectors = (numDetectors > (*Fstats)->numDetectors);
+  const BOOLEAN moreFreqBins = (numFreqBins > (*Fstats)->internalalloclen);
+  const BOOLEAN moreDetectors = (numDetectors > (*Fstats)->numDetectors);
   if (moreFreqBins || moreDetectors) {
 
     // Enlarge multi-detector 2F array
