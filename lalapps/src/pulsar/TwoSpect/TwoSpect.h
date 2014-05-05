@@ -29,15 +29,15 @@
 extern FILE *LOG;
 
 inputParamsStruct * new_inputParams(INT4 numofIFOs);
-void free_inputParams(inputParamsStruct *input);
+void free_inputParams(inputParamsStruct *params);
 
-ffdataStruct * new_ffdata(inputParamsStruct *input);
+ffdataStruct * new_ffdata(inputParamsStruct *params);
 void free_ffdata(ffdataStruct *data);
 
-SFTCatalog * findSFTdata(inputParamsStruct *input);
-MultiSFTVector * extractSFTband(inputParamsStruct *input, SFTCatalog *catalog);
-REAL4Vector * convertSFTdataToPowers(MultiSFTVector *sfts, inputParamsStruct *input, REAL8 normalization);
-REAL4Vector * readInSFTs(inputParamsStruct *input, REAL8 *normalization);
+SFTCatalog * findSFTdata(inputParamsStruct *params);
+MultiSFTVector * extractSFTband(inputParamsStruct *params, SFTCatalog *catalog);
+REAL4Vector * convertSFTdataToPowers(MultiSFTVector *sfts, inputParamsStruct *params, REAL8 normalization);
+REAL4Vector * readInSFTs(inputParamsStruct *params, REAL8 *normalization);
 
 MultiLIGOTimeGPSVector * getMultiTimeStampsFromSFTCatalog(SFTCatalog *catalog);
 MultiLIGOTimeGPSVector * getMultiTimeStampsFromSFTs(inputParamsStruct *params);
@@ -59,7 +59,7 @@ INT4Vector * detectLines_simple(REAL4Vector *TFdata, ffdataStruct *ffdata, input
 REAL4VectorSequence * trackLines(INT4Vector *lines, INT4Vector *binshifts, inputParamsStruct *params);
 INT4 cleanLines(REAL4Vector *TFdata, REAL4Vector *background, INT4Vector *lines, inputParamsStruct *params);
 
-INT4 slideTFdata(REAL4Vector *output, inputParamsStruct *input, REAL4Vector *tfdata, INT4Vector *binshifts);
+INT4 slideTFdata(REAL4Vector *output, inputParamsStruct *params, REAL4Vector *tfdata, INT4Vector *binshifts);
 void tfMeanSubtract(REAL4Vector *tfdata, REAL4Vector *rngMeans, INT4 numffts, INT4 numfbins);
 INT4 tfWeight(REAL4Vector *output, REAL4Vector *tfdata, REAL4Vector *rngMeans, REAL4Vector *antPatternWeights, INT4Vector *indexValuesOfExistingSFTs, inputParamsStruct *params);
 INT4 tfRngMeans(REAL4Vector *output, REAL4Vector *tfdata, INT4 numffts, INT4 numfbins, INT4 blksize);

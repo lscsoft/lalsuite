@@ -307,7 +307,7 @@ INT4 clusterCandidates(candidateVector **output, candidateVector *input, ffdataS
 
 
 //Big function to test the IHS candidates against Gaussian templates
-INT4 testIHScandidates(candidateVector **output, candidateVector *ihsCandidates, ffdataStruct *ffdata, REAL4Vector *aveNoise, REAL4Vector *aveTFnoisePerFbinRatio, REAL4 alpha, REAL4 delta, inputParamsStruct *inputParams)
+INT4 testIHScandidates(candidateVector **output, candidateVector *ihsCandidates, ffdataStruct *ffdata, REAL4Vector *aveNoise, REAL4Vector *aveTFnoisePerFbinRatio, REAL4 alpha, REAL4 delta, inputParamsStruct *params)
 {
 
    //R probability calculator errorcode
@@ -321,24 +321,24 @@ INT4 testIHScandidates(candidateVector **output, candidateVector *ihsCandidates,
 
    //Allocate memory for template
    templateStruct *template = NULL;
-   XLAL_CHECK( (template = new_templateStruct(inputParams->maxtemplatelength)) != NULL, XLAL_EFUNC );
+   XLAL_CHECK( (template = new_templateStruct(params->maxtemplatelength)) != NULL, XLAL_EFUNC );
 
    INT4 candidatesoutsideofmainULrange = 0;
-   REAL8 log10templatefar = inputParams->log10templatefar;
+   REAL8 log10templatefar = params->log10templatefar;
 
    for (ii=0; ii<(INT4)ihsCandidates->numofcandidates; ii++) {
       //Assess the IHS candidate if the signal is away from the band edges, the modulation depth is greater or equal to minimum allowed and less than or equal to the maximum allowed, and if the period/modulation depth combo is within allowable limits for a template to be made. We will cut the period space in the next step.
-      if ( ihsCandidates->data[ii].fsig>=inputParams->fmin && ihsCandidates->data[ii].fsig<(inputParams->fmin+inputParams->fspan) ) {
-         if ( inputParams->followUpOutsideULrange || (ihsCandidates->data[ii].fsig>=inputParams->ULfmin && ihsCandidates->data[ii].fsig<=(inputParams->ULfmin + inputParams->ULfspan) && ihsCandidates->data[ii].moddepth>=inputParams->ULmindf && ihsCandidates->data[ii].moddepth<=inputParams->ULmaxdf) ) {
+      if ( ihsCandidates->data[ii].fsig>=params->fmin && ihsCandidates->data[ii].fsig<(params->fmin+params->fspan) ) {
+         if ( params->followUpOutsideULrange || (ihsCandidates->data[ii].fsig>=params->ULfmin && ihsCandidates->data[ii].fsig<=(params->ULfmin + params->ULfspan) && ihsCandidates->data[ii].moddepth>=params->ULmindf && ihsCandidates->data[ii].moddepth<=params->ULmaxdf) ) {
 
             resetTemplateStruct(template);
 
             REAL8 R, prob, bestPeriod = 0.0, bestR = 0.0, bestProb = 0.0;
             INT4 bestproberrcode = 0;
 
-            if (ihsCandidates->data[ii].period>=fmax(2.0*3600.0, minPeriod(ihsCandidates->data[ii].moddepth, inputParams->Tcoh)) && ihsCandidates->data[ii].period<=(0.2*inputParams->Tobs)) {
+            if (ihsCandidates->data[ii].period>=fmax(2.0*3600.0, minPeriod(ihsCandidates->data[ii].moddepth, params->Tcoh)) && ihsCandidates->data[ii].period<=(0.2*params->Tobs)) {
                //Make a Gaussian train template
-               XLAL_CHECK( makeTemplateGaussians(template, ihsCandidates->data[ii], inputParams, ffdata->numfbins, ffdata->numfprbins) == XLAL_SUCCESS, XLAL_EFUNC );
+               XLAL_CHECK( makeTemplateGaussians(template, ihsCandidates->data[ii], params, ffdata->numfbins, ffdata->numfprbins) == XLAL_SUCCESS, XLAL_EFUNC );
 
                //remove this--for testing purposes only
                //for (jj=0; jj<(INT4)template->templatedata->length; jj++) fprintf(stderr, "%g %d %d %d %g\n", template->templatedata->data[jj], template->pixellocations->data[jj], template->firstfftfrequenciesofpixels->data[jj], template->secondfftfrequencies->data[jj], aveNoise->data[template->secondfftfrequencies->data[jj]]*aveTFnoisePerFbinRatio->data[template->firstfftfrequenciesofpixels->data[jj]]);
@@ -365,17 +365,17 @@ INT4 testIHScandidates(candidateVector **output, candidateVector *ihsCandidates,
                XLALDestroyINT4Vector(sftexist); */
 
                //Estimate the FAR for these bin weights if the option was given
-               if (inputParams->calcRthreshold) XLAL_CHECK( numericFAR(farval, template, inputParams->templatefar, aveNoise, aveTFnoisePerFbinRatio, inputParams, inputParams->rootFindingMethod) == XLAL_SUCCESS, XLAL_EFUNC );
+               if (params->calcRthreshold) XLAL_CHECK( numericFAR(farval, template, params->templatefar, aveNoise, aveTFnoisePerFbinRatio, params, params->rootFindingMethod) == XLAL_SUCCESS, XLAL_EFUNC );
 
                //Caclulate R and probability noise caused the candidate
                R = calculateR(ffdata->ffdata, template, aveNoise, aveTFnoisePerFbinRatio);
                XLAL_CHECK( xlalErrno == 0, XLAL_EFUNC );
-               prob = probR(template, aveNoise, aveTFnoisePerFbinRatio, R, inputParams, &proberrcode);
+               prob = probR(template, aveNoise, aveTFnoisePerFbinRatio, R, params, &proberrcode);
                XLAL_CHECK( xlalErrno == 0, XLAL_EFUNC );
 
                /* Note the candidate if R exceeds the FAR or check other possibilities of different
                 periods */
-               if ((!inputParams->calcRthreshold && prob<log10templatefar) || (inputParams->calcRthreshold && R>farval->far)) {
+               if ((!params->calcRthreshold && prob<log10templatefar) || (params->calcRthreshold && R>farval->far)) {
                   bestR = R;
                   bestProb = prob;
                   bestPeriod = ihsCandidates->data[ii].period;
@@ -386,18 +386,18 @@ INT4 testIHScandidates(candidateVector **output, candidateVector *ihsCandidates,
             REAL8 periodfact = 0.0;
             for (jj=0; jj<=1; jj++) {
                //Shift by harmonics
-               for (kk=1; kk<=inputParams->periodHarmToCheck; kk++) {
+               for (kk=1; kk<=params->periodHarmToCheck; kk++) {
                   if (jj==0) periodfact = 1.0/(REAL8)kk;
                   else periodfact = (REAL8)kk;
-                  if (ihsCandidates->data[ii].period*periodfact>=fmax(inputParams->Pmin, minPeriod(ihsCandidates->data[ii].moddepth, inputParams->Tcoh)) && ihsCandidates->data[ii].period*periodfact<=fmin(inputParams->Pmax, inputParams->Tobs*0.2)) {
+                  if (ihsCandidates->data[ii].period*periodfact>=fmax(params->Pmin, minPeriod(ihsCandidates->data[ii].moddepth, params->Tcoh)) && ihsCandidates->data[ii].period*periodfact<=fmin(params->Pmax, params->Tobs*0.2)) {
                      ihsCandidates->data[ii].period *= periodfact;
-                     XLAL_CHECK( makeTemplateGaussians(template, ihsCandidates->data[ii], inputParams, ffdata->numfbins, ffdata->numfprbins) == XLAL_SUCCESS, XLAL_EFUNC );
+                     XLAL_CHECK( makeTemplateGaussians(template, ihsCandidates->data[ii], params, ffdata->numfbins, ffdata->numfprbins) == XLAL_SUCCESS, XLAL_EFUNC );
                      R = calculateR(ffdata->ffdata, template, aveNoise, aveTFnoisePerFbinRatio);
                      XLAL_CHECK( xlalErrno == 0, XLAL_EFUNC );
-                     prob = probR(template, aveNoise, aveTFnoisePerFbinRatio, R, inputParams, &proberrcode);
+                     prob = probR(template, aveNoise, aveTFnoisePerFbinRatio, R, params, &proberrcode);
                      XLAL_CHECK( xlalErrno == 0, XLAL_EFUNC );
-                     if (inputParams->calcRthreshold && bestProb==0.0) XLAL_CHECK( numericFAR(farval, template, inputParams->templatefar, aveNoise, aveTFnoisePerFbinRatio, inputParams, inputParams->rootFindingMethod) == XLAL_SUCCESS, XLAL_EFUNC );
-                     if ((bestProb!=0.0 && prob<bestProb) || (bestProb==0.0 && !inputParams->calcRthreshold && prob<log10templatefar) || (bestProb==0.0 && inputParams->calcRthreshold && R>farval->far)) {
+                     if (params->calcRthreshold && bestProb==0.0) XLAL_CHECK( numericFAR(farval, template, params->templatefar, aveNoise, aveTFnoisePerFbinRatio, params, params->rootFindingMethod) == XLAL_SUCCESS, XLAL_EFUNC );
+                     if ((bestProb!=0.0 && prob<bestProb) || (bestProb==0.0 && !params->calcRthreshold && prob<log10templatefar) || (bestProb==0.0 && params->calcRthreshold && R>farval->far)) {
                         bestPeriod = ihsCandidates->data[ii].period;
                         bestR = R;
                         bestProb = prob;
@@ -408,18 +408,18 @@ INT4 testIHScandidates(candidateVector **output, candidateVector *ihsCandidates,
                } // shift by harmonics for kk <= inputParams->periodHarmToCheck (harmonics)
 
                //shift by fractions
-               for (kk=1; kk<=inputParams->periodFracToCheck; kk++) {
+               for (kk=1; kk<=params->periodFracToCheck; kk++) {
                   if (jj==0) periodfact = (kk+1.0)/(kk+2.0);
                   else periodfact = (kk+2.0)/(kk+1.0);
-                  if (ihsCandidates->data[ii].period*periodfact>=fmax(inputParams->Pmin, minPeriod(ihsCandidates->data[ii].moddepth, inputParams->Tcoh)) && ihsCandidates->data[ii].period*periodfact<=fmin(inputParams->Pmax, inputParams->Tobs*0.2)) {
+                  if (ihsCandidates->data[ii].period*periodfact>=fmax(params->Pmin, minPeriod(ihsCandidates->data[ii].moddepth, params->Tcoh)) && ihsCandidates->data[ii].period*periodfact<=fmin(params->Pmax, params->Tobs*0.2)) {
                      ihsCandidates->data[ii].period *= periodfact;
-                     XLAL_CHECK( makeTemplateGaussians(template, ihsCandidates->data[ii], inputParams, ffdata->numfbins, ffdata->numfprbins) == XLAL_SUCCESS, XLAL_EFUNC );
+                     XLAL_CHECK( makeTemplateGaussians(template, ihsCandidates->data[ii], params, ffdata->numfbins, ffdata->numfprbins) == XLAL_SUCCESS, XLAL_EFUNC );
                      R = calculateR(ffdata->ffdata, template, aveNoise, aveTFnoisePerFbinRatio);
                      XLAL_CHECK( xlalErrno == 0, XLAL_EFUNC );
-                     prob = probR(template, aveNoise, aveTFnoisePerFbinRatio, R, inputParams, &proberrcode);
+                     prob = probR(template, aveNoise, aveTFnoisePerFbinRatio, R, params, &proberrcode);
                      XLAL_CHECK( xlalErrno == 0, XLAL_EFUNC );
-                     if (inputParams->calcRthreshold && bestProb==0.0) XLAL_CHECK( numericFAR(farval, template, inputParams->templatefar, aveNoise, aveTFnoisePerFbinRatio, inputParams, inputParams->rootFindingMethod) == XLAL_SUCCESS, XLAL_EFUNC );
-                     if ((bestProb!=0.0 && prob<bestProb) || (bestProb==0.0 && !inputParams->calcRthreshold && prob<log10templatefar) || (bestProb==0.0 && inputParams->calcRthreshold && R>farval->far)) {
+                     if (params->calcRthreshold && bestProb==0.0) XLAL_CHECK( numericFAR(farval, template, params->templatefar, aveNoise, aveTFnoisePerFbinRatio, params, params->rootFindingMethod) == XLAL_SUCCESS, XLAL_EFUNC );
+                     if ((bestProb!=0.0 && prob<bestProb) || (bestProb==0.0 && !params->calcRthreshold && prob<log10templatefar) || (bestProb==0.0 && params->calcRthreshold && R>farval->far)) {
                         bestPeriod = ihsCandidates->data[ii].period;
                         bestR = R;
                         bestProb = prob;
@@ -432,7 +432,7 @@ INT4 testIHScandidates(candidateVector **output, candidateVector *ihsCandidates,
 
             if (bestProb != 0.0) {
                REAL8 h0 = 0.0;
-               if (bestR > 0.0) h0 = 2.7426*sqrt(sqrt(bestR/(inputParams->Tcoh*inputParams->Tobs)));  //Now compute the h0 value
+               if (bestR > 0.0) h0 = 2.7426*sqrt(sqrt(bestR/(params->Tcoh*params->Tobs)));  //Now compute the h0 value
 
                if ((*output)->numofcandidates == (*output)->length-1) XLAL_CHECK( (*output = resize_candidateVector(*output, 2*(*output)->length)) != NULL, XLAL_EFUNC );
                loadCandidateData(&((*output)->data[(*output)->numofcandidates]), ihsCandidates->data[ii].fsig, bestPeriod, ihsCandidates->data[ii].moddepth, alpha, delta, bestR, h0, bestProb, bestproberrcode, ihsCandidates->data[ii].normalization);

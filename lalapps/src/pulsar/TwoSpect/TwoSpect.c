@@ -1042,13 +1042,13 @@ inputParamsStruct * new_inputParams(INT4 numofIFOs)
 
 //////////////////////////////////////////////////////////////
 // Destroy inputParamsStruct  -- done
-void free_inputParams(inputParamsStruct *input)
+void free_inputParams(inputParamsStruct *params)
 {
 
-   XLALFree((CHAR*)input->sftType);
-   XLALFree((LALDetector*)input->det);
-   gsl_rng_free(input->rng);
-   XLALFree((inputParamsStruct*)input);
+   XLALFree((CHAR*)params->sftType);
+   XLALFree((LALDetector*)params->det);
+   gsl_rng_free(params->rng);
+   XLALFree((inputParamsStruct*)params);
 
 } /* free_inputParams() */
 
@@ -1056,16 +1056,16 @@ void free_inputParams(inputParamsStruct *input)
 
 //////////////////////////////////////////////////////////////
 // Allocate ffdataStruct vectors  -- done
-ffdataStruct * new_ffdata(inputParamsStruct *input)
+ffdataStruct * new_ffdata(inputParamsStruct *params)
 {
 
-   XLAL_CHECK_NULL( input != NULL, XLAL_EINVAL );
+   XLAL_CHECK_NULL( params != NULL, XLAL_EINVAL );
 
    ffdataStruct *ffdata = NULL;
    XLAL_CHECK_NULL( (ffdata = XLALMalloc(sizeof(*ffdata))) != NULL, XLAL_ENOMEM );
 
-   ffdata->numfbins = (INT4)(round(input->fspan*input->Tcoh + 2.0*input->dfmax*input->Tcoh)+12+1);
-   ffdata->numffts = (INT4)floor(input->Tobs/(input->Tcoh-input->SFToverlap)-1);
+   ffdata->numfbins = (INT4)(round(params->fspan*params->Tcoh + 2.0*params->dfmax*params->Tcoh)+12+1);
+   ffdata->numffts = (INT4)floor(params->Tobs/(params->Tcoh-params->SFToverlap)-1);
    ffdata->numfprbins = (INT4)floorf(ffdata->numffts*0.5) + 1;
    ffdata->tfnormalization = ffdata->ffnormalization = 0.0;
 
@@ -1089,10 +1089,10 @@ void free_ffdata(ffdataStruct *data)
 
 //////////////////////////////////////////////////////////////
 // Find SFT data and return a catalog specified by input values
-SFTCatalog * findSFTdata(inputParamsStruct *input)
+SFTCatalog * findSFTdata(inputParamsStruct *params)
 {
 
-   XLAL_CHECK_NULL( input != NULL, XLAL_EINVAL );
+   XLAL_CHECK_NULL( params != NULL, XLAL_EINVAL );
 
    fprintf(LOG, "Finding SFTs... ");
    fprintf(stderr, "Finding SFTs... ");
@@ -1101,14 +1101,14 @@ SFTCatalog * findSFTdata(inputParamsStruct *input)
 
    //Set the start and end times in the LIGO GPS format
    LIGOTimeGPS start = LIGOTIMEGPSZERO, end = LIGOTIMEGPSZERO;
-   XLALGPSSetREAL8(&start, input->searchstarttime);
+   XLALGPSSetREAL8(&start, params->searchstarttime);
    XLAL_CHECK_NULL( xlalErrno == 0, XLAL_EFUNC );
-   XLALGPSSetREAL8(&end, input->searchstarttime+input->Tobs);
+   XLALGPSSetREAL8(&end, params->searchstarttime+params->Tobs);
    XLAL_CHECK_NULL( xlalErrno == 0, XLAL_EFUNC );
 
    //Setup the constraints
    SFTConstraints XLAL_INIT_DECL(constraints);
-   constraints.detector = input->det[0].frDetector.prefix;
+   constraints.detector = params->det[0].frDetector.prefix;
    constraints.minStartTime = &start;
    constraints.maxStartTime = &end;
 
@@ -1125,21 +1125,21 @@ SFTCatalog * findSFTdata(inputParamsStruct *input)
 
 //////////////////////////////////////////////////////////////
 // Extract the SFT data from a band
-MultiSFTVector * extractSFTband(inputParamsStruct *input, SFTCatalog *catalog)
+MultiSFTVector * extractSFTband(inputParamsStruct *params, SFTCatalog *catalog)
 {
 
-   XLAL_CHECK_NULL( input != NULL && catalog != NULL, XLAL_EINVAL );
+   XLAL_CHECK_NULL( params != NULL && catalog != NULL, XLAL_EINVAL );
 
    fprintf(LOG, "Extracting band from SFTs... ");
    fprintf(stderr, "Extracting band from SFTs... ");
 
    //Determine band size (remember to get extra bins because of the running median and the bin shifts due to detector velocity)
-   REAL8 minfbin = round(input->fmin*input->Tcoh - input->dfmax*input->Tcoh - 0.5*(input->blksize-1) - (REAL8)(input->maxbinshift) - 6.0)/input->Tcoh;
-   REAL8 maxfbin = round((input->fmin + input->fspan)*input->Tcoh + input->dfmax*input->Tcoh + 0.5*(input->blksize-1) + (REAL8)(input->maxbinshift) + 6.0)/input->Tcoh;
+   REAL8 minfbin = round(params->fmin*params->Tcoh - params->dfmax*params->Tcoh - 0.5*(params->blksize-1) - (REAL8)(params->maxbinshift) - 6.0)/params->Tcoh;
+   REAL8 maxfbin = round((params->fmin + params->fspan)*params->Tcoh + params->dfmax*params->Tcoh + 0.5*(params->blksize-1) + (REAL8)(params->maxbinshift) + 6.0)/params->Tcoh;
 
    //Now extract the data
    MultiSFTVector *sftvector = NULL;
-   XLAL_CHECK_NULL( (sftvector = XLALLoadMultiSFTs(catalog, minfbin+0.1/input->Tcoh, maxfbin-0.1/input->Tcoh)) != NULL, XLAL_EFUNC );
+   XLAL_CHECK_NULL( (sftvector = XLALLoadMultiSFTs(catalog, minfbin+0.1/params->Tcoh, maxfbin-0.1/params->Tcoh)) != NULL, XLAL_EFUNC );
 
    fprintf(LOG, "done\n");
    fprintf(stderr, "done\n");
@@ -1151,10 +1151,10 @@ MultiSFTVector * extractSFTband(inputParamsStruct *input, SFTCatalog *catalog)
 
 //////////////////////////////////////////////////////////////
 // Convert the SFT data into powers
-REAL4Vector * convertSFTdataToPowers(MultiSFTVector *sfts, inputParamsStruct *input, REAL8 normalization)
+REAL4Vector * convertSFTdataToPowers(MultiSFTVector *sfts, inputParamsStruct *params, REAL8 normalization)
 {
 
-   XLAL_CHECK_NULL( sfts != NULL && input != NULL, XLAL_EINVAL );
+   XLAL_CHECK_NULL( sfts != NULL && params != NULL, XLAL_EINVAL );
 
    fprintf(LOG, "Converting band to powers... ");
    fprintf(stderr, "Converting band to powers... ");
@@ -1162,18 +1162,18 @@ REAL4Vector * convertSFTdataToPowers(MultiSFTVector *sfts, inputParamsStruct *in
    INT4 ii, jj;
 
    //Determine band size (remember to get extra bins because of the running median and the bin shifts due to detector velocity)
-   REAL8 minfbin = round(input->fmin*input->Tcoh - input->dfmax*input->Tcoh - 0.5*(input->blksize-1) - (REAL8)(input->maxbinshift) - 6.0)/input->Tcoh;
-   REAL8 maxfbin = round((input->fmin + input->fspan)*input->Tcoh + input->dfmax*input->Tcoh + 0.5*(input->blksize-1) + (REAL8)(input->maxbinshift) + 6.0)/input->Tcoh;
+   REAL8 minfbin = round(params->fmin*params->Tcoh - params->dfmax*params->Tcoh - 0.5*(params->blksize-1) - (REAL8)(params->maxbinshift) - 6.0)/params->Tcoh;
+   REAL8 maxfbin = round((params->fmin + params->fspan)*params->Tcoh + params->dfmax*params->Tcoh + 0.5*(params->blksize-1) + (REAL8)(params->maxbinshift) + 6.0)/params->Tcoh;
 
    //Now put the power data into the TF plane, looping through each SFT
    //If an SFT doesn't exit, fill the TF pixels of the SFT with zeros
-   INT4 numffts = (INT4)floor(input->Tobs/(input->Tcoh-input->SFToverlap)-1);
+   INT4 numffts = (INT4)floor(params->Tobs/(params->Tcoh-params->SFToverlap)-1);
    INT4 sftlength;
-   if (sfts->data[0]->length == 0) sftlength = (INT4)round(maxfbin*input->Tcoh - minfbin*input->Tcoh + 1);
+   if (sfts->data[0]->length == 0) sftlength = (INT4)round(maxfbin*params->Tcoh - minfbin*params->Tcoh + 1);
    else {
       sftlength = sfts->data[0]->data->data->length;
       //Check the length is what we expect
-      XLAL_CHECK_NULL( sftlength==(INT4)round(maxfbin*input->Tcoh - minfbin*input->Tcoh + 1), XLAL_EFPINEXCT, "sftlength (%d) is not matching expected length (%d)\n", sftlength, (INT4)round(maxfbin*input->Tcoh - minfbin*input->Tcoh + 1) );
+      XLAL_CHECK_NULL( sftlength==(INT4)round(maxfbin*params->Tcoh - minfbin*params->Tcoh + 1), XLAL_EFPINEXCT, "sftlength (%d) is not matching expected length (%d)\n", sftlength, (INT4)round(maxfbin*params->Tcoh - minfbin*params->Tcoh + 1) );
    }
    INT4 nonexistantsft = 0;
    REAL4Vector *tfdata = NULL;
@@ -1184,7 +1184,7 @@ REAL4Vector * convertSFTdataToPowers(MultiSFTVector *sfts, inputParamsStruct *in
    for (ii=0; ii<numffts; ii++) {
       if (ii-nonexistantsft < (INT4)sfts->data[0]->length) {
          SFTtype *sft = &(sfts->data[0]->data[ii - nonexistantsft]);
-         if (sft->epoch.gpsSeconds == (INT4)round(ii*(input->Tcoh-input->SFToverlap)+input->searchstarttime)) {
+         if (sft->epoch.gpsSeconds == (INT4)round(ii*(params->Tcoh-params->SFToverlap)+params->searchstarttime)) {
             for (jj=0; jj<sftlength; jj++) {
                COMPLEX8 sftcoeff = sft->data->data[jj];
                tfdata->data[ii*sftlength + jj] = (REAL4)((sqrtnorm*crealf(sftcoeff))*(sqrtnorm*crealf(sftcoeff)) + (sqrtnorm*cimagf(sftcoeff))*(sqrtnorm*cimagf(sftcoeff)));  //power, normalized
@@ -1202,108 +1202,10 @@ REAL4Vector * convertSFTdataToPowers(MultiSFTVector *sfts, inputParamsStruct *in
    } /* for ii < numffts */
 
    //Vladimir's code uses a different SFT normalization factor than MFD
-   if (strcmp(input->sftType, "vladimir") == 0) {
+   if (strcmp(params->sftType, "vladimir") == 0) {
       REAL4 vladimirfactor = (REAL4)(0.25*(8.0/3.0));
       for (ii=0; ii<(INT4)tfdata->length; ii++) tfdata->data[ii] *= vladimirfactor;
    }
-
-   fprintf(LOG, "done\n");
-   fprintf(stderr, "done\n");
-
-   fprintf(LOG, "Duty factor = %f\n", 1.0-(REAL4)nonexistantsft/(REAL4)numffts);
-   fprintf(stderr, "Duty factor = %f\n", 1.0-(REAL4)nonexistantsft/(REAL4)numffts);
-
-   REAL4 stddev = 0.0;
-   XLAL_CHECK_NULL( calcStddev(&stddev, tfdata) == XLAL_SUCCESS, XLAL_EFUNC );
-   fprintf(LOG, "TF before weighting, mean subtraction: mean = %g, std. dev. = %g\n", calcMean(tfdata), stddev);
-   fprintf(stderr, "TF before weighting, mean subtraction: mean = %g, std. dev. = %g\n", calcMean(tfdata), stddev);
-
-   return tfdata;
-
-}
-
-
-//////////////////////////////////////////////////////////////
-// Read in SFT data to produce a TF vector
-REAL4Vector * readInSFTs(inputParamsStruct *input, REAL8 *normalization)
-{
-
-   XLAL_CHECK_NULL( input != NULL && normalization != NULL, XLAL_EINVAL );
-
-   fprintf(LOG, "Loading in SFTs... ");
-   fprintf(stderr, "Loading in SFTs... ");
-
-   INT4 ii, jj;
-   SFTCatalog *catalog = NULL;
-
-   //Set the start and end times in the LIGO GPS format
-   LIGOTimeGPS start = LIGOTIMEGPSZERO, end = LIGOTIMEGPSZERO;
-   XLALGPSSetREAL8(&start, input->searchstarttime);
-   XLAL_CHECK_NULL( xlalErrno == 0, XLAL_EFUNC );
-   XLALGPSSetREAL8(&end, input->searchstarttime+input->Tobs);
-   XLAL_CHECK_NULL( xlalErrno == 0, XLAL_EFUNC );
-
-   //Setup the constraints
-   SFTConstraints XLAL_INIT_DECL(constraints);
-   constraints.detector = input->det[0].frDetector.prefix;
-   constraints.minStartTime = &start;
-   constraints.maxStartTime = &end;
-
-   //Find SFT files
-   XLAL_CHECK_NULL( (catalog = XLALSFTdataFind(sft_dir_file, &constraints)) != NULL, XLAL_EFUNC );
-
-   //Determine band size (remember to get extra bins because of the running median and the bin shifts due to detector velocity)
-   REAL8 minfbin = round(input->fmin*input->Tcoh - input->dfmax*input->Tcoh - 0.5*(input->blksize-1) - (REAL8)(input->maxbinshift) - 6.0)/input->Tcoh;
-   REAL8 maxfbin = round((input->fmin + input->fspan)*input->Tcoh + input->dfmax*input->Tcoh + 0.5*(input->blksize-1) + (REAL8)(input->maxbinshift) + 6.0)/input->Tcoh;
-
-   //Now extract the data
-   SFTVector *sfts = NULL;
-   XLAL_CHECK_NULL( (sfts = XLALLoadSFTs(catalog, minfbin+0.1/input->Tcoh, maxfbin-0.1/input->Tcoh)) != NULL, XLAL_EFUNC );
-
-   //Now put the power data into the TF plane, looping through each SFT
-   //If an SFT doesn't exit, fill the TF pixels of the SFT with zeros
-   INT4 numffts = (INT4)floor(input->Tobs/(input->Tcoh-input->SFToverlap)-1);
-   INT4 sftlength;
-   if (sfts->length == 0) sftlength = (INT4)round(maxfbin*input->Tcoh - minfbin*input->Tcoh + 1);
-   else {
-      sftlength = sfts->data->data->length;
-      //Check the length is what we expect
-      XLAL_CHECK_NULL( sftlength==(INT4)round(maxfbin*input->Tcoh - minfbin*input->Tcoh + 1), XLAL_EFPINEXCT, "sftlength (%d) is not matching expected length (%d)\n", sftlength, (INT4)round(maxfbin*input->Tcoh - minfbin*input->Tcoh + 1) );
-   }
-   INT4 nonexistantsft = 0;
-   REAL4Vector *tfdata = NULL;
-   XLAL_CHECK_NULL( (tfdata = XLALCreateREAL4Vector(numffts*sftlength)) != NULL, XLAL_EFUNC );
-
-   //Load the data into the output vector, roughly normalizing as we go along from the input value
-   REAL8 sqrtnorm = sqrt(*(normalization));
-   for (ii=0; ii<numffts; ii++) {
-
-      SFTDescriptor *sftdescription = &(catalog->data[ii - nonexistantsft]);
-      if (sftdescription->header.epoch.gpsSeconds == (INT4)round(ii*(input->Tcoh-input->SFToverlap)+input->searchstarttime)) {
-
-         SFTtype *sft = &(sfts->data[ii - nonexistantsft]);
-         for (jj=0; jj<sftlength; jj++) {
-            COMPLEX8 sftcoeff = sft->data->data[jj];
-            tfdata->data[ii*sftlength + jj] = (REAL4)((sqrtnorm*crealf(sftcoeff))*(sqrtnorm*crealf(sftcoeff)) + (sqrtnorm*cimagf(sftcoeff))*(sqrtnorm*cimagf(sftcoeff)));  //power, normalized
-         }
-
-      } else {
-         //for (jj=0; jj<sftlength; jj++) tfdata->data[ii*sftlength + jj] = 0.0;   //Set values to be zero
-         memset(&(tfdata->data[ii*sftlength]), 0, sizeof(REAL4)*sftlength);
-         nonexistantsft++;    //increment the nonexistantsft counter
-      }
-
-   } /* for ii < numffts */
-
-   //Vladimir's code uses a different SFT normalization factor than MFD
-   if (strcmp(input->sftType, "vladimir") == 0) {
-      REAL4 vladimirfactor = (REAL4)(0.25*(8.0/3.0));
-      for (ii=0; ii<(INT4)tfdata->length; ii++) tfdata->data[ii] *= vladimirfactor;
-   }
-
-   //Destroy stuff
-   XLALDestroySFTCatalog(catalog);
-   XLALDestroySFTVector(sfts);
 
    fprintf(LOG, "done\n");
    fprintf(stderr, "done\n");
@@ -1312,10 +1214,35 @@ REAL4Vector * readInSFTs(inputParamsStruct *input, REAL8 *normalization)
    fprintf(stderr, "Duty factor = %f\n", 1.0-(REAL4)nonexistantsft/(REAL4)numffts);
 
    REAL4 meanTFdata = calcMean(tfdata);
-   REAL4 stdTFdata = 0.0;
-   XLAL_CHECK_NULL( calcStddev(&stdTFdata, tfdata) == XLAL_SUCCESS, XLAL_EFUNC );
-   fprintf(LOG, "TF before weighting, mean subtraction: mean = %g, std. dev. = %g\n", meanTFdata, stdTFdata);
-   fprintf(stderr, "TF before weighting, mean subtraction: mean = %g, std. dev. = %g\n", meanTFdata, stdTFdata);
+   REAL4 stddev = 0.0;
+   XLAL_CHECK_NULL( calcStddev(&stddev, tfdata) == XLAL_SUCCESS, XLAL_EFUNC );
+   fprintf(LOG, "TF before weighting, mean subtraction: mean = %g, std. dev. = %g\n", meanTFdata, stddev);
+   fprintf(stderr, "TF before weighting, mean subtraction: mean = %g, std. dev. = %g\n", meanTFdata, stddev);
+
+   return tfdata;
+
+}
+
+
+//////////////////////////////////////////////////////////////
+// Read in SFT data to produce a TF vector
+REAL4Vector * readInSFTs(inputParamsStruct *params, REAL8 *normalization)
+{
+
+   XLAL_CHECK_NULL( params != NULL && normalization != NULL, XLAL_EINVAL );
+
+   SFTCatalog *catalog = NULL;
+   XLAL_CHECK_NULL( (catalog = findSFTdata(params)) != NULL, XLAL_EFUNC );
+
+   MultiSFTVector *sftvector = NULL;
+   XLAL_CHECK_NULL( (sftvector = extractSFTband(params, catalog)) != NULL, XLAL_EFUNC );
+
+   REAL4Vector *tfdata = NULL;
+   XLAL_CHECK_NULL( (tfdata = convertSFTdataToPowers(sftvector, params, *(normalization))) != NULL, XLAL_EFUNC );
+
+   //Destroy stuff
+   XLALDestroySFTCatalog(catalog);
+   XLALDestroyMultiSFTVector(sftvector);
 
    return tfdata;
 
@@ -1549,19 +1476,19 @@ MultiLIGOTimeGPSVector * getMultiTimeStampsFromSegmentsFile(CHAR *file, inputPar
 
 //////////////////////////////////////////////////////////////
 // Slide SFT TF data
-INT4 slideTFdata(REAL4Vector *output, inputParamsStruct *input, REAL4Vector *tfdata, INT4Vector *binshifts)
+INT4 slideTFdata(REAL4Vector *output, inputParamsStruct *params, REAL4Vector *tfdata, INT4Vector *binshifts)
 {
 
-   XLAL_CHECK( output != NULL && input != NULL && tfdata != NULL && binshifts != NULL, XLAL_EINVAL );
+   XLAL_CHECK( output != NULL && params != NULL && tfdata != NULL && binshifts != NULL, XLAL_EINVAL );
 
-   INT4 ii, jj;
-   INT4 numffts = (INT4)floor(input->Tobs/(input->Tcoh-input->SFToverlap)-1);
-   INT4 numfbins = (INT4)(round(input->fspan*input->Tcoh+2.0*input->dfmax*input->Tcoh)+12+1);
+   INT4 ii;
+   INT4 numffts = (INT4)floor(params->Tobs/(params->Tcoh-params->SFToverlap)-1);
+   INT4 numfbins = (INT4)(round(params->fspan*params->Tcoh+2.0*params->dfmax*params->Tcoh)+12+1);
 
    for (ii=0; ii<numffts; ii++) {
-      XLAL_CHECK( binshifts->data[ii]<=input->maxbinshift, XLAL_EFAILED, "SFT slide value %d is greater than maximum value predicted (%d)", binshifts->data[ii], input->maxbinshift );
-      for (jj=0; jj<numfbins; jj++) output->data[ii*numfbins + jj] = tfdata->data[ii*(numfbins+2*input->maxbinshift) + jj + input->maxbinshift + binshifts->data[ii]];
-      //memcpy(&(output->data[ii*numfbins]), &(tfdata->data[ii*(numfbins+2*input->maxbinshift) + input->maxbinshift + binshifts->data[ii]]), sizeof(REAL4)*numfbins);
+      XLAL_CHECK( binshifts->data[ii]<=params->maxbinshift, XLAL_EFAILED, "SFT slide value %d is greater than maximum value predicted (%d)", binshifts->data[ii], params->maxbinshift );
+      //for (jj=0; jj<numfbins; jj++) output->data[ii*numfbins + jj] = tfdata->data[ii*(numfbins+2*params->maxbinshift) + jj + params->maxbinshift + binshifts->data[ii]];
+      memcpy(&(output->data[ii*numfbins]), &(tfdata->data[ii*(numfbins+2*params->maxbinshift) + params->maxbinshift + binshifts->data[ii]]), sizeof(REAL4)*numfbins);
    }
 
    return XLAL_SUCCESS;
