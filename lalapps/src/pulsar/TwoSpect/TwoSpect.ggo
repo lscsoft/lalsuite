@@ -98,7 +98,6 @@ option "ULoff"    - "Turn off upper limits computation" flag off hidden
 option "printSFTtimes" - "Output a list <GPS sec> <GPS nanosec> of SFT start times of input SFTs" flag off hidden
 option "printUsedSFTtimes"  - "Output a list <GPS sec> <GPS nanosec> of SFT start times of the SFTs passing tests" flag off hidden
 option "printData"     - "Print to ASCII files the data values" flag off hidden
-option "printUninitialized" - "Print uninitialized values in TFdata_weighted and TSofPowers vectors at n-th sky location specified by option (if not enough sky locations exist, then these vectors don't get printed!)" int optional hidden
 option "printSignalData"    - "Print f0 and h0 per SFT of the signal, used only with --injectionSources option" dependon="injectionSources" string typestr="path/filename" default="./signal.dat" optional hidden
 option "printMarginalizedSignalData"  - "Print f0 and h0 per SFT of the signal, used only with --injectionSources option" dependon="injectionSources" string typestr="path/filename" default="./signal.dat" optional hidden
 option "randSeed" - "Random seed value" int optional hidden

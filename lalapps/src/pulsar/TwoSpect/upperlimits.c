@@ -253,7 +253,7 @@ INT4 skypoint95UL(UpperLimit *ul, inputParamsStruct *params, ffdataStruct *ffdat
 
    gsl_root_fsolver_free(s);
 
-   return 0;
+   return XLAL_SUCCESS;
 
 }
 
@@ -357,6 +357,6 @@ INT4 outputUpperLimitToFile(CHAR *outputfile, UpperLimit ul, INT4 printAllULvalu
 
    fclose(ULFILE);
 
-   return 0;
+   return XLAL_SUCCESS;
 
 }

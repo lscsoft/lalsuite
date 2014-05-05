@@ -248,9 +248,6 @@ struct gengetopt_args_info
   const char *printUsedSFTtimes_help; /**< @brief Output a list <GPS sec> <GPS nanosec> of SFT start times of the SFTs passing tests help description.  */
   int printData_flag;	/**< @brief Print to ASCII files the data values (default=off).  */
   const char *printData_help; /**< @brief Print to ASCII files the data values help description.  */
-  int printUninitialized_arg;	/**< @brief Print uninitialized values in TFdata_weighted and TSofPowers vectors at n-th sky location specified by option (if not enough sky locations exist, then these vectors don't get printed!).  */
-  char * printUninitialized_orig;	/**< @brief Print uninitialized values in TFdata_weighted and TSofPowers vectors at n-th sky location specified by option (if not enough sky locations exist, then these vectors don't get printed!) original value given at command line.  */
-  const char *printUninitialized_help; /**< @brief Print uninitialized values in TFdata_weighted and TSofPowers vectors at n-th sky location specified by option (if not enough sky locations exist, then these vectors don't get printed!) help description.  */
   char * printSignalData_arg;	/**< @brief Print f0 and h0 per SFT of the signal, used only with --injectionSources option (default='./signal.dat').  */
   char * printSignalData_orig;	/**< @brief Print f0 and h0 per SFT of the signal, used only with --injectionSources option original value given at command line.  */
   const char *printSignalData_help; /**< @brief Print f0 and h0 per SFT of the signal, used only with --injectionSources option help description.  */
@@ -342,7 +339,6 @@ struct gengetopt_args_info
   unsigned int printSFTtimes_given ;	/**< @brief Whether printSFTtimes was given.  */
   unsigned int printUsedSFTtimes_given ;	/**< @brief Whether printUsedSFTtimes was given.  */
   unsigned int printData_given ;	/**< @brief Whether printData was given.  */
-  unsigned int printUninitialized_given ;	/**< @brief Whether printUninitialized was given.  */
   unsigned int printSignalData_given ;	/**< @brief Whether printSignalData was given.  */
   unsigned int printMarginalizedSignalData_given ;	/**< @brief Whether printMarginalizedSignalData was given.  */
   unsigned int randSeed_given ;	/**< @brief Whether randSeed was given.  */

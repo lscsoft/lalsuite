@@ -99,14 +99,12 @@ void estimateFAR(farStruct *output, templateStruct *templatestruct, INT4 trials,
       Rs->data[ii] = (REAL4)(R*sumofsqweightsinv);
    } /* for ii < trials */
    REAL4 mean = calcMean(Rs);
-   REAL4 sigma = calcStddev(Rs);
    if (XLAL_IS_REAL4_FAIL_NAN(mean)) {
       fprintf(stderr,"%s: calcMean() failed.\n", __func__);
       XLAL_ERROR_VOID(XLAL_EFUNC);
-   } else if (XLAL_IS_REAL4_FAIL_NAN(sigma)) {
-      fprintf(stderr,"%s: calcStddev() failed.\n", __func__);
-      XLAL_ERROR_VOID(XLAL_EFUNC);
    }
+   REAL4 sigma = 0.0;
+   XLAL_CHECK_VOID( calcStddev(&sigma, Rs) == XLAL_SUCCESS, XLAL_EFUNC );
 
    //Do an insertion sort. At best this is O(thresh*trials), at worst this is O(thresh*trials*trials).
    if (output->topRvalues == NULL) {
@@ -234,7 +232,7 @@ INT4 numericFAR(farStruct *output, templateStruct *templatestruct, REAL8 thresh,
    gsl_root_fsolver_free(s1);
    gsl_root_fdfsolver_free(s0);
 
-   return 0;
+   return XLAL_SUCCESS;
 
 } /* numericFAR() */
 
@@ -741,7 +739,7 @@ INT4 makeTemplateGaussians(templateStruct *output, candidate input, inputParamsS
    XLALDestroyREAL4Vector(cos_phi_times_omega_pr);
    XLALDestroyREAL4Vector(datavector);
 
-   return 0;
+   return XLAL_SUCCESS;
 
 } /* makeTemplateGaussians() */
 
@@ -874,7 +872,7 @@ INT4 makeTemplate(templateStruct *output, candidate input, inputParamsStruct *pa
    XLALDestroyREAL4Window(win);
    XLALDestroyREAL4Vector(psd);
 
-   return 0;
+   return XLAL_SUCCESS;
 
 }
 
@@ -917,7 +915,7 @@ INT4 analyzeOneTemplate(candidate *output, candidate *input, ffdataStruct *ffdat
 
    loadCandidateData(output, input->fsig, input->period, input->moddepth, input->ra, input->dec, R, h0, prob, proberrcode, 1.0);
 
-   return 0;
+   return XLAL_SUCCESS;
 }
 
 
@@ -1052,7 +1050,7 @@ INT4 bruteForceTemplateSearch(candidate *output, candidate input, REAL8 fminimum
       loadCandidateData(output, bestf, bestp, bestdf, input.ra, input.dec, bestR, besth0, bestProb, bestproberrcode, input.normalization);
    }
 
-   return 0;
+   return XLAL_SUCCESS;
 
 }
 
@@ -1110,7 +1108,7 @@ INT4 templateSearch_scox1Style(candidateVector **output, REAL8 fminimum, REAL8 f
    XLALDestroyREAL8Vector(trialf);
    trialf = NULL;
 
-   return 0;
+   return XLAL_SUCCESS;
 
 }
 

@@ -27,7 +27,7 @@
 INT4 CompBinShifts(INT4Vector *output, REAL8 freq, REAL4Vector *velocities, REAL8 Tcoh, REAL4 dopplerMultiplier)
 {
    for (INT4 ii=0; ii<(INT4)velocities->length; ii++) output->data[ii] = (INT4)round(dopplerMultiplier*freq*velocities->data[ii]*Tcoh);
-   return 0;
+   return XLAL_SUCCESS;
 } /* CompBinShifts() */
 
 
@@ -56,7 +56,7 @@ INT4 CompAntennaPatternWeights(REAL4Vector *output, REAL4 ra, REAL4 dec, REAL8 t
 
    } /* for ii < numffts */
 
-   return 0;
+   return XLAL_SUCCESS;
 
 } /* CompAntennaPatternWeights() */
 
@@ -83,7 +83,7 @@ INT4 CompAntennaVelocity(REAL4Vector *output, REAL4 ra, REAL4 dec, REAL8 t0, REA
 
    } /* for ii < numffts */
 
-   return 0;
+   return XLAL_SUCCESS;
 
 } /* CompAntennaVelocity() */
 

@@ -120,7 +120,6 @@ const char *gengetopt_args_info_full_help[] = {
   "      --printSFTtimes           Output a list <GPS sec> <GPS nanosec> of SFT \n                                  start times of input SFTs  (default=off)",
   "      --printUsedSFTtimes       Output a list <GPS sec> <GPS nanosec> of SFT \n                                  start times of the SFTs passing tests  \n                                  (default=off)",
   "      --printData               Print to ASCII files the data values  \n                                  (default=off)",
-  "      --printUninitialized=INT  Print uninitialized values in TFdata_weighted \n                                  and TSofPowers vectors at n-th sky location \n                                  specified by option (if not enough sky \n                                  locations exist, then these vectors don't get \n                                  printed!)",
   "      --printSignalData=path/filename\n                                Print f0 and h0 per SFT of the signal, used \n                                  only with --injectionSources option  \n                                  (default=`./signal.dat')",
   "      --printMarginalizedSignalData=path/filename\n                                Print f0 and h0 per SFT of the signal, used \n                                  only with --injectionSources option  \n                                  (default=`./signal.dat')",
   "      --randSeed=INT            Random seed value",
@@ -338,7 +337,6 @@ void clear_given (struct gengetopt_args_info *args_info)
   args_info->printSFTtimes_given = 0 ;
   args_info->printUsedSFTtimes_given = 0 ;
   args_info->printData_given = 0 ;
-  args_info->printUninitialized_given = 0 ;
   args_info->printSignalData_given = 0 ;
   args_info->printMarginalizedSignalData_given = 0 ;
   args_info->randSeed_given = 0 ;
@@ -453,7 +451,6 @@ void clear_args (struct gengetopt_args_info *args_info)
   args_info->printSFTtimes_flag = 0;
   args_info->printUsedSFTtimes_flag = 0;
   args_info->printData_flag = 0;
-  args_info->printUninitialized_orig = NULL;
   args_info->printSignalData_arg = gengetopt_strdup ("./signal.dat");
   args_info->printSignalData_orig = NULL;
   args_info->printMarginalizedSignalData_arg = gengetopt_strdup ("./signal.dat");
@@ -549,11 +546,10 @@ void init_args_info(struct gengetopt_args_info *args_info)
   args_info->printSFTtimes_help = gengetopt_args_info_full_help[85] ;
   args_info->printUsedSFTtimes_help = gengetopt_args_info_full_help[86] ;
   args_info->printData_help = gengetopt_args_info_full_help[87] ;
-  args_info->printUninitialized_help = gengetopt_args_info_full_help[88] ;
-  args_info->printSignalData_help = gengetopt_args_info_full_help[89] ;
-  args_info->printMarginalizedSignalData_help = gengetopt_args_info_full_help[90] ;
-  args_info->randSeed_help = gengetopt_args_info_full_help[91] ;
-  args_info->chooseSeed_help = gengetopt_args_info_full_help[92] ;
+  args_info->printSignalData_help = gengetopt_args_info_full_help[88] ;
+  args_info->printMarginalizedSignalData_help = gengetopt_args_info_full_help[89] ;
+  args_info->randSeed_help = gengetopt_args_info_full_help[90] ;
+  args_info->chooseSeed_help = gengetopt_args_info_full_help[91] ;
   
 }
 
@@ -759,7 +755,6 @@ cmdline_parser_release (struct gengetopt_args_info *args_info)
   free_string_field (&(args_info->templateTestDf_orig));
   free_string_field (&(args_info->ULsolver_orig));
   free_string_field (&(args_info->dopplerMultiplier_orig));
-  free_string_field (&(args_info->printUninitialized_orig));
   free_string_field (&(args_info->printSignalData_arg));
   free_string_field (&(args_info->printSignalData_orig));
   free_string_field (&(args_info->printMarginalizedSignalData_arg));
@@ -1001,8 +996,6 @@ cmdline_parser_dump(FILE *outfile, struct gengetopt_args_info *args_info)
     write_into_file(outfile, "printUsedSFTtimes", 0, 0 );
   if (args_info->printData_given)
     write_into_file(outfile, "printData", 0, 0 );
-  if (args_info->printUninitialized_given)
-    write_into_file(outfile, "printUninitialized", args_info->printUninitialized_orig, 0);
   if (args_info->printSignalData_given)
     write_into_file(outfile, "printSignalData", args_info->printSignalData_orig, 0);
   if (args_info->printMarginalizedSignalData_given)
@@ -1758,7 +1751,6 @@ cmdline_parser_internal (
         { "printSFTtimes",	0, NULL, 0 },
         { "printUsedSFTtimes",	0, NULL, 0 },
         { "printData",	0, NULL, 0 },
-        { "printUninitialized",	1, NULL, 0 },
         { "printSignalData",	1, NULL, 0 },
         { "printMarginalizedSignalData",	1, NULL, 0 },
         { "randSeed",	1, NULL, 0 },
@@ -2803,20 +2795,6 @@ cmdline_parser_internal (
             if (update_arg((void *)&(args_info->printData_flag), 0, &(args_info->printData_given),
                 &(local_args_info.printData_given), optarg, 0, 0, ARG_FLAG,
                 check_ambiguity, override, 1, 0, "printData", '-',
-                additional_error))
-              goto failure;
-          
-          }
-          /* Print uninitialized values in TFdata_weighted and TSofPowers vectors at n-th sky location specified by option (if not enough sky locations exist, then these vectors don't get printed!).  */
-          else if (strcmp (long_options[option_index].name, "printUninitialized") == 0)
-          {
-          
-          
-            if (update_arg( (void *)&(args_info->printUninitialized_arg), 
-                 &(args_info->printUninitialized_orig), &(args_info->printUninitialized_given),
-                &(local_args_info.printUninitialized_given), optarg, 0, 0, ARG_INT,
-                check_ambiguity, override, 0, 0,
-                "printUninitialized", '-',
                 additional_error))
               goto failure;
           

@@ -33,9 +33,7 @@ candidateVector * new_candidateVector(UINT4 length)
    vector->length = length;
    vector->numofcandidates = 0;
    if (length==0) vector->data = NULL;
-   else {
-      XLAL_CHECK_NULL( (vector->data = XLALMalloc( length*sizeof(*vector->data) )) != NULL, XLAL_ENOMEM );
-   }
+   else XLAL_CHECK_NULL( (vector->data = XLALMalloc( length*sizeof(*vector->data) )) != NULL, XLAL_ENOMEM );
 
    return vector;
 
@@ -123,9 +121,7 @@ INT4 clusterCandidates(candidateVector **output, candidateVector *input, ffdataS
 
    //Make FFT plan if option 1 is given
    REAL4FFTPlan *plan = NULL;
-   if (option==1) {
-      XLAL_CHECK( (plan = XLALCreateForwardREAL4FFTPlan(ffdata->numffts, 1)) != NULL, XLAL_EFUNC );
-   }
+   if (option==1) XLAL_CHECK( (plan = XLALCreateForwardREAL4FFTPlan(ffdata->numffts, 1)) != NULL, XLAL_EFUNC );
 
    numcandoutlist = 0;
    for (ii=0; ii<(INT4)input->numofcandidates; ii++) {
@@ -241,11 +237,8 @@ INT4 clusterCandidates(candidateVector **output, candidateVector *input, ffdataS
 
                      loadCandidateData(&cand, avefsig, aveperiod, mindf + kk*0.5/params->Tcoh, input->data[0].ra, input->data[0].dec, 0, 0, 0.0, 0, 0.0);
 
-                     if (option==1) {
-                        XLAL_CHECK( makeTemplate(template, cand, params, sftexist, plan) == XLAL_SUCCESS, XLAL_EFUNC );
-                     } else {
-                        XLAL_CHECK( makeTemplateGaussians(template, cand, params, ffdata->numfbins, ffdata->numfprbins) == XLAL_SUCCESS, XLAL_EFUNC );
-                     }
+                     if (option==1) XLAL_CHECK( makeTemplate(template, cand, params, sftexist, plan) == XLAL_SUCCESS, XLAL_EFUNC );
+                     else XLAL_CHECK( makeTemplateGaussians(template, cand, params, ffdata->numfbins, ffdata->numfprbins) == XLAL_SUCCESS, XLAL_EFUNC );
 
                      REAL8 R = calculateR(ffdata->ffdata, template, ffplanenoise, fbinaveratios);
                      XLAL_CHECK( xlalErrno == 0, XLAL_EFUNC );
@@ -271,9 +264,7 @@ INT4 clusterCandidates(candidateVector **output, candidateVector *input, ffdataS
                if (bestR > 0.0) besth0 = 2.7426*pow(bestR/(params->Tcoh*params->Tobs),0.25);
                else besth0 = 0.0;
 
-               if ((*output)->numofcandidates == (*output)->length-1) {
-                  XLAL_CHECK( (*output = resize_candidateVector(*output, 2*(*output)->length)) != NULL, XLAL_EFUNC );
-               }
+               if ((*output)->numofcandidates == (*output)->length-1) XLAL_CHECK( (*output = resize_candidateVector(*output, 2*(*output)->length)) != NULL, XLAL_EFUNC );
                loadCandidateData(&((*output)->data[(*output)->numofcandidates]), avefsig, aveperiod, bestmoddepth, input->data[0].ra, input->data[0].dec, bestR, besth0, bestProb, bestproberrcode, input->data[0].normalization);
                numcandoutlist++;
                (*output)->numofcandidates++;
@@ -306,7 +297,10 @@ INT4 clusterCandidates(candidateVector **output, candidateVector *input, ffdataS
    XLALDestroyINT4Vector(usedcandidate);
    if (option==1) XLALDestroyREAL4FFTPlan(plan);
 
-   return 0;
+   fprintf(stderr, "Clustering done with candidates = %d\n", (*output)->numofcandidates);
+   fprintf(LOG, "Clustering done with candidates = %d\n", (*output)->numofcandidates);
+
+   return XLAL_SUCCESS;
 
 } /* clusterCandidates() */
 
@@ -371,11 +365,9 @@ INT4 testIHScandidates(candidateVector **output, candidateVector *ihsCandidates,
                XLALDestroyINT4Vector(sftexist); */
 
                //Estimate the FAR for these bin weights if the option was given
-               if (inputParams->calcRthreshold) {
-                  XLAL_CHECK( numericFAR(farval, template, inputParams->templatefar, aveNoise, aveTFnoisePerFbinRatio, inputParams, inputParams->rootFindingMethod) == XLAL_SUCCESS, XLAL_EFUNC );
-               }
+               if (inputParams->calcRthreshold) XLAL_CHECK( numericFAR(farval, template, inputParams->templatefar, aveNoise, aveTFnoisePerFbinRatio, inputParams, inputParams->rootFindingMethod) == XLAL_SUCCESS, XLAL_EFUNC );
 
-               //Caclulate R, probability noise caused the candidate, and estimate of h0
+               //Caclulate R and probability noise caused the candidate
                R = calculateR(ffdata->ffdata, template, aveNoise, aveTFnoisePerFbinRatio);
                XLAL_CHECK( xlalErrno == 0, XLAL_EFUNC );
                prob = probR(template, aveNoise, aveTFnoisePerFbinRatio, R, inputParams, &proberrcode);
@@ -404,9 +396,7 @@ INT4 testIHScandidates(candidateVector **output, candidateVector *ihsCandidates,
                      XLAL_CHECK( xlalErrno == 0, XLAL_EFUNC );
                      prob = probR(template, aveNoise, aveTFnoisePerFbinRatio, R, inputParams, &proberrcode);
                      XLAL_CHECK( xlalErrno == 0, XLAL_EFUNC );
-                     if (inputParams->calcRthreshold && bestProb==0.0) {
-                        XLAL_CHECK( numericFAR(farval, template, inputParams->templatefar, aveNoise, aveTFnoisePerFbinRatio, inputParams, inputParams->rootFindingMethod) == XLAL_SUCCESS, XLAL_EFUNC );
-                     }
+                     if (inputParams->calcRthreshold && bestProb==0.0) XLAL_CHECK( numericFAR(farval, template, inputParams->templatefar, aveNoise, aveTFnoisePerFbinRatio, inputParams, inputParams->rootFindingMethod) == XLAL_SUCCESS, XLAL_EFUNC );
                      if ((bestProb!=0.0 && prob<bestProb) || (bestProb==0.0 && !inputParams->calcRthreshold && prob<log10templatefar) || (bestProb==0.0 && inputParams->calcRthreshold && R>farval->far)) {
                         bestPeriod = ihsCandidates->data[ii].period;
                         bestR = R;
@@ -428,9 +418,7 @@ INT4 testIHScandidates(candidateVector **output, candidateVector *ihsCandidates,
                      XLAL_CHECK( xlalErrno == 0, XLAL_EFUNC );
                      prob = probR(template, aveNoise, aveTFnoisePerFbinRatio, R, inputParams, &proberrcode);
                      XLAL_CHECK( xlalErrno == 0, XLAL_EFUNC );
-                     if (inputParams->calcRthreshold && bestProb==0.0) {
-                        XLAL_CHECK( numericFAR(farval, template, inputParams->templatefar, aveNoise, aveTFnoisePerFbinRatio, inputParams, inputParams->rootFindingMethod) == XLAL_SUCCESS, XLAL_EFUNC );
-                     }
+                     if (inputParams->calcRthreshold && bestProb==0.0) XLAL_CHECK( numericFAR(farval, template, inputParams->templatefar, aveNoise, aveTFnoisePerFbinRatio, inputParams, inputParams->rootFindingMethod) == XLAL_SUCCESS, XLAL_EFUNC );
                      if ((bestProb!=0.0 && prob<bestProb) || (bestProb==0.0 && !inputParams->calcRthreshold && prob<log10templatefar) || (bestProb==0.0 && inputParams->calcRthreshold && R>farval->far)) {
                         bestPeriod = ihsCandidates->data[ii].period;
                         bestR = R;
@@ -446,9 +434,7 @@ INT4 testIHScandidates(candidateVector **output, candidateVector *ihsCandidates,
                REAL8 h0 = 0.0;
                if (bestR > 0.0) h0 = 2.7426*sqrt(sqrt(bestR/(inputParams->Tcoh*inputParams->Tobs)));  //Now compute the h0 value
 
-               if ((*output)->numofcandidates == (*output)->length-1) {
-                  XLAL_CHECK( (*output = resize_candidateVector(*output, 2*(*output)->length)) != NULL, XLAL_EFUNC );
-               }
+               if ((*output)->numofcandidates == (*output)->length-1) XLAL_CHECK( (*output = resize_candidateVector(*output, 2*(*output)->length)) != NULL, XLAL_EFUNC );
                loadCandidateData(&((*output)->data[(*output)->numofcandidates]), ihsCandidates->data[ii].fsig, bestPeriod, ihsCandidates->data[ii].moddepth, alpha, delta, bestR, h0, bestProb, bestproberrcode, ihsCandidates->data[ii].normalization);
                (*output)->numofcandidates++;
 
@@ -460,15 +446,17 @@ INT4 testIHScandidates(candidateVector **output, candidateVector *ihsCandidates,
       } /* if within outer boundaries */
    } /* for ii < numofcandidates */
 
-   fprintf(stderr, "%d remaining candidate(s) inside UL range.\n", ihsCandidates->numofcandidates-candidatesoutsideofmainULrange);
-
    //Destroy allocated memory
    free_templateStruct(template);
    template = NULL;
    free_farStruct(farval);
    farval = NULL;
 
-   return 0;
+   fprintf(stderr, "%d remaining candidate(s) inside UL range.\n", ihsCandidates->numofcandidates-candidatesoutsideofmainULrange);
+   fprintf(stderr,"Initial stage done with candidates = %d\n", (*output)->numofcandidates);
+   fprintf(LOG,"Initial stage done with candidates = %d\n", (*output)->numofcandidates);
+
+   return XLAL_SUCCESS;
 
 } /* testIHScandidates() */
 
@@ -476,6 +464,11 @@ INT4 testIHScandidates(candidateVector **output, candidateVector *ihsCandidates,
 //Keep the most significant candidates, potentially reducing the number of candidates if there are more than allowed
 candidateVector * keepMostSignificantCandidates(candidateVector *input, inputParamsStruct *params)
 {
+
+   XLAL_CHECK_NULL( input != NULL && params != NULL, XLAL_EINVAL );
+
+   fprintf(stderr, "Reducing total number of IHS candidates %d to user input %d\n", input->numofcandidates, params->keepOnlyTopNumIHS);
+   fprintf(LOG, "Reducing total number of IHS candidates %d to user input %d\n", input->numofcandidates, params->keepOnlyTopNumIHS);
 
    INT4 ii, jj;
    candidateVector *output = NULL;

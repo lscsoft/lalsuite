@@ -146,7 +146,7 @@ INT4 runIHS(ihsMaximaStruct *output, ffdataStruct *input, ihsfarStruct *ihsfarin
    XLALDestroyINT4Vector(markedharmonics);
    free_ihsVals(ihsvals);
 
-   return 0;
+   return XLAL_SUCCESS;
 
 } /* runIHS() */
 
@@ -195,7 +195,7 @@ INT4 incHarmSum(ihsVals *output, REAL4Vector *input, INT4 ihsfactor)
    XLALDestroyREAL4Vector(tempvect);
    //fclose(ALLIHSVALS);
 
-   return 0;
+   return XLAL_SUCCESS;
 
 } /* incHarmSum() */
 
@@ -216,7 +216,7 @@ INT4 incHarmSumVector(REAL4Vector *output, REAL4Vector *input, INT4 ihsfactor)
       XLAL_CHECK( ihsfactor*(ii-1)<=(INT4)input->length-1, XLAL_EBADLEN );
    } /* for ii=5 --> highval */
 
-   return 0;
+   return XLAL_SUCCESS;
 
 } /* incHarmSumVector() */
 
@@ -238,7 +238,7 @@ INT4 incHarmSumVectorWeighted(REAL4Vector *output, REAL4Vector *input, REAL4Vect
       XLAL_CHECK( ihsfactor*(ii-1)<=(INT4)input->length-1, XLAL_EBADLEN );
    } /* for ii=5 --> highval */
 
-   return 0;
+   return XLAL_SUCCESS;
 
 } /* incHarmSumVectorWeighted() */
 
@@ -287,6 +287,11 @@ void free_ihsfarStruct(ihsfarStruct *ihsfarstruct)
 // Compute the IHS FAR for a sum of a number of rows
 INT4 genIhsFar(ihsfarStruct *output, inputParamsStruct *params, INT4 rows, REAL4Vector *aveNoise)
 {
+
+   XLAL_CHECK( output != NULL && params != NULL && rows > 0 && aveNoise != NULL, XLAL_EINVAL );
+
+   fprintf(stderr, "Determining IHS FAR values... ");
+   fprintf(LOG, "Determining IHS FAR values... ");
 
    INT4 ii, jj;
    REAL8 Tobs = params->Tobs;
@@ -381,7 +386,10 @@ INT4 genIhsFar(ihsfarStruct *output, inputParamsStruct *params, INT4 rows, REAL4
    XLALDestroyREAL4Vector(FbinMean);
    XLALDestroyINT4Vector(locs);
 
-   return 0;
+   fprintf(stderr, "done\n");
+   fprintf(LOG, "done.\n");
+
+   return XLAL_SUCCESS;
 
 } /* genIhsFar() */
 
@@ -480,8 +488,7 @@ INT4 sumIHSSequenceFAR(ihsfarStruct *outputfar, REAL4VectorSequence *ihsvectorse
          //because zeros would come from the notched harmonics, which we won't want anyway
          sampledtempihsvals = sampleREAL4VectorSequence_nozerosaccepted(tworows, ihsvectorsequence->length-(ii-1), 10000, params->rng);
          outputfar->ihsdistMean->data[ii-2] = calcMean(sampledtempihsvals);  //And then calculate the mean value
-         outputfar->ihsdistSigma->data[ii-2] = calcStddev(sampledtempihsvals);  //We also calculate the standard deviation
-         XLAL_CHECK( xlalErrno == 0, XLAL_EFUNC );
+         XLAL_CHECK( calcStddev(&(outputfar->ihsdistSigma->data[ii-2]), sampledtempihsvals) == XLAL_SUCCESS, XLAL_EFUNC );  //We also calculate the standard deviation
       } else {
          //If there were fewer than 10000 entries, then we will keep all those that are part of the nearest neighbor
          //sum up to this point
@@ -512,6 +519,9 @@ INT4 sumIHSSequenceFAR(ihsfarStruct *outputfar, REAL4VectorSequence *ihsvectorse
          } //for jj=0 --> sampledtempihsval->length
          outputfar->ihsfar->data[ii-2] = farave/(REAL8)numvals;
       } //if params->ihsfar != 1.0
+      else {
+         outputfar->ihsfar->data[ii-2] = 0.0;
+      }
 
       //Comment this out
       /* if (ii==360) {
@@ -524,8 +534,7 @@ INT4 sumIHSSequenceFAR(ihsfarStruct *outputfar, REAL4VectorSequence *ihsvectorse
 
       //FOM part
       outputfar->ihsfomdistMean->data[ii-2] = calcMean(foms);
-      outputfar->ihsfomdistSigma->data[ii-2] = calcStddev(foms);
-      XLAL_CHECK( xlalErrno == 0, XLAL_EFUNC );
+      XLAL_CHECK( calcStddev(&(outputfar->ihsfomdistSigma->data[ii-2]), foms) == XLAL_SUCCESS, XLAL_EFUNC );
       //We need to find the smallest values
       if (params->ihsfomfar!=1.0 && params->ihsfom==0.0) {
          REAL4Vector *smallestfomvals = NULL;
@@ -549,7 +558,7 @@ INT4 sumIHSSequenceFAR(ihsfarStruct *outputfar, REAL4VectorSequence *ihsvectorse
    XLALDestroyREAL4Vector(scaledExpectedIHSVectorValues);
    XLALDestroyINT4Vector(ihslocations);
 
-   return 0;
+   return XLAL_SUCCESS;
 
 } /*sumIHSSequenceFAR() */
 
@@ -702,7 +711,7 @@ INT4 sumIHSSequence(ihsMaximaStruct *output, ihsfarStruct *inputfar, REAL4Vector
    XLALDestroyREAL4Vector(ihsvalues);
    XLALDestroyINT4Vector(ihslocations);
 
-   return 0;
+   return XLAL_SUCCESS;
 
 } /*sumIHSSequence() */
 
@@ -842,7 +851,6 @@ INT4 findIHScandidates(candidateVector **candlist, ihsfarStruct *ihsfarstruct, i
                } else {
                   REAL8 noise = ihsfarstruct->ihsdistMean->data[ii-2];
                   REAL8 totalnoise = meanNoise*noise;
-                  //if (ii==2) fprintf(stderr, "%g %g\n", meanNoise, calcRms(avgsinrange));     //remove this
 
                   REAL8 significance = gsl_cdf_chisq_Q(2.0*ihsmaxima->maxima->data[locationinmaximastruct], 2.0*totalnoise);
                   if (significance==0.0) {
@@ -1033,8 +1041,11 @@ INT4 findIHScandidates(candidateVector **candlist, ihsfarStruct *ihsfarstruct, i
    //fclose(IHSVALSOUTPUT);
 
    fprintf(stderr,"Number of IHS vals checked = %d, number exceeding IHS threshold = %d, number passing both = %d, but lines interfere with %d, number not skipped = %d and number of skipped candidates is %d\n", numberofIHSvalsChecked, numberofIHSvalsExceededThresh, numberPassingBoth, linesinterferewithnum, notskipped, skipped);
+   fprintf(stderr, "Candidates found in IHS step = %d\n", (*candlist)->numofcandidates);
+   fprintf(LOG,"Number of IHS vals checked = %d, number exceeding IHS threshold = %d, number passing both = %d, but lines interfere with %d, number not skipped = %d and number of skipped candidates is %d\n", numberofIHSvalsChecked, numberofIHSvalsExceededThresh, numberPassingBoth, linesinterferewithnum, notskipped, skipped);
+   fprintf(LOG, "Candidates found in IHS step = %d\n", (*candlist)->numofcandidates);
 
-   return 0;
+   return XLAL_SUCCESS;
 
 } /* findIHScandidates() */
 
