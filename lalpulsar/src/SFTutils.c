@@ -1506,36 +1506,36 @@ int XLALLatestMultiSFTsample ( LIGOTimeGPS *out,              /**< [out] latest 
 
 
 /**
- * XLAL function to get a list of detector IDs from multi-segment multiSFT vectors
- * returns all unique detector IDs for cases with some detectors switching on and off
+ * XLAL function to get a sorted list of unique 2-character detector IDs (prefixes) from a SFTcatalog
+ * IFOList can be either
+ * (1) NULL, in which case it will be allocated and filled from the IDs in the SFTcatalog
+ * (2) or a pre-allocated and filled list, then it appends any new detectors and resorts the list
  */
 LALStringVector *
 XLALGetDetectorIDsFromSFTCatalog (
-  LALStringVector *IFOList,		///< IFO string vector for returning
-  const SFTCatalog *SFTcatalog		///< SFT catalog
+  LALStringVector *IFOList,		/**< [in/out] IFO string vector for (appending and) returning */
+  const SFTCatalog *SFTcatalog		/**< [in] SFT catalog which carries the detector prefixes */
   )
 {
 
-  /* check input parameters and report errors */
   XLAL_CHECK_NULL( SFTcatalog != NULL, XLAL_EFAULT );
 
-  for (UINT4 X = 0; X < SFTcatalog->length; X++) {
-    /* check for a new detector */
-    const char *thisIFO = SFTcatalog->data[X].header.name;
+  for (UINT4 n = 0; n < SFTcatalog->length; n++) {
 
-    if ( XLALFindStringInVector ( thisIFO, IFOList ) >= 0 ) { // if already in list, do nothing
-      continue;
-    }
-    else {       // otherwise, append to IFOList
-      if ( (IFOList = XLALAppendString2Vector ( IFOList, thisIFO )) == NULL ) {
-        XLAL_ERROR_NULL ( XLAL_EFUNC );
-      }
+    /* get only the official 2-character prefix, not any longer name that might be in the SFT header */
+    char *thisIFO = NULL;
+    XLAL_CHECK_NULL ( ( thisIFO =  XLALGetChannelPrefix(SFTcatalog->data[n].header.name) ) != NULL, XLAL_EFUNC );
+
+    if ( XLALFindStringInVector ( thisIFO, IFOList ) == -1 ) { /* only append to IFOList if not a duplicate */
+      XLAL_CHECK_NULL ( (IFOList = XLALAppendString2Vector ( IFOList, thisIFO )) != NULL, XLAL_EFUNC );
     }
 
-  } /* for X < number of detectors */
+    XLALFree ( thisIFO );
 
-  /* sort final list by detector-name */
-  XLAL_CHECK_NULL ( XLALSortStringVector ( IFOList ) == XLAL_SUCCESS, XLAL_EFUNC, "Failed call to XLALSortStringVector()." );
+  } /* for n < SFTcatalog->length */
+
+  /* sort final list alphabetically by detector-name */
+  XLAL_CHECK_NULL ( XLALSortStringVector ( IFOList ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   return IFOList;
 
