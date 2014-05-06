@@ -47,7 +47,7 @@ parser.add_option("-V", "--invV", type='string',
 parser.add_option("-o", "--out", type='string',
                   action="store",
                   dest="outpath",
-                  default="./"
+                  default="./",
                   help="output path",)
 
 (options, args) = parser.parse_args()
