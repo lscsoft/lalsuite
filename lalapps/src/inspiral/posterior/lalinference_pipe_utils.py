@@ -800,7 +800,7 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
     romweightsnode={}
     prenode=self.EngineNode(self.preengine_job)
     node=self.EngineNode(self.engine_jobs[tuple(ifos)])
-    roqeventpath=os.path.join(self.basepath,event.event_id)
+    roqeventpath=os.path.join(self.basepath,str(event.event_id))
     end_time=event.trig_time
     node.set_trig_time(end_time)
     prenode.set_trig_time(end_time)
@@ -818,8 +818,8 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
     if event.trigSNR:
       node.set_trigSNR(event.trigSNR)
     if self.dataseed:
-      node.set_dataseed(self.dataseed+event.event_id)
-      prenode.set_dataseed(self.dataseed+event.event_id)
+      node.set_dataseed(self.dataseed+str(event.event_id))
+      prenode.set_dataseed(self.dataseed+str(event.event_id))
     gotdata=0
     for ifo in ifos:
       if event.timeslides.has_key(ifo):
