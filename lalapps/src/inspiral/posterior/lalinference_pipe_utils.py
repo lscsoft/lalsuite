@@ -800,7 +800,7 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
     romweightsnode={}
     prenode=self.EngineNode(self.preengine_job)
     node=self.EngineNode(self.engine_jobs[tuple(ifos)])
-    roqeventpath=os.path.join(self.snrpath,event.event_id)
+    roqeventpath=os.path.join(self.basepath,event.event_id)
     end_time=event.trig_time
     node.set_trig_time(end_time)
     prenode.set_trig_time(end_time)
