@@ -1034,8 +1034,12 @@ class EngineJob(pipeline.CondorDAGJob,pipeline.AnalysisJob):
     self.set_sub_file(submitFile)
     if self.engine=='lalinferencemcmc' or self.engine=='lalinferencebambimpi':
       #openmpipath=cp.get('condor','openmpi')
-      self.machine_count=cp.get('mpi','machine-count')
-      self.machine_memory=cp.get('mpi','machine-memory')
+      if ispreengine is False:
+        self.machine_count=cp.get('mpi','machine-count')
+        self.machine_memory=cp.get('mpi','machine-memory')
+      else
+        self.machine_count=1
+        self.machine_memory=cp.get('mpi','machine-memory')/cp.get('mpi','machine-count')
       #self.add_condor_cmd('machine_count',machine_count)
       #self.add_condor_cmd('environment','CONDOR_MPI_PATH=%s'%(openmpipath))
       try:
