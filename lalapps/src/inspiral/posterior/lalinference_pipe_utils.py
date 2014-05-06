@@ -867,7 +867,7 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
       prenode.set_padding(self.config.getint('input','padding'))
       #prenode[ifo].set_output_file('/dev/null')
       prenode.add_var_arg('--Niter 1')
-      prenode.add_var_arg('--data-dump')
+      prenode.add_var_arg('--data-dump '+roqeventpath)
       if self.config.has_option('lalinference','seglen'):
         prenode.set_seglen(self.config.getint('lalinference','seglen'))
       elif self.config.has_option('engine','seglen'):
@@ -898,6 +898,7 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
                 romweightsnode[ifo].add_input_file(freqDataFile)
                 romweightsnode[ifo].add_var_arg('-p '+os.path.join(roqeventpath,ifo+'-PSD.dat'))
                 romweightsnode[ifo].add_input_file(os.path.join(roqeventpath,ifo+'-PSD.dat'))
+                romweightsnode[ifo].add_var_arg('-o '+roqeventpath)
                 romweightsnode[ifo].add_output_file(os.path.join(roqeventpath,'weights_'+ifo+'.dat'))
               #self.prenodes[seg.id()]=(prenode,romweightsnode)
               self.prenodes[event.event_id]=(prenode,romweightsnode)
