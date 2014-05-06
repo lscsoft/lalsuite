@@ -2,6 +2,7 @@ import numpy as np
 import sys
 from math import ceil
 from optparse import OptionParser
+import os
 
 data_dir = './'
 # load in data from file
@@ -126,7 +127,9 @@ for ifo in options.IFOs:
 
 	#*************************************************************************** #
 
-	weights_file = open(options.outpath+"weights_%s.dat"%ifo, "wb")
+	weights_path = os.path.join(options.outpath,"weights_%s.dat"%ifo)
+
+	weights_file = open(weights_path, "wb")
 
 	print "Computing weights for "+ifo
 	weights = BuildWeights(tc_shifted_data, basis_set, deltaF, invV)
@@ -137,6 +140,7 @@ for ifo in options.IFOs:
 	weights_file.close()
 	i += 1
 
-size_file = open(options.outpath+"Num_tc_sub_domains.dat", "wb")
+size_file_path = os.path.join(options.outpath,"Num_tc_sub_domains.dat")
+size_file = open(size_file_path, "wb")
 np.array(len(tcs)).tofile(size_file)
 size_file.close()
