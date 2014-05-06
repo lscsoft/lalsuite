@@ -912,7 +912,7 @@ class EngineJob(pipeline.CondorDAGJob,pipeline.AnalysisJob):
       self.write_sub_file=self.__write_sub_file_mcmc_mpi
     else:
       exe=cp.get('condor',self.engine)
-      if self.site is not None and self.self!='local':
+      if site is not None and site!='local':
         universe='vanilla'
       else: universe="standard"
     pipeline.CondorDAGJob.__init__(self,universe,exe)
@@ -959,7 +959,7 @@ class EngineJob(pipeline.CondorDAGJob,pipeline.AnalysisJob):
       self.set_universe('vanilla')
     else:
       self.set_universe('standard')
-    pipeline.CondorDAGJob.set_grid_site(site)
+    pipeline.CondorDAGJob.set_grid_site(self,site)
  
   def __write_sub_file_mcmc_mpi(self):
     """
