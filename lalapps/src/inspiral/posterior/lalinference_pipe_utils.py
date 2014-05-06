@@ -910,11 +910,15 @@ class EngineJob(pipeline.CondorDAGJob,pipeline.AnalysisJob):
       self.binary=cp.get('condor','lalinferencebambi')
       universe="vanilla"
       self.write_sub_file=self.__write_sub_file_mcmc_mpi
-    else:
+    elif self.engine=='lalinferencenest':
       exe=cp.get('condor',self.engine)
       if site is not None and site!='local':
         universe='vanilla'
       else: universe="standard"
+    else:
+      print 'LALInferencePipe: Unknown engine node type %s!'%(self.engine)
+      sys.exit(1)
+      
     pipeline.CondorDAGJob.__init__(self,universe,exe)
     pipeline.AnalysisJob.__init__(self,cp,dax=dax)
     # Set grid site if needed
