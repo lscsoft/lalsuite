@@ -1038,7 +1038,7 @@ class EngineJob(pipeline.CondorDAGJob,pipeline.AnalysisJob):
         self.machine_count=cp.get('mpi','machine-count')
         self.machine_memory=cp.get('mpi','machine-memory')
       else:
-        self.machine_count=1
+        self.machine_count=str(1)
         self.machine_memory=cp.get('mpi','machine-memory')
       #self.add_condor_cmd('machine_count',machine_count)
       #self.add_condor_cmd('environment','CONDOR_MPI_PATH=%s'%(openmpipath))
