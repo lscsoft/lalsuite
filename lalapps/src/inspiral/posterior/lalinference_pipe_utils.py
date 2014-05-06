@@ -416,9 +416,10 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
     self.datafind_job.set_universe('vanilla')
     self.datafind_job.add_opt('url-type','file')
     self.datafind_job.set_sub_file(os.path.join(self.basepath,'datafind.sub'))
-    self.preengine_job = EngineJob(self.config, os.path.join(self.basepath,'prelalinference.sub'),self.logpath,ispreengine=True,dax=self.is_dax())
-    self.preengine_job.set_grid_site('local')
     if cp.has_option('lalinference','roq'):
+      self.preengine_job = EngineJob(self.config, os.path.join(self.basepath,'prelalinference.sub'),self.logpath,ispreengine=True,dax=self.is_dax())
+      self.preengine_job.set_grid_site('local')
+      self.preengine_job.set_universe('vanilla')
       self.romweights_job = ROMJob(self.config,os.path.join(self.basepath,'romweights.sub'),self.logpath,dax=self.is_dax())
       self.romweights_job.set_grid_site('local')
     # Need to create a job file for each IFO combination
@@ -1016,11 +1017,12 @@ class EngineJob(pipeline.CondorDAGJob,pipeline.AnalysisJob):
       self.roqpath=roqpath
       mkdirs(roqpath)
       self.engine='lalinferencemcmc'
-      exe=cp.get('condor',self.engine)
+      exe='lalinferencemcmc'#cp.get('condor',self.engine)
       if cp.has_option('engine','site'):
         if self.site is not None and self.self!='local':
           universe='vanilla'
-        else: universe="standard"
+        else:
+          universe="standard"
       else:
         universe='vanilla'
     pipeline.CondorDAGJob.__init__(self,universe,exe)
