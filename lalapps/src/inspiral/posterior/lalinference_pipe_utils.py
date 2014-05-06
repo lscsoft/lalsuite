@@ -1017,7 +1017,7 @@ class EngineJob(pipeline.CondorDAGJob,pipeline.AnalysisJob):
       self.roqpath=roqpath
       mkdirs(roqpath)
       self.engine='lalinferencemcmc'
-      exe='lalinferencemcmc'#cp.get('condor',self.engine)
+      exe=cp.get('condor',self.engine)
       if cp.has_option('engine','site'):
         if self.site is not None and self.self!='local':
           universe='vanilla'
