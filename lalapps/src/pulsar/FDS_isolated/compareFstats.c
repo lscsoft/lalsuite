@@ -294,8 +294,8 @@ XLALcompareFstatFiles ( UINT4 *diff, const LALParsedDataFile *f1, const LALParse
       REAL8 err2F;
       if ( uvar->sigFtolerance )	// measure error in Nseg*2F compared to sigmas of chi^2_(4*Nseg) distribution
         {
-          REAL8 mean2F = 0.5 * ( parsed1.TwoF + parsed2.TwoF );
-          REAL8 noncent = fmax ( 0, uvar->Nseg * ( mean2F - 4 ) );
+          REAL8 mean2F = fmax ( 4, 0.5 * ( parsed1.TwoF + parsed2.TwoF ) );
+          REAL8 noncent = uvar->Nseg * ( mean2F - 4 );
           REAL8 sigma = sqrt ( 2 * ( 4*uvar->Nseg + 2 * noncent ) );	// std-dev for noncentral chi^2 distribution with dof degrees of freedom
           err2F = uvar->Nseg * fabs ( parsed1.TwoF - parsed2.TwoF ) / sigma;
         }
@@ -371,6 +371,7 @@ relError(REAL8 x, REAL8 y)
     return 0;
   }
 
-  return ( 2.0 * fabs ( (x - y ) / (x + y) ) );
+  REAL8 denom = fmax ( 4, 0.5*(x+y) );
+  return fabs ( (x - y ) / denom );
 
 } /* relError() */
