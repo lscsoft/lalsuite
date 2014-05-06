@@ -801,7 +801,8 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
     romweightsnode={}
     prenode=self.EngineNode(self.preengine_job)
     node=self.EngineNode(self.engine_jobs[tuple(ifos)])
-    roqeventpath=os.path.join(self.basepath,str(event.event_id))
+    roqeventpath=os.path.join(self.preengine_job.roqpath,str(event.event_id))
+    mkdirs(roqeventpath)
     end_time=event.trig_time
     node.set_trig_time(end_time)
     prenode.set_trig_time(end_time)
@@ -1120,7 +1121,6 @@ class EngineNode(pipeline.CondorDAGNode):
       self.id=EngineNode.new_id()
     self.__finaldata=False
     self.snrpath=None
-    self.roqpath=None
     self.fakedata=False
     self.lfns=[] # Local file names (for frame files and pegasus)
 
