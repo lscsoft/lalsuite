@@ -1,4 +1,4 @@
-/* 
+/*
  *  LALInferenceReadData.c:  Bayesian Followup functions
  *
  *  Copyright (C) 2009,2012 Ilya Mandel, Vivien Raymond, Christian
@@ -320,6 +320,7 @@ void LALInferencePrintDataWithInjection(LALInferenceIFOData *IFOdata, ProcessPar
   UINT4 Nifo=0,i,j;
   LALInferenceIFOData *thisData=IFOdata;
   ProcessParamsTable *ppt=NULL;
+  ProcessParamsTable *pptdatadump=NULL;
   while(thisData){
     thisData=thisData->next;
     Nifo++;
@@ -327,6 +328,7 @@ void LALInferencePrintDataWithInjection(LALInferenceIFOData *IFOdata, ProcessPar
   
   
   if (LALInferenceGetProcParamVal(commandLine, "--data-dump")) {
+    pptdatadump=LALInferenceGetProcParamVal(commandLine,"--data-dump");
     const UINT4 nameLength=FILENAME_MAX;
     char filename[nameLength];
     FILE *out;
@@ -336,6 +338,9 @@ void LALInferencePrintDataWithInjection(LALInferenceIFOData *IFOdata, ProcessPar
       ppt=LALInferenceGetProcParamVal(commandLine,"--outfile");
       if(ppt) {
         snprintf(filename, nameLength, "%s-%s-timeDataWithInjection.dat", ppt->value, IFOdata[i].name);
+      }
+      else if(strcmp(pptdatadump->value,"")) {
+        snprintf(filename, nameLength, "%s/%s-timeDataWithInjection.dat", pptdatadump->value, IFOdata[i].name);
       }
       else
         snprintf(filename, nameLength, "%s-timeDataWithInjection.dat", IFOdata[i].name);
@@ -352,6 +357,9 @@ void LALInferencePrintDataWithInjection(LALInferenceIFOData *IFOdata, ProcessPar
       ppt=LALInferenceGetProcParamVal(commandLine,"--outfile");
       if(ppt) {
         snprintf(filename, nameLength, "%s-%s-freqDataWithInjection.dat", ppt->value, IFOdata[i].name);
+      }
+      else if(strcmp(pptdatadump->value,"")) {
+        snprintf(filename, nameLength, "%s/%s-freqDataWithInjection.dat", pptdatadump->value, IFOdata[i].name);
       }
       else
         snprintf(filename, nameLength, "%s-freqDataWithInjection.dat", IFOdata[i].name);
@@ -400,6 +408,7 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
     INT4 dataseed=0;
     memset(&status,0,sizeof(status));
     ProcessParamsTable *procparam=NULL,*ppt=NULL;
+    ProcessParamsTable *pptdatadump=NULL;
     LALInferenceIFOData *headIFO=NULL,*IFOdata=NULL;
     REAL8 SampleRate=4096.0,SegmentLength=0;
     if(LALInferenceGetProcParamVal(commandLine,"--srate")) SampleRate=atof(LALInferenceGetProcParamVal(commandLine,"--srate")->value);
@@ -1254,12 +1263,16 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
         }
 
         if (LALInferenceGetProcParamVal(commandLine, "--data-dump")) {
+            pptdatadump=LALInferenceGetProcParamVal(commandLine,"--data-dump");
             const UINT4 nameLength=FILENAME_MAX;
             char filename[nameLength];
             FILE *out;
             ppt=LALInferenceGetProcParamVal(commandLine,"--outfile");
             if(ppt) {
             	snprintf(filename, nameLength, "%s-%s-PSD.dat", ppt->value, IFOdata[i].name);
+            }
+            else if(strcmp(pptdatadump->value,"")) {
+              snprintf(filename, nameLength, "%s/%s-PSD.dat", pptdatadump->value, IFOdata[i].name);
             }
             else
                 snprintf(filename, nameLength, "%s-PSD.dat", IFOdata[i].name);
@@ -1271,8 +1284,15 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
                 fprintf(out, "%g %g\n", f, psd);
             }
             fclose(out);
-
-            snprintf(filename, nameLength, "%s-timeData.dat", IFOdata[i].name);
+          
+            if(ppt) {
+              snprintf(filename, nameLength, "%s-%s-timeData.dat", ppt->value, IFOdata[i].name);
+            }
+            else if(strcmp(pptdatadump->value,"")) {
+              snprintf(filename, nameLength, "%s/%s-timeData.dat", pptdatadump->value, IFOdata[i].name);
+            }
+            else
+              snprintf(filename, nameLength, "%s-timeData.dat", IFOdata[i].name);
             out = fopen(filename, "w");
             for (j = 0; j < IFOdata[i].timeData->data->length; j++) {
                 REAL8 t = XLALGPSGetREAL8(&(IFOdata[i].timeData->epoch)) + 
@@ -1282,8 +1302,16 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
                 fprintf(out, "%.6f %g\n", t, d);
             }
             fclose(out);
-
-            snprintf(filename, nameLength, "%s-freqData.dat", IFOdata[i].name);
+          
+            ppt=LALInferenceGetProcParamVal(commandLine,"--outfile");
+            if(ppt) {
+              snprintf(filename, nameLength, "%s-%s-freqData.dat", ppt->value, IFOdata[i].name);
+            }
+            else if(strcmp(pptdatadump->value,"")) {
+              snprintf(filename, nameLength, "%s/%s-freqData.dat", pptdatadump->value, IFOdata[i].name);
+            }
+            else
+              snprintf(filename, nameLength, "%s-freqData.dat", IFOdata[i].name);
             out = fopen(filename, "w");
             for (j = 0; j < IFOdata[i].freqData->data->length; j++) {
                 REAL8 f = IFOdata[i].freqData->deltaF * j;

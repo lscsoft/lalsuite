@@ -44,6 +44,12 @@ parser.add_option("-V", "--invV", type='string',
 											action="store",
 											dest="invV_path",
 											help="inverse of the Vandermonde matrix",)
+parser.add_option("-o", "--out", type='string',
+                  action="store",
+                  dest="outpath",
+                  default="./"
+                  help="output path",)
+
 (options, args) = parser.parse_args()
 
 #basis_set = np.fromfile("/Users/vivien/mcmc/rom/TF2_ROM_40_1024/basis_complex_conjugate.dat", dtype = complex)
@@ -120,7 +126,7 @@ for ifo in options.IFOs:
 
 	#*************************************************************************** #
 
-	weights_file = open("weights_%s.dat"%ifo, "wb")
+	weights_file = open(outpath+"weights_%s.dat"%ifo, "wb")
 
 	print "Computing weights for "+ifo
 	weights = BuildWeights(tc_shifted_data, basis_set, deltaF, invV)
@@ -131,6 +137,6 @@ for ifo in options.IFOs:
 	weights_file.close()
 	i += 1
 
-size_file = open("Num_tc_sub_domains.dat", "wb")
+size_file = open(outpath+"Num_tc_sub_domains.dat", "wb")
 np.array(len(tcs)).tofile(size_file)
 size_file.close()

@@ -800,6 +800,7 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
     romweightsnode={}
     prenode=self.EngineNode(self.preengine_job)
     node=self.EngineNode(self.engine_jobs[tuple(ifos)])
+    roqeventpath=os.path.join(self.snrpath,event.event_id)
     end_time=event.trig_time
     node.set_trig_time(end_time)
     prenode.set_trig_time(end_time)
@@ -876,29 +877,38 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
     # Add the nodes it depends on
     for ifokey, seg in node.scisegs.items():
       dfnode=seg.get_df_node()
-      if dfnode is not None and dfnode not in self.get_nodes():
-        if not self.config.has_option('lalinference','fake-cache'):
-          self.add_node(dfnode)
+    
+      if 1==1:
+        #if dfnode is not None and dfnode not in self.get_nodes():
         if self.config.has_option('lalinference','roq'):
-          if gotdata and seg.id() not in self.prenodes.keys():
+          #if gotdata and seg.id() not in self.prenodes.keys():
+          if gotdata and event.event_id not in self.prenodes.keys():
             if prenode not in self.get_nodes():
               self.add_node(prenode)
               for ifo in ifos:
                 romweightsnode[ifo]=self.add_rom_weights_node(ifo,prenode)
-                self.add_node(romweightsnode[ifo])
+                #self.add_node(romweightsnode[ifo])
                 if self.config.has_option('input','injection-file'):
-                  freqDataFile=os.path.join(self.basepath,ifo+'-freqDataWithInjection.dat')
+                  freqDataFile=os.path.join(roqeventpath,ifo+'-freqDataWithInjection.dat')
                 else:
-                  freqDataFile=os.path.join(self.basepath,ifo+'-freqData.dat')
+                  freqDataFile=os.path.join(roqeventpath,ifo+'-freqData.dat')
                 prenode.add_output_file(freqDataFile)
-                prenode.add_output_file(os.path.join(self.basepath,ifo+'-PSD.dat'))
+                prenode.add_output_file(os.path.join(roqeventpath,ifo+'-PSD.dat'))
                 romweightsnode[ifo].add_var_arg('-d '+freqDataFile)
                 romweightsnode[ifo].add_input_file(freqDataFile)
-                romweightsnode[ifo].add_var_arg('-p '+os.path.join(self.basepath,ifo+'-PSD.dat'))
-                romweightsnode[ifo].add_input_file(os.path.join(self.basepath,ifo+'-PSD.dat'))
-                romweightsnode[ifo].add_output_file(os.path.join(self.basepath,'weights_'+ifo+'.dat'))
-            self.prenodes[seg.id()]=(prenode,romweightsnode)
-          node.add_parent(self.prenodes[seg.id()][1][ifokey])
+                romweightsnode[ifo].add_var_arg('-p '+os.path.join(roqeventpath,ifo+'-PSD.dat'))
+                romweightsnode[ifo].add_input_file(os.path.join(roqeventpath,ifo+'-PSD.dat'))
+                romweightsnode[ifo].add_output_file(os.path.join(roqeventpath,'weights_'+ifo+'.dat'))
+              #self.prenodes[seg.id()]=(prenode,romweightsnode)
+              self.prenodes[event.event_id]=(prenode,romweightsnode)
+
+      if self.config.has_option('lalinference','roq'):
+        #node.add_parent(self.prenodes[seg.id()][1][ifokey])
+        node.add_parent(self.prenodes[event.event_id][1][ifokey])
+
+      if dfnode is not None and dfnode not in self.get_nodes():
+        if not self.config.has_option('lalinference','fake-cache'):
+          self.add_node(dfnode)
 
     if gotdata:
       self.add_node(node)
@@ -929,11 +939,11 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
     node.set_output_file(os.path.join(out_dir,node.engine+'-'+str(event.event_id)+'-'+node.get_ifos()+'-'+str(node.get_trig_time())+'-'+str(node.id)))
     if self.config.has_option('lalinference','roq'):
       for ifo in ifos:
-        node.add_var_arg('--'+ifo+'-roqweights '+os.path.join(self.basepath,'weights_'+ifo+'.dat'))
-        node.add_input_file(os.path.join(self.basepath,'weights_'+ifo+'.dat'))
+        node.add_var_arg('--'+ifo+'-roqweights '+os.path.join(roqeventpath,'weights_'+ifo+'.dat'))
+        node.add_input_file(os.path.join(roqeventpath,'weights_'+ifo+'.dat'))
         
-      node.add_var_arg('--roqtime_steps '+os.path.join(self.basepath,'Num_tc_sub_domains.dat'))
-      node.add_input_file(os.path.join(self.basepath,'Num_tc_sub_domains.dat'))
+      node.add_var_arg('--roqtime_steps '+os.path.join(roqeventpath,'Num_tc_sub_domains.dat'))
+      node.add_input_file(os.path.join(roqeventpath,'Num_tc_sub_domains.dat'))
       if self.config.has_option('paths','rom_nodes'):
         nodes_path=self.config.get('paths','rom_nodes')
         node.add_var_arg('--roqnodes '+nodes_path)
@@ -964,14 +974,14 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
     return node
 
   def add_rom_weights_node(self,ifo,parent=None):
-    try:
-      node=self.romweightsnodes[ifo]
-    except KeyError:
-      node=ROMNode(self.romweights_job,ifo)
-      self.romweightsnodes[ifo]=node
-      if parent is not None:
-        node.add_parent(parent)
-    #self.add_node(node)
+    #try:
+    #node=self.romweightsnodes[ifo]
+        #except KeyError:
+    node=ROMNode(self.romweights_job,ifo)
+    self.romweightsnodes[ifo]=node
+    if parent is not None:
+      node.add_parent(parent)
+    self.add_node(node)
     return node
 
 
@@ -1001,11 +1011,17 @@ class EngineJob(pipeline.CondorDAGJob,pipeline.AnalysisJob):
           universe='vanilla'
         else: universe="standard"
     else:
-      self.engine=='lalinferencemcmc'
+      roqpath=os.path.join(basepath,'ROQdata')
+      self.roqpath=roqpath
+      mkdirs(roqpath)
+      self.engine='lalinferencemcmc'
       exe=cp.get('condor',self.engine)
-      if self.site is not None and self.self!='local':
+      if cp.has_option('engine','site'):
+        if self.site is not None and self.self!='local':
+          universe='vanilla'
+        else: universe="standard"
+      else:
         universe='vanilla'
-      else: universe="standard"
     pipeline.CondorDAGJob.__init__(self,universe,exe)
     pipeline.AnalysisJob.__init__(self,cp,dax=dax)
     # Set grid site if needed
@@ -1052,7 +1068,7 @@ class EngineJob(pipeline.CondorDAGJob,pipeline.AnalysisJob):
       self.set_universe('vanilla')
     else:
       self.set_universe('standard')
-    pipeline.CondorDAGJob.set_grid_site(site)
+    pipeline.CondorDAGJob.set_grid_site(self,site)
  
   def __write_sub_file_mcmc_mpi(self):
     """
@@ -1097,6 +1113,7 @@ class EngineNode(pipeline.CondorDAGNode):
       self.id=EngineNode.new_id()
     self.__finaldata=False
     self.snrpath=None
+    self.roqpath=None
     self.fakedata=False
     self.lfns=[] # Local file names (for frame files and pegasus)
 
