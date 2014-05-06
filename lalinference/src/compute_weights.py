@@ -126,7 +126,7 @@ for ifo in options.IFOs:
 
 	#*************************************************************************** #
 
-	weights_file = open(outpath+"weights_%s.dat"%ifo, "wb")
+	weights_file = open(options.outpath+"weights_%s.dat"%ifo, "wb")
 
 	print "Computing weights for "+ifo
 	weights = BuildWeights(tc_shifted_data, basis_set, deltaF, invV)
@@ -137,6 +137,6 @@ for ifo in options.IFOs:
 	weights_file.close()
 	i += 1
 
-size_file = open(outpath+"Num_tc_sub_domains.dat", "wb")
+size_file = open(options.outpath+"Num_tc_sub_domains.dat", "wb")
 np.array(len(tcs)).tofile(size_file)
 size_file.close()
