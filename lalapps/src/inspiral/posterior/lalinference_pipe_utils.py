@@ -1037,7 +1037,7 @@ class EngineJob(pipeline.CondorDAGJob,pipeline.AnalysisJob):
       if ispreengine is False:
         self.machine_count=cp.get('mpi','machine-count')
         self.machine_memory=cp.get('mpi','machine-memory')
-      else
+      else:
         self.machine_count=1
         self.machine_memory=cp.get('mpi','machine-memory')/cp.get('mpi','machine-count')
       #self.add_condor_cmd('machine_count',machine_count)
