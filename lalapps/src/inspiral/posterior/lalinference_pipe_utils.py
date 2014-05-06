@@ -1594,6 +1594,7 @@ class ROMJob(pipeline.CondorDAGJob,pipeline.AnalysisJob):
     self.add_arg('-s 32')
     self.add_arg('-f 40')
     self.add_arg('-T 0.0001')
+    self.add_condor_cmd('RequestMemory','2000')
 
 class ROMNode(pipeline.CondorDAGNode):
   """
