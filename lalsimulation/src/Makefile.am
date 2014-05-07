@@ -41,8 +41,7 @@ bin_PROGRAMS = \
 	lalsim-sgwb \
 	lalsim-unicorn
 
-lalsimulationincludedir = $(includedir)/lal
-lalsimulationinclude_HEADERS = \
+pkginclude_HEADERS = \
 	LALSimBlackHoleRingdown.h \
 	LALSimBurst.h \
 	LALSimInspiralPrecess.h \
@@ -202,5 +201,4 @@ LALSimulationBuildInfo.c: Makefile $(liblalsimulation_la_DEPENDENCIES)
 
 @LAL_HEADER_LINK@
 
-swig_headers = $(lalsimulationinclude_HEADERS)
 include $(top_srcdir)/swig/swiglal_header.am

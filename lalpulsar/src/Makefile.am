@@ -5,8 +5,7 @@ XMLHDR = LALXMLVOTableSerializersPulsar.h
 XMLSRC = LALXMLVOTableSerializersPulsar.c
 endif
 
-lalpulsarincludedir = $(includedir)/lal
-lalpulsarinclude_HEADERS = \
+pkginclude_HEADERS = \
 	BinaryPulsarTiming.h \
 	ComplexAM.h \
 	ComputeFstat.h \
@@ -205,5 +204,4 @@ LALPulsarBuildInfo.c: Makefile $(liblalpulsar_la_DEPENDENCIES)
 
 @LAL_HEADER_LINK@
 
-swig_headers = $(lalpulsarinclude_HEADERS)
 include $(top_srcdir)/swig/swiglal_header.am

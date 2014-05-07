@@ -80,5 +80,4 @@ all-local: include-link
 include-link: $(pkginclude_HEADERS)
 @INCLUDEMKFILE@
 
-swig_headers = $(pkginclude_HEADERS)
 include $(top_srcdir)/swig/swiglal_header.am

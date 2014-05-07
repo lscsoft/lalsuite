@@ -1,8 +1,7 @@
 AM_CPPFLAGS = -I$(top_builddir)/include -DPKG_DATA_DIR='"$(pkgdatadir)/"' @AM_CPPFLAGS@
 LDADD = liblaldetchar.la
 
-laldetcharincludedir = $(includedir)/lal
-laldetcharinclude_HEADERS = \
+pkginclude_HEADERS = \
 	LALDetChar.h \
 	LALDetCharBuildInfo.h \
 	LALDetCharConfig.h \
@@ -82,5 +81,4 @@ LALDetCharBuildInfo.c: Makefile $(liblaldetchar_la_DEPENDENCIES)
 
 @LAL_HEADER_LINK@
 
-swig_headers = $(laldetcharinclude_HEADERS)
 include $(top_srcdir)/swig/swiglal_header.am

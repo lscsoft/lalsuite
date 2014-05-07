@@ -38,8 +38,7 @@ lalfr_paste_SOURCES = paste.c utils.c utils.h
 lalfr_stream_SOURCES = stream.c
 lalfr_vis_SOURCES = vis.c
 
-lalframeincludedir = $(includedir)/lal
-lalframeinclude_HEADERS = \
+pkginclude_HEADERS = \
 	Aggregation.h \
 	FrameCalibration.h \
 	LALFrStream.h \
@@ -125,5 +124,4 @@ LALFrameBuildInfo.c: Makefile $(liblalframe_la_DEPENDENCIES)
 
 @LAL_HEADER_LINK@
 
-swig_headers = $(lalframeinclude_HEADERS)
 include $(top_srcdir)/swig/swiglal_header.am

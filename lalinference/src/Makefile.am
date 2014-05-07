@@ -10,8 +10,7 @@ BAYESTARHDR = bayestar_sky_map.h
 BAYESTARSRC = bayestar_sky_map.c
 endif
 
-lalinferenceincludedir = $(includedir)/lal
-lalinferenceinclude_HEADERS = \
+pkginclude_HEADERS = \
 	LALInference.h \
 	LALInferenceBuildInfo.h \
 	LALInferenceConfig.h \
@@ -102,5 +101,4 @@ LALInferenceBuildInfo.c: Makefile $(liblalinference_la_DEPENDENCIES)
 
 @LAL_HEADER_LINK@
 
-swig_headers = $(lalinferenceinclude_HEADERS)
 include $(top_srcdir)/swig/swiglal_header.am

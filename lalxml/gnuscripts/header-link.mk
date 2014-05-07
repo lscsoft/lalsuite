@@ -1,6 +1,6 @@
 all-local: header-links
 header-links:
-	@for file in $(lalxmlinclude_HEADERS) ; do \
+	@for file in $(pkginclude_HEADERS) ; do \
 		sourcedir=$(abs_srcdir); \
 		targetdir=$(abs_top_builddir)/include/lal; \
 		if test ! -r $$targetdir/$$file ; then \

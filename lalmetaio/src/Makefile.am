@@ -1,7 +1,6 @@
 AM_CPPFLAGS = -I$(top_builddir)/include -DPKG_DATA_DIR='"$(pkgdatadir)/"' @AM_CPPFLAGS@
 
-lalmetaioincludedir = $(includedir)/lal
-lalmetaioinclude_HEADERS = \
+pkginclude_HEADERS = \
 	LALMetaIOBuildInfo.h \
 	LALMetaIOConfig.h \
 	LALMetaIOLibVCSInfo.h \
@@ -78,5 +77,4 @@ LALMetaIOBuildInfo.c: Makefile $(liblalmetaio_la_DEPENDENCIES)
 
 @LAL_HEADER_LINK@
 
-swig_headers = $(lalmetaioinclude_HEADERS)
 include $(top_srcdir)/swig/swiglal_header.am

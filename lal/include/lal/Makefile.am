@@ -16,5 +16,4 @@ all-local:
 			|| case "$$amf" in *=*) exit1;; *k*) fail=yes;; *) exit 1;; esac; \
 		test -z "$$fail"
 
-swig_headers = $(pkginclude_HEADERS)
 include $(top_srcdir)/swig/swiglal_header.am

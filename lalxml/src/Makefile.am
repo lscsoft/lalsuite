@@ -1,7 +1,6 @@
 AM_CPPFLAGS = -I$(top_builddir)/include -DPKG_DATA_DIR='"$(pkgdatadir)/"' @AM_CPPFLAGS@
 
-lalxmlincludedir = $(includedir)/lal
-lalxmlinclude_HEADERS = \
+pkginclude_HEADERS = \
 	LALXML.h \
 	LALXMLBuildInfo.h \
 	LALXMLConfig.h \
@@ -72,5 +71,4 @@ LALXMLBuildInfo.c: Makefile $(liblalxml_la_DEPENDENCIES)
 
 @LAL_HEADER_LINK@
 
-swig_headers = $(lalxmlinclude_HEADERS)
 include $(top_srcdir)/swig/swiglal_header.am

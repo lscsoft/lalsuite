@@ -1,7 +1,6 @@
 AM_CPPFLAGS = -I$(top_builddir)/include -DPKG_DATA_DIR='"$(pkgdatadir)/"' @AM_CPPFLAGS@
 
-lalstochasticincludedir = $(includedir)/lal
-lalstochasticinclude_HEADERS = \
+pkginclude_HEADERS = \
 	AstroOmega.h \
 	LALStochasticBuildInfo.h \
 	LALStochasticConfig.h \
@@ -83,5 +82,4 @@ LALStochasticBuildInfo.c: Makefile $(liblalstochastic_la_DEPENDENCIES)
 
 @LAL_HEADER_LINK@
 
-swig_headers = $(lalstochasticinclude_HEADERS)
 include $(top_srcdir)/swig/swiglal_header.am

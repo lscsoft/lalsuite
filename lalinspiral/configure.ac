@@ -139,6 +139,9 @@ if test "${cuda}" = "true"; then
   AC_DEFINE([LALINSPIRAL_CUDA_ENABLED],[1],[Define if using cuda library])
 fi
 
+# force headers to be installed in ${includedir}/lal, ignoring library name
+AC_SUBST([pkgincludedir], ["\${includedir}/lal"])
+
 # force all python modules into the exec dir to prevent mixed C and
 # pure-python library code from being split across lib and lib64 on
 # RedHat-derived systems.

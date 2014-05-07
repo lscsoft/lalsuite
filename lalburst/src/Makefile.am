@@ -1,8 +1,6 @@
 AM_CPPFLAGS = -I$(top_builddir)/include -DPKG_DATA_DIR='"$(pkgdatadir)/"' @AM_CPPFLAGS@
 
-lalburstincludedir = $(includedir)/lal
-
-lalburstinclude_HEADERS = \
+pkginclude_HEADERS = \
 	CLR.h \
 	EPSearch.h \
 	GenerateBurst.h \
@@ -102,5 +100,4 @@ LALBurstBuildInfo.c: Makefile $(liblalburst_la_DEPENDENCIES)
 
 @LAL_HEADER_LINK@
 
-swig_headers = $(lalburstinclude_HEADERS)
 include $(top_srcdir)/swig/swiglal_header.am

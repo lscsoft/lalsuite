@@ -1,7 +1,6 @@
 AM_CPPFLAGS = -I$(top_builddir)/include -DPKG_DATA_DIR='"$(pkgdatadir)/"' @AM_CPPFLAGS@
 
-lalinspiralincludedir = $(includedir)/lal
-lalinspiralinclude_HEADERS = \
+pkginclude_HEADERS = \
 	BBHPhenomCoeffs.h \
 	Chisq_CPU.h \
 	Chisq_GPU.h \
@@ -291,5 +290,4 @@ LALInspiralBuildInfo.c: Makefile $(liblalinspiral_la_DEPENDENCIES)
 # cuda build rules
 include $(top_srcdir)/gnuscripts/cuda.common
 
-swig_headers = $(lalinspiralinclude_HEADERS)
 include $(top_srcdir)/swig/swiglal_header.am
