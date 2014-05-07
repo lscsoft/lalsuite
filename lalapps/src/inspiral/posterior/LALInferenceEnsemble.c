@@ -293,13 +293,10 @@ void initializeMCMC(LALInferenceRunState *runState) {
                 ---------------------------------------------------------------------------------------------------\n\
                  --- General Algorithm Parameters ------------------------------------------------------------------\n\
                  ---------------------------------------------------------------------------------------------------\n\
-                 (--Niter N)                      Number of iterations (2*10^7).\n\
-                 (--Neff N)                       Number of effective samples. (ends if chain surpasses Niter)\n\
-                 (--Nskip N)                      Number of iterations between disk save (100).\n\
-                 (--trigSNR SNR)                  Network SNR from trigger, used to calculate tempMax (injection SNR).\n\
+                 (--nsteps n)                     Total number of steps for all walkers to make (100000).\n\
+                 (--skip n)                       Number of steps between writes to file (100).\n\
+                 (--update-interval n)            Number of steps between ensemble updates (1000).\n\
                  (--randomseed seed)              Random seed of sampling distribution (random).\n\
-                 (--adaptTau)                     Adaptation decay power, results in adapt length of 10^tau (5).\n\
-                 (--noAdapt)                      Do not adapt run.\n\
                  \n\
                  ---------------------------------------------------------------------------------------------------\n\
                  --- Likelihood Functions --------------------------------------------------------------------------\n\
@@ -329,41 +326,10 @@ void initializeMCMC(LALInferenceRunState *runState) {
                  (--xcorrbands)                   Run PSD fitting with correlated frequency bands\n\
                  \n\
                  ---------------------------------------------------------------------------------------------------\n\
-                 --- Proposals  ------------------------------------------------------------------------------------\n\
-                 ---------------------------------------------------------------------------------------------------\n\
-                 (--rapidSkyLoc)                  Use rapid sky localization jump proposals.\n\
-                 (--kDTree)                       Use a kDTree proposal.\n\
-                 (--kDNCell N)                    Number of points per kD cell in proposal.\n\
-                 (--covarianceMatrix file)        Find the Cholesky decomposition of the covariance matrix for jumps in file.\n\
-                 (--noProposalSkyRing)              Disable the proposal that rotates sky position\n\
-                                                    around vector connecting any two IFOs in network.\n\
-                 (--noProposalCorrPsiPhi)           Disable the proponal that jumps along psi-phi \n\
-                                                    correlation\n\
-                 (--noDifferentialEvolution)      Disable the differential-evolution proposal\n\
-                 (--differential-buffer-limit)    Limit the number of stored differential-evolution points\n\
-                 \n\
-                 ---------------------------------------------------------------------------------------------------\n\
-                 --- Parallel Tempering Algorithm Parameters -------------------------------------------------------\n\
-                 ---------------------------------------------------------------------------------------------------\n\
-                 (--inverseLadder)                Space temperature uniform in 1/T, rather than geometric.\n\
-                 (--tempLadderBottomUp)           Construct the a geometric temperature ladder with tempDelta=1+sqrt(2/nPar).\n\
-                 (--tempSkip N)                   Number of iterations between temperature swap proposals (100).\n\
-                 (--tempKill N)                   Iteration number to stop temperature swapping (Niter).\n\
-                 (--tempMin T)                    Lowest temperature for parallel tempering (1.0).\n\
-                 (--tempMax T)                    Highest temperature for parallel tempering (50.0).\n\
-                 (--anneal)                       Anneal hot temperature linearly to T=1.0.\n\
-                 (--annealStart N)                Iteration number to start annealing (5*10^5).\n\
-                 (--annealLength N)               Number of iterations to anneal all chains to T=1.0 (1*10^5).\n\
-                 \n\
-                 ---------------------------------------------------------------------------------------------------\n\
                  --- Output ----------------------------------------------------------------------------------------\n\
                  ---------------------------------------------------------------------------------------------------\n\
                  (--data-dump)                    Output waveforms to file.\n\
-                 (--adaptVerbose)                 Output parameter jump sizes and acceptance rate stats to file.\n\
-                 (--tempVerbose)                  Output temperature swapping stats to file.\n\
-                 (--propVerbose)                  Output proposal stats to file.\n\
-                 (--propTrack)                    Output useful info for track proposal behavior.\n\
-                 (--outfile file)                 Write output files <file>.<chain_number> (PTMCMC.output.<random_seed>.<chain_number>).\n";
+                 (--outfile file)                 Write output files <file>.<chain_number> (ensemble.output.<random_seed>.<walker_number>).\n";
 
     INT4 walker, i;
     MPI_Comm_rank(MPI_COMM_WORLD, &walker);
@@ -374,23 +340,23 @@ void initializeMCMC(LALInferenceRunState *runState) {
         return;
     }
 
-    INT4 verbose=0,tmpi=0;
+    INT4 tmpi=0;
     unsigned int randomseed=0;
-    ProcessParamsTable *commandLine=runState->commandLine;
-    ProcessParamsTable *ppt=NULL;
+    ProcessParamsTable *commandLine = runState->commandLine;
+    ProcessParamsTable *ppt = NULL;
     FILE *devrandom;
     struct timeval tv;
 
     /* Print command line arguments if help requested */
-    if(LALInferenceGetProcParamVal(runState->commandLine,"--help")) {
+    if (LALInferenceGetProcParamVal(runState->commandLine,"--help")) {
         fprintf(stdout,"%s",help);
         return;
     }
 
     /* Initialise parameters structure */
-    runState->algorithmParams=XLALCalloc(1,sizeof(LALInferenceVariables));
-    runState->priorArgs=XLALCalloc(1,sizeof(LALInferenceVariables));
-    runState->proposalArgs=XLALCalloc(1,sizeof(LALInferenceVariables));
+    runState->algorithmParams = XLALCalloc(1,sizeof(LALInferenceVariables));
+    runState->priorArgs = XLALCalloc(1,sizeof(LALInferenceVariables));
+    runState->proposalArgs = XLALCalloc(1,sizeof(LALInferenceVariables));
 
     /* Set up the appropriate functions for the MCMC algorithm */
     runState->algorithm = &ensemble_sampler;
@@ -423,29 +389,30 @@ void initializeMCMC(LALInferenceRunState *runState) {
         REAL8 malmquist_second_loudest = 5.0;
         REAL8 malmquist_network = 0.0;
 
-        ppt=LALInferenceGetProcParamVal(commandLine,"--malmquist-loudest-snr");
-        if(ppt)
+        ppt = LALInferenceGetProcParamVal(commandLine,"--malmquist-loudest-snr");
+        if (ppt)
             malmquist_loudest = atof(ppt->value);
 
-        ppt=LALInferenceGetProcParamVal(commandLine,"--malmquist-second-loudest-snr");
-        if(ppt)
+        ppt = LALInferenceGetProcParamVal(commandLine,"--malmquist-second-loudest-snr");
+        if (ppt)
             malmquist_second_loudest = atof(ppt->value);
 
-        ppt=LALInferenceGetProcParamVal(commandLine,"--malmquist-network-snr");
-        if(ppt)
+        ppt = LALInferenceGetProcParamVal(commandLine,"--malmquist-network-snr");
+        if (ppt)
             malmquist_network = atof(ppt->value);
 
-        LALInferenceAddVariable(runState->priorArgs, "malmquist_loudest_snr", &malmquist_loudest, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
-        LALInferenceAddVariable(runState->priorArgs, "malmquist_second_loudest_snr", &malmquist_second_loudest, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
-        LALInferenceAddVariable(runState->priorArgs, "malmquist_network_snr", &malmquist_network, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
+        LALInferenceAddVariable(runState->priorArgs, "malmquist_loudest_snr",
+                &malmquist_loudest, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
+        LALInferenceAddVariable(runState->priorArgs, "malmquist_second_loudest_snr",
+                &malmquist_second_loudest, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
+        LALInferenceAddVariable(runState->priorArgs, "malmquist_network_snr",
+                &malmquist_network, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
     }
 
-    ppt=LALInferenceGetProcParamVal(commandLine,"--verbose");
-    if(ppt) {
+    /* Print more stuff */
+    UINT4 verbose=0;
+    if (LALInferenceGetProcParamVal(commandLine, "--verbose"))
         verbose=1;
-        LALInferenceAddVariable(runState->algorithmParams,"verbose", &verbose , LALINFERENCE_UINT4_t,
-                              LALINFERENCE_PARAM_FIXED);
-    }
 
     /* Number of steps between ensemble updates */
     UINT4 nsteps = 100000;
@@ -453,33 +420,30 @@ void initializeMCMC(LALInferenceRunState *runState) {
     if(ppt)
         nsteps = atoi(ppt->value);
 
-    LALInferenceAddVariable(runState->algorithmParams, "nsteps", &nsteps,
-                            LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_FIXED);
-
     /* Print sample every skip iterations */
     UINT4 skip = 100;
-    ppt = LALInferenceGetProcParamVal(commandLine,"--skip");
+    ppt = LALInferenceGetProcParamVal(commandLine, "--skip");
     if(ppt)
         skip = atoi(ppt->value);
 
-    LALInferenceAddVariable(runState->algorithmParams, "skip", &skip,
-                            LALINFERENCE_UINT4_t,LALINFERENCE_PARAM_FIXED);
-
     /* Update ensemble every *update_interval* iterations */
     UINT4 update_interval = 1000;
-    ppt = LALInferenceGetProcParamVal(commandLine,"--update-interval");
+    ppt = LALInferenceGetProcParamVal(commandLine, "--update-interval");
     if(ppt)
         update_interval = atoi(ppt->value);
 
-    LALInferenceAddVariable(runState->algorithmParams, "update_interval", &update_interval,
-                            LALINFERENCE_UINT4_t,LALINFERENCE_PARAM_FIXED);
+    /* Keep track of time if benchmarking */
+    UINT4 benchmark = 0;
+    if (LALInferenceGetProcParamVal(runState->commandLine, "--benchmark"))
+        benchmark = 1;
 
-
+    /* Initialize a random number generator. */
     gsl_rng_env_setup();
     runState->GSLrandom = gsl_rng_alloc(gsl_rng_mt19937);
 
+    /* Use clocktime if seed isn't provided */
     ppt = LALInferenceGetProcParamVal(commandLine, "--randomseed");
-    if (ppt != NULL)
+    if (ppt)
         randomseed = atoi(ppt->value);
     else {
         if ((devrandom = fopen("/dev/urandom","r")) == NULL) {
@@ -496,14 +460,10 @@ void initializeMCMC(LALInferenceRunState *runState) {
             MPI_Bcast(&randomseed, 1, MPI_UNSIGNED_LONG, 0, MPI_COMM_WORLD);
         }
     }
-    MPI_Barrier(MPI_COMM_WORLD);
 
     fprintf(stdout, " initialize(): random seed: %u\n", randomseed);
-    LALInferenceAddVariable(runState->algorithmParams, "random_seed", &randomseed,
-                            LALINFERENCE_UINT4_t,LALINFERENCE_PARAM_FIXED);
 
     gsl_rng_set(runState->GSLrandom, randomseed);
-
 
     /* Now make sure that everyone is running with un-correlated
        jumps!  We re-seed rank i process with the ith output of
@@ -513,6 +473,25 @@ void initializeMCMC(LALInferenceRunState *runState) {
         randomseed = gsl_rng_get(runState->GSLrandom);
 
     gsl_rng_set(runState->GSLrandom, randomseed);
+
+    /* Store flags to keep from checking the command line all the time */
+    LALInferenceAddVariable(runState->algorithmParams,"verbose", &verbose,
+                            LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_FIXED);
+
+    LALInferenceAddVariable(runState->algorithmParams, "nsteps", &nsteps,
+                            LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_FIXED);
+
+    LALInferenceAddVariable(runState->algorithmParams, "skip", &skip,
+                            LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_FIXED);
+
+    LALInferenceAddVariable(runState->algorithmParams, "update_interval", &update_interval,
+                            LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_FIXED);
+
+    LALInferenceAddVariable(runState->algorithmParams, "benchmark", &benchmark,
+                            LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_FIXED);
+
+    LALInferenceAddVariable(runState->algorithmParams, "random_seed", &randomseed,
+                            LALINFERENCE_UINT4_t,LALINFERENCE_PARAM_FIXED);
 
     return;
 }

@@ -71,20 +71,13 @@ void ensemble_sampler(struct tagLALInferenceRunState *runState) {
     INT4 skip = *(INT4*) LALInferenceGetVariable(runState->algorithmParams, "skip");
     INT4 update_interval = *(INT4*) LALInferenceGetVariable(runState->algorithmParams, "update_interval");
 
-    /* Keep track of time if benchmarking */
-    UINT4 benchmark = 0;
-    if (LALInferenceGetProcParamVal(runState->commandLine, "--benchmark"))
-        benchmark = 1;
-
     walker_output = LALInferenceInitializeEnsembleOutput(runState);
 
     /* Setup clustered-KDE proposal from the inital state of the ensemble */
     ensemble_update(runState);
 
-    // iterate:
     UINT4 step = 0;
     while (step < nsteps) {
-        /* Increment iteration counter */
         step++;
 
         /* Update the proposal from the current state of the ensemble */
@@ -93,11 +86,11 @@ void ensemble_sampler(struct tagLALInferenceRunState *runState) {
 
         walker_step(runState); //evolve the walker
 
-        /* Print current sample to file */
+        /* Don't print every sample to file */
         if ((step % skip) == 0)
             LALInferencePrintEnsembleSample(runState, walker_output, step);
     }
-    
+
     fclose(walker_output);
 }
 
@@ -106,31 +99,30 @@ void walker_step(LALInferenceRunState *runState) {
     REAL8 log_proposal_ratio = 0.0;
     REAL8 log_acceptance_probability;
     LALInferenceIFOData *headData;
-  
+
     /* Propose a new sample */
     LALInferenceVariables proposedParams;
     proposedParams.head = NULL;
     proposedParams.dimension = 0;
     runState->proposal(runState, &proposedParams);
 
-    if (runState->proposedParams != NULL)
-        LALInferenceCopyVariables(&proposedParams, runState->proposedParams);
-
     /* Get the probability of proposing the reverse jump */
-    log_proposal_ratio = *(REAL8*) LALInferenceGetVariable(runState->proposalArgs, "logProposalRatio");
-  
-    /* Only bother calculating likelihood if sample within prior boundaries */
+    log_proposal_ratio =
+        *(REAL8*) LALInferenceGetVariable(runState->proposalArgs, "logProposalRatio");
+
+    /* Only bother calculating likelihood if within prior boundaries */
     log_prior_proposed = runState->prior(runState, &proposedParams);
     if (log_prior_proposed > -DBL_MAX)
-        log_likelihood_proposed = runState->likelihood(&proposedParams, runState->data, runState->templt);
+        log_likelihood_proposed =
+            runState->likelihood(&proposedParams, runState->data, runState->templt);
     else
         log_likelihood_proposed = -INFINITY;
-  
+
     /* Find jump acceptance probability */
     log_acceptance_probability = (log_prior_proposed + log_likelihood_proposed)
                                 - (runState->currentPrior + runState->currentLikelihood)
                                 + log_proposal_ratio;
-  
+
     /* Accept the jump with the calculated probability */
     if (log_acceptance_probability > 0
             || (log(gsl_rng_uniform(runState->GSLrandom)) < log_acceptance_probability)) {
@@ -218,7 +210,7 @@ FILE *LALInferenceInitializeEnsembleOutput(LALInferenceRunState *runState) {
                         (in %s, line %d)\n",__FILE__, __LINE__);
         XLAL_ERROR_NULL(XLAL_EIO);
     }
-  
+
     XLALFree(outfile_name);
     return walker_output;
 }
@@ -255,7 +247,8 @@ void LALInferencePrintEnsembleSample(LALInferenceRunState *runState, FILE *walke
     networkSNR = sqrt(networkSNR);
     fprintf(walker_output, "%f\t", networkSNR);
 
-    if (LALInferenceGetProcParamVal(runState->commandLine, "--benchmark")) {
+    UINT4 benchmark = *(UINT4 *) LALInferenceGetVariable(runState->algorithmParams, "benchmark");
+    if (benchmark) {
         struct timeval tv;
         REAL8 timestamp_epoch = *(REAL8 *) LALInferenceGetVariable(runState->algorithmParams,
                                                                    "timestamp_epoch");
@@ -323,9 +316,7 @@ void LALInferencePrintEnsembleHeader(LALInferenceRunState *runState, FILE *walke
     network_snr = sqrt(network_snr);
 
     /* Keep track of time if benchmarking */
-    benchmark = 0;
-    if (LALInferenceGetProcParamVal(runState->commandLine,"--benchmark"))
-        benchmark=1;
+    benchmark = *(UINT4 *) LALInferenceGetVariable(runState->algorithmParams, "benchmark");
 
     /* Write the header information to file */
     fprintf(walker_output,
