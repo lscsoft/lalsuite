@@ -41,14 +41,7 @@
 /* System includes */
 #include <math.h>
 #include <stdio.h>
-#include <time.h>
 #include <strings.h>
-#ifdef HAVE_UNISTD_H
-#include <unistd.h>
-#endif
-#include <sys/time.h>
-
-int finite(double);
 
 /* LAL-includes */
 #include <lal/LALString.h>
@@ -146,17 +139,21 @@ typedef struct
 typedef struct
 {
   UINT4 NSFTs;			/**< total number of SFTs */
+  UINT4 NFreq;			/**< number of frequency bins */
   REAL8 tauFstat;		/**< time to compute one Fstatistic over full data-duration (NSFT atoms) [in seconds]*/
   REAL8 tauTemplate;		/**< total loop time per template, includes candidate-handling (transient stats, toplist etc) */
+  REAL8 tauF0;			/**< Demod timing constant = time per template per SFT */
 
-  /* transient-specific timings */
+  FstatMethodType Fmethod;	/**< Fstat-method used */
+
+  /* ----- transient-specific timings */
   UINT4 tauMin;			/**< shortest transient timescale [s] */
   UINT4 tauMax;			/**< longest transient timescale [s] */
   UINT4 NStart;			/**< number of transient start-time steps in FstatMap matrix */
   UINT4 NTau;			/**< number of transient timescale steps in FstatMap matrix */
-
   REAL8 tauTransFstatMap;	/**< time to compute transient-search Fstatistic-map over {t0, tau} [s]     */
   REAL8 tauTransMarg;		/**< time to marginalize the Fstat-map to compute transient-search Bayes [s] */
+
 } timingInfo_t;
 
 /**
@@ -340,7 +337,7 @@ int compareFstatCandidates_LV ( const void *candA, const void *candB );
 void WriteFStatLog ( LALStatus *status, const CHAR *log_fname, const CHAR *logstr );
 CHAR *XLALGetLogString ( const ConfigVariables *cfg );
 
-int write_TimingInfo_to_fp ( FILE * fp, const timingInfo_t *ti );
+int write_TimingInfo ( const CHAR *timingFile, const timingInfo_t *ti );
 
 /* ---------- scanline window functions ---------- */
 scanlineWindow_t *XLALCreateScanlineWindow ( UINT4 windowWings );
@@ -529,11 +526,7 @@ int main(int argc,char *argv[])
    * and for each value of the frequency-spindown
    */
   templateCounter = 0.0;
-  clock0 = time(NULL);
-
-  REAL8 tic0, tic, toc, timeOfLastProgressUpdate = 0;	// high-precision timing counters
-  timingInfo_t XLAL_INIT_DECL(timing);			// timings of Fstatistic computation, transient Fstat-map, transient Bayes factor
-  timing.NSFTs = GV.NSFTs;
+  clock0 = GETTIME();
 
   /* fixed time-offset between internalRefTime and refTime */
   REAL8 DeltaTRefInt = XLALGPSDiff ( &(GV.internalRefTime), &(GV.searchRegion.refTime) ); // tRefInt - tRef
@@ -549,6 +542,10 @@ int main(int argc,char *argv[])
 	}
       numFreqBins_FBand = (UINT4) ( 1 + floor ( GV.searchRegion.fkdotBand[0] / dFreqResamp ) );
     }
+
+  // ----- prepare timing info
+  REAL8 tic0, tic, toc, timeOfLastProgressUpdate = 0;	// high-precision timing counters
+  timingInfo_t XLAL_INIT_DECL(timing);			// timings of Fstatistic computation, transient Fstat-map, transient Bayes factor
 
   // pointer to Fstat results structure, will be allocated by XLALComputeFstat()
   FstatResults* Fstat_res = NULL;
@@ -591,7 +588,7 @@ int main(int argc,char *argv[])
       templateCounter += 1.0;
       if ( lalDebugLevel && ( (toc - timeOfLastProgressUpdate) > uvar.timerCount) )
         {
-          REAL8 diffSec = time(NULL) - clock0 ;  /* seconds since start of loop*/
+          REAL8 diffSec = GETTIME() - clock0 ;  /* seconds since start of loop*/
           REAL8 taup = diffSec / templateCounter ;
           REAL8 timeLeft = (numTemplates - templateCounter) *  taup;
           LogPrintf (LOG_DEBUG, "Progress: %g/%g = %.2f %% done, Estimated time left: %.0f s\n",
@@ -632,7 +629,7 @@ int main(int argc,char *argv[])
         }
 
         /* sanity check on the result */
-        if ( !finite(thisFCand.twoF) )
+        if ( !isfinite(thisFCand.twoF) )
 	{
 	  LogPrintf(LOG_CRITICAL, "non-finite 2F = %.16g, Fa=(%.16g,%.16g), Fb=(%.16g,%.16g)\n",
 		    thisFCand.twoF, creal(thisFCand.Fa), cimag(thisFCand.Fa), creal(thisFCand.Fb), cimag(thisFCand.Fb) );
@@ -873,31 +870,23 @@ int main(int argc,char *argv[])
   /* if requested: output timings into timing-file */
   if ( uvar.outputTiming )
     {
-      FILE *fpTiming = NULL;
       REAL8 num_templates = numTemplates * numFreqBins_FBand;	// 'templates' now refers to number of 'frequency-bands' in resampling case
 
+      timing.NSFTs = GV.NSFTs;
+      timing.NFreq = (UINT4) ( 1 + floor ( GV.searchRegion.fkdotBand[0] / uvar.dFreq ) );
+
+      timing.Fmethod = GV.Fmethod;
+
       // compute averages:
-      timing.tauFstat         /= num_templates;
-      timing.tauTemplate      /= num_templates;
-      timing.tauTransFstatMap /= num_templates;
-      timing.tauTransMarg     /= num_templates;
+      timing.tauFstat    /= num_templates;
+      timing.tauTemplate /= num_templates;
+      timing.tauF0       =  timing.tauFstat / timing.NSFTs;
 
-      if ( ( fpTiming = fopen ( uvar.outputTiming, "ab" )) == NULL ) {
-        XLALPrintError ("%s: failed to open timing file '%s' for writing \n", __func__, uvar.outputTiming );
-        return COMPUTEFSTATISTIC_ESYS;
-      }
-      /* write header comment line */
-      if ( write_TimingInfo_to_fp ( fpTiming, NULL ) != XLAL_SUCCESS ) {
-        XLALPrintError ("%s: write_TimingInfo_to_fp() failed to write header-comment into file '%s'\n", __func__, uvar.outputTiming );
-        return COMPUTEFSTATISTIC_EXLAL;
-      }
-
-      if ( write_TimingInfo_to_fp ( fpTiming, &timing ) != XLAL_SUCCESS ) {
+      if ( write_TimingInfo ( uvar.outputTiming, &timing ) != XLAL_SUCCESS ) {
         XLALPrintError ("%s: write_TimingInfo_to_fp() failed.\n", __func__ );
         return COMPUTEFSTATISTIC_EXLAL;
       }
 
-      fclose ( fpTiming );
     } /* if timing output requested */
 
   /* ----- if using toplist: sort and write it out to file now ----- */
@@ -1780,7 +1769,7 @@ XLALGetLogString ( const ConfigVariables *cfg )
   XLAL_CHECK_NULL ( (logstr = XLALStringAppend ( logstr, buf )) != NULL, XLAL_EFUNC );
 
   XLAL_CHECK_NULL ( (logstr = XLALStringAppend ( logstr, "%% Started search: " )) != NULL, XLAL_EFUNC );
-  time_t tp = time(NULL);
+  time_t tp = GETTIME();
   XLAL_CHECK_NULL ( (logstr = XLALStringAppend ( logstr, asctime( gmtime( &tp ) ))) != NULL, XLAL_EFUNC );
   XLAL_CHECK_NULL ( (logstr = XLALStringAppend ( logstr, "%% Loaded SFTs: [ " )) != NULL, XLAL_EFUNC );
 
@@ -2397,34 +2386,38 @@ XLALCenterIsLocalMax ( const scanlineWindow_t *scanWindow, const UINT4 rankingSt
 } /* XLALCenterIsLocalMax() */
 
 /**
- * Function to append one timing-info line to open output file.
+ * Function to append one timing-info line to output file.
  *
- * NOTE: called with NULL timing pointer writes header-comment line.
  */
 int
-write_TimingInfo_to_fp ( FILE * fp, const timingInfo_t *ti )
+write_TimingInfo ( const CHAR *fname, const timingInfo_t *ti )
 {
   /* input sanity */
-  if ( !fp ) {
-    XLALPrintError ("%s: invalid NULL input 'fp'\n", __func__ );
+  if ( !fname || !ti ) {
+    XLALPrintError ("%s: invalid NULL input 'fp' | 'ti'\n", __func__ );
     XLAL_ERROR ( XLAL_EINVAL );
   }
 
-  /* if timingInfo == NULL ==> write header comment line */
-  if ( ti == NULL )
+  FILE *fp;
+  if ( (fp = fopen(fname,"rb" )) != NULL )
     {
-      fprintf ( fp, "%%%%NSFTs  costFstat[s]   tauMin[s]  tauMax[s]  NStart    NTau    costTransFstatMap[s]  costTransMarg[s] costTemplate[s]  tauF0 [s]\n");
-      return XLAL_SUCCESS;
-    } /* if ti == NULL */
+      fclose(fp);
+      XLAL_CHECK ( (fp = fopen( fname, "ab" ) ), XLAL_ESYS, "Failed to open existing timing-file '%s' for appending\n", fname );
+    }
+  else
+    {
+      XLAL_CHECK ( (fp = fopen( fname, "wb" ) ), XLAL_ESYS, "Failed to open new timing-file '%s' for writing\n", fname );
+      fprintf ( fp, "%2s%6s %10s %10s %10s %10s %10s\n",
+                "%%", "NSFTs", "NFreq", "tauF[s]", "tauFEff[s]", "tauF0[s]", "FstatMethod" );
+    }
 
-  // compute fundamental timing constant 'tauF0' = F-stat time per template per SFT
-  REAL8 tauF0 = ti->tauTemplate / ti->NSFTs;
-  fprintf ( fp, "% 5d    %10.6e      %6d     %6d    %5d   %5d           %10.6e       %10.6e	%10.6e   %10.6e\n",
-            ti->NSFTs, ti->tauFstat, ti->tauMin, ti->tauMax, ti->NStart, ti->NTau, ti->tauTransFstatMap, ti->tauTransMarg, ti->tauTemplate, tauF0 );
+  fprintf ( fp, "%8d %10d %10.1e %10.1e %10.1e %10s\n",
+            ti->NSFTs, ti->NFreq, ti->tauFstat, ti->tauTemplate, ti->tauF0, XLALGetFstatMethodName(ti->Fmethod) );
 
+  fclose ( fp );
   return XLAL_SUCCESS;
 
-} /* write_TimingInfo_to_fp() */
+} /* write_TimingInfo() */
 
 #ifdef HIGHRES_TIMING
 /**
