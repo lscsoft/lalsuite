@@ -1088,7 +1088,8 @@ LALInferenceDrawApproxPrior(LALInferenceRunState *runState, LALInferenceVariable
   UINT4 analyticTest = 0;
   REAL8 logBackwardJump;
 
-  LALInferenceSetVariable(runState->proposalArgs, LALInferenceCurrentProposalName, &propName);
+  if (LALInferenceCheckVariable(runState->proposalArgs, LALInferenceCurrentProposalName))
+      LALInferenceSetVariable(runState->proposalArgs, LALInferenceCurrentProposalName, &propName);
   LALInferenceCopyVariables(runState->currentParams, proposedParams);
 
   if (runState->likelihood==&LALInferenceCorrelatedAnalyticLogLikelihood ||
