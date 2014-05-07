@@ -1406,6 +1406,11 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg, const UserInput_t *uvar )
 	TRY ( SkySquare2String( status->statusPtr, &(cfg->searchRegion.skyRegionString),
 				cfg->Alpha, cfg->Delta,	uvar->AlphaBand, uvar->DeltaBand), status);
       }
+    else if (!uvar->gridFile)
+      {
+	XLALPrintError ("\nCould not setup searchRegion, have neither skyRegion nor (Alpha, Delta) nor a gridFile!\n\n" );
+	ABORT ( status,  COMPUTEFSTATISTIC_EINPUT,  COMPUTEFSTATISTIC_MSGEINPUT);
+      }
 
     /* spin searchRegion defined by spin-range at reference-time */
     cfg->searchRegion.refTime = refTime;
@@ -2007,6 +2012,13 @@ checkUserInputConsistency (LALStatus *status, const UserInput_t *uvar)
         XLALPrintError ("\nOverdetermined sky-region: only use EITHER (Alpha,Delta) OR skyRegion!\n\n");
         ABORT (status, COMPUTEFSTATISTIC_EINPUT, COMPUTEFSTATISTIC_MSGEINPUT);
       }
+    if ( !haveSkyRegion && !haveAlphaDelta && !useSkyGridFile && !useFullGridFile )
+      {
+        XLALPrintError ("\nUnderdetermined sky-region: use one of (Alpha,Delta), (RA,Dec), skyRegion or a gridFile!\n\n");
+        ABORT (status, COMPUTEFSTATISTIC_EINPUT, COMPUTEFSTATISTIC_MSGEINPUT);
+
+      }
+
     if ( !useMetric && haveMetric)
       {
         LALWarning (status, "\nWARNING: Metric was specified for non-metric grid... will be ignored!\n");
