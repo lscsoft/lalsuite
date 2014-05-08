@@ -41,18 +41,20 @@ extern "C" {
 #include <lal/PulsarDataTypes.h>
 #include <lal/StringVector.h>
 #include <lal/LALConstants.h>
+#include <lal/ConfigFile.h>
 #include <math.h>
 
 /* additional includes */
+typedef struct tagLRstatSetup LRstatSetup;	///< internal storage for setup and pre-computed LRstat quantities
 
 /*---------- exported DEFINES ----------*/
 
 /*---------- exported types ----------*/
 
-/** Type containing multi- and single-detector F statistics and Line Veto statistic */
+/** Type containing multi- and single-detector \f$ \mathcal{F} \f$-statistics and line-robust statistic */
 typedef struct tagLRScomponents {
-  REAL4 TwoF;				/**< multi-detector F-statistic value */
-  REAL4 TwoFX[PULSAR_MAX_DETECTORS];	/**< fixed-size array of single-detector F-statistic values */
+  REAL4 TwoF;				/**< multi-detector \f$ \mathcal{F} \f$-statistic value */
+  REAL4 TwoFX[PULSAR_MAX_DETECTORS];	/**< fixed-size array of single-detector \f$ \mathcal{F} \f$-statistic values */
   UINT4 numDetectors;			/**< number of detectors, numDetectors=0 should make all code ignore the TwoFX field. */
   REAL4 LRS;				/**< multi-detector line-robust statistic value */
 } LRScomponents;
@@ -60,20 +62,46 @@ typedef struct tagLRScomponents {
 /*---------- exported Global variables ----------*/
 
 /*---------- exported prototypes [API] ----------*/
+
+LRstatSetup *
+XLALCreateLRstatSetup ( const UINT4 numDetectors,
+			const REAL4 Fstar0,
+			const REAL4 oLGX[PULSAR_MAX_DETECTORS]
+);
+
+REAL4
+XLALComputeLRstat ( const REAL4 twoF,
+		    const REAL4 twoFX[PULSAR_MAX_DETECTORS],
+		    const LRstatSetup *setup,
+		    const BOOLEAN useAllTerms
+);
+
 REAL4
 XLALComputeLineVeto ( const REAL4 TwoF,
 		      const REAL4Vector *TwoFX,
 		      const REAL8 rhomaxline,
 		      const REAL8Vector *lX,
-		      const BOOLEAN useAllTerms );
+		      const BOOLEAN useAllTerms
+);
 
 REAL4
 XLALComputeLineVetoArray ( const REAL4 TwoF,
-                           const UINT4 numDetectors,
-                           const REAL4 *TwoFX,
-                           const REAL8 logRhoTerm,
-                           const REAL8 *loglX,
-                           const BOOLEAN useAllTerms );
+			   const UINT4 numDetectors,
+			   const REAL4 *TwoFX,
+			   const REAL8 logRhoTerm,
+			   const REAL8 *loglX,
+			   const BOOLEAN useAllTerms
+);
+
+int
+XLALParseLinePriors ( REAL4 *oLGX_REAL4,
+		      const LALStringVector *oLGX_string
+);
+
+int
+XLALParseStringValueToREAL4 ( REAL4 *valREAL4,
+			      const char *valString
+);
 
 // @}
 
