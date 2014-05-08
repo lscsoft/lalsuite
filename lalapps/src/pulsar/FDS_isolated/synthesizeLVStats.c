@@ -167,7 +167,7 @@ int XLALInitUserVars ( UserInput_t *uvar );
 int XLALInitCode ( ConfigVariables *cfg, const UserInput_t *uvar );
 int XLALInitAmplitudePrior ( AmplitudePrior_t *AmpPrior, const UserInput_t *uvar );
 MultiLIGOTimeGPSVector * XLALCreateMultiLIGOTimeGPSVector ( UINT4 numDetectors );
-int write_LV_candidate_to_fp ( FILE *fp, const LVcomponents *LVstat, const PulsarDopplerParams *dopplerParams_in );
+int write_LV_candidate_to_fp ( FILE *fp, const LVcomponents *LVstat, const LALStringVector *IFOs, const InjParams_t *injParams );
 MultiNoiseWeights * XLALComputeConstantMultiNoiseWeightsFromNoiseFloor (const MultiNoiseFloor *multiNoiseFloor, const MultiLIGOTimeGPSVector *multiTS, const UINT4 Tsft );
 
 /* exportable API */
@@ -257,9 +257,9 @@ int main(int argc,char *argv[])
 	  XLAL_ERROR ( XLAL_EIO );
 	}
       fprintf (fpStats, "%s", cfg.logString );		/* write search log comment */
-//       if ( write_LV_candidate_to_fp ( fpStats, NULL, NULL ) != XLAL_SUCCESS ) { /* write header-line comment */
-//         XLAL_ERROR ( XLAL_EFUNC );
-//       }
+      if ( write_LV_candidate_to_fp ( fpStats, NULL, uvar.IFOs, NULL ) != XLAL_SUCCESS ) { /* write header-line comment */
+        XLAL_ERROR ( XLAL_EFUNC );
+      }
     } /* if outputStats */
 
   /* ----- prepare injection params output ----- */
@@ -361,7 +361,7 @@ int main(int argc,char *argv[])
 
 
       /* ----- if requested, output transient-cand statistics */
-      if ( fpStats && write_LV_candidate_to_fp ( fpStats, &lvstats, NULL ) != XLAL_SUCCESS ) {
+      if ( fpStats && write_LV_candidate_to_fp ( fpStats, &lvstats, uvar.IFOs, &injParamsDrawn ) != XLAL_SUCCESS ) {
         XLALPrintError ( "%s: write_transientCandidate_to_fp() failed.\n", __func__ );
         XLAL_ERROR ( XLAL_EFUNC );
       }
@@ -843,60 +843,63 @@ XLALCreateMultiLIGOTimeGPSVector ( UINT4 numDetectors )
 /**
  * Write one line for given LV candidate into output file.
  *
- * NOTE: input dopplerParams can be NULL pointer, then just writes 0 in doppler fields (useful for synthetic LV draws)
+ * NOTE: input LVstat and injParams can be NULL pointers, then writes header comment instead
  *
  */
 int
-write_LV_candidate_to_fp ( FILE *fp, const LVcomponents *LVstat, const PulsarDopplerParams *dopplerParams_in )
+write_LV_candidate_to_fp ( FILE *fp, const LVcomponents *LVstat, const LALStringVector *IFOs, const InjParams_t *injParams )
 {
-  /* sanity checks */
-  if ( !fp ) {
-    XLALPrintError ( "%s: invalid NULL filepointer input.\n", __func__ );
-    XLAL_ERROR ( XLAL_EINVAL );
-  }
-  if ( !LVstat || !LVstat->TwoFX || !LVstat->TwoFX->data ) {
-    XLALPrintError ("\nError in function %s, line %d : Empty LVstat pointer as input parameter!\n\n", __func__, __LINE__);
-    XLAL_ERROR ( XLAL_EFAULT);
-  }
 
-  PulsarDopplerParams XLAL_INIT_DECL(dopplerParams);
-  XLAL_INIT_MEM( dopplerParams.fkdot );
-  if ( dopplerParams_in == NULL ) { /* just write zeros */
-    dopplerParams.Alpha = 0.0;
-    dopplerParams.Delta = 0.0;
-  }
-  else {
-    dopplerParams = *dopplerParams_in;
-  }
+  XLAL_CHECK ( fp, XLAL_EINVAL, "Invalid NULL filepointer input." );
+
+  /* if requested, write header-comment line */
+  if ( !LVstat && !injParams ) {
+
+    char stat_header_string[256] = "";
+    char buf0[256];
+    snprintf ( stat_header_string, sizeof(stat_header_string), "2F      " );
+    for ( UINT4 X = 0; X < IFOs->length ; X ++ ) {
+      snprintf ( buf0, sizeof(buf0), " 2F_%s   ", IFOs->data[X] );
+      UINT4 len1 = strlen ( stat_header_string ) + strlen ( buf0 ) + 1;
+      XLAL_CHECK ( len1 <= sizeof ( stat_header_string ), XLAL_EBADLEN, "Assembled output string too long! (%d > %d)", len1, sizeof(stat_header_string));
+      strcat ( stat_header_string, buf0 );
+    }
+    snprintf ( buf0, sizeof(buf0), " LV" );
+    strcat ( stat_header_string, buf0 );
+    fprintf(fp, "%%%% freq  alpha    delta    f1dot    %s\n", stat_header_string);
+
+    return XLAL_SUCCESS;	/* we're done here */
+
+  } /* if par == NULL */
+
+  /* sanity checks */
+  XLAL_CHECK ( LVstat && LVstat->TwoFX && LVstat->TwoFX->data, XLAL_EFAULT, "Invalid LVstat pointer as input parameter!" );
+  XLAL_CHECK ( injParams, XLAL_EFAULT, "Invalid injParams pointer as input parameter!" );
 
   /* add output-field containing twoF and per-detector sumTwoFX */
   char statString[256] = "";	/* defaults to empty */
   char buf0[256];
-  snprintf ( statString, sizeof(statString), " %.6f", LVstat->TwoF );
-  UINT4 numDet = LVstat->TwoFX->length;
-  UINT4 X;
-  for ( X = 0; X < numDet ; X ++ ) {
+  snprintf ( statString, sizeof(statString), "%.6f", LVstat->TwoF );
+  for ( UINT4 X = 0; X < IFOs->length ; X ++ ) {
     snprintf ( buf0, sizeof(buf0), " %.6f", LVstat->TwoFX->data[X] );
     UINT4 len1 = strlen ( statString ) + strlen ( buf0 ) + 1;
-    if ( len1 > sizeof ( statString ) ) {
-      XLALPrintError ("%s: assembled output string too long! (%d > %d)\n", __func__, len1, sizeof(statString));
-      break;	/* we can't really terminate with error in this function, but at least we avoid crashing */
-    }
+    XLAL_CHECK ( len1 <= sizeof ( statString ), XLAL_EBADLEN, "Assembled output string too long! (%d > %d)", len1, sizeof(statString));
     strcat ( statString, buf0 );
-  } /* for X < numDet */
+  } /* for X < IFOs->length */
   snprintf ( buf0, sizeof(buf0), " %.6f", LVstat->LV );
   strcat ( statString, buf0 );
-  fprintf (fp, "%.16g %.13g %.13g %.13g%s\n",
-		dopplerParams.fkdot[0],
-		dopplerParams.Alpha,
-		dopplerParams.Delta,
-		dopplerParams.fkdot[1],
-		statString
+  fprintf (fp, "%.6f %.6f %.6f %.6f %s\n",
+		0.0, /* legacy field from synthesizeTransientStats: freq, not needed here */
+		injParams->skypos.longitude,
+		injParams->skypos.latitude,
+		0.0,
+		statString /* legacy field from synthesizeTransientStats: f1dot, not needed here */
 	    );
 
   return XLAL_SUCCESS;
 
 } /* write_LV_candidate_to_fp() */
+
 
 /**
  *
