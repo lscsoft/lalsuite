@@ -1976,6 +1976,7 @@ int XLALSimInspiralChooseFDWaveform(
     REAL8 S2z,                              /**< z-component of the dimensionless spin of object 2 */
     REAL8 f_min,                            /**< starting GW frequency (Hz) */
     REAL8 f_max,                            /**< ending GW frequency (Hz) */
+    REAL8 f_ref,                            /**< Reference frequency (Hz) */
     REAL8 r,                                /**< distance of source (m) */
     REAL8 i,                                /**< inclination of source (rad) */
     REAL8 lambda1,                          /**< (tidal deformability of mass 1) / m1^5 (dimensionless) */
@@ -2038,7 +2039,7 @@ int XLALSimInspiralChooseFDWaveform(
                 ABORT_NONZERO_TRANSVERSE_SPINS(waveFlags);
             /* Call the waveform driver routine */
             ret = XLALSimInspiralTaylorF2(hptilde, phiRef, deltaF, m1, m2,
-                    S1z, S2z, f_min, f_max, r, lambda1, lambda2,
+                    S1z, S2z, f_min, f_max, f_ref, r, lambda1, lambda2,
                     XLALSimInspiralGetSpinOrder(waveFlags),
                     XLALSimInspiralGetTidalOrder(waveFlags),
                     phaseO, amplitudeO);

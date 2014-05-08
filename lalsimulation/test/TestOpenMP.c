@@ -82,7 +82,7 @@ int main (int argc, char **argv) {
         XLALSimInspiralTaylorF2(
             &htilde, 0, 1. / 2048,
             1.4 * LAL_MSUN_SI, 1.4 * LAL_MSUN_SI,
-            0, 0, 10, 2048, 1e6 * LAL_PC_SI,
+            0, 0, 10, 0., 2048, 1e6 * LAL_PC_SI,
             0, 0,
             LAL_SIM_INSPIRAL_SPIN_ORDER_0PN,
             LAL_SIM_INSPIRAL_TIDAL_ORDER_0PN,

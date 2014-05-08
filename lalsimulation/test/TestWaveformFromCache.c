@@ -144,8 +144,8 @@ int main(void) {
     // Generate waveform via usual ChooseFDWaveform path
     s1 = clock();
     ret = XLALSimInspiralChooseFDWaveform(&hptilde, &hctilde, phiref1, df,
-            m1, m2, s1x, s1y, s1z, s2x, s2y, s2z, f_min, f_max, dist1, inc1,
-        lambda1, lambda2, NULL, NULL, ampO, phaseO, approxFD);
+            m1, m2, s1x, s1y, s1z, s2x, s2y, s2z, f_min, f_max, f_ref, dist1,
+            inc1, lambda1, lambda2, NULL, NULL, ampO, phaseO, approxFD);
     e1 = clock();
     diff1 = (double) (e1 - s1) / CLOCKS_PER_SEC;
     if( ret == XLAL_FAILURE )
@@ -155,8 +155,8 @@ int main(void) {
     s2 = clock();
     ret = XLALSimInspiralChooseFDWaveformFromCache(&hptildeC, &hctildeC,
             phiref1, df, m1, m2, s1x, s1y, s1z, s2x, s2y, s2z, f_min, f_max,
-            dist1, inc1, lambda1, lambda2, NULL, NULL, ampO, phaseO, approxFD,
-            cache);
+            f_ref, dist1, inc1, lambda1, lambda2, NULL, NULL, ampO, phaseO,
+            approxFD, cache);
     e2 = clock();
     diff2 = (double) (e2 - s2) / CLOCKS_PER_SEC;
     if( ret == XLAL_FAILURE )
@@ -187,8 +187,8 @@ int main(void) {
     // Generate another waveform via ChooseFDWaveform path
     s1 = clock();
     ret = XLALSimInspiralChooseFDWaveform(&hptilde, &hctilde, phiref2, df,
-            m1, m2, s1x, s1y, s1z, s2x, s2y, s2z, f_min, f_max, dist2, inc2,
-        lambda1, lambda2, NULL, NULL, ampO, phaseO, approxFD);
+            m1, m2, s1x, s1y, s1z, s2x, s2y, s2z, f_min, f_max, f_ref, dist2,
+            inc2, lambda1, lambda2, NULL, NULL, ampO, phaseO, approxFD);
     e1 = clock();
     diff1 = (double) (e1 - s1) / CLOCKS_PER_SEC;
     if( ret == XLAL_FAILURE )
@@ -198,8 +198,8 @@ int main(void) {
     s2 = clock();
     ret = XLALSimInspiralChooseFDWaveformFromCache(&hptildeC, &hctildeC,
             phiref2, df, m1, m2, s1x, s1y, s1z, s2x, s2y, s2z, f_min, f_max,
-            dist2, inc2, lambda1, lambda2, NULL, NULL, ampO, phaseO, approxFD,
-            cache);
+            f_ref, dist2, inc2, lambda1, lambda2, NULL, NULL, ampO, phaseO,
+            approxFD, cache);
     e2 = clock();
     diff2 = (double) (e2 - s2) / CLOCKS_PER_SEC;
     if( ret == XLAL_FAILURE )

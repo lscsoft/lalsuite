@@ -430,7 +430,7 @@ int main (int argc , char **argv) {
             XLALSimInspiralChooseFDWaveform(&hptilde, &hctilde, params->phiRef, 
                     params->deltaF, params->m1, params->m2, params->s1x, 
                     params->s1y, params->s1z, params->s2x, params->s2y, 
-                    params->s2z, params->f_min, params->f_max, 
+                    params->s2z, params->f_min, params->f_max, params->fRef, 
                     params->distance, params->inclination, params->lambda1, 
                     params->lambda2, params->waveFlags, params->nonGRparams,
                     params->ampO, params->phaseO, params->approximant);

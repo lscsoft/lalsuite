@@ -989,6 +989,7 @@ int XLALSimInspiralChooseFDWaveform(
     REAL8 S2z,                                  /**< z-component of the dimensionless spin of object 2 */
     REAL8 f_min,                                /**< starting GW frequency (Hz) */
     REAL8 f_max,                                /**< ending GW frequency (Hz) */
+    REAL8 f_ref,                                /**< Reference GW frequency (Hz) */
     REAL8 r,                                    /**< distance of source (m) */
     REAL8 i,                                    /**< inclination of source (rad) */
     REAL8 lambda1,                              /**< (tidal deformability of mass 1) / m1^5 (dimensionless) */
@@ -1725,7 +1726,7 @@ int XLALSimInspiralTaylorF2Phasing(
  */
 int XLALSimInspiralTaylorF2(
 		COMPLEX16FrequencySeries **htilde, /**< FD waveform */
-		const REAL8 phic,               /**< orbital coalescence phase (rad) */
+		const REAL8 phi_ref,            /**< orbital reference phase (rad) */
 		const REAL8 deltaF,             /**< frequency resolution */
 		const REAL8 m1_SI,              /**< mass of companion 1 (kg) */
 		const REAL8 m2_SI,              /**< mass of companion 2 (kg) */
@@ -1733,6 +1734,7 @@ int XLALSimInspiralTaylorF2(
 		const REAL8 S2z,                /**<   z component of the spin of companion 2  */
 		const REAL8 fStart,             /**< start GW frequency (Hz) */
 		const REAL8 fEnd,               /**< highest GW frequency (Hz) of waveform generation - if 0, end at Schwarzschild ISCO */
+        const REAL8 f_ref,              /**< Reference GW frequency at which phi_ref is defined */
 		const REAL8 r,                  /**< distance of source (m) */
 		const REAL8 lambda1,            /**< (tidal deformation of body 1)/(mass of body 1)^5 */
 		const REAL8 lambda2,            /**< (tidal deformation of body 2)/(mass of body 2)^5 */
