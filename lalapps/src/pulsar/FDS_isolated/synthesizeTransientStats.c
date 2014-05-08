@@ -245,7 +245,7 @@ int main(int argc,char *argv[])
 	  XLAL_ERROR ( XLAL_EIO );
 	}
       fprintf (fpInjParams, "%s", cfg.logString );		/* write search log comment */
-      if ( write_InjParams_to_fp ( fpInjParams, NULL, 0 ) != XLAL_SUCCESS ) { /* write header-line comment */
+      if ( write_InjParams_to_fp ( fpInjParams, NULL, 0, 0, 0 ) != XLAL_SUCCESS ) { /* write header-line comment - options outputMmunuX and numDetectors not supported here, so pass defaults to deactivate them */
         XLAL_ERROR ( XLAL_EFUNC );
       }
     } /* if outputInjParams */
@@ -260,14 +260,14 @@ int main(int argc,char *argv[])
 
       /* ----- generate signal random draws from ranges and generate Fstat atoms */
       MultiFstatAtomVector *multiAtoms;
-      multiAtoms = XLALSynthesizeTransientAtoms ( &injParamsDrawn, cfg.skypos, cfg.AmpPrior, cfg.transientInjectRange, cfg.multiDetStates, cfg.SignalOnly, &multiAMBuffer, cfg.rng, -1);
+      multiAtoms = XLALSynthesizeTransientAtoms ( &injParamsDrawn, cfg.skypos, cfg.AmpPrior, cfg.transientInjectRange, cfg.multiDetStates, cfg.SignalOnly, &multiAMBuffer, cfg.rng, -1, NULL ); // options lineX and noise_weights not supported here, so pass defaults to deactivate them
       if ( multiAtoms ==NULL ) {
         LogPrintf ( LOG_CRITICAL, "%s: XLALSynthesizeTransientAtoms() failed with xlalErrno = %d\n", __func__, xlalErrno );
         XLAL_ERROR ( XLAL_EFUNC );
       }
 
       /* ----- if requested, output signal injection parameters into file */
-      if ( fpInjParams && (write_InjParams_to_fp ( fpInjParams, &injParamsDrawn, uvar.dataStartGPS ) != XLAL_SUCCESS ) ) {
+      if ( fpInjParams && (write_InjParams_to_fp ( fpInjParams, &injParamsDrawn, uvar.dataStartGPS, 0, 0 ) ) != XLAL_SUCCESS ) { // options outputMmunuX and numDetectors not supported here, so pass defaults to deactivate them
         XLAL_ERROR ( XLAL_EFUNC );
       } /* if fpInjParams & failure*/
 

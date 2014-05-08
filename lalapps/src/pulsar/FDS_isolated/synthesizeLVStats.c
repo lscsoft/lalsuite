@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2010 Reinhard Prix
+ * Copyright (C) 2011, 2014 David Keitel
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -115,11 +116,14 @@ typedef struct {
   REAL8 LVrho;		/**< prior rho_max_line for LineVeto-statistic */
   LALStringVector* LVlX; /**< Line-to-gauss prior ratios lX for LineVeto statistic */
 
+  LALStringVector* sqrtSX; /**< per-detector noise PSD sqrt(SX) */
+
   INT4 numDraws;	/**< number of random 'draws' to simulate for F-stat and B-stat */
 
   CHAR *outputStats;	/**< output file to write numDraw resulting statistics into */
   CHAR *outputAtoms;	/**< output F-statistic atoms into a file with this basename */
   CHAR *outputInjParams;/**< output injection parameters into this file */
+  BOOLEAN outputMmunuX;	/**< Whether to write the per-IFO antenna pattern matrices into the parameter file */
   BOOLEAN SignalOnly;	/**< dont generate noise-draws: will result in non-random 'signal only' values of F and B */
 
   BOOLEAN useFReg;	/**< use 'regularized' Fstat (1/D)*e^F for marginalization, or 'standard' e^F */
@@ -152,6 +156,8 @@ typedef struct {
   REAL8 LVlogRhoTerm;		/**< For LineVeto statistic: extra term coming from prior normalization: log(rho_max_line^4/70) */
   REAL8Vector *LVloglX;		/**< For LineVeto statistic: vector of logs of line prior ratios lX per detector */
 
+  MultiNoiseWeights *multiNoiseWeights;	/**< per-detector noise weights SX^-1/S^-1, no per-SFT variation (can be NULL for unit weights) */
+
 } ConfigVariables;
 
 /* ---------- local prototypes ---------- */
@@ -162,6 +168,7 @@ int XLALInitCode ( ConfigVariables *cfg, const UserInput_t *uvar );
 int XLALInitAmplitudePrior ( AmplitudePrior_t *AmpPrior, const UserInput_t *uvar );
 MultiLIGOTimeGPSVector * XLALCreateMultiLIGOTimeGPSVector ( UINT4 numDetectors );
 int write_LV_candidate_to_fp ( FILE *fp, const LVcomponents *LVstat, const PulsarDopplerParams *dopplerParams_in );
+MultiNoiseWeights * XLALComputeConstantMultiNoiseWeightsFromNoiseFloor (const MultiNoiseFloor *multiNoiseFloor, const MultiLIGOTimeGPSVector *multiTS, const UINT4 Tsft );
 
 /* exportable API */
 
@@ -226,6 +233,20 @@ int main(int argc,char *argv[])
     loglX = cfg.LVloglX->data;
   }
 
+  /* compare IFO name for line injection with IFO list, find the corresponding index, or throw an error if not found */
+  UINT4 numDetectors = cfg.multiDetStates->length;
+  INT4 lineX = -1;
+  if ( uvar.lineIFO ) {
+    for ( UINT4 X=0; X < numDetectors; X++ ) {
+      if ( strcmp( uvar.lineIFO, uvar.IFOs->data[X] ) == 0 )
+        lineX = X;
+    }
+    if ( lineX == -1 ) {
+      XLALPrintError ("\nError in function %s, line %d : Could not match detector ID \"%s\" for line injection to any detector.\n\n", __func__, __LINE__, uvar.lineIFO);
+      XLAL_ERROR ( XLAL_EFAILED );
+    }
+  }
+
   /* ----- prepare stats output ----- */
   FILE *fpStats = NULL;
   if ( uvar.outputStats )
@@ -251,24 +272,12 @@ int main(int argc,char *argv[])
 	  XLAL_ERROR ( XLAL_EIO );
 	}
       fprintf (fpInjParams, "%s", cfg.logString );		/* write search log comment */
-      if ( write_InjParams_to_fp ( fpInjParams, NULL, 0 ) != XLAL_SUCCESS ) { /* write header-line comment */
+      if ( write_InjParams_to_fp ( fpInjParams, NULL, 0, uvar.outputMmunuX, numDetectors ) != XLAL_SUCCESS ) { /* write header-line comment */
         XLAL_ERROR ( XLAL_EFUNC );
       }
     } /* if outputInjParams */
 
-  /* compare IFO name for line injection with IFO list, find the corresponding index, or throw an error if not found */
-  UINT4 numDetectors = cfg.multiDetStates->length;
-  INT4 lineX = -1;
-  if ( uvar.lineIFO ) {
-    for ( UINT4 X=0; X < numDetectors; X++ ) {
-      if ( strcmp( uvar.lineIFO, uvar.IFOs->data[X] ) == 0 )
-        lineX = X;
-    }
-    if ( lineX == -1 ) {
-      XLALPrintError ("\nError in function %s, line %d : Could not match detector ID \"%s\" for line injection to any detector.\n\n", __func__, __LINE__, uvar.lineIFO);
-      XLAL_ERROR ( XLAL_EFAILED );
-    }
-  }
+  multiAMBuffer_t XLAL_INIT_DECL(multiAMBuffer);      /* prepare AM-buffer */
 
   /* ----- main MC loop over numDraws trials ---------- */
   INT4 i;
@@ -277,14 +286,13 @@ int main(int argc,char *argv[])
       InjParams_t XLAL_INIT_DECL(injParamsDrawn);
 
       /* ----- generate signal random draws from ranges and generate Fstat atoms */
-      multiAMBuffer_t XLAL_INIT_DECL(multiAMBuffer);      /* prepare AM-buffer */
       MultiFstatAtomVector *multiAtoms;
 
-      multiAtoms = XLALSynthesizeTransientAtoms ( &injParamsDrawn, cfg.skypos, cfg.AmpPrior, cfg.transientInjectRange, cfg.multiDetStates, cfg.SignalOnly, &multiAMBuffer, cfg.rng, lineX);
+      multiAtoms = XLALSynthesizeTransientAtoms ( &injParamsDrawn, cfg.skypos, cfg.AmpPrior, cfg.transientInjectRange, cfg.multiDetStates, cfg.SignalOnly, &multiAMBuffer, cfg.rng, lineX, cfg.multiNoiseWeights );
       XLAL_CHECK ( multiAtoms != NULL, XLAL_EFUNC );
 
       /* ----- if requested, output signal injection parameters into file */
-      if ( fpInjParams && (write_InjParams_to_fp ( fpInjParams, &injParamsDrawn, uvar.dataStartGPS ) != XLAL_SUCCESS ) ) {
+      if ( fpInjParams && (write_InjParams_to_fp ( fpInjParams, &injParamsDrawn, uvar.dataStartGPS, uvar.outputMmunuX, numDetectors ) != XLAL_SUCCESS ) ) {
         XLAL_ERROR ( XLAL_EFUNC );
       } /* if fpInjParams & failure*/
 
@@ -361,7 +369,6 @@ int main(int argc,char *argv[])
       /* ----- free Memory */
       XLALDestroyREAL4Vector ( lvstats.TwoFX );
       XLALDestroyMultiFstatAtomVector ( multiAtoms );
-      XLALDestroyMultiAMCoeffs ( multiAMBuffer.multiAM );
 
     } /* for i < numDraws */
 
@@ -371,7 +378,9 @@ int main(int argc,char *argv[])
 
   /* ----- free memory ---------- */
   XLALDestroyMultiDetectorStateSeries ( cfg.multiDetStates );
+  XLALDestroyMultiNoiseWeights ( cfg.multiNoiseWeights );
   XLALDestroyExpLUT();
+  XLALDestroyMultiAMCoeffs ( multiAMBuffer.multiAM );
   /* ----- free amplitude prior pdfs ----- */
   XLALDestroyPDF1D ( cfg.AmpPrior.pdf_h0Nat );
   XLALDestroyPDF1D ( cfg.AmpPrior.pdf_cosi );
@@ -421,6 +430,7 @@ XLALInitUserVars ( UserInput_t *uvar )
   uvar->computeLV = 0;
   uvar->LVrho = 0.0;
   uvar->LVlX = NULL;
+  uvar->sqrtSX = NULL;
   uvar->useFReg = 0;
 
   uvar->fixedh0Nat = -1;
@@ -466,12 +476,15 @@ XLALInitUserVars ( UserInput_t *uvar )
   XLALregREALUserStruct ( LVrho,		 0, UVAR_OPTIONAL, "LineVeto: prior rho_max_line for LineVeto-statistic");
   XLALregLISTUserStruct ( LVlX,			 0, UVAR_OPTIONAL, "LineVeto: line-to-gauss prior ratios lX for different detectors X, length must be numDetectors. Defaults to lX=1,1,..");
 
+  XLALregLISTUserStruct ( sqrtSX,		 0, UVAR_OPTIONAL, "Per-detector noise PSD sqrt(SX). Only ratios relevant to compute noise weights. Defaults to 1,1,...");
+
   XLALregINTUserStruct  ( numDraws,		'N', UVAR_OPTIONAL,"Number of random 'draws' to simulate");
   XLALregINTUserStruct  ( randSeed,		 0, UVAR_OPTIONAL, "GSL random-number generator seed value to use");
 
   XLALregSTRINGUserStruct ( outputStats,	'o', UVAR_OPTIONAL, "Output file containing 'numDraws' random draws of stats");
   XLALregSTRINGUserStruct ( outputAtoms,	 0,  UVAR_OPTIONAL, "Output F-statistic atoms into a file with this basename");
-  XLALregSTRINGUserStruct ( outputInjParams,	 0,  UVAR_OPTIONAL,  "Output injection parameters into this file");
+  XLALregSTRINGUserStruct ( outputInjParams,	 0,  UVAR_OPTIONAL, "Output injection parameters into this file");
+  XLALregBOOLUserStruct ( outputMmunuX,        	 0,  UVAR_OPTIONAL, "Write the per-IFO antenna pattern matrices into the parameter file");
 
   XLALregBOOLUserStruct ( SignalOnly,        	'S', UVAR_OPTIONAL, "Signal only: generate pure signal without noise");
   XLALregBOOLUserStruct ( useFReg,        	 0,  UVAR_OPTIONAL, "use 'regularized' Fstat (1/D)*e^F (if TRUE) for marginalization, or 'standard' e^F (if FALSE)");
@@ -633,6 +646,17 @@ XLALInitCode ( ConfigVariables *cfg, const UserInput_t *uvar )
     } /* for X < numDetectors */
 
   } /* if ( uvar->computeLV && uvar->LVlX ) */
+
+  if ( uvar->sqrtSX ) { /* translate user-input PSD sqrt(SX) to noise-weights (this actually does not care whether they were normalized or not) */
+
+    /* parse input comma-separated list */
+    MultiNoiseFloor multiNoiseFloor;
+    XLAL_CHECK ( XLALParseMultiNoiseFloor ( &multiNoiseFloor, uvar->sqrtSX, numDetectors ) == XLAL_SUCCESS, XLAL_EFUNC );
+
+    /* translate to noise weights */
+    XLAL_CHECK ( ( cfg->multiNoiseWeights = XLALComputeConstantMultiNoiseWeightsFromNoiseFloor ( &multiNoiseFloor, multiTS, uvar->TAtom ) ) != NULL, XLAL_EFUNC );
+
+  } /* if ( uvar->sqrtSX ) */
 
   /* get rid of all temporary memory allocated for this step */
   XLALDestroyEphemerisData ( edat );
@@ -873,3 +897,58 @@ write_LV_candidate_to_fp ( FILE *fp, const LVcomponents *LVstat, const PulsarDop
   return XLAL_SUCCESS;
 
 } /* write_LV_candidate_to_fp() */
+
+/**
+ *
+ */
+MultiNoiseWeights *
+XLALComputeConstantMultiNoiseWeightsFromNoiseFloor ( const MultiNoiseFloor *multiNoiseFloor,	/**< [in] noise floor values sqrt(S) for all detectors */
+                                                     const MultiLIGOTimeGPSVector *multiTS,	/**< [in] timestamps vectors for all detectors, only needed for their lengths */
+                                                     const UINT4 Tsft				/**< [in] length of SFTs in secons, needed for normalization factor Sinv_Tsft */
+                                                     )
+{
+
+  /* check input parameters */
+  XLAL_CHECK_NULL ( multiNoiseFloor != NULL, XLAL_EINVAL );
+  XLAL_CHECK_NULL ( multiTS != NULL, XLAL_EINVAL );
+  UINT4 numDet = multiNoiseFloor->length;
+  XLAL_CHECK_NULL ( numDet == multiTS->length, XLAL_EINVAL, "Inconsistent length between multiNoiseFloor (%d) and multiTimeStamps (%d) structs.\n", numDet, multiTS->length );
+
+  /* create multi noise weights for output */
+  MultiNoiseWeights *multiWeights = NULL;
+  XLAL_CHECK_NULL ( (multiWeights = XLALCalloc(1, sizeof(*multiWeights))) != NULL, XLAL_ENOMEM, "Failed call to XLALCalloc ( 1, %d )\n", sizeof(*multiWeights) );
+  XLAL_CHECK_NULL ( (multiWeights->data = XLALCalloc(numDet, sizeof(*multiWeights->data))) != NULL, XLAL_ENOMEM, "Failed call to XLALCalloc ( %d, %d )\n", numDet, sizeof(*multiWeights->data) );
+  multiWeights->length = numDet;
+
+  REAL8 sqrtSnTotal = 0;
+  UINT4 numSFTsTotal = 0;
+  for (UINT4 X = 0; X < numDet; X++) { /* first loop over detectors: compute total noise floor normalization */
+    sqrtSnTotal  += multiTS->data[X]->length / SQ ( multiNoiseFloor->sqrtSn[X] ); /* actually summing up 1/Sn, not sqrtSn yet */
+    numSFTsTotal += multiTS->data[X]->length;
+  }
+  sqrtSnTotal = sqrt ( numSFTsTotal / sqrtSnTotal ); /* SnTotal = harmonicMean{S_X} assuming per-detector stationarity */
+
+  for (UINT4 X = 0; X < numDet; X++) { /* second loop over detectors: compute the weights */
+
+    /* compute per-IFO weights */
+    REAL8 noise_weight_X = SQ(sqrtSnTotal/multiNoiseFloor->sqrtSn[X]); /* w_Xalpha = S_Xalpha^-1/S^-1 = S / S_Xalpha */
+
+    /* create k^th weights vector */
+    if( ( multiWeights->data[X] = XLALCreateREAL8Vector ( multiTS->data[X]->length ) ) == NULL ) {
+      /* free weights vectors created previously in loop */
+      XLALDestroyMultiNoiseWeights ( multiWeights );
+      XLAL_ERROR_NULL ( XLAL_EFUNC, "Failed to allocate noiseweights for IFO X = %d\n", X );
+    } /* if XLALCreateREAL8Vector() failed */
+
+    /* loop over SFT timestamps and use same weights for all */
+    for ( UINT4 alpha = 0; alpha < multiTS->data[X]->length; alpha++) {
+      multiWeights->data[X]->data[alpha] = noise_weight_X;
+    }
+
+  } /* for X < numDet */
+
+  multiWeights->Sinv_Tsft = Tsft / SQ ( sqrtSnTotal );
+
+  return multiWeights;
+
+} /* XLALComputeConstantMultiNoiseWeightsFromNoiseFloor() */
