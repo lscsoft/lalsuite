@@ -167,7 +167,7 @@ int XLALInitUserVars ( UserInput_t *uvar );
 int XLALInitCode ( ConfigVariables *cfg, const UserInput_t *uvar );
 int XLALInitAmplitudePrior ( AmplitudePrior_t *AmpPrior, const UserInput_t *uvar );
 MultiLIGOTimeGPSVector * XLALCreateMultiLIGOTimeGPSVector ( UINT4 numDetectors );
-int write_LV_candidate_to_fp ( FILE *fp, const LVcomponents *LVstat, const LALStringVector *IFOs, const InjParams_t *injParams );
+int write_LRS_candidate_to_fp ( FILE *fp, const LRScomponents *stats, const LALStringVector *IFOs, const InjParams_t *injParams );
 MultiNoiseWeights * XLALComputeConstantMultiNoiseWeightsFromNoiseFloor (const MultiNoiseFloor *multiNoiseFloor, const MultiLIGOTimeGPSVector *multiTS, const UINT4 Tsft );
 
 /* exportable API */
@@ -257,7 +257,7 @@ int main(int argc,char *argv[])
 	  XLAL_ERROR ( XLAL_EIO );
 	}
       fprintf (fpStats, "%s", cfg.logString );		/* write search log comment */
-      if ( write_LV_candidate_to_fp ( fpStats, NULL, uvar.IFOs, NULL ) != XLAL_SUCCESS ) { /* write header-line comment */
+      if ( write_LRS_candidate_to_fp ( fpStats, NULL, uvar.IFOs, NULL ) != XLAL_SUCCESS ) { /* write header-line comment */
         XLAL_ERROR ( XLAL_EFUNC );
       }
     } /* if outputStats */
@@ -296,24 +296,21 @@ int main(int argc,char *argv[])
         XLAL_ERROR ( XLAL_EFUNC );
       } /* if fpInjParams & failure*/
 
-      /* initialise LVcomponents structure and allocate memory */
-      LVcomponents   lvstats;      /* struct containing multi-detector Fstat, single-detector Fstats, Line Veto stat */
-      if ( (lvstats.TwoFX = XLALCreateREAL4Vector ( numDetectors )) == NULL ) {
-        XLALPrintError ("%s: failed to XLALCreateREAL4Vector( %d )\n", __func__, numDetectors );
-        XLAL_ERROR ( XLAL_EFUNC );
-      }
+      /* initialise LRScomponents structure and allocate memory */
+      LRScomponents XLAL_INIT_DECL(synthStats); /* struct containing multi-detector Fstat, single-detector Fstats, line-robust stat */
+      synthStats.numDetectors = numDetectors;
 
       /* compute F and LV statistics from atoms */
       UINT4 X;
       for ( X=0; X < numDetectors; X++ )    {
-        lvstats.TwoFX->data[X] = XLALComputeFstatFromAtoms ( multiAtoms, X );
+        synthStats.TwoFX[X] = XLALComputeFstatFromAtoms ( multiAtoms, X );
         if ( xlalErrno != 0 ) {
           XLALPrintError ("\nError in function %s, line %d : Failed call to XLALComputeFstatFromAtoms().\n\n", __func__, __LINE__);
           XLAL_ERROR ( XLAL_EFUNC );
         }
       }
 
-      lvstats.TwoF = XLALComputeFstatFromAtoms ( multiAtoms, -1 );
+      synthStats.TwoF = XLALComputeFstatFromAtoms ( multiAtoms, -1 );
       if ( xlalErrno != 0 ) {
         XLALPrintError ("\nError in function %s, line %d : Failed call to XLALComputeFstatFromAtoms().\n\n", __func__, __LINE__);
         XLAL_ERROR ( XLAL_EFUNC );
@@ -321,14 +318,11 @@ int main(int argc,char *argv[])
 
       if ( uvar.computeLV ) {
         BOOLEAN useAllTerms = TRUE;
-        lvstats.LV = XLALComputeLineVetoArray ( (REAL4)lvstats.TwoF, numDetectors, (REAL4*)lvstats.TwoFX->data, cfg.LVlogRhoTerm, loglX, useAllTerms );
+        synthStats.LRS = XLALComputeLineVetoArray ( synthStats.TwoF, numDetectors, synthStats.TwoFX, cfg.LVlogRhoTerm, loglX, useAllTerms );
         if ( xlalErrno != 0 ) {
           XLALPrintError ("\nError in function %s, line %d : Failed call to XLALComputeLineVeto().\n\n", __func__, __LINE__);
           XLAL_ERROR ( XLAL_EFUNC );
         }
-      }
-      else {
-       lvstats.LV = 0.0;
       }
 
       /* ----- if requested, output atoms-vector into file */
@@ -361,13 +355,12 @@ int main(int argc,char *argv[])
 
 
       /* ----- if requested, output transient-cand statistics */
-      if ( fpStats && write_LV_candidate_to_fp ( fpStats, &lvstats, uvar.IFOs, &injParamsDrawn ) != XLAL_SUCCESS ) {
+      if ( fpStats && write_LRS_candidate_to_fp ( fpStats, &synthStats, uvar.IFOs, &injParamsDrawn ) != XLAL_SUCCESS ) {
         XLALPrintError ( "%s: write_transientCandidate_to_fp() failed.\n", __func__ );
         XLAL_ERROR ( XLAL_EFUNC );
       }
 
       /* ----- free Memory */
-      XLALDestroyREAL4Vector ( lvstats.TwoFX );
       XLALDestroyMultiFstatAtomVector ( multiAtoms );
 
     } /* for i < numDraws */
@@ -843,17 +836,17 @@ XLALCreateMultiLIGOTimeGPSVector ( UINT4 numDetectors )
 /**
  * Write one line for given LV candidate into output file.
  *
- * NOTE: input LVstat and injParams can be NULL pointers, then writes header comment instead
+ * NOTE: input stats and injParams can be NULL pointers, then writes header comment instead
  *
  */
 int
-write_LV_candidate_to_fp ( FILE *fp, const LVcomponents *LVstat, const LALStringVector *IFOs, const InjParams_t *injParams )
+write_LRS_candidate_to_fp ( FILE *fp, const LRScomponents *stats, const LALStringVector *IFOs, const InjParams_t *injParams )
 {
 
   XLAL_CHECK ( fp, XLAL_EINVAL, "Invalid NULL filepointer input." );
 
   /* if requested, write header-comment line */
-  if ( !LVstat && !injParams ) {
+  if ( !stats && !injParams ) {
 
     char stat_header_string[256] = "";
     char buf0[256];
@@ -873,20 +866,20 @@ write_LV_candidate_to_fp ( FILE *fp, const LVcomponents *LVstat, const LALString
   } /* if par == NULL */
 
   /* sanity checks */
-  XLAL_CHECK ( LVstat && LVstat->TwoFX && LVstat->TwoFX->data, XLAL_EFAULT, "Invalid LVstat pointer as input parameter!" );
+  XLAL_CHECK ( stats, XLAL_EFAULT, "Invalid stats pointer as input parameter!" );
   XLAL_CHECK ( injParams, XLAL_EFAULT, "Invalid injParams pointer as input parameter!" );
 
   /* add output-field containing twoF and per-detector sumTwoFX */
   char statString[256] = "";	/* defaults to empty */
   char buf0[256];
-  snprintf ( statString, sizeof(statString), "%.6f", LVstat->TwoF );
+  snprintf ( statString, sizeof(statString), "%.6f", stats->TwoF );
   for ( UINT4 X = 0; X < IFOs->length ; X ++ ) {
-    snprintf ( buf0, sizeof(buf0), " %.6f", LVstat->TwoFX->data[X] );
+    snprintf ( buf0, sizeof(buf0), " %.6f", stats->TwoFX[X] );
     UINT4 len1 = strlen ( statString ) + strlen ( buf0 ) + 1;
     XLAL_CHECK ( len1 <= sizeof ( statString ), XLAL_EBADLEN, "Assembled output string too long! (%d > %d)", len1, sizeof(statString));
     strcat ( statString, buf0 );
   } /* for X < IFOs->length */
-  snprintf ( buf0, sizeof(buf0), " %.6f", LVstat->LV );
+  snprintf ( buf0, sizeof(buf0), " %.6f", stats->LRS );
   strcat ( statString, buf0 );
   fprintf (fp, "%.6f %.6f %.6f %.6f %s\n",
 		0.0, /* legacy field from synthesizeTransientStats: freq, not needed here */
@@ -898,7 +891,7 @@ write_LV_candidate_to_fp ( FILE *fp, const LVcomponents *LVstat, const LALString
 
   return XLAL_SUCCESS;
 
-} /* write_LV_candidate_to_fp() */
+} /* write_LRS_candidate_to_fp() */
 
 
 /**

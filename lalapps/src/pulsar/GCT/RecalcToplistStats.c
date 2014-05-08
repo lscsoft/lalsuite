@@ -74,10 +74,6 @@ int XLALComputeExtraStatsForToplist ( toplist_t *list,                          
 
   UINT4 numDetectors = detectorIDs->length;
 
-  /* initialise LVcomponents structure and allocate memory */
-  LVcomponents   XLAL_INIT_DECL(lineVeto); /* struct containing multi-detector Fstat, single-detector Fstats, Line Veto stat */
-  XLAL_CHECK ( (lineVeto.TwoFX = XLALCreateREAL4Vector ( numDetectors )) != NULL, XLAL_EFUNC, "Failed call to XLALCreateREAL4Vector( %d ).", numDetectors );
-
   UINT4 j;
   UINT4 numElements = list->elems;
   /* loop over toplist: re-compute sumTwoF and sumTwoFX for all candidates */
@@ -137,23 +133,24 @@ int XLALComputeExtraStatsForToplist ( toplist_t *list,                          
       }
 
       /*  recalculate multi- and single-IFO Fstats for all segments for this candidate */
-      XLAL_CHECK ( XLALComputeExtraStatsSemiCoherent( &lineVeto, &candidateDopplerParams, Fstat_in_vec, detectorIDs, startTstack, singleSegStatsFile ) == XLAL_SUCCESS, XLAL_EFUNC, "Failed call to XLALComputeLineVetoSemiCoherent()." );
+      LRScomponents XLAL_INIT_DECL(recalcStats); /* struct containing multi-detector Fstat, single-detector Fstats, LR-stat */
+      XLAL_CHECK ( XLALComputeExtraStatsSemiCoherent( &recalcStats, &candidateDopplerParams, Fstat_in_vec, detectorIDs, startTstack, singleSegStatsFile ) == XLAL_SUCCESS, XLAL_EFUNC, "Failed call to XLALComputeExtraStatsSemiCoherent()." );
 
       /* save values in toplist */
       if ( listEntryType == 1 ) {
           GCTtopOutputEntry *elem = elemV;
           elem->numDetectors = numDetectors;
-          elem->sumTwoFrecalc  = lineVeto.TwoF;
+          elem->sumTwoFrecalc  = recalcStats.TwoF;
           for ( X = 0; X < numDetectors; X ++ ) {
-            elem->sumTwoFXrecalc[X]  = lineVeto.TwoFX->data[X];
+            elem->sumTwoFXrecalc[X]  = recalcStats.TwoFX[X];
           }
       }
       else if ( listEntryType == 2 ) {
           HoughFStatOutputEntry *elem = elemV;
 
-          elem->sumTwoF         = lineVeto.TwoF;
+          elem->sumTwoF         = recalcStats.TwoF;
           for ( X = 0; X < numDetectors; X ++ ) {
-            elem->sumTwoFX->data[X]  = lineVeto.TwoFX->data[X];
+            elem->sumTwoFX->data[X]  = recalcStats.TwoFX[X];
           }
       }
 
@@ -164,9 +161,6 @@ int XLALComputeExtraStatsForToplist ( toplist_t *list,                          
 
     } /* for j < numElements */
 
-  /* free temporary structures */
-  XLALDestroyREAL4Vector ( lineVeto.TwoFX );
-
   return (XLAL_SUCCESS);
 
 } /* XLALComputeExtraStatsForToplist() */
@@ -175,7 +169,7 @@ int XLALComputeExtraStatsForToplist ( toplist_t *list,                          
 /**
  * XLAL Function to recalculate single-IFO Fstats for all semicoherent search segments, and use them to compute line-robust statistics
  */
-int XLALComputeExtraStatsSemiCoherent ( LVcomponents *lineVeto,                                 /**< [out] structure containing multi TwoF, single TwoF, LV stat */
+int XLALComputeExtraStatsSemiCoherent ( LRScomponents *recalcStats,                                 /**< [out] structure containing multi TwoF, single TwoF, LRS stat */
 					const PulsarDopplerParams *dopplerParams,               /**< sky position, frequency and fdot for a given candidate */
 					const FstatInputVector *Fstat_in_vec,               /**< vector of input data for XLALComputeFstat() */
 					const LALStringVector *detectorIDs,                     /**< detector name vector with all detectors present in any data sements */
@@ -185,19 +179,12 @@ int XLALComputeExtraStatsSemiCoherent ( LVcomponents *lineVeto,                 
 {
 
   /* check input parameters and report errors */
-  XLAL_CHECK ( lineVeto && lineVeto->TwoFX && lineVeto->TwoFX->data && dopplerParams && Fstat_in_vec && detectorIDs && startTstack, XLAL_EFAULT, "Empty pointer as input parameter." );
+  XLAL_CHECK ( recalcStats && recalcStats->TwoFX && dopplerParams && Fstat_in_vec && detectorIDs && startTstack, XLAL_EFAULT, "Empty pointer as input parameter." );
 
   UINT4 numSegments  = Fstat_in_vec->length;
   UINT4 numDetectors = detectorIDs->length;
 
-  XLAL_CHECK ( lineVeto->TwoFX->length == numDetectors, XLAL_EBADLEN, "Inconsistent number of detectors: TwoFX vector has length %d, while detectorID list contains %d elements.", lineVeto->TwoFX->length, numDetectors );
-
-  /* initialiase LVcomponents structure */
-  lineVeto->TwoF = 0.0;
-  lineVeto->LV   = 0.0;
-  for (UINT4 X = 0; X < numDetectors; X++) {
-    lineVeto->TwoFX->data[X] = 0.0;
-  }
+  recalcStats->numDetectors = numDetectors;
 
   /* variables necessary to catch segments where not all detectors have data */
   INT4 detid = -1; /* count through detector IDs for matching with name strings */
@@ -206,14 +193,19 @@ int XLALComputeExtraStatsSemiCoherent ( LVcomponents *lineVeto,                 
     numSegmentsX[X] = 0;
   }
 
-  REAL4Vector *twoFXseg = NULL;
-  XLAL_CHECK ( ( twoFXseg = XLALCreateREAL4Vector ( numDetectors )) != NULL, XLAL_EFUNC, "Failed call to XLALCreateREAL4Vector( %d ).", numDetectors );
+  REAL4 twoFXseg[numDetectors];
 
   /* internal dopplerParams structure, for extrapolating to correct reftimes for each segment */
   PulsarDopplerParams XLAL_INIT_DECL(dopplerParams_temp); /* struct containing sky position, frequency and fdot for the current candidate */
   dopplerParams_temp.Alpha = dopplerParams->Alpha;
   dopplerParams_temp.Delta = dopplerParams->Delta;
   XLAL_INIT_MEM( dopplerParams_temp.fkdot );
+
+  /* just in case the caller hasn't properly initialized recalcStats, make sure everything is 0 before the loop */
+  recalcStats->TwoF = 0.0;
+  for (UINT4 X = 0; X < numDetectors; X++) {
+    recalcStats->TwoFX[X] = 0.0;
+  }
 
   /* compute single- and multi-detector Fstats for each data segment and sum up */
   UINT4 k;
@@ -223,7 +215,7 @@ int XLALComputeExtraStatsSemiCoherent ( LVcomponents *lineVeto,                 
 
       /* initialize temporary single-IFO Fstat vector */
       for (UINT4 X = 0; X < numDetectors; X++) {
-        twoFXseg->data[X] = 0.0;
+        twoFXseg[X] = 0.0;
       }
 
       /* starttime of segment */
@@ -239,7 +231,7 @@ int XLALComputeExtraStatsSemiCoherent ( LVcomponents *lineVeto,                 
       }
       XLAL_CHECK ( XLALComputeFstat(&Fstat_res, Fstat_in_vec->data[k], &dopplerParams_temp, 0.0, 1, FSTATQ_2F | FSTATQ_2F_PER_DET) == XLAL_SUCCESS, XLAL_EFUNC, "XLALComputeFstat() failed with errno=%d", xlalErrno );
 
-      lineVeto->TwoF  += Fstat_res->twoF[0]; /* sum up multi-detector Fstat for this segment*/
+      recalcStats->TwoF  += Fstat_res->twoF[0]; /* sum up multi-detector Fstat for this segment*/
 
       if ( singleSegStatsFile ) {
         fprintf ( singleSegStatsFile, "%.6f", Fstat_res->twoF[0] );
@@ -266,15 +258,15 @@ int XLALComputeExtraStatsSemiCoherent ( LVcomponents *lineVeto,                 
           }
           numSegmentsX[detid] += 1; /* have to keep this for correct averaging */
 
-          twoFXseg->data[detid] = Fstat_res->twoFPerDet[X][0];
+          twoFXseg[detid] = Fstat_res->twoFPerDet[X][0];
 
-          lineVeto->TwoFX->data[detid]  += twoFXseg->data[detid]; /* sum up single-detector Fstat for this segment*/
+          recalcStats->TwoFX[detid]  += twoFXseg[detid]; /* sum up single-detector Fstat for this segment*/
 
         } /* for X < numDetectorsSeg */
 
       if ( singleSegStatsFile ) {
         for (UINT4 X = 0; X < numDetectors; X++) {
-          fprintf ( singleSegStatsFile, " %.6f",twoFXseg->data[X] );
+          fprintf ( singleSegStatsFile, " %.6f",twoFXseg[X] );
         }
         fprintf ( singleSegStatsFile, "\n" );
       }
@@ -282,12 +274,11 @@ int XLALComputeExtraStatsSemiCoherent ( LVcomponents *lineVeto,                 
     } /* for k < numSegments */
 
   /* get average stats over all segments */
-  lineVeto->TwoF /= numSegments;
+  recalcStats->TwoF /= numSegments;
   for (UINT4 X = 0; X < numDetectors; X++) {
-    lineVeto->TwoFX->data[X] /= numSegmentsX[X];
+    recalcStats->TwoFX[X] /= numSegmentsX[X];
   }
 
-  XLALDestroyREAL4Vector(twoFXseg);
   XLALDestroyFstatResults(Fstat_res);
 
   return(XLAL_SUCCESS);

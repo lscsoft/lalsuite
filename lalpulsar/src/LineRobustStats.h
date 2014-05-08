@@ -50,11 +50,12 @@ extern "C" {
 /*---------- exported types ----------*/
 
 /** Type containing multi- and single-detector F statistics and Line Veto statistic */
-typedef struct tagLVcomponents {
-   REAL4 TwoF;                           /**< multi-detector F-statistic value */
-   REAL4 LV;                             /**< multi-detector Line Veto statistic value */
-   REAL4Vector *TwoFX;                   /**< vector of single-detector F-statistic values */
-} LVcomponents;
+typedef struct tagLRScomponents {
+  REAL4 TwoF;				/**< multi-detector F-statistic value */
+  REAL4 TwoFX[PULSAR_MAX_DETECTORS];	/**< fixed-size array of single-detector F-statistic values */
+  UINT4 numDetectors;			/**< number of detectors, numDetectors=0 should make all code ignore the TwoFX field. */
+  REAL4 LRS;				/**< multi-detector line-robust statistic value */
+} LRScomponents;
 
 /*---------- exported Global variables ----------*/
 

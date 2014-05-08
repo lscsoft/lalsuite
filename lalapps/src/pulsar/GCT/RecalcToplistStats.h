@@ -64,7 +64,7 @@ XLALComputeExtraStatsForToplist ( toplist_t *list,
 				  const char* outputSingleSegStats );
 
 int
-XLALComputeExtraStatsSemiCoherent ( LVcomponents *lineVeto,
+XLALComputeExtraStatsSemiCoherent ( LRScomponents *stats,
 				    const PulsarDopplerParams *dopplerParams,
 				    const FstatInputVector *Fstat_in_vec,
 				    const LALStringVector *detectorIDs,
