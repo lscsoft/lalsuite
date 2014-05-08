@@ -138,6 +138,8 @@ void estimateFAR(farStruct *output, templateStruct *templatestruct, INT4 trials,
 INT4 numericFAR(farStruct *output, templateStruct *templatestruct, REAL8 thresh, REAL4Vector *ffplanenoise, REAL4Vector *fbinaveratios, inputParamsStruct *inputParams, INT4 method)
 {
 
+   XLAL_CHECK( output != NULL && templatestruct != NULL && ffplanenoise != NULL && fbinaveratios != NULL && inputParams != NULL, XLAL_EINVAL );
+
    INT4 ii;
    INT4 errcode = 0;
 
@@ -168,11 +170,8 @@ INT4 numericFAR(farStruct *output, templateStruct *templatestruct, REAL8 thresh,
 
    //Start off with an initial guess and set the solver at the beginning
    REAL8 Rlow = 0.0, Rhigh = 10000.0, root = 400.0;
-   if (method != 0) {
-      XLAL_CHECK( gsl_root_fsolver_set(s1, &F, Rlow, Rhigh) == GSL_SUCCESS, XLAL_EFUNC );
-   } else {
-      XLAL_CHECK( gsl_root_fdfsolver_set(s0, &FDF, root) == GSL_SUCCESS, XLAL_EFUNC );
-   }
+   if (method != 0) XLAL_CHECK( gsl_root_fsolver_set(s1, &F, Rlow, Rhigh) == GSL_SUCCESS, XLAL_EFUNC );
+   else XLAL_CHECK( gsl_root_fdfsolver_set(s0, &FDF, root) == GSL_SUCCESS, XLAL_EFUNC );
 
    //And now find the root
    ii = 0;
@@ -250,13 +249,9 @@ REAL8 gsl_probR(REAL8 R, void *param)
 
    REAL8 prob = (probR(pars->templatestruct, pars->ffplanenoise, pars->fbinaveratios, R, pars->inputParams, &errcode1) + probR(pars->templatestruct, pars->ffplanenoise, pars->fbinaveratios, R1, pars->inputParams, &errcode2) + probR(pars->templatestruct, pars->ffplanenoise, pars->fbinaveratios, R2, pars->inputParams, &errcode3))/3.0;
 
-   if (errcode1!=0) {
-      pars->errcode = errcode1;
-   } else if (errcode2!=0) {
-      pars->errcode = errcode2;
-   } else if (errcode3!=0) {
-      pars->errcode = errcode3;
-   }
+   if (errcode1!=0) pars->errcode = errcode1;
+   else if (errcode2!=0) pars->errcode = errcode2;
+   else if (errcode3!=0) pars->errcode = errcode3;
 
    REAL8 returnval = prob - log10(pars->threshold);
 
@@ -315,6 +310,8 @@ void gsl_probRandDprobRdR(REAL8 R, void *param, REAL8 *probabilityR, REAL8 *dpro
 REAL8 probR(templateStruct *templatestruct, REAL4Vector *ffplanenoise, REAL4Vector *fbinaveratios, REAL8 R, inputParamsStruct *params, INT4 *errcode)
 {
 
+   XLAL_CHECK_REAL8( templatestruct != NULL && ffplanenoise != NULL && fbinaveratios != NULL && params != NULL, XLAL_EINVAL );
+
    INT4 ii = 0;
    REAL8 prob = 0.0;
    REAL8 sumwsq = 0.0;
@@ -329,8 +326,8 @@ REAL8 probR(templateStruct *templatestruct, REAL4Vector *ffplanenoise, REAL4Vect
    }
 
    REAL8Vector *newweights = NULL;
-   XLAL_CHECK_REAL8( (newweights = XLALCreateREAL8Vector(numweights)) != NULL, XLAL_EFUNC );
    INT4Vector *sorting = NULL;
+   XLAL_CHECK_REAL8( (newweights = XLALCreateREAL8Vector(numweights)) != NULL, XLAL_EFUNC );
    XLAL_CHECK_REAL8( (sorting = XLALCreateINT4Vector(numweights)) != NULL, XLAL_EFUNC );
 
    REAL8 Rpr = R;
@@ -345,7 +342,7 @@ REAL8 probR(templateStruct *templatestruct, REAL4Vector *ffplanenoise, REAL4Vect
    vars.sorting = sorting;
    vars.dofs = NULL;
    vars.noncentrality = NULL;
-   vars.ndtsrt = 0;           //Set because we do the sorting outside of Davies' algorithm with qsort
+   vars.arrayNotSorted = 0;           //Set because we do the sorting outside of Davies' algorithm with qsort
    vars.lim = 50000000;
    vars.c = Rpr;
    vars.useSSE = params->useSSE;
@@ -475,14 +472,11 @@ void resetTemplateStruct(templateStruct *templatestruct)
 //Free the memory of a template structure
 void free_templateStruct(templateStruct *nameoftemplate)
 {
-
    XLALDestroyREAL4Vector(nameoftemplate->templatedata);
    XLALDestroyINT4Vector(nameoftemplate->pixellocations);
    XLALDestroyINT4Vector(nameoftemplate->firstfftfrequenciesofpixels);
    XLALDestroyINT4Vector(nameoftemplate->secondfftfrequencies);
-
    XLALFree((templateStruct*)nameoftemplate);
-
 } /* free_templateStruct() */
 
 
@@ -494,6 +488,8 @@ void free_templateStruct(templateStruct *nameoftemplate)
 // exp(log(eq. 18)) = exp(log(4*pi*sigma^2)-sigma^2*omegapr^2)*(1+cos(delta*omegapr))*exp(log(1-cos(N*P*omegapr))-log(P*omegapr))
 INT4 makeTemplateGaussians(templateStruct *output, candidate input, inputParamsStruct *params, INT4 numfbins, INT4 numfprbins)
 {
+
+   XLAL_CHECK( output != NULL && params != NULL, XLAL_EINVAL );
 
    //Set data for output template
    output->f0 = input.fsig;
@@ -535,9 +531,7 @@ INT4 makeTemplateGaussians(templateStruct *output, candidate input, inputParamsS
    //Doing the precomputation of the useful values
    if (params->useSSE) {
       XLAL_CHECK( sseScaleREAL4Vector(omegapr, fpr, (REAL4)LAL_TWOPI) == XLAL_SUCCESS, XLAL_EFUNC );
-
       XLAL_CHECK( sseSSVectorMultiply(omegapr_squared, omegapr, omegapr) == XLAL_SUCCESS, XLAL_EFUNC );
-
       for (ii=0; ii<(INT4)fpr->length; ii++) {
          REAL4 cos_omegapr_times_period = cosf((REAL4)(input.period*omegapr->data[ii]));
          REAL4 cos_N_times_omegapr_times_period = cosf((REAL4)(N*input.period*omegapr->data[ii]));
@@ -546,9 +540,7 @@ INT4 makeTemplateGaussians(templateStruct *output, candidate input, inputParamsS
       }
    } else if (params->useAVX) {
       XLAL_CHECK( avxScaleREAL4Vector(omegapr, fpr, (REAL4)LAL_TWOPI) == XLAL_SUCCESS, XLAL_EFUNC );
-
       XLAL_CHECK( avxSSVectorMultiply(omegapr_squared, omegapr, omegapr) == XLAL_SUCCESS, XLAL_EFUNC );
-
       for (ii=0; ii<(INT4)fpr->length; ii++) {
          REAL4 cos_omegapr_times_period = cosf((REAL4)(input.period*omegapr->data[ii]));
          REAL4 cos_N_times_omegapr_times_period = cosf((REAL4)(N*input.period*omegapr->data[ii]));
@@ -567,7 +559,6 @@ INT4 makeTemplateGaussians(templateStruct *output, candidate input, inputParamsS
    }
 
    //Scale used for "spillover" into bins outside of phi_actual
-   //REAL4 k = input.moddepth*params->Tcoh;    //amplitude of modulation in units of bins
    REAL4Vector *scale = NULL;
    XLAL_CHECK( (scale = XLALCreateREAL4Vector(numfbins)) != NULL, XLAL_EFUNC );      //the scaling factor
    INT4 bin0 = (INT4)round(params->fmin*params->Tcoh - params->dfmax*params->Tcoh - 6.0);      //bin number of fmin
@@ -600,8 +591,8 @@ INT4 makeTemplateGaussians(templateStruct *output, candidate input, inputParamsS
       //if the velocity approaches zero, the sigma calculation will diverge (which it should do) but this is bad numerically, so we cap it
       if (sigbinvelocity<1.0e-4) sigbinvelocity = 1.0e-4;
 
-      REAL4 sigma = 0.5*params->Tcoh * (0.5346 * powf(sigbinvelocity, -1.0213f));   //Derived fit from simulation
-      //REAL4 sigma = 0.5*params->Tcoh * (0.5979 / (sigbinvelocity - 3.2895e-5));  //Could think about using this fit in the future
+      //REAL4 sigma = 0.5*params->Tcoh * (0.5346 * powf(sigbinvelocity, -1.0213f));   //Derived fit from simulation
+      REAL4 sigma = 0.5*params->Tcoh * (0.5979 / (sigbinvelocity - 3.2895e-5));  //Could think about using this fit in the future
 
       for (jj=0; jj<(INT4)sigmas->length; jj++) {
          weightvals->data[ii*sigmas->length + jj] = sqsincxoverxsqminusone(sigbin-(bin0+jj+fnumstart));
@@ -751,6 +742,8 @@ INT4 makeTemplateGaussians(templateStruct *output, candidate input, inputParamsS
 INT4 makeTemplate(templateStruct *output, candidate input, inputParamsStruct *params, INT4Vector *sftexist, REAL4FFTPlan *plan)
 {
 
+   XLAL_CHECK( output != NULL && params != NULL && sftexist != NULL && plan != NULL, XLAL_EINVAL );
+
    //Set data for output template
    output->f0 = input.fsig;
    output->period = input.period;
@@ -765,8 +758,8 @@ INT4 makeTemplate(templateStruct *output, candidate input, inputParamsStruct *pa
    numffts = (INT4)sftexist->length;   //Number of FFTs
 
    REAL4Vector *psd1 = NULL;
-   XLAL_CHECK( (psd1 = XLALCreateREAL4Vector(numfbins*numffts)) != NULL, XLAL_EFUNC );
    REAL8Vector *freqbins = NULL, *bindiffs = NULL;
+   XLAL_CHECK( (psd1 = XLALCreateREAL4Vector(numfbins*numffts)) != NULL, XLAL_EFUNC );
    XLAL_CHECK( (freqbins = XLALCreateREAL8Vector(numfbins)) != NULL, XLAL_EFUNC );
    XLAL_CHECK( (bindiffs = XLALCreateREAL8Vector(numfbins)) != NULL, XLAL_EFUNC );
 
@@ -798,9 +791,9 @@ INT4 makeTemplate(templateStruct *output, candidate input, inputParamsStruct *pa
 
    //Do the second FFT
    REAL4Vector *x = NULL, *psd = NULL;
+   REAL4Window *win = NULL;
    XLAL_CHECK( (x = XLALCreateREAL4Vector(numffts)) != NULL, XLAL_EFUNC );
    XLAL_CHECK( (psd = XLALCreateREAL4Vector((INT4)floor(x->length*0.5)+1)) != NULL, XLAL_EFUNC );
-   REAL4Window *win = NULL;
    XLAL_CHECK( (win = XLALCreateHannREAL4Window(x->length)) != NULL, XLAL_EFUNC );
    REAL8 winFactor = 8.0/3.0;
    REAL8 secPSDfactor = winFactor/x->length*0.5*params->Tcoh;
@@ -923,6 +916,8 @@ INT4 analyzeOneTemplate(candidate *output, candidate *input, ffdataStruct *ffdat
 INT4 bruteForceTemplateSearch(candidate *output, candidate input, REAL8 fminimum, REAL8 fmaximum, INT4 numfsteps, INT4 numperiodslonger, INT4 numperiodsshorter, REAL8 dfmin, REAL8 dfmax, INT4 numdfsteps, inputParamsStruct *params, REAL4Vector *ffdata, INT4Vector *sftexist, REAL4Vector *aveNoise, REAL4Vector *aveTFnoisePerFbinRatio, REAL4FFTPlan *secondFFTplan, INT4 useExactTemplates)
 {
 
+   XLAL_CHECK( output != NULL && params != NULL && sftexist != NULL && aveNoise != NULL && aveTFnoisePerFbinRatio != NULL && secondFFTplan != NULL, XLAL_EINVAL );
+
    INT4 ii, jj, kk;
    REAL8Vector *trialf, *trialb, *trialp;
    REAL8 fstepsize, dfstepsize;
@@ -1044,11 +1039,8 @@ INT4 bruteForceTemplateSearch(candidate *output, candidate input, REAL8 fminimum
    trialb = NULL;
    trialp = NULL;
 
-   if (bestProb==0.0) {
-      loadCandidateData(output, input.fsig, input.period, input.moddepth, input.ra, input.dec, input.stat, input.h0, input.prob, input.proberrcode, input.normalization);
-   } else {
-      loadCandidateData(output, bestf, bestp, bestdf, input.ra, input.dec, bestR, besth0, bestProb, bestproberrcode, input.normalization);
-   }
+   if (bestProb==0.0) loadCandidateData(output, input.fsig, input.period, input.moddepth, input.ra, input.dec, input.stat, input.h0, input.prob, input.proberrcode, input.normalization);
+   else loadCandidateData(output, bestf, bestp, bestdf, input.ra, input.dec, bestR, besth0, bestProb, bestproberrcode, input.normalization);
 
    return XLAL_SUCCESS;
 
@@ -1059,6 +1051,8 @@ INT4 bruteForceTemplateSearch(candidate *output, candidate input, REAL8 fminimum
 /// Testing in progress
 INT4 templateSearch_scox1Style(candidateVector **output, REAL8 fminimum, REAL8 fspan, REAL8 period, REAL8 asini, inputParamsStruct *params, REAL4Vector *ffdata, INT4Vector *sftexist, REAL4Vector *aveNoise, REAL4Vector *aveTFnoisePerFbinRatio, REAL4FFTPlan *secondFFTplan, INT4 useExactTemplates)
 {
+
+   XLAL_CHECK( params != NULL && ffdata != NULL && sftexist != NULL && aveNoise != NULL && aveTFnoisePerFbinRatio != NULL && secondFFTplan != NULL, XLAL_EINVAL );
 
    INT4 ii;
    REAL8Vector *trialf;
@@ -1118,7 +1112,6 @@ INT4 templateSearch_scox1Style(candidateVector **output, REAL8 fminimum, REAL8 f
 void insertionSort_template(templateStruct *output, REAL4 weight, INT4 pixelloc, INT4 firstfftfreq, INT4 secfftfreq)
 {
 
-   //INT4 ii;
    INT4 insertionpoint = (INT4)output->templatedata->length-1;
    INT4 numbertomove = 0;
    while (insertionpoint > 0 && weight > output->templatedata->data[insertionpoint-1]) {
@@ -1126,12 +1119,6 @@ void insertionSort_template(templateStruct *output, REAL4 weight, INT4 pixelloc,
       numbertomove++;
    }
 
-   /* for (ii=output->templatedata->length-1; ii>insertionpoint; ii--) {
-      output->templatedata->data[ii] = output->templatedata->data[ii-1];
-      output->pixellocations->data[ii] = output->pixellocations->data[ii-1];
-      output->firstfftfrequenciesofpixels->data[ii] = output->firstfftfrequenciesofpixels->data[ii-1];
-      output->secondfftfrequencies->data[ii] = output->secondfftfrequencies->data[ii-1];
-   } */
    if (insertionpoint<(INT4)output->templatedata->length-1) {
       memmove(&(output->templatedata->data[insertionpoint+1]), &(output->templatedata->data[insertionpoint]), sizeof(REAL4)*numbertomove);
       memmove(&(output->pixellocations->data[insertionpoint+1]), &(output->pixellocations->data[insertionpoint]), sizeof(INT4)*numbertomove);
@@ -1152,20 +1139,15 @@ void insertionSort_template(templateStruct *output, REAL4 weight, INT4 pixelloc,
 // Calculates y = sin(pi*x)/(pi*x)/(x^2-1)
 REAL8 sincxoverxsqminusone(REAL8 x)
 {
-
    if (fabs(x*x-1.0)<1.0e-8) return -0.5;
    if (fabs(x)<1.0e-8) return -1.0;
-
    REAL8 pix = LAL_PI*x;
    return sin(pix)/(pix*(x*x-1.0));
-
 } /* sincxoverxsqminusone() */
 REAL8 sqsincxoverxsqminusone(REAL8 x)
 {
-
    REAL8 val = sincxoverxsqminusone(x);
    return val*val;
-
 } /* sqsincxoverxsqminusone() */
 
 

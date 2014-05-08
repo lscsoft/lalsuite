@@ -100,6 +100,8 @@ void loadCandidateData(candidate* output, REAL8 fsig, REAL8 period, REAL8 moddep
 INT4 clusterCandidates(candidateVector **output, candidateVector *input, ffdataStruct *ffdata, inputParamsStruct *params, REAL4Vector *ffplanenoise, REAL4Vector *fbinaveratios, INT4Vector *sftexist, INT4 option)
 {
 
+   XLAL_CHECK( input != NULL && ffdata != NULL && params != NULL && ffplanenoise != NULL && fbinaveratios != NULL && sftexist != NULL, XLAL_EINVAL );
+
    INT4 ii, jj, kk, loc, loc2, numcandoutlist;
    REAL8 avefsig, aveperiod, mindf, maxdf;
 
@@ -191,20 +193,10 @@ INT4 clusterCandidates(candidateVector **output, candidateVector *input, ffdataS
 
             //find best candidate moddepth
             fprintf(stderr,"Finding best modulation depth with number to try %d\n",loc2);
-            avefsig = 0.0;
-            aveperiod = 0.0;
-            mindf = 0.0;
-            maxdf = 0.0;
-            REAL8 weight = 0.0;
-            REAL8 bestmoddepth = 0.0;
-            REAL8 bestR = 0.0;
-            REAL8 besth0 = 0.0;
-            REAL8 bestProb = 0.0;
+            avefsig = 0.0, aveperiod = 0.0, mindf = 0.0, maxdf = 0.0;
+            REAL8 weight = 0.0, bestmoddepth = 0.0, bestR = 0.0, besth0 = 0.0, bestProb = 0.0;
             INT4 bestproberrcode = 0;
             for (kk=0; kk<loc2; kk++) {
-               /* avefsig += input->data[locs2->data[kk]].fsig*(-input->data[locs2->data[kk]].prob);
-               aveperiod += input->data[locs2->data[kk]].period*(-input->data[locs2->data[kk]].prob);
-               weight += -input->data[locs2->data[kk]].prob; */
                avefsig += input->data[locs2->data[kk]].fsig*(input->data[locs2->data[kk]].prob*input->data[locs2->data[kk]].prob);
                aveperiod += input->data[locs2->data[kk]].period*(input->data[locs2->data[kk]].prob*input->data[locs2->data[kk]].prob);
                weight += input->data[locs2->data[kk]].prob*input->data[locs2->data[kk]].prob;
@@ -244,10 +236,8 @@ INT4 clusterCandidates(candidateVector **output, candidateVector *input, ffdataS
                      XLAL_CHECK( xlalErrno == 0, XLAL_EFUNC );
                      REAL8 prob = probR(template, ffplanenoise, fbinaveratios, R, params, &proberrcode);
                      XLAL_CHECK( xlalErrno == 0, XLAL_EFUNC );
-                     //REAL8 h0 = 2.7426*pow(R/(params->Tcoh*params->Tobs),0.25);
 
                      if (prob < bestProb) {
-                        //besth0 = h0;
                         bestmoddepth = mindf + kk*0.5/params->Tcoh;
                         bestR = R;
                         bestProb = prob;
@@ -310,6 +300,8 @@ INT4 clusterCandidates(candidateVector **output, candidateVector *input, ffdataS
 INT4 testIHScandidates(candidateVector **output, candidateVector *ihsCandidates, ffdataStruct *ffdata, REAL4Vector *aveNoise, REAL4Vector *aveTFnoisePerFbinRatio, REAL4 alpha, REAL4 delta, inputParamsStruct *params)
 {
 
+   XLAL_CHECK( ihsCandidates != NULL && ffdata != NULL && aveNoise != NULL && aveTFnoisePerFbinRatio != NULL && params != NULL, XLAL_EINVAL );
+
    //R probability calculator errorcode
    INT4 proberrcode = 0;
 
@@ -339,30 +331,6 @@ INT4 testIHScandidates(candidateVector **output, candidateVector *ihsCandidates,
             if (ihsCandidates->data[ii].period>=fmax(2.0*3600.0, minPeriod(ihsCandidates->data[ii].moddepth, params->Tcoh)) && ihsCandidates->data[ii].period<=(0.2*params->Tobs)) {
                //Make a Gaussian train template
                XLAL_CHECK( makeTemplateGaussians(template, ihsCandidates->data[ii], params, ffdata->numfbins, ffdata->numfprbins) == XLAL_SUCCESS, XLAL_EFUNC );
-
-               //remove this--for testing purposes only
-               //for (jj=0; jj<(INT4)template->templatedata->length; jj++) fprintf(stderr, "%g %d %d %d %g\n", template->templatedata->data[jj], template->pixellocations->data[jj], template->firstfftfrequenciesofpixels->data[jj], template->secondfftfrequencies->data[jj], aveNoise->data[template->secondfftfrequencies->data[jj]]*aveTFnoisePerFbinRatio->data[template->firstfftfrequenciesofpixels->data[jj]]);
-               /* for (jj=0; jj<50; jj++) {
-                  REAL8 probval = probR(template, aveNoise, aveTFnoisePerFbinRatio, 0.3*jj-2.0, inputParams, &proberrcode);
-                  fprintf(stderr, "%f %g\n", 0.3*jj-2.0, pow(10.0, probval));
-               } */
-               /* resetTemplateStruct(template);
-               REAL4FFTPlan *FFTplan = XLALCreateForwardREAL4FFTPlan(ffdata->numffts, inputParams->FFTplanFlag);
-               INT4Vector *sftexist = XLALCreateINT4Vector(ffdata->numffts);
-               for (jj=0; jj<(INT4)ffdata->numffts; jj++) sftexist->data[jj] = 1;
-               makeTemplate(template, ihsCandidates->data[ii], inputParams, sftexist, FFTplan);
-               if (xlalErrno!=0) {
-                  fprintf(stderr,"%s: makeTemplate() failed.\n", __func__);
-                  XLAL_ERROR(XLAL_EFUNC);
-               }
-               fprintf(stderr, "\n"); */
-               //for (jj=0; jj<(INT4)template->templatedata->length; jj++) fprintf(stderr, "%g %d %d %d %g\n", template->templatedata->data[jj], template->pixellocations->data[jj], template->firstfftfrequenciesofpixels->data[jj], template->secondfftfrequencies->data[jj], aveNoise->data[template->secondfftfrequencies->data[jj]]*aveTFnoisePerFbinRatio->data[template->firstfftfrequenciesofpixels->data[jj]]);
-               /* for (jj=0; jj<50; jj++) {
-                  REAL8 probval = probR(template, aveNoise, aveTFnoisePerFbinRatio, 0.75*jj-8.0, inputParams, &proberrcode);
-                  fprintf(stderr, "%f %g\n", 0.75*jj-8.0, pow(10.0, probval));
-               } */
-               /* XLALDestroyREAL4FFTPlan(FFTplan);
-               XLALDestroyINT4Vector(sftexist); */
 
                //Estimate the FAR for these bin weights if the option was given
                if (params->calcRthreshold) XLAL_CHECK( numericFAR(farval, template, params->templatefar, aveNoise, aveTFnoisePerFbinRatio, params, params->rootFindingMethod) == XLAL_SUCCESS, XLAL_EFUNC );
@@ -521,6 +489,8 @@ candidateVector * keepMostSignificantCandidates(candidateVector *input, inputPar
 REAL8 calculateR(REAL4Vector *ffdata, templateStruct *templatestruct, REAL4Vector *noise, REAL4Vector *fbinaveratios)
 {
 
+   XLAL_CHECK_REAL8( ffdata != NULL && templatestruct != NULL && noise != NULL && fbinaveratios != NULL, XLAL_EINVAL );
+
    INT4 ii;
 
    REAL8 sumofsqweights = 0.0;
@@ -544,11 +514,8 @@ REAL8 calculateR(REAL4Vector *ffdata, templateStruct *templatestruct, REAL4Vecto
 // Calculates maximum modulation depth allowed
 REAL8 maxModDepth(REAL8 period, REAL8 cohtime)
 {
-
    REAL8 maxB = 0.5*period/(cohtime*cohtime);
-
    return maxB;
-
 } /* maxModDepth() */
 
 
@@ -556,9 +523,6 @@ REAL8 maxModDepth(REAL8 period, REAL8 cohtime)
 // Calculates minimum period allowable for modulation depth and Tcoh
 REAL8 minPeriod(REAL8 moddepth, REAL8 cohtime)
 {
-
    REAL8 minP = 2.0*moddepth*cohtime*cohtime;
-
    return minP;
-
 } /* minPeriod() */

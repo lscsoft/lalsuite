@@ -104,34 +104,19 @@ void reset_UpperLimitStruct(UpperLimit *ul)
 //Free an upperLimitStruct
 void free_UpperLimitStruct(UpperLimit *ul)
 {
-
-   if (ul->fsig) {
-      XLALDestroyREAL8Vector(ul->fsig);
-      ul->fsig = NULL;
-   }
-   if (ul->period) {
-      XLALDestroyREAL8Vector(ul->period);
-      ul->period = NULL;
-   }
-   if (ul->moddepth) {
-      XLALDestroyREAL8Vector(ul->moddepth);
-      ul->moddepth = NULL;
-   }
-   if (ul->ULval) {
-      XLALDestroyREAL8Vector(ul->ULval);
-      ul->ULval = NULL;
-   }
-   if (ul->effSNRval) {
-      XLALDestroyREAL8Vector(ul->effSNRval);
-      ul->effSNRval = NULL;
-   }
-
+   if (ul->fsig) XLALDestroyREAL8Vector(ul->fsig);
+   if (ul->period) XLALDestroyREAL8Vector(ul->period);
+   if (ul->moddepth) XLALDestroyREAL8Vector(ul->moddepth);
+   if (ul->ULval) XLALDestroyREAL8Vector(ul->ULval);
+   if (ul->effSNRval) XLALDestroyREAL8Vector(ul->effSNRval);
 } /* free_UpperLimitStruct() */
 
 
 //Determine the 95% confidence level upper limit at a particular sky location from the loudest IHS value
 INT4 skypoint95UL(UpperLimit *ul, inputParamsStruct *params, ffdataStruct *ffdata, ihsMaximaStruct *ihsmaxima, ihsfarStruct *ihsfar, REAL4Vector *fbinavgs)
 {
+
+   XLAL_CHECK( ul != NULL && params != NULL && ffdata != NULL && ihsmaxima != NULL && ihsfar!= NULL && fbinavgs != NULL, XLAL_EINVAL );
 
    INT4 ii, jj, kk, ULdetermined = 0;
 
@@ -202,9 +187,6 @@ INT4 skypoint95UL(UpperLimit *ul, inputParamsStruct *params, ffdataStruct *ffdat
             jjbinofloudestoutlier = jj;
          }
       } /* for jj < ffdata->numfbins-(ii-1) */
-
-      //comment or remove this
-      //fprintf(stderr, "%f %f %.6f %.6f %d %d\n", params->fmin + (0.5*(ii-1.0) + jjbinofloudestoutlier)/params->Tcoh, 0.5*(ii-1.0)/params->Tcoh, loudestoutliernoise, loudestoutlierminusnoise, locationofloudestoutlier, jjbinofloudestoutlier);
 
       if (locationofloudestoutlier!=-1) {
          //We do a root finding algorithm to find the delta value required so that only 5% of a non-central chi-square

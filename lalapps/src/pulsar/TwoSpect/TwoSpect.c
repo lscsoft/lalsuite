@@ -2101,9 +2101,9 @@ INT4 makeSecondFFT(ffdataStruct *output, REAL4Vector *tfdata, REAL4FFTPlan *plan
 
    //Do the second FFT
    REAL4Vector *x = NULL, *psd = NULL;
+   REAL4Window *win = NULL;
    XLAL_CHECK( (x = XLALCreateREAL4Vector(output->numffts)) != NULL, XLAL_EFUNC );
    XLAL_CHECK( (psd = XLALCreateREAL4Vector((UINT4)floor(x->length*0.5)+1)) != NULL, XLAL_EFUNC );
-   REAL4Window *win = NULL;
    XLAL_CHECK( (win = XLALCreateHannREAL4Window(x->length)) != NULL, XLAL_EFUNC );
 
    for (ii=0; ii<output->numfbins; ii++) {
@@ -2158,11 +2158,9 @@ REAL4 avgTFdataBand(REAL4Vector *backgrnd, INT4 numfbins, INT4 numffts, INT4 bin
    for (ii=0; ii<(INT4)aveNoiseInTime->length; ii++) {
       memcpy(rngMeansOverBand->data, &(backgrnd->data[ii*numfbins + binmin]), sizeof(*rngMeansOverBand->data)*rngMeansOverBand->length);
       aveNoiseInTime->data[ii] = calcMean(rngMeansOverBand);
-      XLAL_CHECK_REAL4( xlalErrno == 0, XLAL_EFUNC );
    } /* for ii < aveNoiseInTime->length */
 
    REAL4 avgTFdata = calcMean(aveNoiseInTime);
-   XLAL_CHECK_REAL4( xlalErrno == 0, XLAL_EFUNC );
 
    //Destroy stuff
    XLALDestroyREAL4Vector(aveNoiseInTime);
@@ -2224,8 +2222,8 @@ INT4 ffPlaneNoise(REAL4Vector *aveNoise, inputParamsStruct *params, INT4Vector *
    if (!params->signalOnly) {
       //Window and psd allocation
       REAL4Window *win = NULL;
-      XLAL_CHECK( (win = XLALCreateHannREAL4Window(numffts)) != NULL, XLAL_EFUNC );  //Window function
       REAL4Vector *psd = NULL;
+      XLAL_CHECK( (win = XLALCreateHannREAL4Window(numffts)) != NULL, XLAL_EFUNC );  //Window function
       XLAL_CHECK( (psd = XLALCreateREAL4Vector(numfprbins)) != NULL, XLAL_EFUNC );   //Current PSD calculation
       REAL4 winFactor = 8.0/3.0;
       REAL8 dutyfactor = 0.0, dutyfactorincrement = 1.0/(REAL8)numffts;
@@ -2269,8 +2267,7 @@ INT4 ffPlaneNoise(REAL4Vector *aveNoise, inputParamsStruct *params, INT4Vector *
       for (ii=0; ii<(INT4)floor(win->data->length*(params->SFToverlap/params->Tcoh)-1); ii++) correlationfactor += win->data->data[ii]*win->data->data[ii + (INT4)((1.0-(params->SFToverlap/params->Tcoh))*win->data->length)];
       correlationfactor /= win->sumofsquares;
       REAL8 corrfactorsquared = correlationfactor*correlationfactor;
-      REAL8 prevnoiseval = 0.0;
-      REAL8 noiseval = 0.0;
+      REAL8 prevnoiseval = 0.0, noiseval = 0.0;
       for (ii=0; ii<4000; ii++) {
          memset(x->data, 0, sizeof(REAL4)*x->length);
          for (jj=0; jj<(INT4)x->length; jj++) {

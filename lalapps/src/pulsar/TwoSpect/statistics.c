@@ -702,30 +702,13 @@ INT4 kuipers_test_exp(REAL8 *kuipervalue, REAL4Vector *vector)
 
 }
 
-//Sort a REAL4Vector, keeping the largest of the values in the output vector
-void sort_float_largest(REAL4Vector *output, REAL4Vector *input)
-{
-   //Copy of the input vector
-   REAL4Vector *tempvect = NULL;
-   XLAL_CHECK_VOID( (tempvect = XLALCreateREAL4Vector(input->length)) != NULL, XLAL_EFUNC );
-   memcpy(tempvect->data, input->data, sizeof(REAL4)*input->length);
-
-   //qsort rearranges original vector, so sort the copy of the input vector
-   qsort(tempvect->data, tempvect->length, sizeof(REAL4), qsort_REAL4_compar);
-
-   INT4 ii;
-   for (ii=0; ii<(INT4)output->length; ii++) output->data[ii] = tempvect->data[tempvect->length-1-ii];
-
-   XLALDestroyREAL4Vector(tempvect);
-
-}
 
 //Sort a REAL4Vector, keeping the smallest of the values in the output vector
-void sort_float_smallest(REAL4Vector *output, REAL4Vector *input)
+INT4 sort_float_smallest(REAL4Vector *output, REAL4Vector *input)
 {
    //Copy of the input vector
    REAL4Vector *tempvect = NULL;
-   XLAL_CHECK_VOID( (tempvect = XLALCreateREAL4Vector(input->length)) != NULL, XLAL_EFUNC );
+   XLAL_CHECK( (tempvect = XLALCreateREAL4Vector(input->length)) != NULL, XLAL_EFUNC );
    memcpy(tempvect->data, input->data, sizeof(REAL4)*input->length);
 
    //qsort rearranges original vector, so sort the copy of the input vector
@@ -735,29 +718,10 @@ void sort_float_smallest(REAL4Vector *output, REAL4Vector *input)
 
    XLALDestroyREAL4Vector(tempvect);
 
-}
-
-//Sort a REAL8Vector from highest to lowest
-/* !!!!This modifies the input vector!!!! */
-void sort_double_descend(REAL8Vector *vector)
-{
-
-   INT4 ii;
-
-   //Since the function will modify the input vector, we can do qsort() on the input vector
-   qsort(vector->data, vector->length, sizeof(REAL8), qsort_REAL8_compar);
-
-   //Make a copy of the sorted vector because we will take the reverse of the sorted vector (descending order)
-   REAL8Vector *tempvect = NULL;
-   XLAL_CHECK_VOID( (tempvect = XLALCreateREAL8Vector(vector->length)) != NULL, XLAL_EFUNC );
-   memcpy(tempvect->data, vector->data, sizeof(REAL8)*vector->length);
-
-   //This does the descending part
-   for (ii=0; ii<(INT4)vector->length; ii++) vector->data[ii] = tempvect->data[tempvect->length-1-ii];
-
-   XLALDestroyREAL8Vector(tempvect);
+   return XLAL_SUCCESS;
 
 }
+
 
 //Sort a REAL8Vector from lowest to highest
 /* !!!!This modifies the input vector!!!! */
@@ -765,6 +729,7 @@ void sort_double_ascend(REAL8Vector *vector)
 {
    qsort(vector->data, vector->length, sizeof(REAL8), qsort_REAL8_compar);
 }
+
 
 //Sort a REAL4Vector from lowest to highest
 /* !!!!This modifies the input vector!!!! */
