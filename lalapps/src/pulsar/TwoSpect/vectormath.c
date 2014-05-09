@@ -32,6 +32,7 @@
 #include <math.h>
 
 #include <lal/LALConstants.h>
+#include <lal/CWFastMath.h>
 
 #include "vectormath.h"
 #include "templates.h"
@@ -1371,8 +1372,11 @@ INT4 sse_sin_cos_2PI_LUT_REAL8Vector(REAL8Vector *sin2pix_vector, REAL8Vector *c
    if (!outputaligned2) memcpy(cos2pix_vector->data, alignedoutput2, 2*roundedvectorlength*sizeof(REAL8));
 
    //Finish up the remaining part
+   REAL4 sin2pix = 0.0, cos2pix = 0.0;
    for (ii=2*roundedvectorlength; ii<(INT4)x->length; ii++) {
-      XLAL_CHECK( twospect_sin_cos_2PI_LUT(&(sin2pix_vector->data[ii]), &(cos2pix_vector->data[ii]), x->data[ii]) == XLAL_SUCCESS, XLAL_EFUNC );
+      XLAL_CHECK( XLALSinCos2PiLUT(&sin2pix, &cos2pix, x->data[ii]) == XLAL_SUCCESS, XLAL_EFUNC );
+      sin2pix_vector->data[ii] = (REAL8)sin2pix;
+      cos2pix_vector->data[ii] = (REAL8)cos2pix;
    }
 
    //Free memory if necessary
@@ -1511,12 +1515,7 @@ INT4 sse_sin_cos_2PI_LUT_REAL4Vector(REAL4Vector *sin2pix_vector, REAL4Vector *c
    if (!outputaligned2) memcpy(cos2pix_vector->data, alignedoutput2, 4*roundedvectorlength*sizeof(REAL4));
 
    //Finish up the remaining part
-   REAL8 sinval = 0.0, cosval = 0.0;
-   for (ii=4*roundedvectorlength; ii<(INT4)x->length; ii++) {
-      XLAL_CHECK( twospect_sin_cos_2PI_LUT(&sinval, &cosval, x->data[ii]) == XLAL_SUCCESS, XLAL_EFUNC );
-      sin2pix_vector->data[ii] = (REAL4)sinval;
-      cos2pix_vector->data[ii] = (REAL4)cosval;
-   }
+   for (ii=4*roundedvectorlength; ii<(INT4)x->length; ii++) XLAL_CHECK( XLALSinCos2PiLUT(&(sin2pix_vector->data[ii]), &(cos2pix_vector->data[ii]), x->data[ii]) == XLAL_SUCCESS, XLAL_EFUNC );
 
    //Free memory if necessary
    if (!vecaligned) XLALFree(allocinput);

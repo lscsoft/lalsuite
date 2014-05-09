@@ -29,6 +29,7 @@
 #include <lal/LALMalloc.h>
 #include <lal/Window.h>
 #include <lal/VectorOps.h>
+#include <lal/CWFastMath.h>
 
 #include "templates.h"
 #include "cdfwchisq.h"
@@ -581,10 +582,10 @@ INT4 makeTemplateGaussians(templateStruct *output, candidate input, inputParamsS
    XLAL_CHECK( (weightvals = XLALCreateREAL4Vector(wvals->length * sigmas->length)) != NULL, XLAL_EFUNC );
 
    //Here is where the sigmas are computed. It is a weighted average. t = (ii+1)*in->Tcoh*0.5
-   REAL8 sin2pix = 0.0, cos2pix = 0.0;
+   REAL4 sin2pix = 0.0, cos2pix = 0.0;
    for (ii=0; ii<(INT4)wvals->length; ii++) {
       //calculate sin and cos of 2*pi*t/P and then the bin the signal is in and the signal velocity
-      XLAL_CHECK( twospect_sin_cos_2PI_LUT(&sin2pix, &cos2pix, periodf*((ii+1)*params->Tcoh*0.5)) == XLAL_SUCCESS, XLAL_EFUNC );
+      XLAL_CHECK( XLALSinCos2PiLUT(&sin2pix, &cos2pix, periodf*((ii+1)*params->Tcoh*0.5)) == XLAL_SUCCESS, XLAL_EFUNC );
       REAL4 sigbin = (input.moddepth*cos2pix+input.fsig)*params->Tcoh;
       REAL4 sigbinvelocity = fabs(-input.moddepth*sin2pix*params->Tcoh*params->Tcoh*LAL_PI*periodf);
 
@@ -653,11 +654,8 @@ INT4 makeTemplateGaussians(templateStruct *output, candidate input, inputParamsS
             //Compute cos(2*pi*phi_actual*fpr) using LUT and SSE
             XLAL_CHECK( sse_sin_cos_2PI_LUT_REAL4Vector(sin_phi_times_omega_pr, cos_phi_times_omega_pr, phi_times_fpr) == XLAL_SUCCESS, XLAL_EFUNC );
          } else {
-            //Compute cos(2*pi*phi_actual*fpr) using LUT
-            for (jj=0; jj<(INT4)omegapr_squared->length; jj++) {
-               XLAL_CHECK( twospect_sin_cos_2PI_LUT(&sin2pix, &cos2pix, phi_times_fpr->data[jj]) == XLAL_SUCCESS, XLAL_EFUNC );
-               cos_phi_times_omega_pr->data[jj] = (REAL4)cos2pix;
-            }
+            //Compute cos(2*pi*phi_actual*fpr) without using LUT
+            for (jj=0; jj<(INT4)omegapr_squared->length; jj++) cos_phi_times_omega_pr->data[jj] = cosf((REAL4)LAL_TWOPI*phi_times_fpr->data[jj]);
          }
          //datavector = cos(phi_actual*omega_pr) + 1.0
          if (params->useSSE) XLAL_CHECK( sseAddScalarToREAL4Vector(datavector, cos_phi_times_omega_pr, 1.0) == XLAL_SUCCESS, XLAL_EFUNC );
@@ -676,7 +674,7 @@ INT4 makeTemplateGaussians(templateStruct *output, candidate input, inputParamsS
             //Do all or nothing if the exponential is too negative
             if ((prefact0-s*s*omegapr_squared->data[jj])>-88.0) {
                exp_neg_sigma_sq_times_omega_pr_sq->data[jj] = expf((REAL4)(prefact0-s*s*omegapr_squared->data[jj]));
-               XLAL_CHECK( twospect_sin_cos_2PI_LUT(&sin2pix, &cos2pix, phi_actual->data[ii+fnumstart]*fpr->data[jj]) == XLAL_SUCCESS, XLAL_EFUNC );
+               XLAL_CHECK( XLALSinCos2PiLUT(&sin2pix, &cos2pix, phi_actual->data[ii+fnumstart]*fpr->data[jj]) == XLAL_SUCCESS, XLAL_EFUNC );
                cos_phi_times_omega_pr->data[jj] = (REAL4)cos2pix;
                datavector->data[jj] = scale->data[ii+fnumstart]*exp_neg_sigma_sq_times_omega_pr_sq->data[jj]*(cos_phi_times_omega_pr->data[jj]+1.0)*cos_ratio->data[jj];
             } else {
@@ -773,11 +771,11 @@ INT4 makeTemplate(templateStruct *output, candidate input, inputParamsStruct *pa
 
    //Determine the signal modulation in bins with time at center of coherence time and create
    //Hann windowed PSDs
-   REAL8 sin2pix = 0.0, cos2pix = 0.0;
+   REAL4 sin2pix = 0.0, cos2pix = 0.0;
    REAL8 PSDprefact = 2.0/3.0;
    for (ii=0; ii<numffts; ii++) {
       REAL8 t = 0.5*params->Tcoh*ii;  //Assumed 50% overlapping SFTs
-      XLAL_CHECK( twospect_sin_cos_2PI_LUT(&sin2pix, &cos2pix, periodf*t) == XLAL_SUCCESS, XLAL_EFUNC );
+      XLAL_CHECK( XLALSinCos2PiLUT(&sin2pix, &cos2pix, periodf*t) == XLAL_SUCCESS, XLAL_EFUNC );
       REAL8 n0 = B*sin2pix + input.fsig*params->Tcoh;
       if (params->useSSE) XLAL_CHECK( sseAddScalarToREAL8Vector(bindiffs, freqbins, -n0) == XLAL_SUCCESS, XLAL_EFUNC );
       else if (params->useAVX) XLAL_CHECK( avxAddScalarToREAL8Vector(bindiffs, freqbins, -n0) == XLAL_SUCCESS, XLAL_EFUNC );
@@ -835,7 +833,6 @@ INT4 makeTemplate(templateStruct *output, candidate input, inputParamsStruct *pa
             sum += (REAL8)psd->data[jj];     //sum up the total weight
 
             //Sort the weights, insertion sort technique
-            //if (correctedValue > output->templatedata->data[output->templatedata->length-1]) insertionSort_template(output, correctedValue, ii*psd->length+jj, ii, jj);
             if (psd->data[jj] > output->templatedata->data[output->templatedata->length-1]) insertionSort_template(output, psd->data[jj], ii*psd->length+jj, ii, jj);
          } /* for jj < psd->length */
       } /* if doSecondFFT */
@@ -1151,70 +1148,3 @@ REAL8 sqsincxoverxsqminusone(REAL8 x)
 } /* sqsincxoverxsqminusone() */
 
 
-//Stolen from computeFstat.c with higher resolution
-#define OOTWOPI         (1.0 / LAL_TWOPI)
-INT4 twospect_sin_cos_LUT(REAL8 *sinx, REAL8 *cosx, REAL8 x)
-{
-   return twospect_sin_cos_2PI_LUT( sinx, cosx, x * OOTWOPI );
-} /* twospect_sin_cos_LUT() */
-#define LUT_RES         1024      /* resolution of lookup-table */
-#define LUT_RES_F       (1.0 * LUT_RES)
-#define OO_LUT_RES      (1.0 / LUT_RES)
-#define X_TO_IND        (1.0 * LUT_RES * OOTWOPI )
-#define IND_TO_X        (LAL_TWOPI * OO_LUT_RES)
-#define TRUE (1==1)
-#define FALSE (1==0)
-INT4 twospect_sin_cos_2PI_LUT(REAL8 *sin2pix, REAL8 *cos2pix, REAL8 x)
-{
-   REAL8 xt;
-   INT4 i0;
-   REAL8 d, d2;
-   REAL8 ts, tc;
-   REAL8 dummy;
-
-   static BOOLEAN firstCall = TRUE;
-   static REAL8 sinVal[LUT_RES+1], cosVal[LUT_RES+1];
-
-   /* the first time we get called, we set up the lookup-table */
-   if ( firstCall ) {
-      UINT4 k;
-      for (k=0; k <= LUT_RES; k++) {
-         sinVal[k] = sin( LAL_TWOPI * k * OO_LUT_RES );
-         cosVal[k] = cos( LAL_TWOPI * k * OO_LUT_RES );
-      }
-      firstCall = FALSE;
-   }
-
-   /* we only need the fractional part of 'x', which is number of cylces,
-   * this was previously done using
-   *   xt = x - (INT4)x;
-   * which is numerically unsafe for x > LAL_INT4_MAX ~ 2e9
-   * for saftey we therefore rather use modf(), even if that
-   * will be somewhat slower...
-   */
-   //xt = modf(x, &dummy);/* xt in (-1, 1) */
-   if (x<2.147483647e9 && x>-2.147483647e9) xt = x - (INT4)x;  // if x < LAL_INT4_MAX
-   else xt = modf(x, &dummy);
-
-   if ( xt < 0.0 ) xt += 1.0;                  /* xt in [0, 1 ) */
-   #ifndef LAL_NDEBUG
-   /* if ( xt < 0.0 || xt > 1.0 ) {
-         XLALPrintError("\nFailed numerica in twospect_sin_cos_2PI_LUT(): xt = %f not in [0,1)\n\n", xt );
-         return XLAL_FAILURE;
-         } */
-      XLAL_CHECK( !(xt < 0.0 || xt > 1.0), XLAL_EINVAL, "Failed numerica in twospect_sin_cos_2PI_LUT(): xt = %f not in [0,1)\n", xt );
-   #endif
-
-   i0 = (INT4)( xt * LUT_RES_F + 0.5 );  /* i0 in [0, LUT_RES ] */
-   d = d2 = LAL_TWOPI * (xt - OO_LUT_RES * i0);
-   d2 *= 0.5 * d;
-
-   ts = sinVal[i0];
-   tc = cosVal[i0];
-
-   /* use Taylor-expansions for sin/cos around LUT-points */
-   (*sin2pix) = ts + d * tc - d2 * ts;
-   (*cos2pix) = tc - d * ts - d2 * tc;
-
-   return XLAL_SUCCESS;
-} /* twospect_sin_cos_2PI_LUT() */
