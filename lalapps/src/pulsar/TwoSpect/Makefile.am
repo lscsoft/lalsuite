@@ -18,9 +18,7 @@ skygridsetup_SOURCES = helperprograms/skygridsetup.c helperprograms/cmdline_skyg
 compareCandidates_SOURCES = helperprograms/compareCandidates.c helperprograms/cmdline_compareCandidates.c \
                             helperprograms/cmdline_compareCandidates.h
 
-testVectorMath_SOURCES = helperprograms/testVectorMath.c vectormath.c templates.c candidates.c statistics.c \
-                         fastchisqinv.c cdfwchisq.c vectormath.h templates.h candidates.h statistics.h \
-                         fastchisqinv.h cdfwchisq.h
+testVectorMath_SOURCES = helperprograms/testVectorMath.c vectormath.c vectormath.h
 
 ## make sure lalapps.la is rebuilt when appropriate
 BUILT_SOURCES =

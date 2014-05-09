@@ -20,6 +20,7 @@
 #include <stdio.h>
 #include <math.h>
 #include <string.h>
+#include <time.h>
 
 #include <lal/LALConstants.h>
 #include <lal/SeqFactories.h>
@@ -27,24 +28,28 @@
 
 #include "../vectormath.h"
 
+#define GIGA 1000000000
+
 int main(void)
 {
 
-   INT4 ii, length = 10000000;
+   //struct timespec st,end,st2,end2;
+
+   INT4 ii, length = 20000000;
    REAL4Vector *floatvalues1 = NULL, *floatvalues2 = NULL;
    REAL8Vector *doublevalues1 = NULL, *doublevalues2 = NULL;
+   REAL4VectorSequence *floatvalues = NULL;
    XLAL_CHECK( (floatvalues1 = XLALCreateREAL4Vector(length)) != NULL, XLAL_EFUNC );
    XLAL_CHECK( (floatvalues2 = XLALCreateREAL4Vector(length)) != NULL, XLAL_EFUNC );
    XLAL_CHECK( (doublevalues1 = XLALCreateREAL8Vector(length)) != NULL, XLAL_EFUNC );
    XLAL_CHECK( (doublevalues2 = XLALCreateREAL8Vector(length)) != NULL, XLAL_EFUNC );
-   REAL4VectorSequence *floatvalues = NULL;
    XLAL_CHECK( (floatvalues = XLALCreateREAL4VectorSequence(2, length)) != NULL, XLAL_EFUNC );
 
    for (ii=0; ii<length; ii++) {
-      floatvalues1->data[ii] = (REAL4)(ii-length/2)*1.0e-5;
-      doublevalues1->data[ii] = (REAL8)(ii-length/2)*1.0e-5;
-      floatvalues2->data[ii] = (REAL4)ii*1.0e-5;
-      doublevalues2->data[ii] = (REAL8)ii*1.0e-5;
+      floatvalues1->data[ii] = (REAL4)(ii-length/2)*5.0e-6;
+      doublevalues1->data[ii] = (REAL8)(ii-length/2)*5.0e-6;
+      floatvalues2->data[ii] = (REAL4)ii*5.0e-6;
+      doublevalues2->data[ii] = (REAL8)ii*5.0e-6;
    }
    memcpy(floatvalues->data, floatvalues1->data, sizeof(REAL4)*length);
    memcpy(&(floatvalues->data[length]), floatvalues2->data, sizeof(REAL4)*length);
@@ -68,6 +73,8 @@ int main(void)
    XLAL_CHECK( (sequencesumresult = XLALCreateREAL4VectorSequence(2, length)) != NULL, XLAL_EFUNC );
    memset(sequencesumresult->data, 0, sizeof(REAL4)*2*length);
 
+   //clock_gettime(CLOCK_REALTIME, &st);
+
    XLAL_CHECK( sse_exp_REAL4Vector(floatresult_exp, floatvalues1) == XLAL_SUCCESS, XLAL_EFUNC );
    XLAL_CHECK( sse_exp_REAL8Vector(doubleresult_exp, doublevalues1) == XLAL_SUCCESS, XLAL_EFUNC );
    XLAL_CHECK( sseSSVectorSum(floatresult_vecsum, floatvalues1, floatvalues2) == XLAL_SUCCESS, XLAL_EFUNC );
@@ -80,6 +87,8 @@ int main(void)
    XLAL_CHECK( sse_sin_cos_2PI_LUT_REAL8Vector(doubleresult_sin2pix, doubleresult_cos2pix, doublevalues2) == XLAL_SUCCESS, XLAL_EFUNC );
    XLAL_CHECK( sseSSVectorSequenceSum(sequencesumresult, floatvalues, floatvalues, 0, 1, 0, 1) == XLAL_SUCCESS, XLAL_EFUNC );
    XLAL_CHECK( sseSSVectorSequenceSubtract(sequencesubtractresult, floatvalues, floatvalues2, 0) == XLAL_SUCCESS, XLAL_EFUNC );
+
+   //clock_gettime(CLOCK_REALTIME, &end);
 
    REAL4 maxfloatdiff_exp = 0.0, maxfloatrelerr_exp = 0.0, maxfloatdiff_vecsum = 0.0, maxfloatrelerr_vecsum = 0.0, maxfloatdiff_vecmult = 0.0, maxfloatrelerr_vecmult = 0.0, maxfloatdiff_addscalar = 0.0, maxfloatrelerr_addscalar = 0.0, maxfloatdiff_scale = 0.0, maxfloatrelerr_scale = 0.0, maxfloatdiff_sin2pix = 0.0, maxfloatrelerr_sin2pix = 0.0, maxfloatdiff_cos2pix = 0.0, maxfloatrelerr_cos2pix = 0.0, maxfloatdiff_seqsum = 0.0, maxfloatrelerr_seqsum = 0.0, maxfloatdiff_seqsub = 0.0, maxfloatrelerr_seqsub = 0.0;
    REAL8 maxdoublediff_exp = 0.0, maxdoublerelerr_exp = 0.0, maxdoublediff_addscalar = 0.0, maxdoublerelerr_addscalar = 0.0, maxdoublediff_scale = 0.0, maxdoublerelerr_scale = 0.0, maxdoublediff_sin2pix = 0.0, maxdoublerelerr_sin2pix = 0.0, maxdoublediff_cos2pix = 0.0, maxdoublerelerr_cos2pix = 0.0;
@@ -166,8 +175,11 @@ int main(void)
    fprintf(stderr, "cos(2*pi*REAL8Vector): max error = %g, max relative error = %g\n", maxdoublediff_cos2pix, maxdoublerelerr_cos2pix);
    fprintf(stderr, "Sum vectors of vector sequence into vector sequence: max error = %g, max relative error = %g\n", maxfloatdiff_seqsum, maxfloatrelerr_seqsum);
    fprintf(stderr, "Subtract vector from vector sequence: max error = %g, max relative error = %g\n", maxfloatdiff_seqsub, maxfloatrelerr_seqsub);
+   //fprintf(stderr, "Time elapsed: %li\n", (end.tv_sec-st.tv_sec)*GIGA+(end.tv_nsec-st.tv_nsec));
 
 #ifdef __AVX__
+   //clock_gettime(CLOCK_REALTIME, &st2);
+
    XLAL_CHECK( avxSSVectorSum(floatresult_vecsum, floatvalues1, floatvalues2) == XLAL_SUCCESS, XLAL_EFUNC );
    XLAL_CHECK( avxSSVectorMultiply(floatresult_vecmult, floatvalues1, floatvalues2) == XLAL_SUCCESS, XLAL_EFUNC );
    XLAL_CHECK( avxAddScalarToREAL4Vector(floatresult_addscalar, floatvalues1, (REAL4)100.0) == XLAL_SUCCESS, XLAL_EFUNC );
@@ -176,6 +188,9 @@ int main(void)
    XLAL_CHECK( avxScaleREAL8Vector(doubleresult_scale, doublevalues1, 100.0) == XLAL_SUCCESS, XLAL_EFUNC );
    XLAL_CHECK( avxSSVectorSequenceSum(sequencesumresult, floatvalues, floatvalues, 0, 1, 0, 1) == XLAL_SUCCESS, XLAL_EFUNC );
    XLAL_CHECK( avxSSVectorSequenceSubtract(sequencesubtractresult, floatvalues, floatvalues2, 0) == XLAL_SUCCESS, XLAL_EFUNC );
+
+   //clock_gettime(CLOCK_REALTIME, &end2);
+
    //REAL4 maxfloatdiff_vecsum = 0.0, maxfloatrelerr_vecsum = 0.0, maxfloatdiff_vecmult = 0.0, maxfloatrelerr_vecmult = 0.0, maxfloatdiff_addscalar = 0.0, maxfloatrelerr_addscalar = 0.0, maxfloatdiff_scale = 0.0, maxfloatrelerr_scale = 0.0, maxfloatdiff_seqsum = 0.0, maxfloatrelerr_seqsum = 0.0, maxfloatdiff_seqsub = 0.0, maxfloatrelerr_seqsub = 0.0;
    //REAL8 maxdoublediff_addscalar = 0.0, maxdoublerelerr_addscalar = 0.0, maxdoublediff_scale = 0.0, maxdoublerelerr_scale = 0.0;
    for (ii=0; ii<length; ii++) {
@@ -228,6 +243,7 @@ int main(void)
    fprintf(stderr, "Scale REAL8Vector: max error = %g, max relative error = %g\n", maxdoublediff_scale, maxdoublerelerr_scale);
    fprintf(stderr, "Sum vectors of vector sequence into vector sequence: max error = %g, max relative error = %g\n", maxfloatdiff_seqsum, maxfloatrelerr_seqsum);
    fprintf(stderr, "Subtract vector from vector sequence: max error = %g, max relative error = %g\n", maxfloatdiff_seqsub, maxfloatrelerr_seqsub);
+   //fprintf(stderr, "Time elapsed: %li\n", (end2.tv_sec-st2.tv_sec)*GIGA+(end2.tv_nsec-st2.tv_nsec));
 #endif
 
    XLALDestroyREAL4Vector(floatvalues1);
