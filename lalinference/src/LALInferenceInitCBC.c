@@ -290,7 +290,10 @@ LALInferenceVariables *LALInferenceInitCBCVariables(LALInferenceRunState *state)
                (--distance-min MIN)                    Minimum distance in Mpc (1).\n\
                (--distance-max MAX)                    Maximum distance in Mpc (100).\n\
                (--dt time)                             Width of time prior, centred around trigger (0.1s).\n\
-               (--malmquistPrior)              Rejection sample based on SNR of template \n\
+               (--malmquistPrior)                      Rejection sample based on SNR of template \n\
+               (--analyse-segment)                     Analyse whole segment (for margtime)\n\
+               (--time-pad-start T)                    Skip T seconds at start of segment when --analyse-segment given (default 10)\n\
+               (--time-pad-end T)                      Skip T seconds at end of segment when --analyse-segment given (default 0)\n\
                Equation of state parameters:\n\
                (--lambda1-min)                         Minimum lambda1 (0).\n\
                (--lambda1-max)                         Maximum lambda1 (3000).\n\
@@ -555,6 +558,8 @@ LALInferenceVariables *LALInferenceInitCBCVariables(LALInferenceRunState *state)
   ppt=LALInferenceGetProcParamVal(commandLine,"--dt");
   if(ppt){
     dt=atof(ppt->value);
+    timeMin=endtime-dt;
+    timeMax=endtime+dt;
   }
   
   /* Over-ride component masses */
@@ -719,9 +724,25 @@ LALInferenceVariables *LALInferenceInitCBCVariables(LALInferenceRunState *state)
     /* User has specified start time. */
     timeParam = atof(ppt->value);
   } else {
-    timeParam = endtime+dt*(1.0-2.0*gsl_rng_uniform(GSLrandom));
-    timeParam = endtime+gsl_ran_gaussian(GSLrandom,0.01);
+    timeParam = timeMin + (timeMax-timeMin)*gsl_rng_uniform(GSLrandom);
   }
+
+  /* Option to analyse entire segment with margtime likelihoods */
+  if(LALInferenceGetProcParamVal(commandLine,"--analyse-segment"))
+  {
+    /* Default padding times at start and end */
+    REAL8 timeSkipStart=10.0;
+    REAL8 timeSkipEnd=0.0;
+    if((ppt=LALInferenceGetProcParamVal(commandLine,"--time-pad-start")))
+      timeSkipStart=atof(ppt->value);
+    if((ppt=LALInferenceGetProcParamVal(commandLine,"--time-pad-end")))
+      timeSkipEnd=atof(ppt->value);
+    REAL8 seglen=atof(LALInferenceGetProcParamVal(commandLine,"--seglen")->value);
+    REAL8 segStart=XLALGPSGetREAL8(&(state->data->epoch));
+    timeMin=segStart+timeSkipStart;
+    timeMax=segStart+seglen-timeSkipEnd;
+  }
+  
   
   /* Non-standard names for backward compatibility */
   if((ppt=LALInferenceGetProcParamVal(commandLine,"--phi"))) start_phase=atof(ppt->value);
@@ -819,8 +840,8 @@ LALInferenceVariables *LALInferenceInitCBCVariables(LALInferenceRunState *state)
   dataPtr = state->data;
   while (dataPtr != NULL)
   {
-    dt      = dataPtr->timeData->deltaT;
-    df      = 1.0 / (((double)dataPtr->timeData->data->length) * dt);
+    REAL8 deltaT      = dataPtr->timeData->deltaT;
+    df      = 1.0 / (((double)dataPtr->timeData->data->length) * deltaT);
     imin    = (UINT4)ceil( dataPtr->fLow  / df);
     imax    = (UINT4)floor(dataPtr->fHigh / df);
 
@@ -1222,7 +1243,7 @@ LALInferenceVariables *LALInferenceInitCBCVariables(LALInferenceRunState *state)
         }
       }
     }
-  
+    
     ppt=LALInferenceGetProcParamVal(commandLine,"--fixTime");
     if(ppt){
       LALInferenceRegisterUniformVariableREAL8(state, currentParams, "time", timeParam, timeMin, timeMax, LALINFERENCE_PARAM_FIXED);
@@ -1230,7 +1251,7 @@ LALInferenceVariables *LALInferenceInitCBCVariables(LALInferenceRunState *state)
     }else{
       LALInferenceRegisterUniformVariableREAL8(state, currentParams, "time", timeParam, timeMin, timeMax, LALINFERENCE_PARAM_LINEAR);
     }
-
+    
     /* If we are marginalising over the time, remove that variable from the model (having set the prior above) */
     /* Also set the prior in currentParams, since Likelihood can't access the state! (ugly hack) */
     if(LALInferenceGetProcParamVal(commandLine,"--margtime") || LALInferenceGetProcParamVal(commandLine, "--margtimephi")){
@@ -1603,18 +1624,31 @@ void LALInferenceCheckOptionsConsistency(ProcessParamsTable *commandLine)
     exit(1);
   }
   // Check seglen > 0
+  REAL8 seglen=0.;
   ppt=LALInferenceGetProcParamVal(commandLine,"--seglen");
   if (!ppt){
     XLALPrintError("Must provide segment length with --seglen. Exiting...");
     exit(1);
   }
+  else seglen=atof(ppt->value);
+  
   tmp=atof(ppt->value);
   if (tmp<0.0){
     fprintf(stderr,"ERROR: seglen must be positive. Exiting...\n");
     exit(1);
   }
-
-  
+  REAL8 timeSkipStart=0.;
+  REAL8 timeSkipEnd=0.;
+  if((ppt=LALInferenceGetProcParamVal(commandLine,"--time-pad-start")))
+     timeSkipStart=atof(ppt->value);
+  if((ppt=LALInferenceGetProcParamVal(commandLine,"--time-pad-end")))
+     timeSkipEnd=atof(ppt->value);
+  if(timeSkipStart+timeSkipEnd > seglen)
+  {
+    fprintf(stderr,"ERROR: --time-pad-start + --time-pad-end is greater than --seglen!");
+    exit(1);
+  }
+     
   /* Flags consistency */
   ppt=LALInferenceGetProcParamVal(commandLine,"--disable-spin");
   ppt2=LALInferenceGetProcParamVal(commandLine,"--noSpin");
