@@ -14,7 +14,7 @@ import string
 from math import floor,ceil,log,pow
 import sys
 import random
-from itertools import combinations
+from itertools import permutations
 import shutil
 
 # We use the GLUE pipeline utilities to construct classes for each
@@ -423,7 +423,7 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
     self.engine_jobs={}
     ifocombos=[]
     for N in range(1,len(self.ifos)+1):
-        for a in combinations(self.ifos,N):
+        for a in permutations(self.ifos,N):
             ifocombos.append(a)
     for ifos in ifocombos:
         self.engine_jobs[ifos] = EngineJob(self.config, os.path.join(self.basepath,'engine_%s.sub'%(reduce(lambda x,y:x+y, map(str,ifos)))),self.logpath ,dax=self.is_dax(), site=site)
@@ -446,7 +446,8 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
       print 'No input events found, please check your config. Will generate an empty DAG'
     
     # Set up the segments
-    (mintime,maxtime)=self.get_required_data(self.times)
+    if not (self.config.has_option('input','gps-start-time') and self.config.has_option('input','gps-end-time')):
+      (mintime,maxtime)=self.get_required_data(self.times)
     if not self.config.has_option('input','gps-start-time'):
       self.config.set('input','gps-start-time',str(int(floor(mintime))))
     if not self.config.has_option('input','gps-end-time'):
@@ -582,7 +583,7 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
         t=gpsstart
         events=[]
         while(t<gpsend):
-            ev=Event()
+            ev=Event(trig_time=t+seglen-2)
             ev.set_engine_option('segment-start',str(t-overlap))
             ev.set_engine_option('time-min',str(t))
             tMax=t + seglen - overlap
@@ -591,6 +592,7 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
             ev.set_engine_option('time-max',str(tMax))
             events.append(ev)
             t=tMax
+        return events
 
     # ASCII list of GPS times
     if self.config.has_option('input','gps-time-file'):
@@ -649,9 +651,9 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
             used_events.append(e)
         events=used_events
     if gpsstart is not None:
-        events = filter(lambda e:e.trig_time>gpsstart, events)
+        events = filter(lambda e: not e.trig_time<gpsstart, events)
     if gpsend is not None:
-        events = filter(lambda e:e.trig_time<gpsend, events)
+        events = filter(lambda e: not e.trig_time>gpsend, events)
     return events
 
   def add_full_analysis_lalinferencenest(self,event):
@@ -821,8 +823,21 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
       ifos=event.ifos
     if ifos is None:
       ifos=self.ifos
-    node=self.EngineNode(self.engine_jobs[tuple(ifos)])
     end_time=event.trig_time
+    seglen=self.config.getfloat('engine','seglen')
+    segstart=end_time+2-seglen
+    segend=segstart+seglen
+    myifos=set([])
+    for ifo in ifos:
+      for seg in self.segments[ifo]:
+        if segstart >= seg.start() and segend < seg.end():
+          myifos.add(ifo)
+    ifos=myifos
+    if len(ifos)==0:
+      print 'No data found for time %f - %f, skipping'%(segstart,segend)
+      return
+    
+    node=self.EngineNode(self.engine_jobs[tuple(ifos)])
     node.set_trig_time(end_time)
     node.set_seed(random.randint(1,2**31))
     if event.srate: node.set_srate(event.srate)
@@ -836,7 +851,7 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
       else:
         slide=0
       for seg in self.segments[ifo]:
-        if end_time >= seg.start() and end_time < seg.end():
+        if segstart >= seg.start() and segend < seg.end():
             if not self.config.has_option('lalinference','fake-cache'):
               gotdata+=node.add_ifo_data(ifo,seg,self.channels[ifo],timeslide=slide)
             else:
@@ -902,7 +917,7 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
     out_dir=os.path.join(self.basepath,'engine')
     mkdirs(out_dir)
     node.set_output_file(os.path.join(out_dir,node.engine+'-'+str(event.event_id)+'-'+node.get_ifos()+'-'+str(node.get_trig_time())+'-'+str(node.id)))
-    for (opt,arg) in event.engine_opts:
+    for (opt,arg) in event.engine_opts.items():
         node.add_var_opt(opt,arg)
     return node
     
@@ -1134,7 +1149,7 @@ class EngineNode(pipeline.CondorDAGNode):
     """
     Add a cache file from LIGODataFind. Based on same method from pipeline.AnalysisNode
     """
-    print 'Adding cache files %s'%(str(filename))
+    #print 'Adding cache files %s'%(str(filename))
     if isinstance(filename,str): # A normal lal cache file
         self.cachefiles[ifo]=filename
         self.add_input_file(filename)
@@ -1194,7 +1209,7 @@ class EngineNode(pipeline.CondorDAGNode):
       # Override calculated start time if requested by user in ini file
       if self.psdstart is not None:
         self.GPSstart=self.psdstart
-        print 'Over-riding start time to user-specified value %f'%(self.GPSstart)
+        #print 'Over-riding start time to user-specified value %f'%(self.GPSstart)
         #if self.GPSstart<starttime or self.GPSstart>endtime:
         #  print 'ERROR: Over-ridden time lies outside of science segment!'
         #  raise Exception('Bad psdstart specified') 
