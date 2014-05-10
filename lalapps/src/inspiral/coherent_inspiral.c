@@ -1724,6 +1724,8 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
    };
 
    int c;
+   char *duration = NULL;
+   char *dur = NULL;
    ProcessParamsTable *this_proc_param = procparams.processParamsTable;
 
    while (1)
@@ -1894,7 +1896,6 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
            cohbankFileName = (CHAR *) calloc( optarg_len, sizeof(CHAR));
            memcpy(cohbankFileName, optarg, optarg_len );
            char tempName[256];
-           char *duration =NULL;
            strcpy(tempName, cohbankFileName);
            duration = strtok(tempName,"-");
            duration = strtok(NULL,"-");
@@ -1909,7 +1910,6 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
            /* create storage for the chia trigger filename */
            strcpy(chiaFileName, optarg);
            char tmpName[256];
-           char *dur =NULL;
            strcpy(tmpName, chiaFileName);
            dur = strtok(tmpName,"-");
            dur = strtok(NULL,"-");

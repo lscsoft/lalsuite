@@ -545,6 +545,7 @@ XLALGetSSBtimes ( const DetectorStateSeries *DetectorStates,	/**< [in] detector-
   REAL8 alpha = pos.longitude;
   REAL8 delta = pos.latitude;
   REAL8 refTimeREAL8 = XLALGPSGetREAL8 ( &refTime );
+  BarycenterBuffer *bBuffer = NULL;
 
   BarycenterInput XLAL_INIT_DECL(baryinput);
 
@@ -614,7 +615,6 @@ XLALGetSSBtimes ( const DetectorStateSeries *DetectorStates,	/**< [in] detector-
       baryinput.delta = delta;
       baryinput.dInv = 0;
 
-      BarycenterBuffer *bBuffer = NULL;
       for ( UINT4 i = 0; i < numSteps; i++ )
         {
           EmissionTime emit;
