@@ -58,6 +58,13 @@ class Event():
         self.trig_time=self.coinctrigger.end_time + 1.0e-9 * self.coinctrigger.end_time_ns
     if self.GID is not None:
         self.event_id=int(''.join(i for i in self.GID if i.isdigit()))
+    self.engine_opts={}
+  def set_engine_option(self,opt,val):
+    """
+    Can set event-specific options for the engine nodes
+    using this option, e.g. ev.set_engine_option('time-min','1083759273')
+    """
+    self.engine_opts[opt]=val
 
 dummyCacheNames=['LALLIGO','LALVirgo','LALAdLIGO','LALAdVirgo']
 
@@ -541,9 +548,15 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
     """
     gpsstart=None
     gpsend=None
-    inputnames=['gps-time-file','injection-file','sngl-inspiral-file','coinc-inspiral-file','pipedown-db','gid']#,'lvalert-file']
-    if sum([ 1 if self.config.has_option('input',name) else 0 for name in inputnames])!=1:
+    if self.config.has_option('input','gps-start-time'):
+      gpsstart=self.config.getfloat('input','gps-start-time')
+    if self.config.has_option('input','gps-end-time'):
+      gpsend=self.config.getfloat('input','gps-end-time')
+    inputnames=['gps-time-file','injection-file','sngl-inspiral-file','coinc-inspiral-file','pipedown-db','gid']
+    ReadInputFromList=sum([ 1 if self.config.has_option('input',name) else 0 for name in inputnames])
+    if ReadInputFromList!=1 and (gpsstart is None or gpsend is None):
         print 'Plese specify only one input file'
+        print 'Or specify gps-start-time and gps-end-time in the ini file'
         sys.exit(1)
     if self.config.has_option('input','events'):
       selected_events=self.config.get('input','events')
@@ -555,10 +568,30 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
           selected_events=self.select_events()
     else:
         selected_events=None
-    if self.config.has_option('input','gps-start-time'):
-      gpsstart=self.config.getfloat('input','gps-start-time')
-    if self.config.has_option('input','gps-end-time'):
-      gpsend=self.config.getfloat('input','gps-end-time')
+    # No input file given, analyse the entire time stretch between gpsstart and gpsend
+    if ReadInputFromList!=1:
+        seglen=self.config.getfloat('engine','seglen')
+        if(self.config.has_option('input','segment-overlap'):
+          overlap=self.config.getfloat('input','segment-overlap')
+        else:
+          overlap=32.;
+        if(overlap>seglen):
+          print 'ERROR: segment-overlap is greater than seglen'
+          sys.exit(1)
+        # Now divide gpsstart - gpsend into jobs of seglen - overlap length
+        t=gpsstart
+        events=[]
+        while(t<gpsend):
+            ev=Event()
+            ev.set_engine_option('segment-start',str(t-overlap))
+            ev.set_engine_option('time-min',str(t))
+            tMax=t + seglen - overlap
+            if tMax>=gpsend:
+                tMax=gpsend
+            ev.set_engine_option('time-max',str(tMax))
+            events.append(ev)
+            t=tMax
+
     # ASCII list of GPS times
     if self.config.has_option('input','gps-time-file'):
       times=scan_timefile(self.config.get('input','gps-time-file'))
@@ -869,6 +902,8 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
     out_dir=os.path.join(self.basepath,'engine')
     mkdirs(out_dir)
     node.set_output_file(os.path.join(out_dir,node.engine+'-'+str(event.event_id)+'-'+node.get_ifos()+'-'+str(node.get_trig_time())+'-'+str(node.id)))
+    for( (opt,arg) in event.engine_opts):
+        node.add_var_opt(opt,arg)
     return node
     
   def add_results_page_node(self,resjob=None,outdir=None,parent=None,extra_options=None,gzip_output=None):

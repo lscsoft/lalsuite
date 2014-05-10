@@ -291,9 +291,6 @@ LALInferenceVariables *LALInferenceInitCBCVariables(LALInferenceRunState *state)
                (--distance-max MAX)                    Maximum distance in Mpc (100).\n\
                (--dt time)                             Width of time prior, centred around trigger (0.1s).\n\
                (--malmquistPrior)                      Rejection sample based on SNR of template \n\
-               (--analyse-segment)                     Analyse whole segment (for margtime)\n\
-               (--time-pad-start T)                    Skip T seconds at start of segment when --analyse-segment given (default 10)\n\
-               (--time-pad-end T)                      Skip T seconds at end of segment when --analyse-segment given (default 0)\n\
                Equation of state parameters:\n\
                (--lambda1-min)                         Minimum lambda1 (0).\n\
                (--lambda1-max)                         Maximum lambda1 (3000).\n\
@@ -727,23 +724,6 @@ LALInferenceVariables *LALInferenceInitCBCVariables(LALInferenceRunState *state)
     timeParam = timeMin + (timeMax-timeMin)*gsl_rng_uniform(GSLrandom);
   }
 
-  /* Option to analyse entire segment with margtime likelihoods */
-  if(LALInferenceGetProcParamVal(commandLine,"--analyse-segment"))
-  {
-    /* Default padding times at start and end */
-    REAL8 timeSkipStart=10.0;
-    REAL8 timeSkipEnd=0.0;
-    if((ppt=LALInferenceGetProcParamVal(commandLine,"--time-pad-start")))
-      timeSkipStart=atof(ppt->value);
-    if((ppt=LALInferenceGetProcParamVal(commandLine,"--time-pad-end")))
-      timeSkipEnd=atof(ppt->value);
-    REAL8 seglen=atof(LALInferenceGetProcParamVal(commandLine,"--seglen")->value);
-    REAL8 segStart=XLALGPSGetREAL8(&(state->data->epoch));
-    timeMin=segStart+timeSkipStart;
-    timeMax=segStart+seglen-timeSkipEnd;
-  }
-  
-  
   /* Non-standard names for backward compatibility */
   if((ppt=LALInferenceGetProcParamVal(commandLine,"--phi"))) start_phase=atof(ppt->value);
   if((ppt=LALInferenceGetProcParamVal(commandLine,"--dist"))) start_dist=atof(ppt->value);
