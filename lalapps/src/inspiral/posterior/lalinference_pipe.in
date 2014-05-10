@@ -15,9 +15,12 @@ usage=""" %prog [options] config.ini
 Setup a Condor DAG file to run the LALInference pipeline based on
 the config.ini file.
 
-The user must specify either an injection file to analyse, with the --inj option,
+The user can specify either an injection file to analyse, with the --inj option,
 a list of SnglInspiralTable or CoincInspiralTable triggers with the --<x>-triggers options,
 or an ASCII list of GPS times with the --gps-time-file option.
+
+If none of the above options are given, the pipeline will analyse the entire
+stretch of time between gps-start-time and gps-end-time, specified in the config.ini file.
 
 The user must also specify and ini file which will contain the main analysis config.
 

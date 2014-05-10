@@ -571,7 +571,7 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
     # No input file given, analyse the entire time stretch between gpsstart and gpsend
     if ReadInputFromList!=1:
         seglen=self.config.getfloat('engine','seglen')
-        if(self.config.has_option('input','segment-overlap'):
+        if(self.config.has_option('input','segment-overlap')):
           overlap=self.config.getfloat('input','segment-overlap')
         else:
           overlap=32.;
@@ -902,7 +902,7 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
     out_dir=os.path.join(self.basepath,'engine')
     mkdirs(out_dir)
     node.set_output_file(os.path.join(out_dir,node.engine+'-'+str(event.event_id)+'-'+node.get_ifos()+'-'+str(node.get_trig_time())+'-'+str(node.id)))
-    for( (opt,arg) in event.engine_opts):
+    for (opt,arg) in event.engine_opts:
         node.add_var_opt(opt,arg)
     return node
     
