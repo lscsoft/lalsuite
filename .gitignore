@@ -5,6 +5,7 @@
 .dirstamp
 /Makefile
 /Makefile.in
+/_build/
 /_inst/
 TAGS
 aclocal.m4
