@@ -107,6 +107,7 @@ const char *gengetopt_args_info_full_help[] = {
   "      --templateTestF=DOUBLE    The template test frequency; templateTest flag \n                                  is required",
   "      --templateTestP=DOUBLE    The template test period; templateTest flag is \n                                  required",
   "      --templateTestDf=DOUBLE   The template test modulation depth; \n                                  templateTest flag is required",
+  "      --bruteForceTemplateTest  Test a number of different templates using \n                                  templateTest parameters  (default=off)",
   "      --ULsolver=INT            Solver function for the upper limit \n                                  calculation: \n                                  0=gsl_ncx2cdf_float_withouttinyprob_solver, \n                                  1=gsl_ncx2cdf_withouttinyprob_solver, \n                                  2=gsl_ncx2cdf_float_solver, \n                                  3=gsl_ncx2cdf_solver, \n                                  4=ncx2cdf_float_withouttinyprob_withmatlabchi2cdf_solver, \n                                  5=ncx2cdf_withouttinyprob_withmatlabchi2cdf_solver \n                                   (possible values=\"0\", \"1\", \"2\", \"3\", \n                                  \"4\", \"5\" default=`0')",
   "      --dopplerMultiplier=DOUBLE\n                                Multiplier for the Doppler velocity  \n                                  (default=`1.0')",
   "      --IHSonly                 IHS stage only is run. Output statistic is the \n                                  IHS statistic.  (default=off)",
@@ -324,6 +325,7 @@ void clear_given (struct gengetopt_args_info *args_info)
   args_info->templateTestF_given = 0 ;
   args_info->templateTestP_given = 0 ;
   args_info->templateTestDf_given = 0 ;
+  args_info->bruteForceTemplateTest_given = 0 ;
   args_info->ULsolver_given = 0 ;
   args_info->dopplerMultiplier_given = 0 ;
   args_info->IHSonly_given = 0 ;
@@ -436,6 +438,7 @@ void clear_args (struct gengetopt_args_info *args_info)
   args_info->templateTestF_orig = NULL;
   args_info->templateTestP_orig = NULL;
   args_info->templateTestDf_orig = NULL;
+  args_info->bruteForceTemplateTest_flag = 0;
   args_info->ULsolver_arg = 0;
   args_info->ULsolver_orig = NULL;
   args_info->dopplerMultiplier_arg = 1.0;
@@ -533,23 +536,24 @@ void init_args_info(struct gengetopt_args_info *args_info)
   args_info->templateTestF_help = gengetopt_args_info_full_help[72] ;
   args_info->templateTestP_help = gengetopt_args_info_full_help[73] ;
   args_info->templateTestDf_help = gengetopt_args_info_full_help[74] ;
-  args_info->ULsolver_help = gengetopt_args_info_full_help[75] ;
-  args_info->dopplerMultiplier_help = gengetopt_args_info_full_help[76] ;
-  args_info->IHSonly_help = gengetopt_args_info_full_help[77] ;
-  args_info->noNotchHarmonics_help = gengetopt_args_info_full_help[78] ;
-  args_info->calcRthreshold_help = gengetopt_args_info_full_help[79] ;
-  args_info->BrentsMethod_help = gengetopt_args_info_full_help[80] ;
-  args_info->antennaOff_help = gengetopt_args_info_full_help[81] ;
-  args_info->noiseWeightOff_help = gengetopt_args_info_full_help[82] ;
-  args_info->gaussTemplatesOnly_help = gengetopt_args_info_full_help[83] ;
-  args_info->ULoff_help = gengetopt_args_info_full_help[84] ;
-  args_info->printSFTtimes_help = gengetopt_args_info_full_help[85] ;
-  args_info->printUsedSFTtimes_help = gengetopt_args_info_full_help[86] ;
-  args_info->printData_help = gengetopt_args_info_full_help[87] ;
-  args_info->printSignalData_help = gengetopt_args_info_full_help[88] ;
-  args_info->printMarginalizedSignalData_help = gengetopt_args_info_full_help[89] ;
-  args_info->randSeed_help = gengetopt_args_info_full_help[90] ;
-  args_info->chooseSeed_help = gengetopt_args_info_full_help[91] ;
+  args_info->bruteForceTemplateTest_help = gengetopt_args_info_full_help[75] ;
+  args_info->ULsolver_help = gengetopt_args_info_full_help[76] ;
+  args_info->dopplerMultiplier_help = gengetopt_args_info_full_help[77] ;
+  args_info->IHSonly_help = gengetopt_args_info_full_help[78] ;
+  args_info->noNotchHarmonics_help = gengetopt_args_info_full_help[79] ;
+  args_info->calcRthreshold_help = gengetopt_args_info_full_help[80] ;
+  args_info->BrentsMethod_help = gengetopt_args_info_full_help[81] ;
+  args_info->antennaOff_help = gengetopt_args_info_full_help[82] ;
+  args_info->noiseWeightOff_help = gengetopt_args_info_full_help[83] ;
+  args_info->gaussTemplatesOnly_help = gengetopt_args_info_full_help[84] ;
+  args_info->ULoff_help = gengetopt_args_info_full_help[85] ;
+  args_info->printSFTtimes_help = gengetopt_args_info_full_help[86] ;
+  args_info->printUsedSFTtimes_help = gengetopt_args_info_full_help[87] ;
+  args_info->printData_help = gengetopt_args_info_full_help[88] ;
+  args_info->printSignalData_help = gengetopt_args_info_full_help[89] ;
+  args_info->printMarginalizedSignalData_help = gengetopt_args_info_full_help[90] ;
+  args_info->randSeed_help = gengetopt_args_info_full_help[91] ;
+  args_info->chooseSeed_help = gengetopt_args_info_full_help[92] ;
   
 }
 
@@ -970,6 +974,8 @@ cmdline_parser_dump(FILE *outfile, struct gengetopt_args_info *args_info)
     write_into_file(outfile, "templateTestP", args_info->templateTestP_orig, 0);
   if (args_info->templateTestDf_given)
     write_into_file(outfile, "templateTestDf", args_info->templateTestDf_orig, 0);
+  if (args_info->bruteForceTemplateTest_given)
+    write_into_file(outfile, "bruteForceTemplateTest", 0, 0 );
   if (args_info->ULsolver_given)
     write_into_file(outfile, "ULsolver", args_info->ULsolver_orig, cmdline_parser_ULsolver_values);
   if (args_info->dopplerMultiplier_given)
@@ -1738,6 +1744,7 @@ cmdline_parser_internal (
         { "templateTestF",	1, NULL, 0 },
         { "templateTestP",	1, NULL, 0 },
         { "templateTestDf",	1, NULL, 0 },
+        { "bruteForceTemplateTest",	0, NULL, 0 },
         { "ULsolver",	1, NULL, 0 },
         { "dopplerMultiplier",	1, NULL, 0 },
         { "IHSonly",	0, NULL, 0 },
@@ -2635,6 +2642,18 @@ cmdline_parser_internal (
                 &(local_args_info.templateTestDf_given), optarg, 0, 0, ARG_DOUBLE,
                 check_ambiguity, override, 0, 0,
                 "templateTestDf", '-',
+                additional_error))
+              goto failure;
+          
+          }
+          /* Test a number of different templates using templateTest parameters.  */
+          else if (strcmp (long_options[option_index].name, "bruteForceTemplateTest") == 0)
+          {
+          
+          
+            if (update_arg((void *)&(args_info->bruteForceTemplateTest_flag), 0, &(args_info->bruteForceTemplateTest_given),
+                &(local_args_info.bruteForceTemplateTest_given), optarg, 0, 0, ARG_FLAG,
+                check_ambiguity, override, 1, 0, "bruteForceTemplateTest", '-',
                 additional_error))
               goto failure;
           

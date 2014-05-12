@@ -31,7 +31,7 @@ extern "C" {
 
 #ifndef CMDLINE_PARSER_VERSION
 /** @brief the program version */
-#define CMDLINE_PARSER_VERSION "1.2.0"
+#define CMDLINE_PARSER_VERSION "1.2.1"
 #endif
 
 /** @brief Where the command line options are stored */
@@ -220,6 +220,8 @@ struct gengetopt_args_info
   double templateTestDf_arg;	/**< @brief The template test modulation depth; templateTest flag is required.  */
   char * templateTestDf_orig;	/**< @brief The template test modulation depth; templateTest flag is required original value given at command line.  */
   const char *templateTestDf_help; /**< @brief The template test modulation depth; templateTest flag is required help description.  */
+  int bruteForceTemplateTest_flag;	/**< @brief Test a number of different templates using templateTest parameters (default=off).  */
+  const char *bruteForceTemplateTest_help; /**< @brief Test a number of different templates using templateTest parameters help description.  */
   int ULsolver_arg;	/**< @brief Solver function for the upper limit calculation: 0=gsl_ncx2cdf_float_withouttinyprob_solver, 1=gsl_ncx2cdf_withouttinyprob_solver, 2=gsl_ncx2cdf_float_solver, 3=gsl_ncx2cdf_solver, 4=ncx2cdf_float_withouttinyprob_withmatlabchi2cdf_solver, 5=ncx2cdf_withouttinyprob_withmatlabchi2cdf_solver (default='0').  */
   char * ULsolver_orig;	/**< @brief Solver function for the upper limit calculation: 0=gsl_ncx2cdf_float_withouttinyprob_solver, 1=gsl_ncx2cdf_withouttinyprob_solver, 2=gsl_ncx2cdf_float_solver, 3=gsl_ncx2cdf_solver, 4=ncx2cdf_float_withouttinyprob_withmatlabchi2cdf_solver, 5=ncx2cdf_withouttinyprob_withmatlabchi2cdf_solver original value given at command line.  */
   const char *ULsolver_help; /**< @brief Solver function for the upper limit calculation: 0=gsl_ncx2cdf_float_withouttinyprob_solver, 1=gsl_ncx2cdf_withouttinyprob_solver, 2=gsl_ncx2cdf_float_solver, 3=gsl_ncx2cdf_solver, 4=ncx2cdf_float_withouttinyprob_withmatlabchi2cdf_solver, 5=ncx2cdf_withouttinyprob_withmatlabchi2cdf_solver help description.  */
@@ -326,6 +328,7 @@ struct gengetopt_args_info
   unsigned int templateTestF_given ;	/**< @brief Whether templateTestF was given.  */
   unsigned int templateTestP_given ;	/**< @brief Whether templateTestP was given.  */
   unsigned int templateTestDf_given ;	/**< @brief Whether templateTestDf was given.  */
+  unsigned int bruteForceTemplateTest_given ;	/**< @brief Whether bruteForceTemplateTest was given.  */
   unsigned int ULsolver_given ;	/**< @brief Whether ULsolver was given.  */
   unsigned int dopplerMultiplier_given ;	/**< @brief Whether dopplerMultiplier was given.  */
   unsigned int IHSonly_given ;	/**< @brief Whether IHSonly was given.  */

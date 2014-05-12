@@ -910,7 +910,7 @@ INT4 analyzeOneTemplate(candidate *output, candidate *input, ffdataStruct *ffdat
 
 
 //A brute force template search to find the most significant template around a candidate
-INT4 bruteForceTemplateSearch(candidate *output, candidate input, REAL8 fminimum, REAL8 fmaximum, INT4 numfsteps, INT4 numperiodslonger, INT4 numperiodsshorter, REAL8 dfmin, REAL8 dfmax, INT4 numdfsteps, inputParamsStruct *params, REAL4Vector *ffdata, INT4Vector *sftexist, REAL4Vector *aveNoise, REAL4Vector *aveTFnoisePerFbinRatio, REAL4FFTPlan *secondFFTplan, INT4 useExactTemplates)
+INT4 bruteForceTemplateSearch(candidate *output, candidate input, REAL8 fminimum, REAL8 fmaximum, INT4 numfsteps, INT4 numperiodslonger, INT4 numperiodsshorter, REAL4 periodSpacingFactor, REAL8 dfmin, REAL8 dfmax, INT4 numdfsteps, inputParamsStruct *params, REAL4Vector *ffdata, INT4Vector *sftexist, REAL4Vector *aveNoise, REAL4Vector *aveTFnoisePerFbinRatio, REAL4FFTPlan *secondFFTplan, INT4 useExactTemplates)
 {
 
    XLAL_CHECK( output != NULL && params != NULL && sftexist != NULL && aveNoise != NULL && aveTFnoisePerFbinRatio != NULL && secondFFTplan != NULL, XLAL_EINVAL );
@@ -969,11 +969,11 @@ INT4 bruteForceTemplateSearch(candidate *output, candidate input, REAL8 fminimum
          //20% mismatch parameter
          trialp->data[startposition] = input.period;
          for (kk=0; kk<numperiodsshorter; kk++) {
-            REAL8 nnp = trialp->data[startposition-kk]*trialp->data[startposition-kk]*(1+trialp->data[startposition-kk]/tcohfactor/params->Tobs)/tcohfactor/params->Tobs*sqrt(3.6e-3/trialb->data[jj]);
+            REAL8 nnp = periodSpacingFactor*trialp->data[startposition-kk]*trialp->data[startposition-kk]*(1+trialp->data[startposition-kk]/tcohfactor/params->Tobs)/tcohfactor/params->Tobs*sqrt(3.6e-3/trialb->data[jj]);
             trialp->data[startposition-(kk+1)] = trialp->data[startposition-kk] - nnp;
          }
          for (kk=0; kk<numperiodslonger; kk++) {
-            REAL8 nnp = trialp->data[startposition+kk]*trialp->data[startposition+kk]*(1+trialp->data[startposition+kk]/tcohfactor/params->Tobs)/tcohfactor/params->Tobs*sqrt(3.6e-3/trialb->data[jj]);
+            REAL8 nnp = periodSpacingFactor*trialp->data[startposition+kk]*trialp->data[startposition+kk]*(1+trialp->data[startposition+kk]/tcohfactor/params->Tobs)/tcohfactor/params->Tobs*sqrt(3.6e-3/trialb->data[jj]);
             trialp->data[startposition+(kk+1)] = trialp->data[startposition+kk] + nnp;
          }
 
@@ -1042,6 +1042,114 @@ INT4 bruteForceTemplateSearch(candidate *output, candidate input, REAL8 fminimum
    return XLAL_SUCCESS;
 
 }
+
+
+INT4 bruteForceTemplateTest(candidateVector **output, candidate input, REAL8 fminimum, REAL8 fmaximum, INT4 numfsteps, INT4 numperiodslonger, INT4 numperiodsshorter, REAL4 periodSpacingFactor, REAL8 dfmin, REAL8 dfmax, INT4 numdfsteps, inputParamsStruct *params, REAL4Vector *ffdata, INT4Vector *sftexist, REAL4Vector *aveNoise, REAL4Vector *aveTFnoisePerFbinRatio, REAL4FFTPlan *secondFFTplan, INT4 useExactTemplates)
+{
+
+   XLAL_CHECK( output != NULL && params != NULL && sftexist != NULL && aveNoise != NULL && aveTFnoisePerFbinRatio != NULL && secondFFTplan != NULL, XLAL_EINVAL );
+
+   INT4 ii, jj, kk;
+   REAL8Vector *trialf, *trialb, *trialp;
+   REAL8 fstepsize, dfstepsize;
+   REAL4 tcohfactor = 1.49e-3*params->Tcoh + 1.76;    //From in-text equation after Eq. 23 of E.G. and K.R. 2011
+
+   //Set up parameters of modulation depth search
+   if (dfmin<params->dfmin) dfmin = params->dfmin;
+   if (dfmax>params->dfmax) dfmax = params->dfmax;
+   XLAL_CHECK( (trialb = XLALCreateREAL8Vector(numdfsteps)) != NULL, XLAL_EFUNC );
+   if (numdfsteps>1) {
+      dfstepsize = (dfmax-dfmin)/(REAL8)(numdfsteps-1);
+      for (ii=0; ii<numdfsteps; ii++) trialb->data[ii] = dfmin + dfstepsize*ii;
+   } else {
+      trialb->data[0] = 0.5*(dfmin+dfmax);
+   }
+
+   //Set up parameters of signal frequency search
+   if (fminimum<params->fmin) fminimum = params->fmin;
+   if (fmaximum>params->fmin+params->fspan) fmaximum = params->fmin+params->fspan;
+   XLAL_CHECK( (trialf = XLALCreateREAL8Vector(numfsteps)) != NULL, XLAL_EFUNC );
+   if (numfsteps>1) {
+      fstepsize = (fmaximum-fminimum)/(REAL8)(numfsteps-1);
+      for (ii=0; ii<numfsteps; ii++) trialf->data[ii] = fminimum + fstepsize*ii;
+   } else {
+      trialf->data[0] = 0.5*(fminimum+fmaximum);
+   }
+
+   //Search over numperiods different periods
+   XLAL_CHECK( (trialp = XLALCreateREAL8Vector(numperiodslonger+numperiodsshorter+1)) != NULL, XLAL_EFUNC );
+
+   //Now search over the parameter space. Frequency, then modulation depth, then period
+   candidate cand;
+   templateStruct *template = NULL;
+   XLAL_CHECK( (template = new_templateStruct(params->maxtemplatelength)) != NULL, XLAL_EFUNC );
+
+   INT4 startposition = numperiodsshorter, proberrcode = 0;
+   //Search over frequency
+   for (ii=0; ii<(INT4)trialf->length; ii++) {
+      //Search over modulation depth
+      for (jj=0; jj<(INT4)trialb->length; jj++) {
+         //Start with period of the first guess, then determine nearest neighbor from the
+         //modulation depth amplitude to find the other period guesses. These parameters
+         //are determined from simulation to scale the N.N. distance w.r.t. mod. depth with
+         //20% mismatch parameter
+         trialp->data[startposition] = input.period;
+         for (kk=0; kk<numperiodsshorter; kk++) {
+            REAL8 nnp = periodSpacingFactor*trialp->data[startposition-kk]*trialp->data[startposition-kk]*(1+trialp->data[startposition-kk]/tcohfactor/params->Tobs)/tcohfactor/params->Tobs*sqrt(3.6e-3/trialb->data[jj]);
+            trialp->data[startposition-(kk+1)] = trialp->data[startposition-kk] - nnp;
+         }
+         for (kk=0; kk<numperiodslonger; kk++) {
+            REAL8 nnp = periodSpacingFactor*trialp->data[startposition+kk]*trialp->data[startposition+kk]*(1+trialp->data[startposition+kk]/tcohfactor/params->Tobs)/tcohfactor/params->Tobs*sqrt(3.6e-3/trialb->data[jj]);
+            trialp->data[startposition+(kk+1)] = trialp->data[startposition+kk] + nnp;
+         }
+
+         //Search over period
+         for (kk=0; kk<(INT4)trialp->length; kk++) {
+            //Within boundaries?
+            if ( trialf->data[ii]>=params->fmin &&
+                trialf->data[ii]<(params->fmin+params->fspan) &&
+                trialb->data[jj]<maxModDepth(trialp->data[kk], params->Tcoh) &&
+                trialp->data[kk]>minPeriod(trialb->data[jj], params->Tcoh) &&
+                trialp->data[kk]<=(0.2*params->Tobs) &&
+                trialp->data[kk]>=(2.0*3600.0) &&
+                trialb->data[jj]>=params->dfmin &&
+                trialb->data[jj]<=params->dfmax &&
+                trialp->data[kk]<=params->Pmax &&
+                trialp->data[kk]>=params->Pmin ) {
+
+               loadCandidateData(&cand, trialf->data[ii], trialp->data[kk], trialb->data[jj], input.ra, input.dec, 0, 0, 0.0, 0, 0.0);
+
+               resetTemplateStruct(template);
+
+               if (useExactTemplates) XLAL_CHECK( makeTemplate(template, cand, params, sftexist, secondFFTplan) == XLAL_SUCCESS, XLAL_EFUNC );
+               else XLAL_CHECK( makeTemplateGaussians(template, cand, params, (INT4)aveTFnoisePerFbinRatio->length, (INT4)aveNoise->length) == XLAL_SUCCESS, XLAL_EFUNC );
+
+               REAL8 R = calculateR(ffdata, template, aveNoise, aveTFnoisePerFbinRatio);
+               XLAL_CHECK( xlalErrno == 0, XLAL_EFUNC );
+               REAL8 prob = probR(template, aveNoise, aveTFnoisePerFbinRatio, R, params, &proberrcode);
+               XLAL_CHECK( xlalErrno == 0, XLAL_EFUNC );
+               REAL8 h0 = 0.0;
+               if ( R > 0.0 ) h0 = 2.7426*pow(R/(params->Tcoh*params->Tobs),0.25);
+
+               //Resize the output candidate vector if necessary
+               if ((*output)->numofcandidates == (*output)->length-1) XLAL_CHECK( (*output = resize_candidateVector(*output, 2*(*output)->length)) != NULL, XLAL_EFUNC );
+
+               loadCandidateData(&((*output)->data[(*output)->numofcandidates]), trialf->data[ii], trialp->data[kk], trialb->data[jj], input.ra, input.dec, R, h0, prob, proberrcode, input.normalization);
+               (*output)->numofcandidates++;
+
+            } /* if within boundaries */
+         } /* for kk < trialp */
+      } /* for jj < trialb */
+   } /* for ii < trialf */
+   free_templateStruct(template);
+   XLALDestroyREAL8Vector(trialf);
+   XLALDestroyREAL8Vector(trialb);
+   XLALDestroyREAL8Vector(trialp);
+
+   return XLAL_SUCCESS;
+
+}
+
 
 
 //A brute force template search in a region of parameter space

@@ -682,58 +682,23 @@ int main(int argc, char *argv[])
          //Rescale the h0 output from the normaliztions and amount of observation time present
          exactCandidates2->data[exactCandidates2->numofcandidates-1].h0 /= sqrt(ffdata->tfnormalization)*pow(frac_tobs_complete*ffdata->ffnormalization/skypointffnormalization,0.25);
 
-      } else if (args_info.templateTest_given && (!args_info.templateTestF_given || !args_info.templateTestP_given || !args_info.templateTestDf_given)) {
+      } else if (args_info.bruteForceTemplateTest_given && args_info.templateTestF_given && args_info.templateTestP_given && args_info.templateTestDf_given) {
+         candidate cand;
+         loadCandidateData(&cand, args_info.templateTestF_arg, args_info.templateTestP_arg, args_info.templateTestDf_arg, dopplerpos.Alpha, dopplerpos.Delta, 0.0, 0.0, 0.0, 0, 0.0);
+         XLAL_CHECK( bruteForceTemplateTest(&(exactCandidates2), cand, args_info.templateTestF_arg-2.0/inputParams->Tcoh, args_info.templateTestF_arg+2.0/inputParams->Tcoh, 21, 5, 5, 0.5, args_info.templateTestDf_arg-2.0/inputParams->Tcoh, args_info.templateTestDf_arg+2.0/inputParams->Tcoh, 21, inputParams, ffdata->ffdata, sftexist, aveNoise, aveTFnoisePerFbinRatio, secondFFTplan, 1) == XLAL_SUCCESS, XLAL_EFUNC );
+         for (ii=0; ii<(INT4)exactCandidates2->numofcandidates; ii++) exactCandidates2->data[ii].h0 /= sqrt(ffdata->tfnormalization)*pow(frac_tobs_complete*ffdata->ffnormalization/skypointffnormalization,0.25);
+      } else if ((args_info.templateTest_given || args_info.bruteForceTemplateTest_given) && (!args_info.templateTestF_given || !args_info.templateTestP_given || !args_info.templateTestDf_given)) {
          fprintf(stderr, "%s: the template test values must be given: --templateTestF, --templateTestP, and --templateTestDf\n", __func__);
          XLAL_ERROR(XLAL_FAILURE);
-      } else if (!args_info.templateTest_given && args_info.templateTestF_given && args_info.templateTestP_given && args_info.templateTestDf_given) {
-         fprintf(stderr, "%s: the template test values have been given but --templateTest was not specified\n", __func__);
+      } else if (!args_info.templateTest_given && !args_info.bruteForceTemplateTest_given && args_info.templateTestF_given && args_info.templateTestP_given && args_info.templateTestDf_given) {
+         fprintf(stderr, "%s: the template test values have been given but --templateTest or --bruteForceTemplateTest was not specified\n", __func__);
          XLAL_ERROR(XLAL_FAILURE);
       }
 
       //If the user wants to do a template search, that is done here
       if (args_info.templateSearch_given) {
-
          XLAL_CHECK( templateSearch_scox1Style(&exactCandidates2, inputParams->fmin, inputParams->fspan, 68023.8259, 1.44, inputParams, ffdata->ffdata, sftexist, aveNoise,  aveTFnoisePerFbinRatio,  secondFFTplan, 1) == XLAL_SUCCESS, XLAL_EFUNC );
-
-         /* exactCandidates2->numofcandidates = 0;
-            candidate cand;
-            loadCandidateData(&cand, args_info.templateTestF_arg-0.5/inputParams->Tcoh, args_info.templateTestP_arg, args_info.templateTestDf_arg, 0, 0, 0, 0, 0, 0, 0);
-            analyzeOneTemplate(&(exactCandidates2->data[exactCandidates2->numofcandidates]), &cand, ffdata, aveNoise, aveTFnoisePerFbinRatio, inputParams, sftexist, secondFFTplan);
-            if (xlalErrno!=0) {
-            fprintf(stderr, "%s: analyzeOneTemplate() failed.\n", __func__);
-            XLAL_ERROR(XLAL_FAILURE);
-            }
-            fprintf(stderr, "%.8g %.9g %g %.14g\n", exactCandidates2->data[exactCandidates2->numofcandidates].fsig, exactCandidates2->data[exactCandidates2->numofcandidates].period, exactCandidates2->data[exactCandidates2->numofcandidates].moddepth, exactCandidates2->data[exactCandidates2->numofcandidates].stat);
-            exactCandidates2->numofcandidates++;
-            loadCandidateData(&cand, args_info.templateTestF_arg+0.5/inputParams->Tcoh, args_info.templateTestP_arg, args_info.templateTestDf_arg, 0, 0, 0, 0, 0, 0, 0);
-            analyzeOneTemplate(&(exactCandidates2->data[exactCandidates2->numofcandidates]), &cand, ffdata, aveNoise, aveTFnoisePerFbinRatio, inputParams, sftexist, secondFFTplan);
-            if (xlalErrno!=0) {
-            fprintf(stderr, "%s: analyzeOneTemplate() failed.\n", __func__);
-            XLAL_ERROR(XLAL_FAILURE);
-            }
-            fprintf(stderr, "%.8g %.9g %g %.14g\n", exactCandidates2->data[exactCandidates2->numofcandidates].fsig, exactCandidates2->data[exactCandidates2->numofcandidates].period, exactCandidates2->data[exactCandidates2->numofcandidates].moddepth, exactCandidates2->data[exactCandidates2->numofcandidates].stat);
-            exactCandidates2->numofcandidates++;
-            loadCandidateData(&cand, args_info.templateTestF_arg, args_info.templateTestP_arg, args_info.templateTestDf_arg, 0, 0, 0, 0, 0, 0, 0);
-            bruteForceTemplateSearch(&(exactCandidates2->data[exactCandidates2->numofcandidates]), cand, cand.fsig, cand.fsig, 1, 1, 1, cand.moddepth, cand.moddepth, 1, inputParams, ffdata->ffdata, sftexist, aveNoise, aveTFnoisePerFbinRatio, secondFFTplan, 1);
-            loadCandidateData(&cand, args_info.templateTestF_arg, args_info.templateTestP_arg, args_info.templateTestDf_arg-0.5/inputParams->Tcoh, 0, 0, 0, 0, 0, 0, 0);
-            analyzeOneTemplate(&(exactCandidates2->data[exactCandidates2->numofcandidates]), &cand, ffdata, aveNoise, aveTFnoisePerFbinRatio, inputParams, sftexist, secondFFTplan);
-            if (xlalErrno!=0) {
-            fprintf(stderr, "%s: analyzeOneTemplate() failed.\n", __func__);
-            XLAL_ERROR(XLAL_FAILURE);
-            }
-            fprintf(stderr, "%.8g %.9g %g %.14g\n", exactCandidates2->data[exactCandidates2->numofcandidates].fsig, exactCandidates2->data[exactCandidates2->numofcandidates].period, exactCandidates2->data[exactCandidates2->numofcandidates].moddepth, exactCandidates2->data[exactCandidates2->numofcandidates].stat);
-            exactCandidates2->numofcandidates++;
-            loadCandidateData(&cand, args_info.templateTestF_arg, args_info.templateTestP_arg, args_info.templateTestDf_arg+0.5/inputParams->Tcoh, 0, 0, 0, 0, 0, 0, 0);
-            analyzeOneTemplate(&(exactCandidates2->data[exactCandidates2->numofcandidates]), &cand, ffdata, aveNoise, aveTFnoisePerFbinRatio, inputParams, sftexist, secondFFTplan);
-            if (xlalErrno!=0) {
-            fprintf(stderr, "%s: analyzeOneTemplate() failed.\n", __func__);
-            XLAL_ERROR(XLAL_FAILURE);
-            }
-            fprintf(stderr, "%.8g %.9g %g %.14g\n", exactCandidates2->data[exactCandidates2->numofcandidates].fsig, exactCandidates2->data[exactCandidates2->numofcandidates].period, exactCandidates2->data[exactCandidates2->numofcandidates].moddepth, exactCandidates2->data[exactCandidates2->numofcandidates].stat);
-            exactCandidates2->numofcandidates++; */
-
          for (ii=0; ii<(INT4)exactCandidates2->numofcandidates; ii++) exactCandidates2->data[ii].h0 /= sqrt(ffdata->tfnormalization)*pow(frac_tobs_complete*ffdata->ffnormalization/skypointffnormalization,0.25);
-
       }
 
       if (inputParams->signalOnly) return 0;
@@ -741,7 +706,7 @@ int main(int argc, char *argv[])
 ////////Start of the IHS step!
       candidateVector *ihsCandidates_reduced = NULL;
       //Find the FAR of IHS sum -- only if the templateTest has not been given
-      if (!args_info.templateTest_given && !args_info.templateSearch_given) {
+      if (!args_info.templateTest_given && !args_info.templateSearch_given && !args_info.bruteForceTemplateTest_given) {
          //If the false alarm thresholds need to be computed
          if (ihsfarstruct->ihsfar->data[0]<0.0) XLAL_CHECK( genIhsFar(ihsfarstruct, inputParams, maxrows, aveNoise) == XLAL_SUCCESS, XLAL_EFUNC );
 
@@ -817,6 +782,7 @@ int main(int argc, char *argv[])
                                                  5,                                                      //Number of frequencies to search in range
                                                  2,                                                      //Number of longer periods to search
                                                  2,                                                      //Number of shorter periods to search
+                                                 1.0,                                                    //Period spacing factor
                                                  gaussCandidates2->data[ii].moddepth-1.0/inputParams->Tcoh, //Minimum modulation depth
                                                  gaussCandidates2->data[ii].moddepth+1.0/inputParams->Tcoh, //Maximum modulation depth
                                                  5,                                                      //Number of modulation depths to search in range
@@ -902,6 +868,7 @@ int main(int argc, char *argv[])
                                                     3,
                                                     1,
                                                     1,
+                                                    1.0,
                                                     exactCandidates1->data[ii].moddepth-0.5/inputParams->Tcoh,
                                                     exactCandidates1->data[ii].moddepth+0.5/inputParams->Tcoh,
                                                     3,
@@ -916,6 +883,7 @@ int main(int argc, char *argv[])
                                                     3,
                                                     1,
                                                     1,
+                                                    1.0,
                                                     exactCandidates1->data[ii].moddepth-0.5/inputParams->Tcoh,
                                                     exactCandidates1->data[ii].moddepth+0.5/inputParams->Tcoh,
                                                     3,
