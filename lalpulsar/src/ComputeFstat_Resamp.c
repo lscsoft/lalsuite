@@ -581,7 +581,8 @@ SetupFstatInput_Resamp(
   resamp->multiSFTs = multiSFTs;
 
   // Set parameters to pass to ComputeFStatFreqBand_RS()
-  resamp->params.Dterms = OptimisedHotloopDterms;   // Use fixed Dterms for single frequency bin demodulation
+  resamp->params.Dterms = 8;   // Use fixed Dterms Demod for single frequency bin demodulation
+  resamp->params.FstatMethod = FMETHOD_DEMOD_BEST; //  use best available Demod calculation method
   resamp->params.SSBprec = common->SSBprec;
   resamp->params.buffer = NULL;
   resamp->params.edat = common->ephemerides;
@@ -605,7 +606,7 @@ GetFstatExtraBins_Resamp(
 
   // FIXME: resampling should not require extra frequency bins, however
   // the following is required to get 'testCFSv2_resamp.sh' to pass
-  return OptimisedHotloopDterms;
+  return 8;
 
 }
 

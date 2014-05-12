@@ -138,16 +138,15 @@ liblalpulsar_la_SOURCES = \
 nodist_liblalpulsar_la_SOURCES = LALPulsarBuildInfo.c
 
 EXTRA_liblalpulsar_la_SOURCES = \
-	ComputeFstat_Demod.c \
-	ComputeFstat_Demod_altivec.i \
-	ComputeFstat_Demod_autovect.i \
-	ComputeFstat_Demod_generic.i \
-	ComputeFstat_Demod_precalc.i \
-	ComputeFstat_Demod_sse.i \
-	ComputeFstat_Demod_sse_msc.i \
-	ComputeFstat_Resamp.c \
-	SinCosLUT.i \
-	SFTfileIO-LAL.c \
+	SinCosLUT.i 				\
+	ComputeFstat_Demod.c 			\
+	ComputeFstat_Demod_ComputeFaFb.c 	\
+	ComputeFstat_DemodHL_Altivec.i		\
+	ComputeFstat_DemodHL_OptC.i		\
+	ComputeFstat_DemodHL_SSE.i		\
+	ComputeFstat_DemodHL_Generic.i		\
+	ComputeFstat_Resamp.c 			\
+	SFTfileIO-LAL.c 			\
 	SFTutils-LAL.c
 
 liblalpulsar_la_LDFLAGS = $(AM_LDFLAGS) -version-info $(LIBVERSION)

@@ -78,6 +78,125 @@ struct tagFstatInput {
 #include "ComputeFstat_Resamp.c"
 
 ///// Function definitions /////
+const int FMETHOD_RESAMP_BEST = FMETHOD_RESAMP_GENERIC;
+
+#if defined(HAVE_SSE)
+#define have_SSE 1
+#define have_Altivec 0
+const int FMETHOD_DEMOD_BEST = FMETHOD_DEMOD_SSE;
+
+#elif (defined HAVE_ALTIVEC) || (defined __ALTIVEC__)
+#define have_Altivec 1
+#define have_SSE 0
+const int FMETHOD_DEMOD_BEST = FMETHOD_DEMOD_ALTIVEC;
+
+#else
+#define have_Altivec 0
+#define have_SSE 0
+const int FMETHOD_DEMOD_BEST = FMETHOD_DEMOD_OPTC;
+#endif
+
+
+static const struct {
+  const char *const name;
+  BOOLEAN available;
+} FstatMethodNames[FMETHOD_END] = {
+  [FMETHOD_DEMOD_GENERIC]	= {"DemodGeneric",	1 },
+  [FMETHOD_DEMOD_OPTC] 		= {"DemodOptC", 	1 },
+  [FMETHOD_DEMOD_SSE] 		= {"DemodSSE", 		have_SSE},
+  [FMETHOD_DEMOD_ALTIVEC] 	= {"DemodAltivec", 	have_Altivec},
+
+  [FMETHOD_RESAMP_GENERIC]	= {"ResampGeneric", 	1 }
+} ;
+
+/** Provide human-readable names for the different Fstat-method variants 'FstatMethodType'
+ */
+const CHAR *
+XLALGetFstatMethodName ( FstatMethodType i )
+{
+  XLAL_CHECK_NULL ( (i > FMETHOD_START) && (i < FMETHOD_END) && FstatMethodNames[i].name!=NULL, XLAL_EDOM, "Invalid FstatMethodType = %d\n", i );
+  return FstatMethodNames[i].name;
+} // XLALGetFstatMethodName()
+
+/** Return pointer to static help-string enumerating all (available) FstatMethod options
+ * Also indicates which is the (guessed) available 'best' algorithm available.
+ */
+const CHAR *
+XLALFstatMethodHelpString ( void )
+{
+  static int firstCall = 1;
+  static CHAR helpstr[1024];
+  if ( firstCall )
+    {
+      CHAR buf[1024];
+      strncpy (helpstr, "Available methods: (", sizeof(helpstr));
+      UINT4 len = strlen(helpstr);
+      const CHAR *separator = "";
+      for (int i = FMETHOD_START + 1; i < FMETHOD_END; i++ )
+        {
+          if ( ! FstatMethodNames[i].available ) {
+            continue;
+          }
+          snprintf ( buf, sizeof(buf), "%s%s", separator, FstatMethodNames[i].name );
+          separator="|";
+          if ( i == FMETHOD_DEMOD_BEST ) {
+            strncat ( buf, "=DemodBest", sizeof(buf) );
+          }
+          if ( i == FMETHOD_RESAMP_BEST ) {
+            strncat ( buf, "=ResampBest", sizeof(buf) );
+          }
+          len += strlen(buf);
+          XLAL_CHECK_NULL ( len < sizeof(helpstr), XLAL_EBADLEN, "FstatMethod help-string exceeds buffer length (%d)\n", sizeof(helpstr) );
+          strcat ( helpstr, buf );
+        } // for i < FMETHOD_LAST
+
+      strcat(helpstr, ") ");
+      firstCall = 0;
+
+    } // if firstCall
+
+  return helpstr;
+} // XLALFstatMethodHelpString()
+
+/** Parse a given string into an FstatMethodType number if valid and available,
+ * return error otherwise
+ */
+int
+XLALParseFstatMethodString ( FstatMethodType *Fmethod, 	//!< [out] parsed FstatMethod type enum
+                             const char *s		//!< [in] string to parse
+                             )
+{
+  XLAL_CHECK ( s != NULL, XLAL_EINVAL );
+  XLAL_CHECK ( Fmethod != NULL, XLAL_EINVAL );
+
+  // handle special user-input strings to select respective (guessed) best method
+  if ( strcmp ( s, "DemodBest" ) == 0 ) {
+    (*Fmethod) = FMETHOD_DEMOD_BEST;
+    return XLAL_SUCCESS;
+  }
+  if ( strcmp ( s, "ResampBest" ) == 0 ) {
+    (*Fmethod) = FMETHOD_RESAMP_BEST;
+    return XLAL_SUCCESS;
+  }
+
+  // find matching FstatMethod string
+  for (int i = FMETHOD_START + 1; i < FMETHOD_END; i++ )
+    {
+      if ( (FstatMethodNames[i].name != NULL) && (strcmp ( s, FstatMethodNames[i].name ) == 0) )
+        {
+          if ( FstatMethodNames[i].available ) {
+            (*Fmethod) = i;
+            return XLAL_SUCCESS;
+          }  else {
+            XLAL_ERROR ( XLAL_EINVAL, "Chosen FstatMethod '%s' valid but unavailable in this binary\n", s );
+          }
+        } // if found matching FstatMethod
+    } // for i < FMETHOD_LAST
+
+  XLAL_ERROR ( XLAL_EINVAL, "Unknown FstatMethod '%s'\n", s );
+
+} // XLALParseFstatMethodString()
+
 
 FstatInputVector*
 XLALCreateFstatInputVector(

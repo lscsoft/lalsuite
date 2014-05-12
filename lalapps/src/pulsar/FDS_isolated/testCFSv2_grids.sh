@@ -146,7 +146,7 @@ echo
 ## common arguments for grid types 0,1,2,6
 sky_CL="--Alpha=$Alpha --AlphaBand=$AlphaBand --dAlpha=$dAlpha --Delta=$Delta --DeltaBand=$DeltaBand --dDelta=$dDelta"
 spin_CL="--Freq=$Freq --FreqBand=$FreqBand --dFreq=$dFreq --f1dot=$f1dot --f1dotBand=$f1dotBand --df1dot=$df1dot"
-cfs_CL="--IFO=$IFO --DataFiles='${SFTdir_40h}/testSFT*' --TwoFthreshold=0 --Dterms=16 $extra_args"
+cfs_CL="--IFO=$IFO --DataFiles='${SFTdir_40h}/testSFT*' --TwoFthreshold=0 --Dterms=16 --FstatMethod=DemodOptC $extra_args"
 if [ "$haveNoise" = false ]; then
     cfs_CL="$cfs_CL --SignalOnly"
 fi

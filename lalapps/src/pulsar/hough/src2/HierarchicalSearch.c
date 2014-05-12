@@ -406,7 +406,7 @@ int MAIN( int argc, char *argv[]) {
 
   INT4 uvar_blocksRngMed = BLOCKSRNGMED;
   INT4 uvar_nStacksMax = 1;
-  INT4 uvar_Dterms = OptimisedHotloopDterms;
+  INT4 uvar_Dterms = 8;
   INT4 uvar_SSBprecision = SSBPREC_RELATIVISTIC;
   INT4 uvar_nf1dotRes = 1;
   INT4 uvar_metricType1 = LAL_PMETRIC_COH_PTOLE_ANALYTIC;
@@ -1416,7 +1416,7 @@ void SetUpSFTs( LALStatus *status,			/**< pointer to LALStatus structure */
   for (k = 0; k < in->nStacks; k++) {
 
     /* create Fstat input data struct for demodulation */
-    (*p_Fstat_in_vec)->data[k] = XLALCreateFstatInput_Demod( in->Dterms, DEMODHL_BEST );
+    (*p_Fstat_in_vec)->data[k] = XLALCreateFstatInput_Demod( in->Dterms, FMETHOD_DEMOD_BEST );
     if ( (*p_Fstat_in_vec)->data[k] == NULL ) {
       XLALPrintError("%s: XLALCreateFstatInput_Demod() failed with errno=%d", __func__, xlalErrno);
       ABORT ( status, HIERARCHICALSEARCH_EXLAL, HIERARCHICALSEARCH_MSGEXLAL );

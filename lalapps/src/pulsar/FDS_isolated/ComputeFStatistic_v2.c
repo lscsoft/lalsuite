@@ -197,6 +197,8 @@ typedef struct {
   REAL8 LVlogRhoTerm;                       /**< log(rho^4/70) of LV line-prior amplitude 'rho' */
   REAL8Vector *LVloglX;                     /**< vector of line-prior ratios per detector {l1, l2, ... } */
   RankingStat_t RankingStatistic;           /**< rank candidates according to F or LV */
+  BOOLEAN useResamp;
+  FstatMethodType Fmethod;
 } ConfigVariables;
 
 
@@ -313,7 +315,7 @@ typedef struct {
 
   CHAR *outputTiming;		/**< output timing measurements and parameters into this file [append!]*/
 
-  BOOLEAN useResamp;		/**< use FFT-resampling method instead of LALDemod() */
+  CHAR *FstatMethod;		//!< select which method/algorithm to use to compute the F-statistic
 } UserInput_t;
 
 /*---------- Global variables ----------*/
@@ -536,9 +538,9 @@ int main(int argc,char *argv[])
   /* fixed time-offset between internalRefTime and refTime */
   REAL8 DeltaTRefInt = XLALGPSDiff ( &(GV.internalRefTime), &(GV.searchRegion.refTime) ); // tRefInt - tRef
 
-  UINT4 numFreqBins_FBand = 1;	// number of frequency-bins in the frequency-band used for resampling (1 if not --useResamp)
+  UINT4 numFreqBins_FBand = 1;	// number of frequency-bins in the frequency-band used for resampling (1 if not using Resampling)
   REAL8 dFreqResamp = 0; // frequency resolution used to allocate vector of F-stat values for resampling
-  if ( uvar.useResamp )	// handle special resampling case, where we deal with a vector of F-stat values instead of one
+  if ( GV.useResamp )	// handle special resampling case, where we deal with a vector of F-stat values instead of one
     {
 	if ( LALUserVarWasSet(&uvar.dFreq) ) {
 		dFreqResamp = uvar.dFreq;
@@ -1044,7 +1046,7 @@ initUserVars (LALStatus *status, UserInput_t *uvar)
   uvar->DeltaBand = 0;
   uvar->skyRegion = NULL;
   // Dterms-default used to be 16, but has to be 8 for SSE version
-  uvar->Dterms 	= OptimisedHotloopDterms;
+  uvar->Dterms 	= 8;
 
   uvar->ephemEarth = XLALStringDuplicate("earth00-19-DE405.dat.gz");
   uvar->ephemSun = XLALStringDuplicate("sun00-19-DE405.dat.gz");
@@ -1106,7 +1108,7 @@ initUserVars (LALStatus *status, UserInput_t *uvar)
   uvar->minBraking = 0.0;
   uvar->maxBraking = 0.0;
 
-  uvar->useResamp = FALSE;
+  uvar->FstatMethod = XLALStringDuplicate("DemodBest");	// default to guessed 'best' demod hotloop variant
 
   uvar->outputSingleFstats = FALSE;
   uvar->computeLV = FALSE;
@@ -1203,9 +1205,9 @@ initUserVars (LALStatus *status, UserInput_t *uvar)
   LALregREALUserStruct(status, transient_tauDaysBand,0,  UVAR_OPTIONAL, "TransientCW: Range of transient-CW duration timescales to search, in days");
   LALregINTUserStruct (status, transient_dtau,   0,  UVAR_OPTIONAL,     "TransientCW: Step-size in transient-CW duration timescale, in seconds [Default:Tsft]");
 
-  LALregBOOLUserStruct( status, version,	'V', UVAR_SPECIAL,  "Output version information");
+  XLALregSTRINGUserStruct( FstatMethod,             0,  UVAR_OPTIONAL,  XLALFstatMethodHelpString() );
 
-  LALregBOOLUserStruct(status,  useResamp,       0,  UVAR_OPTIONAL,  "Use FFT-resampling method instead of LALDemod()");
+  LALregBOOLUserStruct( status, version,	'V', UVAR_SPECIAL,  "Output version information");
 
   /* ----- more experimental/expert options ----- */
   LALregREALUserStruct(status, 	dopplermax, 	'q', UVAR_DEVELOPER, "Maximum doppler shift expected");
@@ -1236,7 +1238,7 @@ initUserVars (LALStatus *status, UserInput_t *uvar)
 
   XLALregSTRINGUserStruct( outputTiming,         0,  UVAR_DEVELOPER, "Append timing measurements and parameters into this file");
 
-  LALregBOOLUserStruct(status,LVuseAllTerms	,0,  UVAR_DEVELOPER, "Use only leading term or all terms in Line Veto computation?");
+  LALregBOOLUserStruct(status,LVuseAllTerms,	 0,  UVAR_DEVELOPER, "Use only leading term or all terms in Line Veto computation?");
 
   DETATCHSTATUSPTR (status);
   RETURN (status);
@@ -1265,6 +1267,35 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg, const UserInput_t *uvar )
     {
       LogPrintf (LOG_CRITICAL,  "Unable to change directory to workinDir '%s'\n", uvar->workingDir);
       ABORT (status, COMPUTEFSTATISTIC_EINPUT, COMPUTEFSTATISTIC_MSGEINPUT);
+    }
+
+  /* ----- set computational parameters for F-statistic from User-input ----- */
+  if ( XLALParseFstatMethodString ( &cfg->Fmethod, uvar->FstatMethod ) != XLAL_SUCCESS ) {
+    XLALPrintError( "XLALParseFstatMethodString() failed\n");
+    ABORT ( status, COMPUTEFSTATISTIC_EXLAL, COMPUTEFSTATISTIC_MSGEXLAL );
+  }
+  if ( XLALFstatMethodClassIsResamp ( cfg->Fmethod ) ) 	// use resampling
+    {
+      cfg->useResamp = 1;
+      cfg->Fstat_in = XLALCreateFstatInput_Resamp();
+      if ( cfg->Fstat_in == NULL ) {
+        XLALPrintError("%s: XLALCreateFstatInput_Resamp() failed with errno=%d", __func__, xlalErrno);
+        ABORT ( status, COMPUTEFSTATISTIC_EXLAL, COMPUTEFSTATISTIC_MSGEXLAL );
+      }
+    }
+  else if ( XLALFstatMethodClassIsDemod ( cfg->Fmethod ) ) // use demodulation
+    {
+      cfg->useResamp = 0;
+      cfg->Fstat_in = XLALCreateFstatInput_Demod( uvar->Dterms, cfg->Fmethod );
+      if ( cfg->Fstat_in == NULL ) {
+        XLALPrintError("%s: XLALCreateFstatInput_Demod() failed with errno=%d", __func__, xlalErrno);
+        ABORT ( status, COMPUTEFSTATISTIC_EXLAL, COMPUTEFSTATISTIC_MSGEXLAL );
+      }
+    }
+  else
+    {
+      XLALPrintError("Something went wrong: couldn't classify '%s'(=%d) into {Demod | Resamp}\n", uvar->FstatMethod, cfg->Fmethod );
+      ABORT ( status, COMPUTEFSTATISTIC_EINPUT, COMPUTEFSTATISTIC_MSGEINPUT );
     }
 
   /* use IFO-contraint if one given by the user */
@@ -1432,8 +1463,9 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg, const UserInput_t *uvar )
     DopplerFullScanInit scanInit;			/* init-structure for DopperScanner */
 
     scanInit.searchRegion = cfg->searchRegion;
-    if ( uvar->useResamp )	// in the resampling-case, temporarily take out frequency-dimension of the Doppler template bank
+    if ( cfg->useResamp ) {	// in the resampling-case, temporarily take out frequency-dimension of the Doppler template bank
       scanInit.searchRegion.fkdotBand[0] = 0;
+    }
 
     scanInit.gridType = uvar->gridType;
     scanInit.gridFile = uvar->gridFile;
@@ -1482,8 +1514,9 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg, const UserInput_t *uvar )
 
     // in the resampling case, we need to restore the frequency-band info now, which we set to 0
     // before calling the DopplerInit template bank construction
-    if ( uvar->useResamp )
+    if ( cfg->useResamp ) {
       spinRangeRef.fkdotBand[0] = tmpFreqBandRef;
+    }
 
     // write this search spin-range@refTime back into 'cfg' struct for users' reference
     cfg->searchRegion.refTime = spinRangeRef.refTime;
@@ -1510,25 +1543,6 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg, const UserInput_t *uvar )
     fCoverMin *= 1.0 - uvar->dopplermax;
 
   } /* extrapolate spin-range */
-
-  /* ----- set computational parameters for F-statistic from User-input ----- */
-  if ( uvar->useResamp ) {	// use resampling
-
-    cfg->Fstat_in = XLALCreateFstatInput_Resamp();
-    if ( cfg->Fstat_in == NULL ) {
-      XLALPrintError("%s: XLALCreateFstatInput_Resamp() failed with errno=%d", __func__, xlalErrno);
-      ABORT ( status, COMPUTEFSTATISTIC_EXLAL, COMPUTEFSTATISTIC_MSGEXLAL );
-    }
-
-  } else {			// use demodulation
-
-    cfg->Fstat_in = XLALCreateFstatInput_Demod( uvar->Dterms, DEMODHL_BEST );
-    if ( cfg->Fstat_in == NULL ) {
-      XLALPrintError("%s: XLALCreateFstatInput_Demod() failed with errno=%d", __func__, xlalErrno);
-      ABORT ( status, COMPUTEFSTATISTIC_EXLAL, COMPUTEFSTATISTIC_MSGEXLAL );
-    }
-
-  }
 
   /* if single-only flag is given, assume a PSD with sqrt(S) = 1.0 */
   MultiNoiseFloor assumeSqrtSX, *p_assumeSqrtSX;
@@ -1737,13 +1751,6 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg, const UserInput_t *uvar )
         } /* for X < numDetectors */
     } /* if ( uvar.computeLV && uvar.LVlX ) */
 
-  // ----- check that resampling option was used sensibly ...
-  if ( uvar->useResamp )
-    {
-      // FIXME: probably should check a few more things, can't think of any right now ...
-      // let's hope users are sensible
-    }
-
   DETATCHSTATUSPTR (status);
   RETURN (status);
 
@@ -1757,6 +1764,9 @@ XLALGetLogString ( const ConfigVariables *cfg )
 {
   XLAL_CHECK_NULL ( cfg != NULL, XLAL_EINVAL );
 
+#define BUFLEN 1024
+  CHAR buf[BUFLEN];
+
   CHAR *logstr = NULL;
   XLAL_CHECK_NULL ( (logstr = XLALStringAppend ( logstr, "%% cmdline: " )) != NULL, XLAL_EFUNC );
   CHAR *cmdline;
@@ -1766,13 +1776,13 @@ XLALGetLogString ( const ConfigVariables *cfg )
   XLAL_CHECK_NULL ( (logstr = XLALStringAppend ( logstr, "\n" )) != NULL, XLAL_EFUNC );
   XLAL_CHECK_NULL ( (logstr = XLALStringAppend ( logstr, cfg->VCSInfoString )) != NULL, XLAL_EFUNC );
 
+  XLAL_CHECK_NULL ( snprintf ( buf, BUFLEN, "%%%% FstatMethod used: '%s'\n", XLALGetFstatMethodName ( cfg->Fmethod ) ) < BUFLEN, XLAL_EBADLEN );
+  XLAL_CHECK_NULL ( (logstr = XLALStringAppend ( logstr, buf )) != NULL, XLAL_EFUNC );
+
   XLAL_CHECK_NULL ( (logstr = XLALStringAppend ( logstr, "%% Started search: " )) != NULL, XLAL_EFUNC );
   time_t tp = time(NULL);
   XLAL_CHECK_NULL ( (logstr = XLALStringAppend ( logstr, asctime( gmtime( &tp ) ))) != NULL, XLAL_EFUNC );
   XLAL_CHECK_NULL ( (logstr = XLALStringAppend ( logstr, "%% Loaded SFTs: [ " )) != NULL, XLAL_EFUNC );
-
-#define BUFLEN 1024
-  CHAR buf[BUFLEN];
 
   UINT4 numDet = cfg->detectorIDs->length;
   for ( UINT4 X=0; X < numDet; X ++ )

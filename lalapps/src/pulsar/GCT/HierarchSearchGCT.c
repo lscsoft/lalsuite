@@ -142,6 +142,7 @@ typedef struct {
   REAL8 df2dot;                    /**< coarse grid resolution in 2nd spindown */
   UINT4 extraBinsFstat;            /**< Extra bins required for Fstat calculation */
   SSBprecision SSBprec;            /**< SSB transform precision */
+  FstatMethodType Fmethod;         //!< which Fstat-method/algorithm to use
   BOOLEAN useResamp;               /**< user-input switch whether to use resampling */
   BOOLEAN useWholeSFTs;            /**< special switch: load all given frequency bins from SFTs */
   REAL8 mismatch1;                 /**< 'mismatch1' user-input needed here internally ... */
@@ -309,7 +310,6 @@ int MAIN( int argc, char *argv[]) {
   BOOLEAN uvar_printCand1 = FALSE;      /* if 1st stage candidates are to be printed */
   BOOLEAN uvar_printFstat1 = FALSE;
   BOOLEAN uvar_semiCohToplist = TRUE; /* if overall first stage candidates are to be output */
-  BOOLEAN uvar_useResamp = FALSE;      /* use resampling to compute F-statistic instead of SFT method */
   BOOLEAN uvar_SignalOnly = FALSE;     /* if Signal-only case (for SFT normalization) */
   BOOLEAN uvar_recalcToplistStats = FALSE; /* Do additional analysis for all toplist candidates, output F, FXvector for postprocessing */
   BOOLEAN uvar_computeLV = FALSE;          /* In Fstat loop, get single-IFO F-stats [and, in future, compute Line Veto stat] */
@@ -347,7 +347,7 @@ int MAIN( int argc, char *argv[]) {
   INT4  uvar_nStacksMax = 1;
   CHAR *uvar_segmentList = NULL;	/**< ALTERNATIVE: file containing a pre-computed segment list of tuples (startGPS endGPS duration[h] NumSFTs) */
 
-  INT4 uvar_Dterms = OptimisedHotloopDterms;
+  INT4 uvar_Dterms = DTERMS;
   INT4 uvar_SSBprecision = SSBPREC_RELATIVISTIC;
   INT4 uvar_gammaRefine = 1;
   INT4 uvar_gamma2Refine = 1;
@@ -370,6 +370,7 @@ int MAIN( int argc, char *argv[]) {
   CHAR *uvar_outputTiming = NULL;
 
   BOOLEAN uvar_useWholeSFTs = 0;
+  CHAR *uvar_FstatMethod = XLALStringDuplicate("best");
 
   global_status = &status;
 
@@ -441,7 +442,6 @@ int MAIN( int argc, char *argv[]) {
   LAL_CALL( LALRegisterREALUserVar(   &status, "minStartTime1",0,  UVAR_OPTIONAL, "1st stage: Only use SFTs with timestamps starting from (including) this GPS time", &uvar_minStartTime1), &status);
   LAL_CALL( LALRegisterREALUserVar(   &status, "maxStartTime1",0,  UVAR_OPTIONAL, "1st stage: Only use SFTs with timestamps up to (excluding) this GPS time",   &uvar_maxStartTime1),   &status);
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "printFstat1",  0,  UVAR_OPTIONAL, "Print 1st stage Fstat vectors", &uvar_printFstat1), &status);
-  LAL_CALL( LALRegisterBOOLUserVar(   &status, "useResamp",    0,  UVAR_OPTIONAL, "Use resampling to compute F-statistic", &uvar_useResamp), &status);
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "SignalOnly",  'S', UVAR_OPTIONAL, "Signal only flag", &uvar_SignalOnly), &status);
 
   LAL_CALL( LALRegisterINTUserVar(    &status, "nStacksMax",   0,  UVAR_OPTIONAL, "Maximum No. of segments", &uvar_nStacksMax ),&status);
@@ -452,6 +452,7 @@ int MAIN( int argc, char *argv[]) {
   LAL_CALL( LALRegisterREALUserVar(   &status, "LVrho",        0, UVAR_OPTIONAL,  "LineVeto: Prior rho_max_line, must be >=0", &uvar_LVrho), &status);
   LAL_CALL( LALRegisterLISTUserVar(   &status, "LVlX",         0, UVAR_OPTIONAL,  "LineVeto: line-to-gauss prior ratios lX for different detectors X, length must be numDetectors. Defaults to lX=1,1,..", &uvar_LVlX), &status);
 
+  LAL_CALL( LALRegisterSTRINGUserVar( &status, "FstatMethod",  0, UVAR_OPTIONAL, XLALFstatMethodHelpString(), &uvar_FstatMethod ), &status);
   /* developer user variables */
   LAL_CALL( LALRegisterINTUserVar(    &status, "blocksRngMed", 0, UVAR_DEVELOPER, "RngMed block size", &uvar_blocksRngMed), &status);
   LAL_CALL( LALRegisterINTUserVar (   &status, "SSBprecision", 0, UVAR_DEVELOPER, "Precision for SSB transform.", &uvar_SSBprecision),    &status);
@@ -482,7 +483,7 @@ int MAIN( int argc, char *argv[]) {
   }
 
   LogPrintfVerbatim( LOG_DEBUG, "Code-version: %s\n", VCSInfoString );
-  LogPrintfVerbatim( LOG_DEBUG, "CFS Hotloop variant: %s\n", OptimisedHotloopSource );
+  // LogPrintfVerbatim( LOG_DEBUG, "CFS Hotloop variant: %s\n", OptimisedHotloopSource );
 
   if ( uvar_version )
     {
@@ -540,7 +541,7 @@ int MAIN( int argc, char *argv[]) {
     fprintf(stderr, "Toplist sorting by LV-stat only possible if --computeLV given.\n");
     return( HIERARCHICALSEARCH_EBAD );
   }
-  
+
   // compute single-IFO F-statistics for line veto
   if ( uvar_computeLV ) {
     Fstat_what |= FSTATQ_2F_PER_DET;
@@ -724,7 +725,14 @@ int MAIN( int argc, char *argv[]) {
   usefulParams.SignalOnly = uvar_SignalOnly;
   usefulParams.dopplerMax = uvar_dopplerMax;
   usefulParams.SSBprec = uvar_SSBprecision;
-  usefulParams.useResamp = uvar_useResamp;
+
+  if ( XLALParseFstatMethodString ( &usefulParams.Fmethod, uvar_FstatMethod ) != XLAL_SUCCESS ) {
+    XLALPrintError ("XLALParseFstatMethodString() failed.\n");
+    return( HIERARCHICALSEARCH_EBAD );
+  }
+  LogPrintf (LOG_NORMAL, "FstatMethod used: '%s'\n", XLALGetFstatMethodName( usefulParams.Fmethod ) );
+  usefulParams.useResamp = XLALFstatMethodClassIsResamp ( usefulParams.Fmethod );
+
   usefulParams.useWholeSFTs = uvar_useWholeSFTs;
   usefulParams.mismatch1 = uvar_mismatch1;
 
@@ -1958,7 +1966,7 @@ void SetUpSFTs( LALStatus *status,			/**< pointer to LALStatus structure */
 
     } else {			// use demodulation
 
-      (*p_Fstat_in_vec)->data[k] = XLALCreateFstatInput_Demod( in->Dterms, DEMODHL_BEST );
+      (*p_Fstat_in_vec)->data[k] = XLALCreateFstatInput_Demod( in->Dterms, in->Fmethod );
       if ( (*p_Fstat_in_vec)->data[k] == NULL ) {
         XLALPrintError("%s: XLALCreateFstatInput_Demod() failed with errno=%d", __func__, xlalErrno);
         ABORT ( status, HIERARCHICALSEARCH_EXLAL, HIERARCHICALSEARCH_MSGEXLAL );

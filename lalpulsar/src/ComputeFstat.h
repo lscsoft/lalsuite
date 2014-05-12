@@ -95,25 +95,41 @@ typedef enum tagFstatQuantities {
 } FstatQuantities;
 
 ///
-/// Demodulation hotloop variants directly selectable by the user.
+/// Different algorithms available to compute the F-statitistc, falling into two broad classes:
+/// 'Demod' = Dirichel-Kernel based demodulation, following Williams&Schutz's method
+/// 'Resamp' = FFT-based resampling
 ///
-typedef enum tagDemodHLType {
-  DEMODHL_AKOSGENERIC20 = 0,            ///< Generic C hotloop using Akos' algorithm, works for Dterms <~20
-  DEMODHL_VANILLA = 1,                  ///< Old 'vanilla' C hotloop, works for all values of Dterms
-  DEMODHL_AKOS8 = 2,                    ///< Akos C hotloop algorithm with hardcoded Dterms=8
-  DEMODHL_AUTOVECT8 = 3,                ///< C compiler autovectorizable Akos hotloop, hardcoded Dterms=8
-  DEMODHL_SIMD_SSE = 4,                 ///< SSE generic hotloop
-  DEMODHL_SIMD_SSE_PRECALC = 5,         ///< SSE hotloop with precalc divisors
-  DEMODHL_SIMD_SSE_MSC = 6,             ///< SSE hotloop for MSC compiler
-  DEMODHL_SIMD_ALTIVEC = 7,             ///< Altivec hotloop variant
-  DEMODHL_LAST
-} DemodHLType;
+typedef enum tagFstatMethodType {
+  FMETHOD_START = 1,		///< overall start marker (set to 1 to allow range-check without warnings)
+
+  FMETHOD_DEMOD_START,		///< demod start marker
+  FMETHOD_DEMOD_GENERIC,	///< Old 'generic' C hotloop, works for all values of Dterms
+  FMETHOD_DEMOD_OPTC,		///< Optimized C hotloop using Akos' algorithm, only works for Dterms <~20
+  FMETHOD_DEMOD_SSE,		///< SSE hotloop (with precalc divisors) (Dterms=8)
+  FMETHOD_DEMOD_ALTIVEC,	///< Altivec hotloop variant (Dterms=8)
+  FMETHOD_DEMOD_END,		///< demod end marker
+
+  FMETHOD_RESAMP_START,		///< resamp start marker
+  FMETHOD_RESAMP_GENERIC,	///< 'generic' resampling implementation
+  FMETHOD_RESAMP_END,		///< resamp end marker
+
+  FMETHOD_END			///< overall end marker
+} FstatMethodType;
+
+/// Some helpful range macros
+#define XLALFstatMethodClassIsDemod(x)  ( ((x) > FMETHOD_DEMOD_START )  && ((x) < FMETHOD_DEMOD_END ) )
+#define XLALFstatMethodClassIsResamp(x) ( ((x) > FMETHOD_RESAMP_START ) && ((x) < FMETHOD_RESAMP_END ) )
 
 ///
 /// Provide a 'best guess' heuristic as to which available demodulation hotloop variant will be fastest.
 /// Can be used as a user default value.
 ///
-extern const int DEMODHL_BEST;
+extern const int FMETHOD_DEMOD_BEST;
+extern const int FMETHOD_RESAMP_BEST;
+
+const CHAR *XLALGetFstatMethodName ( FstatMethodType i);
+const CHAR *XLALFstatMethodHelpString ( void );
+int XLALParseFstatMethodString ( FstatMethodType *Fmethod, const char *s );
 
 ///
 /// Complex \f$\mathcal{F}\f$-statistic amplitudes \f$F_a\f$ and \f$F_b\f$.
@@ -297,20 +313,10 @@ XLALCreateFstatInput_Demod(
   /// [in] Number of terms to keep in the Dirichlet kernel.
   const UINT4 Dterms,
 
-  /// [in] Which hotloop variant to use in demodulation: see the documentation for #DemodHLType.
-  const DemodHLType demodHL
+  /// [in] Which Fstat algorithm/method to use: see the documentation for #FstatMethodType
+  const FstatMethodType FstatMethod
 
   );
-
-///
-/// Records which optimised version of the demodulation hotloop was actually used.
-///
-extern const char *const OptimisedHotloopSource;
-
-///
-/// Number of Dirichlet kernel terms used by optimised versions of the demodulation hotloop.
-///
-extern const UINT4 OptimisedHotloopDterms;
 
 ///
 /// Create a \c FstatInput structure which will compute the \f$\mathcal{F}\f$-statistic using resampling \cite JKS98.

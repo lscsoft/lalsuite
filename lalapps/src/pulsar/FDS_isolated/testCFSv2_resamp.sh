@@ -26,6 +26,11 @@ if [ -n "$DEBUG" ]; then
     debug=${DEBUG}
 fi
 
+## ----- allow user-control of (Demod) FstatMethod variant to use
+if [ -n "$FSTAT_METHOD" ]; then
+    FstatMethod="--FstatMethod=${FSTAT_METHOD}"
+fi
+
 ##---------- names of codes and input/output files
 mfd_code="${injectdir}lalapps_Makefakedata_v5"
 cmp_code="${builddir}lalapps_compareFstats"
@@ -114,12 +119,12 @@ echo "----------------------------------------------------------------------"
 echo "STEP 2: run directed CFS_v2 with LALDemod method"
 echo "----------------------------------------------------------------------"
 echo
-cfs_CL=" --refTime=${refTime} --Dterms=16 --Alpha=$Alpha --Delta=$Delta  --AlphaBand=$AlphaBand --DeltaBand=$DeltaBand --dAlpha=$dAlpha --dDelta=$dDelta --Freq=$cfs_Freq --FreqBand=$cfs_FreqBand --dFreq=$cfs_dFreq --f1dot=$cfs_f1dot --f1dotBand=$cfs_f1dotBand --df1dot=${cfs_df1dot} --DataFiles='$SFTdir/*.sft' --NumCandidatesToKeep=${cfs_nCands}"
+cfs_CL=" --refTime=${refTime} --Dterms=8 --Alpha=$Alpha --Delta=$Delta  --AlphaBand=$AlphaBand --DeltaBand=$DeltaBand --dAlpha=$dAlpha --dDelta=$dDelta --Freq=$cfs_Freq --FreqBand=$cfs_FreqBand --dFreq=$cfs_dFreq --f1dot=$cfs_f1dot --f1dotBand=$cfs_f1dotBand --df1dot=${cfs_df1dot} --DataFiles='$SFTdir/*.sft' --NumCandidatesToKeep=${cfs_nCands} ${FstatMethod}"
 if [ "$haveNoise" != "true" ]; then
     cfs_CL="$cfs_CL --SignalOnly"
 fi
 
-cmdline="$cfs_code $cfs_CL --useResamp=0 --outputFstat=$outfile_Demod --outputTiming=$timefile_Demod"
+cmdline="$cfs_code $cfs_CL --outputFstat=$outfile_Demod --outputTiming=$timefile_Demod"
 echo $cmdline;
 if ! eval "$cmdline &> /dev/null"; then
     echo "Error.. something failed when running '$cfs_code' ..."
@@ -131,7 +136,7 @@ echo "----------------------------------------------------------------------"
 echo " STEP 3: run directed CFS_v2 with resampling"
 echo "----------------------------------------------------------------------"
 echo
-cmdline="$cfs_code $cfs_CL --useResamp=1 --outputFstat=$outfile_Resamp --outputTiming=$timefile_Resamp"
+cmdline="$cfs_code $cfs_CL --FstatMethod=ResampGeneric --outputFstat=$outfile_Resamp --outputTiming=$timefile_Resamp"
 echo $cmdline;
 if ! eval "$cmdline 2> /dev/null"; then
     echo "Error.. something failed when running '$cfs_code' ..."

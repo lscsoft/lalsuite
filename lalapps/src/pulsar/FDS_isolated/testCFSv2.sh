@@ -32,6 +32,11 @@ else
     debug=0	## default=quiet
 fi
 
+## ----- allow user-control of hotloop variant to use
+if [ -n "$FSTAT_METHOD" ]; then
+    FstatMethod="--FstatMethod=${FSTAT_METHOD}"
+fi
+
 ##---------- names of codes and input/output files
 mfd_code="${injectdir}lalapps_Makefakedata_v4"
 saf_code="${builddir}lalapps_SemiAnalyticF"
@@ -144,7 +149,7 @@ echo "STEP 2: run CFS_v2 with perfect match"
 echo "----------------------------------------------------------------------"
 echo
 
-cfs_CL="--IFO=$IFO --Alpha=$Alpha --Delta=$Delta --Freq=$cfs_Freq --dFreq=$cfs_dFreq --f1dot=$cfs_f1dot --f1dotBand=$cfs_f1dotBand --df1dot=$cfs_df1dot --DataFiles='$SFTdir/*.sft' --NumCandidatesToKeep=${cfs_nCands} --Dterms=${Dterms} --outputLoudest=${outfile_Loudest}"
+cfs_CL="--IFO=$IFO --Alpha=$Alpha --Delta=$Delta --Freq=$cfs_Freq --dFreq=$cfs_dFreq --f1dot=$cfs_f1dot --f1dotBand=$cfs_f1dotBand --df1dot=$cfs_df1dot --DataFiles='$SFTdir/*.sft' --NumCandidatesToKeep=${cfs_nCands} --Dterms=${Dterms} --outputLoudest=${outfile_Loudest} ${FstatMethod}"
 if [ "$haveNoise" != "true" ]; then
     cfs_CL="$cfs_CL --SignalOnly"
 fi

@@ -17,11 +17,6 @@
 // MA  02111-1307  USA
 //
 
-/* NOTE: sin[ 2pi (Dphi_alpha - k) ] = sin [ 2pi Dphi_alpha ], therefore
- * the trig-functions need to be calculated only once!
- * We choose the value sin[ 2pi(Dphi_alpha - kstar) ] because it is the
- * closest to zero and will pose no numerical difficulties !
- */
 {
   {
     /* improved hotloop algorithm by Fekete Akos:
@@ -37,12 +32,13 @@
 
     /* 2*DTERMS iterations */
     UINT4 l;
-    for ( l = 1; l < 2*DTERMS; l ++ ) {
+    for ( l = 1; l < 2*DTERMS; l ++ )
+      {
         Xalpha_l ++;
-        pn = pn - 1.0f;                     /* p_(n+1) */
-        Sn = pn * Sn + qn * crealf(*Xalpha_l); /* S_(n+1) */
-        Tn = pn * Tn + qn * cimagf(*Xalpha_l); /* T_(n+1) */
-        qn *= pn;                           /* q_(n+1) */
+        pn = pn - 1.0f;                         /* p_(n+1) */
+        Sn = pn * Sn + qn * crealf(*Xalpha_l);  /* S_(n+1) */
+        Tn = pn * Tn + qn * cimagf(*Xalpha_l);  /* T_(n+1) */
+        qn *= pn;                               /* q_(n+1) */
       } /* for l < 2*DTERMS */
 
     { /* only one division left */
@@ -51,16 +47,18 @@
       V_alpha = Tn * r_qn;
     }
 
-    SINCOS_2PI_TRIMMED(&s_alpha, &c_alpha, kappa_star);
+    /* NOTE: sin[ 2pi (Dphi_alpha - k) ] = sin [ 2pi Dphi_alpha ], therefore
+     * the trig-functions need to be calculated only once!
+     * We choose the value sin[ 2pi(Dphi_alpha - kstar) ] because it is the
+     * closest to zero and will pose no numerical difficulties !
+     */
+    REAL4 s_alpha, c_alpha;   /* sin(2pi kappa_alpha) and (cos(2pi kappa_alpha)-1) */
+    XLALSinCos2PiLUTtrimmed ( &s_alpha, &c_alpha, kappa_star );
     c_alpha -= 1.0f;
 
     realXP = s_alpha * U_alpha - c_alpha * V_alpha;
     imagXP = c_alpha * U_alpha + s_alpha * V_alpha;
   }
 
-  {
-    REAL8 _lambda_alpha = lambda_alpha;
-    SINCOS_TRIM_X (_lambda_alpha,_lambda_alpha);
-    SINCOS_2PI_TRIMMED( &imagQ, &realQ, _lambda_alpha );
-  }
+  XLALSinCos2PiLUT ( &imagQ, &realQ, lambda_alpha );
 }

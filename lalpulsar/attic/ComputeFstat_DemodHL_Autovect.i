@@ -43,10 +43,9 @@
       }
     }
 
-    {
-      SINCOS_2PI_TRIMMED( &s_alpha, &c_alpha, kappa_star );
-      c_alpha -= 1.0f;
-    }
+    REAL4 s_alpha, c_alpha;   /* sin(2pi kappa_alpha) and (cos(2pi kappa_alpha)-1) */
+    XLALSinCos2PiLUTtrimmed( &s_alpha, &c_alpha, kappa_star );
+    c_alpha -= 1.0f;
 
     /* combine the partial sums: */
     {
@@ -78,9 +77,5 @@
     }
   }
 
-  {
-    REAL8 _lambda_alpha = lambda_alpha;
-    SINCOS_TRIM_X (_lambda_alpha,_lambda_alpha);
-    SINCOS_2PI_TRIMMED( &imagQ, &realQ, _lambda_alpha );
-  }
+  XLALSinCos2PiLUT( &imagQ, &realQ, lambda_alpha );
 }

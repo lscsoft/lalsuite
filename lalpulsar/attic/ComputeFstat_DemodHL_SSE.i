@@ -21,7 +21,9 @@
 {
   {
 
-    COMPLEX8 XSums __attribute__ ((aligned (16))); /* sums of Xa.re and Xa.im for SSE */
+    // COMPLEX8 XSums __attribute__ ((aligned (16))); /* sums of Xa.re and Xa.im for SSE */
+
+    REAL4 kappa_max = kappa_star + 1.0f * DTERMS - 1.0f;
     REAL4 kappa_m = kappa_max; /* single precision version of kappa_max */
 
     static REAL4 *scd               =  &(sincosLUTdiff[0]);
@@ -101,7 +103,8 @@
   #define LIN_SIN_COS_P4(sin) ""
   #define LIN_SIN_COS_P5(cos) ""
 
-    SINCOS_2PI_TRIMMED ( &s_alpha, &c_alpha, kappa_star );
+    REAL4 s_alpha, c_alpha;   /* sin(2pi kappa_alpha) and (cos(2pi kappa_alpha)-1) */
+    XLALSinCos2PiLUTtrimmed ( &s_alpha, &c_alpha, kappa_star );
 
     SINCOS_TRIM_X (_lambda_alpha,_lambda_alpha);
   #endif
@@ -267,10 +270,6 @@
   }
 
   #ifndef EAH_HOTLOOP_INTERLEAVED
-  {
-    REAL8 _lambda_alpha = lambda_alpha;
-    SINCOS_TRIM_X (_lambda_alpha,_lambda_alpha);
-    SINCOS_2PI_TRIMMED( &imagQ, &realQ, _lambda_alpha );
-  }
+  XLALSinCos2PiLUT ( &imagQ, &realQ, lambda_alpha );
   #endif
 }

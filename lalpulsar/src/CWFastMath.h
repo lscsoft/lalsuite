@@ -36,35 +36,11 @@ extern "C" {
 ///
 
 // @{
+void XLALSinCosLUTInit (void);
 
-///
-/// Calculate sin(x) and cos(x) to roughly 1e-7 precision using a lookup-table and Taylor-expansion.
-///
-/// \note This function will fail for arguments larger than |x| > INT4_MAX = 2147483647 ~ 2e9 !!!
-///
-/// Returns XLAL_SUCCESS or XLAL_FAILURE.
-///
-int
-XLALSinCosLUT(
-  REAL4 *sinx,
-  REAL4 *cosx,
-  REAL8 x
-  );
-
-///
-/// Calculate sin(2*pi*x) and cos(2*pi*x) to roughly 1e-7 precision using a lookup-table and
-/// Taylor-expansion.
-///
-/// \note This function will fail for arguments larger than |x| > INT4_MAX = 2147483647 ~ 2e9 !!!
-///
-/// Returns XLAL_SUCCESS or XLAL_FAILURE.
-///
-int
-XLALSinCos2PiLUT(
-  REAL4 *sin2pix,
-  REAL4 *cos2pix,
-  REAL8 x
-  );
+int XLALSinCosLUT ( REAL4 *sinx, REAL4 *cosx, REAL8 x );
+int XLALSinCos2PiLUT ( REAL4 *sin2pix, REAL4 *cos2pix, REAL8 x );
+int XLALSinCos2PiLUTtrimmed ( REAL4 *s, REAL4 *c, REAL8 x );
 
 /* these functions operate on the module-local lookup-table for logarithms,
  * which will dynamically be generated on first use of XLALFastLog(), and can
@@ -73,10 +49,6 @@ XLALSinCos2PiLUT(
 REAL8 XLALFastLog ( REAL8 x );
 void XLALDestroyLogLUT( void );
 
-/* these functions operate on the module-local lookup-table for negative-exponentials,
- * which will dynamically be generated on first use of XLALFastNegExp(), and can
- * be destroyed at any time using XLALDestroyExpLUT()
- */
 REAL8 XLALFastNegExp ( REAL8 mx );
 void XLALDestroyExpLUT( void );
 

@@ -74,6 +74,7 @@
      * We choose the value sin[ 2pi(Dphi_alpha - kstar) ] because it is the
      * closest to zero and will pose no numerical difficulties !
      */
+    REAL4 s_alpha, c_alpha;   /* sin(2pi kappa_alpha) and (cos(2pi kappa_alpha)-1) */
     SINCOS_2PI_TRIMMED ( &s_alpha, &c_alpha, kappa_star );
     c_alpha -= 1.0f;
 

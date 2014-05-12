@@ -273,7 +273,7 @@ outfile_GCT_RS="${testDir}/GCT_RS.dat"
 timingsfile_RS="${testDir}/timing_RS.dat"
 
 if [ -z "$NORESAMP" ]; then
-    cmdline="$gct_code $gct_CL_common --useResamp=true --fnameout='$outfile_GCT_RS' --outputTiming='$timingsfile_RS' --recalcToplistStats"
+    cmdline="$gct_code $gct_CL_common --FstatMethod=ResampGeneric --fnameout='$outfile_GCT_RS' --outputTiming='$timingsfile_RS' --recalcToplistStats"
     if [ -n "$DEBUG" ]; then
         cmdline="$cmdline"
     else
@@ -306,7 +306,7 @@ rm -f checkpoint.cpt # delete checkpoint to start correctly
 outfile_GCT_DM="${testDir}/GCT_DM.dat"
 timingsfile_DM="${testDir}/timing_DM.dat"
 
-cmdline="$gct_code $gct_CL_common --useResamp=false --fnameout='$outfile_GCT_DM' --outputTiming='$timingsfile_DM' ${LV_flags}"
+cmdline="$gct_code $gct_CL_common --FstatMethod=DemodOptC --fnameout='$outfile_GCT_DM' --outputTiming='$timingsfile_DM' ${LV_flags}"
 if [ -n "$DEBUG" ]; then
     cmdline="$cmdline"
 else
@@ -336,7 +336,7 @@ rm -f checkpoint.cpt # delete checkpoint to start correctly
 outfile_GCT_DM_LV="${testDir}/GCT_DM_LV.dat"
 timingsfile_DM_LV="${testDir}/timing_DM_LV.dat"
 
-cmdline="$gct_code $gct_CL_common --useResamp=false ${LV_flags} --SortToplist=2 --fnameout='$outfile_GCT_DM_LV' --outputTiming='$timingsfile_DM_LV'"
+cmdline="$gct_code $gct_CL_common --FstatMethod=DemodOptC ${LV_flags} --SortToplist=2 --fnameout='$outfile_GCT_DM_LV' --outputTiming='$timingsfile_DM_LV'"
 if [ -n "$DEBUG" ]; then
     cmdline="$cmdline"
 else
@@ -365,7 +365,7 @@ rm -f checkpoint.cpt # delete checkpoint to start correctly
 outfile_GCT_DM_DUAL="${testDir}/GCT_DM_DUAL.dat"
 timingsfile_DM_DUAL="${testDir}/timing_DM_DUAL.dat"
 
-cmdline="$gct_code $gct_CL_common --useResamp=false --SortToplist=3 ${LV_flags} --fnameout='$outfile_GCT_DM_DUAL' --outputTiming='$timingsfile_DM_DUAL'"
+cmdline="$gct_code $gct_CL_common --FstatMethod=DemodOptC --SortToplist=3 ${LV_flags} --fnameout='$outfile_GCT_DM_DUAL' --outputTiming='$timingsfile_DM_DUAL'"
 if [ -n "$DEBUG" ]; then
     cmdline="$cmdline"
 else

@@ -20,7 +20,7 @@
 /** SSE version with precalculated divisors from Akos */
 {
   {
-
+    REAL4 s_alpha, c_alpha;   /* sin(2pi kappa_alpha) and (cos(2pi kappa_alpha)-1) */
     //COMPLEX8 XSums __attribute__ ((aligned (16))); /* sums of Xa.re and Xa.im for SSE */
     REAL4 kappa_s = kappa_star; /* single precision version of kappa_star */
 
