@@ -43,15 +43,19 @@ duration=90000
 Tsft=1800
 Nsteps=$(echo $duration $Tsft | awk '{print $1/$2}')
 SNR=2
+log10e=0.4342944819032518276511289189166051
+
 ## convergence is very slow, so optionally do many more draws and a bit tighter tolerance
 if [ -n "$LOWTOL" ]; then
  numDraws=100000
- tolerance_F=0.02
- tolerance_p=0.02
+ tolerance_F=0.025
+ tolerance_p=0.025
+ tolerance_LRS=1e-5
 else
- numDraws=2000
+ numDraws=1000
  tolerance_F=0.05
  tolerance_p=0.1
+ tolerance_LRS=1e-5
 fi
 
 outCAP1="${testDir}/antenna_pattern_test.dat"
@@ -70,11 +74,11 @@ stats_file_nll="${testDir}/synthLV_test_stats_nll.dat"
 params_file_nll="${testDir}/synthLV_test_params_nll.dat"
 timestampsfile="${testDir}/timestamps_test.dat"
 
-# do all-sky average by default to get expected SNR scaling
-synth_cmdline_common="${synth_code} --IFOs=H1,L1 --outputMmunuX --dataStartGPS=$timestamp1 --dataDuration=$duration --numDraws=$numDraws --randSeed=1"
+# do all-sky average by default to get expected SNR scaling, use defaults for Fstar0 and oLGX for now
+synth_cmdline_common="${synth_code} --IFOs=H1,L1 --outputMmunuX --dataStartGPS=$timestamp1 --dataDuration=$duration --numDraws=$numDraws --randSeed=1 --computeLRS"
 
 echo "----------------------------------------------------------------------------------------------------"
-echo "synthesizeLVstats Test1a: average stats for pure Gaussian noise, signals, lines";
+echo "synthesizeLVstats Test1a: average F-stats for pure Gaussian noise, signals, lines";
 echo "----------------------------------------------------------------------------------------------------"
 
 synth_cmdline="${synth_cmdline_common} --fixedSNR=0 --outputStats=$stats_file_g --outputInjParams=$params_file_g"
@@ -306,10 +310,45 @@ else
 fi
 
 echo "----------------------------------------------------------------------------------------------------"
-echo "synthesizeLVstats Test2a: stats for varying detector sensitivity";
+echo "synthesizeLVstats Test1d: LR-stats";
 echo "----------------------------------------------------------------------------------------------------"
 
-synth_cmdline="${synth_cmdline_common} --fixedSNR=$SNR --outputStats=$stats_file_ns --outputInjParams=$params_file_ns --sqrtSX=1,2"
+stats_draw1=$(awk '!/%%/ && /[0-9]/' $stats_file_s | head -n 1)
+draw1_2F=$(echo $stats_draw1 | awk '{print $5}')
+draw1_2FH1=$(echo $stats_draw1 | awk '{print $6}')
+draw1_2FL1=$(echo $stats_draw1 | awk '{print $7}')
+draw1_LRS=$(echo $stats_draw1 | awk '{print $8}')
+
+draw1_LRS_recomp=$(echo $draw1_2F $draw1_2FH1 $draw1_2FL1 $log10e | awk '{print ( 0.5*$1 - log( 0.5 * ( exp(0.5*$2)*0.5 + exp(0.5*$3)*0.5 ) ) ) * $4}')
+reldev_LRS_draw1=$(echo $draw1_LRS $draw1_LRS_recomp | awk "$awk_reldev")
+fail_LRS_draw1=$(echo $reldev_LRS_draw1 $tolerance_LRS | awk "$awk_isgtr")
+
+echo "for draw1, 2F=$draw1_2F, 2FH1=$draw1_2FH1, 2FL1=$draw1_2FL1:"
+echo "           LRS    =$draw1_LRS  -- recomputed externally: $draw1_LRS_recomp -- rel. deviation: $reldev_LRS_draw1)"
+
+if [ "$fail_LRS_draw1" ]; then
+    echo "==> FAILED at tolerance=$tolerance_LRS"
+    exit 1
+else
+    echo "==> OK at tolerance=$tolerance_LRS"
+fi
+
+
+echo "----------------------------------------------------------------------------------------------------"
+echo "synthesizeLVstats Test2a: F-stats for varying detector sensitivity";
+echo "----------------------------------------------------------------------------------------------------"
+
+Fstar0=10
+oLGH1=0.2 # use weird values here to test internal conversions
+oLGL1=3
+oLG=$(echo $oLGH1 $oLGL1 | awk '{print $1+$2}')
+pL=$(echo $oLG | awk '{print $1/(1+$1)}')
+rH1=$(echo $oLGH1 $oLG | awk '{print $1/$2}') # these are not really the rX of Keitel et al 2014, but divided by Ndet
+rL1=$(echo $oLGL1 $oLG | awk '{print $1/$2}')
+
+synth_cmdline_common2="${synth_cmdline_common} --sqrtSX=1,2 --Fstar0=$Fstar0  --oLGX=$oLGH1,$oLGL1"
+
+synth_cmdline="${synth_cmdline_common2} --fixedSNR=$SNR --outputStats=$stats_file_ns --outputInjParams=$params_file_ns"
 echo $synth_cmdline;
 if ! eval $synth_cmdline; then
     echo "Error.. something failed when running '$synth_cmdline' ..."
@@ -344,7 +383,7 @@ else
     echo "==> OK at tolerance=$tolerance_F"
 fi
 
-synth_cmdline="${synth_cmdline_common} --fixedSNR=$SNR --outputStats=$stats_file_nlh --outputInjParams=$params_file_nlh --sqrtSX=1,2 --lineIFO=H1"
+synth_cmdline="${synth_cmdline_common2} --fixedSNR=$SNR --outputStats=$stats_file_nlh --outputInjParams=$params_file_nlh --lineIFO=H1"
 echo $synth_cmdline;
 if ! eval $synth_cmdline; then
     echo "Error.. something failed when running '$synth_cmdline' ..."
@@ -379,7 +418,7 @@ else
     echo "==> OK at tolerance=$tolerance_F"
 fi
 
-synth_cmdline="${synth_cmdline_common} --fixedSNR=$SNR --outputStats=$stats_file_nll --outputInjParams=$params_file_nll --sqrtSX=1,2 --lineIFO=L1"
+synth_cmdline="${synth_cmdline_common2} --fixedSNR=$SNR --outputStats=$stats_file_nll --outputInjParams=$params_file_nll --lineIFO=L1"
 echo $synth_cmdline;
 if ! eval $synth_cmdline; then
     echo "Error.. something failed when running '$synth_cmdline' ..."
@@ -494,6 +533,31 @@ if [ "$fail_A" -o "$fail_B" -o "$fail_C" -o "$fail_D" -o "$fail_A_H1" -o "$fail_
     exit 1
 else
     echo "==> OK at tolerance=$tolerance_p"
+fi
+
+
+echo "----------------------------------------------------------------------------------------------------"
+echo "synthesizeLVstats Test2c: LR-stats for varying detector sensitivity";
+echo "----------------------------------------------------------------------------------------------------"
+
+stats_draw1=$(awk '!/%%/ && /[0-9]/' $stats_file_ns | head -n 1)
+draw1_2F=$(echo $stats_draw1 | awk '{print $5}')
+draw1_2FH1=$(echo $stats_draw1 | awk '{print $6}')
+draw1_2FL1=$(echo $stats_draw1 | awk '{print $7}')
+draw1_LRS=$(echo $stats_draw1 | awk '{print $8}')
+
+draw1_LRS_recomp=$(echo $draw1_2F $draw1_2FH1 $draw1_2FL1 $log10e $Fstar0 $pL $rH1 $rL1 | awk '{print ( 0.5*$1 - log( (1-$6)*exp($5) + $6*( exp(0.5*$2)*$7 + exp(0.5*$3)*$8 ) ) ) * $4}')
+reldev_LRS_draw1=$(echo $draw1_LRS $draw1_LRS_recomp | awk "$awk_reldev")
+fail_LRS_draw1=$(echo $reldev_LRS_draw1 $tolerance_LRS | awk "$awk_isgtr")
+
+echo "for draw1, 2F=$draw1_2F, 2FH1=$draw1_2FH1, 2FL1=$draw1_2FL1:"
+echo "           LRS    =$draw1_LRS  -- recomputed externally: $draw1_LRS_recomp -- rel. deviation: $reldev_LRS_draw1)"
+
+if [ "$fail_LRS_draw1" ]; then
+    echo "==> FAILED at tolerance=$tolerance_LRS"
+    exit 1
+else
+    echo "==> OK at tolerance=$tolerance_LRS"
     echo
     echo "========== OK. All synthesizeLVstats tests PASSED. =========="
     echo

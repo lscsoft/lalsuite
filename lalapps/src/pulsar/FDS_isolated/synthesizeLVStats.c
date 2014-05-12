@@ -23,7 +23,7 @@
  * \author R. Prix, D. Keitel
  * \file
  * \brief
- * Generate N samples of various statistics (F-stat, LV-stat,...) drawn from their
+ * Generate N samples of various statistics (F-stat, LR-stat,...) drawn from their
  * respective distributions, assuming Gaussian noise, and drawing signal params from
  * their (given) priors
  *
@@ -112,9 +112,9 @@ typedef struct {
   INT4 dataDuration;	/**< data-span to generate */
   INT4 TAtom;		/**< Fstat atoms time baseline */
 
-  BOOLEAN computeLV;	/**< Also compute LineVeto-statistic */
-  REAL8 LVrho;		/**< prior rho_max_line for LineVeto-statistic */
-  LALStringVector* LVlX; /**< Line-to-gauss prior ratios lX for LineVeto statistic */
+  BOOLEAN computeLRS;	/**< also compute line-robust statistic */
+  REAL8 Fstar0;		/**< transition scale parameter F*(0) for line-robust statistic */
+  LALStringVector* oLGX; /**< Line-to-gauss prior ratios oLGX for line-robust statistic */
 
   LALStringVector* sqrtSX; /**< per-detector noise PSD sqrt(SX) */
 
@@ -153,8 +153,7 @@ typedef struct {
   gsl_rng *rng;			/**< gsl random-number generator */
   CHAR *logString;		/**< logstring for file-output, containing cmdline-options + code VCS version info */
 
-  REAL8 LVlogRhoTerm;		/**< For LineVeto statistic: extra term coming from prior normalization: log(rho_max_line^4/70) */
-  REAL8Vector *LVloglX;		/**< For LineVeto statistic: vector of logs of line prior ratios lX per detector */
+  REAL4 *oLGX;			/**< per-detector line prior odds */
 
   MultiNoiseWeights *multiNoiseWeights;	/**< per-detector noise weights SX^-1/S^-1, no per-SFT variation (can be NULL for unit weights) */
 
@@ -167,7 +166,7 @@ int XLALInitUserVars ( UserInput_t *uvar );
 int XLALInitCode ( ConfigVariables *cfg, const UserInput_t *uvar );
 int XLALInitAmplitudePrior ( AmplitudePrior_t *AmpPrior, const UserInput_t *uvar );
 MultiLIGOTimeGPSVector * XLALCreateMultiLIGOTimeGPSVector ( UINT4 numDetectors );
-int write_LRS_candidate_to_fp ( FILE *fp, const LRScomponents *stats, const LALStringVector *IFOs, const InjParams_t *injParams );
+int write_LRS_candidate_to_fp ( FILE *fp, const LRScomponents *stats, const LALStringVector *IFOs, const InjParams_t *injParams, const BOOLEAN haveLRS );
 MultiNoiseWeights * XLALComputeConstantMultiNoiseWeightsFromNoiseFloor (const MultiNoiseFloor *multiNoiseFloor, const MultiLIGOTimeGPSVector *multiTS, const UINT4 Tsft );
 
 /* exportable API */
@@ -228,11 +227,6 @@ int main(int argc,char *argv[])
     XLAL_ERROR ( XLAL_EFUNC );
   }
 
-  REAL8 *loglX = NULL;
-  if ( cfg.LVloglX ) {
-    loglX = cfg.LVloglX->data;
-  }
-
   /* compare IFO name for line injection with IFO list, find the corresponding index, or throw an error if not found */
   UINT4 numDetectors = cfg.multiDetStates->length;
   INT4 lineX = -1;
@@ -257,7 +251,7 @@ int main(int argc,char *argv[])
 	  XLAL_ERROR ( XLAL_EIO );
 	}
       fprintf (fpStats, "%s", cfg.logString );		/* write search log comment */
-      if ( write_LRS_candidate_to_fp ( fpStats, NULL, uvar.IFOs, NULL ) != XLAL_SUCCESS ) { /* write header-line comment */
+      if ( write_LRS_candidate_to_fp ( fpStats, NULL, uvar.IFOs, NULL, uvar.computeLRS ) != XLAL_SUCCESS ) { /* write header-line comment */
         XLAL_ERROR ( XLAL_EFUNC );
       }
     } /* if outputStats */
@@ -278,6 +272,12 @@ int main(int argc,char *argv[])
     } /* if outputInjParams */
 
   multiAMBuffer_t XLAL_INIT_DECL(multiAMBuffer);      /* prepare AM-buffer */
+
+  /* ----- prepare LR-stat computation */
+  LRstatSetup *LRSsetup = NULL;
+  if ( uvar.computeLRS ) {
+    XLAL_CHECK ( ( LRSsetup = XLALCreateLRstatSetup ( numDetectors, uvar.Fstar0, cfg.oLGX ) ) != NULL, XLAL_EFUNC );
+  }
 
   /* ----- main MC loop over numDraws trials ---------- */
   INT4 i;
@@ -300,7 +300,7 @@ int main(int argc,char *argv[])
       LRScomponents XLAL_INIT_DECL(synthStats); /* struct containing multi-detector Fstat, single-detector Fstats, line-robust stat */
       synthStats.numDetectors = numDetectors;
 
-      /* compute F and LV statistics from atoms */
+      /* compute F- and LR-statistics from atoms */
       UINT4 X;
       for ( X=0; X < numDetectors; X++ )    {
         synthStats.TwoFX[X] = XLALComputeFstatFromAtoms ( multiAtoms, X );
@@ -316,13 +316,10 @@ int main(int argc,char *argv[])
         XLAL_ERROR ( XLAL_EFUNC );
       }
 
-      if ( uvar.computeLV ) {
+      if ( uvar.computeLRS ) {
         BOOLEAN useAllTerms = TRUE;
-        synthStats.LRS = XLALComputeLineVetoArray ( synthStats.TwoF, numDetectors, synthStats.TwoFX, cfg.LVlogRhoTerm, loglX, useAllTerms );
-        if ( xlalErrno != 0 ) {
-          XLALPrintError ("\nError in function %s, line %d : Failed call to XLALComputeLineVeto().\n\n", __func__, __LINE__);
-          XLAL_ERROR ( XLAL_EFUNC );
-        }
+        synthStats.LRS = XLALComputeLRstat ( synthStats.TwoF, synthStats.TwoFX, LRSsetup, useAllTerms );
+        XLAL_CHECK ( xlalErrno == 0, XLAL_EFUNC, "XLALComputeLRstat() failed with xlalErrno = %d\n", xlalErrno );
       }
 
       /* ----- if requested, output atoms-vector into file */
@@ -355,7 +352,7 @@ int main(int argc,char *argv[])
 
 
       /* ----- if requested, output transient-cand statistics */
-      if ( fpStats && write_LRS_candidate_to_fp ( fpStats, &synthStats, uvar.IFOs, &injParamsDrawn ) != XLAL_SUCCESS ) {
+      if ( fpStats && write_LRS_candidate_to_fp ( fpStats, &synthStats, uvar.IFOs, &injParamsDrawn, uvar.computeLRS ) != XLAL_SUCCESS ) {
         XLALPrintError ( "%s: write_transientCandidate_to_fp() failed.\n", __func__ );
         XLAL_ERROR ( XLAL_EFUNC );
       }
@@ -380,10 +377,17 @@ int main(int argc,char *argv[])
   XLALDestroyPDF1D ( cfg.AmpPrior.pdf_psi );
   XLALDestroyPDF1D ( cfg.AmpPrior.pdf_phi0 );
 
-  if ( cfg.logString ) XLALFree ( cfg.logString );
-  gsl_rng_free ( cfg.rng );
+  XLALFree ( LRSsetup );
+  LRSsetup = NULL;
 
-  XLALDestroyREAL8Vector ( cfg.LVloglX );
+  if ( cfg.oLGX ) {
+   XLALFree ( cfg.oLGX );
+  }
+
+  if ( cfg.logString ) {
+    XLALFree ( cfg.logString );
+  }
+  gsl_rng_free ( cfg.rng );
 
   XLALDestroyUserVars();
 
@@ -420,9 +424,9 @@ XLALInitUserVars ( UserInput_t *uvar )
   uvar->numDraws = 1;
   uvar->TAtom = 1800;
 
-  uvar->computeLV = 0;
-  uvar->LVrho = 0.0;
-  uvar->LVlX = NULL;
+  uvar->computeLRS = 1;
+  uvar->Fstar0 = -LAL_REAL4_MAX; /* corresponding to OSL limit */
+  uvar->oLGX = NULL;
   uvar->sqrtSX = NULL;
   uvar->useFReg = 0;
 
@@ -465,9 +469,9 @@ XLALInitUserVars ( UserInput_t *uvar )
   XLALregINTUserStruct ( dataDuration,	 	 0,  UVAR_OPTIONAL, "data-span to generate (in seconds)");
 
   /* misc params */
-  XLALregBOOLUserStruct ( computeLV,		 0, UVAR_OPTIONAL, "Also compute LineVeto-statistic");
-  XLALregREALUserStruct ( LVrho,		 0, UVAR_OPTIONAL, "LineVeto: prior rho_max_line for LineVeto-statistic");
-  XLALregLISTUserStruct ( LVlX,			 0, UVAR_OPTIONAL, "LineVeto: line-to-gauss prior ratios lX for different detectors X, length must be numDetectors. Defaults to lX=1,1,..");
+  XLALregBOOLUserStruct ( computeLRS,		 0, UVAR_OPTIONAL, "Also compute line-robust statistic");
+  XLALregREALUserStruct ( Fstar0,		 0, UVAR_OPTIONAL, "transition scale parameter F*(0) for line-robust statistic");
+  XLALregLISTUserStruct ( oLGX,			 0, UVAR_OPTIONAL, "line-to-gauss prior ratios for different detectors X, length must be numDetectors. Defaults to oLGX=1,1,..");
 
   XLALregLISTUserStruct ( sqrtSX,		 0, UVAR_OPTIONAL, "Per-detector noise PSD sqrt(SX). Only ratios relevant to compute noise weights. Defaults to 1,1,...");
 
@@ -489,7 +493,6 @@ XLALInitUserVars ( UserInput_t *uvar )
 
   /* 'hidden' stuff */
   XLALregINTUserStruct ( TAtom,		  	  0, UVAR_DEVELOPER, "Time baseline for Fstat-atoms (typically Tsft) in seconds." );
-
 
   if ( xlalErrno ) {
     XLALPrintError ("%s: something failed in initializing user variabels .. errno = %d.\n", __func__, xlalErrno );
@@ -591,54 +594,11 @@ XLALInitCode ( ConfigVariables *cfg, const UserInput_t *uvar )
     XLAL_ERROR ( XLAL_EFUNC );
   }
 
-  /* process LV user vars */
-  if ( uvar->LVrho < 0.0 ) {
-    fprintf(stderr, "Invalid LV prior rho (given rho=%f, need rho>=0)!\n", uvar->LVrho);
-    return( XLAL_EINVAL );
+  /* set up prior line weights: either given by user, then parse from string to REAL4 array; else, pass NULL, which is interpreted as rX=1.0 for all X */
+  if ( uvar->oLGX ) {
+    XLAL_CHECK ( ( cfg->oLGX = XLALMalloc ( numDetectors*sizeof(REAL4) ) ) != NULL, XLAL_ENOMEM, "XLALMalloc(%d) failed.", numDetectors*sizeof(REAL4) );
+    XLALParseLinePriors ( cfg->oLGX, uvar->oLGX );
   }
-  else if ( uvar->LVrho > 0.0 ) {
-    cfg->LVlogRhoTerm = 4.0 * log(uvar->LVrho) - log(70.0);
-  }
-  else { /* if uvar_LVrho == 0.0, logRhoTerm should become irrelevant in summation */
-    cfg->LVlogRhoTerm = - LAL_REAL4_MAX;
-  }
-
-  /* set up line prior ratios: either given by user, then convert from string to REAL4 vector; else, pass NULL, which is interpreted as lX=1.0 for all X */
-  cfg->LVloglX = NULL;
-
-  if ( uvar->computeLV && uvar->LVlX ) {
-
-    if (  uvar->LVlX->length != numDetectors ) {
-      fprintf(stderr, "Length of LV prior ratio vector does not match number of detectors! (%d != %d)\n", uvar->LVlX->length, numDetectors);
-      XLAL_ERROR ( XLAL_EINVAL );
-    }
-
-    if ( (cfg->LVloglX = XLALCreateREAL8Vector ( numDetectors )) == NULL ) {
-      fprintf(stderr, "Failed call to XLALCreateREAL8Vector( %d )\n", numDetectors );
-      XLAL_ERROR ( XLAL_EFUNC );
-    }
-
-    for (UINT4 X = 0; X < numDetectors; X++) {
-
-      if ( 1 != sscanf ( uvar->LVlX->data[X], "%" LAL_REAL8_FORMAT, &cfg->LVloglX->data[X] ) ) {
-        fprintf(stderr, "Illegal REAL8 commandline argument to --LVlX[%d]: '%s'\n", X, uvar->LVlX->data[X]);
-        XLAL_ERROR ( XLAL_EINVAL );
-      }
-
-      if ( cfg->LVloglX->data[X] < 0.0 ) {
-        fprintf(stderr, "Negative input prior-ratio for detector X=%d lX[X]=%f\n", X, cfg->LVloglX->data[X] );
-        XLAL_ERROR ( XLAL_EINVAL );
-      }
-      else if ( cfg->LVloglX->data[X] > 0.0 ) {
-        cfg->LVloglX->data[X] = log(cfg->LVloglX->data[X]);
-      }
-      else { /* if zero prior ratio, approximate log(0)=-inf by -LAL_REA4_MAX to avoid raising underflow exceptions */
-        cfg->LVloglX->data[X] = - LAL_REAL8_MAX;
-      }
-
-    } /* for X < numDetectors */
-
-  } /* if ( uvar->computeLV && uvar->LVlX ) */
 
   if ( uvar->sqrtSX ) { /* translate user-input PSD sqrt(SX) to noise-weights (this actually does not care whether they were normalized or not) */
 
@@ -834,13 +794,13 @@ XLALCreateMultiLIGOTimeGPSVector ( UINT4 numDetectors )
 
 
 /**
- * Write one line for given LV candidate into output file.
+ * Write one line for given LRS candidate into output file.
  *
  * NOTE: input stats and injParams can be NULL pointers, then writes header comment instead
  *
  */
 int
-write_LRS_candidate_to_fp ( FILE *fp, const LRScomponents *stats, const LALStringVector *IFOs, const InjParams_t *injParams )
+write_LRS_candidate_to_fp ( FILE *fp, const LRScomponents *stats, const LALStringVector *IFOs, const InjParams_t *injParams, const BOOLEAN haveLRS )
 {
 
   XLAL_CHECK ( fp, XLAL_EINVAL, "Invalid NULL filepointer input." );
@@ -850,15 +810,17 @@ write_LRS_candidate_to_fp ( FILE *fp, const LRScomponents *stats, const LALStrin
 
     char stat_header_string[256] = "";
     char buf0[256];
-    snprintf ( stat_header_string, sizeof(stat_header_string), "2F      " );
+    snprintf ( stat_header_string, sizeof(stat_header_string), "2F   " );
     for ( UINT4 X = 0; X < IFOs->length ; X ++ ) {
-      snprintf ( buf0, sizeof(buf0), " 2F_%s   ", IFOs->data[X] );
+      snprintf ( buf0, sizeof(buf0), "    2F_%s", IFOs->data[X] );
       UINT4 len1 = strlen ( stat_header_string ) + strlen ( buf0 ) + 1;
       XLAL_CHECK ( len1 <= sizeof ( stat_header_string ), XLAL_EBADLEN, "Assembled output string too long! (%d > %d)", len1, sizeof(stat_header_string));
       strcat ( stat_header_string, buf0 );
     }
-    snprintf ( buf0, sizeof(buf0), " LV" );
-    strcat ( stat_header_string, buf0 );
+    if ( haveLRS ) {
+      snprintf ( buf0, sizeof(buf0), "     LRS" );
+      strcat ( stat_header_string, buf0 );
+    }
     fprintf(fp, "%%%% freq  alpha    delta    f1dot    %s\n", stat_header_string);
 
     return XLAL_SUCCESS;	/* we're done here */
@@ -879,8 +841,10 @@ write_LRS_candidate_to_fp ( FILE *fp, const LRScomponents *stats, const LALStrin
     XLAL_CHECK ( len1 <= sizeof ( statString ), XLAL_EBADLEN, "Assembled output string too long! (%d > %d)", len1, sizeof(statString));
     strcat ( statString, buf0 );
   } /* for X < IFOs->length */
-  snprintf ( buf0, sizeof(buf0), " %.6f", stats->LRS );
-  strcat ( statString, buf0 );
+  if ( haveLRS ) {
+    snprintf ( buf0, sizeof(buf0), " %.6f", stats->LRS );
+    strcat ( statString, buf0 );
+  }
   fprintf (fp, "%.6f %.6f %.6f %.6f %s\n",
 		0.0, /* legacy field from synthesizeTransientStats: freq, not needed here */
 		injParams->skypos.longitude,
