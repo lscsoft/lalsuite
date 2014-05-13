@@ -196,7 +196,8 @@ GetOptions('help' => \$help,
            'maxSpindown:f' => \$maxSpindown, 
            'spindownDist:i' => \$spindownDist, 
            'ifo=s' => \@ifo, 
-           'fmin=f' => \$fmin, 
+           'fmin=f' => \$fmin,
+           'fspan:f' => \$fspan,
            'h0min:f' => \$h0min, 
            'h0max:f' => \$h0max, 
            'h0dist:i' => \$h0dist, 
@@ -345,7 +346,7 @@ for(my $ii=0; $ii<10; $ii++) {
          elsif ($eccDist==1) { $ecc = 10**((log10($maxEcc)-log10($minEcc))*random_uniform()) * $minEcc; }
          else { $ecc = ($maxEcc + $minEcc) - 10**((log10($maxEcc)-log10($minEcc))*random_uniform()) * $minEcc; }
          $argp = 2.0*pi*random_uniform();
-      } 
+      }
 
       if ($minSpindown != 0.0 || $maxSpindown!=0.0) {
          if ($spindownDist==0) { $f1dot = ($maxSpindown - $minSpindown)*random_uniform() + $minSpindown; }
