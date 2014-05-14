@@ -156,6 +156,10 @@ double XLALSimIMRPhenomCGetFinalFreq(
 /**
  * Driver routine to compute the spin-aligned, inspiral-merger-ringdown
  * phenomenological waveform IMRPhenomC in the time domain.
+ * (Note that this approximant was constructed as a smooth function in
+ * the frequency domain, so there might be spurious effects after
+ * transforming into the time domain. One example are small amplitude
+ * oscillations just before merger.)
  *
  * Reference: http://arxiv.org/pdf/1005.3306v3.pdf
  *   - Waveform: Eq.(5.3)-(5.13)
