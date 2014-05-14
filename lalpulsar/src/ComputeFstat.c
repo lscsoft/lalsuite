@@ -72,6 +72,8 @@ struct tagFstatInput {
   FstatInput_Resamp* resamp;                        // Resampling input data
 };
 
+// ----- internal prototypes
+static REAL8 XLALComputeFstatFromFaFb ( COMPLEX16 Fa, COMPLEX16 Fb, REAL8 A, REAL8 B, REAL8 C, REAL8 E, REAL8 Dinv );
 ///// Include F-statistic algorithm implementations /////
 
 #include "ComputeFstat_Demod.c"
@@ -636,7 +638,7 @@ XLALComputeFstat(
 
   return XLAL_SUCCESS;
 
-}
+} // XLALComputeFstat()
 
 void
 XLALDestroyFstatInput(
@@ -1106,8 +1108,30 @@ REAL8 XLALComputeFstatFromAtoms ( const MultiFstatAtomVector *multiFstatAtoms,  
 
   /* compute determinant and final Fstat (not twoF!) */
   REAL8 Dinv = 1.0 / ( mmatrixA * mmatrixB - SQ(mmatrixC) );
-  F = Dinv * ( mmatrixB * ( SQ(crealf(Fa)) + SQ(cimagf(Fa)) ) + mmatrixA * ( SQ(crealf(Fb)) + SQ(cimagf(Fb)) ) - 2.0 * mmatrixC * (crealf(Fa)*crealf(Fb) + cimagf(Fa)*cimagf(Fb)) );
 
-  return(F);
+  F = XLALComputeFstatFromFaFb ( Fa, Fb, mmatrixA, mmatrixB, mmatrixC, 0, Dinv );
 
-} /* XLALComputeFstatFromAtoms() */
+  return F;
+
+} // XLALComputeFstatFromAtoms()
+
+
+///
+/// Simple helper function for computing the F-statistic 'F' from given 'Fa,Fb' and antenna-pattern coefficients {A,B,C,E}
+/// with determinant D = A * B - C^2 - E^2, and Dinv = 1/D.
+///
+static REAL8
+XLALComputeFstatFromFaFb ( COMPLEX16 Fa, COMPLEX16 Fb, REAL8 A, REAL8 B, REAL8 C, REAL8 E, REAL8 Dinv )
+{
+  REAL8 Fa_re = creal(Fa);
+  REAL8 Fa_im = cimag(Fa);
+  REAL8 Fb_re = creal(Fb);
+  REAL8 Fb_im = cimag(Fb);
+
+  REAL8 F = Dinv * (  B * ( SQ(Fa_re) + SQ(Fa_im) )
+                      + A * ( SQ(Fb_re) + SQ(Fb_im) )
+                      - 2.0 * C * (   Fa_re * Fb_re + Fa_im * Fb_im )
+                      - 2.0 * E * ( - Fa_re * Fb_im + Fa_im * Fb_re )		// nonzero only in RAA case where Ed!=0
+                      );
+  return F;
+} // XLALComputeFstatFromFaFb()

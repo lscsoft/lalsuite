@@ -229,18 +229,10 @@ ComputeFstat_Demod ( FstatResults* Fstats,
               REAL8 DdX_inv = 1.0 / multiAMcoef->data[X]->D;
               REAL8 EdX = 0;
 
-              REAL8 FXa_re = creal(FaX);
-              REAL8 FXa_im = cimag(FaX);
-              REAL8 FXb_re = creal(FbX);
-              REAL8 FXb_im = cimag(FbX);
+              /* compute final single-IFO F-stat */
+              FX[X] = XLALComputeFstatFromFaFb ( FaX, FbX, AdX, BdX, CdX, EdX, DdX_inv );
 
-              // compute final single-IFO F-stat
-              FX[X] = DdX_inv * (  BdX * ( SQ(FXa_re) + SQ(FXa_im) )
-                                   + AdX * ( SQ(FXb_re) + SQ(FXb_im) )
-                                   - 2.0 * CdX * (   FXa_re * FXb_re + FXa_im * FXb_im )
-                                   - 2.0 * EdX * ( - FXa_re * FXb_im + FXa_im * FXb_re )		// nonzero only in RAA case where Ed!=0
-                                   );
-            } // if returnSingleF
+            } /* if returnSingleF */
 
           /* Fa = sum_X Fa_X */
           Fa += FaX;
@@ -261,16 +253,7 @@ ComputeFstat_Demod ( FstatResults* Fstats,
       REAL8 Dd_inv = 1.0 / multiAMcoef->Mmunu.Dd;
       REAL8 Ed = 0;
 
-      REAL8 Fa_re = creal(Fa);
-      REAL8 Fa_im = cimag(Fa);
-      REAL8 Fb_re = creal(Fb);
-      REAL8 Fb_im = cimag(Fb);
-
-      F = Dd_inv * (  Bd * ( SQ(Fa_re) + SQ(Fa_im) )
-                      + Ad * ( SQ(Fb_re) + SQ(Fb_im) )
-                      - 2.0 * Cd * ( Fa_re * Fb_re + Fa_im * Fb_im )
-                      - 2.0 * Ed * ( - Fa_re * Fb_im + Fa_im * Fb_re )		// nonzero only in RAA case where Ed!=0
-                      );
+      F = XLALComputeFstatFromFaFb ( Fa, Fb, Ad, Bd, Cd, Ed, Dd_inv );
 
       // this needs to be free'ed, as it's currently not buffered
       XLALDestroyMultiSSBtimes ( multiBinary );

@@ -464,10 +464,9 @@ void ComputeFStatFreqBand_RS ( LALStatus *status,                               
       UINT4 numFreqBins = (fstatVector->data->length)/(numDetectors + 1);
       for (UINT4 m = 0; m < numFreqBins; m++) {
         UINT4 idy = m + offset_single;
-        fstatVector->data->data[((i+1)*numFreqBins) + m] = DdX_inv * (  BdX * (SQ(crealf(outaSingle->data[idy])) + SQ(cimagf(outaSingle->data[idy])) )
-                                                                        + AdX * ( SQ(crealf(outbSingle->data[idy])) + SQ(cimagf(outbSingle->data[idy])) )
-                                                                        - 2.0 * CdX *( crealf(outaSingle->data[idy]) * crealf(outbSingle->data[idy]) + cimagf(outaSingle->data[idy]) * cimagf(outbSingle->data[idy]) )
-          );
+        COMPLEX16 FaX = outaSingle->data[idy];
+        COMPLEX16 FbX = outbSingle->data[idy];
+        fstatVector->data->data[((i+1)*numFreqBins) + m] = XLALComputeFstatFromFaFb ( FaX, FbX, AdX, BdX, CdX, 0, DdX_inv );
       } /* end loop over samples */
     } /* if returnSingleF */
 
@@ -500,16 +499,9 @@ void ComputeFStatFreqBand_RS ( LALStatus *status,                               
       UINT4 idx = k + offset;
       /* ----- compute final Fstatistic-value ----- */
 
-      /* NOTE: the data MUST be normalized by the DOUBLE-SIDED PSD (using LALNormalizeMultiSFTVect),
-       * therefore there is a factor of 2 difference with respect to the equations in JKS, which
-       * where based on the single-sided PSD.
-       */
-      fstatVector->data->data[k] = Dd_inv * (
-        Bd * (SQ(crealf(Faf_resampled->data[idx])) + SQ(cimagf(Faf_resampled->data[idx])))
-        + Ad * (SQ(crealf(Fbf_resampled->data[idx])) + SQ(cimagf(Fbf_resampled->data[idx])))
-        - 2.0 * Cd *( crealf(Faf_resampled->data[idx]) * crealf(Fbf_resampled->data[idx]) +
-                      cimagf(Faf_resampled->data[idx]) * cimagf(Fbf_resampled->data[idx]) )
-        );
+      COMPLEX16 Fa = Faf_resampled->data[idx];
+      COMPLEX16 Fb = Fbf_resampled->data[idx];
+      fstatVector->data->data[k] = XLALComputeFstatFromFaFb ( Fa, Fb, Ad, Bd, Cd, 0, Dd_inv );
     }
   }
 
