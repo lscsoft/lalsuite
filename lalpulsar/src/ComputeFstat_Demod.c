@@ -155,7 +155,7 @@ ComputeFstat_Demod ( FstatResults* Fstats,
 
   MultiSSBtimes *multiBinary = NULL;
   MultiSSBtimes *multiSSBTotal = NULL;
-  // handly binary-orbital timing corrections, if applicable
+  // handle binary-orbital timing corrections, if applicable
   if ( thisPoint.asini > 0 )
     {
       // compute binary time corrections to the SSB time delays and SSB time derivitive
@@ -198,16 +198,16 @@ ComputeFstat_Demod ( FstatResults* Fstats,
           switch ( demod->FstatMethod )
             {
             case  FMETHOD_DEMOD_GENERIC:
-              XLAL_CHECK ( XLALComputeFaFb_Generic ( &FaX, &FbX, FstatAtoms_p, multiSFTs->data[X], thisPoint.fkdot, multiSSBTotal->data[X], multiAMcoef->data[X], Dterms ) == XLAL_SUCCESS, XLAL_EFUNC );
+              XLAL_CHECK ( XLALComputeFaFb_Generic ( &FaX, &FbX, FstatAtoms_p, multiSFTs->data[X], thisPoint.fkdot, multiSSBTotal->data[X], multiAMcoef->data[X], Dterms )==XLAL_SUCCESS,XLAL_EFUNC);
               break;
             case FMETHOD_DEMOD_OPTC:
-              XLAL_CHECK ( XLALComputeFaFb_OptC ( &FaX, &FbX, FstatAtoms_p, multiSFTs->data[X], thisPoint.fkdot, multiSSBTotal->data[X], multiAMcoef->data[X], Dterms ) == XLAL_SUCCESS, XLAL_EFUNC );
+              XLAL_CHECK ( XLALComputeFaFb_OptC ( &FaX, &FbX, FstatAtoms_p, multiSFTs->data[X], thisPoint.fkdot, multiSSBTotal->data[X], multiAMcoef->data[X], Dterms ) == XLAL_SUCCESS, XLAL_EFUNC);
               break;
             case FMETHOD_DEMOD_SSE:
-              XLAL_CHECK ( XLALComputeFaFb_SSE ( &FaX, &FbX, FstatAtoms_p, multiSFTs->data[X], thisPoint.fkdot, multiSSBTotal->data[X], multiAMcoef->data[X], Dterms) == XLAL_SUCCESS, XLAL_EFUNC );
+              XLAL_CHECK ( XLALComputeFaFb_SSE ( &FaX, &FbX, FstatAtoms_p, multiSFTs->data[X], thisPoint.fkdot, multiSSBTotal->data[X], multiAMcoef->data[X], Dterms) == XLAL_SUCCESS, XLAL_EFUNC);
               break;
             case FMETHOD_DEMOD_ALTIVEC:
-              XLAL_CHECK ( XLALComputeFaFb_Altivec ( &FaX, &FbX, FstatAtoms_p, multiSFTs->data[X], thisPoint.fkdot, multiSSBTotal->data[X], multiAMcoef->data[X], Dterms) == XLAL_SUCCESS, XLAL_EFUNC );
+              XLAL_CHECK ( XLALComputeFaFb_Altivec ( &FaX, &FbX, FstatAtoms_p, multiSFTs->data[X], thisPoint.fkdot, multiSSBTotal->data[X], multiAMcoef->data[X], Dterms)==XLAL_SUCCESS,XLAL_EFUNC);
               break;
             default:
               XLAL_ERROR ( XLAL_EINVAL, "Invalid Fstat-method %d!\n", demod->FstatMethod );
@@ -229,10 +229,10 @@ ComputeFstat_Demod ( FstatResults* Fstats,
               REAL8 DdX_inv = 1.0 / multiAMcoef->data[X]->D;
               REAL8 EdX = 0;
 
-              /* compute final single-IFO F-stat */
+              // compute final single-IFO F-stat
               FX[X] = XLALComputeFstatFromFaFb ( FaX, FbX, AdX, BdX, CdX, EdX, DdX_inv );
 
-            } /* if returnSingleF */
+            } // if returnSingleF
 
           /* Fa = sum_X Fa_X */
           Fa += FaX;
@@ -243,10 +243,6 @@ ComputeFstat_Demod ( FstatResults* Fstats,
         } // for  X < numDetectors
 
       // ----- compute final Fstatistic-value -----
-      /* NOTE: the data MUST be normalized by the DOUBLE-SIDED PSD (using LALNormalizeMultiSFTVect),
-       * therefore there is a factor of 2 difference with respect to the equations in JKS, which
-       * where based on the single-sided PSD.
-       */
       REAL8 Ad = multiAMcoef->Mmunu.Ad;
       REAL8 Bd = multiAMcoef->Mmunu.Bd;
       REAL8 Cd = multiAMcoef->Mmunu.Cd;
@@ -260,30 +256,30 @@ ComputeFstat_Demod ( FstatResults* Fstats,
       // --------------------------------------------------
 
       // Return multi-detector 2F
-      if (whatToCompute & FSTATQ_2F) {
+      if ( whatToCompute & FSTATQ_2F ) {
         Fstats->twoF[k] = 2.0 * F;   // *** Return value of 2F ***
       }
 
       // Return multi-detector Fa & Fb
-      if (whatToCompute & FSTATQ_FAFB) {
+      if ( whatToCompute & FSTATQ_FAFB ) {
         Fstats->FaFb[k].Fa = Fa;
         Fstats->FaFb[k].Fb = Fb;
       }
 
       // Return 2F per detector
-      if (whatToCompute & FSTATQ_2F_PER_DET) {
-        for (UINT4 X = 0; X < Fstats->numDetectors; ++X) {
+      if ( whatToCompute & FSTATQ_2F_PER_DET ) {
+        for ( UINT4 X = 0; X < Fstats->numDetectors; ++X ) {
           Fstats->twoFPerDet[X][k] = 2.0 * FX[X];   // *** Return value of 2F ***
         }
       }
 
       // Return Fa & Fb per detector
-      if (whatToCompute & FSTATQ_FAFB_PER_DET) {
-        XLAL_ERROR(XLAL_EFAILED, "Unimplemented!");
+      if ( whatToCompute & FSTATQ_FAFB_PER_DET ) {
+        XLAL_ERROR ( XLAL_EFAILED, "Unimplemented!" );
       }
 
       // Return F-atoms per detector
-      if (whatToCompute & FSTATQ_ATOMS_PER_DET) {
+      if ( whatToCompute & FSTATQ_ATOMS_PER_DET ) {
         XLALDestroyMultiFstatAtomVector(Fstats->multiFatoms[k]);
         Fstats->multiFatoms[k] = multiFstatAtoms;
       }
@@ -301,7 +297,9 @@ ComputeFstat_Demod ( FstatResults* Fstats,
 static void
 DestroyFstatInput_Demod ( FstatInput_Demod* demod )
 {
-
+  if ( demod == NULL ) {
+    return;
+  }
   XLALDestroyMultiSFTVector ( demod->multiSFTs);
   XLALDestroyMultiSSBtimes  ( demod->prevMultiSSBtimes );
   XLALDestroyMultiAMCoeffs  ( demod->prevMultiAMcoef );
@@ -309,19 +307,22 @@ DestroyFstatInput_Demod ( FstatInput_Demod* demod )
 
 } // DestroyFstatInput_Demod()
 
+///
+/// Create a \c FstatInput structure which will compute the \f$\mathcal{F}\f$-statistic using demodulation \cite Williams1999.
+///
 FstatInput*
-XLALCreateFstatInput_Demod( const UINT4 Dterms,
-                            const FstatMethodType FstatMethod
-                            )
+XLALCreateFstatInput_Demod ( const UINT4 Dterms,			  ///< [in] Number of terms to keep in the Dirichlet kernel.
+                             const FstatMethodType FstatMethod	  ///< [in] Which Fstat algorithm/method to use: see the documentation for #FstatMethodType
+                             )
 {
   // Check input
-  XLAL_CHECK_NULL(Dterms > 0, XLAL_EINVAL);
+  XLAL_CHECK_NULL ( Dterms > 0, XLAL_EINVAL );
 
   // Allocate input data struct
-  FstatInput* input = XLALCalloc(1, sizeof(FstatInput));
-  XLAL_CHECK_NULL(input != NULL, XLAL_ENOMEM);
-  input->demod = XLALCalloc(1, sizeof(FstatInput_Demod));
-  XLAL_CHECK_NULL(input->demod != NULL, XLAL_ENOMEM);
+  FstatInput* input = XLALCalloc ( 1, sizeof(FstatInput) );
+  XLAL_CHECK_NULL ( input != NULL, XLAL_ENOMEM );
+  input->demod = XLALCalloc ( 1, sizeof(FstatInput_Demod) );
+  XLAL_CHECK_NULL ( input->demod != NULL, XLAL_ENOMEM );
 
   // Save parameters
   input->demod->Dterms = Dterms;
@@ -338,9 +339,9 @@ SetupFstatInput_Demod ( FstatInput_Demod *demod,
                         )
 {
   // Check input
-  XLAL_CHECK(common != NULL, XLAL_EFAULT);
-  XLAL_CHECK(demod != NULL, XLAL_EFAULT);
-  XLAL_CHECK(multiSFTs != NULL, XLAL_EFAULT);
+  XLAL_CHECK ( common != NULL, XLAL_EFAULT );
+  XLAL_CHECK ( demod != NULL, XLAL_EFAULT );
+  XLAL_CHECK ( multiSFTs != NULL, XLAL_EFAULT );
 
   // Save pointer to SFTs
   demod->multiSFTs = multiSFTs;
@@ -354,7 +355,7 @@ static int
 GetFstatExtraBins_Demod ( FstatInput_Demod* demod )
 {
   // Check input
-  XLAL_CHECK(demod != NULL, XLAL_EFAULT);
+  XLAL_CHECK ( demod != NULL, XLAL_EFAULT );
 
   // Demodulation requires 'Dterms' extra frequency bins
   return demod->Dterms;

@@ -549,6 +549,9 @@ DestroyFstatInput_Resamp(
   XLALFree(resamp);
 }
 
+///
+/// Create a \c FstatInput structure which will compute the \f$\mathcal{F}\f$-statistic using resampling \cite JKS98.
+///
 FstatInput*
 XLALCreateFstatInput_Resamp(
   void
