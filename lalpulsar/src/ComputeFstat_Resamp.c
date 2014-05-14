@@ -43,6 +43,19 @@
 #define NhalfPosDC(N) ((UINT4)(ceil ( ((N)/2.0 - 1e-6 ))))      /* round up */
 #define NhalfNeg(N) ((UINT4)( (N) - NhalfPosDC(N) ))            /* round down (making sure N+ + N- = (N-1) */
 
+/* [opaque] type holding a ComputeFBuffer for use in the resampling F-stat codes */
+typedef struct tagComputeFBuffer_RS ComputeFBuffer_RS;
+
+/* Extra parameters controlling the actual computation of F */
+typedef struct tagComputeFParams {
+  UINT4 Dterms;         /* how many terms to keep in the Dirichlet kernel (~16 is usually fine) */
+  SSBprecision SSBprec; /* whether to use full relativist SSB-timing, or just simple Newtonian */
+  ComputeFBuffer_RS *buffer; /* buffer for storing pre-resampled timeseries (used for resampling implementation) */
+  const EphemerisData *edat;   /* ephemeris data for re-computing multidetector states */
+  BOOLEAN returnAtoms;  /* whether or not to return the 'FstatAtoms' used to compute the F-statistic */
+  BOOLEAN returnSingleF; /* in multi-detector case, whether or not to also return the single-detector Fstats computed from the atoms */
+} ComputeFParams;
+
 /* Struct holding buffered ComputeFStat()-internal quantities to avoid unnecessarily
  * recomputing things that depend ONLY on the skyposition and detector-state series (but not on the spins).
  * For the first call of ComputeFStatFreqBand_RS() the pointer-entries should all be NULL.
@@ -128,7 +141,6 @@ void ComputeFStatFreqBand_RS ( LALStatus *status,                               
   REAL8 f0_shifted;
   REAL8 f0_shifted_single;
   REAL8 dt;
-  REAL8 df_out;
   ComplexFFTPlan *pfwd = NULL;  /* this will store the FFT plan */
   COMPLEX8Vector *outa = NULL;  /* this will contain the FFT output of Fa for this detector */
   COMPLEX8Vector *outb = NULL;  /* this will contain the FFT output of Fb for this detector */
@@ -152,8 +164,6 @@ void ComputeFStatFreqBand_RS ( LALStatus *status,                               
   ASSERT ( fstatVector->data, status, COMPUTEFSTATRSC_ENULL, COMPUTEFSTATRSC_MSGENULL );
   ASSERT ( fstatVector->data->data, status, COMPUTEFSTATRSC_ENULL, COMPUTEFSTATRSC_MSGENULL );
   ASSERT ( fstatVector->data->length > 0, status, COMPUTEFSTATRSC_EINPUT, COMPUTEFSTATRSC_MSGEINPUT );
-
-  df_out = fstatVector->deltaF;                   /* the user defined frequency resolution */
 
   /* check that the multidetector noise weights have the same length as the multiSFTs */
   if ( multiWeights ) {
@@ -216,11 +226,18 @@ void ComputeFStatFreqBand_RS ( LALStatus *status,                               
 
   }  /* if (!cfBuffer->multiTimeseries || (buffered-start != SFT-start) ) */
 
-  /* End of the SFT -> timeseries buffering checks                                                            */
-  /*/
+  /* End of the SFT -> timeseries buffering checks */
 
-    /*/
-  /* Dealing with sky position dependent quantities and buffering them                                        */
+
+  /* compute the fractional bin offset between the user requested initial frequency */
+  /* and the closest output frequency bin */
+  REAL8 diff = cfBuffer->multiTimeseries->data[0]->f0 - doppler->fkdot[0]; /* the difference between the new timeseries heterodyne frequency and the user requested lowest frequency */
+  // use given frequency resolution or exactly 'diff' if dFreq=0 // FIXME: temporary fix until we properly figure out 1-bin resampling efficiently
+  REAL8 dFreq = (fstatVector->deltaF>0) ? fstatVector->deltaF : diff;
+  INT4 bins = (INT4)lround( diff / dFreq );           /* the rounded number of output frequency bins difference */
+  REAL8 shift = diff - dFreq * bins;                       /* the fractional bin frequency offset */
+
+  /* Dealing with sky position dependent quantities and buffering them */
 
   /* if the sky position has changed or if any of the sky position dependent quantities are not buffered
      i.e the multiDetstates, the multiAMcoefficients, the multiSSB times and the resampled multiTimeSeries Fa and Fb,
@@ -283,7 +300,7 @@ void ComputeFStatFreqBand_RS ( LALStatus *status,                               
     /* Perform barycentric resampling on the multi-detector timeseries */
     if ( XLALBarycentricResampleMultiCOMPLEX8TimeSeries ( &multiFa_resampled, &multiFb_resampled,
                                                           multiFa, multiFb, multiSSB, multiSFTs,
-                                                          df_out) != XLAL_SUCCESS ) {
+                                                          dFreq) != XLAL_SUCCESS ) {
       XLALPrintError("\nXLALBarycentricResampleMultiCOMPLEX8TimeSeries() failed with error = %d\n\n", xlalErrno );
       ABORT ( status, COMPUTEFSTATRSC_EXLAL, COMPUTEFSTATRSC_MSGEXLAL );
     }
@@ -329,12 +346,6 @@ void ComputeFStatFreqBand_RS ( LALStatus *status,                               
     ABORT ( status, COMPUTEFSTATRSC_EXLAL, COMPUTEFSTATRSC_MSGEXLAL );
   if ( ( multiFb_spin = XLALDuplicateMultiCOMPLEX8TimeSeries ( cfBuffer->multiFb_resampled ) ) == NULL )
     ABORT ( status, COMPUTEFSTATRSC_EXLAL, COMPUTEFSTATRSC_MSGEXLAL );
-
-  /* compute the fractional bin offset between the user requested initial frequency */
-  /* and the closest output frequency bin */
-  REAL8 diff = cfBuffer->multiTimeseries->data[0]->f0 - doppler->fkdot[0]; /* the difference between the new timeseries heterodyne frequency and the user requested lowest frequency */
-  INT4 bins = (INT4)round( diff / fstatVector->deltaF );           /* the rounded number of output frequency bins difference */
-  REAL8 shift = diff - fstatVector->deltaF * bins;                       /* the fractional bin frequency offset */
 
   /* shift the timeseries by a fraction of a frequency bin so that user requested frequency is exactly resolved */
   if (shift != 0.0) {
@@ -444,10 +455,10 @@ void ComputeFStatFreqBand_RS ( LALStatus *status,                               
       /* define new initial frequency of the frequency domain representations of Fa and Fb */
       /* before the shift the zero bin was the heterodyne frequency */
       /* now we've shifted it by N - NhalfPosDC(N) bins */
-      f0_shifted_single = multiFa_spin->data[i]->f0 - NhalfNeg(numSamples) * df_out;
+      f0_shifted_single = multiFa_spin->data[i]->f0 - NhalfNeg(numSamples) * dFreq;
 
       /* define number of bins offset from the internal start frequency bin to the user requested bin */
-      UINT4 offset_single = floor(0.5 + (doppler->fkdot[0] - f0_shifted_single)/fstatVector->deltaF);
+      UINT4 offset_single = floor(0.5 + (doppler->fkdot[0] - f0_shifted_single)/ dFreq );
 
       /* compute final single-IFO F-stat */
       UINT4 numFreqBins = (fstatVector->data->length)/(numDetectors + 1);
@@ -472,13 +483,13 @@ void ComputeFStatFreqBand_RS ( LALStatus *status,                               
   /* define new initial frequency of the frequency domain representations of Fa and Fb */
   /* before the shift the zero bin was the heterodyne frequency */
   /* now we've shifted it by N - NhalfPosDC(N) bins */
-  f0_shifted = multiFa_spin->data[0]->f0 - NhalfNeg(numSamples) * df_out;
+  f0_shifted = multiFa_spin->data[0]->f0 - NhalfNeg(numSamples) * dFreq;
 
   /* loop over requested output frequencies and construct F *NOT* 2F */
   {
 
     /* define number of bins offset from the internal start frequency bin to the user requested bin */
-    UINT4 offset = floor(0.5 + (doppler->fkdot[0] - f0_shifted)/fstatVector->deltaF);
+    UINT4 offset = floor(0.5 + (doppler->fkdot[0] - f0_shifted)/dFreq);
     if ( params->returnSingleF ) {
       kmax = (fstatVector->data->length)/(numDetectors + 1);
     } else {
@@ -531,7 +542,6 @@ void ComputeFStatFreqBand_RS ( LALStatus *status,                               
 struct tagFstatInput_Resamp {
   MultiSFTVector *multiSFTs;                    // Input multi-detector SFTs
   ComputeFParams params;                        // Additional parameters for ComputeFStat() and ComputeFStatFreqBand_RS()
-  ComputeFBuffer buffer;                        // Internal buffer for ComputeFStat()
   REAL4 *Fout;                                  // Output array of *F* values passed to ComputeFStatFreqBand_RS()
 };
 
@@ -543,7 +553,6 @@ DestroyFstatInput_Resamp(
   XLALDestroyMultiSFTVector(resamp->multiSFTs);
   XLALEmptyComputeFBuffer_RS(resamp->params.buffer);
   XLALFree(resamp->params.buffer);
-  XLALEmptyComputeFBuffer(&resamp->buffer);
   XLALFree(resamp->Fout);
   XLALFree(resamp);
 }
@@ -581,8 +590,6 @@ SetupFstatInput_Resamp(
   resamp->multiSFTs = multiSFTs;
 
   // Set parameters to pass to ComputeFStatFreqBand_RS()
-  resamp->params.Dterms = 8;   // Use fixed Dterms Demod for single frequency bin demodulation
-  resamp->params.FstatMethod = FMETHOD_DEMOD_BEST; //  use best available Demod calculation method
   resamp->params.SSBprec = common->SSBprec;
   resamp->params.buffer = NULL;
   resamp->params.edat = common->ephemerides;
@@ -630,11 +637,6 @@ ComputeFstat_Resamp(
   XLAL_CHECK(!(whatToCompute & FSTATQ_FAFB), XLAL_EINVAL, "Resamping does not currently support Fa & Fb");
   XLAL_CHECK(!(whatToCompute & FSTATQ_FAFB_PER_DET), XLAL_EINVAL, "Resamping does not currently support Fa & Fb per detector");
   XLAL_CHECK(!(whatToCompute & FSTATQ_ATOMS_PER_DET), XLAL_EINVAL, "Resamping does not currently support atoms per detector");
-
-  // If only computing the \f$\mathcal{F}\f$-statistic for a single frequency bin, use demodulation
-  if (Fstats->numFreqBins == 1) {
-    goto ComputeFstat_Resamp_demod;
-  }
 
   // Set parameters to pass to ComputeFStatFreqBand_RS()
   resamp->params.returnSingleF = whatToCompute & FSTATQ_2F_PER_DET;
@@ -705,77 +707,4 @@ ComputeFstat_Resamp(
 
   return XLAL_SUCCESS;
 
-  //////////////////////////////////////////////////////////////////////////////////////////////////////////
-  ///// If only computing the \f$\mathcal{F}\f$-statistic for a single frequency bin, use demodulation /////
-  //////////////////////////////////////////////////////////////////////////////////////////////////////////
-ComputeFstat_Resamp_demod:
-  {
-    static int first_call = 1;
-    if (first_call) {
-      LogPrintf(LOG_NORMAL, "WARNING: %s() is using demodulation to compute the F-statistic for a single frequency bin\n", __func__);
-      first_call = 0;
-    }
-  }
-
-  // Set parameters to pass to ComputeFStat()
-  resamp->params.returnSingleF = (whatToCompute & FSTATQ_2F_PER_DET);
-  resamp->params.returnAtoms = (whatToCompute & FSTATQ_ATOMS_PER_DET);
-
-  // Save local copy of doppler point and starting frequency
-  thisPoint = Fstats->doppler;
-  const REAL8 fStart = thisPoint.fkdot[0];
-
-  // Call ComputeFStat() for each frequency bin
-  for (UINT4 k = 0; k < Fstats->numFreqBins; ++k) {
-
-    // Set frequency to search at
-    thisPoint.fkdot[0] = fStart + k * Fstats->dFreq;
-
-    // Call ComputeFStat()
-    Fcomponents Fcomp;
-    XLAL_CHECK ( ComputeFStat( &Fcomp, &thisPoint, resamp->multiSFTs, common->noiseWeights, common->detectorStates, &resamp->params, &resamp->buffer) == XLAL_SUCCESS, XLAL_EFUNC );
-
-    // Return multi-detector 2F
-    if (whatToCompute & FSTATQ_2F) {
-      Fstats->twoF[k] = 2.0 * Fcomp.F;   // *** Return value of 2F ***
-    }
-
-    // Return multi-detector Fa & Fb
-    if (whatToCompute & FSTATQ_FAFB) {
-      Fstats->FaFb[k].Fa = Fcomp.Fa;
-      Fstats->FaFb[k].Fb = Fcomp.Fb;
-    }
-
-    // Return 2F per detector
-    if (whatToCompute & FSTATQ_2F_PER_DET) {
-      for (UINT4 X = 0; X < Fstats->numDetectors; ++X) {
-        Fstats->twoFPerDet[X][k] = 2.0 * Fcomp.FX[X];   // *** Return value of 2F ***
-      }
-    }
-
-    // Return Fa & Fb per detector
-    if (whatToCompute & FSTATQ_FAFB_PER_DET) {
-      XLAL_ERROR(XLAL_EFAILED, "Unimplemented!");
-    }
-
-    // Return F-atoms per detector
-    if (whatToCompute & FSTATQ_ATOMS_PER_DET) {
-      XLALDestroyMultiFstatAtomVector(Fstats->multiFatoms[k]);
-      Fstats->multiFatoms[k] = Fcomp.multiFstatAtoms;
-    }
-
-  } // for k < Fstats->numFreqBins
-
-  // Return amplitude modulation coefficients
-  if (resamp->buffer.multiAMcoef != NULL) {
-    Fstats->Mmunu.Ad = resamp->buffer.multiAMcoef->Mmunu.Ad;
-    Fstats->Mmunu.Bd = resamp->buffer.multiAMcoef->Mmunu.Bd;
-    Fstats->Mmunu.Cd = resamp->buffer.multiAMcoef->Mmunu.Cd;
-    Fstats->Mmunu.Ed = 0;
-    Fstats->Mmunu.Dd = resamp->buffer.multiAMcoef->Mmunu.Dd;
-    Fstats->Mmunu.Sinv_Tsft = resamp->buffer.multiAMcoef->Mmunu.Sinv_Tsft;
-  }
-
-  return XLAL_SUCCESS;
-
-}
+} // ComputeFstat_Resamp()

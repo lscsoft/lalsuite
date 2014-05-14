@@ -89,7 +89,7 @@ gct_F2dotBand=0
 gct_dFreq=0.000002 #"2.0e-6"
 gct_dF1dot=1.0e-10
 gct_dF2dot=0
-gct_nCands=1000
+gct_nCands=10
 
 sqrtSh=1
 

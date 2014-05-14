@@ -6,18 +6,20 @@
  * Compute JKS's Fa and Fb, which are ingredients for calculating the F-statistic.
  */
 static int
-FUNC ( Fcomponents *FaFb,                    /* [out] Fa,Fb (and possibly atoms) returned */
+FUNC ( COMPLEX16 *Fa,                        /* [out] Fa,Fb (and possibly atoms) returned */
+       COMPLEX16 *Fb,
+       FstatAtomVector **FstatAtoms,         // if !NULL: return Fstat atoms vector
        const SFTVector *sfts,                /* [in] input SFTs */
        const PulsarSpins fkdot,              /* [in] frequency and derivatives fkdot = d^kf/dt^k */
        const SSBtimes *tSSB,                 /* [in] SSB timing series for particular sky-direction */
        const AMCoeffs *amcoe,                /* [in] antenna-pattern coefficients for this sky-direction */
-       const ComputeFParams *params )        /* addition computational params */
+       const UINT4 Dterms                    /* [in] Dterms to keep in Dirichlet kernel */
+       )
 {
-  /* ----- check validity of input */
-  const UINT4 UNUSED Dterms = params->Dterms;
   RUNTIME_CHECK
 
-  if ( !FaFb ) {
+  /* ----- check validity of input */
+  if ( !Fa || !Fb ) {
     XLALPrintError ("\nOutput-pointer is NULL !\n\n");
     XLAL_ERROR ( XLAL_EINVAL);
   }
@@ -27,7 +29,7 @@ FUNC ( Fcomponents *FaFb,                    /* [out] Fa,Fb (and possibly atoms)
     XLAL_ERROR ( XLAL_EINVAL);
   }
 
-  if ( !tSSB || !tSSB->DeltaT || !tSSB->Tdot || !amcoe || !amcoe->a || !amcoe->b || !params)
+  if ( !tSSB || !tSSB->DeltaT || !tSSB->Tdot || !amcoe || !amcoe->a || !amcoe->b )
     {
       XLALPrintError ("\nIllegal NULL in input !\n\n");
       XLAL_ERROR ( XLAL_EINVAL);
@@ -43,7 +45,6 @@ FUNC ( Fcomponents *FaFb,                    /* [out] Fa,Fb (and possibly atoms)
   UINT4 alpha;                  /* loop index over SFTs */
   UINT4 spdnOrder;              /* maximal spindown-orders */
   UINT4 numSFTs;                /* number of SFTs (M in the Notes) */
-  COMPLEX16 Fa, Fb;
   REAL8 Tsft;                   /* length of SFTs in seconds */
   INT4 freqIndex0;              /* index of first frequency-bin in SFTs */
   INT4 freqIndex1;              /* index of last frequency-bin in SFTs */
@@ -51,8 +52,6 @@ FUNC ( Fcomponents *FaFb,                    /* [out] Fa,Fb (and possibly atoms)
   REAL4 *a_al, *b_al;           /* pointer to alpha-arrays over a and b */
   REAL8 *DeltaT_al, *Tdot_al;   /* pointer to alpha-arrays of SSB-timings */
   SFTtype *SFT_al;              /* SFT alpha  */
-
-  const REAL8 norm = OOTWOPI;
 
   /* ----- prepare convenience variables */
   numSFTs = sfts->length;
@@ -71,23 +70,12 @@ FUNC ( Fcomponents *FaFb,                    /* [out] Fa,Fb (and possibly atoms)
   }
 
   /* ----- prepare return of 'FstatAtoms' if requested */
-  if ( params->returnAtoms )
+  if ( FstatAtoms != NULL )
     {
-      if ( (FaFb->multiFstatAtoms = LALMalloc ( sizeof(*FaFb->multiFstatAtoms) )) == NULL ){
-        XLAL_ERROR ( XLAL_ENOMEM );
-      }
-      FaFb->multiFstatAtoms->length = 1;        /* in this function: single-detector only */
-      if ( (FaFb->multiFstatAtoms->data = LALMalloc ( 1 * sizeof( *FaFb->multiFstatAtoms->data) )) == NULL ){
-        LALFree (FaFb->multiFstatAtoms);
-        XLAL_ERROR ( XLAL_ENOMEM );
-      }
-      if ( (FaFb->multiFstatAtoms->data[0] = XLALCreateFstatAtomVector ( numSFTs )) == NULL ) {
-        LALFree ( FaFb->multiFstatAtoms->data );
-        LALFree ( FaFb->multiFstatAtoms );
-        XLAL_ERROR( XLAL_ENOMEM );
-      }
+      XLAL_CHECK ( (*FstatAtoms == NULL), XLAL_EINVAL );
+      XLAL_CHECK ( ((*FstatAtoms) = XLALCreateFstatAtomVector ( numSFTs ) ) != NULL, XLAL_EFUNC );
 
-      FaFb->multiFstatAtoms->data[0]->TAtom = Tsft;     /* time-baseline of returned atoms is Tsft */
+      (*FstatAtoms)->TAtom = Tsft;     /* time-baseline of returned atoms is Tsft */
 
     } /* if returnAtoms */
 
@@ -96,8 +84,8 @@ FUNC ( Fcomponents *FaFb,                    /* [out] Fa,Fb (and possibly atoms)
     if ( fkdot[spdnOrder] != 0.0 )
       break;
 
-  Fa = 0.0f;
-  Fb = 0.0f;
+  (*Fa) = 0.0f;
+  (*Fb) = 0.0f;
 
   a_al = amcoe->a->data;        /* point to beginning of alpha-arrays */
   b_al = amcoe->b->data;
@@ -215,20 +203,20 @@ FUNC ( Fcomponents *FaFb,                    /* [out] Fa,Fb (and possibly atoms)
       b_alpha = (*b_al);
 
       COMPLEX16 Fa_alpha = crect( a_alpha * realQXP, a_alpha * imagQXP );
-      Fa += Fa_alpha;
+      (*Fa) += Fa_alpha;
 
       COMPLEX16 Fb_alpha = crect( b_alpha * realQXP, b_alpha * imagQXP );
-      Fb += Fb_alpha;
+      (*Fb) += Fb_alpha;
 
       /* store per-SFT F-stat 'atoms' for transient-CW search */
-      if ( params->returnAtoms )
+      if ( FstatAtoms != NULL )
         {
-          FaFb->multiFstatAtoms->data[0]->data[alpha].timestamp = (UINT4)XLALGPSGetREAL8( &SFT_al->epoch );
-          FaFb->multiFstatAtoms->data[0]->data[alpha].a2_alpha   = a_alpha * a_alpha;
-          FaFb->multiFstatAtoms->data[0]->data[alpha].b2_alpha   = b_alpha * b_alpha;
-          FaFb->multiFstatAtoms->data[0]->data[alpha].ab_alpha   = a_alpha * b_alpha;
-          FaFb->multiFstatAtoms->data[0]->data[alpha].Fa_alpha   = norm * Fa_alpha;
-          FaFb->multiFstatAtoms->data[0]->data[alpha].Fb_alpha   = norm * Fb_alpha;
+          (*FstatAtoms)->data[alpha].timestamp  = SFT_al->epoch.gpsSeconds;
+          (*FstatAtoms)->data[alpha].a2_alpha   = a_alpha * a_alpha;
+          (*FstatAtoms)->data[alpha].b2_alpha   = b_alpha * b_alpha;
+          (*FstatAtoms)->data[alpha].ab_alpha   = a_alpha * b_alpha;
+          (*FstatAtoms)->data[alpha].Fa_alpha   = OOTWOPI * Fa_alpha;
+          (*FstatAtoms)->data[alpha].Fb_alpha   = OOTWOPI * Fb_alpha;
         }
 
       /* advance pointers over alpha */
@@ -241,8 +229,8 @@ FUNC ( Fcomponents *FaFb,                    /* [out] Fa,Fb (and possibly atoms)
     } /* for alpha < numSFTs */
 
   /* return result */
-  FaFb->Fa = norm * Fa;
-  FaFb->Fb = norm * Fb;
+  (*Fa) *= OOTWOPI;
+  (*Fb) *= OOTWOPI;
 
   return XLAL_SUCCESS;
 
