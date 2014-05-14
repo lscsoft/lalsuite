@@ -13,7 +13,6 @@ EXTRA_DIST = \
 	$(DATA)
 
 SUBDIRS = \
-	gnuscripts \
 	debian \
 	include \
 	src \

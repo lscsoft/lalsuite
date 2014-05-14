@@ -13,7 +13,6 @@ EXTRA_DIST = \
 
 SUBDIRS = \
 	bin \
-	gnuscripts \
 	debian \
 	include \
 	src \

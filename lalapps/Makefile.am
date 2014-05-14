@@ -16,7 +16,6 @@ EXTRA_DIST = \
 
 SUBDIRS = \
 	debian \
-	gnuscripts \
 	src \
 	doc \
 	man

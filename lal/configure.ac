@@ -12,7 +12,6 @@ AC_CONFIG_FILES([ \
   lalsupport-uninstalled.pc \
   Makefile \
   debian/Makefile \
-  gnuscripts/Makefile \
   include/Makefile \
   include/lal/Makefile \
   lib/Makefile \

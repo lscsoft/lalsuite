@@ -9,7 +9,6 @@ AC_CONFIG_FILES([ \
   lalinspiral.pc \
   lalinspiral-uninstalled.pc \
   Makefile \
-  gnuscripts/Makefile \
   debian/Makefile \
   include/Makefile \
   include/lal/Makefile \

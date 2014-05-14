@@ -9,7 +9,6 @@ AC_CONFIG_FILES([\
   lalapps.spec \
   debian/Makefile \
   doc/Makefile \
-  gnuscripts/Makefile \
   man/Makefile \
   src/Makefile \
   src/lalapps/Makefile \

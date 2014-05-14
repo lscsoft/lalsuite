@@ -9,7 +9,6 @@ AC_CONFIG_FILES([ \
   laldetchar.pc \
   laldetchar-uninstalled.pc \
   Makefile \
-  gnuscripts/Makefile \
   debian/Makefile \
   include/Makefile \
   include/lal/Makefile \

@@ -9,7 +9,6 @@ AC_CONFIG_FILES([ \
   lalsimulation.pc \
   lalsimulation-uninstalled.pc \
   Makefile \
-  gnuscripts/Makefile \
   debian/Makefile \
   include/Makefile \
   include/lal/Makefile \

@@ -9,7 +9,6 @@ AC_CONFIG_FILES([ \
   lalxml.pc \
   lalxml-uninstalled.pc \
   Makefile \
-  gnuscripts/Makefile \
   debian/Makefile \
   include/Makefile \
   include/lal/Makefile \

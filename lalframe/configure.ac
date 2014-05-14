@@ -9,7 +9,6 @@ AC_CONFIG_FILES([ \
   lalframe.pc \
   lalframe-uninstalled.pc \
   Makefile \
-  gnuscripts/Makefile \
   debian/Makefile \
   include/Makefile \
   include/lal/Makefile \

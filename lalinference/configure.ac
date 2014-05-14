@@ -9,7 +9,6 @@ AC_CONFIG_FILES([ \
   lalinference.pc \
   lalinference-uninstalled.pc \
   Makefile \
-  gnuscripts/Makefile \
   debian/Makefile \
   bin/Makefile \
   include/Makefile \

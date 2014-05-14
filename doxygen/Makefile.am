@@ -13,7 +13,6 @@ EXTRA_DIST = \
 	$(DOXY_PDF_FILES)
 
 SUBDIRS = \
-	gnuscripts \
 	src
 
 .PHONY: html pdf

@@ -9,7 +9,6 @@ AC_CONFIG_FILES([ \
   lalstochastic.pc \
   lalstochastic-uninstalled.pc \
   Makefile \
-  gnuscripts/Makefile \
   debian/Makefile \
   include/Makefile \
   include/lal/Makefile \
