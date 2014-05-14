@@ -370,7 +370,7 @@ int MAIN( int argc, char *argv[]) {
   CHAR *uvar_outputTiming = NULL;
 
   BOOLEAN uvar_useWholeSFTs = 0;
-  CHAR *uvar_FstatMethod = XLALStringDuplicate("best");
+  CHAR *uvar_FstatMethod = XLALStringDuplicate("DemodBest");
 
   global_status = &status;
 
