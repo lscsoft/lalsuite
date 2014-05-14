@@ -24,21 +24,28 @@
 // This file implements the F-statistic demodulation algorithm. It is not compiled directly, but
 // included from ComputeFstat.c
 
-///////////////////////////////////////////////////////////////////
-//////////////////// Old demodulation API code ////////////////////
-///////////////////////////////////////////////////////////////////
-
 #include <lal/LogPrintf.h>
 #include <lal/CWFastMath.h>
 #include "config.h"
 
-// ----- local prototypes ----------
-static inline void DestroyFstatInput_Demod ( FstatInput_Demod* demod );
+// ========== Demod internals ==========
 
-// ----- NEW F-stat Demod API ----------
+// ----- local types ----------
+struct tagFstatInput_Demod {
+  UINT4 Dterms;                                 // Number of terms to keep in Dirichlet kernel
+  FstatMethodType FstatMethod;                  // Which Fstat algorithm to use
+  MultiSFTVector *multiSFTs;                    // Input multi-detector SFTs
+  REAL8 prevAlpha, prevDelta;                   // previous skyposition computed
+  MultiSSBtimes *prevMultiSSBtimes;		// previous multiSSB times, unique to skypos + SFTs
+  MultiAMCoeffs *prevMultiAMcoef;		// previous AM-coeffs, unique to skypos + SFTs
+};
+
+// ----- local prototypes ----------
+static void DestroyFstatInput_Demod ( FstatInput_Demod* demod );
 static int ComputeFstat_Demod ( FstatResults* Fstats, const FstatInput_Common *common, FstatInput_Demod* demod );
 
-// ----- define various variants of ComputeFaFb() using different hotloops
+
+// ========== define various hotloop variants of ComputeFaFb() ==========
 // ComputeFaFb: DTERMS define used for loop unrolling in some hotloop variants
 #define DTERMS 8
 #define LD_SMALL4       (2.0e-4)                /* "small" number for REAL4*/
@@ -85,94 +92,15 @@ static int ComputeFstat_Demod ( FstatResults* Fstats, const FstatInput_Common *c
 #else
 #define XLALComputeFaFb_Altivec(...) (XLALPrintError("Selected Hotloop variant 'Altivec' unavailable\n") || XLAL_EFAILED)
 #endif
-// ------------------------------------------------------------
+// ======================================================================
 
-///////////////////////////////////////////////////////////////////
-//////////////////// New demodulation API code ////////////////////
-///////////////////////////////////////////////////////////////////
 
-struct tagFstatInput_Demod {
-  UINT4 Dterms;                                 // Number of terms to keep in Dirichlet kernel
-  FstatMethodType FstatMethod;                  // Which Fstat algorithm to use
-  MultiSFTVector *multiSFTs;                    // Input multi-detector SFTs
-  REAL8 prevAlpha, prevDelta;                   // previous skyposition computed
-  MultiSSBtimes *prevMultiSSBtimes;		// previous multiSSB times, unique to skypos + SFTs
-  MultiAMCoeffs *prevMultiAMcoef;		// previous AM-coeffs, unique to skypos + SFTs
-};
-
-static inline void
-DestroyFstatInput_Demod(
-  FstatInput_Demod* demod
-  )
-{
-  XLALDestroyMultiSFTVector ( demod->multiSFTs);
-  XLALDestroyMultiSSBtimes  ( demod->prevMultiSSBtimes );
-  XLALDestroyMultiAMCoeffs  ( demod->prevMultiAMcoef );
-  XLALFree ( demod );
-} // DestroyFstatInput_Demod()
-
-FstatInput*
-XLALCreateFstatInput_Demod(
-  const UINT4 Dterms,
-  const FstatMethodType FstatMethod
-  )
-{
-  // Check input
-  XLAL_CHECK_NULL(Dterms > 0, XLAL_EINVAL);
-
-  // Allocate input data struct
-  FstatInput* input = XLALCalloc(1, sizeof(FstatInput));
-  XLAL_CHECK_NULL(input != NULL, XLAL_ENOMEM);
-  input->demod = XLALCalloc(1, sizeof(FstatInput_Demod));
-  XLAL_CHECK_NULL(input->demod != NULL, XLAL_ENOMEM);
-
-  // Save parameters
-  input->demod->Dterms = Dterms;
-  input->demod->FstatMethod = FstatMethod;
-
-  return input;
-
-}
-
+// ----- local function definitions ----------
 static int
-SetupFstatInput_Demod(
-  FstatInput_Demod *demod,
-  const FstatInput_Common *common,
-  MultiSFTVector *multiSFTs
-  )
-{
-
-  // Check input
-  XLAL_CHECK(common != NULL, XLAL_EFAULT);
-  XLAL_CHECK(demod != NULL, XLAL_EFAULT);
-  XLAL_CHECK(multiSFTs != NULL, XLAL_EFAULT);
-
-  // Save pointer to SFTs
-  demod->multiSFTs = multiSFTs;
-
-  return XLAL_SUCCESS;
-
-}
-
-static int
-GetFstatExtraBins_Demod(
-  FstatInput_Demod* demod
-  )
-{
-  // Check input
-  XLAL_CHECK(demod != NULL, XLAL_EFAULT);
-
-  // Demodulation requires 'Dterms' extra frequency bins
-  return demod->Dterms;
-
-} // XLALSetupFstat_Demod()
-
-static int
-ComputeFstat_Demod(
-  FstatResults* Fstats,
-  const FstatInput_Common *common,
-  FstatInput_Demod* demod
-  )
+ComputeFstat_Demod ( FstatResults* Fstats,
+                     const FstatInput_Common *common,
+                     FstatInput_Demod* demod
+                     )
 {
   // Check input
   XLAL_CHECK(Fstats != NULL, XLAL_EFAULT);
@@ -239,16 +167,16 @@ ComputeFstat_Demod(
       multiSSBTotal = multiSSB;
     }
 
-  // ---------- Compute F-stat each frequency bin ----------
-  for (UINT4 k = 0; k < Fstats->numFreqBins; ++k)
+  // ---------- Compute F-stat for each frequency bin ----------
+  for ( UINT4 k = 0; k < Fstats->numFreqBins; k++ )
     {
       // Set frequency to search at
       thisPoint.fkdot[0] = fStart + k * Fstats->dFreq;
 
-      REAL8 F;                              		// F-statistic value
-      REAL8 FX[PULSAR_MAX_DETECTORS];       		// vector of single-detector F-statistic values (array of fixed size)
-      COMPLEX16 XLAL_INIT_DECL(Fa);         		// complex amplitude Fa
-      COMPLEX16 XLAL_INIT_DECL(Fb);                     // complex amplitude Fb
+      REAL8 F;                       	// F-statistic value
+      REAL8 FX[PULSAR_MAX_DETECTORS];	// vector of single-detector F-statistic values (array of fixed size)
+      COMPLEX16 Fa = 0;       		// complex amplitude Fa
+      COMPLEX16 Fb = 0;                 // complex amplitude Fb
       MultiFstatAtomVector *multiFstatAtoms = NULL;	// per-IFO, per-SFT arrays of F-stat 'atoms', ie quantities required to compute F-stat
 
       // prepare return of 'FstatAtoms' if requested
@@ -385,3 +313,67 @@ ComputeFstat_Demod(
   return XLAL_SUCCESS;
 
 } // ComputeFstat_Demod()
+
+
+static void
+DestroyFstatInput_Demod ( FstatInput_Demod* demod )
+{
+
+  XLALDestroyMultiSFTVector ( demod->multiSFTs);
+  XLALDestroyMultiSSBtimes  ( demod->prevMultiSSBtimes );
+  XLALDestroyMultiAMCoeffs  ( demod->prevMultiAMcoef );
+  XLALFree ( demod );
+
+} // DestroyFstatInput_Demod()
+
+FstatInput*
+XLALCreateFstatInput_Demod( const UINT4 Dterms,
+                            const FstatMethodType FstatMethod
+                            )
+{
+  // Check input
+  XLAL_CHECK_NULL(Dterms > 0, XLAL_EINVAL);
+
+  // Allocate input data struct
+  FstatInput* input = XLALCalloc(1, sizeof(FstatInput));
+  XLAL_CHECK_NULL(input != NULL, XLAL_ENOMEM);
+  input->demod = XLALCalloc(1, sizeof(FstatInput_Demod));
+  XLAL_CHECK_NULL(input->demod != NULL, XLAL_ENOMEM);
+
+  // Save parameters
+  input->demod->Dterms = Dterms;
+  input->demod->FstatMethod = FstatMethod;
+
+  return input;
+
+} // XLALCreateFstatInput_Demod()
+
+static int
+SetupFstatInput_Demod ( FstatInput_Demod *demod,
+                        const FstatInput_Common *common,
+                        MultiSFTVector *multiSFTs
+                        )
+{
+  // Check input
+  XLAL_CHECK(common != NULL, XLAL_EFAULT);
+  XLAL_CHECK(demod != NULL, XLAL_EFAULT);
+  XLAL_CHECK(multiSFTs != NULL, XLAL_EFAULT);
+
+  // Save pointer to SFTs
+  demod->multiSFTs = multiSFTs;
+
+  return XLAL_SUCCESS;
+
+} // SetupFstatInput_Demod()
+
+
+static int
+GetFstatExtraBins_Demod ( FstatInput_Demod* demod )
+{
+  // Check input
+  XLAL_CHECK(demod != NULL, XLAL_EFAULT);
+
+  // Demodulation requires 'Dterms' extra frequency bins
+  return demod->Dterms;
+
+} // GetFstatExtraBins_Demod()
