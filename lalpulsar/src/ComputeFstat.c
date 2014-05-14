@@ -140,10 +140,10 @@ XLALFstatMethodHelpString ( void )
           snprintf ( buf, sizeof(buf), "%s%s", separator, FstatMethodNames[i].name );
           separator="|";
           if ( i == FMETHOD_DEMOD_BEST ) {
-            strncat ( buf, "=DemodBest", sizeof(buf) );
+            strncat ( buf, "=DemodBest", sizeof(buf) - strlen(buf) - 1 );
           }
           if ( i == FMETHOD_RESAMP_BEST ) {
-            strncat ( buf, "=ResampBest", sizeof(buf) );
+            strncat ( buf, "=ResampBest", sizeof(buf) - strlen(buf) - 1 );
           }
           len += strlen(buf);
           XLAL_CHECK_NULL ( len < sizeof(helpstr), XLAL_EBADLEN, "FstatMethod help-string exceeds buffer length (%d)\n", sizeof(helpstr) );
