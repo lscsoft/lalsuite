@@ -95,7 +95,7 @@ typedef enum tagFstatQuantities {
 } FstatQuantities;
 
 ///
-/// Different algorithms available to compute the F-statitistc, falling into two broad classes:
+/// Different algorithms available to compute the F-statistic, falling into two broad classes:
 /// 'Demod' = Dirichel-Kernel based demodulation, following Williams&Schutz's method
 /// 'Resamp' = FFT-based resampling
 ///
@@ -121,7 +121,7 @@ typedef enum tagFstatMethodType {
 #define XLALFstatMethodClassIsResamp(x) ( ((x) > FMETHOD_RESAMP_START ) && ((x) < FMETHOD_RESAMP_END ) )
 
 ///
-/// Provide a 'best guess' heuristic as to which available demodulation hotloop variant will be fastest.
+/// Provide a 'best guess' heuristic as to which available F-statistic algorithm variant will be fastest.
 /// Can be used as a user default value.
 ///
 extern const int FMETHOD_DEMOD_BEST;
