@@ -52,8 +52,6 @@
 #include <LALAppsVCSInfo.h>
 #include "SFTReferenceLibrary.h"
 
-#define VCSID LALAPPS_VCS_IDENT_ID LALAPPS_VCS_IDENT_STATUS
-
 /**
  * rounding (for positive numbers!)
  * taken from SFTfileIO in LALSupport, should be consistent with that
@@ -212,9 +210,10 @@ int main(int argc, char**argv) {
   }
 
   /* record VCS ID and command-line for the comment */
-  TRY((cmdline = (char*)malloc(strlen(VCSID)+2)) == NULL,
+  TRY((cmdline = (char*)malloc(strlen(lalAppsVCSIdentId)+strlen(lalAppsVCSIdentStatus)+2)) == NULL,
       "out of memory allocating cmdline",1);
-  strcpy(cmdline,VCSID);
+  strcpy(cmdline,lalAppsVCSIdentId);
+  strcpy(cmdline,lalAppsVCSIdentStatus);
   strcat(cmdline, "\n");
   for(arg = 0; arg < argc; arg++) {
     if (strcmp(argv[arg], "-m") == 0) {

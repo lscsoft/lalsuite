@@ -17,14 +17,15 @@
 *  MA  02111-1307  USA
 */
 
+#include "config.h"
+#include "LALAppsVCSInfo.h"
+#include "lalapps.h"
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <getopt.h>
 
 #include <lal/LALMalloc.h>
-
-#include <lalapps.h>
-#include <LALAppsVCSInfo.h>
 
 /* program information */
 #define PROGRAM_NAME "lalapps_version"

@@ -10,6 +10,7 @@ libstd_la_SOURCES = \
 	LALGSL.c \
 	LALMalloc.c \
 	LALString.c \
+	LALVCSInfoType.c \
 	LALVersion.c \
 	StringConvert.c \
 	StringToken.c \

@@ -47,7 +47,9 @@ lal.spec
 lib/lal/.vcsinfo
 lib/lal/LALBuildInfo.c
 lib/lal/LALConfig.h
+lib/lal/LALVCSInfo.c
 lib/lal/LALVCSInfo.h
+lib/lal/LALVCSInfoHeader.h
 lib/lal/git_info.sed
 lib/lal/git_version
 lib/lal/lal-version

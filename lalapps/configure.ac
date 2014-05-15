@@ -12,6 +12,8 @@ AC_CONFIG_FILES([\
   man/Makefile \
   src/Makefile \
   src/lalapps/Makefile \
+  src/lalapps/LALAppsVCSInfo.c \
+  src/lalapps/LALAppsVCSInfo.h \
   src/calibration/Makefile \
   src/frametools/Makefile \
   src/findchirp/Makefile \

@@ -28,7 +28,9 @@ python/__init__.py
 python/git_version.py
 src/LALDetCharBuildInfo.c
 src/LALDetCharConfig.h
+src/LALDetCharVCSInfo.c
 src/LALDetCharVCSInfo.h
+src/LALDetCharVCSInfoHeader.h
 src/config.h
 src/config.h.in
 src/laldetchar-hveto

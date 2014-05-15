@@ -24,7 +24,9 @@ python/__init__.py
 python/git_version.py
 src/LALFrameBuildInfo.c
 src/LALFrameConfig.h
+src/LALFrameVCSInfo.c
 src/LALFrameVCSInfo.h
+src/LALFrameVCSInfoHeader.h
 src/config.h
 src/config.h.in
 src/lalfr-*[!1]

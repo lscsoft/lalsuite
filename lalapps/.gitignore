@@ -140,7 +140,9 @@ src/inspiral/posterior/lalinference_pipe
 src/inspiral/posterior/python_config.sed
 src/inspiral/ssipe_config.sed
 src/lalapps/LALAppsBuildInfo.c
+src/lalapps/LALAppsVCSInfo.c
 src/lalapps/LALAppsVCSInfo.h
+src/lalapps/LALAppsVCSInfoHeader.h
 src/lalapps/git_version.py
 src/lalapps/lalapps_cache
 src/lalapps/lalapps_fftw*_wisdom

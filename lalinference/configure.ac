@@ -13,6 +13,8 @@ AC_CONFIG_FILES([ \
   bin/Makefile \
   include/Makefile \
   include/lal/Makefile \
+  src/LALInferenceVCSInfo.c \
+  src/LALInferenceVCSInfo.h \
   src/Makefile \
   python/Makefile \
   python/__init__.py \

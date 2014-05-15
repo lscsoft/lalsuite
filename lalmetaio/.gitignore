@@ -24,7 +24,9 @@ python/__init__.py
 python/git_version.py
 src/LALMetaIOBuildInfo.c
 src/LALMetaIOConfig.h
+src/LALMetaIOVCSInfo.c
 src/LALMetaIOVCSInfo.h
+src/LALMetaIOVCSInfoHeader.h
 src/config.h
 src/config.h.in
 src/git_version

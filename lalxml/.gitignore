@@ -24,7 +24,9 @@ python/__init__.py
 python/git_version.py
 src/LALXMLBuildInfo.c
 src/LALXMLConfig.h
+src/LALXMLVCSInfo.c
 src/LALXMLVCSInfo.h
+src/LALXMLVCSInfoHeader.h
 src/config.h
 src/config.h.in
 src/git_version

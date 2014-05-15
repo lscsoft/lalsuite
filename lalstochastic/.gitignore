@@ -22,7 +22,9 @@ lalstochastic.spec
 libtool
 src/LALStochasticBuildInfo.c
 src/LALStochasticConfig.h
+src/LALStochasticVCSInfo.c
 src/LALStochasticVCSInfo.h
+src/LALStochasticVCSInfoHeader.h
 src/config.h
 src/config.h.in
 src/git_version

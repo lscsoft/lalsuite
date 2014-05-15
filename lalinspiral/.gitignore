@@ -25,7 +25,9 @@ python/git_version.py
 src/Chisq_GPU.cpp
 src/LALInspiralBuildInfo.c
 src/LALInspiralConfig.h
+src/LALInspiralVCSInfo.c
 src/LALInspiralVCSInfo.h
+src/LALInspiralVCSInfoHeader.h
 src/config.h
 src/config.h.in
 src/git_version

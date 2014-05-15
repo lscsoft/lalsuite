@@ -15,6 +15,8 @@ AC_CONFIG_FILES([ \
   include/Makefile \
   include/lal/Makefile \
   lib/Makefile \
+  lib/lal/LALVCSInfo.c \
+  lib/lal/LALVCSInfo.h \
   lib/lal/Makefile \
   lib/lalsupport/Makefile \
   lib/lalsupport/doc/Makefile \

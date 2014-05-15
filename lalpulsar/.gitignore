@@ -24,7 +24,9 @@ python/__init__.py
 python/git_version.py
 src/LALPulsarBuildInfo.c
 src/LALPulsarConfig.h
+src/LALPulsarVCSInfo.c
 src/LALPulsarVCSInfo.h
+src/LALPulsarVCSInfoHeader.h
 src/config.h
 src/config.h.in
 src/git_version

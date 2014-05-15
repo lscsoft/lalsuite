@@ -460,7 +460,7 @@ LALWriteLIGOLwXMLTable (
       {
         FIRST_TABLE_ROW
           fprintf( xml->fp, SEARCH_SUMMARY_ROW,
-              lalHeaderVCSInfo.vcsTag,
+              lalVCSInfo.vcsTag,
               tablePtr.searchSummaryTable->comment,
               tablePtr.searchSummaryTable->ifos,
               tablePtr.searchSummaryTable->in_start_time.gpsSeconds,
@@ -1239,7 +1239,7 @@ int XLALWriteLIGOLwXMLSearchSummaryTable(
 		if(fprintf(xml->fp, "%s\"process:process_id:%ld\",\"standalone\",\"\",\"%s\",\"%s\",\"%s\",%d,%d,%d,%d,%d,%d,%d,%d,%d,%d",
 			row_head,
 			search_summary->process_id,
-			lalHeaderVCSInfo.vcsTag,
+			lalVCSInfo.vcsTag,
 			search_summary->comment,
 			search_summary->ifos,
 			search_summary->in_start_time.gpsSeconds,

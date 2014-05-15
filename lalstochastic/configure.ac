@@ -12,6 +12,8 @@ AC_CONFIG_FILES([ \
   debian/Makefile \
   include/Makefile \
   include/lal/Makefile \
+  src/LALStochasticVCSInfo.c \
+  src/LALStochasticVCSInfo.h \
   src/Makefile \
   swig/Makefile \
   swig/octave/Makefile \

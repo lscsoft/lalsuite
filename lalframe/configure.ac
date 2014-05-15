@@ -12,6 +12,8 @@ AC_CONFIG_FILES([ \
   debian/Makefile \
   include/Makefile \
   include/lal/Makefile \
+  src/LALFrameVCSInfo.c \
+  src/LALFrameVCSInfo.h \
   src/Makefile \
   python/Makefile \
   python/__init__.py \

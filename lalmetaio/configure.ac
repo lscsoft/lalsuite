@@ -14,6 +14,8 @@ AC_CONFIG_FILES([ \
   include/lal/Makefile \
   python/Makefile \
   python/__init__.py \
+  src/LALMetaIOVCSInfo.c \
+  src/LALMetaIOVCSInfo.h \
   src/Makefile \
   swig/Makefile \
   swig/octave/Makefile \

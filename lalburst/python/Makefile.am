@@ -1,26 +1,20 @@
+BUILT_SOURCES =
+MOSTLYCLEANFILES =
+include $(top_srcdir)/gnuscripts/lalsuite_vcs_info.am
+
 AM_CPPFLAGS = -I$(top_builddir)/include @AM_CPPFLAGS@
 
 pkgpython_PYTHON = \
 	__init__.py \
 	git_version.py
 
-#pkgpython_LTLIBRARIES = \
-#	cs_gamma.la
-
 EXTRA_DIST = \
 	git_version.py
 
-BUILT_SOURCES =
-MOSTLYCLEANFILES =
+vcs_info_sources = git_version.py
 
-if HAVE_GIT_REPO
-BUILT_SOURCES += git_version.py
-MOSTLYCLEANFILES += git_version.py
-git_version.py .PHONY : gen-git_version.py
-gen-git_version.py :
-	$(AM_V_at)$(GENERATE_VCS_INFO) git_version.py $(srcdir)/git_version.py.git
-endif
-
+#pkgpython_LTLIBRARIES = \
+#	cs_gamma.la
 #cs_gamma_la_SOURCES = cs_gamma.c
 #cs_gamma_la_CPPFLAGS = $(AM_CPPFLAGS) $(CPPFLAGS) $(PYTHON_CPPFLAGS)
 #cs_gamma_la_CFLAGS = $(AM_CFLAGS) $(CFLAGS) $(GSL_CFLAGS) $(LAL_CFLAGS)

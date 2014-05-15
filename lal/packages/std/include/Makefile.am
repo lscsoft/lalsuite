@@ -20,6 +20,7 @@ pkginclude_HEADERS = \
 	LALStdio.h \
 	LALStdlib.h \
 	LALString.h \
+	LALVCSInfoType.h \
 	LALVersion.h \
 	StringInput.h \
 	XLALError.h \

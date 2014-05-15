@@ -24,7 +24,9 @@ python/__init__.py
 python/git_version.py
 src/LALSimulationBuildInfo.c
 src/LALSimulationConfig.h
+src/LALSimulationVCSInfo.c
 src/LALSimulationVCSInfo.h
+src/LALSimulationVCSInfoHeader.h
 src/config.h
 src/config.h.in
 src/lalsim-bh-qnmode

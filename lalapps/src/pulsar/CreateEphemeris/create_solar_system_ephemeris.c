@@ -329,9 +329,9 @@ writing!\n");
 
     /* output header information on lines starting with a # comment */
     fprintf(fpe, "# Build information for %s\n", argv[0]);
-    fprintf(fpe, "# Author: "LALAPPS_VCS_AUTHOR"\n");
-    fprintf(fpe, "# LALApps Commit ID: "LALAPPS_VCS_ID"\n");
-    fprintf(fpe, "# LALApps Commit Date: "LALAPPS_VCS_DATE"\n");
+    fprintf(fpe, "# Author: %s\n", lalAppsVCSAuthor);
+    fprintf(fpe, "# LALApps Commit ID: %s\n", lalAppsVCSId);
+    fprintf(fpe, "# LALApps Commit Date: %s\n", lalAppsVCSDate);
     fprintf(fpe, "#\n# Ephemeris creation command:-\n#\t");
     for( INT4 k=0; k<argc; k++ ) fprintf(fpe, "%s ", argv[k]);
     fprintf(fpe, "\n");

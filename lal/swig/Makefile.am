@@ -64,7 +64,7 @@ $(swig_iface_preproc) : $(swig_iface_headers) Makefile
 	echo "#define SWIGLAL_CLEAR(...) const char __swiglal_clear__[] = #__VA_ARGS__" >> $@; \
 	headers=`cat $(swig_iface_headers) | $(SED) 's|^.*:||'`; \
 	for header in $$headers; do \
-		header=`echo $$header | $(SED) '\|LibVCSInfo.h$$|p;\|VCSInfo.h$$|d'`; \
+		header=`echo $$header | $(SED) '\|VCSInfoHeader.h$$|d'`; \
 		if test "x$$header" != x; then \
 			echo "%include <lal/$${header}>" >> $@; \
 		fi; \

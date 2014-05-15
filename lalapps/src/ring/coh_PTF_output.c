@@ -235,7 +235,7 @@ ProcessTable *coh_PTF_create_process_table( struct coh_PTF_params *params )
   /* call lalapps routine to populate the process table */
 
   XLALPopulateProcessTable(processTable, params->programName,
-      LALAPPS_VCS_IDENT_ID,LALAPPS_VCS_IDENT_STATUS,LALAPPS_VCS_IDENT_DATE,0);
+      lalAppsVCSIdentId,lalAppsVCSIdentStatus,lalAppsVCSIdentDate,0);
 
   strncpy( processTable->comment, " ", LIGOMETA_COMMENT_MAX );
 

@@ -12,6 +12,8 @@ AC_CONFIG_FILES([ \
   debian/Makefile \
   include/Makefile \
   include/lal/Makefile \
+  src/LALSimulationVCSInfo.c \
+  src/LALSimulationVCSInfo.h \
   src/Makefile \
   python/Makefile \
   python/__init__.py \

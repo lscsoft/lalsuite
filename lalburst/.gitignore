@@ -24,7 +24,9 @@ python/__init__.py
 python/git_version.py
 src/LALBurstBuildInfo.c
 src/LALBurstConfig.h
+src/LALBurstVCSInfo.c
 src/LALBurstVCSInfo.h
+src/LALBurstVCSInfoHeader.h
 src/config.h
 src/config.h.in
 src/git_version

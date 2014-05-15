@@ -37,7 +37,9 @@ python/__init__.py
 python/git_version.py
 src/LALInferenceBuildInfo.c
 src/LALInferenceConfig.h
+src/LALInferenceVCSInfo.c
 src/LALInferenceVCSInfo.h
+src/LALInferenceVCSInfoHeader.h
 src/config.h
 src/config.h.in
 src/git_version

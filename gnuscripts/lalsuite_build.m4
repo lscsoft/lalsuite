@@ -200,20 +200,13 @@ AC_DEFUN([LALSUITE_CHECK_GIT_REPO],[
   ])
   # conditional for git and building from a git repository
   AM_CONDITIONAL(HAVE_GIT_REPO,[test "x${have_git_repo}" = xyes])
-  # command line for version information generation script
-  AM_COND_IF(HAVE_GIT_REPO,[
-    m4_pattern_allow([AM_DEFAULT_VERBOSITY])
-    m4_pattern_allow([AM_V_GEN])
-    AC_SUBST([genvcsinfo_],["\$(genvcsinfo_\$(AM_DEFAULT_VERBOSITY))"])
-    AC_SUBST([genvcsinfo_0],["--am-v-gen='\$(AM_V_GEN)'"])
-    GENERATE_VCS_INFO="\$(PYTHON) \$(top_srcdir)/../gnuscripts/generate_vcs_info.py --git-path='\$(GIT)' \$(genvcsinfo_\$(V))"
-  ],[GENERATE_VCS_INFO=false])
-  AC_SUBST(GENERATE_VCS_INFO)
 ])
 
 AC_DEFUN([LALSUITE_VERSION_CONFIGURE_INFO],[
   # $0: define version/configure info
   m4_pushdef([uppercase],m4_translit(AC_PACKAGE_NAME, [a-z], [A-Z]))
+  m4_pushdef([lowercase],m4_translit(AC_PACKAGE_NAME, [A-Z], [a-z]))
+  m4_pushdef([withoutlal],m4_bpatsubst(AC_PACKAGE_NAME, [^LAL], []))
   version_major=`echo "$VERSION" | cut -d. -f1`
   version_minor=`echo "$VERSION" | cut -d. -f2`
   version_micro=`echo "$VERSION" | cut -d. -f3`
@@ -228,7 +221,12 @@ AC_DEFUN([LALSUITE_VERSION_CONFIGURE_INFO],[
   AC_DEFINE_UNQUOTED(uppercase[_VERSION_DEVEL],[$version_devel],AC_PACKAGE_NAME[ Version Devel Number])
   AC_SUBST([ac_configure_args])
   AC_SUBST([configure_date])
+  AC_SUBST([PACKAGE_NAME_UCASE],uppercase)
+  AC_SUBST([PACKAGE_NAME_LCASE],lowercase)
+  AC_SUBST([PACKAGE_NAME_NOLAL],withoutlal)
   m4_popdef([uppercase])
+  m4_popdef([lowercase])
+  m4_popdef([withoutlal])
   # end $0
 ])
 
@@ -511,12 +509,12 @@ AC_DEFUN([LALSUITE_CHECK_OPT_LIB],[
 AC_DEFUN([LALSUITE_HEADER_LIBRARY_MISMATCH_CHECK],[
 AC_MSG_CHECKING([whether $1 headers match the library])
 lib_structure=`echo $1 | sed 's/LAL/lal/'`VCSInfo
-header_structure=`echo $1 | sed 's/LAL/lal/'`HeaderVCSInfo
+header_structure=`echo $1 | sed 's/LAL/lal/'`VCSInfoHeader
 AC_RUN_IFELSE(
   [AC_LANG_SOURCE([[
 #include <string.h>
 #include <stdlib.h>
-#include <lal/$1VCSInfo.h>
+#include <lal/$1VCSInfoHeader.h>
 int main(void) { exit(XLALVCSInfoCompare(&$lib_structure, &$header_structure) ? 1 : 0); }
   ]])],
   [
