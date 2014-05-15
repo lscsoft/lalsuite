@@ -54,6 +54,7 @@ typedef struct {
   MultiDetectorStateSeries *detectorStates;             // Multi-detector state series
   const EphemerisData *ephemerides;                     // Ephemerides for the time-span of the SFTs
   SSBprecision SSBprec;                                 // Barycentric transformation precision
+  FstatMethodType FstatMethod;                          // method/algorithm to use for computing the F-statistic
 } FstatInput_Common;
 
 // Input data specific to F-statistic algorithms
@@ -109,7 +110,8 @@ static const struct {
 ///// ==================== Function definitions ===================
 
 ///
-/// Create a #FstatInputVector of the given length.
+/// Create a #FstatInputVector of the given length, for example for setting up
+/// F-stat searches over several segments.
 ///
 FstatInputVector*
 XLALCreateFstatInputVector ( const UINT4 length            ///< [in] Length of the #FstatInputVector.
@@ -244,72 +246,86 @@ XLALDestroyMultiFstatAtomVector ( MultiFstatAtomVector *multiAtoms  ///< [in] #M
 } // XLALDestroyMultiFstatAtomVector()
 
 ///
-/// Setup a \c FstatInput structure for computing the \f$\mathcal{F}\f$-statistic.
+/// Create a fully-setup \c FstatInput structure for computing the \f$\mathcal{F}\f$-statistic using XLALComputeFstat().
 ///
-int
-XLALSetupFstatInput ( FstatInput *input,			  ///< [out] Input data structure created by one of the setup functions.
-
-                      const SFTCatalog *SFTcatalog,		  ///< [in] Catalog of SFTs to either load from files, or generate in memory.
+FstatInput *
+XLALCreateFstatInput ( const SFTCatalog *SFTcatalog,		  ///< [in] Catalog of SFTs to either load from files, or generate in memory.
                                                                   ///< The \c locator field of each ::SFTDescriptor must be \c !NULL for SFT loading,
                                                                   ///< and \c NULL for SFT generation.
 
-                      const REAL8 minCoverFreq,			  ///< [in] Minimum instantaneous frequency which will be covered over the SFT time span.
-                      const REAL8 maxCoverFreq,			  ///< [in] Maximum instantaneous frequency which will be covered over the SFT time span.
-                      const PulsarParamsVector *injectSources,	  ///< [in] Optional vector of parameters of CW signals to simulate and inject.
+                       const REAL8 minCoverFreq,		  ///< [in] Minimum instantaneous frequency which will be covered over the SFT time span.
+                       const REAL8 maxCoverFreq,		  ///< [in] Maximum instantaneous frequency which will be covered over the SFT time span.
+                       const PulsarParamsVector *injectSources,	  ///< [in] Optional vector of parameters of CW signals to simulate and inject.
 
-                      const MultiNoiseFloor *injectSqrtSX,	  ///< [in] Optional array of single-sided PSD values governing fake Gaussian noise generation.
+                       const MultiNoiseFloor *injectSqrtSX,	  ///< [in] Optional array of single-sided PSD values governing fake Gaussian noise generation.
                                                                   ///< If supplied, then fake Gaussian noise with the given PSD values will be added to the SFTs.
 
-                      const MultiNoiseFloor *assumeSqrtSX,	  ///< [in] Optional array of single-sided PSD values governing the calculation of SFT noise weights.
+                       const MultiNoiseFloor *assumeSqrtSX,	  ///< [in] Optional array of single-sided PSD values governing the calculation of SFT noise weights.
                                                                   ///< If supplied, then SFT noise weights are calculated from constant spectra with the given PSD
                                                                   ///< values; otherwise, SFT noise weights are calculated from PSDs computed from a running median
                                                                   ///< of the SFTs themselves.
+                       const UINT4 runningMedianWindow,		  ///< [in] If SFT noise weights are calculated from the SFTs, the running median window length to use.
 
-                      const UINT4 runningMedianWindow,		  ///< [in] If SFT noise weights are calculated from the SFTs, the running median window length to use.
-                      const EphemerisData *ephemerides,		  ///< [in] Ephemerides for the time-span of the SFTs.
-                      const SSBprecision SSBprec,		  ///< [in] Barycentric transformation precision.
-                      const UINT4 randSeed			  ///< [in] Seed value used for random number generation, if required.
-                      )
+                       const EphemerisData *ephemerides,	  ///< [in] Ephemerides for the time-span of the SFTs.
+
+                       const FstatMethodType FstatMethod,	  ///< [in] method/algorithm to use for computing the F-statistic
+                       const FstatExtraParams extraParams         ///< [in] minor 'tuning' or method-specific parameters to use for injection/computing F
+                       )
 {
-  // Check Fstat input data
-  XLAL_CHECK( input != NULL, XLAL_EFAULT );
-  XLAL_CHECK( input->common == NULL, XLAL_EINVAL, "'input' has already been set up" );
-
   // Check catalog
-  XLAL_CHECK( SFTcatalog != NULL, XLAL_EFAULT );
-  XLAL_CHECK( SFTcatalog->length > 0, XLAL_EINVAL );
-  XLAL_CHECK( SFTcatalog->data != NULL, XLAL_EFAULT );
+  XLAL_CHECK_NULL ( SFTcatalog != NULL, XLAL_EFAULT );
+  XLAL_CHECK_NULL ( SFTcatalog->length > 0, XLAL_EINVAL );
+  XLAL_CHECK_NULL ( SFTcatalog->data != NULL, XLAL_EFAULT );
   for ( UINT4 i = 1; i < SFTcatalog->length; ++i )
     {
-      XLAL_CHECK( (SFTcatalog->data[0].locator == NULL) == (SFTcatalog->data[i].locator == NULL), XLAL_EINVAL,
+      XLAL_CHECK_NULL ( (SFTcatalog->data[0].locator == NULL) == (SFTcatalog->data[i].locator == NULL), XLAL_EINVAL,
                   "All 'locator' fields of SFTDescriptors in 'SFTcatalog' must be either NULL or !NULL." );
     }
 
   // Create a multi-view of SFT catalog
   MultiSFTCatalogView *multiSFTcatalog = XLALGetMultiSFTCatalogView(SFTcatalog);
-  XLAL_CHECK ( multiSFTcatalog != NULL, XLAL_EFUNC );
+  XLAL_CHECK_NULL ( multiSFTcatalog != NULL, XLAL_EFUNC );
   const UINT4 numDetectors = multiSFTcatalog->length;
 
   // Check remaining parameters
-  XLAL_CHECK( isfinite(minCoverFreq) && minCoverFreq > 0, XLAL_EINVAL );
-  XLAL_CHECK( isfinite(maxCoverFreq) && maxCoverFreq > 0, XLAL_EINVAL );
-  XLAL_CHECK( maxCoverFreq > minCoverFreq, XLAL_EINVAL );
-  XLAL_CHECK( injectSources == NULL || injectSources->length > 0, XLAL_EINVAL );
-  XLAL_CHECK( injectSources == NULL || injectSources->data != NULL, XLAL_EFAULT );
-  XLAL_CHECK( injectSqrtSX == NULL || injectSqrtSX->length == numDetectors, XLAL_EINVAL );
-  XLAL_CHECK( assumeSqrtSX == NULL || assumeSqrtSX->length == numDetectors, XLAL_EINVAL );
-  XLAL_CHECK( ephemerides != NULL, XLAL_EFAULT );
-  XLAL_CHECK( SSBprec < SSBPREC_LAST, XLAL_EINVAL );
+  XLAL_CHECK_NULL ( isfinite(minCoverFreq) && minCoverFreq > 0, XLAL_EINVAL );
+  XLAL_CHECK_NULL ( isfinite(maxCoverFreq) && maxCoverFreq > 0, XLAL_EINVAL );
+  XLAL_CHECK_NULL ( maxCoverFreq > minCoverFreq, XLAL_EINVAL );
+  XLAL_CHECK_NULL ( injectSources == NULL || injectSources->length > 0, XLAL_EINVAL );
+  XLAL_CHECK_NULL ( injectSources == NULL || injectSources->data != NULL, XLAL_EFAULT );
+  XLAL_CHECK_NULL ( injectSqrtSX == NULL || injectSqrtSX->length == numDetectors, XLAL_EINVAL );
+  XLAL_CHECK_NULL ( assumeSqrtSX == NULL || assumeSqrtSX->length == numDetectors, XLAL_EINVAL );
+  XLAL_CHECK_NULL ( ephemerides != NULL, XLAL_EFAULT );
+  XLAL_CHECK_NULL ( extraParams.SSBprec < SSBPREC_LAST, XLAL_EINVAL );
 
   // Determine whether to load and/or generate SFTs
   const BOOLEAN loadSFTs = (SFTcatalog->data[0].locator != NULL);
   const BOOLEAN generateSFTs = (injectSources != NULL) || (injectSqrtSX != NULL);
-  XLAL_CHECK ( loadSFTs || generateSFTs, XLAL_EINVAL, "Can neither load nor generate SFTs with given parameters" );
+  XLAL_CHECK_NULL ( loadSFTs || generateSFTs, XLAL_EINVAL, "Can neither load nor generate SFTs with given parameters" );
 
-  // Allocate common input data struct
-  input->common = XLALCalloc(1, sizeof(*input->common));
-  XLAL_CHECK ( input->common != NULL, XLAL_ENOMEM );
-  FstatInput_Common *const common = input->common;
+  // Create top-level input data struct
+  FstatInput* input;
+  XLAL_CHECK_NULL ( (input = XLALCalloc ( 1, sizeof(*input) )) != NULL, XLAL_ENOMEM );
+
+  // create common input data
+  XLAL_CHECK_NULL ( (input->common = XLALCalloc ( 1, sizeof(*input->common))) != NULL, XLAL_ENOMEM );
+  FstatInput_Common *const common = input->common;	// handy shortcut
+
+  // create method-specific input data
+  if ( XLALFstatMethodClassIsDemod ( FstatMethod ) )
+    {
+      XLAL_CHECK_NULL ( (input->demod = XLALCalloc ( 1, sizeof(FstatInput_Demod) )) != NULL, XLAL_ENOMEM );
+      input->demod->Dterms = extraParams.Dterms;
+    }
+  else if ( XLALFstatMethodClassIsResamp ( FstatMethod ) )
+    {
+      XLAL_CHECK_NULL ( (input->resamp = XLALCalloc(1, sizeof(FstatInput_Resamp))) != NULL, XLAL_ENOMEM );
+    }
+  else
+    {
+      XLAL_ERROR_NULL ( XLAL_EINVAL, "Received invalid Fstat method enum '%d'\n", FstatMethod );
+    }
+  common->FstatMethod = FstatMethod;
 
   // Determine the time baseline of an SFT
   const REAL8 Tsft = 1.0 / SFTcatalog->data[0].header.deltaF;
@@ -324,12 +340,12 @@ XLALSetupFstatInput ( FstatInput *input,			  ///< [out] Input data structure cre
     } else if ( input->resamp != NULL ) {
       extraBins = GetFstatExtraBins_Resamp ( input->resamp );
     } else {
-      XLAL_ERROR ( XLAL_EFAILED, "Invalid FstatInput struct passed to %s()", __func__);
+      XLAL_ERROR_NULL ( XLAL_EFAILED, "Invalid FstatInput struct passed to %s()", __func__);
     }
-    XLAL_CHECK ( extraBins >= 0, XLAL_EFAILED );
+    XLAL_CHECK_NULL ( extraBins >= 0, XLAL_EFAILED );
 
     // Add number of extra frequency bins required by running median
-    extraBins += runningMedianWindow/2 + 1;
+    extraBins += runningMedianWindow/2 + 1;	// NOTE: this is currently needed irrespective of assumeSqrtSX usage!
 
     // Extend frequency range by number of extra bins times SFT bin width
     const REAL8 extraFreq = extraBins / Tsft;
@@ -338,8 +354,8 @@ XLALSetupFstatInput ( FstatInput *input,			  ///< [out] Input data structure cre
   } // end: block to determine frequency-bins range
 
   // Extract detectors and timestamps from multi-view of SFT catalog
-  XLAL_CHECK ( XLALMultiLALDetectorFromMultiSFTCatalogView( &common->detectors, multiSFTcatalog ) == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK ( (common->timestamps = XLALTimestampsFromMultiSFTCatalogView(multiSFTcatalog)) != NULL,  XLAL_EFUNC );
+  XLAL_CHECK_NULL ( XLALMultiLALDetectorFromMultiSFTCatalogView( &common->detectors, multiSFTcatalog ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK_NULL ( (common->timestamps = XLALTimestampsFromMultiSFTCatalogView(multiSFTcatalog)) != NULL,  XLAL_EFUNC );
 
   // Generate SFTs with injections and noise, if required
   MultiSFTVector *multiSFTs = NULL;
@@ -350,8 +366,8 @@ XLALSetupFstatInput ( FstatInput *input,			  ///< [out] Input data structure cre
       MFDparams.fMin = minFreq;
       MFDparams.Band = maxFreq - minFreq;
       MFDparams.multiIFO = common->detectors;
-      MFDparams.multiTimestamps = *common->timestamps;
-      MFDparams.randSeed = randSeed;
+      MFDparams.multiTimestamps = *(common->timestamps);
+      MFDparams.randSeed = extraParams.randSeed;
 
       // Set noise floors if sqrtSX is given; otherwise noise floors are zero
       if ( injectSqrtSX != NULL ) {
@@ -361,7 +377,7 @@ XLALSetupFstatInput ( FstatInput *input,			  ///< [out] Input data structure cre
       }
 
       // Generate SFTs with injections
-      XLAL_CHECK ( XLALCWMakeFakeMultiData ( &multiSFTs, NULL, injectSources, &MFDparams, ephemerides ) == XLAL_SUCCESS, XLAL_EFUNC );
+      XLAL_CHECK_NULL ( XLALCWMakeFakeMultiData ( &multiSFTs, NULL, injectSources, &MFDparams, ephemerides ) == XLAL_SUCCESS, XLAL_EFUNC );
 
     } // if generateSFTs
 
@@ -371,7 +387,7 @@ XLALSetupFstatInput ( FstatInput *input,			  ///< [out] Input data structure cre
       // If no SFTs have been generated, then load all SFTs at once
       if (multiSFTs == NULL)
         {
-          XLAL_CHECK( ( multiSFTs = XLALLoadMultiSFTs(SFTcatalog, minFreq, maxFreq) ) != NULL, XLAL_EFUNC );
+          XLAL_CHECK_NULL ( ( multiSFTs = XLALLoadMultiSFTs(SFTcatalog, minFreq, maxFreq) ) != NULL, XLAL_EFUNC );
         }
       else
         {
@@ -379,8 +395,8 @@ XLALSetupFstatInput ( FstatInput *input,			  ///< [out] Input data structure cre
           for ( UINT4 X = 0; X < numDetectors; ++X )
             {
               SFTVector *loadedSFTs = NULL;
-              XLAL_CHECK ( ( loadedSFTs = XLALLoadSFTs ( &multiSFTcatalog->data[X], minFreq, maxFreq) ) != NULL, XLAL_EFUNC );
-              XLAL_CHECK ( XLALSFTVectorAdd ( multiSFTs->data[X], loadedSFTs ) == XLAL_SUCCESS, XLAL_EFUNC );
+              XLAL_CHECK_NULL ( ( loadedSFTs = XLALLoadSFTs ( &multiSFTcatalog->data[X], minFreq, maxFreq) ) != NULL, XLAL_EFUNC );
+              XLAL_CHECK_NULL ( XLALSFTVectorAdd ( multiSFTs->data[X], loadedSFTs ) == XLAL_SUCCESS, XLAL_EFUNC );
               XLALDestroySFTVector ( loadedSFTs );
             } // for X < numDetectors
         } // if multiSFTs != NULL
@@ -389,35 +405,35 @@ XLALSetupFstatInput ( FstatInput *input,			  ///< [out] Input data structure cre
 
   // Normalise SFTs using either running median or assumed PSDs
   MultiPSDVector *runningMedian = XLALNormalizeMultiSFTVect ( multiSFTs, runningMedianWindow, assumeSqrtSX );
-  XLAL_CHECK ( runningMedian != NULL, XLAL_EFUNC );
+  XLAL_CHECK_NULL ( runningMedian != NULL, XLAL_EFUNC );
 
   // Calculate SFT noise weights from PSD
   common->noiseWeights = XLALComputeMultiNoiseWeights ( runningMedian, runningMedianWindow, 0 );
-  XLAL_CHECK ( common->noiseWeights != NULL, XLAL_EFUNC );
+  XLAL_CHECK_NULL ( common->noiseWeights != NULL, XLAL_EFUNC );
 
   // Get detector states, with a timestamp shift of Tsft/2
   const REAL8 tOffset = 0.5 * Tsft;
   common->detectorStates = XLALGetMultiDetectorStates ( common->timestamps, &common->detectors, ephemerides, tOffset );
-  XLAL_CHECK ( common->detectorStates != NULL, XLAL_EFUNC );
+  XLAL_CHECK_NULL ( common->detectorStates != NULL, XLAL_EFUNC );
 
   // Save ephemerides and SSB precision
   common->ephemerides = ephemerides;
-  common->SSBprec = SSBprec;
+  common->SSBprec = extraParams.SSBprec;
 
   // Call the appropriate algorithm function to setup their input data structures
   // - The algorithm input data structures are expected to take ownership of the
   //   SFTs, which is why 'input->common' does not retain a pointer to them
   if ( input->demod != NULL )
     {
-      XLAL_CHECK ( SetupFstatInput_Demod ( input->demod, common, multiSFTs ) == XLAL_SUCCESS, XLAL_EFUNC );
+      XLAL_CHECK_NULL ( SetupFstatInput_Demod ( input->demod, common, multiSFTs ) == XLAL_SUCCESS, XLAL_EFUNC );
     }
   else if ( input->resamp != NULL )
     {
-      XLAL_CHECK ( SetupFstatInput_Resamp ( input->resamp, common, multiSFTs ) == XLAL_SUCCESS, XLAL_EFUNC );
+      XLAL_CHECK_NULL ( SetupFstatInput_Resamp ( input->resamp, common, multiSFTs ) == XLAL_SUCCESS, XLAL_EFUNC );
     }
   else
     {
-      XLAL_ERROR ( XLAL_EFAILED, "Invalid FstatInput struct passed to %s()", __func__ );
+      XLAL_ERROR_NULL ( XLAL_EFAILED, "Invalid FstatInput struct passed to %s()", __func__ );
     }
   multiSFTs = NULL;
 
@@ -425,9 +441,9 @@ XLALSetupFstatInput ( FstatInput *input,			  ///< [out] Input data structure cre
   XLALDestroyMultiSFTCatalogView ( multiSFTcatalog );
   XLALDestroyMultiPSDVector ( runningMedian );
 
-  return XLAL_SUCCESS;
+  return input;
 
-} // XLALSetupFstatInput()
+} // XLALCreateFstatInput()
 
 ///
 /// Returns the detector information stored in a \c FstatInput structure.

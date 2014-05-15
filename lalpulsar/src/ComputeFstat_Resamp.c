@@ -549,25 +549,6 @@ DestroyFstatInput_Resamp(
   XLALFree(resamp);
 }
 
-///
-/// Create a \c FstatInput structure which will compute the \f$\mathcal{F}\f$-statistic using resampling \cite JKS98.
-///
-FstatInput*
-XLALCreateFstatInput_Resamp(
-  void
-  )
-{
-
-  // Allocate input data struct
-  FstatInput* input = XLALCalloc(1, sizeof(FstatInput));
-  XLAL_CHECK_NULL(input != NULL, XLAL_ENOMEM);
-  input->resamp = XLALCalloc(1, sizeof(FstatInput_Resamp));
-  XLAL_CHECK_NULL(input->resamp != NULL, XLAL_ENOMEM);
-
-  return input;
-
-}
-
 static int
 SetupFstatInput_Resamp(
   FstatInput_Resamp *resamp,

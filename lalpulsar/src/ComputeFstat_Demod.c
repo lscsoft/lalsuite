@@ -33,11 +33,10 @@
 // ----- local types ----------
 struct tagFstatInput_Demod {
   UINT4 Dterms;                                 // Number of terms to keep in Dirichlet kernel
-  FstatMethodType FstatMethod;                  // Which Fstat algorithm to use
   MultiSFTVector *multiSFTs;                    // Input multi-detector SFTs
-  REAL8 prevAlpha, prevDelta;                   // previous skyposition computed
-  MultiSSBtimes *prevMultiSSBtimes;		// previous multiSSB times, unique to skypos + SFTs
-  MultiAMCoeffs *prevMultiAMcoef;		// previous AM-coeffs, unique to skypos + SFTs
+  REAL8 prevAlpha, prevDelta;                   // buffering: previous skyposition computed
+  MultiSSBtimes *prevMultiSSBtimes;		// buffering: previous multiSSB times, unique to skypos + SFTs
+  MultiAMCoeffs *prevMultiAMcoef;		// buffering: previous AM-coeffs, unique to skypos + SFTs
 };
 
 // ----- local prototypes ----------
@@ -195,7 +194,7 @@ ComputeFstat_Demod ( FstatResults* Fstats,
           FstatAtomVector **FstatAtoms_p = returnAtoms ? (&FstatAtoms) : NULL;
 
           // chose ComputeFaFb main function depending on selected hotloop variant
-          switch ( demod->FstatMethod )
+          switch ( common->FstatMethod )
             {
             case  FMETHOD_DEMOD_GENERIC:
               XLAL_CHECK ( XLALComputeFaFb_Generic ( &FaX, &FbX, FstatAtoms_p, multiSFTs->data[X], thisPoint.fkdot, multiSSBTotal->data[X], multiAMcoef->data[X], Dterms )==XLAL_SUCCESS,XLAL_EFUNC);
@@ -210,7 +209,7 @@ ComputeFstat_Demod ( FstatResults* Fstats,
               XLAL_CHECK ( XLALComputeFaFb_Altivec ( &FaX, &FbX, FstatAtoms_p, multiSFTs->data[X], thisPoint.fkdot, multiSSBTotal->data[X], multiAMcoef->data[X], Dterms)==XLAL_SUCCESS,XLAL_EFUNC);
               break;
             default:
-              XLAL_ERROR ( XLAL_EINVAL, "Invalid Fstat-method %d!\n", demod->FstatMethod );
+              XLAL_ERROR ( XLAL_EINVAL, "Invalid Fstat-method %d!\n", common->FstatMethod );
               break;
             } // switch ( FstatMethod )
 
@@ -306,31 +305,6 @@ DestroyFstatInput_Demod ( FstatInput_Demod* demod )
   XLALFree ( demod );
 
 } // DestroyFstatInput_Demod()
-
-///
-/// Create a \c FstatInput structure which will compute the \f$\mathcal{F}\f$-statistic using demodulation \cite Williams1999.
-///
-FstatInput*
-XLALCreateFstatInput_Demod ( const UINT4 Dterms,			  ///< [in] Number of terms to keep in the Dirichlet kernel.
-                             const FstatMethodType FstatMethod	  ///< [in] Which Fstat algorithm/method to use: see the documentation for #FstatMethodType
-                             )
-{
-  // Check input
-  XLAL_CHECK_NULL ( Dterms > 0, XLAL_EINVAL );
-
-  // Allocate input data struct
-  FstatInput* input = XLALCalloc ( 1, sizeof(FstatInput) );
-  XLAL_CHECK_NULL ( input != NULL, XLAL_ENOMEM );
-  input->demod = XLALCalloc ( 1, sizeof(FstatInput_Demod) );
-  XLAL_CHECK_NULL ( input->demod != NULL, XLAL_ENOMEM );
-
-  // Save parameters
-  input->demod->Dterms = Dterms;
-  input->demod->FstatMethod = FstatMethod;
-
-  return input;
-
-} // XLALCreateFstatInput_Demod()
 
 static int
 SetupFstatInput_Demod ( FstatInput_Demod *demod,

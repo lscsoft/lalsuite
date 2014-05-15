@@ -42,10 +42,9 @@ extern "C" {
 /// This module provides a API for computing the \f$\mathcal{F}\f$-statistic \cite JKS98, using
 /// various different algorithms.  All data required to compute the \f$\mathcal{F}\f$-statistic are
 /// contained in the opaque structure \c FstatInput, which is shared by all algorithms. A
-/// function <tt>XLALCreateFstatInput_...()</tt> is provided by each algorithm for creating an
-/// \c FstatInput structure configured for the particular algorithm.  The \c FstatInput
-/// structure is then passed to the function XLALSetupFstatInput(), which performs general
-/// initialisation tasks.  Finally, the \c FstatInput structure is passed to the function
+/// function <tt>XLALCreateFstatInput()</tt> is provided for creating an
+/// \c FstatInput structure configured for the particular algorithm.
+/// The \c FstatInput structure is passed to the function
 /// XLALComputeFstat(), which computes the \f$\mathcal{F}\f$-statistic using the chosen algorithm,
 /// and fills a \c FstatResults structure with the results.
 ///
@@ -126,6 +125,16 @@ typedef enum tagFstatMethodType {
 ///
 extern const int FMETHOD_DEMOD_BEST;
 extern const int FMETHOD_RESAMP_BEST;
+
+///
+/// Struct for collecting 'lower-level' tuning and method-specific parameters to be passed to the
+/// Fstat-setup function.
+///
+typedef struct tagFstatExtraParams {
+  UINT4 randSeed;		  ///< Random-number seed value used for Gaussian-noise generation --injectSqrtSX
+  SSBprecision SSBprec;		  ///< Barycentric transformation precision.
+  UINT4 Dterms;	   		  ///< number of 'Dterms' for use in some of the 'Demod' methods (DemodGeneric,GemodOptC)
+} FstatExtraParams;
 
 ///
 /// Complex \f$\mathcal{F}\f$-statistic amplitudes \f$F_a\f$ and \f$F_b\f$.
@@ -263,13 +272,13 @@ FstatAtomVector* XLALCreateFstatAtomVector ( const UINT4 length );
 void XLALDestroyFstatAtomVector ( FstatAtomVector *atoms );
 MultiFstatAtomVector* XLALCreateMultiFstatAtomVector ( const UINT4 length );
 void XLALDestroyMultiFstatAtomVector ( MultiFstatAtomVector *atoms );
-FstatInput* XLALCreateFstatInput_Demod ( const UINT4 Dterms, const FstatMethodType FstatMethod );
-FstatInput* XLALCreateFstatInput_Resamp ( void );
 
-int
-XLALSetupFstatInput ( FstatInput *input, const SFTCatalog *SFTcatalog, const REAL8 minCoverFreq, const REAL8 maxCoverFreq,
-                      const PulsarParamsVector *injectSources, const MultiNoiseFloor *injectSqrtSX, const MultiNoiseFloor *assumeSqrtSX,
-                      const UINT4 runningMedianWindow, const EphemerisData *ephemerides, const SSBprecision SSBprec, const UINT4 randSeed );
+FstatInput *
+XLALCreateFstatInput ( const SFTCatalog *SFTcatalog, const REAL8 minCoverFreq, const REAL8 maxCoverFreq,
+                       const PulsarParamsVector *injectSources, const MultiNoiseFloor *injectSqrtSX,
+                       const MultiNoiseFloor *assumeSqrtSX, const UINT4 runningMedianWindow,
+                       const EphemerisData *ephemerides,
+                       const FstatMethodType FstatMethod, const FstatExtraParams extraParams );
 
 const MultiLALDetector* XLALGetFstatInputDetectors ( const FstatInput* input );
 const MultiLIGOTimeGPSVector* XLALGetFstatInputTimestamps ( const FstatInput* input );
@@ -279,8 +288,8 @@ const MultiDetectorStateSeries* XLALGetFstatInputDetectorStates ( const FstatInp
 #ifdef SWIG // SWIG interface directives
 SWIGLAL(INOUT_STRUCTS(FstatResults**, Fstats));
 #endif
-
 int XLALComputeFstat ( FstatResults **Fstats, FstatInput *input, const PulsarDopplerParams *doppler, const REAL8 dFreq, const UINT4 numFreqBins, const FstatQuantities whatToCompute );
+
 void XLALDestroyFstatInput ( FstatInput* input );
 void XLALDestroyFstatResults ( FstatResults* Fstats );
 int XLALAdd4ToFstatResults ( FstatResults* Fstats );

@@ -144,7 +144,7 @@ typedef struct
   REAL8 tauTemplate;		/**< total loop time per template, includes candidate-handling (transient stats, toplist etc) */
   REAL8 tauF0;			/**< Demod timing constant = time per template per SFT */
 
-  FstatMethodType Fmethod;	/**< Fstat-method used */
+  FstatMethodType FstatMethod;	/**< Fstat-method used */
 
   /* ----- transient-specific timings */
   UINT4 tauMin;			/**< shortest transient timescale [s] */
@@ -195,7 +195,7 @@ typedef struct {
   REAL8Vector *LVloglX;                     /**< vector of line-prior ratios per detector {l1, l2, ... } */
   RankingStat_t RankingStatistic;           /**< rank candidates according to F or LV */
   BOOLEAN useResamp;
-  FstatMethodType Fmethod;
+  FstatMethodType FstatMethod;
 } ConfigVariables;
 
 
@@ -875,7 +875,7 @@ int main(int argc,char *argv[])
       timing.NSFTs = GV.NSFTs;
       timing.NFreq = (UINT4) ( 1 + floor ( GV.searchRegion.fkdotBand[0] / uvar.dFreq ) );
 
-      timing.Fmethod = GV.Fmethod;
+      timing.FstatMethod = GV.FstatMethod;
 
       // compute averages:
       timing.tauFstat    /= num_templates;
@@ -1259,33 +1259,19 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg, const UserInput_t *uvar )
     }
 
   /* ----- set computational parameters for F-statistic from User-input ----- */
-  if ( XLALParseFstatMethodString ( &cfg->Fmethod, uvar->FstatMethod ) != XLAL_SUCCESS ) {
+
+  if ( XLALParseFstatMethodString ( &cfg->FstatMethod, uvar->FstatMethod ) != XLAL_SUCCESS ) {
     XLALPrintError( "XLALParseFstatMethodString() failed\n");
     ABORT ( status, COMPUTEFSTATISTIC_EXLAL, COMPUTEFSTATISTIC_MSGEXLAL );
   }
-  if ( XLALFstatMethodClassIsResamp ( cfg->Fmethod ) ) 	// use resampling
-    {
-      cfg->useResamp = 1;
-      cfg->Fstat_in = XLALCreateFstatInput_Resamp();
-      if ( cfg->Fstat_in == NULL ) {
-        XLALPrintError("%s: XLALCreateFstatInput_Resamp() failed with errno=%d", __func__, xlalErrno);
-        ABORT ( status, COMPUTEFSTATISTIC_EXLAL, COMPUTEFSTATISTIC_MSGEXLAL );
-      }
-    }
-  else if ( XLALFstatMethodClassIsDemod ( cfg->Fmethod ) ) // use demodulation
-    {
-      cfg->useResamp = 0;
-      cfg->Fstat_in = XLALCreateFstatInput_Demod( uvar->Dterms, cfg->Fmethod );
-      if ( cfg->Fstat_in == NULL ) {
-        XLALPrintError("%s: XLALCreateFstatInput_Demod() failed with errno=%d", __func__, xlalErrno);
-        ABORT ( status, COMPUTEFSTATISTIC_EXLAL, COMPUTEFSTATISTIC_MSGEXLAL );
-      }
-    }
-  else
-    {
-      XLALPrintError("Something went wrong: couldn't classify '%s'(=%d) into {Demod | Resamp}\n", uvar->FstatMethod, cfg->Fmethod );
-      ABORT ( status, COMPUTEFSTATISTIC_EINPUT, COMPUTEFSTATISTIC_MSGEINPUT );
-    }
+  if ( XLALFstatMethodClassIsResamp ( cfg->FstatMethod ) ) { // use resampling
+    cfg->useResamp = 1;
+  } else if ( XLALFstatMethodClassIsDemod ( cfg->FstatMethod ) ) { // use demodulation
+    cfg->useResamp = 0;
+  } else {
+    XLALPrintError("Something went wrong: couldn't classify '%s'(=%d) into {Demod | Resamp}\n", uvar->FstatMethod, cfg->FstatMethod );
+    ABORT ( status, COMPUTEFSTATISTIC_EINPUT, COMPUTEFSTATISTIC_MSGEINPUT );
+  }
 
   /* use IFO-contraint if one given by the user */
   if ( LALUserVarWasSet ( &uvar->IFO ) )
@@ -1546,11 +1532,15 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg, const UserInput_t *uvar )
   }
 
   PulsarParamsVector *injectSources = NULL;
-  MultiNoiseFloor *p_injectSqrtSX = NULL;
-  if ( XLALSetupFstatInput( cfg->Fstat_in, catalog, fCoverMin, fCoverMax,
-                                injectSources, p_injectSqrtSX, p_assumeSqrtSX,
-                                uvar->RngMedWindow, cfg->ephemeris, uvar->SSBprecision, 0 ) != XLAL_SUCCESS ) {
-    XLALPrintError("%s: XLALSetupFstatInput() failed with errno=%d", __func__, xlalErrno);
+  MultiNoiseFloor *injectSqrtSX = NULL;
+  FstatExtraParams XLAL_INIT_DECL(extraParams);
+  extraParams.Dterms = uvar->Dterms;
+  extraParams.SSBprec = uvar->SSBprecision;
+  cfg->Fstat_in = XLALCreateFstatInput( catalog, fCoverMin, fCoverMax,
+                                        injectSources, injectSqrtSX, p_assumeSqrtSX, uvar->RngMedWindow,
+                                        cfg->ephemeris, cfg->FstatMethod, extraParams );
+  if ( cfg->Fstat_in == NULL ) {
+    XLALPrintError("%s: XLALCreateFstatInput() failed with errno=%d", __func__, xlalErrno);
     ABORT ( status, COMPUTEFSTATISTIC_EXLAL, COMPUTEFSTATISTIC_MSGEXLAL );
   }
 
@@ -1765,7 +1755,7 @@ XLALGetLogString ( const ConfigVariables *cfg )
   XLAL_CHECK_NULL ( (logstr = XLALStringAppend ( logstr, "\n" )) != NULL, XLAL_EFUNC );
   XLAL_CHECK_NULL ( (logstr = XLALStringAppend ( logstr, cfg->VCSInfoString )) != NULL, XLAL_EFUNC );
 
-  XLAL_CHECK_NULL ( snprintf ( buf, BUFLEN, "%%%% FstatMethod used: '%s'\n", XLALGetFstatMethodName ( cfg->Fmethod ) ) < BUFLEN, XLAL_EBADLEN );
+  XLAL_CHECK_NULL ( snprintf ( buf, BUFLEN, "%%%% FstatMethod used: '%s'\n", XLALGetFstatMethodName ( cfg->FstatMethod ) ) < BUFLEN, XLAL_EBADLEN );
   XLAL_CHECK_NULL ( (logstr = XLALStringAppend ( logstr, buf )) != NULL, XLAL_EFUNC );
 
   XLAL_CHECK_NULL ( (logstr = XLALStringAppend ( logstr, "%% Started search: " )) != NULL, XLAL_EFUNC );
@@ -2412,7 +2402,7 @@ write_TimingInfo ( const CHAR *fname, const timingInfo_t *ti )
     }
 
   fprintf ( fp, "%8d %10d %10.1e %10.1e %10.1e %10s\n",
-            ti->NSFTs, ti->NFreq, ti->tauFstat, ti->tauTemplate, ti->tauF0, XLALGetFstatMethodName(ti->Fmethod) );
+            ti->NSFTs, ti->NFreq, ti->tauFstat, ti->tauTemplate, ti->tauF0, XLALGetFstatMethodName(ti->FstatMethod) );
 
   fclose ( fp );
   return XLAL_SUCCESS;

@@ -1412,18 +1412,19 @@ void SetUpSFTs( LALStatus *status,			/**< pointer to LALStatus structure */
   nSFTs = 0;
 #endif
 
+  FstatExtraParams XLAL_INIT_DECL(extraParams);
+  extraParams.SSBprec = in->SSBprec;
+  extraParams.Dterms = in->Dterms;
+
   /* loop over stacks and read sfts */
   for (k = 0; k < in->nStacks; k++) {
 
-    /* create Fstat input data struct for demodulation */
-    (*p_Fstat_in_vec)->data[k] = XLALCreateFstatInput_Demod( in->Dterms, FMETHOD_DEMOD_BEST );
+    /* create Fstat input data struct for Fstat-computation */
+    (*p_Fstat_in_vec)->data[k] = XLALCreateFstatInput( &catalogSeq.data[k], fMin, fMax,
+                                                       NULL, NULL, NULL, in->blocksRngMed,
+                                                       in->edat, FMETHOD_DEMOD_BEST, extraParams );
     if ( (*p_Fstat_in_vec)->data[k] == NULL ) {
-      XLALPrintError("%s: XLALCreateFstatInput_Demod() failed with errno=%d", __func__, xlalErrno);
-      ABORT ( status, HIERARCHICALSEARCH_EXLAL, HIERARCHICALSEARCH_MSGEXLAL );
-    }
-    if ( XLALSetupFstatInput( (*p_Fstat_in_vec)->data[k], &catalogSeq.data[k], fMin, fMax, NULL,
-                                  NULL, NULL, in->blocksRngMed, in->edat, in->SSBprec, 0 ) != XLAL_SUCCESS ) {
-      XLALPrintError("%s: XLALSetupFstatInput() failed with errno=%d", __func__, xlalErrno);
+      XLALPrintError("%s: XLALCreateFstatInput() failed with errno=%d", __func__, xlalErrno);
       ABORT ( status, HIERARCHICALSEARCH_EXLAL, HIERARCHICALSEARCH_MSGEXLAL );
     }
 

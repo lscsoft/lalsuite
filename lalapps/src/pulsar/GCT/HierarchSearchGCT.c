@@ -1953,26 +1953,12 @@ void SetUpSFTs( LALStatus *status,			/**< pointer to LALStatus structure */
   for (UINT4 X = 0; X < numDetectors; X++) {
     in->NSegmentsInvX[X] = 0;
   }
+
+  FstatExtraParams XLAL_INIT_DECL(extraParams);
+  extraParams.SSBprec = in->SSBprec;
+  extraParams.Dterms = in->Dterms;
+
   for (k = 0; k < in->nStacks; k++) {
-
-    /* ----- create Fstat input data struct ----- */
-    if ( in->useResamp ) {	// use resampling
-
-      (*p_Fstat_in_vec)->data[k] = XLALCreateFstatInput_Resamp();
-      if ( (*p_Fstat_in_vec)->data[k] == NULL ) {
-        XLALPrintError("%s: XLALCreateFstatInput_Resamp() failed with errno=%d", __func__, xlalErrno);
-        ABORT ( status, HIERARCHICALSEARCH_EXLAL, HIERARCHICALSEARCH_MSGEXLAL );
-      }
-
-    } else {			// use demodulation
-
-      (*p_Fstat_in_vec)->data[k] = XLALCreateFstatInput_Demod( in->Dterms, in->Fmethod );
-      if ( (*p_Fstat_in_vec)->data[k] == NULL ) {
-        XLALPrintError("%s: XLALCreateFstatInput_Demod() failed with errno=%d", __func__, xlalErrno);
-        ABORT ( status, HIERARCHICALSEARCH_EXLAL, HIERARCHICALSEARCH_MSGEXLAL );
-      }
-
-    }
 
     /* if single-only flag is given, assume a PSD with sqrt(S) = 1.0 */
     MultiNoiseFloor assumeSqrtSX, *p_assumeSqrtSX;
@@ -1987,11 +1973,14 @@ void SetUpSFTs( LALStatus *status,			/**< pointer to LALStatus structure */
     }
 
     PulsarParamsVector *injectSources = NULL;
-    MultiNoiseFloor *p_injectSqrtSX = NULL;
-    if ( XLALSetupFstatInput( (*p_Fstat_in_vec)->data[k], &catalogSeq.data[k], freqmin, freqmax,
-                                  injectSources, p_injectSqrtSX, p_assumeSqrtSX,
-                                  in->blocksRngMed, in->edat, in->SSBprec, 0 ) != XLAL_SUCCESS ) {
-      XLALPrintError("%s: XLALSetupFstatInput() failed with errno=%d", __func__, xlalErrno);
+    MultiNoiseFloor *injectSqrtSX = NULL;
+
+    /* ----- create Fstat input data struct ----- */
+    (*p_Fstat_in_vec)->data[k] = XLALCreateFstatInput ( &catalogSeq.data[k], freqmin, freqmax,
+                                                        injectSources, injectSqrtSX, p_assumeSqrtSX, in->blocksRngMed,
+                                                        in->edat, in->Fmethod, extraParams );
+    if ( (*p_Fstat_in_vec)->data[k] == NULL ) {
+      XLALPrintError("%s: XLALCreateFstatInput() failed with errno=%d", __func__, xlalErrno);
       ABORT ( status, HIERARCHICALSEARCH_EXLAL, HIERARCHICALSEARCH_MSGEXLAL );
     }
 
