@@ -1,13 +1,14 @@
 ACLOCAL_AMFLAGS = -I gnuscripts
 
+if HAVE_GIT_REPO
 # Override automake's default rule for rebuilding aclocal.m4, to ensure that
 # ./configure is successfully recreated after certain build system changes which
 # require other autotools (e.g. autoheader) to be re-run. See Redmine issue #728.
 $(ACLOCAL_M4): $(am__aclocal_m4_deps)
 	$(am__cd) $(srcdir) && $(SHELL) ./00boot
+endif # HAVE_GIT_REPO
 
 EXTRA_DIST = \
-	COPYING \
 	README.bugs \
 	README.contrib \
 	README.install \
@@ -22,23 +23,10 @@ SUBDIRS = \
 	python \
 	swig
 
-DISTCLEANFILES = config.lt
-
 pkgconfigdir = $(libdir)/pkgconfig
-pkgconfig_DATA = \
-	lal.pc \
-	lalsupport.pc
-noinst_DATA = \
-	lal-uninstalled.pc \
-	lalsupport-uninstalled.pc
-BUILT_SOURCES = \
-	lal-uninstalled.pc \
-	lalsupport-uninstalled.pc
-
-if HAVE_GIT_REPO
-vcs-clean: maintainer-clean
-	-cd $(top_srcdir) && $(GIT) clean -Xdf
-endif
+pkgconfig_DATA = lal.pc lalsupport.pc
+noinst_DATA = lal-uninstalled.pc lalsupport-uninstalled.pc
+BUILT_SOURCES = lal-uninstalled.pc lalsupport-uninstalled.pc
 
 all-local:
 	@echo "";\
