@@ -1,8 +1,5 @@
 include $(top_srcdir)/gnuscripts/lallibs_header_links.am
 
-EXTRA_DIST = \
-	generate_user_env.awk
-
 lib_LTLIBRARIES = liblal.la
 
 pkginclude_HEADERS = \
@@ -35,33 +32,10 @@ bin_PROGRAMS = lal-version
 lal_version_SOURCES = lal-version.c
 lal_version_LDADD = liblal.la
 
-MOSTLYCLEANFILES = \
-	lal-user-env.shell \
-	lal-user-env.sh \
-	lal-user-env.csh
-
-sysconf_DATA = \
-	lal-user-env.sh \
-	lal-user-env.csh
-
-BUILT_SOURCES = \
-	lal-user-env.sh \
-	lal-user-env.csh
-
 TESTS = lal-version
 
-lal-user-env.shell: Makefile $(srcdir)/generate_user_env.awk
-	@echo "# source this file to access $(PACKAGE_NAME)" >$@
-	@echo "set LAL_PREFIX $(prefix)" >>$@
-	@echo "prepend PATH $(bindir)" >>$@
-	@echo "prepend MANPATH $(mandir)" >>$@
-	@echo "prepend PKG_CONFIG_PATH $(libdir)/pkgconfig" >>$@
-	@echo "prepend PYTHONPATH $(pyexecdir) $(pythondir)" >>$@
-	@echo "prepend LAL_DATA_PATH $(pkgdatadir)" >>$@
-	@echo "prepend OCTAVE_PATH $(octexecdir)" >>$@
-
-lal-user-env.csh lal-user-env.sh: lal-user-env.shell $(srcdir)/generate_user_env.awk
-	$(AM_V_GEN)$(AWK) -f $(srcdir)/generate_user_env.awk -v SED="$(SED)" -v output="$@" $<
+BUILT_SOURCES =
+MOSTLYCLEANFILES =
 
 if HAVE_GIT_REPO
 BUILT_SOURCES += LALVCSInfo.h

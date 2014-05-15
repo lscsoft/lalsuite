@@ -27,41 +27,17 @@ nodist_liblaldetchar_la_SOURCES = LALDetCharBuildInfo.c
 
 liblaldetchar_la_LDFLAGS = $(AM_LDFLAGS) -version-info $(LIBVERSION)
 
-MOSTLYCLEANFILES = \
-	laldetchar-user-env.shell \
-	laldetchar-user-env.sh \
-	laldetchar-user-env.csh
-
-sysconf_DATA = \
-	laldetchar-user-env.sh \
-	laldetchar-user-env.csh
-
 #bin_PROGRAMS = \
 	#laldetchar-hveto
 
 #laldetchar_hveto_SOURCES = hveto.c
 
-BUILT_SOURCES = \
-	laldetchar-user-env.sh \
-	laldetchar-user-env.csh
-
-laldetchar-user-env.shell: Makefile $(srcdir)/generate_user_env.awk
-	@echo "# source this file to access $(PACKAGE_NAME)" >$@
-	@echo "set LALDETCHAR_PREFIX $(prefix)" >>$@
-	@echo "prepend PATH $(bindir)" >>$@
-	@echo "prepend MANPATH $(mandir)" >>$@
-	@echo "prepend PKG_CONFIG_PATH $(libdir)/pkgconfig" >>$@
-	@echo "prepend PYTHONPATH $(pyexecdir)" >>$@
-	@echo "prepend LAL_DATA_PATH $(pkgdatadir)" >>$@
-	@echo "prepend OCTAVE_PATH $(octexecdir)" >>$@
-
-laldetchar-user-env.csh laldetchar-user-env.sh: laldetchar-user-env.shell $(srcdir)/generate_user_env.awk
-	$(AM_V_GEN)$(AWK) -f $(srcdir)/generate_user_env.awk -v SED="$(SED)" -v output="$@" $<
-
 EXTRA_DIST = \
 	LALDetCharConfig.h.in \
-	config.h.in \
-	generate_user_env.awk
+	config.h.in
+
+BUILT_SOURCES =
+MOSTLYCLEANFILES =
 
 if HAVE_GIT_REPO
 BUILT_SOURCES += LALDetCharVCSInfo.h

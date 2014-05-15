@@ -30,36 +30,12 @@ liblalmetaio_la_LDFLAGS = $(AM_LDFLAGS) -version-info $(LIBVERSION)
 
 EXTRA_DIST = \
 	LALMetaIOConfig.h.in \
-	config.h.in \
-	generate_user_env.awk
+	config.h.in
 
 DISTCLEANFILES = config.h
 
-MOSTLYCLEANFILES = \
-	lalmetaio-user-env.shell \
-	lalmetaio-user-env.sh \
-	lalmetaio-user-env.csh
-
-sysconf_DATA = \
-	lalmetaio-user-env.sh \
-	lalmetaio-user-env.csh
-
-BUILT_SOURCES = \
-	lalmetaio-user-env.sh \
-	lalmetaio-user-env.csh
-
-lalmetaio-user-env.shell: Makefile $(srcdir)/generate_user_env.awk
-	@echo "# source this file to access $(PACKAGE_NAME)" >$@
-	@echo "set LALMETAIO_PREFIX $(prefix)" >>$@
-	@echo "prepend PATH $(bindir)" >>$@
-	@echo "prepend MANPATH $(mandir)" >>$@
-	@echo "prepend PKG_CONFIG_PATH $(libdir)/pkgconfig" >>$@
-	@echo "prepend LAL_DATA_PATH $(pkgdatadir)" >>$@
-	@echo "prepend PYTHONPATH $(pyexecdir)" >>$@
-	@echo "prepend OCTAVE_PATH $(octexecdir)" >>$@
-
-lalmetaio-user-env.csh lalmetaio-user-env.sh: lalmetaio-user-env.shell $(srcdir)/generate_user_env.awk
-	$(AM_V_GEN)$(AWK) -f $(srcdir)/generate_user_env.awk -v SED="$(SED)" -v output="$@" $<
+BUILT_SOURCES =
+MOSTLYCLEANFILES =
 
 if HAVE_GIT_REPO
 BUILT_SOURCES += LALMetaIOVCSInfo.h

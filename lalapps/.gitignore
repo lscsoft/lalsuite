@@ -23,6 +23,9 @@ doc/lalapps.out
 doc/lalapps.pdf
 doc/lalapps.toc
 lalapps-*.tar.gz
+lalapps-user-env.csh
+lalapps-user-env.sh
+lalapps-user-env.shell
 lalapps.spec
 libtool
 src/*/python_config.sed
@@ -139,9 +142,6 @@ src/inspiral/ssipe_config.sed
 src/lalapps/LALAppsBuildInfo.c
 src/lalapps/LALAppsVCSInfo.h
 src/lalapps/git_version.py
-src/lalapps/lalapps-user-env.csh
-src/lalapps/lalapps-user-env.sh
-src/lalapps/lalapps-user-env.shell
 src/lalapps/lalapps_cache
 src/lalapps/lalapps_fftw*_wisdom
 src/lalapps/lalapps_tconvert

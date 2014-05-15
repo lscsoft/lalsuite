@@ -15,6 +15,9 @@ include/lal/*.h
 include/lal/*.i
 include/lal/header-link-stamp
 lalsimulation-*.tar.gz
+lalsimulation-user-env.csh
+lalsimulation-user-env.sh
+lalsimulation-user-env.shell
 lalsimulation.spec
 libtool
 python/__init__.py
@@ -33,9 +36,6 @@ src/lalsim-ns-mass-radius
 src/lalsim-ns-params
 src/lalsim-sgwb
 src/lalsim-unicorn
-src/lalsimulation-user-env.csh
-src/lalsimulation-user-env.sh
-src/lalsimulation-user-env.shell
 src/stamp-h1
 src/stamp-h2
 test/GRFlagsTest

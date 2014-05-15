@@ -1,3 +1,9 @@
+BUILT_SOURCES =
+sysconf_DATA =
+MOSTLYCLEANFILES =
+EXTRA_DIST =
+include $(top_srcdir)/gnuscripts/lalsuite_user_env.am
+
 ACLOCAL_AMFLAGS = -I gnuscripts
 
 if HAVE_GIT_REPO
@@ -8,7 +14,7 @@ $(ACLOCAL_M4): $(am__aclocal_m4_deps)
 	$(am__cd) $(srcdir) && $(SHELL) ./00boot
 endif # HAVE_GIT_REPO
 
-EXTRA_DIST = \
+EXTRA_DIST += \
 	README \
 	README.bugs \
 	README.contrib \
@@ -20,6 +26,14 @@ SUBDIRS = \
 	src \
 	doc \
 	man
+
+user_environment = \
+	set $(PACKAGE)_PREFIX $(prefix); \
+	prepend LAL_DATA_PATH $(pkgdatadir); \
+	prepend MANPATH $(mandir); \
+	prepend PATH $(bindir); \
+	prepend PYTHONPATH $(pyexecdir) $(pythondir); \
+	$(END_OF_LIST)
 
 all-local:
 	@echo "";\

@@ -146,42 +146,18 @@ lalsim_sgwb_SOURCES = sgwb.c
 lalsim_unicorn_SOURCES = unicorn.c
 lalsim_detector_noise_SOURCES = detector_noise.c
 
-MOSTLYCLEANFILES = \
-	lalsimulation-user-env.shell \
-	lalsimulation-user-env.sh \
-	lalsimulation-user-env.csh
-
 pkgdata_DATA = \
 	$(NOISEPSDFILES) \
 	$(EOSDATAFILES)
 
-sysconf_DATA = \
-	lalsimulation-user-env.sh \
-	lalsimulation-user-env.csh
-
-BUILT_SOURCES = \
-	lalsimulation-user-env.sh \
-	lalsimulation-user-env.csh
-
-lalsimulation-user-env.shell: Makefile $(srcdir)/generate_user_env.awk
-	@echo "# source this file to access $(PACKAGE_NAME)" >$@
-	@echo "set LALSIMULATION_PREFIX $(prefix)" >>$@
-	@echo "prepend PATH $(bindir)" >>$@
-	@echo "prepend MANPATH $(mandir)" >>$@
-	@echo "prepend PKG_CONFIG_PATH $(libdir)/pkgconfig" >>$@
-	@echo "prepend PYTHONPATH $(pyexecdir)" >>$@
-	@echo "prepend LAL_DATA_PATH $(pkgdatadir)" >>$@
-	@echo "prepend OCTAVE_PATH $(octexecdir)" >>$@
-
-lalsimulation-user-env.csh lalsimulation-user-env.sh: lalsimulation-user-env.shell $(srcdir)/generate_user_env.awk
-	$(AM_V_GEN)$(AWK) -f $(srcdir)/generate_user_env.awk -v SED="$(SED)" -v output="$@" $<
-
 EXTRA_DIST = \
 	config.h.in \
-	generate_user_env.awk \
 	LALSimulationConfig.h.in \
 	$(NOISEPSDFILES) \
 	$(EOSDATAFILES)
+
+BUILT_SOURCES =
+MOSTLYCLEANFILES =
 
 if HAVE_GIT_REPO
 BUILT_SOURCES += LALSimulationVCSInfo.h

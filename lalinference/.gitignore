@@ -28,6 +28,9 @@ include/lal/*.h
 include/lal/*.i
 include/lal/header-link-stamp
 lalinference-*.tar.gz
+lalinference-user-env.csh
+lalinference-user-env.sh
+lalinference-user-env.shell
 lalinference.spec
 libtool
 python/__init__.py
@@ -38,9 +41,6 @@ src/LALInferenceVCSInfo.h
 src/config.h
 src/config.h.in
 src/git_version
-src/lalinference-user-env.csh
-src/lalinference-user-env.sh
-src/lalinference-user-env.shell
 src/stamp-h1
 src/stamp-h2
 test/LALInferenceInjectionTest

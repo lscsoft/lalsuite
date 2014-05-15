@@ -15,6 +15,9 @@ include/lal/*.h
 include/lal/*.i
 include/lal/header-link-stamp
 lalxml-*.tar.gz
+lalxml-user-env.csh
+lalxml-user-env.sh
+lalxml-user-env.shell
 lalxml.spec
 libtool
 python/__init__.py
@@ -25,9 +28,6 @@ src/LALXMLVCSInfo.h
 src/config.h
 src/config.h.in
 src/git_version
-src/lalxml-user-env.csh
-src/lalxml-user-env.sh
-src/lalxml-user-env.shell
 src/stamp-h1
 src/stamp-h2
 test/LALXMLTest

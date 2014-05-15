@@ -51,38 +51,14 @@ nodist_liblalburst_la_SOURCES = LALBurstBuildInfo.c
 
 liblalburst_la_LDFLAGS = $(AM_LDFLAGS) -version-info $(LIBVERSION)
 
-MOSTLYCLEANFILES = \
-	lalburst-user-env.shell \
-	lalburst-user-env.sh \
-	lalburst-user-env.csh
-
-sysconf_DATA = \
-	lalburst-user-env.sh \
-	lalburst-user-env.csh
-
-BUILT_SOURCES = \
-	lalburst-user-env.sh \
-	lalburst-user-env.csh
-
-lalburst-user-env.shell: Makefile $(srcdir)/generate_user_env.awk
-	@echo "# source this file to access $(PACKAGE_NAME)" >$@
-	@echo "set LALBURST_PREFIX $(prefix)" >>$@
-	@echo "prepend PATH $(bindir)" >>$@
-	@echo "prepend MANPATH $(mandir)" >>$@
-	@echo "prepend PKG_CONFIG_PATH $(libdir)/pkgconfig" >>$@
-	@echo "prepend PYTHONPATH $(pyexecdir)" >>$@
-	@echo "prepend LAL_DATA_PATH $(pkgdatadir)" >>$@
-	@echo "prepend OCTAVE_PATH $(octexecdir)" >>$@
-
-lalburst-user-env.csh lalburst-user-env.sh: lalburst-user-env.shell $(srcdir)/generate_user_env.awk
-	$(AM_V_GEN)$(AWK) -f $(srcdir)/generate_user_env.awk -v SED="$(SED)" -v output="$@" $<
-
 EXTRA_DIST = \
 	LALBurstConfig.h.in \
-	config.h.in \
-	generate_user_env.awk
+	config.h.in
 
 DISTCLEANFILES = config.h
+
+BUILT_SOURCES =
+MOSTLYCLEANFILES =
 
 if HAVE_GIT_REPO
 BUILT_SOURCES += LALBurstVCSInfo.h

@@ -15,6 +15,9 @@ include/lal/*.h
 include/lal/*.i
 include/lal/header-link-stamp
 lalstochastic-*.tar.gz
+lalstochastic-user-env.csh
+lalstochastic-user-env.sh
+lalstochastic-user-env.shell
 lalstochastic.spec
 libtool
 src/LALStochasticBuildInfo.c
@@ -23,9 +26,6 @@ src/LALStochasticVCSInfo.h
 src/config.h
 src/config.h.in
 src/git_version
-src/lalstochastic-user-env.csh
-src/lalstochastic-user-env.sh
-src/lalstochastic-user-env.shell
 src/stamp-h1
 src/stamp-h2
 test/??_714382918*.dat

@@ -15,6 +15,9 @@ include/lal/*.h
 include/lal/*.i
 include/lal/header-link-stamp
 lalinspiral-*.tar.gz
+lalinspiral-user-env.csh
+lalinspiral-user-env.sh
+lalinspiral-user-env.shell
 lalinspiral.spec
 libtool
 python/__init__.py
@@ -26,9 +29,6 @@ src/LALInspiralVCSInfo.h
 src/config.h
 src/config.h.in
 src/git_version
-src/lalinspiral-user-env.csh
-src/lalinspiral-user-env.sh
-src/lalinspiral-user-env.shell
 src/stamp-h1
 src/stamp-h2
 test/BCVTemplates

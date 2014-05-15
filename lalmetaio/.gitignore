@@ -15,6 +15,9 @@ include/lal/*.h
 include/lal/*.i
 include/lal/header-link-stamp
 lalmetaio-*.tar.gz
+lalmetaio-user-env.csh
+lalmetaio-user-env.sh
+lalmetaio-user-env.shell
 lalmetaio.spec
 libtool
 python/__init__.py
@@ -25,8 +28,5 @@ src/LALMetaIOVCSInfo.h
 src/config.h
 src/config.h.in
 src/git_version
-src/lalmetaio-user-env.csh
-src/lalmetaio-user-env.sh
-src/lalmetaio-user-env.shell
 src/stamp-h1
 src/stamp-h2

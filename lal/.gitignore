@@ -40,6 +40,9 @@ include/lal/*.i
 include/lal/header-link-stamp
 include/stamp-h1
 lal-*.tar.gz
+lal-user-env.csh
+lal-user-env.sh
+lal-user-env.shell
 lal.spec
 lib/lal/.vcsinfo
 lib/lal/LALBuildInfo.c
@@ -47,9 +50,6 @@ lib/lal/LALConfig.h
 lib/lal/LALVCSInfo.h
 lib/lal/git_info.sed
 lib/lal/git_version
-lib/lal/lal-user-env.csh
-lib/lal/lal-user-env.sh
-lib/lal/lal-user-env.shell
 lib/lal/lal-version
 lib/lal/stamp-h2
 lib/lalsupport/test/*PrintVector.*
