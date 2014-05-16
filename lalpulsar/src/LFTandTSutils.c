@@ -1082,7 +1082,7 @@ int XLALBarycentricResampleCOMPLEX8TimeSeries ( COMPLEX8TimeSeries **Faoft_RS,  
   }
 
   /* check that the Fa and Fb epochs are equal */
-  if ( (XLALGPSCmp(&Faoft->epoch,&Faoft->epoch) != 0 ) ) {
+  if ( (XLALGPSCmp(&Faoft->epoch, &Fboft->epoch) != 0 ) ) {
     XLALPrintError ("%s: Faoft and Fboft epochs do not match!\n", __func__ );
     XLAL_ERROR (XLAL_EINVAL);
   }
