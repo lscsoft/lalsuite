@@ -42,16 +42,16 @@ Frequency span in Hz of each band being searched [R]
 Number of bands to produce >= 1 (1)
 
 =item B<ifo:>
-Interferometer to use, multiple if desired [R]
+Interferometer to use, multiple (order specific) [R]
 
 =item B<sourceSFTs:>
-Path/filename to concatenated SFT file source, multiple [R]
+Path/file to concatenated SFT file, multiple (ordered) [R]
 
 =item B<sourceSFTtypes:>
-Identify SFTs as 'vladimir' or 'standard', multiple [R]
+SFTs are 'vladimir' or 'standard', multiple (ordered) [R]
 
 =item B<t0:>
-Start time of the search, multiple [R]
+Start time of the search, multiple (ordered) [R]
 
 =item B<Tcoh:>
 Coherence lengthe of the SFTs in seconds (1800)
