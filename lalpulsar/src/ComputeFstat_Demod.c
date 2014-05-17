@@ -229,7 +229,7 @@ ComputeFstat_Demod ( FstatResults* Fstats,
               REAL8 EdX = 0;
 
               // compute final single-IFO F-stat
-              FX[X] = XLALComputeFstatFromFaFb ( FaX, FbX, AdX, BdX, CdX, EdX, DdX_inv );
+              FX[X] = ComputeFstatFromFaFb ( FaX, FbX, AdX, BdX, CdX, EdX, DdX_inv );
 
             } // if returnSingleF
 
@@ -248,7 +248,7 @@ ComputeFstat_Demod ( FstatResults* Fstats,
       REAL8 Dd_inv = 1.0 / multiAMcoef->Mmunu.Dd;
       REAL8 Ed = 0;
 
-      F = XLALComputeFstatFromFaFb ( Fa, Fb, Ad, Bd, Cd, Ed, Dd_inv );
+      F = ComputeFstatFromFaFb ( Fa, Fb, Ad, Bd, Cd, Ed, Dd_inv );
 
       // this needs to be free'ed, as it's currently not buffered
       XLALDestroyMultiSSBtimes ( multiBinary );

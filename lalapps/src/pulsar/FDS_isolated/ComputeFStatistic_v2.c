@@ -1538,7 +1538,7 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg, const UserInput_t *uvar )
   extraParams.SSBprec = uvar->SSBprecision;
   cfg->Fstat_in = XLALCreateFstatInput( catalog, fCoverMin, fCoverMax,
                                         injectSources, injectSqrtSX, p_assumeSqrtSX, uvar->RngMedWindow,
-                                        cfg->ephemeris, cfg->FstatMethod, extraParams );
+                                        cfg->ephemeris, cfg->FstatMethod, &extraParams );
   if ( cfg->Fstat_in == NULL ) {
     XLALPrintError("%s: XLALCreateFstatInput() failed with errno=%d", __func__, xlalErrno);
     ABORT ( status, COMPUTEFSTATISTIC_EXLAL, COMPUTEFSTATISTIC_MSGEXLAL );

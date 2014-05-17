@@ -44,9 +44,9 @@
 #define MYSIGN(x) ( ((x) < 0) ? (-1.0):(+1.0) )
 #define SQ(x) ( (x) * (x) )
 
-///// ---------- Internal struct definitions ---------- /////
+// ---------- Internal struct definitions ---------- //
 
-// Common input data for F-statistic algorithms
+// Common input data for F-statistic methods
 typedef struct {
   MultiLALDetector detectors;                           // List of detectors
   MultiLIGOTimeGPSVector *timestamps;                   // Multi-detector list of SFT timestamps
@@ -54,10 +54,10 @@ typedef struct {
   MultiDetectorStateSeries *detectorStates;             // Multi-detector state series
   const EphemerisData *ephemerides;                     // Ephemerides for the time-span of the SFTs
   SSBprecision SSBprec;                                 // Barycentric transformation precision
-  FstatMethodType FstatMethod;                          // method/algorithm to use for computing the F-statistic
+  FstatMethodType FstatMethod;                          // Method to use for computing the F-statistic
 } FstatInput_Common;
 
-// Input data specific to F-statistic algorithms
+// Input data specific to F-statistic methods
 typedef struct tagFstatInput_Demod FstatInput_Demod;
 typedef struct tagFstatInput_Resamp FstatInput_Resamp;
 
@@ -69,9 +69,9 @@ struct tagFstatInput {
 };
 
 // ----- internal prototypes
-static REAL8 XLALComputeFstatFromFaFb ( COMPLEX16 Fa, COMPLEX16 Fb, REAL8 A, REAL8 B, REAL8 C, REAL8 E, REAL8 Dinv );
+static REAL8 ComputeFstatFromFaFb ( COMPLEX16 Fa, COMPLEX16 Fb, REAL8 A, REAL8 B, REAL8 C, REAL8 E, REAL8 Dinv );
 
-///// ---------- Include F-statistic algorithm implementations ---------- /////
+// ---------- Include F-statistic method implementations ---------- //
 
 const int FMETHOD_RESAMP_BEST = FMETHOD_RESAMP_GENERIC;
 
@@ -107,7 +107,7 @@ static const struct {
 #include "ComputeFstat_Demod.c"
 #include "ComputeFstat_Resamp.c"
 
-///// ==================== Function definitions ===================
+// ==================== Function definitions =================== //
 
 ///
 /// Create a #FstatInputVector of the given length, for example for setting up
@@ -268,8 +268,8 @@ XLALCreateFstatInput ( const SFTCatalog *SFTcatalog,		  ///< [in] Catalog of SFT
 
                        const EphemerisData *ephemerides,	  ///< [in] Ephemerides for the time-span of the SFTs.
 
-                       const FstatMethodType FstatMethod,	  ///< [in] method/algorithm to use for computing the F-statistic
-                       const FstatExtraParams extraParams         ///< [in] minor 'tuning' or method-specific parameters to use for injection/computing F
+                       const FstatMethodType FstatMethod,	  ///< [in] Method to use for computing the \f$\mathcal{F}\f$-statistic.
+                       const FstatExtraParams *extraParams        ///< [in] Minor tuning or method-specific parameters.
                        )
 {
   // Check catalog
@@ -296,7 +296,8 @@ XLALCreateFstatInput ( const SFTCatalog *SFTcatalog,		  ///< [in] Catalog of SFT
   XLAL_CHECK_NULL ( injectSqrtSX == NULL || injectSqrtSX->length == numDetectors, XLAL_EINVAL );
   XLAL_CHECK_NULL ( assumeSqrtSX == NULL || assumeSqrtSX->length == numDetectors, XLAL_EINVAL );
   XLAL_CHECK_NULL ( ephemerides != NULL, XLAL_EFAULT );
-  XLAL_CHECK_NULL ( extraParams.SSBprec < SSBPREC_LAST, XLAL_EINVAL );
+  XLAL_CHECK_NULL ( extraParams != NULL, XLAL_EFAULT );
+  XLAL_CHECK_NULL ( extraParams->SSBprec < SSBPREC_LAST, XLAL_EINVAL );
 
   // Determine whether to load and/or generate SFTs
   const BOOLEAN loadSFTs = (SFTcatalog->data[0].locator != NULL);
@@ -315,7 +316,7 @@ XLALCreateFstatInput ( const SFTCatalog *SFTcatalog,		  ///< [in] Catalog of SFT
   if ( XLALFstatMethodClassIsDemod ( FstatMethod ) )
     {
       XLAL_CHECK_NULL ( (input->demod = XLALCalloc ( 1, sizeof(FstatInput_Demod) )) != NULL, XLAL_ENOMEM );
-      input->demod->Dterms = extraParams.Dterms;
+      input->demod->Dterms = extraParams->Dterms;
     }
   else if ( XLALFstatMethodClassIsResamp ( FstatMethod ) )
     {
@@ -333,7 +334,7 @@ XLALCreateFstatInput ( const SFTCatalog *SFTcatalog,		  ///< [in] Catalog of SFT
   // Determine the frequency band to load or generate SFTs over
   REAL8 minFreq = minCoverFreq, maxFreq = maxCoverFreq;
   {
-    // Determine whether the algorithm being used requires extra frequency bins
+    // Determine whether the method being used requires extra frequency bins
     int extraBins = 0;
     if ( input->demod != NULL ) {
       extraBins = GetFstatExtraBins_Demod ( input->demod );
@@ -367,7 +368,7 @@ XLALCreateFstatInput ( const SFTCatalog *SFTcatalog,		  ///< [in] Catalog of SFT
       MFDparams.Band = maxFreq - minFreq;
       MFDparams.multiIFO = common->detectors;
       MFDparams.multiTimestamps = *(common->timestamps);
-      MFDparams.randSeed = extraParams.randSeed;
+      MFDparams.randSeed = extraParams->randSeed;
 
       // Set noise floors if sqrtSX is given; otherwise noise floors are zero
       if ( injectSqrtSX != NULL ) {
@@ -418,10 +419,10 @@ XLALCreateFstatInput ( const SFTCatalog *SFTcatalog,		  ///< [in] Catalog of SFT
 
   // Save ephemerides and SSB precision
   common->ephemerides = ephemerides;
-  common->SSBprec = extraParams.SSBprec;
+  common->SSBprec = extraParams->SSBprec;
 
-  // Call the appropriate algorithm function to setup their input data structures
-  // - The algorithm input data structures are expected to take ownership of the
+  // Call the appropriate method function to setup their input data structures
+  // - The method input data structures are expected to take ownership of the
   //   SFTs, which is why 'input->common' does not retain a pointer to them
   if ( input->demod != NULL )
     {
@@ -509,7 +510,7 @@ XLALGetFstatInputDetectorStates ( const FstatInput* input	///< [in] \c FstatInpu
 /// Compute the \f$\mathcal{F}\f$-statistic over a band of frequencies.
 ///
 int
-XLALComputeFstat ( FstatResults **Fstats,	  	//< [in/out] Address of a pointer to a #FstatResults results structure (if NULL: allocate here).
+XLALComputeFstat ( FstatResults **Fstats,	  	///< [in/out] Address of a pointer to a #FstatResults results structure; if \c NULL, allocate here.
                    FstatInput *input,		  	///< [in] Input data structure created by one of the setup functions.
                    const PulsarDopplerParams *doppler,  ///< [in] Doppler parameters, including starting frequency, at which to compute \f$2\mathcal{F}\f$
                    const REAL8 dFreq,	  		///< [in] Required spacing in frequency between each \f$\mathcal{F}\f$-statistic.
@@ -620,7 +621,7 @@ XLALComputeFstat ( FstatResults **Fstats,	  	//< [in/out] Address of a pointer t
   }
   (*Fstats)->whatWasComputed = whatToCompute;
 
-  // Call the appropriate algorithm function to compute the F-statistic
+  // Call the appropriate method function to compute the F-statistic
   if ( input->demod != NULL )
     {
       XLAL_CHECK ( ComputeFstat_Demod(*Fstats, common, input->demod) == XLAL_SUCCESS, XLAL_EFUNC );
@@ -1096,11 +1097,11 @@ XLALAmplitudeVect2Params ( PulsarAmplitudeParams *Amp,		///< [out] Physical ampl
 
 
 ///
-/// Compute single-or multi-IFO Fstat from multi-IFO Atoms:
+/// Compute single-or multi-IFO Fstat from multi-IFO 'atoms'
 ///
 REAL8
-XLALComputeFstatFromAtoms ( const MultiFstatAtomVector *multiFstatAtoms,   ///< [in] multi-detector atoms
-                            const INT4                 X                   ///< [in] detector number, give -1 for multi-Fstat */
+XLALComputeFstatFromAtoms ( const MultiFstatAtomVector *multiFstatAtoms,   ///< [in] Multi-detector atoms
+                            const INT4                 X                   ///< [in] Detector number, give -1 for multi-Fstat
                             )
 {
   // ----- check input parameters and report errors
@@ -1149,7 +1150,7 @@ XLALComputeFstatFromAtoms ( const MultiFstatAtomVector *multiFstatAtoms,   ///< 
   // compute determinant and final Fstat (not twoF!)
   REAL8 Dinv = 1.0 / ( mmatrixA * mmatrixB - SQ(mmatrixC) );
 
-  F = XLALComputeFstatFromFaFb ( Fa, Fb, mmatrixA, mmatrixB, mmatrixC, 0, Dinv );
+  F = ComputeFstatFromFaFb ( Fa, Fb, mmatrixA, mmatrixB, mmatrixC, 0, Dinv );
 
   return F;
 
@@ -1157,11 +1158,11 @@ XLALComputeFstatFromAtoms ( const MultiFstatAtomVector *multiFstatAtoms,   ///< 
 
 
 ///
-/// Simple helper function for computing the F-statistic 'F' from given 'Fa,Fb' and antenna-pattern coefficients {A,B,C,E}
-/// with determinant D = A * B - C^2 - E^2, and Dinv = 1/D.
+/// Simple helper function which computes \f$\mathcal{F}\f$ from given \f$F_a\f$ and \f$F_b\f$, and antenna-pattern
+/// coefficients \f$(A,B,C,E)\f$ with inverse determinant \f$\text{Dinv} = 1/D\f$ where \f$D = A * B - C^2 - E^2\f$.
 ///
 static REAL8
-XLALComputeFstatFromFaFb ( COMPLEX16 Fa, COMPLEX16 Fb, REAL8 A, REAL8 B, REAL8 C, REAL8 E, REAL8 Dinv )
+ComputeFstatFromFaFb ( COMPLEX16 Fa, COMPLEX16 Fb, REAL8 A, REAL8 B, REAL8 C, REAL8 E, REAL8 Dinv )
 {
   REAL8 Fa_re = creal(Fa);
   REAL8 Fa_im = cimag(Fa);
@@ -1175,10 +1176,10 @@ XLALComputeFstatFromFaFb ( COMPLEX16 Fa, COMPLEX16 Fb, REAL8 A, REAL8 B, REAL8 C
                       );
   return F;
 
-} // XLALComputeFstatFromFaFb()
+} // ComputeFstatFromFaFb()
 
 ///
-/// Provide human-readable names for the different Fstat-method variants 'FstatMethodType'
+/// Provide human-readable names for the different \f$\mathcal{F}\f$-statistic method variants in #FstatMethodType.
 ///
 const CHAR *
 XLALGetFstatMethodName ( FstatMethodType i )
@@ -1188,8 +1189,8 @@ XLALGetFstatMethodName ( FstatMethodType i )
 } // XLALGetFstatMethodName()
 
 ///
-/// Return pointer to static help-string enumerating all (available) FstatMethod options
-/// Also indicates which is the (guessed) available 'best' algorithm available.
+/// Return pointer to a static help string enumerating all (available) #FstatMethodType options.
+/// Also indicates which is the (guessed) available 'best' method available.
 ///
 const CHAR *
 XLALFstatMethodHelpString ( void )
@@ -1229,12 +1230,12 @@ XLALFstatMethodHelpString ( void )
 } // XLALFstatMethodHelpString()
 
 ///
-/// Parse a given string into an FstatMethodType number if valid and available,
-/// return error otherwise
+/// Parse a given string into an #FstatMethodType number if valid and available,
+/// return error otherwise.
 ///
 int
-XLALParseFstatMethodString ( FstatMethodType *Fmethod, 	//!< [out] parsed FstatMethod type enum
-                             const char *s		//!< [in] string to parse
+XLALParseFstatMethodString ( FstatMethodType *Fmethod, 	//!< [out] Parsed #FstatMethodType enum
+                             const char *s		//!< [in] String to parse
                              )
 {
   XLAL_CHECK ( s != NULL, XLAL_EINVAL );

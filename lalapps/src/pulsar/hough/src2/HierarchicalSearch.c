@@ -1422,7 +1422,7 @@ void SetUpSFTs( LALStatus *status,			/**< pointer to LALStatus structure */
     /* create Fstat input data struct for Fstat-computation */
     (*p_Fstat_in_vec)->data[k] = XLALCreateFstatInput( &catalogSeq.data[k], fMin, fMax,
                                                        NULL, NULL, NULL, in->blocksRngMed,
-                                                       in->edat, FMETHOD_DEMOD_BEST, extraParams );
+                                                       in->edat, FMETHOD_DEMOD_BEST, &extraParams );
     if ( (*p_Fstat_in_vec)->data[k] == NULL ) {
       XLALPrintError("%s: XLALCreateFstatInput() failed with errno=%d", __func__, xlalErrno);
       ABORT ( status, HIERARCHICALSEARCH_EXLAL, HIERARCHICALSEARCH_MSGEXLAL );

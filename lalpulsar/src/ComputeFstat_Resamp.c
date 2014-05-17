@@ -466,7 +466,7 @@ void ComputeFStatFreqBand_RS ( LALStatus *status,                               
         UINT4 idy = m + offset_single;
         COMPLEX16 FaX = outaSingle->data[idy];
         COMPLEX16 FbX = outbSingle->data[idy];
-        fstatVector->data->data[((i+1)*numFreqBins) + m] = XLALComputeFstatFromFaFb ( FaX, FbX, AdX, BdX, CdX, 0, DdX_inv );
+        fstatVector->data->data[((i+1)*numFreqBins) + m] = ComputeFstatFromFaFb ( FaX, FbX, AdX, BdX, CdX, 0, DdX_inv );
       } /* end loop over samples */
     } /* if returnSingleF */
 
@@ -501,7 +501,7 @@ void ComputeFStatFreqBand_RS ( LALStatus *status,                               
 
       COMPLEX16 Fa = Faf_resampled->data[idx];
       COMPLEX16 Fb = Fbf_resampled->data[idx];
-      fstatVector->data->data[k] = XLALComputeFstatFromFaFb ( Fa, Fb, Ad, Bd, Cd, 0, Dd_inv );
+      fstatVector->data->data[k] = ComputeFstatFromFaFb ( Fa, Fb, Ad, Bd, Cd, 0, Dd_inv );
     }
   }
 
