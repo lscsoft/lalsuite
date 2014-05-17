@@ -285,10 +285,13 @@ if ! eval "$cmdline"; then
     exit 1
 fi
 topline=$(sort -nr -k7,7 $outfile_GCT_RS | head -1)
+freqGCT_RS=$(echo $topline | awk '{print $1}')
 resGCT_RS=$(echo $topline | awk '{print $7}')
 resGCT_RS_H1=$(echo $topline | awk '{print $9}')
 resGCT_RS_L1=$(echo $topline | awk '{print $10}')
-freqGCT_RS=$(echo $topline | awk '{print $1}')
+resGCT_RSr=$(echo $topline  | awk '{print $11}')
+resGCT_RSr_H1=$(echo $topline  | awk '{print $12}')
+resGCT_RSr_L1=$(echo $topline  | awk '{print $13}')
 
 echo
 echo "----------------------------------------------------------------------------------------------------"
@@ -318,7 +321,9 @@ resGCT_DM=$(echo $topline  | awk '{print $7}')
 resGCT_DM_H1=$(echo $topline  | awk '{print $9}')
 resGCT_DM_L1=$(echo $topline  | awk '{print $10}')
 freqGCT_DM=$(echo $topline | awk '{print $1}')
-
+resGCT_DMr=$(echo $topline  | awk '{print $11}')
+resGCT_DMr_H1=$(echo $topline  | awk '{print $12}')
+resGCT_DMr_L1=$(echo $topline  | awk '{print $13}')
 
 echo
 echo "----------------------------------------------------------------------------------------------------"
@@ -382,14 +387,23 @@ fi
 ## ---------- compute relative differences and check against tolerance --------------------
 awk_reldev='{printf "%.2e", sqrt(($1-$2)*($1-$2))/(0.5*($1+$2)) }'
 
+freqreldev_RS=$(echo $Freq $freqGCT_RS | awk "$awk_reldev")
 reldev_RS=$(echo $TwoFAvg $resGCT_RS | awk "$awk_reldev")
 reldev_RS_H1=$(echo $TwoFAvg_H1 $resGCT_RS_H1 | awk "$awk_reldev")
 reldev_RS_L1=$(echo $TwoFAvg_L1 $resGCT_RS_L1 | awk "$awk_reldev")
-freqreldev_RS=$(echo $Freq $freqGCT_RS | awk "$awk_reldev")
+
+reldev_RSr=$(echo $TwoFAvg $resGCT_RSr | awk "$awk_reldev")
+reldev_RSr_H1=$(echo $TwoFAvg_H1 $resGCT_RSr_H1 | awk "$awk_reldev")
+reldev_RSr_L1=$(echo $TwoFAvg_L1 $resGCT_RSr_L1 | awk "$awk_reldev")
 
 reldev_DM=$(echo $TwoFAvg $resGCT_DM | awk "$awk_reldev")
 reldev_DM_H1=$(echo $TwoFAvg_H1 $resGCT_DM_H1 | awk "$awk_reldev")
 reldev_DM_L1=$(echo $TwoFAvg_L1 $resGCT_DM_L1 | awk "$awk_reldev")
+
+reldev_DMr=$(echo $TwoFAvg $resGCT_DMr | awk "$awk_reldev")
+reldev_DMr_H1=$(echo $TwoFAvg_H1 $resGCT_DMr_H1 | awk "$awk_reldev")
+reldev_DMr_L1=$(echo $TwoFAvg_L1 $resGCT_DMr_L1 | awk "$awk_reldev")
+
 freqreldev_DM=$(echo $Freq $freqGCT_DM | awk "$awk_reldev")
 reldev_DM_LV=$(echo $TwoFAvg $resGCT_DM_LV | awk "$awk_reldev")
 reldev_DM_H1_LV=$(echo $TwoFAvg_H1 $resGCT_DM_H1_LV | awk "$awk_reldev")
@@ -404,7 +418,7 @@ echo
 echo "--------- Timings ------------------------------------------------------------------------------------------------"
 awk_timing='BEGIN { sumTau = 0; sumTauCoh = 0; sumTauSC = 0; sumTauF0 = 0; sumTauS0 = 0; counter=0; } \
            { sumTau = sumTau + $6; sumTauCoh = sumTauCoh + $7; sumTauSC = sumTauSC + $8; sumTauF0 = sumTauF0 + $10; sumTauS0 = sumTauS0 + $11; counter=counter+1; } \
-           END {printf "tau = %6.3g s, tauCoh = %6.3g s, tauSC = %6.3g s;  tauF0 = %6.3g s, tauS0 = %6.3g s",
+           END {printf "tau = %-6.3g s, tauCoh = %-6.3g s, tauSC = %-6.3g s;  tauF0 = %-6.3g s, tauS0 = %-6.3g s",
                 sumTau/counter, sumTauCoh/counter, sumTauSC/counter, sumTauF0 / counter, sumTauS0 / counter}'
 timing_DM=$(sed '/^%.*/d' $timingsfile_DM | awk "$awk_timing")
 timing_DM_LV=$(sed '/^%.*/d' $timingsfile_DM_LV | awk "$awk_timing")
@@ -418,13 +432,24 @@ echo "--------- Compare results ------------------------------------------------
 echo "                     	<2F_multi>	<2F_H1>  	<2F_L1>  	 @ Freq [Hz]     	(reldev, reldev_H1, reldev_L1, reldev_Freq)"
 echo    "==>  CFSv2:         	$TwoFAvg 	$TwoFAvg_H1   	$TwoFAvg_L1   	 @ $Freq 	[Tolerance = ${Tolerance}]"
 
-echo -n "==>  GCT-LALDemod: 	$resGCT_DM 	$resGCT_DM_H1 	$resGCT_DM_L1  	 @ $freqGCT_DM 	($reldev_DM, $reldev_DM_H1, $reldev_DM_L1, $freqreldev_DM)"
+echo -n "==>  GCT-DM: 		$resGCT_DM	$resGCT_DM_H1	$resGCT_DM_L1  	 @ $freqGCT_DM 	($reldev_DM, $reldev_DM_H1, $reldev_DM_L1, $freqreldev_DM)"
 fail1=$(echo $freqreldev_DM $Tolerance | awk "$awk_isgtr")
 fail2=$(echo $reldev_DM $Tolerance     | awk "$awk_isgtr")
 fail3=$(echo $reldev_DM_H1 $Tolerance  | awk "$awk_isgtr")
 fail4=$(echo $reldev_DM_L1 $Tolerance  | awk "$awk_isgtr")
 if [ "$fail1" -o "$fail2" -o "$fail3" -o "$fail4" ]; then
-    echo " ==> FAILED"
+    echo " ==> *FAILED*"
+    retstatus=1
+else
+    echo " ==> OK"
+fi
+
+echo -n "==>  GCT-DM-recalc:	$resGCT_DMr	$resGCT_DMr_H1	$resGCT_DMr_L1	 @ $freqGCT_DM	($reldev_DMr, $reldev_DMr_H1, $reldev_DMr_L1, $freqreldev_DM)"
+fail2r=$(echo $reldev_DMr $Tolerance     | awk "$awk_isgtr")
+fail3r=$(echo $reldev_DMr_H1 $Tolerance  | awk "$awk_isgtr")
+fail4r=$(echo $reldev_DMr_L1 $Tolerance  | awk "$awk_isgtr")
+if [ "$fail2r" -o "$fail3r" -o "$fail4r" ]; then
+    echo " ==> *FAILED*"
     retstatus=1
 else
     echo " ==> OK"
@@ -436,7 +461,7 @@ fail2=$(echo $reldev_DM_LV $Tolerance     | awk "$awk_isgtr")
 fail3=$(echo $reldev_DM_H1_LV $Tolerance  | awk "$awk_isgtr")
 fail4=$(echo $reldev_DM_L1_LV $Tolerance  | awk "$awk_isgtr")
 if [ "$fail1" -o "$fail2" -o "$fail3" -o "$fail4" ]; then
-    echo " ==> FAILED"
+    echo " ==> *FAILED*"
     retstatus=1
 else
     echo " ==> OK"
@@ -448,8 +473,18 @@ fail2=$(echo $reldev_RS     $Tolerance | awk "$awk_isgtr")
 fail3=$(echo $reldev_RS_H1  $Tolerance | awk "$awk_isgtr")
 fail4=$(echo $reldev_RS_L1  $Tolerance | awk "$awk_isgtr")
 if [ "$fail1" -o "$fail2" -o "$fail3" -o "$fail4" ]; then
-    echo " ==> FAILED"
+    echo " ==> *FAILED*"
     retstatus=1
+else
+    echo " ==> OK"
+fi
+
+echo -n "==>  GCT-RS-recalc: 	$resGCT_RSr 	$resGCT_RSr_H1 	$resGCT_RSr_L1  	 @ $freqGCT_RS 	($reldev_RSr, $reldev_RSr_H1, $reldev_RSr_L1, $freqreldev_RS)"
+fail2r=$(echo $reldev_RSr     $Tolerance | awk "$awk_isgtr")
+fail3r=$(echo $reldev_RSr_H1  $Tolerance | awk "$awk_isgtr")
+fail4r=$(echo $reldev_RSr_L1  $Tolerance | awk "$awk_isgtr")
+if [ "$fail2r" -o "$fail3r" -o "$fail4r" ]; then
+    echo " ==> *FAILED* BUT ACCEPTED FOR NOW: FIXME!"
 else
     echo " ==> OK"
 fi
