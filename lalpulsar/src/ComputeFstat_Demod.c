@@ -35,6 +35,7 @@ struct tagFstatInput_Demod {
   UINT4 Dterms;                                 // Number of terms to keep in Dirichlet kernel
   MultiSFTVector *multiSFTs;                    // Input multi-detector SFTs
   REAL8 prevAlpha, prevDelta;                   // buffering: previous skyposition computed
+  LIGOTimeGPS prevRefTime;			// buffering: keep track of previous refTime for SSBtimes buffering
   MultiSSBtimes *prevMultiSSBtimes;		// buffering: previous multiSSB times, unique to skypos + SFTs
   MultiAMCoeffs *prevMultiAMcoef;		// buffering: previous AM-coeffs, unique to skypos + SFTs
 };
@@ -129,7 +130,10 @@ ComputeFstat_Demod ( FstatResults* Fstats,
   MultiSSBtimes *multiSSB = NULL;
   MultiAMCoeffs *multiAMcoef = NULL;
   // ----- check if we have buffered SSB+AMcoef for current sky-position
-  if ( (demod->prevAlpha == thisPoint.Alpha) && (demod->prevDelta == thisPoint.Delta ) && demod->prevMultiSSBtimes && demod->prevMultiAMcoef )
+  if ( (demod->prevAlpha == thisPoint.Alpha) && (demod->prevDelta == thisPoint.Delta ) &&
+       (demod->prevMultiSSBtimes != NULL) && ( XLALGPSDiff(&demod->prevRefTime, &thisPoint.refTime) == 0 ) &&	// have SSB times for same reftime?
+       (demod->prevMultiAMcoef != NULL)
+       )
     { // if yes ==> reuse
       multiSSB    = demod->prevMultiSSBtimes;
       multiAMcoef = demod->prevMultiAMcoef;
@@ -146,6 +150,7 @@ ComputeFstat_Demod ( FstatResults* Fstats,
       // store these for possible later re-use in buffer
       XLALDestroyMultiSSBtimes ( demod->prevMultiSSBtimes );
       demod->prevMultiSSBtimes = multiSSB;
+      demod->prevRefTime = thisPoint.refTime;
       XLALDestroyMultiAMCoeffs ( demod->prevMultiAMcoef );
       demod->prevMultiAMcoef = multiAMcoef;
       demod->prevAlpha = thisPoint.Alpha;
