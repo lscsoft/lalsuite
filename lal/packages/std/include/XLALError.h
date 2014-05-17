@@ -636,7 +636,7 @@ void XLALError(const char *func,
 /* Helper macro for internal use only */
 #define XLAL_ERROR_VAL_(val, errnum, fmt, ...) \
 	do { \
-		if (fmt) { \
+		if (fmt != NULL) { \
 			XLAL_PRINT_ERROR(fmt, __VA_ARGS__); \
 		} \
 		XLALError(__func__, __FILE__, __LINE__, errnum); \
@@ -730,7 +730,7 @@ void XLALError(const char *func,
 #define XLAL_CHECK_VAL_(val, assertion, errnum, fmt, ...) \
 	do { \
 		if (!(assertion)) { \
-			if (fmt) { \
+			if (fmt != NULL) { \
 				XLAL_PRINT_ERROR(fmt, __VA_ARGS__); \
 			} else { \
 				XLAL_PRINT_ERROR("Check failed: " #assertion); \
