@@ -1,5 +1,7 @@
 #ifdef _SFTUTILS_H  /* Only include via SFTutils.h */
 #ifndef SWIG /* exclude from SWIG interface */
+#ifndef _SFTUTILSLAL_H
+#define _SFTUTILSLAL_H
 /** \cond DONT_DOXYGEN */
 
 /*----- Error-codes -----*/
@@ -47,5 +49,6 @@ void LALDestroyMultiNoiseWeights  (LALStatus *status, MultiNoiseWeights **weight
 void LALGetSFTtimestamps (LALStatus *, LIGOTimeGPSVector **timestamps, const SFTVector *sfts );
 
 /** \endcond */
+#endif /* _SFTUTILSLAL_H */
 #endif /* SWIG */
 #endif /* _SFTUTILS_H */
