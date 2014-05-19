@@ -183,6 +183,7 @@ main ( int argc, char *argv[] )
   MultiSSBtimes *multiBinary_test = NULL;
   PulsarDopplerParams doppler;
   memset(&doppler, 0, sizeof(doppler));
+  doppler.fkdot[0] = 100;
   doppler.tp = orbit.tp;
   doppler.argp = orbit.argp;
   doppler.asini = orbit.asini;
