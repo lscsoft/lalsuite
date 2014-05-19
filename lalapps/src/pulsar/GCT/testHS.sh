@@ -37,10 +37,6 @@ else
     gct_code="$@"
 fi
 
-if [ -n "${LALPULSAR_DATADIR}" ]; then
-    export LAL_DATA_PATH=${LAL_DATA_PATH}:${LALPULSAR_DATADIR}
-fi
-
 testDirBase="testHS_dir"
 testDir="./${testDirBase}";
 if [ -d "$testDir" ]; then

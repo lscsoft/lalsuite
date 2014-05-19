@@ -12,12 +12,6 @@ duration = 200*1800;
 #refTime = 600000000;
 refTime = startTime;
 ##ephemDir = '/local_data/badkri/lscsoft/share/lal/';
-## check that LAL_DATA_PATH has been set
-check = getenv ("LAL_DATA_PATH");
-if ( check == "" )
-  printf("\n");
-  error ("Sorry, LAL_DATA_PATH needs to be set!\nSet this to your ephemeris directory, e.g. 'lal-installed/share/lal'\n\n");
-endif
 
 ## doppler parameter space
 fStart = 310;

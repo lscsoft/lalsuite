@@ -26,15 +26,6 @@ code_MFD="${injectdir}lalapps_Makefakedata_v4"
 code_HS="${builddir}/lalapps_HierarchicalSearch"
 code_RC="${builddir}/lalapps_RecalcHSCandidates"
 
-if [ -z "${LAL_DATA_PATH}" ]; then
-    echo
-    echo "Need environment-variable LAL_DATA_PATH to be set to include"
-    echo "your ephemeris-directory (e.g. /usr/local/share/lalpulsar)"
-    echo "This might indicate an incomplete LAL+LALPULSAR installation"
-    echo
-    exit 1
-fi
-
 ## ----- parameters
 SFTsH1="./allSFTs_H1.sft"
 SFTsL1="./allSFTs_L1.sft"
