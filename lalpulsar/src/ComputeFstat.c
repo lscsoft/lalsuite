@@ -287,6 +287,11 @@ XLALCreateFstatInput ( const SFTCatalog *SFTcatalog,		  ///< [in] Catalog of SFT
   XLAL_CHECK_NULL ( multiSFTcatalog != NULL, XLAL_EFUNC );
   const UINT4 numDetectors = multiSFTcatalog->length;
 
+  // check that no single-SFT input vectors are given to avoid returning singular results:
+  for ( UINT4 X=0; X < numDetectors; X ++ ) {
+    XLAL_CHECK_NULL ( multiSFTcatalog->data[X].length > 1, XLAL_EINVAL, "Need more than 1 SFTs per Detector!\n" );
+  }
+
   // Check remaining parameters
   XLAL_CHECK_NULL ( isfinite(minCoverFreq) && minCoverFreq > 0, XLAL_EINVAL );
   XLAL_CHECK_NULL ( isfinite(maxCoverFreq) && maxCoverFreq > 0, XLAL_EINVAL );
