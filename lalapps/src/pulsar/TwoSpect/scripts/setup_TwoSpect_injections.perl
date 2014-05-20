@@ -231,8 +231,6 @@ my $numIFOs = @ifo;
 my $numberTimestampFiles = @timestampsfile;
 my $numberSegmentFiles = @segmentfile;
 
-system("mkdir $directory/out");
-die "mkdir failed: $?" if $?;
 system("mkdir $directory/err");
 die "mkdir failed: $?" if $?;
 
@@ -253,7 +251,7 @@ print CONDORFILE<<EOF;
 universe=vanilla
 executable=/atlas/user/atlas3/egoetz/lalsuite-master/lalapps/src/pulsar/TwoSpect/scripts/run_TwoSpect_injections.perl
 input=/dev/null
-output=$directory/out/out.\$(JOBNUM)
+output=/dev/null
 error=$directory/err/err.\$(JOBNUM)
 log=/local/user/egoetz/$logfile
 request_memory=2500
@@ -293,7 +291,7 @@ if ($weightedIHS!=0) { print CONDORFILE " --weightedIHS"; }
 
 if ($markBadSFTs!=0) { print CONDORFILE " --markBadSFTs"; }
 
-if ($ulonly!=0) { print CONDORFILE " --IHSonly"; }
+if ($ulonly!=0) { print CONDORFILE " --ulonly"; }
 
 if ($templateTest!=0) { print CONDORFILE " --templateTest"; }
 

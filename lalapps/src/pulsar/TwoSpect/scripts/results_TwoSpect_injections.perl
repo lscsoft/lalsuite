@@ -12,11 +12,11 @@ my $candidateOutput = '';
 GetOptions('dir=s' => \$directory,
            'jobs=i' => \$jobs,
            'ifo=s' => \@ifos,
-           'ULoutput=:s' => \$ULoutput,
-           'candidateOutput=:s' => \$candidateOutput);
+           'ULoutput:s' => \$ULoutput,
+           'candidateOutput:s' => \$candidateOutput);
 
-open(ULRESULTS, ">$directory/$ULoutput") or die "Cannot write to $directory/$ULoutput $!";
-open(CANDIDATERESULTS, ">$directory/$candidateOutput") or die "Cannot write to $directory/$candidateOutput $!";
+if ($ULoutput ne "") { open(ULRESULTS, ">$directory/$ULoutput") or die "Cannot write to $directory/$ULoutput $!"; }
+if ($candidateOutput ne "") { open(CANDIDATERESULTS, ">$directory/$candidateOutput") or die "Cannot write to $directory/$candidateOutput $!"; }
 
 for(my $ii=0; $ii<$jobs; $ii++) {
    open(INJECTEDVALS, "$directory/$ii/injections.dat") or die "Cannot open $directory/$ii/injections.dat $!";
@@ -63,5 +63,5 @@ for(my $ii=0; $ii<$jobs; $ii++) {
    }
 }
 
-close(ULRESULTS);
-close(CANDIDATERESULTS);
+if ($ULoutput ne "") { close(ULRESULTS); }
+if ($candidateOutput ne "") { close(CANDIDATERESULTS); }
