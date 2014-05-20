@@ -207,7 +207,7 @@ echo " STEP 3: Compare to reference results: "
 echo "----------------------------------------"
 echo
 
-for n in 0 1 2 6 8 9; do
+for n in 0 1 2 6; do
 
     ## set F-statistic comparison tolerance
     if [ $n -eq 6 ]; then
