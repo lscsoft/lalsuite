@@ -20,6 +20,7 @@
 // MA  02111-1307  USA
 //
 
+#include <config.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <math.h>
@@ -71,26 +72,31 @@ struct tagFstatInput {
 // ----- internal prototypes
 static REAL8 ComputeFstatFromFaFb ( COMPLEX16 Fa, COMPLEX16 Fb, REAL8 A, REAL8 B, REAL8 C, REAL8 E, REAL8 Dinv );
 
+// ---------- Check for various computer architectures ---------- //
+
+#if defined(HAVE_SSE) || defined(__SSE__)
+#define CFS_HAVE_SSE 1
+#else
+#define CFS_HAVE_SSE 0
+#endif
+
+#if defined(HAVE_ALTIVEC) || defined(__ALTIVEC__)
+#define CFS_HAVE_ALTIVEC 1
+#else
+#define CFS_HAVE_ALTIVEC 0
+#endif
+
 // ---------- Include F-statistic method implementations ---------- //
 
-const int FMETHOD_RESAMP_BEST = FMETHOD_RESAMP_GENERIC;
-
-#if defined(HAVE_SSE)
-#define have_SSE 1
-#define have_Altivec 0
+#if CFS_HAVE_SSE
 const int FMETHOD_DEMOD_BEST = FMETHOD_DEMOD_SSE;
-
-#elif (defined HAVE_ALTIVEC) || (defined __ALTIVEC__)
-#define have_Altivec 1
-#define have_SSE 0
+#elif CFS_HAVE_ALTIVEC
 const int FMETHOD_DEMOD_BEST = FMETHOD_DEMOD_ALTIVEC;
-
 #else
-#define have_Altivec 0
-#define have_SSE 0
 const int FMETHOD_DEMOD_BEST = FMETHOD_DEMOD_OPTC;
 #endif
 
+const int FMETHOD_RESAMP_BEST = FMETHOD_RESAMP_GENERIC;
 
 static const struct {
   const char *const name;
@@ -98,8 +104,8 @@ static const struct {
 } FstatMethodNames[FMETHOD_END] = {
   [FMETHOD_DEMOD_GENERIC]	= {"DemodGeneric",	1 },
   [FMETHOD_DEMOD_OPTC] 		= {"DemodOptC", 	1 },
-  [FMETHOD_DEMOD_SSE] 		= {"DemodSSE", 		have_SSE},
-  [FMETHOD_DEMOD_ALTIVEC] 	= {"DemodAltivec", 	have_Altivec},
+  [FMETHOD_DEMOD_SSE] 		= {"DemodSSE", 		CFS_HAVE_SSE},
+  [FMETHOD_DEMOD_ALTIVEC] 	= {"DemodAltivec", 	CFS_HAVE_ALTIVEC},
 
   [FMETHOD_RESAMP_GENERIC]	= {"ResampGeneric", 	1 }
 } ;

@@ -74,7 +74,7 @@ static int ComputeFstat_Demod ( FstatResults* Fstats, const FstatInput_Common *c
 #define RUNTIME_CHECK XLAL_CHECK ( Dterms <= 20, XLAL_EINVAL, "Selected Hotloop variant 'OptC' only works for Dterms <= 20, got %d\n", Dterms );
 #include "ComputeFstat_Demod_ComputeFaFb.c"
 // ----- Akos hotloop precalc SSE code (Dterms=8) ----------
-#if defined(HAVE_SSE)
+#if CFS_HAVE_SSE
 #define FUNC XLALComputeFaFb_SSE
 #define HOTLOOP_SOURCE "ComputeFstat_DemodHL_SSE.i"
 #define RUNTIME_CHECK XLAL_CHECK ( Dterms == 8, XLAL_EINVAL, "Selected Hotloop variant 'SSE' only works for Dterms == 8, got %d\n", Dterms );
@@ -83,7 +83,7 @@ static int ComputeFstat_Demod ( FstatResults* Fstats, const FstatInput_Common *c
 #define XLALComputeFaFb_SSE(...) (XLALPrintError("Selected Hotloop variant 'SSE' unavailable\n") || XLAL_EFAILED)
 #endif
 // ----- Akos hotloop Altivec code (Dterms=8) ----------
-#if (defined(HAVE_ALTIVEC) || defined(__ALTIVEC__))
+#if CFS_HAVE_ALTIVEC
 #include <altivec.h>
 #define FUNC XLALComputeFaFb_Altivec
 #define HOTLOOP_SOURCE "ComputeFstat_DemodHL_Altivec.i"
