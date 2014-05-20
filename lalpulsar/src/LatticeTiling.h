@@ -59,6 +59,22 @@ gsl_vector* XLALMetricEllipseBoundingBox(
   );
 
 ///
+/// Compute a lower triangular basis matrix whose columns are orthonormal with respect to a given metric
+///
+gsl_matrix* XLALComputeMetricOrthoBasis(
+  const gsl_matrix* metric			///< [in] Metric to orthonormalise with respect to
+  );
+
+///
+/// Compute a lower triangular generator matrix for a given lattice type and mismatch
+///
+gsl_matrix* XLALComputeLatticeGenerator(
+  const size_t dimensions,			///< [in] Number of dimensions
+  const LatticeType lattice,			///< [in] Lattice type
+  const double max_mismatch			///< [in] Maximum prescribed mismatch
+  );
+
+///
 /// Create a new lattice tiling state structure
 ///
 LatticeTiling* XLALCreateLatticeTiling(

@@ -37,6 +37,7 @@
 #include <lal/LALMalloc.h>
 #include <lal/LALConstants.h>
 #include <lal/XLALError.h>
+#include <lal/XLALGSL.h>
 #include <lal/GSLSupport.h>
 
 #ifdef __GNUC__
@@ -102,292 +103,15 @@ static void LT_ZeroStrictUpperTriangle(gsl_matrix* A) {
 }
 
 ///
-/// Orthonormalise the columns of a matrix with respect to a metric (matrix is lower triangular)
+/// Exchange all rows and columns of the matrix A
 ///
-static int LT_OrthonormaliseWRTMetric(
-  gsl_matrix* matrix,				///< [in] Matrix of columns to orthonormalise
-  const gsl_matrix* metric			///< [in] Metric to orthonormalise with respect to
-  )
-{
-
-  // Check input
-  XLAL_CHECK(matrix != NULL, XLAL_EFAULT);
-  XLAL_CHECK(metric != NULL, XLAL_EFAULT);
-  XLAL_CHECK(metric->size1 == metric->size2, XLAL_ESIZE);
-  XLAL_CHECK(metric->size1 == matrix->size2 && metric->size2 == matrix->size2, XLAL_ESIZE);
-  const size_t n = metric->size1;
-
-  // Allocate temporary vector
-  gsl_vector* temp = gsl_vector_alloc(n);
-  XLAL_CHECK(temp != NULL, XLAL_ENOMEM);
-
-  // Orthonormalise the columns of the matrix using numerically stabilised Gram-Schmidt
-  for (ssize_t i = n - 1; i >= 0; --i) {
-    gsl_vector_view col_i = gsl_matrix_column(matrix, i);
-
-    double inner_prod = 0.0;
-
-    for (ssize_t j = n - 1; j > i; --j) {
-      gsl_vector_view col_j = gsl_matrix_column(matrix, j);
-
-      // Compute inner product of (j)th and (i)th columns with the metric
-      gsl_blas_dgemv(CblasNoTrans, 1.0, metric, &col_j.vector, 0.0, temp);
-      gsl_blas_ddot(&col_i.vector, temp, &inner_prod);
-
-      // Subtract component of (j)th column from (i)th column
-      gsl_vector_memcpy(temp, &col_j.vector);
-      gsl_vector_scale(temp, inner_prod);
-      gsl_vector_sub(&col_i.vector, temp);
-
-    }
-
-    // Compute inner product of (i)th column with itself
-    gsl_blas_dgemv(CblasNoTrans, 1.0, metric, &col_i.vector, 0.0, temp);
-    gsl_blas_ddot(&col_i.vector, temp, &inner_prod);
-
-    // Normalise (i)th column
-    gsl_vector_scale(&col_i.vector, 1.0 / sqrt(inner_prod));
-
+static void LT_ExchangeRowsCols(gsl_matrix* A) {
+  for (size_t i = 0; i < A->size1 / 2; ++i) {
+    gsl_matrix_swap_rows(A, i, A->size1 - i - 1);
   }
-
-  // Matrix will be lower triangular, so zero out upper triangle
-  LT_ZeroStrictUpperTriangle(matrix);
-
-  // Cleanup
-  gsl_vector_free(temp);
-
-  return XLAL_SUCCESS;
-
-}
-
-///
-/// Transform a lattice generator to a square lower triangular form
-///
-static gsl_matrix* LT_SquareLowerTriangularLatticeGenerator(
-  gsl_matrix* generator				///< [in] Generator matrix of lattice
-  )
-{
-
-  // Check input
-  XLAL_CHECK_NULL(generator != NULL, XLAL_EFAULT);
-  const size_t m = generator->size1;
-  const size_t n = generator->size2;
-  XLAL_CHECK_NULL(m >= n, XLAL_ESIZE);
-
-  // Allocate memory
-  gsl_matrix* QR_decomp = gsl_matrix_alloc(m, n);
-  XLAL_CHECK_NULL(QR_decomp != NULL, XLAL_ENOMEM);
-  gsl_vector* QR_tau = gsl_vector_alloc(n);
-  XLAL_CHECK_NULL(QR_tau != NULL, XLAL_ENOMEM);
-  gsl_matrix* Q = gsl_matrix_alloc(m, m);
-  XLAL_CHECK_NULL(Q != NULL, XLAL_ENOMEM);
-  gsl_matrix* R = gsl_matrix_alloc(m, n);
-  XLAL_CHECK_NULL(R != NULL, XLAL_ENOMEM);
-  gsl_matrix* perm_sign = gsl_matrix_alloc(n, m);
-  XLAL_CHECK_NULL(perm_sign != NULL, XLAL_ENOMEM);
-  gsl_matrix* left = gsl_matrix_alloc(n, m);
-  XLAL_CHECK_NULL(left != NULL, XLAL_ENOMEM);
-  gsl_matrix* right = gsl_matrix_alloc(n, n);
-  XLAL_CHECK_NULL(right != NULL, XLAL_ENOMEM);
-  gsl_matrix* temp = gsl_matrix_alloc(m, n);
-  XLAL_CHECK_NULL(temp != NULL, XLAL_ENOMEM);
-  gsl_matrix* result = gsl_matrix_alloc(n, n);
-  XLAL_CHECK_NULL(result != NULL, XLAL_ENOMEM);
-
-  // Find the QR decomposition of the generator
-  gsl_matrix_memcpy(QR_decomp, generator);
-  gsl_linalg_QR_decomp(QR_decomp, QR_tau);
-  gsl_linalg_QR_unpack(QR_decomp, QR_tau, Q, R);
-
-  // Build matrix to permute column order and make signs to diagonal positive
-  gsl_matrix_set_zero(perm_sign);
-  for (size_t i = 0; i < n; ++i) {
-    for (size_t j = 0; j < m; ++j) {
-      if (i + j == n - 1) {
-        double x = gsl_matrix_get(R, j, j);
-        gsl_matrix_set(perm_sign, i, j, x < 0 ? -1.0 : (x > 0 ? 1.0 : 0.0));
-      }
-    }
+  for (size_t j = 0; j < A->size2 / 2; ++j) {
+    gsl_matrix_swap_columns(A, j, A->size2 - j - 1);
   }
-
-  // Calculate left side of transform (Q is transposed to get inverse)
-  gsl_blas_dgemm(CblasNoTrans, CblasTrans, 1.0, perm_sign, Q, 0.0, left);
-
-  // Build right side of transform
-  gsl_matrix_set_zero(right);
-  for (size_t i = 0; i < n; ++i) {
-    for (size_t j = 0; j < n; ++j) {
-      if (i + j == n - 1) {
-        gsl_matrix_set(right, i, j, 1.0);
-      }
-    }
-  }
-
-  // Transform generator
-  gsl_blas_dgemm(CblasNoTrans, CblasNoTrans, 1.0, generator, right, 0.0, temp);
-  gsl_blas_dgemm(CblasNoTrans, CblasNoTrans, 1.0, left, temp, 0.0, result);
-
-  // Generator will be lower triangular, so zero out upper triangle
-  LT_ZeroStrictUpperTriangle(result);
-
-  // Cleanup
-  gsl_matrix_free(QR_decomp);
-  gsl_vector_free(QR_tau);
-  gsl_matrix_free(Q);
-  gsl_matrix_free(R);
-  gsl_matrix_free(perm_sign);
-  gsl_matrix_free(left);
-  gsl_matrix_free(right);
-  gsl_matrix_free(temp);
-
-  return result;
-
-}
-
-///
-/// Normalise a lattice generator matrix to have a specified covering radius
-///
-static int LT_NormaliseLatticeGenerator(
-  gsl_matrix* generator,			///< [in] Generator matrix of lattice
-  const double norm_thickness,			///< [in] Normalised thickness of lattice
-  const double covering_radius			///< [in] Desired covering radius
-  )
-{
-
-  // Check input
-  XLAL_CHECK(generator != NULL, XLAL_EFAULT);
-  XLAL_CHECK(generator->size1 == generator->size2, XLAL_ESIZE);
-  const size_t n = generator->size1;
-
-  // Allocate memory
-  gsl_matrix* LU_decomp = gsl_matrix_alloc(n, n);
-  XLAL_CHECK(LU_decomp != NULL, XLAL_ENOMEM);
-  gsl_permutation* LU_perm = gsl_permutation_alloc(n);
-  XLAL_CHECK(LU_perm != NULL, XLAL_ENOMEM);
-
-  // Compute generator LU decomposition
-  gsl_matrix_memcpy(LU_decomp, generator);
-  int LU_sign = 0;
-  gsl_linalg_LU_decomp(LU_decomp, LU_perm, &LU_sign);
-
-  // Compute generator determinant
-  const double generator_determinant = gsl_linalg_LU_det(LU_decomp, LU_sign);
-
-  // Compute covering radius
-  const double generator_covering_radius = pow(norm_thickness * generator_determinant, 1.0 / n);
-
-  // Normalise so covering spheres have specified covering radius
-  gsl_matrix_scale(generator, covering_radius / generator_covering_radius);
-
-  // Cleanup
-  gsl_matrix_free(LU_decomp);
-  gsl_permutation_free(LU_perm);
-
-  return XLAL_SUCCESS;
-
-}
-
-///
-/// Find the lattice increment matrix for a given lattice, metric and mismatch
-///
-static gsl_matrix* LT_MetricLatticeIncrements(
-  const LatticeType lattice,			///< [in] Lattice type
-  const gsl_matrix* metric,			///< [in] parameter-space metric
-  const double max_mismatch			///< [in] Maximum prescribed mismatch
-  )
-{
-
-  // Check input
-  XLAL_CHECK_NULL(metric != NULL, XLAL_EFAULT);
-  XLAL_CHECK_NULL(metric->size1 == metric->size2, XLAL_ESIZE);
-  XLAL_CHECK_NULL(max_mismatch > 0.0, XLAL_EINVAL);
-  const size_t n = metric->size1;
-
-  // Allocate memory
-  gsl_matrix* directions = gsl_matrix_alloc(metric->size1, metric->size2);
-  XLAL_CHECK_NULL(directions != NULL, XLAL_ENOMEM);
-  gsl_matrix* increment = gsl_matrix_alloc(metric->size1, metric->size2);
-  XLAL_CHECK_NULL(increment != NULL, XLAL_ENOMEM);
-
-  // Check metric is positive definite, by trying to compute its Cholesky decomposition
-  gsl_matrix_memcpy(directions, metric);   // Make copy to preserve original
-  gsl_error_handler_t* old_handler = gsl_set_error_handler_off();
-  int retn = gsl_linalg_cholesky_decomp(directions);
-  gsl_set_error_handler(old_handler);
-  XLAL_CHECK_NULL(retn == 0, XLAL_EFAILED, "metric is not positive definite");
-
-  // Find orthonormalise directions with respect to tiling metric
-  gsl_matrix_set_identity(directions);
-  XLAL_CHECK_NULL(LT_OrthonormaliseWRTMetric(directions, metric) == XLAL_SUCCESS, XLAL_EFUNC);
-
-  // Get lattice generator
-  gsl_matrix* gen_matrix = NULL;
-  double norm_thickness = 0.0;
-  switch (lattice) {
-
-  case LATTICE_TYPE_CUBIC:   // Cubic (\f$Z_n\f$) lattice
-  {
-
-    // Allocate memory
-    gen_matrix = gsl_matrix_alloc(n, n);
-    XLAL_CHECK_NULL(gen_matrix != NULL, XLAL_ENOMEM);
-
-    // Create generator
-    gsl_matrix_set_identity(gen_matrix);
-
-    // Calculate normalised thickness
-    norm_thickness = pow(sqrt(n)/2, n);
-
-  }
-  break;
-
-  case LATTICE_TYPE_ANSTAR:   // An-star (\f$A_n^*\f$) lattice
-  {
-
-    // Allocate memory
-    gen_matrix = gsl_matrix_alloc(n + 1, n);
-    XLAL_CHECK_NULL(gen_matrix != NULL, XLAL_ENOMEM);
-
-    // Create generator in (n + 1) space
-    gsl_matrix_set_all(gen_matrix, 0.0);
-    gsl_vector_view first_row = gsl_matrix_row(gen_matrix, 0);
-    gsl_vector_view sub_diag = gsl_matrix_subdiagonal(gen_matrix, 1);
-    gsl_vector_view last_col = gsl_matrix_column(gen_matrix, n - 1);
-    gsl_vector_set_all(&first_row.vector, 1.0);
-    gsl_vector_set_all(&sub_diag.vector, -1.0);
-    gsl_vector_set_all(&last_col.vector, 1.0 / (n + 1.0));
-    gsl_vector_set(&last_col.vector, 0, -1.0 * n / (n + 1.0));
-
-    // Calculate normalised thickness
-    norm_thickness = sqrt(n + 1.0)*pow((1.0*n*(n + 2))/(12.0*(n + 1)), 0.5*n);
-
-  }
-  break;
-
-  default:
-    XLAL_ERROR_NULL(XLAL_EINVAL, "Invalid 'lattice'=%u", lattice);
-  }
-
-  // Transform lattice generator to square lower triangular
-  gsl_matrix* sqlwtr_gen_matrix = LT_SquareLowerTriangularLatticeGenerator(gen_matrix);
-  XLAL_CHECK_NULL(sqlwtr_gen_matrix != NULL, XLAL_EFAILED);
-
-  // Normalise lattice generator so covering radius is sqrt(mismatch)
-  XLAL_CHECK_NULL(LT_NormaliseLatticeGenerator(sqlwtr_gen_matrix, norm_thickness, sqrt(max_mismatch)) == XLAL_SUCCESS, XLAL_EFUNC);
-
-  // Compute the increment matrix of the lattice generator along the orthogonal directions
-  gsl_blas_dgemm(CblasNoTrans, CblasNoTrans, 1.0, directions, sqlwtr_gen_matrix, 0.0, increment);
-
-  // Increments will be lower triangular, so zero out upper triangle
-  LT_ZeroStrictUpperTriangle(increment);
-
-  // Cleanup
-  gsl_matrix_free(directions);
-  gsl_matrix_free(gen_matrix);
-  gsl_matrix_free(sqlwtr_gen_matrix);
-
-  return increment;
-
 }
 
 ///
@@ -553,6 +277,189 @@ gsl_vector* XLALMetricEllipseBoundingBox(
   gsl_matrix_free(inverse);
 
   return bounding_box;
+
+}
+
+gsl_matrix* XLALComputeMetricOrthoBasis(
+  const gsl_matrix* metric
+  )
+{
+
+  // Check input
+  XLAL_CHECK_NULL(metric->size1 == metric->size2, XLAL_ESIZE);
+  const size_t n = metric->size1;
+
+  // Allocate memory
+  gsl_matrix* basis = gsl_matrix_alloc(n, n);
+  XLAL_CHECK_NULL(basis != NULL, XLAL_ENOMEM);
+  gsl_vector* temp = gsl_vector_alloc(n);
+  XLAL_CHECK_NULL(temp != NULL, XLAL_ENOMEM);
+
+  // Initialise basis to the identity matrix
+  gsl_matrix_set_identity(basis);
+
+  // Orthonormalise the columns of 'basis' using numerically stabilised Gram-Schmidt
+  for (ssize_t i = n - 1; i >= 0; --i) {
+    gsl_vector_view col_i = gsl_matrix_column(basis, i);
+    for (ssize_t j = n - 1; j > i; --j) {
+      gsl_vector_view col_j = gsl_matrix_column(basis, j);
+
+      // Compute inner product of (j)th and (i)th columns with the metric
+      gsl_blas_dgemv(CblasNoTrans, 1.0, metric, &col_j.vector, 0.0, temp);
+      double inner_prod = 0.0;
+      gsl_blas_ddot(&col_i.vector, temp, &inner_prod);
+
+      // Subtract component of (j)th column from (i)th column
+      gsl_vector_memcpy(temp, &col_j.vector);
+      gsl_vector_scale(temp, inner_prod);
+      gsl_vector_sub(&col_i.vector, temp);
+
+    }
+
+    // Compute inner product of (i)th column with itself
+    gsl_blas_dgemv(CblasNoTrans, 1.0, metric, &col_i.vector, 0.0, temp);
+    double inner_prod = 0.0;
+    gsl_blas_ddot(&col_i.vector, temp, &inner_prod);
+
+    // Normalise (i)th column
+    gsl_vector_scale(&col_i.vector, 1.0 / sqrt(inner_prod));
+
+  }
+
+  // Matrix will be lower triangular, so zero out upper triangle
+  LT_ZeroStrictUpperTriangle(basis);
+
+  // Cleanup
+  gsl_vector_free(temp);
+
+  return basis;
+
+}
+
+gsl_matrix* XLALComputeLatticeGenerator(
+  const size_t dimensions,
+  const LatticeType lattice,
+  const double max_mismatch
+  )
+{
+
+  // Check input
+  XLAL_CHECK_NULL(dimensions > 0, XLAL_EINVAL);
+  XLAL_CHECK_NULL(max_mismatch > 0.0, XLAL_EINVAL);
+  const size_t n = dimensions;
+
+  // Allocate memory
+  gsl_matrix* generator = gsl_matrix_alloc(n, n);
+  XLAL_CHECK_NULL(generator != NULL, XLAL_ENOMEM);
+  gsl_matrix* LU_decomp = gsl_matrix_alloc(n, n);
+  XLAL_CHECK_NULL(LU_decomp != NULL, XLAL_ENOMEM);
+  gsl_permutation* LU_perm = gsl_permutation_alloc(n);
+  XLAL_CHECK_NULL(LU_perm != NULL, XLAL_ENOMEM);
+
+  // Compute lattice generator and normalised thickness
+  double norm_thickness = 0.0;
+  switch (lattice) {
+
+  case LATTICE_TYPE_CUBIC:   // Cubic (\f$Z_n\f$) lattice
+  {
+
+    // Zn lattice generator is the identity
+    gsl_matrix_set_identity(generator);
+
+    // Zn normalised thickness
+    norm_thickness = pow(sqrt(n)/2.0, n);
+
+  }
+  break;
+
+  case LATTICE_TYPE_ANSTAR:   // An-star (\f$A_n^*\f$) lattice
+  {
+
+    // Allocate memory
+    gsl_matrix* G = gsl_matrix_alloc(n + 1, n + 1);
+    XLAL_CHECK_NULL(G != NULL, XLAL_ENOMEM);
+    gsl_vector* tau = gsl_vector_alloc(n);
+    XLAL_CHECK_NULL(tau != NULL, XLAL_ENOMEM);
+    gsl_matrix* Q = gsl_matrix_alloc(n + 1, n + 1);
+    XLAL_CHECK_NULL(Q != NULL, XLAL_ENOMEM);
+    gsl_matrix* L = gsl_matrix_alloc(n + 1, n);
+    XLAL_CHECK_NULL(L != NULL, XLAL_ENOMEM);
+
+    // An* lattice generator in n+1 dimensions, given in:
+    //   McKilliam et.al., "A linear-time nearest point algorithm for the lattice An*"
+    //   in "International Symposium on Information Theory and Its Applications", ISITA2008,
+    //   Auckland, New Zealand, 7-10 Dec. 2008. DOI: 10.1109/ISITA.2008.4895596
+    gsl_matrix_set_identity(G);
+    gsl_matrix_add_constant(G, -1.0 / (n + 1));
+
+    // Find the QL decomposition of the generator matrix G, excluding 1st column,
+    // which is linearly dependent on the remaining columns:
+    //   G(:, 2:end) = Gp = Q * L
+    // where Q is an orthogonal matrix and L an lower triangular matrix.
+    // This is found using the more commonly implemented QR decomposition by:
+    // - exchanging the rows/columns of Gp
+    // - decomposing Gp = Qp * Lp, where Lp is upper triangular
+    // - exchanging the rows/columns of Qp to give Q
+    // - exchanging the rows/columns of Lp to give L
+    gsl_matrix_view Gp = gsl_matrix_submatrix(G, 0, 1, n + 1, n);
+    LT_ExchangeRowsCols(&Gp.matrix);
+    gsl_linalg_QR_decomp(&Gp.matrix, tau);
+    gsl_linalg_QR_unpack(&Gp.matrix, tau, Q, L);
+    LT_ExchangeRowsCols(Q);
+    LT_ExchangeRowsCols(L);
+
+    // Discard the first row of L, which is zero, to get the generator in n dimensions
+    gsl_matrix_view L_view = gsl_matrix_submatrix(L, 1, 0, n, n);
+    gsl_matrix_memcpy(generator, &L_view.matrix);
+
+    // Cleanup
+    gsl_matrix_free(G);
+    gsl_vector_free(tau);
+    gsl_matrix_free(Q);
+    gsl_matrix_free(L);
+
+    // Ans normalised thickness
+    norm_thickness = sqrt(n+1.0) * pow( (1.0*n*(n+2.0)) / (12.0*(n+1.0)), 0.5*n );
+
+  }
+  break;
+
+  default:
+    XLAL_ERROR_NULL(XLAL_EINVAL, "Invalid 'lattice'=%u", lattice);
+  }
+
+  // Generator will be lower triangular, so zero out upper triangle
+  LT_ZeroStrictUpperTriangle(generator);
+
+  // Ensure that the generator has positive diagonal elements, by
+  // changing the sign of the columns of the matrix, if necessary
+  for (size_t j = 0; j < generator->size2; ++j) {
+    gsl_vector_view generator_col = gsl_matrix_column(generator, j);
+    XLAL_CHECK_NULL( gsl_vector_get(&generator_col.vector, j) != 0, XLAL_ERANGE, "generator(%zu,%zu) == 0", j ,j );
+    if (gsl_vector_get(&generator_col.vector, j) < 0) {
+      gsl_vector_scale(&generator_col.vector, -1);
+    }
+  }
+
+  // Compute generator LU decomposition
+  gsl_matrix_memcpy(LU_decomp, generator);
+  int LU_sign = 0;
+  gsl_linalg_LU_decomp(LU_decomp, LU_perm, &LU_sign);
+
+  // Compute generator determinant
+  const double generator_determinant = gsl_linalg_LU_det(LU_decomp, LU_sign);
+
+  // Compute generator covering radius
+  const double generator_covering_radius = pow(norm_thickness * generator_determinant, 1.0 / n);
+
+  // Normalise so covering spheres have sqrt(max_mismatch) covering radii
+  gsl_matrix_scale(generator, sqrt(max_mismatch) / generator_covering_radius);
+
+  // Cleanup
+  gsl_matrix_free(LU_decomp);
+  gsl_permutation_free(LU_perm);
+
+  return generator;
 
 }
 
@@ -892,7 +799,6 @@ int XLALSetLatticeTypeAndMetric(
   const size_t n = tiling->dimensions;
 
   // Check input
-  XLAL_CHECK(lattice < LATTICE_TYPE_MAX, XLAL_EINVAL, "'lattice'=%u must be in [0,%u)", lattice, LATTICE_TYPE_MAX);
   XLAL_CHECK(metric != NULL, XLAL_EFAULT);
   XLAL_CHECK(metric->size1 == n && metric->size2 == n, XLAL_EINVAL);
   XLAL_CHECK(max_mismatch > 0, XLAL_EINVAL);
@@ -920,11 +826,9 @@ int XLALSetLatticeTypeAndMetric(
 
   // Check metric is symmetric and has positive diagonal elements
   for (size_t i = 0; i < n; ++i) {
-    XLAL_CHECK(gsl_matrix_get(metric, i, i) > 0,
-               XLAL_EINVAL, "metric(%zu,%zu) <= 0", i, i);
+    XLAL_CHECK(gsl_matrix_get(metric, i, i) > 0, XLAL_EINVAL, "metric(%zu,%zu) <= 0", i, i);
     for (size_t j = i + 1; j < n; ++j) {
-      XLAL_CHECK(gsl_matrix_get(metric, i, j) == gsl_matrix_get(metric, j, i),
-                 XLAL_EINVAL, "metric(%zu,%zu) != metric(%zu,%zu)", i, j, j, i);
+      XLAL_CHECK(gsl_matrix_get(metric, i, j) == gsl_matrix_get(metric, j, i), XLAL_EINVAL, "metric(%zu,%zu) != metric(%zu,%zu)", i, j, j, i);
     }
   }
 
@@ -961,10 +865,14 @@ int XLALSetLatticeTypeAndMetric(
     // Allocate memory
     tiling->increment = gsl_matrix_alloc(n, n);
     XLAL_CHECK(tiling->increment != NULL, XLAL_ENOMEM);
+    tiling->tiled_increment = gsl_matrix_alloc(tn, tn);
+    XLAL_CHECK(tiling->tiled_increment != NULL, XLAL_ENOMEM);
     tiling->inv_increment = gsl_matrix_alloc(n, n);
     XLAL_CHECK(tiling->inv_increment != NULL, XLAL_ENOMEM);
     gsl_matrix* tiled_metric = gsl_matrix_alloc(tn, tn);
     XLAL_CHECK(tiled_metric != NULL, XLAL_ENOMEM);
+    gsl_matrix* tiled_metric_copy = gsl_matrix_alloc(tn, tn);
+    XLAL_CHECK(tiled_metric_copy != NULL, XLAL_ENOMEM);
     gsl_matrix* inv_tiled_increment = gsl_matrix_alloc(tn, tn);
     XLAL_CHECK(inv_tiled_increment != NULL, XLAL_ENOMEM);
 
@@ -980,9 +888,27 @@ int XLALSetLatticeTypeAndMetric(
       }
     }
 
-    // Calculate metric lattice increment matrix
-    tiling->tiled_increment = LT_MetricLatticeIncrements(tiling->lattice, tiled_metric, max_mismatch);
-    XLAL_CHECK(tiling->tiled_increment != NULL, XLAL_EFUNC);
+    // Check tiled metric is positive definite, by trying to compute its Cholesky decomposition
+    {
+      gsl_matrix_memcpy(tiled_metric_copy, tiled_metric);
+      int retn = 0;
+      XLAL_CALLGSL(retn = gsl_linalg_cholesky_decomp(tiled_metric_copy));
+      XLAL_CHECK(retn == 0, XLAL_EFAILED, "tiled metric is not positive definite");
+    }
+
+    // Compute a lower triangular basis matrix whose columns are orthonormal with respect to the tiled metric
+    gsl_matrix* tiled_basis = XLALComputeMetricOrthoBasis(tiled_metric);
+    XLAL_CHECK(tiled_basis != NULL, XLAL_EFUNC);
+
+    // Compute a lower triangular generator matrix for a given lattice type and mismatch
+    gsl_matrix* tiled_generator = XLALComputeLatticeGenerator(tn, lattice, max_mismatch);
+    XLAL_CHECK(tiled_generator != NULL, XLAL_EFUNC);
+
+    // Compute the increment matrix, which is the lattice generator expressed in the orthonormal metric basis
+    gsl_blas_dgemm(CblasNoTrans, CblasNoTrans, 1.0, tiled_basis, tiled_generator, 0.0, tiling->tiled_increment);
+
+    // Increment matrix will be lower triangular, so zero out upper triangle
+    LT_ZeroStrictUpperTriangle(tiling->tiled_increment);
 
     // Calculate inverse of lattice increment matrix; set 'inv_tiled_increment'
     // to identity matrix, then multiply by inverse of lattice increment matrix
@@ -1013,7 +939,10 @@ int XLALSetLatticeTypeAndMetric(
 
     // Cleanup
     gsl_matrix_free(tiled_metric);
+    gsl_matrix_free(tiled_metric_copy);
     gsl_matrix_free(inv_tiled_increment);
+    gsl_matrix_free(tiled_basis);
+    gsl_matrix_free(tiled_generator);
     gsl_vector_free(tiled_padding);
 
   }
