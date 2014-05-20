@@ -1108,7 +1108,7 @@ XLALAmplitudeVect2Params ( PulsarAmplitudeParams *Amp,		///< [out] Physical ampl
 
 
 ///
-/// Compute single-or multi-IFO Fstat from multi-IFO 'atoms'
+/// Compute single-or multi-IFO Fstat '2F' from multi-IFO 'atoms'
 ///
 REAL8
 XLALComputeFstatFromAtoms ( const MultiFstatAtomVector *multiFstatAtoms,   ///< [in] Multi-detector atoms
@@ -1134,7 +1134,7 @@ XLALComputeFstatFromAtoms ( const MultiFstatAtomVector *multiFstatAtoms,   ///< 
 
   // set up temporary Fatoms and matrix elements for summations
   REAL8 mmatrixA = 0.0, mmatrixB = 0.0, mmatrixC = 0.0;
-  REAL8 F = 0.0;
+  REAL8 twoF = 0.0;
   COMPLEX8 Fa, Fb;
   Fa = 0.0;
   Fb = 0.0;
@@ -1161,15 +1161,15 @@ XLALComputeFstatFromAtoms ( const MultiFstatAtomVector *multiFstatAtoms,   ///< 
   // compute determinant and final Fstat (not twoF!)
   REAL8 Dinv = 1.0 / ( mmatrixA * mmatrixB - SQ(mmatrixC) );
 
-  F = ComputeFstatFromFaFb ( Fa, Fb, mmatrixA, mmatrixB, mmatrixC, 0, Dinv );
+  twoF = ComputeFstatFromFaFb ( Fa, Fb, mmatrixA, mmatrixB, mmatrixC, 0, Dinv );
 
-  return F;
+  return twoF;
 
 } // XLALComputeFstatFromAtoms()
 
 
 ///
-/// Simple helper function which computes \f$\mathcal{F}\f$ from given \f$F_a\f$ and \f$F_b\f$, and antenna-pattern
+/// Simple helper function which computes \f$2\mathcal{F}\f$ from given \f$F_a\f$ and \f$F_b\f$, and antenna-pattern
 /// coefficients \f$(A,B,C,E)\f$ with inverse determinant \f$\text{Dinv} = 1/D\f$ where \f$D = A * B - C^2 - E^2\f$.
 ///
 static REAL8
@@ -1185,7 +1185,7 @@ ComputeFstatFromFaFb ( COMPLEX16 Fa, COMPLEX16 Fb, REAL8 A, REAL8 B, REAL8 C, RE
                       - 2.0 * C * (   Fa_re * Fb_re + Fa_im * Fb_im )
                       - 2.0 * E * ( - Fa_re * Fb_im + Fa_im * Fb_re )		// nonzero only in RAA case where Ed!=0
                       );
-  return F;
+  return 2*F;
 
 } // ComputeFstatFromFaFb()
 

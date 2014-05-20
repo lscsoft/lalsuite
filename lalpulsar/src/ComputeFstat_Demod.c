@@ -177,8 +177,8 @@ ComputeFstat_Demod ( FstatResults* Fstats,
       // Set frequency to search at
       thisPoint.fkdot[0] = fStart + k * Fstats->dFreq;
 
-      REAL8 F;                       	// F-statistic value
-      REAL8 FX[PULSAR_MAX_DETECTORS];	// vector of single-detector F-statistic values (array of fixed size)
+      REAL8 twoF;                       // F-statistic value
+      REAL8 twoFX[PULSAR_MAX_DETECTORS];// vector of single-detector F-statistic values (array of fixed size)
       COMPLEX16 Fa = 0;       		// complex amplitude Fa
       COMPLEX16 Fb = 0;                 // complex amplitude Fb
       MultiFstatAtomVector *multiFstatAtoms = NULL;	// per-IFO, per-SFT arrays of F-stat 'atoms', ie quantities required to compute F-stat
@@ -234,7 +234,7 @@ ComputeFstat_Demod ( FstatResults* Fstats,
               REAL8 EdX = 0;
 
               // compute final single-IFO F-stat
-              FX[X] = ComputeFstatFromFaFb ( FaX, FbX, AdX, BdX, CdX, EdX, DdX_inv );
+              twoFX[X] = ComputeFstatFromFaFb ( FaX, FbX, AdX, BdX, CdX, EdX, DdX_inv );
 
             } // if returnSingleF
 
@@ -253,7 +253,7 @@ ComputeFstat_Demod ( FstatResults* Fstats,
       REAL8 Dd_inv = 1.0 / multiAMcoef->Mmunu.Dd;
       REAL8 Ed = 0;
 
-      F = ComputeFstatFromFaFb ( Fa, Fb, Ad, Bd, Cd, Ed, Dd_inv );
+      twoF = ComputeFstatFromFaFb ( Fa, Fb, Ad, Bd, Cd, Ed, Dd_inv );
 
       // this needs to be free'ed, as it's currently not buffered
       XLALDestroyMultiSSBtimes ( multiBinary );
@@ -261,7 +261,7 @@ ComputeFstat_Demod ( FstatResults* Fstats,
 
       // Return multi-detector 2F
       if ( whatToCompute & FSTATQ_2F ) {
-        Fstats->twoF[k] = 2.0 * F;   // *** Return value of 2F ***
+        Fstats->twoF[k] = twoF;
       }
 
       // Return multi-detector Fa & Fb
@@ -273,7 +273,7 @@ ComputeFstat_Demod ( FstatResults* Fstats,
       // Return 2F per detector
       if ( whatToCompute & FSTATQ_2F_PER_DET ) {
         for ( UINT4 X = 0; X < Fstats->numDetectors; ++X ) {
-          Fstats->twoFPerDet[X][k] = 2.0 * FX[X];   // *** Return value of 2F ***
+          Fstats->twoFPerDet[X][k] = twoFX[X];
         }
       }
 

@@ -306,14 +306,14 @@ int main(int argc,char *argv[])
       /* compute F and LV statistics from atoms */
       UINT4 X;
       for ( X=0; X < numDetectors; X++ )    {
-        lvstats.TwoFX->data[X] = 2.0*XLALComputeFstatFromAtoms ( multiAtoms, X );
+        lvstats.TwoFX->data[X] = XLALComputeFstatFromAtoms ( multiAtoms, X );
         if ( xlalErrno != 0 ) {
           XLALPrintError ("\nError in function %s, line %d : Failed call to XLALComputeFstatFromAtoms().\n\n", __func__, __LINE__);
           XLAL_ERROR ( XLAL_EFUNC );
         }
       }
 
-      lvstats.TwoF = 2.0*XLALComputeFstatFromAtoms ( multiAtoms, -1 );
+      lvstats.TwoF = XLALComputeFstatFromAtoms ( multiAtoms, -1 );
       if ( xlalErrno != 0 ) {
         XLALPrintError ("\nError in function %s, line %d : Failed call to XLALComputeFstatFromAtoms().\n\n", __func__, __LINE__);
         XLAL_ERROR ( XLAL_EFUNC );

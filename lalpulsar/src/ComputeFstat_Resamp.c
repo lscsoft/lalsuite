@@ -171,9 +171,9 @@ ComputeFstat_Resamp ( FstatResults* Fstats,
   const FstatQuantities whatToCompute = Fstats->whatWasComputed;
 
   // Check which quantities can be computed
-  XLAL_CHECK ( !(whatToCompute & FSTATQ_FAFB), XLAL_EINVAL, "Resamping does not currently support Fa & Fb");
-  XLAL_CHECK ( !(whatToCompute & FSTATQ_FAFB_PER_DET), XLAL_EINVAL, "Resamping does not currently support Fa & Fb per detector");
-  XLAL_CHECK ( !(whatToCompute & FSTATQ_ATOMS_PER_DET), XLAL_EINVAL, "Resamping does not currently support atoms per detector");
+  XLAL_CHECK ( !(whatToCompute & FSTATQ_FAFB), XLAL_EINVAL, "Resampling does not currently support Fa & Fb");
+  XLAL_CHECK ( !(whatToCompute & FSTATQ_FAFB_PER_DET), XLAL_EINVAL, "Resampling does not currently support Fa & Fb per detector");
+  XLAL_CHECK ( !(whatToCompute & FSTATQ_ATOMS_PER_DET), XLAL_EINVAL, "Resampling does not currently support atoms per detector");
 
   // Set parameters to pass to ComputeFStatFreqBand_RS()
   resamp->params.returnSingleF = whatToCompute & FSTATQ_2F_PER_DET;
@@ -469,7 +469,7 @@ ComputeFstat_Resamp ( FstatResults* Fstats,
                 UINT4 idy = k + offset_single;
                 COMPLEX16 FaX = outaSingle->data[idy];
                 COMPLEX16 FbX = outbSingle->data[idy];
-                Fstats->twoFPerDet[X][k] = 2.0 * ComputeFstatFromFaFb ( FaX, FbX, AdX, BdX, CdX, 0, DdX_inv );
+                Fstats->twoFPerDet[X][k] = ComputeFstatFromFaFb ( FaX, FbX, AdX, BdX, CdX, 0, DdX_inv );
               } // for k < numFreqBins
           } // if returnSingleF
 
@@ -496,7 +496,7 @@ ComputeFstat_Resamp ( FstatResults* Fstats,
         /* ----- compute final Fstatistic-value ----- */
         COMPLEX16 Fa = Faf_resampled->data[idx];
         COMPLEX16 Fb = Fbf_resampled->data[idx];
-        Fstats->twoF[k] = 2.0 * ComputeFstatFromFaFb ( Fa, Fb, Ad, Bd, Cd, 0, Dd_inv );
+        Fstats->twoF[k] = ComputeFstatFromFaFb ( Fa, Fb, Ad, Bd, Cd, 0, Dd_inv );
       } // for k < numFreqBins
 
     /* free memory not stored in the buffer */
