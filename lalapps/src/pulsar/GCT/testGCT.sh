@@ -37,7 +37,7 @@ else
     gct_code="$@"
 fi
 
-testDirBase="testHS_dir"
+testDirBase="testGCT.d"
 testDir="./${testDirBase}";
 if [ -d "$testDir" ]; then
     rm -rf $testDir
