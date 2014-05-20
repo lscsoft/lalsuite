@@ -1116,7 +1116,7 @@ REAL8 LALInferenceNullLogLikelihood(LALInferenceIFOData *data)
 }
 
 static void extractDimensionlessVariableVector(LALInferenceVariables *currentParams, REAL8 *x, INT4 mode) {
-  REAL8 m1, m2, d, iota, phi, psi, ra, dec, t, a1, a2, theta1, theta2, phi1, phi2;
+  REAL8 m1, m2, d, iota=0., phi, psi, ra, dec, t, a1, a2, theta1, theta2, phi1, phi2;
   
   REAL8 mean[15];
   REAL8 Mc;
@@ -1219,7 +1219,10 @@ static void extractDimensionlessVariableVector(LALInferenceVariables *currentPar
     exit(1);
   }
 
-  iota = *(REAL8 *)LALInferenceGetVariable(currentParams, "inclination");
+  if(LALInferenceCheckVariable(currentParams,"inclination"))
+      iota = *(REAL8 *)LALInferenceGetVariable(currentParams, "inclination");
+  else if(LALInferenceCheckVariable(currentParams,"theta_JN"))
+      iota = *(REAL8 *)LALInferenceGetVariable(currentParams, "theta_JN");
   psi = *(REAL8 *)LALInferenceGetVariable(currentParams, "polarisation");
   phi = *(REAL8 *)LALInferenceGetVariable(currentParams, "phase");
   ra = *(REAL8 *)LALInferenceGetVariable(currentParams, "rightascension");
