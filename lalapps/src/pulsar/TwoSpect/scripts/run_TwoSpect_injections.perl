@@ -141,10 +141,15 @@ my $help = 0;
 
 my $jobnum = 0;
 
-my $SFTnoise = 0;
+my @sftFile = ();
+my @sftType = ();
 my $gaussianNoiseWithSFTGaps = 0;
 my @timestampsfile = ();
 my @segmentfile = ();
+
+my $dur = 40551300.0;
+my $Tsft = 1800.0;
+my $SFToverlap = 900.0;
 
 my $injPol = 2;
 my $minEcc = 0;
@@ -162,15 +167,16 @@ my $h0val = '';
 my $injskyra = '';
 my $injskydec = '';
 my $injPmin = 7200;
-my $injPmax = 0;
+my $injPmax = 0.2*$dur;
 my $periodDist = 0;
 my $injDfmin = 0;
 my $injDfmax = 0.1;
+my $injDfExpansionAllowance = 1.0;
 my $scox1switch = 0;
 
-my @ifo = (); 
+my @ifo = ();
+my @t0 = (); 
 my $skylocations = 0;
-
 my $ihsfactor = 5;
 my $seedstart = 42;
 my $weightedIHS = 0;
@@ -183,19 +189,28 @@ my $tmplLength = 500;
 my $markBadSFTs = 0;
 my $directory = '';
 
-GetOptions('help' => \$help, 
-           'dir=s' => \$directory, 
-           'jobnum=i' => \$jobnum, 
-           'SFTnoise' => \$SFTnoise, 
-           'gaussianNoiseWithSFTGaps' => \$gaussianNoiseWithSFTGaps, 
-           'injPol:i' => \$injPol, 
-           'minEcc:f' => \$minEcc, 
-           'maxEcc:f' => \$maxEcc, 
-           'eccDist:i' => \$eccDist, 
+#H1 t0 = 931081500
+#L1 t0 = 931113900
+#V1 t0 = 931131900
+
+GetOptions('help' => \$help,
+           'dir=s' => \$directory,
+           'jobnum=i' => \$jobnum,
+           'sftFile:s' => \@sftFile,
+           'sftType:s' => \@sftType,
+           'gaussianNoiseWithSFTGaps' => \$gaussianNoiseWithSFTGaps,
+           'injPol:i' => \$injPol,
+           'minEcc:f' => \$minEcc,
+           'maxEcc:f' => \$maxEcc,
+           'eccDist:i' => \$eccDist,
            'minSpindown:f' => \$minSpindown, 
            'maxSpindown:f' => \$maxSpindown, 
            'spindownDist:i' => \$spindownDist, 
-           'ifo=s' => \@ifo, 
+           'ifo=s' => \@ifo,
+           't0=f' => \@t0,
+           'Tobs:f' => \$dur,
+           'Tsft:f' => \$Tsft,
+           'SFToverlap:f' => \$SFToverlap,
            'fmin=f' => \$fmin,
            'fspan:f' => \$fspan,
            'h0min:f' => \$h0min, 
@@ -212,6 +227,7 @@ GetOptions('help' => \$help,
            'periodDist:i' => $periodDist,
            'injDfmin:f' => \$injDfmin,
            'injDfmax:f' => \$injDfmax,
+           'injDfExpAllow:f' => \$injDfExpansionAllowance,
            'ihsfactor:i' => \$ihsfactor, 
            'seed:i' => \$seedstart, 
            'scox1' => \$scox1switch, 
@@ -228,58 +244,61 @@ pod2usage(1) if $help;
 my $numIFOs = @ifo;
 my $numberTimestampFiles = @timestampsfile;
 my $numberSegmentFiles = @segmentfile;
+my $numberSFTfiles = @sftFile;
+my $numberSFTtypes = @sftType;
+my $numberT0 = @t0;
 
-die "No more than 3 interferometers can be used" if $numIFOs > 3;
-die "Must specify one of --h0min or --h0val" if (($h0min ne "" && $h0val ne "") || ($h0min eq "" && $h0val eq ""));
-die "Must specify one of --SFTnoise or --gaussianNoiseWithSFTGaps or --timestampsfile or --segmentfile" if (($SFTnoise!=0 && ($gaussianNoiseWithSFTGaps!=0 || $numberTimestampFiles>0 || $numberSegmentFiles>0)) || ($gaussianNoiseWithSFTGaps!=0 && ($SFTnoise!=0 || $numberTimestampFiles>0 || $numberSegmentFiles>0)) || ($numberTimestampFiles>0 && ($SFTnoise!=0 || $gaussianNoiseWithSFTGaps!=0 || $numberSegmentFiles>0)) || ($numberSegmentFiles>0 && ($SFTnoise!=0 || $gaussianNoiseWithSFTGaps!=0 || $numberTimestampFiles>0)));
-die "Need both --injskyra and --injskydec" if (($injskyra ne "" && $injskydec eq "") ||  ($injskyra eq "" && $injskydec ne ""));
+die "Number of IFOs and concatenated SFT files must be the same" if $numIFOs!=$numberSFTfiles;
+die "Must provide SFT file when gaussianNoiseWithSFTGaps is specifed" if $numberSFTfiles<1 && $gaussianNoiseWithSFTGaps!=0;
+die "Only choose sftFile OR sftFile and gaussianNoiseWithSFTgaps OR timestampsfile OR segmentfile" if (($numberSFTfiles>0 && ($numberTimestampFiles>0 || $numberSegmentFiles>0)) || ($numberTimestampFiles>0 && $numberSegmentFiles>0));
+die "Number of IFOs and timestamp files must be the same" if $numIFOs!=$numberTimestampFiles;
+die "Number of IFOs and segment files must be the same" if $numIFOs!=$numberSegmentFiles;
+die "injPol must be 0, 1, or 2" if $injPol<0 || $injPol>2;
+die "Minimum eccentricity must be 0 or larger" if $minEcc<0.0;
+die "Maximum eccentricity must be smaller than 1" if $maxEcc>=1.0;
+die "eccDist must be 0, 1, or -1" if $eccDist<-1 || $eccDist>1;
+die "spindownDist must be 0" if $spindownDist!=0;
+die "Number of IFOs must be 3 or less" if $numIFOs>3;
+die "Number of IFOs and t0 must be the same" if $numIFOs!=$numberT0;
+die "Must specify both h0min and h0max" if (($h0min ne "" && $h0max eq "") || ($h0max ne "" && $h0min eq ""));
+die "h0dist must be 0, 1, or -1" if $h0dist<-1 || $h0dist>1;
+die "h0val cannot be specified with h0min or h0max" if ($h0val ne "" && ($h0min ne "" || $h0max ne ""));
+die "skylocations must be 0 or greater" if $skylocations<0;
+die "Need both injskyra and injskydec" if (($injskyra ne "" && $injskydec eq "") || ($injskyra eq "" && $injskydec ne ""));
+die "periodDist must be 0, 1, or -1" if $periodDist<-1 || $periodDist>1;
+die "ihsfactor must be 1 or greater" if $ihsfactor<1;
+die "injDfExpAllow must be 1 or greater" if $injDfExpansionAllowance<1.0;
+die "seed must be greater than 0" if $seedstart<1;
+die "ihsfar must be less than or equal to 1" if $ihsfar>1.0;
+die "ihsfomfar must be less than or equal to 1" if $ihsfomfar>1.0;
+die "tmplfar must be less than or equal to 1" if $tmplfar>1.0;
+die "tmplLength must be 1 or greater" if $tmplLength<1;
 
-random_set_seed_from_phrase($seedstart+$jobnum);
-my $Tsft = 1800.0;
-my $SFToverlap = 900.0;
-my $dur = 40551300.0;
-$injPmax = 0.2*$dur;
+if ($dur!=40551300.0 && $injPmax>0.2*$dur) { $injPmax = $0.2*$dur; }
+
+my @seedval = ($seedstart, $jobnum);
+random_set_seed(@seedval);
+
 my $scoX1P = 68023.70;
 my $scoX1asini = 1.44;
-my $lowestFneeded = $fmin - 0.1 - 0.1 - 4e-3;
-my $lowestFinteger = int(floor($lowestFneeded - fmod($lowestFneeded, 2.0) + 0.5)) + 1;
-if ($lowestFinteger>$lowestFneeded) {
-   $lowestFinteger -= 2;
-}
-my $highestFinteger = $lowestFinteger + 3;
 
 system("mkdir /local/user/egoetz/$$");
 die "mkdir failed: $?" if $?;
 
 my @ifokey = ();
 my @ifos = ();
-my @t0 = ();
-my @sftFile = ();
-my @sftType = ();
 my @skygridfile = ();
 foreach my $ifoval (@ifo) {
    if ($ifoval eq "LHO" || $ifoval eq "H1") {
-      push(@t0, 931081500);  #H1 start
       push(@ifos, "LHO");
       push(@ifokey, "H1");
    } elsif ($ifoval eq "LLO" || $ifoval eq "L1") {
-      push(@t0, 931113900);  #L1 start
       push(@ifos, "LLO");
       push(@ifokey, "L1");
    } elsif ($ifoval eq "Virgo" || $ifoval eq "V1") {
-      push(@t0, 931131900);  #V1 start
       push(@ifos, "Virgo");
       push(@ifokey, "V1");
-   }
-
-   if ($lowestFinteger<173 && ($ifokey[-1] eq "H1" || $ifokey[-1] eq "L1")) {
-      push(@sftFile, "/atlas/user/atlas3/egoetz/twospect/$ifos[-1]/1800s_sfts/$lowestFinteger\-${highestFinteger}Hz/*.sft");
-      if ($SFTnoise!=0) { push (@sftType, "vladimir"); }
-      else { push (@sftType, "standard"); }
-   } else {
-      push(@sftType, "standard");
-      push(@sftFile, "/atlas/user/atlas3/egoetz/twospect/$ifos[-1]/1800s_sfts/$lowestFinteger\-${highestFinteger}Hz/*.sft");
-   }
+   } else { die "Interferometer not recognized!"; }
 
    if ($skylocations>=1) {
       push(@skygridfile, "/local/user/egoetz/$$/skygrid-$ifokey[-1].dat");
@@ -337,7 +356,7 @@ for(my $ii=0; $ii<10; $ii++) {
       else { $P = ($injPmax + $injPmin) - 10**((log10($injPmax)-log10($injPmin))*random_uniform()) * $injPmin; }
 
       $df = ($injDfmax-$injDfmin)*random_uniform() + $injDfmin;
-      while ($df-0.5/$Tsft<1.0e-6 || $df>$P/(2*$Tsft*$Tsft)) { $df = ($injDfmax-$injDfmin)*random_uniform() + $injDfmin; }
+      while ($df-0.5/$Tsft<1.0e-6 || $df>$injDfExpansionAllowance*$P/(2.0*$Tsft*$Tsft)) { $df = ($injDfmax-$injDfmin)*random_uniform() + $injDfmin; }
 
       $asini = $df*$P/2.0/pi/$f0;
 
@@ -416,14 +435,16 @@ ULfilename ${ifokey[$jj]}uls_$ii.dat
 configCopy ${ifokey[$jj]}input_copy_$ii.conf
 injectionSources \@/local/user/egoetz/$$/mfdconfig
 ihsfactor $ihsfactor
-sftType $sftType[$jj]
 EOF
 
-      if ($SFTnoise!=0 || $gaussianNoiseWithSFTGaps!=0) { print TWOSPECTCONFIG "sftFile $sftFile[$jj]\n"; } 
+      if ($numberSFTfiles>0) {
+         print TWOSPECTCONFIG "sftFile $sftFile[$jj]\n";
+         print TWOSPECTCONFIG "sftType $sftType[$jj]\n";
+      }
       elsif ($timestampsfile[$jj] ne "") { print TWOSPECTCONFIG "timestampsFile $timestampsfile[$jj]\n"; } 
       elsif ($segmentfile[$jj] ne "") { print TWOSPECTCONFIG "segmentFile $segmentfile[$jj]\n"; }
 
-      if ($SFTnoise==0) {
+      if ($numberSFTfiles==0) {
          my $mfdrandseed = random_uniform_integer(1, 0, 1000000);
          print TWOSPECTCONFIG "injRandSeed $mfdrandseed\n";
       }

@@ -25,7 +25,7 @@ Base directory to store the job subdirectories [R]
 Number of jobs to execute [R]
 
 =item B<logfile:>
-Name of logfile to be stored at /local/user/egoetz [R]
+Name of condor logfile path/filename [R]
 
 =item B<fmin:>
 Minimum frequency in Hz of injection [R]
@@ -38,6 +38,9 @@ Minimum strain value to inject
 
 =item B<h0max:>
 Maximum strain value to inject
+
+=item B<h0dist:>
+Distribution of h0, 0 = linear, 1 = log, -1 = inv. log (1)
 
 =item B<h0val:>
 Constant strain value to inject
@@ -52,10 +55,10 @@ Right ascension of injection
 Declination of injection
 
 =item B<injPmin:>
-Minimum period of injection
+Minimum period of injection (7200)
 
 =item B<injPmax:>
-Maximum period of injection
+Maximum period of injection (8110260)
 
 =item B<periodDist:>
 Orbit period dist. 0 = linear, 1 = log, -1 = inv. log (0)
@@ -65,6 +68,9 @@ Minimum modulation depth of injection in Hz (0.0)
 
 =item B<injDfmax:>
 Maximum modulation depth of injection (0.1)
+
+=item B<injDfExpAllow:>
+Allow larger Df values by factor (1)
 
 =item B<minEcc:>
 Minimum of eccentricity of orbit (0.0)
@@ -87,17 +93,23 @@ Spindown distribution, 0 = linear (0)
 =item B<ifo:>
 Interferometer to use (may be multiple) [R]
 
-=item B<SFTnoise:>
-Use noise from SFTs
+=item B<t0:>
+Start time of search (may be multiple) [R]
+
+=item B<sftFile:>
+Noise SFT file (may be multiple)
+
+=item B<sftType:>
+SFT type (may be multiple)
 
 =item B<gaussianNoiseWithSFTGaps:>
 Gaussian noise from the gaps of SFT data
 
 =item B<timestampsfile:>
-File containing start times of SFTs to produce
+File of start times of SFTs to produce (may be multiple)
 
 =item B<segmentfile:>
-File containing <start end> of segments to produce SFTs
+File of <start end> times to produce SFTs (may be multiple)
 
 =item B<skylocations:>
 Number of sky locations to search, 0 exact location (0)
@@ -106,7 +118,7 @@ Number of sky locations to search, 0 exact location (0)
 IHS folding factor (5)
 
 =item B<seed:>
-Seed value for producing injections and Gaussian noise
+Seed value for producing injections and Gaussian noise (42)
 
 =item B<scox1:>
 Inject Sco X-1 signals (flag, off)
@@ -140,10 +152,15 @@ Mark and remove bad SFTs (flag, off)
 my $help = 0;
 
 my $directory = '';
-my $jobs = 0;
+my $jobs = 1;
 my $logfile = '';
 
-my $SFTnoise = 0;
+my $dur = 40551300.0;
+my $Tsft = 1800.0;
+my $SFToverlap = 900.0;
+
+my @sftFile = ();
+my @sftType = ();
 my $gaussianNoiseWithSFTGaps = 0;
 my @timestampsfile = ();
 my @segmentfile = ();
@@ -164,13 +181,15 @@ my $h0val = '';
 my $injskyra = '';
 my $injskydec = '';
 my $injPmin = 7200;
-my $injPmax = 0;
+my $injPmax = 0.2*$dur;
 my $periodDist = 0;
 my $injDfmin = 0;
 my $injDfmax = 0.1;
+my $injDfExpansionAllowance = 1.0;
 my $scox1switch = 0;
 
-my @ifo = (); 
+my @ifo = ();
+my @t0 = ();
 my $skylocations = 0;
 
 my $ihsfactor = 5;
@@ -184,11 +203,16 @@ my $tmplfar = 1.0;
 my $tmplLength = 500;
 my $markBadSFTs = 0;
 
+#H1 t0 = 931081500
+#L1 t0 = 931113900
+#V1 t0 = 931131900
+
 GetOptions('help' => \$help, 
            'dir=s' => \$directory, 
            'jobs=i' => \$jobs,
            'logfile=s' => \$logfile,
-           'SFTnoise' => \$SFTnoise, 
+           'sftFile:s' => \@sftFile,
+           'sftType:s' => \@sftType,
            'gaussianNoiseWithSFTGaps' => \$gaussianNoiseWithSFTGaps, 
            'injPol:i' => \$injPol, 
            'minEcc:f' => \$minEcc, 
@@ -197,7 +221,11 @@ GetOptions('help' => \$help,
            'minSpindown:f' => \$minSpindown, 
            'maxSpindown:f' => \$maxSpindown, 
            'spindownDist:i' => \$spindownDist, 
-           'ifo=s' => \@ifo, 
+           'ifo=s' => \@ifo,
+           't0=f' => \@t0,
+           'Tobs:f' => \$dur,
+           'Tcoh:f' => \$Tsft,
+           'SFToverlap:f' => \$SFToverlap,
            'fmin=f' => \$fmin,
            'fspan:f' => \$fspan,
            'h0min:f' => \$h0min, 
@@ -214,6 +242,7 @@ GetOptions('help' => \$help,
            'periodDist:i' => $periodDist,
            'injDfmin:f' => \$injDfmin,
            'injDfmax:f' => \$injDfmax,
+           'injDfExpAllow:f' => \$injDfExpansionAllowance,
            'ihsfactor:i' => \$ihsfactor, 
            'seed:i' => \$seedstart, 
            'scox1' => \$scox1switch, 
@@ -230,6 +259,38 @@ pod2usage(1) if $help;
 my $numIFOs = @ifo;
 my $numberTimestampFiles = @timestampsfile;
 my $numberSegmentFiles = @segmentfile;
+my $numberSFTfiles = @sftFile;
+my $numberSFTtypes = @sftType;
+my $numberT0 = @t0;
+
+die "Jobs must be 1 or more" if $jobs<1;
+die "Number of IFOs and concatenated SFT files must be the same" if $numIFOs!=$numberSFTfiles;
+die "Must provide SFT file when gaussianNoiseWithSFTGaps is specifed" if $numberSFTfiles<1 && $gaussianNoiseWithSFTGaps!=0;
+die "Only choose sftFile OR sftFile and gaussianNoiseWithSFTgaps OR timestampsfile OR segmentfile" if (($numberSFTfiles>0 && ($numberTimestampFiles>0 || $numberSegmentFiles>0)) || ($numberTimestampFiles>0 && $numberSegmentFiles>0));
+die "Number of IFOs and timestamp files must be the same" if ($numberTimestampFiles>0 && $numIFOs!=$numberTimestampFiles);
+die "Number of IFOs and segment files must be the same" if ($numberSegmentFiles>0 && $numIFOs!=$numberSegmentFiles);
+die "injPol must be 0, 1, or 2" if $injPol<0 || $injPol>2;
+die "Minimum eccentricity must be 0 or larger" if $minEcc<0.0;
+die "Maximum eccentricity must be smaller than 1" if $maxEcc>=1.0;
+die "eccDist must be 0, 1, or -1" if $eccDist<-1 || $eccDist>1;
+die "spindownDist must be 0" if $spindownDist!=0;
+die "Number of IFOs must be 3 or less" if $numIFOs>3;
+die "Number of IFOs and t0 must be the same" if $numIFOs!=$numberT0;
+die "Must specify both h0min and h0max" if (($h0min ne "" && $h0max eq "") || ($h0max ne "" && $h0min eq ""));
+die "h0dist must be 0, 1, or -1" if $h0dist<-1 || $h0dist>1;
+die "h0val cannot be specified with h0min or h0max" if ($h0val ne "" && ($h0min ne "" || $h0max ne ""));
+die "skylocations must be 0 or greater" if $skylocations<0;
+die "Need both injskyra and injskydec" if (($injskyra ne "" && $injskydec eq "") || ($injskyra eq "" && $injskydec ne ""));
+die "periodDist must be 0, 1, or -1" if $periodDist<-1 || $periodDist>1;
+die "ihsfactor must be 1 or greater" if $ihsfactor<1;
+die "injDfExpAllow must be 1 or greater" if $injDfExpansionAllowance<1.0;
+die "seed must be greater than 0" if $seedstart<1;
+die "ihsfar must be less than or equal to 1" if $ihsfar>1.0;
+die "ihsfomfar must be less than or equal to 1" if $ihsfomfar>1.0;
+die "tmplfar must be less than or equal to 1" if $tmplfar>1.0;
+die "tmplLength must be 1 or greater" if $tmplLength<1;
+
+if ($dur!=40551300.0 && $injPmax>0.2*$dur) { $injPmax = $0.2*$dur; }
 
 system("mkdir $directory/err");
 die "mkdir failed: $?" if $?;
@@ -253,12 +314,12 @@ executable=/atlas/user/atlas3/egoetz/lalsuite-master/lalapps/src/pulsar/TwoSpect
 input=/dev/null
 output=/dev/null
 error=$directory/err/err.\$(JOBNUM)
-log=/local/user/egoetz/$logfile
+log=$logfile
 request_memory=2500
 notification=Never
 EOF
 
-print CONDORFILE "arguments=\"--dir=$directory --jobnum=\$(JOBNUM) --fmin=$fmin --fspan=$fspan --injPol=$injPol";
+print CONDORFILE "arguments=\"--dir=$directory --jobnum=\$(JOBNUM) --Tobs=$dur --Tcoh=$Tsft --SFToverlap=$SFToverlap --fmin=$fmin --fspan=$fspan --injPol=$injPol";
 
 if ($h0val ne "") { print CONDORFILE " --h0val=$h0val"; }
 else { print CONDORFILE " --h0min=$h0min --h0max=$h0max --h0dist=$h0dist"; }
@@ -271,15 +332,16 @@ else {
    if ($minSpindown != 0.0 || $maxSpindown!=0.0) { print CONDORFILE " --minSpindown=$minSpindown --maxSpindown=$maxSpindown --spindownDist=$spindownDist"; }
 }
 
-for (my $ii=0; $ii<$numIFOs; $ii++) { print CONDORFILE " --ifo=$ifo[$ii]"; }
-
-if ($SFTnoise!=0) { print CONDORFILE " --SFTnoise"; }
-elsif ($gaussianNoiseWithSFTGaps!=0) { print CONDORFILE " --gaussianNoiseWithSFTGaps"; }
-elsif ($numberTimestampFiles>0) {
-   for (my $ii=0; $ii<$numberTimestampFiles; $ii++) { print CONDORFILE " --timestampsfile=$timestampsfile[$ii]"; }
-} elsif ($numberSegmentFiles>0) {
-   for (my $ii=0; $ii<$numberSegmentFiles; $ii++) { print CONDORFILE " --segmentfile=$segmentfile[$ii]"; }
+for (my $ii=0; $ii<$numIFOs; $ii++) {
+   print CONDORFILE " --ifo=$ifo[$ii] --t0=$t0[$ii]";
+   if ($numberSFTfiles>0) {
+      print CONDORFILE " --sftFile=$sftFile[$ii]";
+      print CONDORFILE " --sftType=$sftType[$ii]";
+   } elsif ($numberTimestampFiles>0) { print CONDORFILE " --timestampsfile=$timestampsfile[$ii]"; }
+   elsif ($numberSegmentFiles>0) { print CONDORFILE " --segmentfile=$segmentfile[$ii]"; }
 }
+
+if ($gaussianNoiseWithSFTGaps!=0) { print CONDORFILE " --gaussianNoiseWithSFTGaps"; }
 
 if ($skylocations!=0) { print CONDORFILE " --skylocations=$skylocations"; }
 
@@ -299,6 +361,7 @@ if ($ihsfar!=1.0) { print CONDORFILE " --ihsfar=$ihsfar"; }
 if ($ihsfomfar!=1.0) { print CONDORFILE " --ihsfomfar=$ihsfomfar"; }
 if ($tmplfar!=1.0) { print CONDORFILE " --tmplfar=$tmplfar"; }
 if ($tmplLength!=500) { print CONDORFILE " --tmplLength=$tmplLength"; }
+if ($injDfExpansionAllowance!=1.0) { print CONDORFILE " --injDfExpAllow=$injDfExpansionAllowance"; }
 
 print CONDORFILE "\"\n";
 
