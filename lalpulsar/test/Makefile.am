@@ -2,10 +2,6 @@ AM_CFLAGS = $(LALSUPPORT_CFLAGS) -DTEST_DATA_DIR='"$(abs_srcdir)/"' @AM_CFLAGS@
 AM_CPPFLAGS = -I$(top_builddir)/include -DSRCDIR=\"$(srcdir)\" @AM_CPPFLAGS@
 LDADD = $(LALSUPPORT_LIBS) $(top_builddir)/src/liblalpulsar.la
 
-if LALXML
-XMLTEST = LALPulsarXMLTest
-endif
-
 check_PROGRAMS = \
 	LALBarycenterTest \
 	BinarySSBTimesTest \
@@ -40,14 +36,18 @@ check_PROGRAMS = \
 	UniversalDopplerMetricTest \
 	NormalizeSFTRngMedTest \
 	XLALMultiNoiseWeightsTest \
-	FileIOTest \
-	$(XMLTEST)
+	FileIOTest
 #	SFTCleanTest
+
+if LALXML
+check_PROGRAMS += LALPulsarXMLTest
+endif
 
 TESTS = $(check_PROGRAMS)
 EXTRA_PROGRAMS = XLALLoadSFTsTest
 
-TESTS_ENVIRONMENT = LAL_DEBUG_LEVEL=memdbg
+TESTS_ENVIRONMENT = \
+	LAL_DEBUG_LEVEL=msglvl1,memdbg; export LAL_DEBUG_LEVEL;
 
 TwoDMeshTest_SOURCES = TwoDMeshTest.c TwoDMeshPlot.h TwoDMeshPlot.c
 
