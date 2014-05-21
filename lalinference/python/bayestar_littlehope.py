@@ -32,7 +32,7 @@ __author__ = "Leo Singer <leo.singer@ligo.org>"
 # Determine list of known detectors for command line arguments.
 import lal
 available_ifos = sorted(det.frDetector.prefix
-    for det in lal.lalCachedDetectors)
+    for det in lal.CachedDetectors)
 
 # List of interpolation methods
 available_interp_methods = [
@@ -354,10 +354,10 @@ for i_sim_inspiral in progress.iterate(range(n_injections), format='injection %d
         # Generate injection
         hplus, hcross = lalsimulation.SimInspiralChooseTDWaveform(
             phi, 1 / sample_rate,
-            mass1 * lal.LAL_MSUN_SI, mass2 * lal.LAL_MSUN_SI,
+            mass1 * lal.MSUN_SI, mass2 * lal.MSUN_SI,
             spin1x, spin1y, spin1z, spin2x, spin2y, spin2z,
             f_low, f_low,
-            DL * 1e6 * lal.LAL_PC_SI,
+            DL * 1e6 * lal.PC_SI,
             inc, 0, 0,
             None, None,
             amplitude_order,

@@ -39,7 +39,7 @@ __author__ = "Leo Singer <leo.singer@ligo.org>"
 # Determine list of known detectors for command line arguments.
 import lal
 available_ifos = sorted(det.frDetector.prefix
-    for det in lal.lalCachedDetectors)
+    for det in lal.CachedDetectors)
 
 # Command line interface.
 from optparse import Option, OptionParser

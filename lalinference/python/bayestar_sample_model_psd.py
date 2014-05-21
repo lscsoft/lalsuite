@@ -65,7 +65,7 @@ parser.add_option(
 detectors = []
 
 # Add options for individual detectors
-for detector in lal.lalCachedDetectors:
+for detector in lal.CachedDetectors:
     name = detector.frDetector.name
     prefix = detector.frDetector.prefix
     detectors.append(prefix)
@@ -80,7 +80,7 @@ if args:
 psds = {}
 
 unit = lal.Unit()
-unit = lal.UnitInvert(unit, lal.lalHertzUnit)
+unit = lal.UnitInvert(unit, lal.HertzUnit)
 n = int(opts.f_max // opts.df)
 epoch = lal.LIGOTimeGPS()
 

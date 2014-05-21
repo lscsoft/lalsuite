@@ -37,10 +37,8 @@ from .decorator import memoized
 
 
 # Useful sample units
-unitInverseHertz = lal.Unit()
-unitInverseSqrtHertz = lal.Unit()
-lal.UnitInvert(unitInverseHertz, lal.lalHertzUnit)
-lal.UnitSqrt(unitInverseSqrtHertz, unitInverseHertz)
+unitInverseHertz = lal.Unit('s')
+unitInverseSqrtHertz = lal.Unit('s^1/2')
 
 
 # Memoize FFT plans
@@ -123,9 +121,9 @@ def colored_noise(epoch, duration, sample_rate, psd):
     data_length = duration * sample_rate
     plan = CreateReverseREAL8FFTPlan(data_length, 0)
     x = lal.CreateREAL8TimeSeries(None, lal.LIGOTimeGPS(0), 0, 0,
-        lal.lalDimensionlessUnit, data_length)
+        lal.DimensionlessUnit, data_length)
     xf = lal.CreateCOMPLEX16FrequencySeries(None, epoch, 0, 1 / duration,
-        lal.lalDimensionlessUnit, data_length // 2 + 1)
+        lal.DimensionlessUnit, data_length // 2 + 1)
     white_noise = (np.random.randn(len(xf.data.data)) + np.random.randn(len(xf.data.data)) * 1j)
 
     # On line 1288 of lal's AverageSpectrum.c, in the code comments for
@@ -146,7 +144,7 @@ def colored_noise(epoch, duration, sample_rate, psd):
 
     # Copy over metadata.
     x.epoch = epoch
-    x.sampleUnits = lal.lalStrainUnit
+    x.sampleUnits = lal.StrainUnit
 
     # Done.
     return x
@@ -178,7 +176,7 @@ def matched_filter_spa(template, psd):
     fdfilter = matched_filter_real_fd(template, psd)
     fdfilter2 = add_quadrature_phase(fdfilter)
     tdfilter = lal.CreateCOMPLEX16TimeSeries(None, lal.LIGOTimeGPS(0), 0, 0,
-        lal.lalDimensionlessUnit, len(fdfilter2.data.data))
+        lal.DimensionlessUnit, len(fdfilter2.data.data))
     plan = CreateReverseCOMPLEX16FFTPlan(len(fdfilter2.data.data), 0)
     lal.COMPLEX16FreqTimeFFT(tdfilter, fdfilter2, plan)
     return tdfilter
@@ -187,7 +185,7 @@ def matched_filter_spa(template, psd):
 def matched_filter_real(template, psd):
     fdfilter = matched_filter_real_fd(template, psd)
     tdfilter = lal.CreateREAL8TimeSeries(None, lal.LIGOTimeGPS(0), 0, 0,
-        lal.lalDimensionlessUnit, 2 * (len(fdfilter.data.data) - 1))
+        lal.DimensionlessUnit, 2 * (len(fdfilter.data.data) - 1))
     plan = CreateReverseREAL8FFTPlan(len(tdfilter.data.data), 0)
     lal.REAL8FreqTimeFFT(tdfilter, fdfilter, plan)
     return tdfilter
@@ -364,12 +362,12 @@ def autocorrelation(
 
     # Compute duration of template, rounded up to a power of 2.
     duration = ceil_pow_2(lalsimulation.SimInspiralTaylorF2ReducedSpinChirpTime(
-        f_low, mass1*lal.LAL_MSUN_SI, mass2*lal.LAL_MSUN_SI, 0, phase_order))
+        f_low, mass1*lal.MSUN_SI, mass2*lal.MSUN_SI, 0, phase_order))
 
     # Evaluate waveform. Terminates at ISCO.
     hplus, hcross = lalsimulation.SimInspiralChooseFDWaveform(
-        0, 1/duration, mass1*lal.LAL_MSUN_SI, mass2*lal.LAL_MSUN_SI,
-        0, 0, 0, 0, 0, 0, 9, 0, 1e6 * lal.LAL_PC_SI, 0, 0, 0,
+        0, 1/duration, mass1*lal.MSUN_SI, mass2*lal.MSUN_SI,
+        0, 0, 0, 0, 0, 0, f_low, 0, 0, 1e6 * lal.PC_SI, 0, 0, 0,
         None, None, amplitude_order, phase_order, approximant)
 
     # Force `plus' and `cross' waveform to be in quadrature.
@@ -406,23 +404,23 @@ def generate_template(mass1, mass2, S, f_low, sample_rate, template_duration, ap
     if approximant == lalsimulation.TaylorF2:
         zf, _ = lalsimulation.SimInspiralChooseFDWaveform(0,
             1 / template_duration,
-            mass1 * lal.LAL_MSUN_SI, mass2 * lal.LAL_MSUN_SI,
-            0, 0, 0, 0, 0, 0, f_low, 0, 1e6 * lal.LAL_PC_SI,
+            mass1 * lal.MSUN_SI, mass2 * lal.MSUN_SI,
+            0, 0, 0, 0, 0, 0, f_low, 0, 0, 1e6 * lal.PC_SI,
             0, 0, 0, None, None, amplitude_order, phase_order, approximant)
         lal.ResizeCOMPLEX16FrequencySeries(zf, 0, template_length // 2 + 1)
 
         # Generate over-whitened template
         psd = lal.CreateREAL8FrequencySeries(None, zf.epoch, zf.f0, zf.deltaF,
-            lal.lalDimensionlessUnit, len(zf.data.data))
+            lal.DimensionlessUnit, len(zf.data.data))
         psd.data.data = S(abscissa(psd))
         zW = matched_filter_spa(zf, psd)
     elif approximant == lalsimulation.TaylorT4:
         hplus, hcross = lalsimulation.SimInspiralChooseTDWaveform(
             0, 1 / sample_rate,
-            mass1 * lal.LAL_MSUN_SI, mass2 * lal.LAL_MSUN_SI,
+            mass1 * lal.MSUN_SI, mass2 * lal.MSUN_SI,
             0, 0, 0, 0, 0, 0,
             f_low, f_low,
-            1e6 * lal.LAL_PC_SI,
+            1e6 * lal.PC_SI,
             0, 0, 0,
             None, None,
             amplitude_order,
@@ -430,7 +428,7 @@ def generate_template(mass1, mass2, S, f_low, sample_rate, template_duration, ap
             approximant)
 
         ht = lal.CreateREAL8TimeSeries(None, lal.LIGOTimeGPS(-template_duration), hplus.f0, hplus.deltaT, hplus.sampleUnits, template_length)
-        hf = lal.CreateCOMPLEX16FrequencySeries(None, lal.LIGOTimeGPS(0), 0, 0, lal.lalDimensionlessUnit, template_length // 2 + 1)
+        hf = lal.CreateCOMPLEX16FrequencySeries(None, lal.LIGOTimeGPS(0), 0, 0, lal.DimensionlessUnit, template_length // 2 + 1)
         plan = CreateForwardREAL8FFTPlan(template_length, 0)
 
         ht.data.data[:-len(hplus.data.data)] = 0
@@ -438,7 +436,7 @@ def generate_template(mass1, mass2, S, f_low, sample_rate, template_duration, ap
         lal.REAL8TimeFreqFFT(hf, ht, plan)
 
         psd = lal.CreateREAL8FrequencySeries(None, hf.epoch, hf.f0, hf.deltaF,
-            lal.lalDimensionlessUnit, len(hf.data.data))
+            lal.DimensionlessUnit, len(hf.data.data))
         psd.data.data = S(abscissa(psd))
 
         zWreal = matched_filter_real(hf, psd)

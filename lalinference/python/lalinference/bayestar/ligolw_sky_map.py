@@ -178,7 +178,7 @@ def ligolw_sky_map(
     # Maximum barycentered arrival time error:
     # |distance from array barycenter to furthest detector| / c + 5 ms
     max_abs_t = np.max(
-        np.sqrt(np.sum(np.square(locations / lal.LAL_C_SI), axis=1))) + 0.005
+        np.sqrt(np.sum(np.square(locations / lal.C_SI), axis=1))) + 0.005
 
     acors, sample_rates = zip(*[
         filter.autocorrelation(

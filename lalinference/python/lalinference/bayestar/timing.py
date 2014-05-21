@@ -37,7 +37,7 @@ log = logging.getLogger('BAYESTAR')
 
 def get_f_lso(mass1, mass2):
     """Calculate the GW frequency during the last stable orbit of a compact binary."""
-    return 1 / (6 ** 1.5 * np.pi * (mass1 + mass2) * lal.LAL_MTSUN_SI)
+    return 1 / (6 ** 1.5 * np.pi * (mass1 + mass2) * lal.MTSUN_SI)
 
 
 _noise_psd_funcs = {}
@@ -134,8 +134,8 @@ class SignalModel(object):
         if approximant == lalsimulation.TaylorF2:
             # Frequency-domain post-Newtonian inspiral waveform.
             h, _ = lalsimulation.SimInspiralChooseFDWaveform(0, 1,
-                mass1 * lal.LAL_MSUN_SI, mass2 * lal.LAL_MSUN_SI,
-                0, 0, 0, 0, 0, 0, f_low, 0, 1e6 * lal.LAL_PC_SI,
+                mass1 * lal.MSUN_SI, mass2 * lal.MSUN_SI,
+                0, 0, 0, 0, 0, 0, f_low, 0, 0, 1e6 * lal.PC_SI,
                 0, 0, 0, None, None, amplitude_order, 0, approximant)
 
             # Find indices of first and last nonzero samples.
@@ -145,14 +145,14 @@ class SignalModel(object):
         elif approximant == lalsimulation.TaylorT4:
             # Time-domain post-Newtonian inspiral waveform.
             hplus, hcross = lalsimulation.SimInspiralChooseTDWaveform(0,
-                1 / 4096, mass1 * lal.LAL_MSUN_SI, mass2 * lal.LAL_MSUN_SI,
-                0, 0, 0, 0, 0, 0, f_low, f_low, 1e6 * lal.LAL_PC_SI,
+                1 / 4096, mass1 * lal.MSUN_SI, mass2 * lal.MSUN_SI,
+                0, 0, 0, 0, 0, 0, f_low, f_low, 1e6 * lal.PC_SI,
                 0, 0, 0, None, None, amplitude_order, phase_order, approximant)
 
             hplus.data.data += hcross.data.data
             hplus.data.data /= np.sqrt(2)
 
-            h = lal.CreateCOMPLEX16FrequencySeries(None, lal.LIGOTimeGPS(0), 0, 0, lal.lalDimensionlessUnit, len(hplus.data.data) // 2 + 1)
+            h = lal.CreateCOMPLEX16FrequencySeries(None, lal.LIGOTimeGPS(0), 0, 0, lal.DimensionlessUnit, len(hplus.data.data) // 2 + 1)
             plan = CreateForwardREAL8FFTPlan(len(hplus.data.data), 0)
             lal.REAL8TimeFreqFFT(h, hplus, plan)
 
