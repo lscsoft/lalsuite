@@ -15,9 +15,12 @@ usage=""" %prog [options] config.ini
 Setup a Condor DAG file to run the LALInference pipeline based on
 the config.ini file.
 
-The user must specify either an injection file to analyse, with the --inj option,
+The user can specify either an injection file to analyse, with the --inj option,
 a list of SnglInspiralTable or CoincInspiralTable triggers with the --<x>-triggers options,
 or an ASCII list of GPS times with the --gps-time-file option.
+
+If none of the above options are given, the pipeline will analyse the entire
+stretch of time between gps-start-time and gps-end-time, specified in the config.ini file.
 
 The user must also specify and ini file which will contain the main analysis config.
 
@@ -91,7 +94,6 @@ if(opts.dax):
   peg_frame_cache = inspiralutils.create_pegasus_cache_file(pfnfile)
 else:
   peg_frame_cache = '/dev/null'
-# Create the dax scripts
 
 # A directory to store the DAX temporary files
 import uuid
@@ -102,7 +104,9 @@ if opts.grid_site is not None:
     site='local,'+opts.grid_site
 else:
     site=None
-dag.prepare_dax(tmp_exec_dir=execdir,grid_site=site,peg_frame_cache=peg_frame_cache)
+# Create the DAX scripts
+if opts.dax:
+  dag.prepare_dax(tmp_exec_dir=execdir,grid_site=site,peg_frame_cache=peg_frame_cache)
 dag.write_sub_files()
 dag.write_dag()
 dag.write_script()

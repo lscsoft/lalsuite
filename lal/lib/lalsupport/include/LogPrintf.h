@@ -73,6 +73,7 @@ int XLALfprintfGSLvector ( FILE *fp, const char *fmt, const gsl_vector *vect );
 int XLALfprintfGSLvector_int ( FILE *fp, const char *fmt, const gsl_vector_int *vect );
 
 REAL8 XLALGetTimeOfDay(void);
+REAL8 XLALGetPeakHeapUsageMB ( void );
 
 char * XLALClearLinebreaks ( const char *str );
 

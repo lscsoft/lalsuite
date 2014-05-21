@@ -14,6 +14,7 @@ import copy
 import os
 import re
 import glob
+import shutil
 import StringIO
 from optparse import *
 from glue  import markup
@@ -2176,10 +2177,12 @@ def copy_segments():
 
 def copy_files(dataDir,webDir,name):
   '''
-  A function to use find and xargs to copy a list of files
+  A function to use python to copy files matching name from dataDir to webDir
   '''
-  command = 'find ' + dataDir + ' -name "' + name + '" -maxdepth 1 | xargs cp -r --target-directory ' + webDir
-  make_external_call(command, opts.debug, opts.debug, True)
+  # Loop over matching files
+  for file in glob.glob(os.path.join(dataDir,name)):
+    # Copy the file
+    shutil.copy(file, webDir)
 
 def copy_plot_directory(dataDir,webDir,open_box = True):
   '''
@@ -2190,14 +2193,34 @@ def copy_plot_directory(dataDir,webDir,open_box = True):
   if not os.path.isdir(webDir):
     mkdir(webDir)
     print >> sys.stdout, ' .../ copying all' + dataDir + ' files to ' + webDir
+    # Copy the html and cache files
     copy_files(dataDir,webDir,'*html')
     copy_files(dataDir,webDir,'*cache')
-    command = 'cp -r ' + dataDir + '/Images '
-    command += webDir
-    make_external_call(command, opts.debug, opts.debug, True)
-    command = 'cp -r ' + dataDir + '/omega_scans '
-    command += webDir
-    make_external_call(command, opts.debug, opts.debug, True)
+
+    # Copy the images directory
+    from_path = os.path.join(dataDir, 'Images')
+    if os.path.isdir(from_path):
+      to_path = os.path.join(webDir, 'Images')
+      if os.path.exists(to_path):
+        shutil.rmtree(to_path)
+      shutil.copytree(from_path, to_path)
+    else:
+      # Why does the directory not exist?
+      errMsg = "Directory %s does not exist." %(from_path,)
+      logText(logfile, errMsg, "warning")
+
+    # Copy the omega_scans directory
+    from_path = os.path.join(dataDir, 'omega_scans')
+    if os.path.isdir(from_path):
+      to_path = os.path.join(webDir, 'omega_scans')
+      if os.path.exists(to_path):
+        shutil.rmtree(to_path)
+      shutil.copytree(from_path, to_path)
+    else:
+      # Why does the directory not exist?
+      errMsg = "Directory %s does not exist." %(from_path,)
+      logText(logfile, errMsg, "warning")
+
     print >> sys.stdout, '... Done'
 
 def symlink_plot_directory(dataDir,webDir):

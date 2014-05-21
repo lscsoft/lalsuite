@@ -44,11 +44,7 @@
 
 // ---------- local macro definitions
 #define SQ(x) ( (x) * (x) )
-#define INIT_MEM(x) memset(&(x), 0, sizeof((x)))
 // ---------- local type definitions
-
-// ---------- empty initializers
-const CWMFDataParams empty_CWMFDataParams;
 
 // ---------- Global variables
 
@@ -80,9 +76,10 @@ XLALCWMakeFakeMultiData ( MultiSFTVector **multiSFTs,			///< [out] pointer to op
   const MultiLIGOTimeGPSVector *multiTimestamps = &(dataParams->multiTimestamps);
 
   // check multi-detector input
-  XLAL_CHECK ( dataParams->detInfo.length >= 1, XLAL_EINVAL );
-  UINT4 numDet = dataParams->detInfo.length;
+  XLAL_CHECK ( dataParams->multiIFO.length >= 1, XLAL_EINVAL );
+  UINT4 numDet = dataParams->multiIFO.length;
   XLAL_CHECK ( multiTimestamps->length == numDet, XLAL_EINVAL, "Inconsistent number of IFOs: detInfo says '%d', multiTimestamps says '%d'\n", numDet, multiTimestamps->length );
+  XLAL_CHECK ( dataParams->multiNoiseFloor.length == numDet, XLAL_EINVAL );
 
   // check Tsft, consistent over detectors
   REAL8 Tsft = multiTimestamps->data[0]->deltaT;
@@ -111,10 +108,11 @@ XLALCWMakeFakeMultiData ( MultiSFTVector **multiSFTs,			///< [out] pointer to op
     {
       /* detector params */
       CWMFDataParams dataParamsX = (*dataParams); // struct-copy for general settings
-      dataParamsX.detInfo.length = 1;
-      dataParamsX.detInfo.sites[0] = dataParams->detInfo.sites[X];
-      dataParamsX.detInfo.sqrtSn[0] = dataParams->detInfo.sqrtSn[X];
-      MultiLIGOTimeGPSVector mTimestamps = empty_MultiLIGOTimeGPSVector;
+      dataParamsX.multiIFO.length = 1;
+      dataParamsX.multiIFO.sites[0] = dataParams->multiIFO.sites[X];
+      dataParamsX.multiNoiseFloor.length = 1;
+      dataParamsX.multiNoiseFloor.sqrtSn[0] = dataParams->multiNoiseFloor.sqrtSn[X];
+      MultiLIGOTimeGPSVector XLAL_INIT_DECL(mTimestamps);
       mTimestamps.length = 1;
       mTimestamps.data = &(multiTimestamps->data[X]); // such that pointer mTimestamps.data[0] = multiTimestamps->data[X]
       dataParamsX.multiTimestamps = mTimestamps;
@@ -164,7 +162,8 @@ XLALCWMakeFakeData ( SFTVector **SFTvect,
 
   XLAL_CHECK ( dataParams != NULL, XLAL_EINVAL );
   XLAL_CHECK ( edat != NULL, XLAL_EINVAL );
-  XLAL_CHECK ( dataParams->detInfo.length ==1, XLAL_EINVAL );
+  XLAL_CHECK ( dataParams->multiIFO.length == 1, XLAL_EINVAL );
+  XLAL_CHECK ( dataParams->multiNoiseFloor.length == 1, XLAL_EINVAL );
   XLAL_CHECK ( dataParams->multiTimestamps.length == 1, XLAL_EINVAL );
   XLAL_CHECK ( dataParams->multiTimestamps.data[0] != NULL, XLAL_EINVAL );
 
@@ -174,7 +173,7 @@ XLALCWMakeFakeData ( SFTVector **SFTvect,
   REAL8 fSamp = 2.0 * fBand;
 
   const LIGOTimeGPSVector *timestamps = dataParams->multiTimestamps.data[0];
-  const LALDetector *site = &dataParams->detInfo.sites[0];
+  const LALDetector *site = &dataParams->multiIFO.sites[0];
   REAL8 Tsft = timestamps->deltaT;
 
   // if SFT output requested: need *effective* fMin and Band consistent with SFT bins
@@ -247,7 +246,7 @@ XLALCWMakeFakeData ( SFTVector **SFTvect,
       XLAL_CHECK ( XLALGetTransientWindowTimespan ( &t0, &t1, pulsarParams->Transient ) == XLAL_SUCCESS, XLAL_EFUNC );
 
       // use latest possible start-time: max(t0,firstGPS), but not later than than lastGPS
-      LIGOTimeGPS signalStartGPS; INIT_MEM ( signalStartGPS );
+      LIGOTimeGPS XLAL_INIT_DECL(signalStartGPS);
       if ( t0 <= firstGPS_REAL8 ) {
         signalStartGPS = firstGPS;
       } else if ( t0 >= lastGPS_REAL8 ) {
@@ -258,7 +257,7 @@ XLALCWMakeFakeData ( SFTVector **SFTvect,
       }
 
       // use earliest possible end-time: min(t1,lastGPS), but not earlier than firstGPS
-      LIGOTimeGPS signalEndGPS; INIT_MEM ( signalEndGPS );
+      LIGOTimeGPS XLAL_INIT_DECL(signalEndGPS);
       if ( t1 >= lastGPS_REAL8 ) {
         signalEndGPS = lastGPS;
       } else if ( t1 <= firstGPS_REAL8 ) {
@@ -276,10 +275,10 @@ XLALCWMakeFakeData ( SFTVector **SFTvect,
           XLAL_CHECK ( (Tseries_sum = XLALAddREAL4TimeSeries ( Tseries_sum, Tseries_i )) != NULL, XLAL_EFUNC );
           XLALDestroyREAL4TimeSeries ( Tseries_i );
         }
-    } // for iInj = 1 ... (numPulsars-1)
+    } // for iInj < numSources
 
-  // add Gaussian noise if requested
-  REAL8 sqrtSn = dataParams->detInfo.sqrtSn[0];
+  /* add Gaussian noise if requested */
+  REAL8 sqrtSn = dataParams->multiNoiseFloor.sqrtSn[0];
   if ( sqrtSn > 0)
     {
       REAL8 noiseSigma = sqrtSn * sqrt ( fBand );
@@ -301,7 +300,7 @@ XLALCWMakeFakeData ( SFTVector **SFTvect,
           XLAL_CHECK ( (window = XLALCreateNamedREAL4Window ( dataParams->SFTWindowType, dataParams->SFTWindowBeta, numTimesteps )) != NULL, XLAL_EFUNC );
         } // if uvar->SFTwindowName
 
-      SFTParams sftParams = empty_SFTParams;
+      SFTParams XLAL_INIT_DECL(sftParams);
       sftParams.Tsft = Tsft;
       sftParams.timestamps = timestamps;
       sftParams.noiseSFTs = NULL;	// not used here any more!
@@ -389,7 +388,7 @@ XLALGenerateCWSignalTS ( const PulsarParams *pulsarParams,	///< input CW pulsar-
   /*----------------------------------------
    * fill old-style PulsarSignalParams struct
    *----------------------------------------*/
-  PulsarSignalParams params = empty_PulsarSignalParams;
+  PulsarSignalParams XLAL_INIT_DECL(params);
   params.pulsar.refTime            = pulsarParams->Doppler.refTime;
   params.pulsar.position.system    = COORDINATESYSTEM_EQUATORIAL;
   params.pulsar.position.longitude = pulsarParams->Doppler.Alpha;
@@ -650,7 +649,7 @@ XLALReadPulsarParams ( PulsarParams *pulsarParams,	///< [out] pulsar parameters 
   XLAL_CHECK ( pulsarParams != NULL, XLAL_EINVAL );
   XLAL_CHECK ( cfgdata != NULL, XLAL_EINVAL );
 
-  INIT_MEM ( (*pulsarParams) );	// wipe input struct clean
+  XLAL_INIT_MEM ( (*pulsarParams) );	// wipe input struct clean
 
   // ---------- PulsarAmplitudeParams ----------
   // ----- h0, cosi

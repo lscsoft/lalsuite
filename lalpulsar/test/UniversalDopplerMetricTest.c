@@ -53,9 +53,6 @@
 
 // ---------- global variables --------------------
 
-static LALStatus empty_LALStatus;
-static PtoleMetricIn empty_PtoleMetricIn;
-
 // ---------- local prototypes
 static int test_XLALComputeOrbitalDerivatives ( void );
 static int test_XLALDopplerFstatMetric ( void );
@@ -121,15 +118,19 @@ test_XLALDopplerFstatMetric ( void )
 
   LALStringVector *detNames = XLALCreateStringVector ( "H1", "L1", "V1",  NULL );
   LALStringVector *sqrtSX   = XLALCreateStringVector ( "1.0", "0.5", "1.5", NULL );
-  MultiDetectorInfo detInfo;
-  XLAL_CHECK ( XLALParseMultiDetectorInfo ( &detInfo, detNames, sqrtSX ) == XLAL_SUCCESS, XLAL_EFUNC );
+
+  MultiLALDetector multiIFO;
+  XLAL_CHECK ( XLALParseMultiLALDetector ( &multiIFO, detNames ) == XLAL_SUCCESS, XLAL_EFUNC );
   XLALDestroyStringVector ( detNames );
+
+  MultiNoiseFloor multiNoiseFloor;
+  XLAL_CHECK ( XLALParseMultiNoiseFloor ( &multiNoiseFloor, sqrtSX, multiIFO.length ) == XLAL_SUCCESS, XLAL_EFUNC );
   XLALDestroyStringVector ( sqrtSX );
 
   // prepare metric parameters for modern XLALDopplerFstatMetric() and mid-old XLALOldDopplerFstatMetric()
   DopplerCoordinateSystem coordSys = { 4, { DOPPLERCOORD_FREQ, DOPPLERCOORD_ALPHA, DOPPLERCOORD_DELTA, DOPPLERCOORD_F1DOT } };
   PulsarAmplitudeParams Amp = { 0.03, -0.3, 0.5, 0.0 };	// h0, cosi, psi, phi0
-  PulsarDopplerParams dop = empty_PulsarDopplerParams;
+  PulsarDopplerParams XLAL_INIT_DECL(dop);
   dop.refTime  = startTimeGPS;
   dop.Alpha    = Alpha;
   dop.Delta    = Delta;
@@ -142,12 +143,13 @@ test_XLALDopplerFstatMetric ( void )
   ret = XLALSegListInitSimpleSegments ( &segList, startTimeGPS, Nseg, Tseg );
   XLAL_CHECK ( ret == XLAL_SUCCESS, XLAL_EFUNC, "XLALSegListInitSimpleSegments() failed with xlalErrno = %d\n", xlalErrno );
 
-  DopplerMetricParams pars2 = empty_DopplerMetricParams;
+  DopplerMetricParams XLAL_INIT_DECL(pars2);
 
   pars2.coordSys      		= coordSys;
   pars2.detMotionType 		= DETMOTION_SPIN | DETMOTION_ORBIT;
   pars2.segmentList   		= segList;
-  pars2.detInfo 		= detInfo;
+  pars2.multiIFO 		= multiIFO;
+  pars2.multiNoiseFloor		= multiNoiseFloor;
   pars2.signalParams.Amp     	= Amp;
   pars2.signalParams.Doppler 	= dop;
   pars2.projectCoord  		= - 1;	// -1==no projection
@@ -155,8 +157,8 @@ test_XLALDopplerFstatMetric ( void )
   pars2.approxPhase   		= 0;
 
   // ----- prepare call-parameters of ancient LALPulsarMetric()
-  LALStatus status = empty_LALStatus;
-  PtoleMetricIn pars0 = empty_PtoleMetricIn;
+  LALStatus XLAL_INIT_DECL(status);
+  PtoleMetricIn XLAL_INIT_DECL(pars0);
 
   pars0.spindown = XLALCreateREAL4Vector ( 1 );
   XLAL_CHECK ( pars0.spindown != NULL, XLAL_EFUNC, "XLALCreateREAL4Vector(1) failed.\n");
@@ -168,7 +170,7 @@ test_XLALDopplerFstatMetric ( void )
   pars0.epoch    		= startTimeGPS;
   pars0.duration 		= duration;
   pars0.maxFreq  		= Freq;
-  pars0.site     		= &(detInfo.sites[0]);	// use first detector for phase-metric
+  pars0.site     		= &(multiIFO.sites[0]);	// use first detector for phase-metric
   pars0.ephemeris 		= edat;
   pars0.metricType 		= LAL_PMETRIC_COH_EPHEM;
 
@@ -182,7 +184,8 @@ test_XLALDopplerFstatMetric ( void )
 
   XLALPrintWarning("\n---------- ROUND 1: ephemeris-based (single-IFO) phase-metrics ----------\n");
 
-  pars2.detInfo.length = 1;	// truncate to first detector
+  pars2.multiIFO.length = 1;	// truncate to first detector
+  pars2.multiNoiseFloor.length = 1;	// truncate to first detector
 
   // 0) compute metric using ancient LALPulsarMetric() function (used in lalapps_getMetric)
   LALPulsarMetric ( &status, &metric0, &pars0 );
@@ -241,7 +244,8 @@ test_XLALDopplerFstatMetric ( void )
 
   pars2.detMotionType = DETMOTION_SPIN | DETMOTION_ORBIT;
   pars2.metricType    = METRIC_TYPE_FSTAT;
-  pars2.detInfo       = detInfo;	// 3 IFOs
+  pars2.multiIFO      = multiIFO;	// 3 IFOs
+  pars2.multiNoiseFloor = multiNoiseFloor;// 3 IFOs
 
   // 1) compute metric using old FstatMetric code, now wrapped into XLALOldDopplerFstatMetric()
   XLAL_CHECK ( (metric1 = XLALOldDopplerFstatMetric ( &pars2, edat )) != NULL, XLAL_EFUNC );
@@ -259,7 +263,8 @@ test_XLALDopplerFstatMetric ( void )
 
 
   XLALPrintWarning("\n---------- ROUND 4: compare analytic {f,f1dot,f2dot,f3dot} phase-metric vs  XLALDopplerFstatMetric() ----------\n");
-  pars2.detInfo.length  = 1;	// truncate to 1st detector
+  pars2.multiIFO.length  = 1;	// truncate to 1st detector
+  pars2.multiNoiseFloor.length  = 1;	// truncate to 1st detector
   pars2.detMotionType   = DETMOTION_SPIN | DETMOTION_ORBIT;
   pars2.metricType      = METRIC_TYPE_PHASE;
   pars2.approxPhase     = 1;	// use same phase-approximation as in analytic solution to improve comparison

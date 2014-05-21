@@ -5,7 +5,6 @@ pkginclude_HEADERS = \
 	DetResponse.h \
 	DetectorSite.h \
 	EllipsoidOverlapTools.h \
-	FlatLatticeTiling.h \
 	FrequencySeries.h \
 	LALCosmologyCalculator.h \
 	LALDetectors.h \

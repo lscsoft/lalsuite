@@ -27,9 +27,6 @@
 #include <lal/GenerateTaylorCW.h>
 #include <lal/GenerateSpinOrbitCW.h>
 
-static LALStatus empty_LALStatus;
-
-
 /**
  * FIXME: Temporary XLAL-wapper to LAL-function LALGenerateSpinOrbitCW()
  *
@@ -48,7 +45,7 @@ XLALGenerateSpinOrbitCW ( PulsarCoherentGW *sourceSignal,		///< [out] output sig
   XLAL_CHECK ( sourceSignal != NULL, XLAL_EINVAL );
   XLAL_CHECK ( sourceParams != NULL, XLAL_EINVAL );
 
-  LALStatus status = empty_LALStatus;
+  LALStatus XLAL_INIT_DECL(status);
 
   LALGenerateSpinOrbitCW ( &status, sourceSignal, sourceParams );
 

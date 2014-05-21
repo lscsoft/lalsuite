@@ -8,8 +8,9 @@
 ## We use S5 pulsar0 parameters for the test.
 ##
 
-## run all LALApps programs with memory debugging
-export LAL_DEBUG_LEVEL="${LAL_DEBUG_LEVEL},memdbg"
+## set LAL debug level
+echo "Setting LAL_DEBUG_LEVEL=${LAL_DEBUG_LEVEL:-msglvl1,memdbg}"
+export LAL_DEBUG_LEVEL
 
 ## allow 'make test' to work from builddir != srcdir
 builddir="./";
@@ -29,19 +30,6 @@ if [ -n "$DEBUG" ]; then
     debug=${DEBUG}
 else
     debug=0	## default=quiet
-fi
-
-if [ -z "${LAL_DATA_PATH}" ]; then
-    echo
-    echo "Need environment-variable LAL_DATA_PATH to be set to include"
-    echo "your ephemeris-directory (e.g. /usr/local/share/lalpulsar)"
-    echo "This might indicate an incomplete LAL+LALPULSAR installation"
-    echo
-    exit 1
-fi
-
-if [ -n "${LALPULSAR_DATADIR}" ]; then
-    v2_code="${v2_code} -E ${LALPULSAR_DATADIR}"
 fi
 
 #prepare test subdirectory

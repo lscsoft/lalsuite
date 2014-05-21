@@ -29,11 +29,11 @@
 
 #include <lal/UserInput.h>
 #include <lal/LALConstants.h>
+#include <lal/PulsarDataTypes.h>
 
 // ----- defines & macros ----------
 #define TRUE (1==1)
 #define FALSE (1==0)
-#define INIT_MEM(x) memset(&(x), 0, sizeof((x)))
 
 /* (possible) fields of the output Fstat-file */
 typedef struct {
@@ -72,7 +72,7 @@ int
 main (int argc, char *argv[] )
 {
   /* register all user-variables */
-  UserVariables_t uvar; INIT_MEM ( uvar );
+  UserVariables_t XLAL_INIT_DECL(uvar);
   XLAL_CHECK ( XLALinitUserVars ( &uvar ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   /* read cmdline & cfgfile  */
@@ -240,8 +240,8 @@ XLALcompareFstatFiles ( UINT4 *diff, const LALParsedDataFile *f1, const LALParse
   XLAL_CHECK ( (diff != NULL) && (f1 != NULL) && ( f2 != NULL ) && (Ftol > 0), XLAL_EINVAL );
 
   REAL4 eps4 = 100.0 * LAL_REAL4_EPS;
-  FstatLine_t parsed1; INIT_MEM ( parsed1 );
-  FstatLine_t parsed2; INIT_MEM ( parsed2 );
+  FstatLine_t XLAL_INIT_DECL(parsed1);
+  FstatLine_t XLAL_INIT_DECL(parsed2);
 
   UINT4 nlines1 = f1->lines->nTokens;
   UINT4 nlines2 = f2->lines->nTokens;
@@ -294,8 +294,8 @@ XLALcompareFstatFiles ( UINT4 *diff, const LALParsedDataFile *f1, const LALParse
       REAL8 err2F;
       if ( uvar->sigFtolerance )	// measure error in Nseg*2F compared to sigmas of chi^2_(4*Nseg) distribution
         {
-          REAL8 mean2F = 0.5 * ( parsed1.TwoF + parsed2.TwoF );
-          REAL8 noncent = fmax ( 0, uvar->Nseg * ( mean2F - 4 ) );
+          REAL8 mean2F = fmax ( 4, 0.5 * ( parsed1.TwoF + parsed2.TwoF ) );
+          REAL8 noncent = uvar->Nseg * ( mean2F - 4 );
           REAL8 sigma = sqrt ( 2 * ( 4*uvar->Nseg + 2 * noncent ) );	// std-dev for noncentral chi^2 distribution with dof degrees of freedom
           err2F = uvar->Nseg * fabs ( parsed1.TwoF - parsed2.TwoF ) / sigma;
         }
@@ -371,6 +371,7 @@ relError(REAL8 x, REAL8 y)
     return 0;
   }
 
-  return ( 2.0 * fabs ( (x - y ) / (x + y) ) );
+  REAL8 denom = fmax ( 4, 0.5*(x+y) );
+  return fabs ( (x - y ) / denom );
 
 } /* relError() */

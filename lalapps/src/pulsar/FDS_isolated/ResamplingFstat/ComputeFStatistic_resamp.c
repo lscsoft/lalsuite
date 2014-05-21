@@ -159,7 +159,7 @@ typedef struct tagComputeFParams {
 typedef struct {
   PulsarDopplerParams doppler;		/**< Doppler params of this 'candidate' */
   Fcomponents  Fstat;			/**< the Fstat-value (plus Fa,Fb) for this candidate */
-  CmplxAntennaPatternMatrix Mmunu;		/**< antenna-pattern matrix Mmunu = 0.5* Sinv*Tsft * [ Ad, Cd; Cd; Bd ] */
+  AntennaPatternMatrix Mmunu;		/**< antenna-pattern matrix Mmunu = 0.5* Sinv*Tsft * [ Ad, Cd; Cd; Bd ] */
 } FstatCandidate;
 
 /**
@@ -198,7 +198,7 @@ typedef struct {
   scanlineWindow_t *scanlineWindow;         /**< moving window of candidates on scanline to find local maxima */
 } ConfigVariables;
 
-LALUnit empty_Unit;
+LALUnit emptyUnit;
 
 /*---------- Global variables ----------*/
 extern UINT4 vrbflg;		/**< defined in lalapps.c */
@@ -262,7 +262,7 @@ REAL8 uvar_internalRefTime;
 INT4 uvar_SSBprecision;
 
 INT4 uvar_minStartTime;
-INT4 uvar_maxEndTime;
+INT4 uvar_maxStartTime;
 CHAR *uvar_workingDir;
 REAL8 uvar_timerCount;
 INT4 uvar_upsampleSFTs;
@@ -398,12 +398,6 @@ void XLALDestroyScanlineWindow ( scanlineWindow_t *scanlineWindow );
 int XLALAdvanceScanlineWindow ( const FstatCandidate *nextCand, scanlineWindow_t *scanWindow );
 BOOLEAN XLALCenterIsLocalMax ( const scanlineWindow_t *scanWindow );
 
-
-/*---------- empty initializers ---------- */
-static const ConfigVariables empty_ConfigVariables;
-static const FstatCandidate empty_FstatCandidate;
-static const ReSampBuffer empty_ReSampBuffer;
-
 /*----------------------------------------------------------------------*/
 /* Function definitions start here */
 /*----------------------------------------------------------------------*/
@@ -420,14 +414,15 @@ int main(int argc,char *argv[])
 
   FILE *fpFstat = NULL;
   FILE *fpTSeries = NULL;
-  ReSampBuffer Buffer = empty_ReSampBuffer;
+  ReSampBuffer XLAL_INIT_DECL(Buffer);
   REAL8 numTemplates, templateCounter;
   REAL8 tickCounter;
   time_t clock0;
-  PulsarDopplerParams dopplerpos = empty_PulsarDopplerParams;		/* current search-parameters */
-  FstatCandidate loudestFCand = empty_FstatCandidate, thisFCand = empty_FstatCandidate;
+  PulsarDopplerParams XLAL_INIT_DECL(dopplerpos);		/* current search-parameters */
+  FstatCandidate XLAL_INIT_DECL(loudestFCand);
+  FstatCandidate XLAL_INIT_DECL(thisFCand);
   UINT4 k;
-  ConfigVariables GV = empty_ConfigVariables;		/**< global container for various derived configuration settings */
+  ConfigVariables XLAL_INIT_DECL(GV);		/**< global container for various derived configuration settings */
   REAL8FrequencySeries *fstatVector = Buffer.fstatVector;
   Resamp_Variables Vars;
   gsl_vector_int *Fstat_histogram = NULL;
@@ -677,7 +672,7 @@ int main(int argc,char *argv[])
   if ( uvar_outputLoudest )
     {
       FILE *fpLoudest;
-      PulsarCandidate pulsarParams = empty_PulsarCandidate;
+      PulsarCandidate XLAL_INIT_DECL(pulsarParams);
       pulsarParams.Doppler = loudestFCand.doppler;
 
       // deactivated the following call, which is defunct: this function requires {Fa,Fb} in loudestFCand.Fstat, but this is not
@@ -823,7 +818,7 @@ initUserVars (LALStatus *status)
   uvar_SSBprecision = SSBPREC_RELATIVISTIC;
 
   uvar_minStartTime = 0;
-  uvar_maxEndTime = LAL_INT4_MAX;
+  uvar_maxStartTime = LAL_INT4_MAX;
 
   uvar_workingDir = (CHAR*)LALMalloc(512);
   strcpy(uvar_workingDir, ".");
@@ -872,7 +867,7 @@ initUserVars (LALStatus *status)
   LALregBOOLUserVar(status, 	UseNoiseWeights,'W', UVAR_OPTIONAL, "Use SFT-specific noise weights");
 
   LALregREALUserVar(status, 	TwoFthreshold,	'F', UVAR_OPTIONAL, "Set the threshold for selection of 2F");
-  LALregINTUserVar(status, 	gridType,	 0 , UVAR_OPTIONAL, "Grid: 0=flat, 1=isotropic, 2=metric, 3=skygrid-file, 6=grid-file, 7=An*lattice");
+  LALregINTUserVar(status, 	gridType,	 0 , UVAR_OPTIONAL, "Grid: 0=flat, 1=isotropic, 2=metric, 3=skygrid-file, 6=grid-file");
   LALregINTUserVar(status, 	metricType,	'M', UVAR_OPTIONAL, "Metric: 0=none,1=Ptole-analytic,2=Ptole-numeric, 3=exact");
   LALregREALUserVar(status, 	metricMismatch,	'X', UVAR_OPTIONAL, "Maximal allowed mismatch for metric tiling");
   LALregSTRINGUserVar(status,	outputLogfile,	 0,  UVAR_OPTIONAL, "Name of log-file identifying the code + search performed");
@@ -890,8 +885,8 @@ initUserVars (LALStatus *status)
   LALregINTUserVar(status,      clusterOnScanline, 0, UVAR_OPTIONAL, "Neighbors on each side for finding 1D local maxima on scanline");
 
 
-  LALregINTUserVar ( status, 	minStartTime, 	 0,  UVAR_OPTIONAL, "Earliest SFT-timestamp to include");
-  LALregINTUserVar ( status, 	maxEndTime, 	 0,  UVAR_OPTIONAL, "Latest SFT-timestamps to include");
+  LALregINTUserVar ( status, 	minStartTime, 	 0,  UVAR_OPTIONAL, "Only use SFTs with timestamps starting from (including) this GPS time");
+  LALregINTUserVar ( status, 	maxStartTime, 	 0,  UVAR_OPTIONAL, "Only use SFTs with timestamps up to (excluding) this GPS time");
   LALregREALUserVar(status, 	WinFrac,  0,  UVAR_OPTIONAL, "Fraction of Window to use as transition (0 -> Rectangular window , 1-> Hann Window) [Default: 0.01]");
   LALregREALUserVar(status, 	BandFrac,  0,  UVAR_OPTIONAL, "Extra Fracion of Band to use, to minimize interpolation losses (1.0 -> Use Full Band , 2.0 -> Double the Band, 3.0 -> Triple the band) [Default: 1.0]");
 
@@ -921,10 +916,10 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg )
 {
   REAL8 fCoverMin, fCoverMax;	/* covering frequency-band to read from SFTs */
   SFTCatalog *catalog = NULL;
-  SFTConstraints constraints = empty_SFTConstraints;
-  LIGOTimeGPS minStartTimeGPS = empty_LIGOTimeGPS;
-  LIGOTimeGPS maxEndTimeGPS = empty_LIGOTimeGPS;
-  PulsarSpinRange spinRangeRef = empty_PulsarSpinRange;
+  SFTConstraints XLAL_INIT_DECL(constraints);
+  LIGOTimeGPS XLAL_INIT_DECL(minStartTimeGPS);
+  LIGOTimeGPS XLAL_INIT_DECL(maxStartTimeGPS);
+  PulsarSpinRange XLAL_INIT_DECL(spinRangeRef);
 
   UINT4 numSFTs;
   LIGOTimeGPS startTime, endTime;
@@ -945,9 +940,9 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg )
       ABORT ( status,  COMPUTEFSTATISTIC_EINPUT,  COMPUTEFSTATISTIC_MSGEINPUT);
     }
   minStartTimeGPS.gpsSeconds = uvar_minStartTime;
-  maxEndTimeGPS.gpsSeconds = uvar_maxEndTime;
-  constraints.startTime = &minStartTimeGPS;
-  constraints.endTime = &maxEndTimeGPS;
+  maxStartTimeGPS.gpsSeconds = uvar_maxStartTime;
+  constraints.minStartTime = &minStartTimeGPS;
+  constraints.maxStartTime = &maxStartTimeGPS;
 
   /* get full SFT-catalog of all matching (multi-IFO) SFTs */
   LogPrintf (LOG_DEBUG, "Finding all SFTs to load ... ");
@@ -1112,8 +1107,8 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg )
   }
  
   { /* ----- set up Doppler region (at internalRefTime) to scan ----- */
-    LIGOTimeGPS internalRefTime = empty_LIGOTimeGPS;
-    PulsarSpinRange spinRangeInt = empty_PulsarSpinRange;
+    LIGOTimeGPS XLAL_INIT_DECL(internalRefTime);
+    PulsarSpinRange XLAL_INIT_DECL(spinRangeInt);
     BOOLEAN haveAlphaDelta = (LALUserVarWasSet(&uvar_Alpha) && LALUserVarWasSet(&uvar_Delta)) || (LALUserVarWasSet(&uvar_RA) && LALUserVarWasSet(&uvar_Dec));
 
     /* define sky position variables from user input */
@@ -2666,7 +2661,7 @@ void ComputeFStat_resamp(LALStatus *status, const PulsarDopplerParams *doppler, 
       UINT4 numFreqBins = floor(uvar_FreqBand/dF_closest + 0.5);
       if(Buffer->fstatVector)
 	XLALDestroyREAL8FrequencySeries(Buffer->fstatVector);
-      fstatVector = XLALCreateREAL8FrequencySeries ("Fstat vector", &doppler->refTime, doppler->fkdot[0], dF_closest, &empty_Unit, numFreqBins );
+      fstatVector = XLALCreateREAL8FrequencySeries ("Fstat vector", &doppler->refTime, doppler->fkdot[0], dF_closest, &emptyUnit, numFreqBins );
       Buffer->fstatVector = fstatVector;
     }
       

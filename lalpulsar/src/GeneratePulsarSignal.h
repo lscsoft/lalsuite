@@ -35,6 +35,7 @@
 #include <lal/PulsarDataTypes.h>
 #include <lal/ComputeSky.h>
 #include <lal/Window.h>
+#include <lal/SFTutils.h>
 
 /* C++ protection. */
 #ifdef  __cplusplus
@@ -303,6 +304,9 @@ typedef struct tagPulsarSignalParams {
 /**
  * Parameters defining the SFTs to be returned from LALSignalToSFTs().
  */
+#ifdef SWIG /* SWIG interface directives */
+SWIGLAL(IMMUTABLE_MEMBERS(tagSFTParams, timestamps, noiseSFTs, window));
+#endif /* SWIG */
 typedef struct tagSFTParams {
   REAL8 Tsft;			 /**< length of each SFT in seconds */
   const LIGOTimeGPSVector *timestamps; /**< timestamps to produce SFTs for (can be NULL) */
@@ -338,12 +342,6 @@ typedef struct tagSkyConstAndZeroPsiAMResponse {
 } SkyConstAndZeroPsiAMResponse;
 
 /*---------- Global variables ----------*/
-/** \name Empty init-structs for the types defined in here */
-/*@{*/
-extern const PulsarSignalParams empty_PulsarSignalParams;
-extern const SFTParams empty_SFTParams;
-extern const SFTandSignalParams empty_SFTandSignalParams;
-/*@}*/
 
 /* ---------- Function prototypes ---------- */
 REAL4TimeSeries *XLALGeneratePulsarSignal ( const PulsarSignalParams *params );

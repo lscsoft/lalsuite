@@ -1,5 +1,5 @@
 /*
- *
+ * Copyright (C) 2014 Karl Wette
  * Copyright (C) 2005, 2006 Reinhard Prix
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -52,15 +52,13 @@
 #define MYMAX(x,y) ( (x) > (y) ? (x) : (y) )
 #define MYMIN(x,y) ( (x) < (y) ? (x) : (y) )
 
-#define GPS2REAL8(gps) (1.0 * (gps).gpsSeconds + 1.e-9 * (gps).gpsNanoSeconds )
-
 #define TRUE (1==1)
 #define FALSE (1==0)
 
 /*---------- main functions ---------- */
 
 /**
- * General pulsar-spin extraploation function: given a "spin-range" (ie spins + spin-bands) at time
+ * General pulsar-spin extrapolation function: given a "spin-range" (ie spins + spin-bands) at time
  * \f$\tau_0\f$, propagate the whole spin-range to time \f$\tau_1\f$.
  *
  * NOTE: *range1 is allowed to point to the same spin-range as *range0: the input will be overwritten
@@ -69,41 +67,30 @@
  * NOTE2: The output-range is in the 'canonical' order of \f$[ f^{(k)}, f^{(k)} + \Delta f^{(k)}]\f$,
  * where \f$\Delta f^{(k)} \ge 0\f$.
  *
- * NOTE3: This function works correctly for both epoch1 > epoch0 and epoch1 <= epoch0 !
  */
-void
-LALExtrapolatePulsarSpinRange(  LALStatus *status,
-				PulsarSpinRange *range1,
-				LIGOTimeGPS epoch1,
-				const PulsarSpinRange *range0 )
+int
+XLALExtrapolatePulsarSpinRange(
+  PulsarSpinRange *range1,			/**< output spin range */
+  const PulsarSpinRange *range0,		/**< input spin range */
+  const REAL8 dtau 				/**< time difference (range1.refTime - range0.refTime) to extrapolate spin range to */
+  )
 {
-  UINT4 numSpins = PULSAR_MAX_SPINS; 			/* fixed size array */
   UINT4 k, l;
   PulsarSpinRange inRange;
-  REAL8 dtau;
 
-  INITSTATUS(status);
-
-  ASSERT ( range1, status, EXTRAPOLATEPULSARSPINS_ENULL, EXTRAPOLATEPULSARSPINS_MSGENULL);
-  ASSERT ( range0, status, EXTRAPOLATEPULSARSPINS_ENULL, EXTRAPOLATEPULSARSPINS_MSGENULL);
+  XLAL_CHECK( range1 != NULL, XLAL_EFAULT );
+  XLAL_CHECK( range0 != NULL, XLAL_EFAULT );
 
   /* ----- make a copy of input range, because we allow input == output range, so
    * the input can get overwritten */
-  for ( k = 0 ; k < numSpins; k ++ )
-    {
-      inRange.fkdot[k]     = range0->fkdot[k];
-      inRange.fkdotBand[k] = range0->fkdotBand[k];
-    } /* for k < numSpins */
+  memmove(&inRange, range0, sizeof(inRange));
 
-  /* ----- translate each spin-value \f$\f^{(l)}\f$ from epoch0 to epoch1 */
-  dtau = GPS2REAL8(epoch1) - GPS2REAL8(range0->refTime);
-
-  for ( l = 0; l < numSpins; l ++ )
+  for ( l = 0; l < PULSAR_MAX_SPINS; l ++ )
     {
       REAL8 flmin = 0, flmax = 0;
       REAL8 kfact = 1, dtau_powk = 1;	/* values for k=0 */
 
-      for ( k = 0; k < numSpins - l; k ++ )
+      for ( k = 0; k < PULSAR_MAX_SPINS - l; k ++ )
 	{
 	  REAL8 fkltauk0 = inRange.fkdot[k+l] * dtau_powk;
 	  REAL8 fkltauk1 = fkltauk0 + inRange.fkdotBand[k+l] * dtau_powk;
@@ -117,19 +104,20 @@ LALExtrapolatePulsarSpinRange(  LALStatus *status,
 	  kfact *= (k+1);
 	  dtau_powk *= dtau;
 
-	} /* for k < numSpins */
+	} /* for k < PULSAR_MAX_SPINS */
 
       range1->fkdot[l]     = flmin;
       range1->fkdotBand[l] = flmax - flmin;
 
-    } /* for l < numSpins */
+    } /* for l < PULSAR_MAX_SPINS */
 
   /* set proper epoch for output */
-  range1->refTime = epoch1;
+  range1->refTime = range0->refTime;
+  XLALGPSAdd(&range1->refTime, dtau);
 
-  RETURN( status );
+  return XLAL_SUCCESS;
 
-} /* ExtrapolatePulsarSpinRange() */
+} /* XLALExtrapolatePulsarSpinRange() */
 
 
 /**
@@ -137,41 +125,12 @@ LALExtrapolatePulsarSpinRange(  LALStatus *status,
  * (\a fkdotOld) from the initial reference-epoch \f$\tau_0\f$ (\a epoch0)
  * to the new reference-epoch \f$\tau_1\f$ (\a epoch1).
  *
- * This is equivalent to LALExtrapolatePulsarSpins(), but uses the fixed-size array-type
+ * This is equivalent to XLALExtrapolatePulsarSpins(), but uses the fixed-size array-type
  * 'PulsarSpins' = REAL8[PULSAR_MAX_SPINS] instead, which is easier to handle and avoids
  * any dynamic-memory hassles.
  *
- * NOTE: this can be called with fkdot1 == fkdot0, in which case the input will be correctly
+ * NOTE: this can be called with fkdotOut == fkdotIn, in which case the input will be correctly
  * replaced by the output.
- */
-void
-LALExtrapolatePulsarSpins (LALStatus   *status,		/**< pointer to LALStatus structure */
-			   PulsarSpins  fkdot1,		/**< [out] spin-parameters at epoch1 */
-			   LIGOTimeGPS  epoch1, 	/**< [in] GPS SSB-time of new epoch1 */
-			   const PulsarSpins  fkdot0,	/**< [in] spin-params at reference epoch0 */
-			   LIGOTimeGPS  epoch0		/**< [in] GPS SSB-time of reference-epoch0 */
-			   )
-{
-  REAL8 dtau;
-
-  INITSTATUS(status);
-
-  ASSERT ( fkdot1, status, EXTRAPOLATEPULSARSPINS_ENULL, EXTRAPOLATEPULSARSPINS_MSGENULL);
-
-  dtau = XLALGPSDiff( &epoch1, &epoch0 );
-
-  if ( XLALExtrapolatePulsarSpins ( fkdot1, fkdot0, dtau ) ) {
-    ABORT ( status,  EXTRAPOLATEPULSARSPINS_EXLAL,  EXTRAPOLATEPULSARSPINS_MSGEXLAL );
-  }
-
-  RETURN(status);
-
-} /* LALExtrapolatePulsarSpins() */
-
-/**
- * Lightweight API to extrapolate PulsarSpins by a time-difference 'DeltaTau'.
- *
- * NOTE: This allows fkdotIn to point to the same memory as fkdotOut !
  */
 int
 XLALExtrapolatePulsarSpins ( PulsarSpins fkdotOut,		/**< output fkdot array */
@@ -212,7 +171,6 @@ XLALExtrapolatePulsarSpins ( PulsarSpins fkdotOut,		/**< output fkdot array */
   return XLAL_SUCCESS;
 
 } /* XLALExtrapolatePulsarSpins() */
-
 
 
 /**
@@ -258,4 +216,98 @@ XLALExtrapolatePulsarPhase(
 
   return XLAL_SUCCESS;
 
-} /* LALExtrapolatePulsarPhase() */
+} /* XLALExtrapolatePulsarPhase() */
+
+
+/**
+ * Determines a frequency band which covers the frequency evolution of a band of CW signals between two GPS times.
+ * The calculation accounts for the spin evolution of the signals, and the maximum possible Dopper modulation
+ * due to detector motion, and (for binary signals) binary orbital motion.
+ */
+int XLALCWSignalCoveringBand(
+  REAL8 *minCoverFreq,                          /**< [out] Minimum frequency of the covering band */
+  REAL8 *maxCoverFreq,                          /**< [out] Maximum frequency of the covering band */
+  const LIGOTimeGPS *time1,                     /**< [in] One end of the GPS time range */
+  const LIGOTimeGPS *time2,                     /**< [in] The other end of the GPS time range */
+  const PulsarSpinRange *spinRange,             /**< [in] Frequency and spindown range of the CW signals */
+  const REAL8 binaryMaxAsini,                   /**< [in] For binary signals, maximum value of projected, normalized
+                                                   orbital semi-major axis (s); =0 for isolated signals */
+  const REAL8 binaryMinPeriod                   /**< [in] For binary signals, minimum orbital period (s); =0 for isolated signals */
+  )
+{
+
+  // Check input
+  XLAL_CHECK( minCoverFreq != NULL, XLAL_EFAULT );
+  XLAL_CHECK( maxCoverFreq != NULL, XLAL_EFAULT );
+  XLAL_CHECK( time1 != NULL, XLAL_EFAULT );
+  XLAL_CHECK( time2 != NULL, XLAL_EFAULT );
+  XLAL_CHECK( spinRange != NULL, XLAL_EFAULT );
+  XLAL_CHECK( binaryMaxAsini >= 0, XLAL_EINVAL );
+  XLAL_CHECK( binaryMinPeriod >= 0, XLAL_EINVAL );
+
+  // Extrapolate frequency and spindown range to each end of GPS time range
+  PulsarSpinRange spin1, spin2;
+  const REAL8 DeltaT1 = XLALGPSDiff(time1, &spinRange->refTime);
+  const REAL8 DeltaT2 = XLALGPSDiff(time2, &spinRange->refTime);
+  XLAL_CHECK( XLALExtrapolatePulsarSpinRange(&spin1, spinRange, DeltaT1) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( XLALExtrapolatePulsarSpinRange(&spin2, spinRange, DeltaT2) == XLAL_SUCCESS, XLAL_EFUNC );
+
+  // Determine the minimum and maximum frequencies covered
+  *minCoverFreq = MYMIN( spin1.fkdot[0], spin2.fkdot[0] );
+  *maxCoverFreq = MYMAX( spin1.fkdot[0] + spin1.fkdotBand[0], spin2.fkdot[0] + spin2.fkdotBand[0] );
+
+  // Extra frequency range needed due to detector motion, per unit frequency
+  // * Maximum value of the time derivative of the diurnal and (Ptolemaic) orbital phase, plus 5% for luck
+  REAL8 extraPerFreq = 1.05 * LAL_TWOPI / LAL_C_SI * ( (LAL_AU_SI/LAL_YRSID_SI) + (LAL_REARTH_SI/LAL_DAYSID_SI) );
+
+  // Extra frequency range needed due to binary orbital motion, per unit frequency
+  // * Maximum value of the time derivative of the small-eccentricity-limit binary phase, plus 5% for luck
+  if (binaryMaxAsini > 0) {
+    XLAL_CHECK( binaryMinPeriod > 0, XLAL_EINVAL );
+    extraPerFreq += 1.05 * LAL_TWOPI * binaryMaxAsini / binaryMinPeriod;
+  }
+
+  // Expand frequency range
+  *minCoverFreq *= 1.0 - extraPerFreq;
+  *maxCoverFreq *= 1.0 + extraPerFreq;
+
+  return XLAL_SUCCESS;
+
+} /* XLALCWSignalCoveringBand() */
+
+
+void
+LALExtrapolatePulsarSpinRange(  LALStatus *status,
+				PulsarSpinRange *range1,
+				LIGOTimeGPS epoch1,
+				const PulsarSpinRange *range0 )
+{
+  REAL8 dtau;
+  INITSTATUS(status);
+  ASSERT ( range1, status, EXTRAPOLATEPULSARSPINS_ENULL, EXTRAPOLATEPULSARSPINS_MSGENULL);
+  ASSERT ( range0, status, EXTRAPOLATEPULSARSPINS_ENULL, EXTRAPOLATEPULSARSPINS_MSGENULL);
+  dtau = XLALGPSDiff( &epoch1, &range0->refTime );
+  if ( XLALExtrapolatePulsarSpinRange( range1, range0, dtau ) != XLAL_SUCCESS ) {
+    ABORT ( status,  EXTRAPOLATEPULSARSPINS_EXLAL,  EXTRAPOLATEPULSARSPINS_MSGEXLAL );
+  }
+  RETURN(status);
+}
+
+
+void
+LALExtrapolatePulsarSpins (LALStatus   *status,
+			   PulsarSpins  fkdot1,
+			   LIGOTimeGPS  epoch1,
+			   const PulsarSpins  fkdot0,
+			   LIGOTimeGPS  epoch0
+			   )
+{
+  REAL8 dtau;
+  INITSTATUS(status);
+  ASSERT ( fkdot1, status, EXTRAPOLATEPULSARSPINS_ENULL, EXTRAPOLATEPULSARSPINS_MSGENULL);
+  dtau = XLALGPSDiff( &epoch1, &epoch0 );
+  if ( XLALExtrapolatePulsarSpins ( fkdot1, fkdot0, dtau ) ) {
+    ABORT ( status,  EXTRAPOLATEPULSARSPINS_EXLAL,  EXTRAPOLATEPULSARSPINS_MSGEXLAL );
+  }
+  RETURN(status);
+}

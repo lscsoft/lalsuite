@@ -53,7 +53,6 @@
 
 // ----- macros
 #define GPS2REAL8(gps) (1.0 * (gps).gpsSeconds + 1.e-9 * (gps).gpsNanoSeconds )
-#define INIT_MEM(x) memset(&(x), 0, sizeof((x)))
 
 // ----- global variables
 static REAL8 A,B;          /* binary time delay coefficients (need to be global so that the LAL root finding procedure can see them) */
@@ -87,12 +86,9 @@ int XLALCompareMultiSSBtimes ( REAL8 *err_DeltaT, REAL8 *err_Tdot, const MultiSS
 int
 main ( int argc, char *argv[] )
 {
-  LALStatus status;
-  UserInput_t uvar_s;
+  LALStatus XLAL_INIT_DECL(status);
+  UserInput_t XLAL_INIT_DECL(uvar_s);
   UserInput_t *uvar = &uvar_s;
-
-  INIT_MEM ( status );
-  INIT_MEM ( uvar_s );
 
   struct tms buf;
   uvar->randSeed = times(&buf);
@@ -143,14 +139,13 @@ main ( int argc, char *argv[] )
   const char *sites[3] = { "H1", "L1", "V1" };
   UINT4 numDetectors = sizeof( sites ) / sizeof ( sites[0] );
 
-  MultiLALDetector *multiIFO = XLALCreateMultiLALDetector ( numDetectors );
-  XLAL_CHECK ( multiIFO != NULL, XLAL_EFUNC, "XLALCreateMultiLALDetector(%d) failed.\n", numDetectors );
-
+  MultiLALDetector multiIFO;
+  multiIFO.length = numDetectors;
   for ( UINT4 X = 0; X < numDetectors; X ++ )
     {
       LALDetector *det = XLALGetSiteInfo ( sites[X] );
       XLAL_CHECK ( det != NULL, XLAL_EFUNC, "XLALGetSiteInfo ('%s') failed for detector X=%d\n", sites[X], X );
-      multiIFO->data[X] = (*det);	 // struct copy
+      multiIFO.sites[X] = (*det);	 // struct copy
       XLALFree ( det );
     }
 
@@ -172,7 +167,7 @@ main ( int argc, char *argv[] )
     } /* for X < numIFOs */
 
   // generate detector-states
-  MultiDetectorStateSeries *multiDetStates = XLALGetMultiDetectorStates ( multiTS, multiIFO, edat, 0 );
+  MultiDetectorStateSeries *multiDetStates = XLALGetMultiDetectorStates ( multiTS, &multiIFO, edat, 0 );
   XLAL_CHECK ( multiDetStates != NULL, XLAL_EFUNC, "XLALGetMultiDetectorStates() failed.\n");
 
   // generate isolated-NS SSB times
@@ -188,6 +183,7 @@ main ( int argc, char *argv[] )
   MultiSSBtimes *multiBinary_test = NULL;
   PulsarDopplerParams doppler;
   memset(&doppler, 0, sizeof(doppler));
+  doppler.fkdot[0] = 100;
   doppler.tp = orbit.tp;
   doppler.argp = orbit.argp;
   doppler.asini = orbit.asini;
@@ -214,7 +210,6 @@ main ( int argc, char *argv[] )
   XLALDestroyMultiSSBtimes ( multiSSBIn );
   XLALDestroyMultiTimestamps ( multiTS );
   XLALDestroyMultiDetectorStateSeries ( multiDetStates );
-  XLALDestroyMultiLALDetector ( multiIFO );
 
   // check for memory-leaks
   LALCheckMemoryLeaks();

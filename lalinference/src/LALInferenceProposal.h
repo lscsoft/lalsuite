@@ -25,6 +25,15 @@
 
 #include <lal/LALInference.h>
 
+#ifdef SWIG // SWIG interface directives
+SWIGLAL(
+	FUNCTION_POINTER(
+			 NSWrapMCMCLALProposal
+			 )
+);
+#endif
+
+
 /**
  * \defgroup LALInferenceProposal_h Header LALInferenceProposal.h
  * \ingroup pkg_LALInference

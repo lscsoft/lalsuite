@@ -93,8 +93,6 @@
 /*function to read ephemeris files*/
 EphemerisData * InitEphemeris (const CHAR *ephemType, const CHAR *ephemDir );
 
-LALStatus empty_LALStatus;
-
 typedef struct tagInputParams{
   CHAR *ephemDir; /* ephemeris directory */
   CHAR *ephemType; /* ephemeric year */
@@ -114,22 +112,20 @@ typedef struct tagInputParams{
   UINT4 geocentre; /* a flag to set the detector to the geocentre */
 } InputParams;
 
-const InputParams empty_InputParams;
-
 void ReadInput(InputParams *inputParams, int argc, char *argv[]);
 
 /*--------------main function---------------*/
 int main(int argc, char **argv){
   const CHAR *fn = __func__;
 
-  InputParams inputs = empty_InputParams;
+  InputParams XLAL_INIT_DECL(inputs);
 
   REAL8 srate = 16384.0; /*sample rate defaulted to 16384 */
 
   /* read in command line input args */
   ReadInput( &inputs, argc, argv );
 
-  LALStatus status = empty_LALStatus;
+  LALStatus XLAL_INIT_DECL(status);
 
   EphemerisData *edat;
   if ( (edat = InitEphemeris ( inputs.ephemType, inputs.ephemDir)) == NULL ){
@@ -222,7 +218,7 @@ int main(int argc, char **argv){
       continue;
     }
     else{
-      PulsarSignalParams params = empty_PulsarSignalParams;
+      PulsarSignalParams XLAL_INIT_DECL(params);
 
       /* set signal generation barycenter delay look-up table step size */
       params.dtDelayBy2 = 10.; /* generate table every 10 seconds */

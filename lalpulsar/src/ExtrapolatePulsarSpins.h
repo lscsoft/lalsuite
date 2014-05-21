@@ -1,4 +1,5 @@
 /*
+ * Copyright (C) 2014 Karl Wette
  * Copyright (C) 2005, 2006 Reinhard Prix
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -108,15 +109,21 @@ extern "C" {
 /*---------- exported Global variables ----------*/
 
 /*---------- exported prototypes [API] ----------*/
-void LALExtrapolatePulsarSpinRange( LALStatus *, PulsarSpinRange *range1, LIGOTimeGPS epoch1,  const PulsarSpinRange *range0 );
-
-void LALExtrapolatePulsarSpins (LALStatus *, PulsarSpins fkdot1, LIGOTimeGPS epoch1, const PulsarSpins fkdot0, LIGOTimeGPS epoch0 );
-
-int XLALExtrapolatePulsarPhase ( REAL8 *phi1, PulsarSpins fkdot1, LIGOTimeGPS epoch1, REAL8 phi0, LIGOTimeGPS epoch0 );
+int XLALExtrapolatePulsarSpinRange(  PulsarSpinRange *range1, const PulsarSpinRange *range0, const REAL8 dtau );
 
 int XLALExtrapolatePulsarSpins ( PulsarSpins fkdotOut, const PulsarSpins fkdotIn, REAL8 DeltaTau );
 
+int XLALExtrapolatePulsarPhase ( REAL8 *phi1, PulsarSpins fkdot1, LIGOTimeGPS epoch1, REAL8 phi0, LIGOTimeGPS epoch0 );
+
+int XLALCWSignalCoveringBand( REAL8 *minCoverFreq, REAL8 *maxCoverFreq, const LIGOTimeGPS *time1, const LIGOTimeGPS *time2,
+                              const PulsarSpinRange *spinRange, const REAL8 binaryMaxAsini, const REAL8 binaryMinPeriod );
+
 /*@}*/
+
+/** \cond DONT_DOXYGEN */
+void LALExtrapolatePulsarSpinRange( LALStatus *, PulsarSpinRange *range1, LIGOTimeGPS epoch1,  const PulsarSpinRange *range0 );
+void LALExtrapolatePulsarSpins (LALStatus *, PulsarSpins fkdot1, LIGOTimeGPS epoch1, const PulsarSpins fkdot0, LIGOTimeGPS epoch0 );
+/** \endcond */
 
 #ifdef  __cplusplus
 }

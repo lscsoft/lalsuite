@@ -39,15 +39,12 @@ INT4 genIhsFar(ihsfarStruct *output, inputParamsStruct *params, INT4 rows, REAL4
 INT4 sumIHSSequenceFAR(ihsfarStruct *outputfar, REAL4VectorSequence *ihsvectorsequence, INT4 rows, REAL4Vector *FbinMean, inputParamsStruct *params);
 INT4 sumIHSSequence(ihsMaximaStruct *output, ihsfarStruct *inputfar, REAL4VectorSequence *ihsvectorsequence, INT4 rows, REAL4Vector *FbinMean, inputParamsStruct *params);
 
-REAL4VectorSequence * ihsVectorSums(REAL4VectorSequence *input, INT4 rows);
-
 void SSVectorSequenceSum(REAL4VectorSequence *output, REAL4VectorSequence *input1, REAL4VectorSequence *input2, INT4 vectorpos1, INT4 vectorpos2, INT4 outputvectorpos);
 
 INT4 findIHScandidates(candidateVector **candlist, ihsfarStruct *ihsfarstruct, inputParamsStruct *params, ffdataStruct *ffdata, ihsMaximaStruct *ihsmaxima, REAL4Vector *fbinavgs, REAL4VectorSequence *trackedlines);
 
 REAL4 ihsFOM(INT4Vector *locs, INT4 fomnorm);
 
-REAL8 ihs2h0_withNoiseSubtraction(REAL8 ihsval, INT4 location, INT4 lowestfrequencybin, INT4 rows, inputParamsStruct *params, REAL4Vector *aveNoise, REAL4Vector *fbinavgs);
 REAL8 ihs2h0(REAL8 ihsval, inputParamsStruct *params);
 
 #endif

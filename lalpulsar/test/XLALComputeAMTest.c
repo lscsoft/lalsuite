@@ -57,9 +57,6 @@
 
 extern char *optarg;
 
-static const LALStatus empty_status;
-
-
 /* ----- internal prototypes ---------- */
 int XLALCompareMultiAMCoeffs ( MultiAMCoeffs *multiAM1, MultiAMCoeffs *multiAM2, REAL8 tolerance );
 
@@ -110,12 +107,8 @@ int main(int argc, char *argv[])
 
   /* ----- init detector info ---------- */
   UINT4 X;
-  MultiLALDetector *multiDet;
-  if ( (multiDet = XLALCreateMultiLALDetector ( numIFOs )) == NULL ) {
-    XLALPrintError ("%s: XLALCreateMultiLALDetector(%d) failed with errno=%d\n", __func__, numIFOs, xlalErrno );
-    return XLAL_EFAILED;
-  }
-
+  MultiLALDetector multiDet;
+  multiDet.length = numIFOs;
   for (X=0; X < numIFOs; X ++ )
     {
       LALDetector *site;
@@ -123,7 +116,7 @@ int main(int argc, char *argv[])
         XLALPrintError ("%s: Failed to get site-info for detector '%s'\n", __func__, sites[X] );
         return XLAL_EFAILED;
       }
-      multiDet->data[X] = (*site); 	/* copy! */
+      multiDet.sites[X] = (*site); 	/* copy! */
       XLALFree ( site );
     }
 
@@ -157,18 +150,17 @@ int main(int argc, char *argv[])
 
   /* ---------- compute multi-detector states -------------------- */
   MultiDetectorStateSeries *multiDetStates;
-  if ( (multiDetStates = XLALGetMultiDetectorStates ( multiTS, multiDet, edat, 0.5 * Tsft )) == NULL ) {
+  if ( (multiDetStates = XLALGetMultiDetectorStates ( multiTS, &multiDet, edat, 0.5 * Tsft )) == NULL ) {
     XLALPrintError ( "%s: XLALGetMultiDetectorStates() failed.\n", __func__ );
     return XLAL_EFAILED;
   }
-  XLALDestroyMultiLALDetector ( multiDet );
   XLALDestroyMultiTimestamps ( multiTS );
   XLALDestroyEphemerisData ( edat );
 
   /* ========== MAIN LOOP: N-trials of comparisons XLAL <--> LAL multiAM functions ========== */
   while ( numChecks-- )
     {
-      LALStatus status = empty_status;
+      LALStatus XLAL_INIT_DECL(status);
 
       /* ----- pick skyposition at random ----- */
       SkyPosition skypos;

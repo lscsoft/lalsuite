@@ -20,15 +20,6 @@ pfs_code="lalapps_PredictFStat"
 
 SFTdir="./testRandom_sfts"
 
-if [ -z "${LAL_DATA_PATH}" ]; then
-    echo
-    echo "Need environment-variable LAL_DATA_PATH to be set to include"
-    echo "your ephemeris-directory (e.g. /usr/local/share/lalpulsar)"
-    echo "This might indicate an incomplete LAL+LALPULSAR installation"
-    echo
-    exit 1
-fi
-
 maxiter=1;
 echo "maxiter=$maxiter"
 ## ---------- param-ranges for MC

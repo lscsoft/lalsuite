@@ -1,4 +1,5 @@
 /*
+ *  Copyright (C) 2014 Karl Wette
  *  Copyright (C) 2009 Chris Messenger
  *  Copyright (C) 2005 Reinhard Prix
  *
@@ -51,6 +52,7 @@ extern "C" {
 #include <lal/LALRunningMedian.h>
 #include <lal/Segments.h>
 #include <lal/SFTfileIO.h>
+#include <lal/StringVector.h>
 
 /*---------- DEFINES ----------*/
 
@@ -89,10 +91,6 @@ typedef struct tagMultiNoiseWeights {
 } MultiNoiseWeights;
 
 /*---------- Global variables ----------*/
-/* empty init-structs for the types defined in here */
-extern const PSDVector empty_PSDVector;
-extern const MultiPSDVector empty_MultiPSDVector;
-extern const MultiNoiseWeights empty_MultiNoiseWeights;
 
 /*---------- exported prototypes [API] ----------*/
 /* ----------------------------------------------------------------------
@@ -144,6 +142,12 @@ void XLALDestroyMultiPSDVector ( MultiPSDVector *multvect );
 MultiNoiseWeights *XLALComputeMultiNoiseWeights ( const MultiPSDVector *rngmed, UINT4 blocksRngMed, UINT4 excludePercentile);
 
 void XLALDestroyMultiNoiseWeights ( MultiNoiseWeights *weights );
+
+LALStringVector *
+XLALGetDetectorIDsFromSFTCatalog ( LALStringVector *IFOList, const SFTCatalog *SFTcatalog );
+
+SFTCatalog *XLALAddToFakeSFTCatalog( SFTCatalog *catalog, const CHAR *detector, const LIGOTimeGPSVector *timestamps );
+SFTCatalog *XLALMultiAddToFakeSFTCatalog( SFTCatalog *catalog, const LALStringVector *detectors, const MultiLIGOTimeGPSVector *timestamps );
 
 /*@}*/
 

@@ -52,8 +52,6 @@
 #define SIMULATECOHERENTGWH_MSGEUNIT "Bad input units"
 /** \endcond */
 
-static LALStatus empty_LALStatus;
-
 /**
  * FIXME: Temporary XLAL-wapper to LAL-function LALPulsarSimulateCoherentGW()
  *
@@ -74,7 +72,7 @@ XLALPulsarSimulateCoherentGW ( REAL4TimeSeries  *output,	///< [in/out] output ti
   XLAL_CHECK ( CWsignal != NULL, XLAL_EINVAL );
   XLAL_CHECK ( detector != NULL, XLAL_EINVAL );
 
-  LALStatus status = empty_LALStatus;
+  LALStatus XLAL_INIT_DECL(status);
 
   LALPulsarSimulateCoherentGW ( &status, output, CWsignal, detector );
 

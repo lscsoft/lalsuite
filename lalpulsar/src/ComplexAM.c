@@ -380,3 +380,255 @@ XLALWeightMultiCmplxAMCoeffs (  MultiCmplxAMCoeffs *multiAMcoef, const MultiNois
   return XLAL_SUCCESS;
 
 } /* XLALWeightMultiCmplxAMCoefs() */
+
+
+#if 0
+/* Revamped version of XLALComputeFaFb() for the case where a and b
+ * are complex.
+ * Compute JKS's Fa and Fb, which are ingredients for
+ * calculating the F-statistic.
+ */
+static int
+XLALComputeFaFbCmplx ( Fcomponents *FaFb,               /* [out] Fa,Fb (and possibly atoms) returned */
+                  const SFTVector *sfts,                /* [in] input SFTs */
+                  const PulsarSpins fkdot,              /* [in] frequency and derivatives fkdot = d^kf/dt^k */
+                  const SSBtimes *tSSB,                 /* [in] SSB timing series for particular sky-direction */
+                  const CmplxAMCoeffs *amcoe,           /* [in] antenna-pattern coefficients for this sky-direction */
+                  const ComputeFParams *params)         /* addition computational params */
+{
+  UINT4 alpha;                  /* loop index over SFTs */
+  UINT4 spdnOrder;              /* maximal spindown-orders */
+  UINT4 numSFTs;                /* number of SFTs (M in the Notes) */
+  COMPLEX16 Fa, Fb;
+  REAL8 Tsft;                   /* length of SFTs in seconds */
+  INT4 freqIndex0;              /* index of first frequency-bin in SFTs */
+  INT4 freqIndex1;              /* index of last frequency-bin in SFTs */
+
+  COMPLEX8 *a_al, *b_al;        /* pointer to alpha-arrays over a and b */
+  REAL8 *DeltaT_al, *Tdot_al;   /* pointer to alpha-arrays of SSB-timings */
+  SFTtype *SFT_al;              /* SFT alpha  */
+  UINT4 Dterms = params->Dterms;
+
+  REAL8 norm = OOTWOPI;
+
+  /* ----- check validity of input */
+#ifndef LAL_NDEBUG
+  if ( !FaFb ) {
+    XLALPrintError ("\nOutput-pointer is NULL !\n\n");
+    XLAL_ERROR ( XLAL_EINVAL);
+  }
+
+  if ( !sfts || !sfts->data ) {
+    XLALPrintError ("\nInput SFTs are NULL!\n\n");
+    XLAL_ERROR ( XLAL_EINVAL);
+  }
+
+  if ( !tSSB || !tSSB->DeltaT || !tSSB->Tdot || !amcoe || !amcoe->a || !amcoe->b || !params)
+    {
+      XLALPrintError ("\nIllegal NULL in input !\n\n");
+      XLAL_ERROR ( XLAL_EINVAL);
+    }
+
+  if ( PULSAR_MAX_SPINS > LAL_FACT_MAX )
+    {
+      XLALPrintError ("\nInverse factorials table only up to order s=%d, can't handle %d spin-order\n\n",
+                     LAL_FACT_MAX, PULSAR_MAX_SPINS - 1 );
+      XLAL_ERROR ( XLAL_EINVAL);
+    }
+
+  if ( params->returnAtoms )
+    {
+      XLALPrintError ("%s: using the option 'returnAtoms' is not supported in this function!\n", __func__ );
+      XLAL_ERROR ( XLAL_EINVAL);
+    }
+#endif
+
+  /* ----- prepare convenience variables */
+  numSFTs = sfts->length;
+  Tsft = 1.0 / sfts->data[0].deltaF;
+  {
+    REAL8 dFreq = sfts->data[0].deltaF;
+    freqIndex0 = (UINT4) ( sfts->data[0].f0 / dFreq + 0.5); /* lowest freqency-index */
+    freqIndex1 = freqIndex0 + sfts->data[0].data->length;
+  }
+
+  /* find highest non-zero spindown-entry */
+  for ( spdnOrder = PULSAR_MAX_SPINS - 1;  spdnOrder > 0 ; spdnOrder --  )
+    if ( fkdot[spdnOrder] )
+      break;
+
+  Fa = 0.0f;
+  Fb = 0.0f;
+
+  a_al = amcoe->a->data;        /* point to beginning of alpha-arrays */
+  b_al = amcoe->b->data;
+  DeltaT_al = tSSB->DeltaT->data;
+  Tdot_al = tSSB->Tdot->data;
+  SFT_al = sfts->data;
+
+  /* Loop over all SFTs  */
+  for ( alpha = 0; alpha < numSFTs; alpha++ )
+    {
+      COMPLEX8 a_alpha, b_alpha;
+
+      INT4 kstar;               /* central frequency-bin k* = round(xhat_alpha) */
+      INT4 k0, k1;
+
+      COMPLEX8 *Xalpha = SFT_al->data->data; /* pointer to current SFT-data */
+      COMPLEX8 *Xalpha_l;       /* pointer to frequency-bin k in current SFT */
+      REAL4 s_alpha=0, c_alpha=0;/* sin(2pi kappa_alpha) and (cos(2pi kappa_alpha)-1) */
+      REAL4 realQ, imagQ;       /* Re and Im of Q = e^{-i 2 pi lambda_alpha} */
+      REAL4 realXP, imagXP;     /* Re/Im of sum_k X_ak * P_ak */
+      REAL4 realQXP, imagQXP;   /* Re/Im of Q_alpha R_alpha */
+
+      REAL8 lambda_alpha, kappa_max, kappa_star;
+
+      /* ----- calculate kappa_max and lambda_alpha */
+      {
+        UINT4 s;                /* loop-index over spindown-order */
+        REAL8 phi_alpha, Dphi_alpha, DT_al;
+        REAL8 Tas;      /* temporary variable to calculate (DeltaT_alpha)^s */
+
+        /* init for s=0 */
+        phi_alpha = 0.0;
+        Dphi_alpha = 0.0;
+        DT_al = (*DeltaT_al);
+        Tas = 1.0;              /* DeltaT_alpha ^ 0 */
+
+        for (s=0; s <= spdnOrder; s++)
+          {
+            REAL8 fsdot = fkdot[s];
+            Dphi_alpha += fsdot * Tas * LAL_FACT_INV[s];        /* here: DT^s/s! */
+            Tas *= DT_al;                               /* now: DT^(s+1) */
+            phi_alpha += fsdot * Tas * LAL_FACT_INV[s+1];
+          } /* for s <= spdnOrder */
+
+        /* Step 3: apply global factors to complete Dphi_alpha */
+        Dphi_alpha *= Tsft * (*Tdot_al);                /* guaranteed > 0 ! */
+
+        lambda_alpha = phi_alpha - 0.5 * Dphi_alpha;
+
+        /* real- and imaginary part of e^{-i 2 pi lambda_alpha } */
+        if ( XLALSinCos2PiLUT ( &imagQ, &realQ, - lambda_alpha ) ) {
+          XLAL_ERROR ( XLAL_EFUNC);
+        }
+
+        kstar = (INT4) (Dphi_alpha);    /* k* = floor(Dphi_alpha) for positive Dphi */
+        kappa_star = Dphi_alpha - 1.0 * kstar;  /* remainder of Dphi_alpha: >= 0 ! */
+        kappa_max = kappa_star + 1.0 * Dterms - 1.0;
+
+        /* ----- check that required frequency-bins are found in the SFTs ----- */
+        k0 = kstar - Dterms + 1;
+        k1 = k0 + 2 * Dterms - 1;
+        if ( (k0 < freqIndex0) || (k1 > freqIndex1) )
+          {
+            XLALPrintError ("Required frequency-bins [%d, %d] not covered by SFT-interval [%d, %d]\n\n",
+                           k0, k1, freqIndex0, freqIndex1 );
+            XLAL_ERROR(XLAL_EDOM);
+          }
+
+      } /* compute kappa_star, lambda_alpha */
+
+      /* NOTE: sin[ 2pi (Dphi_alpha - k) ] = sin [ 2pi Dphi_alpha ], therefore
+       * the trig-functions need to be calculated only once!
+       * We choose the value sin[ 2pi(Dphi_alpha - kstar) ] because it is the
+       * closest to zero and will pose no numerical difficulties !
+       */
+      XLAL_CHECK( XLALSinCos2PiLUT ( &s_alpha, &c_alpha, kappa_star ) == XLAL_SUCCESS, XLAL_EFUNC );
+      c_alpha -= 1.0f;
+
+      /* ---------- calculate the (truncated to Dterms) sum over k ---------- */
+
+      /* ---------- ATTENTION: this the "hot-loop", which will be
+       * executed many millions of times, so anything in here
+       * has a HUGE impact on the whole performance of the code.
+       *
+       * DON'T touch *anything* in here unless you really know
+       * what you're doing !!
+       *------------------------------------------------------------
+       */
+
+      Xalpha_l = Xalpha + k0 - freqIndex0;  /* first frequency-bin in sum */
+
+      realXP = 0;
+      imagXP = 0;
+
+      /* if no danger of denominator -> 0 */
+      if ( ( kappa_star > LD_SMALL4 ) && (kappa_star < 1.0 - LD_SMALL4) )
+        {
+          /* improved hotloop algorithm by Fekete Akos:
+           * take out repeated divisions into a single common denominator,
+           * plus use extra cleverness to compute the nominator efficiently...
+           */
+          REAL4 Sn = crealf(*Xalpha_l);
+          REAL4 Tn = cimagf(*Xalpha_l);
+          REAL4 pn = kappa_max;
+          REAL4 qn = pn;
+          REAL4 U_alpha, V_alpha;
+
+          /* recursion with 2*Dterms steps */
+          UINT4 l;
+          for ( l = 1; l < 2*Dterms; l ++ )
+            {
+              Xalpha_l ++;
+
+              pn = pn - 1.0f;                   /* p_(n+1) */
+              Sn = pn * Sn + qn * crealf(*Xalpha_l);    /* S_(n+1) */
+              Tn = pn * Tn + qn * cimagf(*Xalpha_l);    /* T_(n+1) */
+              qn *= pn;                         /* q_(n+1) */
+            } /* for l <= 2*Dterms */
+
+          U_alpha = Sn / qn;
+          V_alpha = Tn / qn;
+
+#ifndef LAL_NDEBUG
+          if ( !isfinite(U_alpha) || !isfinite(V_alpha) || !isfinite(pn) || !isfinite(qn) || !isfinite(Sn) || !isfinite(Tn) ) {
+            XLALPrintError("XLALComputeFaFbCmplx() returned non-finite: U_alpha=%f, V_alpha=%f, pn=%f, qn=%f, Sn=%f, Tn=%f\n",
+                           U_alpha, V_alpha, pn, qn, Sn, Tn);
+            XLAL_ERROR (XLAL_EFPINVAL);
+          }
+#endif
+
+          realXP = s_alpha * U_alpha - c_alpha * V_alpha;
+          imagXP = c_alpha * U_alpha + s_alpha * V_alpha;
+
+        } /* if |remainder| > LD_SMALL4 */
+      else
+        { /* otherwise: lim_{rem->0}P_alpha,k  = 2pi delta_{k,kstar} */
+          UINT4 ind0;
+          if ( kappa_star <= LD_SMALL4 ) ind0 = Dterms - 1;
+          else ind0 = Dterms;
+          realXP = TWOPI_FLOAT * crealf(Xalpha_l[ind0]);
+          imagXP = TWOPI_FLOAT * cimagf(Xalpha_l[ind0]);
+        } /* if |remainder| <= LD_SMALL4 */
+
+      realQXP = realQ * realXP - imagQ * imagXP;
+      imagQXP = realQ * imagXP + imagQ * realXP;
+
+      /* we're done: ==> combine these into Fa and Fb */
+      a_alpha = (*a_al);
+      b_alpha = (*b_al);
+
+      /* Fa contains complex conjugate of a */
+      Fa += crect( crealf(a_alpha) * realQXP + cimagf(a_alpha) * imagQXP, crealf(a_alpha) * imagQXP - cimagf(a_alpha) * realQXP );
+
+      /* Fb contains complex conjugate of b */
+      Fb += crect( crealf(b_alpha) * realQXP + cimagf(b_alpha) * imagQXP, crealf(b_alpha) * imagQXP - cimagf(b_alpha) * realQXP );
+
+      /* advance pointers over alpha */
+      a_al ++;
+      b_al ++;
+      DeltaT_al ++;
+      Tdot_al ++;
+      SFT_al ++;
+
+    } /* for alpha < numSFTs */
+
+  /* return result */
+  FaFb->Fa = norm * Fa;
+  FaFb->Fb = norm * Fb;
+
+  return XLAL_SUCCESS;
+
+} /* XLALComputeFaFbCmplx() */
+#endif

@@ -45,10 +45,6 @@
 /*----- SWITCHES -----*/
 /*---------- internal types ----------*/
 
-/*---------- empty initializers ---------- */
-multiAMBuffer_t empty_multiAMBuffer;
-InjParams_t empty_InjParams_t;
-
 /*---------- Global variables ----------*/
 
 /*---------- internal prototypes ----------*/
@@ -500,7 +496,7 @@ XLALAddSignalToMultiFstatAtomVector ( MultiFstatAtomVector* multiAtoms,	 /**< [i
 
   UINT4 X;
   REAL8 rho2 = 0;
-  (*M_mu_nu) = empty_AntennaPatternMatrix;
+  XLAL_INIT_MEM( (*M_mu_nu));
 
   for ( X=0; X < numDet; X ++ )
     {
@@ -615,7 +611,7 @@ XLALSynthesizeTransientAtoms ( InjParams_t *injParamsOut,			/**< [out] return su
   }
 
   /* ----- draw transient-window parameters from given ranges using flat priors */
-  transientWindow_t injectWindow = empty_transientWindow;
+  transientWindow_t XLAL_INIT_DECL(injectWindow);
   injectWindow.type = transientInjectRange.type;
   if ( injectWindow.type != TRANSIENT_NONE )	/* nothing to be done if no window */
     {

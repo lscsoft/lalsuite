@@ -40,6 +40,7 @@ test/PhenomP_Test1.dat
 test/ST2-dynamics.dat
 test/ST4-dynamics.dat
 test/TestEOBNRv2
+test/TestOpenMP
 test/TestPhenomP
 test/TestPrecessWaveform
 test/TestPrecessWaveformEOBNR
@@ -47,6 +48,7 @@ test/TestPrecessWaveformIMRPhenomB
 test/TestSphHarmTS
 test/TestSpinTaylorT4Dynamics
 test/TestWaveformFromCache
+test/TestXLALSimAddInjection
 test/WaveformFlagsTest
 test/XLALSimIMRPhenomC.dat
 test/XLALSimIMRPhenomP.dat

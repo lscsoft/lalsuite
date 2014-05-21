@@ -26,7 +26,6 @@
 /** Default values for all enumerated flags */ 
 #define LAL_SIM_INSPIRAL_SPIN_ORDER_DEFAULT LAL_SIM_INSPIRAL_SPIN_ORDER_ALL
 #define LAL_SIM_INSPIRAL_TIDAL_ORDER_DEFAULT LAL_SIM_INSPIRAL_TIDAL_ORDER_ALL
-#define LAL_SIM_INSPIRAL_INTERACTION_DEFAULT LAL_SIM_INSPIRAL_INTERACTION_ALL
 #define LAL_SIM_INSPIRAL_FRAME_AXIS_DEFAULT LAL_SIM_INSPIRAL_FRAME_AXIS_VIEW
 #define LAL_SIM_INSPIRAL_MODES_CHOICE_DEFAULT LAL_SIM_INSPIRAL_MODES_CHOICE_RESTRICTED
 
@@ -65,25 +64,6 @@ typedef enum {
     LAL_SIM_INSPIRAL_TIDAL_ORDER_ALL = -1
 } LALSimInspiralTidalOrder;
 
-
-/**
- * Enumeration to specify which interaction will be used in the waveform
- * generation. Their combination also can be used by the bitwise or.
- */
-typedef enum {
-    LAL_SIM_INSPIRAL_INTERACTION_NONE = 0, /**< No spin, tidal or other interactions */
-    LAL_SIM_INSPIRAL_INTERACTION_SPIN_ORBIT_15PN = 1, /**< Leading order spin-orbit interaction */
-    LAL_SIM_INSPIRAL_INTERACTION_SPIN_SPIN_2PN = 1 << 1,  /**< Spin-spin interaction */
-    LAL_SIM_INSPIRAL_INTERACTION_SPIN_SPIN_SELF_2PN = 1 << 2,     /**<  Spin-spin-self interaction */
-    LAL_SIM_INSPIRAL_INTERACTION_QUAD_MONO_2PN = 1 << 3,     /**< Quadrupole-monopole interaction */
-    LAL_SIM_INSPIRAL_INTERACTION_SPIN_ORBIT_25PN = 1 << 4,     /**<  Next-to-leading-order spin-orbit interaction */
-    LAL_SIM_INSPIRAL_INTERACTION_SPIN_ORBIT_3PN = 1 << 5,  /**< Spin-spin interaction */
-    LAL_SIM_INSPIRAL_INTERACTION_TIDAL_5PN = 1 << 6, /**< Leading-order tidal interaction */
-    LAL_SIM_INSPIRAL_INTERACTION_TIDAL_6PN = 1 << 7, /**< Next-to-leading-order tidal interaction */
-    LAL_SIM_INSPIRAL_INTERACTION_ALL_SPIN = (1 << 6) - 1, /**< all spin interactions, no tidal interactions */
-    LAL_SIM_INSPIRAL_INTERACTION_ALL = (1 << 8) - 1 /**< all spin and tidal interactions */
-} LALSimInspiralInteraction;
-
 /**
  * Enumerator for choosing the reference frame associated with
  * PSpinInspiralRD waveforms.
@@ -111,9 +91,9 @@ typedef enum {
   LAL_SIM_INSPIRAL_MODES_CHOICE_2AND4L     = (1<<3) - 1 - (1<<1),   /**< Include l=2,4 modes */
   LAL_SIM_INSPIRAL_MODES_CHOICE_3AND4L     = (1<<3) - (1<<1),       /**< Include l=3,4 modes */
   LAL_SIM_INSPIRAL_MODES_CHOICE_5L         = 1<<3,                  /**< Inlude only l=5 modes */
-  LAL_SIM_INSPIRAL_MODES_CHOICE_2AND5L     = (1<<4) -1,             /**< Inlude l=2,5 modes */
-  LAL_SIM_INSPIRAL_MODES_CHOICE_3AND5L     = (1<<4) - (1<<1),       /**< Inlude l=3,5 modes */
-  LAL_SIM_INSPIRAL_MODES_CHOICE_4AND5L     = (1<<4),                /**< Inlude l=4,5 modes */
+  LAL_SIM_INSPIRAL_MODES_CHOICE_2AND5L     = (1<<3) + 1,            /**< Inlude l=2,5 modes */
+  LAL_SIM_INSPIRAL_MODES_CHOICE_3AND5L     = (1<<3) + (1<<1),       /**< Inlude l=3,5 modes */
+  LAL_SIM_INSPIRAL_MODES_CHOICE_4AND5L     = (1<<3) + (1<<2),       /**< Inlude l=4,5 modes */
   LAL_SIM_INSPIRAL_MODES_CHOICE_2AND3AND5L = (1<<4) - 1 -(1<<2),    /**< Inlude l=2,3,5 modes */
   LAL_SIM_INSPIRAL_MODES_CHOICE_2AND4AND5L = (1<<4) - 1 -(1<<1),    /**< Inlude l=2,4,5 modes */
   LAL_SIM_INSPIRAL_MODES_CHOICE_3AND4AND5L = (1<<4) - (1<<1),       /**< Inlude l=3,4,5 modes */

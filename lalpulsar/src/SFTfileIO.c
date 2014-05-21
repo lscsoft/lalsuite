@@ -79,10 +79,6 @@
 #define GPSEQUAL(gps1,gps2) (((gps1).gpsSeconds == (gps2).gpsSeconds) && ((gps1).gpsNanoSeconds == (gps2).gpsNanoSeconds))
 
 #define GPSZERO(gps) (((gps).gpsSeconds == 0) && ((gps).gpsNanoSeconds == 0))
-
-/* rounding for positive numbers! */
-#define MYROUND(x) ( floor( (x) + 0.5 ) )
-
 /*---------- internal types ----------*/
 
 /* NOTE: the locator is implemented as an OPAQUE type in order to enforce encapsulation
@@ -129,18 +125,6 @@ typedef struct {
 } SFTReadSegment;
 
 /*---------- Global variables ----------*/
-/* empty struct initializers */
-static LALStatus empty_status;
-const SFTConstraints empty_SFTConstraints;
-const SFTCatalog empty_SFTCatalog;
-const SFTtype empty_SFTtype;
-const SFTVector empty_SFTVector;
-const MultiSFTVector empty_MultiSFTVector;
-const MultiREAL4TimeSeries empty_MultiREAL4TimeSeries;
-const LIGOTimeGPSVector empty_LIGOTimeGPSVector;
-const MultiLIGOTimeGPSVector empty_MultiLIGOTimeGPSVector;
-
-
 static REAL8 fudge_up   = 1 + 10 * LAL_REAL8_EPS;	// about ~1 + 2e-15
 static REAL8 fudge_down = 1 - 10 * LAL_REAL8_EPS;	// about ~1 - 2e-15
 
@@ -162,7 +146,7 @@ static int read_sft_header_from_fp (FILE *fp, SFTtype  *header, UINT4 *version, 
 static int read_v2_header_from_fp ( FILE *fp, SFTtype *header, UINT4 *nsamples, UINT8 *header_crc64, UINT8 *ref_crc64, CHAR **SFTcomment, BOOLEAN swapEndian);
 static int read_v1_header_from_fp ( FILE *fp, SFTtype *header, UINT4 *nsamples, BOOLEAN swapEndian);
 
-static int compareSFTdesc(const void *ptr1, const void *ptr2);
+int compareSFTdesc(const void *ptr1, const void *ptr2);
 static int compareSFTloc(const void *ptr1, const void *ptr2);
 static int compareDetNameCatalogs ( const void *ptr1, const void *ptr2 );
 
@@ -174,6 +158,29 @@ static int read_SFTversion_from_fp ( UINT4 *version, BOOLEAN *need_swap, FILE *f
 // ---------- obsolete LAL-API was moved into external file
 #include "SFTfileIO-LAL.c"
 // ------------------------------
+
+/**
+ * Defines the official CW convention for whether a GPS time is 'within' a given range, defined
+ * as the half-open interval [minGPS, maxGPS)
+ *
+ * This function should be used when dealing with SFTs, segment lists, etc. It returns:
+ *
+ * - -1 if \f$\mathtt{gps} < \mathtt{minGPS}\f$, i.e. GPS time is 'below' the range;
+ * -  0 if \f$\mathtt{minGPS} \le \mathtt{gps} < \mathtt{maxGPS}\f$, i.e. GPS time is 'within' the range;
+ * -  1 if \f$\mathtt{maxGPS} \le \mathtt{gos}\f$, i.e. GPS time is 'above' the range;
+ *
+ * If either \c minGPS or \c maxGPS are \c NULL, there are treated as \f$-\infty\f$ or \f$+\infty\f$ respectively.
+ */
+int XLALCWGPSinRange( const LIGOTimeGPS gps, const LIGOTimeGPS* minGPS, const LIGOTimeGPS* maxGPS )
+{
+  if (minGPS != NULL && GPS2REAL8(gps) < GPS2REAL8(*minGPS)) {
+    return -1;
+  }
+  if (maxGPS != NULL && GPS2REAL8(gps) >= GPS2REAL8(*maxGPS)) {
+    return 1;
+  }
+  return 0;
+}
 
 /**
  * Find the list of SFTs matching the \a file_pattern and satisfying the given \a constraints,
@@ -193,7 +200,7 @@ static int read_SFTversion_from_fp ( UINT4 *version, BOOLEAN *need_swap, FILE *f
  *
  * Note that the constraints are combined by 'AND' and the resulting full constraint
  * MUST be satisfied (in particular: if 'timestamps' is given, all timestamps within
- * [startTime, endTime) MUST be found!.
+ * [minStartTime, maxStartTime) MUST be found!.
  *
  * The returned SFTs in the catalogue are sorted by increasing GPS-epochs !
  *
@@ -318,11 +325,7 @@ XLALSFTdataFind ( const CHAR *file_pattern,		/**< which SFT-files */
                   }
 		}
 
-	      if ( constraints->startTime && ( GPS2REAL8(this_header.epoch) < GPS2REAL8( *constraints->startTime))) {
-		want_this_block = FALSE;
-              }
-
-	      if ( constraints->endTime && ( GPS2REAL8(this_header.epoch) >= GPS2REAL8( *constraints->endTime ) ) ) {
+	      if ( XLALCWGPSinRange(this_header.epoch, constraints->minStartTime, constraints->maxStartTime) != 0 ) {
 		want_this_block = FALSE;
               }
 
@@ -423,29 +426,15 @@ XLALSFTdataFind ( const CHAR *file_pattern,		/**< which SFT-files */
 
   /* ----- final consistency-checks: ----- */
 
-  /* did we find all timestamps that lie within [startTime, endTime)? */
+  /* did we find all timestamps that lie within [minStartTime, maxStartTime)? */
   if ( constraints && constraints->timestamps )
     {
       LIGOTimeGPSVector *ts = constraints->timestamps;
-      REAL8 t0, t1;
-      if ( constraints->startTime ) {
-	t0 = GPS2REAL8 ( (*constraints->startTime) );
-      }
-      else {
-	t0 = 0;
-      }
-      if ( constraints->endTime ) {
-	t1 = GPS2REAL8 ( (*constraints->endTime) );
-      }
-      else {
-	t1 = LAL_REAL4_MAX;	/* large enough */
-      }
 
       for ( UINT4 i = 0; i < ts->length; i ++ )
 	{
           const LIGOTimeGPS *ts_i = &(ts->data[i]);
-	  REAL8 ti = GPS2REAL8((*ts_i));
-	  if ( (t0 <= ti) && ( ti < t1 ) )
+	  if ( XLALCWGPSinRange(*ts_i, constraints->minStartTime, constraints->maxStartTime) == 0 )
             {
               UINT4 j;
               for ( j = 0; j < ret->length; j ++ )
@@ -455,13 +444,14 @@ XLALSFTdataFind ( const CHAR *file_pattern,		/**< which SFT-files */
                     break;
                   }
                 }
-              XLAL_CHECK_NULL ( j < ret->length, XLAL_EFAILED, "Timestamp %d : [%d, %d] did not find a matching SFT\n\n", (i+1), ts_i->gpsSeconds, ts_i->gpsNanoSeconds );
-            } // if timestamp ti within startTime/endTime constraint
+              XLAL_CHECK_NULL ( j < ret->length, XLAL_EFAILED,
+                                "Timestamp %d : [%d, %d] did not find a matching SFT\n\n", (i+1), ts_i->gpsSeconds, ts_i->gpsNanoSeconds );
+            }
 	} // for i < ts->length
 
     } /* if constraints->timestamps */
 
-  SFTtype first_header = empty_SFTtype;
+  SFTtype XLAL_INIT_DECL(first_header);
   /* have all matched SFTs identical dFreq values ? */
   for ( UINT4 i = 0; i < ret->length; i ++ )
     {
@@ -565,7 +555,7 @@ read_sft_bins_from_fp ( SFTtype *ret, UINT4 *firstBinRead, UINT4 firstBin2read, 
   }
 
   tmp = ret->f0 / ret->deltaF;
-  firstSFTbin = MYROUND ( tmp );
+  firstSFTbin = lround ( tmp );
   lastSFTbin = firstSFTbin + numSFTbins - 1;
 
   /* limit the interval to be read to what's actually in the SFT */
@@ -723,10 +713,10 @@ XLALLoadSFTs (const SFTCatalog *catalog,   /**< The 'catalogue' of SFTs to load 
   LIGOTimeGPS epoch = catalog->data[0].header.epoch;
   catalog->data[0].locator->isft = nSFTs - 1;
   deltaF = catalog->data[0].header.deltaF; /* Hz/bin */
-  minbin = firstbin = MYROUND( catalog->data[0].header.f0 / deltaF );
+  minbin = firstbin = lround ( catalog->data[0].header.f0 / deltaF );
   maxbin = lastbin = firstbin + catalog->data[0].numBins - 1;
   for(catPos = 1; catPos < catalog->length; catPos++) {
-    firstbin = MYROUND( catalog->data[catPos].header.f0 / deltaF );
+    firstbin = lround ( catalog->data[catPos].header.f0 / deltaF );
     lastbin = firstbin + catalog->data[catPos].numBins - 1;
     if (firstbin < minbin)
       minbin = firstbin;
@@ -803,7 +793,7 @@ XLALLoadSFTs (const SFTCatalog *catalog,   /**< The 'catalogue' of SFTs to load 
 	 copy the relevant part to thisSFT */
 
       volatile REAL8 tmp = locatalog.data[catPos].header.f0 / deltaF;
-      UINT4 firstSFTbin = MYROUND ( tmp );
+      UINT4 firstSFTbin = lround ( tmp );
       UINT4 lastSFTbin = firstSFTbin + locatalog.data[catPos].numBins - 1;
       UINT4 firstBin2read = firstbin;
       UINT4 lastBin2read = lastbin;
@@ -1213,7 +1203,7 @@ XLALWriteSFT2fp ( const SFTtype *sft,	/**< SFT to write to disk */
   rawheader.gps_sec        		= sft->epoch.gpsSeconds;
   rawheader.gps_nsec       		= sft->epoch.gpsNanoSeconds;
   rawheader.tbase          		= 1.0 / sft->deltaF;
-  rawheader.first_frequency_index 	= MYROUND( sft->f0 / sft->deltaF );
+  rawheader.first_frequency_index 	= lround ( sft->f0 / sft->deltaF );
   rawheader.nsamples       		= sft->data->length;
   rawheader.crc64          		= 0;	/* set to 0 for crc-calculation */
   rawheader.detector[0]    		= sft->name[0];
@@ -1997,7 +1987,7 @@ consistent_mSFT_header ( SFTtype header1, UINT4 version1, UINT4 nsamples1, SFTty
 static int
 read_sft_header_from_fp (FILE *fp, SFTtype *header, UINT4 *version, UINT8 *crc64, BOOLEAN *swapEndian, CHAR **SFTcomment, UINT4 *numBins )
 {
-  SFTtype head = empty_SFTtype;
+  SFTtype XLAL_INIT_DECL(head);
   UINT4 nsamples;
   CHAR *comm = NULL;
   UINT8 ref_crc = 0;
@@ -2030,7 +2020,7 @@ read_sft_header_from_fp (FILE *fp, SFTtype *header, UINT4 *version, UINT8 *crc64
 
 
   /* read this SFT-header with version-specific code */
-  head = empty_SFTtype;
+  XLAL_INIT_MEM(head);
 
   switch( ver )
     {
@@ -2802,7 +2792,7 @@ calc_crc64(const CHAR *data, UINT4 length, UINT8 crc)
 
 
 /* compare two SFT-descriptors by their GPS-epoch, then starting frequency */
-static int
+int
 compareSFTdesc(const void *ptr1, const void *ptr2)
 {
   const SFTDescriptor *desc1 = ptr1;

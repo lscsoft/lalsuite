@@ -11,8 +11,6 @@
 
 #define SQUARE(x) ( (x) * (x) );
 
-static BinaryPulsarParams empty_BinaryPulsarParams;
-
 /******************************************************************************/
 /*                            MODEL FUNCTIONS                                 */
 /******************************************************************************/
@@ -32,7 +30,7 @@ static BinaryPulsarParams empty_BinaryPulsarParams;
  * \sa pulsar_model
  */
 void get_pulsar_model( LALInferenceIFOData *data ){
-  BinaryPulsarParams pars = empty_BinaryPulsarParams; /* initialise as empty */
+  BinaryPulsarParams XLAL_INIT_DECL(pars); /* initialise as empty */
 
   /* set model parameters (including rescaling) */
   //pars.h0 = rescale_parameter( data, "h0" );

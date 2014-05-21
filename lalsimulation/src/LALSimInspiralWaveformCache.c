@@ -43,7 +43,7 @@ static CacheVariableDiffersBitmask CacheArgsDifferenceBitmask(
         REAL8 m2,
         REAL8 S1x, REAL8 S1y, REAL8 S1z,
         REAL8 S2x, REAL8 S2y, REAL8 S2z,
-        REAL8 f_min, REAL8 f_ref_max,
+        REAL8 f_min, REAL8 f_ref, REAL8 f_max,
         REAL8 r,
         REAL8 i,
         REAL8 lambda1,
@@ -62,7 +62,7 @@ static int StoreTDHCache(LALSimInspiralWaveformCache *cache,
         REAL8 m1, REAL8 m2,
         REAL8 S1x, REAL8 S1y, REAL8 S1z,
         REAL8 S2x, REAL8 S2y, REAL8 S2z,
-        REAL8 f_min, REAL8 f_ref_max,
+        REAL8 f_min, REAL8 f_ref,
         REAL8 r,
         REAL8 i,
         REAL8 lambda1, REAL8 lambda2,
@@ -80,7 +80,7 @@ static int StoreFDHCache(LALSimInspiralWaveformCache *cache,
         REAL8 m1, REAL8 m2,
         REAL8 S1x, REAL8 S1y, REAL8 S1z,
         REAL8 S2x, REAL8 S2y, REAL8 S2z,
-        REAL8 f_min, REAL8 f_ref_max,
+        REAL8 f_min, REAL8 f_ref, REAL8 f_max,
         REAL8 r,
         REAL8 i,
         REAL8 lambda1, REAL8 lambda2,
@@ -142,7 +142,7 @@ int XLALSimInspiralChooseTDWaveformFromCache(
 
     // Check which parameters have changed
     changedParams = CacheArgsDifferenceBitmask(cache, phiRef, deltaT,
-            m1, m2, S1x, S1y, S1z, S2x, S2y, S2z, f_min, f_ref, r, i,
+            m1, m2, S1x, S1y, S1z, S2x, S2y, S2z, f_min, f_ref, 0., r, i,
             lambda1, lambda2, waveFlags, nonGRparams, amplitudeO,
             phaseO, approximant);
 
@@ -447,6 +447,7 @@ int XLALSimInspiralChooseFDWaveformFromCache(
         REAL8 S2z,                              /**< z-component of the dimensionless spin of object 2 */
         REAL8 f_min,                            /**< starting GW frequency (Hz) */
         REAL8 f_max,                            /**< ending GW frequency (Hz) */
+        REAL8 f_ref,                            /**< Reference GW frequency (Hz) */
         REAL8 r,                                /**< distance of source (m) */
         REAL8 i,                                /**< inclination of source (rad) */
         REAL8 lambda1,                          /**< (tidal deformability of mass 1) / m1^5 (dimensionless) */
@@ -468,13 +469,13 @@ int XLALSimInspiralChooseFDWaveformFromCache(
     // If nonGRparams are not NULL, don't even try to cache.
     if ( nonGRparams != NULL || (!cache) )
         return XLALSimInspiralChooseFDWaveform(hptilde, hctilde, phiRef, deltaF,
-                m1, m2, S1x, S1y, S1z, S2x, S2y, S2z, f_min, f_max, r, i,
+                m1, m2, S1x, S1y, S1z, S2x, S2y, S2z, f_min, f_max, f_ref, r, i,
                 lambda1, lambda2, waveFlags, nonGRparams, amplitudeO, phaseO,
                 approximant);
 
     // Check which parameters have changed
     changedParams = CacheArgsDifferenceBitmask(cache, phiRef, deltaF,
-            m1, m2, S1x, S1y, S1z, S2x, S2y, S2z, f_min, f_max, r, i,
+            m1, m2, S1x, S1y, S1z, S2x, S2y, S2z, f_min, f_ref, f_max, r, i,
             lambda1, lambda2, waveFlags, nonGRparams, amplitudeO,
             phaseO, approximant);
 
@@ -497,13 +498,13 @@ int XLALSimInspiralChooseFDWaveformFromCache(
     // Intrinsic parameters have changed. We must generate a new waveform
     if( (changedParams & INTRINSIC) != 0 ) {
         status = XLALSimInspiralChooseFDWaveform(hptilde, hctilde, phiRef,
-                deltaF, m1, m2, S1x, S1y, S1z, S2x, S2y, S2z, f_min, f_max,
+                deltaF, m1, m2, S1x, S1y, S1z, S2x, S2y, S2z, f_min, f_max, f_ref,
                 r, i, lambda1, lambda2, waveFlags, nonGRparams, amplitudeO,
                 phaseO, approximant);
         if (status == XLAL_FAILURE) return status;
 
         return StoreFDHCache(cache, *hptilde, *hctilde, phiRef, deltaF, m1, m2,
-            S1x, S1y, S1z, S2x, S2y, S2z, f_min, f_max, r, i, lambda1, lambda2,
+            S1x, S1y, S1z, S2x, S2y, S2z, f_min, f_ref, f_max, r, i, lambda1, lambda2,
             waveFlags, nonGRparams, amplitudeO, phaseO, approximant);
     }
 
@@ -516,13 +517,13 @@ int XLALSimInspiralChooseFDWaveformFromCache(
         // FIXME: Will need to check hlms and/or dynamical variables as well
         if( cache->hptilde == NULL || cache->hctilde == NULL) {
             status = XLALSimInspiralChooseFDWaveform(hptilde, hctilde, phiRef,
-                    deltaF, m1, m2, S1x, S1y, S1z, S2x, S2y, S2z, f_min, f_max,
+                    deltaF, m1, m2, S1x, S1y, S1z, S2x, S2y, S2z, f_min, f_max, f_ref,
                     r, i, lambda1, lambda2, waveFlags, nonGRparams, amplitudeO,
                     phaseO, approximant);
             if (status == XLAL_FAILURE) return status;
 
             return StoreFDHCache(cache, *hptilde, *hctilde, phiRef, deltaF,
-                    m1, m2, S1x, S1y, S1z, S2x, S2y, S2z, f_min, f_max, r, i,
+                    m1, m2, S1x, S1y, S1z, S2x, S2y, S2z, f_min, f_ref, f_max, r, i,
                     lambda1, lambda2, waveFlags, nonGRparams, amplitudeO,
                     phaseO, approximant);
         }
@@ -589,7 +590,7 @@ int XLALSimInspiralChooseFDWaveformFromCache(
     // b/c of lack of interest or it's unclear what/how to cache for that model
     else {
         return XLALSimInspiralChooseFDWaveform(hptilde, hctilde, phiRef, deltaF,
-                m1, m2, S1x, S1y, S1z, S2x, S2y, S2z, f_min, f_max, r, i,
+                m1, m2, S1x, S1y, S1z, S2x, S2y, S2z, f_min, f_max, f_ref, r, i,
                 lambda1, lambda2, waveFlags, nonGRparams, amplitudeO, phaseO,
                 approximant);
     }
@@ -636,7 +637,7 @@ static CacheVariableDiffersBitmask CacheArgsDifferenceBitmask(
         REAL8 m2,
         REAL8 S1x, REAL8 S1y, REAL8 S1z,
         REAL8 S2x, REAL8 S2y, REAL8 S2z,
-        REAL8 f_min, REAL8 f_ref_max,
+        REAL8 f_min, REAL8 f_ref, REAL8 f_max,
         REAL8 r,
         REAL8 i,
         REAL8 lambda1,
@@ -665,7 +666,8 @@ static CacheVariableDiffersBitmask CacheArgsDifferenceBitmask(
     if ( S2y != cache->S2y) return INTRINSIC;
     if ( S2z != cache->S2z) return INTRINSIC;
     if ( f_min != cache->f_min) return INTRINSIC;
-    if ( f_ref_max != cache->f_ref_max) return INTRINSIC;
+    if ( f_ref != cache->f_ref) return INTRINSIC;
+    if ( f_max != cache->f_max) return INTRINSIC;
     if ( lambda1 != cache->lambda1) return INTRINSIC;
     if ( lambda2 != cache->lambda2) return INTRINSIC;
     if ( nonGRparams != cache->nonGRparams) return INTRINSIC;
@@ -689,7 +691,7 @@ static int StoreTDHCache(LALSimInspiralWaveformCache *cache,
         REAL8 m1, REAL8 m2,
         REAL8 S1x, REAL8 S1y, REAL8 S1z,
         REAL8 S2x, REAL8 S2y, REAL8 S2z,
-        REAL8 f_min, REAL8 f_ref_max,
+        REAL8 f_min, REAL8 f_ref,
         REAL8 r,
         REAL8 i,
         REAL8 lambda1, REAL8 lambda2,
@@ -723,7 +725,7 @@ static int StoreTDHCache(LALSimInspiralWaveformCache *cache,
     cache->S2y = S2y;
     cache->S2z = S2z;
     cache->f_min = f_min;
-    cache->f_ref_max = f_ref_max;
+    cache->f_ref = f_ref;
     cache->r = r;
     cache->i = i;
     cache->lambda1 = lambda1;
@@ -759,7 +761,7 @@ static int StoreFDHCache(LALSimInspiralWaveformCache *cache,
         REAL8 m1, REAL8 m2,
         REAL8 S1x, REAL8 S1y, REAL8 S1z,
         REAL8 S2x, REAL8 S2y, REAL8 S2z,
-        REAL8 f_min, REAL8 f_ref_max,
+        REAL8 f_min, REAL8 f_ref, REAL8 f_max,
         REAL8 r,
         REAL8 i,
         REAL8 lambda1, REAL8 lambda2,
@@ -793,7 +795,8 @@ static int StoreFDHCache(LALSimInspiralWaveformCache *cache,
     cache->S2y = S2y;
     cache->S2z = S2z;
     cache->f_min = f_min;
-    cache->f_ref_max = f_ref_max;
+    cache->f_ref = f_ref;
+    cache->f_max = f_max;
     cache->r = r;
     cache->i = i;
     cache->lambda1 = lambda1;

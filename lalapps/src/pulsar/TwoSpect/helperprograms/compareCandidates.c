@@ -1,5 +1,5 @@
 /*
-*  Copyright (C) 2013 Evan Goetz
+*  Copyright (C) 2013, 2014 Evan Goetz
 *
 *  This program is free software; you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
@@ -25,8 +25,13 @@
 #include <gsl/gsl_roots.h>
 
 #include <lal/LALStdlib.h>
+#include <lal/SeqFactories.h>
+
+#include "cmdline_compareCandidates.h"
 
 REAL8 f_diff(double indexval, void *params);
+INT4 readInCoincidentOutliers(double **output, int **output_job, int *output_numOutliers, const char *infilename);
+INT4 readInIFOoutliersAndSort(double **output, int **output_job, int *output_numCoincident, const char *infilename);
 
 struct solver_params {
    double fvalue;
@@ -36,105 +41,98 @@ double f_diff(double indexval, void *params) {
    struct solver_params *p = (struct solver_params *)params;
    return p->fvalue - p->data_array[(int)round(indexval)*9];
 }
- 
-INT4 main(void) {
+INT4 readInCoincidentOutliers(double **output, int **output_job, int *output_numCoincident, const char *infilename) {
+   FILE *CANDS = NULL;
+   XLAL_CHECK( (CANDS = fopen(infilename,"r")) != NULL, XLAL_EIO, "Can't fopen %s", infilename );
+   //Determines number of candidates in the file
+   INT4 ch, count = 0;
+   do {
+      ch = fgetc(CANDS);
+      if (ch == '\n') count++;
+   } while (ch != EOF);
+   double *allcands = NULL;
+   XLAL_CHECK( (allcands = (double*)XLALMalloc(sizeof(double)*count*18)) != NULL, XLAL_ENOMEM );
+   int *allcands_job = NULL;
+   XLAL_CHECK( (allcands_job = (int*)XLALMalloc(sizeof(int)*count*2)) != NULL, XLAL_ENOMEM );
+   rewind(CANDS);
+   //Put the data into the array
+   for (INT4 ii=0; ii<count; ii++) {
+      fscanf(CANDS, "%la %la %la %la %la %la %la %la %la %d %la %la %la %la %la %la %la %la %la %d", &(allcands[ii*18]), &(allcands[ii*18+1]), &(allcands[ii*18+2]), &(allcands[ii*18+3]), &(allcands[ii*18+4]), &(allcands[ii*18+5]), &(allcands[ii*18+6]), &(allcands[ii*18+7]), &(allcands[ii*18+8]), &(allcands_job[2*ii]), &(allcands[ii*18+9]), &(allcands[ii*18+10]), &(allcands[ii*18+11]), &(allcands[ii*18+12]), &(allcands[ii*18+13]), &(allcands[ii*18+14]), &(allcands[ii*18+15]), &(allcands[ii*18+16]), &(allcands[ii*18+17]), &(allcands_job[ii*2+1]));
+   }
+   fclose(CANDS);
+   (*output) = allcands;
+   (*output_job) = allcands_job;
+   (*output_numCoincident) = count;
+   return XLAL_SUCCESS;
+}
+INT4 readInIFOoutliersAndSort(double **output, int **output_job, int *output_numOutliers, const char *infilename) {
+   FILE *IFOCANDS = NULL;
+   XLAL_CHECK( (IFOCANDS = fopen(infilename,"r")) != NULL, XLAL_EIO, "Can't fopen %s", infilename );
+   //Determines number of candidates in the file
+   INT4 ch, ifocount = 0;
+   do {
+      ch = fgetc(IFOCANDS);
+      if (ch == '\n') ifocount++;
+   } while (ch != EOF);
+   double *allIFOcands = NULL;
+   XLAL_CHECK( (allIFOcands = (double*)XLALMalloc(sizeof(double)*ifocount*9)) != NULL, XLAL_ENOMEM );
+   int *allIFOcands_job = NULL;
+   XLAL_CHECK( (allIFOcands_job = (int*)XLALMalloc(sizeof(int)*ifocount)) != NULL, XLAL_ENOMEM );
+   rewind(IFOCANDS);
+   //Put data in array
+   for (INT4 ii=0; ii<ifocount; ii++) {
+      fscanf(IFOCANDS, "%la %la %la %la %la %la %la %la %la %d", &(allIFOcands[ii*9]), &(allIFOcands[ii*9+1]), &(allIFOcands[ii*9+2]), &(allIFOcands[ii*9+3]), &(allIFOcands[ii*9+4]), &(allIFOcands[ii*9+5]), &(allIFOcands[ii*9+6]), &(allIFOcands[ii*9+7]), &(allIFOcands[ii*9+8]), &(allIFOcands_job[ii]));
+   }
+   fclose(IFOCANDS);
+   //Sort the array based on the frequency
+   size_t *sorted_index = NULL;
+   XLAL_CHECK( (sorted_index = (size_t*)XLALMalloc(sizeof(size_t)*ifocount)) != NULL, XLAL_ENOMEM );
+   double *allIFOcands_sorted = NULL;
+   XLAL_CHECK( (allIFOcands_sorted = (double*)XLALMalloc(sizeof(double)*ifocount*9)) != NULL, XLAL_ENOMEM );
+   int *allIFOcands_job_sorted = NULL;
+   XLAL_CHECK( (allIFOcands_job_sorted = (int*)XLALMalloc(sizeof(int)*ifocount)) != NULL, XLAL_ENOMEM );
+   gsl_sort_index(sorted_index, allIFOcands, 9, ifocount);
+   for (INT4 ii=0; ii<ifocount; ii++) {
+      memcpy(&(allIFOcands_sorted[ii*9]), &(allIFOcands[sorted_index[ii]*9]), sizeof(double)*9);
+      allIFOcands_job_sorted[ii] = allIFOcands_job[sorted_index[ii]];
+   }
+   XLALFree(allIFOcands);
+   XLALFree(sorted_index);
+   XLALFree(allIFOcands_job);
+   (*output) = allIFOcands_sorted;
+   (*output_job) = allIFOcands_job_sorted;
+   (*output_numOutliers) = ifocount;
+   return XLAL_SUCCESS;
+}
+
+INT4 main(int argc, char *argv[]) {
 
    //Turn off gsl error handler
    gsl_set_error_handler_off();
 
-   FILE *H1CANDS, *L1CANDS;
-   const char *infile1 = "/Users/evgoet/Documents/MATLAB/pulsar/VSR2-3/20-100HzV1Candidates.dat";
-   const char *infile2 = "/Users/evgoet/Documents/MATLAB/pulsar/S6/50-252HzL1Candidates.dat";
-   const char *outfile1 = "/Users/evgoet/Documents/MATLAB/pulsar/S6/50-100HzCandidates_output1.dat";
-   const char *outfile2 = "/Users/evgoet/Documents/MATLAB/pulsar/S6/50-100HzCandidates_output2.dat";
-   const char *outfile3 = "/Users/evgoet/Documents/MATLAB/pulsar/S6/50-100HzCandidates_final_V1L1.dat";
-   const char *outfile4 = "/Users/evgoet/Documents/MATLAB/pulsar/S6/50-100HzCandidates_output3.dat";
+   struct gengetopt_args_info args_info;
+   struct cmdline_parser_params *configparams;
+   configparams = cmdline_parser_params_create();
+   configparams->check_required = 0;  //don't check for required values at the step
+   cmdline_parser_ext(argc, argv, &args_info, configparams);
+   configparams->initialize = 0;  //don't reinitialize the parameters structure
+   if (args_info.config_given) cmdline_parser_config_file(args_info.config_arg, &args_info, configparams);
+   cmdline_parser_required(&args_info, argv[0]);
 
-   XLAL_CHECK( (H1CANDS = fopen(infile1,"r")) != NULL, XLAL_EIO, "Can't fopen %s", infile1 );
-
-   //Determines number of candidates in the file
-   int ch, h1count = 0, l1count = 0;
-   do {
-      ch = fgetc(H1CANDS);
-      if (ch == '\n') h1count++;
-   } while (ch != EOF);
-
-   XLAL_CHECK( (L1CANDS = fopen(infile2,"r")) != NULL, XLAL_EIO, "Can't fopen %s", infile2 );
-
-   //Determines number of candidates in the file
-   do {
-      ch = fgetc(L1CANDS);
-      if (ch == '\n') l1count++;
-   } while (ch != EOF);
-
-   double *allh1cands = NULL, *alll1cands = NULL;
-   int *allh1cands_job = NULL, *alll1cands_job = NULL;
-   XLAL_CHECK( (allh1cands = (double*)XLALMalloc(sizeof(double)*h1count*9)) != NULL, XLAL_ENOMEM );
-   XLAL_CHECK( (alll1cands = (double*)XLALMalloc(sizeof(double)*l1count*9)) != NULL, XLAL_ENOMEM );
-   XLAL_CHECK( (allh1cands_job = (int*)XLALMalloc(sizeof(int)*h1count)) != NULL, XLAL_ENOMEM );
-   XLAL_CHECK( (alll1cands_job = (int*)XLALMalloc(sizeof(int)*l1count)) != NULL, XLAL_ENOMEM );
-
-   //Reset the pointer in the streams
-   rewind(H1CANDS);
-   rewind(L1CANDS);
-
-   //Put the data into the array
-   int ii, jj;
-   for (ii=0; ii<h1count; ii++) {
-      fscanf(H1CANDS, "%la %la %la %la %la %la %la %la %la %d", &(allh1cands[ii*9]), &(allh1cands[ii*9+1]), &(allh1cands[ii*9+2]), &(allh1cands[ii*9+3]), &(allh1cands[ii*9+4]), &(allh1cands[ii*9+5]), &(allh1cands[ii*9+6]), &(allh1cands[ii*9+7]), &(allh1cands[ii*9+8]), &(allh1cands_job[ii]));
-   }
-
-   //Sort the array based on the frequency
-   size_t *sorted_index = NULL;
-   XLAL_CHECK( (sorted_index = (size_t*)XLALMalloc(sizeof(size_t)*h1count)) != NULL, XLAL_ENOMEM );
-   double *allh1cands_sorted = NULL;
-   XLAL_CHECK( (allh1cands_sorted = (double*)XLALMalloc(sizeof(double)*h1count*9)) != NULL, XLAL_ENOMEM );
-   int *allh1cands_job_sorted = NULL;
-   XLAL_CHECK( (allh1cands_job_sorted = (int*)XLALMalloc(sizeof(int)*h1count)) != NULL, XLAL_ENOMEM );
-   gsl_sort_index(sorted_index, allh1cands, 9, h1count);
-   for (ii=0; ii<h1count; ii++) {
-      memcpy(&(allh1cands_sorted[ii*9]), &(allh1cands[sorted_index[ii]*9]), sizeof(double)*9);
-      allh1cands_job_sorted[ii] = allh1cands_job[sorted_index[ii]];
-   }
-   XLALFree(allh1cands);
-   XLALFree(sorted_index);
-   XLALFree(allh1cands_job);
-
-   //Put the data into the array
-   for (ii=0; ii<l1count; ii++) {
-      fscanf(L1CANDS, "%la %la %la %la %la %la %la %la %la %d", &(alll1cands[ii*9]), &(alll1cands[ii*9+1]), &(alll1cands[ii*9+2]), &(alll1cands[ii*9+3]), &(alll1cands[ii*9+4]), &(alll1cands[ii*9+5]), &(alll1cands[ii*9+6]), &(alll1cands[ii*9+7]), &(alll1cands[ii*9+8]), &(alll1cands_job[ii]));
-   }
-
-   //TODO: Remove this!
-   // for (ii=0; ii<l1count; ii++) alll1cands[ii*9] += 1.0;
-
-   //Sort the array based on the frequency
-   XLAL_CHECK( (sorted_index = (size_t*)XLALMalloc(sizeof(size_t)*l1count)) != NULL, XLAL_ENOMEM );
-   double *alll1cands_sorted = NULL;
-   XLAL_CHECK( (alll1cands_sorted = (double*)XLALMalloc(sizeof(double)*l1count*9)) != NULL, XLAL_ENOMEM );
-   int *alll1cands_job_sorted = NULL;
-   XLAL_CHECK( (alll1cands_job_sorted = (int*)XLALMalloc(sizeof(int)*l1count)) != NULL, XLAL_ENOMEM );
-   gsl_sort_index(sorted_index, alll1cands, 9, l1count);
-   for (ii=0; ii<l1count; ii++) {
-      memcpy(&(alll1cands_sorted[ii*9]), &(alll1cands[sorted_index[ii]*9]), sizeof(double)*9);
-      alll1cands_job_sorted[ii] = alll1cands_job[sorted_index[ii]];
-   }
-   XLALFree(alll1cands);
-   XLALFree(sorted_index);
-   XLALFree(alll1cands_job);
-
-   //Close the streams
-   fclose(H1CANDS);
-   fclose(L1CANDS);
+   double *allIFO1cands_sorted = NULL, *allIFO2cands_sorted = NULL;
+   int *allIFO1cands_job_sorted = NULL, *allIFO2cands_job_sorted = NULL;
+   int ifo1count = 0, ifo2count = 0;
+   XLAL_CHECK( readInIFOoutliersAndSort(&allIFO1cands_sorted, &allIFO1cands_job_sorted, &ifo1count, args_info.infile1_arg) == XLAL_SUCCESS, XLAL_EFUNC );
+   XLAL_CHECK( readInIFOoutliersAndSort(&allIFO2cands_sorted, &allIFO2cands_job_sorted, &ifo2count, args_info.infile2_arg) == XLAL_SUCCESS, XLAL_EFUNC );
 
    //Open a file to save the output data
    FILE *CANDS = NULL;
-   XLAL_CHECK( (CANDS = fopen(outfile1,"w")) != NULL, XLAL_EIO, "Can't fopen %s", outfile1 );
+   XLAL_CHECK( (CANDS = fopen(args_info.outfile1_arg,"w")) != NULL, XLAL_EIO, "Can't fopen %s", args_info.outfile1_arg );
 
    //Setup and allocate the solver
    int status = GSL_CONTINUE;
    int max_iter = 100;
-   double x_lo = 0.0, x_hi = (double)(l1count-1);
+   double x_lo = 0.0, x_hi = (double)(ifo2count-1);
    double foundIndex = -1.0;
    gsl_function F;
    F.function = &f_diff;
@@ -142,19 +140,21 @@ INT4 main(void) {
    gsl_root_fsolver *s = NULL;
    XLAL_CHECK( (s = gsl_root_fsolver_alloc(T)) != NULL, XLAL_EFUNC );
 
-   double tobs = 40551300.0;
-   double fdiff_allowed = 1.0/1800.0;
-   double dfdiff_allowed = fdiff_allowed;
-   double skydiff_allowed = 0.04*200.0;
+   double tobs = args_info.Tobs_arg;
+   double fdiff_allowed = args_info.fdiff_allowed_arg;
+   double dfdiff_allowed = args_info.dfdiff_allowed_arg;
+   double skydiff_allowed = args_info.skydiff_allowed_arg*200.0;
+   double periodTcohFactor = 2.7*(args_info.Tcoh_arg/1800.0) + 1.8;
    int numpassingf = 0, numpassingdf = 0, numpassingP = 0, numpassingskyloc = 0;
-   for (ii=0; ii<h1count; ii++) {
+   INT4 ii, jj;
+   for (ii=0; ii<ifo1count; ii++) {
 
       //Check that the frequency of the H1 candidate we look at is within the frequency span of the L1 candidates
-      if ( allh1cands_sorted[ii*9] >= alll1cands_sorted[0] && allh1cands_sorted[ii*9] <= alll1cands_sorted[(l1count-1)*9] ) {
-         if (foundIndex < 0.0 || status != GSL_SUCCESS || (status==GSL_SUCCESS && fabs(allh1cands_sorted[ii*9]-alll1cands_sorted[(int)round(gsl_root_fsolver_root(s))*9])>fdiff_allowed)) {
+      if ( allIFO1cands_sorted[ii*9] >= allIFO2cands_sorted[0] && allIFO1cands_sorted[ii*9] <= allIFO2cands_sorted[(ifo2count-1)*9] ) {
+         if (foundIndex < 0.0 || status != GSL_SUCCESS || (status==GSL_SUCCESS && fabs(allIFO1cands_sorted[ii*9]-allIFO2cands_sorted[(int)round(gsl_root_fsolver_root(s))*9])>fdiff_allowed)) {
             //Do a root finding search for the closest L1 candidate in frequency to the H1 candidate frequency
             int iter = 0;
-            struct solver_params params = {allh1cands_sorted[ii*9], alll1cands_sorted};
+            struct solver_params params = {allIFO1cands_sorted[ii*9], allIFO2cands_sorted};
             F.params = &params;
             XLAL_CHECK( gsl_root_fsolver_set(s, &F, x_lo, x_hi) == GSL_SUCCESS, XLAL_EFUNC );
             do {
@@ -172,25 +172,25 @@ INT4 main(void) {
             jj = (int)round(foundIndex);   //start at the index of the L1 candidate found in the root finding
 
             //Step backwards in L1 candidates until we are definitely below the H1 candidate in frequency (or at the start of the L1 list)
-            while (jj>0 && (allh1cands_sorted[ii*9]-alll1cands_sorted[jj*9])<1.05*fdiff_allowed) jj--;
+            while (jj>0 && (allIFO1cands_sorted[ii*9]-allIFO2cands_sorted[jj*9])<1.05*fdiff_allowed) jj--;
 
             //Set the foundIndex value to the start of where we should search from
             foundIndex = jj;
 
             //Starting from the L1 candidate below the H1 candidate frequency
-            for ( ; jj<l1count; jj++) {
+            for ( ; jj<ifo2count; jj++) {
                //Check that if the frequency of L1 candidate is above the H1 value by greater than the allowed value, break the loop
-               if (alll1cands_sorted[jj*9]-allh1cands_sorted[ii*9] > 1.05*fdiff_allowed) break;
+               if (allIFO2cands_sorted[jj*9]-allIFO1cands_sorted[ii*9] > 1.05*fdiff_allowed) break;
 
                //If the H1 and L1 frequency values are near enough, proceed with checking more parameter values
-               if (fabs(allh1cands_sorted[ii*9]-alll1cands_sorted[jj*9])<=fdiff_allowed) {
+               if (fabs(allIFO1cands_sorted[ii*9]-allIFO2cands_sorted[jj*9])<=fdiff_allowed) {
                   numpassingf++;
                   //Check the modulation depth
-                  if (fabs(allh1cands_sorted[ii*9+2]-alll1cands_sorted[jj*9+2])<=dfdiff_allowed) {
+                  if (fabs(allIFO1cands_sorted[ii*9+2]-allIFO2cands_sorted[jj*9+2])<=dfdiff_allowed) {
                      numpassingdf++;
                      //Check the period and harmonic values
-                     double Pdiff_allowed = allh1cands_sorted[ii*9+1]*allh1cands_sorted[ii*9+1]*sqrt(3.6e-3/allh1cands_sorted[ii*9+2])/(4.5*tobs);
-                     double Pdiff_allowed_2 = alll1cands_sorted[jj*9+1]*alll1cands_sorted[jj*9+1]*sqrt(3.6e-3/alll1cands_sorted[jj*9+2])/(4.5*tobs);
+                     double Pdiff_allowed = allIFO1cands_sorted[ii*9+1]*allIFO1cands_sorted[ii*9+1]*sqrt(3.6e-3/allIFO1cands_sorted[ii*9+2])/(periodTcohFactor*tobs);
+                     double Pdiff_allowed_2 = allIFO2cands_sorted[jj*9+1]*allIFO2cands_sorted[jj*9+1]*sqrt(3.6e-3/allIFO2cands_sorted[jj*9+2])/(periodTcohFactor*tobs);
                      int foundmatch = 0, passedtestP = 0;
                      for (int kk=1; kk<=7; kk++) {
                         double P1factor = 0.0;
@@ -204,20 +204,20 @@ INT4 main(void) {
                            else if (ll<5) P2factor = 1.0/ll;
                            else P2factor = (double)(ll-3);
 
-                           if (fabs(P1factor*allh1cands_sorted[ii*9+1]-P2factor*alll1cands_sorted[jj*9+1])<=Pdiff_allowed*(P1factor*P1factor) || fabs(P1factor*allh1cands_sorted[ii*9+1]-P2factor*alll1cands_sorted[jj*9+1])<=Pdiff_allowed_2*(P2factor*P2factor)) {
+                           if (fabs(P1factor*allIFO1cands_sorted[ii*9+1]-P2factor*allIFO2cands_sorted[jj*9+1])<=Pdiff_allowed*(P1factor*P1factor) || fabs(P1factor*allIFO1cands_sorted[ii*9+1]-P2factor*allIFO2cands_sorted[jj*9+1])<=Pdiff_allowed_2*(P2factor*P2factor)) {
                               if (!passedtestP) {
                                  numpassingP++;
                                  passedtestP = 1;
                               }
                               //Check the sky location
-                              double absd1mPo2 = fabs(allh1cands_sorted[ii*9+4]-M_PI_2);
-                              double absd2mPo2 = fabs(alll1cands_sorted[jj*9+4]-M_PI_2);
-                              double dist = acos(sin(absd1mPo2)*sin(absd2mPo2)*cos(allh1cands_sorted[ii*9+3]-alll1cands_sorted[jj*9+3])+cos(absd1mPo2)*cos(absd2mPo2));
+                              double absd1mPo2 = fabs(allIFO1cands_sorted[ii*9+4]-M_PI_2);
+                              double absd2mPo2 = fabs(allIFO2cands_sorted[jj*9+4]-M_PI_2);
+                              double dist = acos(sin(absd1mPo2)*sin(absd2mPo2)*cos(allIFO1cands_sorted[ii*9+3]-allIFO2cands_sorted[jj*9+3])+cos(absd1mPo2)*cos(absd2mPo2));
 
-                              if (dist<=2.0*skydiff_allowed/(allh1cands_sorted[ii*9]+alll1cands_sorted[jj*9])) {
+                              if (dist<=2.0*skydiff_allowed/(allIFO1cands_sorted[ii*9]+allIFO2cands_sorted[jj*9])) {
                                  foundmatch = 1;
                                  numpassingskyloc++;
-                                 fprintf(CANDS, "%f %f %f %f %f %f %g %f %g %d %f %f %f %f %f %f %g %f %g %d\n",  (float)allh1cands_sorted[ii*9], (float)allh1cands_sorted[ii*9+1], (float)allh1cands_sorted[ii*9+2], (float)allh1cands_sorted[ii*9+3], (float)allh1cands_sorted[ii*9+4], (float)allh1cands_sorted[ii*9+5], allh1cands_sorted[ii*9+6], (float)allh1cands_sorted[ii*9+7], allh1cands_sorted[ii*9+8], allh1cands_job_sorted[ii], (float)alll1cands_sorted[jj*9], (float)alll1cands_sorted[jj*9+1], (float)alll1cands_sorted[jj*9+2], (float)alll1cands_sorted[jj*9+3], (float)alll1cands_sorted[jj*9+4], (float)alll1cands_sorted[jj*9+5], alll1cands_sorted[jj*9+6], (float)alll1cands_sorted[jj*9+7], alll1cands_sorted[jj*9+8], alll1cands_job_sorted[jj]);
+                                 fprintf(CANDS, "%f %f %f %f %f %f %g %f %g %d %f %f %f %f %f %f %g %f %g %d\n",  allIFO1cands_sorted[ii*9], allIFO1cands_sorted[ii*9+1], allIFO1cands_sorted[ii*9+2], allIFO1cands_sorted[ii*9+3], allIFO1cands_sorted[ii*9+4], allIFO1cands_sorted[ii*9+5], allIFO1cands_sorted[ii*9+6], allIFO1cands_sorted[ii*9+7], allIFO1cands_sorted[ii*9+8], allIFO1cands_job_sorted[ii], allIFO2cands_sorted[jj*9], allIFO2cands_sorted[jj*9+1], allIFO2cands_sorted[jj*9+2], allIFO2cands_sorted[jj*9+3], allIFO2cands_sorted[jj*9+4], allIFO2cands_sorted[jj*9+5], allIFO2cands_sorted[jj*9+6], allIFO2cands_sorted[jj*9+7], allIFO2cands_sorted[jj*9+8], allIFO2cands_job_sorted[jj]);
                               } //end sky check
                            } //end period check
                            if (foundmatch) break;
@@ -228,17 +228,17 @@ INT4 main(void) {
                } //end frequency check
             } //end test against L1 values
          } //end successful search
-      } else if ((alll1cands_sorted[0]-allh1cands_sorted[ii*9]) <= fdiff_allowed && allh1cands_sorted[ii*9] <= alll1cands_sorted[0]) {
+      } else if ((allIFO2cands_sorted[0]-allIFO1cands_sorted[ii*9]) <= fdiff_allowed && allIFO1cands_sorted[ii*9] <= allIFO2cands_sorted[0]) {
 
-         for (jj=0; jj<l1count; jj++) {
-            if (alll1cands_sorted[jj*9]-allh1cands_sorted[ii*9] > 1.05*fdiff_allowed) break;
+         for (jj=0; jj<ifo2count; jj++) {
+            if (allIFO2cands_sorted[jj*9]-allIFO1cands_sorted[ii*9] > 1.05*fdiff_allowed) break;
 
-            if (fabs(allh1cands_sorted[ii*9]-alll1cands_sorted[jj*9])<=fdiff_allowed) {
+            if (fabs(allIFO1cands_sorted[ii*9]-allIFO2cands_sorted[jj*9])<=fdiff_allowed) {
                numpassingf++;
-               if (fabs(allh1cands_sorted[ii*9+2]-alll1cands_sorted[jj*9+2])<=dfdiff_allowed) {
+               if (fabs(allIFO1cands_sorted[ii*9+2]-allIFO2cands_sorted[jj*9+2])<=dfdiff_allowed) {
                   numpassingdf++;
-                  double Pdiff_allowed = allh1cands_sorted[ii*9+1]*allh1cands_sorted[ii*9+1]*sqrt(3.6e-3/allh1cands_sorted[ii*9+2])/(4.5*tobs);
-                  double Pdiff_allowed_2 = alll1cands_sorted[jj*9+1]*alll1cands_sorted[jj*9+1]*sqrt(3.6e-3/alll1cands_sorted[jj*9+2])/(4.5*tobs);
+                  double Pdiff_allowed = allIFO1cands_sorted[ii*9+1]*allIFO1cands_sorted[ii*9+1]*sqrt(3.6e-3/allIFO1cands_sorted[ii*9+2])/(periodTcohFactor*tobs);
+                  double Pdiff_allowed_2 = allIFO2cands_sorted[jj*9+1]*allIFO2cands_sorted[jj*9+1]*sqrt(3.6e-3/allIFO2cands_sorted[jj*9+2])/(periodTcohFactor*tobs);
                   int foundmatch = 0, passedtestP = 0;
                   for (int kk=1; kk<=7; kk++) {
                      double P1factor = 0.0;
@@ -252,20 +252,20 @@ INT4 main(void) {
                         else if (ll<5) P2factor = 1.0/ll;
                         else P2factor = (double)(ll-3);
 
-                        if (fabs(P1factor*allh1cands_sorted[ii*9+1]-P2factor*alll1cands_sorted[jj*9+1])<=Pdiff_allowed*(P1factor*P1factor) || fabs(P1factor*allh1cands_sorted[ii*9+1]-P2factor*alll1cands_sorted[jj*9+1])<=Pdiff_allowed_2*(P2factor*P2factor)) {
+                        if (fabs(P1factor*allIFO1cands_sorted[ii*9+1]-P2factor*allIFO2cands_sorted[jj*9+1])<=Pdiff_allowed*(P1factor*P1factor) || fabs(P1factor*allIFO1cands_sorted[ii*9+1]-P2factor*allIFO2cands_sorted[jj*9+1])<=Pdiff_allowed_2*(P2factor*P2factor)) {
                            if (!passedtestP) {
                               numpassingP++;
                               passedtestP = 1;
                            }
                            //Check the sky location
-                           double absd1mPo2 = fabs(allh1cands_sorted[ii*9+4]-M_PI_2);
-                           double absd2mPo2 = fabs(alll1cands_sorted[jj*9+4]-M_PI_2);
-                           double dist = acos(sin(absd1mPo2)*sin(absd2mPo2)*cos(allh1cands_sorted[ii*9+3]-alll1cands_sorted[jj*9+3])+cos(absd1mPo2)*cos(absd2mPo2));
+                           double absd1mPo2 = fabs(allIFO1cands_sorted[ii*9+4]-M_PI_2);
+                           double absd2mPo2 = fabs(allIFO2cands_sorted[jj*9+4]-M_PI_2);
+                           double dist = acos(sin(absd1mPo2)*sin(absd2mPo2)*cos(allIFO1cands_sorted[ii*9+3]-allIFO2cands_sorted[jj*9+3])+cos(absd1mPo2)*cos(absd2mPo2));
 
-                           if (dist<=2.0*skydiff_allowed/(allh1cands_sorted[ii*9]+alll1cands_sorted[jj*9])) {
+                           if (dist<=2.0*skydiff_allowed/(allIFO1cands_sorted[ii*9]+allIFO2cands_sorted[jj*9])) {
                               foundmatch = 1;
                               numpassingskyloc++;
-                              fprintf(CANDS, "%f %f %f %f %f %f %g %f %g %d %f %f %f %f %f %f %g %f %g %d\n",  (float)allh1cands_sorted[ii*9], (float)allh1cands_sorted[ii*9+1], (float)allh1cands_sorted[ii*9+2], (float)allh1cands_sorted[ii*9+3], (float)allh1cands_sorted[ii*9+4], (float)allh1cands_sorted[ii*9+5], allh1cands_sorted[ii*9+6], (float)allh1cands_sorted[ii*9+7], allh1cands_sorted[ii*9+8], allh1cands_job_sorted[ii], (float)alll1cands_sorted[jj*9], (float)alll1cands_sorted[jj*9+1], (float)alll1cands_sorted[jj*9+2], (float)alll1cands_sorted[jj*9+3], (float)alll1cands_sorted[jj*9+4], (float)alll1cands_sorted[jj*9+5], alll1cands_sorted[jj*9+6], (float)alll1cands_sorted[jj*9+7], alll1cands_sorted[jj*9+8], alll1cands_job_sorted[jj]);
+                              fprintf(CANDS, "%f %f %f %f %f %f %g %f %g %d %f %f %f %f %f %f %g %f %g %d\n",  allIFO1cands_sorted[ii*9], allIFO1cands_sorted[ii*9+1], allIFO1cands_sorted[ii*9+2], allIFO1cands_sorted[ii*9+3], allIFO1cands_sorted[ii*9+4], allIFO1cands_sorted[ii*9+5], allIFO1cands_sorted[ii*9+6], allIFO1cands_sorted[ii*9+7], allIFO1cands_sorted[ii*9+8], allIFO1cands_job_sorted[ii], allIFO2cands_sorted[jj*9], allIFO2cands_sorted[jj*9+1], allIFO2cands_sorted[jj*9+2], allIFO2cands_sorted[jj*9+3], allIFO2cands_sorted[jj*9+4], allIFO2cands_sorted[jj*9+5], allIFO2cands_sorted[jj*9+6], allIFO2cands_sorted[jj*9+7], allIFO2cands_sorted[jj*9+8], allIFO2cands_job_sorted[jj]);
                            } //end sky check
                         } //end period check
                         if (foundmatch) break;
@@ -275,17 +275,17 @@ INT4 main(void) {
                } //end modulation depth check
             } //end frequency check
          } //end test against L1 values
-      } else if ((allh1cands_sorted[ii*9]-alll1cands_sorted[(l1count-1)*9]) <= fdiff_allowed && allh1cands_sorted[ii*9] >= alll1cands_sorted[(l1count-1)*9]) {
-         jj = l1count-1;
-         while (jj>0 && (allh1cands_sorted[ii*9]-alll1cands_sorted[jj*9])<1.05*fdiff_allowed) jj--;
+      } else if ((allIFO1cands_sorted[ii*9]-allIFO2cands_sorted[(ifo2count-1)*9]) <= fdiff_allowed && allIFO1cands_sorted[ii*9] >= allIFO2cands_sorted[(ifo2count-1)*9]) {
+         jj = ifo2count-1;
+         while (jj>0 && (allIFO1cands_sorted[ii*9]-allIFO2cands_sorted[jj*9])<1.05*fdiff_allowed) jj--;
 
-         for ( ; jj<l1count; jj++) {
-            if (fabs(allh1cands_sorted[ii*9]-alll1cands_sorted[jj*9])<=fdiff_allowed) {
+         for ( ; jj<ifo2count; jj++) {
+            if (fabs(allIFO1cands_sorted[ii*9]-allIFO2cands_sorted[jj*9])<=fdiff_allowed) {
                numpassingf++;
-               if (fabs(allh1cands_sorted[ii*9+2]-alll1cands_sorted[jj*9+2])<=dfdiff_allowed) {
+               if (fabs(allIFO1cands_sorted[ii*9+2]-allIFO2cands_sorted[jj*9+2])<=dfdiff_allowed) {
                   numpassingdf++;
-                  double Pdiff_allowed = allh1cands_sorted[ii*9+1]*allh1cands_sorted[ii*9+1]*sqrt(3.6e-3/allh1cands_sorted[ii*9+2])/(4.5*tobs);
-                  double Pdiff_allowed_2 = alll1cands_sorted[jj*9+1]*alll1cands_sorted[jj*9+1]*sqrt(3.6e-3/alll1cands_sorted[jj*9+2])/(4.5*tobs);
+                  double Pdiff_allowed = allIFO1cands_sorted[ii*9+1]*allIFO1cands_sorted[ii*9+1]*sqrt(3.6e-3/allIFO1cands_sorted[ii*9+2])/(periodTcohFactor*tobs);
+                  double Pdiff_allowed_2 = allIFO2cands_sorted[jj*9+1]*allIFO2cands_sorted[jj*9+1]*sqrt(3.6e-3/allIFO2cands_sorted[jj*9+2])/(periodTcohFactor*tobs);
                   int foundmatch = 0, passedtestP = 0;
                   for (int kk=1; kk<=7; kk++) {
                      double P1factor = 0.0;
@@ -299,20 +299,20 @@ INT4 main(void) {
                         else if (ll<5) P2factor = 1.0/ll;
                         else P2factor = (double)(ll-3);
 
-                        if (fabs(P1factor*allh1cands_sorted[ii*9+1]-P2factor*alll1cands_sorted[jj*9+1])<=Pdiff_allowed*(P1factor*P1factor) || fabs(P1factor*allh1cands_sorted[ii*9+1]-P2factor*alll1cands_sorted[jj*9+1])<=Pdiff_allowed_2*(P2factor*P2factor)) {
+                        if (fabs(P1factor*allIFO1cands_sorted[ii*9+1]-P2factor*allIFO2cands_sorted[jj*9+1])<=Pdiff_allowed*(P1factor*P1factor) || fabs(P1factor*allIFO1cands_sorted[ii*9+1]-P2factor*allIFO2cands_sorted[jj*9+1])<=Pdiff_allowed_2*(P2factor*P2factor)) {
                            if (!passedtestP) {
                               numpassingP++;
                               passedtestP = 1;
                            }
                            //Check the sky location
-                           double absd1mPo2 = fabs(allh1cands_sorted[ii*9+4]-M_PI_2);
-                           double absd2mPo2 = fabs(alll1cands_sorted[jj*9+4]-M_PI_2);
-                           double dist = acos(sin(absd1mPo2)*sin(absd2mPo2)*cos(allh1cands_sorted[ii*9+3]-alll1cands_sorted[jj*9+3])+cos(absd1mPo2)*cos(absd2mPo2));
+                           double absd1mPo2 = fabs(allIFO1cands_sorted[ii*9+4]-M_PI_2);
+                           double absd2mPo2 = fabs(allIFO2cands_sorted[jj*9+4]-M_PI_2);
+                           double dist = acos(sin(absd1mPo2)*sin(absd2mPo2)*cos(allIFO1cands_sorted[ii*9+3]-allIFO2cands_sorted[jj*9+3])+cos(absd1mPo2)*cos(absd2mPo2));
 
-                           if (dist<=2.0*skydiff_allowed/(allh1cands_sorted[ii*9]+alll1cands_sorted[jj*9])) {
+                           if (dist<=2.0*skydiff_allowed/(allIFO1cands_sorted[ii*9]+allIFO2cands_sorted[jj*9])) {
                               foundmatch = 1;
                               numpassingskyloc++;
-                              fprintf(CANDS, "%f %f %f %f %f %f %g %f %g %d %f %f %f %f %f %f %g %f %g %d\n",  (float)allh1cands_sorted[ii*9], (float)allh1cands_sorted[ii*9+1], (float)allh1cands_sorted[ii*9+2], (float)allh1cands_sorted[ii*9+3], (float)allh1cands_sorted[ii*9+4], (float)allh1cands_sorted[ii*9+5], allh1cands_sorted[ii*9+6], (float)allh1cands_sorted[ii*9+7], allh1cands_sorted[ii*9+8], allh1cands_job_sorted[ii], (float)alll1cands_sorted[jj*9], (float)alll1cands_sorted[jj*9+1], (float)alll1cands_sorted[jj*9+2], (float)alll1cands_sorted[jj*9+3], (float)alll1cands_sorted[jj*9+4], (float)alll1cands_sorted[jj*9+5], alll1cands_sorted[jj*9+6], (float)alll1cands_sorted[jj*9+7], alll1cands_sorted[jj*9+8], alll1cands_job_sorted[jj]);
+                              fprintf(CANDS, "%f %f %f %f %f %f %g %f %g %d %f %f %f %f %f %f %g %f %g %d\n",  allIFO1cands_sorted[ii*9], allIFO1cands_sorted[ii*9+1], allIFO1cands_sorted[ii*9+2], allIFO1cands_sorted[ii*9+3], allIFO1cands_sorted[ii*9+4], allIFO1cands_sorted[ii*9+5], allIFO1cands_sorted[ii*9+6], allIFO1cands_sorted[ii*9+7], allIFO1cands_sorted[ii*9+8], allIFO1cands_job_sorted[ii], allIFO2cands_sorted[jj*9], allIFO2cands_sorted[jj*9+1], allIFO2cands_sorted[jj*9+2], allIFO2cands_sorted[jj*9+3], allIFO2cands_sorted[jj*9+4], allIFO2cands_sorted[jj*9+5], allIFO2cands_sorted[jj*9+6], allIFO2cands_sorted[jj*9+7], allIFO2cands_sorted[jj*9+8], allIFO2cands_job_sorted[jj]);
                            } //end sky check
                         } //end period check
                         if (foundmatch) break;
@@ -330,65 +330,48 @@ INT4 main(void) {
    CANDS = NULL;
 
    gsl_root_fsolver_free(s);
-   XLALFree(allh1cands_sorted);
-   XLALFree(alll1cands_sorted);
-   XLALFree(allh1cands_job_sorted);
-   XLALFree(alll1cands_job_sorted);
+   XLALFree(allIFO1cands_sorted);
+   XLALFree(allIFO2cands_sorted);
+   XLALFree(allIFO1cands_job_sorted);
+   XLALFree(allIFO2cands_job_sorted);
 
    fprintf(stderr, "Passed f = %d, passed df = %d, passed P = %d, passed sky loc %d\n", numpassingf, numpassingdf, numpassingP, numpassingskyloc);
 
 
    /// PART TWO: ///
 
-   //open list for reading
-   XLAL_CHECK( (CANDS = fopen(outfile1,"r")) != NULL, XLAL_EIO, "Couldn't fopen %s\n", outfile1 );
-
-   //Determines number of candidates in the file
-   int count = 0;
-   do {
-      ch = fgetc(CANDS);
-      if (ch == '\n') count++;
-   } while (ch != EOF);
-
    double *allcands = NULL;
-   XLAL_CHECK( (allcands = (double*)XLALMalloc(sizeof(double)*count*18)) != NULL, XLAL_ENOMEM );
    int *allcands_job = NULL;
-   XLAL_CHECK( (allcands_job = (int*)XLALMalloc(sizeof(int)*count*2)) != NULL, XLAL_ENOMEM );
+   int count = 0;
+   XLAL_CHECK( readInCoincidentOutliers(&allcands, &allcands_job, &count, args_info.outfile1_arg) == XLAL_SUCCESS, XLAL_EFUNC );
 
-   //Reset the pointer in the stream
-   rewind(CANDS);
-
-   //Put the data into the array
-   for (ii=0; ii<count; ii++) {
-      fscanf(CANDS, "%la %la %la %la %la %la %la %la %la %d %la %la %la %la %la %la %la %la %la %d", &(allcands[ii*18]), &(allcands[ii*18+1]), &(allcands[ii*18+2]), &(allcands[ii*18+3]), &(allcands[ii*18+4]), &(allcands[ii*18+5]), &(allcands[ii*18+6]), &(allcands[ii*18+7]), &(allcands[ii*18+8]), &(allcands_job[2*ii]), &(allcands[ii*18+9]), &(allcands[ii*18+10]), &(allcands[ii*18+11]), &(allcands[ii*18+12]), &(allcands[ii*18+13]), &(allcands[ii*18+14]), &(allcands[ii*18+15]), &(allcands[ii*18+16]), &(allcands[ii*18+17]), &(allcands_job[ii*2+1]));
-   }
-
-   //Close the stream
-   fclose(CANDS);
-   CANDS = NULL;
+   //Allocate usedvalue array
+   INT4Vector *usedvalue = NULL;
+   XLAL_CHECK( (usedvalue = XLALCreateINT4Vector(count)) != NULL, XLAL_EFUNC );
+   memset(usedvalue->data, 0, sizeof(INT4)*count);
 
    //Open a file to save the output data
    FILE *NEWCANDS = NULL;
-   XLAL_CHECK( (NEWCANDS = fopen(outfile2,"w")) != NULL, XLAL_EIO, "Couldn't fopen %s\n", outfile2 );
+   XLAL_CHECK( (NEWCANDS = fopen(args_info.outfile2_arg,"w")) != NULL, XLAL_EIO, "Couldn't fopen %s\n", args_info.outfile2_arg );
 
    for (ii=0; ii<count; ii++) {
-      if (allcands[ii*18]!=0.0) {
+      if (!usedvalue->data[ii]) {
          int bestcand = ii;
          double bestcandprob = allcands[ii*18+16];
          for (jj=0; jj<count; jj++) {
-            if (jj==ii) continue;
-            if (allcands[jj*18]!=0.0 && allcands[jj*18] == allcands[ii*18] && allcands[jj*18+1] == allcands[ii*18+1] && allcands[jj*18+2] == allcands[ii*18+2] && allcands[jj*18+3] == allcands[ii*18+3] && allcands[jj*18+4] == allcands[ii*18+4]) {
+            if (usedvalue->data[jj] || jj==ii) continue;
+            if (allcands[jj*18] == allcands[bestcand*18] && allcands[jj*18+1] == allcands[bestcand*18+1] && allcands[jj*18+2] == allcands[bestcand*18+2] && allcands[jj*18+3] == allcands[bestcand*18+3] && allcands[jj*18+4] == allcands[bestcand*18+4]) {
                if (allcands[jj*18+16]<bestcandprob) {
+                  usedvalue->data[bestcand] = 1;
                   bestcandprob = allcands[jj*18+16];
-                  allcands[bestcand*18] = 0.0;
                   bestcand = jj;
                } else {
-                  allcands[jj*18] = 0.0;
+                  usedvalue->data[jj] = 1;
                }
             }
          }
-         fprintf(NEWCANDS, "%f %f %f %f %f %f %g %f %g %d %f %f %f %f %f %f %g %f %g %d\n",  (float)allcands[bestcand*18], (float)allcands[bestcand*18+1], (float)allcands[bestcand*18+2], (float)allcands[bestcand*18+3], (float)allcands[bestcand*18+4], (float)allcands[bestcand*18+5], allcands[bestcand*18+6], (float)allcands[bestcand*18+7], allcands[bestcand*18+8], allcands_job[bestcand*2], (float)allcands[bestcand*18+9], (float)allcands[bestcand*18+10], (float)allcands[bestcand*18+11], (float)allcands[bestcand*18+12], (float)allcands[bestcand*18+13], (float)allcands[bestcand*18+14], allcands[bestcand*18+15], (float)allcands[bestcand*18+16], allcands[bestcand*18+17], allcands_job[bestcand*2+1]);
-         allcands[bestcand*18] = 0.0;
+         fprintf(NEWCANDS, "%f %f %f %f %f %f %g %f %g %d %f %f %f %f %f %f %g %f %g %d\n", allcands[bestcand*18], allcands[bestcand*18+1], allcands[bestcand*18+2], allcands[bestcand*18+3], allcands[bestcand*18+4], allcands[bestcand*18+5], allcands[bestcand*18+6], allcands[bestcand*18+7], allcands[bestcand*18+8], allcands_job[bestcand*2], allcands[bestcand*18+9], allcands[bestcand*18+10], allcands[bestcand*18+11], allcands[bestcand*18+12], allcands[bestcand*18+13], allcands[bestcand*18+14], allcands[bestcand*18+15], allcands[bestcand*18+16], allcands[bestcand*18+17], allcands_job[bestcand*2+1]);
+         usedvalue->data[bestcand] = 1;
       }
    }
 
@@ -397,55 +380,36 @@ INT4 main(void) {
 
    XLALFree(allcands);
    XLALFree(allcands_job);
+   XLALDestroyINT4Vector(usedvalue);
 
    /// PART THREE: ///
 
-   //open list for reading
-   XLAL_CHECK( (CANDS = fopen(outfile2,"r")) != NULL, XLAL_EIO, "Couldn't fopen %s\n", outfile2 );
+   XLAL_CHECK( readInCoincidentOutliers(&allcands, &allcands_job, &count, args_info.outfile2_arg) == XLAL_SUCCESS, XLAL_EFUNC );
 
-   //Determines number of candidates in the file
-   count = 0;
-   do {
-      ch = fgetc(CANDS);
-      if (ch == '\n') count++;
-   } while (ch != EOF);
-
-   XLAL_CHECK( (allcands = (double*)XLALMalloc(sizeof(double)*count*18)) != NULL, XLAL_ENOMEM );
-   XLAL_CHECK( (allcands_job = (int*)XLALMalloc(sizeof(int)*count*2)) != NULL, XLAL_ENOMEM );
-
-   //Reset the pointer in the stream
-   rewind(CANDS);
-
-   //Put the data into the array
-   for (ii=0; ii<count; ii++) {
-      fscanf(CANDS, "%la %la %la %la %la %la %la %la %la %d %la %la %la %la %la %la %la %la %la %d", &(allcands[ii*18]), &(allcands[ii*18+1]), &(allcands[ii*18+2]), &(allcands[ii*18+3]), &(allcands[ii*18+4]), &(allcands[ii*18+5]), &(allcands[ii*18+6]), &(allcands[ii*18+7]), &(allcands[ii*18+8]), &(allcands_job[2*ii]), &(allcands[ii*18+9]), &(allcands[ii*18+10]), &(allcands[ii*18+11]), &(allcands[ii*18+12]), &(allcands[ii*18+13]), &(allcands[ii*18+14]), &(allcands[ii*18+15]), &(allcands[ii*18+16]), &(allcands[ii*18+17]), &(allcands_job[ii*2+1]));
-   }
-
-   //Close the stream
-   fclose(CANDS);
-   CANDS = NULL;
+   XLAL_CHECK( (usedvalue = XLALCreateINT4Vector(count)) != NULL, XLAL_EFUNC );
+   memset(usedvalue->data, 0, sizeof(INT4)*count);
 
    //Open a file to save the output data
-   XLAL_CHECK( (NEWCANDS = fopen(outfile3,"w")) != NULL, XLAL_EIO, "Couldn't fopen %s\n", outfile3 );
+   XLAL_CHECK( (NEWCANDS = fopen(args_info.finalOutfile_arg,"w")) != NULL, XLAL_EIO, "Couldn't fopen %s\n", args_info.finalOutfile_arg );
 
    for (ii=0; ii<count; ii++) {
-      if (allcands[ii*18]!=0.0) {
+      if (!usedvalue->data[ii]) {
          int bestcand = ii;
          double bestcandprob = allcands[ii*18+7];
          for (jj=0; jj<count; jj++) {
-            if (jj==ii) continue;
-            if (allcands[jj*18]!=0.0 && allcands[jj*18+9] == allcands[ii*18+9] && allcands[jj*18+10] == allcands[ii*18+10] && allcands[jj*18+11] == allcands[ii*18+11] && allcands[jj*18+12] == allcands[ii*18+12] && allcands[jj*18+13] == allcands[ii*18+13]) {
+            if (usedvalue->data[jj] || jj==ii) continue;
+            if (allcands[jj*18+9] == allcands[bestcand*18+9] && allcands[jj*18+10] == allcands[bestcand*18+10] && allcands[jj*18+11] == allcands[bestcand*18+11] && allcands[jj*18+12] == allcands[bestcand*18+12] && allcands[jj*18+13] == allcands[bestcand*18+13]) {
                if (allcands[jj*18+7]<bestcandprob) {
+                  usedvalue->data[bestcand] = 1;
                   bestcandprob = allcands[jj*18+7];
-                  allcands[bestcand*18] = 0.0;
                   bestcand = jj;
                } else {
-                  allcands[jj*18] = 0.0;
+                  usedvalue->data[jj] = 1;
                }
             }
          }
-         fprintf(NEWCANDS, "%f %f %f %f %f %f %g %f %g %d %f %f %f %f %f %f %g %f %g %d\n",  (float)allcands[bestcand*18], (float)allcands[bestcand*18+1], (float)allcands[bestcand*18+2], (float)allcands[bestcand*18+3], (float)allcands[bestcand*18+4], (float)allcands[bestcand*18+5], allcands[bestcand*18+6], (float)allcands[bestcand*18+7], allcands[bestcand*18+8], allcands_job[bestcand*2], (float)allcands[bestcand*18+9], (float)allcands[bestcand*18+10], (float)allcands[bestcand*18+11], (float)allcands[bestcand*18+12], (float)allcands[bestcand*18+13], (float)allcands[bestcand*18+14], allcands[bestcand*18+15], (float)allcands[bestcand*18+16], allcands[bestcand*18+17], allcands_job[bestcand*2+1]);
-         allcands[bestcand*18] = 0.0;
+         fprintf(NEWCANDS, "%f %f %f %f %f %f %g %f %g %d %f %f %f %f %f %f %g %f %g %d\n", allcands[bestcand*18], allcands[bestcand*18+1], allcands[bestcand*18+2], allcands[bestcand*18+3], allcands[bestcand*18+4], allcands[bestcand*18+5], allcands[bestcand*18+6], allcands[bestcand*18+7], allcands[bestcand*18+8], allcands_job[bestcand*2], allcands[bestcand*18+9], allcands[bestcand*18+10], allcands[bestcand*18+11], allcands[bestcand*18+12], allcands[bestcand*18+13], allcands[bestcand*18+14], allcands[bestcand*18+15], allcands[bestcand*18+16], allcands[bestcand*18+17], allcands_job[bestcand*2+1]);
+         usedvalue->data[bestcand] = 1;
       }
    }
 
@@ -453,55 +417,36 @@ INT4 main(void) {
 
    XLALFree(allcands);
    XLALFree(allcands_job);
+   XLALDestroyINT4Vector(usedvalue);
 
 
    //PART FOUR: Swap input values
-   XLAL_CHECK( (CANDS = fopen(outfile1,"r")) != NULL, XLAL_EIO, "Couldn't fopen %s\n", outfile1 );
+   XLAL_CHECK( readInCoincidentOutliers(&allcands, &allcands_job, &count, args_info.outfile1_arg) == XLAL_SUCCESS, XLAL_EFUNC );
 
-   count = 0;
-   do {
-      ch = fgetc(CANDS);
-      if (ch == '\n') count++;
-   } while (ch != EOF);
-
-   allcands = NULL;
-   XLAL_CHECK( (allcands = (double*)XLALMalloc(sizeof(double)*count*18)) != NULL, XLAL_ENOMEM );
-   allcands_job = NULL;
-   XLAL_CHECK( (allcands_job = (int*)XLALMalloc(sizeof(int)*count*2)) != NULL, XLAL_ENOMEM );
-
-   //Reset the pointer in the stream
-   rewind(CANDS);
-
-   //Put the data into the array
-   for (ii=0; ii<count; ii++) {
-      fscanf(CANDS, "%la %la %la %la %la %la %la %la %la %d %la %la %la %la %la %la %la %la %la %d", &(allcands[ii*18]), &(allcands[ii*18+1]), &(allcands[ii*18+2]), &(allcands[ii*18+3]), &(allcands[ii*18+4]), &(allcands[ii*18+5]), &(allcands[ii*18+6]), &(allcands[ii*18+7]), &(allcands[ii*18+8]), &(allcands_job[2*ii]), &(allcands[ii*18+9]), &(allcands[ii*18+10]), &(allcands[ii*18+11]), &(allcands[ii*18+12]), &(allcands[ii*18+13]), &(allcands[ii*18+14]), &(allcands[ii*18+15]), &(allcands[ii*18+16]), &(allcands[ii*18+17]), &(allcands_job[ii*2+1]));
-   }
-
-   //Close the stream
-   fclose(CANDS);
-   CANDS = NULL;
+   XLAL_CHECK( (usedvalue = XLALCreateINT4Vector(count)) != NULL, XLAL_EFUNC );
+   memset(usedvalue->data, 0, sizeof(INT4)*count);
 
    //Open a file to save the output data
-   XLAL_CHECK( (NEWCANDS = fopen(outfile4,"w")) != NULL, XLAL_EIO, "Couldn't fopen %s\n", outfile4 );
+   XLAL_CHECK( (NEWCANDS = fopen(args_info.outfile3_arg,"w")) != NULL, XLAL_EIO, "Couldn't fopen %s\n", args_info.outfile3_arg );
 
    for (ii=0; ii<count; ii++) {
-      if (allcands[ii*18]!=0.0) {
+      if (!usedvalue->data[ii]) {
          int bestcand = ii;
          double bestcandprob = allcands[ii*18+7];
          for (jj=0; jj<count; jj++) {
-            if (jj==ii) continue;
-            if (allcands[jj*18]!=0.0 && allcands[jj*18+9] == allcands[ii*18+9] && allcands[jj*18+10] == allcands[ii*18+10] && allcands[jj*18+11] == allcands[ii*18+11] && allcands[jj*18+12] == allcands[ii*18+12] && allcands[jj*18+13] == allcands[ii*18+13]) {
+            if (usedvalue->data[jj] || jj==ii) continue;
+            if (allcands[jj*18+9] == allcands[bestcand*18+9] && allcands[jj*18+10] == allcands[bestcand*18+10] && allcands[jj*18+11] == allcands[bestcand*18+11] && allcands[jj*18+12] == allcands[bestcand*18+12] && allcands[jj*18+13] == allcands[bestcand*18+13]) {
                if (allcands[jj*18+7]<bestcandprob) {
+                  usedvalue->data[bestcand] = 1;
                   bestcandprob = allcands[jj*18+7];
-                  allcands[bestcand*18] = 0.0;
                   bestcand = jj;
                } else {
-                  allcands[jj*18] = 0.0;
+                   usedvalue->data[jj] = 1;
                }
             }
          }
-         fprintf(NEWCANDS, "%f %f %f %f %f %f %g %f %g %d %f %f %f %f %f %f %g %f %g %d\n",  (float)allcands[bestcand*18], (float)allcands[bestcand*18+1], (float)allcands[bestcand*18+2], (float)allcands[bestcand*18+3], (float)allcands[bestcand*18+4], (float)allcands[bestcand*18+5], allcands[bestcand*18+6], (float)allcands[bestcand*18+7], allcands[bestcand*18+8], allcands_job[bestcand*2], (float)allcands[bestcand*18+9], (float)allcands[bestcand*18+10], (float)allcands[bestcand*18+11], (float)allcands[bestcand*18+12], (float)allcands[bestcand*18+13], (float)allcands[bestcand*18+14], allcands[bestcand*18+15], (float)allcands[bestcand*18+16], allcands[bestcand*18+17], allcands_job[bestcand*2+1]);
-         allcands[bestcand*18] = 0.0;
+         fprintf(NEWCANDS, "%f %f %f %f %f %f %g %f %g %d %f %f %f %f %f %f %g %f %g %d\n", allcands[bestcand*18], allcands[bestcand*18+1], allcands[bestcand*18+2], allcands[bestcand*18+3], allcands[bestcand*18+4], allcands[bestcand*18+5], allcands[bestcand*18+6], allcands[bestcand*18+7], allcands[bestcand*18+8], allcands_job[bestcand*2], allcands[bestcand*18+9], allcands[bestcand*18+10], allcands[bestcand*18+11], allcands[bestcand*18+12], allcands[bestcand*18+13], allcands[bestcand*18+14], allcands[bestcand*18+15], allcands[bestcand*18+16], allcands[bestcand*18+17], allcands_job[bestcand*2+1]);
+          usedvalue->data[bestcand] = 1;
       }
    }
 
@@ -510,52 +455,35 @@ INT4 main(void) {
 
    XLALFree(allcands);
    XLALFree(allcands_job);
+   XLALDestroyINT4Vector(usedvalue);
 
-   XLAL_CHECK( (CANDS = fopen(outfile4,"r")) != NULL, XLAL_EIO, "Couldn't fopen %s\n", outfile4 );
 
-   //Determines number of candidates in the file
-   count = 0;
-   do {
-      ch = fgetc(CANDS);
-      if (ch == '\n') count++;
-   } while (ch != EOF);
+   XLAL_CHECK( readInCoincidentOutliers(&allcands, &allcands_job, &count, args_info.outfile3_arg) == XLAL_SUCCESS, XLAL_EFUNC );
 
-   XLAL_CHECK( (allcands = (double*)XLALMalloc(sizeof(double)*count*18)) != NULL, XLAL_ENOMEM );
-   XLAL_CHECK( (allcands_job = (int*)XLALMalloc(sizeof(int)*count*2)) != NULL, XLAL_ENOMEM );
-
-   //Reset the pointer in the stream
-   rewind(CANDS);
-
-   //Put the data into the array
-   for (ii=0; ii<count; ii++) {
-      fscanf(CANDS, "%la %la %la %la %la %la %la %la %la %d %la %la %la %la %la %la %la %la %la %d", &(allcands[ii*18]), &(allcands[ii*18+1]), &(allcands[ii*18+2]), &(allcands[ii*18+3]), &(allcands[ii*18+4]), &(allcands[ii*18+5]), &(allcands[ii*18+6]), &(allcands[ii*18+7]), &(allcands[ii*18+8]), &(allcands_job[2*ii]), &(allcands[ii*18+9]), &(allcands[ii*18+10]), &(allcands[ii*18+11]), &(allcands[ii*18+12]), &(allcands[ii*18+13]), &(allcands[ii*18+14]), &(allcands[ii*18+15]), &(allcands[ii*18+16]), &(allcands[ii*18+17]), &(allcands_job[ii*2+1]));
-   }
-
-   //Close the stream
-   fclose(CANDS);
-   CANDS = NULL;
+   XLAL_CHECK( (usedvalue = XLALCreateINT4Vector(count)) != NULL, XLAL_EFUNC );
+   memset(usedvalue->data, 0, sizeof(INT4)*count);
 
    //Open a file to save the output data
-   XLAL_CHECK( (NEWCANDS = fopen(outfile3,"a")) != NULL, XLAL_EIO, "Couldn't fopen %s\n", outfile3 );
+   XLAL_CHECK( (NEWCANDS = fopen(args_info.finalOutfile_arg,"a")) != NULL, XLAL_EIO, "Couldn't fopen %s\n", args_info.finalOutfile_arg );
 
    for (ii=0; ii<count; ii++) {
-      if (allcands[ii*18]!=0.0) {
+      if (!usedvalue->data[ii]) {
          int bestcand = ii;
          double bestcandprob = allcands[ii*18+16];
          for (jj=0; jj<count; jj++) {
-            if (jj==ii) continue;
-            if (allcands[jj*18]!=0.0 && allcands[jj*18] == allcands[ii*18] && allcands[jj*18+1] == allcands[ii*18+1] && allcands[jj*18+2] == allcands[ii*18+2] && allcands[jj*18+3] == allcands[ii*18+3] && allcands[jj*18+4] == allcands[ii*18+4]) {
+            if (usedvalue->data[jj] || jj==ii) continue;
+            if (allcands[jj*18] == allcands[bestcand*18] && allcands[jj*18+1] == allcands[bestcand*18+1] && allcands[jj*18+2] == allcands[bestcand*18+2] && allcands[jj*18+3] == allcands[bestcand*18+3] && allcands[jj*18+4] == allcands[bestcand*18+4]) {
                if (allcands[jj*18+16]<bestcandprob) {
+                  usedvalue->data[bestcand] = 1;
                   bestcandprob = allcands[jj*18+16];
-                  allcands[bestcand*18] = 0.0;
                   bestcand = jj;
                } else {
-                  allcands[jj*18] = 0.0;
+                  usedvalue->data[jj] = 1;
                }
             }
          }
-         fprintf(NEWCANDS, "%f %f %f %f %f %f %g %f %g %d %f %f %f %f %f %f %g %f %g %d\n",  (float)allcands[bestcand*18], (float)allcands[bestcand*18+1], (float)allcands[bestcand*18+2], (float)allcands[bestcand*18+3], (float)allcands[bestcand*18+4], (float)allcands[bestcand*18+5], allcands[bestcand*18+6], (float)allcands[bestcand*18+7], allcands[bestcand*18+8], allcands_job[bestcand*2], (float)allcands[bestcand*18+9], (float)allcands[bestcand*18+10], (float)allcands[bestcand*18+11], (float)allcands[bestcand*18+12], (float)allcands[bestcand*18+13], (float)allcands[bestcand*18+14], allcands[bestcand*18+15], (float)allcands[bestcand*18+16], allcands[bestcand*18+17], allcands_job[bestcand*2+1]);
-         allcands[bestcand*18] = 0.0;
+         fprintf(NEWCANDS, "%f %f %f %f %f %f %g %f %g %d %f %f %f %f %f %f %g %f %g %d\n", allcands[bestcand*18], allcands[bestcand*18+1], allcands[bestcand*18+2], allcands[bestcand*18+3], allcands[bestcand*18+4], allcands[bestcand*18+5], allcands[bestcand*18+6], allcands[bestcand*18+7], allcands[bestcand*18+8], allcands_job[bestcand*2], allcands[bestcand*18+9], allcands[bestcand*18+10], allcands[bestcand*18+11], allcands[bestcand*18+12], allcands[bestcand*18+13], allcands[bestcand*18+14], allcands[bestcand*18+15], allcands[bestcand*18+16], allcands[bestcand*18+17], allcands_job[bestcand*2+1]);
+         usedvalue->data[bestcand] = 1;
       }
    }
 
@@ -564,6 +492,7 @@ INT4 main(void) {
 
    XLALFree(allcands);
    XLALFree(allcands_job);
+   XLALDestroyINT4Vector(usedvalue);
 
    return 0;
 }

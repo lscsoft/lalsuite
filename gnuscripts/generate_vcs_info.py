@@ -3,7 +3,7 @@
 # Based on generateGitID.sh by Reinhard Prix
 #
 # Copyright (C) 2012-2013 Karl Wette <karl.wette@ligo.org>
-# Copyright (C) 2009-2013, Adam Mercer <adam.mercer@ligo.org>
+# Copyright (C) 2009-2014, Adam Mercer <adam.mercer@ligo.org>
 # Copyright (C) 2009,2010, Nickolas Fotopoulos <nvf@gravity.phys.uwm.edu>
 # Copyright (C) 2008,2009, John T. Whelan <john.whelan@ligo.org>
 # Copyright (C) 2008, Reinhard Prix <reinhard.ligo.org>
@@ -248,6 +248,6 @@ if __name__ == "__main__":
   # print generation message
   if modified and len(am_v_gen) > 0:
     prefix = re.findall("[ ]*GEN[ ]*", am_v_gen)
-    print '%s %s' % (prefix[0], dst_file)
+    print('%s %s' % (prefix[0], dst_file))
 
 # vim: syntax=python tw=72 ts=2 et

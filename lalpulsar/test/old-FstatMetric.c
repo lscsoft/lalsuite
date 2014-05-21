@@ -121,9 +121,6 @@ typedef struct
   PhaseType_t phaseType;
 } ConfigVariables;
 
-/*---------- empty structs for initializations ----------*/
-ConfigVariables empty_ConfigVariables;
-PulsarTimesParamStruc empty_PulsarTimesParamStruc;
 /* ---------- global variables ----------*/
 
 /* ---------- local prototypes ---------- */
@@ -193,7 +190,7 @@ XLALOldDopplerFstatMetric ( const DopplerMetricParams *metricParams,  	/**< inpu
   DopplerMetric *metric;
   XLAL_CHECK_NULL ( (metric = XLALCalloc ( 1, sizeof(*metric) )) != NULL, XLAL_ENOMEM );
 
-  ConfigVariables config = empty_ConfigVariables;
+  ConfigVariables XLAL_INIT_DECL(config);
 
   /* basic setup and initializations */
   metric->gF_ij = gsl_matrix_calloc ( METRIC_DIM, METRIC_DIM );
@@ -678,7 +675,7 @@ InitCode ( ConfigVariables *cfg,
   XLALDestroyREAL8Vector ( ti );
 
   /* ----- initialize IFOs and (Multi-)DetectorStateSeries  ----- */
-  UINT4 numDet = metricParams->detInfo.length;
+  UINT4 numDet = metricParams->multiIFO.length;
 
   XLAL_CHECK ( (cfg->multiDetStates = XLALCalloc ( 1, sizeof( *(cfg->multiDetStates) ))) != NULL, XLAL_ENOMEM );
   XLAL_CHECK ( (cfg->multiDetStates->data = XLALCalloc (numDet, sizeof( *(cfg->multiDetStates->data)))) != NULL, XLAL_ENOMEM );
@@ -688,7 +685,7 @@ InitCode ( ConfigVariables *cfg,
 
   for ( UINT4 X=0; X < numDet; X ++ )
     {
-      const LALDetector *ifo = &(metricParams->detInfo.sites[X]);
+      const LALDetector *ifo = &(metricParams->multiIFO.sites[X]);
       /* obtain detector positions and velocities, together with LMSTs */
       cfg->multiDetStates->data[X] = XLALGetDetectorStates ( GLtimestamps, ifo, edat, 0 );
       XLAL_CHECK ( cfg->multiDetStates->data[X] != NULL, XLAL_EFUNC );
@@ -699,7 +696,7 @@ InitCode ( ConfigVariables *cfg,
 
   for ( UINT4 X=0; X < numDet ; X ++ )
     {
-      detWeights->data[X] = metricParams->detInfo.detWeights[X];
+      detWeights->data[X] = metricParams->multiNoiseFloor.sqrtSn[X];
     }
 
   /* ---------- combine relative detector-weights with GL-weights ----------*/
@@ -803,7 +800,7 @@ getMultiPhaseDerivs ( const MultiDetectorStateSeries *multiDetStates,
   REAL8 refTime = XLALGPSGetREAL8 ( &refTimeGPS );
 
   /* get tAutumn */
-  PulsarTimesParamStruc times = empty_PulsarTimesParamStruc;
+  PulsarTimesParamStruc XLAL_INIT_DECL(times);
   times.epoch = refTimeGPS;
   XLAL_CHECK_NULL ( XLALGetEarthTimes ( &(times.epoch), &(times.tMidnight), &(times.tAutumn) ) == XLAL_SUCCESS, XLAL_EFUNC );
 

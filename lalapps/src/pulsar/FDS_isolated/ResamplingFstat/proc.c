@@ -18,12 +18,6 @@
 #include<zlib.h>
 #include<gsl/gsl_blas.h>
 
-
-
-/*---------- empty initializers ---------- */
-LALStatus empty_status;
-SFTConstraints empty_constraints;
-
 /*---------- Global variables ----------*/
 
 SFTVector *sft_vect = NULL;
@@ -292,7 +286,7 @@ int main(int argc, char **argv)
   REAL8 InputST = 1800.0;
 
   /****** LALStatus for debugging ******/
-  LALStatus status = empty_status;
+  LALStatus XLAL_INIT_DECL(status);
 
   /****** Type of Window used (its not used for the whole data, but only at the edges, so its split in two parts and attached to ramp function) ******/
   WindowType W = HANN;
@@ -307,7 +301,7 @@ int main(int argc, char **argv)
   double f_min,f_max; 
   
   /****** Internal LAL variable ******/
-  SFTConstraints constraints=empty_constraints;
+  SFTConstraints XLAL_INIT_DECL(constraints);
   
   /****** Start and End times of the time series to be outputted ******/ 
   LIGOTimeGPS startTime, endTime; 
@@ -322,11 +316,11 @@ int main(int argc, char **argv)
   /****** Assigning arguments and creating SFT constraints ******/
   startTime.gpsSeconds = atoi(argv[1]);
   startTime.gpsNanoSeconds = 0;
-  constraints.startTime = &startTime; 
+  constraints.minStartTime = &startTime;
   
   endTime.gpsSeconds = atoi(argv[2]);
   endTime.gpsNanoSeconds = 0;
-  constraints.endTime = &endTime;
+  constraints.maxStartTime = &endTime;
   constraints.detector = argv[3];
   
   InputST = atof(argv[7]);

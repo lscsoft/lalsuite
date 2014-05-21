@@ -105,16 +105,16 @@ extern "C" {
 
 int XLALGetDopplerShiftedFrequencyInfo
 (
-   REAL8Vector         *shiftedFreqs,
-   UINT4Vector         *lowestBins,
+   REAL8Vector        *shiftedFreqs,
+   UINT4Vector          *lowestBins,
    REAL8Vector         *kappaValues,
-   REAL8Vector         *signalPhases,
-   UINT4               numBins,
-   PulsarDopplerParams *dopp,
-   SFTIndexList        *sfts,
-   MultiSFTVector      *inputSFTs,
-   MultiSSBtimes       *multiTimes,
-   REAL8               Tsft
+   REAL8Vector        *signalPhases,
+   UINT4                    numBins,
+   PulsarDopplerParams        *dopp,
+   SFTIndexList               *sfts,
+   MultiSFTVector        *inputSFTs,
+   MultiSSBtimes        *multiTimes,
+   REAL8                       Tsft
    )
   ;
 
@@ -155,7 +155,8 @@ int XLALCalculatePulsarCrossCorrStatistic
    UINT4              numBins,
    SFTPairIndexList *sftPairs,
    SFTIndexList   *sftIndices,
-   MultiSFTVector  *inputSFTs
+   MultiSFTVector  *inputSFTs,
+   MultiNoiseWeights *multiWeights
   )
  ;
 
@@ -170,7 +171,7 @@ int XLALFindLMXBCrossCorrDiagMetric
    SFTPairIndexList  *pairIndexList,
    SFTIndexList      *indexList,
    MultiSFTVector    *sfts
-  
+   /* REAL8Vector       *kappaValues*/
    /*REAL8             *g_pp,*/
    )
   ;

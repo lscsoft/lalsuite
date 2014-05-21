@@ -47,7 +47,7 @@ from matplotlib import rcParams
 import os
 import subprocess
 import numpy as np
-from pylal.progress import ProgressBar
+from glue.text_progress_bar import ProgressBar
 
 # Create progress bar.
 pb = ProgressBar()

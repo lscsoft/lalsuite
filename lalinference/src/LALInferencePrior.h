@@ -27,6 +27,16 @@
 #include <lal/LALInference.h>
 #include <lal/LALInferenceNestedSampler.h>
 
+#ifdef SWIG // SWIG interface directives
+SWIGLAL(
+    FUNCTION_POINTER(
+        LALInferenceInspiralSkyLocPrior,
+        LALInferenceInspiralPriorNormalised,
+        LALInferenceAnalyticNullPrior
+    )
+);
+#endif
+
 /**
  * \defgroup LALInferencePrior_h Header LALInferencePrior.h
  * \ingroup pkg_LALInference

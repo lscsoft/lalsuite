@@ -270,11 +270,9 @@ dtor_name_regexp = re.compile(r'(Destroy|Free|Close)([A-Z0-9_]|$)')
 dtor_decl_regexp = re.compile(r'^f\(p\.(.*)\)\.$')
 for function_name in functions:
 
-    # function must match destructor name regexp, and return void
+    # function must match destructor name regexp
     dtor_name_match = dtor_name_regexp.search(function_name)
     if dtor_name_match is None:
-        continue
-    if not functions[function_name]['type'] == 'void':
         continue
 
     # function must take a single pointer argument
@@ -287,6 +285,12 @@ for function_name in functions:
     # function argument must be a struct name
     if not dtor_struct_name in tdstructs:
         continue
+
+    # function return either void or int
+    if not functions[function_name]['type'] in ['void', 'int']:
+        fail("destructor function '%s' has invalid return type '%s'" % (
+                function_name, functions[function_name]['type'])
+             )
 
     # struct must not already have a destructor
     if 'dtor_function' in tdstructs[dtor_struct_name]:

@@ -76,6 +76,7 @@ static inline PyObject* swiglal_get_reference(PyObject* v) { Py_XINCREF(v); retu
 %define %swiglal_py_ury_op(NAME, FUNCTYPE, SLOT)
 %pythonmaybecall *::__##NAME##__;
 %feature("python:slot", #SLOT, functype=#FUNCTYPE) *::__##NAME##__;
+%feature("kwargs", 0) *::__##NAME##__;
 %enddef
 %swiglal_py_ury_op(float, unaryfunc, nb_float);
 %swiglal_py_ury_op(hash, hashfunc, tp_hash);
@@ -91,6 +92,7 @@ static inline PyObject* swiglal_get_reference(PyObject* v) { Py_XINCREF(v); retu
 %newobject *::__##NAME##__;
 %pythonmaybecall *::__##NAME##__;
 %feature("python:slot", #SLOT, functype=#FUNCTYPE) *::__##NAME##__;
+%feature("kwargs", 0) *::__##NAME##__;
 %enddef
 %swiglal_py_urn_op(abs, unaryfunc, nb_absolute);
 %swiglal_py_urn_op(neg, unaryfunc, nb_negative);
@@ -104,6 +106,7 @@ static inline PyObject* swiglal_get_reference(PyObject* v) { Py_XINCREF(v); retu
 %newobject *::__##NAME##__;
 %pythonmaybecall *::__##NAME##__;
 %feature("python:slot", #SLOT, functype=#FUNCTYPE) *::__##NAME##__;
+%feature("kwargs", 0) *::__##NAME##__;
 %ignore *::__r##NAME##__;
 %enddef
 %swiglal_py_bin_op(add, binaryfunc, nb_add);
@@ -121,6 +124,7 @@ static inline PyObject* swiglal_get_reference(PyObject* v) { Py_XINCREF(v); retu
 %define %swiglal_py_cmp_op(NAME, COMPTYPE)
 %pythonmaybecall *::__##NAME##__;
 %feature("python:compare", #COMPTYPE) *::__##NAME##__;
+%feature("kwargs", 0) *::__##NAME##__;
 %enddef
 %swiglal_py_cmp_op(eq, Py_EQ);
 %swiglal_py_cmp_op(ge, Py_GE);
@@ -858,3 +862,7 @@ static inline PyObject* swiglal_get_reference(PyObject* v) { Py_XINCREF(v); retu
 %swiglal_py_array_asvalfrom_frags(gsl_complex, NPY_CDOUBLE);
 %swiglal_py_array_asvalfrom_frags(COMPLEX8, NPY_CFLOAT);
 %swiglal_py_array_asvalfrom_frags(COMPLEX16, NPY_CDOUBLE);
+
+// Local Variables:
+// mode: c
+// End:

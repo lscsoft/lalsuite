@@ -197,18 +197,6 @@ static int checkTidesZero(REAL8 lambda1, REAL8 lambda2)
 
 /**
  * Macro procedure for aborting if non-default value of
- * LALSimInspiralInteraction is given for an approximant
- * which does not use that flag
- */
-#define ABORT_NONDEFAULT_INTERACTION(waveFlags)\
-	do {\
-	XLALSimInspiralDestroyWaveformFlags(waveFlags);\
-	XLALPrintError("XLAL Error - %s: Non-default LALSimInspiralInteraction provided, but this approximant does not use that flag.\n", __func__);\
-	XLAL_ERROR(XLAL_EINVAL);\
-	} while (0)
-
-/**
- * Macro procedure for aborting if non-default value of
  * LALSimInspiralFrameAxis is given for an approximant
  * which does not use that flag
  */
@@ -294,15 +282,20 @@ double XLALSimInspiralGetFinalFreq(
         case TaylorT2:
         case TaylorT3:
         case TaylorT4:
-        case TaylorF2:
             /* Check that spins are zero */
             if( !checkSpinsZero(S1x, S1y, S1z, S2x, S2y, S2z) )
             {
                 XLALPrintError("Non-zero spins were given, but this is a non-spinning approximant.\n");
                 XLAL_ERROR(XLAL_EINVAL);
             }
+        case TaylorF2:
         case TaylorF2RedSpin:
         case TaylorF2RedSpinTidal:
+            if( !checkTransverseSpinsZero(S1x, S1y, S2x, S2y) )
+            {
+	            XLALPrintError("Non-zero transverse spins were given, but this is a non-precessing approximant.\n");
+                XLAL_ERROR(XLAL_EINVAL);
+            }
             /* Schwarzschild ISCO */
 	        freq = pow(LAL_C_SI,3) / (pow(6.,3./2.)*LAL_PI*(m1+m2)*LAL_MSUN_SI*LAL_G_SI);
             break;
@@ -336,6 +329,12 @@ double XLALSimInspiralGetFinalFreq(
             }
             else
             {
+                /* Check that the transverse spins are zero */
+                if( !checkTransverseSpinsZero(S1x, S1y, S2x, S2y) )
+                {
+                    XLALPrintError("Non-zero transverse spins were given, but this is a non-precessing approximant.\n");
+                    XLAL_ERROR(XLAL_EINVAL);
+                }
                 spin1[0] = S1x; spin1[1] = S1y; spin1[2] = S1z;
                 spin2[0] = S2x; spin2[1] = S2y; spin2[2] = S2z;
             }
@@ -361,11 +360,21 @@ double XLALSimInspiralGetFinalFreq(
             break;
 
         case IMRPhenomB:
+            if( !checkTransverseSpinsZero(S1x, S1y, S2x, S2y) )
+            {
+                XLALPrintError("Non-zero transverse spins were given, but this is a non-precessing approximant.\n");
+                XLAL_ERROR(XLAL_EINVAL);
+            }
             chi = XLALSimIMRPhenomBComputeChi(m1, m2, S1z, S2z);
             freq = XLALSimIMRPhenomBGetFinalFreq(m1, m2, chi);
             break;
 
         case IMRPhenomC:
+            if( !checkTransverseSpinsZero(S1x, S1y, S2x, S2y) )
+            {
+                XLALPrintError("Non-zero transverse spins were given, but this is a non-precessing approximant.\n");
+                XLAL_ERROR(XLAL_EINVAL);
+            }
             chi = XLALSimIMRPhenomBComputeChi(m1, m2, S1z, S2z);
             freq = XLALSimIMRPhenomCGetFinalFreq(m1, m2, chi);
             break;
@@ -1891,6 +1900,23 @@ int XLALSimInspiralChooseTDWaveform(
             ret = XLALSimSpinInspiralGenerator(hplus, hcross, phiRef,
 					       deltaT, m1, m2, f_min, f_ref, r, i, S1x, S1y, S1z, S2x, S2y, S2z,
 					       phaseO, amplitudeO, waveFlags, nonGRparams);
+	    break;
+
+        case IMRPhenomC:
+            /* Waveform-specific sanity checks */
+            if( !XLALSimInspiralWaveformFlagsIsDefault(waveFlags) )
+                ABORT_NONDEFAULT_WAVEFORM_FLAGS(waveFlags);
+            if( !checkTransverseSpinsZero(S1x, S1y, S2x, S2y) )
+                ABORT_NONZERO_TRANSVERSE_SPINS(waveFlags);
+            if( !checkTidesZero(lambda1, lambda2) )
+                ABORT_NONZERO_TIDES(waveFlags);
+            if( f_ref != 0.)
+                XLALPrintWarning("XLAL Warning - %s: This approximant does use f_ref. The reference phase will be defined at coalescence.\n", __func__);
+            /* Call the waveform driver routine */
+            // NB: f_max = 0 will generate up to the ringdown cut-off frequency
+            ret = XLALSimIMRPhenomCGenerateTD(hplus, hcross, phiRef, deltaT,
+                    m1, m2, XLALSimIMRPhenomBComputeChi(m1, m2, S1z, S2z),
+                    f_min, 0., r, i);
             break;
 
         case PhenSpinTaylorRD:
@@ -1950,6 +1976,7 @@ int XLALSimInspiralChooseFDWaveform(
     REAL8 S2z,                              /**< z-component of the dimensionless spin of object 2 */
     REAL8 f_min,                            /**< starting GW frequency (Hz) */
     REAL8 f_max,                            /**< ending GW frequency (Hz) */
+    REAL8 f_ref,                            /**< Reference frequency (Hz) */
     REAL8 r,                                /**< distance of source (m) */
     REAL8 i,                                /**< inclination of source (rad) */
     REAL8 lambda1,                          /**< (tidal deformability of mass 1) / m1^5 (dimensionless) */
@@ -2012,7 +2039,7 @@ int XLALSimInspiralChooseFDWaveform(
                 ABORT_NONZERO_TRANSVERSE_SPINS(waveFlags);
             /* Call the waveform driver routine */
             ret = XLALSimInspiralTaylorF2(hptilde, phiRef, deltaF, m1, m2,
-                    S1z, S2z, f_min, f_max, r, lambda1, lambda2,
+                    S1z, S2z, f_min, f_max, f_ref, r, lambda1, lambda2,
                     XLALSimInspiralGetSpinOrder(waveFlags),
                     XLALSimInspiralGetTidalOrder(waveFlags),
                     phaseO, amplitudeO);
@@ -2558,6 +2585,7 @@ int XLALSimInspiralImplementedTDApproximants(
         case SpinTaylorT4:
         case IMRPhenomB:
         case PhenSpinTaylor:
+        case IMRPhenomC:
         case PhenSpinTaylorRD:
         case SEOBNRv1:
             return 1;
@@ -2696,6 +2724,10 @@ int XLALGetApproximantFromString(const CHAR *inString)
   else if ( strstr(inString, "IMRPhenomFB" ) )
   {
     return IMRPhenomFB;
+  }
+  else if ( strstr(inString, "IMRPhenomFC" ) )
+  {
+    return IMRPhenomFC;
   }
   else if ( strstr(inString, "SEOBNRv1" ) )
   {
@@ -2846,6 +2878,8 @@ char* XLALGetStringFromApproximant(Approximant approximant)
       return strdup("IMRPhenomFA");
     case IMRPhenomFB:
       return strdup("IMRPhenomFB");
+    case IMRPhenomFC:
+      return strdup("IMRPhenomFC");
     case SEOBNRv1:
       return strdup("SEOBNRv1");
     case EOBNRv2HM:
@@ -2974,42 +3008,6 @@ int XLALGetTaperFromString(const CHAR *inString)
   else
   {
     XLALPrintError( "Invalid injection tapering option specified: %s\n", inString );
-    XLAL_ERROR( XLAL_EINVAL );
-  }
-}
-
-/**
- * XLAL function to determine LALSimInspiralInteraction from a string.
- *
- * TODO: return the bit sum if the string is a concatenation of several
- * interaction terms. Also make names match cases of enum.
- */
-int XLALGetInteractionFromString(const CHAR *inString) 
-{
-  if (strstr(inString, "NO")) {
-    return LAL_SIM_INSPIRAL_INTERACTION_NONE;
-  } else if (strstr(inString, "SO15")) {
-    return LAL_SIM_INSPIRAL_INTERACTION_SPIN_ORBIT_15PN;
-  } else if (strstr(inString,"SS")) {
-    return LAL_SIM_INSPIRAL_INTERACTION_SPIN_SPIN_2PN;
-  } else if (strstr(inString,"SELF")) {
-    return LAL_SIM_INSPIRAL_INTERACTION_SPIN_SPIN_SELF_2PN;
-  } else if (strstr(inString, "QM")) {
-    return LAL_SIM_INSPIRAL_INTERACTION_QUAD_MONO_2PN;
-  } else if (strstr(inString, "SO25")) {
-    return LAL_SIM_INSPIRAL_INTERACTION_SPIN_ORBIT_25PN;
-  } else if (strstr(inString, "SO")) {
-    return LAL_SIM_INSPIRAL_INTERACTION_SPIN_ORBIT_3PN;
-  } else if (strstr(inString, "ALL_SPIN")) {
-    return LAL_SIM_INSPIRAL_INTERACTION_ALL_SPIN;
-  } else if (strstr(inString, "TIDAL5PN")) {
-    return LAL_SIM_INSPIRAL_INTERACTION_TIDAL_5PN;
-  } else if (strstr(inString, "TIDAL")) {
-    return LAL_SIM_INSPIRAL_INTERACTION_TIDAL_6PN;
-  } else if (strstr(inString, "ALL")){
-    return LAL_SIM_INSPIRAL_INTERACTION_ALL;
-  } else {
-    XLALPrintError( "Cannot parse LALSimInspiralInteraction from string: %s\n Please add 'ALL' to the above string for including all spin interactions\n", inString );
     XLAL_ERROR( XLAL_EINVAL );
   }
 }

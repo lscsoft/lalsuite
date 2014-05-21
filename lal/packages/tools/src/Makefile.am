@@ -12,7 +12,6 @@ libtools_la_SOURCES = \
 	CreateDetector.c \
 	DetResponse.c \
 	EllipsoidOverlapTools.c \
-	FlatLatticeTiling.c \
 	FrequencySeries.c \
 	LALCosmologyCalculator.c \
 	ResampleTimeSeries.c \

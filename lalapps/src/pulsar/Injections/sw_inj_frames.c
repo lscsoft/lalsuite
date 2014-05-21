@@ -71,7 +71,6 @@ example$ ./lalapps_sw_inj_frames -p /Users/erinmacdonald/lsc/analyses/test_par_f
 #include <lal/BinaryPulsarTiming.h>
 #include <lal/LogPrintf.h>
 #include <lal/LALString.h>
-/*#include <lal/PulsarDataTypes.h>*/
 
 #define STRINGLENGTH 256              /* the length of general string */
 
@@ -97,10 +96,6 @@ UserInput_t uvar_struct;
 int InitUserVars ( UserInput_t *uvar, int argc, char **argv ); /*Initiates user variables*/
 
 int XLALFrameFileName(char *fname, size_t size, const char *chname, const LIGOTimeGPS * epoch, double duration);
-
-/* empty initialiser */
-LALStatus empty_LALStatus;
-
 
 /* ---------- Function definitions ---------- */
 
@@ -153,7 +148,7 @@ int main(int argc, char **argv)
   struct dirent **gwfnamelist;
   char pulin[256];
 
-  LALStatus status = empty_LALStatus;
+  LALStatus XLAL_INIT_DECL(status);
 
   /*init ephemeris-data */
   EphemerisData *edat;
@@ -453,7 +448,7 @@ int main(int argc, char **argv)
 	    /*fprintf(stderr, "Error opening file: %s\n", pulin);*/
 	    /*XLAL_ERROR ( fn, XLAL_EIO );*/
 	    /*}*/
-	    PulsarSignalParams params = empty_PulsarSignalParams; /*pulsar parameter structure*/
+	    PulsarSignalParams XLAL_INIT_DECL(params);
 	    /* set signal generation barycenter delay look-up table step size */
             params.dtDelayBy2 = 10.; /* generate table every 10 seconds */
 

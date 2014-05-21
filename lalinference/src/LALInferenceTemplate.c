@@ -596,7 +596,7 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveform(LALInferenceIFOData *IFOd
     
 	XLAL_TRY(ret=XLALSimInspiralChooseFDWaveformFromCache(&hptilde, &hctilde, phi0,
             deltaF, m1*LAL_MSUN_SI, m2*LAL_MSUN_SI, spin1x, spin1y, spin1z,
-            spin2x, spin2y, spin2z, f_start, f_max, distance, inclination,lambda1, lambda2, IFOdata->waveFlags, nonGRparams, amporder, order,
+            spin2x, spin2y, spin2z, f_start, f_max, fRef, distance, inclination,lambda1, lambda2, IFOdata->waveFlags, nonGRparams, amporder, order,
             approximant,IFOdata->waveformCache), errnum);
 
 	if (hptilde==NULL || hptilde->data==NULL || hptilde->data->data==NULL ) {

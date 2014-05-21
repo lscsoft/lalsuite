@@ -1,7 +1,7 @@
 # -*- mode: autoconf; -*-
 # lalsuite_build.m4 - top level build macros
 #
-# serial 81
+# serial 82
 
 # not present in older versions of pkg.m4
 m4_pattern_allow([^PKG_CONFIG(_(PATH|LIBDIR|SYSROOT_DIR|ALLOW_SYSTEM_(CFLAGS|LIBS)))?$])
@@ -835,17 +835,62 @@ AC_ARG_WITH(
   LALSUITE_ENABLE_MODULE([CUDA])
 ])
 
-AC_DEFUN([LALSUITE_ENABLE_FAST_GSL],
-[AC_ARG_ENABLE(
-  [fast_gsl],
-  AC_HELP_STRING([--enable-fast-gsl],[enable fast/inline GSL code [default=no]]),
-  AS_CASE(["${enableval}"],
-    [yes],[AC_DEFINE([HAVE_INLINE],[1],[Define to 1 to use inline code])
-           AC_DEFINE([GSL_C99_INLINE],[1],[Define to 1 to use GSL C99 inline code])
-           AC_DEFINE([GSL_RANGE_CHECK_OFF],[1],[Define to 1 to turn GSL range checking off])],
-    [no],,
-    AC_MSG_ERROR([bad value ${enableval} for --enable-fast-gsl]))
+
+AC_DEFUN([LALSUITE_CHECK_GSL_VERSION],[
+  # $0: check for GSL version
+  lal_min_gsl_version=m4_normalize([$1])
+  AC_MSG_CHECKING(for GSL version >= $lal_min_gsl_version)
+  AC_TRY_RUN([
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <gsl/gsl_version.h>
+int main(void)
+{
+  int required_major, required_minor;
+  int major, minor;
+  char required_version[] = "$lal_min_gsl_version";
+  char version[] = GSL_VERSION;
+  if ( strcmp(GSL_VERSION, gsl_version) ) {
+    printf("error\n*** mismatch between header and library versions of GSL\n" );
+    printf("\n*** header  has version %s\n", GSL_VERSION);
+    printf("\n*** library has version %s\n", gsl_version);
+    exit(1);
+  }
+  sscanf(required_version, "%d.%d", &required_major, &required_minor);
+  sscanf(version, "%d.%d", &major, &minor);
+  if ( major < required_major || (major == required_major && minor < required_minor) ) {
+    printf("no\n*** found version %s of GSL but minimum version is %d.%d\n", GSL_VERSION, required_major, required_minor );
+    exit(1);
+  }
+  return 0;
+}
+  ],[
+    AC_MSG_RESULT([yes])
+  ],[
+    AC_MSG_ERROR([could not find required version of GSL])
+  ],[
+    AC_MSG_WARN([cross compiling; assumed OK...])
+  ])
+  # end $0
+])
+
+AC_DEFUN([LALSUITE_ENABLE_FAST_GSL],[
+  # $0: enable/disable fast/inline GSL code
+  AC_ARG_ENABLE(
+    [fast_gsl],
+    AC_HELP_STRING([--enable-fast-gsl],[enable fast/inline GSL code [default=no]]),
+    AS_CASE(["${enableval}"],
+      [yes],[
+        AC_DEFINE([HAVE_INLINE],[1],[Define to 1 to use inline code])
+        AC_DEFINE([GSL_C99_INLINE],[1],[Define to 1 to use GSL C99 inline code])
+        AC_DEFINE([GSL_RANGE_CHECK_OFF],[1],[Define to 1 to turn GSL range checking off])
+      ],
+      [no],[:],
+      AC_MSG_ERROR([bad value ${enableval} for --enable-fast-gsl])
+    )
   )
+  # end $0
 ])
 
 AC_DEFUN([LALSUITE_ENABLE_OSX_VERSION_CHECK],

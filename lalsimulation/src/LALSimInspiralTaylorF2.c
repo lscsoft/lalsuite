@@ -71,13 +71,14 @@ int XLALSimInspiralTaylorF2Phasing(
  */
 int XLALSimInspiralTaylorF2(
         COMPLEX16FrequencySeries **htilde_out, /**< FD waveform */
-        const REAL8 phic,                      /**< orbital coalescence phase (rad) */
+        const REAL8 phi_ref,                   /**< reference orbital phase (rad) */
         const REAL8 deltaF,                    /**< frequency resolution */
         const REAL8 m1_SI,                     /**< mass of companion 1 (kg) */
         const REAL8 m2_SI,                     /**< mass of companion 2 (kg) */
         const REAL8 S1z,                       /**<  z component of the spin of companion 1 */
         const REAL8 S2z,                       /**<  z component of the spin of companion 2  */
         const REAL8 fStart,                    /**< start GW frequency (Hz) */
+        const REAL8 f_ref,                     /**< Reference GW frequency (Hz) - if 0 reference point is coalescence */
         const REAL8 fEnd,                      /**< highest GW frequency (Hz) of waveform generation - if 0, end at Schwarzschild ISCO */
         const REAL8 r,                         /**< distance of source (m) */
         const REAL8 lambda1,                   /**< (tidal deformation of body 1)/(mass of body 1)^5 */
@@ -100,7 +101,7 @@ int XLALSimInspiralTaylorF2(
     const REAL8 piM = LAL_PI * m_sec;
     const REAL8 vISCO = 1. / sqrt(6.);
     const REAL8 fISCO = vISCO * vISCO * vISCO / piM;
-    const REAL8 v0 = cbrt(piM * fStart);
+    const REAL8 v0 = 1.0; /* v0=c */
     const REAL8 chi1 = m1 / m;
     const REAL8 chi2 = m2 / m;
     const REAL8 lam1 = lambda1;
@@ -141,6 +142,44 @@ int XLALSimInspiralTaylorF2(
     REAL8 qm_def1 = 1; /* The QM deformability parameters */
     REAL8 qm_def2 = 1; /* This is 1 for black holes and larger for neutron stars */
 
+    /* Validate expansion order arguments.
+     * This must be done here instead of in the OpenMP parallel loop
+     * because when OpenMP parallelization is turned on, early exits
+     * from loops (via return or break statements) are not permitted.
+     */
+
+    /* Validate phase PN order. */
+    switch (phaseO)
+    {
+        case -1:
+        case 7:
+        case 6:
+        case 5:
+        case 4:
+        case 3:
+        case 2:
+        case 0:
+            break;
+        default:
+            XLAL_ERROR(XLAL_ETYPE, "Invalid phase PN order %s", phaseO);
+    }
+
+    /* Validate amplitude PN order. */
+    switch (amplitudeO)
+    {
+        case -1:
+        case 7:
+        case 6:
+        case 5:
+        case 4:
+        case 3:
+        case 2:
+        case 0:
+            break;
+        default:
+            XLAL_ERROR(XLAL_ETYPE, "Invalid amplitude PN order %s", amplitudeO);
+    }
+
     switch( spinO )
     {
         case LAL_SIM_INSPIRAL_SPIN_ORDER_ALL:
@@ -177,10 +216,7 @@ int XLALSimInspiralTaylorF2(
         case LAL_SIM_INSPIRAL_SPIN_ORDER_0PN:
             break;
         default:
-            XLALPrintError("XLAL Error - %s: Invalid spin PN order %s\n",
-                    __func__, spinO );
-            XLAL_ERROR(XLAL_EINVAL);
-            break;
+            XLAL_ERROR(XLAL_EINVAL, "Invalid spin PN order %s", spinO);
     }
 
     /* Tidal coefficients for phasing, fluz, and energy */
@@ -200,10 +236,7 @@ int XLALSimInspiralTaylorF2(
         case LAL_SIM_INSPIRAL_TIDAL_ORDER_0PN:
             break;
         default:
-            XLALPrintError("XLAL Error - %s: Invalid tidal PN order %s\n",
-                    __func__, tideO );
-            XLAL_ERROR(XLAL_EINVAL);
-            break;
+            XLAL_ERROR(XLAL_EINVAL, "Invalid tidal PN order %s", tideO);
     }
 
     /* flux coefficients */
@@ -255,10 +288,74 @@ int XLALSimInspiralTaylorF2(
     /* Fill with non-zero vals from fStart to f_max */
     iStart = (size_t) ceil(fStart / deltaF);
     data = htilde->data->data;
+
+    /* Compute the SPA phase at the reference point */
+    const REAL8 vref = cbrt(piM*f_ref);
+    const REAL8 logvref = log(vref);
+    const REAL8 v2ref = vref * vref;
+    const REAL8 v3ref = vref * v2ref;
+    const REAL8 v4ref = vref * v3ref;
+    const REAL8 v5ref = vref * v4ref;
+    const REAL8 v6ref = vref * v5ref;
+    const REAL8 v7ref = vref * v6ref;
+    const REAL8 v8ref = vref * v7ref;
+    const REAL8 v9ref = vref * v8ref;
+    const REAL8 v10ref = vref * v9ref;
+    const REAL8 v12ref = v2ref * v10ref;
+    REAL8 ref_phasing = 0.;
+    switch (phaseO)
+    {
+        case -1:
+        case 7:
+            ref_phasing += pfa7 * v7ref;
+        case 6:
+            ref_phasing += (pfa6 + pfl6 * (log4+logvref)) * v6ref;
+        case 5:
+            ref_phasing += (pfa5 + pfl5 * (logvref-logv0)) * v5ref;
+        case 4:
+            ref_phasing += pfa4 * v4ref;
+        case 3:
+            ref_phasing += pfa3 * v3ref;
+        case 2:
+            ref_phasing += pfa2 * v2ref;
+        case 0:
+            ref_phasing += 1.;
+    }
+    switch( spinO )
+    {
+        case LAL_SIM_INSPIRAL_SPIN_ORDER_ALL:
+        case LAL_SIM_INSPIRAL_SPIN_ORDER_35PN:
+            ref_phasing += psiSO35 * v7ref;
+        case LAL_SIM_INSPIRAL_SPIN_ORDER_3PN:
+            ref_phasing += psiSO3 * v6ref;
+        case LAL_SIM_INSPIRAL_SPIN_ORDER_25PN:
+            ref_phasing += -pn_gamma * (1 + 3*(logvref-logv0)) * v5ref;
+        case LAL_SIM_INSPIRAL_SPIN_ORDER_2PN:
+            ref_phasing += -10.L*pn_sigma * v4ref;
+        case LAL_SIM_INSPIRAL_SPIN_ORDER_15PN:
+            ref_phasing += 4.L*pn_beta * v3ref;
+        case LAL_SIM_INSPIRAL_SPIN_ORDER_1PN:
+        case LAL_SIM_INSPIRAL_SPIN_ORDER_05PN:
+        case LAL_SIM_INSPIRAL_SPIN_ORDER_0PN:
+            ;
+    }
+    switch( tideO )
+    {
+        case LAL_SIM_INSPIRAL_TIDAL_ORDER_ALL:
+        case LAL_SIM_INSPIRAL_TIDAL_ORDER_6PN:
+            ref_phasing += pft12 * v12ref;
+        case LAL_SIM_INSPIRAL_TIDAL_ORDER_5PN:
+            ref_phasing += pft10 * v10ref;
+        case LAL_SIM_INSPIRAL_TIDAL_ORDER_0PN:
+            ;
+    }
+    ref_phasing *= pfaN / v5ref;
+
+    #pragma omp parallel for
     for (i = iStart; i < n; i++) {
         const REAL8 f = i * deltaF;
         const REAL8 v = cbrt(piM*f);
-	const REAL8 logv = log(v);
+        const REAL8 logv = log(v);
         const REAL8 v2 = v * v;
         const REAL8 v3 = v * v2;
         const REAL8 v4 = v * v3;
@@ -291,10 +388,6 @@ int XLALSimInspiralTaylorF2(
                 phasing += pfa2 * v2;
             case 0:
                 phasing += 1.;
-                break;
-            default:
-                XLALDestroyCOMPLEX16FrequencySeries(htilde);
-                XLAL_ERROR(XLAL_ETYPE);
         }
         switch (amplitudeO)
         {
@@ -317,10 +410,6 @@ int XLALSimInspiralTaylorF2(
             case 0:
                 flux += 1.;
                 dEnergy += 1.;
-                break;
-            default:
-                XLALDestroyCOMPLEX16FrequencySeries(htilde);
-                XLAL_ERROR(XLAL_ETYPE);
         }
 
         switch( spinO )
@@ -339,12 +428,7 @@ int XLALSimInspiralTaylorF2(
             case LAL_SIM_INSPIRAL_SPIN_ORDER_1PN:
             case LAL_SIM_INSPIRAL_SPIN_ORDER_05PN:
             case LAL_SIM_INSPIRAL_SPIN_ORDER_0PN:
-                break;
-            default:
-                XLALPrintError("XLAL Error - %s: Invalid spin PN order %s\n",
-                        __func__, spinO );
-                XLAL_ERROR(XLAL_EINVAL);
-                break;
+                ;
         }
 
         switch( tideO )
@@ -355,19 +439,14 @@ int XLALSimInspiralTaylorF2(
             case LAL_SIM_INSPIRAL_TIDAL_ORDER_5PN:
                 phasing += pft10 * v10;
             case LAL_SIM_INSPIRAL_TIDAL_ORDER_0PN:
-                break;
-            default:
-                XLALPrintError("XLAL Error - %s: Invalid tidal PN order %s\n",
-                        __func__, tideO );
-                XLAL_ERROR(XLAL_EINVAL);
-                break;
+                ;
         }
 
         phasing *= pfaN / v5;
         flux *= FTaN * v10;
         dEnergy *= dETaN * v;
-        // Note the factor of 2 b/c phic is orbital phase
-        phasing += shft * f - 2.*phic;
+        // Note the factor of 2 b/c phi_ref is orbital phase
+        phasing += shft * f - 2.*phi_ref - ref_phasing;
         amp = amp0 * sqrt(-dEnergy/flux) * v;
         data[i] = amp * cos(phasing - LAL_PI_4)
                 - amp * sin(phasing - LAL_PI_4) * 1.0j;

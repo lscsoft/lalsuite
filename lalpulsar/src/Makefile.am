@@ -8,21 +8,18 @@ endif
 lalpulsarincludedir = $(includedir)/lal
 lalpulsarinclude_HEADERS = \
 	BinaryPulsarTiming.h \
-	CWFastMath.h \
-	CWMakeFakeData.h \
 	ComplexAM.h \
 	ComputeFstat.h \
 	ComputeSky.h \
+	CWFastMath.h \
+	CWMakeFakeData.h \
 	DetectorStates.h \
 	DopplerFullScan.h \
-	DopplerLatticeCovering.h \
 	DopplerScan.h \
 	ExtrapolatePulsarSpins.h \
 	FitToPulsar.h \
-	FlatLatticeTilingPulsar.h \
 	FlatMesh.h \
 	FlatPulsarMetric.h \
-	FoldAmplitudes.h \
 	GeneratePulsarSignal.h \
 	GenerateSpinOrbitCW.h \
 	GenerateTaylorCW.h \
@@ -37,15 +34,15 @@ lalpulsarinclude_HEADERS = \
 	LALPulsarLibVCSInfo.h \
 	LALPulsarVCSInfo.h \
 	LALXMGRInterface.h \
+	LatticeTiling.h \
 	LFTandTSutils.h \
+	LineRobustStats.h \
 	LISAspecifics.h \
 	LUT.h \
-	LatticeCovering.h \
 	NormalizeSFTRngMed.h \
 	PHMD.h \
 	ProbabilityDensity.h \
 	PtoleMetric.h \
-	PulsarCat.h \
 	PulsarCrossCorr.h \
 	PulsarCrossCorr_v2.h \
 	PulsarDataTypes.h \
@@ -56,8 +53,8 @@ lalpulsarinclude_HEADERS = \
 	SFTfileIO.h \
 	SFTutils-LAL.h \
 	SFTutils.h \
-	SSBtimes.h \
 	SimulatePulsarSignal.h \
+	SSBtimes.h \
 	StackMetric.h \
 	Statistics.h \
 	SynthesizeCWDraws.h \
@@ -71,24 +68,22 @@ lalpulsarinclude_HEADERS = \
 lib_LTLIBRARIES = liblalpulsar.la
 liblalpulsar_la_SOURCES = \
 	BinaryPulsarTiming.c \
-	CWMakeFakeData.c \
 	CoherentMetric.c \
 	ComplexAM.c \
 	ComputeFstat.c \
 	ComputeSky.c \
 	ConstructPLUT.c \
-	DTEphemeris.c \
+	CWFastMath.c \
+	CWMakeFakeData.c \
 	DetectorStates.c \
 	DopplerFullScan.c \
-	DopplerLatticeCovering.c \
 	DopplerScan.c \
 	DriveHough.c \
+	DTEphemeris.c \
 	ExtrapolatePulsarSpins.c \
 	FitToPulsar.c \
-	FlatLatticeTilingPulsar.c \
 	FlatMesh.c \
 	FlatPulsarMetric.c \
-	FoldAmplitudes.c \
 	GenerateEllipticSpinOrbitCW.c \
 	GenerateHyperbolicSpinOrbitCW.c \
 	GenerateParabolicSpinOrbitCW.c \
@@ -104,9 +99,10 @@ liblalpulsar_la_SOURCES = \
 	LALInitBarycenter.c \
 	LALPulsarVCSInfo.c \
 	LALXMGRInterface.c \
+	LatticeTiling.c \
 	LFTandTSutils.c \
+	LineRobustStats.c \
 	LISAspecifics.c \
-	LatticeCovering.c \
 	NDParamPLUT.c \
 	NormalizeSFTRngMed.c \
 	ParamPLUT.c \
@@ -115,26 +111,23 @@ liblalpulsar_la_SOURCES = \
 	ProbabilityDensity.c \
 	ProjectMetric.c \
 	PtoleMetric.c \
-	PulsarCat.c \
-	PulsarCatInput.c \
 	PulsarCrossCorr.c \
 	PulsarCrossCorr_v2.c \
-	PulsarDataTypes.c \
 	PulsarSimulateCoherentGW.c \
 	SFTClean.c \
 	SFTfileIO.c \
 	SFTutils.c \
-	SSBtimes.c \
 	SimulatePulsarSignal.c \
 	SinCosLUT.c \
+	SSBtimes.c \
 	StackMetric.c \
 	Statistics.c \
 	Stereographic.c \
 	SynthesizeCWDraws.c \
 	TBaryPtolemaic.c \
 	TComp.c \
-	TSpin.c \
 	TransientCW_utils.c \
+	TSpin.c \
 	TwoDMesh.c \
 	TwoDMeshInternal.c \
 	TwoDMeshMetrics.c \
@@ -145,16 +138,15 @@ liblalpulsar_la_SOURCES = \
 nodist_liblalpulsar_la_SOURCES = LALPulsarBuildInfo.c
 
 EXTRA_liblalpulsar_la_SOURCES = \
-	ComputeFstat_Demod.c \
-	ComputeFstat_Demod_altivec.i \
-	ComputeFstat_Demod_autovect.i \
-	ComputeFstat_Demod_generic.i \
-	ComputeFstat_Demod_precalc.i \
-	ComputeFstat_Demod_sse.i \
-	ComputeFstat_Demod_sse_msc.i \
-	ComputeFstat_Resamp.c \
-	SinCosLUT.i \
-	SFTfileIO-LAL.c \
+	SinCosLUT.i 				\
+	ComputeFstat_Demod.c 			\
+	ComputeFstat_Demod_ComputeFaFb.c 	\
+	ComputeFstat_DemodHL_Altivec.i		\
+	ComputeFstat_DemodHL_OptC.i		\
+	ComputeFstat_DemodHL_SSE.i		\
+	ComputeFstat_DemodHL_Generic.i		\
+	ComputeFstat_Resamp.c 			\
+	SFTfileIO-LAL.c 			\
 	SFTutils-LAL.c
 
 liblalpulsar_la_LDFLAGS = $(AM_LDFLAGS) -version-info $(LIBVERSION)

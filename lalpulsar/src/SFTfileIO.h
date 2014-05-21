@@ -96,7 +96,7 @@ extern "C" {
  * combined by logical \c AND.
  *
  * <b>Note 2:</b> if a timestamps-list is given, *ALL* timestamps within
- * <tt>[startTime, endTime]</tt> MUST be found!]
+ * <tt>[minStartTime, maxStartTime)</tt> MUST be found!]
  *
  * <b>Note 3:</b> LALSFTdataFind() will refuse to return any SFTs without their detector-name
  * properly set. This applies only to v1-SFTs, for which you have to use constraints->detector,
@@ -236,13 +236,13 @@ typedef struct tagMultiSFTVector {
  * 'Constraints' for SFT-matching: which detector, within which time-stretch and which
  * timestamps exactly should be loaded ?
  * Any of the entries is optional, and they will be combined by logical AND.
- * Note however, that *ALL* timestamps within [startTime, endTime] MUST be found if specified.
+ * Note however, that *ALL* timestamps within [minStartTime, maxStartTime) MUST be found if specified.
  */
 typedef struct tagSFTConstraints
 {
   CHAR *detector;			/**< 2-char channel-prefix describing the detector (eg 'H1', 'H2', 'L1', 'G1' etc) */
-  LIGOTimeGPS *startTime;		/**< only include SFTs starting >= startTime */
-  LIGOTimeGPS *endTime;			/**< only include SFTs starting <= endTime */
+  LIGOTimeGPS *minStartTime;		/**< only include SFTs whose epoch is >= minStartTime */
+  LIGOTimeGPS *maxStartTime;		/**< only include SFTs whose epoch is <  maxStartTime */
   LIGOTimeGPSVector *timestamps;	/**< list of timestamps  */
 } SFTConstraints;
 
@@ -265,6 +265,9 @@ typedef struct tagSFTDescriptor
 /** An "SFT-catalogue": a vector of SFTdescriptors, as returned by LALSFTdataFind() */
 typedef struct tagSFTCatalog
 {
+#ifdef SWIG /* SWIG interface directives */
+  SWIGLAL(ARRAY_1D(SFTCatalog, SFTDescriptor, data, UINT4, length));
+#endif /* SWIG */
   UINT4 length;			/**< number of SFTs in catalog */
   SFTDescriptor *data;		/**< array of data-entries describing matched SFTs */
 } SFTCatalog;
@@ -280,25 +283,21 @@ typedef struct tagSFTCatalog
  */
 typedef struct tagMultiSFTCatalogView
 {
+#ifdef SWIG /* SWIG interface directives */
+  SWIGLAL(ARRAY_1D(MultiSFTCatalogView, SFTCatalog, data, UINT4, length));
+#endif /* SWIG */
   UINT4 length;			/**< number of detectors */
   SFTCatalog *data;		/**< array of SFT-catalog pointers */
 } MultiSFTCatalogView;
 
 
 /*---------- Global variables ----------*/
-/* empty init-structs for the types defined in here */
-extern const SFTConstraints empty_SFTConstraints;
-extern const SFTCatalog empty_SFTCatalog;
-extern const SFTtype empty_SFTtype;
-extern const SFTVector empty_SFTVector;
-extern const MultiSFTVector empty_MultiSFTVector;
-extern const MultiREAL4TimeSeries empty_MultiREAL4TimeSeries;
-extern const LIGOTimeGPSVector empty_LIGOTimeGPSVector;
-extern const MultiLIGOTimeGPSVector empty_MultiLIGOTimeGPSVector;
 
 /*
  * Functions Declarations (i.e., prototypes).
  */
+
+int XLALCWGPSinRange( const LIGOTimeGPS gps, const LIGOTimeGPS* minGPS, const LIGOTimeGPS* maxGPS );
 
 LALStringVector *XLALFindFiles (const CHAR *globstring);
 

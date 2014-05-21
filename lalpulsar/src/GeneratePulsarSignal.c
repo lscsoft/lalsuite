@@ -46,19 +46,11 @@ static int XLALcorrect_phase ( SFTtype *sft, LIGOTimeGPS tHeterodyne );
 /*----------------------------------------------------------------------*/
 
 static REAL8 eps = 1.e-14;	/* maximal REAL8 roundoff-error (used for determining if some REAL8 frequency corresponds to an integer "bin-index" */
+static LALUnit emptyLALUnit;
 
 /* ----- DEFINES ----- */
 
 /*---------- Global variables ----------*/
-
-/* empty init-structs for the types defined in here */
-static SpinOrbitCWParamStruc emptyCWParams;
-static PulsarCoherentGW emptySignal;
-
-const PulsarSignalParams empty_PulsarSignalParams;
-const SFTParams empty_SFTParams;
-const SFTandSignalParams empty_SFTandSignalParams;
-static LALUnit empty_LALUnit;
 
 /**
  * Generate a time-series at the detector for a given pulsar.
@@ -75,7 +67,7 @@ XLALGeneratePulsarSignal ( const PulsarSignalParams *params /**< input params */
    * First call GenerateSpinOrbitCW() to generate the source-signal
    *
    *----------------------------------------------------------------------*/
-  SpinOrbitCWParamStruc sourceParams = emptyCWParams;
+  SpinOrbitCWParamStruc XLAL_INIT_DECL(sourceParams);
   sourceParams.psi = params->pulsar.psi;
   sourceParams.aPlus = params->pulsar.aPlus;
   sourceParams.aCross = params->pulsar.aCross;
@@ -166,7 +158,7 @@ XLALGeneratePulsarSignal ( const PulsarSignalParams *params /**< input params */
     } // if pulsar.spindown
 
   /* finally, call the function to generate the source waveform */
-  PulsarCoherentGW sourceSignal = emptySignal;
+  PulsarCoherentGW XLAL_INIT_DECL(sourceSignal);
 
   XLAL_CHECK_NULL ( XLALGenerateSpinOrbitCW ( &sourceSignal, &sourceParams ) == XLAL_SUCCESS, XLAL_EFUNC );
 
@@ -203,7 +195,7 @@ XLALGeneratePulsarSignal ( const PulsarSignalParams *params /**< input params */
   REAL8 fHet = params->fHeterodyne;
 
   /* ok, we  need to prepare the output time-series */
-  REAL4TimeSeries *output = XLALCreateREAL4TimeSeries ( "", &(params->startTimeGPS), fHet, dt, &empty_LALUnit, numSteps );
+  REAL4TimeSeries *output = XLALCreateREAL4TimeSeries ( "", &(params->startTimeGPS), fHet, dt, &emptyLALUnit, numSteps );
   XLAL_CHECK_NULL ( output != NULL, XLAL_EFUNC, "XLALCreateREAL4TimeSeries() failed with xlalErrno = %d\n", xlalErrno );
 
   // internal interpolation parameters for LALPulsarSimulateCoherentGW()
@@ -276,8 +268,8 @@ XLALSignalToSFTs ( const REAL4TimeSeries *signalvec, 	/**< input time-series */
     }
 
   /* make sure that number of timesamples/SFT is an integer (up to possible rounding errors) */
-  REAL8 REALnumTimesteps = params->Tsft / dt;		/* this is a float!*/
-  UINT4 numTimesteps = (UINT4) (REALnumTimesteps + 0.5);		/* number of time-samples in an Tsft, round to closest int */
+  REAL8 REALnumTimesteps = params->Tsft / dt;			/* this is a float!*/
+  UINT4 numTimesteps = lround ( REALnumTimesteps );		/* number of time-samples in an Tsft, round to closest int */
   XLAL_CHECK_NULL ( fabs ( REALnumTimesteps - numTimesteps ) / REALnumTimesteps < eps, XLAL_ETOL,
                     "Inconsistent sampling-step (dt=%g) and Tsft=%g: must be integer multiple Tsft/dt = %g >= %g\n",
                     dt, params->Tsft, REALnumTimesteps, eps );
@@ -290,7 +282,7 @@ XLALSignalToSFTs ( const REAL4TimeSeries *signalvec, 	/**< input time-series */
   LIGOTimeGPS tStart = signalvec->epoch;	/* start-time of time-series */
 
   /* get last possible start-time for an SFT */
-  REAL8 duration =  (UINT4) (1.0* signalvec->data->length * dt + 0.5); /* total duration rounded to seconds */
+  REAL8 duration =  round (1.0* signalvec->data->length * dt ); /* total duration rounded to seconds */
   LIGOTimeGPS tLast = tStart;
   XLALGPSAdd( &tLast, duration - params->Tsft );
   XLAL_CHECK_NULL ( xlalErrno == XLAL_SUCCESS, XLAL_EFUNC );
@@ -353,7 +345,7 @@ XLALSignalToSFTs ( const REAL4TimeSeries *signalvec, 	/**< input time-series */
       REAL8 delay = XLALGPSDiff ( &(timestamps->data[iSFT]), &tPrev );
 
       /* round properly: picks *closest* timestep (==> "nudging") !!  */
-      INT4 relIndexShift = (INT4) ( delay / signalvec->deltaT + 0.5 );
+      INT4 relIndexShift = lround ( delay / signalvec->deltaT );
       totalIndex += relIndexShift;
 
       REAL4Vector timeStretch;
@@ -647,9 +639,9 @@ LALFastGeneratePulsarSFTs (LALStatus *status,
   tSFT = params->pSFTParams->Tsft;                  /* SFT duration */
   deltaF = 1.0/tSFT;                                /* frequency resolution */
   f0 = params->pSigParams->fHeterodyne;             /* start frequency */
-  k0 = (INT4)(f0*tSFT + 0.5);                       /* index of start frequency */
+  k0 = lround ( f0*tSFT );                       /* index of start frequency */
   band = 0.5*params->pSigParams->samplingRate;      /* frequency band */
-  SFTlen = (INT4)(band*tSFT + 0.5);                 /* number of frequency-bins */
+  SFTlen = lround ( band*tSFT );                 /* number of frequency-bins */
   numSFTs = params->pSFTParams->timestamps->length; /* number of SFTs */
 
   if ( (params->Dterms < 1) || (params->Dterms > SFTlen) ) {
@@ -729,7 +721,7 @@ LALFastGeneratePulsarSFTs (LALStatus *status,
         yTmp = phi0Signal/real8TwoPi + f0Signal*input->skyConst[tmpInt-1] + ySum;
         varTmp = yTmp-(INT4)yTmp;
         /* indexTrig=(INT4)(varTmp*params->resTrig+0.5); */ /* 10/08/04 gam */
-        indexTrig=(INT4)((varTmp + 1.0)*halfResTrig + 0.5);
+        indexTrig = lround ((varTmp + 1.0)*halfResTrig );
         dTmp = real8TwoPi*varTmp - params->trigArg[indexTrig];
         dTmp2 = 0.5*dTmp*dTmp;
         sinTmp = params->sinVal[indexTrig];
@@ -741,7 +733,7 @@ LALFastGeneratePulsarSFTs (LALStatus *status,
         /* Using LUT to find sin(2*pi*kappa) and 1 - cos(2*pi*kappa) */
         varTmp = kappa-(INT4)kappa;
         /* indexTrig=(INT4)(varTmp*params->resTrig+0.5); */
-        indexTrig=(INT4)((varTmp + 1.0)*halfResTrig + 0.5); /* 10/08/04 gam */
+        indexTrig= lround((varTmp + 1.0)*halfResTrig); /* 10/08/04 gam */
         dTmp = real8TwoPi*varTmp - params->trigArg[indexTrig];
         dTmp2 = 0.5*dTmp*dTmp;
         sinTmp = params->sinVal[indexTrig];
@@ -811,7 +803,7 @@ LALFastGeneratePulsarSFTs (LALStatus *status,
       /* Now add the noise-SFTs if given */
       if (params->pSFTParams->noiseSFTs) {
         thisNoiseSFT = &(params->pSFTParams->noiseSFTs->data[iSFT]);
-        index0n = (INT4)( (thisSFT->f0 - thisNoiseSFT->f0)*tSFT + 0.5 );
+        index0n = lround( (thisSFT->f0 - thisNoiseSFT->f0)*tSFT );
         for (j=0; j < SFTlen; j++)
         {
            thisSFT->data->data[j] += thisNoiseSFT->data->data[index0n + j];
@@ -846,7 +838,7 @@ XLALConvertGPS2SSB ( LIGOTimeGPS *SSBout, 		/**< [out] arrival-time in SSB */
   XLAL_CHECK ( SSBout != NULL, XLAL_EINVAL, "Invalid NULL input 'SSBout'\n" );
   XLAL_CHECK ( params != NULL, XLAL_EINVAL, "Invalid NULL input 'params'\n" );
 
-  BarycenterInput baryinput = empty_BarycenterInput;
+  BarycenterInput XLAL_INIT_DECL(baryinput);
   baryinput.site = *(params->site);
   /* account for a quirk in LALBarycenter(): -> see documentation of type BarycenterInput */
   baryinput.site.location[0] /= LAL_C_SI;
@@ -969,9 +961,8 @@ XLALGenerateLineFeature ( const PulsarSignalParams *params )
   REAL8 deltaT = 1.0 / params->samplingRate;
   REAL8 tStart = XLALGPSGetREAL8 ( &params->startTimeGPS );
 
-  LALUnit units = empty_LALUnit;
   REAL4TimeSeries *ret;
-  XLAL_CHECK_NULL ( (ret = XLALCreateREAL4TimeSeries (name, &(params->startTimeGPS), params->fHeterodyne, deltaT, &units, length)) != NULL, XLAL_EFUNC );
+  XLAL_CHECK_NULL ( (ret = XLALCreateREAL4TimeSeries (name, &(params->startTimeGPS), params->fHeterodyne, deltaT, &emptyLALUnit, length)) != NULL, XLAL_EFUNC );
   XLALFree ( name );
 
   REAL8 h0 = params->pulsar.aPlus + sqrt ( pow(params->pulsar.aPlus,2) - pow(params->pulsar.aCross,2) );

@@ -174,7 +174,8 @@ typedef struct tagDopplerMetricParams
   DetectorMotionType detMotionType;		/**< the type of detector-motion assumed: full spin+orbit, pure orbital, Ptole, ... */
 
   LALSegList segmentList;			/**< segment list: Nseg segments of the form (startGPS endGPS numSFTs) */
-  MultiDetectorInfo detInfo;			/**< detectors (and their noise-weights) to compute metric for */
+  MultiLALDetector multiIFO;			/**< detectors to compute metric for */
+  MultiNoiseFloor multiNoiseFloor;		/**< and associated per-detector noise-floors to be used for weighting. Use length=0 for unit weights */
 
   PulsarParams signalParams;			/**< parameter-space point to compute metric for (doppler + amplitudes) */
   INT4 projectCoord;				/**< project metric onto subspace orthogonal to this axis (-1 = none, 0 = 1st coordinate, etc) */
@@ -234,11 +235,6 @@ typedef struct tagDopplerMetric
 
 
 /*---------- Global variables ----------*/
-extern const PosVel3D_t empty_PosVel3D_t;
-extern const DopplerMetricParams empty_DopplerMetricParams;
-extern const MultiDetectorInfo empty_MultiDetectorInfo;
-extern const DopplerCoordinateSystem empty_DopplerCoordinateSystem;
-#define empty_vect3D_t {0,0,0}
 
 /*---------- exported prototypes [API] ----------*/
 gsl_matrix *

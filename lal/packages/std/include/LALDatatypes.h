@@ -451,6 +451,13 @@ typedef struct tagCOMPLEX16ArraySequence {
 
     /* ---------- Structured datatypes ---------- */
 
+#ifdef SWIG
+/* *INDENT-OFF* */
+/* SWIG interface directives: must appear *before* the definition of LIGOTimeGPS */
+%include <lal/SWIGLIGOTimeGPSPre.i>
+/* *INDENT-ON* */
+#endif /* SWIG */
+
 /** Epoch relative to GPS epoch, see \ref ss_LIGOTimeGPS for more details */
 typedef struct tagLIGOTimeGPS {
     INT4 gpsSeconds; /**< Seconds since 0h UTC 6 Jan 1980. */
@@ -462,7 +469,8 @@ typedef struct tagLIGOTimeGPS {
 
 #ifdef SWIG     /* SWIG interface directives */
 /* *INDENT-OFF* */
-%include <lal/lalswig_ligotimegps.i>
+/* SWIG interface directives: must appear *after* the definition of LIGOTimeGPS */
+%include <lal/SWIGLIGOTimeGPSPost.i>
 /* *INDENT-ON* */
 #endif /* SWIG */
 

@@ -31,7 +31,6 @@ test/ExtrapolatePulsarSpinsTest
 test/FileIOTest
 test/FitToPulsarTest
 test/FlatMeshTest
-test/FoldAmplitudesTest
 test/GeneralMeshTest
 test/GeneralMetricTest
 test/GeneratePulsarSignalTest
@@ -45,13 +44,13 @@ test/H-3_H1_60SFT_test_concat-000012345-302.sft
 test/HeterodynePulsarTest
 test/LALBarycenterTest
 test/LALPulsarXMLTest
+test/LineRobustStatsTest
 test/NewGetAMCoeffsTest
 test/NormalizeSFTRngMedTest
 test/OutHistogram.asc
 test/OutHough.asc
 test/PtoleMeshTest
 test/PtoleMetricTest
-test/PulsarCatTest
 test/ResampleTest
 test/SFTCleanTest
 test/SFTfileIOTest

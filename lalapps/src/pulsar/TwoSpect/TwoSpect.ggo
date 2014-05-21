@@ -1,11 +1,10 @@
 package "lalapps_TwoSpect"
-version "1.1.32"
+version "1.2.1"
 purpose "TwoSpect analysis program"
 
 args "--string-parser --conf-parser --show-required=[required]"
 
 option "config"   - "Configuration file in gengetopt format for passing parameters" string typestr="filename" optional
-option "laldebug" d "LAL debug level" int default="0" optional
 
 section "Observational parameters"
 option "Tobs"  - "Total observation time (in seconds)" double required
@@ -70,6 +69,7 @@ section "TwoSpect performance options"
 option "FFTplanFlag"    - "0=Estimate, 1=Measure, 2=Patient, 3=Exhaustive" int values="0","1","2","3" default="1" optional
 option "fastchisqinv"   - "Use a faster central chi-sq inversion function (roughly float precision instead of double)" flag off
 option "useSSE"         - "Use SSE functions (caution: user needs to have compiled for SSE or program fails)" flag off
+option "useAVX"         - "Use AVX functions (caution: user needs to have compiled for AVX or program fails)" flag off
 option "followUpOutsideULrange"  - "Follow up outliers outside the range of the UL values" flag off
 
 section "Injection options"
@@ -85,6 +85,7 @@ option "templateTest"  - "Test the doubly-Fourier transformed data against a sin
 option "templateTestF" - "The template test frequency; templateTest flag is required" double dependon="templateTest" optional hidden
 option "templateTestP" - "The template test period; templateTest flag is required" double dependon="templateTest" optional hidden
 option "templateTestDf"    - "The template test modulation depth; templateTest flag is required" double dependon="templateTest" optional hidden
+option "bruteForceTemplateTest" - "Test a number of different templates using templateTest parameters" flag off hidden
 option "ULsolver" - "Solver function for the upper limit calculation: 0=gsl_ncx2cdf_float_withouttinyprob_solver, 1=gsl_ncx2cdf_withouttinyprob_solver, 2=gsl_ncx2cdf_float_solver, 3=gsl_ncx2cdf_solver, 4=ncx2cdf_float_withouttinyprob_withmatlabchi2cdf_solver, 5=ncx2cdf_withouttinyprob_withmatlabchi2cdf_solver" int values="0","1","2","3","4","5" default="0" optional hidden
 option "dopplerMultiplier" - "Multiplier for the Doppler velocity" double default="1.0" optional hidden
 option "IHSonly"  - "IHS stage only is run. Output statistic is the IHS statistic." flag off hidden
@@ -98,7 +99,6 @@ option "ULoff"    - "Turn off upper limits computation" flag off hidden
 option "printSFTtimes" - "Output a list <GPS sec> <GPS nanosec> of SFT start times of input SFTs" flag off hidden
 option "printUsedSFTtimes"  - "Output a list <GPS sec> <GPS nanosec> of SFT start times of the SFTs passing tests" flag off hidden
 option "printData"     - "Print to ASCII files the data values" flag off hidden
-option "printUninitialized" - "Print uninitialized values in TFdata_weighted and TSofPowers vectors at n-th sky location specified by option (if not enough sky locations exist, then these vectors don't get printed!)" int optional hidden
 option "printSignalData"    - "Print f0 and h0 per SFT of the signal, used only with --injectionSources option" dependon="injectionSources" string typestr="path/filename" default="./signal.dat" optional hidden
 option "printMarginalizedSignalData"  - "Print f0 and h0 per SFT of the signal, used only with --injectionSources option" dependon="injectionSources" string typestr="path/filename" default="./signal.dat" optional hidden
 option "randSeed" - "Random seed value" int optional hidden

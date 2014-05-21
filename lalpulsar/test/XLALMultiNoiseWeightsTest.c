@@ -50,11 +50,6 @@
 /*---------- macros ---------- */
 #define FRACERR(x,y) (fabs((x)-(y))/(0.5*((x)+(y))))
 
-/*---------- empty initializers ---------- */
-const LALStatus empty_status;
-const SFTConstraints empty_constraints;
-const MultiNoiseWeights empty_MultiNoiseWeights;
-
 /* ----- internal prototypes ---------- */
 int XLALCompareMultiNoiseWeights ( MultiNoiseWeights *multiWeights1, MultiNoiseWeights *multiWeights2, REAL8 tolerance );
 
@@ -62,9 +57,9 @@ int XLALCompareMultiNoiseWeights ( MultiNoiseWeights *multiWeights1, MultiNoiseW
 int
 main (  void )
 {
-  LALStatus status = empty_status;
+  LALStatus XLAL_INIT_DECL(status);
   SFTCatalog *catalog = NULL;
-  SFTConstraints constraints = empty_constraints;
+  SFTConstraints XLAL_INIT_DECL(constraints);
   MultiSFTVector *multiSFTs = NULL;
   MultiPSDVector *multiPSDs = NULL;
   MultiNoiseWeights *multiWeightsXLAL = NULL;
@@ -96,7 +91,7 @@ main (  void )
   XLAL_CHECK ( ( multiSFTs = XLALLoadMultiSFTs ( catalog, -1, -1 ) ) != NULL, XLAL_EFUNC, " XLALLoadMultiSFTs failed\n" );
 
   /* calculate the psd and normalize the SFTs */
-  XLAL_CHECK ( ( multiPSDs = XLALNormalizeMultiSFTVect ( multiSFTs, rngmedBins ) ) != NULL, XLAL_EFUNC, " XLALNormalizeMultiSFTVect failed\n" );
+  XLAL_CHECK ( ( multiPSDs = XLALNormalizeMultiSFTVect ( multiSFTs, rngmedBins, NULL ) ) != NULL, XLAL_EFUNC, " XLALNormalizeMultiSFTVect failed\n" );
 
   /* Get weights using LAL function */
   LALComputeMultiNoiseWeights ( &status, &(multiWeightsLAL), multiPSDs, rngmedBins, 0 );

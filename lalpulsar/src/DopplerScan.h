@@ -98,7 +98,7 @@ typedef enum
   GRID_SKY_LAST,			/**< end-marker for factored grid types */
   /* ----- full multi-dim grid-types ----- */
   GRID_FILE_FULLGRID	= 6,		/**< load the full D-dim grid from a file */
-  GRID_METRIC_LATTICE	= 7,		/**< 'optimal' covering using An*-lattice and flat metric */
+  /* GRID_METRIC_LATTICE= 7: 'optimal' covering using An*-lattice and flat metric */
   GRID_SPINDOWN_SQUARE  = 8,            /**< spindown tiling for a single sky position and square parameter space */
   GRID_SPINDOWN_AGEBRK  = 9,            /**< spindown tiling for a single sky position and non-square parameter space
 					   defined by spindown age and braking indices */
@@ -131,7 +131,7 @@ typedef struct tagDopplerSkyGrid {
 
 /** initialization-structure passed to InitDopplerSkyScan() */
 #ifdef SWIG /* SWIG interface directives */
-SWIGLAL(IMMUTABLE_MEMBERS(tagDopplerSkyScanInit, skyGridFile));
+SWIGLAL(IMMUTABLE_MEMBERS(tagDopplerSkyScanInit, Detector, ephemeris, skyGridFile));
 #endif /* SWIG */
 typedef struct tagDopplerSkyScanInit {
   CHAR *skyRegionString;	/**< sky-region to search: format polygon '(a1,d1), (a2,d2), ..' */
@@ -166,14 +166,6 @@ typedef struct tagMetricEllipse {
   REAL8 sminor;
   REAL8 angle;
 } MetricEllipse;
-
-/*---------- Global variables ----------*/
-/* some empty structs for initializations */
-extern const DopplerSkyGrid empty_DopplerSkyGrid;
-extern const DopplerSkyScanState empty_DopplerSkyScanState;
-extern const DopplerSkyScanInit empty_DopplerSkyScanInit;
-extern const DopplerRegion empty_DopplerRegion;
-extern const SkyRegion empty_SkyRegion;
 
 /*---------- external prototypes [API] ----------*/
 

@@ -53,6 +53,8 @@ parser = OptionParser(
         Option("--contour", metavar="PERCENT", type=float, action="append",
             default=[], help="plot contour enclosing this percentage of"
             + " probability mass [may be specified multiple times, default: none]"),
+        Option("--colorbar", default=False, action="store_true",
+            help="Show colorbar [default: %default]"),
         Option("--radec", nargs=2, metavar="RA Dec", type=float, action="append",
             default=[], help="right ascension (deg) and declination (deg) to mark"
             + " [may be specified multiple times, default: none]"),
@@ -103,11 +105,12 @@ vmax = probperdeg2.max()
 plot.healpix_heatmap(probperdeg2, dlon=dlon,
     vmin=0., vmax=vmax, cmap=plt.get_cmap(opts.colormap))
 
-# Plot colorbar.
-cb = plot.colorbar(vmax)
+if opts.colorbar:
+    # Plot colorbar.
+    cb = plot.colorbar(vmax)
 
-# Set colorbar label.
-cb.set_label(r'prob. per deg$^2$')
+    # Set colorbar label.
+    cb.set_label(r'prob. per deg$^2$')
 
 # Add contours.
 if opts.contour:
@@ -126,7 +129,7 @@ if opts.geo:
         geojson = json.load(geojson_file)
     for shape in geojson['geometries']:
         verts = np.deg2rad(shape['coordinates'])
-        plt.plot(verts[:, 0], verts[:, 1], color='black', linewidth=1, alpha=0.5)
+        plt.plot(verts[:, 0], verts[:, 1], color='black', linewidth=1, alpha=0.25)
 
 # Add markers (e.g., for injections or external triggers).
 for ra, dec in np.deg2rad(opts.radec):

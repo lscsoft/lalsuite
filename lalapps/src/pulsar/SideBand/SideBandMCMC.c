@@ -87,8 +87,6 @@ BOOLEAN uvar_ampmod;
 
 REAL8 jumptemp;
 
-static SideBandMCMCVector empty_SideBandMCMCVector;
-
 /* ---------- local prototypes ---------- */
 int main(int argc,char *argv[]);
 void initUserVars (LALStatus *);
@@ -123,7 +121,7 @@ int main(int argc,char *argv[])
   SideBandMCMCVector **MCMCchain = NULL;       /* a vector of MCMC parameter vectors where the Markov chain is stored */
   SideBandMCMCVector lambda;                   /* stores the current MCMC parameter vector */
   SideBandMCMCVector newlambda;                /* stores the prospective MCMC parameter vector */
-  SideBandMCMCVector currentlambda = empty_SideBandMCMCVector; /* stores the last successful MCMC jump parameter vector */
+  SideBandMCMCVector XLAL_INIT_DECL(currentlambda); /* stores the last successful MCMC jump parameter vector */
   SideBandMCMCRanges ranges;                   /* used to store the prior ranges on all MCMC parameters */
   SideBandMCMCJumpProbs jumpsizes;                 /* used to store the jump sizes for all MCMC parameters */
   RandomParams *randparams = NULL;

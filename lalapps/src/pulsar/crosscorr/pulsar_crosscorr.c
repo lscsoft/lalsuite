@@ -107,8 +107,6 @@ CHAR 	 *uvar_debugOut=NULL;
 #define SQUARE(x) ((x)*(x))
 #define CUBE(x) ((x)*(x)*(x))
 
-#define INIT_MEM(x) memset(&(x), 0, sizeof((x)))
-
 #define N_SPINDOWN_DERIVS 6
 
 void initUserVars (LALStatus *status);
@@ -356,8 +354,8 @@ int main(int argc, char *argv[]){
   /* set sft catalog constraints */
   constraints.detector = NULL;
   constraints.timestamps = NULL;
-  constraints.startTime = NULL;
-  constraints.endTime = NULL;
+  constraints.minStartTime = NULL;
+  constraints.maxStartTime = NULL;
 
   XLALGPSSet(&startTimeGPS, 0, 0);
   XLALGPSSet(&endTimeGPS, LAL_INT4_MAX, 0); 
@@ -365,12 +363,12 @@ int main(int argc, char *argv[]){
   if ( LALUserVarWasSet( &uvar_startTime ) ) {
     XLALGPSSetREAL8(&startTimeGPS, uvar_startTime);
 
-    constraints.startTime = &startTimeGPS;
+    constraints.minStartTime = &startTimeGPS;
   }
 
   if ( LALUserVarWasSet( &uvar_endTime ) ) {
     XLALGPSSetREAL8(&endTimeGPS, uvar_endTime);
-    constraints.endTime = &endTimeGPS;
+    constraints.maxStartTime = &endTimeGPS;
   }
 
   /* get sft catalog */
@@ -581,9 +579,9 @@ int main(int argc, char *argv[]){
     fdotsMax->length = N_SPINDOWN_DERIVS;
     fdotsMax->data = (REAL8 *)LALCalloc(fdotsMax->length, sizeof(REAL8));
 
-    INIT_MEM(spinRange_startTime);
-    INIT_MEM(spinRange_endTime);
-    INIT_MEM(spinRange_refTime);
+    XLAL_INIT_MEM(spinRange_startTime);
+    XLAL_INIT_MEM(spinRange_endTime);
+    XLAL_INIT_MEM(spinRange_refTime);
 
     spinRange_refTime.refTime = refTime;
     spinRange_refTime.fkdot[0] = uvar_f0;
@@ -1141,8 +1139,8 @@ void SetUpRadiometerSkyPatches(LALStatus           *status,	/**< pointer to LALS
 			       REAL8               dDelta)  /**< delta resolution (if isotropic grid is to be constructed) */
 {
 
-  DopplerSkyScanInit scanInit = empty_DopplerSkyScanInit;   /* init-structure for DopperScanner */
-  DopplerSkyScanState thisScan = empty_DopplerSkyScanState; /* current state of the Doppler-scan */
+  DopplerSkyScanInit XLAL_INIT_DECL(scanInit);   /* init-structure for DopperScanner */
+  DopplerSkyScanState XLAL_INIT_DECL(thisScan); /* current state of the Doppler-scan */
   UINT4 nSkyPatches, skyCounter;
   PulsarDopplerParams dopplerpos;
 
@@ -1279,7 +1277,7 @@ void InitDoppParams(LALStatus *status,
    
 	    /* initialize Doppler parameters of the potential source */
 
-	    INIT_MEM( thisPoint->fkdot );
+	    XLAL_INIT_MEM( thisPoint->fkdot );
 	    thisPoint->fkdot[0] = f_current;
 	    thisPoint->fkdot[1] = fdot_current; 
 	    thisPoint->fkdot[2] = fddot_current;

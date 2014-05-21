@@ -21,12 +21,8 @@
   This file defines:
   - a macro SINCOS_TRIM_X(y,x) which trims the value x to interval [0..2)
   - global REAL4 arrays sincosLUTbase[] and sincosLUTdiff[] as lookup tables
-  - a function void local_sin_cos_2PI_LUT_init(void) that inits these
-  - a function local_sin_cos_2PI_LUT_trimmed(*sin,*cos,x) that uses the
-    lookup tables to evaluate sin and cos values of 2*Pi*x if x is
-    already trimmed to the interval [0..2)
   - macros SINCOS_STEP1..6 for the individual steps of
-    local_sin_cos_2PI_LUT_trimmed() (to be mixed into the hotloop code)
+    XLALSinCos2PiLUTtrimmed() (to be mixed into the hotloop code)
   - a type ux_t for a variable ux to be used in these macros
   - macros SINCOS_LUT_RES, SINCOS_ADDS, SINCOS_MASK1, SINCOS_MASK2, SINCOS_SHIFT
 
@@ -39,6 +35,12 @@
 
 #include <lal/LALConstants.h>
 #include <lal/XLALError.h>
+
+#ifdef __GNUC__
+#define UNUSED __attribute__ ((unused))
+#else
+#define UNUSED
+#endif
 
 /*
   Trimming macro
@@ -100,47 +102,15 @@
 #define SINCOS_LUT_RES 1024 /* should be multiple of 4 */
 
 /* global VARIABLES to be used in (global) macros */
-static REAL4 sincosLUTbase[SINCOS_LUT_RES+SINCOS_LUT_RES/4];
-static REAL4 sincosLUTdiff[SINCOS_LUT_RES+SINCOS_LUT_RES/4];
+extern UNUSED REAL4 sincosLUTbase[SINCOS_LUT_RES+SINCOS_LUT_RES/4];
+extern UNUSED REAL4 sincosLUTdiff[SINCOS_LUT_RES+SINCOS_LUT_RES/4];
 /* shift cos tables 90 deg. to sin table */
-static const REAL4* cosLUTbase = sincosLUTbase + (SINCOS_LUT_RES/4);
-static const REAL4* cosLUTdiff = sincosLUTdiff + (SINCOS_LUT_RES/4);
-
-
-
-
-/*
-  LUT initialization
-*/
-
-static void local_sin_cos_2PI_LUT_init (void)
-{
-  static const REAL8 step = LAL_TWOPI / (REAL8)SINCOS_LUT_RES;
-  static const REAL8 divide  = 1.0 / ( 1 << SINCOS_SHIFT );
-  REAL8 start, end, true_mid, linear_mid;
-  int i;
-
-  start = 0.0; /* sin(0 * step) */
-  for( i = 0; i < SINCOS_LUT_RES + SINCOS_LUT_RES/4; i++ ) {
-    true_mid = sin( ( i + 0.5 ) * step );
-    end = sin( ( i + 1 ) * step );
-    linear_mid = ( start + end ) * 0.5;
-    sincosLUTbase[i] = start + ( ( true_mid - linear_mid ) * 0.5 );
-    sincosLUTdiff[i] = ( end - start ) * divide;
-    start = end;
-  }
-}
-
-
-
-
-/*
-  LUT evaluation
-*/
+static const UNUSED REAL4* cosLUTbase = sincosLUTbase + (SINCOS_LUT_RES/4);
+static const UNUSED REAL4* cosLUTdiff = sincosLUTdiff + (SINCOS_LUT_RES/4);
 
 /* Variables */
 
-static INT4 sincosI, sincosN;
+static UNUSED INT4 sincosI, sincosN;
 
 /* A REAL8 variable that allows to read its higher bits as an INT4 */
 static union {
@@ -154,7 +124,7 @@ static union {
     INT4 dummy;
 #endif
   } as2int;
-} sincosUX;
+} UNUSED sincosUX;
 
 
 
@@ -245,33 +215,3 @@ static union {
   "fstps   %[" #cos "]     \n\t" /* (*cos)=cosbase[i]+n*cosdiff[i];*/
 /* list of clobbered registers */
 #define SINCOS_REGISTERS RAX,RDX,RDI,"st","st(1)","st(2)","cc"
-
-
-
-/* LUT evaluation function */
-
-static int local_sin_cos_2PI_LUT_trimmed (REAL4 *s, REAL4 *c, REAL8 x) {
-
-  /* check range of input only in DEBUG mode */
-#ifndef LAL_NDEBUG
-  if(x > SINCOS_ADDS) {
-    XLALPrintError("%s: x too large: %22f > %f\n", __func__, x, SINCOS_ADDS);
-    return XLAL_FAILURE;
-  } else if(x < -SINCOS_ADDS) {
-    XLALPrintError("%s: x too small: %22f < %f\n", __func__, x, -SINCOS_ADDS);
-    return XLAL_FAILURE;
-  }
-#endif
-
-  /* use the macros defined above */
-  SINCOS_PROLOG
-  SINCOS_STEP1(x)
-  SINCOS_STEP2
-  SINCOS_STEP3
-  SINCOS_STEP4
-  SINCOS_STEP5(s)
-  SINCOS_STEP6(c)
-  SINCOS_EPILOG(s,c,x)
-
-  return XLAL_SUCCESS;
-} /* local_sin_cos_2PI_LUT_trimmed */

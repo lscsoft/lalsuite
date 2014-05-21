@@ -70,9 +70,6 @@ void subtractSFTVectors (LALStatus *stat, SFTVector **ret, const SFTVector *sftv
 extern int vrbflg;
 
 /*----------------------------------------------------------------------*/
-static const LALStatus empty_status;
-static const SFTConstraints empty_constraints;
-/*----------------------------------------------------------------------*/
 /* User variables */
 CHAR *uvar_sftBname1;
 CHAR *uvar_sftBname2;
@@ -87,8 +84,8 @@ REAL8 uvar_relErrorMax;
 int
 main(int argc, char *argv[])
 {
-  LALStatus status = empty_status;	/* initialize status */
-  SFTConstraints constraints = empty_constraints;
+  LALStatus XLAL_INIT_DECL(status);
+  SFTConstraints XLAL_INIT_DECL(constraints);
   CHAR detector[2] = "??";	/* allow reading v1-SFTs without detector-info */
   SFTVector *SFTs1 = NULL, *SFTs2 = NULL;
   SFTVector *diffs = NULL;

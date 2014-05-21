@@ -164,6 +164,9 @@ tagRAT4
  * Consists of a pair of unit structures; used as an input structure for
  * the LALUnitCompare() and LALUnitMultiply() functions.
  */
+#ifdef SWIG /* SWIG interface directives */
+SWIGLAL(IMMUTABLE_MEMBERS(tagLALUnitPair, unitOne, unitTwo));
+#endif /* SWIG */
 typedef struct
 tagLALUnitPair
 {

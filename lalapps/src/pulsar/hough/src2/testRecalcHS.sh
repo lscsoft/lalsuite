@@ -4,8 +4,9 @@
 ## namely by feeding it the HS output candidate-file as input and verifying that it correctly reproduces these
 ## candidates
 
-## run all LALApps programs with memory debugging
-export LAL_DEBUG_LEVEL="${LAL_DEBUG_LEVEL},memdbg"
+## set LAL debug level
+echo "Setting LAL_DEBUG_LEVEL=${LAL_DEBUG_LEVEL:-msglvl1,memdbg}"
+export LAL_DEBUG_LEVEL
 
 ## take user-arguments:
 extra_args="$@"
@@ -24,15 +25,6 @@ fi
 code_MFD="${injectdir}lalapps_Makefakedata_v4"
 code_HS="${builddir}/lalapps_HierarchicalSearch"
 code_RC="${builddir}/lalapps_RecalcHSCandidates"
-
-if [ -z "${LAL_DATA_PATH}" ]; then
-    echo
-    echo "Need environment-variable LAL_DATA_PATH to be set to include"
-    echo "your ephemeris-directory (e.g. /usr/local/share/lalpulsar)"
-    echo "This might indicate an incomplete LAL+LALPULSAR installation"
-    echo
-    exit 1
-fi
 
 ## ----- parameters
 SFTsH1="./allSFTs_H1.sft"

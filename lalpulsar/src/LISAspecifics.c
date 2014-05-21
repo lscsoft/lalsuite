@@ -48,9 +48,6 @@
 
 /*---------- internal types ----------*/
 
-/*---------- empty initializers ---------- */
-const LALDetector empty_LALDetector;
-
 /*---------- Global variables ----------*/
 
 /*---------- internal prototypes ----------*/
@@ -71,7 +68,7 @@ XLALcreateLISA (LALDetector *Detector,	/**< [out] LALDetector */
 		CHAR channelNum		/**< [in] which TDI observable: '1' = X, '2'= Y, '3' = Z, '4' = Y-Z, '5' = Z-X, '6' = X-Y, '7' = A, '8' = E, '9' = T */
 		)
 {
-  LALDetector Detector1 = empty_LALDetector;
+  LALDetector XLAL_INIT_DECL(Detector1);
 
   if ( !Detector )
     return -1;

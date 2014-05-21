@@ -20,17 +20,15 @@
 #include <math.h>
 #include "antenna.h"
 
-
-static const LALStatus empty_status;
-
 //Compute the number of integer bin shifts per SFT
 // bin shift = f0*v*Tcoh
 // where f0 is frequency, v is velocity in units of c, and Tcoh is the SFT coherence length
 // an optional dopplerMultiplier value could be multiplied if desired (default value is 1.0)
 INT4 CompBinShifts(INT4Vector *output, REAL8 freq, REAL4Vector *velocities, REAL8 Tcoh, REAL4 dopplerMultiplier)
 {
+   XLAL_CHECK( output != NULL && velocities != NULL, XLAL_EINVAL );
    for (INT4 ii=0; ii<(INT4)velocities->length; ii++) output->data[ii] = (INT4)round(dopplerMultiplier*freq*velocities->data[ii]*Tcoh);
-   return 0;
+   return XLAL_SUCCESS;
 } /* CompBinShifts() */
 
 
@@ -40,11 +38,13 @@ INT4 CompBinShifts(INT4Vector *output, REAL8 freq, REAL4Vector *velocities, REAL
 INT4 CompAntennaPatternWeights(REAL4Vector *output, REAL4 ra, REAL4 dec, REAL8 t0, REAL8 Tcoh, REAL8 SFToverlap, REAL8 Tobs, INT4 linPolOn, REAL8 polAngle, LALDetector det)
 {
 
+   XLAL_CHECK( output != NULL, XLAL_EINVAL );
+
    INT4 numffts = (INT4)floor(Tobs/(Tcoh-SFToverlap)-1);    //Number of FFTs
    REAL8 fplus, fcross;
-   
+
    for (INT4 ii=0; ii<numffts; ii++) {
-      
+
       LIGOTimeGPS gpstime = LIGOTIMEGPSZERO;
       gpstime.gpsSeconds = (INT4)floor(t0 + ii*(Tcoh-SFToverlap) + 0.5*Tcoh);
       gpstime.gpsNanoSeconds = (INT4)floor((t0+ii*(Tcoh-SFToverlap)+0.5*Tcoh - floor(t0+ii*(Tcoh-SFToverlap)+0.5*Tcoh))*1e9);
@@ -53,13 +53,13 @@ INT4 CompAntennaPatternWeights(REAL4Vector *output, REAL4 ra, REAL4 dec, REAL8 t
 
       XLALComputeDetAMResponse(&fplus, &fcross, (const REAL4(*)[3])det.response, ra, dec, polAngle, gmst);
       XLAL_CHECK( xlalErrno == 0, XLAL_EFUNC );
-      
+
       if (!linPolOn) output->data[ii] = (REAL4)(fplus*fplus + fcross*fcross);
       else output->data[ii] = (REAL4)(fplus*fplus);
-      
+
    } /* for ii < numffts */
 
-   return 0;
+   return XLAL_SUCCESS;
 
 } /* CompAntennaPatternWeights() */
 
@@ -67,38 +67,42 @@ INT4 CompAntennaPatternWeights(REAL4Vector *output, REAL4 ra, REAL4 dec, REAL8 t
 //Compute the antenna velocity
 INT4 CompAntennaVelocity(REAL4Vector *output, REAL4 ra, REAL4 dec, REAL8 t0, REAL8 Tcoh, REAL8 SFToverlap, REAL8 Tobs, LALDetector det, EphemerisData *edat)
 {
-   
+
+   XLAL_CHECK( output != NULL && edat != NULL, XLAL_EINVAL );
+
    INT4 ii;
    INT4 numffts = (INT4)floor(Tobs/(Tcoh-SFToverlap)-1);    //Number of FFTs
-   LALStatus status = empty_status;
-   
+   LALStatus XLAL_INIT_DECL(status);
+
    REAL8 detvel[3];
    for (ii=0; ii<numffts; ii++) {
-      
+
       LIGOTimeGPS gpstime = LIGOTIMEGPSZERO;
       gpstime.gpsSeconds = (INT4)floor(t0 + ii*(Tcoh-SFToverlap) + 0.5*Tcoh);
       gpstime.gpsNanoSeconds = (INT4)floor((t0+ii*(Tcoh-SFToverlap)+0.5*Tcoh - floor(t0+ii*(Tcoh-SFToverlap)+0.5*Tcoh))*1e9);
-   
+
       LALDetectorVel(&status, detvel, &gpstime, det, edat);
       XLAL_CHECK( status.statusCode == 0, XLAL_EFUNC );
-      
+
       output->data[ii] = (REAL4)(detvel[0]*cos(ra)*cos(dec) + detvel[1]*sin(ra)*cos(dec) + detvel[2]*sin(dec));
-      
+
    } /* for ii < numffts */
 
-   return 0;
-   
+   return XLAL_SUCCESS;
+
 } /* CompAntennaVelocity() */
 
 
 //Determine the maximum change in velocity
 REAL4 CompDetectorDeltaVmax(REAL8 t0, REAL8 Tcoh, REAL8 SFToverlap, REAL8 Tobs, LALDetector det, EphemerisData *edat)
 {
-   
+
+   XLAL_CHECK( edat != NULL, XLAL_EINVAL );
+
    INT4 ii;
    INT4 numffts = (INT4)floor(Tobs/(Tcoh-SFToverlap)-1);    //Number of FFTs
-   LALStatus status = empty_status;
-   
+   LALStatus XLAL_INIT_DECL(status);
+
    REAL8 detvel[3];
    REAL8 detvel0[3];
    REAL8 dv[3];
@@ -107,7 +111,7 @@ REAL4 CompDetectorDeltaVmax(REAL8 t0, REAL8 Tcoh, REAL8 SFToverlap, REAL8 Tobs, 
       LIGOTimeGPS gpstime = LIGOTIMEGPSZERO;
       gpstime.gpsSeconds = (INT4)floor(t0 + ii*(Tcoh-SFToverlap) + 0.5*Tcoh);
       gpstime.gpsNanoSeconds = (INT4)floor((t0+ii*(Tcoh-SFToverlap)+0.5*Tcoh - floor(t0+ii*(Tcoh-SFToverlap)+0.5*Tcoh))*1e9);
-   
+
       if (ii==0) {
          LALDetectorVel(&status, detvel0, &gpstime, det, edat);
          XLAL_CHECK_REAL4( status.statusCode == 0, XLAL_EFUNC );
@@ -122,27 +126,29 @@ REAL4 CompDetectorDeltaVmax(REAL8 t0, REAL8 Tcoh, REAL8 SFToverlap, REAL8 Tobs, 
          if (deltaV > deltaVmax) deltaVmax = deltaV;
       } /* if ii==0 else ... */
    } /* for ii < numffts */
-   
+
    return deltaVmax;
-   
+
 } /* CompDetectorDeltaVmax() */
 
 
 //From a given t0 start time, determine the maximum velocity over the observation time
 REAL4 CompDetectorVmax(REAL8 t0, REAL8 Tcoh, REAL8 SFToverlap, REAL8 Tobs, LALDetector det, EphemerisData *edat)
 {
-   
+
+   XLAL_CHECK( edat != NULL, XLAL_EINVAL );
+
    INT4 ii;
    INT4 numffts = (INT4)floor(Tobs/(Tcoh-SFToverlap)-1);    //Number of FFTs
-   LALStatus status = empty_status;
-   
+   LALStatus XLAL_INIT_DECL(status);
+
    REAL8 detvel[3];
    REAL4 Vmax = 0.0;
    for (ii=0; ii<numffts; ii++) {
       LIGOTimeGPS gpstime = LIGOTIMEGPSZERO;
       gpstime.gpsSeconds = (INT4)floor(t0 + ii*(Tcoh-SFToverlap) + 0.5*Tcoh);
       gpstime.gpsNanoSeconds = (INT4)floor((t0+ii*(Tcoh-SFToverlap)+0.5*Tcoh - floor(t0+ii*(Tcoh-SFToverlap)+0.5*Tcoh))*1e9);
-      
+
       if (ii==0) {
          LALDetectorVel(&status, detvel, &gpstime, det, edat);
          XLAL_CHECK_REAL4( status.statusCode == 0, XLAL_EFUNC );
@@ -154,9 +160,7 @@ REAL4 CompDetectorVmax(REAL8 t0, REAL8 Tcoh, REAL8 SFToverlap, REAL8 Tobs, LALDe
          if (V > Vmax) Vmax = V;
       } /* if ii==0 else ... */
    } /* for ii < numffts */
-   
+
    return Vmax;
-   
+
 } /* CompDetectorVmax() */
-
-

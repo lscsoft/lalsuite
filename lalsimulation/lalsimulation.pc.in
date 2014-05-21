@@ -12,4 +12,4 @@ Description: LAL Simulation Library Support
 Version: @VERSION@
 Requires: lal >= @LAL_VERSION@
 Libs: -L${libdir} -llalsimulation
-Cflags: -I${includedir}
+Cflags: -I${includedir} @OPENMP_CFLAGS@

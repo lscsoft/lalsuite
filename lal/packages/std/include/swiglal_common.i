@@ -305,7 +305,9 @@ static const LALStatus swiglal_empty_LALStatus = {0, NULL, NULL, NULL, NULL, 0, 
 // to check whether PTR own its own memory (and release any parents).
 %define %swiglal_call_dtor(DTORFUNC, PTR)
 if (swiglal_release_parent(PTR)) {
-  DTORFUNC(PTR);
+  XLALClearErrno();
+  (void)DTORFUNC(PTR);
+  XLALClearErrno();
 }
 %enddef
 
@@ -1087,10 +1089,17 @@ if (swiglal_release_parent(PTR)) {
     return SWIG_AsLALcharPtrAndSize(obj, pstr, 0, &alloc);
   }
 }
+#if SWIG_VERSION >= 0x030000
+%typemaps_string_alloc(%checkcode(STRING), %checkcode(char), char, LALchar,
+                       SWIG_AsLALcharPtrAndSize, SWIG_FromLALcharPtrAndSize,
+                       strlen, SWIG_strnlen, %swiglal_new_copy_array, XLALFree,
+                       "<limits.h>", CHAR_MIN, CHAR_MAX);
+#else
 %typemaps_string_alloc(%checkcode(STRING), %checkcode(char), char, LALchar,
                        SWIG_AsLALcharPtrAndSize, SWIG_FromLALcharPtrAndSize,
                        strlen, %swiglal_new_copy_array, XLALFree,
                        "<limits.h>", CHAR_MIN, CHAR_MAX);
+#endif
 
 // Typemaps for string pointers.  By default, treat arguments of type char**
 // as output-only arguments, which do not require a scripting-language input
@@ -1334,6 +1343,40 @@ if (swiglal_release_parent(PTR)) {
   (const char *format, ...), (const char *fmt, ...)
 };
 
+// Specialised input typemap for C file pointers. Generally it is not possible to
+// convert scripting-language file objects into FILE*, since the scripting language
+// may not provide access to the FILE*, or even be using FILE* internally for I/O.
+// The FILE* will therefore have to be supplied from another SWIG-wrapped C function.
+// For convenience, however, we allow the user to pass integers 0, 1, or 2 in place
+// of a FILE*, as an instruction to use standard input, output, or error respectively.
+%typemap(in, noblock=1, fragment=SWIG_AsVal_frag(int)) FILE* (void *argp = 0, int res = 0) {
+  res = SWIG_ConvertPtr($input, &argp, $descriptor, $disown | %convertptr_flags);
+  if (!SWIG_IsOK(res)) {
+    int val = 0;
+    res = SWIG_AsVal(int)($input, &val);
+    if (!SWIG_IsOK(res)) {
+      %argument_fail(res, "$type", $symname, $argnum);
+    } else {
+      switch (val) {
+      case 0:
+        $1 = stdin;
+        break;
+      case 1:
+        $1 = stdout;
+        break;
+      case 2:
+        $1 = stderr;
+        break;
+      default:
+        %argument_fail(SWIG_ValueError, "$type", $symname, $argnum);
+      }
+    }
+  } else {
+    $1 = %reinterpret_cast(argp, $ltype);
+  }
+}
+%typemap(freearg) FILE* "";
+
 // This macro supports functions which require a variable-length
 // list of arguments of type TYPE, i.e. a list of strings. It
 // generates SWIG "compact" default arguments, i.e. only one
@@ -1360,8 +1403,12 @@ typedef struct {} NAME;
 %ignore DTORFUNC;
 %extend NAME {
   ~NAME() {
-    DTORFUNC($self);
+    (void)DTORFUNC($self);
   }
 }
 %enddef
 #define %swiglal_public_clear_EXTERNAL_STRUCT(NAME, DTORFUNC)
+
+// Local Variables:
+// mode: c
+// End:

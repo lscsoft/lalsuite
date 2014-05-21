@@ -238,6 +238,30 @@ int XLALSimIMRPhenomPCalculateModelParameters(
 );
 
 /**
+ * Driver routine to compute the spin-aligned, inspiral-merger-ringdown
+ * phenomenological waveform IMRPhenomC in the time domain.
+ *
+ * Reference: http://arxiv.org/abs/1005.3306
+ *   - Waveform: Eq.(5.1) - (5.13)
+ *   - Coefficients: Eq.(5.14) and Table II
+ *
+ * All input parameters should be in SI units. Angles should be in radians.
+ */
+int XLALSimIMRPhenomCGenerateTD(
+    REAL8TimeSeries **hplus,  /**< +-polarization waveform */
+    REAL8TimeSeries **hcross, /**< x-polarization waveform */
+    const REAL8 phiPeak,      /**< orbital phase at peak (rad) */
+    const REAL8 deltaT,       /**< sampling interval (s) */
+    const REAL8 m1_SI,        /**< mass of companion 1 (kg) */
+    const REAL8 m2_SI,        /**< mass of companion 2 (kg) */
+    const REAL8 chi,          /**< mass-weighted aligned-spin parameter */
+    const REAL8 f_min,        /**< starting GW frequency (Hz) */
+    const REAL8 f_max,        /**< end frequency; 0 defaults to ringdown cutoff freq */
+    const REAL8 distance,     /**< distance of source (m) */
+    const REAL8 inclination   /**< inclination of source (rad) */
+);
+
+/**
  * This function generates the plus and cross polarizations for the dominant
  * (2,2) mode of the EOBNRv2 approximant. This model is defined in Pan et al,
  * arXiv:1106.1021v1 [gr-qc].

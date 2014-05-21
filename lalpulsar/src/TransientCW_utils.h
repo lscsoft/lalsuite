@@ -48,6 +48,7 @@ extern "C" {
 #include <lal/SFTutils.h>
 #include <lal/PulsarDataTypes.h>
 #include <lal/ComputeFstat.h>
+#include <lal/CWFastMath.h> /* for XLALFastNegExp() */
 
 /* ---------- exported API defines ---------- */
 
@@ -95,12 +96,6 @@ typedef struct tagtransientCandidate_t {
   REAL8 tau_MP;				/**< maximum-posterior estimate for tau */
 } transientCandidate_t;
 
-/* empty struct initializers */
-extern const transientCandidate_t empty_transientCandidate;
-extern const transientWindow_t empty_transientWindow;
-extern const transientWindowRange_t empty_transientWindowRange;
-extern const transientFstatMap_t empty_transientFstatMap;
-
 /* ---------- exported API prototypes ---------- */
 int XLALParseTransientWindowName ( const char *windowName );
 
@@ -126,13 +121,6 @@ pdf1D_t *XLALComputeTransientPosterior_tau ( transientWindowRange_t windowRange,
 
 void XLALDestroyTransientFstatMap ( transientFstatMap_t *FstatMap );
 void XLALDestroyTransientCandidate ( transientCandidate_t *cand );
-
-/* these functions operate on the module-local lookup-table for negative-exponentials,
- * which will dynamically be generated on first use of XLALFastNegExp(), and can
- * be destroyed at any time using XLALDestroyExpLUT()
- */
-REAL8 XLALFastNegExp ( REAL8 mx );
-void XLALDestroyExpLUT( void );
 
 /* ---------- Fstat-atoms related functions ----------*/
 int write_MultiFstatAtoms_to_fp ( FILE *fp, const MultiFstatAtomVector *multiAtoms );

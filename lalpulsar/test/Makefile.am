@@ -12,16 +12,15 @@ check_PROGRAMS = \
 	ExtrapolatePulsarSpinsTest \
 	FitToPulsarTest \
 	FlatMeshTest \
-	FoldAmplitudesTest \
 	GeneralMeshTest \
 	GeneralMetricTest \
 	GeneratePulsarSignalTest \
 	GetAMCoeffsTest \
+	LineRobustStatsTest \
 	NewGetAMCoeffsTest \
 	XLALComputeAMTest \
 	PtoleMeshTest \
 	PtoleMetricTest \
-	PulsarCatTest \
 	SFTfileIOTest \
 	SimulateTaylorCWTest \
 	SkyMetricTest \

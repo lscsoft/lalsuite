@@ -65,9 +65,6 @@ typedef struct tagMultiSSBtimes {
 } MultiSSBtimes;
 
 /*---------- exported Global variables ----------*/
-/* empty init-structs for the types defined in here */
-extern const SSBtimes empty_SSBtimes;
-extern const MultiSSBtimes empty_MultiSSBtimes;
 
 /*---------- exported prototypes [API] ----------*/
 int XLALAddBinaryTimes ( SSBtimes **tSSBOut, const SSBtimes *tSSBIn, const PulsarDopplerParams *Doppler );

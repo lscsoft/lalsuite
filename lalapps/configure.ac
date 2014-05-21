@@ -32,6 +32,7 @@ AC_CONFIG_FILES([\
   src/pulsar/TimingTests/Makefile \
   src/pulsar/TDS_isolated/Makefile \
   src/pulsar/CreateEphemeris/Makefile \
+  src/pulsar/Tools/Makefile \
   src/inspiral/Makefile \
   src/inspiral/posterior/Makefile \
   src/inspiral/posterior/SPINspiral/Makefile \
@@ -176,6 +177,7 @@ PKG_CHECK_MODULES([GSL],[gsl],[true],[false])
 LALSUITE_ADD_FLAGS([C],[${GSL_CFLAGS}],[${GSL_LIBS}])
 AC_CHECK_LIB([gslcblas],[main],,[AC_MSG_ERROR([could not find the gsl library])])
 AC_CHECK_LIB([gsl],[gsl_version],,[AC_MSG_ERROR([could not find the gsl library])])
+LALSUITE_CHECK_GSL_VERSION([1.13])
 LALSUITE_ENABLE_FAST_GSL
 
 # check for gsl headers

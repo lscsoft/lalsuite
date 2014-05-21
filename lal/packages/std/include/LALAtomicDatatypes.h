@@ -71,6 +71,12 @@ typedef uint16_t UINT2;		/**< Two-byte unsigned integer. */
 typedef uint32_t UINT4;		/**< Four-byte unsigned integer. */
 typedef uint64_t UINT8;		/**< Eight-byte unsigned integer; on some platforms this is equivalent to <tt>unsigned long int</tt> instead. */
 
+/** MACRO to initialize arbitrary variable 'x' to zero */
+#define XLAL_INIT_MEM(x) memset(&(x), 0, sizeof((x)))
+/** C99 MACRO to declare and zero-initialize a variable, use as "type XLAL_INIT_DECL(var);" */
+#define XLAL_INIT_DECL(var) var; XLAL_INIT_MEM(var)
+
+
 /* Macros for integer constants */
 /**
  * \def LAL_INT8_C(v) (v ## LL)

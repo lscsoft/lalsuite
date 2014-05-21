@@ -7,7 +7,7 @@ endif
 
 if HAVE_CHEALPIX
 BAYESTARHDR = bayestar_sky_map.h
-BAYESTARSRC = logaddexp.h bayestar_sky_map.c
+BAYESTARSRC = bayestar_sky_map.c
 endif
 
 lalinferenceincludedir = $(includedir)/lal
@@ -41,6 +41,7 @@ liblalinference_la_SOURCES = \
 	LALInferenceInitCBC.c \
 	LALInferenceVCSInfo.c \
 	LALInferenceRemoveLines.c \
+	logaddexp.h \
 	$(BAYESTARSRC) \
 	$(XMLSRC)
 nodist_liblalinference_la_SOURCES = LALInferenceBuildInfo.c

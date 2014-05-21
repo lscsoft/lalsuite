@@ -86,8 +86,6 @@
 #define TRUE (1==1)
 #define FALSE (1==0)
 
-static REAL8Vector empty_REAL8Vector;
-
 /* ****************************************
  * Structure, HoughParamsTest, typedef
  */
@@ -160,7 +158,8 @@ int main(int argc, char *argv[]){
   UINT4     binsSFT;
 
   /* vector of weights */
-  REAL8Vector      weightsV, weightsNoise, weightsAM = empty_REAL8Vector;;
+  REAL8Vector      weightsV, weightsNoise;
+  REAL8Vector XLAL_INIT_DECL(weightsAM);
   REAL8      alphaPeak, meanN, sigmaN; 
   /* REAL8      significance;*/
   

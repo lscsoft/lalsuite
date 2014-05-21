@@ -34,7 +34,8 @@ include $(top_srcdir)/swig/swiglal_header.am
 
 swigincludedir = $(pkgincludedir)
 swiginclude_HEADERS = \
-	lalswig_ligotimegps.i \
+	SWIGLIGOTimeGPSPre.i \
+	SWIGLIGOTimeGPSPost.i \
 	swiglal_common.i \
 	swiglal_octave.i \
 	swiglal_python.i

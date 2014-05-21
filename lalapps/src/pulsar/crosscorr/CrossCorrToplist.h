@@ -45,6 +45,8 @@ typedef struct {
   REAL8 ecc;     	/**< eccentricity */
   REAL8 period; 	/**< bperiod */
   REAL8 rho; 		/**< Crosscorr statistic */
+  REAL8 evSquared;      /**< E[rho]/h0^2)^2 */
+  REAL8 estSens;        /**< average template E[rho]/h0^2)^2*/
 } CrossCorrBinaryOutputEntry;
 
 
@@ -57,6 +59,7 @@ typedef struct {
  * returns -1 on error (usually out of memory), else 0
  */
 extern int create_crossCorr_toplist(toplist_t**list, UINT8 length);
+extern int create_crossCorrBinary_toplist(toplist_t**list, UINT8 length);
 
 /** frees the space occupied by the toplist */
 extern void free_crossCorr_toplist(toplist_t**list);
@@ -69,7 +72,7 @@ extern void free_crossCorr_toplist(toplist_t**list);
  */
 extern int insert_into_crossCorr_toplist(toplist_t*list, CrossCorrOutputEntry line);
 
-extern int insert_into_CrossCorrBinary_toplist(toplist_t*list, CrossCorrBinaryOutputEntry line);
+extern int insert_into_crossCorrBinary_toplist(toplist_t*list, CrossCorrBinaryOutputEntry line);
 
 /**
  * Writes the toplist to an (already open) filepointer
@@ -78,6 +81,8 @@ extern int insert_into_CrossCorrBinary_toplist(toplist_t*list, CrossCorrBinaryOu
  * Returns something <0 on error
  */
 extern int write_crossCorr_toplist_to_fp(toplist_t*list, FILE*fp, UINT4*checksum);
+
+extern int write_crossCorrBinary_toplist_to_fp(toplist_t*list, FILE*fp, UINT4*checksum);
 
 /**
  * reads a (created!) toplist from an open filepointer
@@ -88,7 +93,9 @@ extern int write_crossCorr_toplist_to_fp(toplist_t*list, FILE*fp, UINT4*checksum
  * -1 if the file contained a syntax error,
  * -2 if given an improper toplist
  */
-extern int read_crossCorr_toplist_from_fp(toplist_t*list, FILE*fp, UINT4*checksum, UINT4 maxbytes);
+/* extern int read_crossCorr_toplist_from_fp(toplist_t*list, FILE*fp, UINT4*checksum, UINT4 maxbytes); */
+
+/* extern int read_crossCorrBinary_toplist_from_fp(toplist_t*list, FILE*fp, UINT4*checksum, UINT4 maxbytes); */
 
 /**
  * sorts the toplist with an internal sorting function,
@@ -96,7 +103,7 @@ extern int read_crossCorr_toplist_from_fp(toplist_t*list, FILE*fp, UINT4*checksu
  */
 extern void sort_crossCorr_toplist(toplist_t*list);
 
-
+extern void sort_crossCorrBinary_toplist(toplist_t*list);
 
 
 /** File IO */
@@ -118,6 +125,8 @@ extern int write_crossCorrBinary_toplist_item_to_fp(CrossCorrBinaryOutputEntry l
  */
 extern int atomic_write_crossCorr_toplist_to_file(toplist_t*list, const char*filename, UINT4*checksum);
 
+extern int atomic_write_crossCorrBinary_toplist_to_file(toplist_t*list, const char*filename, UINT4*checksum);
+
 /**
  * meant for the final writing of the toplist
  * - reduces toplist precision
@@ -126,7 +135,7 @@ extern int atomic_write_crossCorr_toplist_to_file(toplist_t*list, const char*fil
  */
 extern int final_write_crossCorr_toplist_to_file(toplist_t*list, const char*filename, UINT4*checksum);
 
-
+extern int final_write_crossCorrBinary_toplist_to_file(toplist_t*list, const char*filename, UINT4*checksum);
 
 
 /**
@@ -164,6 +173,6 @@ extern int read_cc_checkpoint(const char*filename, toplist_t*tl, UINT4*counter);
  * - write out the toplist in ASCII format with end marker to a temporary file
  * - rename the file to the final name
  */
-extern int write_cc_oputput(const char*filename, toplist_t*tl);
+extern int write_cc_output(const char*filename, toplist_t*tl);
 
 #endif /* CROSSCORRTOPLIST_H - double inclusion protection */

@@ -208,10 +208,6 @@ typedef struct
 
 // ----- global variables ----------
 
-// ----- empty structs for initializations
-static const UserVariables_t empty_UserVariables;
-static const ConfigVars_t empty_GV;
-
 // ---------- local prototypes ----------
 int XLALInitUserVars ( UserVariables_t *uvar, int argc, char *argv[] );
 int XLALInitMakefakedata ( ConfigVars_t *cfg, UserVariables_t *uvar );
@@ -230,13 +226,13 @@ int XLALIsValidDescriptionField ( const char *desc );
 int
 main(int argc, char *argv[])
 {
-  ConfigVars_t GV = empty_GV;
-  PulsarSignalParams params = empty_PulsarSignalParams;
+  ConfigVars_t XLAL_INIT_DECL(GV);
+  PulsarSignalParams XLAL_INIT_DECL(params);
   REAL4TimeSeries *Tseries = NULL;
   UINT4 i_chunk, numchunks;
   FILE *fpSingleSFT = NULL;
   size_t len;
-  UserVariables_t uvar = empty_UserVariables;
+  UserVariables_t XLAL_INIT_DECL(uvar);
 
 
   /* ------------------------------
@@ -451,7 +447,7 @@ main(int argc, char *argv[])
       SFTVector *SFTs = NULL;
       if (uvar.outSFTbname)
 	{
-	  SFTParams sftParams = empty_SFTParams;
+	  SFTParams XLAL_INIT_DECL(sftParams);
 	  LIGOTimeGPSVector ts;
 	  SFTVector noise;
 
@@ -916,8 +912,8 @@ XLALInitMakefakedata ( ConfigVars_t *cfg, UserVariables_t *uvar )
     if ( uvar->noiseSFTs )
       {
 	REAL8 fMin, fMax;
-	SFTConstraints constraints = empty_SFTConstraints;
-	LIGOTimeGPS minStartTime, maxEndTime;
+	SFTConstraints XLAL_INIT_DECL(constraints);
+	LIGOTimeGPS minStartTime, maxStartTime;
         BOOLEAN have_window = XLALUserVarWasSet ( &uvar->window );
 
         /* user must specify the window function used for the noiseSFTs */
@@ -931,9 +927,9 @@ XLALInitMakefakedata ( ConfigVars_t *cfg, UserVariables_t *uvar )
 	if ( haveStart && haveDuration )
 	  {
 	    XLALGPSSetREAL8 ( &minStartTime, uvar->startTime );
-	    constraints.startTime = &minStartTime;
-	    XLALGPSSetREAL8 ( &maxEndTime, uvar->startTime + uvar->duration );
-	    constraints.endTime = &maxEndTime;
+	    constraints.minStartTime = &minStartTime;
+	    XLALGPSSetREAL8 ( &maxStartTime, uvar->startTime + uvar->duration );
+	    constraints.maxStartTime = &maxStartTime;
             XLALPrintWarning ( "\nWARNING: only noise-SFTs between GPS [%d, %d] will be used!\n", uvar->startTime, uvar->startTime + uvar->duration );
 	  } /* if start+duration given */
 	if ( cfg->timestamps )

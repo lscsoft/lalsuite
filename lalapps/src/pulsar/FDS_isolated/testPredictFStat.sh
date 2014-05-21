@@ -1,7 +1,8 @@
 #!/bin/sh
 
-## run all LALApps programs with memory debugging
-export LAL_DEBUG_LEVEL="${LAL_DEBUG_LEVEL},memdbg"
+## set LAL debug level
+echo "Setting LAL_DEBUG_LEVEL=${LAL_DEBUG_LEVEL:-msglvl1,memdbg}"
+export LAL_DEBUG_LEVEL
 
 ## test PredictFStat by comparison with SemiAnalyticF
 extra_args="$@"
@@ -20,15 +21,6 @@ pfs_path="${builddir}${pfs_code}"
 
 SFTdir="./testPredictFStat_sfts"
 
-if [ -z "${LAL_DATA_PATH}" ]; then
-    echo
-    echo "Need environment-variable LAL_DATA_PATH to be set to include"
-    echo "your ephemeris-directory (e.g. /usr/local/share/lalpulsar)"
-    echo "This might indicate an incomplete LAL+LALPULSAR installation"
-    echo
-    exit 1
-fi
-
 Ftolerance=0.05
 # ---------- fixed parameter of our test-signal
 Tsft=1800;
@@ -41,6 +33,9 @@ Alpha=2.0
 Delta=-0.5
 
 h0=1
+noiseSqrtSh=0.5
+h0Double=2  ## same SNR for noiseSqrtSh=1 as assumed in SignalOnly
+
 cosi=-0.3
 
 psi=0.6
@@ -48,8 +43,6 @@ phi0=1.5
 
 Freq=100.12345
 mfd_fmin=$(echo $Freq $mfd_FreqBand | awk '{printf "%g", $1 - $2 / 2.0}');
-
-noiseSqrtSh=1
 
 IFO=H1
 
@@ -97,10 +90,10 @@ else
 fi
 resSAF=`echo $tmp | awk '{printf "%g", 2.0 * $1}'`
 
-pfs_CL_common=" --Alpha=$Alpha --Delta=$Delta --IFO=$IFO --h0=$h0 --cosi=$cosi --psi=$psi --Freq=$Freq --DataFiles=\"${SFTdir}/*.sft\""
+pfs_CL_common=" --Alpha=$Alpha --Delta=$Delta --IFO=$IFO --cosi=$cosi --psi=$psi --Freq=$Freq --DataFiles=\"${SFTdir}/*.sft\""
 ## ---------- Run PredictFStat{NoiseWeights} ----------
 outfile_pfs1="__tmp_PFS1.dat";
-pfs_CL="${pfs_CL_common} --outputFstat=$outfile_pfs1"
+pfs_CL="${pfs_CL_common} --h0=$h0 --outputFstat=$outfile_pfs1"
 cmdline="$pfs_path $pfs_CL"
 if [ "$DEBUG" ]; then echo $cmdline; fi
 echo -n "Running ${pfs_code}{NoiseWeights} ... "
@@ -115,7 +108,7 @@ resPFS1=`echo $tmp | awk '{printf "%g", $1}'`
 
 ## ---------- Run PredictFStat{SignalOnly} ----------
 outfile_pfs0="__tmp_PFS0.dat";
-pfs_CL="${pfs_CL_common} --outputFstat=$outfile_pfs0 --SignalOnly"
+pfs_CL="${pfs_CL_common} --h0=$h0Double --outputFstat=$outfile_pfs0 --SignalOnly"
 cmdline="$pfs_path $pfs_CL"
 if [ "$DEBUG" ]; then echo $cmdline; fi
 echo -n "Running ${pfs_code}{SignalOnly} ... "
@@ -128,27 +121,54 @@ else
 fi
 resPFS0=`echo $tmp | awk '{printf "%g", $1}'`
 
+## ---------- Run PredictFStat{assumeSqrtSX} ----------
+outfile_pfs0a="__tmp_PFS0a.dat";
+pfs_CL="${pfs_CL_common} --h0=$h0 --outputFstat=$outfile_pfs0a --assumeSqrtSX=${noiseSqrtSh}"
+cmdline="$pfs_path $pfs_CL"
+if [ "$DEBUG" ]; then echo $cmdline; fi
+echo -n "Running ${pfs_code}{assumeSqrtSX} ... "
+if ! tmp=`eval $cmdline`; then
+    echo "FAILED:"
+    echo $cmdline
+    exit 1;
+else
+    echo "OK."
+fi
+resPFS0a=`echo $tmp | awk '{printf "%g", $1}'`
+
 ## ---------- Comparing results ----------
 echo
 echo "SemiAnalyticF:              2F_SA  = $resSAF"
 echo "PredictFStat{SignalOnly}:   2F_PF0 = $resPFS0"
+echo "PredictFStat{assumeSqrtSX}: 2F_PF0a= $resPFS0a"
 echo "PredictFStat{NoiseWeights}: 2F_PF1 = $resPFS1"
+
 echo
 
 awk_reldevPercent='{printf "%.1f", 100.0 * sqrt(($1-$2)*($1-$2))/(0.5*($1+$2)) }'
 awk_isgtr='{if($1>$2) {print "1"}}'
 tolerance0=1	## percent
-tolerance1=15	## percent
+tolerance1=20	## percent
 
 eps0=$(echo $resSAF $resPFS0 | awk "$awk_reldevPercent");
+eps0a=$(echo $resSAF $resPFS0a | awk "$awk_reldevPercent");
 eps1=$(echo $resSAF $resPFS1 | awk "$awk_reldevPercent");
 
 res=0;
 fail0=$(echo $eps0 $tolerance0 | awk "$awk_isgtr")
+fail0a=$(echo $eps0a $tolerance0 | awk "$awk_isgtr")
 fail1=$(echo $eps1 $tolerance1 | awk "$awk_isgtr")
 
 echo -n "Relative deviation 2F_PF{SignalOnly}   wrt 2F_SA = ${eps0}% (tolerance = ${tolerance0}%)"
 if [ "$fail0" ]; then
+    echo " ==> FAILED."
+    res=1;
+else
+    echo " ==> OK."
+fi
+
+echo -n "Relative deviation 2F_PF{assumeSqrtSX} wrt 2F_SA = ${eps0a}% (tolerance = ${tolerance0}%)"
+if [ "$fail0a" ]; then
     echo " ==> FAILED."
     res=1;
 else
@@ -166,7 +186,7 @@ echo
 
 ## clean up files
 if [ -z "$NOCLEANUP" ]; then
-    rm -rf $SFTdir $outfile_pfs0 $outfile_pfs1
+    rm -rf $SFTdir $outfile_pfs0 $outfile_pfs0a $outfile_pfs1
 fi
 
 exit $res;

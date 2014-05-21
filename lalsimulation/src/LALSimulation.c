@@ -337,9 +337,8 @@ int XLALSimAddInjectionREAL8TimeSeries(
 			XLALPrintError("%s(): error: source time series too long\n", __func__);
 			XLAL_ERROR(XLAL_EBADLEN);
 		}
-		i = (i - h->data->length) / 2;
-		start_sample_int -= i;
-		if(!XLALResizeREAL8TimeSeries(h, -(int) i, h->data->length + i))
+		start_sample_int -= (i - h->data->length) / 2;
+		if(!XLALResizeREAL8TimeSeries(h, -(int) (i - h->data->length) / 2, i))
 			XLAL_ERROR(XLAL_EFUNC);
 
 		/* transform source time series to frequency domain.  the FFT
@@ -569,9 +568,8 @@ int XLALSimAddInjectionREAL4TimeSeries(
 			XLALPrintError("%s(): error: source time series too long\n", __func__);
 			XLAL_ERROR(XLAL_EBADLEN);
 		}
-		i = (i - h->data->length) / 2;
-		start_sample_int -= i;
-		if(!XLALResizeREAL4TimeSeries(h, -(int) i, h->data->length + i))
+		start_sample_int -= (i - h->data->length) / 2;
+		if(!XLALResizeREAL4TimeSeries(h, -(int) (i - h->data->length) / 2, i))
 			XLAL_ERROR(XLAL_EFUNC);
 
 		/* transform source time series to frequency domain.  the FFT

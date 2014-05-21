@@ -182,7 +182,6 @@ src/pulsar/FDS_isolated/lalapps_synthesizeTransientStats
 src/pulsar/FDS_isolated/lalapps_uberpolka
 src/pulsar/FDS_isolated/lalapps_zellepolka
 src/pulsar/GCT/lalapps_HierarchSearchGCT
-src/pulsar/GCT/testLineVeto
 src/pulsar/Injections/Tseries_v2_*.dat
 src/pulsar/Injections/debug_phi_v2.dat
 src/pulsar/Injections/lalapps_Makefakedata_v4
@@ -233,9 +232,14 @@ src/pulsar/TDS_isolated/lalapps_pulsar_parameter_estimation
 src/pulsar/TDS_isolated/lalapps_pulsar_parameter_estimation_nested
 src/pulsar/TDS_isolated/lalapps_ssbtodetector
 src/pulsar/TimingTests/lalapps_TEMPOcomparison
+src/pulsar/Tools/lalapps_ComputeAntennaPattern
+src/pulsar/Tools/lalapps_ComputePSD
+src/pulsar/Tools/lalapps_GetSFTVelocities
+src/pulsar/Tools/lalapps_PrintDetectorState
 src/pulsar/TwoSpect/lalapps_TwoSpect
 src/pulsar/crosscorr/lalapps_pulsar_crosscorr
 src/pulsar/crosscorr/lalapps_pulsar_crosscorr_v2
+src/pulsar/crosscorr/toplist_crosscorr.dat
 src/pulsar/fscan/lalapps_spec_avg
 src/pulsar/hough/src/lalapps_DriveHoughMulti
 src/pulsar/hough/src/lalapps_DriveHough_v3
@@ -256,13 +260,9 @@ src/pulsar/hough/src2/lalapps_HoughValidateAM
 src/pulsar/hough/src2/lalapps_RecalcHSCandidates
 src/pulsar/lalapps_Calibrate1800SFTs
 src/pulsar/lalapps_Calibrate60sSFTs
-src/pulsar/lalapps_ComputeAntennaPattern
-src/pulsar/lalapps_ComputePSD
 src/pulsar/lalapps_ComputeWeightedMultiAMCoeffs
 src/pulsar/lalapps_FreqAverager
 src/pulsar/lalapps_FreqAverager_v2
-src/pulsar/lalapps_GetSFTVelocities
-src/pulsar/lalapps_PrintDetectorState
 src/pulsar/lalapps_make_job_input_data
 src/pulsar/lalapps_make_sfts
 src/pulsar/lalapps_psd

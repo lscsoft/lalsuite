@@ -150,23 +150,34 @@ static long indexof_confidence_level(long npix, double *P, double level, gsl_per
 
 
 /* Find error in time of arrival. */
-static double toa_error(
+static void toa_errors(
+    double *dt,
     double theta,
     double phi,
     double gmst,
-    const double *loc, /* Input: detector position. */
-    double toa /* Input: time of arrival. */
+    int nifos,
+    const double **locs, /* Input: detector position. */
+    const double *toas /* Input: time of arrival. */
 ) {
     /* Convert to Cartesian coordinates. */
     double n[3];
     ang2vec(theta, phi - gmst, n);
 
-    return toa + cblas_ddot(3, n, 1, loc, 1) / LAL_C_SI;
+    int i, j;
+    for (i = 0; i < nifos; i ++)
+    {
+        double dot;
+        for (dot = 0, j = 0; j < 3; j ++)
+        {
+            dot += locs[i][j] * n[j];
+        }
+        dt[i] = toas[i] + dot / LAL_C_SI;
+    }
 }
 
 
 /* Perform sky localization based on TDOAs alone. Returns log probability; not normalized. */
-static double bayestar_log_posterior_toa(
+double bayestar_log_posterior_toa(
     double theta,
     double phi,
     double gmst,
@@ -175,14 +186,8 @@ static double bayestar_log_posterior_toa(
     const double *toas, /* Input: array of times of arrival. */
     const double *w_toas /* Input: sum-of-squares weights, (1/TOA variance)^2. */
 ) {
-    int iifo;
-
-    /* Loop over detectors. */
     double dt[nifos];
-    for (iifo = 0; iifo < nifos; iifo ++)
-        dt[iifo] = toa_error(theta, phi, gmst, locs[iifo], toas[iifo]);
-
-    /* Evaluate the (un-normalized) Gaussian log likelihood. */
+    toa_errors(dt, theta, phi, gmst, nifos, locs, toas);
     return -0.5 * gsl_stats_wtss(w_toas, 1, dt, 1, nifos);
 }
 
@@ -764,11 +769,9 @@ double *bayestar_sky_map_toa_phoa_snr(
             /* Look up polar coordinates of this pixel */
             pix2ang_ring(nside, ipix, &theta, &phi);
 
+            toa_errors(dtau, theta, phi, gmst, nifos, locations, toas);
             for (iifo = 0; iifo < nifos; iifo ++)
-            {
-                dtau[iifo] = toa_error(theta, phi, gmst, locations[iifo], toas[iifo]);
                 exp_i_toaphoa[iifo] = exp_i_phoas[iifo] * exp_i(w1s[iifo] * dtau[iifo]);
-            }
 
             /* Find mean arrival time error */
             mean_dtau = gsl_stats_wmean(w_toas, 1, dtau, 1, nifos);
@@ -992,6 +995,93 @@ double bayestar_log_posterior_toa_snr(
 
     if (prior_distance_power != 0)
         logp += prior_distance_power * log(distance);
+
+    return logp;
+}
+
+
+double bayestar_log_posterior_toa_phoa_snr(
+    double ra,
+    double sin_dec,
+    double distance,
+    double u,
+    double twopsi,
+    double t,
+    double gmst, /* Greenwich mean sidereal time in radians. */
+    int nifos, /* Input: number of detectors. */
+    const float (**responses)[3], /* Pointers to detector responses. */
+    const double **locations, /* Pointers to locations of detectors in Cartesian geographic coordinates. */
+    const double *toas, /* Input: array of times of arrival with arbitrary relative offset. (Make toas[0] == 0.) */
+    const double *phoas, /* Input: array of times of arrival with arbitrary relative offset. (Make toas[0] == 0.) */
+    const double *snrs, /* Input: array of SNRs. */
+    const double *w_toas, /* Input: sum-of-squares weights, (1/TOA variance)^2. */
+    const double *w1s, /* Input: first moments of angular frequency. */
+    const double *w2s, /* Input: second moments of angular frequency. */
+    const double *horizons, /* Distances at which a source would produce an SNR of 1 in each detector. */
+    int prior_distance_power) /* Use a prior of (distance)^(prior_distance_power) */
+{
+    int iifo;
+    const double dec = asin(sin_dec);
+    const double u2 = gsl_pow_2(u);
+    const double complex exp_i_twopsi = exp_i(twopsi);
+
+    (void)w2s; /* FIXME: remove unused parameter */
+
+    /* Compute time of arrival errors */
+    double dt[nifos];
+    toa_errors(dt, M_PI_2 - dec, ra, gmst, nifos, locations, toas);
+
+    {
+        double mean_dt = gsl_stats_wmean(w_toas, 1, dt, 1, nifos);
+        for (iifo = 0; iifo < nifos; iifo++)
+            dt[iifo] += t - mean_dt;
+    }
+
+    /* Rescale distances so that furthest horizon distance is 1. */
+    double d1[nifos];
+    {
+        const double d1max = gsl_stats_max(horizons, 1, nifos);
+        for (iifo = 0; iifo < nifos; iifo ++)
+            d1[iifo] = horizons[iifo] / d1max;
+        distance /= d1max;
+    }
+
+    double logp = 0;
+    double complex i0arg_complex = 0;
+    double A = 0;
+    double B = 0;
+
+    /* Loop over detectors */
+    for (iifo = 0; iifo < nifos; iifo++)
+    {
+        double complex F;
+        XLALComputeDetAMResponse(
+            (double *)&F,     /* Type-punned real part */
+            1 + (double *)&F, /* Type-punned imag part */
+            responses[iifo], ra, dec, 0, gmst);
+        F *= d1[iifo];
+
+        const double complex tmp = F * exp_i_twopsi;
+        double complex phase_rhotimesr = 0.5 * (1 + u2) * creal(tmp) + I * u * cimag(tmp);
+        const double abs_rhotimesr_2 = cabs2(phase_rhotimesr);
+        const double abs_rhotimesr = sqrt(abs_rhotimesr_2);
+        phase_rhotimesr /= abs_rhotimesr;
+        i0arg_complex += exp_i(phoas[iifo] + w1s[iifo] * dt[iifo]) * phase_rhotimesr * gsl_pow_2(snrs[iifo]);
+        logp += -0.5 * w_toas[iifo] * gsl_pow_2(dt[iifo]);
+
+        A += abs_rhotimesr_2;
+        B += abs_rhotimesr * snrs[iifo];
+    }
+    A *= -0.5;
+
+    const double i0arg = cabs(i0arg_complex);
+
+    /* Should be equivalent to, but more accurate than:
+         logp += log(gsl_sf_bessel_I0(i0arg))
+     */
+    logp += log(gsl_sf_bessel_I0_scaled(i0arg)) + i0arg;
+
+    logp += log_radial_integrand(distance, A, B, prior_distance_power);
 
     return logp;
 }

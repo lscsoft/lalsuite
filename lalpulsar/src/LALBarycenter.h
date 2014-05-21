@@ -333,7 +333,6 @@ void observatoryEarth( REAL8 obsearth[3],
 void LALBarycenterEarth ( LALStatus *status, EarthState *earth, const LIGOTimeGPS *tGPS, const EphemerisData *edat);
 void LALBarycenter ( LALStatus *status, EmissionTime *emit, const BarycenterInput *baryinput, const EarthState *earth);
 
-
 /*@}*/
 
 #ifdef  __cplusplus

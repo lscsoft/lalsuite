@@ -1,4 +1,5 @@
 /*
+ * Copyright (C) 2014 Karl Wette
  * Copyright (C) 2005 Reinhard Prix
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -45,12 +46,9 @@
 static REAL8 fudge_up   = 1 + 10 * LAL_REAL8_EPS;	// about ~1 + 2e-15
 static REAL8 fudge_down = 1 - 10 * LAL_REAL8_EPS;	// about ~1 - 2e-15
 
-/* empty struct initializers */
-const PSDVector empty_PSDVector;
-const MultiPSDVector empty_MultiPSDVector;
-const MultiNoiseWeights empty_MultiNoiseWeights;
-
 /*---------- internal prototypes ----------*/
+
+int compareSFTdesc(const void *ptr1, const void *ptr2);     // defined in SFTfileIO.c
 
 /*==================== FUNCTION DEFINITIONS ====================*/
 
@@ -1034,7 +1032,7 @@ XLALrefineCOMPLEX8Vector (const COMPLEX8Vector *in,
       REAL8 Yk_re, Yk_im, Xd_re, Xd_im;
 
       kstarREAL = 1.0 * l  / refineby;
-      kstar = (INT4)( kstarREAL + 0.5);	/* round to closest bin */
+      kstar = lround( kstarREAL );	/* round to closest bin */
       kstar = MIN ( kstar, oldLen - 1 );	/* stay within the old SFT index-bounds */
       remain = kstarREAL - kstar;
 
@@ -1505,3 +1503,124 @@ int XLALLatestMultiSFTsample ( LIGOTimeGPS *out,              /**< [out] latest 
   return XLAL_SUCCESS;
 
 } /* XLALLatestMultiSFTsample() */
+
+
+/**
+ * XLAL function to get a sorted list of unique 2-character detector IDs (prefixes) from a SFTcatalog
+ * IFOList can be either
+ * (1) NULL, in which case it will be allocated and filled from the IDs in the SFTcatalog
+ * (2) or a pre-allocated and filled list, then it appends any new detectors and resorts the list
+ */
+LALStringVector *
+XLALGetDetectorIDsFromSFTCatalog (
+  LALStringVector *IFOList,		/**< [in/out] IFO string vector for (appending and) returning */
+  const SFTCatalog *SFTcatalog		/**< [in] SFT catalog which carries the detector prefixes */
+  )
+{
+
+  XLAL_CHECK_NULL( SFTcatalog != NULL, XLAL_EFAULT );
+
+  for (UINT4 n = 0; n < SFTcatalog->length; n++) {
+
+    /* get only the official 2-character prefix, not any longer name that might be in the SFT header */
+    char *thisIFO = NULL;
+    XLAL_CHECK_NULL ( ( thisIFO =  XLALGetChannelPrefix(SFTcatalog->data[n].header.name) ) != NULL, XLAL_EFUNC );
+
+    if ( XLALFindStringInVector ( thisIFO, IFOList ) == -1 ) { /* only append to IFOList if not a duplicate */
+      XLAL_CHECK_NULL ( (IFOList = XLALAppendString2Vector ( IFOList, thisIFO )) != NULL, XLAL_EFUNC );
+    }
+
+    XLALFree ( thisIFO );
+
+  } /* for n < SFTcatalog->length */
+
+  /* sort final list alphabetically by detector-name */
+  XLAL_CHECK_NULL ( XLALSortStringVector ( IFOList ) == XLAL_SUCCESS, XLAL_EFUNC );
+
+  return IFOList;
+
+} /* XLALGetDetectorIDsFromSFTCatalog() */
+
+
+/**
+ * Create a 'fake' SFT catalog which contains only detector and timestamp information.
+ */
+SFTCatalog *XLALAddToFakeSFTCatalog(
+  SFTCatalog *catalog,                          /**< [in] SFT catalog; if NULL, a new catalog is created */
+  const CHAR *detector,                         /**< [in] Name of detector to set fake catalog entries to */
+  const LIGOTimeGPSVector *timestamps           /**< [in] Timestamps of each fake catalog entry */
+  )
+{
+
+  // Check input
+  XLAL_CHECK_NULL( detector != NULL, XLAL_EFAULT );
+  XLAL_CHECK_NULL( timestamps != NULL, XLAL_EFAULT );
+  XLAL_CHECK_NULL( timestamps->length > 0, XLAL_EINVAL );
+  XLAL_CHECK_NULL( timestamps->data != NULL, XLAL_EFAULT );
+
+  // Get channel prefix
+  CHAR *channel = XLALGetChannelPrefix( detector );
+  XLAL_CHECK_NULL( channel != NULL, XLAL_EFUNC );
+
+  // If catalog is NULL, create a new fake catalog
+  if (catalog == NULL) {
+    catalog = XLALCalloc(1, sizeof(*catalog));
+    XLAL_CHECK_NULL( catalog != NULL, XLAL_ENOMEM );
+  }
+
+  // Extend catalog to add new timestamps
+  const UINT4 new_length = catalog->length + timestamps->length;
+  catalog->data = XLALRealloc(catalog->data, new_length * sizeof(catalog->data[0]));
+  XLAL_CHECK_NULL( catalog->data != NULL, XLAL_ENOMEM );
+
+  // Fill out new SFT descriptors with channel name and timestamps info
+  for (UINT4 i = 0; i < timestamps->length; ++i) {
+    SFTDescriptor *desc = &catalog->data[catalog->length + i];
+    memset(desc, 0, sizeof(*desc));
+    strncpy(desc->header.name, channel, 2);
+    desc->header.epoch = timestamps->data[i];
+    desc->header.deltaF = 1.0 / timestamps->deltaT;
+    desc->header.sampleUnits = lalDimensionlessUnit;
+    desc->version = 2;
+  }
+
+  // Set new catalog length
+  catalog->length = new_length;
+
+  // Sort catalog
+  qsort( (void*)catalog->data, catalog->length, sizeof( catalog->data[0] ), compareSFTdesc );
+
+  // Cleanup
+  XLALFree(channel);
+
+  return catalog;
+
+} /* XLALAddToFakeSFTCatalog() */
+
+/**
+ * Multi-detector and multi-timestamp wrapper of XLALAddToFakeSFTCatalog().
+ */
+SFTCatalog *XLALMultiAddToFakeSFTCatalog(
+  SFTCatalog *catalog,                          /**< [in] SFT catalog; if NULL, a new catalog is created */
+  const LALStringVector *detectors,             /**< [in] Detector names to set fake catalog entries to */
+  const MultiLIGOTimeGPSVector *timestamps      /**< [in] Timestamps for each detector of each fake catalog entry */
+  )
+{
+
+  // Check input
+  XLAL_CHECK_NULL( detectors != NULL, XLAL_EFAULT );
+  XLAL_CHECK_NULL( detectors->length > 0, XLAL_EINVAL );
+  XLAL_CHECK_NULL( detectors->data != NULL, XLAL_EFAULT );
+  XLAL_CHECK_NULL( timestamps != NULL, XLAL_EFAULT );
+  XLAL_CHECK_NULL( timestamps->length == detectors->length, XLAL_EINVAL );
+  XLAL_CHECK_NULL( timestamps->data != NULL, XLAL_EFAULT );
+
+  // Loop over detectors, calling XLALAddToFakeSFTCatalog()
+  for (UINT4 X = 0; X < detectors->length; ++X) {
+    catalog = XLALAddToFakeSFTCatalog( catalog, detectors->data[X], timestamps->data[X] );
+    XLAL_CHECK_NULL( catalog != NULL, XLAL_EFUNC );
+  }
+
+  return catalog;
+
+} /* XLALMultiAddToFakeSFTCatalog() */

@@ -53,7 +53,9 @@ if __name__ == '__main__':
             Option("-p", "--contour", default=[], action="append",
                 type=float, metavar="PERCENT",
                 help="Report the area of the smallest contour and the number of modes"
-                + "containing this much probability. Can be repeated mulitple times")
+                + "containing this much probability. Can be repeated mulitple times"),
+            Option("--modes", default=False, action="store_true",
+                help="Compute number of disjoint modes [default: %default]")
         ]
     )
     opts, args = parser.parse_args()
@@ -75,10 +77,11 @@ from lalinference.bayestar import fits
 from lalinference.bayestar import postprocess
 
 
-def startup(dbfilename, opts_contour):
-    global db, contours
+def startup(dbfilename, opts_contour, opts_modes):
+    global db, contours, modes
     db = sqlite3.connect(dbfilename)
     contours = opts_contour
+    modes = opts_modes
 
 
 def process(fitsfilename):
@@ -101,34 +104,40 @@ def process(fitsfilename):
         AND cem2.table_name = 'coinc_event' AND cem2.event_id = ?""",
         (coinc_event_id,)).fetchone()
     searched_area, searched_prob, offset, searched_modes, contour_areas, contour_modes = postprocess.find_injection(
-        sky_map, true_ra, true_dec, contours=[0.01 * p for p in contours])
+        sky_map, true_ra, true_dec, contours=[0.01 * p for p in contours], modes=modes)
 
     if snr is None:
         snr = float('nan')
     if far is None:
         far = float('nan')
 
-    return [coinc_event_id, simulation_id, far, snr, searched_area, searched_prob, offset, runtime, searched_modes] + contour_areas + contour_modes
+    ret = [coinc_event_id, simulation_id, far, snr, searched_area, searched_prob, offset, runtime] + contour_areas
+    if modes:
+        ret += [searched_modes] + contour_modes
+    return ret
 
 
 if __name__ == '__main__':
-    import pylal.progress
-    progress = pylal.progress.ProgressBar()
+    from glue.text_progress_bar import ProgressBar
+    progress = ProgressBar()
 
     progress.update(-1, 'spawning {0} workers'.format(opts.jobs))
+    startupargs = (dbfilename, opts.contour, opts.modes)
     if opts.jobs == 1:
         from itertools import imap
     else:
         import multiprocessing
-        imap = multiprocessing.Pool(opts.jobs, startup, (dbfilename, opts.contour)).imap_unordered
-    startup(dbfilename, opts.contour)
+        imap = multiprocessing.Pool(opts.jobs, startup, startupargs).imap_unordered
+    startup(*startupargs)
 
     progress.update(-1, 'obtaining filenames of sky maps')
     fitsfilenames = tuple(command.chainglob(fitsfileglobs))
 
     colnames = ['coinc_event_id', 'simulation_id', 'far', 'snr', 'searched_area',
-        'searched_prob', 'offset', 'runtime', 'searched_modes'] + ["area({0:g})".format(p)
-        for p in contours] + ["modes({0:g})".format(p) for p in contours]
+        'searched_prob', 'offset', 'runtime'] + ["area({0:g})".format(p)
+        for p in contours]
+    if modes:
+        colnames += ['searched_modes'] + ["modes({0:g})".format(p) for p in contours]
     print(*colnames, sep="\t", file=outfile)
 
     count_records = 0

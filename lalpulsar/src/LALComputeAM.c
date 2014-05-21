@@ -61,15 +61,6 @@
 
 /*---------- internal types ----------*/
 
-/*---------- Global variables ----------*/
-/* empty initializers  */
-const AMCoeffs empty_AMCoeffs;
-const MultiAMCoeffs empty_MultiAMCoeffs;
-const AntennaPatternMatrix empty_AntennaPatternMatrix;
-
-static const LALStatus empty_LALStatus;
-static const EarthState empty_EarthState;
-
 /*---------- internal prototypes ----------*/
 
 
@@ -385,8 +376,8 @@ XLALComputeAntennaPatternCoeffs ( REAL8 *ai,   			/**< [out] antenna-pattern fun
 				  const EphemerisData *edat	/**< [in] ephemeris-data */
 				  )
 {
-  LALStatus status = empty_LALStatus;
-  EarthState earth = empty_EarthState;
+  LALStatus XLAL_INIT_DECL(status);
+  EarthState XLAL_INIT_DECL(earth);
 
   if ( !ai || !bi || !skypos || !tGPS || !site || !edat) {
     XLAL_ERROR( XLAL_EINVAL );

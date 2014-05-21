@@ -109,39 +109,56 @@ typedef struct tagAMCoeffsParams
   REAL4                polAngle;    /**< polarization angle             */
 } AMCoeffsParams;
 
-
 /**
  * Struct holding the "antenna-pattern" matrix \f$\mathcal{M}_{\mu\nu} \equiv \left( \mathbf{h}_\mu|\mathbf{h}_\nu\right)\f$,
- * in terms of the multi-detector scalar product. This matrix can be shown to be expressible as
+ * in terms of the multi-detector scalar product.
+
+  \f[
+  \newcommand{\Ad}{\widehat{A}}
+  \newcommand{\Bd}{\widehat{B}}
+  \newcommand{\Cd}{\widehat{C}}
+  \newcommand{\Ed}{\widehat{E}}
+  \newcommand{\Dd}{\widehat{D}}
+  \newcommand{\ah}{\hat{a}}
+  \newcommand{\bh}{\hat{b}}
+  \newcommand{\M}{\mathcal{M}}
+  \newcommand{\S}{\mathcal{S}}
+  \newcommand{\Tsft}{T_{\mathrm{sft}}}
+  \newcommand{\Nsft}{N_{\mathrm{sft}}}
+  \f]
+
+This matrix can be shown to be generally expressible as
  * \f{equation}{
- * \mathcal{M}_{\mu\nu} = \mathcal{S}^{-1}\,T_\mathrm{SFT}\,\left( \begin{array}{c c c c}
- * \widehat{A} & \widehat{C} & 0 & 0 \\
- * \widehat{C} & \widehat{B} & 0 & 0 \\
- * 0 & 0 & \widehat{A} & \widehat{C} \\
- * 0 & 0 & \widehat{C} & \widehat{B} \\
- * \end{array}\right)\,,
+ * \M_{\mu\nu} = \S^{-1}\,\Tsft\,\begin{pmatrix}
+ *  \Ad & \Cd &   0 & -\Ed \\
+ *  \Cd & \Bd & \Ed &    0 \\
+ *    0 & \Ed & \Ad &  \Cd \\
+ * -\Ed &   0 & \Cd &  \Bd \\
+ * \end{pmatrix}
  * \f}
- * where (here) \f$\mathcal{S} \equiv \frac{1}{N_\mathrm{SFT}}\sum_{X,\alpha} S_{X\alpha}\f$ characterizes the (single-sided!)
- * multi-detector noise-floor, and
- * \f{equation}{
- * \widehat{A} \equiv \sum_{X,\alpha} \widehat{a}^2_{X\alpha} \,,\quad
- * \widehat{B} \equiv \sum_{X,\alpha} \widehat{b}^2_{X\alpha} \,,\quad
- * \widehat{C} \equiv \sum_{X,\alpha} \widehat{a}_{X\alpha} \widehat{b}_{X\alpha} \,,
+ * where \f$\S^{-1} \equiv \frac{1}{\Nsft}\sum_{X\alpha} S^{-1}_{X\alpha}\f$ characterizes the overall multi-detector noise-floor.
+ * The sum is over all detectors \f$X\f$ and all SFTs \f$\alpha\f$ from each detector. The nonzero matrix coefficients are expressible as
+ * \f{align}{
+ * \Ad &\equiv \sum_{X\alpha} \left|\ah_{X\alpha}\right|^2 \,,\\
+ * \Bd &\equiv \sum_{X\alpha} \left|\bh_{X\alpha}\right|^2 \,,\\
+ * \Cd &\equiv \mathrm{Re} \sum_{X\alpha} \ah_{X\alpha}^{\,*} \,\bh_{X\alpha} \,,\\
+ * \Ed &\equiv \mathrm{Im} \sum_{X\alpha} \ah_{X\alpha}^{\,*} \,\bh_{X\alpha} \,,\\
  * \f}
- * and the noise-weighted atenna-functions \f$\widehat{a}_{X\alpha} = \sqrt{w_{X\alpha}}\,a_{X\alpha}\f$,
- * \f$\widehat{b}_{X\alpha} = \sqrt{w_{X\alpha}}\,b_{X\alpha}\f$, and noise-weights
- * \f$w_{X\alpha} \equiv S^{-1}_{X\alpha}/{\mathcal{S}^{-1}}\f$.
+ * in terms of the noise-weighted atenna-functions are \f$\ah_{X\alpha} \equiv \sqrt{w_{X\alpha}}\,a_{X\alpha}\f$,
+ * and \f$\bh_{X\alpha} = \sqrt{w_{X\alpha}}\,b_{X\alpha}\f$, with per-SFT noise-weights
+ * \f$w_{X\alpha} \equiv \frac{S^{-1}_{X\alpha}}{\S^{-1}}\f$.
  *
- * \note One reason for storing the un-normalized \a Ad, \a Bd, \a Cd and the normalization-factor \a Sinv_Tsft separately
- * is that the former are of order unity, while \a Sinv_Tsft is very large, and it has numerical advantages for parameter-estimation
+ * \note One reason for storing the un-normalized \f$\{\Ad,\,\Bd,\,\Cd,\,\Ed\}\f$ and the normalization-factor \f$\S^{-1}\,\Tsft\f$ separately
+ * is that the former are of order one, while the latter is generally very large, and so it has numerical advantages for parameter-estimation
  * to use that fact.
  */
 typedef struct tagAntennaPatternMatrix {
-  REAL8 Ad; 		/**<  \f$\widehat{A} \equiv \sum_{X,\alpha} \widehat{a}^2_{X\alpha} \f$ */
-  REAL8 Bd; 		/**<  \f$\widehat{B} \equiv \sum_{X,\alpha} \widehat{b}^2_{X\alpha} \f$ */
-  REAL8 Cd; 		/**<  \f$\widehat{C} \equiv \sum_{X,\alpha} \widehat{a}_{X\alpha} \widehat{b}_{X\alpha}\f$ */
-  REAL8 Dd; 		/**<  determinant \f$\widehat{D} \equiv \widehat{A} \widehat{B} - \widehat{C}^2 \f$ */
-  REAL8 Sinv_Tsft;	/**< normalization-factor \f$\mathcal{S}^{-1}\,T_\mathrm{SFT}\f$ (wrt single-sided PSD!) */
+  REAL8 Ad; 		//!<  \f$\Ad\f$
+  REAL8 Bd; 		//!<  \f$\Bd\f$
+  REAL8 Cd; 		//!<  \f$\Cd\f$
+  REAL8 Ed; 		//!<  \f$\Ed\f$
+  REAL8 Dd; 		//!<  determinant factor \f$\Dd \equiv \Ad \Bd - \Cd^2 - \Ed^2 \f$
+  REAL8 Sinv_Tsft;	//!< normalization-factor \f$\S^{-1}\,\Tsft\f$ (using single-sided PSD!)
 } AntennaPatternMatrix;
 
 /** Multi-IFO container for antenna-pattern coefficients \f$a_{X\alpha}, b_{X\alpha}\f$ and atenna-pattern matrix \f$\mathcal{M}_{\mu\nu}\f$ */
@@ -153,10 +170,6 @@ typedef struct tagMultiAMCoeffs {
 
 
 /*---------- exported Global variables ----------*/
-/* empty init-structs for the types defined in here */
-extern const AntennaPatternMatrix empty_AntennaPatternMatrix;
-extern const MultiAMCoeffs empty_MultiAMCoeffs;
-
 
 /*---------- exported prototypes [API] ----------*/
 

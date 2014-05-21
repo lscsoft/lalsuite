@@ -79,6 +79,16 @@ double *bayestar_sky_map_toa(
     const double *w_toas /* Input: sum-of-squares weights, (1/TOA variance)^2. */
 );
 
+double bayestar_log_posterior_toa(
+    double ra,
+    double sin_dec,
+    double gmst, /* Greenwich mean sidereal time in radians. */
+    int nifos, /* Input: number of detectors. */
+    const double **locations, /* Pointers to locations of detectors in Cartesian geographic coordinates. */
+    const double *toas, /* Input: array of times of arrival with arbitrary relative offset. (Make toas[0] == 0.) */
+    const double *w_toas /* Input: sum-of-squares weights, (1/TOA variance)^2. */
+);
+
 double bayestar_log_posterior_toa_snr(
     double ra,
     double sin_dec,
@@ -128,6 +138,27 @@ double *bayestar_sky_map_toa_phoa_snr(
     const double *horizons, /* Distances at which a source would produce an SNR of 1 in each detector. */
     double min_distance,
     double max_distance,
+    int prior_distance_power /* Use a prior of (distance)^(prior_distance_power) */
+);
+
+double bayestar_log_posterior_toa_phoa_snr(
+    double ra,
+    double sin_dec,
+    double distance,
+    double u,
+    double twopsi,
+    double t,
+    double gmst, /* Greenwich mean sidereal time in radians. */
+    int nifos, /* Input: number of detectors. */
+    const float (**responses)[3], /* Pointers to detector responses. */
+    const double **locations, /* Pointers to locations of detectors in Cartesian geographic coordinates. */
+    const double *toas, /* Input: array of times of arrival with arbitrary relative offset. (Make toas[0] == 0.) */
+    const double *phoas, /* Input: array of times of arrival with arbitrary relative offset. (Make toas[0] == 0.) */
+    const double *snrs, /* Input: array of SNRs. */
+    const double *w_toas, /* Input: sum-of-squares weights, (1/TOA variance)^2. */
+    const double *w1s, /* Input: first moments of angular frequency. */
+    const double *w2s, /* Input: second moments of angular frequency. */
+    const double *horizons, /* Distances at which a source would produce an SNR of 1 in each detector. */
     int prior_distance_power /* Use a prior of (distance)^(prior_distance_power) */
 );
 
