@@ -341,6 +341,167 @@ static void LT_PrintLookup(
 
 }
 
+///
+/// Find the nearest point, and its index, in the lattice tiling
+///
+static void LT_FindNearestPoint(
+  const size_t n,				///< [in] Number of tiled dimensions
+  const LatticeType lattice,			///< [in] Lattice type
+  const LT_IndexLookup* lookup_base,		///< [in] Lookup trie for finding index of nearest point
+  const gsl_vector* int_point,			///< [in] Point in generating integer space
+  long long *nearest_int_point,			///< [in/out] Nearest point in generating integer space
+  UINT8* nearest_idx				///< [in/out] Index of nearest point
+  )
+{
+
+  // Find the nearest point to 'int_point', which is in generating integer space
+  switch (lattice) {
+
+  case LATTICE_TYPE_CUBIC:   // Cubic (\f$Z_n\f$) lattice
+  {
+
+    // Since Zn lattice generator is the identity, 'int_point' is already in lattice space;
+    // to find the nearest point, just need to round to nearest integer
+    for (size_t i = 0; i < n; ++i) {
+      nearest_int_point[i] = llround(gsl_vector_get(int_point, i));
+    }
+
+  }
+  break;
+
+  case LATTICE_TYPE_ANSTAR:   // An-star (\f$A_n^*\f$) lattice
+  {
+
+    // Transform 'int_point' from n-D generating integer space to (n+1)-D lattice space:
+    // The An* lattice generator in n+1 dimensions [see XLALComputeLatticeGenerator()]
+    // projects the hypercubic Z(n+1) lattice onto the plane perpendicular to the
+    // (n+1)-D 1-vector 'w' = (1,1,...,1), which generates the An* lattice in that plane.
+    // The generator matrix is therefore the projection operator
+    //   G = Q = I - w*w^T/(n+1)
+    // where 'I' is the (n+1)x(n+1) identity, and w*w^T denotes a (n+1)x(n+1) matrix of 1s.
+    // This projection is not one-to-one; points in Zn which differ by the 1-vector 'w'
+    // will be mapped to the same point in An*. We can therefore choose an n-D subset of
+    // points in Zn to map to and from 'int_point'; we choose the subset where the 1st
+    // dimension is zero, and therefore the points in Zn are (0,'int_point'). Therefore
+    //   w*w^T/(n+1) * (0,'int_point') = w*sum('int_point')/(n+1)
+    // and
+    //  G * (0,'int_point') = (0,'int_point') - w*sum('int_point')/(n+1)
+    //                      = (S, 'int_point' + S)
+    // where S = -sum('int_point')/(n+1), and 'int_point' + S denotes adding S to each
+    // element of 'int_point'. We first calculate S, store it in y[0], then add S to
+    // each element of 'int_point', storing them in y[1]...y[n].
+    double y[n+1];
+    y[0] = 0;
+    for (size_t i = 0; i < n; ++i) {
+      y[0] += gsl_vector_get(int_point, i);
+    }
+    y[0] *= -1.0 / (n + 1);
+    for (size_t i = 0; i < n; ++i) {
+      y[i+1] = gsl_vector_get(int_point, i) + y[0];
+    }
+
+    // Find the nearest point in An* to the point 'y', using the O(n) Algorithm 2 given in:
+    //   McKilliam et.al., "A linear-time nearest point algorithm for the lattice An*"
+    //   in "International Symposium on Information Theory and Its Applications", ISITA2008,
+    //   Auckland, New Zealand, 7-10 Dec. 2008. DOI: 10.1109/ISITA.2008.4895596
+    // Notes:
+    //   * Since Algorithm 2 uses 1-based arrays, we have to translate, e.g.:
+    //       z_t in paper <---> z[tn-1] in C code
+    //   * Line 6 in Algorithm 2 as written in the paper is in error, see correction below.
+    //   * We are only interested in 'k', the generating integers of the nearest point
+    //     'x = Q * k', therefore line 26 in Algorithm 2 is not included.
+    long long k[n+1];
+    {
+
+      // Lines 1--4, 20
+      double z[n+1], alpha = 0, beta = 0;
+      size_t bucket[n+1], link[n+1];
+      for (size_t i = 1; i <= n + 1; ++i) {
+        k[i-1] = llround(y[i-1]);   // Line 20, moved here to avoid duplicate round
+        z[i-1] = y[i-1] - k[i-1];
+        alpha += z[i-1];
+        beta += z[i-1]*z[i-1];
+        bucket[i-1] = 0;
+      }
+
+      // Lines 5--8. Note correction to line 6:
+      //   i = n + 1 - (n + 1)*floor(z_t + 0.5)
+      // as written in McKilliam et.al. should instead read
+      //   i = n + 1 - floor((n + 1)*(z_t + 0.5))
+      for (size_t t = 1; t <= n + 1; ++t) {
+        const size_t i = n + 1 - (size_t)floor((n + 1) * (z[t-1] + 0.5));
+        link[t-1] = bucket[i-1];
+        bucket[i-1] = t;
+      }
+
+      // Lines 9--10
+      double D = beta - alpha*alpha / (n + 1);
+      size_t m = 0;
+
+      // Lines 11--19
+      for (size_t i = 1; i <= n + 1; ++i) {
+        size_t t = bucket[i-1];
+        while (t != 0) {
+          alpha = alpha - 1;
+          beta = beta - 2*z[t-1] + 1;
+          t = link[t-1];
+        }
+        double d = beta - alpha*alpha / (n + 1);
+        if (d < D) {
+          D = d;
+          m = i;
+        }
+      }
+
+      // Lines 21--25
+      for (size_t i = 1; i <= m; ++i) {
+        size_t t = bucket[i-1];
+        while (t != 0) {
+          k[t-1] = k[t-1] + 1;
+          t = link[t-1];
+        }
+      }
+
+    }
+
+    // Transform 'k' from (n+1)-D lattice space to n-D generating integers 'nearest_int_point':
+    // Since points in Zn which differ by the 1-vector 'w' are mapped to the same point in An*,
+    // we can freely add or subtract 'w' from 'k' until the first dimension of 'k' is zero, which
+    // is our chosen set of points in Zn. Clearly this is achieved by subtracting k[0]*w from 'k',
+    // i.e. by substracting 'k[0]' from each element of 'k'.
+    for (size_t i = 0; i < n; ++i) {
+      nearest_int_point[i] = k[i+1] - k[0];
+    }
+
+  }
+  break;
+
+  default:
+    XLAL_ERROR_VOID(XLAL_EINVAL, "Invalid 'lattice'=%u", lattice);
+  }
+
+  // Look up the index of 'int_point' index lookup trie: start at the base of the trie
+  const LT_IndexLookup* lookup = lookup_base;
+
+  // Iterate over tiled dimensions, except the highest dimension
+  for (size_t i = 0; i + 1 < n; ++i) {
+
+    // Make sure (i)th dimension of nearest integer point is within lookup bounds, then subtract minimum to get index
+    const size_t idx_i = GSL_MAX( lookup->min, GSL_MIN( nearest_int_point[i], lookup->max ) ) - lookup->min;
+
+    // Jump to the next level of the lookup trie, based in index
+    lookup = &lookup->next[idx_i];
+
+  }
+
+  // Make sure (n-1)th dimension of nearest integer point is within lookup bounds, then subtract minimum to get index
+  const size_t idx_nm1 = GSL_MAX( lookup->min, GSL_MIN( nearest_int_point[n-1], lookup->max ) ) - lookup->min;
+
+  // Set index of nearest point
+  *nearest_idx = lookup->index + idx_nm1;
+
+}
+
 gsl_vector* XLALMetricEllipseBoundingBox(
   const gsl_matrix* metric,
   const double max_mismatch
@@ -1493,6 +1654,138 @@ int XLALPrintLatticeIndexLookup(
 
   // Cleanup
   gsl_vector_free(int_point);
+
+  return XLAL_SUCCESS;
+
+}
+
+int XLALNearestLatticePoints(
+  const LatticeTiling* tiling,
+  const gsl_matrix* points,
+  gsl_matrix* nearest_points,
+  UINT8Vector* nearest_indices
+  )
+{
+
+  // Check tiling
+  XLAL_CHECK(tiling != NULL, XLAL_EFAULT);
+  XLAL_CHECK(tiling->status > LT_S_INCOMPLETE, XLAL_EFAILED);
+  const size_t n = tiling->dimensions;
+  const size_t tn = (tiling->tiled_idx != NULL) ? tiling->tiled_idx->size : 0;
+  XLAL_CHECK(nearest_indices == NULL || tn == 0 || tiling->lookup_base != NULL, XLAL_EFAILED,
+             "Need to first run XLALBuildLatticeIndexLookup() to build index lookup" );
+
+  // Check input
+  XLAL_CHECK(points != NULL, XLAL_EFAULT);
+  XLAL_CHECK(points->size1 == n, XLAL_ESIZE);
+  const size_t num_points = points->size2;
+  XLAL_CHECK(nearest_points != NULL, XLAL_EFAULT);
+  XLAL_CHECK(nearest_points->size1 == n, XLAL_ESIZE);
+  XLAL_CHECK(nearest_points->size2 >= num_points, XLAL_ESIZE);
+  XLAL_CHECK(nearest_indices == NULL || nearest_indices->length >= num_points, XLAL_ESIZE);
+  XLAL_CHECK(nearest_indices == NULL || nearest_indices->data != NULL, XLAL_EFAULT);
+
+  // If there are no tiled dimensions:
+  if (tn == 0) {
+
+    // Set all columns of 'nearest_points' to the sole point in the tiling,
+    // which is just the physical offset given by 'phys_offset'
+    for (size_t i = 0; i < n; ++i) {
+      const double phys_offset = gsl_vector_get(tiling->phys_offset, i);
+      gsl_vector_view nearest_points_row = gsl_matrix_row(nearest_points, i);
+      gsl_vector_set_all(&nearest_points_row.vector, phys_offset);
+    }
+
+    // Set all elements of 'nearest_indices' to zero, since there is only one point
+    if (nearest_indices != NULL) {
+      memset(nearest_indices->data, 0, nearest_indices->length * sizeof(nearest_indices->data[0]));
+    }
+
+    return XLAL_SUCCESS;
+
+  }
+
+  // Create a workspace view of 'nearest_points' which has the same size as 'points'
+  gsl_matrix_view wksp = gsl_matrix_submatrix(nearest_points, 0, 0, tn, num_points);
+
+  // Copy tiled dimensions of 'points' to 'wksp'
+  for (size_t ti = 0; ti < tn; ++ti) {
+    const size_t i = gsl_vector_uint_get(tiling->tiled_idx, ti);
+    gsl_vector_const_view points_row = gsl_matrix_const_row(points, i);
+    gsl_vector_view wksp_row = gsl_matrix_row(&wksp.matrix, ti);
+    gsl_vector_memcpy(&wksp_row.vector, &points_row.vector);
+  }
+
+  // Transform 'wksp' from physical to normalised coordinates
+  for (size_t ti = 0; ti < tn; ++ti) {
+    const size_t i = gsl_vector_uint_get(tiling->tiled_idx, ti);
+    const double phys_scale = gsl_vector_get(tiling->phys_scale, i);
+    const double phys_offset = gsl_vector_get(tiling->phys_offset, i);
+    gsl_vector_view wksp_row = gsl_matrix_row(&wksp.matrix, ti);
+    gsl_vector_add_constant(&wksp_row.vector, -phys_offset);
+    gsl_vector_scale(&wksp_row.vector, 1.0/phys_scale);
+  }
+
+  // Transform 'wksp' points from normalised coordinates to generating integer space, by
+  // multiplying by the inverse of the lattice increments matrix
+  gsl_blas_dtrsm(CblasLeft, CblasLower, CblasNoTrans, CblasNonUnit, 1.0, tiling->tiled_increment, &wksp.matrix);
+
+  // Find the nearest points in the lattice tiling to the 'wksp' points
+  long long nearest_int_point[tn];
+  for (size_t j = 0; j < num_points; ++j) {
+    gsl_vector_view p = gsl_matrix_column(&wksp.matrix, j);
+    LT_FindNearestPoint(tn, tiling->lattice, tiling->lookup_base, &p.vector, nearest_int_point, &(nearest_indices->data[j]));
+    for (size_t ti = 0; ti < tn; ++ti) {
+      gsl_vector_set(&p.vector, ti, nearest_int_point[ti]);
+    }
+  }
+  XLAL_CHECK( xlalErrno == 0, XLAL_EFAILED, "LT_FindNearestPoint() failed" );
+
+  // Transform 'wksp' points from generating integer space back to normalised coordinates,
+  // by multiplying by the lattice increments matrix
+  gsl_blas_dtrmm(CblasLeft, CblasLower, CblasNoTrans, CblasNonUnit, 1.0, tiling->tiled_increment, &wksp.matrix);
+
+  // Transform 'wksp' from normalised back to physical coordinates
+  for (size_t ti = 0; ti < tn; ++ti) {
+    const size_t i = gsl_vector_uint_get(tiling->tiled_idx, ti);
+    const double phys_scale = gsl_vector_get(tiling->phys_scale, i);
+    const double phys_offset = gsl_vector_get(tiling->phys_offset, i);
+    gsl_vector_view wksp_row = gsl_matrix_row(&wksp.matrix, ti);
+    gsl_vector_scale(&wksp_row.vector, phys_scale);
+    gsl_vector_add_constant(&wksp_row.vector, phys_offset);
+  }
+
+  // Copy 'wksp' to tiled dimensions of 'nearest_points'
+  // - because 'wksp' points to same memory as 'nearest_points', we don't need to copy
+  //   if n == tn; if we do need to copy, we must iterate in reverse from (tn - 1) to 0,
+  //   in order not to erase results already stored in 'nearest_points'
+  if (tn != n) {
+    for (size_t ti = tn - 1; ti != (size_t)-1; --ti) {
+      const size_t i = gsl_vector_uint_get(tiling->tiled_idx, ti);
+      gsl_vector_view wksp_row = gsl_matrix_row(&wksp.matrix, ti);
+      gsl_vector_view nearest_points_row = gsl_matrix_row(nearest_points, i);
+      gsl_vector_memcpy(&nearest_points_row.vector, &wksp_row.vector);
+    }
+  }
+
+  // Set any untiled dimensions in 'nearest_points' to the sole point in that dimension
+  for (size_t i = 0; i < n; ++i) {
+    const double phys_scale = gsl_vector_get(tiling->phys_scale, i);
+    const double phys_offset = gsl_vector_get(tiling->phys_offset, i);
+    if (!tiling->bounds[i].tiled) {
+      for (size_t j = 0; j < num_points; ++j) {
+
+        // Get normalised bounds
+        gsl_vector_view point_j = gsl_matrix_column(nearest_points, j);
+        double lower_i = 0, upper_i = 0;
+        LT_GetBounds(tiling, i, &point_j.vector, NULL, &lower_i, &upper_i);
+
+        // Set point
+        gsl_vector_set(&point_j.vector, i, lower_i*phys_scale + phys_offset);
+
+      }
+    }
+  }
 
   return XLAL_SUCCESS;
 

@@ -225,6 +225,16 @@ int XLALPrintLatticeIndexLookup(
   FILE* file					///< [in] File pointer to print to
   );
 
+///
+/// Find the nearest point in the lattice tiling, and optionally its index, to each given
+///
+int XLALNearestLatticePoints(
+  const LatticeTiling* tiling,			///< [in] Tiling state
+  const gsl_matrix* points,			///< [in] Matrix whose columns are the given points
+  gsl_matrix* nearest_points,			///< [in/out] Matrix whose columns are the nearest points
+  UINT8Vector* nearest_indices			///< [in/out] Vector of indices of nearest points
+  );
+
 #ifdef __cplusplus
 }
 #endif
