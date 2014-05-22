@@ -18,6 +18,7 @@
 //
 
 #include <config.h>
+#include <inttypes.h>
 #include <sys/types.h>
 #include <math.h>
 #include <stdio.h>
@@ -321,7 +322,7 @@ static void LT_PrintLookup(
 
   // If this is the highest dimension, print index and return
   if (ti + 1 == tn) {
-    fprintf(fp, "   index %lu\n", lookup->index);
+    fprintf(fp, "   index %"PRIu64"\n", lookup->index);
   } else {
 
     // Otherwise, loop over this dimension
