@@ -283,7 +283,6 @@ die "Must specify both h0min and h0max" if (($h0min ne "" && $h0max eq "") || ($
 die "h0dist must be 0, 1, or -1" if $h0dist<-1 || $h0dist>1;
 die "h0val cannot be specified with h0min or h0max" if ($h0val ne "" && ($h0min ne "" || $h0max ne ""));
 die "skylocations must be 0 or greater" if $skylocations<0;
-die "Need both injskyra and injskydec" if (($injskyra ne "" && $injskydec eq "") || ($injskyra eq "" && $injskydec ne ""));
 die "periodDist must be 0, 1, or -1" if $periodDist<-1 || $periodDist>1;
 die "ihsfactor must be 1 or greater" if $ihsfactor<1;
 die "injDfExpAllow must be 1 or greater" if $injDfExpansionAllowance<1.0;

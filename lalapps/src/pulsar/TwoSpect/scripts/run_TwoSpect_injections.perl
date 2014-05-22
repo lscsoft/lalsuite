@@ -39,6 +39,9 @@ Minimum strain value to inject
 =item B<h0max:>
 Maximum strain value to inject
 
+=item B<h0dist:>
+Distribution of h0, 0 = linear, 1 = log, -1 = inv. log (1)
+
 =item B<h0val:>
 Constant strain value to inject
 
@@ -46,16 +49,16 @@ Constant strain value to inject
 Polarizations, 0 = linear, 1 = random, 2 = circular (2)
 
 =item B<injskyra:>
-Right ascension of injection
+Right ascension of injection (0)
 
 =item B<injskydec:>
-Declination of injection
+Declination of injection (0)
 
 =item B<injPmin:>
-Minimum period of injection
+Minimum period of injection (7200)
 
 =item B<injPmax:>
-Maximum period of injection
+Maximum period of injection (8110260)
 
 =item B<periodDist:>
 Orbit period dist. 0 = linear, 1 = log, -1 = inv. log (0)
@@ -99,8 +102,8 @@ Coherence length of each SFT (1800)
 =item B<SFToverlap:>
 Overlap of each SFT in seconds (900)
 
-=item B<SFTnoise:>
-Use noise from SFTs
+=item B<sftFile:>
+Use noise from SFTs (may be multple)
 
 =item B<gaussianNoiseWithSFTGaps:>
 Gaussian noise from the gaps of SFT data
@@ -169,14 +172,14 @@ my $eccDist = 0;
 my $minSpindown = 0;
 my $maxSpindown = 0;
 my $spindownDist = 0;
-my $fmin = '';
+my $fmin = 0;
 my $fspan = 0.25;
 my $h0min = '';
 my $h0max = '';
 my $h0dist = 1;
 my $h0val = '';
-my $injskyra = '';
-my $injskydec = '';
+my $injskyra = 0;
+my $injskydec = 0;
 my $injPmin = 7200;
 my $injPmax = 0.2*$dur;
 my $periodDist = 0;
@@ -273,7 +276,6 @@ die "Must specify both h0min and h0max" if (($h0min ne "" && $h0max eq "") || ($
 die "h0dist must be 0, 1, or -1" if $h0dist<-1 || $h0dist>1;
 die "h0val cannot be specified with h0min or h0max" if ($h0val ne "" && ($h0min ne "" || $h0max ne ""));
 die "skylocations must be 0 or greater" if $skylocations<0;
-die "Need both injskyra and injskydec" if (($injskyra ne "" && $injskydec eq "") || ($injskyra eq "" && $injskydec ne ""));
 die "periodDist must be 0, 1, or -1" if $periodDist<-1 || $periodDist>1;
 die "ihsfactor must be 1 or greater" if $ihsfactor<1;
 die "injDfExpAllow must be 1 or greater" if $injDfExpansionAllowance<1.0;
