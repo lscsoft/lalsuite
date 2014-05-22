@@ -31,7 +31,7 @@ extern "C" {
 
 #ifndef CMDLINE_PARSER_VERSION
 /** @brief the program version */
-#define CMDLINE_PARSER_VERSION "1.2.1"
+#define CMDLINE_PARSER_VERSION "1.2.2"
 #endif
 
 /** @brief Where the command line options are stored */
@@ -72,9 +72,6 @@ struct gengetopt_args_info
   int blksize_arg;	/**< @brief Blocksize for running median to determine expected noise of input SFTs (default='101').  */
   char * blksize_orig;	/**< @brief Blocksize for running median to determine expected noise of input SFTs original value given at command line.  */
   const char *blksize_help; /**< @brief Blocksize for running median to determine expected noise of input SFTs help description.  */
-  char * sftType_arg;	/**< @brief SFT type of either 'standard' (v2 SFTs; FFT coefficients * dt/RMS(window weights)) or 'vladimir' (Vladimir's Hann windowed SFT version; FFT coefficients * 2*dt) (default='standard').  */
-  char * sftType_orig;	/**< @brief SFT type of either 'standard' (v2 SFTs; FFT coefficients * dt/RMS(window weights)) or 'vladimir' (Vladimir's Hann windowed SFT version; FFT coefficients * 2*dt) original value given at command line.  */
-  const char *sftType_help; /**< @brief SFT type of either 'standard' (v2 SFTs; FFT coefficients * dt/RMS(window weights)) or 'vladimir' (Vladimir's Hann windowed SFT version; FFT coefficients * 2*dt) help description.  */
   char * outdirectory_arg;	/**< @brief Output directory (default='output').  */
   char * outdirectory_orig;	/**< @brief Output directory original value given at command line.  */
   const char *outdirectory_help; /**< @brief Output directory help description.  */
@@ -275,7 +272,6 @@ struct gengetopt_args_info
   unsigned int IFO_given ;	/**< @brief Whether IFO was given.  */
   unsigned int avesqrtSh_given ;	/**< @brief Whether avesqrtSh was given.  */
   unsigned int blksize_given ;	/**< @brief Whether blksize was given.  */
-  unsigned int sftType_given ;	/**< @brief Whether sftType was given.  */
   unsigned int outdirectory_given ;	/**< @brief Whether outdirectory was given.  */
   unsigned int outfilename_given ;	/**< @brief Whether outfilename was given.  */
   unsigned int configCopy_given ;	/**< @brief Whether configCopy was given.  */
@@ -538,7 +534,6 @@ int cmdline_parser_required (struct gengetopt_args_info *args_info,
   const char *prog_name);
 
 extern const char *cmdline_parser_IFO_values[];  /**< @brief Possible values for IFO. */
-extern const char *cmdline_parser_sftType_values[];  /**< @brief Possible values for sftType. */
 extern const char *cmdline_parser_FFTplanFlag_values[];  /**< @brief Possible values for FFTplanFlag. */
 extern const char *cmdline_parser_ULsolver_values[];  /**< @brief Possible values for ULsolver. */
 

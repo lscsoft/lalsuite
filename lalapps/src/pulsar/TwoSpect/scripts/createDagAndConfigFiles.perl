@@ -137,7 +137,6 @@ my $fspan = 0.0;
 my $numberBands = 1;
 my @ifos;
 my @sourceSFTs;
-my @sourceSFTtypes;
 my @t0;
 my $Tcoh = 1800;
 my $SFToverlap = 900;
@@ -177,7 +176,6 @@ GetOptions('help' => \$help,
            'numberBands:i' => \$numberBands,
            'ifo=s' => \@ifos,
            'sourceSFTs=s' => \@sourceSFTs,
-           'sourceSFTtypes=s' => \@sourceSFTtypes,
            't0=f' => \@t0,
            'Tcoh:f' => \$Tcoh,
            'Tobs:f' => \$Tobs,
@@ -317,7 +315,6 @@ minTemplateLength $minTemplateLength
 maxTemplateLength $maxTemplateLength
 sftFile $sourceSFTs[$ii]
 outdirectory $outdirectory
-sftType $sourceSFTtypes[$ii]
 IFO $ifokey[$ii]
 skyRegionFile $skyregionfile
 FFTplanFlag $FFTplanFlag

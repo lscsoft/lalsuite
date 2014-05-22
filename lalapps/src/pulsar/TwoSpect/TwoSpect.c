@@ -1013,7 +1013,6 @@ inputParamsStruct * new_inputParams(INT4 numofIFOs)
 void free_inputParams(inputParamsStruct *params)
 {
 
-   XLALFree((CHAR*)params->sftType);
    XLALFree((LALDetector*)params->det);
    gsl_rng_free(params->rng);
    XLALFree((inputParamsStruct*)params);
@@ -1169,12 +1168,6 @@ REAL4Vector * convertSFTdataToPowers(MultiSFTVector *sfts, inputParamsStruct *pa
 
    } /* for ii < numffts */
 
-   //Vladimir's code uses a different SFT normalization factor than MFD
-   if (strcmp(params->sftType, "vladimir") == 0) {
-      REAL4 vladimirfactor = (REAL4)(0.25*(8.0/3.0));
-      for (ii=0; ii<(INT4)tfdata->length; ii++) tfdata->data[ii] *= vladimirfactor;
-   }
-
    fprintf(LOG, "done\n");
    fprintf(stderr, "done\n");
 
@@ -1296,12 +1289,6 @@ REAL4VectorSequence * readInMultiSFTs(inputParamsStruct *input, REAL8 *normaliza
             IFOspecificNonexistantsft->data[jj]++;
          }
       }
-   }
-
-   //Vladimir's code uses a different SFT normalization factor than MFD
-   if (strcmp(input->sftType, "vladimir") == 0) {
-      REAL4 vladimirfactor = (REAL4)(0.25*(8.0/3.0));
-      for (ii=0; ii<(INT4)(multiTFdata->length*multiTFdata->vectorLength); ii++) multiTFdata->data[ii] *= vladimirfactor;
    }
 
    XLALDestroySFTCatalog(catalog);
@@ -2570,24 +2557,6 @@ INT4 readTwoSpectInputParams(inputParamsStruct *params, struct gengetopt_args_in
    fprintf(stderr,"FFT plan flag = %d\n", params->FFTplanFlag);
    if (args_info.ihsfomfar_given) fprintf(stderr,"IHS FOM FAR = %f\n", params->ihsfomfar);
    else fprintf(stderr,"IHS FOM = %f\n", params->ihsfom);
-
-   //SFT type standard or vladimir (Vladimir's SFT generation program has a different normalization factor than standard v2)
-   params->sftType = XLALCalloc((INT4)strlen(args_info.sftType_arg)+1, sizeof(*(params->sftType)));
-   if (params->sftType==NULL) {
-      fprintf(stderr, "%s: XLALCalloc(%zu) failed.\n", __func__, sizeof(*(params->sftType)));
-      XLAL_ERROR(XLAL_ENOMEM);
-   }
-   sprintf(params->sftType, "%s", args_info.sftType_arg);
-   if (strcmp(params->sftType, "standard")==0) {
-      fprintf(LOG,"sftType = %s\n", params->sftType);
-      fprintf(stderr,"sftType = %s\n", params->sftType);
-   } else if (strcmp(params->sftType, "vladimir")==0) {
-      fprintf(LOG,"sftType = %s\n", params->sftType);
-      fprintf(stderr,"sftType = %s\n", params->sftType);
-   } else {
-      fprintf(stderr, "%s: Not using valid type of SFT! Expected 'standard' or 'vladimir' not %s.\n", __func__, params->sftType);
-      XLAL_ERROR(XLAL_EINVAL);
-   }
 
    //Interferometer from the IFO given parameter. Could be more than 1, but this functionality is not fully implemented, so we exit with
    //an error if this is done

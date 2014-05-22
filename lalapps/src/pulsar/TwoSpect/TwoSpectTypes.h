@@ -70,7 +70,6 @@ typedef struct
    INT4 rootFindingMethod;
    INT4 numofIFOs;
    LALDetector *det;
-   CHAR* sftType;
    INT4 markBadSFTs;
    INT4 FFTplanFlag;
    INT4 calcRthreshold;

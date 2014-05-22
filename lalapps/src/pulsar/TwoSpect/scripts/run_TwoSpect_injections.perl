@@ -87,6 +87,18 @@ Spindown distribution, 0 = linear (0)
 =item B<ifo:>
 Interferometer to use (may be multiple) [R]
 
+=item B<t0:>
+Start time of search (may be multiple) [R]
+
+=item B<Tobs:>
+Observation time of the search in seconds (40551300)
+
+=item B<Tsft:>
+Coherence length of each SFT (1800)
+
+=item B<SFToverlap:>
+Overlap of each SFT in seconds (900)
+
 =item B<SFTnoise:>
 Use noise from SFTs
 
@@ -142,7 +154,6 @@ my $help = 0;
 my $jobnum = 0;
 
 my @sftFile = ();
-my @sftType = ();
 my $gaussianNoiseWithSFTGaps = 0;
 my @timestampsfile = ();
 my @segmentfile = ();
@@ -197,7 +208,6 @@ GetOptions('help' => \$help,
            'dir=s' => \$directory,
            'jobnum=i' => \$jobnum,
            'sftFile:s' => \@sftFile,
-           'sftType:s' => \@sftType,
            'gaussianNoiseWithSFTGaps' => \$gaussianNoiseWithSFTGaps,
            'injPol:i' => \$injPol,
            'minEcc:f' => \$minEcc,
@@ -245,7 +255,6 @@ my $numIFOs = @ifo;
 my $numberTimestampFiles = @timestampsfile;
 my $numberSegmentFiles = @segmentfile;
 my $numberSFTfiles = @sftFile;
-my $numberSFTtypes = @sftType;
 my $numberT0 = @t0;
 
 die "Number of IFOs and concatenated SFT files must be the same" if $numIFOs!=$numberSFTfiles;
@@ -274,9 +283,7 @@ die "ihsfomfar must be less than or equal to 1" if $ihsfomfar>1.0;
 die "tmplfar must be less than or equal to 1" if $tmplfar>1.0;
 die "tmplLength must be 1 or greater" if $tmplLength<1;
 
-if ($dur!=40551300.0 && $injPmax>0.2*$dur) { $injPmax = $0.2*$dur; }
-
-my @seedval = ($seedstart, $jobnum);
+my @seedval = ($seedstart, $jobnum+1);
 random_set_seed(@seedval);
 
 my $scoX1P = 68023.70;
@@ -437,10 +444,7 @@ injectionSources \@/local/user/egoetz/$$/mfdconfig
 ihsfactor $ihsfactor
 EOF
 
-      if ($numberSFTfiles>0) {
-         print TWOSPECTCONFIG "sftFile $sftFile[$jj]\n";
-         print TWOSPECTCONFIG "sftType $sftType[$jj]\n";
-      }
+      if ($numberSFTfiles>0) { print TWOSPECTCONFIG "sftFile $sftFile[$jj]\n"; }
       elsif ($timestampsfile[$jj] ne "") { print TWOSPECTCONFIG "timestampsFile $timestampsfile[$jj]\n"; } 
       elsif ($segmentfile[$jj] ne "") { print TWOSPECTCONFIG "segmentFile $segmentfile[$jj]\n"; }
 

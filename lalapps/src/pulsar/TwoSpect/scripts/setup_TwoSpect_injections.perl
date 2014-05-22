@@ -22,7 +22,7 @@ Show the help information
 Base directory to store the job subdirectories [R]
 
 =item B<jobs:>
-Number of jobs to execute [R]
+Number of jobs to execute (1)
 
 =item B<logfile:>
 Name of condor logfile path/filename [R]
@@ -49,10 +49,10 @@ Constant strain value to inject
 Polarizations, 0 = linear, 1 = random, 2 = circular (2)
 
 =item B<injskyra:>
-Right ascension of injection
+Right ascension of injection in radians (0)
 
 =item B<injskydec:>
-Declination of injection
+Declination of injection in radians (0)
 
 =item B<injPmin:>
 Minimum period of injection (7200)
@@ -96,11 +96,17 @@ Interferometer to use (may be multiple) [R]
 =item B<t0:>
 Start time of search (may be multiple) [R]
 
+=item B<Tobs:>
+Observation time of the search in seconds (40551300)
+
+=item B<Tsft:>
+Coherence length of each SFT (1800)
+
+=item B<SFToverlap:>
+Overlap of each SFT in seconds (900)
+
 =item B<sftFile:>
 Noise SFT file (may be multiple)
-
-=item B<sftType:>
-SFT type (may be multiple)
 
 =item B<gaussianNoiseWithSFTGaps:>
 Gaussian noise from the gaps of SFT data
@@ -160,7 +166,6 @@ my $Tsft = 1800.0;
 my $SFToverlap = 900.0;
 
 my @sftFile = ();
-my @sftType = ();
 my $gaussianNoiseWithSFTGaps = 0;
 my @timestampsfile = ();
 my @segmentfile = ();
@@ -172,14 +177,14 @@ my $eccDist = 0;
 my $minSpindown = 0;
 my $maxSpindown = 0;
 my $spindownDist = 0;
-my $fmin = '';
+my $fmin = 0;
 my $fspan = 0.25;
 my $h0min = '';
 my $h0max = '';
 my $h0dist = 1;
 my $h0val = '';
-my $injskyra = '';
-my $injskydec = '';
+my $injskyra = 0;
+my $injskydec = 0;
 my $injPmin = 7200;
 my $injPmax = 0.2*$dur;
 my $periodDist = 0;
@@ -209,10 +214,9 @@ my $markBadSFTs = 0;
 
 GetOptions('help' => \$help, 
            'dir=s' => \$directory, 
-           'jobs=i' => \$jobs,
+           'jobs=:i' => \$jobs,
            'logfile=s' => \$logfile,
            'sftFile:s' => \@sftFile,
-           'sftType:s' => \@sftType,
            'gaussianNoiseWithSFTGaps' => \$gaussianNoiseWithSFTGaps, 
            'injPol:i' => \$injPol, 
            'minEcc:f' => \$minEcc, 
@@ -260,7 +264,6 @@ my $numIFOs = @ifo;
 my $numberTimestampFiles = @timestampsfile;
 my $numberSegmentFiles = @segmentfile;
 my $numberSFTfiles = @sftFile;
-my $numberSFTtypes = @sftType;
 my $numberT0 = @t0;
 
 die "Jobs must be 1 or more" if $jobs<1;
@@ -289,8 +292,6 @@ die "ihsfar must be less than or equal to 1" if $ihsfar>1.0;
 die "ihsfomfar must be less than or equal to 1" if $ihsfomfar>1.0;
 die "tmplfar must be less than or equal to 1" if $tmplfar>1.0;
 die "tmplLength must be 1 or greater" if $tmplLength<1;
-
-if ($dur!=40551300.0 && $injPmax>0.2*$dur) { $injPmax = $0.2*$dur; }
 
 system("mkdir $directory/err");
 die "mkdir failed: $?" if $?;
@@ -334,10 +335,8 @@ else {
 
 for (my $ii=0; $ii<$numIFOs; $ii++) {
    print CONDORFILE " --ifo=$ifo[$ii] --t0=$t0[$ii]";
-   if ($numberSFTfiles>0) {
-      print CONDORFILE " --sftFile=$sftFile[$ii]";
-      print CONDORFILE " --sftType=$sftType[$ii]";
-   } elsif ($numberTimestampFiles>0) { print CONDORFILE " --timestampsfile=$timestampsfile[$ii]"; }
+   if ($numberSFTfiles>0) { print CONDORFILE " --sftFile=$sftFile[$ii]"; }
+   elsif ($numberTimestampFiles>0) { print CONDORFILE " --timestampsfile=$timestampsfile[$ii]"; }
    elsif ($numberSegmentFiles>0) { print CONDORFILE " --segmentfile=$segmentfile[$ii]"; }
 }
 

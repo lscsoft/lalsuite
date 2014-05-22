@@ -1,5 +1,5 @@
 package "lalapps_TwoSpect"
-version "1.2.1"
+version "1.2.2"
 purpose "TwoSpect analysis program"
 
 args "--string-parser --conf-parser --show-required=[required]"
@@ -16,7 +16,6 @@ option "fspan" - "Frequency span of band (Hz)" double required
 option "IFO"   - "Interferometer of whose data is being analyzed" string typestr="IFO code" values="H1","L1","V1" required multiple(1)
 option "avesqrtSh"     - "Expected average of square root of Sh" double required
 option "blksize"       - "Blocksize for running median to determine expected noise of input SFTs" int default="101" optional
-option "sftType"  - "SFT type of either 'standard' (v2 SFTs; FFT coefficients * dt/RMS(window weights)) or 'vladimir' (Vladimir's Hann windowed SFT version; FFT coefficients * 2*dt)" string values="standard","vladimir" default="standard" optional
 
 section "Input/ouput parameters"
 option "outdirectory"   - "Output directory" string typestr="directory" default="output" optional
