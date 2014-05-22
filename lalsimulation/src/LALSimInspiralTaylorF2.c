@@ -65,6 +65,11 @@ int XLALSimInspiralTaylorF2Phasing(
  * and amplitude given by expanding \f$1/\sqrt{\dot{F}}\f$. If the PN order is
  * set to -1, then the highest implemented order is used.
  *
+ * N.B. f_ref is the GW frequency at which phi_ref is defined. The most common
+ * choice in the literature is to choose the reference point as "coalescence",
+ * when the frequency becomes infinite. This is the behavior of the code when
+ * f_ref==0. If f_ref > 0, phi_ref sets the orbital phase at that GW frequency.
+ *
  * See arXiv:0810.5336 and arXiv:astro-ph/0504538 for spin corrections
  * to the phasing.
  * See arXiv:1303.7412 for spin-orbit phasing corrections at 3 and 3.5PN order
@@ -211,7 +216,7 @@ int XLALSimInspiralTaylorF2(
     if (m1_SI <= 0) XLAL_ERROR(XLAL_EDOM);
     if (m2_SI <= 0) XLAL_ERROR(XLAL_EDOM);
     if (fStart <= 0) XLAL_ERROR(XLAL_EDOM);
-    if (f_ref <= 0) XLAL_ERROR(XLAL_EDOM); /* FIXME: Remove when f_ref <= 0 option added */
+    if (f_ref < 0) XLAL_ERROR(XLAL_EDOM);
     if (r <= 0) XLAL_ERROR(XLAL_EDOM);
 
     /* allocate htilde */
@@ -236,39 +241,47 @@ int XLALSimInspiralTaylorF2(
     iStart = (size_t) ceil(fStart / deltaF);
     data = htilde->data->data;
 
-    /* Compute the SPA phase at the reference point */
-    const REAL8 vref = cbrt(piM*f_ref);
-    const REAL8 logvref = log(vref);
-    const REAL8 v2ref = vref * vref;
-    const REAL8 v3ref = vref * v2ref;
-    const REAL8 v4ref = vref * v3ref;
-    const REAL8 v5ref = vref * v4ref;
-    const REAL8 v6ref = vref * v5ref;
-    const REAL8 v7ref = vref * v6ref;
-    const REAL8 v8ref = vref * v7ref;
-    const REAL8 v9ref = vref * v8ref;
-    const REAL8 v10ref = vref * v9ref;
-    const REAL8 v12ref = v2ref * v10ref;
+    /* Compute the SPA phase at the reference point
+     * N.B. f_ref == 0 means we define the reference time/phase at "coalescence"
+     * when the frequency approaches infinity. In that case,
+     * the integrals Eq. 3.15 of arXiv:0907.0700 vanish when evaluated at
+     * f_ref == infinity. If f_ref is finite, we must compute the SPA phase
+     * evaluated at f_ref, store it as ref_phasing and subtract it off.
+     */
     REAL8 ref_phasing = 0.;
-    ref_phasing += pfa7 * v7ref;
-    ref_phasing += (pfa6 + pfl6 * logvref) * v6ref;
-    ref_phasing += (pfa5 + pfl5 * logvref) * v5ref;
-    ref_phasing += pfa4 * v4ref;
-    ref_phasing += pfa3 * v3ref;
-    ref_phasing += pfa2 * v2ref;
-    ref_phasing += pfaN;
+    if( f_ref != 0. ) {
+        const REAL8 vref = cbrt(piM*f_ref);
+        const REAL8 logvref = log(vref);
+        const REAL8 v2ref = vref * vref;
+        const REAL8 v3ref = vref * v2ref;
+        const REAL8 v4ref = vref * v3ref;
+        const REAL8 v5ref = vref * v4ref;
+        const REAL8 v6ref = vref * v5ref;
+        const REAL8 v7ref = vref * v6ref;
+        const REAL8 v8ref = vref * v7ref;
+        const REAL8 v9ref = vref * v8ref;
+        const REAL8 v10ref = vref * v9ref;
+        const REAL8 v12ref = v2ref * v10ref;
+        ref_phasing += pfa7 * v7ref;
+        ref_phasing += (pfa6 + pfl6 * logvref) * v6ref;
+        ref_phasing += (pfa5 + pfl5 * logvref) * v5ref;
+        ref_phasing += pfa4 * v4ref;
+        ref_phasing += pfa3 * v3ref;
+        ref_phasing += pfa2 * v2ref;
+        ref_phasing += pfaN;
 
-    switch( tideO )
-    {
-        case LAL_SIM_INSPIRAL_TIDAL_ORDER_ALL:
-        case LAL_SIM_INSPIRAL_TIDAL_ORDER_6PN:
-            ref_phasing += pfaN * pft12 * v12ref;
-        case LAL_SIM_INSPIRAL_TIDAL_ORDER_5PN:
-            ref_phasing += pfaN * pft10 * v10ref;
-        case LAL_SIM_INSPIRAL_TIDAL_ORDER_0PN:
-            ;
-    }
-    ref_phasing /= v5ref;
+        switch( tideO )
+        {
+            case LAL_SIM_INSPIRAL_TIDAL_ORDER_ALL:
+            case LAL_SIM_INSPIRAL_TIDAL_ORDER_6PN:
+                ref_phasing += pfaN * pft12 * v12ref;
+            case LAL_SIM_INSPIRAL_TIDAL_ORDER_5PN:
+                ref_phasing += pfaN * pft10 * v10ref;
+            case LAL_SIM_INSPIRAL_TIDAL_ORDER_0PN:
+                ;
+        }
+        ref_phasing /= v5ref;
+    } /* End of if(f_ref != 0) block */
 
     #pragma omp parallel for
     for (i = iStart; i < n; i++) {

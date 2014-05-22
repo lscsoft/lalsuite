@@ -45,7 +45,7 @@ int main(void) {
     COMPLEX16FrequencySeries *hctildeC = NULL;
     REAL8 m1 = 10. * LAL_MSUN_SI, m2 = 10 * LAL_MSUN_SI;
     REAL8 s1x = 0., s1y = 0., s1z = 0., s2x = 0., s2y = 0., s2z = 0.;
-    REAL8 f_min = 40., f_ref = 40., lambda1 = 0., lambda2 = 0.i, f_max = 0.;
+    REAL8 f_min = 40., f_ref = 0., lambda1 = 0., lambda2 = 0.i, f_max = 0.;
     REAL8 dt = 1./16384., df = 1./16.;
     int ret, phaseO = 7, ampO = 0;
     Approximant approx = SEOBNRv1;
