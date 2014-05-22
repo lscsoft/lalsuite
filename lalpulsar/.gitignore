@@ -44,6 +44,7 @@ test/H-3_H1_60SFT_test_concat-000012345-302.sft
 test/HeterodynePulsarTest
 test/LALBarycenterTest
 test/LALPulsarXMLTest
+test/LatticeTilingTest
 test/LineRobustStatsTest
 test/NewGetAMCoeffsTest
 test/NormalizeSFTRngMedTest
