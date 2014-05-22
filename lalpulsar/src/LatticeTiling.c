@@ -102,50 +102,6 @@ static void LT_ZeroStrictUpperTriangle(gsl_matrix* A) {
 }
 
 ///
-/// Find the bounding box of the mismatch ellipses of a metric
-///
-static gsl_vector* LT_MetricEllipseBoundingBox(
-  const gsl_matrix* metric,			///< [in] Metric to bound
-  const double max_mismatch			///< [in] Maximum mismatch with respect to metric
-  )
-{
-
-  // Check input
-  XLAL_CHECK_NULL(metric != NULL, XLAL_EFAULT);
-  XLAL_CHECK_NULL(metric->size1 == metric->size2, XLAL_ESIZE);
-  const size_t n = metric->size1;
-
-  // Allocate memory
-  gsl_matrix* LU_decomp = gsl_matrix_alloc(n, n);
-  XLAL_CHECK_NULL(LU_decomp != NULL, XLAL_ENOMEM);
-  gsl_permutation* LU_perm = gsl_permutation_alloc(n);
-  XLAL_CHECK_NULL(LU_perm != NULL, XLAL_ENOMEM);
-  gsl_matrix* inverse = gsl_matrix_alloc(n, n);
-  XLAL_CHECK_NULL(inverse != NULL, XLAL_ENOMEM);
-  gsl_vector* bound_box = gsl_vector_alloc(n);
-  XLAL_CHECK_NULL(bound_box != NULL, XLAL_ENOMEM);
-
-  // Compute metric inverse
-  int LU_sign = 0;
-  gsl_matrix_memcpy(LU_decomp, metric);
-  gsl_linalg_LU_decomp(LU_decomp, LU_perm, &LU_sign);
-  gsl_linalg_LU_invert(LU_decomp, LU_perm, inverse);
-
-  // Compute bounding box
-  for (size_t i = 0; i < n; ++i) {
-    gsl_vector_set(bound_box, i, sqrt(max_mismatch * gsl_matrix_get(inverse, i ,i)));
-  }
-
-  // Cleanup
-  gsl_matrix_free(LU_decomp);
-  gsl_permutation_free(LU_perm);
-  gsl_matrix_free(inverse);
-
-  return bound_box;
-
-}
-
-///
 /// Orthonormalise the columns of a matrix with respect to a metric (matrix is lower triangular)
 ///
 static int LT_OrthonormaliseWRTMetric(
@@ -545,6 +501,58 @@ static void LT_GetBounds(
     *lower -= pad;
     *upper += pad;
   }
+
+}
+
+gsl_vector* XLALMetricEllipseBoundingBox(
+  const gsl_matrix* metric,
+  const double max_mismatch
+  )
+{
+
+  // Check input
+  XLAL_CHECK_NULL(metric != NULL, XLAL_EFAULT);
+  XLAL_CHECK_NULL(metric->size1 == metric->size2, XLAL_ESIZE);
+  const size_t n = metric->size1;
+
+  // Allocate memory
+  gsl_matrix* LU_decomp = gsl_matrix_alloc(n, n);
+  XLAL_CHECK_NULL(LU_decomp != NULL, XLAL_ENOMEM);
+  gsl_permutation* LU_perm = gsl_permutation_alloc(n);
+  XLAL_CHECK_NULL(LU_perm != NULL, XLAL_ENOMEM);
+  gsl_matrix* inverse = gsl_matrix_alloc(n, n);
+  XLAL_CHECK_NULL(inverse != NULL, XLAL_ENOMEM);
+  gsl_vector* bounding_box = gsl_vector_alloc(n);
+  XLAL_CHECK_NULL(bounding_box != NULL, XLAL_ENOMEM);
+
+  // Copy metric, and ensure it is diagonally normalised
+  for (size_t i = 0; i < n; ++i) {
+    const double norm_i = gsl_matrix_get(metric, i, i);
+    for (size_t j = 0; j < n; ++j) {
+      const double norm_j = gsl_matrix_get(metric, j, j);
+      const double metric_i_j = gsl_matrix_get(metric, i, j);
+      gsl_matrix_set(LU_decomp, i, j, metric_i_j / sqrt(norm_i * norm_j));
+    }
+  }
+
+  // Compute metric inverse
+  int LU_sign = 0;
+  gsl_linalg_LU_decomp(LU_decomp, LU_perm, &LU_sign);
+  gsl_linalg_LU_invert(LU_decomp, LU_perm, inverse);
+
+  // Compute bounding box, and reverse diagonal scaling
+  for (size_t i = 0; i < n; ++i) {
+    const double norm_i = gsl_matrix_get(metric, i, i);
+    const double bounding_box_i = sqrt(norm_i * max_mismatch * gsl_matrix_get(inverse, i, i));
+    gsl_vector_set(bounding_box, i, bounding_box_i);
+  }
+
+  // Cleanup
+  gsl_matrix_free(LU_decomp);
+  gsl_permutation_free(LU_perm);
+  gsl_matrix_free(inverse);
+
+  return bounding_box;
 
 }
 
@@ -994,7 +1002,7 @@ int XLALSetLatticeTypeAndMetric(
     }
 
     // Set padding to metric ellipse bounding box
-    gsl_vector* tiled_padding = LT_MetricEllipseBoundingBox(tiled_metric, max_mismatch);
+    gsl_vector* tiled_padding = XLALMetricEllipseBoundingBox(tiled_metric, max_mismatch);
     XLAL_CHECK(tiled_padding != NULL, XLAL_EFUNC);
 
     // Copy padding to tiled dimensions

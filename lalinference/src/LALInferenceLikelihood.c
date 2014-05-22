@@ -1390,6 +1390,8 @@ REAL8 LALInferenceRosenbrockLogLikelihood(LALInferenceVariables *currentParams,
 
   extractDimensionlessVariableVector(currentParams, x, mode);
 
+  for (i = 0; i < DIM; i++) x[i] += 1.0;
+
   for (i = 0; i < DIM-1; i++) {
     REAL8 oneMX = 1.0 - x[i];
     REAL8 dx = x[i+1] - x[i]*x[i];
