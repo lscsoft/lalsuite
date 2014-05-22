@@ -298,6 +298,9 @@ static double *bayestar_sky_map_toa_adapt_resolution(
             goto fail;
         }
         exp_normalize(my_npix, P, my_pix_perm);
+
+        my_maxpix = indexof_confidence_level(my_npix, P,
+            autoresolution_confidence_level, my_pix_perm);
     }
 
     *npix = my_npix;
