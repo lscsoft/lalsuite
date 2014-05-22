@@ -1141,12 +1141,18 @@ fail:
 
 
 static PyMethodDef methods[] = {
-    {"toa", (PyCFunction)sky_map_toa, METH_VARARGS | METH_KEYWORDS, "fill me in"},
-    {"toa_snr", (PyCFunction)sky_map_toa_snr, METH_VARARGS | METH_KEYWORDS, "fill me in"},
-    {"toa_phoa_snr", (PyCFunction)sky_map_toa_phoa_snr, METH_VARARGS | METH_KEYWORDS, "fill me in"},
-    {"log_posterior_toa", (PyCFunction)log_posterior_toa, METH_VARARGS | METH_KEYWORDS, "fill me in"},
-    {"log_posterior_toa_snr", (PyCFunction)log_posterior_toa_snr, METH_VARARGS | METH_KEYWORDS, "fill me in"},
-    {"log_posterior_toa_phoa_snr", (PyCFunction)log_posterior_toa_phoa_snr, METH_VARARGS | METH_KEYWORDS, "fill me in"},
+    {"toa", (PyCFunction)sky_map_toa,
+        METH_VARARGS | METH_KEYWORDS, "fill me in"},
+    {"toa_snr", (PyCFunction)sky_map_toa_snr,
+        METH_VARARGS | METH_KEYWORDS, "fill me in"},
+    {"toa_phoa_snr", (PyCFunction)sky_map_toa_phoa_snr,
+        METH_VARARGS | METH_KEYWORDS, "fill me in"},
+    {"log_posterior_toa", (PyCFunction)log_posterior_toa,
+        METH_VARARGS | METH_KEYWORDS, "fill me in"},
+    {"log_posterior_toa_snr", (PyCFunction)log_posterior_toa_snr,
+        METH_VARARGS | METH_KEYWORDS, "fill me in"},
+    {"log_posterior_toa_phoa_snr", (PyCFunction)log_posterior_toa_phoa_snr,
+        METH_VARARGS | METH_KEYWORDS, "fill me in"},
     {NULL, NULL, 0, NULL}
 };
 
