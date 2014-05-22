@@ -203,7 +203,6 @@ static int bayestar_sky_map_toa_not_normalized_log(
     const double *w_toas /* Input: sum-of-squares weights, (1/TOA variance)^2. */
 ) {
     long nside;
-    long i;
 
     /* Determine the lateral HEALPix resolution. */
     nside = npix2nside(npix);
@@ -211,7 +210,7 @@ static int bayestar_sky_map_toa_not_normalized_log(
         GSL_ERROR("output is not a valid HEALPix array", GSL_EINVAL);
 
     /* Loop over pixels. */
-    for (i = 0; i < npix; i ++)
+    for (long i = 0; i < npix; i ++)
     {
         /* Determine polar coordinates of this pixel. */
         double theta, phi;
