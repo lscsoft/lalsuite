@@ -205,10 +205,6 @@ def ligolw_sky_map(
     if method == "toa":
         prob = sky_map.toa(
             gmst, sample_rate, acors, locations, toas, snrs, nside)
-    elif method == "toa_snr":
-        prob = sky_map.toa_snr(
-            min_distance, max_distance, prior_distance_power, gmst, sample_rate,
-            acors, responses, locations, horizons, toas, snrs, nside)
     elif method == "toa_phoa_snr":
         prob = sky_map.toa_phoa_snr(
             min_distance, max_distance, prior_distance_power, gmst, sample_rate,

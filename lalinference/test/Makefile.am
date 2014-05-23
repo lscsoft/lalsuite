@@ -14,6 +14,9 @@ endif
 
 # Add shell, Python, etc. test scripts to this variable
 #test_scripts += test_plot.py
+if HAVE_CHEALPIX
+test_scripts += test_bayestar.py
+endif
 
 # Add any helper programs required by tests to this variable
 test_helpers +=

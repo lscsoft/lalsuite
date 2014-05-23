@@ -182,9 +182,9 @@ static PyObject *sky_map_toa(
         "locations", "toas", "snrs", "nside", NULL};
 
     /* Parse arguments */
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "ddOOOO|l", keywords,
-        &gmst, &sample_rate, &acors_obj, &locations_obj, &toas_obj, &snrs_obj))
-        return NULL;
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "ddOOOO|l",
+        keywords, &gmst, &sample_rate, &acors_obj, &locations_obj, &toas_obj,
+        &snrs_obj, &nside)) return NULL;
 
     /* Determine HEALPix resolution, if specified */
     if (nside == -1)
@@ -261,127 +261,6 @@ fail: /* Cleanup */
 };
 
 
-static PyObject *sky_map_toa_snr(
-    PyObject *NPY_UNUSED(module), PyObject *args, PyObject *kwargs)
-{
-    /* Input arguments */
-    long nside = -1;
-    long npix;
-    double min_distance;
-    double max_distance;
-    int prior_distance_power;
-    double gmst;
-    unsigned int nifos;
-    unsigned long nsamples = 0;
-    double sample_rate;
-    PyObject *acors_obj;
-    PyObject *responses_obj;
-    PyObject *locations_obj;
-    PyObject *horizons_obj;
-    PyObject *toas_obj;
-    PyObject *snrs_obj;
-
-    /* Names of arguments */
-    static const char *keywords[] = {"min_distance", "max_distance",
-        "prior_distance_power", "gmst", "sample_rate", "acors", "responses",
-        "locations", "horizons", "toas", "snrs", "nside", NULL};
-
-    /* Parse arguments */
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "ddiddOOOOOO|l", keywords,
-        &min_distance, &max_distance, &prior_distance_power, &gmst,
-        &sample_rate, &acors_obj, &responses_obj, &locations_obj,
-        &horizons_obj, &toas_obj, &snrs_obj, &nside)) return NULL;
-
-    /* Determine HEALPix resolution, if specified */
-    if (nside == -1)
-    {
-        npix = -1;
-    } else {
-        npix = nside2npix(nside);
-        if (npix == -1)
-        {
-            PyErr_SetString(PyExc_ValueError, "nside must be a power of 2");
-            return NULL;
-        }
-    }
-
-    /* Determine number of detectors */
-    {
-        Py_ssize_t n = PySequence_Length(acors_obj);
-        if (n < 0) return NULL;
-        nifos = n;
-    }
-
-    /* Return value */
-    PyObject *out = NULL;
-
-    /* Numpy array objects */
-    PyArrayObject *acors_npy[nifos], *responses_npy[nifos],
-        *locations_npy[nifos], *horizons_npy = NULL, *toas_npy = NULL,
-        *snrs_npy = NULL;
-    memset(acors_npy, 0, sizeof(acors_npy));
-    memset(responses_npy, 0, sizeof(responses_npy));
-    memset(locations_npy, 0, sizeof(locations_npy));
-
-    /* Arrays of pointers for inputs with multiple dimensions */
-    const double complex *acors[nifos];
-    const float (*responses[nifos])[3];
-    const double *locations[nifos];
-
-    /* Gather C-aligned arrays from Numpy types */
-    INPUT_LIST_OF_ARRAYS(acors, NPY_CDOUBLE, 1,
-        npy_intp dim = PyArray_DIM(npy, 0);
-        if (iifo == 0)
-            nsamples = dim;
-        else if ((unsigned long)dim != nsamples)
-        {
-            PyErr_SetString(PyExc_ValueError,
-                "expected elements of acors to be vectors of the same length");
-            goto fail;
-        }
-    )
-    INPUT_LIST_OF_ARRAYS(responses, NPY_FLOAT, 2,
-        if (PyArray_DIM(npy, 0) != 3 || PyArray_DIM(npy, 1) != 3)
-        {
-            PyErr_SetString(PyExc_ValueError,
-                "expected elements of responses to be 3x3 arrays");
-            goto fail;
-        }
-    )
-    INPUT_LIST_OF_ARRAYS(locations, NPY_DOUBLE, 1,
-        if (PyArray_DIM(npy, 0) != 3)
-        {
-            PyErr_SetString(PyExc_ValueError,
-                "expected elements of locations to be vectors of length 3");
-            goto fail;
-        }
-    )
-    INPUT_VECTOR_DOUBLE_NIFOS(horizons)
-    INPUT_VECTOR_DOUBLE_NIFOS(toas)
-    INPUT_VECTOR_DOUBLE_NIFOS(snrs)
-
-    /* Call function */
-    gsl_error_handler_t *old_handler = gsl_set_error_handler(my_gsl_error);
-    double *ret = bayestar_sky_map_toa_snr(&npix, min_distance,
-        max_distance, prior_distance_power, gmst, nifos, nsamples, sample_rate,
-        acors, responses, locations, horizons, toas, snrs);
-    gsl_set_error_handler(old_handler);
-
-    /* Prepare output object */
-    if (ret)
-        out = premalloced_npy_double_array(ret, npix);
-
-fail: /* Cleanup */
-    FREE_INPUT_LIST_OF_ARRAYS(acors)
-    FREE_INPUT_LIST_OF_ARRAYS(responses)
-    FREE_INPUT_LIST_OF_ARRAYS(locations)
-    Py_XDECREF(horizons_npy);
-    Py_XDECREF(toas_npy);
-    Py_XDECREF(snrs_npy);
-    return out;
-};
-
-
 static PyObject *sky_map_toa_phoa_snr(
     PyObject *NPY_UNUSED(module), PyObject *args, PyObject *kwargs)
 {
@@ -409,8 +288,8 @@ static PyObject *sky_map_toa_phoa_snr(
         "locations", "horizons", "toas", "phoas", "snrs", "nside", NULL};
 
     /* Parse arguments */
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "ddiddOOOOOOO|l", keywords,
-        &min_distance, &max_distance, &prior_distance_power, &gmst,
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "ddiddOOOOOOO|l",
+        keywords, &min_distance, &max_distance, &prior_distance_power, &gmst,
         &sample_rate, &acors_obj, &responses_obj, &locations_obj,
         &horizons_obj, &toas_obj, &phoas_obj, &snrs_obj, &nside)) return NULL;
 
@@ -527,9 +406,9 @@ static PyObject *log_likelihood_toa(
         "locations", "toas", "snrs", NULL};
 
     /* Parse arguments */
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "(ddd)ddOOOO", keywords,
-        &ra, &sin_dec, &t, &gmst, &sample_rate, &acors_obj, &locations_obj,
-        &toas_obj, &snrs_obj)) return NULL;
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "(ddd)ddOOOO",
+        keywords, &ra, &sin_dec, &t, &gmst, &sample_rate, &acors_obj,
+        &locations_obj, &toas_obj, &snrs_obj)) return NULL;
 
     /* Determine number of detectors */
     {
@@ -616,10 +495,10 @@ static PyObject *log_likelihood_toa_snr(
         "responses", "locations", "horizons", "toas", "snrs", NULL};
 
     /* Parse arguments */
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "(dddddd)ddOOOOOO", keywords,
-        &ra, &sin_dec, &distance, &u, &twopsi, &t, &gmst, &sample_rate,
-        &acors_obj, &responses_obj, &locations_obj, &horizons_obj, &toas_obj,
-        &snrs_obj)) return NULL;
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "(dddddd)ddOOOOOO",
+        keywords, &ra, &sin_dec, &distance, &u, &twopsi, &t, &gmst,
+        &sample_rate, &acors_obj, &responses_obj, &locations_obj, &horizons_obj,
+        &toas_obj, &snrs_obj)) return NULL;
 
     /* Determine number of detectors */
     {
@@ -722,10 +601,10 @@ static PyObject *log_likelihood_toa_phoa_snr(
         "responses", "locations", "horizons", "toas", "phoas", "snrs", NULL};
 
     /* Parse arguments */
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "(dddddd)ddOOOOOOO", keywords,
-        &ra, &sin_dec, &distance, &u, &twopsi, &t, &gmst, &sample_rate,
-        &acors_obj, &responses_obj, &locations_obj, &horizons_obj, &toas_obj,
-        &phoas_obj, &snrs_obj)) return NULL;
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "(dddddd)ddOOOOOOO",
+        keywords, &ra, &sin_dec, &distance, &u, &twopsi, &t, &gmst,
+        &sample_rate, &acors_obj, &responses_obj, &locations_obj, &horizons_obj,
+        &toas_obj, &phoas_obj, &snrs_obj)) return NULL;
 
     /* Determine number of detectors */
     {
@@ -803,10 +682,15 @@ fail: /* Cleanup */
 };
 
 
+static PyObject *test(
+    PyObject *NPY_UNUSED(module), PyObject *NPY_UNUSED(arg))
+{
+    return PyInt_FromLong(bayestar_test());
+}
+
+
 static PyMethodDef methods[] = {
     {"toa", (PyCFunction)sky_map_toa,
-        METH_VARARGS | METH_KEYWORDS, "fill me in"},
-    {"toa_snr", (PyCFunction)sky_map_toa_snr,
         METH_VARARGS | METH_KEYWORDS, "fill me in"},
     {"toa_phoa_snr", (PyCFunction)sky_map_toa_phoa_snr,
         METH_VARARGS | METH_KEYWORDS, "fill me in"},
@@ -816,6 +700,8 @@ static PyMethodDef methods[] = {
         METH_VARARGS | METH_KEYWORDS, "fill me in"},
     {"log_likelihood_toa_phoa_snr", (PyCFunction)log_likelihood_toa_phoa_snr,
         METH_VARARGS | METH_KEYWORDS, "fill me in"},
+    {"test", (PyCFunction)test,
+        METH_NOARGS, "fill me in"},
     {NULL, NULL, 0, NULL}
 };
 

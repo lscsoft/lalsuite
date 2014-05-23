@@ -87,26 +87,6 @@ double *bayestar_sky_map_toa(
     const double *snrs              /* SNRs */
 );
 
-double *bayestar_sky_map_toa_snr(
-    long *npix,
-    /* Prior */
-    double min_distance,            /* Minimum distance */
-    double max_distance,            /* Maximum distance */
-    int prior_distance_power,       /* Power of distance in prior */
-    /* Detector network */
-    double gmst,                    /* GMST (rad) */
-    unsigned int nifos,             /* Number of detectors */
-    unsigned long nsamples,         /* Length of autocorrelation sequence */
-    double sample_rate,             /* Sample rate in seconds */
-    const double complex **acors,   /* Autocorrelation sequences */
-    const float (**responses)[3],   /* Detector responses */
-    const double **locations,       /* Barycentered Cartesian geographic detector positions (m) */
-    const double *horizons,         /* SNR=1 horizon distances for each detector */
-    /* Observations */
-    const double *toas,             /* Arrival time differences relative to network barycenter (s) */
-    const double *snrs              /* SNRs */
-);
-
 /* Perform sky localization based on TDOAs, PHOAs, and amplitude. */
 double *bayestar_sky_map_toa_phoa_snr(
     long *npix,
@@ -190,5 +170,9 @@ double bayestar_log_likelihood_toa_phoa_snr(
     const double *phoas,            /* Phases on arrival */
     const double *snrs              /* SNRs */
 );
+
+/* Unit test suite. Return EXIT_SUCCESS if tests passed,
+ * or otherwise EXIT_FAILURE. */
+int bayestar_test(void);
 
 #endif /* BAYESTAR_SKY_MAP_H */

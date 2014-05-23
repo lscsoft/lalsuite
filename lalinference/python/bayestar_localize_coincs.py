@@ -33,13 +33,11 @@ distance of the most sensitive detector.
 A FITS file is created for each sky map, having a filename of the form
 
   "X.toa.fits.gz"
-  "X.toa_snr.fits.gz"
   "X.toa_phoa_snr.fits.gz"
 
-where X is the LIGO-LW row id of the coinc and "toa", "toa_snr", or
-"toa_phoa_snr" identifies whether the sky map accounts for
-times of arrival (TOA), PHases on arrival (PHOA), and amplitudes on
-arrival (SNR).
+where X is the LIGO-LW row id of the coinc and "toa" or "toa_phoa_snr"
+identifies whether the sky map accounts for times of arrival (TOA),
+PHases on arrival (PHOA), and amplitudes on arrival (SNR).
 """
 __author__ = "Leo Singer <leo.singer@ligo.org>"
 
@@ -48,7 +46,7 @@ __author__ = "Leo Singer <leo.singer@ligo.org>"
 from optparse import Option, OptionParser
 from lalinference.bayestar import command
 
-methods = ("toa", "toa_snr", "toa_phoa_snr", "toa_mcmc", "toa_snr_mcmc", "toa_phoa_snr_mcmc")
+methods = ("toa", "toa_phoa_snr", "toa_mcmc", "toa_snr_mcmc", "toa_phoa_snr_mcmc")
 default_method = "toa_phoa_snr"
 parser = OptionParser(
     formatter = command.NewlinePreservingHelpFormatter(),
