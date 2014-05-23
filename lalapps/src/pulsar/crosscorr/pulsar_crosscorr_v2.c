@@ -188,8 +188,7 @@ int main(int argc, char *argv[]){
   /* if (!(LALUserVarWasSet (&uvar_fResolution))) { */
   /*   uvar_fResolution = 1/tObs; */
   /* } */
-
-
+  LogPrintf (LOG_CRITICAL, "starting time\n", 0);/*for debug convenience to record calculating time*/
 
   /* { */
   /*   /\* block for calculating frequency range to read from SFTs *\/ */
@@ -477,7 +476,7 @@ int main(int argc, char *argv[]){
   LogPrintf (LOG_CRITICAL, "The metric element g_ff=%.9f\n", diagff);
   LogPrintf (LOG_CRITICAL, "The metric element g_aa=%.9f\n", diagaa);
   LogPrintf (LOG_CRITICAL, "The metric element g_TT=%.9f\n", diagTT);
-
+  LogPrintf (LOG_CRITICAL, "End time\n", 0);/*for debug convenience to record calculating time*/
   return 0;
 
 } /* main */
