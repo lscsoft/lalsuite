@@ -113,7 +113,7 @@ static const UNUSED REAL4* cosLUTdiff = sincosLUTdiff + (SINCOS_LUT_RES/4);
 static UNUSED INT4 sincosI, sincosN;
 
 /* A REAL8 variable that allows to read its higher bits as an INT4 */
-static union {
+static UNUSED union {
   REAL8 asreal;
   struct {
 #ifdef __BIG_ENDIAN__
@@ -124,7 +124,7 @@ static union {
     INT4 dummy;
 #endif
   } as2int;
-} UNUSED sincosUX;
+} sincosUX;
 
 
 
