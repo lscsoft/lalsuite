@@ -86,8 +86,7 @@
 #include "logaddexp.h"
 
 
-/* Custom GSL error handler that simply prints the error message.
- * Guaranteed to be reentrant as long as the GSL stream handler is. */
+/* Custom, reentrant GSL error handler that simply prints the error message. */
 static void
 my_gsl_error (const char *reason, const char *file, int line, int gsl_errno)
 {
