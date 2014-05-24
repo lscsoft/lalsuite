@@ -89,7 +89,7 @@
 /* Custom GSL error handler that simply prints the error message.
  * Guaranteed to be reentrant as long as the GSL stream handler is. */
 static void
-my_gsl_error (const char * reason, const char * file, int line, int gsl_errno)
+my_gsl_error (const char *reason, const char *file, int line, int gsl_errno)
 {
     (void)gsl_errno;
     fprintf(stderr, "gsl: %s:%d: %s: %s\n", file, line, "ERROR", reason);
