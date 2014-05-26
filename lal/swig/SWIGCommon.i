@@ -1286,17 +1286,41 @@ if (strides[I-1] == 0) {
 // an INOUT typemap for input-output arguments, which allows a scripting-language
 // input argument to be supplied. The INOUT typemaps can be applied as needed
 // using the SWIGLAL(INOUT_STRUCTS(TYPE, ...)) macro.
+//
+// The typemaps apply the following convention for NULL pointers. For an argument
+// 'arg' of type TYPE**, where SWIGLAL(INOUT_STRUCTS(TYPE, arg)) has been applied:
+//  - if 'arg' is passed a scripting language 'empty' value (e.g. [] in Octave, or
+//    None in Python), this is interpreted as a NULL pointer of type TYPE**, e.g.:
+//      TYPE** arg = NULL;
+//  - if 'arg' is passed the integer value '0', this is interpreted as a valid
+//    pointer of type TYPE** to a NULL pointer of type TYPE*, e.g.:
+//      TYPE* ptr = NULL;
+//      TYPE** arg = &ptr;
 %typemap(in, noblock=1, numinputs=0) SWIGTYPE ** (void *argp = NULL, int owner = 0) {
   $1 = %reinterpret_cast(&argp, $ltype);
-  owner = (argp == NULL) ? SWIG_POINTER_OWN : 0;
+  owner = SWIG_POINTER_OWN;
 }
-%typemap(in, noblock=1) SWIGTYPE ** INOUT (void  *argp = NULL, int owner = 0, int res = 0) {
+%typemap(in, noblock=1, fragment=SWIG_AsVal_frag(int)) SWIGTYPE ** INOUT (void  *argp = NULL, int owner = 0, int res = 0) {
   res = SWIG_ConvertPtr($input, &argp, $*descriptor, ($disown | %convertptr_flags) | SWIG_POINTER_DISOWN);
   if (!SWIG_IsOK(res)) {
-    %argument_fail(res, "$type", $symname, $argnum);
+    int val = 0;
+    res = SWIG_AsVal(int)($input, &val);
+    if (!SWIG_IsOK(res) || val != 0) {
+      %argument_fail(res, "$type", $symname, $argnum);
+    } else {
+      argp = NULL;
+      $1 = %reinterpret_cast(&argp, $ltype);
+      owner = SWIG_POINTER_OWN;
+    }
+  } else {
+    if (argp == NULL) {
+      $1 = NULL;
+      owner = 0;
+    } else {
+      $1 = %reinterpret_cast(&argp, $ltype);
+      owner = 0;
+    }
   }
-  $1 = %reinterpret_cast(&argp, $ltype);
-  owner = (argp == NULL) ? SWIG_POINTER_OWN : 0;
 }
 %typemap(argout, noblock=1) SWIGTYPE ** {
   %append_output(SWIG_NewPointerObj(%as_voidptr(*$1), $*descriptor, owner$argnum | %newpointer_flags));
