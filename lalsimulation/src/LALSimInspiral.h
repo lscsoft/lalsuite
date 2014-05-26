@@ -1745,22 +1745,26 @@ int XLALSimInspiralTaylorF2(
 		);
 
 int XLALSimInspiralSpinTaylorF2(
-	COMPLEX16FrequencySeries **htilde_out, /**< frequency-domain waveform */
-	REAL8 psi,                      /**< desired polarization */
-	REAL8 phic,                     /**< coalescence GW phase */
+    COMPLEX16FrequencySeries **hplus_out,  /**< FD hplus waveform */
+    COMPLEX16FrequencySeries **hcross_out, /**< FD hcross waveform */
+    REAL8 phi_ref,                   /**< reference orbital phase (rad) */
 	REAL8 deltaF,                   /**< sampling frequency (Hz) */
 	REAL8 m1_SI,                    /**< mass of companion 1 (kg) */
 	REAL8 m2_SI,                    /**< mass of companion 2 (kg) */
-	REAL8 fStart,                   /**< start GW frequency (Hz) */
-	REAL8 r,                        /**< distance of source (m) */
 	REAL8 s1x,                      /**< initial value of S1x */
 	REAL8 s1y,                      /**< initial value of S1y */
 	REAL8 s1z,                      /**< initial value of S1z */
 	REAL8 lnhatx,                   /**< initial value of LNhatx */
 	REAL8 lnhaty,                   /**< initial value of LNhaty */
 	REAL8 lnhatz,                   /**< initial value of LNhatz */
-	int phaseO,                     /**< twice PN phase order */
-	int amplitudeO                  /**< twice PN amplitude order */
+    const REAL8 fStart,             /**< start GW frequency (Hz) */
+    const REAL8 fEnd,               /**< highest GW frequency (Hz) of waveform generation - if 0, end at Schwarzschild ISCO */
+    const REAL8 f_ref,              /**< Reference GW frequency (Hz) - if 0 reference point is coalescence */
+    const REAL8 r,                  /**< distance of source (m) */
+    LALSimInspiralTestGRParam *moreParams, /**< Linked list of extra params. Pass in NULL (or None in python) for standard waveform. Set "sideband",m to get a single sideband (m=-2..2) */
+    const LALSimInspiralSpinOrder spinO,   /**< twice PN order of spin effects */
+    const INT4 phaseO,              /**< twice PN phase order */
+    const INT4 amplitudeO           /**< twice PN amplitude order */
 	);
 
 /**

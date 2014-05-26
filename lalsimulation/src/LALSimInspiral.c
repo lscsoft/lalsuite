@@ -1998,7 +1998,7 @@ int XLALSimInspiralChooseFDWaveform(
      * If non-GR approximants are added, change the below to
      * if( nonGRparams && approximant != nonGR1 && approximant != nonGR2 )
      */
-    if( nonGRparams )
+    if( nonGRparams && approximant != SpinTaylorF2)
     {
         XLALPrintError("XLAL Error - %s: Passed in non-NULL pointer to LALSimInspiralTestGRParam for an approximant that does not use LALSimInspiralTestGRParam\n", __func__);
         XLAL_ERROR(XLAL_EINVAL);
@@ -2107,14 +2107,11 @@ int XLALSimInspiralChooseFDWaveform(
             amplitudeO = 0; /* amplitudeO <= MAX_PRECESSING_AMP_PN_ORDER ? 
                     amplitudeO : MAX_PRECESSING_AMP_PN_ORDER */;
             /* Call the waveform driver routine */
-            // FIXME: Note the HACK to use lambda1 as polarization angle psi!!
-            ret = XLALSimInspiralSpinTaylorF2(hptilde, 0., phiRef, deltaF,
-                    m1, m2, f_min, r, S1x, S1y, S1z,
-                    LNhatx, LNhaty, LNhatz, phaseO, amplitudeO);
+            ret = XLALSimInspiralSpinTaylorF2(hptilde, hctilde, phiRef, deltaF,
+                    m1, m2, S1x, S1y, S1z, LNhatx, LNhaty, LNhatz,
+                    f_min, 0., f_min, r, /* FIXME Deal with f_ref properly */
+                    nonGRparams, XLALSimInspiralGetSpinOrder(waveFlags), phaseO, amplitudeO);
             if (ret == XLAL_FAILURE) XLAL_ERROR(XLAL_EFUNC);
-            ret = XLALSimInspiralSpinTaylorF2(hctilde, LAL_PI/4.,phiRef, deltaF,
-                    m1, m2, f_min, r, S1x, S1y, S1z,
-                    LNhatx, LNhaty, LNhatz, phaseO, amplitudeO);
             break;
 
         /* FIXME: Comment out this case, as I don't have its source code */
