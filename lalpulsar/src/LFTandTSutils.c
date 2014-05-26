@@ -1214,6 +1214,10 @@ int XLALBarycentricResampleCOMPLEX8TimeSeries ( COMPLEX8TimeSeries **Faoft_RS,  
     for (k=0;k<numSamples_SSB;k++) {
 
       UINT4 idx = k + idx_start_SSB;                                                                     /* the full resampled timeseries index */
+      UINT4 numSamples_RS = (*Faoft_RS)->data->length;
+      if ( idx >= numSamples_RS ) {	// temporary FIX to avoid writing outside of memory bounds (FIXME!)
+        break;
+      }
       REAL8 tDiff = start_SSB + idx*deltaT_SSB - detectortimes->data[k];                                 /* the difference between t_SSB and t_DET */
       REAL8 cycles = fmod ( fHet*tDiff, 1 );                                                            /* the accumulated heterodyne cycles */
       REAL4 cosphase,sinphase;                                                                           /* the real and imaginary parts of the phase correction */
