@@ -23,15 +23,10 @@
 #include <math.h>
 #include <stdio.h>
 #include <string.h>
-#include <time.h>
 
-#include <gsl/gsl_permutation.h>
 #include <gsl/gsl_math.h>
-#include <gsl/gsl_eigen.h>
-#include <gsl/gsl_linalg.h>
 #include <gsl/gsl_blas.h>
-#include <gsl/gsl_nan.h>
-#include <gsl/gsl_sf.h>
+#include <gsl/gsl_linalg.h>
 
 #include <lal/LatticeTiling.h>
 #include <lal/LALStdlib.h>
@@ -39,6 +34,8 @@
 #include <lal/LALConstants.h>
 #include <lal/XLALError.h>
 #include <lal/XLALGSL.h>
+
+#include "GSLHelpers.h"
 
 #ifdef __GNUC__
 #define UNUSED __attribute__ ((unused))
@@ -514,14 +511,10 @@ gsl_vector* XLALMetricEllipseBoundingBox(
   const size_t n = metric->size1;
 
   // Allocate memory
-  gsl_matrix* LU_decomp = gsl_matrix_alloc(n, n);
-  XLAL_CHECK_NULL(LU_decomp != NULL, XLAL_ENOMEM);
-  gsl_permutation* LU_perm = gsl_permutation_alloc(n);
-  XLAL_CHECK_NULL(LU_perm != NULL, XLAL_ENOMEM);
-  gsl_matrix* inverse = gsl_matrix_alloc(n, n);
-  XLAL_CHECK_NULL(inverse != NULL, XLAL_ENOMEM);
-  gsl_vector* bounding_box = gsl_vector_alloc(n);
-  XLAL_CHECK_NULL(bounding_box != NULL, XLAL_ENOMEM);
+  gsl_matrix* GAMAT_NULL(LU_decomp, n, n);
+  gsl_permutation* GAPERM_NULL(LU_perm, n);
+  gsl_matrix* GAMAT_NULL(inverse, n, n);
+  gsl_vector* GAVEC_NULL(bounding_box, n);
 
   // Copy metric, and ensure it is diagonally normalised
   for (size_t i = 0; i < n; ++i) {
@@ -535,8 +528,8 @@ gsl_vector* XLALMetricEllipseBoundingBox(
 
   // Compute metric inverse
   int LU_sign = 0;
-  gsl_linalg_LU_decomp(LU_decomp, LU_perm, &LU_sign);
-  gsl_linalg_LU_invert(LU_decomp, LU_perm, inverse);
+  GCALL_NULL(gsl_linalg_LU_decomp(LU_decomp, LU_perm, &LU_sign));
+  GCALL_NULL(gsl_linalg_LU_invert(LU_decomp, LU_perm, inverse));
 
   // Compute bounding box, and reverse diagonal scaling
   for (size_t i = 0; i < n; ++i) {
@@ -546,9 +539,8 @@ gsl_vector* XLALMetricEllipseBoundingBox(
   }
 
   // Cleanup
-  gsl_matrix_free(LU_decomp);
-  gsl_permutation_free(LU_perm);
-  gsl_matrix_free(inverse);
+  GFMAT(LU_decomp, inverse);
+  GFPERM(LU_perm);
 
   return bounding_box;
 
@@ -564,10 +556,8 @@ gsl_matrix* XLALComputeMetricOrthoBasis(
   const size_t n = metric->size1;
 
   // Allocate memory
-  gsl_matrix* basis = gsl_matrix_alloc(n, n);
-  XLAL_CHECK_NULL(basis != NULL, XLAL_ENOMEM);
-  gsl_vector* temp = gsl_vector_alloc(n);
-  XLAL_CHECK_NULL(temp != NULL, XLAL_ENOMEM);
+  gsl_matrix* GAMAT_NULL(basis, n, n);
+  gsl_vector* GAVEC_NULL(temp, n);
 
   // Initialise basis to the identity matrix
   gsl_matrix_set_identity(basis);
@@ -604,7 +594,7 @@ gsl_matrix* XLALComputeMetricOrthoBasis(
   LT_ZeroStrictUpperTriangle(basis);
 
   // Cleanup
-  gsl_vector_free(temp);
+  GFVEC(temp);
 
   return basis;
 
@@ -623,12 +613,9 @@ gsl_matrix* XLALComputeLatticeGenerator(
   const size_t n = dimensions;
 
   // Allocate memory
-  gsl_matrix* generator = gsl_matrix_alloc(n, n);
-  XLAL_CHECK_NULL(generator != NULL, XLAL_ENOMEM);
-  gsl_matrix* LU_decomp = gsl_matrix_alloc(n, n);
-  XLAL_CHECK_NULL(LU_decomp != NULL, XLAL_ENOMEM);
-  gsl_permutation* LU_perm = gsl_permutation_alloc(n);
-  XLAL_CHECK_NULL(LU_perm != NULL, XLAL_ENOMEM);
+  gsl_matrix* GAMAT_NULL(generator, n, n);
+  gsl_matrix* GAMAT_NULL(LU_decomp, n, n);
+  gsl_permutation* GAPERM_NULL(LU_perm, n);
 
   // Compute lattice generator and normalised thickness
   double norm_thickness = 0.0;
@@ -650,14 +637,10 @@ gsl_matrix* XLALComputeLatticeGenerator(
   {
 
     // Allocate memory
-    gsl_matrix* G = gsl_matrix_alloc(n + 1, n + 1);
-    XLAL_CHECK_NULL(G != NULL, XLAL_ENOMEM);
-    gsl_vector* tau = gsl_vector_alloc(n);
-    XLAL_CHECK_NULL(tau != NULL, XLAL_ENOMEM);
-    gsl_matrix* Q = gsl_matrix_alloc(n + 1, n + 1);
-    XLAL_CHECK_NULL(Q != NULL, XLAL_ENOMEM);
-    gsl_matrix* L = gsl_matrix_alloc(n + 1, n);
-    XLAL_CHECK_NULL(L != NULL, XLAL_ENOMEM);
+    gsl_matrix* GAMAT_NULL(G, n + 1, n + 1);
+    gsl_vector* GAVEC_NULL(tau, n);
+    gsl_matrix* GAMAT_NULL(Q, n + 1, n + 1);
+    gsl_matrix* GAMAT_NULL(L, n + 1, n);
 
     // An* lattice generator in n+1 dimensions, given in:
     //   McKilliam et.al., "A linear-time nearest point algorithm for the lattice An*"
@@ -677,8 +660,8 @@ gsl_matrix* XLALComputeLatticeGenerator(
     // - exchanging the rows/columns of Lp to give L
     gsl_matrix_view Gp = gsl_matrix_submatrix(G, 0, 1, n + 1, n);
     LT_ExchangeRowsCols(&Gp.matrix);
-    gsl_linalg_QR_decomp(&Gp.matrix, tau);
-    gsl_linalg_QR_unpack(&Gp.matrix, tau, Q, L);
+    GCALL_NULL(gsl_linalg_QR_decomp(&Gp.matrix, tau));
+    GCALL_NULL(gsl_linalg_QR_unpack(&Gp.matrix, tau, Q, L));
     LT_ExchangeRowsCols(Q);
     LT_ExchangeRowsCols(L);
 
@@ -687,10 +670,8 @@ gsl_matrix* XLALComputeLatticeGenerator(
     gsl_matrix_memcpy(generator, &L_view.matrix);
 
     // Cleanup
-    gsl_matrix_free(G);
-    gsl_vector_free(tau);
-    gsl_matrix_free(Q);
-    gsl_matrix_free(L);
+    GFMAT(G, L, Q);
+    GFVEC(tau);
 
     // Ans normalised thickness
     norm_thickness = sqrt(n+1.0) * pow( (1.0*n*(n+2.0)) / (12.0*(n+1.0)), 0.5*n );
@@ -718,7 +699,7 @@ gsl_matrix* XLALComputeLatticeGenerator(
   // Compute generator LU decomposition
   gsl_matrix_memcpy(LU_decomp, generator);
   int LU_sign = 0;
-  gsl_linalg_LU_decomp(LU_decomp, LU_perm, &LU_sign);
+  GCALL_NULL(gsl_linalg_LU_decomp(LU_decomp, LU_perm, &LU_sign));
 
   // Compute generator determinant
   const double generator_determinant = gsl_linalg_LU_det(LU_decomp, LU_sign);
@@ -730,8 +711,8 @@ gsl_matrix* XLALComputeLatticeGenerator(
   gsl_matrix_scale(generator, sqrt(max_mismatch) / generator_covering_radius);
 
   // Cleanup
-  gsl_matrix_free(LU_decomp);
-  gsl_permutation_free(LU_perm);
+  GFMAT(LU_decomp);
+  GFPERM(LU_perm);
 
   return generator;
 
@@ -753,23 +734,15 @@ LatticeTiling* XLALCreateLatticeTiling(
   tiling->status = LT_S_INCOMPLETE;
   tiling->lattice = LATTICE_TYPE_MAX;
 
-  // Allocate parameter-space bounds info
+  // Allocate tiling structure memory
   tiling->bounds = XLALCalloc(n, sizeof(*tiling->bounds));
   XLAL_CHECK_NULL(tiling->bounds != NULL, XLAL_ENOMEM);
-
-  // Allocate vectors and matrices
-  tiling->phys_scale = gsl_vector_alloc(n);
-  XLAL_CHECK_NULL(tiling->phys_scale != NULL, XLAL_ENOMEM);
-  tiling->phys_offset = gsl_vector_alloc(n);
-  XLAL_CHECK_NULL(tiling->phys_offset != NULL, XLAL_ENOMEM);
-  tiling->padding = gsl_vector_alloc(n);
-  XLAL_CHECK_NULL(tiling->padding != NULL, XLAL_ENOMEM);
-  tiling->point = gsl_vector_alloc(n);
-  XLAL_CHECK_NULL(tiling->point != NULL, XLAL_ENOMEM);
-  tiling->lower = gsl_vector_alloc(n);
-  XLAL_CHECK_NULL(tiling->lower != NULL, XLAL_ENOMEM);
-  tiling->upper = gsl_vector_alloc(n);
-  XLAL_CHECK_NULL(tiling->upper != NULL, XLAL_ENOMEM);
+  GAVEC_NULL(tiling->phys_scale, n);
+  GAVEC_NULL(tiling->phys_offset, n);
+  GAVEC_NULL(tiling->padding, n);
+  GAVEC_NULL(tiling->point, n);
+  GAVEC_NULL(tiling->lower, n);
+  GAVEC_NULL(tiling->upper, n);
 
   return tiling;
 
@@ -788,11 +761,9 @@ void XLALDestroyLatticeTiling(
     // Free bounds data
     if (tiling->bounds != NULL) {
       for (size_t i = 0; i < n; ++i) {
-        gsl_vector_free(tiling->bounds[i].a);
-        gsl_matrix_free(tiling->bounds[i].c_lower);
-        gsl_matrix_free(tiling->bounds[i].m_lower);
-        gsl_matrix_free(tiling->bounds[i].c_upper);
-        gsl_matrix_free(tiling->bounds[i].m_upper);
+        LT_Bound* bound = &tiling->bounds[i];
+        GFMAT(bound->c_lower, bound->c_upper, bound->m_lower, bound->m_upper);
+        GFVEC(bound->a);
       }
       XLALFree(tiling->bounds);
     }
@@ -804,16 +775,9 @@ void XLALDestroyLatticeTiling(
     }
 
     // Free vectors and matrices
-    gsl_vector_uint_free(tiling->tiled_idx);
-    gsl_vector_free(tiling->phys_scale);
-    gsl_vector_free(tiling->phys_offset);
-    gsl_matrix_free(tiling->increment);
-    gsl_matrix_free(tiling->inv_increment);
-    gsl_matrix_free(tiling->tiled_increment);
-    gsl_vector_free(tiling->padding);
-    gsl_vector_free(tiling->point);
-    gsl_vector_free(tiling->lower);
-    gsl_vector_free(tiling->upper);
+    GFMAT(tiling->increment, tiling->inv_increment, tiling->tiled_increment);
+    GFVEC(tiling->lower, tiling->padding, tiling->phys_offset, tiling->phys_scale, tiling->point, tiling->upper);
+    GFVECU(tiling->tiled_idx);
 
     // Free tiling structure
     XLALFree(tiling);
@@ -929,16 +893,11 @@ int XLALSetLatticeBound(
 
   // Allocate memory
   LT_Bound* bound = &tiling->bounds[dimension];
-  bound->a = gsl_vector_alloc(a->size);
-  XLAL_CHECK(bound->a != NULL, XLAL_EFAULT);
-  bound->c_lower = gsl_matrix_alloc(c_lower->size1, c_lower->size2);
-  XLAL_CHECK(bound->c_lower != NULL, XLAL_EFAULT);
-  bound->m_lower = gsl_matrix_alloc(m_lower->size1, m_lower->size2);
-  XLAL_CHECK(bound->m_lower != NULL, XLAL_EFAULT);
-  bound->c_upper = gsl_matrix_alloc(c_upper->size1, c_upper->size2);
-  XLAL_CHECK(bound->c_upper != NULL, XLAL_EFAULT);
-  bound->m_upper = gsl_matrix_alloc(m_upper->size1, m_upper->size2);
-  XLAL_CHECK(bound->m_upper != NULL, XLAL_EFAULT);
+  GAVEC(bound->a, a->size);
+  GAMAT(bound->c_lower, c_lower->size1, c_lower->size2);
+  GAMAT(bound->m_lower, m_lower->size1, m_lower->size2);
+  GAMAT(bound->c_upper, c_upper->size1, c_upper->size2);
+  GAMAT(bound->m_upper, m_upper->size1, m_upper->size2);
 
   // Determine if bound is tiled, i.e. not a single point
   bound->tiled = false;
@@ -978,17 +937,12 @@ int XLALSetLatticeConstantBound(
   XLAL_CHECK(isfinite(bound1), XLAL_EINVAL);
   XLAL_CHECK(isfinite(bound2), XLAL_EINVAL);
 
-  // Allocate zeroed memory
-  gsl_vector* a = gsl_vector_calloc(dimension + 1);
-  XLAL_CHECK(a != NULL, XLAL_EFAULT);
-  gsl_matrix* c_lower = gsl_matrix_calloc(1, 1);
-  XLAL_CHECK(c_lower != NULL, XLAL_EFAULT);
-  gsl_matrix* m_lower = gsl_matrix_calloc(1, 1);
-  XLAL_CHECK(m_lower != NULL, XLAL_EFAULT);
-  gsl_matrix* c_upper = gsl_matrix_calloc(c_lower->size1, c_lower->size2);
-  XLAL_CHECK(c_upper != NULL, XLAL_EFAULT);
-  gsl_matrix* m_upper = gsl_matrix_calloc(m_lower->size1, m_lower->size2);
-  XLAL_CHECK(m_upper != NULL, XLAL_EFAULT);
+  // Allocate memory
+  gsl_vector* GAVEC(a, dimension + 1);
+  gsl_matrix* GAMAT(c_lower, 1, 1);
+  gsl_matrix* GAMAT(m_lower, 1, 1);
+  gsl_matrix* GAMAT(c_upper, c_lower->size1, c_lower->size2);
+  gsl_matrix* GAMAT(m_upper, m_lower->size1, m_lower->size2);
 
   // Set bounds data: min(bound1,bound2) <= x <= max(bound1,bound2)
   gsl_matrix_set(c_lower, 0, 0, GSL_MIN(bound1, bound2));
@@ -998,11 +952,8 @@ int XLALSetLatticeConstantBound(
   XLAL_CHECK(XLALSetLatticeBound(tiling, dimension, a, c_lower, m_lower, c_upper, m_upper) == XLAL_SUCCESS, XLAL_EFUNC);
 
   // Cleanup
-  gsl_vector_free(a);
-  gsl_matrix_free(c_lower);
-  gsl_matrix_free(m_lower);
-  gsl_matrix_free(c_upper);
-  gsl_matrix_free(m_upper);
+  GFMAT(c_lower, c_upper, m_lower, m_upper);
+  GFVEC(a);
 
   return XLAL_SUCCESS;
 
@@ -1027,17 +978,12 @@ int XLALSetLatticeEllipticalBounds(
   // Set parameter-space x bound
   XLAL_CHECK(XLALSetLatticeConstantBound(tiling, x_dimension, x_centre - x_semi, x_centre + x_semi) == XLAL_SUCCESS, XLAL_EFUNC);
 
-  // Allocate zeroed memory
-  gsl_vector* a = gsl_vector_calloc(y_dimension + 1);
-  XLAL_CHECK(a != NULL, XLAL_EFAULT);
-  gsl_matrix* c_lower = gsl_matrix_calloc(3, 1);
-  XLAL_CHECK(c_lower != NULL, XLAL_EFAULT);
-  gsl_matrix* m_lower = gsl_matrix_calloc(2*y_dimension + 1, 1);
-  XLAL_CHECK(m_lower != NULL, XLAL_EFAULT);
-  gsl_matrix* c_upper = gsl_matrix_calloc(c_lower->size1, c_lower->size2);
-  XLAL_CHECK(c_upper != NULL, XLAL_EFAULT);
-  gsl_matrix* m_upper = gsl_matrix_calloc(m_lower->size1, m_lower->size2);
-  XLAL_CHECK(m_upper != NULL, XLAL_EFAULT);
+  // Allocate memory
+  gsl_vector* GAVEC(a, y_dimension + 1);
+  gsl_matrix* GAMAT(c_lower, 3, 1);
+  gsl_matrix* GAMAT(m_lower, 2*y_dimension + 1, 1);
+  gsl_matrix* GAMAT(c_upper, c_lower->size1, c_lower->size2);
+  gsl_matrix* GAMAT(m_upper, m_lower->size1, m_lower->size2);
 
   // Set bounds data: -sqrt(1 - (x-x_centre)^2) <= y-y_centre <= +sqrt(1 - (x-x_centre))
   gsl_vector_set(a, y_dimension - 1, x_centre);
@@ -1056,11 +1002,8 @@ int XLALSetLatticeEllipticalBounds(
   XLAL_CHECK(XLALSetLatticeBound(tiling, y_dimension, a, c_lower, m_lower, c_upper, m_upper) == XLAL_SUCCESS, XLAL_EFUNC);
 
   // Cleanup
-  gsl_vector_free(a);
-  gsl_matrix_free(c_lower);
-  gsl_matrix_free(m_lower);
-  gsl_matrix_free(c_upper);
-  gsl_matrix_free(m_upper);
+  GFMAT(c_lower, c_upper, m_lower, m_upper);
+  GFVEC(a);
 
   return XLAL_SUCCESS;
 
@@ -1096,7 +1039,7 @@ int XLALSetLatticeTypeAndMetric(
     }
   }
   if (tn > 0) {
-    tiling->tiled_idx = gsl_vector_uint_alloc(tn);
+    GAVECU(tiling->tiled_idx, tn);
     for (unsigned int i = 0, ti = 0; i < tiling->dimensions; ++i) {
       if (tiling->bounds[i].tiled) {
         gsl_vector_uint_set(tiling->tiled_idx, ti, i);
@@ -1144,18 +1087,12 @@ int XLALSetLatticeTypeAndMetric(
   if (tn > 0) {
 
     // Allocate memory
-    tiling->increment = gsl_matrix_alloc(n, n);
-    XLAL_CHECK(tiling->increment != NULL, XLAL_ENOMEM);
-    tiling->tiled_increment = gsl_matrix_alloc(tn, tn);
-    XLAL_CHECK(tiling->tiled_increment != NULL, XLAL_ENOMEM);
-    tiling->inv_increment = gsl_matrix_alloc(n, n);
-    XLAL_CHECK(tiling->inv_increment != NULL, XLAL_ENOMEM);
-    gsl_matrix* tiled_metric = gsl_matrix_alloc(tn, tn);
-    XLAL_CHECK(tiled_metric != NULL, XLAL_ENOMEM);
-    gsl_matrix* tiled_metric_copy = gsl_matrix_alloc(tn, tn);
-    XLAL_CHECK(tiled_metric_copy != NULL, XLAL_ENOMEM);
-    gsl_matrix* inv_tiled_increment = gsl_matrix_alloc(tn, tn);
-    XLAL_CHECK(inv_tiled_increment != NULL, XLAL_ENOMEM);
+    GAMAT(tiling->increment, n, n);
+    GAMAT(tiling->tiled_increment, tn, tn);
+    GAMAT(tiling->inv_increment, n, n);
+    gsl_matrix* GAMAT(tiled_metric, tn, tn);
+    gsl_matrix* GAMAT(tiled_metric_copy, tn, tn);
+    gsl_matrix* GAMAT(inv_tiled_increment, tn, tn);
 
     // Copy and rescale tiled dimensions of metric
     for (size_t ti = 0; ti < tn; ++ti) {
@@ -1170,12 +1107,8 @@ int XLALSetLatticeTypeAndMetric(
     }
 
     // Check tiled metric is positive definite, by trying to compute its Cholesky decomposition
-    {
-      gsl_matrix_memcpy(tiled_metric_copy, tiled_metric);
-      int retn = 0;
-      XLAL_CALLGSL(retn = gsl_linalg_cholesky_decomp(tiled_metric_copy));
-      XLAL_CHECK(retn == 0, XLAL_EFAILED, "tiled metric is not positive definite");
-    }
+    gsl_matrix_memcpy(tiled_metric_copy, tiled_metric);
+    GCALL(gsl_linalg_cholesky_decomp(tiled_metric_copy), "tiled metric is not positive definite");
 
     // Compute a lower triangular basis matrix whose columns are orthonormal with respect to the tiled metric
     gsl_matrix* tiled_basis = XLALComputeMetricOrthoBasis(tiled_metric);
@@ -1219,12 +1152,8 @@ int XLALSetLatticeTypeAndMetric(
     }
 
     // Cleanup
-    gsl_matrix_free(tiled_metric);
-    gsl_matrix_free(tiled_metric_copy);
-    gsl_matrix_free(inv_tiled_increment);
-    gsl_matrix_free(tiled_basis);
-    gsl_matrix_free(tiled_generator);
-    gsl_vector_free(tiled_padding);
+    GFMAT(inv_tiled_increment, tiled_basis, tiled_generator, tiled_metric, tiled_metric_copy);
+    GFVEC(tiled_padding);
 
   }
 
@@ -1517,9 +1446,8 @@ int XLALBuildLatticeIndexLookup(
     return XLAL_SUCCESS;
   }
 
-  // Allocate temporary vector
-  gsl_vector* int_point = gsl_vector_alloc(n);
-  XLAL_CHECK(int_point != NULL, XLAL_ENOMEM);
+  // Allocate vector
+  gsl_vector* GAVEC(int_point, n);
 
   // Initialise pointer to the base lookup trie struct
   LT_IndexLookup* lookup_base = NULL;
@@ -1624,7 +1552,7 @@ int XLALBuildLatticeIndexLookup(
   tiling->lookup_base = lookup_base;
 
   // Cleanup
-  gsl_vector_free(int_point);
+  GFVEC(int_point);
 
   return XLAL_SUCCESS;
 
@@ -1645,15 +1573,14 @@ int XLALPrintLatticeIndexLookup(
   // Check input
   XLAL_CHECK(file != NULL, XLAL_EFAULT);
 
-  // Allocate zeroed temporary vector
-  gsl_vector* int_point = gsl_vector_calloc(tn);
-  XLAL_CHECK(int_point != NULL, XLAL_ENOMEM);
+  // Allocate vector
+  gsl_vector* GAVEC(int_point, tn);
 
   // Print lookup trie
   LT_PrintLookup(tiling, file, 0, tn, tiling->lookup_base, int_point);
 
   // Cleanup
-  gsl_vector_free(int_point);
+  GFVEC(int_point);
 
   return XLAL_SUCCESS;
 
