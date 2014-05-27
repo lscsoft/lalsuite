@@ -1190,6 +1190,23 @@ ComputeFstatFromFaFb ( COMPLEX16 Fa, COMPLEX16 Fb, REAL8 A, REAL8 B, REAL8 C, RE
 } // ComputeFstatFromFaFb()
 
 ///
+/// Return true if given #FstatMethodType corresponds to a valid and *available* Fstat method, false otherwise
+///
+int
+XLALFstatMethodIsAvailable ( FstatMethodType i )
+{
+  if ( (i <= FMETHOD_START) || (i >= FMETHOD_END) ) {
+    return 0;
+  }
+  if ( (FstatMethodNames[i].name == NULL) || !FstatMethodNames[i].available ) {
+    return 0;
+  }
+
+  return 1;
+} // XLALFstatMethodIsAvailable()
+
+
+///
 /// Provide human-readable names for the different \f$\mathcal{F}\f$-statistic method variants in #FstatMethodType.
 ///
 const CHAR *
