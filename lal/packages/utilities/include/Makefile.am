@@ -1,5 +1,4 @@
 pkginclude_HEADERS = \
-	BitField.h \
 	CoarseGrainFrequencySeries.h \
 	Dirichlet.h \
 	Factorial.h \

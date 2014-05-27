@@ -17,7 +17,6 @@
  * \defgroup MatrixUtils_h 		Header MatrixUtils.h
  * \defgroup LALRunningMedian_h 		Header LALRunningMedian.h
  * \defgroup RngMedBias_h 		Header RngMedBias.h
- * \defgroup BitField_h			Header BitField.h
  * \defgroup GSLSupport_h		Header GSLSupport.h
  * \defgroup SphericalHarmonics_h 	Header SphericalHarmonics.h
  * @}
