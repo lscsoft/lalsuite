@@ -1760,7 +1760,7 @@ int XLALNearestLatticePoints(
   //   if n == tn; if we do need to copy, we must iterate in reverse from (tn - 1) to 0,
   //   in order not to erase results already stored in 'nearest_points'
   if (tn != n) {
-    for (size_t ti = tn - 1; ti != (size_t)-1; --ti) {
+    for (ssize_t ti = tn - 1; ti >= 0; --ti) {
       const size_t i = gsl_vector_uint_get(tiling->tiled_idx, ti);
       gsl_vector_view wksp_row = gsl_matrix_row(&wksp.matrix, ti);
       gsl_vector_view nearest_points_row = gsl_matrix_row(nearest_points, i);
