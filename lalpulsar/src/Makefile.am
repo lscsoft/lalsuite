@@ -138,6 +138,7 @@ liblalpulsar_la_SOURCES = \
 nodist_liblalpulsar_la_SOURCES = LALPulsarBuildInfo.c
 
 EXTRA_liblalpulsar_la_SOURCES = \
+	GSLHelpers.h \
 	SinCosLUT.i 				\
 	ComputeFstat_Demod.c 			\
 	ComputeFstat_Demod_ComputeFaFb.c 	\
