@@ -36,10 +36,11 @@ arguments, and may also be provided as globs (such as '*.fits.gz').
 __author__ = "Leo Singer <leo.singer@ligo.org>"
 
 
+from lalinference.bayestar import command
+
 if __name__ == '__main__':
     # Command line interface.
     from optparse import Option, OptionParser
-    from lalinference.bayestar import command
 
     parser = OptionParser(
         formatter=command.NewlinePreservingHelpFormatter(),
@@ -79,7 +80,7 @@ from lalinference.bayestar import postprocess
 
 def startup(dbfilename, opts_contour, opts_modes):
     global db, contours, modes
-    db = sqlite3.connect(dbfilename)
+    db = command.sqlite3_connect_nocreate(dbfilename)
     contours = opts_contour
     modes = opts_modes
 

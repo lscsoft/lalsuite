@@ -61,3 +61,13 @@ def get_input_filename(parser, args):
 def chainglob(patterns):
     """Generate a list of all files matching a list of globs."""
     return itertools.chain.from_iterable(glob.iglob(s) for s in patterns)
+
+
+def sqlite3_connect_nocreate(dbfilename):
+    """Open an SQLite database, or fail if it does not exist.
+    FIXME: use SQLite URI when we drop support for Python < 3.4.
+    See: https://docs.python.org/3.4/whatsnew/3.4.html#sqlite3"""
+    import sqlite3
+    with open(dbfilename, 'rb') as testfile:
+        pass
+    return sqlite3.connect(dbfilename)
