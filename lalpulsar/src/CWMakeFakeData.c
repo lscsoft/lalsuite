@@ -556,7 +556,7 @@ gcd (UINT4 numer, UINT4 denom)
 } // gcd
 
 /**
- * Create PulsarParamsVector for numPulsars
+ * Create *zero-initialized* PulsarParamsVector for numPulsars
  */
 PulsarParamsVector *
 XLALCreatePulsarParamsVector ( UINT4 numPulsars )
