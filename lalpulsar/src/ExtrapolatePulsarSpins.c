@@ -69,11 +69,10 @@
  *
  */
 int
-XLALExtrapolatePulsarSpinRange(
-  PulsarSpinRange *range1,			/**< output spin range */
-  const PulsarSpinRange *range0,		/**< input spin range */
-  const REAL8 dtau 				/**< time difference (range1.refTime - range0.refTime) to extrapolate spin range to */
-  )
+XLALExtrapolatePulsarSpinRange ( PulsarSpinRange *range1,		/**< [out] output spin range */
+                                 const PulsarSpinRange *range0,		/**< [in] input spin range */
+                                 const REAL8 dtau 			/**< [in] time difference (range1.refTime - range0.refTime) to extrapolate spin range to */
+                                 )
 {
   UINT4 k, l;
   PulsarSpinRange inRange;
@@ -178,13 +177,12 @@ XLALExtrapolatePulsarSpins ( PulsarSpins fkdotOut,		/**< output fkdot array */
  * Returns phi1 in the range [0, 2pi]
  */
 int
-XLALExtrapolatePulsarPhase(
-  REAL8 *phi1,			/**< [out] phase at epoch1 */
-  PulsarSpins fkdot1,		/**< [in] spin-params at reference epoch1 */
-  LIGOTimeGPS epoch1, 		/**< [in] GPS SSB-time of epoch1 */
-  REAL8 phi0,			/**< [in] initial phase at epoch 0 */
-  LIGOTimeGPS epoch0		/**< [in] GPS SSB-time of reference-epoch */
-  )
+XLALExtrapolatePulsarPhase ( REAL8 *phi1,		/**< [out] phase at epoch1 */
+                             PulsarSpins fkdot1,	/**< [in] spin-params at reference epoch1 */
+                             LIGOTimeGPS epoch1, 	/**< [in] GPS SSB-time of epoch1 */
+                             REAL8 phi0,		/**< [in] initial phase at epoch 0 */
+                             LIGOTimeGPS epoch0		/**< [in] GPS SSB-time of reference-epoch */
+                             )
 {
   UINT4 numSpins = PULSAR_MAX_SPINS;
   UINT4 k;
@@ -224,18 +222,17 @@ XLALExtrapolatePulsarPhase(
  * The calculation accounts for the spin evolution of the signals, and the maximum possible Dopper modulation
  * due to detector motion, and (for binary signals) binary orbital motion.
  */
-int XLALCWSignalCoveringBand(
-  REAL8 *minCoverFreq,                          /**< [out] Minimum frequency of the covering band */
-  REAL8 *maxCoverFreq,                          /**< [out] Maximum frequency of the covering band */
-  const LIGOTimeGPS *time1,                     /**< [in] One end of the GPS time range */
-  const LIGOTimeGPS *time2,                     /**< [in] The other end of the GPS time range */
-  const PulsarSpinRange *spinRange,             /**< [in] Frequency and spindown range of the CW signals */
-  const REAL8 binaryMaxAsini,                   /**< [in] For binary signals, maximum value of projected, normalized
-                                                   orbital semi-major axis (s); =0 for isolated signals */
-  const REAL8 binaryMinPeriod                   /**< [in] For binary signals, minimum orbital period (s); =0 for isolated signals */
-  )
+int
+XLALCWSignalCoveringBand ( REAL8 *minCoverFreq,                          /**< [out] Minimum frequency of the covering band */
+                           REAL8 *maxCoverFreq,                          /**< [out] Maximum frequency of the covering band */
+                           const LIGOTimeGPS *time1,                     /**< [in] One end of the GPS time range */
+                           const LIGOTimeGPS *time2,                     /**< [in] The other end of the GPS time range */
+                           const PulsarSpinRange *spinRange,             /**< [in] Frequency and spindown range of the CW signals */
+                           const REAL8 binaryMaxAsini,                   /**< [in] For binary signals, maximum value of projected, normalized
+                                                                          *        orbital semi-major axis (s); =0 for isolated signals */
+                           const REAL8 binaryMinPeriod                   /**< [in] For binary signals, minimum orbital period (s); =0 for isolated signals */
+                           )
 {
-
   // Check input
   XLAL_CHECK( minCoverFreq != NULL, XLAL_EFAULT );
   XLAL_CHECK( maxCoverFreq != NULL, XLAL_EFAULT );
@@ -275,12 +272,14 @@ int XLALCWSignalCoveringBand(
 
 } /* XLALCWSignalCoveringBand() */
 
+// ---------- deprecated LAL functions ----------
 
 void
-LALExtrapolatePulsarSpinRange(  LALStatus *status,
-				PulsarSpinRange *range1,
-				LIGOTimeGPS epoch1,
-				const PulsarSpinRange *range0 )
+LALExtrapolatePulsarSpinRange (  LALStatus *status,
+                                 PulsarSpinRange *range1,
+                                 LIGOTimeGPS epoch1,
+                                 const PulsarSpinRange *range0
+                                 )
 {
   REAL8 dtau;
   INITSTATUS(status);
@@ -295,12 +294,12 @@ LALExtrapolatePulsarSpinRange(  LALStatus *status,
 
 
 void
-LALExtrapolatePulsarSpins (LALStatus   *status,
-			   PulsarSpins  fkdot1,
-			   LIGOTimeGPS  epoch1,
-			   const PulsarSpins  fkdot0,
-			   LIGOTimeGPS  epoch0
-			   )
+LALExtrapolatePulsarSpins ( LALStatus   *status,
+                            PulsarSpins  fkdot1,
+                            LIGOTimeGPS  epoch1,
+                            const PulsarSpins  fkdot0,
+                            LIGOTimeGPS  epoch0
+                            )
 {
   REAL8 dtau;
   INITSTATUS(status);
