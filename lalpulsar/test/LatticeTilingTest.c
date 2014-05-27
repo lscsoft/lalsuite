@@ -82,7 +82,7 @@ static int CheckLatticeTiling(
   for (size_t i = 0; i < total; ++i) {
     if (indices->data[i] != i) {
       ++failed;
-      fprintf(stderr, "warning: indices->data[i] = %lu != %zu\n", indices->data[i], i);
+      fprintf(stderr, "warning: indices->data[i] = "PRIu64" != %zu\n", indices->data[i], i);
     }
   }
   if (failed >= 5) {
