@@ -87,7 +87,7 @@ typedef struct tagLT_IndexLookup {
 struct tagLatticeTiling {
   size_t dimensions;				///< Dimension of the parameter space
   LT_Status status;				///< Status of the tiling
-  LT_Bound *bounds;				///< Array of parameter-space bound info for each dimension
+  LT_Bound* bounds;				///< Array of parameter-space bound info for each dimension
   gsl_vector_uint* tiled_idx;			///< Indices of the tiled dimensions of the parameter space
   LatticeType lattice;				///< Type of lattice to generate flat tiling with
   gsl_vector* phys_scale;			///< Normalised to physical coordinate scale
@@ -247,7 +247,7 @@ static void LT_GetBounds(
 static void LT_DestroyLookup(
   const size_t ti,				///< [in] Current depth of the trie
   const size_t tn,				///< [in] Total depth of the trie
-  LT_IndexLookup *lookup			///< [in] Pointer to array of trie structures
+  LT_IndexLookup* lookup			///< [in] Pointer to array of trie structures
   )
 {
 
@@ -255,7 +255,7 @@ static void LT_DestroyLookup(
   // allocated in higher dimensions. No need to do this for second-highest dimension, since
   // highest dimension does not allocate memory ('index' is used instead of 'next').
   if (ti + 2 < tn) {
-    LT_IndexLookup *next = lookup->next;
+    LT_IndexLookup* next = lookup->next;
     for (int32_t i = lookup->min; i <= lookup->max; ++i) {
       LT_DestroyLookup(ti + 1, tn, next++);
     }
@@ -277,8 +277,8 @@ static void LT_PrintLookup(
   FILE* fp,					///< [in] File pointer to print trie to
   const size_t ti,				///< [in] Current depth of the trie
   const size_t tn,				///< [in] Total depth of the trie
-  const LT_IndexLookup *lookup,			///< [in] Pointer to array of trie structures
-  gsl_vector *int_point				///< [in] Temporary point used in printing
+  const LT_IndexLookup* lookup,			///< [in] Pointer to array of trie structures
+  gsl_vector* int_point				///< [in] Temporary point used in printing
   )
 {
 
@@ -326,7 +326,7 @@ static void LT_PrintLookup(
 
     // Otherwise, loop over this dimension
     fprintf(fp, "\n");
-    LT_IndexLookup *next = lookup->next;
+    LT_IndexLookup* next = lookup->next;
     for (int32_t p = lookup->min; p <= lookup->max; ++p, ++next) {
 
       // Set (i)th dimension of integer point
@@ -349,7 +349,7 @@ static void LT_FindNearestPoint(
   const LatticeType lattice,			///< [in] Lattice type
   const LT_IndexLookup* lookup_base,		///< [in] Lookup trie for finding index of nearest point
   const gsl_vector* int_point,			///< [in] Point in generating integer space
-  long long *nearest_int_point,			///< [in/out] Nearest point in generating integer space
+  long long* nearest_int_point,			///< [in/out] Nearest point in generating integer space
   UINT8* nearest_idx				///< [in/out] Index of nearest point
   )
 {
@@ -1388,8 +1388,8 @@ int XLALNextLatticePoint(
 
 int XLALFastForwardLatticeTiling(
   LatticeTiling* tiling,
-  uint32_t *point_count,
-  double *point_spacing
+  uint32_t* point_count,
+  double* point_spacing
   )
 {
 
@@ -1518,14 +1518,14 @@ int XLALBuildLatticeIndexLookup(
   }
 
   // Allocate temporary vector
-  gsl_vector *int_point = gsl_vector_alloc(n);
+  gsl_vector* int_point = gsl_vector_alloc(n);
   XLAL_CHECK(int_point != NULL, XLAL_ENOMEM);
 
   // Initialise pointer to the base lookup trie struct
-  LT_IndexLookup *lookup_base = NULL;
+  LT_IndexLookup* lookup_base = NULL;
 
   // Allocate array of pointers to the next lookup trie struct
-  LT_IndexLookup *next[tn];
+  LT_IndexLookup* next[tn];
   memset(next, 0, sizeof(next));
 
   // Ensure tiling is restarted
@@ -1553,7 +1553,7 @@ int XLALBuildLatticeIndexLookup(
         // Get a pointer to the lookup struct which needs to be built:
         // - if tj is non-zero, we should use the struct pointed to by 'next' in the lower dimension
         // - otherwise, this is the first point of the tiling, so initialise the base lookup struct
-        LT_IndexLookup *lookup = NULL;
+        LT_IndexLookup* lookup = NULL;
         if (tj > 0) {
           lookup = next[tj - 1];
         } else {
@@ -1646,7 +1646,7 @@ int XLALPrintLatticeIndexLookup(
   XLAL_CHECK(file != NULL, XLAL_EFAULT);
 
   // Allocate zeroed temporary vector
-  gsl_vector *int_point = gsl_vector_calloc(tn);
+  gsl_vector* int_point = gsl_vector_calloc(tn);
   XLAL_CHECK(int_point != NULL, XLAL_ENOMEM);
 
   // Print lookup trie
