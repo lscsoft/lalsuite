@@ -1722,38 +1722,12 @@ REAL8 LALInferenceMarginalisedPhaseLogLikelihood(LALInferenceVariables *currentP
   return(loglikeli);
 }
 
-static double log_quadratic_integral_log(double h, double lx0, double lx1, double lx2) {
-  double a = (lx0 - 2.0*lx1 + lx2)/(2.0*h*h);
-  double b = -(3.0*lx0 - 4.0*lx1 + lx2)/(2.0*h);
-  double c = lx0;
-
-  if (lx0 == lx1 && lx1 == lx2) return log(2.0) + log(h) + lx0;
-
-  if (a > 0.0) {
-    if (b + 2.0*a*h > 0.0) {
-      double log_norm = c - 0.5*log(a) + 2.0*h*(b + 2.0*a*h);
-      double other_term = gsl_sf_dawson((b+4.0*a*h)/(2.0*sqrt(a))) - exp(-2.0*h*(b+2.0*a*h))*gsl_sf_dawson(b/(2.0*sqrt(a)));
-      return log_norm + log(other_term);
-    } else {
-      double log_norm = c - 0.5*log(a);
-      double other_term = exp(2.0*h*(b + 2.0*a*h))*gsl_sf_dawson((b + 4.0*a*h)/(2.0*sqrt(a))) - gsl_sf_dawson(b/(2.0*sqrt(a)));
-      return log_norm + log(other_term);
-    }
-  } else if (a < 0.0) {
-    double A = -a;
-    return c + b*b/(4.0*A) + log(sqrt(M_PI/A)/2.0) + log(gsl_sf_erf(b/(2.0*sqrt(A))) + gsl_sf_erf((4.0*A*h-b)/(2.0*sqrt(A))));
-  } else {
-    if (b > 0) {
-      return c - log(b) + 2.0*b*h + log(1.0 - exp(-2.0*b*h));
-    } else {
-      double B = -b;
-      return c - log(B) + log1p(-exp(-2.0*B*h));
-    }
-  }
-}
-
-/** Integrate interpolated log, returns the mean index in *imax if it is not a NULL pointer
- * Stores the mean index in *imean (can be fractional)
+/** Integrate interpolated log, returns the mean index in *imax if it
+ * is not a NULL pointer.  Stores the mean index in *imean (can be
+ * fractional).
+ * 
+ * The method used is the trapezoid method, which is quadratically
+ * accurate.
  */
 static double integrate_interpolated_log(double h, double *log_ys, size_t n, double *imean, size_t *imax) {
   size_t i;
@@ -1761,43 +1735,45 @@ static double integrate_interpolated_log(double h, double *log_ys, size_t n, dou
   double max=-INFINITY;
   size_t imax_l=0;
   double log_imean_l=-INFINITY;
-  double thislogL;
+  double log_h = log(h);
+  
+  for (i = 1; i < n-1; i++) {
+    log_integral = logaddexp(log_integral, log_ys[i]);
+    log_imean_l = logaddexp(log_imean_l, log(i) + log_ys[i]);
 
-  for (i = 0; i < n-2; i++) {
-    double l0, l1, l2;
-
-    l0 = log_ys[i];
-    l1 = log_ys[i+1];
-    l2 = log_ys[i+2];
-    
-    thislogL=log_quadratic_integral_log(h, l0, l1, l2);
-    if (thislogL>max)
-    {
-        max=thislogL;
-        imax_l=i;
+    if (log_ys[i] > max) {
+      max = log_ys[i];
+      imax_l = i;
     }
-    log_imean_l=logaddexp(log_imean_l, log((double)i)+thislogL);
-
-    log_integral = logaddexp(log_integral, thislogL);
-
   }
-  thislogL = log_quadratic_integral_log(h, log_ys[n-2], log_ys[n-1], log_ys[0]);
-  log_integral = logaddexp(log_integral, thislogL);
-  if (thislogL>max)
-  {
-      max=thislogL;
-      imax_l=i;
+
+  log_integral = logaddexp(log_integral, log(0.5) + log_ys[0]);
+  log_integral = logaddexp(log_integral, log(0.5) + log_ys[n-1]);
+
+  /* No contribution to mean index from i = 0 term! */
+  log_imean_l = logaddexp(log_imean_l, log(0.5) + log(n-1) + log_ys[n-1]);
+
+  log_integral += log_h;
+  log_imean_l += log_h;
+
+  if (log_ys[0] > max) {
+    max = log_ys[0];
+    imax_l = 0;
   }
-  log_imean_l=logaddexp(log_imean_l, log((double)i)+thislogL);
 
-  log_integral-=log(2.0);
+  if (log_ys[n-1] > max) {
+    max = log_ys[n-1];
+    imax_l = n-1;
+  }    
 
-  log_imean_l-=log_integral+log(2.0);
+  log_imean_l -= log_integral;
+
   if(imean) *imean=exp(log_imean_l);
   if(imax) *imax=imax_l;
 
   return log_integral;
 }
+
 REAL8 LALInferenceMarginalisedTimeLogLikelihood(LALInferenceVariables *currentParams, LALInferenceIFOData * data, 
                               LALInferenceTemplateFunction templt)
 /***************************************************************/
