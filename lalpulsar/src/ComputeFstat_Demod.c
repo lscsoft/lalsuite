@@ -254,9 +254,6 @@ ComputeFstat_Demod ( FstatResults* Fstats,
       REAL8 Ed = 0;
 
       twoF = ComputeFstatFromFaFb ( Fa, Fb, Ad, Bd, Cd, Ed, Dd_inv );
-
-      // this needs to be free'ed, as it's currently not buffered
-      XLALDestroyMultiSSBtimes ( multiBinary );
       // --------------------------------------------------
 
       // Return multi-detector 2F
@@ -289,6 +286,10 @@ ComputeFstat_Demod ( FstatResults* Fstats,
       }
 
     } // for k < Fstats->numFreqBins
+
+  // this needs to be free'ed, as it's currently not buffered
+  XLALDestroyMultiSSBtimes ( multiBinary );
+
 
   // Return amplitude modulation coefficients
   Fstats->Mmunu = demod->prevMultiAMcoef->Mmunu;
