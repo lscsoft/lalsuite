@@ -106,9 +106,9 @@ XLALDestroySFT ( SFTtype *sft )
  * XLAL function to create an SFTVector of \c numSFT SFTs with \c SFTlen frequency-bins
  */
 SFTVector *
-XLALCreateSFTVector (UINT4 numSFTs, 	/**< number of SFTs */
-		     UINT4 numBins	/**< number of frequency-bins per SFT */
-		     )
+XLALCreateSFTVector ( UINT4 numSFTs, 	/**< number of SFTs */
+                      UINT4 numBins	/**< number of frequency-bins per SFT */
+                      )
 {
   UINT4 iSFT;
   SFTVector *vect;
@@ -1005,9 +1005,10 @@ XLALDestroyMultiNoiseWeights ( MultiNoiseWeights *weights )
  * This is using DFT-interpolation (derived from zero-padding).
  */
 COMPLEX8Vector *
-XLALrefineCOMPLEX8Vector (const COMPLEX8Vector *in,
-			  UINT4 refineby,
-			  UINT4 Dterms)
+XLALrefineCOMPLEX8Vector ( const COMPLEX8Vector *in,
+                           UINT4 refineby,
+                           UINT4 Dterms
+                           )
 {
   UINT4 newLen, oldLen, l;
   COMPLEX8Vector *ret = NULL;
@@ -1184,7 +1185,10 @@ XLALReadSegmentsFromFile ( const char *fname	/**< name of file containing segmen
  *
  */
 SFTVector *
-XLALExtractBandFromSFTVector ( const SFTVector *inSFTs, REAL8 fMin, REAL8 Band )
+XLALExtractBandFromSFTVector ( const SFTVector *inSFTs,	///< [in] input SFTs
+                               REAL8 fMin,		///< [in] lower end of frequency interval to return
+                               REAL8 Band		///< [in] band width of frequency interval to return
+                               )
 {
   XLAL_CHECK_NULL ( inSFTs != NULL, XLAL_EINVAL, "Invalid NULL input SFT vector 'inSFTs'\n");
   XLAL_CHECK_NULL ( inSFTs->length > 0, XLAL_EINVAL, "Invalid zero-length input SFT vector 'inSFTs'\n");
@@ -1397,9 +1401,10 @@ XLALFindCoveringSFTBins ( UINT4 *firstBin,	///< [out] effective lower frequency-
 /** Finds the earliest timestamp in a multi-SFT data structure
  *
 */
-int XLALEarliestMultiSFTsample ( LIGOTimeGPS *out,              /**< [out] earliest GPS time */
-                                 MultiSFTVector *multisfts      /**< [in] multi SFT vector */
-                                 )
+int
+XLALEarliestMultiSFTsample ( LIGOTimeGPS *out,              /**< [out] earliest GPS time */
+                             MultiSFTVector *multisfts      /**< [in] multi SFT vector */
+                             )
 {
   UINT4 i,j;
 
@@ -1446,9 +1451,10 @@ int XLALEarliestMultiSFTsample ( LIGOTimeGPS *out,              /**< [out] earli
 /** Find the time of the end of the latest SFT in a multi-SFT data structure
  *
 */
-int XLALLatestMultiSFTsample ( LIGOTimeGPS *out,              /**< [out] latest GPS time */
-                               MultiSFTVector *multisfts      /**< [in] multi SFT vector */
-                               )
+int
+XLALLatestMultiSFTsample ( LIGOTimeGPS *out,              /**< [out] latest GPS time */
+                           MultiSFTVector *multisfts      /**< [in] multi SFT vector */
+                           )
 {
   UINT4 i,j;
   SFTtype *firstSFT;
@@ -1512,10 +1518,9 @@ int XLALLatestMultiSFTsample ( LIGOTimeGPS *out,              /**< [out] latest 
  * (2) or a pre-allocated and filled list, then it appends any new detectors and resorts the list
  */
 LALStringVector *
-XLALGetDetectorIDsFromSFTCatalog (
-  LALStringVector *IFOList,		/**< [in/out] IFO string vector for (appending and) returning */
-  const SFTCatalog *SFTcatalog		/**< [in] SFT catalog which carries the detector prefixes */
-  )
+XLALGetDetectorIDsFromSFTCatalog ( LALStringVector *IFOList,		/**< [in/out] IFO string vector for (appending and) returning */
+                                   const SFTCatalog *SFTcatalog		/**< [in] SFT catalog which carries the detector prefixes */
+                                   )
 {
 
   XLAL_CHECK_NULL( SFTcatalog != NULL, XLAL_EFAULT );
@@ -1545,11 +1550,11 @@ XLALGetDetectorIDsFromSFTCatalog (
 /**
  * Create a 'fake' SFT catalog which contains only detector and timestamp information.
  */
-SFTCatalog *XLALAddToFakeSFTCatalog(
-  SFTCatalog *catalog,                          /**< [in] SFT catalog; if NULL, a new catalog is created */
-  const CHAR *detector,                         /**< [in] Name of detector to set fake catalog entries to */
-  const LIGOTimeGPSVector *timestamps           /**< [in] Timestamps of each fake catalog entry */
-  )
+SFTCatalog *
+XLALAddToFakeSFTCatalog ( SFTCatalog *catalog,                          /**< [in] SFT catalog; if NULL, a new catalog is created */
+                          const CHAR *detector,                         /**< [in] Name of detector to set fake catalog entries to */
+                          const LIGOTimeGPSVector *timestamps           /**< [in] Timestamps of each fake catalog entry */
+                          )
 {
 
   // Check input
@@ -1600,13 +1605,12 @@ SFTCatalog *XLALAddToFakeSFTCatalog(
 /**
  * Multi-detector and multi-timestamp wrapper of XLALAddToFakeSFTCatalog().
  */
-SFTCatalog *XLALMultiAddToFakeSFTCatalog(
-  SFTCatalog *catalog,                          /**< [in] SFT catalog; if NULL, a new catalog is created */
-  const LALStringVector *detectors,             /**< [in] Detector names to set fake catalog entries to */
-  const MultiLIGOTimeGPSVector *timestamps      /**< [in] Timestamps for each detector of each fake catalog entry */
-  )
+SFTCatalog *
+XLALMultiAddToFakeSFTCatalog ( SFTCatalog *catalog,                          /**< [in] SFT catalog; if NULL, a new catalog is created */
+                               const LALStringVector *detectors,             /**< [in] Detector names to set fake catalog entries to */
+                               const MultiLIGOTimeGPSVector *timestamps      /**< [in] Timestamps for each detector of each fake catalog entry */
+                               )
 {
-
   // Check input
   XLAL_CHECK_NULL( detectors != NULL, XLAL_EFAULT );
   XLAL_CHECK_NULL( detectors->length > 0, XLAL_EINVAL );
