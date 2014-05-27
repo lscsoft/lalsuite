@@ -40,7 +40,6 @@
 
 #include <lal/LALStdlib.h>
 #include <lal/LALError.h>
-#include <lal/GSLSupport.h>
 #include <lal/LogPrintf.h>
 #include <lal/UserInput.h>
 #include <lal/SFTfileIO.h>
@@ -55,6 +54,7 @@ BOOLEAN calc_AM_coeffs(LALStatus*, gsl_rng*, REAL8, REAL8, REAL8, REAL8, MultiDe
 REAL8 pdf_ncx2_4(REAL8, REAL8);
 REAL8 d_pdf_ncx2_4(REAL8, REAL8);
 REAL8 ran_ncx2_4(const gsl_rng*, REAL8);
+gsl_vector_int *resize_histogram(gsl_vector_int *old_hist, size_t size);
 
 #define TRUE  (1==1)
 #define FALSE (1==0)
@@ -499,7 +499,7 @@ int main(int argc, char *argv[]) {
 	  
 	  /* Resize histogram vector if needed */
 	  if (!twoF_pdf_hist || bin >= twoF_pdf_hist->size)
-	    if (NULL == (twoF_pdf_hist = XLALResizeGSLVectorInt(twoF_pdf_hist, bin + 1, 0))) {
+	    if (NULL == (twoF_pdf_hist = resize_histogram(twoF_pdf_hist, bin + 1))) {
 	      XLALPrintError("\nCouldn't (re)allocate 'twoF_pdf_hist'\n");
 	      return EXIT_FAILURE;
 	    }
@@ -721,4 +721,18 @@ REAL8 ran_ncx2_4(const gsl_rng *rng, REAL8 lambda) {
   
   return x;
 
+}
+
+/* Resize histogram */
+gsl_vector_int *resize_histogram(gsl_vector_int *old_hist, size_t size) {
+  gsl_vector_int *new_hist = gsl_vector_int_alloc(size);
+  XLAL_CHECK_NULL(new_hist != NULL, XLAL_ENOMEM);
+  gsl_vector_int_set_zero(new_hist);
+  if (old_hist != NULL) {
+    gsl_vector_int_view old = gsl_vector_int_subvector(old_hist, 0, GSL_MIN(old_hist->size, size));
+    gsl_vector_int_view new = gsl_vector_int_subvector(new_hist, 0, GSL_MIN(old_hist->size, size));
+    gsl_vector_int_memcpy(&new.vector, &old.vector);
+    gsl_vector_int_free(old_hist);
+  }
+  return new_hist;
 }

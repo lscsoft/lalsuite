@@ -10,7 +10,6 @@ libutilities_la_SOURCES = \
 	Eigen.c \
 	EigenInternal.c \
 	FindRoot.c \
-	GSLSupport.c \
 	HeapSort.c \
 	Integrate.c \
 	Interpolate.c \

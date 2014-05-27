@@ -39,7 +39,6 @@
 #include <lal/LALConstants.h>
 #include <lal/XLALError.h>
 #include <lal/XLALGSL.h>
-#include <lal/GSLSupport.h>
 
 #ifdef __GNUC__
 #define UNUSED __attribute__ ((unused))

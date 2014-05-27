@@ -58,7 +58,6 @@
 #include <lal/LogPrintf.h>
 
 #include <lal/AVFactories.h>
-#include <lal/GSLSupport.h>
 
 #include <lal/ComplexFFT.h>
 #include <lal/RealFFT.h>

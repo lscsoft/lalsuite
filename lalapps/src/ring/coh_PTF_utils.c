@@ -3593,9 +3593,9 @@ CohPTFSkyPositions *coh_PTF_generate_sky_grid(
     if ( detectors[ifoNumber] )
       LALFree(detectors[ifoNumber]);
   }
-  FREE_GSL_VECTOR(npPos);
-  FREE_GSL_VECTOR(trigPos);
-  FREE_GSL_VECTOR(axis);
+  gsl_vector_free(npPos);
+  gsl_vector_free(trigPos);
+  gsl_vector_free(axis);
 
   return skyPoints;
 
@@ -3836,8 +3836,8 @@ void coh_PTF_rotate_SkyPosition(
   XLALNormalizeSkyPosition(&skyPoint->longitude, &skyPoint->latitude);
 
   /* free memory */
-  FREE_GSL_VECTOR(pos);
-  FREE_GSL_VECTOR(rotPos);
+  gsl_vector_free(pos);
+  gsl_vector_free(rotPos);
 }
 
 void cross_product(
@@ -4068,11 +4068,11 @@ CohPTFSkyPositions *coh_PTF_two_det_sky_grid(
     if (detectors[ifoNumber] )
       LALFree(detectors[ifoNumber]);
     if (locations[ifoNumber])
-      FREE_GSL_VECTOR(locations[ifoNumber]);
+      gsl_vector_free(locations[ifoNumber]);
   }
-  FREE_GSL_VECTOR(normal);
-  FREE_GSL_VECTOR(northPole);
-  FREE_GSL_VECTOR(axis);
+  gsl_vector_free(normal);
+  gsl_vector_free(northPole);
+  gsl_vector_free(axis);
 
   return skyPoints;
 }

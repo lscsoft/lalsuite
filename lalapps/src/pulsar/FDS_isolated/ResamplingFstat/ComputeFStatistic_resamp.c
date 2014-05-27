@@ -53,7 +53,6 @@ int finite(double);
 #include <lal/SFTfileIO.h>
 #include <lal/ExtrapolatePulsarSpins.h>
 #include <lal/FrequencySeries.h>
-#include <lal/GSLSupport.h>
 
 #include <lal/NormalizeSFTRngMed.h>
 #include <lal/LALHough.h>
@@ -72,6 +71,7 @@ int finite(double);
 #include <lalapps.h>
 #include <lal/Window.h>
 #include <fftw3.h>
+#include <gsl/gsl_math.h>
 #include <gsl/gsl_errno.h>
 #include <gsl/gsl_spline.h>
 #include <gsl/gsl_interp.h>
@@ -392,6 +392,8 @@ int write_PulsarCandidate_to_fp ( FILE *fp,  const PulsarCandidate *pulsarParams
 int compareFstatCandidates ( const void *candA, const void *candB );
 void getLogString ( LALStatus *status, CHAR **logstr, const ConfigVariables *cfg );
 
+gsl_vector_int *resize_histogram(gsl_vector_int *old_hist, size_t size);
+
 /* ---------- scanline window functions ---------- */
 scanlineWindow_t *XLALCreateScanlineWindow ( UINT4 windowWings );
 void XLALDestroyScanlineWindow ( scanlineWindow_t *scanlineWindow );
@@ -619,7 +621,7 @@ int main(int argc,char *argv[])
 
 	  /* resize histogram vector if needed */
 	  if (!Fstat_histogram || bin >= Fstat_histogram->size)
-	    if (NULL == (Fstat_histogram = XLALResizeGSLVectorInt(Fstat_histogram, bin + 1, 0))) {
+	    if (NULL == (Fstat_histogram = resize_histogram(Fstat_histogram, bin + 1))) {
 	      XLALPrintError("\nCouldn't (re)allocate 'Fstat_histogram'\n");
 	      return COMPUTEFSTATISTIC_EMEM;
 	    }
@@ -3073,3 +3075,16 @@ void ComputeFStat_resamp(LALStatus *status, const PulsarDopplerParams *doppler, 
 
 }
 
+/* Resize histogram */
+gsl_vector_int *resize_histogram(gsl_vector_int *old_hist, size_t size) {
+  gsl_vector_int *new_hist = gsl_vector_int_alloc(size);
+  XLAL_CHECK_NULL(new_hist != NULL, XLAL_ENOMEM);
+  gsl_vector_int_set_zero(new_hist);
+  if (old_hist != NULL) {
+    gsl_vector_int_view old = gsl_vector_int_subvector(old_hist, 0, GSL_MIN(old_hist->size, size));
+    gsl_vector_int_view new = gsl_vector_int_subvector(new_hist, 0, GSL_MIN(old_hist->size, size));
+    gsl_vector_int_memcpy(&new.vector, &old.vector);
+    gsl_vector_int_free(old_hist);
+  }
+  return new_hist;
+}

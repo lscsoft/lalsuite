@@ -3,7 +3,6 @@ pkginclude_HEADERS = \
 	Dirichlet.h \
 	Factorial.h \
 	FindRoot.h \
-	GSLSupport.h \
 	Integrate.h \
 	Interpolate.h \
 	LALAdaptiveRungeKutta4.h \

@@ -42,11 +42,11 @@
 #include <math.h>
 #include <stdio.h>
 #include <strings.h>
+#include <gsl/gsl_math.h>
 
 /* LAL-includes */
 #include <lal/LALString.h>
 #include <lal/AVFactories.h>
-#include <lal/GSLSupport.h>
 #include <lal/LALInitBarycenter.h>
 #include <lal/UserInput.h>
 #include <lal/SFTfileIO.h>
@@ -338,6 +338,8 @@ void WriteFStatLog ( LALStatus *status, const CHAR *log_fname, const CHAR *logst
 CHAR *XLALGetLogString ( const ConfigVariables *cfg );
 
 int write_TimingInfo ( const CHAR *timingFile, const timingInfo_t *ti );
+
+gsl_vector_int *resize_histogram(gsl_vector_int *old_hist, size_t size);
 
 /* ---------- scanline window functions ---------- */
 scanlineWindow_t *XLALCreateScanlineWindow ( UINT4 windowWings );
@@ -730,7 +732,7 @@ int main(int argc,char *argv[])
 
 	/* resize histogram vector if needed */
 	if (!Fstat_histogram || bin >= Fstat_histogram->size)
-	  if (NULL == (Fstat_histogram = XLALResizeGSLVectorInt(Fstat_histogram, bin + 1, 0))) {
+	  if (NULL == (Fstat_histogram = resize_histogram(Fstat_histogram, bin + 1))) {
 	    XLALPrintError("\nCouldn't (re)allocate 'Fstat_histogram'\n");
 	    return COMPUTEFSTATISTIC_EMEM;
 	  }
@@ -2447,3 +2449,17 @@ XLALGetUserCPUTime ( void )
 
 } /* XLALGetUserCPUTime() */
 #endif
+
+/* Resize histogram */
+gsl_vector_int *resize_histogram(gsl_vector_int *old_hist, size_t size) {
+  gsl_vector_int *new_hist = gsl_vector_int_alloc(size);
+  XLAL_CHECK_NULL(new_hist != NULL, XLAL_ENOMEM);
+  gsl_vector_int_set_zero(new_hist);
+  if (old_hist != NULL) {
+    gsl_vector_int_view old = gsl_vector_int_subvector(old_hist, 0, GSL_MIN(old_hist->size, size));
+    gsl_vector_int_view new = gsl_vector_int_subvector(new_hist, 0, GSL_MIN(old_hist->size, size));
+    gsl_vector_int_memcpy(&new.vector, &old.vector);
+    gsl_vector_int_free(old_hist);
+  }
+  return new_hist;
+}
