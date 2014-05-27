@@ -23,62 +23,39 @@
 
 #include <lal/LogPrintf.h>
 
-/////////////////////////////////////////////////////////////////
-//////////////////// Old resampling API code ////////////////////
-/////////////////////////////////////////////////////////////////
-
 #define NhalfPosDC(N) ((UINT4)(ceil ( ((N)/2.0 - 1e-6 ))))      /* round up */
 #define NhalfNeg(N) ((UINT4)( (N) - NhalfPosDC(N) ))            /* round down (making sure N+ + N- = (N-1) */
-
-/* [opaque] type holding a ComputeFBuffer for use in the resampling F-stat codes */
-typedef struct tagComputeFBuffer_RS ComputeFBuffer_RS;
-
-/* Extra parameters controlling the actual computation of F */
-typedef struct tagComputeFParams {
-  UINT4 Dterms;         /* how many terms to keep in the Dirichlet kernel (~16 is usually fine) */
-  SSBprecision SSBprec; /* whether to use full relativist SSB-timing, or just simple Newtonian */
-  ComputeFBuffer_RS *buffer; /* buffer for storing pre-resampled timeseries (used for resampling implementation) */
-  const EphemerisData *edat;   /* ephemeris data for re-computing multidetector states */
-  BOOLEAN returnAtoms;  /* whether or not to return the 'FstatAtoms' used to compute the F-statistic */
-  BOOLEAN returnSingleF; /* in multi-detector case, whether or not to also return the single-detector Fstats computed from the atoms */
-} ComputeFParams;
 
 /* Struct holding buffered ComputeFStat()-internal quantities to avoid unnecessarily
  * recomputing things that depend ONLY on the skyposition and detector-state series (but not on the spins).
  * For the first call of ComputeFStatFreqBand_RS() the pointer-entries should all be NULL.
  */
-struct tagComputeFBuffer_RS {
-  MultiDetectorStateSeries *multiDetStates;             /* buffer for each detStates (store pointer) and skypos */
-  REAL8 Alpha, Delta;                                         /* skyposition of candidate */
-  LIGOTimeGPS segstart;                                       /* the start time of the first SFT of the first detector (used to check if the segment has changed) */
+typedef struct tagComputeFBuffer_RS {
+  MultiDetectorStateSeries *multiDetStates;             	/* buffer for each detStates (store pointer) and skypos */
+  REAL8 Alpha, Delta;                                         	/* skyposition of candidate */
+  LIGOTimeGPS segstart;                                       	/* the start time of the first SFT of the first detector (used to check if the segment has changed) */
   MultiSSBtimes *multiSSB;
-  MultiSSBtimes *multiBinary;
   MultiAMCoeffs *multiAMcoef;
   MultiCOMPLEX8TimeSeries *multiTimeseries;                   /* the buffered unweighted multi-detector timeseries */
   MultiCOMPLEX8TimeSeries *multiFa_resampled;                 /* the buffered multi-detector resampled timeseries weighted by a(t) */
   MultiCOMPLEX8TimeSeries *multiFb_resampled;                 /* the buffered multi-detector resampled timeseries weighted by b(t) */
-};
+} ComputeFBuffer_RS;;
 
-/* Struct holding a vector of buffered ComputeFStat()-internal quantities to avoid unnecessarily
- * recomputing things that depend ONLY on the skyposition and detector-state series (but not on the spins).
- */
-typedef struct tagComputeFBufferVector_RS {
-  ComputeFBuffer_RS **data;                                    /* pointer to a series of ComputeFBuffer_RS structures */
-  UINT4 length;                                               /* the length of the vector */
-} ComputeFBufferVector_RS;
+// internal Resampling-specific parameters
+struct tagFstatInput_Resamp {
+  MultiSFTVector *multiSFTs;            // Input multi-detector SFTs
+  ComputeFBuffer_RS *buffer; 		/* buffer for storing pre-resampled timeseries (used for resampling implementation) */
+};
 
 /* Destruction of a ComputeFBuffer *contents*,
  * i.e. the multiSSB and multiAMcoeff, while the
  * buffer-container is not freed (which is why it's passed
  * by value and not by reference...) */
 static void
-XLALEmptyComputeFBuffer_RS ( ComputeFBuffer_RS *buffer)
+XLALEmptyComputeFBuffer_RS ( ComputeFBuffer_RS *buffer )
 {
-
   if ( buffer->multiSSB ) XLALDestroyMultiSSBtimes( buffer->multiSSB );
   buffer->multiSSB = NULL;
-  if ( buffer->multiBinary ) XLALDestroyMultiSSBtimes( buffer->multiBinary );
-  buffer->multiBinary = NULL;
   if ( buffer->multiAMcoef) XLALDestroyMultiAMCoeffs( buffer->multiAMcoef );
   buffer->multiAMcoef = NULL;
   if ( buffer->multiTimeseries) XLALDestroyMultiCOMPLEX8TimeSeries( buffer->multiTimeseries );
@@ -95,34 +72,23 @@ XLALEmptyComputeFBuffer_RS ( ComputeFBuffer_RS *buffer)
 
 } /* XLALEmptyComputeFBuffer_RS() */
 
-/////////////////////////////////////////////////////////////////
-//////////////////// New resampling API code ////////////////////
-/////////////////////////////////////////////////////////////////
 
-struct tagFstatInput_Resamp {
-  MultiSFTVector *multiSFTs;                    // Input multi-detector SFTs
-  ComputeFParams params;                        // Additional parameters for ComputeFStat() and ComputeFStatFreqBand_RS()
-};
-
-static inline void
-DestroyFstatInput_Resamp(
-  FstatInput_Resamp* resamp
-  )
+static void
+DestroyFstatInput_Resamp ( FstatInput_Resamp* resamp )
 {
   XLALDestroyMultiSFTVector(resamp->multiSFTs);
-  XLALEmptyComputeFBuffer_RS(resamp->params.buffer);
-  XLALFree(resamp->params.buffer);
+  XLALEmptyComputeFBuffer_RS(resamp->buffer);
+  XLALFree(resamp->buffer);
   XLALFree(resamp);
-}
+  return;
+} // DestroyFstatInput_Resamp()
 
 static int
-SetupFstatInput_Resamp(
-  FstatInput_Resamp *resamp,
-  const FstatInput_Common *common,
-  MultiSFTVector *multiSFTs
-  )
+SetupFstatInput_Resamp ( FstatInput_Resamp *resamp,
+                         const FstatInput_Common *common,
+                         MultiSFTVector *multiSFTs
+                         )
 {
-
   // Check input
   XLAL_CHECK(common != NULL, XLAL_EFAULT);
   XLAL_CHECK(resamp != NULL, XLAL_EFAULT);
@@ -132,29 +98,20 @@ SetupFstatInput_Resamp(
   resamp->multiSFTs = multiSFTs;
 
   // Set parameters to pass to ComputeFStatFreqBand_RS()
-  resamp->params.SSBprec = common->SSBprec;
-  resamp->params.buffer = NULL;
-  resamp->params.edat = common->ephemerides;
+  resamp->buffer = NULL;
 
   return XLAL_SUCCESS;
 
-}
+} // SetupFstatInput_Resamp()
+
 
 static int
-GetFstatExtraBins_Resamp(
-  FstatInput_Resamp* resamp
-  )
+GetFstatExtraBins_Resamp ( FstatInput_Resamp* resamp )
 {
-
-
-  // Check input
   XLAL_CHECK(resamp != NULL, XLAL_EFAULT);
+  return 8;	// use 8 extra bins to give better agreement with LALDemod(w Dterms=8) near the boundaries
+} // GetFstatExtraBins_Resamp()
 
-  // FIXME: resampling should not require extra frequency bins, however
-  // the following is required to get 'testCFSv2_resamp.sh' to pass
-  return 8;
-
-}
 
 static int
 ComputeFstat_Resamp ( FstatResults* Fstats,
@@ -171,18 +128,16 @@ ComputeFstat_Resamp ( FstatResults* Fstats,
   const FstatQuantities whatToCompute = Fstats->whatWasComputed;
 
   // Check which quantities can be computed
-  XLAL_CHECK ( !(whatToCompute & FSTATQ_FAFB), XLAL_EINVAL, "Resampling does not currently support Fa & Fb");
-  XLAL_CHECK ( !(whatToCompute & FSTATQ_FAFB_PER_DET), XLAL_EINVAL, "Resampling does not currently support Fa & Fb per detector");
-  XLAL_CHECK ( !(whatToCompute & FSTATQ_ATOMS_PER_DET), XLAL_EINVAL, "Resampling does not currently support atoms per detector");
+  XLAL_CHECK ( !(whatToCompute & FSTATQ_FAFB), 		XLAL_EINVAL, "Resampling does not currently support Fa & Fb" );
+  XLAL_CHECK ( !(whatToCompute & FSTATQ_FAFB_PER_DET), 	XLAL_EINVAL, "Resampling does not currently support Fa & Fb per detector" );
+  XLAL_CHECK ( !(whatToCompute & FSTATQ_ATOMS_PER_DET), XLAL_EINVAL, "Resampling does not currently support atoms per detector" );
 
   // Set parameters to pass to ComputeFStatFreqBand_RS()
-  resamp->params.returnSingleF = whatToCompute & FSTATQ_2F_PER_DET;
-  resamp->params.returnAtoms = 0;
+  BOOLEAN returnSingleF = whatToCompute & FSTATQ_2F_PER_DET;
 
   const PulsarDopplerParams *thisPoint = &Fstats->doppler;
   MultiSFTVector *multiSFTs = resamp->multiSFTs;
   const MultiNoiseWeights *multiWeights = common->noiseWeights;
-  ComputeFParams *params = &resamp->params;
   {// ================================================================================
     // Call ComputeFStatFreqBand_RS()
     UINT4 numDetectors;
@@ -207,7 +162,7 @@ ComputeFstat_Resamp ( FstatResults* Fstats,
     COMPLEX8Vector *outaSingle = NULL; /* this will contain Faf_resampled for a single IFO */
     COMPLEX8Vector *outbSingle = NULL; /* this will contain Fbf_resampled for a single IFO */
 
-    cfBuffer = params->buffer;                      /* set local pointer to the buffer location */
+    cfBuffer = resamp->buffer;                      /* set local pointer to the buffer location */
     numDetectors = multiSFTs->length;               /* set the number of detectors to the number of sets of SFTs */
     // unused: SFTtype * firstSFT = &(multiSFTs->data[0]->data[0]);      /* use data from the first SFT from the first detector to set other params */
 
@@ -258,7 +213,7 @@ ComputeFstat_Resamp ( FstatResults* Fstats,
 
         REAL8 Tsft = 1.0 / multiSFTs->data[0]->data[0].deltaF;
         REAL8 tOffset = 0.5 * Tsft;
-        XLAL_CHECK ( (multiDetStates = XLALGetMultiDetectorStates ( multiTS, &multiIFO, params->edat, tOffset )) != NULL, XLAL_EFUNC );
+        XLAL_CHECK ( (multiDetStates = XLALGetMultiDetectorStates ( multiTS, &multiIFO, common->ephemerides, tOffset )) != NULL, XLAL_EFUNC );
         XLALDestroyMultiTimestamps ( multiTS );
 
         /* set all other segment dependent quantity pointers to NULL */
@@ -308,7 +263,7 @@ ComputeFstat_Resamp ( FstatResults* Fstats,
         skypos.system = COORDINATESYSTEM_EQUATORIAL;
         skypos.longitude = thisPoint->Alpha;
         skypos.latitude  = thisPoint->Delta;
-        XLAL_CHECK ( (multiSSB = XLALGetMultiSSBtimes ( cfBuffer->multiDetStates, skypos, thisPoint->refTime, params->SSBprec )) != NULL, XLAL_EFUNC );
+        XLAL_CHECK ( (multiSSB = XLALGetMultiSSBtimes ( cfBuffer->multiDetStates, skypos, thisPoint->refTime, common->SSBprec )) != NULL, XLAL_EFUNC );
 
         MultiSSBtimes *multiBinary = NULL;
         MultiSSBtimes *multiSSBTotal = NULL;
@@ -401,7 +356,7 @@ ComputeFstat_Resamp ( FstatResults* Fstats,
     XLAL_CHECK ( (Fbf_resampled = XLALCreateCOMPLEX8Vector(numSamples)) != NULL, XLAL_EFUNC );
     XLAL_CHECK ( (outa = XLALCreateCOMPLEX8Vector(numSamples)) != NULL, XLAL_EFUNC );
     XLAL_CHECK ( (outb = XLALCreateCOMPLEX8Vector(numSamples)) != NULL, XLAL_EFUNC );
-    if ( params->returnSingleF )
+    if ( returnSingleF )
       {
         XLAL_CHECK ( (outaSingle = XLALCreateCOMPLEX8Vector(numSamples)) != NULL, XLAL_EFUNC );
         XLAL_CHECK ( (outbSingle = XLALCreateCOMPLEX8Vector(numSamples)) != NULL, XLAL_EFUNC );
@@ -425,7 +380,7 @@ ComputeFstat_Resamp ( FstatResults* Fstats,
         /* initialise output vectors to zero for safety */
         memset ( outa->data, 0, numSamples * sizeof(COMPLEX8) );
         memset ( outb->data, 0, numSamples * sizeof(COMPLEX8) );
-        if ( params->returnSingleF )
+        if ( returnSingleF )
           {
             memset ( outaSingle->data, 0, numSamples * sizeof(COMPLEX8) );
             memset ( outbSingle->data, 0, numSamples * sizeof(COMPLEX8) );
@@ -443,9 +398,9 @@ ComputeFstat_Resamp ( FstatResults* Fstats,
           }
 
         /* compute single-IFO F-stats, if requested */
-        if ( params->returnSingleF )
+        if ( returnSingleF )
           {
-            if ( params->buffer == NULL )
+            if ( resamp->buffer == NULL )
               {
                 AdX = multiAMcoef->data[X]->A;
                 BdX = multiAMcoef->data[X]->B;
@@ -521,7 +476,7 @@ ComputeFstat_Resamp ( FstatResults* Fstats,
     XLALDestroyCOMPLEX8Vector( Fbf_resampled );
     XLALDestroyCOMPLEX8Vector( outa );
     XLALDestroyCOMPLEX8Vector( outb );
-    if ( params->returnSingleF ) {
+    if ( returnSingleF ) {
       XLALDestroyCOMPLEX8Vector ( outaSingle );
       XLALDestroyCOMPLEX8Vector ( outbSingle );
     }
@@ -531,7 +486,7 @@ ComputeFstat_Resamp ( FstatResults* Fstats,
     XLALDestroyMultiCOMPLEX8TimeSeries ( multiFb_spin );
 
     /* IMPORTANT - point the input buffer pointer to the buffered data */
-    params->buffer = cfBuffer;
+    resamp->buffer = cfBuffer;
 
   }// ================================================================================
 
