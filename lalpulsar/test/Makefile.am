@@ -37,7 +37,8 @@ check_PROGRAMS = \
 	UniversalDopplerMetricTest \
 	NormalizeSFTRngMedTest \
 	XLALMultiNoiseWeightsTest \
-	FileIOTest
+	FileIOTest \
+	ComputeFstatTest
 #	SFTCleanTest
 
 if LALXML
