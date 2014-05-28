@@ -35,7 +35,11 @@ opts, args = OptionParser(
         Option("--normed", action="store_true"),
         Option("--group-by", choices=("far", "snr"), metavar="far|snr",
             default="far", help="Group plots by false alarm rate (FAR) or " +
-            "signal to noise ratio (SNR) [default: %default]")
+            "signal to noise ratio (SNR) [default: %default]"),
+        Option("--pp-confidence-interval", type=float, metavar="PCT",
+            default=95, help="If all inputs files have the same number of "
+            "samples, overlay binomial confidence bands for this percentage on "
+            "the P--P plot [default: %default]")
     ]
 ).parse_args()
 
@@ -44,6 +48,7 @@ import matplotlib
 matplotlib.use('agg')
 from matplotlib import pyplot as plt
 from matplotlib import rcParams
+import scipy.stats
 import os
 import subprocess
 import numpy as np
@@ -110,6 +115,7 @@ for i, (bin_edge, subdir, title) in enumerate(zip(bin_edges, bin_names, bin_titl
         datasets = [dataset[dataset['far'] <= bin_edge] for dataset in datasets_]
     elif opts.group_by == 'snr':
         datasets = [dataset[dataset['snr'] >= bin_edge] for dataset in datasets_]
+    nsamples = list(set(len(dataset) for dataset in datasets))
 
     # Compute titles and labels for plots.
     if rcParams['text.usetex']:
@@ -173,7 +179,29 @@ for i, (bin_edge, subdir, title) in enumerate(zip(bin_edges, bin_names, bin_titl
     # Finish and save plot 1.
     pb.update(i * 4)
     plt.figure(1)
-    plt.plot([0, 1], [0, 1], '--', color='0.75')
+    # Only plot target confidence band if all datasets have the same number
+    # of samples, because the confidence band depends on the number of samples.
+    handles, labels = plt.gca().get_legend_handles_labels()
+    # Add target confidence band to P--P plot.
+    if len(nsamples) == 1:
+        n, = nsamples
+        k = np.arange(0, n + 1)
+        p = k / n
+        ci_lo, ci_hi = scipy.stats.beta.interval(
+            0.01 * opts.pp_confidence_interval, k + 1, n - k + 1)
+        plt.fill_betweenx(p, ci_lo, ci_hi, color='lightgray', zorder=-2)
+        plt.plot(ci_lo, p, color='gray', linewidth=0.5, zorder=-1)
+        plt.plot(ci_hi, p, color='gray', linewidth=0.5, zorder=-1)
+        percent_sign = r'\%' if matplotlib.rcParams['text.usetex'] else '%'
+        label = 'target {0:g}{1:s}\nconfidence band'.format(
+            opts.pp_confidence_interval, percent_sign)
+        plt.annotate(label, xy=(1, 1), xycoords='axes fraction',
+            xytext=(0, 0), textcoords='offset points', annotation_clip=False,
+            horizontalalignment='right', verticalalignment='bottom',
+            arrowprops=dict(arrowstyle="->",
+                shrinkA=0, shrinkB=2, linewidth=0.5,
+                connectionstyle="angle,angleA=0,angleB=45,rad=0"))
+    plt.plot([0, 1], [0, 1], '--', color='black', linewidth=0.5)
     plt.grid()
     if len(args) > 1:
         plt.legend(loc='lower right')
