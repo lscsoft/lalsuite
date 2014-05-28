@@ -295,6 +295,7 @@ ComputeFstat_Resamp ( FstatResults* Fstats,
          || ( cfBuffer->multiSSB == NULL )                                    /* and we have buffered multiSSB times */
          || ( cfBuffer->multiFa_resampled == NULL )                           /* and we have buffered multiFa_resampled  */
          || ( cfBuffer->multiFb_resampled == NULL )                           /* and we have multiFb_resampled */
+         || ( thisPoint->asini > 0 )						// no buffering in binary-CW case for now
          )
       {
         XLALPrintInfo("*** New sky position : recomputing SSB times, AM coefficients and Fa and Fb\n");
@@ -309,6 +310,20 @@ ComputeFstat_Resamp ( FstatResults* Fstats,
         skypos.latitude  = thisPoint->Delta;
         XLAL_CHECK ( (multiSSB = XLALGetMultiSSBtimes ( cfBuffer->multiDetStates, skypos, thisPoint->refTime, params->SSBprec )) != NULL, XLAL_EFUNC );
 
+        MultiSSBtimes *multiBinary = NULL;
+        MultiSSBtimes *multiSSBTotal = NULL;
+        // handle binary-orbital timing corrections, if applicable
+        if ( thisPoint->asini > 0 )
+          {
+            // compute binary time corrections to the SSB time delays and SSB time derivitive
+            XLAL_CHECK ( XLALAddMultiBinaryTimes ( &multiBinary, multiSSB, thisPoint ) == XLAL_SUCCESS, XLAL_EFUNC );
+            multiSSBTotal = multiBinary;
+          }
+        else
+          {
+            multiSSBTotal = multiSSB;
+          }
+
         /* compute the AM parameters for each detector */
         XLAL_CHECK ( (multiAMcoef = XLALComputeMultiAMCoeffs ( cfBuffer->multiDetStates, multiWeights, skypos )) != NULL, XLAL_EFUNC );
 
@@ -316,7 +331,9 @@ ComputeFstat_Resamp ( FstatResults* Fstats,
         XLAL_CHECK ( XLALAntennaWeightMultiCOMPLEX8TimeSeries ( &multiFa, &multiFb, cfBuffer->multiTimeseries, multiAMcoef, multiSFTs) == XLAL_SUCCESS, XLAL_EFUNC );
 
         /* Perform barycentric resampling on the multi-detector timeseries */
-        XLAL_CHECK ( XLALBarycentricResampleMultiCOMPLEX8TimeSeries ( &multiFa_resampled, &multiFb_resampled, multiFa, multiFb, multiSSB, multiSFTs, dFreq) == XLAL_SUCCESS, XLAL_EFUNC );
+        XLAL_CHECK ( XLALBarycentricResampleMultiCOMPLEX8TimeSeries ( &multiFa_resampled, &multiFb_resampled, multiFa, multiFb, multiSSBTotal, multiSFTs, dFreq) == XLAL_SUCCESS, XLAL_EFUNC );
+
+        XLALDestroyMultiSSBtimes ( multiBinary );
 
         /* free multiFa and MultiFb - we won't need them again since we're storing the resampled versions */
         XLALDestroyMultiCOMPLEX8TimeSeries ( multiFa );
