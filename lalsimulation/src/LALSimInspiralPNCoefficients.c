@@ -409,6 +409,30 @@ XLALSimInspiralPNPhasing_F2AddSS(
     }
 }
 
+/*
+ * Tidal corrections to F2 phasing
+ * See arXiv:1101.1673
+ */
+
+static REAL8 UNUSED
+XLALSimInspiralTaylorF2Phasing_10PNTidalCoeff(
+	REAL8 chi, /**< ratio of object mass to total mass */
+	REAL8 lambda /**< tidal deformability parameter */
+    )
+{
+    return -4.L * lambda * chi*chi*chi*chi * (72.L - 66.L*chi);
+}
+
+static REAL8 UNUSED
+XLALSimInspiralTaylorF2Phasing_12PNTidalCoeff(
+	REAL8 chi, /**< ratio of object mass to total mass */
+	REAL8 lambda /**< tidal deformability parameter */
+    )
+{
+    return -5.L * lambda * chi*chi*chi*chi *
+        (3179.L - 919.L*chi - 2286.L*chi*chi + 260.L*chi*chi*chi)/28.L;
+}
+
 /**
  * Computes the PN Coefficients for using in the TaylorT2 phasing equation.
  *

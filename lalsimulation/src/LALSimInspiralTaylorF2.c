@@ -103,10 +103,8 @@ int XLALSimInspiralTaylorF2(
     const REAL8 piM = LAL_PI * m_sec;
     const REAL8 vISCO = 1. / sqrt(6.);
     const REAL8 fISCO = vISCO * vISCO * vISCO / piM;
-    const REAL8 chi1 = m1 / m;
-    const REAL8 chi2 = m2 / m;
-    const REAL8 lam1 = lambda1;
-    const REAL8 lam2 = lambda2;
+    const REAL8 m1OverM = m1 / m;
+    const REAL8 m2OverM = m2 / m;
     REAL8 shft, amp0, f_max;
     size_t i, n, iStart;
     COMPLEX16 *data = NULL;
@@ -171,20 +169,18 @@ int XLALSimInspiralTaylorF2(
             XLAL_ERROR(XLAL_ETYPE, "Invalid amplitude PN order %s", amplitudeO);
     }
 
-    /* Tidal coefficients for phasing, fluz, and energy */
+    /* Tidal coefficients for phasing */
     REAL8 pft10 = 0.;
     REAL8 pft12 = 0.;
     switch( tideO )
     {
         case LAL_SIM_INSPIRAL_TIDAL_ORDER_ALL:
         case LAL_SIM_INSPIRAL_TIDAL_ORDER_6PN:
-            pft12 = - 5.L * lam2 * chi2*chi2*chi2*chi2 * (3179.L - 919.L*chi2
-                    - 2286.L*chi2*chi2 + 260.L*chi2*chi2*chi2)/28.L
-                    - 5.L * lam1 * chi1*chi1*chi1*chi1 * (3179.L - 919.L*chi1
-                    - 2286.L*chi1*chi1 + 260.L*chi1*chi1*chi1)/28.L;
+            pft12 = pfaN * ( XLALSimInspiralTaylorF2Phasing_12PNTidalCoeff(m1OverM, lambda1)
+                            + XLALSimInspiralTaylorF2Phasing_12PNTidalCoeff(m2OverM, lambda2) );
         case LAL_SIM_INSPIRAL_TIDAL_ORDER_5PN:
-            pft10 = - 24.L * lam2 * chi2*chi2*chi2*chi2 * (1.L + 11.L*chi1)
-                    - 24.L * lam1 * chi1*chi1*chi1*chi1 * (1.L + 11.L*chi2);
+            pft10 = pfaN * ( XLALSimInspiralTaylorF2Phasing_10PNTidalCoeff(m1OverM, lambda1)
+                            + XLALSimInspiralTaylorF2Phasing_10PNTidalCoeff(m2OverM, lambda2) );
         case LAL_SIM_INSPIRAL_TIDAL_ORDER_0PN:
             break;
         default:
@@ -274,9 +270,9 @@ int XLALSimInspiralTaylorF2(
         {
             case LAL_SIM_INSPIRAL_TIDAL_ORDER_ALL:
             case LAL_SIM_INSPIRAL_TIDAL_ORDER_6PN:
-                ref_phasing += pfaN * pft12 * v12ref;
+                ref_phasing += pft12 * v12ref;
             case LAL_SIM_INSPIRAL_TIDAL_ORDER_5PN:
-                ref_phasing += pfaN * pft10 * v10ref;
+                ref_phasing += pft10 * v10ref;
             case LAL_SIM_INSPIRAL_TIDAL_ORDER_0PN:
                 ;
         }
@@ -338,9 +334,9 @@ int XLALSimInspiralTaylorF2(
         {
             case LAL_SIM_INSPIRAL_TIDAL_ORDER_ALL:
             case LAL_SIM_INSPIRAL_TIDAL_ORDER_6PN:
-                phasing += pfaN * pft12 * v12;
+                phasing += pft12 * v12;
             case LAL_SIM_INSPIRAL_TIDAL_ORDER_5PN:
-                phasing += pfaN * pft10 * v10;
+                phasing += pft10 * v10;
             case LAL_SIM_INSPIRAL_TIDAL_ORDER_0PN:
                 ;
         }
