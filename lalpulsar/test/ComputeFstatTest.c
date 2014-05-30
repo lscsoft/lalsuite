@@ -162,7 +162,7 @@ main ( int argc, char *argv[] )
                 firstMethod = iMethod;
               }
 
-              FstatQuantities whatToCompute = FSTATQ_2F; // FIXME: currently Resampling doesn't support FSTATQ_FAFB yet
+              FstatQuantities whatToCompute = (FSTATQ_2F | FSTATQ_FAFB);
               XLAL_CHECK ( XLALComputeFstat ( &results[iMethod], input[iMethod], &Doppler, dFreq, numFreqBins, whatToCompute ) == XLAL_SUCCESS, XLAL_EFUNC );
 
               if ( lalDebugLevel & LALINFOBIT )
