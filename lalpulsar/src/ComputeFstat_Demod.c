@@ -110,11 +110,7 @@ ComputeFstat_Demod ( FstatResults* Fstats,
   // Get which F-statistic quantities to compute
   const FstatQuantities whatToCompute = Fstats->whatWasComputed;
 
-  // Check which quantities can be computed
-  XLAL_CHECK(!(whatToCompute & FSTATQ_FAFB_PER_DET), XLAL_EINVAL, "Demodulation does not currently support Fa & Fb per detector");
-
   // handy shortcuts
-  BOOLEAN returnSingleF = (whatToCompute & FSTATQ_2F_PER_DET);
   BOOLEAN returnAtoms = (whatToCompute & FSTATQ_ATOMS_PER_DET);
   UINT4 Dterms = demod->Dterms;
   PulsarDopplerParams thisPoint = Fstats->doppler;
@@ -171,14 +167,19 @@ ComputeFstat_Demod ( FstatResults* Fstats,
       multiSSBTotal = multiSSB;
     }
 
+  // ----- compute final Fstatistic-value -----
+  REAL8 Ad = multiAMcoef->Mmunu.Ad;
+  REAL8 Bd = multiAMcoef->Mmunu.Bd;
+  REAL8 Cd = multiAMcoef->Mmunu.Cd;
+  REAL8 Ed = multiAMcoef->Mmunu.Ed;;
+  REAL8 Dd_inv = 1.0 / multiAMcoef->Mmunu.Dd;
+
   // ---------- Compute F-stat for each frequency bin ----------
   for ( UINT4 k = 0; k < Fstats->numFreqBins; k++ )
     {
       // Set frequency to search at
       thisPoint.fkdot[0] = fStart + k * Fstats->dFreq;
 
-      REAL8 twoF;                       // F-statistic value
-      REAL8 twoFX[PULSAR_MAX_DETECTORS];// vector of single-detector F-statistic values (array of fixed size)
       COMPLEX16 Fa = 0;       		// complex amplitude Fa
       COMPLEX16 Fb = 0;                 // complex amplitude Fb
       MultiFstatAtomVector *multiFstatAtoms = NULL;	// per-IFO, per-SFT arrays of F-stat 'atoms', ie quantities required to compute F-stat
@@ -224,19 +225,25 @@ ComputeFstat_Demod ( FstatResults* Fstats,
 
           XLAL_CHECK ( isfinite(creal(FaX)) && isfinite(cimag(FaX)) && isfinite(creal(FbX)) && isfinite(cimag(FbX)), XLAL_EFPOVRFLW );
 
+          if ( whatToCompute & FSTATQ_FAFB_PER_DET )
+            {
+              Fstats->FaFbPerDet[X][k].Fa = FaX;
+              Fstats->FaFbPerDet[X][k].Fb = FbX;
+            }
+
           // compute single-IFO F-stats, if requested
-          if ( returnSingleF )
+          if ( whatToCompute & FSTATQ_2F_PER_DET )
             {
               REAL8 AdX = multiAMcoef->data[X]->A;
               REAL8 BdX = multiAMcoef->data[X]->B;
               REAL8 CdX = multiAMcoef->data[X]->C;
-              REAL8 DdX_inv = 1.0 / multiAMcoef->data[X]->D;
               REAL8 EdX = 0;
+              REAL8 DdX_inv = 1.0 / multiAMcoef->data[X]->D;
 
               // compute final single-IFO F-stat
-              twoFX[X] = ComputeFstatFromFaFb ( FaX, FbX, AdX, BdX, CdX, EdX, DdX_inv );
+              Fstats->twoFPerDet[X][k] = ComputeFstatFromFaFb ( FaX, FbX, AdX, BdX, CdX, EdX, DdX_inv );
 
-            } // if returnSingleF
+            } // if FSTATQ_2F_PER_DET
 
           /* Fa = sum_X Fa_X */
           Fa += FaX;
@@ -246,44 +253,24 @@ ComputeFstat_Demod ( FstatResults* Fstats,
 
         } // for  X < numDetectors
 
-      // ----- compute final Fstatistic-value -----
-      REAL8 Ad = multiAMcoef->Mmunu.Ad;
-      REAL8 Bd = multiAMcoef->Mmunu.Bd;
-      REAL8 Cd = multiAMcoef->Mmunu.Cd;
-      REAL8 Dd_inv = 1.0 / multiAMcoef->Mmunu.Dd;
-      REAL8 Ed = 0;
-
-      twoF = ComputeFstatFromFaFb ( Fa, Fb, Ad, Bd, Cd, Ed, Dd_inv );
-      // --------------------------------------------------
-
-      // Return multi-detector 2F
-      if ( whatToCompute & FSTATQ_2F ) {
-        Fstats->twoF[k] = twoF;
-      }
+      if ( whatToCompute & FSTATQ_2F )
+        {
+          Fstats->twoF[k] = ComputeFstatFromFaFb ( Fa, Fb, Ad, Bd, Cd, Ed, Dd_inv );
+        }
 
       // Return multi-detector Fa & Fb
-      if ( whatToCompute & FSTATQ_FAFB ) {
-        Fstats->FaFb[k].Fa = Fa;
-        Fstats->FaFb[k].Fb = Fb;
-      }
-
-      // Return 2F per detector
-      if ( whatToCompute & FSTATQ_2F_PER_DET ) {
-        for ( UINT4 X = 0; X < Fstats->numDetectors; ++X ) {
-          Fstats->twoFPerDet[X][k] = twoFX[X];
+      if ( whatToCompute & FSTATQ_FAFB )
+        {
+          Fstats->FaFb[k].Fa = Fa;
+          Fstats->FaFb[k].Fb = Fb;
         }
-      }
-
-      // Return Fa & Fb per detector
-      if ( whatToCompute & FSTATQ_FAFB_PER_DET ) {
-        XLAL_ERROR ( XLAL_EFAILED, "Unimplemented!" );
-      }
 
       // Return F-atoms per detector
-      if ( whatToCompute & FSTATQ_ATOMS_PER_DET ) {
-        XLALDestroyMultiFstatAtomVector(Fstats->multiFatoms[k]);
-        Fstats->multiFatoms[k] = multiFstatAtoms;
-      }
+      if ( whatToCompute & FSTATQ_ATOMS_PER_DET )
+        {
+          XLALDestroyMultiFstatAtomVector ( Fstats->multiFatoms[k] );
+          Fstats->multiFatoms[k] = multiFstatAtoms;
+        }
 
     } // for k < Fstats->numFreqBins
 
