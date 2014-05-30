@@ -1,4 +1,6 @@
-LDADD = $(top_builddir)/src/lalapps/liblalapps.la
+LDADD =
+BUILT_SOURCES =
+include $(top_srcdir)/gnuscripts/lalapps.am
 
 if LALFRAME
 if LALBURST
@@ -123,6 +125,3 @@ MOSTLYCLEANFILES = \
 	tsaMap* \
 	Candidate* \
 	Pre-*
-
-BUILT_SOURCES =
-include $(top_srcdir)/gnuscripts/vcsID.common

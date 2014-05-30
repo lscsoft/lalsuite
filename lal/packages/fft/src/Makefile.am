@@ -1,4 +1,5 @@
 include $(top_srcdir)/gnuscripts/lallibs_header_links.am
+include $(top_srcdir)/gnuscripts/lalsuite_cuda.am
 
 if QTHREAD
 QTHREADSRC = qthread.c
@@ -64,6 +65,3 @@ EXTRA_DIST = \
 	CudaFFT.h
 
 CLEANFILES = CudaFFT.cpp
-
-# cuda build rules
-include $(top_srcdir)/gnuscripts/cuda.common

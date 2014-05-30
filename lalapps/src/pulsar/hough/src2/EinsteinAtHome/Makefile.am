@@ -1,9 +1,8 @@
-## Process this file with automake to produce Makefile.in
+LDADD =
+BUILT_SOURCES =
+include $(top_srcdir)/gnuscripts/lalapps.am
 
 AM_CPPFLAGS = -I$(top_srcdir)/src/pulsar/FDS_isolated @AM_CPPFLAGS@
-
-# for using lalapps-defines + functions
-LDADD = $(top_builddir)/src/lalapps/liblalapps.la
 
 cfsHOME = @CFS_DIR@
 hsHOME = @HS_DIR@
@@ -109,9 +108,3 @@ ACLOCAL_AMFLAGS = -I m4
 starsphere_CPPFLAGS = -Wall -DUSE_BOINC -DBOINC_APP_GRAPHICS -DBOINC_APIV6 -DBOINC_GRAPHICS=0 @GRAPHICS_CFLAGS@ -Igraphics -I/usr/X11R6/include
 starsphere_LDADD    = -lboinc_graphics2 -lboinc_api -lboinc @GRAPHICS_LIBS@ @MAC_LIBS@ # -lglut
 starsphere_SOURCES  = graphics/starlist.C graphics/snr_list.C graphics/user_text.C graphics/pulsar_list.C graphics/search_info.C graphics/starsphere.C graphics/main.C
-
-
-
-## make sure lalapps.la is rebuilt when appropriate
-BUILT_SOURCES =
-include $(top_srcdir)/gnuscripts/vcsID.common

@@ -1,3 +1,6 @@
+LDADD =
+BUILT_SOURCES =
+include $(top_srcdir)/gnuscripts/lalapps.am
 
 if LALFRAME
 if LALMETAIO
@@ -27,8 +30,3 @@ pkgdata_DATA = power_pipe.ini power_online_pipe.ini
 EXTRA_DIST = lalapps_power_pipe lalapps_power_online_pipe \
              lalapps_power_likelihood_pipe power.py \
              power_pipe.ini power_online_pipe.ini
-
-LDADD = $(top_builddir)/src/lalapps/liblalapps.la
-
-BUILT_SOURCES =
-include $(top_srcdir)/gnuscripts/vcsID.common

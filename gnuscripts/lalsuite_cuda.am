@@ -1,0 +1,5 @@
+if CUDA
+SUFFIXES = .cu .cpp
+.cu.cpp:
+	$(AM_V_GEN)$(NVCC) --cuda $(INCLUDES) $(CPPFLAGS) $(NVCC_CFLAGS) --output-file $@ $<
+endif

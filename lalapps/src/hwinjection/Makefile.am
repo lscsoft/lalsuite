@@ -1,6 +1,6 @@
-## Process this file with automake to produce Makefile.in
-
-LDADD = $(top_builddir)/src/lalapps/liblalapps.la
+LDADD =
+BUILT_SOURCES =
+include $(top_srcdir)/gnuscripts/lalapps.am
 
 if LALFRAME
 frameprogs = lalapps_psinject
@@ -18,7 +18,3 @@ online_psinject_SOURCES = psinject.c SIStr.c SIStr.h
 online_psinject_CPPFLAGS = -DONLINE
 online_psinject_LDFLAGS = -lawg -ltestpoint
 ## --------------------------------------------------------------------------------
-
-## make sure lalapps.la is rebuilt when appropriate
-BUILT_SOURCES =
-include $(top_srcdir)/gnuscripts/vcsID.common

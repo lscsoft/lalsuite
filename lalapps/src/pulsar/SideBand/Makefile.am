@@ -1,6 +1,6 @@
-## Process this file with automake to produce Makefile.in
-
-LDADD = $(top_builddir)/src/lalapps/liblalapps.la
+LDADD =
+BUILT_SOURCES =
+include $(top_srcdir)/gnuscripts/lalapps.am
 
 bin_PROGRAMS = lalapps_GenerateSideBandTemplate lalapps_SideBandMCMC \
 		lalapps_GetTimeStamps
@@ -10,7 +10,3 @@ lalapps_GenerateSideBandTemplate_SOURCES = GenerateSideBandTemplate.c SideBandUt
 lalapps_SideBandMCMC_SOURCES = SideBandMCMC.c SideBandUtils.c SideBand.h
 
 lalapps_GetTimeStamps_SOURCES = GetTimeStamps.c
-
-## make sure lalapps.la is rebuilt when appropriate
-BUILT_SOURCES =
-include $(top_srcdir)/gnuscripts/vcsID.common

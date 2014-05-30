@@ -1,0 +1,5 @@
+LDADD += $(top_builddir)/src/lalapps/liblalapps.la
+BUILT_SOURCES += liblalapps
+.PHONY: liblalapps
+liblalapps:
+	@cd $(top_builddir)/src/lalapps && $(MAKE) liblalapps.la

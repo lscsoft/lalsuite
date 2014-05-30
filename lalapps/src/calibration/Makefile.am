@@ -1,3 +1,6 @@
+LDADD =
+BUILT_SOURCES =
+include $(top_srcdir)/gnuscripts/lalapps.am
 
 lalapps_ComputeStrainDriver_SOURCES = ComputeStrainDriver.c
 lalapps_ComputeFactors_SOURCES = ComputeFactors.c
@@ -7,8 +10,6 @@ bin_PROGRAMS = \
 	lalapps_ComputeFactors \
 	lalapps_ComputeStrainDriver \
 	lalapps_NoiseComparison
-
-LDADD = $(top_builddir)/src/lalapps/liblalapps.la
 
 if HAVE_PYTHON
 bin_SCRIPTS = lalapps_strain_pipe lalapps_noise_comp_pipe
@@ -42,6 +43,3 @@ lalapps_strain_pipe: $(srcdir)/strain_pipe.in python_config.sed
 lalapps_noise_comp_pipe: $(srcdir)/noise_comp_pipe.in python_config.sed
 	$(AM_V_GEN)sed -f python_config.sed $(srcdir)/noise_comp_pipe.in > lalapps_noise_comp_pipe
 	@chmod +x lalapps_noise_comp_pipe
-
-BUILT_SOURCES =
-include $(top_srcdir)/gnuscripts/vcsID.common

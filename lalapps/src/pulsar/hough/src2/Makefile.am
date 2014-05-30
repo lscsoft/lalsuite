@@ -1,9 +1,8 @@
-## Process this file with automake to produce Makefile.in
+LDADD =
+BUILT_SOURCES =
+include $(top_srcdir)/gnuscripts/lalapps.am
 
 AM_CPPFLAGS = -I$(top_srcdir)/src/pulsar/FDS_isolated @AM_CPPFLAGS@
-
-# for using lalapps-defines + functions
-LDADD = $(top_builddir)/src/lalapps/liblalapps.la
 
 ## Compiling with OpenCL on Linux
 # LDFLAGS = -lOpenCL
@@ -98,7 +97,3 @@ EXTRA_DIST = testRecalcHS.sh
 TESTS_ENVIRONMENT = \
 	LAL_DEBUG_LEVEL=msglvl1,memdbg; export LAL_DEBUG_LEVEL; \
 	LAL_DATA_PATH="$(LAL_DATA_PATH)"; export LAL_DATA_PATH;
-
-## make sure lalapps.la is rebuilt when appropriate
-BUILT_SOURCES =
-include $(top_srcdir)/gnuscripts/vcsID.common

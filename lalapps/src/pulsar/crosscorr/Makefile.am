@@ -1,11 +1,10 @@
-## Process this file with automake to produce Makefile.in
+LDADD =
+BUILT_SOURCES =
+include $(top_srcdir)/gnuscripts/lalapps.am
 
 AM_CPPFLAGS = -I$(top_srcdir)/src/pulsar/FDS_isolated @AM_CPPFLAGS@
 
 CFSsrc = $(top_srcdir)/src/pulsar/FDS_isolated
-
-# for using lalapps-defines + functions
-LDADD = $(top_builddir)/src/lalapps/liblalapps.la
 
 bin_PROGRAMS = lalapps_pulsar_crosscorr lalapps_pulsar_crosscorr_v2
 
@@ -24,7 +23,3 @@ TESTS_ENVIRONMENT = \
 	LAL_DATA_PATH="$(LAL_DATA_PATH)"; export LAL_DATA_PATH;
 
 CLEANFILES = toplist_crosscorr.dat
-
-## make sure lalapps.la is rebuilt when appropriate
-BUILT_SOURCES =
-include $(top_srcdir)/gnuscripts/vcsID.common

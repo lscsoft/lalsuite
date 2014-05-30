@@ -1,8 +1,10 @@
+LDADD =
+BUILT_SOURCES =
+include $(top_srcdir)/gnuscripts/lalapps.am
+
 SUBDIRS = \
 	SPINspiral \
 	mpi
-
-LDADD = $(top_builddir)/src/lalapps/liblalapps.la
 
 if LALINSPIRAL
 if LALFRAME
@@ -125,7 +127,3 @@ lalapps_merge_nested_sampling_runs: $(srcdir)/merge_nested_sampling_runs.in pyth
 CLEANFILES = \
 	$(bin_SCRIPTS) \
 	python_config.sed
-
-BUILT_SOURCES =
-include $(top_srcdir)/gnuscripts/vcsID.common
-

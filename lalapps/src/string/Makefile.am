@@ -1,3 +1,6 @@
+LDADD =
+BUILT_SOURCES =
+include $(top_srcdir)/gnuscripts/lalapps.am
 
 if LALFRAME
 if LALMETAIO
@@ -19,8 +22,3 @@ endif
 #pkgdata_DATA = S3_H1_StringDag.ini S3_StringDag.ini S4_StringDag.ini
 
 EXTRA_DIST = cosmicstring.py $(DATA)
-
-LDADD = $(top_builddir)/src/lalapps/liblalapps.la
-
-BUILT_SOURCES =
-include $(top_srcdir)/gnuscripts/vcsID.common

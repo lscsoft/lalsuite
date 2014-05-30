@@ -1,4 +1,6 @@
-## Process this file with automake to produce Makefile.in
+LDADD =
+BUILT_SOURCES =
+include $(top_srcdir)/gnuscripts/lalapps.am
 
 SUBDIRS = posterior
 
@@ -419,8 +421,6 @@ EXTRA_DIST = \
 	cbc_sbank_splitter.in \
 	$(DATA)
 
-LDADD = $(top_builddir)/src/lalapps/liblalapps.la
-
 CLEANFILES = \
 	$(bin_SCRIPTS) \
 	python_config.sed \
@@ -432,6 +432,3 @@ MOSTLYCLEANFILES = \
 	*INSPIRAL*.gwf \
 	*TMPLTBANK*.gwf \
 	*TMPLTBANK*.xml
-
-BUILT_SOURCES =
-include $(top_srcdir)/gnuscripts/vcsID.common

@@ -1,6 +1,8 @@
-# Makefile for TDS_isolated
+LDADD =
+BUILT_SOURCES =
+include $(top_srcdir)/gnuscripts/lalapps.am
 
-LDADD = $(top_builddir)/src/lalapps/liblalapps.la
+# Makefile for TDS_isolated
 
 if LALFRAME
 frame_progs = \
@@ -64,7 +66,3 @@ EXTRA_DIST = \
 TESTS_ENVIRONMENT = \
 	LAL_DEBUG_LEVEL=msglvl1,memdbg; export LAL_DEBUG_LEVEL; \
 	LAL_DATA_PATH="$(LAL_DATA_PATH)"; export LAL_DATA_PATH;
-
-## make sure lalapps.la is rebuilt when appropriate
-BUILT_SOURCES =
-include $(top_srcdir)/gnuscripts/vcsID.common

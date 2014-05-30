@@ -1,4 +1,6 @@
-LDADD = $(top_builddir)/src/lalapps/liblalapps.la
+LDADD =
+BUILT_SOURCES =
+include $(top_srcdir)/gnuscripts/lalapps.am
 
 CC = $(MPICC) -std=gnu99
 AM_CPPFLAGS = @AM_CPPFLAGS@
@@ -25,6 +27,3 @@ lalinference_mcmc_SOURCES = \
 	$(srcdir)/../LALInferenceMCMCSampler.h
 
 bin_PROGRAMS = $(mpi_progs)
-
-BUILT_SOURCES =
-include $(top_srcdir)/gnuscripts/vcsID.common

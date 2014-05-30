@@ -1,3 +1,7 @@
+LDADD =
+BUILT_SOURCES =
+include $(top_srcdir)/gnuscripts/lalapps.am
+
 if LALINSPIRAL
 LALINSPIRALPROGRAMS = \
 	lalapps_InspiralOverlap \
@@ -31,8 +35,6 @@ lalapps_BankEfficiency_SOURCES = BankEfficiency.c BankEfficiency.h
 endif
 endif
 
-LDADD = $(top_builddir)/src/lalapps/liblalapps.la
-
 EXTRA_DIST = \
 	exc_resp.c \
 	ivana.c \
@@ -46,6 +48,3 @@ EXTRA_DIST = \
 CLEANFILES = \
 	lalapps_BankEfficiency  \
 	lalapps_InspiralOverlap
-
-BUILT_SOURCES =
-include $(top_srcdir)/gnuscripts/vcsID.common

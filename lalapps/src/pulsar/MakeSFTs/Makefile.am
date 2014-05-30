@@ -1,7 +1,6 @@
-
-## Process this file with automake to produce Makefile.in
-
-LDADD = $(top_builddir)/src/lalapps/liblalapps.la
+LDADD =
+BUILT_SOURCES =
+include $(top_srcdir)/gnuscripts/lalapps.am
 
 if FRAME
 frameprogs = lalapps_MakeSFTs
@@ -36,7 +35,3 @@ endif
 lalapps_ConvertToSFTv2_SOURCES = ConvertToSFTv2.c
 
 lalapps_LISAmakeSFTs_SOURCES = LISAmakeSFTs.c readxml.c readxml.h ezxml.c ezxml.h
-
-## make sure lalapps.la is rebuilt when appropriate
-BUILT_SOURCES =
-include $(top_srcdir)/gnuscripts/vcsID.common

@@ -1,6 +1,6 @@
-## Process this file with automake to produce Makefile.in
-
-LDADD = $(top_builddir)/src/lalapps/liblalapps.la
+LDADD =
+BUILT_SOURCES =
+include $(top_srcdir)/gnuscripts/lalapps.am
 
 bin_PROGRAMS = lalapps_makefakedata_v2 lalapps_Makefakedata_v4 lalapps_Makefakedata_v5 lalapps_compareSFTs lalapps_compareTS \
 	lalapps_dumpSFT lalapps_makefakedatabinary lalapps_makefakedata_test
@@ -41,8 +41,3 @@ TESTS = testMakefakedata.sh testMFDv4.sh testMFDv4-HW.sh testMFDv5.sh
 TESTS_ENVIRONMENT = \
 	LAL_DEBUG_LEVEL=msglvl1,memdbg; export LAL_DEBUG_LEVEL; \
 	LAL_DATA_PATH="$(LAL_DATA_PATH)"; export LAL_DATA_PATH;
-
-
-## make sure lalapps.la is rebuilt when appropriate
-BUILT_SOURCES =
-include $(top_srcdir)/gnuscripts/vcsID.common

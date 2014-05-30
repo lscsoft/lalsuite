@@ -1,10 +1,7 @@
-## Process this file with automake to produce Makefile.in
-
-## make sure lalapps.la is rebuilt when appropriate
+LDADD =
 BUILT_SOURCES =
-include $(top_srcdir)/gnuscripts/vcsID.common
+include $(top_srcdir)/gnuscripts/lalapps.am
 
-LDADD = $(top_builddir)/src/lalapps/liblalapps.la
 
 binsources = SFTReferenceLibrary.c \
              SFTReferenceLibrary.h

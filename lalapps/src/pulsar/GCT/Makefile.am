@@ -1,12 +1,11 @@
-## Process this file with automake to produce Makefile.in
+LDADD =
+BUILT_SOURCES =
+include $(top_srcdir)/gnuscripts/lalapps.am
 
 AM_CPPFLAGS = -I$(top_srcdir)/src/pulsar/FDS_isolated @AM_CPPFLAGS@
 
 CFSsrc = $(top_srcdir)/src/pulsar/FDS_isolated
 EAHsrc = $(top_srcdir)/src/pulsar/hough/src2/EinsteinAtHome
-
-# for using lalapps-defines + functions
-LDADD = $(top_builddir)/src/lalapps/liblalapps.la
 
 bin_PROGRAMS = lalapps_HierarchSearchGCT
 check_PROGRAMS =
@@ -50,9 +49,6 @@ exchndl.o: $(EAHsrc)/exchndl.c
 erp_execinfo_plus.o: $(EAHsrc)/erp_execinfo_plus.c
 	$(CC) $(CPPFLAGS) $(CFLAGS) -c $< -o $@
 
-## make sure lalapps.la is rebuilt when appropriate
-BUILT_SOURCES =
-include $(top_srcdir)/gnuscripts/vcsID.common
 
 # how to compile CUDA files (.cu)
 NVCC ?= nvcc

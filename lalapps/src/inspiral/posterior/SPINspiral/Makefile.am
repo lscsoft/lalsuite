@@ -17,7 +17,5 @@ endif
 endif
 endif
 
-LDADD = $(top_builddir)/src/lalapps/liblalapps.la
-
 clean-local :
 	rm -f mcmc.output.??????.?? *-signal*.dat

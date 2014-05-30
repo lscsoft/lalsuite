@@ -2,6 +2,7 @@ BUILT_SOURCES =
 MOSTLYCLEANFILES =
 include $(top_srcdir)/gnuscripts/lallibs_header_links.am
 include $(top_srcdir)/gnuscripts/lalsuite_vcs_info.am
+include $(top_srcdir)/gnuscripts/lalsuite_cuda.am
 
 pkginclude_HEADERS = \
 	BBHPhenomCoeffs.h \
@@ -247,6 +248,3 @@ DISTCLEANFILES = config.h
 vcs_info_sources = LALInspiralVCSInfoHeader.h
 build_info_source = LALInspiralBuildInfo.c
 $(build_info_source): $(liblalinspiral_la_DEPENDENCIES)
-
-# cuda build rules
-include $(top_srcdir)/gnuscripts/cuda.common

@@ -1,3 +1,7 @@
+LDADD =
+BUILT_SOURCES =
+include $(top_srcdir)/gnuscripts/lalapps.am
+
 DATAFIND_SRCS = online_datafind.c
 
 if FRAME
@@ -8,8 +12,3 @@ endif
 endif
 
 bin_PROGRAMS = ${FRAME_PROGS}
-
-LDADD = $(top_builddir)/src/lalapps/liblalapps.la
-
-BUILT_SOURCES =
-include $(top_srcdir)/gnuscripts/vcsID.common
