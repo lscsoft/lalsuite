@@ -5,8 +5,8 @@
 print("checking module load ...")
 import lal
 import lalxml
-from lalxml import cvar as lalxmlcvar
-from lal import cvar as lalcvar
+from lalxml import globalvar as lalxmlglobalvar
+from lal import globalvar as lalglobalvar
 print("PASSED module load")
 
 # check object parent tracking
@@ -14,8 +14,8 @@ print("checking object parent tracking ...")
 a = lalxml.swig_lalxml_test_parent_map_struct()
 for i in range(0, 7):
     b = a.s
-    c = lalxmlcvar.swig_lalxml_test_parent_map.s
-    lalxmlcvar.swig_lalxml_test_parent_map.s = lalcvar.swig_lal_test_struct_const
+    c = lalxmlglobalvar.swig_lalxml_test_parent_map.s
+    lalxmlglobalvar.swig_lalxml_test_parent_map.s = lalglobalvar.swig_lal_test_struct_const
 del c
 del b
 del a

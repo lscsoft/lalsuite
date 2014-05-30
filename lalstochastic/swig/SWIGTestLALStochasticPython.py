@@ -5,8 +5,8 @@
 print("checking module load ...")
 import lal
 import lalstochastic
-from lalstochastic import cvar as lalstochasticcvar
-from lal import cvar as lalcvar
+from lalstochastic import globalvar as lalstochasticglobalvar
+from lal import globalvar as lalglobalvar
 print("PASSED module load")
 
 # check object parent tracking
@@ -14,8 +14,8 @@ print("checking object parent tracking ...")
 a = lalstochastic.swig_lalstochastic_test_parent_map_struct()
 for i in range(0, 7):
     b = a.s
-    c = lalstochasticcvar.swig_lalstochastic_test_parent_map.s
-    lalstochasticcvar.swig_lalstochastic_test_parent_map.s = lalcvar.swig_lal_test_struct_const
+    c = lalstochasticglobalvar.swig_lalstochastic_test_parent_map.s
+    lalstochasticglobalvar.swig_lalstochastic_test_parent_map.s = lalglobalvar.swig_lal_test_struct_const
 del c
 del b
 del a

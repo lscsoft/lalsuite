@@ -22,10 +22,10 @@ swig_cppflags = -shared -I$(top_builddir)/include $(SWIG_CPPFLAGS)
 swig_ldflags = -module -avoid-version -version-info 0:0:0 $(SWIG_LDFLAGS)
 swig_libtoolflags = --tag=disable-static
 swig_deps_filter = $(SED) -e '/^  *swig_[a-z0-9][a-z0-9]*\.[a-z0-9][a-z0-9]*  *\\$$/d'
-swig_octave_flags = $(swig_flags) -octave -outdir octave/ -globals $(PACKAGE)cvar -DSWIG_CPLUSPLUS_CAST
+swig_octave_flags = $(swig_flags) -octave -outdir octave/ -globals . -DSWIG_CPLUSPLUS_CAST
 swig_octave_sources = swig_octave.cpp
 swig_octave_test = $(swig_test_runner) OCTAVE_PATH '$(abs_builddir)/octave:$(abs_srcdir)/octave:$(LAL_OCTAVE_PATH)'
-swig_python_flags = $(swig_flags) -python -outdir python/ -O -builtin -globals cvar
+swig_python_flags = $(swig_flags) -python -outdir python/ -O -builtin -globals globalvar
 swig_python_pysource = python/$(PACKAGE).py
 swig_python_sources = swig_python.c
 swig_python_test = $(swig_test_runner) PYTHONPATH '$(abs_builddir)/python:$(abs_srcdir)/python:$(LAL_PYTHON_PATH)'

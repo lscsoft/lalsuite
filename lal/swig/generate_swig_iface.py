@@ -29,8 +29,10 @@ def fail(msg):
     sys.exit(1)
 
 # get input arguments
-package_name, dependencies, symbol_prefixes, input_xml, output_iface = sys.argv[1:]
+package_name, dependencies, function_prefixes, input_xml, output_iface = sys.argv[1:]
 assert(package_name[:3] == 'LAL')
+dependencies = dependencies.split()
+function_prefixes = function_prefixes.split()
 
 # parse XML input
 tree = ElementTree()
@@ -88,12 +90,16 @@ ordered_headers = list()
 get_header_list(root)
 
 # get dictionaries of symbols from interface headers
-functions = dict()
-funcnames = dict()
-tdstructs = dict()
-tagnames = dict()
-structs = dict()
 clear_macros = dict()
+constant_names = dict()
+constants = dict()
+function_names = dict()
+functions = dict()
+structs = dict()
+tdstruct_names = dict()
+tdstructs = dict()
+variable_names = dict()
+variables = dict()
 for header_name in headers:
     clear_macros[header_name] = set()
 
@@ -131,14 +137,19 @@ for header_name in headers:
             if cdecl_name in functions:
                 fail("duplicate function '%s' in header '%s'" % (cdecl_name, header_name))
             functions[cdecl_name] = cdecl
-            funcnames[cdecl_name] = cdecl_name
+            function_names[cdecl_name] = cdecl_name
 
         # typedefs to structs
         elif cdecl_kind == 'typedef' and cdecl_type.startswith('struct '):
             if cdecl_name in tdstructs:
                 fail("duplicate struct typedef '%s' in header '%s'" % (cdecl_name, header_name))
-            tagnames[cdecl_name] = cdecl_type[7:]
+            tdstruct_names[cdecl_name] = cdecl_type[7:]
             tdstructs[cdecl_name] = cdecl
+
+        # variables
+        if cdecl_kind == 'variable' and not cdecl_type in ['SWIGLAL', 'SWIGLAL_CLEAR']:
+            variables[cdecl_name] = cdecl
+            variable_names[cdecl_name] = cdecl_name
 
     # structs
     for struct in headers[header_name].findall('class'):
@@ -151,56 +162,93 @@ for header_name in headers:
             fail("duplicate struct '%s' in header %s" % (struct_name, header_name))
         structs[struct_name] = struct
 
-# list of symbol prefixes, for renaming
-symbol_prefix_list = symbol_prefixes.split()
-symbol_prefix_list.append('')
+    # preprocessor constants
+    for constant in headers[header_name].findall('constant'):
+        constant_name = get_swig_attr(constant, 'name')
+        constants[constant_name] = constant
+        constant_names[constant_name] = constant_name
+
+    # enumeration constants
+    for enum in headers[header_name].findall('enum'):
+        for enumitem in enum.findall('enumitem'):
+            enumitem_name = get_swig_attr(enumitem, 'name')
+            constants[enumitem_name] = cdecl
+            constant_names[enumitem_name] = enumitem_name
 
 # function: build renaming map for symbols, using symbol prefix order
-def rename_symbols(rename_taken, rename_map, symbols, name_map):
+rename_kind = dict()
+renames = dict()
+def rename_symbols(symbol_kind, symbols, symbol_names, symbol_prefixes):
 
     # rank symbol by where their prefix comes in prefix list
     rename_rank = dict()
     for symbol_key in symbols:
-        for rank in range(len(symbol_prefix_list)):
-            if symbol_key.startswith(symbol_prefix_list[rank]):
+        for rank in range(len(symbol_prefixes)):
+            if symbol_key.startswith(symbol_prefixes[rank]):
                 rename_rank[symbol_key] = rank
                 break
+        else:
+            rename_rank[symbol_key] = len(symbol_prefixes)
 
     # iterate over symbols in order of decreasing rank
     for symbol_key in sorted(symbols, key = lambda k : rename_rank[k]):
 
-        # get name of symbol
-        symbol_name = name_map[symbol_key]
+        # ignore symbol if the 'feature_ignore' attribute is set
+        if get_swig_attr(symbols[symbol_key], 'feature_ignore') != None:
+            continue
 
-        # check for duplicate symbols
-        if symbol_name in rename_map:
+        # get name of symbol
+        symbol_name = symbol_names[symbol_key]
+
+        # check for duplicate symbol renames
+        if symbol_name in renames and renames[symbol_name] != None:
             fail("duplicate symbols '%s' in interface" % symbol_key)
 
-        # ignore symbol if the 'feature_ignore' attribute is set,
-        # otherwise strip prefix from symbol key to get re-name
-        if get_swig_attr(symbols[symbol_key], 'feature_ignore') != None:
-            symbol_rename = None
+        # strip prefix from symbol key to get re-name
+        rank = rename_rank[symbol_key]
+        if rank < len(symbol_prefixes):
+            symbol_rename = symbol_key[len(symbol_prefixes[rank]):]
         else:
-            rank = rename_rank[symbol_key]
-            symbol_rename = symbol_key[len(symbol_prefix_list[rank]):]
+            symbol_rename = symbol_key
 
-        # ignore symbol if another symbol has taken the re-name,
-        # otherwise record that a symbol has taken this re-name
-        if symbol_rename != None:
-            if symbol_rename in rename_taken:
+        # if re-name has already been taken
+        if symbol_rename in rename_kind:
+
+            # if the re-name has been taken by a symbol of the same kind,
+            # then ignore this symbol; otherwise, do not rename symbol
+            if rename_kind[symbol_rename] == symbol_kind:
                 symbol_rename = None
             else:
-                rename_taken.add(symbol_rename)
+                symbol_rename = symbol_name
+
+        # otherwise make this symbol re-name as having been taken
+        else:
+            rename_kind[symbol_rename] = symbol_kind
 
         # if re-name differs from original name, add to rename map
         if symbol_rename != symbol_name:
-            rename_map[symbol_name] = symbol_rename
+            renames[symbol_name] = symbol_rename
 
-# rename functions and struct typedefs, using symbol prefix order
-rename_taken = set()
-rename_map = dict()
-rename_symbols(rename_taken, rename_map, functions, funcnames)
-rename_symbols(rename_taken, rename_map, tdstructs, tagnames)
+# identity and ignore old LAL error code and error messages
+old_lal_emsg_regexp = re.compile(r'([A-Z0-9_]+H_)MSG(E[A-Z0-9]+)$')
+for old_lal_emsg in constant_names:
+
+    # constant name must match form of an old LAL error message
+    old_lal_emsg_match = old_lal_emsg_regexp.match(old_lal_emsg)
+    if old_lal_emsg_match == None:
+        continue
+
+    # if the corresponding old LAL error code exists, ignore both of them
+    old_lal_eval = ''.join(old_lal_emsg_match.groups())
+    if old_lal_eval in constant_names:
+        renames[old_lal_emsg] = None
+        renames[old_lal_eval] = None
+
+# rename constants, variables, functions, and structs
+rename_symbols('constant', constants, constant_names, ['XLAL_', 'LAL_'])
+rename_symbols('variable', variables, variable_names, ['lal'])
+rename_symbols('function', functions, function_names, function_prefixes)
+rename_symbols('tdstruct', tdstructs, tdstruct_names, function_prefixes)
 
 # look for a destructor function for each struct
 dtor_functions = dict()
@@ -237,7 +285,7 @@ for function_name in functions:
     dtor_functions[dtor_struct_name] = function_name
 
     # remove destructor function from interface
-    rename_map[function_name] = None
+    renames[function_name] = None
 
 # start SWIG interface file
 try:
@@ -250,7 +298,7 @@ f.write('%include <lal/SWIGCommon.i>\n')
 
 # import dependent modules
 f.write('#ifndef SWIGIMPORTED\n')
-for module in dependencies.split():
+for module in dependencies:
     f.write('%%import <lal/swig_%s.i>\n' % module.lower())
 f.write('#endif // !SWIGIMPORTED\n')
 
@@ -261,19 +309,25 @@ for header_name in ordered_headers:
 f.write('%}\n')
 
 # perform symbol renames
-for name in sorted(rename_map):
-    rename = rename_map[name]
+for name in sorted(renames):
+    rename = renames[name]
     if rename == None:
         f.write('%%ignore %s;\n' % name)
-    else:
-        f.write('%%rename("%s") %s;\n' % (rename, name))
+rename_kinds = set(rename_kind.values())
+for kind in sorted(rename_kinds):
+    f.write('#ifdef SWIGLAL_MODULE_RENAME_%sS\n' % kind.upper())
+    for name in sorted(renames):
+        rename = renames[name]
+        if rename != None and rename_kind[rename] == kind:
+            f.write('%%rename("%s") %s;\n' % (rename, name))
+    f.write('#endif // SWIGLAL_MODULE_RENAME_%sS\n' % kind.upper())
 
 # perform operations on functions
 func_retn_1starg_regexp = re.compile(r'^f\(((?:p\.)+[^,]+?)(?:,[^,]+)*\)\.\1$')
 for function_name in sorted(functions):
 
     # skip ignored functions
-    if rename_map.get(function_name, '') == None:
+    if renames.get(function_name, '') == None:
         continue
 
     # apply %newobject to all functions
@@ -299,7 +353,7 @@ f.write('%%include <lal/SWIG%sOmega.i>\n' % package_name)
 
 # create constructors and destructors for structs
 for struct_name in sorted(tdstructs):
-    struct_tagname = tagnames[struct_name]
+    struct_tagname = tdstruct_names[struct_name]
     struct_opaque = '%i' % (not struct_tagname in structs)
     struct_dtor_function = dtor_functions.get(struct_name, '')
     struct_args = (struct_name, struct_tagname, struct_opaque, struct_dtor_function)

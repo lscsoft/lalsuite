@@ -8,20 +8,19 @@ expected_exception = 0;
 disp("checking module load ...");
 lal;
 assert(exist("lal", "var"));
-assert(exist("lalcvar", "var"));
 disp("PASSED module load");
 
 ## check memory allocation
 disp("checking memory allocation ...");
-if !lalcvar.lalNoDebug
-  CheckMemoryLeaks();
-  mem1 = new_Detector();
-  mem2 = CreateCOMPLEX8Vector(5);
-  mem3 = CreateREAL8Vector(3);
-  mem4 = CreateREAL4TimeSeries("test", LIGOTimeGPS(0), 100, 0.1, lalcvar.lalDimensionlessUnit, 10);
+if !lal.NoDebug
+  LALCheckMemoryLeaks();
+  mem1 = new_LALDetector();
+  mem2 = XLALCreateCOMPLEX8Vector(5);
+  mem3 = XLALCreateREAL8Vector(3);
+  mem4 = XLALCreateREAL4TimeSeries("test", LIGOTimeGPS(0), 100, 0.1, lal.DimensionlessUnit, 10);
   disp("*** below should be an error message from CheckMemoryLeaks() ***");
   try
-    CheckMemoryLeaks();
+    LALCheckMemoryLeaks();
     expected_exception = 1;
   end_try_catch
   assert(!expected_exception);
@@ -31,7 +30,7 @@ if !lalcvar.lalNoDebug
   clear mem3;
   clear mem4;
   clear ans;
-  CheckMemoryLeaks();
+  LALCheckMemoryLeaks();
   disp("PASSED memory allocation");
 else
   disp("skipped memory allocation");
@@ -47,7 +46,7 @@ assert(all(b == [1.1; 2.2; 3.3]));
 clear a;
 clear ans;
 assert(all(b == [1.1; 2.2; 3.3]));
-ts = CreateREAL8TimeSeries("test", LIGOTimeGPS(0), 0, 0.1, lalcvar.lalDimensionlessUnit, 10);
+ts = XLALCreateREAL8TimeSeries("test", LIGOTimeGPS(0), 0, 0.1, lal.DimensionlessUnit, 10);
 ts.data.data = (1:10)';
 for i = 1:7
   v = ts.data;
@@ -58,74 +57,74 @@ clear ans;
 assert(v.data == (1:10)');
 clear v;
 clear ans;
-CheckMemoryLeaks();
+LALCheckMemoryLeaks();
 disp("PASSED object parent tracking");
 
 ## check equal return/first argument type handling
 disp("checking equal return/first argument type handling");
-sv = CreateStringVector("1");
+sv = XLALCreateStringVector("1");
 assert(sv.length == 1);
-AppendString2Vector(sv, "2");
+XLALAppendString2Vector(sv, "2");
 assert(sv.length == 2);
-sv = AppendString2Vector(sv, "3");
+sv = XLALAppendString2Vector(sv, "3");
 assert(sv.length == 3);
-sv2 = AppendString2Vector(sv, "4");
+sv2 = XLALAppendString2Vector(sv, "4");
 assert(sv.length == 4);
 assert(sv2.length == 4);
 assert(swig_this(sv) == swig_this(sv2));
 clear sv;
 clear sv2;
 clear ans;
-CheckMemoryLeaks();
-ts = CreateREAL8TimeSeries("ts", 800000000, 100, 0.1, lalcvar.lalHertzUnit, 10);
+LALCheckMemoryLeaks();
+ts = XLALCreateREAL8TimeSeries("ts", 800000000, 100, 0.1, lal.HertzUnit, 10);
 assert(ts.data.length == 10)
-ResizeREAL8TimeSeries(ts, 0, 20);
+XLALResizeREAL8TimeSeries(ts, 0, 20);
 assert(ts.data.length == 20)
-ts = ResizeREAL8TimeSeries(ts, 0, 30);
+ts = XLALResizeREAL8TimeSeries(ts, 0, 30);
 assert(ts.data.length == 30)
-ts2 = ResizeREAL8TimeSeries(ts, 0, 40);
+ts2 = XLALResizeREAL8TimeSeries(ts, 0, 40);
 assert(ts.data.length == 40);
 assert(ts2.data.length == 40);
 assert(swig_this(ts) == swig_this(ts2));
 clear ts;
 clear ts2;
 clear ans;
-CheckMemoryLeaks();
+LALCheckMemoryLeaks();
 disp("PASSED equal return/first argument type handling");
 
 ## check string conversions
 disp("checking string conversions ...");
 strs = {"a"; "bc"; "def"};
-sv = CreateStringVector(strs{:});
+sv = XLALCreateStringVector(strs{:});
 assert(sv.length == 3);
 assert(all(strcmp(sv.data, strs)));
 strs{1} = "ghijk";
 sv.data{1} = strs{1};
 strs{end+1} = "lmnopq";
-sv = AppendString2Vector(sv, strs{4});
+sv = XLALAppendString2Vector(sv, strs{4});
 assert(sv.length == 4);
 for i = 1:4
   assert(strcmp(sv.data{i}, strs{i}));
 endfor
 clear sv;
 clear ans;
-CheckMemoryLeaks();
+LALCheckMemoryLeaks();
 disp("PASSED string conversions");
 
 ## check static vector/matrix conversions
 disp("checking static vector/matrix conversions ...");
-lalcvar.swig_lal_test_struct_vector{1} = lalcvar.swig_lal_test_struct_const;
-assert(lalcvar.swig_lal_test_struct_vector{1}.n == lalcvar.swig_lal_test_struct_const.n);
-assert(lalcvar.swig_lal_test_struct_vector{1}.i == lalcvar.swig_lal_test_struct_const.i);
-assert(lalcvar.swig_lal_test_struct_vector{1}.f == lalcvar.swig_lal_test_struct_const.f);
-assert(strcmp(lalcvar.swig_lal_test_struct_vector{1}.str, lalcvar.swig_lal_test_struct_const.str));
-assert(all(lalcvar.swig_lal_test_struct_vector{1}.vec == lalcvar.swig_lal_test_struct_const.vec));
-lalcvar.swig_lal_test_struct_matrix{1, 1} = lalcvar.swig_lal_test_struct_const;
-assert(lalcvar.swig_lal_test_struct_matrix{1, 1}.n == lalcvar.swig_lal_test_struct_const.n);
-assert(lalcvar.swig_lal_test_struct_matrix{1, 1}.i == lalcvar.swig_lal_test_struct_const.i);
-assert(lalcvar.swig_lal_test_struct_matrix{1, 1}.f == lalcvar.swig_lal_test_struct_const.f);
-assert(strcmp(lalcvar.swig_lal_test_struct_matrix{1, 1}.str, lalcvar.swig_lal_test_struct_const.str));
-assert(all(lalcvar.swig_lal_test_struct_matrix{1, 1}.vec == lalcvar.swig_lal_test_struct_const.vec));
+lal.swig_lal_test_struct_vector{1} = lal.swig_lal_test_struct_const;
+assert(lal.swig_lal_test_struct_vector{1}.n == lal.swig_lal_test_struct_const.n);
+assert(lal.swig_lal_test_struct_vector{1}.i == lal.swig_lal_test_struct_const.i);
+assert(lal.swig_lal_test_struct_vector{1}.f == lal.swig_lal_test_struct_const.f);
+assert(strcmp(lal.swig_lal_test_struct_vector{1}.str, lal.swig_lal_test_struct_const.str));
+assert(all(lal.swig_lal_test_struct_vector{1}.vec == lal.swig_lal_test_struct_const.vec));
+lal.swig_lal_test_struct_matrix{1, 1} = lal.swig_lal_test_struct_const;
+assert(lal.swig_lal_test_struct_matrix{1, 1}.n == lal.swig_lal_test_struct_const.n);
+assert(lal.swig_lal_test_struct_matrix{1, 1}.i == lal.swig_lal_test_struct_const.i);
+assert(lal.swig_lal_test_struct_matrix{1, 1}.f == lal.swig_lal_test_struct_const.f);
+assert(strcmp(lal.swig_lal_test_struct_matrix{1, 1}.str, lal.swig_lal_test_struct_const.str));
+assert(all(lal.swig_lal_test_struct_matrix{1, 1}.vec == lal.swig_lal_test_struct_const.vec));
 sts = new_swig_lal_test_struct();
 assert(length(sts.vec) == 3);
 assert(length(sts.evec) == 3);
@@ -145,38 +144,38 @@ for i = 1:3
 endfor
 clear sts;
 clear ans;
-assert(!any(lalcvar.swig_lal_test_enum_vector));
-assert(!any(lalcvar.swig_lal_test_enum_matrix(:)));
-assert(length(lalcvar.swig_lal_test_empty_INT4_vector) == 0);
-assert(!any(lalcvar.swig_lal_test_INT4_vector));
-assert(!any(lalcvar.swig_lal_test_INT4_matrix(:)));
-assert(!any(lalcvar.swig_lal_test_REAL8_vector));
-assert(!any(lalcvar.swig_lal_test_REAL8_matrix(:)));
-assert(!any(lalcvar.swig_lal_test_COMPLEX8_vector));
-assert(!any(lalcvar.swig_lal_test_COMPLEX8_matrix(:)));
-lalcvar.swig_lal_test_INT4_vector(1) = 10;
-assert(lalcvar.swig_lal_test_INT4_vector(1) == 10);
-lalcvar.swig_lal_test_INT4_matrix(1, 1) = 11;
-assert(lalcvar.swig_lal_test_INT4_matrix(1, 1) == 11);
-lalcvar.swig_lal_test_INT4_vector = lalcvar.swig_lal_test_INT4_const_vector;
-assert(all(lalcvar.swig_lal_test_INT4_vector == [1; 2; 4]));
-assert(lalcvar.swig_lal_test_INT4_const_vector(3) == 4);
-lalcvar.swig_lal_test_INT4_matrix = lalcvar.swig_lal_test_INT4_const_matrix;
-assert(all(lalcvar.swig_lal_test_INT4_matrix == [[1, 2, 4]; [2, 4, 8]]));
-assert(lalcvar.swig_lal_test_INT4_const_matrix(2, 3) == 8);
+assert(!any(lal.swig_lal_test_enum_vector));
+assert(!any(lal.swig_lal_test_enum_matrix(:)));
+assert(length(lal.swig_lal_test_empty_INT4_vector) == 0);
+assert(!any(lal.swig_lal_test_INT4_vector));
+assert(!any(lal.swig_lal_test_INT4_matrix(:)));
+assert(!any(lal.swig_lal_test_REAL8_vector));
+assert(!any(lal.swig_lal_test_REAL8_matrix(:)));
+assert(!any(lal.swig_lal_test_COMPLEX8_vector));
+assert(!any(lal.swig_lal_test_COMPLEX8_matrix(:)));
+lal.swig_lal_test_INT4_vector(1) = 10;
+assert(lal.swig_lal_test_INT4_vector(1) == 10);
+lal.swig_lal_test_INT4_matrix(1, 1) = 11;
+assert(lal.swig_lal_test_INT4_matrix(1, 1) == 11);
+lal.swig_lal_test_INT4_vector = lal.swig_lal_test_INT4_const_vector;
+assert(all(lal.swig_lal_test_INT4_vector == [1; 2; 4]));
+assert(lal.swig_lal_test_INT4_const_vector(3) == 4);
+lal.swig_lal_test_INT4_matrix = lal.swig_lal_test_INT4_const_matrix;
+assert(all(lal.swig_lal_test_INT4_matrix == [[1, 2, 4]; [2, 4, 8]]));
+assert(lal.swig_lal_test_INT4_const_matrix(2, 3) == 8);
 try
-  lalcvar.swig_lal_test_INT4_const_vector(20);
+  lal.swig_lal_test_INT4_const_vector(20);
   expected_exception = 1;
 end_try_catch
 assert(!expected_exception);
-lalcvar.swig_lal_test_REAL8_vector(1) = 3.4;
-assert(lalcvar.swig_lal_test_REAL8_vector(1) == 3.4);
-lalcvar.swig_lal_test_REAL8_matrix(1, 1) = 5.6;
-assert(lalcvar.swig_lal_test_REAL8_matrix(1, 1) == 5.6);
-lalcvar.swig_lal_test_COMPLEX8_vector(1) = complex(3.5, 4.75);
-assert(lalcvar.swig_lal_test_COMPLEX8_vector(1) == complex(3.5, 4.75));
-lalcvar.swig_lal_test_COMPLEX8_matrix(1, 1) = complex(5.5, 6.25);
-assert(lalcvar.swig_lal_test_COMPLEX8_matrix(1, 1) == complex(5.5, 6.25));
+lal.swig_lal_test_REAL8_vector(1) = 3.4;
+assert(lal.swig_lal_test_REAL8_vector(1) == 3.4);
+lal.swig_lal_test_REAL8_matrix(1, 1) = 5.6;
+assert(lal.swig_lal_test_REAL8_matrix(1, 1) == 5.6);
+lal.swig_lal_test_COMPLEX8_vector(1) = complex(3.5, 4.75);
+assert(lal.swig_lal_test_COMPLEX8_vector(1) == complex(3.5, 4.75));
+lal.swig_lal_test_COMPLEX8_matrix(1, 1) = complex(5.5, 6.25);
+assert(lal.swig_lal_test_COMPLEX8_matrix(1, 1) == complex(5.5, 6.25));
 disp("PASSED static vector/matrix conversions");
 
 ## check dynamic vector/matrix conversions
@@ -229,25 +228,25 @@ function check_dynamic_vector_matrix(iv, ivl, rv, rvl, cm, cms1, cms2)
   assert(!expected_exception);
 endfunction
 ## check LAL vector and matrix datatypes
-iv = CreateINT4Vector(5);
-rv = CreateREAL8Vector(5);
-cm = CreateCOMPLEX8VectorSequence(4, 6);
+iv = XLALCreateINT4Vector(5);
+rv = XLALCreateREAL8Vector(5);
+cm = XLALCreateCOMPLEX8VectorSequence(4, 6);
 check_dynamic_vector_matrix(iv, iv.length, rv, rv.length,
                             cm, cm.length, cm.vectorLength);
 clear iv;
 clear rv;
 clear cm;
 clear ans;
-rv0 = CreateREAL8Vector(0);
+rv0 = XLALCreateREAL8Vector(0);
 assert(rv0.length == 0);
 assert(length(rv0.data) == 0);
 clear rv0;
 clear ans;
-rv1 = CreateREAL8Vector(1);
+rv1 = XLALCreateREAL8Vector(1);
 rv1.data(1) = 1;
 clear rv1;
 clear ans;
-CheckMemoryLeaks();
+LALCheckMemoryLeaks();
 disp("PASSED dynamic vector/matrix conversions (LAL)");
 ## check GSL vectors and matrices
 iv = new_gsl_vector_int(5);
@@ -297,28 +296,28 @@ for i = 1:ap.length
 endfor
 clear ap;
 clear ans;
-CheckMemoryLeaks();
+LALCheckMemoryLeaks();
 disp("PASSED dynamic array of pointers access");
 
 ## check 'tm' struct conversions
 disp("checking 'tm' struct conversions ...");
 gps = 989168284;
 utc = [2011, 5, 11, 16, 57, 49, 4, 131, 0];
-assert(all(GPSToUTC(gps) == utc));
-assert(UTCToGPS(utc) == gps);
-assert(UTCToGPS(utc(1:6)) == gps);
+assert(all(XLALGPSToUTC(gps) == utc));
+assert(XLALUTCToGPS(utc) == gps);
+assert(XLALUTCToGPS(utc(1:6)) == gps);
 utc(7) = utc(8) = 0;
 for i = [-1, 0, 1]
   utc(9) = i;
-  assert(UTCToGPS(utc) == gps);
+  assert(XLALUTCToGPS(utc) == gps);
 endfor
 utcd = utc;
 for i = 0:9
   utcd(3) = utc(3) + i;
-  utcd = GPSToUTC(UTCToGPS(utcd));
+  utcd = XLALGPSToUTC(XLALUTCToGPS(utcd));
   assert(utcd(7) == weekday(datenum(utcd(1:6))));
 endfor
-CheckMemoryLeaks();
+LALCheckMemoryLeaks();
 disp("PASSED 'tm' struct conversions");
 
 ## check LIGOTimeGPS operations
@@ -376,7 +375,7 @@ clear t3;
 clear t4struct;
 clear t5;
 clear ans;
-CheckMemoryLeaks();
+LALCheckMemoryLeaks();
 disp("PASSED LIGOTimeGPS operations");
 
 ## passed all tests!

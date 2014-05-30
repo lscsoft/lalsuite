@@ -22,6 +22,13 @@
 
 ////////// General SWIG directives and interface code //////////
 
+// In SWIG Python modules, everything is namespaced, so it makes
+// sense to rename symbols to remove superfluous C-API prefixes
+#define SWIGLAL_MODULE_RENAME_CONSTANTS
+#define SWIGLAL_MODULE_RENAME_FUNCTIONS
+#define SWIGLAL_MODULE_RENAME_TDSTRUCTS
+#define SWIGLAL_MODULE_RENAME_VARIABLES
+
 // Include SWIG Python headers.
 %include <pycomplex.swg>
 

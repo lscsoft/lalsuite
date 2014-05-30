@@ -22,6 +22,10 @@
 
 ////////// General SWIG directives and interface code //////////
 
+// In SWIG Octave modules, only variables are namespaced, everything else
+// is inserted in the global symbol table, so we rename only variables
+#define SWIGLAL_MODULE_RENAME_VARIABLES
+
 // Include SWIG Octave headers.
 %include <octcomplex.swg>
 

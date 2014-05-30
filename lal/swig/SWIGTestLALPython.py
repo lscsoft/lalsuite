@@ -14,17 +14,17 @@ if hasattr(numpy, "ComplexWarning"):
 # check module load
 print("checking module load ...")
 import lal
-from lal import cvar as lalcvar
+from lal import globalvar as lalglobalvar
 print("PASSED module load")
 
 # check memory allocation
 print("checking memory allocation ...")
-if not lal.lalNoDebug:
+if not lal.NoDebug:
     lal.CheckMemoryLeaks()
     mem1 = lal.Detector()
     mem2 = lal.CreateCOMPLEX8Vector(5)
     mem3 = lal.CreateREAL8Vector(3)
-    mem4 = lal.CreateREAL4TimeSeries("test", lal.LIGOTimeGPS(0), 100, 0.1, lal.lalDimensionlessUnit, 10)
+    mem4 = lal.CreateREAL4TimeSeries("test", lal.LIGOTimeGPS(0), 100, 0.1, lal.DimensionlessUnit, 10)
     print("*** below should be an error message from CheckMemoryLeaks() ***")
     sys.stdout.flush()
     sys.stderr.flush()
@@ -53,7 +53,7 @@ assert(not b.flags['OWNDATA'])
 assert((b == [1.1, 2.2, 3.3]).all())
 del a
 assert((b == [1.1, 2.2, 3.3]).all())
-ts = lal.CreateREAL8TimeSeries("test", lal.LIGOTimeGPS(0), 0, 0.1, lal.lalDimensionlessUnit, 10)
+ts = lal.CreateREAL8TimeSeries("test", lal.LIGOTimeGPS(0), 0, 0.1, lal.DimensionlessUnit, 10)
 ts.data.data = range(0, 10)
 for i in range(0, 7):
     v = ts.data
@@ -79,7 +79,7 @@ assert(sv == sv2)
 del sv
 del sv2
 lal.CheckMemoryLeaks()
-ts = lal.CreateREAL8TimeSeries("ts", 800000000, 100, 0.1, lal.lalHertzUnit, 10)
+ts = lal.CreateREAL8TimeSeries("ts", 800000000, 100, 0.1, lal.HertzUnit, 10)
 assert(ts.data.length == 10)
 lal.ResizeREAL8TimeSeries(ts, 0, 20)
 assert(ts.data.length == 20)
@@ -113,18 +113,18 @@ print("PASSED string conversions")
 
 # check static vector/matrix conversions
 print("checking static vector/matrix conversions ...")
-lalcvar.swig_lal_test_struct_vector[0] = lalcvar.swig_lal_test_struct_const
-assert(lalcvar.swig_lal_test_struct_vector[0].n == lalcvar.swig_lal_test_struct_const.n)
-assert(lalcvar.swig_lal_test_struct_vector[0].i == lalcvar.swig_lal_test_struct_const.i)
-assert(lalcvar.swig_lal_test_struct_vector[0].f == lalcvar.swig_lal_test_struct_const.f)
-assert(lalcvar.swig_lal_test_struct_vector[0].str == lalcvar.swig_lal_test_struct_const.str)
-assert((lalcvar.swig_lal_test_struct_vector[0].vec == lalcvar.swig_lal_test_struct_const.vec).all())
-lalcvar.swig_lal_test_struct_matrix[0, 0] = lalcvar.swig_lal_test_struct_const
-assert(lalcvar.swig_lal_test_struct_matrix[0, 0].n == lalcvar.swig_lal_test_struct_const.n)
-assert(lalcvar.swig_lal_test_struct_matrix[0, 0].i == lalcvar.swig_lal_test_struct_const.i)
-assert(lalcvar.swig_lal_test_struct_matrix[0, 0].f == lalcvar.swig_lal_test_struct_const.f)
-assert(lalcvar.swig_lal_test_struct_matrix[0, 0].str == lalcvar.swig_lal_test_struct_const.str)
-assert((lalcvar.swig_lal_test_struct_matrix[0, 0].vec == lalcvar.swig_lal_test_struct_const.vec).all())
+lalglobalvar.swig_lal_test_struct_vector[0] = lalglobalvar.swig_lal_test_struct_const
+assert(lalglobalvar.swig_lal_test_struct_vector[0].n == lalglobalvar.swig_lal_test_struct_const.n)
+assert(lalglobalvar.swig_lal_test_struct_vector[0].i == lalglobalvar.swig_lal_test_struct_const.i)
+assert(lalglobalvar.swig_lal_test_struct_vector[0].f == lalglobalvar.swig_lal_test_struct_const.f)
+assert(lalglobalvar.swig_lal_test_struct_vector[0].str == lalglobalvar.swig_lal_test_struct_const.str)
+assert((lalglobalvar.swig_lal_test_struct_vector[0].vec == lalglobalvar.swig_lal_test_struct_const.vec).all())
+lalglobalvar.swig_lal_test_struct_matrix[0, 0] = lalglobalvar.swig_lal_test_struct_const
+assert(lalglobalvar.swig_lal_test_struct_matrix[0, 0].n == lalglobalvar.swig_lal_test_struct_const.n)
+assert(lalglobalvar.swig_lal_test_struct_matrix[0, 0].i == lalglobalvar.swig_lal_test_struct_const.i)
+assert(lalglobalvar.swig_lal_test_struct_matrix[0, 0].f == lalglobalvar.swig_lal_test_struct_const.f)
+assert(lalglobalvar.swig_lal_test_struct_matrix[0, 0].str == lalglobalvar.swig_lal_test_struct_const.str)
+assert((lalglobalvar.swig_lal_test_struct_matrix[0, 0].vec == lalglobalvar.swig_lal_test_struct_const.vec).all())
 sts = lal.swig_lal_test_struct()
 assert(len(sts.vec) == 3)
 assert(len(sts.evec) == 3)
@@ -143,39 +143,39 @@ for i in range(0, 3):
     sts.evec[i] = 2*i + 3
     assert(sts.evec[i] == (2*i + 3))
 del sts
-assert(not lalcvar.swig_lal_test_enum_vector.any())
-assert(not lalcvar.swig_lal_test_enum_matrix.any())
-assert(len(lalcvar.swig_lal_test_empty_INT4_vector) == 0)
-assert(not lalcvar.swig_lal_test_INT4_vector.any())
-assert(not lalcvar.swig_lal_test_INT4_matrix.any())
-assert(not lalcvar.swig_lal_test_REAL8_vector.any())
-assert(not lalcvar.swig_lal_test_REAL8_matrix.any())
-assert(not lalcvar.swig_lal_test_COMPLEX8_vector.any())
-assert(not lalcvar.swig_lal_test_COMPLEX8_matrix.any())
-lalcvar.swig_lal_test_INT4_vector[0] = 10
-assert(lalcvar.swig_lal_test_INT4_vector[0] == 10)
-lalcvar.swig_lal_test_INT4_matrix[0, 0] = 11
-assert(lalcvar.swig_lal_test_INT4_matrix[0, 0] == 11)
-lalcvar.swig_lal_test_INT4_vector = lalcvar.swig_lal_test_INT4_const_vector
-assert((lalcvar.swig_lal_test_INT4_vector == [1, 2, 4]).all())
-assert(lalcvar.swig_lal_test_INT4_const_vector[2] == 4)
-lalcvar.swig_lal_test_INT4_matrix = lalcvar.swig_lal_test_INT4_const_matrix
-assert((lalcvar.swig_lal_test_INT4_matrix == [[1, 2, 4], [2, 4, 8]]).all())
-assert(lalcvar.swig_lal_test_INT4_const_matrix[1, 2] == 8)
+assert(not lalglobalvar.swig_lal_test_enum_vector.any())
+assert(not lalglobalvar.swig_lal_test_enum_matrix.any())
+assert(len(lalglobalvar.swig_lal_test_empty_INT4_vector) == 0)
+assert(not lalglobalvar.swig_lal_test_INT4_vector.any())
+assert(not lalglobalvar.swig_lal_test_INT4_matrix.any())
+assert(not lalglobalvar.swig_lal_test_REAL8_vector.any())
+assert(not lalglobalvar.swig_lal_test_REAL8_matrix.any())
+assert(not lalglobalvar.swig_lal_test_COMPLEX8_vector.any())
+assert(not lalglobalvar.swig_lal_test_COMPLEX8_matrix.any())
+lalglobalvar.swig_lal_test_INT4_vector[0] = 10
+assert(lalglobalvar.swig_lal_test_INT4_vector[0] == 10)
+lalglobalvar.swig_lal_test_INT4_matrix[0, 0] = 11
+assert(lalglobalvar.swig_lal_test_INT4_matrix[0, 0] == 11)
+lalglobalvar.swig_lal_test_INT4_vector = lalglobalvar.swig_lal_test_INT4_const_vector
+assert((lalglobalvar.swig_lal_test_INT4_vector == [1, 2, 4]).all())
+assert(lalglobalvar.swig_lal_test_INT4_const_vector[2] == 4)
+lalglobalvar.swig_lal_test_INT4_matrix = lalglobalvar.swig_lal_test_INT4_const_matrix
+assert((lalglobalvar.swig_lal_test_INT4_matrix == [[1, 2, 4], [2, 4, 8]]).all())
+assert(lalglobalvar.swig_lal_test_INT4_const_matrix[1, 2] == 8)
 try:
-    lalcvar.swig_lal_test_INT4_const_vector(20)
+    lalglobalvar.swig_lal_test_INT4_const_vector(20)
     expected_exception = True
 except:
     pass
 assert(not expected_exception)
-lalcvar.swig_lal_test_REAL8_vector[0] = 3.4
-assert(lalcvar.swig_lal_test_REAL8_vector[0] == 3.4)
-lalcvar.swig_lal_test_REAL8_matrix[0, 0] = 5.6
-assert(lalcvar.swig_lal_test_REAL8_matrix[0, 0] == 5.6)
-lalcvar.swig_lal_test_COMPLEX8_vector[0] = complex(3.5, 4.75)
-assert(lalcvar.swig_lal_test_COMPLEX8_vector[0] == complex(3.5, 4.75))
-lalcvar.swig_lal_test_COMPLEX8_matrix[0, 0] = complex(5.5, 6.25)
-assert(lalcvar.swig_lal_test_COMPLEX8_matrix[0, 0] == complex(5.5, 6.25))
+lalglobalvar.swig_lal_test_REAL8_vector[0] = 3.4
+assert(lalglobalvar.swig_lal_test_REAL8_vector[0] == 3.4)
+lalglobalvar.swig_lal_test_REAL8_matrix[0, 0] = 5.6
+assert(lalglobalvar.swig_lal_test_REAL8_matrix[0, 0] == 5.6)
+lalglobalvar.swig_lal_test_COMPLEX8_vector[0] = complex(3.5, 4.75)
+assert(lalglobalvar.swig_lal_test_COMPLEX8_vector[0] == complex(3.5, 4.75))
+lalglobalvar.swig_lal_test_COMPLEX8_matrix[0, 0] = complex(5.5, 6.25)
+assert(lalglobalvar.swig_lal_test_COMPLEX8_matrix[0, 0] == complex(5.5, 6.25))
 print("PASSED static vector/matrix conversions")
 
 # check dynamic vector/matrix conversions

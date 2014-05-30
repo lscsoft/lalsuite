@@ -5,8 +5,8 @@
 print("checking module load ...")
 import lal
 import lalpulsar
-from lalpulsar import cvar as lalpulsarcvar
-from lal import cvar as lalcvar
+from lalpulsar import globalvar as lalpulsarglobalvar
+from lal import globalvar as lalglobalvar
 print("PASSED module load")
 
 # check object parent tracking
@@ -14,8 +14,8 @@ print("checking object parent tracking ...")
 a = lalpulsar.swig_lalpulsar_test_parent_map_struct()
 for i in range(0, 7):
     b = a.s
-    c = lalpulsarcvar.swig_lalpulsar_test_parent_map.s
-    lalpulsarcvar.swig_lalpulsar_test_parent_map.s = lalcvar.swig_lal_test_struct_const
+    c = lalpulsarglobalvar.swig_lalpulsar_test_parent_map.s
+    lalpulsarglobalvar.swig_lalpulsar_test_parent_map.s = lalglobalvar.swig_lal_test_struct_const
 del c
 del b
 del a

@@ -7,10 +7,8 @@ crash_dumps_octave_core(0);
 disp("checking module load ...");
 lalstochastic;
 assert(exist("lalstochastic", "var"));
-assert(exist("lalstochasticcvar", "var"));
 lal;
 assert(exist("lal", "var"));
-assert(exist("lalcvar", "var"));
 disp("PASSED module load");
 
 ## check object parent tracking
@@ -18,14 +16,14 @@ disp("checking object parent tracking ...");
 a = lalstochastic.new_swig_lalstochastic_test_parent_map_struct();
 for i = 1:7
   b = a.s;
-  c = lalstochasticcvar.swig_lalstochastic_test_parent_map.s;
-  lalstochasticcvar.swig_lalstochastic_test_parent_map.s = lalcvar.swig_lal_test_struct_const;
+  c = lalstochastic.swig_lalstochastic_test_parent_map.s;
+  lalstochastic.swig_lalstochastic_test_parent_map.s = lal.swig_lal_test_struct_const;
 endfor
 clear c;
 clear b;
 clear a;
 clear ans;
-CheckMemoryLeaks();
+LALCheckMemoryLeaks();
 disp("PASSED object parent tracking");
 
 ## passed all tests!
