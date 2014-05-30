@@ -63,7 +63,10 @@ def emcee_sky_map(logl, logp, xmin, xmax, nside):
     return prob
 
 
-def ligolw_sky_map(sngl_inspirals, approximant, amplitude_order, phase_order, f_low, min_distance=None, max_distance=None, prior_distance_power=None, method="toa_phoa_snr", psds=None, nside=-1, chain_dump=None):
+def ligolw_sky_map(
+        sngl_inspirals, approximant, amplitude_order, phase_order, f_low,
+        min_distance=None, max_distance=None, prior_distance_power=None,
+        method="toa_phoa_snr", psds=None, nside=-1, chain_dump=None):
     """Convenience function to produce a sky map from LIGO-LW rows. Note that
     min_distance and max_distance should be in Mpc."""
 
@@ -225,7 +228,9 @@ def ligolw_sky_map(sngl_inspirals, approximant, amplitude_order, phase_order, f_
     return prob, epoch, elapsed_time
 
 
-def gracedb_sky_map(coinc_file, psd_file, waveform, f_low, min_distance=None, max_distance=None, prior_distance_power=None, nside=-1):
+def gracedb_sky_map(
+        coinc_file, psd_file, waveform, f_low, min_distance=None,
+        max_distance=None, prior_distance_power=None, nside=-1):
     # LIGO-LW XML imports.
     from glue.ligolw import table as ligolw_table
     from glue.ligolw import utils as ligolw_utils
@@ -233,7 +238,8 @@ def gracedb_sky_map(coinc_file, psd_file, waveform, f_low, min_distance=None, ma
     import lal.series
 
     # Determine approximant, amplitude order, and phase order from command line arguments.
-    approximant, amplitude_order, phase_order = timing.get_approximant_and_orders_from_string(waveform)
+    approximant, amplitude_order, phase_order = \
+        timing.get_approximant_and_orders_from_string(waveform)
 
     # Read input file.
     xmldoc, _ = ligolw_utils.load_fileobj(coinc_file)
@@ -266,7 +272,8 @@ def gracedb_sky_map(coinc_file, psd_file, waveform, f_low, min_distance=None, ma
         psds = [psds[sngl_inspiral.ifo] for sngl_inspiral in sngl_inspirals]
 
         # Interpolate PSDs.
-        psds = [timing.InterpolatedPSD(filter.abscissa(psd), psd.data.data) for psd in psds]
+        psds = [timing.InterpolatedPSD(filter.abscissa(psd), psd.data.data)
+            for psd in psds]
 
     # TOA+SNR sky localization
     prob, epoch, elapsed_time = ligolw_sky_map(sngl_inspirals, approximant,
