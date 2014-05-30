@@ -195,10 +195,8 @@ XLALSFTVectorToLFT ( const SFTVector *sfts,	/**< input SFT vector */
       REAL8 offset_n, nudge_n;
       UINT4 copyLen, binsLeft;
 
-      UINT4 k;
       REAL8 offset0, offsetEff, hetCycles;
       REAL4 hetCorr_re, hetCorr_im;
-      REAL4 fact_re, fact_im;
       REAL4 norm = 1.0 / numBinsSFT;
 
 
@@ -232,19 +230,11 @@ XLALSFTVectorToLFT ( const SFTVector *sfts,	/**< input SFT vector */
       XLAL_CHECK_NULL( XLALSinCos2PiLUT (&hetCorr_im, &hetCorr_re, -hetCycles ) == XLAL_SUCCESS, XLAL_EFUNC );
 
       /* apply all phase- and normalizing factors */
-      fact_re = norm * hetCorr_re;
-      fact_im = norm * hetCorr_im;
+      COMPLEX8 fact_norm = norm * crectf ( hetCorr_re, hetCorr_im);
 
-      XLALPrintInfo ("SFT n = %d: (tn - t0) = %g s EQUIV %g s, hetCycles = %g, ==> fact = %g + i %g\n", n, offset0, offsetEff, hetCycles, fact_re, fact_im );
-
-      for ( k = 0; k < numBinsSFT; k ++ )
+      for ( UINT4 k = 0; k < numBinsSFT; k ++ )
 	{
-	  REAL8 binReal, binImag;
-
-	  binReal = fact_re * crealf(thisSFT->data->data[k]) - fact_im * cimagf(thisSFT->data->data[k]);
-	  binImag = fact_re * cimagf(thisSFT->data->data[k]) + fact_im * crealf(thisSFT->data->data[k]);
-
-	  thisSFT->data->data[k] = crectf( binReal, binImag );
+	  thisSFT->data->data[k] *= fact_norm;
 	} /* k < numBins */
 
       if ( XLALReorderSFTtoFFTW (thisSFT->data) != XLAL_SUCCESS )
@@ -483,11 +473,10 @@ XLALSFTVectorToCOMPLEX8TimeSeries ( SFTVector *sfts,                /**< [in/out
       hetCorrection *= ((REAL4) dfSFT);
 
       /* FIXME: check how time-critical this step is, using proper profiling! */
-      if ( XLALMultiplySFTbyCOMPLEX8 ( thisSFT, hetCorrection ) != XLAL_SUCCESS )
-	{
-	  XLALPrintError ( "%s: XLALMultiplySFTbyCOMPLEX8(sft-%d) failed! errno = %d!\n", __func__, n, xlalErrno );
-	  goto failed;
-	}
+      for ( UINT4 k=0; k < thisSFT->data->length; k++)
+        {
+          thisSFT->data->data[k] *= hetCorrection;
+        } /* for k < numBins */
 
       XLALPrintInfo ("SFT n = %d: (tn - t0) = %g s EQUIV %g s, hetCycles = %g, ==> fact = %g + i %g\n",
                      n, offset0, offsetEff, hetCycles, crealf(hetCorrection), cimagf(hetCorrection) );
@@ -622,40 +611,6 @@ XLALReorderSFTtoFFTW (COMPLEX8Vector *X)
 
 }  /* XLALReorderSFTtoFFTW() */
 
-
-/**
- * Multiply SFT frequency bins by given complex factor.
- *
- * NOTE: this <b>modifies</b> the given SFT in place
- */
-int
-XLALMultiplySFTbyCOMPLEX8 ( SFTtype *sft,	/**< [in/out] SFT */
-			    COMPLEX8 factor )	/**< [in] complex8 factor to multiply SFT by */
-{
-  UINT4 k;
-
-  if ( !sft || !sft->data )
-    {
-      XLALPrintError ("%s: empty input SFT!\n", __func__ );
-      XLAL_ERROR (XLAL_EINVAL);
-    }
-
-  for ( k=0; k < sft->data->length; k++)
-    {
-      REAL4 yRe, yIm;
-
-      yRe = crealf(factor) * crealf(sft->data->data[k]) - cimagf(factor) * cimagf(sft->data->data[k]);
-      yIm = crealf(factor) * cimagf(sft->data->data[k]) + cimagf(factor) * crealf(sft->data->data[k]);
-
-      sft->data->data[k] = crectf( yRe, yIm );
-
-    } /* for k < numBins */
-
-  return XLAL_SUCCESS;
-
-} /* XLALMultiplySFTbyCOMPLEX8() */
-
-
 /**
  * Time-shift the given SFT by an amount of 'shift' seconds,
  * using the frequency-domain expression y(f) = x(f) * e^(-i 2pi f tau),
@@ -665,29 +620,20 @@ XLALMultiplySFTbyCOMPLEX8 ( SFTtype *sft,	/**< [in/out] SFT */
  */
 int
 XLALTimeShiftSFT ( SFTtype *sft,	/**< [in/out] SFT to time-shift */
-		   REAL8 shift )	/**< time-shift in seconds */
+		   REAL8 shift		/**< time-shift in seconds */
+                   )
 {
-  UINT4 k;
+  XLAL_CHECK ( (sft != NULL) && (sft->data != NULL), XLAL_EINVAL );
 
-  if ( !sft || !sft->data )
-    {
-      XLALPrintError ("%s: empty input SFT!\n", __func__ );
-      XLAL_ERROR (XLAL_EINVAL);
-    }
-
-  for ( k=0; k < sft->data->length; k++)
+  for ( UINT4 k=0; k < sft->data->length; k++ )
     {
       REAL8 fk = sft->f0 + k * sft->deltaF;	/* frequency of k-th bin */
       REAL8 shiftCyles = shift * fk;
       REAL4 fact_re, fact_im;			/* complex phase-shift factor e^(-2pi f tau) */
-      REAL4 yRe, yIm;
-
       XLAL_CHECK( XLALSinCos2PiLUT ( &fact_im, &fact_re, shiftCyles ) == XLAL_SUCCESS, XLAL_EFUNC );
 
-      yRe = fact_re * crealf(sft->data->data[k]) - fact_im * cimagf(sft->data->data[k]);
-      yIm = fact_re * cimagf(sft->data->data[k]) + fact_im * crealf(sft->data->data[k]);
-
-      sft->data->data[k] = crectf( yRe, yIm );
+      COMPLEX8 fact = crectf(fact_re, fact_im);
+      sft->data->data[k] *= fact;
 
     } /* for k < numBins */
 
@@ -1393,33 +1339,23 @@ int
 XLALFrequencyShiftCOMPLEX8TimeSeries ( COMPLEX8TimeSeries **x,	        /**< [in/out] timeseries to time-shift */
 				       const REAL8 shift )	        /**< [in] freq-shift in Hz */
 {
-  UINT4 k;
-  REAL8 deltat;
+  XLAL_CHECK ( ((*x) != NULL) && ( (*x)->data != NULL ), XLAL_EINVAL );
 
-  if ( !(*x) || !(*x)->data )
-    {
-      XLALPrintError ("%s: empty input COMPLEX8TimeSeries!\n", __func__ );
-      XLAL_ERROR (XLAL_EINVAL);
-    }
-
-  /* get timeseries epoch */
-  deltat = (*x)->deltaT;
+  /* get timeseries time-step */
+  REAL8 deltat = (*x)->deltaT;
 
   /* loop over COMPLEX8TimeSeries elements */
-  for ( k=0; k < (*x)->data->length; k++)
+  for ( UINT4 k=0; k < (*x)->data->length; k++)
     {
       REAL8 tk = k * deltat;	/* time of k-th bin */
       REAL8 shiftCycles = shift * tk;
       REAL4 fact_re, fact_im;			/* complex phase-shift factor e^(-2pi f tau) */
-      REAL4 yRe, yIm;
 
       /* use a sin/cos look-up-table for speed */
       XLAL_CHECK( XLALSinCos2PiLUT ( &fact_im, &fact_re, shiftCycles ) == XLAL_SUCCESS, XLAL_EFUNC );
+      COMPLEX8 fact = crectf(fact_re, fact_im);
 
-      /* apply the phase shift */
-      yRe = fact_re * crealf((*x)->data->data[k]) - fact_im * cimagf((*x)->data->data[k]);
-      yIm = fact_re * cimagf((*x)->data->data[k]) + fact_im * crealf((*x)->data->data[k]);
-      (*x)->data->data[k] = crectf( yRe, yIm );
+      (*x)->data->data[k] *= fact;
 
     } /* for k < numBins */
 
@@ -1513,19 +1449,14 @@ XLALSpinDownCorrectionMultiFaFb ( MultiCOMPLEX8TimeSeries **Fa,	                
       /* use look-up-table for speed to compute real and imaginary phase */
       XLAL_CHECK( XLALSinCos2PiLUT (&sinphase, &cosphase, -cycles ) == XLAL_SUCCESS, XLAL_EFUNC );
 
+      COMPLEX8 em2piphase = crectf(cosphase,sinphase);
+
       /* loop over detectors */
-      for (i=0;i<numDetectors;i++) {
-
-	/* apply phase correction to Fa and Fb */
-	REAL8 Fare = crealf((*Fa)->data[i]->data->data[k])*cosphase - cimagf((*Fa)->data[i]->data->data[k])*sinphase;
-	REAL8 Faim = cimagf((*Fa)->data[i]->data->data[k])*cosphase + crealf((*Fa)->data[i]->data->data[k])*sinphase;
-	REAL8 Fbre = crealf((*Fb)->data[i]->data->data[k])*cosphase - cimagf((*Fb)->data[i]->data->data[k])*sinphase;
-	REAL8 Fbim = cimagf((*Fb)->data[i]->data->data[k])*cosphase + crealf((*Fb)->data[i]->data->data[k])*sinphase;
-
-	(*Fa)->data[i]->data->data[k] = crectf( Fare, Faim );
-	(*Fb)->data[i]->data->data[k] = crectf( Fbre, Fbim );
-
-      } /* (i<numDetectors) */
+      for (i=0;i<numDetectors;i++)
+        {
+          (*Fa)->data[i]->data->data[k] *= em2piphase;
+          (*Fb)->data[i]->data->data[k] *= em2piphase;
+        } /* (i<numDetectors) */
 
     } /* (k<numSamples) */
 

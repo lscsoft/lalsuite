@@ -80,7 +80,6 @@ SFTtype *XLALSFTVectorToLFT ( const SFTVector *sfts, REAL8 upsampling );
 int XLALReorderFFTWtoSFT (COMPLEX8Vector *X);
 int XLALReorderSFTtoFFTW (COMPLEX8Vector *X);
 int XLALTimeShiftSFT ( SFTtype *sft, REAL8 shift );
-int XLALMultiplySFTbyCOMPLEX8 ( SFTtype *sft, COMPLEX8 factor );
 
 MultiCOMPLEX8TimeSeries *XLALMultiSFTVectorToCOMPLEX8TimeSeries (
                          MultiSFTVector *multisfts  /**< [in] multi SFT vector, gets modified! */
