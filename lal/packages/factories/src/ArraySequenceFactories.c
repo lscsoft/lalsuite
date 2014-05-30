@@ -1,6 +1,6 @@
-#include "lal/LALStdlib.h"
-#include "lal/AVFactories.h"
-#include "lal/SeqFactories.h"
+#include <lal/LALStdlib.h>
+#include <lal/AVFactories.h>
+#include <lal/SeqFactories.h>
 
 #define TYPECODE Z
 #define TYPE COMPLEX16

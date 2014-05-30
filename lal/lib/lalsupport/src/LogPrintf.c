@@ -60,7 +60,7 @@
 #define localtime_r(timep, result) memcpy((result), localtime(timep), sizeof(struct tm))
 #endif
 
-#include "LogPrintf.h"
+#include <lal/LogPrintf.h>
 
 /* output file for log messages, default to standard error */
 #define LogOutputDefault stderr

@@ -24,7 +24,6 @@
 #include <lal/LALStdlib.h>
 #include <lal/AVFactories.h>
 #include <lal/LALRunningMedian.h>
-/* #include "LALRunningMedian.h" */
 
 /*----------------------------------
   A structure to store values and indices

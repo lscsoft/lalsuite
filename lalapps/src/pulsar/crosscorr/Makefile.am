@@ -1,9 +1,10 @@
 ## Process this file with automake to produce Makefile.in
 
+AM_CPPFLAGS = -I$(top_srcdir)/src/pulsar/FDS_isolated @AM_CPPFLAGS@
+
 CFSsrc = $(top_srcdir)/src/pulsar/FDS_isolated
 
 # for using lalapps-defines + functions
-AM_CPPFLAGS = -I$(top_srcdir)/src -I$(top_srcdir)/src/lalapps  -I$(top_srcdir)/src/pulsar/FDS_isolated -DPKG_DATA_DIR='"$(pkgdatadir)/"' @AM_CPPFLAGS@
 LDADD = $(top_builddir)/src/lalapps/liblalapps.la
 
 bin_PROGRAMS = lalapps_pulsar_crosscorr lalapps_pulsar_crosscorr_v2

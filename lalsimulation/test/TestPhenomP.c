@@ -40,7 +40,7 @@
 #include <gsl/gsl_spline.h>
 #include <gsl/gsl_math.h>
 
-#include "LALSimIMRPhenomP.c" /* Include source directly so we can carry out unit tests for internal functions */
+#include "../src/LALSimIMRPhenomP.c" /* Include source directly so we can carry out unit tests for internal functions */
 
 #define UNUSED(expr) do { (void)(expr); } while (0)
 

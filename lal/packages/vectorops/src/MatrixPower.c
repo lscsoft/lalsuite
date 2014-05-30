@@ -1,5 +1,5 @@
 #include <math.h>
-#include "Matrix.h"
+#include <lal/Matrix.h>
 
 #define TYPECODE D
 #define TYPE REAL8

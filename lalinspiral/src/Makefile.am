@@ -3,8 +3,6 @@ MOSTLYCLEANFILES =
 include $(top_srcdir)/gnuscripts/lallibs_header_links.am
 include $(top_srcdir)/gnuscripts/lalsuite_vcs_info.am
 
-AM_CPPFLAGS = -I$(top_builddir)/include -DPKG_DATA_DIR='"$(pkgdatadir)/"' @AM_CPPFLAGS@
-
 pkginclude_HEADERS = \
 	BBHPhenomCoeffs.h \
 	Chisq_CPU.h \

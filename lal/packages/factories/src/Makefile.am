@@ -1,7 +1,5 @@
 include $(top_srcdir)/gnuscripts/lallibs_header_links.am
 
-AM_CPPFLAGS = -I$(top_builddir)/include -I$(srcdir)/../include @AM_CPPFLAGS@
-
 noinst_LTLIBRARIES = libfactories.la
 
 libfactories_la_SOURCES = \

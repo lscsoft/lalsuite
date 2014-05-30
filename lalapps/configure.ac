@@ -385,9 +385,6 @@ AC_CHECK_FUNCS([setenv])
 # set prefix
 AC_DEFINE_UNQUOTED([PREFIX],["$prefix"],[Install prefix])
 
-# add gcc specific flags
-LALSUITE_ADD_GCC_FLAGS
-
 # define if CUDA is enabled
 if test "${cuda}" = "true"; then
   AC_DEFINE([LALAPPS_CUDA_ENABLED],[1],[Define if using cuda library])
@@ -406,6 +403,15 @@ if test "${static_binaries}" = "true"; then
   LALSUITE_ADD_FLAGS([],[],[-all-static])
   AC_DISABLE_SHARED
 fi
+
+# add gcc specific flags
+LALSUITE_ADD_GCC_FLAGS
+
+# add extra preprocessor flags
+AM_CPPFLAGS="-DPKG_DATA_DIR='\"\$(pkgdatadir)/\"' ${AM_CPPFLAGS}"
+AM_CPPFLAGS="-I\$(top_builddir)/src/lalapps ${AM_CPPFLAGS}"
+AM_CPPFLAGS="-I\$(top_srcdir)/src/lalapps ${AM_CPPFLAGS}"
+AM_CPPFLAGS="-I\$(top_srcdir)/src ${AM_CPPFLAGS}"
 
 # force all python modules into the exec dir to prevent mixed C and
 # pure-python library code from being split across lib and lib64 on

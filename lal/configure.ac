@@ -347,6 +347,11 @@ AM_CONDITIONAL([QTHREAD],[test x$qthread = xtrue])
 # add gcc specific flags --- must be done at end or tests will break!
 LALSUITE_ADD_GCC_FLAGS
 
+# add extra preprocessor flags
+AM_CPPFLAGS="\$(TEST_CPPFLAGS) ${AM_CPPFLAGS}"
+AM_CPPFLAGS="-DPKG_DATA_DIR='\"\$(pkgdatadir)/\"' ${AM_CPPFLAGS}"
+AM_CPPFLAGS="-I\$(top_builddir)/include ${AM_CPPFLAGS}"
+
 # force all python modules into the exec dir to prevent mixed C and
 # pure-python library code from being split across lib and lib64 on
 # RedHat-derived systems.

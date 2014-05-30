@@ -136,6 +136,11 @@ LALSUITE_USE_SWIG([XLAL LAL])
 # add gcc specific flags
 LALSUITE_ADD_GCC_FLAGS
 
+# add extra preprocessor flags
+AM_CPPFLAGS="\$(TEST_CPPFLAGS) ${AM_CPPFLAGS}"
+AM_CPPFLAGS="-DPKG_DATA_DIR='\"\$(pkgdatadir)/\"' ${AM_CPPFLAGS}"
+AM_CPPFLAGS="-I\$(top_builddir)/include ${AM_CPPFLAGS}"
+
 # force headers to be installed in ${includedir}/lal, ignoring library name
 AC_SUBST([pkgincludedir], ["\${includedir}/lal"])
 

@@ -1,7 +1,7 @@
 /* -*- C -*- */
 
 #include <math.h>
-#include "VectorIndexRange.h"
+#include <lal/VectorIndexRange.h>
 
 #define TYPECODE Z
 #define TYPE COMPLEX16

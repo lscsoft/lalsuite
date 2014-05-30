@@ -24,7 +24,8 @@
 
 #include <lal/LALStdlib.h>
 #include <lal/Date.h>
-#include <XLALLeapSeconds.h>
+
+#include "../src/XLALLeapSeconds.h"
 
 
 static int do_test(int gpssec, int tai_utc_before, int tai_utc_after)
