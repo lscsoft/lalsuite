@@ -25,6 +25,12 @@ pds_code="${builddir}lalapps_PrintDetectorState"
 mfd_code="${injectdir}lalapps_Makefakedata_v4"
 pfs_code="${fdsdir}lalapps_PredictFstat"
 
+testDir="./testCAP.d";
+if [ -d "$testDir" ]; then
+    rm -rf $testDir
+fi
+mkdir -p "$testDir"
+
 tolerance=1e-3
 tolerance_pfs=1 ## more lenient because PFS has noise fluctuations from MFD
 Tsft=1800
@@ -48,15 +54,15 @@ alpha=4.649850989853494
 delta=-0.506281802989210
 
 # ---------- temporary files
-outCAP=antenna_pattern_test.dat
-outPDS=detector_state_test.dat
-skygridfile=./skygrid_test.dat
-timestampsfile_H1=./timestamps_test_H1.dat
-timestampsfile_L1=./timestamps_test_L1.dat
-sftfile_base=./sft_test_
+outCAP="${testDir}/antenna_pattern_test.dat"
+outPDS="${testDir}/detector_state_test.dat"
+skygridfile="${testDir}/skygrid_test.dat"
+timestampsfile_H1="${testDir}/timestamps_test_H1.dat"
+timestampsfile_L1="${testDir}/timestamps_test_L1.dat"
+sftfile_base="${testDir}/sft_test_"
 sftfile_H1="${sftfile_base}H1"
 sftfile_L1="${sftfile_base}L1"
-outPFS=./pfs_test.dat
+outPFS="${testDir}/pfs_test.dat"
 
 
 ## if a previous run failed, have to delete some files to avoid appending
@@ -578,12 +584,7 @@ fi
 
 ## clean up files
 if [ -z "$NOCLEANUP" ]; then
-    rm $outCAP
-    rm $outPDS
-    rm $skygridfile
-    rm $timestampsfile_H1 $timestampsfile_L1
-    rm $sftfile_H1 $sftfile_L1
-    rm $outPFS
+    rm -rf $testDir
     echo "Cleaned up."
 fi
 
