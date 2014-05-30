@@ -125,11 +125,6 @@ TESTS_ENVIRONMENT = \
 	LAL_DEBUG_LEVEL=msglvl1,memdbg; export LAL_DEBUG_LEVEL; \
 	LAL_DATA_PATH="$(LAL_DATA_PATH)"; export LAL_DATA_PATH;
 
-# how to compile CUDA files (.cu)
-NVCC ?= nvcc
-.cu.o:
-	$(NVCC) $(CPPFLAGS) -c $< -o $@
-
 ## make sure lalapps.la is rebuilt when appropriate
 BUILT_SOURCES =
 include $(top_srcdir)/gnuscripts/vcsID.common
