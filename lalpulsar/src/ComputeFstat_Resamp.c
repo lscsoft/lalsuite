@@ -44,7 +44,7 @@ typedef struct tagComputeFBuffer_RS {
 // internal Resampling-specific parameters
 struct tagFstatInput_Resamp {
   MultiSFTVector *multiSFTs;            // Input multi-detector SFTs
-  ComputeFBuffer_RS *buffer; 		/* buffer for storing pre-resampled timeseries (used for resampling implementation) */
+  ComputeFBuffer_RS buffer; 		/* buffer for storing pre-resampled timeseries (used for resampling implementation) */
 };
 
 /* Destruction of a ComputeFBuffer *contents*,
@@ -76,10 +76,9 @@ XLALEmptyComputeFBuffer_RS ( ComputeFBuffer_RS *buffer )
 static void
 DestroyFstatInput_Resamp ( FstatInput_Resamp* resamp )
 {
-  XLALDestroyMultiSFTVector(resamp->multiSFTs);
-  XLALEmptyComputeFBuffer_RS(resamp->buffer);
-  XLALFree(resamp->buffer);
-  XLALFree(resamp);
+  XLALDestroyMultiSFTVector (resamp->multiSFTs );
+  XLALEmptyComputeFBuffer_RS ( &resamp->buffer );
+  XLALFree ( resamp );
   return;
 } // DestroyFstatInput_Resamp()
 
@@ -97,8 +96,8 @@ SetupFstatInput_Resamp ( FstatInput_Resamp *resamp,
   // Save pointer to SFTs
   resamp->multiSFTs = multiSFTs;
 
-  // Set parameters to pass to ComputeFStatFreqBand_RS()
-  resamp->buffer = NULL;
+  // clear buffer
+  XLAL_INIT_MEM ( resamp->buffer );
 
   return XLAL_SUCCESS;
 
@@ -138,10 +137,10 @@ ComputeFstat_Resamp ( FstatResults* Fstats,
   const PulsarDopplerParams *thisPoint = &Fstats->doppler;
   MultiSFTVector *multiSFTs = resamp->multiSFTs;
   const MultiNoiseWeights *multiWeights = common->noiseWeights;
+  ComputeFBuffer_RS *cfBuffer = &resamp->buffer;                      /* set local pointer to the buffer location */
   {// ================================================================================
     // Call ComputeFStatFreqBand_RS()
     UINT4 numDetectors;
-    ComputeFBuffer_RS *cfBuffer = NULL;
     MultiDetectorStateSeries *multiDetStates = NULL;
     MultiSSBtimes *multiSSB = NULL;
     MultiAMCoeffs *multiAMcoef = NULL;
@@ -162,18 +161,11 @@ ComputeFstat_Resamp ( FstatResults* Fstats,
     COMPLEX8Vector *outaSingle = NULL; /* this will contain Faf_resampled for a single IFO */
     COMPLEX8Vector *outbSingle = NULL; /* this will contain Fbf_resampled for a single IFO */
 
-    cfBuffer = resamp->buffer;                      /* set local pointer to the buffer location */
     numDetectors = multiSFTs->length;               /* set the number of detectors to the number of sets of SFTs */
     // unused: SFTtype * firstSFT = &(multiSFTs->data[0]->data[0]);      /* use data from the first SFT from the first detector to set other params */
 
     /* check that the multidetector noise weights have the same length as the multiSFTs */
     XLAL_CHECK ( (multiWeights == NULL) || (multiWeights->length == numDetectors), XLAL_EINVAL );
-
-    /* first, if there is no buffer allocate space for one */
-    /* IMPORTANT - use Calloc here so that all pointers within the structure are NULL */
-    if ( cfBuffer == NULL ) {
-      XLAL_CHECK ( (cfBuffer = XLALCalloc ( 1, sizeof(*cfBuffer) )) != NULL, XLAL_ENOMEM );
-    }
 
     /* Dealing with the input SFT -> timeseries conversion and whether it has already been done and is buffered */
 
@@ -400,20 +392,10 @@ ComputeFstat_Resamp ( FstatResults* Fstats,
         /* compute single-IFO F-stats, if requested */
         if ( returnSingleF )
           {
-            if ( resamp->buffer == NULL )
-              {
-                AdX = multiAMcoef->data[X]->A;
-                BdX = multiAMcoef->data[X]->B;
-                CdX = multiAMcoef->data[X]->C;
-                DdX_inv = 1.0 / multiAMcoef->data[X]->D;
-              }
-            else
-              {
-                AdX = cfBuffer->multiAMcoef->data[X]->A;
-                BdX = cfBuffer->multiAMcoef->data[X]->B;
-                CdX = cfBuffer->multiAMcoef->data[X]->C;
-                DdX_inv = 1.0 / cfBuffer->multiAMcoef->data[X]->D;
-              }
+            AdX = cfBuffer->multiAMcoef->data[X]->A;
+            BdX = cfBuffer->multiAMcoef->data[X]->B;
+            CdX = cfBuffer->multiAMcoef->data[X]->C;
+            DdX_inv = 1.0 / cfBuffer->multiAMcoef->data[X]->D;
 
             /* normalize by dt */
             for ( UINT4 j = 0; j < numSamples; j++ )
@@ -484,9 +466,6 @@ ComputeFstat_Resamp ( FstatResults* Fstats,
 
     XLALDestroyMultiCOMPLEX8TimeSeries ( multiFa_spin );
     XLALDestroyMultiCOMPLEX8TimeSeries ( multiFb_spin );
-
-    /* IMPORTANT - point the input buffer pointer to the buffered data */
-    resamp->buffer = cfBuffer;
 
   }// ================================================================================
 
