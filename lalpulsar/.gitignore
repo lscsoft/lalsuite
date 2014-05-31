@@ -27,6 +27,7 @@ src/lalpulsar-user-env.shell
 src/stamp-h1
 src/stamp-h2
 test/BinarySSBTimesTest
+test/ComputeFstatTest
 test/ExtrapolatePulsarSpinsTest
 test/FileIOTest
 test/FitToPulsarTest
