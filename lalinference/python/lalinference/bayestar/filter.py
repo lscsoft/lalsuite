@@ -49,11 +49,23 @@ CreateReverseCOMPLEX16FFTPlan = memoized(lal.CreateReverseCOMPLEX16FFTPlan)
 CreateReverseREAL8FFTPlan = memoized(lal.CreateReverseREAL8FFTPlan)
 
 
-def ceil_pow_2(number):
-    """Return the least integer power of 2 that is greater than or equal to number."""
+def ceil_pow_2(n):
+    """Return the least integer power of 2 that is greater than or equal to n.
+
+    >>> ceil_pow_2(128.0)
+    128.0
+    >>> ceil_pow_2(0.125)
+    0.125
+    >>> ceil_pow_2(129.0)
+    256.0
+    >>> ceil_pow_2(0.126)
+    0.25
+    >>> ceil_pow_2(1.0)
+    1.0
+    """
     # frexp splits floats into mantissa and exponent, ldexp does the opposite.
     # For positive numbers, mantissa is in [0.5, 1.).
-    mantissa, exponent = math.frexp(number)
+    mantissa, exponent = math.frexp(n)
     return math.ldexp(
         1 if mantissa >= 0 else float('nan'),
         exponent - 1 if mantissa == 0.5 else exponent
