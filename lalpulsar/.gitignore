@@ -72,7 +72,7 @@ test/TestConstructPLUT
 test/TestDriveHough
 test/TestDriveNDHough
 test/TestHoughMap
-test/TestLFTandTSutils
+test/LFTandTSutilsTest
 test/TestNDConstructPLUT
 test/TestNDHoughMap
 test/TestNDPeak2PHMD

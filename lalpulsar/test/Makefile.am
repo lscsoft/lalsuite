@@ -25,7 +25,7 @@ check_PROGRAMS = \
 	TestDriveHough \
 	TestDriveNDHough \
 	TestHoughMap \
-	TestLFTandTSutils \
+	LFTandTSutilsTest \
 	TestNDConstructPLUT \
 	TestNDHoughMap \
 	TestNDPeak2PHMD \
@@ -95,8 +95,9 @@ MOSTLYCLEANFILES = \
 	OutHistogram.asc \
 	OutHough.asc \
 	outputsft*.sft \
-	testLFTandTSutils-LFT.sft \
-	testLFTandTSutils-timeseries.dat
+	TS_R4.dat \
+	LFT_R4.dat \
+	LFT_C8.dat
 
 pkgdata_DATA = \
 	circularEphem.dat \
