@@ -233,10 +233,6 @@ ComputeFstat_Resamp ( FstatResults* Fstats,
       {
         XLALPrintInfo("*** New sky position : recomputing SSB times, AM coefficients and Fa and Fb\n");
 
-        /* temporary timeseries used to store the unbarycentred antenna weighted Fa and Fb timeseries */
-        MultiCOMPLEX8TimeSeries *multiFa = NULL;
-        MultiCOMPLEX8TimeSeries *multiFb = NULL;
-
         /* compute the SSB times corresponding to the midpoints of each SFT for the current sky position for all detectors */
         skypos.system = COORDINATESYSTEM_EQUATORIAL;
         skypos.longitude = thisPoint->Alpha;
@@ -261,6 +257,8 @@ ComputeFstat_Resamp ( FstatResults* Fstats,
         XLAL_CHECK ( (multiAMcoef = XLALComputeMultiAMCoeffs ( cfBuffer->multiDetStates, multiWeights, skypos )) != NULL, XLAL_EFUNC );
 
         /* Generate a(t) and b(t) weighted heterodyned downsampled timeseries */
+        MultiCOMPLEX8TimeSeries *multiFa = NULL;
+        MultiCOMPLEX8TimeSeries *multiFb = NULL;
         XLAL_CHECK ( XLALAntennaWeightMultiCOMPLEX8TimeSeries ( &multiFa, &multiFb, cfBuffer->multiTimeseries, multiAMcoef, multiSFTs) == XLAL_SUCCESS, XLAL_EFUNC );
 
         /* Perform barycentric resampling on the multi-detector timeseries */
