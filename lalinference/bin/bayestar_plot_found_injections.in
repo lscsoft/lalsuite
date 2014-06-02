@@ -181,8 +181,6 @@ for i, (bin_edge, subdir, title) in enumerate(zip(bin_edges, bin_names, bin_titl
     plt.figure(1)
     # Only plot target confidence band if all datasets have the same number
     # of samples, because the confidence band depends on the number of samples.
-    handles, labels = plt.gca().get_legend_handles_labels()
-    # Add target confidence band to P--P plot.
     if len(nsamples) == 1:
         n, = nsamples
         k = np.arange(0, n + 1)
