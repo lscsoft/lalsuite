@@ -23,9 +23,6 @@
 
 #include <lal/LogPrintf.h>
 
-#define NhalfPosDC(N) ((UINT4)(ceil ( ((N)/2.0 - 1e-6 ))))      /* round up */
-#define NhalfNeg(N) ((UINT4)( (N) - NhalfPosDC(N) ))            /* round down (making sure N+ + N- = (N-1) */
-
 /* Struct holding buffered ComputeFStat()-internal quantities to avoid unnecessarily
  * recomputing things that depend ONLY on the skyposition and detector-state series (but not on the spins).
  * For the first call of ComputeFStatFreqBand_RS() the pointer-entries should all be NULL.

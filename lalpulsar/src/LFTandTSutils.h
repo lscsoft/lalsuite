@@ -43,6 +43,10 @@ extern "C" {
 
 /*---------- exported DEFINES ----------*/
 
+/*---------- exported MACROS ----------*/
+#define NhalfPosDC(N) ( (UINT4)( N / 2 ) + 1 )
+#define NhalfNeg(N) ((UINT4)( (N) - NhalfPosDC(N) ))		/* round down (making sure N+ + N- = (N-1) */
+
 /*---------- exported types ----------*/
 
 /** Multi-IFO container for COMPLEX8 resampled timeseries */

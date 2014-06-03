@@ -59,7 +59,7 @@
 #define MYMAX(x,y) ( (x) > (y) ? (x) : (y) )
 #define MYMIN(x,y) ( (x) < (y) ? (x) : (y) )
 #define RELERR(x,y) ( ( (x) - (y) ) / ( 0.5 * (fabs(x) + fabs(y)) + 2) )
-#define SQ(x) ( (x) * (x) )
+
 /* ---------- local types ---------- */
 
 /*---------- Global variables ----------*/

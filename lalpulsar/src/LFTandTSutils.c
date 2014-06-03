@@ -46,10 +46,6 @@
 #define MYMIN(x,y) ( (x) < (y) ? (x) : (y) )
 #define SQ(x) ((x)*(x))
 
-#define NhalfPosDC(N) ((UINT4)(ceil ( ((N)/2.0 - 1e-6 ))))	/* round up */
-#define NhalfNeg(N) ((UINT4)( (N) - NhalfPosDC(N) ))		/* round down (making sure N+ + N- = (N-1) */
-
-#define GPS2REAL8(gps) (1.0 * (gps).gpsSeconds + 1.e-9 * (gps).gpsNanoSeconds )
 #define RELERR(x,y) ( cabs( (x) - (y) ) / ( 0.5 * (cabs(x) + cabs(y)) ) )
 
 /*---------- Global variables ----------*/
