@@ -51,19 +51,23 @@ parser = OptionParser(
     description = __doc__,
     usage="%prog [options] [INPUT.xml[.gz]]",
     option_list = [
-        Option("-o", "--output", metavar="OUTPUT.xml[.gz]", default="/dev/stdout",
+        Option("-o", "--output", metavar="OUTPUT.xml[.gz]",
+            default="/dev/stdout",
             help="Name of output file [default: %default]"),
         Option("--detector", metavar='|'.join(available_ifos), action="append",
             help="Detectors to use.  May be specified multiple times.",
             choices=available_ifos),
         Option("--waveform",
-            help="Waveform to use for injections (overrides values in sim_inspiral table)"),
+            help="Waveform to use for injections (overrides values in "
+            "sim_inspiral table)"),
         Option("--snr-threshold", type=float, default=4.,
             help="Single-detector SNR threshold [default: %default]"),
         Option("--min-triggers", type=int, default=2,
-            help="Emit coincidences only when at least this many triggers are found [default: %default]"),
+            help="Emit coincidences only when at least this many triggers "
+            "are found [default: %default]"),
         Option("--measurement-error", choices=measurement_error_choices,
-            default=measurement_error_choices[0], metavar='|'.join(measurement_error_choices),
+            default=measurement_error_choices[0],
+            metavar='|'.join(measurement_error_choices),
             help="How to compute the measurement error [default: %default]"),
         Option("--reference-psd", metavar="PSD.xml[.gz]",
             help="Name of PSD file (required)"),
@@ -116,7 +120,8 @@ process = ligolw_process.register_to_xmldoc(out_xmldoc, parser.get_prog_name(),
     opts.__dict__, ifos=opts.detector, comment="Simulated coincidences")
 
 # Add search summary to output file.
-all_time = segments.segment([glue.lal.LIGOTimeGPS(0), glue.lal.LIGOTimeGPS(2e9)])
+all_time = segments.segment(
+    [glue.lal.LIGOTimeGPS(0), glue.lal.LIGOTimeGPS(2e9)])
 search_summary_table = lsctables.New(lsctables.SearchSummaryTable)
 out_xmldoc.childNodes[0].appendChild(search_summary_table)
 summary = ligolw_search_summary.append_search_summary(out_xmldoc, process,
@@ -184,10 +189,12 @@ for sim_inspiral in progress.iterate(sim_inspiral_table):
     inc = sim_inspiral.inclination
     phi = sim_inspiral.coa_phase
     psi = sim_inspiral.polarization
-    epoch = lal.LIGOTimeGPS(sim_inspiral.geocent_end_time, sim_inspiral.geocent_end_time_ns)
+    epoch = lal.LIGOTimeGPS(
+        sim_inspiral.geocent_end_time, sim_inspiral.geocent_end_time_ns)
     gmst = lal.GreenwichMeanSiderealTime(epoch)
     waveform = sim_inspiral.waveform if opts.waveform is None else opts.waveform
-    approximant, amplitude_order, phase_order = timing.get_approximant_and_orders_from_string(waveform)
+    approximant, amplitude_order, phase_order = \
+        timing.get_approximant_and_orders_from_string(waveform)
 
     # Pre-evaluate some trigonometric functions that we will need.
     cosinc = np.cos(inc)
@@ -203,7 +210,9 @@ for sim_inspiral in progress.iterate(sim_inspiral_table):
     M *= ((cospsi, sinpsi), (-sinpsi, cospsi))
 
     # Signal models for each detector.
-    signal_models = [timing.SignalModel(m1, m2, psds[ifo], f_low, approximant, amplitude_order, phase_order)
+    signal_models = [
+        timing.SignalModel(m1, m2, psds[ifo], f_low,
+        approximant, amplitude_order, phase_order)
         for ifo in opts.detector]
 
     # Get SNR=1 horizon distances for each detector.
@@ -236,12 +245,14 @@ for sim_inspiral in progress.iterate(sim_inspiral_table):
         abs_snrs += np.random.randn(len(abs_snrs))
 
         for i, signal_model in enumerate(signal_models):
-            arg_snrs[i], toas[i]  = np.random.multivariate_normal([arg_snrs[i], toas[i]], signal_model.get_cov(abs_snrs[i]))
+            arg_snrs[i], toas[i]  = np.random.multivariate_normal(
+                [arg_snrs[i], toas[i]], signal_model.get_cov(abs_snrs[i]))
     elif opts.measurement_error == 'from-measurement':
         # Otherwise, by defualt, apply noise to TOAs and phases first.
 
         for i, signal_model in enumerate(signal_models):
-            arg_snrs[i], toas[i]  = np.random.multivariate_normal([arg_snrs[i], toas[i]], signal_model.get_cov(abs_snrs[i]))
+            arg_snrs[i], toas[i]  = np.random.multivariate_normal(
+                [arg_snrs[i], toas[i]], signal_model.get_cov(abs_snrs[i]))
 
         # Add noise to SNR estimates.
         abs_snrs += np.random.randn(len(abs_snrs))
@@ -251,7 +262,8 @@ for sim_inspiral in progress.iterate(sim_inspiral_table):
     sngl_inspirals = []
 
     # Loop over individual detectors and create SnglInspiral entries.
-    for ifo, abs_snr, arg_snr, toa, horizon in zip(opts.detector, abs_snrs, arg_snrs, toas, horizons):
+    for ifo, abs_snr, arg_snr, toa, horizon in zip(
+            opts.detector, abs_snrs, arg_snrs, toas, horizons):
 
         # If SNR < threshold, then the injection is not found. Skip it.
         if abs_snr < opts.snr_threshold:
