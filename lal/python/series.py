@@ -67,8 +67,8 @@ def _build_series(series, dim_names, comment, delta_name, delta_unit):
     a.Unit = lal.UnitToString(series.sampleUnits)
     dim0 = a.getElementsByTagName(ligolw.Dim.tagName)[0]
     dim0.Unit = delta_unit
-    dim0.Start = ligolw_types.FormatFunc[u"real_8"](series.f0)
-    dim0.Scale = ligolw_types.FormatFunc[u"real_8"](delta)
+    dim0.Start = series.f0
+    dim0.Scale = delta
     elem.appendChild(a)
     return elem
 
