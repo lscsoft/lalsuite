@@ -66,7 +66,9 @@ parser = OptionParser(
             default=measurement_error_choices[0], metavar='|'.join(measurement_error_choices),
             help="How to compute the measurement error [default: %default]"),
         Option("--reference-psd", metavar="PSD.xml[.gz]",
-            help="Name of PSD file (required)")
+            help="Name of PSD file (required)"),
+        Option("--f-low", type=float,
+            help="Override low frequency cutoff found in sim_inspiral table.")
     ]
 )
 opts, args = parser.parse_args()
@@ -175,7 +177,7 @@ for sim_inspiral in progress.iterate(sim_inspiral_table):
     # Unpack some values from the row in the table.
     m1 = sim_inspiral.mass1
     m2 = sim_inspiral.mass2
-    f_low = sim_inspiral.f_lower
+    f_low = sim_inspiral.f_lower if opts.f_low is None else opts.f_low
     DL = sim_inspiral.distance
     ra = sim_inspiral.longitude
     dec = sim_inspiral.latitude
