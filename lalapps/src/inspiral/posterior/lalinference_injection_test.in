@@ -13,6 +13,15 @@ import ast
 import os
 
 
+class PriorTestDAG(pipeline.CondorDAG):
+  """
+  Class to contain outer DAG workflow
+  """
+  def __init__(self,cp,dax=False,site='local'):
+    pass
+
+
+
 usage=""" %prog [options] config.ini
 Setup a DAG to run an end-to-end lalinference test:
  1) Generate samples from prior
@@ -23,6 +32,10 @@ Setup a DAG to run an end-to-end lalinference test:
 parser=OptionParser(usage)
 parser.add_option("-r","--run-path",default=None,action="store",type="string",help="Directory to run pipeline in (default: $PWD)",metavar="RUNDIR")
 parser.add_option("-p","--daglog-path",default=None,action="store",type="string",help="Path to directory to contain DAG log file. SHOULD BE LOCAL TO SUBMIT NODE",metavar="LOGDIR")
+parser.add_option("-x", "--dax",action="store_true",default=False, help="Delete the ligo_data_find jobs and populate frame LFNs in the DAX")
+parser.add_option("-G", "--grid-site",action="store",type="string",metavar="SITE", help="Specify remote site in conjunction with --dax option. e.g. --grid-site=creamce for Bologna cluster.\
+Supported options are: creamce and local",default=None)
+
 
 (opts,args)=parser.parse_args()
 
@@ -46,8 +59,14 @@ local_work_dir=cp.get('paths','daglogdir')
 
 # Create a DAG to contain the other scripts
 
+outerdag=pipeline.CondorDAG
+
 
 # Run code with prior sampling
+priordag=pipe_utils.LALInferencePipelineDAG(cp,dax=opts.dax,site=opts.grid_site)
+
+
+priordagjob=pipeline.CondorDAGManJob()
 
 # Convert prior samples to injections
 
