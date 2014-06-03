@@ -25,7 +25,8 @@ __author__ = "Leo Singer <leo.singer@ligo.org>"
 
 import logging
 import numpy as np
-import lal, lalsimulation
+import lal
+import lalsimulation
 from scipy import interpolate
 from scipy import linalg
 from scipy import optimize
