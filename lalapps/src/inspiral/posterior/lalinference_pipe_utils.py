@@ -418,7 +418,7 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
     # Set up necessary job files.
     self.datafind_job = pipeline.LSCDataFindJob(self.cachepath,self.logpath,self.config,dax=self.is_dax())
     self.datafind_job.add_opt('url-type','file')
-    self.datafind_job.set_sub_file(os.path.join(self.basepath,'datafind.sub'))
+    self.datafind_job.set_sub_file(os.path.abspath(os.path.join(self.basepath,'datafind.sub')))
     # Need to create a job file for each IFO combination
     self.engine_jobs={}
     ifocombos=[]
@@ -439,14 +439,14 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
     self.gracedbjob.set_grid_site('local')
     # Process the input to build list of analyses to do
     self.events=self.setup_from_inputs()
-    self.times=[e.trig_time for e in self.events]
 
     # Sanity checking
     if len(self.events)==0:
-      print 'No input events found, please check your config. Will generate an empty DAG'
+      print 'No input events found, please check your config if you expect some events'
+    self.times=[e.trig_time for e in self.events]
     
     # Set up the segments
-    if not (self.config.has_option('input','gps-start-time') and self.config.has_option('input','gps-end-time')):
+    if not (self.config.has_option('input','gps-start-time') and self.config.has_option('input','gps-end-time')) and len(self.times)>0:
       (mintime,maxtime)=self.get_required_data(self.times)
     if not self.config.has_option('input','gps-start-time'):
       self.config.set('input','gps-start-time',str(int(floor(mintime))))
@@ -550,6 +550,7 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
     in the [input] section of the ini file.
     And process the events found therein
     """
+    events=[]
     gpsstart=None
     gpsend=None
     if self.config.has_option('input','gps-start-time'):
@@ -559,7 +560,8 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
     inputnames=['gps-time-file','injection-file','sngl-inspiral-file','coinc-inspiral-file','pipedown-db','gid']
     ReadInputFromList=sum([ 1 if self.config.has_option('input',name) else 0 for name in inputnames])
     if ReadInputFromList!=1 and (gpsstart is None or gpsend is None):
-        print 'Plese specify only one input file'
+        return []
+        print 'Please specify only one input file'
         print 'Or specify gps-start-time and gps-end-time in the ini file'
         sys.exit(1)
     if self.config.has_option('input','events'):
@@ -573,7 +575,7 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
     else:
         selected_events=None
     # No input file given, analyse the entire time stretch between gpsstart and gpsend
-    if ReadInputFromList!=1:
+    if self.config.has_option('input','analyse-all-time') and self.config.get('input','analyse-all-time')==True:
         seglen=self.config.getfloat('engine','seglen')
         if(self.config.has_option('input','segment-overlap')):
           overlap=self.config.getfloat('input','segment-overlap')
@@ -979,7 +981,7 @@ class EngineJob(pipeline.CondorDAGJob,pipeline.AnalysisJob):
       if site!='local':
         self.set_executable_installed(False)
     # Set the options which are always used
-    self.set_sub_file(submitFile)
+    self.set_sub_file(os.path.abspath(submitFile))
     if self.engine=='lalinferencemcmc' or self.engine=='lalinferencebambimpi':
       #openmpipath=cp.get('condor','openmpi')
       self.machine_count=cp.get('mpi','machine-count')
@@ -1299,7 +1301,7 @@ class ResultsPageJob(pipeline.CondorDAGJob,pipeline.AnalysisJob):
     exe=cp.get('condor','resultspage')
     pipeline.CondorDAGJob.__init__(self,"vanilla",exe)
     pipeline.AnalysisJob.__init__(self,cp,dax=dax) # Job always runs locally
-    self.set_sub_file(submitFile)
+    self.set_sub_file(os.path.abspath(submitFile))
     self.set_stdout_file(os.path.join(logdir,'resultspage-$(cluster)-$(process).out'))
     self.set_stderr_file(os.path.join(logdir,'resultspage-$(cluster)-$(process).err'))
     self.add_condor_cmd('getenv','True')
@@ -1370,7 +1372,7 @@ class CoherenceTestJob(pipeline.CondorDAGJob,pipeline.AnalysisJob):
       self.add_condor_cmd('getenv','True')
       self.set_stdout_file(os.path.join(logdir,'coherencetest-$(cluster)-$(process).out'))
       self.set_stderr_file(os.path.join(logdir,'coherencetest-$(cluster)-$(process).err'))
-      self.set_sub_file(submitFile)
+      self.set_sub_file(os.path.abspath(submitFile))
 
 class CoherenceTestNode(pipeline.CondorDAGNode):
     """
@@ -1418,7 +1420,7 @@ class MergeNSJob(pipeline.CondorDAGJob,pipeline.AnalysisJob):
       exe=cp.get('condor','mergescript')
       pipeline.CondorDAGJob.__init__(self,"vanilla",exe)
       pipeline.AnalysisJob.__init__(self,cp,dax=dax) 
-      self.set_sub_file(submitFile)
+      self.set_sub_file(os.path.abspath(submitFile))
       self.set_stdout_file(os.path.join(logdir,'merge-$(cluster)-$(process).out'))
       self.set_stderr_file(os.path.join(logdir,'merge-$(cluster)-$(process).err'))
       self.add_condor_cmd('getenv','True')
@@ -1467,7 +1469,7 @@ class GraceDBJob(pipeline.CondorDAGJob,pipeline.AnalysisJob):
       #pipeline.CondorDAGJob.__init__(self,"vanilla",exe)
       pipeline.CondorDAGJob.__init__(self,"scheduler",exe)
       pipeline.AnalysisJob.__init__(self,cp,dax=dax)
-      self.set_sub_file(submitFile)
+      self.set_sub_file(os.path.abspath(submitFile))
       self.set_stdout_file(os.path.join(logdir,'gracedb-$(cluster)-$(process).out'))
       self.set_stderr_file(os.path.join(logdir,'gracedb-$(cluster)-$(process).err'))
       self.add_condor_cmd('getenv','True')
