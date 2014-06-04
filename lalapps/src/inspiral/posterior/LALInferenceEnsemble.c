@@ -65,12 +65,6 @@ void LALInferenceInitEnsemble(LALInferenceRunState *state) {
     ppt = LALInferenceGetProcParamVal(state->commandLine, "--init-samples");
     if (ppt) {
         if (walker == 0) {
-            if (!ppt) {
-                fprintf(stderr, "This sampler is in its enfancy, and needs to be spoon fed.\n");
-                fprintf(stderr, "Please specify a file containing a list of samples to start with.\n");
-                exit(1);
-            }
-
             char *infile = ppt->value;
             FILE *input = fopen(infile, "r");
 
