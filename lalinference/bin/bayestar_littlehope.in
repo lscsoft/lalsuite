@@ -167,7 +167,7 @@ try:
     time_slide_table = ligolw_table.get_table(out_xmldoc, lsctables.TimeSlideTable.tableName)
 except ValueError:
     time_slide_table = lsctables.New(lsctables.TimeSlideTable)
-    xmldoc.childNodes[0].appendChild(time_slide_table)
+    out_xmldoc.childNodes[0].appendChild(time_slide_table)
     time_slide_table.sync_next_id()
 time_slide_id = time_slide_table.get_time_slide_id(
     dict((ifo, 0) for ifo in opts.detector), create_new=process)
