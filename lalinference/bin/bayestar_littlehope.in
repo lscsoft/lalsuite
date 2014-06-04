@@ -81,6 +81,8 @@ command.check_required_arguments(parser, opts, 'waveform', 'template_bank', 'ref
 
 # Python standard library imports.
 import os
+import signal
+import sys
 
 # LIGO-LW XML imports.
 from glue.ligolw import ligolw
@@ -306,7 +308,20 @@ def inject(hplus, hcross, ifo, psd):
     return x
 
 
+class keyboard_interrupt_handler(object):
+    def __init__(self):
+        self.interrupted = False
+        signal.signal(signal.SIGINT, self)
+    def __call__(self, signal, frame):
+        self.interrupted = True
+handler = keyboard_interrupt_handler()
+
+
 for i_sim_inspiral in progress.iterate(range(n_injections), format='injection %d of ' + str(n_injections)):
+
+    if handler.interrupted:
+        print 'warning: interrupted, cleaning up'
+        break
 
     if opts.repeat_first_injection:
         sim_inspiral = sim_inspiral_table[0]
@@ -402,6 +417,9 @@ for i_sim_inspiral in progress.iterate(range(n_injections), format='injection %d
         coinc_map_table.append(coinc_map)
 
 
+signal.signal(signal.SIGINT, signal.SIG_DFL)
+
+
 # Record process end time.
 progress.update(-1, 'writing ' + opts.output)
 ligolw_process.set_process_end_time(process)
@@ -409,3 +427,7 @@ ligolw_process.set_process_end_time(process)
 # Write output file.
 ligolw_utils.write_filename(out_xmldoc, opts.output,
     gz=(os.path.splitext(opts.output)[-1]==".gz"))
+
+
+if handler.interrupted:
+    sys.exit(1)
