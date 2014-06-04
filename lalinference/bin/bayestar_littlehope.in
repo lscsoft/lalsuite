@@ -93,6 +93,7 @@ from glue.ligolw import lsctables
 
 # glue and LAL imports.
 from glue import segments
+import glue.text_progress_bar
 import glue.lal
 import lal, lalsimulation
 import lal.series
@@ -106,7 +107,10 @@ from lalinference.bayestar import ligolw as ligolw_bayestar
 import numpy as np
 
 
-template_approximant, template_amplitude_order, template_phase_order = timing.get_approximant_and_orders_from_string(opts.waveform)
+progress = glue.text_progress_bar.ProgressBar()
+
+template_approximant, template_amplitude_order, template_phase_order = \
+    timing.get_approximant_and_orders_from_string(opts.waveform)
 
 
 # FIXME: sample rate could be a command line option; template duration and data
@@ -134,6 +138,7 @@ summary = ligolw_search_summary.append_search_summary(out_xmldoc, process,
     inseg=all_time, outseg=all_time)
 
 # Read template bank file.
+progress.update(-1, 'reading ' + opts.template_bank)
 xmldoc = ligolw_utils.load_filename(opts.template_bank)
 
 # Determine the low frequency cutoff from the template bank file.
@@ -143,6 +148,7 @@ template_bank = ligolw_table.get_table(xmldoc,
     lsctables.SnglInspiralTable.tableName)
 
 # Read injection file.
+progress.update(-1, 'reading ' + infilename)
 xmldoc = ligolw_utils.load_filename(infilename)
 
 # Extract simulation table from injection file.
@@ -186,6 +192,7 @@ coinc_inspiral_table = lsctables.New(lsctables.CoincInspiralTable)
 out_xmldoc.childNodes[0].appendChild(coinc_inspiral_table)
 
 # Read PSD file.
+progress.update(-1, 'reading ' + opts.reference_psd)
 xmldoc = ligolw_utils.load_filename(opts.reference_psd)
 psds = lal.series.read_psd_xmldoc(xmldoc)
 psds = dict(
@@ -199,14 +206,19 @@ class psdfunc(object):
         self.func = func
 
     def __call__(self, f):
-        if 5 <= f <= 1800:
-            return self.func(f)
-        else:
-            return 0.
+        _f = np.atleast_1d(f)
+        ret = np.empty(_f.shape, dtype=float)
+        cond = (5 <= _f) & (_f <= 1800)
+        ret[cond] = self.func(_f[cond])
+        ret[~cond] = 0.
+        if np.isscalar(f):
+            ret = np.asscalar(ret)
+        return ret
 
-psdfuncs = [np.vectorize(psdfunc(psds[ifo])) for ifo in opts.detector]
+psdfuncs = [psdfunc(psds[ifo]) for ifo in opts.detector]
 
 # Compute horizon distances for each template, for each detector
+progress.update(-1, 'computing signal models')
 horizons_bank = [
     [
         timing.SignalModel(sngl.mass1, sngl.mass2, S, template_bank_f_low, template_approximant, template_amplitude_order, template_phase_order).get_horizon_distance()
@@ -215,6 +227,7 @@ horizons_bank = [
 
 # Generate templates for each unique set of intrinsic parameters
 # FIXME: Get template_duration, template_approximant, template_amplitude_order, and template_phase_order from sngl_inspiral table.
+progress.update(-1, 'computing template bank')
 template_bank = [
     [
         filter.generate_template(sngl.mass1, sngl.mass2, S, template_bank_f_low, sample_rate, template_duration, template_approximant, template_amplitude_order, template_phase_order)
@@ -222,6 +235,7 @@ template_bank = [
     ] for sngl in template_bank]
 
 # Generate PSDs for data coloring
+progress.update(-1, 'computing PSDs')
 def generate_psd(S):
     psd = lal.CreateREAL8FrequencySeries(None, lal.LIGOTimeGPS(0), 0, 1 / data_duration, filter.unitInverseHertz, data_length // 2 + 1)
     psd.data.data = S(filter.abscissa(psd))
@@ -292,7 +306,7 @@ def inject(hplus, hcross, ifo, psd):
     return x
 
 
-for i_sim_inspiral in range(n_injections):
+for i_sim_inspiral in progress.iterate(range(n_injections), format='injection %d of ' + str(n_injections)):
 
     if opts.repeat_first_injection:
         sim_inspiral = sim_inspiral_table[0]
@@ -303,6 +317,12 @@ for i_sim_inspiral in range(n_injections):
     if not(opts.repeat_first_injection) or i_sim_inspiral == 0:
         mass1 = sim_inspiral.mass1
         mass2 = sim_inspiral.mass2
+        spin1x = sim_inspiral.spin1x
+        spin1y = sim_inspiral.spin1y
+        spin1z = sim_inspiral.spin1z
+        spin2x = sim_inspiral.spin2x
+        spin2y = sim_inspiral.spin2y
+        spin2z = sim_inspiral.spin2z
         f_low = sim_inspiral.f_lower
         DL = sim_inspiral.distance
         ra = sim_inspiral.longitude
@@ -321,7 +341,7 @@ for i_sim_inspiral in range(n_injections):
         hplus, hcross = lalsimulation.SimInspiralChooseTDWaveform(
             phi, 1 / sample_rate,
             mass1 * lal.LAL_MSUN_SI, mass2 * lal.LAL_MSUN_SI,
-            0, 0, 0, 0, 0, 0,
+            spin1x, spin1y, spin1z, spin2x, spin2y, spin2z,
             f_low, f_low,
             DL * 1e6 * lal.LAL_PC_SI,
             inc, 0, 0,
@@ -383,6 +403,7 @@ for i_sim_inspiral in range(n_injections):
 
 
 # Record process end time.
+progress.update(-1, 'writing ' + opts.output)
 ligolw_process.set_process_end_time(process)
 
 # Write output file.
