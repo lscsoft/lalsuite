@@ -21,6 +21,7 @@
 #define _GSLHELPERS_H
 /// \cond DONT_DOXYGEN
 
+#include <gsl/gsl_errno.h>
 #include <gsl/gsl_vector.h>
 #include <gsl/gsl_matrix.h>
 
@@ -77,7 +78,7 @@
       if (fmt != NULL) { \
         XLAL_ERROR_VAL(val, XLAL_EFAILED, fmt, __VA_ARGS__, NULL); \
       } else { \
-        XLAL_ERROR_VAL(val, XLAL_EFAILED, #call " failed"); \
+        XLAL_ERROR_VAL(val, XLAL_EFAILED, #call " failed: %s", gsl_strerror(GH_retn)); \
       } \
     } \
   } while (0)
