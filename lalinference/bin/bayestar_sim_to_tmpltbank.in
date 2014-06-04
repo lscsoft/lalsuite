@@ -36,7 +36,9 @@ parser = OptionParser(
     usage="%prog [options] [INPUT.xml[.gz]] [-o OUTPUT.xml[.gz]]",
     option_list = [
         Option("-o", "--output", metavar="OUTPUT.xml[.gz]", default="/dev/stdout",
-            help="Name of output file [default: %default]")
+            help="Name of output file [default: %default]"),
+        Option("--f-low", type=float,
+            help="Override low frequency cutoff found in sim_inspiral table.")
     ]
 )
 opts, args = parser.parse_args()
@@ -82,14 +84,6 @@ class TaylorF2RedSpinIntrinsicParams(namedtuple('intrinsic_params', _fields)):
             self.mass1, self.mass2, self.spin1z, self.spin2z)
 
 
-# Open output file.
-out_xmldoc = ligolw.Document()
-out_xmldoc.appendChild(ligolw.LIGO_LW())
-
-# Write process metadata to output file.
-process = ligolw_process.register_to_xmldoc(out_xmldoc, "tmpltbank",
-    opts.__dict__, ifos="H1", comment="Exact-match template bank")
-
 # Read injection file.
 xmldoc = ligolw_utils.load_filename(infilename)
 
@@ -101,15 +95,29 @@ sim_inspiral_table = ligolw_table.get_table(xmldoc,
 sim_inspiral_intrinsic_params = set(TaylorF2RedSpinIntrinsicParams(sim_inspiral)
     for sim_inspiral in sim_inspiral_table)
 
-# Get the low-frequency cutoffs from the sim_inspiral table.
-f_lows = set(sim_inspiral.f_lower for sim_inspiral in sim_inspiral_table)
+if opts.f_low is None:
+    # Get the low-frequency cutoffs from the sim_inspiral table.
+    f_lows = set(sim_inspiral.f_lower for sim_inspiral in sim_inspiral_table)
 
-# There can be only one!
-try:
-    f_low, = f_lows
-except ValueError:
-    raise ValueError("sim_inspiral:f_lower columns are not unique, got values: "
-        + ' '.join(f_lows))
+    # There can be only one!
+    try:
+        f_low, = f_lows
+    except ValueError:
+        raise ValueError(
+            "sim_inspiral:f_lower columns are not unique, got values: "
+            + ' '.join(f_lows))
+else:
+    f_low = opts.f_low
+
+# Open output file.
+out_xmldoc = ligolw.Document()
+out_xmldoc.appendChild(ligolw.LIGO_LW())
+
+# Write process metadata to output file. Masquerade as lalapps_tmpltbank and
+# encode low frequency cutoff in command line arguments.
+process = ligolw_process.register_to_xmldoc(out_xmldoc, "tmpltbank",
+    dict(opts.__dict__, low_frequency_cutoff=f_low), ifos="H1",
+    comment="Exact-match template bank")
 
 # Record low-frequency cutoff in the SearchSummVars table.
 search_summvars_table = lsctables.New(lsctables.SearchSummVarsTable)
