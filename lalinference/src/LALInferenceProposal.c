@@ -962,7 +962,7 @@ void LALInferenceDifferentialEvolutionIntrinsic(LALInferenceRunState *runState, 
   const char *propName = differentialEvolutionIntrinsicName;
   LALInferenceSetVariable(runState->proposalArgs, LALInferenceCurrentProposalName, &propName);
   const char *names[] = {"chirpmass", "asym_massratio", "massratio", "m1", "m2", "a_spin1", "a_spin2",
-      "tilt_spin1", "tilt_spin2", "phi12", "phi_spin1", "phi_spin2", "theta_spin1", "theta_spin2", NULL};
+      "tilt_spin1", "tilt_spin2", "phi12", "phi_spin1", "phi_spin2", "theta_spin1", "theta_spin2", "spin1", "spin2", NULL};
   LALInferenceDifferentialEvolutionNames(runState, pp, names);
 }
 
