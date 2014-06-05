@@ -203,10 +203,11 @@ int XLALSimIMRPhenomP(
   const REAL8 Mtot_SI,                  /**< Total mass of binary (kg) */
   const REAL8 distance,                 /**< Distance of source (m) */
   const REAL8 alpha0,                   /**< Initial value of alpha angle */
-  const REAL8 phic,                     /**< Orbital coalescence phase (rad) */
+  const REAL8 phic,                     /**< Orbital phase at the peak of the underlying non precessing model (rad) */
   const REAL8 deltaF,                   /**< Sampling frequency (Hz) */
   const REAL8 f_min,                    /**< Starting GW frequency (Hz) */
-  const REAL8 f_max                    	/**< End frequency; 0 defaults to ringdown cutoff freq */
+  const REAL8 f_max,                   	/**< End frequency; 0 defaults to ringdown cutoff freq */
+  const REAL8 f_ref                     /**< Reference frequency */
 );
 
 /**
@@ -225,7 +226,7 @@ int XLALSimIMRPhenomPCalculateModelParameters(
     REAL8 *alpha0,                  /**< Output: Initial value of alpha angle */
     const REAL8 m1_SI,              /**< Mass of companion 1 (kg) */
     const REAL8 m2_SI,              /**< Mass of companion 2 (kg) */
-    const REAL8 f_min,              /**< Starting GW frequency (Hz) */
+    const REAL8 f_ref,              /**< Reference GW frequency (Hz) */
     const REAL8 lnhatx,             /**< Initial value of LNhatx: orbital angular momentum unit vector */
     const REAL8 lnhaty,             /**< Initial value of LNhaty */
     const REAL8 lnhatz,             /**< Initial value of LNhatz */

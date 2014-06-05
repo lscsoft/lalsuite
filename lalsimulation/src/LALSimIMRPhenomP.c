@@ -87,10 +87,12 @@ int PhenomPCore(
   const REAL8 chip,                       /**< Dimensionless spin in the orbital plane */
   const REAL8 distance,                   /**< Distance of source (m) */
   const REAL8 M,                          /**< Total mass (Solar masses) */
-  const REAL8 phic,                       /**< Orbital coalescence phase (rad) */
+  const REAL8 phic,                       /**< Orbital phase at the peak of the underlying non precessing model (rad) */
   BBHPhenomCParams *PCparams,             /**< Internal PhenomC parameters */
   NNLOanglecoeffs *angcoeffs,             /**< Struct with PN coeffs for the NNLO angles */
   SpinWeightedSphericalHarmonic_l2 *Y2m,  /**< Struct of l=2 spherical harmonics of spin weight -2 */
+  const REAL8 alphaoffset,                /**< f_ref dependent offset for alpha angle */
+  const REAL8 epsilonoffset,              /**< f_ref dependent offset for epsilon angle */
   COMPLEX16 *hp,                          /**< Output: \tilde h_+ */
   COMPLEX16 *hc                           /**< Output: \tilde h_+ */
 );
@@ -145,7 +147,7 @@ int XLALSimIMRPhenomPCalculateModelParameters(
     REAL8 *alpha0,                  /**< Output: Initial value of alpha angle */
     const REAL8 m1_SI,              /**< Mass of companion 1 (kg) */
     const REAL8 m2_SI,              /**< Mass of companion 2 (kg) */
-    const REAL8 f_min,              /**< Starting GW frequency (Hz) */
+    const REAL8 f_ref,              /**< Reference GW frequency (Hz) */
     const REAL8 lnhatx,             /**< Initial value of LNhatx: orbital angular momentum unit vector */
     const REAL8 lnhaty,             /**< Initial value of LNhaty */
     const REAL8 lnhatz,             /**< Initial value of LNhatz */
@@ -163,6 +165,11 @@ int XLALSimIMRPhenomPCalculateModelParameters(
   if (!thetaJ)   XLAL_ERROR(XLAL_EFAULT);
   if (!phiJ)     XLAL_ERROR(XLAL_EFAULT);
   if (!alpha0)   XLAL_ERROR(XLAL_EFAULT);
+
+  if (f_ref <= 0) {
+    XLALPrintError("Reference frequency must be positive.\n");
+    XLAL_ERROR(XLAL_EDOM);
+  }
 
   const REAL8 m1 = m1_SI / LAL_MSUN_SI;   /* Masses in solar masses */
   const REAL8 m2 = m2_SI / LAL_MSUN_SI;
@@ -198,7 +205,7 @@ int XLALSimIMRPhenomPCalculateModelParameters(
   /* Compute L, J0 and orientation angles */
   const REAL8 m_sec = M * LAL_MTSUN_SI;   /* Total mass in seconds */
   const REAL8 piM = LAL_PI * m_sec;
-  const REAL8 v_ref = cbrt(piM * f_min);   /* f_ref is f_min*/
+  const REAL8 v_ref = cbrt(piM * f_ref);
 
   const REAL8 L0 = M*M * L2PNR(v_ref, *eta); /* Use 2PN approximation for L. */
   const REAL8 Jx0 = L0 * lnhatx + m1_2*s1x + m2_2*s2x;
@@ -242,10 +249,11 @@ int XLALSimIMRPhenomP(
   const REAL8 Mtot_SI,                  /**< Total mass of binary (kg) */
   const REAL8 distance,                 /**< Distance of source (m) */
   const REAL8 alpha0,                   /**< Initial value of alpha angle */
-  const REAL8 phic,                     /**< Orbital coalescence phase (rad) */
+  const REAL8 phic,                     /**< Orbital phase at the peak of the underlying non precessing model (rad) */
   const REAL8 deltaF,                   /**< Sampling frequency (Hz) */
   const REAL8 f_min,                    /**< Starting GW frequency (Hz) */
-  const REAL8 f_max)                    /**< End frequency; 0 defaults to ringdown cutoff freq */
+  const REAL8 f_max,                    /**< End frequency; 0 defaults to ringdown cutoff freq */
+  const REAL8 f_ref)                    /**< Reference frequency */
 {
   const REAL8 M = Mtot_SI / LAL_MSUN_SI;  /* External units: SI; internal units: solar masses */
   const REAL8 m_sec = M * LAL_MTSUN_SI;   /* Total mass in seconds */
@@ -253,7 +261,7 @@ int XLALSimIMRPhenomP(
   const REAL8 m1 = M * 1.0 / (1+q);
   const REAL8 m2 = M * q / (1+q);
   const REAL8 piM = LAL_PI * m_sec;
-  const REAL8 v0 = cbrt(piM * f_min);   /* f_ref is f_min*/
+  const REAL8 v0 = cbrt(piM * f_ref);
 
   static LIGOTimeGPS ligotimegps_zero = {0, 0};
 
@@ -265,6 +273,11 @@ int XLALSimIMRPhenomP(
   if (f_min <= 0)     XLAL_ERROR(XLAL_EDOM);
   if (f_max < 0)      XLAL_ERROR(XLAL_EDOM);
   if (distance <= 0)  XLAL_ERROR(XLAL_EDOM);
+
+  if (f_ref <= 0) {
+      XLALPrintError("Reference frequency must be positive.\n");
+      XLAL_ERROR(XLAL_EDOM);
+  }
 
   if (eta < 0.0453515){ /* q = 20 */
       XLALPrintError("Mass ratio is way outside the calibration range. m1/m2 should be <= 20.\n");
@@ -288,8 +301,8 @@ int XLALSimIMRPhenomP(
   NNLOanglecoeffs angcoeffs;
   ComputeNNLOanglecoeffs(&angcoeffs,q,chil,chip);
 
-  /* Compute the offset due to the choice of integration constant in alpha PN formula */
-  const REAL8 omega_ref = piM * f_min;
+  /* Compute the offsets due to the choice of integration constant in alpha and epsilon PN formula */
+  const REAL8 omega_ref = piM * f_ref;
   const REAL8 logomega_ref = log(omega_ref);
   const REAL8 omega_ref_cbrt = v0;
   const REAL8 omega_ref_cbrt2 = omega_ref_cbrt*omega_ref_cbrt;
@@ -299,11 +312,16 @@ int XLALSimIMRPhenomP(
                               + angcoeffs.alphacoeff4*logomega_ref
                               + angcoeffs.alphacoeff5*omega_ref_cbrt);
 
+  const REAL8 epsilonNNLOoffset = (angcoeffs.epsiloncoeff1/omega_ref
+                                + angcoeffs.epsiloncoeff2/omega_ref_cbrt2
+                                + angcoeffs.epsiloncoeff3/omega_ref_cbrt
+                                + angcoeffs.epsiloncoeff4*logomega_ref
+                                + angcoeffs.epsiloncoeff5*omega_ref_cbrt);
 
   /* Compute Ylm's only once and pass them to PhenomPCore() below. */
   SpinWeightedSphericalHarmonic_l2 Y2m;
   const REAL8 ytheta  = thetaJ;
-  const REAL8 yphi    = alphaNNLOoffset - alpha0;
+  const REAL8 yphi    = 0;
   Y2m.Y2m2 = XLALSpinWeightedSphericalHarmonic(ytheta, yphi, -2, 2, -2);
   Y2m.Y2m1 = XLALSpinWeightedSphericalHarmonic(ytheta, yphi, -2, 2, -1);
   Y2m.Y20  = XLALSpinWeightedSphericalHarmonic(ytheta, yphi, -2, 2,  0);
@@ -364,7 +382,9 @@ int XLALSimIMRPhenomP(
 
     /* Generate the waveform */
     int errcode = PhenomPCore(f, eta, chi_eff, chip, distance, M, phic,
-                              PCparams, &angcoeffs, &Y2m, &hp_val, &hc_val);
+                              PCparams, &angcoeffs, &Y2m,
+                              alphaNNLOoffset - alpha0, epsilonNNLOoffset,
+                              &hp_val, &hc_val);
     if( errcode != XLAL_SUCCESS )
       XLAL_ERROR(XLAL_EFUNC);
 
@@ -385,10 +405,12 @@ int PhenomPCore(
   const REAL8 chip,                       /**< Dimensionless spin in the orbital plane */
   const REAL8 distance,                   /**< Distance of source (m) */
   const REAL8 M,                          /**< Total mass (Solar masses) */
-  const REAL8 phic,                       /**< Orbital coalescence phase (rad) */
+  const REAL8 phic,                       /**< Orbital phase at the peak of the underlying non precessing model (rad) */
   BBHPhenomCParams *PCparams,             /**< Internal PhenomC parameters */
   NNLOanglecoeffs *angcoeffs,  		  /**< Struct with PN coeffs for the NNLO angles */
   SpinWeightedSphericalHarmonic_l2 *Y2m,  /**< Struct of l=2 spherical harmonics of spin weight -2 */
+  const REAL8 alphaoffset,                /**< f_ref dependent offset for alpha angle */
+  const REAL8 epsilonoffset,              /**< f_ref dependent offset for epsilon angle */
   COMPLEX16 *hp,                          /**< Output: \tilde h_+ */
   COMPLEX16 *hc)                          /**< Output: \tilde h_+ */
 {
@@ -440,13 +462,13 @@ int PhenomPCore(
               + angcoeffs->alphacoeff2/omega_cbrt2
               + angcoeffs->alphacoeff3/omega_cbrt
               + angcoeffs->alphacoeff4*logomega
-              + angcoeffs->alphacoeff5*omega_cbrt);
+              + angcoeffs->alphacoeff5*omega_cbrt) - alphaoffset;
 
   REAL8 epsilon = (angcoeffs->epsiloncoeff1/omega
                 + angcoeffs->epsiloncoeff2/omega_cbrt2
                 + angcoeffs->epsiloncoeff3/omega_cbrt
                 + angcoeffs->epsiloncoeff4*logomega
-                + angcoeffs->epsiloncoeff5*omega_cbrt);
+                + angcoeffs->epsiloncoeff5*omega_cbrt) - epsilonoffset;
 
   /* Calculate intermediate expressions cos(beta/2), sin(beta/2) and powers thereof for Wigner d's. */
   REAL8 cBetah, sBetah; /* cos(beta/2), sin(beta/2) */
