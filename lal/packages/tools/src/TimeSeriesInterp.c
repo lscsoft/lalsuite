@@ -105,7 +105,7 @@ void XLALREAL8TimeSeriesInterpDestroy(LALREAL8TimeSeriesInterp *interp)
 
 REAL8 XLALREAL8TimeSeriesInterpEval(LALREAL8TimeSeriesInterp *interp, const LIGOTimeGPS *t)
 {
-	const double noop_threshold = 1e-2;	/* samples */
+	const double noop_threshold = 1./1024.;	/* samples */
 	const REAL8 *data = interp->series->data->data;
 	double *cached_kernel = interp->cached_kernel;
 	REAL8 val = 0.0;
@@ -124,13 +124,19 @@ REAL8 XLALREAL8TimeSeriesInterpEval(LALREAL8TimeSeriesInterp *interp, const LIGO
 	stop = start + interp->kernel_length;
 
 	if(fabs(residual - interp->residual) >= noop_threshold) {
-		/* kernel is top hat-windowed sinc function.  don't check
-		 * for 0/0:  can only occur if j is an integer, which is
-		 * trapped by no-op path above */
-		for(i = start; i < stop; i++) {
-			double x = LAL_PI * (i - j);
-			*cached_kernel++ = sin(x) / x;
-		}
+		/* kernel is top hat-windowed sinc function.
+		 *
+		 *	x = pi (i - j);
+		 *	kern = sin(x) / x
+		 *
+		 * don't check for 0/0:  can only occur if j is an integer,
+		 * which is trapped by no-op path above.  note that
+		 * argument of sin(x) increases by pi each iteration, so
+		 * just need to compute its value for first iteration then
+		 * flip sign for each subsequent iteration. */
+		double sinx_over_pi = sin(LAL_PI * (start - j)) / LAL_PI;
+		for(i = start; i < stop; i++, sinx_over_pi = -sinx_over_pi)
+			*cached_kernel++ = sinx_over_pi / (i - j);
 		interp->residual = residual;
 		/* reset pointer */
 		cached_kernel = interp->cached_kernel;
