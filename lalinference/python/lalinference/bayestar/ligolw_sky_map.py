@@ -22,6 +22,7 @@ from __future__ import division
 __author__ = "Leo Singer <leo.singer@ligo.org>"
 
 
+import itertools
 import time
 import numpy as np
 from . import filter
@@ -59,7 +60,8 @@ def emcee_sky_map(logl, loglargs, logp, logpargs, xmin, xmax, nside):
     ntemps = 20
     nwalkers = 100
     nburnin = 1000
-    niter = 10000
+    nthin = 10
+    niter = 10000 + nburnin
     ndim = len(xmin)
     sampler = emcee.PTSampler(
         ntemps=ntemps, nwalkers=nwalkers, dim=ndim, logl=logl, logp=logp,
@@ -68,19 +70,21 @@ def emcee_sky_map(logl, loglargs, logp, logpargs, xmin, xmax, nside):
     # Draw initial state from multivariate uniform distribution
     p0 = np.random.uniform(xmin, xmax, (ntemps, nwalkers, ndim))
 
-    # Burn in
-    p0, logp0, logl0 = sampler.run_mcmc(p0, nburnin, storechain=False)
-
     # Collect samples. The .copy() is important because PTSampler.sample()
     # reuses p on every iteration.
     ra, sin_dec = np.vstack([
         p[0, :, :2].copy() for p, _, _
-        in sampler.sample(p0, logp0, logl0, niter, storechain=False)]).T
+        in itertools.islice(
+            sampler.sample(p0, iterations=niter, storechain=False),
+            nburnin, niter, nthin
+        )]).T
 
     # Bin samples
     theta = np.arccos(sin_dec)
     phi = ra
-    prob = postprocess.adaptive_healpix_histogram(theta, phi, 30, nside=nside)
+    samples_per_bin = int(np.ceil(0.005 * len(theta)))
+    prob = postprocess.adaptive_healpix_histogram(
+        theta, phi, samples_per_bin, nside=nside)
 
     # Done!
     return prob
