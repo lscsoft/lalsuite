@@ -45,7 +45,7 @@ extern "C" {
 
 /*---------- exported MACROS ----------*/
 #define NhalfPosDC(N) ( (UINT4)( N / 2 ) + 1 )
-#define NhalfNeg(N) ((UINT4)( (N) - NhalfPosDC(N) ))		/* round down (making sure N+ + N- = (N-1) */
+#define NhalfNeg(N) ( (N) - NhalfPosDC(N) )		/* making sure NhalfPosDC(N) + NhalfNeg(N) = N */
 
 /*---------- exported types ----------*/
 
@@ -74,7 +74,7 @@ typedef struct tagVectorComparison
 /*---------- exported prototypes [API] ----------*/
 
 COMPLEX8TimeSeries *XLALSFTVectorToCOMPLEX8TimeSeries ( SFTVector *sfts, const LIGOTimeGPS *start_in, const LIGOTimeGPS *end_in );
-SFTtype *XLALSFTVectorToLFT ( const SFTVector *sfts, REAL8 upsampling );
+SFTtype *XLALSFTVectorToLFT ( SFTVector *sfts, REAL8 upsampling );
 
 int XLALReorderFFTWtoSFT (COMPLEX8Vector *X);
 int XLALReorderSFTtoFFTW (COMPLEX8Vector *X);
