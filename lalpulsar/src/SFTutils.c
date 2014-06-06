@@ -1628,3 +1628,37 @@ XLALMultiAddToFakeSFTCatalog ( SFTCatalog *catalog,                          /**
   return catalog;
 
 } /* XLALMultiAddToFakeSFTCatalog() */
+
+
+/**
+ * Copy an entire SFT-type into another.
+ * We require the destination-SFT to have a NULL data-entry, as the
+ * corresponding data-vector will be allocated here and copied into
+ *
+ * Note: the source-SFT is allowed to have a NULL data-entry,
+ * in which case only the header is copied.
+ */
+int
+XLALCopySFT ( SFTtype *dest, 		/**< [out] copied SFT (needs to be allocated already) */
+              const SFTtype *src	/**< input-SFT to be copied */
+              )
+{
+  // check input sanity
+  XLAL_CHECK ( dest != NULL, XLAL_EINVAL );
+  XLAL_CHECK ( dest->data == NULL, XLAL_EINVAL );
+  XLAL_CHECK ( src != NULL, XLAL_EINVAL );
+
+  /* copy complete head (including data-pointer, but this will be separately alloc'ed and copied in the next step) */
+  (*dest) = (*src);	// struct copy
+
+  /* copy data (if there's any )*/
+  if ( src->data )
+    {
+      UINT4 numBins = src->data->length;
+      XLAL_CHECK ( (dest->data = XLALCreateCOMPLEX8Vector ( numBins )) != NULL, XLAL_EFUNC );
+      memcpy ( dest->data->data, src->data->data, numBins * sizeof (dest->data->data[0]));
+    }
+
+  return XLAL_SUCCESS;
+
+} // XLALCopySFT()

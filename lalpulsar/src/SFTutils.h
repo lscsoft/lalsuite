@@ -148,6 +148,7 @@ XLALGetDetectorIDsFromSFTCatalog ( LALStringVector *IFOList, const SFTCatalog *S
 
 SFTCatalog *XLALAddToFakeSFTCatalog( SFTCatalog *catalog, const CHAR *detector, const LIGOTimeGPSVector *timestamps );
 SFTCatalog *XLALMultiAddToFakeSFTCatalog( SFTCatalog *catalog, const LALStringVector *detectors, const MultiLIGOTimeGPSVector *timestamps );
+int XLALCopySFT ( SFTtype *dest, const SFTtype *src );
 
 /*@}*/
 

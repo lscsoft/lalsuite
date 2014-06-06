@@ -199,6 +199,8 @@ LALDestroyMultiPSDVector (LALStatus *status,		/**< pointer to LALStatus structur
 } /* LALDestroyMultiPSDVector() */
 
 /**
+ * \deprecated Use XLALCopySFT()
+ *
  * Copy an entire SFT-type into another.
  * We require the destination-SFT to have a NULL data-entry, as the
  * corresponding data-vector will be allocated here and copied into
@@ -211,34 +213,18 @@ LALCopySFT (LALStatus *status,	/**< pointer to LALStatus structure */
 	    SFTtype *dest, 	/**< [out] copied SFT (needs to be allocated already) */
 	    const SFTtype *src)	/**< input-SFT to be copied */
 {
-
-
   INITSTATUS(status);
-  ATTATCHSTATUSPTR ( status );
 
-  ASSERT (dest,  status, SFTUTILS_ENULL,  SFTUTILS_MSGENULL);
-  ASSERT (dest->data == NULL, status, SFTUTILS_ENONULL, SFTUTILS_MSGENONULL );
-  ASSERT (src, status, SFTUTILS_ENULL,  SFTUTILS_MSGENULL);
+  XLAL_PRINT_DEPRECATION_WARNING("XLALCopySFT");
 
-  /* copy complete head (including data-pointer, but this will be separately alloc'ed and copied in the next step) */
-  memcpy ( dest, src, sizeof(*dest) );
+  int ret = XLALCopySFT ( dest, src );
+  if ( ret != XLAL_SUCCESS ) {
+    ABORT ( status, SFTUTILS_EFUNC, SFTUTILS_MSGEFUNC );
+  }
 
-  /* copy data (if there's any )*/
-  if ( src->data )
-    {
-      UINT4 numBins = src->data->length;
-      if ( (dest->data = XLALCreateCOMPLEX8Vector ( numBins )) == NULL ) {
-	ABORT ( status, SFTUTILS_EMEM, SFTUTILS_MSGEMEM );
-      }
-      memcpy (dest->data->data, src->data->data, numBins * sizeof (src->data->data[0]));
-    }
-
-  DETATCHSTATUSPTR (status);
   RETURN (status);
 
 } /* LALCopySFT() */
-
-
 
 /**
  * Subtract two SFT-vectors and put the results in a new one (which it allocates).
