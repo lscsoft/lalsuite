@@ -61,7 +61,7 @@ gcd(INT2 numer, UINT2 denom)
       next_numer=next_denom;
       next_denom=remainder;
    }
-   return abs(next_numer);
+   return next_numer;
 }
 
 /**
