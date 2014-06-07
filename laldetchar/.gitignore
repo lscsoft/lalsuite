@@ -5,6 +5,9 @@
 *.pc
 .deps
 .libs
+/_build/
+/_inst/
+/laldetchar-*/
 Makefile
 Makefile.in
 bin/laldetchar-hveto

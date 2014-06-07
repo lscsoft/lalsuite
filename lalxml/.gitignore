@@ -5,6 +5,9 @@
 *.pc
 .deps
 .libs
+/_build/
+/_inst/
+/lalxml-*/
 Makefile
 Makefile.in
 config.lt

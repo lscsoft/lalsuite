@@ -5,6 +5,9 @@
 *.pc
 .deps
 .libs
+/_build/
+/_inst/
+/lalburst-*/
 Makefile
 Makefile.in
 config.lt

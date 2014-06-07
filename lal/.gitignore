@@ -9,6 +9,9 @@
 .deps
 .dvi-dep
 .libs
+/_build/
+/_inst/
+/lal-*/
 Makefile
 Makefile.in
 config.lt

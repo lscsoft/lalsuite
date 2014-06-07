@@ -5,6 +5,9 @@
 *.pc
 .deps
 .libs
+/_build/
+/_inst/
+/lalinference-*/
 Makefile
 Makefile.in
 bin/bayestar_aggregate_found_injections

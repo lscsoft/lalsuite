@@ -7,6 +7,7 @@
 /Makefile.in
 /_build/
 /_inst/
+/lalsuite-*/
 TAGS
 aclocal.m4
 auto/
