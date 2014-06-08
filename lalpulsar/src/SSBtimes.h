@@ -79,6 +79,7 @@ int XLALEarliestMultiSSBtime ( LIGOTimeGPS *out, const MultiSSBtimes *multiSSB, 
 int XLALLatestMultiSSBtime ( LIGOTimeGPS *out, const MultiSSBtimes *multiSSB,  const REAL8 Tsft );
 
 /* destructors */
+void XLALDestroySSBtimes ( SSBtimes *multiSSB );
 void XLALDestroyMultiSSBtimes ( MultiSSBtimes *multiSSB );
 
 /*@}*/

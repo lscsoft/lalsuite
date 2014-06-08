@@ -819,6 +819,26 @@ int XLALLatestMultiSSBtime ( LIGOTimeGPS *out,                   /**< output lat
 
 /* ===== Object creation/destruction functions ===== */
 
+/** Destroy a SSBtimes structure.
+ * Note, this is "NULL-robust" in the sense that it will not crash
+ * on NULL-entries anywhere in this struct, so it can be used
+ * for failure-cleanup even on incomplete structs
+ */
+void
+XLALDestroySSBtimes ( SSBtimes *tSSB )
+{
+
+  if ( ! tSSB )
+    return;
+
+  if ( tSSB->DeltaT )
+    XLALDestroyREAL8Vector( tSSB->DeltaT );
+  if ( tSSB->Tdot )
+    XLALDestroyREAL8Vector( tSSB->Tdot );
+  XLALFree( tSSB );
+
+}
+
 /** Destroy a MultiSSBtimes structure.
  * Note, this is "NULL-robust" in the sense that it will not crash
  * on NULL-entries anywhere in this struct, so it can be used
@@ -828,7 +848,6 @@ void
 XLALDestroyMultiSSBtimes ( MultiSSBtimes *multiSSB )
 {
   UINT4 X;
-  SSBtimes *tmp;
 
   if ( ! multiSSB )
     return;
@@ -837,14 +856,7 @@ XLALDestroyMultiSSBtimes ( MultiSSBtimes *multiSSB )
     {
       for ( X=0; X < multiSSB->length; X ++ )
 	{
-	  if ( (tmp = multiSSB->data[X]) != NULL )
-	    {
-	      if ( tmp->DeltaT )
-		XLALDestroyREAL8Vector ( tmp->DeltaT );
-	      if ( tmp->Tdot )
-		XLALDestroyREAL8Vector ( tmp->Tdot );
-	      LALFree ( tmp );
-	    } /* if multiSSB->data[X] */
+	  XLALDestroySSBtimes ( multiSSB->data[X] );
 	} /* for X < numDetectors */
       LALFree ( multiSSB->data );
     }
