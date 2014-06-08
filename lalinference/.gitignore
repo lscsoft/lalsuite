@@ -26,6 +26,7 @@ bin/python_config.sed
 config.lt
 include/lal/*.h
 include/lal/*.i
+include/lal/header-link-stamp
 lalinference-*.tar.gz
 lalinference.spec
 libtool

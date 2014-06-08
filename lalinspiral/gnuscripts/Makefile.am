@@ -4,7 +4,6 @@ EXTRA_DIST = \
 	config.sub \
 	cuda.common \
 	depcomp \
-	header-link.mk \
 	install-sh \
 	lalsuite_build.m4 \
 	libtool.m4 \

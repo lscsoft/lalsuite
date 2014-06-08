@@ -1,3 +1,5 @@
+include $(top_srcdir)/gnuscripts/lallibs_header_links.am
+
 AM_CPPFLAGS = -I$(top_builddir)/include -DPKG_DATA_DIR='"$(pkgdatadir)/"' @AM_CPPFLAGS@
 
 pkginclude_HEADERS = \
@@ -74,7 +76,3 @@ LALMetaIOBuildInfo.c: Makefile $(liblalmetaio_la_DEPENDENCIES)
 	echo 'const char *const lalMetaIOConfigureArgs = "'"$(ac_configure_args)"'";' >>$@; \
 	echo 'const char *const lalMetaIOConfigureDate = "'"$(configure_date)"'";' >>$@; \
 	echo 'const char *const lalMetaIOBuildDate = "'`date +"%Y-%m-%dT%H:%M:%S%z"`'";' >>$@
-
-@LAL_HEADER_LINK@
-
-include $(top_srcdir)/swig/swiglal_header.am

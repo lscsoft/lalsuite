@@ -7,7 +7,6 @@ EXTRA_DIST = \
 	config.guess \
 	config.sub \
 	depcomp \
-	header-link.mk \
 	install-sh \
 	lalpulsar.m4 \
 	lalsuite_build.m4 \

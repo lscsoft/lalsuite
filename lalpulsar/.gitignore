@@ -13,6 +13,7 @@ Makefile.in
 config.lt
 include/lal/*.h
 include/lal/*.i
+include/lal/header-link-stamp
 lalpulsar-*.tar.gz
 lalpulsar.spec
 libtool

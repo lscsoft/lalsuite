@@ -4,7 +4,6 @@ EXTRA_DIST = \
 	config.guess \
 	config.sub \
 	depcomp \
-	header-link.mk \
 	install-sh \
 	lalframe.m4 \
 	lalsuite_build.m4 \

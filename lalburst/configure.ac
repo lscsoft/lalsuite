@@ -143,9 +143,6 @@ AC_SUBST([pkgincludedir], ["\${includedir}/lal"])
 # RedHat-derived systems.
 AC_SUBST([pkgpythondir], ["\${pkgpyexecdir}"])
 
-LAL_HEADER_LINK=${ac_aux_dir}/header-link.mk
-AC_SUBST_FILE(LAL_HEADER_LINK)
-
 # output
 AC_OUTPUT
 AC_MSG_NOTICE([

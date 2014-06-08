@@ -1,3 +1,5 @@
+include $(top_srcdir)/gnuscripts/lallibs_header_links.am
+
 AM_CPPFLAGS = -I$(top_builddir)/include -DPKG_DATA_DIR='"$(pkgdatadir)/"' @AM_CPPFLAGS@
 
 pkginclude_HEADERS = \
@@ -68,7 +70,3 @@ LALXMLBuildInfo.c: Makefile $(liblalxml_la_DEPENDENCIES)
 	echo 'const char *const lalXMLConfigureArgs = "'"$(ac_configure_args)"'";' >>$@; \
 	echo 'const char *const lalXMLConfigureDate = "'"$(configure_date)"'";' >>$@; \
 	echo 'const char *const lalXMLBuildDate = "'`date +"%Y-%m-%dT%H:%M:%S%z"`'";' >>$@
-
-@LAL_HEADER_LINK@
-
-include $(top_srcdir)/swig/swiglal_header.am

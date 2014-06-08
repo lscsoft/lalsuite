@@ -1,5 +1,5 @@
-#include "LALStdlib.h"
-#include "SeqFactories.h"
+#include "lal/LALStdlib.h"
+#include "lal/SeqFactories.h"
 
 #define TYPECODE Z
 #define TYPE COMPLEX16

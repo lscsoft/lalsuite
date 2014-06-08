@@ -1,3 +1,5 @@
+include $(top_srcdir)/gnuscripts/lallibs_header_links.am
+
 AM_CPPFLAGS = -I$(top_builddir)/include -DPKG_DATA_DIR='"$(pkgdatadir)/"' @AM_CPPFLAGS@
 
 if LALXML
@@ -98,7 +100,3 @@ LALInferenceBuildInfo.c: Makefile $(liblalinference_la_DEPENDENCIES)
 	echo 'const char *const lalInferenceConfigureArgs = "'"$(ac_configure_args)"'";' >>$@; \
 	echo 'const char *const lalInferenceConfigureDate = "'"$(configure_date)"'";' >>$@; \
 	echo 'const char *const lalInferenceBuildDate = "'`date +"%Y-%m-%dT%H:%M:%S%z"`'";' >>$@
-
-@LAL_HEADER_LINK@
-
-include $(top_srcdir)/swig/swiglal_header.am

@@ -5,7 +5,6 @@ EXTRA_DIST = \
 	config.sub \
 	cuda.common \
 	depcomp \
-	include.mk \
 	install-sh \
 	lal.m4 \
 	lalsuite_build.m4 \
@@ -18,6 +17,3 @@ EXTRA_DIST = \
 	missing \
 	mkinstalldirs \
 	test-driver
-
-all-local: include-link
-@INCLUDEMKFILE@

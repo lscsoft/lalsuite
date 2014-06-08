@@ -1,3 +1,5 @@
+include $(top_srcdir)/gnuscripts/lallibs_header_links.am
+
 AM_CPPFLAGS = -I$(top_builddir)/include -I$(srcdir)/../include -DPKG_DATA_DIR='"$(pkgdatadir)/"' @AM_CPPFLAGS@
 
 lib_LTLIBRARIES = liblalsupport.la

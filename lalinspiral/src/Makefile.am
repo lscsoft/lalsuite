@@ -1,3 +1,5 @@
+include $(top_srcdir)/gnuscripts/lallibs_header_links.am
+
 AM_CPPFLAGS = -I$(top_builddir)/include -DPKG_DATA_DIR='"$(pkgdatadir)/"' @AM_CPPFLAGS@
 
 pkginclude_HEADERS = \
@@ -285,9 +287,5 @@ LALInspiralBuildInfo.c: Makefile $(liblalinspiral_la_DEPENDENCIES)
 	echo 'const char *const lalInspiralConfigureDate = "'"$(configure_date)"'";' >>$@; \
 	echo 'const char *const lalInspiralBuildDate = "'`date +"%Y-%m-%dT%H:%M:%S%z"`'";' >>$@
 
-@LAL_HEADER_LINK@
-
 # cuda build rules
 include $(top_srcdir)/gnuscripts/cuda.common
-
-include $(top_srcdir)/swig/swiglal_header.am

@@ -1,3 +1,5 @@
+include $(top_srcdir)/gnuscripts/lallibs_header_links.am
+
 EXTRA_DIST = LALConfig.dox \
 	LALDatatypes.dox \
 	LALError.dox \
@@ -25,11 +27,6 @@ pkginclude_HEADERS = \
 	lalswig_error.i \
 	lalswig_gsl.i \
 	lalswig_test.i
-
-all-local: include-link
-@INCLUDEMKFILE@
-
-include $(top_srcdir)/swig/swiglal_header.am
 
 swigincludedir = $(pkgincludedir)
 swiginclude_HEADERS = \

@@ -1,3 +1,5 @@
+include $(top_srcdir)/gnuscripts/lallibs_header_links.am
+
 AM_CPPFLAGS = -I$(top_builddir)/include -DPKG_DATA_DIR='"$(pkgdatadir)/"' @AM_CPPFLAGS@
 LDADD = liblalframe.la
 
@@ -121,7 +123,3 @@ LALFrameBuildInfo.c: Makefile $(liblalframe_la_DEPENDENCIES)
 	echo 'const char *const lalFrameConfigureArgs = "'"$(ac_configure_args)"'";' >>$@; \
 	echo 'const char *const lalFrameConfigureDate = "'"$(configure_date)"'";' >>$@; \
 	echo 'const char *const lalFrameBuildDate = "'`date +"%Y-%m-%dT%H:%M:%S%z"`'";' >>$@
-
-@LAL_HEADER_LINK@
-
-include $(top_srcdir)/swig/swiglal_header.am

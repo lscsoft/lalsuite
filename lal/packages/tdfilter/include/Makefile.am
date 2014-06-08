@@ -1,9 +1,6 @@
+include $(top_srcdir)/gnuscripts/lallibs_header_links.am
+
 pkginclude_HEADERS = \
 	BandPassTimeSeries.h \
 	IIRFilter.h \
 	ZPGFilter.h
-
-all-local: include-link
-@INCLUDEMKFILE@
-
-include $(top_srcdir)/swig/swiglal_header.am

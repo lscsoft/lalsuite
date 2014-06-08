@@ -1,6 +1,6 @@
 AC_PREREQ([2.63])
 AC_INIT([LAL],[6.12.0.1],[lal-discuss@ligo.org])
-AC_CONFIG_HEADERS([include/config.h include/lal/LALConfig.h])
+AC_CONFIG_HEADERS([include/config.h lib/lal/LALConfig.h])
 AC_CONFIG_SRCDIR([packages/std/include/LALStdio.h])
 AC_CONFIG_AUX_DIR([gnuscripts])
 AC_CONFIG_MACRO_DIR([gnuscripts])
@@ -350,9 +350,6 @@ LALSUITE_ADD_GCC_FLAGS
 # pure-python library code from being split across lib and lib64 on
 # RedHat-derived systems.
 AC_SUBST([pkgpythondir], ["\${pkgpyexecdir}"])
-
-INCLUDEMKFILE=$srcdir/gnuscripts/include.mk
-AC_SUBST_FILE([INCLUDEMKFILE])
 
 # output
 AC_OUTPUT

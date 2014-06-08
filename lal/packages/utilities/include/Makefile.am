@@ -1,3 +1,5 @@
+include $(top_srcdir)/gnuscripts/lallibs_header_links.am
+
 pkginclude_HEADERS = \
 	CoarseGrainFrequencySeries.h \
 	Dirichlet.h \
@@ -13,8 +15,3 @@ pkginclude_HEADERS = \
 	RngMedBias.h \
 	Sort.h \
 	SphericalHarmonics.h
-
-all-local: include-link
-@INCLUDEMKFILE@
-
-include $(top_srcdir)/swig/swiglal_header.am

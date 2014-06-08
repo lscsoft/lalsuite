@@ -1,0 +1,21 @@
+.PHONY: header-links
+header-links: $(pkginclude_HEADERS) $(swiginclude_HEADERS)
+	$(AM_V_at)for dir in $(SUBDIRS); do \
+		if test "x$$dir" != "x."; then \
+			( cd "$$dir" && $(MAKE) $(AM_MAKEFLAGS) header-links ) || exit 1; \
+		fi; \
+	done; \
+	if test "x$<" != x; then \
+		echo "Making header-links in $(subdir)"; \
+		for file in $^; do \
+			targetfile="$(abs_builddir)/$$file"; \
+			linkname=`expr "$$targetfile" : '.*/\([^/]*\)$$'`; \
+			linkfile="$(abs_top_builddir)/include/lal/$$linkname"; \
+			if test ! -r "$$linkfile" ; then \
+				rm -f "$$linkfile"; \
+				$(LN_S) "$$targetfile" "$$linkfile"; \
+			fi; \
+		done; \
+	fi
+
+include $(top_srcdir)/swig/swiglal_header.am

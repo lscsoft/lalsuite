@@ -1,3 +1,5 @@
+include $(top_srcdir)/gnuscripts/lallibs_header_links.am
+
 pkginclude_HEADERS = \
 	Audio.h \
 	FileIO.h \
@@ -14,8 +16,3 @@ pkginclude_HEADERS = \
 	StreamOutput.h \
 	UserInput.h \
 	ConfigFile.h
-
-all-local: include-link
-@INCLUDEMKFILE@
-
-include $(top_srcdir)/swig/swiglal_header.am

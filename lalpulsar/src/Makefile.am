@@ -1,3 +1,5 @@
+include $(top_srcdir)/gnuscripts/lallibs_header_links.am
+
 AM_CPPFLAGS = -I$(top_builddir)/include -DPKG_DATA_DIR='"$(pkgdatadir)/"' @AM_CPPFLAGS@
 
 if LALXML
@@ -201,7 +203,3 @@ LALPulsarBuildInfo.c: Makefile $(liblalpulsar_la_DEPENDENCIES)
 	echo 'const char *const lalPulsarConfigureArgs = "'"$(ac_configure_args)"'";' >>$@; \
 	echo 'const char *const lalPulsarConfigureDate = "'"$(configure_date)"'";' >>$@; \
 	echo 'const char *const lalPulsarBuildDate = "'`date +"%Y-%m-%dT%H:%M:%S%z"`'";' >>$@
-
-@LAL_HEADER_LINK@
-
-include $(top_srcdir)/swig/swiglal_header.am

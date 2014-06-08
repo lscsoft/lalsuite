@@ -37,12 +37,13 @@ include/config.h
 include/config.h.in
 include/lal/*.h
 include/lal/*.i
-include/lal/stamp-h2
+include/lal/header-link-stamp
 include/stamp-h1
 lal-*.tar.gz
 lal.spec
 lib/lal/.vcsinfo
 lib/lal/LALBuildInfo.c
+lib/lal/LALConfig.h
 lib/lal/LALVCSInfo.h
 lib/lal/git_info.sed
 lib/lal/git_version
@@ -50,6 +51,7 @@ lib/lal/lal-user-env.csh
 lib/lal/lal-user-env.sh
 lib/lal/lal-user-env.shell
 lib/lal/lal-version
+lib/lal/stamp-h2
 lib/lalsupport/test/*PrintVector.*
 lib/lalsupport/test/?FS*.dat
 lib/lalsupport/test/?TS*.dat

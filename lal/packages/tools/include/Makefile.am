@@ -1,3 +1,5 @@
+include $(top_srcdir)/gnuscripts/lallibs_header_links.am
+
 pkginclude_HEADERS = \
 	Calibration.h \
 	CoherentEstimation.h \
@@ -16,8 +18,3 @@ pkginclude_HEADERS = \
 	TimeSeriesInterp.h \
 	TriggerInterpolation.h \
 	Units.h
-
-all-local: include-link
-@INCLUDEMKFILE@
-
-include $(top_srcdir)/swig/swiglal_header.am

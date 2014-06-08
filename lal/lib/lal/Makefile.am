@@ -1,11 +1,14 @@
+include $(top_srcdir)/gnuscripts/lallibs_header_links.am
+
 EXTRA_DIST = \
 	generate_user_env.awk
 
 lib_LTLIBRARIES = liblal.la
 
 pkginclude_HEADERS = \
-	LALLibVCSInfo.h \
 	LALBuildInfo.h \
+	LALConfig.h \
+	LALLibVCSInfo.h \
 	LALVCSInfo.h
 
 liblal_la_SOURCES = \
@@ -75,9 +78,3 @@ LALBuildInfo.c: Makefile $(liblal_la_DEPENDENCIES)
 	echo 'const char *const lalConfigureArgs = "'"$(ac_configure_args)"'";' >>$@; \
 	echo 'const char *const lalConfigureDate = "'"$(configure_date)"'";' >>$@; \
 	echo 'const char *const lalBuildDate = "'`date +"%Y-%m-%dT%H:%M:%S%z"`'";' >>$@
-
-all-local: include-link
-include-link: $(pkginclude_HEADERS)
-@INCLUDEMKFILE@
-
-include $(top_srcdir)/swig/swiglal_header.am
