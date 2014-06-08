@@ -333,7 +333,8 @@ int XLALFrStreamNext(LALFrStream * stream)
         XLALGPSToINT8NS(XLALFrFileQueryGTime(&stream->epoch, stream->file,
             stream->pos));
 
-    if (abs(texp - tact) > tacc) {      /* there is a gap */
+    /* INT8 is platform dependent, cast to long long for llabs() call */
+    if (llabs((long long)(texp - tact)) > tacc) { /* there is a gap */
         stream->state |= LAL_FR_STREAM_GAP;
         if (stream->mode & LAL_FR_STREAM_GAPINFO_MODE) {
             XLAL_PRINT_INFO("Gap in frame data between times %.6f and %.6f",
