@@ -105,7 +105,12 @@ void XLALREAL8TimeSeriesInterpDestroy(LALREAL8TimeSeriesInterp *interp)
 
 REAL8 XLALREAL8TimeSeriesInterpEval(LALREAL8TimeSeriesInterp *interp, const LIGOTimeGPS *t)
 {
-	const double noop_threshold = 1./1024.;	/* samples */
+	/* samples.  the length of the kernel sets the bandwidth of the
+	 * interpolator:  the longer the kernel, the closer to an ideal
+	 * interpolator it becomes.  we tie the interval at which the
+	 * kernel is regenerated to this in a heuristic way to hide the
+	 * sub-sample residual quantization in the filter's roll-off. */
+	const double noop_threshold = 1. / (4 * interp->kernel_length);
 	const REAL8 *data = interp->series->data->data;
 	double *cached_kernel = interp->cached_kernel;
 	REAL8 val = 0.0;
