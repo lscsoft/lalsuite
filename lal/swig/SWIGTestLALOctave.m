@@ -870,5 +870,45 @@ clear ans;
 LALCheckMemoryLeaks();
 disp("PASSED LIGOTimeGPS operations");
 
+## check LALUnit operations
+disp("checking LALUnit operations ...");
+u1 = LALUnit("kg m s^-2");
+assert(u1 == lal.NewtonUnit && strcmp(swig_type(u1), "LALUnit"));
+assert(strcmp(u1.__str__(), "m kg s^-2"));
+u2 = lal.MeterUnit * lal.KiloGramUnit / lal.SecondUnit ^ 2;
+assert(u1 == u2 && strcmp(swig_type(u2), "LALUnit"));
+u2 = lal.MeterUnit^[1,2] * lal.KiloGramUnit^[1,2] * lal.SecondUnit ^ -1;
+assert(u1^[1,2] == u2 && strcmp(swig_type(u2), "LALUnit"));
+try
+  lal.SecondUnit ^ [1,0];
+  expected_exception = 1;
+end_try_catch
+assert(!expected_exception);
+u1 *= lal.MeterUnit;
+assert(u1 == lal.JouleUnit && strcmp(swig_type(u1), "LALUnit"));
+assert(strcmp(u1.__repr__(), "m^2 kg s^-2"));
+u1 /= lal.SecondUnit;
+assert(u1 == lal.WattUnit && strcmp(swig_type(u1), "LALUnit"));
+assert(u1 == "m^2 kg s^-3");
+u1 *= 1000;
+assert(u1 == lal.KiloUnit * lal.WattUnit);
+assert(u1 == 1000 * lal.WattUnit);
+assert(u1 == lal.WattUnit * 1000);
+assert(u1 == lal.MegaUnit / 1000 * lal.WattUnit);
+assert(u1.__int__() == 1000);
+u1 /= 10000;
+assert(u1 == 100 * lal.MilliUnit * lal.WattUnit);
+try
+  u1 *= 1.234;
+  expected_exception = 1;
+end_try_catch
+assert(!expected_exception);
+assert(u1.norm() == u1);
+clear u1;
+clear u2;
+clear ans;
+LALCheckMemoryLeaks();
+disp("PASSED LALUnit operations");
+
 ## passed all tests!
 disp("PASSED all tests");

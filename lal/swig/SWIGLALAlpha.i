@@ -296,6 +296,48 @@ typedef struct {
 }
 %swiglal_specialised_typemaps(tagLIGOTimeGPS, "swiglal_specialised_tagLIGOTimeGPS");
 
+////////// Specialised typemaps for LALUnit //////////
+
+// Specialised input typemaps for LALUnit structs.
+// Accepts a SWIG-wrapped LALUnit or power-of-10 double as input.
+%fragment("swiglal_specialised_tagLALUnit", "header", fragment="SWIG_AsCharPtr", fragment=SWIG_AsVal_frag(double)) {
+  int swiglal_specialised_tagLALUnit(SWIG_Object in, LALUnit *out) {
+    char *str = 0;
+    int alloc = 0;
+    int res = SWIG_AsCharPtr(in, &str, &alloc);
+    if (SWIG_IsOK(res)) {
+      if (XLALParseUnitString(out, str) == NULL) {
+        res = SWIG_ValueError;
+      }
+    }
+    if (alloc == SWIG_NEWOBJ) {
+      %delete_array(str);
+    }
+    if (SWIG_IsOK(res)) {
+      return res;
+    }
+    double val = 0;
+    res = SWIG_AsVal(double)(in, &val);
+    if (!SWIG_IsOK(res)) {
+      return res;
+    }
+    if (val <= 0) {
+      return SWIG_ValueError;
+    }
+    double pow10 = 0;
+    if (modf(log10(val), &pow10) != 0) {
+      return SWIG_ValueError;
+    }
+    if (pow10 < INT16_MIN || INT16_MAX < pow10) {
+      return SWIG_ValueError;
+    }
+    *out = lalDimensionlessUnit;
+    out->powerOfTen = (INT2)pow10;
+    return SWIG_OK;
+  }
+}
+%swiglal_specialised_typemaps(tagLALUnit, "swiglal_specialised_tagLALUnit");
+
 // Local Variables:
 // mode: c
 // End:

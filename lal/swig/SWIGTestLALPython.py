@@ -898,5 +898,46 @@ del t5
 lal.CheckMemoryLeaks()
 print("PASSED LIGOTimeGPS operations")
 
+# check LALUnit operations
+print("checking LALUnit operations ...")
+u1 = lal.Unit("kg m s^-2")
+assert(u1 == lal.NewtonUnit and isinstance(u1, lal.Unit))
+assert(str(u1) == "m kg s^-2")
+u2 = lal.MeterUnit * lal.KiloGramUnit / lal.SecondUnit ** 2
+assert(u1 == u2 and isinstance(u2, lal.Unit));
+u2 = lal.MeterUnit**(1,2) * lal.KiloGramUnit**(1,2) * lal.SecondUnit ** -1
+assert(u1**(1,2) == u2 and isinstance(u2, lal.Unit));
+try:
+    lal.SecondUnit ** (1,0);
+    expected_exception = True
+except:
+    pass
+assert(not expected_exception)
+u1 *= lal.MeterUnit
+assert(u1 == lal.JouleUnit and isinstance(u1, lal.Unit))
+assert(repr(u1) == "m^2 kg s^-2")
+u1 /= lal.SecondUnit
+assert(u1 == lal.WattUnit and isinstance(u1, lal.Unit))
+assert(u1 == "m^2 kg s^-3")
+u1 *= 1000
+assert(u1 == lal.KiloUnit * lal.WattUnit)
+assert(u1 == 1000 * lal.WattUnit)
+assert(u1 == lal.WattUnit * 1000)
+assert(u1 == lal.MegaUnit / 1000 * lal.WattUnit)
+assert(int(u1) == 1000)
+u1 /= 10000
+assert(u1 == 100 * lal.MilliUnit * lal.WattUnit)
+try:
+    u1 *= 1.234
+    expected_exception = True
+except:
+    pass
+assert(not expected_exception)
+assert(u1.norm() == u1)
+del u1
+del u2
+lal.CheckMemoryLeaks()
+print("PASSED LALUnit operations")
+
 # passed all tests!
 print("PASSED all tests")

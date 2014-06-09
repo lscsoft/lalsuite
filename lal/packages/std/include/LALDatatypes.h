@@ -492,6 +492,9 @@ enum {
  * \f}
  *
  */
+#ifdef SWIG     /* SWIG interface directives */
+SWIGLAL(IMMUTABLE_MEMBERS(tagLALUnit, powerOfTen, unitNumerator, unitDenominatorMinusOne));
+#endif /* SWIG */
 typedef struct tagLALUnit {
     INT2 powerOfTen; /**< Overall power-of-ten scaling is 10^\c powerOfTen. */
     INT2 unitNumerator[LALNumUnits]; /**< Array of unit power numerators. */

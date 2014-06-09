@@ -287,6 +287,129 @@ typedef struct {
 
 } // %extend tagLIGOTimeGPS
 
+////////// Specialised wrapping of LALUnit //////////
+
+// Allocate a new LALUnit.
+#define %swiglal_new_LALUnit() (LALUnit*)(XLALCalloc(1, sizeof(LALUnit)))
+
+// Extend the LALUnit class.
+%extend tagLALUnit {
+
+  // Construct a new LALUnit class from a string.
+  tagLALUnit(const char* str) {
+    LALUnit* unit = %swiglal_new_LALUnit();
+    if (XLALParseUnitString(unit, str) == NULL) {
+      XLALFree(unit);
+      xlalErrno = XLAL_EFUNC;   // Silently signal an error to constructor
+      return NULL;
+    }
+    return unit;
+  }
+
+  // Return whether a LALUnit is non-zero, i.e. dimensionless.
+  bool __nonzero__() {
+    return !XLALUnitIsDimensionless($self);
+  }
+
+  // Return integer representations of a LALUnit.
+  int __int__() {
+    return (int)XLALUnitPrefactor($self);
+  }
+  long __long__() {
+    return (long)XLALUnitPrefactor($self);
+  }
+
+  // Return a floating-point representation of a LALUnit.
+  double __float__() {
+    return XLALUnitPrefactor($self);
+  }
+
+  // Return a string representation of a LALUnit. Because
+  // XLALUnitToString() allocates a new string using LAL memory,
+  // %newobject is used to make SWIG use a 'newfree' typemap,
+  // where the string is freed; SWIG will have already copied it
+  // to a native scripting-language string to return as output.
+  %newobject __str__;
+  %typemap(newfree) char* __str__ "XLALFree($1);";
+  char* __str__() {
+    LALUnit norm = *$self;
+    assert(XLALUnitNormalize(&norm) == XLAL_SUCCESS);
+    return XLALUnitToString(&norm);
+  }
+  %newobject __repr__;
+  %typemap(newfree) char* __repr__ "XLALFree($1);";
+  char* __repr__() {
+    LALUnit norm = *$self;
+    assert(XLALUnitNormalize(&norm) == XLAL_SUCCESS);
+    return XLALUnitToString(&norm);
+  }
+
+  // Return the hash value of a LALUnit.
+  long __hash__() {
+    long hash = (long)$self->powerOfTen;
+    for (size_t i = 0; i < LALNumUnits; ++i) {
+      hash ^= (long)$self->unitNumerator;
+      hash ^= (long)$self->unitDenominatorMinusOne;
+    }
+    return hash == -1 ? -2 : hash;
+  }
+
+  // Return the integer exponentiation of a LALUnit.
+  LALUnit* __pow__(INT2 n, void* SWIGLAL_OP_POW_3RDARG) {
+    LALUnit* retn = %swiglal_new_LALUnit();
+    return XLALUnitRaiseINT2(retn, $self, n);
+  }
+
+  // Return the rational exponentiation of a LALUnit.
+  LALUnit* __pow__(INT2 r[2], void* SWIGLAL_OP_POW_3RDARG) {
+    if (r[1] == 0) {
+      xlalErrno = XLAL_EDOM;   // Silently signal an error to caller
+      return NULL;
+    }
+    RAT4 rat = { (r[1] < 0) ? -r[0] : r[0], abs(r[1]) - 1 };
+    LALUnit* retn = %swiglal_new_LALUnit();
+    return XLALUnitRaiseRAT4(retn, $self, &rat);
+  }
+
+  // Return the multiplication of two LALUnits.
+  LALUnit* __mul__(LALUnit* unit) {
+    LALUnit* retn = %swiglal_new_LALUnit();
+    return XLALUnitMultiply(retn, $self, unit);
+  }
+  LALUnit* __rmul__(LALUnit* unit) {
+    LALUnit* retn = %swiglal_new_LALUnit();
+    return XLALUnitMultiply(retn, unit, $self);
+  }
+
+  // Return the division of two LALUnits.
+  LALUnit* __div__(LALUnit* unit) {
+    LALUnit* retn = %swiglal_new_LALUnit();
+    return XLALUnitDivide(retn, $self, unit);
+  }
+  LALUnit* __rdiv__(LALUnit* unit) {
+    LALUnit* retn = %swiglal_new_LALUnit();
+    return XLALUnitDivide(retn, unit, $self);
+  }
+
+  // Comparison operators between two LALUnits.
+  bool __eq__(LALUnit* unit) {
+    return XLALUnitCompare($self, unit) == 0;
+  }
+  bool __ne__(LALUnit* unit) {
+    return XLALUnitCompare($self, unit) != 0;
+  }
+
+  // Return a normalised LALUnit.
+  %newobject norm;
+  LALUnit* norm() {
+    LALUnit* retn = %swiglal_new_LALUnit();
+    *retn = *$self;
+    assert(XLALUnitNormalize(retn) == XLAL_SUCCESS);
+    return retn;
+  }
+
+} // %extend tagLALUnit
+
 // Local Variables:
 // mode: c
 // End:
