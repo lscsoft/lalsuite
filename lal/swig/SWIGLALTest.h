@@ -68,6 +68,410 @@ void swig_lal_test_copyin_array2(INT4 INPUT[3][2], INT4 scale, INT4 OUTPUT[3][2]
   }
 }
 
+// Test input views of array structs.
+bool swig_lal_test_viewin_REAL4Vector(REAL4Vector* copyout, const REAL4Vector* viewin) {
+  if (!copyout || !copyout->data || !viewin || !viewin->data || copyout->length != viewin->length) {
+    return false;
+  }
+  for (size_t i = 0; i < viewin->length; ++i) {
+    copyout->data[i] = viewin->data[i];
+  }
+  return true;
+}
+#ifdef SWIG
+SWIGLAL(VIEWIN_STRUCTS(REAL4Vector, viewin, viewout));
+#endif // SWIG
+bool swig_lal_test_viewinout_REAL4Vector(REAL4Vector* viewout, REAL4Vector* viewin) {
+  if (!viewout || !viewout->data || !viewin || !viewin->data || viewout->length != viewin->length) {
+    return false;
+  }
+  for (size_t i = 0; i < viewin->length; ++i) {
+    viewout->data[i] = viewin->data[i];
+    viewin->data[i] = viewin->data[i] * 2.0;
+  }
+  return true;
+}
+#ifdef SWIG
+SWIGLAL_CLEAR(VIEWIN_STRUCTS(REAL4Vector, viewin, viewout));
+#endif // SWIG
+bool swig_lal_test_viewin_REAL8Vector(REAL8Vector* copyout, const REAL8Vector* viewin) {
+  if (!copyout || !copyout->data || !viewin || !viewin->data || copyout->length != viewin->length) {
+    return false;
+  }
+  for (size_t i = 0; i < viewin->length; ++i) {
+    copyout->data[i] = viewin->data[i];
+  }
+  return true;
+}
+#ifdef SWIG
+SWIGLAL(VIEWIN_STRUCTS(REAL8Vector, viewin, viewout));
+#endif // SWIG
+bool swig_lal_test_viewinout_REAL8Vector(REAL8Vector* viewout, REAL8Vector* viewin) {
+  if (!viewout || !viewout->data || !viewin || !viewin->data || viewout->length != viewin->length) {
+    return false;
+  }
+  for (size_t i = 0; i < viewin->length; ++i) {
+    viewout->data[i] = viewin->data[i];
+    viewin->data[i] = viewin->data[i] * 2.0;
+  }
+  return true;
+}
+#ifdef SWIG
+SWIGLAL_CLEAR(VIEWIN_STRUCTS(REAL8Vector, viewin, viewout));
+#endif // SWIG
+bool swig_lal_test_viewin_COMPLEX8Vector(COMPLEX8Vector* copyout, const COMPLEX8Vector* viewin) {
+  if (!copyout || !copyout->data || !viewin || !viewin->data || copyout->length != viewin->length) {
+    return false;
+  }
+  for (size_t i = 0; i < viewin->length; ++i) {
+    copyout->data[i] = viewin->data[i];
+  }
+  return true;
+}
+#ifdef SWIG
+SWIGLAL(VIEWIN_STRUCTS(COMPLEX8Vector, viewin, viewout));
+#endif // SWIG
+bool swig_lal_test_viewinout_COMPLEX8Vector(COMPLEX8Vector* viewout, COMPLEX8Vector* viewin) {
+  if (!viewout || !viewout->data || !viewin || !viewin->data || viewout->length != viewin->length) {
+    return false;
+  }
+  for (size_t i = 0; i < viewin->length; ++i) {
+    viewout->data[i] = viewin->data[i];
+    viewin->data[i] = crectf(crealf(viewin->data[i]) * 2.0, cimagf(viewin->data[i]) * 2.0);
+  }
+  return true;
+}
+#ifdef SWIG
+SWIGLAL_CLEAR(VIEWIN_STRUCTS(COMPLEX8Vector, viewin, viewout));
+#endif // SWIG
+bool swig_lal_test_viewin_COMPLEX16Vector(COMPLEX16Vector* copyout, const COMPLEX16Vector* viewin) {
+  if (!copyout || !copyout->data || !viewin || !viewin->data || copyout->length != viewin->length) {
+    return false;
+  }
+  for (size_t i = 0; i < viewin->length; ++i) {
+    copyout->data[i] = viewin->data[i];
+  }
+  return true;
+}
+#ifdef SWIG
+SWIGLAL(VIEWIN_STRUCTS(COMPLEX16Vector, viewin, viewout));
+#endif // SWIG
+bool swig_lal_test_viewinout_COMPLEX16Vector(COMPLEX16Vector* viewout, COMPLEX16Vector* viewin) {
+  if (!viewout || !viewout->data || !viewin || !viewin->data || viewout->length != viewin->length) {
+    return false;
+  }
+  for (size_t i = 0; i < viewin->length; ++i) {
+    viewout->data[i] = viewin->data[i];
+    viewin->data[i] = crect(creal(viewin->data[i]) * 2.0, cimag(viewin->data[i]) * 2.0);
+  }
+  return true;
+}
+#ifdef SWIG
+SWIGLAL_CLEAR(VIEWIN_STRUCTS(COMPLEX16Vector, viewin, viewout));
+#endif // SWIG
+bool swig_lal_test_viewin_REAL4VectorSequence(REAL4VectorSequence* copyout, const REAL4VectorSequence* viewin) {
+  if (!copyout || !copyout->data || !viewin || !viewin->data || copyout->length != viewin->length || copyout->vectorLength != viewin->vectorLength) {
+    return false;
+  }
+  const size_t n = viewin->vectorLength;
+  for (size_t i = 0; i < viewin->length; ++i) {
+    for (size_t j = 0; j < n; ++j) {
+      copyout->data[i*n + j] = viewin->data[i*n + j];
+    }
+  }
+  return true;
+}
+#ifdef SWIG
+SWIGLAL(VIEWIN_STRUCTS(REAL4VectorSequence, viewin, viewout));
+#endif // SWIG
+bool swig_lal_test_viewinout_REAL4VectorSequence(REAL4VectorSequence* viewout, REAL4VectorSequence* viewin) {
+  if (!viewout || !viewout->data || !viewin || !viewin->data || viewout->length != viewin->length || viewout->vectorLength != viewin->vectorLength) {
+    return false;
+  }
+  const size_t n = viewin->vectorLength;
+  for (size_t i = 0; i < viewin->length; ++i) {
+    for (size_t j = 0; j < n; ++j) {
+      viewout->data[i*n + j] = viewin->data[i*n + j];
+      viewin->data[i*n + j] = viewin->data[i*n + j] * 2.0;
+    }
+  }
+  return true;
+}
+#ifdef SWIG
+SWIGLAL_CLEAR(VIEWIN_STRUCTS(REAL4VectorSequence, viewin, viewout));
+#endif // SWIG
+bool swig_lal_test_viewin_REAL8VectorSequence(REAL8VectorSequence* copyout, const REAL8VectorSequence* viewin) {
+  if (!copyout || !copyout->data || !viewin || !viewin->data || copyout->length != viewin->length || copyout->vectorLength != viewin->vectorLength) {
+    return false;
+  }
+  const size_t n = viewin->vectorLength;
+  for (size_t i = 0; i < viewin->length; ++i) {
+    for (size_t j = 0; j < n; ++j) {
+      copyout->data[i*n + j] = viewin->data[i*n + j];
+    }
+  }
+  return true;
+}
+#ifdef SWIG
+SWIGLAL(VIEWIN_STRUCTS(REAL8VectorSequence, viewin, viewout));
+#endif // SWIG
+bool swig_lal_test_viewinout_REAL8VectorSequence(REAL8VectorSequence* viewout, REAL8VectorSequence* viewin) {
+  if (!viewout || !viewout->data || !viewin || !viewin->data || viewout->length != viewin->length || viewout->vectorLength != viewin->vectorLength) {
+    return false;
+  }
+  const size_t n = viewin->vectorLength;
+  for (size_t i = 0; i < viewin->length; ++i) {
+    for (size_t j = 0; j < n; ++j) {
+      viewout->data[i*n + j] = viewin->data[i*n + j];
+      viewin->data[i*n + j] = viewin->data[i*n + j] * 2.0;
+    }
+  }
+  return true;
+}
+#ifdef SWIG
+SWIGLAL_CLEAR(VIEWIN_STRUCTS(REAL8VectorSequence, viewin, viewout));
+#endif // SWIG
+bool swig_lal_test_viewin_COMPLEX8VectorSequence(COMPLEX8VectorSequence* copyout, const COMPLEX8VectorSequence* viewin) {
+  if (!copyout || !copyout->data || !viewin || !viewin->data || copyout->length != viewin->length || copyout->vectorLength != viewin->vectorLength) {
+    return false;
+  }
+  const size_t n = viewin->vectorLength;
+  for (size_t i = 0; i < viewin->length; ++i) {
+    for (size_t j = 0; j < n; ++j) {
+      copyout->data[i*n + j] = viewin->data[i*n + j];
+    }
+  }
+  return true;
+}
+#ifdef SWIG
+SWIGLAL(VIEWIN_STRUCTS(COMPLEX8VectorSequence, viewin, viewout));
+#endif // SWIG
+bool swig_lal_test_viewinout_COMPLEX8VectorSequence(COMPLEX8VectorSequence* viewout, COMPLEX8VectorSequence* viewin) {
+  if (!viewout || !viewout->data || !viewin || !viewin->data || viewout->length != viewin->length || viewout->vectorLength != viewin->vectorLength) {
+    return false;
+  }
+  const size_t n = viewin->vectorLength;
+  for (size_t i = 0; i < viewin->length; ++i) {
+    for (size_t j = 0; j < n; ++j) {
+      viewout->data[i*n + j] = viewin->data[i*n + j];
+      viewin->data[i*n + j] = crectf(crealf(viewin->data[i*n + j]) * 2.0, cimagf(viewin->data[i*n + j]) * 2.0);
+    }
+  }
+  return true;
+}
+#ifdef SWIG
+SWIGLAL_CLEAR(VIEWIN_STRUCTS(COMPLEX8VectorSequence, viewin, viewout));
+#endif // SWIG
+bool swig_lal_test_viewin_COMPLEX16VectorSequence(COMPLEX16VectorSequence* copyout, const COMPLEX16VectorSequence* viewin) {
+  if (!copyout || !copyout->data || !viewin || !viewin->data || copyout->length != viewin->length || copyout->vectorLength != viewin->vectorLength) {
+    return false;
+  }
+  const size_t n = viewin->vectorLength;
+  for (size_t i = 0; i < viewin->length; ++i) {
+    for (size_t j = 0; j < n; ++j) {
+      copyout->data[i*n + j] = viewin->data[i*n + j];
+    }
+  }
+  return true;
+}
+#ifdef SWIG
+SWIGLAL(VIEWIN_STRUCTS(COMPLEX16VectorSequence, viewin, viewout));
+#endif // SWIG
+bool swig_lal_test_viewinout_COMPLEX16VectorSequence(COMPLEX16VectorSequence* viewout, COMPLEX16VectorSequence* viewin) {
+  if (!viewout || !viewout->data || !viewin || !viewin->data || viewout->length != viewin->length || viewout->vectorLength != viewin->vectorLength) {
+    return false;
+  }
+  const size_t n = viewin->vectorLength;
+  for (size_t i = 0; i < viewin->length; ++i) {
+    for (size_t j = 0; j < n; ++j) {
+      viewout->data[i*n + j] = viewin->data[i*n + j];
+      viewin->data[i*n + j] = crect(creal(viewin->data[i*n + j]) * 2.0, cimag(viewin->data[i*n + j]) * 2.0);
+    }
+  }
+  return true;
+}
+#ifdef SWIG
+SWIGLAL_CLEAR(VIEWIN_STRUCTS(COMPLEX16VectorSequence, viewin, viewout));
+#endif // SWIG
+#ifdef SWIGLAL_HAVE_LIBGSL
+bool swig_lal_test_viewin_gsl_vector_float(gsl_vector_float* copyout, const gsl_vector_float* viewin) {
+  if (!copyout || !viewin || copyout->size != viewin->size) {
+    return false;
+  }
+  gsl_vector_float_memcpy(copyout, viewin);
+  return true;
+}
+#ifdef SWIG
+SWIGLAL(VIEWIN_STRUCTS(gsl_vector_float, viewin, viewout));
+#endif // SWIG
+bool swig_lal_test_viewinout_gsl_vector_float(gsl_vector_float* viewout, gsl_vector_float* viewin) {
+  if (!viewout || !viewout->data || !viewin || !viewin->data || viewout->size != viewin->size) {
+    return false;
+  }
+  gsl_vector_float_memcpy(viewout, viewin);
+  gsl_vector_float_scale(viewin, 2.0);
+  return true;
+}
+#ifdef SWIG
+SWIGLAL_CLEAR(VIEWIN_STRUCTS(gsl_vector_float, viewin, viewout));
+#endif // SWIG
+bool swig_lal_test_viewin_gsl_vector(gsl_vector* copyout, const gsl_vector* viewin) {
+  if (!copyout || !viewin || copyout->size != viewin->size) {
+    return false;
+  }
+  gsl_vector_memcpy(copyout, viewin);
+  return true;
+}
+#ifdef SWIG
+SWIGLAL(VIEWIN_STRUCTS(gsl_vector, viewin, viewout));
+#endif // SWIG
+bool swig_lal_test_viewinout_gsl_vector(gsl_vector* viewout, gsl_vector* viewin) {
+  if (!viewout || !viewout->data || !viewin || !viewin->data || viewout->size != viewin->size) {
+    return false;
+  }
+  gsl_vector_memcpy(viewout, viewin);
+  gsl_vector_scale(viewin, 2.0);
+  return true;
+}
+#ifdef SWIG
+SWIGLAL_CLEAR(VIEWIN_STRUCTS(gsl_vector, viewin, viewout));
+#endif // SWIG
+bool swig_lal_test_viewin_gsl_vector_complex_float(gsl_vector_complex_float* copyout, const gsl_vector_complex_float* viewin) {
+  if (!copyout || !viewin || copyout->size != viewin->size) {
+    return false;
+  }
+  gsl_vector_complex_float_memcpy(copyout, viewin);
+  return true;
+}
+#ifdef SWIG
+SWIGLAL(VIEWIN_STRUCTS(gsl_vector_complex_float, viewin, viewout));
+#endif // SWIG
+bool swig_lal_test_viewinout_gsl_vector_complex_float(gsl_vector_complex_float* viewout, gsl_vector_complex_float* viewin) {
+  if (!viewout || !viewout->data || !viewin || !viewin->data || viewout->size != viewin->size) {
+    return false;
+  }
+  gsl_vector_complex_float_memcpy(viewout, viewin);
+  gsl_complex_float z;
+  GSL_SET_COMPLEX(&z, 2.0, 0.0);
+  gsl_vector_complex_float_scale(viewin, z);
+  return true;
+}
+#ifdef SWIG
+SWIGLAL_CLEAR(VIEWIN_STRUCTS(gsl_vector_complex_float, viewin, viewout));
+#endif // SWIG
+bool swig_lal_test_viewin_gsl_vector_complex(gsl_vector_complex* copyout, const gsl_vector_complex* viewin) {
+  if (!copyout || !viewin || copyout->size != viewin->size) {
+    return false;
+  }
+  gsl_vector_complex_memcpy(copyout, viewin);
+  return true;
+}
+#ifdef SWIG
+SWIGLAL(VIEWIN_STRUCTS(gsl_vector_complex, viewin, viewout));
+#endif // SWIG
+bool swig_lal_test_viewinout_gsl_vector_complex(gsl_vector_complex* viewout, gsl_vector_complex* viewin) {
+  if (!viewout || !viewout->data || !viewin || !viewin->data || viewout->size != viewin->size) {
+    return false;
+  }
+  gsl_vector_complex_memcpy(viewout, viewin);
+  gsl_complex z;
+  GSL_SET_COMPLEX(&z, 2.0, 0.0);
+  gsl_vector_complex_scale(viewin, z);
+  return true;
+}
+#ifdef SWIG
+SWIGLAL_CLEAR(VIEWIN_STRUCTS(gsl_vector_complex, viewin, viewout));
+#endif // SWIG
+bool swig_lal_test_viewin_gsl_matrix_float(gsl_matrix_float* copyout, const gsl_matrix_float* viewin) {
+  if (!copyout || !viewin || copyout->size1 != copyout->size1 || copyout->size2 != copyout->size2) {
+    return false;
+  }
+  gsl_matrix_float_memcpy(copyout, viewin);
+  return true;
+}
+#ifdef SWIG
+SWIGLAL(VIEWIN_STRUCTS(gsl_matrix_float, viewin, viewout));
+#endif // SWIG
+bool swig_lal_test_viewinout_gsl_matrix_float(gsl_matrix_float* viewout, gsl_matrix_float* viewin) {
+  if (!viewout || !viewout->data || !viewin || !viewin->data || viewout->size1 != viewout->size1 || viewout->size2 != viewout->size2) {
+    return false;
+  }
+  gsl_matrix_float_memcpy(viewout, viewin);
+  gsl_matrix_float_scale(viewin, 2.0);
+  return true;
+}
+#ifdef SWIG
+SWIGLAL_CLEAR(VIEWIN_STRUCTS(gsl_matrix_float, viewin, viewout));
+#endif // SWIG
+bool swig_lal_test_viewin_gsl_matrix(gsl_matrix* copyout, const gsl_matrix* viewin) {
+  if (!copyout || !viewin || copyout->size1 != copyout->size1 || copyout->size2 != copyout->size2) {
+    return false;
+  }
+  gsl_matrix_memcpy(copyout, viewin);
+  return true;
+}
+#ifdef SWIG
+SWIGLAL(VIEWIN_STRUCTS(gsl_matrix, viewin, viewout));
+#endif // SWIG
+bool swig_lal_test_viewinout_gsl_matrix(gsl_matrix* viewout, gsl_matrix* viewin) {
+  if (!viewout || !viewout->data || !viewin || !viewin->data || viewout->size1 != viewout->size1 || viewout->size2 != viewout->size2) {
+    return false;
+  }
+  gsl_matrix_memcpy(viewout, viewin);
+  gsl_matrix_scale(viewin, 2.0);
+  return true;
+}
+#ifdef SWIG
+SWIGLAL_CLEAR(VIEWIN_STRUCTS(gsl_matrix, viewin, viewout));
+#endif // SWIG
+bool swig_lal_test_viewin_gsl_matrix_complex_float(gsl_matrix_complex_float* copyout, const gsl_matrix_complex_float* viewin) {
+  if (!copyout || !viewin || copyout->size1 != copyout->size1 || copyout->size2 != copyout->size2) {
+    return false;
+  }
+  gsl_matrix_complex_float_memcpy(copyout, viewin);
+  return true;
+}
+#ifdef SWIG
+SWIGLAL(VIEWIN_STRUCTS(gsl_matrix_complex_float, viewin, viewout));
+#endif // SWIG
+bool swig_lal_test_viewinout_gsl_matrix_complex_float(gsl_matrix_complex_float* viewout, gsl_matrix_complex_float* viewin) {
+  if (!viewout || !viewout->data || !viewin || !viewin->data || viewout->size1 != viewout->size1 || viewout->size2 != viewout->size2) {
+    return false;
+  }
+  gsl_matrix_complex_float_memcpy(viewout, viewin);
+  gsl_complex_float z;
+  GSL_SET_COMPLEX(&z, 2.0, 0.0);
+  gsl_matrix_complex_float_scale(viewin, z);
+  return true;
+}
+#ifdef SWIG
+SWIGLAL_CLEAR(VIEWIN_STRUCTS(gsl_matrix_complex_float, viewin, viewout));
+#endif // SWIG
+bool swig_lal_test_viewin_gsl_matrix_complex(gsl_matrix_complex* copyout, const gsl_matrix_complex* viewin) {
+  if (!copyout || !viewin || copyout->size1 != copyout->size1 || copyout->size2 != copyout->size2) {
+    return false;
+  }
+  gsl_matrix_complex_memcpy(copyout, viewin);
+  return true;
+}
+#ifdef SWIG
+SWIGLAL(VIEWIN_STRUCTS(gsl_matrix_complex, viewin, viewout));
+#endif // SWIG
+bool swig_lal_test_viewinout_gsl_matrix_complex(gsl_matrix_complex* viewout, gsl_matrix_complex* viewin) {
+  if (!viewout || !viewout->data || !viewin || !viewin->data || viewout->size1 != viewout->size1 || viewout->size2 != viewout->size2) {
+    return false;
+  }
+  gsl_matrix_complex_memcpy(viewout, viewin);
+  gsl_complex z;
+  GSL_SET_COMPLEX(&z, 2.0, 0.0);
+  gsl_matrix_complex_scale(viewin, z);
+  return true;
+}
+#ifdef SWIG
+SWIGLAL_CLEAR(VIEWIN_STRUCTS(gsl_matrix_complex, viewin, viewout));
+#endif // SWIG
+#endif // SWIGLAL_HAVE_LIBGSL
+
 // Test dynamic array of pointer access.
 typedef struct tagswig_lal_test_arrayofdata {
 #ifdef SWIG

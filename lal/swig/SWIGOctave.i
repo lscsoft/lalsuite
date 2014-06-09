@@ -746,7 +746,8 @@ SWIGINTERN bool swiglal_release_parent(void *ptr) {
 //  - OVCLASS is the octave_base_value-derived class of the array view class.
 //  - OVTYPE is the type of octave_value array value.
 //  - OVVALUE() is the method of octave_value which returns an OVTYPE.
-%define %swiglal_oct_array_frags(ACFTYPE, INFRAG, OUTFRAG, INCALL, OUTCALL, OVCLASS, OVTYPE, OVVALUE)
+//  - ISOVTYPEEXPR returns true if the octave_value 'obj' is of type OVTYPE.
+%define %swiglal_oct_array_frags(ACFTYPE, INFRAG, OUTFRAG, INCALL, OUTCALL, OVCLASS, OVTYPE, OVVALUE, ISOVTYPEEXPR)
 
 // Register the ACFTYPE-specific array view class as an Octave type.
 %fragment(%swiglal_oct_array_view_init_frag(ACFTYPE), "init") {
@@ -874,6 +875,82 @@ SWIGINTERN bool swiglal_release_parent(void *ptr) {
   }
 }
 
+// Input view conversion fragment for arrays of type ACFTYPE.
+%fragment(%swiglal_array_viewin_frag(ACFTYPE), "header",
+          fragment=%swiglal_oct_array_view_frag(ACFTYPE))
+{
+  SWIGINTERN int %swiglal_array_viewin_func(ACFTYPE)(const octave_value& parent,
+                                                     octave_value obj,
+                                                     void** ptr,
+                                                     const size_t esize,
+                                                     const size_t ndims,
+                                                     size_t* numel,
+                                                     size_t dims[],
+                                                     const bool isptr,
+                                                     swig_type_info *tinfo,
+                                                     const int tflags)
+  {
+
+    // Cannot handle arrays of pointers.
+    if (isptr) {
+      return SWIG_TypeError;
+    }
+
+    // Check that 'obj' is not itself an Octave view of a C array.
+    if (obj.type_name().find("swiglal_oct_array_view_") == 0) {
+      return SWIG_TypeError;
+    }
+
+    // Check that 'obj' is of the correct type, then store value in 'val'.
+    if (!(ISOVTYPEEXPR)) {
+      return SWIG_TypeError;
+    }
+    OVTYPE val = obj.OVVALUE();
+
+    // Check that the elements of 'val' have the correct size.
+    if (val.byte_size() != val.numel() * esize) {
+      return SWIG_TypeError;
+    }
+
+    // Check that 'val' has the correct number of dimensions.
+    // 1-D arrays are a special case, since Octave arrays are always at least
+    // 2-dimensional, so need to check that one of those dimensions is singular.
+    dim_vector valdims = val.dims();
+    if (ndims == 1) {
+      if (valdims.length() > 2 || valdims.num_ones() == 0) {
+        return SWIG_ValueError;
+      }
+    }
+    else if (val.ndims() != ndims) {
+      return SWIG_ValueError;
+    }
+
+    // Return number of elements and dimensions of Octave array.
+    *numel = val.numel();
+    if (ndims == 1) {
+      dims[0] = val.numel();
+    } else {
+      for (size_t i = 0; i < ndims; ++i) {
+        dims[i] = valdims(i);
+      }
+    }
+
+    // Since Octave stores arrays in column-major order, we can only view 1-D arrays.
+    if (ndims != 1) {
+      return SWIG_ValueError;
+    }
+
+    // Get pointer to Octave array data.
+    *ptr = %reinterpret_cast(val.data(), void*);
+    if (!*ptr) {
+      return SWIG_ValueError;
+    }
+
+    return SWIG_OK;
+
+  }
+}
+
 // Output view conversion fragment for arrays of type ACFTYPE.
 %fragment(%swiglal_array_viewout_frag(ACFTYPE), "header",
           fragment=%swiglal_oct_array_view_frag(ACFTYPE))
@@ -897,45 +974,47 @@ SWIGINTERN bool swiglal_release_parent(void *ptr) {
 %enddef // %swiglal_oct_array_frags
 
 // Array conversion fragments for generic arrays, e.g. SWIG-wrapped types.
+// Note that input views are not supported, and so ISOVTYPEEXPR is 'false'.
 %swiglal_oct_array_frags(SWIGTYPE, "swiglal_as_SWIGTYPE", "swiglal_from_SWIGTYPE",
                          %arg(swiglal_as_SWIGTYPE(parent, objelem, elemptr, esize, isptr, tinfo, tflags)),
                          %arg(swiglal_from_SWIGTYPE(parent, elemptr, isptr, tinfo, tflags)),
-                         octave_cell, Cell, cell_value);
+                         octave_cell, Cell, cell_value, false);
 
 // Array conversion fragments for arrays of LAL strings.
+// Note that input views are not supported, and so ISOVTYPEEXPR is 'false'.
 %swiglal_oct_array_frags(LALchar, "SWIG_AsNewLALcharPtr", "SWIG_FromLALcharPtr",
                          %arg(SWIG_AsNewLALcharPtr(objelem, %reinterpret_cast(elemptr, char**))),
                          %arg(SWIG_FromLALcharPtr(*%reinterpret_cast(elemptr, char**))),
-                         octave_cell, Cell, cell_value);
+                         octave_cell, Cell, cell_value, false);
 
 // Macro which generates array conversion function fragments to/from Octave
 // arrays for real/fragment TYPEs which use SWIG_AsVal/From fragments.
-%define %swiglal_oct_array_asvalfrom_frags(TYPE, OVCLASS, OVTYPE, OVVALUE)
+%define %swiglal_oct_array_asvalfrom_frags(TYPE, OVCLASS, OVTYPE, OVVALUE, ISOVTYPEEXPR)
 %swiglal_oct_array_frags(TYPE, SWIG_AsVal_frag(TYPE), SWIG_From_frag(TYPE),
                          %arg(SWIG_AsVal(TYPE)(objelem, %reinterpret_cast(elemptr, TYPE*))),
                          %arg(SWIG_From(TYPE)(*%reinterpret_cast(elemptr, TYPE*))),
-                         OVCLASS, OVTYPE, OVVALUE);
+                         OVCLASS, OVTYPE, OVVALUE, ISOVTYPEEXPR);
 %enddef
 
 // Array conversion fragments for integer arrays.
-%swiglal_oct_array_asvalfrom_frags(int8_t, octave_int8_matrix, intNDArray<octave_int<int8_t> >, int8_array_value);
-%swiglal_oct_array_asvalfrom_frags(uint8_t, octave_uint8_matrix, intNDArray<octave_int<uint8_t> >, uint8_array_value);
-%swiglal_oct_array_asvalfrom_frags(int16_t, octave_int16_matrix, intNDArray<octave_int<int16_t> >, int16_array_value);
-%swiglal_oct_array_asvalfrom_frags(uint16_t, octave_uint16_matrix, intNDArray<octave_int<uint16_t> >, uint16_array_value);
-%swiglal_oct_array_asvalfrom_frags(int32_t, octave_int32_matrix, intNDArray<octave_int<int32_t> >, int32_array_value);
-%swiglal_oct_array_asvalfrom_frags(uint32_t, octave_uint32_matrix, intNDArray<octave_int<uint32_t> >, uint32_array_value);
-%swiglal_oct_array_asvalfrom_frags(int64_t, octave_int64_matrix, intNDArray<octave_int<int64_t> >, int64_array_value);
-%swiglal_oct_array_asvalfrom_frags(uint64_t, octave_uint64_matrix, intNDArray<octave_int<uint64_t> >, uint64_array_value);
+%swiglal_oct_array_asvalfrom_frags(int8_t, octave_int8_matrix, intNDArray<octave_int<int8_t> >, int8_array_value, obj.is_int8_type());
+%swiglal_oct_array_asvalfrom_frags(uint8_t, octave_uint8_matrix, intNDArray<octave_int<uint8_t> >, uint8_array_value, obj.is_uint8_type());
+%swiglal_oct_array_asvalfrom_frags(int16_t, octave_int16_matrix, intNDArray<octave_int<int16_t> >, int16_array_value, obj.is_int16_type());
+%swiglal_oct_array_asvalfrom_frags(uint16_t, octave_uint16_matrix, intNDArray<octave_int<uint16_t> >, uint16_array_value, obj.is_uint16_type());
+%swiglal_oct_array_asvalfrom_frags(int32_t, octave_int32_matrix, intNDArray<octave_int<int32_t> >, int32_array_value, obj.is_int32_type());
+%swiglal_oct_array_asvalfrom_frags(uint32_t, octave_uint32_matrix, intNDArray<octave_int<uint32_t> >, uint32_array_value, obj.is_uint32_type());
+%swiglal_oct_array_asvalfrom_frags(int64_t, octave_int64_matrix, intNDArray<octave_int<int64_t> >, int64_array_value, obj.is_int64_type());
+%swiglal_oct_array_asvalfrom_frags(uint64_t, octave_uint64_matrix, intNDArray<octave_int<uint64_t> >, uint64_array_value, obj.is_uint64_type());
 
 // Array conversion fragments for floating-precision real arrays.
-%swiglal_oct_array_asvalfrom_frags(float, octave_float_matrix, FloatMatrix, float_matrix_value);
-%swiglal_oct_array_asvalfrom_frags(double, octave_matrix, Matrix, matrix_value);
+%swiglal_oct_array_asvalfrom_frags(float, octave_float_matrix, FloatMatrix, float_matrix_value, obj.is_real_type() && obj.is_single_type());
+%swiglal_oct_array_asvalfrom_frags(double, octave_matrix, Matrix, matrix_value, obj.is_real_type() && obj.is_double_type());
 
 // Array conversion fragments for floating-precision complex arrays.
-%swiglal_oct_array_asvalfrom_frags(gsl_complex_float, octave_float_complex_matrix, FloatComplexMatrix, float_complex_matrix_value);
-%swiglal_oct_array_asvalfrom_frags(gsl_complex, octave_complex_matrix, ComplexMatrix, complex_matrix_value);
-%swiglal_oct_array_asvalfrom_frags(COMPLEX8, octave_float_complex_matrix, FloatComplexMatrix, float_complex_matrix_value);
-%swiglal_oct_array_asvalfrom_frags(COMPLEX16, octave_complex_matrix, ComplexMatrix, complex_matrix_value);
+%swiglal_oct_array_asvalfrom_frags(gsl_complex_float, octave_float_complex_matrix, FloatComplexMatrix, float_complex_matrix_value, obj.is_complex_type() && obj.is_single_type());
+%swiglal_oct_array_asvalfrom_frags(gsl_complex, octave_complex_matrix, ComplexMatrix, complex_matrix_value, obj.is_complex_type() && obj.is_double_type());
+%swiglal_oct_array_asvalfrom_frags(COMPLEX8, octave_float_complex_matrix, FloatComplexMatrix, float_complex_matrix_value, obj.is_complex_type() && obj.is_single_type());
+%swiglal_oct_array_asvalfrom_frags(COMPLEX16, octave_complex_matrix, ComplexMatrix, complex_matrix_value, obj.is_complex_type() && obj.is_double_type());
 
 // Local Variables:
 // mode: c

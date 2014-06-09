@@ -86,7 +86,7 @@ swig_set_nice_error_handlers();
 ////////// GSL vectors and matrices //////////
 
 // This macro create wrapping structs for GSL vectors and matrices.
-%define %swig_lal_gsl_vector_matrix(TYPE, NAME)
+%define %swig_lal_gsl_vector_matrix(BASETYPE, TYPE, NAME)
 
 // GSL vector of type NAME.
 typedef struct {
@@ -106,6 +106,74 @@ typedef struct {
   %swiglal_array_dynamic_size(size_t, size);
   %swiglal_array_dynamic_1D(gsl_vector##NAME, TYPE, size_t, data, arg1->size, arg1->stride);
 } gsl_vector##NAME;
+
+// Typemap which attempts to view pointers to const GSL vector.
+%typemap(in, noblock=1) const gsl_vector##NAME* (void *argp = 0, int res = 0, gsl_vector##NAME##_view temp, void *temp_data = 0) %{
+  res = SWIG_ConvertPtr($input, &argp, $descriptor, 0 /*$disown*/ | %convertptr_flags);
+  if (!SWIG_IsOK(res)) {
+#if !($disown)
+    size_t numel = 0;
+    size_t dims[] = {0};
+    void *data = NULL;
+    // swiglal_array_typeid input type: TYPE*
+    res = %swiglal_array_viewin(TYPE*)(swiglal_no_self(), $input, %as_voidptrptr(&data),
+                                       sizeof(TYPE), 1, &numel, dims,
+                                       $typemap(swiglal_dynarr_isptr, TYPE), $typemap(swiglal_dynarr_tinfo, TYPE),
+                                       $disown | %convertptr_flags);
+    if (!SWIG_IsOK(res)) {
+      temp_data = data = XLALMalloc(numel * sizeof(TYPE));
+      size_t strides[] = {1};
+      res = %swiglal_array_copyin(TYPE*)(swiglal_no_self(), $input, %as_voidptr(data),
+                                         sizeof(TYPE), 1, dims, strides,
+                                         $typemap(swiglal_dynarr_isptr, TYPE), $typemap(swiglal_dynarr_tinfo, TYPE),
+                                         $disown | %convertptr_flags);
+      if (!SWIG_IsOK(res)) {
+        %argument_fail(res, "$type", $symname, $argnum);
+      } else {
+        temp = gsl_vector##NAME##_view_array(%reinterpret_cast(data, BASETYPE*), dims[0]);
+        argp = &temp.vector;
+      }
+    } else {
+      temp = gsl_vector##NAME##_view_array(%reinterpret_cast(data, BASETYPE*), dims[0]);
+      argp = &temp.vector;
+    }
+#else
+    %argument_fail(res, "$type", $symname, $argnum);
+#endif
+  }
+  $1 = %reinterpret_cast(argp, $ltype);
+%}
+%typemap(freearg, match="in", noblock=1) const gsl_vector##NAME* %{
+  if (temp_data$argnum) {
+    XLALFree(temp_data$argnum);
+  }
+%}
+
+// Typemap which attempts to view pointers to non-const GSL vector.
+%typemap(in, noblock=1) gsl_vector##NAME* SWIGLAL_VIEWIN_STRUCT (void *argp = 0, int res = 0, gsl_vector##NAME##_view temp) %{
+  res = SWIG_ConvertPtr($input, &argp, $descriptor, 0 /*$disown*/ | %convertptr_flags);
+  if (!SWIG_IsOK(res)) {
+#if !($disown)
+    size_t numel = 0;
+    size_t dims[] = {0};
+    void *data = NULL;
+    // swiglal_array_typeid input type: TYPE*
+    res = %swiglal_array_viewin(TYPE*)(swiglal_no_self(), $input, %as_voidptrptr(&data),
+                                       sizeof(TYPE), 1, &numel, dims,
+                                       $typemap(swiglal_dynarr_isptr, TYPE), $typemap(swiglal_dynarr_tinfo, TYPE),
+                                       $disown | %convertptr_flags);
+    if (!SWIG_IsOK(res)) {
+      %argument_fail(res, "$type", $symname, $argnum);
+    } else {
+      temp = gsl_vector##NAME##_view_array(%reinterpret_cast(data, BASETYPE*), dims[0]);
+      argp = &temp.vector;
+    }
+#else
+    %argument_fail(res, "$type", $symname, $argnum);
+#endif
+  }
+  $1 = %reinterpret_cast(argp, $ltype);
+%}
 
 // GSL matrix of type NAME.
 typedef struct {
@@ -127,21 +195,89 @@ typedef struct {
   %swiglal_array_dynamic_2D(gsl_matrix##NAME, TYPE, size_t, data, arg1->size1, arg1->size2, arg1->tda, 1);
 } gsl_matrix##NAME;
 
+// Typemap which attempts to view pointers to const GSL matrix.
+%typemap(in, noblock=1) const gsl_matrix##NAME* (void *argp = 0, int res = 0, gsl_matrix##NAME##_view temp, void *temp_data = 0) %{
+  res = SWIG_ConvertPtr($input, &argp, $descriptor, 0 /*$disown*/ | %convertptr_flags);
+  if (!SWIG_IsOK(res)) {
+#if !($disown)
+    size_t numel = 0;
+    size_t dims[] = {0, 0};
+    void *data = NULL;
+    // swiglal_array_typeid input type: TYPE*
+    res = %swiglal_array_viewin(TYPE*)(swiglal_no_self(), $input, %as_voidptrptr(&data),
+                                       sizeof(TYPE), 2, &numel, dims,
+                                       $typemap(swiglal_dynarr_isptr, TYPE), $typemap(swiglal_dynarr_tinfo, TYPE),
+                                       $disown | %convertptr_flags);
+    if (!SWIG_IsOK(res)) {
+      temp_data = data = XLALMalloc(numel * sizeof(TYPE));
+      size_t strides[] = {dims[1], 1};
+      res = %swiglal_array_copyin(TYPE*)(swiglal_no_self(), $input, %as_voidptr(data),
+                                         sizeof(TYPE), 2, dims, strides,
+                                         $typemap(swiglal_dynarr_isptr, TYPE), $typemap(swiglal_dynarr_tinfo, TYPE),
+                                         $disown | %convertptr_flags);
+      if (!SWIG_IsOK(res)) {
+        %argument_fail(res, "$type", $symname, $argnum);
+      } else {
+        temp = gsl_matrix##NAME##_view_array(%reinterpret_cast(data, BASETYPE*), dims[0], dims[1]);
+        argp = &temp.matrix;
+      }
+    } else {
+      temp = gsl_matrix##NAME##_view_array(%reinterpret_cast(data, BASETYPE*), dims[0], dims[1]);
+      argp = &temp.matrix;
+    }
+#else
+    %argument_fail(res, "$type", $symname, $argnum);
+#endif
+  }
+  $1 = %reinterpret_cast(argp, $ltype);
+%}
+%typemap(freearg, match="in", noblock=1) const gsl_matrix##NAME* %{
+  if (temp_data$argnum) {
+    XLALFree(temp_data$argnum);
+  }
+%}
+
+// Typemap which attempts to view pointers to non-const GSL matrix.
+%typemap(in, noblock=1) gsl_matrix##NAME* SWIGLAL_VIEWIN_STRUCT (void *argp = 0, int res = 0, gsl_matrix##NAME##_view temp) %{
+  res = SWIG_ConvertPtr($input, &argp, $descriptor, 0 /*$disown*/ | %convertptr_flags);
+  if (!SWIG_IsOK(res)) {
+#if !($disown)
+    size_t numel = 0;
+    size_t dims[] = {0, 0};
+    void *data = NULL;
+    // swiglal_array_typeid input type: TYPE*
+    res = %swiglal_array_viewin(TYPE*)(swiglal_no_self(), $input, %as_voidptrptr(&data),
+                                       sizeof(TYPE), 2, &numel, dims,
+                                       $typemap(swiglal_dynarr_isptr, TYPE), $typemap(swiglal_dynarr_tinfo, TYPE),
+                                       $disown | %convertptr_flags);
+    if (!SWIG_IsOK(res)) {
+      %argument_fail(res, "$type", $symname, $argnum);
+    } else {
+      temp = gsl_matrix##NAME##_view_array(%reinterpret_cast(data, BASETYPE*), dims[0], dims[1]);
+      argp = &temp.matrix;
+    }
+#else
+    %argument_fail(res, "$type", $symname, $argnum);
+#endif
+  }
+  $1 = %reinterpret_cast(argp, $ltype);
+%}
+
 %enddef // %swig_lal_gsl_vector_matrix
 
 // GSL integer vectors and matrices.
-%swig_lal_gsl_vector_matrix(short, _short);
-%swig_lal_gsl_vector_matrix(unsigned short, _ushort);
-%swig_lal_gsl_vector_matrix(int, _int);
-%swig_lal_gsl_vector_matrix(unsigned int, _uint);
-%swig_lal_gsl_vector_matrix(long, _long);
-%swig_lal_gsl_vector_matrix(unsigned long, _ulong);
+%swig_lal_gsl_vector_matrix(short, short, _short);
+%swig_lal_gsl_vector_matrix(unsigned short, unsigned short, _ushort);
+%swig_lal_gsl_vector_matrix(int, int, _int);
+%swig_lal_gsl_vector_matrix(unsigned int, unsigned int, _uint);
+%swig_lal_gsl_vector_matrix(long, long, _long);
+%swig_lal_gsl_vector_matrix(unsigned long, unsigned long, _ulong);
 
 // GSL real and complex vectors and matrices.
-%swig_lal_gsl_vector_matrix(float, _float);
-%swig_lal_gsl_vector_matrix(double, ); // GSL double vec./mat. has no typename suffix.
-%swig_lal_gsl_vector_matrix(gsl_complex_float, _complex_float);
-%swig_lal_gsl_vector_matrix(gsl_complex, _complex);
+%swig_lal_gsl_vector_matrix(float, float, _float);
+%swig_lal_gsl_vector_matrix(double, double, ); // GSL double vec./mat. has no typename suffix.
+%swig_lal_gsl_vector_matrix(float, gsl_complex_float, _complex_float);
+%swig_lal_gsl_vector_matrix(double, gsl_complex, _complex);
 
 ////////// Specialised typemaps for LIGOTimeGPS //////////
 

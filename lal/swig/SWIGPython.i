@@ -660,7 +660,7 @@ SWIGINTERN bool swiglal_release_parent(void *ptr) {
     int res = 0;
     npy_intp idx[ndims];
 
-    // Check that C array is non-NULL.
+    // Check that C array pointer is valid.
     if (ptr == NULL) {
       return SWIG_MemoryError;
     }
@@ -732,7 +732,7 @@ SWIGINTERN bool swiglal_release_parent(void *ptr) {
     npy_intp objdims[ndims];
     npy_intp idx[ndims];
 
-    // Check that C array is non-NULL.
+    // Check that C array pointer is valid.
     if (ptr == NULL) {
       goto fail;
     }
@@ -772,6 +772,73 @@ SWIGINTERN bool swiglal_release_parent(void *ptr) {
     Py_CLEAR(nparr);
     Py_INCREF(Py_None);
     return Py_None;
+
+  }
+}
+
+// Input view conversion fragment for arrays of type ACFTYPE.
+%fragment(%swiglal_array_viewin_frag(ACFTYPE), "header",
+          fragment="swiglal_py_array_helpers", fragment=INFRAG)
+{
+  SWIGINTERN int %swiglal_array_viewin_func(ACFTYPE)(PyObject* parent,
+                                                     PyObject* obj,
+                                                     void** ptr,
+                                                     const size_t esize,
+                                                     const size_t ndims,
+                                                     size_t* numel,
+                                                     size_t dims[],
+                                                     const bool isptr,
+                                                     swig_type_info *tinfo,
+                                                     const int tflags)
+  {
+
+    // Cannot handle arrays of pointers.
+    if (isptr) {
+      return SWIG_TypeError;
+    }
+
+    // Cannot handle object types.
+    if (NPYTYPE == NPY_OBJECT) {
+      return SWIG_TypeError;
+    }
+
+    // Check that 'obj' is a NumPy array.
+    if (!PyArray_Check(obj)) {
+      return SWIG_TypeError;
+    }
+    PyArrayObject* nparr = (PyArrayObject*)obj;
+
+    // Check that 'nparr' is of the correct type and has the required flags.
+    if (PyArray_TYPE(nparr) != NPYTYPE) {
+      return SWIG_TypeError;
+    }
+    if (!PyArray_ISCARRAY(nparr)) {
+      return SWIG_TypeError;
+    }
+
+    // Check that the elements of 'nparr' have the correct size.
+    if (PyArray_ITEMSIZE(nparr) != esize) {
+      return SWIG_TypeError;
+    }
+
+    // Check that 'nparr' has the correct number of dimensions.
+    if (PyArray_NDIM(nparr) != ndims) {
+      return SWIG_ValueError;
+    }
+
+    // Return number of elements and dimensions of Python array.
+    *numel = PyArray_SIZE(nparr);
+    for (size_t i = 0; i < ndims; ++i) {
+      dims[i] = PyArray_DIM(nparr, i);
+    }
+
+    // Get pointer to Python array data.
+    *ptr = PyArray_DATA(nparr);
+    if (*ptr == NULL) {
+      return SWIG_ValueError;
+    }
+
+    return SWIG_OK;
 
   }
 }

@@ -286,6 +286,391 @@ except:
 assert(not expected_exception)
 print("PASSED fixed and dynamic arrays typemaps")
 
+## check input views of array structs
+print("checking input views of array structs ...")
+r4dat = numpy.array([1.2, 2.3, 3.4, 4.5, 5.6], dtype=numpy.float32)
+r8dat = numpy.array([3.4, 4.5, 5.6, 6.7, 7.8, 8.9], dtype=numpy.float64)
+c8dat = numpy.array(numpy.vectorize(complex)(r4dat, 8 + r4dat), dtype=numpy.complex64)
+c16dat = numpy.array(numpy.vectorize(complex)(r8dat, 16 + r8dat), dtype=numpy.complex128)
+r4 = lal.CreateREAL4Vector(len(r4dat))
+r4.data = r4dat
+r4out = lal.CreateREAL4Vector(len(r4dat))
+r4out.data = numpy.zeros(numpy.shape(r4dat), dtype=r4dat.dtype)
+assert(lal.swig_lal_test_viewin_REAL4Vector(r4out, r4))
+assert((r4out.data == r4.data).all())
+r4out.data = numpy.zeros(numpy.shape(r4dat), dtype=r4dat.dtype)
+assert(lal.swig_lal_test_viewin_REAL4Vector(r4out, r4dat))
+assert((r4out.data == r4dat).all())
+r4out.data = numpy.zeros(numpy.shape(r4dat), dtype=r4dat.dtype)
+assert(lal.swig_lal_test_viewinout_REAL4Vector(r4out, r4))
+assert((2 * r4out.data == r4.data).all())
+r4out.data = numpy.zeros(numpy.shape(r4dat), dtype=r4dat.dtype)
+assert(lal.swig_lal_test_viewinout_REAL4Vector(r4out, r4dat))
+assert((2 * r4out.data == r4dat).all())
+del r4
+del r4out
+del r4dat
+lal.CheckMemoryLeaks()
+r8 = lal.CreateREAL8Vector(len(r8dat))
+r8.data = r8dat
+r8out = lal.CreateREAL8Vector(len(r8dat))
+r8out.data = numpy.zeros(numpy.shape(r8dat), dtype=r8dat.dtype)
+assert(lal.swig_lal_test_viewin_REAL8Vector(r8out, r8))
+assert((r8out.data == r8.data).all())
+r8out.data = numpy.zeros(numpy.shape(r8dat), dtype=r8dat.dtype)
+assert(lal.swig_lal_test_viewin_REAL8Vector(r8out, r8dat))
+assert((r8out.data == r8dat).all())
+r8out.data = numpy.zeros(numpy.shape(r8dat), dtype=r8dat.dtype)
+assert(lal.swig_lal_test_viewinout_REAL8Vector(r8out, r8))
+assert((2 * r8out.data == r8.data).all())
+r8out.data = numpy.zeros(numpy.shape(r8dat), dtype=r8dat.dtype)
+assert(lal.swig_lal_test_viewinout_REAL8Vector(r8out, r8dat))
+assert((2 * r8out.data == r8dat).all())
+del r8
+del r8out
+del r8dat
+lal.CheckMemoryLeaks()
+c8 = lal.CreateCOMPLEX8Vector(len(c8dat))
+c8.data = c8dat
+c8out = lal.CreateCOMPLEX8Vector(len(c8dat))
+c8out.data = numpy.zeros(numpy.shape(c8dat), dtype=c8dat.dtype)
+assert(lal.swig_lal_test_viewin_COMPLEX8Vector(c8out, c8))
+assert((c8out.data == c8.data).all())
+c8out.data = numpy.zeros(numpy.shape(c8dat), dtype=c8dat.dtype)
+assert(lal.swig_lal_test_viewin_COMPLEX8Vector(c8out, c8dat))
+assert((c8out.data == c8dat).all())
+c8out.data = numpy.zeros(numpy.shape(c8dat), dtype=c8dat.dtype)
+assert(lal.swig_lal_test_viewinout_COMPLEX8Vector(c8out, c8))
+assert((2 * c8out.data == c8.data).all())
+c8out.data = numpy.zeros(numpy.shape(c8dat), dtype=c8dat.dtype)
+assert(lal.swig_lal_test_viewinout_COMPLEX8Vector(c8out, c8dat))
+assert((2 * c8out.data == c8dat).all())
+del c8
+del c8out
+del c8dat
+lal.CheckMemoryLeaks()
+c16 = lal.CreateCOMPLEX16Vector(len(c16dat))
+c16.data = c16dat
+c16out = lal.CreateCOMPLEX16Vector(len(c16dat))
+c16out.data = numpy.zeros(numpy.shape(c16dat), dtype=c16dat.dtype)
+assert(lal.swig_lal_test_viewin_COMPLEX16Vector(c16out, c16))
+assert((c16out.data == c16.data).all())
+c16out.data = numpy.zeros(numpy.shape(c16dat), dtype=c16dat.dtype)
+assert(lal.swig_lal_test_viewin_COMPLEX16Vector(c16out, c16dat))
+assert((c16out.data == c16dat).all())
+c16out.data = numpy.zeros(numpy.shape(c16dat), dtype=c16dat.dtype)
+assert(lal.swig_lal_test_viewinout_COMPLEX16Vector(c16out, c16))
+assert((2 * c16out.data == c16.data).all())
+c16out.data = numpy.zeros(numpy.shape(c16dat), dtype=c16dat.dtype)
+assert(lal.swig_lal_test_viewinout_COMPLEX16Vector(c16out, c16dat))
+assert((2 * c16out.data == c16dat).all())
+del c16
+del c16out
+del c16dat
+lal.CheckMemoryLeaks()
+r4dat = numpy.array([[1.2, 2.3, 3.4], [4.5, 5.6, 6.7]], dtype=numpy.float32)
+r8dat = numpy.array([[3.4, 4.5], [5.6, 6.7], [7.8, 8.9]], dtype=numpy.float64)
+c8dat = numpy.array(numpy.vectorize(complex)(r4dat, 8 + r4dat), dtype=numpy.complex64)
+c16dat = numpy.array(numpy.vectorize(complex)(r8dat, 16 + r8dat), dtype=numpy.complex128)
+r4 = lal.CreateREAL4VectorSequence(r4dat.shape[0], r4dat.shape[1])
+r4.data = r4dat
+r4out = lal.CreateREAL4VectorSequence(r4dat.shape[0], r4dat.shape[1])
+r4out.data = numpy.zeros(numpy.shape(r4dat), dtype=r4dat.dtype)
+assert(lal.swig_lal_test_viewin_REAL4VectorSequence(r4out, r4))
+assert((r4out.data == r4.data).all())
+r4out.data = numpy.zeros(numpy.shape(r4dat), dtype=r4dat.dtype)
+assert(lal.swig_lal_test_viewin_REAL4VectorSequence(r4out, r4dat))
+assert((r4out.data == r4dat).all())
+r4out.data = numpy.zeros(numpy.shape(r4dat), dtype=r4dat.dtype)
+assert(lal.swig_lal_test_viewinout_REAL4VectorSequence(r4out, r4))
+assert((2 * r4out.data == r4.data).all())
+r4out.data = numpy.zeros(numpy.shape(r4dat), dtype=r4dat.dtype)
+assert(lal.swig_lal_test_viewinout_REAL4VectorSequence(r4out, r4dat))
+assert((2 * r4out.data == r4dat).all())
+del r4
+del r4out
+del r4dat
+lal.CheckMemoryLeaks()
+r8 = lal.CreateREAL8VectorSequence(r8dat.shape[0], r8dat.shape[1])
+r8.data = r8dat
+r8out = lal.CreateREAL8VectorSequence(r8dat.shape[0], r8dat.shape[1])
+r8out.data = numpy.zeros(numpy.shape(r8dat), dtype=r8dat.dtype)
+assert(lal.swig_lal_test_viewin_REAL8VectorSequence(r8out, r8))
+assert((r8out.data == r8.data).all())
+r8out.data = numpy.zeros(numpy.shape(r8dat), dtype=r8dat.dtype)
+assert(lal.swig_lal_test_viewin_REAL8VectorSequence(r8out, r8dat))
+assert((r8out.data == r8dat).all())
+r8out.data = numpy.zeros(numpy.shape(r8dat), dtype=r8dat.dtype)
+assert(lal.swig_lal_test_viewinout_REAL8VectorSequence(r8out, r8))
+assert((2 * r8out.data == r8.data).all())
+r8out.data = numpy.zeros(numpy.shape(r8dat), dtype=r8dat.dtype)
+assert(lal.swig_lal_test_viewinout_REAL8VectorSequence(r8out, r8dat))
+assert((2 * r8out.data == r8dat).all())
+del r8
+del r8out
+del r8dat
+lal.CheckMemoryLeaks()
+c8 = lal.CreateCOMPLEX8VectorSequence(c8dat.shape[0], c8dat.shape[1])
+c8.data = c8dat
+c8out = lal.CreateCOMPLEX8VectorSequence(c8dat.shape[0], c8dat.shape[1])
+c8out.data = numpy.zeros(numpy.shape(c8dat), dtype=c8dat.dtype)
+assert(lal.swig_lal_test_viewin_COMPLEX8VectorSequence(c8out, c8))
+assert((c8out.data == c8.data).all())
+c8out.data = numpy.zeros(numpy.shape(c8dat), dtype=c8dat.dtype)
+assert(lal.swig_lal_test_viewin_COMPLEX8VectorSequence(c8out, c8dat))
+assert((c8out.data == c8dat).all())
+c8out.data = numpy.zeros(numpy.shape(c8dat), dtype=c8dat.dtype)
+assert(lal.swig_lal_test_viewinout_COMPLEX8VectorSequence(c8out, c8))
+assert((2 * c8out.data == c8.data).all())
+c8out.data = numpy.zeros(numpy.shape(c8dat), dtype=c8dat.dtype)
+assert(lal.swig_lal_test_viewinout_COMPLEX8VectorSequence(c8out, c8dat))
+assert((2 * c8out.data == c8dat).all())
+del c8
+del c8out
+del c8dat
+lal.CheckMemoryLeaks()
+c16 = lal.CreateCOMPLEX16VectorSequence(c16dat.shape[0], c16dat.shape[1])
+c16.data = c16dat
+c16out = lal.CreateCOMPLEX16VectorSequence(c16dat.shape[0], c16dat.shape[1])
+c16out.data = numpy.zeros(numpy.shape(c16dat), dtype=c16dat.dtype)
+assert(lal.swig_lal_test_viewin_COMPLEX16VectorSequence(c16out, c16))
+assert((c16out.data == c16.data).all())
+c16out.data = numpy.zeros(numpy.shape(c16dat), dtype=c16dat.dtype)
+assert(lal.swig_lal_test_viewin_COMPLEX16VectorSequence(c16out, c16dat))
+assert((c16out.data == c16dat).all())
+c16out.data = numpy.zeros(numpy.shape(c16dat), dtype=c16dat.dtype)
+assert(lal.swig_lal_test_viewinout_COMPLEX16VectorSequence(c16out, c16))
+assert((2 * c16out.data == c16.data).all())
+c16out.data = numpy.zeros(numpy.shape(c16dat), dtype=c16dat.dtype)
+assert(lal.swig_lal_test_viewinout_COMPLEX16VectorSequence(c16out, c16dat))
+assert((2 * c16out.data == c16dat).all())
+del c16
+del c16out
+del c16dat
+lal.CheckMemoryLeaks()
+print("PASSED input views of array structs (LAL)")
+vfdat = numpy.array([1.2, 2.3, 3.4, 4.5, 5.6], dtype=numpy.float32)
+vddat = numpy.array([3.4, 4.5, 5.6, 6.7, 7.8, 8.9], dtype=numpy.float64)
+vcfdat = numpy.array(numpy.vectorize(complex)(vfdat, 8 + vfdat), dtype=numpy.complex64)
+vcddat = numpy.array(numpy.vectorize(complex)(vddat, 16 + vddat), dtype=numpy.complex128)
+vf = lal.gsl_vector_float(len(vfdat))
+vf.data = vfdat
+vfout = lal.gsl_vector_float(len(vfdat))
+vfout.data = numpy.zeros(numpy.shape(vfdat), dtype=vfdat.dtype)
+assert(lal.swig_lal_test_viewin_gsl_vector_float(vfout, vf))
+assert((vfout.data == vf.data).all())
+vfout.data = numpy.zeros(numpy.shape(vfdat), dtype=vfdat.dtype)
+assert(lal.swig_lal_test_viewin_gsl_vector_float(vfout, vfdat))
+assert((vfout.data == vfdat).all())
+vfout.data = numpy.zeros(numpy.shape(vfdat), dtype=vfdat.dtype)
+assert(lal.swig_lal_test_viewinout_gsl_vector_float(vfout, vf))
+assert((2 * vfout.data == vf.data).all())
+vfout.data = numpy.zeros(numpy.shape(vfdat), dtype=vfdat.dtype)
+assert(lal.swig_lal_test_viewinout_gsl_vector_float(vfout, vfdat))
+assert((2 * vfout.data == vfdat).all())
+del vf
+del vfout
+del vfdat
+lal.CheckMemoryLeaks()
+vd = lal.gsl_vector(len(vddat))
+vd.data = vddat
+vdout = lal.gsl_vector(len(vddat))
+vdout.data = numpy.zeros(numpy.shape(vddat), dtype=vddat.dtype)
+assert(lal.swig_lal_test_viewin_gsl_vector(vdout, vd))
+assert((vdout.data == vd.data).all())
+vdout.data = numpy.zeros(numpy.shape(vddat), dtype=vddat.dtype)
+assert(lal.swig_lal_test_viewin_gsl_vector(vdout, vddat))
+assert((vdout.data == vddat).all())
+vdout.data = numpy.zeros(numpy.shape(vddat), dtype=vddat.dtype)
+assert(lal.swig_lal_test_viewinout_gsl_vector(vdout, vd))
+assert((2 * vdout.data == vd.data).all())
+vdout.data = numpy.zeros(numpy.shape(vddat), dtype=vddat.dtype)
+assert(lal.swig_lal_test_viewinout_gsl_vector(vdout, vddat))
+assert((2 * vdout.data == vddat).all())
+del vd
+del vdout
+del vddat
+lal.CheckMemoryLeaks()
+vcf = lal.gsl_vector_complex_float(len(vcfdat))
+vcf.data = vcfdat
+vcfout = lal.gsl_vector_complex_float(len(vcfdat))
+vcfout.data = numpy.zeros(numpy.shape(vcfdat), dtype=vcfdat.dtype)
+assert(lal.swig_lal_test_viewin_gsl_vector_complex_float(vcfout, vcf))
+assert((vcfout.data == vcf.data).all())
+vcfout.data = numpy.zeros(numpy.shape(vcfdat), dtype=vcfdat.dtype)
+assert(lal.swig_lal_test_viewin_gsl_vector_complex_float(vcfout, vcfdat))
+assert((vcfout.data == vcfdat).all())
+vcfout.data = numpy.zeros(numpy.shape(vcfdat), dtype=vcfdat.dtype)
+assert(lal.swig_lal_test_viewinout_gsl_vector_complex_float(vcfout, vcf))
+assert((2 * vcfout.data == vcf.data).all())
+vcfout.data = numpy.zeros(numpy.shape(vcfdat), dtype=vcfdat.dtype)
+assert(lal.swig_lal_test_viewinout_gsl_vector_complex_float(vcfout, vcfdat))
+assert((2 * vcfout.data == vcfdat).all())
+del vcf
+del vcfout
+del vcfdat
+lal.CheckMemoryLeaks()
+vcd = lal.gsl_vector_complex(len(vcddat))
+vcd.data = vcddat
+vcdout = lal.gsl_vector_complex(len(vcddat))
+vcdout.data = numpy.zeros(numpy.shape(vcddat), dtype=vcddat.dtype)
+assert(lal.swig_lal_test_viewin_gsl_vector_complex(vcdout, vcd))
+assert((vcdout.data == vcd.data).all())
+vcdout.data = numpy.zeros(numpy.shape(vcddat), dtype=vcddat.dtype)
+assert(lal.swig_lal_test_viewin_gsl_vector_complex(vcdout, vcddat))
+assert((vcdout.data == vcddat).all())
+vcdout.data = numpy.zeros(numpy.shape(vcddat), dtype=vcddat.dtype)
+assert(lal.swig_lal_test_viewinout_gsl_vector_complex(vcdout, vcd))
+assert((2 * vcdout.data == vcd.data).all())
+vcdout.data = numpy.zeros(numpy.shape(vcddat), dtype=vcddat.dtype)
+assert(lal.swig_lal_test_viewinout_gsl_vector_complex(vcdout, vcddat))
+assert((2 * vcdout.data == vcddat).all())
+del vcd
+del vcdout
+del vcddat
+lal.CheckMemoryLeaks()
+mfdat = numpy.array([[1.2, 2.3, 3.4], [4.5, 5.6, 6.7]], dtype=numpy.float32)
+mddat = numpy.array([[3.4, 4.5], [5.6, 6.7], [7.8, 8.9]], dtype=numpy.float64)
+mcfdat = numpy.array(numpy.vectorize(complex)(mfdat, 8 + mfdat), dtype=numpy.complex64)
+mcddat = numpy.array(numpy.vectorize(complex)(mddat, 16 + mddat), dtype=numpy.complex128)
+mf = lal.gsl_matrix_float(mfdat.shape[0], mfdat.shape[1])
+mf.data = mfdat
+mfout = lal.gsl_matrix_float(mfdat.shape[0], mfdat.shape[1])
+mfout.data = numpy.zeros(numpy.shape(mfdat), dtype=mfdat.dtype)
+assert(lal.swig_lal_test_viewin_gsl_matrix_float(mfout, mf))
+assert((mfout.data == mf.data).all())
+mfout.data = numpy.zeros(numpy.shape(mfdat), dtype=mfdat.dtype)
+assert(lal.swig_lal_test_viewin_gsl_matrix_float(mfout, mfdat))
+assert((mfout.data == mfdat).all())
+mfout.data = numpy.zeros(numpy.shape(mfdat), dtype=mfdat.dtype)
+assert(lal.swig_lal_test_viewinout_gsl_matrix_float(mfout, mf))
+assert((2 * mfout.data == mf.data).all())
+mfout.data = numpy.zeros(numpy.shape(mfdat), dtype=mfdat.dtype)
+assert(lal.swig_lal_test_viewinout_gsl_matrix_float(mfout, mfdat))
+assert((2 * mfout.data == mfdat).all())
+del mf
+del mfout
+del mfdat
+lal.CheckMemoryLeaks()
+md = lal.gsl_matrix(mddat.shape[0], mddat.shape[1])
+md.data = mddat
+mdout = lal.gsl_matrix(mddat.shape[0], mddat.shape[1])
+mdout.data = numpy.zeros(numpy.shape(mddat), dtype=mddat.dtype)
+assert(lal.swig_lal_test_viewin_gsl_matrix(mdout, md))
+assert((mdout.data == md.data).all())
+mdout.data = numpy.zeros(numpy.shape(mddat), dtype=mddat.dtype)
+assert(lal.swig_lal_test_viewin_gsl_matrix(mdout, mddat))
+assert((mdout.data == mddat).all())
+mdout.data = numpy.zeros(numpy.shape(mddat), dtype=mddat.dtype)
+assert(lal.swig_lal_test_viewinout_gsl_matrix(mdout, md))
+assert((2 * mdout.data == md.data).all())
+mdout.data = numpy.zeros(numpy.shape(mddat), dtype=mddat.dtype)
+assert(lal.swig_lal_test_viewinout_gsl_matrix(mdout, mddat))
+assert((2 * mdout.data == mddat).all())
+del md
+del mdout
+del mddat
+lal.CheckMemoryLeaks()
+mcf = lal.gsl_matrix_complex_float(mcfdat.shape[0], mcfdat.shape[1])
+mcf.data = mcfdat
+mcfout = lal.gsl_matrix_complex_float(mcfdat.shape[0], mcfdat.shape[1])
+mcfout.data = numpy.zeros(numpy.shape(mcfdat), dtype=mcfdat.dtype)
+assert(lal.swig_lal_test_viewin_gsl_matrix_complex_float(mcfout, mcf))
+assert((mcfout.data == mcf.data).all())
+mcfout.data = numpy.zeros(numpy.shape(mcfdat), dtype=mcfdat.dtype)
+assert(lal.swig_lal_test_viewin_gsl_matrix_complex_float(mcfout, mcfdat))
+assert((mcfout.data == mcfdat).all())
+mcfout.data = numpy.zeros(numpy.shape(mcfdat), dtype=mcfdat.dtype)
+assert(lal.swig_lal_test_viewinout_gsl_matrix_complex_float(mcfout, mcf))
+assert((2 * mcfout.data == mcf.data).all())
+mcfout.data = numpy.zeros(numpy.shape(mcfdat), dtype=mcfdat.dtype)
+assert(lal.swig_lal_test_viewinout_gsl_matrix_complex_float(mcfout, mcfdat))
+assert((2 * mcfout.data == mcfdat).all())
+del mcf
+del mcfout
+del mcfdat
+lal.CheckMemoryLeaks()
+mcd = lal.gsl_matrix_complex(mcddat.shape[0], mcddat.shape[1])
+mcd.data = mcddat
+mcdout = lal.gsl_matrix_complex(mcddat.shape[0], mcddat.shape[1])
+mcdout.data = numpy.zeros(numpy.shape(mcddat), dtype=mcddat.dtype)
+assert(lal.swig_lal_test_viewin_gsl_matrix_complex(mcdout, mcd))
+assert((mcdout.data == mcd.data).all())
+mcdout.data = numpy.zeros(numpy.shape(mcddat), dtype=mcddat.dtype)
+assert(lal.swig_lal_test_viewin_gsl_matrix_complex(mcdout, mcddat))
+assert((mcdout.data == mcddat).all())
+mcdout.data = numpy.zeros(numpy.shape(mcddat), dtype=mcddat.dtype)
+assert(lal.swig_lal_test_viewinout_gsl_matrix_complex(mcdout, mcd))
+assert((2 * mcdout.data == mcd.data).all())
+mcdout.data = numpy.zeros(numpy.shape(mcddat), dtype=mcddat.dtype)
+assert(lal.swig_lal_test_viewinout_gsl_matrix_complex(mcdout, mcddat))
+assert((2 * mcdout.data == mcddat).all())
+del mcd
+del mcdout
+del mcddat
+lal.CheckMemoryLeaks()
+print("PASSED input views of array structs (GSL)")
+def check_input_view_type_safety(f, a, b, expect_exception):
+    expected_exception = False
+    if expect_exception:
+        try:
+            f(a, b)
+            expected_exception = True
+        except:
+            pass
+        assert(not expected_exception)
+        try:
+            f(b, a)
+            expected_exception = True
+        except:
+            pass
+        assert(not expected_exception)
+    else:
+        f(a, b)
+        f(b, a)
+r4 = numpy.zeros(10, dtype=numpy.float32)
+r8 = numpy.zeros(10, dtype=numpy.float64)
+c8 = numpy.zeros(10, dtype=numpy.complex64)
+c16 = numpy.zeros(10, dtype=numpy.complex128)
+check_input_view_type_safety(lal.swig_lal_test_viewinout_REAL4Vector, r4, r4, False)
+check_input_view_type_safety(lal.swig_lal_test_viewinout_REAL4Vector, r4, r8, True)
+check_input_view_type_safety(lal.swig_lal_test_viewinout_REAL4Vector, r4, c8, True)
+check_input_view_type_safety(lal.swig_lal_test_viewinout_REAL4Vector, r4, c16, True)
+check_input_view_type_safety(lal.swig_lal_test_viewinout_REAL8Vector, r8, r4, True)
+check_input_view_type_safety(lal.swig_lal_test_viewinout_REAL8Vector, r8, r8, False)
+check_input_view_type_safety(lal.swig_lal_test_viewinout_REAL8Vector, r8, c8, True)
+check_input_view_type_safety(lal.swig_lal_test_viewinout_REAL8Vector, r8, c16, True)
+check_input_view_type_safety(lal.swig_lal_test_viewinout_COMPLEX8Vector, c8, r4, True)
+check_input_view_type_safety(lal.swig_lal_test_viewinout_COMPLEX8Vector, c8, r8, True)
+check_input_view_type_safety(lal.swig_lal_test_viewinout_COMPLEX8Vector, c8, c8, False)
+check_input_view_type_safety(lal.swig_lal_test_viewinout_COMPLEX8Vector, c8, c16, True)
+check_input_view_type_safety(lal.swig_lal_test_viewinout_COMPLEX16Vector, c16, r4, True)
+check_input_view_type_safety(lal.swig_lal_test_viewinout_COMPLEX16Vector, c16, r8, True)
+check_input_view_type_safety(lal.swig_lal_test_viewinout_COMPLEX16Vector, c16, c8, True)
+check_input_view_type_safety(lal.swig_lal_test_viewinout_COMPLEX16Vector, c16, c16, False)
+check_input_view_type_safety(lal.swig_lal_test_viewinout_gsl_vector_float, r4, r4, False)
+check_input_view_type_safety(lal.swig_lal_test_viewinout_gsl_vector_float, r4, r8, True)
+check_input_view_type_safety(lal.swig_lal_test_viewinout_gsl_vector_float, r4, c8, True)
+check_input_view_type_safety(lal.swig_lal_test_viewinout_gsl_vector_float, r4, c16, True)
+check_input_view_type_safety(lal.swig_lal_test_viewinout_gsl_vector, r8, r4, True)
+check_input_view_type_safety(lal.swig_lal_test_viewinout_gsl_vector, r8, r8, False)
+check_input_view_type_safety(lal.swig_lal_test_viewinout_gsl_vector, r8, c8, True)
+check_input_view_type_safety(lal.swig_lal_test_viewinout_gsl_vector, r8, c16, True)
+check_input_view_type_safety(lal.swig_lal_test_viewinout_gsl_vector_complex_float, c8, r4, True)
+check_input_view_type_safety(lal.swig_lal_test_viewinout_gsl_vector_complex_float, c8, r8, True)
+check_input_view_type_safety(lal.swig_lal_test_viewinout_gsl_vector_complex_float, c8, c8, False)
+check_input_view_type_safety(lal.swig_lal_test_viewinout_gsl_vector_complex_float, c8, c16, True)
+check_input_view_type_safety(lal.swig_lal_test_viewinout_gsl_vector_complex, c16, r4, True)
+check_input_view_type_safety(lal.swig_lal_test_viewinout_gsl_vector_complex, c16, r8, True)
+check_input_view_type_safety(lal.swig_lal_test_viewinout_gsl_vector_complex, c16, c8, True)
+check_input_view_type_safety(lal.swig_lal_test_viewinout_gsl_vector_complex, c16, c16, False)
+del r4
+del r8
+del c8
+del c16
+lal.CheckMemoryLeaks()
+print("PASSED input views of array structs (type safety)")
+
 # check dynamic array of pointers access
 print("checking dynamic array of pointers access ...")
 ap = lal.swig_lal_test_Create_arrayofptrs(3)

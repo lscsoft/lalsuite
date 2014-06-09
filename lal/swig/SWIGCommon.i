@@ -341,6 +341,7 @@ struct TAGNAME {
 // by the following functions:
 //  - %swiglal_array_copyin...() copies a scripting-language array into a C array.
 //  - %swiglal_array_copyout...() copies a C array into a scripting-language array.
+//  - %swiglal_array_viewin...() tries to view a scripting-language array as a C array.
 //  - %swiglal_array_viewout...() wraps a C array inside a scripting-language array,
 //    if this is supported by the target scripting language.
 // These functions accept a subset of the following arguments:
@@ -356,16 +357,19 @@ struct TAGNAME {
 // Return values are:
 //  - %swiglal_array_copyin...(): int: SWIG error code.
 //  - %swiglal_array_copyout...() SWIG_Object: output scripting-language array.
+//  - %swiglal_array_viewin...(): int: SWIG error code.
 //  - %swiglal_array_viewout...() SWIG_Object: output scripting-language array view.
 
 // Names of array conversion functions for array type ACFTYPE.
 #define %swiglal_array_copyin_func(ACFTYPE) swiglal_array_copyin_##ACFTYPE
 #define %swiglal_array_copyout_func(ACFTYPE) swiglal_array_copyout_##ACFTYPE
+#define %swiglal_array_viewin_func(ACFTYPE) swiglal_array_viewin_##ACFTYPE
 #define %swiglal_array_viewout_func(ACFTYPE) swiglal_array_viewout_##ACFTYPE
 
 // Names of fragments containing the conversion functions for ACFTYPE.
 #define %swiglal_array_copyin_frag(ACFTYPE) "swiglal_array_copyin_" %str(ACFTYPE)
 #define %swiglal_array_copyout_frag(ACFTYPE) "swiglal_array_copyout_" %str(ACFTYPE)
+#define %swiglal_array_viewin_frag(ACFTYPE) "swiglal_array_viewin_" %str(ACFTYPE)
 #define %swiglal_array_viewout_frag(ACFTYPE) "swiglal_array_viewout_" %str(ACFTYPE)
 
 // The %swiglal_array_type() macro maps TYPEs of C arrays to an ACFTYPE of the
@@ -375,6 +379,7 @@ struct TAGNAME {
 %fragment("swiglal_array_frags_" %str(ACFTYPE), "header",
           fragment=%swiglal_array_copyin_frag(ACFTYPE),
           fragment=%swiglal_array_copyout_frag(ACFTYPE),
+          fragment=%swiglal_array_viewin_frag(ACFTYPE),
           fragment=%swiglal_array_viewout_frag(ACFTYPE)) {};
 %typemap(swiglal_array_typeid, fragment="swiglal_array_frags_" %str(ACFTYPE)) TYPE* %str(ACFTYPE);
 %typemap(swiglal_array_typeid, fragment="swiglal_array_frags_" %str(ACFTYPE)) const TYPE* %str(ACFTYPE);
@@ -419,14 +424,17 @@ struct TAGNAME {
 %enddef
 %swiglal_array_int32or64_frags(%swiglal_array_copyin_frag, %swiglal_array_copyin_func, int);
 %swiglal_array_int32or64_frags(%swiglal_array_copyout_frag, %swiglal_array_copyout_func, int);
+%swiglal_array_int32or64_frags(%swiglal_array_viewin_frag, %swiglal_array_viewin_func, int);
 %swiglal_array_int32or64_frags(%swiglal_array_viewout_frag, %swiglal_array_viewout_func, int);
 %swiglal_array_int32or64_frags(%swiglal_array_copyin_frag, %swiglal_array_copyin_func, uint);
 %swiglal_array_int32or64_frags(%swiglal_array_copyout_frag, %swiglal_array_copyout_func, uint);
+%swiglal_array_int32or64_frags(%swiglal_array_viewin_frag, %swiglal_array_viewin_func, uint);
 %swiglal_array_int32or64_frags(%swiglal_array_viewout_frag, %swiglal_array_viewout_func, uint);
 
 // Call the appropriate conversion function for C TYPE arrays.
 #define %swiglal_array_copyin(TYPE) %swiglal_array_copyin_func($typemap(swiglal_array_typeid, TYPE))
 #define %swiglal_array_copyout(TYPE) %swiglal_array_copyout_func($typemap(swiglal_array_typeid, TYPE))
+#define %swiglal_array_viewin(TYPE) %swiglal_array_viewin_func($typemap(swiglal_array_typeid, TYPE))
 #define %swiglal_array_viewout(TYPE) %swiglal_array_viewout_func($typemap(swiglal_array_typeid, TYPE))
 
 //
@@ -627,6 +635,10 @@ struct TAGNAME {
 %swiglal_map_a(%swiglal_clear, TYPE, __VA_ARGS__);
 %enddef
 
+//
+// Typemaps which convert to/from dynamically-sized arrays.
+//
+
 // Get the correct descriptor for a dynamic array element:
 // Always return a pointer description, even for non-pointer types, and
 // determine whether array is an array of pointers or of data blocks.
@@ -809,6 +821,175 @@ if (strides[I-1] == 0) {
 
 %enddef // %swiglal_array_dynamic_2D()
 
+// The %swiglal_array_struct_<n>D() macros create typemaps which attempt to
+// view a scripting-language array as a C array struct NAME. If the input is
+// not already a SWIG-wrapped object wrapping a NAME struct, an input view is
+// attempted using %swiglal_array_viewin...().
+// The main concern with passing scripting-language memory to C code is
+// that it might try to re-allocate or free the memory, which would certainly
+// lead to undefined behaviour. Therefore, by default a view is attempted only
+// for pointers to const NAME*, since it is reasonable to assume the called C
+// code will not try to re-allocate or free constant memory. When it is known
+// that the called C function will not try to re-allocate or free a particular
+// argument, the SWIGLAL(VIEWIN_STRUCTS(NAME, ...)) macro can be used to apply
+// the typemap to pointers to (non-const) NAME*.
+// 1-D arrays:
+%define %swiglal_array_struct_1D(NAME, TYPE, SIZET, DATA, NI)
+
+// Typemap which attempts to view pointers to const NAME*
+%typemap(in, noblock=1) const NAME* (void *argp = 0, int res = 0, NAME temp, void *temp_data = 0) %{
+  res = SWIG_ConvertPtr($input, &argp, $descriptor, 0 /*$disown*/ | %convertptr_flags);
+  if (!SWIG_IsOK(res)) {
+#if !($disown) && (swiglal_field_count_##NAME == 2)
+    size_t numel = 0;
+    size_t dims[] = {0};
+    temp.DATA = NULL;
+    // swiglal_array_typeid input type: TYPE*
+    res = %swiglal_array_viewin(TYPE*)(swiglal_no_self(), $input, %as_voidptrptr(&temp.DATA),
+                                       sizeof(TYPE), 1, &numel, dims,
+                                       $typemap(swiglal_dynarr_isptr, TYPE), $typemap(swiglal_dynarr_tinfo, TYPE),
+                                       $disown | %convertptr_flags);
+    if (!SWIG_IsOK(res)) {
+      temp_data = temp.DATA = %reinterpret_cast(XLALMalloc(numel * sizeof(TYPE)), TYPE*);
+      size_t strides[] = {1};
+      res = %swiglal_array_copyin(TYPE*)(swiglal_no_self(), $input, %as_voidptr(temp.DATA),
+                                         sizeof(TYPE), 1, dims, strides,
+                                         $typemap(swiglal_dynarr_isptr, TYPE), $typemap(swiglal_dynarr_tinfo, TYPE),
+                                         $disown | %convertptr_flags);
+      if (!SWIG_IsOK(res)) {
+        %argument_fail(res, "$type", $symname, $argnum);
+      } else {
+        temp.NI = dims[0];
+        argp = &temp;
+      }
+    } else {
+      temp.NI = dims[0];
+      argp = &temp;
+    }
+#else
+    %argument_fail(res, "$type", $symname, $argnum);
+#endif
+  }
+  $1 = %reinterpret_cast(argp, $ltype);
+%}
+%typemap(freearg, match="in", noblock=1) const NAME* %{
+  if (temp_data$argnum) {
+    XLALFree(temp_data$argnum);
+  }
+%}
+
+// Typemap which attempts to view pointers to non-const NAME*
+%typemap(in, noblock=1) NAME* SWIGLAL_VIEWIN_STRUCT (void *argp = 0, int res = 0, NAME temp) %{
+  res = SWIG_ConvertPtr($input, &argp, $descriptor, 0 /*$disown*/ | %convertptr_flags);
+  if (!SWIG_IsOK(res)) {
+#if !($disown) && (swiglal_field_count_##NAME == 2)
+    size_t numel = 0;
+    size_t dims[] = {0};
+    temp.DATA = NULL;
+    // swiglal_array_typeid input type: TYPE*
+    res = %swiglal_array_viewin(TYPE*)(swiglal_no_self(), $input, %as_voidptrptr(&temp.DATA),
+                                       sizeof(TYPE), 1, &numel, dims,
+                                       $typemap(swiglal_dynarr_isptr, TYPE), $typemap(swiglal_dynarr_tinfo, TYPE),
+                                       $disown | %convertptr_flags);
+    if (!SWIG_IsOK(res)) {
+      %argument_fail(res, "$type", $symname, $argnum);
+    } else {
+      temp.NI = dims[0];
+      argp = &temp;
+    }
+#else
+    %argument_fail(res, "$type", $symname, $argnum);
+#endif
+  }
+  $1 = %reinterpret_cast(argp, $ltype);
+%}
+
+%enddef // %swiglal_array_struct_1D
+// 2-D arrays:
+%define %swiglal_array_struct_2D(NAME, TYPE, SIZET, DATA, NI, NJ)
+
+// Typemap which attempts to view pointers to const NAME*
+%typemap(in, noblock=1) const NAME* (void *argp = 0, int res = 0, NAME temp, void *temp_data = 0) %{
+  res = SWIG_ConvertPtr($input, &argp, $descriptor, 0 /*$disown*/ | %convertptr_flags);
+  if (!SWIG_IsOK(res)) {
+#if !($disown) && (swiglal_field_count_##NAME == 3)
+    size_t numel = 0;
+    size_t dims[] = {0, 0};
+    temp.DATA = NULL;
+    // swiglal_array_typeid input type: TYPE*
+    res = %swiglal_array_viewin(TYPE*)(swiglal_no_self(), $input, %as_voidptrptr(&temp.DATA),
+                                       sizeof(TYPE), 2, &numel, dims,
+                                       $typemap(swiglal_dynarr_isptr, TYPE), $typemap(swiglal_dynarr_tinfo, TYPE),
+                                       $disown | %convertptr_flags);
+    if (!SWIG_IsOK(res)) {
+      temp_data = temp.DATA = %reinterpret_cast(XLALMalloc(numel * sizeof(TYPE)), TYPE*);
+      size_t strides[] = {dims[1], 1};
+      res = %swiglal_array_copyin(TYPE*)(swiglal_no_self(), $input, %as_voidptr(temp.DATA),
+                                         sizeof(TYPE), 2, dims, strides,
+                                         $typemap(swiglal_dynarr_isptr, TYPE), $typemap(swiglal_dynarr_tinfo, TYPE),
+                                         $disown | %convertptr_flags);
+      if (!SWIG_IsOK(res)) {
+        %argument_fail(res, "$type", $symname, $argnum);
+      } else {
+        temp.NI = dims[0];
+        temp.NJ = dims[1];
+        argp = &temp;
+      }
+    } else {
+      temp.NI = dims[0];
+      temp.NJ = dims[1];
+      argp = &temp;
+    }
+#else
+    %argument_fail(res, "$type", $symname, $argnum);
+#endif
+  }
+  $1 = %reinterpret_cast(argp, $ltype);
+%}
+%typemap(freearg, match="in", noblock=1) const NAME* %{
+  if (temp_data$argnum) {
+    XLALFree(temp_data$argnum);
+  }
+%}
+
+// Typemap which attempts to view pointers to non-const NAME*
+%typemap(in, noblock=1) NAME* SWIGLAL_VIEWIN_STRUCT (void *argp = 0, int res = 0, NAME temp) %{
+  res = SWIG_ConvertPtr($input, &argp, $descriptor, 0 /*$disown*/ | %convertptr_flags);
+  if (!SWIG_IsOK(res)) {
+#if !($disown) && (swiglal_field_count_##NAME == 3)
+    size_t numel = 0;
+    size_t dims[] = {0, 0};
+    temp.DATA = NULL;
+    // swiglal_array_typeid input type: TYPE*
+    res = %swiglal_array_viewin(TYPE*)(swiglal_no_self(), $input, %as_voidptrptr(&temp.DATA),
+                                       sizeof(TYPE), 2, &numel, dims,
+                                       $typemap(swiglal_dynarr_isptr, TYPE), $typemap(swiglal_dynarr_tinfo, TYPE),
+                                       $disown | %convertptr_flags);
+    if (!SWIG_IsOK(res)) {
+      %argument_fail(res, "$type", $symname, $argnum);
+    } else {
+      temp.NI = dims[0];
+      temp.NJ = dims[1];
+      argp = &temp;
+    }
+#else
+    %argument_fail(res, "$type", $symname, $argnum);
+#endif
+  }
+  $1 = %reinterpret_cast(argp, $ltype);
+%}
+
+%enddef // %swiglal_array_struct_2D
+
+// The SWIGLAL(VIEWIN_STRUCTS(NAME, ...)) macro can be used to apply the
+// above input view typemaps to pointers to (non-const) NAME*.
+%define %swiglal_public_VIEWIN_STRUCTS(NAME, ...)
+%swiglal_map_ab(%swiglal_apply, NAME* SWIGLAL_VIEWIN_STRUCT, NAME*, __VA_ARGS__);
+%enddef
+%define %swiglal_public_clear_VIEWIN_STRUCTS(NAME, ...)
+%swiglal_map_a(%swiglal_clear, NAME*, __VA_ARGS__);
+%enddef
+
 // These macros should be called from within the definitions of
 // LAL structs NAME containing dynamically-allocated arrays.
 // 1-D arrays, e.g:
@@ -819,6 +1000,7 @@ if (strides[I-1] == 0) {
 %swiglal_array_dynamic_1D(NAME, TYPE, SIZET, DATA, arg1->NI, 1);
 %ignore DATA;
 %ignore NI;
+%swiglal_array_struct_1D(NAME, TYPE, SIZET, DATA, NI);
 %enddef
 #define %swiglal_public_clear_ARRAY_1D(NAME, TYPE, DATA, SIZET, NI)
 // a 1-D array of pointers to 1-D arrays, e.g.:
@@ -854,6 +1036,7 @@ if (strides[I-1] == 0) {
 %ignore DATA;
 %ignore NI;
 %ignore NJ;
+%swiglal_array_struct_2D(NAME, TYPE, SIZET, DATA, NI, NJ);
 %enddef
 #define %swiglal_public_clear_ARRAY_2D(NAME, TYPE, DATA, SIZET, NI, NJ)
 
