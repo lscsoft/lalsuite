@@ -57,10 +57,10 @@ LALREAL8TimeSeriesInterp *XLALREAL8TimeSeriesInterpCreate(const REAL8TimeSeries 
 	LALREAL8TimeSeriesInterp *interp;
 	double *cached_kernel;
 
-	if(kernel_length < 2)
+	if(kernel_length < 3)
 		XLAL_ERROR_NULL(XLAL_EDOM);
-	/* interpolator induces phase shifts unless this is even */
-	kernel_length -= kernel_length % 1;
+	/* interpolator induces phase shifts unless this is odd */
+	kernel_length -= (~kernel_length) & 1;
 
 	interp = XLALMalloc(sizeof(*interp));
 	cached_kernel = XLALMalloc(kernel_length * sizeof(*cached_kernel));
@@ -120,7 +120,7 @@ REAL8 XLALREAL8TimeSeriesInterpEval(LALREAL8TimeSeriesInterp *interp, const LIGO
 	if(fabs(residual) < noop_threshold)
 		return data[(int) round(j)];
 
-	start = round(j - interp->kernel_length / 2.0);
+	start = round(j - (interp->kernel_length - 1) / 2.0);
 	stop = start + interp->kernel_length;
 
 	if(fabs(residual - interp->residual) >= noop_threshold) {
