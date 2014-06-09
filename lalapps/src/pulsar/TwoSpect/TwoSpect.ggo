@@ -40,7 +40,10 @@ option "linPolAngle"    - "Polarization angle to search using linear polarizatio
 option "harmonicNumToSearch"  - "Number of harmonics of the Pmin to Pmax range to search" int default="1" optional
 option "periodHarmToCheck"  - "Number of harmonics/sub-harmonics of the IHS candidates to test" int default="5" optional
 option "periodFracToCheck"  - "Number of fractional periods to check in the sense of [(1...N)+1]/[(1...N)+2]" int default="3" optional
-option "templateSearch" - "Flag for doing a pure template-based search on search region specified by (sky,f,fspan,hardcoded P, hardcoded asini)" flag off
+option "templateSearch" - "Flag for doing a pure template-based search on search region specified by (sky,f,fspan,P, Asini +- 3 AsiniSigma)" flag off
+option "templateSearchP" - "The template search period; templateSearch flag is required" double dependon="templateSearch" optional
+option "templateSearchAsini" - "The template search Asini; templateSearch flag is required" double dependon="templateSearch" optional
+option "templateSearchAsiniSigma" - "The template search uncertainty in Asini; templateSearch flag is required" double dependon="templateSearch" optional
 
 section "TwoSpect threshold settings"
 option "ihsfactor" - "Number of harmonics to sum in IHS algorithm" int default="5" optional

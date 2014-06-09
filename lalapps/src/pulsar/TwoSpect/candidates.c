@@ -328,7 +328,7 @@ INT4 testIHScandidates(candidateVector **output, candidateVector *ihsCandidates,
             REAL8 R, prob, bestPeriod = 0.0, bestR = 0.0, bestProb = 0.0;
             INT4 bestproberrcode = 0;
 
-            if (ihsCandidates->data[ii].period>=fmax(2.0*3600.0, minPeriod(ihsCandidates->data[ii].moddepth, params->Tcoh)) && ihsCandidates->data[ii].period<=(0.2*params->Tobs)) {
+            if (ihsCandidates->data[ii].period>=fmax(4.0*params->Tcoh, minPeriod(ihsCandidates->data[ii].moddepth, params->Tcoh)) && ihsCandidates->data[ii].period<=(0.2*params->Tobs)) {
                //Make a Gaussian train template
                XLAL_CHECK( makeTemplateGaussians(template, ihsCandidates->data[ii], params, ffdata->numfbins, ffdata->numfprbins) == XLAL_SUCCESS, XLAL_EFUNC );
 

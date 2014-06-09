@@ -58,7 +58,6 @@ CHAR *sft_dir_file = NULL;
 //Main program
 int main(int argc, char *argv[])
 {
-
    INT4 ii, jj;               //counter variables
    LALStatus XLAL_INIT_DECL(status);
    char s[1000], t[1000], u[1000];   //Path and file name to LOG, ULFILE, and NORMRMSOUT
@@ -697,7 +696,12 @@ int main(int argc, char *argv[])
 
       //If the user wants to do a template search, that is done here
       if (args_info.templateSearch_given) {
-         XLAL_CHECK( templateSearch_scox1Style(&exactCandidates2, inputParams->fmin, inputParams->fspan, 68023.8259, 1.44, inputParams, ffdata->ffdata, sftexist, aveNoise,  aveTFnoisePerFbinRatio,  secondFFTplan, 1) == XLAL_SUCCESS, XLAL_EFUNC );
+
+         printf(stderr, "Calling templateSearch\n (in development, last edited 2014-06-09)\n");
+         XLAL_CHECK( templateSearch_scox1Style(&exactCandidates2, inputParams->fmin, inputParams->fspan, args_info.templateSearchP_arg, args_info.templateSearchAsini_arg, args_info.templateSearchAsiniSigma_arg, dopplerpos.Alpha, dopplerpos.Delta, inputParams, ffdata->ffdata, sftexist, aveNoise,  aveTFnoisePerFbinRatio,  secondFFTplan, 1) == XLAL_SUCCESS, XLAL_EFUNC );
+         printf(stderr, "Done calling templateSearch\n");
+
+
          for (ii=0; ii<(INT4)exactCandidates2->numofcandidates; ii++) exactCandidates2->data[ii].h0 /= sqrt(ffdata->tfnormalization)*pow(frac_tobs_complete*ffdata->ffnormalization/skypointffnormalization,0.25);
       }
 
@@ -2513,10 +2517,10 @@ INT4 readTwoSpectInputParams(inputParamsStruct *params, struct gengetopt_args_in
       fprintf(LOG,"WARNING! Adjusting input maximum period to 1/5 the observation time!\n");
       fprintf(stderr,"WARNING! Adjusting input maximum period to 1/5 the observation time!\n");
    }
-   if (params->Pmin < 2.0*3600) {
-      params->Pmin = 2.0*3600;
-      fprintf(LOG,"WARNING! Adjusting input minimum period to 2 hours!\n");
-      fprintf(stderr,"WARNING! Adjusting input minimum period to 2 hours!\n");
+   if (params->Pmin < 4.0*(params->Tcoh)) {
+      params->Pmin = 4.0*(params->Tcoh);
+      fprintf(LOG,"WARNING! Adjusting input minimum period to 4 coherence times!\n");
+      fprintf(stderr,"WARNING! Adjusting input minimum period to 4 coherence times!\n");
    }
    if (params->dfmax > maxModDepth(params->Pmax, params->Tcoh)) {
       params->dfmax = floor(maxModDepth(params->Pmax, params->Tcoh)*(params->Tcoh))/(params->Tcoh);

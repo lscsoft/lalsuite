@@ -401,7 +401,7 @@ INT4 sumIHSSequenceFAR(ihsfarStruct *outputfar, REAL4VectorSequence *ihsvectorse
    INT4 ii = 0, jj;
 
    //The minimum and maximum index to search in the IHS vector
-   INT4 maxIndexForIHS = (INT4)ceil(fmin(params->Tobs/params->Pmin, fmin(params->Tobs/minPeriod(params->dfmin, params->Tcoh), params->Tobs/7200.0))) - 5;
+   INT4 maxIndexForIHS = (INT4)ceil(fmin(params->Tobs/params->Pmin, fmin(params->Tobs/minPeriod(params->dfmin, params->Tcoh), params->Tobs/(4.0*params->Tcoh)))) - 5;
    INT4 minIndexForIHS = (INT4)floor(fmax(5.0, params->Tobs/params->Pmax)) - 5;
 
    //Allocate a vector sequence that holds the summed values of at least two nearest neighbor rows
@@ -578,7 +578,7 @@ INT4 sumIHSSequence(ihsMaximaStruct *output, ihsfarStruct *inputfar, REAL4Vector
    XLAL_CHECK( (ihslocations = XLALCreateINT4Vector(ihsvectorsequence->length)) != NULL, XLAL_EFUNC );
 
    //The minimum and maximum index to search in the IHS vector
-   INT4 maxIndexForIHS = (INT4)ceil(fmin(params->Tobs/params->Pmin, fmin(params->Tobs/minPeriod(params->dfmin, params->Tcoh), params->Tobs/7200.0))) - 5;
+   INT4 maxIndexForIHS = (INT4)ceil(fmin(params->Tobs/params->Pmin, fmin(params->Tobs/minPeriod(params->dfmin, params->Tcoh), params->Tobs/(4.0*params->Tcoh)))) - 5;
    INT4 minIndexForIHS = (INT4)floor(fmax(5.0, params->Tobs/params->Pmax)) - 5;
 
    //Finding the maximum for each IHS vector and the location using SSE or not
@@ -626,7 +626,7 @@ INT4 sumIHSSequence(ihsMaximaStruct *output, ihsfarStruct *inputfar, REAL4Vector
          XLAL_CHECK( (rowsequencelocs = XLALCreateINT4Vector(ii)) != NULL, XLAL_EFUNC );
 
          //The maximum index to search in the IHS vector
-         maxIndexForIHS = (INT4)ceil(fmin(params->Tobs/params->Pmin, fmin(params->Tobs/minPeriod(0.5*(ii-1)/params->Tcoh, params->Tcoh), params->Tobs/7200.0))) - 5;
+         maxIndexForIHS = (INT4)ceil(fmin(params->Tobs/params->Pmin, fmin(params->Tobs/minPeriod(0.5*(ii-1)/params->Tcoh, params->Tcoh), params->Tobs/(4.0*params->Tcoh)))) - 5;
 
          REAL4 sumofnoise = 0.0;    //To scale the expected IHS background
          INT4 endloc = ((ii-1)*(ii-1)-(ii-1))/2;

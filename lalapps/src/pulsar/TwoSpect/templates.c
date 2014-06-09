@@ -985,7 +985,7 @@ INT4 bruteForceTemplateSearch(candidate *output, candidate input, REAL8 fminimum
                 trialb->data[jj]<maxModDepth(trialp->data[kk], params->Tcoh) &&
                 trialp->data[kk]>minPeriod(trialb->data[jj], params->Tcoh) &&
                 trialp->data[kk]<=(0.2*params->Tobs) &&
-                trialp->data[kk]>=(2.0*3600.0) &&
+                trialp->data[kk]>=(4.0*params->Tcoh) &&
                 trialb->data[jj]>=params->dfmin &&
                 trialb->data[jj]<=params->dfmax &&
                 trialp->data[kk]<=params->Pmax &&
@@ -1111,7 +1111,7 @@ INT4 bruteForceTemplateTest(candidateVector **output, candidate input, REAL8 fmi
                 trialb->data[jj]<maxModDepth(trialp->data[kk], params->Tcoh) &&
                 trialp->data[kk]>minPeriod(trialb->data[jj], params->Tcoh) &&
                 trialp->data[kk]<=(0.2*params->Tobs) &&
-                trialp->data[kk]>=(2.0*3600.0) &&
+                trialp->data[kk]>=(4.0*params->Tcoh) &&
                 trialb->data[jj]>=params->dfmin &&
                 trialb->data[jj]<=params->dfmax &&
                 trialp->data[kk]<=params->Pmax &&
@@ -1154,15 +1154,17 @@ INT4 bruteForceTemplateTest(candidateVector **output, candidate input, REAL8 fmi
 
 //A brute force template search in a region of parameter space
 /// Testing in progress
-INT4 templateSearch_scox1Style(candidateVector **output, REAL8 fminimum, REAL8 fspan, REAL8 period, REAL8 asini, inputParamsStruct *params, REAL4Vector *ffdata, INT4Vector *sftexist, REAL4Vector *aveNoise, REAL4Vector *aveTFnoisePerFbinRatio, REAL4FFTPlan *secondFFTplan, INT4 useExactTemplates)
+INT4 templateSearch_scox1Style(candidateVector **output, REAL8 fminimum, REAL8 fspan, REAL8 period, REAL8 asini, REAL8 asinisigma, REAL4 ra, REAL4 dec, inputParamsStruct *params, REAL4Vector *ffdata, INT4Vector *sftexist, REAL4Vector *aveNoise, REAL4Vector *aveTFnoisePerFbinRatio, REAL4FFTPlan *secondFFTplan, INT4 useExactTemplates)
 {
 
    XLAL_CHECK( params != NULL && ffdata != NULL && sftexist != NULL && aveNoise != NULL && aveTFnoisePerFbinRatio != NULL && secondFFTplan != NULL, XLAL_EINVAL );
 
-   INT4 ii;
+   INT4 ii, jj;
    REAL8Vector *trialf;
+   REAL8Vector *trialdf;
    REAL8 fstepsize;
-
+   REAL8 dfstepsize;
+   
    //Set up parameters of signal frequency search
    INT4 numfsteps = (INT4)round(2.0*fspan*params->Tcoh)+1;
    XLAL_CHECK( (trialf = XLALCreateREAL8Vector(numfsteps)) != NULL, XLAL_EFUNC );
@@ -1177,30 +1179,76 @@ INT4 templateSearch_scox1Style(candidateVector **output, REAL8 fminimum, REAL8 f
 
    //Search over frequency
    for (ii=0; ii<(INT4)trialf->length; ii++) {
-      //Determine modulation depth
-      REAL8 moddepth = 0.8727*(trialf->data[ii]/1000.0)*(7200.0/period)*asini;
 
-      //load candidate
-      loadCandidateData(&cand, trialf->data[ii], period, moddepth, 0.0, 0.0, 0, 0, 0.0, 0, 0.0);
+       //Set up parameters of signal modulation depth search
+       /* Modulation depth is 2*pi*f*asini*period, or rearranged
+       0.8727*(f/1000.0)*(7200.0/period)*asini
+       Assuming sigma = 0.18 uncertainty in an asini of 1.44 for
+       Scorpius X-1 and giving +/- 3*sigma leeway, the conservative 
+       number of df steps should cover
+       0.8727*(fmax/1000.0)*(7200.0/period)*6*0.18 
+       with, as empirical testing has found necessary, a spacing of
+       4*Tcoh */
+       /* While this initialization could be moved inside the loop
+       that searches over frequency, it is slightly faster not to have to 
+       recalculate these variables every time,
+       and it gives us a bit of extra data*/
+       //REAL8 asinisigma = 0.18; typical for Scorpius X-1 with 2014 data
+       REAL8 moddepth = 0.8727*(trialf->data[ii]/1000.0)*(7200.0/period)*asini;
+       printf(stderr,"Making the first computation involving asinisigma, for moddepthmin\n");
+       //Note, 6*asinsigma for a span of plus/minus 3*asinisigma
+       REAL8 moddepthspan = 0.8727*(trialf->data[numfsteps-1]/1000.0)*(7200.0/period)*6*asinisigma;
+       printf(stderr,"intended moddepthspan: %f \n", moddepthspan);
+       //printf(stderr,"Done with moddepthspan, making moddepthmin\n");
+       REAL8 moddepthmin = moddepth - 0.5*moddepthspan;
+       printf(stderr,"intended moddepthmin: %f \n", moddepthmin);
+       INT4 numdfsteps = (INT4)round(4.0*moddepthspan*params->Tcoh) + 1;
+       printf(stderr,"intended numdfsteps: %d \n", numdfsteps);
+       trialdf = XLALCreateREAL8Vector(numdfsteps);
+       XLAL_CHECK( trialdf != NULL, XLAL_EFUNC);
+       if (numdfsteps > 1) {
+           dfstepsize = moddepthspan/(REAL8)(numdfsteps-1);
+       } else {
+           dfstepsize = 0;
+       }
+       for (jj=0; jj<numdfsteps; jj++) trialdf->data[jj] = moddepthmin + dfstepsize*jj; 
+   
 
-      //Make the template
-      resetTemplateStruct(template);
-      if (useExactTemplates) XLAL_CHECK( makeTemplate(template, cand, params, sftexist, secondFFTplan) == XLAL_SUCCESS, XLAL_EFUNC );
-      else XLAL_CHECK( makeTemplateGaussians(template, cand, params, (INT4)aveTFnoisePerFbinRatio->length, (INT4)aveNoise->length) == XLAL_SUCCESS, XLAL_EFUNC );
 
-      REAL8 R = calculateR(ffdata, template, aveNoise, aveTFnoisePerFbinRatio);
-      XLAL_CHECK( xlalErrno == 0, XLAL_EFUNC );
-      REAL8 prob = probR(template, aveNoise, aveTFnoisePerFbinRatio, R, params, &proberrcode);
-      XLAL_CHECK( xlalErrno == 0, XLAL_EFUNC );
-      REAL8 h0 = 0.0;
-      if ( R > 0.0 ) h0 = 2.7426*pow(R/(params->Tcoh*params->Tobs),0.25);
+     for (jj=0; jj<(INT4)trialdf->length; jj++) {
+        //Determine modulation depth
+        //REAL8 moddepth = 0.8727*(trialf->data[ii]/1000.0)*(7200.0/period)*asini;
 
-      //Resize the output candidate vector if necessary
-      if ((*output)->numofcandidates == (*output)->length-1) XLAL_CHECK( (*output = resize_candidateVector(*output, 2*(*output)->length)) != NULL, XLAL_EFUNC );
+        //load candidate
+        //printf(stderr,"Loading candidate. Remember to get the RA and dec from outside in production run\n");
+        loadCandidateData(&cand, trialf->data[ii], period, trialdf->data[jj], ra, dec, 0, 0, 0.0, 0, 0.0);
 
-      loadCandidateData(&((*output)->data[(*output)->numofcandidates]), trialf->data[ii], period, moddepth, 0.0, 0.0, R, h0, prob, proberrcode, 0.0);
-      (*output)->numofcandidates++;
+        //Make the template
+        resetTemplateStruct(template);
+        if (useExactTemplates!=0) {
+           XLAL_CHECK( makeTemplate(template, cand, params, sftexist, secondFFTplan) == XLAL_SUCCESS, XLAL_EFUNC );
+        } else {
+           XLAL_CHECK( makeTemplateGaussians(template, cand, params, (INT4)aveTFnoisePerFbinRatio->length, (INT4)aveNoise->length) == XLAL_SUCCESS, XLAL_EFUNC );
+        }
 
+        REAL8 R = calculateR(ffdata, template, aveNoise, aveTFnoisePerFbinRatio);
+        XLAL_CHECK( xlalErrno == 0, XLAL_EFUNC);
+        REAL8 prob = probR(template, aveNoise, aveTFnoisePerFbinRatio, R, params, &proberrcode);
+        XLAL_CHECK( xlalErrno == 0, XLAL_EFUNC);
+        REAL8 h0 = 0.0;
+        if ( R > 0.0 ) h0 = 2.7426*pow(R/(params->Tcoh*params->Tobs),0.25);
+  
+        //Resize the output candidate vector if necessary
+        if ((*output)->numofcandidates == (*output)->length-1) {
+           *output = resize_candidateVector(*output, 2*((*output)->length));
+           XLAL_CHECK( *output != NULL, XLAL_EFUNC);
+        }
+
+        loadCandidateData(&((*output)->data[(*output)->numofcandidates]), trialf->data[ii], period, trialdf->data[jj], ra, dec, R, h0, prob, proberrcode, 0.0);
+        (*output)->numofcandidates++;
+     } /* for jj < trialdf */   
+     XLALDestroyREAL8Vector(trialdf);
+     trialdf = NULL;
    } /* for ii < trialf */
    free_templateStruct(template);
    template = NULL;
