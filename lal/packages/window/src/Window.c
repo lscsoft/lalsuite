@@ -510,6 +510,7 @@ REAL8Window *XLALCreateKaiserREAL8Window(UINT4 length, REAL8 beta)
 	 *
 	 * note that in many places the window is defined with pi
 	 * multiplying beta in the numerator and denominator, but not here.
+	 * beta=0 --> top-hat window.
 	 *
 	 * The asymptotic forms for large beta are derived from the
 	 * asymptotic form of I0(x) which is
