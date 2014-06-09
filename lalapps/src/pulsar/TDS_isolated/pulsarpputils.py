@@ -121,26 +121,26 @@ def rad_to_dms(rad):
   else:
     return (sign * d, m, s)
 
-def dms_to_rad(deg, min, sec):
+def dms_to_rad(deg, mins, sec):
   """
   dms_to_rad(deg, min, sec):
      Convert degrees, minutes, and seconds of arc to radians.
   """
   if (deg < 0.0):
     sign = -1
-  elif (deg==0.0 and (min < 0.0 or sec < 0.0)):
+  elif (deg==0.0 and (mins < 0.0 or sec < 0.0)):
     sign = -1
   else:
     sign = 1
   return sign * ARCSECTORAD * \
-    (60.0 * (60.0 * np.fabs(deg) + np.fabs(min)) + np.fabs(sec))
+    (60.0 * (60.0 * np.fabs(deg) + np.fabs(mins)) + np.fabs(sec))
 
-def dms_to_deg(deg, min, sec):
+def dms_to_deg(deg, mins, sec):
   """
   dms_to_deg(deg, min, sec):
      Convert degrees, minutes, and seconds of arc to degrees.
   """
-  return RADTODEG * dms_to_rad(deg, min, sec)
+  return RADTODEG * dms_to_rad(deg, mins, sec)
 
 def rad_to_hms(rad):
   """
@@ -156,7 +156,7 @@ def rad_to_hms(rad):
   s = (arc - m) * 60.0
   return (h, m, s)
 
-def hms_to_rad(hour, min, sec):
+def hms_to_rad(hour, mins, sec):
   """
   hms_to_rad(hour, min, sec):
      Convert hours, minutes, and seconds of arc to radians
@@ -164,7 +164,7 @@ def hms_to_rad(hour, min, sec):
   if (hour < 0.0): sign = -1
   else: sign = 1
   return sign * SECTORAD * \
-         (60.0 * (60.0 * np.fabs(hour) + np.fabs(min)) + np.fabs(sec))
+         (60.0 * (60.0 * np.fabs(hour) + np.fabs(mins)) + np.fabs(sec))
 
 def coord_to_string(h_or_d, m, s):
   """
