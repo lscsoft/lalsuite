@@ -12,8 +12,7 @@ pkginclude_HEADERS = \
 	SimulatePopcorn.h \
 	SimulateSB.h \
 	StochasticCrossCorrelation.h \
-	StochasticMC.h \
-	lalstochasticswig_test.i
+	StochasticMC.h
 
 lib_LTLIBRARIES = liblalstochastic.la
 liblalstochastic_la_SOURCES = \

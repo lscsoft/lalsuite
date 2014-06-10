@@ -24,18 +24,7 @@
 
 #include <stdint.h>
 #include <lal/LALConfig.h>
-
-/* macros for certain keywords */
-#if __STDC_VERSION__ >= 199901L
-# define _LAL_RESTRICT_ restrict
-# define _LAL_INLINE_ inline
-#elif defined __GNUC__
-# define _LAL_RESTRICT_ __restrict__
-# define _LAL_INLINE_ __inline__
-#else
-# define _LAL_RESTRICT_
-# define _LAL_INLINE_
-#endif
+#include <lal/LALStddef.h>
 
 #if defined(__cplusplus)
 extern "C" {

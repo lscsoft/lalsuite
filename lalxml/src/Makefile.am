@@ -9,8 +9,7 @@ pkginclude_HEADERS = \
 	LALXMLVCSInfo.h \
 	LALXMLVCSInfoHeader.h \
 	LALXMLVOTableCommon.h \
-	LALXMLVOTableSerializers.h \
-	lalxmlswig_test.i
+	LALXMLVOTableSerializers.h
 
 lib_LTLIBRARIES = liblalxml.la
 liblalxml_la_SOURCES = \

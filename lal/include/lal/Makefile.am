@@ -13,7 +13,7 @@ header-link-stamp: force-header-link-generation
 	else \
 		srcdirs="src"; \
 	fi; \
-	for dir in $$srcdirs; do \
+	for dir in $$srcdirs swig; do \
 		( cd "$(top_builddir)/$$dir" && $(MAKE) $(AM_MAKEFLAGS) header-links ) || exit 1; \
 	done; \
 	echo "$@" > $@

@@ -51,8 +51,7 @@ pkginclude_HEADERS = \
 	LALFrameL.h \
 	LALFrameU.h \
 	LALFrameVCSInfo.h \
-	LALFrameVCSInfoHeader.h \
-	lalframeswig_test.i
+	LALFrameVCSInfoHeader.h
 
 lib_LTLIBRARIES = liblalframe.la
 liblalframe_la_SOURCES = \

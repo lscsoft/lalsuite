@@ -16,8 +16,6 @@ AC_CONFIG_FILES([ \
   src/LALStochasticVCSInfo.h \
   src/Makefile \
   swig/Makefile \
-  swig/octave/Makefile \
-  swig/python/Makefile \
   test/Makefile
 ])
 AM_INIT_AUTOMAKE([1.11 foreign subdir-objects color-tests parallel-tests])
@@ -100,7 +98,7 @@ LALSUITE_CHECK_LIB([LALSupport],[6.12.0],[XLALCacheImport],[lal/LALCache.h])
 LALSUITE_CHECK_LIB([LALMetaIO],[1.2.0],[XLALCreateMetaTableDir],[lal/LIGOLwXMLRead.h])
 
 # configure SWIG wrapping modules
-LALSUITE_USE_SWIG([XLAL LAL])
+LALSUITE_USE_SWIG
 
 # add gcc specific flags
 LALSUITE_ADD_GCC_FLAGS
@@ -124,8 +122,9 @@ AC_MSG_NOTICE([
 ==================================================
 LALStochastic has now been successfully configured:
 
-* SWIG wrapping module for Octave is $SWIG_OCTAVE_ENABLE_VAL
-* SWIG wrapping module for Python is $SWIG_PYTHON_ENABLE_VAL
+* SWIG binding generation is $SWIG_GENERATE_ENABLE_VAL
+* SWIG bindings for Octave are $SWIG_BUILD_OCTAVE_ENABLE_VAL
+* SWIG bindings for Python are $SWIG_BUILD_PYTHON_ENABLE_VAL
 
 and will be installed under the directory:
 

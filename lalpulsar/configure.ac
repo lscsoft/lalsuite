@@ -18,8 +18,6 @@ AC_CONFIG_FILES([ \
   python/Makefile \
   python/__init__.py \
   swig/Makefile \
-  swig/octave/Makefile \
-  swig/python/Makefile \
   test/Makefile
 ])
 AM_INIT_AUTOMAKE([1.11 foreign subdir-objects color-tests parallel-tests])
@@ -138,7 +136,7 @@ if test "${boinc}" = "true" ; then
 fi
 
 # configure SWIG wrapping modules
-LALSUITE_USE_SWIG([XLAL LAL])
+LALSUITE_USE_SWIG
 
 # add gcc specific flags
 LALSUITE_ADD_GCC_FLAGS
@@ -165,8 +163,9 @@ LALPulsar has now been successfully configured:
 * SIMD extensions are $SIMD_ENABLE_VAL
 * LALXML library support is $LALXML_ENABLE_VAL
 * BOINC support is $BOINC_ENABLE_VAL
-* SWIG wrapping module for Octave is $SWIG_OCTAVE_ENABLE_VAL
-* SWIG wrapping module for Python is $SWIG_PYTHON_ENABLE_VAL
+* SWIG binding generation is $SWIG_GENERATE_ENABLE_VAL
+* SWIG bindings for Octave are $SWIG_BUILD_OCTAVE_ENABLE_VAL
+* SWIG bindings for Python are $SWIG_BUILD_PYTHON_ENABLE_VAL
 
 and will be installed under the directory:
 

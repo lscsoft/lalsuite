@@ -1,7 +1,0 @@
-/lal*swig_headers.list
-/lal*swig_preproc.i
-/lal*swig_preproc.xml
-/lal*swig.i
-/octave/lal*swig_octave.cpp
-/python/lal*swig_python.c
-/swig_config.h

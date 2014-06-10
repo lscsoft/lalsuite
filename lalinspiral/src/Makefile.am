@@ -51,8 +51,7 @@ pkginclude_HEADERS = \
 	RingUtils.h \
 	SimulateInspiral.h \
 	TemplateBankGeneration.h \
-	TrigScanEThincaCommon.h \
-	lalinspiralswig_test.i
+	TrigScanEThincaCommon.h
 
 lib_LTLIBRARIES = liblalinspiral.la
 liblalinspiral_la_SOURCES = \

@@ -1,7 +1,7 @@
 abs_top_srcdir=@abs_top_srcdir@
 abs_top_builddir=@abs_top_builddir@
-LAL_OCTAVE_PATH=@abs_top_builddir@/swig/octave/.libs
-LAL_PYTHON_PATH=@abs_top_builddir@/swig/python/.libs
+LAL_OCTAVE_PATH=@abs_top_builddir@/swig/octave:@abs_top_srcdir@/swig/octave
+LAL_PYTHON_PATH=@abs_top_builddir@/swig/python:@abs_top_srcdir@/swig/python
 
 Name: LAL
 Description: (uninstalled)

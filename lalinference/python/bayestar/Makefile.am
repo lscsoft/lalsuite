@@ -18,8 +18,8 @@ dist_bayestar_DATA = \
 if HAVE_CHEALPIX
 if SWIG_BUILD_PYTHON
 bayestar_LTLIBRARIES = sky_map.la
-sky_map_la_CPPFLAGS = $(AM_CPPFLAGS) $(PYTHON_CPPFLAGS)
-sky_map_la_CFLAGS = $(PYTHON_CFLAGS) -w
+sky_map_la_CPPFLAGS = $(AM_CPPFLAGS) $(SWIG_PYTHON_CPPFLAGS)
+sky_map_la_CFLAGS = $(SWIG_PYTHON_CFLAGS) -w
 sky_map_la_LDFLAGS = -shared -module -avoid-version
 sky_map_la_LIBADD = $(top_builddir)/src/liblalinference.la
 endif

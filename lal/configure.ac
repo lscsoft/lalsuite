@@ -28,8 +28,6 @@ AC_CONFIG_FILES([ \
   python/utils/Makefile \
   python/spectrum/Makefile \
   swig/Makefile \
-  swig/octave/Makefile \
-  swig/python/Makefile \
   packages/Makefile \
   packages/std/Makefile \
   packages/std/doc/Makefile \
@@ -319,7 +317,7 @@ if test "${boinc}" = "true"; then
 fi
 
 # configure SWIG wrapping modules
-LALSUITE_USE_SWIG([XLAL LAL])
+LALSUITE_USE_SWIG
 
 # checks for typedefs, structures, and compiler characteristics
 AC_C_BIGENDIAN
@@ -365,8 +363,9 @@ LAL has now been successfully configured:
 
 * CUDA support is $CUDA_ENABLE_VAL
 * BOINC support is $BOINC_ENABLE_VAL
-* SWIG wrapping module for Octave is $SWIG_OCTAVE_ENABLE_VAL
-* SWIG wrapping module for Python is $SWIG_PYTHON_ENABLE_VAL
+* SWIG binding generation is $SWIG_GENERATE_ENABLE_VAL
+* SWIG bindings for Octave are $SWIG_BUILD_OCTAVE_ENABLE_VAL
+* SWIG bindings for Python are $SWIG_BUILD_PYTHON_ENABLE_VAL
 
 and will be installed under the directory:
 

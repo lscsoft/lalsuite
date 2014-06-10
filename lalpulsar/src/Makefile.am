@@ -64,8 +64,7 @@ pkginclude_HEADERS = \
 	TwoDMesh.h \
 	UniversalDopplerMetric.h \
 	Velocity.h \
-	$(XMLHDR) \
-	lalpulsarswig_test.i
+	$(XMLHDR)
 
 lib_LTLIBRARIES = liblalpulsar.la
 liblalpulsar_la_SOURCES = \

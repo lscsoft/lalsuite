@@ -40,6 +40,9 @@ src/lalsim-sgwb
 src/lalsim-unicorn
 src/stamp-h1
 src/stamp-h2
+swig/octave/
+swig/python/
+swig/swig_*
 test/GRFlagsTest
 test/GenerateSimulation
 test/PhenomP_Test1.dat

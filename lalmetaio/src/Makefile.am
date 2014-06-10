@@ -13,8 +13,7 @@ pkginclude_HEADERS = \
 	LIGOLwXMLInspiralHeaders.h \
 	LIGOLwXMLRead.h \
 	LIGOMetadataTables.h \
-	LIGOMetadataUtils.h \
-	lalmetaioswig_test.i
+	LIGOMetadataUtils.h
 
 lib_LTLIBRARIES = liblalmetaio.la
 liblalmetaio_la_SOURCES = \

@@ -62,8 +62,7 @@ pkginclude_HEADERS = \
 	LALSimSGWB.h \
 	LALSimulationConfig.h \
 	LALSimulationVCSInfo.h \
-	LALSimulationVCSInfoHeader.h \
-	lalsimulationswig_test.i
+	LALSimulationVCSInfoHeader.h
 
 noinst_HEADERS = \
 	LALSimIMREOBFactorizedWaveform.c \

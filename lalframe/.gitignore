@@ -32,6 +32,9 @@ src/config.h.in
 src/lalfr-*[!1]
 src/stamp-h1
 src/stamp-h2
+swig/octave/
+swig/python/
+swig/swig_*
 test/AggregationTest
 test/H1:LSC-AS_Q.???
 test/LALFrSeriesTest

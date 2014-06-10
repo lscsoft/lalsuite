@@ -19,8 +19,7 @@ pkginclude_HEADERS = \
 	TimeFreq.h \
 	TrackSearch.h \
 	cs_cosmo.h \
-	cs_lambda_cosmo.h \
-	lalburstswig_test.i
+	cs_lambda_cosmo.h
 
 lib_LTLIBRARIES = liblalburst.la
 liblalburst_la_SOURCES = \

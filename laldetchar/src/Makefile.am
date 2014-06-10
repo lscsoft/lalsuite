@@ -14,8 +14,7 @@ pkginclude_HEADERS = \
 	LALDetCharRange.h \
 	LALDetCharHvetoUtils.h \
 	LALDetCharHveto.h \
-	LALDetCharVCSInfoHeader.h \
-	laldetcharswig_test.i
+	LALDetCharVCSInfoHeader.h
 
 lib_LTLIBRARIES = liblaldetchar.la
 liblaldetchar_la_SOURCES = \

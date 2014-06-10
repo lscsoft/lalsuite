@@ -32,3 +32,6 @@ src/config.h.in
 src/git_version
 src/stamp-h1
 src/stamp-h2
+swig/octave/
+swig/python/
+swig/swig_*

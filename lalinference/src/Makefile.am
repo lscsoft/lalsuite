@@ -26,7 +26,6 @@ pkginclude_HEADERS = \
 	LALInferenceInit.h \
 	LALInferenceVCSInfoHeader.h \
 	LALInferenceRemoveLines.h \
-	lalinferenceswig_test.i \
 	$(BAYESTARHDR) \
 	$(XMLHDR)
 

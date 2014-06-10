@@ -17,6 +17,7 @@ pkginclude_HEADERS = \
 	LALGSL.h \
 	LALMalloc.h \
 	LALStatusMacros.h \
+	LALStddef.h \
 	LALStdio.h \
 	LALStdlib.h \
 	LALString.h \
@@ -24,15 +25,4 @@ pkginclude_HEADERS = \
 	LALVersion.h \
 	StringInput.h \
 	XLALError.h \
-	XLALGSL.h \
-	lalswig_error.i \
-	lalswig_gsl.i \
-	lalswig_test.i
-
-swigincludedir = $(pkgincludedir)
-swiginclude_HEADERS = \
-	SWIGLIGOTimeGPSPre.i \
-	SWIGLIGOTimeGPSPost.i \
-	swiglal_common.i \
-	swiglal_octave.i \
-	swiglal_python.i
+	XLALGSL.h
