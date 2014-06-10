@@ -394,8 +394,8 @@ int main(int argc,char *argv[]) {
   /* check that LAL header and library versions are consistent */
   if (
       strcmp(lalVersion,LAL_VERSION) ||
-      fabs(lalVersionMajor-LAL_VERSION_MAJOR)>1.e-3 ||
-      fabs(lalVersionMinor-LAL_VERSION_MINOR)>1.e-3
+      (lalVersionMajor != LAL_VERSION_MAJOR ) ||
+      ( lalVersionMinor != LAL_VERSION_MINOR )
       ) {
     error( "Mismatch between compile time header versions and run-time library version:\n");
     error( "LAL Version: %s\nMajor Version: %d\nMinor Version: %d\n",
