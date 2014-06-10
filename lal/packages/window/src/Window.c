@@ -647,6 +647,22 @@ REAL8Window *XLALCreateGaussREAL8Window(UINT4 length, REAL8 beta)
 }
 
 
+REAL8Window *XLALCreateLanczosREAL8Window(UINT4 length)
+{
+	REAL8Sequence *sequence = XLALCreateREAL8Sequence(length);
+	UINT4 i;
+
+	if(!sequence)
+		XLAL_ERROR_NULL(XLAL_EFUNC);
+
+	/* sin(pi y) / (pi y) */
+	for(i = 0; i < (length + 1) / 2; i++) {
+		double pi_y = LAL_PI * Y(length, i);
+		sequence->data[i] = pi_y != 0. ? sin(pi_y) / pi_y : 1.0;
+	}
+
+	return XLALCreateREAL8WindowFromSequence(sequence);
+}
 
 
 void XLALDestroyREAL8Window(REAL8Window * window)
@@ -732,6 +748,10 @@ REAL4Window *XLALCreateGaussREAL4Window(UINT4 length, REAL4 beta)
 }
 
 
+REAL4Window *XLALCreateLanczosREAL4Window(UINT4 length)
+{
+	return XLALREAL4Window_from_REAL8Window(XLALCreateLanczosREAL8Window(length));
+}
 
 
 void XLALDestroyREAL4Window(REAL4Window * window)

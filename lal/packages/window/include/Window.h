@@ -159,6 +159,16 @@ extern "C" {
  * central peak.  \f$\beta = 0\f$ yields the rectangle window, \f$\beta \rightarrow \infty\f$ yields a \f$\delta\f$ function with a single non-zero sample in the
  * middle.
  *
+ * ### Lanczos ###
+ *
+ * \f{equation}{
+ * w(y)
+ * = \frac{\sin \pi y}{\pi y}.
+ * \f}
+ * The Lanczos window is the central lobe of the sinc function.  This is
+ * used, for example, in finite impulse response resampling to modulate a
+ * truncated sinc interpolating kernel.
+ *
  * These window functions are shown in \figref{window_t}, showing various windows as functions of the normalized
  * independend variable \f$y\f$, choosing \f$\beta = 6\f$ for the Kaiser window, \f$\beta = 2\f$ for the Creighton window,
  * \f$\beta = 0.5\f$ for the Tukey window, and \f$\beta = 3\f$ for the Gauss window.
@@ -251,6 +261,7 @@ REAL4Window *XLALCreateKaiserREAL4Window(UINT4 length, REAL4 beta);
 REAL4Window *XLALCreateCreightonREAL4Window(UINT4 length, REAL4 beta);
 REAL4Window *XLALCreateTukeyREAL4Window(UINT4 length, REAL4 beta);
 REAL4Window *XLALCreateGaussREAL4Window(UINT4 length, REAL4 beta);
+REAL4Window *XLALCreateLanczosREAL4Window(UINT4 length);
 
 REAL8Window *XLALCreateRectangularREAL8Window(UINT4 length);
 REAL8Window *XLALCreateHannREAL8Window(UINT4 length);
@@ -263,6 +274,7 @@ REAL8Window *XLALCreateKaiserREAL8Window(UINT4 length, REAL8 beta);
 REAL8Window *XLALCreateCreightonREAL8Window(UINT4 length, REAL8 beta);
 REAL8Window *XLALCreateTukeyREAL8Window(UINT4 length, REAL8 beta);
 REAL8Window *XLALCreateGaussREAL8Window(UINT4 length, REAL8 beta);
+REAL8Window *XLALCreateLanczosREAL8Window(UINT4 length);
 
 void XLALDestroyREAL4Window(REAL4Window *window);
 void XLALDestroyREAL8Window(REAL8Window *window);
