@@ -1730,7 +1730,7 @@ static int XLALSimInspiralSpinTaylorDriver(
         }
     }
     /* if fRef=fStart, just integrate from start to end. Let phiRef=phiStart */
-    else if( abs(fRef - fStart) < LAL_REAL4_EPS )
+    else if( fabs(fRef - fStart) < LAL_REAL4_EPS )
     {
         fS = fStart;
         fE = 0.;
