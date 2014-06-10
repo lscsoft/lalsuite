@@ -139,24 +139,34 @@ REAL8 XLALREAL8TimeSeriesInterpEval(LALREAL8TimeSeriesInterp *interp, const LIGO
 	const REAL8 *data = interp->series->data->data;
 	double *cached_kernel = interp->cached_kernel;
 	REAL8 val = 0.0;
+	/* the (real-valued) sample index at which we wish to evalute the
+	 * source time series */
 	double j = XLALGPSDiff(t, &interp->series->epoch) / interp->series->deltaT;
-	double residual = round(j) - j;
-	int start, stop;
+	int start = round(j);
+	int stop;
+	/* the magnitude of the shift (in samples) required to move the
+	 * samples we have so that one falls on the (real-valued) index
+	 * where we want there to be a sample.  the interpolating kernel
+	 * depends only on this quantity.  when we compute a kernel, we
+	 * record the value of this quantity, and only recompute the kernel
+	 * if this quantity differs from the one for which the kernel was
+	 * computed by more than the no-op threshold */
+	double residual = j - start;
 	int i;
 
 	if(j < 0 || j >= interp->series->data->length)
 		XLAL_ERROR_REAL8(XLAL_EDOM);
 
 	if(fabs(residual) < noop_threshold)
-		return data[(int) round(j)];
+		return data[start];
 
-	start = round(j - (interp->kernel_length - 1) / 2.0);
+	start -= (interp->kernel_length - 1) / 2;
 	stop = start + interp->kernel_length;
 
 	if(fabs(residual - interp->residual) >= noop_threshold) {
 		/* kernel is Kaiser-windowed sinc function.  we don't
 		 * bother re-computing the Kaiser window, we consider it to
-		 * be approximately independent of the sum-sample shift.
+		 * be approximately independent of the sub-sample shift.
 		 * only the sinc component is recomputed, and it takes the
 		 * form
 		 *
