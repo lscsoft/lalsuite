@@ -83,10 +83,10 @@ extern "C" {
 } /* so that editors will match preceding brace */
 #endif
 
-#define PRINT_LIGOLW_XML_HEADER(fp) ( \
+#define PRINT_LIGOLW_XML_HEADER(fp) (( \
 fputs( "<?xml version='1.0' encoding='utf-8' ?>\n", fp) == EOF || \
 fputs( "<!DOCTYPE LIGO_LW SYSTEM \"http://ldas-sw.ligo.caltech.edu/doc/ligolwAPI/html/ligolw_dtd.txt\">", fp ) == EOF || \
-fputs( "<LIGO_LW>\n", fp ) == EOF )
+fputs( "<LIGO_LW>\n", fp ) == EOF ) ? EOF : 0)
 
 
 #define PRINT_LIGOLW_XML_FOOTER(fp) \
