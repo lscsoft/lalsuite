@@ -1195,15 +1195,15 @@ INT4 templateSearch_scox1Style(candidateVector **output, REAL8 fminimum, REAL8 f
        and it gives us a bit of extra data*/
        //REAL8 asinisigma = 0.18; typical for Scorpius X-1 with 2014 data
        REAL8 moddepth = 0.8727*(trialf->data[ii]/1000.0)*(7200.0/period)*asini;
-       //printf(stderr,"Making the first computation involving asinisigma, for moddepthmin\n");
+       //fprintf(stderr,"Making the first computation involving asinisigma, for moddepthmin\n");
        //Note, 6*asinsigma for a span of plus/minus 3*asinisigma
        REAL8 moddepthspan = 0.8727*(trialf->data[numfsteps-1]/1000.0)*(7200.0/period)*6*asinisigma;
-       //printf(stderr,"intended moddepthspan: %f \n", moddepthspan);
-       //printf(stderr,"Done with moddepthspan, making moddepthmin\n");
+       //fprintf(stderr,"intended moddepthspan: %f \n", moddepthspan);
+       //fprintf(stderr,"Done with moddepthspan, making moddepthmin\n");
        REAL8 moddepthmin = moddepth - 0.5*moddepthspan;
-       //printf(stderr,"intended moddepthmin: %f \n", moddepthmin);
+       //fprintf(stderr,"intended moddepthmin: %f \n", moddepthmin);
        INT4 numdfsteps = (INT4)round(4.0*moddepthspan*params->Tcoh) + 1;
-       //printf(stderr,"intended numdfsteps: %d \n", numdfsteps);
+       //fprintf(stderr,"intended numdfsteps: %d \n", numdfsteps);
        trialdf = XLALCreateREAL8Vector(numdfsteps);
        XLAL_CHECK( trialdf != NULL, XLAL_EFUNC);
        if (numdfsteps > 1) {

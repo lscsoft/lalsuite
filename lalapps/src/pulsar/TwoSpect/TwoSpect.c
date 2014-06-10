@@ -697,9 +697,9 @@ int main(int argc, char *argv[])
       //If the user wants to do a template search, that is done here
       if (args_info.templateSearch_given) {
 
-         printf(stderr, "Calling templateSearch\n (in development, last edited 2014-06-09)\n");
+         //fprintf(stderr, "Calling templateSearch\n (in development, last edited 2014-06-09)\n");
          XLAL_CHECK( templateSearch_scox1Style(&exactCandidates2, inputParams->fmin, inputParams->fspan, args_info.templateSearchP_arg, args_info.templateSearchAsini_arg, args_info.templateSearchAsiniSigma_arg, dopplerpos.Alpha, dopplerpos.Delta, inputParams, ffdata->ffdata, sftexist, aveNoise,  aveTFnoisePerFbinRatio,  secondFFTplan, 1) == XLAL_SUCCESS, XLAL_EFUNC );
-         printf(stderr, "Done calling templateSearch\n");
+         //fprintf(stderr, "Done calling templateSearch\n");
 
 
          for (ii=0; ii<(INT4)exactCandidates2->numofcandidates; ii++) exactCandidates2->data[ii].h0 /= sqrt(ffdata->tfnormalization)*pow(frac_tobs_complete*ffdata->ffnormalization/skypointffnormalization,0.25);
