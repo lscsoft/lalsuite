@@ -1267,6 +1267,8 @@ XLALMultiSFTVectorAdd ( MultiSFTVector *a,	/**< [in/out] MultiSFTVector to be ad
       SFTVector *vect1 = a->data[X];
       SFTVector *vect2 = b->data[X];
 
+      XLAL_CHECK ( strncmp ( vect1->data[0].name, vect2->data[0].name, 2 ) == 0, XLAL_EINVAL, "SFT detectors differ '%c%c' != '%c%c'\n", vect1->data[0].name[0], vect1->data[0].name[1], vect2->data[0].name[0], vect2->data[0].name[1] );
+
       XLAL_CHECK ( XLALSFTVectorAdd ( vect1, vect2 ) == XLAL_SUCCESS, XLAL_EFUNC, "XLALSFTVectorAdd() failed for SFTVector %d out of %d\n", X+1, numIFOs );
 
     } // for X < numIFOs
@@ -1279,7 +1281,7 @@ XLALMultiSFTVectorAdd ( MultiSFTVector *a,	/**< [in/out] MultiSFTVector to be ad
 /**
  * Adds SFT-data from SFTvector 'b' to elements of SFTVector 'a'
  *
- * NOTE: the inputs 'a' and 'b' must have consistent number of SFTs, IFO-names,
+ * NOTE: the inputs 'a' and 'b' must have consistent number of SFTs,
  * start-frequency, frequency-spacing, timestamps, units and number of bins.
  *
  * The 'name' field of input/output SFTs in 'a' is not modified!
@@ -1311,7 +1313,7 @@ XLALSFTVectorAdd ( SFTVector *a,	/**< [in/out] SFTVector to be added to */
 /**
  * Adds SFT-data from SFT 'b' to SFT 'a'
  *
- * NOTE: the inputs 'a' and 'b' must have consistent IFO-names,
+ * NOTE: the inputs 'a' and 'b' must have consistent
  * start-frequency, frequency-spacing, timestamps, units and number of bins.
  *
  * The 'name' field of input/output SFTs in 'a' is not modified!
@@ -1326,7 +1328,6 @@ XLALSFTAdd ( SFTtype *a,		/**< [in/out] SFT to be added to */
   XLAL_CHECK ( a->data != NULL, XLAL_EINVAL );
   XLAL_CHECK ( b->data != NULL, XLAL_EINVAL );
 
-  XLAL_CHECK ( strncmp ( a->name, b->name, 2 ) == 0, XLAL_EINVAL, "SFT detectors differ '%c%c' != '%c%c'\n", a->name[0], a->name[1], b->name[0], b->name[1] );
   XLAL_CHECK ( XLALGPSDiff ( &(a->epoch), &(b->epoch) ) == 0, XLAL_EINVAL, "SFT epochs differ %ld != %ld ns\n", XLALGPSToINT8NS ( &(a->epoch) ), XLALGPSToINT8NS ( &(b->epoch) ) );
 
   REAL8 tol = 10 * LAL_REAL8_EPS;	// generously allow up to 10*eps tolerance
