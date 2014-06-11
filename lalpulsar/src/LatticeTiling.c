@@ -860,7 +860,6 @@ int XLALSetLatticeConstantBound(
 
   // Check input
   XLAL_CHECK(tiling != NULL, XLAL_EFAULT);
-  XLAL_CHECK(tiling->status == LT_S_INCOMPLETE, XLAL_EINVAL);
   XLAL_CHECK(isfinite(bound1), XLAL_EINVAL);
   XLAL_CHECK(isfinite(bound2), XLAL_EINVAL);
 
