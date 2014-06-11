@@ -37,6 +37,18 @@ extern "C" {
 ///
 
 ///
+/// Function which defines bounds on the lattice tiling parameter space
+///
+typedef void (*LatticeBoundFunction)(
+  const size_t dimension,			///< [in] Dimension on which bound applies
+  const gsl_vector* point,			///< [in] Point on which to find bound
+  const gsl_vector* bbox,			///< [in] Metric ellipse bounding box
+  const void* data,				///< [in] Arbitrary data describing parameter space bound
+  double* bound,				///< [out] Bound on point in dimension
+  double* padding				///< [out,optional] Padding on parameter space bound (ignored for non-tiled dimensions)
+  );
+
+///
 /// Type of lattice to generate flat tiling with
 ///
 typedef enum tagLatticeType {
@@ -46,7 +58,7 @@ typedef enum tagLatticeType {
 } LatticeType;
 
 ///
-/// Flat lattice tiling state structure
+/// Lattice tiling state structure
 ///
 typedef struct tagLatticeTiling LatticeTiling;
 
@@ -118,47 +130,31 @@ uint64_t XLALCountLatticePoints(
   );
 
 ///
-/// Set the parameter-space bounds on dimension \f$n\f$ of the lattice tiling.
-///
-/// The lower/upper bound \f$X_n\f$ is specified by
-/// \f[
-/// X_n - a_n = \sum_{k=0}^{P-1} c_{N,k} \left[ \sum_{j=0}^{N-1} c_{j,k} \prod_{i=0}^{n-1} (x_i - a_i)^{m_{nj+i,k}} \right]^{m_{nN,k}}
-/// \f]
-/// where \f$x = (x_0,\cdots,x_{n-1})\f$ is the current parameter-space point, \f$a\f$ is a vector of \f$n + 1\f$ offsets,
-/// \f$c\f$ is a matrix of \f$N + 1 \times P\f$ coefficients, and \f$m\f$ is a matrix of \f$nM + 1 \times P\f$ exponents.
-/// Note that \f$x^m \rightarrow 0\f$ if the result is not finite and real-valued.
+/// Set a parameter-space bound on a dimension of the lattice tiling.
+/// The bound is described by a function \c func, and two data of length
+/// \c data_len, \c data_lower and \c data_upper, describing the lower
+/// and upper parameter space bounds respectively. If \c data_lower and
+/// \c data_upper are identical, this parameter-space dimension will be
+/// treated as a single point, and will not be tiled.
 ///
 int XLALSetLatticeBound(
   LatticeTiling* tiling,			///< [in] Tiling state
-  const size_t dimension,			///< [in] Dimension on which bound applies (\f$n\f$)
-  const gsl_vector* a,				///< [in] Vector of offsets (\f$a\f$)
-  const gsl_matrix* c_lower,			///< [in] Matrix of coefficients (\f$c\f$) for the lower bound
-  const gsl_matrix* m_lower,			///< [in] Matrix of exponents (\f$m\f$) for the lower bound
-  const gsl_matrix* c_upper,			///< [in] Matrix of coefficients (\f$c\f$) for the upper bound
-  const gsl_matrix* m_upper			///< [in] Matrix of exponents (\f$m\f$) for the upper bound
+  const size_t dimension,			///< [in] Dimension on which bound applies
+  const LatticeBoundFunction func,		///< [in] Parameter space bound function
+  const size_t data_len,			///< [in] Length of arbitrary data describing parameter space bounds
+  void* data_lower,				///< [in] Arbitrary data describing lower parameter space bound
+  void* data_upper				///< [in] Arbitrary data describing upper parameter space bound
   );
 
 ///
-/// Set a constant parameter-space bound, given by the minimum and
-/// maximum of the two supplied bounds, on the lattice tiling
+/// Set a constant parameter-space bound, given by the minimum and maximum
+/// of the two supplied bounds, on a dimension of the lattice tiling
 ///
 int XLALSetLatticeConstantBound(
   LatticeTiling* tiling,			///< [in] Tiling state
   const size_t dimension,			///< [in] Dimension on which bound applies
   const double bound1,				///< [in] First bound on dimension
   const double bound2				///< [in] Second bound on dimension
-  );
-
-///
-/// Set elliptical bounds in two dimensions on the lattice tiling
-///
-int XLALSetLatticeEllipticalBounds(
-  LatticeTiling* tiling,			///< [in] Tiling state
-  const size_t dimension,			///< [in] Dimension of X bound (Y bound is one higher)
-  const double x_centre,			///< [in] X centre of ellipse
-  const double y_centre,			///< [in] Y centre of ellipse
-  const double x_semi,				///< [in] Length of X semi-diameter
-  const double y_semi				///< [in] Length of Y semi-diameter
   );
 
 ///
@@ -183,7 +179,7 @@ int XLALNextLatticePoint(
 
 ///
 /// Fast-forward the lattice tiling through the highest tiled dimension of
-/// the parameter space, so that then calling XLALNextFlatticePoint() will
+/// the parameter space, so that then calling XLALNextLatticePoint() will
 /// advance the next highest tiled dimension. Optionally, return the count of
 /// and spacing between the points fast-forwarded over.
 ///
