@@ -906,7 +906,8 @@ int XLALConvertSSB2GPS ( LIGOTimeGPS *GPSout,			/**< [out] GPS-arrival-time at d
       delta = XLALGPSToINT8NS( &SSBin ) - XLALGPSToINT8NS( &SSBofguess );
 
       /* if we are within 1ns of the result increment the flip-flop counter */
-      if ( abs(delta) == 1) {
+      /* cast delta to "long long" to ensure expected type for llabs() */
+      if ( llabs((long long)delta) == 1) {
         flip_flop_counter ++;
       }
 
