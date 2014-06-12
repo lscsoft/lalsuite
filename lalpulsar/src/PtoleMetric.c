@@ -156,7 +156,7 @@ void LALPtoleMetric( LALStatus *status,
 	  PTOLEMETRICH_MSGEPARM );
   ASSERT( input->position.longitude <= LAL_TWOPI, status,
           PTOLEMETRICH_EPARM, PTOLEMETRICH_MSGEPARM );
-  ASSERT( abs(input->position.latitude) <= LAL_PI_2, status,
+  ASSERT( fabs(input->position.latitude) <= LAL_PI_2, status,
 	  PTOLEMETRICH_EPARM, PTOLEMETRICH_MSGEPARM );
 
   /* Check for valid maximum frequency. */
@@ -164,9 +164,9 @@ void LALPtoleMetric( LALStatus *status,
           PTOLEMETRICH_MSGEPARM );
 
   /* Check for valid detector location. */
-  ASSERT( abs(input->site->frDetector.vertexLatitudeRadians) <= LAL_PI_2, status,
+  ASSERT( fabs(input->site->frDetector.vertexLatitudeRadians) <= LAL_PI_2, status,
 	  PTOLEMETRICH_EPARM, PTOLEMETRICH_MSGEPARM );
-  ASSERT( abs(input->site->frDetector.vertexLongitudeRadians) <= LAL_PI, status,
+  ASSERT( fabs(input->site->frDetector.vertexLongitudeRadians) <= LAL_PI, status,
 	  PTOLEMETRICH_EPARM, PTOLEMETRICH_MSGEPARM );
 
   if( input->spindown )
