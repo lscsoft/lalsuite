@@ -214,7 +214,7 @@ my $markBadSFTs = 0;
 
 GetOptions('help' => \$help, 
            'dir=s' => \$directory, 
-           'jobs=:i' => \$jobs,
+           'jobs:i' => \$jobs,
            'logfile=s' => \$logfile,
            'sftFile:s' => \@sftFile,
            'gaussianNoiseWithSFTGaps' => \$gaussianNoiseWithSFTGaps, 
