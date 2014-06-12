@@ -119,7 +119,8 @@ void LALHOUGHPeak2PHMD (LALStatus    *status,
   /* ASSERT ( fabs((REAL4)lut->deltaF - (REAL4)pg->deltaF) < 1.0e-6,  status, PHMDH_EVAL, PHMDH_MSGEVAL); */
 
   /* Make sure phmd.fBin and lut are compatible */
-  fBinDif = abs( (phmd->fBin) - (lut->f0Bin) );
+  /* case to "long long" to be expected type for llabs() */
+  fBinDif = llabs( (long long)( (phmd->fBin) - (lut->f0Bin) ));
   if ( fBinDif > lut->nFreqValid ) {
     /* fprintf(stderr,"fBinDif > nFreqValid [Peak2PHMD.c %d]\n", __LINE__); */
     ABORT( status, PHMDH_EFREQ, PHMDH_MSGEFREQ);
