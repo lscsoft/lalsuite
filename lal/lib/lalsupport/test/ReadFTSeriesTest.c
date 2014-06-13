@@ -190,7 +190,7 @@ int main( void )
     return READFTSERIESTESTC_EFUN;
   }
 
-  if (abs(cFrequencySeries.deltaF - cFrequencySeries.deltaF)/
+  if (fabs(cFrequencySeries.deltaF - cFrequencySeries.deltaF)/
       cFrequencySeries.deltaF > READFTSERIESTEST_TOL)
   {
     fprintf(stderr,"DeltaF MisMatch [ReadFTSeriesTest:%s]\n",
@@ -219,7 +219,7 @@ int main( void )
   }
   if ((cFrequencySeries.f0) ?
       (fabs(cFrequencySeries.f0 - cFrequencySeries2.f0)/cFrequencySeries.f0) :
-      (abs(cFrequencySeries.f0 - cFrequencySeries2.f0)  >
+      (fabs(cFrequencySeries.f0 - cFrequencySeries2.f0)  >
       READFTSERIESTEST_TOL))
   {
     fprintf(stderr,"f0 Mismatch [ReadFTSeriesTest:%s]\n",
