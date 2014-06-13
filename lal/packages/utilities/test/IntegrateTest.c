@@ -747,7 +747,7 @@ int main (int argc, char *argv[])
     printf ("expect: %.15Lf\n", expect);
   /* integral isn't very accurate because we needed to use an open interval */
   if ( verbose )
-    printf ("error:  %.2f%%\n", 100*fabsl(sresult - expect)/fabsl(expect));
+    printf ("error:  %.2Lf%%\n", 100*fabsl(sresult - expect)/fabsl(expect));
   /*
    * don't do 2d double-precision: it takes too long!
    *
