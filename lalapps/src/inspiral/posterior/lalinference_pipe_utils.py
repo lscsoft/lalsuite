@@ -460,18 +460,21 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
       self.config.write(conffile)
     
     # Generate the DAG according to the config given
-    if self.engine=='lalinferencenest':
-      for event in self.events: self.add_full_analysis_lalinferencenest(event)
-    elif self.engine=='lalinferencemcmc':
-      for event in self.events: self.add_full_analysis_lalinferencemcmc(event)
-    elif self.engine=='lalinferencebambi' or self.engine=='lalinferencebambimpi':
-      for event in self.events: self.add_full_analysis_lalinferencebambi(event)
+    for event in self.events: self.add_full_analysis(event)
 
     self.dagfilename="lalinference_%s-%s"%(self.config.get('input','gps-start-time'),self.config.get('input','gps-end-time'))
     self.set_dag_file(self.dagfilename)
     if self.is_dax():
       self.set_dax_file(self.dagfilename)
   
+  def add_full_analysis(self,event):
+    if self.engine=='lalinferencenest':
+      return self.add_full_analysis_lalinferencenest(event)
+    elif self.engine=='lalinferencemcmc':
+      return self.add_full_analysis_lalinferencemcmc(event)
+    elif self.engine=='lalinferencebambi' or self.engine=='lalinferencebambimpi':
+      return self.add_full_analysis_lalinferencebambi(event)
+
   def create_frame_pfn_file(self):
     """
     Create a pegasus cache file name, uses inspiralutils
@@ -514,7 +517,7 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
     Generate a DAG from a list of times
     """
     for time in self.times:
-      self.add_full_analysis_lalinferencenest(Event(trig_time=time))
+      self.add_full_analysis(Event(trig_time=time))
       
   def select_events(self):
     """
