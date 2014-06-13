@@ -58,7 +58,7 @@ static int CheckLatticeTiling(
 
   // Count number of templates
   size_t total = XLALCountLatticePoints(tiling);
-  fprintf(stderr, "Number of lattice points: %lu\n", total);
+  fprintf(stderr, "Number of lattice points: %zu\n", total);
   XLAL_CHECK(total == total_ref, XLAL_EFUNC, "ERROR: total = %zu != %zu = total_ref", total, total_ref);
 
   // Get all templates
