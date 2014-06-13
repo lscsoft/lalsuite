@@ -459,6 +459,12 @@ int XLALReducedSuperSkyMetric(
     // Sort the eigenvalues/vectors by descending absolute eigenvalue
     GCALL(gsl_eigen_symmv_sort(sky_eval, sky_evec, GSL_EIGEN_SORT_ABS_DESC));
 
+    // Check that the first two eigenvalues are strictly positive
+    for (size_t i = 0; i < 2; ++i) {
+      XLAL_CHECK(gsl_vector_get(sky_eval, i) > 0.0, XLAL_ELOSS,
+                 "Negative eigenvalue #%zu = %0.6e", i, gsl_vector_get(sky_eval, i));
+    }
+
     // Set the sky-sky block to the diagonal matrix of eigenvalues
     gsl_matrix_set_zero(&sky_sky.matrix);
     gsl_vector_view sky_sky_diag = gsl_matrix_diagonal(&sky_sky.matrix);
