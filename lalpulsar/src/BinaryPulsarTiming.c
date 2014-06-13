@@ -2113,7 +2113,7 @@ Parameters not in consistent order!\n");
       }
 
       /* if off diagonal values are +/-1 set to +/- 0.99999 */
-      if ( j != i && abs(tmpval) == 1. )
+      if ( j != i && fabs(tmpval) == 1. )
         tmpval *= 0.99999;
 
       cormat->data[i*numPars + j] = tmpval;
