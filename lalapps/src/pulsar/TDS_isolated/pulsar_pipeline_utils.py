@@ -267,8 +267,12 @@ class ppeNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
 
     self.__mismatch = None
     self.__mm_factor = None
+    self.__nonfixedonly = False
+    self.__gzip = False
 
+    # legacy inputs
     self.__oldChunks = None
+    self.__jonesModel = False
 
     self.__verbose = False
 
@@ -482,11 +486,25 @@ class ppeNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
     self.add_var_opt('mm-factor',mmf)
     self.__mm_factor = mmf
 
+  def set_gzip(self):
+    # set to gzip the output file
+    self.add_var_opt('gzip', '')
+    self.__gzip = True
+
+  def set_non_fixed_only(self):
+    # set to only output the non-fixed parameters
+    self.add_var_opt('non-fixed-only', '')
+    self.__nonfixedonly = True
+
   def set_OldChunks(self):
     # use the old data segmentation routine i.e. 30 min segments
     self.add_var_opt('oldChunks', '')
     self.__oldChunks = True
 
+  def set_jones_model(self):
+    # use the physical parameter model from Jones
+    self.add_var_opt('jones-model', '')
+    self.__jonesModel = True
 
 class createresultspageJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
   """
