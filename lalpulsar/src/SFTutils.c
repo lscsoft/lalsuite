@@ -1202,7 +1202,6 @@ XLALExtractBandFromSFTVector ( const SFTVector *inSFTs,	///< [in] input SFTs
 
   REAL8 fMinSFT    = inSFTs->data[0].f0;
   UINT4 numBinsSFT = inSFTs->data[0].data->length;
-  REAL8 BandSFT    = df * numBinsSFT;
   UINT4 firstBinSFT= round ( fMinSFT / df );	// round to closest bin
   UINT4 lastBinSFT = firstBinSFT + ( numBinsSFT - 1 );
 
@@ -1213,7 +1212,7 @@ XLALExtractBandFromSFTVector ( const SFTVector *inSFTs,	///< [in] input SFTs
 
   XLAL_CHECK_NULL ( firstBinExt >= firstBinSFT && (lastBinExt <= lastBinSFT), XLAL_EINVAL,
                     "Requested frequency-bins [%f,%f]Hz = [%d, %d] not contained within SFT's [%f, %f]Hz = [%d,%d].\n",
-                    fMin, fMin + Band, firstBinExt, lastBinExt, fMinSFT, fMinSFT + BandSFT, firstBinSFT, lastBinSFT );
+                    fMin, fMin + Band, firstBinExt, lastBinExt, fMinSFT, fMinSFT + (numBinsSFT-1) * df, firstBinSFT, lastBinSFT );
 
   INT4 firstBinOffset = firstBinExt - firstBinSFT;
 
