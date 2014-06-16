@@ -124,6 +124,7 @@
  */
 
 #include <lal/LALStdlib.h>
+#include <lal/LogPrintf.h>
 
 /* Error codes and messages */
 
@@ -542,10 +543,7 @@ int main(int argc,char *argv[]) {
 
   if (lalDebugLevel >= 3)
     {
-      FILE *fp;
-      fp = fopen ("debug_phi_v2.dat", "w");
-      write_timeSeriesR8 (fp, cgwOutput.phi);
-      fclose (fp);
+      XLALdumpREAL8TimeSeries ("debug_phi_v2.dat", cgwOutput.phi);
     }
 
 
@@ -567,12 +565,9 @@ int main(int argc,char *argv[]) {
 
     if (lalDebugLevel >= 3)
       {
-	FILE *fp;
 	CHAR fname[512];
 	sprintf (fname, "Tseries_v2_%05d.dat", iSFT);
-	fp = fopen (fname, "w");
-	write_timeSeriesR4 (fp, timeSeries);
-	fclose (fp);
+	XLALdumpREAL4TimeSeries (fname, timeSeries);
       }
 
     /*if you want noise, make it and add to timeseries */

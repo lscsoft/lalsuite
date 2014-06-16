@@ -215,8 +215,6 @@ int XLALWriteMFDlog ( const char *logfile, const ConfigVars_t *cfg );
 COMPLEX8FrequencySeries *XLALLoadTransferFunctionFromActuation ( REAL8 actuationScale, const CHAR *fname );
 int XLALFreeMem ( ConfigVars_t *cfg );
 
-extern void write_timeSeriesR4 (FILE *fp, const REAL4TimeSeries *series);
-extern void write_timeSeriesR8 (FILE *fp, const REAL8TimeSeries *series);
 BOOLEAN is_directory ( const CHAR *fname );
 int XLALIsValidDescriptionField ( const char *desc );
 
@@ -363,19 +361,10 @@ main(int argc, char *argv[])
       /* output ASCII time-series if requested */
       if ( uvar.TDDfile )
 	{
-	  FILE *fp;
 	  CHAR *fname = XLALCalloc (1, len = strlen(uvar.TDDfile) + 10 );
           XLAL_CHECK ( fname != NULL, XLAL_ENOMEM, "XLALCalloc(1,%d) failed\n", len );
 	  sprintf (fname, "%s.%02d", uvar.TDDfile, i_chunk);
-
-	  if ( (fp = fopen (fname, "w")) == NULL)
-	    {
-	      perror ("Error opening outTDDfile for writing");
-              XLAL_ERROR ( XLAL_EIO, "Failed to fopen TDDfile = '%s' for writing\n", fname );
-	    }
-
-	  write_timeSeriesR4(fp, Tseries);
-	  fclose(fp);
+	  XLAL_CHECK ( XLALdumpREAL4TimeSeries ( fname, Tseries ) == XLAL_SUCCESS, XLAL_EFUNC );
 	  XLALFree (fname);
 	} /* if outputting ASCII time-series */
 

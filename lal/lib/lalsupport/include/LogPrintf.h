@@ -33,7 +33,6 @@ extern "C" {
 
 /*---------- INCLUDES ----------*/
 #include <stdarg.h>
-
 #include <gsl/gsl_matrix.h>
 
 /**
@@ -76,6 +75,11 @@ REAL8 XLALGetTimeOfDay(void);
 REAL8 XLALGetPeakHeapUsageMB ( void );
 
 char * XLALClearLinebreaks ( const char *str );
+
+
+int XLALdumpREAL4TimeSeries (const char *fname, const REAL4TimeSeries *series);
+int XLALdumpREAL8TimeSeries (const char *fname, const REAL8TimeSeries *series);
+int XLALdumpCOMPLEX8TimeSeries (const char *fname, const COMPLEX8TimeSeries *series );
 
 /*@}*/
 

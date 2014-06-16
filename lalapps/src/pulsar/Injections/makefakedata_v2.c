@@ -347,8 +347,6 @@ int parseR8(FILE *fp, const char* vname, REAL8 *data);
 int parseI4(FILE *fp, const char* vname, INT4 *data);
 void usage(FILE *fp);
 
-extern void write_timeSeriesR4 (FILE *fp, const REAL4TimeSeries *series);
-
 /* Like perror() but takes variable numbers of arguments and includes
    program name*/
 void syserror(const char *fmt, ...){
