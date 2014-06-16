@@ -64,7 +64,7 @@ void LALInferenceInitCBCTemplate(LALInferenceRunState *runState);
 /**
  Initialise the glitch fitting parameters
  */
-void LALInferenceInitGlitchVariables(LALInferenceRunState *runState);
+void LALInferenceInitGlitchVariables(LALInferenceRunState *runState, LALInferenceVariables *currentParams);
 
 /**
  * Review functions

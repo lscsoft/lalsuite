@@ -38,7 +38,7 @@
 
 
 static void print_flags_orders_warning(SimInspiralTable *injt, ProcessParamsTable *commline);
-static void LALInferenceInitSpinVariables(LALInferenceRunState *state);
+static void LALInferenceInitSpinVariables(LALInferenceRunState *state, LALInferenceVariables *currentParams);
 
 /* Setup the template generation */
 /* Defaults to using LALSimulation */
@@ -79,13 +79,12 @@ void LALInferenceInitCBCTemplate(LALInferenceRunState *runState)
 }
 
 /* Setup the glitch model */
-void LALInferenceInitGlitchVariables(LALInferenceRunState *runState)
+void LALInferenceInitGlitchVariables(LALInferenceRunState *runState, LALInferenceVariables *currentParams)
 {
   ProcessParamsTable    *commandLine   = runState->commandLine;
   LALInferenceIFOData   *dataPtr       = runState->data;
   LALInferenceVariables *priorArgs     = runState->priorArgs;
   LALInferenceVariables *proposalArgs  = runState->proposalArgs;
-  LALInferenceVariables *currentParams = runState->currentParams;
 
   UINT4 i,nifo;
   UINT4 n = (UINT4)dataPtr->timeData->data->length;
@@ -204,8 +203,7 @@ void LALInferenceRegisterUniformVariableREAL8(LALInferenceRunState *state, LALIn
 
 
 /* Setup the variables to control template generation for the CBC model */
-/* Includes specification of prior ranges. Sets runState->currentParams and
- returns address of new LALInferenceVariables */
+/* Includes specification of prior ranges. Returns address of new LALInferenceVariables */
 
 LALInferenceVariables *LALInferenceInitCBCVariables(LALInferenceRunState *state)
 {
@@ -343,8 +341,7 @@ LALInferenceVariables *LALInferenceInitCBCVariables(LALInferenceRunState *state)
   SimInspiralTable *injTable=NULL;
   LALInferenceVariables *priorArgs=state->priorArgs;
   LALInferenceVariables *proposalArgs=state->proposalArgs;
-  state->currentParams=XLALCalloc(1,sizeof(LALInferenceVariables));
-  LALInferenceVariables *currentParams=state->currentParams;
+  LALInferenceVariables *currentParams = XLALCalloc(1,sizeof(LALInferenceVariables));
   ProcessParamsTable *commandLine=state->commandLine;
   ProcessParamsTable *ppt=NULL;
   ProcessParamsTable *ppt_order=NULL;
@@ -1186,7 +1183,7 @@ LALInferenceVariables *LALInferenceInitCBCVariables(LALInferenceRunState *state)
   }//End of line-removal initialization
    
   LALInferenceAddVariable(currentParams, "removeLinesFlag", &lines_flag, LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_FIXED);
-  if(LALInferenceGetProcParamVal(commandLine, "--glitchFit")) LALInferenceInitGlitchVariables(state);
+  if(LALInferenceGetProcParamVal(commandLine, "--glitchFit")) LALInferenceInitGlitchVariables(state, state->currentParams);
 
   UINT4 signal_flag=1;
   ppt = LALInferenceGetProcParamVal(commandLine, "--noiseonly");
@@ -1236,10 +1233,10 @@ LALInferenceVariables *LALInferenceInitCBCVariables(LALInferenceRunState *state)
     /* Also set the prior in currentParams, since Likelihood can't access the state! (ugly hack) */
     if(LALInferenceGetProcParamVal(commandLine,"--margtime") || LALInferenceGetProcParamVal(commandLine, "--margtimephi")){
         LALInferenceVariableItem *p=LALInferenceGetItem(state->priorArgs,"time_min");
-        LALInferenceAddVariable(state->currentParams,"time_min",p->value,p->type,p->vary);
+        LALInferenceAddVariable(currentParams,"time_min",p->value,p->type,p->vary);
         p=LALInferenceGetItem(state->priorArgs,"time_max");
-        LALInferenceAddVariable(state->currentParams,"time_max",p->value,p->type,p->vary);
-        LALInferenceRemoveVariable(state->currentParams,"time");
+        LALInferenceAddVariable(currentParams,"time_max",p->value,p->type,p->vary);
+        LALInferenceRemoveVariable(currentParams,"time");
     }
 
     if(!LALInferenceGetProcParamVal(commandLine,"--margphi") && !LALInferenceGetProcParamVal(commandLine, "--margtimephi")){
@@ -1320,7 +1317,7 @@ LALInferenceVariables *LALInferenceInitCBCVariables(LALInferenceRunState *state)
   }
 
   fprintf(stdout,"\n\n---\t\t ---\n");
-  LALInferenceInitSpinVariables(state);
+  LALInferenceInitSpinVariables(state, currentParams);
 
   if (injTable)
      print_flags_orders_warning(injTable,commandLine); 
@@ -1688,13 +1685,12 @@ void LALInferenceCheckOptionsConsistency(ProcessParamsTable *commandLine)
   return;
 }
 
-void LALInferenceInitSpinVariables(LALInferenceRunState *state){
+void LALInferenceInitSpinVariables(LALInferenceRunState *state, LALInferenceVariables *currentParams){
 
 
   LALStatus status;
   memset(&status,0,sizeof(status));
 
-  LALInferenceVariables *currentParams=state->currentParams;
   ProcessParamsTable *commandLine=state->commandLine;
   ProcessParamsTable *ppt=NULL;
 
