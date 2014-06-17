@@ -73,6 +73,8 @@
 #include <string.h>
 
 #include <lal/DetResponse.h>
+#include <lal/InspiralInjectionParams.h>
+#include <lal/LALSimulation.h>
 
 #include <chealpix.h>
 
@@ -308,7 +310,7 @@ static double complex signal_amplitude_model(
     double u,                       /* cos(inclination) */
     double u2                       /* cos^2(inclination */
 ) {
-    const double complex tmp = F * exp_i_twopsi;
+    const double complex tmp = F * conj(exp_i_twopsi);
     return 0.5 * (1 + u2) * creal(tmp) + I * u * cimag(tmp);
 }
 
@@ -1049,6 +1051,81 @@ static void test_eval_acor(void)
 }
 
 
+static void test_signal_amplitude_model(
+    double ra,
+    double dec,
+    double inclination,
+    double polarization,
+    unsigned long epoch_nanos,
+    const char *instrument
+) {
+    const LALDetector *detector = XLALDetectorPrefixToLALDetector(
+        instrument);
+    LIGOTimeGPS epoch;
+    double gmst;
+    XLALINT8NSToGPS(&epoch, epoch_nanos);
+    gmst = XLALGreenwichMeanSiderealTime(&epoch);
+
+    double complex result;
+    {
+        double complex F;
+        const double complex exp_i_twopsi = exp_i(2 * polarization);
+        const double u = cos(inclination);
+        const double u2 = gsl_pow_2(u);
+        XLALComputeDetAMResponse(
+            (double *)&F,     /* Type-punned real part */
+            1 + (double *)&F, /* Type-punned imag part */
+            detector->response, ra, dec, 0, gmst);
+
+        result = signal_amplitude_model(F, exp_i_twopsi, u, u2);
+    }
+
+    float abs_expected;
+    {
+        SimInspiralTable sim_inspiral;
+        memset(&sim_inspiral, 0, sizeof(sim_inspiral));
+        sim_inspiral.distance = 1;
+        sim_inspiral.longitude = ra;
+        sim_inspiral.latitude = dec;
+        sim_inspiral.inclination = inclination;
+        sim_inspiral.polarization = polarization;
+        sim_inspiral.geocent_end_time = epoch;
+        sim_inspiral.end_time_gmst = gmst;
+
+        XLALInspiralSiteTimeAndDist(
+            &sim_inspiral, detector, &epoch, &abs_expected);
+        abs_expected = 1 / abs_expected;
+    }
+
+    double complex expected;
+    {
+        double Fplus, Fcross;
+        const double u = cos(inclination);
+        const double u2 = gsl_pow_2(u);
+        XLALComputeDetAMResponse(
+            &Fplus, &Fcross, detector->response, ra, dec, polarization, gmst);
+        expected = 0.5 * (1 + u2) * Fplus + I * u * Fcross;
+    }
+
+    /* Test to nearly float (32-bit) precision because
+     * XLALInspiralSiteTimeAndDist returns result as float. */
+    gsl_test_abs(cabs(result), abs_expected, 1.5 * GSL_FLT_EPSILON,
+        "testing abs(signal_amplitude_model(ra=%0.03f, dec=%0.03f, "
+        "inc=%0.03f, pol=%0.03f, epoch_nanos=%lu, detector=%s))",
+        ra, dec, inclination, polarization, epoch_nanos, instrument);
+
+    gsl_test_abs(creal(result), creal(expected), 2.5 * GSL_DBL_EPSILON,
+        "testing re(signal_amplitude_model(ra=%0.03f, dec=%0.03f, "
+        "inc=%0.03f, pol=%0.03f, epoch_nanos=%lu, detector=%s))",
+        ra, dec, inclination, polarization, epoch_nanos, instrument);
+
+    gsl_test_abs(cimag(result), cimag(expected), 2.5 * GSL_DBL_EPSILON,
+        "testing im(signal_amplitude_model(ra=%0.03f, dec=%0.03f, "
+        "inc=%0.03f, pol=%0.03f, epoch_nanos=%lu, detector=%s))",
+        ra, dec, inclination, polarization, epoch_nanos, instrument);
+}
+
+
 static void test_toa_phoa_snr_log_radial_integral(
     double expected, double tol, double r1, double r2, double p2, double b, int k)
 {
@@ -1095,6 +1172,13 @@ int bayestar_test(void)
 
     test_catrom();
     test_eval_acor();
+
+    for (double ra = -M_PI; ra <= M_PI; ra += 0.1 * M_PI)
+        for (double dec = -M_PI_2; dec <= M_PI_2; dec += 0.1 * M_PI)
+            for (double inc = -M_PI; inc <= M_PI; inc += 0.1 * M_PI)
+                for (double pol = -M_PI; pol <= M_PI; pol += 0.1 * M_PI)
+                    for (unsigned long epoch = 1000000000000000000; epoch <= 1000086400000000000; epoch += 3600000000000)
+                        test_signal_amplitude_model(ra, dec, inc, pol, epoch, "H1");
 
     /* Tests of radial integrand with p2=0, b=0. */
     test_toa_phoa_snr_log_radial_integral(0, 0, 0, 1, 0, 0, 0);

@@ -197,17 +197,8 @@ for sim_inspiral in progress.iterate(sim_inspiral_table):
         timing.get_approximant_and_orders_from_string(waveform)
 
     # Pre-evaluate some trigonometric functions that we will need.
-    cosinc = np.cos(inc)
-    cosphi = np.cos(2 * phi)
-    sinphi = np.sin(2 * phi)
-    cospsi = np.cos(2 * psi)
-    sinpsi = np.sin(2 * psi)
-
-    # Generate transformation matrix that maps F+, Fx onto the amplitudes of
-    # the two waveform quadratures
-    M = np.asmatrix(((cosphi, sinphi), (-sinphi, cosphi)))
-    M *= np.diag((cosinc, 0.5 * (1 + cosinc * cosinc)))
-    M *= ((cospsi, sinpsi), (-sinpsi, cospsi))
+    u = np.cos(inc)
+    u2 = np.square(u)
 
     # Signal models for each detector.
     signal_models = [
@@ -220,7 +211,8 @@ for sim_inspiral in progress.iterate(sim_inspiral_table):
         for signal_model in signal_models])
 
     # Get antenna factors for each detector.
-    F = np.asarray([lal.ComputeDetAMResponse(response, ra, dec, 0, gmst)
+    Fplus, Fcross = np.asarray([
+        lal.ComputeDetAMResponse(response, ra, dec, psi, gmst)
         for response in responses]).T
 
     # Compute TOAs at each detector.
@@ -228,10 +220,7 @@ for sim_inspiral in progress.iterate(sim_inspiral_table):
         epoch) for location in locations])
 
     # Compute SNR in each detector.
-    snrs = np.asarray(M * (F * horizons / DL))
-
-    # Convert SNR to a complex vector.
-    snrs = snrs[0] + snrs[1] * 1j
+    snrs = (0.5 * (1 + u2) * Fplus + 1j * u * Fcross) * horizons / DL
 
     abs_snrs = np.abs(snrs)
     arg_snrs = np.angle(snrs)
