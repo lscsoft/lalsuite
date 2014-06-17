@@ -28,7 +28,7 @@ import collections
 import itertools
 
 
-_max_order = 30
+_max_order = 29
 
 
 def nside2order(nside):
