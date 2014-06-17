@@ -30,6 +30,7 @@
 #include <gsl/gsl_matrix.h>
 
 #include <lal/LALStdio.h>
+#include <lal/LALConstants.h>
 #include <lal/LogPrintf.h>
 #include <lal/LALXML.h>
 #include <lal/LALXMLVOTableCommon.h>
@@ -57,9 +58,8 @@
 #define LALXMLC_NAMETEST5 "testTable"
 
 
-
-#define REAL8TOL 1e-16
-#define REAL4TOL 1e-6
+#define REAL8TOL 2 * LAL_REAL8_EPS
+#define REAL4TOL LAL_REAL4_EPS
 #define PATH_MAXLEN 256
 
 /* private test prototypes */
@@ -297,7 +297,7 @@ test_gsl_vector(void)
       REAL8 in, out;
       in  = gsl_vector_get ( in_vect, i );
       out = gsl_vector_get ( out_vect, i );
-      err = abs ( (in - out) / (0.5 * (in + out)));
+      err = fabs ( (in - out) / (0.5 * (in + out)));
       if ( err > maxerr ) maxerr = err;
       if (  err > REAL8TOL ) {
 	XLALPrintError ("%s: element %d in gsl_vector '%s' differs by more (%g) than tolerance %g: in=%.16g, out=%.16g.\n\n",
@@ -417,7 +417,7 @@ test_gsl_matrix(void)
 	  REAL8 in, out;
 	  in  = gsl_matrix_get ( in_matrix, row, col );
 	  out = gsl_matrix_get ( out_matrix, row, col );
-	  err = abs ( (in - out) / (0.5 * (in + out) ) );
+	  err = fabs ( (in - out) / (0.5 * (in + out) ) );
 	  if ( err > maxerr ) maxerr = err;
 	  if ( err > REAL8TOL ) {
 	    XLALPrintError ("%s: element (%d,%d) in gsl_matrix '%s' differs by more (%g) than tolerance %g: in=%.16g, out=%.16g.\n\n",
