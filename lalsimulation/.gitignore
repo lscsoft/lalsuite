@@ -45,7 +45,7 @@ swig/python/
 swig/swig_*
 test/GRFlagsTest
 test/GenerateSimulation
-test/PhenomP_Test1.dat
+test/PhenomP_Test*dat
 test/ST2-dynamics.dat
 test/ST4-dynamics.dat
 test/TestEOBNRv2
