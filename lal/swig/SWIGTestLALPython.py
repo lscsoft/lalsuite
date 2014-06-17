@@ -671,6 +671,134 @@ del c16
 lal.CheckMemoryLeaks()
 print("PASSED input views of array structs (type safety)")
 
+# check FFT functions with input views
+print("check FFT functions with input views ...")
+r4in = numpy.array(range(0, 32), dtype=numpy.float32)
+r8in = numpy.array(range(0, 64), dtype=numpy.float64)
+c8in = numpy.array(numpy.vectorize(complex)(8 + r4in, r4in), dtype=numpy.complex64)
+c16in = numpy.array(numpy.vectorize(complex)(16 + r8in, r8in), dtype=numpy.complex128)
+c8inv = lal.CreateCOMPLEX8Vector(len(c8in))
+c8inv.data = c8in
+c8outv = lal.CreateCOMPLEX8Vector(len(c8in))
+plan = lal.CreateForwardCOMPLEX8FFTPlan(len(c8in), 0)
+lal.COMPLEX8VectorFFT(c8outv, c8inv, plan)
+c8out = numpy.zeros(numpy.shape(c8outv.data), dtype=c8outv.data.dtype)
+lal.COMPLEX8VectorFFT(c8out, c8in, plan)
+assert((c8out == c8outv.data).all())
+del c8inv
+del c8outv
+del plan
+lal.CheckMemoryLeaks()
+c16inv = lal.CreateCOMPLEX16Vector(len(c16in))
+c16inv.data = c16in
+c16outv = lal.CreateCOMPLEX16Vector(len(c16in))
+plan = lal.CreateForwardCOMPLEX16FFTPlan(len(c16in), 0)
+lal.COMPLEX16VectorFFT(c16outv, c16inv, plan)
+c16out = numpy.zeros(numpy.shape(c16outv.data), dtype=c16outv.data.dtype)
+lal.COMPLEX16VectorFFT(c16out, c16in, plan)
+assert((c16out == c16outv.data).all())
+del c16inv
+del c16outv
+del plan
+lal.CheckMemoryLeaks()
+r4inv = lal.CreateREAL4Vector(len(r4in))
+r4inv.data = r4in
+c8outv = lal.CreateCOMPLEX8Vector(len(r4in)/2 + 1)
+plan = lal.CreateForwardREAL4FFTPlan(len(r4in), 0)
+lal.REAL4ForwardFFT(c8outv, r4inv, plan)
+c8out = numpy.zeros(numpy.shape(c8outv.data), dtype=c8outv.data.dtype)
+lal.REAL4ForwardFFT(c8out, r4in, plan)
+assert((c8out == c8outv.data).all())
+del r4inv
+del c8outv
+del plan
+lal.CheckMemoryLeaks()
+c8inv = lal.CreateCOMPLEX8Vector(len(c8in))
+c8inv.data = c8in
+r4outv = lal.CreateREAL4Vector((len(c8in)-1)*2)
+plan = lal.CreateReverseREAL4FFTPlan((len(c8in)-1)*2, 0)
+lal.REAL4ReverseFFT(r4outv, c8inv, plan)
+r4out = numpy.zeros(numpy.shape(r4outv.data), dtype=r4outv.data.dtype)
+lal.REAL4ReverseFFT(r4out, c8in, plan)
+assert((r4out == r4outv.data).all())
+del c8inv
+del r4outv
+del plan
+lal.CheckMemoryLeaks()
+r8inv = lal.CreateREAL8Vector(len(r8in))
+r8inv.data = r8in
+c16outv = lal.CreateCOMPLEX16Vector(len(r8in)/2 + 1)
+plan = lal.CreateForwardREAL8FFTPlan(len(r8in), 0)
+lal.REAL8ForwardFFT(c16outv, r8inv, plan)
+c16out = numpy.zeros(numpy.shape(c16outv.data), dtype=c16outv.data.dtype)
+lal.REAL8ForwardFFT(c16out, r8in, plan)
+assert((c16out == c16outv.data).all())
+del r8inv
+del c16outv
+del plan
+lal.CheckMemoryLeaks()
+c16inv = lal.CreateCOMPLEX16Vector(len(c16in))
+c16inv.data = c16in
+r8outv = lal.CreateREAL8Vector((len(c16in)-1)*2)
+plan = lal.CreateReverseREAL8FFTPlan((len(c16in)-1)*2, 0)
+lal.REAL8ReverseFFT(r8outv, c16inv, plan)
+r8out = numpy.zeros(numpy.shape(r8outv.data), dtype=r8outv.data.dtype)
+lal.REAL8ReverseFFT(r8out, c16in, plan)
+assert((r8out == r8outv.data).all())
+del c16inv
+del r8outv
+del plan
+lal.CheckMemoryLeaks()
+r4inv = lal.CreateREAL4Vector(len(r4in))
+r4inv.data = r4in
+r4outv = lal.CreateREAL4Vector(len(r4in))
+plan = lal.CreateForwardREAL4FFTPlan(len(r4in), 0)
+lal.REAL4VectorFFT(r4outv, r4inv, plan)
+r4out = numpy.zeros(numpy.shape(r4outv.data), dtype=r4outv.data.dtype)
+lal.REAL4VectorFFT(r4out, r4in, plan)
+assert((r4out == r4outv.data).all())
+del r4inv
+del r4outv
+del plan
+lal.CheckMemoryLeaks()
+r8inv = lal.CreateREAL8Vector(len(r8in))
+r8inv.data = r8in
+r8outv = lal.CreateREAL8Vector(len(r8in))
+plan = lal.CreateForwardREAL8FFTPlan(len(r8in), 0)
+lal.REAL8VectorFFT(r8outv, r8inv, plan)
+r8out = numpy.zeros(numpy.shape(r8outv.data), dtype=r8outv.data.dtype)
+lal.REAL8VectorFFT(r8out, r8in, plan)
+assert((r8out == r8outv.data).all())
+del r8inv
+del r8outv
+del plan
+lal.CheckMemoryLeaks()
+r4inv = lal.CreateREAL4Vector(len(r4in))
+r4inv.data = r4in
+r4outv = lal.CreateREAL4Vector(len(r4in)/2 + 1)
+plan = lal.CreateForwardREAL4FFTPlan(len(r4in), 0)
+lal.REAL4PowerSpectrum(r4outv, r4inv, plan)
+r4out = numpy.zeros(numpy.shape(r4outv.data), dtype=r4outv.data.dtype)
+lal.REAL4PowerSpectrum(r4out, r4in, plan)
+assert((r4out == r4outv.data).all())
+del r4inv
+del r4outv
+del plan
+lal.CheckMemoryLeaks()
+r8inv = lal.CreateREAL8Vector(len(r8in))
+r8inv.data = r8in
+r8outv = lal.CreateREAL8Vector(len(r8in)/2 + 1)
+plan = lal.CreateForwardREAL8FFTPlan(len(r8in), 0)
+lal.REAL8PowerSpectrum(r8outv, r8inv, plan)
+r8out = numpy.zeros(numpy.shape(r8outv.data), dtype=r8outv.data.dtype)
+lal.REAL8PowerSpectrum(r8out, r8in, plan)
+assert((r8out == r8outv.data).all())
+del r8inv
+del r8outv
+del plan
+lal.CheckMemoryLeaks()
+print("PASSED FFT functions with input views ...")
+
 # check dynamic array of pointers access
 print("checking dynamic array of pointers access ...")
 ap = lal.swig_lal_test_Create_arrayofptrs(3)
