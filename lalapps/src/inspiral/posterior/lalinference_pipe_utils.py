@@ -1588,7 +1588,7 @@ class ROMJob(pipeline.CondorDAGJob,pipeline.AnalysisJob):
     self.set_stdout_file(os.path.join(logdir,'romweights-$(cluster)-$(process).out'))
     self.set_stderr_file(os.path.join(logdir,'romweights-$(cluster)-$(process).err'))
     self.add_condor_cmd('getenv','True')
-    self.add_arg('-B '+str(cp.get('paths','rom_basis')))
+    self.add_arg('-B '+str(cp.get('paths','rom_b_matrix')))
     self.add_arg('-V '+str(cp.get('paths','rom_invV')))
     self.add_arg('-t 0.1')
     self.add_arg('-s 32')

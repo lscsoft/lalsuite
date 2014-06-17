@@ -39,8 +39,8 @@ parser.add_option("-T", "--delta_tc", type=float,
                       help="width of tc subdomain",)
 parser.add_option("-B", "--basis-set", type='string',
                       action="store",
-											dest="b_matrix_path",
-											help="B matrix",)
+                      dest="b_matrix_path",
+                      help="B matrix",)
 parser.add_option("-o", "--out", type='string',
                   action="store",
                   dest="outpath",
@@ -56,7 +56,7 @@ parser.add_option("-o", "--out", type='string',
 #invV = np.fromfile(options.invV_path, dtype=complex)
 #invV =invV.reshape(965, 965)
 
-B = np.load("options.b_matrix_path")
+B = np.load(options.b_matrix_path)
 
 def BuildWeights(data, B, deltaF):
 
@@ -102,7 +102,7 @@ for ifo in options.IFOs:
 
 	# print len(data),len(psd),len(basis_set)
 
-	assert len(data) == len(psd) == len(basis_set)
+	assert len(data) == len(psd) == B.shape[1]
 
 	for k in range(len(data)):
 		if np.isnan(data[k].real):
