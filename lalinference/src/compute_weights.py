@@ -70,7 +70,7 @@ def BuildWeights(data, B, deltaF):
         '''
 
         # compute inner products <rb,data> = \int data.conj * rb 
-        weights = np.dot(B.transpose(), data.conjugate()) * deltaF * 4.
+        weights = np.dot(B, data.conjugate()) * deltaF * 4.
 
         # compute data-specific weights
         #weights = np.dot(invV.transpose(), E)
