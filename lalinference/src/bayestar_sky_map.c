@@ -303,6 +303,23 @@ static void toa_errors(
 }
 
 
+/* Compute antenna factors from the detector response tensor and source
+ * sky location, and return as a complex number F_plus + i F_cross. */
+static double complex complex_antenna_factor(
+    const float response[3][3],
+    double ra,
+    double dec,
+    double gmst
+) {
+    double complex F;
+    XLALComputeDetAMResponse(
+        (double *)&F,     /* Type-punned real part */
+        1 + (double *)&F, /* Type-punned imag part */
+        response, ra, dec, 0, gmst);
+    return F;
+}
+
+
 /* Expression for complex amplitude on arrival (without 1/distance factor) */
 static double complex signal_amplitude_model(
     double complex F,               /* Antenna factor */
@@ -666,13 +683,8 @@ double *bayestar_sky_map_toa_phoa_snr(
 
             /* Look up antenna factors */
             for (unsigned int iifo = 0; iifo < nifos; iifo++)
-            {
-                XLALComputeDetAMResponse(
-                    (double *)&F[iifo],     /* Type-punned real part */
-                    1 + (double *)&F[iifo], /* Type-punned imag part */
-                    responses[iifo], phi, M_PI_2 - theta, 0, gmst);
-                F[iifo] *= horizons[iifo];
-            }
+                F[iifo] = complex_antenna_factor(
+                    responses[iifo], phi, M_PI_2-theta, gmst) * horizons[iifo];
 
             toa_errors(dt, theta, phi, gmst, nifos, locations, toas);
         }
@@ -843,13 +855,8 @@ double bayestar_log_likelihood_toa_snr(
     /* Loop over detectors */
     for (unsigned int iifo = 0; iifo < nifos; iifo++)
     {
-        double complex F;
-        XLALComputeDetAMResponse(
-            (double *)&F,     /* Type-punned real part */
-            1 + (double *)&F, /* Type-punned imag part */
-            responses[iifo], ra, dec, 0, gmst);
-        F *= horizons[iifo];
-
+        const double complex F = complex_antenna_factor(
+            responses[iifo], ra, dec, gmst) * horizons[iifo];
         const double complex z_times_r =
             signal_amplitude_model(F, exp_i_twopsi, u, u2);
         const double rho2_times_r2 = cabs2(z_times_r);
@@ -906,12 +913,8 @@ double bayestar_log_likelihood_toa_phoa_snr(
     /* Loop over detectors */
     for (unsigned int iifo = 0; iifo < nifos; iifo++)
     {
-        double complex F;
-        XLALComputeDetAMResponse(
-            (double *)&F,     /* Type-punned real part */
-            1 + (double *)&F, /* Type-punned imag part */
-            responses[iifo], ra, dec, 0, gmst);
-        F *= horizons[iifo];
+        const double complex F = complex_antenna_factor(
+            responses[iifo], ra, dec, gmst) * horizons[iifo];
 
         const double complex z_times_r =
              signal_amplitude_model(F, exp_i_twopsi, u, u2);
