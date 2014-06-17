@@ -25,6 +25,7 @@
  * \brief Check ChooseTD/FDWaveformFromCache is consistent with ChooseWaveoform
  */
 
+#include <math.h>
 #include <lal/LALSimInspiralWaveformCache.h>
 #include <lal/FrequencySeries.h>
 #include <time.h>
