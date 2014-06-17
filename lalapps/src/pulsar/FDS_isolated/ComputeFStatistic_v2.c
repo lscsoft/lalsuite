@@ -617,8 +617,8 @@ int main(int argc,char *argv[])
         }
         if (GV.Fstat_what & FSTATQ_FAFB) {
           thisFCand.FaFb_refTime = Fstat_res->doppler.refTime; // this will be 'internal' reference time, used only for parameter estimation
-          thisFCand.Fa = Fstat_res->FaFb[iFreq].Fa;
-          thisFCand.Fb = Fstat_res->FaFb[iFreq].Fb;
+          thisFCand.Fa = Fstat_res->Fa[iFreq];
+          thisFCand.Fb = Fstat_res->Fb[iFreq];
         } else {
           thisFCand.Fa = thisFCand.Fb = crect(LAL_NAN,LAL_NAN);
         }
@@ -935,8 +935,7 @@ int main(int argc,char *argv[])
       PulsarCandidate XLAL_INIT_DECL(pulsarParams);
       pulsarParams.Doppler = loudestFCand.doppler;
 
-      if ( XLALEstimatePulsarAmplitudeParams ( &pulsarParams, &loudestFCand.FaFb_refTime, loudestFCand.Fa, loudestFCand.Fb, &loudestFCand.Mmunu )
-           != XLAL_SUCCESS )
+      if ( XLALEstimatePulsarAmplitudeParams ( &pulsarParams, &loudestFCand.FaFb_refTime, loudestFCand.Fa, loudestFCand.Fb, &loudestFCand.Mmunu ) != XLAL_SUCCESS )
       {
         XLALPrintError ("%s: XLALEstimatePulsarAmplitudeParams() failed with errno=%d\n", __func__, xlalErrno );
         return COMPUTEFSTATISTIC_ESYS;

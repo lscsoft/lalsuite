@@ -227,8 +227,8 @@ ComputeFstat_Demod ( FstatResults* Fstats,
 
           if ( whatToCompute & FSTATQ_FAFB_PER_DET )
             {
-              Fstats->FaFbPerDet[X][k].Fa = FaX;
-              Fstats->FaFbPerDet[X][k].Fb = FbX;
+              Fstats->FaPerDet[X][k] = FaX;
+              Fstats->FbPerDet[X][k] = FbX;
             }
 
           // compute single-IFO F-stats, if requested
@@ -261,8 +261,8 @@ ComputeFstat_Demod ( FstatResults* Fstats,
       // Return multi-detector Fa & Fb
       if ( whatToCompute & FSTATQ_FAFB )
         {
-          Fstats->FaFb[k].Fa = Fa;
-          Fstats->FaFb[k].Fb = Fb;
+          Fstats->Fa[k] = Fa;
+          Fstats->Fb[k] = Fb;
         }
 
       // Return F-atoms per detector

@@ -565,8 +565,10 @@ XLALComputeFstat ( FstatResults **Fstats,	  	///< [in/out] Address of a pointer 
       // Enlarge multi-detector Fa & Fb array
       if ( (whatToCompute & FSTATQ_FAFB) && moreFreqBins )
         {
-          (*Fstats)->FaFb = XLALRealloc( (*Fstats)->FaFb, numFreqBins * sizeof((*Fstats)->FaFb[0]) );
-          XLAL_CHECK ( (*Fstats)->FaFb != NULL, XLAL_EINVAL, "Failed to (re)allocate (*Fstats)->FaFb to length %u", numFreqBins );
+          (*Fstats)->Fa = XLALRealloc( (*Fstats)->Fa, numFreqBins * sizeof((*Fstats)->Fa[0]) );
+          XLAL_CHECK ( (*Fstats)->Fa != NULL, XLAL_EINVAL, "Failed to (re)allocate (*Fstats)->Fa to length %u", numFreqBins );
+          (*Fstats)->Fb = XLALRealloc( (*Fstats)->Fb, numFreqBins * sizeof((*Fstats)->Fb[0]) );
+          XLAL_CHECK ( (*Fstats)->Fb != NULL, XLAL_EINVAL, "Failed to (re)allocate (*Fstats)->Fb to length %u", numFreqBins );
         }
 
       // Enlarge 2F per detector arrays
@@ -584,8 +586,10 @@ XLALComputeFstat ( FstatResults **Fstats,	  	///< [in/out] Address of a pointer 
         {
           for ( UINT4 X = 0; X < numDetectors; ++X )
             {
-              (*Fstats)->FaFbPerDet[X] = XLALRealloc ( (*Fstats)->FaFbPerDet[X], numFreqBins*sizeof((*Fstats)->FaFbPerDet[X][0]) );
-              XLAL_CHECK( (*Fstats)->FaFbPerDet[X] != NULL, XLAL_EINVAL, "Failed to (re)allocate (*Fstats)->FaFbPerDet[%u] to length %u", X, numFreqBins );
+              (*Fstats)->FaPerDet[X] = XLALRealloc ( (*Fstats)->FaPerDet[X], numFreqBins*sizeof((*Fstats)->FaPerDet[X][0]) );
+              XLAL_CHECK( (*Fstats)->FaPerDet[X] != NULL, XLAL_EINVAL, "Failed to (re)allocate (*Fstats)->FaPerDet[%u] to length %u", X, numFreqBins );
+              (*Fstats)->FbPerDet[X] = XLALRealloc ( (*Fstats)->FbPerDet[X], numFreqBins*sizeof((*Fstats)->FbPerDet[X][0]) );
+              XLAL_CHECK( (*Fstats)->FbPerDet[X] != NULL, XLAL_EINVAL, "Fbiled to (re)allocate (*Fstats)->FbPerDet[%u] to length %u", X, numFreqBins );
             }
         }
 
@@ -694,11 +698,13 @@ XLALDestroyFstatResults ( FstatResults* Fstats  ///< [in] #FstatResults structur
   }
 
   XLALFree ( Fstats->twoF );
-  XLALFree ( Fstats->FaFb );
+  XLALFree ( Fstats->Fa );
+  XLALFree ( Fstats->Fb );
   for ( UINT4 X = 0; X < PULSAR_MAX_DETECTORS; ++X )
     {
       XLALFree ( Fstats->twoFPerDet[X] );
-      XLALFree ( Fstats->FaFbPerDet[X] );
+      XLALFree ( Fstats->FaPerDet[X] );
+      XLALFree ( Fstats->FbPerDet[X] );
       if ( Fstats->multiFatoms != NULL )
         {
           for ( UINT4 n = 0; n < Fstats->internalalloclen; ++n )
