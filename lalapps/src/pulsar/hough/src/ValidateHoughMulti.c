@@ -61,8 +61,6 @@ BOOLEAN uvar_printEvents, uvar_printTemplates, uvar_printMaps, uvar_printStats, 
 #define TRUE (1==1)
 #define FALSE (1==0)
 
-#define LAL_INT4_MAX 2147483647
-
 /* local function prototype */
 
 

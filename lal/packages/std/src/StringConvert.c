@@ -143,13 +143,6 @@
 #include <lal/LALConstants.h>
 #include <lal/StringInput.h>
 
-/* Extremal integer values, all expressed as unsigned long long. */
-#define LAL_UINT8_MAX   LAL_UINT8_C(18446744073709551615)
-#define LAL_UINT4_MAX   LAL_UINT8_C(4294967295)
-#define LAL_UINT2_MAX   LAL_UINT8_C(65535)
-#define LAL_INT8_MAX    LAL_UINT8_C(9223372036854775807)
-#define LAL_INT4_MAX    LAL_UINT8_C(2147483647)
-#define LAL_INT2_MAX    LAL_UINT8_C(32767)
 #define LAL_INT8_ABSMIN LAL_UINT8_C(9223372036854775808)
 #define LAL_INT4_ABSMIN LAL_UINT8_C(2147483648)
 #define LAL_INT2_ABSMIN LAL_UINT8_C(32768)

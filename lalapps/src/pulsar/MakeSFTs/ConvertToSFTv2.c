@@ -55,7 +55,6 @@
 #define TRUE    (1==1)
 #define FALSE   (1==0)
 
-#define LAL_INT4_MAX 2147483647
 /*----- Macros ----- */
 /*---------- internal types ----------*/
 

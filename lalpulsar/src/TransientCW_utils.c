@@ -45,7 +45,6 @@
 
 /* ----- MACRO definitions ---------- */
 #define SQ(x) ((x)*(x))
-#define LAL_INT4_MAX 2147483647
 
 /* ---------- internal prototypes ---------- */
 

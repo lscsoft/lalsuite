@@ -87,8 +87,6 @@ CHAR 	 *uvar_debugOut=NULL;
 
 #define F0 100
 #define FBAND 1
-#define LAL_INT4_MAX 2147483647
-
 
 #define BLOCKSRNGMED 51
 #define MAXFILENAMELENGTH 512 /* maximum # of characters  of a filename */

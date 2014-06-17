@@ -127,7 +127,6 @@ int finite(double);
 #define MYMAX(x,y) ( (x) > (y) ? (x) : (y) )
 #define MYMIN(x,y) ( (x) < (y) ? (x) : (y) )
 
-#define LAL_INT4_MAX 2147483647
 UINT4 FactorialLookup[8] = {1,1,2,6,24,120,720,5040};
 
 /*---------- internal types ----------*/

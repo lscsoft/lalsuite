@@ -102,8 +102,6 @@
 #define MYMAX(x,y) ( (x) > (y) ? (x) : (y) )
 #define MYMIN(x,y) ( (x) < (y) ? (x) : (y) )
 
-#define LAL_INT4_MAX 2147483647
-
 // NOTE: LAL's nan is more portable than either of libc or gsl !
 #define LAL_NAN XLALREAL4FailNaN()
 /*---------- internal types ----------*/
