@@ -712,7 +712,7 @@ XLALComputeTransientFstatMap ( const MultiFstatAtomVector *multiFstatAtoms, 	/**
       if ( i_t0 >= numAtoms ) i_t0 = numAtoms - 1;
 
       /* ----- INNER loop over timescale-parameter tau ---------- */
-      REAL8 Ad=0, Bd=0, Cd=0;
+      REAL4 Ad=0, Bd=0, Cd=0;
       COMPLEX8 Fa=0, Fb=0;
       UINT4 i_t1_last = i_t0;
 
@@ -812,9 +812,9 @@ XLALComputeTransientFstatMap ( const MultiFstatAtomVector *multiFstatAtoms, 	/**
 
 
           /* generic F-stat calculation from A,B,C, Fa, Fb */
-          REAL8 DdInv = 1.0 / ( Ad * Bd - Cd * Cd );
-          REAL8 twoF = XLALComputeFstatFromFaFb ( Fa, Fb, Ad, Bd, Cd, 0, DdInv );
-          REAL8 F = 0.5 * twoF;
+          REAL4 DdInv = 1.0 / ( Ad * Bd - Cd * Cd );
+          REAL4 twoF = XLALComputeFstatFromFaFb ( Fa, Fb, Ad, Bd, Cd, 0, DdInv );
+          REAL4 F = 0.5 * twoF;
 
           /* keep track of loudest F-stat value encountered over the m x n matrix */
           if ( F > ret->maxF )

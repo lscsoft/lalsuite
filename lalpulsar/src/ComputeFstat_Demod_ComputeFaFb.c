@@ -6,8 +6,8 @@
  * Compute JKS's Fa and Fb, which are ingredients for calculating the F-statistic.
  */
 static int
-FUNC ( COMPLEX16 *Fa,                        /* [out] Fa,Fb (and possibly atoms) returned */
-       COMPLEX16 *Fb,
+FUNC ( COMPLEX8 *Fa,                        /* [out] Fa,Fb (and possibly atoms) returned */
+       COMPLEX8 *Fb,
        FstatAtomVector **FstatAtoms,         // if !NULL: return Fstat atoms vector
        const SFTVector *sfts,                /* [in] input SFTs */
        const PulsarSpins fkdot,              /* [in] frequency and derivatives fkdot = d^kf/dt^k */
@@ -202,10 +202,10 @@ FUNC ( COMPLEX16 *Fa,                        /* [out] Fa,Fb (and possibly atoms)
       a_alpha = (*a_al);
       b_alpha = (*b_al);
 
-      COMPLEX16 Fa_alpha = crect( a_alpha * realQXP, a_alpha * imagQXP );
+      COMPLEX8 Fa_alpha = crect( a_alpha * realQXP, a_alpha * imagQXP );
       (*Fa) += Fa_alpha;
 
-      COMPLEX16 Fb_alpha = crect( b_alpha * realQXP, b_alpha * imagQXP );
+      COMPLEX8 Fb_alpha = crect( b_alpha * realQXP, b_alpha * imagQXP );
       (*Fb) += Fb_alpha;
 
       /* store per-SFT F-stat 'atoms' for transient-CW search */

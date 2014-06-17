@@ -168,11 +168,11 @@ ComputeFstat_Demod ( FstatResults* Fstats,
     }
 
   // ----- compute final Fstatistic-value -----
-  REAL8 Ad = multiAMcoef->Mmunu.Ad;
-  REAL8 Bd = multiAMcoef->Mmunu.Bd;
-  REAL8 Cd = multiAMcoef->Mmunu.Cd;
-  REAL8 Ed = multiAMcoef->Mmunu.Ed;;
-  REAL8 Dd_inv = 1.0 / multiAMcoef->Mmunu.Dd;
+  REAL4 Ad = multiAMcoef->Mmunu.Ad;
+  REAL4 Bd = multiAMcoef->Mmunu.Bd;
+  REAL4 Cd = multiAMcoef->Mmunu.Cd;
+  REAL4 Ed = multiAMcoef->Mmunu.Ed;;
+  REAL4 Dd_inv = 1.0 / multiAMcoef->Mmunu.Dd;
 
   // ---------- Compute F-stat for each frequency bin ----------
   for ( UINT4 k = 0; k < Fstats->numFreqBins; k++ )
@@ -180,8 +180,8 @@ ComputeFstat_Demod ( FstatResults* Fstats,
       // Set frequency to search at
       thisPoint.fkdot[0] = fStart + k * Fstats->dFreq;
 
-      COMPLEX16 Fa = 0;       		// complex amplitude Fa
-      COMPLEX16 Fb = 0;                 // complex amplitude Fb
+      COMPLEX8 Fa = 0;       		// complex amplitude Fa
+      COMPLEX8 Fb = 0;                 // complex amplitude Fb
       MultiFstatAtomVector *multiFstatAtoms = NULL;	// per-IFO, per-SFT arrays of F-stat 'atoms', ie quantities required to compute F-stat
 
       // prepare return of 'FstatAtoms' if requested
@@ -195,7 +195,7 @@ ComputeFstat_Demod ( FstatResults* Fstats,
       // loop over detectors and compute all detector-specific quantities
       for ( UINT4 X=0; X < numDetectors; X ++)
         {
-          COMPLEX16 FaX, FbX;
+          COMPLEX8 FaX, FbX;
           FstatAtomVector *FstatAtoms = NULL;
           FstatAtomVector **FstatAtoms_p = returnAtoms ? (&FstatAtoms) : NULL;
 
@@ -234,11 +234,11 @@ ComputeFstat_Demod ( FstatResults* Fstats,
           // compute single-IFO F-stats, if requested
           if ( whatToCompute & FSTATQ_2F_PER_DET )
             {
-              REAL8 AdX = multiAMcoef->data[X]->A;
-              REAL8 BdX = multiAMcoef->data[X]->B;
-              REAL8 CdX = multiAMcoef->data[X]->C;
-              REAL8 EdX = 0;
-              REAL8 DdX_inv = 1.0 / multiAMcoef->data[X]->D;
+              REAL4 AdX = multiAMcoef->data[X]->A;
+              REAL4 BdX = multiAMcoef->data[X]->B;
+              REAL4 CdX = multiAMcoef->data[X]->C;
+              REAL4 EdX = 0;
+              REAL4 DdX_inv = 1.0 / multiAMcoef->data[X]->D;
 
               // compute final single-IFO F-stat
               Fstats->twoFPerDet[X][k] = XLALComputeFstatFromFaFb ( FaX, FbX, AdX, BdX, CdX, EdX, DdX_inv );

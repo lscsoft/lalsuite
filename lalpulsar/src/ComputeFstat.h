@@ -159,9 +159,9 @@ typedef struct tagFstatExtraParams {
 ///
 typedef struct tagFstatAtom {
   UINT4 timestamp;                      ///< SFT GPS timestamp \f$t_i\f$ in seconds.
-  REAL8 a2_alpha;                       ///< Antenna-pattern factor \f$a^2(X,t_i)\f$.
-  REAL8 b2_alpha;                       ///< Antenna-pattern factor \f$b^2(X,t_i)\f$.
-  REAL8 ab_alpha;                       ///< Antenna-pattern factor \f$a*b(X,t_i)\f$.
+  REAL4 a2_alpha;                       ///< Antenna-pattern factor \f$a^2(X,t_i)\f$.
+  REAL4 b2_alpha;                       ///< Antenna-pattern factor \f$b^2(X,t_i)\f$.
+  REAL4 ab_alpha;                       ///< Antenna-pattern factor \f$a*b(X,t_i)\f$.
   COMPLEX8 Fa_alpha;                    ///< \f$Fa^X(t_i)\f$.
   COMPLEX8 Fb_alpha;                    ///< \f$Fb^X(t_i)\f$.
 } FstatAtom;
@@ -310,13 +310,13 @@ void XLALDestroyFstatResults ( FstatResults* Fstats );
 int XLALAdd4ToFstatResults ( FstatResults* Fstats );
 
 int XLALEstimatePulsarAmplitudeParams ( PulsarCandidate *pulsarParams, const LIGOTimeGPS* FaFb_refTime,
-                                        const COMPLEX16 Fa, const COMPLEX16 Fb, const AntennaPatternMatrix *Mmunu );
+                                        const COMPLEX8 Fa, const COMPLEX8 Fb, const AntennaPatternMatrix *Mmunu );
 
 int XLALAmplitudeParams2Vect ( PulsarAmplitudeVect A_Mu, const PulsarAmplitudeParams Amp );
 int XLALAmplitudeVect2Params( PulsarAmplitudeParams *Amp, const PulsarAmplitudeVect A_Mu );
 
-REAL8 XLALComputeFstatFromAtoms ( const MultiFstatAtomVector *multiFstatAtoms, const INT4 X );
-REAL8 XLALComputeFstatFromFaFb ( COMPLEX16 Fa, COMPLEX16 Fb, REAL8 A, REAL8 B, REAL8 C, REAL8 E, REAL8 Dinv );
+REAL4 XLALComputeFstatFromAtoms ( const MultiFstatAtomVector *multiFstatAtoms, const INT4 X );
+REAL4 XLALComputeFstatFromFaFb ( COMPLEX8 Fa, COMPLEX8 Fb, REAL4 A, REAL4 B, REAL4 C, REAL4 E, REAL4 Dinv );
 
 // @}
 

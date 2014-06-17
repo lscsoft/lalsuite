@@ -191,7 +191,7 @@ ComputeFstat_Resamp ( FstatResults* Fstats,
     MultiSSBtimes *multiSSB = NULL;
     MultiAMCoeffs *multiAMcoef = NULL;
     MultiCOMPLEX8TimeSeries *multiTimeseries = NULL;
-    REAL8 Ad, Bd, Cd, Dd_inv, AdX, BdX, CdX, DdX_inv;
+    REAL4 Ad, Bd, Cd, Dd_inv, AdX, BdX, CdX, DdX_inv;
     SkyPosition skypos;
     MultiCOMPLEX8TimeSeries *multiFa_resampled = NULL;
     MultiCOMPLEX8TimeSeries *multiFb_resampled = NULL;
@@ -484,8 +484,8 @@ ComputeFstat_Resamp ( FstatResults* Fstats,
             for ( UINT4 k = 0; k < numFreqBins; k++ )
               {
                 UINT4 idy = k + offset_single;
-                COMPLEX16 FaX = outaSingle->data[idy];
-                COMPLEX16 FbX = outbSingle->data[idy];
+                COMPLEX8 FaX = outaSingle->data[idy];
+                COMPLEX8 FbX = outbSingle->data[idy];
                 Fstats->twoFPerDet[X][k] = XLALComputeFstatFromFaFb ( FaX, FbX, AdX, BdX, CdX, 0, DdX_inv );
               } // for k < numFreqBins
           } // if returnSingleF
@@ -511,8 +511,8 @@ ComputeFstat_Resamp ( FstatResults* Fstats,
       {
         UINT4 idx = k + offset;
         /* ----- compute final Fstatistic-value ----- */
-        COMPLEX16 Fa = Faf_resampled->data[idx];
-        COMPLEX16 Fb = Fbf_resampled->data[idx];
+        COMPLEX8 Fa = Faf_resampled->data[idx];
+        COMPLEX8 Fb = Fbf_resampled->data[idx];
         Fstats->twoF[k] = XLALComputeFstatFromFaFb ( Fa, Fb, Ad, Bd, Cd, 0, Dd_inv );
       } // for k < numFreqBins
 
