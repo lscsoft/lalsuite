@@ -39,12 +39,8 @@ parser.add_option("-T", "--delta_tc", type=float,
                       help="width of tc subdomain",)
 parser.add_option("-B", "--basis-set", type='string',
                       action="store",
-											dest="basis_set_path",
-											help="reduced basis matrix",)
-parser.add_option("-V", "--invV", type='string',
-											action="store",
-											dest="invV_path",
-											help="inverse of the Vandermonde matrix",)
+											dest="b_matrix_path",
+											help="B matrix",)
 parser.add_option("-o", "--out", type='string',
                   action="store",
                   dest="outpath",
@@ -54,29 +50,30 @@ parser.add_option("-o", "--out", type='string',
 (options, args) = parser.parse_args()
 
 #basis_set = np.fromfile("/Users/vivien/mcmc/rom/TF2_ROM_40_1024/basis_complex_conjugate.dat", dtype = complex)
-basis_set = np.fromfile(options.basis_set_path, dtype = complex)
-basis_set = basis_set.reshape(31489, 965)
+#basis_set = np.fromfile(options.basis_set_path, dtype = complex)
+#basis_set = basis_set.reshape(31489, 965)
 #invV = np.fromfile("/Users/vivien/mcmc/rom/TF2_ROM_40_1024/invV_complex_conjugate.dat", dtype=complex)
-invV = np.fromfile(options.invV_path, dtype=complex)
-invV =invV.reshape(965, 965)
+#invV = np.fromfile(options.invV_path, dtype=complex)
+#invV =invV.reshape(965, 965)
 
-def BuildWeights(data, rb, deltaF, invV):
+B = np.load("options.b_matrix_path")
 
-        ''' for a data array, PSD and reduced basis compute roq weights
+def BuildWeights(data, B, deltaF):
+
+        ''' for a data array and reduced basis compute roq weights
         
-        rb: reduced basis element
+        B: (reduced basis element)*invV (the inverse Vandermonde matrix)
         data: data set 
         PSD: detector noise power spectral density (must be same shape as data)
         deltaF: integration element df
-        invV: A^{-1}, the inverse Vandermonde matrix
 
         '''
 
         # compute inner products <rb,data> = \int data.conj * rb 
-        E = np.dot(rb.transpose(), data.conjugate()) * deltaF * 4.
+        weights = np.dot(B.transpose(), data.conjugate()) * deltaF * 4.
 
         # compute data-specific weights
-        weights = np.dot(invV.transpose(), E)
+        #weights = np.dot(invV.transpose(), E)
 
         return weights.T
 ##################################
@@ -132,7 +129,7 @@ for ifo in options.IFOs:
 	weights_file = open(weights_path, "wb")
 
 	print "Computing weights for "+ifo
-	weights = BuildWeights(tc_shifted_data, basis_set, deltaF, invV)
+	weights = BuildWeights(tc_shifted_data, B, deltaF)
 	print "Weights have been computed for "+ifo
 
 	(weights.T).tofile(weights_file)
