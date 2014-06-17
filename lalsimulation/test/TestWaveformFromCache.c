@@ -84,9 +84,9 @@ int main(void) {
     plusdiff = crossdiff = 0.;
     for(i=0; i < hplus->data->length; i++)
     {
-        temp = abs(hplus->data->data[i] - hplusC->data->data[i]);
+        temp = fabs(hplus->data->data[i] - hplusC->data->data[i]);
         if(temp > plusdiff) plusdiff = temp;
-        temp = abs(hcross->data->data[i] - hcrossC->data->data[i]);
+        temp = fabs(hcross->data->data[i] - hcrossC->data->data[i]);
         if(temp > crossdiff) crossdiff = temp;
     }
     printf("Comparing waveforms from ChooseTDWaveform and ChooseTDWaveformFromCache\n");
@@ -120,9 +120,9 @@ int main(void) {
     plusdiff = crossdiff = 0.;
     for(i=0; i < hplus->data->length; i++)
     {
-        temp = abs(hplus->data->data[i] - hplusC->data->data[i]);
+        temp = fabs(hplus->data->data[i] - hplusC->data->data[i]);
         if(temp > plusdiff) plusdiff = temp;
-        temp = abs(hcross->data->data[i] - hcrossC->data->data[i]);
+        temp = fabs(hcross->data->data[i] - hcrossC->data->data[i]);
         if(temp > crossdiff) crossdiff = temp;
     }
     printf("Comparing waveforms from ChooseTDWaveform and ChooseTDWaveformFromCache\n");
