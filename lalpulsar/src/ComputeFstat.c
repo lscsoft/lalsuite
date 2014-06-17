@@ -70,8 +70,6 @@ struct tagFstatInput {
 };
 
 // ----- internal prototypes
-static REAL8 ComputeFstatFromFaFb ( COMPLEX16 Fa, COMPLEX16 Fb, REAL8 A, REAL8 B, REAL8 C, REAL8 E, REAL8 Dinv );
-
 // ---------- Check for various computer architectures ---------- //
 
 #if defined(HAVE_SSE) || defined(__SSE__)
@@ -1167,7 +1165,7 @@ XLALComputeFstatFromAtoms ( const MultiFstatAtomVector *multiFstatAtoms,   ///< 
   // compute determinant and final Fstat (not twoF!)
   REAL8 Dinv = 1.0 / ( mmatrixA * mmatrixB - SQ(mmatrixC) );
 
-  twoF = ComputeFstatFromFaFb ( Fa, Fb, mmatrixA, mmatrixB, mmatrixC, 0, Dinv );
+  twoF = XLALComputeFstatFromFaFb ( Fa, Fb, mmatrixA, mmatrixB, mmatrixC, 0, Dinv );
 
   return twoF;
 
@@ -1178,8 +1176,8 @@ XLALComputeFstatFromAtoms ( const MultiFstatAtomVector *multiFstatAtoms,   ///< 
 /// Simple helper function which computes \f$2\mathcal{F}\f$ from given \f$F_a\f$ and \f$F_b\f$, and antenna-pattern
 /// coefficients \f$(A,B,C,E)\f$ with inverse determinant \f$\text{Dinv} = 1/D\f$ where \f$D = A * B - C^2 - E^2\f$.
 ///
-static REAL8
-ComputeFstatFromFaFb ( COMPLEX16 Fa, COMPLEX16 Fb, REAL8 A, REAL8 B, REAL8 C, REAL8 E, REAL8 Dinv )
+REAL8
+XLALComputeFstatFromFaFb ( COMPLEX16 Fa, COMPLEX16 Fb, REAL8 A, REAL8 B, REAL8 C, REAL8 E, REAL8 Dinv )
 {
   REAL8 Fa_re = creal(Fa);
   REAL8 Fa_im = cimag(Fa);
@@ -1193,7 +1191,7 @@ ComputeFstatFromFaFb ( COMPLEX16 Fa, COMPLEX16 Fb, REAL8 A, REAL8 B, REAL8 C, RE
                       );
   return 2*F;
 
-} // ComputeFstatFromFaFb()
+} // XLALComputeFstatFromFaFb()
 
 ///
 /// Return true if given #FstatMethodType corresponds to a valid and *available* Fstat method, false otherwise

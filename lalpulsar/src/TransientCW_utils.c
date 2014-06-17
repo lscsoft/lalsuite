@@ -712,7 +712,8 @@ XLALComputeTransientFstatMap ( const MultiFstatAtomVector *multiFstatAtoms, 	/**
       if ( i_t0 >= numAtoms ) i_t0 = numAtoms - 1;
 
       /* ----- INNER loop over timescale-parameter tau ---------- */
-      REAL8 Ad=0, Bd=0, Cd=0, Fa_re=0, Fa_im=0, Fb_re=0, Fb_im=0;
+      REAL8 Ad=0, Bd=0, Cd=0;
+      COMPLEX8 Fa=0, Fb=0;
       UINT4 i_t1_last = i_t0;
 
       for ( n = 0; n < N_tauRange; n ++ )
@@ -752,7 +753,7 @@ XLALComputeTransientFstatMap ( const MultiFstatAtomVector *multiFstatAtoms, 	/**
             case TRANSIENT_RECTANGULAR:
 #if 0
               /* 'vanilla' unoptimized method, for sanity checks with 'optimized' method */
-              Ad=0; Bd=0; Cd=0; Fa_re=0; Fa_im=0; Fb_re=0; Fb_im=0;
+              Ad=0; Bd=0; Cd=0; Fa=0; Fb=0;
               for ( UINT4 i = i_t0; i <= i_t1; i ++ )
 #else
               /* special optimiziation in the rectangular-window case: just add on to previous tau values
@@ -768,11 +769,8 @@ XLALComputeTransientFstatMap ( const MultiFstatAtomVector *multiFstatAtoms, 	/**
                   Bd += thisAtom_i->b2_alpha;
                   Cd += thisAtom_i->ab_alpha;
 
-                  Fa_re += crealf(thisAtom_i->Fa_alpha);
-                  Fa_im += cimagf(thisAtom_i->Fa_alpha);
-
-                  Fb_re += crealf(thisAtom_i->Fb_alpha);
-                  Fb_im += cimagf(thisAtom_i->Fb_alpha);
+                  Fa += thisAtom_i->Fa_alpha;
+                  Fb += thisAtom_i->Fb_alpha;
 
                 } /* for i = i_t1_last : i_t1 */
 
@@ -782,7 +780,7 @@ XLALComputeTransientFstatMap ( const MultiFstatAtomVector *multiFstatAtoms, 	/**
 
             case TRANSIENT_EXPONENTIAL:
               /* reset all values */
-              Ad=0; Bd=0; Cd=0; Fa_re=0; Fa_im=0; Fb_re=0; Fb_im=0;
+              Ad=0; Bd=0; Cd=0; Fa=0; Fb=0;
 
               for ( UINT4 i = i_t0; i <= i_t1; i ++ )
                 {
@@ -798,11 +796,8 @@ XLALComputeTransientFstatMap ( const MultiFstatAtomVector *multiFstatAtoms, 	/**
                   Bd += thisAtom_i->b2_alpha * win2_i;
                   Cd += thisAtom_i->ab_alpha * win2_i;
 
-                  Fa_re += crealf(thisAtom_i->Fa_alpha) * win_i;
-                  Fa_im += cimagf(thisAtom_i->Fa_alpha) * win_i;
-
-                  Fb_re += crealf(thisAtom_i->Fb_alpha) * win_i;
-                  Fb_im += cimagf(thisAtom_i->Fb_alpha) * win_i;
+                  Fa += thisAtom_i->Fa_alpha * win_i;
+                  Fb += thisAtom_i->Fb_alpha * win_i;
 
                 } /* for i in [i_t0, i_t1] */
               break;
@@ -818,9 +813,8 @@ XLALComputeTransientFstatMap ( const MultiFstatAtomVector *multiFstatAtoms, 	/**
 
           /* generic F-stat calculation from A,B,C, Fa, Fb */
           REAL8 DdInv = 1.0 / ( Ad * Bd - Cd * Cd );
-          REAL8 F = DdInv * ( Bd * (SQ(Fa_re) + SQ(Fa_im) ) + Ad * ( SQ(Fb_re) + SQ(Fb_im) )
-                              - 2.0 * Cd *( Fa_re * Fb_re + Fa_im * Fb_im )
-                              );
+          REAL8 twoF = XLALComputeFstatFromFaFb ( Fa, Fb, Ad, Bd, Cd, 0, DdInv );
+          REAL8 F = 0.5 * twoF;
 
           /* keep track of loudest F-stat value encountered over the m x n matrix */
           if ( F > ret->maxF )

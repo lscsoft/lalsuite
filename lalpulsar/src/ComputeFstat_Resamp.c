@@ -486,7 +486,7 @@ ComputeFstat_Resamp ( FstatResults* Fstats,
                 UINT4 idy = k + offset_single;
                 COMPLEX16 FaX = outaSingle->data[idy];
                 COMPLEX16 FbX = outbSingle->data[idy];
-                Fstats->twoFPerDet[X][k] = ComputeFstatFromFaFb ( FaX, FbX, AdX, BdX, CdX, 0, DdX_inv );
+                Fstats->twoFPerDet[X][k] = XLALComputeFstatFromFaFb ( FaX, FbX, AdX, BdX, CdX, 0, DdX_inv );
               } // for k < numFreqBins
           } // if returnSingleF
 
@@ -513,7 +513,7 @@ ComputeFstat_Resamp ( FstatResults* Fstats,
         /* ----- compute final Fstatistic-value ----- */
         COMPLEX16 Fa = Faf_resampled->data[idx];
         COMPLEX16 Fb = Fbf_resampled->data[idx];
-        Fstats->twoF[k] = ComputeFstatFromFaFb ( Fa, Fb, Ad, Bd, Cd, 0, Dd_inv );
+        Fstats->twoF[k] = XLALComputeFstatFromFaFb ( Fa, Fb, Ad, Bd, Cd, 0, Dd_inv );
       } // for k < numFreqBins
 
     /* free memory not stored in the buffer */

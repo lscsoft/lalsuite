@@ -241,7 +241,7 @@ ComputeFstat_Demod ( FstatResults* Fstats,
               REAL8 DdX_inv = 1.0 / multiAMcoef->data[X]->D;
 
               // compute final single-IFO F-stat
-              Fstats->twoFPerDet[X][k] = ComputeFstatFromFaFb ( FaX, FbX, AdX, BdX, CdX, EdX, DdX_inv );
+              Fstats->twoFPerDet[X][k] = XLALComputeFstatFromFaFb ( FaX, FbX, AdX, BdX, CdX, EdX, DdX_inv );
 
             } // if FSTATQ_2F_PER_DET
 
@@ -255,7 +255,7 @@ ComputeFstat_Demod ( FstatResults* Fstats,
 
       if ( whatToCompute & FSTATQ_2F )
         {
-          Fstats->twoF[k] = ComputeFstatFromFaFb ( Fa, Fb, Ad, Bd, Cd, Ed, Dd_inv );
+          Fstats->twoF[k] = XLALComputeFstatFromFaFb ( Fa, Fb, Ad, Bd, Cd, Ed, Dd_inv );
         }
 
       // Return multi-detector Fa & Fb
