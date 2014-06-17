@@ -732,7 +732,7 @@ double *bayestar_sky_map_toa_phoa_snr(
                         for (unsigned int iifo = 0; iifo < nifos; iifo ++)
                         {
                             I0arg_complex_times_r += snrs[iifo]
-                                * z_times_r[iifo] * exp_i_phoas[iifo]
+                                * conj(z_times_r[iifo]) * exp_i_phoas[iifo]
                                 * eval_acor(acors[iifo], nsamples,
                                     dt[iifo] * sample_rate + isample);
                         }
@@ -920,7 +920,7 @@ double bayestar_log_likelihood_toa_phoa_snr(
              signal_amplitude_model(F, exp_i_twopsi, u, u2);
         const double complex zhat = snrs[iifo] * exp_i(phoas[iifo]);
 
-        i0arg_complex_times_r += zhat * z_times_r
+        i0arg_complex_times_r += zhat * conj(z_times_r)
             * eval_acor(acors[iifo], nsamples, dt[iifo] * sample_rate);
         A += cabs2(z_times_r);
     }
