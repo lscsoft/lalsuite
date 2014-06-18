@@ -195,7 +195,6 @@ REAL8 rescale_parameter( LALInferenceIFOData *data, const CHAR *parname ){
  * \param data [in] The data structure containing the detector data and additional info
  *
  * \sa get_amplitude_model
- * \sa get_amplitude_model
  * \sa get_phase_model
  */
 void pulsar_model( BinaryPulsarParams params, LALInferenceIFOData *data ){

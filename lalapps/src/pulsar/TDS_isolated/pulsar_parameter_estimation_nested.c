@@ -171,13 +171,16 @@ LALStringVector *corlist = NULL;
 " --cor-file          pulsar TEMPO-fit parameter correlation matrix\n"\
 " --input-files       full paths and file names for the data for each\n\
                      detector and model harmonic in the list (must be in the\n\
-                     same order) delimited by commas. If not set you can\n\
-                     generate fake data (see --fake-data below)\n"\
+                     same order) delimited by commas. These files can be gzipped.\n\
+                     If not set you can generate fake data (see --fake-data below)\n"\
 " --sample-interval   (REAL8) the time interval bewteen samples (default to 60 s)\n"\
 " --downsample-factor (INT4) factor by which to downsample the input data\n\
                      (default is for no downsampling and this is NOT\n\
                      applied to fake data)\n"\
 " --outfile           name of output data file [required]\n"\
+" --non-fixed-only    output only the non-fixed (i.e. variable) parameters\n\
+                     specified in the prior and .par files.\n"\
+" --gzip              gzip the output text file\n"\
 " --outXML            name of output XML file [not required]\n"\
 " --chunk-min         (INT4) minimum stationary length of data to be used in\n\
                      the likelihood e.g. 5 mins\n"\
@@ -319,9 +322,6 @@ INT4 main( INT4 argc, CHAR *argv[] ){
 
   /* set signal model/template */
   runState.templt = get_pulsar_model;
-
-  /* set output style (change this when the code if fixed for using XML) */
-  runState.logsample = LALInferenceLogSampleToFile;
 
   /* Generate the lookup tables and read parameters from par file */
   setupFromParFile( &runState );
@@ -472,6 +472,15 @@ void initialiseAlgorithm( LALInferenceRunState *runState )
   }
 
   gsl_rng_set( runState->GSLrandom, randomseed );
+
+  /* check whether to output all values or just the non-fixed values */
+  if ( LALInferenceGetProcParamVal( commandLine, "--non-fixed-only" ) ){
+    #ifdef HAVE_LIBLALXML
+    runState->logsample = LogNonFixedSampleToArray;
+    #else
+    runState->logsample = LogNonFixedSampleToFile;
+    #endif
+  }
 
   return;
 }
@@ -867,7 +876,7 @@ detectors specified (no. dets =\%d)\n", ml, ml, numDets);
     INT4 j = 0, k = 0, datalength = 0;
     ProcessParamsTable *ppte = NULL, *ppts = NULL, *pptt = NULL;
 
-    FILE *fp = NULL;
+    CHAR *filebuf = NULL;
 
     count = 0;
 
@@ -920,12 +929,6 @@ detectors specified (no. dets =\%d)\n", ml, ml, numDets);
 
       datafile = strsep(&filestr, ",");
 
-      /* open data file */
-      if( (fp = fopen(datafile, "r")) == NULL ){
-        fprintf(stderr, "Error... can't open data file %s!\n", datafile);
-        exit(0);
-      }
-
       j=0;
 
       /* read in data */
@@ -935,34 +938,23 @@ detectors specified (no. dets =\%d)\n", ml, ml, numDets);
       REAL8 tmpre = 0., tmpim = 0., timetmp = 0., dtcur = 0., dtprev = 0.;
       REAL8 tnow = 0., tprev = 0.;
 
-      /* read in data - ignore lines starting with # or % */
-      long offset;
-      while(!feof(fp)){
-        offset = ftell(fp);
-        int testchar;
+      /* read in all the data then ignore lines starting with # or % */
+      filebuf = XLALFileLoad( datafile );
 
-        if( (testchar = fgetc(fp)) == EOF ){ break; }
-        else{ fseek(fp, offset, SEEK_SET); } /* return to start of line */
+      /* separate data into lines */
+      TokenList *tlist = NULL;
+      if ( XLALCreateTokenList( &tlist, filebuf, "\n" ) != XLAL_SUCCESS ){
+        fprintf(stderr, "Error... could not convert data into separate lines.\n");
+        exit(3);
+      }
 
-        /* test for comment characters */
-        if( ( testchar == '%' ) || ( testchar == '#' ) ){
-          /* skip to end of line */
-          /* some lines for testing the comment check */
-          // char *line = NULL;
-          // size_t len = 0;
-          // ssize_t testread;
-
-          // if( (testread = getline(&line, &len, fp)) == -1 ){ break; }
-          // fprintf(stderr, "%s", line);
-
-          if ( fscanf(fp, "%*[^\n]") == EOF ){ break; }
+      for ( k = 0; k < (INT4)tlist->nTokens; k++ ){
+        /* search for a comment character in the string */
+        if ( strchr(tlist->tokens[k], '#') || strchr(tlist->tokens[k], '%') ){ continue; }
+        else{ /* read in data from string */
+          int rc = sscanf( tlist->tokens[k], "%lf%lf%lf", &times, &dataValsRe, &dataValsIm );
+          if ( rc != 3 ){ continue; } /* ignore the line */
         }
-        else{ /* read in data */
-          int rc = fscanf(fp, "%lf%lf%lf", &times, &dataValsRe, &dataValsIm);
-          if( rc == EOF ){ break; }
-          else if( rc != 3 ){ continue; } /* ignore the line */
-        }
-
         j++;
 
         tnow = times;
@@ -1034,7 +1026,8 @@ detectors specified (no. dets =\%d)\n", ml, ml, numDets);
         j = 0;
       }
 
-      fclose(fp);
+      XLALDestroyTokenList( tlist );
+      XLALFree( filebuf );
 
       datalength = counter;
 
@@ -3106,10 +3099,21 @@ void rescaleOutput( LALInferenceRunState *runState ){
 
     CHAR v[128] = "";
     while( fscanf(fppars, "%s", v) != EOF ){
-      paramsStr = XLALAppendString2Vector( paramsStr, v );
+      /* if outputing only non-fixed values then only re-output names of those non-fixed things */
+      if ( LALInferenceGetProcParamVal( runState->commandLine, "--non-fixed-only" ) ){
+        if ( LALInferenceCheckVariable( runState->currentParams, v ) ){
+          if ( LALInferenceGetVariableVaryType( runState->currentParams, v ) != LALINFERENCE_PARAM_FIXED ){
+            fprintf(fpparstmp, "%s\t", v);
+            paramsStr = XLALAppendString2Vector( paramsStr, v );
+          }
+        }
+      }
+      else{
+        paramsStr = XLALAppendString2Vector( paramsStr, v );
 
-      /* re-output everything but the "model" value to a temporary file */
-      if( strcmp(v, "model") ) { fprintf(fpparstmp, "%s\t", v); }
+        /* re-output everything but the "model" value to a temporary file */
+        if( strcmp(v, "model") ) { fprintf(fpparstmp, "%s\t", v); }
+      }
     }
 
     fclose(fppars);
@@ -3158,6 +3162,14 @@ void rescaleOutput( LALInferenceRunState *runState ){
 
     /* move the temporary file name to the standard outfile name */
     rename( outfiletmp, outfile );
+
+    /* gzip the output file if required */
+    if( LALInferenceGetProcParamVal( runState->commandLine, "--gzip" ) ){
+      if ( XLALGzipTextFile( outfile ) != XLAL_SUCCESS ){
+        XLAL_PRINT_ERROR( "Error... Could not gzip the output file!\n" );
+        XLAL_ERROR_VOID( XLAL_EIO );
+      }
+    }
   }
 /* if we have XML enabled */
 #ifdef HAVE_LIBLALXML
@@ -3845,4 +3857,71 @@ void samples_prior( LALInferenceRunState *runState ){
 
   /* create k-d tree of the samples for use as a prior */
   create_kdtree_prior( runState );
+}
+
+
+/**
+ * \brief Print out only the variable (i.e. non-fixed) parameters to the file
+ *
+ * If the command line argument --non-fixed-only is given then this function
+ * will be used to output the nested samples to a file. Otherwise all parameters
+ * will be output.
+ */
+void LogNonFixedSampleToFile(LALInferenceRunState *state, LALInferenceVariables *vars)
+{
+  FILE *outfile=NULL;
+  if(LALInferenceCheckVariable(state->algorithmParams,"outfile"))
+    outfile=*(FILE **)LALInferenceGetVariable(state->algorithmParams,"outfile");
+  /* Write out old sample */
+  if(outfile==NULL) return;
+  LALInferenceSortVariablesByName(vars);
+  /* only write out non-fixed samples */
+  LALInferencePrintSampleNonFixed(outfile,vars);
+  fprintf(outfile,"\n");
+  return;
+}
+
+
+/**
+ * \brief Print out only the variable (i.e. non-fixed) parameters to the file whilst also creating
+ * an array for all parameters
+ *
+ * If the command line argument --non-fixed-only is given (and the XML library
+ * is present) then this function will be used to output the nested samples to a file.
+ * Otherwise all parameters will be output.
+ */
+void LogNonFixedSampleToArray(LALInferenceRunState *state, LALInferenceVariables *vars)
+{
+  LALInferenceVariables *output_array=NULL;
+  UINT4 N_output_array=0;
+  LALInferenceSortVariablesByName(vars);
+  LogNonFixedSampleToFile(state, vars);
+
+  /* Set up the array if it is not already allocated */
+  if(LALInferenceCheckVariable(state->algorithmParams,"outputarray"))
+    output_array=*(LALInferenceVariables **)LALInferenceGetVariable(state->algorithmParams,"outputarray");
+  else
+    LALInferenceAddVariable(state->algorithmParams,"outputarray",&output_array,LALINFERENCE_void_ptr_t,LALINFERENCE_PARAM_OUTPUT);
+
+  if(LALInferenceCheckVariable(state->algorithmParams,"N_outputarray"))
+    N_output_array=*(INT4 *)LALInferenceGetVariable(state->algorithmParams,"N_outputarray");
+  else
+    LALInferenceAddVariable(state->algorithmParams,"N_outputarray",&N_output_array,LALINFERENCE_INT4_t,LALINFERENCE_PARAM_OUTPUT);
+
+  /* Expand the array for new sample */
+  output_array=XLALRealloc(output_array, (N_output_array+1) *sizeof(LALInferenceVariables));
+  if(!output_array){
+    XLAL_ERROR_VOID(XLAL_EFAULT, "Unable to allocate array for samples.");
+  }
+  else
+  {
+    /* Save sample and update */
+    memset(&(output_array[N_output_array]),0,sizeof(LALInferenceVariables));
+    LALInferenceCopyVariables(vars,&output_array[N_output_array]);
+    N_output_array++;
+
+    LALInferenceSetVariable(state->algorithmParams,"outputarray",&output_array);
+    LALInferenceSetVariable(state->algorithmParams,"N_outputarray",&N_output_array);
+  }
+  return;
 }

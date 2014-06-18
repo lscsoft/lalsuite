@@ -57,6 +57,7 @@
 #include <lal/Date.h>
 #include <lal/StringVector.h>
 #include <lal/XLALGSL.h>
+#include <lal/FileIO.h>
 
 #include <lalapps.h>
 
@@ -103,6 +104,11 @@ extern "C" {
  * removed in the future with memory allocated dynamically.
  */
 #define MAXLENGTH 1000000
+
+/**
+ * The maximum line length (in characters) of a heterodyned data file.
+ */
+#define PPEN_MAXLINELENGTH 1024
 
 /* default values */
 /** Default value of the minimum length into which the data can be split. */
@@ -266,6 +272,10 @@ TimeCorrectionType XLALAutoSetEphemerisFiles( CHAR *efile, CHAR *sfile,
 void remove_variable_and_prior( LALInferenceRunState *runState, LALInferenceIFOData *data, const CHAR *var );
 
 void samples_prior( LALInferenceRunState *runState );
+
+void LogNonFixedSampleToFile(LALInferenceRunState *state, LALInferenceVariables *vars);
+
+void LogNonFixedSampleToArray(LALInferenceRunState *state, LALInferenceVariables *vars);
 
 #ifdef __cplusplus
 }
