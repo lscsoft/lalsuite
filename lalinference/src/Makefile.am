@@ -24,8 +24,6 @@ pkginclude_HEADERS = \
 	LALInferenceProposal.h \
 	LALInferenceClusteredKDE.h \
 	LALInferenceKDE.h \
-	LALInferenceLibVCSInfo.h \
-	LALInferenceInit.h \
 	LALInferenceVCSInfo.h \
 	LALInferenceInit.h \
 	LALInferenceVCSInfoHeader.h \
