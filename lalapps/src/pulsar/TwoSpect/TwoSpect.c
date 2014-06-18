@@ -239,10 +239,19 @@ int main(int argc, char *argv[])
          XLAL_CHECK( (multiTimestamps = XLALMakeMultiTimestamps(tStart, inputParams->Tobs, inputParams->Tcoh, inputParams->SFToverlap, 1)) != NULL, XLAL_EFUNC );
       }
 
+      //TwoSpect to analyze:
+      REAL8 TwoSpectFmin = round(inputParams->fmin*inputParams->Tcoh - inputParams->dfmax*inputParams->Tcoh - 0.5*(inputParams->blksize-1) - (REAL8)(inputParams->maxbinshift) - 6.0)/inputParams->Tcoh;
+      REAL8 TwoSpectBand = round(inputParams->fspan*inputParams->Tcoh + 2.0*inputParams->dfmax*inputParams->Tcoh + (inputParams->blksize-1) + (REAL8)(2.0*inputParams->maxbinshift) + 12.0)/inputParams->Tcoh;
+
       //Setup the MFD data parameters
       CWMFDataParams DataParams;
-      DataParams.fMin = round(inputParams->fmin*inputParams->Tcoh - inputParams->dfmax*inputParams->Tcoh - 0.5*(inputParams->blksize-1) - (REAL8)(inputParams->maxbinshift) - 6.0)/inputParams->Tcoh;
-      DataParams.Band = round(inputParams->fspan*inputParams->Tcoh + 2.0*inputParams->dfmax*inputParams->Tcoh + (inputParams->blksize-1) + (REAL8)(2.0*inputParams->maxbinshift) + 12.0)/inputParams->Tcoh;
+      if (args_info.injFmin_given && args_info.injBand_given && args_info.injFmin_arg<=TwoSpectFmin && args_info.injFmin_arg+args_info.injBand_arg>=TwoSpectFmin+TwoSpectBand) {
+         DataParams.fMin = args_info.injFmin_arg;
+         DataParams.Band = args_info.injBand_arg;
+      } else {
+         DataParams.fMin = TwoSpectFmin;
+         DataParams.Band = TwoSpectBand;
+      }
       DataParams.multiIFO.length = 1;
       DataParams.multiIFO.sites[0] = *(inputParams->det);
       DataParams.multiNoiseFloor.length = 1;
@@ -260,8 +269,23 @@ int main(int argc, char *argv[])
 
          fprintf(stderr, "Injecting %d signals... ", (INT4)injectionSources->length);
 
-         if (!inputParams->signalOnly) XLAL_CHECK( XLALCWMakeFakeMultiData(&signalSFTs, NULL, injectionSources, &DataParams, edat) == XLAL_SUCCESS, XLAL_EFUNC );
-         else XLAL_CHECK( XLALCWMakeFakeMultiData(&sftvector, NULL, injectionSources, &DataParams, edat) == XLAL_SUCCESS, XLAL_EFUNC );
+         if (!inputParams->signalOnly) {
+            if (!args_info.injFmin_given) XLAL_CHECK( XLALCWMakeFakeMultiData(&signalSFTs, NULL, injectionSources, &DataParams, edat) == XLAL_SUCCESS, XLAL_EFUNC );
+            else {
+               MultiSFTVector *tmpSignalSFTs = NULL;
+               XLAL_CHECK( XLALCWMakeFakeMultiData(&tmpSignalSFTs, NULL, injectionSources, &DataParams, edat) == XLAL_SUCCESS, XLAL_EFUNC );
+               XLAL_CHECK( (signalSFTs = XLALExtractBandFromMultiSFTVector(tmpSignalSFTs, TwoSpectFmin, TwoSpectBand)) != NULL, XLAL_EFUNC );
+               XLALDestroyMultiSFTVector(tmpSignalSFTs);
+            }
+         } else {
+            if (!args_info.injFmin_given) XLAL_CHECK( XLALCWMakeFakeMultiData(&sftvector, NULL, injectionSources, &DataParams, edat) == XLAL_SUCCESS, XLAL_EFUNC );
+            else {
+               MultiSFTVector *tmpSftvector = NULL;
+               XLAL_CHECK( XLALCWMakeFakeMultiData(&tmpSftvector, NULL, injectionSources, &DataParams, edat) == XLAL_SUCCESS, XLAL_EFUNC );
+               XLAL_CHECK( (sftvector = XLALExtractBandFromMultiSFTVector(tmpSftvector, TwoSpectFmin, TwoSpectBand)) != NULL, XLAL_EFUNC );
+               XLALDestroyMultiSFTVector(tmpSftvector);
+            }
+         }
 
          fprintf(stderr, "done\n");
       } // if there are injections
@@ -270,7 +294,13 @@ int main(int argc, char *argv[])
       if (!inputParams->signalOnly) {
          if (args_info.gaussNoiseWithSFTgaps_given || args_info.timestampsFile_given || args_info.segmentFile_given || !(args_info.sftDir_given || args_info.sftFile_given)) {
             DataParams.multiNoiseFloor.sqrtSn[0] = args_info.avesqrtSh_arg;
-            XLAL_CHECK( XLALCWMakeFakeMultiData(&sftvector, NULL, NULL, &DataParams, edat) == XLAL_SUCCESS, XLAL_EFUNC );
+            if (!args_info.injFmin_given) XLAL_CHECK( XLALCWMakeFakeMultiData(&sftvector, NULL, NULL, &DataParams, edat) == XLAL_SUCCESS, XLAL_EFUNC );
+            else {
+               MultiSFTVector *tmpSftvector = NULL;
+               XLAL_CHECK( XLALCWMakeFakeMultiData(&tmpSftvector, NULL, NULL, &DataParams, edat) == XLAL_SUCCESS, XLAL_EFUNC );
+               XLAL_CHECK( (sftvector = XLALExtractBandFromMultiSFTVector(tmpSftvector, TwoSpectFmin, TwoSpectBand)) != NULL, XLAL_EFUNC );
+               XLALDestroyMultiSFTVector(tmpSftvector);
+            }
          } else {
            SFTConstraints XLAL_INIT_DECL(constraints);
             constraints.detector = inputParams->det[0].frDetector.prefix;
@@ -304,8 +334,13 @@ int main(int argc, char *argv[])
          for (ii=0; ii<(INT4)injectionSources->length; ii++) {
             memcpy(oneSignal->data, &(injectionSources->data[ii]), sizeof(injectionSources->data[0]));
             if (args_info.printSignalData_given) {
-               MultiSFTVector *oneSignalSFTs = NULL;
-               XLAL_CHECK( XLALCWMakeFakeMultiData(&oneSignalSFTs, NULL, oneSignal, &DataParams, edat) == XLAL_SUCCESS, XLAL_EFUNC );
+               MultiSFTVector *oneSignalSFTs = NULL, *tmpOneSignalSFTs = NULL;
+               if (!args_info.injFmin_given) XLAL_CHECK( XLALCWMakeFakeMultiData(&oneSignalSFTs, NULL, oneSignal, &DataParams, edat) == XLAL_SUCCESS, XLAL_EFUNC );
+               else {
+                  XLAL_CHECK( XLALCWMakeFakeMultiData(&tmpOneSignalSFTs, NULL, oneSignal, &DataParams, edat) == XLAL_SUCCESS, XLAL_EFUNC );
+                  XLAL_CHECK( (oneSignalSFTs = XLALExtractBandFromMultiSFTVector(tmpOneSignalSFTs, TwoSpectFmin, TwoSpectBand)) != NULL, XLAL_EFUNC );
+                  XLALDestroyMultiSFTVector(tmpOneSignalSFTs);
+               }
 
                REAL8Vector *aveSFTsPower = NULL;
                XLAL_CHECK( (aveSFTsPower = XLALCreateREAL8Vector(sftvector->data[0]->data->data->length)) != NULL, XLAL_EFUNC );
@@ -328,12 +363,17 @@ int main(int argc, char *argv[])
                   oneSignal->data[0].Amp.psi = LAL_TWOPI*gsl_rng_uniform(inputParams->rng);
                   oneSignal->data[0].Amp.phi0 = LAL_TWOPI*gsl_rng_uniform(inputParams->rng);
                   oneSignal->data[0].Doppler.argp = LAL_TWOPI*gsl_rng_uniform(inputParams->rng);
-                  MultiSFTVector *oneSignalSFTs = NULL;
-                  XLAL_CHECK( XLALCWMakeFakeMultiData(&oneSignalSFTs, NULL, oneSignal, &DataParams, edat) == XLAL_SUCCESS, XLAL_EFUNC );
+                  MultiSFTVector *oneSignalSFTs = NULL, *tmpOneSignalSFTs = NULL;
+                  if (!args_info.injFmin_given) XLAL_CHECK( XLALCWMakeFakeMultiData(&oneSignalSFTs, NULL, oneSignal, &DataParams, edat) == XLAL_SUCCESS, XLAL_EFUNC );
+                  else {
+                     XLAL_CHECK( XLALCWMakeFakeMultiData(&tmpOneSignalSFTs, NULL, oneSignal, &DataParams, edat) == XLAL_SUCCESS, XLAL_EFUNC );
+                     XLAL_CHECK( (oneSignalSFTs = XLALExtractBandFromMultiSFTVector(tmpOneSignalSFTs, TwoSpectFmin, TwoSpectBand)) != NULL, XLAL_EFUNC );
+                     XLALDestroyMultiSFTVector(tmpOneSignalSFTs);
+                  }
 
                   for (INT4 kk=0; kk<(INT4)oneSignalSFTs->data[0]->length; kk++) {
                      SFTtype *sft = &(oneSignalSFTs->data[0]->data[kk]);
-                     for (INT4 ll=0; ll<(INT4)marginalizedSignalData->length; ll++) marginalizedSignalData->data[ll] += (2.0*(crealf(sft->data->data[ll])*crealf(sft->data->data[ll]) + cimagf(sft->data->data[ll])*cimagf(sft->data->data[ll]))/inputParams->Tcoh);
+                     for (INT4 ll=0; ll<(INT4)marginalizedSignalData->length; ll++) marginalizedSignalData->data[ll] += (2.0*(creal(sft->data->data[ll])*creal(sft->data->data[ll]) + cimag(sft->data->data[ll])*cimag(sft->data->data[ll]))/inputParams->Tcoh);
                   }
                   XLALDestroyMultiSFTVector(oneSignalSFTs);
                } //Loop over trials

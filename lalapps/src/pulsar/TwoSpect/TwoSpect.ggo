@@ -1,5 +1,5 @@
 package "lalapps_TwoSpect"
-version "1.2.2"
+version "1.2.3"
 purpose "TwoSpect analysis program"
 
 args "--string-parser --conf-parser --show-required=[required]"
@@ -78,6 +78,8 @@ section "Injection options"
 option "timestampsFile"    - "File to read timestamps from (file-format: lines with <seconds> <nanoseconds>; conflicts with --sftDir/--sftFile and --segmentFile options)" string typestr="path/filename" optional
 option "segmentFile"       - "File to read segments from (file-format: lines with <startGPSTime> <endGPSTime>; conflicts with --sftDir/--sftFile and --timestampsFile options)" string typestr="path/filename" optional
 option "injectionSources"  - "File containing sources to inject with a required preceding @ symbol" string typestr="@path/filename" optional
+option "injFmin"           - "Minimum frequency of band to create in TwoSpect" double dependon="injBand" optional
+option "injBand"           - "Width of band to create in TwoSpect" double dependon="injFmin" optional
 option "injRandSeed"       - "Random seed value for reproducable noise (conflicts with --sftDir/--sftFile options)" int default="0" optional
 
 section "Hidden options"
