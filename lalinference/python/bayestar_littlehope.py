@@ -62,7 +62,7 @@ parser = OptionParser(
             help="Trigger interpolation window [default: %default]"),
         Option("--waveform",
             help="Waveform to use for injections"),
-        Option("--snr-threshold", type=float, default=8.,
+        Option("--snr-threshold", type=float, default=4.,
             help="Single-detector SNR threshold [default: %default]"),
         Option("--min-triggers", type=int, default=2,
             help="Emit coincidences only when at least this many triggers are found [default: %default]"),
