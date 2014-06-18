@@ -837,7 +837,7 @@ Arguments for each section follow:\n\n";
     else if(LALInferenceGetProcParamVal(procParams,"--rosenbrockLikelihood"))
         LALInferenceInitVariablesReviewEvidence_banana(state);
     else
-        LALInferenceInitCBCVariables(state);
+        state->currentParams=LALInferenceInitCBCVariables(state);
 
     /* Choose the likelihood */
     LALInferenceInitLikelihood(state);
