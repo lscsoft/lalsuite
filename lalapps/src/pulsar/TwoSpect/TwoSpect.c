@@ -246,7 +246,7 @@ int main(int argc, char *argv[])
       DataParams.multiIFO.length = 1;
       DataParams.multiIFO.sites[0] = *(inputParams->det);
       DataParams.multiNoiseFloor.length = 1;
-      DataParams.multiNoiseFloor.sqrtSn[0] = args_info.avesqrtSh_arg;
+      DataParams.multiNoiseFloor.sqrtSn[0] = 0.0;
       DataParams.multiTimestamps = *multiTimestamps;
       DataParams.randSeed = args_info.injRandSeed_arg;
       DataParams.SFTWindowType = "Hann";
