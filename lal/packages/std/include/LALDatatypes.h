@@ -452,6 +452,9 @@ typedef struct tagCOMPLEX16ArraySequence {
     /* ---------- Structured datatypes ---------- */
 
 /** Epoch relative to GPS epoch, see \ref ss_LIGOTimeGPS for more details */
+#ifdef SWIG     /* SWIG interface directives */
+SWIGLAL(IMMUTABLE_MEMBERS(tagLIGOTimeGPS, gpsSeconds, gpsNanoSeconds));
+#endif /* SWIG */
 typedef struct tagLIGOTimeGPS {
     INT4 gpsSeconds; /**< Seconds since 0h UTC 6 Jan 1980. */
     INT4 gpsNanoSeconds; /**< Residual nanoseconds. */
