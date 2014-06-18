@@ -15,6 +15,7 @@ pybin_SCRIPTS = \
 	bayestar_plot_pileup \
 	bayestar_prune_neighborhood_tmpltbank \
 	bayestar_realize_coincs \
+	bayestar_sample_model_psd \
 	bayestar_sim_to_tmpltbank \
 	bayestar_littlehope \
 	$(END_OF_LIST)

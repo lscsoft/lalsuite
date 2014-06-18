@@ -34,6 +34,7 @@ python/bayestar_plot_found_injections
 python/bayestar_plot_pileup
 python/bayestar_prune_neighborhood_tmpltbank
 python/bayestar_realize_coincs
+python/bayestar_sample_model_psd
 python/bayestar_sim_to_tmpltbank
 python/lalinference/__init__.py
 python/lalinference/_lalinference*
