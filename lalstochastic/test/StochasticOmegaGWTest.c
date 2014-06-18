@@ -459,7 +459,7 @@ int main( int argc, char *argv[] )
              f, omegaGW.data->data[i], omega);
     }
     if ( (omegaGW.data->data[i] - omega) &&
-         abs((omegaGW.data->data[i] - omega)/omega) > STOCHASTICOMEGAGWTESTC_TOL )
+         fabsf((omegaGW.data->data[i] - omega)/omega) > STOCHASTICOMEGAGWTESTC_TOL )
     {
       printf("  FAIL: Valid data test #1 (alpha=%f)\n",STOCHASTICOMEGAGWTESTC_ALPHA);
       return STOCHASTICOMEGAGWTESTC_EFLS;
