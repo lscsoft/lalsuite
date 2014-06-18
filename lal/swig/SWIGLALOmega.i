@@ -22,11 +22,6 @@
 
 ////////// Specialised wrapping of gsl_rng //////////
 
-// Include GSL header.
-%header %{
-#include <gsl/gsl_rng.h>
-%}
-
 // Wrap the gsl_rng class.
 typedef struct {
   %extend {

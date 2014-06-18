@@ -23,7 +23,11 @@ shift
 cmd="$1"
 echo "cmd='${cmd}'"
 shift
-args=`printf " '%s'" "$@"`
+args=
+while test "x$1" != x; do
+    args="${args} '$1'"
+    shift
+done
 echo "args=\"${args}\""
 echo
 

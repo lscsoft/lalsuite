@@ -24,7 +24,6 @@
 
 // Set custom GSL error handler which raises an XLAL error (instead of aborting).
 %header %{
-#include <gsl/gsl_errno.h>
 static void swiglal_gsl_error_handler(const char *reason, const char *file, int line, int errnum) {
   XLALPrintError("GSL function failed: %s (errnum=%i)\n", reason, errnum);
   XLALError("<GSL function>", file, line, XLAL_EFAILED);
@@ -35,12 +34,6 @@ gsl_set_error_handler(swiglal_gsl_error_handler);
 %}
 
 ////////// GSL vectors and matrices //////////
-
-// Include GSL headers.
-%header %{
-#include <gsl/gsl_vector.h>
-#include <gsl/gsl_matrix.h>
-%}
 
 // This macro create wrapping structs for GSL vectors and matrices.
 %define %swig_lal_gsl_vector_matrix(TYPE, NAME)
