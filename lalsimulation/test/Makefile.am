@@ -5,6 +5,10 @@ if HAVE_OPENMP
 OPENMPPROGRAMS = TestOpenMP
 endif
 
+if SWIG_BUILD_PYTHON
+SWIGTESTS = LALSimWaveformReference.py
+endif
+
 check_PROGRAMS = \
 	$(OPENMPPROGRAMS) \
 	GenerateSimulation \
@@ -19,7 +23,8 @@ check_PROGRAMS = \
 	TestPhenomP \
 	TestXLALSimAddInjection
 TESTS = $(check_PROGRAMS) \
-	TestAllApproximants
+	TestAllApproximants \
+    $(SWIGTESTS)
 
 # disable test programs
 # TestSpinTaylorT4Dynamics - memory issues?
