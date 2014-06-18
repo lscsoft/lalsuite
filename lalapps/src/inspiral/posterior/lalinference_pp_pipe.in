@@ -171,7 +171,11 @@ ppjob.add_condor_cmd('getenv','True')
 
 ppnode=pipeline.CondorDAGNode(ppjob)
 ppnode.add_var_opt('injXML',injfile)
-outdir=os.path.join(rundir,'ppanalysis')
+if main_cp.has_option('ppanalysis','webdir'):
+  outdir=main_cp.get('ppanalysis','webdir')
+else:
+  outdir=os.path.join(rundir,'ppanalysis')
+
 mkdirs(outdir)
 ppnode.add_var_opt('outdir',outdir)
 for f in posteriorfiles:
