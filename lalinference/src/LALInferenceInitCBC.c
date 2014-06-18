@@ -387,6 +387,7 @@ LALInferenceModel *LALInferenceInitCBCModel(LALInferenceRunState *state)
 (--spinAligned or --aligned-spin)  template will assume spins aligned with the orbital angular momentum.\n\
 (--singleSpin)                  template will assume only the spin of the most massive binary component exists.\n\
 (--noSpin, --disable-spin)      template will assume no spins (giving this will void spinOrder!=0) \n\
+(--detector-frame)              model will use detector-centred coordinates instead of RA,dec\n\
 \n\
 ------------------------------------------------------------------------------------------------------------------\n\
 --- Starting Parameters ------------------------------------------------------------------------------------------\n\
@@ -865,21 +866,6 @@ where the known names have been listed above\n\
     else
       LALInferenceRegisterUniformVariableREAL8(state, model->params, "q", zero, qMin, qMax, LALINFERENCE_PARAM_LINEAR);
 
-    LALInferenceRegisterUniformVariableREAL8(state, model->params, "time", timeParam, timeMin, timeMax,LALINFERENCE_PARAM_LINEAR);
-
-    /* If we are marginalising over the time, remove that variable from the model (having set the prior above) */
-    /* Also set the prior in model->params, since Likelihood can't access the state! (ugly hack) */
-    if(LALInferenceGetProcParamVal(commandLine,"--margtime") || LALInferenceGetProcParamVal(commandLine, "--margtimephi")){
-        LALInferenceVariableItem *p=LALInferenceGetItem(state->priorArgs,"time_min");
-        LALInferenceAddVariable(model->params,"time_min",p->value,p->type,p->vary);
-        p=LALInferenceGetItem(state->priorArgs,"time_max");
-        LALInferenceAddVariable(model->params,"time_max",p->value,p->type,p->vary);
-        LALInferenceRemoveVariable(model->params,"time");
-        if (LALInferenceGetProcParamVal(commandLine, "--margtimephi")) {
-            UINT4 margphi = 1;
-            LALInferenceAddVariable(model->params, "margtimephi", &margphi, LALINFERENCE_UINT4_t,LALINFERENCE_PARAM_FIXED);
-        }
-    }
 
     if(!LALInferenceGetProcParamVal(commandLine,"--margphi") && !LALInferenceGetProcParamVal(commandLine, "--margtimephi")){
       LALInferenceRegisterUniformVariableREAL8(state, model->params, "phase", zero, phiMin, phiMax, LALINFERENCE_PARAM_CIRCULAR);
@@ -894,10 +880,41 @@ where the known names have been listed above\n\
   } else {
     LALInferenceRegisterUniformVariableREAL8(state, model->params, "distance", zero, Dmin, Dmax, LALINFERENCE_PARAM_LINEAR);
   }
-  LALInferenceRegisterUniformVariableREAL8(state, model->params, "rightascension", zero, raMin, raMax, LALINFERENCE_PARAM_CIRCULAR);
-  LALInferenceRegisterUniformVariableREAL8(state, model->params, "declination", zero, decMin, decMax, LALINFERENCE_PARAM_LINEAR);
   LALInferenceRegisterUniformVariableREAL8(state, model->params, "polarisation", zero, psiMin, psiMax, LALINFERENCE_PARAM_LINEAR);
   LALInferenceRegisterUniformVariableREAL8(state, model->params, "theta_jn", zero, thetaJNmin, thetaJNmax,LALINFERENCE_PARAM_LINEAR);
+	
+  /* Option to use the detector-aligned frame */ 
+  if(LALInferenceGetProcParamVal(commandLine,"--detector-frame"))
+  {
+      printf("Using detector-based sky frame\n");
+      LALInferenceRegisterUniformVariableREAL8(state,model->params,"t0",timeParam,timeMin,timeMax,LALINFERENCE_PARAM_LINEAR);
+      LALInferenceRegisterUniformVariableREAL8(state,model->params,"cosalpha",0,-1,1,LALINFERENCE_PARAM_LINEAR);
+      LALInferenceRegisterUniformVariableREAL8(state,model->params,"azimuth",0.0,0.0,LAL_TWOPI,LALINFERENCE_PARAM_CIRCULAR);
+      INT4 one=1;
+      LALInferenceAddVariable(model->params,"SKY_FRAME",&one,LALINFERENCE_INT4_t,LALINFERENCE_PARAM_FIXED);
+  }
+  else
+  {
+		  LALInferenceRegisterUniformVariableREAL8(state, model->params, "rightascension", zero, raMin, raMax, LALINFERENCE_PARAM_CIRCULAR);
+		  LALInferenceRegisterUniformVariableREAL8(state, model->params, "declination", zero, decMin, decMax, LALINFERENCE_PARAM_LINEAR);
+
+		  LALInferenceRegisterUniformVariableREAL8(state, model->params, "time", timeParam, timeMin, timeMax,LALINFERENCE_PARAM_LINEAR);
+
+		  /* If we are marginalising over the time, remove that variable from the model (having set the prior above) */
+		  /* Also set the prior in model->params, since Likelihood can't access the state! (ugly hack) */
+		  if(LALInferenceGetProcParamVal(commandLine,"--margtime") || LALInferenceGetProcParamVal(commandLine, "--margtimephi")){
+				  LALInferenceVariableItem *p=LALInferenceGetItem(state->priorArgs,"time_min");
+				  LALInferenceAddVariable(model->params,"time_min",p->value,p->type,p->vary);
+				  p=LALInferenceGetItem(state->priorArgs,"time_max");
+				  LALInferenceAddVariable(model->params,"time_max",p->value,p->type,p->vary);
+				  LALInferenceRemoveVariable(model->params,"time");
+				  if (LALInferenceGetProcParamVal(commandLine, "--margtimephi")) {
+						  UINT4 margphi = 1;
+						  LALInferenceAddVariable(model->params, "margtimephi", &margphi, LALINFERENCE_UINT4_t,LALINFERENCE_PARAM_FIXED);
+				  }
+		  }
+  }
+      
   /* PPE parameters */
 
   ppt=LALInferenceGetProcParamVal(commandLine, "--TaylorF2ppE");

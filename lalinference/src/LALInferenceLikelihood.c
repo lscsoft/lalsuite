@@ -40,6 +40,7 @@
 #include <lal/LALInferenceTemplate.h>
 
 #include "logaddexp.h"
+#include "DetectorFixedSkyCoords.c"
 
 typedef enum
 {
@@ -223,9 +224,27 @@ static int checkItemAndAdd(void *item, void **array)
  * For testing purposes (for instance sampling the prior), likelihood that returns 0.0 = log(1) every
  * time.  Activated with the --zeroLogLike command flag.
  */
-REAL8 LALInferenceZeroLogLikelihood(LALInferenceVariables UNUSED *currentParams,
+REAL8 LALInferenceZeroLogLikelihood(LALInferenceVariables *currentParams,
                                     LALInferenceIFOData UNUSED *data,
                                     LALInferenceModel UNUSED *model) {
+
+    INT4 SKY_FRAME=0;
+    REAL8 ra,dec,GPSdouble;
+
+    if(LALInferenceCheckVariable(currentParams,"SKY_FRAME"))
+      SKY_FRAME=*(INT4 *)LALInferenceGetVariable(currentParams,"SKY_FRAME");
+    
+    if(SKY_FRAME==1)
+    {
+      REAL8 t0=LALInferenceGetREAL8Variable(currentParams,"t0");
+      REAL8 alph=acos(LALInferenceGetREAL8Variable(currentParams,"cosalpha"));
+      REAL8 theta=LALInferenceGetREAL8Variable(currentParams,"azimuth");
+      LALInferenceDetFrameToEquatorial(data->detector,data->next->detector,
+                                       t0,alph,theta,&GPSdouble,&ra,&dec);
+      LALInferenceAddVariable(currentParams,"rightascension",&ra,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
+      LALInferenceAddVariable(currentParams,"declination",&dec,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
+      LALInferenceAddVariable(currentParams,"time",&GPSdouble,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
+    }
   return 0.0;
 }
 
@@ -564,20 +583,41 @@ static REAL8 LALInferenceFusedFreqDomainLogLikelihood(LALInferenceVariables *cur
       REAL8 distMpc = exp(*(REAL8*)LALInferenceGetVariable(currentParams,"logdistance"));
       LALInferenceAddVariable(currentParams,"distance",&distMpc,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
     }
-
+    
     if(LALInferenceCheckVariable(currentParams,"logmc")){
       mc=exp(*(REAL8 *)LALInferenceGetVariable(currentParams,"logmc"));
       LALInferenceAddVariable(currentParams,"chirpmass",&mc,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
     }
 
-    /* determine source's sky location & orientation parameters: */
-    ra        = *(REAL8*) LALInferenceGetVariable(currentParams, "rightascension"); /* radian      */
-    dec       = *(REAL8*) LALInferenceGetVariable(currentParams, "declination");    /* radian      */
-    psi       = *(REAL8*) LALInferenceGetVariable(currentParams, "polarisation");   /* radian      */
-    if(!margtime)
-      GPSdouble = *(REAL8*) LALInferenceGetVariable(currentParams, "time");           /* GPS seconds */
+    INT4 SKY_FRAME=0;
+    if(LALInferenceCheckVariable(currentParams,"SKY_FRAME"))
+      SKY_FRAME=*(INT4 *)LALInferenceGetVariable(currentParams,"SKY_FRAME");
+    
+    if(SKY_FRAME==0){
+      /* determine source's sky location & orientation parameters: */
+      ra        = *(REAL8*) LALInferenceGetVariable(currentParams, "rightascension"); /* radian      */
+      dec       = *(REAL8*) LALInferenceGetVariable(currentParams, "declination");    /* radian      */
+	  if(!margtime)
+			  GPSdouble = *(REAL8*) LALInferenceGetVariable(currentParams, "time");           /* GPS seconds */
+	  else
+			  GPSdouble = XLALGPSGetREAL8(&(data->freqData->epoch));
+    }
     else
-      GPSdouble = XLALGPSGetREAL8(&(data->freqData->epoch));
+    {
+      if(Nifos<2){
+			  fprintf(stderr,"ERROR: Cannot use --detector-frame with less than 2 detectors!\n");
+			  exit(1);
+	  }
+      REAL8 t0=LALInferenceGetREAL8Variable(currentParams,"t0");
+      REAL8 alph=acos(LALInferenceGetREAL8Variable(currentParams,"cosalpha"));
+      REAL8 theta=LALInferenceGetREAL8Variable(currentParams,"azimuth");
+      LALInferenceDetFrameToEquatorial(data->detector,data->next->detector,
+                                       t0,alph,theta,&GPSdouble,&ra,&dec);
+      LALInferenceAddVariable(currentParams,"rightascension",&ra,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
+      LALInferenceAddVariable(currentParams,"declination",&dec,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
+      LALInferenceAddVariable(currentParams,"time",&GPSdouble,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
+    }
+    psi       = *(REAL8*) LALInferenceGetVariable(currentParams, "polarisation");   /* radian      */
 
 
     // Add phase parameter set to 0 for calculation
