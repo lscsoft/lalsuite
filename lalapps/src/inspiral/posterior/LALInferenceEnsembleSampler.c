@@ -321,8 +321,8 @@ void LALInferencePrintEnsembleHeader(LALInferenceRunState *runState, FILE *walke
     /* Write the header information to file */
     fprintf(walker_output,
             "  LALInference version:%s,%s,%s,%s,%s\n",
-            LALAPPS_VCS_ID, LALAPPS_VCS_DATE, LALAPPS_VCS_BRANCH,
-            LALAPPS_VCS_AUTHOR, LALAPPS_VCS_STATUS);
+            lalAppsVCSId, lalAppsVCSDate, lalAppsVCSBranch,
+            lalAppsVCSAuthor, lalAppsVCSStatus);
 
     fprintf(walker_output, "  %s\n", cmd_str);
 
