@@ -298,11 +298,10 @@ def inject(hplus, hcross, ifo, psd):
 
     # Project injection for this detector.
     detector = lalsimulation.DetectorPrefixToLALDetector(ifo)
-    h = lalsimulation.SimDetectorStrainREAL8TimeSeries(hplus, hcross,
-        ra, dec, psi, detector)
-
-    # Add injection to data
-    x = lal.AddREAL8TimeSeries(x, h)
+    lalsimulation.SimInjectDetectorStrainREAL8TimeSeries(
+        x, hplus, hcross,
+        ra, dec, psi,
+        detector, None)
 
     # Done!
     return x
