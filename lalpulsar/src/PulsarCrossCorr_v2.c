@@ -207,7 +207,7 @@ int XLALCreateSFTPairIndexList
     for (l=lMin; l < numSFTs; l++) {
       gps2 = sfts->data[indexList->data[l].detInd]->data[indexList->data[l].sftInd].epoch;
       timeDiff = XLALGPSDiff(&gps1,&gps2);
-      if (abs(timeDiff) <= maxLag) {
+      if (fabs(timeDiff) <= maxLag) {
 	ret->data[j].sftNum[0] = k;
 	ret->data[j].sftNum[1] = l;
 	++j;
