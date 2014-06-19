@@ -1,6 +1,11 @@
 # Environment script generation
 # Author: Karl Wette, 2011--2014
 
+# input records are separated by semi-colons
+BEGIN {
+  RS=";"
+}
+
 # env[name] holds the value of environment variable 'name'
 # set[name,path] is defined if 'path' has already been set in 'name'
 # sed[name] holds sed scripts to remove duplicates from 'name'
