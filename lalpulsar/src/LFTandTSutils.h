@@ -51,6 +51,19 @@ typedef struct tagMultiCOMPLEX8TimeSeries {
   COMPLEX8TimeSeries **data;        /**< array of COMPLEX8TimeSeries (pointers) */
 } MultiCOMPLEX8TimeSeries;
 
+
+/** Struct holding the results of comparing two floating-point vectors (real-valued or complex),
+ * using various different comparison metrics
+ */
+typedef struct tagVectorComparison
+{
+  REAL4 relErr_L1;		///< relative error between vectors using L1 norm \f$r_1(x,y) \equiv \frac{|x - y|_1}{0.5(|x|_1 + |y|_1)}\f$
+  REAL4 relErr_L2;		///< relative error between vectors using L2 norm \f$r_2(x,y) \equiv \frac{|x - y|_2}{0.5(|x|_2 + |y|_2)}\f$
+  REAL4 angleV;			///< angle between the two vectors, according to \f$\cos\theta = \frac{\Re(x\cdot y^*)}{|x|_2 \, |y|_2}\f$
+  REAL4 relErr_atMaxAbsx;	///< single-sample relative error *at* maximum |sample-value| of first vector 'x'
+  REAL4 relErr_atMaxAbsy;	///< single-sample relative error *at* maximum |sample-value| of second vector 'x'
+} VectorComparison;
+
 /*---------- exported Global variables ----------*/
 /* empty init-structs for the types defined in here */
 
@@ -131,6 +144,10 @@ int XLALSpinDownCorrectionMultiFaFb ( MultiCOMPLEX8TimeSeries **Fa,	/**< [in/out
 void XLALDestroyMultiCOMPLEX8TimeSeries ( MultiCOMPLEX8TimeSeries *multiTimes );
 COMPLEX8TimeSeries *XLALDuplicateCOMPLEX8TimeSeries ( COMPLEX8TimeSeries *times );
 MultiCOMPLEX8TimeSeries *XLALDuplicateMultiCOMPLEX8TimeSeries ( MultiCOMPLEX8TimeSeries *multiTimes );
+
+int XLALCompareCOMPLEX8Vectors ( VectorComparison *result, const COMPLEX8Vector *x, const COMPLEX8Vector *y, const VectorComparison *tol );
+int XLALCompareREAL4Vectors    ( VectorComparison *result, const REAL4Vector *x, const REAL4Vector *y, const VectorComparison *tol );
+int XLALCheckVectorComparisonTolerances ( const VectorComparison *result, const VectorComparison *tol );
 
 /*@}*/
 

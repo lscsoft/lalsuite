@@ -50,6 +50,7 @@
 #define NhalfNeg(N) ((UINT4)( (N) - NhalfPosDC(N) ))		/* round down (making sure N+ + N- = (N-1) */
 
 #define GPS2REAL8(gps) (1.0 * (gps).gpsSeconds + 1.e-9 * (gps).gpsNanoSeconds )
+#define RELERR(x,y) ( cabs( (x) - (y) ) / ( 0.5 * (cabs(x) + cabs(y)) ) )
 
 /*---------- Global variables ----------*/
 static LALUnit emptyLALUnit;
@@ -1635,3 +1636,201 @@ XLALDuplicateCOMPLEX8TimeSeries ( COMPLEX8TimeSeries *times )
   return out;
 
 } /* XLALDuplicateCOMPLEX8TimeSeries() */
+
+
+/** Compare two COMPLEX8 vectors using various different comparison metrics
+ */
+int
+XLALCompareCOMPLEX8Vectors ( VectorComparison *result,		///< [out] return comparison results
+                             const COMPLEX8Vector *x,		///< [in] first input vector
+                             const COMPLEX8Vector *y,		///< [in] second input vector
+                             const VectorComparison *tol	///< [in] accepted tolerances on comparisons, or NULL for no check
+                             )
+{
+  XLAL_CHECK ( result != NULL, XLAL_EINVAL );
+  XLAL_CHECK ( x != NULL, XLAL_EINVAL );
+  XLAL_CHECK ( y != NULL, XLAL_EINVAL );
+  XLAL_CHECK ( x->data != NULL, XLAL_EINVAL );
+  XLAL_CHECK ( y->data != NULL, XLAL_EINVAL );
+  XLAL_CHECK ( x->length > 0, XLAL_EINVAL );
+  XLAL_CHECK ( x->length == y->length, XLAL_EINVAL );
+
+  REAL8 x_L1 = 0, x_L2 = 0;
+  REAL8 y_L1 = 0, y_L2 = 0;
+  REAL8 diff_L1 = 0, diff_L2 = 0;
+  COMPLEX16 scalar = 0;
+
+  REAL8 maxAbsx = 0, maxAbsy = 0;
+  COMPLEX8 x_atMaxAbsx = 0, y_atMaxAbsx = 0;
+  COMPLEX8 x_atMaxAbsy = 0, y_atMaxAbsy = 0;
+
+  UINT4 numSamples = x->length;
+  for ( UINT4 i = 0; i < numSamples; i ++ )
+    {
+      COMPLEX8 x_i = x->data[i];
+      COMPLEX8 y_i = y->data[i];
+      REAL8 xAbs_i = cabs ( x_i );
+      REAL8 yAbs_i = cabs ( y_i );
+
+      REAL8 absdiff = cabs ( x_i - y_i );
+      diff_L1 += absdiff;
+      diff_L2 += SQ(absdiff);
+
+      x_L1 += xAbs_i;
+      y_L1 += yAbs_i;
+      x_L2 += SQ(xAbs_i);
+      y_L2 += SQ(yAbs_i);
+
+      scalar += x_i * conj(y_i);
+
+      if ( xAbs_i > maxAbsx ) {
+        maxAbsx = xAbs_i;
+        x_atMaxAbsx = x_i;
+        y_atMaxAbsx = y_i;
+      }
+      if ( yAbs_i > maxAbsy ) {
+        maxAbsy = yAbs_i;
+        x_atMaxAbsy = x_i;
+        y_atMaxAbsy = y_i;
+      }
+
+    } // for i < numSamples
+
+  // complete L2 norms by taking sqrt
+  x_L2 = sqrt ( x_L2 );
+  y_L2 = sqrt ( y_L2 );
+  diff_L2 = sqrt ( diff_L2 );
+
+  // compute and return comparison results
+  result->relErr_L1 = diff_L1 / ( 0.5 * (x_L1 + y_L1 ) );
+  result->relErr_L2 = diff_L2 / ( 0.5 * (x_L2 + y_L2 ) );
+  REAL8 cosTheta = fmin ( 1, creal ( scalar ) / (x_L2 * y_L2) );
+  result->angleV = acos ( cosTheta );
+  result->relErr_atMaxAbsx = RELERR ( x_atMaxAbsx, y_atMaxAbsx );
+  result->relErr_atMaxAbsy = RELERR ( x_atMaxAbsy, y_atMaxAbsy );;
+
+  XLAL_CHECK ( XLALCheckVectorComparisonTolerances ( result, tol ) == XLAL_SUCCESS, XLAL_EFUNC );
+
+  return XLAL_SUCCESS;
+
+} // XLALCompareCOMPLEX8Vectors()
+
+/** Compare two REAL4 vectors using various different comparison metrics
+ */
+int
+XLALCompareREAL4Vectors ( VectorComparison *result,	///< [out] return comparison results
+                          const REAL4Vector *x,		///< [in] first input vector
+                          const REAL4Vector *y,		///< [in] second input vector
+                          const VectorComparison *tol	///< [in] accepted tolerances on comparisons, or NULL for no check
+                          )
+{
+  XLAL_CHECK ( result != NULL, XLAL_EINVAL );
+  XLAL_CHECK ( x != NULL, XLAL_EINVAL );
+  XLAL_CHECK ( y != NULL, XLAL_EINVAL );
+  XLAL_CHECK ( x->data != NULL, XLAL_EINVAL );
+  XLAL_CHECK ( y->data != NULL, XLAL_EINVAL );
+  XLAL_CHECK ( x->length > 0, XLAL_EINVAL );
+  XLAL_CHECK ( x->length == y->length, XLAL_EINVAL );
+
+  REAL8 x_L1 = 0, x_L2 = 0;
+  REAL8 y_L1 = 0, y_L2 = 0;
+  REAL8 diff_L1 = 0, diff_L2 = 0;
+  REAL8 scalar = 0;
+
+  REAL4 maxAbsx = 0, maxAbsy = 0;
+  REAL4 x_atMaxAbsx = 0, y_atMaxAbsx = 0;
+  REAL4 x_atMaxAbsy = 0, y_atMaxAbsy = 0;
+
+  UINT4 numSamples = x->length;
+  for ( UINT4 i = 0; i < numSamples; i ++ )
+    {
+      REAL4 x_i = x->data[i];
+      REAL4 y_i = y->data[i];
+      REAL4 xAbs_i = fabs ( x_i );
+      REAL4 yAbs_i = fabs ( y_i );
+
+      REAL8 absdiff = fabs ( x_i - y_i );
+      diff_L1 += absdiff;
+      diff_L2 += SQ(absdiff);
+
+      x_L1 += xAbs_i;
+      y_L1 += yAbs_i;
+      x_L2 += SQ(xAbs_i);
+      y_L2 += SQ(yAbs_i);
+
+      scalar += x_i * y_i;
+
+      if ( xAbs_i > maxAbsx ) {
+        maxAbsx = xAbs_i;
+        x_atMaxAbsx = x_i;
+        y_atMaxAbsx = y_i;
+      }
+      if ( yAbs_i > maxAbsy ) {
+        maxAbsy = yAbs_i;
+        x_atMaxAbsy = x_i;
+        y_atMaxAbsy = y_i;
+      }
+
+    } // for i < numSamples
+
+  // complete L2 norms by taking sqrt
+  x_L2 = sqrt ( x_L2 );
+  y_L2 = sqrt ( y_L2 );
+  diff_L2 = sqrt ( diff_L2 );
+
+  // compute and return comparison results
+  result->relErr_L1 = diff_L1 / ( 0.5 * (x_L1 + y_L1 ) );
+  result->relErr_L2 = diff_L2 / ( 0.5 * (x_L2 + y_L2 ) );
+  REAL8 cosTheta = fmin ( 1, scalar / (x_L2 * y_L2) );
+  result->angleV = acos ( cosTheta );
+  result->relErr_atMaxAbsx = RELERR ( x_atMaxAbsx, y_atMaxAbsx );
+  result->relErr_atMaxAbsy = RELERR ( x_atMaxAbsy, y_atMaxAbsy );;
+
+  XLAL_CHECK ( XLALCheckVectorComparisonTolerances ( result, tol ) == XLAL_SUCCESS, XLAL_EFUNC );
+
+  return XLAL_SUCCESS;
+
+} // XLALCompareREAL4Vectors()
+
+/** Check VectorComparison result against specified tolerances,
+ * to allow for standardized comparison and reporting.
+ */
+int
+XLALCheckVectorComparisonTolerances ( const VectorComparison *result,	///< [in] comparison result from XLALCompareREAL4Vectors() or XLALCompareCOMPLEX8Vectors()
+                                      const VectorComparison *tol	///< [in] accepted tolerances on comparisons: if NULL=> always accept the result
+                                      )
+{
+  XLAL_CHECK ( result != NULL, XLAL_EINVAL );
+
+  VectorComparison XLAL_INIT_DECL(localTol);
+  BOOLEAN failed = 0;
+
+  if ( tol != NULL ) {
+    localTol = (*tol);
+    failed = ( (result->relErr_L1 > tol->relErr_L1) || (result->relErr_L2 > tol->relErr_L2) ||
+               (result->angleV > tol->angleV) ||
+               (result->relErr_atMaxAbsx > tol->relErr_atMaxAbsx) || (result->relErr_atMaxAbsy > tol->relErr_atMaxAbsy) );
+  }
+
+  if ( failed || (lalDebugLevel & LALINFO) )
+    {
+      XLALPrintInfo ( "relErr_L1        = %.1e (%.1e)\n"
+                      "relErr_L2        = %.1e (%.1e)\n"
+                      "angleV           = %.1e (%.1e)\n"
+                      "relErr_atMaxAbsx = %.1e (%.1e)\n"
+                      "relErr_atMaxAbsy = %.1e (%.1e)\n",
+                      result->relErr_L1, localTol.relErr_L1, result->relErr_L2, localTol.relErr_L2, result->angleV,
+                      localTol.angleV,
+                      result->relErr_atMaxAbsx, localTol.relErr_atMaxAbsx,
+                      result->relErr_atMaxAbsy, localTol.relErr_atMaxAbsy );
+    }
+
+  if ( failed ) {
+    XLAL_ERROR ( XLAL_ETOL, "FAILED. Exceeded at least one tolerance level.\n");
+  }
+
+  XLALPrintInfo ("OK.\n");
+
+  return XLAL_SUCCESS;
+
+} // XLALCheckVectorComparisonTolerances()
