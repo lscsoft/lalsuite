@@ -58,8 +58,8 @@
 #define LALXMLC_NAMETEST5 "testTable"
 
 
-#define REAL8TOL 2 * LAL_REAL8_EPS
-#define REAL4TOL LAL_REAL4_EPS
+#define REAL8TOL 4 * LAL_REAL8_EPS
+#define REAL4TOL 2 * LAL_REAL4_EPS
 #define PATH_MAXLEN 256
 
 /* private test prototypes */
@@ -223,7 +223,7 @@ test_gsl_vector(void)
   /* ---------- initialize input test data ---------- */
 
   /* pick a random number of dimensions between [1, 11] */
-  srand(time(NULL));	/* pick random seed */
+  srand(1);	/* pick random seed */
   dim = 1 + (1.0 * rand() / RAND_MAX) * 10;
 
   if ( (in_vect = gsl_vector_alloc ( dim )) == NULL ) {
@@ -338,7 +338,7 @@ test_gsl_matrix(void)
   /* ---------- initialize input test data ---------- */
 
   /* pick a random number of dimensions between [2, 6] */
-  srand(time(NULL));	/* pick random seed */
+  srand(2);	/* pick random seed */
   numRows = 2 + (1.0 * rand() / RAND_MAX) * 4;
   numCols = 2 + (1.0 * rand() / RAND_MAX) * 4;
 
