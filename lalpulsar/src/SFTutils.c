@@ -1242,6 +1242,38 @@ XLALExtractBandFromSFTVector ( const SFTVector *inSFTs,	///< [in] input SFTs
 
 } /* XLALExtractBandFromSFTVector() */
 
+/**
+ * Return a MultiSFT vector containing only the bins in [fMin, fMin+Band].
+ * Note: the output MultiSFT is guaranteed to "cover" the input boundaries 'fMin'
+ * and 'fMin+Band', ie if necessary the output SFT contains one additional
+ * bin on either end of the interval.
+ *
+ * This uses the conventions in XLALFindCoveringSFTBins() to determine
+ * the 'effective' frequency-band to extract.
+ *
+ */
+MultiSFTVector *
+XLALExtractBandFromMultiSFTVector ( const MultiSFTVector *inSFTs,      ///< [in] input MultiSFTs
+                                    REAL8 fMin,                                ///< [in] lower end of frequency interval to return
+                                    REAL8 Band                         ///< [in] band width of frequency interval to return
+                                    )
+{
+  XLAL_CHECK_NULL ( inSFTs != NULL, XLAL_EINVAL, "Invalid NULL input MultiSFT vector 'inSFTs'\n");
+  XLAL_CHECK_NULL ( inSFTs->length > 0, XLAL_EINVAL, "Invalid zero-length input MultiSFT vector 'inSFTs'\n");
+  XLAL_CHECK_NULL ( fMin >= 0, XLAL_EDOM, "Invalid negative frequency fMin = %g\n", fMin );
+  XLAL_CHECK_NULL ( Band > 0, XLAL_EDOM, "Invalid non-positive Band = %g\n", Band );
+
+  MultiSFTVector *ret = NULL;
+  XLAL_CHECK_NULL ( (ret = XLALCalloc(1, sizeof(*ret))) != NULL, XLAL_ENOMEM );
+  XLAL_CHECK_NULL ( (ret->data = XLALCalloc(inSFTs->length, sizeof(ret->data[0]))) != NULL, XLAL_ENOMEM );
+  ret->length = inSFTs->length;
+
+  for (UINT4 X = 0; X < inSFTs->length; X++) {
+     XLAL_CHECK_NULL( (ret->data[X] = XLALExtractBandFromSFTVector(inSFTs->data[X], fMin, Band)) != NULL, XLAL_EFUNC );
+  }
+
+  return ret;
+} //XLALExtractBandFromMultiSFTVector()
 
 /**
  * Adds SFT-data from MultiSFTvector 'b' to elements of MultiSFTVector 'a'
