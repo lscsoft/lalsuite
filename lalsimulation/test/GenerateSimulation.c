@@ -85,6 +85,7 @@ const char * usage =
 "                             EOBNRv2\n"
 "                             EOBNRv2HM\n"
 "                             SEOBNRv1\n"
+"                             SEOBNRv2\n"
 "                             SpinTaylorT4\n"
 "                             SpinTaylorT2\n"
 "                             PhenSpinTaylor\n"

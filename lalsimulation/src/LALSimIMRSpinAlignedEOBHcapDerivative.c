@@ -104,7 +104,7 @@ static int XLALSpinAlignedHcapDerivative(
 
   gsl_function F;
   INT4         gslStatus;
-
+  UINT4 SpinAlignedEOBversion;
   UINT4 i;
 
   REAL8Vector rVec, pVec;
@@ -118,6 +118,8 @@ static int XLALSpinAlignedHcapDerivative(
   REAL8 mass1, mass2, eta;
 
   /* Spins */
+  REAL8Vector *s1Vec = NULL;
+  REAL8Vector *s2Vec = NULL;
   REAL8Vector *sKerr = NULL;
   REAL8Vector *sStar = NULL;
 
@@ -132,10 +134,16 @@ static int XLALSpinAlignedHcapDerivative(
   /* The error in a derivative as measured by GSL */
   REAL8 absErr;
 
+  /* Declare NQC coefficients */
+  EOBNonQCCoeffs *nqcCoeffs = NULL;
+
   /* Set up pointers for GSL */ 
   params.values  = cartValues;
   params.params  = (SpinEOBParams *)funcParams;
+  nqcCoeffs = params.params->nqcCoeffs;
 
+  s1Vec = params.params->s1Vec;
+  s2Vec = params.params->s2Vec;
   sKerr = params.params->sigmaKerr;
   sStar = params.params->sigmaStar;
 
@@ -145,6 +153,8 @@ static int XLALSpinAlignedHcapDerivative(
   mass1 = params.params->eobParams->m1;
   mass2 = params.params->eobParams->m2;
   eta   = params.params->eobParams->eta;
+
+  SpinAlignedEOBversion = params.params->seobCoeffs->SpinAlignedEOBversion;
 
   r = values[0];
 
@@ -157,6 +167,7 @@ static int XLALSpinAlignedHcapDerivative(
   DeltaT = XLALSimIMRSpinEOBHamiltonianDeltaT( params.params->seobCoeffs, r, eta, a );
   DeltaR = XLALSimIMRSpinEOBHamiltonianDeltaR( params.params->seobCoeffs, r, eta, a );
   csi    = sqrt( DeltaT * DeltaR ) / (r*r + a*a);
+  //printf("DeltaT = %.16e, DeltaR = %.16e, a = %.16e\n",DeltaT,DeltaR,a);
   //printf( "csi in derivatives function = %.16e\n", csi );
 
   /* Populate the Cartesian values vector, using polar coordinate values */
@@ -197,20 +208,21 @@ static int XLALSpinAlignedHcapDerivative(
   pData[0] = values[2];
   pData[1] = values[3] / values[0];
   /* Calculate Hamiltonian using Cartesian vectors rVec and pVec */
-  H =  XLALSimIMRSpinEOBHamiltonian( eta, &rVec, &pVec, sKerr, sStar, params.params->tortoise, params.params->seobCoeffs ); 
+  H =  XLALSimIMRSpinEOBHamiltonian( eta, &rVec, &pVec, s1Vec, s2Vec, sKerr, sStar, params.params->tortoise, params.params->seobCoeffs );
 
   //printf( "csi = %.16e, ham = %.16e ( tortoise = %d)\n", csi, H, params.params->tortoise );
   //exit(1);
-  //printf( "Hamiltonian = %e\n", H );
+  //if ( values[0] > 1.3 && values[0] < 3.9 ) printf( "r = %e\n", values[0] );
+  //if ( values[0] > 1.3 && values[0] < 3.9 ) printf( "Hamiltonian = %e\n", H );
   H = H * (mass1 + mass2);
 
 
-  //printf( "Cartesian derivatives:\n%.16e %.16e %.16e %.16e %.16e %.16e\n",
-  //    tmpDValues[3], tmpDValues[4], tmpDValues[5], -tmpDValues[0], -tmpDValues[1], -tmpDValues[2] );
+  /*if ( values[0] > 1.3 && values[0] < 3.9 ) printf( "Cartesian derivatives:\n%f %f %f %f %f %f\n",
+      tmpDValues[3], tmpDValues[4], tmpDValues[5], -tmpDValues[0], -tmpDValues[1], -tmpDValues[2] );*/
 
   /* Now calculate omega, and hence the flux */
   omega = tmpDValues[4] / r;
-  flux  = XLALInspiralSpinFactorizedFlux( &polarDynamics, omega, params.params, H/(mass1+mass2), lMax );
+  flux  = XLALInspiralSpinFactorizedFlux( &polarDynamics, nqcCoeffs, omega, params.params, H/(mass1+mass2), lMax, SpinAlignedEOBversion );
 
   /* Looking at the non-spinning model, I think we need to divide the flux by eta */
   flux = flux / eta;
@@ -227,9 +239,9 @@ static int XLALSpinAlignedHcapDerivative(
   dvalues[2] = dvalues[2] * csi - ( values[2] / values[3] ) * flux / omega;
   dvalues[3] = - flux / omega;
 
-  //printf("Values:\n%.16e %.16e %.16e %.16e\n", values[0], values[1], values[2], values[3] );
+  //if ( values[0] > 1.3 && values[0] < 3.9 ) printf("Values:\n%f %f %f %f\n", values[0], values[1], values[2], values[3] );
 
-  //printf("Derivatives:\n%.16e %.16e %.16e %.16e\n", dvalues[0], dvalues[1], dvalues[2], dvalues[3] );
+  //if ( values[0] > 1.3 && values[0] < 3.9 ) printf("Derivatives:\n%f %f %f %f\n", dvalues[0], r*dvalues[1], dvalues[2], dvalues[3] );
 
   if ( isnan( dvalues[0] ) || isnan( dvalues[1] ) || isnan( dvalues[2] ) || isnan( dvalues[3] ) )
   {

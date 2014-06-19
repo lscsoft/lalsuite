@@ -305,6 +305,7 @@ double XLALSimInspiralGetFinalFreq(
         case EOBNRv2HM:
         case EOBNRv2:
         case SEOBNRv1:
+        case SEOBNRv2:
             // FIXME: Probably shouldn't hard code the modes.
             if ( approximant == EOBNRv2HM )
             {
@@ -1659,6 +1660,11 @@ int XLALSimInspiralChooseTDWaveform(
         XLAL_ERROR(XLAL_EINVAL);
     }
 
+    /* SEOBNR flag for model version. 1 for SEOBNRv1, 2 for SEOBNRv2 */
+    UINT4 SpinAlignedEOBversion;
+    //REAL8 spin1[3], spin2[3];
+    //LIGOTimeGPS epoch = LIGOTIMEGPSZERO;
+
     /* General sanity check the input parameters - only give warnings! */
     if( deltaT > 1. )
         XLALPrintWarning("XLAL Warning - %s: Large value of deltaT = %e requested.\nPerhaps sample rate and time step size were swapped?\n", __func__, deltaT);
@@ -1961,10 +1967,27 @@ int XLALSimInspiralChooseTDWaveform(
             if( !checkTidesZero(lambda1, lambda2) )
                 ABORT_NONZERO_TIDES(waveFlags);
             if( f_ref != 0.)
-                XLALPrintWarning("XLAL Warning - %s: This approximant does use f_ref. The reference phase will be defined at coalescence.\n", __func__);
+                XLALPrintWarning("XLAL Warning - %s: This approximant does not use f_ref. The reference phase will be defined at coalescence.\n", __func__);
             /* Call the waveform driver routine */
+            SpinAlignedEOBversion = 1;
+            ret = XLALSimIMRSpinAlignedEOBWaveform(hplus, hcross, phiRef,
+                    deltaT, m1, m2, f_min, r, i, S1z, S2z, SpinAlignedEOBversion);
+            break;
+
+        case SEOBNRv2:
+            /* Waveform-specific sanity checks */
+            if( !XLALSimInspiralWaveformFlagsIsDefault(waveFlags) )
+                ABORT_NONDEFAULT_WAVEFORM_FLAGS(waveFlags);
+            if( !checkTransverseSpinsZero(S1x, S1y, S2x, S2y) )
+                ABORT_NONZERO_TRANSVERSE_SPINS(waveFlags);
+            if( !checkTidesZero(lambda1, lambda2) )
+                ABORT_NONZERO_TIDES(waveFlags);
+            if( f_ref != 0.)
+                XLALPrintWarning("XLAL Warning - %s: This approximant does not use f_ref. The reference phase will be defined at coalescence.\n", __func__);
+            /* Call the waveform driver routine */
+            SpinAlignedEOBversion = 2;
             ret = XLALSimIMRSpinAlignedEOBWaveform(hplus, hcross, phiRef, 
-                    deltaT, m1, m2, f_min, r, i, S1z, S2z);
+                    deltaT, m1, m2, f_min, r, i, S1z, S2z, SpinAlignedEOBversion);
             break;
 
         default:
@@ -2609,6 +2632,7 @@ int XLALSimInspiralImplementedTDApproximants(
         case PhenSpinTaylorRD:
         case SEOBNRv1:
         case SpinDominatedWf:
+        case SEOBNRv2:
             return 1;
 
         default:
@@ -2753,6 +2777,10 @@ int XLALGetApproximantFromString(const CHAR *inString)
   else if ( strstr(inString, "SEOBNRv1" ) )
   {
     return SEOBNRv1;
+  }
+  else if ( strstr(inString, "SEOBNRv2" ) )
+  {
+    return SEOBNRv2;
   }
   else if ( strstr(inString, "EOBNRv2HM" ) )
   {
@@ -2907,6 +2935,8 @@ char* XLALGetStringFromApproximant(Approximant approximant)
       return strdup("IMRPhenomFC");
     case SEOBNRv1:
       return strdup("SEOBNRv1");
+    case SEOBNRv2:
+      return strdup("SEOBNRv2");
     case EOBNRv2HM:
       return strdup("EOBNRv2HM");
     case EOBNRv2:
@@ -3122,6 +3152,7 @@ int XLALSimInspiralGetSpinSupportFromApproximant(Approximant approx){
     case IMRPhenomB:
     case IMRPhenomC:
     case SEOBNRv1:
+    case SEOBNRv2:
     case TaylorR2F4:
     case IMRPhenomFB:
     case FindChirpSP:

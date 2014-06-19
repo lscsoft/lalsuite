@@ -88,6 +88,7 @@ typedef enum {
    EOBNRv2,		/**< UNDOCUMENTED */
    EOBNRv2HM,		/**< UNDOCUMENTED */
    SEOBNRv1,		/**< Spin-aligned EOBNR model */
+   SEOBNRv2,		/**< Spin-aligned EOBNR model v2 */
    IMRPhenomA,		/**< Time domain (non-spinning) inspiral-merger-ringdown waveforms generated from the inverse FFT of IMRPhenomFA  */
    IMRPhenomB,		/**< Time domain (non-precessing spins) inspiral-merger-ringdown waveforms generated from the inverse FFT of IMRPhenomFB */
    IMRPhenomFA,		/**< Frequency domain (non-spinning) inspiral-merger-ringdown templates of Ajith et al [Ajith_2007kx] with phenomenological coefficients defined in the Table I of [Ajith_2007xh]*/
