@@ -27,6 +27,8 @@
 #include <lal/ExtrapolatePulsarSpins.h>
 #include <lal/ComputeFstat.h>
 #include <lal/DetectorStates.h>
+#include <lal/LFTandTSutils.h>
+#include <lal/LALString.h>
 
 // basic consistency checks of the ComputeFstat module: compare F-stat results for all
 // *available* Fstat methods against each other
@@ -89,7 +91,7 @@ main ( int argc, char *argv[] )
   sources->data[0].Amp.psi  = 0.1;
   sources->data[0].Amp.phi0 = 1.2;
 
-  REAL8 asini = 2.9;
+  REAL8 asini = 0;
   REAL8 Period = 10 * 3600;
 
   PulsarDopplerParams XLAL_INIT_DECL(Doppler);
@@ -159,13 +161,43 @@ main ( int argc, char *argv[] )
               if ( firstMethod == FMETHOD_START ) {	// keep track of first available method found
                 firstMethod = iMethod;
               }
-              XLAL_CHECK ( XLALComputeFstat ( &results[iMethod], input[iMethod], &Doppler, dFreq, numFreqBins, FSTATQ_2F ) == XLAL_SUCCESS, XLAL_EFUNC );
+
+              FstatQuantities whatToCompute = FSTATQ_2F; // FIXME: currently Resampling doesn't support FSTATQ_FAFB yet
+              XLAL_CHECK ( XLALComputeFstat ( &results[iMethod], input[iMethod], &Doppler, dFreq, numFreqBins, whatToCompute ) == XLAL_SUCCESS, XLAL_EFUNC );
+
+              if ( lalDebugLevel & LALINFOBIT )
+                {
+                  FILE *fp;
+                  char *fname;
+                  XLAL_CHECK ( (fname = XLALStringDuplicate ( "twoF" )) != NULL, XLAL_EFUNC );
+                  XLAL_CHECK ( (fname = XLALStringAppend ( fname, XLALGetFstatMethodName(iMethod) )) != NULL, XLAL_EFUNC );
+                  XLAL_CHECK ( (fname = XLALStringAppend ( fname, ".dat" )) != NULL, XLAL_EFUNC );
+                  XLAL_CHECK ( (fp = fopen ( fname, "wb" )) != NULL, XLAL_EFUNC );
+                  XLALFree ( fname );
+                  for ( UINT4 k = 0; k < results[iMethod]->numFreqBins; k ++ )
+                    {
+                      REAL8 Freq0 = results[iMethod]->doppler.fkdot[0];
+                      REAL8 Freq_k = Freq0 + k * results[iMethod]->dFreq;
+                      if ( whatToCompute & FSTATQ_FAFB ) {
+                        fprintf ( fp, "%20.16g %10.4g   %10.4g %10.4g   %10.4g %10.4g\n",
+                                  Freq_k, results[iMethod]->twoF[k],
+                                  crealf(results[iMethod]->Fa[k]), cimagf(results[iMethod]->Fa[k]),
+                                  crealf(results[iMethod]->Fb[k]), cimagf(results[iMethod]->Fb[k])
+                                  );
+                      } else {
+                        fprintf ( fp, "%20.16g %10.4g\n",
+                                  Freq_k, results[iMethod]->twoF[k] );
+                      }
+                    } // for k < numFreqBins
+                  fclose(fp);
+
+                } // if info
 
               // compare to first result
+              XLALPrintInfo ("Comparing results between method '%s' and '%s'\n", XLALGetFstatMethodName(firstMethod), XLALGetFstatMethodName(iMethod) );
               if ( compareFstatResults ( results[firstMethod], results[iMethod] ) != XLAL_SUCCESS )
                 {
-                  XLALPrintError ("Comparison between method '%s' and '%s' failed comparison\n",
-                                  XLALGetFstatMethodName(firstMethod), XLALGetFstatMethodName(iMethod) );
+                  XLALPrintError ("Comparison between method '%s' and '%s' failed\n", XLALGetFstatMethodName(firstMethod), XLALGetFstatMethodName(iMethod) );
                   XLAL_ERROR ( XLAL_EFUNC );
                 }
 
@@ -200,82 +232,57 @@ main ( int argc, char *argv[] )
 
 } // main()
 
-static REAL8
-relError ( REAL8 val1, REAL8 val2 )
-{
-  return ( (val1-val2) / ( 0.5 * (val1+val2) ) );
-} // relError()
-
 static int
 compareFstatResults ( const FstatResults *result1, const FstatResults *result2 )
 {
   XLAL_CHECK ( (result1 != NULL) && (result2 != NULL), XLAL_EINVAL );
 
   XLAL_CHECK ( result1->whatWasComputed == result2->whatWasComputed, XLAL_EINVAL );
-  XLAL_CHECK ( result1->whatWasComputed == FSTATQ_2F, XLAL_EINVAL, "Currently on 2F comparison supported.\n");
   XLAL_CHECK ( result1->dFreq == result2->dFreq, XLAL_EINVAL );
   XLAL_CHECK ( result1->numFreqBins == result2->numFreqBins, XLAL_EINVAL );
-  UINT4 numFreqBins = result1->numFreqBins;
   XLAL_CHECK ( result1->numDetectors == result2->numDetectors, XLAL_EINVAL );
 
-  REAL8 tolMaxRelErr = 1.2;
-  REAL8 tolMeanRelErr = 0.1;
-  REAL8 tolMeanAbsRelErr = 0.15;
-  REAL8 tolRelErrSum = 0.1;
+  // ----- set tolerance levels for comparisons ----------
+  VectorComparison XLAL_INIT_DECL(tol);
+  tol.relErr_L1 	= 3e-2;
+  tol.relErr_L2		= 3e-2;
+  tol.angleV 		= 8e-3;	// rad
+  tol.relErr_atMaxAbsx 	= 3e-2;
+  tol.relErr_atMaxAbsy  = 3e-2;
 
-  REAL8 maxRelErr = 0;
-  REAL8 meanRelErr = 0;
-  REAL8 meanAbsRelErr = 0;
-  REAL8 relErrSum = 0;
-  REAL8 sum1 = 0, sum2 = 0;
-  REAL8 maxTwoF1 = 0, twoF2atMax = 0;
-  for ( UINT4 k = 0; k < numFreqBins; k ++ )
+  UINT4 numFreqBins = result1->numFreqBins;
+  VectorComparison XLAL_INIT_DECL(cmp);
+
+  if ( result1->whatWasComputed & FSTATQ_2F )
     {
-      REAL8 twoF1 = result1->twoF[k];
-      REAL8 twoF2 = result2->twoF[k];
+      // ----- package twoF arrays into REAL4Vectors
+      REAL4Vector XLAL_INIT_DECL(v1);
+      REAL4Vector XLAL_INIT_DECL(v2);
+      v1.length = numFreqBins;
+      v2.length = numFreqBins;
+      v1.data = result1->twoF;
+      v2.data = result2->twoF;
 
-      // keep track of highest 2F_1 peak and corresponding 2F_2 value
-      if ( twoF1 > maxTwoF1 ) {
-        maxTwoF1 = twoF1;
-        twoF2atMax = twoF2;
-      }
+      XLAL_CHECK ( XLALCompareREAL4Vectors ( &cmp, &v1, &v2, &tol ) == XLAL_SUCCESS, XLAL_EFUNC );
+    }
 
-      REAL8 relErr = relError ( twoF1, twoF2 );
-
-      meanRelErr += relErr;
-      meanAbsRelErr += fabs(relErr);
-      maxRelErr = fmax ( maxRelErr, fabs ( relErr ) );
-      sum1 += twoF1;
-      sum2 += twoF2;
-
-    } // for k < numFreqBins
-
-  meanRelErr = fabs(meanRelErr) / numFreqBins;
-  meanAbsRelErr = meanAbsRelErr / numFreqBins;
-  relErrSum = fabs ( relError ( sum1, sum2 ) );
-
-  REAL8 relErrAtMax = fabs ( relError ( maxTwoF1, twoF2atMax ) );
-  REAL8 tolRelErrAtMax = 0.1;
-
-  XLALPrintWarning ( "maxRelErr = %g (tol=%g), relErrAtMax = %g (tol=%g), meanRelErr = %g (tol=%g), meanAbsRelErr = %g (tol=%g), relErrSum = %g (tol=%g)\n",
-                     maxRelErr, tolMaxRelErr, relErrAtMax, tolRelErrAtMax, meanRelErr, tolMeanRelErr, meanAbsRelErr, tolMeanAbsRelErr, relErrSum, tolRelErrSum );
-
-  if ( (maxRelErr > tolMaxRelErr) || (relErrAtMax > tolRelErrAtMax) || (meanRelErr > tolMeanRelErr) || (meanAbsRelErr > tolMeanAbsRelErr) || (relErrSum > tolRelErrSum) )
+  if ( result1->whatWasComputed & FSTATQ_FAFB )
     {
-      XLALPrintError ( "maxRelErr = %g (tol=%g), relErrAtMax = %g (tol=%g), meanRelErr = %g (tol=%g), meanAbsRelErr = %g (tol=%g), relErrSum = %g (tol=%g)\n",
-                       maxRelErr, tolMaxRelErr, relErrAtMax, tolRelErrAtMax, meanRelErr, tolMeanRelErr, meanAbsRelErr, tolMeanAbsRelErr, relErrSum, tolRelErrSum );
+      // ----- package Fa,Fb arrays int COMPLEX8Vectors
+      COMPLEX8Vector XLAL_INIT_DECL(c1);
+      COMPLEX8Vector XLAL_INIT_DECL(c2);
+      c1.length = numFreqBins;
+      c2.length = numFreqBins;
+      // Fa
+      c1.data = result1->Fa;
+      c2.data = result2->Fa;
+      XLAL_CHECK ( XLALCompareCOMPLEX8Vectors ( &cmp, &c1, &c2, NULL ) == XLAL_SUCCESS, XLAL_EFUNC );	 // FIXME: deactivated test
+      // Fb
+      c1.data = result1->Fb;
+      c2.data = result2->Fb;
 
-      FILE *fp = fopen("failed-fstats.dat", "wb");
-      fprintf (fp, "%%%% Freq             F1        F2\n");
-      for ( UINT4 k1 = 0; k1 < result1->numFreqBins; k1 ++ )
-        {
-          REAL8 fi = result1->doppler.fkdot[0] + k1 * result1->dFreq;
-          fprintf ( fp, "%20.16g %10.5g %10.5g\n", fi, result1->twoF[k1], result2->twoF[k1] );
-        }
-      fclose(fp);
-
-      XLAL_ERROR ( XLAL_ETOL );
-    } // if error > tolerance
+      XLAL_CHECK ( XLALCompareCOMPLEX8Vectors ( &cmp, &c1, &c2, NULL ) == XLAL_SUCCESS, XLAL_EFUNC );	 // FIXME: deactivated test
+    }
 
   return XLAL_SUCCESS;
 

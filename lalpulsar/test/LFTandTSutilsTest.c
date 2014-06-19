@@ -74,7 +74,7 @@ int test_XLALSFTVectorToLFT(void);
 int XLALgenerateRandomData ( REAL4TimeSeries **ts, SFTVector **sfts );
 int write_SFTdata (const char *fname, const SFTtype *sft);
 SFTVector *XLALDuplicateSFTVector ( const SFTVector *sftsIn );
-int XLALCompareSFTs ( const SFTtype *sft1, const SFTtype *sft2 );
+int XLALCompareSFTs ( const SFTtype *sft1, const SFTtype *sft2, const VectorComparison *tol );
 
 /*----------------------------------------------------------------------*/
 /* Main Function starts here */
@@ -173,7 +173,14 @@ test_XLALSFTVectorToLFT ( void )
   } // end: debug output
 
   // ========== compare resulting LFTs ==========
-  XLAL_CHECK ( XLALCompareSFTs ( lftR4, lftSFTs ) == XLAL_SUCCESS, XLAL_EFUNC );
+  VectorComparison XLAL_INIT_DECL(tol);
+  tol.relErr_L1 	= 0.5;
+  tol.relErr_L2		= 5e-2;
+  tol.angleV 		= 4e-2;	// rad
+  tol.relErr_atMaxAbsx 	= 2e-3;
+  tol.relErr_atMaxAbsy  = 2e-3;
+
+  XLAL_CHECK ( XLALCompareSFTs ( lftR4, lftSFTs, &tol ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   // ---------- free memory ----------
   XLALDestroyREAL4TimeSeries ( tsR4 );
@@ -331,11 +338,12 @@ XLALDuplicateSFTVector ( const SFTVector *sftsIn )
 
 // compare two SFTs, return XLAL_SUCCESS if OK, error otherwise
 int
-XLALCompareSFTs ( const SFTtype *sft1, const SFTtype *sft2 )
+XLALCompareSFTs ( const SFTtype *sft1, const SFTtype *sft2, const VectorComparison *tol )
 {
   // check input sanity
   XLAL_CHECK ( sft1 != NULL, XLAL_EINVAL );
   XLAL_CHECK ( sft2 != NULL, XLAL_EINVAL );
+  XLAL_CHECK ( tol  != NULL, XLAL_EINVAL );
 
   XLAL_CHECK ( XLALGPSCmp ( &(sft1->epoch), &(sft2->epoch) ) == 0, XLAL_ETOL );
   REAL8 tolFreq = 10 * LAL_REAL8_EPS;
@@ -347,80 +355,10 @@ XLALCompareSFTs ( const SFTtype *sft1, const SFTtype *sft2 )
   XLAL_CHECK ( XLALUnitCompare( &(sft1->sampleUnits), &(sft2->sampleUnits) ) == 0, XLAL_ETOL );
 
   XLAL_CHECK ( sft1->data->length == sft2->data->length, XLAL_ETOL, "sft1->length = %d, sft2->length = %d\n", sft1->data->length, sft2->data->length  );
-  UINT4 numBins = sft1->data->length;
 
-  REAL8 maxAbsRelErr = 0;
-  REAL8 meanAbsRelErr = 0;
-  REAL8 meanRelErr = 0;
-  REAL8 relErrNormV, angleV;
+  VectorComparison XLAL_INIT_DECL(cmp);
+  XLAL_CHECK ( XLALCompareCOMPLEX8Vectors ( &cmp, sft1->data, sft2->data, tol ) == XLAL_SUCCESS, XLAL_EFUNC );
 
-  REAL8 relErrAtMax, phaseErrAtMax;
-
-  REAL8 maxPow1 = 0, pow2AtMax = 0, phase1AtMax = 0, phase2AtMax = 0;
-  REAL8 norm1 = 0, norm2 = 0, scalar = 0;
-  for ( UINT4 i = 0; i < numBins; i ++ )
-    {
-      COMPLEX8 thisBin1 = sft1->data->data[i];
-      COMPLEX8 thisBin2 = sft2->data->data[i];
-      REAL8 pow1 = SQ ( cabsf (thisBin1) );
-      REAL8 pow2 = SQ ( cabsf (thisBin2) );
-      REAL8 phase1 = cargf ( thisBin1 );
-      REAL8 phase2 = cargf ( thisBin2 );
-
-      REAL8 relErr = RELERR(pow1, pow2);
-
-      maxAbsRelErr = fmax ( maxAbsRelErr, fabs(relErr) );
-      meanAbsRelErr += fabs(relErr);
-      meanRelErr += relErr;
-
-      norm1 += pow1;
-      norm2 += pow2;
-      scalar += sqrt(pow1 * pow2);
-      if ( pow1 > maxPow1 ) {
-        maxPow1 = pow1;
-        pow2AtMax = pow2;
-        phase1AtMax = phase1;
-        phase2AtMax = phase2;
-      }
-
-    } // for i < numBins
-
-  meanAbsRelErr /= numBins;
-  meanRelErr = fabs(meanRelErr) / numBins;
-
-  relErrNormV = fabs ( RELERR(norm1, norm2) );
-  angleV = acos ( scalar  / sqrt(norm1 * norm2) );
-
-  relErrAtMax = fabs ( RELERR(maxPow1, pow2AtMax) );
-  phaseErrAtMax = fabs ( phase1AtMax - phase2AtMax );
-
-  REAL8 tolMaxAbsRelErr = 0.1;
-  REAL8 tolMeanAbsRelErr = 1e-3;
-  REAL8 tolMeanRelErr = 1e-3;
-  REAL8 tolRelErrAtMax = 1e-2;
-  REAL8 tolPhaseErrAtMax = 1e-3;	// radians
-  REAL8 tolRelErrNormV = 1e-3;
-  REAL8 tolAngleV = 0.05;	// radians
-
-  BOOLEAN failed = (maxAbsRelErr > tolMaxAbsRelErr) || (meanAbsRelErr > tolMeanAbsRelErr) || (meanRelErr > tolMeanRelErr)
-    || (relErrAtMax > tolRelErrAtMax) || (phaseErrAtMax > tolPhaseErrAtMax)
-    || (relErrNormV > tolRelErrNormV) || (angleV > tolAngleV);
-
-  if ( failed || (lalDebugLevel & LALINFO) )
-    {
-      XLALPrintError ( "maxAbsRelErr  = %.1e (%.1e)\nmeanAbsRelErr = %.1e (%.1e)\nmeanRelErr    = %.1e (%.1e)\n",
-                       maxAbsRelErr, tolMaxAbsRelErr, meanAbsRelErr, tolMeanAbsRelErr, meanRelErr, tolMeanRelErr );
-      XLALPrintError ( "relErrAtMax   = %.1e (%.1e)\nphaseErrAtMax = %.1e (%.1e)\n",
-                       relErrAtMax, tolRelErrAtMax, phaseErrAtMax, tolPhaseErrAtMax );
-      XLALPrintError ( "relErrNormV   = %.1e (%.1e)\nangleV        = %.1e (%.1e)\n",
-                       relErrNormV, tolRelErrNormV, angleV, tolAngleV );
-    }
-
-  if ( failed ) {
-    XLAL_ERROR ( XLAL_ETOL, "FAILED. Exceeded at least one tolerance level.\n");
-  }
-
-  XLALPrintInfo ("OK.\n");
   return XLAL_SUCCESS;
 
 } // XLALCompareSFTs()
