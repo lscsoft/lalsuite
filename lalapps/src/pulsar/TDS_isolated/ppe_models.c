@@ -1216,6 +1216,8 @@ void inverse_phi0_psi_transform( REAL8 phi0prime, REAL8 psiprime, REAL8 *phi0, R
  *
  * Convert the physical source parameters into the amplitude and phase notation given in Eqns
  * 76-79 of LIGO T1200265-v3.
+ *
+ * In this is \c phi0 is the gravitational wave phase for a signal from the l=m=2 mode.
  */
 void invert_source_params( BinaryPulsarParams *params ){
   REAL8 sinlambda, coslambda, sinlambda2, coslambda2, sin2lambda;
