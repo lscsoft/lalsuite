@@ -98,6 +98,7 @@ typedef enum {
    TaylorEt,		/**< UNDOCUMENTED */
    TaylorT4,		/**< UNDOCUMENTED */
    TaylorN,		/**< UNDOCUMENTED */
+   SpinDominatedWf,     /**< Time domain, inspiral only, 1 spin, precessing waveform, Tapai et al, arXiv: 1209.1722 */
    NumApproximants	/**< Number of elements in enum, useful for checking bounds */
  } Approximant;
 
@@ -1976,6 +1977,55 @@ int XLALSimInspiralSpinTaylorT4PTFQVecs(
 	LALSimInspiralTidalOrder tideO, /**< twice PN order of tidal effects */
         int phaseO                  /**< twice PN phase order */
         );
+
+/**
+ * Functions for calculating the  Spin-Dominated waveforms
+ * See tables 1 to 5 in the appendix of Arxiv:1209.1722
+ * Interface routine, calculating the prefered variables for the Spin-dominated waveforms
+ */
+int XLALSimInspiralSpinDominatedWaveformInterfaceTD(
+	REAL8TimeSeries **hplus,        /**< +-polarization waveform */
+	REAL8TimeSeries **hcross,       /**< x-polarization waveform */
+	REAL8 deltaT,                   /**< sampling interval (s) */
+	REAL8 m1,                       /**< mass of companion 1 (kg) */
+	REAL8 m2,                       /**< mass of companion 2 (kg) */
+	REAL8 fStart,                   /**< start GW frequency (Hz) */
+	REAL8 fRef,			/**< end GW frequency (Hz) */
+	REAL8 D,                        /**< distance of source (m) */
+	REAL8 s1x,                      /**< initial value of S1x */
+	REAL8 s1y,                      /**< initial value of S1y */
+	REAL8 s1z,                      /**< initial value of S1z */
+	REAL8 lnhatx,                   /**< initial value of LNhatx */
+	REAL8 lnhaty,                   /**< initial value of LNhaty */
+	REAL8 lnhatz,                   /**< initial value of LNhatz */
+	int phaseO,                     /**< twice PN phase order */
+	int amplitudeO,                 /**< twice PN amplitude order */
+	REAL8 phiRef			/**< Reference phase at the Reference Frequency */
+);
+
+/**
+ * Function calculating the Spin-Dominated waveforms
+ * This waveform is an inspiral only, 1 spin, precessing waveform.
+ * For the formulae see the appendix of Arxiv:1209.1722
+ */
+int XLALSimInspiralSpinDominatedWaveformDriver(
+	REAL8TimeSeries **hplus,        /**< +-polarization waveform */
+	REAL8TimeSeries **hcross,       /**< x-polarization waveform */
+	REAL8 totalmass,		/**< total mass of the binary */
+	REAL8 nu,			/**< mass ratio */
+	REAL8 chi1,			/**< dimensionless spin paramter */
+	REAL8 D,			/**< Distance to the source */
+	REAL8 kappa1,			/**< Angle span by S_1 and L */
+	REAL8 beta1,			/**< Angle span by J and S_1 */
+	REAL8 theta,			/**< Angle span by the line of sight and J */
+	REAL8 fStart,			/**< Starting gravitational wave frequency*/
+	REAL8 fRef,			/**< Ending gravitational wave frequency*/
+	int phaseO,                     /**< twice PN phase order */
+	int amplitudeO,                 /**< twice PN amplitude order */
+	REAL8 deltaT,			/**< Sampling time interval */
+	REAL8 phiRef,			/**< Reference phase at the Reference Frequency */
+	REAL8 phin0			/**< Starting value of the \phi_n parameter */
+);
 
 /**
  * Function to specify the desired orientation of a precessing binary in terms

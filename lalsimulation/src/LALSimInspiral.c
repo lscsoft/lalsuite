@@ -1873,6 +1873,27 @@ int XLALSimInspiralChooseTDWaveform(
                     XLALSimInspiralGetTidalOrder(waveFlags),
                     phaseO, amplitudeO);
             break;
+        case SpinDominatedWf:
+                // waveform specific sanity checks
+                if (S2x != 0. || S2y != 0. || S2z != 0.){
+                XLALPrintError("XLAL Error : The spindominatedwf approximant is only for 1 spin case.\n");
+                XLAL_ERROR(XLAL_EDOM);
+                }
+                /*Maximal PN amplitude order is 1.5, maximal phase order is 2 PN*/
+                if (amplitudeO > 3) {
+                XLALPrintError("XLAL Error : Foe the spindominatedwf approximant maximal amplitude correction is 1.5 PN\n");
+                XLAL_ERROR(XLAL_EDOM);
+                }
+                if (phaseO > 4){
+                XLALPrintError("XLAL Error : For the spindominatedwf approximant maximal phase correction is 2 PN\n");
+                XLAL_ERROR(XLAL_EDOM);
+                }
+                LNhatx = sin(i);
+                LNhaty = 0.;
+                LNhatz = cos(i);
+                /* Call the waveform driver routine */
+                ret = XLALSimInspiralSpinDominatedWaveformInterfaceTD(hplus, hcross, deltaT, m1, m2, f_min, f_ref, r, S1x, S1y, S1z, LNhatx, LNhaty, LNhatz, phaseO, amplitudeO, phiRef);
+                break;
 
         /* spin aligned inspiral-merger-ringdown models */
         case IMRPhenomB:
@@ -2587,6 +2608,7 @@ int XLALSimInspiralImplementedTDApproximants(
         case IMRPhenomC:
         case PhenSpinTaylorRD:
         case SEOBNRv1:
+        case SpinDominatedWf:
             return 1;
 
         default:
@@ -2816,6 +2838,10 @@ int XLALGetApproximantFromString(const CHAR *inString)
   {
     return Eccentricity;
   }
+  else if ( strstr(inString, "SpinDominatedWf" ) )
+  {
+    return SpinDominatedWf;
+  }
   else
   {
     XLALPrintError( "Cannot parse approximant from string: %s \n", inString );
@@ -2921,6 +2947,8 @@ char* XLALGetStringFromApproximant(Approximant approximant)
       return strdup("FrameFile");
     case Eccentricity:
       return strdup("Eccentricity");
+    case SpinDominatedWf:
+      return strdup("SpinDominatedWf");
     default:
         XLALPrintError("Not a valid approximant\n");
         XLAL_ERROR_NULL(XLAL_EINVAL);
@@ -3081,6 +3109,7 @@ int XLALSimInspiralGetSpinSupportFromApproximant(Approximant approx){
     case PhenSpinTaylorRD:
     case SpinTaylorT3:
     case IMRPhenomP:
+    case SpinDominatedWf:
       spin_support=LAL_SIM_INSPIRAL_PRECESSINGSPIN;
       break;
     case SpinTaylorF2:
