@@ -1197,43 +1197,15 @@ XLALExtractBandFromSFTVector ( const SFTVector *inSFTs,	///< [in] input SFTs
 
   UINT4 numSFTs = inSFTs->length;
 
-  REAL8 df      = inSFTs->data[0].deltaF;
-  REAL8 Tsft    = 1.0 / df;
-
-  REAL8 fMinSFT    = inSFTs->data[0].f0;
-  UINT4 numBinsSFT = inSFTs->data[0].data->length;
-  UINT4 firstBinSFT= round ( fMinSFT / df );	// round to closest bin
-  UINT4 lastBinSFT = firstBinSFT + ( numBinsSFT - 1 );
-
-  // find 'covering' SFT-band to extract
-  UINT4 firstBinExt, numBinsExt;
-  XLAL_CHECK_NULL ( XLALFindCoveringSFTBins ( &firstBinExt, &numBinsExt, fMin, Band, Tsft ) == XLAL_SUCCESS, XLAL_EFUNC );
-  UINT4 lastBinExt = firstBinExt + ( numBinsExt - 1 );
-
-  XLAL_CHECK_NULL ( firstBinExt >= firstBinSFT && (lastBinExt <= lastBinSFT), XLAL_EINVAL,
-                    "Requested frequency-bins [%f,%f]Hz = [%d, %d] not contained within SFT's [%f, %f]Hz = [%d,%d].\n",
-                    fMin, fMin + Band, firstBinExt, lastBinExt, fMinSFT, fMinSFT + (numBinsSFT-1) * df, firstBinSFT, lastBinSFT );
-
-  INT4 firstBinOffset = firstBinExt - firstBinSFT;
-
   SFTVector *ret;
-  XLAL_CHECK_NULL ( (ret = XLALCreateSFTVector ( numSFTs, numBinsExt )) != NULL, XLAL_EFUNC );
+  XLAL_CHECK_NULL ( (ret = XLALCreateSFTVector ( numSFTs, 0 )) != NULL, XLAL_EFUNC );
 
   for ( UINT4 i = 0; i < numSFTs; i ++ )
     {
       SFTtype *dest = &(ret->data[i]);
       SFTtype *src =  &(inSFTs->data[i]);
-      COMPLEX8Vector *ptr = dest->data;
 
-      /* copy complete header first */
-      memcpy ( dest, src, sizeof(*dest) );
-      /* restore data-pointer */
-      dest->data = ptr;
-      /* set correct fMin */
-      dest->f0 = firstBinExt * df ;
-
-      /* copy the relevant part of the data */
-      memcpy ( dest->data->data, src->data->data + firstBinOffset, numBinsExt * sizeof( dest->data->data[0] ) );
+      XLAL_CHECK_NULL ( XLALExtractBandFromSFT ( &dest, src, fMin, Band ) == XLAL_SUCCESS, XLAL_EFUNC );
 
     } /* for i < numSFTs */
 
@@ -1241,6 +1213,72 @@ XLALExtractBandFromSFTVector ( const SFTVector *inSFTs,	///< [in] input SFTs
   return ret;
 
 } /* XLALExtractBandFromSFTVector() */
+
+
+/**
+ * Return an SFTs containing only the bins in [fMin, fMin+Band].
+ * Note: the output SFT is guaranteed to "cover" the input boundaries 'fMin'
+ * and 'fMin+Band', ie if necessary the output SFT contains one additional
+ * bin on either end of the interval.
+ *
+ * This uses the conventions in XLALFindCoveringSFTBins() to determine
+ * the 'effective' frequency-band to extract.
+ *
+ */
+int
+XLALExtractBandFromSFT ( SFTtype **outSFT,	///< [out] output SFT (alloc'ed or re-alloced as required)
+                         const SFTtype *inSFT,	///< [in] input SFT
+                         REAL8 fMin,		///< [in] lower end of frequency interval to return
+                         REAL8 Band		///< [in] band width of frequency interval to return
+                         )
+{
+  XLAL_CHECK ( outSFT != NULL, XLAL_EINVAL );
+  XLAL_CHECK ( inSFT != NULL, XLAL_EINVAL );
+  XLAL_CHECK ( inSFT->data != NULL, XLAL_EINVAL );
+  XLAL_CHECK ( fMin >= 0, XLAL_EDOM, "Invalid negative frequency fMin = %g\n", fMin );
+  XLAL_CHECK ( Band > 0, XLAL_EDOM, "Invalid non-positive Band = %g\n", Band );
+
+  REAL8 df      = inSFT->deltaF;
+  REAL8 Tsft    = 1.0 / df;
+
+  REAL8 fMinSFT    = inSFT->f0;
+  UINT4 numBinsSFT = inSFT->data->length;
+  UINT4 firstBinSFT= round ( fMinSFT / df );	// round to closest bin
+  UINT4 lastBinSFT = firstBinSFT + ( numBinsSFT - 1 );
+
+  // find 'covering' SFT-band to extract
+  UINT4 firstBinExt, numBinsExt;
+  XLAL_CHECK ( XLALFindCoveringSFTBins ( &firstBinExt, &numBinsExt, fMin, Band, Tsft ) == XLAL_SUCCESS, XLAL_EFUNC );
+  UINT4 lastBinExt = firstBinExt + ( numBinsExt - 1 );
+
+  XLAL_CHECK ( firstBinExt >= firstBinSFT && (lastBinExt <= lastBinSFT), XLAL_EINVAL,
+               "Requested frequency-bins [%f,%f]Hz = [%d, %d] not contained within SFT's [%f, %f]Hz = [%d,%d].\n",
+               fMin, fMin + Band, firstBinExt, lastBinExt, fMinSFT, fMinSFT + (numBinsSFT-1) * df, firstBinSFT, lastBinSFT );
+
+  INT4 firstBinOffset = firstBinExt - firstBinSFT;
+
+  if ( (*outSFT) == NULL ) {
+    XLAL_CHECK ( ((*outSFT) = XLALCalloc(1, sizeof(*(*outSFT)))) != NULL, XLAL_ENOMEM );
+  }
+  if ( (*outSFT)->data == NULL ) {
+    XLAL_CHECK ( ((*outSFT)->data = XLALCreateCOMPLEX8Vector ( numBinsExt )) != NULL, XLAL_EFUNC );
+  }
+  if ( (*outSFT)->data->length != numBinsExt ) {
+    XLAL_CHECK ( ((*outSFT)->data->data = XLALRealloc ( (*outSFT)->data->data, numBinsExt * sizeof((*outSFT)->data->data[0]))) != NULL, XLAL_ENOMEM );
+    (*outSFT)->data->length = numBinsExt;
+  }
+
+  COMPLEX8Vector *ptr = (*outSFT)->data;	// keep copy to data-pointer
+  (*(*outSFT)) = (*inSFT);			// copy complete header
+  (*outSFT)->data = ptr;	  		// restore data-pointer
+  (*outSFT)->f0 = firstBinExt * df ;	  	// set correct new fMin
+
+  /* copy the relevant part of the data */
+  memcpy ( (*outSFT)->data->data, inSFT->data->data + firstBinOffset, numBinsExt * sizeof( (*outSFT)->data->data[0] ) );
+
+  return XLAL_SUCCESS;
+
+} // XLALExtractBandFromSFT()
 
 /**
  * Return a MultiSFT vector containing only the bins in [fMin, fMin+Band].
