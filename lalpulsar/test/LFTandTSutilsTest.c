@@ -72,11 +72,13 @@ int main(void);
 
 int test_XLALSFTVectorToLFT(void);
 int test_XLALSincInterpolateCOMPLEX8TimeSeries(void);
+int test_XLALDirichletInterpolateSFT ( void );
+
 int XLALgenerateRandomData ( REAL4TimeSeries **ts, SFTVector **sfts );
 int write_SFTdata (const char *fname, const SFTtype *sft);
 SFTVector *XLALDuplicateSFTVector ( const SFTVector *sftsIn );
 int XLALCompareSFTs ( const SFTtype *sft1, const SFTtype *sft2, const VectorComparison *tol );
-static COMPLEX8 testSignal ( REAL8 t );
+static COMPLEX8 testSignal ( REAL8 t, REAL8 sigmaN );
 
 /*----------------------------------------------------------------------*/
 /* Main Function starts here */
@@ -90,6 +92,8 @@ int main(void)
   XLAL_CHECK ( test_XLALSFTVectorToLFT() == XLAL_SUCCESS, XLAL_EFUNC );
 
   XLAL_CHECK ( test_XLALSincInterpolateCOMPLEX8TimeSeries() == XLAL_SUCCESS, XLAL_EFUNC );
+
+  XLAL_CHECK ( test_XLALDirichletInterpolateSFT() == XLAL_SUCCESS, XLAL_EFUNC );
 
   LALCheckMemoryLeaks();
 
@@ -141,14 +145,8 @@ test_XLALSFTVectorToLFT ( void )
   lft0->deltaF = dfLFT;
 
   // ----- extract frequency band of interest
-  SFTVector XLAL_INIT_DECL(lftR4V0);
-  lftR4V0.length = 1;
-  lftR4V0.data = lft0;
-  SFTVector *lftR4V;
-  XLAL_CHECK ( (lftR4V = XLALExtractBandFromSFTVector ( &lftR4V0, out_fMin, out_Band )) != NULL, XLAL_EFUNC );
-  XLALDestroySFT ( lft0 );
-  SFTtype *lftR4 = &(lftR4V->data[0]);
-
+  SFTtype *lftR4 = NULL;
+  XLAL_CHECK ( XLALExtractBandFromSFT ( &lftR4, lft0, out_fMin, out_Band ) == XLAL_SUCCESS, XLAL_EFUNC );
   for ( UINT4 k=0; k < lftR4->data->length; k ++ ) {
     lftR4->data->data[k] *= dt_R4;
   }
@@ -159,13 +157,8 @@ test_XLALSFTVectorToLFT ( void )
   XLALDestroySFTVector ( sftsBand );
 
   // ----- re-extract frequency band of interest
-  SFTVector XLAL_INIT_DECL(lftSFTsV0);
-  lftSFTsV0.length = 1;
-  lftSFTsV0.data = lftSFTs0;
-  SFTVector *lftSFTsV;
-  XLAL_CHECK ( (lftSFTsV = XLALExtractBandFromSFTVector ( &lftSFTsV0, out_fMin, out_Band )) != NULL, XLAL_EFUNC );
-  XLALDestroySFT ( lftSFTs0 );
-  SFTtype *lftSFTs = &(lftSFTsV->data[0]);
+  SFTtype *lftSFTs = NULL;
+  XLAL_CHECK ( XLALExtractBandFromSFT ( &lftSFTs, lftSFTs0, out_fMin, out_Band ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   if ( lalDebugLevel & LALINFO )
   {   // ----- write debug output
@@ -178,11 +171,11 @@ test_XLALSFTVectorToLFT ( void )
 
   // ========== compare resulting LFTs ==========
   VectorComparison XLAL_INIT_DECL(tol);
-  tol.relErr_L1 	= 0.5;
+  tol.relErr_L1 	= 4e-2;
   tol.relErr_L2		= 5e-2;
-  tol.angleV 		= 4e-2;	// rad
-  tol.relErr_atMaxAbsx 	= 2e-3;
-  tol.relErr_atMaxAbsy  = 2e-3;
+  tol.angleV 		= 5e-2;	// rad
+  tol.relErr_atMaxAbsx 	= 1.2e-2;
+  tol.relErr_atMaxAbsy  = 1.2e-2;
 
   XLALPrintInfo ("Comparing LFT from REAL4-timeseries, to LFT from heterodyned COMPLEX8-timeseries:\n");
   XLAL_CHECK ( XLALCompareSFTs ( lftR4, lftSFTs, &tol ) == XLAL_SUCCESS, XLAL_EFUNC );
@@ -191,12 +184,201 @@ test_XLALSFTVectorToLFT ( void )
   XLALDestroyREAL4TimeSeries ( tsR4 );
   XLALDestroyREAL4FFTPlan ( planR4 );
 
-  XLALDestroySFTVector ( lftR4V );
-  XLALDestroySFTVector ( lftSFTsV );
+  XLALDestroySFT ( lft0 );
+  XLALDestroySFT ( lftR4 );
+  XLALDestroySFT ( lftSFTs );
+  XLALDestroySFT ( lftSFTs0 );
 
   return XLAL_SUCCESS;
 
 } // test_XLALSFTVectorToLFT()
+
+
+int
+test_XLALSincInterpolateCOMPLEX8TimeSeries ( void )
+{
+
+  COMPLEX8TimeSeries* tsIn;
+  REAL8 f0 = 100;	// heterodyning frequency
+  REAL8 dt = 0.1;	// sampling frequency = 10Hz
+  LIGOTimeGPS epoch = { 100, 0 };
+  REAL8 tStart = XLALGPSGetREAL8 ( &epoch );
+  UINT4 numSamples = 1000;
+  REAL8 Tspan = numSamples * dt;
+
+  XLAL_CHECK ( (tsIn = XLALCreateCOMPLEX8TimeSeries ( "test TS_in", &epoch, f0, dt, &emptyLALUnit, numSamples )) != NULL, XLAL_EFUNC );
+  for ( UINT4 j = 0; j < numSamples; j ++ ) {
+    tsIn->data->data[j] = testSignal ( tStart + j * dt, 0 );
+  } // for j < numSamples
+
+  // ---------- interpolate this onto new time-samples
+  UINT4 Dterms = 16;
+  REAL8 safety = (Dterms+1.0) * dt;	// avoid truncated interpolation to minimize errors, set to 0 for seeing boundary-effects [they're not so bad...]
+  LIGOTimeGPS epochOut = epoch;
+  XLALGPSAdd ( &epochOut, safety );
+  REAL8 TspanOut = Tspan - 2 * safety;
+
+  REAL8 dtOut = dt / 10;
+  UINT4 numSamplesOut = lround ( TspanOut / dtOut );
+  COMPLEX8TimeSeries *tsOut;
+  XLAL_CHECK ( (tsOut = XLALCreateCOMPLEX8TimeSeries ( "test TS_out", &epochOut, f0, dtOut, &emptyLALUnit, numSamplesOut )) != NULL, XLAL_EFUNC );
+
+
+  REAL8 tStartOut = XLALGPSGetREAL8 ( &epochOut );
+  REAL8Vector *times_out;
+  XLAL_CHECK ( (times_out = XLALCreateREAL8Vector ( numSamplesOut )) != NULL, XLAL_EFUNC );
+  for ( UINT4 j = 0; j < numSamplesOut; j ++ )
+    {
+      REAL8 t_j = tStartOut + j * dtOut;
+      times_out->data[j] = t_j;
+    } // for j < numSamplesOut
+
+  XLAL_CHECK ( XLALSincInterpolateCOMPLEX8TimeSeries ( &(tsOut->data), times_out, tsIn, Dterms ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLALDestroyREAL8Vector ( times_out );
+
+  // ---------- check accuracy of interpolation
+  COMPLEX8TimeSeries *tsFull;
+  XLAL_CHECK ( (tsFull = XLALCreateCOMPLEX8TimeSeries ( "test TS_full", &epochOut, f0, dtOut, &emptyLALUnit, numSamplesOut )) != NULL, XLAL_EFUNC );
+  for ( UINT4 j = 0; j < numSamplesOut; j ++ ) {
+    tsFull->data->data[j] = testSignal ( tStartOut + j * dtOut, 0 );
+  } // for j < numSamplesOut
+
+  // ----- out debug info
+  if ( lalDebugLevel & LALINFO )
+    {
+      XLAL_CHECK ( XLALdumpCOMPLEX8TimeSeries ( "TS_in.dat", tsIn ) == XLAL_SUCCESS, XLAL_EFUNC );
+      XLAL_CHECK ( XLALdumpCOMPLEX8TimeSeries ( "TS_out.dat", tsOut ) == XLAL_SUCCESS, XLAL_EFUNC );
+      XLAL_CHECK ( XLALdumpCOMPLEX8TimeSeries ( "TS_full.dat", tsFull ) == XLAL_SUCCESS, XLAL_EFUNC );
+    } // if LALINFO
+
+  VectorComparison XLAL_INIT_DECL(tol);
+  tol.relErr_L1 	= 2e-2;
+  tol.relErr_L2		= 2e-2;
+  tol.angleV		= 2e-2;
+  tol.relErr_atMaxAbsx	= 2e-2;
+  tol.relErr_atMaxAbsy	= 2e-2;
+
+  XLALPrintInfo ("Comparing sinc-interpolated timeseries to exact signal timeseries:\n");
+  VectorComparison XLAL_INIT_DECL(cmp);
+  XLAL_CHECK ( XLALCompareCOMPLEX8Vectors ( &cmp, tsOut->data, tsFull->data, &tol ) == XLAL_SUCCESS, XLAL_EFUNC );
+
+  // ---------- free memory
+  XLALDestroyCOMPLEX8TimeSeries ( tsIn );
+  XLALDestroyCOMPLEX8TimeSeries ( tsOut );
+  XLALDestroyCOMPLEX8TimeSeries ( tsFull );
+
+  return XLAL_SUCCESS;
+
+} // test_XLALSincInterpolateCOMPLEX8TimeSeries()
+
+int
+test_XLALDirichletInterpolateSFT ( void )
+{
+  REAL8 f0 = 0;		// heterodyning frequency
+  REAL8 sigmaN = 0.001;
+  REAL8 dt = 0.1;	// sampling frequency = 10Hz
+  LIGOTimeGPS epoch = { 100, 0 };
+  REAL8 tStart = XLALGPSGetREAL8 ( &epoch );
+  UINT4 numSamples = 1000;
+  REAL8 Tspan = numSamples * dt;
+  REAL8 df = 1.0 / Tspan;
+
+  UINT4 numSamples0padded = 3 * numSamples;
+  REAL8 Tspan0padded = numSamples0padded * dt;
+  REAL8 df0padded = 1.0 / Tspan0padded;
+
+  UINT4 numBins = NhalfPosDC ( numSamples );
+  UINT4 numBins0padded = NhalfPosDC ( numSamples0padded );
+  // original timeseries
+  REAL4TimeSeries* ts;
+  XLAL_CHECK ( (ts = XLALCreateREAL4TimeSeries ( "test TS_in", &epoch, f0, dt, &emptyLALUnit, numSamples )) != NULL, XLAL_EFUNC );
+  for ( UINT4 j = 0; j < numSamples; j ++ ) {
+    ts->data->data[j] = crealf ( testSignal ( tStart + j * dt, sigmaN ) );
+  } // for j < numSamples
+
+  // zero-padded to double length
+  REAL4TimeSeries* ts0padded;
+  XLAL_CHECK ( (ts0padded = XLALCreateREAL4TimeSeries ( "test TS_padded", &epoch, f0, dt, &emptyLALUnit, numSamples0padded )) != NULL, XLAL_EFUNC );
+  memcpy ( ts0padded->data->data, ts->data->data, numSamples * sizeof(ts0padded->data->data[0]) );
+  memset ( ts0padded->data->data + numSamples, 0, (numSamples0padded - numSamples) * sizeof(ts0padded->data->data[0]) );
+
+  // compute FFT on ts and ts0padded
+  REAL4FFTPlan *plan, *plan0padded;
+  XLAL_CHECK ( (plan        = XLALCreateForwardREAL4FFTPlan ( numSamples, 0 )) != NULL, XLAL_EFUNC );
+  XLAL_CHECK ( (plan0padded = XLALCreateForwardREAL4FFTPlan ( numSamples0padded, 0 )) != NULL, XLAL_EFUNC );
+  COMPLEX8Vector *fft, *fft0padded;
+  XLAL_CHECK ( (fft        = XLALCreateCOMPLEX8Vector ( numBins )) != NULL, XLAL_ENOMEM );
+  XLAL_CHECK ( (fft0padded = XLALCreateCOMPLEX8Vector ( numBins0padded )) != NULL, XLAL_ENOMEM );
+
+  XLAL_CHECK ( XLALREAL4ForwardFFT ( fft, ts->data, plan ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK ( XLALREAL4ForwardFFT ( fft0padded, ts0padded->data, plan0padded ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLALDestroyREAL4TimeSeries ( ts );
+  XLALDestroyREAL4TimeSeries ( ts0padded );
+  XLALDestroyREAL4FFTPlan( plan );
+  XLALDestroyREAL4FFTPlan( plan0padded );
+
+  SFTtype XLAL_INIT_DECL(tmp);
+  tmp.f0 = f0;
+  tmp.deltaF = df;
+  tmp.data = fft;
+
+  REAL8 Band = 0.5/dt - f0;
+  SFTtype *sft = NULL;
+  XLAL_CHECK ( XLALExtractBandFromSFT ( &sft, &tmp, f0, Band ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLALDestroyCOMPLEX8Vector ( fft );
+
+
+  tmp.f0 = f0;
+  tmp.deltaF = df0padded;
+  tmp.data = fft0padded;
+  SFTtype *sft0padded = NULL;
+  XLAL_CHECK ( XLALExtractBandFromSFT ( &sft0padded, &tmp, f0, Band ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLALDestroyCOMPLEX8Vector ( fft0padded );
+
+  // ---------- interpolate input SFT onto frequency bins of padded-ts FFT for comparison
+  UINT4 Dterms = 16;
+  REAL8 safetyBins = (Dterms + 1.0);	// avoid truncated interpolation to minimize errors, set to 0 for seeing boundary-effects [they're not so bad...]
+
+  REAL8 fMin = f0 + safetyBins * df;
+  fMin = round(fMin / df0padded) * df0padded;
+  UINT4 numBinsOut = numBins0padded - 3 * safetyBins;
+  REAL8 BandOut = (numBinsOut-1) * df0padded;
+
+  SFTtype *sftUpsampled = NULL;
+  XLAL_CHECK ( XLALExtractBandFromSFT ( &sftUpsampled, sft0padded, fMin + 0.5*df0padded, BandOut - df0padded ) == XLAL_SUCCESS, XLAL_EFUNC );
+
+  SFTtype *sftInterpolated;
+  XLAL_CHECK ( (sftInterpolated = XLALDirichletInterpolateSFT ( sft, fMin, df0padded, numBinsOut, Dterms )) != NULL, XLAL_EFUNC );
+
+  // ----- out debug info
+  if ( lalDebugLevel & LALINFO )
+    {
+      XLAL_CHECK ( write_SFTdata ( "SFT_in.dat", sft ) == XLAL_SUCCESS, XLAL_EFUNC );
+      XLAL_CHECK ( write_SFTdata ( "SFT_in0padded.dat", sft0padded ) == XLAL_SUCCESS, XLAL_EFUNC );
+      XLAL_CHECK ( write_SFTdata ( "SFT_upsampled.dat", sftUpsampled ) == XLAL_SUCCESS, XLAL_EFUNC );
+      XLAL_CHECK ( write_SFTdata ( "SFT_interpolated.dat", sftInterpolated ) == XLAL_SUCCESS, XLAL_EFUNC );
+    } // if LALINFO
+
+  // ---------- check accuracy of interpolation
+  VectorComparison XLAL_INIT_DECL(tol);
+  tol.relErr_L1 	= 8e-2;
+  tol.relErr_L2		= 8e-2;
+  tol.angleV		= 8e-2;
+  tol.relErr_atMaxAbsx	= 4e-3;
+  tol.relErr_atMaxAbsy	= 4e-3;
+
+  XLALPrintInfo ("Comparing Dirichlet SFT interpolation with upsampled SFT:\n");
+  XLAL_CHECK ( XLALCompareSFTs ( sftUpsampled, sftInterpolated, &tol ) == XLAL_SUCCESS, XLAL_EFUNC );
+
+  // ---------- free memory
+  XLALDestroySFT ( sft );
+  XLALDestroySFT ( sft0padded );
+  XLALDestroySFT ( sftUpsampled );
+  XLALDestroySFT ( sftInterpolated );
+
+  return XLAL_SUCCESS;
+
+} // test_XLALDirichletInterpolateSFT()
 
 
 /**
@@ -215,12 +397,7 @@ XLALgenerateRandomData ( REAL4TimeSeries **ts, SFTVector **sfts )
   REAL8 Tsft = 1000.0;
 
   // noise sigma
-  REAL8 sigmaN = 0;
-
-  // frequency and amplitude of sinuoid signal
-  REAL8 freqS = LAL_PI;
-  REAL8 ampS = 0.01;
-  REAL8 phi0S = 1.0;
+  REAL8 sigmaN = 0.1;
 
   /* prepare sampling constants */
   REAL8 numR4SamplesPerSFT = 2 * 5000;
@@ -242,12 +419,6 @@ XLALgenerateRandomData ( REAL4TimeSeries **ts, SFTVector **sfts )
   XLAL_CHECK ( (timestampsSFT->data = XLALCalloc (numSFTs, sizeof (*timestampsSFT->data) )) != NULL, XLAL_ENOMEM );
   timestampsSFT->length = numSFTs;
 
-  /* prepare random-number generator */
-  gsl_rng * r;
-  XLAL_CHECK ( (r = gsl_rng_alloc (gsl_rng_taus2)) != NULL, XLAL_EFAILED );
-  //time_t now = time(NULL);
-  gsl_rng_set (r, 13);	/* sets random-number seed */
-
   /* ----- set up random-noise timeseries with gaps ---------- */
   for ( UINT4 alpha=0; alpha < numSFTs; alpha ++ )
     {
@@ -261,7 +432,7 @@ XLALgenerateRandomData ( REAL4TimeSeries **ts, SFTVector **sfts )
           UINT4 alpha_j = alpha * numR4SamplesPerSFT + j;
           REAL8 ti = alpha * Tsft + j * dtR4;
           /* unit-variance Gaussian noise + sinusoid */
-          TSdata[alpha_j] = gsl_ran_gaussian (r, sigmaN) + ampS * sin ( LAL_TWOPI * freqS * ti + phi0S); // ( alpha_j == 1000 ? 1 : 0 )
+          TSdata[alpha_j] = crealf ( testSignal ( ti, sigmaN ) );
         } // for js < numR4SamplesPerSFT
 
     } /* for alpha < numSFTs */
@@ -277,7 +448,6 @@ XLALgenerateRandomData ( REAL4TimeSeries **ts, SFTVector **sfts )
   XLAL_CHECK ( (outSFTs = XLALSignalToSFTs ( outTS, &sftParams )) != NULL, XLAL_EFUNC );
 
   /* free memory */
-  gsl_rng_free (r);
   XLALFree ( timestampsSFT->data );
   XLALFree ( timestampsSFT );
 
@@ -288,30 +458,6 @@ XLALgenerateRandomData ( REAL4TimeSeries **ts, SFTVector **sfts )
   return XLAL_SUCCESS;
 
 } // XLALgenerateRandomData()
-
-
-int
-write_SFTdata (const char *fname, const SFTtype *sft)
-{
-  XLAL_CHECK ( fname != NULL, XLAL_EINVAL );
-  XLAL_CHECK ( sft != NULL, XLAL_EINVAL );
-
-  REAL8 f0 = sft->f0;
-  REAL8 df = sft->deltaF;
-
-  FILE *fp;
-  XLAL_CHECK ( (fp = fopen(fname, "wb")) != NULL, XLAL_ESYS );
-  for ( UINT4 k = 0; k < sft->data->length; k ++ )
-    {
-      REAL8 fk = f0 + k * df;
-      fprintf ( fp, "%.9f      % 6e  % 6e  \n", fk, crealf(sft->data->data[k]), cimagf(sft->data->data[k]) );
-    } // for k < numFreqBins
-
-  fclose(fp);
-
-  return XLAL_SUCCESS;
-
-} // write_SFTdata()
 
 SFTVector *
 XLALDuplicateSFTVector ( const SFTVector *sftsIn )
@@ -368,94 +514,50 @@ XLALCompareSFTs ( const SFTtype *sft1, const SFTtype *sft2, const VectorComparis
 
 } // XLALCompareSFTs()
 
-int
-test_XLALSincInterpolateCOMPLEX8TimeSeries ( void )
-{
-
-  COMPLEX8TimeSeries* tsIn;
-  REAL8 f0 = 100;	// heterodyning frequency
-  REAL8 dt = 0.1;	// sampling frequency = 10Hz
-  LIGOTimeGPS epoch = { 100, 0 };
-  REAL8 tStart = XLALGPSGetREAL8 ( &epoch );
-  UINT4 numSamples = 1000;
-  REAL8 Tspan = numSamples * dt;
-
-  XLAL_CHECK ( (tsIn = XLALCreateCOMPLEX8TimeSeries ( "test TS_in", &epoch, f0, dt, &emptyLALUnit, numSamples )) != NULL, XLAL_EFUNC );
-  for ( UINT4 j = 0; j < numSamples; j ++ ) {
-    tsIn->data->data[j] = testSignal ( tStart + j * dt );
-  } // for j < numSamples
-
-  // ---------- interpolate this onto new time-samples
-  UINT4 Dterms = 16;
-  REAL8 safety = (Dterms+1.0) * dt;	// avoid truncated interpolation to minimize errors, set to 0 for seeing boundary-effects [they're not so bad...]
-  LIGOTimeGPS epochOut = epoch;
-  XLALGPSAdd ( &epochOut, safety );
-  REAL8 TspanOut = Tspan - 2 * safety;
-
-  REAL8 dtOut = dt / 10;
-  UINT4 numSamplesOut = lround ( TspanOut / dtOut );
-  COMPLEX8TimeSeries *tsOut;
-  XLAL_CHECK ( (tsOut = XLALCreateCOMPLEX8TimeSeries ( "test TS_out", &epochOut, f0, dtOut, &emptyLALUnit, numSamplesOut )) != NULL, XLAL_EFUNC );
-
-
-  REAL8 tStartOut = XLALGPSGetREAL8 ( &epochOut );
-  REAL8Vector *times_out;
-  XLAL_CHECK ( (times_out = XLALCreateREAL8Vector ( numSamplesOut )) != NULL, XLAL_EFUNC );
-  for ( UINT4 j = 0; j < numSamplesOut; j ++ )
-    {
-      REAL8 t_j = tStartOut + j * dtOut;
-      times_out->data[j] = t_j;
-    } // for j < numSamplesOut
-
-
-  XLAL_CHECK ( XLALSincInterpolateCOMPLEX8TimeSeries ( &(tsOut->data), times_out, tsIn, Dterms ) == XLAL_SUCCESS, XLAL_EFUNC );
-
-  // ---------- check accuracy of interpolation
-  COMPLEX8TimeSeries *tsFull;
-  XLAL_CHECK ( (tsFull = XLALCreateCOMPLEX8TimeSeries ( "test TS_full", &epochOut, f0, dtOut, &emptyLALUnit, numSamplesOut )) != NULL, XLAL_EFUNC );
-  for ( UINT4 j = 0; j < numSamplesOut; j ++ ) {
-    tsFull->data->data[j] = testSignal ( tStartOut + j * dtOut );
-  } // for j < numSamplesOut
-
-  // ----- out debug info
-  if ( lalDebugLevel & LALINFO )
-    {
-      XLAL_CHECK ( XLALdumpCOMPLEX8TimeSeries ( "TS_in.dat", tsIn ) == XLAL_SUCCESS, XLAL_EFUNC );
-      XLAL_CHECK ( XLALdumpCOMPLEX8TimeSeries ( "TS_out.dat", tsOut ) == XLAL_SUCCESS, XLAL_EFUNC );
-      XLAL_CHECK ( XLALdumpCOMPLEX8TimeSeries ( "TS_full.dat", tsFull ) == XLAL_SUCCESS, XLAL_EFUNC );
-    } // if LALINFO
-
-  VectorComparison XLAL_INIT_DECL(tol);
-  tol.relErr_L1 	= 2e-2;
-  tol.relErr_L2		= 2e-2;
-  tol.angleV		= 2e-2;
-  tol.relErr_atMaxAbsx	= 2e-2;
-  tol.relErr_atMaxAbsy	= 2e-2;
-
-  XLALPrintInfo ("Comparing sinc-interpolated timeseries to exact signal timeseries:\n");
-  VectorComparison XLAL_INIT_DECL(cmp);
-  XLAL_CHECK ( XLALCompareCOMPLEX8Vectors ( &cmp, tsOut->data, tsFull->data, &tol ) == XLAL_SUCCESS, XLAL_EFUNC );
-
-  // ---------- free memory
-  XLALDestroyCOMPLEX8TimeSeries ( tsIn );
-  XLALDestroyCOMPLEX8TimeSeries ( tsOut );
-  XLALDestroyCOMPLEX8TimeSeries ( tsFull );
-
-  XLALDestroyREAL8Vector ( times_out );
-
-  return XLAL_SUCCESS;
-
-} // test_XLALSincInterpolateCOMPLEX8TimeSeries()
-
 
 static COMPLEX8
-testSignal ( REAL8 t )
+testSignal ( REAL8 t, REAL8 sigmaN )
 {
-  REAL8 amp1 = 1;
+  static gsl_rng * r = NULL;
+  static BOOLEAN firstCall = 1;
+  if ( firstCall )
+    {
+      XLAL_CHECK ( (r = gsl_rng_alloc (gsl_rng_taus2)) != NULL, XLAL_EFAILED );
+      gsl_rng_set (r, 13);	/* sets random-number seed */
+      firstCall = 0;
+    }
+
+  REAL8 amp1 = 0.001;
   REAL8 amp2 = 1;
-  REAL8 freq1 = 1;
+  REAL8 freq1 = LAL_PI;
   REAL8 freq2 = 2;
 
   COMPLEX8 y = amp1 * sin ( LAL_TWOPI * freq1 * t ) + I * amp2 * cos ( LAL_TWOPI * freq2 * t );
+  y += gsl_ran_gaussian (r, sigmaN);
+  y += I * gsl_ran_gaussian (r, sigmaN);
+
   return y;
 } // testSignal()
+
+int
+write_SFTdata (const char *fname, const SFTtype *sft)
+{
+  XLAL_CHECK ( fname != NULL, XLAL_EINVAL );
+  XLAL_CHECK ( sft != NULL, XLAL_EINVAL );
+
+  REAL8 f0 = sft->f0;
+  REAL8 df = sft->deltaF;
+
+  FILE *fp;
+  XLAL_CHECK ( (fp = fopen(fname, "wb")) != NULL, XLAL_ESYS );
+  for ( UINT4 k = 0; k < sft->data->length; k ++ )
+    {
+      REAL8 fk = f0 + k * df;
+      fprintf ( fp, "%.9f      % 6e  % 6e  \n", fk, crealf(sft->data->data[k]), cimagf(sft->data->data[k]) );
+    } // for k < numFreqBins
+
+  fclose(fp);
+
+  return XLAL_SUCCESS;
+
+} // write_SFTdata()
