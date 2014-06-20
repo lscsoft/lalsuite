@@ -102,6 +102,8 @@ SFTVector* XLALCreateSFTVector (UINT4 numSFTs, UINT4 numBins );
 void XLALDestroySFT (SFTtype *sft);
 void XLALDestroySFTVector (SFTVector *vect);
 
+SFTVector *XLALDuplicateSFTVector ( const SFTVector *sftsIn );
+
 COMPLEX8Vector *XLALrefineCOMPLEX8Vector (const COMPLEX8Vector *in, UINT4 refineby, UINT4 Dterms);
 
 int XLALExtractBandFromSFT ( SFTtype **outSFT, const SFTtype *inSFT, REAL8 fMin, REAL8 Band );
@@ -134,8 +136,8 @@ int XLALMultiSFTVectorAdd ( MultiSFTVector *a, const MultiSFTVector *b );
 int XLALSFTVectorAdd ( SFTVector *a, const SFTVector *b );
 int XLALSFTAdd ( SFTtype *a, const SFTtype *b );
 
-int XLALEarliestMultiSFTsample ( LIGOTimeGPS *out, MultiSFTVector *multisfts );
-int XLALLatestMultiSFTsample ( LIGOTimeGPS *out, MultiSFTVector *multisfts );
+int XLALEarliestMultiSFTsample ( LIGOTimeGPS *out, const MultiSFTVector *multisfts );
+int XLALLatestMultiSFTsample ( LIGOTimeGPS *out, const MultiSFTVector *multisfts );
 
 // destructors
 void XLALDestroyPSDVector ( PSDVector *vect );

@@ -1473,7 +1473,7 @@ XLALFindCoveringSFTBins ( UINT4 *firstBin,	///< [out] effective lower frequency-
 */
 int
 XLALEarliestMultiSFTsample ( LIGOTimeGPS *out,              /**< [out] earliest GPS time */
-                             MultiSFTVector *multisfts      /**< [in] multi SFT vector */
+                             const MultiSFTVector *multisfts      /**< [in] multi SFT vector */
                              )
 {
   UINT4 i,j;
@@ -1523,7 +1523,7 @@ XLALEarliestMultiSFTsample ( LIGOTimeGPS *out,              /**< [out] earliest 
 */
 int
 XLALLatestMultiSFTsample ( LIGOTimeGPS *out,              /**< [out] latest GPS time */
-                           MultiSFTVector *multisfts      /**< [in] multi SFT vector */
+                           const MultiSFTVector *multisfts      /**< [in] multi SFT vector */
                            )
 {
   UINT4 i,j;
@@ -1732,3 +1732,35 @@ XLALCopySFT ( SFTtype *dest, 		/**< [out] copied SFT (needs to be allocated alre
   return XLAL_SUCCESS;
 
 } // XLALCopySFT()
+
+
+/**
+ * Create a complete copy of an SFT vector
+ */
+SFTVector *
+XLALDuplicateSFTVector ( const SFTVector *sftsIn )
+{
+  XLAL_CHECK_NULL ( (sftsIn != NULL) && ( sftsIn->length > 0), XLAL_EINVAL );
+
+  UINT4 numSFTs = sftsIn->length;
+  UINT4 numBins = sftsIn->data[0].data->length;
+
+  SFTVector *sftsOut;
+  XLAL_CHECK_NULL ( (sftsOut = XLALCreateSFTVector ( numSFTs, numBins )) != NULL, XLAL_EFUNC );
+
+  for ( UINT4 alpha=0; alpha < numSFTs; alpha++ )
+    {
+      SFTtype *thisSFTIn = &sftsIn->data[alpha];
+      SFTtype *thisSFTOut = &sftsOut->data[alpha];
+
+      COMPLEX8Vector *tmp = thisSFTOut->data;
+      memcpy ( thisSFTOut, thisSFTIn, sizeof(*thisSFTOut) );
+      thisSFTOut->data = tmp;
+      thisSFTOut->data->length = numBins;
+      memcpy ( thisSFTOut->data->data, thisSFTIn->data->data, numBins * sizeof(thisSFTOut->data->data[0]) );
+
+    } // for alpha < numSFTs
+
+  return sftsOut;
+
+} // XLALDuplicateSFTVector()

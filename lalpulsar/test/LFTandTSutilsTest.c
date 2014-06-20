@@ -76,7 +76,6 @@ int test_XLALDirichletInterpolateSFT ( void );
 
 int XLALgenerateRandomData ( REAL4TimeSeries **ts, SFTVector **sfts );
 int write_SFTdata (const char *fname, const SFTtype *sft);
-SFTVector *XLALDuplicateSFTVector ( const SFTVector *sftsIn );
 int XLALCompareSFTs ( const SFTtype *sft1, const SFTtype *sft2, const VectorComparison *tol );
 static COMPLEX8 testSignal ( REAL8 t, REAL8 sigmaN );
 
@@ -458,34 +457,6 @@ XLALgenerateRandomData ( REAL4TimeSeries **ts, SFTVector **sfts )
   return XLAL_SUCCESS;
 
 } // XLALgenerateRandomData()
-
-SFTVector *
-XLALDuplicateSFTVector ( const SFTVector *sftsIn )
-{
-  XLAL_CHECK_NULL ( (sftsIn != NULL) && ( sftsIn->length > 0), XLAL_EINVAL );
-
-  UINT4 numSFTs = sftsIn->length;
-  UINT4 numBins = sftsIn->data[0].data->length;
-
-  SFTVector *sftsOut;
-  XLAL_CHECK_NULL ( (sftsOut = XLALCreateSFTVector ( numSFTs, numBins )) != NULL, XLAL_EFUNC );
-
-  for ( UINT4 alpha=0; alpha < numSFTs; alpha++ )
-    {
-      SFTtype *thisSFTIn = &sftsIn->data[alpha];
-      SFTtype *thisSFTOut = &sftsOut->data[alpha];
-
-      COMPLEX8Vector *tmp = thisSFTOut->data;
-      memcpy ( thisSFTOut, thisSFTIn, sizeof(*thisSFTOut) );
-      thisSFTOut->data = tmp;
-      thisSFTOut->data->length = numBins;
-      memcpy ( thisSFTOut->data->data, thisSFTIn->data->data, numBins * sizeof(thisSFTOut->data->data[0]) );
-
-    } // for alpha < numSFTs
-
-  return sftsOut;
-
-} // XLALDuplicateSFTVector()
 
 // compare two SFTs, return XLAL_SUCCESS if OK, error otherwise
 int
