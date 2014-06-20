@@ -47,6 +47,8 @@
 #define SQ(x) ((x)*(x))
 
 #define RELERR(x,y) ( cabs( (x) - (y) ) / ( 0.5 * (cabs(x) + cabs(y)) ) )
+#define OOTWOPI         (1.0 / LAL_TWOPI)      // 1/2pi
+#define OOPI         (1.0 / LAL_PI)      // 1/pi
 
 /*---------- Global variables ----------*/
 static LALUnit emptyLALUnit;
@@ -1297,3 +1299,99 @@ XLALCheckVectorComparisonTolerances ( const VectorComparison *result,	///< [in] 
   return XLAL_SUCCESS;
 
 } // XLALCheckVectorComparisonTolerances()
+
+/** Interpolate a given regularly-spaced COMPLEX8 timeseries 'ts_in = x_in(j * dt)' onto new samples
+ *  'y_out(t_out)' using Shannon sinc interpolation truncated to (2*Dterms+1) terms, namely
+ *
+ * \f{equation}{
+ * x(t) = \sum_{j = j^* - \Delta j}^{j^* + \Delta j} x_j \,\, \frac{\sin(\pi\delta_j)}{\pi\delta_j}\,,\quad\text{with}\quad
+ * \delta_j \equiv \frac{t - t_j}{\Delta t}\,,
+ * \f}
+ * and where \f$j^* \equiv \mathrm{round}(t / \Delta t)\f$.
+ *
+ * In order to implement this more efficiently, we observe that \f$\sin(\pi\delta_j) = (-1)^{(j-j0)}\sin(\pi\delta_{j0})\f$ for integer \f$j\f$,
+ * and therefore
+ *
+ * \f{equation}{
+ * x(t) = \frac{\sin(\pi\,\delta_{j0})}{\pi} \, \sum_{j = j^* - \Delta j}^{j^* + \Delta j} (-1)^{(j-j0)}\frac{x_j}{\delta_j}\,,
+ * \f}
+ *
+ * NOTE: Using Dterms=0 corresponds to closest-bin interpolation
+ *
+ * NOTE2: samples *outside* the original timespan are returned as 0
+ */
+int
+XLALSincInterpolateCOMPLEX8TimeSeries ( COMPLEX8Vector **y_out,		///< [out] output series of interpolated y-values [alloc'ed or re-calloc'ed here]
+                                        const REAL8Vector *t_out,	///< [in] output time-steps to interpolate input to
+                                        const COMPLEX8TimeSeries *ts_in,///< [in] regularly-spaced input timeseries
+                                        UINT4 Dterms			///< [in] truncate sinc kernel sum to +-Dterms around max
+                                        )
+{
+  XLAL_CHECK ( y_out != NULL, XLAL_EINVAL );
+  XLAL_CHECK ( t_out != NULL, XLAL_EINVAL );
+  XLAL_CHECK ( ts_in != NULL, XLAL_EINVAL );
+
+  UINT4 numSamplesOut = t_out->length;
+
+  // make sure output vector is allocated and of the right size
+  if ( (*y_out) == NULL ) {
+    XLAL_CHECK ( ((*y_out) = XLALCreateCOMPLEX8Vector ( numSamplesOut )) != NULL, XLAL_EFUNC );
+  }
+  if ( ((*y_out)->length != numSamplesOut ) ) {
+    XLAL_CHECK ( ((*y_out)->data = XLALRealloc ( (*y_out)->data, numSamplesOut * sizeof((*y_out)->data[0]) )) != NULL, XLAL_ENOMEM );
+    (*y_out)->length = numSamplesOut;
+  }
+
+  UINT4 numSamplesIn = ts_in->data->length;
+  REAL8 dt = ts_in->deltaT;
+  REAL8 tmin = XLALGPSGetREAL8 ( &(ts_in->epoch) );	// time of first bin in input timeseries
+
+  const REAL8 oodt = 1.0 / dt;
+
+  for ( UINT4 l = 0; l < numSamplesOut; l ++ )
+    {
+      REAL8 t = t_out->data[l] - tmin;		// measure time since start of input timeseries
+
+      // samples outside of input timeseries are returned as 0
+      if ( (t < 0) || (t > (numSamplesIn-1)*dt) )	// avoid any extrapolations!
+        {
+          (*y_out)->data[l] = 0;
+          continue;
+        }
+
+      INT8 jstar = lround ( t * oodt );		// bin closest to 't', guaranteed to be in [0, numSamples-1]
+
+      if ( fabs ( t - jstar * dt ) < 1e-6 )	// avoid numerical problems near peak
+        {
+          (*y_out)->data[l] = ts_in->data->data[jstar];	// known analytic solution for exact bin
+          continue;
+        }
+
+      UINT8 jStart = MYMAX ( jstar - Dterms, 0 );
+      UINT8 jEnd = MYMIN ( jstar + Dterms, numSamplesIn - 1 );
+
+      REAL4 delta_jStart = (t - jStart * dt) * oodt;
+      REAL4 sin0, cos0;
+      XLALSinCosLUT ( &sin0, &cos0, LAL_PI * delta_jStart );
+      REAL4 sin0oopi = sin0 * OOPI;
+
+      COMPLEX8 y_l = 0;
+      REAL8 delta_j = delta_jStart;
+      for ( UINT8 j = jStart; j <= jEnd; j ++ )
+        {
+          COMPLEX8 Cj = sin0oopi / delta_j;
+
+          y_l += Cj * ts_in->data->data[j];
+
+          sin0oopi = -sin0oopi;		// sin-term flips sign every step
+          delta_j --;
+        } // for j in [j* - Dterms, ... ,j* + Dterms]
+
+      (*y_out)->data[l] = y_l;
+
+    } // for l < numSamplesOut
+
+  return XLAL_SUCCESS;
+
+} // XLALSincInterpolateCOMPLEX8TimeSeries()
+
