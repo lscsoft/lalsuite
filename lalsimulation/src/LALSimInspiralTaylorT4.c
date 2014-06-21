@@ -240,7 +240,7 @@ XLALSimInspiralAngularAcceleration4_6PN(
 		+ ak->aat3*v3
 		+ ak->aat4*v4
 		+ ak->aat5*v5
-		+ (ak->aat6 + ak->aat6l*log(16.0*v2))*v6
+		+ (ak->aat6 + ak->aat6l*log(v))*v6
 		+ ak->aat10*v10
 		+ ak->aat12*v12);
 
@@ -273,7 +273,7 @@ XLALSimInspiralAngularAcceleration4_7PN(
 		+ ak->aat3*v3
 		+ ak->aat4*v4
 		+ ak->aat5*v5
-		+ (ak->aat6 + ak->aat6l*log(16.0*v2))*v6
+		+ (ak->aat6 + ak->aat6l*log(v))*v6
 		+ ak->aat7*v7
 		+ ak->aat10*v10
 		+ ak->aat12*v12);
@@ -339,16 +339,16 @@ XLALSimInspiralTaylorT4Setup(
     akdEF->ETa1 = XLALSimInspiralPNEnergy_2PNCoeff(ak->nu);
     akdEF->ETa2 = XLALSimInspiralPNEnergy_4PNCoeff(ak->nu);
     akdEF->ETa3 = XLALSimInspiralPNEnergy_6PNCoeff(ak->nu);
-    
+
     /* PN co-efficients for angular acceleration */
-    ak->aatN = XLALSimInspiralTaylorT4AngularAccel_0PNCoeff(LAL_G_SI*ak->m/pow(LAL_C_SI, 3.0), ak->nu);
-    ak->aat2 = XLALSimInspiralTaylorT4AngularAccel_2PNCoeff(ak->nu);
-    ak->aat3 = XLALSimInspiralTaylorT4AngularAccel_3PNCoeff(ak->nu);
-    ak->aat4 = XLALSimInspiralTaylorT4AngularAccel_4PNCoeff(ak->nu);
-    ak->aat5 = XLALSimInspiralTaylorT4AngularAccel_5PNCoeff(ak->nu);
-    ak->aat6 = XLALSimInspiralTaylorT4AngularAccel_6PNCoeff(ak->nu);
-    ak->aat7 = XLALSimInspiralTaylorT4AngularAccel_7PNCoeff(ak->nu);
-    ak->aat6l = XLALSimInspiralTaylorT4AngularAccel_6PNLogCoeff(ak->nu);
+    ak->aatN = XLALSimInspiralTaylorT4OmDer_0PNCoeff(ak->nu)/(ak->m/LAL_MSUN_SI*LAL_MTSUN_SI)/3.;
+    ak->aat2 = XLALSimInspiralTaylorT4OmDer_2PNCoeff(ak->nu);
+    ak->aat3 = XLALSimInspiralTaylorT4OmDer_3PNCoeff(ak->nu);
+    ak->aat4 = XLALSimInspiralTaylorT4OmDer_4PNCoeff(ak->nu);
+    ak->aat5 = XLALSimInspiralTaylorT4OmDer_5PNCoeff(ak->nu);
+    ak->aat6 = XLALSimInspiralTaylorT4OmDer_6PNCoeff(ak->nu);
+    ak->aat7 = XLALSimInspiralTaylorT4OmDer_7PNCoeff(ak->nu);
+    ak->aat6l = XLALSimInspiralTaylorT4OmDer_6PNLogCoeff(ak->nu);
 
     /* Tidal coefficients for energy and angular acceleration */
     akdEF->ETa5 = 0.;
@@ -363,18 +363,18 @@ XLALSimInspiralTaylorT4Setup(
                     ak->chi2, ak->chi1, lambda1)
                     + XLALSimInspiralPNEnergy_12PNTidalCoeff(
                     ak->chi1, ak->chi2, lambda2);
-            ak->aat12   = XLALSimInspiralTaylorT4AngularAccel_12PNTidalCoeff(
+            ak->aat12   = XLALSimInspiralTaylorT4OmDer_12PNTidalCoeff(
                     ak->nu, ak->chi1, lambda1)
-                    + XLALSimInspiralTaylorT4AngularAccel_12PNTidalCoeff(
+                    + XLALSimInspiralTaylorT4OmDer_12PNTidalCoeff(
                     ak->nu, ak->chi2, lambda2);
         case LAL_SIM_INSPIRAL_TIDAL_ORDER_5PN:
             akdEF->ETa5 = XLALSimInspiralPNEnergy_10PNTidalCoeff(
                     ak->chi2, ak->chi1, lambda1)
                     + XLALSimInspiralPNEnergy_10PNTidalCoeff(
                     ak->chi1, ak->chi2, lambda2);
-            ak->aat10   = XLALSimInspiralTaylorT4AngularAccel_10PNTidalCoeff(
+            ak->aat10   = XLALSimInspiralTaylorT4OmDer_10PNTidalCoeff(
                     ak->chi1, lambda1)
-                    + XLALSimInspiralTaylorT4AngularAccel_10PNTidalCoeff(
+                    + XLALSimInspiralTaylorT4OmDer_10PNTidalCoeff(
                     ak->chi2, lambda2);
         case LAL_SIM_INSPIRAL_TIDAL_ORDER_0PN:
             break;
@@ -582,6 +582,7 @@ int XLALSimInspiralTaylorT4PNGenerator(
 		int phaseO                      /**< twice post-Newtonian phase order */
 		)
 {
+
 	/* The Schwarzschild ISCO frequency - for sanity checking fRef */
 	REAL8 fISCO = pow(LAL_C_SI,3) / (pow(6.,3./2.)*LAL_PI*(m1+m2)*LAL_G_SI);
 
