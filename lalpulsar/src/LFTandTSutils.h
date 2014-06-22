@@ -73,35 +73,35 @@ typedef struct tagVectorComparison
 
 /*---------- exported prototypes [API] ----------*/
 
-COMPLEX8TimeSeries *XLALSFTVectorToCOMPLEX8TimeSeries ( SFTVector *sfts, const LIGOTimeGPS *start_in, const LIGOTimeGPS *end_in );
+COMPLEX8TimeSeries *XLALSFTVectorToCOMPLEX8TimeSeries ( const SFTVector *sfts, const LIGOTimeGPS *start_in, const LIGOTimeGPS *end_in );
+MultiCOMPLEX8TimeSeries *XLALMultiSFTVectorToCOMPLEX8TimeSeries ( const MultiSFTVector *multisfts );
 SFTtype *XLALSFTVectorToLFT ( SFTVector *sfts, REAL8 upsampling );
 
 int XLALReorderFFTWtoSFT (COMPLEX8Vector *X);
 int XLALReorderSFTtoFFTW (COMPLEX8Vector *X);
 int XLALTimeShiftSFT ( SFTtype *sft, REAL8 shift );
 
-MultiCOMPLEX8TimeSeries *XLALMultiSFTVectorToCOMPLEX8TimeSeries ( MultiSFTVector *multisfts );
 
 int XLALAntennaWeightCOMPLEX8TimeSeries ( COMPLEX8TimeSeries **Faoft, COMPLEX8TimeSeries **Fboft,
                                           const COMPLEX8TimeSeries *timeseries,
                                           const AMCoeffs *AMcoef,
-                                          const SFTVector *sfts );
+                                          const LIGOTimeGPSVector *TS );
 
 int XLALAntennaWeightMultiCOMPLEX8TimeSeries ( MultiCOMPLEX8TimeSeries **Faoft, MultiCOMPLEX8TimeSeries **Fboft,
                                                const MultiCOMPLEX8TimeSeries *multiTimeseries,
                                                const MultiAMCoeffs *multiAMcoef,
-                                               const MultiSFTVector *multisfts );
+                                               const MultiLIGOTimeGPSVector *multiTS );
 
 int XLALBarycentricResampleMultiCOMPLEX8TimeSeries ( MultiCOMPLEX8TimeSeries **Faoft_RS, MultiCOMPLEX8TimeSeries **Fboft_RS,
                                                      const MultiCOMPLEX8TimeSeries *Faoft, const MultiCOMPLEX8TimeSeries *Fboft,
                                                      const MultiSSBtimes *multiSSB,
-                                                     const MultiSFTVector *multiSFTs,
+                                                     const MultiLIGOTimeGPSVector *multiTS,
                                                      const REAL8 deltaF );
 
 int XLALBarycentricResampleCOMPLEX8TimeSeries ( COMPLEX8TimeSeries **Faoft_RS, COMPLEX8TimeSeries **Fboft_RS,
                                                 const COMPLEX8TimeSeries *Faoft, const COMPLEX8TimeSeries *Fboft,
                                                 const SSBtimes *SSB,
-                                                const SFTVector *SFTs );
+                                                const LIGOTimeGPSVector *TS );
 
 int XLALGSLInterpolateREAL8Vector ( REAL8Vector **yi, REAL8Vector *xi, gsl_spline *spline );
 
