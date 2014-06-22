@@ -331,7 +331,6 @@ XLALAddBinaryTimes ( SSBtimes **tSSBOut,			//!< [out] reference-time offsets in 
 
         XLAL_CHECK ( gsl_root_fsolver_set(s, &F, E_lo, E_hi) == 0, XLAL_EFAILED );
 
-        XLALPrintInfo ("%5s [%9s, %9s] %9s %10s %9s\n", "iter", "lower", "upper", "root", "abstol", "err(est)");
         int max_iter = 100;
         int iter = 0;
         int status;
@@ -344,9 +343,6 @@ XLALAddBinaryTimes ( SSBtimes **tSSBOut,			//!< [out] reference-time offsets in 
             E_lo = gsl_root_fsolver_x_lower (s);
             E_hi = gsl_root_fsolver_x_upper (s);
             status = gsl_root_test_interval ( E_lo, E_hi, epsabs, epsrel );
-
-            if (status == GSL_SUCCESS) { XLALPrintInfo ("Converged:\n"); }
-            XLALPrintInfo ("%5d [%.7f, %.7f] %.7f %+10.7g %10.7g\n", iter, E_lo, E_hi, E_i, epsabs, E_hi - E_lo);
 
           } while ( (status == GSL_CONTINUE) && (iter < max_iter) );
 
