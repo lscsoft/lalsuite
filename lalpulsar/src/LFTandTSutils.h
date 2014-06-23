@@ -92,16 +92,22 @@ int XLALAntennaWeightMultiCOMPLEX8TimeSeries ( MultiCOMPLEX8TimeSeries **Faoft, 
                                                const MultiAMCoeffs *multiAMcoef,
                                                const MultiLIGOTimeGPSVector *multiTS );
 
-int XLALBarycentricResampleMultiCOMPLEX8TimeSeries ( MultiCOMPLEX8TimeSeries **Faoft_RS, MultiCOMPLEX8TimeSeries **Fboft_RS,
-                                                     const MultiCOMPLEX8TimeSeries *Faoft, const MultiCOMPLEX8TimeSeries *Fboft,
-                                                     const MultiSSBtimes *multiSSB,
-                                                     const MultiLIGOTimeGPSVector *multiTS,
-                                                     const REAL8 deltaF );
+int
+XLALBarycentricResampleMultiCOMPLEX8TimeSeries ( MultiCOMPLEX8TimeSeries **mTimeSeries_SRC,
+                                                 MultiLIGOTimeGPSVector **mTimestamps_SRC,
+                                                 const MultiCOMPLEX8TimeSeries *mTimeSeries_DET,
+                                                 const MultiLIGOTimeGPSVector *mTimestamps_DET,
+                                                 const MultiSSBtimes *mSRC_timing,
+                                                 const REAL8 deltaF
+                                                 );
 
-int XLALBarycentricResampleCOMPLEX8TimeSeries ( COMPLEX8TimeSeries **Faoft_RS, COMPLEX8TimeSeries **Fboft_RS,
-                                                const COMPLEX8TimeSeries *Faoft, const COMPLEX8TimeSeries *Fboft,
-                                                const SSBtimes *SSB,
-                                                const LIGOTimeGPSVector *TS );
+int
+XLALBarycentricResampleCOMPLEX8TimeSeries ( COMPLEX8TimeSeries *TimeSeries_SRC,
+                                            LIGOTimeGPSVector *Timestamps_SRC,
+                                            const COMPLEX8TimeSeries *TimeSeries_DET,
+                                            const LIGOTimeGPSVector *Timestamps_DET,
+                                            const SSBtimes *SRC_timing
+                                            );
 
 int XLALGSLInterpolateREAL8Vector ( REAL8Vector **yi, REAL8Vector *xi, gsl_spline *spline );
 
