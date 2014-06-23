@@ -81,34 +81,6 @@ int XLALReorderFFTWtoSFT (COMPLEX8Vector *X);
 int XLALReorderSFTtoFFTW (COMPLEX8Vector *X);
 int XLALTimeShiftSFT ( SFTtype *sft, REAL8 shift );
 
-
-int XLALAntennaWeightCOMPLEX8TimeSeries ( COMPLEX8TimeSeries **Faoft, COMPLEX8TimeSeries **Fboft,
-                                          const COMPLEX8TimeSeries *timeseries,
-                                          const AMCoeffs *AMcoef,
-                                          const LIGOTimeGPSVector *TS );
-
-int XLALAntennaWeightMultiCOMPLEX8TimeSeries ( MultiCOMPLEX8TimeSeries **Faoft, MultiCOMPLEX8TimeSeries **Fboft,
-                                               const MultiCOMPLEX8TimeSeries *multiTimeseries,
-                                               const MultiAMCoeffs *multiAMcoef,
-                                               const MultiLIGOTimeGPSVector *multiTS );
-
-int
-XLALBarycentricResampleMultiCOMPLEX8TimeSeries ( MultiCOMPLEX8TimeSeries **mTimeSeries_SRC,
-                                                 MultiLIGOTimeGPSVector **mTimestamps_SRC,
-                                                 const MultiCOMPLEX8TimeSeries *mTimeSeries_DET,
-                                                 const MultiLIGOTimeGPSVector *mTimestamps_DET,
-                                                 const MultiSSBtimes *mSRC_timing,
-                                                 const REAL8 deltaF
-                                                 );
-
-int
-XLALBarycentricResampleCOMPLEX8TimeSeries ( COMPLEX8TimeSeries *TimeSeries_SRC,
-                                            LIGOTimeGPSVector *Timestamps_SRC,
-                                            const COMPLEX8TimeSeries *TimeSeries_DET,
-                                            const LIGOTimeGPSVector *Timestamps_DET,
-                                            const SSBtimes *SRC_timing
-                                            );
-
 int XLALGSLInterpolateREAL8Vector ( REAL8Vector **yi, REAL8Vector *xi, gsl_spline *spline );
 
 int XLALGSLInitInterpolateREAL8Vector ( gsl_spline **spline, REAL8Vector *x, REAL8Vector *y );
