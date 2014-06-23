@@ -433,6 +433,30 @@ struct TAGNAME {
 // Typemaps which convert to/from fixed-size arrays.
 //
 
+// Type checkers for overloaded functions:
+%typecheck(SWIG_TYPECHECK_POINTER) SWIGTYPE[ANY] {
+  $typemap(swiglal_fixarr_ltype, $1_type) temp$argnum[$1_dim0];
+  const size_t dims[] = {$1_dim0};
+  const size_t strides[] = {1};
+  // swiglal_array_typeid input type: $1_type
+  int res = %swiglal_array_copyin($1_type)(swiglal_no_self(), $input, %as_voidptr(&temp$argnum[0]),
+                                           sizeof(temp$argnum[0]), 1, dims, strides,
+                                           false, $typemap(swiglal_fixarr_tinfo, $1_type),
+                                           %convertptr_flags);
+  $1 = SWIG_CheckState(res);
+}
+%typecheck(SWIG_TYPECHECK_POINTER) SWIGTYPE[ANY][ANY] {
+  $typemap(swiglal_fixarr_ltype, $1_type) temp$argnum[$1_dim0][$1_dim1];
+  const size_t dims[] = {$1_dim0, $1_dim1};
+  const size_t strides[] = {$1_dim1, 1};
+  // swiglal_array_typeid input type: $1_type
+  int res = %swiglal_array_copyin($1_type)(swiglal_no_self(), $input, %as_voidptr(&temp$argnum[0]),
+                                           sizeof(temp$argnum[0][0]), 2, dims, strides,
+                                           false, $typemap(swiglal_fixarr_tinfo, $1_type),
+                                           %convertptr_flags);
+  $1 = SWIG_CheckState(res);
+}
+
 // Input typemaps for functions and structs:
 %typemap(in, noblock=1) SWIGTYPE[ANY], SWIGTYPE INOUT[ANY] {
   $typemap(swiglal_fixarr_ltype, $1_type) temp$argnum[$1_dim0];
