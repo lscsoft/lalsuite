@@ -1098,7 +1098,7 @@ REAL4 bessj(INT4 n, REAL4 x)
 	sign = 1;
 	if (n<0) {
 	  sign = pow((-1.0),n);
-	  n = fabs(n);
+	  n = abs(n);
 	}
 	
 	if (n==0) return sign*bessj0(x);
