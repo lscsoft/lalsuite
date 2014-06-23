@@ -115,9 +115,17 @@ static inline PyObject* swiglal_get_reference(PyObject* v) { Py_XINCREF(v); retu
 %swiglal_py_bin_op(mod, binaryfunc, nb_remainder);
 %swiglal_py_bin_op(mul, binaryfunc, nb_multiply);
 %swiglal_py_bin_op(or, binaryfunc, nb_or);
+%swiglal_py_bin_op(pow, ternaryfunc, nb_power);
 %swiglal_py_bin_op(rshift, binaryfunc, nb_rshift);
 %swiglal_py_bin_op(sub, binaryfunc, nb_subtract);
 %swiglal_py_bin_op(xor, binaryfunc, nb_xor);
+
+// Python __pow__() operator must accept 3 arguments, but we do not use the 3rd.
+%typemap(in) void* SWIGLAL_OP_POW_3RDARG {
+  if ($input != Py_None) {
+    %argument_fail(SWIG_TypeError, "$type", $symname, $argnum);
+  }
+}
 
 // Comparison operators.
 %define %swiglal_py_cmp_op(NAME, COMPTYPE)

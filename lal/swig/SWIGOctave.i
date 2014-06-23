@@ -84,9 +84,13 @@ extern "C++" {
 %swiglal_oct_bin_op(mod);
 %swiglal_oct_bin_op(mul);
 %swiglal_oct_bin_op(or);
+%swiglal_oct_bin_op(pow);
 %swiglal_oct_bin_op(rshift);
 %swiglal_oct_bin_op(sub);
 %swiglal_oct_bin_op(xor);
+
+// Octave __pow__() operator takes 2 arguments, so we ignore the 3rd.
+%typemap(in, numinputs=0) void* SWIGLAL_OP_POW_3RDARG "";
 
 ////////// General fragments, typemaps, and macros //////////
 
