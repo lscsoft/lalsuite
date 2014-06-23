@@ -148,6 +148,7 @@ MACRO(A, B, C, X);
 #include <cstdio>
 #include <cstring>
 #include <complex>
+#include <csignal>
 #else
 #include <assert.h>
 #include <stdlib.h>
@@ -155,6 +156,7 @@ MACRO(A, B, C, X);
 #include <string.h>
 #include <stdbool.h>
 #include <complex.h>
+#include <signal.h>
 #endif
 %}
 
@@ -165,6 +167,29 @@ MACRO(A, B, C, X);
 %header %{
 #include <swig_config.h>
 %}
+
+// Include GSL headers.
+#ifdef SWIGLAL_HAVE_LIBGSL
+%header %{
+#include <gsl/gsl_errno.h>
+#include <gsl/gsl_math.h>
+#include <gsl/gsl_complex_math.h>
+#include <gsl/gsl_vector.h>
+#include <gsl/gsl_matrix.h>
+#include <gsl/gsl_rng.h>
+%}
+#endif
+
+// Add missing GSL constructor for single-precision complex numbers.
+#ifdef SWIGLAL_HAVE_LIBGSL
+%header %{
+SWIGINTERNINLINE gsl_complex_float gsl_complex_float_rect(float x, float y) {
+  gsl_complex_float z;
+  GSL_SET_COMPLEX(&z, x, y);
+  return z;
+}
+%}
+#endif
 
 // Include LAL standard definitions header: this contains macro
 // definitions which are required for parsing LAL headers.
@@ -180,18 +205,6 @@ MACRO(A, B, C, X);
 
 // Version of SWIG used to generate wrapping code.
 %constant int swig_version = SWIG_VERSION;
-
-// Constructors for GSL complex numbers, if required.
-#ifdef SWIGLAL_HAVE_LIBGSL
-%header %{
-#include <gsl/gsl_complex_math.h>   // provides gsl_complex_rect()
-SWIGINTERNINLINE gsl_complex_float gsl_complex_float_rect(float x, float y) {
-  gsl_complex_float z;
-  GSL_SET_COMPLEX(&z, x, y);
-  return z;
-}
-%}
-#endif
 
 // Convert XLAL/LAL errors into native scripting-language exceptions:
 //  - XLAL: Before performing any action, clear the XLAL error number.

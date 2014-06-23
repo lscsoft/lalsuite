@@ -56,22 +56,36 @@ for incl_elem in tree.findall('include'):
 else:
     fail('could not find root of preprocessing interface parse tree')
 
+# function: get list of interface headers, ordered by #include precedence
+def get_header_list(elem):
+
+    for incl_elem in elem.findall('include'):
+
+        # find header filename
+        header_name = get_swig_attr(incl_elem, 'name')
+        if header_name == None:
+            fail('could not find filename of header file')
+        header_name = os.path.basename(header_name)
+
+        # filter out SWIG interface headers
+        if header_name.endswith('.i'):
+            continue
+
+        # skip in already in header list
+        if header_name in headers:
+            continue
+
+        # add headers #included by this header to list
+        get_header_list(incl_elem)
+
+        # add this header to list
+        headers[header_name] = incl_elem
+        ordered_headers.append(header_name)
+
 # get list of interface headers
 headers = dict()
-for incl_elem in root.findall('include'):
-
-    # find header filename
-    header_name = get_swig_attr(incl_elem, 'name')
-    if header_name == None:
-        fail('could not find filename of header file')
-    _, header_name = os.path.split(header_name)
-
-    # filter out SWIG interface headers
-    if header_name.endswith('.i'):
-        continue
-
-    # add this header
-    headers[header_name] = incl_elem
+ordered_headers = list()
+get_header_list(root)
 
 # get dictionaries of symbols from interface headers
 functions = dict()
@@ -103,14 +117,14 @@ for header_name in headers:
             macro = re.sub(r'\s', '', cdecl_value)
             if cdecl_name == '__swiglal__':
                 if macro in clear_macros[header_name]:
-                    fail("duplicate definition of SWIGLAL(%s)", macro)
+                    fail("duplicate definition of SWIGLAL(%s)" % macro)
                 else:
                     clear_macros[header_name].add(macro)
             else:
                 if macro in clear_macros[header_name]:
                     clear_macros[header_name].remove(macro)
                 else:
-                    fail("cannot clear undefined macro SWIGLAL(%s)", macro)
+                    fail("cannot clear undefined macro SWIGLAL(%s)" % macro)
 
         # functions
         elif cdecl_kind == 'function':
@@ -242,7 +256,7 @@ f.write('#endif // !SWIGIMPORTED\n')
 
 # include interface headers in wrapping code
 f.write('%header %{\n')
-for header_name in sorted(headers):
+for header_name in ordered_headers:
     f.write('#include <lal/%s>\n' % header_name)
 f.write('%}\n')
 
@@ -277,7 +291,7 @@ for function_name in sorted(functions):
 
 # include interface headers, and clear SWIGLAL() macros afterwards
 f.write('%%include <lal/SWIG%sAlpha.i>\n' % package_name)
-for header_name in sorted(headers):
+for header_name in ordered_headers:
     f.write('%%include <lal/%s>\n' % header_name)
     for macro_name in clear_macros[header_name]:
         f.write('SWIGLAL_CLEAR(%s);\n' % macro_name)

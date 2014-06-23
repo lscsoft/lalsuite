@@ -429,7 +429,7 @@ Arguments for each section follow:\n\n";
 	else
 		initVarsFunc=&LALInferenceInitCBCVariables;
 	state->initVariables=initVarsFunc;
-	initVarsFunc(state);
+	state->currentParams = initVarsFunc(state);
 
         /* Choose the likelihood */
         LALInferenceInitLikelihood(state);

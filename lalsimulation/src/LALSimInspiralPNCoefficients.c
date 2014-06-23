@@ -117,7 +117,7 @@ XLALSimInspiralPNEnergy_4PNQM2SCoeff(
 }
 
 static REAL8 UNUSED
-XLALSimInspiralPNEnergy_4PNQM2SLCoeff(
+XLALSimInspiralPNEnergy_4PNQM2SOCoeff(
 	REAL8 mByM)
 {
 	return -3. * (1./mByM/mByM) / 2.;
@@ -136,7 +136,6 @@ XLALSimInspiralPNEnergy_7PNSOCoeff(
 {
 	return -75./4. + 27./(4.*mByM) + 53.*mByM/2. + 67*mByM*mByM/6. + 17.*pow(mByM,3)/12. - pow(mByM,4)/12.;
 }
-
 
 /*
  * Tidal correction coefficients to Energy
@@ -255,6 +254,14 @@ XLALSimInspiralPNFlux_7PNSOCoeff(
 	REAL8 mByM)
 {
         return (380.647/13.608) + 9535./(336.*mByM) - 40115.*mByM/756. + 3742.*mByM*mByM/63. - 35.*pow(mByM,3)/108. - 1117.*pow(mByM,4)/54.;
+}
+
+static REAL8 UNUSED
+XLALSimInspiralPNFlux_8PNSOCoeff(
+	REAL8 mByM)
+{
+        return LAL_PI * (125.47/2.52 - 71.63/(6.72*mByM) -3.137*mByM/2.016 - 212.41*mByM*mByM/3.36);
+       // see eq. (4.9) of arXiv:1307.6793
 }
 
 /*
@@ -800,154 +807,98 @@ XLALSimInspiralTaylorT3Frequency_12PNTidalCoeff(
 }
 
 /**
- * Computes the PN Coefficients for using in the TaylorT4 angular acceleration
- * equation.
+ * Computes the PN Coefficients for using in the TaylorT4 frequency equation.
  *
- * Terms given in equation 3.6 of: Alessandra Buonanno, Bala R Iyer, Evan
- * Ochsner, Yi Pan, and B S Sathyaprakash, "Comparison of post-Newtonian
+ * Spin-less terms given in equation 3.6 of: Alessandra Buonanno, Bala R Iyer,
+ * Evan Ochsner, Yi Pan, and B S Sathyaprakash, "Comparison of post-Newtonian
  * templates for compact binary inspiral signals in gravitational-wave
  * detectors", Phys. Rev. D 80, 084043 (2009), arXiv:0907.0700v1
+ * ( with (domega/dt)/omega = 3 (dv/dt)/v ),
+ * spin-orbit terms in eq. 4.9 of S.Marsat, A.Bohe, L.Blanchet, A.Buonanno
+ * Class.Quant.Grav. 31 (2014) 025023, arXiv:1307.6793,
+ * spin-spin terms in eqs. 5.15-17 of E.Racine, A.Buonanno, L.Kidder PRD80(2009)
+ * 044010, arXiv:0812.4413
+ *** UNREVIEWED ****
  */
 
 static REAL8 UNUSED
-XLALSimInspiralTaylorT4AngularAccel_0PNCoeff(
-	REAL8 totalmass,
-	REAL8 eta)
-{
-	return 32.0 * eta / (5.0 * totalmass);
-}
-
-static REAL8 UNUSED
-XLALSimInspiralTaylorT4AngularAccel_2PNCoeff(
-	REAL8 eta)
-{
-	return -(7.43/3.36 + 11.0/4.0 * eta);
-}
-
-static REAL8 UNUSED
-XLALSimInspiralTaylorT4AngularAccel_3PNCoeff(
-	REAL8 UNUSED eta)
-{
-	return 4.0 * LAL_PI;
-}
-
-static REAL8 UNUSED
-XLALSimInspiralTaylorT4AngularAccel_4PNCoeff(
-	REAL8 eta)
-{
-	return (3.4103/1.8144 + 13.661/2.016 * eta + 5.9/1.8 * eta*eta);
-}
-
-static REAL8 UNUSED
-XLALSimInspiralTaylorT4AngularAccel_5PNCoeff(
-	REAL8 eta)
-{
-	return -(41.59/6.72 + 189.0/8.0 * eta) * LAL_PI;
-}
-
-static REAL8 UNUSED
-XLALSimInspiralTaylorT4AngularAccel_6PNCoeff(
-	REAL8 eta)
-{
-	return (164.47322263/1.39708800 + 16.0/3.0 * LAL_PI * LAL_PI 
-		- 17.12/1.05 * LAL_GAMMA
-		+ (45.1/4.8 * LAL_PI*LAL_PI - 561.98689/2.17728) * eta
-		+ 5.41/8.96 * eta*eta - 5.605/2.592 * eta*eta*eta);
-}
-
-static REAL8 UNUSED
-XLALSimInspiralTaylorT4AngularAccel_6PNLogCoeff(
-	REAL8 UNUSED eta)
-{
-	return -8.56/1.05;
-}
-
-static REAL8 UNUSED
-XLALSimInspiralTaylorT4AngularAccel_7PNCoeff(
-	REAL8 eta)
-{
-	return -(4.415/4.032 - 358.675/6.048 * eta - 91.495/1.512 * eta*eta) * LAL_PI;
-}
-
-
-static REAL8 UNUSED
-XLALSimInspiralTaylorT4Phasing_0PNCoeff(
+XLALSimInspiralTaylorT4OmDer_0PNCoeff(
 	REAL8 eta)
 {
 	return 96. / 5. * eta;
 }
 
 static REAL8 UNUSED
-XLALSimInspiralTaylorT4Phasing_2PNCoeff(
+XLALSimInspiralTaylorT4OmDer_2PNCoeff(
 	REAL8 eta)
 {
 	return ( -(1.0/336.0) * (743.0 + 924.0*eta) );
 }
 
 static REAL8 UNUSED
-XLALSimInspiralTaylorT4Phasing_3PNCoeff(
+XLALSimInspiralTaylorT4OmDer_3PNCoeff(
 	REAL8 UNUSED eta)
 {
 	return 4.0 * LAL_PI;
 }
 
 static REAL8 UNUSED
-XLALSimInspiralTaylorT4Phasing_3PNSOCoeff(
+XLALSimInspiralTaylorT4OmDer_3PNSOCoeff(
 	REAL8 mByM)
 {
 	return - 19./6. - 25./4./mByM;
 }
 
 static REAL8 UNUSED
-XLALSimInspiralTaylorT4Phasing_4PNCoeff(
+XLALSimInspiralTaylorT4OmDer_4PNCoeff(
 	REAL8 eta)
 {
 	return (34103. + 122949.*eta + 59472.*eta*eta)/18144.;
 }
 
 static REAL8 UNUSED
-XLALSimInspiralTaylorT4Phasing_4PNSSCoeff(
+XLALSimInspiralTaylorT4OmDer_4PNSSCoeff(
 	REAL8 eta)
 {
 	return - 247. / 48. / eta;
 }
 
-static REAL8 UNUSED XLALSimInspiralTaylorT4Phasing_4PNSSLCoeff(
+static REAL8 UNUSED XLALSimInspiralTaylorT4OmDer_4PNSSOCoeff(
 	REAL8 eta)
 {
 	return 721. / 48. / eta;
 }
 
 static REAL8 UNUSED
-XLALSimInspiralTaylorT4Phasing_4PNSelfSSCoeff(
+XLALSimInspiralTaylorT4OmDer_4PNSelfSSCoeff(
 	REAL8 mByM)
 {
 	return 7./96./mByM/mByM;
 }
 
 static REAL8 UNUSED
-XLALSimInspiralTaylorT4Phasing_4PNSelfSSLCoeff(
+XLALSimInspiralTaylorT4OmDer_4PNSelfSSOCoeff(
 	REAL8 mByM)
 {
 	return -1./96./mByM/mByM;
 }
 
 static REAL8 UNUSED
-XLALSimInspiralTaylorT4Phasing_4PNQMCoeff(
+XLALSimInspiralTaylorT4OmDer_4PNQMCoeff(
 	REAL8 mByM)
 {
 	return -5./2./mByM/mByM;
 }
 
 static REAL8 UNUSED
-XLALSimInspiralTaylorT4Phasing_4PNQMSOCoeff(
+XLALSimInspiralTaylorT4OmDer_4PNQMSOCoeff(
 	REAL8 mByM)
 {
 	return 15./2./mByM/mByM;
 }
 
 static REAL8 UNUSED
-XLALSimInspiralTaylorT4Phasing_5PNCoeff(
+XLALSimInspiralTaylorT4OmDer_5PNCoeff(
 	REAL8 eta)
 {
 	return ( -(1.0/672.0) * LAL_PI * (4159.0 + 15876.0*eta) );
@@ -963,38 +914,39 @@ XLALSimInspiralTaylorT4Phasing_5PNCoeff(
 }
 
 static REAL8 UNUSED
-XLALSimInspiralTaylorT4Phasing_5PNSLCoeff(
+XLALSimInspiralTaylorT4OmDer_5PNSOCoeff(
 	REAL8 mByM)
 {
 	return 13.795/1.008 - 809./(84.*mByM) - 527.*mByM/24. - 79.*mByM*mByM/6.;
 }
 
 static REAL8 UNUSED
-XLALSimInspiralTaylorT4Phasing_6PNCoeff(
+XLALSimInspiralTaylorT4OmDer_6PNCoeff(
 	REAL8 eta)
 {
-	return ( 16447322263./139708800. - 1712./105.
-		* LAL_GAMMA - 56198689./217728. * eta + LAL_PI * LAL_PI
+	return ( 16447.322263/139.7088 - 1712./105.
+		* LAL_GAMMA - 561.98689/2.17728 * eta + LAL_PI * LAL_PI
 		* (16./3. + 451./48. * eta) + 541./896. * eta * eta
 		- 5605./2592. * eta * eta * eta - 856./105. * log(16.) );
 }
 
+/* The coefficient of the log is normalized for the argument of the log to be v=(M omega)^(1/3) */
 static REAL8 UNUSED
-XLALSimInspiralTaylorT4Phasing_6PNLogCoeff(
+XLALSimInspiralTaylorT4OmDer_6PNLogCoeff(
 	REAL8 UNUSED eta)
 {
-	return -(1712.0/315.0);
+	return -(1712.0/105.0);
 }
 
 static REAL8 UNUSED
-XLALSimInspiralTaylorT4Phasing_6PNSLCoeff(
+XLALSimInspiralTaylorT4OmDer_6PNSOCoeff(
 	REAL8 mByM)
 {
 	return -LAL_PI/3. * ( 188. - 151./2./mByM );
 }
 
 static REAL8 UNUSED
-XLALSimInspiralTaylorT4Phasing_7PNCoeff(
+XLALSimInspiralTaylorT4OmDer_7PNCoeff(
 	REAL8 eta)
 {
 	return (LAL_PI/12096.0) * (-13245.0 + 717350.0*eta + 731960.0*eta*eta);
@@ -1010,10 +962,40 @@ XLALSimInspiralTaylorT4Phasing_7PNCoeff(
 }
 
 static REAL8 UNUSED
-XLALSimInspiralTaylorT4Phasing_7PNSLCoeff(
+XLALSimInspiralTaylorT4OmDer_7PNSOCoeff(
 	REAL8 mByM)
 {
 	return (1195.759 + 6558.455 * mByM - 3734.208 * mByM*mByM + 299.397*pow(mByM,3) - 737.205*pow(mByM,4) - 454.398*pow(mByM,5) )/(18.144 * mByM);
+}
+
+static REAL8 UNUSED
+XLALSimInspiralTaylorT4OmDer_8PNSOCoeff(
+	REAL8 mByM)
+{
+        return LAL_PI*(266.519/2.016 - 166.5/(2.8*mByM) - 828.43*mByM/6.72 -343.03*mByM*mByM/3.36);
+        // see eq.(4.10a) of arXiv:1307.6793
+}
+
+/*
+ * Tidal correction coefficients to DOmega/dt
+ */
+
+static REAL8 UNUSED
+XLALSimInspiralTaylorT4OmDer_10PNTidalCoeff(
+	REAL8 chi,
+	REAL8 lambda)
+{
+	return lambda * (-66.*chi + 72.) * chi*chi*chi*chi;
+}
+
+static REAL8 UNUSED
+XLALSimInspiralTaylorT4OmDer_12PNTidalCoeff(
+	REAL8 eta,
+	REAL8 chi,
+	REAL8 lambda)
+{
+	return lambda * chi*chi*chi*chi * (-461.9*chi/5.6 + 275.*eta*chi/2.
+		+ 442.1/5.6 - 273.*eta/2. + 797.*chi*chi/4. - 193.*chi*chi*chi);
 }
 
 static REAL8 UNUSED
@@ -1030,7 +1012,7 @@ static const REAL8 UNUSED
 XLALSimInspiralSpinDot_4PNCoeffLS1LS2=-1.5;
 
 static REAL8 UNUSED
-XLALSimInspiralSpinDot_4PNCoeffLSLSself(
+XLALSimInspiralSpinDot_4PNCoeffLSOSself(
 	REAL8 mByM)
 {
 	return 1.5 * (1./mByM - 1.);
@@ -1041,28 +1023,6 @@ XLALSimInspiralSpinDot_5PNCoeff(
 	REAL8 mByM)
 {
 	return 9./8. - mByM/2. + 7.*mByM*mByM/12. - 7.*pow(mByM,3)/6. - pow(mByM,4)/24.;
-}
-
-/*
- * Tidal correction coefficients to Angular Acceleration
- */
-
-static REAL8 UNUSED
-XLALSimInspiralTaylorT4AngularAccel_10PNTidalCoeff(
-	REAL8 chi,
-	REAL8 lambda)
-{
-	return lambda * (-66.*chi + 72.) * chi*chi*chi*chi;
-}
-
-static REAL8 UNUSED
-XLALSimInspiralTaylorT4AngularAccel_12PNTidalCoeff(
-	REAL8 eta,
-	REAL8 chi,
-	REAL8 lambda)
-{
-	return lambda * chi*chi*chi*chi * (-461.9*chi/5.6 + 275.*eta*chi/2.
-		+ 442.1/5.6 - 273.*eta/2. + 797.*chi*chi/4. - 193.*chi*chi*chi);
 }
 
 

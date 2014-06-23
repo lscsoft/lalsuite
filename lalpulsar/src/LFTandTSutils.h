@@ -119,6 +119,10 @@ void XLALDestroyMultiCOMPLEX8TimeSeries ( MultiCOMPLEX8TimeSeries *multiTimes );
 COMPLEX8TimeSeries *XLALDuplicateCOMPLEX8TimeSeries ( COMPLEX8TimeSeries *times );
 MultiCOMPLEX8TimeSeries *XLALDuplicateMultiCOMPLEX8TimeSeries ( MultiCOMPLEX8TimeSeries *multiTimes );
 
+int XLALSincInterpolateCOMPLEX8TimeSeries ( COMPLEX8Vector **y_out, const REAL8Vector *t_out, const COMPLEX8TimeSeries *ts_in, UINT4 Dterms );
+int XLALDirichletInterpolateCOMPLEX8FrequencySeries ( COMPLEX8Vector **y_out, const REAL8Vector *f_out, const COMPLEX8FrequencySeries *fs_in, UINT4 Dterms );
+SFTtype *XLALDirichletInterpolateSFT ( const SFTtype *sft_in, REAL8 f0Out, REAL8 dfOut, UINT4 numBinsOut, UINT4 Dterms );
+
 int XLALCompareCOMPLEX8Vectors ( VectorComparison *result, const COMPLEX8Vector *x, const COMPLEX8Vector *y, const VectorComparison *tol );
 int XLALCompareREAL4Vectors    ( VectorComparison *result, const REAL4Vector *x, const REAL4Vector *y, const VectorComparison *tol );
 int XLALCheckVectorComparisonTolerances ( const VectorComparison *result, const VectorComparison *tol );

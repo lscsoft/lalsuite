@@ -20,27 +20,70 @@
 // Header containing SWIG code which must appear *before* the LAL headers.
 // Author: Karl Wette
 
-////////// GSL error handling //////////
+////////// Error handling //////////
 
-// Set custom GSL error handler which raises an XLAL error (instead of aborting).
+// Custom GSL/LAL error handlers which raise XLAL errors, so that
+// they will be caught by the SWIG %exception handler (instead of
+// aborting, which will crash the user's scripting language session).
 %header %{
-#include <gsl/gsl_errno.h>
-static void swiglal_gsl_error_handler(const char *reason, const char *file, int line, int errnum) {
+
+// Print the supplied error message, then raise an XLAL error.
+static void swig_lal_gsl_error_handler(const char *reason, const char *file, int line, int errnum) {
   XLALPrintError("GSL function failed: %s (errnum=%i)\n", reason, errnum);
   XLALError("<GSL function>", file, line, XLAL_EFAILED);
 }
+
+// Print the supplied error message, then raise an XLAL error.
+static int swig_lal_raise_hook(int sig, const char *fmt, ...) {
+  va_list ap;
+  va_start(ap, fmt);
+  (void) vfprintf(stderr, fmt, ap);
+  va_end(ap);
+  (void) fprintf(stderr, "LALRaise: %s\n", strsignal(sig));
+  XLALSetErrno(XLAL_EFAILED);
+  return 0;
+}
+
+// Print the supplied error message, then raise an XLAL error.
+static void swig_lal_abort_hook(const char *fmt, ...) {
+  va_list ap;
+  va_start(ap, fmt);
+  (void) vfprintf(stderr, fmt, ap);
+  va_end(ap);
+  XLALSetErrno(XLAL_EFAILED);
+}
+
+%} // %header
+
+// Replace default GSL/LAL error handler with nice custom
+// handlers, and ensure default XLAL error handler is used.
+%inline %{
+void swig_set_nice_error_handlers(void) {
+  gsl_set_error_handler(swig_lal_gsl_error_handler);
+  lalRaiseHook = swig_lal_raise_hook;
+  lalAbortHook = swig_lal_abort_hook;
+  XLALSetErrorHandler(XLALDefaultErrorHandler);
+}
 %}
+
+// Use abort() error handlers in GSL/LAL/XLAL, which can be useful
+// when running scripting language interpreter under a debugger.
+%inline %{
+void swig_set_nasty_error_handlers(void) {
+  fprintf(stderr, "*** WARNING: GSL/LAL/XLAL functions will now abort() on error ***\n");
+  gsl_set_error_handler(NULL);
+  lalRaiseHook = LALRaise;
+  lalAbortHook = LALAbort;
+  XLALSetErrorHandler(XLALAbortErrorHandler);
+}
+%}
+
+// Use nice custom handlers by default.
 %init %{
-gsl_set_error_handler(swiglal_gsl_error_handler);
+swig_set_nice_error_handlers();
 %}
 
 ////////// GSL vectors and matrices //////////
-
-// Include GSL headers.
-%header %{
-#include <gsl/gsl_vector.h>
-#include <gsl/gsl_matrix.h>
-%}
 
 // This macro create wrapping structs for GSL vectors and matrices.
 %define %swig_lal_gsl_vector_matrix(TYPE, NAME)
@@ -99,41 +142,6 @@ typedef struct {
 %swig_lal_gsl_vector_matrix(double, ); // GSL double vec./mat. has no typename suffix.
 %swig_lal_gsl_vector_matrix(gsl_complex_float, _complex_float);
 %swig_lal_gsl_vector_matrix(gsl_complex, _complex);
-
-////////// LAL error handling //////////
-
-// Replace default LAL raise/abort hooks with custom handlers which
-// translate them into an XLAL error, so that they will be caught
-// by the SWIG %exception handler.
-%header %{
-
-#include <signal.h>
-
-// Print the supplied error message, then raise an XLAL error.
-static int swig_lal_LALRaise(int sig, const char *fmt, ...) {
-  va_list ap;
-  va_start(ap, fmt);
-  (void) vfprintf(stderr, fmt, ap);
-  va_end(ap);
-  (void) fprintf(stderr, "LALRaise: %s\n", strsignal(sig));
-  XLALSetErrno(XLAL_EFAILED);
-  return 0;
-}
-
-// Print the supplied error message, then raise an XLAL error.
-static void swig_lal_LALAbort(const char *fmt, ...) {
-  va_list ap;
-  va_start(ap, fmt);
-  (void) vfprintf(stderr, fmt, ap);
-  va_end(ap);
-  XLALSetErrno(XLAL_EFAILED);
-}
-
-%} // %header
-%init %{
-lalRaiseHook = swig_lal_LALRaise;
-lalAbortHook = swig_lal_LALAbort;
-%}
 
 ////////// Specialised typemaps for LIGOTimeGPS //////////
 
