@@ -2,8 +2,6 @@ LDADD =
 BUILT_SOURCES =
 include $(top_srcdir)/gnuscripts/lalapps.am
 
-SUBDIRS = ResamplingFstat
-
 bin_PROGRAMS = \
 	lalapps_ComputeFStatistic \
 	lalapps_FstatShapeTest \
