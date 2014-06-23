@@ -1415,7 +1415,7 @@ XLALSincInterpolateCOMPLEX8TimeSeries ( COMPLEX8Vector **y_out,		///< [out] outp
  * NOTE2: frequencies *outside* the original frequency band are returned as 0
  */
 int
-XLALDirichletInterpolateCOMPLEX8FrequencySeries ( COMPLEX8Vector **y_out,		///< [out] output series of interpolated y-values [alloc'ed or re-calloc'ed here]
+XLALDirichletInterpolateCOMPLEX8FrequencySeries ( COMPLEX8Vector *y_out,		///< [out] output series of interpolated y-values [must be alloc'ed already]
                                                   const REAL8Vector *f_out,		///< [in] output frequency-values to interpolate input to
                                                   const COMPLEX8FrequencySeries *fs_in,	///< [in] regularly-spaced input frequency-series
                                                   UINT4 Dterms				///< [in] truncate Dirichlet kernel sum to +-Dterms around max
@@ -1426,15 +1426,7 @@ XLALDirichletInterpolateCOMPLEX8FrequencySeries ( COMPLEX8Vector **y_out,		///< 
   XLAL_CHECK ( fs_in != NULL, XLAL_EINVAL );
 
   UINT4 numBinsOut = f_out->length;
-
-  // make sure output vector is allocated and of the right size
-  if ( (*y_out) == NULL ) {
-    XLAL_CHECK ( ((*y_out) = XLALCreateCOMPLEX8Vector ( numBinsOut )) != NULL, XLAL_EFUNC );
-  }
-  if ( ((*y_out)->length != numBinsOut ) ) {
-    XLAL_CHECK ( ((*y_out)->data = XLALRealloc ( (*y_out)->data, numBinsOut * sizeof((*y_out)->data[0]) )) != NULL, XLAL_ENOMEM );
-    (*y_out)->length = numBinsOut;
-  }
+  XLAL_CHECK ( y_out->length == numBinsOut, XLAL_EINVAL );
 
   UINT4 numBinsIn = fs_in->data->length;
   REAL8 df = fs_in->deltaF;
@@ -1449,7 +1441,7 @@ XLALDirichletInterpolateCOMPLEX8FrequencySeries ( COMPLEX8Vector **y_out,		///< 
       // bins outside of input frequency-series are returned as 0
       if ( (f < 0) || (f > (numBinsIn-1)*df) )	// avoid any extrapolations!
         {
-          (*y_out)->data[l] = 0;
+          y_out->data[l] = 0;
           continue;
         }
 
@@ -1457,7 +1449,7 @@ XLALDirichletInterpolateCOMPLEX8FrequencySeries ( COMPLEX8Vector **y_out,		///< 
 
       if ( fabs ( f - kstar * df ) < 1e-6 )	// avoid numerical problems near peak
         {
-          (*y_out)->data[l] = fs_in->data->data[kstar];	// known analytic solution for exact bin
+          y_out->data[l] = fs_in->data->data[kstar];	// known analytic solution for exact bin
           continue;
         }
 
@@ -1478,7 +1470,7 @@ XLALDirichletInterpolateCOMPLEX8FrequencySeries ( COMPLEX8Vector **y_out,		///< 
           delta_k --;
         } // for k in [k* - Dterms, ... ,k* + Dterms]
 
-      (*y_out)->data[l] = prefact * y_l;
+      y_out->data[l] = prefact * y_l;
 
     } // for l < numBinsOut
 
@@ -1515,9 +1507,9 @@ XLALDirichletInterpolateSFT ( const SFTtype *sft_in,	///< [in] input SFT
   (*out) = (*sft_in);	// copy header
   out->f0 = f0Out;
   out->deltaF = dfOut;
-  out->data = NULL;
+  XLAL_CHECK_NULL ( (out->data = XLALCreateCOMPLEX8Vector ( numBinsOut )) != NULL, XLAL_EFUNC );
 
-  XLAL_CHECK_NULL ( XLALDirichletInterpolateCOMPLEX8FrequencySeries ( &(out->data), f_out, sft_in, Dterms ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK_NULL ( XLALDirichletInterpolateCOMPLEX8FrequencySeries ( out->data, f_out, sft_in, Dterms ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   XLALDestroyREAL8Vector ( f_out );
 
