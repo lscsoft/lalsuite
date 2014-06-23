@@ -980,7 +980,7 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
     #try:
     #node=self.romweightsnodes[ifo]
         #except KeyError:
-    node=ROMNode(self.romweights_job,ifo)
+    node=ROMNode(self.romweights_job,ifo,parent.seglen,parent.flows[ifo])
     self.romweightsnodes[ifo]=node
     if parent is not None:
       node.add_parent(parent)
@@ -1589,20 +1589,25 @@ class ROMJob(pipeline.CondorDAGJob,pipeline.AnalysisJob):
     self.set_stderr_file(os.path.join(logdir,'romweights-$(cluster)-$(process).err'))
     self.add_condor_cmd('getenv','True')
     self.add_arg('-B '+str(cp.get('paths','rom_b_matrix')))
-    self.add_arg('-V '+str(cp.get('paths','rom_invV')))
-    self.add_arg('-t 0.1')
-    self.add_arg('-s 32')
-    self.add_arg('-f 40')
-    self.add_arg('-T 0.0001')
+    if cp.has_option('engine','dt'):
+      self.add_arg('-t '+str(cp.get('engine','dt')))
+    else:
+      self.add_arg('-t 0.1')
+    if cp.has_option('engine','dt'):
+      self.add_arg('-T '+str(cp.get('engine','time_step')))
+    else:
+      self.add_arg('-T 0.0001')
     self.add_condor_cmd('RequestMemory','2000')
 
 class ROMNode(pipeline.CondorDAGNode):
   """
   Run the ROM compute weights script
   """
-  def __init__(self,romweights_job,ifo):
+  def __init__(self,romweights_job,ifo,seglen,flow):
     pipeline.CondorDAGNode.__init__(self,romweights_job)
     self.__finalized=False
+    self.add_var_arg('-s '+str(seglen))
+    self.add_var_arg('-f '+str(flow))
     self.add_var_arg('-i '+ifo)
 
   def finalize(self):
