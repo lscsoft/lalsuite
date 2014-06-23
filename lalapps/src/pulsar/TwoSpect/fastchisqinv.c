@@ -253,7 +253,7 @@ REAL8 cdf_ugaussian_Pinv(REAL8 P)
    XLAL_CHECK_REAL8( P != 1.0, XLAL_EFPOVRFLW );
    XLAL_CHECK_REAL8( P != 0.0, XLAL_EFPOVRFLW );
 
-   if (fabsf(dP) <= 0.425) {
+   if (fabs(dP) <= 0.425) {
       x = twospect_small(dP);
       return x;
    }
