@@ -331,8 +331,8 @@ ComputeFstat_Resamp ( FstatResults* Fstats,
 
       /* the complex FFT output is shifted such that the heterodyne frequency is at DC */
       /* we need to shift the negative frequencies to before the positive ones */
-      XLAL_CHECK ( XLALFFTShiftCOMPLEX8Vector ( &outaX ) == XLAL_SUCCESS, XLAL_EFUNC );
-      XLAL_CHECK ( XLALFFTShiftCOMPLEX8Vector ( &outbX ) == XLAL_SUCCESS, XLAL_EFUNC );
+      XLAL_CHECK ( XLALReorderFFTWtoSFT ( outaX ) == XLAL_SUCCESS, XLAL_EFUNC );
+      XLAL_CHECK ( XLALReorderFFTWtoSFT ( outbX ) == XLAL_SUCCESS, XLAL_EFUNC );
 
       REAL4 AdX = multiAMcoef->data[X]->A;
       REAL4 BdX = multiAMcoef->data[X]->B;

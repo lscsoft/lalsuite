@@ -85,8 +85,6 @@ int XLALGSLInterpolateREAL8Vector ( REAL8Vector **yi, REAL8Vector *xi, gsl_splin
 
 int XLALGSLInitInterpolateREAL8Vector ( gsl_spline **spline, REAL8Vector *x, REAL8Vector *y );
 
-int XLALFFTShiftCOMPLEX8Vector ( COMPLEX8Vector **x );
-
 int XLALFrequencyShiftMultiCOMPLEX8TimeSeries ( MultiCOMPLEX8TimeSeries **x, const REAL8 shift );
 
 int XLALFrequencyShiftCOMPLEX8TimeSeries ( COMPLEX8TimeSeries **x, const REAL8 shift );

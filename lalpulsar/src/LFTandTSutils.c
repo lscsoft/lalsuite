@@ -490,42 +490,6 @@ XLALGSLInitInterpolateREAL8Vector ( gsl_spline **spline,
 
 } // XLALGSLInitInterpolateREAL8Vector()
 
-
-/**
- * Shifts an FFT output vector such that the Niquest frequency is the central bin
- */
-int
-XLALFFTShiftCOMPLEX8Vector ( COMPLEX8Vector **x
-                             )
-{
-  XLAL_CHECK ( (x != NULL) && (*x != NULL) && ( (*x)->data != NULL ) && ( (*x)->length > 0), XLAL_EINVAL );
-
-  COMPLEX8 *data = (*x)->data;
-  UINT4 Nbins = (*x)->length;
-  UINT4 NQ = NhalfPosDC ( Nbins );
-  UINT4 NminusNQ = Nbins - NQ;
-
-  /* allocate temp memory */
-  COMPLEX8 *temp;
-  XLAL_CHECK ( (temp = XLALMalloc ( NQ * sizeof(COMPLEX8) )) != NULL, XLAL_ENOMEM );
-
-  /* copy the bins 0 -> NQ - 1 to temp memory */
-  memcpy ( temp, data, NQ * sizeof(COMPLEX8) );
-
-  /* copy the bins NQ -> Nbins - 1 to the start */
-  memcpy ( data, &(data[NQ]), NminusNQ * sizeof(COMPLEX8) );
-
-  /* copy the temp bins to the end */
-  memcpy ( &(data[NminusNQ]), temp, NQ * sizeof(COMPLEX8) );
-
-  /* free temp memory */
-  XLALFree(temp);
-
-  return XLAL_SUCCESS;
-
-} // XLALFFTShiftCOMPLEX8Vector()
-
-
 /**
  * Multi-detector wrapper for XLALFrequencyShiftCOMPLEX8TimeSeries
  * NOTE: this <b>modifies</b> the MultiCOMPLEX8Timeseries in place
