@@ -913,7 +913,7 @@ XLALFrequencyShiftMultiCOMPLEX8TimeSeries ( MultiCOMPLEX8TimeSeries **x,	/**< [i
 /**
  * Freq-shift the given COMPLEX8Timeseries by an amount of 'shift' Hz,
  * using the time-domain expression y(t) = x(t) * e^(-i 2pi df t),
- * which shifts x(f) into y(f) = x(f - df)
+ * which shifts x(f) into y(f) = x(f + df)
  *
  * NOTE: this <b>modifies</b> the COMPLEX8TimeSeries in place
  */
