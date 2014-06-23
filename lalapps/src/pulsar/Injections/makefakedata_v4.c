@@ -825,8 +825,8 @@ XLALInitMakefakedata ( ConfigVars_t *cfg, UserVariables_t *uvar )
 
       if ( lalDebugLevel )
 	{
-	  if ( abs(cfg->fmin_eff - uvar->fmin)> LAL_REAL8_EPS
-	       || abs(cfg->fBand_eff - uvar->Band) > LAL_REAL8_EPS )
+	  if ( fabs(cfg->fmin_eff - uvar->fmin)> LAL_REAL8_EPS
+	       || fabs(cfg->fBand_eff - uvar->Band) > LAL_REAL8_EPS )
 	    printf("\nWARNING: for SFT-creation we had to adjust (fmin,Band) to"
 		   " fmin_eff=%.20g and Band_eff=%.20g\n\n", cfg->fmin_eff, cfg->fBand_eff);
 	}
