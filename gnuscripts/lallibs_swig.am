@@ -6,6 +6,7 @@ include $(top_srcdir)/gnuscripts/lallibs_header_links.am
 .PHONY: force-swig-preproc-generation
 .PHONY: run-octave
 .PHONY: run-python
+.PHONY: run-ipython
 .PHONY: swig-distclean-generate-local
 .PHONY: swig-octave-all-local
 .PHONY: swig-octave-install-hook
@@ -129,6 +130,8 @@ TESTS += SWIGTest$(PACKAGE_NAME)Python.py
 PY_LOG_COMPILER = $(swig_python_test) $(PYTHON)
 
 run-python: $(pkgpyexec_LTLIBRARIES)
+	$(AM_V_at)$(swig_python_test) $(RUNTOOL) $(PYTHON)
+run-ipython: $(pkgpyexec_LTLIBRARIES)
 	$(AM_V_at)$(swig_python_test) $(RUNTOOL) $(PYTHON) $(SWIG_IPYTHON_CMD)
 
 EXTRA_DIST += \
