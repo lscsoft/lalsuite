@@ -46,7 +46,8 @@
 #define MYMIN(x,y) ( (x) < (y) ? (x) : (y) )
 #define SQ(x) ((x)*(x))
 
-#define RELERR(x,y) ( cabs( (x) - (y) ) / ( 0.5 * (cabs(x) + cabs(y)) ) )
+#define cRELERR(x,y) ( cabsf( (x) - (y) ) / ( 0.5 * (cabsf(x) + cabsf(y)) ) )
+#define fRELERR(x,y) ( fabsf( (x) - (y) ) / ( 0.5 * (fabsf(x) + fabsf(y)) ) )
 #define OOTWOPI         (1.0 / LAL_TWOPI)      // 1/2pi
 #define OOPI         (1.0 / LAL_PI)      // 1/pi
 
@@ -1171,8 +1172,8 @@ XLALCompareCOMPLEX8Vectors ( VectorComparison *result,		///< [out] return compar
   result->relErr_L2 = diff_L2 / ( 0.5 * (x_L2 + y_L2 ) );
   REAL8 cosTheta = fmin ( 1, creal ( scalar ) / (x_L2 * y_L2) );
   result->angleV = acos ( cosTheta );
-  result->relErr_atMaxAbsx = RELERR ( x_atMaxAbsx, y_atMaxAbsx );
-  result->relErr_atMaxAbsy = RELERR ( x_atMaxAbsy, y_atMaxAbsy );;
+  result->relErr_atMaxAbsx = cRELERR ( x_atMaxAbsx, y_atMaxAbsx );
+  result->relErr_atMaxAbsy = cRELERR ( x_atMaxAbsy, y_atMaxAbsy );;
 
   XLAL_CHECK ( XLALCheckVectorComparisonTolerances ( result, tol ) == XLAL_SUCCESS, XLAL_EFUNC );
 
@@ -1248,8 +1249,8 @@ XLALCompareREAL4Vectors ( VectorComparison *result,	///< [out] return comparison
   result->relErr_L2 = diff_L2 / ( 0.5 * (x_L2 + y_L2 ) );
   REAL8 cosTheta = fmin ( 1, scalar / (x_L2 * y_L2) );
   result->angleV = acos ( cosTheta );
-  result->relErr_atMaxAbsx = RELERR ( x_atMaxAbsx, y_atMaxAbsx );
-  result->relErr_atMaxAbsy = RELERR ( x_atMaxAbsy, y_atMaxAbsy );;
+  result->relErr_atMaxAbsx = fRELERR ( x_atMaxAbsx, y_atMaxAbsx );
+  result->relErr_atMaxAbsy = fRELERR ( x_atMaxAbsy, y_atMaxAbsy );;
 
   XLAL_CHECK ( XLALCheckVectorComparisonTolerances ( result, tol ) == XLAL_SUCCESS, XLAL_EFUNC );
 
