@@ -784,6 +784,7 @@ typedef enum tagLALWindowType
     LAL_WINDOWTYPE_CREIGHTON,
     LAL_WINDOWTYPE_TUKEY,
     LAL_WINDOWTYPE_GAUSS,
+    LAL_WINDOWTYPE_LANCZOS,
     LAL_WINDOWTYPE_LAST
   } LALWindowType;
 
@@ -803,6 +804,7 @@ const struct {
   [LAL_WINDOWTYPE_CREIGHTON]	= { "creighton",	1 },
   [LAL_WINDOWTYPE_TUKEY]	= { "tukey",		1 },
   [LAL_WINDOWTYPE_GAUSS]	= { "gauss",		1 },
+  [LAL_WINDOWTYPE_LANCZOS]	= { "lanczos",		0 },
 };
 
 /**
@@ -892,6 +894,9 @@ XLALCreateNamedREAL8Window ( const char *windowName, REAL8 beta, UINT4 length )
       break;
     case LAL_WINDOWTYPE_GAUSS:
       win = XLALCreateGaussREAL8Window ( length, beta );
+      break;
+    case LAL_WINDOWTYPE_LANCZOS:
+      win = XLALCreateLanczosREAL8Window ( length );
       break;
     default:
       XLAL_ERROR_NULL ( XLAL_EERR, "Internal ERROR: Invalid window-type '%d', must be within [0, %d]\n", wintype, LAL_WINDOWTYPE_LAST - 1 );
