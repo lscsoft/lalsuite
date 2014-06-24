@@ -163,6 +163,7 @@ packages/tools/test/SegmentsTest
 packages/tools/test/SequenceTest
 packages/tools/test/SkymapTest
 packages/tools/test/TimeSeriesTest
+packages/tools/test/TimeSeriesInterpTest
 packages/tools/test/UnitsTest
 packages/utilities/test/CCoarseGrainFrequencySeriesTest
 packages/utilities/test/CSInterpolateTest

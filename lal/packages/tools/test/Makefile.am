@@ -20,6 +20,7 @@ check_PROGRAMS = \
 	NearestNeighborTriggerInterpolantTest \
 	QuadraticFitTriggerInterpolantTest \
 	TimeSeriesTest \
+	TimeSeriesInterpTest \
 	UnitsTest
 
 EXTRA_DIST = \
@@ -39,6 +40,7 @@ TESTS = \
 	SequenceTest \
 	SkymapTest \
 	TimeSeriesTest \
+	TimeSeriesInterpTest \
 	CubicSplineTriggerInterpolantTest \
 	LanczosTriggerInterpolantTest \
 	NearestNeighborTriggerInterpolantTest \
