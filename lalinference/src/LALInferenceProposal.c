@@ -83,6 +83,10 @@ const char *const KDNeighborhoodProposalName = "KDNeighborhood";
 const char *const frequencyBinJumpName = "FrequencyBin";
 const char *const GlitchMorletJumpName = "glitchMorletJump";
 const char *const GlitchMorletReverseJumpName = "glitchMorletReverseJump";
+const char *const ensembleWalkFullName = "EnsembleWalkFull";
+const char *const ensembleWalkIntrinsicName = "EnsembleWalkIntrinsic";
+const char *const ensembleWalkExtrinsicName = "EnsembleWalkExtrinsic";
+
 
 static int
 same_detector_location(LALInferenceIFOData *d1, LALInferenceIFOData *d2) {
@@ -379,6 +383,9 @@ void LALInferenceSetupDefaultNSProposal(LALInferenceRunState *runState, LALInfer
     LALInferenceAddProposalToCycle(runState, ensembleStretchFullName, &LALInferenceEnsembleStretchFull, BIGWEIGHT);
     LALInferenceAddProposalToCycle(runState, ensembleStretchIntrinsicName, &LALInferenceEnsembleStretchIntrinsic, SMALLWEIGHT);
     LALInferenceAddProposalToCycle(runState, ensembleStretchExtrinsicName, &LALInferenceEnsembleStretchExtrinsic, SMALLWEIGHT);
+    LALInferenceAddProposalToCycle(runState, ensembleWalkFullName, &LALInferenceEnsembleWalkFull, BIGWEIGHT);
+    LALInferenceAddProposalToCycle(runState, ensembleWalkIntrinsicName, &LALInferenceEnsembleWalkIntrinsic, SMALLWEIGHT);
+    LALInferenceAddProposalToCycle(runState, ensembleWalkExtrinsicName, &LALInferenceEnsembleWalkExtrinsic, SMALLWEIGHT);
   }
   
   
@@ -1014,6 +1021,128 @@ void LALInferenceEnsembleStretchNames(LALInferenceRunState *runState,
     LALInferenceSetLogProposalRatio(runState, -DBL_MAX );
   
   
+}
+
+
+void LALInferenceEnsembleWalkFull(LALInferenceRunState *runState, LALInferenceVariables *proposedParams)
+{
+  const char *propName = ensembleWalkFullName;
+  LALInferenceSetVariable(runState->proposalArgs, LALInferenceCurrentProposalName, &propName);
+  LALInferenceEnsembleWalkNames(runState, proposedParams, NULL);
+}
+
+
+void LALInferenceEnsembleWalkIntrinsic(LALInferenceRunState *runState, LALInferenceVariables *pp) {
+  const char *propName = ensembleWalkIntrinsicName;
+  LALInferenceSetVariable(runState->proposalArgs, LALInferenceCurrentProposalName, &propName);
+  const char *names[] = {"chirpmass", "asym_massratio", "massratio", "m1", "m2", "a_spin1", "a_spin2",
+    "tilt_spin1", "tilt_spin2", "phi12", "phi_spin1", "phi_spin2", "theta_spin1", "theta_spin2", NULL};
+    LALInferenceEnsembleWalkNames(runState, pp, names);
+}
+
+void LALInferenceEnsembleWalkExtrinsic(LALInferenceRunState *runState, LALInferenceVariables *pp) {
+  const char *propName = ensembleWalkExtrinsicName;
+  LALInferenceSetVariable(runState->proposalArgs, LALInferenceCurrentProposalName, &propName);
+  
+  const char *names[] = {"rightascension", "declination", "polarisation", "inclination", "distance", "phase", "time", "theta_JN", NULL};
+  const char *marg_time_names[] = {"rightascension", "declination", "polarisation", "inclination", "distance", "phase", "theta_JN", NULL};
+  const char *marg_time_phase_names[] = {"rightascension", "declination", "polarisation", "inclination", "distance", "theta_JN",  NULL};
+  
+  if (LALInferenceGetProcParamVal(runState->commandLine, "--margtimephi"))
+    LALInferenceEnsembleWalkNames(runState, pp, marg_time_phase_names);
+  else if (LALInferenceGetProcParamVal(runState->commandLine, "--margtime"))
+    LALInferenceEnsembleWalkNames(runState, pp, marg_time_names);
+  else
+    LALInferenceEnsembleWalkNames(runState, pp, names);
+}
+
+
+void LALInferenceEnsembleWalkNames(LALInferenceRunState *runState,
+                                            LALInferenceVariables *proposedParams,
+                                            const char **names) {
+  size_t i;
+
+  LALInferenceCopyVariables(runState->currentParams, proposedParams);
+  if (names == NULL) {
+
+    size_t N = LALInferenceGetVariableDimension(runState->currentParams) + 1; /* More names than we need. */
+    names = alloca(N*sizeof(char *)); /* Hope we have alloca---saves
+                                         having to deallocate after
+                                         proposal. */
+
+    LALInferenceVariableItem *item = runState->currentParams->head;
+    i = 0;
+    while (item != NULL) {
+      if (item->vary != LALINFERENCE_PARAM_FIXED && item->vary != LALINFERENCE_PARAM_OUTPUT && item->type==LALINFERENCE_REAL8_t ) {
+        names[i] = item->name;
+        i++;
+      }
+
+      item = item->next;
+    }
+    names[i]=NULL; /* Terminate */
+  }
+
+
+  size_t Ndim = 0;
+  for(Ndim=0,i=0; names[i] != NULL; i++ ) {
+    if(LALInferenceCheckVariableNonFixed(proposedParams,names[i]))
+      Ndim++;
+  }
+ 
+  LALInferenceVariables **pointsPool = runState->differentialPoints;
+  size_t k=0;
+  size_t D = Ndim;
+  size_t sample_size=3;
+
+  LALInferenceVariables **dePts = runState->differentialPoints;
+  size_t nPts = runState->differentialPointsLength;
+
+  if (dePts == NULL || nPts <= 1) {
+    LALInferenceSetLogProposalRatio(runState, 0.0);
+    return; /* Quit now, since we don't have any points to use. */
+  }
+
+  UINT4 *indeces=alloca(sample_size*sizeof(int));
+  UINT4 *all_indeces=alloca(nPts*sizeof(int));
+
+  for (i=0;i<nPts;i++) all_indeces[i]=i;
+  gsl_ran_choose(runState->GSLrandom,indeces, sample_size, all_indeces, nPts, sizeof(UINT4));
+
+  REAL8 *center_of_mass=alloca(sizeof(REAL8)*Ndim);
+  double *w=alloca(sizeof(REAL8)*Ndim);
+  for(k=0;k<Ndim;k++) {center_of_mass[k]=0.0;w[k]=0.0;}
+  for (i=0;i<sample_size;i++)
+  {
+		  for(k=0;names[k]!=NULL;k++)
+		  {
+				if (LALInferenceCheckVariableNonFixed(proposedParams, names[k])) {
+				  center_of_mass[k]+= LALInferenceGetREAL8Variable(pointsPool[indeces[i]],names[k])/((REAL8)sample_size);
+				}
+		  }
+  }
+
+  double *univariate_normals=alloca(D*sizeof(double));
+  for(i=0;i<sample_size;i++) univariate_normals[i] = gsl_ran_ugaussian(runState->GSLrandom);
+
+  for (i=0;i<sample_size;i++)
+  {
+		  for(k=0;names[k]!=NULL;k++)
+		  {
+				if (LALInferenceCheckVariableNonFixed(proposedParams, names[k]) ) {
+				  w[k]+= (LALInferenceGetREAL8Variable(pointsPool[indeces[i]],names[k])-center_of_mass[k])*univariate_normals[i];
+				}
+		  }
+  }
+  for(k=0;names[k]!=NULL;k++)
+  {
+		  if (LALInferenceCheckVariableNonFixed(proposedParams, names[k]) ) {
+				  REAL8 tmp = LALInferenceGetREAL8Variable(proposedParams,names[k])+w[k];
+				  LALInferenceSetVariable(proposedParams, names[k], &tmp);
+		  }
+  }
+
+  LALInferenceSetLogProposalRatio(runState, 0.0); /* Symmetric proposal. */
 }
 
 void LALInferenceDifferentialEvolutionNames(LALInferenceRunState *runState,
