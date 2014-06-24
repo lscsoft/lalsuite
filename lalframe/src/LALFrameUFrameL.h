@@ -26,7 +26,6 @@ extern "C" {
 #if 0
 }
 #endif
-
 void XLALFrameUFrFileClose_FrameL_(LALFrameUFrFile * stream);
 LALFrameUFrFile *XLALFrameUFrFileOpen_FrameL_(const char *filename, const char *mode);
 int XLALFrameUFileCksumValid_FrameL_(LALFrameUFrFile * stream);
@@ -89,7 +88,9 @@ int XLALFrameUFrChanVectorSetUnitX_FrameL_(LALFrameUFrChan * channel, const char
 int XLALFrameUFrChanVectorSetUnitY_FrameL_(LALFrameUFrChan * channel, const char *unit);
 void XLALFrameUFrDetectorFree_FrameL_(LALFrameUFrDetector * detector);
 LALFrameUFrDetector *XLALFrameUFrDetectorRead_FrameL_(LALFrameUFrFile * stream, const char *name);
-LALFrameUFrDetector *XLALFrameUFrDetectorAlloc_FrameL_(const char *name, const char *prefix, double latitude, double longitude, double elevation, double azimuthX, double azimuthY, double altitudeX, double altitudeY, double midpointX, double midpointY, int localTime);
+LALFrameUFrDetector *XLALFrameUFrDetectorAlloc_FrameL_(const char *name, const char *prefix, double latitude, double longitude,
+    double elevation, double azimuthX, double azimuthY, double altitudeX, double altitudeY, double midpointX, double midpointY,
+    int localTime);
 const char *XLALFrameUFrDetectorQueryName_FrameL_(const LALFrameUFrDetector * detector);
 const char *XLALFrameUFrDetectorQueryPrefix_FrameL_(const LALFrameUFrDetector * detector);
 double XLALFrameUFrDetectorQueryLongitude_FrameL_(const LALFrameUFrDetector * detector);
