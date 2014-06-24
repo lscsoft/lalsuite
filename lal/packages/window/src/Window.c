@@ -656,7 +656,7 @@ REAL8Window *XLALCreateLanczosREAL8Window(UINT4 length)
 		XLAL_ERROR_NULL(XLAL_EFUNC);
 
 	/* sin(pi y) / (pi y) */
-	for(i = 0; i < (length + 1) / 2; i++) {
+	for(i = 0; i < length; i++) {
 		double pi_y = LAL_PI * Y(length, i);
 		sequence->data[i] = pi_y != 0. ? sin(pi_y) / pi_y : 1.0;
 	}
