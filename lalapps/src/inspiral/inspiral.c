@@ -3040,7 +3040,7 @@ int main( int argc, char *argv[] )
 
     if (outputPath[0]) {
 
-      if ( username == NULL )
+      if ( !username[0] )
       {
         fprintf( stderr,
             "error: must specify username for cdata when using output-path" );
