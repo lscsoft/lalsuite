@@ -152,7 +152,7 @@ REAL8 XLALREAL8TimeSeriesInterpEval(LALREAL8TimeSeriesInterp *interp, const LIGO
 	 * and only recompute the kernel if this quantity differs from the
 	 * one for which the kernel was computed by more than the no-op
 	 * threshold */
-	int start = round(j);
+	int start = lround(j);
 	int stop;
 	double residual = start - j;
 	int i;
