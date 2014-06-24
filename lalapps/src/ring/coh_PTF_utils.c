@@ -3714,7 +3714,7 @@ CohPTFSkyPositions *coh_PTF_parse_time_delays(
 
       /* if we already have a timeDelay within the timing accuracy,
        * we don't want another one */
-      if (fabsf(timeDelay-timeDelays[i]) < dt)
+      if (fabs(timeDelay-timeDelays[i]) < dt)
       {
         appendPoint[p] = 1;
         break;
