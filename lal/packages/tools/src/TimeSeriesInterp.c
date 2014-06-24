@@ -28,13 +28,10 @@
 #include <lal/XLALError.h>
 
 
-#define KAISER_BETA	(1.0 * LAL_PI)
-
-
 struct tagLALREAL8TimeSeriesInterp {
 	const REAL8TimeSeries *series;
 	int kernel_length;
-	double *kaiser_window;
+	double *window;
 	double *cached_kernel;
 	double residual;
 	/* samples.  the length of the kernel sets the bandwidth of the
@@ -66,7 +63,7 @@ struct tagLALREAL8TimeSeriesInterp {
 LALREAL8TimeSeriesInterp *XLALREAL8TimeSeriesInterpCreate(const REAL8TimeSeries *series, int kernel_length)
 {
 	LALREAL8TimeSeriesInterp *interp;
-	REAL8Window *kaiser_window;
+	REAL8Window *window;
 	double *cached_kernel;
 
 	if(kernel_length < 3)
@@ -77,11 +74,11 @@ LALREAL8TimeSeriesInterp *XLALREAL8TimeSeriesInterpCreate(const REAL8TimeSeries 
 	interp = XLALMalloc(sizeof(*interp));
 	/* we need the window to be centred on (kernel_length-1)/2.  LAL's
 	 * window functions do this. */
-	kaiser_window = XLALCreateKaiserREAL8Window(kernel_length, KAISER_BETA);
+	window = XLALCreateLanczosREAL8Window(kernel_length);
 	cached_kernel = XLALMalloc(kernel_length * sizeof(*cached_kernel));
-	if(!interp || !kaiser_window || !cached_kernel) {
+	if(!interp || !window || !cached_kernel) {
 		XLALFree(interp);
-		XLALDestroyREAL8Window(kaiser_window);
+		XLALDestroyREAL8Window(window);
 		XLALFree(cached_kernel);
 		XLAL_ERROR_NULL(XLAL_EFUNC);
 	}
@@ -89,9 +86,9 @@ LALREAL8TimeSeriesInterp *XLALREAL8TimeSeriesInterpCreate(const REAL8TimeSeries 
 	interp->series = series;
 	interp->kernel_length = kernel_length;
 	/* grab the data pointer from the REAL8Window object */
-	interp->kaiser_window = kaiser_window->data->data;
-	kaiser_window->data->data = NULL;
-	XLALDestroyREAL8Window(kaiser_window);
+	interp->window = window->data->data;
+	window->data->data = NULL;
+	XLALDestroyREAL8Window(window);
 	interp->cached_kernel = cached_kernel;
 	/* >= 1 --> impossible.  forces kernel init on first eval */
 	interp->residual = 2.;
@@ -111,7 +108,7 @@ LALREAL8TimeSeriesInterp *XLALREAL8TimeSeriesInterpCreate(const REAL8TimeSeries 
 void XLALREAL8TimeSeriesInterpDestroy(LALREAL8TimeSeriesInterp *interp)
 {
 	if(interp) {
-		XLALFree(interp->kaiser_window);
+		XLALFree(interp->window);
 		XLALFree(interp->cached_kernel);
 	}
 	XLALFree(interp);
@@ -125,15 +122,15 @@ void XLALREAL8TimeSeriesInterpDestroy(LALREAL8TimeSeriesInterp *interp)
  * sample period, respectively, of the time series to which the
  * interpolator is attached.
  *
- * A Kaiser-windowed (beta = KAISER_BETA) sinc interpolating kernel is
- * used.  See
+ * A Lanczos-windowed sinc interpolating kernel is used.  See
  *
  * Smith, Julius O. Digital Audio Resampling Home Page
  * Center for Computer Research in Music and Acoustics (CCRMA), Stanford
  * University, 2014-01-10.  Web published at
  * http://www-ccrma.stanford.edu/~jos/resample/.
  *
- * for more information.
+ * for more information, but note that that reference uses a Kaiser window
+ * for the sinc kernel's envelope whereas we use a Lanczos window here.
  */
 
 
@@ -168,8 +165,8 @@ REAL8 XLALREAL8TimeSeriesInterpEval(LALREAL8TimeSeriesInterp *interp, const LIGO
 	stop = start + interp->kernel_length;
 
 	if(fabs(residual - interp->residual) >= interp->noop_threshold) {
-		/* kernel is Kaiser-windowed sinc function.  we don't
-		 * bother re-computing the Kaiser window, we consider it to
+		/* kernel is Lanczos-windowed sinc function.  we don't
+		 * bother re-computing the Lanczos window, we consider it to
 		 * be approximately independent of the sub-sample shift.
 		 * only the sinc component is recomputed, and it takes the
 		 * form
@@ -189,12 +186,12 @@ REAL8 XLALREAL8TimeSeriesInterpEval(LALREAL8TimeSeriesInterp *interp, const LIGO
 		 * factors of -1 to apply to get its sign right for the
 		 * first iteration.
 		 */
-		const double *kaiser_window = interp->kaiser_window;
+		const double *window = interp->window;
 		double sinx_over_pi = sin(LAL_PI * residual) / LAL_PI;
 		if(interp->kernel_length & 2)
 			sinx_over_pi = -sinx_over_pi;
 		for(i = start; i < stop; i++, sinx_over_pi = -sinx_over_pi)
-			*cached_kernel++ = sinx_over_pi / (i - j) * *kaiser_window++;
+			*cached_kernel++ = sinx_over_pi / (i - j) * *window++;
 		interp->residual = residual;
 		/* reset pointer */
 		cached_kernel = interp->cached_kernel;
