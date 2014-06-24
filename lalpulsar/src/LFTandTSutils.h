@@ -88,7 +88,7 @@ int XLALGSLInitInterpolateREAL8Vector ( gsl_spline **spline, REAL8Vector *x, REA
 int XLALFrequencyShiftMultiCOMPLEX8TimeSeries ( MultiCOMPLEX8TimeSeries *x, const REAL8 shift );
 int XLALFrequencyShiftCOMPLEX8TimeSeries ( COMPLEX8TimeSeries *x, const REAL8 shift );
 
-int XLALSpinDownCorrectionMultiFaFb ( MultiCOMPLEX8TimeSeries *Fa, MultiCOMPLEX8TimeSeries *Fb, const PulsarDopplerParams *doppler );
+int XLALSpinDownCorrectionMultiTS ( MultiCOMPLEX8TimeSeries *multiTS, const PulsarDopplerParams *doppler );
 
 COMPLEX8TimeSeries *XLALDuplicateCOMPLEX8TimeSeries ( COMPLEX8TimeSeries *times );
 MultiCOMPLEX8TimeSeries *XLALDuplicateMultiCOMPLEX8TimeSeries ( MultiCOMPLEX8TimeSeries *multiTimes );

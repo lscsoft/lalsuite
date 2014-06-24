@@ -563,29 +563,26 @@ XLALFrequencyShiftCOMPLEX8TimeSeries ( COMPLEX8TimeSeries *x,	        /**< [in/o
 
 
 /**
- * Apply a spin-down correction to the Fa and Fb complex timeseries
+ * Apply a spin-down correction to the complex8 timeseries
  * using the time-domain expression y(t) = x(t) * e^(-i 2pi sum f_k * (t-tref)^(k+1)),
  *
- * NOTE: this <b>modifies</b> the COMPLEX8TimeSeries Fa and Fb in place
+ * NOTE: this <b>modifies</b> the input COMPLEX8TimeSeries in place
  */
 int
-XLALSpinDownCorrectionMultiFaFb ( MultiCOMPLEX8TimeSeries *Fa,	                /**< [in/out] timeseries to time-shift */
-				  MultiCOMPLEX8TimeSeries *Fb,	                /**< [in/out] timeseries to time-shift */
-				  const PulsarDopplerParams *doppler		/**< parameter-space point to correct for */
-				  )
+XLALSpinDownCorrectionMultiTS ( MultiCOMPLEX8TimeSeries *multiTimeSeries,       /**< [in/out] timeseries to time-shift */
+                                const PulsarDopplerParams *doppler		/**< parameter-space point to correct for */
+                                )
 {
   // check input sanity
-  XLAL_CHECK ( (Fa != NULL) &&  (Fa->data != NULL) && (Fa->length > 0), XLAL_EINVAL );
-  XLAL_CHECK ( (Fb != NULL) &&  (Fb->data != NULL) && (Fb->length > 0), XLAL_EINVAL );
-  UINT4 numDetectors = Fa->length;
-  XLAL_CHECK ( Fb->length == numDetectors, XLAL_EINVAL );
+  XLAL_CHECK ( (multiTimeSeries != NULL) &&  (multiTimeSeries->data != NULL) && (multiTimeSeries->length > 0), XLAL_EINVAL );
   XLAL_CHECK ( doppler != NULL, XLAL_EINVAL );
 
-  /* check if Fa and Fb have the same timeseries parameters */
-  LIGOTimeGPS *epoch = &(Fa->data[0]->epoch);
-  UINT4 numSamples = Fa->data[0]->data->length;
+  UINT4 numDetectors = multiTimeSeries->length;
 
-  REAL8 dt = Fa->data[0]->deltaT;
+  LIGOTimeGPS *epoch = &(multiTimeSeries->data[0]->epoch);
+  UINT4 numSamples = multiTimeSeries->data[0]->data->length;
+
+  REAL8 dt = multiTimeSeries->data[0]->deltaT;
 
   /* determine number of spin down's and check if sensible */
   UINT4 nspins = PULSAR_MAX_SPINS - 1;
@@ -613,8 +610,7 @@ XLALSpinDownCorrectionMultiFaFb ( MultiCOMPLEX8TimeSeries *Fa,	                /
       /* loop over detectors */
       for ( UINT4 X=0; X < numDetectors; X++ )
         {
-          Fa->data[X]->data->data[k] *= em2piphase;
-          Fb->data[X]->data->data[k] *= em2piphase;
+          multiTimeSeries->data[X]->data->data[k] *= em2piphase;
         } // for X < numDetectors
 
       tk += dt;
@@ -623,7 +619,7 @@ XLALSpinDownCorrectionMultiFaFb ( MultiCOMPLEX8TimeSeries *Fa,	                /
 
   return XLAL_SUCCESS;
 
-} // XLALSpinDownCorrectionMultiFaFb()
+} // XLALSpinDownCorrectionMultiTS()
 
 
 /* ===== Object creation/destruction functions ===== */

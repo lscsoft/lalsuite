@@ -32,11 +32,14 @@ static LALUnit emptyLALUnit;
 struct tagFstatInput_Resamp {
   MultiCOMPLEX8TimeSeries  *multiTimeSeries_DET;	// input SFTs converted into a heterodyned timeseries
 
-  UINT4 prev_numSamples_SRC;				// keep track of previous number of time-samples in SRC frame
+  UINT4 prev_numSamples_SRC;				// keep track of previous SRC-frame samples (ie dFreqOut)
   UINT4 prev_numFreqBinsOut;				// keep track of previous number of output frequency bins
   // ----- workspace ----------
-  MultiCOMPLEX8TimeSeries *ws_multiFa_SRC;		// keep allocated memory for modifying these TS
+  MultiCOMPLEX8TimeSeries *ws_multiTimeSeries_SRC;	// keep allocated memory for modifying this SRC-frame TS
+
+  MultiCOMPLEX8TimeSeries *ws_multiFa_SRC;
   MultiCOMPLEX8TimeSeries *ws_multiFb_SRC;
+
   COMPLEX8Vector *ws_outaX;				// hold results of FTT
   COMPLEX8Vector *ws_outbX;
   ComplexFFTPlan *ws_fftplan;
@@ -49,21 +52,21 @@ struct tagFstatInput_Resamp {
   MultiAMCoeffs *prev_multiAMcoef;			// buffering: previous AM-coeffs, unique to skypos
   MultiSSBtimes *prev_multiSSBsky;			// buffering: previous sky-only multiSSB times, depends on skypos and reftime
 
-  MultiCOMPLEX8TimeSeries *prev_multiFa_SRC; 		// buffering: final multi-detector SRC timeseries weighted by a(t)
-  MultiCOMPLEX8TimeSeries *prev_multiFb_SRC; 		// buffering: final multi-detector SRC timeseries weighted by b(t)
+  MultiLIGOTimeGPSVector *prev_multiTimestamps_SRC;	// buffering: SFT timestamps translated into SRC frame
+  MultiCOMPLEX8TimeSeries *prev_multiTimeSeries_SRC;	// buffering: multi-detector SRC-frame timeseries
 };
 
 
 // ----- local prototypes ----------
 static int
-XLALAntennaWeightCOMPLEX8TimeSeries ( COMPLEX8TimeSeries **Faoft, COMPLEX8TimeSeries **Fboft,
+XLALAntennaWeightCOMPLEX8TimeSeries ( COMPLEX8TimeSeries *ax, COMPLEX8TimeSeries *bx,
                                       const COMPLEX8TimeSeries *timeseries,
                                       const AMCoeffs *AMcoef,
                                       const LIGOTimeGPSVector *TS );
 
 static int
-XLALAntennaWeightMultiCOMPLEX8TimeSeries ( MultiCOMPLEX8TimeSeries **Faoft, MultiCOMPLEX8TimeSeries **Fboft,
-                                           const MultiCOMPLEX8TimeSeries *multiTimeseries,
+XLALAntennaWeightMultiCOMPLEX8TimeSeries ( MultiCOMPLEX8TimeSeries *m_ax, MultiCOMPLEX8TimeSeries *m_bx,
+                                           const MultiCOMPLEX8TimeSeries *multiTimeSeries,
                                            const MultiAMCoeffs *multiAMcoef,
                                            const MultiLIGOTimeGPSVector *multiTS );
 
@@ -92,12 +95,15 @@ DestroyFstatInput_Resamp ( FstatInput_Resamp* resamp )
   XLALDestroyMultiCOMPLEX8TimeSeries (resamp->multiTimeSeries_DET );
 
   // ----- free workspace
-  XLALDestroyMultiCOMPLEX8TimeSeries ( resamp->ws_multiFa_SRC );
-  XLALDestroyMultiCOMPLEX8TimeSeries ( resamp->ws_multiFb_SRC );
+  XLALDestroyMultiCOMPLEX8TimeSeries ( resamp->ws_multiTimeSeries_SRC );
+
   XLALDestroyCOMPLEX8Vector ( resamp->ws_outaX );
   XLALDestroyCOMPLEX8Vector ( resamp->ws_outbX );
 
   XLALDestroyCOMPLEX8FFTPlan ( resamp->ws_fftplan );
+
+  XLALDestroyMultiCOMPLEX8TimeSeries ( resamp->ws_multiFa_SRC );
+  XLALDestroyMultiCOMPLEX8TimeSeries ( resamp->ws_multiFb_SRC );
 
   XLALFree ( resamp->ws_Fa_k );
   XLALFree ( resamp->ws_Fb_k );
@@ -105,8 +111,8 @@ DestroyFstatInput_Resamp ( FstatInput_Resamp* resamp )
   // ----- free buffer
   XLALDestroyMultiAMCoeffs ( resamp->prev_multiAMcoef );
   XLALDestroyMultiSSBtimes ( resamp->prev_multiSSBsky );
-  XLALDestroyMultiCOMPLEX8TimeSeries ( resamp->prev_multiFa_SRC );
-  XLALDestroyMultiCOMPLEX8TimeSeries ( resamp->prev_multiFb_SRC );
+  XLALDestroyMultiCOMPLEX8TimeSeries ( resamp->prev_multiTimeSeries_SRC );
+  XLALDestroyMultiTimestamps ( resamp->prev_multiTimestamps_SRC );
 
   XLALFree ( resamp );
 
@@ -157,30 +163,37 @@ ComputeFstat_Resamp ( FstatResults* Fstats,
   XLAL_CHECK ( Fstats != NULL, XLAL_EFAULT );
   XLAL_CHECK ( common != NULL, XLAL_EFAULT );
   XLAL_CHECK ( resamp != NULL, XLAL_EFAULT );
+
   const FstatQuantities whatToCompute = Fstats->whatWasComputed;
   XLAL_CHECK ( !(whatToCompute & FSTATQ_ATOMS_PER_DET), XLAL_EINVAL, "Resampling does not currently support atoms per detector" );
 
   // ----- handy shortcuts ----------
   PulsarDopplerParams thisPoint = Fstats->doppler;
   const MultiCOMPLEX8TimeSeries *multiTimeSeries_DET = resamp->multiTimeSeries_DET;
-  UINT4 numSamplesIn = multiTimeSeries_DET->data[0]->data->length;
-  REAL8 dtIn = multiTimeSeries_DET->data[0]->deltaT;
-  REAL8 TspanIn = numSamplesIn * dtIn;
-  REAL8 dFreqOut = (Fstats->dFreq > 0) ? Fstats->dFreq : 1.0 / TspanIn;
+  REAL8 dt_DET = multiTimeSeries_DET->data[0]->deltaT;
+  UINT4 numSamples_DET = multiTimeSeries_DET->data[0]->data->length;
+  REAL8 Tspan_DET = numSamples_DET * dt_DET;
 
   MultiAMCoeffs *multiAMcoef;
-  MultiCOMPLEX8TimeSeries *multiFa_SRC = NULL;
-  MultiCOMPLEX8TimeSeries *multiFb_SRC = NULL;
+  MultiLIGOTimeGPSVector *multiTimestamps_SRC = NULL;
+  MultiCOMPLEX8TimeSeries *multiTimeSeries_SRC = NULL;
+
+  /* determine resampled timeseries parameters */
+  REAL8 dFreqOut = ( Fstats->dFreq > 0 ) ? Fstats->dFreq : 1.0 / Tspan_DET;
+
+  REAL8 Tspan_SRC = 1.0 / dFreqOut;                                       /* the effective observation time based on the requested frequency resolution (for zero padding) */
+  UINT4 numSamples_SRC = (UINT4) ceil ( Tspan_SRC / dt_DET );      /* we use ceil() so that we artificially widen the band rather than reduce it */
+
   // ============================== BEGIN: handle buffering =============================
-  // ----- is it the same skyposition and reference time as last call ? -----
+  // ----- is it the same skyposition and reference time and frequency-resolution as last call ? -----
   if ( (resamp->prev_doppler.Alpha == thisPoint.Alpha) &&
        (resamp->prev_doppler.Delta == thisPoint.Delta) &&
-       (XLALGPSDiff ( &resamp->prev_doppler.refTime, &thisPoint.refTime ) == 0 )
+       (XLALGPSDiff ( &resamp->prev_doppler.refTime, &thisPoint.refTime ) == 0 ) &&
+       (resamp->prev_numSamples_SRC == numSamples_SRC)
        )
     {
       multiAMcoef = resamp->prev_multiAMcoef;
       MultiSSBtimes *multiSSBsky = resamp->prev_multiSSBsky;
-
       // ----- is it the same binary-orbital parameters as last call ? -----
       if ( (resamp->prev_doppler.asini == thisPoint.asini) &&
            (resamp->prev_doppler.period == thisPoint.period) &&
@@ -188,14 +201,13 @@ ComputeFstat_Resamp ( FstatResults* Fstats,
            (XLALGPSCmp( &resamp->prev_doppler.tp, &thisPoint.tp )==0 ) &&
            (resamp->prev_doppler.argp == thisPoint.argp)
            )
-        { // ----- no changes in sky + binary ==> reuse everything
-          multiFa_SRC = resamp->prev_multiFa_SRC;
-          multiFb_SRC = resamp->prev_multiFb_SRC;
+        { // ----- no changes in sky + binary ==> reuse SRC-frame timeseries and SFT timestamps
+          multiTimestamps_SRC = resamp->prev_multiTimestamps_SRC;
+          multiTimeSeries_SRC = resamp->prev_multiTimeSeries_SRC;
         }
       else
         {  // ----- same skypos but changes in binary-orbital parameters: recompute just those
-          MultiCOMPLEX8TimeSeries *multiTimeSeries_SRC = NULL;
-          MultiLIGOTimeGPSVector *multiTimestamps_SRC = NULL;
+
           if ( thisPoint.asini > 0 )
             {
               // add binary time corrections to the SSB time delays and SSB time derivitive
@@ -211,17 +223,14 @@ ComputeFstat_Resamp ( FstatResults* Fstats,
                            == XLAL_SUCCESS, XLAL_EFUNC );
             } // if asini==0
 
-          XLAL_CHECK ( XLALAntennaWeightMultiCOMPLEX8TimeSeries ( &multiFa_SRC, &multiFb_SRC, multiTimeSeries_SRC, multiAMcoef, multiTimestamps_SRC ) == XLAL_SUCCESS, XLAL_EFUNC );
-
-          XLALDestroyMultiCOMPLEX8TimeSeries ( multiTimeSeries_SRC );
-          XLALDestroyMultiTimestamps ( multiTimestamps_SRC );
-
           // ----- store new weighted SRC timeseries in buffer ----------
           resamp->prev_doppler = thisPoint;
-          XLALDestroyMultiCOMPLEX8TimeSeries ( resamp->prev_multiFa_SRC );
-          XLALDestroyMultiCOMPLEX8TimeSeries ( resamp->prev_multiFb_SRC );
-          resamp->prev_multiFa_SRC = multiFa_SRC;
-          resamp->prev_multiFb_SRC = multiFb_SRC;
+
+          XLALDestroyMultiCOMPLEX8TimeSeries ( resamp->prev_multiTimeSeries_SRC );
+          resamp->prev_multiTimeSeries_SRC = multiTimeSeries_SRC;
+
+          XLALDestroyMultiTimestamps ( resamp->prev_multiTimestamps_SRC );
+          resamp->prev_multiTimestamps_SRC = multiTimestamps_SRC;
         } // end: if changed binary parameters
 
     } // end: if identical sky-position and reftime
@@ -237,9 +246,6 @@ ComputeFstat_Resamp ( FstatResults* Fstats,
       MultiSSBtimes *multiSSBsky;
       XLAL_CHECK ( (multiSSBsky = XLALGetMultiSSBtimes ( multiDetStates, skypos, thisPoint.refTime, common->SSBprec )) != NULL, XLAL_EFUNC );
 
-      MultiCOMPLEX8TimeSeries *multiTimeSeries_SRC = NULL;
-      MultiLIGOTimeGPSVector *multiTimestamps_SRC = NULL;
-
       if ( thisPoint.asini > 0 )
         { // add binary time corrections to the SSB time delays and SSB time derivitive
           MultiSSBtimes *multiBinary = NULL;
@@ -254,38 +260,37 @@ ComputeFstat_Resamp ( FstatResults* Fstats,
                        == XLAL_SUCCESS, XLAL_EFUNC );
         } // if asini==0
 
-      // antenna-weighting
       XLAL_CHECK ( (multiAMcoef = XLALComputeMultiAMCoeffs ( multiDetStates, multiWeights, skypos )) != NULL, XLAL_EFUNC );
-      XLAL_CHECK ( XLALAntennaWeightMultiCOMPLEX8TimeSeries ( &multiFa_SRC, &multiFb_SRC, multiTimeSeries_SRC, multiAMcoef, multiTimestamps_SRC ) == XLAL_SUCCESS, XLAL_EFUNC );
-
-      XLALDestroyMultiCOMPLEX8TimeSeries ( multiTimeSeries_SRC );
-      XLALDestroyMultiTimestamps ( multiTimestamps_SRC );
 
       // ----- store everything in buffer ----------
-      XLALDestroyMultiAMCoeffs ( resamp->prev_multiAMcoef );
-      XLALDestroyMultiSSBtimes ( resamp->prev_multiSSBsky );
-      XLALDestroyMultiCOMPLEX8TimeSeries ( resamp->prev_multiFa_SRC );
-      XLALDestroyMultiCOMPLEX8TimeSeries ( resamp->prev_multiFb_SRC );
-
       resamp->prev_doppler = thisPoint;
+
+      XLALDestroyMultiAMCoeffs ( resamp->prev_multiAMcoef );
       resamp->prev_multiAMcoef = multiAMcoef;
+
+      XLALDestroyMultiSSBtimes ( resamp->prev_multiSSBsky );
       resamp->prev_multiSSBsky = multiSSBsky;
-      resamp->prev_multiFa_SRC = multiFa_SRC;
-      resamp->prev_multiFb_SRC = multiFb_SRC;
+
+      XLALDestroyMultiCOMPLEX8TimeSeries ( resamp->prev_multiTimeSeries_SRC );
+      resamp->prev_multiTimeSeries_SRC = multiTimeSeries_SRC;
+
+      XLALDestroyMultiTimestamps ( resamp->prev_multiTimestamps_SRC );
+      resamp->prev_multiTimestamps_SRC = multiTimestamps_SRC;
 
     } // end: if could not reuse any previously buffered quantites
 
   UINT4 numFreqBinsOut = Fstats->numFreqBins;
-  UINT4 numSamples_SRC = multiFa_SRC->data[0]->data->length;
-  REAL8 dt_SRC = multiFa_SRC->data[0]->deltaT;
+  REAL8 dt_SRC = multiTimeSeries_SRC->data[0]->deltaT;
 
   // ============================== check workspace is properly allocated and initialized ===========
-  if ( resamp->prev_numSamples_SRC != numSamples_SRC )
+  if ( (resamp->ws_multiTimeSeries_SRC == NULL) || (resamp->prev_numSamples_SRC != numSamples_SRC) )
     {
+      XLALDestroyMultiCOMPLEX8TimeSeries ( resamp->ws_multiTimeSeries_SRC );
+      XLAL_CHECK ( (resamp->ws_multiTimeSeries_SRC = XLALDuplicateMultiCOMPLEX8TimeSeries ( multiTimeSeries_SRC )) != NULL, XLAL_EFUNC );
       XLALDestroyMultiCOMPLEX8TimeSeries ( resamp->ws_multiFa_SRC );
       XLALDestroyMultiCOMPLEX8TimeSeries ( resamp->ws_multiFb_SRC );
-      XLAL_CHECK ( (resamp->ws_multiFa_SRC = XLALDuplicateMultiCOMPLEX8TimeSeries ( multiFa_SRC )) != NULL, XLAL_EFUNC );
-      XLAL_CHECK ( (resamp->ws_multiFb_SRC = XLALDuplicateMultiCOMPLEX8TimeSeries ( multiFb_SRC )) != NULL, XLAL_EFUNC );
+      XLAL_CHECK ( (resamp->ws_multiFa_SRC = XLALDuplicateMultiCOMPLEX8TimeSeries ( multiTimeSeries_SRC )) != NULL, XLAL_EFUNC );
+      XLAL_CHECK ( (resamp->ws_multiFb_SRC = XLALDuplicateMultiCOMPLEX8TimeSeries ( multiTimeSeries_SRC )) != NULL, XLAL_EFUNC );
 
       XLALDestroyCOMPLEX8Vector ( resamp->ws_outaX );
       XLALDestroyCOMPLEX8Vector ( resamp->ws_outbX );
@@ -295,26 +300,22 @@ ComputeFstat_Resamp ( FstatResults* Fstats,
       XLALDestroyCOMPLEX8FFTPlan ( resamp->ws_fftplan );
       XLAL_CHECK ( (resamp->ws_fftplan = XLALCreateCOMPLEX8FFTPlan ( numSamples_SRC, 1, 0) ) != NULL, XLAL_EFUNC );
 
-      resamp->prev_numSamples_SRC = numSamples_SRC;
-    } // if number of SRC samples has changed
-  else
-    {
-      XLAL_CHECK ( XLALCopyMultiCOMPLEX8TimeSeries ( resamp->ws_multiFa_SRC, multiFa_SRC ) == XLAL_SUCCESS, XLAL_EFUNC );
-      XLAL_CHECK ( XLALCopyMultiCOMPLEX8TimeSeries ( resamp->ws_multiFb_SRC, multiFb_SRC ) == XLAL_SUCCESS, XLAL_EFUNC );
-    }
-
-  if ( resamp->prev_numFreqBinsOut != numFreqBinsOut )
-    {
       XLALFree ( resamp->ws_Fa_k );
       XLALFree ( resamp->ws_Fb_k );
       XLAL_CHECK ( (resamp->ws_Fa_k = XLALCalloc ( numFreqBinsOut, sizeof(COMPLEX8))) != NULL, XLAL_ENOMEM );
       XLAL_CHECK ( (resamp->ws_Fb_k = XLALCalloc ( numFreqBinsOut, sizeof(COMPLEX8))) != NULL, XLAL_ENOMEM );
-    }
+
+      resamp->prev_numSamples_SRC = numSamples_SRC;
+    } // if number of SRC samples has changed
   else
     {
+      XLAL_CHECK ( XLALCopyMultiCOMPLEX8TimeSeries ( resamp->ws_multiTimeSeries_SRC, multiTimeSeries_SRC ) == XLAL_SUCCESS, XLAL_EFUNC );
+
       memset ( resamp->ws_Fa_k, 0, numFreqBinsOut * sizeof(COMPLEX8) );
       memset ( resamp->ws_Fb_k, 0, numFreqBinsOut * sizeof(COMPLEX8) );
     }
+  // update number of prev samples only at the end!
+  resamp->prev_numSamples_SRC = numSamples_SRC;
   // ====================================================================================================
 
   /* compute the fractional bin offset between the user requested initial frequency */
@@ -335,12 +336,13 @@ ComputeFstat_Resamp ( FstatResults* Fstats,
   REAL4 Dd_inv = 1.0f / Dd;
 
   /* shift the timeseries by a fraction of a frequency bin so that user requested frequency is exactly resolved */
-  XLAL_CHECK ( XLALFrequencyShiftMultiCOMPLEX8TimeSeries ( resamp->ws_multiFa_SRC, shift ) == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK ( XLALFrequencyShiftMultiCOMPLEX8TimeSeries ( resamp->ws_multiFb_SRC, shift ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK ( XLALFrequencyShiftMultiCOMPLEX8TimeSeries ( resamp->ws_multiTimeSeries_SRC, shift ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   /* apply spin derivitive correction to resampled timeseries */
   /* this function only applies a correction if there are any non-zero spin derivitives */
-  XLAL_CHECK ( XLALSpinDownCorrectionMultiFaFb ( resamp->ws_multiFa_SRC, resamp->ws_multiFb_SRC, &thisPoint ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK ( XLALSpinDownCorrectionMultiTS ( resamp->ws_multiTimeSeries_SRC, &thisPoint ) == XLAL_SUCCESS, XLAL_EFUNC );
+
+  XLAL_CHECK ( XLALAntennaWeightMultiCOMPLEX8TimeSeries ( resamp->ws_multiFa_SRC, resamp->ws_multiFb_SRC, resamp->ws_multiTimeSeries_SRC, multiAMcoef, multiTimestamps_SRC ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   /* we now compute the FFTs of the resampled functions Fa and Fb for each detector */
   /* and combine them into the multi-detector F-statistic */
@@ -348,7 +350,7 @@ ComputeFstat_Resamp ( FstatResults* Fstats,
   /* define new initial frequency of the frequency domain representations of Fa and Fb */
   /* before the shift the zero bin was the heterodyne frequency */
   /* now we've shifted it by N - NhalfPosDC(N) bins */
-  REAL8 f0_shifted = resamp->ws_multiFa_SRC->data[0]->f0 - NhalfNeg(numSamples_SRC) * dFreqOut;
+  REAL8 f0_shifted = resamp->ws_multiTimeSeries_SRC->data[0]->f0 - NhalfNeg(numSamples_SRC) * dFreqOut;
   /* define number of bins offset from the internal start frequency bin to the user requested bin */
   UINT4 offset_bins = (UINT4) lround ( ( thisPoint.fkdot[0] - f0_shifted ) / dFreqOut );
 
@@ -431,35 +433,72 @@ ComputeFstat_Resamp ( FstatResults* Fstats,
  * Computed the weighted timeseries Fa(t) = x(t).a(t) and Fb(t) = x(t).b(t) for a multi-detector timeseries
  */
 int
-XLALAntennaWeightCOMPLEX8TimeSeries ( COMPLEX8TimeSeries **Faoft,                   /**< [out] the timeseries weighted by a(t) */
-                                      COMPLEX8TimeSeries **Fboft,                   /**< [out] the timeseries weighted by b(t) */
+XLALAntennaWeightMultiCOMPLEX8TimeSeries ( MultiCOMPLEX8TimeSeries *multi_ax,                      /**< [out] the timeseries weighted by a(t) */
+                                           MultiCOMPLEX8TimeSeries *multi_bx,                      /**< [out] the timeseries weighted by b(t) */
+                                           const MultiCOMPLEX8TimeSeries *multiTimeSeries,         /**< [in] the input multi-detector timeseries */
+                                           const MultiAMCoeffs *multiAMcoef,                       /**< [in] the multi-detector AM coefficients */
+                                           const MultiLIGOTimeGPSVector *multiTimestamps           /**< [in] the multi SFT timestamps */
+                                           )
+{
+  // input sanity checks
+  XLAL_CHECK ( (multi_ax != NULL) && (multi_bx != NULL), XLAL_EINVAL );
+  XLAL_CHECK ( multiTimeSeries != NULL, XLAL_EINVAL );
+  XLAL_CHECK ( multiAMcoef != NULL, XLAL_EINVAL );
+  XLAL_CHECK ( multiTimestamps != NULL, XLAL_EINVAL );
+  UINT4 numDetectors = multiTimeSeries->length;
+  XLAL_CHECK ( (numDetectors > 0) && (multiAMcoef->length == numDetectors) && (multiTimestamps->length == numDetectors), XLAL_EINVAL );
+  XLAL_CHECK ( (multi_ax->length == numDetectors) && (multi_bx->length == numDetectors), XLAL_EINVAL );
+
+  /* loop over detectors */
+  for ( UINT4 X=0; X < numDetectors; X++)
+    {
+      /* point to current detector params */
+      COMPLEX8TimeSeries *timeseries = multiTimeSeries->data[X];
+      AMCoeffs *AMcoef = multiAMcoef->data[X];
+      LIGOTimeGPSVector *timestamps = multiTimestamps->data[X];
+      COMPLEX8TimeSeries *ax = multi_ax->data[X];
+      COMPLEX8TimeSeries *bx = multi_bx->data[X];
+
+      XLAL_CHECK ( XLALAntennaWeightCOMPLEX8TimeSeries ( ax, bx, timeseries, AMcoef, timestamps ) == XLAL_SUCCESS, XLAL_EFUNC );
+    } // for X < numDetectors
+
+  /* success */
+  return XLAL_SUCCESS;
+
+} // XLALAntennaWeightMultiCOMPLEX8TimeSeries()
+
+
+/**
+ * Computed the weighted timeseries Fa(t) = x(t).a(t) and Fb(t) = x(t).b(t) for a multi-detector timeseries
+ */
+int
+XLALAntennaWeightCOMPLEX8TimeSeries ( COMPLEX8TimeSeries *ax,                       /**< [out] the timeseries weighted by a(t) */
+                                      COMPLEX8TimeSeries *bx,                       /**< [out] the timeseries weighted by b(t) */
                                       const COMPLEX8TimeSeries *timeseries,         /**< [in] the input timeseries */
                                       const AMCoeffs *AMcoef,                       /**< [in] the AM coefficients */
                                       const LIGOTimeGPSVector *timestamps           /**< [in] SFT timestamps */
                                       )
 {
   // check input sanity
-  XLAL_CHECK ( (Faoft != NULL) && ( *Faoft == NULL ), XLAL_EINVAL );
-  XLAL_CHECK ( (Fboft != NULL) && ( *Fboft == NULL ), XLAL_EINVAL );
+  XLAL_CHECK ( (ax != NULL) && ( bx != NULL ), XLAL_EINVAL );
   XLAL_CHECK ( (timeseries != NULL) && (timeseries->data != NULL) && ( timeseries->data->length > 0 ), XLAL_EINVAL );
   XLAL_CHECK ( (AMcoef != NULL) && (AMcoef->a != NULL) && (AMcoef->b != NULL), XLAL_EINVAL );
   XLAL_CHECK ( timestamps != NULL, XLAL_EINVAL );
+  UINT4 numSamples = timeseries->data->length;
+  XLAL_CHECK ( (ax->data->length == numSamples) && (bx->data->length == numSamples), XLAL_EINVAL );
   UINT4 numSFTs = timestamps->length;
   XLAL_CHECK ( (AMcoef->a->length == numSFTs) && (AMcoef->b->length == numSFTs), XLAL_EINVAL );
 
   /* local copies */
   REAL8 start = XLALGPSGetREAL8(&timeseries->epoch);
-  REAL8 fHet = timeseries->f0;
   REAL8 deltaT = timeseries->deltaT;
-  UINT4 numSamples = timeseries->data->length;
-  REAL8 Tsft = timestamps->deltaT;
-  UINT4 nbins = (UINT4)lround ( Tsft / deltaT );
 
-  /* create empty timeseries structures for Fa(t) and Fb(t) */
-  XLAL_CHECK ( ((*Faoft) = XLALCreateCOMPLEX8TimeSeries ( timeseries->name, &(timeseries->epoch), fHet, deltaT, &emptyLALUnit, numSamples )) != NULL, XLAL_EFUNC );
-  XLAL_CHECK ( ((*Fboft) = XLALCreateCOMPLEX8TimeSeries ( timeseries->name, &(timeseries->epoch), fHet, deltaT, &emptyLALUnit, numSamples )) != NULL, XLAL_EFUNC );
-  memset ( (*Faoft)->data->data, 0, numSamples * sizeof(*(*Faoft)->data->data)); 	/* set all time-samples to zero (in case there are gaps) */
-  memset ( (*Fboft)->data->data, 0, numSamples * sizeof(*(*Fboft)->data->data)); 	/* set all time-samples to zero (in case there are gaps) */
+  REAL8 Tsft = timestamps->deltaT;
+  UINT4 nbins = lround ( Tsft / deltaT );
+
+  // set output TS to 0, to avoid garbage data in case of gaps
+  memset ( ax->data->data, 0, numSamples * sizeof(ax->data->data[0]) );
+  memset ( bx->data->data, 0, numSamples * sizeof(bx->data->data[0]) );
 
   /* loop over SFT timestamps */
   for ( UINT4 j=0; j < numSFTs; j++ )
@@ -477,8 +516,8 @@ XLALAntennaWeightCOMPLEX8TimeSeries ( COMPLEX8TimeSeries **Faoft,               
             break;
           }
           /* weight the complex timeseries by the antenna patterns */
-          (*Faoft)->data->data[time_index] = a * timeseries->data->data[time_index];
-          (*Fboft)->data->data[time_index] = b * timeseries->data->data[time_index];
+          ax->data->data[time_index] = a * timeseries->data->data[time_index];
+          bx->data->data[time_index] = b * timeseries->data->data[time_index];
         } // for k < nbins
 
     } // for j < numSFTs
@@ -487,52 +526,6 @@ XLALAntennaWeightCOMPLEX8TimeSeries ( COMPLEX8TimeSeries **Faoft,               
   return XLAL_SUCCESS;
 
 } // XLALAntennaWeightCOMPLEX8TimeSeries()
-
-
-/**
- * Computed the weighted timeseries Fa(t) = x(t).a(t) and Fb(t) = x(t).b(t) for a multi-detector timeseries
- */
-int
-XLALAntennaWeightMultiCOMPLEX8TimeSeries ( MultiCOMPLEX8TimeSeries **Faoft,                        /**< [out] the timeseries weighted by a(t) */
-                                           MultiCOMPLEX8TimeSeries **Fboft,                        /**< [out] the timeseries weighted by b(t) */
-                                           const MultiCOMPLEX8TimeSeries *multiTimeseries,         /**< [in] the input multi-detector timeseries */
-                                           const MultiAMCoeffs *multiAMcoef,                       /**< [in] the multi-detector AM coefficients */
-                                           const MultiLIGOTimeGPSVector *multiTimestamps           /**< [in] the multi SFT timestamps */
-                                           )
-{
-  // input sanity checks
-  XLAL_CHECK ( (Faoft != NULL) && ( *Faoft == NULL ), XLAL_EINVAL );
-  XLAL_CHECK ( (Fboft != NULL) && ( *Fboft == NULL ), XLAL_EINVAL );
-  XLAL_CHECK ( multiTimeseries != NULL, XLAL_EINVAL );
-  XLAL_CHECK ( multiAMcoef != NULL, XLAL_EINVAL );
-  XLAL_CHECK ( multiTimestamps != NULL, XLAL_EINVAL );
-  UINT4 numDetectors = multiTimeseries->length;
-  XLAL_CHECK ( (numDetectors > 0) && (multiAMcoef->length == numDetectors) && (multiTimestamps->length == numDetectors), XLAL_EINVAL );
-
-  /* allocate memory for the output structure */
-  XLAL_CHECK ( ((*Faoft) = XLALCalloc ( 1, sizeof(MultiCOMPLEX8TimeSeries))) != NULL, XLAL_ENOMEM );
-  XLAL_CHECK ( ((*Fboft) = XLALCalloc ( 1, sizeof(MultiCOMPLEX8TimeSeries))) != NULL, XLAL_ENOMEM );
-  (*Faoft)->length = numDetectors;
-  (*Fboft)->length = numDetectors;
-
-  XLAL_CHECK ( ((*Faoft)->data = XLALCalloc ( numDetectors, sizeof(COMPLEX8TimeSeries*) )) != NULL, XLAL_ENOMEM );
-  XLAL_CHECK ( ((*Fboft)->data = XLALCalloc ( numDetectors, sizeof(COMPLEX8TimeSeries*) )) != NULL, XLAL_ENOMEM );
-
-  /* loop over detectors */
-  for ( UINT4 X=0; X < numDetectors; X++)
-    {
-      /* point to current detector params */
-      COMPLEX8TimeSeries *timeseries = multiTimeseries->data[X];
-      AMCoeffs *AMcoef = multiAMcoef->data[X];
-      LIGOTimeGPSVector *timestamps = multiTimestamps->data[X];
-
-      XLAL_CHECK ( XLALAntennaWeightCOMPLEX8TimeSeries ( &((*Faoft)->data[X]), &((*Fboft)->data[X]), timeseries, AMcoef, timestamps ) == XLAL_SUCCESS, XLAL_EFUNC );
-    } // for X < numDetectors
-
-  /* success */
-  return XLAL_SUCCESS;
-
-} // XLALAntennaWeightMultiCOMPLEX8TimeSeries()
 
 
 /**
