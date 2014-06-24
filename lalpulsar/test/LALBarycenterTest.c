@@ -456,8 +456,8 @@ absmaxEmissionTime ( EmissionTime *absmax, const EmissionTime *demit1, const Emi
     return -1;
 
   absmax->deltaT 		= fmax ( fabs ( demit1->deltaT ) , fabs ( demit2->deltaT ) );
-  absmax->te.gpsSeconds 	= fmax ( fabs ( demit1->te.gpsSeconds) , fabs ( demit2->te.gpsSeconds ) );
-  absmax->te.gpsNanoSeconds 	= fmax ( fabs ( demit1->te.gpsNanoSeconds ), fabs ( demit2->te.gpsNanoSeconds ) );
+  absmax->te.gpsSeconds 	= fmax ( abs ( demit1->te.gpsSeconds) , abs ( demit2->te.gpsSeconds ) );
+  absmax->te.gpsNanoSeconds 	= fmax ( abs ( demit1->te.gpsNanoSeconds ), abs ( demit2->te.gpsNanoSeconds ) );
   absmax->tDot 			= fmax ( fabs ( demit1->tDot ) , fabs ( demit2->tDot ) );
   for ( UINT4 i = 0; i < 3; i ++ )
     {
@@ -475,8 +475,8 @@ maxErrInEmissionTime ( const EmissionTime *demit )
 {
   REAL8 maxdiff = 0;
   maxdiff 		= fmax ( maxdiff, fabs ( demit->deltaT ) );
-  maxdiff		= fmax ( maxdiff, fabs ( demit->te.gpsSeconds ));
-  maxdiff 		= fmax ( maxdiff, 1e-9 * fabs ( demit->te.gpsNanoSeconds ) );
+  maxdiff		= fmax ( maxdiff, abs ( demit->te.gpsSeconds ));
+  maxdiff 		= fmax ( maxdiff, 1e-9 * abs ( demit->te.gpsNanoSeconds ) );
   maxdiff 		= fmax ( maxdiff, fabs ( demit->tDot ) );
   for ( UINT4 i = 0; i < 3; i ++ )
     {
