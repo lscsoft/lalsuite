@@ -144,16 +144,17 @@ REAL8 XLALREAL8TimeSeriesInterpEval(LALREAL8TimeSeriesInterp *interp, const LIGO
 	/* the (real-valued) sample index at which we wish to evalute the
 	 * source time series */
 	double j = XLALGPSDiff(t, &interp->series->epoch) / interp->series->deltaT;
+	/* split the real-valued sample index into integer and fractional
+	 * parts.  the fractional part (residual) is the offset in samples
+	 * from where we want to evaluate the function to where we know its
+	 * value.  the interpolating kernel depends only on this quantity.
+	 * when we compute a kernel, we record the value of this quantity,
+	 * and only recompute the kernel if this quantity differs from the
+	 * one for which the kernel was computed by more than the no-op
+	 * threshold */
 	int start = round(j);
 	int stop;
-	/* the magnitude of the shift (in samples) required to move the
-	 * samples we have so that one falls on the (real-valued) index
-	 * where we want there to be a sample.  the interpolating kernel
-	 * depends only on this quantity.  when we compute a kernel, we
-	 * record the value of this quantity, and only recompute the kernel
-	 * if this quantity differs from the one for which the kernel was
-	 * computed by more than the no-op threshold */
-	double residual = j - start;
+	double residual = start - j;
 	int i;
 	REAL8 val;
 
@@ -181,10 +182,17 @@ REAL8 XLALREAL8TimeSeriesInterpEval(LALREAL8TimeSeriesInterp *interp, const LIGO
 		 * note that the  argument of sin(x) increases by pi each
 		 * iteration, so we just need to compute its value for the
 		 * first iteration then flip sign for each subsequent
-		 * iteration.
+		 * iteration.  for numerical reasons, it's better to
+		 * compute sin(x) from residual rather than from (start -
+		 * j), i.e. what it's argument should be for the first
+		 * iteration, so we also have to figure out how many
+		 * factors of -1 to apply to get its sign right for the
+		 * first iteration.
 		 */
 		const double *kaiser_window = interp->kaiser_window;
-		double sinx_over_pi = sin(LAL_PI * (start - j)) / LAL_PI;
+		double sinx_over_pi = sin(LAL_PI * residual) / LAL_PI;
+		if(interp->kernel_length & 2)
+			sinx_over_pi = -sinx_over_pi;
 		for(i = start; i < stop; i++, sinx_over_pi = -sinx_over_pi)
 			*cached_kernel++ = sinx_over_pi / (i - j) * *kaiser_window++;
 		interp->residual = residual;
