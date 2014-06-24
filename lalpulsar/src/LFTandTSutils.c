@@ -585,7 +585,7 @@ XLALSpinDownCorrectionMultiFaFb ( MultiCOMPLEX8TimeSeries *Fa,	                /
   LIGOTimeGPS *epoch = &(Fa->data[0]->epoch);
   UINT4 numSamples = Fa->data[0]->data->length;
 
-  REAL8 deltaT = Fa->data[0]->deltaT;
+  REAL8 dt = Fa->data[0]->deltaT;
 
   /* determine number of spin down's and check if sensible */
   UINT4 nspins = PULSAR_MAX_SPINS - 1;
@@ -593,35 +593,33 @@ XLALSpinDownCorrectionMultiFaFb ( MultiCOMPLEX8TimeSeries *Fa,	                /
     nspins--;
   }
 
-  /* compute the time difference between timeseries epoch and reference time */
-  REAL8 deltaref = XLALGPSDiff ( epoch, &(doppler->refTime) );
-
   /* apply spin derivitive correction to resampled timeseries */
-  /* loop over spin derivitives (nspins = 1 means first derivitive, = 2 means second derivitive etc.. ) */
-  for ( UINT4 j=1; j <= nspins; j++ )
+  REAL8 tk = XLALGPSDiff ( epoch, &(doppler->refTime) );
+  for ( UINT4 k=0; k < numSamples; k++ )
     {
-      /* loop over time samples  and compute the spin down phase correction */
-      for ( UINT4 k=0; k < numSamples; k++ )
+      REAL8 tk_pow_jp1 = tk;
+      REAL8 cycles_k = 0;
+      for ( UINT4 j=1; j <= nspins; j++ )
         {
+          tk_pow_jp1 *= tk;
           /* compute fractional number of cycles the spin-derivitive has added since the reftime */
-          REAL8 cycles = fmod ( inv_fact[j+1] * doppler->fkdot[j] * pow ( deltaref + k*deltaT, j+1 ), 1 );
+          cycles_k += inv_fact[j+1] * doppler->fkdot[j] * tk_pow_jp1;
+        } // for j < nspins
 
-          /* use look-up-table for speed to compute real and imaginary phase */
-          REAL4 cosphase, sinphase;
-          XLAL_CHECK( XLALSinCos2PiLUT ( &sinphase, &cosphase, -cycles ) == XLAL_SUCCESS, XLAL_EFUNC );
+      REAL4 cosphase, sinphase;
+      XLAL_CHECK( XLALSinCos2PiLUT ( &sinphase, &cosphase, -cycles_k ) == XLAL_SUCCESS, XLAL_EFUNC );
+      COMPLEX8 em2piphase = crectf ( cosphase, sinphase );
 
-          COMPLEX8 em2piphase = crectf ( cosphase, sinphase );
+      /* loop over detectors */
+      for ( UINT4 X=0; X < numDetectors; X++ )
+        {
+          Fa->data[X]->data->data[k] *= em2piphase;
+          Fb->data[X]->data->data[k] *= em2piphase;
+        } // for X < numDetectors
 
-          /* loop over detectors */
-          for ( UINT4 X=0; X < numDetectors; X++ )
-            {
-              Fa->data[X]->data->data[k] *= em2piphase;
-              Fb->data[X]->data->data[k] *= em2piphase;
-            } // for X < numDetectors
+      tk += dt;
 
-        } // for k < numSamples
-
-    } // for j < nspins
+    } // for k < numSamples
 
   return XLAL_SUCCESS;
 
