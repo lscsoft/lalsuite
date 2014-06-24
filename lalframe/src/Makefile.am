@@ -3,6 +3,17 @@ MOSTLYCLEANFILES =
 include $(top_srcdir)/gnuscripts/lallibs_header_links.am
 include $(top_srcdir)/gnuscripts/lalsuite_vcs_info.am
 
+FRAMECSRCS = LALFrameUFrameC.h LALFrameC.c
+FRAMELSRCS = LALFrameUFrameL.h LALFrameL.c
+FRAMEUSRCS =
+
+if FRAMEC
+FRAMEUSRCS += $(FRAMECSRCS)
+endif
+if FRAMEL
+FRAMEUSRCS += $(FRAMELSRCS)
+endif
+
 LDADD = liblalframe.la
 
 bin_PROGRAMS = \
@@ -55,6 +66,7 @@ pkginclude_HEADERS = \
 
 lib_LTLIBRARIES = liblalframe.la
 liblalframe_la_SOURCES = \
+	$(FRAMEUSRCS) \
 	LALFrameU.c \
 	LALFrameIO.c \
 	LALFrStream.c \
@@ -74,6 +86,8 @@ liblalframe_la_LDFLAGS = $(AM_LDFLAGS) -version-info $(LIBVERSION)
 
 EXTRA_DIST = \
 	$(MANS) \
+	$(FRAMECSRCS) \
+	$(FRAMELSRCS) \
 	config.h.in \
 	LALFrameC.c \
 	LALFrameL.c \

@@ -108,21 +108,24 @@ AC_CHECK_LIB([m],[main],,[AC_MSG_ERROR([could not find the math library])])
 AC_CHECK_FUNCS([gmtime_r localtime_r])
 
 # check for framec or libframe libraries and headers
+FRAMEC_AVAILABLE="yes"
+FRAMEL_AVAILABLE="yes"
 PKG_PROG_PKG_CONFIG
-AS_IF([test "${framec}" = "true"],[
-       PKG_CHECK_MODULES([FRAMECPPC],[framecppc >= 1.19.32],[true],[false])
-       LALSUITE_ADD_FLAGS([C],[${FRAMECPPC_CFLAGS}],[${FRAMECPPC_LIBS}])
-       AC_CHECK_LIB([framecppc],[FrameCFileOpen],,[AC_MSG_ERROR([could not find the framec library])])
-       AC_CHECK_HEADERS([framecppc/FrameC.h],,[AC_MSG_ERROR([could not find the FrameC.h header])])
-       AC_DEFINE([USE_FRAMEC],[],[Define to use FrameC])
-       FRAME_LIBRARY="FrameC"])
-AS_IF([test "${framel}" = "true"],[
-       PKG_CHECK_MODULES([LIBFRAME],[libframe],[true],[false])
-       LALSUITE_ADD_FLAGS([C],[${LIBFRAME_CFLAGS}],[${LIBFRAME_LIBS}])
-       AC_CHECK_LIB([Frame],[FrLibIni],,[AC_MSG_ERROR([could not find the frame library])])
-       AC_CHECK_HEADERS([FrameL.h],,[AC_MSG_ERROR([could not find the FrameL.h header])])
-       AC_DEFINE([USE_FRAMEL],[],[Define to use FrameL])
-       FRAME_LIBRARY="FrameL"])
+PKG_CHECK_MODULES([FRAMECPPC],[framecppc >= 1.19.32],[true],[false])
+LALSUITE_ADD_FLAGS([C],[${FRAMECPPC_CFLAGS}],[${FRAMECPPC_LIBS}])
+AC_CHECK_LIB([framecppc],[FrameCFileOpen],,[FRAMEC_AVAILABLE="no"])
+AC_CHECK_HEADERS([framecppc/FrameC.h],,[FRAMEC_AVAILABLE="no"])
+PKG_CHECK_MODULES([LIBFRAME],[libframe],[true],[false])
+LALSUITE_ADD_FLAGS([C],[${LIBFRAME_CFLAGS}],[${LIBFRAME_LIBS}])
+AC_CHECK_LIB([Frame],[FrLibIni],,[FRAMEL_AVAILABLE="no"])
+AC_CHECK_HEADERS([FrameL.h],,[FRAMEL_AVAILABLE="no"])
+
+# make sure a frame library was found
+AS_IF([test "${FRAMEC_AVAILABLE}" = "no" -a "${FRAMEL_AVAILABLE}" = "no"], [
+	AC_MSG_ERROR([no frame library available])
+])
+AM_CONDITIONAL([FRAMEC],[test "${FRAMEC_AVAILABLE}" = "yes"])
+AM_CONDITIONAL([FRAMEL],[test "${FRAMEL_AVAILABLE}" = "yes"])
 
 # check for lal libraries and headers
 LALSUITE_CHECK_LIB([LAL],[6.12.0],[LALVersion],[lal/LALStdio.h])
@@ -162,6 +165,8 @@ AC_MSG_NOTICE([
 LALFrame has now been successfully configured:
 
 * using the $FRAME_LIBRARY frame library
+* FrameC availability... ${FRAMEC_AVAILABLE}
+* FrameL availability... ${FRAMEL_AVAILABLE}
 * inotify support is $INOTIFY_ENABLE_VAL
 * SWIG binding generation is $SWIG_GENERATE_ENABLE_VAL
 * SWIG bindings for Octave are $SWIG_BUILD_OCTAVE_ENABLE_VAL
@@ -175,9 +180,3 @@ Now run 'make' to build LALFrame,
 and run 'make install' to install LALFrame.
 ==================================================
 ])
-
-AS_IF([test "${FRAME_LIBRARY}" = "FrameC"],[
-       echo "
-WARNING: You have selected FrameC as the frame library, support for
-FrameC is _not_ complete and is under active development.
-"])
