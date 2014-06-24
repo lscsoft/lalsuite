@@ -699,7 +699,7 @@ XLALDuplicateCOMPLEX8TimeSeries ( COMPLEX8TimeSeries *times )
   XLAL_CHECK_NULL ( (out->data = XLALCreateCOMPLEX8Vector ( numBins )) != NULL, XLAL_EFUNC );
 
   // copy contents of COMPLEX8 vector
-  memcpy ( out->data->data, times->data->data, numBins * sizeof(*times->data->data) );
+  memcpy ( out->data->data, times->data->data, numBins * sizeof(times->data->data[0]) );
 
   return out;
 
