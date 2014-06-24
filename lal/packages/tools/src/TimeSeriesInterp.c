@@ -37,6 +37,12 @@ struct tagLALREAL8TimeSeriesInterp {
 	double *kaiser_window;
 	double *cached_kernel;
 	double residual;
+	/* samples.  the length of the kernel sets the bandwidth of the
+	 * interpolator:  the longer the kernel, the closer to an ideal
+	 * interpolator it becomes.  we tie the interval at which the
+	 * kernel is regenerated to this in a heuristic way to hide the
+	 * sub-sample residual quantization in the filter's roll-off. */
+	double noop_threshold;
 };
 
 
@@ -89,6 +95,9 @@ LALREAL8TimeSeriesInterp *XLALREAL8TimeSeriesInterpCreate(const REAL8TimeSeries 
 	interp->cached_kernel = cached_kernel;
 	/* >= 1 --> impossible.  forces kernel init on first eval */
 	interp->residual = 2.;
+	/* set no-op threshold.  the kernel is recomputed when the residual
+	 * changes by this much */
+	interp->noop_threshold = 1. / (4 * interp->kernel_length);
 
 	return interp;
 }
@@ -130,12 +139,6 @@ void XLALREAL8TimeSeriesInterpDestroy(LALREAL8TimeSeriesInterp *interp)
 
 REAL8 XLALREAL8TimeSeriesInterpEval(LALREAL8TimeSeriesInterp *interp, const LIGOTimeGPS *t)
 {
-	/* samples.  the length of the kernel sets the bandwidth of the
-	 * interpolator:  the longer the kernel, the closer to an ideal
-	 * interpolator it becomes.  we tie the interval at which the
-	 * kernel is regenerated to this in a heuristic way to hide the
-	 * sub-sample residual quantization in the filter's roll-off. */
-	const double noop_threshold = 1. / (4 * interp->kernel_length);
 	const REAL8 *data = interp->series->data->data;
 	double *cached_kernel = interp->cached_kernel;
 	REAL8 val = 0.0;
@@ -157,13 +160,13 @@ REAL8 XLALREAL8TimeSeriesInterpEval(LALREAL8TimeSeriesInterp *interp, const LIGO
 	if(j < 0 || j >= interp->series->data->length)
 		XLAL_ERROR_REAL8(XLAL_EDOM);
 
-	if(fabs(residual) < noop_threshold)
+	if(fabs(residual) < interp->noop_threshold)
 		return data[start];
 
 	start -= (interp->kernel_length - 1) / 2;
 	stop = start + interp->kernel_length;
 
-	if(fabs(residual - interp->residual) >= noop_threshold) {
+	if(fabs(residual - interp->residual) >= interp->noop_threshold) {
 		/* kernel is Kaiser-windowed sinc function.  we don't
 		 * bother re-computing the Kaiser window, we consider it to
 		 * be approximately independent of the sub-sample shift.
