@@ -85,15 +85,17 @@ int XLALGSLInterpolateREAL8Vector ( REAL8Vector **yi, REAL8Vector *xi, gsl_splin
 
 int XLALGSLInitInterpolateREAL8Vector ( gsl_spline **spline, REAL8Vector *x, REAL8Vector *y );
 
-int XLALFrequencyShiftMultiCOMPLEX8TimeSeries ( MultiCOMPLEX8TimeSeries **x, const REAL8 shift );
+int XLALFrequencyShiftMultiCOMPLEX8TimeSeries ( MultiCOMPLEX8TimeSeries *x, const REAL8 shift );
+int XLALFrequencyShiftCOMPLEX8TimeSeries ( COMPLEX8TimeSeries *x, const REAL8 shift );
 
-int XLALFrequencyShiftCOMPLEX8TimeSeries ( COMPLEX8TimeSeries **x, const REAL8 shift );
+int XLALSpinDownCorrectionMultiFaFb ( MultiCOMPLEX8TimeSeries *Fa, MultiCOMPLEX8TimeSeries *Fb, const PulsarDopplerParams *doppler );
 
-int XLALSpinDownCorrectionMultiFaFb ( MultiCOMPLEX8TimeSeries **Fa, MultiCOMPLEX8TimeSeries **Fb, const PulsarDopplerParams *doppler );
-
-void XLALDestroyMultiCOMPLEX8TimeSeries ( MultiCOMPLEX8TimeSeries *multiTimes );
 COMPLEX8TimeSeries *XLALDuplicateCOMPLEX8TimeSeries ( COMPLEX8TimeSeries *times );
 MultiCOMPLEX8TimeSeries *XLALDuplicateMultiCOMPLEX8TimeSeries ( MultiCOMPLEX8TimeSeries *multiTimes );
+int XLALCopyMultiCOMPLEX8TimeSeries ( MultiCOMPLEX8TimeSeries *multiTimesOut, MultiCOMPLEX8TimeSeries *multiTimesIn );
+int XLALCopyCOMPLEX8TimeSeries ( COMPLEX8TimeSeries *ts_out, COMPLEX8TimeSeries *ts_in );
+
+void XLALDestroyMultiCOMPLEX8TimeSeries ( MultiCOMPLEX8TimeSeries *multiTimes );
 
 int XLALSincInterpolateCOMPLEX8TimeSeries ( COMPLEX8Vector **y_out, const REAL8Vector *t_out, const COMPLEX8TimeSeries *ts_in, UINT4 Dterms );
 int XLALDirichletInterpolateCOMPLEX8FrequencySeries ( COMPLEX8Vector *y_out, const REAL8Vector *f_out, const COMPLEX8FrequencySeries *fs_in, UINT4 Dterms );
