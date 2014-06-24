@@ -36,7 +36,7 @@
 #undef CHAR
 #define CHAR CHAR
 
-/* resolve incomplete types with FrameL structs and custom structs */
+/* resolve incomplete types with FrameC structs and custom structs */
 #define tagLALFrameUFrameH		frame_h
 #define tagLALFrameUFrChan		fr_chan
 #define tagLALFrameUFrTOC		fr_toc_t_
@@ -55,6 +55,7 @@ struct tagLALFrameUFrFile {
 #endif
 
 #include <lal/LALFrameU.h>
+#include "LALFrameUFrameC.h"
 
 /* for safety, have a string prefix that is nul-terminated as well */
 struct tagLALFrameUFrDetector {
@@ -146,7 +147,7 @@ struct tagLALFrameUFrDetector {
 
 #define BUFSZ 16384
 
-void XLALFrameUFrFileClose(LALFrameUFrFile * stream)
+void XLALFrameUFrFileClose_FrameC_(LALFrameUFrFile * stream)
 {
     int err;
     if (stream) {
@@ -165,7 +166,7 @@ void XLALFrameUFrFileClose(LALFrameUFrFile * stream)
     return;
 }
 
-LALFrameUFrFile *XLALFrameUFrFileOpen(const char *filename, const char *mode)
+LALFrameUFrFile *XLALFrameUFrFileOpen_FrameC_(const char *filename, const char *mode)
 {
     char tmpfname[L_tmpnam + 1] = "";
     LALFrameUFrFile *stream;
@@ -206,7 +207,7 @@ LALFrameUFrFile *XLALFrameUFrFileOpen(const char *filename, const char *mode)
     return stream;
 }
 
-int XLALFrameUFileCksumValid(LALFrameUFrFile * stream)
+int XLALFrameUFileCksumValid_FrameC_(LALFrameUFrFile * stream)
 {
     TRY_FRAMEC_FUNCTION_INT(FrameCFileCksumValid, FRFILE(stream));
 }
@@ -215,12 +216,12 @@ int XLALFrameUFileCksumValid(LALFrameUFrFile * stream)
 
 #else /* defined FRAMEC_HANDLES_STDIN_STDOUT */
 
-void XLALFrameUFrFileClose(LALFrameUFrFile * stream)
+void XLALFrameUFrFileClose_FrameC_(LALFrameUFrFile * stream)
 {
     TRY_FRAMEC_FUNCTION_VOID(FrameCFileClose, stream);
 }
 
-LALFrameUFrFile *XLALFrameUFrFileOpen(const char *filename, const char *mode)
+LALFrameUFrFile *XLALFrameUFrFileOpen_FrameC_(const char *filename, const char *mode)
 {
     fr_file_mode_t m;
     if (*mode == 'r')
@@ -235,7 +236,7 @@ LALFrameUFrFile *XLALFrameUFrFileOpen(const char *filename, const char *mode)
     TRY_FRAMEC_FUNCTION_PTR(FrameCFileOpen, filename, m);
 }
 
-int XLALFrameUFileCksumValid(LALFrameUFrFile * stream)
+int XLALFrameUFileCksumValid_FrameC_(LALFrameUFrFile * stream)
 {
     TRY_FRAMEC_FUNCTION_INT(FrameCFileCksumValid, stream);
 }
@@ -246,24 +247,24 @@ int XLALFrameUFileCksumValid(LALFrameUFrFile * stream)
  * FrTOC functions
  */
 
-void XLALFrameUFrTOCFree(LALFrameUFrTOC * toc)
+void XLALFrameUFrTOCFree_FrameC_(LALFrameUFrTOC * toc)
 {
     TRY_FRAMEC_FUNCTION_VOID(FrameCFrTOCFree, toc);
 }
 
-LALFrameUFrTOC *XLALFrameUFrTOCRead(LALFrameUFrFile * stream)
+LALFrameUFrTOC *XLALFrameUFrTOCRead_FrameC_(LALFrameUFrFile * stream)
 {
     TRY_FRAMEC_FUNCTION_PTR(FrameCFrTOCRead, FRFILE(stream));
 }
 
-size_t XLALFrameUFrTOCQueryNFrame(const LALFrameUFrTOC * toc)
+size_t XLALFrameUFrTOCQueryNFrame_FrameC_(const LALFrameUFrTOC * toc)
 {
     fr_toc_nframe_t nframe;
     TRY_FRAMEC_FUNCTION_VAL(nframe, -1, FrameCFrTOCQuery, toc,
         FR_TOC_FIELD_NFRAME, &nframe, FR_TOC_FIELD_LAST);
 }
 
-double XLALFrameUFrTOCQueryGTimeModf(double *iptr, const LALFrameUFrTOC * toc,
+double XLALFrameUFrTOCQueryGTimeModf_FrameC_(double *iptr, const LALFrameUFrTOC * toc,
     size_t pos)
 {
     fr_toc_nframe_t nframe;
@@ -288,7 +289,7 @@ double XLALFrameUFrTOCQueryGTimeModf(double *iptr, const LALFrameUFrTOC * toc,
     return XLALGPSModf(iptr, &epoch);
 }
 
-double XLALFrameUFrTOCQueryDt(const LALFrameUFrTOC * toc, size_t pos)
+double XLALFrameUFrTOCQueryDt_FrameC_(const LALFrameUFrTOC * toc, size_t pos)
 {
     fr_toc_nframe_t nframe;
     fr_toc_dt_t dt;
@@ -308,7 +309,7 @@ double XLALFrameUFrTOCQueryDt(const LALFrameUFrTOC * toc, size_t pos)
     return retval;
 }
 
-size_t XLALFrameUFrTOCQueryAdcN(const LALFrameUFrTOC * toc)
+size_t XLALFrameUFrTOCQueryAdcN_FrameC_(const LALFrameUFrTOC * toc)
 {
     fr_toc_adc_n_t n;
     TRY_FRAMEC_FUNCTION_VAL(n, -1, FrameCFrTOCQuery, toc, FR_TOC_FIELD_ADC_N,
@@ -316,7 +317,7 @@ size_t XLALFrameUFrTOCQueryAdcN(const LALFrameUFrTOC * toc)
 }
 
 /* WARNING: returns pointer to memory that is lost when frame is freed */
-const char *XLALFrameUFrTOCQueryAdcName(const LALFrameUFrTOC * toc,
+const char *XLALFrameUFrTOCQueryAdcName_FrameC_(const LALFrameUFrTOC * toc,
     size_t adc)
 {
     fr_toc_adc_name_t *names;
@@ -337,7 +338,7 @@ const char *XLALFrameUFrTOCQueryAdcName(const LALFrameUFrTOC * toc,
     return name;
 }
 
-size_t XLALFrameUFrTOCQuerySimN(const LALFrameUFrTOC * toc)
+size_t XLALFrameUFrTOCQuerySimN_FrameC_(const LALFrameUFrTOC * toc)
 {
     fr_toc_sim_n_t n;
     TRY_FRAMEC_FUNCTION_VAL(n, -1, FrameCFrTOCQuery, toc, FR_TOC_FIELD_SIM_N,
@@ -345,7 +346,7 @@ size_t XLALFrameUFrTOCQuerySimN(const LALFrameUFrTOC * toc)
 }
 
 /* WARNING: returns pointer to memory that is lost when frame is freed */
-const char *XLALFrameUFrTOCQuerySimName(const LALFrameUFrTOC * toc,
+const char *XLALFrameUFrTOCQuerySimName_FrameC_(const LALFrameUFrTOC * toc,
     size_t sim)
 {
     fr_toc_sim_name_t *names;
@@ -366,7 +367,7 @@ const char *XLALFrameUFrTOCQuerySimName(const LALFrameUFrTOC * toc,
     return name;
 }
 
-size_t XLALFrameUFrTOCQueryProcN(const LALFrameUFrTOC * toc)
+size_t XLALFrameUFrTOCQueryProcN_FrameC_(const LALFrameUFrTOC * toc)
 {
     fr_toc_proc_n_t n;
     TRY_FRAMEC_FUNCTION_VAL(n, -1, FrameCFrTOCQuery, toc, FR_TOC_FIELD_PROC_N,
@@ -374,7 +375,7 @@ size_t XLALFrameUFrTOCQueryProcN(const LALFrameUFrTOC * toc)
 }
 
 /* WARNING: returns pointer to memory that is lost when frame is freed */
-const char *XLALFrameUFrTOCQueryProcName(const LALFrameUFrTOC * toc,
+const char *XLALFrameUFrTOCQueryProcName_FrameC_(const LALFrameUFrTOC * toc,
     size_t proc)
 {
     fr_toc_proc_name_t *names;
@@ -395,7 +396,7 @@ const char *XLALFrameUFrTOCQueryProcName(const LALFrameUFrTOC * toc,
     return name;
 }
 
-size_t XLALFrameUFrTOCQueryDetectorN(const LALFrameUFrTOC * toc)
+size_t XLALFrameUFrTOCQueryDetectorN_FrameC_(const LALFrameUFrTOC * toc)
 {
     fr_toc_detector_n_t n;
     TRY_FRAMEC_FUNCTION_VAL(n, -1, FrameCFrTOCQuery, toc,
@@ -403,7 +404,7 @@ size_t XLALFrameUFrTOCQueryDetectorN(const LALFrameUFrTOC * toc)
 }
 
 /* WARNING: returns pointer to memory that is lost when frame is freed */
-const char *XLALFrameUFrTOCQueryDetectorName(const LALFrameUFrTOC * toc,
+const char *XLALFrameUFrTOCQueryDetectorName_FrameC_(const LALFrameUFrTOC * toc,
     size_t det)
 {
     fr_toc_detector_name_t *names;
@@ -428,12 +429,12 @@ const char *XLALFrameUFrTOCQueryDetectorName(const LALFrameUFrTOC * toc,
  * FrameH functions
  */
 
-void XLALFrameUFrameHFree(LALFrameUFrameH * frame)
+void XLALFrameUFrameHFree_FrameC_(LALFrameUFrameH * frame)
 {
     TRY_FRAMEC_FUNCTION_VOID(FrameCFrameHFree, frame);
 }
 
-LALFrameUFrameH *XLALFrameUFrameHAlloc(const char *name, double start,
+LALFrameUFrameH *XLALFrameUFrameHAlloc_FrameC_(const char *name, double start,
     double dt, int frnum)
 {
     frame_h_gtime_t gtime;
@@ -442,19 +443,19 @@ LALFrameUFrameH *XLALFrameUFrameHAlloc(const char *name, double start,
     TRY_FRAMEC_FUNCTION_PTR(FrameCFrameHAlloc, name, gtime, dt, frnum);
 }
 
-LALFrameUFrameH *XLALFrameUFrameHRead(LALFrameUFrFile * stream, int pos)
+LALFrameUFrameH *XLALFrameUFrameHRead_FrameC_(LALFrameUFrFile * stream, int pos)
 {
     TRY_FRAMEC_FUNCTION_PTR(FrameCFrameHRead, FRFILE(stream), pos);
 }
 
-int XLALFrameUFrameHWrite(LALFrameUFrFile * stream, LALFrameUFrameH * frame)
+int XLALFrameUFrameHWrite_FrameC_(LALFrameUFrFile * stream, LALFrameUFrameH * frame)
 {
     TRY_FRAMEC_FUNCTION(FrameCFrameHWrite, FRFILE(stream), frame);
 }
 
 /* function to add a channel to a frame */
 
-int XLALFrameUFrameHFrChanAdd(LALFrameUFrameH * frame,
+int XLALFrameUFrameHFrChanAdd_FrameC_(LALFrameUFrameH * frame,
     LALFrameUFrChan * channel)
 {
     TRY_FRAMEC_FUNCTION(FrameCFrameHFrChanAdd, frame, channel);
@@ -462,7 +463,7 @@ int XLALFrameUFrameHFrChanAdd(LALFrameUFrameH * frame,
 
 /* function to add a detector to a frame */
 
-int XLALFrameUFrameHFrDetectorAdd(LALFrameUFrameH * frame,
+int XLALFrameUFrameHFrDetectorAdd_FrameC_(LALFrameUFrameH * frame,
     LALFrameUFrDetector * detector)
 {
     TRY_FRAMEC_FUNCTION(FrameCFrameHFrDetectorAdd, frame, detector->handle);
@@ -470,7 +471,7 @@ int XLALFrameUFrameHFrDetectorAdd(LALFrameUFrameH * frame,
 
 /* function to add a detector to a frame */
 
-int XLALFrameUFrameHFrHistoryAdd(LALFrameUFrameH * frame,
+int XLALFrameUFrameHFrHistoryAdd_FrameC_(LALFrameUFrameH * frame,
     LALFrameUFrHistory * history)
 {
     TRY_FRAMEC_FUNCTION(FrameCFrameHFrHistoryAdd, frame, history);
@@ -479,35 +480,35 @@ int XLALFrameUFrameHFrHistoryAdd(LALFrameUFrameH * frame,
 /* functions to query frame metadata */
 
 /* WARNING: returns pointer to memory that is lost when frame is freed */
-const char *XLALFrameUFrameHQueryName(const LALFrameUFrameH * frame)
+const char *XLALFrameUFrameHQueryName_FrameC_(const LALFrameUFrameH * frame)
 {
     frame_h_name_t name;
     TRY_FRAMEC_FUNCTION_VAL(name, NULL, FrameCFrameHQuery, frame,
         FRAME_H_FIELD_NAME, &name, FRAME_H_FIELD_LAST);
 }
 
-int XLALFrameUFrameHQueryRun(const LALFrameUFrameH * frame)
+int XLALFrameUFrameHQueryRun_FrameC_(const LALFrameUFrameH * frame)
 {
     frame_h_run_t run;
     TRY_FRAMEC_FUNCTION_VAL(run, -1, FrameCFrameHQuery, frame,
         FRAME_H_FIELD_RUN, &run, FRAME_H_FIELD_LAST);
 }
 
-int XLALFrameUFrameHQueryFrame(const LALFrameUFrameH * frame)
+int XLALFrameUFrameHQueryFrame_FrameC_(const LALFrameUFrameH * frame)
 {
     frame_h_frame_t frnum;
     TRY_FRAMEC_FUNCTION_VAL(frnum, -1, FrameCFrameHQuery, frame,
         FRAME_H_FIELD_FRAME, &frnum, FRAME_H_FIELD_LAST);
 }
 
-int XLALFrameUFrameHQueryDataQuality(const LALFrameUFrameH * frame)
+int XLALFrameUFrameHQueryDataQuality_FrameC_(const LALFrameUFrameH * frame)
 {
     frame_h_data_quality_t dq;
     TRY_FRAMEC_FUNCTION_VAL(dq, -1, FrameCFrameHQuery, frame,
         FRAME_H_FIELD_DATA_QUALITY, &dq, FRAME_H_FIELD_LAST);
 }
 
-double XLALFrameUFrameHQueryGTimeModf(double *iptr,
+double XLALFrameUFrameHQueryGTimeModf_FrameC_(double *iptr,
     const LALFrameUFrameH * frame)
 {
     frame_h_gtime_t start;
@@ -517,14 +518,14 @@ double XLALFrameUFrameHQueryGTimeModf(double *iptr,
         FRAME_H_FIELD_GTIME, &start, FRAME_H_FIELD_LAST);
 }
 
-int XLALFrameUFrameHQueryULeapS(const LALFrameUFrameH * frame)
+int XLALFrameUFrameHQueryULeapS_FrameC_(const LALFrameUFrameH * frame)
 {
     frame_h_uleaps_t uleaps;
     TRY_FRAMEC_FUNCTION_VAL(uleaps, -1, FrameCFrameHQuery, frame,
         FRAME_H_FIELD_ULEAPS, &uleaps, FRAME_H_FIELD_LAST);
 }
 
-double XLALFrameUFrameHQueryDt(const LALFrameUFrameH * frame)
+double XLALFrameUFrameHQueryDt_FrameC_(const LALFrameUFrameH * frame)
 {
     frame_h_dt_t dt;
     TRY_FRAMEC_FUNCTION_VAL(dt, -1, FrameCFrameHQuery, frame,
@@ -533,7 +534,7 @@ double XLALFrameUFrameHQueryDt(const LALFrameUFrameH * frame)
 
 /* functions to set frame metadata */
 
-int XLALFrameUFrameHSetRun(LALFrameUFrameH * frame, int run)
+int XLALFrameUFrameHSetRun_FrameC_(LALFrameUFrameH * frame, int run)
 {
     frame_h_run_t run_ = run;
     TRY_FRAMEC_FUNCTION(FrameCFrameHSet, frame, FRAME_H_FIELD_RUN, run_,
@@ -544,25 +545,25 @@ int XLALFrameUFrameHSetRun(LALFrameUFrameH * frame, int run)
  * FrChan functions
  */
 
-void XLALFrameUFrChanFree(LALFrameUFrChan * channel)
+void XLALFrameUFrChanFree_FrameC_(LALFrameUFrChan * channel)
 {
     TRY_FRAMEC_FUNCTION_VOID(FrameCFrChanFree, channel);
 }
 
-LALFrameUFrChan *XLALFrameUFrChanRead(LALFrameUFrFile * stream,
+LALFrameUFrChan *XLALFrameUFrChanRead_FrameC_(LALFrameUFrFile * stream,
     const char *name, size_t pos)
 {
     TRY_FRAMEC_FUNCTION_PTR(FrameCFrChanRead, FRFILE(stream), name, pos);
 }
 
-LALFrameUFrChan *XLALFrameUFrAdcChanAlloc(const char *name, int dtype,
+LALFrameUFrChan *XLALFrameUFrAdcChanAlloc_FrameC_(const char *name, int dtype,
     size_t ndata)
 {
     TRY_FRAMEC_FUNCTION_PTR(FrameCFrChanAlloc, name, FR_ADC_CHAN_TYPE, dtype,
         ndata);
 }
 
-LALFrameUFrChan *XLALFrameUFrSimChanAlloc(const char *name, int dtype,
+LALFrameUFrChan *XLALFrameUFrSimChanAlloc_FrameC_(const char *name, int dtype,
     size_t ndata)
 {
     TRY_FRAMEC_FUNCTION_PTR(FrameCFrChanAlloc, name, FR_SIM_CHAN_TYPE, dtype,
@@ -614,7 +615,7 @@ static fr_proc_sub_type_t XLALFrProcSubType(int subtype)
     }
 }
 
-LALFrameUFrChan *XLALFrameUFrProcChanAlloc(const char *name, int type,
+LALFrameUFrChan *XLALFrameUFrProcChanAlloc_FrameC_(const char *name, int type,
     int subtype, int dtype, size_t ndata)
 {
     TRY_FRAMEC_FUNCTION_PTR(FrameCFrProcChanAlloc, name, XLALFrProcType(type),
@@ -624,14 +625,14 @@ LALFrameUFrChan *XLALFrameUFrProcChanAlloc(const char *name, int type,
 /* channel query functions */
 
 /* WARNING: returns pointer to memory that is lost when frame is freed */
-const char *XLALFrameUFrChanQueryName(const LALFrameUFrChan * channel)
+const char *XLALFrameUFrChanQueryName_FrameC_(const LALFrameUFrChan * channel)
 {
     fr_chan_name_t name;
     TRY_FRAMEC_FUNCTION_VAL(name, NULL, FrameCFrChanQuery, channel,
         FR_CHAN_FIELD_NAME, &name, FR_CHAN_FIELD_LAST);
 }
 
-double XLALFrameUFrChanQueryTimeOffset(const LALFrameUFrChan * channel)
+double XLALFrameUFrChanQueryTimeOffset_FrameC_(const LALFrameUFrChan * channel)
 {
     fr_chan_time_offset_t offset;
     TRY_FRAMEC_FUNCTION_VAL(offset, 0, FrameCFrChanQuery, channel,
@@ -640,7 +641,7 @@ double XLALFrameUFrChanQueryTimeOffset(const LALFrameUFrChan * channel)
 
 /* channel set functions */
 
-int XLALFrameUFrChanSetSampleRate(LALFrameUFrChan * channel,
+int XLALFrameUFrChanSetSampleRate_FrameC_(LALFrameUFrChan * channel,
     double sampleRate)
 {
     fr_chan_sample_rate_t srate = sampleRate;
@@ -648,7 +649,7 @@ int XLALFrameUFrChanSetSampleRate(LALFrameUFrChan * channel,
         srate, FR_CHAN_FIELD_LAST);
 }
 
-int XLALFrameUFrChanSetTimeOffset(LALFrameUFrChan * channel,
+int XLALFrameUFrChanSetTimeOffset_FrameC_(LALFrameUFrChan * channel,
     double timeOffset)
 {
     fr_chan_time_offset_t offset = timeOffset;
@@ -660,7 +661,7 @@ int XLALFrameUFrChanSetTimeOffset(LALFrameUFrChan * channel,
  * FrVect functions
  */
 
-int XLALFrameUFrChanVectorAlloc(LALFrameUFrChan * channel, int dtype,
+int XLALFrameUFrChanVectorAlloc_FrameC_(LALFrameUFrChan * channel, int dtype,
     size_t ndata)
 {
     TRY_FRAMEC_FUNCTION(FrameCFrChanVectorAlloc, channel, dtype, ndata);
@@ -693,14 +694,14 @@ static fr_vect_compression_schemes_t XLALFrVectCompressionScheme(int
 
 /* functions to compress and expand FrVect structures within a channel */
 
-int XLALFrameUFrChanVectorCompress(LALFrameUFrChan * channel,
+int XLALFrameUFrChanVectorCompress_FrameC_(LALFrameUFrChan * channel,
     int compressLevel)
 {
     TRY_FRAMEC_FUNCTION(FrameCFrChanVectorCompress, channel,
         XLALFrVectCompressionScheme(compressLevel));
 }
 
-int XLALFrameUFrChanVectorExpand(LALFrameUFrChan * channel)
+int XLALFrameUFrChanVectorExpand_FrameC_(LALFrameUFrChan * channel)
 {
     TRY_FRAMEC_FUNCTION(FrameCFrChanVectorExpand, channel);
 }
@@ -708,21 +709,21 @@ int XLALFrameUFrChanVectorExpand(LALFrameUFrChan * channel)
 /* functions to query FrVect structures within a channel */
 
 /* WARNING: returns pointer to memory that is lost when frame is freed */
-const char *XLALFrameUFrChanVectorQueryName(const LALFrameUFrChan * channel)
+const char *XLALFrameUFrChanVectorQueryName_FrameC_(const LALFrameUFrChan * channel)
 {
     fr_vect_name_t name;
     TRY_FRAMEC_FUNCTION_VAL(name, NULL, FrameCFrChanVectorQuery, channel,
         FR_VECT_FIELD_NAME, &name, FR_VECT_FIELD_LAST);
 }
 
-int XLALFrameUFrChanVectorQueryCompress(const LALFrameUFrChan * channel)
+int XLALFrameUFrChanVectorQueryCompress_FrameC_(const LALFrameUFrChan * channel)
 {
     fr_vect_compress_t compress;
     TRY_FRAMEC_FUNCTION_VAL(compress, -1, FrameCFrChanVectorQuery, channel,
         FR_VECT_FIELD_COMPRESS, &compress, FR_VECT_FIELD_LAST);
 }
 
-int XLALFrameUFrChanVectorQueryType(const LALFrameUFrChan * channel)
+int XLALFrameUFrChanVectorQueryType_FrameC_(const LALFrameUFrChan * channel)
 {
     fr_vect_type_t type;
     TRY_FRAMEC_FUNCTION_VAL(type, -1, FrameCFrChanVectorQuery, channel,
@@ -730,35 +731,35 @@ int XLALFrameUFrChanVectorQueryType(const LALFrameUFrChan * channel)
 }
 
 /* retrieves a handle to the data vector in the FrVect structure */
-void *XLALFrameUFrChanVectorQueryData(const LALFrameUFrChan * channel)
+void *XLALFrameUFrChanVectorQueryData_FrameC_(const LALFrameUFrChan * channel)
 {
     fr_vect_data_t data;
     TRY_FRAMEC_FUNCTION_VAL(data, NULL, FrameCFrChanVectorQuery, channel,
         FR_VECT_FIELD_DATA, &data, FR_VECT_FIELD_LAST);
 }
 
-size_t XLALFrameUFrChanVectorQueryNBytes(const LALFrameUFrChan * channel)
+size_t XLALFrameUFrChanVectorQueryNBytes_FrameC_(const LALFrameUFrChan * channel)
 {
     fr_vect_nbytes_t nbytes;
     TRY_FRAMEC_FUNCTION_VAL(nbytes, -1, FrameCFrChanVectorQuery, channel,
         FR_VECT_FIELD_NBYTES, &nbytes, FR_VECT_FIELD_LAST);
 }
 
-size_t XLALFrameUFrChanVectorQueryNData(const LALFrameUFrChan * channel)
+size_t XLALFrameUFrChanVectorQueryNData_FrameC_(const LALFrameUFrChan * channel)
 {
     fr_vect_ndata_t ndata;
     TRY_FRAMEC_FUNCTION_VAL(ndata, -1, FrameCFrChanVectorQuery, channel,
         FR_VECT_FIELD_NDATA, &ndata, FR_VECT_FIELD_LAST);
 }
 
-size_t XLALFrameUFrChanVectorQueryNDim(const LALFrameUFrChan * channel)
+size_t XLALFrameUFrChanVectorQueryNDim_FrameC_(const LALFrameUFrChan * channel)
 {
     fr_vect_ndim_t ndim;
     TRY_FRAMEC_FUNCTION_VAL(ndim, -1, FrameCFrChanVectorQuery, channel,
         FR_VECT_FIELD_NDIM, &ndim, FR_VECT_FIELD_LAST);
 }
 
-size_t XLALFrameUFrChanVectorQueryNx(const LALFrameUFrChan * channel,
+size_t XLALFrameUFrChanVectorQueryNx_FrameC_(const LALFrameUFrChan * channel,
     size_t dim)
 {
     fr_vect_ndim_t ndim;
@@ -779,7 +780,7 @@ size_t XLALFrameUFrChanVectorQueryNx(const LALFrameUFrChan * channel,
     return retval;
 }
 
-double XLALFrameUFrChanVectorQueryDx(const LALFrameUFrChan * channel,
+double XLALFrameUFrChanVectorQueryDx_FrameC_(const LALFrameUFrChan * channel,
     size_t dim)
 {
     fr_vect_ndim_t ndim;
@@ -800,7 +801,7 @@ double XLALFrameUFrChanVectorQueryDx(const LALFrameUFrChan * channel,
     return retval;
 }
 
-double XLALFrameUFrChanVectorQueryStartX(const LALFrameUFrChan * channel,
+double XLALFrameUFrChanVectorQueryStartX_FrameC_(const LALFrameUFrChan * channel,
     size_t dim)
 {
     fr_vect_ndim_t ndim;
@@ -822,7 +823,7 @@ double XLALFrameUFrChanVectorQueryStartX(const LALFrameUFrChan * channel,
 }
 
 /* WARNING: returns pointer to memory that is lost when frame is freed */
-const char *XLALFrameUFrChanVectorQueryUnitX(const LALFrameUFrChan * channel,
+const char *XLALFrameUFrChanVectorQueryUnitX_FrameC_(const LALFrameUFrChan * channel,
     size_t dim)
 {
     fr_vect_ndim_t ndim;
@@ -844,7 +845,7 @@ const char *XLALFrameUFrChanVectorQueryUnitX(const LALFrameUFrChan * channel,
 }
 
 /* WARNING: returns pointer to memory that is lost when frame is freed */
-const char *XLALFrameUFrChanVectorQueryUnitY(const LALFrameUFrChan * channel)
+const char *XLALFrameUFrChanVectorQueryUnitY_FrameC_(const LALFrameUFrChan * channel)
 {
     fr_vect_unit_y_t unitY;
     TRY_FRAMEC_FUNCTION_VAL(unitY, NULL, FrameCFrChanVectorQuery, channel,
@@ -853,13 +854,13 @@ const char *XLALFrameUFrChanVectorQueryUnitY(const LALFrameUFrChan * channel)
 
 /* functions to set FrVect structures within a channel */
 
-int XLALFrameUFrChanVectorSetName(LALFrameUFrChan * channel, const char *name)
+int XLALFrameUFrChanVectorSetName_FrameC_(LALFrameUFrChan * channel, const char *name)
 {
     TRY_FRAMEC_FUNCTION(FrameCFrChanVectorSet, channel, FR_VECT_FIELD_NAME,
         (fr_vect_name_t) (name), FR_VECT_FIELD_LAST);
 }
 
-int XLALFrameUFrChanVectorSetUnitY(LALFrameUFrChan * channel,
+int XLALFrameUFrChanVectorSetUnitY_FrameC_(LALFrameUFrChan * channel,
     const char *unit)
 {
     TRY_FRAMEC_FUNCTION(FrameCFrChanVectorSet, channel, FR_VECT_FIELD_UNIT_Y,
@@ -868,21 +869,21 @@ int XLALFrameUFrChanVectorSetUnitY(LALFrameUFrChan * channel,
 
 /* NOTE: only support 1-dimensional vectors */
 
-int XLALFrameUFrChanVectorSetDx(LALFrameUFrChan * channel, double dx)
+int XLALFrameUFrChanVectorSetDx_FrameC_(LALFrameUFrChan * channel, double dx)
 {
     fr_vect_dx_t dx_ = dx;
     TRY_FRAMEC_FUNCTION(FrameCFrChanVectorSet, channel, FR_VECT_FIELD_DX,
         &dx_, 1, FR_VECT_FIELD_LAST);
 }
 
-int XLALFrameUFrChanVectorSetStartX(LALFrameUFrChan * channel, double x0)
+int XLALFrameUFrChanVectorSetStartX_FrameC_(LALFrameUFrChan * channel, double x0)
 {
     fr_vect_startx_t x0_ = x0;
     TRY_FRAMEC_FUNCTION(FrameCFrChanVectorSet, channel, FR_VECT_FIELD_START_X,
         &x0_, 1, FR_VECT_FIELD_LAST);
 }
 
-int XLALFrameUFrChanVectorSetUnitX(LALFrameUFrChan * channel,
+int XLALFrameUFrChanVectorSetUnitX_FrameC_(LALFrameUFrChan * channel,
     const char *unit)
 {
     fr_vect_unit_x_t unit_ = unit;
@@ -894,7 +895,7 @@ int XLALFrameUFrChanVectorSetUnitX(LALFrameUFrChan * channel,
  * FrDetector functions
  */
 
-void XLALFrameUFrDetectorFree(LALFrameUFrDetector * detector)
+void XLALFrameUFrDetectorFree_FrameC_(LALFrameUFrDetector * detector)
 {
     if (detector) {
         int err;
@@ -906,7 +907,7 @@ void XLALFrameUFrDetectorFree(LALFrameUFrDetector * detector)
     return;
 }
 
-LALFrameUFrDetector *XLALFrameUFrDetectorRead(LALFrameUFrFile * stream,
+LALFrameUFrDetector *XLALFrameUFrDetectorRead_FrameC_(LALFrameUFrFile * stream,
     const char *name)
 {
     fr_detector_prefix_t prefix;
@@ -918,21 +919,21 @@ LALFrameUFrDetector *XLALFrameUFrDetectorRead(LALFrameUFrFile * stream,
     CALL_FRAMEC_FUNCTION(err, detector->handle =
         FrameCFrDetectorRead, FRFILE(stream), name);
     if (err || !detector->handle) {
-        XLALFrameUFrDetectorFree(detector);
+        XLALFrameUFrDetectorFree_FrameC_(detector);
         return NULL;
     }
     /* read the prefix and use it to set the detector's prefix */
     CALL_FRAMEC_FUNCTION(err, FrameCFrDetectorQuery, detector->handle,
         FR_DETECTOR_FIELD_PREFIX, &prefix, FR_DETECTOR_FIELD_LAST);
     if (err) {
-        XLALFrameUFrDetectorFree(detector);
+        XLALFrameUFrDetectorFree_FrameC_(detector);
         return NULL;
     }
     memcpy(detector->prefix, prefix.prefix, 2);
     return detector;
 }
 
-LALFrameUFrDetector *XLALFrameUFrDetectorAlloc(const char *name,
+LALFrameUFrDetector *XLALFrameUFrDetectorAlloc_FrameC_(const char *name,
     const char *prefix, double latitude, double longitude, double elevation,
     double azimuthX, double azimuthY, double altitudeX, double altitudeY,
     double midpointX, double midpointY, int localTime)
@@ -948,14 +949,14 @@ LALFrameUFrDetector *XLALFrameUFrDetectorAlloc(const char *name,
 	name, prefix, latitude, longitude, elevation, azimuthX, azimuthY,
         altitudeX, altitudeY, midpointX, midpointY, localTime);
     if (err || !detector->handle) {
-        XLALFrameUFrDetectorFree(detector);
+        XLALFrameUFrDetectorFree_FrameC_(detector);
         return NULL;
     }
     return detector;
 }
 
 /* WARNING: returns pointer to memory that is lost when frame is freed */
-const char *XLALFrameUFrDetectorQueryName(const LALFrameUFrDetector *
+const char *XLALFrameUFrDetectorQueryName_FrameC_(const LALFrameUFrDetector *
     detector)
 {
     fr_detector_name_t name;
@@ -965,13 +966,13 @@ const char *XLALFrameUFrDetectorQueryName(const LALFrameUFrDetector *
 }
 
 /* WARNING: returns pointer to memory that is lost when frame is freed */
-const char *XLALFrameUFrDetectorQueryPrefix(const LALFrameUFrDetector *
+const char *XLALFrameUFrDetectorQueryPrefix_FrameC_(const LALFrameUFrDetector *
     detector)
 {
     return detector->prefix;
 }
 
-double XLALFrameUFrDetectorQueryLongitude(const LALFrameUFrDetector *
+double XLALFrameUFrDetectorQueryLongitude_FrameC_(const LALFrameUFrDetector *
     detector)
 {
     fr_detector_longitude_t longitude;
@@ -980,7 +981,7 @@ double XLALFrameUFrDetectorQueryLongitude(const LALFrameUFrDetector *
         FR_DETECTOR_FIELD_LAST);
 }
 
-double XLALFrameUFrDetectorQueryLatitude(const LALFrameUFrDetector * detector)
+double XLALFrameUFrDetectorQueryLatitude_FrameC_(const LALFrameUFrDetector * detector)
 {
     fr_detector_latitude_t latitude;
     TRY_FRAMEC_FUNCTION_VAL(latitude, -1.0, FrameCFrDetectorQuery,
@@ -988,7 +989,7 @@ double XLALFrameUFrDetectorQueryLatitude(const LALFrameUFrDetector * detector)
         FR_DETECTOR_FIELD_LAST);
 }
 
-double XLALFrameUFrDetectorQueryElevation(const LALFrameUFrDetector *
+double XLALFrameUFrDetectorQueryElevation_FrameC_(const LALFrameUFrDetector *
     detector)
 {
     fr_detector_elevation_t elevation;
@@ -997,7 +998,7 @@ double XLALFrameUFrDetectorQueryElevation(const LALFrameUFrDetector *
         FR_DETECTOR_FIELD_LAST);
 }
 
-double XLALFrameUFrDetectorQueryArmXAzimuth(const LALFrameUFrDetector *
+double XLALFrameUFrDetectorQueryArmXAzimuth_FrameC_(const LALFrameUFrDetector *
     detector)
 {
     fr_detector_arm_x_azimuth_t armXazimuth;
@@ -1006,7 +1007,7 @@ double XLALFrameUFrDetectorQueryArmXAzimuth(const LALFrameUFrDetector *
         FR_DETECTOR_FIELD_LAST);
 }
 
-double XLALFrameUFrDetectorQueryArmYAzimuth(const LALFrameUFrDetector *
+double XLALFrameUFrDetectorQueryArmYAzimuth_FrameC_(const LALFrameUFrDetector *
     detector)
 {
     fr_detector_arm_y_azimuth_t armYazimuth;
@@ -1015,7 +1016,7 @@ double XLALFrameUFrDetectorQueryArmYAzimuth(const LALFrameUFrDetector *
         FR_DETECTOR_FIELD_LAST);
 }
 
-double XLALFrameUFrDetectorQueryArmXAltitude(const LALFrameUFrDetector *
+double XLALFrameUFrDetectorQueryArmXAltitude_FrameC_(const LALFrameUFrDetector *
     detector)
 {
     fr_detector_arm_x_altitude_t armXaltitude;
@@ -1024,7 +1025,7 @@ double XLALFrameUFrDetectorQueryArmXAltitude(const LALFrameUFrDetector *
         FR_DETECTOR_FIELD_LAST);
 }
 
-double XLALFrameUFrDetectorQueryArmYAltitude(const LALFrameUFrDetector *
+double XLALFrameUFrDetectorQueryArmYAltitude_FrameC_(const LALFrameUFrDetector *
     detector)
 {
     fr_detector_arm_y_altitude_t armYaltitude;
@@ -1033,7 +1034,7 @@ double XLALFrameUFrDetectorQueryArmYAltitude(const LALFrameUFrDetector *
         FR_DETECTOR_FIELD_LAST);
 }
 
-double XLALFrameUFrDetectorQueryArmXMidpoint(const LALFrameUFrDetector *
+double XLALFrameUFrDetectorQueryArmXMidpoint_FrameC_(const LALFrameUFrDetector *
     detector)
 {
     fr_detector_arm_x_midpoint_t armXmidpoint;
@@ -1042,7 +1043,7 @@ double XLALFrameUFrDetectorQueryArmXMidpoint(const LALFrameUFrDetector *
         FR_DETECTOR_FIELD_LAST);
 }
 
-double XLALFrameUFrDetectorQueryArmYMidpoint(const LALFrameUFrDetector *
+double XLALFrameUFrDetectorQueryArmYMidpoint_FrameC_(const LALFrameUFrDetector *
     detector)
 {
     fr_detector_arm_y_midpoint_t armYmidpoint;
@@ -1051,7 +1052,7 @@ double XLALFrameUFrDetectorQueryArmYMidpoint(const LALFrameUFrDetector *
         FR_DETECTOR_FIELD_LAST);
 }
 
-int XLALFrameUFrDetectorQueryLocalTime(const LALFrameUFrDetector * detector)
+int XLALFrameUFrDetectorQueryLocalTime_FrameC_(const LALFrameUFrDetector * detector)
 {
     fr_detector_localtime_t localTime;
     TRY_FRAMEC_FUNCTION_VAL(localTime, -1.0, FrameCFrDetectorQuery,
@@ -1063,12 +1064,12 @@ int XLALFrameUFrDetectorQueryLocalTime(const LALFrameUFrDetector * detector)
  * FrHistory routines
  */
 
-void XLALFrameUFrHistoryFree(LALFrameUFrHistory * history)
+void XLALFrameUFrHistoryFree_FrameC_(LALFrameUFrHistory * history)
 {
     TRY_FRAMEC_FUNCTION_VOID(FrameCFrHistoryFree, history);
 }
 
-LALFrameUFrHistory *XLALFrameUFrHistoryAlloc(const char *name, double gpssec,
+LALFrameUFrHistory *XLALFrameUFrHistoryAlloc_FrameC_(const char *name, double gpssec,
     const char *comment)
 {
     TRY_FRAMEC_FUNCTION_PTR(FrameCFrHistoryAlloc, name,
