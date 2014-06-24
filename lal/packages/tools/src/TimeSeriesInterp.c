@@ -141,7 +141,6 @@ REAL8 XLALREAL8TimeSeriesInterpEval(LALREAL8TimeSeriesInterp *interp, const LIGO
 {
 	const REAL8 *data = interp->series->data->data;
 	double *cached_kernel = interp->cached_kernel;
-	REAL8 val = 0.0;
 	/* the (real-valued) sample index at which we wish to evalute the
 	 * source time series */
 	double j = XLALGPSDiff(t, &interp->series->epoch) / interp->series->deltaT;
@@ -156,6 +155,7 @@ REAL8 XLALREAL8TimeSeriesInterpEval(LALREAL8TimeSeriesInterp *interp, const LIGO
 	 * computed by more than the no-op threshold */
 	double residual = j - start;
 	int i;
+	REAL8 val;
 
 	if(j < 0 || j >= interp->series->data->length)
 		XLAL_ERROR_REAL8(XLAL_EDOM);
@@ -199,7 +199,7 @@ REAL8 XLALREAL8TimeSeriesInterpEval(LALREAL8TimeSeriesInterp *interp, const LIGO
 		cached_kernel -= start;
 	} else
 		i = start;
-	for(; i < stop; i++)
+	for(val = 0.0; i < stop; i++)
 		val += *cached_kernel++ * data[i];
 
 	return val;
