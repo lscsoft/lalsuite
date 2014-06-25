@@ -209,16 +209,9 @@ echo
 
 for n in 0 1 2 6 8 9; do
 
-    ## set F-statistic comparison tolerance
-    if [ $n -eq 6 ]; then
-        Ftolerance=0.01
-    else
-        Ftolerance=0.1
-    fi
-
     ## compare results
     echo "Comparing gridType=${n}:"
-    cmdline="$cmp_code -1 ./testCFSv2_grid${n}.dat -2 ${srcdir}/testCFSv2_grid${n}.dat.ref.gz --Ftolerance=$Ftolerance";
+    cmdline="$cmp_code -1 ./testCFSv2_grid${n}.dat -2 ${srcdir}/testCFSv2_grid${n}.dat.ref.gz";
     echo $cmdline
     if ! eval $cmdline; then
         echo "OUCH... files differ. Something might be wrong..."

@@ -30,6 +30,7 @@
 #include <lal/UserInput.h>
 #include <lal/LALConstants.h>
 #include <lal/PulsarDataTypes.h>
+#include <lal/LFTandTSutils.h>
 
 // ----- defines & macros ----------
 #define TRUE (1==1)
@@ -52,14 +53,17 @@ typedef struct
   BOOLEAN help;
   CHAR *Fname1;
   CHAR *Fname2;
-  REAL8 Ftolerance;
-  BOOLEAN sigFtolerance;
-  INT4 Nseg;
+
+  REAL8 tol_L1;		// tolerance on relative error between vectors using L1 norm
+  REAL8 tol_L2;		// tolerance on relative error between vectors using L2 norm
+  REAL8 tol_angle;	// tolerance on angle between the two vectors, in radians
+  REAL8 tol_atMax;	// tolerance on single-sample relative error *at* respective maximum
+
 } UserVariables_t;
 
 /* ---------- local prototypes ---------- */
 int XLALinitUserVars ( UserVariables_t *uvar );
-int XLALcompareFstatFiles ( UINT4 *diff, const LALParsedDataFile *f1, const LALParsedDataFile *f2, REAL8 Ftol, const UserVariables_t *uvar );
+int XLALcompareFstatFiles ( const LALParsedDataFile *f1, const LALParsedDataFile *f2, VectorComparison tol );
 int XLALParseFstatLine ( FstatLine_t *FstatLine, const CHAR *line );
 REAL8 relError ( REAL8 x, REAL8 y );
 
@@ -85,21 +89,14 @@ main (int argc, char *argv[] )
   XLAL_CHECK ( XLALParseDataFile ( &Fstats1, uvar.Fname1 ) == XLAL_SUCCESS, XLAL_EFUNC );
   XLAL_CHECK ( XLALParseDataFile ( &Fstats2, uvar.Fname2 ) == XLAL_SUCCESS, XLAL_EFUNC );
 
-  UINT4 diffs = 0;
-  UINT4 nlines1 = Fstats1->lines->nTokens;
-  UINT4 nlines2 = Fstats2->lines->nTokens;
-  if ( nlines1 != nlines2 )
-    {
-      XLALPrintError ("Fstats files have different length.\n");
-      XLALPrintError (" len1 = %d, len2 = %d\n\n", nlines1, nlines2);
-      diffs = 1;
-    }
+  VectorComparison XLAL_INIT_DECL(tol);
+  tol.relErr_L1 	= uvar.tol_L1;
+  tol.relErr_L2		= uvar.tol_L2;
+  tol.angleV 		= uvar.tol_angle;
+  tol.relErr_atMaxAbsx 	= uvar.tol_atMax;
+  tol.relErr_atMaxAbsy  = uvar.tol_atMax;
 
-  XLAL_CHECK ( XLALcompareFstatFiles ( &diffs, Fstats1, Fstats2, uvar.Ftolerance, &uvar ) == XLAL_SUCCESS, XLAL_EFUNC );
-
-  if ( diffs) {
-    XLALPrintError ("FStat files differ! (found %d differences) \n\n", diffs );
-  }
+  XLAL_CHECK ( XLALcompareFstatFiles ( Fstats1, Fstats2, tol ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   XLALDestroyParsedDataFile ( Fstats1 );
   XLALDestroyParsedDataFile ( Fstats2 );
@@ -107,7 +104,7 @@ main (int argc, char *argv[] )
 
   LALCheckMemoryLeaks();
 
-  return diffs;
+  return XLAL_SUCCESS;
 
 } /* main */
 
@@ -118,18 +115,20 @@ XLALinitUserVars ( UserVariables_t *uvar )
 {
   XLAL_CHECK ( uvar != NULL, XLAL_EINVAL );
 
-  uvar->Ftolerance = 100.0 * LAL_REAL4_EPS;
-  uvar->sigFtolerance = FALSE;
-  uvar->Nseg = 1;
+  uvar->tol_L1 		= 5.5e-2;
+  uvar->tol_L2 		= 4.5e-2;
+  uvar->tol_angle	= 0.04;  // rad
+  uvar->tol_atMax 	= 5e-2;
 
   /* now register all user-variables */
   XLALregSTRINGUserStruct ( Fname1,	'1', UVAR_REQUIRED, "Path and basefilename for first Fstats file");
   XLALregSTRINGUserStruct ( Fname2,	'2', UVAR_REQUIRED, "Path and basefilename for second Fstats file");
   XLALregBOOLUserStruct (   help,	'h', UVAR_HELP,     "Print this help/usage message");
 
-  XLALregREALUserStruct (   Ftolerance,   0, UVAR_OPTIONAL, "tolerance of error in 2F (relative or sigmas, depending on --sigFtolerance)" );
-  XLALregBOOLUserStruct (   sigFtolerance, 0,UVAR_OPTIONAL, "Use error in 2F relative to chi^2 std-deviation 'sigma' instead of relative error");
-  XLALregINTUserStruct  (   Nseg,          0,UVAR_OPTIONAL, "Number of segments Fstat '2F' is averaged over");
+  XLALregREALUserStruct (   tol_L1,   	0, UVAR_OPTIONAL, "tolerance on relative error between vectors using L1 norm, between [0,2]");
+  XLALregREALUserStruct (   tol_L2,   	0, UVAR_OPTIONAL, "tolerance on relative error between vectors using L2 norm, between [0,2]");
+  XLALregREALUserStruct (   tol_angle, 	0, UVAR_OPTIONAL, "tolerance on angle between the two vectors in radians, between [0,pi]");
+  XLALregREALUserStruct (   tol_atMax, 	0, UVAR_OPTIONAL, "tolerance on single-sample relative error *at* respective maximum, between [0,2]");
 
   return XLAL_SUCCESS;
 
@@ -139,21 +138,22 @@ XLALinitUserVars ( UserVariables_t *uvar )
  * comparison specific to pure Fstat-output files (5 entries )
  */
 int
-XLALcompareFstatFiles ( UINT4 *diff, const LALParsedDataFile *f1, const LALParsedDataFile *f2, REAL8 Ftol, const UserVariables_t *uvar )
+XLALcompareFstatFiles ( const LALParsedDataFile *f1, const LALParsedDataFile *f2, VectorComparison tol )
 {
-  XLAL_CHECK ( (diff != NULL) && (f1 != NULL) && ( f2 != NULL ) && (Ftol > 0), XLAL_EINVAL );
+  XLAL_CHECK ( (f1 != NULL) && ( f2 != NULL ), XLAL_EINVAL );
 
   REAL4 eps4 = 100.0 * LAL_REAL4_EPS;
   FstatLine_t XLAL_INIT_DECL(parsed1);
   FstatLine_t XLAL_INIT_DECL(parsed2);
 
-  UINT4 nlines1 = f1->lines->nTokens;
-  UINT4 nlines2 = f2->lines->nTokens;
+  XLAL_CHECK ( f1->lines->nTokens == f2->lines->nTokens, XLAL_ETOL, "Different number of lines: %d != %d\n", f1->lines->nTokens, f2->lines->nTokens );
+  UINT4 nlines = f1->lines->nTokens;
 
-  /* step through the two files and compare (trying to avoid stumbling on roundoff-errors ) */
-  UINT4 minlines = (nlines1 < nlines2) ? nlines1 : nlines2;
+  REAL4Vector *twoF1, *twoF2;
+  XLAL_CHECK ( (twoF1 = XLALCreateREAL4Vector ( nlines )) != NULL, XLAL_EFUNC );
+  XLAL_CHECK ( (twoF2 = XLALCreateREAL4Vector ( nlines )) != NULL, XLAL_EFUNC );
 
-  for (UINT4 i=0; i < minlines ; i++)
+  for (UINT4 i=0; i < nlines ; i++)
     {
       const char *line1 = f1->lines->tokens[i];
       const char *line2 = f2->lines->tokens[i];
@@ -162,63 +162,44 @@ XLALcompareFstatFiles ( UINT4 *diff, const LALParsedDataFile *f1, const LALParse
       XLAL_CHECK ( XLALParseFstatLine ( &parsed1, line1 ) == XLAL_SUCCESS, XLAL_EFUNC );
       XLAL_CHECK ( XLALParseFstatLine ( &parsed2, line2 ) == XLAL_SUCCESS, XLAL_EFUNC );
 
-      /* now compare all entries */
+      /* compare all template parameters */
       REAL8 relErr;
-      if ( (relErr = relError( parsed1.Freq, parsed2.Freq)) > eps4 )
-	{
-	  XLALPrintError ("Relative frequency-error %g ecceeds %g in line %d\n", relErr, eps4, i+1);
-	  (*diff) ++;
-	}
-      if ( (relErr = relError( parsed1.Alpha, parsed2.Alpha)) > eps4 )
-	{
-	  XLALPrintError ("Relative error %g in alpha ecceeds %g in line %d\n", relErr, eps4, i+1);
-	  (*diff) ++;
-	}
-      if ( (relErr = relError( parsed1.Delta, parsed2.Delta)) > eps4 )
-	{
-	  XLALPrintError ("Relative error %g in delta ecceeds %g in line %d\n", relErr, eps4, i+1);
-	  (*diff) ++;
-	}
-      if ( (relErr = relError( parsed1.f1dot, parsed2.f1dot)) > eps4 )
-	{
-	  XLALPrintError ("Relative error %g in f1dot ecceeds %g in line %d\n", relErr, eps4, i+1);
-	  (*diff) ++;
-	}
-      if ( (relErr = relError( parsed1.f2dot, parsed2.f2dot)) > eps4 )
-	{
-	  XLALPrintError ("Relative error %g in f2dot ecceeds %g in line %d\n", relErr, eps4, i+1);
-	  (*diff) ++;
-	}
-      if ( (relErr = relError( parsed1.f3dot, parsed2.f3dot)) > eps4 )
-	{
-	  XLALPrintError ("Relative error %g in f3dot ecceeds %g in line %d\n", relErr, eps4, i+1);
-	  (*diff) ++;
-	}
+      if ( (relErr = relError( parsed1.Freq, parsed2.Freq)) > eps4 ) {
+	  XLAL_ERROR (XLAL_ETOL, "Relative frequency-error %g ecceeds %g in line %d\n", relErr, eps4, i+1);
+      }
+      if ( (relErr = relError( parsed1.Alpha, parsed2.Alpha)) > eps4 ) {
+        XLAL_ERROR (XLAL_ETOL, "Relative error %g in alpha ecceeds %g in line %d\n", relErr, eps4, i+1);
+      }
+      if ( (relErr = relError( parsed1.Delta, parsed2.Delta)) > eps4 ) {
+        XLAL_ERROR (XLAL_ETOL, "Relative error %g in delta ecceeds %g in line %d\n", relErr, eps4, i+1);
+      }
+      if ( (relErr = relError( parsed1.f1dot, parsed2.f1dot)) > eps4 ) {
+        XLAL_ERROR (XLAL_ETOL, "Relative error %g in f1dot ecceeds %g in line %d\n", relErr, eps4, i+1);
+      }
+      if ( (relErr = relError( parsed1.f2dot, parsed2.f2dot)) > eps4 ) {
+        XLAL_ERROR (XLAL_ETOL, "Relative error %g in f2dot ecceeds %g in line %d\n", relErr, eps4, i+1);
+      }
+      if ( (relErr = relError( parsed1.f3dot, parsed2.f3dot)) > eps4 ) {
+        XLAL_ERROR (XLAL_ETOL, "Relative error %g in f3dot ecceeds %g in line %d\n", relErr, eps4, i+1);
+      }
 
-      REAL8 err2F;
-      if ( uvar->sigFtolerance )	// measure error in Nseg*2F compared to sigmas of chi^2_(4*Nseg) distribution
-        {
-          REAL8 mean2F = fmax ( 4, 0.5 * ( parsed1.TwoF + parsed2.TwoF ) );
-          REAL8 noncent = uvar->Nseg * ( mean2F - 4 );
-          REAL8 sigma = sqrt ( 2 * ( 4*uvar->Nseg + 2 * noncent ) );	// std-dev for noncentral chi^2 distribution with dof degrees of freedom
-          err2F = uvar->Nseg * fabs ( parsed1.TwoF - parsed2.TwoF ) / sigma;
-        }
-      else	// relative error between F1 and F2
-        {
-          err2F = relError( parsed1.TwoF, parsed2.TwoF );
-        }
+      // and store respective 2F values in vectors for comparison
+      twoF1->data[i] = (REAL4)parsed1.TwoF;
+      twoF2->data[i] = (REAL4)parsed2.TwoF;
 
-      if ( err2F > Ftol )
-	{
-	  XLALPrintError ("%s Error %g in 2F ecceeds threshold %g in line %d\n", ( uvar->sigFtolerance ? "Sigma" : "Relative" ) , err2F, Ftol, i+1);
-	  (*diff) ++;
-	}
+    } /* for i < nlines */
 
-    } /* for i < minlines */
+  // ----- finally vector-compare 2F values against given tolerances ----------
+  VectorComparison XLAL_INIT_DECL(cmp);
+  XLAL_CHECK ( XLALCompareREAL4Vectors ( &cmp, twoF1, twoF2, &tol ) == XLAL_SUCCESS, XLAL_EFUNC );
+
+  XLALDestroyREAL4Vector ( twoF1 );
+  XLALDestroyREAL4Vector ( twoF2 );
 
   return XLAL_SUCCESS;
 
 } /* XLALcompareFstatFiles() */
+
 
 /* parse one Fstat-line into the FstatLine_t struct
  * This function is flexible concerning the number of spindown-entries found

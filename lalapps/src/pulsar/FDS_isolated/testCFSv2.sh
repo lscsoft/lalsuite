@@ -39,7 +39,6 @@ else
     cfsv2_code="$@"
 fi
 
-Ftolerance=0.01
 Dterms=8
 # ---------- fixed parameter of our test-signal
 Tsft=1800;
@@ -162,7 +161,7 @@ echo "----------------------------------------------------------------------"
 sort ${outfile_Fstat} > __tmp_sorted && mv __tmp_sorted ${outfile_Fstat}
 
 echo
-cmdline="$cmp_code -1 ./${outfile_Fstat} -2 ${outfile_ref} --Ftolerance=$Ftolerance"
+cmdline="$cmp_code -1 ./${outfile_Fstat} -2 ${outfile_ref}"
 echo -n $cmdline
 if ! eval $cmdline; then
     echo "==> OUCH... files differ. Something might be wrong..."
