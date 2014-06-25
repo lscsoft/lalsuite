@@ -85,10 +85,8 @@ elif prior_cp.get('analysis','engine')=='lalinferencebambi':
   prior_cp.set('engine','zeroLogLike','')
   prior_cp.set('engine','nlive',str(opts.trials))
 
-local_work_dir=daglogdir
-mkdirs(local_work_dir)
 # Create a DAG to contain the other scripts
-outerdaglog=os.path.join(local_work_dir,'lalinference_injection_test_'+str(uuid.uuid1())+'.log')
+outerdaglog=os.path.join(daglogdir,'lalinference_injection_test_'+str(uuid.uuid1())+'.log')
 outerdag=pipeline.CondorDAG(outerdaglog,dax=opts.dax)
 outerdag.set_dag_file(os.path.join(rundir,'priortest'))
 
@@ -189,9 +187,8 @@ else:
    peg_frame_cache = '/dev/null'
 
 import uuid
-execdir=os.path.join(local_work_dir,'lalinference_pegasus_'+str(uuid.uuid1()))
+execdir=os.path.join(daglogdir,'lalinference_pegasus_'+str(uuid.uuid1()))
 olddir=os.getcwd()
-#os.chdir(local_work_dir)
 if opts.grid_site is not None:
     site='local,'+opts.grid_site
 else:
