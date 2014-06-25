@@ -52,7 +52,6 @@ typedef struct
   BOOLEAN help;
   CHAR *Fname1;
   CHAR *Fname2;
-  BOOLEAN clusterFiles;
   REAL8 Ftolerance;
   BOOLEAN sigFtolerance;
   INT4 Nseg;
@@ -60,7 +59,6 @@ typedef struct
 
 /* ---------- local prototypes ---------- */
 int XLALinitUserVars ( UserVariables_t *uvar );
-int XLALcompareClusterFiles ( UINT4 *diff, const LALParsedDataFile *f1, const LALParsedDataFile *f2 );
 int XLALcompareFstatFiles ( UINT4 *diff, const LALParsedDataFile *f1, const LALParsedDataFile *f2, REAL8 Ftol, const UserVariables_t *uvar );
 int XLALParseFstatLine ( FstatLine_t *FstatLine, const CHAR *line );
 REAL8 relError ( REAL8 x, REAL8 y );
@@ -97,14 +95,7 @@ main (int argc, char *argv[] )
       diffs = 1;
     }
 
-  if ( uvar.clusterFiles )
-    {
-      XLAL_CHECK ( XLALcompareClusterFiles ( &diffs, Fstats1, Fstats2 ) == XLAL_SUCCESS, XLAL_EFUNC );
-    }
-  else
-    {
-      XLAL_CHECK ( XLALcompareFstatFiles ( &diffs, Fstats1, Fstats2, uvar.Ftolerance, &uvar ) == XLAL_SUCCESS, XLAL_EFUNC );
-    }
+  XLAL_CHECK ( XLALcompareFstatFiles ( &diffs, Fstats1, Fstats2, uvar.Ftolerance, &uvar ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   if ( diffs) {
     XLALPrintError ("FStat files differ! (found %d differences) \n\n", diffs );
@@ -127,7 +118,6 @@ XLALinitUserVars ( UserVariables_t *uvar )
 {
   XLAL_CHECK ( uvar != NULL, XLAL_EINVAL );
 
-  uvar->clusterFiles = TRUE;	/* default: compare output-files from "cluster" */
   uvar->Ftolerance = 100.0 * LAL_REAL4_EPS;
   uvar->sigFtolerance = FALSE;
   uvar->Nseg = 1;
@@ -137,7 +127,6 @@ XLALinitUserVars ( UserVariables_t *uvar )
   XLALregSTRINGUserStruct ( Fname2,	'2', UVAR_REQUIRED, "Path and basefilename for second Fstats file");
   XLALregBOOLUserStruct (   help,	'h', UVAR_HELP,     "Print this help/usage message");
 
-  XLALregBOOLUserStruct (   clusterFiles, 0, UVAR_OPTIONAL, "Comparing cluster results-files or pure Fstat-files");
   XLALregREALUserStruct (   Ftolerance,   0, UVAR_OPTIONAL, "tolerance of error in 2F (relative or sigmas, depending on --sigFtolerance)" );
   XLALregBOOLUserStruct (   sigFtolerance, 0,UVAR_OPTIONAL, "Use error in 2F relative to chi^2 std-deviation 'sigma' instead of relative error");
   XLALregINTUserStruct  (   Nseg,          0,UVAR_OPTIONAL, "Number of segments Fstat '2F' is averaged over");
@@ -145,91 +134,6 @@ XLALinitUserVars ( UserVariables_t *uvar )
   return XLAL_SUCCESS;
 
 } /* XLALinitUserVars() */
-
-
-/**
- * comparison specific to cluster-output files (7 entries )
- */
-int
-XLALcompareClusterFiles ( UINT4 *diff, const LALParsedDataFile *f1, const LALParsedDataFile *f2 )
-{
-  XLAL_CHECK ( (diff != NULL) && ( f1 != NULL ) && ( f2 != NULL ), XLAL_EINVAL );
-
-  REAL8 eps8 = 100.0 * LAL_REAL8_EPS;	/* tolerances */
-  REAL4 eps4 = 1000.0 * LAL_REAL4_EPS;
-
-  UINT4 nlines1 = f1->lines->nTokens;
-  UINT4 nlines2 = f2->lines->nTokens;
-
-  /* step through the two files and compare (trying to avoid stumbling on roundoff-errors ) */
-  UINT4 minlines = (nlines1 < nlines2) ? nlines1 : nlines2;
-
-  for ( UINT4 i=0; i < minlines ; i++ )
-    {
-      const char *line1 = f1->lines->tokens[i];
-      const char *line2 = f2->lines->tokens[i];
-
-      /* scan Fstats-lines of cluster-output */
-      REAL8 freq1, freq2, a1, a2, d1, d2;
-      REAL4 mean1, mean2, std1, std2;
-      INT4 N1, N2;
-      REAL4 Fstat1, Fstat2;
-
-      int numRead = sscanf (line1, "%" LAL_REAL8_FORMAT " %" LAL_REAL8_FORMAT " %" LAL_REAL8_FORMAT
-                            " %" LAL_INT4_FORMAT " %" LAL_REAL4_FORMAT
-                            " %" LAL_REAL4_FORMAT " %" LAL_REAL4_FORMAT,
-                            &freq1, &a1, &d1, &N1, &mean1, &std1, &Fstat1 );
-      XLAL_CHECK ( numRead == 7, XLAL_EDATA, "Failed to parse line %d in file 1\n", i+1 );
-
-      numRead = sscanf (line2, "%" LAL_REAL8_FORMAT " %" LAL_REAL8_FORMAT " %" LAL_REAL8_FORMAT
-			" %" LAL_INT4_FORMAT " %" LAL_REAL4_FORMAT
-			" %" LAL_REAL4_FORMAT " %" LAL_REAL4_FORMAT,
-			&freq2, &a2, &d2, &N2, &mean2, &std2, &Fstat2 );
-      XLAL_CHECK ( numRead == 7, XLAL_EDATA, "Failed to parse line %d in file 2\n", i+1 );
-
-      /* now compare all 7 entries */
-      REAL8 relErr;
-      if ( (relErr = relError( freq1, freq2)) > eps8 )
-	{
-	  XLALPrintError ( "Relative frequency-error %g ecceeds %g in line %d\n", relErr, eps8, i+1);
-	  (*diff) ++;
-	}
-      if ( (relErr = relError( a1, a2)) > eps8 )
-	{
-	  XLALPrintError ("Relative error %g in alpha ecceeds %g in line %d\n", relErr, eps8, i+1);
-	  (*diff) ++;
-	}
-      if ( (relErr = relError( d1, d2)) > eps8 )
-	{
-	  XLALPrintError ("Relative error %g in delta ecceeds %g in line %d\n", relErr, eps8, i+1);
-	  (*diff) ++;
-	}
-      if ( (relErr = relError( Fstat1, Fstat2)) > eps4 )
-	{
-	  XLALPrintError ("Relative error %g in F ecceeds %g in line %d\n", relErr, eps4, i+1);
-	  (*diff) ++;
-	}
-      if ( N1 != N2)
-	{
-	  XLALPrintError ("Different cluster-sizes in line %d\n", i+1 );
-	  (*diff) ++;
-	}
-      if ( (relErr = relError( mean1, mean2)) > eps4 )
-	{
-	  XLALPrintError ("Relative error %g in mean ecceeds %g in line %d\n", relErr, eps4, i+1);
-	  (*diff) ++;
-	}
-      if ( (relErr = relError( std1, std2)) > eps4 )
-	{
-	  XLALPrintError ("Relative error %g in std-deviation ecceeds %g in line %d\n", relErr, eps4, i+1);
-	  (*diff)++;
-	}
-    } /* for i < nlines */
-
-  return XLAL_SUCCESS;
-
-} /* XLALcompareClusterFiles() */
-
 
 /**
  * comparison specific to pure Fstat-output files (5 entries )

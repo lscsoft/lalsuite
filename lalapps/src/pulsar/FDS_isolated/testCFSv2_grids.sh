@@ -218,7 +218,7 @@ for n in 0 1 2 6 8 9; do
 
     ## compare results
     echo "Comparing gridType=${n}:"
-    cmdline="$cmp_code -1 ./testCFSv2_grid${n}.dat -2 ${srcdir}/testCFSv2_grid${n}.dat.ref.gz --clusterFiles=0 --Ftolerance=$Ftolerance";
+    cmdline="$cmp_code -1 ./testCFSv2_grid${n}.dat -2 ${srcdir}/testCFSv2_grid${n}.dat.ref.gz --Ftolerance=$Ftolerance";
     echo $cmdline
     if ! eval $cmdline; then
         echo "OUCH... files differ. Something might be wrong..."

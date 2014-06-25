@@ -162,7 +162,7 @@ echo "----------------------------------------------------------------------"
 sort ${outfile_Fstat} > __tmp_sorted && mv __tmp_sorted ${outfile_Fstat}
 
 echo
-cmdline="$cmp_code -1 ./${outfile_Fstat} -2 ${outfile_ref} --clusterFiles=0 --Ftolerance=$Ftolerance"
+cmdline="$cmp_code -1 ./${outfile_Fstat} -2 ${outfile_ref} --Ftolerance=$Ftolerance"
 echo -n $cmdline
 if ! eval $cmdline; then
     echo "==> OUCH... files differ. Something might be wrong..."
