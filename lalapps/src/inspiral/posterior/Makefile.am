@@ -89,7 +89,8 @@ EXTRA_DIST = \
 	lalinference_pipe_utils.py \
 	nest2pos.in \
 	nest2pos.py \
-	merge_nested_sampling_runs.in
+	merge_nested_sampling_runs.in \
+	lalinference_pp_pipe.in
 
 python_config.sed: Makefile
 	@-rm -f python_config.sed
