@@ -46,18 +46,16 @@ main_cp.optionxform = str
 main_cp.readfp(open(inifile))
 
 
-if opts.run_path is not None:
-  rundir=os.path.abspath(opts.run_path)
+rundir=os.path.abspath(opts.run_path)
 
 if opts.daglog_path is not None:
   prior_cp.set('paths','daglogdir',os.path.join(os.path.abspath(opts.daglog_path),'prior'))
   main_cp.set('paths','daglogdir',os.path.join(os.path.abspath(opts.daglog_path),'main'))
-  dagdir=os.path.abspath(opts.daglog_path)
-
-elif opts.run_path is not None:
+  daglogdir=os.path.abspath(opts.daglog_path)
+else:
   prior_cp.set('paths','daglogdir',os.path.join(os.path.abspath(opts.run_path),'prior'))
   main_cp.set('paths','daglogdir',os.path.join(os.path.abspath(opts.run_path),'main'))
-  dagdir=os.path.abspath(opts.run_path)
+  daglogdir=os.path.abspath(opts.run_path)
 
 priordir=os.path.join(rundir,'prior')
 maindir=os.path.join(rundir,'main')
@@ -68,7 +66,7 @@ main_cp.set('paths','basedir',maindir)
 prior_cp.set('paths','webdir',priorwebdir)
 main_cp.set('paths','webdir',mainwebdir)
 
-outerlogdir=os.path.join(dagdir,'log')
+outerlogdir=os.path.join(daglogdir,'log')
 mkdirs(outerlogdir)
 mkdirs(priordir)
 mkdirs(maindir)
@@ -87,17 +85,17 @@ elif prior_cp.get('analysis','engine')=='lalinferencebambi':
   prior_cp.set('engine','zeroLogLike','')
   prior_cp.set('engine','nlive',str(opts.trials))
 
-local_work_dir=dagdir
+local_work_dir=daglogdir
 mkdirs(local_work_dir)
 # Create a DAG to contain the other scripts
 outerdaglog=os.path.join(local_work_dir,'lalinference_injection_test_'+str(uuid.uuid1())+'.log')
 outerdag=pipeline.CondorDAG(outerdaglog,dax=opts.dax)
-outerdag.set_dag_file(os.path.join(dagdir,'priortest'))
+outerdag.set_dag_file(os.path.join(rundir,'priortest'))
 
 # Run code with prior sampling
 trig_time=1085855789
 fake_event=pipe_utils.Event(trig_time=trig_time)
-tfpath=os.path.join(local_work_dir,'time.txt')
+tfpath=os.path.join(rundir,'time.txt')
 tfile=open(tfpath,'w')
 print >>tfile,'%i\n'%(trig_time)
 tfile.close()
