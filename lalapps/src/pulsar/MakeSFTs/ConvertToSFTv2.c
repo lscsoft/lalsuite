@@ -77,6 +77,7 @@ REAL8 uvar_mysteryFactor;
 INT4 uvar_minStartTime;
 INT4 uvar_maxStartTime;
 
+CHAR *uvar_timestampsFile;
 
 /*---------- internal prototypes ----------*/
 void initUserVars (LALStatus *status);
@@ -125,6 +126,15 @@ main(int argc, char *argv[])
       }
   }
 
+  LIGOTimeGPSVector *timestamps = NULL;
+  if ( uvar_timestampsFile )
+    {
+      if ( (timestamps = XLALReadTimestampsFile ( uvar_timestampsFile )) == NULL ) {
+        XLALPrintError ("XLALReadTimestampsFile() failed to load timestamps from file '%s'\n", uvar_timestampsFile );
+        return -1;
+      }
+    }
+
   /* use IFO-contraint if one given by the user */
   if ( LALUserVarWasSet ( &uvar_IFO ) ) {
     if ( (constraints.detector = XLALGetChannelPrefix ( uvar_IFO )) == NULL ) {
@@ -136,11 +146,14 @@ main(int argc, char *argv[])
   maxStartTimeGPS.gpsSeconds = uvar_maxStartTime;
   constraints.minStartTime = &minStartTimeGPS;
   constraints.maxStartTime = &maxStartTimeGPS;
+  constraints.timestamps = timestamps;
 
   /* get full SFT-catalog of all matching (multi-IFO) SFTs */
   LAL_CALL ( LALSFTdataFind ( &status, &FullCatalog, uvar_inputSFTs, &constraints ), &status);
-  if ( constraints.detector )
+
+  if ( constraints.detector ) {
     LALFree ( constraints.detector );
+  }
 
   if ( !FullCatalog || (FullCatalog->length == 0)  )
     {
@@ -238,6 +251,7 @@ main(int argc, char *argv[])
   LALFree ( add_comment );
   LAL_CALL (LALDestroySFTCatalog (&status, &FullCatalog), &status );
   LAL_CALL (LALDestroyUserVars (&status), &status);
+  XLALDestroyTimestampVector ( timestamps );
 
   LALCheckMemoryLeaks();
 
@@ -266,6 +280,8 @@ initUserVars (LALStatus *status)
 
   uvar_mysteryFactor = 1.0;
 
+  uvar_timestampsFile = NULL;
+
   /* now register all our user-variable */
   LALregBOOLUserVar(status,   help,		'h', UVAR_HELP,     "Print this help/usage message");
   LALregSTRINGUserVar(status, inputSFTs,	'i', UVAR_REQUIRED, "File-pattern for input SFTs");
@@ -284,6 +300,7 @@ initUserVars (LALStatus *status)
   LALregINTUserVar ( status, 	minStartTime, 	 0,  UVAR_OPTIONAL, "Only use SFTs with timestamps starting from (including) this GPS time");
   LALregINTUserVar ( status, 	maxStartTime, 	 0,  UVAR_OPTIONAL, "Only use SFTs with timestamps up to (excluding) this GPS time");
 
+  LALregSTRINGUserVar(status, timestampsFile,	 0, UVAR_OPTIONAL, "Timestamps file to use as a constraint for SFT loading");
 
   /* developer-options */
   LALregREALUserVar(status,   mysteryFactor,	 0, UVAR_DEVELOPER, "Change data-normalization by applying this factor (for E@H)");
