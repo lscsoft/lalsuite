@@ -2,18 +2,18 @@
 # lalsuite_swig.m4 - SWIG configuration
 # Author: Karl Wette, 2011--2014
 #
-# serial 59
+# serial 60
 
 AC_DEFUN([_LALSUITE_CHECK_SWIG_VERSION],[
-  # $0: check the version of ${SWIG}, and store it in ${swig_version}
-  swig_version=0.0
-  swig_version_output=[`${SWIG} -version 2>/dev/null`]
+  # $0: check the version of $1, and store it in ${swig_version}
+  swig_version=
+  swig_version_output=[`$1 -version 2>/dev/null`]
   AS_IF([test $? -eq 0],[
     swig_version_regex=['s|^ *SWIG [Vv]ersion \([0-9.][0-9.]*\)|\1|p;d']
     swig_version=[`echo "${swig_version_output}" | ${SED} -e "${swig_version_regex}"`]
-    AS_IF([test "x${swig_version}" = x],[
-      AC_MSG_ERROR([could not determine version of ${SWIG}])
-    ])
+  ])
+  AS_IF([test "x${swig_version}" = x],[
+    AC_MSG_ERROR([could not determine version of $1])
   ])
   # end $0
 ])
@@ -110,29 +110,33 @@ AC_DEFUN([LALSUITE_USE_SWIG],[
     # if SWIG bindings are being generated, check for SWIG binary
     # with version >= ${swig_min_version}; use value of ${SWIG} if
     # set, otherwise check common SWIG binary names
+    AC_SUBST([SWIG])
     AS_IF([test "${swig_generate}" = true],[
       swig_min_version=2.0.11
       AS_IF([test "x${SWIG}" != x],[
-        AC_PATH_PROG(SWIG,["${SWIG}"])
-        AC_MSG_CHECKING([${SWIG} version])
-        _LALSUITE_CHECK_SWIG_VERSION
-        AC_MSG_RESULT([${swig_version}])
+        AC_MSG_CHECKING([if ${SWIG} version >= ${swig_min_version}])
+        _LALSUITE_CHECK_SWIG_VERSION([${SWIG}])
         AS_VERSION_COMPARE([${swig_version}],[${swig_min_version}],[
-          AC_MSG_ERROR([require ${SWIG} version >= ${swig_min_version}])
+          AC_MSG_RESULT([no (${swig_version})])
+          AC_MSG_ERROR([require SWIG with version >= ${swig_min_version}])
         ])
+        AC_MSG_RESULT([yes (${swig_version})])
       ],[
-        for SWIG in swig swig2.0; do
-          AC_PATH_PROG(SWIG,["${SWIG}"])
-          AC_MSG_CHECKING([if ${SWIG} version >= ${swig_min_version}])
-          _LALSUITE_CHECK_SWIG_VERSION
-          AS_VERSION_COMPARE([${swig_version}],[${swig_min_version}],[
+        AC_PATH_PROGS_FEATURE_CHECK([SWIG],[swig swig2.0],[
+          AC_MSG_CHECKING([if ${ac_path_SWIG} version >= ${swig_min_version}])
+          _LALSUITE_CHECK_SWIG_VERSION([${ac_path_SWIG}])
+          ac_path_SWIG_found=true
+          AS_VERSION_COMPARE([${swig_version}],[${swig_min_version}],[ac_path_SWIG_found=false])
+          AS_IF([${ac_path_SWIG_found}],[
+            AC_MSG_RESULT([yes (${swig_version})])
+            ac_cv_path_SWIG="${ac_path_SWIG}"
+          ],[
             AC_MSG_RESULT([no (${swig_version})])
-            SWIG=false
-            continue
           ])
-          AC_MSG_RESULT([yes (${swig_version})])
-          break
-        done
+        ],[
+          AC_MSG_ERROR([require SWIG with version >= ${swig_min_version}])
+        ])
+        SWIG="${ac_cv_path_SWIG}"
       ])
     ],[
       SWIG=false
