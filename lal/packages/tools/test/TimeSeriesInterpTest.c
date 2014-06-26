@@ -150,20 +150,6 @@ int main(void)
 	evaluate(dst, interp);
 	XLALREAL8TimeSeriesInterpDestroy(interp);
 
-	{
-	REAL8TimeSeries *err = error(mdl, dst);
-	double rms, min, max;
-	rms = RMS(err);
-	minmax(err, &min, &max);
-
-	fprintf(stderr, "error vector:  RMS=%g, min=%g, max=%g\n", rms, min, max);
-	XLALDestroyREAL8TimeSeries(err);
-	if(rms > 1.3e-10 || min < -3.6e-10 || max > +3.6e-10) {
-		fprintf(stderr, "error vector larger than allowed\n");
-		exit(1);
-	}
-	}
-
 #if 0
 	{
 	unsigned i;
@@ -181,6 +167,20 @@ int main(void)
 	fclose(output);
 	}
 #endif
+
+	{
+	REAL8TimeSeries *err = error(mdl, dst);
+	double rms, min, max;
+	rms = RMS(err);
+	minmax(err, &min, &max);
+
+	fprintf(stderr, "error vector:  RMS=%g, min=%g, max=%g\n", rms, min, max);
+	XLALDestroyREAL8TimeSeries(err);
+	if(rms > 1.3e-10 || min < -3.6e-10 || max > +3.6e-10) {
+		fprintf(stderr, "error vector larger than allowed\n");
+		exit(1);
+	}
+	}
 
 	XLALDestroyREAL8TimeSeries(src);
 	XLALDestroyREAL8TimeSeries(dst);
@@ -208,20 +208,6 @@ int main(void)
 	evaluate(dst, interp);
 	XLALREAL8TimeSeriesInterpDestroy(interp);
 
-	{
-	REAL8TimeSeries *err = error(mdl, dst);
-	double rms, min, max;
-	rms = RMS(err);
-	minmax(err, &min, &max);
-
-	fprintf(stderr, "error vector:  RMS=%g, min=%g, max=%g\n", rms, min, max);
-	XLALDestroyREAL8TimeSeries(err);
-	if(rms > 0.03 || min < -0.078 || max > +0.83) {
-		fprintf(stderr, "error vector larger than allowed\n");
-		exit(1);
-	}
-	}
-
 #if 0
 	{
 	unsigned i;
@@ -239,6 +225,20 @@ int main(void)
 	fclose(output);
 	}
 #endif
+
+	{
+	REAL8TimeSeries *err = error(mdl, dst);
+	double rms, min, max;
+	rms = RMS(err);
+	minmax(err, &min, &max);
+
+	fprintf(stderr, "error vector:  RMS=%g, min=%g, max=%g\n", rms, min, max);
+	XLALDestroyREAL8TimeSeries(err);
+	if(rms > 0.03 || min < -0.078 || max > +0.83) {
+		fprintf(stderr, "error vector larger than allowed\n");
+		exit(1);
+	}
+	}
 
 	XLALDestroyREAL8TimeSeries(src);
 	XLALDestroyREAL8TimeSeries(dst);
