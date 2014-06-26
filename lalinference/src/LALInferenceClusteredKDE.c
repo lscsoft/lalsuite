@@ -103,7 +103,7 @@ LALInferenceKmeans *LALInferenceIncrementalKmeans(gsl_matrix *data, UINT4 ntrial
 LALInferenceKmeans *LALInferenceOptimizedKmeans(gsl_matrix *data, UINT4 ntrials, gsl_rng *rng) {
     UINT4 k, low_k = 1, mid_k = 2, high_k = 4;
     REAL8 bic, low_bic, mid_bic, high_bic;
-    LALInferenceKmeans *low_kmeans;
+    LALInferenceKmeans *low_kmeans = NULL;
     LALInferenceKmeans *mid_kmeans = NULL;
     LALInferenceKmeans *high_kmeans = NULL;
 
@@ -250,7 +250,7 @@ LALInferenceKmeans *LALInferenceXmeans(gsl_matrix *data, UINT4 ntrials, gsl_rng 
     REAL8 starting_bic, ending_bic;
     REAL8 old_bic, new_bic;
 
-    LALInferenceKmeans *sub_kmeans;
+    LALInferenceKmeans *sub_kmeans = NULL;
     LALInferenceKmeans *new_kmeans = NULL;
 
     LALInferenceKmeans *kmeans = LALInferenceCreateKmeans(2, data, rng);
