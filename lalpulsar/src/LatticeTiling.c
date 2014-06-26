@@ -822,6 +822,10 @@ int XLALSetLatticeBound(
   XLAL_CHECK(data_lower != NULL, XLAL_EFAULT);
   XLAL_CHECK(data_upper != NULL, XLAL_EFAULT);
 
+  // Check that bound has not already been set
+  XLAL_CHECK(tiling->bounds[dimension].func == NULL, XLAL_EINVAL,
+             "Dimension #%i has already been bounded", dimension);
+
   // Determine if this dimension is tiled
   const bool tiled = (memcmp(data_lower, data_upper, data_len) != 0);
 
