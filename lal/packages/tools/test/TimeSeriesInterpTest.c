@@ -187,6 +187,64 @@ int main(void)
 	XLALDestroyREAL8TimeSeries(mdl);
 
 	/*
+	 * higher single frequency, shorter filter, to check for phase
+	 * error.  interpolate three cycles this time.
+	 */
+
+	f = 6500.;	/* bbout 80% of Nyquist */
+
+	src = new_series(1.0 / 16384, 256);
+	add_sine(src, src->epoch, 1.0, f);
+
+	mdl = new_series(1. / 1e8, round(3. / f * 1e8));
+	XLALGPSAdd(&mdl->epoch, src->data->length * src->deltaT * .4);
+	dst = copy_series(mdl);
+
+	fprintf(stderr, "interpolating unit amplitude %g kHz sine function sampled at %g Hz to %g MHz\n", f / 1000., 1.0 / src->deltaT, 1.0 / dst->deltaT / 1e6);
+
+	add_sine(mdl, src->epoch, 1.0, f);
+
+	interp = XLALREAL8TimeSeriesInterpCreate(src, 9);
+	evaluate(dst, interp);
+	XLALREAL8TimeSeriesInterpDestroy(interp);
+
+	{
+	REAL8TimeSeries *err = error(mdl, dst);
+	double rms, min, max;
+	rms = RMS(err);
+	minmax(err, &min, &max);
+
+	fprintf(stderr, "error vector:  RMS=%g, min=%g, max=%g\n", rms, min, max);
+	XLALDestroyREAL8TimeSeries(err);
+	if(rms > 0.03 || min < -0.078 || max > +0.83) {
+		fprintf(stderr, "error vector larger than allowed\n");
+		exit(1);
+	}
+	}
+
+#if 0
+	{
+	unsigned i;
+	FILE *output = fopen("input.txt", "w");
+	for(i = 0; i < src->data->length; i++) {
+		LIGOTimeGPS t = t_i(src, i);
+		fprintf(output, "%u.%09u %.16g\n", t.gpsSeconds, t.gpsNanoSeconds, src->data->data[i]);
+	}
+	fclose(output);
+	output = fopen("output.txt", "w");
+	for(i = 0; i < mdl->data->length; i++) {
+		LIGOTimeGPS t = t_i(mdl, i);
+		fprintf(output, "%u.%09u %.16g %.16g\n", t.gpsSeconds, t.gpsNanoSeconds, mdl->data->data[i], dst->data->data[i]);
+	}
+	fclose(output);
+	}
+#endif
+
+	XLALDestroyREAL8TimeSeries(src);
+	XLALDestroyREAL8TimeSeries(dst);
+	XLALDestroyREAL8TimeSeries(mdl);
+
+	/*
 	 * success
 	 */
 
