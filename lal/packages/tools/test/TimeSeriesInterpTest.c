@@ -158,7 +158,7 @@ int main(void)
 
 	fprintf(stderr, "error vector:  RMS=%g, min=%g, max=%g\n", rms, min, max);
 	XLALDestroyREAL8TimeSeries(err);
-	if(rms > 1.5e-10 || min < -4e-10 || max > +4e-10) {
+	if(rms > 1.3e-10 || min < -3.6e-10 || max > +3.6e-10) {
 		fprintf(stderr, "error vector larger than allowed\n");
 		exit(1);
 	}

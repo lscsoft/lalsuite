@@ -183,7 +183,7 @@ REAL8TimeSeries * XLALSimQuasiPeriodicInjectionREAL8TimeSeries( REAL8TimeSeries 
  *
  * Notes
  *
- * A 19-sample Lanczos-windowed sinc kernel is used for sub-sample
+ * A 19-sample Welch-windowed sinc kernel is used for sub-sample
  * interpolation.  See XLALREAL8TimeSeriesInterpEval() for more
  * information, and consider the frequency response of this kernel when
  * using this function with injections whose frequency content approaches

@@ -31,7 +31,7 @@
 struct tagLALREAL8TimeSeriesInterp {
 	const REAL8TimeSeries *series;
 	int kernel_length;
-	double *window;
+	double welch_factor;
 	double *cached_kernel;
 	double residual;
 	/* samples.  the length of the kernel sets the bandwidth of the
@@ -63,7 +63,6 @@ struct tagLALREAL8TimeSeriesInterp {
 LALREAL8TimeSeriesInterp *XLALREAL8TimeSeriesInterpCreate(const REAL8TimeSeries *series, int kernel_length)
 {
 	LALREAL8TimeSeriesInterp *interp;
-	REAL8Window *window;
 	double *cached_kernel;
 
 	if(kernel_length < 3)
@@ -72,23 +71,16 @@ LALREAL8TimeSeriesInterp *XLALREAL8TimeSeriesInterpCreate(const REAL8TimeSeries 
 	kernel_length -= (~kernel_length) & 1;
 
 	interp = XLALMalloc(sizeof(*interp));
-	/* we need the window to be centred on (kernel_length-1)/2.  LAL's
-	 * window functions do this. */
-	window = XLALCreateLanczosREAL8Window(kernel_length);
 	cached_kernel = XLALMalloc(kernel_length * sizeof(*cached_kernel));
-	if(!interp || !window || !cached_kernel) {
+	if(!interp || !cached_kernel) {
 		XLALFree(interp);
-		XLALDestroyREAL8Window(window);
 		XLALFree(cached_kernel);
 		XLAL_ERROR_NULL(XLAL_EFUNC);
 	}
 
 	interp->series = series;
 	interp->kernel_length = kernel_length;
-	/* grab the data pointer from the REAL8Window object */
-	interp->window = window->data->data;
-	window->data->data = NULL;
-	XLALDestroyREAL8Window(window);
+	interp->welch_factor = 1.0 / ((kernel_length - 1.) / 2. + 1.);
 	interp->cached_kernel = cached_kernel;
 	/* >= 1 --> impossible.  forces kernel init on first eval */
 	interp->residual = 2.;
@@ -107,10 +99,8 @@ LALREAL8TimeSeriesInterp *XLALREAL8TimeSeriesInterpCreate(const REAL8TimeSeries 
 
 void XLALREAL8TimeSeriesInterpDestroy(LALREAL8TimeSeriesInterp *interp)
 {
-	if(interp) {
-		XLALFree(interp->window);
+	if(interp)
 		XLALFree(interp->cached_kernel);
-	}
 	XLALFree(interp);
 }
 
@@ -122,7 +112,7 @@ void XLALREAL8TimeSeriesInterpDestroy(LALREAL8TimeSeriesInterp *interp)
  * sample period, respectively, of the time series to which the
  * interpolator is attached.
  *
- * A Lanczos-windowed sinc interpolating kernel is used.  See
+ * A Welch-windowed sinc interpolating kernel is used.  See
  *
  * Smith, Julius O. Digital Audio Resampling Home Page
  * Center for Computer Research in Music and Acoustics (CCRMA), Stanford
@@ -130,7 +120,10 @@ void XLALREAL8TimeSeriesInterpDestroy(LALREAL8TimeSeriesInterp *interp)
  * http://www-ccrma.stanford.edu/~jos/resample/.
  *
  * for more information, but note that that reference uses a Kaiser window
- * for the sinc kernel's envelope whereas we use a Lanczos window here.
+ * for the sinc kernel's envelope whereas we use a Welch window here.  The
+ * Welch window (inverted parabola) is chosen because it yields results
+ * similar in accuracy to the Lanczos window but is much less costly to
+ * compute.
  *
  * Be aware that for performance reasons the interpolating kernel is cached
  * and only recomputed if the error estimated to arise from failing to
@@ -174,11 +167,8 @@ REAL8 XLALREAL8TimeSeriesInterpEval(LALREAL8TimeSeriesInterp *interp, const LIGO
 	start -= (interp->kernel_length - 1) / 2;
 
 	if(fabs(residual - interp->residual) >= interp->noop_threshold) {
-		/* kernel is Lanczos-windowed sinc function.  we don't
-		 * bother re-computing the Lanczos window, we consider it to
-		 * be approximately independent of the sub-sample shift.
-		 * only the sinc component is recomputed, and it takes the
-		 * form
+		/* kernel is Welch-windowed sinc function.  the sinc
+		 * component takes the form
 		 *
 		 *	x = pi (i - j);
 		 *	kern = sin(x) / x
@@ -195,13 +185,30 @@ REAL8 XLALREAL8TimeSeriesInterpEval(LALREAL8TimeSeriesInterp *interp, const LIGO
 		 * factors of -1 to apply to get its sign right for the
 		 * first iteration.
 		 */
-		const double *window = interp->window;
-		double sinx_over_pi = sin(LAL_PI * residual) / LAL_PI;
+		double welch_factor = interp->welch_factor;
+		/* put a factor of welch_factor in this.  see below */
+		double sinx_over_pi = sin(LAL_PI * residual) / LAL_PI * welch_factor;
 		int i;
 		if(interp->kernel_length & 2)
 			sinx_over_pi = -sinx_over_pi;
-		for(i = start; cached_kernel < stop; i++, sinx_over_pi = -sinx_over_pi)
-			*cached_kernel++ = sinx_over_pi / (i - j) * *window++;
+		for(i = start; cached_kernel < stop; i++, sinx_over_pi = -sinx_over_pi) {
+			double y = welch_factor * (i - j);
+			if(y <= 1.)
+				/* the window is
+				 *
+				 * sinx_over_pi / (i - j) * (1. - y * y)
+				 *
+				 * but by putting an extra factor of
+				 * welch_factor into sinx_over_pi we can
+				 * replace (i - j) with y, and then move
+				 * the factor of 1/y into the parentheses
+				 * to reduce the total number of arithmetic
+				 * operations in the loop
+				 */
+				*cached_kernel++ = sinx_over_pi * (1. / y - y);
+			else
+				*cached_kernel++ = 0.;
+		}
 		interp->residual = residual;
 		/* reset pointer */
 		cached_kernel = interp->cached_kernel;
