@@ -6,6 +6,11 @@ BEGIN {
   RS = ";"
 }
 
+# first filter out any whitespace-only lines
+/^[ \n\t]*$/ {
+  next
+}
+
 # env[name] holds the value of environment variable 'name'
 # set[name,path] is defined if 'path' has already been set in 'name'
 # sed[name] holds sed scripts to remove duplicates from 'name'
@@ -65,7 +70,7 @@ $1 == "append" {
 }
 
 # raise error for any other input
-$1 != "" {
+{
   print "generate_user_env.awk: unknown directive '" $0 "'" >"/dev/stderr"
   exit 1
 }
