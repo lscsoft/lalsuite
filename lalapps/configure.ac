@@ -405,6 +405,35 @@ if test "${static_binaries}" = "true"; then
   AC_DISABLE_SHARED
 fi
 
+# check for OpenMP
+AC_OPENMP
+
+# Disable OpenMP by default.
+# FIXME: OpenMP should be on by default, but it breaks condor_compiling lalapps.
+AS_IF(
+  [test "x$enable_openmp" = "x"],
+  [OPENMP_CFLAGS=]
+)
+# add compiler flags for OpenMP
+AS_IF(
+  [test "x$OPENMP_CFLAGS" = "x"],
+  [
+    OPENMP_ENABLE_VAL="DISABLED"
+    LALSUITE_ADD_FLAGS([C],[-Wno-unknown-pragmas],[])
+  ],
+  [
+    OPENMP_ENABLE_VAL="ENABLED"
+    LALSUITE_ADD_FLAGS([C],[${OPENMP_CFLAGS}],[])
+  ]
+)
+
+# create Automake conditional so that we know whether we need to build
+# OpenMP-specific tests
+AM_CONDITIONAL([HAVE_OPENMP],[test "x$OPENMP_ENABLE_VAL" = "xENABLED"])
+
+# create Automake conditional so that we know whether we need to build
+# OpenMP-specific tests
+AM_CONDITIONAL([HAVE_OPENMP],[test "x$OPENMP_ENABLE_VAL" = "xENABLED"])
 # add gcc specific flags
 LALSUITE_ADD_GCC_FLAGS
 
@@ -455,6 +484,7 @@ LALApps has now been successfully configured:
 * MPI support is $MPI_ENABLE_VAL
 * GDS support is $GDS_ENABLE_VAL
 * CUDA support is $CUDA_ENABLE_VAL
+* OpenMP acceleration is $OPENMP_ENABLE_VAL
 
 and will be installed under the directory:
 
