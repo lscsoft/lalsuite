@@ -131,6 +131,17 @@ void XLALREAL8TimeSeriesInterpDestroy(LALREAL8TimeSeriesInterp *interp)
  *
  * for more information, but note that that reference uses a Kaiser window
  * for the sinc kernel's envelope whereas we use a Lanczos window here.
+ *
+ * Be aware that for performance reasons the interpolating kernel is cached
+ * and only recomputed if the error estimated to arise from failing to
+ * recompute it exceeds the error estimated to arise from using a finite
+ * interpolating kernel.  Therefore, if a function is interpolated at very
+ * high resolution with a short kernel the result will consist of intervals
+ * of constant values in a stair-step pattern.  The stair steps should be a
+ * small contribution to the interpolation error but numerical
+ * differentiation of the result is likely to be unsatisfactory.  In that
+ * case, consider interpolating the derivative or use a longer kernel to
+ * force more frequent kernel updates.
  */
 
 
