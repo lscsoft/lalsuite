@@ -132,13 +132,8 @@ int main(void)
 	src = new_series(1.0 / 16384, 1024 * 1024);
 	add_sine(src, src->epoch, 1.0, f);
 
-#if 1
 	mdl = new_series(1. / 1e8, round(1. / f * 1e8));
 	XLALGPSAdd(&mdl->epoch, src->data->length * src->deltaT * .4);
-#else
-	mdl = new_series(1. / 1e9, 3000);
-	XLALGPSAdd(&mdl->epoch, 25.600036621 - 1500 * mdl->deltaT);
-#endif
 	dst = copy_series(mdl);
 
 	fprintf(stderr, "interpolating unit amplitude %g kHz sine function sampled at %g Hz to %g MHz\n", f / 1000., 1.0 / src->deltaT, 1.0 / dst->deltaT / 1e6);
