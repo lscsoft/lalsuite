@@ -138,6 +138,7 @@ REAL8 XLALREAL8TimeSeriesInterpEval(LALREAL8TimeSeriesInterp *interp, const LIGO
 {
 	const REAL8 *data = interp->series->data->data;
 	double *cached_kernel = interp->cached_kernel;
+	double *stop = cached_kernel + interp->kernel_length;
 	/* the (real-valued) sample index at which we wish to evalute the
 	 * source time series */
 	double j = XLALGPSDiff(t, &interp->series->epoch) / interp->series->deltaT;
@@ -150,9 +151,7 @@ REAL8 XLALREAL8TimeSeriesInterpEval(LALREAL8TimeSeriesInterp *interp, const LIGO
 	 * one for which the kernel was computed by more than the no-op
 	 * threshold */
 	int start = lround(j);
-	int stop;
 	double residual = start - j;
-	int i;
 	REAL8 val;
 
 	if(j < 0 || j >= interp->series->data->length)
@@ -162,7 +161,6 @@ REAL8 XLALREAL8TimeSeriesInterpEval(LALREAL8TimeSeriesInterp *interp, const LIGO
 		return data[start];
 
 	start -= (interp->kernel_length - 1) / 2;
-	stop = start + interp->kernel_length;
 
 	if(fabs(residual - interp->residual) >= interp->noop_threshold) {
 		/* kernel is Lanczos-windowed sinc function.  we don't
@@ -188,24 +186,24 @@ REAL8 XLALREAL8TimeSeriesInterpEval(LALREAL8TimeSeriesInterp *interp, const LIGO
 		 */
 		const double *window = interp->window;
 		double sinx_over_pi = sin(LAL_PI * residual) / LAL_PI;
+		int i;
 		if(interp->kernel_length & 2)
 			sinx_over_pi = -sinx_over_pi;
-		for(i = start; i < stop; i++, sinx_over_pi = -sinx_over_pi)
+		for(i = start; cached_kernel < stop; i++, sinx_over_pi = -sinx_over_pi)
 			*cached_kernel++ = sinx_over_pi / (i - j) * *window++;
 		interp->residual = residual;
 		/* reset pointer */
 		cached_kernel = interp->cached_kernel;
 	}
 
-	if(interp->series->data->length < (unsigned) stop)
-		stop = interp->series->data->length;
-	if(start < 0) {
-		i = 0;
+	if(start + interp->kernel_length > (signed) interp->series->data->length)
+		stop -= start + interp->kernel_length - interp->series->data->length;
+	if(start < 0)
 		cached_kernel -= start;
-	} else
-		i = start;
-	for(val = 0.0; i < stop; i++)
-		val += *cached_kernel++ * data[i];
+	else
+		data += start;
+	for(val = 0.0; cached_kernel < stop;)
+		val += *cached_kernel++ * *data++;
 
 	return val;
 }
