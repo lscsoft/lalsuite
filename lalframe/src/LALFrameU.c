@@ -102,8 +102,7 @@ static int XLALFrameLibrary(void)
                     "LAL_FRAME_LIBRARY=%s: FrameC frame library not available", env);
 #endif
             } else {
-                XLAL_PRINT_WARNING
-                    ("LAL_FRAME_LIBRARY=%s: No valid frame library specified [expect: \"FrameL\" or \"FrameC\"]");
+                XLAL_PRINT_WARNING("LAL_FRAME_LIBRARY=%s: No valid frame library specified [expect: \"FrameL\" or \"FrameC\"]", env);
                 lalFrameLibrary = LAL_FRAMEU_FRAME_LIBRARY_DEFAULT;
             }
         } else {

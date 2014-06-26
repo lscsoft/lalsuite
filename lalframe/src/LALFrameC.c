@@ -190,20 +190,21 @@ LALFrameUFrFile *XLALFrameUFrFileOpen_FrameC_(const char *filename, const char *
     }
     if (filename == NULL || strcmp(filename, "-") == 0) {
         /* hack to allow reading from stdin */
-        filename = tmpnam(tmpfname);
+        filename = tmpfname;
+        snprintf(tmpfname, L_tmpnam, "%s/tmp.lal.XXXXXX", P_tmpdir);
         if (stream->mode == FRAMEC_FILE_MODE_INPUT) {
             /* dump stdin to a temporary file */
             char buf[BUFSZ];
-            stream->tmpfp = fopen(tmpfname, "w");
+            stream->tmpfp = fdopen(mkstemp(tmpfname), "w");
             while (fwrite(buf, 1, fread(buf, 1, sizeof(buf), stdin), stream->tmpfp) == sizeof(buf)) ;
             fclose(stream->tmpfp);
             stream->tmpfp = NULL;
+        } else {
+            stream->tmpfp = fdopen(mkstemp(tmpfname), "r");
         }
     }
     CALL_FRAMEC_FUNCTION_RETVAL(stream->handle, err, FrameCFileOpen, filename, stream->mode);
     if (*tmpfname) {
-        if (stream->mode == FRAMEC_FILE_MODE_OUTPUT)
-            stream->tmpfp = fopen(tmpfname, "r");
         unlink(tmpfname);       /* remove temporary file when closed */
     }
     if (err) {
