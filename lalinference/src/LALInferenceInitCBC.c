@@ -1183,7 +1183,7 @@ LALInferenceVariables *LALInferenceInitCBCVariables(LALInferenceRunState *state)
   }//End of line-removal initialization
    
   LALInferenceAddVariable(currentParams, "removeLinesFlag", &lines_flag, LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_FIXED);
-  if(LALInferenceGetProcParamVal(commandLine, "--glitchFit")) LALInferenceInitGlitchVariables(state, state->currentParams);
+  if(LALInferenceGetProcParamVal(commandLine, "--glitchFit")) LALInferenceInitGlitchVariables(state, currentParams);
 
   UINT4 signal_flag=1;
   ppt = LALInferenceGetProcParamVal(commandLine, "--noiseonly");
@@ -1355,8 +1355,7 @@ LALInferenceVariables *LALInferenceInitVariablesReviewEvidence(LALInferenceRunSt
             memset(&tempParams,0,sizeof(tempParams));
             LALInferenceParseCharacterOptionString(pinned_params,&strings,&N);
     }
-        state->currentParams=XLALCalloc(1,sizeof(LALInferenceVariables));
-        LALInferenceVariables *currentParams=state->currentParams;
+        LALInferenceVariables *currentParams = XLALCalloc(1,sizeof(LALInferenceVariables));
 	i=0;
 
 	struct varSettings {const char *name; REAL8 val, min, max;};
@@ -1406,8 +1405,7 @@ LALInferenceVariables *LALInferenceInitVariablesReviewEvidence_bimod(LALInferenc
     memset(&tempParams,0,sizeof(tempParams));
     LALInferenceParseCharacterOptionString(pinned_params,&strings,&N);
   }
-  state->currentParams=XLALCalloc(1,sizeof(LALInferenceVariables));
-  LALInferenceVariables *currentParams=state->currentParams;
+  LALInferenceVariables *currentParams = XLALCalloc(1,sizeof(LALInferenceVariables));
   i=0;
   
   struct varSettings {const char *name; REAL8 val, min, max;};
@@ -1456,8 +1454,7 @@ LALInferenceVariables *LALInferenceInitVariablesReviewEvidence_banana(LALInferen
     memset(&tempParams,0,sizeof(tempParams));
     LALInferenceParseCharacterOptionString(pinned_params,&strings,&N);
   }
-  state->currentParams=XLALCalloc(1,sizeof(LALInferenceVariables));
-  LALInferenceVariables *currentParams=state->currentParams;
+  LALInferenceVariables *currentParams = XLALCalloc(1,sizeof(LALInferenceVariables));
   i=0;
   
   struct varSettings {const char *name; REAL8 val, min, max;};
