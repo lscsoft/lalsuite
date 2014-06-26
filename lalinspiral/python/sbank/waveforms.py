@@ -47,10 +47,10 @@ def project_hplus_hcross(hplus, hcross, theta, phi, psi):
     Fc = 0.5*(1 + np.cos(theta)**2)*np.cos(2*phi)*np.sin(2*psi) + np.cos(theta)*np.sin(2*phi)*np.cos(2*psi)
 
     # form strain signal in detector
-    hoft = lal.CreateREAL8TimeSeries("h(t)", hplus.epoch, hplus.f0, hplus.deltaT, lal.lalSecondUnit, hplus.data.length)
-    hoft.data.data = Fp*hplus.data.data + Fc*hcross.data.data
+    # hoft = lal.CreateCOMPLEX16FrequncySeries("h(t)", hplus.epoch, hplus.f0, hplus.deltaF, lal.lalSecondUnit, hplus.data.length)
+    hplus.data.data = Fp*hplus.data.data + Fc*hcross.data.data
 
-    return hoft
+    return hplus
 
 
 def compute_sigmasq(htilde, deltaF):
@@ -361,6 +361,98 @@ class IMRPhenomCTemplate(IMRPhenomBTemplate):
             self.chi, self.bank.flow, f_final, 1000000 * LAL_PC_SI)
 
 
+class PrecessingTemplate(Template):
+    """
+    A generic class for precessing templates. These models require the
+    full fifteen-dimensional parameter space to specify the observed
+    signal in the detector.
+    """
+    param_names = ("m1", "m2", "spin1x", "spin1y", "spin1z", "spin2x", "spin2y", "spin2z", "theta", "phi", "iota", "psi")
+    param_formats = ("%.2f","%.2f","%.2f","%.2f","%.2f","%.2f","%.2f","%.2f","%.2f","%.2f","%.2f","%.2f")
+    __slots__ = param_names + ("bank","_f_final","_dur","_mchirp")
+
+    def __init__(self, m1, m2, spin1x, spin1y, spin1z, spin2x, spin2y, spin2z, theta, phi, iota, psi, bank):
+
+        Template.__init__(self)
+        self.m1 = m1
+        self.m2 = m2
+        self.spin1x = spin1x
+        self.spin1y = spin1y
+        self.spin1z = spin1z
+        self.spin2x = spin2x
+        self.spin2y = spin2y
+        self.spin2z = spin2z
+        self.theta = theta
+        self.phi = phi
+        self.iota = iota
+        self.psi = psi
+        self.bank = bank
+
+        # derived quantities
+        self._mchirp = compute_mchirp(m1, m2)
+
+    @property
+    def params(self):
+        return tuple(getattr(self, attr) for attr in self.param_names)
+
+    @classmethod
+    def from_sim(cls, sim, bank):
+        # theta = polar angle wrt overhead
+        #       = pi/2 - latitude (which is 0 on the horizon)
+        return cls(sim.mass1, sim.mass2, sim.spin1x, sim.spin1y, sim.spin1z, sim.spin2x, sim.spin2y, sim.spin2z, np.pi/2 - sim.latitude, sim.longitude, sim.inclination, sim.polarization, bank)
+
+
+
+class IMRPhenomPTemplate(PrecessingTemplate):
+    """
+    IMRPhenomP precessing IMR model.
+    """
+
+    __slots__ = PrecessingTemplate.param_names + ("bank", "_chieff", "_chipre", "_f_final", "_dur", "_mchirp")
+
+    def __init__(self, m1, m2, spin1x, spin1y, spin1z, spin2x, spin2y, spin2z, theta, phi, iota, psi, bank):
+
+        PrecessingTemplate.__init__(self, m1, m2, spin1x, spin1y, spin1z, spin2x, spin2y, spin2z, theta, phi, iota, psi, bank)
+        # derived quantities
+        self._chieff = lalsim.SimIMRPhenomBComputeChi( self.m1, self.m2, self.spin1z, self.spin2z )
+        self._chipre = None # FIXME! What is the formula for this quantity?
+        self._f_final = spawaveform.imrffinal(m1, m2, self._chieff)
+        self._dur = self._imrdur()
+        # FIXME: is this ffinal and dur appropriate for PhenomP?
+
+
+    def _imrdur(self):
+        """
+        Ajith gave us the heuristic that chirp + 1000 M is a conservative
+        estimate for the length of a full IMR waveform.
+        """
+        return lalsim.SimInspiralTaylorF2ReducedSpinChirpTime(self.bank.flow,
+            self.m1 * LAL_MSUN_SI, self.m2 * LAL_MSUN_SI, self._chieff,
+            7) + 1000 * (self.m1 + self.m2) * LAL_MTSUN_SI
+
+    def _compute_waveform(self, df, f_final):
+
+        approx = lalsim.GetApproximantFromString( "IMRPhenomP" )
+        phi0 = 0  # what is phi0?
+        lmbda1 = lmbda2 = 0
+        ampO = 3
+        phaseO = 7 # are these PN orders correct for PhenomP?
+        hplus_fd, hcross_fd = lalsim.SimInspiralChooseFDWaveform(
+            phi0, df,
+            self.m1*LAL_MSUN_SI, self.m2*LAL_MSUN_SI,
+            self.spin1x, self.spin1y, self.spin1z, self.spin2x, self.spin2y, self.spin2z,
+            self.bank.flow, f_final,
+            self.bank.flow, # reference frequency, related to phi0. Is this the right input?
+            1e6*LAL_PC_SI, # irrelevant parameter for banks/banksims
+            self.iota,
+            lmbda1, lmbda2, # irrelevant parameters for BBH
+            None, None, # non-GR parameters
+            ampO, phaseO, approx)
+
+        # project onto detector
+        return project_hplus_hcross(hplus_fd, hcross_fd, self.theta, self.phi, self.psi)
+
+
 class SEOBNRv1Template(Template):
     param_names = ("m1", "m2", "spin1z", "spin2z")
     param_formats = ("%.2f", "%.2f", "%.2f", "%.2f")
@@ -532,6 +624,7 @@ class EOBNRv2Template(Template):
         return row
 
 class SpinTaylorT4Template(Template):
+
     param_names = ("m1","m2","s1x","s1y","s1z","s2x","s2y","s2z","inclination","theta","phi","psi")
     param_formats = ("%.2f","%.2f","%.2f","%.2f","%.2f","%.2f","%.2f","%.2f","%.2f","%.2f","%.2f","%.2f")
 
@@ -711,6 +804,7 @@ waveforms = {
     "TaylorF2RedSpin": TaylorF2RedSpinTemplate,
     "IMRPhenomB": IMRPhenomBTemplate,
     "IMRPhenomC": IMRPhenomCTemplate,
+    "IMRPhenomP": IMRPhenomPTemplate,
     "SEOBNRv1": SEOBNRv1Template,
     "EOBNRv2": EOBNRv2Template,
     "SpinTaylorT4": SpinTaylorT4Template,
