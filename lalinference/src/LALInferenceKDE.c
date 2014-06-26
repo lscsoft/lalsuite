@@ -287,6 +287,8 @@ REAL8 LALInferenceKDEEvaluatePoint(LALInferenceKDE *kde, REAL8 *point) {
      * of the covariance to avoid ever inverting the covariance matrix */
     REAL8 energy;
     REAL8* results = XLALMalloc(npts * sizeof(REAL8));
+
+    #pragma omp parallel for schedule(static)
     for (i=0; i<npts; i++) {
         d = gsl_matrix_row(kde->data, i);
         gsl_vector_memcpy(diff, &d.vector);
