@@ -509,6 +509,9 @@ tagLALInferenceRunState
   REAL8			currentLikelihood;  /** This should be removed, can be given as an algorithmParams or proposalParams entry */
   REAL8                 currentPrior;       /** This should be removed, can be given as an algorithmParams entry */
   gsl_rng               *GSLrandom;         /** A pointer to a GSL random number generator */
+  LALInferenceVariables **currentParamArray;
+  REAL8                  *currentPriors;
+  REAL8                  *currentLikelihoods;
 } LALInferenceRunState;
 
 
@@ -674,9 +677,9 @@ INT4 LALInferenceBufferToArray(LALInferenceRunState *state, REAL8 **array);
 void LALInferenceArrayToBuffer(LALInferenceRunState *state, REAL8 **array, UINT4 nPoints);
 
 /** LALInference variables to an array, and vica versa */
-REAL8Vector *LALInferenceCopyVariablesToArray(LALInferenceVariables *origin);
+void LALInferenceCopyVariablesToArray(LALInferenceVariables *origin, REAL8 *target);
 
-void LALInferenceCopyArrayToVariables(REAL8Vector *origin, LALInferenceVariables *target);
+void LALInferenceCopyArrayToVariables(REAL8 *origin, LALInferenceVariables *target);
 
 /**
  * Append the sample to a file. file pointer is stored in state->algorithmParams as a

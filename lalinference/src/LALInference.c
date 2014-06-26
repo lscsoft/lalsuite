@@ -1299,14 +1299,13 @@ void LALInferenceArrayToBuffer(LALInferenceRunState *runState, REAL8** DEarray, 
 }
 
 
-REAL8Vector *LALInferenceCopyVariablesToArray(LALInferenceVariables *origin) {
-  INT4 nPar = LALInferenceGetVariableDimensionNonFixed(origin);
-  REAL8Vector * parameters = NULL;
+void LALInferenceCopyVariablesToArray(LALInferenceVariables *origin, REAL8 *target) {
   gsl_matrix *m = NULL; //for dealing with noise parameters
   UINT4Vector *v = NULL; //for dealing with dimension parameters
   UINT4 j,k;
 
-  parameters = XLALCreateREAL8Vector(nPar);
+  /* Make sure the structure is initialised */
+  if (!target) XLAL_ERROR_VOID(XLAL_EFAULT, "Unable to copy to uninitialised array.");
 
   LALInferenceVariableItem *ptr=origin->head;
   INT4 p=0;
@@ -1320,7 +1319,7 @@ REAL8Vector *LALInferenceCopyVariablesToArray(LALInferenceVariables *origin) {
         {
           for(k=0; k<m->size2; k++)
           {
-            parameters->data[p]=gsl_matrix_get(m,j,k);
+            target[p]=gsl_matrix_get(m,j,k);
             p++;
           }
         }
@@ -1330,23 +1329,21 @@ REAL8Vector *LALInferenceCopyVariablesToArray(LALInferenceVariables *origin) {
         v = *(UINT4Vector **)ptr->value;
         for(j=0; j<v->length; j++)
         {
-          parameters->data[p]=v->data[j];
+          target[p]=v->data[j];
           p++;
         }
       }
       else
       {
-        parameters->data[p]=*(REAL8 *)ptr->value;
+        target[p]=*(REAL8 *)ptr->value;
         p++;
       }
     }
     ptr=ptr->next;
   }
-
-  return parameters;
 }
 
-void LALInferenceCopyArrayToVariables(REAL8Vector *origin, LALInferenceVariables *target) {
+void LALInferenceCopyArrayToVariables(REAL8 *origin, LALInferenceVariables *target) {
   gsl_matrix *m = NULL; //for dealing with noise parameters
   UINT4Vector *v = NULL; //for dealing with dimension parameters
   UINT4 j,k;
@@ -1364,7 +1361,7 @@ void LALInferenceCopyArrayToVariables(REAL8Vector *origin, LALInferenceVariables
         {
           for(k=0; k<m->size2; k++)
           {
-            gsl_matrix_set(m,j,k,origin->data[p]);
+            gsl_matrix_set(m,j,k,origin[p]);
             p++;
           }
         }
@@ -1374,13 +1371,13 @@ void LALInferenceCopyArrayToVariables(REAL8Vector *origin, LALInferenceVariables
         v = *(UINT4Vector **)ptr->value;
         for(j=0; j<v->length; j++)
         {
-          v->data[j] = origin->data[p];
+          v->data[j] = origin[p];
           p++;
         }
       }
       else
       {
-        memcpy(ptr->value,&(origin->data[p]),LALInferenceTypeSize[ptr->type]);
+        memcpy(ptr->value,&(origin[p]),LALInferenceTypeSize[ptr->type]);
         p++;
       }
     }

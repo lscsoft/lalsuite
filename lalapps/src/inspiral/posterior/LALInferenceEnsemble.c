@@ -56,15 +56,17 @@ void LALInferenceInitEnsemble(LALInferenceRunState *state) {
     REAL8 *sampleArray = NULL;
     UINT4 i=0;
 
-    INT4 walker;
-    MPI_Comm_rank(MPI_COMM_WORLD, &walker);
+    INT4 MPIrank, MPIsize, walker;
+    MPI_Comm_rank(MPI_COMM_WORLD, &MPIrank);
+    MPI_Comm_size(MPI_COMM_WORLD, &MPIsize);
+    INT4 nwalkers_per_thread = *(INT4 *) LALInferenceGetVariable(state->algorithmParams, "nwalkers_per_thread");
 
-    INT4 ndim = LALInferenceGetVariableDimensionNonFixed(state->currentParams);
+    INT4 ndim = LALInferenceGetVariableDimensionNonFixed(state->currentParamArray[0]);
     INT4 *col_order = XLALMalloc(ndim *sizeof(INT4));
 
     ppt = LALInferenceGetProcParamVal(state->commandLine, "--init-samples");
     if (ppt) {
-        if (walker == 0) {
+        if (MPIrank == 0) {
             char *infile = ppt->value;
             FILE *input = fopen(infile, "r");
 
@@ -79,11 +81,11 @@ void LALInferenceInitEnsemble(LALInferenceRunState *state) {
             /* Only cluster parameters that are being sampled */
             UINT4 nvalid_cols=0, j=0;
             UINT4 *valid_cols = XLALMalloc(ncols * sizeof(UINT4));
-            for (j=0; j<ncols; j++)
+            for (j = 0; j < ncols; j++)
                 valid_cols[j] = 0;
 
             UINT4 logl_idx;
-            for (j=0; j<ncols; j++) {
+            for (j = 0; j < ncols; j++) {
                 char* internal_param_name = XLALMalloc(512*sizeof(char));
                 LALInferenceTranslateExternalToInternalParamName(internal_param_name, params[j]);
 
@@ -128,23 +130,26 @@ void LALInferenceInitEnsemble(LALInferenceRunState *state) {
         /* Broadcast parameter order */
         MPI_Bcast(col_order, ndim, MPI_INT, 0, MPI_COMM_WORLD);
 
-        REAL8Vector *parameters = XLALCreateREAL8Vector(ndim);
-        MPI_Scatter(sampleArray, ndim, MPI_DOUBLE, parameters->data, ndim, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+        REAL8 *parameters = XLALMalloc(ndim * sizeof(REAL8));
+        MPI_Scatter(sampleArray, ndim, MPI_DOUBLE, parameters, ndim, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 
-        REAL8Vector *reordered_parameters = XLALCreateREAL8Vector(ndim);
-        for (i=0; i<ndim; i++)
-            reordered_parameters->data[i] = parameters->data[col_order[i]];
+        REAL8 *reordered_parameters = XLALMalloc(ndim * sizeof(REAL8));
+        for (i = 0; i < ndim; i++)
+            reordered_parameters[i] = parameters[col_order[i]];
 
         LALInferenceCopyArrayToVariables(reordered_parameters, state->currentParams);
 
-        XLALDestroyREAL8Vector(parameters);
-        XLALDestroyREAL8Vector(reordered_parameters);
-        if (walker == 0)
+        XLALFree(parameters);
+        XLALFree(reordered_parameters);
+        if (MPIrank == 0)
             XLALFree(sampleArray);
     } else {
-        LALInferenceDrawApproxPrior(state, state->currentParams);
-        while (state->prior(state, state->currentParams) <= -DBL_MAX)
-            LALInferenceDrawApproxPrior(state, state->currentParams);
+        #pragma omp parallel for
+        for (walker = 0; walker < nwalkers_per_thread; walker++) {
+            LALInferenceDrawApproxPrior(state, state->currentParamArray[walker]);
+            while (state->prior(state, state->currentParamArray[walker]) <= -DBL_MAX)
+                LALInferenceDrawApproxPrior(state, state->currentParamArray[walker]);
+        }
     }
 
     /* Determine null loglikelihood that will be subtracted from printed likelihoods */
@@ -160,7 +165,7 @@ void LALInferenceInitEnsemble(LALInferenceRunState *state) {
                 !(LALInferenceGetProcParamVal(state->commandLine,"--psdFit") ||
                   LALInferenceGetProcParamVal(state->commandLine,"--glitchFit"))))) {
         headData = state->data;
-        REAL8 d = *(REAL8 *)LALInferenceGetVariable(state->currentParams, "distance");
+        REAL8 d = *(REAL8 *)LALInferenceGetVariable(state->currentParamArray[0], "distance");
         REAL8 bigD = INFINITY;
 
         /* Don't store to cache, since distance scaling won't work */
@@ -171,8 +176,8 @@ void LALInferenceInitEnsemble(LALInferenceRunState *state) {
         }
         headData = state->data;
 
-        LALInferenceSetVariable(state->currentParams, "distance", &bigD);
-        null_likelihood = state->likelihood(state->currentParams, state->data, state->templt);
+        LALInferenceSetVariable(state->currentParamArray[0], "distance", &bigD);
+        null_likelihood = state->likelihood(state->currentParamArray[0], state->data, state->templt);
 
         /* Restore cache to data structure */
         while (headData != NULL) {
@@ -182,21 +187,26 @@ void LALInferenceInitEnsemble(LALInferenceRunState *state) {
         }
 
         /* Replace finite distance */
-        LALInferenceSetVariable(state->currentParams, "distance", &d);
+        LALInferenceSetVariable(state->currentParamArray[0], "distance", &d);
     }
     LALInferenceAddVariable(state->proposalArgs, "nullLikelihood", &null_likelihood,
                             LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
 
     /* Initialize starting likelihood and prior */
-    state->currentLikelihood = state->likelihood(state->currentParams,
-                                                 state->data, state->templt);
+    state->currentPriors = XLALMalloc(nwalkers_per_thread * sizeof(REAL8));
+    state->currentLikelihoods = XLALMalloc(nwalkers_per_thread * sizeof(REAL8));
+    for (walker = 0; walker < nwalkers_per_thread; walker++) {
+        state->currentPriors[walker] = state->prior(state, state->currentParamArray[walker]);
+
+        state->currentLikelihoods[walker] = state->likelihood(state->currentParamArray[walker],
+                                                                 state->data, state->templt);
+    }
+
     headData = state->data;
     while (headData != NULL) {
         headData->acceptedloglikelihood = headData->loglikelihood;
         headData = headData->next;
     }
-
-    state->currentPrior = state->prior(state, state->currentParams);
 }
 
 LALInferenceRunState *initialize(ProcessParamsTable *commandLine)
@@ -325,8 +335,10 @@ void initializeMCMC(LALInferenceRunState *runState) {
                  (--data-dump)                    Output waveforms to file.\n\
                  (--outfile file)                 Write output files <file>.<chain_number> (ensemble.output.<random_seed>.<walker_number>).\n";
 
-    INT4 walker, i;
-    MPI_Comm_rank(MPI_COMM_WORLD, &walker);
+    INT4 i, walker;
+    INT4 MPIrank, MPIsize;
+    MPI_Comm_rank(MPI_COMM_WORLD, &MPIrank);
+    MPI_Comm_size(MPI_COMM_WORLD, &MPIsize);
 
     /* Print command line arguments if runState was not allocated */
     if(runState==NULL) {
@@ -408,22 +420,44 @@ void initializeMCMC(LALInferenceRunState *runState) {
     if (LALInferenceGetProcParamVal(commandLine, "--verbose"))
         verbose=1;
 
+    /* Determine number of walkers */
+
+    INT4 nwalkers = MPIsize;
+    INT4 nwalkers_per_thread = 1;
+    ppt = LALInferenceGetProcParamVal(commandLine, "--nwalkers");
+    if (ppt) {
+        INT4 requested_nwalkers = atoi(ppt->value);
+
+        /* Round up to have consistent number of walkers across MPI threads */
+        REAL8 requested_nwalkers_per_thread =  floor((REAL8)requested_nwalkers / (REAL8)MPIsize);
+        if (requested_nwalkers % MPIsize != 0.0) {
+            nwalkers_per_thread = (INT4)requested_nwalkers_per_thread + 1;
+            nwalkers = MPIsize * nwalkers_per_thread;
+            printf("Rounding up number of walkers to %i to provide \
+                    consistent performance across the %i available \
+                    MPI threads.\n", nwalkers, MPIsize);
+        } else {
+            nwalkers = requested_nwalkers;
+            nwalkers_per_thread = (INT4) requested_nwalkers_per_thread;
+        }
+    }
+
     /* Number of steps between ensemble updates */
     UINT4 nsteps = 100000;
     ppt = LALInferenceGetProcParamVal(commandLine, "--nsteps");
-    if(ppt)
+    if (ppt)
         nsteps = atoi(ppt->value);
 
     /* Print sample every skip iterations */
     UINT4 skip = 100;
     ppt = LALInferenceGetProcParamVal(commandLine, "--skip");
-    if(ppt)
+    if (ppt)
         skip = atoi(ppt->value);
 
     /* Update ensemble every *update_interval* iterations */
     UINT4 update_interval = 1000;
     ppt = LALInferenceGetProcParamVal(commandLine, "--update-interval");
-    if(ppt)
+    if (ppt)
         update_interval = atoi(ppt->value);
 
     /* Keep track of time if benchmarking */
@@ -441,13 +475,13 @@ void initializeMCMC(LALInferenceRunState *runState) {
         randomseed = atoi(ppt->value);
     else {
         if ((devrandom = fopen("/dev/urandom","r")) == NULL) {
-            if (walker == 0) {
+            if (MPIrank == 0) {
                 gettimeofday(&tv, 0);
                 randomseed = tv.tv_sec + tv.tv_usec;
             }
             MPI_Bcast(&randomseed, 1, MPI_UNSIGNED_LONG, 0, MPI_COMM_WORLD);
         } else {
-            if (walker == 0) {
+            if (MPIrank == 0) {
                 fread(&randomseed, sizeof(randomseed), 1, devrandom);
                 fclose(devrandom);
             }
@@ -459,17 +493,19 @@ void initializeMCMC(LALInferenceRunState *runState) {
 
     gsl_rng_set(runState->GSLrandom, randomseed);
 
-    /* Now make sure that everyone is running with un-correlated
-       jumps!  We re-seed rank i process with the ith output of
-       the RNG stream from the rank 0 process. Otherwise the
-       random stream is the same across all processes. */
-    for (i = 0; i < walker; i++)
-        randomseed = gsl_rng_get(runState->GSLrandom);
-
-    gsl_rng_set(runState->GSLrandom, randomseed);
+     /* Set up currentParams with variables to be used */
+    runState->currentParamArray = XLALMalloc(nwalkers_per_thread * sizeof(LALInferenceVariables*));
+    for (walker = 0; walker < nwalkers_per_thread; walker++)
+        runState->currentParamArray[walker] = LALInferenceInitCBCVariables(runState);
 
     /* Store flags to keep from checking the command line all the time */
     LALInferenceAddVariable(runState->algorithmParams,"verbose", &verbose,
+                            LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_FIXED);
+
+    LALInferenceAddVariable(runState->algorithmParams, "nwalkers_per_thread", &nwalkers_per_thread,
+                            LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_FIXED);
+
+    LALInferenceAddVariable(runState->algorithmParams, "nwalkers", &nwalkers,
                             LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_FIXED);
 
     LALInferenceAddVariable(runState->algorithmParams, "nsteps", &nsteps,
@@ -487,6 +523,15 @@ void initializeMCMC(LALInferenceRunState *runState) {
     LALInferenceAddVariable(runState->algorithmParams, "random_seed", &randomseed,
                             LALINFERENCE_UINT4_t,LALINFERENCE_PARAM_FIXED);
 
+   /* Now make sure that everyone is running with un-correlated
+       jumps!  We re-seed rank i process with the ith output of
+       the RNG stream from the rank 0 process. Otherwise the
+       random stream is the same across all processes. */
+    for (i = 0; i < MPIrank; i++)
+        randomseed = gsl_rng_get(runState->GSLrandom);
+
+    gsl_rng_set(runState->GSLrandom, randomseed);
+
     return;
 }
 
@@ -494,10 +539,10 @@ void initializeMCMC(LALInferenceRunState *runState) {
 int main(int argc, char *argv[]){
     MPI_Init(&argc, &argv);
 
-    INT4 walker;
-    MPI_Comm_rank(MPI_COMM_WORLD, &walker);
+    INT4 MPIrank;
+    MPI_Comm_rank(MPI_COMM_WORLD, &MPIrank);
 
-    if (walker == 0) fprintf(stdout," ========== lalinference_ensemble ==========\n");
+    if (MPIrank == 0) fprintf(stdout," ========== lalinference_ensemble ==========\n");
 
     /* Read command line and parse */
     ProcessParamsTable *procParams=LALInferenceParseCommandLine(argc,argv);
@@ -510,9 +555,6 @@ int main(int argc, char *argv[]){
 
     /* Set up structures for MCMC */
     initializeMCMC(runState);
-
-    /* Set up currentParams with variables to be used */
-    LALInferenceInitCBCVariables(runState);
 
     /* Choose the likelihood */
     LALInferenceInitLikelihood(runState);
@@ -530,7 +572,7 @@ int main(int argc, char *argv[]){
     /* Call MCMC algorithm */
     runState->algorithm(runState);
 
-    if (walker == 0) printf(" ========== main(): finished. ==========\n");
+    if (MPIrank == 0) printf(" ========== main(): finished. ==========\n");
 
     MPI_Finalize();
     return 0;

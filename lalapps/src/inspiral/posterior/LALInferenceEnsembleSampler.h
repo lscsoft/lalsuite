@@ -37,12 +37,12 @@
 void ensemble_sampler(struct tagLALInferenceRunState *runState);
 
 /** Evolve a walker a single step */
-void walker_step(LALInferenceRunState *runState);
+void walker_step(LALInferenceRunState *runState, INT4 walker);
 
 /** Update the ensemble proposal from the ensemble's current state */
 void ensemble_update(LALInferenceRunState *runState);
 
 /* Data IO routines */
-FILE* LALInferenceInitializeEnsembleOutput(LALInferenceRunState *runState);
-void LALInferencePrintEnsembleSample(LALInferenceRunState *runState, FILE *chainoutput, INT4 step);
-void LALInferencePrintEnsembleHeader(LALInferenceRunState *runState, FILE *walker_output);
+FILE *LALInferenceInitializeEnsembleOutput(LALInferenceRunState *runState, INT4 walker, INT4 walker_offset);
+void LALInferencePrintEnsembleSample(LALInferenceRunState *runState, FILE *walker_output, UINT4 walker, INT4 step);
+void LALInferencePrintEnsembleHeader(LALInferenceRunState *runState, FILE *walker_output, INT4 walker);
