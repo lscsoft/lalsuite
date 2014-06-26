@@ -1215,6 +1215,20 @@ void SetUpSFTs( LALStatus *status,			/**< pointer to LALStatus structure */
   fMin = freqLo - doppWings;
   fMax = freqHi + doppWings;
 
+  // ---------- wild hack: FIXME if you can
+  // this code only worked previously because the running-median sideband
+  // actually covered for *physically needed* extraBinsFstat sidebands.
+  // Those are unfortunately unknown at this point in the code, and it turned to
+  // too tricky to get their calculation moved here before SetupSFTs()
+  // Now that CreateFstatInput will actually remove the running-median sidebands
+  // before proceeding with the Fstat-calculation, this fails...
+  // We fix this simply by tagging on an extra 50 SFT bins on either side, which
+  // have previously made this work. I don't think this code cares ...
+  // To whom it may concern: feel free to clean this up if it matters to you.
+  fMin -= 50 * deltaFsft;
+  fMax += 50 * deltaFsft;
+  // ---------- end: wild hack
+
   /* set up vector of Fstat input data structs */
   (*p_Fstat_in_vec) = XLALCreateFstatInputVector( in->nStacks );
   if ( (*p_Fstat_in_vec) == NULL ) {

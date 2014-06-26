@@ -42,6 +42,9 @@
 #include <lal/NormalizeSFTRngMed.h>
 
 // ----- macro definitions
+#define MYMAX(x,y) ( (x) > (y) ? (x) : (y) )
+#define MYMIN(x,y) ( (x) < (y) ? (x) : (y) )
+
 #define MYSIGN(x) ( ((x) < 0) ? (-1.0):(+1.0) )
 #define SQ(x) ( (x) * (x) )
 
@@ -340,27 +343,36 @@ XLALCreateFstatInput ( const SFTCatalog *SFTcatalog,		  ///< [in] Catalog of SFT
   // Determine the time baseline of an SFT
   const REAL8 Tsft = 1.0 / SFTcatalog->data[0].header.deltaF;
 
-  // Determine the frequency band to load or generate SFTs over
-  REAL8 minFreq = minCoverFreq, maxFreq = maxCoverFreq;
+  // Determine the frequency band required by each method 'minFreqMethod',
+  // as well as the frequency band required to load or generate initial SFTs for 'minFreqFull'
+  // the difference being that for noise-floor estimation, we need extra frequency-bands for the
+  // running median
+  REAL8 minFreqMethod, maxFreqMethod;
+  REAL8 minFreqFull, maxFreqFull;
   {
     // Determine whether the method being used requires extra frequency bins
-    int extraBins = 0;
+    int extraBinsMethod = 0;
     if ( input->demod != NULL ) {
-      extraBins = GetFstatExtraBins_Demod ( input->demod );
+      extraBinsMethod = GetFstatExtraBins_Demod ( input->demod );
     } else if ( input->resamp != NULL ) {
-      extraBins = GetFstatExtraBins_Resamp ( input->resamp );
+      extraBinsMethod = GetFstatExtraBins_Resamp ( input->resamp );
     } else {
       XLAL_ERROR_NULL ( XLAL_EFAILED, "Invalid FstatInput struct passed to %s()", __func__);
     }
-    XLAL_CHECK_NULL ( extraBins >= 0, XLAL_EFAILED );
+    XLAL_CHECK_NULL ( extraBinsMethod >= 0, XLAL_EFAILED );
 
     // Add number of extra frequency bins required by running median
-    extraBins += runningMedianWindow/2 + 1;	// NOTE: this is currently needed irrespective of assumeSqrtSX usage!
+    int extraBinsFull = extraBinsMethod + runningMedianWindow/2 + 1; // NOTE: running-median window needed irrespective of assumeSqrtSX!
 
     // Extend frequency range by number of extra bins times SFT bin width
-    const REAL8 extraFreq = extraBins / Tsft;
-    minFreq -= extraFreq;
-    maxFreq += extraFreq;
+    const REAL8 extraFreqMethod = extraBinsMethod / Tsft;
+    minFreqMethod = minCoverFreq - extraFreqMethod;
+    maxFreqMethod = maxCoverFreq + extraFreqMethod;
+
+    const REAL8 extraFreqFull = extraBinsFull / Tsft;
+    minFreqFull = minCoverFreq - extraFreqFull;
+    maxFreqFull = maxCoverFreq + extraFreqFull;
+
   } // end: block to determine frequency-bins range
 
   // Extract detectors and timestamps from multi-view of SFT catalog
@@ -373,8 +385,8 @@ XLALCreateFstatInput ( const SFTCatalog *SFTcatalog,		  ///< [in] Catalog of SFT
     {
       // Initialise parameters struct for XLALCWMakeFakeMultiData()
       CWMFDataParams XLAL_INIT_DECL(MFDparams);
-      MFDparams.fMin = minFreq;
-      MFDparams.Band = maxFreq - minFreq;
+      MFDparams.fMin = minFreqFull;
+      MFDparams.Band = maxFreqFull - minFreqFull;
       MFDparams.multiIFO = common->detectors;
       MFDparams.multiTimestamps = *(common->timestamps);
       MFDparams.randSeed = extraParams->randSeed;
@@ -397,7 +409,7 @@ XLALCreateFstatInput ( const SFTCatalog *SFTcatalog,		  ///< [in] Catalog of SFT
       // If no SFTs have been generated, then load all SFTs at once
       if (multiSFTs == NULL)
         {
-          XLAL_CHECK_NULL ( ( multiSFTs = XLALLoadMultiSFTs(SFTcatalog, minFreq, maxFreq) ) != NULL, XLAL_EFUNC );
+          XLAL_CHECK_NULL ( ( multiSFTs = XLALLoadMultiSFTs(SFTcatalog, minFreqFull, maxFreqFull) ) != NULL, XLAL_EFUNC );
         }
       else
         {
@@ -405,7 +417,7 @@ XLALCreateFstatInput ( const SFTCatalog *SFTcatalog,		  ///< [in] Catalog of SFT
           for ( UINT4 X = 0; X < numDetectors; ++X )
             {
               SFTVector *loadedSFTs = NULL;
-              XLAL_CHECK_NULL ( ( loadedSFTs = XLALLoadSFTs ( &multiSFTcatalog->data[X], minFreq, maxFreq) ) != NULL, XLAL_EFUNC );
+              XLAL_CHECK_NULL ( ( loadedSFTs = XLALLoadSFTs ( &multiSFTcatalog->data[X], minFreqFull, maxFreqFull) ) != NULL, XLAL_EFUNC );
               XLAL_CHECK_NULL ( XLALSFTVectorAdd ( multiSFTs->data[X], loadedSFTs ) == XLAL_SUCCESS, XLAL_EFUNC );
               XLALDestroySFTVector ( loadedSFTs );
             } // for X < numDetectors
@@ -420,6 +432,12 @@ XLALCreateFstatInput ( const SFTCatalog *SFTcatalog,		  ///< [in] Catalog of SFT
   // Calculate SFT noise weights from PSD
   common->noiseWeights = XLALComputeMultiNoiseWeights ( runningMedian, runningMedianWindow, 0 );
   XLAL_CHECK_NULL ( common->noiseWeights != NULL, XLAL_EFUNC );
+
+  // at this point we're done with running-median noise estimation and can 'trim' the SFTs back to
+  // the width actually required by the Fstat-methods *methods*.
+  // NOTE: this is especially relevant for resampling, where the frequency-band determines the sampling
+  // rate, and the number of samples that need to be FFT'ed
+  XLAL_CHECK_NULL ( XLALMultiSFTVectorResizeBand ( multiSFTs, minFreqMethod, maxFreqMethod - minFreqMethod ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   // Get detector states, with a timestamp shift of Tsft/2
   const REAL8 tOffset = 0.5 * Tsft;
