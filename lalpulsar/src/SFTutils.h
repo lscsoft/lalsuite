@@ -139,6 +139,11 @@ int XLALSFTAdd ( SFTtype *a, const SFTtype *b );
 int XLALEarliestMultiSFTsample ( LIGOTimeGPS *out, const MultiSFTVector *multisfts );
 int XLALLatestMultiSFTsample ( LIGOTimeGPS *out, const MultiSFTVector *multisfts );
 
+// resizing SFTs
+int XLALMultiSFTVectorResizeBand ( MultiSFTVector *multiSFTs, REAL8 f0, REAL8 Band );
+int XLALSFTVectorResizeBand ( SFTVector *SFTs, REAL8 f0, REAL8 Band );
+int XLALSFTResizeBand ( SFTtype *SFT, REAL8 f0, REAL8 Band );
+
 // destructors
 void XLALDestroyPSDVector ( PSDVector *vect );
 void XLALDestroyMultiSFTVector ( MultiSFTVector *multvect );

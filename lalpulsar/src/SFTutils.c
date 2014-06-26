@@ -1314,6 +1314,102 @@ XLALExtractBandFromMultiSFTVector ( const MultiSFTVector *inSFTs,      ///< [in]
 } //XLALExtractBandFromMultiSFTVector()
 
 /**
+ * Resize the frequency-band of a given multi-SFT vector to [f0, f0+Band].
+ *
+ * NOTE: If the frequency band is extended in any direction, the corresponding bins
+ * will be set to zero
+ *
+ * NOTE2: This uses the conventions in XLALFindCoveringSFTBins() to determine
+ * the 'effective' frequency-band to resize to, in order to coincide with SFT frequency bins.
+ *
+ */
+int
+XLALMultiSFTVectorResizeBand ( MultiSFTVector *multiSFTs,	///< [in/out] multi-SFT vector to resize
+                               REAL8 f0,			///< [in] new start frequency
+                               REAL8 Band			///< [in] new frequency Band
+                               )
+{
+  XLAL_CHECK ( multiSFTs != NULL, XLAL_EINVAL );
+  XLAL_CHECK ( f0 >= 0, XLAL_EINVAL );
+  XLAL_CHECK ( Band >= 0, XLAL_EINVAL );
+
+  for ( UINT4 X = 0; X < multiSFTs->length; X ++ ) {
+    XLAL_CHECK ( XLALSFTVectorResizeBand ( multiSFTs->data[X], f0, Band ) == XLAL_SUCCESS, XLAL_EFUNC );
+  }
+
+  return XLAL_SUCCESS;
+
+} // XLALMultiSFTVectorResizeBand()
+
+/**
+ * Resize the frequency-band of a given SFT vector to [f0, f0+Band].
+ *
+ * NOTE: If the frequency band is extended in any direction, the corresponding bins
+ * will be set to zero
+ *
+ * NOTE2: This uses the conventions in XLALFindCoveringSFTBins() to determine
+ * the 'effective' frequency-band to resize to, in order to coincide with SFT frequency bins.
+ *
+ */
+int
+XLALSFTVectorResizeBand ( SFTVector *SFTs,	///< [in/out] SFT vector to resize
+                          REAL8 f0,		///< [in] new start frequency
+                          REAL8 Band		///< [in] new frequency Band
+                          )
+{
+  XLAL_CHECK ( SFTs != NULL, XLAL_EINVAL );
+  XLAL_CHECK ( f0 >= 0, XLAL_EINVAL );
+  XLAL_CHECK ( Band >= 0, XLAL_EINVAL );
+
+  for ( UINT4 alpha = 0; alpha < SFTs->length; alpha ++ ) {
+    XLAL_CHECK ( XLALSFTResizeBand ( &(SFTs->data[alpha]), f0, Band ) == XLAL_SUCCESS, XLAL_EFUNC );
+  }
+
+  return XLAL_SUCCESS;
+
+} // XLALSFTVectorResizeBand()
+
+/**
+ * Resize the frequency-band of a given SFT to [f0, f0+Band].
+ *
+ * NOTE: If the frequency band is extended in any direction, the corresponding bins
+ * will be set to zero
+ *
+ * NOTE2: This uses the conventions in XLALFindCoveringSFTBins() to determine
+ * the 'effective' frequency-band to resize to, in order to coincide with SFT frequency bins.
+ *
+ */
+int
+XLALSFTResizeBand ( SFTtype *SFT,	///< [in/out] SFT to resize
+                    REAL8 f0,		///< [in] new start frequency
+                    REAL8 Band		///< [in] new frequency Band
+                    )
+{
+  XLAL_CHECK ( SFT != NULL, XLAL_EINVAL );
+  XLAL_CHECK ( f0 >= 0, XLAL_EINVAL );
+  XLAL_CHECK ( Band >= 0, XLAL_EINVAL );
+
+
+  REAL8 Tsft = 1.0 / SFT->deltaF;
+  REAL8 f0In = SFT->f0;
+
+  UINT4 firstBinIn = (UINT4) lround ( f0In / SFT->deltaF );
+
+  UINT4 firstBinOut;
+  UINT4 numBinsOut;
+  XLAL_CHECK ( XLALFindCoveringSFTBins ( &firstBinOut, &numBinsOut, f0, Band, Tsft ) == XLAL_SUCCESS, XLAL_EFUNC );
+
+  int firstRelative = firstBinOut - firstBinIn;
+
+  XLAL_CHECK ( (SFT = XLALResizeCOMPLEX8FrequencySeries ( SFT, firstRelative, numBinsOut )) != NULL, XLAL_EFUNC );
+
+  return XLAL_SUCCESS;
+
+} // XLALSFTResizeBand()
+
+
+
+/**
  * Adds SFT-data from MultiSFTvector 'b' to elements of MultiSFTVector 'a'
  *
  * NOTE: the inputs 'a' and 'b' must have consistent number of IFO, number of SFTs,
