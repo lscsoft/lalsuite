@@ -57,7 +57,7 @@ else:
   main_cp.set('paths','daglogdir',os.path.join(os.path.abspath(opts.run_path),'main'))
   daglogdir=os.path.abspath(opts.run_path)
 
-webdir=cp.get('ppanalysis','webdir')
+webdir=main_cp.get('ppanalysis','webdir')
 priordir=os.path.join(rundir,'prior')
 maindir=os.path.join(rundir,'main')
 priorwebdir=os.path.join(webdir,'prior')
