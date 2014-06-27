@@ -85,6 +85,9 @@ elif prior_cp.get('analysis','engine')=='lalinferencemcmc':
 elif prior_cp.get('analysis','engine')=='lalinferencebambi':
   prior_cp.set('engine','zeroLogLike','')
   prior_cp.set('engine','nlive',str(opts.trials))
+elif prior_cp.get('analysis','engine')=='lalinferencebambimpi':
+  prior_cp.set('engine','zeroLogLike','')
+  prior_cp.set('engine','nlive',str(opts.trials))
 
 # Create a DAG to contain the other scripts
 outerdaglog=os.path.join(daglogdir,'lalinference_injection_test_'+str(uuid.uuid1())+'.log')
