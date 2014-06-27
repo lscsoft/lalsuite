@@ -871,7 +871,7 @@ INT4 XLALSimIMREOBFinalMassSpin(
   static const REAL8 s4v2 = -0.27506210736300474;
   static const REAL8 t0v2 = -2.649826989941522;
   static const REAL8 t3v2 = 3.910637513328723;
-  static const REAL8 t2v2 = 16.* (-0.17958273605461628 - 0.015625*t3v2);
+  static const REAL8 t2v2 = -3.850983155206041;
 
 
   REAL8 totalMass;
