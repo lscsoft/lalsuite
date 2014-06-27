@@ -80,7 +80,7 @@ import matplotlib.pyplot as plt
 from matplotlib import rcParams
 import healpy as hp
 import lal
-from lalinference.bayestar import fits
+from lalinference import fits
 from lalinference import plot
 
 fig = plt.figure(figsize=(opts.figure_width, opts.figure_height), frameon=False)

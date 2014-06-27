@@ -6,6 +6,7 @@ SUBDIRS = bayestar
 
 pkgpython_PYTHON = \
 	__init__.py \
+	fits.py \
 	plot.py \
 	git_version.py
 

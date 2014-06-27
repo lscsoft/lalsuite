@@ -60,7 +60,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import healpy as hp
 import lal
-from lalinference.bayestar import fits
+from lalinference import fits
 from lalinference import plot
 from glue.text_progress_bar import ProgressBar
 

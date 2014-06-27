@@ -110,7 +110,7 @@ import os
 import shutil
 import tempfile
 from lalinference.bayestar.ligolw_sky_map import gracedb_sky_map
-from lalinference.bayestar import fits
+from lalinference import fits
 
 # A little bit of Cylon humor
 log.info('by your command...')
