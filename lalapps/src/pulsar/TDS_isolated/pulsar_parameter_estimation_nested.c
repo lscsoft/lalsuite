@@ -3478,12 +3478,12 @@ void get_loudest_snr( LALInferenceRunState *runState ){
     //          data->compModelData->data->data[j].im );
     //}
 
-    ndats++;
-
     snrmulti += SQUARE( snrval );
 
     /* print out SNR value */
     fprintf(fpsnr, "%s\t%.3lf\t%le\n", data->name, freqFactors->data[ndats%(INT4)freqFactors->length], snrval);
+
+    ndats++;
 
     data = data->next;
   }
