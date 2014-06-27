@@ -81,7 +81,7 @@ from matplotlib import rcParams
 import healpy as hp
 import lal
 from lalinference.bayestar import fits
-from lalinference.bayestar import plot
+from lalinference import plot
 
 fig = plt.figure(figsize=(opts.figure_width, opts.figure_height), frameon=False)
 ax = plt.subplot(111,
