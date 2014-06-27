@@ -481,6 +481,7 @@ void initialiseAlgorithm( LALInferenceRunState *runState )
     runState->logsample = LogNonFixedSampleToFile;
     #endif
   }
+  else{ runState->logsample = LALInferenceLogSampleToFile; }
 
   return;
 }
