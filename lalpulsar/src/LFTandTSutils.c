@@ -353,14 +353,15 @@ XLALReorderSFTtoFFTW (COMPLEX8Vector *X)
 
 /**
  * Time-shift the given SFT by an amount of 'shift' seconds,
- * using the frequency-domain expression y(f) = x(f) * e^(-i 2pi f tau),
- * which shifts x(t) into y(t) = x(t - tau)
+ * using the frequency-domain expression
+ * \f$\widetilde{y}(f) = \widetilde{x}(f) \, e^{i 2\pi\,f\,\tau}\f$,
+ * which shifts \f$x(t)\f$ into \f$y(t) = x(t + \tau)\f$
  *
  * NOTE: this <b>modifies</b> the SFT in place
  */
 int
 XLALTimeShiftSFT ( SFTtype *sft,	/**< [in/out] SFT to time-shift */
-		   REAL8 shift		/**< time-shift in seconds */
+		   REAL8 shift		/**< time-shift \f$\tau\f$ in seconds */
                    )
 {
   XLAL_CHECK ( (sft != NULL) && (sft->data != NULL), XLAL_EINVAL );
