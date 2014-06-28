@@ -17,6 +17,8 @@
  *  MA  02111-1307  USA
  */
 
+//Some functions based from Matab 2012a functions, but optimized for TwoSpect analysis
+
 #include <math.h>
 #include <time.h>
 

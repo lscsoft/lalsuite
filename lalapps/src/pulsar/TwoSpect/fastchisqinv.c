@@ -18,6 +18,7 @@
  */
 
 //Based on GSL functions to determine chi-squared inversions
+//Some functions based from Matab 2012a functions, but optimized for TwoSpect analysis
 
 #include <stdlib.h>
 #include <math.h>
