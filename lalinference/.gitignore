@@ -3,6 +3,7 @@
 *.log
 *.o
 *.pc
+*.pyc
 .deps
 .libs
 /_build/
@@ -55,4 +56,5 @@ test/LALInferencePriorTest
 test/LALInferenceProposalTest
 test/LALInferenceTest
 test/LALInferenceXMLTest
+test/test_result_images
 test/test_vot.xml

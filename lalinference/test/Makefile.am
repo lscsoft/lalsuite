@@ -1,3 +1,5 @@
+SUBDIRS = baseline_images
+
 TEST_CPPFLAGS = -DTEST_DATA_DIR='"$(abs_srcdir)/"'
 LDADD = $(top_builddir)/src/liblalinference.la
 
@@ -47,7 +49,11 @@ TESTS = \
 	LALInferenceKDTest \
 	$(XMLPRG)
 
-EXTRA_DIST =
+EXTRA_DIST = test_plot.py
+
+# FIXME: Run this as a regular unit test.
+installcheck-local:
+	$(PYTHON) test_plot.py
 
 CLEANFILES = \
 	test_vot.xml \

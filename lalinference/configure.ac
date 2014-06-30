@@ -20,7 +20,8 @@ AC_CONFIG_FILES([ \
   python/__init__.py \
   python/bayestar/Makefile \
   swig/Makefile \
-  test/Makefile
+  test/Makefile \
+  test/baseline_images/Makefile
 ])
 AM_INIT_AUTOMAKE([1.11 foreign subdir-objects color-tests parallel-tests])
 
