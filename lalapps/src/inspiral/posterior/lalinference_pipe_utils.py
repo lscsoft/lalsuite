@@ -692,7 +692,10 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
         if self.config.getboolean('analysis','upload-to-gracedb'):
           self.add_gracedb_log_node(respagenode,event.GID)
     if self.config.getboolean('analysis','coherence-test') and len(enginenodes[0].ifos)>1:
-        zipfilename='postproc_'+evstring+'.tar.gz'
+        if self.site!='local':
+          zipfilename='postproc_'+evstring+'.tar.gz'
+		else:
+          zipfilename=None
         respagenode=self.add_results_page_node(resjob=self.cotest_results_page_job,outdir=pagedir,parent=mergenode,gzip_output=zipfilename)
         if self.config.has_option('input','injection-file') and event.event_id is not None:
             respagenode.set_injection(self.config.get('input','injection-file'),event.event_id)
@@ -721,8 +724,10 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
         respagenode.add_parent(coherence_node)
         respagenode.set_bayes_coherent_incoherent(coherence_node.get_output_files()[0])
     else:
-        zipfilename='postproc_'+evstring+'.tar.gz'
-        respagenode=self.add_results_page_node(outdir=pagedir,parent=mergenode,gzip_output=zipfilename)
+        if self.site!='local':
+          zipfilename='postproc_'+evstring+'.tar.gz'
+        else:
+          respagenode=self.add_results_page_node(outdir=pagedir,parent=mergenode,gzip_output=zipfilename)
     respagenode.set_bayes_coherent_noise(mergenode.get_B_file())
     if self.config.has_option('input','injection-file') and event.event_id is not None:
         respagenode.set_injection(self.config.get('input','injection-file'),event.event_id)
