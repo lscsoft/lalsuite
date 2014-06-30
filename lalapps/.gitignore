@@ -137,6 +137,7 @@ src/inspiral/posterior/lalapps_nest_pipe
 src/inspiral/posterior/lalapps_vo_nest2pos
 src/inspiral/posterior/lalinference_bambi
 src/inspiral/posterior/lalinference_pipe
+src/inspiral/posterior/lalinference_pp_pipe
 src/inspiral/posterior/python_config.sed
 src/inspiral/ssipe_config.sed
 src/lalapps/LALAppsBuildInfo.c
