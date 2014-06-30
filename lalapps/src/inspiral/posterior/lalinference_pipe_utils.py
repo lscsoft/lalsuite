@@ -694,7 +694,7 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
     if self.config.getboolean('analysis','coherence-test') and len(enginenodes[0].ifos)>1:
         if self.site!='local':
           zipfilename='postproc_'+evstring+'.tar.gz'
-		else:
+        else:
           zipfilename=None
         respagenode=self.add_results_page_node(resjob=self.cotest_results_page_job,outdir=pagedir,parent=mergenode,gzip_output=zipfilename)
         if self.config.has_option('input','injection-file') and event.event_id is not None:
@@ -727,7 +727,8 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
         if self.site!='local':
           zipfilename='postproc_'+evstring+'.tar.gz'
         else:
-          respagenode=self.add_results_page_node(outdir=pagedir,parent=mergenode,gzip_output=zipfilename)
+          zipfilename=None
+        respagenode=self.add_results_page_node(outdir=pagedir,parent=mergenode,gzip_output=zipfilename)
     respagenode.set_bayes_coherent_noise(mergenode.get_B_file())
     if self.config.has_option('input','injection-file') and event.event_id is not None:
         respagenode.set_injection(self.config.get('input','injection-file'),event.event_id)
