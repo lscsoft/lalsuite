@@ -46,7 +46,6 @@ static int lalDebugLevel = LAL_DEFAULT_DEBUG_LEVEL;
  * Bad function, put here only for people who know what they are doing,
  * (and understand that what they are doing is wrong).
  */
-void XLALClobberDebugLevel(int level);
 void XLALClobberDebugLevel(int level)
 {
     lalDebugLevel = level;
