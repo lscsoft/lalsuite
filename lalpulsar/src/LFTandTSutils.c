@@ -226,10 +226,6 @@ XLALSFTVectorToCOMPLEX8TimeSeries ( const SFTVector *sftsIn,        /**< [in] SF
       REAL8 nudge_n = bin0_n * deltaT - offset_n;		/* rounding error */
       nudge_n = 1e-9 * round ( nudge_n * 1e9 );	/* round to closest nanosecond */
 
-      REAL8 t0 = XLALGPSGetREAL8 ( &start );
-      XLALPrintInfo ("n = %d: t0_n = %f, sft_tn =(%d,%d), bin-offset = %g s, corresponding to %g timesteps\n",
-                     n, t0 + bin0_n * deltaT, sfts->data[n].epoch.gpsSeconds,  sfts->data[n].epoch.gpsNanoSeconds, nudge_n, nudge_n/deltaT );
-
       /* nudge SFT into integer timestep bin if necessary */
       XLAL_CHECK_NULL ( XLALTimeShiftSFT ( thisSFT, nudge_n ) == XLAL_SUCCESS, XLAL_EFUNC  );
 
@@ -261,9 +257,6 @@ XLALSFTVectorToCOMPLEX8TimeSeries ( const SFTVector *sftsIn,        /**< [in] SF
       for ( UINT4 k=0; k < numFreqBinsSFT; k++) {
         thisSFT->data->data[k] *= hetCorrection;
       } /* for k < numBins */
-
-      XLALPrintInfo ("SFT n = %d: (tn - t0) = %g s EQUIV %g s, hetCycles = %g, ==> fact = %g + i %g\n",
-                     n, offset0, offsetEff, hetCycles, crealf(hetCorrection), cimagf(hetCorrection) );
 
       /* FIXME: check if required */
       XLAL_CHECK_NULL ( XLALReorderSFTtoFFTW (thisSFT->data) == XLAL_SUCCESS, XLAL_EFUNC );

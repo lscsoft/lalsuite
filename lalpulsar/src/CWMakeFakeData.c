@@ -489,9 +489,7 @@ XLALFindSmallestValidSamplingRate ( UINT4 *n1,				//< [out] minimal valid sampli
       // now reduce gap to remainder wrt Tsft
       INT4 gap_i = gap_i0 % Tsft;
 
-      XLALPrintInfo ("gap_i = %d s, remainder wrt Tsft=%d s = %d s: ", gap_i0, Tsft, gap_i );
       if ( (gap_i * nCur) % Tsft == 0 ) {
-        XLALPrintInfo ("Fits exactly with fSamp = %d / Tsft = %g\n", nCur, nCur / TsftREAL );
         continue;
       }
 
@@ -516,7 +514,7 @@ XLALFindSmallestValidSamplingRate ( UINT4 *n1,				//< [out] minimal valid sampli
       UINT4 nNew = (UINT4) ceil ( nCur / Tg ) * Tg;
 
       XLAL_CHECK ( nNew > nCur, XLAL_ETOL, "This seems wrong: nNew = %d !> nCur = %d, but should be greater!\n", nNew, nCur );
-      XLALPrintInfo ("Need to increase to fSamp = %d / Tsft = %g\n", nNew, nNew / TsftREAL );
+      XLALPrintInfo ("Need to increase from fSamp = %d/Tsft = %g to fSamp = %d / Tsft = %g\n", nCur, nCur/TsftREAL, nNew, nNew / TsftREAL );
 
       nCur = nNew;
 
