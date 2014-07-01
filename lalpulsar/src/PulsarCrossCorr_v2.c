@@ -172,7 +172,6 @@ int XLALCreateSFTPairIndexList
 {
   SFTPairIndexList *ret = NULL;
   UINT8 numSFTs;
-  UINT8 numPairs;
   UINT8 j, k, l, lMin;
   REAL8 timeDiff;
   LIGOTimeGPS gps1, gps2;
@@ -183,19 +182,31 @@ int XLALCreateSFTPairIndexList
     XLAL_ERROR ( XLAL_ENOMEM );
   }
 
+  /* do two passes, one to count the number of pairs so the list can be allocated, and one to actually populate the list. */
+
   /* maximum possible number of pairs */
 
-  if ( inclAutoCorr ) {
-    numPairs = numSFTs*(numSFTs+1)/2;
-  } else {
-    numPairs = numSFTs*(numSFTs-1)/2;
+  j = 0;
+  for (k=0; k < numSFTs; k++) {
+    if ( inclAutoCorr ) {
+      lMin = k;
+    } else {
+      lMin = k+1;
+    }
+    gps1 = sfts->data[indexList->data[k].detInd]->data[indexList->data[k].sftInd].epoch;
+    for (l=lMin; l < numSFTs; l++) {
+      gps2 = sfts->data[indexList->data[l].detInd]->data[indexList->data[l].sftInd].epoch;
+      timeDiff = XLALGPSDiff(&gps1,&gps2);
+      if (fabs(timeDiff) <= maxLag) {
+	++j;
+      }
+    }
   }
-  ret->length = numPairs;
-  if ( ( ret->data = XLALCalloc ( numPairs, sizeof ( *ret->data ) )) == NULL ) {
+  ret->length = j;
+  if ( ( ret->data = XLALCalloc ( ret->length , sizeof ( *ret->data ) )) == NULL ) {
     XLALFree ( ret );
     XLAL_ERROR ( XLAL_ENOMEM );
   }
-
   j = 0;
   for (k=0; k < numSFTs; k++) {
     if ( inclAutoCorr ) {
@@ -213,11 +224,6 @@ int XLALCreateSFTPairIndexList
 	++j;
       }
     }
-  }
-  ret->length = j;
-  if ( ( ret->data = XLALRealloc ( ret->data, j * sizeof ( *ret->data ) )) == NULL ) {
-    XLALFree ( ret );
-    XLAL_ERROR ( XLAL_ENOMEM );
   }
 
 
