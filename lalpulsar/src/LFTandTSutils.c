@@ -23,15 +23,6 @@
 /* System includes */
 #include <stdio.h>
 
-/* GSL includes */
-#include <gsl/gsl_vector.h>
-#include <gsl/gsl_matrix.h>
-#include <gsl/gsl_blas.h>
-#include <gsl/gsl_permutation.h>
-#include <gsl/gsl_linalg.h>
-#include <gsl/gsl_errno.h>
-#include <gsl/gsl_spline.h>
-
 /* LAL-includes */
 #include <lal/LFTandTSutils.h>
 #include <lal/UserInput.h>
@@ -416,67 +407,6 @@ XLALTimeShiftSFT ( SFTtype *sft,	/**< [in/out] SFT to time-shift */
   return XLAL_SUCCESS;
 
 } // XLALTimeShiftSFT()
-
-/**
- * Find the latest timestamp in a multi-SSB data structure
- */
-int
-XLALGSLInterpolateREAL8Vector ( REAL8Vector **yi,
-                                REAL8Vector *xi,
-                                gsl_spline *spline
-                                )
-{
-  // check input sanity
-  XLAL_CHECK ( (xi != NULL) && (xi->data != NULL), XLAL_EINVAL );
-  XLAL_CHECK ( spline != NULL, XLAL_EINVAL );
-  XLAL_CHECK ( (yi != NULL) && ( (*yi) == NULL ), XLAL_EINVAL );
-  UINT4 numSamples = xi->length;
-
-  /* allocate memory for output vector */
-  XLAL_CHECK ( ((*yi) = XLALCreateREAL8Vector(numSamples)) != NULL, XLAL_EFUNC );
-
-  /* perform inerpolation */
-  gsl_interp_accel *acc;
-  XLAL_CHECK ( (acc = gsl_interp_accel_alloc()) != NULL, XLAL_EFAILED );
-
-  for ( UINT4 i=0; i < numSamples; i++ ) {
-    (*yi)->data[i] = gsl_spline_eval ( spline, xi->data[i], acc );
-  }
-
-  /* free memory */
-  gsl_interp_accel_free ( acc );
-
-  return XLAL_SUCCESS;
-
-} // XLALGSLInterpolateREAL8Vector()
-
-
-/**
- * Find the latest timestamp in a multi-SSB data structure
- */
-int
-XLALGSLInitInterpolateREAL8Vector ( gsl_spline **spline,
-                                    REAL8Vector *x,
-                                    REAL8Vector *y
-                                    )
-{
-  /* check input */
-  XLAL_CHECK ( (spline != NULL) && (*spline == NULL), XLAL_EINVAL );
-  XLAL_CHECK ( (x != NULL) && (x->data != NULL), XLAL_EINVAL );
-  XLAL_CHECK ( (y != NULL) && (y->data != NULL), XLAL_EINVAL );
-  UINT4 numSamples_in = x->length;
-  XLAL_CHECK ( (numSamples_in > 0) && (y->length == numSamples_in), XLAL_EINVAL );
-
-  REAL8 *xtemp = x->data;
-  REAL8 *ytemp = y->data;
-
-  /* compute spline interpolation coefficients */
-  XLAL_CHECK ( ((*spline) = gsl_spline_alloc ( gsl_interp_cspline, numSamples_in )) != NULL, XLAL_EFAILED );
-  XLAL_CHECK ( gsl_spline_init ( (*spline), xtemp, ytemp, numSamples_in ) == 0, XLAL_EFAILED );
-
-  return XLAL_SUCCESS;
-
-} // XLALGSLInitInterpolateREAL8Vector()
 
 /**
  * Multi-detector wrapper for XLALFrequencyShiftCOMPLEX8TimeSeries

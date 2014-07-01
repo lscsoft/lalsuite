@@ -34,7 +34,6 @@
 static LALUnit emptyLALUnit;
 #define NUM_FACT 7
 static const REAL8 inv_fact[NUM_FACT] = { 1.0, 1.0, (1.0/2.0), (1.0/6.0), (1.0/24.0), (1.0/120.0), (1.0/720.0) };
-const UINT4 Dterms = 8;	// for Sinc and Dirichlet interpolation
 
 // ----- local types ----------
 typedef struct tagMultiUINT4Vector
@@ -708,28 +707,6 @@ XLALBarycentricResampleCOMPLEX8TimeSeries ( COMPLEX8TimeSeries *TimeSeries_SRC,	
   REAL8 start_SRC   = refTime + SRC_timing->DeltaT->data[0] - (0.5*Tsft) * SRC_timing->Tdot->data[0];
   XLALGPSSetREAL8 ( &(TimeSeries_SRC->epoch), start_SRC );
 
-  /* allocate memory for the uniformly sampled detector time samples (Fa and Fb real and imaginary) */
-  REAL8Vector* ts[2]; // store real and imaginary parts of input timeseries as separate real vectors
-  XLAL_CHECK ( (ts[0] = XLALCreateREAL8Vector ( numSamples_DET )) != NULL, XLAL_EFUNC );
-  XLAL_CHECK ( (ts[1] = XLALCreateREAL8Vector ( numSamples_DET )) != NULL, XLAL_EFUNC );
-
-  /* allocate memory for the *uniform* detector time vector required for interpolation */
-  REAL8Vector *t_DET; // a vector of *uniform* time values in the detector frame (for interpolation)
-  XLAL_CHECK ( (t_DET = XLALCreateREAL8Vector ( numSamples_DET )) != NULL, XLAL_EFUNC );
-
-  /* place the timeseries into REAL8Vectors for gsl to be able to interpolate them */
-  for ( UINT4 j=0; j < numSamples_DET; j++ )
-    {
-      t_DET->data[j] = start_DET + j * deltaT_DET;
-      ts[0]->data[j] = crealf ( TimeSeries_DET->data->data[j] );
-      ts[1]->data[j] = cimagf ( TimeSeries_DET->data->data[j] );
-    } // for j < numSamples_DET
-
-  /* initialise the gsl spline interpolation for each of the 2 timeseries */
-  gsl_spline* spline_ts[2]; XLAL_INIT_MEM(spline_ts);
-  XLAL_CHECK ( XLALGSLInitInterpolateREAL8Vector ( &(spline_ts[0]), t_DET, ts[0] ) == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK ( XLALGSLInitInterpolateREAL8Vector ( &(spline_ts[1]), t_DET, ts[1] ) == XLAL_SUCCESS, XLAL_EFUNC );
-
   /* loop over SFT timestamps to compute the detector frame time samples corresponding to uniformly sampled SRC time samples */
   for ( UINT4 j=0; j < numSFTs; j++ )
     {
@@ -785,10 +762,10 @@ XLALBarycentricResampleCOMPLEX8TimeSeries ( COMPLEX8TimeSeries *TimeSeries_SRC,	
             }
         } /* for k < SFTnumSamples_SRC */
 
-      // interpolate on the non-uniformly sampled detector time vector for this SFT for re and im parts input timeseries
-      REAL8Vector *out_ts[2]; XLAL_INIT_MEM(out_ts);
-      XLAL_CHECK ( XLALGSLInterpolateREAL8Vector ( &(out_ts[0]), detectortimes, spline_ts[0] ) == XLAL_SUCCESS, XLAL_EFUNC );
-      XLAL_CHECK ( XLALGSLInterpolateREAL8Vector ( &(out_ts[1]), detectortimes, spline_ts[1] ) == XLAL_SUCCESS, XLAL_EFUNC );
+      COMPLEX8Vector *ts_SRC;
+      XLAL_CHECK ( (ts_SRC = XLALCreateCOMPLEX8Vector ( SFTnumSamples_SRC )) != NULL, XLAL_EFUNC );
+      const UINT4 Dterms = 8;
+      XLAL_CHECK ( XLALSincInterpolateCOMPLEX8TimeSeries ( ts_SRC, detectortimes, TimeSeries_DET, Dterms ) == XLAL_SUCCESS, XLAL_EFUNC );
 
       /* place these interpolated timeseries into the output */
       /* and apply correction due to non-zero heterodyne frequency of input */
@@ -804,23 +781,15 @@ XLALBarycentricResampleCOMPLEX8TimeSeries ( COMPLEX8TimeSeries *TimeSeries_SRC,	
           /* use a look-up-table for speed to compute real and imaginary phase */
           REAL4 cosphase, sinphase;                                                                         /* the real and imaginary parts of the phase correction */
           XLAL_CHECK( XLALSinCos2PiLUT ( &sinphase, &cosphase, -cycles ) == XLAL_SUCCESS, XLAL_EFUNC );
-
-          TimeSeries_SRC->data->data[idx] = crectf( out_ts[0]->data[k]*cosphase - out_ts[1]->data[k]*sinphase, out_ts[1]->data[k]*cosphase + out_ts[0]->data[k]*sinphase );
+          COMPLEX8 ei2piphase = crectf(cosphase,sinphase);
+          TimeSeries_SRC->data->data[idx] = ei2piphase * ts_SRC->data[k];
         } // for k < SFTnumSamples_SRC
 
       /* free memory used for this SFT */
-      XLALDestroyREAL8Vector ( out_ts[0] );
-      XLALDestroyREAL8Vector ( out_ts[1] );
       XLALDestroyREAL8Vector ( detectortimes );
+      XLALDestroyCOMPLEX8Vector ( ts_SRC );
 
     } // for j < numSFTs
-
-  /* free memory */
-  XLALDestroyREAL8Vector ( ts[0] );
-  XLALDestroyREAL8Vector ( ts[1] );
-  gsl_spline_free ( spline_ts[0] );
-  gsl_spline_free ( spline_ts[1] );
-  XLALDestroyREAL8Vector ( t_DET );
 
   /* success */
   return XLAL_SUCCESS;

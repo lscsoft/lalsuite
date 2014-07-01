@@ -82,10 +82,6 @@ int XLALReorderFFTWtoSFT (COMPLEX8Vector *X);
 int XLALReorderSFTtoFFTW (COMPLEX8Vector *X);
 int XLALTimeShiftSFT ( SFTtype *sft, REAL8 shift );
 
-int XLALGSLInterpolateREAL8Vector ( REAL8Vector **yi, REAL8Vector *xi, gsl_spline *spline );
-
-int XLALGSLInitInterpolateREAL8Vector ( gsl_spline **spline, REAL8Vector *x, REAL8Vector *y );
-
 int XLALFrequencyShiftMultiCOMPLEX8TimeSeries ( MultiCOMPLEX8TimeSeries *x, const REAL8 shift );
 int XLALFrequencyShiftCOMPLEX8TimeSeries ( COMPLEX8TimeSeries *x, const REAL8 shift );
 
