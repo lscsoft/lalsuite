@@ -726,6 +726,7 @@ LALInferenceVariables *LALInferenceInitCBCVariables(LALInferenceRunState *state)
   if((ppt=LALInferenceGetProcParamVal(commandLine,"--dist"))) start_dist=atof(ppt->value);
   if((ppt=LALInferenceGetProcParamVal(commandLine,"--Dmin"))) Dmin=atof(ppt->value);
   if((ppt=LALInferenceGetProcParamVal(commandLine,"--Dmax"))) Dmax=atof(ppt->value);
+
   
   if((ppt=LALInferenceGetProcParamVal(commandLine,"--psi")))  start_psi=atof(ppt->value);
   if((ppt=LALInferenceGetProcParamVal(commandLine,"--dec")))  start_dec=atof(ppt->value);
@@ -1250,6 +1251,9 @@ LALInferenceVariables *LALInferenceInitCBCVariables(LALInferenceRunState *state)
     }
   
   if(LALInferenceGetProcParamVal(commandLine,"--use-logdistance")){
+    /* Check for distance priors on command line */
+    if((ppt=LALInferenceGetProcParamVal(commandLine,"--distance-max"))) Dmax=atof(ppt->value);
+    if((ppt=LALInferenceGetProcParamVal(commandLine,"--distance-min"))) Dmin=atof(ppt->value);
     LALInferenceRegisterUniformVariableREAL8(state, currentParams, "logdistance", log(start_dist), log(Dmin), log(Dmax), LALInferenceGetProcParamVal(commandLine,"--fixDist")?LALINFERENCE_PARAM_FIXED:LALINFERENCE_PARAM_LINEAR);
   } else {
     LALInferenceRegisterUniformVariableREAL8(state, currentParams, "distance", start_dist, Dmin, Dmax, LALInferenceGetProcParamVal(commandLine,"--fixDist")?LALINFERENCE_PARAM_FIXED:LALINFERENCE_PARAM_LINEAR);
