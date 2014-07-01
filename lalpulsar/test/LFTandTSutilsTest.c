@@ -233,7 +233,7 @@ test_XLALSincInterpolateCOMPLEX8TimeSeries ( void )
       times_out->data[j] = t_j;
     } // for j < numSamplesOut
 
-  XLAL_CHECK ( XLALSincInterpolateCOMPLEX8TimeSeries ( &(tsOut->data), times_out, tsIn, Dterms ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK ( XLALSincInterpolateCOMPLEX8TimeSeries ( tsOut->data, times_out, tsIn, Dterms ) == XLAL_SUCCESS, XLAL_EFUNC );
   XLALDestroyREAL8Vector ( times_out );
 
   // ---------- check accuracy of interpolation

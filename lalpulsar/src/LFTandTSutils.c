@@ -966,7 +966,7 @@ XLALCheckVectorComparisonTolerances ( const VectorComparison *result,	///< [in] 
  * NOTE2: samples *outside* the original timespan are returned as 0
  */
 int
-XLALSincInterpolateCOMPLEX8TimeSeries ( COMPLEX8Vector **y_out,		///< [out] output series of interpolated y-values [alloc'ed or re-calloc'ed here]
+XLALSincInterpolateCOMPLEX8TimeSeries ( COMPLEX8Vector *y_out,		///< [out] output series of interpolated y-values [must be same size as t_out]
                                         const REAL8Vector *t_out,	///< [in] output time-steps to interpolate input to
                                         const COMPLEX8TimeSeries *ts_in,///< [in] regularly-spaced input timeseries
                                         UINT4 Dterms			///< [in] truncate sinc kernel sum to +-Dterms around max
@@ -975,18 +975,9 @@ XLALSincInterpolateCOMPLEX8TimeSeries ( COMPLEX8Vector **y_out,		///< [out] outp
   XLAL_CHECK ( y_out != NULL, XLAL_EINVAL );
   XLAL_CHECK ( t_out != NULL, XLAL_EINVAL );
   XLAL_CHECK ( ts_in != NULL, XLAL_EINVAL );
+  XLAL_CHECK ( y_out->length == t_out->length, XLAL_EINVAL );
 
   UINT4 numSamplesOut = t_out->length;
-
-  // make sure output vector is allocated and of the right size
-  if ( (*y_out) == NULL ) {
-    XLAL_CHECK ( ((*y_out) = XLALCreateCOMPLEX8Vector ( numSamplesOut )) != NULL, XLAL_EFUNC );
-  }
-  if ( ((*y_out)->length != numSamplesOut ) ) {
-    XLAL_CHECK ( ((*y_out)->data = XLALRealloc ( (*y_out)->data, numSamplesOut * sizeof((*y_out)->data[0]) )) != NULL, XLAL_ENOMEM );
-    (*y_out)->length = numSamplesOut;
-  }
-
   UINT4 numSamplesIn = ts_in->data->length;
   REAL8 dt = ts_in->deltaT;
   REAL8 tmin = XLALGPSGetREAL8 ( &(ts_in->epoch) );	// time of first bin in input timeseries
@@ -1000,7 +991,7 @@ XLALSincInterpolateCOMPLEX8TimeSeries ( COMPLEX8Vector **y_out,		///< [out] outp
       // samples outside of input timeseries are returned as 0
       if ( (t < 0) || (t > (numSamplesIn-1)*dt) )	// avoid any extrapolations!
         {
-          (*y_out)->data[l] = 0;
+          y_out->data[l] = 0;
           continue;
         }
 
@@ -1008,7 +999,7 @@ XLALSincInterpolateCOMPLEX8TimeSeries ( COMPLEX8Vector **y_out,		///< [out] outp
 
       if ( fabs ( t - jstar * dt ) < 1e-6 )	// avoid numerical problems near peak
         {
-          (*y_out)->data[l] = ts_in->data->data[jstar];	// known analytic solution for exact bin
+          y_out->data[l] = ts_in->data->data[jstar];	// known analytic solution for exact bin
           continue;
         }
 
@@ -1032,7 +1023,7 @@ XLALSincInterpolateCOMPLEX8TimeSeries ( COMPLEX8Vector **y_out,		///< [out] outp
           delta_j --;
         } // for j in [j* - Dterms, ... ,j* + Dterms]
 
-      (*y_out)->data[l] = y_l;
+      y_out->data[l] = y_l;
 
     } // for l < numSamplesOut
 
