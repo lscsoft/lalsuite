@@ -996,7 +996,7 @@ void PTMCMCOneStep(LALInferenceRunState *runState)
   proposedParams.head = NULL;
   proposedParams.dimension = 0;
 
-  runState->proposal(runState, &proposedParams);
+  runState->proposal(runState, runState->currentParams, &proposedParams);
   if (LALInferenceCheckVariable(runState->proposalArgs, "logProposalRatio"))
     logProposalRatio = *(REAL8*) LALInferenceGetVariable(runState->proposalArgs, "logProposalRatio");
 

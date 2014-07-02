@@ -1061,7 +1061,7 @@ UINT4 LALInferenceMCMCSamplePrior(LALInferenceRunState *runState)
       if (logLmin<thislogL) outOfBounds=0;
     }
     
-    runState->proposal(runState,&proposedParams);
+    runState->proposal(runState,runState->currentParams,&proposedParams);
     REAL8 logPriorNew=runState->prior(runState,&proposedParams);
     if(LALInferenceCheckVariable(runState->proposalArgs,"logProposalRatio"))
        logProposalRatio=*(REAL8 *)LALInferenceGetVariable(runState->proposalArgs,"logProposalRatio");

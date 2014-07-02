@@ -444,7 +444,7 @@ Arguments for each section follow:\n\n";
 	/* Call setupLivePointsArray() to populate live points structures */
 	LALInferenceSetupLivePointsArray(state);
 
-	LALInferenceSetupDefaultNSProposal(state,state->currentParams);
+	LALInferenceSetupDefaultNSProposal(state,state->currentParams,state->currentParams);
 	
 	/* write injection with noise evidence information from algorithm */
 	LALInferencePrintInjectionSample(state);

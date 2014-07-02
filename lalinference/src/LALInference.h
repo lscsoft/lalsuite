@@ -336,6 +336,7 @@ typedef void (*LALInferenceTemplateFunction) (struct tagLALInferenceIFOData *dat
  * jump proposal distributions
  */
 typedef void (*LALInferenceProposalFunction) (struct tagLALInferenceRunState *runState,
+	LALInferenceVariables *currentParams,
 	LALInferenceVariables *proposedParams);
 
 /**
