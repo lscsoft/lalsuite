@@ -2592,7 +2592,9 @@ void LALInferenceGlitchMorletReverseJump(LALInferenceRunState *runState, LALInfe
   UINT4 nmin = (UINT4)(*(REAL8 *)LALInferenceGetVariable(runState->priorArgs,"glitch_dim_min"));
   UINT4 nmax = (UINT4)(*(REAL8 *)LALInferenceGetVariable(runState->priorArgs,"glitch_dim_max"));
 
-  INT4 adapting = *(INT4*) LALInferenceGetVariable(runState->proposalArgs, "adapting");
+  INT4 adapting=1;
+  if(LALInferenceCheckVariable(runState->proposalArgs,"adapting"))
+    adapting=LALInferenceGetINT4Variable(runState->proposalArgs,"adapting");
 
   /* Choose which IFO */
   ifo = (UINT4)floor( gsl_rng_uniform(runState->GSLrandom)*(REAL8)(gsize->length) );
