@@ -24,12 +24,14 @@ check_PROGRAMS = \
 	TestXLALSimAddInjection
 TESTS = $(check_PROGRAMS) \
 	TestAllApproximants \
-    $(SWIGTESTS)
+	$(SWIGTESTS)
 
 # disable test programs
 # TestSpinTaylorT4Dynamics - memory issues?
 
-EXTRA_DIST =
+EXTRA_DIST = TestAllApproximants \
+	LALSimWaveformReference.py \
+	reviewed_waveforms.asc
 
 MOSTLYCLEANFILES =
 CLEANFILES = \

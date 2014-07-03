@@ -25,16 +25,17 @@ import unittest
 from optparse import OptionParser
 import ConfigParser
 import io
-import sys
+import sys, os
 
 NEW_DATA_STR = '######### NEW DATASET #############\n'
+DEFAULT_FILE = 'reviewed_waveforms.asc'
 
 usage = ('usage: %prog [options]\nChecks the waveform generation'
         + ' in LALSimulation against reference data.')
 
 parser = OptionParser(usage = usage)
 parser.add_option('-r', '--reference-file', action = 'store', type = 'string',
-        dest = 'reffilename', default = 'reviewed_waveforms.dat',
+        dest = 'reffilename', default = DEFAULT_FILE,
         metavar = "FILE", help = 'location of the file containing '
         + 'reference waveform data [default: %default]')
 parser.add_option('-t', '--tolerance', action = 'store', type = float,
@@ -183,7 +184,12 @@ class CheckReferenceWaveforms(unittest.TestCase):
 
 
 if __name__ == '__main__':
-    reffile = ReferenceFile(options.reffilename)
+    if options.reffilename == DEFAULT_FILE:
+        filepath = (os.path.dirname(os.path.abspath(__file__)))
+        absfilename = filepath + '/' + options.reffilename
+    else:
+        absfilename = options.reffilename
+    reffile = ReferenceFile(absfilename)
     allapprox = list(set([conf.get('approximant', 'approximant')
             for conf in reffile.dataset]))
 
