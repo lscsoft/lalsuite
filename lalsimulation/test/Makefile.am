@@ -22,12 +22,12 @@ check_PROGRAMS = \
 	TestPrecessWaveformEOBNR \
 	TestPhenomP \
 	TestXLALSimAddInjection
-TESTS = $(check_PROGRAMS) \
-	TestAllApproximants \
-	$(SWIGTESTS)
+TESTS = $(check_PROGRAMS)
 
 # disable test programs
 # TestSpinTaylorT4Dynamics - memory issues?
+#	TestAllApproximants \
+#	$(SWIGTESTS)
 
 EXTRA_DIST = TestAllApproximants \
 	LALSimWaveformReference.py \
