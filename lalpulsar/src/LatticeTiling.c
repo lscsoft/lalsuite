@@ -762,6 +762,20 @@ UINT8 XLALCountLatticePoints(
 
 }
 
+gsl_matrix* XLALLatticeBasisVectors(
+  const LatticeTiling* tiling
+  )
+{
+
+  // Check input
+  XLAL_CHECK_NULL(tiling != NULL, XLAL_EFAULT);
+  XLAL_CHECK_NULL(tiling->status > LT_S_INCOMPLETE, XLAL_EINVAL);
+
+  // Return 'phys_from_int', whose columns are the basis vectors of the lattice
+  return tiling->phys_from_int;
+
+}
+
 int XLALSetLatticeBound(
   LatticeTiling* tiling,
   const size_t dimension,

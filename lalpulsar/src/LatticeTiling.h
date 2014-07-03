@@ -134,6 +134,17 @@ UINT8 XLALCountLatticePoints(
   );
 
 ///
+/// Return a matrix whose columns are the basis vectors of the lattice.
+/// If no dimensions are tiled, NULL is returned.
+///
+#ifdef SWIG // SWIG interface directives
+SWIGLAL(RETURNS_PROPERTY(gsl_matrix*, XLALLatticeBasisVectors));
+#endif
+gsl_matrix* XLALLatticeBasisVectors(
+  const LatticeTiling* tiling			///< [in] Tiling state
+  );
+
+///
 /// Set a parameter-space bound on a dimension of the lattice tiling.
 /// The bound is described by a function \c func, and two data of length
 /// \c data_len, \c data_lower and \c data_upper, describing the lower
