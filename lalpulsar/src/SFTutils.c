@@ -1829,6 +1829,75 @@ XLALCopySFT ( SFTtype *dest, 		/**< [out] copied SFT (needs to be allocated alre
 
 } // XLALCopySFT()
 
+/**
+ * Extract an SFTVector from another SFTVector but only those timestamps matching
+ *
+ * Timestamps must be a subset of those sfts in the SFTVector or an error occurs
+ */
+SFTVector *
+XLALExtractSFTVectorWithTimestamps ( const SFTVector *sfts,                 /**< input SFTs */
+                                     const LIGOTimeGPSVector *timestamps    /**< timestamps */
+                                     )
+{
+  // check input sanity
+  XLAL_CHECK_NULL( sfts != NULL, XLAL_EINVAL);
+  XLAL_CHECK_NULL( timestamps != NULL, XLAL_EINVAL );
+  XLAL_CHECK_NULL( sfts->length >= timestamps->length, XLAL_EINVAL );
+
+  SFTVector *ret = NULL;
+  XLAL_CHECK_NULL( (ret = XLALCreateSFTVector(timestamps->length, 0)) != NULL, XLAL_EFUNC );
+
+  UINT4 indexOfInputSFTVector = 0;
+  UINT4 numberOfSFTsLoadedIntoOutputVector = 0;
+  for (UINT4 ii=0; ii<timestamps->length; ii++)
+    {
+      XLAL_CHECK_NULL( indexOfInputSFTVector < sfts->length, XLAL_FAILURE, "At least one timestamp is not in the range specified by the SFT vector" );
+
+      for (UINT4 jj=indexOfInputSFTVector; jj<sfts->length; jj++)
+        {
+        if ( XLALGPSCmp(&(sfts->data[jj].epoch), &(timestamps->data[ii])) == 0 )
+          {
+            indexOfInputSFTVector = jj+1;
+            XLAL_CHECK_NULL( XLALCopySFT(&(ret->data[ii]), &(sfts->data[jj])) == XLAL_SUCCESS, XLAL_EFUNC );
+            numberOfSFTsLoadedIntoOutputVector++;
+            break;
+          } // if SFT epoch matches timestamp epoch
+        } // for jj < sfts->length
+    } // for ii < timestamps->length
+
+  XLAL_CHECK_NULL( numberOfSFTsLoadedIntoOutputVector == ret->length, XLAL_FAILURE, "Not all timestamps were found in the input SFT vector" );
+
+  return ret;
+
+} // XLALExtractSFTVectorWithTimestamps
+
+/**
+ * Extract a MultiSFTVector from another MultiSFTVector but only those timestamps matching
+ *
+ * Timestamps in each LIGOTimeGPSVector must be a subset of those sfts in each SFTVector or an error occurs
+ */
+MultiSFTVector *
+XLALExtractMultiSFTVectorWithMultiTimestamps ( const MultiSFTVector *multiSFTs,                 /**< input SFTs */
+                                               const MultiLIGOTimeGPSVector *multiTimestamps    /**< timestamps */
+                                               )
+{
+  // check input sanity
+  XLAL_CHECK_NULL( multiSFTs != NULL, XLAL_EINVAL);
+  XLAL_CHECK_NULL( multiTimestamps != NULL, XLAL_EINVAL );
+
+  MultiSFTVector *ret = NULL;
+  XLAL_CHECK_NULL( (ret = XLALCalloc(1, sizeof(*ret))) != NULL, XLAL_ENOMEM );
+  XLAL_CHECK_NULL( (ret->data = XLALCalloc(multiSFTs->length, sizeof(*ret->data))) != NULL, XLAL_ENOMEM );
+  ret->length = multiSFTs->length;
+
+  for (UINT4 X=0; X<multiSFTs->length; X++)
+    {
+       XLAL_CHECK_NULL( (ret->data[X] = XLALExtractSFTVectorWithTimestamps(multiSFTs->data[X], multiTimestamps->data[X])) != NULL, XLAL_EFUNC );
+    }
+
+  return ret;
+
+} // XLALExtractMultiSFTVectorWithMultiTimestamps
 
 /**
  * Create a complete copy of an SFT vector
