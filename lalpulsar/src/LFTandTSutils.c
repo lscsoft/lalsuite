@@ -169,7 +169,7 @@ XLALSFTVectorToCOMPLEX8TimeSeries ( const SFTVector *sftsIn,        /**< [in] SF
   UINT4 numFreqBinsSFT = firstSFT->data->length;
   REAL8 dfSFT = firstSFT->deltaF;
   REAL8 Tsft = 1.0 / dfSFT;
-  REAL8 deltaT = Tsft / numFreqBinsSFT;	/* complex FFT: numSamplesSFT = numFreqBinsSFT */
+  REAL8 deltaT = Tsft / numFreqBinsSFT;	// complex FFT: numSamplesSFT = numFreqBinsSFT
   REAL8 f0SFT = firstSFT->f0;
 
   /* if the start and end input pointers are NOT NULL then determine start and time-span of the final long time-series */
@@ -220,12 +220,11 @@ XLALSFTVectorToCOMPLEX8TimeSeries ( const SFTVector *sftsIn,        /**< [in] SF
       SFTtype *thisSFT = &(sfts->data[n]);
 
       /* find bin in long timeseries corresponding to starttime of *this* SFT */
-      REAL8 offset_n = XLALGPSDiff ( &thisSFT->epoch, &start );
+      REAL8 offset_n = XLALGPSDiff ( &(thisSFT->epoch), &start );
       UINT4 bin0_n = lround ( offset_n / deltaT );	/* round to closest bin */
 
       REAL8 nudge_n = bin0_n * deltaT - offset_n;		/* rounding error */
       nudge_n = 1e-9 * round ( nudge_n * 1e9 );	/* round to closest nanosecond */
-
       /* nudge SFT into integer timestep bin if necessary */
       XLAL_CHECK_NULL ( XLALTimeShiftSFT ( thisSFT, nudge_n ) == XLAL_SUCCESS, XLAL_EFUNC  );
 
