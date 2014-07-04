@@ -43,9 +43,10 @@ check_PROGRAMS = \
 
 TESTS = \
 	LALInferenceTest \
-	LALInferencePriorTest \
 	LALInferenceKDTest \
 	$(XMLPRG)
+
+#	LALInferencePriorTest
 
 EXTRA_DIST =
 
