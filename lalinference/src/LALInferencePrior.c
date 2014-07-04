@@ -37,20 +37,6 @@ static double qInnerIntegrand(double M2, void *viData);
 static double etaInnerIntegrand(double M2, void *viData);
 static double outerIntegrand(double M1, void *voData);
 
-/* Return the log Prior for the glitch amplitude */
-REAL8 logGlitchAmplitudeDensity(REAL8 A, REAL8 Q, REAL8 f)
-{
-  REAL8 SNR;
-  /*
-  REAL8 PIterm = 0.5*LAL_2_SQRTPI*LAL_SQRT1_2;
-  */
-  REAL8 PIterm = LAL_2_SQRTPI*LAL_SQRT1_2;
-  REAL8 SNRPEAK = 5.0;
-
-  SNR = A*sqrt( (PIterm*Q/f) );
-  return log(SNR/(SNRPEAK*SNRPEAK))+(-SNR/SNRPEAK);
-}
-
 /* Return the log Prior of the variables specified, for the non-spinning/spinning inspiral signal case */
 REAL8 LALInferenceInspiralPrior(LALInferenceRunState *runState, LALInferenceVariables *params)
 {
@@ -1428,16 +1414,11 @@ LALInferenceVariableItem *item=params->head;
     char massRatioName[VARNAME_MAX];
     REAL8 norm=0.0;
 
-  UINT4 signalFlag=1;
-  if(LALInferenceCheckVariable(params, "signalModelFlag"))
-    signalFlag = *((UINT4 *)LALInferenceGetVariable(params, "signalModelFlag"));
-
   if (!S6PEpriorWarning) {
     S6PEpriorWarning = 1;
     fprintf(stderr, "S6PEpaper priors are being used. (in %s, line %d)\n", __FILE__, __LINE__);
   }
 
-  if(signalFlag){
     if(LALInferenceCheckVariable(params,"asym_massratio")){
       LALInferenceGetMinMaxPrior(priorParams, "asym_massratio", (void *)&massRatioMin, (void *)&massRatioMax);
       strcpy(massRatioName,"asym_massratio");
@@ -1445,7 +1426,6 @@ LALInferenceVariableItem *item=params->head;
       LALInferenceGetMinMaxPrior(priorParams, "massratio", (void *)&massRatioMin, (void *)&massRatioMax);
       strcpy(massRatioName,"massratio");
     }
-  }
     /* Check boundaries */
     for(;item;item=item->next)
     {
@@ -1749,32 +1729,7 @@ LALInferenceVariableItem *item=params->head;
           }
           logPrior+=prior;
         }
-        else if(!strcmp(item->name,"morlet_Amp"))
-        {
-          UINT4 nifo,nglitch;
-          // Get parameters for current glitch model
-          UINT4Vector *gsize   = *(UINT4Vector **) LALInferenceGetVariable(params, "glitch_size");
-
-          gsl_matrix *glitch_f = *(gsl_matrix **)LALInferenceGetVariable(params, "morlet_f0");
-          gsl_matrix *glitch_Q = *(gsl_matrix **)LALInferenceGetVariable(params, "morlet_Q");
-          gsl_matrix *glitch_A = *(gsl_matrix **)LALInferenceGetVariable(params, "morlet_Amp");
-
-          REAL8 Anorm = *(REAL8 *)LALInferenceGetVariable(priorParams,"glitch_norm");
-
-          REAL8 A,f,Q;
-          for(nifo=0; nifo<(UINT4)gsize->length; nifo++)
-          {
-            for(nglitch=0; nglitch<gsize->data[nifo]; nglitch++)
-            {
-              A = gsl_matrix_get(glitch_A,nifo,nglitch);
-              Q = gsl_matrix_get(glitch_Q,nifo,nglitch);
-              f = gsl_matrix_get(glitch_f,nifo,nglitch);
-
-              logPrior += logGlitchAmplitudeDensity(A*Anorm,Q,f);
-            }
-          }
-        }
-        else if(!strcmp(item->name,"morlet_f0" ) || !strcmp(item->name,"morlet_Q"  ) || !strcmp(item->name,"morlet_t0" ) || !strcmp(item->name,"morlet_phi") )
+        else if(!strcmp(item->name,"morlet_Amp") || !strcmp(item->name,"morlet_f0" ) || !strcmp(item->name,"morlet_Q"  ) || !strcmp(item->name,"morlet_t0" ) || !strcmp(item->name,"morlet_phi") )
         {
           REAL8 prior = 0.0;
           gsl_matrix *gparams = *((gsl_matrix **)(item->value));

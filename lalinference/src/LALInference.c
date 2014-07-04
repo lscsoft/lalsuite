@@ -280,9 +280,6 @@ void LALInferenceRemoveVariable(LALInferenceVariables *vars,const char *name)
   }
   if(!parent) vars->head=this->next;
   else parent->next=this->next;
-  if(this->type==LALINFERENCE_gslMatrix_t) gsl_matrix_free(*(gsl_matrix **)this->value);
-  if(this->type==LALINFERENCE_UINT4Vector_t) XLALDestroyUINT4Vector(*(UINT4Vector **)this->value);
-  if(this->type==LALINFERENCE_REAL8Vector_t) XLALDestroyREAL8Vector(*(REAL8Vector **)this->value);
   XLALFree(this->value);
   this->value=NULL;
   XLALFree(this);
