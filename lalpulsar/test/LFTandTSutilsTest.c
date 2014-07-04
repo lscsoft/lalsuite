@@ -1,4 +1,5 @@
 /*
+ * Copyright (C) 2014 Reinhard Prix
  * Copyright (C) 2009 Reinhard Prix
  *
  *  This program is free software; you can redistribute it and/or modify

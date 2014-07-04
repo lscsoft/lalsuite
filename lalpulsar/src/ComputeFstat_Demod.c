@@ -1,4 +1,5 @@
 //
+// Copyright (C) 2014 Reinhard Prix
 // Copyright (C) 2012, 2013, 2014 Karl Wette
 // Copyright (C) 2007, 2008, 2009, 2010, 2012 Bernd Machenschalk
 // Copyright (C) 2007 Chris Messenger
