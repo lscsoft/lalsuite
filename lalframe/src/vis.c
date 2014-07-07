@@ -293,12 +293,13 @@ void output_ts(const char *fname, REAL8TimeSeries *series)
     else if (strcasecmp(ext, "xml") == 0)
         xml_output_ts(fname, series);
     else { /* default is an ascii file */
-        double tt = XLALGPSGetREAL8(&series->epoch);
         size_t i;
         fp = fname ? fopen(fname, "w") : stdout;
         for (i = 0; i < series->data->length; ++i) {
-            double t = tt + i *series->deltaT;
-            fprintf(fp, "%.9f\t%.15g\n", t, series->data->data[i]);
+            char tstr[32];
+            LIGOTimeGPS t = series->epoch;
+            XLALGPSToStr(tstr, XLALGPSAdd(&t, i * series->deltaT));
+            fprintf(fp, "%s\t%.15g\n", tstr, series->data->data[i]);
         }
         if (fname)
             fclose(fp);
@@ -486,8 +487,9 @@ void xml_end_series(FILE *fp)
 
 void xml_put_gps(LIGOTimeGPS *epoch, FILE *fp)
 {
-    fprintf(fp, "\t\t<Time Type=\"GPS\" Name=\"epoch\">%.9f</Time>\n",
-        XLALGPSGetREAL8(epoch));
+    char tstr[32];
+    XLALGPSToStr(tstr, epoch);
+    fprintf(fp, "\t\t<Time Type=\"GPS\" Name=\"epoch\">%s</Time>\n", tstr);
     return;
 }
 void xml_put_f0(double f0, FILE *fp)

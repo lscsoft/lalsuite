@@ -32,6 +32,7 @@
 #include <lal/TimeSeries.h>
 #include <lal/LALSimSGWB.h>
 
+double srate = 16384.0; // sampling rate in Hertz
 double tstart;
 double duration;
 double flow = 10.0;
@@ -44,8 +45,8 @@ int parseargs(int argc, char **argv);
 
 int main(int argc, char *argv[])
 {
+	char tstr[32]; // string to hold GPS time -- 31 characters is enough
 	const double H0 = 0.72 * LAL_H0FAC_SI; // Hubble's constant in seconds
-	const double srate = 16384.0; // sampling rate in Hertz
 	const size_t length = 65536; // number of points in a segment
 	const size_t stride = length / 2; // number of points in a stride
 	size_t i, n;
@@ -70,12 +71,12 @@ int main(int argc, char *argv[])
 
 	XLALSimSGWB(seg, detectors, numDetectors, 0, OmegaGW, H0, rng); // first time to initilize
 	while (1) { // infinite loop
-		double t0 = XLALGPSGetREAL8(&seg[0]->epoch);
 		size_t j;
 		for (j = 0; j < stride; ++j, --n) { // output first stride points
+			LIGOTimeGPS t = seg[0]->epoch;
 			if (n == 0) // check if we're done
 				goto end;
-			printf("%.9f", t0 + j * seg[0]->deltaT);
+			printf("%s", XLALGPSToStr(tstr, XLALGPSAdd(&t, j * seg[0]->deltaT)));
 			for (i = 0; i < numDetectors; ++i)
 				printf("\t%e", seg[i]->data->data[j]);
 			printf("\n");
@@ -103,11 +104,12 @@ int parseargs( int argc, char **argv )
 			{ "virgo", no_argument, 0, 'V' },
 			{ "start-time", required_argument, 0, 's' },
 			{ "duration", required_argument, 0, 't' },
+			{ "sample-rate", required_argument, 0, 'r' },
 			{ "Omega0", required_argument, 0, 'W' },
 			{ "low-frequency", required_argument, 0, 'f' },
 			{ 0, 0, 0, 0 }
 		};
-	char args[] = "hGHLVs:t:W:f:";
+	char args[] = "hGHLVs:t:r:W:f:";
 	while (1) {
 		int option_index = 0;
 		int c;
@@ -144,6 +146,9 @@ int parseargs( int argc, char **argv )
 				break;
 			case 't': /* duration */
 				duration = atof(optarg);
+				break;
+			case 'r': /* sample-rate */
+				srate = atof(optarg);
 				break;
 			case 'W': /* Omega0 */
 				Omega0 = atof(optarg);
@@ -185,6 +190,7 @@ int usage( const char *program )
 	fprintf(stderr, "\t-V, --virgo                  \tinclude Virgo\n");
 	fprintf(stderr, "\t-s, --start-time GPSSTART    \tGPS start time (s)\n");
 	fprintf(stderr, "\t-t, --duration   DURATION    \t(required) duration of data to produce (s)\n");
+	fprintf(stderr, "\t-r, --sample-rate            \tsample rate (Hz) [16384]\n");
 	fprintf(stderr, "\t-W, --Omega0     OMEGA0      \t(required) flat spectral energy density\n");
 	fprintf(stderr, "\t-f, --low-frequency FLOW     \tlow frequency cutoff (Hz) (default = 10 Hz)\n");
 	return 0;
