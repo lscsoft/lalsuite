@@ -11,8 +11,9 @@
 
 #include <lal/LALSimBlackHoleRingdown.h>
 
+/* note: use double-precision variables, but demand single-precision accuracy */
 #define EPS LAL_REAL4_EPS
-#define TINY LAL_REAL8_MIN
+#define TINY LAL_REAL4_MIN
 #define MAXITER 16384
 
 #ifdef __GNUC__
