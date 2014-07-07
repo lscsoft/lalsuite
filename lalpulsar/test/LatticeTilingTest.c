@@ -67,7 +67,7 @@ static int CheckLatticeTiling(
   for (size_t i = 0; i < total; ++i) {
     gsl_vector_view point = gsl_matrix_column(templates, i);
     XLALNextLatticePoint(tiling, &point.vector);
-    XLAL_CHECK(XLALGetLatticePointCount(tiling) == i + 1, XLAL_EFAILED);
+    XLAL_CHECK(XLALLatticePointCount(tiling) == i + 1, XLAL_EFAILED);
   }
   XLAL_CHECK(XLALNextLatticePoint(tiling, NULL) < 0, XLAL_EFAILED);
   XLAL_CHECK(XLALRestartLatticeTiling(tiling) == XLAL_SUCCESS, XLAL_EFUNC);

@@ -736,7 +736,7 @@ void XLALDestroyLatticeTiling(
 
 }
 
-size_t XLALGetLatticeTotalDimensions(
+size_t XLALLatticeTotalDimensions(
   const LatticeTiling* tiling
   )
 {
@@ -748,7 +748,7 @@ size_t XLALGetLatticeTotalDimensions(
 
 }
 
-size_t XLALGetLatticeTiledDimensions(
+size_t XLALLatticeTiledDimensions(
   const LatticeTiling* tiling
   )
 {
@@ -761,7 +761,7 @@ size_t XLALGetLatticeTiledDimensions(
 
 }
 
-uint64_t XLALGetLatticePointCount(
+uint64_t XLALLatticePointCount(
   const LatticeTiling* tiling
   )
 {
