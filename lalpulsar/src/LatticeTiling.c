@@ -864,16 +864,16 @@ int XLALSetLatticeConstantBound(
   XLAL_CHECK(isfinite(bound2), XLAL_EINVAL);
 
   // Allocate memory
-  double* data_lower = XLALMalloc(sizeof(*data_lower));
+  const size_t data_len = sizeof(double);
+  double* data_lower = XLALMalloc(data_len);
   XLAL_CHECK(data_lower != NULL, XLAL_ENOMEM);
-  double* data_upper = XLALMalloc(sizeof(*data_lower));
+  double* data_upper = XLALMalloc(data_len);
   XLAL_CHECK(data_upper != NULL, XLAL_ENOMEM);
 
   // Set the parameter-space bound
   *data_lower = GSL_MIN(bound1, bound2);
   *data_upper = GSL_MAX(bound1, bound2);
-  XLAL_CHECK(XLALSetLatticeBound(tiling, dimension, ConstantBound,
-                                 sizeof(*data_lower), data_lower, data_upper) == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK(XLALSetLatticeBound(tiling, dimension, ConstantBound, data_len, data_lower, data_upper) == XLAL_SUCCESS, XLAL_EFUNC);
 
   return XLAL_SUCCESS;
 
