@@ -63,7 +63,7 @@ typedef enum tagLatticeType {
 typedef struct tagLatticeTiling LatticeTiling;
 
 ///
-/// Find the bounding box of the mismatch ellipses of a metric
+/// Compute the extent of the bounding box of the mismatch ellipses of a metric
 ///
 gsl_vector* XLALMetricEllipseBoundingBox(
   const gsl_matrix* metric,			///< [in] Metric to bound

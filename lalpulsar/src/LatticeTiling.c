@@ -158,7 +158,7 @@ static void LT_GetBounds(
 
   // Set default padding to metric ellipse bounding box in this dimension,
   // for tiled dimensions, otherwise zero for non-tiled dimensions
-  double lower_pad = bound->tiled ? gsl_vector_get(tiling->phys_bbox, dimension) : 0.0;
+  double lower_pad = 0.5 * gsl_vector_get(tiling->phys_bbox, dimension);
   double upper_pad = lower_pad;
 
   // Compute lower parameter space bound
@@ -485,7 +485,7 @@ gsl_vector* XLALMetricEllipseBoundingBox(
   // Compute bounding box, and reverse diagonal scaling
   for (size_t i = 0; i < n; ++i) {
     const double norm_i = gsl_matrix_get(metric, i, i);
-    const double bounding_box_i = sqrt(norm_i * max_mismatch * gsl_matrix_get(inverse, i, i));
+    const double bounding_box_i = 2.0 * sqrt(max_mismatch * gsl_matrix_get(inverse, i, i) / norm_i);
     gsl_vector_set(bounding_box, i, bounding_box_i);
   }
 
