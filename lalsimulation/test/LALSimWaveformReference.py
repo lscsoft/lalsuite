@@ -85,10 +85,10 @@ def generatePolarizationTest(datasets):
             names = self.paramnames[domain]
             parstring =' / '.join([name + ': '
                     + str(conf.get('parameters', name)) for name in names])
-            parDict = {p: self.paramtype[p](conf.get('parameters', p)) for p in conf.options('parameters')}
-            parDict['m1'] *= lal.LAL_MSUN_SI
-            parDict['m2'] *= lal.LAL_MSUN_SI
-            parDict['distance'] *= (1.e6 * lal.LAL_PC_SI)
+            parDict = dict([ (p, self.paramtype[p](conf.get('parameters', p)) ) for p in conf.options('parameters') ])
+            parDict['m1'] *= lal.MSUN_SI
+            parDict['m2'] *= lal.MSUN_SI
+            parDict['distance'] *= (1.e6 * lal.PC_SI)
 
             params = [parDict[name] for name in names]
             params.append(approx)
