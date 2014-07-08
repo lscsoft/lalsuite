@@ -1250,6 +1250,73 @@ int XLALRestartLatticeTiling(
 
 }
 
+gsl_matrix* XLALLatticeTilingSubset(
+  LatticeTiling* tiling,
+  size_t subset_dimension
+  )
+{
+
+  // Check input
+  XLAL_CHECK_NULL(tiling != NULL, XLAL_EFAULT);
+  XLAL_CHECK_NULL(tiling->status > LT_S_INCOMPLETE, XLAL_EFAILED);
+  const size_t n = tiling->dims;
+  const size_t tn = (tiling->tiled != NULL) ? tiling->tiled->size : 0;
+  XLAL_CHECK_NULL(0 < subset_dimension && subset_dimension <= n, XLAL_EINVAL);
+  const size_t subset_n = subset_dimension;
+
+  // Count how many tiled dimensions are in the subset dimensions
+  size_t subset_tn = 0;
+  for (size_t i = 0; i < subset_n; ++i) {
+    if (tiling->bounds[i].tiled) {
+      ++subset_tn;
+    }
+  }
+
+  // Save the total tiling count, since it will be destroyed by what follows
+  const UINT8 save_total_count = tiling->total_count;
+
+  // Restart the tiling, and iterate over all points
+  XLAL_CHECK_NULL(XLALRestartLatticeTiling(tiling) == XLAL_SUCCESS, XLAL_EFUNC);
+  while (XLALNextLatticePoint(tiling, NULL) >= 0) {
+
+    // In all dimensions higher than the subset dimension, skip to the very last point
+    for (size_t ti = subset_tn; ti < tn; ++ti) {
+      const int int_upper_ti = gsl_vector_int_get(tiling->int_upper, ti);
+      gsl_vector_int_set(tiling->int_point, ti, int_upper_ti);
+    }
+
+  }
+
+  // Allocate a matrix to hold the subset points; the tiling count
+  // will now hold the total number of points in the subset
+  gsl_matrix* GAMAT_NULL(subset_points, subset_n, tiling->total_count);
+
+  // Restart the tiling, and iterate over all points
+  XLAL_CHECK_NULL(XLALRestartLatticeTiling(tiling) == XLAL_SUCCESS, XLAL_EFUNC);
+  while (XLALNextLatticePoint(tiling, NULL) >= 0) {
+
+    // Copy the first 'subset_n' dimensions of each point to the subset matrix
+    for (size_t i = 0; i < subset_n; ++i) {
+      const double phys_point_i = gsl_vector_get(tiling->phys_point, i);
+      gsl_matrix_set(subset_points, i, tiling->count - 1, phys_point_i);
+    }
+
+    // In all dimensions higher than the subset dimension, skip to the very last point
+    for (size_t ti = subset_tn; ti < tn; ++ti) {
+      const int int_upper_ti = gsl_vector_int_get(tiling->int_upper, ti);
+      gsl_vector_int_set(tiling->int_point, ti, int_upper_ti);
+    }
+
+  }
+
+  // Restart the tiling, and restore the total tiling count
+  XLAL_CHECK_NULL(XLALRestartLatticeTiling(tiling) == XLAL_SUCCESS, XLAL_EFUNC);
+  tiling->total_count = save_total_count;
+
+  return subset_points;
+
+}
+
 int XLALRandomLatticePoints(
   const LatticeTiling* tiling,
   RandomParams* rng,

@@ -212,6 +212,16 @@ int XLALRestartLatticeTiling(
   );
 
 ///
+/// Return a subset of the lattice tiling, containing only up to the given
+/// dimension of each point, and only including unique points. If the given
+/// dimension is the total dimension, all points in the tiling are returned.
+///
+gsl_matrix* XLALLatticeTilingSubset(
+  LatticeTiling* tiling,			///< [in] Tiling state
+  size_t subset_dimension			///< [in] Number of dimensions of subset
+  );
+
+///
 /// Generate random points within the lattice tiling parameter space
 ///
 int XLALRandomLatticePoints(
