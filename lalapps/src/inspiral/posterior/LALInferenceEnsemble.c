@@ -145,9 +145,9 @@ void LALInferenceInitEnsemble(LALInferenceRunState *state) {
     } else {
         #pragma omp parallel for
         for (walker = 0; walker < nwalkers_per_thread; walker++) {
-            LALInferenceDrawApproxPrior(state, state->currentParamArray[walker]);
+            LALInferenceDrawApproxPrior(state, state->currentParamArray[walker], state->currentParamArray[walker]);
             while (state->prior(state, state->currentParamArray[walker]) <= -DBL_MAX)
-                LALInferenceDrawApproxPrior(state, state->currentParamArray[walker]);
+                LALInferenceDrawApproxPrior(state, state->currentParamArray[walker], state->currentParamArray[walker]);
         }
     }
 
@@ -496,6 +496,10 @@ void initializeMCMC(LALInferenceRunState *runState) {
     runState->currentParamArray = XLALMalloc(nwalkers_per_thread * sizeof(LALInferenceVariables*));
     for (walker = 0; walker < nwalkers_per_thread; walker++)
         runState->currentParamArray[walker] = LALInferenceInitCBCVariables(runState);
+
+    /* Have currentParams in runState point to the first parameter set, since currentParams
+     *   is often used to count dimensions, determine variable names, etc. */
+    runState->currentParams = runState->currentParamArray[0];
 
     /* Store flags to keep from checking the command line all the time */
     LALInferenceAddVariable(runState->algorithmParams,"verbose", &verbose,

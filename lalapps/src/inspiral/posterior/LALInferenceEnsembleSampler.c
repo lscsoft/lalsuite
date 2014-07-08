@@ -114,7 +114,7 @@ void walker_step(LALInferenceRunState *runState, INT4 walker) {
     LALInferenceVariables proposedParams;
     proposedParams.head = NULL;
     proposedParams.dimension = 0;
-    runState->proposal(runState, &proposedParams);
+    runState->proposal(runState, runState->currentParamArray[walker], &proposedParams);
 
     /* Get the probability of proposing the reverse jump */
     log_proposal_ratio =
