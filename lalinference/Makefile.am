@@ -22,10 +22,11 @@ SUBDIRS = \
 	debian \
 	include \
 	src \
+	swig \
 	python \
 	bin \
 	test \
-	swig
+	$(END_OF_LIST)
 
 user_environment = \
 	set $(PACKAGE)_PREFIX $(prefix); \

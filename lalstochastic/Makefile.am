@@ -23,8 +23,9 @@ SUBDIRS = \
 	debian \
 	include \
 	src \
+	swig \
 	test \
-	swig
+	$(END_OF_LIST)
 
 user_environment = \
 	set $(PACKAGE)_PREFIX $(prefix); \

@@ -26,8 +26,9 @@ SUBDIRS = \
 	include \
 	packages \
 	lib \
+	swig \
 	python \
-	swig
+	$(END_OF_LIST)
 
 user_environment = \
 	set $(PACKAGE)_PREFIX $(prefix); \
