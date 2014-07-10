@@ -29,7 +29,7 @@ swig_python_flags = $(swig_flags) -python -outdir python/ -O -builtin -globals g
 swig_python_pysource = python/$(PACKAGE).py
 swig_python_sources = swig_python.c
 swig_python_test = $(swig_test_runner) PYTHONPATH '$(abs_builddir)/python:$(abs_srcdir)/python:$(LAL_PYTHON_PATH)'
-swig_test_runner = $(SHELL) $(srcdir)/run_swig_tests.sh '$(LIBTOOL)' '$(swig_module_lal_libs)'
+swig_test_runner = $(SHELL) $(srcdir)/run_swig_tests.sh '$(LIBTOOL)' '$(LDADD)'
 
 BUILT_SOURCES =
 CLEANFILES =
@@ -73,7 +73,7 @@ nodist_octave_swiglal_la_SOURCES = $(swig_octave_sources)
 octave_swiglal_la_CPPFLAGS = $(swig_cppflags) $(SWIG_OCTAVE_CPPFLAGS)
 octave_swiglal_la_CXXFLAGS = $(SWIG_OCTAVE_CXXFLAGS)
 octave_swiglal_la_LDFLAGS = $(swig_ldflags) $(SWIG_OCTAVE_LDFLAGS)
-octave_swiglal_la_LIBADD = $(swig_module_lal_libs)
+octave_swiglal_la_LIBADD = $(LDADD)
 octave_swiglal_la_LIBTOOLFLAGS = $(swig_libtoolflags)
 
 all-local: swig-octave-all-local
@@ -111,7 +111,7 @@ nodist_python_swiglal_la_SOURCES = $(swig_python_sources)
 python_swiglal_la_CPPFLAGS = $(swig_cppflags) $(SWIG_PYTHON_CPPFLAGS)
 python_swiglal_la_CFLAGS = $(SWIG_PYTHON_CFLAGS)
 python_swiglal_la_LDFLAGS = $(swig_ldflags) $(SWIG_PYTHON_LDFLAGS)
-python_swiglal_la_LIBADD = $(swig_module_lal_libs)
+python_swiglal_la_LIBADD = $(LDADD)
 python_swiglal_la_LIBTOOLFLAGS = $(swig_libtoolflags)
 
 all-local: swig-python-all-local
