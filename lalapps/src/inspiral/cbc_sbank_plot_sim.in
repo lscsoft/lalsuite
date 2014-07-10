@@ -66,7 +66,7 @@ with H5File(fname, "r") as h5file:
     match = match[order]
 
     # extract columns of interest and apply row ordering
-    inj_arr = h5file["/sim_inspiral"]["mass1", "mass2", "spin1z", "spin2z"][inj_ind]
+    inj_arr = h5file["/sim_inspiral"]["mass1", "mass2", "spin1x", "spin1y", "spin1z", "spin2x", "spin2y", "spin2z", "inclination"][inj_ind]
     tmplt_arr = h5file["/sngl_inspiral"]["mass1", "mass2", "spin1z", "spin2z"][tmplt_ind]
 
     # extract waveforms
@@ -92,15 +92,33 @@ tmplt_tau0, tmplt_tau3 = m1m2_to_tau0tau3(tmplt_arr["mass1"], tmplt_arr["mass2"]
 tmplt_mchirp = compute_mchirp(tmplt_arr["mass1"], tmplt_arr["mass2"])
 inj_mchirp = compute_mchirp(inj_arr["mass1"], inj_arr["mass2"])
 
-# sim_inspiral tables don't have a chi column; which chi to use? Switch on sngl.
+#
+# compute effective/reduced spin parameter for templates
+#
 if tmplt_approx == "TaylorF2RedSpin":
     tmplt_chi = [SimInspiralTaylorF2ReducedSpinComputeChi(float(row["mass1"]), float(row["mass2"]), float(row["spin1z"]), float(row["spin2z"])) for row in tmplt_arr]
-    inj_chi = [SimInspiralTaylorF2ReducedSpinComputeChi(float(row["mass1"]), float(row["mass2"]), float(row["spin1z"]), float(row["spin2z"])) for row in inj_arr]
-elif tmplt_approx == "IMRPhenomB":
+elif tmplt_approx in ["IMRPhenomB", "IMRPhenomC", "IMRPhenomP"]:
     tmplt_chi = [SimIMRPhenomBComputeChi(float(row["mass1"]), float(row["mass2"]), float(row["spin1z"]), float(row["spin2z"])) for row in tmplt_arr]
-    inj_chi = [SimIMRPhenomBComputeChi(float(row["mass1"]), float(row["mass2"]), float(row["spin1z"]), float(row["spin2z"])) for row in inj_arr]
 else:
-    raise NotImplementedError("only know how to compute chi for TaylorF2RedSpin and IMRPhenomB")
+    raise NotImplementedError("Only know how to compute chi for TaylorF2RedSpin (reduced spin) and IMRPhenomB/C (effective spin) templates.")
+
+
+#
+# compute effective/reduced spin parameter for injections
+#
+if inj_approx == "TaylorF2RedSpin" or "SpinTaylorT5" in inj_approx: # reduced spin
+    inj_chi = [SimInspiralTaylorF2ReducedSpinComputeChi(float(row["mass1"]), float(row["mass2"]), float(row["spin1z"]), float(row["spin2z"])) for row in inj_arr]
+elif "SpinTaylorT4" in inj_approx: # reduced spin (requires coordinate transformation)
+    chi1 = [row["spin1x"] *np.sin(row["inclination"]) + row["spin1z"] *np.cos(row["inclination"]) for row in inj_arr]
+    chi2 = [row["spin2x"] *np.sin(row["inclination"]) + row["spin2z"] *np.cos(row["inclination"]) for row in inj_arr]
+    inj_chi = [SimIMRPhenomBComputeChi(float(row["mass1"]), float(row["mass2"]), s1z, s2z) for row, s1z, s2z in zip(inj_arr, chi1, chi2)]
+else: # default to effective spin
+    inj_chi = [SimIMRPhenomBComputeChi(float(row["mass1"]), float(row["mass2"]), float(row["spin1z"]), float(row["spin2z"])) for row in inj_arr]
+
+
+if "PhenomP" in inj_approx: # seriously wtf?
+    inj_chi *= np.cos(inj_arr["inclination"])
+
 
 smallest_match = match.min()
 
