@@ -777,6 +777,8 @@ XLALCompareCOMPLEX8Vectors ( VectorComparison *result,		///< [out] return compar
       COMPLEX8 y_i = y->data[i];
       REAL8 xAbs_i = cabs ( x_i );
       REAL8 yAbs_i = cabs ( y_i );
+      XLAL_CHECK ( isfinite ( xAbs_i ), XLAL_EFPINVAL, "non-finite element: x(%d) = %g + I %g\n", i, crealf(x_i), cimagf(x_i) );
+      XLAL_CHECK ( isfinite ( yAbs_i ), XLAL_EFPINVAL, "non-finite element: y(%d) = %g + I %g\n", i, crealf(y_i), cimagf(y_i) );
 
       REAL8 absdiff = cabs ( x_i - y_i );
       diff_L1 += absdiff;
@@ -852,6 +854,8 @@ XLALCompareREAL4Vectors ( VectorComparison *result,	///< [out] return comparison
     {
       REAL4 x_i = x->data[i];
       REAL4 y_i = y->data[i];
+      XLAL_CHECK ( isfinite ( x_i ), XLAL_EFPINVAL, "non-finite element: x(%d) = %g\n", i, x_i );
+      XLAL_CHECK ( isfinite ( y_i ), XLAL_EFPINVAL, "non-finite element: y(%d) = %g\n", i, y_i );
       REAL4 xAbs_i = fabs ( x_i );
       REAL4 yAbs_i = fabs ( y_i );
 
