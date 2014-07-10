@@ -1951,27 +1951,27 @@ REAL8 LALInferenceMarginalisedTimeLogLikelihood(LALInferenceVariables *currentPa
     dataPtr->loglikelihood = 0.0;
     chisquared = 0.0;
 
-    LALInferenceCopyVariables(currentParams, dataPtr->modelParams);
-    LALInferenceAddVariable(dataPtr->modelParams, "time", &desired_tc, LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_LINEAR);
-    if (margphi) {
-        double pi2 = M_PI / 2.0;
-        LALInferenceAddVariable(dataPtr->modelParams, "phase", &pi2, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR);
-    }
     
     /* Check to see if this buffer has already been filled with the signal.
      Different dataPtrs can share the same signal buffer to avoid repeated
      calls to template */
     if(!checkItemAndAdd((void *)(dataPtr->freqModelhPlus), generatedFreqModels))
-    {
-      templt(dataPtr);
-      if(XLALGetBaseErrno()==XLAL_FAILURE) /* Template generation failed in a known way, set -Inf likelihood */
-        return(-DBL_MAX);
-      
-      if (dataPtr->modelDomain == LAL_SIM_DOMAIN_TIME) {
-        /* TD --> FD. */
-        LALInferenceExecuteFT(dataPtr);
-      }
-    }
+	{
+			LALInferenceCopyVariables(currentParams, dataPtr->modelParams);
+			LALInferenceAddVariable(dataPtr->modelParams, "time", &desired_tc, LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_LINEAR);
+			if (margphi) {
+					double pi2 = M_PI / 2.0;
+					LALInferenceAddVariable(dataPtr->modelParams, "phase", &pi2, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR);
+			}
+			templt(dataPtr);
+			if(XLALGetBaseErrno()==XLAL_FAILURE) /* Template generation failed in a known way, set -Inf likelihood */
+					return(-DBL_MAX);
+
+			if (dataPtr->modelDomain == LAL_SIM_DOMAIN_TIME) {
+					/* TD --> FD. */
+					LALInferenceExecuteFT(dataPtr);
+			}
+	}
 
     /* Template is now in dataPtr->timeFreqModelhPlus and hCross */
 
