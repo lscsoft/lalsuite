@@ -26,11 +26,11 @@ from scipy.optimize import fsolve
 
 # local
 try:
-    from pylal.xlal.constants import LAL_PI, LAL_MTSUN_SI
     from glue.iterutils import choices
 except ImportError:
     raise ImportError("The sbank subpackage of lalinspiral depends on the glue and pylal packages.")
 
+from lal import PI, MTSUN_SI
 #
 # functions for converting between m1-m2 and tau0-tau3 coords
 #
@@ -40,25 +40,25 @@ def A0(flow):
     A0 is a conversion factor between tau0 and mchirp, defined in eqn
     B3 of the appendix of arxiv.org/abs/0706.4437
     '''
-    return 5./(256*(LAL_PI * flow)**(8./3)) # eqn B3
- 
+    return 5./(256*(PI * flow)**(8./3)) # eqn B3
+
 def A3(flow):
     '''
     A3 is a conversion factor between tau3 and tau0*M, defined in eqn
     B3 of the appendix of arxiv.org/abs/0706.4437
     '''
-    return LAL_PI/(8*(LAL_PI*flow)**(5./3)) # eqn B3
+    return PI/(8*(PI*flow)**(5./3)) # eqn B3
 
 def tau0tau3_to_m1m2(tau0, tau3, flow):
     '''
     Convert tau0-tau3 coordinates to m1-m2 coordinates.    
     '''
     # compute mtotal in seconds
-    mtotal = 5. / (32 * LAL_PI * LAL_PI * flow) * (tau3 / tau0)
+    mtotal = 5. / (32 * PI * PI * flow) * (tau3 / tau0)
     eta = ( A0(flow) / tau0 ) * mtotal**(-5./3)
 
     # convert to solar masses
-    mtotal /= LAL_MTSUN_SI
+    mtotal /= MTSUN_SI
     m1 = mtotal * (0.5 + (0.25 - eta)**0.5)
 
     return m1, mtotal - m1
@@ -68,8 +68,8 @@ def m1m2_to_tau0tau3(m1, m2, flow):
     Convert m1-m2 coordinates to tau0-tau3 coordinates.    
     '''
     # convert solar masses to seconds
-    m1_s = m1 * LAL_MTSUN_SI
-    m2_s = m2 * LAL_MTSUN_SI
+    m1_s = m1 * MTSUN_SI
+    m2_s = m2 * MTSUN_SI
 
     # compute mass-dependent terms
     mtotal = m1_s + m2_s

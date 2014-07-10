@@ -22,10 +22,10 @@ from operator import attrgetter
 
 try:
     from glue.iterutils import inorder, uniq
-    from pylal.xlal.constants import LAL_PI, LAL_MTSUN_SI
 except ImportError:
     raise ImportError("The sbank subpackage of lalinspiral depends on the glue and pylal packages.")
 
+from lal import PI, MTSUN_SI
 from lalinspiral import CreateSBankWorkspaceCache
 from lalinspiral.sbank.psds import get_neighborhood_ASD, get_neighborhood_PSD
 
@@ -168,7 +168,7 @@ def _find_neighborhood(tmplt_mcs, mc0, flow, dt0=0.25):
     chirp mass (mc0) within a tau0 difference of dt0 (seconds).
     tmplt_mcs should be a sequence of mchirp values in sorted order.
     """
-    tau0 = 5. * mc0 * LAL_MTSUN_SI / (256 * (LAL_PI * flow * mc0 * LAL_MTSUN_SI)**(8./3))
+    tau0 = 5. * mc0 * MTSUN_SI / (256 * (PI * flow * mc0 * MTSUN_SI)**(8./3))
     low = mc0 * (1 - 0.6 * dt0 / tau0)  # Taylor expand mchirp = (tau0/A0)**-0.6
     high = mc0 * (1 + 0.6 * dt0 / tau0)
     low_ind = bisect.bisect_left(tmplt_mcs, low)

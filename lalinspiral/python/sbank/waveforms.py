@@ -22,7 +22,7 @@ np.seterr(all="ignore")
 
 import lal
 import lalsimulation as lalsim
-from lal import LAL_MSUN_SI, LAL_MTSUN_SI, LAL_PC_SI, LAL_PI, CreateREAL8Vector, CreateCOMPLEX8FrequencySeries
+from lal import MSUN_SI, MTSUN_SI, PC_SI, PI, CreateREAL8Vector, CreateCOMPLEX8FrequencySeries
 from lalsimulation import SimInspiralTaylorF2RedSpinComputeNoiseMoments, SimInspiralTaylorF2RedSpinMetricChirpTimes
 from lalinspiral import InspiralSBankComputeMatch
 from lalinspiral.sbank.psds import get_neighborhood_PSD
@@ -103,11 +103,11 @@ def create_moments(df, flow, len_PSD):
     momK_12 = lal.CreateREAL8Vector(n)
     return (momI_0, momI_2, momI_3, momI_4, momI_5, momI_6, momI_7, momI_8, momI_9, momI_10, momI_11, momI_12, momI_13, momI_14, momI_15, momI_16, momJ_5, momJ_6, momJ_7, momJ_8, momJ_9, momJ_10, momJ_11, momJ_12, momJ_13, momJ_14, momK_10, momK_11, momK_12)
 
-LAL_PI_p5 = LAL_PI**5
+PI_p5 = PI**5
 def compute_chirptimes(mchirp, eta, chi, flow):
-    theta0 = (125. / 2. / (16. * LAL_PI * flow * mchirp * LAL_MTSUN_SI)**5)**(1./3)
-    theta3 = (16. * LAL_PI_p5 / 25. * theta0 * theta0 / (eta * eta * eta))**0.2
-    theta3s = 113. / (48 * LAL_PI) * chi * theta3
+    theta0 = (125. / 2. / (16. * PI * flow * mchirp * MTSUN_SI)**5)**(1./3)
+    theta3 = (16. * PI_p5 / 25. * theta0 * theta0 / (eta * eta * eta))**0.2
+    theta3s = 113. / (48 * PI) * chi * theta3
     return theta0, theta3, theta3s
 
 
@@ -209,9 +209,9 @@ class TaylorF2RedSpinTemplate(Template):
         self.bank = bank
 
         # derived quantities
-        self._f_final = 6**-1.5 / (LAL_PI * (m1 + m2) * LAL_MTSUN_SI)  # ISCO
+        self._f_final = 6**-1.5 / (PI * (m1 + m2) * MTSUN_SI)  # ISCO
         self._dur = lalsim.SimInspiralTaylorF2ReducedSpinChirpTime(\
-            bank.flow, m1 * LAL_MSUN_SI, m2 * LAL_MSUN_SI, chi, 7)
+            bank.flow, m1 * MSUN_SI, m2 * MSUN_SI, chi, 7)
         self._mchirp = compute_mchirp(m1, m2)
         self._eta = m1*m2/(m1+m2)**2
         self._theta0, self._theta3, self._theta3s = compute_chirptimes(self._mchirp, self._eta, self.chi, self.bank.flow)
@@ -238,8 +238,8 @@ class TaylorF2RedSpinTemplate(Template):
     def _compute_waveform(self, df, f_final):
 
         wf = lalsim.SimInspiralTaylorF2ReducedSpin(
-            0, df, self.m1 * LAL_MSUN_SI, self.m2 * LAL_MSUN_SI, self.chi,
-            self.bank.flow, 0, 1000000 * LAL_PC_SI, 7, 7)
+            0, df, self.m1 * MSUN_SI, self.m2 * MSUN_SI, self.chi,
+            self.bank.flow, 0, 1000000 * PC_SI, 7, 7)
         # have to resize wf to next pow 2 for FFT plan caching
         wf = lal.ResizeCOMPLEX16FrequencySeries( wf, 0, ceil_pow_2(wf.data.length) )
         return wf
@@ -314,8 +314,8 @@ class IMRPhenomBTemplate(Template):
 
     def _compute_waveform(self, df, f_final):
         return lalsim.SimIMRPhenomBGenerateFD(0, df,
-            self.m1 * LAL_MSUN_SI, self.m2 * LAL_MSUN_SI,
-            self.chi, self.bank.flow, f_final, 1000000 * LAL_PC_SI)
+            self.m1 * MSUN_SI, self.m2 * MSUN_SI,
+            self.chi, self.bank.flow, f_final, 1000000 * PC_SI)
 
     def _imrdur(self):
         """
@@ -323,8 +323,8 @@ class IMRPhenomBTemplate(Template):
         estimate for the length of a full IMR waveform.
         """
         return lalsim.SimInspiralTaylorF2ReducedSpinChirpTime(self.bank.flow,
-            self.m1 * LAL_MSUN_SI, self.m2 * LAL_MSUN_SI, self.chi,
-            7) + 1000 * (self.m1 + self.m2) * LAL_MTSUN_SI
+            self.m1 * MSUN_SI, self.m2 * MSUN_SI, self.chi,
+            7) + 1000 * (self.m1 + self.m2) * MTSUN_SI
 
     @classmethod
     def from_sim(cls, sim, bank):
@@ -357,8 +357,100 @@ class IMRPhenomCTemplate(IMRPhenomBTemplate):
 
     def _compute_waveform(self, df, f_final):
         return lalsim.SimIMRPhenomCGenerateFD(0, df,
-            self.m1 * LAL_MSUN_SI, self.m2 * LAL_MSUN_SI,
-            self.chi, self.bank.flow, f_final, 1000000 * LAL_PC_SI)
+            self.m1 * MSUN_SI, self.m2 * MSUN_SI,
+            self.chi, self.bank.flow, f_final, 1000000 * PC_SI)
+
+
+class PrecessingTemplate(Template):
+    """
+    A generic class for precessing templates. These models require the
+    full fifteen-dimensional parameter space to specify the observed
+    signal in the detector.
+    """
+    param_names = ("m1", "m2", "spin1x", "spin1y", "spin1z", "spin2x", "spin2y", "spin2z", "theta", "phi", "iota", "psi")
+    param_formats = ("%.2f","%.2f","%.2f","%.2f","%.2f","%.2f","%.2f","%.2f","%.2f","%.2f","%.2f","%.2f")
+    __slots__ = param_names + ("bank","_f_final","_dur","_mchirp")
+
+    def __init__(self, m1, m2, spin1x, spin1y, spin1z, spin2x, spin2y, spin2z, theta, phi, iota, psi, bank):
+
+        Template.__init__(self)
+        self.m1 = m1
+        self.m2 = m2
+        self.spin1x = spin1x
+        self.spin1y = spin1y
+        self.spin1z = spin1z
+        self.spin2x = spin2x
+        self.spin2y = spin2y
+        self.spin2z = spin2z
+        self.theta = theta
+        self.phi = phi
+        self.iota = iota
+        self.psi = psi
+        self.bank = bank
+
+        # derived quantities
+        self._mchirp = compute_mchirp(m1, m2)
+
+    @property
+    def params(self):
+        return tuple(getattr(self, attr) for attr in self.param_names)
+
+    @classmethod
+    def from_sim(cls, sim, bank):
+        # theta = polar angle wrt overhead
+        #       = pi/2 - latitude (which is 0 on the horizon)
+        return cls(sim.mass1, sim.mass2, sim.spin1x, sim.spin1y, sim.spin1z, sim.spin2x, sim.spin2y, sim.spin2z, np.pi/2 - sim.latitude, sim.longitude, sim.inclination, sim.polarization, bank)
+
+
+
+class IMRPhenomPTemplate(PrecessingTemplate):
+    """
+    IMRPhenomP precessing IMR model.
+    """
+
+    __slots__ = PrecessingTemplate.param_names + ("bank", "_chieff", "_chipre", "_f_final", "_dur", "_mchirp")
+
+    def __init__(self, m1, m2, spin1x, spin1y, spin1z, spin2x, spin2y, spin2z, theta, phi, iota, psi, bank):
+
+        PrecessingTemplate.__init__(self, m1, m2, spin1x, spin1y, spin1z, spin2x, spin2y, spin2z, theta, phi, iota, psi, bank)
+        # derived quantities
+        self._chieff = lalsim.SimIMRPhenomBComputeChi( self.m1, self.m2, self.spin1z, self.spin2z )
+        self._chipre = None # FIXME! What is the formula for this quantity?
+        self._f_final = spawaveform.imrffinal(m1, m2, self._chieff)
+        self._dur = self._imrdur()
+        # FIXME: is this ffinal and dur appropriate for PhenomP?
+
+
+    def _imrdur(self):
+        """
+        Ajith gave us the heuristic that chirp + 1000 M is a conservative
+        estimate for the length of a full IMR waveform.
+        """
+        return lalsim.SimInspiralTaylorF2ReducedSpinChirpTime(self.bank.flow,
+            self.m1 * MSUN_SI, self.m2 * MSUN_SI, self._chieff,
+            7) + 1000 * (self.m1 + self.m2) * MTSUN_SI
+
+    def _compute_waveform(self, df, f_final):
+
+        approx = lalsim.GetApproximantFromString( "IMRPhenomP" )
+        phi0 = 0  # what is phi0?
+        lmbda1 = lmbda2 = 0
+        ampO = 3
+        phaseO = 7 # are these PN orders correct for PhenomP?
+        hplus_fd, hcross_fd = lalsim.SimInspiralChooseFDWaveform(
+            phi0, df,
+            self.m1*MSUN_SI, self.m2*MSUN_SI,
+            self.spin1x, self.spin1y, self.spin1z, self.spin2x, self.spin2y, self.spin2z,
+            self.bank.flow, f_final,
+            self.bank.flow, # reference frequency, related to phi0. Is this the right input?
+            1e6*PC_SI, # irrelevant parameter for banks/banksims
+            self.iota,
+            lmbda1, lmbda2, # irrelevant parameters for BBH
+            None, None, # non-GR parameters
+            ampO, phaseO, approx)
+
+        # project onto detector
+        return project_hplus_hcross(hplus_fd, hcross_fd, self.theta, self.phi, self.psi)
 
 
 class PrecessingTemplate(Template):
@@ -488,8 +580,8 @@ class SEOBNRv1Template(Template):
         dt = 1. / sample_rate
         # get hplus
         hplus, hcross = lalsim.SimIMRSpinAlignedEOBWaveform(
-            0., dt, self.m1 * LAL_MSUN_SI, self.m2 * LAL_MSUN_SI,
-            self.bank.flow, 1e6*LAL_PC_SI, 0., self.spin1z, self.spin2z)
+            0., dt, self.m1 * MSUN_SI, self.m2 * MSUN_SI,
+            self.bank.flow, 1e6*PC_SI, 0., self.spin1z, self.spin2z)
         # zero-pad up to 1/df
         N = int(sample_rate / df)
         hplus = lal.ResizeREAL8TimeSeries(hplus, 0, N)
@@ -510,8 +602,8 @@ class SEOBNRv1Template(Template):
         Just using the estimate used for IMRPhenomB here.
         """
         return lalsim.SimInspiralTaylorF2ReducedSpinChirpTime(self.bank.flow,
-            self.m1 * LAL_MSUN_SI, self.m2 * LAL_MSUN_SI, self._chi,
-            7) + 1000 * (self.m1 + self.m2) * LAL_MTSUN_SI
+            self.m1 * MSUN_SI, self.m2 * MSUN_SI, self._chi,
+            7) + 1000 * (self.m1 + self.m2) * MTSUN_SI
 
     @classmethod
     def from_sim(cls, sim, bank):
@@ -574,8 +666,8 @@ class EOBNRv2Template(Template):
         dt = 1. / sample_rate
         # get hplus
         hplus, hcross = lalsim.SimIMREOBNRv2DominantMode(
-            0., dt, self.m1 * LAL_MSUN_SI, self.m2 * LAL_MSUN_SI,
-            self.bank.flow, 1e6*LAL_PC_SI, 0.)
+            0., dt, self.m1 * MSUN_SI, self.m2 * MSUN_SI,
+            self.bank.flow, 1e6*PC_SI, 0.)
         # zero-pad up to 1/df
         N = int(sample_rate / df)
         hplus = lal.ResizeREAL8TimeSeries(hplus, 0, N)
@@ -596,8 +688,8 @@ class EOBNRv2Template(Template):
         Just using the estimate used for IMRPhenomB here.
         """
         return lalsim.SimInspiralTaylorF2ReducedSpinChirpTime(self.bank.flow,
-            self.m1 * LAL_MSUN_SI, self.m2 * LAL_MSUN_SI, 0,
-            7) + 1000 * (self.m1 + self.m2) * LAL_MTSUN_SI
+            self.m1 * MSUN_SI, self.m2 * MSUN_SI, 0,
+            7) + 1000 * (self.m1 + self.m2) * MTSUN_SI
 
     @classmethod
     def from_sim(cls, sim, bank):
@@ -647,8 +739,8 @@ class SpinTaylorT4Template(Template):
         self.bank = bank
 
         # derived quantities
-        self._f_final = 6**-1.5 / (LAL_PI * (m1 + m2) * LAL_MTSUN_SI)  # ISCO
-        self._dur = lalsim.SimInspiralTaylorF2ReducedSpinChirpTime(bank.flow, m1 * LAL_MSUN_SI, m2 * LAL_MSUN_SI, lalsim.SimInspiralTaylorF2ReducedSpinComputeChi(self.m1*LAL_MSUN_SI,self.m2*LAL_MSUN_SI,self.s1z,self.s2z), 7)
+        self._f_final = 6**-1.5 / (PI * (m1 + m2) * MTSUN_SI)  # ISCO
+        self._dur = lalsim.SimInspiralTaylorF2ReducedSpinChirpTime(bank.flow, m1 * MSUN_SI, m2 * MSUN_SI, lalsim.SimInspiralTaylorF2ReducedSpinComputeChi(self.m1*MSUN_SI,self.m2*MSUN_SI,self.s1z,self.s2z), 7)
         self._mchirp = compute_mchirp(m1, m2)
 
     @property
@@ -666,11 +758,11 @@ class SpinTaylorT4Template(Template):
             0,				# GW phase at reference freq (rad)
             1,				# tail gauge term (default = 1)
             dt,				# sampling interval (s)
-            self.m1 * lal.LAL_MSUN_SI,	# mass of companion 1 (kg)
-            self.m2 * lal.LAL_MSUN_SI,	# mass of companion 2 (kg)
+            self.m1 * lal.MSUN_SI,	# mass of companion 1 (kg)
+            self.m2 * lal.MSUN_SI,	# mass of companion 2 (kg)
             self.bank.flow,			# start GW frequency (Hz)
             self.bank.flow,			# reference GW frequency at which phase is set (Hz)
-            1e6*LAL_PC_SI,			# distance of source (m)
+            1e6*PC_SI,			# distance of source (m)
             self.s1x,			# initial value of S1x
             self.s1y,			# initial value of S1y
             self.s1z,			# initial value of S1z
@@ -701,7 +793,7 @@ class SpinTaylorT4Template(Template):
         hoft = lal.ResizeREAL8TimeSeries(hoft, 0, N)
 
         # taper
-        lalsim.SimInspiralREAL8WaveTaper(hoft.data, lalsim.LAL_SIM_INSPIRAL_TAPER_STARTEND)
+        lalsim.SimInspiralREAL8WaveTaper(hoft.data, lalsim.SIM_INSPIRAL_TAPER_STARTEND)
 
         # create vector to hold output and plan
         htilde = lal.CreateCOMPLEX16FrequencySeries("h(f)", hoft.epoch, hoft.f0, df, lal.lalHertzUnit, int(N/2 + 1))
@@ -742,8 +834,8 @@ class SpinTaylorT5Template(Template):
         self.bank = bank
 
         # derived quantities
-        self._f_final = 6**-1.5 / (LAL_PI * (m1 + m2) * LAL_MTSUN_SI)  # ISCO
-        self._dur = lalsim.SimInspiralTaylorF2ReducedSpinChirpTime(bank.flow, m1 * LAL_MSUN_SI, m2 * LAL_MSUN_SI, lalsim.SimInspiralTaylorF2ReducedSpinComputeChi(self.m1*LAL_MSUN_SI,self.m2*LAL_MSUN_SI,self.s1z,self.s2z), 7)
+        self._f_final = 6**-1.5 / (PI * (m1 + m2) * MTSUN_SI)  # ISCO
+        self._dur = lalsim.SimInspiralTaylorF2ReducedSpinChirpTime(bank.flow, m1 * MSUN_SI, m2 * MSUN_SI, lalsim.SimInspiralTaylorF2ReducedSpinComputeChi(self.m1*MSUN_SI,self.m2*MSUN_SI,self.s1z,self.s2z), 7)
         self._mchirp = compute_mchirp(m1, m2)
 
     @property
@@ -759,10 +851,10 @@ class SpinTaylorT5Template(Template):
         hplus, hcross = lalsim.SimInspiralSpinTaylorT5(
             0,				# GW phase at reference freq (rad)
             dt,				# sampling interval (s)
-            self.m1 * lal.LAL_MSUN_SI,	# mass of companion 1 (kg)
-            self.m2 * lal.LAL_MSUN_SI,	# mass of companion 2 (kg)
+            self.m1 * lal.MSUN_SI,	# mass of companion 1 (kg)
+            self.m2 * lal.MSUN_SI,	# mass of companion 2 (kg)
             self.bank.flow,			# start GW frequency (Hz)
-            1e6*LAL_PC_SI,			# distance of source (m)
+            1e6*PC_SI,			# distance of source (m)
             self.s1x,			# initial value of S1x
             self.s1y,			# initial value of S1y
             self.s1z,			# initial value of S1z
