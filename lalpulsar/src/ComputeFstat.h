@@ -256,7 +256,7 @@ typedef struct tagFstatResults {
   /// This array should not be accessed if #whatWasComputed & FSTATQ_PARTS_PER_DET is false.
 #ifdef SWIG // SWIG interface directives
   SWIGLAL(ARRAY_1D_PTR_1D(FstatResults, COMPLEX8, FaPerDet, UINT4, numDetectors, numFreqBins));
-  SWIGLAL(ARRAY_1D_PTR_1D(FstatResults, COMPLEX8, FaPerDet, UINT4, numDetectors, numFreqBins));
+  SWIGLAL(ARRAY_1D_PTR_1D(FstatResults, COMPLEX8, FbPerDet, UINT4, numDetectors, numFreqBins));
 #endif // SWIG
   COMPLEX8 *FaPerDet[PULSAR_MAX_DETECTORS];
   COMPLEX8 *FbPerDet[PULSAR_MAX_DETECTORS];
