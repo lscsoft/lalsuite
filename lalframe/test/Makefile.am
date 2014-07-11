@@ -1,5 +1,4 @@
 TEST_CPPFLAGS = -DTEST_DATA_DIR='"$(abs_srcdir)/"'
-LDADD = $(top_builddir)/src/liblalframe.la
 
 FRAMEFILES = \
 	F-TEST-600000000-60.gwf \

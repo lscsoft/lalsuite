@@ -1,4 +1,3 @@
-LDADD =
 BUILT_SOURCES =
 include $(top_srcdir)/gnuscripts/lalapps.am
 

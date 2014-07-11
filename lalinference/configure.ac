@@ -193,6 +193,9 @@ AS_IF(
 # add gcc specific flags
 LALSUITE_ADD_GCC_FLAGS
 
+# link any executables against LALInference library
+AC_SUBST([LDADD], ["\$(top_builddir)/src/liblalinference.la"])
+
 # add extra preprocessor flags
 AM_CPPFLAGS="\$(TEST_CPPFLAGS) ${AM_CPPFLAGS}"
 AM_CPPFLAGS="-DPKG_DATA_DIR='\"\$(pkgdatadir)/\"' ${AM_CPPFLAGS}"

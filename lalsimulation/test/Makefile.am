@@ -1,5 +1,4 @@
 TEST_CPPFLAGS = -DTEST_DATA_DIR='"$(abs_srcdir)/"'
-LDADD = $(top_builddir)/src/liblalsimulation.la
 
 if HAVE_OPENMP
 OPENMPPROGRAMS = TestOpenMP

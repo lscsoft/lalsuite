@@ -1,5 +1,4 @@
 TEST_CPPFLAGS = -DTEST_DATA_DIR='"$(abs_srcdir)/"'
-LDADD = $(top_builddir)/src/liblalpulsar.la
 
 check_PROGRAMS = \
 	LALBarycenterTest \

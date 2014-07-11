@@ -345,6 +345,9 @@ AM_CONDITIONAL([QTHREAD],[test x$qthread = xtrue])
 # add gcc specific flags --- must be done at end or tests will break!
 LALSUITE_ADD_GCC_FLAGS
 
+# link any executables against LAL and LALSupport libraries
+AC_SUBST([LDADD], ["\$(top_builddir)/lib/lal/liblal.la \$(top_builddir)/lib/lalsupport/src/liblalsupport.la"])
+
 # add extra preprocessor flags
 AM_CPPFLAGS="\$(TEST_CPPFLAGS) ${AM_CPPFLAGS}"
 AM_CPPFLAGS="-DPKG_DATA_DIR='\"\$(pkgdatadir)/\"' ${AM_CPPFLAGS}"

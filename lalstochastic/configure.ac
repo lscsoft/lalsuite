@@ -103,6 +103,9 @@ LALSUITE_USE_SWIG
 # add gcc specific flags
 LALSUITE_ADD_GCC_FLAGS
 
+# link any executables against LALStochastic library
+AC_SUBST([LDADD], ["\$(top_builddir)/src/liblalstochastic.la"])
+
 # add extra preprocessor flags
 AM_CPPFLAGS="\$(TEST_CPPFLAGS) ${AM_CPPFLAGS}"
 AM_CPPFLAGS="-DPKG_DATA_DIR='\"\$(pkgdatadir)/\"' ${AM_CPPFLAGS}"

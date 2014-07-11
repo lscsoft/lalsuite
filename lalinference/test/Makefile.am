@@ -1,7 +1,6 @@
 SUBDIRS = baseline_images
 
 TEST_CPPFLAGS = -DTEST_DATA_DIR='"$(abs_srcdir)/"'
-LDADD = $(top_builddir)/src/liblalinference.la
 
 if LALXML
 
