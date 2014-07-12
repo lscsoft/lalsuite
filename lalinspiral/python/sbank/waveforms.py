@@ -519,8 +519,8 @@ class IMRPhenomPTemplate(PrecessingTemplate):
         estimate for the length of a full IMR waveform.
         """
         return lalsim.SimInspiralTaylorF2ReducedSpinChirpTime(self.bank.flow,
-            self.m1 * LAL_MSUN_SI, self.m2 * LAL_MSUN_SI, self._chieff,
-            7) + 1000 * (self.m1 + self.m2) * LAL_MTSUN_SI
+            self.m1 * MSUN_SI, self.m2 * MSUN_SI, self._chieff,
+            7) + 1000 * (self.m1 + self.m2) * MTSUN_SI
 
     def _compute_waveform(self, df, f_final):
 
@@ -531,11 +531,11 @@ class IMRPhenomPTemplate(PrecessingTemplate):
         phaseO = 7 # are these PN orders correct for PhenomP?
         hplus_fd, hcross_fd = lalsim.SimInspiralChooseFDWaveform(
             phi0, df,
-            self.m1*LAL_MSUN_SI, self.m2*LAL_MSUN_SI,
+            self.m1*MSUN_SI, self.m2*MSUN_SI,
             self.spin1x, self.spin1y, self.spin1z, self.spin2x, self.spin2y, self.spin2z,
             self.bank.flow, f_final,
             self.bank.flow, # reference frequency, related to phi0. Is this the right input?
-            1e6*LAL_PC_SI, # irrelevant parameter for banks/banksims
+            1e6*PC_SI, # irrelevant parameter for banks/banksims
             self.iota,
             lmbda1, lmbda2, # irrelevant parameters for BBH
             None, None, # non-GR parameters
