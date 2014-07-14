@@ -280,7 +280,7 @@ void pulsar_model( BinaryPulsarParams params, LALInferenceIFOData *data ){
             REAL8 dphit;
             COMPLEX16 expp;
 
-            dphit = -fmod(dphi->data[i] - data->timeData->data->data[i], 1.);
+            dphit = fmod(dphi->data[i] - data->timeData->data->data[i], 1.);
 
             expp = cexp( LAL_TWOPI * I * dphit );
 
@@ -448,6 +448,10 @@ REAL8Vector *get_ssb_delay( BinaryPulsarParams pars, LIGOTimeGPSVector *datatime
   /* copy barycenter and ephemeris data */
   bary = (BarycenterInput*)XLALCalloc( 1, sizeof(BarycenterInput) );
   memcpy( &bary->site, detector, sizeof(LALDetector) );
+
+  bary->site.location[0] /= LAL_C_SI;
+  bary->site.location[1] /= LAL_C_SI;
+  bary->site.location[2] /= LAL_C_SI;
 
   bary->alpha = pars.ra;
   bary->delta = pars.dec;
