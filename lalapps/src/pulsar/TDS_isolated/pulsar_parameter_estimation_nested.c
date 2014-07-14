@@ -145,6 +145,9 @@ LALInference tools */
 #include "ppe_likelihood.h"
 #include "ppe_testing.h"
 
+const char *const ensembleStretchFullName = "EnsembleStretchFull";
+const char *const ensembleWalkFullName = "EnsembleWalkFull";
+
 /** The maximum number of different detectors allowable. */
 #define MAXDETS 6
 
@@ -1976,7 +1979,7 @@ void initialisePrior( LALInferenceRunState *runState )
  */
 void initialiseProposal( LALInferenceRunState *runState ){
   ProcessParamsTable *ppt = NULL;
-  UINT4 covfrac = 0, defrac = 0, kdfrac = 0, freqfrac = 0;
+  UINT4 covfrac = 0, defrac = 0, kdfrac = 0, freqfrac = 0, esfrac = 0, ewfrac = 0;
   REAL8 temperature = 0.;
   const CHAR *defaultPropName = NULL;
   defaultPropName = XLALStringDuplicate( "none" );
@@ -1996,7 +1999,13 @@ void initialiseProposal( LALInferenceRunState *runState ){
   ppt = LALInferenceGetProcParamVal( runState->commandLine, "--freqBinJump" );
   if( ppt ) { freqfrac = atoi( ppt->value ); }
 
-  if( !covfrac && !defrac && !kdfrac ){
+  ppt = LALInferenceGetProcParamVal(runState->commandLine, "--ensembleStretch" );
+  if ( ppt ) { esfrac = atoi( ppt->value ); }
+
+  ppt = LALInferenceGetProcParamVal(runState->commandLine, "--ensembleWalk" );
+  if ( ppt ) { ewfrac = atoi( ppt->value ); }
+
+  if( !covfrac && !defrac && !kdfrac && !freqfrac && !ewfrac && !esfrac ){
     XLALPrintError("All proposal weights are zero!\n");
     XLAL_ERROR_VOID(XLAL_EFAILED);
   }
@@ -2032,6 +2041,15 @@ void initialiseProposal( LALInferenceRunState *runState ){
 
   if ( freqfrac ){
     LALInferenceAddProposalToCycle( runState, frequencyBinJumpName, &LALInferenceFrequencyBinJump, freqfrac );
+  }
+
+  /* Use ensemble moves */
+  if ( esfrac ){
+    LALInferenceAddProposalToCycle( runState, ensembleStretchFullName, &LALInferenceEnsembleStretchFull, esfrac );
+  }
+
+  if ( ewfrac ){
+    LALInferenceAddProposalToCycle( runState, ensembleWalkFullName, &LALInferenceEnsembleWalkFull, ewfrac );
   }
 
   LALInferenceRandomizeProposalCycle( runState );
