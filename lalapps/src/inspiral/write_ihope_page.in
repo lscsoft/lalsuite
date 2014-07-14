@@ -17,9 +17,12 @@ import glob
 import shutil
 import StringIO
 from optparse import *
-from glue  import markup
-from glue.ligolw import utils
+from glue import markup
+from glue import segments
+from glue.ligolw import ligolw
+from glue.ligolw import lsctables
 from glue.ligolw import table
+from glue.ligolw import utils
 from glue.ligolw.utils import print_tables
 from glue.markup import oneliner as e
 import ConfigParser
@@ -688,10 +691,10 @@ def write_datainfo(page,opts):
   # for each category, we loop over each ifo and create a table
   # with the time analysed.
   i=0
-  catStrings = ["CATEGORY_1_VETO_SEGS"]
+  catStrings = ["VETOTIME_CAT1"]
   categories = (hipecp.get('segments','veto-categories')).split(',')
   for num in categories:
-    catStrings.append("CATEGORY_" + str(num) + "_VETO_SEGS")
+    catStrings.append("VETOTIME_CAT" + str(num))
   for cat in (catStrings):
     vetSegs = get_segments_tag(cat)
     i=i+1
@@ -2041,7 +2044,7 @@ def get_segments_tag(tag):
   @type tag: string
   return: 
   """
-  # some variables
+  # variables for file location
   datadir = opts.datadir
   ifos = get_ifos()
   thisdata = {}
@@ -2049,23 +2052,37 @@ def get_segments_tag(tag):
   thisdata['segments'] = ['filename', 'duration(days)' ,'duration (s)']
 
   # the name of the files (except for the ifo)
-  this_tag  = '-' + tag + opts.txt_suffix
+  this_tag  = '-' + tag + '-' + opts.gps_start_time + '-' + opts.duration + '.xml'
 
   for ifo in ifos:
-    file = datadir +'/segments/' + ifo + this_tag
-    scifile = datadir+'/segments/'+ifo+'-SCIENCE_SEGMENTS'+opts.txt_suffix
-    if os.path.isfile(file) and os.path.isfile(scifile):
-      command = 'segexpr \'intersection(%s,%s)\' -include index,duration | awk \'{sum=sum+$4} END {print sum}\'' % (file,scifile)
-      output_seconds, status = \
-        make_external_call(command, False, opts.debug, True)
-      if output_seconds.rstrip():
-        thisdata[ifo] = [os.path.basename(file), str(float(output_seconds)/86400.0), output_seconds]
-      else:
-        thisdata[ifo] = [os.path.basename(file), '0', '0']
-    else: 
-      logText(logfile , 'File ' + file + ' and/or ' + scifile + ' does not exist. Cannot read segments!',"error")
+    # read segments from science segments xml file
+    scifile          = datadir + '/segments/' + ifo + '-SCIENCE_SEGMENTS-' + opts.gps_start_time + '-' + opts.duration + '.xml'
+    scifile_xmldoc, digest  = utils.load_fileobj(open(scifile, 'r'))
+    scifile_segtable = table.get_table(scifile_xmldoc, lsctables.SegmentTable.tableName)
+    scifile_seglist  = segments.segmentlist()
+    for seg in scifile_segtable:
+      endtime   = seg.end_time + seg.end_time_ns * 10**(-9)
+      starttime = seg.start_time + seg.start_time_ns * 10**(-9)
+      scifile_seglist.append(segments.segment(starttime, endtime))
+
+    # read segments from tag xml file
+    file                 = datadir + '/segments/' + ifo + this_tag
+    file_xmldoc, digest  = utils.load_fileobj(open(file, 'r'))
+    file_segtable        = table.get_table(file_xmldoc, lsctables.SegmentTable.tableName)
+    file_seglist         = segments.segmentlist()
+    for seg in file_segtable:
+      endtime   = seg.end_time + seg.end_time_ns * 10**(-9)
+      starttime = seg.start_time + seg.start_time_ns * 10**(-9)
+      file_seglist.append(segments.segment(starttime, endtime))
+
+    # find the intersection of science segments and tag segments
+    scifile_seglist &= file_seglist
+    ifotime = abs(scifile_seglist)
+    thisdata[ifo] = [os.path.basename(file),  str(float(ifotime)/86400.0), ifotime]
 
   return thisdata
+
+
 
 
 # ***************************************************************************

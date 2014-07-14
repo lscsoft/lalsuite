@@ -1,4 +1,4 @@
-#!/usr/bin/env @PYTHONPROG@
+#!@PYTHONPROG@
 
 ##############################################################################
 # import standard modules and append the lalapps prefix to the python path
@@ -138,7 +138,7 @@ try:
   do_cats = cp.get('pipeline', 'pipedown-cats')
   do_cats = do_cats.split(',')
 except:
-  do_cats = ['2','3','4']
+  do_cats = False
 
 # if logs directory not present, create it
 try:
@@ -808,6 +808,7 @@ for result_db in result_dbs_cache:
 
   for datatype in datatypes:
     print "\t\tfor %s..." % datatype
+
     # set file naming type
     type_prefix = tag
     type = '_'.join([ type_prefix, 'LOUDEST', datatype.upper(), 'EVENTS_BY', cp.get('printlc', 'ranking-stat').upper()])
