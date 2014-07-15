@@ -22,6 +22,8 @@ lalstochastic-user-env.sh
 lalstochastic-user-env.shell
 lalstochastic.spec
 libtool
+python/lalstochastic/__init__.py
+python/lalstochastic/git_version.py
 src/LALStochasticBuildInfo.c
 src/LALStochasticConfig.h
 src/LALStochasticVCSInfo.c

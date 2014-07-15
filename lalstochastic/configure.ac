@@ -12,6 +12,9 @@ AC_CONFIG_FILES([ \
   debian/Makefile \
   include/Makefile \
   include/lal/Makefile \
+  python/Makefile \
+  python/lalstochastic/Makefile \
+  python/lalstochastic/__init__.py \
   src/LALStochasticVCSInfo.c \
   src/LALStochasticVCSInfo.h \
   src/Makefile \

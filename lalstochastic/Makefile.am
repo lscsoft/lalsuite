@@ -24,6 +24,7 @@ SUBDIRS = \
 	include \
 	src \
 	swig \
+	python \
 	test \
 	$(END_OF_LIST)
 
