@@ -1,6 +1,10 @@
-bayestardir = $(pkgpythondir)/bayestar
+BUILT_SOURCES =
+MOSTLYCLEANFILES =
+include $(top_srcdir)/gnuscripts/lalsuite_python.am
 
-bayestar_PYTHON = \
+pymoduledir = $(pkgpythondir)/bayestar
+
+pymodule_PYTHON = \
 	__init__.py \
 	command.py \
 	decorator.py \
@@ -8,13 +12,14 @@ bayestar_PYTHON = \
 	fits.py \
 	ligolw.py \
 	ligolw_sky_map.py \
-	postprocess.py \
 	plot.py \
-	timing.py
+	postprocess.py \
+	timing.py \
+	$(END_OF_LIST)
 
 if HAVE_CHEALPIX
 if SWIG_BUILD_PYTHON
-bayestar_LTLIBRARIES = sky_map.la
+pymodule_LTLIBRARIES = sky_map.la
 sky_map_la_CPPFLAGS = $(AM_CPPFLAGS) $(SWIG_PYTHON_CPPFLAGS)
 sky_map_la_CFLAGS = $(SWIG_PYTHON_CFLAGS) -w
 sky_map_la_LDFLAGS = -shared -module -avoid-version

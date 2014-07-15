@@ -10,15 +10,15 @@ AC_CONFIG_FILES([ \
   lalinference-uninstalled.pc \
   Makefile \
   debian/Makefile \
-  bin/Makefile \
   include/Makefile \
   include/lal/Makefile \
   src/LALInferenceVCSInfo.c \
   src/LALInferenceVCSInfo.h \
   src/Makefile \
   python/Makefile \
-  python/__init__.py \
-  python/bayestar/Makefile \
+  python/lalinference/Makefile \
+  python/lalinference/__init__.py \
+  python/lalinference/bayestar/Makefile \
   swig/Makefile \
   test/Makefile \
 ])

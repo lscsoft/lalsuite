@@ -1,4 +1,4 @@
-#!@PYTHONPROG@
+#!@PYTHON@
 #
 # Copyright (C) 2013  Leo Singer
 #
