@@ -52,8 +52,8 @@ TESTS = \
 EXTRA_DIST = test_plot.py
 
 # FIXME: Run this as a regular unit test.
-# installcheck-local:
-# 	$(PYTHON) test_plot.py
+installcheck-local:
+	$(PYTHON) $(srcdir)/test_plot.py
 
 CLEANFILES = \
 	test_vot.xml \
