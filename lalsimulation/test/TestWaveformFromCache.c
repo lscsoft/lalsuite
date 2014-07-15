@@ -96,6 +96,13 @@ int main(void) {
     printf("Largest difference in plus polarization is: %.16g\n", plusdiff);
     printf("Largest difference in cross polarization is: %.16g\n\n", crossdiff);
 
+    XLALDestroyREAL8TimeSeries(hplus);
+    XLALDestroyREAL8TimeSeries(hcross);
+    XLALDestroyREAL8TimeSeries(hplusC);
+    XLALDestroyREAL8TimeSeries(hcrossC);
+    hplus = hcross = hplusC = hcrossC = NULL;
+
+
     // Generate another waveform via ChooseTDWaveform path
     s1 = clock();
     ret = XLALSimInspiralChooseTDWaveform(&hplus, &hcross, phiref2, dt, m1, m2,
@@ -136,6 +143,7 @@ int main(void) {
     XLALDestroyREAL8TimeSeries(hcross);
     XLALDestroyREAL8TimeSeries(hplusC);
     XLALDestroyREAL8TimeSeries(hcrossC);
+    hplus = hcross = hplusC = hcrossC = NULL;
 
 
     //
@@ -222,12 +230,13 @@ int main(void) {
     printf("Largest difference in plus polarization is: %.16g\n", plusdiff);
     printf("Largest difference in cross polarization is: %.16g\n\n", crossdiff);
 
-    XLALDestroySimInspiralWaveformCache(cache);
     XLALDestroyCOMPLEX16FrequencySeries(hptilde);
     XLALDestroyCOMPLEX16FrequencySeries(hctilde);
     XLALDestroyCOMPLEX16FrequencySeries(hptildeC);
     XLALDestroyCOMPLEX16FrequencySeries(hctildeC);
+    hptilde = hctilde = hptildeC = hctildeC = NULL;
 
+    XLALDestroySimInspiralWaveformCache(cache);
     LALCheckMemoryLeaks();
 
     return 0;
