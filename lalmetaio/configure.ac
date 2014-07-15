@@ -13,7 +13,8 @@ AC_CONFIG_FILES([ \
   include/Makefile \
   include/lal/Makefile \
   python/Makefile \
-  python/__init__.py \
+  python/lalmetaio/Makefile \
+  python/lalmetaio/__init__.py \
   src/LALMetaIOVCSInfo.c \
   src/LALMetaIOVCSInfo.h \
   src/Makefile \

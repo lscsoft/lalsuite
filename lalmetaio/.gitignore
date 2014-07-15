@@ -22,8 +22,8 @@ lalmetaio-user-env.sh
 lalmetaio-user-env.shell
 lalmetaio.spec
 libtool
-python/__init__.py
-python/git_version.py
+python/lalmetaio/__init__.py
+python/lalmetaio/git_version.py
 src/LALMetaIOBuildInfo.c
 src/LALMetaIOConfig.h
 src/LALMetaIOVCSInfo.c
