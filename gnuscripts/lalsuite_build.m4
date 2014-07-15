@@ -1,15 +1,7 @@
 # -*- mode: autoconf; -*-
 # lalsuite_build.m4 - top level build macros
 #
-# serial 86
-
-# empty Automake variable, useful for terminating \-delimited file lists, e.g.:
-# SOURCES = \
-#    file1.c \
-#    file2.c \
-#    file3.c \
-#    $(END_OF_LIST)
-AC_SUBST([END_OF_LIST],[])
+# serial 87
 
 # not present in older versions of pkg.m4
 m4_pattern_allow([^PKG_CONFIG(_(PATH|LIBDIR|SYSROOT_DIR|ALLOW_SYSTEM_(CFLAGS|LIBS)))?$])
