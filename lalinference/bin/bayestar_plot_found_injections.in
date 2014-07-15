@@ -53,6 +53,7 @@ import os
 import subprocess
 import numpy as np
 from glue.text_progress_bar import ProgressBar
+import lalinference.plot
 
 # Create progress bar.
 pb = ProgressBar()
@@ -133,100 +134,75 @@ for i, (bin_edge, subdir, title) in enumerate(zip(bin_edges, bin_names, bin_titl
     os.chdir(subdir)
 
     # Set up figure 1.
-    plt.figure(1, figsize=(4, 4))
-    plt.subplot(111, aspect=1)
-    plt.subplots_adjust(bottom=0.15)
-    plt.xlabel('searched posterior mass')
-    plt.ylabel('cumulative fraction of injections')
-    plt.title(title)
+    fig1 = plt.figure(1, figsize=(6, 6))
+    ax1 = fig1.add_subplot(111, projection='pp_plot')
+    fig1.subplots_adjust(bottom=0.15)
+    ax1.set_xlabel('searched posterior mass')
+    ax1.set_ylabel('cumulative fraction of injections')
+    ax1.set_title(title)
 
     # Set up figure 2.
-    plt.figure(2, figsize=(4, 3))
-    plt.xscale('log')
-    plt.subplots_adjust(bottom=0.15)
-    plt.xlabel('searched area (deg$^2$)')
-    plt.ylabel(histlabel)
-    plt.title(title)
+    fig2 = plt.figure(2, figsize=(6, 4.5))
+    ax2 = fig2.add_subplot(111)
+    fig2.subplots_adjust(bottom=0.15)
+    ax2.set_xscale('log')
+    ax2.set_xlabel('searched area (deg$^2$)')
+    ax2.set_ylabel(histlabel)
+    ax2.set_title(title)
 
     # Set up figure 3.
-    plt.figure(3, figsize=(4, 3))
-    plt.xscale('log')
-    plt.subplots_adjust(bottom=0.15)
-    plt.xlabel('angle between true location and mode of posterior')
-    plt.ylabel(histlabel)
-    plt.title(title)
+    fig3 = plt.figure(3, figsize=(6, 4.5))
+    ax3 = fig3.add_subplot(111)
+    ax3.set_xscale('log')
+    fig3.subplots_adjust(bottom=0.15)
+    ax3.set_xlabel('angle between true location and mode of posterior')
+    ax3.set_ylabel(histlabel)
+    ax3.set_title(title)
 
     # Set up figure 4.
-    plt.figure(4, figsize=(4, 3))
-    plt.xscale('log')
-    plt.subplots_adjust(bottom=0.15)
-    plt.xlabel('run time (s)')
-    plt.ylabel(histlabel)
+    fig4 = plt.figure(4, figsize=(6, 4.5))
+    ax4 = fig4.add_subplot(111)
+    ax4.set_xscale('log')
+    fig4.subplots_adjust(bottom=0.15)
+    ax4.set_xlabel('run time (s)')
+    ax4.set_ylabel(histlabel)
 
     # Plot a histogram from each dataset onto each of the 5 figures.
     for (data, label) in zip(datasets, labels):
         if len(data): # Skip if data is empty
-            plt.figure(1)
-            plt.plot(np.sort(data['searched_prob']), np.linspace(0, 1, len(data['searched_prob'])), label=label)
-            plt.figure(2)
-            plt.hist(data['searched_area'], histtype='step', label=label, bins=np.logspace(np.log10(min_searched_area), np.log10(max_searched_area), 20), cumulative=opts.cumulative, normed=opts.normed)
-            plt.figure(3)
-            plt.hist(data['offset'], histtype='step', label=label, bins=np.logspace(np.log10(min_offset), np.log10(max_offset), 20), cumulative=opts.cumulative, normed=opts.normed)
-            plt.figure(4)
+            ax1.add_series(data['searched_prob'], label=label)
+            ax2.hist(data['searched_area'], histtype='step', label=label, bins=np.logspace(np.log10(min_searched_area), np.log10(max_searched_area), 20), cumulative=opts.cumulative, normed=opts.normed)
+            ax3.hist(data['offset'], histtype='step', label=label, bins=np.logspace(np.log10(min_offset), np.log10(max_offset), 20), cumulative=opts.cumulative, normed=opts.normed)
             if np.any(np.isfinite(data['runtime'])):
-                plt.hist(data['runtime'], histtype='step', bins=np.logspace(np.log10(min_runtime), np.log10(max_runtime), 20), cumulative=opts.cumulative, normed=opts.normed)
+                ax4.hist(data['runtime'], histtype='step', bins=np.logspace(np.log10(min_runtime), np.log10(max_runtime), 20), cumulative=opts.cumulative, normed=opts.normed)
 
     # Finish and save plot 1.
     pb.update(i * 4)
-    plt.figure(1)
     # Only plot target confidence band if all datasets have the same number
     # of samples, because the confidence band depends on the number of samples.
+    ax1.add_diagonal()
     if len(nsamples) == 1:
         n, = nsamples
-        k = np.arange(0, n + 1)
-        p = k / n
-        ci_lo, ci_hi = scipy.stats.beta.interval(
-            0.01 * opts.pp_confidence_interval, k + 1, n - k + 1)
-        plt.fill_betweenx(p, ci_lo, ci_hi, color='lightgray', zorder=-2)
-        plt.plot(ci_lo, p, color='gray', linewidth=0.5, zorder=-1)
-        plt.plot(ci_hi, p, color='gray', linewidth=0.5, zorder=-1)
-        percent_sign = r'\%' if matplotlib.rcParams['text.usetex'] else '%'
-        label = 'target {0:g}{1:s}\nconfidence band'.format(
-            opts.pp_confidence_interval, percent_sign)
-        plt.annotate(label, xy=(1, 1), xycoords='axes fraction',
-            xytext=(0, 0), textcoords='offset points', annotation_clip=False,
-            horizontalalignment='right', verticalalignment='bottom',
-            arrowprops=dict(arrowstyle="->",
-                shrinkA=0, shrinkB=2, linewidth=0.5,
-                connectionstyle="angle,angleA=0,angleB=45,rad=0"))
-    plt.plot([0, 1], [0, 1], '--', color='black', linewidth=0.5)
-    plt.grid()
+        ax1.add_confidence_band(n, 0.01 * opts.pp_confidence_interval)
+    ax1.grid()
     if len(args) > 1:
-        plt.legend(loc='lower right')
-    plt.xlim(0, 1)
-    plt.ylim(0, 1)
-    plt.savefig('searched_prob.pdf')
-    plt.close()
+        ax1.legend(loc='lower right')
+    fig1.savefig('searched_prob.pdf')
 
     # Finish and save plot 2.
     pb.update(i * 4 + 1)
-    plt.figure(2)
-    plt.grid()
-    plt.savefig('searched_area_hist.pdf')
-    plt.close()
+    ax2.grid()
+    fig2.savefig('searched_area_hist.pdf')
 
     # Finish and save plot 3.
     pb.update(i * 4 + 2)
-    plt.figure(3)
-    plt.grid()
-    plt.savefig('offset_hist.pdf')
-    plt.close()
+    ax3.grid()
+    fig3.savefig('offset_hist.pdf')
 
     # Finish and save plot 4.
     pb.update(i * 4 + 3)
-    plt.figure(4)
-    plt.grid()
-    plt.savefig('runtime_hist.pdf')
+    ax4.grid()
+    fig4.savefig('runtime_hist.pdf')
     plt.close()
 
     # Go back to starting directory.
