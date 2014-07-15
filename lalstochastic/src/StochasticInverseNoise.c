@@ -18,7 +18,7 @@
 */
 
 /**
- * \author UTB Relativity Group; contact whelan@phys.utb.edu
+ * \author UTB Relativity Group; contact john.whelan@ligo.org
  * \addtogroup StochasticInverseNoise_c
  *
  * \brief Calculates the values of the calibrated and half-calibrated inverse

@@ -20,7 +20,7 @@
 /**
  * \addtogroup StochasticCrossCorrelation_h
  *
- * \author UTB Relativity Group; contact whelan@phys.utb.edu (original by S. Drasco)
+ * \author UTB Relativity Group; contact john.whelan@ligo.org (original by S. Drasco)
  *
  * \brief Provides prototype and error code information for the \ref StochasticCrossCorrelation_c.
  *

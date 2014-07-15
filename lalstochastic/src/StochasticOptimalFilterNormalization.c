@@ -18,7 +18,7 @@
 */
 
 /**
- * \author UTB Relativity Group; contact whelan@phys.utb.edu
+ * \author UTB Relativity Group; contact john.whelan@ligo.org
  * \addtogroup StochasticOptimalFilterNormalization_c
  *
  * \brief Calculates the normalization factor for the optimal filter and the

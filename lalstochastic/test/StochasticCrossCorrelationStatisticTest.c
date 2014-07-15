@@ -18,7 +18,7 @@
 */
 
 /**
- * \author UTB Relativity Group; contact whelan@phys.utb.edu (original by S. Drasco)
+ * \author UTB Relativity Group; contact john.whelan@ligo.org (original by S. Drasco)
  * \file
  * \ingroup StochasticCrossCorrelation_c
  *
