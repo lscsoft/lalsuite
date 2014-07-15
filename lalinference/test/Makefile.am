@@ -52,11 +52,14 @@ TESTS = \
 EXTRA_DIST = test_plot.py
 
 # FIXME: Run this as a regular unit test.
-#installcheck-local:
-#	$(PYTHON) $(srcdir)/test_plot.py
+installcheck-local:
+	PYTHONPATH=$(pyexecdir):$(PYTHONPATH) $(PYTHON) $(srcdir)/test_plot.py
 
 CLEANFILES = \
 	test_vot.xml \
+	test_result_images/pp_plot_default.png \
+	test_result_images/pp_plot_lines.png \
+	test_result_images/pp_plot_steps.png \
 	*.out \
 	*.dat \
 	*.xml
