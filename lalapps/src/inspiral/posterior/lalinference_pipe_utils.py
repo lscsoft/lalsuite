@@ -575,7 +575,8 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
     else:
         selected_events=None
     # No input file given, analyse the entire time stretch between gpsstart and gpsend
-    if self.config.has_option('input','analyse-all-time') and self.config.get('input','analyse-all-time')==True:
+    if self.config.has_option('input','analyse-all-time') and self.config.getboolean('input','analyse-all-time')==True:
+        print 'Setting up for analysis of continuous time stretch %f - %f'%(gpsstart,gpsend)
         seglen=self.config.getfloat('engine','seglen')
         if(self.config.has_option('input','segment-overlap')):
           overlap=self.config.getfloat('input','segment-overlap')
