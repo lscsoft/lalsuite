@@ -4,6 +4,7 @@
 *.o
 *.pc
 *.pyc
+*.pyo
 .deps
 .libs
 /_build/

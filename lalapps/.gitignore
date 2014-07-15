@@ -3,6 +3,8 @@
 *.lo
 *.log
 *.o
+*.pyc
+*.pyo
 .deps
 .libs
 /_build/

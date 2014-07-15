@@ -5,6 +5,8 @@
 *.log
 *.o
 *.pc
+*.pyc
+*.pyo
 .adoc
 .deps
 .dvi-dep
