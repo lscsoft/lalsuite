@@ -214,7 +214,7 @@ main(void)
   }
   fclose(fpr);
   /* Free the list, and exit. */
-  if (list != NULL) LALFree (list);
+  XLALDestroyREAL4VectorSequence(list);
   LALDDestroyVector(&status, &(shf.data) );
   LALCheckMemoryLeaks();
   return 0;
