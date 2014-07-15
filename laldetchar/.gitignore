@@ -12,10 +12,6 @@
 /laldetchar-*/
 Makefile
 Makefile.in
-bin/laldetchar-hveto
-bin/laldetchar-hveto-summary-page
-bin/laldetchar-segments-from-data
-bin/python_config.sed
 config.lt
 include/lal/*.h
 include/lal/*.i
@@ -26,8 +22,11 @@ laldetchar-user-env.sh
 laldetchar-user-env.shell
 laldetchar.spec
 libtool
-python/__init__.py
-python/git_version.py
+python/laldetchar-hveto
+python/laldetchar-hveto-summary-page
+python/laldetchar-segments-from-data
+python/laldetchar/__init__.py
+python/laldetchar/git_version.py
 src/LALDetCharBuildInfo.c
 src/LALDetCharConfig.h
 src/LALDetCharVCSInfo.c

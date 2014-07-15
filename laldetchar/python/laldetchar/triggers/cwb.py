@@ -245,7 +245,7 @@ def from_root(filename, columns=None, start=None, end=None, ifo=None,
 
 
 def get_ifos(root_event):
-    """Find the instrument set for this cWB `ROOT` tree event 
+    """Find the instrument set for this cWB `ROOT` tree event
 
     @param root_event
         a cWB `ROOT` tree event

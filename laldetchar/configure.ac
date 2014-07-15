@@ -16,11 +16,11 @@ AC_CONFIG_FILES([ \
   src/LALDetCharVCSInfo.h \
   src/Makefile \
   python/Makefile \
-  python/__init__.py \
-  python/triggers/Makefile \
-  python/hveto/Makefile \
+  python/laldetchar/Makefile \
+  python/laldetchar/__init__.py \
+  python/laldetchar/triggers/Makefile \
+  python/laldetchar/hveto/Makefile \
   swig/Makefile \
-  bin/Makefile \
   test/Makefile
 ])
 AM_INIT_AUTOMAKE([1.11 foreign subdir-objects color-tests parallel-tests])

@@ -1,4 +1,4 @@
-#!@PYTHONPROG@
+#!@PYTHON@
 #
 #  Copyright (C) 2013 Chris Pankow
 #
@@ -9,7 +9,7 @@
 #
 #  This program is distributed in the hope that it will be useful,
 #  but WITHOUT ANY WARRANTY; without even the implied warranty of
-#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
 #  GNU General Public License for more details.
 #
 #  You should have received a copy of the GNU General Public License
@@ -19,7 +19,7 @@
 #
 # Based on the reference implementation in MATLAB by Josh Smith, et al.
 """trigger based hierarchical veto"""
- 
+
 
 import sys
 import itertools
@@ -73,8 +73,8 @@ def process_options():
 	veto_settings.add_option( "--snr-thresh", action="append", help="Add an SNR threshold to use in veto round. Can be given multiple times for different values. WARNING: This will override the default settings, *not* append to them." )
 	veto_settings.add_option( "--time-window", action="append", help="Add a time window to use in veto round. Can be given multiple times for different values. WARNING: This will override the default settings, *not* append to them." )
 	veto_settings.add_option( "-S", "--min-ref-snr", type=float, default=8, help="Minimum SNR threshold to load a trigger in the reference channel." )
-	# FIXME: Strictly speaking the ignore list is required because I'm not 
-	# sure what the  function will do with out one?
+	# FIXME: Strictly speaking the ignore list is required because I'm not
+	# sure what the	 function will do with out one?
 	veto_settings.add_option( "-I", "--ignore-list", help="Text file, one channel per line with a list of channels to ignore when loading triggers." )
 	# FIXME:
 	#veto_settings.add_option( "-C", "--ignore-channel", action="append", help="Ignore these channels. Given several times, will ignore several channels. Do not prepend instrument. E.g. -C LSC-DARM_CTRL." )
@@ -117,7 +117,7 @@ def process_options():
 	if opts.ignore_list is None:
 		print >>sys.stderr, "Must provide a channel ignore list."
 		exit()
-	
+
 	return opts, args
 
 #
@@ -218,7 +218,7 @@ lalsegl = gl.lalseg_from_seglist( livesegs )
 chanlist = sorted(gl.get_chan_list( trig_seq ))
 print "Channels present:\n\t" + "\n\t".join(chanlist)
 
-# Preprocessing. Remove triggers which are outside the livetime segments or 
+# Preprocessing. Remove triggers which are outside the livetime segments or
 # below our minimum SNR threshold
 print "Length before prune: %d" % laldetchar.GetGSequenceLength( trig_seq )
 laldetchar.DetCharPruneTrigs( trig_seq, lalsegl, min_ref_chan_snr, None );
@@ -378,7 +378,7 @@ Round statistics:
 	# Plot the vetoed reference channel tringgers
 	if vetoed_trigs is not None or len(vetoed_trigs) != 0:
 		aux_trigs = filter(lambda sb: sb.channel == winner, vetoed_trigs)
-		pname = "hveto_round_%d_summary.png" % rnd 
+		pname = "hveto_round_%d_summary.png" % rnd
 		#breakout.breakout_plot( all_ref_trigs, aux_trigs, ref_chan, winner, livesegs, vetosegs, pname )
 
 	# Calculate the significance of each of the channels against the reference
@@ -391,7 +391,7 @@ Round statistics:
 			mu = twind_sub*cnt*ref_cnt/livetime
 			chansig[subrnd][chan] = laldetchar.DetCharHvetoSignificance( mu, coinc )
 
-	# If this isn't the first round, calculate the significance drop from 
+	# If this isn't the first round, calculate the significance drop from
 	# last round
 	if sigdrop is not None:
 		pu.plot_sigdrop( sigdrop, chansig[(snr_win, wind_win)], rnd )
@@ -405,7 +405,7 @@ Round statistics:
 	if sig < sig_stop_thresh:
 		break
 	else:
-		rnd +=  1
+		rnd +=	1
 
 # Final plots
 pyplot.figure()

@@ -24,7 +24,6 @@ SUBDIRS = \
 	src \
 	swig \
 	python \
-	bin \
 	test \
 	$(END_OF_LIST)
 

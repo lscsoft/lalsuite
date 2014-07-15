@@ -1,4 +1,4 @@
-#!@PYTHONPROG@
+#!@PYTHON@
 import sys
 import glob
 from optparse import OptionParser

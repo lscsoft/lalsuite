@@ -1,17 +1,11 @@
 BUILT_SOURCES =
 MOSTLYCLEANFILES =
-include $(top_srcdir)/gnuscripts/lalsuite_vcs_info.am
+include $(top_srcdir)/gnuscripts/lalsuite_python.am
 
-SUBDIRS = \
-	triggers \
-	hveto
+SUBDIRS = laldetchar
 
-pkgpython_PYTHON = \
-	__init__.py \
-	dqsegs.py \
-	git_version.py
-
-EXTRA_DIST = \
-	git_version.py
-
-vcs_info_sources = git_version.py
+pybin_SCRIPTS = \
+	laldetchar-hveto \
+	laldetchar-hveto-summary-page \
+	laldetchar-segments-from-data \
+	$(END_OF_LIST)

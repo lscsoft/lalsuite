@@ -1,4 +1,4 @@
-#!@PYTHONPROG@
+#!@PYTHON@
 #
 # Copyright (C) 2013 Chris Pankow
 #
@@ -163,7 +163,7 @@ for channel, opthresholds in channel_cond.iteritems():
 		invert = False
 	if opts.verbose:
 		print "Inverted? %s"% str(invert)
-				
+
 	seglist = segmentlist([])
 	for path in cache.pfnlist():
 		#
@@ -208,7 +208,7 @@ for channel, opthresholds in channel_cond.iteritems():
 # After recording segments, one can take the intersection (all must be on) or
 # union (any can be on)
 #
-# Possible enhancement: instead of giving all keys, give a user selection 
+# Possible enhancement: instead of giving all keys, give a user selection
 # corresponding to their demands
 if opts.intersection:
 	intersection = segmentlistdict(all_segs).intersection(all_segs.keys())

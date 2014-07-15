@@ -1,0 +1,18 @@
+BUILT_SOURCES =
+MOSTLYCLEANFILES =
+include $(top_srcdir)/gnuscripts/lalsuite_python.am
+
+pymoduledir = $(pkgpythondir)/triggers
+
+pymodule_PYTHON = \
+	__init__.py \
+	cwb.py \
+	daily_ihope.py \
+	excesspower.py \
+	kw.py \
+	omega.py \
+	omicron.py \
+	rate.py \
+	trigfind.py \
+	utils.py \
+	$(END_OF_LIST)

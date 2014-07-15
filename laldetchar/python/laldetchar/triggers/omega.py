@@ -191,7 +191,7 @@ def from_ascii(filename, columns=None, start=None, end=None,
     @param end
         maximum GPS time for returned triggers
     @param channel
-        name of the source data channel for these events 
+        name of the source data channel for these events
 
     @returns a LIGO_LW table containing the triggers
     """
@@ -412,4 +412,3 @@ def find_dmt_cache(start, end, ifo, check_files=False, **kwargs):
     out.sort(key=lambda e: e.path)
 
     return out
-
