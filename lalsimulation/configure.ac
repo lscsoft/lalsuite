@@ -16,7 +16,8 @@ AC_CONFIG_FILES([ \
   src/LALSimulationVCSInfo.h \
   src/Makefile \
   python/Makefile \
-  python/__init__.py \
+  python/lalsimulation/Makefile \
+  python/lalsimulation/__init__.py \
   swig/Makefile \
   test/Makefile
 ])

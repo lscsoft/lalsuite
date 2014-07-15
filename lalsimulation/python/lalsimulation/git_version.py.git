@@ -60,4 +60,3 @@ def check_match(foreign_id, onmismatch="raise"):
 
     # in the backtrace, show calling code
     warnings.warn(msg, UserWarning)
-
