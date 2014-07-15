@@ -13,11 +13,10 @@ check_PROGRAMS = \
 	StochasticInverseNoiseTest \
 	AstroOmegaTest \
 	SimulateSBTest \
-	SimulatePopcornTest
-TESTS = $(check_PROGRAMS)
+	SimulatePopcornTest \
+        OverlapReductionFunctionTest
 
-# disabled tests
-# OverlapReductionFunctionTest
+TESTS = $(check_PROGRAMS)
 
 StochasticCrossCorrelationStatisticTest_SOURCES = \
   StochasticCrossCorrelationStatisticTest.c CheckStatus.c
@@ -33,9 +32,8 @@ StochasticOptimalFilterNormalizationTest_SOURCES = \
   StochasticOptimalFilterNormalizationTest.c CheckStatus.c
 StochasticOmegaGWTest_SOURCES = \
   StochasticOmegaGWTest.c CheckStatus.c
-# test disabled
-#OverlapReductionFunctionTest_SOURCES = \
-#  OverlapReductionFunctionTest.c CheckStatus.c
+OverlapReductionFunctionTest_SOURCES = \
+  OverlapReductionFunctionTest.c CheckStatus.c
 StochasticInverseNoiseTest_SOURCES = \
   StochasticInverseNoiseTest.c CheckStatus.c
 SimulateSBTest_SOURCES = SimulateSBTest.c CheckStatus.c
