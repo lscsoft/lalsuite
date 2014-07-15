@@ -22,8 +22,8 @@ lalpulsar-user-env.sh
 lalpulsar-user-env.shell
 lalpulsar.spec
 libtool
-python/__init__.py
-python/git_version.py
+python/lalpulsar/__init__.py
+python/lalpulsar/git_version.py
 src/LALPulsarBuildInfo.c
 src/LALPulsarConfig.h
 src/LALPulsarVCSInfo.c

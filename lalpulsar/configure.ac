@@ -16,7 +16,8 @@ AC_CONFIG_FILES([ \
   src/LALPulsarVCSInfo.h \
   src/Makefile \
   python/Makefile \
-  python/__init__.py \
+  python/lalpulsar/Makefile \
+  python/lalpulsar/__init__.py \
   swig/Makefile \
   test/Makefile
 ])
