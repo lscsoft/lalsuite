@@ -206,6 +206,48 @@ XLALSimInspiralPNFlux_4PNCoeff(
 }
 
 static REAL8 UNUSED
+XLALSimInspiralPNFlux_4PNS1S2Coeff(
+    REAL8 eta)
+{
+    return -103./48./eta;
+}
+
+static REAL8 UNUSED
+XLALSimInspiralPNFlux_4PNS1S2LCoeff(
+    REAL8 eta)
+{
+    return 289./48./eta;
+}
+
+static REAL8 UNUSED
+XLALSimInspiralPNFlux_4PNQM2SCoeff(
+    REAL8 mByM)
+{
+    return -1./mByM/mByM;
+}
+
+static REAL8 UNUSED
+XLALSimInspiralPNFlux_4PNQM2SOCoeff(
+    REAL8 mByM)
+{
+    return 3./mByM/mByM;
+}
+
+static REAL8 UNUSED
+XLALSimInspiralPNFlux_4PNSelf2SCoeff(
+    REAL8 mByM)
+{
+    return 7./96./mByM/mByM;
+}
+
+static REAL8 UNUSED
+XLALSimInspiralPNFlux_4PNSelf2SOCoeff(
+    REAL8 mByM)
+{
+    return -1./96./mByM/mByM;
+}
+
+static REAL8 UNUSED
 XLALSimInspiralPNFlux_5PNCoeff(
 	REAL8 eta)
 {
@@ -506,6 +548,139 @@ XLALSimInspiralTaylorT2Phasing_7PNCoeff(
 {
 	return (77.096675/2.032128 + 37.8515/1.2096 * eta - 74.045/6.048 * eta*eta) * LAL_PI;
 }
+
+/*
+ * TaylorT2 derivatives dt/dv
+ */
+
+/* The expression for dt/dv has an extra factor of M not implemented here */
+static REAL8 UNUSED
+XLALSimInspiralTaylorT2dtdv_0PNCoeff(
+    REAL8 eta)
+{
+    return 5./(32.*eta);
+}
+
+static REAL8 UNUSED
+XLALSimInspiralTaylorT2dtdv_2PNCoeff(
+    REAL8 eta)
+{
+    return 743./336. + 11.*eta/4.;
+}
+
+static REAL8 UNUSED
+XLALSimInspiralTaylorT2dtdv_3PNCoeff(
+    REAL8 UNUSED eta)
+{
+    return -4.*LAL_PI;
+}
+
+static REAL8 UNUSED
+XLALSimInspiralTaylorT2dtdv_4PNCoeff(
+    REAL8 eta)
+{
+    return 3058673./1016064. + 5429.*eta/1008. + 617.*eta*eta/144.;
+}
+
+static REAL8 UNUSED
+XLALSimInspiralTaylorT2dtdv_5PNCoeff(
+    REAL8 eta)
+{
+    return (-7729./672.+13.*eta/8.)*LAL_PI;
+}
+
+static REAL8 UNUSED
+XLALSimInspiralTaylorT2dtdv_6PNCoeff(
+    REAL8 eta)
+{
+    return -10817850546611./93884313600. + 32.*LAL_PI*LAL_PI/3.
+            + 1712.*LAL_GAMMA/105.
+            + (3147553127./12192768. - 451.*LAL_PI*LAL_PI/48.)*eta
+            - 15211.*eta*eta/6912. + 25565.*eta*eta*eta/5184.
+            + 856.*log(16.)/105.;
+}
+
+/* The convention here is that this is the coefficient in front of v^6 log(v)
+ * in the dt/dv expansion, NOT the one proportional to v^6 log(16 v^2).
+ * Hence the term above containing log(16).
+ */
+static REAL8 UNUSED
+XLALSimInspiralTaylorT2dtdv_6PNLogCoeff(
+    REAL8 UNUSED eta)
+{
+    return 1712./105.;
+}
+
+static REAL8 UNUSED
+XLALSimInspiralTaylorT2dtdv_7PNCoeff(
+    REAL8 eta)
+{
+    return LAL_PI*(-15419335./1016064. -75703.*eta/6048. + 14809.*eta*eta/3024);
+}
+
+static REAL8 UNUSED
+XLALSimInspiralTaylorT2dtdv_3PNSOCoeff(
+    REAL8 mByM)
+{
+    return 19./6. + 25./mByM/4.;
+}
+
+static REAL8 UNUSED
+XLALSimInspiralTaylorT2dtdv_5PNSOCoeff(
+    REAL8 mByM)
+{
+    return -17.*mByM*mByM/4. + 5.*mByM + 1249./36. + 8349./mByM/224.;
+}
+
+static REAL8 UNUSED
+XLALSimInspiralTaylorT2dtdv_6PNSOCoeff(
+    REAL8 mByM)
+{
+    return LAL_PI*( -13. - 149./mByM/6.);
+}
+
+static REAL8 UNUSED
+XLALSimInspiralTaylorT2dtdv_7PNSOCoeff(
+    REAL8 mByM)
+{
+    const REAL8 mByMsq = mByM*mByM;
+    return 1069.*mByMsq*mByMsq/288. - 1741.*mByMsq*mByM/192. + 176383.*mByMsq/12096. + 707767.*mByM/3456. + 133100377./6096384. + 34195607./mByM/193536.;
+}
+
+/* At 2 PN there are several spin^2 terms; see arXiv:astro-ph/0504538
+ * The dt/dv spin^2 term at 2 PN is just -sigma (Eq. 9b-9d)
+ * The terms 4PNSS and 4PNSSL are spin1-spin1 terms, and also depend
+ * on qm_def, the dimensionless quadrupole-monopole deformation
+ * parameter (1 for BH, larger for NS
+ */
+static REAL8 UNUSED
+XLALSimInspiralTaylorT2dtdv_4PNS1S2Coeff(
+    REAL8 eta)
+{
+    return 247./48./eta;
+}
+
+static REAL8 UNUSED
+XLALSimInspiralTaylorT2dtdv_4PNS1S2LCoeff(
+    REAL8 eta)
+{
+    return -721./48./eta;
+}
+
+static REAL8 UNUSED
+XLALSimInspiralTaylorT2dtdv_4PNSSCoeff(
+    REAL8 mByM, REAL8 qm_def)
+{
+    return (5.*qm_def/2. - 7./96.)/mByM/mByM;
+}
+
+static REAL8 UNUSED
+XLALSimInspiralTaylorT2dtdv_4PNSSLCoeff(
+    REAL8 mByM, REAL8 qm_def)
+{
+    return (-15.*qm_def/2. + 1./96.)/mByM/mByM;
+}
+
 
 /*
  * Tidal correction coefficients to Phasing
