@@ -16,7 +16,8 @@ AC_CONFIG_FILES([ \
   src/LALBurstVCSInfo.h \
   src/Makefile \
   python/Makefile \
-  python/__init__.py \
+  python/lalburst/Makefile \
+  python/lalburst/__init__.py \
   swig/Makefile \
   test/Makefile
 ])

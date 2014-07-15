@@ -48,13 +48,13 @@
  * Find dR/dz given Gmu, alpha, f, and Gamma. This is a C function that was taken from cs_gamma.c
  * and modified so that it could be called from Python. The global variables
  * that the function used to use are now all passed through arguments.
- * 
+ *
  * Arguments:
  * Gmu, alpha, gamma: parameters calculated by the main program. See technical
  *  document for what they represent cosmologically.
  * f: the frequency that is passed to the main program with --frequency opt
  * Namp: The size of the data arrays. This is set when opening the data file
- * *zofA, *dRdz: 1D arrays of length Namp. See technical document for what 
+ * *zofA, *dRdz: 1D arrays of length Namp. See technical document for what
  *  they represent cosmologically.
  */
 /*****************************************************************************/
@@ -90,9 +90,9 @@ static PyObject *cs_gamma_finddRdz(PyObject *self, PyObject *args)
       /*double theta = pow((1+cosmofns.z[j]) * f * alpha * cosmofns.phit[j] / H0, -1.0/3.0);
 
       if (theta > 1.0)
-	  dRdz[j] = 0.0;
+          dRdz[j] = 0.0;
       else*/
-	  dRdz[j] = 0.5 * H0 * pow(f/H0,-2.0/3.0) * pow(alpha, -5.0/3.0) / (Gamma*Gmu) * pow(cosmofns.phit[j],-14.0/3.0) * cosmofns.phiV[j] * pow(1+cosmofns.z[j],-5.0/3.0);
+          dRdz[j] = 0.5 * H0 * pow(f/H0,-2.0/3.0) * pow(alpha, -5.0/3.0) / (Gamma*Gmu) * pow(cosmofns.phit[j],-14.0/3.0) * cosmofns.phiV[j] * pow(1+cosmofns.z[j],-5.0/3.0);
       if(gsl_isnan(dRdz[j])) {
         Py_DECREF(Numpy_dRdz);
         Numpy_dRdz = NULL;
@@ -134,8 +134,8 @@ static PyObject *cs_gamma_findzofA(PyObject *self, PyObject *args)
   cs_cosmo_functions_t cosmofns;
   double *fz,*z;
   double a;
-  gsl_interp *zofa_interp; 
-  gsl_interp_accel *acc_zofa = gsl_interp_accel_alloc(); 
+  gsl_interp *zofa_interp;
+  gsl_interp_accel *acc_zofa = gsl_interp_accel_alloc();
 
   if (!PyArg_ParseTuple(args, "ddO!", &Gmu, &alpha, &PyArray_Type, &Numpy_amp))
     return NULL;
@@ -156,9 +156,9 @@ static PyObject *cs_gamma_findzofA(PyObject *self, PyObject *args)
 
   zofa_interp = gsl_interp_alloc (gsl_interp_linear, cosmofns.n);
 
-  fz = calloc( cosmofns.n, sizeof( *fz ) ); 
-  z = calloc( cosmofns.n, sizeof( *z ) ); 
-  
+  fz = calloc( cosmofns.n, sizeof( *fz ) );
+  z = calloc( cosmofns.n, sizeof( *z ) );
+
   /* first compute the function that relates A and z */
   /* invert order; b/c fz is a monotonically decreasing func of z */
   for ( i = cosmofns.n-1 ; i >= 0; i-- )

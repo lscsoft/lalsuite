@@ -22,8 +22,8 @@ lalburst-user-env.sh
 lalburst-user-env.shell
 lalburst.spec
 libtool
-python/__init__.py
-python/git_version.py
+python/lalburst/__init__.py
+python/lalburst/git_version.py
 src/LALBurstBuildInfo.c
 src/LALBurstConfig.h
 src/LALBurstVCSInfo.c
