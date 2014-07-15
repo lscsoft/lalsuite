@@ -102,6 +102,7 @@
  * fprintf()
  * freopen()
  * fabs()
+ * fabsf()
  * \endcode
  *
  * ### Notes ###
@@ -605,9 +606,9 @@ main( int argc, char *argv[] )
               f, crealf(goodOutput.data->data[i]), cimagf(goodOutput.data->data[i]),
               crealf(expectedOutputDataData[i]), cimagf(expectedOutputDataData[i]));
      }
-     if (fabs(crealf(goodOutput.data->data[i]) - crealf(expectedOutputDataData[i]))
+     if (fabsf(crealf(goodOutput.data->data[i]) - crealf(expectedOutputDataData[i]))
          /* / expectedOutputDataData[0].re */> CZEROPADANDFFTTESTC_TOL
-         || fabs(cimagf(goodOutput.data->data[i]) - cimagf(expectedOutputDataData[i]))
+         || fabsf(cimagf(goodOutput.data->data[i]) - cimagf(expectedOutputDataData[i]))
          /* / expectedOutputDataData[0].re */> CZEROPADANDFFTTESTC_TOL)
      {
        printf("  FAIL: Valid data test\n");

@@ -109,6 +109,8 @@
  * XLALUnitAsString()
  * XLALUnitCompare()
  * LALCheckMemoryLeaks()
+ * fabs()
+ * fabsf()
  * \endcode
  *
  * ### Notes ###
@@ -775,8 +777,8 @@ int main(int argc, char *argv[])
      printf("1/PHW(0)=%g + %g i, should be 0\n",
             crealf(hwInvNoise.data->data[0]), cimagf(hwInvNoise.data->data[0]));
    }
-   if ( fabs(crealf(hwInvNoise.data->data[0])) > STOCHASTICINVERSENOISETESTC_TOL
-        || fabs(cimagf(hwInvNoise.data->data[0]))
+   if ( fabsf(crealf(hwInvNoise.data->data[0])) > STOCHASTICINVERSENOISETESTC_TOL
+        || fabsf(cimagf(hwInvNoise.data->data[0]))
 	> STOCHASTICINVERSENOISETESTC_TOL )
    {
      printf("  FAIL: Valid data test\n");
@@ -798,9 +800,9 @@ int main(int argc, char *argv[])
 	     f, crealf(hwInvNoise.data->data[i]), cimagf(hwInvNoise.data->data[i]),
 	     expectedReal, expectedImag);
     }
-    if (fabs(crealf(hwInvNoise.data->data[i]) - expectedReal)/expectedReal
+    if (fabsf(crealf(hwInvNoise.data->data[i]) - expectedReal)/expectedReal
 	> STOCHASTICINVERSENOISETESTC_TOL
-	|| fabs(cimagf(hwInvNoise.data->data[i]) - expectedImag)/expectedImag
+	|| fabsf(cimagf(hwInvNoise.data->data[i]) - expectedImag)/expectedImag
 	> STOCHASTICINVERSENOISETESTC_TOL)
     {
       printf("  FAIL: Valid data test\n");
@@ -885,7 +887,7 @@ int main(int argc, char *argv[])
      printf("1/P(0)=%g, should be 0\n",
             invNoise.data->data[0]);
    }
-   if ( fabs(invNoise.data->data[0]) > STOCHASTICINVERSENOISETESTC_TOL )
+   if ( fabsf(invNoise.data->data[0]) > STOCHASTICINVERSENOISETESTC_TOL )
    {
      printf("  FAIL: Valid data test\n");
      if (optVerbose)
@@ -904,7 +906,7 @@ int main(int argc, char *argv[])
       printf("1/P(%f Hz)=%g, should be %g\n",
 	     f, invNoise.data->data[i], expectedReal);
     }
-    if ( fabs(invNoise.data->data[i] - expectedReal)/expectedReal
+    if ( fabsf(invNoise.data->data[i] - expectedReal)/expectedReal
 	 > STOCHASTICINVERSENOISETESTC_TOL )
     {
       printf("  FAIL: Valid data test\n");

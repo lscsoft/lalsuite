@@ -114,7 +114,7 @@
  * printf()
  * fprintf()
  * freopen()
- * fabs()
+ * fabsf()
  * \endcode
  *
  * ### Notes ###
@@ -701,7 +701,7 @@ int main( int argc, char *argv[] )
   }
 
   if (optVerbose) printf("Y=%g, should be 0\n",output.value);
-  if (fabs(output.value)/STOCHASTICCROSSCORRELATIONSTATISTICTESTC_DELTAF
+  if (fabsf(output.value)/STOCHASTICCROSSCORRELATIONSTATISTICTESTC_DELTAF
       > STOCHASTICCROSSCORRELATIONSTATISTICTESTC_TOL)
   {
     printf("  FAIL: Valid data test #1\n");
@@ -784,7 +784,7 @@ int main( int argc, char *argv[] )
     printf("Y=%g, should be %g\n",output.value,
            STOCHASTICCROSSCORRELATIONSTATISTICTESTC_EXP2);
   }
-  if ( fabs(output.value-STOCHASTICCROSSCORRELATIONSTATISTICTESTC_EXP2)
+  if ( fabsf(output.value-STOCHASTICCROSSCORRELATIONSTATISTICTESTC_EXP2)
        / STOCHASTICCROSSCORRELATIONSTATISTICTESTC_EXP2
        > STOCHASTICCROSSCORRELATIONSTATISTICTESTC_TOL)
   {

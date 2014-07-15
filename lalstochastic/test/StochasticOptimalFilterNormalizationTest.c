@@ -128,7 +128,7 @@
  * printf()
  * fprintf()
  * freopen()
- * fabs()
+ * fabsf()
  * \endcode
  *
  * ### Notes ###
@@ -802,7 +802,7 @@ int main(int argc, char *argv[])
     printf("lambda=%g, should be %g\n", normOut.value,
            STOCHASTICOPTIMALFILTERNORMALIZATIONTESTC_LAMBDA1);
   }
-  if ( fabs(normOut.value
+  if ( fabsf(normOut.value
             - STOCHASTICOPTIMALFILTERNORMALIZATIONTESTC_LAMBDA1)
        / STOCHASTICOPTIMALFILTERNORMALIZATIONTESTC_LAMBDA1
        > STOCHASTICOPTIMALFILTERNORMALIZATIONTESTC_TOL )
@@ -851,7 +851,7 @@ int main(int argc, char *argv[])
     printf("sigma^2/T=%g, should be %g\n", varOut.value,
            STOCHASTICOPTIMALFILTERNORMALIZATIONTESTC_VARPERT1);
   }
-  if ( fabs(varOut.value
+  if ( fabsf(varOut.value
             - STOCHASTICOPTIMALFILTERNORMALIZATIONTESTC_VARPERT1)
        / STOCHASTICOPTIMALFILTERNORMALIZATIONTESTC_VARPERT1
        > STOCHASTICOPTIMALFILTERNORMALIZATIONTESTC_TOL )
@@ -928,7 +928,7 @@ int main(int argc, char *argv[])
     printf("lambda=%g, should be %g\n", normOut.value,
            STOCHASTICOPTIMALFILTERNORMALIZATIONTESTC_LAMBDA2);
   }
-  if ( fabs(normOut.value
+  if ( fabsf(normOut.value
             - STOCHASTICOPTIMALFILTERNORMALIZATIONTESTC_LAMBDA2)
        / STOCHASTICOPTIMALFILTERNORMALIZATIONTESTC_LAMBDA2
        > STOCHASTICOPTIMALFILTERNORMALIZATIONTESTC_TOL )
@@ -977,7 +977,7 @@ int main(int argc, char *argv[])
     printf("sigma^2/T=%g, should be %g\n", varOut.value,
            STOCHASTICOPTIMALFILTERNORMALIZATIONTESTC_VARPERT2);
   }
-  if ( fabs(varOut.value
+  if ( fabsf(varOut.value
             - STOCHASTICOPTIMALFILTERNORMALIZATIONTESTC_VARPERT2)
        / STOCHASTICOPTIMALFILTERNORMALIZATIONTESTC_VARPERT2
        > STOCHASTICOPTIMALFILTERNORMALIZATIONTESTC_TOL )
