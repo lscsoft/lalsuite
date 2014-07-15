@@ -2,7 +2,7 @@
 # lalsuite_swig.m4 - SWIG configuration
 # Author: Karl Wette, 2011--2014
 #
-# serial 60
+# serial 61
 
 AC_DEFUN([_LALSUITE_CHECK_SWIG_VERSION],[
   # $0: check the version of $1, and store it in ${swig_version}
@@ -197,7 +197,7 @@ AC_DEFUN([LALSUITE_USE_SWIG],[
         AS_IF([test "${swig_generate}" = true],[
           test -f "swig/${file}" || echo '#empty' > "swig/${file}"
         ],[test -f "${depfile}"],[
-          srcfilename=`${SED} -n -e '1{s/:.*$//p}' "${depfile}"`
+          srcfilename=`cat "${depfile}" | ${SED} -n -e '1p' | ${SED} -e 's/:.*$//'`
           srcfile="${srcdir}/swig/${srcfilename}"
           AS_IF([test -f "${srcfile}"],[
             touch "${srcfile}"
