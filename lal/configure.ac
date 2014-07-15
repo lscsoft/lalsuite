@@ -24,9 +24,10 @@ AC_CONFIG_FILES([ \
   lib/lalsupport/src/Makefile \
   lib/lalsupport/test/Makefile \
   python/Makefile \
-  python/__init__.py \
-  python/utils/Makefile \
-  python/spectrum/Makefile \
+  python/lal/Makefile \
+  python/lal/__init__.py \
+  python/lal/utils/Makefile \
+  python/lal/spectrum/Makefile \
   swig/Makefile \
   packages/Makefile \
   packages/std/Makefile \

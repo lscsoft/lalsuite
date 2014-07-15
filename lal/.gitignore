@@ -190,8 +190,8 @@ packages/utilities/test/ZCoarseGrainFrequencySeriesTest
 packages/vectorops/test/VectorIndexRangeTest
 packages/vectorops/test/VectorOpsTest
 packages/window/test/WindowTest
-python/__init__.py
-python/git_version.py
+python/lal/__init__.py
+python/lal/git_version.py
 swig/octave/
 swig/python/
 swig/swig_*
