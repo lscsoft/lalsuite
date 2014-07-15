@@ -22,8 +22,8 @@ lalinspiral-user-env.sh
 lalinspiral-user-env.shell
 lalinspiral.spec
 libtool
-python/__init__.py
-python/git_version.py
+python/lalinspiral/__init__.py
+python/lalinspiral/git_version.py
 src/Chisq_GPU.cpp
 src/LALInspiralBuildInfo.c
 src/LALInspiralConfig.h

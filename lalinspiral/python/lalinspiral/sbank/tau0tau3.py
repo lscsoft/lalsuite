@@ -51,7 +51,7 @@ def A3(flow):
 
 def tau0tau3_to_m1m2(tau0, tau3, flow):
     '''
-    Convert tau0-tau3 coordinates to m1-m2 coordinates.    
+    Convert tau0-tau3 coordinates to m1-m2 coordinates.
     '''
     # compute mtotal in seconds
     mtotal = 5. / (32 * PI * PI * flow) * (tau3 / tau0)
@@ -65,7 +65,7 @@ def tau0tau3_to_m1m2(tau0, tau3, flow):
 
 def m1m2_to_tau0tau3(m1, m2, flow):
     '''
-    Convert m1-m2 coordinates to tau0-tau3 coordinates.    
+    Convert m1-m2 coordinates to tau0-tau3 coordinates.
     '''
     # convert solar masses to seconds
     m1_s = m1 * MTSUN_SI

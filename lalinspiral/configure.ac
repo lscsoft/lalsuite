@@ -16,8 +16,9 @@ AC_CONFIG_FILES([ \
   src/LALInspiralVCSInfo.h \
   src/Makefile \
   python/Makefile \
-  python/__init__.py \
-  python/sbank/Makefile \
+  python/lalinspiral/Makefile \
+  python/lalinspiral/__init__.py \
+  python/lalinspiral/sbank/Makefile \
   swig/Makefile \
   test/Makefile
 ])
