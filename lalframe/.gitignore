@@ -22,8 +22,8 @@ lalframe-user-env.sh
 lalframe-user-env.shell
 lalframe.spec
 libtool
-python/__init__.py
-python/git_version.py
+python/lalframe/__init__.py
+python/lalframe/git_version.py
 src/LALFrameBuildInfo.c
 src/LALFrameConfig.h
 src/LALFrameVCSInfo.c

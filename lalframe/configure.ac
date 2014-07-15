@@ -16,8 +16,9 @@ AC_CONFIG_FILES([ \
   src/LALFrameVCSInfo.h \
   src/Makefile \
   python/Makefile \
-  python/__init__.py \
-  python/utils/Makefile \
+  python/lalframe/Makefile \
+  python/lalframe/__init__.py \
+  python/lalframe/utils/Makefile \
   swig/Makefile \
   test/Makefile
 ])
