@@ -54,7 +54,7 @@ class TestPlot(unittest.TestCase):
         # Re-initialize the random seed to make the unit test repeatable
         np.random.seed(0)
         self.fig = plt.figure(figsize=(3, 3), dpi=72)
-        self.ax = self.fig.add_subplot(111, projection= lalinference.plot.PPPlot)
+        self.ax = self.fig.add_subplot(111, projection='pp_plot')
         # self.ax = lalinference.plot.PPPlot(self.fig, [0.1, 0.1, 0.8, 0.8])
         # self.fig.add_axes(self.ax)
         self.p_values = np.arange(1, 20) / 20

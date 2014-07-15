@@ -600,7 +600,7 @@ class PPPlot(Axes):
 
     Example usage::
 
-        from lalinference.plot import PPPlot
+        import lalinference.plot
         from matplotlib import pyplot as plt
         import numpy as np
 
@@ -610,7 +610,7 @@ class PPPlot(Axes):
         p_values_3 = np.random.uniform(size=n) # Yet another experiment
 
         fig = plt.figure(figsize=(3, 3))
-        ax = fig.add_subplot(111, projection=PPPlot)
+        ax = fig.add_subplot(111, projection='pp_plot')
         ax.add_confidence_band(n, alpha=0.95) # Add 95% confidence band
         ax.add_diagonal() # Add diagonal line
         ax.add_lightning(n, 20) # Add some random realizations of n samples
@@ -631,6 +631,8 @@ class PPPlot(Axes):
         # ...
         fig.savefig('example.png')
     """
+
+    name = 'pp_plot'
 
     def __init__(self, *args, **kwargs):
         # Call parent constructor
@@ -795,3 +797,5 @@ class PPPlot(Axes):
         """Support placement in figure using the `projection` keyword argument.
         See http://matplotlib.org/devel/add_new_projection.html"""
         return cls, {}
+
+projection_registry.register(PPPlot)
