@@ -39,7 +39,7 @@ int main (int argc, char *argv[])
 
   UNUSED(argc);
   UNUSED(argv);
-  
+
   if ( XLALSimIMREOBNRv2DominantMode( &hplus, &hcross, phiC, deltaT, m1, m2, fMin, r, i) == XLAL_FAILURE )
   {
     fprintf( stderr, "The waveform generation function has failed!!\n" );

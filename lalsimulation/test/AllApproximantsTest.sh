@@ -1,5 +1,3 @@
-#!/usr/bin/env bash
-
 # Test the generation of all available waveform approximants by using
 # the GenerateSimulation test code
 
@@ -181,4 +179,3 @@ do
         exit 1
     fi
 done
-

@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 # Copyright (C) 2014 Frank Ohme, Evan Ochsner
 #
 # This program is free software; you can redistribute it and/or modify it
@@ -210,4 +208,3 @@ if __name__ == '__main__':
         sys.exit(0)
     else:
         sys.exit(1)
-
