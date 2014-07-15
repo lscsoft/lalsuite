@@ -22,8 +22,8 @@ lalxml-user-env.sh
 lalxml-user-env.shell
 lalxml.spec
 libtool
-python/__init__.py
-python/git_version.py
+python/lalxml/__init__.py
+python/lalxml/git_version.py
 src/LALXMLBuildInfo.c
 src/LALXMLConfig.h
 src/LALXMLVCSInfo.c

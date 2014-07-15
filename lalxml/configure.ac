@@ -16,7 +16,8 @@ AC_CONFIG_FILES([ \
   src/LALXMLVCSInfo.h \
   src/Makefile \
   python/Makefile \
-  python/__init__.py \
+  python/lalxml/Makefile \
+  python/lalxml/__init__.py \
   swig/Makefile \
   test/Makefile
 ])
