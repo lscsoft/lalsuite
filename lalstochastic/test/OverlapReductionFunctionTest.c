@@ -472,7 +472,7 @@ int main( int argc, char *argv[] )
     }
     if ( (overlap.data->data[i] - expectedOutputDataData[i]) &&
          fabsf((overlap.data->data[i] - expectedOutputDataData[i])
-	     / expectedOutputDataData[i])
+	       / expectedOutputDataData[0])
 	 > OVERLAPREDUCTIONFUNCTIONTESTC_TOL )
     {
       printf("  FAIL: Valid data test #2 (coaligned, non-coincident IFOs)\n");
