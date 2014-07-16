@@ -2,7 +2,7 @@
 # lalsuite_swig.m4 - SWIG configuration
 # Author: Karl Wette, 2011--2014
 #
-# serial 61
+# serial 62
 
 AC_DEFUN([_LALSUITE_CHECK_SWIG_VERSION],[
   # $0: check the version of $1, and store it in ${swig_version}
@@ -465,19 +465,6 @@ EOD`]
     ])
     LALSUITE_POP_UVARS
     AC_LANG_POP([C])
-
-    # check for IPython
-    AC_SUBST([SWIG_IPYTHON_CMD],[])
-    AC_MSG_CHECKING([for IPython])
-    ipython_cmd="from IPython.frontend.terminal.ipapp import launch_new_instance"
-    ${PYTHON} -c "${ipython_cmd}" >/dev/null 2>&1
-    AS_IF([test $? -eq 0],[
-      SWIG_IPYTHON_CMD="-c '${ipython_cmd}; launch_new_instance()'"
-      AC_MSG_RESULT([yes])
-    ])
-    AS_IF([test "x${SWIG_IPYTHON_CMD}" = x],[
-      AC_MSG_RESULT([no])
-    ])
 
   ])
   # end $0
