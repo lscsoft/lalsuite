@@ -145,9 +145,6 @@ LALInference tools */
 #include "ppe_likelihood.h"
 #include "ppe_testing.h"
 
-const char *const ensembleStretchFullName = "EnsembleStretchFull";
-const char *const ensembleWalkFullName = "EnsembleWalkFull";
-
 /** The maximum number of different detectors allowable. */
 #define MAXDETS 6
 

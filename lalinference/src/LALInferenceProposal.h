@@ -111,13 +111,24 @@ extern const char *const skyLocWanderJumpName;
 extern const char *const differentialEvolutionFullName;
 extern const char *const differentialEvolutionIntrinsicName;
 extern const char *const differentialEvolutionExtrinsicName;
+extern const char *const ensembleStretchFullName;
+extern const char *const ensembleStretchIntrinsicName;
+extern const char *const ensembleStretchExtrinsicName;
 extern const char *const drawApproxPriorName;
 extern const char *const skyReflectDetPlaneName;
+extern const char *const skyRingProposalName;
+extern const char *const PSDFitJumpName;
 extern const char *const rotateSpinsName;
 extern const char *const polarizationPhaseJumpName;
+extern const char *const polarizationCorrPhaseJumpName;
 extern const char *const extrinsicParamProposalName;
 extern const char *const KDNeighborhoodProposalName;
 extern const char *const frequencyBinJumpName;
+extern const char *const GlitchMorletJumpName;
+extern const char *const GlitchMorletReverseJumpName;
+extern const char *const ensembleWalkFullName;
+extern const char *const ensembleWalkIntrinsicName;
+extern const char *const ensembleWalkExtrinsicName;
 
 /**
  * The name of the variable that will store the name of the current
