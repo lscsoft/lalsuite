@@ -189,7 +189,7 @@ int output_td_waveform(REAL8TimeSeries * h_plus, REAL8TimeSeries * h_cross, stru
 
         /* compute the amplitude and phase of h+ - i hx */
         for (j = 0; j < h_plus->data->length; ++j) {
-            complex z = h_plus->data->data[j] - I * h_cross->data->data[j];
+            double complex z = h_plus->data->data[j] - I * h_cross->data->data[j];
             amp->data[j] = cabs(z);
             phi->data[j] = carg(z);
         }
@@ -311,7 +311,7 @@ int create_td_waveform(REAL8TimeSeries ** h_plus, REAL8TimeSeries ** h_cross, st
 
         /* shift the waveform 1 second back; compensate in the epoch */
         for (k = 0; k < htilde_plus->data->length; ++k) {
-            complex phasefac = cexp(2.0 * M_PI * I * k * df * EXTRA_TIME_SECONDS);
+            double complex phasefac = cexp(2.0 * M_PI * I * k * df * EXTRA_TIME_SECONDS);
             htilde_plus->data->data[k] *= phasefac;
             htilde_cross->data->data[k] *= phasefac;
         }
