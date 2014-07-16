@@ -1652,9 +1652,12 @@ int XLALSimInspiralChooseTDWaveform(
      */
     REAL8 v0 = 1., quadparam1 = 1., quadparam2 = 1.;
 
-    /* General sanity checks that will abort */
-
-    if( nonGRparams && approximant != PhenSpinTaylor && approximant != PhenSpinTaylorRD )
+    /* General sanity checks that will abort
+     *
+     * If non-GR approximants are added, include them in
+     * XLALSimInspiralApproximantAcceptTestGRParams()
+     */
+    if( nonGRparams && XLALSimInspiralApproximantAcceptTestGRParams(approximant) != LAL_SIM_INSPIRAL_TESTGR_PARAMS )
     {
         XLALPrintError("XLAL Error - %s: Passed in non-NULL pointer to LALSimInspiralTestGRParam for an approximant that does not use LALSimInspiralTestGRParam\n", __func__);
         XLAL_ERROR(XLAL_EINVAL);
@@ -2037,13 +2040,12 @@ int XLALSimInspiralChooseFDWaveform(
     unsigned int j;
     REAL8 pfac, cfac;
 
-    /* General sanity checks that will abort */
-    /*
-     * If non-GR approximants are added, change the below to
-     * if( nonGRparams && approximant != nonGR1 && approximant != nonGR2 )
+    /* General sanity checks that will abort
+     *
+     * If non-GR approximants are added, include them in
+     * XLALSimInspiralApproximantAcceptTestGRParams()
      */
-    if( nonGRparams && approximant != SpinTaylorF2)
-    {
+    if( nonGRparams && XLALSimInspiralApproximantAcceptTestGRParams(approximant) != LAL_SIM_INSPIRAL_TESTGR_PARAMS ) {
         XLALPrintError("XLAL Error - %s: Passed in non-NULL pointer to LALSimInspiralTestGRParam for an approximant that does not use LALSimInspiralTestGRParam\n", __func__);
         XLAL_ERROR(XLAL_EINVAL);
     }
@@ -3180,3 +3182,69 @@ int XLALSimInspiralGetSpinSupportFromApproximant(Approximant approx){
     return spin_support;
 
 }
+
+int XLALSimInspiralApproximantAcceptTestGRParams(Approximant approx){
+
+  TestGRaccept testGR_accept=LAL_SIM_INSPIRAL_NUM_TESTGR_ACCEPT;
+  switch (approx)
+    {
+    case TaylorT1:
+    case TaylorT2:
+    case TaylorT3:
+    case TaylorF1:
+    case TaylorF2:
+    case TaylorR2F4:
+    case TaylorF2RedSpin:
+    case TaylorF2RedSpinTidal:
+    case PadeT1:
+    case PadeF1:
+    case EOB:
+    case BCV:
+    case BCVSpin:
+    case SpinTaylorT1:
+    case SpinTaylorT2:
+    case SpinTaylorT3:
+    case SpinTaylorT4:
+    case SpinTaylorT5:
+    case SpinTaylorFrameless:
+    case SpinTaylor:
+    case SpinQuadTaylor:
+    case FindChirpSP:
+    case FindChirpPTF:
+    case GeneratePPN:
+    case BCVC:
+    case FrameFile:
+    case AmpCorPPN:
+    case NumRel:
+    case NumRelNinja2:
+    case EOBNR:
+    case EOBNRv2:
+    case EOBNRv2HM:
+    case SEOBNRv1:
+    case SEOBNRv2:
+    case IMRPhenomA:
+    case IMRPhenomB:
+    case IMRPhenomFA:
+    case IMRPhenomFB:
+    case IMRPhenomC:
+    case IMRPhenomP:
+    case IMRPhenomFC:
+    case TaylorEt:
+    case TaylorT4:
+    case TaylorN:
+    case SpinDominatedWf:
+    case NumApproximants:
+      testGR_accept=LAL_SIM_INSPIRAL_NO_TESTGR_PARAMS;
+      break;
+    case SpinTaylorF2:
+    case Eccentricity:
+    case PhenSpinTaylor:
+    case PhenSpinTaylorRD:
+      testGR_accept=LAL_SIM_INSPIRAL_TESTGR_PARAMS;
+      break;
+    default:
+      XLALPrintError("Approximant not supported by lalsimuation TD/FD routines \n");
+      XLAL_ERROR(XLAL_EINVAL);
+    }
+  return testGR_accept;
+};

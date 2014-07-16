@@ -2355,6 +2355,17 @@ typedef enum {
 
 int XLALSimInspiralGetSpinSupportFromApproximant(Approximant approx);
 
+
+typedef enum {
+  LAL_SIM_INSPIRAL_NO_TESTGR_PARAMS,   /** These approximants cannot accept testGR params as input params */
+  LAL_SIM_INSPIRAL_TESTGR_PARAMS,      /** These approximants accept testGR params as input params */
+  LAL_SIM_INSPIRAL_NUM_TESTGR_ACCEPT  /**< Number of elements in enum, useful for checking bounds */
+ } TestGRaccept;
+
+/* check if the given approximant accepts testGRparams */
+
+int XLALSimInspiralApproximantAcceptTestGRParams(Approximant approx);
+
 #if 0
 { /* so that editors will match succeeding brace */
 #elif defined(__cplusplus)
