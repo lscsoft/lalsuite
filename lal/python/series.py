@@ -82,30 +82,25 @@ def _parse_series(elem, creatorfunc, delta_target_unit_string):
     epoch = lal.LIGOTimeGPS(str(t.pcdata))
 
     # Target units: inverse seconds
-    inverse_seconds_unit = lal.Unit()
-    inverse_seconds_unit = lal.ParseUnitString(inverse_seconds_unit, "s^-1")
+    inverse_seconds_unit = lal.Unit("s^-1")
 
-    delta_target_unit = lal.Unit()
-    delta_target_unit = lal.ParseUnitString(delta_target_unit, delta_target_unit_string)
+    delta_target_unit = lal.Unit(delta_target_unit_string)
 
     # Parse units of f0 field
-    f0_unit = lal.Unit()
-    f0_unit = lal.ParseUnitString(f0_unit, str(f0.Unit))
+    f0_unit = lal.Unit(str(f0.Unit))
 
     # Parse units of deltaF field
-    delta_unit = lal.Unit()
-    delta_unit = lal.ParseUnitString(delta_unit, str(dims[0].Unit))
+    delta_unit = lal.Unit(str(dims[0].Unit))
 
     # Parse units of data
-    sample_unit = lal.Unit()
-    sample_unit = lal.ParseUnitString(sample_unit, str(a.Unit))
+    sample_unit = lal.Unit(str(a.Unit))
 
     # Initialize data structure
     series = creatorfunc(
         str(a.Name),
         epoch,
-        float(f0.pcdata) * lal.UnitRatio(f0_unit, inverse_seconds_unit),
-        float(dims[0].Scale) * lal.UnitRatio(delta_unit, delta_target_unit),
+        float(f0.pcdata) * float(f0_unit / inverse_seconds_unit),
+        float(dims[0].Scale) * float(delta_unit / delta_target_unit),
         sample_unit,
         len(a.array.T)
     )
