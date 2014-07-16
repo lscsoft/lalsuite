@@ -24,6 +24,7 @@ SUBDIRS = \
 	src \
 	swig \
 	python \
+	test \
 	$(END_OF_LIST)
 
 user_environment = \
