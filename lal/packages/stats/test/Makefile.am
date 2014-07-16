@@ -1,18 +1,17 @@
+EXTRA_DIST =
+include $(top_srcdir)/gnuscripts/lalsuite_test.am
 include $(top_srcdir)/gnuscripts/lalsuite_header_links.am
 
-TEST_CPPFLAGS = -DTEST_DATA_DIR='"$(abs_srcdir)/"'
+# Add compiled test programs to this variable
+test_programs += LALCorrelationTest
+test_programs += LALMomentTest
 
-check_PROGRAMS = \
-	LALMomentTest \
-	LALCorrelationTest
+# Add shell, Python, etc. test scripts to this variable
+test_scripts +=
 
-LALMomentTest_SOURCES = \
-	LALMomentTest.c \
-	CheckStatus.c
+# Add any helper programs required by tests to this variable
+test_helpers +=
 
-TESTS = \
-	$(check_PROGRAMS)
-
-EXTRA_DIST = \
-	CheckStatus.c \
-	CheckStatus.h
+EXTRA_DIST += \
+	CheckStatus.h \
+	$(END_OF_LIST)

@@ -1,15 +1,21 @@
+EXTRA_DIST =
+include $(top_srcdir)/gnuscripts/lalsuite_test.am
 include $(top_srcdir)/gnuscripts/lalsuite_header_links.am
 
-TEST_CPPFLAGS = -DTEST_DATA_DIR='"$(abs_srcdir)/"'
+# Add compiled test programs to this variable
+test_programs += AverageSpectrumTest
+test_programs += AvgSpecTest
+test_programs += ComplexFFTTest
+test_programs += RealFFTTest
+test_programs += TimeFreqFFTTest
 
-check_PROGRAMS = \
-	ComplexFFTTest \
-	RealFFTTest \
-	TimeFreqFFTTest \
-	AverageSpectrumTest \
-	AvgSpecTest
+# Add shell, Python, etc. test scripts to this variable
+test_scripts +=
 
-TESTS = \
-	$(check_PROGRAMS)
+# Add any helper programs required by tests to this variable
+test_helpers +=
 
-MOSTLYCLEANFILES = *.out out*.dat
+MOSTLYCLEANFILES = \
+	*.out \
+	out*.dat \
+	$(END_OF_LIST)

@@ -141,4 +141,3 @@ int main(void)
   LALCheckMemoryLeaks();
   return 0;
 }
-

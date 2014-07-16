@@ -1,14 +1,20 @@
+EXTRA_DIST =
+include $(top_srcdir)/gnuscripts/lalsuite_test.am
 include $(top_srcdir)/gnuscripts/lalsuite_header_links.am
 
-TEST_CPPFLAGS = -DTEST_DATA_DIR='"$(abs_srcdir)/"'
+# Add compiled test programs to this variable
+test_programs += NoisePSDTest
 
-check_PROGRAMS = \
-	NoisePSDTest
+# Add shell, Python, etc. test scripts to this variable
+test_scripts +=
 
-TESTS = \
-	$(check_PROGRAMS)
+# Add any helper programs required by tests to this variable
+test_helpers +=
 
-EXTRA_DIST = NoisePSDTest.eps
-EXTRA_TEXSOURCES = NoisePSDTest.eps
+MOSTLYCLEANFILES = \
+	*.out
+	$(END_OF_LIST)
 
-CLEANFILES = *.out
+EXTRA_DIST += \
+	NoisePSDTest.eps \
+	$(END_OF_LIST)

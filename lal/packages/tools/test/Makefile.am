@@ -1,48 +1,29 @@
+EXTRA_DIST =
+include $(top_srcdir)/gnuscripts/lalsuite_test.am
 include $(top_srcdir)/gnuscripts/lalsuite_header_links.am
 
-TEST_CPPFLAGS = -DTEST_DATA_DIR='"$(abs_srcdir)/"'
+# Add compiled test programs to this variable
+test_programs += ComputeTransferTest
+test_programs += CubicSplineTriggerInterpolantTest
+test_programs += DetResponseTest
+test_programs += DetectorSiteTest
+test_programs += FrequencySeriesTest
+test_programs += LanczosTriggerInterpolantTest
+test_programs += NearestNeighborTriggerInterpolantTest
+test_programs += QuadraticFitTriggerInterpolantTest
+test_programs += SequenceTest
+test_programs += SkymapTest
+test_programs += TimeSeriesInterpTest
+test_programs += TimeSeriesTest
+test_programs += UnitsTest
+#test_programs += CoherentEstimationTest
+#test_programs += SegmentsTest
 
-check_PROGRAMS = \
-	CoherentEstimationTest \
-	ComputeTransferTest \
-	DetectorSiteTest \
-	FrequencySeriesTest \
-	LALIndependentTestDetResponse \
-	LALTestDetResponse0 \
-	SegmentsTest \
-	SequenceTest \
-	SkymapTest \
-	CubicSplineTriggerInterpolantTest \
-	LanczosTriggerInterpolantTest \
-	NearestNeighborTriggerInterpolantTest \
-	QuadraticFitTriggerInterpolantTest \
-	TimeSeriesTest \
-	TimeSeriesInterpTest \
-	UnitsTest
+# Add shell, Python, etc. test scripts to this variable
+test_scripts += IndependentDetResponseTest.sh
 
-EXTRA_DIST = \
-	ComputeCalibrationFactorsTest.c \
-	LALIndTestDetRes.sh \
-	ResampleTimeSeriesTest.c \
-	indTestDetResGEO.cfg \
-	indTestDetResLHO.cfg \
-	indTestDetResLLO.cfg
-
-TESTS = \
-	ComputeTransferTest \
-	DetectorSiteTest \
-	FrequencySeriesTest \
-	LALIndTestDetRes.sh \
-	LALTestDetResponse0 \
-	SequenceTest \
-	SkymapTest \
-	TimeSeriesTest \
-	TimeSeriesInterpTest \
-	CubicSplineTriggerInterpolantTest \
-	LanczosTriggerInterpolantTest \
-	NearestNeighborTriggerInterpolantTest \
-	QuadraticFitTriggerInterpolantTest \
-	UnitsTest
+# Add any helper programs required by tests to this variable
+test_helpers += IndependentDetResponseTest
 
 MOSTLYCLEANFILES = \
 	PrintVector.* \
@@ -78,4 +59,13 @@ MOSTLYCLEANFILES = \
 	sum_sq.txt \
 	sum_sq_avg.txt \
 	theta.txt \
-	transfer.out
+	transfer.out \
+	$(END_OF_LIST)
+
+EXTRA_DIST += \
+	ComputeCalibrationFactorsTest.c \
+	ResampleTimeSeriesTest.c \
+	indTestDetResGEO.cfg \
+	indTestDetResLHO.cfg \
+	indTestDetResLLO.cfg \
+	$(END_OF_LIST)

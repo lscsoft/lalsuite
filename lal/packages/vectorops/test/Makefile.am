@@ -1,10 +1,13 @@
+EXTRA_DIST =
+include $(top_srcdir)/gnuscripts/lalsuite_test.am
 include $(top_srcdir)/gnuscripts/lalsuite_header_links.am
 
-TEST_CPPFLAGS = -DTEST_DATA_DIR='"$(abs_srcdir)/"'
+# Add compiled test programs to this variable
+test_programs += VectorIndexRangeTest
+test_programs += VectorOpsTest
 
-check_PROGRAMS = \
-	VectorOpsTest \
-	VectorIndexRangeTest
+# Add shell, Python, etc. test scripts to this variable
+test_scripts +=
 
-TESTS = \
-	$(check_PROGRAMS)
+# Add any helper programs required by tests to this variable
+test_helpers +=
