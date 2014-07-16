@@ -21,7 +21,6 @@ AC_CONFIG_FILES([ \
   python/bayestar/Makefile \
   swig/Makefile \
   test/Makefile \
-  test/baseline_images/Makefile
 ])
 AM_INIT_AUTOMAKE([1.11 foreign subdir-objects color-tests parallel-tests])
 
@@ -197,7 +196,6 @@ LALSUITE_ADD_GCC_FLAGS
 AC_SUBST([LDADD], ["\$(top_builddir)/src/liblalinference.la"])
 
 # add extra preprocessor flags
-AM_CPPFLAGS="\$(TEST_CPPFLAGS) ${AM_CPPFLAGS}"
 AM_CPPFLAGS="-DPKG_DATA_DIR='\"\$(pkgdatadir)/\"' ${AM_CPPFLAGS}"
 AM_CPPFLAGS="-I\$(top_builddir)/include ${AM_CPPFLAGS}"
 

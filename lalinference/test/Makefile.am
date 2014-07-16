@@ -1,64 +1,36 @@
-SUBDIRS = baseline_images
+EXTRA_DIST =
+include $(top_srcdir)/gnuscripts/lalsuite_test.am
 
-TEST_CPPFLAGS = -DTEST_DATA_DIR='"$(abs_srcdir)/"'
-
+# Add compiled test programs to this variable
+test_programs += LALInferenceTest
+test_programs += LALInferenceKDTest
+test_programs += LALInferencePriorTest
+#test_programs += LALInferenceInjectionTest
+#test_programs += LALInferenceLikelihoodTest
+#test_programs += LALInferenceProposalTest
 if LALXML
-
-XMLPRG = \
-	LALInferenceXMLTest
-
+test_programs += LALInferenceXMLTest
 endif
 
-LALInferenceTest_SOURCES = \
-	LALInferenceTest.c \
-	LALInferenceTest.h
+# Add shell, Python, etc. test scripts to this variable
+#test_scripts += LALInferencePlotTest.py
 
-LALInferencePriorTest_SOURCES = \
-	LALInferencePriorTest.c
-	LALInferenceTest.h
+# Add any helper programs required by tests to this variable
+test_helpers +=
 
-LALInferenceLikelihoodTest_SOURCES = \
-	LALInferenceLikelihoodTest.c
-	LALInferenceTest.h
-
-LALInferenceProposalTest_SOURCES = \
-	LALInferenceProposalTest.c
-	LALInferenceTest.h
-
-LALInferenceInjectionTest_SOURCES = \
-	LALInferenceTestInjectionLikelihood.c
-	LALInferenceTest.h
-
-LALInferenceKDTest_SOURCES = \
-	LALInferenceKDTest.c \
-	LALInferenceTest.h
-
-check_PROGRAMS = \
-	LALInferenceTest \
-	LALInferencePriorTest \
-	LALInferenceLikelihoodTest \
-	LALInferenceProposalTest \
-	LALInferenceKDTest \
-	LALInferenceInjectionTest \
-	$(XMLPRG)
-
-TESTS = \
-	LALInferenceTest \
-	LALInferencePriorTest \
-	LALInferenceKDTest \
-	$(XMLPRG)
-
-EXTRA_DIST = test_plot.py
-
-# FIXME: Run this as a regular unit test.
-# installcheck-local:
-# 	PYTHONPATH=$(pyexecdir):$(PYTHONPATH) $(PYTHON) $(srcdir)/test_plot.py
-
-CLEANFILES = \
-	test_vot.xml \
+MOSTLYCLEANFILES = \
+	*.dat \
+	*.out \
+	*.xml \
 	test_result_images/pp_plot_default.png \
 	test_result_images/pp_plot_lines.png \
 	test_result_images/pp_plot_steps.png \
-	*.out \
-	*.dat \
-	*.xml
+	test_vot.xml \
+	$(END_OF_LIST)
+
+EXTRA_DIST += \
+	LALInferenceTest.h \
+	baseline_images/pp_plot_default.png \
+	baseline_images/pp_plot_lines.png \
+	baseline_images/pp_plot_steps.png \
+	$(END_OF_LIST)
