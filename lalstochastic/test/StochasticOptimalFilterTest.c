@@ -1024,7 +1024,7 @@ int main(int argc, char *argv[])
              cimagf(optimal.data->data[i])/crealf(optimal.data->data[1]),
              testNum);
     }
-    if (fabsf(crealf(optimal.data->data[i])/crealf(optimal.data->data[1])
+    if (fabs(crealf(optimal.data->data[i])/crealf(optimal.data->data[1])
              - testNum)/testNum
         > STOCHASTICOPTIMALFILTERTESTC_TOL
         || fabsf(cimagf(optimal.data->data[i])/crealf(optimal.data->data[1]))
@@ -1203,7 +1203,7 @@ int main(int argc, char *argv[])
              cimagf(optimal.data->data[i])/crealf(optimal.data->data[1]),
              testNum);
     }
-    if (fabsf(crealf(optimal.data->data[i])/crealf(optimal.data->data[1])
+    if (fabs(crealf(optimal.data->data[i])/crealf(optimal.data->data[1])
              - testNum)/testNum
         > STOCHASTICOPTIMALFILTERTESTC_TOL
         || fabsf(cimagf(optimal.data->data[i])/crealf(optimal.data->data[1]))

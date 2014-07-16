@@ -489,7 +489,7 @@ int main( int argc, char *argv[] )
       printf("Omega(%f Hz)=%g, should be %g\n",
              f, omegaGW.data->data[i], STOCHASTICOMEGAGWTESTC_OMEGAREF);
     }
-    if ( fabsf(omegaGW.data->data[i] - STOCHASTICOMEGAGWTESTC_OMEGAREF)
+    if ( fabs(omegaGW.data->data[i] - STOCHASTICOMEGAGWTESTC_OMEGAREF)
          / STOCHASTICOMEGAGWTESTC_OMEGAREF > STOCHASTICOMEGAGWTESTC_TOL )
     {
       printf("  FAIL: Valid data test #2 (alpha=0)\n");
