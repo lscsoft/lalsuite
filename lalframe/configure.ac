@@ -62,9 +62,6 @@ LALSUITE_ENABLE_GCC_FLAGS
 # enable SWIG wrapping modules
 LALSUITE_ENABLE_SWIG
 
-# allow use of either FrameC or FrameL
-LALFRAME_WITH_FRAME_LIBRARY
-
 # define version/configure info
 LALSUITE_VERSION_CONFIGURE_INFO
 
