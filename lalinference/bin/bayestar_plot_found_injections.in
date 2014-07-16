@@ -134,7 +134,7 @@ for i, (bin_edge, subdir, title) in enumerate(zip(bin_edges, bin_names, bin_titl
     os.chdir(subdir)
 
     # Set up figure 1.
-    fig1 = plt.figure(1, figsize=(6, 6))
+    fig1 = plt.figure(figsize=(6, 6))
     ax1 = fig1.add_subplot(111, projection='pp_plot')
     fig1.subplots_adjust(bottom=0.15)
     ax1.set_xlabel('searched posterior mass')
@@ -142,7 +142,7 @@ for i, (bin_edge, subdir, title) in enumerate(zip(bin_edges, bin_names, bin_titl
     ax1.set_title(title)
 
     # Set up figure 2.
-    fig2 = plt.figure(2, figsize=(6, 4.5))
+    fig2 = plt.figure(figsize=(6, 4.5))
     ax2 = fig2.add_subplot(111)
     fig2.subplots_adjust(bottom=0.15)
     ax2.set_xscale('log')
@@ -151,7 +151,7 @@ for i, (bin_edge, subdir, title) in enumerate(zip(bin_edges, bin_names, bin_titl
     ax2.set_title(title)
 
     # Set up figure 3.
-    fig3 = plt.figure(3, figsize=(6, 4.5))
+    fig3 = plt.figure(figsize=(6, 4.5))
     ax3 = fig3.add_subplot(111)
     ax3.set_xscale('log')
     fig3.subplots_adjust(bottom=0.15)
@@ -160,7 +160,7 @@ for i, (bin_edge, subdir, title) in enumerate(zip(bin_edges, bin_names, bin_titl
     ax3.set_title(title)
 
     # Set up figure 4.
-    fig4 = plt.figure(4, figsize=(6, 4.5))
+    fig4 = plt.figure(figsize=(6, 4.5))
     ax4 = fig4.add_subplot(111)
     ax4.set_xscale('log')
     fig4.subplots_adjust(bottom=0.15)
