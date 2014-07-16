@@ -1,0 +1,49 @@
+SUFFIXES = .py
+pybindir = $(bindir)
+BUILT_SOURCES += $(pymodule_PYTHON) $(pybin_SCRIPTS)
+MOSTLYCLEANFILES += $(pybin_SCRIPTS)
+
+.PHONY: pymodule-all-local
+all-local: pymodule-all-local
+pymodule-all-local: pymodule-mostlyclean-local
+	$(AM_V_at)if test "x$(builddir)" != "x$(srcdir)"; then \
+		for file in $(pymodule_PYTHON); do \
+			if test -r "$(srcdir)/$${file}"; then \
+				$(LN_S) "$(srcdir)/$${file}" "$(builddir)/$${file}" || exit 1; \
+			fi; \
+		done; \
+	fi
+
+.PHONY: pymodule-mostlyclean-local
+mostlyclean-local: pymodule-mostlyclean-local
+pymodule-mostlyclean-local:
+	$(AM_V_at)if test "x$(builddir)" != "x$(srcdir)"; then \
+		for file in $(pymodule_PYTHON); do \
+			if test -r "$(srcdir)/$${file}"; then \
+				rm -f "$(builddir)/$${file}" "$(builddir)/$${file}c" "$(builddir)/$${file}o" || exit 1; \
+			fi; \
+		done; \
+	fi
+
+$(pybin_SCRIPTS): Makefile
+.py:
+	$(AM_V_GEN)if test -x $<; then \
+		echo "" >&2; \
+		echo "ERROR: $< must not be executable" >&2; \
+		echo "" >&2; \
+		exit 1; \
+	fi; \
+	if $(SED) -e 's|[@]PYTHON[@]|@PYTHON@|g;s|[@]pkgpythondir[@]|@pkgpythondir@|g;' $< > $@; then \
+		chmod +x $@; \
+		exit 0; \
+	else \
+		rm -f $@; \
+		exit 1; \
+	fi
+
+.PHONY: pybin-dist-hook
+dist-hook: pybin-dist-hook
+pybin-dist-hook:
+	for file in $(pybin_SCRIPTS); do \
+		cp "$(srcdir)/$${file}.py" "$(distdir)"; \
+	done
