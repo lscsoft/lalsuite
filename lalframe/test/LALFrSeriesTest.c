@@ -34,9 +34,7 @@
  * ### Description ###
  *
  * This program reads the channels <tt>H1:LSC-AS_Q</tt> from all the fake frames
- * <tt>F-TEST-*.gwf</tt> in the directory set in the environment
- * \c LAL_FRAME_PATH * (or the current directory if this environment is not
- * set) and prints them to files.
+ * <tt>F-TEST-*.gwf</tt> in the directory TEST_DATA_DIR, and prints them to files.
  *
  */
 
@@ -67,7 +65,6 @@ int main( void )
   LALFrStreamPos     frpos;
   static INT4TimeSeries chan; /* must zero the f0 field */
   LIGOTimeGPS epoch;
-  CHAR *dirname = getenv( "LAL_FRAME_PATH" );
   INT4 file = 0;
 
   XLALSetErrorHandler(XLALAbortErrorHandler);
@@ -76,7 +73,7 @@ int main( void )
   LALI4CreateVector( &status, &chan.data, npts );
   TESTSTATUS( &status );
 
-  LALFrOpen( &status, &stream, dirname, "F-TEST-*.gwf" );
+  LALFrOpen( &status, &stream, TEST_DATA_DIR, "F-TEST-*.gwf" );
   TESTSTATUS( &status );
 
   if ( XLALFrStreamSetMode( stream, LAL_FR_STREAM_VERBOSE_MODE | LAL_FR_STREAM_CHECKSUM_MODE ) )
