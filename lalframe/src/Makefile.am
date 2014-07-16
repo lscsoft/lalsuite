@@ -1,6 +1,6 @@
 BUILT_SOURCES =
 MOSTLYCLEANFILES =
-include $(top_srcdir)/gnuscripts/lallibs_header_links.am
+include $(top_srcdir)/gnuscripts/lalsuite_header_links.am
 include $(top_srcdir)/gnuscripts/lalsuite_vcs_info.am
 
 FRAMECSRCS = LALFrameUFrameC.h LALFrameC.c

@@ -1,4 +1,4 @@
-include $(top_srcdir)/gnuscripts/lallibs_header_links.am
+include $(top_srcdir)/gnuscripts/lalsuite_header_links.am
 
 if CUDA
 CUDAHDRS = CudaPlan.h

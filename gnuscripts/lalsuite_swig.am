@@ -1,7 +1,7 @@
 # Common SWIG build rules
 # Author: Karl Wette, 2011--2014
 
-include $(top_srcdir)/gnuscripts/lallibs_header_links.am
+include $(top_srcdir)/gnuscripts/lalsuite_header_links.am
 
 .PHONY: force-swig-preproc-generation
 .PHONY: run-octave
