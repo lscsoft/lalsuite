@@ -87,6 +87,7 @@
 
 struct tagLALInferenceRunState;
 struct tagLALInferenceIFOData;
+struct tagLALInferenceModel;
 
 /*Data storage type definitions*/
 
@@ -322,7 +323,7 @@ int LALInferenceCompareVariables(LALInferenceVariables *var1, LALInferenceVariab
  * Type declaration for template function, which operates on
  * a LALInferenceIFOData structure \c *data
  */
-typedef void (*LALInferenceTemplateFunction) (struct tagLALInferenceIFOData *data);
+typedef void (*LALInferenceTemplateFunction) (struct tagLALInferenceModel *model);
 
 
 /**
@@ -358,7 +359,7 @@ tagLALInferenceProposalStatistics
  * Can depend on \c runState ->priorArgs
  */
 typedef REAL8 (*LALInferencePriorFunction) (struct tagLALInferenceRunState *runState,
-	LALInferenceVariables *params);
+	LALInferenceVariables *params, struct tagLALInferenceModel *model);
 
 /**
  * Type declaration for CubeToPrior function which converts parameters in unit hypercube
@@ -366,7 +367,40 @@ typedef REAL8 (*LALInferencePriorFunction) (struct tagLALInferenceRunState *runS
  * Can depend on \c runState ->priorArgs
  */
 typedef UINT4 (*LALInferenceCubeToPriorFunction) (struct tagLALInferenceRunState *runState,
-  LALInferenceVariables *params, double *cube, void *context);
+  LALInferenceVariables *params, struct tagLALInferenceModel *model, double *cube, void *context);
+
+/**
+ * Structure to constain a model and its parameters.
+ */
+typedef struct tagLALInferenceModel
+{
+  LALInferenceVariables       *params; /** Parameters used when filling the buffers - template functions should copy to here */
+  LALSimulationDomain          domain; /** Domain of model */
+  LALInferenceTemplateFunction templt; /** The template generation function */
+
+  REAL8                        fLow;   /** Start frequency for waveform generation */
+  REAL8                        deltaT, deltaF;   /** Sampling rate information */
+  INT4                         freqLength; /* Length of freq-domain buffer */
+
+  REAL8TimeSeries             *timehPlus, *timehCross; /** Time series model buffers */
+  COMPLEX16FrequencySeries    *freqhPlus, *freqhCross; /** Freq series model buffers */
+
+  LALSimInspiralWaveformFlags *waveFlags;   /** A pointer to the WF flag. Will store here tide and spin order, as well as frame */
+  LALSimInspiralWaveformCache *waveformCache;   /** Waveform cache */
+
+  REAL8FFTPlan                *timeToFreqFFTPlan, *freqToTimeFFTPlan; /** Pre-calculated FFT plans for forward and reverse FFTs */
+  REAL8Window                 *window;        /** A window */
+  struct tagLALInferenceROQModel *roq; /** ROQ data */
+} LALInferenceModel;
+
+
+/**
+ * Type declaration for variables init function, can be user-declared.
+ * The function returns a pointer to a new LALInferenceVariables instance
+ * Reads \c runState->commandLine to get user config
+ */
+typedef LALInferenceModel* (*LALInferenceInitModelFunction) (struct tagLALInferenceRunState *runState);
+
 
 //Likelihood calculator 
 //Should take care to perform expensive evaluation of h+ and hx 
@@ -378,7 +412,7 @@ typedef UINT4 (*LALInferenceCubeToPriorFunction) (struct tagLALInferenceRunState
  * templt is a LALInferenceTemplateFunction defined below
  */
 typedef REAL8 (*LALInferenceLikelihoodFunction) (LALInferenceVariables *currentParams,
-        struct tagLALInferenceIFOData * data, LALInferenceTemplateFunction templt);
+        struct tagLALInferenceIFOData * data, LALInferenceModel *model);
 
 /** Perform one step of an algorithm, replaces \c runState ->currentParams */
 typedef INT4 (*LALInferenceEvolveOneStepFunction) (struct tagLALInferenceRunState *runState);
@@ -394,13 +428,6 @@ typedef void (*LALInferenceAlgorithm) (struct tagLALInferenceRunState *runState)
 typedef void (*LALInferenceLogFunction) (struct tagLALInferenceRunState *runState, LALInferenceVariables *vars);
 
 /**
- * Type declaration for variables init function, can be user-declared.
- * The function returns a pointer to a new LALInferenceVariables instance
- * Reads \c runState->commandLine to get user config
- */
-typedef LALInferenceVariables * (*LALInferenceInitVariablesFunction) (struct tagLALInferenceRunState *runState);
-
-/**
  * Structure containing inference run state
  * This includes pointers to the function types required to run
  * the algorithm, and data structures as required
@@ -409,15 +436,16 @@ typedef struct
 tagLALInferenceRunState
 {
   ProcessParamsTable        *commandLine; /** A ProcessParamsTable with command line arguments */
-  LALInferenceInitVariablesFunction  initVariables; /** A function that returns a new set of variables for the model */
+  LALInferenceInitModelFunction  initModel; /** A function that returns a new set of variables for the model */
   LALInferenceAlgorithm              algorithm; /** The algorithm function */
   LALInferenceEvolveOneStepFunction  evolve; /** The algorithm's single iteration function */
   LALInferencePriorFunction          prior; /** The prior for the parameters */
   LALInferenceCubeToPriorFunction    CubeToPrior; /** MultiNest prior for the parameters */
   LALInferenceLikelihoodFunction     likelihood; /** The likelihood function */
   LALInferenceProposalFunction       proposal; /** The proposal function */
-  LALInferenceTemplateFunction       templt; /** The template generation function */
   LALInferenceLogFunction            logsample; /** Log sample, i.e. to disk */
+  LALInferenceTemplateFunction templt; /** The template generation function */
+  LALInferenceModel        *model; /** Stucture containing model buffers and parameters */
   struct tagLALInferenceIFOData      *data; /** The data from the interferometers */
   LALInferenceVariables              *currentParams, /** The current parameters */
     *priorArgs,                                      /** Any special arguments for the prior function */
@@ -460,7 +488,6 @@ tagLALInferenceIFOData
 {
   char                       name[DETNAMELEN]; /** Detector name */
   REAL8TimeSeries           *timeData,         /** A time series from the detector */
-                            *timeModelhPlus, *timeModelhCross, /** Time series model buffers */
                             *whiteTimeData, *windowedTimeData; /** white is not really white, but over-white. */
   /* Stores the log(L) for the model in presence of data.  These were
      added to allow for individual-detector log(L) output.  The
@@ -472,13 +499,10 @@ tagLALInferenceIFOData
   REAL8                      fPlus, fCross; /** Detector responses */
   REAL8                      timeshift;     /** What is this? */
   COMPLEX16FrequencySeries  *freqData,      /** Buffer for frequency domain data */
-                            *freqModelhPlus, *freqModelhCross, /** Buffers for frequency domain models */
                             *whiteFreqData; /* Over-white. */
   COMPLEX16TimeSeries       *compTimeData, *compModelData; /** Complex time series data buffers */
   LIGOTimeGPSVector         *dataTimes;     /** Vector of time stamps for time domain data */
-  LALInferenceVariables     *modelParams;   /** Parameters used when filling the buffers - template functions should copy to here */
   LALInferenceVariables     *dataParams;    /* Optional data parameters */
-  LALSimulationDomain        modelDomain;   /** Domain of model */
   REAL8FrequencySeries      *oneSidedNoisePowerSpectrum;  /** one-sided Noise Power Spectrum */
   REAL8FrequencySeries      *noiseASD;  /** (one-sided Noise Power Spectrum)^{-1/2} */
 //  REAL8TimeSeries           *timeDomainNoiseWeights; /** Roughly, InvFFT(1/Noise PSD). */
@@ -493,29 +517,37 @@ tagLALInferenceIFOData
   LIGOTimeGPS		    epoch;              /** The epoch of this observation (the time of the first sample) */
   REAL8                     SNR;                /** IF INJECTION ONLY, E(SNR) of the injection in the detector.*/
   REAL8                     STDOF;              /** Degrees of freedom for IFO to be used in Student-T Likelihood. */
-  LALSimInspiralWaveformFlags *waveFlags;   /** A pointer to the WF flag. Will store here tide and spin order, as well as frame */
-  LALSimInspiralWaveformCache *waveformCache;   /** Waveform cache */
-  struct tagLALInferenceROQData       *roqData; /** ROQ data */
+  struct tagLALInferenceROQData *roq; /** ROQ data */
 
   struct tagLALInferenceIFOData      *next;     /** A pointer to the next set of data for linked list */
 } LALInferenceIFOData;
+
 /**
- * Structure to contain Reduced Order Quadrature quantities
+ * Structure to contain data-related Reduced Order Quadrature quantities
  */
 typedef struct
 tagLALInferenceROQData
 {
   gsl_matrix_complex *weights; /** weights for the likelihood: NOTE: needs to be stored from data read from command line */
+  double int_f_7_over_3; /** /int_{fmin}^{fmax} df f^(-7/3)/psd...for <h|h> part of the likelihood */
+  REAL8 time_weights_width;
+} LALInferenceROQData;
+
+
+/**
+ * Structure to contain model-related Reduced Order Quadrature quantities
+ */
+typedef struct
+tagLALInferenceROQModel
+{
   gsl_vector_complex *hplus; /** waveform at frequency nodes. */
   gsl_vector_complex *hcross;
   gsl_vector_complex *hstrain;
   gsl_vector         *frequencyNodes; /** empirical frequency nodes for the likelihood. NOTE: needs to be stored from data read from command line */
-  double int_f_7_over_3; /** /int_{fmin}^{fmax} df f^(-7/3)/psd...for <h|h> part of the likelihood */
-  //double *h_dot_h; /** <h|h> */
   REAL8* amp_squared;
   REAL8 trigtime;
-  REAL8 time_weights_width;
-} LALInferenceROQData;
+} LALInferenceROQModel;
+
 
 /** Returns the element of the process params table with "name" */
 ProcessParamsTable *LALInferenceGetProcParamVal(ProcessParamsTable *procparams,const char *name);
@@ -543,9 +575,9 @@ ProcessParamsTable *LALInferenceParseCommandLineStringVector(LALStringVector *ar
 char* LALInferencePrintCommandLine(ProcessParamsTable *procparams);
 
 /** Execute FFT for data in \c IFOdata */
-void LALInferenceExecuteFT(LALInferenceIFOData *IFOdata);
+void LALInferenceExecuteFT(LALInferenceModel *model);
 /** Execute Inverse FFT for data in \c IFOdata */
-void LALInferenceExecuteInvFT(LALInferenceIFOData *IFOdata);
+void LALInferenceExecuteInvFT(LALInferenceModel *model);
 
 /** Return the list node for "name" - do not rely on this */
 LALInferenceVariableItem *LALInferenceGetItem(const LALInferenceVariables *vars,const char *name);
@@ -781,7 +813,7 @@ INT4 LALInferenceSanityCheck(LALInferenceRunState *state);
  * Dump all waveforms from the ifodata structure. (currently: timeData, freqData)
  * basefilename is optional text to append to file names
  */
-void LALInferenceDumpWaveforms(LALInferenceRunState *state, const char *basefilename);
+void LALInferenceDumpWaveforms(LALInferenceModel *model, const char *basefilename);
 
 /**
  * Write a LALInferenceVariables as binary to a given FILE pointer, returns the number

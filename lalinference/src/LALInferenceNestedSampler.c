@@ -420,7 +420,6 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
   #endif
   
   if ( !LALInferenceCheckVariable(runState->algorithmParams, "logZnoise" ) ){
-    /*if (runState->data->modelDomain == LALINFERENCE_DOMAIN_FREQUENCY )*/
     logZnoise=LALInferenceNullLogLikelihood(runState->data);
     
     LALInferenceAddVariable(runState->algorithmParams,"logZnoise",&logZnoise,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_FIXED);
@@ -579,7 +578,7 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
 	do
     {
         runState->evolve(runState);
-    	logLikelihoods[i]=runState->likelihood(runState->livePoints[i],runState->data,runState->templt);
+    	logLikelihoods[i]=runState->likelihood(runState->livePoints[i],runState->data,runState->model);
     }while(isnan(logLikelihoods[i]));
 	if(XLALPrintProgressBar((double)i/(double)Nlive)) fprintf(stderr,"\n");
     }
@@ -1057,12 +1056,15 @@ UINT4 LALInferenceMCMCSamplePrior(LALInferenceRunState *runState)
     
     if(adaptProp)
     {
-      thislogL=runState->likelihood(runState->currentParams,runState->data,runState->templt);
+      thislogL=runState->likelihood(runState->currentParams,runState->data,runState->model);
       if (logLmin<thislogL) outOfBounds=0;
     }
     
     logProposalRatio = runState->proposal(runState,runState->currentParams,&proposedParams);
-    REAL8 logPriorNew=runState->prior(runState,&proposedParams);
+    runState->proposal(runState,runState->currentParams,&proposedParams);
+    REAL8 logPriorNew=runState->prior(runState, &proposedParams, runState->model);
+    if(LALInferenceCheckVariable(runState->proposalArgs,"logProposalRatio"))
+       logProposalRatio=*(REAL8 *)LALInferenceGetVariable(runState->proposalArgs,"logProposalRatio");
     if(logPriorNew==-DBL_MAX || isnan(logPriorNew) || log(gsl_rng_uniform(runState->GSLrandom)) > (logPriorNew-logPriorOld) + logProposalRatio) 
     {
 	/* Reject - don't need to copy new params back to currentParams */
@@ -1077,7 +1079,7 @@ UINT4 LALInferenceMCMCSamplePrior(LALInferenceRunState *runState)
     
     if((!outOfBounds)&&adaptProp)
     {
-      thislogL=runState->likelihood(runState->currentParams,runState->data,runState->templt);
+      thislogL=runState->likelihood(runState->currentParams,runState->data,runState->model);
       if(logLmin<thislogL) LALInferenceUpdateAdaptiveJumps(runState, accepted, 0.35);
       else LALInferenceUpdateAdaptiveJumps(runState, 0, 0.35);
 
@@ -1229,7 +1231,7 @@ INT4 LALInferenceNestedSamplingSloppySample(LALInferenceRunState *runState)
         tries=0;
         mcmc_iter++;
     	sub_iter+=subchain_length;
-        if(logLmin!=-DBL_MAX) logLnew=runState->likelihood(runState->currentParams,runState->data,runState->templt);
+        if(logLmin!=-DBL_MAX) logLnew=runState->likelihood(runState->currentParams,runState->data,runState->model);
         if(logLnew>logLmin || logLmin==-DBL_MAX) /* Accept */
         {
             Naccepted++;
@@ -1258,7 +1260,7 @@ INT4 LALInferenceNestedSamplingSloppySample(LALInferenceRunState *runState)
     }while((mcmc_iter<testnumber||runState->currentLikelihood<=logLmin||Naccepted==0)&&(mcmc_iter<BAILOUT));
     /* Make sure likelihood is filled in if it wasn't done during sampling */
     if(logLnew==0.0){
-            logLnew=runState->likelihood(runState->currentParams,runState->data,runState->templt);
+            logLnew=runState->likelihood(runState->currentParams,runState->data,runState->model);
             runState->currentLikelihood=logLnew;
             LALInferenceAddVariable(runState->currentParams,"logL",(void *)&logLnew,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
             if(LALInferenceCheckVariable(runState->algorithmParams,"logZnoise")){
@@ -1338,10 +1340,10 @@ void LALInferenceSetupLivePointsArray(LALInferenceRunState *runState){
 	  /* Sprinkle the varying points among prior */
 	  do{
 	    LALInferenceDrawFromPrior( runState->livePoints[i], runState->priorArgs, runState->GSLrandom );
-	    logPrior=runState->prior(runState,runState->livePoints[i]);
+	    logPrior=runState->prior(runState,runState->livePoints[i],runState->model);
 	  }while(logPrior==-DBL_MAX || isnan(logPrior));
 	  /* Populate log likelihood */
-	  logLs->data[i]=runState->likelihood(runState->livePoints[i],runState->data,runState->templt);
+	  logLs->data[i]=runState->likelihood(runState->livePoints[i],runState->data,runState->model);
 	  LALInferenceAddVariable(runState->livePoints[i],"logL",(void *)&(logLs->data[i]),LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
 	  LALInferenceAddVariable(runState->livePoints[i],"logPrior",(void*)&logPrior,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
 	}

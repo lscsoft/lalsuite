@@ -478,19 +478,15 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
     REAL8 bigD = INFINITY;
 
     /* Don't store to cache, since distance scaling won't work */
-    LALSimInspiralWaveformCache *cache = headData->waveformCache;
-    while (headData != NULL) {
-      headData->waveformCache = NULL;
-      headData = headData->next;
-    }
-    headData = runState->data;
+    LALSimInspiralWaveformCache *cache = runState->model->waveformCache;
+    runState->model->waveformCache = NULL;
 
     LALInferenceSetVariable(runState->currentParams, "distance", &bigD);
-    nullLikelihood = runState->likelihood(runState->currentParams, runState->data, runState->templt);
+    nullLikelihood = runState->likelihood(runState->currentParams, runState->data, runState->model);
 
+    runState->model->waveformCache = cache;
     while (headData != NULL) {
       headData->nullloglikelihood = headData->loglikelihood;
-      headData->waveformCache = cache;
       headData = headData->next;
     }
 
@@ -604,13 +600,13 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
   }
 
   // initialize starting likelihood value:
-  runState->currentLikelihood = runState->likelihood(runState->currentParams, runState->data, runState->templt);
+  runState->currentLikelihood = runState->likelihood(runState->currentParams, runState->data, runState->model);
   LALInferenceIFOData *headData = runState->data;
   while (headData != NULL) {
     headData->acceptedloglikelihood = headData->loglikelihood;
     headData = headData->next;
   }
-  runState->currentPrior = runState->prior(runState, runState->currentParams);
+  runState->currentPrior = runState->prior(runState, runState->currentParams, runState->model);
 
   REAL8 logLAtAdaptStart = runState->currentLikelihood;
   LALInferenceSetVariable(runState->proposalArgs, "logLAtAdaptStart", &(logLAtAdaptStart));
@@ -665,10 +661,10 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
     printf("%f\t", runState->currentLikelihood - nullLikelihood);
     printf("\n");
 
-    /* Print to file the contents of ->freqModelhPlus->data->length. */
+    /* Print to file the contents of model->freqhPlus. */
     ppt = LALInferenceGetProcParamVal(runState->commandLine, "--data-dump");
     if (ppt) {
-      LALInferenceDataDump(runState);
+      LALInferenceDataDump(runState->data, runState->model);
     }
   }
 
@@ -1000,9 +996,9 @@ INT4 PTMCMCOneStep(LALInferenceRunState *runState)
   logProposalRatio = runState->proposal(runState, runState->currentParams, &proposedParams);
 
   // compute prior & likelihood:
-  logPriorProposed = runState->prior(runState, &proposedParams);
+  logPriorProposed = runState->prior(runState, &proposedParams, runState->model);
   if (logPriorProposed > -DBL_MAX)
-    logLikelihoodProposed = runState->likelihood(&proposedParams, runState->data, runState->templt);
+    logLikelihoodProposed = runState->likelihood(&proposedParams, runState->data, runState->model);
   else
     logLikelihoodProposed = -DBL_MAX;
 
@@ -1242,8 +1238,8 @@ void LALInferenceLadderUpdate(LALInferenceRunState *runState, INT4 sourceChainFl
     LALInferenceCopyArrayToVariables(params, runState->currentParams);
 
     /* Update prior and likelihood */
-    runState->currentPrior = runState->prior(runState, runState->currentParams);
-    runState->currentLikelihood = runState->likelihood(runState->currentParams, runState->data, runState->templt);
+    runState->currentPrior = runState->prior(runState, runState->currentParams, runState->model);
+    runState->currentLikelihood = runState->likelihood(runState->currentParams, runState->data, runState->model);
 
     /* Restart adaptation to tune for the current location */
     LALInferenceAdaptationRestart(runState, cycle);
@@ -1310,7 +1306,7 @@ UINT4 LALInferenceMCMCMCswap(LALInferenceRunState *runState, REAL8 *ladder, INT4
     XLALDestroyREAL8Vector(adjParameters);
 
     /* Calculate likelihood at adjacent parameters and send */
-    lowLikeHighParams = runState->likelihood(adjCurrentParams, runState->data, runState->templt);
+    lowLikeHighParams = runState->likelihood(adjCurrentParams, runState->data, runState->model);
     MPI_Send(&lowLikeHighParams, 1, MPI_DOUBLE, MPIrank+1, PT_COM, MPI_COMM_WORLD);
 
     /* Determine if swap was accepted */
@@ -1336,7 +1332,7 @@ UINT4 LALInferenceMCMCMCswap(LALInferenceRunState *runState, REAL8 *ladder, INT4
 
     if (swapAccepted) {
       /* Calculate prior at new values */
-      runState->currentPrior = runState->prior(runState, runState->currentParams);
+      runState->currentPrior = runState->prior(runState, runState->currentParams, runState->model);
     }
   }
 
@@ -1372,7 +1368,7 @@ UINT4 LALInferenceMCMCMCswap(LALInferenceRunState *runState, REAL8 *ladder, INT4
       XLALDestroyREAL8Vector(adjParameters);
 
       /* Calculate likelihood at adjacent parameters */
-      highLikeLowParams = runState->likelihood(adjCurrentParams, runState->data, runState->templt);
+      highLikeLowParams = runState->likelihood(adjCurrentParams, runState->data, runState->model);
 
       /* Recieve likelihood from adjacent chain */
       MPI_Recv(&lowLikeHighParams, 1, MPI_DOUBLE, MPIrank-1, PT_COM, MPI_COMM_WORLD, &MPIstatus);
@@ -1414,7 +1410,7 @@ UINT4 LALInferenceMCMCMCswap(LALInferenceRunState *runState, REAL8 *ladder, INT4
 
       if (swapAccepted) {
         /* Calculate prior at new values */
-        runState->currentPrior = runState->prior(runState, runState->currentParams);
+        runState->currentPrior = runState->prior(runState, runState->currentParams, runState->model);
       }
     }
   }
@@ -1847,8 +1843,8 @@ void LALInferencePrintPTMCMCInjectionSample(LALInferenceRunState *runState) {
       LALInferenceSetVariable(runState->currentParams, "phi_spin2", &phi_spin2);
     }
 
-    runState->currentLikelihood = runState->likelihood(runState->currentParams, runState->data, runState->templt);
-    runState->currentPrior = runState->prior(runState, runState->currentParams);
+    runState->currentLikelihood = runState->likelihood(runState->currentParams, runState->data, runState->model);
+    runState->currentPrior = runState->prior(runState, runState->currentParams, runState->model);
     setIFOAcceptedLikelihoods(runState);
     LALInferencePrintPTMCMCHeaderFile(runState, out);
     fclose(out);
@@ -1864,8 +1860,8 @@ void LALInferencePrintPTMCMCInjectionSample(LALInferenceRunState *runState) {
     }
 
     LALInferenceCopyVariables(saveParams, runState->currentParams);
-    runState->currentLikelihood = runState->likelihood(runState->currentParams, runState->data, runState->templt);
-    runState->currentPrior = runState->prior(runState, runState->currentParams);
+    runState->currentLikelihood = runState->likelihood(runState->currentParams, runState->data, runState->model);
+    runState->currentPrior = runState->prior(runState, runState->currentParams, runState->model);
     setIFOAcceptedLikelihoods(runState);    
 
     XLALFree(fname);
@@ -1874,85 +1870,82 @@ void LALInferencePrintPTMCMCInjectionSample(LALInferenceRunState *runState) {
   }
 }
 
-void LALInferenceDataDump(LALInferenceRunState *runState){
+void LALInferenceDataDump(LALInferenceIFOData *data, LALInferenceModel *model){
 
   const UINT4 nameLength=256;
   char filename[nameLength];
   FILE *out;
-  LALInferenceIFOData *headData = runState->data;
   UINT4 ui;
 
-  while (headData != NULL) {
+  snprintf(filename, nameLength, "freqTemplatehPlus.dat");
+  out = fopen(filename, "w");
+  for (ui = 0; ui < model->freqhPlus->data->length; ui++) {
+    REAL8 f = model->freqhPlus->deltaF * ui;
+    COMPLEX16 d = model->freqhPlus->data->data[ui];
 
-    snprintf(filename, nameLength, "%s-freqTemplatehPlus.dat", headData->name);
+    fprintf(out, "%g %g %g\n", f, creal(d), cimag(d));
+  }
+  fclose(out);
+
+  snprintf(filename, nameLength, "freqTemplatehCross.dat");
+  out = fopen(filename, "w");
+  for (ui = 0; ui < model->freqhCross->data->length; ui++) {
+    REAL8 f = model->freqhCross->deltaF * ui;
+    COMPLEX16 d = model->freqhCross->data->data[ui];
+
+    fprintf(out, "%g %g %g\n", f, creal(d), cimag(d));
+  }
+  fclose(out);
+
+  while (data != NULL) {
+    snprintf(filename, nameLength, "%s-freqTemplateStrain.dat", data->name);
     out = fopen(filename, "w");
-    for (ui = 0; ui < headData->freqModelhPlus->data->length; ui++) {
-      REAL8 f = headData->freqModelhPlus->deltaF * ui;
-      COMPLEX16 d = headData->freqModelhPlus->data->data[ui];
-
-      fprintf(out, "%g %g %g\n", f, creal(d), cimag(d));
-    }
-    fclose(out);
-
-    snprintf(filename, nameLength, "%s-freqTemplatehCross.dat", headData->name);
-    out = fopen(filename, "w");
-    for (ui = 0; ui < headData->freqModelhCross->data->length; ui++) {
-      REAL8 f = headData->freqModelhCross->deltaF * ui;
-      COMPLEX16 d = headData->freqModelhCross->data->data[ui];
-
-      fprintf(out, "%g %g %g\n", f, creal(d), cimag(d));
-    }
-    fclose(out);
-
-    snprintf(filename, nameLength, "%s-freqTemplateStrain.dat", headData->name);
-    out = fopen(filename, "w");
-    for (ui = 0; ui < headData->freqModelhCross->data->length; ui++) {
-      REAL8 f = headData->freqModelhCross->deltaF * ui;
+    for (ui = 0; ui < model->freqhCross->data->length; ui++) {
+      REAL8 f = model->freqhCross->deltaF * ui;
       COMPLEX16 d;
-      d = headData->fPlus * headData->freqModelhPlus->data->data[ui] +
-             headData->fCross * headData->freqModelhCross->data->data[ui];
+      d = data->fPlus * model->freqhPlus->data->data[ui] +
+             data->fCross * model->freqhCross->data->data[ui];
 
       fprintf(out, "%g %g %g\n", f, creal(d), cimag(d) );
     }
     fclose(out);
 
-    snprintf(filename, nameLength, "%s-timeTemplatehPlus.dat", headData->name);
+    snprintf(filename, nameLength, "%s-timeTemplateStrain.dat", data->name);
     out = fopen(filename, "w");
-    for (ui = 0; ui < headData->timeModelhPlus->data->length; ui++) {
-      REAL8 tt = XLALGPSGetREAL8(&(headData->timeModelhPlus->epoch)) +
-        ui * headData->timeModelhPlus->deltaT;
-      REAL8 d = headData->timeModelhPlus->data->data[ui];
+    for (ui = 0; ui < model->timehCross->data->length; ui++) {
+      REAL8 tt = XLALGPSGetREAL8(&(model->timehCross->epoch)) +
+        data->timeshift + ui*model->timehCross->deltaT;
+      REAL8 d = data->fPlus*model->timehPlus->data->data[ui] +
+        data->fCross*model->timehCross->data->data[ui];
 
       fprintf(out, "%.6f %g\n", tt, d);
     }
     fclose(out);
 
-    snprintf(filename, nameLength, "%s-timeTemplatehCross.dat", headData->name);
+    snprintf(filename, nameLength, "%s-timeTemplatehPlus.dat", data->name);
     out = fopen(filename, "w");
-    for (ui = 0; ui < headData->timeModelhCross->data->length; ui++) {
-      REAL8 tt = XLALGPSGetREAL8(&(headData->timeModelhCross->epoch)) +
-        ui * headData->timeModelhCross->deltaT;
-      REAL8 d = headData->timeModelhCross->data->data[ui];
+    for (ui = 0; ui < model->timehPlus->data->length; ui++) {
+      REAL8 tt = XLALGPSGetREAL8(&(model->timehPlus->epoch)) +
+        ui * model->timehPlus->deltaT;
+      REAL8 d = model->timehPlus->data->data[ui];
 
       fprintf(out, "%.6f %g\n", tt, d);
     }
     fclose(out);
 
-    snprintf(filename, nameLength, "%s-timeTemplateStrain.dat", headData->name);
+    snprintf(filename, nameLength, "%s-timeTemplatehCross.dat", data->name);
     out = fopen(filename, "w");
-    for (ui = 0; ui < headData->timeModelhCross->data->length; ui++) {
-      REAL8 tt = XLALGPSGetREAL8(&(headData->timeModelhCross->epoch)) +
-        headData->timeshift + ui*headData->timeModelhCross->deltaT;
-      REAL8 d = headData->fPlus*headData->timeModelhPlus->data->data[ui] +
-        headData->fCross*headData->timeModelhCross->data->data[ui];
+    for (ui = 0; ui < model->timehCross->data->length; ui++) {
+      REAL8 tt = XLALGPSGetREAL8(&(model->timehCross->epoch)) +
+        ui * model->timehCross->deltaT;
+      REAL8 d = model->timehCross->data->data[ui];
 
       fprintf(out, "%.6f %g\n", tt, d);
     }
     fclose(out);
 
-    headData = headData->next;
+    data = data->next;
   }
-
 }
 
 void LALInferenceMCMCResumeRead(LALInferenceRunState *runState, FILE *resumeFile) {

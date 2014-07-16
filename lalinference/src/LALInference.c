@@ -1312,10 +1312,10 @@ char* LALInferencePrintCommandLine(ProcessParamsTable *procparams)
   return str;
 }
 
-void LALInferenceExecuteFT(LALInferenceIFOData *IFOdata)
+void LALInferenceExecuteFT(LALInferenceModel *model)
 /* Execute (forward, time-to-freq) Fourier transform.  Contents of
-IFOdata->timeModelh... are windowed and FT'ed, results go into
-IFOdata->freqModelh...  
+model->timeh... are windowed and FT'ed, results go into
+model->freqh...  
 
 NOTE: the windowing is performed *in-place*, so do not call more than
 once on a given timeModel!
@@ -1325,131 +1325,113 @@ once on a given timeModel!
   double norm;
   int errnum; 
   
-  if (IFOdata==NULL) {
-    fprintf(stderr," ERROR: IFOdata is a null pointer at LALInferenceExecuteFT, exiting!.\n");
+  if (model==NULL) {
+    fprintf(stderr," ERROR: model is a null pointer at LALInferenceExecuteFT, exiting!.\n");
     XLAL_ERROR_VOID(XLAL_EFAULT);
   }
 
-  else if(!IFOdata->timeData && IFOdata->timeData){				
-    XLALPrintError("timeData is NULL at LALInferenceExecuteFT, exiting!");
-    XLAL_ERROR_VOID(XLAL_EFAULT);	
+  if(!model->freqhPlus && !model->timehPlus){
+    XLALPrintError("freqhPlus and timeqhPlus are NULL at LALInferenceExecuteFT, exiting!");
+    XLAL_ERROR_VOID(XLAL_EFAULT);
   }
-
-  else if(!IFOdata->freqData && IFOdata->timeData){
-    XLALPrintError("freqData is NULL at LALInferenceExecuteFT, exiting!");
-    XLAL_ERROR_VOID(XLAL_EFAULT);	
-  }
-
-  else if(!IFOdata->freqData && !IFOdata->timeData){
-    XLALPrintError("timeData and freqData are NULL at LALInferenceExecuteFT, exiting!");
+  else if(!model->freqhCross && !model->timehCross){
+    XLALPrintError("freqhCross and timeqhCross are NULL at LALInferenceExecuteFT, exiting!");
     XLAL_ERROR_VOID(XLAL_EFAULT);
   }
  
-  else if(!IFOdata->freqData->data->length){
-    XLALPrintError("Frequency series length is not set, exiting!");
+  /* h+ */
+  if(!model->freqhPlus){     
+      XLAL_TRY(model->freqhPlus=(COMPLEX16FrequencySeries *)XLALCreateCOMPLEX16FrequencySeries("freqData",&(model->timehPlus->epoch),0.0,model->deltaF,&lalDimensionlessUnit,model->freqLength),errnum);
+
+    if (errnum){
+      XLALPrintError("Could not create COMPLEX16FrequencySeries in LALInferenceExecuteFT");
+      XLAL_ERROR_VOID(errnum);
+    }
+  }
+
+  if (!model->window || !model->window->data){
+    XLALPrintError("model->window is NULL at LALInferenceExecuteFT: Exiting!");
     XLAL_ERROR_VOID(XLAL_EFAULT);
   }
 
-  for(;IFOdata;IFOdata=IFOdata->next){
-    /* h+ */
-    if(!IFOdata->freqModelhPlus){     
-	
-      XLAL_TRY(IFOdata->freqModelhPlus=(COMPLEX16FrequencySeries *)XLALCreateCOMPLEX16FrequencySeries("freqData",&(IFOdata->timeData->epoch),0.0,IFOdata->freqData->deltaF,&lalDimensionlessUnit,IFOdata->freqData->data->length),errnum);
+  XLAL_TRY(XLALDDVectorMultiply(model->timehPlus->data, model->timehPlus->data, model->window->data), errnum);
 
-      if (errnum){
-	XLALPrintError("Could not create COMPLEX16FrequencySeries in LALInferenceExecuteFT");
-	XLAL_ERROR_VOID(errnum);
-      }
-    }
-    if (!IFOdata->window || !IFOdata->window->data){
-      XLALPrintError("IFOdata->window is NULL at LALInferenceExecuteFT: Exiting!");
-      XLAL_ERROR_VOID(XLAL_EFAULT);
-    }
+  if (errnum){
+    XLALPrintError("Could not window time-series in LALInferenceExecuteFT");
+    XLAL_ERROR_VOID(errnum);
+  }
+  	
+  if (!model->timeToFreqFFTPlan){
+    XLALPrintError("model->timeToFreqFFTPlan is NULL at LALInferenceExecuteFT: Exiting!");
+    XLAL_ERROR_VOID(XLAL_EFAULT);
+  }
 
-    XLAL_TRY(XLALDDVectorMultiply(IFOdata->timeModelhPlus->data,IFOdata->timeModelhPlus->data,IFOdata->window->data),errnum);
-
-    if (errnum){
-      XLALPrintError("Could not window time-series in LALInferenceExecuteFT");
-      XLAL_ERROR_VOID(errnum);
+  XLAL_TRY(XLALREAL8TimeFreqFFT(model->freqhPlus, model->timehPlus, model->timeToFreqFFTPlan), errnum);
+  
+  if (errnum){
+    XLALPrintError("Could not h_plus FFT time-series");
+    XLAL_ERROR_VOID(errnum);
+  }
+  			    
+  /* hx */
+  if(!model->freqhCross){ 
+    XLAL_TRY(model->freqhCross=(COMPLEX16FrequencySeries *)XLALCreateCOMPLEX16FrequencySeries("freqData",&(model->timehCross->epoch),0.0,model->deltaF,&lalDimensionlessUnit,model->freqLength),errnum);
+  
+    if (errnum){	
+      XLALPrintError("Could not create COMPLEX16FrequencySeries in LALInferenceExecuteFT");
+      XLAL_ERROR_VOID(errnum);		
     }
-   		
-    if (!IFOdata->timeToFreqFFTPlan){
-      XLALPrintError("IFOdata->timeToFreqFFTPlan is NULL at LALInferenceExecuteFT: Exiting!");
-      XLAL_ERROR_VOID(XLAL_EFAULT);
-    }
+  }
 
-    XLAL_TRY(XLALREAL8TimeFreqFFT(IFOdata->freqModelhPlus,IFOdata->timeModelhPlus,IFOdata->timeToFreqFFTPlan),errnum);
-	
-    if (errnum){
-      XLALPrintError("Could not h_plus FFT time-series");
-      XLAL_ERROR_VOID(errnum);
-    }
-    			    
-    /* hx */
-    if(!IFOdata->freqModelhCross){ 
+  XLAL_TRY(XLALDDVectorMultiply(model->timehCross->data, model->timehCross->data, model->window->data), errnum);
 
-      XLAL_TRY(IFOdata->freqModelhCross=(COMPLEX16FrequencySeries *)XLALCreateCOMPLEX16FrequencySeries("freqData",&(IFOdata->timeData->epoch),0.0,IFOdata->freqData->deltaF,&lalDimensionlessUnit,IFOdata->freqData->data->length),errnum);
-	
-      if (errnum){	
-	XLALPrintError("Could not create COMPLEX16FrequencySeries in LALInferenceExecuteFT");
-	XLAL_ERROR_VOID(errnum);		
-      }
-    }
+  if (errnum){
+    XLALPrintError("Could not window time-series in LALInferenceExecuteFT");
+    XLAL_ERROR_VOID(errnum);
+  }
+  	 
+  XLAL_TRY(XLALREAL8TimeFreqFFT(model->freqhCross, model->timehCross, model->timeToFreqFFTPlan), errnum);
+  
+  if (errnum){
+    XLALPrintError("Could not FFT h_cross time-series");
+    XLAL_ERROR_VOID(errnum);
+  }   
 
-    XLAL_TRY(XLALDDVectorMultiply(IFOdata->timeModelhCross->data,IFOdata->timeModelhCross->data,IFOdata->window->data),errnum);
-
-    if (errnum){
-      XLALPrintError("Could not window time-series in LALInferenceExecuteFT");
-      XLAL_ERROR_VOID(errnum);
-    }
-		 
-    XLAL_TRY(XLALREAL8TimeFreqFFT(IFOdata->freqModelhCross,IFOdata->timeModelhCross,IFOdata->timeToFreqFFTPlan),errnum);
-	
-    if (errnum){
-      XLALPrintError("Could not FFT h_cross time-series");
-      XLAL_ERROR_VOID(errnum);
-    }   
-
-    norm=sqrt(IFOdata->window->data->length/IFOdata->window->sumofsquares);
-    
-    for(i=0;i<IFOdata->freqModelhPlus->data->length;i++){
-      IFOdata->freqModelhPlus->data->data[i] *= ((REAL8) norm);
-      IFOdata->freqModelhCross->data->data[i] *= ((REAL8) norm);
-    }
+  norm=sqrt(model->window->data->length/model->window->sumofsquares);
+  
+  for(i=0;i<model->freqhPlus->data->length;i++){
+    model->freqhPlus->data->data[i] *= ((REAL8) norm);
+    model->freqhCross->data->data[i] *= ((REAL8) norm);
   }
 }
 
-void LALInferenceExecuteInvFT(LALInferenceIFOData *IFOdata)
+void LALInferenceExecuteInvFT(LALInferenceModel *model)
 /* Execute inverse (freq-to-time) Fourier transform. */
-/* Results go into 'IFOdata->timeModelh...'          */
+/* Results go into 'model->timeh...'                 */
 {
-  while (IFOdata != NULL) {
-    if (IFOdata->freqToTimeFFTPlan==NULL) {
-      XLAL_ERROR_VOID(XLAL_EFAULT, "Encountered unallocated \"freqToTimeFFTPlan\".");
-    }
-
-    /*  h+ :  */
-    if (IFOdata->timeModelhPlus==NULL) {
-      XLAL_ERROR_VOID(XLAL_EFAULT, "Encountered unallocated \"timeModelhPlus\".");
-    }
-    if (IFOdata->freqModelhPlus==NULL) {
-      XLAL_ERROR_VOID(XLAL_EFAULT, "Encountered unallocated \"freqModelhPlus\".");
-    }
-
-    XLALREAL8FreqTimeFFT(IFOdata->timeModelhPlus, IFOdata->freqModelhPlus, IFOdata->freqToTimeFFTPlan);
-
-    /*  hx :  */
-    if (IFOdata->timeModelhCross==NULL) {
-      XLAL_ERROR_VOID(XLAL_EFAULT, "Encountered unallocated \"timeModelhCross\".");
-    }
-    if (IFOdata->freqModelhCross==NULL) {
-      XLAL_ERROR_VOID(XLAL_EFAULT, "Encountered unallocated \"freqModelhCross\".");
-    }
-
-    XLALREAL8FreqTimeFFT(IFOdata->timeModelhCross, IFOdata->freqModelhCross, IFOdata->freqToTimeFFTPlan);
-
-    IFOdata=IFOdata->next;
+  if (model->freqToTimeFFTPlan==NULL) {
+    XLAL_ERROR_VOID(XLAL_EFAULT, "Encountered unallocated \"freqToTimeFFTPlan\".");
   }
+
+  /*  h+ :  */
+  if (model->timehPlus==NULL) {
+    XLAL_ERROR_VOID(XLAL_EFAULT, "Encountered unallocated \"timehPlus\".");
+  }
+  if (model->freqhPlus==NULL) {
+    XLAL_ERROR_VOID(XLAL_EFAULT, "Encountered unallocated \"freqhPlus\".");
+  }
+
+  XLALREAL8FreqTimeFFT(model->timehPlus, model->freqhPlus, model->freqToTimeFFTPlan);
+
+  /*  hx :  */
+  if (model->timehCross==NULL) {
+    XLAL_ERROR_VOID(XLAL_EFAULT, "Encountered unallocated \"timehCross\".");
+  }
+  if (model->freqhCross==NULL) {
+    XLAL_ERROR_VOID(XLAL_EFAULT, "Encountered unallocated \"freqhCross\".");
+  }
+
+  XLALREAL8FreqTimeFFT(model->timehCross, model->freqhCross, model->freqToTimeFFTPlan);
 }
 
 void LALInferenceProcessParamLine(FILE *inp, char **headers, LALInferenceVariables *vars) {
@@ -2562,14 +2544,6 @@ INT4 LALInferenceSanityCheck(LALInferenceRunState *state)
       fprintf(stderr,"Checking timeData: ");
       if(!(retcode|=checkREAL8TimeSeries(data->timeData))) fprintf(stderr," OK\n");
     }
-    if(data->timeModelhPlus) {
-      fprintf(stderr,"Checking timeModelhPlus: ");
-      if(!(retcode|=checkREAL8TimeSeries(data->timeModelhPlus))) fprintf(stderr," OK\n");
-    }
-    if(data->timeModelhCross) {
-      fprintf(stderr,"Checking timeModelhCross: ");
-      if(!(retcode|=checkREAL8TimeSeries(data->timeModelhCross))) fprintf(stderr," OK\n");
-    }
     if(data->whiteTimeData) {
       fprintf(stderr,"Checking whiteTimeData: ");
       if(!(retcode|=checkREAL8TimeSeries(data->whiteTimeData))) fprintf(stderr," OK\n");
@@ -2582,14 +2556,6 @@ INT4 LALInferenceSanityCheck(LALInferenceRunState *state)
       fprintf(stderr,"Checking freqData: ");
       if(!(retcode|=checkCOMPLEX16FrequencySeries(data->freqData))) fprintf(stderr," OK\n");
     }
-    if(data->freqModelhPlus) {
-      fprintf(stderr,"Checking freqModelhPlus: ");
-      if(!(retcode|=checkCOMPLEX16FrequencySeries(data->freqModelhPlus))) fprintf(stderr," OK\n");
-    }
-    if(data->freqModelhCross) {
-      fprintf(stderr,"Checking freqModelhCross: ");
-      if(!(retcode|=checkCOMPLEX16FrequencySeries(data->freqModelhCross))) fprintf(stderr," OK\n");
-    }
     if(data->whiteFreqData) {
       fprintf(stderr,"Checking whiteFreqData: ");
       if(!(retcode|=checkCOMPLEX16FrequencySeries(data->whiteFreqData))) fprintf(stderr," OK\n");
@@ -2600,6 +2566,29 @@ INT4 LALInferenceSanityCheck(LALInferenceRunState *state)
     }
     data=data->next;
   }
+
+  LALInferenceModel *model = state->model;
+  if(!model) {
+	fprintf(stderr,"NULL model pointer!\n");
+        return(1);
+  }
+  if(model->timehPlus) {
+    fprintf(stderr,"Checking timehPlus: ");
+    if(!(retcode|=checkREAL8TimeSeries(model->timehPlus))) fprintf(stderr," OK\n");
+  }
+  if(model->timehCross) {
+    fprintf(stderr,"Checking timehCross: ");
+    if(!(retcode|=checkREAL8TimeSeries(model->timehCross))) fprintf(stderr," OK\n");
+  }
+  if(model->freqhPlus) {
+    fprintf(stderr,"Checking freqhPlus: ");
+    if(!(retcode|=checkCOMPLEX16FrequencySeries(model->freqhPlus))) fprintf(stderr," OK\n");
+  }
+  if(model->freqhCross) {
+    fprintf(stderr,"Checking freqhCross: ");
+    if(!(retcode|=checkCOMPLEX16FrequencySeries(model->freqhCross))) fprintf(stderr," OK\n");
+  }
+
   return(retcode);
 }
 
@@ -2667,7 +2656,7 @@ static INT4 checkREAL8Value(REAL8 val)
   return 0;
 }
 
-void LALInferenceDumpWaveforms(LALInferenceRunState *state, const char *basefilename)
+void LALInferenceDumpWaveforms(LALInferenceModel *model, const char *basefilename)
 {
     UINT4 i;
     FILE *dumpfile=NULL;
@@ -2677,27 +2666,24 @@ void LALInferenceDumpWaveforms(LALInferenceRunState *state, const char *basefile
     {
         sprintf(basename,"%s",basefilename);
     }
-    LALInferenceIFOData *data=state->data;
-    while(data){
-        if(data->timeModelhPlus && data->timeModelhCross){
-            sprintf(filename,"%s_%s_time.txt",basename,data->name);
-            dumpfile=fopen(filename,"w");
-            REAL8 epoch = data->timeModelhPlus->epoch.gpsSeconds + 1e-9*data->timeModelhPlus->epoch.gpsNanoSeconds;
-            REAL8 dt=data->timeModelhPlus->deltaT;
-            for(i=0;i<data->timeModelhPlus->data->length;i++) fprintf(dumpfile,"%10.20e %10.20e %10.20e\n",epoch+i*dt,data->timeModelhPlus->data->data[i],data->timeModelhCross->data->data[i]);
-            fclose(dumpfile);
-            fprintf(stdout,"Dumped file %s\n",filename);
-        }
-        if(data->freqModelhPlus && data->freqModelhCross){
-            sprintf(filename,"%s_%s_freq.txt",basename,data->name);
-            dumpfile=fopen(filename,"w");
-            REAL8 fLow=data->freqModelhPlus->f0;
-            REAL8 df=data->freqModelhPlus->deltaF;
-            for(i=0;i<data->freqModelhPlus->data->length;i++) fprintf(dumpfile,"%10.20e %10.20e %10.20e %10.20e %10.20e\n",fLow+i*df,creal(data->freqModelhPlus->data->data[i]), cimag(data->freqModelhPlus->data->data[i]),creal(data->freqModelhCross->data->data[i]), cimag(data->freqModelhCross->data->data[i]));
-            fclose(dumpfile);
-            fprintf(stdout,"Dumped file %s\n",filename);
-        }
-        data=data->next;
+
+    if(model->timehPlus && model->timehCross){
+        sprintf(filename,"%s_time.txt",basename);
+        dumpfile=fopen(filename,"w");
+        REAL8 epoch = model->timehPlus->epoch.gpsSeconds + 1e-9*model->timehPlus->epoch.gpsNanoSeconds;
+        REAL8 dt=model->timehPlus->deltaT;
+        for(i=0;i<model->timehPlus->data->length;i++) fprintf(dumpfile,"%10.20e %10.20e %10.20e\n",epoch+i*dt,model->timehPlus->data->data[i],model->timehCross->data->data[i]);
+        fclose(dumpfile);
+        fprintf(stdout,"Dumped file %s\n",filename);
+    }
+    if(model->freqhPlus && model->freqhCross){
+        sprintf(filename,"%s_freq.txt",basename);
+        dumpfile=fopen(filename,"w");
+        REAL8 fLow=model->freqhPlus->f0;
+        REAL8 df=model->freqhPlus->deltaF;
+        for(i=0;i<model->freqhPlus->data->length;i++) fprintf(dumpfile,"%10.20e %10.20e %10.20e %10.20e %10.20e\n",fLow+i*df,creal(model->freqhPlus->data->data[i]), cimag(model->freqhPlus->data->data[i]),creal(model->freqhCross->data->data[i]), cimag(model->freqhCross->data->data[i]));
+        fclose(dumpfile);
+        fprintf(stdout,"Dumped file %s\n",filename);
     }
 }
 

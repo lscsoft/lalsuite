@@ -124,7 +124,7 @@ void getLogLike(double *Cube, UNUSED int *ndim, UNUSED int *npars, double *lnew,
     newParams=calloc(1,sizeof(LALInferenceVariables));
     /* Make a copy of the parameters passed through currentParams */
     LALInferenceCopyVariables(runStateGlobal->currentParams,newParams);
-    int i = runStateGlobal->CubeToPrior(runStateGlobal, newParams, Cube, context);
+    int i = runStateGlobal->CubeToPrior(runStateGlobal, newParams, runStateGlobal->model, Cube, context);
 
     // if the parameters violate the prior then set likelihood to log(0);
     if( i == 0 )
@@ -136,7 +136,7 @@ void getLogLike(double *Cube, UNUSED int *ndim, UNUSED int *npars, double *lnew,
     }
 
     // calculate the loglike
-    *lnew=runStateGlobal->likelihood(newParams, runStateGlobal->data, runStateGlobal->templt);
+    *lnew=runStateGlobal->likelihood(newParams, runStateGlobal->data, runStateGlobal->model);
     *lnew -= (*(REAL8 *)LALInferenceGetVariable(runStateGlobal->algorithmParams, "logZnoise"));
     LALInferenceClearVariables(newParams);
     free(newParams);
@@ -183,7 +183,7 @@ void getphysparams(double *Cube, UNUSED int *ndim, UNUSED int *nPar, void *conte
     LALInferenceVariables *newParams=NULL;
     newParams=calloc(1,sizeof(LALInferenceVariables));
     LALInferenceCopyVariables(runStateGlobal->currentParams,newParams);
-    runStateGlobal->CubeToPrior(runStateGlobal, newParams, Cube, context);
+    runStateGlobal->CubeToPrior(runStateGlobal, newParams, runStateGlobal->model, Cube, context);
     free(newParams);
 
     // Adjust time if necessary
@@ -202,7 +202,7 @@ void getallparams(double *Cube, UNUSED int *ndim, UNUSED int *nPar, void *contex
     LALInferenceVariables *newParams=NULL;
     newParams=calloc(1,sizeof(LALInferenceVariables));
     LALInferenceCopyVariables(runStateGlobal->currentParams,newParams);
-    runStateGlobal->CubeToPrior(runStateGlobal, newParams, Cube, context);
+    runStateGlobal->CubeToPrior(runStateGlobal, newParams, runStateGlobal->model, Cube, context);
     free(newParams);
 }
 
@@ -303,7 +303,7 @@ void LALInferenceMultiNestAlgorithm(LALInferenceRunState *runState)
 
     if( ND==0 )
     {
-        double like = runState->likelihood(runState->currentParams,runState->data,runState->templt);
+        double like = runState->likelihood(runState->currentParams,runState->data,runState->model);
         like -= (*(REAL8 *)LALInferenceGetVariable(runState->algorithmParams, "logZnoise"));
         fprintf(stdout,"LOG-LIKELIHOOD VALUE RETURNED = %g\n",like);
         double prior = runState->prior(runState,runState->currentParams);
@@ -422,7 +422,7 @@ void LALInferenceMultiNestAlgorithm(LALInferenceRunState *runState)
     double linj,pinj,lz;
         char finjname[150];
         sprintf(finjname,"%sinjlike.txt",root);
-    linj=runState->likelihood(runState->currentParams, runState->data, runState->templt);
+    linj=runState->likelihood(runState->currentParams, runState->data, runState->model);
         lz = (*(REAL8 *)LALInferenceGetVariable(runState->algorithmParams, "logZnoise"));
     linj -= lz;
     pinj = runState->prior(runState,runState->currentParams);
@@ -519,32 +519,6 @@ Initialisation arguments:\n\
 
         ifoPtr = irs->data;
         ifoListStart = irs->data;
-        while (ifoPtr != NULL) {
-            /*If two IFOs have the same sampling rate, they should have the same timeModelh*,
-             freqModelh*, and modelParams variables to avoid excess computation
-             in model waveform generation in the future*/
-            LALInferenceIFOData * ifoPtrCompare=ifoListStart;
-            int foundIFOwithSameSampleRate=0;
-            while(ifoPtrCompare != NULL && ifoPtrCompare!=ifoPtr) {
-                if(ifoPtrCompare->timeData->deltaT == ifoPtr->timeData->deltaT){
-                    ifoPtr->timeModelhPlus=ifoPtrCompare->timeModelhPlus;
-                    ifoPtr->freqModelhPlus=ifoPtrCompare->freqModelhPlus;
-                    ifoPtr->timeModelhCross=ifoPtrCompare->timeModelhCross;
-                    ifoPtr->freqModelhCross=ifoPtrCompare->freqModelhCross;
-                    ifoPtr->modelParams=ifoPtrCompare->modelParams;
-                    foundIFOwithSameSampleRate=1;
-                    break;
-                }
-            }
-            if(!foundIFOwithSameSampleRate){
-                ifoPtr->timeModelhPlus  = XLALCreateREAL8TimeSeries("timeModelhPlus",&(ifoPtr->timeData->epoch),0.0,ifoPtr->timeData->deltaT,&lalDimensionlessUnit,ifoPtr->timeData->data->length);
-                ifoPtr->timeModelhCross = XLALCreateREAL8TimeSeries("timeModelhCross",&(ifoPtr->timeData->epoch),0.0,    ifoPtr->timeData->deltaT,&lalDimensionlessUnit,ifoPtr->timeData->data->length);
-                ifoPtr->freqModelhPlus = XLALCreateCOMPLEX16FrequencySeries("freqModelhPlus",&(ifoPtr->freqData->epoch),0.0,ifoPtr->freqData->deltaF,&lalDimensionlessUnit,ifoPtr->freqData->data->length);
-                ifoPtr->freqModelhCross = XLALCreateCOMPLEX16FrequencySeries("freqModelhCross",&(ifoPtr->freqData->epoch), 0.0, ifoPtr->freqData->deltaF, &lalDimensionlessUnit,ifoPtr->freqData->data->length);
-                ifoPtr->modelParams = XLALCalloc(1, sizeof(LALInferenceVariables));
-            }
-            ifoPtr = ifoPtr->next;
-        }
         irs->currentLikelihood=LALInferenceNullLogLikelihood(irs->data);
         printf("Null Log Likelihood: %g\n", irs->currentLikelihood);
     }
@@ -822,22 +796,24 @@ Arguments for each section follow:\n\n";
     /* And allocating memory */
     state = initialize(procParams);
 
-    /* Set template function */
-    LALInferenceInitCBCTemplate(state);
-
     /* Set up structures for MultiNest */
     initializeMN(state);
 
     /* Set up currentParams with variables to be used */
     /* Review task needs special priors */
     if(LALInferenceGetProcParamVal(procParams,"--correlatedGaussianLikelihood"))
-        LALInferenceInitVariablesReviewEvidence(state);
+        state->model = LALInferenceInitModelReviewEvidence(state);
     else if(LALInferenceGetProcParamVal(procParams,"--bimodalGaussianLikelihood"))
-        LALInferenceInitVariablesReviewEvidence_bimod(state);
+        state->model = LALInferenceInitModelReviewEvidence_bimod(state);
     else if(LALInferenceGetProcParamVal(procParams,"--rosenbrockLikelihood"))
-        LALInferenceInitVariablesReviewEvidence_banana(state);
+        state->model = LALInferenceInitModelReviewEvidence_banana(state);
     else
-        state->currentParams=LALInferenceInitCBCVariables(state);
+        state->model = LALInferenceInitCBCModel(state);
+
+    state->currentParams = XLALMallou(sizeof(LALInferenceVariables));
+    memset(runState->currentParams, 0, sizeof(LALInferenceVariables));
+    LALInferenceCopyVariables(model->params, state->currentParams);
+    state->templt = state->model->templt;
 
     /* Choose the likelihood */
     LALInferenceInitLikelihood(state);

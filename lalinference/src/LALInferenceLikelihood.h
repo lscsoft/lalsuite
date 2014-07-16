@@ -61,7 +61,7 @@ SWIGLAL(
  * Takes as input:
  * - a pointer to a LALInferenceVariable structure containing the parameters to compute the likelihood for,
  * - a pointer to a LALInferenceIFOData structure containing the linked list of interferometer data,
- * - a pointer to the LALInferenceTemplateFunction template function to be used.
+ * - a pointer to the LALInferenceModel model structure, containing the template function and model.
  *
  * Outputs as a REAL8 the natural logarithm value of the likelihood, as defined by:
  *
@@ -87,18 +87,17 @@ SWIGLAL(
  *   - "distance"        (REAL8, Mpc, >0)                      
  *   - "time"            (REAL8, GPS sec.)                     
  ***************************************************************/
-REAL8 LALInferenceUndecomposedFreqDomainLogLikelihood(LALInferenceVariables *currentParams, LALInferenceIFOData *data, 
-                              LALInferenceTemplateFunction templt);
+REAL8 LALInferenceUndecomposedFreqDomainLogLikelihood(LALInferenceVariables *currentParams, LALInferenceIFOData *data, LALInferenceModel *model);
 
 REAL8 LALInferenceROQLogLikelihood(LALInferenceVariables *currentParams, LALInferenceIFOData * data,
-                              LALInferenceTemplateFunction templt);
+                              LALInferenceModel *model);
 
 /**
  * For testing purposes (for instance sampling the prior),
  * likelihood that returns 0.0 = log(1) every
  * time.  Activated with the --zeroLogLike command flag.
  */
-REAL8 LALInferenceZeroLogLikelihood(LALInferenceVariables *currentParams, LALInferenceIFOData *data, LALInferenceTemplateFunction templt);
+REAL8 LALInferenceZeroLogLikelihood(LALInferenceVariables *currentParams, LALInferenceIFOData *data, LALInferenceModel *model);
 
 /***********************************************************//**
  * (log-) likelihood function.                                 
@@ -113,8 +112,7 @@ REAL8 LALInferenceZeroLogLikelihood(LALInferenceVariables *currentParams, LALInf
  *   - "distance"        (REAL8, Mpc, >0)                      
  *   - "time"            (REAL8, GPS sec.)                     
  ***************************************************************/
-REAL8 LALInferenceFreqDomainLogLikelihood(LALInferenceVariables *currentParams, LALInferenceIFOData * data,
-                              LALInferenceTemplateFunction templt);
+REAL8 LALInferenceFreqDomainLogLikelihood(LALInferenceVariables *currentParams, LALInferenceIFOData *data, LALInferenceModel *model);
 
 /***********************************************************//**
  * Chi-Square function.                                        
@@ -128,8 +126,7 @@ REAL8 LALInferenceFreqDomainLogLikelihood(LALInferenceVariables *currentParams, 
  *   - "distance"        (REAL8, Mpc, >0)                      
  *   - "time"            (REAL8, GPS sec.)                     
  ***************************************************************/
-REAL8 LALInferenceChiSquareTest(LALInferenceVariables *currentParams, LALInferenceIFOData * data,
-                              LALInferenceTemplateFunction templt);
+REAL8 LALInferenceChiSquareTest(LALInferenceVariables *currentParams, LALInferenceIFOData *data, LALInferenceModel *model);
 
 /***********************************************************//**
  * Frequency-domain single-IFO response computation.           
@@ -149,8 +146,7 @@ REAL8 LALInferenceChiSquareTest(LALInferenceVariables *currentParams, LALInferen
  *   - "distance"        (REAL8, Mpc, >0)                      
  *   - "time"            (REAL8, GPS sec.)                     
  ***************************************************************/				
-void LALInferenceComputeFreqDomainResponse(LALInferenceVariables *currentParams, LALInferenceIFOData * dataPtr,
-                              LALInferenceTemplateFunction templt, COMPLEX16Vector *freqWaveform);
+void LALInferenceComputeFreqDomainResponse(LALInferenceVariables *currentParams, LALInferenceIFOData *dataPtr, LALInferenceModel *model, COMPLEX16Vector *freqWaveform);
 
 /**
  * Computes the <x|y> overlap in the Fourrier domain.
@@ -194,41 +190,34 @@ REAL8 LALInferenceNullLogLikelihood(LALInferenceIFOData *data);
  *        i.e., to be a set of vectors corresponding to        
  *        frequencies)                                         
  ***************************************************************/
-REAL8 LALInferenceFreqDomainStudentTLogLikelihood(LALInferenceVariables *currentParams, LALInferenceIFOData *data,
-                                      LALInferenceTemplateFunction templt);
+REAL8 LALInferenceFreqDomainStudentTLogLikelihood(LALInferenceVariables *currentParams, LALInferenceIFOData *data, LALInferenceModel *model);
 
 /**
  * An analytic likeilhood that is a correlated Gaussian in 15
  * dimensions.
  */
-REAL8 LALInferenceCorrelatedAnalyticLogLikelihood(LALInferenceVariables *currentParams,
-                                                  LALInferenceIFOData *data,
-                                                  LALInferenceTemplateFunction templt);
+REAL8 LALInferenceCorrelatedAnalyticLogLikelihood(LALInferenceVariables *currentParams, LALInferenceIFOData *data, LALInferenceModel *model);
 
 /**
  * An analytic likeilhood that is two correlated Gaussians in 15
  * dimensions.
  */
-REAL8 LALInferenceBimodalCorrelatedAnalyticLogLikelihood(LALInferenceVariables *currentParams,
-                                                  LALInferenceIFOData *data,
-                                                  LALInferenceTemplateFunction templt);
+REAL8 LALInferenceBimodalCorrelatedAnalyticLogLikelihood(LALInferenceVariables *currentParams, LALInferenceIFOData *data, LALInferenceModel *model);
 
 /**
  * 15-D Rosenbrock log(L) function (see Eq (3) of
  * http://en.wikipedia.org/wiki/Rosenbrock_function .
  */
-REAL8 LALInferenceRosenbrockLogLikelihood(LALInferenceVariables *currentParams,
-                                          LALInferenceIFOData *data,
-                                          LALInferenceTemplateFunction templt);
+REAL8 LALInferenceRosenbrockLogLikelihood(LALInferenceVariables *currentParams, LALInferenceIFOData *data, LALInferenceModel *model);
 
-REAL8 LALInferenceMarginalisedPhaseLogLikelihood(LALInferenceVariables *currentParams, LALInferenceIFOData * data,LALInferenceTemplateFunction templt);
+REAL8 LALInferenceMarginalisedPhaseLogLikelihood(LALInferenceVariables *currentParams, LALInferenceIFOData *data, LALInferenceModel *model);
 
 /**
  * Returns the log-likelihood marginalised over the time dimension
  * from the prior min to the prior max.  See
  * https://dcc.ligo.org/LIGO-T1400460 for the details.
  */
-REAL8 LALInferenceMarginalisedTimeLogLikelihood(LALInferenceVariables *currentParams, LALInferenceIFOData *data, LALInferenceTemplateFunction templt);
+REAL8 LALInferenceMarginalisedTimeLogLikelihood(LALInferenceVariables *currentParams, LALInferenceIFOData *data, LALInferenceModel *model);
 
 /**
  * Initialisation function which reads runState->commaneLine and sets up the
@@ -244,8 +233,7 @@ LALInferenceVariables LALInferenceGetInstrinsicParams(LALInferenceVariables *cur
 INT4 LALInferenceLineSwitch(INT4 lineFlag, INT4 Nlines, INT4 *lines_array, INT4 *widths_array, INT4 i);
 
 /** Calculate the SNR across the network */
-void LALInferenceNetworkSNR(LALInferenceVariables *currentParams, LALInferenceIFOData * data, 
-                              LALInferenceTemplateFunction templt, REAL8 *SNRs);
+void LALInferenceNetworkSNR(LALInferenceVariables *currentParams, LALInferenceIFOData *data, LALInferenceModel *model, REAL8 *SNRs);
 /*@}*/
 
 #endif

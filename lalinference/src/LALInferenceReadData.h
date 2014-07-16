@@ -60,7 +60,7 @@ void LALInferenceInjectInspiralSignal(struct tagLALInferenceIFOData *IFOdata, Pr
  * \param commandLine [in] Pointer to a ProcessParamsTable containing command line arguments
  * \param IFOdata [in] Pointer to an already existing IFOdata structure.
  */
-void LALInferenceSetupROQ(LALInferenceIFOData *IFOdata, ProcessParamsTable *commandLine);
+void LALInferenceSetupROQ(LALInferenceIFOData *IFOdata, LALInferenceModel *model, ProcessParamsTable *commandLine);
 
 /**
  * \brief Fills the variable in vars with the injection values from theEventTable. Destroys contents of

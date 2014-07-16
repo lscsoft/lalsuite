@@ -38,9 +38,9 @@ static double etaInnerIntegrand(double M2, void *viData);
 static double outerIntegrand(double M1, void *voData);
 
 /* Return the log Prior of the variables specified, for the non-spinning/spinning inspiral signal case */
-REAL8 LALInferenceInspiralPrior(LALInferenceRunState *runState, LALInferenceVariables *params)
+REAL8 LALInferenceInspiralPrior(LALInferenceRunState *runState, LALInferenceVariables *params, LALInferenceModel *model)
 {
-  if (params == NULL || runState == NULL || runState->priorArgs == NULL)
+  if (runState->priorArgs == NULL || params == NULL)
     XLAL_ERROR_REAL8(XLAL_EFAULT, "Null arguments received.");
 
   REAL8 logPrior=0.0;
@@ -154,14 +154,14 @@ REAL8 LALInferenceInspiralPrior(LALInferenceRunState *runState, LALInferenceVari
 
   if(LALInferenceCheckVariable(priorParams,"malmquist") &&
         *(UINT4 *)LALInferenceGetVariable(priorParams,"malmquist") &&
-        !within_malmquist(runState, params))
+        !within_malmquist(runState, params, model))
       return -DBL_MAX;
 
   return(logPrior);
 }
 
 /* Convert the hypercube parameter to physical parameters, for the non-spinning inspiral signal case */
-UINT4 LALInferenceInspiralCubeToPrior(LALInferenceRunState *runState, LALInferenceVariables *params, double *Cube, void *context)
+UINT4 LALInferenceInspiralCubeToPrior(LALInferenceRunState *runState, LALInferenceVariables *params, LALInferenceModel *model, double *Cube, void *context)
 {
     REAL8 min=-INFINITY, max=INFINITY, logPrior=0.;
     LALInferenceVariableItem *item;
@@ -578,7 +578,7 @@ UINT4 LALInferenceInspiralCubeToPrior(LALInferenceRunState *runState, LALInferen
 
     Cube[i] = m1; i++; strcat(header,"m1 ");
     Cube[i] = m2; i++; strcat(header,"m2 ");
-    Cube[i] = LALInferenceInspiralPrior(runState,params);
+    Cube[i] = LALInferenceInspiralPrior(runState,params,runState->model);
     i++; strcat(header,"logprior ");
 
     // fRef for system-frame parameters
@@ -627,7 +627,7 @@ UINT4 LALInferenceInspiralCubeToPrior(LALInferenceRunState *runState, LALInferen
 
     if(LALInferenceCheckVariable(priorParams,"malmquist") &&
         *(UINT4 *)LALInferenceGetVariable(priorParams,"malmquist") &&
-        !within_malmquist(runState, params))
+        !within_malmquist(runState, params, model))
       return 0;
 
     return 1;
@@ -752,7 +752,7 @@ void LALInferenceRotateInitialPhase( LALInferenceVariables *parameter){
 
 
 /* Return the log Prior of the variables specified for the sky localisation project, ref: https://www.lsc-group.phys.uwm.edu/ligovirgo/cbcnote/SkyLocComparison#priors, for the non-spinning/spinning inspiral signal case */
-REAL8 LALInferenceInspiralSkyLocPrior(LALInferenceRunState *runState, LALInferenceVariables *params)
+REAL8 LALInferenceInspiralSkyLocPrior(LALInferenceRunState *runState, LALInferenceVariables *params, LALInferenceModel *model)
 {
   REAL8 logPrior=0.0;
   REAL8 val=0.0;
@@ -921,7 +921,7 @@ REAL8 LALInferenceInspiralSkyLocPrior(LALInferenceRunState *runState, LALInferen
 }
 
 /* Convert the hypercube parameter to physical parameters, for the non-spinning inspiral signal case */
-UINT4 LALInferenceInspiralSkyLocCubeToPrior(LALInferenceRunState *runState, LALInferenceVariables *params, double *Cube, void *context)
+UINT4 LALInferenceInspiralSkyLocCubeToPrior(LALInferenceRunState *runState, LALInferenceVariables *params, LALInferenceModel *model, double *Cube, void *context)
 {
     LALInferenceVariableItem *item;
     LALInferenceVariables *priorParams=runState->priorArgs;
@@ -1343,7 +1343,7 @@ UINT4 LALInferenceInspiralSkyLocCubeToPrior(LALInferenceRunState *runState, LALI
 
     Cube[i] = m1; i++; strcat(header,"m1 ");
     Cube[i] = m2; i++; strcat(header,"m2 ");
-    Cube[i] = LALInferenceInspiralSkyLocPrior(runState,params);
+    Cube[i] = LALInferenceInspiralSkyLocPrior(runState,params,model);
     i++; strcat(header,"logprior ");
 
     // fRef for system-frame parameters
@@ -1395,7 +1395,7 @@ UINT4 LALInferenceInspiralSkyLocCubeToPrior(LALInferenceRunState *runState, LALI
 
 
 /* Return the log Prior of the variables specified, for the non-spinning/spinning inspiral signal case */
-REAL8 LALInferenceInspiralPriorNormalised(LALInferenceRunState *runState, LALInferenceVariables *params)
+REAL8 LALInferenceInspiralPriorNormalised(LALInferenceRunState *runState, LALInferenceVariables *params, LALInferenceModel *model)
 {
   static int S6PEpriorWarning = 0;
   REAL8 logPrior=0.0;
@@ -1778,7 +1778,7 @@ LALInferenceVariableItem *item=params->head;
 }
 
 /* Convert the hypercube parameter to physical parameters, for the non-spinning inspiral signal case */
-UINT4 LALInferenceInspiralPriorNormalisedCubeToPrior(LALInferenceRunState *runState, LALInferenceVariables *params, double *Cube, void *context)
+UINT4 LALInferenceInspiralPriorNormalisedCubeToPrior(LALInferenceRunState *runState, LALInferenceVariables *params, LALInferenceModel *model, double *Cube, void *context)
 {
     LALInferenceVariableItem *item;
     LALInferenceVariables *priorParams=runState->priorArgs;
@@ -2199,7 +2199,7 @@ UINT4 LALInferenceInspiralPriorNormalisedCubeToPrior(LALInferenceRunState *runSt
 
     Cube[i] = m1; i++; strcat(header,"m1 ");
     Cube[i] = m2; i++; strcat(header,"m2 ");
-    Cube[i] = LALInferenceInspiralPriorNormalised(runState,params);
+    Cube[i] = LALInferenceInspiralPriorNormalised(runState,params,model);
     i++; strcat(header,"logprior ");
 
     // fRef for system-frame parameters
@@ -2718,7 +2718,7 @@ void LALInferenceDrawNameFromPrior( LALInferenceVariables *output,
 
 
 /* Switch reads true if parameters lie within Malmquist prior */
-UINT4 within_malmquist(LALInferenceRunState *runState, LALInferenceVariables *params) {
+UINT4 within_malmquist(LALInferenceRunState *runState, LALInferenceVariables *params, LALInferenceModel *model) {
     UINT4 i=0, nifo=0;
 
     LALInferenceIFOData *ifo = runState->data;
@@ -2728,7 +2728,7 @@ UINT4 within_malmquist(LALInferenceRunState *runState, LALInferenceVariables *pa
     }
 
     REAL8 *SNRs = XLALMalloc(nifo * sizeof(REAL8));
-    LALInferenceNetworkSNR(params, runState->data, runState->templt, SNRs);
+    LALInferenceNetworkSNR(params, runState->data, model, SNRs);
     REAL8 loudest_snr=0.0, second_loudest_snr=0.0, network_snr=0.0;
     for (i=0; i<nifo; i++) {
         if (SNRs[i] > second_loudest_snr) {
@@ -2757,7 +2757,7 @@ UINT4 within_malmquist(LALInferenceRunState *runState, LALInferenceVariables *pa
 }
 
 
-REAL8 LALInferenceAnalyticNullPrior(LALInferenceRunState UNUSED *runState, LALInferenceVariables *params) {
+REAL8 LALInferenceAnalyticNullPrior(LALInferenceRunState UNUSED *runState, LALInferenceVariables *params, LALInferenceModel UNUSED *model) {
   REAL8 logPrior=0.0;
   REAL8 logmc=0.0,mc=0.0;
   REAL8 m1=0.0,m2=0.0,q=0.0,eta=0.0;
@@ -2792,7 +2792,7 @@ REAL8 LALInferenceAnalyticNullPrior(LALInferenceRunState UNUSED *runState, LALIn
   return(logPrior);
 }
 
-UINT4 LALInferenceAnalyticCubeToPrior(LALInferenceRunState *runState, LALInferenceVariables *params, double *Cube, void *context) {
+UINT4 LALInferenceAnalyticCubeToPrior(LALInferenceRunState *runState, LALInferenceVariables *params, LALInferenceModel *model, double *Cube, void *context) {
     int i = 0;
     REAL8 logPrior=0.,min=-INFINITY,max=INFINITY;
     REAL8 m1=1.,m2=1.,mc,eta,m;
@@ -3069,7 +3069,7 @@ UINT4 LALInferenceAnalyticCubeToPrior(LALInferenceRunState *runState, LALInferen
 
     Cube[i] = mc; i++; strcat(header,"mchirp ");
     Cube[i] = eta; i++; strcat(header,"eta ");
-    Cube[i] = LALInferenceAnalyticNullPrior(runState,params);
+    Cube[i] = LALInferenceAnalyticNullPrior(runState,params,model);
     i++; strcat(header,"logprior ");
 
     strcat(header,"logl");
@@ -3096,7 +3096,7 @@ REAL8 LALInferenceFlatBoundedPrior(LALInferenceRunState *runState, LALInferenceV
   return 0.0;
 }
 
-REAL8 LALInferenceNullPrior(LALInferenceRunState UNUSED *runState, LALInferenceVariables UNUSED *params) {
+REAL8 LALInferenceNullPrior(LALInferenceRunState UNUSED *runState, LALInferenceVariables UNUSED *params, LALInferenceModel UNUSED *model) {
   return 0.0;
 }
 

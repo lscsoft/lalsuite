@@ -110,14 +110,15 @@ void LALInferenceInitMCMCState(LALInferenceRunState *state)
 
   /* If the currentParams are not in the prior, overwrite and pick paramaters from the priors. OVERWRITE EVEN USER CHOICES.
    *     (necessary for complicated prior shapes where LALInferenceCyclicReflectiveBound() is not enough */
-  while(state->prior(state, currentParams)<=-DBL_MAX){
+  LALInferenceVariables *temp=XLALCalloc(1,sizeof(LALInferenceVariables));
+  while(state->prior(state, currentParams, state->model)<=-DBL_MAX){
     fprintf(stderr, "Warning initial parameter randlomy drawn from prior. (in %s, line %d)\n",__FILE__, __LINE__);
-    LALInferenceVariables *temp; //
-    temp=XLALCalloc(1,sizeof(LALInferenceVariables));
-    memset(temp,0,sizeof(LALInferenceVariables));
     LALInferenceDrawApproxPrior(state, currentParams, temp);
     LALInferenceCopyVariables(temp, currentParams);
   }
+  LALInferenceClearVariables(temp);
+  XLALFree(temp);
+
   /* Make sure that our initial value is within the
    *     prior-supported volume. */
   LALInferenceCyclicReflectiveBound(currentParams, priorArgs);
@@ -278,6 +279,7 @@ LALInferenceRunState *initialize(ProcessParamsTable *commandLine)
   /*     fLow, fHigh, detector, timeToFreqFFTPlan, freqToTimeFFTPlan,     */
   /*     window, oneSidedNoisePowerSpectrum, timeDate, freqData         ) */
   fprintf(stdout, " ==== LALInferenceReadData(): finished. ====\n");
+
   if (irs->data != NULL) {
     fprintf(stdout, " ==== initialize(): successfully read data. ====\n");
 
@@ -291,72 +293,13 @@ LALInferenceRunState *initialize(ProcessParamsTable *commandLine)
     
     ifoPtr = irs->data;
     ifoListStart = irs->data;
-    while (ifoPtr != NULL) {
-      /*If two IFOs have the same sampling rate, they should have the same timeModelh*,
-        freqModelh*, and modelParams variables to avoid excess computation
-        in model waveform generation in the future*/
-      LALInferenceIFOData * ifoPtrCompare=ifoListStart;
-      int foundIFOwithSameSampleRate=0;
-      while (ifoPtrCompare != NULL && ifoPtrCompare!=ifoPtr) {
-        if(ifoPtrCompare->timeData->deltaT == ifoPtr->timeData->deltaT){
-          ifoPtr->timeModelhPlus=ifoPtrCompare->timeModelhPlus;
-          ifoPtr->freqModelhPlus=ifoPtrCompare->freqModelhPlus;
-          ifoPtr->timeModelhCross=ifoPtrCompare->timeModelhCross;
-          ifoPtr->freqModelhCross=ifoPtrCompare->freqModelhCross;
-          ifoPtr->modelParams=ifoPtrCompare->modelParams;
-          if (ifoPtr->roqData){
-            ifoPtr->roqData->hplus = ifoPtrCompare->roqData->hplus;
-            ifoPtr->roqData->hcross = ifoPtrCompare->roqData->hcross;
-            ifoPtr->roqData->hstrain = ifoPtrCompare->roqData->hstrain;
-            ifoPtr->roqData->amp_squared = ifoPtrCompare->roqData->amp_squared;
-          }
-          foundIFOwithSameSampleRate=1;
-          break;
-        }
-        ifoPtrCompare = ifoPtrCompare->next;
-      }
-      if(!foundIFOwithSameSampleRate){
-        ifoPtr->timeModelhPlus  = XLALCreateREAL8TimeSeries("timeModelhPlus",
-                                                            &(ifoPtr->timeData->epoch),
-                                                            0.0,
-                                                            ifoPtr->timeData->deltaT,
-                                                            &lalDimensionlessUnit,
-                                                            ifoPtr->timeData->data->length);
-        ifoPtr->timeModelhCross = XLALCreateREAL8TimeSeries("timeModelhCross",
-                                                            &(ifoPtr->timeData->epoch),
-                                                            0.0,
-                                                            ifoPtr->timeData->deltaT,
-                                                            &lalDimensionlessUnit,
-                                                            ifoPtr->timeData->data->length);
-        ifoPtr->freqModelhPlus = XLALCreateCOMPLEX16FrequencySeries("freqModelhPlus",
-                                                                    &(ifoPtr->freqData->epoch),
-                                                                    0.0,
-                                                                    ifoPtr->freqData->deltaF,
-                                                                    &lalDimensionlessUnit,
-                                                                    ifoPtr->freqData->data->length);
-        ifoPtr->freqModelhCross = XLALCreateCOMPLEX16FrequencySeries("freqModelhCross",
-                                                                     &(ifoPtr->freqData->epoch),
-                                                                     0.0,
-                                                                     ifoPtr->freqData->deltaF,
-                                                                     &lalDimensionlessUnit,
-                                                                     ifoPtr->freqData->data->length);
-        ifoPtr->modelParams = XLALCalloc(1, sizeof(LALInferenceVariables));
-        if (ifoPtr->roqData){
-          ifoPtr->roqData->hplus = gsl_vector_complex_calloc(n_basis);
-          ifoPtr->roqData->hcross = gsl_vector_complex_calloc(n_basis);
-          ifoPtr->roqData->hstrain = gsl_vector_complex_calloc(n_basis);
-          ifoPtr->roqData->amp_squared = XLALCalloc(1, sizeof(REAL8));
-        }
-      }
-      ifoPtr = ifoPtr->next;
-    }
+
     irs->currentLikelihood=LALInferenceNullLogLikelihood(irs->data);
     printf("Injection Null Log Likelihood: %g\n", irs->currentLikelihood);
   }
   else{
     fprintf(stdout, " initialize(): no data read.\n");
     irs = NULL;
-    return(irs);
   }
 
   return(irs);
@@ -485,9 +428,6 @@ void initializeMCMC(LALInferenceRunState *runState)
   else
     runState->proposal=&LALInferenceDefaultProposal;
     //runState->proposal=&LALInferencetempProposal;
-
-  /* Choose the template generator for inspiral signals */
-  LALInferenceInitCBCTemplate(runState);
 
  /* runState->template=&LALInferenceTemplateLAL;
   if(LALInferenceGetProcParamVal(commandLine,"--LALSimulation")){
@@ -876,8 +816,14 @@ int main(int argc, char *argv[]){
     LALInferenceAddVariable(runState->algorithmParams,"MPIrank", &MPIrank, LALINFERENCE_UINT4_t,
                           LALINFERENCE_PARAM_FIXED);
 
-  /* Set up currentParams with variables to be used */
-  runState->currentParams = LALInferenceInitCBCVariables(runState);
+  /* Set up model struct and set currentVariables to match the initialized model params */
+  runState->model = LALInferenceInitCBCModel(runState);
+  runState->currentParams = XLALMalloc(sizeof(LALInferenceVariables));
+  memset(runState->currentParams, 0, sizeof(LALInferenceVariables));
+  LALInferenceCopyVariables(runState->model->params, runState->currentParams);
+
+  /* Set template function in runState, since it's sometime used */
+  runState->templt = runState->model->templt;
 
   /* Choose the likelihood */
   LALInferenceInitLikelihood(runState);

@@ -80,7 +80,7 @@ void LALInferenceLadderUpdate(LALInferenceRunState *runState, INT4 sourceChainFl
 FILE* LALInferencePrintPTMCMCHeaderOrResume(LALInferenceRunState *runState);
 void LALInferencePrintPTMCMCHeaderFile(LALInferenceRunState *runState, FILE *file);
 void LALInferencePrintPTMCMCInjectionSample(LALInferenceRunState *runState);
-void LALInferenceDataDump(LALInferenceRunState *runState);
+void LALInferenceDataDump(LALInferenceIFOData *data, LALInferenceModel *model);
 
 /** Reads final parameter values from the given output file, and
     stores them in the current params to try to continue the run. */

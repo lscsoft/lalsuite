@@ -51,12 +51,12 @@ SWIGLAL(INPUT_SCALARS(REAL8*, min, max));
 /**
  * Return the logarithmic prior density of the variables specified, for the non-spinning/spinning inspiral signal case.
  */
-REAL8 LALInferenceInspiralPrior(LALInferenceRunState *runState, LALInferenceVariables *variables);
+REAL8 LALInferenceInspiralPrior(LALInferenceRunState *runState, LALInferenceVariables *params, LALInferenceModel *model);
 
 /**
  * Convert the hypercube parameter to physical parameters, for the non-spinning/spinning inspiral signal case.
  */
-UINT4 LALInferenceInspiralCubeToPrior(LALInferenceRunState *runState, LALInferenceVariables *params, double *Cube, void *context);
+UINT4 LALInferenceInspiralCubeToPrior(LALInferenceRunState *runState, LALInferenceVariables *params, LALInferenceModel *model, double *Cube, void *context);
 
 /**
  * Apply cyclic and reflective boundaries to \c parameter to bring it
@@ -92,7 +92,7 @@ void LALInferenceRotateInitialPhase( LALInferenceVariables *parameter );
  * (see: https://www.lsc-group.phys.uwm.edu/ligovirgo/cbcnote/SkyLocComparison#priors ),
  * for the non-spinning/spinning inspiral signal case.
  */
-REAL8 LALInferenceInspiralSkyLocPrior(LALInferenceRunState *runState, LALInferenceVariables *params);
+REAL8 LALInferenceInspiralSkyLocPrior(LALInferenceRunState *runState, LALInferenceVariables *params, LALInferenceModel *model);
 
 /**
  * Convert the hypercube parameter to physical parameters, for the prior density of the variables as
@@ -100,13 +100,13 @@ REAL8 LALInferenceInspiralSkyLocPrior(LALInferenceRunState *runState, LALInferen
  * (see: https://www.lsc-group.phys.uwm.edu/ligovirgo/cbcnote/SkyLocComparison#priors ),
  * for the non-spinning/spinning inspiral signal case.
  */
-UINT4 LALInferenceInspiralSkyLocCubeToPrior(LALInferenceRunState *runState, LALInferenceVariables *params, double *Cube, void *context);
+UINT4 LALInferenceInspiralSkyLocCubeToPrior(LALInferenceRunState *runState, LALInferenceVariables *params, LALInferenceModel *model, double *Cube, void *context);
 
 /**
  * Return the logarithmic prior density of the variables specified,
  * for the non-spinning/spinning inspiral signal case.
  */
-REAL8 LALInferenceInspiralPriorNormalised(LALInferenceRunState *runState, LALInferenceVariables *params);
+REAL8 LALInferenceInspiralPriorNormalised(LALInferenceRunState *runState, LALInferenceVariables *params, LALInferenceModel *model);
 
 /**
  * Convert the hypercube parameter to physical parameters, for the prior density of the variables as
@@ -114,7 +114,7 @@ REAL8 LALInferenceInspiralPriorNormalised(LALInferenceRunState *runState, LALInf
  * (see: https://www.lsc-group.phys.uwm.edu/ligovirgo/cbcnote/BayesS6PEpaper#Priors ),
  * for the non-spinning/spinning inspiral signal case.
  */
-UINT4 LALInferenceInspiralPriorNormalisedCubeToPrior(LALInferenceRunState *runState, LALInferenceVariables *params, double *Cube, void *context);
+UINT4 LALInferenceInspiralPriorNormalisedCubeToPrior(LALInferenceRunState *runState, LALInferenceVariables *params, LALInferenceModel *model, double *Cube, void *context);
 
 /**
  * Function to add the minimum and maximum values for the uniform prior onto the \c priorArgs.
@@ -200,16 +200,16 @@ void LALInferenceDrawNameFromPrior( LALInferenceVariables *output,
                                     gsl_rng *rdm );
 
 /* Switch reads true if parameters lie within Malmquist prior */
-UINT4 within_malmquist(LALInferenceRunState *runState, LALInferenceVariables *params);
+UINT4 within_malmquist(LALInferenceRunState *runState, LALInferenceVariables *params, LALInferenceModel *model);
 
 /** Prior that is 1 everywhere in component mass space. */
-REAL8 LALInferenceAnalyticNullPrior(LALInferenceRunState *runState, LALInferenceVariables *params);
+REAL8 LALInferenceAnalyticNullPrior(LALInferenceRunState *runState, LALInferenceVariables *params, LALInferenceModel *model);
 
 /** Analytic null prior converted from hypercube */
-UINT4 LALInferenceAnalyticCubeToPrior(LALInferenceRunState *runState, LALInferenceVariables *params, double *Cube, void *context);
+UINT4 LALInferenceAnalyticCubeToPrior(LALInferenceRunState *runState, LALInferenceVariables *params, LALInferenceModel *model, double *Cube, void *context);
 
 /** Prior that is 1 everywhere. */
-REAL8 LALInferenceNullPrior(LALInferenceRunState *runState, LALInferenceVariables *params);
+REAL8 LALInferenceNullPrior(LALInferenceRunState *runState, LALInferenceVariables *params, LALInferenceModel *model);
 
 /**
  * Computes the numerical normalization of the mass prior \f$p(\mathcal{M}) \sim
