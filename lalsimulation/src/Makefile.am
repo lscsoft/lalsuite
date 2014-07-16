@@ -39,6 +39,7 @@ bin_PROGRAMS = \
 	lalsim-bh-ringdown \
 	lalsim-bh-sphwf \
 	lalsim-detector-noise \
+	lalsim-inspiral \
 	lalsim-ns-eos-table \
 	lalsim-ns-mass-radius \
 	lalsim-ns-params \
@@ -146,6 +147,7 @@ lalsim_ns_params_SOURCES = ns-params.c
 lalsim_sgwb_SOURCES = sgwb.c
 lalsim_unicorn_SOURCES = unicorn.c
 lalsim_detector_noise_SOURCES = detector_noise.c
+lalsim_inspiral_SOURCES = inspiral.c
 
 pkgdata_DATA = \
 	$(NOISEPSDFILES) \
