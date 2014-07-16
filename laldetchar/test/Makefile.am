@@ -1,10 +1,11 @@
-TEST_CPPFLAGS = -DTEST_DATA_DIR='"$(abs_srcdir)/"'
-
-check_PROGRAMS = 
-TESTS = $(check_PROGRAMS)
-
 EXTRA_DIST =
+include $(top_srcdir)/gnuscripts/lalsuite_test.am
 
-MOSTLYCLEANFILES =
-CLEANFILES = \
-	*.dat
+# Add compiled test programs to this variable
+test_programs +=
+
+# Add shell, Python, etc. test scripts to this variable
+test_scripts +=
+
+# Add any helper programs required by tests to this variable
+test_helpers +=
