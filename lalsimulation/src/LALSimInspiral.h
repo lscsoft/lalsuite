@@ -1760,12 +1760,14 @@ typedef struct tagPNPhasingSeries
 }
 PNPhasingSeries;
 
-int XLALSimInspiralTaylorF2Phasing(
+int XLALSimInspiralTaylorF2AlignedPhasing(
 	PNPhasingSeries **pfa,
 	const REAL8 m1,
 	const REAL8 m2,
-	const REAL8 chi1L,
-	const REAL8 chi2L,
+	const REAL8 chi1,
+	const REAL8 chi2,
+	const REAL8 qm_def1,
+	const REAL8 qm_def2,
 	const LALSimInspiralSpinOrder spinO
 	);
 

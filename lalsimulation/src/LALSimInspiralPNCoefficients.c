@@ -327,12 +327,17 @@ XLALSimInspiralPNFlux_12PNTidalCoeff(
 }
 
 static void UNUSED
-XLALSimInspiralPNPhasing_F2WithSO(
+XLALSimInspiralPNPhasing_F2(
 	PNPhasingSeries *pfa,
 	const REAL8 m1,
 	const REAL8 m2,
 	const REAL8 chi1L,
 	const REAL8 chi2L,
+	const REAL8 chi1sq,
+	const REAL8 chi2sq,
+	const REAL8 chi1dotchi2,
+	const REAL8 qm_def1,
+	const REAL8 qm_def2,
 	const LALSimInspiralSpinOrder spinO
 	)
 {
@@ -370,6 +375,15 @@ XLALSimInspiralPNPhasing_F2WithSO(
     /* Spin-orbit terms - can be derived from arXiv:1303.7412, Eq. 3.15-16 */
     const REAL8 pn_gamma = (732985.L/2268.L - 24260.L/81.L * eta - 340.L/9.L * eta * eta ) * xs + (732985.L/2268.L +140.L/9.0L * eta) * xa * d;
 
+    /* Compute 2.0PN SS, QM, and self-spin */
+    // See Eq. (6.24) in arXiv:0810.5336
+    // 9b,c,d in arXiv:astro-ph/0504538
+    REAL8 pn_sigma = eta * (721.L/48.L*chi1L*chi2L - 247.L/48.L*chi1dotchi2);
+    pn_sigma += (720.L*qm_def1 - 1.L)/96.0L * m1M * m1M * chi1L * chi1L;
+    pn_sigma += (720.L*qm_def2 - 1.L)/96.0L * m2M * m2M * chi2L * chi2L;
+    pn_sigma -= (240.L*qm_def1 - 7.L)/96.0L * m1M * m1M * chi1sq;
+    pn_sigma -= (240.L*qm_def2 - 7.L)/96.0L * m2M * m2M * chi2sq;
+
     switch( spinO )
     {
         case LAL_SIM_INSPIRAL_SPIN_ORDER_ALL:
@@ -383,7 +397,7 @@ XLALSimInspiralPNPhasing_F2WithSO(
             pfa->v[5] += -1.L * pn_gamma;
             pfa->vlogv[5] += -3.L * pn_gamma;
         case LAL_SIM_INSPIRAL_SPIN_ORDER_2PN:
-            /* At least for now, handle spin-spin term in following function */
+            pfa->v[4] += -10.L * pn_sigma;
         case LAL_SIM_INSPIRAL_SPIN_ORDER_15PN:
             pfa->v[3] += 4.L * ( (113.L/12.L- 19.L/3.L * eta) * xs + 113.L/12.L * d * xa);
         case LAL_SIM_INSPIRAL_SPIN_ORDER_1PN:
@@ -403,58 +417,6 @@ XLALSimInspiralPNPhasing_F2WithSO(
         pfa->v[ii] *= pfaN;
         pfa->vlogv[ii] *= pfaN;
         pfa->vlogvsq[ii] *= pfaN;
-    }
-}
-
-static void UNUSED
-XLALSimInspiralPNPhasing_F2AddSS(
-	PNPhasingSeries *pfa,
-	const REAL8 m1,
-	const REAL8 m2,
-	const REAL8 chi1L,
-	const REAL8 chi2L,
-	const REAL8 chi1sq,
-	const REAL8 chi2sq,
-    const REAL8 chi1dotchi2,
-    const REAL8 qm_def1,
-    const REAL8 qm_def2,
-    const LALSimInspiralSpinOrder spinO
-	)
-{
-    const REAL8 mtot = m1 + m2;
-    const REAL8 eta = m1*m2/mtot/mtot;
-    const REAL8 m1Msq = m1*m1/mtot/mtot;
-    const REAL8 m2Msq = m2*m2/mtot/mtot;
-
-    const REAL8 pfaN = 3.L/(128.L * eta);
-    REAL8 pn_sigma;
-
-    /* Compute 2.0PN SS, QM, and self-spin */
-    // See Eq. (6.24) in arXiv:0810.5336
-    // 9b,c,d in arXiv:astro-ph/0504538
-    pn_sigma = eta * (721.L/48.L *chi1L*chi2L-247.L/48.L*chi1dotchi2);
-    pn_sigma += (720.L*qm_def1 - 1.L)/96.0L * m1Msq * chi1L * chi1L;
-    pn_sigma += (720.L*qm_def2 - 1.L)/96.0L * m2Msq * chi2L * chi2L;
-    pn_sigma -= (240.L*qm_def1 - 7.L)/96.0L * m1Msq * chi1sq;
-    pn_sigma -= (240.L*qm_def2 - 7.L)/96.0L * m2Msq * chi2sq;
-
-    switch( spinO )
-    {
-        case LAL_SIM_INSPIRAL_SPIN_ORDER_ALL:
-        case LAL_SIM_INSPIRAL_SPIN_ORDER_35PN:
-        case LAL_SIM_INSPIRAL_SPIN_ORDER_3PN:
-        case LAL_SIM_INSPIRAL_SPIN_ORDER_25PN:
-        case LAL_SIM_INSPIRAL_SPIN_ORDER_2PN:
-            pfa->v[4] += -10.L * pfaN * pn_sigma;
-        case LAL_SIM_INSPIRAL_SPIN_ORDER_15PN:
-        case LAL_SIM_INSPIRAL_SPIN_ORDER_1PN:
-        case LAL_SIM_INSPIRAL_SPIN_ORDER_05PN:
-        case LAL_SIM_INSPIRAL_SPIN_ORDER_0PN:
-            break;
-        default:
-            XLALPrintError("XLAL Error - %s: Invalid spin PN order %s\n",
-                    __func__, spinO );
-            XLAL_ERROR_VOID(XLAL_EINVAL);
     }
 }
 

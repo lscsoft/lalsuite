@@ -34,12 +34,14 @@
 #include <lal/XLALError.h>
 #include "LALSimInspiralPNCoefficients.c"
 
-int XLALSimInspiralTaylorF2Phasing(
+int XLALSimInspiralTaylorF2AlignedPhasing(
         PNPhasingSeries **pn,
         const REAL8 m1,
         const REAL8 m2,
-        const REAL8 chi1L,
-        const REAL8 chi2L,
+        const REAL8 chi1,
+        const REAL8 chi2,
+        const REAL8 qm_def1,
+        const REAL8 qm_def2,
         const LALSimInspiralSpinOrder spinO
 	)
 {
@@ -51,7 +53,7 @@ int XLALSimInspiralTaylorF2Phasing(
 
     pfa = (PNPhasingSeries *) LALMalloc(sizeof(PNPhasingSeries));
 
-    XLALSimInspiralPNPhasing_F2WithSO(pfa, m1, m2, chi1L, chi2L, spinO);
+    XLALSimInspiralPNPhasing_F2(pfa, m1, m2, chi1, chi2, chi1*chi1, chi2*chi2, chi1*chi2, qm_def1, qm_def2, spinO);
 
     *pn = pfa;
 
@@ -110,12 +112,13 @@ int XLALSimInspiralTaylorF2(
     COMPLEX16 *data = NULL;
     LIGOTimeGPS tC = {0, 0};
 
+    /* FIXME: Cannot yet set QM constant in ChooseFDWaveform interface */
+    const REAL8 quadparam1 = 1.;
+    const REAL8 quadparam2 = 1.;
+
     /* phasing coefficients */
     PNPhasingSeries pfa;
-    XLALSimInspiralPNPhasing_F2WithSO(&pfa, m1, m2, S1z, S2z, spinO);
-    /* FIXME: Cannot yet set QM constant in ChooseFDWaveform interface */
-    XLALSimInspiralPNPhasing_F2AddSS(&pfa, m1, m2, S1z, S2z,
-            S1z*S1z, S2z*S2z, S1z*S2z, 1., 1., spinO);
+    XLALSimInspiralPNPhasing_F2(&pfa, m1, m2, S1z, S2z, S1z*S1z, S2z*S2z, S1z*S2z, quadparam1, quadparam2, spinO);
 
     REAL8 pfaN = 0.;
     REAL8 pfa2 = 0.; REAL8 pfa3 = 0.; REAL8 pfa4 = 0.;
