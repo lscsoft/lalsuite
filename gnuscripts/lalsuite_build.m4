@@ -1,7 +1,7 @@
 # -*- mode: autoconf; -*-
 # lalsuite_build.m4 - top level build macros
 #
-# serial 85
+# serial 86
 
 # empty Automake variable, useful for terminating \-delimited file lists, e.g.:
 # SOURCES = \
@@ -82,6 +82,9 @@ AC_DEFUN([LALSUITE_POP_UVARS],[
 AC_DEFUN([LALSUITE_ADD_FLAGS],[
   # $0: prepend flags to AM_CPPFLAGS/AM_$1FLAGS/AM_LDFLAGS/LIBS,
   # and update values of CPPFLAGS/$1FLAGS/LDFLAGS for Autoconf tests
+  # - arg 1: prefix of the compiler flag variable, e.g. C for CFLAGS, CXX for CXXFLAGS
+  # - arg 2: compiler flags
+  # - arg 3: linker flags
   m4_ifval([$1],[m4_ifval([$2],[
     pre_AM_CPPFLAGS=
     pre_sys_CPPFLAGS=
@@ -166,6 +169,8 @@ AC_DEFUN([LALSUITE_ADD_FLAGS],[
 
 AC_DEFUN([LALSUITE_ADD_PATH],[
   # $0: prepend path to $1, removing duplicates, first value taking precedence
+  # - arg 1: name of path variable
+  # - arg 2: path to prepend
   tokens=$2
   tokens=`echo ${tokens} ${$1} | sed 's/:/ /g'`
   $1=
@@ -184,7 +189,7 @@ AC_DEFUN([LALSUITE_ADD_PATH],[
 ])
 
 AC_DEFUN([LALSUITE_CHECK_GIT_REPO],[
-  # check for git
+  # $0: check for git
   AC_PATH_PROGS(GIT,[git],[false])
   # check whether building from a git repository
   have_git_repo=no
@@ -200,6 +205,7 @@ AC_DEFUN([LALSUITE_CHECK_GIT_REPO],[
   ])
   # conditional for git and building from a git repository
   AM_CONDITIONAL(HAVE_GIT_REPO,[test "x${have_git_repo}" = xyes])
+  # end $0
 ])
 
 AC_DEFUN([LALSUITE_VERSION_CONFIGURE_INFO],[
@@ -231,13 +237,15 @@ AC_DEFUN([LALSUITE_VERSION_CONFIGURE_INFO],[
 ])
 
 AC_DEFUN([LALSUITE_REQUIRE_CXX],[
-  # require a C++ compiler
+  # $0: require a C++ compiler
   lalsuite_require_cxx=true
+  # end $0
 ])
 
 AC_DEFUN([LALSUITE_REQUIRE_F77],[
-  # require an F77 compiler
+  # $0: require an F77 compiler
   lalsuite_require_f77=true
+  # end $0
 ])
 
 # because we want to conditionally decide whether to check for
@@ -280,6 +288,7 @@ AC_DEFUN([_LALSUITE_POST_PROG_COMPILERS],[
 ])
 
 AC_DEFUN([LALSUITE_PROG_COMPILERS],[
+  # $0: check for C/C++/Fortran compilers
   AC_REQUIRE([_LALSUITE_PRE_PROG_COMPILERS])
 
   # check for C99 compiler
@@ -324,36 +333,39 @@ AC_DEFUN([LALSUITE_PROG_COMPILERS],[
   # end $0
 ])
 
-AC_DEFUN([LALSUITE_USE_LIBTOOL],
-[## $0: Generate a libtool script for use in configure tests
-AC_REQUIRE([LT_INIT])
-LT_OUTPUT
-m4_append([AC_LANG(C)],
-[ac_link="./libtool --mode=link --tag=CC $ac_link"
-])[]dnl
-AC_PROVIDE_IFELSE([AC_PROG_CXX],
-[m4_append([AC_LANG(C++)],
-[ac_link="./libtool --mode=link --tag=CXX $ac_link"
-])])[]dnl
-AC_LANG(_AC_LANG)[]dnl
-]) # LALSUITE_USE_LIBTOOL
+AC_DEFUN([LALSUITE_USE_LIBTOOL],[
+  # $0: Generate a libtool script for use in configure tests
+  AC_REQUIRE([LT_INIT])
+  LT_OUTPUT
+  m4_append([AC_LANG(C)],[
+    ac_link="./libtool --mode=link --tag=CC $ac_link"
+  ])
+  AC_PROVIDE_IFELSE([AC_PROG_CXX],[
+    m4_append([AC_LANG(C++)],[
+      ac_link="./libtool --mode=link --tag=CXX $ac_link"
+    ])
+  ])
+  AC_LANG(_AC_LANG)
+  # end $0
+])
 
-AC_DEFUN([LALSUITE_MULTILIB_LIBTOOL_HACK],
-[## $0: libtool incorrectly determine library path on SL6
-case "${host}" in
-  x86_64-*-linux-gnu*)
-    case `cat /etc/redhat-release 2> /dev/null` in
-      "Scientific Linux"*|"CentOS"*)
-        AC_MSG_NOTICE([hacking round broken libtool multilib support on RedHat systems])
-        lt_cv_sys_lib_dlsearch_path_spec="/lib64 /usr/lib64"
-        ;;
-    esac
-    ;;
-esac
-]) # LALSUITE_MULTILIB_LIBTOOL_HACK
+AC_DEFUN([LALSUITE_MULTILIB_LIBTOOL_HACK],[
+  # $0: libtool incorrectly determine library path on SL6
+  case "${host}" in
+    x86_64-*-linux-gnu*)
+      case `cat /etc/redhat-release 2> /dev/null` in
+        "Scientific Linux"*|"CentOS"*)
+          AC_MSG_NOTICE([hacking round broken libtool multilib support on RedHat systems])
+          lt_cv_sys_lib_dlsearch_path_spec="/lib64 /usr/lib64"
+          ;;
+      esac
+      ;;
+  esac
+  # end $0
+])
 
-# store configure flags for 'make distcheck'
 AC_DEFUN([LALSUITE_DISTCHECK_CONFIGURE_FLAGS],[
+  # $0: store configure flags for 'make distcheck'
   DISTCHECK_CONFIGURE_FLAGS=
   for arg in ${ac_configure_args}; do
     case ${arg} in
@@ -375,6 +387,7 @@ AC_DEFUN([LALSUITE_DISTCHECK_CONFIGURE_FLAGS],[
     esac
   done
   AC_SUBST(DISTCHECK_CONFIGURE_FLAGS)
+  # end $0
 ])
 
 AC_DEFUN([LALSUITE_ENABLE_MODULE],[
@@ -395,6 +408,10 @@ AC_DEFUN([LALSUITE_ENABLE_MODULE],[
 
 AC_DEFUN([LALSUITE_CHECK_LIB],[
   # $0: check for LAL library
+  # - arg 1: name of LAL library
+  # - arg 2: minimum version required
+  # - arg 3: library function to check for
+  # - arg 4: library header to check for
   AC_REQUIRE([PKG_PROG_PKG_CONFIG])
   m4_pushdef([lowercase],m4_translit([[$1]], [A-Z], [a-z]))
   m4_pushdef([uppercase],m4_translit([[$1]], [a-z], [A-Z]))
@@ -490,6 +507,10 @@ ${lal_pkg_errors}
 
 AC_DEFUN([LALSUITE_CHECK_OPT_LIB],[
   # $0: check for optional LAL library
+  # - arg 1: name of LAL library
+  # - arg 2: minimum version required
+  # - arg 3: library function to check for
+  # - arg 4: library header to check for
   m4_pushdef([lowercase],m4_translit([[$1]], [A-Z], [a-z]))
   m4_pushdef([uppercase],m4_translit([[$1]], [a-z], [A-Z]))
 
@@ -507,29 +528,26 @@ AC_DEFUN([LALSUITE_CHECK_OPT_LIB],[
 ])
 
 AC_DEFUN([LALSUITE_HEADER_LIBRARY_MISMATCH_CHECK],[
-AC_MSG_CHECKING([whether $1 headers match the library])
-lib_structure=`echo $1 | sed 's/LAL/lal/'`VCSInfo
-header_structure=`echo $1 | sed 's/LAL/lal/'`VCSInfoHeader
-AC_RUN_IFELSE(
-  [AC_LANG_SOURCE([[
+  # $0: check for version mismatch between library $1 and its headers
+  AC_MSG_CHECKING([whether $1 headers match the library])
+  lib_structure=`echo $1 | sed 's/LAL/lal/'`VCSInfo
+  header_structure=`echo $1 | sed 's/LAL/lal/'`VCSInfoHeader
+  AC_RUN_IFELSE([
+    AC_LANG_SOURCE([[
 #include <string.h>
 #include <stdlib.h>
 #include <lal/$1VCSInfoHeader.h>
 int main(void) { exit(XLALVCSInfoCompare(&$lib_structure, &$header_structure) ? 1 : 0); }
-  ]])],
-  [
+    ]])
+  ],[
     AC_MSG_RESULT(yes)
-  ],
-  [
+  ],[
     AC_MSG_RESULT(no)
-    AC_MSG_ERROR([Your $1 headers do not match your
-library. Check config.log for details.
-])
-  ],
-  [
+    AC_MSG_ERROR([Your $1 headers do not match your library. Check config.log for details.])
+  ],[
     AC_MSG_WARN([cross compiling: not checking])
-  ]
-)
+  ])
+  # end $0
 ])
 
 AC_DEFUN([LALSUITE_CHECK_LIBRARY_FOR_SUPPORT],[
