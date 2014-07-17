@@ -13,7 +13,7 @@ test_programs += LALInferenceXMLTest
 endif
 
 # Add shell, Python, etc. test scripts to this variable
-#test_scripts += test_plot.py
+test_scripts += test_plot.py
 
 # Add any helper programs required by tests to this variable
 test_helpers +=
