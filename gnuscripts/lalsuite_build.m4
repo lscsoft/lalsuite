@@ -1,7 +1,7 @@
 # -*- mode: autoconf; -*-
 # lalsuite_build.m4 - top level build macros
 #
-# serial 84
+# serial 85
 
 # empty Automake variable, useful for terminating \-delimited file lists, e.g.:
 # SOURCES = \
