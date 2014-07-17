@@ -273,7 +273,7 @@ int output_fd_waveform(COMPLEX16FrequencySeries * htilde_plus, COMPLEX16Frequenc
  * the frequency-domain and transformed */
 int create_td_waveform(REAL8TimeSeries ** h_plus, REAL8TimeSeries ** h_cross, struct params p)
 {
-    clock_t timer_start;
+    clock_t timer_start = 0;
     double tchirp, textra, fstart;
 
     /* rough estimate of chirp time */
@@ -370,7 +370,7 @@ int create_td_waveform(REAL8TimeSeries ** h_plus, REAL8TimeSeries ** h_cross, st
  * in the time-domain and transformed */
 int create_fd_waveform(COMPLEX16FrequencySeries ** htilde_plus, COMPLEX16FrequencySeries ** htilde_cross, struct params p)
 {
-    clock_t timer_start;
+    clock_t timer_start = 0;
     double tchirp, textra, fstart, chirplen, df;
     int chirplen_exp;
 
