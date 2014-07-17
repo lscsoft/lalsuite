@@ -22,8 +22,11 @@ lalframe-user-env.sh
 lalframe-user-env.shell
 lalframe.spec
 libtool
+octave/
 python/lalframe/__init__.py
+python/lalframe/_lalframe*
 python/lalframe/git_version.py
+python/lalframe/lalframe.py
 src/LALFrameBuildInfo.c
 src/LALFrameConfig.h
 src/LALFrameVCSInfo.c
@@ -34,9 +37,7 @@ src/config.h.in
 src/lalfr-*[!1]
 src/stamp-h1
 src/stamp-h2
-swig/octave/
-swig/python/
-swig/swig_*
+swig/swiglal*
 test/AggregationTest
 test/H1:LSC-AS_Q.???
 test/LALFrSeriesTest

@@ -1,8 +1,8 @@
 abs_top_srcdir=@abs_top_srcdir@
 abs_top_builddir=@abs_top_builddir@
 LAL_DATA_PATH=@abs_top_srcdir@/test:@abs_top_builddir@/test:@LAL_DATA_PATH@
-LAL_OCTAVE_PATH=@abs_top_builddir@/swig/octave:@abs_top_srcdir@/swig/octave:@LAL_OCTAVE_PATH@
-LAL_PYTHON_PATH=@abs_top_builddir@/swig/python:@abs_top_srcdir@/swig/python:@LAL_PYTHON_PATH@
+LAL_OCTAVE_PATH=@abs_top_builddir@/octave:@LAL_OCTAVE_PATH@
+LAL_PYTHON_PATH=@abs_top_builddir@/python:@LAL_PYTHON_PATH@
 
 Name: LALSimulation
 Description: (uninstalled)

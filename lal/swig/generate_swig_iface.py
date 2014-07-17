@@ -299,7 +299,7 @@ f.write('%include <lal/SWIGCommon.i>\n')
 # import dependent modules
 f.write('#ifndef SWIGIMPORTED\n')
 for module in dependencies:
-    f.write('%%import <lal/swig_%s.i>\n' % module.lower())
+    f.write('%%import <lal/swig%s.i>\n' % module.lower())
 f.write('#endif // !SWIGIMPORTED\n')
 
 # include interface headers in wrapping code

@@ -22,11 +22,14 @@ laldetchar-user-env.sh
 laldetchar-user-env.shell
 laldetchar.spec
 libtool
+octave/
 python/laldetchar-hveto
 python/laldetchar-hveto-summary-page
 python/laldetchar-segments-from-data
 python/laldetchar/__init__.py
+python/laldetchar/_laldetchar*
 python/laldetchar/git_version.py
+python/laldetchar/laldetchar.py
 src/LALDetCharBuildInfo.c
 src/LALDetCharConfig.h
 src/LALDetCharVCSInfo.c
@@ -37,6 +40,4 @@ src/config.h.in
 src/laldetchar-hveto
 src/stamp-h1
 src/stamp-h2
-swig/octave/
-swig/python/
-swig/swig_*
+swig/swiglal*

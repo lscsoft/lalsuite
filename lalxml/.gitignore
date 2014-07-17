@@ -22,8 +22,11 @@ lalxml-user-env.sh
 lalxml-user-env.shell
 lalxml.spec
 libtool
+octave/
 python/lalxml/__init__.py
+python/lalxml/_lalxml*
 python/lalxml/git_version.py
+python/lalxml/lalxml.py
 src/LALXMLBuildInfo.c
 src/LALXMLConfig.h
 src/LALXMLVCSInfo.c
@@ -34,7 +37,5 @@ src/config.h.in
 src/git_version
 src/stamp-h1
 src/stamp-h2
-swig/octave/
-swig/python/
-swig/swig_*
+swig/swiglal*
 test/LALXMLTest

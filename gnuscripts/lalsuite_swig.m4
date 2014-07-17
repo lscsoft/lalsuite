@@ -2,7 +2,7 @@
 # lalsuite_swig.m4 - SWIG configuration
 # Author: Karl Wette, 2011--2014
 #
-# serial 62
+# serial 63
 
 AC_DEFUN([_LALSUITE_CHECK_SWIG_VERSION],[
   # $0: check the version of $1, and store it in ${swig_version}
@@ -190,7 +190,7 @@ AC_DEFUN([LALSUITE_USE_SWIG],[
     # SWIG sources, if distributed, have new timestamps
     AC_CONFIG_COMMANDS([swig_depfiles],[
       AS_IF([test "${swig_generate}" = true],[
-        test -f "swig/swig_preproc.deps" || echo '#empty' > "swig/swig_preproc.deps"
+        test -f "swig/swiglal_preproc.deps" || echo '#empty' > "swig/swiglal_preproc.deps"
       ])
       for file in ${swig_dep_files}; do
         depfile="${srcdir}/swig/${file}"
@@ -231,7 +231,7 @@ AC_DEFUN([LALSUITE_USE_SWIG_LANGUAGE],[
   AS_IF([test "${swig_build_]lowercase[}" = true],[
     $2
     swig_build=true
-    swig_dep_files="${swig_dep_files} swig_[]lowercase[].deps"
+    swig_dep_files="${swig_dep_files} swiglal_[]lowercase[].deps"
   ])
   m4_popdef([uppercase])
   m4_popdef([lowercase])

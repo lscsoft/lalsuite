@@ -163,9 +163,9 @@ MACRO(A, B, C, X);
 // Include SWIG configuration header generated from 'config.h',
 // but don't generate wrappers for any of its symbols
 %rename("$ignore", regexmatch$name="^SWIGLAL_") "";
-%include <swig_config.h>
+%include <swiglal_config.h>
 %header %{
-#include <swig_config.h>
+#include <swiglal_config.h>
 %}
 
 // Include GSL headers.

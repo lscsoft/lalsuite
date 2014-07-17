@@ -1,0 +1,1 @@
+../../gnuscripts/lalsuite_test_script_runner.sh

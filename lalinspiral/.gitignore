@@ -22,8 +22,11 @@ lalinspiral-user-env.sh
 lalinspiral-user-env.shell
 lalinspiral.spec
 libtool
+octave/
 python/lalinspiral/__init__.py
+python/lalinspiral/_lalinspiral*
 python/lalinspiral/git_version.py
+python/lalinspiral/lalinspiral.py
 src/Chisq_GPU.cpp
 src/LALInspiralBuildInfo.c
 src/LALInspiralConfig.h
@@ -35,9 +38,7 @@ src/config.h.in
 src/git_version
 src/stamp-h1
 src/stamp-h2
-swig/octave/
-swig/python/
-swig/swig_*
+swig/swiglal*
 test/BCVTemplates
 test/BCVTemplates.out
 test/BCVTemplatesFlatMesh

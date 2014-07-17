@@ -22,8 +22,11 @@ lalstochastic-user-env.sh
 lalstochastic-user-env.shell
 lalstochastic.spec
 libtool
+octave/
 python/lalstochastic/__init__.py
+python/lalstochastic/_lalstochastic*
 python/lalstochastic/git_version.py
+python/lalstochastic/lalstochastic.py
 src/LALStochasticBuildInfo.c
 src/LALStochasticConfig.h
 src/LALStochasticVCSInfo.c
@@ -34,9 +37,7 @@ src/config.h.in
 src/git_version
 src/stamp-h1
 src/stamp-h2
-swig/octave/
-swig/python/
-swig/swig_*
+swig/swiglal*
 test/??_714382918*.dat
 test/AstroOmegaTest
 test/CZeroPadAndFFTTest

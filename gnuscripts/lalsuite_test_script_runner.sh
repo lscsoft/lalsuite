@@ -1,8 +1,8 @@
-# Set up environment and run SWIG test scripts under libtool
+# Run Python, etc. test scripts in a correctly set-up environment
 # Author: Karl Wette, 2014
 
 # record command line
-printf "\nCommand:\n%s" "$0"
+printf "\nCommand line:\n%s" "$0"
 printf " '%s'" "$@"
 printf "\n\n"
 
@@ -14,36 +14,14 @@ shift
 libs="$1"
 echo "libs='${libs}'"
 shift
-pathname="$1"
-echo "pathname='${pathname}'"
+cmd="${1:-false}"
 shift
-pathval="$1"
-echo "pathval='${pathval}'"
-shift
-cmd="$1"
-echo "cmd='${cmd}'"
-shift
-args=
 while test "x$1" != x; do
-    args="${args} '$1'"
+    cmd="${cmd} '$1'"
     shift
 done
-echo "args=\"${args}\""
+echo "cmd=\"${cmd}\""
 echo
-
-# set LAL debugging and message level
-LAL_DEBUG_LEVEL="memdbg,msglvl1"
-export LAL_DEBUG_LEVEL
-
-# set language path
-eval "${pathname}=${pathval}; export ${pathname}"
-
-# list directories in language path
-for dir in `echo ${pathval} | sed 's|:| |g'`; do
-    echo "Contents of path directory $dir:"
-    ls -l "$dir"
-    echo
-done
 
 # recursively build unique list of all libtool libraries
 oldlibs="${libs}"
@@ -101,19 +79,18 @@ for lib in ${libs}; do
 done
 
 # print environment under libtool command
-paths="/=\$/d;/^PATH=/p;/^${pathname}=/p;/LIBRARY_PATH=/p;/^LAL/p"
 echo "Environment:"
-eval "${ltcmd} ${SHELL} -c 'set'" | sed -n -e "${paths}"
+eval "${ltcmd} ${SHELL} -c 'set'" | sed -n -e '/PATH=/p;/^LAL/p'
 echo
 
 # print test script command
 echo "Test script command:"
-echo "${ltcmd} ${cmd} ${args}"
+echo "${ltcmd} ${cmd}"
 echo
 
-# run test script
+# run test script under libtool
 echo "Test script output:"
-eval "${ltcmd} ${cmd} ${args}"
+eval "${ltcmd} ${cmd}"
 exitval="$?"
 
 # print test script return status

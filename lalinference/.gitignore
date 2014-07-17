@@ -22,6 +22,7 @@ lalinference-user-env.sh
 lalinference-user-env.shell
 lalinference.spec
 libtool
+octave/
 python/bayestar_aggregate_found_injections
 python/bayestar_bin_samples
 python/bayestar_lattice_tmpltbank
@@ -35,7 +36,9 @@ python/bayestar_prune_neighborhood_tmpltbank
 python/bayestar_realize_coincs
 python/bayestar_sim_to_tmpltbank
 python/lalinference/__init__.py
+python/lalinference/_lalinference*
 python/lalinference/git_version.py
+python/lalinference/lalinference.py
 src/LALInferenceBuildInfo.c
 src/LALInferenceConfig.h
 src/LALInferenceVCSInfo.c
@@ -46,9 +49,7 @@ src/config.h.in
 src/git_version
 src/stamp-h1
 src/stamp-h2
-swig/octave/
-swig/python/
-swig/swig_*
+swig/swiglal*
 test/LALInferenceInjectionTest
 test/LALInferenceKDTest
 test/LALInferenceLikelihoodTest

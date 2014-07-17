@@ -78,6 +78,7 @@ lib/lalsupport/test/StreamInputTest
 lib/lalsupport/test/StreamSeriesInputTest
 lib/lalsupport/test/UserInputTest
 libtool
+octave/
 packages/*/doc/main.pdf
 packages/*/include/*.tex
 packages/*/src/*.tex
@@ -191,7 +192,7 @@ packages/vectorops/test/VectorIndexRangeTest
 packages/vectorops/test/VectorOpsTest
 packages/window/test/WindowTest
 python/lal/__init__.py
+python/lal/_lal*
 python/lal/git_version.py
-swig/octave/
-swig/python/
-swig/swig_*
+python/lal/lal.py
+swig/swiglal*

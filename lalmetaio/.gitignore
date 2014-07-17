@@ -22,8 +22,11 @@ lalmetaio-user-env.sh
 lalmetaio-user-env.shell
 lalmetaio.spec
 libtool
+octave/
 python/lalmetaio/__init__.py
+python/lalmetaio/_lalmetaio*
 python/lalmetaio/git_version.py
+python/lalmetaio/lalmetaio.py
 src/LALMetaIOBuildInfo.c
 src/LALMetaIOConfig.h
 src/LALMetaIOVCSInfo.c
@@ -34,6 +37,4 @@ src/config.h.in
 src/git_version
 src/stamp-h1
 src/stamp-h2
-swig/octave/
-swig/python/
-swig/swig_*
+swig/swiglal*

@@ -22,8 +22,11 @@ lalpulsar-user-env.sh
 lalpulsar-user-env.shell
 lalpulsar.spec
 libtool
+octave/
 python/lalpulsar/__init__.py
+python/lalpulsar/_lalpulsar*
 python/lalpulsar/git_version.py
+python/lalpulsar/lalpulsar.py
 src/LALPulsarBuildInfo.c
 src/LALPulsarConfig.h
 src/LALPulsarVCSInfo.c
@@ -34,9 +37,7 @@ src/config.h.in
 src/git_version
 src/stamp-h1
 src/stamp-h2
-swig/octave/
-swig/python/
-swig/swig_*
+swig/swiglal*
 test/BinarySSBTimesTest
 test/ComputeFstatTest
 test/ExtrapolatePulsarSpinsTest
