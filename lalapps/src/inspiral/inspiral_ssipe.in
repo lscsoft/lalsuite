@@ -20,7 +20,6 @@ import socket, time
 import re, string
 from optparse import *
 import tempfile
-import ConfigParser
 import urlparse
 sys.path.append('@PYTHONLIBDIR@')
 
@@ -730,7 +729,7 @@ except: pass
 
 ##############################################################################
 # create the config parser object and read in the ini file
-cp = ConfigParser.ConfigParser()
+cp = pipeline.DeepCopyableConfigParser()
 cp.read(opts.config_file)
 
 ##############################################################################

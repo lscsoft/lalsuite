@@ -25,8 +25,8 @@ from glue.ligolw import table
 from glue.ligolw import utils
 from glue.ligolw.utils import print_tables
 from glue.markup import oneliner as e
-import ConfigParser
 sys.path.append('@PYTHONLIBDIR@')
+import glue.pipeline
 
 # ***************************************************************************
 def initialize_page(title,style,script):
@@ -2645,7 +2645,7 @@ h2_num = 0       # counter for the section h2
 h3_num = 1       # counter for the section h3
 config   =  opts.config_file
 opts.config = config # save the name of the ini file, why ?
-configcp = ConfigParser.ConfigParser()
+configcp = glue.pipeline.DeepCopyableConfigParser()
 configcp.read(config)
 maxdiv = 200
 print >>sys.stdout, "|------------------- Initialisation"
@@ -2724,7 +2724,7 @@ opts.style = set_style()
 msg =   "Parsing the ihope ini file (" + opts.config_file+")"
 logText(logfile, msg)
 hipe   = opts.datadir+'/'+opts.config_file
-hipecp = ConfigParser.ConfigParser()
+hipecp = glue.pipeline.DeepCopyableConfigParser()
 hipecp.read(hipe)
 make_external_call( 'cp '+opts.config_file + ' ' + opts.physdir, False, opts.debug, True)
 

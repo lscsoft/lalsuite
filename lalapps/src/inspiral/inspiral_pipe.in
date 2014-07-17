@@ -14,7 +14,6 @@ __version__ = '$Revision$'
 import sys, os
 import getopt, re, string
 import tempfile
-import ConfigParser
 sys.path.append('@PYTHONLIBDIR@')
 
 # import the modules we need to build the pipeline
@@ -144,7 +143,7 @@ try: os.mkdir('logs')
 except: pass
 
 # create the config parser object and read in the ini file
-cp = ConfigParser.ConfigParser()
+cp = pipeline.DeepCopyableConfigParser()
 cp.read(config_file)
 
 # if a usertag has been specified, override the config file

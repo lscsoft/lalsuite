@@ -3,8 +3,10 @@
 
 import sys,os,math
 from optparse import *
-import ConfigParser
 import random
+
+sys.path.append('@PYTHONLIBDIR@')
+import glue.pipeline
 
 ##############################################################################
 usage = """
@@ -13,7 +15,7 @@ usage: %prog [options]
 """
 
 def determine_reduced_combos(combo):
-  cp2 = ConfigParser.ConfigParser()
+  cp2 = glue.pipeline.DeepCopyableConfigParser()
   cp2.addsection('input')
   ifos = []
   temp = 0
@@ -506,7 +508,7 @@ if not opts.config_file:
 
 ###################################
 
-cp = ConfigParser.ConfigParser()
+cp = glue.pipeline.DeepCopyableConfigParser()
 cp.read(opts.config_file)
 
 # Read ini file and determine how to run the code

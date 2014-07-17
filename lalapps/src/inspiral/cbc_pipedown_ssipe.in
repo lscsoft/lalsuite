@@ -3,7 +3,6 @@
 ##############################################################################
 # import standard modules and append the lalapps prefix to the python path
 import os, sys, re, copy
-import ConfigParser
 from optparse import OptionParser
 import tempfile
 sys.path.append('@PYTHONLIBDIR@')
@@ -126,7 +125,7 @@ proc_id = process.register_to_xmldoc(logdoc, __prog__, options.__dict__, version
 
 ##############################################################################
 # parse the ini file and initialize
-cp = ConfigParser.ConfigParser()
+cp = pipeline.DeepCopyableConfigParser()
 cp.read(options.config_file)
 
 tmp_space = cp.get('pipeline', 'node-tmp-dir')
