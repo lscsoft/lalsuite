@@ -140,6 +140,9 @@ def ligolw_sky_map(
     snrs = np.asarray([sngl_inspiral.snr
         for sngl_inspiral in sngl_inspirals])
 
+    # Fudge factor for excess estimation error in gstlal_inspiral.
+    snrs *= 0.83
+
     # Look up physical parameters for detector.
     detectors = [lalsimulation.DetectorPrefixToLALDetector(str(ifo))
         for ifo in ifos]
