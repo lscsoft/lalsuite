@@ -70,6 +70,7 @@
 #include <assert.h>
 #include <float.h>
 #include <math.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include <lal/DetResponse.h>
@@ -94,12 +95,25 @@
 #include "logaddexp.h"
 
 
+/* Storage for old GSL error handler. */
+static gsl_error_handler_t *old_handler;
+
+
 /* Custom, reentrant GSL error handler that simply prints the error message. */
 static void
 my_gsl_error (const char *reason, const char *file, int line, int gsl_errno)
 {
     (void)gsl_errno;
     fprintf(stderr, "gsl: %s:%d: %s: %s\n", file, line, "ERROR", reason);
+}
+
+
+/* Custom error handler that ignores underflow errors. */
+static void
+ignore_underflow (const char *reason, const char *file, int line, int gsl_errno)
+{
+    if (gsl_errno != GSL_EUNDRFLW)
+        old_handler(reason, file, line, gsl_errno);
 }
 
 
@@ -603,8 +617,171 @@ static double complex exp_i(double phi) {
 }
 
 
+/* Data structure to store a pixel in an adaptively refined sky map. */
+typedef struct {
+    double log4p;           /* Logarithm base 4 of probability */
+    unsigned char order;    /* HEALPix resolution order */
+    unsigned long ipix;     /* HEALPix nested pixel index */
+} adaptive_sky_map_pixel;
+
+
+/* Data structure to store an adaptively refined sky map. */
+typedef struct {
+    unsigned char max_order;
+    size_t len;
+    adaptive_sky_map_pixel pixels[];
+} adaptive_sky_map;
+
+
+/* Compare two pixels by contained probability. */
+static int adaptive_sky_map_pixel_compare(const void *a, const void *b)
+{
+    int ret;
+    const adaptive_sky_map_pixel *apix = a;
+    const adaptive_sky_map_pixel *bpix = b;
+
+    const double delta_log4p = apix->log4p - bpix->log4p;
+    const char delta_order = apix->order - bpix->order;
+
+    if (delta_log4p < delta_order)
+        ret = -1;
+    else if (delta_log4p > delta_order)
+        ret = 1;
+    else
+        ret = 0;
+
+    return ret;
+}
+
+
+/* Sort pixels by ascending contained probability. */
+static void adaptive_sky_map_sort(adaptive_sky_map *map)
+{
+    qsort(map->pixels, map->len, sizeof(map->pixels[0]),
+        adaptive_sky_map_pixel_compare);
+}
+
+
+static void *realloc_or_free(void *ptr, size_t size)
+{
+    void *new_ptr = realloc(ptr, size);
+    if (!new_ptr)
+    {
+        free(ptr);
+        GSL_ERROR_NULL("not enough memory to resize array", GSL_ENOMEM);
+    }
+    return new_ptr;
+}
+
+
+/* Subdivide the final last_n pixels of an adaptively refined sky map. */
+static adaptive_sky_map *adaptive_sky_map_refine(
+    adaptive_sky_map *map,
+    size_t last_n
+) {
+    assert(last_n <= map->len);
+
+    /* New length: adding 4*last_n new pixels, removing last_n old pixels. */
+    const size_t new_len = map->len + 3 * last_n;
+    const size_t new_size = sizeof(adaptive_sky_map)
+        + new_len * sizeof(adaptive_sky_map_pixel);
+
+    map = realloc_or_free(map, new_size);
+    if (map)
+    {
+        for (size_t i = 0; i < last_n; i ++)
+        {
+            adaptive_sky_map_pixel *const old_pixel
+                = &map->pixels[map->len - i - 1];
+            const unsigned char order = 1 + old_pixel->order;
+            if (order > map->max_order)
+                map->max_order = order;
+            const unsigned long ipix = 4 * old_pixel->ipix;
+            for (unsigned char j = 0; j < 4; j ++)
+            {
+                adaptive_sky_map_pixel *const new_pixel
+                    = &map->pixels[new_len - (4 * i + j) - 1];
+                new_pixel->log4p = old_pixel->log4p;
+                new_pixel->order = order;
+                new_pixel->ipix = j + ipix;
+            }
+        }
+        map->len = new_len;
+    }
+    return map;
+}
+
+
+static adaptive_sky_map *adaptive_sky_map_alloc(unsigned char order)
+{
+    unsigned long nside = (unsigned long)1 << order;
+    unsigned long npix = nside2npix(nside);
+    size_t size = sizeof(adaptive_sky_map)
+        + npix * sizeof(adaptive_sky_map_pixel);
+
+    adaptive_sky_map *map = malloc(size);
+    if (!map)
+        GSL_ERROR_NULL("not enough memory to allocate sky map", GSL_ENOMEM);
+
+    map->len = npix;
+    map->max_order = order;
+    for (unsigned long ipix = 0; ipix < npix; ipix ++)
+    {
+        map->pixels[ipix].log4p = GSL_NAN;
+        map->pixels[ipix].order = order;
+        map->pixels[ipix].ipix = ipix;
+    }
+    return map;
+}
+
+
+static double *adaptive_sky_map_rasterize(adaptive_sky_map *map, long *out_npix)
+{
+    const unsigned char order = map->max_order;
+    const unsigned long nside = (unsigned long)1 << order;
+    const long npix = nside2npix(nside);
+
+    double *P = malloc(npix * sizeof(double));
+    if (!P)
+        GSL_ERROR_NULL("not enough memory to allocate image", GSL_ENOMEM);
+
+    double norm = 0;
+    const double max_log4p = map->pixels[map->len - 1].log4p;
+    for (ssize_t i = (ssize_t)map->len - 1; i >= 0; i --)
+    {
+        map->pixels[i].log4p -= max_log4p;
+    }
+    for (ssize_t i = (ssize_t)map->len - 1; i >= 0; i --)
+    {
+        const unsigned long reps = (unsigned long)1 << 2 * (order - map->pixels[i].order);
+        const double dP = gsl_sf_exp_mult(map->pixels[i].log4p, reps);
+        if (dP <= 0)
+            break; /* We have reached underflow. */
+        norm += dP;
+    }
+    norm = 1 / norm;
+    for (ssize_t i = (ssize_t)map->len - 1; i >= 0; i --)
+    {
+        const double value = gsl_sf_exp_mult(map->pixels[i].log4p, norm);
+        const unsigned long base_ipix = map->pixels[i].ipix;
+        const unsigned long reps = (unsigned long)1 << 2 * (order - map->pixels[i].order);
+        const unsigned long start = base_ipix * reps;
+        const unsigned long stop = (base_ipix + 1) * reps;
+        for (unsigned long ipix_nest = start; ipix_nest < stop; ipix_nest ++)
+        {
+            long ipix_ring;
+            nest2ring(nside, ipix_nest, &ipix_ring);
+            P[ipix_ring] = value;
+        }
+    }
+    *out_npix = npix;
+
+    return P;
+}
+
+
 double *bayestar_sky_map_toa_phoa_snr(
-    long *npix,
+    long *inout_npix,
     /* Prior */
     double min_distance,            /* Minimum distance */
     double max_distance,            /* Maximum distance */
@@ -623,33 +800,16 @@ double *bayestar_sky_map_toa_phoa_snr(
     const double *phoas,            /* Phases on arrival */
     const double *snrs              /* SNRs */
 ) {
-    long nside;
-    long maxpix;
-    double *P;
-    gsl_permutation *pix_perm;
-
-    /* Storage for old GSL error handler. */
-    gsl_error_handler_t *old_handler;
-
     double complex exp_i_phoas[nifos];
     for (unsigned int iifo = 0; iifo < nifos; iifo ++)
         exp_i_phoas[iifo] = exp_i(phoas[iifo]);
 
-    /* Evaluate posterior term only first. */
-    P = bayestar_sky_map_toa_adapt_resolution(&pix_perm, &maxpix, npix,
-        gmst, nifos, nsamples, sample_rate, acors, locations, toas, snrs);
-    if (!P)
+    static const unsigned char order0 = 4;
+    unsigned char level = order0;
+    adaptive_sky_map *map = adaptive_sky_map_alloc(order0);
+    if (!map)
         return NULL;
-
-    /* Determine the lateral HEALPix resolution. */
-    nside = npix2nside(*npix);
-
-    /* Zero pixels that didn't meet the TDOA cut. */
-    for (long i = maxpix; i < *npix; i ++)
-    {
-        long ipix = gsl_permutation_get(pix_perm, i);
-        P[ipix] = -INFINITY;
-    }
+    const unsigned long npix0 = map->len;
 
     /* Look up Gauss-Legendre quadrature rule for integral over cos(i). */
     gsl_integration_glfixed_table *gltable
@@ -662,118 +822,130 @@ double *bayestar_sky_map_toa_phoa_snr(
      * http://git.savannah.gnu.org/cgit/gsl.git/tree/integration/glfixed.c
      */
     assert(gltable);
+    assert(gltable->precomputed); /* We don't have to free it. */
 
-    /* Use our own error handler while in parallel section to avoid concurrent
-     * calls to the GSL error handler, which if provided by the user may not
-     * be threadsafe. */
-    old_handler = gsl_set_error_handler(my_gsl_error);
-
-    /* Compute posterior factor for amplitude consistency. */
-    #pragma omp parallel for
-    for (long i = 0; i < maxpix; i ++)
+    while (1)
     {
-        long ipix = gsl_permutation_get(pix_perm, i);
-        double complex F[nifos];
-        double dt[nifos];
-        double accum = -INFINITY;
+        /* Use our own error handler while in parallel section to avoid
+         * concurrent calls to the GSL error handler, which if provided by the
+         * user may not be threadsafe. */
+        old_handler = gsl_set_error_handler(my_gsl_error);
 
+        #pragma omp parallel for
+        for (unsigned long i = 0; i < npix0; i ++)
         {
-            double theta, phi;
-            pix2ang_ring(nside, ipix, &theta, &phi);
+            adaptive_sky_map_pixel *const pixel = &map->pixels[map->len - npix0 + i];
+            double complex F[nifos];
+            double dt[nifos];
+            double accum = -INFINITY;
 
-            /* Look up antenna factors */
-            for (unsigned int iifo = 0; iifo < nifos; iifo++)
-                F[iifo] = complex_antenna_factor(
-                    responses[iifo], phi, M_PI_2-theta, gmst) * horizons[iifo];
-
-            toa_errors(dt, theta, phi, gmst, nifos, locations, toas);
-        }
-
-        /* Integrate over 2*psi */
-        for (unsigned int itwopsi = 0; itwopsi < ntwopsi; itwopsi++)
-        {
-            const double twopsi = (2 * M_PI / ntwopsi) * itwopsi;
-            const double complex exp_i_twopsi = exp_i(twopsi);
-            double accum1 = -INFINITY;
-
-            /* Integrate over u from -1 to 1. */
-            for (unsigned int iu = 0; iu < nglfixed; iu++)
             {
-                double u, weight;
-                double accum2 = -INFINITY;
-                {
-                    /* Look up Gauss-Legendre abscissa and weight. */
-                    int ret = gsl_integration_glfixed_point(
-                        -1, 1, iu, &u, &weight, gltable);
+                double theta, phi;
+                const unsigned long nside = (unsigned long)1 << pixel->order;
+                pix2ang_nest(nside, pixel->ipix, &theta, &phi);
 
-                    /* Don't bother checking return value; the only
-                     * possible failure is in index bounds checking. */
-                    assert(ret == GSL_SUCCESS);
-                }
-                const double u2 = gsl_pow_2(u);
-                double complex z_times_r[nifos];
-                double p2 = 0;
+                /* Look up antenna factors */
+                for (unsigned int iifo = 0; iifo < nifos; iifo++)
+                    F[iifo] = complex_antenna_factor(
+                        responses[iifo], phi, M_PI_2-theta, gmst) * horizons[iifo];
 
-                for (unsigned int iifo = 0; iifo < nifos; iifo ++)
-                {
-                    p2 += cabs2(
-                        z_times_r[iifo] = signal_amplitude_model(
-                            F[iifo], exp_i_twopsi, u, u2));
-                }
-                p2 *= 0.5;
-                double p = sqrt(p2);
-
-                for (long isample = 1 - (long)nsamples;
-                    isample < (long)nsamples; isample++)
-                {
-                    double b;
-                    {
-                        double complex I0arg_complex_times_r = 0;
-                        for (unsigned int iifo = 0; iifo < nifos; iifo ++)
-                        {
-                            I0arg_complex_times_r += snrs[iifo]
-                                * conj(z_times_r[iifo]) * exp_i_phoas[iifo]
-                                * eval_acor(acors[iifo], nsamples,
-                                    dt[iifo] * sample_rate + isample);
-                        }
-                        b = cabs(I0arg_complex_times_r);
-                    }
-
-                    double result = toa_phoa_snr_log_radial_integral(
-                        min_distance, max_distance, p2, p, b,
-                        prior_distance_power, gltable);
-                    accum2 = logaddexp(accum2, result);
-                }
-
-                accum1 = logaddexp(accum1, accum2 + log(weight));
+                toa_errors(dt, theta, phi, gmst, nifos, locations, toas);
             }
 
-            accum = logaddexp(accum, accum1);
+            /* Integrate over 2*psi */
+            for (unsigned int itwopsi = 0; itwopsi < ntwopsi; itwopsi++)
+            {
+                const double twopsi = (2 * M_PI / ntwopsi) * itwopsi;
+                const double complex exp_i_twopsi = exp_i(twopsi);
+                double accum1 = -INFINITY;
+
+                /* Integrate over u from -1 to 1. */
+                for (unsigned int iu = 0; iu < nglfixed; iu++)
+                {
+                    double u, weight;
+                    double accum2 = -INFINITY;
+                    {
+                        /* Look up Gauss-Legendre abscissa and weight. */
+                        int ret = gsl_integration_glfixed_point(
+                            -1, 1, iu, &u, &weight, gltable);
+
+                        /* Don't bother checking return value; the only
+                         * possible failure is in index bounds checking. */
+                        assert(ret == GSL_SUCCESS);
+                    }
+                    const double u2 = gsl_pow_2(u);
+                    double complex z_times_r[nifos];
+                    double p2 = 0;
+
+                    for (unsigned int iifo = 0; iifo < nifos; iifo ++)
+                    {
+                        p2 += cabs2(
+                            z_times_r[iifo] = signal_amplitude_model(
+                                F[iifo], exp_i_twopsi, u, u2));
+                    }
+                    p2 *= 0.5;
+                    double p = sqrt(p2);
+
+                    for (long isample = 1 - (long)nsamples;
+                        isample < (long)nsamples; isample++)
+                    {
+                        double b;
+                        {
+                            double complex I0arg_complex_times_r = 0;
+                            for (unsigned int iifo = 0; iifo < nifos; iifo ++)
+                            {
+                                I0arg_complex_times_r += snrs[iifo]
+                                    * conj(z_times_r[iifo]) * exp_i_phoas[iifo]
+                                    * eval_acor(acors[iifo], nsamples,
+                                        dt[iifo] * sample_rate + isample);
+                            }
+                            b = cabs(I0arg_complex_times_r);
+                        }
+
+                        double result = toa_phoa_snr_log_radial_integral(
+                            min_distance, max_distance, p2, p, b,
+                            prior_distance_power, gltable);
+                        accum2 = logaddexp(accum2, result);
+                    }
+
+                    accum1 = logaddexp(accum1, accum2 + log(weight));
+                }
+
+                accum = logaddexp(accum, accum1);
+            }
+
+            /* Record logarithm base 4 of posterior. */
+            pixel->log4p = accum - 2 * M_LN2;
         }
 
-        /* Record log posterior. */
-        P[ipix] = accum;
+        /* Restore old error handler. */
+        gsl_set_error_handler(old_handler);
+
+        /* Sort pixels by descending log posterior. */
+        adaptive_sky_map_sort(map);
+
+        /* If we have reached order=11 (nside=2048), stop. */
+        if (level++ >= 11)
+            break;
+
+        /* Adaptively refine the pixels that contain the most probability. */
+        map = adaptive_sky_map_refine(map, npix0 / 4);
+        if (!map)
+            return NULL;
     }
+
+    /* Set error handler to ignore underflow errors, but invoke the user's
+     * error handler for all other errors. */
+    old_handler = gsl_set_error_handler(ignore_underflow);
+
+    /* Flatten sky map to an image. */
+    double *P = adaptive_sky_map_rasterize(map, inout_npix);
+    free(map);
 
     /* Restore old error handler. */
     gsl_set_error_handler(old_handler);
 
-    /* Free Gauss-Legendre table. A no-op, because the table was precomputed. */
-    gsl_integration_glfixed_table_free(gltable);
-
-    /* Free permutation. */
-    gsl_permutation_free(pix_perm);
-
-    /* Exponentiate and normalize posterior. */
-    pix_perm = get_pixel_ranks(*npix, P);
-    if (!pix_perm)
-    {
-        free(P);
-        return NULL;
-    }
-    exp_normalize(*npix, P, pix_perm);
-    gsl_permutation_free(pix_perm);
-
+    /* Done! */
     return P;
 }
 
