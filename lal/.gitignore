@@ -106,8 +106,8 @@ packages/date/test/GPStoGMST1Test
 packages/date/test/GPStoUTCTest
 packages/date/test/IncrementGPSTest
 packages/date/test/JulianDayTest
-packages/date/test/LMSTTest
 packages/date/test/LMST2Test
+packages/date/test/LMSTTest
 packages/date/test/LeapSecsTest
 packages/date/test/StrToGPSTest
 packages/date/test/UTCtoGPSTest
@@ -154,10 +154,10 @@ packages/tdfilter/test/LPCTest
 packages/tools/test/CoherentEstimationTest
 packages/tools/test/ComputeTransferTest
 packages/tools/test/CubicSplineTriggerInterpolantTest
+packages/tools/test/DetResponseTest
 packages/tools/test/DetectorSiteTest
 packages/tools/test/FrequencySeriesTest
 packages/tools/test/IndependentDetResponseTest
-packages/tools/test/DetResponseTest
 packages/tools/test/LanczosTriggerInterpolantTest
 packages/tools/test/NearestNeighborTriggerInterpolantTest
 packages/tools/test/QuadraticFitTriggerInterpolantTest
@@ -165,8 +165,8 @@ packages/tools/test/ResampleTimeSeriesTest
 packages/tools/test/SegmentsTest
 packages/tools/test/SequenceTest
 packages/tools/test/SkymapTest
-packages/tools/test/TimeSeriesTest
 packages/tools/test/TimeSeriesInterpTest
+packages/tools/test/TimeSeriesTest
 packages/tools/test/UnitsTest
 packages/utilities/test/CCoarseGrainFrequencySeriesTest
 packages/utilities/test/CSInterpolateTest
