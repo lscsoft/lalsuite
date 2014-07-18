@@ -6,7 +6,7 @@ import sys
 import os
 import gzip
 
-from lalapps.nest2pos import draw_posterior_many, draw_N_posterior_many
+from lalapps.nest2pos import draw_posterior_many, draw_N_posterior_many,compute_weights
 
 usage='''%prog -N Nlive [-p posterior.dat] [-H header.txt] [--npos Npos] datafile1.dat [datafile2.dat ...]
 
@@ -79,6 +79,7 @@ if __name__=='__main__':
   # Create posterior samples for each input file
   inarrays=map(loadtxt,datafiles)
   posterior=sampler(inarrays,[int(opts.Nlive) for d in datafiles],logLcol=logLcol)
+  log_evs,log_wts=zip(*[compute_weights(data[:,logLcol],opts.Nlive) for data in inarrays])
   if opts.pos is not None:
     if opts.gz:
       posfile=gzip.open(opts.pos+'.gz','wb')
@@ -102,10 +103,11 @@ if __name__=='__main__':
     Bfile=opts.pos+'_B.txt'
     Bs=map(getBfile,[d.replace('.gz', '')+'_B.txt' for d in datafiles])
     if not any([b is None for b in Bs]):
-      meanB=reduce(logaddexp,[b[0] for b in Bs])-log(len(Bs))
-      meanZ=reduce(logaddexp,[b[1] for b in Bs])-log(len(Bs))
+      meanZ=reduce(logaddexp,log_evs)-log(len(log_evs))
+      noiseZ=reduce(logaddexp,[b[2] for b in Bs]) - log(len(Bs))
+      meanB=meanZ-noiseZ
       maxL=max([b[3] for b in Bs])
       outB=open(Bfile,'w')
-      outB.write('%f %f %f %f\n'%(meanB,meanZ,Bs[0][2],maxL))
+      outB.write('%f %f %f %f\n'%(meanB,meanZ,noiseZ,maxL))
       outB.close()
 

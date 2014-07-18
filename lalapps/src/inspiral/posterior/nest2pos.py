@@ -1,37 +1,43 @@
-from numpy import log1p, log, logaddexp, array, digitize, loadtxt, zeros, exp, hstack, vstack, reshape
+import numpy as np
+from numpy import log1p, log, logaddexp, array, digitize, loadtxt, zeros, exp, hstack, vstack, reshape, diff, concatenate, all, cumsum, ones, linspace
 from numpy.random import uniform
+
+def logsubexp(x,y):
+        assert all(x >= y), 'cannot take log of negative number %s - %s'%(str(x),str(y))
+
+        return x + log1p(-exp(y-x))
+
+def log_integrate_log_trap(log_func,log_support):
+    """
+    Trapezoidal integration of given log(func)
+    Returns log of the integral
+    """
+
+    log_func_sum = logaddexp(log_func[:-1], log_func[1:]) - log(2)
+    log_dxs = logsubexp(log_support[:-1], log_support[1:])
+
+    return logaddexp.reduce(log_func_sum + log_dxs)
+
 
 def compute_weights(data, Nlive):
     """Returns log_ev, log_wts for the log-likelihood samples in data,
     assumed to be a result of nested sampling with Nlive live points."""
 
-    start_data=data[:-Nlive]
+    start_data=concatenate(([float('-inf')], data[:-Nlive]))
     end_data=data[-Nlive:]
 
     log_wts=zeros(data.shape[0])
 
-    log_vol_factor=log1p(-1.0/Nlive)
-    log_dvol = -1.0/Nlive
+    log_vols_start=cumsum(ones(len(start_data)+1)*log1p(-1./Nlive))-log1p(-1./Nlive)
+    log_vols_end=log_vols_start[-1]+concatenate((log(linspace(1,0,len(end_data)+1)[1:-1]),[np.NINF]))
 
-    log_vol = 0.0
-    log_ev = -float('inf')
-    for i,log_like in enumerate(start_data):
-        # Volume associated with this likelihood = Vol/Nlive:
-        log_this_vol=log_vol+log_dvol
-        log_wts[i] = log_like+log_this_vol
-        log_ev = logaddexp(log_ev, log_wts[i])
-        log_vol += log_vol_factor
+    log_likes = concatenate((start_data,end_data,[end_data[-1]]))
 
-    avg_log_like_end = -float('inf')
-    for i,log_l in enumerate(end_data):
-        avg_log_like_end = logaddexp(avg_log_like_end, log_l)
-    avg_log_like_end-=log(Nlive)
+    log_vols=concatenate((log_vols_start,log_vols_end))
+    log_ev = log_integrate_log_trap(log_likes, log_vols)
 
-    # Each remaining live point contributes (Vol/Nlive)*like to
-    # integral, but have posterior weights Vol relative to the other samples
-    log_wts[-Nlive:] = log_vol+end_data
-
-    log_ev = logaddexp(log_ev, avg_log_like_end + log_vol)
+    log_dXs = logsubexp(log_vols[:-1], log_vols[1:])
+    log_wts = log_likes[1:-1]*(log(0.5) + logaddexp(log_dXs[:-1], log_dXs[1:]))
 
     log_wts -= log_ev
 
