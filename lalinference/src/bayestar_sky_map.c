@@ -91,6 +91,7 @@
 #include <gsl/gsl_statistics_double.h>
 #include <gsl/gsl_test.h>
 #include <gsl/gsl_vector.h>
+#include <gsl/gsl_version.h> /* FIXME: remove, depend on GSL >= 1.15 */
 
 #include "logaddexp.h"
 
@@ -413,6 +414,7 @@ static const unsigned int nglfixed = 10;
 static const unsigned int ntwopsi = 10;
 
 
+#if GSL_MINOR_VERSION >= 15 /* FIXME: add dependency on GSL >= 1.15 */
 static double toa_phoa_snr_log_radial_integral(
     double r1, double r2, double p2, double p, double b, int k,
     const gsl_integration_glfixed_table *gltable)
@@ -502,6 +504,7 @@ static double toa_phoa_snr_log_radial_integral(
 
     return result;
 }
+#endif /* GSL_MINOR_VERSION >= 1.15 */
 
 
 static double *bayestar_sky_map_toa_adapt_resolution(
@@ -800,6 +803,7 @@ double *bayestar_sky_map_toa_phoa_snr(
     const double *phoas,            /* Phases on arrival */
     const double *snrs              /* SNRs */
 ) {
+#if GSL_MINOR_VERSION >= 15 /* FIXME: add dependency on GSL >= 1.15 */
     double complex exp_i_phoas[nifos];
     for (unsigned int iifo = 0; iifo < nifos; iifo ++)
         exp_i_phoas[iifo] = exp_i(phoas[iifo]);
@@ -947,6 +951,32 @@ double *bayestar_sky_map_toa_phoa_snr(
 
     /* Done! */
     return P;
+#else /* GSL_MINOR_VERSION < 15 */
+    /* Unused arguments */
+    (void)inout_npix,
+    (void)min_distance;
+    (void)max_distance;
+    (void)prior_distance_power;
+    (void)gmst;
+    (void)nifos;
+    (void)nsamples;
+    (void)sample_rate;
+    (void)acors;
+    (void)responses;
+    (void)locations;
+    (void)horizons;
+    (void)toas;
+    (void)phoas;
+    (void)snrs;
+    /* Unused functions */
+    (void)my_gsl_error;
+    (void)ignore_underflow;
+    (void)adaptive_sky_map_sort;
+    (void)adaptive_sky_map_refine;
+    (void)adaptive_sky_map_alloc;
+    (void)adaptive_sky_map_rasterize;
+    GSL_ERROR_NULL("requires GSL >= 1.15", GSL_EFAILED);
+#endif /* GSL_MINOR_VERSION >= 15 */
 }
 
 
