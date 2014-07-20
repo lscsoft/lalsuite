@@ -31,31 +31,31 @@ __version__ = git_version.id
 __date__ = git_version.date
 
 # map LAL type codes to strings (for function factory)
-LAL_TYPE_STR = {lal.LAL_I2_TYPE_CODE: 'INT2',
-                lal.LAL_I4_TYPE_CODE: 'INT4',
-                lal.LAL_I8_TYPE_CODE: 'INT8',
-                lal.LAL_U2_TYPE_CODE: 'UINT2',
-                lal.LAL_U4_TYPE_CODE: 'UINT4',
-                lal.LAL_U8_TYPE_CODE: 'UINT8',
-                lal.LAL_S_TYPE_CODE:  'REAL4',
-                lal.LAL_D_TYPE_CODE:  'REAL8',
-                lal.LAL_C_TYPE_CODE:  'COMPLEX8',
-                lal.LAL_Z_TYPE_CODE:  'COMPLEX16'}
+LAL_TYPE_STR = {lal.I2_TYPE_CODE: 'INT2',
+                lal.I4_TYPE_CODE: 'INT4',
+                lal.I8_TYPE_CODE: 'INT8',
+                lal.U2_TYPE_CODE: 'UINT2',
+                lal.U4_TYPE_CODE: 'UINT4',
+                lal.U8_TYPE_CODE: 'UINT8',
+                lal.S_TYPE_CODE:  'REAL4',
+                lal.D_TYPE_CODE:  'REAL8',
+                lal.C_TYPE_CODE:  'COMPLEX8',
+                lal.Z_TYPE_CODE:  'COMPLEX16'}
 
 # map strings to LAL type codes
 LAL_TYPE_FROM_STR = dict((v,k) for k, v in LAL_TYPE_STR.iteritems())
 
 # map numpy dtypes to LAL type codes
-LAL_TYPE_FROM_NUMPY = {numpy.int16:lal.LAL_I2_TYPE_CODE,
-                       numpy.int32:lal.LAL_I4_TYPE_CODE,
-                       numpy.int64:lal.LAL_I8_TYPE_CODE,
-                       numpy.uint16:lal.LAL_U2_TYPE_CODE,
-                       numpy.uint32:lal.LAL_U4_TYPE_CODE,
-                       numpy.uint64:lal.LAL_U8_TYPE_CODE,
-                       numpy.float32:lal.LAL_S_TYPE_CODE,
-                       numpy.float64:lal.LAL_D_TYPE_CODE,
-                       numpy.complex64:lal.LAL_C_TYPE_CODE,
-                       numpy.complex128:lal.LAL_Z_TYPE_CODE}
+LAL_TYPE_FROM_NUMPY = {numpy.int16:lal.I2_TYPE_CODE,
+                       numpy.int32:lal.I4_TYPE_CODE,
+                       numpy.int64:lal.I8_TYPE_CODE,
+                       numpy.uint16:lal.U2_TYPE_CODE,
+                       numpy.uint32:lal.U4_TYPE_CODE,
+                       numpy.uint64:lal.U8_TYPE_CODE,
+                       numpy.float32:lal.S_TYPE_CODE,
+                       numpy.float64:lal.D_TYPE_CODE,
+                       numpy.complex64:lal.C_TYPE_CODE,
+                       numpy.complex128:lal.Z_TYPE_CODE}
 
 # map LAL type codes to numpy dtypes
 NUMPY_TYPE_FROM_LAL = dict((v,k) for k, v in LAL_TYPE_FROM_NUMPY.iteritems())
