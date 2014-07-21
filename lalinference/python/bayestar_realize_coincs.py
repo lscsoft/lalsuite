@@ -1,4 +1,3 @@
-#!@PYTHON@
 #
 # Copyright (C) 2013  Leo Singer
 #
@@ -17,7 +16,7 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #
 from __future__ import division
-"""
+__doc__ = """
 Synthesize triggers for simulated sources by realizing Gaussian measurement
 errors in SNR and time of arrival. The input file (or stdin if the input file
 is omitted) should be an optionally gzip-compressed LIGO-LW XML file of the form

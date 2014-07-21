@@ -1,4 +1,3 @@
-#!@PYTHON@
 #
 # Copyright (C) 2013  Leo Singer
 #
@@ -18,7 +17,7 @@
 #
 from __future__ import division
 from __future__ import print_function
-"""
+__doc__ = """
 Match sky maps with injections in an inspinjfind-style sqlite database and print
 summary values for each sky map:
 

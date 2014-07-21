@@ -1,7 +1,12 @@
 SUFFIXES = .py
+
 pybindir = $(bindir)
 BUILT_SOURCES += $(pymodule_PYTHON) $(pybin_SCRIPTS)
 MOSTLYCLEANFILES += $(pybin_SCRIPTS)
+
+python_install_script = $(top_srcdir)/gnuscripts/lalsuite_python_install_script
+INSTALL_SCRIPT = $(python_install_script) $(INSTALL)
+EXTRA_DIST += $(python_install_script)
 
 .PHONY: pymodule-all-local
 all-local: pymodule-all-local
@@ -33,13 +38,28 @@ $(pybin_SCRIPTS): Makefile
 		echo "" >&2; \
 		exit 1; \
 	fi; \
-	if $(SED) -e 's|[@]PYTHON[@]|@PYTHON@|g;s|[@]pkgpythondir[@]|@pkgpythondir@|g;' $< > $@; then \
-		chmod +x $@; \
-		exit 0; \
-	else \
-		rm -f $@; \
-		exit 1; \
-	fi
+	$(MKDIR_P) .pybin/ || exit 1; \
+	rm -f $@ $@.tmp .pybin/$@ || exit 1; \
+	echo "#!/bin/sh" > $@.tmp; \
+	echo "### SHELL SELF-EXECUTING HEADER SCRIPT" >> $@.tmp; \
+	echo "''':'" >> $@.tmp; \
+	echo "PYTHONPATH=\"$(abs_builddir):$(abs_srcdir):$(LAL_PYTHON_PATH):\$${PYTHONPATH}\"" >> $@.tmp; \
+	echo "export PYTHONPATH" >> $@.tmp; \
+	echo "exec $(PYTHON) \"\$$0\" \"\$$@\"" >> $@.tmp; \
+	echo "exit \$$?" >> $@.tmp; \
+	echo "fi" >> $@.tmp; \
+	echo "'''" >> $@.tmp; \
+	echo "### PYTHON SCRIPT" >> $@.tmp; \
+	$(SED) -e "s|^PYTHONPATH=.*|PYTHONPATH=\"$(pyexecdir):$(pythondir):\$${PYTHONPATH}\"|" $@.tmp > .pybin/$@ || exit 1; \
+	cat $< >> .pybin/$@ || exit 1; \
+	cat $< >> $@.tmp || exit 1; \
+	chmod +x $@.tmp || exit 1; \
+	mv -f $@.tmp $@
+
+.PHONY: pybin-clean-local
+clean-local: pybin-clean-local
+pybin-clean-local:
+	-rm -rf .pybin/
 
 .PHONY: pybin-dist-hook
 dist-hook: pybin-dist-hook

@@ -1,4 +1,3 @@
-#!@PYTHON@
 #
 # Copyright (C) 2013  Leo Singer
 #
@@ -16,7 +15,7 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #
-"""
+__doc__ = """
 Listen for new events from LVAlert and perform sky localization.
 
 `bayestar_localize_lvalert` supports two modes of operation. You can explicitly

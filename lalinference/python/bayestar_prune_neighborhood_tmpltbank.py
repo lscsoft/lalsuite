@@ -1,4 +1,3 @@
-#!@PYTHON@
 #
 # Copyright (C) 2013  Leo Singer
 #
@@ -16,7 +15,7 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #
-"""
+__doc__ = """
 Remove all entries from a template bank except those that lie within a 1-sigma
 error ellipse of a (mass1, mass2, chi=0) at a given SNR. Uses
 TaylorF2ReducedSpin metric.

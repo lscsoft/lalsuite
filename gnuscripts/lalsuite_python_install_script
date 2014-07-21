@@ -1,0 +1,27 @@
+#!/bin/sh
+
+# Install Python scripts from .pybin/, which have the correct PYTHONPATH
+# Author: Karl Wette, 2014
+
+# first command line argument is 'install' command
+cmd="$1"
+if test "x${cmd}" = x; then
+    echo "$0: insufficient arguments" >&2
+    exit 1
+fi
+shift
+
+# iterate over 'install' arguments
+while test "x$1" != x; do
+    arg="$1"
+    if test -f "${arg}" && test -f ".pybin/${arg}"; then
+        arg=".pybin/${arg}"
+    fi
+    cmd="${cmd} '${arg}'"
+    shift
+done
+
+# print and execute 'install' command
+echo " ${cmd}"
+eval "${cmd}"
+exit $?

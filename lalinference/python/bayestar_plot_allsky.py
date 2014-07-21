@@ -1,4 +1,3 @@
-#!@PYTHON@
 #
 # Copyright (C) 2011  Leo Singer
 #
@@ -15,7 +14,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
-"""
+__doc__ = """
 Plot an all-sky map on a Mollweide projection.
 By default, plot in celestial coordinates (RA, Dec).
 
