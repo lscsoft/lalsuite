@@ -220,8 +220,8 @@ def ts_from_stream(stream, channel, start=None, duration=None, datatype=None,
     @returns a TimeSeries of the imported data
     """
     # set verbosity
-    lalframe.FrSetMode(verbose and lalframe.LAL_FR_STREAM_VERBOSE_MODE or
-                       lalframe.LAL_FR_STREAM_DEFAULT_MODE, stream)
+    lalframe.FrSetMode(verbose and lalframe.FR_STREAM_VERBOSE_MODE or
+                       lalframe.FR_STREAM_DEFAULT_MODE, stream)
     # determine default start time and duration
     epoch = stream.epoch
     if start is None:
