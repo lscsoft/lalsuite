@@ -35,6 +35,7 @@ if __name__=='__main__':
   parser.add_option('-H','--headers',action='store',type='string',default=None,help='Header file explaining columns in data file',metavar='file.dat_params.txt')
   parser.add_option('-d','--prec',action='store',type='int',dest='prec',default=14,help='Number of decimal place required for output posterior samples. Default is 14.',metavar='NUM')
   parser.add_option('-z','--gzip',action="store_true",dest='gz',default=False,help='Gzip compress the output posterior samples (this will append .gz onto the posterior file). Default is no compression.')
+  parser.add_option('-v','--verbose',action="store_true",default=False,help="Print some additional information")
   (opts,args)=parser.parse_args()
 
   datafiles=args
@@ -55,10 +56,13 @@ if __name__=='__main__':
     if not os.access(headerfilename,os.R_OK):
       print 'Unable to open header file %s!'%(headerfilename)
       sys.exit(1)
+    elif opts.verbose: print 'Reading headers from %s'%(headerfilename)
     headerfile=open(headerfilename,'r')
     headerstr=headerfile.readline()
     headerfile.close()
   else: # old inspnest defaults
+    if opts.verbose:
+      print 'No header file found, assuming inspnest default'
     headerstr='mchirp\t eta\t time\t phi0\t dist\t ra\t dec\t psi\t iota\t logL'
   headers=headerstr.lower().split()
   logLcol=headers.index('logl')
@@ -80,6 +84,8 @@ if __name__=='__main__':
   inarrays=map(loadtxt,datafiles)
   posterior=sampler(inarrays,[int(opts.Nlive) for d in datafiles],logLcol=logLcol)
   log_evs,log_wts=zip(*[compute_weights(data[:,logLcol],opts.Nlive) for data in inarrays])
+  if opts.verbose:
+    print 'Log evidences from input files: %s'%(str(log_evs))
   if opts.pos is not None:
     if opts.gz:
       posfile=gzip.open(opts.pos+'.gz','wb')
