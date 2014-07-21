@@ -266,7 +266,8 @@ def get_stream_length(stream, channel):
 
     @returns the integer length of the data for this channel
     """
-    epoch = lal.LIGOTimeGPS(stream.epoch)
+    epoch = lal.LIGOTimeGPS(stream.epoch.gpsSeconds,
+                            stream.epoch.gpsNanoSeconds)
     # loop over each file in the stream cache and query its vector length
     nfile = stream.cache.length
     length = 0
@@ -288,7 +289,8 @@ def get_stream_duration(stream):
 
     @returns the float duration (seconds) of the data for this channel
     """
-    epoch = lal.LIGOTimeGPS(stream.epoch)
+    epoch = lal.LIGOTimeGPS(stream.epoch.gpsSeconds,
+                            stream.epoch.gpsNanoSeconds)
     # loop over each file in the stream cache and query its duration
     nfile = stream.cache.length
     duration = 0
