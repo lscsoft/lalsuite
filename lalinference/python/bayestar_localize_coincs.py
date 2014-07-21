@@ -32,8 +32,9 @@ distance of the most sensitive detector.
 
 A FITS file is created for each sky map, having a filename of the form
 
-  "X.toa.fits.gz"
   "X.toa_phoa_snr.fits.gz"
+  "X.toa_snr_mcmc.fits.gz"
+  "X.toa_phoa_snr_mcmc.fits.gz"
 
 where X is the LIGO-LW row id of the coinc and "toa" or "toa_phoa_snr"
 identifies whether the sky map accounts for times of arrival (TOA),
@@ -47,12 +48,9 @@ from optparse import Option, OptionParser
 from lalinference.bayestar import command
 
 methods = '''
-    toa
     toa_phoa_snr
-    toa_mcmc
     toa_snr_mcmc
     toa_phoa_snr_mcmc
-    toa_mcmc_kde
     toa_snr_mcmc_kde
     toa_phoa_snr_mcmc_kde
     '''.split()

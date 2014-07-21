@@ -73,20 +73,6 @@
 #include <complex.h>
 
 
-double *bayestar_sky_map_toa(
-    long *npix,
-    /* Detector network */
-    double gmst,                    /* GMST (rad) */
-    unsigned int nifos,             /* Number of detectors */
-    unsigned long nsamples,         /* Length of autocorrelation sequence */
-    double sample_rate,             /* Sample rate in seconds */
-    const double complex **acors,   /* Autocorrelation sequences */
-    const double **locations,       /* Barycentered Cartesian geographic detector positions (m) */
-    /* Observations */
-    const double *toas,             /* Arrival time differences relative to network barycenter (s) */
-    const double *snrs              /* SNRs */
-);
-
 /* Perform sky localization based on TDOAs, PHOAs, and amplitude. */
 double *bayestar_sky_map_toa_phoa_snr(
     long *npix,
@@ -106,23 +92,6 @@ double *bayestar_sky_map_toa_phoa_snr(
     /* Observations */
     const double *toas,             /* Arrival time differences relative to network barycenter (s) */
     const double *phoas,            /* Phases on arrival */
-    const double *snrs              /* SNRs */
-);
-
-double bayestar_log_likelihood_toa(
-    /* Parameters */
-    double ra,                      /* Right ascension (rad) */
-    double sin_dec,                 /* Sin(declination) */
-    double t,                       /* Barycentered arrival time (s) */
-    /* Detector network */
-    double gmst,                    /* GMST (rad) */
-    unsigned int nifos,             /* Number of detectors */
-    unsigned long nsamples,         /* Length of autocorrelation sequence */
-    double sample_rate,             /* Sample rate in seconds */
-    const double complex **acors,   /* Autocorrelation sequences */
-    const double **locations,       /* Barycentered Cartesian geographic detector positions (m) */
-    /* Observations */
-    const double *toas,             /* Arrival time differences relative to network barycenter (s) */
     const double *snrs              /* SNRs */
 );
 

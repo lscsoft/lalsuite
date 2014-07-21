@@ -87,10 +87,7 @@
 #include <gsl/gsl_sf_exp.h>
 #include <gsl/gsl_sf_expint.h>
 #include <gsl/gsl_sf_gamma.h>
-#include <gsl/gsl_sort_vector_double.h>
-#include <gsl/gsl_statistics_double.h>
 #include <gsl/gsl_test.h>
-#include <gsl/gsl_vector.h>
 #include <gsl/gsl_version.h> /* FIXME: remove, depend on GSL >= 1.15 */
 
 #include "logaddexp.h"
@@ -238,60 +235,6 @@ static double complex eval_acor(
 }
 
 
-/* Return indices of sorted pixels from greatest to smallest. */
-static gsl_permutation *get_pixel_ranks(long npix, double *P)
-{
-    gsl_permutation *pix_perm = gsl_permutation_alloc(npix);
-    if (pix_perm)
-    {
-        gsl_vector_view P_vector = gsl_vector_view_array(P, npix);
-        gsl_sort_vector_index(pix_perm, &P_vector.vector);
-        gsl_permutation_reverse(pix_perm);
-    }
-    return pix_perm;
-}
-
-
-/* Exponentiate and normalize a log probability sky map. */
-static void exp_normalize(long npix, double *P, gsl_permutation *pix_perm)
-{
-    long i;
-    double accum, max_log_p;
-
-    /* Find the value of the greatest log probability. */
-    max_log_p = P[gsl_permutation_get(pix_perm, 0)];
-
-    /* Subtract it off. */
-    for (i = 0; i < npix; i ++)
-        P[i] -= max_log_p;
-
-    /* Exponentiate to convert from log probability to probability. */
-    for (i = 0; i < npix; i ++)
-        P[i] = exp(P[i]);
-
-    /* Sum entire sky map to find normalization. */
-    for (accum = 0, i = 0; i < npix; i ++)
-        accum += P[gsl_permutation_get(pix_perm, i)];
-
-    /* Normalize. */
-    for (i = 0; i < npix; i ++)
-        P[i] /= accum;
-}
-
-
-static long indexof_confidence_level(
-    long npix, double *P, double level, gsl_permutation *pix_perm)
-{
-    double accum;
-    long maxpix;
-
-    for (accum = 0, maxpix = 0; maxpix < npix && accum <= level; maxpix ++)
-        accum += P[gsl_permutation_get(pix_perm, maxpix)];
-
-    return maxpix;
-}
-
-
 /* Find error in time of arrival. */
 static void toa_errors(
     double *dt,
@@ -347,69 +290,6 @@ static double complex signal_amplitude_model(
 }
 
 
-static int bayestar_sky_map_toa_not_normalized_log(
-    long npix,                      /* Number of HEALPix pixels */
-    double *P,                      /* Preallocated posterior pixel map */
-    /* Detector network */
-    double gmst,                    /* GMST (rad) */
-    unsigned int nifos,             /* Number of detectors */
-    unsigned long nsamples,         /* Length of autocorrelation sequence */
-    double sample_rate,             /* Sample rate in seconds */
-    const double complex **acors,   /* Autocorrelation sequences */
-    const double **locations,       /* Barycentered Cartesian geographic detector positions (m) */
-    /* Observations */
-    const double *toas,             /* Arrival time differences relative to network barycenter (s) */
-    const double *snrs              /* SNRs */
-) {
-    long nside;
-
-    /* Determine the lateral HEALPix resolution. */
-    nside = npix2nside(npix);
-    if (nside < 0)
-        GSL_ERROR("output is not a valid HEALPix array", GSL_EINVAL);
-
-    /* Loop over pixels. */
-    #pragma omp parallel for
-    for (long i = 0; i < npix; i ++)
-    {
-        double log_posterior = -INFINITY;
-        double dt[nifos];
-
-        /* Compute time of arrival errors */
-        {
-            double theta, phi;
-            pix2ang_ring(nside, i, &theta, &phi);
-            toa_errors(dt, theta, phi, gmst, nifos, locations, toas);
-        }
-
-        /* Loop over arrival time */
-        for (long isample = 1 - (long)nsamples; isample < (long)nsamples; isample++)
-        {
-            double product = 1;
-            double scale = 0;
-
-            /* Loop over detectors */
-            for (unsigned int iifo = 0; iifo < nifos; iifo++)
-            {
-                const double I0arg = gsl_pow_2(snrs[iifo]) * cabs(eval_acor(
-                    acors[iifo], nsamples, dt[iifo] * sample_rate + isample));
-                product *= gsl_sf_bessel_I0_scaled(I0arg);
-                scale += I0arg;
-            }
-
-            log_posterior = logaddexp(log_posterior, scale + log(product));
-        }
-
-        P[i] = log_posterior;
-    }
-
-    /* Done! */
-    return GSL_SUCCESS;
-}
-
-
-static const double autoresolution_confidence_level = 0.9999;
-static const long autoresolution_count_pix = 12288;
 static const unsigned int nglfixed = 10;
 static const unsigned int ntwopsi = 10;
 
@@ -505,114 +385,6 @@ static double toa_phoa_snr_log_radial_integral(
     return result;
 }
 #endif /* GSL_MINOR_VERSION >= 1.15 */
-
-
-static double *bayestar_sky_map_toa_adapt_resolution(
-    gsl_permutation **pix_perm,
-    long *maxpix,
-    long *npix,
-    /* Detector network */
-    double gmst,                    /* GMST (rad) */
-    unsigned int nifos,             /* Number of detectors */
-    unsigned long nsamples,         /* Length of autocorrelation sequence */
-    double sample_rate,             /* Sample rate in seconds */
-    const double complex **acors,   /* Autocorrelation sequences */
-    const double **locations,       /* Barycentered Cartesian geographic detector positions (m) */
-    /* Observations */
-    const double *toas,             /* Arrival time differences relative to network barycenter (s) */
-    const double *snrs              /* SNRs */
-) {
-    int ret;
-    double *P = NULL;
-    long my_npix = *npix;
-    long my_maxpix = *npix;
-    gsl_permutation *my_pix_perm = NULL;
-
-    if (my_npix == -1)
-    {
-        my_npix = autoresolution_count_pix / 4;
-        do {
-            my_npix *= 4;
-
-            free(P);
-            gsl_permutation_free(my_pix_perm);
-
-            P = malloc(my_npix * sizeof(double));
-            if (!P)
-                GSL_ERROR_NULL("failed to allocate output array", GSL_ENOMEM);
-            ret = bayestar_sky_map_toa_not_normalized_log(my_npix, P, gmst,
-                nifos, nsamples, sample_rate, acors, locations, toas, snrs);
-            if (ret != GSL_SUCCESS)
-            {
-                free(P);
-                P = NULL;
-                goto fail;
-            }
-            my_pix_perm = get_pixel_ranks(my_npix, P);
-            if (!my_pix_perm)
-            {
-                free(P);
-                P = NULL;
-                goto fail;
-            }
-            exp_normalize(my_npix, P, my_pix_perm);
-
-            my_maxpix = indexof_confidence_level(my_npix, P,
-                autoresolution_confidence_level, my_pix_perm);
-        } while (my_maxpix < autoresolution_count_pix);
-    } else {
-        P = malloc(my_npix * sizeof(double));
-        if (!P)
-            GSL_ERROR_NULL("failed to allocate output array", GSL_ENOMEM);
-        ret = bayestar_sky_map_toa_not_normalized_log(my_npix, P, gmst,
-            nifos, nsamples, sample_rate, acors, locations, toas, snrs);
-        if (ret != GSL_SUCCESS)
-        {
-            free(P);
-            P = NULL;
-            goto fail;
-        }
-        my_pix_perm = get_pixel_ranks(my_npix, P);
-        if (!my_pix_perm)
-        {
-            free(P);
-            P = NULL;
-            goto fail;
-        }
-        exp_normalize(my_npix, P, my_pix_perm);
-
-        my_maxpix = indexof_confidence_level(my_npix, P,
-            autoresolution_confidence_level, my_pix_perm);
-    }
-
-    *npix = my_npix;
-    *pix_perm = my_pix_perm;
-    *maxpix = my_maxpix;
-fail:
-    return P;
-}
-
-
-double *bayestar_sky_map_toa(
-    long *npix,
-    /* Detector network */
-    double gmst,                    /* GMST (rad) */
-    unsigned int nifos,             /* Number of detectors */
-    unsigned long nsamples,         /* Length of autocorrelation sequence */
-    double sample_rate,             /* Sample rate in seconds */
-    const double complex **acors,   /* Autocorrelation sequences */
-    const double **locations,       /* Barycentered Cartesian geographic detector positions (m) */
-    /* Observations */
-    const double *toas,             /* Arrival time differences relative to network barycenter (s) */
-    const double *snrs              /* SNRs */
-) {
-    long maxpix;
-    gsl_permutation *pix_perm = NULL;
-    double *ret = bayestar_sky_map_toa_adapt_resolution(&pix_perm, &maxpix,
-        npix, gmst, nifos, nsamples, sample_rate, acors, locations, toas, snrs);
-    gsl_permutation_free(pix_perm);
-    return ret;
-}
 
 
 static double complex exp_i(double phi) {
@@ -977,46 +749,6 @@ double *bayestar_sky_map_toa_phoa_snr(
     (void)adaptive_sky_map_rasterize;
     GSL_ERROR_NULL("requires GSL >= 1.15", GSL_EFAILED);
 #endif /* GSL_MINOR_VERSION >= 15 */
-}
-
-
-double bayestar_log_likelihood_toa(
-    /* Parameters */
-    double ra,                      /* Right ascension (rad) */
-    double sin_dec,                 /* Sin(declination) */
-    double t,                       /* Barycentered arrival time (s) */
-    /* Detector network */
-    double gmst,                    /* GMST (rad) */
-    unsigned int nifos,             /* Number of detectors */
-    unsigned long nsamples,         /* Length of autocorrelation sequence */
-    double sample_rate,             /* Sample rate in seconds */
-    const double complex **acors,   /* Autocorrelation sequences */
-    const double **locations,       /* Barycentered Cartesian geographic detector positions (m) */
-    /* Observations */
-    const double *toas,             /* Arrival time differences relative to network barycenter (s) */
-    const double *snrs              /* SNRs */
-) {
-    const double dec = asin(sin_dec);
-
-    /* Compute time of arrival errors */
-    double dt[nifos];
-    toa_errors(dt, M_PI_2 - dec, ra, gmst, nifos, locations, toas);
-    for (unsigned int iifo = 0; iifo < nifos; iifo++)
-        dt[iifo] -= t;
-
-    double product = 1;
-    double scale = 0;
-
-    /* Loop over detectors */
-    for (unsigned int iifo = 0; iifo < nifos; iifo++)
-    {
-        const double I0arg = gsl_pow_2(snrs[iifo]) * cabs(eval_acor(
-            acors[iifo], nsamples, dt[iifo] * sample_rate));
-        product *= gsl_sf_bessel_I0_scaled(I0arg);
-        scale += I0arg;
-    }
-
-    return log(product) + scale;
 }
 
 

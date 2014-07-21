@@ -162,105 +162,6 @@ my_gsl_error (const char * reason, const char * file, int line, int gsl_errno)
     INPUT_VECTOR_NIFOS(double, NAME, NPY_DOUBLE)
 
 
-static PyObject *sky_map_toa(
-    PyObject *NPY_UNUSED(module), PyObject *args, PyObject *kwargs)
-{
-    /* Input arguments */
-    long nside = -1;
-    long npix;
-    double gmst;
-    unsigned int nifos;
-    unsigned long nsamples = 0;
-    double sample_rate;
-    PyObject *acors_obj;
-    PyObject *locations_obj;
-    PyObject *toas_obj;
-    PyObject *snrs_obj;
-
-    /* Names of arguments */
-    static const char *keywords[] = {"gmst", "sample_rate", "acors",
-        "locations", "toas", "snrs", "nside", NULL};
-
-    /* Parse arguments */
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "ddOOOO|l",
-        keywords, &gmst, &sample_rate, &acors_obj, &locations_obj, &toas_obj,
-        &snrs_obj, &nside)) return NULL;
-
-    /* Determine HEALPix resolution, if specified */
-    if (nside == -1)
-    {
-        npix = -1;
-    } else {
-        npix = nside2npix(nside);
-        if (npix == -1)
-        {
-            PyErr_SetString(PyExc_ValueError, "nside must be a power of 2");
-            return NULL;
-        }
-    }
-
-    /* Determine number of detectors */
-    {
-        Py_ssize_t n = PySequence_Length(acors_obj);
-        if (n < 0) return NULL;
-        nifos = n;
-    }
-
-    /* Return value */
-    PyObject *out = NULL;
-
-    /* Numpy array objects */
-    PyArrayObject *acors_npy[nifos], *locations_npy[nifos], *toas_npy = NULL,
-        *snrs_npy = NULL;
-    memset(acors_npy, 0, sizeof(acors_npy));
-    memset(locations_npy, 0, sizeof(locations_npy));
-
-    /* Arrays of pointers for inputs with multiple dimensions */
-    const double complex *acors[nifos];
-    const double *locations[nifos];
-
-    /* Gather C-aligned arrays from Numpy types */
-    INPUT_LIST_OF_ARRAYS(acors, NPY_CDOUBLE, 1,
-        npy_intp dim = PyArray_DIM(npy, 0);
-        if (iifo == 0)
-            nsamples = dim;
-        else if ((unsigned long)dim != nsamples)
-        {
-            PyErr_SetString(PyExc_ValueError,
-                "expected elements of acors to be vectors of the same length");
-            goto fail;
-        }
-    )
-    INPUT_LIST_OF_ARRAYS(locations, NPY_DOUBLE, 1,
-        if (PyArray_DIM(npy, 0) != 3)
-        {
-            PyErr_SetString(PyExc_ValueError,
-                "expected elements of locations to be vectors of length 3");
-            goto fail;
-        }
-    )
-    INPUT_VECTOR_DOUBLE_NIFOS(toas)
-    INPUT_VECTOR_DOUBLE_NIFOS(snrs)
-
-    /* Call function */
-    gsl_error_handler_t *old_handler = gsl_set_error_handler(my_gsl_error);
-    double *ret = bayestar_sky_map_toa(&npix, gmst, nifos, nsamples,
-        sample_rate, acors, locations, toas, snrs);
-    gsl_set_error_handler(old_handler);
-
-    /* Prepare output object */
-    if (ret)
-        out = premalloced_npy_double_array(ret, npix);
-
-fail: /* Cleanup */
-    FREE_INPUT_LIST_OF_ARRAYS(acors)
-    FREE_INPUT_LIST_OF_ARRAYS(locations)
-    Py_XDECREF(toas_npy);
-    Py_XDECREF(snrs_npy);
-    return out;
-};
-
-
 static PyObject *sky_map_toa_phoa_snr(
     PyObject *NPY_UNUSED(module), PyObject *args, PyObject *kwargs)
 {
@@ -380,90 +281,6 @@ fail: /* Cleanup */
     Py_XDECREF(horizons_npy);
     Py_XDECREF(toas_npy);
     Py_XDECREF(phoas_npy);
-    Py_XDECREF(snrs_npy);
-    return out;
-};
-
-
-static PyObject *log_likelihood_toa(
-    PyObject *NPY_UNUSED(module), PyObject *args, PyObject *kwargs)
-{
-    /* Input arguments */
-    double ra;
-    double sin_dec;
-    double t;
-    double gmst;
-    unsigned int nifos;
-    unsigned long nsamples = 0;
-    double sample_rate;
-    PyObject *acors_obj;
-    PyObject *locations_obj;
-    PyObject *toas_obj;
-    PyObject *snrs_obj;
-
-    /* Names of arguments */
-    static const char *keywords[] = {"params", "gmst", "sample_rate", "acors",
-        "locations", "toas", "snrs", NULL};
-
-    /* Parse arguments */
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "(ddd)ddOOOO",
-        keywords, &ra, &sin_dec, &t, &gmst, &sample_rate, &acors_obj,
-        &locations_obj, &toas_obj, &snrs_obj)) return NULL;
-
-    /* Determine number of detectors */
-    {
-        Py_ssize_t n = PySequence_Length(acors_obj);
-        if (n < 0) return NULL;
-        nifos = n;
-    }
-
-    /* Return value */
-    PyObject *out = NULL;
-
-    /* Numpy array objects */
-    PyArrayObject *acors_npy[nifos], *locations_npy[nifos], *toas_npy = NULL,
-        *snrs_npy = NULL;
-    memset(acors_npy, 0, sizeof(acors_npy));
-    memset(locations_npy, 0, sizeof(locations_npy));
-
-    /* Arrays of pointers for inputs with multiple dimensions */
-    const double complex *acors[nifos];
-    const double *locations[nifos];
-
-    /* Gather C-aligned arrays from Numpy types */
-    INPUT_LIST_OF_ARRAYS(acors, NPY_CDOUBLE, 1,
-        npy_intp dim = PyArray_DIM(npy, 0);
-        if (iifo == 0)
-            nsamples = dim;
-        else if ((unsigned long)dim != nsamples)
-        {
-            PyErr_SetString(PyExc_ValueError,
-                "expected elements of acors to be vectors of the same length");
-            goto fail;
-        }
-    )
-    INPUT_LIST_OF_ARRAYS(locations, NPY_DOUBLE, 1,
-        if (PyArray_DIM(npy, 0) != 3)
-        {
-            PyErr_SetString(PyExc_ValueError,
-                "expected elements of locations to be vectors of length 3");
-            goto fail;
-        }
-    )
-    INPUT_VECTOR_DOUBLE_NIFOS(toas)
-    INPUT_VECTOR_DOUBLE_NIFOS(snrs)
-
-    /* Call function */
-    const double ret = bayestar_log_likelihood_toa(ra, sin_dec, t, gmst, nifos,
-        nsamples, sample_rate, acors, locations, toas, snrs);
-
-    /* Prepare output object */
-    out = PyFloat_FromDouble(ret);
-
-fail: /* Cleanup */
-    FREE_INPUT_LIST_OF_ARRAYS(acors)
-    FREE_INPUT_LIST_OF_ARRAYS(locations)
-    Py_XDECREF(toas_npy);
     Py_XDECREF(snrs_npy);
     return out;
 };
@@ -690,11 +507,7 @@ static PyObject *test(
 
 
 static PyMethodDef methods[] = {
-    {"toa", (PyCFunction)sky_map_toa,
-        METH_VARARGS | METH_KEYWORDS, "fill me in"},
     {"toa_phoa_snr", (PyCFunction)sky_map_toa_phoa_snr,
-        METH_VARARGS | METH_KEYWORDS, "fill me in"},
-    {"log_likelihood_toa", (PyCFunction)log_likelihood_toa,
         METH_VARARGS | METH_KEYWORDS, "fill me in"},
     {"log_likelihood_toa_snr", (PyCFunction)log_likelihood_toa_snr,
         METH_VARARGS | METH_KEYWORDS, "fill me in"},

@@ -33,14 +33,6 @@ from . import sky_map
 import lal, lalsimulation
 
 
-def toa_log_prior((ra, sin_dec, t), max_abs_t):
-    return (
-        1 if 0 <= ra < 2*np.pi
-        and -1 <= sin_dec <= 1
-        and -max_abs_t <= t <= max_abs_t
-        else -np.inf)
-
-
 def toa_phoa_snr_log_prior(
         (ra, sin_dec, distance, u, twopsi, t),
         min_distance, max_distance, prior_distance_power, max_abs_t):
@@ -234,22 +226,10 @@ def ligolw_sky_map(
 
     # Time and run sky localization.
     start_time = time.time()
-    if method == "toa":
-        prob = sky_map.toa(
-            gmst, sample_rate, acors, locations, toas, snrs, nside)
-    elif method == "toa_phoa_snr":
+    if method == "toa_phoa_snr":
         prob = sky_map.toa_phoa_snr(
             min_distance, max_distance, prior_distance_power, gmst, sample_rate,
             acors, responses, locations, horizons, toas, phoas, snrs, nside)
-    elif method == "toa_mcmc":
-        prob = emcee_sky_map(
-            logl=sky_map.log_likelihood_toa,
-            loglargs=(gmst, sample_rate, acors, locations, toas, snrs),
-            logp=toa_log_prior,
-            logpargs=(max_abs_t,),
-            xmin=[0, -1, -max_abs_t],
-            xmax=[2*np.pi, 1, max_abs_t],
-            nside=nside, kde=kde)
     elif method == "toa_snr_mcmc":
         prob = emcee_sky_map(
             logl=sky_map.log_likelihood_toa_snr,
