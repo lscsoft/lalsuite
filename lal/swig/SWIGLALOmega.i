@@ -103,6 +103,11 @@ typedef struct {
 // Extend the LIGOTimeGPS class.
 %extend tagLIGOTimeGPS {
 
+  // Construct a new LIGOTimeGPS from another LIGOTimeGPS.
+  tagLIGOTimeGPS(const LIGOTimeGPS* gps) {
+    return (LIGOTimeGPS*)memcpy(%swiglal_new_LIGOTimeGPS(), gps, sizeof(*gps));
+  }
+
   // Construct a new LIGOTimeGPS from a real number.
   tagLIGOTimeGPS(REAL8 t) {
     return XLALGPSSetREAL8(%swiglal_new_LIGOTimeGPS(), t);
@@ -294,6 +299,11 @@ typedef struct {
 
 // Extend the LALUnit class.
 %extend tagLALUnit {
+
+  // Construct a new LALUnit from another LALUnit.
+  tagLALUnit(const LALUnit* unit) {
+    return (LALUnit*)memcpy(%swiglal_new_LALUnit(), unit, sizeof(*unit));
+  }
 
   // Construct a new LALUnit class from a string.
   tagLALUnit(const char* str) {

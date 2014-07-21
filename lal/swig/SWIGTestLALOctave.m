@@ -815,6 +815,7 @@ disp("PASSED 'tm' struct conversions");
 ## check LIGOTimeGPS operations
 disp("checking LIGOTimeGPS operations ...");
 t0 = new_LIGOTimeGPS();
+assert(strcmp(swig_type(LIGOTimeGPS(t0)), "LIGOTimeGPS"));
 assert(t0 == 0 && strcmp(swig_type(t0), "LIGOTimeGPS"));
 t1 = new_LIGOTimeGPS(10.5);
 t2 = new_LIGOTimeGPS(10, 500000000);
@@ -873,6 +874,7 @@ disp("PASSED LIGOTimeGPS operations");
 ## check LALUnit operations
 disp("checking LALUnit operations ...");
 u1 = LALUnit("kg m s^-2");
+assert(strcmp(swig_type(LALUnit(u1)), "LALUnit"));
 assert(u1 == lal.NewtonUnit && strcmp(swig_type(u1), "LALUnit"));
 assert(strcmp(u1.__str__(), "m kg s^-2"));
 u2 = lal.MeterUnit * lal.KiloGramUnit / lal.SecondUnit ^ 2;
