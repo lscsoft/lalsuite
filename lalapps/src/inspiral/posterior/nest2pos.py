@@ -37,7 +37,7 @@ def compute_weights(data, Nlive):
     log_ev = log_integrate_log_trap(log_likes, log_vols)
 
     log_dXs = logsubexp(log_vols[:-1], log_vols[1:])
-    log_wts = log_likes[1:-1]*(log(0.5) + logaddexp(log_dXs[:-1], log_dXs[1:]))
+    log_wts = log_likes[1:-1] + log_vols[1:-1]  #(log(0.5) + logaddexp(log_dXs[:-1], log_dXs[1:]))
 
     log_wts -= log_ev
 
