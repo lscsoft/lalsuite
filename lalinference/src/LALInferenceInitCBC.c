@@ -1745,9 +1745,6 @@ void LALInferenceInitSpinVariables(LALInferenceRunState *state, LALInferenceMode
   }
   LALInferenceAddVariable(model->params, "LALINFERENCE_FRAME", &frame, LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_FIXED);
 
-  LALInferenceIFOData *dataPtr;
-  dataPtr = state->data;
-
   Approximant approx= *(Approximant*) LALInferenceGetVariable(model->params, "LAL_APPROXIMANT");
 
   REAL8 a1min=0.0,a1max=1.0;

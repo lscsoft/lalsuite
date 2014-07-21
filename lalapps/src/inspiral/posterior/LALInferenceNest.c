@@ -70,7 +70,6 @@ Initialisation arguments:\n\
 (--randomseed seed           Random seed for Nested Sampling)\
 (--resume)\tAllow non-condor checkpointing every 4 hours. If give will check for OUTFILE_resume and continue if possible\n\n";
 	LALInferenceRunState *irs=NULL;
-	LALInferenceIFOData *ifoPtr, *ifoListStart;
 	ProcessParamsTable *ppt=NULL;
 	unsigned long int randomseed;
 	struct timeval tv;
@@ -134,8 +133,6 @@ Initialisation arguments:\n\
 		LALInferenceInjectInspiralSignal(irs->data,commandLine);
 		fprintf(stdout, " LALInferenceInjectInspiralSignal(): finished.\n");
 		
-		ifoPtr = irs->data;
-		ifoListStart = irs->data;
 		irs->currentLikelihood=LALInferenceNullLogLikelihood(irs->data);
 		printf("Null Log Likelihood: %g\n", irs->currentLikelihood);
 	}

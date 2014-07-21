@@ -752,7 +752,7 @@ void LALInferenceRotateInitialPhase( LALInferenceVariables *parameter){
 
 
 /* Return the log Prior of the variables specified for the sky localisation project, ref: https://www.lsc-group.phys.uwm.edu/ligovirgo/cbcnote/SkyLocComparison#priors, for the non-spinning/spinning inspiral signal case */
-REAL8 LALInferenceInspiralSkyLocPrior(LALInferenceRunState *runState, LALInferenceVariables *params, LALInferenceModel *model)
+REAL8 LALInferenceInspiralSkyLocPrior(LALInferenceRunState *runState, LALInferenceVariables *params,  UNUSED LALInferenceModel *model)
 {
   REAL8 logPrior=0.0;
   REAL8 val=0.0;
@@ -1395,7 +1395,7 @@ UINT4 LALInferenceInspiralSkyLocCubeToPrior(LALInferenceRunState *runState, LALI
 
 
 /* Return the log Prior of the variables specified, for the non-spinning/spinning inspiral signal case */
-REAL8 LALInferenceInspiralPriorNormalised(LALInferenceRunState *runState, LALInferenceVariables *params, LALInferenceModel *model)
+REAL8 LALInferenceInspiralPriorNormalised(LALInferenceRunState *runState, LALInferenceVariables *params, UNUSED LALInferenceModel *model)
 {
   static int S6PEpriorWarning = 0;
   REAL8 logPrior=0.0;

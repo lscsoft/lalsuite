@@ -936,7 +936,6 @@ void LALInferenceDumptemplateFreqDomain(LALInferenceVariables *currentParams,
   REAL8 f;
   UINT4 i;
 
-  REAL8 deltaT = model->deltaT;
   REAL8 deltaF = model->deltaF;
 
   LALInferenceCopyVariables(currentParams, model->params);
