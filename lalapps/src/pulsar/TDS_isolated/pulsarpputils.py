@@ -1858,7 +1858,7 @@ def antenna_response( gpsTime, ra, dec, psi, det ):
     raise ValueError, "ERROR. Key %s is not a valid detector name." % (det)
 
   # get detector
-  detval = lal.lalCachedDetectors[detector]
+  detval = lal.CachedDetectors[detector]
 
   response = detval.response
 
