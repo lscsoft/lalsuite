@@ -35,6 +35,16 @@ extern "C" {
 ///
 
 ///
+/// Coordinate systems associated with the super-sky metrics
+///
+typedef enum {
+  SSC_PHYSICAL,					///< Physical: right ascension, declination, frequency and spindowns
+  SSC_SUPER_SKY,				///< Super-sky: 3-dimensional sky, spindowns and frequency
+  SSC_REDUCED_SUPER_SKY,			///< Reduced super-sky: 2-dimensional sky, reduced spindowns and frequency
+  SSC_MAX
+} SuperSkyCoordinates;
+
+///
 /// Compute the expanded super-sky metric, which separates spin and orbital sky components.
 ///
 int XLALExpandedSuperSkyMetric(
@@ -64,6 +74,40 @@ int XLALReducedSuperSkyMetric(
   gsl_matrix **rssky_metric,			///< [out] Pointer to allocated reduced super-sky metric
   gsl_matrix **rssky_transf,			///< [out] Pointer to allocated coordinate transform data
   const gsl_matrix* essky_metric		///< [in] Input expanded super-sky metric
+  );
+
+///
+/// Convert a series of points between super-sky coordinate systems
+///
+#ifdef SWIG // SWIG interface directives
+SWIGLAL(INOUT_STRUCTS(gsl_matrix**, out_points));
+#endif
+int XLALConvertSuperSkyCoordinates(
+  const SuperSkyCoordinates out,		///< [in] Coordinate system of the output points
+  gsl_matrix** out_points,			///< [in/out] Matrix whose columns are the output points
+  const SuperSkyCoordinates in,			///< [in] Coordinate system of the input points
+  const gsl_matrix* in_points,			///> [in] Matrix whose columns are the input points
+  const gsl_matrix* rssky_transf		///< [in] Reduced super-sky coordinate transform data
+  );
+
+///
+/// Convert a single point from physical to super-sky coordinates
+///
+int XLALConvertPhysicalToSuperSky(
+  const SuperSkyCoordinates out,		///< [in] Coordinate system of the output point
+  gsl_vector* out_point,			///< [in/out] Output point in super-sky coordinates
+  const PulsarDopplerParams* in_phys,		///< [in] Input point in physical coordinates
+  const gsl_matrix* rssky_transf		///< [in] Reduced super-sky coordinate transform data
+  );
+
+///
+/// Convert a single point from super-sky to physical coordinates
+///
+int XLALConvertSuperSkyToPhysical(
+  PulsarDopplerParams* out_phys,		///< [in/out] Output point in physical coordinates
+  const SuperSkyCoordinates in,			///< [in] Coordinate system of the input point
+  const gsl_vector* in_point,			///< [in] Input point in super-sky coordinates
+  const gsl_matrix* rssky_transf		///< [in] Reduced super-sky coordinate transform data
   );
 
 #ifdef __cplusplus
