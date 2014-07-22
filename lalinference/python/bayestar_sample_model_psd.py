@@ -1,3 +1,4 @@
+#!@PYTHON@
 #
 # Copyright (C) 2014  Leo Singer
 #
@@ -15,7 +16,7 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #
-__doc__ = """Construct a LIGO-LW XML power spectral density file for a network of
+"""Construct a LIGO-LW XML power spectral density file for a network of
 detectors by evaluating a model power noise sensitivity curve."""
 
 import glue.ligolw.utils

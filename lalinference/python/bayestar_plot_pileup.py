@@ -1,3 +1,4 @@
+#!@PYTHON@
 #
 # Copyright (C) 2011  Leo Singer
 #
@@ -14,7 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
-__doc__ = """
+"""
 Overplot contours for a large number of sky maps, in geographical coordinates.
 This can reveal patterns due to the priors (i.e., the network antenna pattern).
 """

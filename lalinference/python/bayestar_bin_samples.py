@@ -1,3 +1,4 @@
+#!@PYTHON@
 #
 # Copyright (C) 2011  Leo Singer
 #
@@ -14,7 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
-__doc__ = """
+"""
 Convert a list of posterior samples to a HEALPix FITS image using an adaptively
 refined HEALPix tree, subdividing each node if it contains more than
 --samples-per-bin posterior samples. By default, the resolution is set to the

@@ -1,3 +1,4 @@
+#!@PYTHON@
 #
 # Copyright (C) 2013  Leo Singer
 #
@@ -15,7 +16,7 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #
-__doc__ = """
+"""
 Produce GW sky maps for all coincidences in a LIGO-LW XML file.
 
 The filename of the (optionally gzip-compressed) LIGO-LW XML input is an
