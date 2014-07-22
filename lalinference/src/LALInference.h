@@ -330,12 +330,13 @@ typedef void (*LALInferenceTemplateFunction) (struct tagLALInferenceIFOData *dat
  * Computes \c proposedParams based on \c currentParams
  * and additional variables stored as proposalArgs inside \c runState,
  * which could include correlation matrix, etc.,
- * as well as forward and reverse proposal probability.
+ * as well as forward and reverse proposal probability.  The log of the
+ * Metropolis-Hasting proposal ratio is returned.
  * A jump proposal distribution function could call other jump proposal
  * distribution functions with various probabilities to allow for multiple
  * jump proposal distributions
  */
-typedef void (*LALInferenceProposalFunction) (struct tagLALInferenceRunState *runState,
+typedef REAL8 (*LALInferenceProposalFunction) (struct tagLALInferenceRunState *runState,
 	LALInferenceVariables *currentParams,
 	LALInferenceVariables *proposedParams);
 
@@ -380,7 +381,7 @@ typedef REAL8 (*LALInferenceLikelihoodFunction) (LALInferenceVariables *currentP
         struct tagLALInferenceIFOData * data, LALInferenceTemplateFunction templt);
 
 /** Perform one step of an algorithm, replaces \c runState ->currentParams */
-typedef void (*LALInferenceEvolveOneStepFunction) (struct tagLALInferenceRunState *runState);
+typedef INT4 (*LALInferenceEvolveOneStepFunction) (struct tagLALInferenceRunState *runState);
 
 /**
  * Type declaration for an algorithm function which is called by the driver code

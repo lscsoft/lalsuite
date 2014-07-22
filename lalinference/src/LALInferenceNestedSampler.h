@@ -65,7 +65,7 @@ void LALInferenceNScalcCVM(gsl_matrix **cvm, LALInferenceVariables **Live, UINT4
 /* double logadd(double a,double b); */
 
 /** A single iteration of the NS algorithm */
-void LALInferenceNestedSamplingOneStep(LALInferenceRunState *runState);
+INT4 LALInferenceNestedSamplingOneStep(LALInferenceRunState *runState);
 
 /** Compute the autocorrelation length from the sampler at the current global iteration */
 LALInferenceVariables *LALInferenceComputeAutoCorrelation(LALInferenceRunState *runState, UINT4 max_iterations, LALInferenceEvolveOneStepFunction evolve);
@@ -81,10 +81,10 @@ UINT4 LALInferenceMCMCSamplePriorNTimes(LALInferenceRunState *runState, UINT4 N)
  * run a sub-chain of x iterations which doesn't check the likelihood bound.
  * x=LALInferenceGetVariable(runState->algorithmParams,"sloppyratio")
  */
-void LALInferenceNestedSamplingSloppySample(LALInferenceRunState *runState);
+INT4 LALInferenceNestedSamplingSloppySample(LALInferenceRunState *runState);
 
 /* Cache wrapper around the sloppy sampler */
-void LALInferenceNestedSamplingCachedSampler(LALInferenceRunState *runState);
+INT4 LALInferenceNestedSamplingCachedSampler(LALInferenceRunState *runState);
 
 /* REAL8 mean(REAL8 *array,int N); */
 REAL8 LALInferenceNSSample_logt(int Nlive,gsl_rng *RNG);

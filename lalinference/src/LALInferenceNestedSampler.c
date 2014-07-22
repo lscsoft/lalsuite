@@ -1061,10 +1061,8 @@ UINT4 LALInferenceMCMCSamplePrior(LALInferenceRunState *runState)
       if (logLmin<thislogL) outOfBounds=0;
     }
     
-    runState->proposal(runState,runState->currentParams,&proposedParams);
+    logProposalRatio = runState->proposal(runState,runState->currentParams,&proposedParams);
     REAL8 logPriorNew=runState->prior(runState,&proposedParams);
-    if(LALInferenceCheckVariable(runState->proposalArgs,"logProposalRatio"))
-       logProposalRatio=*(REAL8 *)LALInferenceGetVariable(runState->proposalArgs,"logProposalRatio");
     if(logPriorNew==-DBL_MAX || isnan(logPriorNew) || log(gsl_rng_uniform(runState->GSLrandom)) > (logPriorNew-logPriorOld) + logProposalRatio) 
     {
 	/* Reject - don't need to copy new params back to currentParams */
@@ -1129,8 +1127,9 @@ void LALInferenceProjectSampleOntoEigenvectors(LALInferenceVariables *params, gs
 }
 
 /* Cache wrapper around another sampler */
-void LALInferenceNestedSamplingCachedSampler(LALInferenceRunState *runState)
+INT4 LALInferenceNestedSamplingCachedSampler(LALInferenceRunState *runState)
 {
+  INT4 Naccept;
   if(!LALInferenceCheckVariable(runState->algorithmParams,"proposalcache") || !LALInferenceCheckVariable(runState->algorithmParams,"proposalcachesize"))
   {
     fprintf(stderr,"Adding cache variables in the sampler\n");
@@ -1146,8 +1145,8 @@ void LALInferenceNestedSamplingCachedSampler(LALInferenceRunState *runState)
   LALInferenceVariables *cache=*cache_ptr;
   
   if(*Ncache==0 || LALInferenceGetProcParamVal(runState->commandLine,"--no-cache")){
-    LALInferenceNestedSamplingSloppySample(runState);
-    return;
+    Naccept = LALInferenceNestedSamplingSloppySample(runState);
+    return Naccept;
   }
   REAL8 logL=-DBL_MAX;
   REAL8 logLmin=*(REAL8 *)LALInferenceGetVariable(runState->algorithmParams,"logLmin");
@@ -1170,10 +1169,10 @@ void LALInferenceNestedSamplingCachedSampler(LALInferenceRunState *runState)
   /* If we didn't get any acceptable samples, call the main sampler */
   if(*Ncache==0 && logL<=logLmin)
   {
-    LALInferenceNestedSamplingSloppySample(runState);
+    Naccept = LALInferenceNestedSamplingSloppySample(runState);
   }
-  return;
-  
+
+  return Naccept;
 }
 
 /* Sample the limited prior distribution using the MCMC method as usual, but
@@ -1181,7 +1180,7 @@ void LALInferenceNestedSamplingCachedSampler(LALInferenceRunState *runState)
    x=LALInferenceGetVariable(runState->algorithmParams,"sloppyfraction")
    */
 
-void LALInferenceNestedSamplingSloppySample(LALInferenceRunState *runState)
+INT4 LALInferenceNestedSamplingSloppySample(LALInferenceRunState *runState)
 {
     LALInferenceVariables oldParams;
     LALInferenceIFOData *data=runState->data;
@@ -1291,6 +1290,7 @@ void LALInferenceNestedSamplingSloppySample(LALInferenceRunState *runState)
     }
     /* Cleanup */
     LALInferenceClearVariables(&oldParams);
+    return Naccepted;
 }
 
 
@@ -1298,9 +1298,10 @@ void LALInferenceNestedSamplingSloppySample(LALInferenceRunState *runState)
  evolve runState->currentParams to a new point with higher
  likelihood than currentLikelihood. Uses the MCMC method with sloppy sampling.
  */
-void LALInferenceNestedSamplingOneStep(LALInferenceRunState *runState)
+INT4 LALInferenceNestedSamplingOneStep(LALInferenceRunState *runState)
 {
-     LALInferenceNestedSamplingCachedSampler(runState);
+     INT4 Naccept = LALInferenceNestedSamplingCachedSampler(runState);
+     return Naccept;
 }
 
 void LALInferenceSetupLivePointsArray(LALInferenceRunState *runState){

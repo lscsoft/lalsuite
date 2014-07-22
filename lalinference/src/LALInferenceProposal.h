@@ -152,7 +152,7 @@ void
 LALInferenceRandomizeProposalCycle(LALInferenceRunState *runState);
 
 /** Proposes a jump from the next proposal in the proposal cycle.*/
-void
+REAL8
 LALInferenceCyclicProposal(LALInferenceRunState *runState, LALInferenceVariables *currentParams, LALInferenceVariables *proposedParams);
 
 /** Completely remove the current proposal cycle, freeing the associated memory. */
@@ -163,49 +163,49 @@ LALInferenceDeleteProposalCycle(LALInferenceRunState *runState);
  * A reasonable default proposal.  Uses adaptation if the --adapt
  * command-line flag active.
  */
-void LALInferenceDefaultProposal(LALInferenceRunState *runState, LALInferenceVariables *currentParams, LALInferenceVariables *proposedParams);
+REAL8 LALInferenceDefaultProposal(LALInferenceRunState *runState, LALInferenceVariables *currentParams, LALInferenceVariables *proposedParams);
 
 /**
  * Proposal for rapid sky localization.  Used when --rapidSkyLoc
  * is specified.
  */
-void LALInferenceRapidSkyLocProposal(LALInferenceRunState *runState, LALInferenceVariables *currentParams, LALInferenceVariables *proposedParams);
+REAL8 LALInferenceRapidSkyLocProposal(LALInferenceRunState *runState, LALInferenceVariables *currentParams, LALInferenceVariables *proposedParams);
 
 /** Proposal for after annealing is over. */
-void LALInferencePostPTProposal(LALInferenceRunState *runState, LALInferenceVariables *currentParams, LALInferenceVariables *proposedParams);
+REAL8 LALInferencePostPTProposal(LALInferenceRunState *runState, LALInferenceVariables *currentParams, LALInferenceVariables *proposedParams);
 
 /**
  * Non-adaptive, sigle-variable update proposal with reasonable
  * widths in each dimension.
  */
-void LALInferenceSingleProposal(LALInferenceRunState *runState, LALInferenceVariables *currentParams, LALInferenceVariables *proposedParams);
+REAL8 LALInferenceSingleProposal(LALInferenceRunState *runState, LALInferenceVariables *currentParams, LALInferenceVariables *proposedParams);
 
 /**
  * Like LALInferenceSingleProposal() but will use adaptation if the
  * --adapt command-line flag given.
  */
-void LALInferenceSingleAdaptProposal(LALInferenceRunState *runState, LALInferenceVariables *currentParams, LALInferenceVariables *proposedParams);
+REAL8 LALInferenceSingleAdaptProposal(LALInferenceRunState *runState, LALInferenceVariables *currentParams, LALInferenceVariables *proposedParams);
 
 /** Increments the orbital phase by pi. */
-void LALInferenceOrbitalPhaseJump(LALInferenceRunState *runState, LALInferenceVariables *currentParams, LALInferenceVariables *proposedParams);
+REAL8 LALInferenceOrbitalPhaseJump(LALInferenceRunState *runState, LALInferenceVariables *currentParams, LALInferenceVariables *proposedParams);
 
 /** Polarization-phase exact degeneracy. */
-void LALInferencePolarizationPhaseJump(LALInferenceRunState *runState, LALInferenceVariables *currentParams, LALInferenceVariables *proposedParams);
+REAL8 LALInferencePolarizationPhaseJump(LALInferenceRunState *runState, LALInferenceVariables *currentParams, LALInferenceVariables *proposedParams);
 
 /** Polarization-phase correlation jump */
-void LALInferenceCorrPolarizationPhaseJump(LALInferenceRunState *runState, LALInferenceVariables *currentParams, LALInferenceVariables *proposedParams);
+REAL8 LALInferenceCorrPolarizationPhaseJump(LALInferenceRunState *runState, LALInferenceVariables *currentParams, LALInferenceVariables *proposedParams);
 
 /** Choose a random covariance matrix eigenvector to jump along. */
-void LALInferenceCovarianceEigenvectorJump(LALInferenceRunState *runState, LALInferenceVariables *currentParams, LALInferenceVariables *proposedParams);
+REAL8 LALInferenceCovarianceEigenvectorJump(LALInferenceRunState *runState, LALInferenceVariables *currentParams, LALInferenceVariables *proposedParams);
 
 /** Jump around by 0.01 radians in angle on the sky */
-void LALInferenceSkyLocWanderJump(LALInferenceRunState *runState, LALInferenceVariables *currentParams, LALInferenceVariables *proposedParams);
+REAL8 LALInferenceSkyLocWanderJump(LALInferenceRunState *runState, LALInferenceVariables *currentParams, LALInferenceVariables *proposedParams);
 
-/* void LALInferenceAdaptationProposal(LALInferenceRunState *runState, LALInferenceVariables *proposedParams); */
-/* void LALInferenceAdaptationSingleProposal(LALInferenceRunState *runState, LALInferenceVariables *proposedParams); */
+/* REAL8 LALInferenceAdaptationProposal(LALInferenceRunState *runState, LALInferenceVariables *proposedParams); */
+/* REAL8 LALInferenceAdaptationSingleProposal(LALInferenceRunState *runState, LALInferenceVariables *proposedParams); */
 
 /** Differential evolution, on all non-fixed, non-output parameters. */
-void LALInferenceDifferentialEvolutionFull(LALInferenceRunState *state, LALInferenceVariables *currentParams, LALInferenceVariables *proposedParams);
+REAL8 LALInferenceDifferentialEvolutionFull(LALInferenceRunState *state, LALInferenceVariables *currentParams, LALInferenceVariables *proposedParams);
 
 /**
  * Perform differential evolution on the parameters of the given
@@ -213,16 +213,16 @@ void LALInferenceDifferentialEvolutionFull(LALInferenceRunState *state, LALInfer
  * If names == NULL, then perform a
  * LALInferenceDifferentialEvolutionFull() step.
  */
-void LALInferenceDifferentialEvolutionNames(LALInferenceRunState *state, LALInferenceVariables *currentParams, LALInferenceVariables *proposedParams, const char *names[]);
+REAL8 LALInferenceDifferentialEvolutionNames(LALInferenceRunState *state, LALInferenceVariables *currentParams, LALInferenceVariables *proposedParams, const char *names[]);
 
 /** Perform differential evolution on only the intrinsic parameters. */
-void LALInferenceDifferentialEvolutionIntrinsic(LALInferenceRunState *state, LALInferenceVariables *currentParams, LALInferenceVariables *proposedParams);
+REAL8 LALInferenceDifferentialEvolutionIntrinsic(LALInferenceRunState *state, LALInferenceVariables *currentParams, LALInferenceVariables *proposedParams);
 
 /**
  * Perform a differential evolution step on only the extrinsic
  * parameters.
  */
-void LALInferenceDifferentialEvolutionExtrinsic(LALInferenceRunState *state, LALInferenceVariables *currentParams, LALInferenceVariables *proposedParams);
+REAL8 LALInferenceDifferentialEvolutionExtrinsic(LALInferenceRunState *state, LALInferenceVariables *currentParams, LALInferenceVariables *proposedParams);
 
 /**
  * Draws from an approximation to the true prior.  Flat in all
@@ -230,28 +230,28 @@ void LALInferenceDifferentialEvolutionExtrinsic(LALInferenceRunState *state, LAL
  * in sin(dec), dist^2.
  * WARNING: This seems to break detailed balance for the LALInferenceProposalTest
  */
-void LALInferenceDrawApproxPrior(LALInferenceRunState *runState, LALInferenceVariables *currentParams, LALInferenceVariables *proposedParams);
+REAL8 LALInferenceDrawApproxPrior(LALInferenceRunState *runState, LALInferenceVariables *currentParams, LALInferenceVariables *proposedParams);
 
 /**
  * Reflects the sky location through the plane formed by three
  * detectors.  Should only be used when there are exactly three
  * different locations for detectors.
  */
-void LALInferenceSkyReflectDetPlane(LALInferenceRunState *runState, LALInferenceVariables *currentParams, LALInferenceVariables *proposedParams);
+REAL8 LALInferenceSkyReflectDetPlane(LALInferenceRunState *runState, LALInferenceVariables *currentParams, LALInferenceVariables *proposedParams);
 
-void LALInferenceSkyRingProposal(LALInferenceRunState *runState, LALInferenceVariables *currentParams, LALInferenceVariables *proposedParams);;
+REAL8 LALInferenceSkyRingProposal(LALInferenceRunState *runState, LALInferenceVariables *currentParams, LALInferenceVariables *proposedParams);;
 
 /* Nested sampling wrappers. */
 void NSFillMCMCVariables(LALInferenceVariables *proposedParams, LALInferenceVariables *priorArgs);
-void NSWrapMCMCLALProposal(LALInferenceRunState *runState, LALInferenceVariables *currentParams, LALInferenceVariables *proposedParams);
+REAL8 NSWrapMCMCLALProposal(LALInferenceRunState *runState, LALInferenceVariables *currentParams, LALInferenceVariables *proposedParams);
 
 /* Noise model proposals. */
-void LALInferenceGlitchMorletProposal(LALInferenceRunState *runState, LALInferenceVariables *currentParams, LALInferenceVariables *proposedParams);
-void LALInferenceGlitchMorletReverseJump(LALInferenceRunState *runState, LALInferenceVariables *currentParams, LALInferenceVariables *proposedParams);
-void LALInferencePSDFitJump(LALInferenceRunState *runState, LALInferenceVariables *currentParams, LALInferenceVariables *proposedParams);
+REAL8 LALInferenceGlitchMorletProposal(LALInferenceRunState *runState, LALInferenceVariables *currentParams, LALInferenceVariables *proposedParams);
+REAL8 LALInferenceGlitchMorletReverseJump(LALInferenceRunState *runState, LALInferenceVariables *currentParams, LALInferenceVariables *proposedParams);
+REAL8 LALInferencePSDFitJump(LALInferenceRunState *runState, LALInferenceVariables *currentParams, LALInferenceVariables *proposedParams);
 
 /** Rotate each spin by random angles about L. */
-void LALInferenceRotateSpins(LALInferenceRunState *runState, LALInferenceVariables *currentParams, LALInferenceVariables *proposedParams);
+REAL8 LALInferenceRotateSpins(LALInferenceRunState *runState, LALInferenceVariables *currentParams, LALInferenceVariables *proposedParams);
 
 /**
  * Uses a kD tree containing the previously-output points to propose
@@ -260,7 +260,7 @@ void LALInferenceRotateSpins(LALInferenceRunState *runState, LALInferenceVariabl
  * and then chooses the proposed point uniformly within the bounding
  * box of the points contained in this sell.
  */
-void LALInferenceKDNeighborhoodProposal(LALInferenceRunState *runState, LALInferenceVariables *currentParams, LALInferenceVariables *proposedParams);
+REAL8 LALInferenceKDNeighborhoodProposal(LALInferenceRunState *runState, LALInferenceVariables *currentParams, LALInferenceVariables *proposedParams);
 
 /**
  * Proposal for the extrinsic parameters. Uses the sky reflection for 3
@@ -268,14 +268,14 @@ void LALInferenceKDNeighborhoodProposal(LALInferenceRunState *runState, LALInfer
  * of polarisation, inclination and distance for the proposed sky location.
  * See Vivien's thesis for the details of the equations implemented.
  */
-void LALInferenceExtrinsicParamProposal(LALInferenceRunState *runState, LALInferenceVariables *currentParams, LALInferenceVariables *proposedParams);
+REAL8 LALInferenceExtrinsicParamProposal(LALInferenceRunState *runState, LALInferenceVariables *currentParams, LALInferenceVariables *proposedParams);
 
 /**
  * Proposal to jump in frequency by one frequency bin. The frequency bin size \c df must be
  * given as a (fixed) variable in the \c proposedParams. The frequency parameter is
  * presumed to have the variable name \c f0.
  */
-void LALInferenceFrequencyBinJump(LALInferenceRunState *runState, LALInferenceVariables *currentParams, LALInferenceVariables *proposedParams);
+REAL8 LALInferenceFrequencyBinJump(LALInferenceRunState *runState, LALInferenceVariables *currentParams, LALInferenceVariables *proposedParams);
 
 /* Zero out proposal statistics */
 void LALInferenceZeroProposalStats(LALInferenceRunState *runState);
@@ -294,19 +294,19 @@ void LALInferenceSetupDefaultNSProposal(LALInferenceRunState *runState, LALInfer
 int LALInferencePrintProposalTrackingHeader(FILE *fp,LALInferenceVariables *params);
 
 /** Output proposal tracking information to file *fp */
-void LALInferencePrintProposalTracking(FILE *fp, LALInferenceVariables *propArgs, LALInferenceVariables *theta, LALInferenceVariables *theta_prime);
+void LALInferencePrintProposalTracking(FILE *fp, LALInferenceVariables *propArgs, LALInferenceVariables *theta, LALInferenceVariables *theta_prime, REAL8 logPropRatio, INT4 accepted);
 
 /** Ensemble stretch moves - see http://dx.doi.org/10.2140/camcos.2010.5.65 */
-void LALInferenceEnsembleStretchFull(LALInferenceRunState *runState, LALInferenceVariables *cp, LALInferenceVariables *proposedParams);
-void LALInferenceEnsembleStretchIntrinsic(LALInferenceRunState *runState, LALInferenceVariables *cp, LALInferenceVariables *pp);
-void LALInferenceEnsembleStretchExtrinsic(LALInferenceRunState *runState, LALInferenceVariables *cp, LALInferenceVariables *pp);
-void LALInferenceEnsembleStretchNames(LALInferenceRunState *runState, LALInferenceVariables *cpi, LALInferenceVariables *ppi, const char **names);
+REAL8 LALInferenceEnsembleStretchFull(LALInferenceRunState *runState, LALInferenceVariables *cp, LALInferenceVariables *proposedParams);
+REAL8 LALInferenceEnsembleStretchIntrinsic(LALInferenceRunState *runState, LALInferenceVariables *cp, LALInferenceVariables *pp);
+REAL8 LALInferenceEnsembleStretchExtrinsic(LALInferenceRunState *runState, LALInferenceVariables *cp, LALInferenceVariables *pp);
+REAL8 LALInferenceEnsembleStretchNames(LALInferenceRunState *runState, LALInferenceVariables *cpi, LALInferenceVariables *ppi, const char **names);
 
 
-void LALInferenceEnsembleWalkFull(LALInferenceRunState *runState, LALInferenceVariables *cp, LALInferenceVariables *proposedParams);
-void LALInferenceEnsembleWalkIntrinsic(LALInferenceRunState *runState, LALInferenceVariables *cp, LALInferenceVariables *pp);
-void LALInferenceEnsembleWalkExtrinsic(LALInferenceRunState *runState, LALInferenceVariables *cp, LALInferenceVariables *pp);
-void LALInferenceEnsembleWalkNames(LALInferenceRunState *runState, LALInferenceVariables *cpi, LALInferenceVariables *ppi, const char **names);
+REAL8 LALInferenceEnsembleWalkFull(LALInferenceRunState *runState, LALInferenceVariables *cp, LALInferenceVariables *proposedParams);
+REAL8 LALInferenceEnsembleWalkIntrinsic(LALInferenceRunState *runState, LALInferenceVariables *cp, LALInferenceVariables *pp);
+REAL8 LALInferenceEnsembleWalkExtrinsic(LALInferenceRunState *runState, LALInferenceVariables *cp, LALInferenceVariables *pp);
+REAL8 LALInferenceEnsembleWalkNames(LALInferenceRunState *runState, LALInferenceVariables *cpi, LALInferenceVariables *ppi, const char **names);
 /*@}*/
 
 #endif

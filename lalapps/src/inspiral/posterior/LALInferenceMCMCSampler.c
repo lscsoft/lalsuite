@@ -805,7 +805,7 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
       }
     } //if (*runPhase_p==SINGLE_CHAIN)
 
-    runState->evolve(runState); //evolve the chain at temperature ladder[t]
+    INT4 accepted = runState->evolve(runState); //evolve the chain at temperature ladder[t]
     acceptanceCount = *(INT4*) LALInferenceGetVariable(runState->proposalArgs, "acceptanceCount");
 
     if (i==1){
@@ -896,8 +896,9 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
       }
 
       if (propTrack) {
+        REAL8 logProposalRatio = *(REAL8*) LALInferenceGetVariable(runState->proposalArgs, "logProposalRatio");
         fprintf(proptrackfile, "%d\t", i);
-        LALInferencePrintProposalTracking(proptrackfile, runState->proposalArgs, runState->preProposalParams, runState->proposedParams);
+        LALInferencePrintProposalTracking(proptrackfile, runState->proposalArgs, runState->preProposalParams, runState->proposedParams, logProposalRatio, accepted);
       }
     }
 
@@ -970,7 +971,7 @@ void acknowledgePhase(LALInferenceRunState *runState)
     MPI_Irecv(runPhase, 1, MPI_INT, MPI_ANY_SOURCE, RUN_PHASE_COM, MPI_COMM_WORLD, &MPIrequest);
 }
 
-void PTMCMCOneStep(LALInferenceRunState *runState)
+INT4 PTMCMCOneStep(LALInferenceRunState *runState)
   // Metropolis-Hastings sampler.
 {
   int MPIrank;
@@ -996,9 +997,7 @@ void PTMCMCOneStep(LALInferenceRunState *runState)
   proposedParams.head = NULL;
   proposedParams.dimension = 0;
 
-  runState->proposal(runState, runState->currentParams, &proposedParams);
-  if (LALInferenceCheckVariable(runState->proposalArgs, "logProposalRatio"))
-    logProposalRatio = *(REAL8*) LALInferenceGetVariable(runState->proposalArgs, "logProposalRatio");
+  logProposalRatio = runState->proposal(runState, runState->currentParams, &proposedParams);
 
   // compute prior & likelihood:
   logPriorProposed = runState->prior(runState, &proposedParams);
@@ -1043,8 +1042,14 @@ void PTMCMCOneStep(LALInferenceRunState *runState)
   if (LALInferenceCheckVariable(runState->proposalArgs, "accepted"))
     LALInferenceSetVariable(runState->proposalArgs, "accepted", &accepted);
 
+  if (!LALInferenceCheckVariable(runState->proposalArgs, "logProposalRatio"))
+    LALInferenceAddVariable(runState->proposalArgs, "logProposalRatio", &logProposalRatio, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR);
+  LALInferenceSetVariable(runState->proposalArgs, "logProposalRatio", &logProposalRatio);
+
   LALInferenceUpdateAdaptiveJumps(runState, accepted, targetAcceptance);
   LALInferenceClearVariables(&proposedParams);
+
+  return accepted;
 }
 
 
