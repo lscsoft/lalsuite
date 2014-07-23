@@ -890,7 +890,7 @@ UNUSED static inline REAL8 XLALSimIMREOBGetNRSpinPeakDeltaTv2(
   }
   else
   {
-    return 2.5 + (1.+chi) * (-2.5+2.5*sqrt(1.-4.*eta));
+    return 2.5 + (1.+2.5*chi) * (-2.5+2.5*sqrt(1.-4.*eta));
   }
 }
 
