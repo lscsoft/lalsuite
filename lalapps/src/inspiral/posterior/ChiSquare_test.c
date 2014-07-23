@@ -50,7 +50,6 @@ LALInferenceRunState *initialize(ProcessParamsTable *commandLine)
 /* and initializes other variables accordingly.                     */
 {
 	LALInferenceRunState *irs=NULL;
-	LALInferenceIFOData *ifoPtr, *ifoListStart;
 	//ProcessParamsTable *ppt=NULL;
 
 	
@@ -70,55 +69,6 @@ LALInferenceRunState *initialize(ProcessParamsTable *commandLine)
 		LALInferenceInjectInspiralSignal(irs->data,commandLine);
 		fprintf(stdout, " injectSignal(): finished.\n");
 		
-		ifoPtr = irs->data;
-		ifoListStart = irs->data;
-		while (ifoPtr != NULL) {
-			/*If two IFOs have the same sampling rate, they should have the same timeModelh*,
-			 freqModelh*, and modelParams variables to avoid excess computation 
-			 in model waveform generation in the future*/
-			LALInferenceIFOData * ifoPtrCompare=ifoListStart;
-			int foundIFOwithSameSampleRate=0;
-			while (ifoPtrCompare != NULL && ifoPtrCompare!=ifoPtr) {
-                          if(ifoPtrCompare->timeData->deltaT == ifoPtr->timeData->deltaT){
-                            ifoPtr->timeModelhPlus=ifoPtrCompare->timeModelhPlus;
-                            ifoPtr->freqModelhPlus=ifoPtrCompare->freqModelhPlus;
-                            ifoPtr->timeModelhCross=ifoPtrCompare->timeModelhCross;				
-                            ifoPtr->freqModelhCross=ifoPtrCompare->freqModelhCross;				
-                            ifoPtr->modelParams=ifoPtrCompare->modelParams;	
-                            foundIFOwithSameSampleRate=1;	
-                            break;
-                          }
-				ifoPtrCompare = ifoPtrCompare->next;
-			}
-			if(!foundIFOwithSameSampleRate){
-				ifoPtr->timeModelhPlus  = XLALCreateREAL8TimeSeries("timeModelhPlus",
-																	&(ifoPtr->timeData->epoch),
-																	0.0,
-																	ifoPtr->timeData->deltaT,
-																	&lalDimensionlessUnit,
-																	ifoPtr->timeData->data->length);
-				ifoPtr->timeModelhCross = XLALCreateREAL8TimeSeries("timeModelhCross",
-																	&(ifoPtr->timeData->epoch),
-																	0.0,
-																	ifoPtr->timeData->deltaT,
-																	&lalDimensionlessUnit,
-																	ifoPtr->timeData->data->length);
-				ifoPtr->freqModelhPlus = XLALCreateCOMPLEX16FrequencySeries("freqModelhPlus",
-																			&(ifoPtr->freqData->epoch),
-																			0.0,
-																			ifoPtr->freqData->deltaF,
-																			&lalDimensionlessUnit,
-																			ifoPtr->freqData->data->length);
-				ifoPtr->freqModelhCross = XLALCreateCOMPLEX16FrequencySeries("freqModelhCross",
-																			 &(ifoPtr->freqData->epoch),
-																			 0.0,
-																			 ifoPtr->freqData->deltaF,
-																			 &lalDimensionlessUnit,
-																			 ifoPtr->freqData->data->length);
-				ifoPtr->modelParams = XLALCalloc(1, sizeof(LALInferenceVariables));
-			}
-			ifoPtr = ifoPtr->next;
-		}
 		irs->currentLikelihood=LALInferenceNullLogLikelihood(irs->data);
 		printf("Injection Null Log Likelihood: %g\n", irs->currentLikelihood);
 	}
@@ -582,6 +532,7 @@ void initVariables(LALInferenceRunState *state)
     
 	}
   
+    state->model = LALInferenceInitCBCModel(state);
   
     state->differentialPoints = NULL;
     state->differentialPointsLength = 0;
@@ -610,9 +561,9 @@ int main(int argc, char *argv[]){
  	initVariables(runState);
 	
     REAL8 loglikelihood=0.0;
-	loglikelihood = LALInferenceFreqDomainLogLikelihood(runState->currentParams, runState->data, &LALInferenceTemplateXLALSimInspiralChooseWaveform) - LALInferenceNullLogLikelihood(runState->data);
+	loglikelihood = LALInferenceFreqDomainLogLikelihood(runState->currentParams, runState->data, runState->model) - LALInferenceNullLogLikelihood(runState->data);
 	printf("network LogLikelihood=%f\tSNR=%f\n",loglikelihood,sqrt(2*loglikelihood));
-    LALInferenceChiSquareTest(runState->currentParams, runState->data, &LALInferenceTemplateXLALSimInspiralChooseWaveform);
+    LALInferenceChiSquareTest(runState->currentParams, runState->data, runState->model);
 
   return 0;
 }
