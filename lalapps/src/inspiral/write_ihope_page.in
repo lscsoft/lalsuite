@@ -226,7 +226,7 @@ def mkdir( newdir ):
   @type newdir: string
   """
   if os.path.isdir(newdir): 
-    print >>sys.stdout, "WARNING: this directory already exists (" + newdir +")."
+    print >>sys.stdout,"WARNING: this directory already exists (" + newdir +")."
     pass
   elif os.path.isfile(newdir):
     raise OSError("a file with the same name as the desired " \
@@ -1227,6 +1227,37 @@ def write_analysis(page, opts, thisSearch='playground',pipedown='pipedown'):
   comments[section] = None
   configs[section] = None
   images_dirs[section] = PDdir
+
+  if thisSearch=='full_data':
+    section = 'zerofar2'
+    sections.append(section)
+    titles[section] = "FAR vs SNR for loud events with CAT2 vetoes applied" 
+    tags[section] = '*lalapps_cbc_plotrates*CAT_2*'
+    imagetags[section] = ['cumulative_F1']
+    captions[section] = "SNR vs cumulative rate of triggers"
+    comments[section] = None
+    configs[section] = 'zerofar'
+    images_dirs[section] = PDdir
+
+    section = 'zerofar3'
+    sections.append(section)
+    titles[section] = "FAR vs SNR for loud events with CAT2 vetoes applied and CBC hardware injections removed." 
+    tags[section] = '*lalapps_cbc_plotrates*CAT_3*'
+    imagetags[section] = ['cumulative_F1']
+    captions[section] = "SNR vs cumulative rate of triggers"
+    comments[section] = None
+    configs[section] = 'zerofar'
+    images_dirs[section] = PDdir
+
+    section = 'zerofar4'
+    sections.append(section)
+    titles[section] = "FAR vs SNR for loud events with CAT2 and CAT3 vetoes applied and CBC hardware injections removed." 
+    tags[section] = '*lalapps_cbc_plotrates*CAT_4*'
+    imagetags[section] = ['cumulative_F1']
+    captions[section] = " vs cumulative number of triggers"
+    comments[section] = None
+    configs[section] = 'zerofar'
+    images_dirs[section] = PDdir
 
   section = 'printlc2zl'
   sections.append(section)
@@ -2636,7 +2667,7 @@ opts.gpsdir =  '/'+str(opts.gps_start_time)+'-'+str(opts.gps_end_time)+'/'   # n
 opts.duration = str(int(opts.gps_end_time) - int(opts.gps_start_time))
 opts.daydur = float(opts.duration) / 86400
 opts.webdir = './'
-opts.datadir = opts.ihope_directory + opts.gpsdir 
+opts.datadir = os.path.abspath(opts.ihope_directory) + opts.gpsdir 
 opts.physdir = opts.html_directory + opts.gpsdir
 opts.txt_suffix = '-'+opts.gps_start_time+'-'+opts.duration+'.txt'
 
@@ -2662,7 +2693,10 @@ if not  os.path.isdir(opts.datadir):
 msg = "We will copy all images and HTML documents into this directory " +opts.physdir
 logText(logfile, msg,"done")
 # Make the physdir and all necessary directories above it
-os.makedirs(opts.physdir)
+try:
+  os.makedirs(opts.physdir)
+except OSError:
+  pass
 mkdir(opts.physdir+'/Images')
 
 # get the style file and copy it (must happen after the html directories have been created)

@@ -1,8 +1,12 @@
 BUILT_SOURCES =
 MOSTLYCLEANFILES =
+EXTRA_DIST =
 include $(top_srcdir)/gnuscripts/lalsuite_python.am
 
 SUBDIRS = lalinference
+
+.py:
+	$(AM_V_GEN)rm -rf .pybin && $(SED) 's|[@]PYTHON[@]|$(PYTHON)|' $< > $@ && chmod +x $@
 
 pybin_SCRIPTS = \
 	bayestar_aggregate_found_injections \

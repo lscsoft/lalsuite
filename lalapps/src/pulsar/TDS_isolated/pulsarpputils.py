@@ -1858,7 +1858,7 @@ def antenna_response( gpsTime, ra, dec, psi, det ):
     raise ValueError, "ERROR. Key %s is not a valid detector name." % (det)
 
   # get detector
-  detval = lal.lalCachedDetectors[detector]
+  detval = lal.CachedDetectors[detector]
 
   response = detval.response
 
@@ -1900,9 +1900,9 @@ def inject_pulsar_signal(starttime, duration, dt, detectors, pardict, \
     for j, det in enumerate(detectors):
       for frf in freqfac:
         if len(npsds) == 1:
-          tmpnpsds.append( (npsds[0]/2.0)/(2.0*dt) )
+          tmpnpsds.append( np.sqrt( (npsds[0]/2.0)/(2.0*dt) ) )
         else:
-          tmpnpsds.append( (npsds[count]/2.0)/(2.0*dt) )
+          tmpnpsds.append( np.sqrt( (npsds[count]/2.0)/(2.0*dt) ) )
 
         count = count+1
 

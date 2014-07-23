@@ -1,27 +1,30 @@
+#!/bin/sh
+
 # Run Python, etc. test scripts in a correctly set-up environment
 # Author: Karl Wette, 2014
 
-# record command line
+# print and parse command line
+if test $# -lt 2; then
+    echo "$0: insufficient arguments" >&2
+    exit 1
+fi
 printf "\nCommand line:\n%s" "$0"
 printf " '%s'" "$@"
 printf "\n\n"
-
-# parse command line
-echo "Arguments:"
 libtool="$1"
-echo "libtool='${libtool}'"
 shift
 libs="$1"
-echo "libs='${libs}'"
 shift
-cmd="${1:-false}"
-shift
-while test "x$1" != x; do
-    cmd="${cmd} '$1'"
+cmd="$1"
+if test "x$1" = x; then
+    cmd=false
+else
     shift
-done
-echo "cmd=\"${cmd}\""
-echo
+    while test "x$1" != x; do
+        cmd="${cmd} '$1'"
+        shift
+    done
+fi
 
 # recursively build unique list of all libtool libraries
 oldlibs="${libs}"
@@ -32,6 +35,10 @@ while :; do
     for oldlib in ${oldlibs}; do
 
         # extract 'dependency_libs' value from 'oldlib'
+        if test ! -f "${oldlib}"; then
+            echo "$0: ${oldlib} is not a file" >&2
+            exit 1
+        fi
         oldlibdeps=`. ${oldlib}; echo ${dependency_libs}`
 
         # add each dependency library to 'newlibs', excluding system libraries
@@ -80,7 +87,7 @@ done
 
 # print environment under libtool command
 echo "Environment:"
-eval "${ltcmd} ${SHELL} -c 'set'" | sed -n -e '/PATH=/p;/^LAL/p'
+eval "${ltcmd} ${SHELL} -c 'set'" 2>/dev/null | sed -n -e '/PATH=/p;/^LAL/p'
 echo
 
 # print test script command

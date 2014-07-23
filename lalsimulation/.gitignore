@@ -7,6 +7,7 @@
 *.pyo
 .deps
 .libs
+.pybin
 /_build/
 /_inst/
 /lalsimulation-*/
@@ -38,6 +39,7 @@ src/lalsim-bh-qnmode
 src/lalsim-bh-ringdown
 src/lalsim-bh-sphwf
 src/lalsim-detector-noise
+src/lalsim-inspiral
 src/lalsim-ns-eos-table
 src/lalsim-ns-mass-radius
 src/lalsim-ns-params

@@ -16,8 +16,8 @@ check_PROGRAMS = $(test_programs) $(test_helpers)
 TESTS = $(test_programs) $(test_scripts)
 EXTRA_DIST += $(test_scripts)
 
-test_script_runner = $(top_srcdir)/gnuscripts/lalsuite_test_script_runner.sh
-test_script_compiler = $(SHELL) $(test_script_runner) '$(LIBTOOL)' '$(LDADD)'
+test_script_runner = $(top_srcdir)/gnuscripts/lalsuite_test_script_runner
+test_script_compiler = $(test_script_runner) '$(LIBTOOL)' '$(LDADD)'
 EXTRA_DIST += $(test_script_runner)
 
 SH_LOG_COMPILER = $(SHELL)
