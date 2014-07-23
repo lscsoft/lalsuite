@@ -9,7 +9,7 @@ __version__ = '$Revision$'
 ##############################################################################
 # import standard modules and append the lalapps prefix to the python path
 import os, sys, copy, shutil, glob
-import ConfigParser
+from ConfigParser import NoSectionError
 import optparse
 import tempfile
 import urllib
@@ -772,12 +772,12 @@ def hipe_setup(hipeDir, config, ifos, logPath, injSeed=None, dataFind = False, \
         hipecp.set("condor","inspinj",executable)
     hipecp.remove_section(hipeDir)
     hipecp.set("input","injection-seed",injSeed)
-    hipecp.set("input", "num-slides", 0)
+    hipecp.set("input", "num-slides", "0")
     # set any extra inspiral arguments for the injection
     try:
       for item in config.items('-'.join([hipeDir,"inspiral"])):
         hipecp.set("inspiral",item[0],item[1])
-    except ConfigParser.NoSectionError:
+    except NoSectionError:
       pass
   else:
     # add the time slide to the ini file

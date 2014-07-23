@@ -14,7 +14,6 @@ __version__ = '$Revision$'
 ##############################################################################
 # import standard modules and append the lalapps prefix to the python path
 import os, sys, copy, shutil, re
-import ConfigParser
 import optparse
 import tempfile
 import urllib
@@ -30,6 +29,7 @@ sys.path.append('@PYTHONLIBDIR@')
 from glue import segments
 from glue import segmentsUtils
 from glue import pipeline
+from glue.pipeline import DeepCopyableConfigParser as dcConfigParser
 import inspiralutils 
 
 
@@ -320,7 +320,7 @@ os.chdir(analysisDirectory)
 inspiralutils.mkdir("logs")
 
 # parse the ini file:
-cp = ConfigParser.ConfigParser()
+cp = dcConfigParser()
 cp.read(opts.config_file)
 
 # set gps start and end times in the cp object.

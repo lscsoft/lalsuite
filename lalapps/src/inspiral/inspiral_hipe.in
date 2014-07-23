@@ -20,13 +20,14 @@ import socket, time
 import re, string
 from optparse import *
 import tempfile
-import ConfigParser
 import urlparse
 sys.path.append('@PYTHONLIBDIR@')
 
 ##############################################################################
 # import the modules we need to build the pipeline
 from glue import pipeline
+import ConfigParser
+from glue.pipeline import DeepCopyableConfigParser as dcConfigParser
 from glue import segments as glue_segments
 from glue import lal
 import inspiral
@@ -1675,7 +1676,7 @@ except: pass
 
 ##############################################################################
 # create the config parser object and read in the ini file
-cp = ConfigParser.ConfigParser()
+cp = dcConfigParser()
 cp.read(opts.config_file)
 
 ##############################################################################

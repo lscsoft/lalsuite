@@ -17,7 +17,7 @@ import socket, time
 import re, string
 from optparse import *
 import tempfile
-import ConfigParser
+from glue.pipeline import DeepCopyableConfigParser as dcConfigParser
 import urlparse
 from pylal import CoincInspiralUtils
 from glue import iterutils
@@ -221,7 +221,7 @@ if ((opts.plotthinca or opts.plotethinca or opts.plotinspmissed or \
 
 ##############################################################################
 # create the config parser object and read in the ini file
-cp = ConfigParser.ConfigParser()
+cp = dcConfigParser()
 cp.read(opts.config_file)
  
 # Checks if the directory as given by output path exists or not. If it exists, it skips else it creates the directory.
