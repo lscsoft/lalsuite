@@ -1,7 +1,7 @@
 # -*- mode: autoconf; -*-
 # lalsuite_build.m4 - top level build macros
 #
-# serial 87
+# serial 88
 
 # not present in older versions of pkg.m4
 m4_pattern_allow([^PKG_CONFIG(_(PATH|LIBDIR|SYSROOT_DIR|ALLOW_SYSTEM_(CFLAGS|LIBS)))?$])
@@ -182,7 +182,7 @@ AC_DEFUN([LALSUITE_ADD_PATH],[
 
 AC_DEFUN([LALSUITE_CHECK_GIT_REPO],[
   # $0: check for git
-  AC_PATH_PROGS(GIT,[git],[false])
+  AC_PATH_PROGS([GIT],[git],[false])
   # check whether building from a git repository
   have_git_repo=no
   AS_IF([test "x${GIT}" != xfalse],[
@@ -196,7 +196,9 @@ AC_DEFUN([LALSUITE_CHECK_GIT_REPO],[
     AC_MSG_RESULT([${have_git_repo}])
   ])
   # conditional for git and building from a git repository
-  AM_CONDITIONAL(HAVE_GIT_REPO,[test "x${have_git_repo}" = xyes])
+  AM_CONDITIONAL([HAVE_GIT_REPO],[test "x${have_git_repo}" = xyes])
+  # require Python for running generate_vcs_info.py
+  AM_COND_IF([HAVE_GIT_REPO],[LALSUITE_REQUIRE_PYTHON([2.6])])
   # end $0
 ])
 
@@ -322,6 +324,46 @@ AC_DEFUN([LALSUITE_PROG_COMPILERS],[
   ])
 
   _LALSUITE_POST_PROG_COMPILERS
+  # end $0
+])
+
+AC_DEFUN([LALSUITE_REQUIRE_PYTHON],[
+  # $0: require Python version $1 or later
+  AS_IF([test "x${lalsuite_require_pyvers}" = x],[
+    lalsuite_require_pyvers="$1"
+  ],[
+    AS_VERSION_COMPARE([${lalsuite_require_pyvers}],[$1],[
+      lalsuite_require_pyvers="$1"
+    ])
+  ])
+  # end $0
+])
+
+AC_DEFUN([LALSUITE_CHECK_PYTHON],[
+  # $0: check for Python
+  lalsuite_pyvers="$1"
+  AS_IF([test "x${lalsuite_require_pyvers}" != x],[
+    AS_VERSION_COMPARE([${lalsuite_pyvers}],[${lalsuite_require_pyvers}],[
+      lalsuite_pyvers="${lalsuite_require_pyvers}"
+    ])
+  ])
+  AS_IF([test "x${PYTHON}" != xfalse],[
+    AM_PATH_PYTHON([${lalsuite_pyvers}],,[
+      AS_IF([test "x${lalsuite_require_pyvers}" = x],[
+        PYTHON=false
+      ],[
+        AC_MSG_ERROR([Python version ${lalsuite_pyvers} or higher is required])
+      ])
+    ])
+  ])
+  AM_CONDITIONAL([HAVE_PYTHON],[test "x${PYTHON}" != xfalse])
+  AM_COND_IF([HAVE_PYTHON],[
+    AC_SUBST([python_prefix], [`${PYTHON} -c 'import sys; print(sys.prefix)' 2>/dev/null`])
+    AC_SUBST([python_exec_prefix], [`${PYTHON} -c 'import sys; print(sys.exec_prefix)' 2>/dev/null`])
+    PYTHON_ENABLE_VAL=ENABLED
+  ],[
+    PYTHON_ENABLE_VAL=DISABLED
+  ])
   # end $0
 ])
 

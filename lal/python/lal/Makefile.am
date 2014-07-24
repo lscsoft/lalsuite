@@ -11,6 +11,8 @@ SUBDIRS = \
 
 vcs_info_sources = git_version.py
 
+if HAVE_PYTHON
+
 pymoduledir = $(pkgpythondir)
 
 pymodule_PYTHON = \
@@ -19,3 +21,5 @@ pymodule_PYTHON = \
 	gpstime.py \
 	series.py \
 	$(END_OF_LIST)
+
+endif

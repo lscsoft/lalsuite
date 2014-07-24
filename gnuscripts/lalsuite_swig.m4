@@ -2,7 +2,7 @@
 # lalsuite_swig.m4 - SWIG configuration
 # Author: Karl Wette, 2011--2014
 #
-# serial 64
+# serial 65
 
 AC_DEFUN([_LALSUITE_CHECK_SWIG_VERSION],[
   # $0: check the version of $1, and store it in ${swig_version}
@@ -60,9 +60,12 @@ AC_DEFUN([LALSUITE_ENABLE_SWIG],[
     ]
   )
   swig_build_any=false
+  python_min_version=
   LALSUITE_ENABLE_SWIG_LANGUAGE([Octave],[false],[LALSUITE_REQUIRE_CXX])
-  LALSUITE_ENABLE_SWIG_LANGUAGE([Python],[false])
+  LALSUITE_ENABLE_SWIG_LANGUAGE([Python],[false],[LALSUITE_REQUIRE_PYTHON([2.6])])
   AS_IF([test "${swig_generate}" = true],[
+    # require Python for running generate_swig_iface.py
+    LALSUITE_REQUIRE_PYTHON([2.6])
     SWIG_GENERATE_ENABLE_VAL=ENABLED
   ],[
     SWIG_GENERATE_ENABLE_VAL=DISABLED
@@ -348,10 +351,6 @@ AC_DEFUN([LALSUITE_USE_SWIG_OCTAVE],[
 AC_DEFUN([LALSUITE_USE_SWIG_PYTHON],[
   # $0: configure SWIG Python bindings
   LALSUITE_USE_SWIG_LANGUAGE([Python],[
-
-    # check for Python
-    python_min_version=2.5
-    AM_PATH_PYTHON([${python_min_version}])
 
     # check for distutils
     AC_MSG_CHECKING([for distutils])

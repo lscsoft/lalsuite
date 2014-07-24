@@ -3,6 +3,8 @@ MOSTLYCLEANFILES =
 EXTRA_DIST =
 include $(top_srcdir)/gnuscripts/lalsuite_python.am
 
+if HAVE_PYTHON
+
 pymoduledir = $(pkgpythondir)/spectrum
 
 pymodule_PYTHON = \
@@ -10,3 +12,5 @@ pymodule_PYTHON = \
 	averagespectrum.py \
 	distributions.py \
 	$(END_OF_LIST)
+
+endif

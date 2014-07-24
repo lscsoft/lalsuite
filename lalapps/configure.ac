@@ -126,8 +126,7 @@ AC_PROG_INSTALL
 AC_PROG_LN_S
 AC_PROG_AWK
 AC_PROG_SED
-AM_PATH_PYTHON([2.6],,[:])
-AM_CONDITIONAL([HAVE_PYTHON],[test "$PYTHON" != :])
+LALSUITE_CHECK_PYTHON([2.6])
 
 # check for condor_compile
 AC_ENABLE_SHARED
@@ -426,6 +425,7 @@ AC_MSG_NOTICE([
 ==================================================
 LALApps has now been successfully configured:
 
+* Python support is $PYTHON_ENABLE_VAL
 * FFTW library support is $FFTW_ENABLE_VAL
 * Frame library support is $FRAME_ENABLE_VAL
 * MetaIO library support is $METAIO_ENABLE_VAL

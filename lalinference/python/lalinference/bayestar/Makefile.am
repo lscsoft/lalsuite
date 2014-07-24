@@ -3,6 +3,8 @@ MOSTLYCLEANFILES =
 EXTRA_DIST =
 include $(top_srcdir)/gnuscripts/lalsuite_python.am
 
+if HAVE_PYTHON
+
 pymoduledir = $(pkgpythondir)/bayestar
 
 pymodule_PYTHON = \
@@ -17,6 +19,8 @@ pymodule_PYTHON = \
 	postprocess.py \
 	timing.py \
 	$(END_OF_LIST)
+
+endif
 
 if HAVE_CHEALPIX
 if SWIG_BUILD_PYTHON

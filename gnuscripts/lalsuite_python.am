@@ -1,6 +1,14 @@
 SUFFIXES = .py
 
+.PHONY: pymodule-all-local
+.PHONY: pymodule-mostlyclean-local
+.PHONY: pybin-clean-local
+.PHONY: pybin-dist-hook
+
+if HAVE_PYTHON
+
 pybindir = $(bindir)
+
 BUILT_SOURCES += $(pymodule_PYTHON) $(pybin_SCRIPTS)
 MOSTLYCLEANFILES += $(pybin_SCRIPTS)
 
@@ -8,7 +16,6 @@ python_install_script = $(top_srcdir)/gnuscripts/lalsuite_python_install_script
 INSTALL_SCRIPT = $(python_install_script) $(INSTALL)
 EXTRA_DIST += $(python_install_script)
 
-.PHONY: pymodule-all-local
 all-local: pymodule-all-local
 pymodule-all-local: pymodule-mostlyclean-local
 	$(AM_V_at)if test "x$(builddir)" != "x$(srcdir)"; then \
@@ -19,7 +26,6 @@ pymodule-all-local: pymodule-mostlyclean-local
 		done; \
 	fi
 
-.PHONY: pymodule-mostlyclean-local
 mostlyclean-local: pymodule-mostlyclean-local
 pymodule-mostlyclean-local:
 	$(AM_V_at)if test "x$(builddir)" != "x$(srcdir)"; then \
@@ -56,14 +62,22 @@ $(pybin_SCRIPTS): Makefile
 	chmod +x $@.tmp || exit 1; \
 	mv -f $@.tmp $@
 
-.PHONY: pybin-clean-local
 clean-local: pybin-clean-local
 pybin-clean-local:
 	-rm -rf .pybin/
 
-.PHONY: pybin-dist-hook
 dist-hook: pybin-dist-hook
 pybin-dist-hook:
 	for file in $(pybin_SCRIPTS); do \
 		cp "$(srcdir)/$${file}.py" "$(distdir)"; \
 	done
+
+else # !HAVE_PYTHON
+
+pkgpython_PYTHON =
+pymoduledir =
+pymodule_PYTHON =
+pybindir =
+pybin_SCRIPTS =
+
+endif # HAVE_PYTHON
