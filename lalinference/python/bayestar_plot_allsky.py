@@ -89,7 +89,7 @@ ax = plt.subplot(111,
 ax.cla()
 ax.grid()
 
-skymap, metadata = fits.read_sky_map(infilename)
+skymap, metadata = fits.read_sky_map(infilename, nest=None)
 nside = hp.npix2nside(len(skymap))
 
 if opts.geo:
@@ -102,7 +102,8 @@ probperdeg2 = skymap / hp.nside2pixarea(nside, degrees=True)
 
 # Plot sky map.
 vmax = probperdeg2.max()
-plot.healpix_heatmap(probperdeg2, dlon=dlon,
+plot.healpix_heatmap(
+    probperdeg2, dlon=dlon, nest=metadata['nest'],
     vmin=0., vmax=vmax, cmap=plt.get_cmap(opts.colormap))
 
 if opts.colorbar:
@@ -117,7 +118,8 @@ if opts.contour:
     indices = np.argsort(-skymap)
     region = np.empty(skymap.shape)
     region[indices] = 100 * np.cumsum(skymap[indices])
-    cs = plot.healpix_contour(region, dlon=dlon,
+    cs = plot.healpix_contour(
+        region, dlon=dlon, nest=metadata['nest'],
         colors='k', linewidths=0.5, levels=opts.contour)
     fmt = r'%g\%%' if rcParams['text.usetex'] else '%g%%'
     plt.clabel(cs, fmt=fmt, fontsize=6, inline=True)

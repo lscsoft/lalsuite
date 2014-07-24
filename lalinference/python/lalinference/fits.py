@@ -218,7 +218,7 @@ def gps_to_mjd(gps_time):
     return jd - lal.MJD_REF + gps_seconds_fraction / 86400.
 
 
-def write_sky_map(filename, prob, objid=None, url=None, instruments=None,
+def write_sky_map(filename, prob, nest=False, objid=None, url=None, instruments=None,
     gps_time=None, gps_creation_time=None, creator=None, origin=None,
     runtime=None):
     """Write a gravitational-wave sky map to a file, populating the header
@@ -267,15 +267,47 @@ def write_sky_map(filename, prob, objid=None, url=None, instruments=None,
         extra_metadata.append(('RUNTIME', runtime,
             'Runtime in seconds of the CREATOR program'))
 
-    write_map(filename, prob, nest=False, fits_IDL=True, coord='C',
+    write_map(filename, prob, nest=nest, fits_IDL=True, coord='C',
         column_names=('PROB',), unit='pix-1', extra_metadata=extra_metadata)
 
 
-def read_sky_map(filename):
-    prob, header = hp.read_map(filename, h=True, verbose=False)
+def read_sky_map(filename, nest=False):
+    """
+    Read a LIGO/Virgo-type sky map and return a tuple of the HEALPix array
+    and a dictionary of metadata from the header.
+
+    Parameters
+    ----------
+
+    filename: string
+        Path to the optionally gzip-compressed FITS file.
+
+    nest: bool, optional
+        If omitted or False, then detect the pixel ordering in the FITS file
+        and rearrange if necessary to RING indexing before returning.
+
+        If True, then detect the pixel ordering and rearrange if necessary to
+        NESTED indexing before returning.
+
+        If None, then preserve the ordering from the FITS file.
+
+        Regardless of the value of this option, the ordering used in the FITS
+        file is indicated as the value of the 'nest' key in the metadata
+        dictionary.
+    """
+    prob, header = hp.read_map(filename, h=True, verbose=False, nest=nest)
     header = dict(header)
 
     metadata = {}
+
+    ordering = header['ORDERING']
+    if ordering == 'RING':
+        metadata['nest'] = False
+    elif ordering == 'NESTED':
+        metadata['nest'] = True
+    else:
+        raise ValueError(
+            'ORDERING card in header has unknown value: {0}'.format(ordering))
 
     try:
         value = header['OBJECT']

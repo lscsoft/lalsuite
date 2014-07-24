@@ -135,7 +135,7 @@ try:
             creator=parser.get_prog_name(), objid=str(graceid),
             url='https://gracedb.ligo.org/events/{0}'.format(graceid),
             runtime=elapsed_time, instruments=instruments,
-            origin='LIGO/Virgo')
+            origin='LIGO/Virgo', nest=True)
         gracedb.writeLog(graceid, "INFO:BAYESTAR:uploaded sky map",
             filename=fitspath, tagname="sky_loc")
     finally:

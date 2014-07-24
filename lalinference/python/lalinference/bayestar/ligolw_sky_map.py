@@ -81,7 +81,7 @@ def emcee_sky_map(logl, loglargs, logp, logpargs, xmin, xmax, nside=-1, kde=Fals
     if nside == -1 or not kde:
         samples_per_bin = int(np.ceil(0.005 * len(theta)))
         prob = postprocess.adaptive_healpix_histogram(
-            theta, phi, samples_per_bin, nside=nside)
+            theta, phi, samples_per_bin, nside=nside, nest=True)
 
         # Determine what nside what actually used.
         nside = hp.npix2nside(len(prob))
@@ -105,7 +105,10 @@ def ligolw_sky_map(
         min_distance=None, max_distance=None, prior_distance_power=None,
         method="toa_phoa_snr", psds=None, nside=-1, chain_dump=None):
     """Convenience function to produce a sky map from LIGO-LW rows. Note that
-    min_distance and max_distance should be in Mpc."""
+    min_distance and max_distance should be in Mpc.
+
+    Returns a 'NESTED' ordering HEALPix image as a Numpy array.
+    """
 
     ifos = [sngl_inspiral.ifo for sngl_inspiral in sngl_inspirals]
 

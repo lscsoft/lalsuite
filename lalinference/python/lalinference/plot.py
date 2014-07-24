@@ -518,18 +518,20 @@ def contour(func, *args, **kwargs):
     return ax
 
 
-def _healpix_lookup(map, lon, lat, dlon=0):
+def _healpix_lookup(map, lon, lat, nest=False, dlon=0):
     """Look up the value of a HEALPix map in the pixel containing the point
     with the specified longitude and latitude."""
     nside = hp.npix2nside(len(map))
-    return map[hp.ang2pix(nside, 0.5 * np.pi - lat, lon - dlon)]
+    return map[hp.ang2pix(nside, 0.5 * np.pi - lat, lon - dlon, nest=nest)]
 
 
 def healpix_heatmap(map, *args, **kwargs):
     """Produce a heatmap from a HEALPix map."""
     mpl_kwargs = dict(kwargs)
     dlon = mpl_kwargs.pop('dlon', 0)
-    return heatmap(functools.partial(_healpix_lookup, map, dlon=dlon),
+    nest = mpl_kwargs.pop('nest', False)
+    return heatmap(
+        functools.partial(_healpix_lookup, map, nest=nest, dlon=dlon),
         *args, **mpl_kwargs)
 
 
@@ -537,7 +539,9 @@ def healpix_contour(map, *args, **kwargs):
     """Produce a contour plot from a HEALPix map."""
     mpl_kwargs = dict(kwargs)
     dlon = mpl_kwargs.pop('dlon', 0)
-    return contour(functools.partial(_healpix_lookup, map, dlon=dlon),
+    nest = mpl_kwargs.pop('nest', False)
+    return contour(
+        functools.partial(_healpix_lookup, map, nest=nest, dlon=dlon),
         *args, **mpl_kwargs)
 
 

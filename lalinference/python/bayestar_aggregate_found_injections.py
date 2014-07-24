@@ -85,7 +85,7 @@ def startup(dbfilename, opts_contour, opts_modes):
 
 
 def process(fitsfilename):
-    sky_map, metadata = fits.read_sky_map(fitsfilename)
+    sky_map, metadata = fits.read_sky_map(fitsfilename, nest=None)
 
     coinc_event_id = metadata['objid']
     try:
@@ -104,7 +104,7 @@ def process(fitsfilename):
         AND cem2.table_name = 'coinc_event' AND cem2.event_id = ?""",
         (coinc_event_id,)).fetchone()
     searched_area, searched_prob, offset, searched_modes, contour_areas, contour_modes = postprocess.find_injection(
-        sky_map, true_ra, true_dec, contours=[0.01 * p for p in contours], modes=modes)
+        sky_map, true_ra, true_dec, contours=[0.01 * p for p in contours], modes=modes, nest=metadata['nest'])
 
     if snr is None:
         snr = float('nan')

@@ -80,14 +80,15 @@ matplotlib.rc('path', simplify=True, simplify_threshold=1)
 
 for count_records, fitsfilename in enumerate(fitsfilenames):
     progress.update(count_records, fitsfilename)
-    skymap, metadata = fits.read_sky_map(fitsfilename)
+    skymap, metadata = fits.read_sky_map(fitsfilename, nest=None)
     nside = hp.npix2nside(len(skymap))
     gmst = lal.GreenwichMeanSiderealTime(metadata['gps_time']) % (2*np.pi)
 
     indices = np.argsort(-skymap)
     region = np.empty(skymap.shape)
     region[indices] = 100 * np.cumsum(skymap[indices])
-    plot.healpix_contour(region, dlon=-gmst, colors='k', linewidths=0.5,
+    plot.healpix_contour(
+        region, nest=metadata['nest'], dlon=-gmst, colors='k', linewidths=0.5,
         levels=[opts.contour], alpha=opts.alpha)
 
 progress.update(-1, 'saving figure')

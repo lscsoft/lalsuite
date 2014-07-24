@@ -552,11 +552,7 @@ static double *adaptive_sky_map_rasterize(adaptive_sky_map *map, long *out_npix)
         const unsigned long start = base_ipix * reps;
         const unsigned long stop = (base_ipix + 1) * reps;
         for (unsigned long ipix_nest = start; ipix_nest < stop; ipix_nest ++)
-        {
-            long ipix_ring;
-            nest2ring(nside, ipix_nest, &ipix_ring);
-            P[ipix_ring] = value;
-        }
+            P[ipix_nest] = value;
     }
     *out_npix = npix;
 
