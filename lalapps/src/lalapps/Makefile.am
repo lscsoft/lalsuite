@@ -1,5 +1,7 @@
 BUILT_SOURCES =
 MOSTLYCLEANFILES =
+EXTRA_DIST =
+include $(top_srcdir)/gnuscripts/lalsuite_python.am
 include $(top_srcdir)/gnuscripts/lalsuite_vcs_info.am
 
 if FRAME
@@ -67,12 +69,12 @@ if HAVE_PYTHON
 pkgpython_PYTHON = \
 	__init__.py \
 	git_version.py
-dist_bin_SCRIPTS = \
+pybin_SCRIPTS = \
 	lalapps_path2cache \
 	lalapps_searchsum2cache
 endif
 
-EXTRA_DIST = \
+EXTRA_DIST += \
 	series.c \
 	series.h \
 	getdate.y \

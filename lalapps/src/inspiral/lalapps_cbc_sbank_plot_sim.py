@@ -1,0 +1,365 @@
+# Copyright (C) 2011  Nickolas Fotopoulos, Stephen Privitera
+#
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the
+# Free Software Foundation; either version 2 of the License, or (at your
+# option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
+# Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
+from __future__ import division
+from math import ceil, log10
+import sys
+import os
+import numpy as np
+import matplotlib
+matplotlib.use("Agg")
+
+from lalsimulation import SimInspiralTaylorF2ReducedSpinComputeChi, SimIMRPhenomBComputeChi
+
+from lalinspiral.sbank.waveforms import compute_mchirp
+from lalinspiral.sbank.tau0tau3 import m1m2_to_tau0tau3
+
+from h5py import File as H5File
+
+matplotlib.rcParams.update({
+    "text.usetex": True,
+    "text.verticalalignment": "center",
+    "font.size": 18,
+    "axes.titlesize": 22,
+    "axes.labelsize": 22,
+    "xtick.labelsize": 18,
+    "ytick.labelsize": 18,
+    "legend.fontsize": 16,
+    "figure.figsize": [12,9],
+   })
+
+fname = sys.argv[1]
+
+def find_process_id(process_table, prog_name):
+    for program, pid in process_table["program", "process_id"]:
+        if program == prog_name:
+            return pid
+    return None
+
+def find_process_param(pp_table, process_id, param):
+    for pid, row_param, value in pp_table["process_id", "param", "value"]:
+        if pid == process_id and row_param == param:
+            return value
+
+# grab data
+with H5File(fname, "r") as h5file:
+    match = h5file["/match_map"]["match"]
+
+    # order data by descending match so that low matches are plotted on top
+    order = match.argsort()[::-1]
+    inj_ind = h5file["/match_map"]["inj_index"][order]
+    tmplt_ind = h5file["/match_map"]["best_match_tmplt_index"][order]
+    match = match[order]
+
+    # extract columns of interest and apply row ordering
+    inj_arr = h5file["/sim_inspiral"]["mass1", "mass2", "spin1x", "spin1y", "spin1z", "spin2x", "spin2y", "spin2z", "inclination"][inj_ind]
+    tmplt_arr = h5file["/sngl_inspiral"]["mass1", "mass2", "spin1z", "spin2z"][tmplt_ind]
+
+    # extract waveforms
+    pid = find_process_id(h5file["/process"], u"lalapps_cbc_sbank_sim")
+    pparams = h5file["/process_params"]
+    inj_approx = find_process_param(pparams, pid, u"--injection-approx"),
+    tmplt_approx = find_process_param(pparams, pid, u"--template-approx")
+
+    # get other useful quantities
+    pid = find_process_id(h5file["/process"], u"lalapps_cbc_sbank")
+    min_match = float(find_process_param(pparams, pid, u"--match-min"))
+    flow = float(find_process_param(pparams, pid, u"--flow"))
+
+# derived quantities
+# NB: Named fields in dtypes (see ligolw_table_to_array in lalapps_cbc_sbank_sim)
+# allow dict-like access to columns: e.g. arr["mass1"].
+inj_M = inj_arr["mass1"] + inj_arr["mass2"] #total mass
+inj_q = inj_arr["mass1"] / inj_arr["mass2"] #mass ratio
+tmplt_M = tmplt_arr["mass1"] + tmplt_arr["mass2"]
+tmplt_q = tmplt_arr["mass1"] / tmplt_arr["mass2"]
+inj_tau0, inj_tau3 = m1m2_to_tau0tau3(inj_arr["mass1"], inj_arr["mass2"], flow)
+tmplt_tau0, tmplt_tau3 = m1m2_to_tau0tau3(tmplt_arr["mass1"], tmplt_arr["mass2"], flow)
+tmplt_mchirp = compute_mchirp(tmplt_arr["mass1"], tmplt_arr["mass2"])
+inj_mchirp = compute_mchirp(inj_arr["mass1"], inj_arr["mass2"])
+
+#
+# compute effective/reduced spin parameter for templates
+#
+if tmplt_approx == "TaylorF2RedSpin":
+    tmplt_chi = [SimInspiralTaylorF2ReducedSpinComputeChi(float(row["mass1"]), float(row["mass2"]), float(row["spin1z"]), float(row["spin2z"])) for row in tmplt_arr]
+elif tmplt_approx in ["IMRPhenomB", "IMRPhenomC", "IMRPhenomP"]:
+    tmplt_chi = [SimIMRPhenomBComputeChi(float(row["mass1"]), float(row["mass2"]), float(row["spin1z"]), float(row["spin2z"])) for row in tmplt_arr]
+else:
+    raise NotImplementedError("Only know how to compute chi for TaylorF2RedSpin (reduced spin) and IMRPhenomB/C (effective spin) templates.")
+
+
+#
+# compute effective/reduced spin parameter for injections
+#
+if inj_approx == "TaylorF2RedSpin" or "SpinTaylorT5" in inj_approx: # reduced spin
+    inj_chi = [SimInspiralTaylorF2ReducedSpinComputeChi(float(row["mass1"]), float(row["mass2"]), float(row["spin1z"]), float(row["spin2z"])) for row in inj_arr]
+elif "SpinTaylorT4" in inj_approx: # reduced spin (requires coordinate transformation)
+    chi1 = [row["spin1x"] *np.sin(row["inclination"]) + row["spin1z"] *np.cos(row["inclination"]) for row in inj_arr]
+    chi2 = [row["spin2x"] *np.sin(row["inclination"]) + row["spin2z"] *np.cos(row["inclination"]) for row in inj_arr]
+    inj_chi = [SimIMRPhenomBComputeChi(float(row["mass1"]), float(row["mass2"]), s1z, s2z) for row, s1z, s2z in zip(inj_arr, chi1, chi2)]
+else: # default to effective spin
+    inj_chi = [SimIMRPhenomBComputeChi(float(row["mass1"]), float(row["mass2"]), float(row["spin1z"]), float(row["spin2z"])) for row in inj_arr]
+
+
+if "PhenomP" in inj_approx: # seriously wtf?
+    inj_chi *= np.cos(inj_arr["inclination"])
+
+
+smallest_match = match.min()
+
+from matplotlib.figure import Figure
+from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
+
+name, ext =  os.path.splitext(os.path.basename(fname))
+
+fig = Figure()
+ax = fig.add_subplot(111)
+coll = ax.hexbin(inj_M, inj_chi, C=match, gridsize=50, vmin=smallest_match, vmax=1)
+ax.set_xlabel("Total Mass ($M_\odot$)")
+ax.set_ylabel("$\chi$")
+ax.set_xlim([min(inj_M), max(inj_M)])
+ax.set_ylim([min(inj_chi), max(inj_chi)])
+fig.colorbar(coll, ax=ax).set_label("Mean Fitting Factor")
+ax.grid(True)
+canvas = FigureCanvas(fig)
+fig.savefig(name+"_match_vs_injM_vs_injchi_hexbin.png")
+
+
+fig = Figure()
+ax = fig.add_subplot(111)
+coll = ax.hexbin(inj_arr["mass1"], inj_arr["mass2"], C=match, gridsize=50, vmin=smallest_match, vmax=1)
+ax.set_xlabel("$m_1$ ($M_\odot$)")
+ax.set_ylabel("$m_2$ ($M_\odot$)")
+ax.set_xlim([min(inj_arr["mass1"]), max(inj_arr["mass1"])])
+ax.set_ylim([min(inj_arr["mass2"]), max(inj_arr["mass2"])])
+fig.colorbar(coll, ax=ax).set_label("Mean Fitting Factor")
+ax.grid(True)
+canvas = FigureCanvas(fig)
+fig.savefig(name+"_match_vs_injm1_vs_injm2_hexbin.png")
+
+
+fig = Figure()
+ax = fig.add_subplot(111)
+ax.plot(inj_arr["mass1"], match, marker = '.', linestyle="None")
+ax.set_xlabel("Injection $m_1$ ($M_\odot$)")
+ax.set_ylabel("Fitting Factor Between Injection and Template Bank")
+ax.grid(True)
+canvas = FigureCanvas(fig)
+fig.savefig(name+"_match_vs_injm1.png")
+
+fig = Figure()
+ax = fig.add_subplot(111)
+ax.plot(inj_arr["mass2"], match, marker = ".", linestyle="None")
+ax.set_xlabel("Injection $m_2$ ($M_\odot$)")
+ax.set_ylabel("Fitting Factor Between Injection and Template Bank")
+ax.grid(True)
+canvas = FigureCanvas(fig)
+fig.savefig(name+"_match_vs_injm2.png")
+
+fig = Figure()
+ax = fig.add_subplot(111)
+ax.plot(inj_M, match, marker = ".",linestyle="None")
+ax.set_xlabel("Injection $M$ ($M_\odot$)")
+ax.set_ylabel("Fitting Factor Between Injection and Template Bank")
+ax.grid(True)
+canvas = FigureCanvas(fig)
+fig.savefig(name+"_match_vs_injM.png")
+
+fig = Figure()
+ax = fig.add_subplot(111)
+ax.plot(inj_mchirp, match, marker = ".", linestyle="None")
+ax.set_xlabel("Injection $M_c$ ($M_\odot$)")
+ax.set_ylabel("Fitting Factor Between Injection and Template Bank")
+ax.grid(True)
+canvas = FigureCanvas(fig)
+fig.savefig(name+"_match_vs_injMc.png")
+
+fig = Figure()
+ax = fig.add_subplot(111)
+ax.plot(inj_q, match , marker = ".", linestyle="None")
+ax.set_xlabel("Injection Mass Ratio, $m_1/m_2$")
+ax.set_ylabel("Match Between Injection and Template Bank")
+ax.grid(True)
+canvas = FigureCanvas(fig)
+fig.savefig(name+"_match_vs_injq.png")
+
+fig = Figure()
+ax = fig.add_subplot(111)
+collection = ax.scatter(inj_arr["mass1"], tmplt_arr["mass1"], c=match, s=20, vmin=smallest_match, linewidth=0, alpha=0.5, vmax=1)
+ax.set_xlabel("Injection $m_1$")
+ax.set_ylabel("Best Matching Template $m_1$ ($M_\odot$)")
+ax.set_title("Colorbar is Fitting Factor")
+ax.grid(True)
+fig.colorbar(collection, ax=ax)
+canvas = FigureCanvas(fig)
+fig.savefig(name+"_match_vs_tmpltm1_vs_injm1.png")
+
+fig = Figure()
+ax = fig.add_subplot(111)
+collection = ax.scatter(inj_arr["mass2"], tmplt_arr["mass2"], c=match, s=20, vmin=smallest_match, linewidth=0, alpha=0.5, vmax=1)
+ax.set_xlabel("Injection $m_2$")
+ax.set_ylabel("Best Matching Template $m_2$ ($M_\odot$)")
+ax.set_title("Colorbar is Fitting Factor")
+ax.grid(True)
+fig.colorbar(collection, ax=ax)
+canvas = FigureCanvas(fig)
+fig.savefig(name+"_match_vs_tmpltm2_vs_injm2.png")
+
+fig = Figure()
+ax = fig.add_subplot(111)
+collection = ax.scatter(inj_chi, tmplt_chi, c=match, s=20, vmin=smallest_match, linewidth=0, alpha=0.5, vmax=1)
+ax.set_xlabel("Injection $\chi$")
+ax.set_ylabel("Best Matching Template $\chi$")
+ax.set_title("Colorbar is Fitting Factor")
+ax.grid(True)
+fig.colorbar(collection, ax=ax)
+canvas = FigureCanvas(fig)
+fig.savefig(name+"_match_vs_tmpltchi_vs_injchi.png")
+
+fig = Figure()
+ax = fig.add_subplot(111)
+collection = ax.scatter(inj_q, tmplt_q, c=match, s=20, vmin=smallest_match, linewidth=0, alpha=0.5, vmax=1)
+ax.set_xlabel("Injection Mass Ratio, $m_1/m_2$")
+ax.set_ylabel("Best Matching Template $q$")
+ax.set_title("Colorbar is Fitting Factor")
+ax.grid(True)
+fig.colorbar(collection, ax=ax)
+canvas = FigureCanvas(fig)
+fig.savefig(name+"_match_vs_injq_vs_tmpltq.png")
+
+fig = Figure()
+ax = fig.add_subplot(111)
+collection = ax.scatter(inj_M, tmplt_M, c=match, s=20, vmin=smallest_match, linewidth=0, alpha=0.5, vmax=1)
+ax.set_xlabel("Injection total mass, $M$ ($M_\odot$)")
+ax.set_ylabel("Best Matching Template $M$ ($M_\odot$)")
+ax.set_title("Colorbar is Fitting Factor")
+ax.grid(True)
+fig.colorbar(collection, ax=ax)
+canvas = FigureCanvas(fig)
+fig.savefig(name+"_match_vs_injM_vs_tmpltM.png")
+
+fig = Figure()
+ax = fig.add_subplot(111)
+collection = ax.scatter(tmplt_arr["mass1"], tmplt_arr["mass2"], c=match, s=20, vmin=smallest_match, linewidth=0, alpha=0.5, vmax=1)
+ax.set_xlabel("Template $m_1$ ($M_\odot$)")
+ax.set_ylabel("Template $m_2$ ($M_\odot$)")
+ax.set_title("Colorbar is Fitting Factor")
+ax.grid(True)
+fig.colorbar(collection, ax=ax)
+canvas = FigureCanvas(fig)
+fig.savefig(name+"_match_vs_tmpltm2_vs_tmpltm1.png")
+
+fig = Figure()
+ax = fig.add_subplot(111)
+collection = ax.scatter(inj_arr["mass1"], inj_arr["mass2"], c=match, s=20, vmin=smallest_match, linewidth=0, alpha=0.5, vmax=1)
+ax.set_xlabel("Injected $m_1$ ($M_\odot$)")
+ax.set_ylabel("Injected $m_2$ ($M_\odot$)")
+ax.set_title("Colorbar is Fitting Factor")
+ax.grid(True)
+fig.colorbar(collection, ax=ax)
+canvas = FigureCanvas(fig)
+fig.savefig(name+"_match_vs_injm2_vs_injm1.png")
+
+fig = Figure()
+ax = fig.add_subplot(111)
+collection = ax.scatter(inj_arr["spin1z"], inj_arr["spin2z"], c=match, s=20, vmin=smallest_match, linewidth=0, alpha=0.5, vmax=1)
+ax.set_xlabel("Injected $s_{1z}$")
+ax.set_ylabel("Injected $s_{2z}$")
+ax.set_title("Colorbar is Fitting Factor")
+ax.grid(True)
+fig.colorbar(collection, ax=ax)
+canvas = FigureCanvas(fig)
+fig.savefig(name+"_match_vs_injs1z_vs_injs2z.png")
+
+fig = Figure()
+ax = fig.add_subplot(111)
+collection = ax.scatter(inj_tau0, inj_tau3, c=match, s=20, vmin=smallest_match, linewidth=0, alpha=0.5, vmax=1)
+ax.set_xlabel(r"Injected $\tau_0$ (s)")
+ax.set_ylabel(r"Injected $\tau_3$ (s)")
+ax.set_title(r"Colorbar is Fitting Factor; assuming $f_\mathrm{low}=%d\,\mathrm{Hz}$" % flow)
+ax.grid(True)
+fig.colorbar(collection, ax=ax)
+canvas = FigureCanvas(fig)
+fig.savefig(name+"_match_vs_injtau0_vs_injtau3.png")
+
+fig = Figure()
+ax = fig.add_subplot(111)
+collection = ax.scatter(inj_tau0, inj_chi, c=match, s=20, vmin=smallest_match, linewidth=0, alpha=0.5, vmax=1)
+ax.set_xlabel(r"Injected $\tau_0$ (s)")
+ax.set_ylabel(r"Injected $\chi$ (s)")
+ax.set_title(r"Colorbar is Fitting Factor; assuming $f_\mathrm{low}=%d\,\mathrm{Hz}$" % flow)
+ax.grid(True)
+fig.colorbar(collection, ax=ax)
+canvas = FigureCanvas(fig)
+fig.savefig(name+"_match_vs_injtau0_vs_injchi.png")
+
+fig = Figure()
+ax = fig.add_subplot(111)
+collection = ax.scatter(tmplt_tau0, tmplt_tau3, c=match, s=20, vmin=smallest_match, linewidth=0, alpha=0.5, vmax=1)
+ax.set_xlabel(r"Template $\tau_0$ (s)")
+ax.set_ylabel(r"Template $\tau_3$ (s)")
+ax.set_title(r"Colorbar is Fitting Factor; assuming $f_\mathrm{low}=%d\,\mathrm{Hz}$" % flow)
+ax.grid(True)
+fig.colorbar(collection, ax=ax)
+canvas = FigureCanvas(fig)
+fig.savefig(name+"_match_vs_tmplttau0_vs_tmplttau3.png")
+
+fig = Figure()
+ax = fig.add_subplot(111)
+collection = ax.scatter(tmplt_tau0, tmplt_chi, c=match, s=20, vmin=smallest_match, linewidth=0, alpha=0.5, vmax=1)
+ax.set_xlabel(r"Template $\tau_0$ (s)")
+ax.set_ylabel(r"Template $\chi$ (s)")
+ax.set_title(r"Colorbar is Fitting Factor; assuming $f_\mathrm{low}=%d\,\mathrm{Hz}$" % flow)
+ax.grid(True)
+fig.colorbar(collection, ax=ax)
+canvas = FigureCanvas(fig)
+fig.savefig(name+"_match_vs_tmplttau0_vs_tmpltchi.png")
+
+fig = Figure()
+ax = fig.add_subplot(111)
+collection = ax.scatter(tmplt_M, tmplt_chi, c=match, s=20, vmin=smallest_match, linewidth=0, alpha=0.5, vmax=1)
+ax.set_xlabel(r"Template $M_{total}$ ($M_\odot$)")
+ax.set_ylabel(r"Template $\chi$ (s)")
+ax.set_title(r"Colorbar is Fitting Factor; assuming $f_\mathrm{low}=%d\,\mathrm{Hz}$" % flow)
+ax.grid(True)
+fig.colorbar(collection, ax=ax)
+canvas = FigureCanvas(fig)
+fig.savefig(name+"_match_vs_tmpltM_vs_tmpltchi.png")
+
+fig = Figure()
+ax = fig.add_axes((0.1, 0.1, 0.85, 0.85), xscale="log", yscale="log")
+count, bin_edges = np.histogram(np.log(1 - match), bins=40)
+bin_centers = np.exp(-(bin_edges[:-1] * bin_edges[1:])**0.5)
+ax.plot(bin_centers, count, linewidth=2.5)
+ax.plot((1 - min_match, 1 - min_match), (1, 10**ceil(log10(count.max()))), "k--")
+ax.set_xlabel("mismatch (1 - fitting factor)")
+ax.set_ylabel("Number")
+ax.set_title(r'$N_\mathrm{inj}=%d$, $N_{\mathrm{FF} < %.2f} = %d$' % (len(match), min_match, (match < min_match).sum()))
+ax.grid(True)
+canvas = FigureCanvas(fig)
+fig.savefig(name+"_match_hist.png")
+
+fig = Figure()
+ax = fig.add_subplot(111)
+collection = ax.scatter(inj_M, inj_chi, c=match, s=20, vmin=smallest_match, linewidth=0, alpha=0.5, vmax=1)
+ax.set_xlabel("Injected Total Mass")
+ax.set_ylabel("Injected Chi")
+ax.set_title("Colorbar is Fitting Factor")
+ax.grid(True)
+fig.colorbar(collection, ax=ax)
+canvas = FigureCanvas(fig)
+fig.savefig(name+"_match_vs_injM_vs_injchi.png")

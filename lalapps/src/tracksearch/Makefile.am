@@ -1,4 +1,7 @@
 BUILT_SOURCES =
+MOSTLYCLEANFILES =
+EXTRA_DIST =
+include $(top_srcdir)/gnuscripts/lalsuite_python.am
 include $(top_srcdir)/gnuscripts/lalapps.am
 
 if LALFRAME
@@ -45,7 +48,7 @@ lalapps_tracksearch_dat2pgm_SOURCES = \
 	tracksearchToolbox.h
 
 if HAVE_PYTHON
-bin_SCRIPTS = \
+pybin_SCRIPTS = \
 	lalapps_tracksearch_handler \
 	lalapps_tracksearch_pipe \
 	lalapps_tracksearch_housekeeper \
@@ -57,63 +60,21 @@ pkgpython_PYTHON = \
 	tracksearch.py
 endif
 
-python_config.sed:
-	@-rm -f python_config.sed
-	@echo "s+@PYTHONLIBDIR@+@pkgpythondir@+g" > python_config.sed
-	@echo "s+@PYTHONPROG@+@PYTHON@+g" >> python_config.sed
-
-lalapps_tracksearch_handler: $(srcdir)/tsHandler.pyin python_config.sed
-	$(AM_V_GEN)sed -f python_config.sed $(srcdir)/tsHandler.pyin > lalapps_tracksearch_handler
-	@chmod +x lalapps_tracksearch_handler
-
-lalapps_tracksearch_pipe: $(srcdir)/tsPipe.pyin python_config.sed
-	$(AM_V_GEN)sed -f python_config.sed $(srcdir)/tsPipe.pyin > lalapps_tracksearch_pipe
-	@chmod +x lalapps_tracksearch_pipe
-
-lalapps_tracksearch_cutpipe: $(srcdir)/tsCutPipe.pyin python_config.sed
-	$(AM_V_GEN)sed -f python_config.sed $(srcdir)/tsCutPipe.pyin > lalapps_tracksearch_cutpipe
-	@chmod +x lalapps_tracksearch_cutpipe
-
-lalapps_tracksearch_housekeeper: $(srcdir)/tsHousekeeper.pyin python_config.sed
-	$(AM_V_GEN)sed -f python_config.sed $(srcdir)/tsHousekeeper.pyin > lalapps_tracksearch_housekeeper
-	@chmod +x lalapps_tracksearch_housekeeper
-
-lalapps_tracksearch_tune_pipe: $(srcdir)/tsTunePipe.pyin python_config.sed
-	$(AM_V_GEN)sed -f python_config.sed $(srcdir)/tsTunePipe.pyin > lalapps_tracksearch_tune_pipe
-	@chmod +x lalapps_tracksearch_tune_pipe
-
-lalapps_tracksearch_mapcachebuilder: $(srcdir)/tsMapCacheBuilder.pyin python_config.sed
-	$(AM_V_GEN)sed -f python_config.sed $(srcdir)/tsMapCacheBuilder.pyin > lalapps_tracksearch_mapcachebuilder
-	@chmod +x lalapps_tracksearch_mapcachebuilder
-
 pkgdata_DATA = \
 	tracksearch_pipeline_configuration.ini \
 	tracksearch_tuning_configuration.tun \
 	tracksearch_cutpipe_configuration.cut
 
-EXTRA_DIST = \
-	tsHandler.pyin \
-	tsPipe.pyin \
-	tsCutPipe.pyin \
-	tsHousekeeper.pyin \
-	tsTunePipe.pyin \
-	tsMapCacheBuilder.pyin \
+EXTRA_DIST += \
 	$(DATA)
 
 CLEANFILES = \
-	lalapps_tracksearch_handler \
-	lalapps_tracksearch_pipe \
-	lalapps_tracksearch_housekeeper \
-	lalapps_tracksearch_tune_pipe \
-	lalapps_tracksearch_cutpipe \
-	lalapps_tracksearch_mapcachebuilder \
-	python_config.sed \
 	lalapps_tracksearch \
 	lalapps_tracksearch_datagen \
 	lalapps_tracksearch_averager \
 	lalapps_tracksearch_dat2pgmy
 
-MOSTLYCLEANFILES = \
+MOSTLYCLEANFILES += \
 	*.candidates \
 	*.dat \
 	*.pgm \
