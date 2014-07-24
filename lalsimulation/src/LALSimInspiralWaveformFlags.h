@@ -97,7 +97,8 @@ typedef enum {
   LAL_SIM_INSPIRAL_MODES_CHOICE_2AND3AND5L = (1<<4) - 1 -(1<<2),    /**< Inlude l=2,3,5 modes */
   LAL_SIM_INSPIRAL_MODES_CHOICE_2AND4AND5L = (1<<4) - 1 -(1<<1),    /**< Inlude l=2,4,5 modes */
   LAL_SIM_INSPIRAL_MODES_CHOICE_3AND4AND5L = (1<<4) - (1<<1),       /**< Inlude l=3,4,5 modes */
-  LAL_SIM_INSPIRAL_MODES_CHOICE_ALL        = (1<<4) - 1,            /**< Include l=2,3,4,5 modes */
+  LAL_SIM_INSPIRAL_MODES_CHOICE_2AND3AND4AND5L = (1<<4) - 1,        /**< Include l=2,3,4,5 modes */
+  LAL_SIM_INSPIRAL_MODES_CHOICE_ALL        = - 1,                   /**< Include all available modes */
 } LALSimInspiralModesChoice;
 
 /**

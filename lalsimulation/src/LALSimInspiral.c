@@ -3092,34 +3092,36 @@ int XLALGetFrameAxisFromString(const CHAR *inString)
  */
 int XLALGetHigherModesFromString(const CHAR *inString)
 {
-  if (strstr(inString, "L2"))
-    return LAL_SIM_INSPIRAL_MODES_CHOICE_RESTRICTED;
-  else if (strstr(inString, "L3"))
-    return  LAL_SIM_INSPIRAL_MODES_CHOICE_3L;
-  else if (strstr(inString, "L4"))
-    return  LAL_SIM_INSPIRAL_MODES_CHOICE_3L;
-  else if (strstr(inString, "L23"))
-    return  LAL_SIM_INSPIRAL_MODES_CHOICE_2AND3L;
-  else if (strstr(inString, "L24"))
-    return  LAL_SIM_INSPIRAL_MODES_CHOICE_2AND4L;
-  else if (strstr(inString, "L34"))
-    return  LAL_SIM_INSPIRAL_MODES_CHOICE_3AND4L;
+  if (strstr(inString, "L2345"))
+    return  LAL_SIM_INSPIRAL_MODES_CHOICE_2AND3AND4AND5L;
   else if (strstr(inString, "L234"))
     return  LAL_SIM_INSPIRAL_MODES_CHOICE_2AND3AND4L;
-  else if (strstr(inString, "L5"))
-    return  LAL_SIM_INSPIRAL_MODES_CHOICE_5L;
-  else if (strstr(inString, "L25"))
-    return  LAL_SIM_INSPIRAL_MODES_CHOICE_2AND5L;
-  else if (strstr(inString, "L35"))
-    return  LAL_SIM_INSPIRAL_MODES_CHOICE_3AND5L;
-  else if (strstr(inString, "L45"))
-    return  LAL_SIM_INSPIRAL_MODES_CHOICE_4AND5L;
   else if (strstr(inString, "L235"))
     return  LAL_SIM_INSPIRAL_MODES_CHOICE_2AND3AND5L;
   else if (strstr(inString, "L245"))
     return  LAL_SIM_INSPIRAL_MODES_CHOICE_2AND4AND5L;
   else if (strstr(inString, "L345"))
     return  LAL_SIM_INSPIRAL_MODES_CHOICE_3AND4AND5L;
+  else if (strstr(inString, "L23"))
+    return  LAL_SIM_INSPIRAL_MODES_CHOICE_2AND3L;
+  else if (strstr(inString, "L24"))
+    return  LAL_SIM_INSPIRAL_MODES_CHOICE_2AND4L;
+  else if (strstr(inString, "L34"))
+    return  LAL_SIM_INSPIRAL_MODES_CHOICE_3AND4L;
+  else if (strstr(inString, "L25"))
+    return  LAL_SIM_INSPIRAL_MODES_CHOICE_2AND5L;
+  else if (strstr(inString, "L35"))
+    return  LAL_SIM_INSPIRAL_MODES_CHOICE_3AND5L;
+  else if (strstr(inString, "L45"))
+    return  LAL_SIM_INSPIRAL_MODES_CHOICE_4AND5L;
+  else if (strstr(inString, "L2"))
+    return LAL_SIM_INSPIRAL_MODES_CHOICE_RESTRICTED;
+  else if (strstr(inString, "L3"))
+    return  LAL_SIM_INSPIRAL_MODES_CHOICE_3L;
+  else if (strstr(inString, "L4"))
+    return  LAL_SIM_INSPIRAL_MODES_CHOICE_4L;
+  else if (strstr(inString, "L5"))
+    return  LAL_SIM_INSPIRAL_MODES_CHOICE_5L;
   else if (strstr(inString, "ALL"))
     return  LAL_SIM_INSPIRAL_MODES_CHOICE_ALL;
   else {
