@@ -46,9 +46,9 @@ extern "C" {
  * quantity has units of strain per root hertz, one constructs the unit
  * &quot;strain per root hertz&quot; from the predefined \c lalStrainUnit and
  * \c lalHertzUnit constant structures using the
- * LALUnitRaise() and LALUnitMultiply() functions, then
+ * XLALUnitRaiseRAT4() and XLALUnitMultiply() functions, then
  * compares that to the unit structure in question using the
- * LALUnitCompare() function.
+ * XLALUnitCompare() function.
  *
  * The LALUnit datatype itself is included in the header
  * \ref LALDatatypes.h, and defines a unit in terms of an integer
@@ -126,58 +126,6 @@ extern "C" {
  */
 /*@{*/
 
-/** \name Error Codes */
-/*@{*/
-#define UNITSH_ENULLPIN         1	/**< Null pointer to input */
-#define UNITSH_ENULLPOUT        2	/**< Null pointer to output */
-#define UNITSH_ENULLPD          3	/**< Null pointer to data member of vector */
-#define UNITSH_ENULLPPARAM      4	/**< Null pointer to parameters */
-#define UNITSH_ESTRINGSIZE      5	/**< Output string too short */
-#define UNITSH_EOVERFLOW        6	/**< Exponent outside of (U)INT2 bounds */
-#define UNITSH_ENONINT          7	/**< Non-integer power of ten */
-#define UNITSH_EPARSE           8	/**< Error parsing unit string */
-/*@}*/
-
-/** \cond DONT_DOXYGEN */
-#define UNITSH_MSGENULLPIN      "Null pointer to input"
-#define UNITSH_MSGENULLPOUT     "Null pointer to output"
-#define UNITSH_MSGENULLPD       "Null pointer to data member of vector"
-#define UNITSH_MSGENULLPPARAM   "Null pointer to parameters"
-#define UNITSH_MSGESTRINGSIZE   "Output string too short"
-#define UNITSH_MSGEOVERFLOW     "Exponent outside of (U)INT2 bounds"
-#define UNITSH_MSGENONINT       "Non-integer power of ten"
-#define UNITSH_MSGEPARSE        "Error parsing unit string"
-/** \endcond */
-
-/**
- * A four-byte rational number, used as a parameter structure for
- * LALUnitRaise().
- */
-typedef struct
-tagRAT4
-{
-  INT2 numerator;		/**< The numerator */
-  UINT2 denominatorMinusOne;	/**< One less than the denominator */
-} RAT4;
-
-/**
- * Consists of a pair of unit structures; used as an input structure for
- * the LALUnitCompare() and LALUnitMultiply() functions.
- */
-#ifdef SWIG /* SWIG interface directives */
-SWIGLAL(IMMUTABLE_MEMBERS(tagLALUnitPair, unitOne, unitTwo));
-#endif /* SWIG */
-typedef struct
-tagLALUnitPair
-{
-  const LALUnit   *unitOne;	/**< The first unit */
-  const LALUnit   *unitTwo;	/**< The second unit */
-}
-LALUnitPair;
-
-/*@}*/
-/* end: Units_h */
-
 /*********************************************************
  *                                                       *
  *       Functions to manipulate unit structures         *
@@ -185,6 +133,17 @@ LALUnitPair;
  *********************************************************/
 
 #ifndef SWIG /* exclude from SWIG interface */
+
+/**
+ * A four-byte rational number, used as a parameter structure for
+ * XLALUnitRaiseRAT4().
+ */
+typedef struct
+tagRAT4
+{
+  INT2 numerator;		/**< The numerator */
+  UINT2 denominatorMinusOne;	/**< One less than the denominator */
+} RAT4;
 
 /* XLAL routines */
 char * XLALUnitAsString( char *string, UINT4 length, const LALUnit *input );
@@ -207,14 +166,6 @@ REAL8 XLALUnitPrefactor(const LALUnit *unit);
 int XLALUnitIsDimensionless(const LALUnit *unit);
 REAL8 XLALUnitRatio(const LALUnit *unit1, const LALUnit *unit2);
 
-/* Obsolete LAL-interface functions */
-void LALUnitNormalize (LALStatus *status, LALUnit *output, const LALUnit *input);
-void LALUnitMultiply (LALStatus *status, LALUnit *output, const LALUnitPair *input);
-void LALUnitCompare (LALStatus *status, BOOLEAN *output, const LALUnitPair *input);
-void LALUnitRaise (LALStatus *status, LALUnit *output, const LALUnit *input, const RAT4 *power);
-void LALUnitAsString (LALStatus *status, CHARVector *output, const LALUnit *input);
-void LALParseUnitString ( LALStatus *status, LALUnit *output, const CHARVector *input );
-
 enum enumLALUnitNameSize {
   LALUnitNameSize = sizeof("strain")
 };
@@ -236,12 +187,12 @@ extern const CHAR lalUnitName[LALNumUnits][LALUnitNameSize];
  *********************************************************/
 
 /* Predefined constant units make it easier for programmers to specify
- * and compare (using LALUnitCompare) units more easily.  Those given
+ * and compare (using XLALUnitCompare) units more easily.  Those given
  * here are an example; more can be added.
  */
 
 /* LALUnitsTest.c will verify the definitions of the derived units,
- * for example using LALUnitRaise, LALUnitMultiply and LALUnitCompare
+ * for example using XLALUnitRaise, XLALUnitMultiply and XLALUnitCompare
  * to show that 1 Farad = 1 Coulomb Volt^-1
  */
 
@@ -299,39 +250,8 @@ extern const LALUnit lalGramUnit      ;
 extern const LALUnit lalAttoStrainUnit;
 extern const LALUnit lalPicoFaradUnit ;
 
-
-/*********************************************************
- *                                                       *
- *    Functions to manipulate quantities with units      *
- *                                                       *
- *********************************************************/
-
-/* The various RescaleUnits routines will change the power of ten
- * offset in the unit structure of a structured datatype to the
- * specified value and multiply each element of the structure by the
- * appropriate factor, so that for instance {15, 0, .24} x 10^-3 kg
- * becomes {.015, 0, .00024} kg if newPowerOfTen is 0.
- */
-/* There will be routines for each type of series; examples are given
- * below.
- */
-/*
-void LALSFRescaleUnits (LALStatus *status, REAL4FrequencySeries *output,
-			const REAL4FrequencySeries *input,
-			const INT2 *newPowerOfTen);
-
-void LALCTRescaleUnits (LALStatus *status, COMPLEX8TimeSeries *output,
-			const COMPLEX8TimeSeries *input,
-			const INT2 *newPowerOfTen);
-
-void LALI2TVRescaleUnits (LALStatus *status, INT2TimeVectorSeries *output,
-			  const INT2TimeVectorSeries *input,
-			  const INT2 *newPowerOfTen);
-
-void LALU2TARescaleUnits (LALStatus *status, UINT2TimeArraySeries *output,
-			  const UINT2TimeArraySeries *input,
-			  const INT2 *newPowerOfTen);
-*/
+/*@}*/
+/* end: Units_h */
 
 #ifdef  __cplusplus
 }
