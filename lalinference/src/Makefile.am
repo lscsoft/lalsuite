@@ -42,7 +42,6 @@ liblalinference_la_SOURCES = \
 	LALInferenceVCSInfo.c \
 	LALInferenceRemoveLines.c \
 	logaddexp.h \
-	likely.h \
 	$(BAYESTARSRC) \
 	$(XMLSRC)
 nodist_liblalinference_la_SOURCES = LALInferenceBuildInfo.c
