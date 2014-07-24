@@ -1,0 +1,12 @@
+#!/bin/sh
+lalsuite_pythonpath="@lalsuite_pythonpath@"
+case "${PYTHONPATH}:" in
+    "${lalsuite_pythonpath}:"*)
+        ;;
+    *)
+        PYTHONPATH="${lalsuite_pythonpath}:${PYTHONPATH}"
+        ;;
+esac
+export PYTHONPATH
+exec "@PYTHON@" "$@"
+exit $?

@@ -7,7 +7,7 @@
 *.pyo
 .deps
 .libs
-.pybin
+.python_wrapper
 /_build/
 /_inst/
 /lalpulsar-*/
