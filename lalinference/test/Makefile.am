@@ -13,9 +13,11 @@ test_programs += LALInferenceXMLTest
 endif
 
 # Add shell, Python, etc. test scripts to this variable
+if SWIG_BUILD_PYTHON
 #test_scripts += test_plot.py
 if HAVE_CHEALPIX
 test_scripts += test_bayestar.py
+endif
 endif
 
 # Add any helper programs required by tests to this variable
