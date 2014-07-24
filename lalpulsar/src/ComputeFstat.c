@@ -289,24 +289,12 @@ XLALCreateFstatInput ( const SFTCatalog *SFTcatalog,		  ///< [in] Catalog of SFT
                   "All 'locator' fields of SFTDescriptors in 'SFTcatalog' must be either NULL or !NULL." );
     }
 
-  // Create a multi-view of SFT catalog
-  MultiSFTCatalogView *multiSFTcatalog = XLALGetMultiSFTCatalogView(SFTcatalog);
-  XLAL_CHECK_NULL ( multiSFTcatalog != NULL, XLAL_EFUNC );
-  const UINT4 numDetectors = multiSFTcatalog->length;
-
-  // check that no single-SFT input vectors are given to avoid returning singular results:
-  for ( UINT4 X=0; X < numDetectors; X ++ ) {
-    XLAL_CHECK_NULL ( multiSFTcatalog->data[X].length > 1, XLAL_EINVAL, "Need more than 1 SFTs per Detector!\n" );
-  }
-
   // Check remaining parameters
   XLAL_CHECK_NULL ( isfinite(minCoverFreq) && minCoverFreq > 0, XLAL_EINVAL );
   XLAL_CHECK_NULL ( isfinite(maxCoverFreq) && maxCoverFreq > 0, XLAL_EINVAL );
   XLAL_CHECK_NULL ( maxCoverFreq > minCoverFreq, XLAL_EINVAL );
   XLAL_CHECK_NULL ( injectSources == NULL || injectSources->length > 0, XLAL_EINVAL );
   XLAL_CHECK_NULL ( injectSources == NULL || injectSources->data != NULL, XLAL_EFAULT );
-  XLAL_CHECK_NULL ( injectSqrtSX == NULL || injectSqrtSX->length == numDetectors, XLAL_EINVAL );
-  XLAL_CHECK_NULL ( assumeSqrtSX == NULL || assumeSqrtSX->length == numDetectors, XLAL_EINVAL );
   XLAL_CHECK_NULL ( ephemerides != NULL, XLAL_EFAULT );
   XLAL_CHECK_NULL ( extraParams != NULL, XLAL_EFAULT );
   XLAL_CHECK_NULL ( extraParams->SSBprec < SSBPREC_LAST, XLAL_EINVAL );
@@ -375,12 +363,37 @@ XLALCreateFstatInput ( const SFTCatalog *SFTcatalog,		  ///< [in] Catalog of SFT
 
   } // end: block to determine frequency-bins range
 
-  // Extract detectors and timestamps from multi-view of SFT catalog
-  XLAL_CHECK_NULL ( XLALMultiLALDetectorFromMultiSFTCatalogView( &common->detectors, multiSFTcatalog ) == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK_NULL ( (common->timestamps = XLALTimestampsFromMultiSFTCatalogView(multiSFTcatalog)) != NULL,  XLAL_EFUNC );
+  // Load SFTs, if required, and extract detectors and timestamps
+  MultiSFTVector *multiSFTs = NULL;
+  if (loadSFTs) {
+
+    // Load all SFTs at once
+    XLAL_CHECK_NULL ( ( multiSFTs = XLALLoadMultiSFTs(SFTcatalog, minFreqFull, maxFreqFull) ) != NULL, XLAL_EFUNC );
+
+    // Extract detectors and timestamps from SFTs
+    XLAL_CHECK_NULL ( XLALMultiLALDetectorFromMultiSFTs ( &common->detectors, multiSFTs ) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK_NULL ( ( common->timestamps = XLALExtractMultiTimestampsFromSFTs ( multiSFTs ) ) != NULL,  XLAL_EFUNC );
+
+  } else {
+
+    // Create a multi-view of SFT catalog
+    MultiSFTCatalogView *multiSFTcatalog = XLALGetMultiSFTCatalogView(SFTcatalog);
+    XLAL_CHECK_NULL ( multiSFTcatalog != NULL, XLAL_EFUNC );
+
+    // Extract detectors and timestamps from multi-view of SFT catalog
+    XLAL_CHECK_NULL ( XLALMultiLALDetectorFromMultiSFTCatalogView ( &common->detectors, multiSFTcatalog ) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK_NULL ( ( common->timestamps = XLALTimestampsFromMultiSFTCatalogView ( multiSFTcatalog ) ) != NULL,  XLAL_EFUNC );
+
+    // Cleanup
+    XLALDestroyMultiSFTCatalogView ( multiSFTcatalog );
+
+  }
+
+  // Check length of multi-noise floor arrays
+  XLAL_CHECK_NULL ( injectSqrtSX == NULL || injectSqrtSX->length == common->detectors.length, XLAL_EINVAL );
+  XLAL_CHECK_NULL ( assumeSqrtSX == NULL || assumeSqrtSX->length == common->detectors.length, XLAL_EINVAL );
 
   // Generate SFTs with injections and noise, if required
-  MultiSFTVector *multiSFTs = NULL;
   if (generateSFTs)
     {
       // Initialise parameters struct for XLALCWMakeFakeMultiData()
@@ -395,35 +408,27 @@ XLALCreateFstatInput ( const SFTCatalog *SFTcatalog,		  ///< [in] Catalog of SFT
       if ( injectSqrtSX != NULL ) {
         MFDparams.multiNoiseFloor = (*injectSqrtSX);
       } else {
-        MFDparams.multiNoiseFloor.length = numDetectors;
+        MFDparams.multiNoiseFloor.length = common->detectors.length;
       }
 
       // Generate SFTs with injections
-      XLAL_CHECK_NULL ( XLALCWMakeFakeMultiData ( &multiSFTs, NULL, injectSources, &MFDparams, ephemerides ) == XLAL_SUCCESS, XLAL_EFUNC );
+      MultiSFTVector *fakeMultiSFTs = NULL;
+      XLAL_CHECK_NULL ( XLALCWMakeFakeMultiData ( &fakeMultiSFTs, NULL, injectSources, &MFDparams, ephemerides ) == XLAL_SUCCESS, XLAL_EFUNC );
+
+      // If SFTs were loaded, add generated SFTs to then, otherwise just used generated SFTs
+      if (multiSFTs != NULL) {
+        XLAL_CHECK_NULL ( XLALMultiSFTVectorAdd ( multiSFTs, fakeMultiSFTs ) == XLAL_SUCCESS, XLAL_EFUNC );
+        XLALDestroyMultiSFTVector ( fakeMultiSFTs );
+      } else {
+        multiSFTs = fakeMultiSFTs;
+      }
 
     } // if generateSFTs
 
-  // Load SFTs, if required
-  if (loadSFTs)
-    {
-      // If no SFTs have been generated, then load all SFTs at once
-      if (multiSFTs == NULL)
-        {
-          XLAL_CHECK_NULL ( ( multiSFTs = XLALLoadMultiSFTs(SFTcatalog, minFreqFull, maxFreqFull) ) != NULL, XLAL_EFUNC );
-        }
-      else
-        {
-          // Otherwise, to minimize memory usage, loop over detectors, load SFTs and add them to generated SFTs
-          for ( UINT4 X = 0; X < numDetectors; ++X )
-            {
-              SFTVector *loadedSFTs = NULL;
-              XLAL_CHECK_NULL ( ( loadedSFTs = XLALLoadSFTs ( &multiSFTcatalog->data[X], minFreqFull, maxFreqFull) ) != NULL, XLAL_EFUNC );
-              XLAL_CHECK_NULL ( XLALSFTVectorAdd ( multiSFTs->data[X], loadedSFTs ) == XLAL_SUCCESS, XLAL_EFUNC );
-              XLALDestroySFTVector ( loadedSFTs );
-            } // for X < numDetectors
-        } // if multiSFTs != NULL
-
-    } // if loadSFTs
+  // Check that no single-SFT input vectors are given to avoid returning singular results
+  for ( UINT4 X = 0; X < common->detectors.length; ++X ) {
+    XLAL_CHECK_NULL ( multiSFTs->data[X]->length > 1, XLAL_EINVAL, "Need more than 1 SFTs per Detector!\n" );
+  }
 
   // Normalise SFTs using either running median or assumed PSDs
   MultiPSDVector *runningMedian = XLALNormalizeMultiSFTVect ( multiSFTs, runningMedianWindow, assumeSqrtSX );
@@ -466,7 +471,6 @@ XLALCreateFstatInput ( const SFTCatalog *SFTcatalog,		  ///< [in] Catalog of SFT
   multiSFTs = NULL;
 
   // Cleanup
-  XLALDestroyMultiSFTCatalogView ( multiSFTcatalog );
   XLALDestroyMultiPSDVector ( runningMedian );
 
   return input;
