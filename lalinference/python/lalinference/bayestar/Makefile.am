@@ -31,6 +31,6 @@ endif
 all-local: sky_map.so
 
 sky_map.so:
-	$(LN_S) .libs/$@
+	rm -f $@ && $(LN_S) .libs/$@
 
 CLEANFILES = sky_map.so
