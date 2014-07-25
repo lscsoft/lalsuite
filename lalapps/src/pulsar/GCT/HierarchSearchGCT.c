@@ -2102,7 +2102,7 @@ void SetUpSFTs( LALStatus *status,			/**< pointer to LALStatus structure */
     if ( in->segmentList ) {
       /* check the number of SFTs we found in this segment against the nominal value, stored in the segment list field 'id' */
       UINT4 nSFTsExpected = in->segmentList->segs[k].id;
-      if ( nSFTsInSeg != nSFTsExpected ) {
+      if ( (nSFTsExpected > 0) && (nSFTsInSeg != nSFTsExpected) ) {
         XLALPrintError ("%s: Segment list seems inconsistent with data read: segment %d contains %d SFTs, should hold %d SFTs\n", __func__, k, nSFTsInSeg, nSFTsExpected );
         ABORT ( status, HIERARCHICALSEARCH_EBAD, HIERARCHICALSEARCH_MSGEBAD );
       }
