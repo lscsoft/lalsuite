@@ -20,8 +20,6 @@ pymodule_PYTHON = \
 	timing.py \
 	$(END_OF_LIST)
 
-endif
-
 if HAVE_CHEALPIX
 if SWIG_BUILD_PYTHON
 pymodule_LTLIBRARIES = sky_map.la
@@ -38,3 +36,5 @@ sky_map.so:
 	rm -f $@ && $(LN_S) .libs/$@
 
 CLEANFILES = sky_map.so
+
+endif
