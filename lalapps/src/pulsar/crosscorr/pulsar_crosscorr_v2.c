@@ -65,8 +65,8 @@ typedef struct{
   REAL8   orbitTimeAsc;       /**< start time of ascension for binary orbit */
   REAL8   orbitTimeAscBand;   /**< band for time of ascension for binary orbit */
   CHAR    *sftLocation;       /**< location of SFT data */
-  CHAR    *ephemEarth;		/**< Earth ephemeris file to use */
-  CHAR    *ephemSun;		/**< Sun ephemeris file to use */
+  CHAR    *ephemEarth;	      /**< Earth ephemeris file to use */
+  CHAR    *ephemSun;	      /**< Sun ephemeris file to use */
   INT4    rngMedBlock;        /**< running median block size */
   INT4    numBins;            /**< number of frequency bins to include in sum */
   REAL8   mismatchF;          /**< mismatch for frequency spacing */
@@ -74,6 +74,7 @@ typedef struct{
   REAL8   mismatchT;          /**< mismatch for spacing in time of periapse passage */
   REAL8   mismatchP;          /**< mismatch for spacing in period */
   INT4    numCand;            /**< number of candidates to keep in output toplist */
+  BOOLEAN readlist;           /**Flag indicate whether read in SFT-pair list, if FALSE, output SFT-pair list*/
   CHAR    *toplistFilename;   /**< output filename containing candidates in toplist */
 } UserInput_t;
 
@@ -122,6 +123,7 @@ int main(int argc, char *argv[]){
   MultiSSBtimes *multiBinaryTimes = NULL;
 
   INT4  k;
+  UINT4 j;
   REAL8 fMin, fMax; /* min and max frequencies read from SFTs */
   REAL8 deltaF; /* frequency resolution associated with time baseline of SFTs */
 
@@ -138,6 +140,7 @@ int main(int argc, char *argv[]){
   CrossCorrBinaryOutputEntry thisCandidate;
   UINT4 checksum;
 
+  LogPrintf (LOG_CRITICAL, "starting time\n", 0);/*for debug convenience to record calculating time*/
   /* initialize and register user variables */
   if ( XLALInitUserVars( &uvar ) != XLAL_SUCCESS ) {
     LogPrintf ( LOG_CRITICAL, "%s: XLALInitUserVars() failed with errno=%d\n", __func__, xlalErrno );
@@ -188,7 +191,6 @@ int main(int argc, char *argv[]){
   /* if (!(LALUserVarWasSet (&uvar_fResolution))) { */
   /*   uvar_fResolution = 1/tObs; */
   /* } */
-  LogPrintf (LOG_CRITICAL, "starting time\n", 0);/*for debug convenience to record calculating time*/
 
   /* { */
   /*   /\* block for calculating frequency range to read from SFTs *\/ */
@@ -289,11 +291,56 @@ int main(int argc, char *argv[]){
   }
 
   /* Construct the list of SFT pairs */
+#define SFTPAIRFILENAME "SFTpairlist.dat"
+#define SFTFILENAME "SFTlist.dat"
+#define PCC_SFTPAIR_HEADER "# The length of SFT-pair list is %u #\n"
+#define PCC_SFT_HEADER "# The length of SFT list is %u #\n"
+  FILE *fp = NULL;
 
-  if ( ( XLALCreateSFTPairIndexList( &sftPairs, sftIndices, inputSFTs, uvar.maxLag, uvar.inclAutoCorr ) != XLAL_SUCCESS ) ) {
-    LogPrintf ( LOG_CRITICAL, "%s: XLALCreateSFTPairIndexList() failed with errno=%d\n", __func__, xlalErrno );
-    XLAL_ERROR( XLAL_EFUNC );
-  }
+  if (uvar.readlist == FALSE) /*Probably no need to introduce a flag, while it can just test whether the file exists or not, but it works well now/Harry*/
+    {
+      if ( ( XLALCreateSFTPairIndexList( &sftPairs, sftIndices, inputSFTs, uvar.maxLag, uvar.inclAutoCorr ) != XLAL_SUCCESS ) ) {
+	LogPrintf ( LOG_CRITICAL, "%s: XLALCreateSFTPairIndexList() failed with errno=%d\n", __func__, xlalErrno );
+	XLAL_ERROR( XLAL_EFUNC );
+      }
+
+      fp = fopen(SFTPAIRFILENAME,"w");
+      fprintf(fp,PCC_SFTPAIR_HEADER, sftPairs->length ); /*output the length of SFT-pair list to the header*/
+      for(j = 0; j < sftPairs->length; j++){
+	fprintf(fp,"%u %u\n", sftPairs->data[j].sftNum[0], sftPairs->data[j].sftNum[1]);
+      }
+      fclose(fp);
+
+      fp = fopen(SFTFILENAME,"w");
+      fprintf(fp,PCC_SFT_HEADER, sftIndices->length ); /*output the length of SFT list to the header*/
+      for(j = 0; j < sftIndices->length; j++){ /*output the SFT list */
+	fprintf(fp,"%u %u\n", sftIndices->data[j].detInd, sftIndices->data[j].sftInd);
+      }
+      fclose(fp);
+    }
+  else
+    {
+      if((sftPairs = XLALCalloc(1, sizeof(*sftPairs))) == NULL){
+	XLAL_ERROR(XLAL_ENOMEM);
+      }
+
+      if((fp = fopen(SFTPAIRFILENAME, "r")) == NULL){
+	LogPrintf ( LOG_CRITICAL, "didn't find SFT-pari list while readin = TRUE\n", 0);
+	XLAL_ERROR( XLAL_EFUNC );
+	}
+      fscanf(fp,PCC_SFTPAIR_HEADER,&sftPairs->length);
+
+      if((sftPairs->data = XLALCalloc(sftPairs->length, sizeof(*sftPairs->data)))==NULL){
+	XLALFree(sftPairs);
+	XLAL_ERROR(XLAL_ENOMEM);
+      }
+
+      for(j = 0; j < sftPairs->length; j++){ /*read in  the SFT-pair list */
+	fscanf(fp,"%u %u\n", &sftPairs->data[j].sftNum[0], &sftPairs->data[j].sftNum[1]);
+      }
+      fclose(fp);
+
+    }
 
   /* Get weighting factors for calculation of metric */
   /* note that the sigma-squared is now absorbed into the curly G
@@ -500,7 +547,7 @@ int XLALInitUserVars (UserInput_t *uvar)
   uvar->deltaRad = 0.0;
   uvar->rngMedBlock = 50;
   uvar->numBins = 1;
-
+  uvar->readlist = FALSE;
   /* default for reftime is in the middle */
   uvar->refTime = 0.5*(uvar->startTime + uvar->endTime);
 
@@ -530,7 +577,7 @@ int XLALInitUserVars (UserInput_t *uvar)
 
 
   /* register  user-variables */
-  XLALregBOOLUserStruct ( help, 	   'h',  UVAR_HELP, "Print this message");
+  XLALregBOOLUserStruct  ( help, 	   'h',  UVAR_HELP, "Print this message");
   XLALregINTUserStruct   ( startTime,       0,  UVAR_OPTIONAL, "Desired start time of analysis in GPS seconds");
   XLALregINTUserStruct   ( endTime,         0,  UVAR_OPTIONAL, "Desired end time of analysis in GPS seconds");
   XLALregREALUserStruct  ( maxLag,          0,  UVAR_OPTIONAL, "Maximum lag time in seconds between SFTs in correlation");
@@ -558,6 +605,7 @@ int XLALInitUserVars (UserInput_t *uvar)
   XLALregREALUserStruct  ( mismatchP,       0,  UVAR_OPTIONAL, "Desired mismatch for period spacing");
   XLALregINTUserStruct   ( numCand,         0,  UVAR_OPTIONAL, "Number of candidates to keep in toplist");
   XLALregSTRINGUserStruct( toplistFilename, 0,  UVAR_OPTIONAL, "Output filename containing candidates in toplist");
+  XLALregBOOLUserStruct  ( readlist,        0,  UVAR_OPTIONAL, "Read in the SFT-pair list(FALSE) or output(TRUE)");
 
   if ( xlalErrno ) {
     XLALPrintError ("%s: user variable initialization failed with errno = %d.\n", __func__, xlalErrno );
