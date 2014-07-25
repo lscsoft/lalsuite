@@ -2041,7 +2041,8 @@ void SetUpSFTs( LALStatus *status,			/**< pointer to LALStatus structure */
     /* if single-only flag is given, assume a PSD with sqrt(S) = 1.0 */
     MultiNoiseFloor assumeSqrtSX, *p_assumeSqrtSX;
     if ( in->SignalOnly ) {
-      assumeSqrtSX.length = XLALCountIFOsInCatalog(catalog);
+      const SFTCatalog *catalog_k = &(catalogSeq.data[k]);
+      assumeSqrtSX.length = XLALCountIFOsInCatalog ( catalog_k );
       for (UINT4 X = 0; X < assumeSqrtSX.length; ++X) {
         assumeSqrtSX.sqrtSn[X] = 1.0;
       }
