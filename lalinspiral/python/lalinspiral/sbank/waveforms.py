@@ -586,10 +586,10 @@ class SEOBNRv1Template(Template):
         N = int(sample_rate / df)
         hplus = lal.ResizeREAL8TimeSeries(hplus, 0, N)
         # taper
-        lalsim.SimInspiralREAL8WaveTaper(hplus.data, lalsim.LAL_SIM_INSPIRAL_TAPER_START)
+        lalsim.SimInspiralREAL8WaveTaper(hplus.data, lalsim.SIM_INSPIRAL_TAPER_START)
 
         # create vector to hold output and plan
-        htilde = lal.CreateCOMPLEX16FrequencySeries("h(f)", hplus.epoch, hplus.f0, df, lal.lalHertzUnit, int(N/2 + 1))
+        htilde = lal.CreateCOMPLEX16FrequencySeries("h(f)", hplus.epoch, hplus.f0, df, lal.HertzUnit, int(N/2 + 1))
         fftplan = lal.CreateForwardREAL8FFTPlan(N, 0)
 
         # do the fft
@@ -672,10 +672,10 @@ class EOBNRv2Template(Template):
         N = int(sample_rate / df)
         hplus = lal.ResizeREAL8TimeSeries(hplus, 0, N)
         # taper
-        lalsim.SimInspiralREAL8WaveTaper(hplus.data, lalsim.LAL_SIM_INSPIRAL_TAPER_START)
+        lalsim.SimInspiralREAL8WaveTaper(hplus.data, lalsim.SIM_INSPIRAL_TAPER_START)
 
         # create vector to hold output and plan
-        htilde = lal.CreateCOMPLEX16FrequencySeries("h(f)", hplus.epoch, hplus.f0, df, lal.lalHertzUnit, int(N/2 + 1))
+        htilde = lal.CreateCOMPLEX16FrequencySeries("h(f)", hplus.epoch, hplus.f0, df, lal.HertzUnit, int(N/2 + 1))
         fftplan = lal.CreateForwardREAL8FFTPlan(N, 0)
 
         # do the fft
@@ -796,7 +796,7 @@ class SpinTaylorT4Template(Template):
         lalsim.SimInspiralREAL8WaveTaper(hoft.data, lalsim.SIM_INSPIRAL_TAPER_STARTEND)
 
         # create vector to hold output and plan
-        htilde = lal.CreateCOMPLEX16FrequencySeries("h(f)", hoft.epoch, hoft.f0, df, lal.lalHertzUnit, int(N/2 + 1))
+        htilde = lal.CreateCOMPLEX16FrequencySeries("h(f)", hoft.epoch, hoft.f0, df, lal.HertzUnit, int(N/2 + 1))
         fftplan = lal.CreateForwardREAL8FFTPlan(N, 0)
 
         # do the fft
@@ -874,10 +874,10 @@ class SpinTaylorT5Template(Template):
         hoft = lal.ResizeREAL8TimeSeries(hoft, 0, N)
 
         # taper
-        lalsim.SimInspiralREAL8WaveTaper(hoft.data, lalsim.LAL_SIM_INSPIRAL_TAPER_STARTEND)
+        lalsim.SimInspiralREAL8WaveTaper(hoft.data, lalsim.SIM_INSPIRAL_TAPER_STARTEND)
 
         # create vector to hold output and plan
-        htilde = lal.CreateCOMPLEX16FrequencySeries("h(f)", hoft.epoch, hoft.f0, df, lal.lalHertzUnit, int(N/2 + 1))
+        htilde = lal.CreateCOMPLEX16FrequencySeries("h(f)", hoft.epoch, hoft.f0, df, lal.HertzUnit, int(N/2 + 1))
         fftplan = lal.CreateForwardREAL8FFTPlan(N, 0)
 
         # do the fft
