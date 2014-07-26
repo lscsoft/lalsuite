@@ -4,7 +4,7 @@ This program makes a dag to generate a stochastic template bank.
 
 __author__ = 'Stephen Privitera <stephen.privitera@ligo.org>'
 ##############################################################################
-# import standard modules
+# import standard modules and append the lalapps prefix to the python path
 import sys, os, shutil
 from itertools import cycle, izip
 import subprocess, socket, tempfile
@@ -362,7 +362,7 @@ else:
     mchirp_boundaries_fname, = sbankChooseMchirpBoundariesNode.get_output_files()
 
     # generate a bank for each mchirp region
-    for j in xrange(nbanks+1):
+    for j in xrange(nbanks):
         bank_node = SBankNode(sbankJob, dag, "%04d"%j, seed="%d" % (j*nbanks+1), mchirp_boundaries_file=mchirp_boundaries_fname, mchirp_boundaries_index=str(j), p_node=[sbankChooseMchirpBoundariesNode])
         bank_node.add_var_opt("match-min", mm)
         bank_node.set_priority(1)  # want complete bank before sims
@@ -371,15 +371,16 @@ else:
         bank_names.append(bank_name)
 
 # recombine bank fragments under a common name
-lwaddJob = LWAddJob(tag_base=options.user_tag + "_lwadd")
-lwaddNode = LWAddNode(lwaddJob, dag, bank_names, "H1-SBANK_COMBINED-%s.xml"%options.user_tag,bank_nodes)
+if not options.template_bank:
+    lwaddJob = LWAddJob(tag_base=options.user_tag + "_lwadd")
+    lwaddNode = LWAddNode(lwaddJob, dag, bank_names, "H1-SBANK_COMBINED-%s.xml"%options.user_tag,bank_nodes)
 
 # set up banksim parameters according to sbank parameters (if not provided)
 if not cp.has_option("banksim","flow"):
     cp.set("banksim","flow",cp.get("sbank","flow"))
 
 # you could want change the template waveform I guess...
-if not cp.has_option("banksim","approximant"):
+if not cp.has_option("banksim","template-approx"):
     cp.set("banksim","template-approx",cp.get("sbank","approximant"))
 
 # sim nodes

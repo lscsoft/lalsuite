@@ -204,13 +204,13 @@ def parse_command_line():
 
     if opts.mchirp_boundaries_file:
         boundaries = [float(line) for line in open(opts.mchirp_boundaries_file)]
-        if opts.mchirp_boundaries_index + 1 > len(boundaries):
+        if opts.mchirp_boundaries_index > len(boundaries):
             raise ValueError("mchirp boundaries file not long enough for requested index")
 
         if opts.mchirp_boundaries_index > 0:
-            opts.mchirp_min = float(boundaries[opts.mchirp_boundaries_index])
+            opts.mchirp_min = float(boundaries[opts.mchirp_boundaries_index - 1])
         if opts.mchirp_boundaries_index + 1 < len(boundaries):
-            opts.mchirp_max = float(boundaries[opts.mchirp_boundaries_index + 1])
+            opts.mchirp_max = float(boundaries[opts.mchirp_boundaries_index])
 
     return opts, args
 
