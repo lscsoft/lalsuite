@@ -347,7 +347,7 @@ def urand_tau0tau3_generator(flow, **constraints):
             yield mass1, mass2
 
 
-def IMRPhenomBC_param_generator(flow, **kwargs):
+def IMRPhenomB_param_generator(flow, **kwargs):
     """
     Specify the min and max mass of the bigger component, then
     the min and max mass of the total mass. This function includes
@@ -386,6 +386,37 @@ def IMRPhenomBC_param_generator(flow, **kwargs):
         yield mass1, mass2, spin1, spin2
 
 
+def IMRPhenomC_param_generator(flow, **kwargs):
+    """
+    Generate random parameters for the IMRPhenomC waveform model.
+    Specify the min and max mass of the bigger component, then the min
+    and max mass of the total mass. This function includes
+    restrictions on q and chi based on IMRPhenomC's range of
+    believability, namely q <=20 and |chi| <= 0.9.
+
+    @param flow: low frequency cutoff
+    @param kwargs: constraints on waveform parameters. See urand_tau0tau3_generator for more usage help. If no spin limits are specified, the IMRPhenomC limits will be used.
+    """
+
+    # get spin limits. IMRPhenomC has special bounds on chi, so we
+    # will silently truncate
+    s1min, s1max = kwargs.pop('spin1', (-0.9, 0.9))
+    s2min, s2max = kwargs.pop('spin2', (s1min, s1max))
+    s1min, s1max = (max(-0.9, s1min), min(0.9, s1max))
+    s2min, s2max = (max(-0.9, s2min), min(0.9, s2max))
+
+    for mass1, mass2 in urand_tau0tau3_generator(flow, **kwargs):
+
+        q = max(mass1/mass2, mass2/mass1)
+        if q <= 20:
+            spin1 = uniform(s1min, s1max)
+            spin2 = uniform(s2min, s2max)
+        else:
+            raise ValueError("mass ratio out of range")
+
+        yield mass1, mass2, spin1, spin2
+
+
 def aligned_spin_param_generator(flow, **kwargs):
     """
     Specify the min and max mass of the bigger component, the min and
@@ -407,8 +438,8 @@ def SpinTaylorT4_param_generator(flow, **kwargs):
     # FIXME implement!
     raise NotImplementedError
 
-proposals = {"IMRPhenomB":IMRPhenomBC_param_generator,
-             "IMRPhenomC":IMRPhenomBC_param_generator,
+proposals = {"IMRPhenomB":IMRPhenomB_param_generator,
+             "IMRPhenomC":IMRPhenomC_param_generator,
              "TaylorF2RedSpin":aligned_spin_param_generator,
              "EOBNRv2":urand_tau0tau3_generator,
              "SEOBNRv1":aligned_spin_param_generator,
