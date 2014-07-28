@@ -197,8 +197,6 @@ AC_DEFUN([LALSUITE_CHECK_GIT_REPO],[
   ])
   # conditional for git and building from a git repository
   AM_CONDITIONAL([HAVE_GIT_REPO],[test "x${have_git_repo}" = xyes])
-  # require Python for running generate_vcs_info.py
-  AM_COND_IF([HAVE_GIT_REPO],[LALSUITE_REQUIRE_PYTHON([2.6])])
   # end $0
 ])
 
