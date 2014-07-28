@@ -159,3 +159,5 @@ else
     mv -f "$output.tmp" "$output"
     test -n "$am_v_gen" && echo "$am_v_gen $output"
 fi
+
+exit 0
