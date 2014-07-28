@@ -419,6 +419,12 @@ AM_CPPFLAGS="-I\$(top_srcdir)/src ${AM_CPPFLAGS}"
 # RedHat-derived systems.
 AC_SUBST([pkgpythondir], ["\${pkgpyexecdir}"])
 
+# get the glue and pylal prefixes from the environment
+AC_SUBST([GLUE_PREFIX])
+AM_CONDITIONAL([HAVE_GLUE_PREFIX], [test ! -z "$GLUE_PREFIX"])
+AC_SUBST([PYLAL_PREFIX])
+AM_CONDITIONAL([HAVE_PYLAL_PREFIX], [test ! -z "$PYLAL_PREFIX"])
+
 # output
 AC_OUTPUT
 AC_MSG_NOTICE([
