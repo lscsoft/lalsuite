@@ -34,6 +34,12 @@
 
 #include "GSLHelpers.h"
 
+#ifdef __GNUC__
+#define UNUSED __attribute__ ((unused))
+#else
+#define UNUSED
+#endif
+
 // Square of a numbers
 #define SQR(x)       ((x)*(x))
 
@@ -827,6 +833,197 @@ int XLALConvertSuperSkyToPhysical(
   out_phys->Alpha = out_point[0];
   out_phys->Delta = out_point[1];
   memcpy(out_phys->fkdot, &out_point[2], fsize * sizeof(out_point[0]));
+
+  return XLAL_SUCCESS;
+
+}
+
+static void ReducedSuperSkyBCoordBound(
+  const size_t dimension UNUSED,
+  const gsl_vector* point,
+  const gsl_vector* bbox,
+  const void* data,
+  double* bound,
+  double* padding
+  )
+{
+
+  // Get bounds data
+  const double sgn = ((const double*) data)[0];
+
+  // Get 2-dimensional reduced super-sky A coordinate
+  const double A = gsl_vector_get(point, 0);
+  const double dA = fabs(A) - 1.0;
+
+  // Set bound on 2-dimensional reduced super-sky B coordinate
+  const double maxB = RE_SQRT(1.0 - SQR(dA));
+  *bound = sgn * maxB;
+
+  // Add sufficient extra padding on B, such that the bounding box of the
+  // boundary templates will not intersect the circular A-B parameter spaces
+  const double hbboxA = 0.5 * gsl_vector_get(bbox, 0);
+  const double absdA = fabs(dA);
+  if (absdA <= hbboxA) {
+    *padding += 1.0 - maxB;
+  } else if (absdA <= 1.0 + hbboxA) {
+    const double ddA = (dA < 0.0) ? dA + hbboxA : dA - hbboxA;
+    *padding += RE_SQRT(1.0 - ddA * ddA) - maxB;
+  }
+
+}
+
+int XLALSetLatticeReducedSuperSkyBounds(
+  LatticeTiling* tiling
+  )
+{
+
+  // Check input
+  XLAL_CHECK(tiling != NULL, XLAL_EFAULT);
+
+  // Set the parameter-space bound on 2-dimensional reduced super-sky A coordinate
+  XLAL_CHECK(XLALSetLatticeConstantBound(tiling, 0, -2.0, 2.0) == XLAL_SUCCESS, XLAL_EFUNC);
+
+  // Allocate memory
+  const size_t data_len = sizeof(double);
+  double* data_lower = XLALMalloc(data_len);
+  XLAL_CHECK(data_lower != NULL, XLAL_ENOMEM);
+  double* data_upper = XLALMalloc(data_len);
+  XLAL_CHECK(data_upper != NULL, XLAL_ENOMEM);
+
+  // Set the parameter-space bound on 2-dimensional reduced super-sky B coordinate
+  data_lower[0] = -1.0;
+  data_upper[0] = +1.0;
+  XLAL_CHECK(XLALSetLatticeBound(tiling, 1, ReducedSuperSkyBCoordBound, data_len, data_lower, data_upper) == XLAL_SUCCESS, XLAL_EFUNC);
+
+  return XLAL_SUCCESS;
+
+}
+
+int XLALSetLatticeReducedSuperSkyPointBounds(
+  LatticeTiling* tiling,
+  const gsl_matrix* rssky_transf,
+  const double alpha,
+  const double delta
+  )
+{
+
+  // Check input
+  XLAL_CHECK(tiling != NULL, XLAL_EFAULT);
+  XLAL_CHECK(rssky_transf != NULL, XLAL_EFAULT);
+
+  // Allocate memory
+  gsl_vector* GAVEC(rssky_point, rssky_transf->size1 - 1);
+
+  // Convert right ascension and declination to reduced super-sky coordinates
+  PulsarDopplerParams XLAL_INIT_DECL(doppler);
+  doppler.Alpha = alpha;
+  doppler.Delta = delta;
+  XLAL_CHECK(XLALConvertPhysicalToSuperSky(SSC_REDUCED_SUPER_SKY, rssky_point, &doppler, rssky_transf) == XLAL_SUCCESS, XLAL_EFUNC);
+
+  // Set the parameter-space bounds on 2-dimensional reduced super-sky A and B coordinates
+  for (size_t i = 0; i < 2; ++i) {
+    const double rssky_point_i = gsl_vector_get(rssky_point, i);
+    XLAL_CHECK(XLALSetLatticeConstantBound(tiling, i, rssky_point_i, rssky_point_i) == XLAL_SUCCESS, XLAL_EFUNC);
+  }
+
+  // Cleanup
+  GFVEC(rssky_point);
+
+  return XLAL_SUCCESS;
+
+}
+
+static void SuperSkySpinBound(
+  const size_t dimension UNUSED,
+  const gsl_vector* point,
+  const gsl_vector* bbox UNUSED,
+  const void* data,
+  double* bound,
+  double* padding UNUSED
+  )
+{
+
+  // Get bounds data
+  const double* sky_offsets = ((const double*) data);
+  *bound = ((const double*) data)[3];
+
+  // Add the inner product of the sky offsets with the aligned sky
+  // position to the super-sky bound to get the reduced super-sky bound
+  double as[3];
+  SSM_ReducedToAligned(as, point);
+  *bound += DOT3(sky_offsets, as);
+
+  // Add sufficient padding to the reduced super-sky bound to cover any
+  // mismatch in sky position, within the bounding box around each sky point
+  const double bboxA = gsl_vector_get(bbox, 0);
+  const double bboxB = gsl_vector_get(bbox, 1);
+  *padding += fabs(sky_offsets[0]) * bboxA  + fabs(sky_offsets[1]) * bboxB;
+
+}
+
+int XLALSetLatticeSuperSkySpinBound(
+  LatticeTiling* tiling,
+  const gsl_matrix* rssky_transf,
+  const size_t s,
+  const double bound1,
+  const double bound2
+  )
+{
+
+  // Check input
+  XLAL_CHECK(tiling != NULL, XLAL_EFAULT);
+  XLAL_CHECK(rssky_transf != NULL, XLAL_EFAULT);
+  XLAL_CHECK(rssky_transf->size1 > 3, XLAL_EINVAL);
+  XLAL_CHECK(isfinite(bound1), XLAL_EINVAL);
+  XLAL_CHECK(isfinite(bound2), XLAL_EINVAL);
+  const size_t smax = rssky_transf->size1 - 4;
+  XLAL_CHECK(s <= smax, XLAL_ESIZE);
+  const size_t dimension = (s == 0) ? (2 + smax) : (1 + s);
+  XLAL_CHECK(dimension < XLALLatticeDimensions(tiling), XLAL_ESIZE);
+
+  // Allocate memory
+  const size_t data_len = 4 * sizeof(double);
+  double* data_lower = XLALMalloc(data_len);
+  XLAL_CHECK(data_lower != NULL, XLAL_ENOMEM);
+  double* data_upper = XLALMalloc(data_len);
+  XLAL_CHECK(data_upper != NULL, XLAL_ENOMEM);
+
+  // Copy the sky offset vector to bounds data
+  for (size_t j = 0; j < 3; ++j) {
+    data_lower[j] = data_upper[j] = gsl_matrix_get(rssky_transf, dimension + 1, j);
+  }
+
+  // Set the parameter-space bound on (untransformed) super-sky frequency/spindown coordinate
+  data_lower[3] = GSL_MIN(bound1, bound2);
+  data_upper[3] = GSL_MAX(bound1, bound2);
+  XLAL_CHECK(XLALSetLatticeBound(tiling, dimension, SuperSkySpinBound, data_len, data_lower, data_upper) == XLAL_SUCCESS, XLAL_EFUNC);
+
+  return XLAL_SUCCESS;
+
+}
+
+int XLALSetLatticeReducedSuperSkySpinBound(
+  LatticeTiling* tiling,
+  const gsl_matrix* rssky_transf,
+  const size_t s,
+  const double bound1,
+  const double bound2
+  )
+{
+
+  // Check input
+  XLAL_CHECK(tiling != NULL, XLAL_EFAULT);
+  XLAL_CHECK(rssky_transf != NULL, XLAL_EFAULT);
+  XLAL_CHECK(rssky_transf->size1 > 3, XLAL_EINVAL);
+  XLAL_CHECK(isfinite(bound1), XLAL_EINVAL);
+  XLAL_CHECK(isfinite(bound2), XLAL_EINVAL);
+  const size_t smax = rssky_transf->size1 - 4;
+  XLAL_CHECK(s <= smax, XLAL_ESIZE);
+  const size_t dimension = (s == 0) ? (2 + smax) : (1 + s);
+  XLAL_CHECK(dimension < XLALLatticeDimensions(tiling), XLAL_ESIZE);
+
+  // Set the parameter-space bound on reduced super-sky frequency/spindown coordinate
+  XLAL_CHECK(XLALSetLatticeConstantBound(tiling, dimension, bound1, bound2) == XLAL_SUCCESS, XLAL_EFUNC);
 
   return XLAL_SUCCESS;
 

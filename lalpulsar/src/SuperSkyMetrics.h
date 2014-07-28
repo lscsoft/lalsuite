@@ -23,6 +23,7 @@
 #include <gsl/gsl_matrix.h>
 #include <lal/LALStdlib.h>
 #include <lal/UniversalDopplerMetric.h>
+#include <lal/LatticeTiling.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -108,6 +109,46 @@ int XLALConvertSuperSkyToPhysical(
   const SuperSkyCoordinates in,			///< [in] Coordinate system of the input point
   const gsl_vector* in_point,			///< [in] Input point in super-sky coordinates
   const gsl_matrix* rssky_transf		///< [in] Reduced super-sky coordinate transform data
+  );
+
+///
+/// Set all-sky parameter-space bounds on a lattice tiling using the reduced super-sky metric
+///
+int XLALSetLatticeReducedSuperSkyBounds(
+  LatticeTiling* tiling				///< [in] Tiling state
+  );
+
+///
+/// Set a sky point parameter-space bound on a lattice tiling using the reduced super-sky metric
+///
+int XLALSetLatticeReducedSuperSkyPointBounds(
+  LatticeTiling* tiling,			///< [in] Tiling state
+  const gsl_matrix* rssky_transf,		///< [in] Reduced super-sky coordinate transform data
+  const double alpha,				///< [in] Sky point right ascension
+  const double delta				///< [in] Sky point declination
+  );
+
+///
+/// Set lattice tiling parameter-space bounds on the (untransformed) super-sky frequency/spindowns \f$f^{(s)}\f$
+///
+int XLALSetLatticeSuperSkySpinBound(
+  LatticeTiling* tiling,			///< [in] Tiling state
+  const gsl_matrix* rssky_transf,		///< [in] Reduced super-sky coordinate transform data
+  const size_t s,				///< [in] Spindown order; 0=frequency, 1=first spindown, etc.
+  const double bound1,				///< [in] First bound on frequency/spindown
+  const double bound2				///< [in] Second bound on frequency/spindown
+  );
+
+///
+/// Set lattice tiling parameter-space bounds on the reduced super-sky frequency/spindowns \f$\nu^{(s)}\f$,
+/// which are related to the super-sky frequency/spindowns by \f$\nu^{(s)} = f^{(s)} + \vec\Delta^s \cdot \vec n\f$
+///
+int XLALSetLatticeReducedSuperSkySpinBound(
+  LatticeTiling* tiling,			///< [in] Tiling state
+  const gsl_matrix* rssky_transf,		///< [in] Reduced super-sky coordinate transform data
+  const size_t s,				///< [in] Spindown order; 0=frequency, 1=first spindown, etc.
+  const double bound1,				///< [in] First bound on frequency/spindown
+  const double bound2				///< [in] Second bound on frequency/spindown
   );
 
 #ifdef __cplusplus
