@@ -249,8 +249,21 @@ EXTRA_DIST += \
 	ihope_ssipe.ini.in \
 	$(DATA)
 
+
+if HAVE_GLUE_PREFIX
+gluebindir=$(GLUE_PREFIX)/bin
+else
+gluebindir=/usr/bin
+endif
+
+if HAVE_PYLAL_PREFIX
+pylalbindir=$(PYLAL_PREFIX)/bin
+else
+pylalbindir=/usr/bin
+endif
+
 ihope_ssipe.ini: $(srcdir)/ihope_ssipe.ini.in
-	$(AM_V_GEN)$(SED) 's|@LALAPPSDIR@|$(bindir)|' $< > $@
+	$(AM_V_GEN)$(SED) -e 's|@LALAPPSDIR@|$(bindir)|' -e 's|@GLUEDIR@|$(gluebindir)|' -e 's|@PYLALDIR@|$(pylaldir)|' $< > $@
 
 CLEANFILES = \
 	ihope_ssipe.ini
