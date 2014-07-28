@@ -2,7 +2,7 @@
 # lalsuite_swig.m4 - SWIG configuration
 # Author: Karl Wette, 2011--2014
 #
-# serial 65
+# serial 66
 
 AC_DEFUN([_LALSUITE_CHECK_SWIG_VERSION],[
   # $0: check the version of $1, and store it in ${swig_version}
@@ -302,8 +302,11 @@ AC_DEFUN([LALSUITE_USE_SWIG_OCTAVE],[
     AC_MSG_CHECKING([C++ compiler used for building ${OCTAVE}])
     octave_CXX=`${mkoctfile} -p CXX 2>/dev/null`
     AC_MSG_RESULT([${octave_CXX}])
-    octave_CXX_version=`${octave_CXX} --version 2>/dev/null | ${SED} -n -e '1p'`
-    lalsuite_CXX_version=`${CXX} --version 2>/dev/null | ${SED} -n -e '1p'`
+    CXX_version_regex=['s|([^)]*) *||g;s|^ *||g;s| *$||g']
+    octave_CXX_version=`${octave_CXX} --version 2>/dev/null | ${SED} -n -e '1p' | ${SED} -e "${CXX_version_regex}"`
+    _AS_ECHO_LOG([octave_CXX_version: '${octave_CXX_version}'])
+    lalsuite_CXX_version=`${CXX} --version 2>/dev/null | ${SED} -n -e '1p' | ${SED} -e "${CXX_version_regex}"`
+    _AS_ECHO_LOG([lalsuite_CXX_version: '${lalsuite_CXX_version}'])
     AS_IF([test "x${lalsuite_CXX_version}" != "x${octave_CXX_version}"],[
       AC_MSG_ERROR([configured C++ compiler "${CXX}" differs from ${OCTAVE} C++ compiler "${octave_CXX}"])
     ])
