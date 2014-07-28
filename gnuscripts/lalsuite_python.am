@@ -36,7 +36,9 @@ pymodule-mostlyclean-local:
 	fi
 
 .python_wrapper: $(lalsuite_python_wrapper)
-	$(AM_V_at)if $(SED) 's|[@]PYTHON[@]|$(PYTHON)|g;s|[@]lalsuite_pythonpath[@]|$(abs_builddir):$(abs_srcdir):$(LAL_PYTHON_PATH)|g' $< > $@; then \
+	$(AM_V_at)pywrapregex='s|[@]SED[@]|$(SED)|g;s|[@]PYTHON[@]|$(PYTHON)|g;s|[@]lalsuite_pythonpath[@]'; \
+	pypath="$(abs_builddir):$(abs_srcdir):$(LAL_PYTHON_PATH)"; \
+	if $(SED) "$${pywrapregex}|$${pypath}|g" $< > $@; then \
 		chmod +x $@ || exit 1; \
 		exit 0; \
 	else \
@@ -46,11 +48,15 @@ pymodule-mostlyclean-local:
 
 $(pybin_SCRIPTS): Makefile .python_wrapper
 .py:
-	$(AM_V_GEN)if test -x $<; then \
+	$(AM_V_GEN)rm -f $@ $@.tmp || exit 1; \
+	if test -x $<; then \
 		printf "\nERROR: $< must not be executable\n\n" >&2; \
 		exit 1; \
 	fi; \
-	rm -f $@ $@.tmp || exit 1; \
+	if test x`$(SED) -n -e '/^#!/p' $<` != x; then \
+		printf "\nERROR: $< must not contain a #! command line\n\n" >&2; \
+		exit 1; \
+	fi; \
 	echo "#!$(abs_builddir)/.python_wrapper" > $@.tmp; \
 	cat $< >> $@.tmp || exit 1; \
 	chmod +x $@.tmp || exit 1; \
@@ -58,23 +64,25 @@ $(pybin_SCRIPTS): Makefile .python_wrapper
 
 install-data-hook: pybin-install-data-hook
 pybin-install-data-hook:
-	$(AM_V_at)if test "x$(pybin_SCRIPTS)" != x; then \
+	$(AM_V_at)pywrapregex='s|[@]SED[@]|$(SED)|g;s|[@]PYTHON[@]|$(PYTHON)|g;s|[@]lalsuite_pythonpath[@]'; \
+	if test "x$(pybin_SCRIPTS)" != x; then \
 		if test "x$(prefix)" = "x$(python_exec_prefix)"; then \
 			python_wrapper="$(PYTHON)"; \
 		else \
-			python_wrapper="$(pkgdatadir)/python_wrapper"; \
-			if test ! -x "$${python_wrapper}"; then \
-				echo " $(MKDIR_P) $(DESTDIR)$(pkgdatadir)"; \
-				$(MKDIR_P) $(DESTDIR)$(pkgdatadir) || exit 1; \
-				echo "Generating $(DESTDIR)$${python_wrapper}..."; \
-				sed_regex='s|[@]PYTHON[@]|$(PYTHON)|g;s|[@]lalsuite_pythonpath[@]|$(pyexecdir):$(pythondir)|g'; \
-				if $(SED) "$${sed_regex}" $(lalsuite_python_wrapper) > $(DESTDIR)$${python_wrapper}; then \
-					chmod 0755 $(DESTDIR)$${python_wrapper} || exit 1; \
-				else \
-					rm -f $(DESTDIR)$${python_wrapper}; \
-					printf "\nERROR: failed to generate $(DESTDIR)$${python_wrapper}\n\n" >&2; \
-					exit 1; \
-				fi; \
+			python_wrapper="$(pkglibexecdir)/python_wrapper"; \
+			echo " $(MKDIR_P) $(DESTDIR)$(pkglibexecdir)"; \
+			$(MKDIR_P) $(DESTDIR)$(pkglibexecdir) || exit 1; \
+			echo "Generating $(DESTDIR)$${python_wrapper}..."; \
+			pypath="$(pyexecdir)"; \
+			if test "$(pythondir)" != "$(pyexecdir)"; then \
+				pypath="$${pypath}:$(pythondir)"; \
+			fi; \
+			if $(SED) "$${pywrapregex}|$${pypath}|g" $(lalsuite_python_wrapper) > $(DESTDIR)$${python_wrapper}; then \
+				chmod 0755 $(DESTDIR)$${python_wrapper} || exit 1; \
+			else \
+				rm -f $(DESTDIR)$${python_wrapper}; \
+				printf "\nERROR: failed to generate $(DESTDIR)$${python_wrapper}\n\n" >&2; \
+				exit 1; \
 			fi; \
 		fi; \
 		echo "Fixing shebangs commands in $(DESTDIR)$(pybindir)..."; \
@@ -90,7 +98,7 @@ pybin-install-data-hook:
 
 uninstall-local: pybin-uninstall-local
 pybin-uninstall-local:
-	-rm -f "$(DESTDIR)$(pkgdatadir)/python_wrapper"
+	-rm -f "$(DESTDIR)$(pkglibexecdir)/python_wrapper"
 
 dist-hook: pybin-dist-hook
 pybin-dist-hook:

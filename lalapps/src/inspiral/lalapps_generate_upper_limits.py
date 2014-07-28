@@ -2,7 +2,6 @@ import sys,os,math
 from optparse import *
 import random
 
-sys.path.append('@PYTHONLIBDIR@')
 import glue.pipeline
 
 ##############################################################################

@@ -1,12 +1,7 @@
 #!/bin/sh
 lalsuite_pythonpath="@lalsuite_pythonpath@"
-case "${PYTHONPATH}:" in
-    "${lalsuite_pythonpath}:"*)
-        ;;
-    *)
-        PYTHONPATH="${lalsuite_pythonpath}:${PYTHONPATH}"
-        ;;
-esac
+PYTHONPATH=`echo "${PYTHONPATH}" | "@SED@" -e "s|${lalsuite_pythonpath}:||g;"`
+PYTHONPATH="${lalsuite_pythonpath}:${PYTHONPATH}"
 export PYTHONPATH
 exec "@PYTHON@" "$@"
 exit $?

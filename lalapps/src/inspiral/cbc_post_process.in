@@ -1,5 +1,3 @@
-#!@PYTHONPROG@
-
 usage = \
 """
 Program to construct post-processing dag.
@@ -14,7 +12,6 @@ __version__ = '$Revision$'
 import os, sys, re
 from optparse import OptionParser
 import tempfile
-sys.path.append('@PYTHONLIBDIR@')
 
 ##############################################################################
 # import the modules we need to build the pipeline

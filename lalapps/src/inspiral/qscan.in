@@ -1,4 +1,3 @@
-#!@PYTHONPROG@
 """
 qscan.in - simple dag generator for q scans
 
@@ -20,7 +19,6 @@ from optparse import *
 import tempfile
 import ConfigParser
 import urlparse
-sys.path.append('@PYTHONLIBDIR@')
 
 ##############################################################################
 # import the modules we need to build the pipeline
