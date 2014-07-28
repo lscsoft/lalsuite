@@ -776,6 +776,18 @@ static int resolve_and_unzip(const char*filename, /**< filename to resolve */
  * boinc-resolving filenames), then calls MAIN() (from HierarchicalSearch.c), and
  * finally handles the output / result file(s) before exiting with boinc_finish().
  */
+/**
+ * rules for "bundled" workunits
+ * - the command-line needs to begin with --BundleSize=<no_wus>
+ * - each WU within a bundle must have its own config file specified on the command line
+ *   the number of config files on the command-line must equal the bundle_size
+ * - the config file should not refer to any files, as filenames in the config files are noy 'boinc_resolve'd
+ *   in particular skygrid- and SFT files need to be specified on the command-line, thus being the
+ *   same for all WUs of a bundle
+ * - only a single output file (toplist) per WU is allowed
+ *   the output file must be specified as a separate argument to the '-o' option,
+ *   e.g. '-o outputfile', NOT '--OutputFile=outputfile'
+ */
 static void worker (void) {
   int argc    = global_argc;   /**< as worker is defined void worker(void), ... */
   char**argv  = global_argv;   /**< ...  take argc and argv from global variables */
@@ -797,6 +809,12 @@ static void worker (void) {
   int test_nan  = 0;
   int test_snan = 0;
   int test_sqrt = 0;
+
+  int bundle_size = 0;           /**< how many workunits are bundled */
+  int current_config_file = 0;   /**< number of current WU in bundle (or config file on command line during parsing) */
+  char**config_files = NULL;     /**< list of (boinc-resolved) config files, omne for each WU in bundle */
+  char**config_file_arg = NULL;  /**< points to a placeholder for the config file in the command-line paased to MAIN() */
+  char wu_result_file[MAX_PATH_LEN];
 
   int resultfile_present = 0;
 
@@ -836,8 +854,14 @@ static void worker (void) {
   /* for all args in the command line (except argv[0]) */
   for (arg=1; arg<argc; arg++) {
     
+    /* if this is a "workunit bundle", --BundleSize must be the first command-line option */
+    if (MATCH_START("--BundleSize=",argv[arg],l)) {
+      bundle_size = atoi(argv[arg]+l);
+      rarg--; rargc--; /* this argument is not passed to the main worker function */
+    }
+
     /* a possible config file is boinc_resolved, but filenames contained in it are not! */
-    if (argv[arg][0] == '@') {
+    else if (argv[arg][0] == '@') {
       rargv[rarg] = (char*)calloc(MAX_PATH_LEN,sizeof(char));
       if(!rargv[rarg]){
 	LogPrintf(LOG_CRITICAL, "Out of memory\n");
@@ -846,6 +870,20 @@ static void worker (void) {
       rargv[rarg][0] = '@';
       if (boinc_resolve_filename(argv[arg]+1,rargv[rarg]+1,MAX_PATH_LEN-1)) {
         LogPrintf (LOG_NORMAL, "WARNING: Can't boinc-resolve config file '%s'\n", argv[arg]+1);
+      }
+      if (bundle_size) {
+	config_files = realloc(config_files, sizeof(char*) * (current_config_file + 1));
+	if(!config_files){
+	  LogPrintf(LOG_CRITICAL, "Out of memory\n");
+	  boinc_finish(boinc_finish_status=HIERARCHICALSEARCH_EMEM);
+	}
+	config_files[current_config_file] = rargv[rarg];
+	if (current_config_file) {
+	  rarg--; rargc--; /* skip that config file */
+	} else {
+	  config_file_arg = &rargv[rarg]; /* save the place of the first config file in the command-line */
+	}
+	current_config_file ++;
       }
     }
 
@@ -1010,7 +1048,11 @@ static void worker (void) {
 	    if (readlink(resultfile,targetpath,sizeof(targetpath)) != -1)
 	      strncpy(resultfile,targetpath,sizeof(resultfile));
 #endif
-	    rargv[rarg] = resultfile;
+	    if (bundle_size) {
+	      rargv[rarg] = wu_result_file; /* this will get copied from resultfile later */
+	    } else {
+	      rargv[rarg] = resultfile;
+	    }
 	  }
 	}
     }
@@ -1079,10 +1121,15 @@ static void worker (void) {
     rarg++;
   } /* for all command line arguments */
 
-  /* sanity check */
+  /* sanity checks */
   if (!resultfile[0] && !output_help && !output_version) {
       LogPrintf (LOG_CRITICAL, "ERROR: no result file has been specified\n");
       res = HIERARCHICALSEARCH_EFILE;
+  }
+  if (bundle_size != current_config_file) {
+    LogPrintf (LOG_CRITICAL, "ERROR: bundle size %d doesn't match number of config files %d\n",
+	       bundle_size, current_config_file);
+    res = HIERARCHICALSEARCH_EFILE;
   }
 
 
@@ -1202,7 +1249,7 @@ static void worker (void) {
   if(test_sqrt)
     fprintf(stderr,"NaN:%f\n", sqrt(-1));
 
-  if((fp = boinc_fopen(resultfile,"r"))) {
+  if(!bundle_size && (fp = boinc_fopen(resultfile,"r"))) {
     fclose(fp);
     LogPrintf (LOG_NORMAL, "WARNING: Resultfile '%s' present - doing nothing\n", resultfile);
     resultfile_present = 1;
@@ -1223,12 +1270,27 @@ static void worker (void) {
     printf("%%%% BOINC: " SVN_VERSION "\n");
 
   if (output_help || output_version || !resultfile_present) {
-    /* CALL WORKER's MAIN()
-     */
-    res = MAIN(rargc,rargv);
-    if (res) {
-      LogPrintf (LOG_CRITICAL, "ERROR: MAIN() returned with error '%d'\n",res);
-    }
+
+    /* loop over WUs in bundles */
+    current_config_file = 0;
+    do {
+
+      if (bundle_size) {
+	unsigned int rlen = strlen(resultfile);
+	strcpy(wu_result_file, resultfile);
+	myltoa(current_config_file, &wu_result_file[rlen-1], MAX_PATH_LEN-rlen);
+	*config_file_arg = config_files[current_config_file];
+      }
+
+      /* CALL WORKER's MAIN()
+       */
+      res = MAIN(rargc,rargv);
+      if (res) {
+	LogPrintf (LOG_CRITICAL, "ERROR: MAIN() returned with error '%d'\n",res);
+      }
+
+      current_config_file ++;
+    } while (!res && bundle_size && current_config_file < bundle_size);
 
 #ifdef __GNUX86__
     {
@@ -1256,8 +1318,7 @@ static void worker (void) {
 
   }
 
-
-  /* HANDLE OUTPUT FILES
+  /* FIXME: HANDLE OUTPUT FILES
    */
 
 #ifdef HAVE_BOINC_ZIP
@@ -1287,7 +1348,7 @@ static void worker (void) {
 #endif
 
   /* if there is a file <wuname>_<instance>_0-LV, rename it to <wuname>_<instance>_1 */
-  {
+  if (!bundle_size) {
     unsigned int len = strlen(resultfile);
     char*lv_file = (char*)malloc(len+4);
     if (lv_file) {
