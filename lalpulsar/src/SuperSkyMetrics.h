@@ -31,7 +31,7 @@ extern "C" {
 ///
 /// \file
 /// \author Karl Wette
-/// \brief Functions for using the super-sky and reduced super-sky metrics of \cite Wette.Prix.2013a
+/// \brief Functions for using the super-sky and reduced super-sky metrics of \cite WettePrix2013a
 ///
 
 ///
