@@ -263,7 +263,7 @@ pylalbindir=/usr/bin
 endif
 
 ihope_ssipe.ini: $(srcdir)/ihope_ssipe.ini.in
-	$(AM_V_GEN)$(SED) -e 's|@LALAPPSDIR@|$(bindir)|' -e 's|@GLUEDIR@|$(gluebindir)|' -e 's|@PYLALDIR@|$(pylaldir)|' $< > $@
+	$(AM_V_GEN)$(SED) -e 's|@LALAPPSDIR@|$(bindir)|' -e 's|@GLUEDIR@|$(gluebindir)|' -e 's|@PYLALDIR@|$(pylalbindir)|' $< > $@
 
 CLEANFILES = \
 	ihope_ssipe.ini
