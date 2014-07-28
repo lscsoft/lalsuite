@@ -171,14 +171,14 @@ coinc_slide_tag = cp.get('pipeline', 'coinc-slide-file-tag')
 search_file_tag = cp.get('pipeline', 'search-file-tag')
 ihope_cache = [line for line in file(options.ihope_cache) \
   if coinc_zero_lag_tag in line or coinc_slide_tag in line \
-  or " INJECTIONS" in line or search_file_tag in line]
+  or (" INJECTIONS" in line or " PREGEN_INJFILE" in line ) or search_file_tag in line]
 
 zero_lag_cache = lal.Cache([lal.CacheEntry(entry) for entry in ihope_cache \
   if coinc_zero_lag_tag in entry])
 slide_cache = lal.Cache([lal.CacheEntry(entry) for entry in ihope_cache \
   if coinc_slide_tag in entry])
 inj_cache = lal.Cache([lal.CacheEntry(entry) for entry in ihope_cache if \
-  " INJECTIONS" in entry])
+  (" INJECTIONS" in entry or " PREGEN_INJFILE" in entry)])
 all_inspirals_cache = lal.Cache([lal.CacheEntry(entry) for entry in ihope_cache \
   if search_file_tag in entry]) 
 

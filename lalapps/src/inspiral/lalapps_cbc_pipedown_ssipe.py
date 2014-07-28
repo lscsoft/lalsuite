@@ -164,12 +164,12 @@ print "Parsing the ihope cache..."
 
 coinc_tag = cp.get('pipeline', 'coinc-file-tag')
 ihope_cache = [line for line in file(options.ihope_cache) \
-  if coinc_tag in line or " INJECTIONS" in line]
+  if coinc_tag in line or " INJECTIONS" in line or " PREGEN_INJFILE" in line]
 
 thinca_cache = lal.Cache([lal.CacheEntry(entry) for entry in ihope_cache \
   if coinc_tag in entry])
 inj_cache = lal.Cache([lal.CacheEntry(entry) for entry in ihope_cache if \
-  " INJECTIONS" in entry])
+  " INJECTIONS" in entry or " PREGEN_INJFILE" in entry])
 
 del ihope_cache
 
@@ -364,7 +364,8 @@ for tag in user_tags:
   # is an injection file for this tag
 
   file_sieve = '_'.join([ r'INJECTIONS_[0-9]{1,}', tag.split('_CAT_')[0] ]) + r'$'
-  inj_file = [ entry for entry in inj_cache if re.match(file_sieve, entry.description) is not None ]
+  file_sieve2 = '_'.join([ r'PREGEN_INJFILE_[0-9]{1,}', tag.split('_CAT_')[0] ]) + r'$'
+  inj_file = [ entry for entry in inj_cache if re.match(file_sieve, entry.description) is not None or re.match(file_sieve2,entry.description) is not None ]
   if len(inj_file) == 0:
     simulation = False
   elif len(inj_file) == 1:
