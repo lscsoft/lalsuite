@@ -222,6 +222,13 @@ gsl_matrix* XLALLatticeTilingSubset(
   );
 
 ///
+/// Count the average number of points tiled in each parameter-space dimension
+///
+gsl_vector* XLALLatticeAveragePointCount(
+  LatticeTiling* tiling				///< [in] Tiling state
+ );
+
+///
 /// Generate random points within the lattice tiling parameter space
 ///
 int XLALRandomLatticePoints(

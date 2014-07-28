@@ -1317,6 +1317,54 @@ gsl_matrix* XLALLatticeTilingSubset(
 
 }
 
+gsl_vector* XLALLatticeAveragePointCount(
+  LatticeTiling* tiling
+  )
+{
+
+  // Check input
+  XLAL_CHECK_NULL(tiling != NULL, XLAL_EFAULT);
+  XLAL_CHECK_NULL(tiling->status > LT_S_INCOMPLETE, XLAL_EFAILED);
+  const size_t n = tiling->dims;
+  const size_t tn = (tiling->tiled != NULL) ? tiling->tiled->size : 0;
+
+  // Allocate memory
+  gsl_vector* GAVEC_NULL(avg_point_count, n);
+
+  // Restart the tiling
+  XLAL_CHECK_NULL(XLALRestartLatticeTiling(tiling) == XLAL_SUCCESS, XLAL_EFUNC);
+
+  // Iterate over points, counting the number of points and number of passes
+  UINT8 tiled_points[tn], tiled_passes[tn];
+  memset(tiled_points, 0, sizeof(tiled_points));
+  memset(tiled_passes, 0, sizeof(tiled_passes));
+  {
+    int ti = 0;
+    while ((ti = XLALNextLatticePoint(tiling, NULL)) >= 0) {
+      for (size_t tj = ti; tj < tn; ++tj) {
+        const int int_point = gsl_vector_int_get(tiling->int_point, tj);
+        const int int_upper = gsl_vector_int_get(tiling->int_upper, tj);
+        tiled_points[tj] += int_upper - int_point + 1;
+        tiled_passes[tj] += 1;
+      }
+      XLAL_CHECK_NULL(XLALFastForwardLatticeTiling(tiling, NULL, NULL) == XLAL_SUCCESS, XLAL_EFUNC);
+    }
+  }
+
+  // Restart the tiling
+  XLAL_CHECK_NULL(XLALRestartLatticeTiling(tiling) == XLAL_SUCCESS, XLAL_EFUNC);
+
+  // Return the average point count in each dimension
+  gsl_vector_set_all(avg_point_count, 1.0);
+  for (size_t ti = 0; ti < tn; ++ti) {
+    const size_t i = gsl_vector_uint_get(tiling->tiled, ti);
+    gsl_vector_set(avg_point_count, i, ((double) tiled_points[ti]) / tiled_passes[ti]);
+  }
+
+  return avg_point_count;
+
+}
+
 int XLALRandomLatticePoints(
   const LatticeTiling* tiling,
   RandomParams* rng,
