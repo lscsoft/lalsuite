@@ -492,7 +492,7 @@ def make_caches(config, ifo, level, cluster, start, end):
     f.close()
 
     # templates
-    files = sorted(glob.glob('%s/%s-TMPLTBANK-*xml.gz' % (config['trigger_dir'],ifo)))
+    files = sorted(glob.glob('%s/%s-TMPLTBANK-*xml*' % (config['trigger_dir'],ifo)))
     proc  = subprocess.Popen(cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
     out, err = proc.communicate("\n".join(files))
 
