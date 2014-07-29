@@ -27,7 +27,7 @@ from glue import segments
 from glue import segmentsUtils
 from glue import pipeline
 from glue.pipeline import DeepCopyableConfigParser as dcConfigParser
-import inspiralutils 
+from lalapps import inspiralutils
 
 
 ##############################################################################

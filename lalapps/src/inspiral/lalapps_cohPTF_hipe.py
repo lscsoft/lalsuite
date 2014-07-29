@@ -28,7 +28,7 @@ import itertools
 from glue import pipeline
 from glue import segments as glue_segments
 from glue import lal
-import inspiral
+from lalapps import inspiral
 
 ##############################################################################
 # concrete dag setup functions

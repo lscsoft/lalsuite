@@ -24,9 +24,9 @@ from glue import iterutils
 # import the modules we need to build the pipeline
 from glue import pipeline
 
-import inspiral
+from lalapps import inspiral
 from inspiralutils import determine_sieve_patterns
-import inspiralutils
+from lalapps import inspiralutils
 ##############################
 # Convert ifo list to string
 def combo2str(combo):

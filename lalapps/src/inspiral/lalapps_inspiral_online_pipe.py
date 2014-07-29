@@ -19,7 +19,7 @@ import urlparse
 # import the modules we need to build the pipeline
 from glue import pipeline
 from glue import segments
-import inspiral
+from lalapps import inspiral
 
 
 class TrigscanJob(inspiral.InspiralAnalysisJob):

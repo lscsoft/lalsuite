@@ -28,7 +28,7 @@ import ConfigParser
 from glue.pipeline import DeepCopyableConfigParser as dcConfigParser
 from glue import segments as glue_segments
 from glue import lal
-import inspiral
+from lalapps import inspiral
 from inspiralutils import get_data_options
 
 ##############################################################################

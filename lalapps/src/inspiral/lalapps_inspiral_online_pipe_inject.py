@@ -20,7 +20,8 @@ import urlparse
 
 # import the modules we need to build the pipeline
 from glue import pipeline
-import inspiral, mkcal
+from lalapps import inspiral
+import mkcal
 
 def usage():
   msg = """\

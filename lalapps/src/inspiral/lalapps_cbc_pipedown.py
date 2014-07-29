@@ -14,7 +14,7 @@ from glue.ligolw import lsctables
 from glue.ligolw import utils
 from glue.ligolw.utils import process
 from glue import git_version
-import inspiral
+from lalapps import inspiral
 from lalapps import inspiralutils
 
 __prog__ = 'cbc_pipedown'

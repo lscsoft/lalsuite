@@ -26,7 +26,7 @@ from glue.ligolw import lsctables
 from glue.ligolw import utils
 from glue.ligolw.utils import process as ligolw_process
 from glue.ligolw.utils import segments as ligolw_segments
-import inspiral
+from lalapps import inspiral
 
 ##############################################################################
 # Functions used in setting up the dag:
