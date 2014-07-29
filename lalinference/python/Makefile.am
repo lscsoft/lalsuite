@@ -7,9 +7,6 @@ SUBDIRS = lalinference
 
 if HAVE_PYTHON
 
-.py:
-	$(AM_V_GEN)rm -rf .pybin && $(SED) 's|[@]PYTHON[@]|$(PYTHON)|' $< > $@ && chmod +x $@
-
 pybin_SCRIPTS = \
 	bayestar_aggregate_found_injections \
 	bayestar_bin_samples \
