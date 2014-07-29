@@ -32,7 +32,6 @@
 // Include Octave headers.
 %header %{
 extern "C++" {
-#include <octave/config.h>
 #include <octave/ov-cell.h>
 #include <octave/ov-int-traits.h>
 #include <octave/ov-flt-re-mat.h>
