@@ -2,7 +2,7 @@
 # lalsuite_swig.m4 - SWIG configuration
 # Author: Karl Wette, 2011--2014
 #
-# serial 66
+# serial 67
 
 AC_DEFUN([_LALSUITE_CHECK_SWIG_VERSION],[
   # $0: check the version of $1, and store it in ${swig_version}
@@ -313,8 +313,14 @@ AC_DEFUN([LALSUITE_USE_SWIG_OCTAVE],[
 
     # determine Octave preprocessor flags
     AC_SUBST([SWIG_OCTAVE_CPPFLAGS],[])
+    AC_SUBST([SWIG_OCTAVE_CPPFLAGS_IOCTAVE],[])
     for arg in CPPFLAGS INCFLAGS; do
-      SWIG_OCTAVE_CPPFLAGS="${SWIG_OCTAVE_CPPFLAGS} "`${mkoctfile} -p ${arg} 2>/dev/null`
+      for flag in `${mkoctfile} -p ${arg} 2>/dev/null`; do
+        AS_CASE([${flag}],
+          [-I*/octave],[SWIG_OCTAVE_CPPFLAGS_IOCTAVE="${flag}"],
+          [SWIG_OCTAVE_CPPFLAGS="${SWIG_OCTAVE_CPPFLAGS} ${flag}"]
+        )
+      done
     done
 
     # determine Octave compiler flags
@@ -338,7 +344,7 @@ AC_DEFUN([LALSUITE_USE_SWIG_OCTAVE],[
     # check for Octave headers
     AC_LANG_PUSH([C++])
     LALSUITE_PUSH_UVARS
-    CPPFLAGS="${SWIG_OCTAVE_CPPFLAGS}"
+    CPPFLAGS="${SWIG_OCTAVE_CPPFLAGS_IOCTAVE} ${SWIG_OCTAVE_CPPFLAGS}"
     AC_CHECK_HEADERS([octave/oct.h],[],[
       AC_MSG_ERROR([could not find the header "octave/oct.h"])
     ],[
