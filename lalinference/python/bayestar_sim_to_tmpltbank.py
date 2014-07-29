@@ -15,8 +15,7 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #
-from __future__ import division
-__doc__ = """
+"""
 Create a template bank from an inspinj-style injection file that has a
 sngl_inspiral record for each unique set of intrinsic parameters
 (mass1, mass2, spin1z, spin2z) described by the sim_inspiral rows in the

@@ -15,12 +15,12 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #
-from __future__ import division
-__doc__ = """
+"""
 Create a template bank that samples a regular lattice in (tau0, tau3), starting
 from an initial (mass1, mass2), with lattice points spaced according to the
 metric at the initial point.
 """
+from __future__ import division
 __author__ = "Leo Singer <leo.singer@ligo.org>"
 
 

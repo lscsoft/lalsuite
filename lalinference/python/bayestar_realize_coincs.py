@@ -15,7 +15,6 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #
-from __future__ import division
 """
 Synthesize triggers for simulated sources by realizing Gaussian measurement
 errors in SNR and time of arrival. The input file (or stdin if the input file
@@ -32,6 +31,7 @@ there is a choice for how to generate perturbed time and phase measurements:
  - from-measurement: first perturb SNR with measurement error, then use
    that perturbed SNR to compute covariance of time and phase errors
 """
+from __future__ import division
 __author__ = "Leo Singer <leo.singer@ligo.org>"
 
 

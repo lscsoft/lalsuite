@@ -15,8 +15,6 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #
-from __future__ import division
-from __future__ import print_function
 """
 Match sky maps with injections in an inspinjfind-style sqlite database and print
 summary values for each sky map:
@@ -32,6 +30,8 @@ summary values for each sky map:
 The filenames of the sky maps may be provided as positional command line
 arguments, and may also be provided as globs (such as '*.fits.gz').
 """
+from __future__ import division
+from __future__ import print_function
 __author__ = "Leo Singer <leo.singer@ligo.org>"
 
 

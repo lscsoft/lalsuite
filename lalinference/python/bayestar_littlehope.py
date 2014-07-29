@@ -15,7 +15,6 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #
-from __future__ import division
 """
 Synthesize triggers for simulated sources using a miniature matched-filter
 detection pipeline. The input file (or stdin if the input file is omitted)
@@ -25,6 +24,7 @@ optionally gzip-compressed LIGO-LW XML file containing single-detector triggers
 and coincidences. A single template that has the same intrinsic parameters as
 the injection is used.
 """
+from __future__ import division
 __author__ = "Leo Singer <leo.singer@ligo.org>"
 
 
