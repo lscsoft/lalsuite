@@ -70,7 +70,7 @@
 #define BAYESTAR_SKY_MAP_H
 
 
-#include <lal/LALAtomicDatatypes.h>
+#include <complex.h>
 
 
 /* Perform sky localization based on TDOAs, PHOAs, and amplitude. */
@@ -85,7 +85,7 @@ double *bayestar_sky_map_toa_phoa_snr(
     unsigned int nifos,             /* Number of detectors */
     unsigned long nsamples,         /* Length of autocorrelation sequence */
     double sample_rate,             /* Sample rate in seconds */
-    const COMPLEX16 **acors,        /* Autocorrelation sequences */
+    const double complex **acors,   /* Autocorrelation sequences */
     const float (**responses)[3],   /* Detector responses */
     const double **locations,       /* Barycentered Cartesian geographic detector positions (m) */
     const double *horizons,         /* SNR=1 horizon distances for each detector */
@@ -108,7 +108,7 @@ double bayestar_log_likelihood_toa_snr(
     unsigned int nifos,             /* Number of detectors */
     unsigned long nsamples,         /* Length of autocorrelation sequence */
     double sample_rate,             /* Sample rate in seconds */
-    const COMPLEX16 **acors,        /* Autocorrelation sequences */
+    const double complex **acors,   /* Autocorrelation sequences */
     const float (**responses)[3],   /* Detector responses */
     const double **locations,       /* Barycentered Cartesian geographic detector positions (m) */
     const double *horizons,         /* SNR=1 horizon distances for each detector */
@@ -130,7 +130,7 @@ double bayestar_log_likelihood_toa_phoa_snr(
     unsigned int nifos,             /* Number of detectors */
     unsigned long nsamples,         /* Length of autocorrelation sequence */
     double sample_rate,             /* Sample rate in seconds */
-    const COMPLEX16 **acors,        /* Autocorrelation sequences */
+    const double complex **acors,   /* Autocorrelation sequences */
     const float (**responses)[3],   /* Detector responses */
     const double **locations,       /* Barycentered Cartesian geographic detector positions (m) */
     const double *horizons,         /* SNR=1 horizon distances for each detector */
