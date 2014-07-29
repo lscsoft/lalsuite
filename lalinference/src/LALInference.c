@@ -635,7 +635,7 @@ void LALInferencePrintSampleNonFixed(FILE *fp,LALInferenceVariables *sample){
 	LALInferenceVariableItem *ptr=sample->head;
 	if(fp==NULL) return;
 	while(ptr!=NULL) {
-		if (ptr->vary != LALINFERENCE_PARAM_FIXED && ptr->type != LALINFERENCE_gslMatrix_t ) {
+		if (LALInferenceCheckVariableNonFixed(sample, ptr->name) && ptr->type != LALINFERENCE_gslMatrix_t ) {
 			switch (ptr->type) {
 				case LALINFERENCE_INT4_t:
 					fprintf(fp, "%"LAL_INT4_FORMAT, *(INT4 *) ptr->value);
@@ -660,14 +660,14 @@ void LALInferencePrintSampleNonFixed(FILE *fp,LALInferenceVariables *sample){
 					fprintf(fp, "%e + i*%e",
 							(REAL8) creal(*(COMPLEX16 *) ptr->value), (REAL8) cimag(*(COMPLEX16 *) ptr->value));
 					break;
-        case LALINFERENCE_UINT4Vector_t:
-          v = *((UINT4Vector **)ptr->value);
-          for(i=0;i<v->length;i++)
-          {
-            fprintf(fp,"%11.7f",(REAL8)v->data[i]);
-            if( i!=(UINT4)(v->length-1) )fprintf(fp,"\t");
-          }
-          break;
+                case LALINFERENCE_UINT4Vector_t:
+                    v = *((UINT4Vector **)ptr->value);
+                    for(i=0;i<v->length;i++)
+                    {
+                        fprintf(fp,"%11.7f",(REAL8)v->data[i]);
+                        if( i!=(UINT4)(v->length-1) )fprintf(fp,"\t");
+                    }
+                    break;
           /*
 				case LALINFERENCE_gslMatrix_t:
                     m = *((gsl_matrix **)ptr->value);
@@ -1114,7 +1114,7 @@ int LALInferenceFprintParameterNonFixedHeaders(FILE *out, LALInferenceVariables 
   //gsl_matrix *matrix = NULL;
   UINT4Vector *vector = NULL;
   while (head != NULL) {
-    if (head->vary != LALINFERENCE_PARAM_FIXED) {
+    if (LALInferenceCheckVariableNonFixed(params, head->name)) {
       if(head->type==LALINFERENCE_gslMatrix_t)
       {
         /*

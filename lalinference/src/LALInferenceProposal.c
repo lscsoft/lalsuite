@@ -262,9 +262,15 @@ LALInferenceCyclicProposal(LALInferenceRunState *runState, LALInferenceVariables
   /* Call proposal. */
   REAL8 logPropRatio = (cycle[i])(runState, currentParams, proposedParams);
 
-  /* Increment counter for the next time around. */
-  i = (i+1) % length;
+  /* Call proposals until one succeeds */
+  while (proposedParams->head == NULL) {
+      LALInferenceClearVariables(proposedParams);
 
+      logPropRatio = (cycle[i])(runState, currentParams, proposedParams);
+
+      /* Increment counter for the next time around. */
+      i = (i+1) % length;
+  }
   LALInferenceSetVariable(propArgs, cycleArrayCounterName, &i);
   
   return logPropRatio;
@@ -3870,19 +3876,21 @@ void LALInferenceSetupClusteredKDEProposalFromRun(LALInferenceRunState *runState
  * proposal is added to the proposal cycle with a specified weight, and in turn
  * chooses at random a KDE-estimate from a linked list.
  * @param      runState      The current LALInferenceRunState.
+ * @param      currentParams The current parameters.
  * @param[out] proposedParam The proposed parameters.
  * @return proposal_ratio    The (log) proposal ratio for maintaining detailed balance
  */
 REAL8 LALInferenceClusteredKDEProposal(LALInferenceRunState *runState, LALInferenceVariables *currentParams, LALInferenceVariables *proposedParams) {
     const char *propName = (const char *) clusteredKDEProposalName;
     REAL8 cumulativeWeight, totalWeight;
+    REAL8 logPropRatio = 0.0;
 
     LALInferenceVariableItem *item;
     LALInferenceVariables *propArgs = runState->proposalArgs;
 
     if (!LALInferenceCheckVariable(propArgs, clusteredKDEProposalName)) {
         LALInferenceClearVariables(proposedParams);
-        return 0.0; /* Quit now, since there is no proposal to call */
+        return logPropRatio; /* Quit now, since there is no proposal to call */
     }
 
     LALInferenceCopyVariables(currentParams, proposedParams);
@@ -3929,11 +3937,12 @@ REAL8 LALInferenceClusteredKDEProposal(LALInferenceRunState *runState, LALInfere
     /* Calculate the proposal ratio */
     REAL8 logCurrentP = LALInferenceKmeansPDF(kde->kmeans, current);
     REAL8 logProposedP = LALInferenceKmeansPDF(kde->kmeans, proposed);
+    logPropRatio = logCurrentP - logProposedP;
 
     XLALFree(current);
     XLALFree(proposed);
 
-    return logCurrentP-logProposedP;
+    return logPropRatio;
 }
 
 

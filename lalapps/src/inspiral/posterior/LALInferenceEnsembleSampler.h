@@ -37,12 +37,13 @@
 void ensemble_sampler(struct tagLALInferenceRunState *runState);
 
 /** Evolve a walker a single step */
-void walker_step(LALInferenceRunState *runState, INT4 walker);
+INT4 walker_step(LALInferenceRunState *runState, LALInferenceModel *model, LALInferenceVariables *currentParams, LALInferenceVariables *proposedParams, REAL8 *currentPrior, REAL8 *currentLikelihood);
 
 /** Update the ensemble proposal from the ensemble's current state */
 void ensemble_update(LALInferenceRunState *runState);
 
 /* Data IO routines */
-FILE *LALInferenceInitializeEnsembleOutput(LALInferenceRunState *runState, INT4 walker, INT4 walker_offset);
-void LALInferencePrintEnsembleSample(LALInferenceRunState *runState, FILE *walker_output, UINT4 walker, INT4 step);
+char *LALInferenceInitializeEnsembleOutput(LALInferenceRunState *runState, INT4 walker, INT4 walker_offset, INT4 verbose);
+void LALInferencePrintEnsembleSample(LALInferenceRunState *runState, char **walker_output_names, UINT4 walker, INT4 step);
+void LALInferencePrintProposedSample(LALInferenceRunState *runState, LALInferenceVariables *proposedParams, INT4 walker, INT4 accepted);
 void LALInferencePrintEnsembleHeader(LALInferenceRunState *runState, FILE *walker_output, INT4 walker);

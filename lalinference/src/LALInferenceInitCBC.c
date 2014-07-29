@@ -1238,6 +1238,10 @@ LALInferenceModel *LALInferenceInitCBCModel(LALInferenceRunState *state)
         p=LALInferenceGetItem(state->priorArgs,"time_max");
         LALInferenceAddVariable(model->params,"time_max",p->value,p->type,p->vary);
         LALInferenceRemoveVariable(model->params,"time");
+        if (LALInferenceGetProcParamVal(commandLine, "--margtimephi")) {
+            UINT4 margphi = 1;
+            LALInferenceAddVariable(model->params, "margtimephi", &margphi, LALINFERENCE_UINT4_t,LALINFERENCE_PARAM_FIXED);
+        }
     }
 
     if(!LALInferenceGetProcParamVal(commandLine,"--margphi") && !LALInferenceGetProcParamVal(commandLine, "--margtimephi")){

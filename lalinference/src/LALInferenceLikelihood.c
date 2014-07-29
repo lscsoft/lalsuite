@@ -104,7 +104,6 @@ void LALInferenceInitLikelihood(LALInferenceRunState *runState)
     fprintf(stderr, "Using marginalised time likelihood.\n");
     runState->likelihood=&LALInferenceMarginalisedTimeLogLikelihood;
    } else if (LALInferenceGetProcParamVal(commandLine, "--margtimephi")) {
-     UINT4 margphi = 1;
      fprintf(stderr, "Using marginalised in time and phase likelihood.\n");
      runState->likelihood=&LALInferenceMarginalisedTimeLogLikelihood;
      LALInferenceAddVariable(runState->currentParams, "margtimephi", &margphi, LALINFERENCE_UINT4_t,LALINFERENCE_PARAM_FIXED);

@@ -478,7 +478,9 @@ tagLALInferenceRunState
   LALInferenceLogFunction            logsample; /** Log sample, i.e. to disk */
   LALInferenceTemplateFunction templt; /** The template generation function */
   LALInferenceModel        *model; /** Stucture containing model buffers and parameters */
+  LALInferenceModel        **modelArray; /** Array containing multiple models */
   struct tagLALInferenceIFOData      *data; /** The data from the interferometers */
+  LALInferenceVariables **currentParamArray;         /** Array containing multiple currentParams */
   LALInferenceVariables              *currentParams, /** The current parameters */
     *priorArgs,                                      /** Any special arguments for the prior function */
     *proposalArgs,                                   /** Any special arguments for the proposal function */
@@ -509,7 +511,6 @@ tagLALInferenceRunState
   REAL8			currentLikelihood;  /** This should be removed, can be given as an algorithmParams or proposalParams entry */
   REAL8                 currentPrior;       /** This should be removed, can be given as an algorithmParams entry */
   gsl_rng               *GSLrandom;         /** A pointer to a GSL random number generator */
-  LALInferenceVariables **currentParamArray;
   REAL8                  *currentPriors;
   REAL8                  *currentLikelihoods;
 } LALInferenceRunState;

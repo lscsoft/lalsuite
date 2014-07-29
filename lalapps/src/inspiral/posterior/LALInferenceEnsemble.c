@@ -22,22 +22,13 @@
 
 
 #include <stdio.h>
-#include <lal/Date.h>
-#include <lal/GenerateInspiral.h>
 #include <lal/LALInference.h>
-#include <lal/FrequencySeries.h>
-#include <lal/Units.h>
-#include <lal/StringInput.h>
-#include <lal/LIGOLwXMLInspiralRead.h>
-#include <lal/TimeSeries.h>
 #include "LALInferenceEnsembleSampler.h"
 #include <lal/LALInferencePrior.h>
-#include <lal/LALInferenceTemplate.h>
 #include <lal/LALInferenceProposal.h>
 #include <lal/LALInferenceLikelihood.h>
 #include <lal/LALInferenceReadData.h>
 #include <lal/LALInferenceInit.h>
-#include <lalapps.h>
 
 #include <mpi.h>
 
@@ -146,7 +137,7 @@ void LALInferenceInitEnsemble(LALInferenceRunState *state) {
         #pragma omp parallel for
         for (walker = 0; walker < nwalkers_per_thread; walker++) {
             LALInferenceDrawApproxPrior(state, state->currentParamArray[walker], state->currentParamArray[walker]);
-            while (state->prior(state, state->currentParamArray[walker]) <= -DBL_MAX)
+            while (state->prior(state, state->currentParamArray[walker], state->modelArray[walker]) <= -DBL_MAX)
                 LALInferenceDrawApproxPrior(state, state->currentParamArray[walker], state->currentParamArray[walker]);
         }
     }
@@ -168,22 +159,18 @@ void LALInferenceInitEnsemble(LALInferenceRunState *state) {
         REAL8 bigD = INFINITY;
 
         /* Don't store to cache, since distance scaling won't work */
-        LALSimInspiralWaveformCache *cache = headData->waveformCache;
-        while (headData != NULL) {
-            headData->waveformCache = NULL;
-            headData = headData->next;
-        }
-        headData = state->data;
+        LALSimInspiralWaveformCache *cache = state->modelArray[0]->waveformCache;
+        state->modelArray[0]->waveformCache = NULL;
 
         LALInferenceSetVariable(state->currentParamArray[0], "distance", &bigD);
-        null_likelihood = state->likelihood(state->currentParamArray[0], state->data, state->templt);
+        null_likelihood = state->likelihood(state->currentParamArray[0], state->data, state->modelArray[0]);
 
         /* Restore cache to data structure */
         while (headData != NULL) {
             headData->nullloglikelihood = headData->loglikelihood;
-            headData->waveformCache = cache;
             headData = headData->next;
         }
+        state->modelArray[0]->waveformCache = cache;
 
         /* Replace finite distance */
         LALInferenceSetVariable(state->currentParamArray[0], "distance", &d);
@@ -195,10 +182,12 @@ void LALInferenceInitEnsemble(LALInferenceRunState *state) {
     state->currentPriors = XLALMalloc(nwalkers_per_thread * sizeof(REAL8));
     state->currentLikelihoods = XLALMalloc(nwalkers_per_thread * sizeof(REAL8));
     for (walker = 0; walker < nwalkers_per_thread; walker++) {
-        state->currentPriors[walker] = state->prior(state, state->currentParamArray[walker]);
+        state->currentPriors[walker] = state->prior(state,
+                                                    state->currentParamArray[walker],
+                                                    state->modelArray[walker]);
 
         state->currentLikelihoods[walker] = state->likelihood(state->currentParamArray[walker],
-                                                                 state->data, state->templt);
+                                                                 state->data, state->modelArray[walker]);
     }
 
     headData = state->data;
@@ -213,7 +202,6 @@ LALInferenceRunState *initialize(ProcessParamsTable *commandLine)
 /* and initializes other variables accordingly.                     */
 {
     LALInferenceRunState *irs=NULL;
-    LALInferenceIFOData *ifoPtr, *ifoListStart;
   
     /* read data from files: */
     irs = XLALCalloc(1, sizeof(LALInferenceRunState));
@@ -223,58 +211,7 @@ LALInferenceRunState *initialize(ProcessParamsTable *commandLine)
   
     if (irs->data != NULL) {
         LALInferenceInjectInspiralSignal(irs->data,commandLine);
-  
-        ifoPtr = irs->data;
-        ifoListStart = irs->data;
-        while (ifoPtr != NULL) {
-            /*If two IFOs have the same sampling rate, they should have the same timeModelh*,
-              freqModelh*, and modelParams variables to avoid excess computation
-              in model waveform generation in the future*/
-            LALInferenceIFOData * ifoPtrCompare=ifoListStart;
-            int foundIFOwithSameSampleRate=0;
-            while (ifoPtrCompare != NULL && ifoPtrCompare!=ifoPtr) {
-                if(ifoPtrCompare->timeData->deltaT == ifoPtr->timeData->deltaT){
-                    ifoPtr->timeModelhPlus=ifoPtrCompare->timeModelhPlus;
-                    ifoPtr->freqModelhPlus=ifoPtrCompare->freqModelhPlus;
-                    ifoPtr->timeModelhCross=ifoPtrCompare->timeModelhCross;
-                    ifoPtr->freqModelhCross=ifoPtrCompare->freqModelhCross;
-                    ifoPtr->modelParams=ifoPtrCompare->modelParams;
-                    foundIFOwithSameSampleRate=1;
-                    break;
-                }
-                ifoPtrCompare = ifoPtrCompare->next;
-            }
-            if(!foundIFOwithSameSampleRate){
-                ifoPtr->timeModelhPlus  = XLALCreateREAL8TimeSeries("timeModelhPlus",
-                                                                    &(ifoPtr->timeData->epoch),
-                                                                    0.0,
-                                                                    ifoPtr->timeData->deltaT,
-                                                                    &lalDimensionlessUnit,
-                                                                    ifoPtr->timeData->data->length);
-                ifoPtr->timeModelhCross = XLALCreateREAL8TimeSeries("timeModelhCross",
-                                                                    &(ifoPtr->timeData->epoch),
-                                                                    0.0,
-                                                                    ifoPtr->timeData->deltaT,
-                                                                    &lalDimensionlessUnit,
-                                                                    ifoPtr->timeData->data->length);
-                ifoPtr->freqModelhPlus = XLALCreateCOMPLEX16FrequencySeries("freqModelhPlus",
-                                                                            &(ifoPtr->freqData->epoch),
-                                                                            0.0,
-                                                                            ifoPtr->freqData->deltaF,
-                                                                            &lalDimensionlessUnit,
-                                                                            ifoPtr->freqData->data->length);
-                ifoPtr->freqModelhCross = XLALCreateCOMPLEX16FrequencySeries("freqModelhCross",
-                                                                             &(ifoPtr->freqData->epoch),
-                                                                             0.0,
-                                                                             ifoPtr->freqData->deltaF,
-                                                                             &lalDimensionlessUnit,
-                                                                             ifoPtr->freqData->data->length);
-                ifoPtr->modelParams = XLALCalloc(1, sizeof(LALInferenceVariables));
-            }
-            ifoPtr = ifoPtr->next;
-        }
         irs->currentLikelihood=LALInferenceNullLogLikelihood(irs->data);
-        printf("Injection Null Log Likelihood: %g\n", irs->currentLikelihood);
     } else {
         fprintf(stdout, " initialize(): no data read.\n");
         irs = NULL;
@@ -492,10 +429,17 @@ void initializeMCMC(LALInferenceRunState *runState) {
 
     gsl_rng_set(runState->GSLrandom, randomseed);
 
-     /* Set up currentParams with variables to be used */
+     /* Set up CBC model and parameter array */
+    runState->modelArray = XLALMalloc(nwalkers_per_thread * sizeof(LALInferenceModel*));
     runState->currentParamArray = XLALMalloc(nwalkers_per_thread * sizeof(LALInferenceVariables*));
-    for (walker = 0; walker < nwalkers_per_thread; walker++)
-        runState->currentParamArray[walker] = LALInferenceInitCBCVariables(runState);
+
+    for (walker = 0; walker < nwalkers_per_thread; walker++) {
+        runState->modelArray[walker] = LALInferenceInitCBCModel(runState);
+
+        runState->currentParamArray[walker] = XLALMalloc(sizeof(LALInferenceVariables));
+        memset(runState->currentParamArray[walker], 0, sizeof(LALInferenceVariables));
+        LALInferenceCopyVariables(runState->modelArray[walker]->params, runState->currentParamArray[walker]);
+    }
 
     /* Have currentParams in runState point to the first parameter set, since currentParams
      *   is often used to count dimensions, determine variable names, etc. */
@@ -558,6 +502,15 @@ int main(int argc, char *argv[]){
 
     /* Set up structures for MCMC */
     initializeMCMC(runState);
+
+    /* Set up model struct and set currentVariables to match the initialized model params */
+    runState->model = LALInferenceInitCBCModel(runState);
+    runState->currentParams = XLALMalloc(sizeof(LALInferenceVariables));
+    memset(runState->currentParams, 0, sizeof(LALInferenceVariables));
+    LALInferenceCopyVariables(runState->model->params, runState->currentParams);
+  
+    /* Set template function in runState, since it's sometime used */
+    runState->templt = runState->model->templt;
 
     /* Choose the likelihood */
     LALInferenceInitLikelihood(runState);
