@@ -74,7 +74,9 @@ typedef struct{
   REAL8   mismatchT;          /**< mismatch for spacing in time of periapse passage */
   REAL8   mismatchP;          /**< mismatch for spacing in period */
   INT4    numCand;            /**< number of candidates to keep in output toplist */
-  BOOLEAN readlist;           /**Flag indicate whether read in SFT-pair list, if FALSE, output SFT-pair list*/
+  CHAR    *pairListInputFilename; /**< input filename containing list of sft index pairs (if not provided, determine list of pairs */
+  CHAR    *pairListOutputFilename; /**< output filename to write list of sft index pairs */
+  CHAR    *sftListOutputFilename; /**< output filename to write list of sfts */
   CHAR    *toplistFilename;   /**< output filename containing candidates in toplist */
 } UserInput_t;
 
@@ -291,44 +293,20 @@ int main(int argc, char *argv[]){
   }
 
   /* Construct the list of SFT pairs */
-#define SFTPAIRFILENAME "SFTpairlist.dat"
-#define SFTFILENAME "SFTlist.dat"
 #define PCC_SFTPAIR_HEADER "# The length of SFT-pair list is %u #\n"
 #define PCC_SFT_HEADER "# The length of SFT list is %u #\n"
   FILE *fp = NULL;
 
-  if (uvar.readlist == FALSE) /*Probably no need to introduce a flag, while it can just test whether the file exists or not, but it works well now/Harry*/
-    {
-      if ( ( XLALCreateSFTPairIndexList( &sftPairs, sftIndices, inputSFTs, uvar.maxLag, uvar.inclAutoCorr ) != XLAL_SUCCESS ) ) {
-	LogPrintf ( LOG_CRITICAL, "%s: XLALCreateSFTPairIndexList() failed with errno=%d\n", __func__, xlalErrno );
-	XLAL_ERROR( XLAL_EFUNC );
-      }
-
-      fp = fopen(SFTPAIRFILENAME,"w");
-      fprintf(fp,PCC_SFTPAIR_HEADER, sftPairs->length ); /*output the length of SFT-pair list to the header*/
-      for(j = 0; j < sftPairs->length; j++){
-	fprintf(fp,"%u %u\n", sftPairs->data[j].sftNum[0], sftPairs->data[j].sftNum[1]);
-      }
-      fclose(fp);
-
-      fp = fopen(SFTFILENAME,"w");
-      fprintf(fp,PCC_SFT_HEADER, sftIndices->length ); /*output the length of SFT list to the header*/
-      for(j = 0; j < sftIndices->length; j++){ /*output the SFT list */
-	fprintf(fp,"%u %u\n", sftIndices->data[j].detInd, sftIndices->data[j].sftInd);
-      }
-      fclose(fp);
-    }
-  else
-    {
+  if (strcmp(uvar.pairListInputFilename,"")) { /* If the user provided a list for reading, use it */
       if((sftPairs = XLALCalloc(1, sizeof(sftPairs))) == NULL){
 	XLAL_ERROR(XLAL_ENOMEM);
       }
-
-      if((fp = fopen(SFTPAIRFILENAME, "r")) == NULL){
+      if((fp = fopen(uvar.pairListInputFilename, "r")) == NULL){
 	LogPrintf ( LOG_CRITICAL, "didn't find SFT-pair list while readin = TRUE\n", 0);
 	XLAL_ERROR( XLAL_EFUNC );
 	}
       fscanf(fp,PCC_SFTPAIR_HEADER,&sftPairs->length);
+	/* FIXME: Should check the return value of this */
 
       if((sftPairs->data = XLALCalloc(sftPairs->length, sizeof(*sftPairs->data)))==NULL){
 	XLALFree(sftPairs);
@@ -337,8 +315,36 @@ int main(int argc, char *argv[]){
 
       for(j = 0; j < sftPairs->length; j++){ /*read in  the SFT-pair list */
 	fscanf(fp,"%u %u\n", &sftPairs->data[j].sftNum[0], &sftPairs->data[j].sftNum[1]);
+	/* FIXME: Should check the return value of this */
       }
       fclose(fp);
+
+  } else { /* if not, construct the list of pairs */
+      if ( ( XLALCreateSFTPairIndexList( &sftPairs, sftIndices, inputSFTs, uvar.maxLag, uvar.inclAutoCorr ) != XLAL_SUCCESS ) ) {
+	LogPrintf ( LOG_CRITICAL, "%s: XLALCreateSFTPairIndexList() failed with errno=%d\n", __func__, xlalErrno );
+	XLAL_ERROR( XLAL_EFUNC );
+      }
+  }
+
+  if (strcmp(uvar.pairListOutputFilename,"")) { /* Write the list of pairs to a file, if a name was provided */
+      fp = fopen(uvar.pairListOutputFilename,"w");
+      fprintf(fp,PCC_SFTPAIR_HEADER, sftPairs->length ); /*output the length of SFT-pair list to the header*/
+      for(j = 0; j < sftPairs->length; j++){
+	fprintf(fp,"%u %u\n", sftPairs->data[j].sftNum[0], sftPairs->data[j].sftNum[1]);
+      }
+      fclose(fp);
+  }
+
+  if (strcmp(uvar.sftListOutputFilename,"")) { /* Write the list of SFTs to a file for sanity-checking purposes */
+      fp = fopen(uvar.sftListOutputFilename,"w");
+      fprintf(fp,PCC_SFT_HEADER, sftIndices->length ); /*output the length of SFT list to the header*/
+      for(j = 0; j < sftIndices->length; j++){ /*output the SFT list */
+	fprintf(fp,"%u %u\n", sftIndices->data[j].detInd, sftIndices->data[j].sftInd);
+      }
+      fclose(fp);
+    }
+  else
+    {
 
     }
 
@@ -547,7 +553,9 @@ int XLALInitUserVars (UserInput_t *uvar)
   uvar->deltaRad = 0.0;
   uvar->rngMedBlock = 50;
   uvar->numBins = 1;
-  uvar->readlist = FALSE;
+  uvar->pairListInputFilename = XLALStringDuplicate("");
+  uvar->pairListOutputFilename = XLALStringDuplicate("");
+  uvar->sftListOutputFilename = XLALStringDuplicate("");
   /* default for reftime is in the middle */
   uvar->refTime = 0.5*(uvar->startTime + uvar->endTime);
 
@@ -604,8 +612,10 @@ int XLALInitUserVars (UserInput_t *uvar)
   XLALregREALUserStruct  ( mismatchT,       0,  UVAR_OPTIONAL, "Desired mismatch for periapse passage time spacing");
   XLALregREALUserStruct  ( mismatchP,       0,  UVAR_OPTIONAL, "Desired mismatch for period spacing");
   XLALregINTUserStruct   ( numCand,         0,  UVAR_OPTIONAL, "Number of candidates to keep in toplist");
+  XLALregSTRINGUserStruct( pairListInputFilename, 0,  UVAR_OPTIONAL, "Name of file from which to read list of SFT pairs");
+  XLALregSTRINGUserStruct( pairListOutputFilename, 0,  UVAR_OPTIONAL, "Name of file to which to write list of SFT pairs");
+  XLALregSTRINGUserStruct( sftListOutputFilename, 0,  UVAR_OPTIONAL, "Name of file to whick to write list of SFTs (for sanity checks)");
   XLALregSTRINGUserStruct( toplistFilename, 0,  UVAR_OPTIONAL, "Output filename containing candidates in toplist");
-  XLALregBOOLUserStruct  ( readlist,        0,  UVAR_OPTIONAL, "Read in the SFT-pair list(FALSE) or output(TRUE)");
 
   if ( xlalErrno ) {
     XLALPrintError ("%s: user variable initialization failed with errno = %d.\n", __func__, xlalErrno );
