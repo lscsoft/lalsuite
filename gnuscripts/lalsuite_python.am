@@ -90,7 +90,9 @@ pybin-install-data-hook:
 		echo "Fixing shebangs commands in $(DESTDIR)$(pybindir)..."; \
 		for file in $(pybin_SCRIPTS); do \
 			printf " $${file}"; \
-			if $(SED) -i "s|^$${shebang}.*$$|$${shebang_command}|" "$(DESTDIR)$(pybindir)/$${file}"; then : ; else \
+			if $(SED) -i.tmp "s|^$${shebang}.*$$|$${shebang_command}|" $(DESTDIR)$(pybindir)/$${file}; then \
+				rm -f $(DESTDIR)$(pybindir)/$${file}.tmp; \
+			else \
 				printf "\n\nERROR: failed to fix shebang command of $(DESTDIR)$(pybindir)/$${file}\n\n" >&2; \
 				exit 1; \
 			fi; \
