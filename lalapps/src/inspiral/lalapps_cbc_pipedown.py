@@ -1203,8 +1203,8 @@ if cp.has_section("extended-background"):
     slide_step = cp.get('extended-background', 'slide-step')
     veto_window = cp.get('extended-background', 'veto-window')
     new_snr_cut = cp.get('extended-background', 'new-snr-cut')
-    
-    loudest_event_glob = "*_VETO_LOUDEST_ALL_DATA_EVENTS_BY_COMBINED_FAR_SUMMAR*xml"
+   
+    loudest_event_glob = cp.get('extended-background', 'loudest-event-glob')
     ihope_base_dir = "../"
     
     ext_job = inspiral.ExtendedCoincJob(cp)

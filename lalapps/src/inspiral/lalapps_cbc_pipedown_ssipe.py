@@ -803,6 +803,8 @@ for result_db in result_dbs_cache:
   else:
     datatypes = ['all_data', 'playground', 'slide']
 
+  lc_nodes = []
+
   for datatype in datatypes:
     print "\t\tfor %s..." % datatype
 
@@ -832,6 +834,8 @@ for result_db in result_dbs_cache:
       printlc_node.set_include_only_coincs( '[ALLin' + on_instruments + ']' )
       printlc_node.set_datatype( datatype )
       printlc_node.add_var_opt('time-column',time_column)
+
+      lc_nodes.append(printlc_node)
 
       # set parent node
       printlc_node.add_parent( ccfar_node )
@@ -1092,6 +1096,37 @@ for result_db in result_dbs_cache:
     plotifar_node.add_parent( ccfar_node )
 
     dag.add_node( plotifar_node )
+
+##############################################################################
+# Generate the extended background plots for zero far events
+if cp.has_section("extended-background"):
+    eopts = cp.items("extended-background")
+    
+    coinc_threshold = cp.get('extended-background', 'coinc-threshold')
+    param_ranges = cp.get('extended-background', 'param-ranges')
+    ethinca = cp.get('extended-background', 'e-thinca-parameter')
+    slide_step = cp.get('extended-background', 'slide-step')
+    veto_window = cp.get('extended-background', 'veto-window')
+    new_snr_cut = cp.get('extended-background', 'new-snr-cut')
+    
+    loudest_event_glob = cp.get('extended-background', 'loudest-event-glob')
+    ihope_base_dir = "../"
+    
+    ext_job = inspiral.ExtendedCoincJob(cp)
+    ext_node = inspiral.ExtendedCoincNode(ext_job)
+    ext_node.set_coinc_threshold(coinc_threshold)
+    ext_node.set_param_ranges(param_ranges)
+    ext_node.set_ethinca(ethinca)
+    ext_node.set_slide_step(slide_step)
+    ext_node.set_veto_window(veto_window)
+    ext_node.set_new_snr_cut(new_snr_cut)
+    ext_node.set_loudest_event_glob(loudest_event_glob)
+    ext_node.set_ihope_base_dir(ihope_base_dir)
+    
+    for node in lc_nodes:
+        ext_node.add_parent(node)
+    
+    dag.add_node(ext_node)
  
   
 ##############################################################################
