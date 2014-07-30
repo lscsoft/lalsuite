@@ -7,7 +7,7 @@
 *.pyo
 .deps
 .libs
-.python_wrapper
+.python_wrapper.sh
 /_build/
 /_inst/
 /lalxml-*/
