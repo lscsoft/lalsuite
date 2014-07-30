@@ -47,26 +47,28 @@ pymodule-mostlyclean-local:
 
 $(pybin_SCRIPTS): Makefile .python_wrapper.sh
 .py:
-	$(AM_V_GEN)rm -f $@ $@.tmp || exit 1; \
+	$(AM_V_GEN)shebang='#!'; \
+	rm -f $@ $@.tmp || exit 1; \
 	if test -x $<; then \
 		printf "\nERROR: $< must not be executable\n\n" >&2; \
 		exit 1; \
 	fi; \
-	if test x`$(SED) -n -e '/^#!/p' $<` != x; then \
-		printf "\nERROR: $< must not contain a #! command line\n\n" >&2; \
+	if test x`$(SED) -n -e "/^$${shebang}/p" $<` != x; then \
+		printf "\nERROR: $< must not contain a $${shebang} command line\n\n" >&2; \
 		exit 1; \
 	fi; \
-	echo "#!/bin/sh $(abs_builddir)/.python_wrapper.sh" > $@.tmp; \
+	echo "$${shebang}/bin/sh $(abs_builddir)/.python_wrapper.sh" > $@.tmp; \
 	cat $< >> $@.tmp || exit 1; \
 	chmod +x $@.tmp || exit 1; \
 	mv -f $@.tmp $@
 
 install-data-hook: pybin-install-data-hook
 pybin-install-data-hook:
-	$(AM_V_at)pywrapregex='s|[@]SED[@]|$(SED)|g;s|[@]PYTHON[@]|$(PYTHON)|g;s|[@]lalsuite_pythonpath[@]'; \
+	$(AM_V_GEN)shebang='#!'; \
+	pywrapregex='s|[@]SED[@]|$(SED)|g;s|[@]PYTHON[@]|$(PYTHON)|g;s|[@]lalsuite_pythonpath[@]'; \
 	if test "x$(pybin_SCRIPTS)" != x; then \
 		if test "x$(prefix)" = "x$(python_exec_prefix)"; then \
-			shebang_command="$(PYTHON)"; \
+			shebang_command="$${shebang}$(PYTHON)"; \
 		else \
 			python_wrapper="$(pkglibexecdir)/python_wrapper.sh"; \
 			echo " $(MKDIR_P) $(DESTDIR)$(pkglibexecdir)"; \
@@ -83,12 +85,12 @@ pybin-install-data-hook:
 				printf "\nERROR: failed to generate $(DESTDIR)$${python_wrapper}\n\n" >&2; \
 				exit 1; \
 			fi; \
-			shebang_command="/bin/sh $${python_wrapper}"; \
+			shebang_command="$${shebang}/bin/sh $${python_wrapper}"; \
 		fi; \
 		echo "Fixing shebangs commands in $(DESTDIR)$(pybindir)..."; \
 		for file in $(pybin_SCRIPTS); do \
 			printf " $${file}"; \
-			if $(SED) -i "s|^#!.*$$|#!$${shebang_command}|" "$(DESTDIR)$(pybindir)/$${file}"; then : ; else \
+			if $(SED) -i "s|^$${shebang}.*$$|$${shebang_command}|" "$(DESTDIR)$(pybindir)/$${file}"; then : ; else \
 				printf "\n\nERROR: failed to fix shebang command of $(DESTDIR)$(pybindir)/$${file}\n\n" >&2; \
 				exit 1; \
 			fi; \
