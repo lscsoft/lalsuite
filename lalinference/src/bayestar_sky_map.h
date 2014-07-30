@@ -69,6 +69,7 @@
 #ifndef BAYESTAR_SKY_MAP_H
 #define BAYESTAR_SKY_MAP_H
 
+#ifndef SWIG /* exclude from SWIG interface */
 
 #include <complex.h>
 
@@ -143,5 +144,7 @@ double bayestar_log_likelihood_toa_phoa_snr(
 /* Unit test suite. Return EXIT_SUCCESS if tests passed,
  * or otherwise EXIT_FAILURE. */
 int bayestar_test(void);
+
+#endif /* SWIG */
 
 #endif /* BAYESTAR_SKY_MAP_H */
