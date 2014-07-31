@@ -689,7 +689,7 @@ def write_datainfo(page,opts):
   # with the time analysed.
   i=0
   catStrings = ["VETOTIME_CAT1"]
-  categories = (hipecp.get('segments','veto-categories')).split(',')
+  categories = (hipecp.get('segments','veto-categories')).split(',')[:-1]
   for num in categories:
     catStrings.append("VETOTIME_CAT" + str(num))
   for cat in (catStrings):
