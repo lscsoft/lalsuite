@@ -510,6 +510,10 @@ static adaptive_sky_map *adaptive_sky_map_alloc(unsigned char order)
 }
 
 
+static const double M_LN4 = 2 * M_LN2;
+static const double M_1_LN4 = 0.5 / M_LN2;
+
+
 static double *adaptive_sky_map_rasterize(adaptive_sky_map *map, long *out_npix)
 {
     const unsigned char order = map->max_order;
@@ -522,10 +526,15 @@ static double *adaptive_sky_map_rasterize(adaptive_sky_map *map, long *out_npix)
 
     double norm = 0;
     const double max_log4p = map->pixels[map->len - 1].log4p;
+
+    /* Rescale so that log(max) = 0, and convert from log base 4 to
+     * natural logarithm. */
     for (ssize_t i = (ssize_t)map->len - 1; i >= 0; i --)
     {
         map->pixels[i].log4p -= max_log4p;
+        map->pixels[i].log4p *= M_LN4;
     }
+
     for (ssize_t i = (ssize_t)map->len - 1; i >= 0; i --)
     {
         const unsigned long reps = (unsigned long)1 << 2 * (order - map->pixels[i].order);
@@ -691,7 +700,7 @@ double *bayestar_sky_map_toa_phoa_snr(
             }
 
             /* Record logarithm base 4 of posterior. */
-            pixel->log4p = accum - 2 * M_LN2;
+            pixel->log4p = M_1_LN4 * accum;
         }
 
         /* Restore old error handler. */
