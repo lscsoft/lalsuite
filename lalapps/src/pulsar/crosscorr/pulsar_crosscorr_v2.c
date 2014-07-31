@@ -116,6 +116,7 @@ int main(int argc, char *argv[]){
   UINT4Vector *lowestBins = NULL;
   REAL8Vector *kappaValues = NULL;
   REAL8Vector *signalPhases = NULL;
+  REAL8Vector *sincValueList = NULL;
 
   PulsarDopplerParams XLAL_INIT_DECL(dopplerpos);
   PulsarDopplerParams thisBinaryTemplate, binaryTemplateSpacings;
@@ -142,7 +143,7 @@ int main(int argc, char *argv[]){
   CrossCorrBinaryOutputEntry thisCandidate;
   UINT4 checksum;
 
-  LogPrintf (LOG_CRITICAL, "starting time\n", 0);/*for debug convenience to record calculating time*/
+  LogPrintf (LOG_CRITICAL, "Starting time\n", 0);/*for debug convenience to record calculating time*/
   /* initialize and register user variables */
   if ( XLALInitUserVars( &uvar ) != XLAL_SUCCESS ) {
     LogPrintf ( LOG_CRITICAL, "%s: XLALInitUserVars() failed with errno=%d\n", __func__, xlalErrno );
@@ -448,6 +449,10 @@ int main(int argc, char *argv[]){
     LogPrintf ( LOG_CRITICAL, "%s: XLALCreateREAL8Vector() failed with errno=%d\n", __func__, xlalErrno );
     XLAL_ERROR( XLAL_EFUNC );
   }
+  if ((sincValueList = XLALCreateREAL8Vector ( numSFTs ) ) == NULL){
+    LogPrintf ( LOG_CRITICAL, "%s: XLALCreateREAL8Vector() failed with errno=%d\n", __func__, xlalErrno );
+    XLAL_ERROR( XLAL_EFUNC );
+  }
 
   /* args should be : spacings, min and max doppler params */
   while ( (GetNextCrossCorrTemplate(&dopplerShiftFlag, &dopplerpos, &binaryTemplateSpacings, &minBinaryTemplate, &maxBinaryTemplate) == 0) )
@@ -464,13 +469,12 @@ int main(int argc, char *argv[]){
 	  }
 	}
 
-
-      if ( (XLALGetDopplerShiftedFrequencyInfo( shiftedFreqs, lowestBins, kappaValues, signalPhases, uvar.numBins, &dopplerpos, sftIndices, inputSFTs, multiBinaryTimes, Tsft )  != XLAL_SUCCESS ) ) {
+      if ( (XLALGetDopplerShiftedFrequencyInfo( shiftedFreqs, lowestBins, kappaValues, signalPhases, sincValueList, uvar.numBins, &dopplerpos, sftIndices, inputSFTs, multiBinaryTimes, Tsft )  != XLAL_SUCCESS ) ) {
 	LogPrintf ( LOG_CRITICAL, "%s: XLALGetDopplerShiftedFrequencyInfo() failed with errno=%d\n", __func__, xlalErrno );
 	XLAL_ERROR( XLAL_EFUNC );
       }
 
-      if ( (XLALCalculatePulsarCrossCorrStatistic( &ccStat, &evSquared, curlyGUnshifted, signalPhases, lowestBins, kappaValues, uvar.numBins, sftPairs, sftIndices, inputSFTs, multiWeights)  != XLAL_SUCCESS ) ) {
+      if ( (XLALCalculatePulsarCrossCorrStatistic( &ccStat, &evSquared, curlyGUnshifted, signalPhases, lowestBins, kappaValues, sincValueList, sftPairs, sftIndices, inputSFTs, multiWeights, uvar.numBins)  != XLAL_SUCCESS ) ) {
 	LogPrintf ( LOG_CRITICAL, "%s: XLALCalculateAveCrossCorrStatistic() failed with errno=%d\n", __func__, xlalErrno );
 	XLAL_ERROR( XLAL_EFUNC );
       }
@@ -502,6 +506,7 @@ int main(int argc, char *argv[]){
   XLALDestroyREAL8Vector ( kappaValues );
   XLALDestroyUINT4Vector ( lowestBins );
   XLALDestroyREAL8Vector ( shiftedFreqs );
+  XLALDestroyREAL8Vector ( sincValueList );
   XLALDestroyMultiSSBtimes ( multiBinaryTimes );
   XLALDestroyMultiSSBtimes ( multiSSBTimes );
   XLALDestroyREAL8Vector ( curlyGUnshifted );
@@ -526,9 +531,9 @@ int main(int argc, char *argv[]){
   /* check memory leaks if we forgot to de-allocate anything */
   LALCheckMemoryLeaks();
 
-  LogPrintf (LOG_CRITICAL, "The metric element g_ff=%.9f\n", diagff);
-  LogPrintf (LOG_CRITICAL, "The metric element g_aa=%.9f\n", diagaa);
-  LogPrintf (LOG_CRITICAL, "The metric element g_TT=%.9f\n", diagTT);
+  LogPrintf (LOG_CRITICAL, "The metric element g_ff=%.9f\n", diagff, 0);
+  LogPrintf (LOG_CRITICAL, "The metric element g_aa=%.9f\n", diagaa, 0);
+  LogPrintf (LOG_CRITICAL, "The metric element g_TT=%.9f\n", diagTT, 0);
   LogPrintf (LOG_CRITICAL, "End time\n", 0);/*for debug convenience to record calculating time*/
   return 0;
 
