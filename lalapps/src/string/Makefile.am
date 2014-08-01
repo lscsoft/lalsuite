@@ -15,7 +15,7 @@ endif
 endif
 
 if HAVE_PYTHON
-pybin_SCRIPTS = \
+pybin_scripts = \
 	lalapps_cosmicstring_pipe \
 	lalapps_string_cs_gamma
 pkgpython_PYTHON = cosmicstring.py

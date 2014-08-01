@@ -128,7 +128,7 @@ bin_PROGRAMS = \
 	$(LALPULSAR_PROGS)
 
 if HAVE_PYTHON
-pybin_SCRIPTS = \
+pybin_scripts = \
 	lalapps_inspiral_pipe \
 	lalapps_inspiral_hipe \
 	lalapps_inspiral_ssipe \

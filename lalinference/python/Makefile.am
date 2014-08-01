@@ -7,7 +7,7 @@ SUBDIRS = lalinference
 
 if HAVE_PYTHON
 
-pybin_SCRIPTS = \
+pybin_scripts = \
 	bayestar_aggregate_found_injections \
 	bayestar_bin_samples \
 	bayestar_lattice_tmpltbank \

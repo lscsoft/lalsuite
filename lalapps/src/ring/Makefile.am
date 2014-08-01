@@ -77,7 +77,7 @@ endif
 
 if HAVE_PYTHON
 pkgpython_PYTHON = ring.py
-pybin_SCRIPTS = \
+pybin_scripts = \
 	lalapps_ring_pipe \
 	lalapps_ringcorse
 endif

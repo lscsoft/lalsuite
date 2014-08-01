@@ -14,7 +14,7 @@ bin_PROGRAMS = \
 	lalapps_NoiseComparison
 
 if HAVE_PYTHON
-pybin_SCRIPTS = lalapps_strain_pipe lalapps_noise_comp_pipe
+pybin_scripts = lalapps_strain_pipe lalapps_noise_comp_pipe
 pkgpython_PYTHON = strain.py
 endif
 

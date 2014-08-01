@@ -48,7 +48,7 @@ lalapps_tracksearch_dat2pgm_SOURCES = \
 	tracksearchToolbox.h
 
 if HAVE_PYTHON
-pybin_SCRIPTS = \
+pybin_scripts = \
 	lalapps_tracksearch_handler \
 	lalapps_tracksearch_pipe \
 	lalapps_tracksearch_housekeeper \

@@ -69,7 +69,7 @@ if HAVE_PYTHON
 pkgpython_PYTHON = \
 	__init__.py \
 	git_version.py
-pybin_SCRIPTS = \
+pybin_scripts = \
 	lalapps_path2cache \
 	lalapps_searchsum2cache
 endif

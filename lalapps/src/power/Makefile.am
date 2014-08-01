@@ -23,7 +23,7 @@ noinst_PROGRAMS = sense_compare
 sense_compare_SOURCES = sense_compare.c
 
 if HAVE_PYTHON
-pybin_SCRIPTS = lalapps_power_pipe lalapps_power_online_pipe lalapps_power_likelihood_pipe
+pybin_scripts = lalapps_power_pipe lalapps_power_online_pipe lalapps_power_likelihood_pipe
 pkgpython_PYTHON = power.py
 endif
 

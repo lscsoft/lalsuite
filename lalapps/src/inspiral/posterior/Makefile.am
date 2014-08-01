@@ -62,7 +62,7 @@ noinst_PROGRAMS = \
 	$(td_test_progs)
 
 if HAVE_PYTHON
-pybin_SCRIPTS = \
+pybin_scripts = \
 	lalapps_combine_evidence \
 	lalapps_coherence_test \
 	lalapps_nest_pipe \

@@ -7,7 +7,7 @@ SUBDIRS = laldetchar
 
 if HAVE_PYTHON
 
-pybin_SCRIPTS = \
+pybin_scripts = \
 	laldetchar-hveto \
 	laldetchar-hveto-summary-page \
 	laldetchar-segments-from-data \
