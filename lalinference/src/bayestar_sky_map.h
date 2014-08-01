@@ -69,7 +69,7 @@
 #ifndef BAYESTAR_SKY_MAP_H
 #define BAYESTAR_SKY_MAP_H
 
-#ifndef SWIG /* exclude from SWIG interface */
+#if !defined(SWIG) && !defined(__cplusplus) /* exclude from SWIG interface and C++ code */
 
 #include <complex.h>
 
@@ -145,6 +145,6 @@ double bayestar_log_likelihood_toa_phoa_snr(
  * or otherwise EXIT_FAILURE. */
 int bayestar_test(void);
 
-#endif /* SWIG */
+#endif /* !defined(SWIG) && !defined(__cplusplus) */
 
 #endif /* BAYESTAR_SKY_MAP_H */
