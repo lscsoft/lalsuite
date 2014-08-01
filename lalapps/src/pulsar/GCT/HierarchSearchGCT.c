@@ -1190,7 +1190,6 @@ int MAIN( int argc, char *argv[]) {
         }
         binsFstat1 = binsFstatSearch + 2 * semiCohPar.extraBinsFstat;
 
-
       /* ################## loop over coarse-grid F1DOT values ################## */
       ifdot = 0;
 
@@ -1834,11 +1833,6 @@ void SetUpSFTs( LALStatus *status,			/**< pointer to LALStatus structure */
   SFTCatalogSequence catalogSeq;
   REAL8 midTseg,startTseg,endTseg;
 
-  REAL8 doppWings, freqmin, freqmax;
-  REAL8 startTime_freqLo, startTime_freqHi;
-  REAL8 endTime_freqLo, endTime_freqHi;
-  REAL8 freqLo, freqHi;
-
   INT4 sft_check_result = 0;
 
   INITSTATUS(status);
@@ -1983,22 +1977,15 @@ void SetUpSFTs( LALStatus *status,			/**< pointer to LALStatus structure */
   in->extraBinsFstat = (UINT4)( 0.25*(in->tObs*in->df1dot + in->tObs*in->tObs*in->df2dot)/in->dFreqStack + 1e-6) + 1;
 
   /* set wings of sfts to be read */
-  /* the wings must be enough for the Doppler shift and extra bins
-     for the running median block size and Dterms for Fstat calculation.
-     In addition, it must also include wings for the spindown correcting
-     for the reference time  */
-  /* calculate Doppler wings at the highest frequency */
-  startTime_freqLo = in->spinRange_startTime.fkdot[0]; /* lowest search freq at start time */
-  startTime_freqHi = startTime_freqLo + in->spinRange_startTime.fkdotBand[0]; /* highest search freq. at start time*/
-  endTime_freqLo = in->spinRange_endTime.fkdot[0];
-  endTime_freqHi = endTime_freqLo + in->spinRange_endTime.fkdotBand[0];
+  REAL8 minCoverFreq, maxCoverFreq;
+  REAL8 asiniMax = 0, PeriodMin = 0;
+  // NOTE: *must* use spin-range at *mid-time* (not reftime), which is where the GCT code sets up its
+  // template bank. This is potentially 'wider' than the physically-requested template bank, and
+  // can therefore also require more SFT frequency bins!
+  XLALCWSignalCoveringBand ( &minCoverFreq, &maxCoverFreq, &tStartGPS, &tEndGPS, &(in->spinRange_midTime), asiniMax, PeriodMin );
 
-  freqLo = HSMIN ( startTime_freqLo, endTime_freqLo );
-  freqHi = HSMAX ( startTime_freqHi, endTime_freqHi );
-  doppWings = freqHi * in->dopplerMax;    /* maximum Doppler wing -- probably larger than it has to be */
-
-  freqmin = freqLo - doppWings - in->extraBinsFstat * in->dFreqStack;
-  freqmax = freqHi + doppWings + in->extraBinsFstat * in->dFreqStack;
+  REAL8 freqmin = minCoverFreq - in->extraBinsFstat * in->dFreqStack;
+  REAL8 freqmax = maxCoverFreq + in->extraBinsFstat * in->dFreqStack;
 
   /* fill detector name vector with all detectors present in any data sements */
   in->detectorIDs = NULL;
