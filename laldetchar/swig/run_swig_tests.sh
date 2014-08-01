@@ -1,1 +1,0 @@
-../../lal/swig/run_swig_tests.sh
