@@ -69,7 +69,9 @@
 #ifndef BAYESTAR_SKY_MAP_H
 #define BAYESTAR_SKY_MAP_H
 
-#if !defined(SWIG) && !defined(__cplusplus) /* exclude from SWIG interface and C++ code */
+/* exclude from SWIG interface and C++ code */
+/* FIXME: maybe use GSL vector and matrix types that SWIG can wrap easily */
+#if !defined(SWIG) && !defined(__cplusplus)
 
 #include <complex.h>
 
