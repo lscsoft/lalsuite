@@ -7,7 +7,7 @@
 *.pyo
 .deps
 .libs
-.pybin
+.python_wrapper.sh
 /_build/
 /_inst/
 /lalinference-*/
@@ -41,6 +41,7 @@ python/lalinference/__init__.py
 python/lalinference/_lalinference*
 python/lalinference/git_version.py
 python/lalinference/lalinference.py
+python/lalinference/bayestar/sky_map.so
 src/LALInferenceBuildInfo.c
 src/LALInferenceConfig.h
 src/LALInferenceVCSInfo.c

@@ -3,6 +3,8 @@ MOSTLYCLEANFILES =
 EXTRA_DIST =
 include $(top_srcdir)/gnuscripts/lalsuite_python.am
 
+if HAVE_PYTHON
+
 pymoduledir = $(pkgpythondir)/sbank
 
 pymodule_PYTHON = \
@@ -13,3 +15,5 @@ pymodule_PYTHON = \
 	tau0tau3.py \
 	waveforms.py \
 	$(END_OF_LIST)
+
+endif

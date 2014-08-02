@@ -1,6 +1,7 @@
 *.swp
 *.trs
 *~
+*.egg-info
 .DS_Store
 .dirstamp
 /Makefile

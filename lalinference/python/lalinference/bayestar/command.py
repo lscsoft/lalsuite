@@ -35,7 +35,7 @@ class NewlinePreservingHelpFormatter(IndentedHelpFormatter):
         return "\n\n".join(
             t if len(t) == 0 or t[0].isspace()
             else IndentedHelpFormatter._format_text(self, t)
-            for t in text.split("\n\n")
+            for t in text.strip().split("\n\n")
         )
 
 

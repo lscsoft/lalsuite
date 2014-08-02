@@ -1,4 +1,3 @@
-#!@PYTHON@
 #
 # Copyright (C) 2013  Leo Singer
 #
@@ -16,7 +15,6 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #
-from __future__ import division
 """
 Synthesize triggers for simulated sources using a miniature matched-filter
 detection pipeline. The input file (or stdin if the input file is omitted)
@@ -26,13 +24,14 @@ optionally gzip-compressed LIGO-LW XML file containing single-detector triggers
 and coincidences. A single template that has the same intrinsic parameters as
 the injection is used.
 """
+from __future__ import division
 __author__ = "Leo Singer <leo.singer@ligo.org>"
 
 
 # Determine list of known detectors for command line arguments.
 import lal
 available_ifos = sorted(det.frDetector.prefix
-    for det in lal.lalCachedDetectors)
+    for det in lal.CachedDetectors)
 
 # List of interpolation methods
 available_interp_methods = [
@@ -354,10 +353,10 @@ for i_sim_inspiral in progress.iterate(range(n_injections), format='injection %d
         # Generate injection
         hplus, hcross = lalsimulation.SimInspiralChooseTDWaveform(
             phi, 1 / sample_rate,
-            mass1 * lal.LAL_MSUN_SI, mass2 * lal.LAL_MSUN_SI,
+            mass1 * lal.MSUN_SI, mass2 * lal.MSUN_SI,
             spin1x, spin1y, spin1z, spin2x, spin2y, spin2z,
             f_low, f_low,
-            DL * 1e6 * lal.LAL_PC_SI,
+            DL * 1e6 * lal.PC_SI,
             inc, 0, 0,
             None, None,
             amplitude_order,

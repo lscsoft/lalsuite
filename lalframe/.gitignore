@@ -7,7 +7,7 @@
 *.pyo
 .deps
 .libs
-.pybin
+.python_wrapper.sh
 /_build/
 /_inst/
 /lalframe-*/

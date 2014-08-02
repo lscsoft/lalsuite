@@ -1,4 +1,3 @@
-#!@PYTHON@
 #
 # Copyright (C) 2011  Leo Singer
 #

@@ -109,6 +109,7 @@ int XLALGetDopplerShiftedFrequencyInfo
    UINT4Vector          *lowestBins,
    REAL8Vector         *kappaValues,
    REAL8Vector        *signalPhases,
+   REAL8Vector            *sincList,
    UINT4                    numBins,
    PulsarDopplerParams        *dopp,
    SFTIndexList               *sfts,
@@ -152,11 +153,12 @@ int XLALCalculatePulsarCrossCorrStatistic
    REAL8Vector  *signalPhases,
    UINT4Vector    *lowestBins,
    REAL8Vector   *kappaValues,
-   UINT4              numBins,
+   REAL8Vector      *sincList,
    SFTPairIndexList *sftPairs,
    SFTIndexList   *sftIndices,
    MultiSFTVector  *inputSFTs,
-   MultiNoiseWeights *multiWeights
+   MultiNoiseWeights *multiWeights,
+      UINT4              numBins
   )
  ;
 

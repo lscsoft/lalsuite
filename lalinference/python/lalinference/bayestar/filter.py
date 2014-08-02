@@ -1,3 +1,4 @@
+# -*- coding: UTF-8 -*-
 #
 # Copyright (C) 2013  Leo Singer
 #
@@ -36,10 +37,8 @@ from .decorator import memoized
 
 
 # Useful sample units
-unitInverseHertz = lal.Unit()
-unitInverseSqrtHertz = lal.Unit()
-lal.UnitInvert(unitInverseHertz, lal.lalHertzUnit)
-lal.UnitSqrt(unitInverseSqrtHertz, unitInverseHertz)
+unitInverseHertz = lal.Unit('s')
+unitInverseSqrtHertz = lal.Unit('s^1/2')
 
 
 # Memoize FFT plans
@@ -122,9 +121,9 @@ def colored_noise(epoch, duration, sample_rate, psd):
     data_length = duration * sample_rate
     plan = CreateReverseREAL8FFTPlan(data_length, 0)
     x = lal.CreateREAL8TimeSeries(None, lal.LIGOTimeGPS(0), 0, 0,
-        lal.lalDimensionlessUnit, data_length)
+        lal.DimensionlessUnit, data_length)
     xf = lal.CreateCOMPLEX16FrequencySeries(None, epoch, 0, 1 / duration,
-        lal.lalDimensionlessUnit, data_length // 2 + 1)
+        lal.DimensionlessUnit, data_length // 2 + 1)
     white_noise = (np.random.randn(len(xf.data.data)) + np.random.randn(len(xf.data.data)) * 1j)
 
     # On line 1288 of lal's AverageSpectrum.c, in the code comments for
@@ -145,7 +144,7 @@ def colored_noise(epoch, duration, sample_rate, psd):
 
     # Copy over metadata.
     x.epoch = epoch
-    x.sampleUnits = lal.lalStrainUnit
+    x.sampleUnits = lal.StrainUnit
 
     # Done.
     return x
@@ -177,7 +176,7 @@ def matched_filter_spa(template, psd):
     fdfilter = matched_filter_real_fd(template, psd)
     fdfilter2 = add_quadrature_phase(fdfilter)
     tdfilter = lal.CreateCOMPLEX16TimeSeries(None, lal.LIGOTimeGPS(0), 0, 0,
-        lal.lalDimensionlessUnit, len(fdfilter2.data.data))
+        lal.DimensionlessUnit, len(fdfilter2.data.data))
     plan = CreateReverseCOMPLEX16FFTPlan(len(fdfilter2.data.data), 0)
     lal.COMPLEX16FreqTimeFFT(tdfilter, fdfilter2, plan)
     return tdfilter
@@ -186,10 +185,218 @@ def matched_filter_spa(template, psd):
 def matched_filter_real(template, psd):
     fdfilter = matched_filter_real_fd(template, psd)
     tdfilter = lal.CreateREAL8TimeSeries(None, lal.LIGOTimeGPS(0), 0, 0,
-        lal.lalDimensionlessUnit, 2 * (len(fdfilter.data.data) - 1))
+        lal.DimensionlessUnit, 2 * (len(fdfilter.data.data) - 1))
     plan = CreateReverseREAL8FFTPlan(len(tdfilter.data.data), 0)
     lal.REAL8FreqTimeFFT(tdfilter, fdfilter, plan)
     return tdfilter
+
+
+def exp_i(phi):
+    return np.cos(phi) + np.sin(phi) * 1j
+
+
+def truncated_ifft(y, nsamples_out=None):
+    """Truncated inverse FFT.
+
+    See http://www.fftw.org/pruned.html for a discussion of related algorithms.
+
+    Perform inverse FFT to obtain truncated autocorrelation time series.
+    This makes use of a folded DFT for a speedup of
+
+        log(nsamples)/log(nsamples_out)
+
+    over directly computing the inverse FFT and truncating. Here is how it
+    works. Say we have a frequency-domain signal X[k], for 0 ≤ k ≤ N - 1. We
+    want to compute its DFT x[n], for 0 ≤ n ≤ M, where N is divisible by M:
+    N = cM, for some integer c. The DFT is:
+
+               N - 1
+               ______
+               \           2 π i k n
+        x[n] =  \     exp[-----------] Y[k]
+               /               N
+              /------
+               k = 0
+
+               c - 1   M - 1
+               ______  ______
+               \       \           2 π i n (m c + j)
+             =  \       \     exp[------------------] Y[m c + j]
+               /       /                 c M
+              /------ /------
+               j = 0   m = 0
+
+               c - 1                     M - 1
+               ______                    ______
+               \           2 π i n j     \           2 π i n m
+             =  \     exp[-----------]    \     exp[-----------] Y[m c + j]
+               /               N         /               M
+              /------                   /------
+               j = 0                     m = 0
+
+    So: we split the frequency series into c deinterlaced sub-signals, each of
+    length M, compute the DFT of each sub-signal, and add them back together
+    with complex weights.
+
+    Parameters
+    ----------
+    y : `numpy.ndarray`
+        Complex input vector.
+    nsamples_out : int, optional
+        Length of output vector. By default, same as length of input vector.
+
+    Returns
+    -------
+    x : `numpy.ndarray`
+        The first nsamples_out samples of the IFFT of x, zero-padded if
+
+
+    First generate the IFFT of a random signal:
+    >>> nsamples_out = 1024
+    >>> y = np.random.randn(nsamples_out) + np.random.randn(nsamples_out) * 1j
+    >>> plan = CreateReverseCOMPLEX16FFTPlan(nsamples_out, 0)
+    >>> freq = lal.CreateCOMPLEX16Vector(nsamples_out)
+    >>> freq.data = y
+    >>> time = lal.CreateCOMPLEX16Vector(nsamples_out)
+    >>> _ = lal.COMPLEX16VectorFFT(time, freq, plan)
+    >>> x = time.data
+
+    Now check that the truncated IFFT agrees:
+    >>> np.allclose(x, truncated_ifft(y), rtol=1e-15)
+    True
+    >>> np.allclose(x, truncated_ifft(y, 1024), rtol=1e-15)
+    True
+    >>> np.allclose(x[:128], truncated_ifft(y, 128), rtol=1e-15)
+    True
+    >>> np.allclose(x[:1], truncated_ifft(y, 1), rtol=1e-15)
+    True
+    >>> np.allclose(x[:32], truncated_ifft(y, 32), rtol=1e-15)
+    True
+    >>> np.allclose(x[:63], truncated_ifft(y, 63), rtol=1e-15)
+    True
+    >>> np.allclose(x[:25], truncated_ifft(y, 25), rtol=1e-15)
+    True
+    >>> truncated_ifft(y, 1025)
+    Traceback (most recent call last):
+        ...
+    ValueError: Input is too short: you gave me an input of length 1024,
+    but you asked for an IFFT of length 1025.
+    """
+    nsamples = len(y)
+    if nsamples_out is None:
+        nsamples_out = nsamples
+    elif nsamples_out > nsamples:
+        raise ValueError(
+            ('Input is too short: you gave me an input of length {0},\n'
+            'but you asked for an IFFT of length {1}.').format(
+            nsamples, nsamples_out))
+    elif nsamples & (nsamples - 1):
+        raise NotImplementedError(
+            'I am too lazy to implement for nsamples that is not a power of 2.')
+
+    # Find number of FFTs.
+    # FIXME: only works if nsamples is a power of 2.
+    # Would be better to find the smallest divisor of nsamples that is
+    # greater than or equal to nsamples_out.
+    nsamples_batch = int(ceil_pow_2(nsamples_out))
+    c = nsamples // nsamples_batch
+
+    # FIXME: Implement for real-to-complex FFTs as well.
+    plan = CreateReverseCOMPLEX16FFTPlan(nsamples_batch, 0)
+    input_workspace = lal.CreateCOMPLEX16Vector(nsamples_batch)
+    output_workspace = lal.CreateCOMPLEX16Vector(nsamples_batch)
+    twiddle = exp_i(2 * np.pi * np.arange(nsamples_batch) / nsamples)
+
+    j = c - 1
+    input_workspace.data = y[j::c]
+    lal.COMPLEX16VectorFFT(output_workspace, input_workspace, plan)
+    x = output_workspace.data.copy() # Make sure this is a deep copy
+
+    for j in range(c-2, -1, -1):
+        input_workspace.data = y[j::c]
+        lal.COMPLEX16VectorFFT(output_workspace, input_workspace, plan)
+        x *= twiddle # FIXME: check stability of this recurrence relation.
+        x += output_workspace.data
+
+    # Now need to truncate remaining samples.
+    if nsamples_out < nsamples_batch:
+        x = x[:nsamples_out]
+
+    return x
+
+
+def autocorrelation(
+        mass1, mass2, S, f_low, out_duration,
+        approximant, amplitude_order, phase_order
+    ):
+    """
+    Calculate the complex autocorrelation sequence a(t), for t >= 0, of an
+    inspiral signal.
+
+    Parameters
+    ----------
+    mass1 : float
+        Mass of component 1 (solar masses).
+    mass2 : float
+        Mass of component 1 (solar masses).
+    S : callable
+        Noise power spectral density function.
+    f_low : float
+        Low frequency cutoff (Hz).
+    out_duration : float
+        Compute the autocorrelation function from time t=0 to t=output_duration.
+    approximant : int
+        Post-Newtonian approximant (e.g. lalsimulation.TaylorF2).
+    amplitude_order : int
+        Twice the post-Newtonian amplitude order (e.g. 3).
+    phase_order : int
+        Twice the post-Newtonian phase order (e.g. 3).
+
+    Returns
+    -------
+    acor : `numpy.ndarray`
+        The complex-valued autocorrelation sequence.
+    sample_rate : float
+        Sample rate in Hz.
+    """
+
+    # Compute duration of template, rounded up to a power of 2.
+    duration = ceil_pow_2(lalsimulation.SimInspiralTaylorF2ReducedSpinChirpTime(
+        f_low, mass1*lal.MSUN_SI, mass2*lal.MSUN_SI, 0, phase_order))
+
+    # Evaluate waveform. Terminates at ISCO.
+    hplus, hcross = lalsimulation.SimInspiralChooseFDWaveform(
+        0, 1/duration, mass1*lal.MSUN_SI, mass2*lal.MSUN_SI,
+        0, 0, 0, 0, 0, 0, f_low, 0, 0, 1e6 * lal.PC_SI, 0, 0, 0,
+        None, None, amplitude_order, phase_order, approximant)
+
+    # Force `plus' and `cross' waveform to be in quadrature.
+    h = 0.5 * (hplus.data.data - 1j * hcross.data.data)
+
+    # Determine length of IFFT; round up to a power of 2.
+    nsamples = 2 * int(ceil_pow_2(len(h)))
+
+    # Compute autopower spectral density.
+    power = np.empty(nsamples, dtype=hplus.data.data.dtype)
+    power[0] = 0
+    f = np.arange(1, len(h)) / duration
+    power[1:len(h)] = abs2(h[1:]) / S(f)
+    power[len(h):] = 0
+
+    sample_rate = nsamples / duration
+
+    # Determine length of output FFT.
+    nsamples_out = int(np.ceil(out_duration * sample_rate))
+
+    acor = truncated_ifft(power, nsamples_out)
+    acor /= np.abs(acor[0])
+
+    # If we have done this right, then the zeroth sample represents lag 0
+    assert np.argmax(np.abs(acor)) == 0
+    assert np.isreal(acor[0])
+
+    # Done!
+    return acor, float(sample_rate)
 
 
 def generate_template(mass1, mass2, S, f_low, sample_rate, template_duration, approximant, amplitude_order, phase_order):
@@ -197,23 +404,23 @@ def generate_template(mass1, mass2, S, f_low, sample_rate, template_duration, ap
     if approximant == lalsimulation.TaylorF2:
         zf, _ = lalsimulation.SimInspiralChooseFDWaveform(0,
             1 / template_duration,
-            mass1 * lal.LAL_MSUN_SI, mass2 * lal.LAL_MSUN_SI,
-            0, 0, 0, 0, 0, 0, f_low, 0, 1e6 * lal.LAL_PC_SI,
+            mass1 * lal.MSUN_SI, mass2 * lal.MSUN_SI,
+            0, 0, 0, 0, 0, 0, f_low, 0, 0, 1e6 * lal.PC_SI,
             0, 0, 0, None, None, amplitude_order, phase_order, approximant)
         lal.ResizeCOMPLEX16FrequencySeries(zf, 0, template_length // 2 + 1)
 
         # Generate over-whitened template
         psd = lal.CreateREAL8FrequencySeries(None, zf.epoch, zf.f0, zf.deltaF,
-            lal.lalDimensionlessUnit, len(zf.data.data))
+            lal.DimensionlessUnit, len(zf.data.data))
         psd.data.data = S(abscissa(psd))
         zW = matched_filter_spa(zf, psd)
     elif approximant == lalsimulation.TaylorT4:
         hplus, hcross = lalsimulation.SimInspiralChooseTDWaveform(
             0, 1 / sample_rate,
-            mass1 * lal.LAL_MSUN_SI, mass2 * lal.LAL_MSUN_SI,
+            mass1 * lal.MSUN_SI, mass2 * lal.MSUN_SI,
             0, 0, 0, 0, 0, 0,
             f_low, f_low,
-            1e6 * lal.LAL_PC_SI,
+            1e6 * lal.PC_SI,
             0, 0, 0,
             None, None,
             amplitude_order,
@@ -221,7 +428,7 @@ def generate_template(mass1, mass2, S, f_low, sample_rate, template_duration, ap
             approximant)
 
         ht = lal.CreateREAL8TimeSeries(None, lal.LIGOTimeGPS(-template_duration), hplus.f0, hplus.deltaT, hplus.sampleUnits, template_length)
-        hf = lal.CreateCOMPLEX16FrequencySeries(None, lal.LIGOTimeGPS(0), 0, 0, lal.lalDimensionlessUnit, template_length // 2 + 1)
+        hf = lal.CreateCOMPLEX16FrequencySeries(None, lal.LIGOTimeGPS(0), 0, 0, lal.DimensionlessUnit, template_length // 2 + 1)
         plan = CreateForwardREAL8FFTPlan(template_length, 0)
 
         ht.data.data[:-len(hplus.data.data)] = 0
@@ -229,7 +436,7 @@ def generate_template(mass1, mass2, S, f_low, sample_rate, template_duration, ap
         lal.REAL8TimeFreqFFT(hf, ht, plan)
 
         psd = lal.CreateREAL8FrequencySeries(None, hf.epoch, hf.f0, hf.deltaF,
-            lal.lalDimensionlessUnit, len(hf.data.data))
+            lal.DimensionlessUnit, len(hf.data.data))
         psd.data.data = S(abscissa(psd))
 
         zWreal = matched_filter_real(hf, psd)

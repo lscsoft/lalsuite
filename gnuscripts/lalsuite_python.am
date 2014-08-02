@@ -1,14 +1,20 @@
 SUFFIXES = .py
 
-pybindir = $(bindir)
-BUILT_SOURCES += $(pymodule_PYTHON) $(pybin_SCRIPTS)
-MOSTLYCLEANFILES += $(pybin_SCRIPTS)
-
-python_install_script = $(top_srcdir)/gnuscripts/lalsuite_python_install_script
-INSTALL_SCRIPT = $(python_install_script) $(INSTALL)
-EXTRA_DIST += $(python_install_script)
-
 .PHONY: pymodule-all-local
+.PHONY: pymodule-mostlyclean-local
+.PHONY: pybin-install-data-hook
+.PHONY: pybin-uninstall-local
+.PHONY: pybin-dist-hook
+
+if HAVE_PYTHON
+
+pybindir = $(bindir)
+lalsuite_python_wrapper = $(top_srcdir)/gnuscripts/lalsuite_python_wrapper.sh.in
+
+BUILT_SOURCES += $(pymodule_PYTHON) $(pybin_SCRIPTS)
+MOSTLYCLEANFILES += .python_wrapper.sh $(pybin_SCRIPTS)
+EXTRA_DIST += $(lalsuite_python_wrapper)
+
 all-local: pymodule-all-local
 pymodule-all-local: pymodule-mostlyclean-local
 	$(AM_V_at)if test "x$(builddir)" != "x$(srcdir)"; then \
@@ -19,7 +25,6 @@ pymodule-all-local: pymodule-mostlyclean-local
 		done; \
 	fi
 
-.PHONY: pymodule-mostlyclean-local
 mostlyclean-local: pymodule-mostlyclean-local
 pymodule-mostlyclean-local:
 	$(AM_V_at)if test "x$(builddir)" != "x$(srcdir)"; then \
@@ -30,40 +35,87 @@ pymodule-mostlyclean-local:
 		done; \
 	fi
 
-$(pybin_SCRIPTS): Makefile
+.python_wrapper.sh: $(lalsuite_python_wrapper)
+	$(AM_V_at)pywrapregex='s|[@]SED[@]|$(SED)|g;s|[@]PYTHON[@]|$(PYTHON)|g;s|[@]lalsuite_pythonpath[@]'; \
+	pypath="$(abs_builddir):$(abs_srcdir):$(LAL_PYTHON_PATH)"; \
+	if $(SED) "$${pywrapregex}|$${pypath}|g" $< > $@; then \
+		: ; \
+	else \
+		rm -f $@; \
+		exit 1; \
+	fi
+
+$(pybin_SCRIPTS): Makefile .python_wrapper.sh
 .py:
-	$(AM_V_GEN)if test -x $<; then \
-		echo "" >&2; \
-		echo "ERROR: $< must not be executable" >&2; \
-		echo "" >&2; \
+	$(AM_V_GEN)shebang='#!'; \
+	rm -f $@ $@.tmp || exit 1; \
+	if test -x $<; then \
+		printf "\nERROR: $< must not be executable\n\n" >&2; \
 		exit 1; \
 	fi; \
-	$(MKDIR_P) .pybin/ || exit 1; \
-	rm -f $@ $@.tmp .pybin/$@ || exit 1; \
-	echo "#!/bin/sh" > $@.tmp; \
-	echo "### SHELL SELF-EXECUTING HEADER SCRIPT" >> $@.tmp; \
-	echo "''':'" >> $@.tmp; \
-	echo "PYTHONPATH=\"$(abs_builddir):$(abs_srcdir):$(LAL_PYTHON_PATH):\$${PYTHONPATH}\"" >> $@.tmp; \
-	echo "export PYTHONPATH" >> $@.tmp; \
-	echo "exec $(PYTHON) \"\$$0\" \"\$$@\"" >> $@.tmp; \
-	echo "exit \$$?" >> $@.tmp; \
-	echo "fi" >> $@.tmp; \
-	echo "'''" >> $@.tmp; \
-	echo "### PYTHON SCRIPT" >> $@.tmp; \
-	$(SED) -e "s|^PYTHONPATH=.*|PYTHONPATH=\"$(pyexecdir):$(pythondir):\$${PYTHONPATH}\"|" $@.tmp > .pybin/$@ || exit 1; \
-	cat $< >> .pybin/$@ || exit 1; \
+	if test x`$(SED) -n -e "/^$${shebang}/p" $<` != x; then \
+		printf "\nERROR: $< must not contain a $${shebang} command line\n\n" >&2; \
+		exit 1; \
+	fi; \
+	echo "$${shebang}/bin/sh $(abs_builddir)/.python_wrapper.sh" > $@.tmp; \
 	cat $< >> $@.tmp || exit 1; \
 	chmod +x $@.tmp || exit 1; \
 	mv -f $@.tmp $@
 
-.PHONY: pybin-clean-local
-clean-local: pybin-clean-local
-pybin-clean-local:
-	-rm -rf .pybin/
+install-data-hook: pybin-install-data-hook
+pybin-install-data-hook:
+	$(AM_V_GEN)shebang='#!'; \
+	pywrapregex='s|[@]SED[@]|$(SED)|g;s|[@]PYTHON[@]|$(PYTHON)|g;s|[@]lalsuite_pythonpath[@]'; \
+	if test "x$(pybin_SCRIPTS)" != x; then \
+		if test "x$(prefix)" = "x$(python_exec_prefix)"; then \
+			shebang_command="$${shebang}$(PYTHON)"; \
+		else \
+			python_wrapper="$(pkglibexecdir)/python_wrapper.sh"; \
+			echo " $(MKDIR_P) $(DESTDIR)$(pkglibexecdir)"; \
+			$(MKDIR_P) $(DESTDIR)$(pkglibexecdir) || exit 1; \
+			echo "Generating $(DESTDIR)$${python_wrapper}..."; \
+			pypath="$(pyexecdir)"; \
+			if test "$(pythondir)" != "$(pyexecdir)"; then \
+				pypath="$${pypath}:$(pythondir)"; \
+			fi; \
+			if $(SED) "$${pywrapregex}|$${pypath}|g" $(lalsuite_python_wrapper) > $(DESTDIR)$${python_wrapper}; then \
+				: ; \
+			else \
+				rm -f $(DESTDIR)$${python_wrapper}; \
+				printf "\nERROR: failed to generate $(DESTDIR)$${python_wrapper}\n\n" >&2; \
+				exit 1; \
+			fi; \
+			shebang_command="$${shebang}/bin/sh $${python_wrapper}"; \
+		fi; \
+		echo "Fixing shebangs commands in $(DESTDIR)$(pybindir)..."; \
+		for file in $(pybin_SCRIPTS); do \
+			printf " $${file}"; \
+			if $(SED) -i.tmp "s|^$${shebang}.*$$|$${shebang_command}|" $(DESTDIR)$(pybindir)/$${file}; then \
+				rm -f $(DESTDIR)$(pybindir)/$${file}.tmp; \
+			else \
+				printf "\n\nERROR: failed to fix shebang command of $(DESTDIR)$(pybindir)/$${file}\n\n" >&2; \
+				exit 1; \
+			fi; \
+		done; \
+		printf "\n"; \
+	fi
 
-.PHONY: pybin-dist-hook
+uninstall-local: pybin-uninstall-local
+pybin-uninstall-local:
+	-rm -f "$(DESTDIR)$(pkglibexecdir)/python_wrapper.sh"
+
 dist-hook: pybin-dist-hook
 pybin-dist-hook:
 	for file in $(pybin_SCRIPTS); do \
 		cp "$(srcdir)/$${file}.py" "$(distdir)"; \
 	done
+
+else # !HAVE_PYTHON
+
+pkgpython_PYTHON =
+pymoduledir =
+pymodule_PYTHON =
+pybindir =
+pybin_SCRIPTS =
+
+endif # HAVE_PYTHON

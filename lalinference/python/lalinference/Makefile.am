@@ -10,6 +10,8 @@ SUBDIRS = \
 
 vcs_info_sources = git_version.py
 
+if HAVE_PYTHON
+
 pymoduledir = $(pkgpythondir)
 
 pymodule_PYTHON = \
@@ -18,6 +20,8 @@ pymodule_PYTHON = \
 	plot.py \
 	git_version.py \
 	$(END_OF_LIST)
+
+endif
 
 dist_pymodule_DATA = \
 	ne_simplified_coastline.json \

@@ -3,6 +3,8 @@ MOSTLYCLEANFILES =
 EXTRA_DIST =
 include $(top_srcdir)/gnuscripts/lalsuite_python.am
 
+if HAVE_PYTHON
+
 pymoduledir = $(pkgpythondir)/triggers
 
 pymodule_PYTHON = \
@@ -17,3 +19,5 @@ pymodule_PYTHON = \
 	trigfind.py \
 	utils.py \
 	$(END_OF_LIST)
+
+endif

@@ -260,8 +260,7 @@ class InspiralJob(InspiralAnalysisJob):
 
     InspiralAnalysisJob.__init__(self,cp,sections,exec_name,extension,dax)
     self.add_condor_cmd('environment',"KMP_LIBRARY=serial;MKL_SERIAL=yes")
-    self.add_condor_cmd('Requirements', 'Memory >= 1000')
-    self.add_condor_cmd('request_memory', '1024')
+    self.add_condor_cmd('request_memory', '1000')
 
     if have_pycbc:
         self.add_condor_cmd('getenv', 'True')
@@ -332,7 +331,6 @@ class PTFInspiralJob(InspiralAnalysisJob):
     if cp.has_section('coh_PTF_inspiral-meta'):
       if cp.has_option('coh_PTF_inspiral-meta','minimum-ram'):
         ramValue = int(cp.get('coh_PTF_inspiral-meta','minimum-ram'))
-    self.add_condor_cmd('Requirements', 'Memory >= %d' %(ramValue))
     self.add_condor_cmd('request_memory', '%d' %(ramValue))
 
 
@@ -348,7 +346,6 @@ class PTFSpinCheckerJob(InspiralAnalysisJob):
     sections = ['coh_PTF_spin_checker']
     extension = 'xml'
     InspiralAnalysisJob.__init__(self,cp,sections,exec_name,extension,dax)
-    self.add_condor_cmd('Requirements', 'Memory >= 1390')
     self.add_condor_cmd('request_memory', '1400')
 
 
@@ -1023,8 +1020,7 @@ class InspiralNode(InspiralAnalysisNode):
     """
     InspiralAnalysisNode.__init__(self,job)
     self.__injections = None
-    self.add_pegasus_profile('condor', 'Requirements', 'Memory >= 1000')
-    self.add_pegasus_profile('condor', 'request_memory', '1024')
+    self.add_pegasus_profile('condor', 'request_memory', '1000')
 
     if job.get_use_gpus():
       # assume all the checks have been already
@@ -1113,7 +1109,6 @@ class PTFInspiralNode(InspiralAnalysisNode):
     InspiralAnalysisNode.__init__(self,job)
     self.__injections = None
     self.set_zip_output(True)
-    self.add_pegasus_profile('condor', 'Requirements', 'Memory >= 1390')
     self.add_pegasus_profile('condor', 'request_memory', '1400')
 
   def set_spin_bank(self,bank):
@@ -1155,7 +1150,6 @@ class PTFSpinCheckerNode(InspiralAnalysisNode):
     """
     InspiralAnalysisNode.__init__(self,job)
     self.__injections = None
-    self.add_pegasus_profile('condor', 'Requirements', 'Memory >= 1390')
     self.add_pegasus_profile('condor', 'request_memory', '1400')
 
   def set_bank(self,bank):

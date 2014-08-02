@@ -19,7 +19,7 @@ include $(top_srcdir)/gnuscripts/lalsuite_test.am
 swig_iface = swig$(PACKAGE).i
 swig_preproc_flags = -MP -MD -Wextra -Werror -I$(top_builddir)/include -includeall -ignoremissing -xml -xmllite
 swig_flags = -MP -MD -Wextra -Werror -I$(top_builddir)/include $(SWIG_CPPFLAGS) $(LAL_SYSTEM_INCLUDES)
-swig_cppflags = -shared -I$(top_builddir)/include $(SWIG_CPPFLAGS)
+swig_cppflags = -shared -I. -I$(top_builddir)/include $(SWIG_CPPFLAGS)
 swig_ldflags = -module -avoid-version -version-info 0:0:0 $(SWIG_LDFLAGS)
 swig_libtoolflags = --tag=disable-static
 swig_deps_filter = $(SED) -e '/^  *swiglal[a-z0-9_]*\.[a-z0-9][a-z0-9]*  *\\$$/d'
@@ -28,6 +28,7 @@ swig_python_flags = $(swig_flags) -python -O -builtin -globals globalvar
 
 BUILT_SOURCES =
 CLEANFILES =
+DEFAULT_INCLUDES =
 EXTRA_HEADERS =
 nodist_pkginclude_HEADERS =
 
@@ -61,7 +62,7 @@ if SWIG_BUILD_OCTAVE
 
 octexec_LTLIBRARIES = swiglal_octave.la
 nodist_swiglal_octave_la_SOURCES = swiglal_octave.cpp
-swiglal_octave_la_CPPFLAGS = $(swig_cppflags) $(SWIG_OCTAVE_CPPFLAGS)
+swiglal_octave_la_CPPFLAGS = $(SWIG_OCTAVE_CPPFLAGS_IOCTAVE) $(swig_cppflags) $(SWIG_OCTAVE_CPPFLAGS)
 swiglal_octave_la_CXXFLAGS = $(SWIG_OCTAVE_CXXFLAGS)
 swiglal_octave_la_LDFLAGS = $(swig_ldflags) $(SWIG_OCTAVE_LDFLAGS)
 swiglal_octave_la_LIBADD = $(LDADD)
@@ -256,13 +257,10 @@ swig-distclean-generate-local:
 else # !SWIG_GENERATE
 
 swiglal_octave.cpp swiglal_python.c:
-	@echo "" >&2; \
-	echo  "ERROR: you are trying to re-create the SWIG-generated source file" >&2; \
-	echo  "   $@" >&2; \
-	echo  "but $(PACKAGE_NAME) was not configured with SWIG generation enabled." >&2; \
-	echo  "Please ensure SWIG is installed and re-run ./configure with either" >&2; \
-	echo  "--enable-swig=generate or --enable-swig-<lang>=generate options." >&2; \
-	echo  "" >&2; \
+	@printf "\nERROR: you are trying to re-create the SWIG-generated source file" >&2; \
+	printf "\n   $@\nbut $(PACKAGE_NAME) was not configured with SWIG generation enabled." >&2; \
+	printf "\nPlease ensure SWIG is installed and re-run ./configure with either" >&2; \
+	printf "\nthe --enable-swig=generate or --enable-swig-<lang>=generate options.\n\n" >&2; \
 	exit 1
 
 endif # SWIG_GENERATE

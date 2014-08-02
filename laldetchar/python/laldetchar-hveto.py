@@ -17,7 +17,7 @@
 #  MA  02111-1307  USA
 #
 # Based on the reference implementation in MATLAB by Josh Smith, et al.
-__doc__ = """trigger based hierarchical veto"""
+"""trigger based hierarchical veto"""
 
 
 import sys

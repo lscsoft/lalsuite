@@ -22,8 +22,10 @@ from __future__ import division
 __author__ = "Leo Singer <leo.singer@ligo.org>"
 
 
+import itertools
 import time
 import numpy as np
+import healpy as hp
 from . import filter
 from . import postprocess
 from . import timing
@@ -31,33 +33,68 @@ from . import sky_map
 import lal, lalsimulation
 
 
-def emcee_sky_map(logl, logp, xmin, xmax, nside):
+def toa_phoa_snr_log_prior(
+        (ra, sin_dec, distance, u, twopsi, t),
+        min_distance, max_distance, prior_distance_power, max_abs_t):
+    return (
+        prior_distance_power * np.log(distance)
+        if 0 <= ra < 2*np.pi
+        and -1 <= sin_dec <= 1
+        and min_distance <= distance <= max_distance
+        and -1 <= u <= 1
+        and 0 <= twopsi < 2*np.pi
+        and -max_abs_t <= t <= max_abs_t
+        else -np.inf)
+
+
+def emcee_sky_map(logl, loglargs, logp, logpargs, xmin, xmax, nside=-1, kde=False):
     # Set up sampler
     import emcee
     ntemps = 20
     nwalkers = 100
     nburnin = 1000
-    niter = 10000
+    nthin = 10
+    niter = 10000 + nburnin
     ndim = len(xmin)
     sampler = emcee.PTSampler(
-        ntemps=ntemps, nwalkers=nwalkers, dim=ndim, logl=logl, logp=logp)
+        ntemps=ntemps, nwalkers=nwalkers, dim=ndim, logl=logl, logp=logp,
+        loglargs=loglargs, logpargs=logpargs)
 
     # Draw initial state from multivariate uniform distribution
     p0 = np.random.uniform(xmin, xmax, (ntemps, nwalkers, ndim))
-
-    # Burn in
-    p0, logp0, logl0 = sampler.run_mcmc(p0, nburnin, storechain=False)
 
     # Collect samples. The .copy() is important because PTSampler.sample()
     # reuses p on every iteration.
     ra, sin_dec = np.vstack([
         p[0, :, :2].copy() for p, _, _
-        in sampler.sample(p0, logp0, logl0, niter, storechain=False)]).T
+        in itertools.islice(
+            sampler.sample(p0, iterations=niter, storechain=False),
+            nburnin, niter, nthin
+        )]).T
 
     # Bin samples
     theta = np.arccos(sin_dec)
     phi = ra
-    prob = postprocess.adaptive_healpix_histogram(theta, phi, 30, nside=nside)
+
+    # Do adaptive histogram binning if the user has not selected the KDE,
+    # or if the user has selected the KDE but we need to guess the resolution.
+    if nside == -1 or not kde:
+        samples_per_bin = int(np.ceil(0.005 * len(theta)))
+        prob = postprocess.adaptive_healpix_histogram(
+            theta, phi, samples_per_bin, nside=nside)
+
+        # Determine what nside what actually used.
+        nside = hp.npix2nside(len(prob))
+        # Go one level finer, because the KDE will find more detail.
+        nside *= 2
+
+    if kde:
+        from sky_area.sky_area_clustering import ClusteredKDEPosterior
+        dec = 0.5 * np.pi - theta
+        pts = np.column_stack((ra, dec))
+        # Pass a random subset of 1000 points to the KDE, to save time.
+        pts = np.random.permutation(pts)[:1000, :]
+        prob = ClusteredKDEPosterior(pts).as_healpix(nside)
 
     # Done!
     return prob
@@ -74,59 +111,85 @@ def ligolw_sky_map(
 
     # Extract masses from the table.
     mass1 = sngl_inspirals[0].mass1
-    if any(sngl_inspiral.mass1 != mass1 for sngl_inspiral in sngl_inspirals[1:]):
+    if any(sngl_inspiral.mass1 != mass1
+            for sngl_inspiral in sngl_inspirals[1:]):
         raise ValueError('mass1 field is not the same for all detectors')
 
     mass2 = sngl_inspirals[0].mass2
-    if any(sngl_inspiral.mass2 != mass2 for sngl_inspiral in sngl_inspirals[1:]):
+    if any(sngl_inspiral.mass2 != mass2
+            for sngl_inspiral in sngl_inspirals[1:]):
         raise ValueError('mass2 field is not the same for all detectors')
 
-    # Extract SNRs from table.
-    # FIXME: should get complex SNR, but MBTAOnline events don't populate the
-    # coa_phase column, and we are not using coa_phase yet.
-    snrs = np.asarray([sngl_inspiral.snr for sngl_inspiral in sngl_inspirals])
-
-    # Extract TOAs from table.
-    toas_ns = np.asarray([sngl_inspiral.get_end().ns()
-        for sngl_inspiral in sngl_inspirals], dtype=np.int64)
-
-    # Find average Greenwich mean sidereal time of event.
-    mean_toa_ns = sum(toas_ns) // len(toas_ns)
-    epoch = lal.LIGOTimeGPS(0, long(mean_toa_ns))
-    gmst = lal.GreenwichMeanSiderealTime(epoch)
-
-    # Convert TOAs from nanoseconds to seconds, subtracting off mean TOA
-    # to keep numbers small.
-    toas = 1e-9 * (toas_ns - mean_toa_ns)
+    # Extract TOAs in GPS nanoseconds from table.
+    toas_ns = [long(sngl_inspiral.get_end().ns())
+        for sngl_inspiral in sngl_inspirals]
 
     # Retrieve phases on arrival from table.
-    phoas = np.asarray([sngl_inspiral.coa_phase for sngl_inspiral in sngl_inspirals])
+    phoas = np.asarray([sngl_inspiral.coa_phase
+        for sngl_inspiral in sngl_inspirals])
+
+    # Extract SNRs from table.
+    snrs = np.asarray([sngl_inspiral.snr
+        for sngl_inspiral in sngl_inspirals])
+
+    # Fudge factor for excess estimation error in gstlal_inspiral.
+    snrs *= 0.83
+
+    # Look up physical parameters for detector.
+    detectors = [lalsimulation.DetectorPrefixToLALDetector(str(ifo))
+        for ifo in ifos]
+    responses = np.asarray([det.response for det in detectors])
+    locations = np.asarray([det.location for det in detectors])
 
     # Power spectra for each detector.
     if psds is None:
         psds = [timing.get_noise_psd_func(ifo) for ifo in ifos]
 
     # Signal models for each detector.
-    signal_models = [timing.SignalModel(mass1, mass2, psd, f_low, approximant, amplitude_order, phase_order)
-        for psd in psds]
+    signal_models = [timing.SignalModel(mass1, mass2, psd, f_low, approximant,
+        amplitude_order, phase_order) for psd in psds]
 
     # Get SNR=1 horizon distances for each detector.
-    horizons = [signal_model.get_horizon_distance()
-        for signal_model in signal_models]
+    horizons = np.asarray([signal_model.get_horizon_distance()
+        for signal_model in signal_models])
 
-    # Estimate TOA uncertainty (squared) using CRB or BRB evaluated at MEASURED
-    # values of the SNRs.
-    w_toas = [1/np.square(signal_model.get_toa_uncert(np.abs(snr)))
+    weights = [1/np.square(signal_model.get_crb_toa_uncert(snr))
         for signal_model, snr in zip(signal_models, snrs)]
 
-    w1s = [signal_model.get_sn_moment(1) for signal_model in signal_models]
-    w2s = [signal_model.get_sn_moment(2) for signal_model in signal_models]
+    # Center detector array.
+    locations -= np.average(locations, weights=weights, axis=0)
 
-    # Look up physical parameters for detector.
-    detectors = [lalsimulation.DetectorPrefixToLALDetector(str(ifo))
-        for ifo in ifos]
-    responses = [det.response for det in detectors]
-    locations = [det.location for det in detectors]
+    # Center times of arrival and compute GMST at mean arrival time.
+    # Pre-center in integer nanoseconds to preserve precision of
+    # initial datatype.
+    epoch = sum(toas_ns) // len(toas_ns)
+    toas = 1e-9 * (np.asarray(toas_ns) - epoch)
+    mean_toa = np.average(toas, weights=weights, axis=0)
+    toas -= mean_toa
+    epoch += long(round(1e9 * mean_toa))
+    epoch = lal.LIGOTimeGPS(0, epoch)
+    gmst = lal.GreenwichMeanSiderealTime(epoch)
+
+    # Maximum barycentered arrival time error:
+    # |distance from array barycenter to furthest detector| / c + 5 ms
+    max_abs_t = np.max(
+        np.sqrt(np.sum(np.square(locations / lal.C_SI), axis=1))) + 0.005
+
+    acors, sample_rates = zip(*[
+        filter.autocorrelation(
+            mass1, mass2, psd, f_low, max_abs_t,
+            approximant, amplitude_order, phase_order)
+        for psd in psds])
+    # FIXME: Sample rate and autocorrelation length is determined only by
+    # template parameters. It would be better to compute the template once
+    # and then re-use it to compute the autocorrelation sequence with respect
+    # to each noise PSD. This would also save some cycles by evaluating the PN
+    # waveform only once.
+    sample_rate = sample_rates[0]
+    nsamples = len(acors[0])
+    assert all(sample_rate == _ for _ in sample_rates)
+    assert all(nsamples == len(_) for _ in acors)
+    acors = np.asarray(acors)
 
     # If minimum distance is not specified, then default to 0 Mpc.
     if min_distance is None:
@@ -148,75 +211,47 @@ def ligolw_sky_map(
         raise ValueError(("Prior is a power law r^k with k={}, "
             + "undefined at min_distance=0").format(prior_distance_power))
 
+    # Rescale distances to horizon distance of most sensitive detector.
+    max_horizon = np.max(horizons)
+    horizons /= max_horizon
+    min_distance /= max_horizon
+    max_distance /= max_horizon
+
+    # Use KDE for density estimation?
+    if method.endswith('_kde'):
+        method = method[:-4]
+        kde = True
+    else:
+        kde = False
+
     # Time and run sky localization.
     start_time = time.time()
-    if method == "toa":
-        prob = sky_map.toa(gmst, toas, w_toas, locations, nside=nside)
-    elif method == "toa_snr":
-        prob = sky_map.toa_snr(gmst, toas, snrs, w_toas, responses, locations, horizons, min_distance, max_distance, prior_distance_power, nside=nside)
-    elif method == "toa_phoa_snr":
-        prob = sky_map.toa_phoa_snr(gmst, toas, phoas, snrs, w_toas, w1s, w2s, responses, locations, horizons, min_distance, max_distance, prior_distance_power, nside=nside)
-    elif method == "toa_mcmc":
-        prob = emcee_sky_map(
-            logl=(lambda args: sky_map.log_posterior_toa(*args,
-                gmst=gmst,
-                toas=toas,
-                w_toas=w_toas,
-                locations=locations)),
-            logp=(lambda (ra, sin_dec):
-                1 if 0 <= ra < 2*np.pi
-                and -1 <= sin_dec <= 1
-                else -np.inf),
-            xmin=[0, -1],
-            xmax=[2*np.pi, 1],
-            nside=nside)
+    if method == "toa_phoa_snr":
+        prob = sky_map.toa_phoa_snr(
+            min_distance, max_distance, prior_distance_power, gmst, sample_rate,
+            acors, responses, locations, horizons, toas, phoas, snrs, nside)
     elif method == "toa_snr_mcmc":
         prob = emcee_sky_map(
-            logl=(lambda args: sky_map.log_posterior_toa_snr(*args,
-                gmst=gmst,
-                toas=toas,
-                snrs=snrs,
-                w_toas=w_toas,
-                responses=responses,
-                locations=locations,
-                horizons=horizons,
-                prior_distance_power=prior_distance_power)),
-            logp=(lambda (ra, sin_dec, distance, u, twopsi):
-                1 if 0 <= ra < 2*np.pi
-                and -1 <= sin_dec <= 1
-                and min_distance <= distance <= max_distance
-                and 0 <= u <= 1
-                and 0 <= twopsi < 2*np.pi
-                else -np.inf),
-            xmin=[0, -1, min_distance, 0, 0],
-            xmax=[2*np.pi, 1, max_distance, 1, 2*np.pi],
-            nside=nside)
-    elif method == "toa_phoa_snr_mcmc":
-        max_abs_t = 0.5 * lal.LAL_REARTH_SI / lal.LAL_C_SI
-        prob = emcee_sky_map(
-            logl=(lambda args: sky_map.log_posterior_toa_phoa_snr(*args,
-                gmst=gmst,
-                toas=toas,
-                phoas=phoas,
-                snrs=snrs,
-                w_toas=w_toas,
-                w1s=w1s,
-                w2s=w2s,
-                responses=responses,
-                locations=locations,
-                horizons=horizons,
-                prior_distance_power=prior_distance_power)),
-            logp=(lambda (ra, sin_dec, distance, u, twopsi, t):
-                1 if 0 <= ra < 2*np.pi
-                and -1 <= sin_dec <= 1
-                and min_distance <= distance <= max_distance
-                and -1 <= u <= 1
-                and 0 <= twopsi < 2*np.pi
-                and -max_abs_t <= t <= max_abs_t
-                else -np.inf),
+            logl=sky_map.log_likelihood_toa_snr,
+            loglargs=(gmst, sample_rate, acors, responses, locations, horizons,
+                toas, snrs),
+            logp=toa_phoa_snr_log_prior,
+            logpargs=(min_distance, max_distance, prior_distance_power,
+                max_abs_t),
             xmin=[0, -1, min_distance, -1, 0, -max_abs_t],
             xmax=[2*np.pi, 1, max_distance, 1, 2*np.pi, max_abs_t],
-            nside=nside)
+            nside=nside, kde=kde)
+    elif method == "toa_phoa_snr_mcmc":
+        prob = emcee_sky_map(
+            logl=sky_map.log_likelihood_toa_phoa_snr,
+            loglargs=(gmst, sample_rate, acors, responses, locations, horizons,
+                toas, phoas, snrs),
+            logp=toa_phoa_snr_log_prior,
+            logpargs=(min_distance, max_distance, prior_distance_power,
+                max_abs_t),
+            xmin=[0, -1, min_distance, -1, 0, -max_abs_t],
+            xmax=[2*np.pi, 1, max_distance, 1, 2*np.pi, max_abs_t],
+            nside=nside, kde=kde)
     else:
         raise ValueError("Unrecognized method: %s" % method)
     end_time = time.time()

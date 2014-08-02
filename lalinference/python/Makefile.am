@@ -5,8 +5,7 @@ include $(top_srcdir)/gnuscripts/lalsuite_python.am
 
 SUBDIRS = lalinference
 
-.py:
-	$(AM_V_GEN)rm -rf .pybin && $(SED) 's|[@]PYTHON[@]|$(PYTHON)|' $< > $@ && chmod +x $@
+if HAVE_PYTHON
 
 pybin_SCRIPTS = \
 	bayestar_aggregate_found_injections \
@@ -23,3 +22,5 @@ pybin_SCRIPTS = \
 	bayestar_sim_to_tmpltbank \
 	bayestar_littlehope \
 	$(END_OF_LIST)
+
+endif

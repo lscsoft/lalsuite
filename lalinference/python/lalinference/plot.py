@@ -526,26 +526,18 @@ def _healpix_lookup(map, lon, lat, dlon=0):
 
 def healpix_heatmap(map, *args, **kwargs):
     """Produce a heatmap from a HEALPix map."""
-    if 'dlon' in kwargs:
-        dlon = kwargs['dlon']
-        kwargs = dict(kwargs)
-        del kwargs['dlon']
-    else:
-        dlon = 0
+    mpl_kwargs = dict(kwargs)
+    dlon = mpl_kwargs.pop('dlon', 0)
     return heatmap(functools.partial(_healpix_lookup, map, dlon=dlon),
-        *args, **kwargs)
+        *args, **mpl_kwargs)
 
 
 def healpix_contour(map, *args, **kwargs):
     """Produce a contour plot from a HEALPix map."""
-    if 'dlon' in kwargs:
-        dlon = kwargs['dlon']
-        kwargs = dict(kwargs)
-        del kwargs['dlon']
-    else:
-        dlon = 0
+    mpl_kwargs = dict(kwargs)
+    dlon = mpl_kwargs.pop('dlon', 0)
     return contour(functools.partial(_healpix_lookup, map, dlon=dlon),
-        *args, **kwargs)
+        *args, **mpl_kwargs)
 
 
 def colorbar(vmax):

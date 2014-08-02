@@ -19,10 +19,12 @@
 
 #include <stdio.h>
 #include <inttypes.h>
+#include <float.h>
 #include <math.h>
 
 #include <lal/LatticeTiling.h>
 #include <lal/LALStdlib.h>
+#include <lal/LALStdio.h>
 #include <lal/XLALError.h>
 
 static int CheckLatticeTiling(
@@ -73,23 +75,20 @@ static int CheckLatticeTiling(
   XLAL_CHECK(XLALRestartLatticeTiling(tiling) == XLAL_SUCCESS, XLAL_EFUNC);
 
   // Get nearest point to each template; should be template itself
-  gsl_matrix* nearest = gsl_matrix_alloc(n, total);
-  XLAL_CHECK(nearest != NULL, XLAL_ENOMEM);
   UINT8Vector* indices = XLALCreateUINT8Vector(total);
   XLAL_CHECK(indices != NULL, XLAL_ENOMEM);
+  gsl_matrix* wksp = NULL;
   XLAL_CHECK(XLALBuildLatticeIndexLookup(tiling) == XLAL_SUCCESS, XLAL_EFUNC);
-  XLAL_CHECK(XLALNearestLatticePoints(tiling, templates, nearest, indices) == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK(XLALNearestLatticePoints(tiling, templates, NULL, indices, &wksp) == XLAL_SUCCESS, XLAL_EFUNC);
   size_t failed = 0;
   for (size_t i = 0; i < total; ++i) {
     if (indices->data[i] != i) {
       ++failed;
-      fprintf(stderr, "warning: indices->data[i] = %"PRIu64" != %zu\n", indices->data[i], i);
+      fprintf(stderr, "ERROR: indices->data[i] = %" LAL_UINT8_FORMAT " != %zu\n", indices->data[i], i);
     }
   }
-  if (failed >= 5) {
-    XLAL_ERROR(XLAL_EFAILED, "ERROR: number of failed index lookups = %zu >= 10", failed);
-  } else if (failed > 0) {
-    fprintf(stderr, "warning: number of failed index lookups = %zu > 0", failed);
+  if (failed > 0) {
+    XLAL_ERROR(XLAL_EFAILED, "ERROR: number of failed index lookups = %zu > 0", failed);
   }
 
   // Cleanup
@@ -97,6 +96,7 @@ static int CheckLatticeTiling(
   gsl_matrix_free(metric);
   gsl_matrix_free(templates);
   XLALDestroyUINT8Vector(indices);
+  gsl_matrix_free(wksp);
   LALCheckMemoryLeaks();
   fprintf(stderr, "\n");
 
@@ -107,20 +107,20 @@ static int CheckLatticeTiling(
 int main(void) {
 
   // Check tiling in 1 dimension
-  XLAL_CHECK(CheckLatticeTiling(1, LATTICE_TYPE_CUBIC,    93) == XLAL_SUCCESS, XLAL_EFAILED);
-  XLAL_CHECK(CheckLatticeTiling(1, LATTICE_TYPE_ANSTAR,   93) == XLAL_SUCCESS, XLAL_EFAILED);
+  XLAL_CHECK(CheckLatticeTiling(1, LATTICE_TYPE_CUBIC,    92) == XLAL_SUCCESS, XLAL_EFAILED);
+  XLAL_CHECK(CheckLatticeTiling(1, LATTICE_TYPE_ANSTAR,   92) == XLAL_SUCCESS, XLAL_EFAILED);
 
   // Check tiling in 2 dimensions
-  XLAL_CHECK(CheckLatticeTiling(2, LATTICE_TYPE_CUBIC,   189) == XLAL_SUCCESS, XLAL_EFAILED);
-  XLAL_CHECK(CheckLatticeTiling(2, LATTICE_TYPE_ANSTAR,  121) == XLAL_SUCCESS, XLAL_EFAILED);
+  XLAL_CHECK(CheckLatticeTiling(2, LATTICE_TYPE_CUBIC,   175) == XLAL_SUCCESS, XLAL_EFAILED);
+  XLAL_CHECK(CheckLatticeTiling(2, LATTICE_TYPE_ANSTAR,  144) == XLAL_SUCCESS, XLAL_EFAILED);
 
   // Check tiling in 3 dimensions
-  XLAL_CHECK(CheckLatticeTiling(3, LATTICE_TYPE_CUBIC,   623) == XLAL_SUCCESS, XLAL_EFAILED);
-  XLAL_CHECK(CheckLatticeTiling(3, LATTICE_TYPE_ANSTAR,  295) == XLAL_SUCCESS, XLAL_EFAILED);
+  XLAL_CHECK(CheckLatticeTiling(3, LATTICE_TYPE_CUBIC,   580) == XLAL_SUCCESS, XLAL_EFAILED);
+  XLAL_CHECK(CheckLatticeTiling(3, LATTICE_TYPE_ANSTAR,  341) == XLAL_SUCCESS, XLAL_EFAILED);
 
   // Check tiling in 4 dimensions
-  XLAL_CHECK(CheckLatticeTiling(4, LATTICE_TYPE_CUBIC,  2417) == XLAL_SUCCESS, XLAL_EFAILED);
-  XLAL_CHECK(CheckLatticeTiling(4, LATTICE_TYPE_ANSTAR, 1031) == XLAL_SUCCESS, XLAL_EFAILED);
+  XLAL_CHECK(CheckLatticeTiling(4, LATTICE_TYPE_CUBIC,  2811) == XLAL_SUCCESS, XLAL_EFAILED);
+  XLAL_CHECK(CheckLatticeTiling(4, LATTICE_TYPE_ANSTAR,  810) == XLAL_SUCCESS, XLAL_EFAILED);
 
   return 0;
 

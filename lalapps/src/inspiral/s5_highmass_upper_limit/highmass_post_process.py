@@ -1,4 +1,3 @@
-#!/usr/bin/env @PYTHONPROG@
 """
 This program makes the S5 high mass post processing dag
 """
@@ -18,7 +17,6 @@ import tempfile
 import ConfigParser
 import urlparse
 from UserDict import UserDict
-sys.path.append('@PYTHONLIBDIR@')
 import subprocess
 
 ##############################################################################

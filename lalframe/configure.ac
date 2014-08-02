@@ -84,7 +84,7 @@ AC_PROG_INSTALL
 AC_PROG_LN_S
 AC_PROG_AWK
 AC_PROG_SED
-AM_PATH_PYTHON([2.6],,[AC_MSG_ERROR([Python-2.6, or higher, is required])])
+LALSUITE_CHECK_PYTHON([2.6])
 
 # check for supported mac os x version
 LALSUITE_OSX_VERSION_CHECK
@@ -169,6 +169,7 @@ AC_MSG_NOTICE([
 ==================================================
 LALFrame has now been successfully configured:
 
+* Python support is $PYTHON_ENABLE_VAL
 * using the $FRAME_LIBRARY frame library
 * FrameC availability... ${FRAMEC_AVAILABLE}
 * FrameL availability... ${FRAMEL_AVAILABLE}

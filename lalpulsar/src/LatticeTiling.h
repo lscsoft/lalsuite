@@ -101,32 +101,47 @@ void XLALDestroyLatticeTiling(
   );
 
 ///
-/// Return the total number of dimensions of the lattice tiling
+/// Return the number of dimensions of the lattice tiling parameter space
 ///
-size_t XLALLatticeTotalDimensions(
+size_t XLALLatticeDimensions(
   const LatticeTiling* tiling			///< [in] Tiling state
   );
 
 ///
-/// Return the number of tiled dimensions of the lattice,
-/// i.e. exclusing dimensions containing only a single point
+/// Return the dimensions of the lattice tiling parameter space which are
+/// tiled, i.e. exclusing dimensions containing only a single point.
+/// If no dimensions are tiled, NULL is returned.
 ///
-size_t XLALLatticeTiledDimensions(
+#ifdef SWIG // SWIG interface directives
+SWIGLAL(RETURNS_PROPERTY(gsl_vector_uint*, XLALLatticeTiledDimensions));
+#endif
+gsl_vector_uint* XLALLatticeTiledDimensions(
   const LatticeTiling* tiling			///< [in] Tiling state
   );
 
 ///
 /// Return the current number of lattice tiling parameter-space points
 ///
-uint64_t XLALLatticePointCount(
+UINT8 XLALLatticePointCount(
   const LatticeTiling* tiling			///< [in] Tiling state
   );
 
 ///
 /// Calculate the total number of lattice tiling parameter-space points
 ///
-uint64_t XLALCountLatticePoints(
+UINT8 XLALCountLatticePoints(
   LatticeTiling* tiling				///< [in] Tiling state
+  );
+
+///
+/// Return a matrix whose columns are the basis vectors of the lattice.
+/// If no dimensions are tiled, NULL is returned.
+///
+#ifdef SWIG // SWIG interface directives
+SWIGLAL(RETURNS_PROPERTY(gsl_matrix*, XLALLatticeBasisVectors));
+#endif
+gsl_matrix* XLALLatticeBasisVectors(
+  const LatticeTiling* tiling			///< [in] Tiling state
   );
 
 ///
@@ -180,12 +195,12 @@ int XLALNextLatticePoint(
 ///
 /// Fast-forward the lattice tiling through the highest tiled dimension of
 /// the parameter space, so that then calling XLALNextLatticePoint() will
-/// advance the next highest tiled dimension. Optionally, return the count of
-/// and spacing between the points fast-forwarded over.
+/// advance the next highest tiled dimension. Optionally, return the count of,
+/// and spacing between, the points fast-forwarded over.
 ///
 int XLALFastForwardLatticeTiling(
   LatticeTiling* tiling,			///< [in] Tiling state
-  uint32_t *point_count,			///< [out] Count of points fast-forwarded over
+  size_t *point_count,				///< [out] Count of points fast-forwarded over
   double *point_spacing				///< [out] Spacing between points fast-forwarded over
   );
 
@@ -195,6 +210,23 @@ int XLALFastForwardLatticeTiling(
 int XLALRestartLatticeTiling(
   LatticeTiling* tiling				///< [in] Tiling state
   );
+
+///
+/// Return a subset of the lattice tiling, containing only up to the given
+/// dimension of each point, and only including unique points. If the given
+/// dimension is the total dimension, all points in the tiling are returned.
+///
+gsl_matrix* XLALLatticeTilingSubset(
+  LatticeTiling* tiling,			///< [in] Tiling state
+  size_t subset_dimension			///< [in] Number of dimensions of subset
+  );
+
+///
+/// Count the average number of points tiled in each parameter-space dimension
+///
+gsl_vector* XLALLatticeAveragePointCount(
+  LatticeTiling* tiling				///< [in] Tiling state
+ );
 
 ///
 /// Generate random points within the lattice tiling parameter space
@@ -222,13 +254,17 @@ int XLALPrintLatticeIndexLookup(
   );
 
 ///
-/// Find the nearest point in the lattice tiling, and optionally its index, to each given
+/// Find the nearest point in the lattice tiling, and/or its index, to each given point
 ///
+#ifdef SWIG // SWIG interface directives
+SWIGLAL(INOUT_STRUCTS(gsl_matrix**, workspace));
+#endif
 int XLALNearestLatticePoints(
   const LatticeTiling* tiling,			///< [in] Tiling state
   const gsl_matrix* points,			///< [in] Matrix whose columns are the given points
   gsl_matrix* nearest_points,			///< [in/out] Matrix whose columns are the nearest points
-  UINT8Vector* nearest_indices			///< [in/out] Vector of indices of nearest points
+  UINT8Vector* nearest_indices,			///< [in/out] Vector of indices of nearest points
+  gsl_matrix** workspace			///< [in/out] Pointer to a workspace matrix
   );
 
 #ifdef __cplusplus

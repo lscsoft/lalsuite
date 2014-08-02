@@ -1,4 +1,3 @@
-#!@PYTHON@
 #
 # Copyright (C) 2013  Leo Singer
 #
@@ -16,11 +15,11 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #
-from __future__ import division
 """
 Create summary plots for sky maps of found injections, binned cumulatively by
 false alarm rate.
 """
+from __future__ import division
 __author__ = "Leo Singer <leo.singer@ligo.org>"
 
 # Command line interface.

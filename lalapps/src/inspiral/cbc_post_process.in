@@ -1,5 +1,3 @@
-#!@PYTHONPROG@
-
 usage = \
 """
 Program to construct post-processing dag.
@@ -12,10 +10,8 @@ __version__ = '$Revision$'
 ##############################################################################
 # import standard modules and append the lalapps prefix to the python path
 import os, sys, re
-import ConfigParser
 from optparse import OptionParser
 import tempfile
-sys.path.append('@PYTHONLIBDIR@')
 
 ##############################################################################
 # import the modules we need to build the pipeline
@@ -89,7 +85,7 @@ if not options.log_path:
 
 ##############################################################################
 # parse the ini file and initialize
-cp = ConfigParser.ConfigParser()
+cp = pipeline.DeepCopyableConfigParser()
 cp.read(options.config_file)
 
 experiment_start = options.gps_start_time

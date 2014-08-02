@@ -31,6 +31,7 @@ int XLALGetDopplerShiftedFrequencyInfo
    UINT4Vector          *lowestBins, /**< Output list of bin indices */
    REAL8Vector         *kappaValues, /**< Output list of bin offsets */
    REAL8Vector        *signalPhases, /**< Output list of signal phases */
+   REAL8Vector            *sincList, /**< Output list of sinc factors */
    UINT4                    numBins, /**< Number of frequency bins to use */
    PulsarDopplerParams        *dopp, /**< Doppler parameters for signal */
    SFTIndexList         *sftIndices, /**< List of indices for SFTs */
@@ -47,7 +48,8 @@ int XLALGetDopplerShiftedFrequencyInfo
   if ( signalPhases->length !=numSFTs
        || shiftedFreqs->length !=numSFTs
        || lowestBins->length !=numSFTs
-       || kappaValues->length !=numSFTs ) {
+       || kappaValues->length !=numSFTs
+       || sincList->length !=numSFTs ) {
     XLALPrintError("Lengths of SFT-indexed lists don't match!");
     XLAL_ERROR(XLAL_EBADLEN );
   }
@@ -101,6 +103,10 @@ int XLALGetDopplerShiftedFrequencyInfo
     lowestBins->data[sftNum]
       = ceil( fminusf0 * Tsft - 0.5*numBins );
     kappaValues->data[sftNum] = lowestBins->data[sftNum] - fminusf0 * Tsft;
+    sincList->data[sftNum]=1;
+    for (UINT8 l=0; l < numBins; l++) {
+      sincList->data[sftNum] *= gsl_sf_sinc(kappaValues->data[sftNum]+l);
+      }
     /* printf("f=%.7f, f0=%.7f, Tsft=%g, numbins=%d, lowestbin=%d, kappa=%g\n",
 	   shiftedFreqs->data[sftNum],
 	   inputSFTs->data[detInd]->data[sftInd].f0,
@@ -281,18 +287,20 @@ int XLALCalculatePulsarCrossCorrStatistic
  REAL8Vector  *signalPhases,   /* Input: Phase of signal for each SFT */
  UINT4Vector    *lowestBins,   /* Input: Bin index to start with for each SFT */
  REAL8Vector   *kappaValues,   /* Input: Fractional offset of signal freq from best bin center */
- UINT4              numBins,   /* Input: Number of bins to include in calc */
+ REAL8Vector      *sincList,   /* Input: input the sinc factors*/
  SFTPairIndexList *sftPairs,   /* Input: flat list of SFT pairs */
  SFTIndexList   *sftIndices,   /* Input: flat list of SFTs */
  MultiSFTVector  *inputSFTs,   /* Input: SFT data */
- MultiNoiseWeights *multiWeights  /* Input: nomalizeation factor S^-1 & weights for each SFT */
+ MultiNoiseWeights *multiWeights,  /* Input: nomalizeation factor S^-1 & weights for each SFT */
+ UINT4              numBins   /**Input Number of frequency bins to be taken into calc */
  )
 {
 
   UINT8 numSFTs = sftIndices->length;
   if ( signalPhases->length !=numSFTs
        || lowestBins->length !=numSFTs
-       || kappaValues->length !=numSFTs ) {
+       || kappaValues->length !=numSFTs
+       || sincList->length !=numSFTs ) {
     XLALPrintError("Lengths of SFT-indexed lists don't match!");
     XLAL_ERROR(XLAL_EBADLEN );
   }
@@ -355,7 +363,6 @@ int XLALCalculatePulsarCrossCorrStatistic
 		 lowestBin1, numBins, lenDataArray1 );
     for (UINT8 j=0; j < numBins; j++) {
       COMPLEX16 data1 = dataArray1[lowestBin1+j];
-      REAL8 sincFactor = gsl_sf_sinc(kappaValues->data[sftNum1]+j);
       /* Normalized sinc, i.e., sin(pi*x)/(pi*x) */
       INT4 ccSign = baseCCSign;
       UINT4 lowestBin2 = lowestBins->data[sftNum2];
@@ -365,9 +372,9 @@ int XLALCalculatePulsarCrossCorrStatistic
 		   lowestBin2, numBins, lenDataArray2 );
       for (UINT8 k=0; k < numBins; k++) {
 	COMPLEX16 data2 = dataArray2[lowestBins->data[sftNum2]+k];
-	sincFactor *= gsl_sf_sinc(kappaValues->data[sftNum2]+k);
-	nume += /*multiWeights->data[detInd1]->data[sftNum1] *  multiWeights->data[detInd2]->data[sftNum2] **/ creal ( GalphaCC * ccSign * sincFactor * conj(data1) * data2  );
-	REAL8 GalphaAmp = curlyGAmp->data[alpha] /** multiWeights->data[detInd1]->data[sftNum1] *  multiWeights->data[detInd2]->data[sftNum2]*/ * sincFactor;
+	REAL8 sincFactor = sincList->data[sftNum1] * sincList->data[sftNum2];
+	nume += creal ( GalphaCC * ccSign * sincFactor * conj(data1) * data2 ); /*multiWeights->data[detInd1]->data[sftNum1] *  multiWeights->data[detInd2]->data[sftNum2] **/
+	REAL8 GalphaAmp = curlyGAmp->data[alpha] * sincFactor ; /** multiWeights->data[detInd1]->data[sftNum1] *  multiWeights->data[detInd2]->data[sftNum2]*/
 	curlyGSqr += SQUARE( GalphaAmp );
 	ccSign *= -1;
       }
