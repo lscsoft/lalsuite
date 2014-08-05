@@ -32,7 +32,8 @@ mpl_version = distutils.version.LooseVersion(matplotlib.__version__)
 
 from matplotlib.axes import Axes
 from matplotlib import text
-from matplotlib.ticker import Formatter, FixedFormatter, FixedLocator
+from matplotlib import ticker
+from matplotlib.ticker import Formatter, FixedLocator
 from matplotlib.projections import projection_registry
 from matplotlib.transforms import Transform, Affine2D
 from matplotlib.projections.geo import MollweideAxes
@@ -540,37 +541,39 @@ def healpix_contour(map, *args, **kwargs):
         *args, **mpl_kwargs)
 
 
-def colorbar(vmax):
-    # Work out a good tick spacing for colorbar.  Why is this so complicated?
-    base = int(np.floor(np.log10(vmax)))
-    dtick = 10. ** base
-    if vmax / dtick < 2:
-        dtick *= 0.25
-    elif vmax / dtick < 5:
-        dtick *= 0.5
-    if vmax % dtick == 0:
-        ticks = np.arange(0, vmax + 0.5 * dtick, dtick)
-    else:
-        ticks = np.arange(0, vmax, dtick)
-    ticklabels = ['$%g$' % (tick / 10.**base) for tick in ticks]
-    if '.' in ticklabels[-1]: ticklabels[-1] = r'$\;\;\;\;$' + ticklabels[-1]
-    else: ticklabels[-1] = r'$\;\;\;\,\,$' + ticklabels[-1]
-    ticklabels[-1] += r'$\times 10^{%d}$' % base
-    formatter = FixedFormatter(ticklabels)
+def colorbar():
+    usetex = matplotlib.rcParams['text.usetex']
+    locator = ticker.AutoLocator()
+    formatter = ticker.ScalarFormatter(useMathText=not usetex)
+    formatter.set_scientific(True)
+    formatter.set_powerlimits((1e-1, 100))
 
     # Plot colorbar
-    cb = plt.colorbar(orientation='horizontal', ticks=ticks, format=formatter,
-        shrink=0.4)
+    cb = plt.colorbar(
+        orientation='horizontal', shrink=0.4,
+        ticks=locator, format=formatter)
+
+    if cb.orientation == 'vertical':
+        axis = cb.ax.yaxis
+    else:
+        axis = cb.ax.xaxis
+
+    # Move order of magnitude text into last label.
+    ticklabels = [label.get_text() for label in axis.get_ticklabels()]
+    # Avoid putting two '$' next to each other if we are in tex mode.
+    if usetex:
+        fmt = '{{{0}}}{{{1}}}'
+    else:
+        fmt = '{0}{1}'
+    ticklabels[-1] = fmt.format(ticklabels[-1], formatter.get_offset())
+    axis.set_ticklabels(ticklabels)
+    last_ticklabel = axis.get_ticklabels()[-1]
+    last_ticklabel.set_horizontalalignment('left')
 
     # Draw edges in colorbar bands to correct thin white bands that
     # appear in buggy PDF viewers. See:
     # https://github.com/matplotlib/matplotlib/pull/1301
     cb.solids.set_edgecolor("face")
-
-    # Adjust appearance of colorbar tick labels
-    for tick, ticklabel in zip(cb.ax.get_xticks(), cb.ax.get_xticklabels()):
-        ticklabel.set_verticalalignment('baseline')
-        ticklabel.set_y(-1.5)
 
     # Done.
     return cb
