@@ -101,6 +101,7 @@ EXTRA_DIST += \
 	testCFSv2_grid0.dat.ref.gz \
 	testCFSv2_grid1.dat.ref.gz \
 	testCFSv2_grid2.dat.ref.gz \
+	testCFSv2_grid3.dat.ref.gz \
 	testCFSv2_grid6.dat.ref.gz \
 	testCFSv2_grid8.dat.ref.gz \
 	testCFSv2_grid9.dat.ref.gz

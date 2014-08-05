@@ -82,7 +82,7 @@ echo " STEP 1: Generate Fake SFTs"
 echo "----------------------------------------------------------------------"
 echo
 
-## --- for grid types 0,1,2,6, generate 40 hours of contiguous SFTs
+## --- for grid types 0,1,2,3,6, generate 40 hours of contiguous SFTs
 
 ## create SFT directory
 SFTdir_40h="./testCFSv2_grids_SFTs_40h"
@@ -134,7 +134,7 @@ echo " STEP 2: run CFS_v2 for various grid-types"
 echo "----------------------------------------------------------------------"
 echo
 
-## common arguments for grid types 0,1,2,6
+## common arguments for grid types 0,1,2,3,6
 sky_CL="--Alpha=$Alpha --AlphaBand=$AlphaBand --dAlpha=$dAlpha --Delta=$Delta --DeltaBand=$DeltaBand --dDelta=$dDelta"
 spin_CL="--Freq=$Freq --FreqBand=$FreqBand --dFreq=$dFreq --f1dot=$f1dot --f1dotBand=$f1dotBand --df1dot=$df1dot"
 cfs_CL="--IFO=$IFO --DataFiles='${SFTdir_40h}/testSFT*' --TwoFthreshold=0 --Dterms=16 --FstatMethod=DemodOptC $extra_args"
@@ -163,6 +163,15 @@ fi
 ## ----- grid=2 : metric grid
 echo "CFSv2 using gridType=2:"
 cmdline="$cfsv2_code $sky_CL $spin_CL $cfs_CL --gridType=2 --metricType=1 --metricMismatch=0.1 --outputFstat=./testCFSv2_grid2.dat";
+echo $cmdline
+if ! eval $cmdline; then
+    echo "Error.. something failed when running '$cmdline' ..."
+    exit 1
+fi
+
+## ----- grid=3 : same metric grid, specified as 'grid-file' passed on the commandline
+echo "CFSv2 using gridType=3:"
+cmdline="$cfsv2_code $sky_CL $spin_CL $cfs_CL --gridType=3 --outputFstat=./testCFSv2_grid3.dat --gridFile='{2.000000953674316 -0.4704365134239197; 2.068386077880859 -0.4704365134239197; 2.099475860595703 -0.492608368396759; 2.000000953674316 -0.4204375147819519; 2.082211971282959 -0.4204375147819519}'";
 echo $cmdline
 if ! eval $cmdline; then
     echo "Error.. something failed when running '$cmdline' ..."
@@ -207,7 +216,7 @@ echo " STEP 3: Compare to reference results: "
 echo "----------------------------------------"
 echo
 
-for n in 0 1 2 6 8 9; do
+for n in 0 1 2 3 6 8 9; do
 
     ## compare results
     echo "Comparing gridType=${n}:"
@@ -226,7 +235,7 @@ done
 if [ -z "$NOCLEANUP" ]; then
     rm -rf $SFTdir_40h $SFTdir_5d
     rm -f $gridFile Fstats Fstats.log
-    for n in 0 1 2 6 8 9; do
+    for n in 0 1 2 3 6 8 9; do
         rm -f testCFSv2_grid${n}.dat
     done
 fi
