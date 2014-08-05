@@ -18,7 +18,7 @@
 */
 
 /**
- * \author UTB Relativity Group; contact whelan@phys.utb.edu
+ * \author UTB Relativity Group; contact john.whelan@ligo.org
  * \addtogroup StochasticOptimalFilter_c
  *
  * \brief Calculates the values of the optimal filter function for the standard cross-correlation statistic.

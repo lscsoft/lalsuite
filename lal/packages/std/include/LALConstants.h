@@ -58,6 +58,21 @@ extern "C" {
 #define LAL_REAL8_EPS 2.2204460492503131e-16  /**< 0.5^(LAL_REAL8_MANT-1), ie the difference between 1 and the next resolveable REAL8 */
 /*@}*/
 
+
+/**
+ * \name Integer constants
+ * Extremal integer values, all expressed as unsigned long long.
+ */
+/*@{*/
+#define LAL_UINT8_MAX   LAL_UINT8_C(18446744073709551615)
+#define LAL_UINT4_MAX   LAL_UINT8_C(4294967295)
+#define LAL_UINT2_MAX   LAL_UINT8_C(65535)
+#define LAL_INT8_MAX    LAL_UINT8_C(9223372036854775807)
+#define LAL_INT4_MAX    LAL_UINT8_C(2147483647)
+#define LAL_INT2_MAX    LAL_UINT8_C(32767)
+/*@}*/
+
+
 /**
  * \name Mathematical constants
  * The following are fundamental mathematical constants.  They are mostly

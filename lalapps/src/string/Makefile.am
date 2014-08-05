@@ -1,4 +1,8 @@
-AM_CPPFLAGS = -I$(top_srcdir)/src -I$(top_srcdir)/src/lalapps -I$(top_builddir)/src/lalapps -DPKG_DATA_DIR='"$(pkgdatadir)/"' @AM_CPPFLAGS@
+BUILT_SOURCES =
+MOSTLYCLEANFILES =
+EXTRA_DIST =
+include $(top_srcdir)/gnuscripts/lalsuite_python.am
+include $(top_srcdir)/gnuscripts/lalapps.am
 
 if LALFRAME
 if LALMETAIO
@@ -11,7 +15,7 @@ endif
 endif
 
 if HAVE_PYTHON
-dist_bin_SCRIPTS = \
+pybin_SCRIPTS = \
 	lalapps_cosmicstring_pipe \
 	lalapps_string_cs_gamma
 pkgpython_PYTHON = cosmicstring.py
@@ -19,9 +23,4 @@ endif
 
 #pkgdata_DATA = S3_H1_StringDag.ini S3_StringDag.ini S4_StringDag.ini
 
-EXTRA_DIST = cosmicstring.py $(DATA)
-
-LDADD = $(top_builddir)/src/lalapps/liblalapps.la
-
-BUILT_SOURCES =
-include $(top_srcdir)/gnuscripts/vcsID.common
+EXTRA_DIST += cosmicstring.py $(DATA)

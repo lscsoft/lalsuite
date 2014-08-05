@@ -91,8 +91,6 @@ typedef struct {
   BOOLEAN version;	/**< output version-info */
 } UserInput_t;
 
-static UserInput_t empty_UserInput;
-
 /* ---------- local prototypes ---------- */
 int main(int argc, char *argv[]);
 
@@ -109,8 +107,8 @@ void LoadInputSFTs ( LALStatus *status, InputSFTData *data, const UserInput_t *u
  */
 int main(int argc, char *argv[])
 {
-  UserInput_t uvar = empty_UserInput;
-  LALStatus status = blank_status;	/* initialize status */
+  UserInput_t XLAL_INIT_DECL(uvar);
+  LALStatus XLAL_INIT_DECL(status);
   InputSFTData inputData;		/**< container for input-data and its meta-info */
   SFTtype *outputLFT = NULL;		/**< output 'Long Fourier Transform */
   MultiSFTVector *SSBmultiSFTs = NULL;	/**< SFT vector transferred to the SSB */
@@ -274,7 +272,7 @@ LoadInputSFTs ( LALStatus *status, InputSFTData *sftData, const UserInput_t *uva
 {
   static const CHAR *fn = "LoadInputSFTs()";
   SFTCatalog *catalog = NULL;
-  SFTConstraints constraints = empty_SFTConstraints;
+  SFTConstraints XLAL_INIT_DECL(constraints);
 
   LIGOTimeGPS minStartTimeGPS, maxEndTimeGPS;
   MultiSFTVector *multiSFTs = NULL;	    	/* multi-IFO SFT-vectors */
@@ -288,8 +286,8 @@ LoadInputSFTs ( LALStatus *status, InputSFTData *sftData, const UserInput_t *uva
   minStartTimeGPS.gpsNanoSeconds = 0;
   maxEndTimeGPS.gpsSeconds = uvar->maxEndTime;
   maxEndTimeGPS.gpsNanoSeconds = 0;
-  constraints.startTime = &minStartTimeGPS;
-  constraints.endTime = &maxEndTimeGPS;
+  constraints.minStartTime = &minStartTimeGPS;
+  constraints.maxStartTime = &maxStartTimeGPS;
 
   /* ----- get full SFT-catalog of all matching (multi-IFO) SFTs */
   LogPrintf (LOG_DEBUG, "Finding all SFTs to load ... ");

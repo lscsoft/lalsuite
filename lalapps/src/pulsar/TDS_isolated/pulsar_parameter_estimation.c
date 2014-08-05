@@ -39,7 +39,6 @@ INT4 verbose=0;
 
 static char joint_string[] = "Joint";
 static char uniform_string[] = "uniform";
-const OutputParams empty_OutputParams;
 
 /* Usage format string */
 static char USAGE1[] = \
@@ -163,7 +162,7 @@ INT4 main(INT4 argc, CHAR *argv[]){
   CHAR dataFile[256];
   CHAR outputFile[256];
 
-  OutputParams output = empty_OutputParams;
+  OutputParams XLAL_INIT_DECL(output);
   REAL8 logNoiseEv[5]; /* log evidence for noise only (no signal) */
   Results results;
   REAL8 h0ul=0.;
@@ -2002,7 +2001,7 @@ void perform_mcmc(DataStructure *data, InputParams input, INT4 numDets,
   ParamData *paramData=NULL, *randVals=NULL, *vals=NULL;
   INT4Vector *matPos=NULL; /* position of parameters in ParamData */
 
-  BarycenterInput baryinput = empty_BarycenterInput;
+  BarycenterInput XLAL_INIT_DECL(baryinput);
   REAL8Vector *phi1[numDets], *phi2=NULL;
 
   INT4 iterations = input.mcmc.iterations + input.mcmc.burnIn;

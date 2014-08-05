@@ -1,0 +1,71 @@
+/*
+ * @PACKAGE_NAME@VCSInfo.h - @PACKAGE_NAME@ VCS Information
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or (at
+ * your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+ * General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with with program; see the file COPYING. If not, write to the
+ * Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
+ * MA 02111-1307 USA
+ *
+ * Copyright (C) 2009-2013 Adam Mercer
+ * Copyright (C) 2014 Karl Wette
+ */
+
+#ifndef _@PACKAGE_NAME_UCASE@VCSINFO_H
+#define _@PACKAGE_NAME_UCASE@VCSINFO_H
+
+#include <lal/LALVCSInfoType.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+/* global variables for vcs information */
+extern const char *const lal@PACKAGE_NAME_NOLAL@VCSVersion;
+extern const char *const lal@PACKAGE_NAME_NOLAL@VCSId;
+extern const char *const lal@PACKAGE_NAME_NOLAL@VCSDate;
+extern const char *const lal@PACKAGE_NAME_NOLAL@VCSBranch;
+extern const char *const lal@PACKAGE_NAME_NOLAL@VCSTag;
+extern const char *const lal@PACKAGE_NAME_NOLAL@VCSAuthor;
+extern const char *const lal@PACKAGE_NAME_NOLAL@VCSCommitter;
+extern const char *const lal@PACKAGE_NAME_NOLAL@VCSStatus;
+
+/* global variables for vcs information - identable */
+extern const char *const lal@PACKAGE_NAME_NOLAL@VCSIdentId;
+extern const char *const lal@PACKAGE_NAME_NOLAL@VCSIdentDate;
+extern const char *const lal@PACKAGE_NAME_NOLAL@VCSIdentBranch;
+extern const char *const lal@PACKAGE_NAME_NOLAL@VCSIdentTag;
+extern const char *const lal@PACKAGE_NAME_NOLAL@VCSIdentAuthor;
+extern const char *const lal@PACKAGE_NAME_NOLAL@VCSIdentCommitter;
+extern const char *const lal@PACKAGE_NAME_NOLAL@VCSIdentStatus;
+
+/* library vcs information structure */
+extern const struct tagLALVCSInfo lal@PACKAGE_NAME_NOLAL@VCSInfo;
+
+/* configure arguments */
+extern const char *const lal@PACKAGE_NAME_NOLAL@ConfigureArgs;
+
+/* configure date */
+extern const char *const lal@PACKAGE_NAME_NOLAL@ConfigureDate;
+
+/* build date */
+extern const char *const lal@PACKAGE_NAME_NOLAL@BuildDate;
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif /* _@PACKAGE_NAME_UCASE@VCSINFO_H */
+
+/*
+ * vim: tw=0 ts=2 et
+ */

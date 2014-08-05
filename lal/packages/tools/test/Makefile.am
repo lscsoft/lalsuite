@@ -1,47 +1,29 @@
-AM_CPPFLAGS = -I$(top_builddir)/include -I$(srcdir)/../include -DTEST_DATA_DIR='"$(abs_srcdir)/"' @AM_CPPFLAGS@
-LDADD = \
-	$(top_builddir)/lib/lal/liblal.la \
-	$(top_builddir)/lib/lalsupport/src/liblalsupport.la
+EXTRA_DIST =
+include $(top_srcdir)/gnuscripts/lalsuite_test.am
+include $(top_srcdir)/gnuscripts/lalsuite_header_links.am
 
-check_PROGRAMS = \
-	CoherentEstimationTest \
-	ComputeTransferTest \
-	DetectorSiteTest \
-	FrequencySeriesTest \
-	LALIndependentTestDetResponse \
-	LALTestDetResponse0 \
-	SegmentsTest \
-	SequenceTest \
-	SkymapTest \
-	CubicSplineTriggerInterpolantTest \
-	LanczosTriggerInterpolantTest \
-	NearestNeighborTriggerInterpolantTest \
-	QuadraticFitTriggerInterpolantTest \
-	TimeSeriesTest \
-	UnitsTest
+# Add compiled test programs to this variable
+test_programs += ComputeTransferTest
+test_programs += CubicSplineTriggerInterpolantTest
+test_programs += DetResponseTest
+test_programs += DetectorSiteTest
+test_programs += FrequencySeriesTest
+test_programs += LanczosTriggerInterpolantTest
+test_programs += NearestNeighborTriggerInterpolantTest
+test_programs += QuadraticFitTriggerInterpolantTest
+test_programs += SequenceTest
+test_programs += SkymapTest
+test_programs += TimeSeriesInterpTest
+test_programs += TimeSeriesTest
+test_programs += UnitsTest
+#test_programs += CoherentEstimationTest
+#test_programs += SegmentsTest
 
-EXTRA_DIST = \
-	ComputeCalibrationFactorsTest.c \
-	LALIndTestDetRes.sh \
-	ResampleTimeSeriesTest.c \
-	indTestDetResGEO.cfg \
-	indTestDetResLHO.cfg \
-	indTestDetResLLO.cfg
+# Add shell, Python, etc. test scripts to this variable
+test_scripts += IndependentDetResponseTest.sh
 
-TESTS = \
-	ComputeTransferTest \
-	DetectorSiteTest \
-	FrequencySeriesTest \
-	LALIndTestDetRes.sh \
-	LALTestDetResponse0 \
-	SequenceTest \
-	SkymapTest \
-	TimeSeriesTest \
-	CubicSplineTriggerInterpolantTest \
-	LanczosTriggerInterpolantTest \
-	NearestNeighborTriggerInterpolantTest \
-	QuadraticFitTriggerInterpolantTest \
-	UnitsTest
+# Add any helper programs required by tests to this variable
+test_helpers += IndependentDetResponseTest
 
 MOSTLYCLEANFILES = \
 	PrintVector.* \
@@ -77,4 +59,13 @@ MOSTLYCLEANFILES = \
 	sum_sq.txt \
 	sum_sq_avg.txt \
 	theta.txt \
-	transfer.out
+	transfer.out \
+	$(END_OF_LIST)
+
+EXTRA_DIST += \
+	ComputeCalibrationFactorsTest.c \
+	ResampleTimeSeriesTest.c \
+	indTestDetResGEO.cfg \
+	indTestDetResLHO.cfg \
+	indTestDetResLLO.cfg \
+	$(END_OF_LIST)

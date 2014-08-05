@@ -48,8 +48,6 @@
  */
 
 /*---------- SCALING FACTORS ----------*/
-#define INIT_MEM(x) memset(&(x), 0, sizeof((x)))
-
 /** shortcuts for integer powers */
 #define POW2(a)  ( (a) * (a) )
 #define POW3(a)  ( (a) * (a) * (a) )
@@ -210,16 +208,6 @@ typedef struct
   BOOLEAN approxPhase;			/**< use an approximate phase-model, neglecting Roemer delay in spindown coordinates (or orders \>= 1) */
 } intparams_t;
 
-
-/*---------- empty initializers ---------- */
-static const LALStatus empty_status;
-static const EmissionTime empty_EmissionTime;
-static const intparams_t empty_intparams;
-static const PulsarTimesParamStruc empty_PulsarTimesParamStruc;
-
-const PosVel3D_t empty_PosVel3D_t;
-const DopplerMetricParams empty_DopplerMetricParams;
-const DopplerCoordinateSystem empty_DopplerCoordinateSystem;
 
 /*---------- Global variables ----------*/
 
@@ -427,12 +415,12 @@ CWPhaseDeriv_i ( double tt, void *params )
   vect3D_t nDeriv_i;	/* derivative of sky-pos vector wrt i */
 
   /* positions/velocities at time tt: */
-  PosVel3D_t spin_posvel = empty_PosVel3D_t;
-  PosVel3D_t orbit_posvel = empty_PosVel3D_t;
-  PosVel3D_t posvel = empty_PosVel3D_t;
+  PosVel3D_t XLAL_INIT_DECL(spin_posvel);
+  PosVel3D_t XLAL_INIT_DECL(orbit_posvel);
+  PosVel3D_t XLAL_INIT_DECL(posvel);
 
   /* orbit position in ecliptic plane */
-  vect3D_t ecl_orbit_pos = empty_vect3D_t;
+  vect3D_t XLAL_INIT_DECL(ecl_orbit_pos);
 
   /* get skypos-vector */
   const REAL8 cosa = cos(par->dopplerPoint->Alpha);
@@ -631,8 +619,8 @@ XLALDetectorPosVel ( PosVel3D_t *spin_posvel,		/**< [out] instantaneous sidereal
                      )
 {
   EarthState earth;
-  BarycenterInput baryinput = empty_BarycenterInput;
-  EmissionTime emit = empty_EmissionTime;
+  BarycenterInput XLAL_INIT_DECL(baryinput);
+  EmissionTime XLAL_INIT_DECL(emit);
   PosVel3D_t Det_wrt_Earth;
   PosVel3D_t PtoleOrbit;
   PosVel3D_t Spin_z, Spin_xy;
@@ -747,10 +735,10 @@ XLALPtolemaicPosVel ( PosVel3D_t *posvel,		/**< [out] instantaneous position and
 		      const LIGOTimeGPS *tGPS		/**< [in] GPS time */
 		      )
 {
-  PulsarTimesParamStruc times = empty_PulsarTimesParamStruc;
+  PulsarTimesParamStruc XLAL_INIT_DECL(times);
   REAL8 phiOrb;   /* Earth orbital revolution angle, in radians. */
   REAL8 sinOrb, cosOrb;
-  LALStatus status = empty_status;
+  LALStatus XLAL_INIT_DECL(status);
 
   if ( !posvel || !tGPS ) {
     XLALPrintError ( "%s: Illegal NULL pointer passed!\n", __func__);
@@ -950,7 +938,7 @@ XLALDopplerPhaseMetric ( const DopplerMetricParams *metricParams,  	/**< input p
 			 )
 {
   gsl_matrix *g_ij = NULL;
-  intparams_t intparams = empty_intparams;
+  intparams_t XLAL_INIT_DECL(intparams);
 
   /* ---------- sanity/consistency checks ---------- */
   XLAL_CHECK_NULL ( metricParams != NULL, XLAL_EINVAL );
@@ -1350,7 +1338,7 @@ XLALComputeAtomsForFmetric ( const DopplerMetricParams *metricParams,  	/**< inp
 			     )
 {
   FmetricAtoms_t *ret;		/* return struct */
-  intparams_t intparams = empty_intparams;
+  intparams_t XLAL_INIT_DECL(intparams);
 
   UINT4 dim, i=-1, j=-1, X;		/* index counters */
   REAL8 A, B, C;			/* antenna-pattern coefficients (gsl-integrated) */

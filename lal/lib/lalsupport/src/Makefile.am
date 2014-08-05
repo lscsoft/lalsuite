@@ -1,4 +1,4 @@
-AM_CPPFLAGS = -I$(top_builddir)/include -I$(srcdir)/../include -DPKG_DATA_DIR='"$(pkgdatadir)/"' @AM_CPPFLAGS@
+include $(top_srcdir)/gnuscripts/lalsuite_header_links.am
 
 lib_LTLIBRARIES = liblalsupport.la
 

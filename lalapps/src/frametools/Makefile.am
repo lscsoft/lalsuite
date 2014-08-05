@@ -1,3 +1,6 @@
+BUILT_SOURCES =
+include $(top_srcdir)/gnuscripts/lalapps.am
+
 if LALFRAME
 LALFRAMEPROGRAMS = \
 	lalapps_animate \
@@ -60,9 +63,3 @@ EXTRA_DIST = \
 	combinexteframes.c \
 	framestats.c \
 	computespec.c
-
-AM_CPPFLAGS = -I$(top_srcdir)/src -I$(top_srcdir)/src/lalapps -DPKG_DATA_DIR='"$(pkgdatadir)/"' @AM_CPPFLAGS@
-LDADD = $(top_builddir)/src/lalapps/liblalapps.la
-
-BUILT_SOURCES =
-include $(top_srcdir)/gnuscripts/vcsID.common

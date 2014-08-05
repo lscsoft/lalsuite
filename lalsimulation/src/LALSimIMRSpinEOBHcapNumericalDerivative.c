@@ -50,6 +50,8 @@
 #include "LALSimIMRSpinEOBFactorizedFlux.c"
 #include "LALSimIMREOBFactorizedWaveform.c"
 
+//int UsePrec = 1;
+
 /*------------------------------------------------------------------------------------------
  *
  *          Prototypes of functions defined in this code.
@@ -114,7 +116,7 @@ static int XLALSpinHcapNumericalDerivative(
 
   gsl_function F;
   INT4         gslStatus;
-
+  UINT4 SpinAlignedEOBversion;
   UINT4 i;
 
   REAL8Vector rVec, pVec;
@@ -127,10 +129,10 @@ static int XLALSpinHcapNumericalDerivative(
 
   REAL8 mass1, mass2, eta;
   REAL8 rrTerm2, pDotS1, pDotS2;
-  REAL8Vector s1, s2, sKerr, sStar;
-  REAL8       s1Data[3], s2Data[3];
+  REAL8Vector s1, s2, s1norm, s2norm, sKerr, sStar;
+  REAL8       s1Data[3], s2Data[3], s1DataNorm[3], s2DataNorm[3];
   REAL8       sKerrData[3], sStarData[3];
-  REAL8 magS1, magS2, chiS, chiA, a;
+  //REAL8 magS1, magS2, chiS, chiA, a;
 
 
   /* Orbital angular momentum */
@@ -146,9 +148,13 @@ static int XLALSpinHcapNumericalDerivative(
   /* The error in a derivative as measured by GSL */
   REAL8 absErr;
 
+  /* NQC coefficients container */
+  EOBNonQCCoeffs *nqcCoeffs = NULL;
+
   /* Set up pointers for GSL */ 
   params.values  = values;
   params.params  = (SpinEOBParams *)funcParams;
+  nqcCoeffs      = params.params->nqcCoeffs;
 
   F.function = &GSLSpinHamiltonianWrapper;
   F.params   = &params;
@@ -156,6 +162,55 @@ static int XLALSpinHcapNumericalDerivative(
   mass1 = params.params->eobParams->m1;
   mass2 = params.params->eobParams->m2;
   eta   = params.params->eobParams->eta;
+  SpinAlignedEOBversion = params.params->seobCoeffs->SpinAlignedEOBversion;
+
+  /* For precessing binaries, the effective spin of the Kerr
+   * background evolves with time. The coefficients used to compute
+   * the Hamiltonian depend on the Kerr spin, and hence need to
+   * be updated for the current spin values */
+  if (UsePrec)
+  {
+    /* Set up structures and calculate necessary (spin-only) PN parameters */
+    /* Due to precession, these need to get calculated in every step */
+    memset( params.params->seobCoeffs, 0, sizeof(SpinEOBHCoeffs) );
+
+    REAL8 tmps1Data[3], tmps2Data[3]; REAL8Vector tmps1Vec, tmps2Vec;
+    memcpy( tmps1Data, values+6, 3*sizeof(REAL8) );
+    memcpy( tmps2Data, values+9, 3*sizeof(REAL8) );
+    tmps1Vec.data   = tmps1Data; tmps2Vec.data   = tmps2Data;
+    tmps1Vec.length = tmps2Vec.length = 3;
+
+    REAL8Vector *tmpsigmaKerr = NULL;
+    if ( !(tmpsigmaKerr = XLALCreateREAL8Vector( 3 )) )
+    {
+      XLAL_ERROR( XLAL_ENOMEM );
+    }
+
+    if ( XLALSimIMRSpinEOBCalculateSigmaKerr( tmpsigmaKerr, mass1, mass2,
+                              &tmps1Vec, &tmps2Vec ) == XLAL_FAILURE )
+    {
+      XLALDestroyREAL8Vector( tmpsigmaKerr );
+      XLAL_ERROR( XLAL_EFUNC );
+    }
+
+    /* Update a with the Kerr background spin
+     * Pre-compute the Hamiltonian coefficients            */
+    REAL8Vector *delsigmaKerr 	= params.params->sigmaKerr;
+    params.params->sigmaKerr 	= tmpsigmaKerr;
+    params.params->a 			= sqrt( tmpsigmaKerr->data[0]*tmpsigmaKerr->data[0]
+								+ tmpsigmaKerr->data[1]*tmpsigmaKerr->data[1]
+								+ tmpsigmaKerr->data[2]*tmpsigmaKerr->data[2] );
+    //tmpsigmaKerr->data[2];
+    if ( XLALSimIMRCalculateSpinEOBHCoeffs( params.params->seobCoeffs, eta,
+					params.params->a, SpinAlignedEOBversion ) == XLAL_FAILURE )
+    {
+      XLALDestroyREAL8Vector( params.params->sigmaKerr );
+      XLAL_ERROR( XLAL_EFUNC );
+    }
+
+    /* Release the old memory */
+    XLALDestroyREAL8Vector( delsigmaKerr );
+  }
 
   /* Now calculate derivatives w.r.t. each parameter */
   for ( i = 0; i < 12; i++ )
@@ -207,18 +262,27 @@ static int XLALSpinHcapNumericalDerivative(
   /* TODO: Modify so that only spin terms get re-calculated */
 
   /* We cannot point to the values vector directly as it leads to a warning */
-  s1.length = s2.length = 3;
+  s1.length = s2.length = s1norm.length = s2norm.length = 3;
   s1.data = s1Data;
   s2.data = s2Data;
+  s1norm.data = s1DataNorm;
+  s2norm.data = s2DataNorm;
 
   memcpy( s1Data, values+6, 3*sizeof(REAL8) );
   memcpy( s2Data, values+9, 3*sizeof(REAL8) );
+  memcpy( s1DataNorm, values+6, 3*sizeof(REAL8) );
+  memcpy( s2DataNorm, values+9, 3*sizeof(REAL8) );
 
-  magS1 = sqrt(s1.data[0]*s1.data[0] + s1.data[1]*s1.data[1] + s1.data[2]*s1.data[2]);
-  magS2 = sqrt(s2.data[0]*s2.data[0] + s2.data[1]*s2.data[1] + s2.data[2]*s2.data[2]);
+  for ( i = 0; i < 3; i++ )
+  {
+     s1DataNorm[i] /= (mass1+mass2)*(mass1+mass2);
+     s2DataNorm[i] /= (mass1+mass2)*(mass1+mass2);
+  }
+  //magS1 = sqrt(s1.data[0]*s1.data[0] + s1.data[1]*s1.data[1] + s1.data[2]*s1.data[2]);
+  //magS2 = sqrt(s2.data[0]*s2.data[0] + s2.data[1]*s2.data[1] + s2.data[2]*s2.data[2]);
 
-  chiS = 0.5 * ( magS1 / (mass1*mass1) + magS2 / (mass2*mass2) );
-  chiA = 0.5 * ( magS1 / (mass1*mass1) - magS2 / (mass2*mass2) );
+  //chiS = 0.5 * ( magS1 / (mass1*mass1) + magS2 / (mass2*mass2) );
+  //chiA = 0.5 * ( magS1 / (mass1*mass1) - magS2 / (mass2*mass2) );
 
   sKerr.length = 3;
   sKerr.data   = sKerrData; 
@@ -228,10 +292,10 @@ static int XLALSpinHcapNumericalDerivative(
   sStar.data   = sStarData;
   XLALSimIMRSpinEOBCalculateSigmaStar( &sStar, mass1, mass2, &s1, &s2 );
 
-  a = sqrt(sKerr.data[0]*sKerr.data[0] + sKerr.data[1]*sKerr.data[1] + sKerr.data[2]*sKerr.data[2]);
+  //a = sqrt(sKerr.data[0]*sKerr.data[0] + sKerr.data[1]*sKerr.data[1] + sKerr.data[2]*sKerr.data[2]);
 
-  XLALSimIMREOBCalcSpinFacWaveformCoefficients( params.params->eobParams->hCoeffs, mass1, mass2, eta, a, chiS, chiA );
-  XLALSimIMRCalculateSpinEOBHCoeffs( params.params->seobCoeffs, eta, a );
+  //XLALSimIMREOBCalcSpinFacWaveformCoefficients( params.params->eobParams->hCoeffs, mass1, mass2, eta, a, chiS, chiA );
+  //XLALSimIMRCalculateSpinEOBHCoeffs( params.params->seobCoeffs, eta, a );
  
   rVec.length = pVec.length = 3;
   rVec.data   = rData;
@@ -240,7 +304,8 @@ static int XLALSpinHcapNumericalDerivative(
   memcpy( rData, values, sizeof(rData) );
   memcpy( pData, values+3, sizeof(pData) );
 
-  H =  XLALSimIMRSpinEOBHamiltonian( eta, &rVec, &pVec, &sKerr, &sStar, params.params->tortoise, params.params->seobCoeffs ); 
+  H = XLALSimIMRSpinEOBHamiltonian( eta, &rVec, &pVec, &s1norm, &s2norm,
+	&sKerr, &sStar, params.params->tortoise, params.params->seobCoeffs );
 
 
   /* Now make the conversion */
@@ -255,7 +320,7 @@ static int XLALSpinHcapNumericalDerivative(
   rCrossV_z = values[0]*dvalues[1] - values[1]*dvalues[0];
 
   omega = sqrt( rCrossV_x*rCrossV_x + rCrossV_y*rCrossV_y + rCrossV_z*rCrossV_z ) / (r*r);
-  flux  = XLALInspiralSpinFactorizedFlux( &polarDynamics, omega, params.params, H/(mass1+mass2), lMax );
+  flux  = XLALInspiralSpinFactorizedFlux( &polarDynamics, nqcCoeffs, omega, params.params, H/(mass1+mass2), lMax, SpinAlignedEOBversion );
 
   /* Looking at the non-spinning model, I think we need to divide the flux by eta */
   flux = flux / eta;
@@ -397,35 +462,50 @@ static double GSLSpinHamiltonianWrapper( double x, void *params )
   EOBParams *eobParams = dParams->params->eobParams;
 
   REAL8 tmpVec[12];
-  REAL8 sKerrData[3], sStarData[3];
+  REAL8 s1normData[3], s2normData[3], sKerrData[3], sStarData[3];
 
   /* These are the vectors which will be used in the call to the Hamiltonian */
-  REAL8Vector r, p, spin1, spin2;
+  REAL8Vector r, p, spin1, spin2, spin1norm, spin2norm;
   REAL8Vector sigmaKerr, sigmaStar;
 
+  int i;
   REAL8 a;
+  REAL8 m1 = eobParams->m1;
+  REAL8 m2 = eobParams->m2;
+  REAL8 mT2 = (m1+m2)*(m1+m2);
 
   /* Use a temporary vector to avoid corrupting the main function */
-  memcpy( tmpVec, dParams->values, 
-               sizeof(tmpVec) );
+  memcpy( tmpVec, dParams->values, sizeof(tmpVec) );
 
   /* Set the relevant entry in the vector to the correct value */
   tmpVec[dParams->varyParam] = x;
 
   /* Set the LAL-style vectors to point to the appropriate things */
-  r.length = p.length = spin1.length = spin2.length = 3;
+  r.length = p.length = spin1.length = spin2.length = spin1norm.length = spin2norm.length = 3;
   sigmaKerr.length = sigmaStar.length = 3;
   r.data     = tmpVec;
   p.data     = tmpVec+3;
   spin1.data = tmpVec+6;
   spin2.data = tmpVec+9;
+  spin1norm.data = s1normData;
+  spin2norm.data = s1normData;
   sigmaKerr.data = sKerrData;
   sigmaStar.data = sStarData;
 
-  /* Calculate various spin parameters */
-  XLALSimIMRSpinEOBCalculateSigmaKerr( &sigmaKerr, eobParams->m1, eobParams->m2, &spin1, &spin2 );
-  XLALSimIMRSpinEOBCalculateSigmaStar( &sigmaStar, eobParams->m1, eobParams->m2, &spin1, &spin2 );
+  memcpy( s1normData, tmpVec+6, 3*sizeof(REAL8) );
+  memcpy( s2normData, tmpVec+9, 3*sizeof(REAL8) );
 
+  for ( i = 0; i < 3; i++ )
+  {
+     s1normData[i] /= mT2;
+     s2normData[i] /= mT2;
+  }
+
+  /* Calculate various spin parameters */
+  XLALSimIMRSpinEOBCalculateSigmaKerr( &sigmaKerr, eobParams->m1,
+				eobParams->m2, &spin1, &spin2 );
+  XLALSimIMRSpinEOBCalculateSigmaStar( &sigmaStar, eobParams->m1,
+				eobParams->m2, &spin1, &spin2 );
   a = sqrt( sigmaKerr.data[0]*sigmaKerr.data[0] + sigmaKerr.data[1]*sigmaKerr.data[1]
               + sigmaKerr.data[2]*sigmaKerr.data[2] );
   //printf( "a = %e\n", a );
@@ -434,10 +514,34 @@ static double GSLSpinHamiltonianWrapper( double x, void *params )
   {
     printf( "a is nan!!\n");
   }
-  XLALSimIMRCalculateSpinEOBHCoeffs( dParams->params->seobCoeffs, eobParams->eta, a );
+  //XLALSimIMRCalculateSpinEOBHCoeffs( dParams->params->seobCoeffs, eobParams->eta, a );
+  if (UsePrec)
+  {
+    /* Set up structures and calculate necessary PN parameters */
+    /* Due to precession, these need to get calculated in every step */
+    /* TODO: Only calculate non-spinning parts once */
+    memset( dParams->params->seobCoeffs, 0, sizeof(SpinEOBHCoeffs) );
+
+    /* Update the Z component of the Kerr background spin
+     * Pre-compute the Hamiltonian coefficients            */
+    REAL8Vector *delsigmaKerr 	    = dParams->params->sigmaKerr;
+    dParams->params->sigmaKerr 		= &sigmaKerr;
+    dParams->params->a 				= a;
+    //tmpsigmaKerr->data[2];
+    if ( XLALSimIMRCalculateSpinEOBHCoeffs( dParams->params->seobCoeffs,
+			eobParams->eta, a,
+			dParams->params->seobCoeffs->SpinAlignedEOBversion ) == XLAL_FAILURE )
+    {
+      XLALDestroyREAL8Vector( dParams->params->sigmaKerr );
+      XLAL_ERROR( XLAL_EFUNC );
+    }
+
+    /* Release the old memory */
+    XLALDestroyREAL8Vector( delsigmaKerr );
+  }
 
   //printf( "Hamiltonian = %e\n", XLALSimIMRSpinEOBHamiltonian( eobParams->eta, &r, &p, &sigmaKerr, &sigmaStar, dParams->params->seobCoeffs ) );
-  return XLALSimIMRSpinEOBHamiltonian( eobParams->eta, &r, &p, &sigmaKerr, &sigmaStar, dParams->params->tortoise, dParams->params->seobCoeffs ) / eobParams->eta;
+  return XLALSimIMRSpinEOBHamiltonian( eobParams->eta, &r, &p, &spin1norm, &spin2norm, &sigmaKerr, &sigmaStar, dParams->params->tortoise, dParams->params->seobCoeffs ) / eobParams->eta;
 }
 
 #endif /* _LALSIMIMRSPINEOBHCAPNUMERICALDERIVATIVE_C */

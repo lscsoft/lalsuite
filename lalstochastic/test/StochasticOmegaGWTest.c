@@ -18,7 +18,7 @@
 */
 
 /**
- * \author UTB Relativity Group; contact whelan@phys.utb.edu
+ * \author UTB Relativity Group; contact john.whelan@ligo.org
  * \file
  * \ingroup StochasticOmegaGW_c
  *
@@ -101,6 +101,7 @@
  * LALSPrintFrequencySeries
  * LALSDestroyVector()
  * LALCheckMemoryLeaks()
+ * fabsf()
  * \endcode
  *
  * ### Notes ###
@@ -169,7 +170,6 @@
 #include <lal/Units.h>
 
 #include "CheckStatus.h"
-#include "CheckStatus.c"
 
 #define STOCHASTICOMEGAGWTESTC_OMEGAREF  1e-6
 #define STOCHASTICOMEGAGWTESTC_FREF      100.0
@@ -460,7 +460,7 @@ int main( int argc, char *argv[] )
              f, omegaGW.data->data[i], omega);
     }
     if ( (omegaGW.data->data[i] - omega) &&
-         abs((omegaGW.data->data[i] - omega)/omega) > STOCHASTICOMEGAGWTESTC_TOL )
+         fabsf((omegaGW.data->data[i] - omega)/omega) > STOCHASTICOMEGAGWTESTC_TOL )
     {
       printf("  FAIL: Valid data test #1 (alpha=%f)\n",STOCHASTICOMEGAGWTESTC_ALPHA);
       return STOCHASTICOMEGAGWTESTC_EFLS;
@@ -489,7 +489,7 @@ int main( int argc, char *argv[] )
       printf("Omega(%f Hz)=%g, should be %g\n",
              f, omegaGW.data->data[i], STOCHASTICOMEGAGWTESTC_OMEGAREF);
     }
-    if ( abs(omegaGW.data->data[i] - STOCHASTICOMEGAGWTESTC_OMEGAREF)
+    if ( fabs(omegaGW.data->data[i] - STOCHASTICOMEGAGWTESTC_OMEGAREF)
          / STOCHASTICOMEGAGWTESTC_OMEGAREF > STOCHASTICOMEGAGWTESTC_TOL )
     {
       printf("  FAIL: Valid data test #2 (alpha=0)\n");

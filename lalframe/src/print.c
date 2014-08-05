@@ -127,6 +127,7 @@ int main(int argc, char *argv[])
 int printchannel(LALFrameUFrChan * channel, double t0)
 {
     /* const char *name; */
+    double t0ip, t0fp;
     double dt;
     void *data;
     int dtype;
@@ -147,9 +148,12 @@ int printchannel(LALFrameUFrChan * channel, double t0)
     data = XLALFrameUFrChanVectorQueryData(channel);
     dtype = XLALFrameUFrChanVectorQueryType(channel);
 
+    t0fp = modf(t0, &t0ip);
     for (i = 0; i < ndata; ++i) {
-        double t = t0 + i * dt;
-        printf("%.9f", t);
+        double tip, tfp;
+        tfp = modf(t0fp + i * dt, &tip);
+	tip += t0ip;
+        printf("%ld.%09ld", (long)tip, (long)(1e9 * tfp));
         fputs(FS, stdout);
         printval(data, i, dtype);
         fputs(RS, stdout);

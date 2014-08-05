@@ -13,16 +13,13 @@ EXTRA_DIST = \
 	$(DOXY_PDF_FILES)
 
 SUBDIRS = \
-	gnuscripts \
 	src
 
 .PHONY: html pdf
 
 override lalsuite_top_srcdir = $(abs_srcdir)/..
 
-override doxy_inputdirs = \
-	$(abs_srcdir)/src \
-	$(addprefix $(lalsuite_top_srcdir)/, \
+DOXYINPUT = \
 	lal \
 	lalburst \
 	laldetchar \
@@ -34,8 +31,11 @@ override doxy_inputdirs = \
 	lalsimulation \
 	lalstochastic \
 	lalxml \
-	lalapps \
-	)
+	lalapps
+
+override doxy_inputdirs = \
+	$(abs_srcdir)/src \
+	$(addprefix $(lalsuite_top_srcdir)/,$(DOXYINPUT))
 
 override lalsuite_version = $(shell \
 	version="$(PACKAGE_VERSION)"; \

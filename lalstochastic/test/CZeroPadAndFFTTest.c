@@ -18,7 +18,7 @@
 */
 
 /**
- * \author UTB Relativity Group; contact whelan@phys.utb.edu
+ * \author UTB Relativity Group; contact john.whelan@ligo.org
  * \file
  * \ingroup ZeroPadAndFFT_c
  *
@@ -102,6 +102,7 @@
  * fprintf()
  * freopen()
  * fabs()
+ * fabsf()
  * \endcode
  *
  * ### Notes ###
@@ -159,7 +160,6 @@
 #include <lal/Units.h>
 
 #include "CheckStatus.h"
-#include "CheckStatus.c"
 
 #define CZEROPADANDFFTTESTC_LENGTH        8
 #define CZEROPADANDFFTTESTC_FULLLENGTH (2 * CZEROPADANDFFTTESTC_LENGTH - 1)
@@ -606,9 +606,9 @@ main( int argc, char *argv[] )
               f, crealf(goodOutput.data->data[i]), cimagf(goodOutput.data->data[i]),
               crealf(expectedOutputDataData[i]), cimagf(expectedOutputDataData[i]));
      }
-     if (fabs(crealf(goodOutput.data->data[i]) - crealf(expectedOutputDataData[i]))
+     if (fabsf(crealf(goodOutput.data->data[i]) - crealf(expectedOutputDataData[i]))
          /* / expectedOutputDataData[0].re */> CZEROPADANDFFTTESTC_TOL
-         || fabs(cimagf(goodOutput.data->data[i]) - cimagf(expectedOutputDataData[i]))
+         || fabsf(cimagf(goodOutput.data->data[i]) - cimagf(expectedOutputDataData[i]))
          /* / expectedOutputDataData[0].re */> CZEROPADANDFFTTESTC_TOL)
      {
        printf("  FAIL: Valid data test\n");

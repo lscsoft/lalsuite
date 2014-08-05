@@ -20,8 +20,6 @@
 
 #include <lal/NormalizeSFTRngMed.h>
 
-static const LALStatus empty_LALStatus;
-
 /**
  * \addtogroup NormalizeSFTRngMed_h
  * \author Badri Krishnan and Alicia Sintes
@@ -338,7 +336,7 @@ XLALPeriodoToRngmed ( REAL8FrequencySeries  *rngmed,		/**< [out] resulting 'smoo
   mediansV.length = medianVLength;
   mediansV.data = rngmed->data->data + blocks2;
 
-  LALStatus status = empty_LALStatus;
+  LALStatus XLAL_INIT_DECL(status);
   LALDRunningMedian2 ( &status, &mediansV, &inputV, rngMedPar);
   XLAL_CHECK ( status.statusCode == 0, XLAL_EFAILED, "LALDRunningMedian2() failed with statusCode = %d", status.statusCode );
 

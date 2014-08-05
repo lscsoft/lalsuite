@@ -30,7 +30,6 @@
 #include <lal/LALStdio.h>
 #include <lal/LALVersion.h>
 #include <lal/LALVCSInfo.h>
-#include <lal/LALBuildInfo.h>
 
 const char *const lalVersion = LAL_VERSION;
 const int lalVersionMajor = LAL_VERSION_MAJOR;
@@ -63,8 +62,8 @@ LALVersion(LALStatus * status, CHAR * message, UINT4 size, INT4 verbose)
                  "Build Date:          %s\n"
                  "Configure Date:      %s\n"
                  "Configure Arguments: %s\n",
-                 lalVersion, lalHeaderVCSInfo.vcsId,
-                 lalHeaderVCSInfo.vcsTag, lalBuildDate, lalConfigureDate,
+                 lalVersion, lalVCSInfo.vcsId,
+                 lalVCSInfo.vcsTag, lalBuildDate, lalConfigureDate,
                  lalConfigureArgs) : snprintf(message, size,
                                               "LAL Version: %s\n",
                                               lalVersion);

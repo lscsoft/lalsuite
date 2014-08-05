@@ -18,7 +18,7 @@
 */
 
 /**
- * \author UTB Relativity Group; contact whelan@phys.utb.edu
+ * \author UTB Relativity Group; contact john.whelan@ligo.org
  * \file
  * \ingroup StochasticOptimalFilterNormalization_c
  *
@@ -128,7 +128,7 @@
  * printf()
  * fprintf()
  * freopen()
- * fabs()
+ * fabsf()
  * \endcode
  *
  * ### Notes ###
@@ -188,7 +188,6 @@
 #include <lal/Units.h>
 
 #include "CheckStatus.h"
-#include "CheckStatus.c"
 
 #define STOCHASTICOPTIMALFILTERNORMALIZATIONTESTC_TRUE     1
 #define STOCHASTICOPTIMALFILTERNORMALIZATIONTESTC_FALSE    0

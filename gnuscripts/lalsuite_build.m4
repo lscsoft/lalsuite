@@ -1,7 +1,7 @@
 # -*- mode: autoconf; -*-
 # lalsuite_build.m4 - top level build macros
 #
-# serial 81
+# serial 88
 
 # not present in older versions of pkg.m4
 m4_pattern_allow([^PKG_CONFIG(_(PATH|LIBDIR|SYSROOT_DIR|ALLOW_SYSTEM_(CFLAGS|LIBS)))?$])
@@ -74,6 +74,9 @@ AC_DEFUN([LALSUITE_POP_UVARS],[
 AC_DEFUN([LALSUITE_ADD_FLAGS],[
   # $0: prepend flags to AM_CPPFLAGS/AM_$1FLAGS/AM_LDFLAGS/LIBS,
   # and update values of CPPFLAGS/$1FLAGS/LDFLAGS for Autoconf tests
+  # - arg 1: prefix of the compiler flag variable, e.g. C for CFLAGS, CXX for CXXFLAGS
+  # - arg 2: compiler flags
+  # - arg 3: linker flags
   m4_ifval([$1],[m4_ifval([$2],[
     pre_AM_CPPFLAGS=
     pre_sys_CPPFLAGS=
@@ -158,6 +161,8 @@ AC_DEFUN([LALSUITE_ADD_FLAGS],[
 
 AC_DEFUN([LALSUITE_ADD_PATH],[
   # $0: prepend path to $1, removing duplicates, first value taking precedence
+  # - arg 1: name of path variable
+  # - arg 2: path to prepend
   tokens=$2
   tokens=`echo ${tokens} ${$1} | sed 's/:/ /g'`
   $1=
@@ -176,8 +181,8 @@ AC_DEFUN([LALSUITE_ADD_PATH],[
 ])
 
 AC_DEFUN([LALSUITE_CHECK_GIT_REPO],[
-  # check for git
-  AC_PATH_PROGS(GIT,[git],[false])
+  # $0: check for git
+  AC_PATH_PROGS([GIT],[git],[false])
   # check whether building from a git repository
   have_git_repo=no
   AS_IF([test "x${GIT}" != xfalse],[
@@ -191,21 +196,15 @@ AC_DEFUN([LALSUITE_CHECK_GIT_REPO],[
     AC_MSG_RESULT([${have_git_repo}])
   ])
   # conditional for git and building from a git repository
-  AM_CONDITIONAL(HAVE_GIT_REPO,[test "x${have_git_repo}" = xyes])
-  # command line for version information generation script
-  AM_COND_IF(HAVE_GIT_REPO,[
-    m4_pattern_allow([AM_DEFAULT_VERBOSITY])
-    m4_pattern_allow([AM_V_GEN])
-    AC_SUBST([genvcsinfo_],["\$(genvcsinfo_\$(AM_DEFAULT_VERBOSITY))"])
-    AC_SUBST([genvcsinfo_0],["--am-v-gen='\$(AM_V_GEN)'"])
-    GENERATE_VCS_INFO="\$(PYTHON) \$(top_srcdir)/../gnuscripts/generate_vcs_info.py --git-path='\$(GIT)' \$(genvcsinfo_\$(V))"
-  ],[GENERATE_VCS_INFO=false])
-  AC_SUBST(GENERATE_VCS_INFO)
+  AM_CONDITIONAL([HAVE_GIT_REPO],[test "x${have_git_repo}" = xyes])
+  # end $0
 ])
 
 AC_DEFUN([LALSUITE_VERSION_CONFIGURE_INFO],[
   # $0: define version/configure info
   m4_pushdef([uppercase],m4_translit(AC_PACKAGE_NAME, [a-z], [A-Z]))
+  m4_pushdef([lowercase],m4_translit(AC_PACKAGE_NAME, [A-Z], [a-z]))
+  m4_pushdef([withoutlal],m4_bpatsubst(AC_PACKAGE_NAME, [^LAL], []))
   version_major=`echo "$VERSION" | cut -d. -f1`
   version_minor=`echo "$VERSION" | cut -d. -f2`
   version_micro=`echo "$VERSION" | cut -d. -f3`
@@ -220,18 +219,25 @@ AC_DEFUN([LALSUITE_VERSION_CONFIGURE_INFO],[
   AC_DEFINE_UNQUOTED(uppercase[_VERSION_DEVEL],[$version_devel],AC_PACKAGE_NAME[ Version Devel Number])
   AC_SUBST([ac_configure_args])
   AC_SUBST([configure_date])
+  AC_SUBST([PACKAGE_NAME_UCASE],uppercase)
+  AC_SUBST([PACKAGE_NAME_LCASE],lowercase)
+  AC_SUBST([PACKAGE_NAME_NOLAL],withoutlal)
   m4_popdef([uppercase])
+  m4_popdef([lowercase])
+  m4_popdef([withoutlal])
   # end $0
 ])
 
 AC_DEFUN([LALSUITE_REQUIRE_CXX],[
-  # require a C++ compiler
+  # $0: require a C++ compiler
   lalsuite_require_cxx=true
+  # end $0
 ])
 
 AC_DEFUN([LALSUITE_REQUIRE_F77],[
-  # require an F77 compiler
+  # $0: require an F77 compiler
   lalsuite_require_f77=true
+  # end $0
 ])
 
 # because we want to conditionally decide whether to check for
@@ -274,6 +280,7 @@ AC_DEFUN([_LALSUITE_POST_PROG_COMPILERS],[
 ])
 
 AC_DEFUN([LALSUITE_PROG_COMPILERS],[
+  # $0: check for C/C++/Fortran compilers
   AC_REQUIRE([_LALSUITE_PRE_PROG_COMPILERS])
 
   # check for C99 compiler
@@ -318,36 +325,79 @@ AC_DEFUN([LALSUITE_PROG_COMPILERS],[
   # end $0
 ])
 
-AC_DEFUN([LALSUITE_USE_LIBTOOL],
-[## $0: Generate a libtool script for use in configure tests
-AC_REQUIRE([LT_INIT])
-LT_OUTPUT
-m4_append([AC_LANG(C)],
-[ac_link="./libtool --mode=link --tag=CC $ac_link"
-])[]dnl
-AC_PROVIDE_IFELSE([AC_PROG_CXX],
-[m4_append([AC_LANG(C++)],
-[ac_link="./libtool --mode=link --tag=CXX $ac_link"
-])])[]dnl
-AC_LANG(_AC_LANG)[]dnl
-]) # LALSUITE_USE_LIBTOOL
+AC_DEFUN([LALSUITE_REQUIRE_PYTHON],[
+  # $0: require Python version $1 or later
+  AS_IF([test "x${lalsuite_require_pyvers}" = x],[
+    lalsuite_require_pyvers="$1"
+  ],[
+    AS_VERSION_COMPARE([${lalsuite_require_pyvers}],[$1],[
+      lalsuite_require_pyvers="$1"
+    ])
+  ])
+  # end $0
+])
 
-AC_DEFUN([LALSUITE_MULTILIB_LIBTOOL_HACK],
-[## $0: libtool incorrectly determine library path on SL6
-case "${host}" in
-  x86_64-*-linux-gnu*)
-    case `cat /etc/redhat-release 2> /dev/null` in
-      "Scientific Linux"*|"CentOS"*)
-        AC_MSG_NOTICE([hacking round broken libtool multilib support on RedHat systems])
-        lt_cv_sys_lib_dlsearch_path_spec="/lib64 /usr/lib64"
-        ;;
-    esac
-    ;;
-esac
-]) # LALSUITE_MULTILIB_LIBTOOL_HACK
+AC_DEFUN([LALSUITE_CHECK_PYTHON],[
+  # $0: check for Python
+  lalsuite_pyvers="$1"
+  AS_IF([test "x${lalsuite_require_pyvers}" != x],[
+    AS_VERSION_COMPARE([${lalsuite_pyvers}],[${lalsuite_require_pyvers}],[
+      lalsuite_pyvers="${lalsuite_require_pyvers}"
+    ])
+  ])
+  AS_IF([test "x${PYTHON}" != xfalse],[
+    AM_PATH_PYTHON([${lalsuite_pyvers}],,[
+      AS_IF([test "x${lalsuite_require_pyvers}" = x],[
+        PYTHON=false
+      ],[
+        AC_MSG_ERROR([Python version ${lalsuite_pyvers} or higher is required])
+      ])
+    ])
+  ])
+  AM_CONDITIONAL([HAVE_PYTHON],[test "x${PYTHON}" != xfalse])
+  AM_COND_IF([HAVE_PYTHON],[
+    AC_SUBST([python_prefix], [`${PYTHON} -c 'import sys; print(sys.prefix)' 2>/dev/null`])
+    AC_SUBST([python_exec_prefix], [`${PYTHON} -c 'import sys; print(sys.exec_prefix)' 2>/dev/null`])
+    PYTHON_ENABLE_VAL=ENABLED
+  ],[
+    PYTHON_ENABLE_VAL=DISABLED
+  ])
+  # end $0
+])
 
-# store configure flags for 'make distcheck'
+AC_DEFUN([LALSUITE_USE_LIBTOOL],[
+  # $0: Generate a libtool script for use in configure tests
+  AC_REQUIRE([LT_INIT])
+  LT_OUTPUT
+  m4_append([AC_LANG(C)],[
+    ac_link="./libtool --mode=link --tag=CC $ac_link"
+  ])
+  AC_PROVIDE_IFELSE([AC_PROG_CXX],[
+    m4_append([AC_LANG(C++)],[
+      ac_link="./libtool --mode=link --tag=CXX $ac_link"
+    ])
+  ])
+  AC_LANG(_AC_LANG)
+  # end $0
+])
+
+AC_DEFUN([LALSUITE_MULTILIB_LIBTOOL_HACK],[
+  # $0: libtool incorrectly determine library path on SL6
+  case "${host}" in
+    x86_64-*-linux-gnu*)
+      case `cat /etc/redhat-release 2> /dev/null` in
+        "Scientific Linux"*|"CentOS"*)
+          AC_MSG_NOTICE([hacking round broken libtool multilib support on RedHat systems])
+          lt_cv_sys_lib_dlsearch_path_spec="/lib64 /usr/lib64"
+          ;;
+      esac
+      ;;
+  esac
+  # end $0
+])
+
 AC_DEFUN([LALSUITE_DISTCHECK_CONFIGURE_FLAGS],[
+  # $0: store configure flags for 'make distcheck'
   DISTCHECK_CONFIGURE_FLAGS=
   for arg in ${ac_configure_args}; do
     case ${arg} in
@@ -369,6 +419,7 @@ AC_DEFUN([LALSUITE_DISTCHECK_CONFIGURE_FLAGS],[
     esac
   done
   AC_SUBST(DISTCHECK_CONFIGURE_FLAGS)
+  # end $0
 ])
 
 AC_DEFUN([LALSUITE_ENABLE_MODULE],[
@@ -389,6 +440,10 @@ AC_DEFUN([LALSUITE_ENABLE_MODULE],[
 
 AC_DEFUN([LALSUITE_CHECK_LIB],[
   # $0: check for LAL library
+  # - arg 1: name of LAL library
+  # - arg 2: minimum version required
+  # - arg 3: library function to check for
+  # - arg 4: library header to check for
   AC_REQUIRE([PKG_PROG_PKG_CONFIG])
   m4_pushdef([lowercase],m4_translit([[$1]], [A-Z], [a-z]))
   m4_pushdef([uppercase],m4_translit([[$1]], [a-z], [A-Z]))
@@ -484,6 +539,10 @@ ${lal_pkg_errors}
 
 AC_DEFUN([LALSUITE_CHECK_OPT_LIB],[
   # $0: check for optional LAL library
+  # - arg 1: name of LAL library
+  # - arg 2: minimum version required
+  # - arg 3: library function to check for
+  # - arg 4: library header to check for
   m4_pushdef([lowercase],m4_translit([[$1]], [A-Z], [a-z]))
   m4_pushdef([uppercase],m4_translit([[$1]], [a-z], [A-Z]))
 
@@ -501,29 +560,26 @@ AC_DEFUN([LALSUITE_CHECK_OPT_LIB],[
 ])
 
 AC_DEFUN([LALSUITE_HEADER_LIBRARY_MISMATCH_CHECK],[
-AC_MSG_CHECKING([whether $1 headers match the library])
-lib_structure=`echo $1 | sed 's/LAL/lal/'`VCSInfo
-header_structure=`echo $1 | sed 's/LAL/lal/'`HeaderVCSInfo
-AC_RUN_IFELSE(
-  [AC_LANG_SOURCE([[
+  # $0: check for version mismatch between library $1 and its headers
+  AC_MSG_CHECKING([whether $1 headers match the library])
+  lib_structure=`echo $1 | sed 's/LAL/lal/'`VCSInfo
+  header_structure=`echo $1 | sed 's/LAL/lal/'`VCSInfoHeader
+  AC_RUN_IFELSE([
+    AC_LANG_SOURCE([[
 #include <string.h>
 #include <stdlib.h>
-#include <lal/$1VCSInfo.h>
+#include <lal/$1VCSInfoHeader.h>
 int main(void) { exit(XLALVCSInfoCompare(&$lib_structure, &$header_structure) ? 1 : 0); }
-  ]])],
-  [
+    ]])
+  ],[
     AC_MSG_RESULT(yes)
-  ],
-  [
+  ],[
     AC_MSG_RESULT(no)
-    AC_MSG_ERROR([Your $1 headers do not match your
-library. Check config.log for details.
-])
-  ],
-  [
+    AC_MSG_ERROR([Your $1 headers do not match your library. Check config.log for details.])
+  ],[
     AC_MSG_WARN([cross compiling: not checking])
-  ]
-)
+  ])
+  # end $0
 ])
 
 AC_DEFUN([LALSUITE_CHECK_LIBRARY_FOR_SUPPORT],[
@@ -914,8 +970,8 @@ AS_IF([test "x${osx_version_check}" = "xtrue"],[
       MACOSX_VERSION=`$SW_VERS -productVersion`
       AC_MSG_RESULT([$MACOSX_VERSION])])
     AS_CASE(["$MACOSX_VERSION"],
-      [10.0*|10.1*|10.2*|10.3*],AC_MSG_ERROR([This version of Mac OS X is not supported]),
-      [10.4*|10.5*|10.6*|10.7*|10.8*|10.9*],,
+      [10.0*|10.1|10.1.*|10.2*|10.3*],AC_MSG_ERROR([This version of Mac OS X is not supported]),
+      [10.4*|10.5*|10.6*|10.7*|10.8*|10.9*|10.10*],,
       AC_MSG_WARN([Unknown Mac OS X version]))
 ])])])
 

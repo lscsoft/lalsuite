@@ -294,8 +294,6 @@ INT4 cfsRunNo = 0;	/**< CFS run-number: 0=run only once, 1=first run, 2=second r
 toplist_t* toplist = NULL;
 char *fstatbuff = NULL;
 
-FstatOutputEntry empty_FstatOutputEntry;
-
 INT4 maxSFTindex = 0;
 
 /*----------------------------------------------------------------------*/
@@ -438,13 +436,13 @@ int main(int argc,char *argv[])
 
   INT4 *maxIndex=NULL;           /* array that contains indexes of maximum of each cluster */
   INT4 spdwn;                    /* counter over spindown-params */
-  DopplerSkyScanState thisScan = empty_DopplerSkyScanState; /* current state of the Doppler-scan */
+  DopplerSkyScanState XLAL_INIT_DECL(thisScan); /* current state of the Doppler-scan */
   PulsarDopplerParams dopplerpos;    /* current search-parameters */
   SkyPosition thisPoint;
   UINT4 loopcounter;             /* Checkpoint-counters for restarting checkpointed search */
   long fstat_bytecounter;
   UINT4 fstat_checksum = 0;      /* Checksum of fstats file contents */
-  FstatOutputEntry loudest = empty_FstatOutputEntry; /* loudest canidate in search-region */
+  FstatOutputEntry XLAL_INIT_DECL(loudest); /* loudest canidate in search-region */
 
 #ifdef RUN_POLKA
   INT4 fstats_completed = FALSE; /* did we find a completed fstats file? */
@@ -1003,7 +1001,7 @@ int main(int argc,char *argv[])
           if (uvar_outputFstat || uvar_outputLoudest) 
             {
               INT4 i;
-	      FstatOutputEntry outputLine = empty_FstatOutputEntry;
+	      FstatOutputEntry XLAL_INIT_DECL(outputLine);
 
               for(i=0;i < GV.FreqImax ;i++)
                 {
@@ -4184,7 +4182,7 @@ InitSearchGrid ( LALStatus *status,
 		 DopplerSkyScanState *scan, 
 		 ConfigVariables *cfg)
 {
-  DopplerSkyScanInit scanInit = empty_DopplerSkyScanInit; /* init-structure for DopperScanner */
+  DopplerSkyScanInit XLAL_INIT_DECL(scanInit); /* init-structure for DopperScanner */
 
   INITSTATUS(status);
   ATTATCHSTATUSPTR (status);

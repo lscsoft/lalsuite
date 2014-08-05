@@ -152,20 +152,6 @@ typedef struct tagPulsarSourceParams {
    REAL8Vector *spindown;/**< wave-frequency spindowns at tRef (NOT f0-normalized!) */
 } PulsarSourceParams;
 
-/*---------- Global variables ----------*/
-/** \name empty struct initializers */
-/*@{*/
-extern const PulsarAmplitudeParams empty_PulsarAmplitudeParams;
-extern const PulsarSpinRange empty_PulsarSpinRange;
-extern const PulsarDopplerParams empty_PulsarDopplerParams;
-extern const PulsarParams empty_PulsarParams;
-extern const PulsarCandidate empty_PulsarCandidate;
-
-/* initializers for frequently used non-pulsar types */
-extern const LIGOTimeGPS empty_LIGOTimeGPS;
-extern const SkyPosition empty_SkyPosition;
-/*@}*/
-
 /*@}*/
 
 #ifdef  __cplusplus

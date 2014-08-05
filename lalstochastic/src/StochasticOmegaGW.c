@@ -18,7 +18,7 @@
 */
 
 /**
- * \author UTB Relativity Group; contact whelan@phys.utb.edu
+ * \author UTB Relativity Group; contact john.whelan@ligo.org
  * \addtogroup StochasticOmegaGW_c
  *
  * \brief Generates a frequency series containing a simple power law spectrum.

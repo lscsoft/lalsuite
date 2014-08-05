@@ -2,7 +2,7 @@
  *  LALInferenceMCMC.c:  Bayesian Followup function testing site
  *
  *  Copyright (C) 2011 Ilya Mandel, Vivien Raymond, Christian Roever,
- *  Marc van der Sluys, John Veitch and Will M. Farr
+ *  Marc van der Sluys, John Veitch, Will M. Farr, and Ben Farr
  *
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -867,7 +867,7 @@ int main(int argc, char *argv[]){
                           LALINFERENCE_PARAM_FIXED);
 
   /* Set up currentParams with variables to be used */
-  LALInferenceInitCBCVariables(runState);
+  runState->currentParams = LALInferenceInitCBCVariables(runState);
 
   /* Choose the likelihood */
   LALInferenceInitLikelihood(runState);

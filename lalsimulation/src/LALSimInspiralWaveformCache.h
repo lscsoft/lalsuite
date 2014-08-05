@@ -50,7 +50,8 @@ tagLALSimInspiralWaveformCache {
     REAL8 S2y;
     REAL8 S2z;
     REAL8 f_min;
-    REAL8 f_ref_max;
+    REAL8 f_ref;
+    REAL8 f_max;
     REAL8 r;
     REAL8 i;
     REAL8 lambda1;
@@ -109,6 +110,7 @@ int XLALSimInspiralChooseFDWaveformFromCache(
     REAL8 S2z,                                  /**< z-component of the dimensionless spin of object 2 */
     REAL8 f_min,                                /**< starting GW frequency (Hz) */
     REAL8 f_max,                                /**< ending GW frequency (Hz) */
+    REAL8 f_ref,                                /**< Reference GW frequency (Hz) */
     REAL8 r,                                    /**< distance of source (m) */
     REAL8 i,                                    /**< inclination of source (rad) */
     REAL8 lambda1,                              /**< (tidal deformability of mass 1) / m1^5 (dimensionless) */

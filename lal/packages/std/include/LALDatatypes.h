@@ -451,14 +451,10 @@ typedef struct tagCOMPLEX16ArraySequence {
 
     /* ---------- Structured datatypes ---------- */
 
-#ifdef SWIG
-/* *INDENT-OFF* */
-/* SWIG interface directives: must appear *before* the definition of LIGOTimeGPS */
-%include <lal/SWIGLIGOTimeGPSPre.i>
-/* *INDENT-ON* */
-#endif /* SWIG */
-
 /** Epoch relative to GPS epoch, see \ref ss_LIGOTimeGPS for more details */
+#ifdef SWIG     /* SWIG interface directives */
+SWIGLAL(IMMUTABLE_MEMBERS(tagLIGOTimeGPS, gpsSeconds, gpsNanoSeconds));
+#endif /* SWIG */
 typedef struct tagLIGOTimeGPS {
     INT4 gpsSeconds; /**< Seconds since 0h UTC 6 Jan 1980. */
     INT4 gpsNanoSeconds; /**< Residual nanoseconds. */
@@ -466,13 +462,6 @@ typedef struct tagLIGOTimeGPS {
 
 /** Zero-initializer for LIGOTimeGPS structs */
 #define LIGOTIMEGPSZERO { 0, 0 }
-
-#ifdef SWIG     /* SWIG interface directives */
-/* *INDENT-OFF* */
-/* SWIG interface directives: must appear *after* the definition of LIGOTimeGPS */
-%include <lal/SWIGLIGOTimeGPSPost.i>
-/* *INDENT-ON* */
-#endif /* SWIG */
 
 /**
  * Indices of arrays corresponding to particular units.
@@ -503,6 +492,9 @@ enum {
  * \f}
  *
  */
+#ifdef SWIG     /* SWIG interface directives */
+SWIGLAL(IMMUTABLE_MEMBERS(tagLALUnit, powerOfTen, unitNumerator, unitDenominatorMinusOne));
+#endif /* SWIG */
 typedef struct tagLALUnit {
     INT2 powerOfTen; /**< Overall power-of-ten scaling is 10^\c powerOfTen. */
     INT2 unitNumerator[LALNumUnits]; /**< Array of unit power numerators. */

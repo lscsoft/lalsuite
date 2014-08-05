@@ -146,14 +146,8 @@ typedef struct
   LALSeg dataSegment;		/**< the data-segment for which PSD was computed */
 } ConfigVariables_t;
 
-
-/*---------- empty structs for initializations ----------*/
-UserVariables_t empty_UserVariables;
-ConfigVariables_t empty_ConfigVariables;
 /* ---------- global variables ----------*/
-
 extern int vrbflg;
-
 
 /* ---------- local prototypes ---------- */
 int initUserVars (int argc, char *argv[], UserVariables_t *uvar);
@@ -173,8 +167,8 @@ int
 main(int argc, char *argv[])
 {
   static LALStatus       status;  /* LALStatus pointer */
-  UserVariables_t uvar = empty_UserVariables;
-  ConfigVariables_t cfg = empty_ConfigVariables;
+  UserVariables_t XLAL_INIT_DECL(uvar);
+  ConfigVariables_t XLAL_INIT_DECL(cfg);
 
   UINT4 k, numBins, numIFOs, maxNumSFTs, X, alpha;
   REAL8 Freq0, dFreq, normPSD;
@@ -963,7 +957,7 @@ XLALReadSFTs ( ConfigVariables_t *cfg,		/**< [out] return derived configuration 
                )
 {
   SFTCatalog *catalog = NULL;
-  SFTConstraints constraints = empty_SFTConstraints;
+  SFTConstraints XLAL_INIT_DECL(constraints);
   LIGOTimeGPS startTimeGPS = {0,0}, endTimeGPS = {0,0};
   LIGOTimeGPSVector *inputTimeStampsVector = NULL;
 
@@ -985,12 +979,12 @@ XLALReadSFTs ( ConfigVariables_t *cfg,		/**< [out] return derived configuration 
 
   if ( XLALUserVarWasSet( &uvar->startTime ) ) {
     XLALGPSSetREAL8 ( &startTimeGPS, uvar->startTime);
-    constraints.startTime = &startTimeGPS;
+    constraints.minStartTime = &startTimeGPS;
   }
 
   if ( XLALUserVarWasSet( &uvar->endTime ) ) {
     XLALGPSSetREAL8 ( &endTimeGPS, uvar->endTime);
-    constraints.endTime = &endTimeGPS;
+    constraints.maxStartTime = &endTimeGPS;
   }
 
   if ( XLALUserVarWasSet( &uvar->timeStampsFile ) ) {
@@ -1266,19 +1260,14 @@ XLALComputeSegmentDataQ ( const MultiPSDVector *multiPSDVect, 	/**< input PSD ma
             XLAL_ERROR_NULL ( XLAL_EDOM );
           }
 
-          LIGOTimeGPS gpsStart = thisPSD->epoch;
-          LIGOTimeGPS gpsEnd   = gpsStart;
-          XLALGPSAdd( &gpsEnd, Tsft - 1e-3 );	/* subtract 1ms from end: segments are half-open intervals [t0, t1) */
+          int cmp = XLALCWGPSinRange( thisPSD->epoch, &segment.start, &segment.end );
 
-          int cmp1 = XLALGPSInSeg ( &gpsStart, &segment );
-          int cmp2 = XLALGPSInSeg ( &gpsEnd, &segment );
-
-          if ( cmp2 < 0 )	/* SFT-end before segment => advance to the next one */
+          if ( cmp < 0 )	/* SFT-end before segment => advance to the next one */
             continue;
-          if ( cmp1 > 0 )	/* SFT-start past end of segment: ==> terminate loop */
+          if ( cmp > 0 )	/* SFT-start past end of segment: ==> terminate loop */
             break;
 
-          if ( (cmp1 == 0) && (cmp2 == 0) )	/* this SFT is inside segment */
+          if ( cmp == 0 )	/* this SFT is inside segment */
             {
               numSFTsInSeg ++;
               /* add SXinv(f) += 1/SX_i(f) over all frequencies */

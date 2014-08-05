@@ -17,6 +17,8 @@
  *  MA  02111-1307  USA
  */
 
+//Some functions based from Matab 2012a functions, but optimized for TwoSpect analysis
+
 #include <math.h>
 #include <time.h>
 
@@ -187,12 +189,6 @@ void sumseries_eg(REAL8 *computedprob, REAL8 P, REAL8 C, REAL8 E, INT8 counter, 
          Pint *= (counterint+1)*oneoverhalfdelta;
          Eint *= (halfdof + counterint+1)*oneoverhalfx;
          Cint += Eint;
-
-         //This part below is wrong!
-         /* Pint *= (counterint)*oneoverhalfdelta;
-         Eint *= (halfdof + counterint)*oneoverhalfx;
-         Cint += Eint;
-         counterint--; */
       }
    } else {
       while (counterint!=-1) {
@@ -205,12 +201,6 @@ void sumseries_eg(REAL8 *computedprob, REAL8 P, REAL8 C, REAL8 E, INT8 counter, 
          Pint *= halfdelta/counterint;
          Eint *= halfx/(halfdof+counterint-1);
          Cint -= Eint;
-
-         //This part below is wrong!
-         /* Pint *= halfdelta/counterint;
-         Eint *= halfx/(halfdof+counterint);
-         Cint -= Eint;
-         counterint++; */
       }
    }
 
@@ -632,7 +622,7 @@ REAL8 unitGaussianSNR(REAL8 value, REAL8 dof)
  n       10      20      30      40      50      60      80      n>80
  .409    .294    .242    .210    .188    .172    .150    1.358/(sqrt(n)+0.12+0.11/sqrt(n))
  */
-REAL8 ks_test_exp(REAL4Vector *vector)
+INT4 ks_test_exp(REAL8 *ksvalue, REAL4Vector *vector)
 {
 
    INT4 ii;
@@ -648,20 +638,21 @@ REAL8 ks_test_exp(REAL4Vector *vector)
    REAL4 vector_mean = (REAL4)(vector_median/LAL_LN2);
 
    //Now start doing the K-S testing
-   REAL8 ksvalue = 0.0, testval1, testval2, testval;
+   *ksvalue = 0.0;
+   REAL8 testval1, testval2, testval;
    REAL8 oneoverlength = 1.0/tempvect->length;
    for (ii=0; ii<(INT4)tempvect->length; ii++) {
       REAL8 pval = gsl_cdf_exponential_P(tempvect->data[ii], vector_mean);
       testval1 = fabs((1.0+ii)*oneoverlength - pval);
       testval2 = fabs(ii*oneoverlength - pval);
       testval = fmax(testval1, testval2);
-      if (testval>ksvalue) ksvalue = testval;
+      if (testval>(*ksvalue)) *ksvalue = testval;
    }
 
    //Destroy stuff
    XLALDestroyREAL4Vector(tempvect);
 
-   return ksvalue;
+   return XLAL_SUCCESS;
 
 }
 
@@ -674,7 +665,7 @@ n                                                               n>80
 alpha=0.1
 n                                                               n>80
                                                                 1.620/(sqrt(n)+0.155+0.24/sqrt(n)) */
-REAL8 kuipers_test_exp(REAL4Vector *vector)
+INT4 kuipers_test_exp(REAL8 *kuipervalue, REAL4Vector *vector)
 {
 
    INT4 ii;
@@ -705,38 +696,21 @@ REAL8 kuipers_test_exp(REAL4Vector *vector)
       if (loval<-testval1) loval = -testval1;
       if (loval<-testval2) loval = -testval2;
    }
-   REAL8 kuiperval2 = hival + loval;
+   *kuipervalue = hival + loval;
 
    XLALDestroyREAL4Vector(tempvect);
 
-   return kuiperval2;
+   return XLAL_SUCCESS;
 
 }
 
-//Sort a REAL4Vector, keeping the largest of the values in the output vector
-void sort_float_largest(REAL4Vector *output, REAL4Vector *input)
-{
-   //Copy of the input vector
-   REAL4Vector *tempvect = NULL;
-   XLAL_CHECK_VOID( (tempvect = XLALCreateREAL4Vector(input->length)) != NULL, XLAL_EFUNC );
-   memcpy(tempvect->data, input->data, sizeof(REAL4)*input->length);
-
-   //qsort rearranges original vector, so sort the copy of the input vector
-   qsort(tempvect->data, tempvect->length, sizeof(REAL4), qsort_REAL4_compar);
-
-   INT4 ii;
-   for (ii=0; ii<(INT4)output->length; ii++) output->data[ii] = tempvect->data[tempvect->length-1-ii];
-
-   XLALDestroyREAL4Vector(tempvect);
-
-}
 
 //Sort a REAL4Vector, keeping the smallest of the values in the output vector
-void sort_float_smallest(REAL4Vector *output, REAL4Vector *input)
+INT4 sort_float_smallest(REAL4Vector *output, REAL4Vector *input)
 {
    //Copy of the input vector
    REAL4Vector *tempvect = NULL;
-   XLAL_CHECK_VOID( (tempvect = XLALCreateREAL4Vector(input->length)) != NULL, XLAL_EFUNC );
+   XLAL_CHECK( (tempvect = XLALCreateREAL4Vector(input->length)) != NULL, XLAL_EFUNC );
    memcpy(tempvect->data, input->data, sizeof(REAL4)*input->length);
 
    //qsort rearranges original vector, so sort the copy of the input vector
@@ -746,29 +720,10 @@ void sort_float_smallest(REAL4Vector *output, REAL4Vector *input)
 
    XLALDestroyREAL4Vector(tempvect);
 
-}
-
-//Sort a REAL8Vector from highest to lowest
-/* !!!!This modifies the input vector!!!! */
-void sort_double_descend(REAL8Vector *vector)
-{
-
-   INT4 ii;
-
-   //Since the function will modify the input vector, we can do qsort() on the input vector
-   qsort(vector->data, vector->length, sizeof(REAL8), qsort_REAL8_compar);
-
-   //Make a copy of the sorted vector because we will take the reverse of the sorted vector (descending order)
-   REAL8Vector *tempvect = NULL;
-   XLAL_CHECK_VOID( (tempvect = XLALCreateREAL8Vector(vector->length)) != NULL, XLAL_EFUNC );
-   memcpy(tempvect->data, vector->data, sizeof(REAL8)*vector->length);
-
-   //This does the descending part
-   for (ii=0; ii<(INT4)vector->length; ii++) vector->data[ii] = tempvect->data[tempvect->length-1-ii];
-
-   XLALDestroyREAL8Vector(tempvect);
+   return XLAL_SUCCESS;
 
 }
+
 
 //Sort a REAL8Vector from lowest to highest
 /* !!!!This modifies the input vector!!!! */
@@ -776,6 +731,7 @@ void sort_double_ascend(REAL8Vector *vector)
 {
    qsort(vector->data, vector->length, sizeof(REAL8), qsort_REAL8_compar);
 }
+
 
 //Sort a REAL4Vector from lowest to highest
 /* !!!!This modifies the input vector!!!! */
@@ -866,33 +822,32 @@ REAL4 calcMean_ignoreZeros(REAL4Vector *vector)
 } /* calcMean_ignoreZeros() */
 
 
-REAL4 calcHarmonicMean(REAL4Vector *vector, INT4 numfbins, INT4 numffts)
+INT4 calcHarmonicMean(REAL4 *harmonicMean, REAL4Vector *vector, INT4 numfbins, INT4 numffts)
 {
 
    INT4 ii, values = 0;
-   REAL4 harmonicMean = 0.0;
    REAL4Vector *tempvect = NULL;
    XLAL_CHECK_REAL4( (tempvect = XLALCreateREAL4Vector(numfbins)) != NULL, XLAL_EFUNC );
 
    for (ii=0; ii<numffts; ii++) {
       if (vector->data[ii*numfbins]!=0.0) {
          memcpy(tempvect->data, &(vector->data[ii*numfbins]), sizeof(REAL4)*numfbins);
-         harmonicMean += 1.0/calcMean(tempvect);
+         *harmonicMean += 1.0/calcMean(tempvect);
          values++;
       }
    }
-   if (values>0) harmonicMean = (REAL4)values/harmonicMean;
+   if (values>0) *harmonicMean = (REAL4)values/(*harmonicMean);
 
    XLALDestroyREAL4Vector(tempvect);
 
-   return harmonicMean;
+   return XLAL_SUCCESS;
 
 }
 
 
 //////////////////////////////////////////////////////////////
 // Compute the standard deviation of a vector of values
-REAL4 calcStddev(REAL4Vector *vector)
+INT4 calcStddev(REAL4 *sigma, REAL4Vector *vector)
 {
 
    INT4 ii;
@@ -904,7 +859,9 @@ REAL4 calcStddev(REAL4Vector *vector)
 
    XLALFree((double*)gslarray);
 
-   return stddev;
+   *sigma = stddev;
+
+   return XLAL_SUCCESS;
 
 } /* calcStddev() */
 
@@ -930,18 +887,18 @@ REAL4 calcStddev_ignoreZeros(REAL4Vector *vector)
 
 //////////////////////////////////////////////////////////////
 // Compute the RMS of a vector of values
-REAL4 calcRms(REAL4Vector *vector)
+INT4 calcRms(REAL4 *rms, REAL4Vector *vector)
 {
 
    REAL4Vector *sqvector = NULL;
    XLAL_CHECK_REAL4( (sqvector = XLALCreateREAL4Vector(vector->length)) != NULL, XLAL_EFUNC );
    sqvector = XLALSSVectorMultiply(sqvector, vector, vector);
    XLAL_CHECK_REAL4( xlalErrno == 0, XLAL_EFUNC );
-   REAL4 rms = sqrtf(calcMean(sqvector));
+   *rms = sqrtf(calcMean(sqvector));
 
    XLALDestroyREAL4Vector(sqvector);
 
-   return rms;
+   return XLAL_SUCCESS;
 
 } /* calcRms() */
 
@@ -1061,7 +1018,7 @@ void min_max_index_INT4Vector(INT4Vector *inputvector, INT4 *min_index_out, INT4
 
 
 //Calculate the median of a REAL4Vector
-REAL4 calcMedian(REAL4Vector *vector)
+INT4 calcMedian(REAL4 *median, REAL4Vector *vector)
 {
    //Make a copy of the original vector
    REAL4Vector *tempvect = NULL;
@@ -1071,45 +1028,15 @@ REAL4 calcMedian(REAL4Vector *vector)
    //qsort() on the copied data
    qsort(tempvect->data, tempvect->length, sizeof(REAL4), qsort_REAL4_compar);
 
-   REAL4 ffdata_median = 0.0;
-   if (tempvect->length % 2 != 1) ffdata_median = 0.5*(tempvect->data[(INT4)(0.5*tempvect->length)-1] + tempvect->data[(INT4)(0.5*tempvect->length)]);
-   else ffdata_median = tempvect->data[(INT4)(0.5*tempvect->length)];
+   if (tempvect->length % 2 != 1) *median = 0.5*(tempvect->data[(INT4)(0.5*tempvect->length)-1] + tempvect->data[(INT4)(0.5*tempvect->length)]);
+   else *median = tempvect->data[(INT4)(0.5*tempvect->length)];
 
    XLALDestroyREAL4Vector(tempvect);
 
-   return ffdata_median;
+   return XLAL_SUCCESS;
 
 } /* calcMedian() */
 
-
-//Calculate the median value of a REAL4Vector ignoring zero values
-REAL4 calcMedian_ignoreZeros(REAL4Vector *vector)
-{
-   //Make a copy of the original vector
-   REAL4Vector *tempvect = NULL;
-   XLAL_CHECK_REAL4( (tempvect = XLALCreateREAL4Vector(vector->length)) != NULL, XLAL_EFUNC );
-   memcpy(tempvect->data, vector->data, sizeof(REAL4)*vector->length);
-
-   //qsort() on copied data
-   qsort(tempvect->data, tempvect->length, sizeof(REAL4), qsort_REAL4_compar);
-
-   //Find forst non-zero element
-   INT4 firstnonzeroelement = -1, ii = 0;
-   while (firstnonzeroelement<0) {
-      if (tempvect->data[ii]!=0.0) firstnonzeroelement = ii;
-      else ii++;
-   }
-
-   //From the non-zero elements, find the median value
-   REAL4 ffdata_median = 0.0;
-   if ((tempvect->length-firstnonzeroelement) % 2 != 1) ffdata_median = 0.5*(tempvect->data[(INT4)(0.5*(tempvect->length-firstnonzeroelement))-1+firstnonzeroelement] + tempvect->data[(INT4)(0.5*(tempvect->length-firstnonzeroelement))+firstnonzeroelement]);
-   else ffdata_median = tempvect->data[(INT4)(0.5*(tempvect->length-firstnonzeroelement))+firstnonzeroelement];
-
-   XLALDestroyREAL4Vector(tempvect);
-
-   return ffdata_median;
-
-} /* calcMedian_ignoreZeros() */
 
 //Comparison functions for qsort
 INT4 qsort_REAL4_compar(const void *a, const void *b)

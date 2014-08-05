@@ -92,11 +92,6 @@ typedef struct
 
 } UserVariables_t;
 
-
-/*---------- empty structs for initializations ----------*/
-static ConfigVariables empty_ConfigVariables;
-static UserVariables_t empty_UserVariables;
-
 /* ---------- global variables ----------*/
 extern int vrbflg;
 
@@ -113,9 +108,8 @@ int
 main(int argc, char *argv[])
 {
 
-  ConfigVariables config = empty_ConfigVariables;
-  UserVariables_t uvar = empty_UserVariables;
-
+  ConfigVariables XLAL_INIT_DECL(config);
+  UserVariables_t XLAL_INIT_DECL(uvar);
 
   /* register user-variables */
 
@@ -219,7 +213,7 @@ main(int argc, char *argv[])
 
     /* write out the data for this sky point */
     if ( uvar.outab ) { // output a(t), b(t) at each timestamp
-      for (UINT4 t = 0; t < config.numTimeStamps; t++) { // FIXME: does not work for different multi-IFO numTimeStampsX
+      for (UINT4 t = 0; t < config.numTimeStampsX->data[0]; t++) { // FIXME: does not work for different multi-IFO numTimeStampsX
          fprintf (fpOutab, "%.7f  %.7f  %d", config.Alpha->data[n], config.Delta->data[n], config.multiTimestamps->data[0]->data[t].gpsSeconds );
          for ( UINT4 X=0; X < config.numDetectors; X++ ) {
            fprintf(fpOutab, " %12.8f %12.8f", multiAMforSingle->data[X]->a->data[t], multiAMforSingle->data[X]->b->data[t]);

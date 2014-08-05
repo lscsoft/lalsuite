@@ -17,72 +17,63 @@
 *  MA  02111-1307  USA
 */
 
-#include <config.h>
-
 #include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <lalapps.h>
 #include <lal/LALMalloc.h>
 #include <lal/LALStatusMacros.h>
-#include <lal/LALBuildInfo.h>
-#include <lal/LALVCSInfo.h>
-#include <LALAppsBuildInfo.h>
-#include <LALAppsVCSInfo.h>
+#include <lalapps.h>
+
+#include <config.h>
+#include <LALAppsVCSInfoHeader.h>
+
+#include <lal/LALConfig.h>
+#include <lal/LALVCSInfoHeader.h>
 
 #ifdef HAVE_LIBLALFRAME
 #include <lal/LALFrameConfig.h>
-#include <lal/LALFrameBuildInfo.h>
-#include <lal/LALFrameVCSInfo.h>
+#include <lal/LALFrameVCSInfoHeader.h>
 #endif
 
 #ifdef HAVE_LIBLALMETAIO
 #include <lal/LALMetaIOConfig.h>
-#include <lal/LALMetaIOBuildInfo.h>
-#include <lal/LALMetaIOVCSInfo.h>
+#include <lal/LALMetaIOVCSInfoHeader.h>
 #endif
 
 #ifdef HAVE_LIBLALXML
 #include <lal/LALXMLConfig.h>
-#include <lal/LALXMLBuildInfo.h>
-#include <lal/LALXMLVCSInfo.h>
+#include <lal/LALXMLVCSInfoHeader.h>
 #endif
 
 #ifdef HAVE_LIBLALSIMULATION
 #include <lal/LALSimulationConfig.h>
-#include <lal/LALSimulationBuildInfo.h>
-#include <lal/LALSimulationVCSInfo.h>
+#include <lal/LALSimulationVCSInfoHeader.h>
 #endif
 
 #ifdef HAVE_LIBLALBURST
 #include <lal/LALBurstConfig.h>
-#include <lal/LALBurstBuildInfo.h>
-#include <lal/LALBurstVCSInfo.h>
+#include <lal/LALBurstVCSInfoHeader.h>
 #endif
 
 #ifdef HAVE_LIBLALINSPIRAL
 #include <lal/LALInspiralConfig.h>
-#include <lal/LALInspiralBuildInfo.h>
-#include <lal/LALInspiralVCSInfo.h>
+#include <lal/LALInspiralVCSInfoHeader.h>
 #endif
 
 #ifdef HAVE_LIBLALPULSAR
 #include <lal/LALPulsarConfig.h>
-#include <lal/LALPulsarBuildInfo.h>
-#include <lal/LALPulsarVCSInfo.h>
+#include <lal/LALPulsarVCSInfoHeader.h>
 #endif
 
 #ifdef HAVE_LIBLALINFERENCE
 #include <lal/LALInferenceConfig.h>
-#include <lal/LALInferenceBuildInfo.h>
-#include <lal/LALInferenceVCSInfo.h>
+#include <lal/LALInferenceVCSInfoHeader.h>
 #endif
 
 #ifdef HAVE_LIBLALSTOCHASTIC
 #include <lal/LALStochasticConfig.h>
-#include <lal/LALStochasticBuildInfo.h>
-#include <lal/LALStochasticVCSInfo.h>
+#include <lal/LALStochasticVCSInfoHeader.h>
 #endif
 
 #define FAILMSG( stat, func, file, line, id )                                  \
@@ -231,7 +222,7 @@ XLALGetVersionString( int level )
   if ((LAL_VERSION_DEVEL != 0) || (LALAPPS_VERSION_DEVEL != 0))
   {
     /* check lal version consistency */
-    if (version_compare(__func__, &lalHeaderVCSInfo, &lalVCSInfo))
+    if (version_compare(__func__, &lalVCSInfoHeader, &lalVCSInfo))
       exit(1);
   }
 
@@ -239,7 +230,7 @@ XLALGetVersionString( int level )
   if ((LALFRAME_VERSION_DEVEL != 0) || (LALAPPS_VERSION_DEVEL != 0))
   {
     /* check lalframe version consistency */
-    if (version_compare(__func__, &lalFrameHeaderVCSInfo, &lalFrameVCSInfo))
+    if (version_compare(__func__, &lalFrameVCSInfoHeader, &lalFrameVCSInfo))
       exit(1);
   }
 #endif
@@ -248,7 +239,7 @@ XLALGetVersionString( int level )
   if ((LALMETAIO_VERSION_DEVEL != 0) || (LALAPPS_VERSION_DEVEL != 0))
   {
     /* check lalmetaio version consistency */
-    if (version_compare(__func__, &lalMetaIOHeaderVCSInfo, &lalMetaIOVCSInfo))
+    if (version_compare(__func__, &lalMetaIOVCSInfoHeader, &lalMetaIOVCSInfo))
       exit(1);
   }
 #endif
@@ -257,7 +248,7 @@ XLALGetVersionString( int level )
   if ((LALSIMULATION_VERSION_DEVEL != 0) || (LALSIMULATION_VERSION_DEVEL != 0))
   {
     /* check lalsimulaton version consistency */
-    if (version_compare(__func__, &lalSimulationHeaderVCSInfo, &lalSimulationVCSInfo))
+    if (version_compare(__func__, &lalSimulationVCSInfoHeader, &lalSimulationVCSInfo))
       exit(1);
   }
 #endif
@@ -266,7 +257,7 @@ XLALGetVersionString( int level )
   if ((LALXML_VERSION_DEVEL != 0) || (LALAPPS_VERSION_DEVEL != 0))
   {
     /* check lalxml version consistency */
-    if (version_compare(__func__, &lalXMLHeaderVCSInfo, &lalXMLVCSInfo))
+    if (version_compare(__func__, &lalXMLVCSInfoHeader, &lalXMLVCSInfo))
       exit(1);
   }
 #endif
@@ -275,7 +266,7 @@ XLALGetVersionString( int level )
   if ((LALBURST_VERSION_DEVEL != 0) || (LALAPPS_VERSION_DEVEL != 0))
   {
     /* check lalburst version consistency */
-    if (version_compare(__func__, &lalBurstHeaderVCSInfo, &lalBurstVCSInfo))
+    if (version_compare(__func__, &lalBurstVCSInfoHeader, &lalBurstVCSInfo))
       exit(1);
   }
 #endif
@@ -284,7 +275,7 @@ XLALGetVersionString( int level )
   if ((LALINSPIRAL_VERSION_DEVEL != 0) || (LALAPPS_VERSION_DEVEL != 0))
   {
     /* check lalinspiral version consistency */
-    if (version_compare(__func__, &lalInspiralHeaderVCSInfo, &lalInspiralVCSInfo))
+    if (version_compare(__func__, &lalInspiralVCSInfoHeader, &lalInspiralVCSInfo))
       exit(1);
   }
 #endif
@@ -293,7 +284,7 @@ XLALGetVersionString( int level )
   if ((LALPULSAR_VERSION_DEVEL != 0) || (LALAPPS_VERSION_DEVEL != 0))
   {
     /* check lalpulsar version consistency */
-    if (version_compare(__func__, &lalPulsarHeaderVCSInfo, &lalPulsarVCSInfo))
+    if (version_compare(__func__, &lalPulsarVCSInfoHeader, &lalPulsarVCSInfo))
       exit(1);
   }
 #endif
@@ -302,7 +293,7 @@ XLALGetVersionString( int level )
   if ((LALINFERENCE_VERSION_DEVEL != 0) || (LALAPPS_VERSION_DEVEL != 0))
   {
     /* check lalinference version consistency */
-    if (version_compare(__func__, &lalInferenceHeaderVCSInfo, &lalInferenceVCSInfo))
+    if (version_compare(__func__, &lalInferenceVCSInfoHeader, &lalInferenceVCSInfo))
       exit(1);
   }
 #endif
@@ -311,7 +302,7 @@ XLALGetVersionString( int level )
   if ((LALSTOCHASTIC_VERSION_DEVEL != 0) || (LALAPPS_VERSION_DEVEL != 0))
   {
     /* check lalstochastic version consistency */
-    if (version_compare(__func__, &lalStochasticHeaderVCSInfo, &lalStochasticVCSInfo))
+    if (version_compare(__func__, &lalStochasticVCSInfoHeader, &lalStochasticVCSInfo))
       exit(1);
   }
 #endif

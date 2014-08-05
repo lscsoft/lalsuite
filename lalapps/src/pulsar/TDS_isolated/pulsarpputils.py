@@ -121,26 +121,26 @@ def rad_to_dms(rad):
   else:
     return (sign * d, m, s)
 
-def dms_to_rad(deg, min, sec):
+def dms_to_rad(deg, mins, sec):
   """
   dms_to_rad(deg, min, sec):
      Convert degrees, minutes, and seconds of arc to radians.
   """
   if (deg < 0.0):
     sign = -1
-  elif (deg==0.0 and (min < 0.0 or sec < 0.0)):
+  elif (deg==0.0 and (mins < 0.0 or sec < 0.0)):
     sign = -1
   else:
     sign = 1
   return sign * ARCSECTORAD * \
-    (60.0 * (60.0 * np.fabs(deg) + np.fabs(min)) + np.fabs(sec))
+    (60.0 * (60.0 * np.fabs(deg) + np.fabs(mins)) + np.fabs(sec))
 
-def dms_to_deg(deg, min, sec):
+def dms_to_deg(deg, mins, sec):
   """
   dms_to_deg(deg, min, sec):
      Convert degrees, minutes, and seconds of arc to degrees.
   """
-  return RADTODEG * dms_to_rad(deg, min, sec)
+  return RADTODEG * dms_to_rad(deg, mins, sec)
 
 def rad_to_hms(rad):
   """
@@ -156,7 +156,7 @@ def rad_to_hms(rad):
   s = (arc - m) * 60.0
   return (h, m, s)
 
-def hms_to_rad(hour, min, sec):
+def hms_to_rad(hour, mins, sec):
   """
   hms_to_rad(hour, min, sec):
      Convert hours, minutes, and seconds of arc to radians
@@ -164,7 +164,7 @@ def hms_to_rad(hour, min, sec):
   if (hour < 0.0): sign = -1
   else: sign = 1
   return sign * SECTORAD * \
-         (60.0 * (60.0 * np.fabs(hour) + np.fabs(min)) + np.fabs(sec))
+         (60.0 * (60.0 * np.fabs(hour) + np.fabs(mins)) + np.fabs(sec))
 
 def coord_to_string(h_or_d, m, s):
   """
@@ -1746,8 +1746,8 @@ def convert_model_parameters(pardict):
 
   C21 = 2.*f2_r * math.sqrt( A21**2 + B21**2 )
 
-  phi22 = 2.*phi0 - math.atan2( B22, A22 )
-  phi21 = phi0 - math.atan2( B21, A21 )
+  phi22 = phi0 - math.atan2( B22, A22 )
+  phi21 = (phi0/2.) - math.atan2( B21, A21 )
 
   outvals = {'C22': C22, 'C21': C21, 'phi22': phi22, 'phi21': phi21}
 
@@ -1858,7 +1858,7 @@ def antenna_response( gpsTime, ra, dec, psi, det ):
     raise ValueError, "ERROR. Key %s is not a valid detector name." % (det)
 
   # get detector
-  detval = lal.lalCachedDetectors[detector]
+  detval = lal.CachedDetectors[detector]
 
   response = detval.response
 
@@ -1900,9 +1900,9 @@ def inject_pulsar_signal(starttime, duration, dt, detectors, pardict, \
     for j, det in enumerate(detectors):
       for frf in freqfac:
         if len(npsds) == 1:
-          tmpnpsds.append( (npsds[0]/2.0)/(2.0*dt) )
+          tmpnpsds.append( np.sqrt( (npsds[0]/2.0)/(2.0*dt) ) )
         else:
-          tmpnpsds.append( (npsds[count]/2.0)/(2.0*dt) )
+          tmpnpsds.append( np.sqrt( (npsds[count]/2.0)/(2.0*dt) ) )
 
         count = count+1
 

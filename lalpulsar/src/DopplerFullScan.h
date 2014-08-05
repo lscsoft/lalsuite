@@ -43,7 +43,7 @@ extern "C" {
 #include <lal/PulsarDataTypes.h>
 #include <lal/ComputeFstat.h>
 #include <lal/DopplerScan.h>
-#include <lal/FlatLatticeTiling.h>
+#include <lal/LatticeTiling.h>
 
 /*---------- DEFINES ----------*/
 
@@ -97,8 +97,8 @@ int XLALGetDopplerSpinRange ( PulsarSpinRange *spinRange, const DopplerFullScanS
 ///
 /// Set a first spindown bound derived from spindown age and braking indices
 ///
-int XLALSetFlatLatticeF1DotAgeBrakingBound(
-  FlatLatticeTiling* tiling,		///< [in] Tiling state
+int XLALSetLatticeF1DotAgeBrakingBound(
+  LatticeTiling* tiling,		///< [in] Tiling state
   const size_t freq_dimension,		///< [in] Frequency dimension
   const size_t f1dot_dimension,		///< [in] First spindown dimension
   const double age,			///< [in] Spindown age
@@ -109,8 +109,8 @@ int XLALSetFlatLatticeF1DotAgeBrakingBound(
 ///
 /// Set a second spindown bound derived from braking indices
 ///
-int XLALSetFlatLatticeF2DotBrakingBound(
-  FlatLatticeTiling* tiling,		///< [in] Tiling state
+int XLALSetLatticeF2DotBrakingBound(
+  LatticeTiling* tiling,		///< [in] Tiling state
   const size_t freq_dimension,		///< [in] Frequency dimension
   const size_t f1dot_dimension,		///< [in] First spindown dimension
   const size_t f2dot_dimension,		///< [in] Second spindown dimension

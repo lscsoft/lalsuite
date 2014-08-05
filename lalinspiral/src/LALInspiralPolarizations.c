@@ -59,7 +59,7 @@ REAL4 LALInspiralHPlusPolarization( REAL8 phase, REAL8 v, InspiralTemplate *para
 	REAL8 M = params->totalMass;
 	REAL8 eta = params->eta;
 	REAL8 eta2 = eta*eta;
-	REAL8 dM = abs(params->mass1 - params->mass2) / params->totalMass;
+	REAL8 dM = fabs(params->mass1 - params->mass2) / params->totalMass;
 	REAL8 cI = cos(params->inclination);
 	REAL8 sI = sin(params->inclination);
 	REAL8 sI2 = sI*sI;
@@ -121,7 +121,7 @@ REAL4 LALInspiralHCrossPolarization( REAL8 phase, REAL8 v, InspiralTemplate *par
 	REAL8 M = params->totalMass;
 	REAL8 eta = params->eta;
 	REAL8 eta2 = eta*eta;
-	REAL8 dM = abs(params->mass1 - params->mass2) / params->totalMass;
+	REAL8 dM = fabs(params->mass1 - params->mass2) / params->totalMass;
 	REAL8 cI = cos(params->inclination);
 	REAL8 sI = sin(params->inclination);
 	REAL8 sI2 = sI*sI;

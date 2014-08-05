@@ -28,15 +28,6 @@ mfdv5_code="${injectdir}lalapps_Makefakedata_v5"
 cfsv2_code="${builddir}lalapps_ComputeFStatistic_v2"
 cmp_code="${builddir}lalapps_compareFstats"
 
-if [ -z "${LAL_DATA_PATH}" ]; then
-    echo
-    echo "Need environment-variable LAL_DATA_PATH to be set to include"
-    echo "your ephemeris-directory (e.g. /usr/local/share/lalpulsar)"
-    echo "This might indicate an incomplete LAL+LALPULSAR installation"
-    echo
-    exit 1
-fi
-
 # ---------- fixed parameter of our test-signal
 Tsft=1800;
 startTime=711595934
@@ -146,7 +137,7 @@ echo
 ## common arguments for grid types 0,1,2,6
 sky_CL="--Alpha=$Alpha --AlphaBand=$AlphaBand --dAlpha=$dAlpha --Delta=$Delta --DeltaBand=$DeltaBand --dDelta=$dDelta"
 spin_CL="--Freq=$Freq --FreqBand=$FreqBand --dFreq=$dFreq --f1dot=$f1dot --f1dotBand=$f1dotBand --df1dot=$df1dot"
-cfs_CL="--IFO=$IFO --DataFiles='${SFTdir_40h}/testSFT*' --TwoFthreshold=0 --Dterms=16 $extra_args"
+cfs_CL="--IFO=$IFO --DataFiles='${SFTdir_40h}/testSFT*' --TwoFthreshold=0 --Dterms=16 --FstatMethod=DemodOptC $extra_args"
 if [ "$haveNoise" = false ]; then
     cfs_CL="$cfs_CL --SignalOnly"
 fi
@@ -218,16 +209,9 @@ echo
 
 for n in 0 1 2 6 8 9; do
 
-    ## set F-statistic comparison tolerance
-    if [ $n -eq 6 ]; then
-        Ftolerance=0.01
-    else
-        Ftolerance=0.1
-    fi
-
     ## compare results
     echo "Comparing gridType=${n}:"
-    cmdline="$cmp_code -1 ./testCFSv2_grid${n}.dat -2 ${srcdir}/testCFSv2_grid${n}.dat.ref.gz --clusterFiles=0 --Ftolerance=$Ftolerance";
+    cmdline="$cmp_code -1 ./testCFSv2_grid${n}.dat -2 ${srcdir}/testCFSv2_grid${n}.dat.ref.gz";
     echo $cmdline
     if ! eval $cmdline; then
         echo "OUCH... files differ. Something might be wrong..."

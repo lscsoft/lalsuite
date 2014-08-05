@@ -55,7 +55,6 @@
 #define TRUE    (1==1)
 #define FALSE   (1==0)
 
-#define LAL_INT4_MAX 2147483647
 /*----- Macros ----- */
 /*---------- internal types ----------*/
 
@@ -76,8 +75,9 @@ REAL8 uvar_fmax;
 REAL8 uvar_mysteryFactor;
 
 INT4 uvar_minStartTime;
-INT4 uvar_maxEndTime;
+INT4 uvar_maxStartTime;
 
+CHAR *uvar_timestampsFile;
 
 /*---------- internal prototypes ----------*/
 void initUserVars (LALStatus *status);
@@ -92,9 +92,9 @@ int
 main(int argc, char *argv[])
 {
   LALStatus status = blank_status;	/* initialize status */
-  SFTConstraints constraints = empty_SFTConstraints;
-  LIGOTimeGPS minStartTimeGPS = empty_LIGOTimeGPS;
-  LIGOTimeGPS maxEndTimeGPS = empty_LIGOTimeGPS;
+  SFTConstraints XLAL_INIT_DECL(constraints);
+  LIGOTimeGPS XLAL_INIT_DECL(minStartTimeGPS);
+  LIGOTimeGPS XLAL_INIT_DECL(maxStartTimeGPS);
   SFTCatalog *FullCatalog = NULL;
   CHAR *add_comment = NULL;
   UINT4 i;
@@ -126,6 +126,15 @@ main(int argc, char *argv[])
       }
   }
 
+  LIGOTimeGPSVector *timestamps = NULL;
+  if ( uvar_timestampsFile )
+    {
+      if ( (timestamps = XLALReadTimestampsFile ( uvar_timestampsFile )) == NULL ) {
+        XLALPrintError ("XLALReadTimestampsFile() failed to load timestamps from file '%s'\n", uvar_timestampsFile );
+        return -1;
+      }
+    }
+
   /* use IFO-contraint if one given by the user */
   if ( LALUserVarWasSet ( &uvar_IFO ) ) {
     if ( (constraints.detector = XLALGetChannelPrefix ( uvar_IFO )) == NULL ) {
@@ -134,14 +143,17 @@ main(int argc, char *argv[])
   }
 
   minStartTimeGPS.gpsSeconds = uvar_minStartTime;
-  maxEndTimeGPS.gpsSeconds = uvar_maxEndTime;
-  constraints.startTime = &minStartTimeGPS;
-  constraints.endTime = &maxEndTimeGPS;
+  maxStartTimeGPS.gpsSeconds = uvar_maxStartTime;
+  constraints.minStartTime = &minStartTimeGPS;
+  constraints.maxStartTime = &maxStartTimeGPS;
+  constraints.timestamps = timestamps;
 
   /* get full SFT-catalog of all matching (multi-IFO) SFTs */
   LAL_CALL ( LALSFTdataFind ( &status, &FullCatalog, uvar_inputSFTs, &constraints ), &status);
-  if ( constraints.detector )
+
+  if ( constraints.detector ) {
     LALFree ( constraints.detector );
+  }
 
   if ( !FullCatalog || (FullCatalog->length == 0)  )
     {
@@ -239,6 +251,7 @@ main(int argc, char *argv[])
   LALFree ( add_comment );
   LAL_CALL (LALDestroySFTCatalog (&status, &FullCatalog), &status );
   LAL_CALL (LALDestroyUserVars (&status), &status);
+  XLALDestroyTimestampVector ( timestamps );
 
   LALCheckMemoryLeaks();
 
@@ -263,9 +276,11 @@ initUserVars (LALStatus *status)
   uvar_IFO = NULL;
 
   uvar_minStartTime = 0;
-  uvar_maxEndTime = LAL_INT4_MAX;
+  uvar_maxStartTime = LAL_INT4_MAX;
 
   uvar_mysteryFactor = 1.0;
+
+  uvar_timestampsFile = NULL;
 
   /* now register all our user-variable */
   LALregBOOLUserVar(status,   help,		'h', UVAR_HELP,     "Print this help/usage message");
@@ -282,9 +297,10 @@ initUserVars (LALStatus *status)
   LALregREALUserVar(status,   fmax,		'F', UVAR_OPTIONAL, "Highest frequency to extract from SFTs. [Default: highest in inputSFTs]");
 
 
-  LALregINTUserVar ( status, 	minStartTime, 	 0,  UVAR_OPTIONAL, "Earliest GPS start-time to include");
-  LALregINTUserVar ( status, 	maxEndTime, 	 0,  UVAR_OPTIONAL, "Latest GPS end-time to include");
+  LALregINTUserVar ( status, 	minStartTime, 	 0,  UVAR_OPTIONAL, "Only use SFTs with timestamps starting from (including) this GPS time");
+  LALregINTUserVar ( status, 	maxStartTime, 	 0,  UVAR_OPTIONAL, "Only use SFTs with timestamps up to (excluding) this GPS time");
 
+  LALregSTRINGUserVar(status, timestampsFile,	 0, UVAR_OPTIONAL, "Timestamps file to use as a constraint for SFT loading");
 
   /* developer-options */
   LALregREALUserVar(status,   mysteryFactor,	 0, UVAR_DEVELOPER, "Change data-normalization by applying this factor (for E@H)");

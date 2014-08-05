@@ -27,6 +27,10 @@
 #include <lal/LALStdio.h>
 #include <lal/LALError.h>
 
+/* global variables */
+size_t lalMallocTotal = 0;	/**< current amount of memory allocated by process */
+size_t lalMallocTotalPeak = 0;	/**< peak amount of memory allocated so far */
+
 /*
  *
  * XLAL Routines.
@@ -144,7 +148,6 @@ static struct allocNode {
     int line;
     struct allocNode *next;
 } *allocList = NULL;
-static size_t lalMallocTotal = 0;
 static int lalMallocCount = 0;
 
 /* need this to turn off gcc warnings about unused functions */
@@ -236,6 +239,7 @@ static void *PadAlloc(size_t * p, size_t n, int keep, const char *func)
 
     pthread_mutex_lock(&mut);
     lalMallocTotal += n;
+    lalMallocTotalPeak = (lalMallocTotalPeak > lalMallocTotal) ? lalMallocTotalPeak : lalMallocTotal;
     ++lalMallocCount;
     pthread_mutex_unlock(&mut);
 

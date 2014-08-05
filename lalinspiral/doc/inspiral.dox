@@ -546,7 +546,7 @@
  * \f{equation}{
  * F_{\times}(\theta_S,\phi_S,\psi) =
  * \frac{1}{2}\left(1+\cos^2\theta_S\right)\cos{2\phi_S}\sin{2\psi}
- * + \cos\theta_S\sin{2\phi_S}\sin{2\psi}.
+ * + \cos\theta_S\sin{2\phi_S}\cos{2\psi}.
  * \f}
  * Next, the polarization phase \f$\varphi(t)\f$ is
  * \f{equation}{

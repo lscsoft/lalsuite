@@ -184,6 +184,8 @@ LALUnitPair;
  *                                                       *
  *********************************************************/
 
+#ifndef SWIG /* exclude from SWIG interface */
+
 /* XLAL routines */
 char * XLALUnitAsString( char *string, UINT4 length, const LALUnit *input );
 char * XLALUnitToString( const LALUnit *input );
@@ -213,7 +215,6 @@ void LALUnitRaise (LALStatus *status, LALUnit *output, const LALUnit *input, con
 void LALUnitAsString (LALStatus *status, CHARVector *output, const LALUnit *input);
 void LALParseUnitString ( LALStatus *status, LALUnit *output, const CHARVector *input );
 
-#ifndef SWIG /* exclude from SWIG interface */
 enum enumLALUnitNameSize {
   LALUnitNameSize = sizeof("strain")
 };
@@ -225,6 +226,7 @@ enum enumLALUnitTextSize {
 };
 
 extern const CHAR lalUnitName[LALNumUnits][LALUnitNameSize];
+
 #endif /* SWIG */
 
 /*********************************************************

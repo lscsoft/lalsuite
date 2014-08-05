@@ -201,8 +201,6 @@ int XLALREAL4TimeSeriesToFrame(CHAR *outdir,REAL4TimeSeries *ts,FrameCombination
 int XLALReadFrameHistory(CHAR **history_string, FrFile *file);
 
 /***********************************************************************************************/
-/* empty initializers */
-UserInput_t empty_UserInput;
 
 /**
  * The main function of xtefitstoframe.c
@@ -212,8 +210,8 @@ UserInput_t empty_UserInput;
  */
 int main( int argc, char *argv[] )
 {
-  LALStatus status = blank_status;              /* empty LAL status structure */
-  UserInput_t uvar = empty_UserInput;           /* user input variables */
+  LALStatus XLAL_INIT_DECL(status);              /* empty LAL status structure */
+  UserInput_t XLAL_INIT_DECL(uvar);           /* user input variables */
   FrameChannelList *framechannels = NULL;       /* list of input frame channels */
   GoodPCUIntervals *pcu = NULL;                 /* the operational pcu count */ 
   CHAR clargs[LONGSTRINGLENGTH];                /* store the command line args */ 

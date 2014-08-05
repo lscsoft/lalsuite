@@ -1,0 +1,33 @@
+AM_CPPFLAGS = -DTEST_DATA_DIR='"$(abs_srcdir)/"' @AM_CPPFLAGS@
+
+TEST_EXTENSIONS = .sh .m .py
+
+TESTS_ENVIRONMENT = \
+	export LC_ALL; LC_ALL=C; \
+	export LAL_DEBUG_LEVEL; LAL_DEBUG_LEVEL=msglvl1,memdbg; \
+	export OCTAVE_PATH; OCTAVE_PATH="$(abs_top_builddir)/octave:$(abs_top_srcdir)/octave:$(LAL_OCTAVE_PATH):$${OCTAVE_PATH}"; \
+	export PYTHONPATH; PYTHONPATH="$(abs_top_builddir)/python:$(abs_top_srcdir)/python:$(LAL_PYTHON_PATH):$${PYTHONPATH}"; \
+	$(END_OF_LIST)
+
+test_programs =
+test_scripts =
+test_helpers =
+check_PROGRAMS = $(test_programs) $(test_helpers)
+TESTS = $(test_programs) $(test_scripts)
+EXTRA_DIST += $(test_scripts)
+
+test_script_runner = $(top_srcdir)/gnuscripts/lalsuite_test_script_runner
+test_script_compiler = $(test_script_runner) '$(LIBTOOL)' '$(LDADD)'
+EXTRA_DIST += $(test_script_runner)
+
+SH_LOG_COMPILER = $(SHELL)
+M_LOG_COMPILER = $(test_script_compiler) "$(OCTAVE)" -fH
+PY_LOG_COMPILER = $(test_script_compiler) "$(PYTHON)"
+
+.PHONY: run-octave
+run-octave: $(octexec_LTLIBRARIES)
+	$(AM_V_at)$(TESTS_ENVIRONMENT)$(test_script_compiler) $(RUNTOOL) "$(OCTAVE)" $(RUNARGS)
+
+.PHONY: run-python
+run-python: $(pkgpyexec_LTLIBRARIES)
+	$(AM_V_at)$(TESTS_ENVIRONMENT)$(test_script_compiler) $(RUNTOOL) "$(PYTHON)" $(RUNARGS)

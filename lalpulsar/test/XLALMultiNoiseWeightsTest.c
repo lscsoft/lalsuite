@@ -50,11 +50,6 @@
 /*---------- macros ---------- */
 #define FRACERR(x,y) (fabs((x)-(y))/(0.5*((x)+(y))))
 
-/*---------- empty initializers ---------- */
-const LALStatus empty_status;
-const SFTConstraints empty_constraints;
-const MultiNoiseWeights empty_MultiNoiseWeights;
-
 /* ----- internal prototypes ---------- */
 int XLALCompareMultiNoiseWeights ( MultiNoiseWeights *multiWeights1, MultiNoiseWeights *multiWeights2, REAL8 tolerance );
 
@@ -62,9 +57,9 @@ int XLALCompareMultiNoiseWeights ( MultiNoiseWeights *multiWeights1, MultiNoiseW
 int
 main (  void )
 {
-  LALStatus status = empty_status;
+  LALStatus XLAL_INIT_DECL(status);
   SFTCatalog *catalog = NULL;
-  SFTConstraints constraints = empty_constraints;
+  SFTConstraints XLAL_INIT_DECL(constraints);
   MultiSFTVector *multiSFTs = NULL;
   MultiPSDVector *multiPSDs = NULL;
   MultiNoiseWeights *multiWeightsXLAL = NULL;

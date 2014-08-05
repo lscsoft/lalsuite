@@ -38,7 +38,7 @@
 
 
 static void print_flags_orders_warning(SimInspiralTable *injt, ProcessParamsTable *commline);
-static void LALInferenceInitSpinVariables(LALInferenceRunState *state);
+static void LALInferenceInitSpinVariables(LALInferenceRunState *state, LALInferenceVariables *currentParams);
 
 /* Setup the template generation */
 /* Defaults to using LALSimulation */
@@ -82,13 +82,12 @@ void LALInferenceInitCBCTemplate(LALInferenceRunState *runState)
 }
 
 /* Setup the glitch model */
-void LALInferenceInitGlitchVariables(LALInferenceRunState *runState)
+void LALInferenceInitGlitchVariables(LALInferenceRunState *runState, LALInferenceVariables *currentParams)
 {
   ProcessParamsTable    *commandLine   = runState->commandLine;
   LALInferenceIFOData   *dataPtr       = runState->data;
   LALInferenceVariables *priorArgs     = runState->priorArgs;
   LALInferenceVariables *proposalArgs  = runState->proposalArgs;
-  LALInferenceVariables *currentParams = runState->currentParams;
 
   UINT4 i,nifo;
   UINT4 n = (UINT4)dataPtr->timeData->data->length;
@@ -207,8 +206,7 @@ void LALInferenceRegisterUniformVariableREAL8(LALInferenceRunState *state, LALIn
 
 
 /* Setup the variables to control template generation for the CBC model */
-/* Includes specification of prior ranges. Sets runState->currentParams and
- returns address of new LALInferenceVariables */
+/* Includes specification of prior ranges. Returns address of new LALInferenceVariables */
 
 LALInferenceVariables *LALInferenceInitCBCVariables(LALInferenceRunState *state)
 {
@@ -293,7 +291,7 @@ LALInferenceVariables *LALInferenceInitCBCVariables(LALInferenceRunState *state)
                (--distance-min MIN)                    Minimum distance in Mpc (1).\n\
                (--distance-max MAX)                    Maximum distance in Mpc (100).\n\
                (--dt time)                             Width of time prior, centred around trigger (0.1s).\n\
-               (--malmquistPrior)              Rejection sample based on SNR of template \n\
+               (--malmquistPrior)                      Rejection sample based on SNR of template \n\
                Equation of state parameters:\n\
                (--lambda1-min)                         Minimum lambda1 (0).\n\
                (--lambda1-max)                         Maximum lambda1 (3000).\n\
@@ -346,8 +344,7 @@ LALInferenceVariables *LALInferenceInitCBCVariables(LALInferenceRunState *state)
   SimInspiralTable *injTable=NULL;
   LALInferenceVariables *priorArgs=state->priorArgs;
   LALInferenceVariables *proposalArgs=state->proposalArgs;
-  state->currentParams=XLALCalloc(1,sizeof(LALInferenceVariables));
-  LALInferenceVariables *currentParams=state->currentParams;
+  LALInferenceVariables *currentParams = XLALCalloc(1,sizeof(LALInferenceVariables));
   ProcessParamsTable *commandLine=state->commandLine;
   ProcessParamsTable *ppt=NULL;
   ProcessParamsTable *ppt_order=NULL;
@@ -558,6 +555,8 @@ LALInferenceVariables *LALInferenceInitCBCVariables(LALInferenceRunState *state)
   ppt=LALInferenceGetProcParamVal(commandLine,"--dt");
   if(ppt){
     dt=atof(ppt->value);
+    timeMin=endtime-dt;
+    timeMax=endtime+dt;
   }
   
   /* Over-ride component masses */
@@ -722,15 +721,15 @@ LALInferenceVariables *LALInferenceInitCBCVariables(LALInferenceRunState *state)
     /* User has specified start time. */
     timeParam = atof(ppt->value);
   } else {
-    timeParam = endtime+dt*(1.0-2.0*gsl_rng_uniform(GSLrandom));
-    timeParam = endtime+gsl_ran_gaussian(GSLrandom,0.01);
+    timeParam = timeMin + (timeMax-timeMin)*gsl_rng_uniform(GSLrandom);
   }
-  
+
   /* Non-standard names for backward compatibility */
   if((ppt=LALInferenceGetProcParamVal(commandLine,"--phi"))) start_phase=atof(ppt->value);
   if((ppt=LALInferenceGetProcParamVal(commandLine,"--dist"))) start_dist=atof(ppt->value);
   if((ppt=LALInferenceGetProcParamVal(commandLine,"--Dmin"))) Dmin=atof(ppt->value);
   if((ppt=LALInferenceGetProcParamVal(commandLine,"--Dmax"))) Dmax=atof(ppt->value);
+
   
   if((ppt=LALInferenceGetProcParamVal(commandLine,"--psi")))  start_psi=atof(ppt->value);
   if((ppt=LALInferenceGetProcParamVal(commandLine,"--dec")))  start_dec=atof(ppt->value);
@@ -822,8 +821,8 @@ LALInferenceVariables *LALInferenceInitCBCVariables(LALInferenceRunState *state)
   dataPtr = state->data;
   while (dataPtr != NULL)
   {
-    dt      = dataPtr->timeData->deltaT;
-    df      = 1.0 / (((double)dataPtr->timeData->data->length) * dt);
+    REAL8 deltaT      = dataPtr->timeData->deltaT;
+    df      = 1.0 / (((double)dataPtr->timeData->data->length) * deltaT);
     imin    = (UINT4)ceil( dataPtr->fLow  / df);
     imax    = (UINT4)floor(dataPtr->fHigh / df);
 
@@ -1188,7 +1187,7 @@ LALInferenceVariables *LALInferenceInitCBCVariables(LALInferenceRunState *state)
   }//End of line-removal initialization
    
   LALInferenceAddVariable(currentParams, "removeLinesFlag", &lines_flag, LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_FIXED);
-  if(LALInferenceGetProcParamVal(commandLine, "--glitchFit")) LALInferenceInitGlitchVariables(state);
+  if(LALInferenceGetProcParamVal(commandLine, "--glitchFit")) LALInferenceInitGlitchVariables(state, currentParams);
 
   UINT4 signal_flag=1;
   ppt = LALInferenceGetProcParamVal(commandLine, "--noiseonly");
@@ -1225,7 +1224,7 @@ LALInferenceVariables *LALInferenceInitCBCVariables(LALInferenceRunState *state)
         }
       }
     }
-  
+    
     ppt=LALInferenceGetProcParamVal(commandLine,"--fixTime");
     if(ppt){
       LALInferenceRegisterUniformVariableREAL8(state, currentParams, "time", timeParam, timeMin, timeMax, LALINFERENCE_PARAM_FIXED);
@@ -1233,15 +1232,15 @@ LALInferenceVariables *LALInferenceInitCBCVariables(LALInferenceRunState *state)
     }else{
       LALInferenceRegisterUniformVariableREAL8(state, currentParams, "time", timeParam, timeMin, timeMax, LALINFERENCE_PARAM_LINEAR);
     }
-
+    
     /* If we are marginalising over the time, remove that variable from the model (having set the prior above) */
     /* Also set the prior in currentParams, since Likelihood can't access the state! (ugly hack) */
     if(LALInferenceGetProcParamVal(commandLine,"--margtime") || LALInferenceGetProcParamVal(commandLine, "--margtimephi")){
         LALInferenceVariableItem *p=LALInferenceGetItem(state->priorArgs,"time_min");
-        LALInferenceAddVariable(state->currentParams,"time_min",p->value,p->type,p->vary);
+        LALInferenceAddVariable(currentParams,"time_min",p->value,p->type,p->vary);
         p=LALInferenceGetItem(state->priorArgs,"time_max");
-        LALInferenceAddVariable(state->currentParams,"time_max",p->value,p->type,p->vary);
-        LALInferenceRemoveVariable(state->currentParams,"time");
+        LALInferenceAddVariable(currentParams,"time_max",p->value,p->type,p->vary);
+        LALInferenceRemoveVariable(currentParams,"time");
     }
 
     if(!LALInferenceGetProcParamVal(commandLine,"--margphi") && !LALInferenceGetProcParamVal(commandLine, "--margtimephi")){
@@ -1255,6 +1254,9 @@ LALInferenceVariables *LALInferenceInitCBCVariables(LALInferenceRunState *state)
     }
   
   if(LALInferenceGetProcParamVal(commandLine,"--use-logdistance")){
+    /* Check for distance priors on command line */
+    if((ppt=LALInferenceGetProcParamVal(commandLine,"--distance-max"))) Dmax=atof(ppt->value);
+    if((ppt=LALInferenceGetProcParamVal(commandLine,"--distance-min"))) Dmin=atof(ppt->value);
     LALInferenceRegisterUniformVariableREAL8(state, currentParams, "logdistance", log(start_dist), log(Dmin), log(Dmax), LALInferenceGetProcParamVal(commandLine,"--fixDist")?LALINFERENCE_PARAM_FIXED:LALINFERENCE_PARAM_LINEAR);
   } else {
     LALInferenceRegisterUniformVariableREAL8(state, currentParams, "distance", start_dist, Dmin, Dmax, LALInferenceGetProcParamVal(commandLine,"--fixDist")?LALINFERENCE_PARAM_FIXED:LALINFERENCE_PARAM_LINEAR);
@@ -1322,7 +1324,7 @@ LALInferenceVariables *LALInferenceInitCBCVariables(LALInferenceRunState *state)
   }
 
   fprintf(stdout,"\n\n---\t\t ---\n");
-  LALInferenceInitSpinVariables(state);
+  LALInferenceInitSpinVariables(state, currentParams);
 
   if (injTable)
      print_flags_orders_warning(injTable,commandLine); 
@@ -1360,8 +1362,7 @@ LALInferenceVariables *LALInferenceInitVariablesReviewEvidence(LALInferenceRunSt
             memset(&tempParams,0,sizeof(tempParams));
             LALInferenceParseCharacterOptionString(pinned_params,&strings,&N);
     }
-        state->currentParams=XLALCalloc(1,sizeof(LALInferenceVariables));
-        LALInferenceVariables *currentParams=state->currentParams;
+        LALInferenceVariables *currentParams = XLALCalloc(1,sizeof(LALInferenceVariables));
 	i=0;
 
 	struct varSettings {const char *name; REAL8 val, min, max;};
@@ -1411,8 +1412,7 @@ LALInferenceVariables *LALInferenceInitVariablesReviewEvidence_bimod(LALInferenc
     memset(&tempParams,0,sizeof(tempParams));
     LALInferenceParseCharacterOptionString(pinned_params,&strings,&N);
   }
-  state->currentParams=XLALCalloc(1,sizeof(LALInferenceVariables));
-  LALInferenceVariables *currentParams=state->currentParams;
+  LALInferenceVariables *currentParams = XLALCalloc(1,sizeof(LALInferenceVariables));
   i=0;
   
   struct varSettings {const char *name; REAL8 val, min, max;};
@@ -1461,8 +1461,7 @@ LALInferenceVariables *LALInferenceInitVariablesReviewEvidence_banana(LALInferen
     memset(&tempParams,0,sizeof(tempParams));
     LALInferenceParseCharacterOptionString(pinned_params,&strings,&N);
   }
-  state->currentParams=XLALCalloc(1,sizeof(LALInferenceVariables));
-  LALInferenceVariables *currentParams=state->currentParams;
+  LALInferenceVariables *currentParams = XLALCalloc(1,sizeof(LALInferenceVariables));
   i=0;
   
   struct varSettings {const char *name; REAL8 val, min, max;};
@@ -1606,18 +1605,31 @@ void LALInferenceCheckOptionsConsistency(ProcessParamsTable *commandLine)
     exit(1);
   }
   // Check seglen > 0
+  REAL8 seglen=0.;
   ppt=LALInferenceGetProcParamVal(commandLine,"--seglen");
   if (!ppt){
     XLALPrintError("Must provide segment length with --seglen. Exiting...");
     exit(1);
   }
+  else seglen=atof(ppt->value);
+  
   tmp=atof(ppt->value);
   if (tmp<0.0){
     fprintf(stderr,"ERROR: seglen must be positive. Exiting...\n");
     exit(1);
   }
-
-  
+  REAL8 timeSkipStart=0.;
+  REAL8 timeSkipEnd=0.;
+  if((ppt=LALInferenceGetProcParamVal(commandLine,"--time-pad-start")))
+     timeSkipStart=atof(ppt->value);
+  if((ppt=LALInferenceGetProcParamVal(commandLine,"--time-pad-end")))
+     timeSkipEnd=atof(ppt->value);
+  if(timeSkipStart+timeSkipEnd > seglen)
+  {
+    fprintf(stderr,"ERROR: --time-pad-start + --time-pad-end is greater than --seglen!");
+    exit(1);
+  }
+     
   /* Flags consistency */
   ppt=LALInferenceGetProcParamVal(commandLine,"--disable-spin");
   ppt2=LALInferenceGetProcParamVal(commandLine,"--noSpin");
@@ -1677,13 +1689,12 @@ void LALInferenceCheckOptionsConsistency(ProcessParamsTable *commandLine)
   return;
 }
 
-void LALInferenceInitSpinVariables(LALInferenceRunState *state){
+void LALInferenceInitSpinVariables(LALInferenceRunState *state, LALInferenceVariables *currentParams){
 
 
   LALStatus status;
   memset(&status,0,sizeof(status));
 
-  LALInferenceVariables *currentParams=state->currentParams;
   ProcessParamsTable *commandLine=state->commandLine;
   ProcessParamsTable *ppt=NULL;
 

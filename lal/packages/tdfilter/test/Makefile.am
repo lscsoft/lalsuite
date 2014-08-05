@@ -1,13 +1,17 @@
-AM_CPPFLAGS = -I$(top_builddir)/include -I$(srcdir)/../include @AM_CPPFLAGS@
-LDADD = \
-	$(top_builddir)/lib/lal/liblal.la \
-	$(top_builddir)/lib/lalsupport/src/liblalsupport.la
+EXTRA_DIST =
+include $(top_srcdir)/gnuscripts/lalsuite_test.am
+include $(top_srcdir)/gnuscripts/lalsuite_header_links.am
 
-check_PROGRAMS = \
-	BandPassTest \
-	IIRFilterTest
+# Add compiled test programs to this variable
+test_programs += BandPassTest
+test_programs += IIRFilterTest
 
-TESTS = \
-	$(check_PROGRAMS)
+# Add shell, Python, etc. test scripts to this variable
+test_scripts +=
 
-MOSTLYCLEANFILES = out.dat
+# Add any helper programs required by tests to this variable
+test_helpers +=
+
+MOSTLYCLEANFILES = \
+	out.dat \
+	$(END_OF_LIST)

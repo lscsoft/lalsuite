@@ -561,32 +561,32 @@ REAL8 LALInferenceUndecomposedFreqDomainLogLikelihood(LALInferenceVariables *cur
     dataPtr->loglikelihood = 0.0;
 
     if(signalFlag){
-        /* Compare parameter values with parameter values corresponding  */
-        /* to currently stored template; ignore "time" variable:         */
-        if (LALInferenceCheckVariable(dataPtr->modelParams, "time")) {
-            timeTmp = *(REAL8 *) LALInferenceGetVariable(dataPtr->modelParams, "time");
-            LALInferenceRemoveVariable(dataPtr->modelParams, "time");
-        }
-        else timeTmp = GPSdouble;
-
-        LALInferenceCopyVariables(currentParams, dataPtr->modelParams);
-        LALInferenceAddVariable(dataPtr->modelParams, "time", &timeTmp, LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_LINEAR);
-      
       
         /* Check to see if this buffer has already been filled with the signal.
            Different dataPtrs can share the same signal buffer to avoid repeated
            calls to template */
         if(!checkItemAndAdd((void *)(dataPtr->freqModelhPlus), generatedFreqModels))
-        {
-          templt(dataPtr);
-          if(XLALGetBaseErrno()==XLAL_FAILURE) /* Template generation failed in a known way, set -Inf likelihood */
-            return(-DBL_MAX);
+		{
+				/* Compare parameter values with parameter values corresponding  */
+				/* to currently stored template; ignore "time" variable:         */
+				if (LALInferenceCheckVariable(dataPtr->modelParams, "time")) {
+						timeTmp = *(REAL8 *) LALInferenceGetVariable(dataPtr->modelParams, "time");
+						LALInferenceRemoveVariable(dataPtr->modelParams, "time");
+				}
+				else timeTmp = GPSdouble;
 
-          if (dataPtr->modelDomain == LAL_SIM_DOMAIN_TIME) {
-            /* TD --> FD. */
-            LALInferenceExecuteFT(dataPtr);
-          }
-        }
+				LALInferenceCopyVariables(currentParams, dataPtr->modelParams);
+				LALInferenceAddVariable(dataPtr->modelParams, "time", &timeTmp, LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_LINEAR);
+
+				templt(dataPtr);
+				if(XLALGetBaseErrno()==XLAL_FAILURE) /* Template generation failed in a known way, set -Inf likelihood */
+						return(-DBL_MAX);
+
+				if (dataPtr->modelDomain == LAL_SIM_DOMAIN_TIME) {
+						/* TD --> FD. */
+						LALInferenceExecuteFT(dataPtr);
+				}
+		}
 
         /* Template is now in dataPtr->timeFreqModelhPlus and hCross */
 
@@ -848,31 +848,31 @@ REAL8 LALInferenceFreqDomainStudentTLogLikelihood(LALInferenceVariables *current
     /* Reset log-likelihood */
     dataPtr->loglikelihood = 0.0;
 
-    /* Compare parameter values with parameter values corresponding */
-    /* to currently stored template; ignore "time" variable:        */
-    if (LALInferenceCheckVariable(dataPtr->modelParams, "time")) {
-        timeTmp = *(REAL8 *) LALInferenceGetVariable(dataPtr->modelParams, "time");
-        LALInferenceRemoveVariable(dataPtr->modelParams, "time");
-    }
-    else timeTmp = GPSdouble;
-
-    LALInferenceCopyVariables(currentParams, dataPtr->modelParams);
-    LALInferenceAddVariable(dataPtr->modelParams, "time", &timeTmp, LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_LINEAR);
     
     /* Check to see if this buffer has already been filled with the signal.
      Different dataPtrs can share the same signal buffer to avoid repeated
      calls to template */
     if(!checkItemAndAdd((void *)(dataPtr->freqModelhPlus), generatedFreqModels))
-    {
-      templt(dataPtr);
-      if(XLALGetBaseErrno()==XLAL_FAILURE) /* Template generation failed in a known way, set -Inf likelihood */
-        return(-DBL_MAX);
-      
-      if (dataPtr->modelDomain == LAL_SIM_DOMAIN_TIME) {
-        /* TD --> FD. */
-        LALInferenceExecuteFT(dataPtr);
-      }
-    }
+	{
+			/* Compare parameter values with parameter values corresponding */
+			/* to currently stored template; ignore "time" variable:        */
+			if (LALInferenceCheckVariable(dataPtr->modelParams, "time")) {
+					timeTmp = *(REAL8 *) LALInferenceGetVariable(dataPtr->modelParams, "time");
+					LALInferenceRemoveVariable(dataPtr->modelParams, "time");
+			}
+			else timeTmp = GPSdouble;
+
+			LALInferenceCopyVariables(currentParams, dataPtr->modelParams);
+			LALInferenceAddVariable(dataPtr->modelParams, "time", &timeTmp, LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_LINEAR);
+			templt(dataPtr);
+			if(XLALGetBaseErrno()==XLAL_FAILURE) /* Template generation failed in a known way, set -Inf likelihood */
+					return(-DBL_MAX);
+
+			if (dataPtr->modelDomain == LAL_SIM_DOMAIN_TIME) {
+					/* TD --> FD. */
+					LALInferenceExecuteFT(dataPtr);
+			}
+	}
 
     /* Template is now in dataPtr->freqModelhPlus hCross. */
 
@@ -1338,7 +1338,7 @@ REAL8 LALInferenceNullLogLikelihood(LALInferenceIFOData *data)
 }
 
 static void extractDimensionlessVariableVector(LALInferenceVariables *currentParams, REAL8 *x, INT4 mode) {
-  REAL8 m1, m2, d, iota, phi, psi, ra, dec, t, a1, a2, theta1, theta2, phi1, phi2;
+  REAL8 m1, m2, d, iota=0., phi, psi, ra, dec, t, a1, a2, theta1, theta2, phi1, phi2;
   
   REAL8 mean[15];
   REAL8 Mc;
@@ -1441,7 +1441,10 @@ static void extractDimensionlessVariableVector(LALInferenceVariables *currentPar
     exit(1);
   }
 
-  iota = *(REAL8 *)LALInferenceGetVariable(currentParams, "inclination");
+  if(LALInferenceCheckVariable(currentParams,"inclination"))
+      iota = *(REAL8 *)LALInferenceGetVariable(currentParams, "inclination");
+  else if(LALInferenceCheckVariable(currentParams,"theta_JN"))
+      iota = *(REAL8 *)LALInferenceGetVariable(currentParams, "theta_JN");
   psi = *(REAL8 *)LALInferenceGetVariable(currentParams, "polarisation");
   phi = *(REAL8 *)LALInferenceGetVariable(currentParams, "phase");
   ra = *(REAL8 *)LALInferenceGetVariable(currentParams, "rightascension");
@@ -1609,6 +1612,8 @@ REAL8 LALInferenceRosenbrockLogLikelihood(LALInferenceVariables *currentParams,
 
   extractDimensionlessVariableVector(currentParams, x, mode);
 
+  for (i = 0; i < DIM; i++) x[i] += 1.0;
+
   for (i = 0; i < DIM-1; i++) {
     REAL8 oneMX = 1.0 - x[i];
     REAL8 dx = x[i+1] - x[i]*x[i];
@@ -1759,31 +1764,31 @@ REAL8 LALInferenceMarginalisedPhaseLogLikelihood(LALInferenceVariables *currentP
     /* Reset log-likelihood */
     dataPtr->loglikelihood = 0.0;
     
-    /* Compare parameter values with parameter values corresponding  */
-    /* to currently stored template; ignore "time" variable:         */
-    if (LALInferenceCheckVariable(dataPtr->modelParams, "time")) {
-        timeTmp = *(REAL8 *) LALInferenceGetVariable(dataPtr->modelParams, "time");
-        LALInferenceRemoveVariable(dataPtr->modelParams, "time");
-    }
-    else timeTmp = GPSdouble;
-    
-    LALInferenceCopyVariables(currentParams, dataPtr->modelParams);
-    LALInferenceAddVariable(dataPtr->modelParams, "time", &timeTmp, LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_LINEAR);
     
     /* Check to see if this buffer has already been filled with the signal.
      Different dataPtrs can share the same signal buffer to avoid repeated
      calls to template */
     if(!checkItemAndAdd((void *)(dataPtr->freqModelhPlus), generatedFreqModels))
     {
-      templt(dataPtr);
-      if(XLALGetBaseErrno()==XLAL_FAILURE) /* Template generation failed in a known way, set -Inf likelihood */
-        return(-DBL_MAX);
-      
-      if (dataPtr->modelDomain == LAL_SIM_DOMAIN_TIME) {
-        /* TD --> FD. */
-        LALInferenceExecuteFT(dataPtr);
-      }
-    }
+			/* Compare parameter values with parameter values corresponding  */
+			/* to currently stored template; ignore "time" variable:         */
+			if (LALInferenceCheckVariable(dataPtr->modelParams, "time")) {
+					timeTmp = *(REAL8 *) LALInferenceGetVariable(dataPtr->modelParams, "time");
+					LALInferenceRemoveVariable(dataPtr->modelParams, "time");
+			}
+			else timeTmp = GPSdouble;
+
+			LALInferenceCopyVariables(currentParams, dataPtr->modelParams);
+			LALInferenceAddVariable(dataPtr->modelParams, "time", &timeTmp, LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_LINEAR);
+			templt(dataPtr);
+			if(XLALGetBaseErrno()==XLAL_FAILURE) /* Template generation failed in a known way, set -Inf likelihood */
+					return(-DBL_MAX);
+
+			if (dataPtr->modelDomain == LAL_SIM_DOMAIN_TIME) {
+					/* TD --> FD. */
+					LALInferenceExecuteFT(dataPtr);
+			}
+	}
 
     /*-- Template is now in dataPtr->freqModelhPlus and dataPtr->freqModelhCross. --*/
     /*-- (Either freshly computed or inherited.)                            --*/
@@ -1939,38 +1944,12 @@ REAL8 LALInferenceMarginalisedPhaseLogLikelihood(LALInferenceVariables *currentP
   return(loglikeli);
 }
 
-static double log_quadratic_integral_log(double h, double lx0, double lx1, double lx2) {
-  double a = (lx0 - 2.0*lx1 + lx2)/(2.0*h*h);
-  double b = -(3.0*lx0 - 4.0*lx1 + lx2)/(2.0*h);
-  double c = lx0;
-
-  if (lx0 == lx1 && lx1 == lx2) return log(2.0) + log(h) + lx0;
-
-  if (a > 0.0) {
-    if (b + 2.0*a*h > 0.0) {
-      double log_norm = c - 0.5*log(a) + 2.0*h*(b + 2.0*a*h);
-      double other_term = gsl_sf_dawson((b+4.0*a*h)/(2.0*sqrt(a))) - exp(-2.0*h*(b+2.0*a*h))*gsl_sf_dawson(b/(2.0*sqrt(a)));
-      return log_norm + log(other_term);
-    } else {
-      double log_norm = c - 0.5*log(a);
-      double other_term = exp(2.0*h*(b + 2.0*a*h))*gsl_sf_dawson((b + 4.0*a*h)/(2.0*sqrt(a))) - gsl_sf_dawson(b/(2.0*sqrt(a)));
-      return log_norm + log(other_term);
-    }
-  } else if (a < 0.0) {
-    double A = -a;
-    return c + b*b/(4.0*A) + log(sqrt(M_PI/A)/2.0) + log(gsl_sf_erf(b/(2.0*sqrt(A))) + gsl_sf_erf((4.0*A*h-b)/(2.0*sqrt(A))));
-  } else {
-    if (b > 0) {
-      return c - log(b) + 2.0*b*h + log(1.0 - exp(-2.0*b*h));
-    } else {
-      double B = -b;
-      return c - log(B) + log1p(-exp(-2.0*B*h));
-    }
-  }
-}
-
-/** Integrate interpolated log, returns the mean index in *imax if it is not a NULL pointer
- * Stores the mean index in *imean (can be fractional)
+/** Integrate interpolated log, returns the mean index in *imax if it
+ * is not a NULL pointer.  Stores the mean index in *imean (can be
+ * fractional).
+ * 
+ * The method used is the trapezoid method, which is quadratically
+ * accurate.
  */
 static double integrate_interpolated_log(double h, double *log_ys, size_t n, double *imean, size_t *imax) {
   size_t i;
@@ -1978,43 +1957,45 @@ static double integrate_interpolated_log(double h, double *log_ys, size_t n, dou
   double max=-INFINITY;
   size_t imax_l=0;
   double log_imean_l=-INFINITY;
-  double thislogL;
+  double log_h = log(h);
+  
+  for (i = 1; i < n-1; i++) {
+    log_integral = logaddexp(log_integral, log_ys[i]);
+    log_imean_l = logaddexp(log_imean_l, log(i) + log_ys[i]);
 
-  for (i = 0; i < n-2; i++) {
-    double l0, l1, l2;
-
-    l0 = log_ys[i];
-    l1 = log_ys[i+1];
-    l2 = log_ys[i+2];
-    
-    thislogL=log_quadratic_integral_log(h, l0, l1, l2);
-    if (thislogL>max)
-    {
-        max=thislogL;
-        imax_l=i;
+    if (log_ys[i] > max) {
+      max = log_ys[i];
+      imax_l = i;
     }
-    log_imean_l=logaddexp(log_imean_l, log((double)i)+thislogL);
-
-    log_integral = logaddexp(log_integral, thislogL);
-
   }
-  thislogL = log_quadratic_integral_log(h, log_ys[n-2], log_ys[n-1], log_ys[0]);
-  log_integral = logaddexp(log_integral, thislogL);
-  if (thislogL>max)
-  {
-      max=thislogL;
-      imax_l=i;
+
+  log_integral = logaddexp(log_integral, log(0.5) + log_ys[0]);
+  log_integral = logaddexp(log_integral, log(0.5) + log_ys[n-1]);
+
+  /* No contribution to mean index from i = 0 term! */
+  log_imean_l = logaddexp(log_imean_l, log(0.5) + log(n-1) + log_ys[n-1]);
+
+  log_integral += log_h;
+  log_imean_l += log_h;
+
+  if (log_ys[0] > max) {
+    max = log_ys[0];
+    imax_l = 0;
   }
-  log_imean_l=logaddexp(log_imean_l, log((double)i)+thislogL);
 
-  log_integral-=log(2.0);
+  if (log_ys[n-1] > max) {
+    max = log_ys[n-1];
+    imax_l = n-1;
+  }    
 
-  log_imean_l-=log_integral+log(2.0);
+  log_imean_l -= log_integral;
+
   if(imean) *imean=exp(log_imean_l);
   if(imax) *imax=imax_l;
 
   return log_integral;
 }
+
 REAL8 LALInferenceMarginalisedTimeLogLikelihood(LALInferenceVariables *currentParams, LALInferenceIFOData * data, 
                               LALInferenceTemplateFunction templt)
 /***************************************************************/
@@ -2192,27 +2173,27 @@ REAL8 LALInferenceMarginalisedTimeLogLikelihood(LALInferenceVariables *currentPa
     dataPtr->loglikelihood = 0.0;
     chisquared = 0.0;
 
-    LALInferenceCopyVariables(currentParams, dataPtr->modelParams);
-    LALInferenceAddVariable(dataPtr->modelParams, "time", &desired_tc, LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_LINEAR);
-    if (margphi) {
-        double pi2 = M_PI / 2.0;
-        LALInferenceAddVariable(dataPtr->modelParams, "phase", &pi2, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR);
-    }
     
     /* Check to see if this buffer has already been filled with the signal.
      Different dataPtrs can share the same signal buffer to avoid repeated
      calls to template */
     if(!checkItemAndAdd((void *)(dataPtr->freqModelhPlus), generatedFreqModels))
-    {
-      templt(dataPtr);
-      if(XLALGetBaseErrno()==XLAL_FAILURE) /* Template generation failed in a known way, set -Inf likelihood */
-        return(-DBL_MAX);
-      
-      if (dataPtr->modelDomain == LAL_SIM_DOMAIN_TIME) {
-        /* TD --> FD. */
-        LALInferenceExecuteFT(dataPtr);
-      }
-    }
+	{
+			LALInferenceCopyVariables(currentParams, dataPtr->modelParams);
+			LALInferenceAddVariable(dataPtr->modelParams, "time", &desired_tc, LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_LINEAR);
+			if (margphi) {
+					double pi2 = M_PI / 2.0;
+					LALInferenceAddVariable(dataPtr->modelParams, "phase", &pi2, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR);
+			}
+			templt(dataPtr);
+			if(XLALGetBaseErrno()==XLAL_FAILURE) /* Template generation failed in a known way, set -Inf likelihood */
+					return(-DBL_MAX);
+
+			if (dataPtr->modelDomain == LAL_SIM_DOMAIN_TIME) {
+					/* TD --> FD. */
+					LALInferenceExecuteFT(dataPtr);
+			}
+	}
 
     /* Template is now in dataPtr->timeFreqModelhPlus and hCross */
 
@@ -2523,32 +2504,32 @@ void LALInferenceNetworkSNR(LALInferenceVariables *currentParams, LALInferenceIF
 	/* IFOdata->modelParams (set, e.g., from the trigger value).     */
     
     signal2noise = 0.0;
-    /* to currently stored template; ignore "time" variable:         */
-    if (LALInferenceCheckVariable(dataPtr->modelParams, "time")) {
-        timeTmp = *(REAL8 *) LALInferenceGetVariable(dataPtr->modelParams, "time");
-        LALInferenceRemoveVariable(dataPtr->modelParams, "time");
-    }
-    else timeTmp = GPSdouble;
-
-    LALInferenceCopyVariables(currentParams, dataPtr->modelParams);
-    LALInferenceAddVariable(dataPtr->modelParams, "time", &timeTmp, LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_LINEAR);
-    if (!LALInferenceCheckVariable(dataPtr->modelParams, "phase")) {
-        double pi2 = M_PI / 2.0;
-        LALInferenceAddVariable(dataPtr->modelParams, "phase", &pi2, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR);
-    }
 
     /* Check to see if this buffer has already been filled with the signal.
      Different dataPtrs can share the same signal buffer to avoid repeated
      calls to template */
     if(!checkItemAndAdd((void *)(dataPtr->freqModelhPlus), generatedFreqModels))
-    {
-      templt(dataPtr);
-      
-      if (dataPtr->modelDomain == LAL_SIM_DOMAIN_TIME) {
-        /* TD --> FD. */
-        LALInferenceExecuteFT(dataPtr);
-      }
-    }
+	{
+			/* to currently stored template; ignore "time" variable:         */
+			if (LALInferenceCheckVariable(dataPtr->modelParams, "time")) {
+					timeTmp = *(REAL8 *) LALInferenceGetVariable(dataPtr->modelParams, "time");
+					LALInferenceRemoveVariable(dataPtr->modelParams, "time");
+			}
+			else timeTmp = GPSdouble;
+
+			LALInferenceCopyVariables(currentParams, dataPtr->modelParams);
+			LALInferenceAddVariable(dataPtr->modelParams, "time", &timeTmp, LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_LINEAR);
+			if (!LALInferenceCheckVariable(dataPtr->modelParams, "phase")) {
+					double pi2 = M_PI / 2.0;
+					LALInferenceAddVariable(dataPtr->modelParams, "phase", &pi2, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR);
+			}
+			templt(dataPtr);
+
+			if (dataPtr->modelDomain == LAL_SIM_DOMAIN_TIME) {
+					/* TD --> FD. */
+					LALInferenceExecuteFT(dataPtr);
+			}
+	}
 
     /* Template is now in dataPtr->timeFreqModelhPlus and hCross */
 

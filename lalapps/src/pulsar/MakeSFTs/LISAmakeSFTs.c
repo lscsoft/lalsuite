@@ -81,8 +81,6 @@
 /*----- Macros ----- */
 /*---------- internal types ----------*/
 
-/*---------- empty initializers ---------- */
-static const LALUnit empty_LALUnit;
 /*---------- Global variables ----------*/
 
 /* User variables */
@@ -582,7 +580,7 @@ ConvertLISAtimeseries2LAL ( LALStatus *status, MultiREAL4TimeSeries **lalTs, con
       CHAR name[LALNameLength];
       LIGOTimeGPS epoch = { 0, 0 };
       REAL8 f0 = 0;	/* no heterodyning */
-      LALUnit units = empty_LALUnit;
+      LALUnit XLAL_INIT_DECL(units);
 
       DataColumn *thisTs = lisaTs->Data[i+1];	/* skip first column: timesteps */
       REAL8 deltaT = thisTs->Cadence;

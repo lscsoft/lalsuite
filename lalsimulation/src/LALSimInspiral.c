@@ -305,6 +305,7 @@ double XLALSimInspiralGetFinalFreq(
         case EOBNRv2HM:
         case EOBNRv2:
         case SEOBNRv1:
+        case SEOBNRv2:
             // FIXME: Probably shouldn't hard code the modes.
             if ( approximant == EOBNRv2HM )
             {
@@ -1651,13 +1652,21 @@ int XLALSimInspiralChooseTDWaveform(
      */
     REAL8 v0 = 1., quadparam1 = 1., quadparam2 = 1.;
 
-    /* General sanity checks that will abort */
-
-    if( nonGRparams && approximant != PhenSpinTaylor && approximant != PhenSpinTaylorRD )
+    /* General sanity checks that will abort
+     *
+     * If non-GR approximants are added, include them in
+     * XLALSimInspiralApproximantAcceptTestGRParams()
+     */
+    if( nonGRparams && XLALSimInspiralApproximantAcceptTestGRParams(approximant) != LAL_SIM_INSPIRAL_TESTGR_PARAMS )
     {
         XLALPrintError("XLAL Error - %s: Passed in non-NULL pointer to LALSimInspiralTestGRParam for an approximant that does not use LALSimInspiralTestGRParam\n", __func__);
         XLAL_ERROR(XLAL_EINVAL);
     }
+
+    /* SEOBNR flag for model version. 1 for SEOBNRv1, 2 for SEOBNRv2 */
+    UINT4 SpinAlignedEOBversion;
+    //REAL8 spin1[3], spin2[3];
+    //LIGOTimeGPS epoch = LIGOTIMEGPSZERO;
 
     /* General sanity check the input parameters - only give warnings! */
     if( deltaT > 1. )
@@ -1873,6 +1882,27 @@ int XLALSimInspiralChooseTDWaveform(
                     XLALSimInspiralGetTidalOrder(waveFlags),
                     phaseO, amplitudeO);
             break;
+        case SpinDominatedWf:
+                // waveform specific sanity checks
+                if (S2x != 0. || S2y != 0. || S2z != 0.){
+                XLALPrintError("XLAL Error : The spindominatedwf approximant is only for 1 spin case.\n");
+                XLAL_ERROR(XLAL_EDOM);
+                }
+                /*Maximal PN amplitude order is 1.5, maximal phase order is 2 PN*/
+                if (amplitudeO > 3) {
+                XLALPrintError("XLAL Error : Foe the spindominatedwf approximant maximal amplitude correction is 1.5 PN\n");
+                XLAL_ERROR(XLAL_EDOM);
+                }
+                if (phaseO > 4){
+                XLALPrintError("XLAL Error : For the spindominatedwf approximant maximal phase correction is 2 PN\n");
+                XLAL_ERROR(XLAL_EDOM);
+                }
+                LNhatx = sin(i);
+                LNhaty = 0.;
+                LNhatz = cos(i);
+                /* Call the waveform driver routine */
+                ret = XLALSimInspiralSpinDominatedWaveformInterfaceTD(hplus, hcross, deltaT, m1, m2, f_min, f_ref, r, S1x, S1y, S1z, LNhatx, LNhaty, LNhatz, phaseO, amplitudeO, phiRef);
+                break;
 
         /* spin aligned inspiral-merger-ringdown models */
         case IMRPhenomB:
@@ -1900,6 +1930,23 @@ int XLALSimInspiralChooseTDWaveform(
             ret = XLALSimSpinInspiralGenerator(hplus, hcross, phiRef,
 					       deltaT, m1, m2, f_min, f_ref, r, i, S1x, S1y, S1z, S2x, S2y, S2z,
 					       phaseO, amplitudeO, waveFlags, nonGRparams);
+	    break;
+
+        case IMRPhenomC:
+            /* Waveform-specific sanity checks */
+            if( !XLALSimInspiralWaveformFlagsIsDefault(waveFlags) )
+                ABORT_NONDEFAULT_WAVEFORM_FLAGS(waveFlags);
+            if( !checkTransverseSpinsZero(S1x, S1y, S2x, S2y) )
+                ABORT_NONZERO_TRANSVERSE_SPINS(waveFlags);
+            if( !checkTidesZero(lambda1, lambda2) )
+                ABORT_NONZERO_TIDES(waveFlags);
+            if( f_ref != 0.)
+                XLALPrintWarning("XLAL Warning - %s: This approximant does use f_ref. The reference phase will be defined at coalescence.\n", __func__);
+            /* Call the waveform driver routine */
+            // NB: f_max = 0 will generate up to the ringdown cut-off frequency
+            ret = XLALSimIMRPhenomCGenerateTD(hplus, hcross, phiRef, deltaT,
+                    m1, m2, XLALSimIMRPhenomBComputeChi(m1, m2, S1z, S2z),
+                    f_min, 0., r, i);
             break;
 
         case PhenSpinTaylorRD:
@@ -1923,10 +1970,27 @@ int XLALSimInspiralChooseTDWaveform(
             if( !checkTidesZero(lambda1, lambda2) )
                 ABORT_NONZERO_TIDES(waveFlags);
             if( f_ref != 0.)
-                XLALPrintWarning("XLAL Warning - %s: This approximant does use f_ref. The reference phase will be defined at coalescence.\n", __func__);
+                XLALPrintWarning("XLAL Warning - %s: This approximant does not use f_ref. The reference phase will be defined at coalescence.\n", __func__);
             /* Call the waveform driver routine */
+            SpinAlignedEOBversion = 1;
+            ret = XLALSimIMRSpinAlignedEOBWaveform(hplus, hcross, phiRef,
+                    deltaT, m1, m2, f_min, r, i, S1z, S2z, SpinAlignedEOBversion);
+            break;
+
+        case SEOBNRv2:
+            /* Waveform-specific sanity checks */
+            if( !XLALSimInspiralWaveformFlagsIsDefault(waveFlags) )
+                ABORT_NONDEFAULT_WAVEFORM_FLAGS(waveFlags);
+            if( !checkTransverseSpinsZero(S1x, S1y, S2x, S2y) )
+                ABORT_NONZERO_TRANSVERSE_SPINS(waveFlags);
+            if( !checkTidesZero(lambda1, lambda2) )
+                ABORT_NONZERO_TIDES(waveFlags);
+            if( f_ref != 0.)
+                XLALPrintWarning("XLAL Warning - %s: This approximant does not use f_ref. The reference phase will be defined at coalescence.\n", __func__);
+            /* Call the waveform driver routine */
+            SpinAlignedEOBversion = 2;
             ret = XLALSimIMRSpinAlignedEOBWaveform(hplus, hcross, phiRef, 
-                    deltaT, m1, m2, f_min, r, i, S1z, S2z);
+                    deltaT, m1, m2, f_min, r, i, S1z, S2z, SpinAlignedEOBversion);
             break;
 
         default:
@@ -1959,6 +2023,7 @@ int XLALSimInspiralChooseFDWaveform(
     REAL8 S2z,                              /**< z-component of the dimensionless spin of object 2 */
     REAL8 f_min,                            /**< starting GW frequency (Hz) */
     REAL8 f_max,                            /**< ending GW frequency (Hz) */
+    REAL8 f_ref,                            /**< Reference frequency (Hz) */
     REAL8 r,                                /**< distance of source (m) */
     REAL8 i,                                /**< inclination of source (rad) */
     REAL8 lambda1,                          /**< (tidal deformability of mass 1) / m1^5 (dimensionless) */
@@ -1975,13 +2040,12 @@ int XLALSimInspiralChooseFDWaveform(
     unsigned int j;
     REAL8 pfac, cfac;
 
-    /* General sanity checks that will abort */
-    /*
-     * If non-GR approximants are added, change the below to
-     * if( nonGRparams && approximant != nonGR1 && approximant != nonGR2 )
+    /* General sanity checks that will abort
+     *
+     * If non-GR approximants are added, include them in
+     * XLALSimInspiralApproximantAcceptTestGRParams()
      */
-    if( nonGRparams )
-    {
+    if( nonGRparams && XLALSimInspiralApproximantAcceptTestGRParams(approximant) != LAL_SIM_INSPIRAL_TESTGR_PARAMS ) {
         XLALPrintError("XLAL Error - %s: Passed in non-NULL pointer to LALSimInspiralTestGRParam for an approximant that does not use LALSimInspiralTestGRParam\n", __func__);
         XLAL_ERROR(XLAL_EINVAL);
     }
@@ -2021,7 +2085,7 @@ int XLALSimInspiralChooseFDWaveform(
                 ABORT_NONZERO_TRANSVERSE_SPINS(waveFlags);
             /* Call the waveform driver routine */
             ret = XLALSimInspiralTaylorF2(hptilde, phiRef, deltaF, m1, m2,
-                    S1z, S2z, f_min, f_max, r, lambda1, lambda2,
+                    S1z, S2z, f_min, f_max, f_ref, r, lambda1, lambda2,
                     XLALSimInspiralGetSpinOrder(waveFlags),
                     XLALSimInspiralGetTidalOrder(waveFlags),
                     phaseO, amplitudeO);
@@ -2089,14 +2153,11 @@ int XLALSimInspiralChooseFDWaveform(
             amplitudeO = 0; /* amplitudeO <= MAX_PRECESSING_AMP_PN_ORDER ? 
                     amplitudeO : MAX_PRECESSING_AMP_PN_ORDER */;
             /* Call the waveform driver routine */
-            // FIXME: Note the HACK to use lambda1 as polarization angle psi!!
-            ret = XLALSimInspiralSpinTaylorF2(hptilde, 0., phiRef, deltaF,
-                    m1, m2, f_min, r, S1x, S1y, S1z,
-                    LNhatx, LNhaty, LNhatz, phaseO, amplitudeO);
+            ret = XLALSimInspiralSpinTaylorF2(hptilde, hctilde, phiRef, deltaF,
+                    m1, m2, S1x, S1y, S1z, LNhatx, LNhaty, LNhatz,
+                    f_min, 0., f_min, r, /* FIXME Deal with f_ref properly */
+                    nonGRparams, XLALSimInspiralGetSpinOrder(waveFlags), phaseO, amplitudeO);
             if (ret == XLAL_FAILURE) XLAL_ERROR(XLAL_EFUNC);
-            ret = XLALSimInspiralSpinTaylorF2(hctilde, LAL_PI/4.,phiRef, deltaF,
-                    m1, m2, f_min, r, S1x, S1y, S1z,
-                    LNhatx, LNhaty, LNhatz, phaseO, amplitudeO);
             break;
 
         /* FIXME: Comment out this case, as I don't have its source code */
@@ -2237,16 +2298,18 @@ int XLALSimInspiralChooseFDWaveform(
             LNhatz = cos(i);
             /* Tranform to model parameters */
             REAL8 chi_eff, chip, eta, thetaJ, phiJ, alpha0;
+            if(f_ref==0.0)
+                f_ref = f_min; /* Default reference frequency is minimum frequency */
             XLALSimIMRPhenomPCalculateModelParameters(
                 &chi_eff, &chip, &eta, &thetaJ, &phiJ, &alpha0,
-                m1, m2, f_min,
+                m1, m2, f_ref,
                 LNhatx, LNhaty, LNhatz,
                 S1x, S1y, S1z,
                 S2x, S2y, S2z);
             /* Call the waveform driver routine */
             ret = XLALSimIMRPhenomP(hptilde, hctilde,
               chi_eff, chip, eta, thetaJ, phiJ,
-              m1+m2, r, alpha0, phiRef, deltaF, f_min, f_max);
+              m1+m2, r, alpha0, phiRef, deltaF, f_min, f_max, f_ref);
             if (ret == XLAL_FAILURE) XLAL_ERROR(XLAL_EFUNC);
             break;
 
@@ -2567,8 +2630,11 @@ int XLALSimInspiralImplementedTDApproximants(
         case SpinTaylorT4:
         case IMRPhenomB:
         case PhenSpinTaylor:
+        case IMRPhenomC:
         case PhenSpinTaylorRD:
         case SEOBNRv1:
+        case SpinDominatedWf:
+        case SEOBNRv2:
             return 1;
 
         default:
@@ -2706,9 +2772,17 @@ int XLALGetApproximantFromString(const CHAR *inString)
   {
     return IMRPhenomFB;
   }
+  else if ( strstr(inString, "IMRPhenomFC" ) )
+  {
+    return IMRPhenomFC;
+  }
   else if ( strstr(inString, "SEOBNRv1" ) )
   {
     return SEOBNRv1;
+  }
+  else if ( strstr(inString, "SEOBNRv2" ) )
+  {
+    return SEOBNRv2;
   }
   else if ( strstr(inString, "EOBNRv2HM" ) )
   {
@@ -2794,6 +2868,10 @@ int XLALGetApproximantFromString(const CHAR *inString)
   {
     return Eccentricity;
   }
+  else if ( strstr(inString, "SpinDominatedWf" ) )
+  {
+    return SpinDominatedWf;
+  }
   else
   {
     XLALPrintError( "Cannot parse approximant from string: %s \n", inString );
@@ -2855,8 +2933,12 @@ char* XLALGetStringFromApproximant(Approximant approximant)
       return strdup("IMRPhenomFA");
     case IMRPhenomFB:
       return strdup("IMRPhenomFB");
+    case IMRPhenomFC:
+      return strdup("IMRPhenomFC");
     case SEOBNRv1:
       return strdup("SEOBNRv1");
+    case SEOBNRv2:
+      return strdup("SEOBNRv2");
     case EOBNRv2HM:
       return strdup("EOBNRv2HM");
     case EOBNRv2:
@@ -2897,6 +2979,8 @@ char* XLALGetStringFromApproximant(Approximant approximant)
       return strdup("FrameFile");
     case Eccentricity:
       return strdup("Eccentricity");
+    case SpinDominatedWf:
+      return strdup("SpinDominatedWf");
     default:
         XLALPrintError("Not a valid approximant\n");
         XLAL_ERROR_NULL(XLAL_EINVAL);
@@ -3008,34 +3092,36 @@ int XLALGetFrameAxisFromString(const CHAR *inString)
  */
 int XLALGetHigherModesFromString(const CHAR *inString)
 {
-  if (strstr(inString, "L2"))
-    return LAL_SIM_INSPIRAL_MODES_CHOICE_RESTRICTED;
-  else if (strstr(inString, "L3"))
-    return  LAL_SIM_INSPIRAL_MODES_CHOICE_3L;
-  else if (strstr(inString, "L4"))
-    return  LAL_SIM_INSPIRAL_MODES_CHOICE_3L;
-  else if (strstr(inString, "L23"))
-    return  LAL_SIM_INSPIRAL_MODES_CHOICE_2AND3L;
-  else if (strstr(inString, "L24"))
-    return  LAL_SIM_INSPIRAL_MODES_CHOICE_2AND4L;
-  else if (strstr(inString, "L34"))
-    return  LAL_SIM_INSPIRAL_MODES_CHOICE_3AND4L;
+  if (strstr(inString, "L2345"))
+    return  LAL_SIM_INSPIRAL_MODES_CHOICE_2AND3AND4AND5L;
   else if (strstr(inString, "L234"))
     return  LAL_SIM_INSPIRAL_MODES_CHOICE_2AND3AND4L;
-  else if (strstr(inString, "L5"))
-    return  LAL_SIM_INSPIRAL_MODES_CHOICE_5L;
-  else if (strstr(inString, "L25"))
-    return  LAL_SIM_INSPIRAL_MODES_CHOICE_2AND5L;
-  else if (strstr(inString, "L35"))
-    return  LAL_SIM_INSPIRAL_MODES_CHOICE_3AND5L;
-  else if (strstr(inString, "L45"))
-    return  LAL_SIM_INSPIRAL_MODES_CHOICE_4AND5L;
   else if (strstr(inString, "L235"))
     return  LAL_SIM_INSPIRAL_MODES_CHOICE_2AND3AND5L;
   else if (strstr(inString, "L245"))
     return  LAL_SIM_INSPIRAL_MODES_CHOICE_2AND4AND5L;
   else if (strstr(inString, "L345"))
     return  LAL_SIM_INSPIRAL_MODES_CHOICE_3AND4AND5L;
+  else if (strstr(inString, "L23"))
+    return  LAL_SIM_INSPIRAL_MODES_CHOICE_2AND3L;
+  else if (strstr(inString, "L24"))
+    return  LAL_SIM_INSPIRAL_MODES_CHOICE_2AND4L;
+  else if (strstr(inString, "L34"))
+    return  LAL_SIM_INSPIRAL_MODES_CHOICE_3AND4L;
+  else if (strstr(inString, "L25"))
+    return  LAL_SIM_INSPIRAL_MODES_CHOICE_2AND5L;
+  else if (strstr(inString, "L35"))
+    return  LAL_SIM_INSPIRAL_MODES_CHOICE_3AND5L;
+  else if (strstr(inString, "L45"))
+    return  LAL_SIM_INSPIRAL_MODES_CHOICE_4AND5L;
+  else if (strstr(inString, "L2"))
+    return LAL_SIM_INSPIRAL_MODES_CHOICE_RESTRICTED;
+  else if (strstr(inString, "L3"))
+    return  LAL_SIM_INSPIRAL_MODES_CHOICE_3L;
+  else if (strstr(inString, "L4"))
+    return  LAL_SIM_INSPIRAL_MODES_CHOICE_4L;
+  else if (strstr(inString, "L5"))
+    return  LAL_SIM_INSPIRAL_MODES_CHOICE_5L;
   else if (strstr(inString, "ALL"))
     return  LAL_SIM_INSPIRAL_MODES_CHOICE_ALL;
   else {
@@ -3057,6 +3143,7 @@ int XLALSimInspiralGetSpinSupportFromApproximant(Approximant approx){
     case PhenSpinTaylorRD:
     case SpinTaylorT3:
     case IMRPhenomP:
+    case SpinDominatedWf:
       spin_support=LAL_SIM_INSPIRAL_PRECESSINGSPIN;
       break;
     case SpinTaylorF2:
@@ -3069,6 +3156,7 @@ int XLALSimInspiralGetSpinSupportFromApproximant(Approximant approx){
     case IMRPhenomB:
     case IMRPhenomC:
     case SEOBNRv1:
+    case SEOBNRv2:
     case TaylorR2F4:
     case IMRPhenomFB:
     case FindChirpSP:
@@ -3096,3 +3184,69 @@ int XLALSimInspiralGetSpinSupportFromApproximant(Approximant approx){
     return spin_support;
 
 }
+
+int XLALSimInspiralApproximantAcceptTestGRParams(Approximant approx){
+
+  TestGRaccept testGR_accept=LAL_SIM_INSPIRAL_NUM_TESTGR_ACCEPT;
+  switch (approx)
+    {
+    case TaylorT1:
+    case TaylorT2:
+    case TaylorT3:
+    case TaylorF1:
+    case TaylorF2:
+    case TaylorR2F4:
+    case TaylorF2RedSpin:
+    case TaylorF2RedSpinTidal:
+    case PadeT1:
+    case PadeF1:
+    case EOB:
+    case BCV:
+    case BCVSpin:
+    case SpinTaylorT1:
+    case SpinTaylorT2:
+    case SpinTaylorT3:
+    case SpinTaylorT4:
+    case SpinTaylorT5:
+    case SpinTaylorFrameless:
+    case SpinTaylor:
+    case SpinQuadTaylor:
+    case FindChirpSP:
+    case FindChirpPTF:
+    case GeneratePPN:
+    case BCVC:
+    case FrameFile:
+    case AmpCorPPN:
+    case NumRel:
+    case NumRelNinja2:
+    case EOBNR:
+    case EOBNRv2:
+    case EOBNRv2HM:
+    case SEOBNRv1:
+    case SEOBNRv2:
+    case IMRPhenomA:
+    case IMRPhenomB:
+    case IMRPhenomFA:
+    case IMRPhenomFB:
+    case IMRPhenomC:
+    case IMRPhenomP:
+    case IMRPhenomFC:
+    case TaylorEt:
+    case TaylorT4:
+    case TaylorN:
+    case SpinDominatedWf:
+    case NumApproximants:
+      testGR_accept=LAL_SIM_INSPIRAL_NO_TESTGR_PARAMS;
+      break;
+    case SpinTaylorF2:
+    case Eccentricity:
+    case PhenSpinTaylor:
+    case PhenSpinTaylorRD:
+      testGR_accept=LAL_SIM_INSPIRAL_TESTGR_PARAMS;
+      break;
+    default:
+      XLALPrintError("Approximant not supported by lalsimuation TD/FD routines \n");
+      XLAL_ERROR(XLAL_EINVAL);
+    }
+  return testGR_accept;
+};

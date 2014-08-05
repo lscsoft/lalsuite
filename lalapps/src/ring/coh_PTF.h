@@ -76,7 +76,6 @@
 #include <gsl/gsl_linalg.h>
 #include <gsl/gsl_eigen.h>
 #include <gsl/gsl_blas.h>
-#include <lal/GSLSupport.h>
 
 #define BUFFER_SIZE 256
 #define FILENAME_SIZE 256

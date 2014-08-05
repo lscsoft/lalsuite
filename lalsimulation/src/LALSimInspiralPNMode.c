@@ -148,7 +148,7 @@ COMPLEX16TimeSeries *XLALSimInspiralPNMode21(
     if ( !hlm )
         XLAL_ERROR_NULL(XLAL_EFUNC);
     UINT4 j;
-    REAL8 fac = -8.0*sqrt(LAL_PI/5.0)*LAL_G_SI/LAL_C_SI/LAL_C_SI;
+    REAL8 fac = -(8.0/3.0)*sqrt(LAL_PI/5.0)*LAL_G_SI/LAL_C_SI/LAL_C_SI;
     REAL8 m = m1 + m2;
     REAL8 dm = m1 - m2;
     REAL8 mu = m1*m2/m;

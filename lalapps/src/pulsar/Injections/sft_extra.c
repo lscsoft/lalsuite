@@ -24,53 +24,7 @@
 #include "sft_extra.h"
 
 
-
-/* write a time-series into a text-file */
-  void
-write_timeSeriesR4 (FILE *fp, const REAL4TimeSeries *series)
-{
-  REAL8 timestamp0, timestamp;
-  UINT4 i;
-
-  if (series == NULL)
-  {
-    printf ("\nempty input!\n");
-    return;
-  }
-
-  timestamp0 = 1.0*series->epoch.gpsSeconds + series->epoch.gpsNanoSeconds * 1.0e-9;
-
-  for( i = 0; i < series->data->length; i++)
-  {
-    timestamp = timestamp0 + 1.0 * i * series->deltaT;
-    fprintf( fp, "%16.9f %e\n", timestamp, series->data->data[i] );
-
-  }
-
-  return;
-
-} /* write_timeSeriesR4() */
-
-  void
-write_timeSeriesR8 (FILE *fp, const REAL8TimeSeries *series)
-{
-  REAL8 timestamp0, timestamp;
-  UINT4 i;
-
-  timestamp0 = 1.0*series->epoch.gpsSeconds + series->epoch.gpsNanoSeconds * 1.0e-9;
-
-  for( i = 0; i < series->data->length; i++)
-  {
-    timestamp = timestamp0 + i * series->deltaT;
-    fprintf( fp, "%f %e\n", timestamp, series->data->data[i] );
-  }
-
-  return;
-
-} /* write_timeSeriesR4() */
-
-
-/* dump an SFT into a text-file 
+/* dump an SFT into a text-file
  *  * format: 0 = openDX (include header), 1 = xmgrace (no header)
  *   */
 void dump_SFT (FILE *fp, const SFTtype *sft, INT4 format)

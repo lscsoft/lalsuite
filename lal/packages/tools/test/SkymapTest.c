@@ -129,7 +129,7 @@ static void numerical(void)
 
             numericApply(&plan, &properties, wSw, &kernel, xSw, 0.5, & logPosteriorNumerical);
 
-            if (abs(logPosteriorAnalytic - logPosteriorNumerical) > 1e-3)
+            if (fabs(logPosteriorAnalytic - logPosteriorNumerical) > 1e-3)
             {
                 fprintf(stderr, "Analytic expression does not match numerical result to expected accuracy\n");
                 exit(1);
@@ -163,7 +163,7 @@ static void interpolation(void)
 
     for (double t = n * 0.25; t < n * 0.75; t += 0.1)
     {
-        if (abs(XLALSkymapInterpolate(t, x) - sin(t)) > 0.03)
+        if (fabs(XLALSkymapInterpolate(t, x) - sin(t)) > 0.03)
         {
             fprintf(stderr, "Interpolation error larger than expected\n");
             exit(1);
@@ -172,7 +172,7 @@ static void interpolation(void)
 
     for (int t = n / 4; t < (n * 3) / 4; ++t)
     {
-        if (abs(XLALSkymapInterpolate(t, x) - sin(t)) != 0)
+        if (fabs(XLALSkymapInterpolate(t, x) - sin(t)) != 0)
         {
             fprintf(stderr, "Interpolation does not pass through data points\n");
             exit(1);

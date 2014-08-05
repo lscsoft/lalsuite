@@ -1,57 +1,41 @@
-AM_CFLAGS = $(LALSUPPORT_CFLAGS) @AM_CFLAGS@
-AM_CPPFLAGS = -I$(top_builddir)/include @AM_CPPFLAGS@
-LDADD = $(LALSUPPORT_LIBS) $(top_builddir)/src/liblalinference.la
+EXTRA_DIST =
+include $(top_srcdir)/gnuscripts/lalsuite_test.am
 
+# Add compiled test programs to this variable
+test_programs += LALInferenceTest
+test_programs += LALInferenceKDTest
+test_programs += LALInferencePriorTest
+#test_programs += LALInferenceInjectionTest
+#test_programs += LALInferenceLikelihoodTest
+#test_programs += LALInferenceProposalTest
 if LALXML
-
-XMLPRG = \
-	LALInferenceXMLTest
-
+test_programs += LALInferenceXMLTest
 endif
 
-LALInferenceTest_SOURCES = \
-	LALInferenceTest.c \
-	LALInferenceTest.h
+# Add shell, Python, etc. test scripts to this variable
+if SWIG_BUILD_PYTHON
+#test_scripts += test_plot.py
+if HAVE_CHEALPIX
+test_scripts += test_bayestar.py
+endif
+endif
 
-LALInferencePriorTest_SOURCES = \
-	LALInferencePriorTest.c
-	LALInferenceTest.h
+# Add any helper programs required by tests to this variable
+test_helpers +=
 
-LALInferenceLikelihoodTest_SOURCES = \
-	LALInferenceLikelihoodTest.c
-	LALInferenceTest.h
-
-LALInferenceProposalTest_SOURCES = \
-	LALInferenceProposalTest.c
-	LALInferenceTest.h
-
-LALInferenceInjectionTest_SOURCES = \
-	LALInferenceTestInjectionLikelihood.c
-	LALInferenceTest.h
-
-LALInferenceKDTest_SOURCES = \
-	LALInferenceKDTest.c \
-	LALInferenceTest.h
-
-check_PROGRAMS = \
-	LALInferenceTest \
-	LALInferencePriorTest \
-	LALInferenceLikelihoodTest \
-	LALInferenceProposalTest \
-	LALInferenceKDTest \
-	LALInferenceInjectionTest \
-	$(XMLPRG)
-
-TESTS = \
-	LALInferenceTest \
-	LALInferencePriorTest \
-	LALInferenceKDTest \
-	$(XMLPRG)
-
-EXTRA_DIST =
-
-CLEANFILES = \
-	test_vot.xml \
-	*.out \
+MOSTLYCLEANFILES = \
 	*.dat \
-	*.xml
+	*.out \
+	*.xml \
+	test_result_images/pp_plot_default.png \
+	test_result_images/pp_plot_lines.png \
+	test_result_images/pp_plot_steps.png \
+	test_vot.xml \
+	$(END_OF_LIST)
+
+EXTRA_DIST += \
+	LALInferenceTest.h \
+	baseline_images/pp_plot_default.png \
+	baseline_images/pp_plot_lines.png \
+	baseline_images/pp_plot_steps.png \
+	$(END_OF_LIST)

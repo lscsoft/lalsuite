@@ -1,0 +1,30 @@
+BUILT_SOURCES += \
+	$(PACKAGE)-user-env.csh \
+	$(PACKAGE)-user-env.sh \
+	$(END_OF_LIST)
+
+sysconf_DATA += \
+	$(PACKAGE)-user-env.csh \
+	$(PACKAGE)-user-env.sh \
+	$(END_OF_LIST)
+
+MOSTLYCLEANFILES += \
+	$(PACKAGE)-user-env.csh \
+	$(PACKAGE)-user-env.sh \
+	$(PACKAGE)-user-env.shell \
+	$(END_OF_LIST)
+
+EXTRA_DIST += generate_user_env.awk
+
+$(PACKAGE)-user-env.shell: Makefile $(srcdir)/generate_user_env.awk
+	$(AM_V_GEN)if echo "$(user_environment)" | $(AWK) -f $(srcdir)/generate_user_env.awk >$@; then \
+		exit 0; \
+	else \
+		rm -f $@; \
+		exit 1; \
+	fi
+
+$(PACKAGE)-user-env.csh $(PACKAGE)-user-env.sh: $(PACKAGE)-user-env.shell
+	$(AM_V_GEN)prefix=`echo "$@" | $(SED) -e 's|.*\.||'`; \
+	echo "# source this file to access $(PACKAGE_NAME)" >$@; \
+	$(SED) -n -e "s|[@]SED[@]|$(SED)|g;s|^$$prefix:||p" $< >>$@

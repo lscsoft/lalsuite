@@ -387,7 +387,7 @@ int main (int argc, char *argv[])
     printf ("result: %.15f\n", sresult);
   if ( verbose )
     printf ("expect: %.15Lf\n", expect);
-  if (fabs(sresult - expect) > sepsilon*fabs(expect))
+  if (fabsl(sresult - expect) > sepsilon*fabsl(expect))
   {
     if ( verbose )
       fprintf (stderr, "Integration did not achieve desired accuracy!\n");
@@ -403,7 +403,7 @@ int main (int argc, char *argv[])
     printf ("result: %.15f\n", dresult);
   if ( verbose )
     printf ("expect: %.15Lf\n", expect);
-  if (fabs(dresult - expect) > depsilon*fabs(expect))
+  if (fabsl(dresult - expect) > depsilon*fabsl(expect))
   {
     if ( verbose )
       fprintf (stderr, "Integration did not achieve desired accuracy!\n");
@@ -422,7 +422,7 @@ int main (int argc, char *argv[])
     printf ("result: %.15f\n", dresult);
   if ( verbose )
     printf ("expect: %.15Lf\n", expect);
-  if (fabs(dresult - expect) > depsilon*fabs(expect))
+  if (fabsl(dresult - expect) > depsilon*fabsl(expect))
   {
     if ( verbose )
       fprintf (stderr, "Integration did not achieve desired accuracy!\n");
@@ -459,7 +459,7 @@ int main (int argc, char *argv[])
     printf ("result: %.15f\n", sresult);
   if ( verbose )
     printf ("expect: %.15Lf\n", expect);
-  if (fabs(sresult - expect) > sepsilon*fabs(expect))
+  if (fabsl(sresult - expect) > sepsilon*fabsl(expect))
   {
     if ( verbose )
       fprintf (stderr, "Integration did not achieve desired accuracy!\n");
@@ -475,7 +475,7 @@ int main (int argc, char *argv[])
     printf ("result: %.15f\n", dresult);
   if ( verbose )
     printf ("expect: %.15Lf\n", expect);
-  if (fabs(dresult - expect) > depsilon*fabs(expect))
+  if (fabsl(dresult - expect) > depsilon*fabsl(expect))
   {
     if ( verbose )
       fprintf (stderr, "Integration did not achieve desired accuracy!\n");
@@ -494,7 +494,7 @@ int main (int argc, char *argv[])
     printf ("result: %.15f\n", dresult);
   if ( verbose )
     printf ("expect: %.15Lf\n", expect);
-  if (fabs(dresult - expect) > depsilon*fabs(expect))
+  if (fabsl(dresult - expect) > depsilon*fabsl(expect))
   {
     if ( verbose )
       fprintf (stderr, "Integration did not achieve desired accuracy!\n");
@@ -531,7 +531,7 @@ int main (int argc, char *argv[])
     printf ("result: %.15f\n", sresult);
   if ( verbose )
     printf ("expect: %.15Lf\n", expect);
-  if (fabs(sresult - expect) > sepsilon*fabs(expect))
+  if (fabsl(sresult - expect) > sepsilon*fabsl(expect))
   {
     if ( verbose )
       fprintf (stderr, "Integration did not achieve desired accuracy!\n");
@@ -547,7 +547,7 @@ int main (int argc, char *argv[])
     printf ("result: %.15f\n", dresult);
   if ( verbose )
     printf ("expect: %.15Lf\n", expect);
-  if (fabs(dresult - expect) > depsilon*fabs(expect))
+  if (fabsl(dresult - expect) > depsilon*fabsl(expect))
   {
     if ( verbose )
       fprintf (stderr, "Integration did not achieve desired accuracy!\n");
@@ -566,7 +566,7 @@ int main (int argc, char *argv[])
     printf ("result: %.15f\n", dresult);
   if ( verbose )
     printf ("expect: %.15Lf\n", expect);
-  if (fabs(dresult - expect) > depsilon*fabs(expect))
+  if (fabsl(dresult - expect) > depsilon*fabsl(expect))
   {
     if ( verbose )
       fprintf (stderr, "Integration did not achieve desired accuracy!\n");
@@ -603,7 +603,7 @@ int main (int argc, char *argv[])
     printf ("result: %.15f\n", sresult);
   if ( verbose )
     printf ("expect: %.15Lf\n", expect);
-  if (fabs(sresult - expect) > sepsilon*fabs(expect))
+  if (fabsl(sresult - expect) > sepsilon*fabsl(expect))
   {
   if ( verbose )
     fprintf (stderr, "Integration did not achieve desired accuracy!\n");
@@ -619,7 +619,7 @@ int main (int argc, char *argv[])
     printf ("result: %.15f\n", dresult);
   if ( verbose )
     printf ("expect: %.15Lf\n", expect);
-  if (fabs(dresult - expect) > depsilon*fabs(expect))
+  if (fabsl(dresult - expect) > depsilon*fabsl(expect))
   {
     if ( verbose )
       fprintf (stderr, "Integration did not achieve desired accuracy!\n");
@@ -638,7 +638,7 @@ int main (int argc, char *argv[])
     printf ("result: %.15f\n", dresult);
   if ( verbose )
     printf ("expect: %.15Lf\n", expect);
-  if (fabs(dresult - expect) > depsilon*fabs(expect))
+  if (fabsl(dresult - expect) > depsilon*fabsl(expect))
   {
     if ( verbose )
       fprintf (stderr, "Integration did not achieve desired accuracy!\n");
@@ -676,7 +676,7 @@ int main (int argc, char *argv[])
   if ( verbose )
     printf ("expect: %.15Lf\n", expect);
   /* this doesn't work so well: multiply tolerance by factor of three */
-  if (fabs(sresult - expect) > 3*sepsilon*fabs(expect))
+  if (fabsl(sresult - expect) > 3*sepsilon*fabsl(expect))
   {
     if ( verbose )
     fprintf (stderr, "Integration did not achieve desired accuracy!\n");
@@ -693,7 +693,7 @@ int main (int argc, char *argv[])
   if ( verbose )
     printf ("expect: %.15Lf\n", expect);
   /* this doesn't work so well: multiply tolerance by factor of three */
-  if (fabs(dresult - expect) > 3*depsilon*fabs(expect))
+  if (fabsl(dresult - expect) > 3*depsilon*fabsl(expect))
   {
     if ( verbose )
     fprintf (stderr, "Integration did not achieve desired accuracy!\n");
@@ -712,7 +712,7 @@ int main (int argc, char *argv[])
     printf ("result: %.15f\n", dresult);
   if ( verbose )
     printf ("expect: %.15Lf\n", expect);
-  if (fabs(dresult - expect) > depsilon*fabs(expect))
+  if (fabsl(dresult - expect) > depsilon*fabsl(expect))
   {
     if ( verbose )
       fprintf (stderr, "Integration did not achieve desired accuracy!\n");
@@ -747,7 +747,7 @@ int main (int argc, char *argv[])
     printf ("expect: %.15Lf\n", expect);
   /* integral isn't very accurate because we needed to use an open interval */
   if ( verbose )
-    printf ("error:  %.2f%%\n", 100*fabs(sresult - expect)/fabs(expect));
+    printf ("error:  %.2Lf%%\n", 100*fabsl(sresult - expect)/fabsl(expect));
   /*
    * don't do 2d double-precision: it takes too long!
    *

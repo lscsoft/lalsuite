@@ -1,5 +1,3 @@
-#!@PYTHONPROG@
-
 # $Id$
 """
 Tools to create a HTML document that summarizes results produced by ihope. 
@@ -23,7 +21,6 @@ from glue.ligolw import table
 from glue.ligolw.utils import print_tables
 from glue.markup import oneliner as e
 import ConfigParser
-sys.path.append('@PYTHONLIBDIR@')
 
 # ***************************************************************************
 def initialize_page(title,style,script):

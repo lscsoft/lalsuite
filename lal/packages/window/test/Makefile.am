@@ -1,6 +1,12 @@
-AM_CPPFLAGS = -I$(top_builddir)/include -I$(srcdir)/../include @AM_CPPFLAGS@
-LDADD = $(top_builddir)/lib/lal/liblal.la -lm
+EXTRA_DIST =
+include $(top_srcdir)/gnuscripts/lalsuite_test.am
+include $(top_srcdir)/gnuscripts/lalsuite_header_links.am
 
-check_PROGRAMS = WindowTest
+# Add compiled test programs to this variable
+test_programs += WindowTest
 
-TESTS = $(check_PROGRAMS)
+# Add shell, Python, etc. test scripts to this variable
+test_scripts +=
+
+# Add any helper programs required by tests to this variable
+test_helpers +=

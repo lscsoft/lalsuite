@@ -1,42 +1,40 @@
-AM_CPPFLAGS = -I$(top_builddir)/include -I$(srcdir)/../include -DTEST_DATA_DIR='"$(abs_srcdir)/"' @AM_CPPFLAGS@
-LDADD = \
-	$(top_builddir)/lib/lal/liblal.la \
-	$(top_builddir)/lib/lalsupport/src/liblalsupport.la
+EXTRA_DIST =
+include $(top_srcdir)/gnuscripts/lalsuite_test.am
+include $(top_srcdir)/gnuscripts/lalsuite_header_links.am
 
-check_PROGRAMS = \
-	ConfigFileTest \
-	LALMath3DPlotTest \
-	LALMathNDPlotTest \
-	PrintFTSeriesTest \
-	PrintVectorTest \
-	ReadFTSeriesTest \
-	SegmentsIOTest \
-	StreamInputTest \
-	StreamSeriesInputTest \
-	UserInputTest \
-	GzipTest
+# Add compiled test programs to this variable
+test_programs += ConfigFileTest
+test_programs += LALMath3DPlotTest
+test_programs += LALMathNDPlotTest
+test_programs += PrintFTSeriesTest
+test_programs += PrintVectorTest
+test_programs += ReadFTSeriesTest
+test_programs += SegmentsIOTest
+test_programs += StreamInputTest
+test_programs += StreamSeriesInputTest
+test_programs += UserInputTest
 
-noinst_DATA = \
+# Add shell, Python, etc. test scripts to this variable
+test_scripts += GzipTest.sh
+
+# Add any helper programs required by tests to this variable
+test_helpers += GzipTest
+
+MOSTLYCLEANFILES = \
+	*.dat \
+	*.out \
+	*PrintVector.00* \
+	ConfigFile.cfg \
+	Math3DNotebook.nb \
+	MathNDNotebook.nb \
+	SegmentsOutput1.data \
+	$(END_OF_LIST)
+
+EXTRA_DIST += \
 	ConfigFileSample.cfg \
 	ConfigFileSample2.cfg \
 	ConfigFileSample3.cfg.gz \
 	SegmentsInput1.data \
 	StreamInput.data \
 	StreamSeriesInput.data
-
-EXTRA_DIST = \
-	$(DATA) \
-	GzipTest.sh
-
-TESTS = \
-	$(check_PROGRAMS) \
-	GzipTest.sh
-
-MOSTLYCLEANFILES = \
-	*.dat \
-	*.out \
-	*PrintVector.00* \
-	Math3DNotebook.nb \
-	MathNDNotebook.nb \
-	SegmentsOutput1.data \
-	ConfigFile.cfg
+	$(END_OF_LIST)

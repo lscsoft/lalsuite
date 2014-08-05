@@ -1,15 +1,20 @@
-AM_CPPFLAGS = -I$(top_builddir)/include -I$(srcdir)/../include @AM_CPPFLAGS@
-LDADD = \
-	$(top_builddir)/lib/lal/liblal.la \
-	$(top_builddir)/lib/lalsupport/src/liblalsupport.la
+EXTRA_DIST =
+include $(top_srcdir)/gnuscripts/lalsuite_test.am
+include $(top_srcdir)/gnuscripts/lalsuite_header_links.am
 
-check_PROGRAMS = \
-	NoisePSDTest
+# Add compiled test programs to this variable
+test_programs += NoisePSDTest
 
-TESTS = \
-	$(check_PROGRAMS)
+# Add shell, Python, etc. test scripts to this variable
+test_scripts +=
 
-EXTRA_DIST = NoisePSDTest.eps
-EXTRA_TEXSOURCES = NoisePSDTest.eps
+# Add any helper programs required by tests to this variable
+test_helpers +=
 
-CLEANFILES = *.out
+MOSTLYCLEANFILES = \
+	*.out
+	$(END_OF_LIST)
+
+EXTRA_DIST += \
+	NoisePSDTest.eps \
+	$(END_OF_LIST)

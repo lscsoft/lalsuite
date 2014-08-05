@@ -125,8 +125,7 @@ void XLALDestroyCOMPLEX8FFTPlan( COMPLEX8FFTPlan *plan )
 }
 
 
-int XLALCOMPLEX8VectorFFT( COMPLEX8Vector *output, COMPLEX8Vector *input,
-    const COMPLEX8FFTPlan *plan )
+int XLALCOMPLEX8VectorFFT( COMPLEX8Vector * _LAL_RESTRICT_ output, const COMPLEX8Vector * _LAL_RESTRICT_ input, const COMPLEX8FFTPlan *plan )
 {
   if ( ! output || ! input || ! plan )
     XLAL_ERROR( XLAL_EFAULT );
@@ -266,8 +265,7 @@ void XLALDestroyCOMPLEX16FFTPlan( COMPLEX16FFTPlan *plan )
 }
 
 
-int XLALCOMPLEX16VectorFFT( COMPLEX16Vector *output, COMPLEX16Vector *input,
-    const COMPLEX16FFTPlan *plan )
+int XLALCOMPLEX16VectorFFT( COMPLEX16Vector * _LAL_RESTRICT_ output, const COMPLEX16Vector * _LAL_RESTRICT_ input, const COMPLEX16FFTPlan *plan )
 {
   if ( ! output || ! input || ! plan )
     XLAL_ERROR( XLAL_EFAULT );

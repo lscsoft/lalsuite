@@ -38,6 +38,7 @@
 #include <lal/Window.h>
 #include <lal/XLALError.h>
 
+
 /*
  * ============================================================================
  *
@@ -347,7 +348,6 @@ COMPLEX8Sequence *XLALUnitaryWindowCOMPLEX8Sequence(COMPLEX8Sequence *sequence, 
 
 
 REAL8Window *XLALCreateRectangularREAL8Window(UINT4 length)
-
 {
 	REAL8Sequence *sequence;
 	UINT4 i;
@@ -364,9 +364,7 @@ REAL8Window *XLALCreateRectangularREAL8Window(UINT4 length)
 }
 
 
-
 REAL8Window *XLALCreateHannREAL8Window(UINT4 length)
-
 {
 	REAL8Sequence *sequence;
 	UINT4 i;
@@ -383,9 +381,7 @@ REAL8Window *XLALCreateHannREAL8Window(UINT4 length)
 }
 
 
-
 REAL8Window *XLALCreateWelchREAL8Window(UINT4 length)
-
 {
 	REAL8Sequence *sequence;
 	UINT4 i;
@@ -403,9 +399,7 @@ REAL8Window *XLALCreateWelchREAL8Window(UINT4 length)
 }
 
 
-
 REAL8Window *XLALCreateBartlettREAL8Window(UINT4 length)
-
 {
 	REAL8Sequence *sequence;
 	UINT4 i;
@@ -424,9 +418,7 @@ REAL8Window *XLALCreateBartlettREAL8Window(UINT4 length)
 }
 
 
-
 REAL8Window *XLALCreateParzenREAL8Window(UINT4 length)
-
 {
 	REAL8Sequence *sequence;
 	UINT4 i;
@@ -447,9 +439,7 @@ REAL8Window *XLALCreateParzenREAL8Window(UINT4 length)
 }
 
 
-
 REAL8Window *XLALCreatePapoulisREAL8Window(UINT4 length)
-
 {
 	REAL8Sequence *sequence;
 	UINT4 i;
@@ -468,9 +458,7 @@ REAL8Window *XLALCreatePapoulisREAL8Window(UINT4 length)
 }
 
 
-
 REAL8Window *XLALCreateHammingREAL8Window(UINT4 length)
-
 {
 	REAL8Sequence *sequence;
 	UINT4 i;
@@ -487,9 +475,7 @@ REAL8Window *XLALCreateHammingREAL8Window(UINT4 length)
 }
 
 
-
 REAL8Window *XLALCreateKaiserREAL8Window(UINT4 length, REAL8 beta)
-
 {
 	REAL8Sequence *sequence;
 	REAL8 I0beta=0;
@@ -510,6 +496,7 @@ REAL8Window *XLALCreateKaiserREAL8Window(UINT4 length, REAL8 beta)
 	 *
 	 * note that in many places the window is defined with pi
 	 * multiplying beta in the numerator and denominator, but not here.
+	 * beta=0 --> top-hat window.
 	 *
 	 * The asymptotic forms for large beta are derived from the
 	 * asymptotic form of I0(x) which is
@@ -573,9 +560,7 @@ REAL8Window *XLALCreateKaiserREAL8Window(UINT4 length, REAL8 beta)
 }
 
 
-
 REAL8Window *XLALCreateCreightonREAL8Window(UINT4 length, REAL8 beta)
-
 {
 	REAL8Sequence *sequence;
 	UINT4 i;
@@ -609,9 +594,7 @@ REAL8Window *XLALCreateCreightonREAL8Window(UINT4 length, REAL8 beta)
 }
 
 
-
 REAL8Window *XLALCreateTukeyREAL8Window(UINT4 length, REAL8 beta)
-
 {
 	REAL8Sequence *sequence;
 	UINT4 transition_length = beta * length + 0.5;
@@ -637,9 +620,7 @@ REAL8Window *XLALCreateTukeyREAL8Window(UINT4 length, REAL8 beta)
 }
 
 
-
 REAL8Window *XLALCreateGaussREAL8Window(UINT4 length, REAL8 beta)
-
 {
 	REAL8Sequence *sequence;
 	UINT4 i;
@@ -666,9 +647,25 @@ REAL8Window *XLALCreateGaussREAL8Window(UINT4 length, REAL8 beta)
 }
 
 
+REAL8Window *XLALCreateLanczosREAL8Window(UINT4 length)
+{
+	REAL8Sequence *sequence = XLALCreateREAL8Sequence(length);
+	UINT4 i;
+
+	if(!sequence)
+		XLAL_ERROR_NULL(XLAL_EFUNC);
+
+	/* sin(pi y) / (pi y) */
+	for(i = 0; i < length; i++) {
+		double pi_y = LAL_PI * Y(length, i);
+		sequence->data[i] = pi_y != 0. ? sin(pi_y) / pi_y : 1.0;
+	}
+
+	return XLALCreateREAL8WindowFromSequence(sequence);
+}
+
 
 void XLALDestroyREAL8Window(REAL8Window * window)
-
 {
 	if(window)
 		XLALDestroyREAL8Sequence(window->data);
@@ -684,96 +681,80 @@ void XLALDestroyREAL8Window(REAL8Window * window)
  * ============================================================================
  */
 
-REAL4Window *XLALCreateRectangularREAL4Window(UINT4 length)
 
+REAL4Window *XLALCreateRectangularREAL4Window(UINT4 length)
 {
 	return XLALREAL4Window_from_REAL8Window(XLALCreateRectangularREAL8Window(length));
 }
 
 
-
 REAL4Window *XLALCreateHannREAL4Window(UINT4 length)
-
 {
 	return XLALREAL4Window_from_REAL8Window(XLALCreateHannREAL8Window(length));
 }
 
 
-
 REAL4Window *XLALCreateWelchREAL4Window(UINT4 length)
-
 {
 	return XLALREAL4Window_from_REAL8Window(XLALCreateWelchREAL8Window(length));
 }
 
 
-
 REAL4Window *XLALCreateBartlettREAL4Window(UINT4 length)
-
 {
 	return XLALREAL4Window_from_REAL8Window(XLALCreateBartlettREAL8Window(length));
 }
 
 
-
 REAL4Window *XLALCreateParzenREAL4Window(UINT4 length)
-
 {
 	return XLALREAL4Window_from_REAL8Window(XLALCreateParzenREAL8Window(length));
 }
 
 
-
 REAL4Window *XLALCreatePapoulisREAL4Window(UINT4 length)
-
 {
 	return XLALREAL4Window_from_REAL8Window(XLALCreatePapoulisREAL8Window(length));
 }
 
 
-
 REAL4Window *XLALCreateHammingREAL4Window(UINT4 length)
-
 {
 	return XLALREAL4Window_from_REAL8Window(XLALCreateHammingREAL8Window(length));
 }
 
 
-
 REAL4Window *XLALCreateKaiserREAL4Window(UINT4 length, REAL4 beta)
-
 {
 	return XLALREAL4Window_from_REAL8Window(XLALCreateKaiserREAL8Window(length, beta));
 }
 
 
-
 REAL4Window *XLALCreateCreightonREAL4Window(UINT4 length, REAL4 beta)
-
 {
 	return XLALREAL4Window_from_REAL8Window(XLALCreateCreightonREAL8Window(length, beta));
 }
 
 
-
 REAL4Window *XLALCreateTukeyREAL4Window(UINT4 length, REAL4 beta)
-
 {
 	return XLALREAL4Window_from_REAL8Window(XLALCreateTukeyREAL8Window(length, beta));
 }
 
 
-
 REAL4Window *XLALCreateGaussREAL4Window(UINT4 length, REAL4 beta)
-
 {
 	return XLALREAL4Window_from_REAL8Window(XLALCreateGaussREAL8Window(length, beta));
 }
 
 
+REAL4Window *XLALCreateLanczosREAL4Window(UINT4 length)
+{
+	return XLALREAL4Window_from_REAL8Window(XLALCreateLanczosREAL8Window(length));
+}
+
 
 void XLALDestroyREAL4Window(REAL4Window * window)
-
 {
 	if(window)
 		XLALDestroyREAL4Sequence(window->data);
@@ -781,7 +762,14 @@ void XLALDestroyREAL4Window(REAL4Window * window)
 }
 
 
-// ---------- some generic window-handling functions to simplify using the above window-functions ----------
+/*
+ * ============================================================================
+ *
+ *                            Get Windows by Name
+ *
+ * ============================================================================
+ */
+
 
 typedef enum tagLALWindowType
   {
@@ -796,6 +784,7 @@ typedef enum tagLALWindowType
     LAL_WINDOWTYPE_CREIGHTON,
     LAL_WINDOWTYPE_TUKEY,
     LAL_WINDOWTYPE_GAUSS,
+    LAL_WINDOWTYPE_LANCZOS,
     LAL_WINDOWTYPE_LAST
   } LALWindowType;
 
@@ -815,6 +804,7 @@ const struct {
   [LAL_WINDOWTYPE_CREIGHTON]	= { "creighton",	1 },
   [LAL_WINDOWTYPE_TUKEY]	= { "tukey",		1 },
   [LAL_WINDOWTYPE_GAUSS]	= { "gauss",		1 },
+  [LAL_WINDOWTYPE_LANCZOS]	= { "lanczos",		0 },
 };
 
 /**
@@ -904,6 +894,9 @@ XLALCreateNamedREAL8Window ( const char *windowName, REAL8 beta, UINT4 length )
       break;
     case LAL_WINDOWTYPE_GAUSS:
       win = XLALCreateGaussREAL8Window ( length, beta );
+      break;
+    case LAL_WINDOWTYPE_LANCZOS:
+      win = XLALCreateLanczosREAL8Window ( length );
       break;
     default:
       XLAL_ERROR_NULL ( XLAL_EERR, "Internal ERROR: Invalid window-type '%d', must be within [0, %d]\n", wintype, LAL_WINDOWTYPE_LAST - 1 );

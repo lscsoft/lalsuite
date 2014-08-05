@@ -4,6 +4,9 @@
 echo "Setting LAL_DEBUG_LEVEL=${LAL_DEBUG_LEVEL:-msglvl1,memdbg}"
 export LAL_DEBUG_LEVEL
 
+LC_ALL_old=$LC_ALL
+export LC_ALL=C
+
 ## take user-arguments
 extra_args="$@"
 
@@ -27,7 +30,7 @@ tolerance_pfs=1 ## more lenient because PFS has noise fluctuations from MFD
 Tsft=1800
 
 ## awk commands needed for testing
-awk_reldev='{printf "%.2e", sqrt(($1-$2)*($1-$2))/(0.5*sqrt(($1+$2)*($1+$2))) }'
+awk_reldev='{printf "%.2e", sqrt(($1-$2)^2)/(0.5*sqrt(($1+$2)^2))}'
 awk_isgtr='{if($1>$2) {print "1"}}'
 awk_print_wo_headers='!/%%/ && /[0-9]/ {print $col}'
 ## awk line filtering: !/%%/ filters out header lines and /[0-9]/ filters out blank lines (require at least one number)
@@ -443,7 +446,7 @@ echo "--------------------------------------------------------------------------
 ## compute harmonic mean of ShX
 SqrtShH=3e-23
 SqrtShL=6e-23
-Sinv=$(echo $SqrtShH $SqrtShL | awk '{print (1/($1*$1)+1/($2*$2)/2}')
+Sinv=$(echo $SqrtShH $SqrtShL | awk '{print 0.5 * (1/($1^2)+1/($2^2))}')
 
 ## need more timestamps to get decent statistics for PFS
 rm $timestampsfile_H1
@@ -585,5 +588,8 @@ if [ -z "$NOCLEANUP" ]; then
     rm $outPFS
     echo "Cleaned up."
 fi
+
+## restore original locale, just in case someone source'd this file
+export LC_ALL=$LC_ALL_old
 
 exit $retstatus

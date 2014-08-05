@@ -419,7 +419,7 @@ int LALInferenceDrawFromPriorTest(void)
 		LALInferenceRemoveVariable(output, name);
 		LALInferenceRemoveCorrelatedPrior(priorArgs, name);
 
-		gsl_matrix_free(covariance);
+		//gsl_matrix_free(covariance);
 		LALInferenceRemoveVariable(output, "gaussian");
 		LALInferenceRemoveVariable(output, "uniform");
 		LALInferenceRemoveVariable(output, "correlated");

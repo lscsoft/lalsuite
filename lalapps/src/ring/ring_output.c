@@ -183,7 +183,7 @@ ProcessTable *ring_create_process_table( struct ring_params *params )
   processTable = LALCalloc( 1, sizeof( *processTable ) );
 
   XLALPopulateProcessTable(processTable, params->programName,
-      LALAPPS_VCS_IDENT_ID, LALAPPS_VCS_IDENT_STATUS, LALAPPS_VCS_IDENT_DATE, 0);
+      lalAppsVCSIdentId, lalAppsVCSIdentStatus, lalAppsVCSIdentDate, 0);
 
   strncpy( processTable->comment, " ", LIGOMETA_COMMENT_MAX );
   strncpy( processTable->ifos, params->ifoName, LIGOMETA_IFOS_MAX );

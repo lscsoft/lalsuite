@@ -382,7 +382,7 @@ INT4 main(INT4 argc, CHAR **argv)
   snprintf(str_spin2x, HISTORY_COMMENT, "spin2x:%s", md_spin2x);
   snprintf(str_spin2y, HISTORY_COMMENT, "spin2y:%s", md_spin2y);
   snprintf(str_spin2z, HISTORY_COMMENT, "spin2z:%s", md_spin2z);
-  snprintf(str_creator, HISTORY_COMMENT, "creator:%s(git:%s)", PROGRAM_NAME, LALAPPS_VCS_ID);
+  snprintf(str_creator, HISTORY_COMMENT, "creator:%s(git:%s)", PROGRAM_NAME, lalAppsVCSId);
 
   /* format specific metadata */
   if (strcmp(metadata_format, "NINJA1") == 0)

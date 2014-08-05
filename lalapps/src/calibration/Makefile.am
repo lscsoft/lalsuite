@@ -1,3 +1,8 @@
+BUILT_SOURCES =
+MOSTLYCLEANFILES =
+EXTRA_DIST =
+include $(top_srcdir)/gnuscripts/lalsuite_python.am
+include $(top_srcdir)/gnuscripts/lalapps.am
 
 lalapps_ComputeStrainDriver_SOURCES = ComputeStrainDriver.c
 lalapps_ComputeFactors_SOURCES = ComputeFactors.c
@@ -8,41 +13,11 @@ bin_PROGRAMS = \
 	lalapps_ComputeStrainDriver \
 	lalapps_NoiseComparison
 
-AM_CPPFLAGS = -I$(top_srcdir)/src -I$(top_srcdir)/src/lalapps -I$(top_builddir)/src/lalapps -DPKG_DATA_DIR='"$(pkgdatadir)/"' @AM_CPPFLAGS@
-LDADD = $(top_builddir)/src/lalapps/liblalapps.la
-
 if HAVE_PYTHON
-bin_SCRIPTS = lalapps_strain_pipe lalapps_noise_comp_pipe
+pybin_SCRIPTS = lalapps_strain_pipe lalapps_noise_comp_pipe
 pkgpython_PYTHON = strain.py
 endif
 
-EXTRA_DIST = \
-	strain_pipe.in \
-	noise_comp_pipe.in \
-	strain.py
-
-MOSTLYCLEANFILES = \
+MOSTLYCLEANFILES += \
 	*.ilwd \
 	*.gwf
-
-CLEANFILES = \
-	python_config.sed \
-	lalapps_strain_pipe \
-	lalapps_noise_comp_pipe
-
-python_config.sed:
-	@-rm -f python_config.sed
-	@echo "s+@PYTHONLIBDIR@+@pkgpythondir@+g" > python_config.sed
-	@echo "s+@PYTHONPROG@+@PYTHON@+g" >> python_config.sed
-	@echo "s+@RINGEXECPATH@+${bindir}+g" >> python_config.sed
-
-lalapps_strain_pipe: $(srcdir)/strain_pipe.in python_config.sed
-	$(AM_V_GEN)sed -f python_config.sed $(srcdir)/strain_pipe.in > lalapps_strain_pipe
-	@chmod +x lalapps_strain_pipe
-
-lalapps_noise_comp_pipe: $(srcdir)/noise_comp_pipe.in python_config.sed
-	$(AM_V_GEN)sed -f python_config.sed $(srcdir)/noise_comp_pipe.in > lalapps_noise_comp_pipe
-	@chmod +x lalapps_noise_comp_pipe
-
-BUILT_SOURCES =
-include $(top_srcdir)/gnuscripts/vcsID.common

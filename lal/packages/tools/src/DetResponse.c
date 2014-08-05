@@ -313,15 +313,9 @@ void LALComputeDetAMResponseSeries(LALStatus * status, LALDetAMResponseSeries * 
 	/* Want to loop over the time and call LALComputeDetAMResponse() */
 	LALDetAMResponse instResponse;
 	unsigned i;
-	char infostr[128];
 
 	INITSTATUS(status);
 	ATTATCHSTATUSPTR(status);
-
-	if(lalDebugLevel >= 8) {
-		sprintf(infostr, "pResponseSeries->pPlus->data->length = %d\npTimeInfo->nSample = %d\n", pResponseSeries->pPlus->data->length, pTimeInfo->nSample);
-		LALInfo(status, infostr);
-	}
 
 	/*
 	 * Error-checking assertions
@@ -404,11 +398,6 @@ void LALComputeDetAMResponseSeries(LALStatus * status, LALDetAMResponseSeries * 
 	for(i = 0; i < pTimeInfo->nSample; ++i) {
 		LIGOTimeGPS gps = pTimeInfo->epoch;
 		XLALGPSAdd(&gps, i * pTimeInfo->deltaT);
-
-		if(lalDebugLevel >= 8) {
-			sprintf(infostr, "LALComputeDetAMResponseSeries: i = %d\n", i);
-			LALInfo(status, infostr);
-		}
 
 		TRY(LALComputeDetAMResponse(status->statusPtr, &instResponse, pDetAndSource, &gps), status);
 

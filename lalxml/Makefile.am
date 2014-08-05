@@ -1,78 +1,67 @@
-include $(top_srcdir)/gnuscripts/topdir_common.am
+BUILT_SOURCES =
+sysconf_DATA =
+MOSTLYCLEANFILES =
+EXTRA_DIST =
+include $(top_srcdir)/gnuscripts/lalsuite_user_env.am
 
 ACLOCAL_AMFLAGS = -I gnuscripts
 
-git_generated_sources += \
-	python/git_version.py \
-	src/lal/LALXMLVCSInfo.h \
-	$(EOL)
-
-noswig_pkginclude_HEADERS += \
-	src/lal/LALXMLVCSInfo.h \
-	$(EOL)
-
-pkginclude_HEADERS += \
-	src/lal/LALXML.h \
-	src/lal/LALXMLBuildInfo.h \
-	src/lal/LALXMLConfig.h \
-	src/lal/LALXMLLibVCSInfo.h \
-	src/lal/LALXMLVOTableCommon.h \
-	src/lal/LALXMLVOTableSerializers.h \
-	src/lal/lalxmlswig_test.i \
-	$(EOL)
-
-pkgconfig_DATA += lalxml.pc
-noinst_DATA += lalxml-uninstalled.pc
-
-lib_LTLIBRARIES += src/liblalxml.la
-
-src_liblalxml_la_SOURCES = \
-	src/LALXML.c \
-	src/LALXMLVCSInfo.c \
-	src/LALXMLVOTableCommon.c \
-	src/LALXMLVOTableSerializers.c \
-	$(EOL)
-
-nodist_src_liblalxml_la_SOURCES = \
-	src/build_info.c \
-	$(EOL)
-
-src_liblalxml_la_LDFLAGS = $(AM_LDFLAGS) -version-info $(LIBVERSION)
-
-LDADD += $(top_builddir)/src/liblalxml.la
-
-pkgpython_PYTHON += \
-	python/__init__.py \
-	python/git_version.py \
-	$(EOL)
-
-test_programs += \
-	test/LALXMLTest \
-	$(EOL)
-
-pkgdata_DATA += \
-	test/VOTable-1.1.xsd
-
-DISTCLEANFILES += \
-	config.lt \
-	src/config.h \
-	$(EOL)
+if HAVE_GIT_REPO
+# Override automake's default rule for rebuilding aclocal.m4, to ensure that
+# ./configure is successfully recreated after certain build system changes which
+# require other autotools (e.g. autoheader) to be re-run. See Redmine issue #728.
+$(ACLOCAL_M4): $(am__aclocal_m4_deps)
+	$(am__cd) $(srcdir) && $(SHELL) ./00boot
+endif # HAVE_GIT_REPO
 
 EXTRA_DIST += \
-	debian/changelog \
-	debian/compat \
-	debian/control \
-	debian/copyright \
-	debian/docs \
-	debian/lalxml-dev.dirs \
-	debian/lalxml-dev.install \
-	debian/lalxml-octave.install \
-	debian/lalxml-python.install \
-	debian/lalxml.dirs \
-	debian/lalxml.install \
-	debian/rules \
-	debian/source/format \
 	lalxml.spec \
-	$(EOL)
+	$(DATA)
 
-include $(top_srcdir)/gnuscripts/swig_common.am
+SUBDIRS = \
+	debian \
+	include \
+	src \
+	swig \
+	python \
+	test \
+	$(END_OF_LIST)
+
+user_environment = \
+	set $(PACKAGE)_PREFIX $(prefix); \
+	prepend LAL_DATA_PATH $(pkgdatadir); \
+	prepend MANPATH $(mandir); \
+	prepend OCTAVE_PATH $(octexecdir); \
+	prepend PATH $(bindir); \
+	prepend PKG_CONFIG_PATH $(libdir)/pkgconfig; \
+	prepend PYTHONPATH $(pyexecdir) $(pythondir); \
+	$(END_OF_LIST)
+
+pkgconfigdir = $(libdir)/pkgconfig
+pkgconfig_DATA = lalxml.pc
+noinst_DATA = lalxml-uninstalled.pc
+BUILT_SOURCES += lalxml-uninstalled.pc
+
+all-local:
+	@echo "";\
+	echo "==================================================";\
+	echo "LALXML has now been successfully built.";\
+	echo "Now run 'make install' to install LALXML.";\
+	echo "==================================================";\
+	echo ""
+
+install-exec-local:
+	@echo "";\
+	echo "==================================================";\
+	echo "LALXML has now been successfully installed.";\
+	echo "Now you may want to setup your environment:";\
+	echo "";\
+	echo "* Bourne shell [bash] users: please add the line";\
+	echo "  . $(sysconfdir)/lalxml-user-env.sh";\
+	echo "  to your .profile file.";\
+	echo "";\
+	echo "* C-shell [tcsh] users: please add the line";\
+	echo "  source $(sysconfdir)/lalxml-user-env.csh";\
+	echo "  to your .login file.";\
+	echo "==================================================";\
+	echo ""

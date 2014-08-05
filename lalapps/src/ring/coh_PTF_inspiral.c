@@ -538,7 +538,7 @@ int main(int argc, char **argv)
 
           verbose("Made coherent statistic for segment %d, template %d, "
                   "sky point %d at %ld \n", j, i, sp,
-                  timeval_subtract(&startTime));      
+                  timeval_subtract(&startTime));
           
           currAnalStart = shortTimeSlideList[slideNum].analStartPoint - \
                       params->analStartPoint;
@@ -1376,6 +1376,7 @@ UINT4 coh_PTF_accept_trig_check(
   MultiInspiralTable *currEvent = *eventList;
   LIGOTimeGPS time1,time2;
   UINT4 loudTrigBefore=0,loudTrigAfter=0;
+  REAL8 GPSDiff;
 
   currEvent = *eventList;
 
@@ -1387,16 +1388,20 @@ UINT4 coh_PTF_accept_trig_check(
   {
     time2.gpsSeconds=currEvent->end_time.gpsSeconds;
     time2.gpsNanoSeconds=currEvent->end_time.gpsNanoSeconds;
-    if (thisEvent.time_slide_id == currEvent->time_slide_id)
+    if (thisEvent.time_slide_id->id == currEvent->time_slide_id->id)
     {
-      if (fabs(XLALGPSDiff(&time1,&time2)) < params->clusterWindow)
+      GPSDiff = XLALGPSDiff(&time1,&time2);
+      if (fabs(GPSDiff) < params->clusterWindow)
       {
         if (thisEvent.snr_dof == currEvent->snr_dof)
         {
           if (thisEvent.snr < currEvent->snr\
               && (thisEvent.event_id->id != currEvent->event_id->id))
           {
-            if ( XLALGPSDiff(&time1,&time2) < 0 )
+            /* If at identical time, return 0 */
+            if (GPSDiff == 0)
+              return 0;
+            else if ( GPSDiff < 0 )
               loudTrigBefore = 1;
             else
               loudTrigAfter = 1;

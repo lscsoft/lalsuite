@@ -121,9 +121,6 @@ typedef struct
   PhaseType_t phaseType;
 } ConfigVariables;
 
-/*---------- empty structs for initializations ----------*/
-ConfigVariables empty_ConfigVariables;
-PulsarTimesParamStruc empty_PulsarTimesParamStruc;
 /* ---------- global variables ----------*/
 
 /* ---------- local prototypes ---------- */
@@ -193,7 +190,7 @@ XLALOldDopplerFstatMetric ( const DopplerMetricParams *metricParams,  	/**< inpu
   DopplerMetric *metric;
   XLAL_CHECK_NULL ( (metric = XLALCalloc ( 1, sizeof(*metric) )) != NULL, XLAL_ENOMEM );
 
-  ConfigVariables config = empty_ConfigVariables;
+  ConfigVariables XLAL_INIT_DECL(config);
 
   /* basic setup and initializations */
   metric->gF_ij = gsl_matrix_calloc ( METRIC_DIM, METRIC_DIM );
@@ -253,7 +250,6 @@ computeFstatMetric ( gsl_matrix *gF_ij, gsl_matrix *gFav_ij,
 		     ConfigVariables *cfg )
 {
   UINT4 i;
-  REAL8 A, B, C, D;
   REAL8 AMA;
 
   gsl_matrix *P1_ij, *P2_ij, *P3_ij;
@@ -313,6 +309,7 @@ computeFstatMetric ( gsl_matrix *gF_ij, gsl_matrix *gFav_ij,
   ab_ab = gsl_matrix_calloc ( METRIC_DIM, METRIC_DIM );
 
   /* ----- calculate averages ----- */
+  REAL8 A = 0, B = 0, C = 0;
   for ( UINT4 X=0; X < numDet; X ++ )
     {
       UINT4 numSteps = cfg->multiDetStates->data[X]->length;
@@ -336,6 +333,10 @@ computeFstatMetric ( gsl_matrix *gF_ij, gsl_matrix *gFav_ij,
 	  REAL8 a2 = SQ(a);
 	  REAL8 b2 = SQ(b);
 	  REAL8 ab = a * b;
+
+          A += a2;
+          B += b2;
+          C += ab;
 
 	  gsl_vector_set ( dPhi_i, 0, dPhi->dFreq->data[i] );
 	  gsl_vector_set ( dPhi_i, 1, dPhi->dAlpha->data[i]);
@@ -397,10 +398,7 @@ computeFstatMetric ( gsl_matrix *gF_ij, gsl_matrix *gFav_ij,
     } /* for X < numDet */
 
   /* ---------- composite quantities ---------- */
-  A = cfg->multiAMcoe->Mmunu.Ad ;
-  B = cfg->multiAMcoe->Mmunu.Bd ;
-  C = cfg->multiAMcoe->Mmunu.Cd ;
-  D = A * B - C*C;
+  REAL8 D = A * B - C*C;
   cfg->Ad = A;
   cfg->Bd = B;
   cfg->Cd = C;
@@ -803,7 +801,7 @@ getMultiPhaseDerivs ( const MultiDetectorStateSeries *multiDetStates,
   REAL8 refTime = XLALGPSGetREAL8 ( &refTimeGPS );
 
   /* get tAutumn */
-  PulsarTimesParamStruc times = empty_PulsarTimesParamStruc;
+  PulsarTimesParamStruc XLAL_INIT_DECL(times);
   times.epoch = refTimeGPS;
   XLAL_CHECK_NULL ( XLALGetEarthTimes ( &(times.epoch), &(times.tMidnight), &(times.tAutumn) ) == XLAL_SUCCESS, XLAL_EFUNC );
 

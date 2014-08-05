@@ -58,7 +58,6 @@
 #include <lal/LogPrintf.h>
 
 #include <lal/AVFactories.h>
-#include <lal/GSLSupport.h>
 
 #include <lal/ComplexFFT.h>
 #include <lal/RealFFT.h>
@@ -142,12 +141,6 @@ int createTopHat(ParamStruct *userParams, VectorStruct *tophat, ExRegion *exr);
 int ComputeCstat(VectorStruct *template, VectorStruct *Fstat, VectorStruct *Cstat, ExRegion *exr);
 int OutputCstats(UserInput_t *uvar, ParamStruct *userParams, VectorStruct *Fstat, VectorStruct *Cstat, ExRegion *exr);
 
-/* empty initializers */
-UserInput_t empty_UserInput;
-VectorStruct empty_VectorStruct;
-ParamStruct empty_ParamStruct;
-ExRegion empty_ExRegion;
-
 /***********************************************************************************************/
 /* Function definitions */
 
@@ -162,12 +155,12 @@ ExRegion empty_ExRegion;
 int main(int argc,char *argv[])
 { 
   static const char *fn = __func__;             /* store function name for log output */
-  UserInput_t uvar = empty_UserInput;		/* global container for user variables */
-  ParamStruct userParams = empty_ParamStruct;	/* initialise paramStruct for search parameters, set by user */
-  VectorStruct Fstat = empty_VectorStruct;	/* initialise Fstat structure */ 
-  VectorStruct Cstat = empty_VectorStruct; 	/* initialise Cstat structure */ 
-  VectorStruct template = empty_VectorStruct;	/* initialise template structure */ 
-  ExRegion exr = empty_ExRegion;		/* initialise the exclusion region structure */
+  UserInput_t XLAL_INIT_DECL(uvar);			/* global container for user variables */
+  ParamStruct XLAL_INIT_DECL(userParams);		/* initialise paramStruct for search parameters, set by user */
+  VectorStruct XLAL_INIT_DECL(Fstat);		/* initialise Fstat structure */
+  VectorStruct XLAL_INIT_DECL(Cstat);		/* initialise Cstat structure */
+  VectorStruct XLAL_INIT_DECL(template);		/* initialise template structure */
+  ExRegion XLAL_INIT_DECL(exr);			/* initialise the exclusion region structure */
 	
 
   vrbflg = 1;					/* verbose error-messages */

@@ -1,10 +1,10 @@
+include $(top_srcdir)/gnuscripts/lalsuite_header_links.am
+
 pkginclude_HEADERS = \
-	BitField.h \
 	CoarseGrainFrequencySeries.h \
 	Dirichlet.h \
 	Factorial.h \
 	FindRoot.h \
-	GSLSupport.h \
 	Integrate.h \
 	Interpolate.h \
 	LALAdaptiveRungeKutta4.h \
@@ -15,9 +15,3 @@ pkginclude_HEADERS = \
 	RngMedBias.h \
 	Sort.h \
 	SphericalHarmonics.h
-
-all-local: include-link
-@INCLUDEMKFILE@
-
-swig_headers = $(pkginclude_HEADERS)
-include $(top_srcdir)/swig/swiglal_header.am

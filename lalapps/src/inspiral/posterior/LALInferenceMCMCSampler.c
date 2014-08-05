@@ -2,7 +2,7 @@
  *  LALInferenceMCMC.c:  Bayesian Followup, MCMC algorithm.
  *
  *  Copyright (C) 2009, 2012 Ilya Mandel, Vivien Raymond, Christian
- *  Roever, Marc van der Sluys, John Veitch and Will M. Farr
+ *  Roever, Marc van der Sluys, John Veitch, Will M. Farr, and Ben Farr
  *
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -1628,7 +1628,7 @@ void LALInferencePrintPTMCMCHeaderFile(LALInferenceRunState *runState, FILE *cha
   UINT4 benchmark=0;
   if(LALInferenceGetProcParamVal(runState->commandLine,"--benchmark")) benchmark=1;
 
-    fprintf(chainoutput, "  LALInference version:%s,%s,%s,%s,%s\n", LALAPPS_VCS_ID,LALAPPS_VCS_DATE,LALAPPS_VCS_BRANCH,LALAPPS_VCS_AUTHOR,LALAPPS_VCS_STATUS);
+    fprintf(chainoutput, "  LALInference version:%s,%s,%s,%s,%s\n", lalAppsVCSId,lalAppsVCSDate,lalAppsVCSBranch,lalAppsVCSAuthor,lalAppsVCSStatus);
     fprintf(chainoutput,"  %s\n",str);
     fprintf(chainoutput, "%10s  %10s  %6s  %20s  %6s %8s   %6s  %10s  %12s  %9s  %9s  %8s %8s\n",
         "nIter","Nburn","seed","null likelihood","Ndet","nCorr","nTemps","Tchain","Network SNR","Waveform","pN order","Npar","fRef");

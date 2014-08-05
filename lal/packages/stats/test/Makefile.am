@@ -1,19 +1,17 @@
-AM_CPPFLAGS = -I$(top_builddir)/include -I$(srcdir)/../include @AM_CPPFLAGS@
-LDADD = \
-	$(top_builddir)/lib/lal/liblal.la \
-	$(top_builddir)/lib/lalsupport/src/liblalsupport.la
+EXTRA_DIST =
+include $(top_srcdir)/gnuscripts/lalsuite_test.am
+include $(top_srcdir)/gnuscripts/lalsuite_header_links.am
 
-check_PROGRAMS = \
-	LALMomentTest \
-	LALCorrelationTest
+# Add compiled test programs to this variable
+test_programs += LALCorrelationTest
+test_programs += LALMomentTest
 
-LALMomentTest_SOURCES = \
-	LALMomentTest.c \
-	CheckStatus.c
+# Add shell, Python, etc. test scripts to this variable
+test_scripts +=
 
-TESTS = \
-	$(check_PROGRAMS)
+# Add any helper programs required by tests to this variable
+test_helpers +=
 
-EXTRA_DIST = \
-	CheckStatus.c \
-	CheckStatus.h
+EXTRA_DIST += \
+	CheckStatus.h \
+	$(END_OF_LIST)

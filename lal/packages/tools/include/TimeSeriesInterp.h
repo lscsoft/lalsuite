@@ -33,6 +33,18 @@ extern "C" {
 
 
 /**
+ * Opaque LALREAL8SequenceInterp structure.
+ */
+
+typedef struct tagLALREAL8SequenceInterp LALREAL8SequenceInterp;
+
+
+LALREAL8SequenceInterp *XLALREAL8SequenceInterpCreate(const REAL8Sequence *, int);
+void XLALREAL8SequenceInterpDestroy(LALREAL8SequenceInterp *);
+REAL8 XLALREAL8SequenceInterpEval(LALREAL8SequenceInterp *, double);
+
+
+/**
  * Opaque LALREAL8TimeSeriesInterp structure.
  */
 

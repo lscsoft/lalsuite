@@ -1,0 +1,275 @@
+# Common SWIG build rules
+# Author: Karl Wette, 2011--2014
+
+EXTRA_DIST =
+include $(top_srcdir)/gnuscripts/lalsuite_header_links.am
+include $(top_srcdir)/gnuscripts/lalsuite_test.am
+
+.PHONY: force-swig-preproc-generation
+.PHONY: swig-distclean-generate-local
+.PHONY: swig-octave-all-local
+.PHONY: swig-octave-clean-local
+.PHONY: swig-octave-install-hook
+.PHONY: swig-octave-uninstall-hook
+.PHONY: swig-python-all-local
+.PHONY: swig-python-clean-local
+.PHONY: swig-python-install-hook
+.PHONY: swig-python-uninstall-hook
+
+swig_iface = swig$(PACKAGE).i
+swig_preproc_flags = -MP -MD -Wextra -Werror -I$(top_builddir)/include -includeall -ignoremissing -xml -xmllite
+swig_flags = -MP -MD -Wextra -Werror -I$(top_builddir)/include $(SWIG_CPPFLAGS) $(LAL_SYSTEM_INCLUDES)
+swig_cppflags = -shared -I. -I$(top_builddir)/include $(SWIG_CPPFLAGS)
+swig_ldflags = -module -avoid-version -version-info 0:0:0 $(SWIG_LDFLAGS)
+swig_libtoolflags = --tag=disable-static
+swig_deps_filter = $(SED) -e '/^  *swiglal[a-z0-9_]*\.[a-z0-9][a-z0-9]*  *\\$$/d'
+swig_octave_flags = $(swig_flags) -octave -globals . -DSWIG_CPLUSPLUS_CAST
+swig_python_flags = $(swig_flags) -python -O -builtin -globals globalvar
+
+BUILT_SOURCES =
+CLEANFILES =
+DEFAULT_INCLUDES =
+EXTRA_HEADERS =
+nodist_pkginclude_HEADERS =
+
+pkginclude_HEADERS = \
+	SWIG$(PACKAGE_NAME)Alpha.i \
+	SWIG$(PACKAGE_NAME)Omega.i \
+	SWIG$(PACKAGE_NAME)Test.h \
+	$(END_OF_LIST)
+
+EXTRA_DIST += \
+	generate_swig_iface.py \
+	$(END_OF_LIST)
+
+if SWIG_BUILD
+
+BUILT_SOURCES += \
+	swiglal_config.h \
+	$(END_OF_LIST)
+
+swiglal_config.h: $(CONFIG_HEADER)
+	$(AM_V_GEN)echo '// $@: generated from $< by $(subdir)/Makefile' >$@; \
+	$(SED) -n 's/^#define  */#define SWIGLAL_/p' $< >>$@
+
+CLEANFILES += \
+	swiglal_config.h \
+	$(END_OF_LIST)
+
+if SWIG_BUILD_OCTAVE
+
+@SWIG_include_deps@/swiglal_octave.deps
+
+octexec_LTLIBRARIES = swiglal_octave.la
+nodist_swiglal_octave_la_SOURCES = swiglal_octave.cpp
+swiglal_octave_la_CPPFLAGS = $(SWIG_OCTAVE_CPPFLAGS_IOCTAVE) $(swig_cppflags) $(SWIG_OCTAVE_CPPFLAGS)
+swiglal_octave_la_CXXFLAGS = $(SWIG_OCTAVE_CXXFLAGS)
+swiglal_octave_la_LDFLAGS = $(swig_ldflags) $(SWIG_OCTAVE_LDFLAGS)
+swiglal_octave_la_LIBADD = $(LDADD)
+swiglal_octave_la_LIBTOOLFLAGS = $(swig_libtoolflags)
+
+all-local: swig-octave-all-local
+swig-octave-all-local:
+	$(AM_V_at)$(MKDIR_P) $(top_builddir)/octave && \
+	cd $(top_builddir)/octave && \
+	rm -f $(PACKAGE).oct && \
+	$(LN_S) $(abs_top_builddir)/swig/$(SWIG_LTLIBDIR)/swiglal_octave$(SWIG_SOEXT) $(PACKAGE).oct
+
+clean-local: swig-octave-clean-local
+swig-octave-clean-local:
+	-cd $(top_builddir)/octave && \
+	rm -f $(PACKAGE).oct
+
+install-exec-hook: swig-octave-install-hook
+swig-octave-install-hook:
+	cd $(DESTDIR)$(octexecdir) && \
+	rm -f swiglal_octave.la $(PACKAGE).oct* && \
+	mv -f swiglal_octave$(SWIG_SOEXT) $(PACKAGE).oct
+
+uninstall-hook: swig-octave-uninstall-hook
+swig-octave-uninstall-hook:
+	cd $(DESTDIR)$(octexecdir) && \
+	rm -f $(PACKAGE).oct
+
+test_scripts += SWIGTest$(PACKAGE_NAME)Octave.m
+
+EXTRA_DIST += \
+	swiglal_octave.cpp \
+	swiglal_octave.deps \
+	$(END_OF_LIST)
+
+endif # SWIG_BUILD_OCTAVE
+
+if SWIG_BUILD_PYTHON
+
+@SWIG_include_deps@/swiglal_python.deps
+
+pkgpyexec_LTLIBRARIES = swiglal_python.la
+nodist_pkgpyexec_PYTHON = swiglal_python/$(PACKAGE).py
+nodist_swiglal_python_la_SOURCES = swiglal_python.c
+swiglal_python_la_CPPFLAGS = $(swig_cppflags) $(SWIG_PYTHON_CPPFLAGS)
+swiglal_python_la_CFLAGS = $(SWIG_PYTHON_CFLAGS)
+swiglal_python_la_LDFLAGS = $(swig_ldflags) $(SWIG_PYTHON_LDFLAGS)
+swiglal_python_la_LIBADD = $(LDADD)
+swiglal_python_la_LIBTOOLFLAGS = $(swig_libtoolflags)
+
+all-local: swig-python-all-local
+swig-python-all-local:
+	$(AM_V_at)$(MKDIR_P) $(top_builddir)/python/$(PACKAGE) && \
+	cd $(top_builddir)/python/$(PACKAGE) && \
+	rm -f _$(PACKAGE)$(SWIG_SOEXT) $(PACKAGE).py && \
+	$(LN_S) $(abs_top_builddir)/swig/$(SWIG_LTLIBDIR)/swiglal_python$(SWIG_SOEXT) _$(PACKAGE)$(SWIG_SOEXT) && \
+	if test -r $(abs_top_srcdir)/swig/swiglal_python/$(PACKAGE).py; then \
+		$(LN_S) $(abs_top_srcdir)/swig/swiglal_python/$(PACKAGE).py $(PACKAGE).py; \
+	else \
+		$(LN_S) $(abs_top_builddir)/swig/swiglal_python/$(PACKAGE).py $(PACKAGE).py; \
+	fi
+
+clean-local: swig-python-clean-local
+swig-python-clean-local:
+	-cd $(top_builddir)/python/$(PACKAGE) && \
+	rm -f _$(PACKAGE)$(SWIG_SOEXT) $(PACKAGE).py $(PACKAGE).pyc $(PACKAGE).pyo
+
+install-exec-hook: swig-python-install-hook
+swig-python-install-hook:
+	cd $(DESTDIR)$(pkgpyexecdir) && \
+	rm -f swiglal_python.la _swig_$(PACKAGE)$(SWIG_SOEXT)* && \
+	mv -f swiglal_python$(SWIG_SOEXT) _$(PACKAGE)$(SWIG_SOEXT)
+
+uninstall-hook: swig-python-uninstall-hook
+swig-python-uninstall-hook:
+	cd $(DESTDIR)$(pkgpyexecdir) && \
+	rm -f _$(PACKAGE)$(SWIG_SOEXT)
+
+test_scripts += SWIGTest$(PACKAGE_NAME)Python.py
+
+EXTRA_DIST += \
+	swiglal_python.c \
+	swiglal_python.deps \
+	swiglal_python/$(PACKAGE).py \
+	$(END_OF_LIST)
+
+endif # SWIG_BUILD_PYTHON
+
+if SWIG_GENERATE
+
+@SWIG_include_deps@/swiglal_preproc.deps
+
+# swiglal_preproc.i.tmp is always generated, but replaces swiglal_preproc.i only if they differ
+swiglal_preproc.i: force-swig-preproc-generation
+	$(AM_V_at)echo '// $@: generated by $(subdir)/Makefile' >$@.tmp; \
+	echo "%module swiglal_preproc;" >>$@.tmp; \
+	echo "#pragma SWIG nowarn=SWIGWARN_PP_MISSING_FILE" >>$@.tmp; \
+	echo "#pragma SWIG nowarn=SWIGWARN_PARSE_REDEFINED" >>$@.tmp; \
+	echo "%warnfilter(SWIGWARN_PARSE_REDUNDANT) __swiglal__;" >>$@.tmp; \
+	echo "%warnfilter(SWIGWARN_PARSE_REDUNDANT) __swiglal_clear__;" >>$@.tmp; \
+	echo "#define SWIGLAL(...) const char __swiglal__[] = #__VA_ARGS__" >>$@.tmp; \
+	echo "#define SWIGLAL_CLEAR(...) const char __swiglal_clear__[] = #__VA_ARGS__" >>$@.tmp; \
+	stddeffile=""; \
+	for flag in $(swig_flags); do \
+		case "$${flag}" in \
+			-I*) \
+				dir=`echo $${flag} | $(SED) 's|^-I||'`; \
+				stddeffile="$${dir}/lal/LALStddef.h"; \
+				if test -f "$${stddeffile}"; then \
+					break; \
+				fi; \
+				stddeffile=""; \
+				;; \
+		esac; \
+	done; \
+	if test "x$${stddeffile}" != x; then \
+		echo "%import \"$${stddeffile}\"" >>$@.tmp; \
+	else \
+		echo "$@: could not find LAL standard definitions header" >&2; \
+		exit 1; \
+	fi; \
+	headers=`find $(top_builddir)/include/lal -name '*.h' ! -name '*VCSInfoHeader.h'`; \
+	headers=`printf '%s\n' $${headers} | $(SED) 's|^.*/\([^/]*\)$$|\1|' | sort`; \
+	printf "%%include <lal/%s>\n" $${headers} >>$@.tmp; \
+	if test -f $@ && diff -s $@ $@.tmp >/dev/null 2>&1; then \
+		rm -f $@.tmp; \
+	else \
+		mv -f $@.tmp $@; \
+	fi
+
+swiglal_preproc.xml: swiglal_preproc.i Makefile
+	$(AM_V_GEN)if $(SWIG) -MF swiglal_preproc.deps.tmp $(swig_preproc_flags) -o $@ $<; then \
+		mv -f swiglal_preproc.deps.tmp swiglal_preproc.deps; \
+		exit 0; \
+	else \
+		rm -f swiglal_preproc.deps.tmp $@; \
+		exit 1; \
+	fi
+
+$(swig_iface): swiglal_preproc.xml $(srcdir)/generate_swig_iface.py
+	$(AM_V_GEN)if $(PYTHON) $(srcdir)/generate_swig_iface.py '$(PACKAGE_NAME)' '$(SWIG_DEPENDENCIES)' '$(swig_function_prefixes)' $< $@; then \
+		rm -f $(top_builddir)/include/lal/$(swig_iface); \
+		$(LN_S) $(abs_top_builddir)/swig/$(swig_iface) $(top_builddir)/include/lal/$(swig_iface); \
+		exit 0; \
+	else \
+		rm -f $@; \
+		exit 1; \
+	fi
+
+swiglal_octave.cpp: $(swig_iface) swiglal_config.h
+	$(AM_V_GEN)$(MKDIR_P) swiglal_octave/ && \
+	if $(SWIG) -MF swiglal_octave.deps.tmp -outdir swiglal_octave/ $(swig_octave_flags) -o $@ $<; then \
+		$(swig_deps_filter) swiglal_octave.deps.tmp > swiglal_octave.deps; \
+		rm -f swiglal_octave.deps.tmp; \
+		exit 0; \
+	else \
+		rm -f swiglal_octave.deps.tmp $@; \
+		exit 1; \
+	fi
+
+swiglal_python.c: $(swig_iface) swiglal_config.h
+	$(AM_V_GEN)$(MKDIR_P) swiglal_python/ && \
+	if $(SWIG) -MF swiglal_python.deps.tmp -outdir swiglal_python/ $(swig_python_flags) -o $@ $<; then \
+		$(swig_deps_filter) swiglal_python.deps.tmp > swiglal_python.deps; \
+		rm -f swiglal_python.deps.tmp; \
+		exit 0; \
+	else \
+		rm -f swiglal_python.deps.tmp $@; \
+		exit 1; \
+	fi
+
+swiglal_python/$(PACKAGE).py: swiglal_python.c
+
+nodist_pkginclude_HEADERS += \
+	$(swig_iface) \
+	$(END_OF_LIST)
+
+CLEANFILES += \
+	$(swig_iface) \
+	swiglal_octave.cpp \
+	swiglal_preproc.i \
+	swiglal_preproc.i.tmp \
+	swiglal_preproc.xml \
+	swiglal_python.c \
+	swiglal_python/$(PACKAGE).py \
+	$(END_OF_LIST)
+
+distclean-local: swig-distclean-generate-local
+swig-distclean-generate-local:
+	-rm -f swig_*.deps
+
+else # !SWIG_GENERATE
+
+swiglal_octave.cpp swiglal_python.c:
+	@printf "\nERROR: you are trying to re-create the SWIG-generated source file" >&2; \
+	printf "\n   $@\nbut $(PACKAGE_NAME) was not configured with SWIG generation enabled." >&2; \
+	printf "\nPlease ensure SWIG is installed and re-run ./configure with either" >&2; \
+	printf "\nthe --enable-swig=generate or --enable-swig-<lang>=generate options.\n\n" >&2; \
+	exit 1
+
+endif # SWIG_GENERATE
+
+endif # SWIG_BUILD
+
+tags-am:
+	@echo > swiglal_dummy.c && $(ETAGS) swiglal_dummy.c && rm -f swiglal_dummy.c
+ctags-am:
+	@echo > swiglal_dummy.c && $(CTAGS) swiglal_dummy.c && rm -f swiglal_dummy.c
+cscopelist-am:
+	@:

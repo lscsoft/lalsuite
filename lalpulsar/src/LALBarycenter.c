@@ -1137,6 +1137,7 @@ XLALBarycenterOpt ( EmissionTime *emit, 		/**< [out] emission-time information *
   XLAL_CHECK ( emit != NULL, XLAL_EINVAL, "Invalid input: emit == NULL");
   XLAL_CHECK ( baryinput != NULL, XLAL_EINVAL, "Invalid input: baryinput == NULL");
   XLAL_CHECK ( earth != NULL, XLAL_EINVAL, "Invalid input: earth == NULL");
+  XLAL_CHECK ( buffer != NULL, XLAL_EINVAL, "Invalid input: buffer == NULL");
 
   // physical constants used by Curt (slightly different from LAL's Constants, but kept for binary-equivalence with XLALBarycenter()
   const REAL8 OMEGA = 7.29211510e-5;  /* ang. vel. of Earth (rad/sec)*/

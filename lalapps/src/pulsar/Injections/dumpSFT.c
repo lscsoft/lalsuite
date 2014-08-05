@@ -32,11 +32,11 @@
 #include <lal/UserInput.h>
 #include <lal/SFTfileIO.h>
 #include <lal/SFTutils.h>
+#include <lal/PulsarDataTypes.h>
 
 /*---------- DEFINES ----------*/
 
 /*----- Macros ----- */
-#define INIT_MEM(x) memset(&(x), 0, sizeof((x)))
 
 /*---------- internal types ----------*/
 /*---------- empty initializers ---------- */
@@ -67,10 +67,10 @@ int
 main(int argc, char *argv[])
 {
   /* register all our user-variable */
-  UserVariables_t uvar; INIT_MEM ( uvar );
+  UserVariables_t XLAL_INIT_DECL(uvar);
   XLAL_CHECK ( XLALReadUserInput ( argc, argv, &uvar ) == XLAL_SUCCESS, XLAL_EFUNC );
 
-  SFTConstraints constraints; INIT_MEM ( constraints );
+  SFTConstraints XLAL_INIT_DECL(constraints);
   CHAR detector[2] = "??";	/* allow reading v1-SFTs without detector-info */
   constraints.detector = detector;
   SFTCatalog *catalog;

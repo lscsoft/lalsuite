@@ -1,5 +1,7 @@
 #ifdef _SFTFILEIO_H /* Only include via SFTfileIO.h */
 #ifndef SWIG /* exclude from SWIG interface */
+#ifndef _SFTFILEIOLAL_H
+#define _SFTFILEIOLAL_H
 /** \cond DONT_DOXYGEN */
 
 /** \name Error codes */
@@ -103,5 +105,6 @@ LALGetSFTheaders (LALStatus *,
                   const LIGOTimeGPS *endTime);
 
 /** \endcond */
+#endif /* _SFTFILEIOLAL_H */
 #endif /* SWIG */
 #endif /* _SFTFILEIO_H */

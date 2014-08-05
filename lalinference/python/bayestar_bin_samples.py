@@ -1,0 +1,73 @@
+#
+# Copyright (C) 2011  Leo Singer
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#
+"""
+Convert a list of posterior samples to a HEALPix FITS image using an adaptively
+refined HEALPix tree, subdividing each node if it contains more than
+--samples-per-bin posterior samples. By default, the resolution is set to the
+deepest resolution of the tree.
+
+If an input filename is specified, then the posterior samples are read from it.
+If no input filename is provided, then input is read from stdin.
+"""
+__author__ = "Leo Singer <leo.singer@ligo.org>"
+
+
+# Command line interface
+
+from optparse import Option, OptionParser
+from lalinference.bayestar import command
+parser = OptionParser(
+    formatter=command.NewlinePreservingHelpFormatter(),
+    description = __doc__,
+    usage = "%prog [options] [INPUT] -o OUTPUT.fits[.gz]",
+    option_list = [
+        Option("--nside", "-n", type=int, default=-1,
+            help="Write final sky map at this HEALPix lateral resolution [default: auto]"),
+        Option("--max-nside", "-m", type=int, default=-1,
+            help="Stop subdivision at this maximum HEALPix lateral resolution [default: max 64-bit]"),
+        Option("-o", "--output", metavar="OUTPUT.fits[.gz]",
+            help="name of output FITS file [required]"),
+        Option("--samples-per-bin", type=int, default=30,
+            help="Samples per bin [default: %default]"),
+        Option("--objid",
+            help="Event ID to be stored in FITS header [default: %default]"),
+    ]
+)
+opts, args = parser.parse_args()
+infilename = command.get_input_filename(parser, args)
+
+if opts.output is None:
+    parser.error('--output: missing required argument')
+
+
+# Late imports.
+import numpy as np
+import lalinference.fits
+import lalinference.bayestar.postprocess
+
+samples = np.recfromtxt(infilename, names=True)
+theta = 0.5*np.pi - samples['dec']
+phi = samples['ra']
+
+p = lalinference.bayestar.postprocess.adaptive_healpix_histogram(
+    theta, phi, opts.samples_per_bin,
+    nside=opts.nside, max_nside=opts.max_nside)
+
+# Write output to FITS file.
+lalinference.fits.write_sky_map(opts.output, p,
+    creator=parser.get_prog_name(), objid=opts.objid,
+    gps_time=samples['time'].mean())

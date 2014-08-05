@@ -1471,7 +1471,7 @@ int main(int argc, char *argv[])
 	 */
 
 	_process_table = XLALCreateProcessTableRow();
-	if(XLALPopulateProcessTable(_process_table, PROGRAM_NAME, LALAPPS_VCS_IDENT_ID, LALAPPS_VCS_IDENT_STATUS, LALAPPS_VCS_IDENT_DATE, 9))
+	if(XLALPopulateProcessTable(_process_table, PROGRAM_NAME, lalAppsVCSIdentId, lalAppsVCSIdentStatus, lalAppsVCSIdentDate, 9))
 		exit(1);
 
 	XLALGPSTimeNow(&_process_table->start_time);

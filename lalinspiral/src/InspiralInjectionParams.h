@@ -240,7 +240,7 @@ SimInspiralTable* XLALRandomNRInjectTotalMass(
 
 SimInspiralTable *XLALInspiralSiteTimeAndDist(
     SimInspiralTable  *inj,
-    LALDetector       *detector,
+    const LALDetector *detector,
     LIGOTimeGPS       *endTime,
     REAL4             *effDist);
 

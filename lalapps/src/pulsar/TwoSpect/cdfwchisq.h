@@ -30,11 +30,11 @@ typedef struct
    REAL8 wnmin;      //Minimum values of weights*noise
    REAL8 wnmean;     //The 'mean' value (not really the true mean)
    REAL8 c;          //The threshold value for Prob(Q < c)
-   REAL8 intl;       //Integration value
-   REAL8 ersm;       //Error of integration
+   REAL8 integrationValue;       //Integration value
+   REAL8 integrationError;       //Error of integration
    INT4 count;       //Count for number of times entering specific functions
    INT4 lim;         //Limit to number of integration terms
-   INT4 ndtsrt;      //Not Done The SoRT (terrible coding)
+   INT4 arrayNotSorted;      //Array has not been sorted
    INT4 fail;        //Fail flag if integration failes
    INT4 useSSE;      //Flag to specify use SSE integration function
    INT4 useAVX;      //Flag to specify use AVX integration function

@@ -17,8 +17,5 @@ endif
 endif
 endif
 
-AM_CPPFLAGS = -I$(top_srcdir)/src -I$(top_srcdir)/src/lalapps -DPKG_DATA_DIR='"$(pkgdatadir)/"' @AM_CPPFLAGS@
-LDADD = $(top_builddir)/src/lalapps/liblalapps.la
-
 clean-local :
 	rm -f mcmc.output.??????.?? *-signal*.dat

@@ -81,13 +81,16 @@ const char * usage =
 "                             TaylorEt\n"
 "                             IMRPhenomA\n"
 "                             IMRPhenomB\n"
+"                             IMRPhenomC\n"
 "                             EOBNRv2\n"
 "                             EOBNRv2HM\n"
 "                             SEOBNRv1\n"
+"                             SEOBNRv2\n"
 "                             SpinTaylorT4\n"
 "                             SpinTaylorT2\n"
 "                             PhenSpinTaylor\n"
 "                             PhenSpinTaylorRD\n"
+"                             SpinDominatedWf\n"
 "                           Supported FD approximants:\n"
 "                             IMRPhenomA\n"
 "                             IMRPhenomB\n"
@@ -429,7 +432,7 @@ int main (int argc , char **argv) {
             XLALSimInspiralChooseFDWaveform(&hptilde, &hctilde, params->phiRef, 
                     params->deltaF, params->m1, params->m2, params->s1x, 
                     params->s1y, params->s1z, params->s2x, params->s2y, 
-                    params->s2z, params->f_min, params->f_max, 
+                    params->s2z, params->f_min, params->f_max, params->fRef, 
                     params->distance, params->inclination, params->lambda1, 
                     params->lambda2, params->waveFlags, params->nonGRparams,
                     params->ampO, params->phaseO, params->approximant);

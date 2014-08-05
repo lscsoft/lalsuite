@@ -26,17 +26,18 @@
 #include "cmdline.h"
 #include "TwoSpectTypes.h"
 
-inputParamsStruct * new_inputParams(INT4 numofIFOs);
-void free_inputParams(inputParamsStruct *input);
+extern FILE *LOG;
 
-ffdataStruct * new_ffdata(inputParamsStruct *input);
+inputParamsStruct * new_inputParams(INT4 numofIFOs);
+void free_inputParams(inputParamsStruct *params);
+
+ffdataStruct * new_ffdata(inputParamsStruct *params);
 void free_ffdata(ffdataStruct *data);
 
-SFTCatalog * findSFTdata(inputParamsStruct *input);
-MultiSFTVector * extractSFTband(inputParamsStruct *input, SFTCatalog *catalog);
-REAL4Vector * convertSFTdataToPowers(MultiSFTVector *sfts, inputParamsStruct *input, REAL8 normalization);
-REAL4Vector * readInSFTs(inputParamsStruct *input, REAL8 *normalization);
-REAL4Vector * simpleTFdata(REAL8 fsig, REAL8 period, REAL8 moddepth, REAL8 Tcoh, REAL8 Tobs, REAL8 SFToverlap, REAL8 fminimum, REAL8 fmaximum, REAL8 sqrtSh);
+SFTCatalog * findSFTdata(inputParamsStruct *params);
+MultiSFTVector * extractSFTband(inputParamsStruct *params, SFTCatalog *catalog);
+REAL4Vector * convertSFTdataToPowers(MultiSFTVector *sfts, inputParamsStruct *params, REAL8 normalization);
+REAL4Vector * readInSFTs(inputParamsStruct *params, REAL8 *normalization);
 
 MultiLIGOTimeGPSVector * getMultiTimeStampsFromSFTCatalog(SFTCatalog *catalog);
 MultiLIGOTimeGPSVector * getMultiTimeStampsFromSFTs(inputParamsStruct *params);
@@ -44,7 +45,6 @@ MultiLIGOTimeGPSVector * getMultiTimeStampsFromTimeStampsFile(CHAR *file, inputP
 MultiLIGOTimeGPSVector * getMultiTimeStampsFromSegmentsFile(CHAR *file, inputParamsStruct *params);
 
 REAL4VectorSequence * readInMultiSFTs(inputParamsStruct *input, REAL8 *normalization);
-INT4VectorSequence * markBadMultiSFTs(REAL4VectorSequence *multiTFdata, inputParamsStruct *params);
 void removeBadMultiSFTs(REAL4VectorSequence *multiTFdata, INT4VectorSequence *badsfts);
 void multiTFRngMeans(REAL4VectorSequence *output, REAL4VectorSequence *multiTFdata, INT4 numffts, INT4 numfbins, INT4 blksize);
 INT4VectorSequence * existingMultiSFTs(REAL4VectorSequence *tfdata, inputParamsStruct *params, INT4 numfbins, INT4 numffts);
@@ -59,13 +59,12 @@ INT4Vector * detectLines_simple(REAL4Vector *TFdata, ffdataStruct *ffdata, input
 REAL4VectorSequence * trackLines(INT4Vector *lines, INT4Vector *binshifts, inputParamsStruct *params);
 INT4 cleanLines(REAL4Vector *TFdata, REAL4Vector *background, INT4Vector *lines, inputParamsStruct *params);
 
-INT4 slideTFdata(REAL4Vector *output, inputParamsStruct *input, REAL4Vector *tfdata, INT4Vector *binshifts);
+INT4 slideTFdata(REAL4Vector *output, inputParamsStruct *params, REAL4Vector *tfdata, INT4Vector *binshifts);
 void tfMeanSubtract(REAL4Vector *tfdata, REAL4Vector *rngMeans, INT4 numffts, INT4 numfbins);
-INT4 tfWeight(REAL4Vector *output, REAL4Vector *tfdata, REAL4Vector *rngMeans, REAL4Vector *antPatternWeights, INT4Vector *indexValuesOfExistingSFTs, inputParamsStruct *input);
-void tfWeightMeanSubtract(REAL4Vector *output, REAL4Vector *tfdata, REAL4Vector *rngMeans, REAL4Vector *antPatternWeights, inputParamsStruct *input);
+INT4 tfWeight(REAL4Vector *output, REAL4Vector *tfdata, REAL4Vector *rngMeans, REAL4Vector *antPatternWeights, INT4Vector *indexValuesOfExistingSFTs, inputParamsStruct *params);
 INT4 tfRngMeans(REAL4Vector *output, REAL4Vector *tfdata, INT4 numffts, INT4 numfbins, INT4 blksize);
 INT4 makeSecondFFT(ffdataStruct *ffdata, REAL4Vector *tfdata, REAL4FFTPlan *plan);
-INT4 ffPlaneNoise(REAL4Vector *aveNoise, inputParamsStruct *input, INT4Vector *sftexist, REAL4Vector *backgrnd, REAL4Vector *antweights, REAL4FFTPlan *plan, REAL8 *normalization);
+INT4 ffPlaneNoise(REAL4Vector *aveNoise, inputParamsStruct *params, INT4Vector *sftexist, REAL4Vector *backgrnd, REAL4Vector *antweights, REAL4FFTPlan *plan, REAL8 *normalization);
 
 REAL8 determineSumOfWeights(REAL4Vector *antweightssq, REAL4Vector *rngMeanssq);
 
@@ -73,6 +72,7 @@ REAL4 avgTFdataBand(REAL4Vector *backgrnd, INT4 numfbins, INT4 numffts, INT4 bin
 REAL4 rmsTFdataBand(REAL4Vector *backgrnd, INT4 numfbins, INT4 numffts, INT4 binmin, INT4 binmax);
 
 INT4 readTwoSpectInputParams(inputParamsStruct *params, struct gengetopt_args_info args_info);
+INT4 printREAL4Vector2File(REAL4Vector *vector, CHAR *filename);
 
 #endif
 

@@ -18,7 +18,7 @@
 */
 
 /**
- * \author UTB Relativity Group; contact whelan@phys.utb.edu (original by S. Drasco)
+ * \author UTB Relativity Group; contact john.whelan@ligo.org (original by S. Drasco)
  * \file
  * \ingroup StochasticCrossCorrelation_c
  *
@@ -106,7 +106,7 @@
  * printf()
  * fprintf()
  * freopen()
- * fabs()
+ * fabsf()
  * \endcode
  *
  * ### Notes ###
@@ -163,7 +163,6 @@
 #include <lal/Units.h>
 
 #include "CheckStatus.h"
-#include "CheckStatus.c"
 
 #define STOCHASTICCROSSCORRELATIONSPECTRUMTESTC_LENGTH    9
 #define STOCHASTICCROSSCORRELATIONSPECTRUMTESTC_F0        80.0
@@ -677,9 +676,9 @@ int main( int argc, char *argv[] )
     printf("Y(0)=%g + %g i, should be 0\n",
            crealf(goodOutput.data->data[0]), cimagf(goodOutput.data->data[0]));
   }
-  if ( ( fabs(crealf(goodOutput.data->data[0]))
+  if ( ( fabsf(crealf(goodOutput.data->data[0]))
          > STOCHASTICCROSSCORRELATIONSPECTRUMTESTC_TOL )
-       || ( fabs(cimagf(goodOutput.data->data[0]))
+       || ( fabsf(cimagf(goodOutput.data->data[0]))
             > STOCHASTICCROSSCORRELATIONSPECTRUMTESTC_TOL ) )
   {
     printf("  FAIL: Valid data test\n");
@@ -702,9 +701,9 @@ int main( int argc, char *argv[] )
              f, crealf(goodOutput.data->data[i]), cimagf(goodOutput.data->data[i]),
              expIm);
      }
-     if ( fabs(crealf(goodOutput.data->data[i]))
+     if ( fabsf(crealf(goodOutput.data->data[i]))
           > STOCHASTICCROSSCORRELATIONSPECTRUMTESTC_TOL
-          || fabs(cimagf(goodOutput.data->data[i]) - expIm)
+          || fabsf(cimagf(goodOutput.data->data[i]) - expIm)
           > STOCHASTICCROSSCORRELATIONSPECTRUMTESTC_TOL )
      {
        printf("  FAIL: Valid data test\n");

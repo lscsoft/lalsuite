@@ -18,7 +18,7 @@
 */
 
 /**
- * \author UTB Relativity Group; contact whelan@phys.utb.edu (original by S. Drasco)
+ * \author UTB Relativity Group; contact john.whelan@ligo.org (original by S. Drasco)
  * \addtogroup StochasticCrossCorrelation_c
  *
  * \brief Calculates the value of the standard optimally-filtered

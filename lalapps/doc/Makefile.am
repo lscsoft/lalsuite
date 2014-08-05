@@ -1,5 +1,3 @@
-## Process this file with automake to produce Makefile.in
-
 ## Add additional tex sources (texfiles, eps&pdf figures, etc.) here
 TEXSOURCEFILES = lalapps.tex lalapps.bib lalapps.bst \
                  animate.tex animate.ps animate.pdf \
@@ -54,5 +52,3 @@ uninstall-local:
             echo "rm -f $(DESTDIR)$(pkgdocdir)/$$file"; \
           fi; \
         done
-
-

@@ -24,18 +24,7 @@
 
 #include <stdint.h>
 #include <lal/LALConfig.h>
-
-/* macros for certain keywords */
-#if __STDC_VERSION__ >= 199901L
-# define _LAL_RESTRICT_ restrict
-# define _LAL_INLINE_ inline
-#elif defined __GNUC__
-# define _LAL_RESTRICT_ __restrict__
-# define _LAL_INLINE_ __inline__
-#else
-# define _LAL_RESTRICT_
-# define _LAL_INLINE_
-#endif
+#include <lal/LALStddef.h>
 
 #if defined(__cplusplus)
 extern "C" {
@@ -70,6 +59,12 @@ typedef int64_t  INT8;		/**< Eight-byte signed integer; on some platforms this i
 typedef uint16_t UINT2;		/**< Two-byte unsigned integer. */
 typedef uint32_t UINT4;		/**< Four-byte unsigned integer. */
 typedef uint64_t UINT8;		/**< Eight-byte unsigned integer; on some platforms this is equivalent to <tt>unsigned long int</tt> instead. */
+
+/** MACRO to initialize arbitrary variable 'x' to zero */
+#define XLAL_INIT_MEM(x) memset(&(x), 0, sizeof((x)))
+/** C99 MACRO to declare and zero-initialize a variable, use as "type XLAL_INIT_DECL(var);" */
+#define XLAL_INIT_DECL(var) var; XLAL_INIT_MEM(var)
+
 
 /* Macros for integer constants */
 /**

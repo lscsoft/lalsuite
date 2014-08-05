@@ -274,8 +274,8 @@ int main( int argc, char *argv[] )
 
   CHAR nameArrayCData[6][LALNameLength];
 
-  DopplerSkyScanInit scanInit = empty_DopplerSkyScanInit; /* init-structure for DopperScanner */
-  DopplerSkyScanState thisScan = empty_DopplerSkyScanState; /* current state of the Doppler-scan */
+  DopplerSkyScanInit XLAL_INIT_DECL(scanInit); /* init-structure for DopperScanner */
+  DopplerSkyScanState XLAL_INIT_DECL(thisScan); /* current state of the Doppler-scan */
   const DopplerSkyGrid *skyGrid;
   UINT4 threeSiteCase = 0;
 
@@ -286,8 +286,8 @@ int main( int argc, char *argv[] )
   proctable.processTable = (ProcessTable *) calloc( 1, sizeof(ProcessTable) );
   XLALGPSTimeNow(&(proctable.processTable->start_time));
 
-  XLALPopulateProcessTable(proctable.processTable, PROGRAM_NAME, LALAPPS_VCS_IDENT_ID,
-      LALAPPS_VCS_IDENT_STATUS, LALAPPS_VCS_IDENT_DATE, 0);
+  XLALPopulateProcessTable(proctable.processTable, PROGRAM_NAME, lalAppsVCSIdentId,
+      lalAppsVCSIdentStatus, lalAppsVCSIdentDate, 0);
 
   this_proc_param = procparams.processParamsTable = (ProcessParamsTable *)
     calloc( 1, sizeof(ProcessParamsTable) );
@@ -1724,6 +1724,8 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
    };
 
    int c;
+   char *duration = NULL;
+   char *dur = NULL;
    ProcessParamsTable *this_proc_param = procparams.processParamsTable;
 
    while (1)
@@ -1894,7 +1896,6 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
            cohbankFileName = (CHAR *) calloc( optarg_len, sizeof(CHAR));
            memcpy(cohbankFileName, optarg, optarg_len );
            char tempName[256];
-           char *duration =NULL;
            strcpy(tempName, cohbankFileName);
            duration = strtok(tempName,"-");
            duration = strtok(NULL,"-");
@@ -1909,7 +1910,6 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
            /* create storage for the chia trigger filename */
            strcpy(chiaFileName, optarg);
            char tmpName[256];
-           char *dur =NULL;
            strcpy(tmpName, chiaFileName);
            dur = strtok(tmpName,"-");
            dur = strtok(NULL,"-");

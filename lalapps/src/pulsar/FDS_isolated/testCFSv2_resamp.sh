@@ -12,14 +12,18 @@ builddir="./";
 injectdir="../Injections/"
 
 ## ----- user-controlled level of debug-output detail
+debug=0	## default=quiet
 if [ -n "$DEBUG" ]; then
     debug=${DEBUG}
-else
-    debug=0	## default=quiet
+fi
+
+## ----- allow user-control of (Demod) FstatMethod variant to use
+if [ -n "$FSTAT_METHOD" ]; then
+    FstatMethod="--FstatMethod=${FSTAT_METHOD}"
 fi
 
 ##---------- names of codes and input/output files
-mfd_code="${injectdir}lalapps_Makefakedata_v4"
+mfd_code="${injectdir}lalapps_Makefakedata_v5"
 cmp_code="${builddir}lalapps_compareFstats"
 
 ## allow user to specify a different CFSv2 version to test by passing as cmdline-argument
@@ -27,17 +31,6 @@ if test $# -eq 0 ; then
     cfs_code="${builddir}lalapps_ComputeFStatistic_v2"
 else
     cfs_code="$@"
-fi
-
-SFTdir="./testCFSv2_resamp_sfts"
-
-if [ -z "${LAL_DATA_PATH}" ]; then
-    echo
-    echo "Need environment-variable LAL_DATA_PATH to be set to include"
-    echo "your ephemeris-directory (e.g. /usr/local/share/lalpulsar)"
-    echo "This might indicate an incomplete LAL+LALPULSAR installation"
-    echo
-    exit 1
 fi
 
 # ---------- fixed parameter of our test-signal
@@ -79,13 +72,19 @@ cfs_f1dot=$(echo $f1dot $cfs_f1dotBand | awk '{printf "%.16g", $1 - $2 / 2.0}');
 
 cfs_nCands=100000	## toplist length: keep N cands
 
-noiseSqrtSh=5
-## ------------------------------------------------------------
-if [ "$noiseSqrtSh" != 0 ]; then
-    haveNoise=true;
-else
-    haveNoise=false;
-fi
+sqrtSX="5,4"
+haveNoise=true;
+
+## ----- define output directory and files
+testDir=testCFSv2_resamp.d
+rm -rf $testDir
+mkdir -p $testDir
+SFTdir=${testDir}
+
+outfile_Demod=${testDir}/Fstat_Demod.dat
+outfile_Resamp=${testDir}/Fstat_Resamp.dat
+timefile_Demod=${testDir}/timing_Demod.dat
+timefile_Resamp=${testDir}/timing_Resamp.dat
 
 ##--------------------------------------------------
 ## test starts here
@@ -96,26 +95,10 @@ echo "----------------------------------------------------------------------"
 echo " STEP 1: Generate Fake Signal"
 echo "----------------------------------------------------------------------"
 echo
-if [ ! -d "$SFTdir" ]; then
-    mkdir $SFTdir;
-else
-    rm -f $SFTdir/*;
-fi
-
-mfd_CL1="--refTime=${refTime} --Alpha=$Alpha --Delta=$Delta --Tsft=$Tsft --startTime=$startTime --duration=$duration --h0=$h0 --cosi=$cosi --psi=$psi --phi0=$phi0"
-mfd_CL="${mfd_CL1} --fmin=$mfd_fmin --Band=$mfd_FreqBand --Freq=$Freq --outSFTbname=$SFTdir --f1dot=$f1dot"
-if [ "$haveNoise" = true ]; then
-    mfd_CL="$mfd_CL --noiseSqrtSh=$noiseSqrtSh";
-fi
-
-cmdline="$mfd_code $mfd_CL --randSeed=1 --IFO=H1"
-echo $cmdline;
-if ! eval "$cmdline &> /dev/null"; then
-    echo "Error.. something failed when running '$mfd_code' ..."
-    exit 1
-fi
-
-cmdline="$mfd_code $mfd_CL --randSeed=2 --IFO=L1"
+injectionSources="refTime=${refTime}; Freq=$Freq; f1dot=$f1dot; Alpha=$Alpha; Delta=$Delta; h0=$h0; cosi=$cosi; psi=$psi; phi0=$phi0;"
+dataSpec="--Tsft=$Tsft --startTime=$startTime --duration=$duration --sqrtSX=${sqrtSX} --fmin=$mfd_fmin --Band=$mfd_FreqBand"
+mfd_CL="--injectionSources='${injectionSources}' ${dataSpec} --outSingleSFT --outSFTdir=${SFTdir} --randSeed=1 --IFOs=H1,L1"
+cmdline="$mfd_code $mfd_CL "
 echo $cmdline;
 if ! eval "$cmdline &> /dev/null"; then
     echo "Error.. something failed when running '$mfd_code' ..."
@@ -127,15 +110,13 @@ echo "----------------------------------------------------------------------"
 echo "STEP 2: run directed CFS_v2 with LALDemod method"
 echo "----------------------------------------------------------------------"
 echo
-cfs_CL=" --refTime=${refTime} --Dterms=16 --Alpha=$Alpha --Delta=$Delta  --AlphaBand=$AlphaBand --DeltaBand=$DeltaBand --dAlpha=$dAlpha --dDelta=$dDelta --Freq=$cfs_Freq --FreqBand=$cfs_FreqBand --dFreq=$cfs_dFreq --f1dot=$cfs_f1dot --f1dotBand=$cfs_f1dotBand --df1dot=${cfs_df1dot} --DataFiles='$SFTdir/*.sft' --NumCandidatesToKeep=${cfs_nCands}"
-if [ "$haveNoise" = false ]; then
+cfs_CL=" --refTime=${refTime} --Dterms=8 --Alpha=$Alpha --Delta=$Delta  --AlphaBand=$AlphaBand --DeltaBand=$DeltaBand --dAlpha=$dAlpha --dDelta=$dDelta --Freq=$cfs_Freq --FreqBand=$cfs_FreqBand --dFreq=$cfs_dFreq --f1dot=$cfs_f1dot --f1dotBand=$cfs_f1dotBand --df1dot=${cfs_df1dot} --DataFiles='$SFTdir/*.sft' --NumCandidatesToKeep=${cfs_nCands} ${FstatMethod}"
+if [ "$haveNoise" != "true" ]; then
     cfs_CL="$cfs_CL --SignalOnly"
 fi
 
-outfile_LD="Fstat_LD.dat";
-cmdline="$cfs_code $cfs_CL  --outputFstat=$outfile_LD --useResamp=0"
+cmdline="$cfs_code $cfs_CL --outputFstat=$outfile_Demod --outputTiming=$timefile_Demod"
 echo $cmdline;
-
 if ! eval "$cmdline &> /dev/null"; then
     echo "Error.. something failed when running '$cfs_code' ..."
     exit 1
@@ -146,9 +127,7 @@ echo "----------------------------------------------------------------------"
 echo " STEP 3: run directed CFS_v2 with resampling"
 echo "----------------------------------------------------------------------"
 echo
-outfile_RS="Fstat_RS.dat";
-
-cmdline="$cfs_code $cfs_CL  --outputFstat=$outfile_RS --useResamp=1"
+cmdline="$cfs_code $cfs_CL --FstatMethod=ResampGeneric --outputFstat=$outfile_Resamp --outputTiming=$timefile_Resamp"
 echo $cmdline;
 if ! eval "$cmdline 2> /dev/null"; then
     echo "Error.. something failed when running '$cfs_code' ..."
@@ -159,12 +138,12 @@ echo "----------------------------------------"
 echo " STEP 4: Comparing results: "
 echo "----------------------------------------"
 
-sort $outfile_LD > __tmp_sorted && mv __tmp_sorted $outfile_LD
-sort $outfile_RS > __tmp_sorted && mv __tmp_sorted $outfile_RS
+sort $outfile_Demod > __tmp_sorted && mv __tmp_sorted $outfile_Demod
+sort $outfile_Resamp > __tmp_sorted && mv __tmp_sorted $outfile_Resamp
 
 ## compare absolute differences instead of relative, allow deviations of up to sigma=sqrt(8)~2.8
 echo
-cmdline="$cmp_code -1 ./${outfile_LD} -2 ./${outfile_RS} --clusterFiles=0 --sigFtolerance --Ftolerance=0.5"
+cmdline="$cmp_code -1 ./${outfile_Demod} -2 ./${outfile_Resamp}"
 echo -n $cmdline
 if ! eval $cmdline; then
     echo "==> OUCH... files differ. Something might be wrong..."
@@ -177,7 +156,7 @@ fi
 ## clean up files
 ## -------------------------------------------
 if [ -z "$NOCLEANUP" ]; then
-    rm -rf $SFTdir $outfile_LD $outfile_RS
+    rm -rf $testDir
 fi
 
 ## restore original locale, just in case someone source'd this file

@@ -1,5 +1,6 @@
 /*
-*  Copyright (C) 2008 Yi Pan, B.S. Sathyaprakash (minor modificaitons)
+*  Copyright (C) 2008 Yi Pan, B.S. Sathyaprakash (minor modificaitons), Prayush
+*  Kumar (some additions)
 *
 *  This program is free software; you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
@@ -32,7 +33,7 @@
  * between the two models in ring-down waveform is the pseudo-QNM introduced
  * in the latter (see Taracchini et al. PRD 86, 024011 (2012) for more details).
  */
-
+#include <math.h>
 #include <complex.h>
 #include <stdlib.h>
 #include <lal/LALStdlib.h>
@@ -420,6 +421,7 @@ static INT4 XLALSimIMREOBHybridAttachRingdown(
 {
 
       COMPLEX16Vector *modefreqs;
+      //COMPLEX16       freq7sav;
       UINT4 Nrdwave;
       UINT4 j;
 
@@ -431,7 +433,8 @@ static INT4 XLALSimIMREOBHybridAttachRingdown(
       REAL8Vector		*ddinspwave;
       REAL8VectorSequence	*inspwaves1;
       REAL8VectorSequence	*inspwaves2;
-      REAL8 eta, a, NRPeakOmega22; /* To generate pQNM frequency */
+      REAL8 eta, a, chi, NRPeakOmega22; /* To generate pQNM frequency */
+      REAL8 sh, kk, kt1, kt2; /* To generate pQNM frequency */
       REAL8 mTot; /* In geometric units */
       REAL8 spin1[3] = { spin1x, spin1y, spin1z };
       REAL8 spin2[3] = { spin2x, spin2y, spin2z };
@@ -476,10 +479,98 @@ static INT4 XLALSimIMREOBHybridAttachRingdown(
           modefreqs->data[7] += I * 10./3. * cimag(modefreqs->data[0]);
       }
 
-      /*for (j = 0; j < nmodes; j++)
+      if ( approximant == SEOBNRv2 )
       {
-        printf("QNM frequencies: %d %d %d %e %e\n",l,m,j,modefreqs->data[j].re*mTot,1./modefreqs->data[j].im/mTot);
-      }*/
+          /* Replace the last two QNMs with pQNMs */
+          /* We assume aligned/antialigned spins here */
+          a  = (spin1[2] + spin2[2]) / 2. * (1.0 - 2.0 * eta) + (spin1[2] - spin2[2]) / 2. * (mass1 - mass2) / (mass1 + mass2);
+          NRPeakOmega22 = GetNRSpinPeakOmegav2( l, m, eta, a ) / mTot;
+
+          /* Define chi */
+          chi = (spin1[2] + spin2[2]) / 2. + (spin1[2] - spin2[2]) / 2. * sqrt(1. - 4. * eta) / (1. - 2. * eta);
+
+          /* For extreme chi (>= 0.8), there are scale factors in both complex
+           * pseudo-QNM frequencies. kk, kt1, kt2 describe those factors. */
+          kk = kt1 = kt2 = 1.;
+          if ( chi >= 0.8 )
+          {
+            kk = 0.7 + 0.3 * exp(100. * (eta - 0.25));
+            kt1 = 0.5 * sqrt(1.+800.0*eta*eta/3.0) - 0.125;
+            kt2 = 0.5 * pow(1.+0.5*eta*sqrt(eta)/0.0225,2./3.) - 0.2;
+          }
+          /*printf("a, chi and NRomega in QNM freq: %.16e %.16e %.16e %.16e %.16e %.16e\n",
+            spin1[2],spin2[2],mTot/LAL_MTSUN_SI,a,chi,NRPeakOmega22*mTot);*/
+          sh = 0.;
+          //freq7sav = modefreqs->data[7];
+          modefreqs->data[7] = (2./3. * NRPeakOmega22/finalMass) + (1./3. * creal(modefreqs->data[0]));
+          modefreqs->data[7] += I * 3.5/0.9 * cimag(modefreqs->data[0]);
+          modefreqs->data[6] = (3./4. * NRPeakOmega22/finalMass) + (1./4. * creal(modefreqs->data[0]));
+          modefreqs->data[6] += I * 3.5 * cimag(modefreqs->data[0]);
+
+          /* For extreme chi (>= 0.8), the ringdown attachment should end
+           * slightly before the value given passed to this function. sh
+           * gives exactly how long before. */
+          if ( chi >= 0.7 && chi < 0.8 )
+          {
+            sh = -9. * (eta - 0.25);
+          }
+          if ( (eta > 30./31./31. && eta <= 10./121. && chi >= 0.8) || (eta <= 30./31./31. && chi >= 0.8 && chi < 0.9) )
+          {
+            sh = -9. * (eta - 0.25) * (1.+2.*exp(-(chi-0.85)*(chi-0.85)/0.05/0.05)) * (1.+1./(1.+exp((eta-0.01)/0.001)));
+            kk = 0.7 + 0.3 * exp(100. * (eta - 0.25));
+            kt1 = 0.5 * sqrt(1.+800.0*eta*eta/3.0) - 0.125;
+            kt2 = 0.5 * pow(1.+0.5*eta*sqrt(eta)/0.0225,2./3.) - 0.2;
+            modefreqs->data[4] = 0.4*(1.+kk)*creal(modefreqs->data[6])
+                                 + I*cimag(modefreqs->data[6])/(2.5*kt2*exp(-(eta-0.005)/0.03));
+            modefreqs->data[5] = 0.4*(1.+kk)*creal(modefreqs->data[7])
+                                 + I*cimag(modefreqs->data[7])/(1.5*kt1*exp(-(eta-0.005)/0.03));
+            modefreqs->data[6] = kk*creal(modefreqs->data[6]) + I*cimag(modefreqs->data[6])/kt2;
+            modefreqs->data[7] = kk*creal(modefreqs->data[7]) + I*cimag(modefreqs->data[7])/kt1;
+	  }
+          if ( eta < 30./31./31. && chi >= 0.9 )
+          {
+            sh = 0.55 - 9. * (eta - 0.25) * (1.+2.*exp(-(chi-0.85)*(chi-0.85)/0.05/0.05)) * (1.+1./(1.+exp((eta-0.01)/0.001)));
+            kk = 0.7 + 0.3 * exp(100. * (eta - 0.25));
+            kt1 = 0.5 * sqrt(1.+800.0*eta*eta/3.0) - 0.125;
+            kt2 = 0.5 * pow(1.+0.5*eta*sqrt(eta)/0.0225,2./3.) - 0.2;
+            modefreqs->data[4] = 1.1*0.4*(1.+kk)*creal(modefreqs->data[6])
+                                 + I*cimag(modefreqs->data[6])/(1.05*2.5*kt2*exp(-(eta-0.005)/0.03));
+            modefreqs->data[5] = 0.4*(1.+kk)*creal(modefreqs->data[7])
+                                 + I*cimag(modefreqs->data[7])/(1.05*1.5*kt1*exp(-(eta-0.005)/0.03));
+            modefreqs->data[6] = kk*creal(modefreqs->data[6]) + I*cimag(modefreqs->data[6])/kt2;
+            modefreqs->data[7] = kk*creal(modefreqs->data[7]) + I*cimag(modefreqs->data[7])/kt1;
+	  }
+          if ( eta > 10./121. && chi >= 0.8 )
+          {
+            sh = 1. - 9. * (eta - 0.25) * (1.+2.*exp(-(chi-0.85)*(chi-0.85)/0.05/0.05)) * (1.+1./(1.+exp((eta-0.01)/0.001)));
+            kk = 0.7 + 0.3 * exp(100. * (eta - 0.25));
+            kt1 = 0.45 * sqrt(1.+200.0*eta*eta/3.0) - 0.125;
+            kt2 = 0.5 * pow(1.+0.5*eta*sqrt(eta)/0.0225,2./3.) - 0.2;
+            modefreqs->data[6] = kk*creal(modefreqs->data[6]) + I*cimag(modefreqs->data[6])/0.95/kt2;
+            modefreqs->data[7] = kk*creal(modefreqs->data[7]) + I*cimag(modefreqs->data[7])/kt1;
+	  }
+          matchrange->data[0] -= sh;
+          matchrange->data[1] -= sh;
+          matchrange->data[0] -= fmod( matchrange->data[0], dt/mTot);
+          matchrange->data[1] -= fmod( matchrange->data[1], dt/mTot);
+/*
+modefreqs->data[7] = 0.38068371/mTot + I/1.4677128/mTot;
+modefreqs->data[6] = 0.37007703/mTot + I/1.3359367/mTot;
+modefreqs->data[5] = 0.36980703/mTot + I/1.7791212/mTot;
+modefreqs->data[4] = 0.3595034/mTot + I/2.6989764/mTot;
+printf("sh = %f\n",sh);
+printf("PeakOmega = %f, mTot = %f\n",NRPeakOmega22,mTot);
+printf("w0 = %f, t0 = %f\n",creal(modefreqs->data[0])*mTot, 1./cimag(modefreqs->data[0])/mTot);
+printf("w1 = %f, t1 = %f\n",creal(modefreqs->data[6])*mTot, 1./cimag(modefreqs->data[6])/mTot);
+printf("w2 = %f, t2 = %f\n",creal(modefreqs->data[7])*mTot, 1./cimag(modefreqs->data[7])/mTot);
+printf("w3 = %f, t3 = %f\n",creal(modefreqs->data[4])*mTot, 1./cimag(modefreqs->data[4])/mTot);
+printf("w4 = %f, t4 = %f\n",creal(modefreqs->data[5])*mTot, 1./cimag(modefreqs->data[5])/mTot);
+*/
+      }
+      for (j = 0; j < nmodes; j++)
+      {
+        //printf("QNM frequencies: %d %d %d %f %f\n",l,m,j,creal(modefreqs->data[j])*mTot,1./cimag(modefreqs->data[j])/mTot);
+      }
 
       /* Ringdown signal length: 10 times the decay time of the n=0 mode */
       Nrdwave = (INT4) (EOB_RD_EFOLDS / cimag(modefreqs->data[0]) / dt);
@@ -488,7 +579,7 @@ static INT4 XLALSimIMREOBHybridAttachRingdown(
       if ( matchrange->data[0] * mTot / dt < 5 || matchrange->data[1]*mTot/dt > matchrange->data[2] *mTot/dt - 2 )
       {
         XLALPrintError( "More inspiral points needed for ringdown matching.\n" );
-        //printf("%.16e,%.16e,%.16e\n",matchrange->data[0] * mTot / dt, matchrange->data[1]*mTot/dt, matchrange->data[2] *mTot/dt - 2);
+        printf("%.16e,%.16e,%.16e\n",matchrange->data[0] * mTot / dt, matchrange->data[1]*mTot/dt, matchrange->data[2] *mTot/dt - 2);
         XLALDestroyCOMPLEX16Vector( modefreqs );
         XLAL_ERROR( XLAL_EFAILED );
       }
@@ -597,7 +688,8 @@ static INT4 XLALSimIMREOBHybridAttachRingdown(
        */
 
       /* Generate full waveforms, by stitching inspiral and ring-down waveforms */
-      UINT4 attachIdx = matchrange->data[1] * mTot / dt;
+      //UINT4 attachIdx = matchrange->data[1] * mTot / dt;
+      UINT4 attachIdx = round( matchrange->data[1] * mTot / dt );
       for (j = 1; j < Nrdwave; ++j)
       {
 	    signal1->data[j + attachIdx] = rdwave1->data[j];

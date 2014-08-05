@@ -61,8 +61,6 @@ BOOLEAN uvar_printEvents, uvar_printTemplates, uvar_printMaps, uvar_printStats, 
 #define TRUE (1==1)
 #define FALSE (1==0)
 
-#define LAL_INT4_MAX 2147483647
-
 /* local function prototype */
 
 
@@ -235,12 +233,12 @@ int main(int argc, char *argv[]){
 
     if ( LALUserVarWasSet( &uvar_startTime ) ) {
       XLALGPSSetREAL8(&startTimeGPS, uvar_startTime);
-      constraints.startTime = &startTimeGPS;
+      constraints.minStartTime = &startTimeGPS;
     }
 
     if ( LALUserVarWasSet( &uvar_endTime ) ) {
       XLALGPSSetREAL8(&endTimeGPS, uvar_endTime);
-      constraints.endTime = &endTimeGPS;
+      constraints.maxStartTime = &endTimeGPS;
     }
 
     if ( LALUserVarWasSet( &uvar_timeStampsFile ) ) {

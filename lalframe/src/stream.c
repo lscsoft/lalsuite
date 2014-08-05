@@ -250,9 +250,11 @@ void output_ ## laltype (LALFrStream *stream, const char *channame, LIGOTimeGPS 
             XLALResize ## laltype ## TimeSeries(series, 0, length); \
         XLALFrStreamGet ## laltype ## TimeSeries(series, stream); \
         for (i = 0; i < series->data->length; ++i) { \
-            double t = XLALGPSGetREAL8(&series->epoch) + i * series->deltaT; \
+            char tstr[32]; \
             laltype value = series->data->data[i]; \
-            fprintf(stdout, "%.9f", t); \
+            LIGOTimeGPS t = series->epoch; \
+            XLALGPSAdd(&t, i * series->deltaT); \
+            fprintf(stdout, "%s", XLALGPSToStr(tstr, &t)); \
             fputs(FS, stdout); \
             fprintf(stdout, format, __VA_ARGS__); \
             fputs(RS, stdout); \

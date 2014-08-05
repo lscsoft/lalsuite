@@ -216,7 +216,7 @@ int main(int argc,char *argv[])
   procparams.processParamsTable = NULL;
   process.processTable = XLALCreateProcessTableRow();
   XLALGPSTimeNow(&(process.processTable->start_time));
-  if(XLALPopulateProcessTable(process.processTable, PROGRAM_NAME, LALAPPS_VCS_IDENT_ID, LALAPPS_VCS_IDENT_STATUS, LALAPPS_VCS_IDENT_DATE, 0))
+  if(XLALPopulateProcessTable(process.processTable, PROGRAM_NAME, lalAppsVCSIdentId, lalAppsVCSIdentStatus, lalAppsVCSIdentDate, 0))
     exit(1);
 
   /****** ReadCommandLine ******/

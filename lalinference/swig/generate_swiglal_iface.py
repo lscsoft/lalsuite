@@ -1,1 +1,0 @@
-../../lal/swig/generate_swiglal_iface.py

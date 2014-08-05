@@ -1,5 +1,5 @@
 AC_PREREQ([2.63])
-AC_INIT([lalinference],[1.3.1.1],[lal-discuss@ligo.org])
+AC_INIT([LALInference],[1.3.1.1],[lal-discuss@ligo.org])
 AC_CONFIG_HEADERS([src/config.h src/LALInferenceConfig.h])
 AC_CONFIG_SRCDIR([src/LALInference.h])
 AC_CONFIG_AUX_DIR([gnuscripts])
@@ -9,19 +9,18 @@ AC_CONFIG_FILES([ \
   lalinference.pc \
   lalinference-uninstalled.pc \
   Makefile \
-  gnuscripts/Makefile \
   debian/Makefile \
-  bin/Makefile \
   include/Makefile \
   include/lal/Makefile \
+  src/LALInferenceVCSInfo.c \
+  src/LALInferenceVCSInfo.h \
   src/Makefile \
   python/Makefile \
-  python/__init__.py \
-  python/bayestar/Makefile \
+  python/lalinference/Makefile \
+  python/lalinference/__init__.py \
+  python/lalinference/bayestar/Makefile \
   swig/Makefile \
-  swig/octave/Makefile \
-  swig/python/Makefile \
-  test/Makefile
+  test/Makefile \
 ])
 AM_INIT_AUTOMAKE([1.11 foreign subdir-objects color-tests parallel-tests])
 
@@ -82,7 +81,7 @@ AC_PROG_INSTALL
 AC_PROG_LN_S
 AC_PROG_AWK
 AC_PROG_SED
-AM_PATH_PYTHON([2.6],,[AC_MSG_ERROR([Python-2.6, or higher, is required])])
+LALSUITE_CHECK_PYTHON([2.6])
 
 # check for supported mac os x version
 LALSUITE_OSX_VERSION_CHECK
@@ -169,7 +168,7 @@ LALSUITE_CHECK_LIB([LALPulsar],[1.9.0],[XLALComputeFstat],[lal/ComputeFstat.h])
 LALSUITE_CHECK_OPT_LIB([LALXML],[1.1.5],[XLALXMLFilePrintElements],[lal/LALXML.h])
 
 # configure SWIG wrapping modules
-LALSUITE_USE_SWIG([XLALInference LALInference XLAL LAL])
+LALSUITE_USE_SWIG
 
 # Disable OpenMP by default.
 # FIXME: OpenMP should be on by default, but it breaks condor_compiling lalapps.
@@ -193,13 +192,20 @@ AS_IF(
 # add gcc specific flags
 LALSUITE_ADD_GCC_FLAGS
 
+# link any executables against LALInference library
+AC_SUBST([LDADD], ["\$(top_builddir)/src/liblalinference.la"])
+
+# add extra preprocessor flags
+AM_CPPFLAGS="-DPKG_DATA_DIR='\"\$(pkgdatadir)/\"' ${AM_CPPFLAGS}"
+AM_CPPFLAGS="-I\$(top_builddir)/include ${AM_CPPFLAGS}"
+
+# force headers to be installed in ${includedir}/lal, ignoring library name
+AC_SUBST([pkgincludedir], ["\${includedir}/lal"])
+
 # force all python modules into the exec dir to prevent mixed C and
 # pure-python library code from being split across lib and lib64 on
 # RedHat-derived systems.
 AC_SUBST([pkgpythondir], ["\${pkgpyexecdir}"])
-
-LAL_HEADER_LINK=${ac_aux_dir}/header-link.mk
-AC_SUBST_FILE([LAL_HEADER_LINK])
 
 # output
 AC_OUTPUT
@@ -207,9 +213,11 @@ AC_MSG_NOTICE([
 ==================================================
 LALInference has now been successfully configured:
 
+* Python support is $PYTHON_ENABLE_VAL
 * LALXML library support is $LALXML_ENABLE_VAL
-* SWIG wrapping module for Octave is $SWIG_OCTAVE_ENABLE_VAL
-* SWIG wrapping module for Python is $SWIG_PYTHON_ENABLE_VAL
+* SWIG binding generation is $SWIG_GENERATE_ENABLE_VAL
+* SWIG bindings for Octave are $SWIG_BUILD_OCTAVE_ENABLE_VAL
+* SWIG bindings for Python are $SWIG_BUILD_PYTHON_ENABLE_VAL
 * HEALPix is $HEALPIX_ENABLE_VAL
 * OpenMP acceleration is $OPENMP_ENABLE_VAL
 

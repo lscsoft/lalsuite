@@ -46,11 +46,6 @@
 static REAL8 fudge_up   = 1 + 10 * LAL_REAL8_EPS;	// about ~1 + 2e-15
 static REAL8 fudge_down = 1 - 10 * LAL_REAL8_EPS;	// about ~1 - 2e-15
 
-/* empty struct initializers */
-const PSDVector empty_PSDVector;
-const MultiPSDVector empty_MultiPSDVector;
-const MultiNoiseWeights empty_MultiNoiseWeights;
-
 /*---------- internal prototypes ----------*/
 
 int compareSFTdesc(const void *ptr1, const void *ptr2);     // defined in SFTfileIO.c
@@ -111,9 +106,9 @@ XLALDestroySFT ( SFTtype *sft )
  * XLAL function to create an SFTVector of \c numSFT SFTs with \c SFTlen frequency-bins
  */
 SFTVector *
-XLALCreateSFTVector (UINT4 numSFTs, 	/**< number of SFTs */
-		     UINT4 numBins	/**< number of frequency-bins per SFT */
-		     )
+XLALCreateSFTVector ( UINT4 numSFTs, 	/**< number of SFTs */
+                      UINT4 numBins	/**< number of frequency-bins per SFT */
+                      )
 {
   UINT4 iSFT;
   SFTVector *vect;
@@ -1010,9 +1005,10 @@ XLALDestroyMultiNoiseWeights ( MultiNoiseWeights *weights )
  * This is using DFT-interpolation (derived from zero-padding).
  */
 COMPLEX8Vector *
-XLALrefineCOMPLEX8Vector (const COMPLEX8Vector *in,
-			  UINT4 refineby,
-			  UINT4 Dterms)
+XLALrefineCOMPLEX8Vector ( const COMPLEX8Vector *in,
+                           UINT4 refineby,
+                           UINT4 Dterms
+                           )
 {
   UINT4 newLen, oldLen, l;
   COMPLEX8Vector *ret = NULL;
@@ -1189,7 +1185,10 @@ XLALReadSegmentsFromFile ( const char *fname	/**< name of file containing segmen
  *
  */
 SFTVector *
-XLALExtractBandFromSFTVector ( const SFTVector *inSFTs, REAL8 fMin, REAL8 Band )
+XLALExtractBandFromSFTVector ( const SFTVector *inSFTs,	///< [in] input SFTs
+                               REAL8 fMin,		///< [in] lower end of frequency interval to return
+                               REAL8 Band		///< [in] band width of frequency interval to return
+                               )
 {
   XLAL_CHECK_NULL ( inSFTs != NULL, XLAL_EINVAL, "Invalid NULL input SFT vector 'inSFTs'\n");
   XLAL_CHECK_NULL ( inSFTs->length > 0, XLAL_EINVAL, "Invalid zero-length input SFT vector 'inSFTs'\n");
@@ -1198,44 +1197,15 @@ XLALExtractBandFromSFTVector ( const SFTVector *inSFTs, REAL8 fMin, REAL8 Band )
 
   UINT4 numSFTs = inSFTs->length;
 
-  REAL8 df      = inSFTs->data[0].deltaF;
-  REAL8 Tsft    = 1.0 / df;
-
-  REAL8 fMinSFT    = inSFTs->data[0].f0;
-  UINT4 numBinsSFT = inSFTs->data[0].data->length;
-  REAL8 BandSFT    = df * numBinsSFT;
-  UINT4 firstBinSFT= round ( fMinSFT / df );	// round to closest bin
-  UINT4 lastBinSFT = firstBinSFT + ( numBinsSFT - 1 );
-
-  // find 'covering' SFT-band to extract
-  UINT4 firstBinExt, numBinsExt;
-  XLAL_CHECK_NULL ( XLALFindCoveringSFTBins ( &firstBinExt, &numBinsExt, fMin, Band, Tsft ) == XLAL_SUCCESS, XLAL_EFUNC );
-  UINT4 lastBinExt = firstBinExt + ( numBinsExt - 1 );
-
-  XLAL_CHECK_NULL ( firstBinExt >= firstBinSFT && (lastBinExt <= lastBinSFT), XLAL_EINVAL,
-                    "Requested frequency-bins [%f,%f]Hz = [%d, %d] not contained within SFT's [%f, %f]Hz = [%d,%d].\n",
-                    fMin, fMin + Band, firstBinExt, lastBinExt, fMinSFT, fMinSFT + BandSFT, firstBinSFT, lastBinSFT );
-
-  INT4 firstBinOffset = firstBinExt - firstBinSFT;
-
   SFTVector *ret;
-  XLAL_CHECK_NULL ( (ret = XLALCreateSFTVector ( numSFTs, numBinsExt )) != NULL, XLAL_EFUNC );
+  XLAL_CHECK_NULL ( (ret = XLALCreateSFTVector ( numSFTs, 0 )) != NULL, XLAL_EFUNC );
 
   for ( UINT4 i = 0; i < numSFTs; i ++ )
     {
       SFTtype *dest = &(ret->data[i]);
       SFTtype *src =  &(inSFTs->data[i]);
-      COMPLEX8Vector *ptr = dest->data;
 
-      /* copy complete header first */
-      memcpy ( dest, src, sizeof(*dest) );
-      /* restore data-pointer */
-      dest->data = ptr;
-      /* set correct fMin */
-      dest->f0 = firstBinExt * df ;
-
-      /* copy the relevant part of the data */
-      memcpy ( dest->data->data, src->data->data + firstBinOffset, numBinsExt * sizeof( dest->data->data[0] ) );
+      XLAL_CHECK_NULL ( XLALExtractBandFromSFT ( &dest, src, fMin, Band ) == XLAL_SUCCESS, XLAL_EFUNC );
 
     } /* for i < numSFTs */
 
@@ -1243,6 +1213,200 @@ XLALExtractBandFromSFTVector ( const SFTVector *inSFTs, REAL8 fMin, REAL8 Band )
   return ret;
 
 } /* XLALExtractBandFromSFTVector() */
+
+
+/**
+ * Return an SFTs containing only the bins in [fMin, fMin+Band].
+ * Note: the output SFT is guaranteed to "cover" the input boundaries 'fMin'
+ * and 'fMin+Band', ie if necessary the output SFT contains one additional
+ * bin on either end of the interval.
+ *
+ * This uses the conventions in XLALFindCoveringSFTBins() to determine
+ * the 'effective' frequency-band to extract.
+ *
+ */
+int
+XLALExtractBandFromSFT ( SFTtype **outSFT,	///< [out] output SFT (alloc'ed or re-alloced as required)
+                         const SFTtype *inSFT,	///< [in] input SFT
+                         REAL8 fMin,		///< [in] lower end of frequency interval to return
+                         REAL8 Band		///< [in] band width of frequency interval to return
+                         )
+{
+  XLAL_CHECK ( outSFT != NULL, XLAL_EINVAL );
+  XLAL_CHECK ( inSFT != NULL, XLAL_EINVAL );
+  XLAL_CHECK ( inSFT->data != NULL, XLAL_EINVAL );
+  XLAL_CHECK ( fMin >= 0, XLAL_EDOM, "Invalid negative frequency fMin = %g\n", fMin );
+  XLAL_CHECK ( Band > 0, XLAL_EDOM, "Invalid non-positive Band = %g\n", Band );
+
+  REAL8 df      = inSFT->deltaF;
+  REAL8 Tsft    = 1.0 / df;
+
+  REAL8 fMinSFT    = inSFT->f0;
+  UINT4 numBinsSFT = inSFT->data->length;
+  UINT4 firstBinSFT= round ( fMinSFT / df );	// round to closest bin
+  UINT4 lastBinSFT = firstBinSFT + ( numBinsSFT - 1 );
+
+  // find 'covering' SFT-band to extract
+  UINT4 firstBinExt, numBinsExt;
+  XLAL_CHECK ( XLALFindCoveringSFTBins ( &firstBinExt, &numBinsExt, fMin, Band, Tsft ) == XLAL_SUCCESS, XLAL_EFUNC );
+  UINT4 lastBinExt = firstBinExt + ( numBinsExt - 1 );
+
+  XLAL_CHECK ( firstBinExt >= firstBinSFT && (lastBinExt <= lastBinSFT), XLAL_EINVAL,
+               "Requested frequency-bins [%f,%f]Hz = [%d, %d] not contained within SFT's [%f, %f]Hz = [%d,%d].\n",
+               fMin, fMin + Band, firstBinExt, lastBinExt, fMinSFT, fMinSFT + (numBinsSFT-1) * df, firstBinSFT, lastBinSFT );
+
+  INT4 firstBinOffset = firstBinExt - firstBinSFT;
+
+  if ( (*outSFT) == NULL ) {
+    XLAL_CHECK ( ((*outSFT) = XLALCalloc(1, sizeof(*(*outSFT)))) != NULL, XLAL_ENOMEM );
+  }
+  if ( (*outSFT)->data == NULL ) {
+    XLAL_CHECK ( ((*outSFT)->data = XLALCreateCOMPLEX8Vector ( numBinsExt )) != NULL, XLAL_EFUNC );
+  }
+  if ( (*outSFT)->data->length != numBinsExt ) {
+    XLAL_CHECK ( ((*outSFT)->data->data = XLALRealloc ( (*outSFT)->data->data, numBinsExt * sizeof((*outSFT)->data->data[0]))) != NULL, XLAL_ENOMEM );
+    (*outSFT)->data->length = numBinsExt;
+  }
+
+  COMPLEX8Vector *ptr = (*outSFT)->data;	// keep copy to data-pointer
+  (*(*outSFT)) = (*inSFT);			// copy complete header
+  (*outSFT)->data = ptr;	  		// restore data-pointer
+  (*outSFT)->f0 = firstBinExt * df ;	  	// set correct new fMin
+
+  /* copy the relevant part of the data */
+  memcpy ( (*outSFT)->data->data, inSFT->data->data + firstBinOffset, numBinsExt * sizeof( (*outSFT)->data->data[0] ) );
+
+  return XLAL_SUCCESS;
+
+} // XLALExtractBandFromSFT()
+
+/**
+ * Return a MultiSFT vector containing only the bins in [fMin, fMin+Band].
+ * Note: the output MultiSFT is guaranteed to "cover" the input boundaries 'fMin'
+ * and 'fMin+Band', ie if necessary the output SFT contains one additional
+ * bin on either end of the interval.
+ *
+ * This uses the conventions in XLALFindCoveringSFTBins() to determine
+ * the 'effective' frequency-band to extract.
+ *
+ */
+MultiSFTVector *
+XLALExtractBandFromMultiSFTVector ( const MultiSFTVector *inSFTs,      ///< [in] input MultiSFTs
+                                    REAL8 fMin,                                ///< [in] lower end of frequency interval to return
+                                    REAL8 Band                         ///< [in] band width of frequency interval to return
+                                    )
+{
+  XLAL_CHECK_NULL ( inSFTs != NULL, XLAL_EINVAL, "Invalid NULL input MultiSFT vector 'inSFTs'\n");
+  XLAL_CHECK_NULL ( inSFTs->length > 0, XLAL_EINVAL, "Invalid zero-length input MultiSFT vector 'inSFTs'\n");
+  XLAL_CHECK_NULL ( fMin >= 0, XLAL_EDOM, "Invalid negative frequency fMin = %g\n", fMin );
+  XLAL_CHECK_NULL ( Band > 0, XLAL_EDOM, "Invalid non-positive Band = %g\n", Band );
+
+  MultiSFTVector *ret = NULL;
+  XLAL_CHECK_NULL ( (ret = XLALCalloc(1, sizeof(*ret))) != NULL, XLAL_ENOMEM );
+  XLAL_CHECK_NULL ( (ret->data = XLALCalloc(inSFTs->length, sizeof(ret->data[0]))) != NULL, XLAL_ENOMEM );
+  ret->length = inSFTs->length;
+
+  for (UINT4 X = 0; X < inSFTs->length; X++) {
+     XLAL_CHECK_NULL( (ret->data[X] = XLALExtractBandFromSFTVector(inSFTs->data[X], fMin, Band)) != NULL, XLAL_EFUNC );
+  }
+
+  return ret;
+} //XLALExtractBandFromMultiSFTVector()
+
+/**
+ * Resize the frequency-band of a given multi-SFT vector to [f0, f0+Band].
+ *
+ * NOTE: If the frequency band is extended in any direction, the corresponding bins
+ * will be set to zero
+ *
+ * NOTE2: This uses the conventions in XLALFindCoveringSFTBins() to determine
+ * the 'effective' frequency-band to resize to, in order to coincide with SFT frequency bins.
+ *
+ */
+int
+XLALMultiSFTVectorResizeBand ( MultiSFTVector *multiSFTs,	///< [in/out] multi-SFT vector to resize
+                               REAL8 f0,			///< [in] new start frequency
+                               REAL8 Band			///< [in] new frequency Band
+                               )
+{
+  XLAL_CHECK ( multiSFTs != NULL, XLAL_EINVAL );
+  XLAL_CHECK ( f0 >= 0, XLAL_EINVAL );
+  XLAL_CHECK ( Band >= 0, XLAL_EINVAL );
+
+  for ( UINT4 X = 0; X < multiSFTs->length; X ++ ) {
+    XLAL_CHECK ( XLALSFTVectorResizeBand ( multiSFTs->data[X], f0, Band ) == XLAL_SUCCESS, XLAL_EFUNC );
+  }
+
+  return XLAL_SUCCESS;
+
+} // XLALMultiSFTVectorResizeBand()
+
+/**
+ * Resize the frequency-band of a given SFT vector to [f0, f0+Band].
+ *
+ * NOTE: If the frequency band is extended in any direction, the corresponding bins
+ * will be set to zero
+ *
+ * NOTE2: This uses the conventions in XLALFindCoveringSFTBins() to determine
+ * the 'effective' frequency-band to resize to, in order to coincide with SFT frequency bins.
+ *
+ */
+int
+XLALSFTVectorResizeBand ( SFTVector *SFTs,	///< [in/out] SFT vector to resize
+                          REAL8 f0,		///< [in] new start frequency
+                          REAL8 Band		///< [in] new frequency Band
+                          )
+{
+  XLAL_CHECK ( SFTs != NULL, XLAL_EINVAL );
+  XLAL_CHECK ( f0 >= 0, XLAL_EINVAL );
+  XLAL_CHECK ( Band >= 0, XLAL_EINVAL );
+
+  for ( UINT4 alpha = 0; alpha < SFTs->length; alpha ++ ) {
+    XLAL_CHECK ( XLALSFTResizeBand ( &(SFTs->data[alpha]), f0, Band ) == XLAL_SUCCESS, XLAL_EFUNC );
+  }
+
+  return XLAL_SUCCESS;
+
+} // XLALSFTVectorResizeBand()
+
+/**
+ * Resize the frequency-band of a given SFT to [f0, f0+Band].
+ *
+ * NOTE: If the frequency band is extended in any direction, the corresponding bins
+ * will be set to zero
+ *
+ * NOTE2: This uses the conventions in XLALFindCoveringSFTBins() to determine
+ * the 'effective' frequency-band to resize to, in order to coincide with SFT frequency bins.
+ *
+ */
+int
+XLALSFTResizeBand ( SFTtype *SFT,	///< [in/out] SFT to resize
+                    REAL8 f0,		///< [in] new start frequency
+                    REAL8 Band		///< [in] new frequency Band
+                    )
+{
+  XLAL_CHECK ( SFT != NULL, XLAL_EINVAL );
+  XLAL_CHECK ( f0 >= 0, XLAL_EINVAL );
+  XLAL_CHECK ( Band >= 0, XLAL_EINVAL );
+
+
+  REAL8 Tsft = 1.0 / SFT->deltaF;
+  REAL8 f0In = SFT->f0;
+
+  UINT4 firstBinIn = (UINT4) lround ( f0In / SFT->deltaF );
+
+  UINT4 firstBinOut;
+  UINT4 numBinsOut;
+  XLAL_CHECK ( XLALFindCoveringSFTBins ( &firstBinOut, &numBinsOut, f0, Band, Tsft ) == XLAL_SUCCESS, XLAL_EFUNC );
+
+  int firstRelative = firstBinOut - firstBinIn;
+
+  XLAL_CHECK ( (SFT = XLALResizeCOMPLEX8FrequencySeries ( SFT, firstRelative, numBinsOut )) != NULL, XLAL_EFUNC );
+
+  return XLAL_SUCCESS;
+
+} // XLALSFTResizeBand()
+
 
 
 /**
@@ -1269,6 +1433,8 @@ XLALMultiSFTVectorAdd ( MultiSFTVector *a,	/**< [in/out] MultiSFTVector to be ad
       SFTVector *vect1 = a->data[X];
       SFTVector *vect2 = b->data[X];
 
+      XLAL_CHECK ( strncmp ( vect1->data[0].name, vect2->data[0].name, 2 ) == 0, XLAL_EINVAL, "SFT detectors differ '%c%c' != '%c%c'\n", vect1->data[0].name[0], vect1->data[0].name[1], vect2->data[0].name[0], vect2->data[0].name[1] );
+
       XLAL_CHECK ( XLALSFTVectorAdd ( vect1, vect2 ) == XLAL_SUCCESS, XLAL_EFUNC, "XLALSFTVectorAdd() failed for SFTVector %d out of %d\n", X+1, numIFOs );
 
     } // for X < numIFOs
@@ -1281,7 +1447,7 @@ XLALMultiSFTVectorAdd ( MultiSFTVector *a,	/**< [in/out] MultiSFTVector to be ad
 /**
  * Adds SFT-data from SFTvector 'b' to elements of SFTVector 'a'
  *
- * NOTE: the inputs 'a' and 'b' must have consistent number of SFTs, IFO-names,
+ * NOTE: the inputs 'a' and 'b' must have consistent number of SFTs,
  * start-frequency, frequency-spacing, timestamps, units and number of bins.
  *
  * The 'name' field of input/output SFTs in 'a' is not modified!
@@ -1313,7 +1479,7 @@ XLALSFTVectorAdd ( SFTVector *a,	/**< [in/out] SFTVector to be added to */
 /**
  * Adds SFT-data from SFT 'b' to SFT 'a'
  *
- * NOTE: the inputs 'a' and 'b' must have consistent IFO-names,
+ * NOTE: the inputs 'a' and 'b' must have consistent
  * start-frequency, frequency-spacing, timestamps, units and number of bins.
  *
  * The 'name' field of input/output SFTs in 'a' is not modified!
@@ -1328,7 +1494,6 @@ XLALSFTAdd ( SFTtype *a,		/**< [in/out] SFT to be added to */
   XLAL_CHECK ( a->data != NULL, XLAL_EINVAL );
   XLAL_CHECK ( b->data != NULL, XLAL_EINVAL );
 
-  XLAL_CHECK ( strncmp ( a->name, b->name, 2 ) == 0, XLAL_EINVAL, "SFT detectors differ '%c%c' != '%c%c'\n", a->name[0], a->name[1], b->name[0], b->name[1] );
   XLAL_CHECK ( XLALGPSDiff ( &(a->epoch), &(b->epoch) ) == 0, XLAL_EINVAL, "SFT epochs differ %ld != %ld ns\n", XLALGPSToINT8NS ( &(a->epoch) ), XLALGPSToINT8NS ( &(b->epoch) ) );
 
   REAL8 tol = 10 * LAL_REAL8_EPS;	// generously allow up to 10*eps tolerance
@@ -1402,9 +1567,10 @@ XLALFindCoveringSFTBins ( UINT4 *firstBin,	///< [out] effective lower frequency-
 /** Finds the earliest timestamp in a multi-SFT data structure
  *
 */
-int XLALEarliestMultiSFTsample ( LIGOTimeGPS *out,              /**< [out] earliest GPS time */
-                                 MultiSFTVector *multisfts      /**< [in] multi SFT vector */
-                                 )
+int
+XLALEarliestMultiSFTsample ( LIGOTimeGPS *out,              /**< [out] earliest GPS time */
+                             const MultiSFTVector *multisfts      /**< [in] multi SFT vector */
+                             )
 {
   UINT4 i,j;
 
@@ -1451,9 +1617,10 @@ int XLALEarliestMultiSFTsample ( LIGOTimeGPS *out,              /**< [out] earli
 /** Find the time of the end of the latest SFT in a multi-SFT data structure
  *
 */
-int XLALLatestMultiSFTsample ( LIGOTimeGPS *out,              /**< [out] latest GPS time */
-                               MultiSFTVector *multisfts      /**< [in] multi SFT vector */
-                               )
+int
+XLALLatestMultiSFTsample ( LIGOTimeGPS *out,              /**< [out] latest GPS time */
+                           const MultiSFTVector *multisfts      /**< [in] multi SFT vector */
+                           )
 {
   UINT4 i,j;
   SFTtype *firstSFT;
@@ -1511,36 +1678,35 @@ int XLALLatestMultiSFTsample ( LIGOTimeGPS *out,              /**< [out] latest 
 
 
 /**
- * XLAL function to get a list of detector IDs from multi-segment multiSFT vectors
- * returns all unique detector IDs for cases with some detectors switching on and off
+ * XLAL function to get a sorted list of unique 2-character detector IDs (prefixes) from a SFTcatalog
+ * IFOList can be either
+ * (1) NULL, in which case it will be allocated and filled from the IDs in the SFTcatalog
+ * (2) or a pre-allocated and filled list, then it appends any new detectors and resorts the list
  */
 LALStringVector *
-XLALGetDetectorIDsFromSFTCatalog (
-  LALStringVector *IFOList,		///< IFO string vector for returning
-  const SFTCatalog *SFTcatalog		///< SFT catalog
-  )
+XLALGetDetectorIDsFromSFTCatalog ( LALStringVector *IFOList,		/**< [in/out] IFO string vector for (appending and) returning */
+                                   const SFTCatalog *SFTcatalog		/**< [in] SFT catalog which carries the detector prefixes */
+                                   )
 {
 
-  /* check input parameters and report errors */
   XLAL_CHECK_NULL( SFTcatalog != NULL, XLAL_EFAULT );
 
-  for (UINT4 X = 0; X < SFTcatalog->length; X++) {
-    /* check for a new detector */
-    const char *thisIFO = SFTcatalog->data[X].header.name;
+  for (UINT4 n = 0; n < SFTcatalog->length; n++) {
 
-    if ( XLALFindStringInVector ( thisIFO, IFOList ) >= 0 ) { // if already in list, do nothing
-      continue;
-    }
-    else {       // otherwise, append to IFOList
-      if ( (IFOList = XLALAppendString2Vector ( IFOList, thisIFO )) == NULL ) {
-        XLAL_ERROR_NULL ( XLAL_EFUNC );
-      }
+    /* get only the official 2-character prefix, not any longer name that might be in the SFT header */
+    char *thisIFO = NULL;
+    XLAL_CHECK_NULL ( ( thisIFO =  XLALGetChannelPrefix(SFTcatalog->data[n].header.name) ) != NULL, XLAL_EFUNC );
+
+    if ( XLALFindStringInVector ( thisIFO, IFOList ) == -1 ) { /* only append to IFOList if not a duplicate */
+      XLAL_CHECK_NULL ( (IFOList = XLALAppendString2Vector ( IFOList, thisIFO )) != NULL, XLAL_EFUNC );
     }
 
-  } /* for X < number of detectors */
+    XLALFree ( thisIFO );
 
-  /* sort final list by detector-name */
-  XLAL_CHECK_NULL ( XLALSortStringVector ( IFOList ) == XLAL_SUCCESS, XLAL_EFUNC, "Failed call to XLALSortStringVector()." );
+  } /* for n < SFTcatalog->length */
+
+  /* sort final list alphabetically by detector-name */
+  XLAL_CHECK_NULL ( XLALSortStringVector ( IFOList ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   return IFOList;
 
@@ -1550,11 +1716,11 @@ XLALGetDetectorIDsFromSFTCatalog (
 /**
  * Create a 'fake' SFT catalog which contains only detector and timestamp information.
  */
-SFTCatalog *XLALAddToFakeSFTCatalog(
-  SFTCatalog *catalog,                          /**< [in] SFT catalog; if NULL, a new catalog is created */
-  const CHAR *detector,                         /**< [in] Name of detector to set fake catalog entries to */
-  const LIGOTimeGPSVector *timestamps           /**< [in] Timestamps of each fake catalog entry */
-  )
+SFTCatalog *
+XLALAddToFakeSFTCatalog ( SFTCatalog *catalog,                          /**< [in] SFT catalog; if NULL, a new catalog is created */
+                          const CHAR *detector,                         /**< [in] Name of detector to set fake catalog entries to */
+                          const LIGOTimeGPSVector *timestamps           /**< [in] Timestamps of each fake catalog entry */
+                          )
 {
 
   // Check input
@@ -1605,13 +1771,12 @@ SFTCatalog *XLALAddToFakeSFTCatalog(
 /**
  * Multi-detector and multi-timestamp wrapper of XLALAddToFakeSFTCatalog().
  */
-SFTCatalog *XLALMultiAddToFakeSFTCatalog(
-  SFTCatalog *catalog,                          /**< [in] SFT catalog; if NULL, a new catalog is created */
-  const LALStringVector *detectors,             /**< [in] Detector names to set fake catalog entries to */
-  const MultiLIGOTimeGPSVector *timestamps      /**< [in] Timestamps for each detector of each fake catalog entry */
-  )
+SFTCatalog *
+XLALMultiAddToFakeSFTCatalog ( SFTCatalog *catalog,                          /**< [in] SFT catalog; if NULL, a new catalog is created */
+                               const LALStringVector *detectors,             /**< [in] Detector names to set fake catalog entries to */
+                               const MultiLIGOTimeGPSVector *timestamps      /**< [in] Timestamps for each detector of each fake catalog entry */
+                               )
 {
-
   // Check input
   XLAL_CHECK_NULL( detectors != NULL, XLAL_EFAULT );
   XLAL_CHECK_NULL( detectors->length > 0, XLAL_EINVAL );
@@ -1629,3 +1794,138 @@ SFTCatalog *XLALMultiAddToFakeSFTCatalog(
   return catalog;
 
 } /* XLALMultiAddToFakeSFTCatalog() */
+
+
+/**
+ * Copy an entire SFT-type into another.
+ * We require the destination-SFT to have a NULL data-entry, as the
+ * corresponding data-vector will be allocated here and copied into
+ *
+ * Note: the source-SFT is allowed to have a NULL data-entry,
+ * in which case only the header is copied.
+ */
+int
+XLALCopySFT ( SFTtype *dest, 		/**< [out] copied SFT (needs to be allocated already) */
+              const SFTtype *src	/**< input-SFT to be copied */
+              )
+{
+  // check input sanity
+  XLAL_CHECK ( dest != NULL, XLAL_EINVAL );
+  XLAL_CHECK ( dest->data == NULL, XLAL_EINVAL );
+  XLAL_CHECK ( src != NULL, XLAL_EINVAL );
+
+  /* copy complete head (including data-pointer, but this will be separately alloc'ed and copied in the next step) */
+  (*dest) = (*src);	// struct copy
+
+  /* copy data (if there's any )*/
+  if ( src->data )
+    {
+      UINT4 numBins = src->data->length;
+      XLAL_CHECK ( (dest->data = XLALCreateCOMPLEX8Vector ( numBins )) != NULL, XLAL_EFUNC );
+      memcpy ( dest->data->data, src->data->data, numBins * sizeof (dest->data->data[0]));
+    }
+
+  return XLAL_SUCCESS;
+
+} // XLALCopySFT()
+
+/**
+ * Extract an SFTVector from another SFTVector but only those timestamps matching
+ *
+ * Timestamps must be a subset of those sfts in the SFTVector or an error occurs
+ */
+SFTVector *
+XLALExtractSFTVectorWithTimestamps ( const SFTVector *sfts,                 /**< input SFTs */
+                                     const LIGOTimeGPSVector *timestamps    /**< timestamps */
+                                     )
+{
+  // check input sanity
+  XLAL_CHECK_NULL( sfts != NULL, XLAL_EINVAL);
+  XLAL_CHECK_NULL( timestamps != NULL, XLAL_EINVAL );
+  XLAL_CHECK_NULL( sfts->length >= timestamps->length, XLAL_EINVAL );
+
+  SFTVector *ret = NULL;
+  XLAL_CHECK_NULL( (ret = XLALCreateSFTVector(timestamps->length, 0)) != NULL, XLAL_EFUNC );
+
+  UINT4 indexOfInputSFTVector = 0;
+  UINT4 numberOfSFTsLoadedIntoOutputVector = 0;
+  for (UINT4 ii=0; ii<timestamps->length; ii++)
+    {
+      XLAL_CHECK_NULL( indexOfInputSFTVector < sfts->length, XLAL_FAILURE, "At least one timestamp is not in the range specified by the SFT vector" );
+
+      for (UINT4 jj=indexOfInputSFTVector; jj<sfts->length; jj++)
+        {
+        if ( XLALGPSCmp(&(sfts->data[jj].epoch), &(timestamps->data[ii])) == 0 )
+          {
+            indexOfInputSFTVector = jj+1;
+            XLAL_CHECK_NULL( XLALCopySFT(&(ret->data[ii]), &(sfts->data[jj])) == XLAL_SUCCESS, XLAL_EFUNC );
+            numberOfSFTsLoadedIntoOutputVector++;
+            break;
+          } // if SFT epoch matches timestamp epoch
+        } // for jj < sfts->length
+    } // for ii < timestamps->length
+
+  XLAL_CHECK_NULL( numberOfSFTsLoadedIntoOutputVector == ret->length, XLAL_FAILURE, "Not all timestamps were found in the input SFT vector" );
+
+  return ret;
+
+} // XLALExtractSFTVectorWithTimestamps
+
+/**
+ * Extract a MultiSFTVector from another MultiSFTVector but only those timestamps matching
+ *
+ * Timestamps in each LIGOTimeGPSVector must be a subset of those sfts in each SFTVector or an error occurs
+ */
+MultiSFTVector *
+XLALExtractMultiSFTVectorWithMultiTimestamps ( const MultiSFTVector *multiSFTs,                 /**< input SFTs */
+                                               const MultiLIGOTimeGPSVector *multiTimestamps    /**< timestamps */
+                                               )
+{
+  // check input sanity
+  XLAL_CHECK_NULL( multiSFTs != NULL, XLAL_EINVAL);
+  XLAL_CHECK_NULL( multiTimestamps != NULL, XLAL_EINVAL );
+
+  MultiSFTVector *ret = NULL;
+  XLAL_CHECK_NULL( (ret = XLALCalloc(1, sizeof(*ret))) != NULL, XLAL_ENOMEM );
+  XLAL_CHECK_NULL( (ret->data = XLALCalloc(multiSFTs->length, sizeof(*ret->data))) != NULL, XLAL_ENOMEM );
+  ret->length = multiSFTs->length;
+
+  for (UINT4 X=0; X<multiSFTs->length; X++)
+    {
+       XLAL_CHECK_NULL( (ret->data[X] = XLALExtractSFTVectorWithTimestamps(multiSFTs->data[X], multiTimestamps->data[X])) != NULL, XLAL_EFUNC );
+    }
+
+  return ret;
+
+} // XLALExtractMultiSFTVectorWithMultiTimestamps
+
+/**
+ * Create a complete copy of an SFT vector
+ */
+SFTVector *
+XLALDuplicateSFTVector ( const SFTVector *sftsIn )
+{
+  XLAL_CHECK_NULL ( (sftsIn != NULL) && ( sftsIn->length > 0), XLAL_EINVAL );
+
+  UINT4 numSFTs = sftsIn->length;
+  UINT4 numBins = sftsIn->data[0].data->length;
+
+  SFTVector *sftsOut;
+  XLAL_CHECK_NULL ( (sftsOut = XLALCreateSFTVector ( numSFTs, numBins )) != NULL, XLAL_EFUNC );
+
+  for ( UINT4 alpha=0; alpha < numSFTs; alpha++ )
+    {
+      SFTtype *thisSFTIn = &sftsIn->data[alpha];
+      SFTtype *thisSFTOut = &sftsOut->data[alpha];
+
+      COMPLEX8Vector *tmp = thisSFTOut->data;
+      memcpy ( thisSFTOut, thisSFTIn, sizeof(*thisSFTOut) );
+      thisSFTOut->data = tmp;
+      thisSFTOut->data->length = numBins;
+      memcpy ( thisSFTOut->data->data, thisSFTIn->data->data, numBins * sizeof(thisSFTOut->data->data[0]) );
+
+    } // for alpha < numSFTs
+
+  return sftsOut;
+
+} // XLALDuplicateSFTVector()

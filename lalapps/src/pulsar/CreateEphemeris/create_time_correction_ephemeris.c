@@ -83,9 +83,9 @@ int main(int argc, char **argv){
 
   /* output header information on lines starting with a # comment */
   fprintf(fp, "# Build information for %s\n", argv[0]);
-  fprintf(fp, "# Author: "LALAPPS_VCS_AUTHOR"\n");
-  fprintf(fp, "# LALApps Commit ID: "LALAPPS_VCS_ID"\n");
-  fprintf(fp, "# LALApps Commit Date: "LALAPPS_VCS_DATE"\n");
+  fprintf(fp, "# Author: %s\n", lalAppsVCSAuthor);
+  fprintf(fp, "# LALApps Commit ID: %s\n", lalAppsVCSId);
+  fprintf(fp, "# LALApps Commit Date: %s\n", lalAppsVCSDate);
   fprintf(fp, "#\n# Ephemeris creation command:-\n#\t");
   for( INT4 k=0; k<argc; k++ ) fprintf(fp, "%s ", argv[k]);
   fprintf(fp, "\n");

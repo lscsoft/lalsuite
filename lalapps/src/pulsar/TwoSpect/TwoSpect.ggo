@@ -1,5 +1,5 @@
 package "lalapps_TwoSpect"
-version "1.2.0"
+version "1.2.3"
 purpose "TwoSpect analysis program"
 
 args "--string-parser --conf-parser --show-required=[required]"
@@ -16,7 +16,6 @@ option "fspan" - "Frequency span of band (Hz)" double required
 option "IFO"   - "Interferometer of whose data is being analyzed" string typestr="IFO code" values="H1","L1","V1" required multiple(1)
 option "avesqrtSh"     - "Expected average of square root of Sh" double required
 option "blksize"       - "Blocksize for running median to determine expected noise of input SFTs" int default="101" optional
-option "sftType"  - "SFT type of either 'standard' (v2 SFTs; FFT coefficients * dt/RMS(window weights)) or 'vladimir' (Vladimir's Hann windowed SFT version; FFT coefficients * 2*dt)" string values="standard","vladimir" default="standard" optional
 
 section "Input/ouput parameters"
 option "outdirectory"   - "Output directory" string typestr="directory" default="output" optional
@@ -41,7 +40,10 @@ option "linPolAngle"    - "Polarization angle to search using linear polarizatio
 option "harmonicNumToSearch"  - "Number of harmonics of the Pmin to Pmax range to search" int default="1" optional
 option "periodHarmToCheck"  - "Number of harmonics/sub-harmonics of the IHS candidates to test" int default="5" optional
 option "periodFracToCheck"  - "Number of fractional periods to check in the sense of [(1...N)+1]/[(1...N)+2]" int default="3" optional
-option "templateSearch" - "Flag for doing a pure template-based search on search region specified by (sky,f,fspan,hardcoded P, hardcoded asini)" flag off
+option "templateSearch" - "Flag for doing a pure template-based search on search region specified by (sky,f,fspan,P, Asini +- 3 AsiniSigma)" flag off
+option "templateSearchP" - "The template search period; templateSearch flag is required" double dependon="templateSearch" optional
+option "templateSearchAsini" - "The template search Asini; templateSearch flag is required" double dependon="templateSearch" optional
+option "templateSearchAsiniSigma" - "The template search uncertainty in Asini; templateSearch flag is required" double dependon="templateSearch" optional
 
 section "TwoSpect threshold settings"
 option "ihsfactor" - "Number of harmonics to sum in IHS algorithm" int default="5" optional
@@ -76,6 +78,8 @@ section "Injection options"
 option "timestampsFile"    - "File to read timestamps from (file-format: lines with <seconds> <nanoseconds>; conflicts with --sftDir/--sftFile and --segmentFile options)" string typestr="path/filename" optional
 option "segmentFile"       - "File to read segments from (file-format: lines with <startGPSTime> <endGPSTime>; conflicts with --sftDir/--sftFile and --timestampsFile options)" string typestr="path/filename" optional
 option "injectionSources"  - "File containing sources to inject with a required preceding @ symbol" string typestr="@path/filename" optional
+option "injFmin"           - "Minimum frequency of band to create in TwoSpect" double dependon="injBand" optional
+option "injBand"           - "Width of band to create in TwoSpect" double dependon="injFmin" optional
 option "injRandSeed"       - "Random seed value for reproducable noise (conflicts with --sftDir/--sftFile options)" int default="0" optional
 
 section "Hidden options"
@@ -85,6 +89,7 @@ option "templateTest"  - "Test the doubly-Fourier transformed data against a sin
 option "templateTestF" - "The template test frequency; templateTest flag is required" double dependon="templateTest" optional hidden
 option "templateTestP" - "The template test period; templateTest flag is required" double dependon="templateTest" optional hidden
 option "templateTestDf"    - "The template test modulation depth; templateTest flag is required" double dependon="templateTest" optional hidden
+option "bruteForceTemplateTest" - "Test a number of different templates using templateTest parameters" flag off hidden
 option "ULsolver" - "Solver function for the upper limit calculation: 0=gsl_ncx2cdf_float_withouttinyprob_solver, 1=gsl_ncx2cdf_withouttinyprob_solver, 2=gsl_ncx2cdf_float_solver, 3=gsl_ncx2cdf_solver, 4=ncx2cdf_float_withouttinyprob_withmatlabchi2cdf_solver, 5=ncx2cdf_withouttinyprob_withmatlabchi2cdf_solver" int values="0","1","2","3","4","5" default="0" optional hidden
 option "dopplerMultiplier" - "Multiplier for the Doppler velocity" double default="1.0" optional hidden
 option "IHSonly"  - "IHS stage only is run. Output statistic is the IHS statistic." flag off hidden
@@ -98,7 +103,6 @@ option "ULoff"    - "Turn off upper limits computation" flag off hidden
 option "printSFTtimes" - "Output a list <GPS sec> <GPS nanosec> of SFT start times of input SFTs" flag off hidden
 option "printUsedSFTtimes"  - "Output a list <GPS sec> <GPS nanosec> of SFT start times of the SFTs passing tests" flag off hidden
 option "printData"     - "Print to ASCII files the data values" flag off hidden
-option "printUninitialized" - "Print uninitialized values in TFdata_weighted and TSofPowers vectors at n-th sky location specified by option (if not enough sky locations exist, then these vectors don't get printed!)" int optional hidden
 option "printSignalData"    - "Print f0 and h0 per SFT of the signal, used only with --injectionSources option" dependon="injectionSources" string typestr="path/filename" default="./signal.dat" optional hidden
 option "printMarginalizedSignalData"  - "Print f0 and h0 per SFT of the signal, used only with --injectionSources option" dependon="injectionSources" string typestr="path/filename" default="./signal.dat" optional hidden
 option "randSeed" - "Random seed value" int optional hidden

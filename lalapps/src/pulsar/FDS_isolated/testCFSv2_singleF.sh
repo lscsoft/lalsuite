@@ -24,15 +24,6 @@ cfs_code="${fdsdir}lalapps_ComputeFStatistic_v2"
 SFTdir="testCFSv2_singleF_sfts"
 SFTfiles="$SFTdir${dirsep}*"
 
-if [ -z "${LAL_DATA_PATH}" ]; then
-    echo
-    echo "Need environment-variable LAL_DATA_PATH to be set to include"
-    echo "your ephemeris-directory (e.g. /usr/local/share/lalpulsar)"
-    echo "This might indicate an incomplete LAL+LALPULSAR installation"
-    echo
-    exit 1
-fi
-
 ## ---------- fixed parameter of our test-signal -------------
 Alpha="1.42"
 Delta="-0.5"

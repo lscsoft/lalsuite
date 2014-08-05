@@ -1,19 +1,26 @@
-SUBDIRS = bayestar
-
-pkgpython_PYTHON = \
-	__init__.py \
-	git_version.py
-
-EXTRA_DIST = \
-	git_version.py
-
 BUILT_SOURCES =
 MOSTLYCLEANFILES =
+EXTRA_DIST =
+include $(top_srcdir)/gnuscripts/lalsuite_python.am
 
-if HAVE_GIT_REPO
-BUILT_SOURCES += git_version.py
-MOSTLYCLEANFILES += git_version.py
-git_version.py .PHONY : gen-git_version.py
-gen-git_version.py :
-	$(AM_V_at)$(GENERATE_VCS_INFO) git_version.py $(srcdir)/git_version.py.git
+SUBDIRS = lalinference
+
+if HAVE_PYTHON
+
+pybin_SCRIPTS = \
+	bayestar_aggregate_found_injections \
+	bayestar_bin_samples \
+	bayestar_lattice_tmpltbank \
+	bayestar_localize_coincs \
+	bayestar_localize_lvalert \
+	bayestar_plot_allsky \
+	bayestar_plot_found_injections \
+	bayestar_plot_pileup \
+	bayestar_prune_neighborhood_tmpltbank \
+	bayestar_realize_coincs \
+	bayestar_sample_model_psd \
+	bayestar_sim_to_tmpltbank \
+	bayestar_littlehope \
+	$(END_OF_LIST)
+
 endif

@@ -40,7 +40,6 @@
 
 #include <lal/LALStdlib.h>
 #include <lal/LALError.h>
-#include <lal/GSLSupport.h>
 #include <lal/LogPrintf.h>
 #include <lal/UserInput.h>
 #include <lal/SFTfileIO.h>
@@ -55,6 +54,7 @@ BOOLEAN calc_AM_coeffs(LALStatus*, gsl_rng*, REAL8, REAL8, REAL8, REAL8, MultiDe
 REAL8 pdf_ncx2_4(REAL8, REAL8);
 REAL8 d_pdf_ncx2_4(REAL8, REAL8);
 REAL8 ran_ncx2_4(const gsl_rng*, REAL8);
+gsl_vector_int *resize_histogram(gsl_vector_int *old_hist, size_t size);
 
 #define TRUE  (1==1)
 #define FALSE (1==0)
@@ -98,7 +98,7 @@ int main(int argc, char *argv[]) {
   gsl_matrix *mism_hist = NULL;
   SFTCatalog *catalog = NULL;
   MultiSFTVector *sfts = NULL;
-  EphemerisData ephemeris = empty_EphemerisData;
+  EphemerisData XLAL_INIT_DECL(ephemeris);
   MultiDetectorStateSeries *detector_states = NULL;
   MultiPSDVector *rng_med = NULL;
   MultiNoiseWeights *noise_weights = NULL;
@@ -228,7 +228,7 @@ int main(int argc, char *argv[]) {
 
   /* Load the SFTs */
   {
-    SFTConstraints constraints = empty_SFTConstraints;
+    SFTConstraints XLAL_INIT_DECL(constraints);
     REAL8 extra = 0.0, f_min = 0.0, f_max = 0.0;
     
     /* Load the catalog */
@@ -499,7 +499,7 @@ int main(int argc, char *argv[]) {
 	  
 	  /* Resize histogram vector if needed */
 	  if (!twoF_pdf_hist || bin >= twoF_pdf_hist->size)
-	    if (NULL == (twoF_pdf_hist = XLALResizeGSLVectorInt(twoF_pdf_hist, bin + 1, 0))) {
+	    if (NULL == (twoF_pdf_hist = resize_histogram(twoF_pdf_hist, bin + 1))) {
 	      XLALPrintError("\nCouldn't (re)allocate 'twoF_pdf_hist'\n");
 	      return EXIT_FAILURE;
 	    }
@@ -631,7 +631,7 @@ BOOLEAN calc_AM_coeffs(
 {
   
   MultiAMCoeffs *AM_coeffs = NULL;
-  SkyPosition sky = empty_SkyPosition;
+  SkyPosition XLAL_INIT_DECL(sky);
   
   /* Generate a random sky position */
   sky.system = COORDINATESYSTEM_EQUATORIAL;
@@ -721,4 +721,18 @@ REAL8 ran_ncx2_4(const gsl_rng *rng, REAL8 lambda) {
   
   return x;
 
+}
+
+/* Resize histogram */
+gsl_vector_int *resize_histogram(gsl_vector_int *old_hist, size_t size) {
+  gsl_vector_int *new_hist = gsl_vector_int_alloc(size);
+  XLAL_CHECK_NULL(new_hist != NULL, XLAL_ENOMEM);
+  gsl_vector_int_set_zero(new_hist);
+  if (old_hist != NULL) {
+    gsl_vector_int_view old = gsl_vector_int_subvector(old_hist, 0, GSL_MIN(old_hist->size, size));
+    gsl_vector_int_view new = gsl_vector_int_subvector(new_hist, 0, GSL_MIN(old_hist->size, size));
+    gsl_vector_int_memcpy(&new.vector, &old.vector);
+    gsl_vector_int_free(old_hist);
+  }
+  return new_hist;
 }

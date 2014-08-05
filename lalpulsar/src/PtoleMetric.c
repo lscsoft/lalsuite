@@ -28,11 +28,6 @@
 #include <lal/StackMetric.h>
 #include <lal/Factorial.h>
 
-/*---------- empty initializers ---------- */
-/* some empty structs for initializations */
-static const MetricParamStruc empty_MetricParamStruc;
-static const PulsarTimesParamStruc empty_PulsarTimesParamStruc;
-
 /* Bounds on acceptable parameters, may be somewhat arbitrary */
 #define MIN_DURATION (LAL_DAYSID_SI/LAL_TWOPI) /* Metric acts funny if duration too short */
 #define MIN_MAXFREQ  1.                        /* Arbitrary */
@@ -161,7 +156,7 @@ void LALPtoleMetric( LALStatus *status,
 	  PTOLEMETRICH_MSGEPARM );
   ASSERT( input->position.longitude <= LAL_TWOPI, status,
           PTOLEMETRICH_EPARM, PTOLEMETRICH_MSGEPARM );
-  ASSERT( abs(input->position.latitude) <= LAL_PI_2, status,
+  ASSERT( fabs(input->position.latitude) <= LAL_PI_2, status,
 	  PTOLEMETRICH_EPARM, PTOLEMETRICH_MSGEPARM );
 
   /* Check for valid maximum frequency. */
@@ -169,9 +164,9 @@ void LALPtoleMetric( LALStatus *status,
           PTOLEMETRICH_MSGEPARM );
 
   /* Check for valid detector location. */
-  ASSERT( abs(input->site->frDetector.vertexLatitudeRadians) <= LAL_PI_2, status,
+  ASSERT( fabs(input->site->frDetector.vertexLatitudeRadians) <= LAL_PI_2, status,
 	  PTOLEMETRICH_EPARM, PTOLEMETRICH_MSGEPARM );
-  ASSERT( abs(input->site->frDetector.vertexLongitudeRadians) <= LAL_PI, status,
+  ASSERT( fabs(input->site->frDetector.vertexLongitudeRadians) <= LAL_PI, status,
 	  PTOLEMETRICH_EPARM, PTOLEMETRICH_MSGEPARM );
 
   if( input->spindown )
@@ -636,10 +631,10 @@ void LALPulsarMetric ( LALStatus *stat,
 		       REAL8Vector **metric,
 		       PtoleMetricIn *input )
 {
-  MetricParamStruc params = empty_MetricParamStruc;
-  PulsarTimesParamStruc spinParams = empty_PulsarTimesParamStruc;
-  PulsarTimesParamStruc baryParams = empty_PulsarTimesParamStruc;
-  PulsarTimesParamStruc compParams = empty_PulsarTimesParamStruc;
+  MetricParamStruc XLAL_INIT_DECL(params);
+  PulsarTimesParamStruc XLAL_INIT_DECL(spinParams);
+  PulsarTimesParamStruc XLAL_INIT_DECL(baryParams);
+  PulsarTimesParamStruc XLAL_INIT_DECL(compParams);
   REAL8Vector *lambda = NULL;
   UINT4 i, nSpin, dim;
 

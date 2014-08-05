@@ -49,6 +49,7 @@ int parseargs(int argc, char **argv);
 
 int main(int argc, char *argv[])
 {
+	char tstr[32]; // string to hold GPS time -- 31 characters is enough
 	size_t length;
 	size_t stride;
 	size_t n;
@@ -85,12 +86,12 @@ int main(int argc, char *argv[])
 	seg = XLALCreateREAL8TimeSeries("STRAIN", &epoch, 0.0, 1.0/srate, &lalStrainUnit, length);
 	XLALSimNoise(seg, 0, psd, rng); // first time to initialize
 	while (1) { // infinite loop
-		double t0 = XLALGPSGetREAL8(&seg->epoch);
 		size_t j;
 		for (j = 0; j < stride; ++j, --n) { // output first stride points
+			LIGOTimeGPS t = seg->epoch;
 			if (n == 0) // check if we're done
 				goto end;
-			printf("%.9f\t%e\n", t0 + j * seg->deltaT, seg->data->data[j]);
+			printf("%s\t%e\n", XLALGPSToStr(tstr, XLALGPSAdd(&t, j * seg->deltaT)), seg->data->data[j]);
 		}
 		XLALSimNoise(seg, stride, psd, rng); // make more data
 	}
@@ -205,11 +206,11 @@ int parseargs( int argc, char **argv )
 				flow = 30.0;
 				detector = "GEO600";
 				break;
-                       case 'G': /* GEO-HF */
-                                psdfunc = XLALSimNoisePSDGEOHF;
-                                flow = 50.0;
-                                detector = "GEOHF";
-                                break;
+			case 'G': /* GEO-HF */
+				psdfunc = XLALSimNoisePSDGEOHF;
+				flow = 50.0;
+				detector = "GEOHF";
+				break;
 			case 'T': /* TAMA300 */
 				psdfunc = XLALSimNoisePSDTAMA;
 				flow = 30.0;
@@ -232,7 +233,7 @@ int parseargs( int argc, char **argv )
 			case 't': /* duration */
 				duration = atof(optarg);
 				break;
-			case 'r': /* duration */
+			case 'r': /* sample-rate */
 				srate = atof(optarg);
 				break;
 			case 'd': /* segment duration */

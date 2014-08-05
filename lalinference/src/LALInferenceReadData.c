@@ -384,7 +384,8 @@ void LALInferencePrintDataWithInjection(LALInferenceIFOData *IFOdata, ProcessPar
  --psdstart GPStime             GPS start time of PSD estimation data\n\
  --psdlength length             length of PSD estimation data in seconds\n\
  --seglen length                length of segments for PSD estimation and analysis in seconds\n\
- --trigtime GPStime             GPS time of the trigger to analyse\n\
+(--trigtime GPStime)            GPS time of the trigger to analyse (optional when using --margtime or --margtimephi)\n\
+(--segment-start)               GPS time of the start of the segment (optional when --trigtime given, default is seglen-2 s before --trigtime)\n\
 (--srate rate)                  Downsample data to rate in Hz (4096.0,)\n\
 (--injectionsrate rate)         Downsample injection signal to rate in Hz (--srate)\n\
 (--IFO1-flow freq1 [--IFO2-flow freq2 ...])      Specify lower frequency cutoff for overlap integral (40.0)\n\
@@ -581,7 +582,7 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
     }
     else{
         if(injTable) memcpy(&GPStrig,&(injTable->geocent_end_time),sizeof(GPStrig));
-        else {
+        else if(!LALInferenceGetProcParamVal(commandLine,"--segment-start")){
             XLALPrintError("Error: No trigger time specifed and no injection given \n");
             XLAL_ERROR_NULL(XLAL_EINVAL);
         }
@@ -822,19 +823,28 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
 
     /* Set up FFT structures and window */
     for (i=0;i<Nifo;i++){
-        /* Create FFT plans */
-        IFOdata[i].timeToFreqFFTPlan = XLALCreateForwardREAL8FFTPlan((UINT4) seglen, 0 );
+        /* Create FFT plans (flag 1 to measure performance) */
+        IFOdata[i].timeToFreqFFTPlan = XLALCreateForwardREAL8FFTPlan((UINT4) seglen, 1 );
         if(!IFOdata[i].timeToFreqFFTPlan) XLAL_ERROR_NULL(XLAL_EFUNC);
-        IFOdata[i].freqToTimeFFTPlan = XLALCreateReverseREAL8FFTPlan((UINT4) seglen,0);
+        IFOdata[i].freqToTimeFFTPlan = XLALCreateReverseREAL8FFTPlan((UINT4) seglen, 1 );
         if(!IFOdata[i].freqToTimeFFTPlan) XLAL_ERROR_NULL(XLAL_EFUNC);		
         /* Setup windows */
         IFOdata[i].window=XLALCreateTukeyREAL8Window(seglen,(REAL8)2.0*padding*SampleRate/(REAL8)seglen);
         if(!IFOdata[i].window) XLAL_ERROR_NULL(XLAL_EFUNC);
     }
 
-    /* Trigger time = 2 seconds before end of segment (was 1 second, but Common Inputs for The Events are -6 +2*/
-    memcpy(&segStart,&GPStrig,sizeof(LIGOTimeGPS));
-    XLALGPSAdd(&segStart,-SegmentLength+2);
+    if(!(ppt=LALInferenceGetProcParamVal(commandLine,"--segment-start")))
+    {
+        /* Trigger time = 2 seconds before end of segment (was 1 second, but Common Inputs for The Events are -6 +2*/
+        memcpy(&segStart,&GPStrig,sizeof(LIGOTimeGPS));
+        XLALGPSAdd(&segStart,-SegmentLength+2);
+    }
+    else
+    {
+        /* Segment starts at given time */
+        REAL8 segstartR8 = atof(ppt->value);
+        XLALGPSSetREAL8(&segStart,segstartR8);
+    }
 
 
     /* Read the PSD data */
@@ -968,10 +978,7 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
 
                 if(LALInferenceGetProcParamVal(commandLine, "--binFit")) {
 
-                    LIGOTimeGPS GPStime;
-
-                    GPStime.gpsSeconds = GPStrig.gpsSeconds - SegmentLength;
-                    GPStime.gpsNanoSeconds = GPStrig.gpsNanoSeconds;
+                    LIGOTimeGPS GPStime=segStart;
 
                     const UINT4 nameLength=256;
                     char filename[nameLength];
@@ -2715,6 +2722,7 @@ void LALInferencePrintInjectionSample(LALInferenceRunState *runState)
 
     /* Save old variables */
     LALInferenceCopyVariables(runState->currentParams,&backup);
+    //LALInferenceClearVariables(runState->currentParams);
     LALPNOrder *order=LALInferenceGetVariable(&backup,"LAL_PNORDER");
     Approximant *approx=LALInferenceGetVariable(&backup,"LAL_APPROXIMANT");
     /* Fill named variables */

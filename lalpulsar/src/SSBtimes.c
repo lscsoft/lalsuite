@@ -30,7 +30,6 @@
 #include <gsl/gsl_roots.h>
 
 /*---------- local DEFINES ----------*/
-#define EA_ACC          1E-9                    /* the timing accuracy of LALGetBinaryTimes in seconds */
 
 /*----- Macros ----- */
 
@@ -38,10 +37,6 @@
 #define SCALAR(u,v) ((u)[0]*(v)[0] + (u)[1]*(v)[1] + (u)[2]*(v)[2])
 
 /*---------- Global variables ----------*/
-
-/* empty initializers  */
-const SSBtimes empty_SSBtimes;
-const MultiSSBtimes empty_MultiSSBtimes;
 
 /*---------- internal prototypes ----------*/
 
@@ -301,6 +296,7 @@ XLALAddBinaryTimes ( SSBtimes **tSSBOut,			//!< [out] reference-time offsets in 
   REAL8 sinw 	= sin ( argp );		/* the sin and cos of the argument of periapsis */
   REAL8 cosw 	= cos ( argp );
   REAL8 n    	= LAL_TWOPI / Porb;
+  REAL8 Freq    = Doppler->fkdot[0];
 
   REAL8 refTimeREAL8 = XLALGPSGetREAL8 ( &tSSBIn->refTime );
 
@@ -309,7 +305,10 @@ XLALAddBinaryTimes ( SSBtimes **tSSBOut,			//!< [out] reference-time offsets in 
   REAL8 B = n * asini * sinw;			// see Eq.(eq:defB)
   REAL8 tp = XLALGPSGetREAL8 ( &(Doppler->tp) );
   REAL8 Tp = tp + asini * sinw * (1 - e);	// see Eq.(eq:defTPeri)
-  REAL8 acc = LAL_TWOPI * EA_ACC / Porb;   // root-finding accuracy, EA_ACC represents the required timing precision in seconds
+
+  REAL8 maxPhaseErr = 1e-3;			// maximal allowed CW phase-error due to error in E
+  REAL8 epsabs = maxPhaseErr / ( Freq * Porb);  // absolute root-finding accuracy required on E
+  REAL8 epsrel = 0;				// no constraint on relative accuracy
 
   /* loop over the SFTs i */
   for ( UINT4 i = 0; i < numSteps; i++ )
@@ -332,7 +331,6 @@ XLALAddBinaryTimes ( SSBtimes **tSSBOut,			//!< [out] reference-time offsets in 
 
         XLAL_CHECK ( gsl_root_fsolver_set(s, &F, E_lo, E_hi) == 0, XLAL_EFAILED );
 
-        XLALPrintInfo ("%5s [%9s, %9s] %9s %10s %9s\n", "iter", "lower", "upper", "root", "abstol", "err(est)");
         int max_iter = 100;
         int iter = 0;
         int status;
@@ -344,14 +342,11 @@ XLALAddBinaryTimes ( SSBtimes **tSSBOut,			//!< [out] reference-time offsets in 
             E_i = gsl_root_fsolver_root(s);
             E_lo = gsl_root_fsolver_x_lower (s);
             E_hi = gsl_root_fsolver_x_upper (s);
-            status = gsl_root_test_interval ( E_lo, E_hi, acc, 0 );
-
-            if (status == GSL_SUCCESS) { XLALPrintInfo ("Converged:\n"); }
-            XLALPrintInfo ("%5d [%.7f, %.7f] %.7f %+10.7g %10.7g\n", iter, E_lo, E_hi, E_i, acc, E_hi - E_lo);
+            status = gsl_root_test_interval ( E_lo, E_hi, epsabs, epsrel );
 
           } while ( (status == GSL_CONTINUE) && (iter < max_iter) );
 
-        XLAL_CHECK ( status == GSL_SUCCESS, XLAL_EMAXITER, "Eccentric anomaly: failed to converge within %d iterations\n", max_iter );
+        XLAL_CHECK ( status == GSL_SUCCESS, XLAL_EMAXITER, "Eccentric anomaly: failed to converge to epsabs=%g within %d iterations\n", epsabs, max_iter );
         gsl_root_fsolver_free(s);
       } // gsl-root finding block
 
@@ -549,8 +544,9 @@ XLALGetSSBtimes ( const DetectorStateSeries *DetectorStates,	/**< [in] detector-
   REAL8 alpha = pos.longitude;
   REAL8 delta = pos.latitude;
   REAL8 refTimeREAL8 = XLALGPSGetREAL8 ( &refTime );
+  BarycenterBuffer *bBuffer = NULL;
 
-  BarycenterInput baryinput = empty_BarycenterInput;
+  BarycenterInput XLAL_INIT_DECL(baryinput);
 
   /*----- now calculate the SSB transformation in the precision required */
   switch (precision)
@@ -618,7 +614,6 @@ XLALGetSSBtimes ( const DetectorStateSeries *DetectorStates,	/**< [in] detector-
       baryinput.delta = delta;
       baryinput.dInv = 0;
 
-      BarycenterBuffer *bBuffer = NULL;
       for ( UINT4 i = 0; i < numSteps; i++ )
         {
           EmissionTime emit;
@@ -820,6 +815,26 @@ int XLALLatestMultiSSBtime ( LIGOTimeGPS *out,                   /**< output lat
 
 /* ===== Object creation/destruction functions ===== */
 
+/** Destroy a SSBtimes structure.
+ * Note, this is "NULL-robust" in the sense that it will not crash
+ * on NULL-entries anywhere in this struct, so it can be used
+ * for failure-cleanup even on incomplete structs
+ */
+void
+XLALDestroySSBtimes ( SSBtimes *tSSB )
+{
+
+  if ( ! tSSB )
+    return;
+
+  if ( tSSB->DeltaT )
+    XLALDestroyREAL8Vector( tSSB->DeltaT );
+  if ( tSSB->Tdot )
+    XLALDestroyREAL8Vector( tSSB->Tdot );
+  XLALFree( tSSB );
+
+}
+
 /** Destroy a MultiSSBtimes structure.
  * Note, this is "NULL-robust" in the sense that it will not crash
  * on NULL-entries anywhere in this struct, so it can be used
@@ -829,7 +844,6 @@ void
 XLALDestroyMultiSSBtimes ( MultiSSBtimes *multiSSB )
 {
   UINT4 X;
-  SSBtimes *tmp;
 
   if ( ! multiSSB )
     return;
@@ -838,14 +852,7 @@ XLALDestroyMultiSSBtimes ( MultiSSBtimes *multiSSB )
     {
       for ( X=0; X < multiSSB->length; X ++ )
 	{
-	  if ( (tmp = multiSSB->data[X]) != NULL )
-	    {
-	      if ( tmp->DeltaT )
-		XLALDestroyREAL8Vector ( tmp->DeltaT );
-	      if ( tmp->Tdot )
-		XLALDestroyREAL8Vector ( tmp->Tdot );
-	      LALFree ( tmp );
-	    } /* if multiSSB->data[X] */
+	  XLALDestroySSBtimes ( multiSSB->data[X] );
 	} /* for X < numDetectors */
       LALFree ( multiSSB->data );
     }

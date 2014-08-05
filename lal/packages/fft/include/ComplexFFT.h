@@ -82,6 +82,11 @@ typedef struct tagCOMPLEX16FFTPlan COMPLEX16FFTPlan;
 #define tagComplexFFTPlan tagCOMPLEX8FFTPlan
 #define ComplexFFTPlan COMPLEX8FFTPlan
 
+#ifdef SWIG /* SWIG interface directives */
+SWIGLAL(VIEWIN_STRUCTS(COMPLEX8Vector, output));
+SWIGLAL(VIEWIN_STRUCTS(COMPLEX16Vector, output));
+#endif /* SWIG */
+
 /*
  *
  * XLAL COMPLEX8 functions
@@ -215,15 +220,13 @@ void XLALDestroyCOMPLEX8FFTPlan( COMPLEX8FFTPlan *plan );
  * - [\c XLAL_ENOMEM] Insufficient storage space is available.
  * .
  */
-int XLALCOMPLEX8VectorFFT( COMPLEX8Vector * _LAL_RESTRICT_ output, const COMPLEX8Vector * _LAL_RESTRICT_ input,
-    const COMPLEX8FFTPlan *plan );
+int XLALCOMPLEX8VectorFFT( COMPLEX8Vector * _LAL_RESTRICT_ output, const COMPLEX8Vector * _LAL_RESTRICT_ input, const COMPLEX8FFTPlan *plan );
 
 /*
  *
  * XLAL COMPLEX16 functions
  *
  */
-
 
 /**
  * Returns a new COMPLEX16FFTPlan
@@ -353,8 +356,7 @@ void XLALDestroyCOMPLEX16FFTPlan( COMPLEX16FFTPlan *plan );
  * - [\c XLAL_ENOMEM] Insufficient storage space is available.
  * .
  */
-int XLALCOMPLEX16VectorFFT( COMPLEX16Vector * _LAL_RESTRICT_ output, const COMPLEX16Vector * _LAL_RESTRICT_ input,
-    const COMPLEX16FFTPlan *plan );
+int XLALCOMPLEX16VectorFFT( COMPLEX16Vector * _LAL_RESTRICT_ output, const COMPLEX16Vector * _LAL_RESTRICT_ input, const COMPLEX16FFTPlan *plan );
 
 /*
  *

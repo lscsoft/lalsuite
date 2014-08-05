@@ -502,7 +502,7 @@ int XLALCOMPLEX16ApplyLanczosTriggerInterpolant(
     do {
         result = gsl_min_fminimizer_iterate(interp->fminimizer);
         if (result != GSL_SUCCESS)
-            GSL_ERROR("failed to perofrm minimizer iteration", result);
+            GSL_ERROR("failed to perform minimizer iteration", result);
 
         t1 = gsl_min_fminimizer_x_lower(interp->fminimizer);
         t2 = gsl_min_fminimizer_x_upper(interp->fminimizer);

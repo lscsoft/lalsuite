@@ -1,10 +1,5 @@
-## Process this file with automake to produce Makefile.in
-
-
-AM_CPPFLAGS = -I$(top_srcdir)/src -I$(top_srcdir)/src/lalapps -DPKG_DATA_DIR='"$(pkgdatadir)/"' @AM_CPPFLAGS@
-LDADD = $(top_builddir)/src/lalapps/liblalapps.la
-
-SUBDIRS = ResamplingFstat
+BUILT_SOURCES =
+include $(top_srcdir)/gnuscripts/lalapps.am
 
 bin_PROGRAMS = \
 	lalapps_ComputeFStatistic \
@@ -98,7 +93,8 @@ EXTRA_DIST = \
 	testCFSv2.sh \
 	testCFSv2_grids.sh \
 	testCFSv2_resamp.sh \
-	testCFSv2_binary.sh
+	testCFSv2_binary.sh \
+	testSynthLV.sh
 
 EXTRA_DIST += \
 	testCFSv2.dat.ref.gz \
@@ -109,7 +105,8 @@ EXTRA_DIST += \
 	testCFSv2_grid8.dat.ref.gz \
 	testCFSv2_grid9.dat.ref.gz
 
-TESTS = testPredictFStat.sh
+TESTS = testPredictFStat.sh \
+	testSynthLV.sh
 
 if !CONDOR_ENABLED
 TESTS += \
@@ -122,12 +119,3 @@ endif
 TESTS_ENVIRONMENT = \
 	LAL_DEBUG_LEVEL=msglvl1,memdbg; export LAL_DEBUG_LEVEL; \
 	LAL_DATA_PATH="$(LAL_DATA_PATH)"; export LAL_DATA_PATH;
-
-# how to compile CUDA files (.cu)
-NVCC ?= nvcc
-.cu.o:
-	$(NVCC) $(CPPFLAGS) -c $< -o $@
-
-## make sure lalapps.la is rebuilt when appropriate
-BUILT_SOURCES =
-include $(top_srcdir)/gnuscripts/vcsID.common

@@ -1,3 +1,5 @@
+include $(top_srcdir)/gnuscripts/lalsuite_header_links.am
+
 EXTRA_DIST = \
 	tools.dox \
 	resamp_1000x4.eps \

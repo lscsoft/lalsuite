@@ -16,13 +16,12 @@
  * Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
  * MA 02111-1307 USA
  *
- * Copyright (C) 2009,2010 Adam Mercer
+ * Copyright (C) 2009-2013 Adam Mercer
+ * Copyright (C) 2014 Karl Wette
  */
 
-#include <lal/LALVCSInfo.h>
-
-#include <lal/LALFrameConfig.h>
-#include <lal/LALFrameVCSInfo.h>
+#include <lal/LALVCSInfoType.h>
+#include "LALFrameVCSInfoHeader.h"
 
 /* global variables for vcs information */
 const char *const lalFrameVCSVersion = LALFRAME_VERSION;
@@ -43,16 +42,17 @@ const char *const lalFrameVCSIdentAuthor = LALFRAME_VCS_IDENT_AUTHOR;
 const char *const lalFrameVCSIdentCommitter = LALFRAME_VCS_IDENT_COMMITTER;
 const char *const lalFrameVCSIdentStatus = LALFRAME_VCS_IDENT_STATUS;
 
-/* vcs information structure */
-const struct tagLALVCSInfo lalFrameVCSInfo = { LALFRAME_VCS_NAME,
-    LALFRAME_VERSION,
-    LALFRAME_VCS_ID,
-    LALFRAME_VCS_DATE,
-    LALFRAME_VCS_BRANCH,
-    LALFRAME_VCS_TAG,
-    LALFRAME_VCS_AUTHOR,
-    LALFRAME_VCS_COMMITTER,
-    LALFRAME_VCS_STATUS
+/* library vcs information structure */
+const struct tagLALVCSInfo lalFrameVCSInfo = { \
+  LALFRAME_NAME, \
+  LALFRAME_VERSION, \
+  LALFRAME_VCS_ID, \
+  LALFRAME_VCS_DATE, \
+  LALFRAME_VCS_BRANCH, \
+  LALFRAME_VCS_TAG, \
+  LALFRAME_VCS_AUTHOR, \
+  LALFRAME_VCS_COMMITTER, \
+  LALFRAME_VCS_STATUS \
 };
 
 /*

@@ -260,8 +260,7 @@ class InspiralJob(InspiralAnalysisJob):
 
     InspiralAnalysisJob.__init__(self,cp,sections,exec_name,extension,dax)
     self.add_condor_cmd('environment',"KMP_LIBRARY=serial;MKL_SERIAL=yes")
-    self.add_condor_cmd('Requirements', 'Memory >= 1000')
-    self.add_condor_cmd('request_memory', '1024')
+    self.add_condor_cmd('request_memory', '1000')
 
     if have_pycbc:
         self.add_condor_cmd('getenv', 'True')
@@ -332,7 +331,6 @@ class PTFInspiralJob(InspiralAnalysisJob):
     if cp.has_section('coh_PTF_inspiral-meta'):
       if cp.has_option('coh_PTF_inspiral-meta','minimum-ram'):
         ramValue = int(cp.get('coh_PTF_inspiral-meta','minimum-ram'))
-    self.add_condor_cmd('Requirements', 'Memory >= %d' %(ramValue))
     self.add_condor_cmd('request_memory', '%d' %(ramValue))
 
 
@@ -348,7 +346,6 @@ class PTFSpinCheckerJob(InspiralAnalysisJob):
     sections = ['coh_PTF_spin_checker']
     extension = 'xml'
     InspiralAnalysisJob.__init__(self,cp,sections,exec_name,extension,dax)
-    self.add_condor_cmd('Requirements', 'Memory >= 1390')
     self.add_condor_cmd('request_memory', '1400')
 
 
@@ -1023,8 +1020,7 @@ class InspiralNode(InspiralAnalysisNode):
     """
     InspiralAnalysisNode.__init__(self,job)
     self.__injections = None
-    self.add_pegasus_profile('condor', 'Requirements', 'Memory >= 1000')
-    self.add_pegasus_profile('condor', 'request_memory', '1024')
+    self.add_pegasus_profile('condor', 'request_memory', '1000')
 
     if job.get_use_gpus():
       # assume all the checks have been already
@@ -1113,7 +1109,6 @@ class PTFInspiralNode(InspiralAnalysisNode):
     InspiralAnalysisNode.__init__(self,job)
     self.__injections = None
     self.set_zip_output(True)
-    self.add_pegasus_profile('condor', 'Requirements', 'Memory >= 1390')
     self.add_pegasus_profile('condor', 'request_memory', '1400')
 
   def set_spin_bank(self,bank):
@@ -1155,7 +1150,6 @@ class PTFSpinCheckerNode(InspiralAnalysisNode):
     """
     InspiralAnalysisNode.__init__(self,job)
     self.__injections = None
-    self.add_pegasus_profile('condor', 'Requirements', 'Memory >= 1390')
     self.add_pegasus_profile('condor', 'request_memory', '1400')
 
   def set_bank(self,bank):
@@ -3418,3 +3412,51 @@ class MVSCDagGenerationNode(InspiralAnalysisNode):
     self.add_var_arg(database)
   def set_user_tag(self, tag):
     self.add_var_opt("user-tag",tag)
+class ExtendedCoincJob(InspiralAnalysisJob):
+  """
+  job to calculate the extende background for zero far events
+  """
+  def __init__(self, cp):
+    """
+    cp = ConfigParser object from which options are read.
+    sections = sections of the ConfigParser that get added to the opts
+    exec_name = exec_name name in ConfigParser
+    """    
+
+    exec_name = 'extended_background'
+    sections = []
+    extension = 'html'
+    InspiralAnalysisJob.__init__(self, cp, sections, exec_name, extension, dax=False)
+    self.add_condor_cmd('getenv','True') 
+
+
+class ExtendedCoincNode(InspiralAnalysisNode):
+  """
+  Node to calculate the extended background for a zero far event
+  """
+  def __init__(self, job):
+    InspiralAnalysisNode.__init__(self, job)
+    
+  def set_coinc_threshold(self, coinc_threshold):
+        self.add_var_opt('coinc-threshold', coinc_threshold)
+ 
+  def set_ihope_base_dir(self, base_dir):
+        self.add_var_opt('ihope-base-dir', base_dir)
+
+  def set_param_ranges(self, param_ranges):
+        self.add_var_opt('param-ranges', param_ranges)
+
+  def set_ethinca(self, ethinca):
+        self.add_var_opt('e-thinca-parameter', ethinca)
+ 
+  def set_slide_step(self, slide_step):
+        self.add_var_opt('slide-step', slide_step)
+        
+  def set_veto_window(self, veto_window):
+        self.add_var_opt('veto-window', veto_window)
+ 
+  def set_new_snr_cut(self, new_snr_cut):
+        self.add_var_opt('new-snr-cut', new_snr_cut)
+
+  def set_loudest_event_glob(self, event_glob):
+        self.add_var_opt('loudest-event-glob', event_glob)

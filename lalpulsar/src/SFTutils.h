@@ -91,10 +91,6 @@ typedef struct tagMultiNoiseWeights {
 } MultiNoiseWeights;
 
 /*---------- Global variables ----------*/
-/* empty init-structs for the types defined in here */
-extern const PSDVector empty_PSDVector;
-extern const MultiPSDVector empty_MultiPSDVector;
-extern const MultiNoiseWeights empty_MultiNoiseWeights;
 
 /*---------- exported prototypes [API] ----------*/
 /* ----------------------------------------------------------------------
@@ -106,8 +102,13 @@ SFTVector* XLALCreateSFTVector (UINT4 numSFTs, UINT4 numBins );
 void XLALDestroySFT (SFTtype *sft);
 void XLALDestroySFTVector (SFTVector *vect);
 
+SFTVector *XLALDuplicateSFTVector ( const SFTVector *sftsIn );
+
 COMPLEX8Vector *XLALrefineCOMPLEX8Vector (const COMPLEX8Vector *in, UINT4 refineby, UINT4 Dterms);
+
+int XLALExtractBandFromSFT ( SFTtype **outSFT, const SFTtype *inSFT, REAL8 fMin, REAL8 Band );
 SFTVector *XLALExtractBandFromSFTVector ( const SFTVector *inSFTs, REAL8 fMin, REAL8 Band );
+MultiSFTVector *XLALExtractBandFromMultiSFTVector ( const MultiSFTVector *inSFTs, REAL8 fMin, REAL8 Band );
 int XLALFindCoveringSFTBins ( UINT4 *firstBin, UINT4 *numBins, REAL8 fMinIn, REAL8 BandIn, REAL8 Tsft );
 
 LIGOTimeGPSVector *XLALCreateTimestampVector (UINT4 len);
@@ -135,8 +136,13 @@ int XLALMultiSFTVectorAdd ( MultiSFTVector *a, const MultiSFTVector *b );
 int XLALSFTVectorAdd ( SFTVector *a, const SFTVector *b );
 int XLALSFTAdd ( SFTtype *a, const SFTtype *b );
 
-int XLALEarliestMultiSFTsample ( LIGOTimeGPS *out, MultiSFTVector *multisfts );
-int XLALLatestMultiSFTsample ( LIGOTimeGPS *out, MultiSFTVector *multisfts );
+int XLALEarliestMultiSFTsample ( LIGOTimeGPS *out, const MultiSFTVector *multisfts );
+int XLALLatestMultiSFTsample ( LIGOTimeGPS *out, const MultiSFTVector *multisfts );
+
+// resizing SFTs
+int XLALMultiSFTVectorResizeBand ( MultiSFTVector *multiSFTs, REAL8 f0, REAL8 Band );
+int XLALSFTVectorResizeBand ( SFTVector *SFTs, REAL8 f0, REAL8 Band );
+int XLALSFTResizeBand ( SFTtype *SFT, REAL8 f0, REAL8 Band );
 
 // destructors
 void XLALDestroyPSDVector ( PSDVector *vect );
@@ -152,6 +158,10 @@ XLALGetDetectorIDsFromSFTCatalog ( LALStringVector *IFOList, const SFTCatalog *S
 
 SFTCatalog *XLALAddToFakeSFTCatalog( SFTCatalog *catalog, const CHAR *detector, const LIGOTimeGPSVector *timestamps );
 SFTCatalog *XLALMultiAddToFakeSFTCatalog( SFTCatalog *catalog, const LALStringVector *detectors, const MultiLIGOTimeGPSVector *timestamps );
+int XLALCopySFT ( SFTtype *dest, const SFTtype *src );
+
+SFTVector *XLALExtractSFTVectorWithTimestamps ( const SFTVector *sfts, const LIGOTimeGPSVector *timestamps );
+MultiSFTVector *XLALExtractMultiSFTVectorWithMultiTimestamps ( const MultiSFTVector *multiSFTs, const MultiLIGOTimeGPSVector *multiTimestamps );
 
 /*@}*/
 

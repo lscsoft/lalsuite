@@ -53,9 +53,6 @@
 
 // ---------- global variables --------------------
 
-static LALStatus empty_LALStatus;
-static PtoleMetricIn empty_PtoleMetricIn;
-
 // ---------- local prototypes
 static int test_XLALComputeOrbitalDerivatives ( void );
 static int test_XLALDopplerFstatMetric ( void );
@@ -133,7 +130,7 @@ test_XLALDopplerFstatMetric ( void )
   // prepare metric parameters for modern XLALDopplerFstatMetric() and mid-old XLALOldDopplerFstatMetric()
   DopplerCoordinateSystem coordSys = { 4, { DOPPLERCOORD_FREQ, DOPPLERCOORD_ALPHA, DOPPLERCOORD_DELTA, DOPPLERCOORD_F1DOT } };
   PulsarAmplitudeParams Amp = { 0.03, -0.3, 0.5, 0.0 };	// h0, cosi, psi, phi0
-  PulsarDopplerParams dop = empty_PulsarDopplerParams;
+  PulsarDopplerParams XLAL_INIT_DECL(dop);
   dop.refTime  = startTimeGPS;
   dop.Alpha    = Alpha;
   dop.Delta    = Delta;
@@ -146,7 +143,7 @@ test_XLALDopplerFstatMetric ( void )
   ret = XLALSegListInitSimpleSegments ( &segList, startTimeGPS, Nseg, Tseg );
   XLAL_CHECK ( ret == XLAL_SUCCESS, XLAL_EFUNC, "XLALSegListInitSimpleSegments() failed with xlalErrno = %d\n", xlalErrno );
 
-  DopplerMetricParams pars2 = empty_DopplerMetricParams;
+  DopplerMetricParams XLAL_INIT_DECL(pars2);
 
   pars2.coordSys      		= coordSys;
   pars2.detMotionType 		= DETMOTION_SPIN | DETMOTION_ORBIT;
@@ -160,8 +157,8 @@ test_XLALDopplerFstatMetric ( void )
   pars2.approxPhase   		= 0;
 
   // ----- prepare call-parameters of ancient LALPulsarMetric()
-  LALStatus status = empty_LALStatus;
-  PtoleMetricIn pars0 = empty_PtoleMetricIn;
+  LALStatus XLAL_INIT_DECL(status);
+  PtoleMetricIn XLAL_INIT_DECL(pars0);
 
   pars0.spindown = XLALCreateREAL4Vector ( 1 );
   XLAL_CHECK ( pars0.spindown != NULL, XLAL_EFUNC, "XLALCreateREAL4Vector(1) failed.\n");

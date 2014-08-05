@@ -31,7 +31,7 @@
 #include <lal/Random.h>
 #include <lal/Integrate.h>
 #include <lal/DetectorSite.h>
-#include <lal/SimulatePopcorn.h>
+#include "SimulatePopcorn.h"
 
 #ifdef __GNUC__
 #define UNUSED __attribute__ ((unused))

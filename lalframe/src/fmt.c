@@ -89,7 +89,6 @@ int main(int argc, char *argv[])
             channel =
                 XLALFrameUFrProcChanAlloc(channame, type, subtype, dtype,
                 dimlen);
-            XLALFrameUFrChanSetSampleRate(channel, srate);
             XLALFrameUFrChanVectorAlloc(channel, dtype, dimlen);
             XLALFrameUFrChanVectorSetName(channel, channame);
             XLALFrameUFrChanVectorSetDx(channel, 1.0 / srate);

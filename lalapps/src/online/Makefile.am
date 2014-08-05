@@ -1,3 +1,6 @@
+BUILT_SOURCES =
+include $(top_srcdir)/gnuscripts/lalapps.am
+
 DATAFIND_SRCS = online_datafind.c
 
 if FRAME
@@ -8,9 +11,3 @@ endif
 endif
 
 bin_PROGRAMS = ${FRAME_PROGS}
-
-AM_CPPFLAGS = -I$(top_srcdir)/src -I$(top_srcdir)/src/lalapps -I$(top_builddir)/src/lalapps -DPKG_DATA_DIR='"$(pkgdatadir)/"' @AM_CPPFLAGS@
-LDADD = $(top_builddir)/src/lalapps/liblalapps.la
-
-BUILT_SOURCES =
-include $(top_srcdir)/gnuscripts/vcsID.common

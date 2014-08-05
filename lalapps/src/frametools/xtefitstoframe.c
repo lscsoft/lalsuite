@@ -332,8 +332,6 @@ int XLALReallocXTEUINT4TimeSeries(XTEUINT4TimeSeries **ts,INT8 N);
 int XLALFreeBarycentricData(BarycentricData *stamps);
 
 /***********************************************************************************************/
-/* empty initializers */
-UserInput_t empty_UserInput;
 
 /**
  * The main function of xtefitstoframe.c
@@ -346,7 +344,7 @@ int main( int argc, char *argv[] )  {
 
   static const char *fn = __func__;             /* store function name for log output */
   LALStatus status = blank_status;              /* empty LAL status structure */
-  UserInput_t uvar = empty_UserInput;           /* user input variables */
+  UserInput_t XLAL_INIT_DECL(uvar);           /* user input variables */
   FITSData *fitsdata = NULL;                    /* a FITS data structure */
   XTEUINT4TimeSeriesArray *ts = NULL;           /* a timeseries array structure */ 
   CHAR clargs[LONGSTRINGLENGTH];                /* store the command line args */

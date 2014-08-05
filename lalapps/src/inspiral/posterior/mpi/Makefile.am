@@ -1,8 +1,8 @@
-LDADD = $(top_builddir)/src/lalapps/liblalapps.la
-AM_CPPFLAGS = -I$(top_srcdir)/src -I$(top_srcdir)/src/lalapps -I$(top_builddir)/src/lalapps -DPKG_DATA_DIR='"$(pkgdatadir)/"' @AM_CPPFLAGS@
+BUILT_SOURCES =
+include $(top_srcdir)/gnuscripts/lalapps.am
 
-CC = $(MPICC)
-AM_CFLAGS = @AM_CFLAGS@ -std=gnu99
+CC = $(MPICC) -std=gnu99
+AM_CPPFLAGS = @AM_CPPFLAGS@
 LIBS += $(MPILIBS)
 
 if LALINFERENCE
@@ -12,7 +12,6 @@ if HAVE_BAMBI
 if HAVE_BAMBI_MPI
 mpi_progs += lalinference_bambi
 AM_CPPFLAGS += -DPARALLEL
-AM_CFLAGS += -DPARALLEL
 lalinference_bambi_SOURCES = $(srcdir)/../LALInferenceBAMBI.c
 lalinference_bambi_LDADD = ${BAMBI_LIBS}
 lalinference_bambi_LDFLAGS = $(shell ${MPICXX} --showme:link) $(shell ${MPIFC} --showme:link)
@@ -27,6 +26,3 @@ lalinference_mcmc_SOURCES = \
 	$(srcdir)/../LALInferenceMCMCSampler.h
 
 bin_PROGRAMS = $(mpi_progs)
-
-BUILT_SOURCES =
-include $(top_srcdir)/gnuscripts/vcsID.common

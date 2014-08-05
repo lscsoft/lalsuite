@@ -671,7 +671,7 @@ SimInspiralTable* XLALRandomNRInjectTotalMass(
 /** Set end time and effective distance of an injection for a detector */
 SimInspiralTable *XLALInspiralSiteTimeAndDist(
     SimInspiralTable  *inj, /**< the injection details */
-    LALDetector       *detector, /**< the detector of interest */
+    const LALDetector *detector, /**< the detector of interest */
     LIGOTimeGPS       *endTime,  /**< the end time to populate */
     REAL4             *effDist   /**< the effective distance to populate */
     )

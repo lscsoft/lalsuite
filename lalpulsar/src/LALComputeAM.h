@@ -153,11 +153,11 @@ This matrix can be shown to be generally expressible as
  * to use that fact.
  */
 typedef struct tagAntennaPatternMatrix {
-  REAL8 Ad; 		//!<  \f$\Ad\f$
-  REAL8 Bd; 		//!<  \f$\Bd\f$
-  REAL8 Cd; 		//!<  \f$\Cd\f$
-  REAL8 Ed; 		//!<  \f$\Ed\f$
-  REAL8 Dd; 		//!<  determinant factor \f$\Dd \equiv \Ad \Bd - \Cd^2 - \Ed^2 \f$
+  REAL4 Ad; 		//!<  \f$\Ad\f$
+  REAL4 Bd; 		//!<  \f$\Bd\f$
+  REAL4 Cd; 		//!<  \f$\Cd\f$
+  REAL4 Ed; 		//!<  \f$\Ed\f$
+  REAL4 Dd; 		//!<  determinant factor \f$\Dd \equiv \Ad \Bd - \Cd^2 - \Ed^2 \f$
   REAL8 Sinv_Tsft;	//!< normalization-factor \f$\S^{-1}\,\Tsft\f$ (using single-sided PSD!)
 } AntennaPatternMatrix;
 
@@ -170,10 +170,6 @@ typedef struct tagMultiAMCoeffs {
 
 
 /*---------- exported Global variables ----------*/
-/* empty init-structs for the types defined in here */
-extern const AntennaPatternMatrix empty_AntennaPatternMatrix;
-extern const MultiAMCoeffs empty_MultiAMCoeffs;
-
 
 /*---------- exported prototypes [API] ----------*/
 

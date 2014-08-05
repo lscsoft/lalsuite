@@ -28,7 +28,7 @@
 #include <lal/XLALError.h>
 #include <lal/LALMalloc.h>
 
-#define NWINDOWS 11
+#define NWINDOWS 12
 
 
 const char *names[] = {
@@ -42,7 +42,8 @@ const char *names[] = {
 	"Kaiser",
 	"Creighton",
 	"Tukey",
-	"Gauss"
+	"Gauss",
+	"Lanczos"
 };
 
 static int create_single_windows(REAL4Window **windows, int length, double kaiser_beta, double creighton_beta, double tukey_beta, double gauss_beta)
@@ -177,7 +178,8 @@ static int test_sum_of_squares(void)
 		375.17819205246843,	/* Kaiser */
 		392.64506106773848,	/* Creighton */
 		703.625,		/* Tukey */
-		451.20289927038817	/* Gauss */
+		451.20289927038817,	/* Gauss */
+		461.79413512656265	/* Lanczos */
 	};
 	double correct_1025[] = {
 		1025.0,			/* rectangle */
@@ -190,7 +192,8 @@ static int test_sum_of_squares(void)
 		375.544934942032,	/* Kaiser */
 		393.028878331734330,	/* Creighton */
 		704,			/* Tukey */
-		451.64394001239367	/* Gauss */
+		451.64394001239367,	/* Gauss */
+		462.24554679335205	/* Lanczos */
 	};
 
 	XLAL_CHECK ( _test_sum_of_squares(correct_1024, 1024, 6, 2, 0.5, 2) == XLAL_SUCCESS, XLAL_EFUNC );
@@ -221,7 +224,8 @@ static int _test_end_and_midpoints(int length, double kaiser_beta, double creigh
 		0.014873337104763204,	/* Kaiser (to be adjusted below) */
 		0,			/* Creighton (to be adjusted below) */
 		0,			/* Tukey (to be adjusted below) */
-		0			/* Gauss (to be adjusted below) */
+		0,			/* Gauss (to be adjusted below) */
+		0			/* Lanczos */
 	};
 	double correct_mid[] = {
 		1,	/* rectangle */
@@ -234,7 +238,8 @@ static int _test_end_and_midpoints(int length, double kaiser_beta, double creigh
 		1,	/* Kaiser */
 		1,	/* Creighton */
 		1,	/* Tukey */
-		1	/* Gauss */
+		1,	/* Gauss */
+		1	/* Lanczos */
 	};
 	REAL4Window *windows1[NWINDOWS];
 	REAL8Window *windows2[NWINDOWS];
@@ -425,6 +430,7 @@ static void _display(int n, double kaiser_beta, double creighton_beta, double tu
 	REAL8Window *creighton = XLALCreateCreightonREAL8Window(n, creighton_beta);
 	REAL8Window *tukey = XLALCreateTukeyREAL8Window(n, tukey_beta);
 	REAL8Window *gauss = XLALCreateGaussREAL8Window(n, gauss_beta);
+	REAL8Window *lanczos = XLALCreateLanczosREAL8Window(n);
 	int i;
 
 	printf("n = %d\n", n);
@@ -433,7 +439,7 @@ static void _display(int n, double kaiser_beta, double creighton_beta, double tu
 	printf("tukey beta = %g\n", tukey_beta);
 	printf("gaussian beta = %g\n", gauss_beta);
 
-	printf("  rect     hann     welch  bartlett  parzen  papoulis  hamming  kaiser   creight   tukey    gauss\n");
+	printf("  rect     hann     welch  bartlett  parzen  papoulis  hamming  kaiser   creight   tukey    gauss  lanczos\n");
 	for(i = 0; i < n; i++) {
 		printf("%8.6f", rectangle->data->data[i]);
 		printf(" %8.6f", hann->data->data[i]);
@@ -446,6 +452,7 @@ static void _display(int n, double kaiser_beta, double creighton_beta, double tu
 		printf(" %8.6f", creighton->data->data[i]);
 		printf(" %8.6f", tukey->data->data[i]);
 		printf(" %8.6f", gauss->data->data[i]);
+		printf(" %8.6f", lanczos->data->data[i]);
 		printf("\n");
 	}
 	printf("\n");
@@ -461,6 +468,7 @@ static void _display(int n, double kaiser_beta, double creighton_beta, double tu
 	XLALDestroyREAL8Window(creighton);
 	XLALDestroyREAL8Window(tukey);
 	XLALDestroyREAL8Window(gauss);
+	XLALDestroyREAL8Window(lanczos);
 }
 
 

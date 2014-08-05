@@ -18,7 +18,7 @@
 */
 
 /**
- * \author UTB Relativity Group; contact whelan@phys.utb.edu
+ * \author UTB Relativity Group; contact john.whelan@ligo.org
  * \addtogroup ZeroPadAndFFT_c
  *
  * \brief Routines for zero-padding and Fourier transforming a time series.

@@ -329,8 +329,8 @@ XLALWeightMultiCmplxAMCoeffs (  MultiCmplxAMCoeffs *multiAMcoef, const MultiNois
 	  for(alpha = 0; alpha < numSteps; alpha++)
 	    {
 	      REAL8 Sqwi = sqrt ( weightsX->data[alpha] );
-	      COMPLEX16 ahat;
-	      COMPLEX16 bhat;
+	      COMPLEX8 ahat;
+	      COMPLEX8 bhat;
 	      ahat = crect( Sqwi * crealf(amcoeX->a->data[alpha]), Sqwi * cimagf(amcoeX->a->data[alpha]) );
 	      bhat = crect( Sqwi * crealf(amcoeX->b->data[alpha]), Sqwi * cimagf(amcoeX->b->data[alpha]) );
 
@@ -356,8 +356,8 @@ XLALWeightMultiCmplxAMCoeffs (  MultiCmplxAMCoeffs *multiAMcoef, const MultiNois
 
 	  for(alpha = 0; alpha < numSteps; alpha++)
 	    {
-	      COMPLEX16 ahat;
-	      COMPLEX16 bhat;
+	      COMPLEX8 ahat;
+	      COMPLEX8 bhat;
 	      ahat = crect( crealf(amcoeX->a->data[alpha]), cimagf(amcoeX->a->data[alpha]) );
 	      bhat = crect( crealf(amcoeX->b->data[alpha]), cimagf(amcoeX->b->data[alpha]) );
 
@@ -399,7 +399,7 @@ XLALComputeFaFbCmplx ( Fcomponents *FaFb,               /* [out] Fa,Fb (and poss
   UINT4 alpha;                  /* loop index over SFTs */
   UINT4 spdnOrder;              /* maximal spindown-orders */
   UINT4 numSFTs;                /* number of SFTs (M in the Notes) */
-  COMPLEX16 Fa, Fb;
+  COMPLEX8 Fa, Fb;
   REAL8 Tsft;                   /* length of SFTs in seconds */
   INT4 freqIndex0;              /* index of first frequency-bin in SFTs */
   INT4 freqIndex1;              /* index of last frequency-bin in SFTs */

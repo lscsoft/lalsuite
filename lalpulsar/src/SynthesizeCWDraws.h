@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2010 Reinhard Prix
+ * Copyright (C) 2011, 2014 David Keitel
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -17,10 +18,11 @@
  *  MA  02111-1307  USA
  */
 
-/*********************************************************************************/
 /**
- * \author R. Prix
- * \file
+ * \defgroup SynthesizeCWDraws_h Header SynthesizeCWDraws.h
+ * \ingroup pkg_pulsarCommon
+ * \author Reinhard Prix, David Keitel
+ *
  * \brief
  * Generate samples of various statistics (F-stat, F-atoms, B-stat,...) drawn from their
  * respective distributions, assuming Gaussian noise, and drawing signal params from
@@ -30,6 +32,7 @@
  * Monte-Carlos studies, ROC curves etc
  *
  */
+/*@{*/
 
 #ifndef _SYNTHESIZE_CW_DRAWS_H  /* Double-include protection. */
 #define _SYNTHESIZE_CW_DRAWS_H
@@ -91,7 +94,7 @@ typedef struct tagInjParams_t
   SkyPosition skypos;
   PulsarAmplitudeParams ampParams;
   PulsarAmplitudeVect ampVect;
-  AntennaPatternMatrix M_mu_nu;
+  MultiAMCoeffs multiAM;
   transientWindow_t transientWindow;
   REAL8 SNR;
   REAL8 detM1o8;	// (detMp)^(1/8): rescale param between h0, and rhoh = h0 * (detMp)^(1/8)
@@ -99,10 +102,6 @@ typedef struct tagInjParams_t
 
 
 /*---------- Global variables ----------*/
-
-/* empty struct initializers */
-extern multiAMBuffer_t empty_multiAMBuffer;
-extern InjParams_t empty_InjParams_t;
 
 /*---------- exported prototypes [API] ----------*/
 int XLALDrawCorrelatedNoise ( PulsarAmplitudeVect n_mu, const gsl_matrix *L, gsl_rng * rng );
@@ -118,7 +117,7 @@ REAL8 XLALAddSignalToFstatAtomVector ( FstatAtomVector* atoms, AntennaPatternMat
 REAL8 XLALAddSignalToMultiFstatAtomVector ( MultiFstatAtomVector* multiAtoms, AntennaPatternMatrix *M_mu_nu, const PulsarAmplitudeVect A_Mu, transientWindow_t transientWindow, INT4 lineX );
 
 int XLALRescaleMultiFstatAtomVector ( MultiFstatAtomVector* multiAtoms,	REAL8 rescale );
-int write_InjParams_to_fp ( FILE * fp, const InjParams_t *par, UINT4 dataStartGPS );
+int write_InjParams_to_fp ( FILE * fp, const InjParams_t *par, const UINT4 dataStartGPS, const BOOLEAN outputMmunuX, const UINT4 numDetectors );
 
 MultiFstatAtomVector *
 XLALSynthesizeTransientAtoms ( InjParams_t *injParamsOut,
@@ -129,10 +128,11 @@ XLALSynthesizeTransientAtoms ( InjParams_t *injParamsOut,
                                BOOLEAN SignalOnly,
                                multiAMBuffer_t *multiAMBuffer,
                                gsl_rng *rng,
-                               INT4 lineX
+                               INT4 lineX,
+                               const MultiNoiseWeights *multiNoiseWeights
                                );
 
-
+// @}
 
 #ifdef  __cplusplus
 }

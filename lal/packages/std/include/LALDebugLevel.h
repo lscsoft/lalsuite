@@ -55,6 +55,7 @@ enum {
 
 #define lalDebugLevel (XLALGetDebugLevel())
 int XLALGetDebugLevel(void);
+void XLALClobberDebugLevel(int level);
 
 #if 0
 {       /* so that editors will match succeeding brace */

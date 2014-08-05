@@ -128,12 +128,12 @@ LALMath3DPlot ( LALStatus *stat,        /**< LALStatus structure pointer */
   xmax = ymax = zmax = 0;
   for( list = first; list != NULL; list = list->next )
   {
-    if( abs( list->x ) > xmax )
-      xmax = abs( list->x );
-    if( abs( list->y ) > ymax )
-      ymax = abs( list->y );
-    if( abs( list->z ) > zmax )
-      zmax = abs( list->z );
+    if( fabs( list->x ) > xmax )
+      xmax = fabs( list->x );
+    if( fabs( list->y ) > ymax )
+      ymax = fabs( list->y );
+    if( fabs( list->z ) > zmax )
+      zmax = fabs( list->z );
   }
   xlog = (INT2)(log(xmax)/log(10));
   ylog = (INT2)(log(ymax)/log(10));

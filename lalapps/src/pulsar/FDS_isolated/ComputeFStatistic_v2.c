@@ -41,19 +41,12 @@
 /* System includes */
 #include <math.h>
 #include <stdio.h>
-#include <time.h>
 #include <strings.h>
-#ifdef HAVE_UNISTD_H
-#include <unistd.h>
-#endif
-#include <sys/time.h>
-
-int finite(double);
+#include <gsl/gsl_math.h>
 
 /* LAL-includes */
 #include <lal/LALString.h>
 #include <lal/AVFactories.h>
-#include <lal/GSLSupport.h>
 #include <lal/LALInitBarycenter.h>
 #include <lal/UserInput.h>
 #include <lal/SFTfileIO.h>
@@ -109,10 +102,8 @@ int finite(double);
 #define MYMAX(x,y) ( (x) > (y) ? (x) : (y) )
 #define MYMIN(x,y) ( (x) < (y) ? (x) : (y) )
 
-#define LAL_INT4_MAX 2147483647
-
-#define INIT_MEM(x) memset(&(x), 0, sizeof((x)))
-
+// NOTE: LAL's nan is more portable than either of libc or gsl !
+#define LAL_NAN XLALREAL4FailNaN()
 /*---------- internal types ----------*/
 
 /** What info do we want to store in our toplist? */
@@ -146,17 +137,21 @@ typedef struct
 typedef struct
 {
   UINT4 NSFTs;			/**< total number of SFTs */
+  UINT4 NFreq;			/**< number of frequency bins */
   REAL8 tauFstat;		/**< time to compute one Fstatistic over full data-duration (NSFT atoms) [in seconds]*/
   REAL8 tauTemplate;		/**< total loop time per template, includes candidate-handling (transient stats, toplist etc) */
+  REAL8 tauF0;			/**< Demod timing constant = time per template per SFT */
 
-  /* transient-specific timings */
+  FstatMethodType FstatMethod;	/**< Fstat-method used */
+
+  /* ----- transient-specific timings */
   UINT4 tauMin;			/**< shortest transient timescale [s] */
   UINT4 tauMax;			/**< longest transient timescale [s] */
   UINT4 NStart;			/**< number of transient start-time steps in FstatMap matrix */
   UINT4 NTau;			/**< number of transient timescale steps in FstatMap matrix */
-
   REAL8 tauTransFstatMap;	/**< time to compute transient-search Fstatistic-map over {t0, tau} [s]     */
   REAL8 tauTransMarg;		/**< time to marginalize the Fstat-map to compute transient-search Bayes [s] */
+
 } timingInfo_t;
 
 /**
@@ -197,6 +192,8 @@ typedef struct {
   REAL8 LVlogRhoTerm;                       /**< log(rho^4/70) of LV line-prior amplitude 'rho' */
   REAL8Vector *LVloglX;                     /**< vector of line-prior ratios per detector {l1, l2, ... } */
   RankingStat_t RankingStatistic;           /**< rank candidates according to F or LV */
+  BOOLEAN useResamp;
+  FstatMethodType FstatMethod;
 } ConfigVariables;
 
 
@@ -284,8 +281,8 @@ typedef struct {
   REAL8 internalRefTime;	/**< which reference time to use internally for template-grid */
   INT4 SSBprecision;		/**< full relativistic timing or Newtonian */
 
-  INT4 minStartTime;		/**< earliest start-time to use data from */
-  INT4 maxEndTime;		/**< latest end-time to use data from */
+  INT4 minStartTime;		/**< Only use SFTs with timestamps starting from (including) this GPS time */
+  INT4 maxStartTime;		/**< Only use SFTs with timestamps up to (excluding) this GPS time */
   CHAR *workingDir;		/**< directory to use for output files */
   REAL8 timerCount;		/**< output progress-meter every timerCount seconds */
 
@@ -313,15 +310,11 @@ typedef struct {
 
   CHAR *outputTiming;		/**< output timing measurements and parameters into this file [append!]*/
 
-  BOOLEAN useResamp;		/**< use FFT-resampling method instead of LALDemod() */
+  CHAR *FstatMethod;		//!< select which method/algorithm to use to compute the F-statistic
 } UserInput_t;
 
 /*---------- Global variables ----------*/
 extern int vrbflg;		/**< defined in lalapps.c */
-
-/* empty initializers */
-static UserInput_t empty_UserInput;
-static timingInfo_t empty_timingInfo;
 
 /* ---------- local prototypes ---------- */
 int main(int argc,char *argv[]);
@@ -342,17 +335,15 @@ int compareFstatCandidates_LV ( const void *candA, const void *candB );
 void WriteFStatLog ( LALStatus *status, const CHAR *log_fname, const CHAR *logstr );
 CHAR *XLALGetLogString ( const ConfigVariables *cfg );
 
-int write_TimingInfo_to_fp ( FILE * fp, const timingInfo_t *ti );
+int write_TimingInfo ( const CHAR *timingFile, const timingInfo_t *ti );
+
+gsl_vector_int *resize_histogram(gsl_vector_int *old_hist, size_t size);
 
 /* ---------- scanline window functions ---------- */
 scanlineWindow_t *XLALCreateScanlineWindow ( UINT4 windowWings );
 void XLALDestroyScanlineWindow ( scanlineWindow_t *scanlineWindow );
 int XLALAdvanceScanlineWindow ( const FstatCandidate *nextCand, scanlineWindow_t *scanWindow );
 BOOLEAN XLALCenterIsLocalMax ( const scanlineWindow_t *scanWindow, const UINT4 sortingStatistic );
-
-/*---------- empty initializers ---------- */
-static const ConfigVariables empty_ConfigVariables;
-static const FstatCandidate empty_FstatCandidate;
 
 /* ----- which timing function to use ----- */
 #ifdef HIGHRES_TIMING
@@ -378,13 +369,14 @@ int main(int argc,char *argv[])
   FILE *fpFstat = NULL, *fpTransientStats = NULL;
   REAL8 numTemplates, templateCounter;
   time_t clock0;
-  PulsarDopplerParams dopplerpos = empty_PulsarDopplerParams;		/* current search-parameters */
-  FstatCandidate loudestFCand = empty_FstatCandidate, thisFCand = empty_FstatCandidate;
+  PulsarDopplerParams XLAL_INIT_DECL(dopplerpos);
+  FstatCandidate XLAL_INIT_DECL(loudestFCand);
+  FstatCandidate XLAL_INIT_DECL(thisFCand);
   FILE *fpLogPrintf = NULL;
   gsl_vector_int *Fstat_histogram = NULL;
 
-  UserInput_t uvar = empty_UserInput;
-  ConfigVariables GV = empty_ConfigVariables;		/**< global container for various derived configuration settings */
+  UserInput_t XLAL_INIT_DECL(uvar);
+  ConfigVariables XLAL_INIT_DECL(GV);
 
   vrbflg = 1;	/* verbose error-messages */
 
@@ -456,7 +448,7 @@ int main(int argc,char *argv[])
       char colum_headings_string_base[] = "freq alpha delta f1dot f2dot f3dot 2F";
       UINT4 column_headings_string_length = sizeof(colum_headings_string_base);
       char column_headings_string[column_headings_string_length];
-      INIT_MEM( column_headings_string );
+      XLAL_INIT_MEM( column_headings_string );
       strcat ( column_headings_string, colum_headings_string_base );
       if ( uvar.computeLV )
         {
@@ -534,18 +526,14 @@ int main(int argc,char *argv[])
    * and for each value of the frequency-spindown
    */
   templateCounter = 0.0;
-  clock0 = time(NULL);
-
-  REAL8 tic0, tic, toc, timeOfLastProgressUpdate = 0;	// high-precision timing counters
-  timingInfo_t timing = empty_timingInfo;	// timings of Fstatistic computation, transient Fstat-map, transient Bayes factor
-  timing.NSFTs = GV.NSFTs;
+  clock0 = GETTIME();
 
   /* fixed time-offset between internalRefTime and refTime */
   REAL8 DeltaTRefInt = XLALGPSDiff ( &(GV.internalRefTime), &(GV.searchRegion.refTime) ); // tRefInt - tRef
 
-  UINT4 numFreqBins_FBand = 1;	// number of frequency-bins in the frequency-band used for resampling (1 if not --useResamp)
+  UINT4 numFreqBins_FBand = 1;	// number of frequency-bins in the frequency-band used for resampling (1 if not using Resampling)
   REAL8 dFreqResamp = 0; // frequency resolution used to allocate vector of F-stat values for resampling
-  if ( uvar.useResamp )	// handle special resampling case, where we deal with a vector of F-stat values instead of one
+  if ( GV.useResamp )	// handle special resampling case, where we deal with a vector of F-stat values instead of one
     {
 	if ( LALUserVarWasSet(&uvar.dFreq) ) {
 		dFreqResamp = uvar.dFreq;
@@ -554,6 +542,10 @@ int main(int argc,char *argv[])
 	}
       numFreqBins_FBand = (UINT4) ( 1 + floor ( GV.searchRegion.fkdotBand[0] / dFreqResamp ) );
     }
+
+  // ----- prepare timing info
+  REAL8 tic0, tic, toc, timeOfLastProgressUpdate = 0;	// high-precision timing counters
+  timingInfo_t XLAL_INIT_DECL(timing);			// timings of Fstatistic computation, transient Fstat-map, transient Bayes factor
 
   // pointer to Fstat results structure, will be allocated by XLALComputeFstat()
   FstatResults* Fstat_res = NULL;
@@ -596,7 +588,7 @@ int main(int argc,char *argv[])
       templateCounter += 1.0;
       if ( lalDebugLevel && ( (toc - timeOfLastProgressUpdate) > uvar.timerCount) )
         {
-          REAL8 diffSec = time(NULL) - clock0 ;  /* seconds since start of loop*/
+          REAL8 diffSec = GETTIME() - clock0 ;  /* seconds since start of loop*/
           REAL8 taup = diffSec / templateCounter ;
           REAL8 timeLeft = (numTemplates - templateCounter) *  taup;
           LogPrintf (LOG_DEBUG, "Progress: %g/%g = %.2f %% done, Estimated time left: %.0f s\n",
@@ -625,10 +617,10 @@ int main(int argc,char *argv[])
         }
         if (GV.Fstat_what & FSTATQ_FAFB) {
           thisFCand.FaFb_refTime = Fstat_res->doppler.refTime; // this will be 'internal' reference time, used only for parameter estimation
-          thisFCand.Fa = Fstat_res->FaFb[iFreq].Fa;
-          thisFCand.Fb = Fstat_res->FaFb[iFreq].Fb;
+          thisFCand.Fa = Fstat_res->Fa[iFreq];
+          thisFCand.Fb = Fstat_res->Fb[iFreq];
         } else {
-          thisFCand.Fa = thisFCand.Fb = crect(NAN,NAN);
+          thisFCand.Fa = thisFCand.Fb = crect(LAL_NAN,LAL_NAN);
         }
         thisFCand.Mmunu = Fstat_res->Mmunu;
         MultiFstatAtomVector* thisFAtoms = NULL;
@@ -637,7 +629,7 @@ int main(int argc,char *argv[])
         }
 
         /* sanity check on the result */
-        if ( !finite(thisFCand.twoF) )
+        if ( !isfinite(thisFCand.twoF) )
 	{
 	  LogPrintf(LOG_CRITICAL, "non-finite 2F = %.16g, Fa=(%.16g,%.16g), Fb=(%.16g,%.16g)\n",
 		    thisFCand.twoF, creal(thisFCand.Fa), cimag(thisFCand.Fa), creal(thisFCand.Fb), cimag(thisFCand.Fb) );
@@ -668,7 +660,7 @@ int main(int argc,char *argv[])
         }
       else
         {
-          thisFCand.LVstat = NAN; /* in non-LV case, block field with NAN, needed for output checking in write_PulsarCandidate_to_fp() */
+          thisFCand.LVstat = LAL_NAN; /* in non-LV case, block field with NAN, needed for output checking in write_PulsarCandidate_to_fp() */
         }
 
       /* push new value onto scan-line buffer */
@@ -738,7 +730,7 @@ int main(int argc,char *argv[])
 
 	/* resize histogram vector if needed */
 	if (!Fstat_histogram || bin >= Fstat_histogram->size)
-	  if (NULL == (Fstat_histogram = XLALResizeGSLVectorInt(Fstat_histogram, bin + 1, 0))) {
+	  if (NULL == (Fstat_histogram = resize_histogram(Fstat_histogram, bin + 1))) {
 	    XLALPrintError("\nCouldn't (re)allocate 'Fstat_histogram'\n");
 	    return COMPUTEFSTATISTIC_EMEM;
 	  }
@@ -793,7 +785,7 @@ int main(int argc,char *argv[])
       /* ----- compute transient-CW statistics if their output was requested  ----- */
       if ( fpTransientStats )
         {
-          transientCandidate_t transientCand = empty_transientCandidate;
+          transientCandidate_t XLAL_INIT_DECL(transientCand);
 
           /* compute Fstat map F_mn over {t0, tau} */
           tic = GETTIME();
@@ -878,31 +870,23 @@ int main(int argc,char *argv[])
   /* if requested: output timings into timing-file */
   if ( uvar.outputTiming )
     {
-      FILE *fpTiming = NULL;
       REAL8 num_templates = numTemplates * numFreqBins_FBand;	// 'templates' now refers to number of 'frequency-bands' in resampling case
 
+      timing.NSFTs = GV.NSFTs;
+      timing.NFreq = (UINT4) ( 1 + floor ( GV.searchRegion.fkdotBand[0] / uvar.dFreq ) );
+
+      timing.FstatMethod = GV.FstatMethod;
+
       // compute averages:
-      timing.tauFstat         /= num_templates;
-      timing.tauTemplate      /= num_templates;
-      timing.tauTransFstatMap /= num_templates;
-      timing.tauTransMarg     /= num_templates;
+      timing.tauFstat    /= num_templates;
+      timing.tauTemplate /= num_templates;
+      timing.tauF0       =  timing.tauFstat / timing.NSFTs;
 
-      if ( ( fpTiming = fopen ( uvar.outputTiming, "ab" )) == NULL ) {
-        XLALPrintError ("%s: failed to open timing file '%s' for writing \n", __func__, uvar.outputTiming );
-        return COMPUTEFSTATISTIC_ESYS;
-      }
-      /* write header comment line */
-      if ( write_TimingInfo_to_fp ( fpTiming, NULL ) != XLAL_SUCCESS ) {
-        XLALPrintError ("%s: write_TimingInfo_to_fp() failed to write header-comment into file '%s'\n", __func__, uvar.outputTiming );
-        return COMPUTEFSTATISTIC_EXLAL;
-      }
-
-      if ( write_TimingInfo_to_fp ( fpTiming, &timing ) != XLAL_SUCCESS ) {
+      if ( write_TimingInfo ( uvar.outputTiming, &timing ) != XLAL_SUCCESS ) {
         XLALPrintError ("%s: write_TimingInfo_to_fp() failed.\n", __func__ );
         return COMPUTEFSTATISTIC_EXLAL;
       }
 
-      fclose ( fpTiming );
     } /* if timing output requested */
 
   /* ----- if using toplist: sort and write it out to file now ----- */
@@ -948,11 +932,10 @@ int main(int argc,char *argv[])
   if ( uvar.outputLoudest )
     {
       FILE *fpLoudest;
-      PulsarCandidate pulsarParams = empty_PulsarCandidate;
+      PulsarCandidate XLAL_INIT_DECL(pulsarParams);
       pulsarParams.Doppler = loudestFCand.doppler;
 
-      if ( XLALEstimatePulsarAmplitudeParams ( &pulsarParams, &loudestFCand.FaFb_refTime, loudestFCand.Fa, loudestFCand.Fb, &loudestFCand.Mmunu )
-           != XLAL_SUCCESS )
+      if ( XLALEstimatePulsarAmplitudeParams ( &pulsarParams, &loudestFCand.FaFb_refTime, loudestFCand.Fa, loudestFCand.Fb, &loudestFCand.Mmunu ) != XLAL_SUCCESS )
       {
         XLALPrintError ("%s: XLALEstimatePulsarAmplitudeParams() failed with errno=%d\n", __func__, xlalErrno );
         return COMPUTEFSTATISTIC_ESYS;
@@ -1051,7 +1034,7 @@ initUserVars (LALStatus *status, UserInput_t *uvar)
   uvar->DeltaBand = 0;
   uvar->skyRegion = NULL;
   // Dterms-default used to be 16, but has to be 8 for SSE version
-  uvar->Dterms 	= OptimisedHotloopDterms;
+  uvar->Dterms 	= 8;
 
   uvar->ephemEarth = XLALStringDuplicate("earth00-19-DE405.dat.gz");
   uvar->ephemSun = XLALStringDuplicate("sun00-19-DE405.dat.gz");
@@ -1102,7 +1085,7 @@ initUserVars (LALStatus *status, UserInput_t *uvar)
   uvar->SSBprecision = SSBPREC_RELATIVISTIC;
 
   uvar->minStartTime = 0;
-  uvar->maxEndTime = LAL_INT4_MAX;
+  uvar->maxStartTime = LAL_INT4_MAX;
 
   uvar->workingDir = (CHAR*)LALMalloc(512);
   strcpy(uvar->workingDir, ".");
@@ -1113,7 +1096,7 @@ initUserVars (LALStatus *status, UserInput_t *uvar)
   uvar->minBraking = 0.0;
   uvar->maxBraking = 0.0;
 
-  uvar->useResamp = FALSE;
+  uvar->FstatMethod = XLALStringDuplicate("DemodBest");	// default to guessed 'best' demod hotloop variant
 
   uvar->outputSingleFstats = FALSE;
   uvar->computeLV = FALSE;
@@ -1172,7 +1155,7 @@ initUserVars (LALStatus *status, UserInput_t *uvar)
   LALregBOOLUserStruct(status, 	SignalOnly, 	'S', UVAR_OPTIONAL, "Signal only flag");
 
   LALregREALUserStruct(status, 	TwoFthreshold,	'F', UVAR_OPTIONAL, "Set the threshold for selection of 2F");
-  LALregINTUserStruct(status, 	gridType,	 0 , UVAR_OPTIONAL, "Grid: 0=flat, 1=isotropic, 2=metric, 3=skygrid-file, 6=grid-file, 7=An*lattice, 8=spin-square, 9=spin-age-brk");
+  LALregINTUserStruct(status, 	gridType,	 0 , UVAR_OPTIONAL, "Grid: 0=flat, 1=isotropic, 2=metric, 3=skygrid-file, 6=grid-file, 8=spin-square, 9=spin-age-brk");
   LALregINTUserStruct(status, 	metricType,	'M', UVAR_OPTIONAL, "Metric: 0=none,1=Ptole-analytic,2=Ptole-numeric, 3=exact");
   LALregREALUserStruct(status, 	metricMismatch,	'X', UVAR_OPTIONAL, "Maximal allowed mismatch for metric tiling");
   LALregSTRINGUserStruct(status,outputLogfile,	 0,  UVAR_OPTIONAL, "Name of log-file identifying the code + search performed");
@@ -1190,8 +1173,8 @@ initUserVars (LALStatus *status, UserInput_t *uvar)
   LALregREALUserStruct(status,FracCandidatesToKeep,0, UVAR_OPTIONAL, "Fraction of Fstat 'candidates' to keep.");
   LALregINTUserStruct(status,   clusterOnScanline, 0, UVAR_OPTIONAL, "Neighbors on each side for finding 1D local maxima on scanline");
 
-  LALregINTUserStruct ( status, minStartTime, 	 0,  UVAR_OPTIONAL, "Earliest SFT-timestamp to include");
-  LALregINTUserStruct ( status, maxEndTime, 	 0,  UVAR_OPTIONAL, "Latest SFT-timestamps to include");
+  LALregINTUserStruct ( status, minStartTime, 	 0,  UVAR_OPTIONAL, "Only use SFTs with timestamps starting from (including) this GPS time");
+  LALregINTUserStruct ( status, maxStartTime, 	 0,  UVAR_OPTIONAL, "Only use SFTs with timestamps up to (excluding) this GPS time");
 
   LALregSTRINGUserStruct(status,outputFstatAtoms,0,  UVAR_OPTIONAL, "Output filename *base* for F-statistic 'atoms' {a,b,Fa,Fb}_alpha. One file per doppler-point.");
   LALregBOOLUserStruct(status,  outputSingleFstats,0,  UVAR_OPTIONAL, "In multi-detector case, also output single-detector F-stats?");
@@ -1210,9 +1193,9 @@ initUserVars (LALStatus *status, UserInput_t *uvar)
   LALregREALUserStruct(status, transient_tauDaysBand,0,  UVAR_OPTIONAL, "TransientCW: Range of transient-CW duration timescales to search, in days");
   LALregINTUserStruct (status, transient_dtau,   0,  UVAR_OPTIONAL,     "TransientCW: Step-size in transient-CW duration timescale, in seconds [Default:Tsft]");
 
-  LALregBOOLUserStruct( status, version,	'V', UVAR_SPECIAL,  "Output version information");
+  XLALregSTRINGUserStruct( FstatMethod,             0,  UVAR_OPTIONAL,  XLALFstatMethodHelpString() );
 
-  LALregBOOLUserStruct(status,  useResamp,       0,  UVAR_OPTIONAL,  "Use FFT-resampling method instead of LALDemod()");
+  LALregBOOLUserStruct( status, version,	'V', UVAR_SPECIAL,  "Output version information");
 
   /* ----- more experimental/expert options ----- */
   LALregREALUserStruct(status, 	dopplermax, 	'q', UVAR_DEVELOPER, "Maximum doppler shift expected");
@@ -1243,7 +1226,7 @@ initUserVars (LALStatus *status, UserInput_t *uvar)
 
   XLALregSTRINGUserStruct( outputTiming,         0,  UVAR_DEVELOPER, "Append timing measurements and parameters into this file");
 
-  LALregBOOLUserStruct(status,LVuseAllTerms	,0,  UVAR_DEVELOPER, "Use only leading term or all terms in Line Veto computation?");
+  LALregBOOLUserStruct(status,LVuseAllTerms,	 0,  UVAR_DEVELOPER, "Use only leading term or all terms in Line Veto computation?");
 
   DETATCHSTATUSPTR (status);
   RETURN (status);
@@ -1257,9 +1240,9 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg, const UserInput_t *uvar )
 {
   REAL8 fCoverMin, fCoverMax;	/* covering frequency-band to read from SFTs */
   SFTCatalog *catalog = NULL;
-  SFTConstraints constraints = empty_SFTConstraints;
-  LIGOTimeGPS minStartTimeGPS = empty_LIGOTimeGPS;
-  LIGOTimeGPS maxEndTimeGPS = empty_LIGOTimeGPS;
+  SFTConstraints XLAL_INIT_DECL(constraints);
+  LIGOTimeGPS XLAL_INIT_DECL(minStartTimeGPS);
+  LIGOTimeGPS XLAL_INIT_DECL(maxStartTimeGPS);
 
   LIGOTimeGPS endTime;
   size_t toplist_length = uvar->NumCandidatesToKeep;
@@ -1274,15 +1257,30 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg, const UserInput_t *uvar )
       ABORT (status, COMPUTEFSTATISTIC_EINPUT, COMPUTEFSTATISTIC_MSGEINPUT);
     }
 
+  /* ----- set computational parameters for F-statistic from User-input ----- */
+
+  if ( XLALParseFstatMethodString ( &cfg->FstatMethod, uvar->FstatMethod ) != XLAL_SUCCESS ) {
+    XLALPrintError( "XLALParseFstatMethodString() failed\n");
+    ABORT ( status, COMPUTEFSTATISTIC_EXLAL, COMPUTEFSTATISTIC_MSGEXLAL );
+  }
+  if ( XLALFstatMethodClassIsResamp ( cfg->FstatMethod ) ) { // use resampling
+    cfg->useResamp = 1;
+  } else if ( XLALFstatMethodClassIsDemod ( cfg->FstatMethod ) ) { // use demodulation
+    cfg->useResamp = 0;
+  } else {
+    XLALPrintError("Something went wrong: couldn't classify '%s'(=%d) into {Demod | Resamp}\n", uvar->FstatMethod, cfg->FstatMethod );
+    ABORT ( status, COMPUTEFSTATISTIC_EINPUT, COMPUTEFSTATISTIC_MSGEINPUT );
+  }
+
   /* use IFO-contraint if one given by the user */
   if ( LALUserVarWasSet ( &uvar->IFO ) )
     if ( (constraints.detector = XLALGetChannelPrefix ( uvar->IFO )) == NULL ) {
       ABORT ( status,  COMPUTEFSTATISTIC_EINPUT,  COMPUTEFSTATISTIC_MSGEINPUT);
     }
   minStartTimeGPS.gpsSeconds = uvar->minStartTime;
-  maxEndTimeGPS.gpsSeconds = uvar->maxEndTime;
-  constraints.startTime = &minStartTimeGPS;
-  constraints.endTime = &maxEndTimeGPS;
+  maxStartTimeGPS.gpsSeconds = uvar->maxStartTime;
+  constraints.minStartTime = &minStartTimeGPS;
+  constraints.maxStartTime = &maxStartTimeGPS;
 
   /* get full SFT-catalog of all matching (multi-IFO) SFTs */
   LogPrintf (LOG_DEBUG, "Finding all SFTs to load ... ");
@@ -1407,6 +1405,11 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg, const UserInput_t *uvar )
 	TRY ( SkySquare2String( status->statusPtr, &(cfg->searchRegion.skyRegionString),
 				cfg->Alpha, cfg->Delta,	uvar->AlphaBand, uvar->DeltaBand), status);
       }
+    else if (!uvar->gridFile)
+      {
+	XLALPrintError ("\nCould not setup searchRegion, have neither skyRegion nor (Alpha, Delta) nor a gridFile!\n\n" );
+	ABORT ( status,  COMPUTEFSTATISTIC_EINPUT,  COMPUTEFSTATISTIC_MSGEINPUT);
+      }
 
     /* spin searchRegion defined by spin-range at reference-time */
     cfg->searchRegion.refTime = refTime;
@@ -1439,8 +1442,9 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg, const UserInput_t *uvar )
     DopplerFullScanInit scanInit;			/* init-structure for DopperScanner */
 
     scanInit.searchRegion = cfg->searchRegion;
-    if ( uvar->useResamp )	// in the resampling-case, temporarily take out frequency-dimension of the Doppler template bank
+    if ( cfg->useResamp ) {	// in the resampling-case, temporarily take out frequency-dimension of the Doppler template bank
       scanInit.searchRegion.fkdotBand[0] = 0;
+    }
 
     scanInit.gridType = uvar->gridType;
     scanInit.gridFile = uvar->gridFile;
@@ -1489,8 +1493,9 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg, const UserInput_t *uvar )
 
     // in the resampling case, we need to restore the frequency-band info now, which we set to 0
     // before calling the DopplerInit template bank construction
-    if ( uvar->useResamp )
+    if ( cfg->useResamp ) {
       spinRangeRef.fkdotBand[0] = tmpFreqBandRef;
+    }
 
     // write this search spin-range@refTime back into 'cfg' struct for users' reference
     cfg->searchRegion.refTime = spinRangeRef.refTime;
@@ -1518,25 +1523,6 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg, const UserInput_t *uvar )
 
   } /* extrapolate spin-range */
 
-  /* ----- set computational parameters for F-statistic from User-input ----- */
-  if ( uvar->useResamp ) {	// use resampling
-
-    cfg->Fstat_in = XLALCreateFstatInput_Resamp();
-    if ( cfg->Fstat_in == NULL ) {
-      XLALPrintError("%s: XLALCreateFstatInput_Resamp() failed with errno=%d", __func__, xlalErrno);
-      ABORT ( status, COMPUTEFSTATISTIC_EXLAL, COMPUTEFSTATISTIC_MSGEXLAL );
-    }
-
-  } else {			// use demodulation
-
-    cfg->Fstat_in = XLALCreateFstatInput_Demod( uvar->Dterms, DEMODHL_BEST );
-    if ( cfg->Fstat_in == NULL ) {
-      XLALPrintError("%s: XLALCreateFstatInput_Demod() failed with errno=%d", __func__, xlalErrno);
-      ABORT ( status, COMPUTEFSTATISTIC_EXLAL, COMPUTEFSTATISTIC_MSGEXLAL );
-    }
-
-  }
-
   /* if single-only flag is given, assume a PSD with sqrt(S) = 1.0 */
   MultiNoiseFloor assumeSqrtSX, *p_assumeSqrtSX;
   if ( uvar->SignalOnly ) {
@@ -1550,11 +1536,15 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg, const UserInput_t *uvar )
   }
 
   PulsarParamsVector *injectSources = NULL;
-  MultiNoiseFloor *p_injectSqrtSX = NULL;
-  if ( XLALSetupFstatInput( cfg->Fstat_in, catalog, fCoverMin, fCoverMax,
-                                injectSources, p_injectSqrtSX, p_assumeSqrtSX,
-                                uvar->RngMedWindow, cfg->ephemeris, uvar->SSBprecision, 0 ) != XLAL_SUCCESS ) {
-    XLALPrintError("%s: XLALSetupFstatInput() failed with errno=%d", __func__, xlalErrno);
+  MultiNoiseFloor *injectSqrtSX = NULL;
+  FstatExtraParams XLAL_INIT_DECL(extraParams);
+  extraParams.Dterms = uvar->Dterms;
+  extraParams.SSBprec = uvar->SSBprecision;
+  cfg->Fstat_in = XLALCreateFstatInput( catalog, fCoverMin, fCoverMax,
+                                        injectSources, injectSqrtSX, p_assumeSqrtSX, uvar->RngMedWindow,
+                                        cfg->ephemeris, cfg->FstatMethod, &extraParams );
+  if ( cfg->Fstat_in == NULL ) {
+    XLALPrintError("%s: XLALCreateFstatInput() failed with errno=%d", __func__, xlalErrno);
     ABORT ( status, COMPUTEFSTATISTIC_EXLAL, COMPUTEFSTATISTIC_MSGEXLAL );
   }
 
@@ -1744,13 +1734,6 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg, const UserInput_t *uvar )
         } /* for X < numDetectors */
     } /* if ( uvar.computeLV && uvar.LVlX ) */
 
-  // ----- check that resampling option was used sensibly ...
-  if ( uvar->useResamp )
-    {
-      // FIXME: probably should check a few more things, can't think of any right now ...
-      // let's hope users are sensible
-    }
-
   DETATCHSTATUSPTR (status);
   RETURN (status);
 
@@ -1764,6 +1747,9 @@ XLALGetLogString ( const ConfigVariables *cfg )
 {
   XLAL_CHECK_NULL ( cfg != NULL, XLAL_EINVAL );
 
+#define BUFLEN 1024
+  CHAR buf[BUFLEN];
+
   CHAR *logstr = NULL;
   XLAL_CHECK_NULL ( (logstr = XLALStringAppend ( logstr, "%% cmdline: " )) != NULL, XLAL_EFUNC );
   CHAR *cmdline;
@@ -1773,13 +1759,13 @@ XLALGetLogString ( const ConfigVariables *cfg )
   XLAL_CHECK_NULL ( (logstr = XLALStringAppend ( logstr, "\n" )) != NULL, XLAL_EFUNC );
   XLAL_CHECK_NULL ( (logstr = XLALStringAppend ( logstr, cfg->VCSInfoString )) != NULL, XLAL_EFUNC );
 
+  XLAL_CHECK_NULL ( snprintf ( buf, BUFLEN, "%%%% FstatMethod used: '%s'\n", XLALGetFstatMethodName ( cfg->FstatMethod ) ) < BUFLEN, XLAL_EBADLEN );
+  XLAL_CHECK_NULL ( (logstr = XLALStringAppend ( logstr, buf )) != NULL, XLAL_EFUNC );
+
   XLAL_CHECK_NULL ( (logstr = XLALStringAppend ( logstr, "%% Started search: " )) != NULL, XLAL_EFUNC );
-  time_t tp = time(NULL);
+  time_t tp = GETTIME();
   XLAL_CHECK_NULL ( (logstr = XLALStringAppend ( logstr, asctime( gmtime( &tp ) ))) != NULL, XLAL_EFUNC );
   XLAL_CHECK_NULL ( (logstr = XLALStringAppend ( logstr, "%% Loaded SFTs: [ " )) != NULL, XLAL_EFUNC );
-
-#define BUFLEN 1024
-  CHAR buf[BUFLEN];
 
   UINT4 numDet = cfg->detectorIDs->length;
   for ( UINT4 X=0; X < numDet; X ++ )
@@ -2025,6 +2011,13 @@ checkUserInputConsistency (LALStatus *status, const UserInput_t *uvar)
         XLALPrintError ("\nOverdetermined sky-region: only use EITHER (Alpha,Delta) OR skyRegion!\n\n");
         ABORT (status, COMPUTEFSTATISTIC_EINPUT, COMPUTEFSTATISTIC_MSGEINPUT);
       }
+    if ( !haveSkyRegion && !haveAlphaDelta && !useSkyGridFile && !useFullGridFile )
+      {
+        XLALPrintError ("\nUnderdetermined sky-region: use one of (Alpha,Delta), (RA,Dec), skyRegion or a gridFile!\n\n");
+        ABORT (status, COMPUTEFSTATISTIC_EINPUT, COMPUTEFSTATISTIC_MSGEINPUT);
+
+      }
+
     if ( !useMetric && haveMetric)
       {
         LALWarning (status, "\nWARNING: Metric was specified for non-metric grid... will be ignored!\n");
@@ -2202,7 +2195,7 @@ write_PulsarCandidate_to_fp ( FILE *fp,  const PulsarCandidate *pulsarParams, co
   for ( X = 0; X < numDet ; X ++ )
     fprintf (fp, "twoF%d    = % .6g;\n", X, Fcand->twoFX[X] );
   /* LVstat */
-  if ( !isnan(Fcand->LVstat) ) /* if --computeLV=FALSE, the LV field was initialised to NAN - do not output LV */
+  if ( !XLALIsREAL4FailNaN(Fcand->LVstat) ) /* if --computeLV=FALSE, the LV field was initialised to NAN - do not output LV */
     fprintf (fp, "LV       = % .6g;\n", Fcand->LVstat );
 
   fprintf (fp, "\nAmpFisher = \\\n" );
@@ -2257,8 +2250,9 @@ write_FstatCandidate_to_fp ( FILE *fp, const FstatCandidate *thisFCand )
   char extraStatsStr[256] = "";     /* defaults to empty */
   char buf0[256];
   /* LVstat */
-  if ( !isnan(thisFCand->LVstat) ) /* if --computeLV=FALSE, the LV field was initialised to NAN - do not output LV */
+  if ( !XLALIsREAL4FailNaN(thisFCand->LVstat) ) { /* if --computeLV=FALSE, the LV field was initialised to NAN - do not output LV */
       snprintf ( extraStatsStr, sizeof(extraStatsStr), " %.9g", thisFCand->LVstat );
+  }
   if ( thisFCand->numDetectors > 0 )
     {
       for ( UINT4 X = 0; X < thisFCand->numDetectors; X ++ )
@@ -2393,34 +2387,38 @@ XLALCenterIsLocalMax ( const scanlineWindow_t *scanWindow, const UINT4 rankingSt
 } /* XLALCenterIsLocalMax() */
 
 /**
- * Function to append one timing-info line to open output file.
+ * Function to append one timing-info line to output file.
  *
- * NOTE: called with NULL timing pointer writes header-comment line.
  */
 int
-write_TimingInfo_to_fp ( FILE * fp, const timingInfo_t *ti )
+write_TimingInfo ( const CHAR *fname, const timingInfo_t *ti )
 {
   /* input sanity */
-  if ( !fp ) {
-    XLALPrintError ("%s: invalid NULL input 'fp'\n", __func__ );
+  if ( !fname || !ti ) {
+    XLALPrintError ("%s: invalid NULL input 'fp' | 'ti'\n", __func__ );
     XLAL_ERROR ( XLAL_EINVAL );
   }
 
-  /* if timingInfo == NULL ==> write header comment line */
-  if ( ti == NULL )
+  FILE *fp;
+  if ( (fp = fopen(fname,"rb" )) != NULL )
     {
-      fprintf ( fp, "%%%%NSFTs  costFstat[s]   tauMin[s]  tauMax[s]  NStart    NTau    costTransFstatMap[s]  costTransMarg[s] costTemplate[s]  tauF0 [s]\n");
-      return XLAL_SUCCESS;
-    } /* if ti == NULL */
+      fclose(fp);
+      XLAL_CHECK ( (fp = fopen( fname, "ab" ) ), XLAL_ESYS, "Failed to open existing timing-file '%s' for appending\n", fname );
+    }
+  else
+    {
+      XLAL_CHECK ( (fp = fopen( fname, "wb" ) ), XLAL_ESYS, "Failed to open new timing-file '%s' for writing\n", fname );
+      fprintf ( fp, "%2s%6s %10s %10s %10s %10s %10s\n",
+                "%%", "NSFTs", "NFreq", "tauF[s]", "tauFEff[s]", "tauF0[s]", "FstatMethod" );
+    }
 
-  // compute fundamental timing constant 'tauF0' = F-stat time per template per SFT
-  REAL8 tauF0 = ti->tauTemplate / ti->NSFTs;
-  fprintf ( fp, "% 5d    %10.6e      %6d     %6d    %5d   %5d           %10.6e       %10.6e	%10.6e   %10.6e\n",
-            ti->NSFTs, ti->tauFstat, ti->tauMin, ti->tauMax, ti->NStart, ti->NTau, ti->tauTransFstatMap, ti->tauTransMarg, ti->tauTemplate, tauF0 );
+  fprintf ( fp, "%8d %10d %10.1e %10.1e %10.1e %10s\n",
+            ti->NSFTs, ti->NFreq, ti->tauFstat, ti->tauTemplate, ti->tauF0, XLALGetFstatMethodName(ti->FstatMethod) );
 
+  fclose ( fp );
   return XLAL_SUCCESS;
 
-} /* write_TimingInfo_to_fp() */
+} /* write_TimingInfo() */
 
 #ifdef HIGHRES_TIMING
 /**
@@ -2448,3 +2446,17 @@ XLALGetUserCPUTime ( void )
 
 } /* XLALGetUserCPUTime() */
 #endif
+
+/* Resize histogram */
+gsl_vector_int *resize_histogram(gsl_vector_int *old_hist, size_t size) {
+  gsl_vector_int *new_hist = gsl_vector_int_alloc(size);
+  XLAL_CHECK_NULL(new_hist != NULL, XLAL_ENOMEM);
+  gsl_vector_int_set_zero(new_hist);
+  if (old_hist != NULL) {
+    gsl_vector_int_view old = gsl_vector_int_subvector(old_hist, 0, GSL_MIN(old_hist->size, size));
+    gsl_vector_int_view new = gsl_vector_int_subvector(new_hist, 0, GSL_MIN(old_hist->size, size));
+    gsl_vector_int_memcpy(&new.vector, &old.vector);
+    gsl_vector_int_free(old_hist);
+  }
+  return new_hist;
+}

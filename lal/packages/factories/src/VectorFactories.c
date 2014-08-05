@@ -4,8 +4,8 @@ File Name: VectorFactories.c
 
 -------------------------------------------------------------------------*/
 
-#include "LALStdlib.h"
-#include "AVFactories.h"
+#include <lal/LALStdlib.h>
+#include <lal/AVFactories.h>
 
 #define TYPECODE Z
 #define TYPE COMPLEX16

@@ -1,4 +1,4 @@
-AM_CPPFLAGS = -I$(top_builddir)/include -I$(srcdir)/../include @AM_CPPFLAGS@
+include $(top_srcdir)/gnuscripts/lalsuite_header_links.am
 
 noinst_LTLIBRARIES = libutilities.la
 
@@ -10,7 +10,6 @@ libutilities_la_SOURCES = \
 	Eigen.c \
 	EigenInternal.c \
 	FindRoot.c \
-	GSLSupport.c \
 	HeapSort.c \
 	Integrate.c \
 	Interpolate.c \

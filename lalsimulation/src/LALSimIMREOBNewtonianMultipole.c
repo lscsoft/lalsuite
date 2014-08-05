@@ -1,5 +1,5 @@
 /*
-*  Copyright (C) 2010 Craig Robinson 
+*  Copyright (C) 2010 Craig Robinson, Prayush Kumar (minor additions)
 *
 *  This program is free software; you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
@@ -19,7 +19,7 @@
 
 
 /**
- * \author Craig Robinson
+ * \author Craig Robinson, Prayush Kumar
  *
  * Functions to construct the Newtonian multipolar waveform as given
  * by Damour et al, Phys.Rev.D79:064004,2009.
@@ -29,6 +29,10 @@
  * In addition to the function used to do this,
  * XLALCalculateNewtonianMultipole(), this file also contains a function
  * for calculating the standard scalar spherical harmonics Ylm.
+ *
+ * Also functions to return only the absolute value of the Newtonian multipolar
+ * waveform, ignoring the complex argument that dependens on the orbital phase.
+ * These functions are used in the flux calculation.
  */
 
 #include <complex.h>
@@ -50,6 +54,11 @@ XLALScalarSphHarmThetaPiBy2(COMPLEX16 *y,
                          INT4 l,
                          INT4  m,
                          REAL8 phi);
+
+static int
+XLALAbsScalarSphHarmThetaPiBy2(COMPLEX16 *y,
+                         INT4 l,
+                         INT4  m);
 
 static int
 CalculateThisMultipolePrefix(
@@ -172,6 +181,43 @@ XLALSimIMRSpinEOBCalculateNewtonianMultipole(
   return XLAL_SUCCESS;
 }
 
+/**
+ * This function calculates the Newtonian multipole part of the
+ * factorized waveform for the SEOBNRv1 model. This is defined in Eq. 4.
+ * It ignores the exp(\ii * phi) part, and returns only the absolute
+ * value.
+ */
+UNUSED static int
+XLALSimIMRSpinEOBFluxCalculateNewtonianMultipole(
+                 COMPLEX16 *multipole, /**<< OUTPUT, Newtonian multipole */
+                 REAL8 x,              /**<< Dimensionless parameter \f$\equiv v^2\f$ */
+                 UNUSED REAL8 r,       /**<< Orbital separation (units of total mass M */
+                 UNUSED REAL8 phi,     /**<< Orbital phase (in radians) */
+                 UINT4  l,             /**<< Mode l */
+                 INT4  m,              /**<< Mode m */
+                 EOBParams *params     /**<< Pre-computed coefficients, parameters, etc. */
+                 )
+{
+   INT4 xlalStatus;
+
+   COMPLEX16 y;
+
+   INT4 epsilon = (l + m) % 2;
+
+   phi = y = 0.0;
+
+  /* Calculate the necessary Ylm */
+  xlalStatus = XLALAbsScalarSphHarmThetaPiBy2( &y, l - epsilon, - m );
+  if (xlalStatus != XLAL_SUCCESS )
+  {
+    XLAL_ERROR( XLAL_EFUNC );
+  }
+
+  *multipole = params->prefixes->values[l][m] * pow( x, (REAL8)(l+epsilon)/2.0) ;
+  *multipole *= y;
+
+  return XLAL_SUCCESS;
+}
 
 /* In the calculation of the Newtonian multipole, we only use
  * the spherical harmonic with theta set to pi/2. Since this
@@ -217,6 +263,48 @@ XLALScalarSphHarmThetaPiBy2(
   return XLAL_SUCCESS;
 }
 
+/* In the calculation of the Newtonian multipole, we only use
+ * the spherical harmonic with theta set to pi/2. Since this
+ * is always the case, we can use this information to use a
+ * faster version of the spherical harmonic code
+ */
+
+static int
+XLALAbsScalarSphHarmThetaPiBy2(
+                 COMPLEX16 *y, /**<< OUTPUT, Ylm(0,phi) */
+                 INT4 l,       /**<< Mode l */
+                 INT4  m      /**<< Mode m */
+                 )
+{
+
+  REAL8 legendre;
+  INT4 absM = abs( m );
+
+  if ( l < 0 || absM > (INT4) l )
+  {
+    XLAL_ERROR( XLAL_EINVAL );
+  }
+
+  /* For some reason GSL will not take negative m */
+  /* We will have to use the relation between sph harmonics of +ve and -ve m */
+  legendre = XLALAssociatedLegendreXIsZero( l, absM );
+  if ( XLAL_IS_REAL8_FAIL_NAN( legendre ))
+  {
+    XLAL_ERROR( XLAL_EFUNC );
+  }
+
+  /* Compute the values for the spherical harmonic */
+  *y = legendre;// * cos(m * phi);
+  //*y += I * legendre * sin(m * phi);
+
+  /* If m is negative, perform some jiggery-pokery */
+  if ( m < 0 && absM % 2  == 1 )
+  {
+    *y *= -1.0;
+  }
+
+  return XLAL_SUCCESS;
+}
 
 /**
  * Function to calculate associated Legendre function used by the spherical harmonics function

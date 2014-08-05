@@ -72,14 +72,21 @@
 
 /* ----- internal prototype ---------- */
 int compare_ephemeris ( const EphemerisData *edat1, const EphemerisData *edat2 );
+REAL8 relerr(REAL8 x, REAL8 xapprox);
+
+inline REAL8 relerr ( REAL8 x, REAL8 xapprox )
+{
+  REAL8 abserr = fabs ( x - xapprox );
+  REAL8 absmean = 0.5 * fabs( x + xapprox );
+  if ( absmean > 10 * LAL_REAL8_EPS )
+    return abserr / absmean;
+  else
+    return abserr;
+}
 
 int diffEmissionTime  ( EmissionTime  *diff, const EmissionTime *emit1, const EmissionTime *emit2 );
 int absmaxEmissionTime ( EmissionTime *absmax, const EmissionTime *demit1, const EmissionTime *demit2 );
 REAL8 maxErrInEmissionTime ( const EmissionTime *demit );
-
-
-// empty local initializers
-static const EmissionTime empty_EmissionTime;
 
 const INT4 t2000 = 630720013; 		/* gps time at Jan 1, 2000 00:00:00 UTC */
 const INT4 t1998 = 630720013-730*86400-1;	/* gps at Jan 1,1998 00:00:00 UTC*/
@@ -156,7 +163,7 @@ main( void )
   LALDetector cachedDetector;
   cachedDetector = lalCachedDetectors[LALDetectorIndexGEO600DIFF];
 
-  BarycenterInput baryinput = empty_BarycenterInput;
+  BarycenterInput XLAL_INIT_DECL(baryinput);
   baryinput.site.location[0]=cachedDetector.location[0]/LAL_C_SI;
   baryinput.site.location[1]=cachedDetector.location[1]/LAL_C_SI;
   baryinput.site.location[2]=cachedDetector.location[2]/LAL_C_SI;
@@ -194,8 +201,8 @@ main( void )
   }
 
   /* ---------- Now running program w/o errors, to illustrate proper use. ---------- */
-  EmissionTime maxDiff 		= empty_EmissionTime;
-  EmissionTime maxDiffOpt	= empty_EmissionTime;
+  EmissionTime XLAL_INIT_DECL(maxDiff);
+  EmissionTime XLAL_INIT_DECL(maxDiffOpt);
   REAL8 tic, toc;
   UINT4 NRepeat = 1;
   UINT4 counter = 0;
@@ -449,8 +456,8 @@ absmaxEmissionTime ( EmissionTime *absmax, const EmissionTime *demit1, const Emi
     return -1;
 
   absmax->deltaT 		= fmax ( fabs ( demit1->deltaT ) , fabs ( demit2->deltaT ) );
-  absmax->te.gpsSeconds 	= fmax ( fabs ( demit1->te.gpsSeconds) , fabs ( demit2->te.gpsSeconds ) );
-  absmax->te.gpsNanoSeconds 	= fmax ( fabs ( demit1->te.gpsNanoSeconds ), fabs ( demit2->te.gpsNanoSeconds ) );
+  absmax->te.gpsSeconds 	= fmax ( abs ( demit1->te.gpsSeconds) , abs ( demit2->te.gpsSeconds ) );
+  absmax->te.gpsNanoSeconds 	= fmax ( abs ( demit1->te.gpsNanoSeconds ), abs ( demit2->te.gpsNanoSeconds ) );
   absmax->tDot 			= fmax ( fabs ( demit1->tDot ) , fabs ( demit2->tDot ) );
   for ( UINT4 i = 0; i < 3; i ++ )
     {
@@ -468,8 +475,8 @@ maxErrInEmissionTime ( const EmissionTime *demit )
 {
   REAL8 maxdiff = 0;
   maxdiff 		= fmax ( maxdiff, fabs ( demit->deltaT ) );
-  maxdiff		= fmax ( maxdiff, fabs ( demit->te.gpsSeconds ));
-  maxdiff 		= fmax ( maxdiff, 1e-9 * fabs ( demit->te.gpsNanoSeconds ) );
+  maxdiff		= fmax ( maxdiff, abs ( demit->te.gpsSeconds ));
+  maxdiff 		= fmax ( maxdiff, 1e-9 * abs ( demit->te.gpsNanoSeconds ) );
   maxdiff 		= fmax ( maxdiff, fabs ( demit->tDot ) );
   for ( UINT4 i = 0; i < 3; i ++ )
     {

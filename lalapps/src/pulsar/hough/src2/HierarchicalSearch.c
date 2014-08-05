@@ -171,8 +171,6 @@ BOOLEAN uvar_validateLUT = FALSE;
 #define HSMAX(x,y) ( (x) > (y) ? (x) : (y) )
 #define HSMIN(x,y) ( (x) < (y) ? (x) : (y) )
 
-#define INIT_MEM(x) memset(&(x), 0, sizeof((x)))
-
 #define BLOCKSIZE_REALLOC 50
 
 /** Useful stuff for a single stage of the Hierarchical search */
@@ -190,8 +188,8 @@ typedef struct {
   EphemerisData *edat;   /**< ephemeris data for LALBarycenter */
   LIGOTimeGPSVector *midTstack;    /**< timestamps vector for mid time of each stack */
   LIGOTimeGPSVector *startTstack;  /**< timestamps vector for start time of each stack */
-  LIGOTimeGPS minStartTimeGPS;     /**< all sft data must be after this time */
-  LIGOTimeGPS maxEndTimeGPS;       /**< all sft data must be before this time */
+  LIGOTimeGPS minStartTimeGPS;     /**< Only use SFTs with timestamps starting from (including) this GPS time */
+  LIGOTimeGPS maxStartTimeGPS;     /**< Only use SFTs with timestamps up to (excluding) this GPS time */
   UINT4 blocksRngMed;              /**< blocksize for running median noise floor estimation */
   UINT4 Dterms;                    /**< size of Dirichlet kernel for Fstat calculation */
   REAL8 dopplerMax;                /**< extra sft wings for doppler motion */
@@ -299,8 +297,8 @@ int MAIN( int argc, char *argv[]) {
   LIGOTimeGPSVector *startTstack=NULL;
 
 
-  LIGOTimeGPS refTimeGPS = empty_LIGOTimeGPS;
-  LIGOTimeGPS tMidGPS = empty_LIGOTimeGPS;
+  LIGOTimeGPS XLAL_INIT_DECL(refTimeGPS);
+  LIGOTimeGPS XLAL_INIT_DECL(tMidGPS);
   REAL8 tObs;
 
   /* velocities and positions at midTstack */
@@ -315,7 +313,7 @@ int MAIN( int argc, char *argv[]) {
   REAL8 tStack;
 
   /* sft related stuff */
-  static LIGOTimeGPS minStartTimeGPS, maxEndTimeGPS;
+  static LIGOTimeGPS minStartTimeGPS, maxStartTimeGPS;
 
 
   /* some useful variables for each stage */
@@ -345,7 +343,7 @@ int MAIN( int argc, char *argv[]) {
 
   /* template and grid variables */
   static DopplerSkyScanInit scanInit;   /* init-structure for DopperScanner */
-  DopplerSkyScanState thisScan = empty_DopplerSkyScanState; /* current state of the Doppler-scan */
+  DopplerSkyScanState XLAL_INIT_DECL(thisScan);
   static PulsarDopplerParams dopplerpos;	       /* current search-parameters */
   static PulsarDopplerParams thisPoint;
 
@@ -395,7 +393,7 @@ int MAIN( int argc, char *argv[]) {
   REAL8 uvar_df1dotRes = 0;
   REAL8 uvar_threshold1 = 0;
   REAL8 uvar_minStartTime1 = 0;
-  REAL8 uvar_maxEndTime1 = LAL_INT4_MAX;
+  REAL8 uvar_maxStartTime1 = LAL_INT4_MAX;
   REAL8 uvar_dopplerMax = 1.05e-4;
 
   REAL8 uvar_refTime = 0;
@@ -408,7 +406,7 @@ int MAIN( int argc, char *argv[]) {
 
   INT4 uvar_blocksRngMed = BLOCKSRNGMED;
   INT4 uvar_nStacksMax = 1;
-  INT4 uvar_Dterms = OptimisedHotloopDterms;
+  INT4 uvar_Dterms = 8;
   INT4 uvar_SSBprecision = SSBPREC_RELATIVISTIC;
   INT4 uvar_nf1dotRes = 1;
   INT4 uvar_metricType1 = LAL_PMETRIC_COH_PTOLE_ANALYTIC;
@@ -488,8 +486,8 @@ int MAIN( int argc, char *argv[]) {
   LAL_CALL( LALRegisterREALUserVar(   &status, "refTime",      0,  UVAR_OPTIONAL, "Ref. time for pulsar pars [Default: mid-time]", &uvar_refTime), &status);
   LAL_CALL( LALRegisterSTRINGUserVar( &status, "ephemEarth",   0,  UVAR_OPTIONAL, "Location of Earth ephemeris file", &uvar_ephemEarth),  &status);
   LAL_CALL( LALRegisterSTRINGUserVar( &status, "ephemSun",     0,  UVAR_OPTIONAL, "Location of Sun ephemeris file", &uvar_ephemSun),  &status);
-  LAL_CALL( LALRegisterREALUserVar(   &status, "minStartTime1",0,  UVAR_OPTIONAL, "1st stage min start time of observation", &uvar_minStartTime1), &status);
-  LAL_CALL( LALRegisterREALUserVar(   &status, "maxEndTime1",  0,  UVAR_OPTIONAL, "1st stage max end time of observation",   &uvar_maxEndTime1),   &status);
+  LAL_CALL( LALRegisterREALUserVar(   &status, "minStartTime1",0,  UVAR_OPTIONAL, "1st stage: Only use SFTs with timestamps starting from (including) this GPS time", &uvar_minStartTime1), &status);
+  LAL_CALL( LALRegisterREALUserVar(   &status, "maxStartTime1",0,  UVAR_OPTIONAL, "1st stage: Only use SFTs with timestamps up to (excluding) this GPS time",   &uvar_maxStartTime1),   &status);
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "printFstat1",  0,  UVAR_OPTIONAL, "Print 1st stage Fstat vectors", &uvar_printFstat1), &status);
 
   /* developer user variables */
@@ -610,7 +608,7 @@ int MAIN( int argc, char *argv[]) {
   XLAL_CHECK ( (edat = XLALInitBarycenter ( uvar_ephemEarth, uvar_ephemSun )) != NULL, XLAL_EFUNC );
 
   XLALGPSSetREAL8(&minStartTimeGPS, uvar_minStartTime1);
-  XLALGPSSetREAL8(&maxEndTimeGPS, uvar_maxEndTime1);
+  XLALGPSSetREAL8(&maxStartTimeGPS, uvar_maxStartTime1);
 
   /* create output Hough file for writing if requested by user */
   if ( uvar_printCand1 )
@@ -638,7 +636,7 @@ int MAIN( int argc, char *argv[]) {
 
   /*------------ Set up stacks, noise weights, detector states etc. */
   /* initialize spin range vectors */
-  INIT_MEM(spinRange_Temp);
+  XLAL_INIT_MEM(spinRange_Temp);
 
   /* some useful first stage params */
   usefulParams.sftbasename = uvar_DataFiles1;
@@ -646,10 +644,10 @@ int MAIN( int argc, char *argv[]) {
   usefulParams.tStack = uvar_tStack;
   usefulParams.SSBprec = uvar_SSBprecision;
 
-  INIT_MEM ( usefulParams.spinRange_startTime );
-  INIT_MEM ( usefulParams.spinRange_endTime );
-  INIT_MEM ( usefulParams.spinRange_refTime );
-  INIT_MEM ( usefulParams.spinRange_midTime );
+  XLAL_INIT_MEM ( usefulParams.spinRange_startTime );
+  XLAL_INIT_MEM ( usefulParams.spinRange_endTime );
+  XLAL_INIT_MEM ( usefulParams.spinRange_refTime );
+  XLAL_INIT_MEM ( usefulParams.spinRange_midTime );
 
   /* copy user specified spin variables at reftime  */
   /* the reference time value in spinRange_refTime will be set in SetUpSFTs() */
@@ -660,7 +658,7 @@ int MAIN( int argc, char *argv[]) {
 
   usefulParams.edat = edat;
   usefulParams.minStartTimeGPS = minStartTimeGPS;
-  usefulParams.maxEndTimeGPS = maxEndTimeGPS;
+  usefulParams.maxStartTimeGPS = maxStartTimeGPS;
   usefulParams.blocksRngMed = uvar_blocksRngMed;
   usefulParams.Dterms = uvar_Dterms;
   usefulParams.dopplerMax = uvar_dopplerMax;
@@ -801,7 +799,7 @@ int MAIN( int argc, char *argv[]) {
   thisPoint.refTime = tMidGPS;
   /* binary orbit and higher spindowns not considered */
   thisPoint.asini = 0 /* isolated pulsar */;
-  INIT_MEM ( thisPoint.fkdot );
+  XLAL_INIT_MEM ( thisPoint.fkdot );
 
 
   /* set up some semiCoherent parameters */
@@ -1299,8 +1297,8 @@ void SetUpSFTs( LALStatus *status,			/**< pointer to LALStatus structure */
   ATTATCHSTATUSPTR (status);
 
   /* get sft catalog */
-  constraints.startTime = &(in->minStartTimeGPS);
-  constraints.endTime = &(in->maxEndTimeGPS);
+  constraints.minStartTime = &(in->minStartTimeGPS);
+  constraints.maxStartTime = &(in->maxStartTimeGPS);
   TRY( LALSFTdataFind( status->statusPtr, &catalog, in->sftbasename, &constraints), status);
 
   /* check CRC sums of SFTs */
@@ -1402,6 +1400,20 @@ void SetUpSFTs( LALStatus *status,			/**< pointer to LALStatus structure */
   fMin = freqLo - doppWings;
   fMax = freqHi + doppWings;
 
+  // ---------- wild hack: FIXME if you can
+  // this code only worked previously because the running-median sideband
+  // actually covered for *physically needed* extraBinsFstat sidebands.
+  // Those are unfortunately unknown at this point in the code, and it turned to
+  // too tricky to get their calculation moved here before SetupSFTs()
+  // Now that CreateFstatInput will actually remove the running-median sidebands
+  // before proceeding with the Fstat-calculation, this fails...
+  // We fix this simply by tagging on an extra 50 SFT bins on either side, which
+  // have previously made this work. I don't think this code cares ...
+  // To whom it may concern: feel free to clean this up if it matters to you.
+  fMin -= 50 * deltaFsft;
+  fMax += 50 * deltaFsft;
+  // ---------- end: wild hack
+
   /* set up vector of Fstat input data structs */
   (*p_Fstat_in_vec) = XLALCreateFstatInputVector( in->nStacks );
   if ( (*p_Fstat_in_vec) == NULL ) {
@@ -1414,18 +1426,19 @@ void SetUpSFTs( LALStatus *status,			/**< pointer to LALStatus structure */
   nSFTs = 0;
 #endif
 
+  FstatExtraParams XLAL_INIT_DECL(extraParams);
+  extraParams.SSBprec = in->SSBprec;
+  extraParams.Dterms = in->Dterms;
+
   /* loop over stacks and read sfts */
   for (k = 0; k < in->nStacks; k++) {
 
-    /* create Fstat input data struct for demodulation */
-    (*p_Fstat_in_vec)->data[k] = XLALCreateFstatInput_Demod( in->Dterms, DEMODHL_BEST );
+    /* create Fstat input data struct for Fstat-computation */
+    (*p_Fstat_in_vec)->data[k] = XLALCreateFstatInput( &catalogSeq.data[k], fMin, fMax,
+                                                       NULL, NULL, NULL, in->blocksRngMed,
+                                                       in->edat, FMETHOD_DEMOD_BEST, &extraParams );
     if ( (*p_Fstat_in_vec)->data[k] == NULL ) {
-      XLALPrintError("%s: XLALCreateFstatInput_Demod() failed with errno=%d", __func__, xlalErrno);
-      ABORT ( status, HIERARCHICALSEARCH_EXLAL, HIERARCHICALSEARCH_MSGEXLAL );
-    }
-    if ( XLALSetupFstatInput( (*p_Fstat_in_vec)->data[k], &catalogSeq.data[k], fMin, fMax, NULL,
-                                  NULL, NULL, in->blocksRngMed, in->edat, in->SSBprec, 0 ) != XLAL_SUCCESS ) {
-      XLALPrintError("%s: XLALSetupFstatInput() failed with errno=%d", __func__, xlalErrno);
+      XLALPrintError("%s: XLALCreateFstatInput() failed with errno=%d", __func__, xlalErrno);
       ABORT ( status, HIERARCHICALSEARCH_EXLAL, HIERARCHICALSEARCH_MSGEXLAL );
     }
 
@@ -2893,8 +2906,8 @@ void PrintSemiCohCandidates(LALStatus *status,
   INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
-  INIT_MEM ( fkdotIn );
-  INIT_MEM ( fkdotOut );
+  XLAL_INIT_MEM ( fkdotIn );
+  XLAL_INIT_MEM ( fkdotOut );
 
   for (k=0; k < in->nCandidates; k++) {
     /*     fprintf(fp, "%e %e %e %g %g %g %g %e %e\n", in->list[k].significance, in->list[k].freq,  */
@@ -2931,7 +2944,7 @@ void PrintSemiCohCandidates(LALStatus *status,
   INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
-  INIT_MEM(fkdot);
+  XLAL_INIT_MEM(fkdot);
 
   fprintf(fp, "## Fstat values from stack %d (reftime -- %d %d)\n", stackIndex, refTime.gpsSeconds, refTime.gpsNanoSeconds);
 
@@ -3399,7 +3412,7 @@ void GetSemiCohToplist(LALStatus            *status,
   ASSERT ( in != NULL, status, HIERARCHICALSEARCH_ENULL, HIERARCHICALSEARCH_MSGENULL );
   ASSERT ( in->length >= in->nCandidates, status, HIERARCHICALSEARCH_EVAL, HIERARCHICALSEARCH_MSGEVAL );
 
-  INIT_MEM ( line );
+  XLAL_INIT_MEM ( line );
 
   /* go through candidates and insert into toplist if necessary */
   for ( k = 0; k < in->nCandidates; k++) {

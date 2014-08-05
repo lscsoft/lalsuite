@@ -84,9 +84,6 @@
 #define MYMIN(x,y) ( (x) < (y) ? (x) : (y) )
 
 #define SQ(x) ((x)*(x))
-#define INIT_MEM(x) memset(&(x), 0, sizeof((x)))
-
-#define LAL_INT4_MAX 2147483647
 
 /**
  * Configuration settings required for and defining a coherent pulsar search.
@@ -131,8 +128,8 @@ typedef struct {
   CHAR *DataFiles;	/**< SFT input-files to use to determine startTime, duration, IFOs and for noise-floor estimation */
   CHAR *outputFstat;	/**< output file to write F-stat estimation results into */
   BOOLEAN printFstat;	/**< print F-stat estimation results to terminal? */
-  INT4 minStartTime;	/**< limit start-time of input SFTs to use */
-  INT4 maxEndTime;	/**< limit end-time of input SFTs to use */
+  INT4 minStartTime;	/**< Only use SFTs with timestamps starting from (including) this GPS time */
+  INT4 maxStartTime;	/**< Only use SFTs with timestamps up to (excluding) this GPS time */
 
   CHAR *transientWindowType;	/**< name of transient window ('rect', 'exp',...) */
   REAL8 transientStartTime;	/**< GPS start-time of transient window */
@@ -143,8 +140,6 @@ typedef struct {
   BOOLEAN version;	/**< output version-info */
 
 } UserInput_t;
-
-static UserInput_t empty_UserInput;
 
 /* ---------- local prototypes ---------- */
 int main(int argc,char *argv[]);
@@ -167,7 +162,7 @@ int main(int argc,char *argv[])
   LALStatus status = blank_status;	/* initialize status */
   REAL8 rho2;	/* SNR^2 */
 
-  UserInput_t uvar = empty_UserInput;
+  UserInput_t XLAL_INIT_DECL(uvar);
   CHAR *VCSInfoString;          /**< LAL + LALapps Git version string */
 
   vrbflg = 1;	/* verbose error-messages */
@@ -291,7 +286,7 @@ initUserVars (LALStatus *status, UserInput_t *uvar )
   uvar->printFstat = TRUE;
 
   uvar->minStartTime = 0;
-  uvar->maxEndTime = LAL_INT4_MAX;
+  uvar->maxStartTime = LAL_INT4_MAX;
 
   uvar->assumeSqrtSX = NULL;
   uvar->SignalOnly = 0;
@@ -324,8 +319,8 @@ initUserVars (LALStatus *status, UserInput_t *uvar )
   LALregSTRINGUserStruct(status,outputFstat,     0,  UVAR_OPTIONAL, "Output-file for predicted F-stat value" );
   LALregBOOLUserStruct(status,printFstat,	 0,  UVAR_OPTIONAL, "Print predicted F-stat value to terminal" );
 
-  LALregINTUserStruct ( status,	minStartTime, 	 0,  UVAR_OPTIONAL, "Earliest SFT-timestamp to include");
-  LALregINTUserStruct ( status,	maxEndTime, 	 0,  UVAR_OPTIONAL, "Latest SFT-timestamps to include");
+  LALregINTUserStruct ( status,	minStartTime, 	 0,  UVAR_OPTIONAL, "Only use SFTs with timestamps starting from (including) this GPS time");
+  LALregINTUserStruct ( status,	maxStartTime, 	 0,  UVAR_OPTIONAL, "Only use SFTs with timestamps up to (excluding) this GPS time");
 
   LALregLISTUserStruct(status,  assumeSqrtSX,	 0,  UVAR_OPTIONAL, "Don't estimate noise-floors but assume (stationary) per-IFO sqrt{SX} (if single value: use for all IFOs)");
   LALregBOOLUserStruct(status,	SignalOnly,	'S', UVAR_DEVELOPER,"DEPRECATED ALTERNATIVE: Don't estimate noise-floors but assume sqrtSX=1 instead");
@@ -352,10 +347,10 @@ InitPFS ( LALStatus *status, ConfigVariables *cfg, const UserInput_t *uvar )
   static const char *fn = "InitPFS()";
 
   SFTCatalog *catalog = NULL;
-  SFTConstraints constraints = empty_SFTConstraints;
+  SFTConstraints XLAL_INIT_DECL(constraints);
   SkyPosition skypos;
 
-  LIGOTimeGPS minStartTimeGPS, maxEndTimeGPS;
+  LIGOTimeGPS minStartTimeGPS, maxStartTimeGPS;
 
   EphemerisData *edat = NULL;		    	/* ephemeris data */
   MultiAMCoeffs *multiAMcoef = NULL;
@@ -426,10 +421,10 @@ InitPFS ( LALStatus *status, ConfigVariables *cfg, const UserInput_t *uvar )
 
   minStartTimeGPS.gpsSeconds = uvar->minStartTime;
   minStartTimeGPS.gpsNanoSeconds = 0;
-  maxEndTimeGPS.gpsSeconds = uvar->maxEndTime;
-  maxEndTimeGPS.gpsNanoSeconds = 0;
-  constraints.startTime = &minStartTimeGPS;
-  constraints.endTime = &maxEndTimeGPS;
+  maxStartTimeGPS.gpsSeconds = uvar->maxStartTime;
+  maxStartTimeGPS.gpsNanoSeconds = 0;
+  constraints.minStartTime = &minStartTimeGPS;
+  constraints.maxStartTime = &maxStartTimeGPS;
 
   /* ----- get full SFT-catalog of all matching (multi-IFO) SFTs */
   LogPrintf (LOG_DEBUG, "Finding all SFTs to load ... ");
@@ -473,7 +468,7 @@ InitPFS ( LALStatus *status, ConfigVariables *cfg, const UserInput_t *uvar )
     XLALPrintError ("%s: XLALTimestampsFromMultiSFTCatalogView() failed with errno=%d\n", __func__, xlalErrno );
     ABORT ( status, PREDICTFSTAT_EXLAL, PREDICTFSTAT_MSGEXLAL );
   }
-  MultiLALDetector multiIFO; INIT_MEM(multiIFO);
+  MultiLALDetector XLAL_INIT_DECL(multiIFO);
   if ( XLALMultiLALDetectorFromMultiSFTCatalogView ( &multiIFO, multiCatalogView ) != XLAL_SUCCESS ) {
     XLALPrintError ("%s: XLALMultiLALDetectorFromMultiSFTCatalogView() failed with errno=%d\n", __func__, xlalErrno );
     ABORT ( status, PREDICTFSTAT_EXLAL, PREDICTFSTAT_MSGEXLAL );
@@ -502,7 +497,7 @@ InitPFS ( LALStatus *status, ConfigVariables *cfg, const UserInput_t *uvar )
         assumeSqrtSX_input = uvar->assumeSqrtSX;
       }
 
-      MultiNoiseFloor assumeSqrtSX; INIT_MEM(assumeSqrtSX);
+      MultiNoiseFloor XLAL_INIT_DECL(assumeSqrtSX);
       if ( XLALParseMultiNoiseFloor ( &assumeSqrtSX, assumeSqrtSX_input, numDetectors ) != XLAL_SUCCESS ) {
         XLALPrintError ("%s: XLALParseMultiNoiseFloor() failed with errno=%d\n", __func__, xlalErrno );
         ABORT ( status, PREDICTFSTAT_EXLAL, PREDICTFSTAT_MSGEXLAL );

@@ -29,7 +29,7 @@ static REAL4 cartesianInnerProduct(REAL4 a[3], REAL4 b[3]);
 
 /**
  * \ingroup OverlapReductionFunction_c
- * \author UTB Relativity Group; contact whelan@phys.utb.edu
+ * \author UTB Relativity Group; contact john.whelan@ligo.org
  *
  * \brief Calculates the values of the overlap reduction function for a pair
  * of gravitational wave detectors.

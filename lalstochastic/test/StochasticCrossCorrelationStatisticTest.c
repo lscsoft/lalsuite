@@ -18,7 +18,7 @@
 */
 
 /**
- * \author UTB Relativity Group; contact whelan@phys.utb.edu (original by S. Drasco)
+ * \author UTB Relativity Group; contact john.whelan@ligo.org (original by S. Drasco)
  * \file
  * \ingroup StochasticCrossCorrelation_c
  *
@@ -114,7 +114,7 @@
  * printf()
  * fprintf()
  * freopen()
- * fabs()
+ * fabsf()
  * \endcode
  *
  * ### Notes ###
@@ -171,7 +171,6 @@
 #include <lal/Units.h>
 
 #include "CheckStatus.h"
-#include "CheckStatus.c"
 
 #define STOCHASTICCROSSCORRELATIONSTATISTICTESTC_LENGTH    9
 #define STOCHASTICCROSSCORRELATIONSTATISTICTESTC_F0        80.0
@@ -702,7 +701,7 @@ int main( int argc, char *argv[] )
   }
 
   if (optVerbose) printf("Y=%g, should be 0\n",output.value);
-  if (fabs(output.value)/STOCHASTICCROSSCORRELATIONSTATISTICTESTC_DELTAF
+  if (fabsf(output.value)/STOCHASTICCROSSCORRELATIONSTATISTICTESTC_DELTAF
       > STOCHASTICCROSSCORRELATIONSTATISTICTESTC_TOL)
   {
     printf("  FAIL: Valid data test #1\n");

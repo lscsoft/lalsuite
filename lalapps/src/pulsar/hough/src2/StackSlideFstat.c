@@ -39,9 +39,6 @@
 #define SSMAX(x,y) ( (x) > (y) ? (x) : (y) )
 #define SSMIN(x,y) ( (x) < (y) ? (x) : (y) )
 
-#define INIT_MEM(x) memset(&(x), 0, sizeof((x)))
-
-
 #define BLOCKSIZE_REALLOC 50
 
 static int smallerStackSlide(const void *a,const void *b) {
@@ -197,7 +194,7 @@ void StackSlideVecF(LALStatus *status,			/**< pointer to LALStatus structure */
   /* The input parameter space point */
   inputPoint.refTime = refTimeGPS;
   inputPoint.asini = 0 /* isolated pulsar */;
-  INIT_MEM ( inputPoint.fkdot );
+  XLAL_INIT_MEM ( inputPoint.fkdot );
   inputPoint.fkdot[0] = fmid;
   inputPoint.fkdot[1] = fdot;
   inputPoint.Alpha = alpha;
@@ -206,12 +203,12 @@ void StackSlideVecF(LALStatus *status,			/**< pointer to LALStatus structure */
   /* Values for output parameter space point that do not change */  
   outputPoint.refTime = refTimeGPS;
   outputPoint.asini = 0 /* isolated pulsar */;
-  INIT_MEM ( outputPoint.fkdot );
+  XLAL_INIT_MEM ( outputPoint.fkdot );
 
   /* uncertainties in the output parameter space point */
   outputPointUnc.refTime = refTimeGPS;
   outputPointUnc.asini = 0 /* isolated pulsar */;
-  INIT_MEM ( outputPointUnc.fkdot );
+  XLAL_INIT_MEM ( outputPointUnc.fkdot );
   outputPointUnc.fkdot[0] = deltaF;
   outputPointUnc.fkdot[1] = dfdot;
   outputPointUnc.Delta = dDelta;

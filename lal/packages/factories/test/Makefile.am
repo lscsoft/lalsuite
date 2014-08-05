@@ -1,20 +1,23 @@
-AM_CPPFLAGS = -I$(top_builddir)/include -I$(srcdir)/../include @AM_CPPFLAGS@
-LDADD = \
-	$(top_builddir)/lib/lal/liblal.la \
-	$(top_builddir)/lib/lalsupport/src/liblalsupport.la
+EXTRA_DIST =
+include $(top_srcdir)/gnuscripts/lalsuite_test.am
+include $(top_srcdir)/gnuscripts/lalsuite_header_links.am
 
-noinst_HEADERS = \
+# Add compiled test programs to this variable
+test_programs += ArrayFactoriesTest
+test_programs += ArraySequenceFactoriesTest
+test_programs += StringVectorTest
+test_programs += VectorFactoriesTest
+test_programs += VectorSequenceFactoriesTest
+
+# Add shell, Python, etc. test scripts to this variable
+test_scripts +=
+
+# Add any helper programs required by tests to this variable
+test_helpers +=
+
+EXTRA_DIST += \
 	ArrayFactoriesTest_source.c \
 	ArraySequenceFactoriesTest_source.c \
 	VectorFactoriesTest_source.c \
-	VectorSequenceFactoriesTest_source.c
-
-check_PROGRAMS = \
-	ArrayFactoriesTest \
-	ArraySequenceFactoriesTest \
-	VectorFactoriesTest \
-	StringVectorTest \
-	VectorSequenceFactoriesTest
-
-TESTS = \
-	$(check_PROGRAMS)
+	VectorSequenceFactoriesTest_source.c \
+	$(END_OF_LIST)

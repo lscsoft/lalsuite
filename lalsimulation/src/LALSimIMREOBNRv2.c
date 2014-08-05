@@ -1575,6 +1575,9 @@ XLALSimIMREOBNRv2Generator(
      rdMatchPoint->data[1] = timePeak + nrPeakDeltaT;
      rdMatchPoint->data[2] = dynamicsHi->data[finalIdx];
 
+     rdMatchPoint->data[0] -= fmod( rdMatchPoint->data[0], dt/m );
+     rdMatchPoint->data[1] -= fmod( rdMatchPoint->data[1], dt/m );
+
      xlalStatus = XLALSimIMREOBHybridAttachRingdown(sigReHi, sigImHi,
                    modeL, modeM, dt, mass1, mass2, 0, 0, 0, 0, 0, 0, &tVecHi, rdMatchPoint, EOBNRv2 );
      if (xlalStatus != XLAL_SUCCESS )
@@ -1641,8 +1644,8 @@ XLALSimIMREOBNRv2Generator(
 
   } /* End loop over modes */
 
-  /* clip the parts below f_min */
-  if (flag_fLower_extend == 1)
+  /* If returning polarizations, clip the parts below f_min */
+  if (flag_fLower_extend == 1 && hplus && hcross)
   {
     if ( cos(inclination) < 0.0 )
     {

@@ -1,6 +1,6 @@
 AC_PREREQ([2.63])
-AC_INIT([lal],[6.12.0.1],[lal-discuss@ligo.org])
-AC_CONFIG_HEADERS([include/config.h include/lal/LALConfig.h])
+AC_INIT([LAL],[6.12.0.1],[lal-discuss@ligo.org])
+AC_CONFIG_HEADERS([include/config.h lib/lal/LALConfig.h])
 AC_CONFIG_SRCDIR([packages/std/include/LALStdio.h])
 AC_CONFIG_AUX_DIR([gnuscripts])
 AC_CONFIG_MACRO_DIR([gnuscripts])
@@ -12,10 +12,11 @@ AC_CONFIG_FILES([ \
   lalsupport-uninstalled.pc \
   Makefile \
   debian/Makefile \
-  gnuscripts/Makefile \
   include/Makefile \
   include/lal/Makefile \
   lib/Makefile \
+  lib/lal/LALVCSInfo.c \
+  lib/lal/LALVCSInfo.h \
   lib/lal/Makefile \
   lib/lalsupport/Makefile \
   lib/lalsupport/doc/Makefile \
@@ -23,12 +24,11 @@ AC_CONFIG_FILES([ \
   lib/lalsupport/src/Makefile \
   lib/lalsupport/test/Makefile \
   python/Makefile \
-  python/__init__.py \
-  python/utils/Makefile \
-  python/spectrum/Makefile \
+  python/lal/Makefile \
+  python/lal/__init__.py \
+  python/lal/utils/Makefile \
+  python/lal/spectrum/Makefile \
   swig/Makefile \
-  swig/octave/Makefile \
-  swig/python/Makefile \
   packages/Makefile \
   packages/std/Makefile \
   packages/std/doc/Makefile \
@@ -181,7 +181,7 @@ AC_PROG_INSTALL
 AC_PROG_LN_S
 AC_PROG_AWK
 AC_PROG_SED
-AM_PATH_PYTHON([2.6],,[AC_MSG_ERROR([Python-2.6, or higher, is required])])
+LALSUITE_CHECK_PYTHON([2.6])
 
 # check for supported mac os x version
 LALSUITE_OSX_VERSION_CHECK
@@ -207,7 +207,7 @@ esac
 
 # check for system headers files
 AC_HEADER_STDC
-AC_CHECK_HEADERS([sys/time.h unistd.h getopt.h malloc.h regex.h glob.h])
+AC_CHECK_HEADERS([sys/time.h sys/resource.h unistd.h getopt.h malloc.h regex.h glob.h])
 AC_CHECK_HEADERS([stdint.h],,[AC_MSG_ERROR([could not find stdint.h])])
 AC_CHECK_HEADERS([inttypes.h],,[AC_MSG_ERROR([could not find inttypes.h])])
 AC_MSG_CHECKING([for gethostname prototype in unistd.h])
@@ -318,7 +318,7 @@ if test "${boinc}" = "true"; then
 fi
 
 # configure SWIG wrapping modules
-LALSUITE_USE_SWIG([XLAL LAL])
+LALSUITE_USE_SWIG
 
 # checks for typedefs, structures, and compiler characteristics
 AC_C_BIGENDIAN
@@ -346,13 +346,17 @@ AM_CONDITIONAL([QTHREAD],[test x$qthread = xtrue])
 # add gcc specific flags --- must be done at end or tests will break!
 LALSUITE_ADD_GCC_FLAGS
 
+# link any executables against LAL and LALSupport libraries
+AC_SUBST([LDADD], ["\$(top_builddir)/lib/lal/liblal.la \$(top_builddir)/lib/lalsupport/src/liblalsupport.la"])
+
+# add extra preprocessor flags
+AM_CPPFLAGS="-DPKG_DATA_DIR='\"\$(pkgdatadir)/\"' ${AM_CPPFLAGS}"
+AM_CPPFLAGS="-I\$(top_builddir)/include ${AM_CPPFLAGS}"
+
 # force all python modules into the exec dir to prevent mixed C and
 # pure-python library code from being split across lib and lib64 on
 # RedHat-derived systems.
 AC_SUBST([pkgpythondir], ["\${pkgpyexecdir}"])
-
-INCLUDEMKFILE=$srcdir/gnuscripts/include.mk
-AC_SUBST_FILE([INCLUDEMKFILE])
 
 # output
 AC_OUTPUT
@@ -360,10 +364,12 @@ AC_MSG_NOTICE([
 ==================================================
 LAL has now been successfully configured:
 
+* Python support is $PYTHON_ENABLE_VAL
 * CUDA support is $CUDA_ENABLE_VAL
 * BOINC support is $BOINC_ENABLE_VAL
-* SWIG wrapping module for Octave is $SWIG_OCTAVE_ENABLE_VAL
-* SWIG wrapping module for Python is $SWIG_PYTHON_ENABLE_VAL
+* SWIG binding generation is $SWIG_GENERATE_ENABLE_VAL
+* SWIG bindings for Octave are $SWIG_BUILD_OCTAVE_ENABLE_VAL
+* SWIG bindings for Python are $SWIG_BUILD_PYTHON_ENABLE_VAL
 
 and will be installed under the directory:
 

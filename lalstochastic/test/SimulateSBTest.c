@@ -118,10 +118,8 @@
 #include <lal/PrintVector.h>
 #include <lal/Random.h>
 #include <lal/SimulateSB.h>
-#include <lal/DetectorSite.h>
-
 #include "CheckStatus.h"
-#include "CheckStatus.c"
+#include <lal/DetectorSite.h>
 
 #define SIMULATESBTESTC_LENGTH    8192
 #define SIMULATESBTESTC_SEED      123
@@ -421,8 +419,8 @@ int main( void ){
     printf("Mean square of whitened output should be: %e.  Ratio is %e\n",totnorm,totnorm/totnorm2);
   }
 
-  LALSPrintTimeSeries(&whitenedSSimStochBG1,TEST_OUTPUT_DIR "WHITENED-SB1");
-  LALSPrintTimeSeries(&whitenedSSimStochBG2,TEST_OUTPUT_DIR "WHITENED-SB2");
+  LALSPrintTimeSeries(&whitenedSSimStochBG1,"WHITENED-SB1");
+  LALSPrintTimeSeries(&whitenedSSimStochBG2,"WHITENED-SB2");
 
   /* clean up, and exit */
   LALSDestroyVector(&status, &(omegaGW.data));

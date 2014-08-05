@@ -53,13 +53,6 @@ REAL8 twospect_log_1plusx_mx(REAL8 x)
    return log1p(x)-x;
 } /* twospect_log_1plusx_mx() */
 
-//count number of calls to errbound, truncation, coeff
-// void counter(qfvars *vars);
-// void counter(qfvars *vars)
-//{
-//   vars->count++;
-//} /* counter() */
-
 
 //find order of absolute values of weights
 void order(qfvars *vars)
@@ -68,7 +61,7 @@ void order(qfvars *vars)
    INT4 ascend = 1;     //To sort descending, set ascend to zero
    XLAL_CHECK_VOID( XLALHeapIndex(vars->sorting->data, vars->weights->data, vars->weights->length, sizeof(REAL8), &ascend, compar) == XLAL_SUCCESS, XLAL_EFUNC );
 
-   vars->ndtsrt = 0; //Signify that we have done the sorting
+   vars->arrayNotSorted = 0; //Signify that we have done the sorting
 
 } /* order() */
 
@@ -98,7 +91,6 @@ REAL8 errbound(qfvars *vars, REAL8 u, REAL8* cx)
    REAL8 sum1, x, y, xconst;
    INT4 ii;
 
-   //counter(vars);
    (vars->count)++;           //Increase counter
 
    xconst = u * vars->sigsq;  //xconst = u * sigma**2 + sum{ }
@@ -416,8 +408,8 @@ void integrate(qfvars *vars, INT4 nterm, REAL8 interv, REAL8 tausq, INT4 mainx)
       if ( !mainx ) x *= (1.0 - exp1(-0.5 * tausq * u*u));  //For auxillary integration, we multiply by this factor)
       sum1 = sin(0.5 * sum1) * x;   //Now compute the sine
       sum2 *= 0.5*x;
-      vars->intl += sum1;     //integration value
-      vars->ersm += sum2;     //error on integration
+      vars->integrationValue += sum1;     //integration value
+      vars->integrationError += sum2;     //error on integration
    } /* for ii=nterm --> 0 */
 
 } /* integrate() */
@@ -450,8 +442,8 @@ void integrate_twospect(qfvars *vars, INT4 nterm, REAL8 interv, REAL8 tausq, INT
       if ( !mainx ) x *= (1.0 - exp1(neghalftimestausq * u*u));
       sum1 = sin(0.5*sum1) * x;
       sum2 *= 0.5*x;
-      vars->intl += sum1;
-      vars->ersm += sum2;
+      vars->integrationValue += sum1;
+      vars->integrationError += sum2;
    } /* for ii=nterm --> 0 */
 
 } /* integrate_twospect() */
@@ -484,8 +476,8 @@ void integrate_eg(qfvars *vars, INT4 nterm, REAL8 interv, REAL8 tausq, INT4 main
          together2 *= (1.0 - exp1(-0.5 * tausq * u*u));
       }
 
-      vars->intl += together;
-      vars->ersm += together2;
+      vars->integrationValue += together;
+      vars->integrationError += together2;
    }
 
 }
@@ -520,8 +512,8 @@ void integrate_twospect2(qfvars *vars, INT4 nterm, REAL8 interv, REAL8 tausq, IN
          together2 *= scalingfactor;
       }
 
-      vars->intl += together;
-      vars->ersm += together2;
+      vars->integrationValue += together;
+      vars->integrationError += together2;
    }
 
 }
@@ -562,8 +554,8 @@ INT4 fast_integrate_twospect2(qfvars *vars, INT4 nterm, REAL8 interv, REAL8 taus
          together2 *= scalingfactor;
       }
 
-      vars->intl += together;
-      vars->ersm += together2;
+      vars->integrationValue += together;
+      vars->integrationError += together2;
    }
 
    XLALDestroyREAL8Vector(scaledweightvector);
@@ -581,13 +573,12 @@ REAL8 coeff(qfvars *vars, REAL8 x)
    REAL8 axl, axl1, axl2, sxl, sum1, lj;
    INT4 ii, jj, t;
 
-   //counter(vars);
    (vars->count)++;
 
    //If the sort hasn't been done, then do it now!
-   if (vars->ndtsrt) {
+   if (vars->arrayNotSorted) {
       order(vars);
-      if (vars->ndtsrt) {
+      if (vars->arrayNotSorted) {
          fprintf(stderr,"%s: order() failed\n.", __func__);
          vars->fail = 1;
          return 1.0;
@@ -615,7 +606,6 @@ REAL8 coeff(qfvars *vars, REAL8 x)
                vars->fail = 1;
                return 1.0;
             } else {
-               //return pow(2.0, 0.25*sum1)*LAL_1_PI/(axl*axl);
                return exp2(0.25*sum1)*LAL_1_PI/(axl*axl);
             }
          }
@@ -626,7 +616,6 @@ REAL8 coeff(qfvars *vars, REAL8 x)
       vars->fail = 1;
       return 1.0;
    } else {
-      //return pow(2.0, 0.25*sum1)*LAL_1_PI/(axl*axl);
       return exp2(0.25*sum1)*LAL_1_PI/(axl*axl);
    }
 
@@ -704,11 +693,11 @@ REAL8 cdfwchisq(qfvars *vars, REAL8 sigma, REAL8 acc, INT4 *ifault)
 
    *ifault = 0;
    vars->count = 0;
-   vars->intl = 0.0;
-   vars->ersm = 0.0;
+   vars->integrationValue = 0.0;
+   vars->integrationError = 0.0;
    qfval = -1.0;
    acc1 = acc;
-   vars->ndtsrt = 1;
+   vars->arrayNotSorted = 1;
    vars->fail = 0;
    xlim = (REAL8)vars->lim;
 
@@ -831,10 +820,10 @@ REAL8 cdfwchisq(qfvars *vars, REAL8 sigma, REAL8 acc, INT4 *ifault)
       nt = (INT4)round(xnt);
       //fprintf(stderr,"Num terms in main integration %d\n", nt);
       integrate(vars, nt, intv, 0.0, 1);
-      qfval = 0.5 - vars->intl;
+      qfval = 0.5 - vars->integrationValue;
 
       /* test whether round-off error could be significant allow for radix 8 or 16 machines */
-      up = vars->ersm;
+      up = vars->integrationError;
       x = up + 0.1*acc;
       for (ii=0; ii<4; ii++) {
          if (rats[ii] * x == rats[ii] * up) *ifault = 2;
@@ -855,8 +844,8 @@ REAL8 cdfwchisq_twospect(qfvars *vars, REAL8 sigma, REAL8 acc, INT4 *ifault)
    //Initialize values
    *ifault = 0;
    vars->count = 0;
-   vars->intl = 0.0;
-   vars->ersm = 0.0;
+   vars->integrationValue = 0.0;
+   vars->integrationError = 0.0;
    qfval = -1.0;
    acc1 = acc;
    vars->fail = 0;
@@ -886,7 +875,7 @@ REAL8 cdfwchisq_twospect(qfvars *vars, REAL8 sigma, REAL8 acc, INT4 *ifault)
       return qfval;
    } /* if wnstd==0 */
 
-   //If the min and max weight, then there needs to be an error
+   //If the min and max weight are zero, then there needs to be an error
    if ( vars->wnmin == 0.0 && vars->wnmax == 0.0 ) {
       *ifault = 3;
       return qfval;
@@ -985,10 +974,10 @@ REAL8 cdfwchisq_twospect(qfvars *vars, REAL8 sigma, REAL8 acc, INT4 *ifault)
    }
    nt = (INT4)round(xnt);  //number of terms in main integration
    XLAL_CHECK_REAL8( fast_integrate_twospect2(vars, nt, intv, 0.0, 1) == XLAL_SUCCESS, XLAL_EFUNC );
-   qfval = 0.5 - vars->intl;
+   qfval = 0.5 - vars->integrationValue;
 
    /* test whether round-off error could be significant allow for radix 8 or 16 machines */
-   up = vars->ersm;
+   up = vars->integrationError;
    x = up + 0.1*acc;
    for (ii=0; ii<4; ii++) {
       if (rats[ii] * x == rats[ii] * up) *ifault = 2;

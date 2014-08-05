@@ -18,7 +18,7 @@
 */
 
 /**
- * \author UTB Relativity Group; contact whelan@phys.utb.edu
+ * \author UTB Relativity Group; contact john.whelan@ligo.org
  * \file
  * \ingroup ZeroPadAndFFT_c
  *
@@ -107,6 +107,7 @@
  * fprintf()
  * freopen()
  * fabs()
+ * fabsf()
  * \endcode
  *
  * ### Notes ###
@@ -164,7 +165,6 @@
 #include <lal/Units.h>
 
 #include "CheckStatus.h"
-#include "CheckStatus.c"
 
 #define SZEROPADANDFFTTESTC_LENGTH        8
 #define SZEROPADANDFFTTESTC_FULLLENGTH (2 * SZEROPADANDFFTTESTC_LENGTH - 1)
@@ -635,9 +635,9 @@ main( int argc, char *argv[] )
             crealf(goodOutput.data->data[0]), cimagf(goodOutput.data->data[0]),
             crealf(expectedOutputDataData[0]));
    }
-   if ( fabs(crealf(goodOutput.data->data[0]) - crealf(expectedOutputDataData[0]))
+   if ( fabsf(crealf(goodOutput.data->data[0]) - crealf(expectedOutputDataData[0]))
         /* / expectedOutputDataData[0].re */> SZEROPADANDFFTTESTC_TOL
-        || fabs(cimagf(goodOutput.data->data[0])) > SZEROPADANDFFTTESTC_TOL )
+        || fabsf(cimagf(goodOutput.data->data[0])) > SZEROPADANDFFTTESTC_TOL )
    {
      printf("  FAIL: Valid data test\n");
      if (optVerbose)
@@ -656,9 +656,9 @@ main( int argc, char *argv[] )
               f, crealf(goodOutput.data->data[i]), cimagf(goodOutput.data->data[i]),
               crealf(expectedOutputDataData[i]), cimagf(expectedOutputDataData[i]));
      }
-     if (fabs(crealf(goodOutput.data->data[i]) - crealf(expectedOutputDataData[i]))
+     if (fabsf(crealf(goodOutput.data->data[i]) - crealf(expectedOutputDataData[i]))
          /* / expectedOutputDataData[0].re */> SZEROPADANDFFTTESTC_TOL
-         || fabs(cimagf(goodOutput.data->data[i]) - cimagf(expectedOutputDataData[i]))
+         || fabsf(cimagf(goodOutput.data->data[i]) - cimagf(expectedOutputDataData[i]))
          /* / expectedOutputDataData[0].re */> SZEROPADANDFFTTESTC_TOL)
      {
        printf("  FAIL: Valid data test\n");

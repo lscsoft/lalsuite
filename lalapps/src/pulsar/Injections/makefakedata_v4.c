@@ -208,10 +208,6 @@ typedef struct
 
 // ----- global variables ----------
 
-// ----- empty structs for initializations
-static const UserVariables_t empty_UserVariables;
-static const ConfigVars_t empty_GV;
-
 // ---------- local prototypes ----------
 int XLALInitUserVars ( UserVariables_t *uvar, int argc, char *argv[] );
 int XLALInitMakefakedata ( ConfigVars_t *cfg, UserVariables_t *uvar );
@@ -219,8 +215,6 @@ int XLALWriteMFDlog ( const char *logfile, const ConfigVars_t *cfg );
 COMPLEX8FrequencySeries *XLALLoadTransferFunctionFromActuation ( REAL8 actuationScale, const CHAR *fname );
 int XLALFreeMem ( ConfigVars_t *cfg );
 
-extern void write_timeSeriesR4 (FILE *fp, const REAL4TimeSeries *series);
-extern void write_timeSeriesR8 (FILE *fp, const REAL8TimeSeries *series);
 BOOLEAN is_directory ( const CHAR *fname );
 int XLALIsValidDescriptionField ( const char *desc );
 
@@ -230,13 +224,13 @@ int XLALIsValidDescriptionField ( const char *desc );
 int
 main(int argc, char *argv[])
 {
-  ConfigVars_t GV = empty_GV;
-  PulsarSignalParams params = empty_PulsarSignalParams;
+  ConfigVars_t XLAL_INIT_DECL(GV);
+  PulsarSignalParams XLAL_INIT_DECL(params);
   REAL4TimeSeries *Tseries = NULL;
   UINT4 i_chunk, numchunks;
   FILE *fpSingleSFT = NULL;
   size_t len;
-  UserVariables_t uvar = empty_UserVariables;
+  UserVariables_t XLAL_INIT_DECL(uvar);
 
 
   /* ------------------------------
@@ -367,19 +361,10 @@ main(int argc, char *argv[])
       /* output ASCII time-series if requested */
       if ( uvar.TDDfile )
 	{
-	  FILE *fp;
 	  CHAR *fname = XLALCalloc (1, len = strlen(uvar.TDDfile) + 10 );
           XLAL_CHECK ( fname != NULL, XLAL_ENOMEM, "XLALCalloc(1,%d) failed\n", len );
 	  sprintf (fname, "%s.%02d", uvar.TDDfile, i_chunk);
-
-	  if ( (fp = fopen (fname, "w")) == NULL)
-	    {
-	      perror ("Error opening outTDDfile for writing");
-              XLAL_ERROR ( XLAL_EIO, "Failed to fopen TDDfile = '%s' for writing\n", fname );
-	    }
-
-	  write_timeSeriesR4(fp, Tseries);
-	  fclose(fp);
+	  XLAL_CHECK ( XLALdumpREAL4TimeSeries ( fname, Tseries ) == XLAL_SUCCESS, XLAL_EFUNC );
 	  XLALFree (fname);
 	} /* if outputting ASCII time-series */
 
@@ -451,7 +436,7 @@ main(int argc, char *argv[])
       SFTVector *SFTs = NULL;
       if (uvar.outSFTbname)
 	{
-	  SFTParams sftParams = empty_SFTParams;
+	  SFTParams XLAL_INIT_DECL(sftParams);
 	  LIGOTimeGPSVector ts;
 	  SFTVector noise;
 
@@ -840,8 +825,8 @@ XLALInitMakefakedata ( ConfigVars_t *cfg, UserVariables_t *uvar )
 
       if ( lalDebugLevel )
 	{
-	  if ( abs(cfg->fmin_eff - uvar->fmin)> LAL_REAL8_EPS
-	       || abs(cfg->fBand_eff - uvar->Band) > LAL_REAL8_EPS )
+	  if ( fabs(cfg->fmin_eff - uvar->fmin)> LAL_REAL8_EPS
+	       || fabs(cfg->fBand_eff - uvar->Band) > LAL_REAL8_EPS )
 	    printf("\nWARNING: for SFT-creation we had to adjust (fmin,Band) to"
 		   " fmin_eff=%.20g and Band_eff=%.20g\n\n", cfg->fmin_eff, cfg->fBand_eff);
 	}
@@ -916,8 +901,8 @@ XLALInitMakefakedata ( ConfigVars_t *cfg, UserVariables_t *uvar )
     if ( uvar->noiseSFTs )
       {
 	REAL8 fMin, fMax;
-	SFTConstraints constraints = empty_SFTConstraints;
-	LIGOTimeGPS minStartTime, maxEndTime;
+	SFTConstraints XLAL_INIT_DECL(constraints);
+	LIGOTimeGPS minStartTime, maxStartTime;
         BOOLEAN have_window = XLALUserVarWasSet ( &uvar->window );
 
         /* user must specify the window function used for the noiseSFTs */
@@ -931,9 +916,9 @@ XLALInitMakefakedata ( ConfigVars_t *cfg, UserVariables_t *uvar )
 	if ( haveStart && haveDuration )
 	  {
 	    XLALGPSSetREAL8 ( &minStartTime, uvar->startTime );
-	    constraints.startTime = &minStartTime;
-	    XLALGPSSetREAL8 ( &maxEndTime, uvar->startTime + uvar->duration );
-	    constraints.endTime = &maxEndTime;
+	    constraints.minStartTime = &minStartTime;
+	    XLALGPSSetREAL8 ( &maxStartTime, uvar->startTime + uvar->duration );
+	    constraints.maxStartTime = &maxStartTime;
             XLALPrintWarning ( "\nWARNING: only noise-SFTs between GPS [%d, %d] will be used!\n", uvar->startTime, uvar->startTime + uvar->duration );
 	  } /* if start+duration given */
 	if ( cfg->timestamps )

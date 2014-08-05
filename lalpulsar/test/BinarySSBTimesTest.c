@@ -53,7 +53,6 @@
 
 // ----- macros
 #define GPS2REAL8(gps) (1.0 * (gps).gpsSeconds + 1.e-9 * (gps).gpsNanoSeconds )
-#define INIT_MEM(x) memset(&(x), 0, sizeof((x)))
 
 // ----- global variables
 static REAL8 A,B;          /* binary time delay coefficients (need to be global so that the LAL root finding procedure can see them) */
@@ -87,12 +86,9 @@ int XLALCompareMultiSSBtimes ( REAL8 *err_DeltaT, REAL8 *err_Tdot, const MultiSS
 int
 main ( int argc, char *argv[] )
 {
-  LALStatus status;
-  UserInput_t uvar_s;
+  LALStatus XLAL_INIT_DECL(status);
+  UserInput_t XLAL_INIT_DECL(uvar_s);
   UserInput_t *uvar = &uvar_s;
-
-  INIT_MEM ( status );
-  INIT_MEM ( uvar_s );
 
   struct tms buf;
   uvar->randSeed = times(&buf);
@@ -187,6 +183,7 @@ main ( int argc, char *argv[] )
   MultiSSBtimes *multiBinary_test = NULL;
   PulsarDopplerParams doppler;
   memset(&doppler, 0, sizeof(doppler));
+  doppler.fkdot[0] = 100;
   doppler.tp = orbit.tp;
   doppler.argp = orbit.argp;
   doppler.asini = orbit.asini;

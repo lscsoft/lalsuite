@@ -1,61 +1,99 @@
-AM_CFLAGS = $(LALSUPPORT_CFLAGS) -DTEST_DATA_DIR='"$(abs_srcdir)/"' @AM_CFLAGS@
-AM_CPPFLAGS = -I$(top_builddir)/include -DSRCDIR=\"$(srcdir)\" @AM_CPPFLAGS@
-LDADD = $(LALSUPPORT_LIBS) $(top_builddir)/src/liblalpulsar.la
+EXTRA_DIST =
+include $(top_srcdir)/gnuscripts/lalsuite_test.am
 
+# Add compiled test programs to this variable
+test_programs += BinarySSBTimesTest
+test_programs += ComputeFstatTest
+test_programs += ConstructPLUTTest
+test_programs += DriveHoughTest
+test_programs += DriveNDHoughTest
+test_programs += ExtrapolatePulsarSpinsTest
+test_programs += FileIOTest
+test_programs += FitToPulsarTest
+test_programs += FlatMeshTest
+test_programs += GeneralMeshTest
+test_programs += GeneralMetricTest
+test_programs += GeneratePulsarSignalTest
+test_programs += GetAMCoeffsTest
+test_programs += HoughMapTest
+test_programs += LALBarycenterTest
+test_programs += LFTandTSutilsTest
+test_programs += LatticeTilingTest
+test_programs += LineRobustStatsTest
+test_programs += NDConstructPLUTTest
+test_programs += NDHoughMapTest
+test_programs += NDPeak2PHMDTest
+test_programs += NewGetAMCoeffsTest
+test_programs += NormalizeSFTRngMedTest
+test_programs += Peak2PHMDTest
+test_programs += PtoleMeshTest
+test_programs += PtoleMetricTest
+test_programs += SFTfileIOTest
+test_programs += SimulateTaylorCWTest
+test_programs += SkyMetricTest
+test_programs += StackMetricTest
+test_programs += StatisticsTest
+test_programs += TwoDMeshTest
+test_programs += UniversalDopplerMetricTest
+test_programs += VelocityTest
+test_programs += XLALComputeAMTest
+test_programs += XLALMultiNoiseWeightsTest
+#test_programs += XLALLoadSFTsTest
+#test_programs += SFTCleanTest
 if LALXML
-XMLTEST = LALPulsarXMLTest
+test_programs += LALPulsarXMLTest
 endif
 
-check_PROGRAMS = \
-	LALBarycenterTest \
-	BinarySSBTimesTest \
-	ExtrapolatePulsarSpinsTest \
-	FitToPulsarTest \
-	FlatMeshTest \
-	FoldAmplitudesTest \
-	GeneralMeshTest \
-	GeneralMetricTest \
-	GeneratePulsarSignalTest \
-	GetAMCoeffsTest \
-	LineRobustStatsTest \
-	NewGetAMCoeffsTest \
-	XLALComputeAMTest \
-	PtoleMeshTest \
-	PtoleMetricTest \
-	PulsarCatTest \
-	SFTfileIOTest \
-	SimulateTaylorCWTest \
-	SkyMetricTest \
-	StackMetricTest \
-	TestConstructPLUT \
-	TestDriveHough \
-	TestDriveNDHough \
-	TestHoughMap \
-	TestLFTandTSutils \
-	TestNDConstructPLUT \
-	TestNDHoughMap \
-	TestNDPeak2PHMD \
-	TestPeak2PHMD \
-	TestStatistics \
-	TestVelocity \
-	TwoDMeshTest \
-	UniversalDopplerMetricTest \
-	NormalizeSFTRngMedTest \
-	XLALMultiNoiseWeightsTest \
-	FileIOTest \
-	$(XMLTEST)
-#	SFTCleanTest
+# Add shell, Python, etc. test scripts to this variable
+test_scripts +=
 
-TESTS = $(check_PROGRAMS)
-EXTRA_PROGRAMS = XLALLoadSFTsTest
+# Add any helper programs required by tests to this variable
+test_helpers +=
 
-TESTS_ENVIRONMENT = LAL_DEBUG_LEVEL=memdbg
+TwoDMeshTest_SOURCES = \
+	TwoDMeshPlot.c \
+	TwoDMeshPlot.h \
+	TwoDMeshTest.c \
+	$(END_OF_LIST)
 
-TwoDMeshTest_SOURCES = TwoDMeshTest.c TwoDMeshPlot.h TwoDMeshPlot.c
+UniversalDopplerMetricTest_SOURCES = \
+	UniversalDopplerMetricTest.c \
+	old-FstatMetric.c \
+	$(END_OF_LIST)
 
-UniversalDopplerMetricTest_SOURCES = UniversalDopplerMetricTest.c old-FstatMetric.c
+MOSTLYCLEANFILES = \
+	H-*_H1*.sft \
+	LFT_C8.dat \
+	LFT_R4.dat \
+	OutHistogram.asc \
+	OutHough.asc \
+	TS_R4.dat \
+	outputsft*.sft \
+	$(END_OF_LIST)
 
-noinst_DATA = \
+pkgdata_DATA = \
+	VOTable-1.1.xsd \
+	circularEphem.dat \
+	earth00-19-DE200.dat.gz \
+	earth00-19-DE405.dat.gz \
+	earth00-19-DE414.dat.gz \
+	sun00-19-DE200.dat.gz \
+	sun00-19-DE405.dat.gz \
+	sun00-19-DE414.dat.gz \
+	tdb_2000-2019.dat.gz \
+	te405_2000-2019.dat.gz \
+	testTimestamps.dat \
+	$(END_OF_LIST)
+
+EXTRA_DIST += \
+	$(pkgdata_DATA) \
+	MultiNoiseWeightsTest1.sft \
+	MultiNoiseWeightsTest2.sft \
+	MultiNoiseWeightsTest3.sft \
+	MultiNoiseWeightsTest4.sft \
+	MultiNoiseWeightsTest5.sft \
+	MultiNoiseWeightsTest6.sft \
+	MultiNoiseWeightsTest7.sft \
 	SFT-bad1 \
 	SFT-bad10 \
 	SFT-bad11 \
@@ -78,38 +116,9 @@ noinst_DATA = \
 	SFT-test5 \
 	SFT-test6 \
 	SFT-test7 \
-	MultiNoiseWeightsTest1.sft \
-	MultiNoiseWeightsTest2.sft \
-	MultiNoiseWeightsTest3.sft \
-	MultiNoiseWeightsTest4.sft \
-	MultiNoiseWeightsTest5.sft \
-	MultiNoiseWeightsTest6.sft \
-	MultiNoiseWeightsTest7.sft \
+	earth98.dat \
 	inputsft.0 \
 	inputsft.1 \
-	earth98.dat \
 	sun98.dat \
-	testTimestamps.dat
-
-MOSTLYCLEANFILES = \
-	H-*_H1*.sft \
-	OutHistogram.asc \
-	OutHough.asc \
-	outputsft*.sft \
-	testLFTandTSutils-LFT.sft \
-	testLFTandTSutils-timeseries.dat
-
-pkgdata_DATA = \
-	circularEphem.dat \
-	earth00-19-DE200.dat.gz \
-	earth00-19-DE405.dat.gz \
-	earth00-19-DE414.dat.gz \
-	sun00-19-DE200.dat.gz \
-	sun00-19-DE405.dat.gz \
-	sun00-19-DE414.dat.gz \
 	testTimestamps.dat \
-	VOTable-1.1.xsd \
-	tdb_2000-2019.dat.gz \
-	te405_2000-2019.dat.gz
-
-EXTRA_DIST = $(DATA)
+	$(END_OF_LIST)

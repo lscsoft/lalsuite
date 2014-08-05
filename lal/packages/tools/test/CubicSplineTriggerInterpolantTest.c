@@ -123,11 +123,11 @@ int main(__attribute__((unused)) int argc, __attribute__((unused)) char **argv)
         if (result)
             exit(EXIT_FAILURE);
 
-        if (fabsf(0.108106552865 - tmax) > 1e-6)
+        if (fabs(0.108106552865 - tmax) > 1e-6)
             exit(EXIT_FAILURE);
-        if (fabsf(-2.10041938439 - crealf(ymax)) > 1e-6)
+        if (fabs(-2.10041938439 - crealf(ymax)) > 1e-6)
             exit(EXIT_FAILURE);
-        if (fabsf(0.85409051094 - cimagf(ymax)) > 1e-6)
+        if (fabs(0.85409051094 - cimagf(ymax)) > 1e-6)
             exit(EXIT_FAILURE);
     }
 

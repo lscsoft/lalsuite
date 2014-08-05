@@ -61,15 +61,6 @@
 
 /*---------- internal types ----------*/
 
-/*---------- Global variables ----------*/
-/* empty initializers  */
-const AMCoeffs empty_AMCoeffs;
-const MultiAMCoeffs empty_MultiAMCoeffs;
-const AntennaPatternMatrix empty_AntennaPatternMatrix;
-
-static const LALStatus empty_LALStatus;
-static const EarthState empty_EarthState;
-
 /*---------- internal prototypes ----------*/
 
 
@@ -385,8 +376,8 @@ XLALComputeAntennaPatternCoeffs ( REAL8 *ai,   			/**< [out] antenna-pattern fun
 				  const EphemerisData *edat	/**< [in] ephemeris-data */
 				  )
 {
-  LALStatus status = empty_LALStatus;
-  EarthState earth = empty_EarthState;
+  LALStatus XLAL_INIT_DECL(status);
+  EarthState XLAL_INIT_DECL(earth);
 
   if ( !ai || !bi || !skypos || !tGPS || !site || !edat) {
     XLAL_ERROR( XLAL_EINVAL );
@@ -674,7 +665,7 @@ XLALWeightMultiAMCoeffs (  MultiAMCoeffs *multiAMcoef, const MultiNoiseWeights *
       }
     } // for X < numDetectors
 
-  REAL8 Ad = 0, Bd = 0, Cd = 0;	// multi-IFO values
+  REAL4 Ad = 0, Bd = 0, Cd = 0;	// multi-IFO values
   /* ---------- main loop over detectors X ---------- */
   for ( X=0; X < numDetectors; X ++)
     {
@@ -696,12 +687,12 @@ XLALWeightMultiAMCoeffs (  MultiAMCoeffs *multiAMcoef, const MultiNoiseWeights *
         } // if weights
 
       UINT4 alpha;	// SFT-index
-      REAL8 AdX = 0, BdX = 0, CdX = 0;	// single-IFO values
+      REAL4 AdX = 0, BdX = 0, CdX = 0;	// single-IFO values
       /* compute single-IFO antenna-pattern coefficients AX,BX,CX, by summing over time-steps 'alpha' */
       for(alpha = 0; alpha < numStepsX; alpha++)
         {
-          REAL8 ahat = amcoeX->a->data[alpha];
-          REAL8 bhat = amcoeX->b->data[alpha];
+          REAL4 ahat = amcoeX->a->data[alpha];
+          REAL4 bhat = amcoeX->b->data[alpha];
 
           AdX += ahat * ahat;
           BdX += bhat * bhat;

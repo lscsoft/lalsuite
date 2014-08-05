@@ -275,8 +275,7 @@ void XLALDestroyREAL4FFTPlan( REAL4FFTPlan *plan )
   return;
 }
 
-int XLALREAL4ForwardFFT( COMPLEX8Vector *output, const REAL4Vector *input,
-    const REAL4FFTPlan *plan )
+int XLALREAL4ForwardFFT( COMPLEX8Vector *output, const REAL4Vector *input, const REAL4FFTPlan *plan )
 {
   REAL4 *tmp;
   UINT4 k;
@@ -316,8 +315,7 @@ int XLALREAL4ForwardFFT( COMPLEX8Vector *output, const REAL4Vector *input,
 }
 
 
-int XLALREAL4ReverseFFT( REAL4Vector *output, const COMPLEX8Vector *input,
-    const REAL4FFTPlan *plan )
+int XLALREAL4ReverseFFT( REAL4Vector *output, const COMPLEX8Vector *input, const REAL4FFTPlan *plan )
 {
   REAL4 *tmp;
   UINT4 k;
@@ -365,8 +363,7 @@ int XLALREAL4ReverseFFT( REAL4Vector *output, const COMPLEX8Vector *input,
 }
 
 
-int XLALREAL4VectorFFT( REAL4Vector * _LAL_RESTRICT_ output, const REAL4Vector * _LAL_RESTRICT_ input,
-    const REAL4FFTPlan *plan )
+int XLALREAL4VectorFFT( REAL4Vector * _LAL_RESTRICT_ output, const REAL4Vector * _LAL_RESTRICT_ input, const REAL4FFTPlan *plan )
 {
   if ( ! output || ! input || ! plan )
     XLAL_ERROR( XLAL_EFAULT );
@@ -383,8 +380,7 @@ int XLALREAL4VectorFFT( REAL4Vector * _LAL_RESTRICT_ output, const REAL4Vector *
 }
 
 
-int XLALREAL4PowerSpectrum( REAL4Vector *spec, const REAL4Vector *data,
-    const REAL4FFTPlan *plan )
+int XLALREAL4PowerSpectrum( REAL4Vector * _LAL_RESTRICT_ spec, const REAL4Vector * _LAL_RESTRICT_ data, const REAL4FFTPlan *plan )
 {
   REAL4 *tmp;
   UINT4 k;
@@ -541,8 +537,7 @@ void XLALDestroyREAL8FFTPlan( REAL8FFTPlan *plan )
   return;
 }
 
-int XLALREAL8ForwardFFT( COMPLEX16Vector *output, REAL8Vector *input,
-    const REAL8FFTPlan *plan )
+int XLALREAL8ForwardFFT( COMPLEX16Vector *output, const REAL8Vector *input, const REAL8FFTPlan *plan )
 {
   REAL8 *tmp;
   UINT4 k;
@@ -582,8 +577,7 @@ int XLALREAL8ForwardFFT( COMPLEX16Vector *output, REAL8Vector *input,
 }
 
 
-int XLALREAL8ReverseFFT( REAL8Vector *output, COMPLEX16Vector *input,
-    const REAL8FFTPlan *plan )
+int XLALREAL8ReverseFFT( REAL8Vector *output, const COMPLEX16Vector *input, const REAL8FFTPlan *plan )
 {
   REAL8 *tmp;
   UINT4 k;
@@ -631,8 +625,7 @@ int XLALREAL8ReverseFFT( REAL8Vector *output, COMPLEX16Vector *input,
 }
 
 
-int XLALREAL8VectorFFT( REAL8Vector * restrict output, REAL8Vector * restrict input,
-    const REAL8FFTPlan *plan )
+int XLALREAL8VectorFFT( REAL8Vector * _LAL_RESTRICT_ output, const REAL8Vector * _LAL_RESTRICT_ input, const REAL8FFTPlan *plan )
 {
   if ( ! output || ! input || ! plan )
     XLAL_ERROR( XLAL_EFAULT );
@@ -649,8 +642,7 @@ int XLALREAL8VectorFFT( REAL8Vector * restrict output, REAL8Vector * restrict in
 }
 
 
-int XLALREAL8PowerSpectrum( REAL8Vector *spec, REAL8Vector *data,
-    const REAL8FFTPlan *plan )
+int XLALREAL8PowerSpectrum( REAL8Vector *_LAL_RESTRICT_ spec, const REAL8Vector * _LAL_RESTRICT_ data, const REAL8FFTPlan *plan )
 {
   REAL8 *tmp;
   UINT4 k;

@@ -1,3 +1,9 @@
+BUILT_SOURCES =
+MOSTLYCLEANFILES =
+EXTRA_DIST =
+include $(top_srcdir)/gnuscripts/lalsuite_python.am
+include $(top_srcdir)/gnuscripts/lalapps.am
+
 if FRAME
 if LALFRAME
 if LALMETAIO
@@ -71,30 +77,10 @@ endif
 
 if HAVE_PYTHON
 pkgpython_PYTHON = ring.py
-bin_SCRIPTS = \
+pybin_SCRIPTS = \
 	lalapps_ring_pipe \
 	lalapps_ringcorse
 endif
 
 pkgdata_DATA = ring_test.ini ringpost_remove_cluster.sql
-AM_CPPFLAGS = -I$(top_srcdir)/src -I$(top_srcdir)/src/lalapps -I$(top_builddir)/src/lalapps -DPKG_DATA_DIR='"$(pkgdatadir)/"' @AM_CPPFLAGS@
-LDADD = $(top_builddir)/src/lalapps/liblalapps.la
-CLEANFILES = python_config.sed lalapps_ring_pipe lalapps_ringcorse
-EXTRA_DIST = ring.c ring_pipe.in ringcorse.in ring.py $(DATA)
-
-python_config.sed:
-	@-rm -f python_config.sed
-	@echo "s+@PYTHONLIBDIR@+@pkgpythondir@+g" > python_config.sed
-	@echo "s+@PYTHONPROG@+@PYTHON@+g" >> python_config.sed
-	@echo "s+@RINGEXECPATH@+${bindir}+g" >> python_config.sed
-
-lalapps_ring_pipe: $(srcdir)/ring_pipe.in python_config.sed
-	$(AM_V_GEN)sed -f python_config.sed $(srcdir)/ring_pipe.in > lalapps_ring_pipe
-	@chmod +x lalapps_ring_pipe
-
-lalapps_ringcorse: $(srcdir)/ringcorse.in python_config.sed
-	$(AM_V_GEN)sed -f python_config.sed $(srcdir)/ringcorse.in > lalapps_ringcorse
-	@chmod +x lalapps_ringcorse
-
-BUILT_SOURCES =
-include $(top_srcdir)/gnuscripts/vcsID.common
+EXTRA_DIST += $(DATA)

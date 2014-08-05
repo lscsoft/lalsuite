@@ -92,11 +92,6 @@ typedef struct {
   LIGOTimeGPS startTimeGPS;	/**< starttime of observation */
 } ConfigVariables;
 
-/*---------- empty structs for initializations ----------*/
-static const ConfigVariables empty_ConfigVariables;
-static const PtoleMetricIn empty_metricpar;
-static const UserInput empty_UserInput;
-
 /* ---------- local prototypes ---------- */
 void initUserVars (LALStatus *, UserInput *uvar, int argc, char *argv[] );
 void initGeneral (LALStatus *status, ConfigVariables *cfg, const UserInput *uvar);
@@ -113,8 +108,8 @@ int
 main(int argc, char *argv[]) 
 {
   LALStatus status = blank_status;
-  ConfigVariables config = empty_ConfigVariables;
-  UserInput uvar = empty_UserInput;
+  ConfigVariables XLAL_INIT_DECL(config);
+  UserInput XLAL_INIT_DECL(uvar);
 
   vrbflg = 1;	/* verbose error-messages */
 
@@ -236,7 +231,7 @@ void
 printPulsarMetric(LALStatus *status, const UserInput *uvar, const ConfigVariables *config)
 {
   REAL8Vector *metric = NULL;
-  PtoleMetricIn metricpar = empty_metricpar;
+  PtoleMetricIn XLAL_INIT_DECL(metricpar);
   UINT4 dim, a;
   static LALDetector this_detector;
 

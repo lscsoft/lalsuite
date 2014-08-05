@@ -1,4 +1,3 @@
-#!/usr/bin/env @PYTHONPROG@
 """
 Something
 
@@ -20,7 +19,6 @@ import tempfile
 import ConfigParser
 import urlparse
 from UserDict import UserDict
-sys.path.append('@PYTHONLIBDIR@')
 
 ##############################################################################
 # import the modules we need to build the pipeline

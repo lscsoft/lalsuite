@@ -28,8 +28,6 @@
 
 /*---------- DEFINES ----------*/
 /*---------- internal types ----------*/
-/*---------- empty initializers ---------- */
-const LALStringVector empty_LALStringVector;
 
 /*---------- Global variables ----------*/
 /*---------- internal prototypes ----------*/

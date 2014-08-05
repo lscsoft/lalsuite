@@ -20,17 +20,15 @@
 #include <math.h>
 #include "antenna.h"
 
-
-static const LALStatus empty_status;
-
 //Compute the number of integer bin shifts per SFT
 // bin shift = f0*v*Tcoh
 // where f0 is frequency, v is velocity in units of c, and Tcoh is the SFT coherence length
 // an optional dopplerMultiplier value could be multiplied if desired (default value is 1.0)
 INT4 CompBinShifts(INT4Vector *output, REAL8 freq, REAL4Vector *velocities, REAL8 Tcoh, REAL4 dopplerMultiplier)
 {
+   XLAL_CHECK( output != NULL && velocities != NULL, XLAL_EINVAL );
    for (INT4 ii=0; ii<(INT4)velocities->length; ii++) output->data[ii] = (INT4)round(dopplerMultiplier*freq*velocities->data[ii]*Tcoh);
-   return 0;
+   return XLAL_SUCCESS;
 } /* CompBinShifts() */
 
 
@@ -39,6 +37,8 @@ INT4 CompBinShifts(INT4Vector *output, REAL8 freq, REAL4Vector *velocities, REAL
 //If linPolOn = 0, then the output weights are Fplus*Fplus + Fcross*Fcross
 INT4 CompAntennaPatternWeights(REAL4Vector *output, REAL4 ra, REAL4 dec, REAL8 t0, REAL8 Tcoh, REAL8 SFToverlap, REAL8 Tobs, INT4 linPolOn, REAL8 polAngle, LALDetector det)
 {
+
+   XLAL_CHECK( output != NULL, XLAL_EINVAL );
 
    INT4 numffts = (INT4)floor(Tobs/(Tcoh-SFToverlap)-1);    //Number of FFTs
    REAL8 fplus, fcross;
@@ -59,7 +59,7 @@ INT4 CompAntennaPatternWeights(REAL4Vector *output, REAL4 ra, REAL4 dec, REAL8 t
 
    } /* for ii < numffts */
 
-   return 0;
+   return XLAL_SUCCESS;
 
 } /* CompAntennaPatternWeights() */
 
@@ -68,9 +68,11 @@ INT4 CompAntennaPatternWeights(REAL4Vector *output, REAL4 ra, REAL4 dec, REAL8 t
 INT4 CompAntennaVelocity(REAL4Vector *output, REAL4 ra, REAL4 dec, REAL8 t0, REAL8 Tcoh, REAL8 SFToverlap, REAL8 Tobs, LALDetector det, EphemerisData *edat)
 {
 
+   XLAL_CHECK( output != NULL && edat != NULL, XLAL_EINVAL );
+
    INT4 ii;
    INT4 numffts = (INT4)floor(Tobs/(Tcoh-SFToverlap)-1);    //Number of FFTs
-   LALStatus status = empty_status;
+   LALStatus XLAL_INIT_DECL(status);
 
    REAL8 detvel[3];
    for (ii=0; ii<numffts; ii++) {
@@ -86,7 +88,7 @@ INT4 CompAntennaVelocity(REAL4Vector *output, REAL4 ra, REAL4 dec, REAL8 t0, REA
 
    } /* for ii < numffts */
 
-   return 0;
+   return XLAL_SUCCESS;
 
 } /* CompAntennaVelocity() */
 
@@ -95,9 +97,11 @@ INT4 CompAntennaVelocity(REAL4Vector *output, REAL4 ra, REAL4 dec, REAL8 t0, REA
 REAL4 CompDetectorDeltaVmax(REAL8 t0, REAL8 Tcoh, REAL8 SFToverlap, REAL8 Tobs, LALDetector det, EphemerisData *edat)
 {
 
+   XLAL_CHECK( edat != NULL, XLAL_EINVAL );
+
    INT4 ii;
    INT4 numffts = (INT4)floor(Tobs/(Tcoh-SFToverlap)-1);    //Number of FFTs
-   LALStatus status = empty_status;
+   LALStatus XLAL_INIT_DECL(status);
 
    REAL8 detvel[3];
    REAL8 detvel0[3];
@@ -132,9 +136,11 @@ REAL4 CompDetectorDeltaVmax(REAL8 t0, REAL8 Tcoh, REAL8 SFToverlap, REAL8 Tobs, 
 REAL4 CompDetectorVmax(REAL8 t0, REAL8 Tcoh, REAL8 SFToverlap, REAL8 Tobs, LALDetector det, EphemerisData *edat)
 {
 
+   XLAL_CHECK( edat != NULL, XLAL_EINVAL );
+
    INT4 ii;
    INT4 numffts = (INT4)floor(Tobs/(Tcoh-SFToverlap)-1);    //Number of FFTs
-   LALStatus status = empty_status;
+   LALStatus XLAL_INIT_DECL(status);
 
    REAL8 detvel[3];
    REAL4 Vmax = 0.0;

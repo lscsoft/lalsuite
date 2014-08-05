@@ -1,11 +1,14 @@
 *.swp
 *.trs
 *~
+*.egg-info
 .DS_Store
 .dirstamp
 /Makefile
 /Makefile.in
+/_build/
 /_inst/
+/lalsuite-*/
 TAGS
 aclocal.m4
 auto/
@@ -15,3 +18,4 @@ config.log
 config.status
 configure
 lalsuite-*.tar.gz
+tags
