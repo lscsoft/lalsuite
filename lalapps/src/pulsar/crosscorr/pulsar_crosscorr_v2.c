@@ -116,7 +116,7 @@ int main(int argc, char *argv[]){
   UINT4Vector *lowestBins = NULL;
   REAL8Vector *kappaValues = NULL;
   REAL8Vector *signalPhases = NULL;
-  REAL8Vector *sincValueList = NULL;
+  REAL8VectorSequence *sincValueList = NULL;
 
   PulsarDopplerParams XLAL_INIT_DECL(dopplerpos);
   PulsarDopplerParams thisBinaryTemplate, binaryTemplateSpacings;
@@ -299,15 +299,18 @@ int main(int argc, char *argv[]){
 #define PCC_SFT_HEADER "# The length of SFT list is %u #\n"
   FILE *fp = NULL;
 
-  if (strcmp(uvar.pairListInputFilename,"")) { /* If the user provided a list for reading, use it */
+  if (XLALUserVarWasSet(&uvar.pairListInputFilename)) { /* If the user provided a list for reading, use it */
       if((sftPairs = XLALCalloc(1, sizeof(sftPairs))) == NULL){
 	XLAL_ERROR(XLAL_ENOMEM);
       }
       if((fp = fopen(uvar.pairListInputFilename, "r")) == NULL){
-	LogPrintf ( LOG_CRITICAL, "didn't find SFT-pair list while readin = TRUE\n", 0);
+	LogPrintf ( LOG_CRITICAL, "didn't find SFT-pair list file with given input name\n", 0);
 	XLAL_ERROR( XLAL_EFUNC );
 	}
-      fscanf(fp,PCC_SFTPAIR_HEADER,&sftPairs->length);
+      if(fscanf(fp,PCC_SFTPAIR_HEADER,&sftPairs->length)==EOF){
+	LogPrintf ( LOG_CRITICAL, "can't read the length of SFT-pair list from the header\n", 0);
+	XLAL_ERROR( XLAL_EFUNC );
+      }
 	/* FIXME: Should check the return value of this */
 
       if((sftPairs->data = XLALCalloc(sftPairs->length, sizeof(*sftPairs->data)))==NULL){
@@ -316,7 +319,10 @@ int main(int argc, char *argv[]){
       }
 
       for(j = 0; j < sftPairs->length; j++){ /*read in  the SFT-pair list */
-	fscanf(fp,"%u %u\n", &sftPairs->data[j].sftNum[0], &sftPairs->data[j].sftNum[1]);
+	if(fscanf(fp,"%u %u\n", &sftPairs->data[j].sftNum[0], &sftPairs->data[j].sftNum[1])==EOF){
+	  LogPrintf ( LOG_CRITICAL, "The length of SFT-pair list doesn't match!", 0);
+	  XLAL_ERROR( XLAL_EFUNC );
+	}
 	/* FIXME: Should check the return value of this */
       }
       fclose(fp);
@@ -328,7 +334,7 @@ int main(int argc, char *argv[]){
       }
   }
 
-  if (strcmp(uvar.pairListOutputFilename,"")) { /* Write the list of pairs to a file, if a name was provided */
+  if (XLALUserVarWasSet(&uvar.pairListOutputFilename)) { /* Write the list of pairs to a file, if a name was provided */
       fp = fopen(uvar.pairListOutputFilename,"w");
       fprintf(fp,PCC_SFTPAIR_HEADER, sftPairs->length ); /*output the length of SFT-pair list to the header*/
       for(j = 0; j < sftPairs->length; j++){
@@ -337,11 +343,11 @@ int main(int argc, char *argv[]){
       fclose(fp);
   }
 
-  if (strcmp(uvar.sftListOutputFilename,"")) { /* Write the list of SFTs to a file for sanity-checking purposes */
+  if (XLALUserVarWasSet(&uvar.sftListOutputFilename)) { /* Write the list of SFTs to a file for sanity-checking purposes */
       fp = fopen(uvar.sftListOutputFilename,"w");
       fprintf(fp,PCC_SFT_HEADER, sftIndices->length ); /*output the length of SFT list to the header*/
       for(j = 0; j < sftIndices->length; j++){ /*output the SFT list */
-	fprintf(fp,"%u %u\n", sftIndices->data[j].detInd, sftIndices->data[j].sftInd);
+	fprintf(fp,"%u %u \n", sftIndices->data[j].detInd, sftIndices->data[j].sftInd );
       }
       fclose(fp);
     }
@@ -450,7 +456,7 @@ int main(int argc, char *argv[]){
     LogPrintf ( LOG_CRITICAL, "%s: XLALCreateREAL8Vector() failed with errno=%d\n", __func__, xlalErrno );
     XLAL_ERROR( XLAL_EFUNC );
   }
-  if ((sincValueList = XLALCreateREAL8Vector ( numSFTs ) ) == NULL){
+  if ((sincValueList = XLALCreateREAL8VectorSequence ( numSFTs * uvar.numBins, uvar.numBins ) ) == NULL){
     LogPrintf ( LOG_CRITICAL, "%s: XLALCreateREAL8Vector() failed with errno=%d\n", __func__, xlalErrno );
     XLAL_ERROR( XLAL_EFUNC );
   }
@@ -507,7 +513,7 @@ int main(int argc, char *argv[]){
   XLALDestroyREAL8Vector ( kappaValues );
   XLALDestroyUINT4Vector ( lowestBins );
   XLALDestroyREAL8Vector ( shiftedFreqs );
-  XLALDestroyREAL8Vector ( sincValueList );
+  XLALDestroyREAL8VectorSequence ( sincValueList );
   XLALDestroyMultiSSBtimes ( multiBinaryTimes );
   XLALDestroyMultiSSBtimes ( multiSSBTimes );
   XLALDestroyREAL8Vector ( curlyGUnshifted );
@@ -559,9 +565,7 @@ int XLALInitUserVars (UserInput_t *uvar)
   uvar->deltaRad = 0.0;
   uvar->rngMedBlock = 50;
   uvar->numBins = 1;
-  uvar->pairListInputFilename = XLALStringDuplicate("");
-  uvar->pairListOutputFilename = XLALStringDuplicate("");
-  uvar->sftListOutputFilename = XLALStringDuplicate("");
+
   /* default for reftime is in the middle */
   uvar->refTime = 0.5*(uvar->startTime + uvar->endTime);
 
