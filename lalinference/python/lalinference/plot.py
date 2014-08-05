@@ -562,6 +562,11 @@ def colorbar(vmax):
     cb = plt.colorbar(orientation='horizontal', ticks=ticks, format=formatter,
         shrink=0.4)
 
+    # Draw edges in colorbar bands to correct thin white bands that
+    # appear in buggy PDF viewers. See:
+    # https://github.com/matplotlib/matplotlib/pull/1301
+    cb.solids.set_edgecolor("face")
+
     # Adjust appearance of colorbar tick labels
     for tick, ticklabel in zip(cb.ax.get_xticks(), cb.ax.get_xticklabels()):
         ticklabel.set_verticalalignment('baseline')
