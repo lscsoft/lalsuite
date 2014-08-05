@@ -816,6 +816,7 @@ static void worker (void) {
   char**config_file_arg = NULL;  /**< points to a placeholder for the config file in the command-line paased to MAIN() */
   char wu_result_file[MAX_PATH_LEN];
 
+  int second_outfile = 0;        /**< flag: is there a second output file, i.e. --SortToplist=3 */
   int resultfile_present = 0;
 
   resultfile[0] = '\0';
@@ -1057,6 +1058,11 @@ static void worker (void) {
 	}
     }
 
+    /* record if there will be a second output file */
+    else if (!strcmp("--SortToplist=3",argv[arg])) {
+      second_outfile = -1;
+    }
+
     /* set the "flops estimation" */
     else if (MATCH_START("--WUfpops=",argv[arg],l)) {
       estimated_flops = atof(argv[arg]+l);
@@ -1278,7 +1284,7 @@ static void worker (void) {
       if (bundle_size) {
 	unsigned int rlen = strlen(resultfile);
 	strcpy(wu_result_file, resultfile);
-	myltoa(current_config_file, &wu_result_file[rlen-1], MAX_PATH_LEN-rlen);
+	myltoa(second_outfile ? current_config_file*2 : current_config_file, &wu_result_file[rlen-1], MAX_PATH_LEN-rlen);
 	*config_file_arg = config_files[current_config_file];
       }
 
@@ -1287,6 +1293,23 @@ static void worker (void) {
       res = MAIN(rargc,rargv);
       if (res) {
 	LogPrintf (LOG_CRITICAL, "ERROR: MAIN() returned with error '%d'\n",res);
+      }
+
+      /* if there is a file <wuname>_<instance>_0-LV, rename it to <wuname>_<instance>_1 */
+      if (second_outfile) {
+	unsigned int len = strlen(resultfile);
+	char*lv_file = (char*)malloc(len+6);
+	if (lv_file) {
+	  strcpy(lv_file, resultfile);
+	  strcat(lv_file, "-LV");
+	  if (boinc_file_exists(lv_file) && resultfile[len-1]=='0') {
+	    myltoa(current_config_file*2+1, &resultfile[len-1], 5);
+	    boinc_rename(lv_file,resultfile);
+	  }
+	} else {
+	  LogPrintf(LOG_CRITICAL,"ERROR: out of memory, can't allocate lv_file\n");
+	  res = HIERARCHICALSEARCH_EMEM;
+	}
       }
 
       current_config_file ++;
@@ -1346,23 +1369,6 @@ static void worker (void) {
     }
   }
 #endif
-
-  /* if there is a file <wuname>_<instance>_0-LV, rename it to <wuname>_<instance>_1 */
-  if (!bundle_size) {
-    unsigned int len = strlen(resultfile);
-    char*lv_file = (char*)malloc(len+4);
-    if (lv_file) {
-      strcpy(lv_file, resultfile);
-      strcat(lv_file, "-LV");
-      if (boinc_file_exists(lv_file) && resultfile[len-1]=='0') {
-	resultfile[len-1] = '1';
-	boinc_rename(lv_file,resultfile);
-      }
-    } else {
-      LogPrintf(LOG_CRITICAL,"ERROR: out of memory, can't allocate lv_file\n");
-      res = HIERARCHICALSEARCH_EMEM;
-    }
-  }
 
   LogPrintf (LOG_NORMAL, "done. calling boinc_finish(%d).\n",res);
   boinc_finish(boinc_finish_status=res);
