@@ -545,7 +545,7 @@ class IMRPhenomPTemplate(PrecessingTemplate):
         return project_hplus_hcross(hplus_fd, hcross_fd, self.theta, self.phi, self.psi)
 
 
-class SEOBNRv1Template(Template):
+class SEOBNRv2Template(Template):
     param_names = ("m1", "m2", "spin1z", "spin2z")
     param_formats = ("%.2f", "%.2f", "%.2f", "%.2f")
 
@@ -581,7 +581,7 @@ class SEOBNRv1Template(Template):
         # get hplus
         hplus, hcross = lalsim.SimIMRSpinAlignedEOBWaveform(
             0., dt, self.m1 * MSUN_SI, self.m2 * MSUN_SI,
-            self.bank.flow, 1e6*PC_SI, 0., self.spin1z, self.spin2z)
+            self.bank.flow, 1e6*PC_SI, 0., self.spin1z, self.spin2z, 2) # last argument is SEOBNR version
         # zero-pad up to 1/df
         N = int(sample_rate / df)
         hplus = lal.ResizeREAL8TimeSeries(hplus, 0, N)
