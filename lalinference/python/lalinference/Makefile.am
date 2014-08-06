@@ -1,6 +1,6 @@
 BUILT_SOURCES =
 MOSTLYCLEANFILES =
-EXTRA_DIST =
+EXTRA_DIST = cylon.py
 include $(top_srcdir)/gnuscripts/lalsuite_python.am
 include $(top_srcdir)/gnuscripts/lalsuite_vcs_info.am
 
@@ -36,5 +36,3 @@ dist_pymodule_DATA = \
 #
 $(srcdir)/cylon.csv: $(srcdir)/cylon.py
 	$(AM_V_GEN)$(PYTHON) $< > $@
-
-EXTRA_DIST = cylon.py
