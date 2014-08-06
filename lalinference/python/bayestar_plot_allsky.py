@@ -107,7 +107,7 @@ plot.healpix_heatmap(probperdeg2, dlon=dlon,
 
 if opts.colorbar:
     # Plot colorbar.
-    cb = plot.colorbar(vmax)
+    cb = plot.colorbar()
 
     # Set colorbar label.
     cb.set_label(r'prob. per deg$^2$')
