@@ -3410,11 +3410,11 @@ int main( int argc, char *argv[] )
 
   if ( spinInjections==1 && spinAligned==1 && strncmp(waveform, "IMRPhenomB", 10)
     && strncmp(waveform, "IMRPhenomC", 10) && strncmp(waveform, "SpinTaylor", 10)
-    && strncmp(waveform, "SEOBNR", 6) )
+    && strncmp(waveform, "IMRPhenomP", 10) && strncmp(waveform, "SEOBNR", 6) )
   {
     fprintf( stderr,
         "Sorry, I only know to make spin aligned injections for SEOBNR, \n"
-        "IMRPhenomB/C, SpinTaylor and SpinTaylorFrameless waveforms.\n" );
+        "IMRPhenomB/C/P, SpinTaylor and SpinTaylorFrameless waveforms.\n" );
     exit( 1 );
   }
 
@@ -3797,7 +3797,8 @@ int main( int argc, char *argv[] )
              !strncmp(waveform, "SpinTaylorT5", 12) ||
              !strncmp(waveform, "SEOBNR", 6) )
           alignInj = alongzAxis;
-        else if ( !strncmp(waveform, "SpinTaylor", 10) )
+        else if ( !strncmp(waveform, "SpinTaylor", 10) ||
+                  !strncmp(waveform, "IMRPhenomP", 10) )
           alignInj = inxzPlane;
         else
         {
