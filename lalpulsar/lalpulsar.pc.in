@@ -3,9 +3,9 @@ exec_prefix=@exec_prefix@
 libdir=@libdir@
 includedir=@includedir@
 datarootdir=@datarootdir@
-LALPULSAR_DATA_PATH=@datadir@/@PACKAGE@
-LALPULSAR_OCTAVE_PATH=@octexecdir@
-LALPULSAR_PYTHON_PATH=@pyexecdir@
+LAL_DATA_PATH=@datadir@/@PACKAGE@:@LAL_DATA_PATH@
+LAL_OCTAVE_PATH=@octexecdir@:@LAL_OCTAVE_PATH@
+LAL_PYTHON_PATH=@pyexecdir@:@LAL_PYTHON_PATH@
 
 Name: LALPulsar
 Description: LAL Pulsar Library

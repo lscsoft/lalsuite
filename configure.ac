@@ -25,12 +25,7 @@ LALSUITE_ENABLE_LALPULSAR
 LALSUITE_ENABLE_LALINFERENCE
 LALSUITE_ENABLE_LALAPPS
 
-# directories of top-level build and source
-lalsuite_abs_top_builddir="`pwd`"
-#lalsuite_top_builddir='$(top_builddir)/..'
-lalsuite_top_srcdir='$(top_srcdir)/..'
-
-# configure a lalsuite package
+# determine subdirectories to configure/build
 AC_DEFUN([lalsuite_config_subdir],[
   m4_pushdef([lowercase],m4_translit([[$1]], [A-Z], [a-z]))
   m4_pushdef([uppercase],m4_translit([[$1]], [a-z], [A-Z]))
@@ -38,48 +33,24 @@ AC_DEFUN([lalsuite_config_subdir],[
   # if $1 is enabled
   AS_IF([test "x${lowercase}" = xtrue],[
 
-    # export precious environment variables
-    uppercase[]_LIBS="${lalsuite_abs_top_builddir}/lowercase/src/lib[]lowercase.la"
-    uppercase[]_CFLAGS="-I${lalsuite_abs_top_builddir}/lowercase/include"
-    uppercase[]_DATA_PATH="${lalsuite_top_srcdir}/lowercase/test"
-    uppercase[]_OCTAVE_PATH="${lalsuite_abs_top_builddir}/lowercase/octave"
-    uppercase[]_PYTHON_PATH="${lalsuite_abs_top_builddir}/lowercase/python"
-    export uppercase[]_LIBS uppercase[]_CFLAGS
-    export uppercase[]_DATA_PATH uppercase[]_OCTAVE_PATH uppercase[]_PYTHON_PATH
+    # add $1 build directory to PKG_CONFIG_PATH
+    LALSUITE_ADD_PATH(PKG_CONFIG_PATH,"`pwd`/lowercase")
+    export PKG_CONFIG_PATH
 
     # configure $1
     AC_CONFIG_SUBDIRS(lowercase)
 
-    # set enable string
+    # set enable/disable string
     uppercase[]_ENABLE_VAL=ENABLED
   ],[
-    # set disable string
     uppercase[]_ENABLE_VAL=DISABLED
   ])
 
   m4_popdef([lowercase])
   m4_popdef([uppercase])
 ])
-
-# doxygen, lal, and lalsupport are always configured
-AC_CONFIG_SUBDIRS(doxygen)
-AC_CONFIG_SUBDIRS(lal)
-LAL_LIBS="${lalsuite_abs_top_builddir}/lal/lib/lal/liblal.la"
-LAL_CFLAGS="-I${lalsuite_abs_top_builddir}/lal/include"
-LAL_DATA_PATH="${lalsuite_top_srcdir}/lal/test"
-LAL_OCTAVE_PATH="${lalsuite_abs_top_builddir}/lal/octave"
-LAL_PYTHON_PATH="${lalsuite_abs_top_builddir}/lal/python"
-LALSUPPORT_LIBS="${lalsuite_abs_top_builddir}/lal/lib/lalsupport/src/liblalsupport.la"
-LALSUPPORT_CFLAGS="-I${lalsuite_abs_top_builddir}/lal/include"
-LALSUPPORT_DATA_PATH="${LAL_DATA_PATH}"
-LALSUPPORT_OCTAVE_PATH="${LAL_OCTAVE_PATH}"
-LALSUPPORT_PYTHON_PATH="${LAL_PYTHON_PATH}"
-LALSUITE_BUILD="true"
-export LALSUITE_BUILD
-export LAL_LIBS LAL_CFLAGS LAL_DATA_PATH LAL_OCTAVE_PATH LAL_PYTHON_PATH
-export LALSUPPORT_LIBS LALSUPPORT_CFLAGS LALSUPPORT_DATA_PATH LALSUPPORT_OCTAVE_PATH LALSUPPORT_PYTHON_PATH
-
-# configure optional packages
+lalsuite_config_subdir([doxygen])
+lalsuite_config_subdir([lal])
 lalsuite_config_subdir([lalframe])
 lalsuite_config_subdir([lalmetaio])
 lalsuite_config_subdir([lalxml])
@@ -90,14 +61,7 @@ lalsuite_config_subdir([lalinspiral])
 lalsuite_config_subdir([lalstochastic])
 lalsuite_config_subdir([lalpulsar])
 lalsuite_config_subdir([lalinference])
-
-# optionally configure lalapps
-AS_IF([test "x$lalapps" = xtrue],[
-  AC_CONFIG_SUBDIRS(lalapps)
-  LALAPPS_ENABLE_VAL=ENABLED
-],[
-  LALAPPS_ENABLE_VAL=DISABLED
-])
+lalsuite_config_subdir([lalapps])
 
 AC_SUBST([ac_configure_args])
 AC_OUTPUT

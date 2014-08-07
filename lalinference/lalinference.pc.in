@@ -3,9 +3,9 @@ exec_prefix=@exec_prefix@
 libdir=@libdir@
 includedir=@includedir@
 datarootdir=@datarootdir@
-LALINFERENCE_DATA_PATH=@datadir@/@PACKAGE@
-LALINFERENCE_OCTAVE_PATH=@octexecdir@
-LALINFERENCE_PYTHON_PATH=@pyexecdir@
+LAL_DATA_PATH=@datadir@/@PACKAGE@:@LAL_DATA_PATH@
+LAL_OCTAVE_PATH=@octexecdir@:@LAL_OCTAVE_PATH@
+LAL_PYTHON_PATH=@pyexecdir@:@LAL_PYTHON_PATH@
 
 Name: LALInference
 Description: LAL Inference Library Support

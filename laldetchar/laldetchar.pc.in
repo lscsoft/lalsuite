@@ -3,9 +3,9 @@ exec_prefix=@exec_prefix@
 libdir=@libdir@
 includedir=@includedir@
 datarootdir=@datarootdir@
-LALDETCHAR_DATA_PATH=@datadir@/@PACKAGE@
-LALDETCHAR_OCTAVE_PATH=@octexecdir@
-LADETCHARL_PYTHON_PATH=@pyexecdir@
+LAL_DATA_PATH=@datadir@/@PACKAGE@:@LAL_DATA_PATH@
+LAL_OCTAVE_PATH=@octexecdir@:@LAL_OCTAVE_PATH@
+LAL_PYTHON_PATH=@pyexecdir@:@LAL_PYTHON_PATH@
 
 Name: LALDetChar
 Description: LAL DetChar Library Support

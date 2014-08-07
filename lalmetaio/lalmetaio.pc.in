@@ -3,9 +3,9 @@ exec_prefix=@exec_prefix@
 libdir=@libdir@
 includedir=@includedir@
 datarootdir=@datarootdir@
-LALMETAIO_DATA_PATH=@datadir@/@PACKAGE@
-LALMETAIO_OCTAVE_PATH=@octexecdir@
-LALMETAIO_PYTHON_PATH=@pyexecdir@
+LAL_DATA_PATH=@datadir@/@PACKAGE@:@LAL_DATA_PATH@
+LAL_OCTAVE_PATH=@octexecdir@:@LAL_OCTAVE_PATH@
+LAL_PYTHON_PATH=@pyexecdir@:@LAL_PYTHON_PATH@
 
 Name: LALMetaIO
 Description: LAL MetaIO Library Support
