@@ -49,7 +49,7 @@ int XLALGetDopplerShiftedFrequencyInfo
        || shiftedFreqs->length !=numSFTs
        || lowestBins->length !=numSFTs
        || kappaValues->length !=numSFTs
-       || sincList->length !=numSFTs*numBins ) {
+       || sincList->length !=numSFTs ) {
     XLALPrintError("Lengths of SFT-indexed lists don't match!");
     XLAL_ERROR(XLAL_EBADLEN );
   }
@@ -300,7 +300,7 @@ int XLALCalculatePulsarCrossCorrStatistic
   if ( signalPhases->length !=numSFTs
        || lowestBins->length !=numSFTs
        || kappaValues->length !=numSFTs
-       || sincList->length !=numSFTs * numBins ) {
+       || sincList->length !=numSFTs ) {
     XLALPrintError("Lengths of SFT-indexed lists don't match!");
     XLAL_ERROR(XLAL_EBADLEN );
   }
