@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2013 Michael Puerrer, Alejandro Bohe
+ *  Copyright (C) 2013,2014 Michael Puerrer, Alejandro Bohe
  *  Reuses code found in:
  *    - LALSimIMRPhenomC
  *    - LALSimInspiralSpinTaylorF2
@@ -42,7 +42,6 @@
 #include <lal/SphericalHarmonics.h>
 #include "LALSimIMR.h"
 #include "LALSimIMRPhenomC_internals.c" /* This is ugly, but allows us to reuse internal PhenomC functions without making those functions XLAL */
-
 
 /**************************** PhenomP internal function prototypes *****************************/
 
@@ -373,26 +372,47 @@ int XLALSimIMRPhenomP(
   XLALPrintInfo("ind_mix = (int)(f_mix / deltaF) = %d\n", (int)(f_min / deltaF));
   XLALPrintInfo("ind_max = (int)(f_max / deltaF) = %d\n", (int)(f_max_prime / deltaF));
 
-  COMPLEX16 hp_val, hc_val;
   /* Note: there will usually be zero data at the beginning and end of the frequency series  */
   size_t i_min = (size_t) (f_min / deltaF);
   size_t i_max = (size_t) (f_max_prime / deltaF);
+  int errcode = XLAL_SUCCESS;
+  /*
+    We can't call XLAL_ERROR() directly with OpenMP on.
+    Keep track of return codes for each thread and in addition use flush to get out of
+    the parallel for loop as soon as possible if something went wrong in any thread.
+  */
+  #pragma omp parallel for
   for (size_t i = i_min; i < i_max; i++) {
+    COMPLEX16 hp_val, hc_val;
     REAL8 f = i * deltaF;
+    int per_thread_errcode;
+
+    #pragma omp flush(errcode)
+    if (errcode != XLAL_SUCCESS)
+      goto skip;
 
     /* Generate the waveform */
-    int errcode = PhenomPCore(f, eta, chi_eff, chip, distance, M, phic,
+    per_thread_errcode = PhenomPCore(f, eta, chi_eff, chip, distance, M, phic,
                               PCparams, &angcoeffs, &Y2m,
                               alphaNNLOoffset - alpha0, epsilonNNLOoffset,
                               &hp_val, &hc_val);
-    if( errcode != XLAL_SUCCESS )
-      XLAL_ERROR(XLAL_EFUNC);
+
+    if (per_thread_errcode != XLAL_SUCCESS) {
+      errcode = per_thread_errcode;
+      #pragma omp flush(errcode)
+    }
+
 
     ((*hptilde)->data->data)[i] = hp_val;
     ((*hctilde)->data->data)[i] = hc_val;
+
+    skip: /* this statement intentionally left blank */;
   }
 
-  return XLAL_SUCCESS;
+  if( errcode != XLAL_SUCCESS )
+    XLAL_ERROR(errcode);
+  else
+    return XLAL_SUCCESS;
 }
 
 /******************************* PhenomP internal functions *********************************/
