@@ -1,20 +1,27 @@
 # -*- mode: autoconf; -*-
 # lalsuite_build.m4 - top level build macros
 #
-# serial 88
+# serial 89
 
 # not present in older versions of pkg.m4
 m4_pattern_allow([^PKG_CONFIG(_(PATH|LIBDIR|SYSROOT_DIR|ALLOW_SYSTEM_(CFLAGS|LIBS)))?$])
 m4_pattern_allow([^PKG_CONFIG_(DISABLE_UNINSTALLED|TOP_BUILD_DIR|DEBUG_SPEW)$])
 
 # forbid LALSUITE_... from appearing in output (./configure)
-m4_pattern_forbid([^_?LALSUITE_[A-Z_]+$])
+#m4_pattern_forbid([^_?LALSUITE_[A-Z_]+$])
 
 # list of user variables; see section 4.8.1 of the Autoconf manual
 m4_define([uvar_list],[CPPFLAGS CFLAGS CXXFLAGS FCFLAGS FFLAGS LDFLAGS])
 # prefix used to save/restore user variables in
 m4_define([uvar_orig_prefix],[lalsuite_uvar_])
 m4_define([uvar_prefix],uvar_orig_prefix)
+
+AC_DEFUN([LALSUITE_ARG_VAR],[
+  AC_ARG_VAR(LAL_DATA_PATH,[Location of LAL data files])
+  AC_ARG_VAR(LAL_OCTAVE_PATH,[Location of LAL octave files])
+  AC_ARG_VAR(LAL_PYTHON_PATH,[Location of LAL python files])
+  AC_ARG_VAR(LALSUITE_BUILD,[Set if part of lalsuite build])
+])
 
 m4_append([AC_INIT],[
   # just after AC_INIT:
@@ -444,94 +451,35 @@ AC_DEFUN([LALSUITE_CHECK_LIB],[
   # - arg 2: minimum version required
   # - arg 3: library function to check for
   # - arg 4: library header to check for
-  AC_REQUIRE([PKG_PROG_PKG_CONFIG])
   m4_pushdef([lowercase],m4_translit([[$1]], [A-Z], [a-z]))
   m4_pushdef([uppercase],m4_translit([[$1]], [a-z], [A-Z]))
-
-  # build pkg-config library name and version
-  lal_pkg="lowercase[] >= $2"
-
-  # substitute required library version in pkg-config files
-  AC_SUBST(uppercase[]_VERSION,[$2])
-
-  # set up pkg-config environment
-  export PKG_CONFIG_PATH
-  AS_UNSET([PKG_CONFIG_DISABLE_UNINSTALLED])
-  AS_UNSET([PKG_CONFIG_ALLOW_SYSTEM_CFLAGS])
-  AS_UNSET([PKG_CONFIG_ALLOW_SYSTEM_LIBS])
-
-  # check for $1
-  AC_MSG_CHECKING([for ${lal_pkg}])
-  lal_pkg_errors=`${PKG_CONFIG} --print-errors --cflags "${lal_pkg}" 2>&1 >/dev/null`
-  AS_IF([test "x${lal_pkg_errors}" = x],[
-    lowercase=true
-    AC_MSG_RESULT([yes])
-
-    # define that we have $1 in the configuration header
-    AC_DEFINE([HAVE_LIB]uppercase,[1],[Define to 1 if you have the $1 library])
-
-    # add $1 to list of LALSuite libraries
-    lalsuite_libs="${lalsuite_libs} lowercase"
-
-    # add $1 compiler and linker flags to CPPFLAGS/CFLAGS/LDFLAGS/LIBS
-    LALSUITE_ADD_FLAGS([C],[`${PKG_CONFIG} --cflags "${lal_pkg}"`],[`${PKG_CONFIG} --libs "${lal_pkg}"`])
-
-    # add system include flags to LAL_SYSTEM_INCLUDES: get $1 include flags with system flags,
-    # then add any flags not already in CPPFLAGS or LAL_SYSTEM_INCLUDES to LAL_SYSTEM_INCLUDES
-    PKG_CONFIG_ALLOW_SYSTEM_CFLAGS=1
-    export PKG_CONFIG_ALLOW_SYSTEM_CFLAGS
-    for flag in `${PKG_CONFIG} --cflags-only-I "${lal_pkg}"`; do
-      AS_CASE([" ${CPPFLAGS} ${LAL_SYSTEM_INCLUDES} "],
-        [*" ${flag} "*],[:],
-        [LAL_SYSTEM_INCLUDES="${LAL_SYSTEM_INCLUDES} ${flag}"]
-      )
-    done
-    AS_UNSET([PKG_CONFIG_ALLOW_SYSTEM_CFLAGS])
-    AC_SUBST([LAL_SYSTEM_INCLUDES])
-
-    # add $1 data path to LAL_DATA_PATH
-    LALSUITE_ADD_PATH(LAL_DATA_PATH,`${PKG_CONFIG} --variable=LAL_DATA_PATH "${lal_pkg}"`)
-    AC_SUBST([LAL_DATA_PATH])
-
-    # add $1 Octave extension path to LAL_OCTAVE_PATH
-    LALSUITE_ADD_PATH(LAL_OCTAVE_PATH,`${PKG_CONFIG} --variable=LAL_OCTAVE_PATH "${lal_pkg}"`)
-    AC_SUBST([LAL_OCTAVE_PATH])
-
-    # add $1 Python extension path to LAL_PYTHON_PATH
-    LALSUITE_ADD_PATH(LAL_PYTHON_PATH,`${PKG_CONFIG} --variable=LAL_PYTHON_PATH "${lal_pkg}"`)
-    AC_SUBST([LAL_PYTHON_PATH])
-
-    AS_IF([${PKG_CONFIG} --uninstalled "${lal_pkg}"],[
-
-      # if $1 is not installed, add .pc.in file to ./config.status dependencies
-      lal_pkg_pcin_dir=`${PKG_CONFIG} --variable=abs_top_srcdir "${lal_pkg}"`
-      lal_pkg_pcin_file="${lal_pkg_pcin_dir}/lowercase[]-uninstalled.pc.in"
-      AS_IF([test ! -f "${lal_pkg_pcin_file}"],[
-        AC_MSG_ERROR([could not find file ${lal_pkg_pcin_file}])
-      ])
-      CONFIG_STATUS_DEPENDENCIES="${CONFIG_STATUS_DEPENDENCIES} ${lal_pkg_pcin_file}"
-      AC_SUBST([CONFIG_STATUS_DEPENDENCIES])
-
-    ],[
-
-      # if $1 is installed, check linking, headers, and VCS info consistency
-      AC_CHECK_LIB(lowercase,[$3],[:],[AC_MSG_ERROR([could not link against the $1 library])])
-      AC_CHECK_HEADERS([$4],[:],[AC_MSG_ERROR([could not find the $1 header $4])])
-      AS_IF([test x`${PKG_CONFIG} --variable=no_header_library_mismatch_check "${lal_pkg}"` != xyes],[
-        LALSUITE_HEADER_LIBRARY_MISMATCH_CHECK([$1])
-      ])
-
-    ])
-
-  ],[
-    lowercase=false
-    AC_MSG_RESULT([no])
-    AC_MSG_ERROR([could not find the $1 library
-
-${lal_pkg_errors}
-])
-  ])
-
+  PKG_CHECK_MODULES(uppercase, [lowercase >= $2], [lowercase="true"], [lowercase="false"])
+  PKG_CHECK_VAR(uppercase[]_DATA_PATH, [lowercase >= $2], uppercase[]_DATA_PATH,,)
+  PKG_CHECK_VAR(uppercase[]_OCTAVE_PATH, [lowercase >= $2], uppercase[]_OCTAVE_PATH,,)
+  PKG_CHECK_VAR(uppercase[]_PYTHON_PATH, [lowercase >= $2], uppercase[]_PYTHON_PATH,,)
+  if test "$lowercase" = "true"; then
+    LALSUITE_ADD_FLAGS([C],$[]uppercase[]_CFLAGS,$[]uppercase[]_LIBS)
+    LALSUITE_ADD_PATH(LAL_DATA_PATH,"$[]uppercase[]_DATA_PATH")
+    LALSUITE_ADD_PATH(LAL_OCTAVE_PATH,"$[]uppercase[]_OCTAVE_PATH")
+    LALSUITE_ADD_PATH(LAL_PYTHON_PATH,"$[]uppercase[]_PYTHON_PATH")
+  fi
+  if test "$LALSUITE_BUILD" = "true"; then
+    if test "$lowercase" = "false"; then
+      # should never get here: bug in build system
+      AC_MSG_ERROR([could not find the $1 library])
+    fi
+  else
+    AC_CHECK_LIB(lowercase,[$3],,[AC_MSG_ERROR([could not find the $1 library])])
+    AC_CHECK_HEADERS([$4],,[AC_MSG_ERROR([could not find the $4 header])])
+    if test "$1" != "LALSupport"; then
+      LALSUITE_HEADER_LIBRARY_MISMATCH_CHECK([$1])
+    fi
+  fi
+  AC_DEFINE([HAVE_LIB]uppercase,[1],[Define to 1 if you have the $1 library])
+  # add $1 to list of LALSuite libraries
+  lalsuite_libs="${lalsuite_libs} lowercase"
+  lowercase="true"
+  LALSUITE_ENABLE_MODULE($1)
   m4_popdef([lowercase])
   m4_popdef([uppercase])
   # end $0
