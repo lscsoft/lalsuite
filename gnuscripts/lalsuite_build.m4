@@ -453,8 +453,15 @@ AC_DEFUN([LALSUITE_CHECK_LIB],[
   # - arg 4: library header to check for
   m4_pushdef([lowercase],m4_translit([[$1]], [A-Z], [a-z]))
   m4_pushdef([uppercase],m4_translit([[$1]], [a-z], [A-Z]))
+
   # substitute required library version in pkg-config files
   AC_SUBST(uppercase[]_VERSION,[$2])
+
+  # set up pkg-config environment
+  AS_UNSET([PKG_CONFIG_ALLOW_SYSTEM_CFLAGS])
+  AS_UNSET([PKG_CONFIG_ALLOW_SYSTEM_LIBS])
+
+  # prepend to CFLAGS, CPPFLAGS, LDFLAGS, LIBS, LAL_DATA_PATH, LAL_OCTAVE_PATH, LAL_PYTHON_PATH
   PKG_CHECK_MODULES(uppercase, [lowercase >= $2], [lowercase="true"], [lowercase="false"])
   PKG_CHECK_VAR(uppercase[]_DATA_PATH, [lowercase >= $2], uppercase[]_DATA_PATH,,)
   PKG_CHECK_VAR(uppercase[]_OCTAVE_PATH, [lowercase >= $2], uppercase[]_OCTAVE_PATH,,)
@@ -465,6 +472,34 @@ AC_DEFUN([LALSUITE_CHECK_LIB],[
     LALSUITE_ADD_PATH(LAL_OCTAVE_PATH,"$[]uppercase[]_OCTAVE_PATH")
     LALSUITE_ADD_PATH(LAL_PYTHON_PATH,"$[]uppercase[]_PYTHON_PATH")
   fi
+
+  # add system include flags to LAL_SYSTEM_INCLUDES
+  if test -n "$PKG_CONFIG"; then
+    # use pkg-config to get system paths
+    PKG_CONFIG_ALLOW_SYSTEM_CFLAGS=1
+    export PKG_CONFIG_ALLOW_SYSTEM_CFLAGS
+    for flag in `$PKG_CONFIG --cflags-only-I "lowercase >= $2"`; do
+      AS_CASE([" $CPPFLAGS $LAL_SYSTEM_INCLUDES "],
+        [*" ${flag} "*],[:],
+        [LAL_SYSTEM_INCLUDES="$LAL_SYSTEM_INCLUDES $flag"]
+      )
+    done
+    AS_UNSET([PKG_CONFIG_ALLOW_SYSTEM_CFLAGS])
+  else
+    # use standard include paths
+    save_IFS="$IFS"
+    IFS=:
+    for flag in "$C_INCLUDE_PATH:CPLUS_INCLUDE_PATH:/usr/include" ; do
+      test -n "$flag" && flag="-I$flag"
+      AS_CASE([" $CPPFLAGS $LAL_SYSTEM_INCLUDES "],
+        [*" ${flag} "*],[:],
+        [LAL_SYSTEM_INCLUDES="$LAL_SYSTEM_INCLUDES $flag"]
+      )
+    done
+    IFS="$save_IFS"
+  fi
+  AC_SUBST([LAL_SYSTEM_INCLUDES])
+
   if test "$LALSUITE_BUILD" = "true"; then
     if test "$lowercase" = "false"; then
       # should never get here: bug in build system
