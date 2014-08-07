@@ -2578,8 +2578,9 @@ INT4 readTwoSpectInputParams(inputParamsStruct *params, struct gengetopt_args_in
    params->dfmax = 0.5*round(2.0*params->dfmax*params->Tcoh)/params->Tcoh;
 
    //Error if dfmax is smaller than templateTestDf or if dfmax is smaller than the templateSearch largest modulation depth
-   XLAL_CHECK( params->dfmax >= args_info.templateTestDf_arg, XLAL_EINVAL, "templateTestDf is larger than dfmax\n" );
-   XLAL_CHECK( params->dfmax >= LAL_TWOPI*(params->fmin+params->fspan)*(args_info.templateSearchAsini_arg+3.0*args_info.templateSearchAsiniSigma_arg)/args_info.templateSearchP_arg, XLAL_EINVAL, "templateSearch parameters would make the largest modulation depth larger than dfmax\n");
+   if (args_info.templateTest_given) XLAL_CHECK( params->dfmax >= args_info.templateTestDf_arg, XLAL_EINVAL, "templateTestDf is larger than dfmax\n" );
+   if (args_info.templateSearch_given) XLAL_CHECK( params->dfmax >= LAL_TWOPI*(params->fmin+params->fspan)*(args_info.templateSearchAsini_arg+3.0*args_info.templateSearchAsiniSigma_arg)/args_info.templateSearchP_arg, XLAL_EINVAL, "templateSearch parameters would make the largest modulation depth larger than dfmax\n");
+   if (args_info.bruteForceTemplateSearch_given) XLAL_CHECK( params->dfmax >= args_info.templateTestDf_arg+2.0/params->Tcoh, XLAL_EINVAL, "templateTestDf+2/Tcoh is larger than dfmax\n" );
 
    //Upper limit settings take span of search values unless specified
    if (args_info.ULfmin_given) params->ULfmin = args_info.ULfmin_arg;            //Upper limit minimum frequency (Hz)
