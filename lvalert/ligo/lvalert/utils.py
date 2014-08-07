@@ -36,7 +36,7 @@ class LVAlertTable(Table):
   temp_data_loc: current location (just the directory)
                  of the ouput of the pipeline (this is VOLATILE)
   """
-  tableName = "LVAlert:table"
+  tableName = "lvalert:table"
   validcolumns = {
     "file": "lstring",
     "uid": "lstring",
