@@ -34,5 +34,5 @@ dist_pymodule_DATA = \
 # The output file is distributed to avoid a build dependency on the Python
 # `colormath` package (https://pypi.python.org/pypi/colormath).
 #
-$(srcdir)/cylon.csv: $(srcdir)/cylon.py
-	$(AM_V_GEN)$(PYTHON) $< > $@
+# $(srcdir)/cylon.csv: $(srcdir)/cylon.py
+# 	$(AM_V_GEN)$(PYTHON) $< > $@
