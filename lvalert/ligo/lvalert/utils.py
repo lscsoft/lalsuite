@@ -21,6 +21,10 @@ try:
 except ImportError:
     Table = object
     warnings.warn("Glue is not installed.  Some lvalert.utils functions require glue")
+else:
+    class LIGOLWContentHandler(ligolw.LIGOLWContentHandler):
+        pass
+    lsctables.use_in(LIGOLWContentHandler)
 
 ##############################################################################
 #
@@ -98,7 +102,7 @@ def get_LVAdata_from_stdin(std_in, as_dict=False):
     # We don't have a file object anymore, because we .read() it.
     # Instead, we want this to load a blob of text. 
     f = StringIO.StringIO(content)
-    doc = utils.load_fileobj(f)[0]
+    doc = utils.load_fileobj(f, contenthandler = LIGOLWContentHandler)[0]
     lvatable = table.get_table(doc, LVAlertTable.tableName)
     file = lvatable[0].file
     uid = lvatable[0].uid
@@ -125,7 +129,7 @@ def get_LVAdata_from_file(filename, as_dict=False):
                be written to
   uid: the gracedb unique id associated with the event in the LVAlertTable
   """
-  doc = utils.load_filename(filename)
+  doc = utils.load_filename(filename, contenthandler = LIGOLWContentHandler)
   lvatable = table.get_table(doc, LVAlertTable.tableName)
   file = lvatable[0].file
   uid = lvatable[0].uid
