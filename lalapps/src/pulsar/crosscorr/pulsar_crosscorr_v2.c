@@ -359,7 +359,7 @@ int main(int argc, char *argv[]){
     UINT4 numofsft=0;
     fp = fopen(uvar.sftListInputFilename,"r");
     if (fscanf(fp, PCC_SFT_HEADER, &numofsft)==EOF){
-      LogPrintf ( LOG_CRITICAL, "can't read in the length of SFT list from header", 0);
+      LogPrintf ( LOG_CRITICAL, "can't read in the length of SFT list from header\n", 0);
       XLAL_ERROR( XLAL_EFUNC );
     }
 
@@ -372,13 +372,13 @@ int main(int argc, char *argv[]){
     if(numofsft == sftIndices->length){
       for (j=0; j<numofsft; j++){
 	if( fscanf(fp,PCC_SFT_BODY,&checkDet->data[j * LALNameLength], &checkGPS[j], &checkGPSns[j])==EOF){
-	  LogPrintf ( LOG_CRITICAL, "The length of SFT list doesn't match", 0);
+	  LogPrintf ( LOG_CRITICAL, "The length of SFT list doesn't match\n", 0);
 	  XLAL_ERROR( XLAL_EFUNC );
 	}
 	if(strcmp( inputSFTs->data[sftIndices->data[j].detInd]->data[sftIndices->data[j].sftInd].name, &checkDet->data[j * LALNameLength] ) != 0
 	   ||inputSFTs->data[sftIndices->data[j].detInd]->data[sftIndices->data[j].sftInd].epoch.gpsSeconds != checkGPS[j]
 	   ||inputSFTs->data[sftIndices->data[j].detInd]->data[sftIndices->data[j].sftInd].epoch.gpsNanoSeconds != checkGPSns[j] ){
-	  LogPrintf ( LOG_CRITICAL, "The order of SFTs has been changed, it's the end of civilization", 0);
+	  LogPrintf ( LOG_CRITICAL, "The order of SFTs has been changed, it's the end of civilization\n", 0);
 	  XLAL_ERROR( XLAL_EFUNC );
 	}
       }

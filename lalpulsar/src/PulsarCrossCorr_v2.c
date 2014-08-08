@@ -374,7 +374,7 @@ int XLALCalculatePulsarCrossCorrStatistic
 	COMPLEX16 data2 = dataArray2[lowestBins->data[sftNum2]+k];
 	REAL8 sincFactor =1;
 	sincFactor = sincList->data[sftNum1 * numBins + k] * sincList->data[sftNum2 * numBins + k];
-	nume += creal ( GalphaCC * ccSign * sincFactor * conj(data1) * data2 ); /*multiWeights->data[detInd1]->data[sftNum1] *  multiWeights->data[detInd2]->data[sftNum2] **/
+	nume +=  ccSign * sincFactor * creal ( GalphaCC * conj(data1) * data2 ); /*multiWeights->data[detInd1]->data[sftNum1] *  multiWeights->data[detInd2]->data[sftNum2] **/
 	REAL8 GalphaAmp = curlyGAmp->data[alpha] * sincFactor ; /** multiWeights->data[detInd1]->data[sftNum1] *  multiWeights->data[detInd2]->data[sftNum2]*/
 	curlyGSqr += SQUARE( GalphaAmp );
 	ccSign *= -1;
