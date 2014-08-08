@@ -1005,8 +1005,8 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
         node.add_var_arg('--'+ifo+'-roqweights '+os.path.join(roqeventpath,'weights_'+ifo+'.dat'))
         node.add_input_file(os.path.join(roqeventpath,'weights_'+ifo+'.dat'))
         
-      node.add_var_arg('--roqtime_steps '+os.path.join(roqeventpath,'Num_tc_sub_domains.dat'))
-      node.add_input_file(os.path.join(roqeventpath,'Num_tc_sub_domains.dat'))
+      node.add_var_arg('--roqtime_steps '+os.path.join(roqeventpath,'roq_sizes.dat'))
+      node.add_input_file(os.path.join(roqeventpath,'roq_sizes.dat'))
       if self.config.has_option('paths','rom_nodes'):
         nodes_path=self.config.get('paths','rom_nodes')
         node.add_var_arg('--roqnodes '+nodes_path)
@@ -1663,7 +1663,7 @@ class ROMJob(pipeline.CondorDAGJob,pipeline.AnalysisJob):
       self.add_arg('-T '+str(cp.get('engine','time_step')))
     else:
       self.add_arg('-T 0.0001')
-    self.add_condor_cmd('RequestMemory','2000')
+    self.add_condor_cmd('RequestMemory',str((os.path.getsize(str(cp.get('paths','rom_b_matrix')))/(1024*1024))*4))
 
 class ROMNode(pipeline.CondorDAGNode):
   """

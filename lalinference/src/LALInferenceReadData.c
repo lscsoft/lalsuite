@@ -2893,8 +2893,10 @@ void LALInferenceSetupROQ(LALInferenceIFOData *IFOdata, ProcessParamsTable *comm
 	
 	if(LALInferenceGetProcParamVal(commandLine,"--roqtime_steps")){
 		ppt=LALInferenceGetProcParamVal(commandLine,"--roqtime_steps");
-		tempfp = fopen(ppt->value, "rb");
-		fread(&time_steps,sizeof(int),1 ,tempfp);
+		tempfp = fopen (ppt->value,"r");
+		fscanf (tempfp, "%u", &time_steps);
+		fscanf (tempfp, "%u", &n_basis);
+		fscanf (tempfp, "%u", &n_samples);
 	}
 
   printf("endtime = %f, timeMin = %f, timeMax = %f\n", endtime, timeMin, timeMax);

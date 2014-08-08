@@ -253,9 +253,19 @@ LALInferenceRunState *initialize(ProcessParamsTable *commandLine)
 {
   LALInferenceRunState *irs=NULL;
   LALInferenceIFOData *ifoPtr, *ifoListStart;
-  unsigned int n_basis;
+  unsigned int n_basis, n_samples, time_steps;
   n_basis = 965;//TODO: have it read from file or from command line.
   
+  ProcessParamsTable *ppt=NULL;
+  FILE *tempfp;
+  if(LALInferenceGetProcParamVal(commandLine,"--roqtime_steps")){
+    ppt=LALInferenceGetProcParamVal(commandLine,"--roqtime_steps");
+    tempfp = fopen (ppt->value,"r");
+    fscanf (tempfp, "%u", &time_steps);
+    fscanf (tempfp, "%u", &n_basis);
+    fscanf (tempfp, "%u", &n_samples);
+  }  
+
   MPI_Comm_rank(MPI_COMM_WORLD, &MPIrank);
 
   irs = XLALCalloc(1, sizeof(LALInferenceRunState));

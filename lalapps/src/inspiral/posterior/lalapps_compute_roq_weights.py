@@ -49,13 +49,6 @@ parser.add_option("-o", "--out", type='string',
 
 (options, args) = parser.parse_args()
 
-#basis_set = np.fromfile("/Users/vivien/mcmc/rom/TF2_ROM_40_1024/basis_complex_conjugate.dat", dtype = complex)
-#basis_set = np.fromfile(options.basis_set_path, dtype = complex)
-#basis_set = basis_set.reshape(31489, 965)
-#invV = np.fromfile("/Users/vivien/mcmc/rom/TF2_ROM_40_1024/invV_complex_conjugate.dat", dtype=complex)
-#invV = np.fromfile(options.invV_path, dtype=complex)
-#invV =invV.reshape(965, 965)
-
 B = np.load(options.b_matrix_path)
 
 def BuildWeights(data, B, deltaF):
@@ -69,11 +62,7 @@ def BuildWeights(data, B, deltaF):
 
         '''
 
-        # compute inner products <rb,data> = \int data.conj * rb 
         weights = np.dot(B, data.conjugate()) * deltaF * 4.
-
-        # compute data-specific weights
-        #weights = np.dot(invV.transpose(), E)
 
         return weights.T
 ##################################
@@ -137,7 +126,5 @@ for ifo in options.IFOs:
 	weights_file.close()
 	i += 1
 
-size_file_path = os.path.join(options.outpath,"Num_tc_sub_domains.dat")
-size_file = open(size_file_path, "wb")
-np.array(len(tcs)).tofile(size_file)
-size_file.close()
+size_file_path = os.path.join(options.outpath,"roq_sizes.dat")
+np.savetxt(size_file_path,np.array((len(tcs),B.shape[0],B.shape[1])),fmt='%u')
