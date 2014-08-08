@@ -3055,8 +3055,7 @@ reflected_extrinsic_parameters(LALInferenceRunState *runState, const REAL8 ra, c
 REAL8 LALInferenceExtrinsicParamProposal(LALInferenceRunState *runState, LALInferenceVariables *currentParams, LALInferenceVariables *proposedParams) {
   const char *propName = extrinsicParamProposalName;
   int timeflag=0;
-  REAL8 baryTime;
-  REAL8 logPropRatio=0.0;
+  REAL8 baryTime, logPropRatio = 0.0;
   LALInferenceSetVariable(runState->proposalArgs, LALInferenceCurrentProposalName, &propName);
   LALInferenceCopyVariables(currentParams, proposedParams);
   int USES_THETA_JN=0;
