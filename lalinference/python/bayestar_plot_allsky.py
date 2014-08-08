@@ -32,6 +32,7 @@ __author__ = "Leo Singer <leo.singer@ligo.org>"
 
 from optparse import Option, OptionParser
 from lalinference.bayestar import command
+import lalinference.cmap
 from matplotlib import cm
 colormap_choices = sorted(cm.cmap_d.keys())
 parser = OptionParser(
@@ -40,7 +41,7 @@ parser = OptionParser(
     option_list = [
         Option("-o", "--output", metavar="FILE.{pdf,png}",
             help="name of output file [default: plot to screen]"),
-        Option("--colormap", default="jet", choices=colormap_choices,
+        Option("--colormap", default="cylon", choices=colormap_choices,
             metavar='|'.join(colormap_choices),
             help="name of matplotlib colormap [default: %default]"),
         Option("--figure-width", metavar="INCHES", type=float, default=8.,
@@ -106,7 +107,7 @@ plot.healpix_heatmap(probperdeg2, dlon=dlon,
 
 if opts.colorbar:
     # Plot colorbar.
-    cb = plot.colorbar(vmax)
+    cb = plot.colorbar()
 
     # Set colorbar label.
     cb.set_label(r'prob. per deg$^2$')
@@ -128,7 +129,7 @@ if opts.geo:
         geojson = json.load(geojson_file)
     for shape in geojson['geometries']:
         verts = np.deg2rad(shape['coordinates'])
-        plt.plot(verts[:, 0], verts[:, 1], color='black', linewidth=1, alpha=0.25)
+        plt.plot(verts[:, 0], verts[:, 1], color='0.5', linewidth=0.5)
 
 # Add markers (e.g., for injections or external triggers).
 for ra, dec in np.deg2rad(opts.radec):

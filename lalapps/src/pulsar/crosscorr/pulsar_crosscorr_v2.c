@@ -74,9 +74,10 @@ typedef struct{
   REAL8   mismatchT;          /**< mismatch for spacing in time of periapse passage */
   REAL8   mismatchP;          /**< mismatch for spacing in period */
   INT4    numCand;            /**< number of candidates to keep in output toplist */
-  CHAR    *pairListInputFilename; /**< input filename containing list of sft index pairs (if not provided, determine list of pairs */
+  CHAR    *pairListInputFilename;  /**< input filename containing list of sft index pairs (if not provided, determine list of pairs */
   CHAR    *pairListOutputFilename; /**< output filename to write list of sft index pairs */
-  CHAR    *sftListOutputFilename; /**< output filename to write list of sfts */
+  CHAR    *sftListOutputFilename;  /**< output filename to write list of sfts */
+  CHAR    *sftListInputFilename;   /**< input filename to read in the  list of sfts and check the order of SFTs */
   CHAR    *toplistFilename;   /**< output filename containing candidates in toplist */
 } UserInput_t;
 
@@ -116,7 +117,7 @@ int main(int argc, char *argv[]){
   UINT4Vector *lowestBins = NULL;
   REAL8Vector *kappaValues = NULL;
   REAL8Vector *signalPhases = NULL;
-  REAL8Vector *sincValueList = NULL;
+  REAL8VectorSequence *sincValueList = NULL;
 
   PulsarDopplerParams XLAL_INIT_DECL(dopplerpos);
   PulsarDopplerParams thisBinaryTemplate, binaryTemplateSpacings;
@@ -296,55 +297,99 @@ int main(int argc, char *argv[]){
 
   /* Construct the list of SFT pairs */
 #define PCC_SFTPAIR_HEADER "# The length of SFT-pair list is %u #\n"
+#define PCC_SFTPAIR_BODY "%u %u\n"
 #define PCC_SFT_HEADER "# The length of SFT list is %u #\n"
+#define PCC_SFT_BODY "%s %d %d\n"
   FILE *fp = NULL;
 
-  if (strcmp(uvar.pairListInputFilename,"")) { /* If the user provided a list for reading, use it */
-      if((sftPairs = XLALCalloc(1, sizeof(sftPairs))) == NULL){
-	XLAL_ERROR(XLAL_ENOMEM);
-      }
-      if((fp = fopen(uvar.pairListInputFilename, "r")) == NULL){
-	LogPrintf ( LOG_CRITICAL, "didn't find SFT-pair list while readin = TRUE\n", 0);
-	XLAL_ERROR( XLAL_EFUNC );
-	}
-      fscanf(fp,PCC_SFTPAIR_HEADER,&sftPairs->length);
-	/* FIXME: Should check the return value of this */
-
-      if((sftPairs->data = XLALCalloc(sftPairs->length, sizeof(*sftPairs->data)))==NULL){
-	XLALFree(sftPairs);
-	XLAL_ERROR(XLAL_ENOMEM);
-      }
-
-      for(j = 0; j < sftPairs->length; j++){ /*read in  the SFT-pair list */
-	fscanf(fp,"%u %u\n", &sftPairs->data[j].sftNum[0], &sftPairs->data[j].sftNum[1]);
-	/* FIXME: Should check the return value of this */
-      }
-      fclose(fp);
-
-  } else { /* if not, construct the list of pairs */
-      if ( ( XLALCreateSFTPairIndexList( &sftPairs, sftIndices, inputSFTs, uvar.maxLag, uvar.inclAutoCorr ) != XLAL_SUCCESS ) ) {
-	LogPrintf ( LOG_CRITICAL, "%s: XLALCreateSFTPairIndexList() failed with errno=%d\n", __func__, xlalErrno );
-	XLAL_ERROR( XLAL_EFUNC );
-      }
-  }
-
-  if (strcmp(uvar.pairListOutputFilename,"")) { /* Write the list of pairs to a file, if a name was provided */
-      fp = fopen(uvar.pairListOutputFilename,"w");
-      fprintf(fp,PCC_SFTPAIR_HEADER, sftPairs->length ); /*output the length of SFT-pair list to the header*/
-      for(j = 0; j < sftPairs->length; j++){
-	fprintf(fp,"%u %u\n", sftPairs->data[j].sftNum[0], sftPairs->data[j].sftNum[1]);
-      }
-      fclose(fp);
-  }
-
-  if (strcmp(uvar.sftListOutputFilename,"")) { /* Write the list of SFTs to a file for sanity-checking purposes */
-      fp = fopen(uvar.sftListOutputFilename,"w");
-      fprintf(fp,PCC_SFT_HEADER, sftIndices->length ); /*output the length of SFT list to the header*/
-      for(j = 0; j < sftIndices->length; j++){ /*output the SFT list */
-	fprintf(fp,"%u %u\n", sftIndices->data[j].detInd, sftIndices->data[j].sftInd);
-      }
-      fclose(fp);
+  if (XLALUserVarWasSet(&uvar.pairListInputFilename)) { /* If the user provided a list for reading, use it */
+    if((sftPairs = XLALCalloc(1, sizeof(sftPairs))) == NULL){
+      XLAL_ERROR(XLAL_ENOMEM);
     }
+    if((fp = fopen(uvar.pairListInputFilename, "r")) == NULL){
+      LogPrintf ( LOG_CRITICAL, "didn't find SFT-pair list file with given input name\n", 0);
+      XLAL_ERROR( XLAL_EFUNC );
+    }
+    if(fscanf(fp,PCC_SFTPAIR_HEADER,&sftPairs->length)==EOF){
+      LogPrintf ( LOG_CRITICAL, "can't read the length of SFT-pair list from the header\n", 0);
+      XLAL_ERROR( XLAL_EFUNC );
+    }
+
+    if((sftPairs->data = XLALCalloc(sftPairs->length, sizeof(*sftPairs->data)))==NULL){
+      XLALFree(sftPairs);
+      XLAL_ERROR(XLAL_ENOMEM);
+    }
+
+    for(j = 0; j < sftPairs->length; j++){ /*read in  the SFT-pair list */
+      if(fscanf(fp,PCC_SFTPAIR_BODY, &sftPairs->data[j].sftNum[0], &sftPairs->data[j].sftNum[1])==EOF){
+	LogPrintf ( LOG_CRITICAL, "The length of SFT-pair list doesn't match!", 0);
+	XLAL_ERROR( XLAL_EFUNC );
+      }
+    }
+    fclose(fp);
+
+  }
+
+  else { /* if not, construct the list of pairs */
+    if ( ( XLALCreateSFTPairIndexList( &sftPairs, sftIndices, inputSFTs, uvar.maxLag, uvar.inclAutoCorr ) != XLAL_SUCCESS ) ) {
+      LogPrintf ( LOG_CRITICAL, "%s: XLALCreateSFTPairIndexList() failed with errno=%d\n", __func__, xlalErrno );
+      XLAL_ERROR( XLAL_EFUNC );
+    }
+  }
+
+  if (XLALUserVarWasSet(&uvar.pairListOutputFilename)) { /* Write the list of pairs to a file, if a name was provided */
+    fp = fopen(uvar.pairListOutputFilename,"w");
+    fprintf(fp,PCC_SFTPAIR_HEADER, sftPairs->length ); /*output the length of SFT-pair list to the header*/
+    for(j = 0; j < sftPairs->length; j++){
+      fprintf(fp,PCC_SFTPAIR_BODY, sftPairs->data[j].sftNum[0], sftPairs->data[j].sftNum[1]);
+    }
+    fclose(fp);
+  }
+
+  if (XLALUserVarWasSet(&uvar.sftListOutputFilename)) { /* Write the list of SFTs to a file for sanity-checking purposes */
+    fp = fopen(uvar.sftListOutputFilename,"w");
+    fprintf(fp,PCC_SFT_HEADER, sftIndices->length ); /*output the length of SFT list to the header*/
+    for(j = 0; j < sftIndices->length; j++){ /*output the SFT list */
+      fprintf(fp,PCC_SFT_BODY, inputSFTs->data[sftIndices->data[j].detInd]->data[sftIndices->data[j].sftInd].name, inputSFTs->data[sftIndices->data[j].detInd]->data[sftIndices->data[j].sftInd].epoch.gpsSeconds, inputSFTs->data[sftIndices->data[j].detInd]->data[sftIndices->data[j].sftInd].epoch.gpsNanoSeconds);
+    }
+    fclose(fp);
+  }
+
+  else if(XLALUserVarWasSet(&uvar.sftListInputFilename)){/*do a sanity check of the order of SFTs list if the name of input SFT list is given*/
+    UINT4 numofsft=0;
+    fp = fopen(uvar.sftListInputFilename,"r");
+    if (fscanf(fp, PCC_SFT_HEADER, &numofsft)==EOF){
+      LogPrintf ( LOG_CRITICAL, "can't read in the length of SFT list from header", 0);
+      XLAL_ERROR( XLAL_EFUNC );
+    }
+
+    CHARVectorSequence *checkDet=NULL;
+    if ((checkDet = XLALCreateCHARVectorSequence (numofsft, LALNameLength) ) == NULL){
+      LogPrintf ( LOG_CRITICAL, "%s: XLALCreateCHARVector() failed with errno=%d\n", __func__, xlalErrno );
+      XLAL_ERROR( XLAL_EFUNC );
+    }
+    INT4 checkGPS[numofsft], checkGPSns[numofsft];
+    if(numofsft == sftIndices->length){
+      for (j=0; j<numofsft; j++){
+	if( fscanf(fp,PCC_SFT_BODY,&checkDet->data[j * LALNameLength], &checkGPS[j], &checkGPSns[j])==EOF){
+	  LogPrintf ( LOG_CRITICAL, "The length of SFT list doesn't match", 0);
+	  XLAL_ERROR( XLAL_EFUNC );
+	}
+	if(strcmp( inputSFTs->data[sftIndices->data[j].detInd]->data[sftIndices->data[j].sftInd].name, &checkDet->data[j * LALNameLength] ) != 0
+	   ||inputSFTs->data[sftIndices->data[j].detInd]->data[sftIndices->data[j].sftInd].epoch.gpsSeconds != checkGPS[j]
+	   ||inputSFTs->data[sftIndices->data[j].detInd]->data[sftIndices->data[j].sftInd].epoch.gpsNanoSeconds != checkGPSns[j] ){
+	  LogPrintf ( LOG_CRITICAL, "The order of SFTs has been changed, it's the end of civilization", 0);
+	  XLAL_ERROR( XLAL_EFUNC );
+	}
+      }
+      fclose(fp);
+      XLALDestroyCHARVectorSequence(checkDet);
+    }
+    else{
+      LogPrintf ( LOG_CRITICAL, "Run for your life, the length of SFT list doesn't match", 0);
+      XLAL_ERROR( XLAL_EFUNC );
+    }
+  }
   else
     {
 
@@ -450,7 +495,7 @@ int main(int argc, char *argv[]){
     LogPrintf ( LOG_CRITICAL, "%s: XLALCreateREAL8Vector() failed with errno=%d\n", __func__, xlalErrno );
     XLAL_ERROR( XLAL_EFUNC );
   }
-  if ((sincValueList = XLALCreateREAL8Vector ( numSFTs ) ) == NULL){
+  if ((sincValueList = XLALCreateREAL8VectorSequence ( numSFTs, uvar.numBins ) ) == NULL){
     LogPrintf ( LOG_CRITICAL, "%s: XLALCreateREAL8Vector() failed with errno=%d\n", __func__, xlalErrno );
     XLAL_ERROR( XLAL_EFUNC );
   }
@@ -507,7 +552,7 @@ int main(int argc, char *argv[]){
   XLALDestroyREAL8Vector ( kappaValues );
   XLALDestroyUINT4Vector ( lowestBins );
   XLALDestroyREAL8Vector ( shiftedFreqs );
-  XLALDestroyREAL8Vector ( sincValueList );
+  XLALDestroyREAL8VectorSequence ( sincValueList );
   XLALDestroyMultiSSBtimes ( multiBinaryTimes );
   XLALDestroyMultiSSBtimes ( multiSSBTimes );
   XLALDestroyREAL8Vector ( curlyGUnshifted );
@@ -559,9 +604,7 @@ int XLALInitUserVars (UserInput_t *uvar)
   uvar->deltaRad = 0.0;
   uvar->rngMedBlock = 50;
   uvar->numBins = 1;
-  uvar->pairListInputFilename = XLALStringDuplicate("");
-  uvar->pairListOutputFilename = XLALStringDuplicate("");
-  uvar->sftListOutputFilename = XLALStringDuplicate("");
+
   /* default for reftime is in the middle */
   uvar->refTime = 0.5*(uvar->startTime + uvar->endTime);
 
@@ -620,7 +663,8 @@ int XLALInitUserVars (UserInput_t *uvar)
   XLALregINTUserStruct   ( numCand,         0,  UVAR_OPTIONAL, "Number of candidates to keep in toplist");
   XLALregSTRINGUserStruct( pairListInputFilename, 0,  UVAR_OPTIONAL, "Name of file from which to read list of SFT pairs");
   XLALregSTRINGUserStruct( pairListOutputFilename, 0,  UVAR_OPTIONAL, "Name of file to which to write list of SFT pairs");
-  XLALregSTRINGUserStruct( sftListOutputFilename, 0,  UVAR_OPTIONAL, "Name of file to whick to write list of SFTs (for sanity checks)");
+  XLALregSTRINGUserStruct( sftListOutputFilename, 0,  UVAR_OPTIONAL, "Name of file to which to write list of SFTs (for sanity checks)");
+  XLALregSTRINGUserStruct( sftListInputFilename, 0,  UVAR_OPTIONAL, "Name of file to which to read in list of SFTs (for sanity checks)");
   XLALregSTRINGUserStruct( toplistFilename, 0,  UVAR_OPTIONAL, "Output filename containing candidates in toplist");
 
   if ( xlalErrno ) {

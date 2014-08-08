@@ -9,6 +9,8 @@ from subprocess import Popen,PIPE
 # Note that some of these utilities are not available unless glue is installed.
 
 import warnings
+import json
+import StringIO
 
 try:
     from glue.ligolw import ligolw
@@ -19,6 +21,10 @@ try:
 except ImportError:
     Table = object
     warnings.warn("Glue is not installed.  Some lvalert.utils functions require glue")
+else:
+    class LIGOLWContentHandler(ligolw.LIGOLWContentHandler):
+        pass
+    lsctables.use_in(LIGOLWContentHandler)
 
 ##############################################################################
 #
@@ -34,7 +40,7 @@ class LVAlertTable(Table):
   temp_data_loc: current location (just the directory)
                  of the ouput of the pipeline (this is VOLATILE)
   """
-  tableName = "LVAlert:table"
+  tableName = "lvalert:table"
   validcolumns = {
     "file": "lstring",
     "uid": "lstring",
@@ -73,28 +79,44 @@ def parse_file_url(file_url):
 
 def get_LVAdata_from_stdin(std_in, as_dict=False):
   """
-  this function takes an LVAlertTable from sys.stdin and it returns:
-  host: the machine the payload file was created on
-  full_path: the full path to (and including) the payload file
-  general_dir: the directory in gracedb that the output of your code should
-               be written to
-  uid: the gracedb unique id associated with the event in the LVAlertTable
-  """
-  doc = utils.load_fileobj(std_in)[0]
-  lvatable = table.get_table(doc, LVAlertTable.tableName)
-  file = lvatable[0].file
-  uid = lvatable[0].uid
-  data_loc = lvatable[0].temp_data_loc
+  this function takes an LVAlertTable *OR* a JSON-serialized dictionary from 
+  sys.stdin and it returns:
 
+  a full dictionary of the LVAlertTable values, or:
+
+  file: the filename (if any) associated with the alert
+  uid: the gracedb unique id associated with the event in the LVAlertTable
+  data_loc: a URL for the payload file
+  """
+  warnings.warn("get_LVAdata_from_stdin is deprecated. Use Python's json module: json.loads(stdin.read())")
+  content = std_in.read()
+  # Try interpreting it as JSON first.
+  try:
+    out_dict = json.loads(content)
+    file = out_dict['file']
+    uid  = out_dict['uid']
+    data_loc = out_dict['data_loc']
+    description = out_dict['description']
+    alert_type = out_dict['alert_type']
+  except Exception, e:            
+    # We don't have a file object anymore, because we .read() it.
+    # Instead, we want this to load a blob of text. 
+    f = StringIO.StringIO(content)
+    doc = utils.load_fileobj(f, contenthandler = LIGOLWContentHandler)[0]
+    lvatable = table.get_table(doc, LVAlertTable.tableName)
+    file = lvatable[0].file
+    uid = lvatable[0].uid
+    data_loc = lvatable[0].temp_data_loc
+    description = lvatable[0].description
+    alert_type = lvatable[0].alert_type
   if as_dict:
     return {
-      "file" : lvatable[0].file,
-      "uid" : lvatable[0].uid,
-      "data_loc" : lvatable[0].temp_data_loc,
-      "description" : lvatable[0].description,
-      "alert_type" : lvatable[0].alert_type,
+      "file"        : file,
+      "uid"         : uid,
+      "data_loc"    : data_loc,
+      "description" : description,
+      "alert_type"  : alert_type,
     }
-
   return file, uid, data_loc
 
 def get_LVAdata_from_file(filename, as_dict=False):
@@ -107,7 +129,7 @@ def get_LVAdata_from_file(filename, as_dict=False):
                be written to
   uid: the gracedb unique id associated with the event in the LVAlertTable
   """
-  doc = utils.load_filename(filename)
+  doc = utils.load_filename(filename, contenthandler = LIGOLWContentHandler)
   lvatable = table.get_table(doc, LVAlertTable.tableName)
   file = lvatable[0].file
   uid = lvatable[0].uid
