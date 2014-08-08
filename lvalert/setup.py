@@ -5,13 +5,13 @@ import os
 
 from distutils.core import setup
 
-version = "1.0"
+version = "1.1"
 
 setup(
   name = "ligo-lvalert",
   version = version,
-  maintainer = "Brian Moe",
-  maintainer_email = "brian.moe@ligo.org",
+  maintainer = "Branson Stephens",
+  maintainer_email = "branson.stephens@ligo.org",
   description = "LIGO-Virgo Alert Network",
   long_description = "The LIGO-Virgo Alert Network (LVAlert) is a prototype notification service built XMPP to provide a basic notification tool which allows multiple producers and consumers of notifications.",
 
