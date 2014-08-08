@@ -1,5 +1,5 @@
 # DAG generation code for running LALInference pipeline
-# (C) 2012 John Veitch, Vivien Raymond
+# (C) 2012 John Veitch
 
 from lalapps import lalinference_pipe_utils as pipe_utils
 from lalapps import inspiralutils
@@ -15,7 +15,6 @@ the config.ini file.
 
 The user can specify either an injection file to analyse, with the --inj option,
 a list of SnglInspiralTable or CoincInspiralTable triggers with the --<x>-triggers options,
-a GraceDB ID with the --gid option,
 or an ASCII list of GPS times with the --gps-time-file option.
 
 If none of the above options are given, the pipeline will analyse the entire

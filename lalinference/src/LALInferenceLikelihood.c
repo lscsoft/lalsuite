@@ -36,7 +36,7 @@
 #include <gsl/gsl_sf_bessel.h>
 #include <gsl/gsl_sf_dawson.h>
 #include <gsl/gsl_sf_erf.h>
-#include <gsl/gsl_complex_math.h>
+
 #include <lal/LALInferenceTemplate.h>
 
 #include "logaddexp.h"
@@ -105,9 +105,6 @@ void LALInferenceInitLikelihood(LALInferenceRunState *runState)
      fprintf(stderr, "Using marginalised in time and phase likelihood.\n");
      runState->likelihood=&LALInferenceMarginalisedTimeLogLikelihood;
      LALInferenceAddVariable(runState->currentParams, "margtimephi", &margphi, LALINFERENCE_UINT4_t,LALINFERENCE_PARAM_FIXED);
-   } else if (LALInferenceGetProcParamVal(commandLine, "--roq")) {
-     fprintf(stderr, "Using ROQ likelihood.\n");
-     runState->likelihood=&LALInferenceROQLogLikelihood;
    } else {
     runState->likelihood=&LALInferenceUndecomposedFreqDomainLogLikelihood;
    }
@@ -149,35 +146,6 @@ void LALInferenceInitLikelihood(LALInferenceRunState *runState)
                               {-0.005107684668720825, -0.0044777735406402895, -0.005543879869413772, 0.006609741178005571, 0.0006211480573305693, -0.002445676747004324, 0.0057186369973531905, -0.00787924472768192, -0.003762752871990247, -0.004801518314458137, -0.011173674374382736, 0.0008818947598624995, 0.042639958466440225, 0.0010194948614718209, 0.0033872675386130637},
                               {0.004402554308030674, -0.011250694688474675, 0.004477221036185477, -0.003292722856107429, -0.006603857049454523, -0.006454778807421815, -0.0005191095254772072, -0.005321753837620446, 0.0003370445313891318, -0.014065326026662679, -0.0008193127407211239, -0.0007262691465810616, 0.0010194948614718226, 0.05244900188599414, -0.000256550861960499},
                               {-0.00334987648531921, 0.007465228985669282, -0.006204169580739178, -0.005873218251875899, -0.009241221870695395, 0.003330357760641278, -0.008466566781233205, 0.011126783289057604, -0.0031735521631824654, -0.005619012077114915, -0.007137012700864866, -0.006482422704208912, 0.0033872675386130632, -0.000256550861960499, 0.05380987317762257}};
-
-
-const char *non_intrinsic_params[] = {"rightascension", "declination", "polarisation", "time",
-                                "deltaLogL", "logL", "deltaloglH1", "deltaloglL1", "deltaloglV1",
-                                "logw", "logPrior", NULL};
-
-LALInferenceVariables LALInferenceGetInstrinsicParams(LALInferenceVariables *currentParams)
-/***************************************************************/
-/* Return a variables structure containing only intrinsic      */
-/* parameters.                                                 */
-/***************************************************************/
-{
-    // TODO: add pointer to template function here.
-    // (otherwise same parameters but different template will lead to no re-computation!!)
-    LALInferenceVariables intrinsicParams;
-    const char **non_intrinsic_param = non_intrinsic_params;
-
-    intrinsicParams.head      = NULL;
-    intrinsicParams.dimension = 0;
-    LALInferenceCopyVariables(currentParams, &intrinsicParams);
-
-    while (*non_intrinsic_param) {
-        if (LALInferenceCheckVariable(&intrinsicParams, *non_intrinsic_param))
-            LALInferenceRemoveVariable(&intrinsicParams, *non_intrinsic_param);
-        non_intrinsic_param++;
-    }
-
-    return intrinsicParams;
-}
 
 
 INT4 LALInferenceLineSwitch(INT4 lineFlag, INT4 Nlines, INT4 *lines_array, INT4 *widths_array, INT4 i)
@@ -224,196 +192,6 @@ static int checkItemAndAdd(void *item, void **array)
  */
 REAL8 LALInferenceZeroLogLikelihood(LALInferenceVariables UNUSED *currentParams, LALInferenceIFOData UNUSED *data, LALInferenceTemplateFunction UNUSED template) {
   return 0.0;
-}
-
-REAL8 LALInferenceROQLogLikelihood(LALInferenceVariables *currentParams, LALInferenceIFOData * data, 
-                              LALInferenceTemplateFunction templt)
-{
-  double Fplus, Fcross;
-  double h_dot_h=0;
-  double FplusScaled, FcrossScaled;
-  REAL8 loglikeli=0;
-  unsigned int weight_index;
-  LALInferenceIFOData *dataPtr;
-  double ra, dec, psi, distMpc, gmst;
-  double GPSdouble;
-  LIGOTimeGPS GPSlal;
-  double chisquared;
-  double timedelay;  /* time delay b/w iterferometer & geocenter w.r.t. sky location */
-  double timeshift=0;  /* time shift (not necessarily same as above)                   */
-  double time_requested, time_min, time_step;
-  double timeTmp;
-  int different;
-	double mc;
-	UINT4 logDistFlag=0;
-  LALStatus status;
-  memset(&status,0,sizeof(status));
-  LALInferenceVariables intrinsicParams;
-  
-  gsl_complex complex_d_dot_h;
-  
-  gsl_complex gsl_fplus;
-  gsl_complex gsl_fcross;
-  
-  //gsl_complex exp_i_pi;
-  //gsl_complex cross_factor;
-  //gsl_complex total_scale_factor;
-  
-  if(data==NULL) {XLAL_ERROR_REAL8(XLAL_EINVAL,"ERROR: Encountered NULL data pointer in likelihood\n");}
-  
-  logDistFlag=LALInferenceCheckVariable(currentParams, "logdistance");
-  if(LALInferenceCheckVariable(currentParams,"logmc")){
-    mc=exp(*(REAL8 *)LALInferenceGetVariable(currentParams,"logmc"));
-    LALInferenceAddVariable(currentParams,"chirpmass",&mc,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
-  }
-  
-  /* determine source's sky location & orientation parameters: */
-  ra        = *(REAL8*) LALInferenceGetVariable(currentParams, "rightascension"); /* radian      */
-  dec       = *(REAL8*) LALInferenceGetVariable(currentParams, "declination");    /* radian      */
-  psi       = *(REAL8*) LALInferenceGetVariable(currentParams, "polarisation");   /* radian      */
-  GPSdouble = *(REAL8*) LALInferenceGetVariable(currentParams, "time");           /* GPS seconds */
-  if(logDistFlag)
-    distMpc = exp(*(REAL8*)LALInferenceGetVariable(currentParams,"logdistance"));
-  else
-    distMpc = *(REAL8*) LALInferenceGetVariable(currentParams, "distance");       /* Mpc         */
-  
-  double iota	= 0.0;
-  if(LALInferenceCheckVariable(currentParams,"inclination")){
-    iota = *(REAL8*) LALInferenceGetVariable(currentParams, "inclination");
-  }
-  else if(LALInferenceCheckVariable(currentParams,"theta_JN")){
-    iota = *(REAL8*) LALInferenceGetVariable(currentParams, "theta_JN");
-  }
-  
-  double cosiota = cos(iota);
-  double plusCoef  = 0.5 * (1.0 + cosiota*cosiota);
-  double crossCoef = cosiota;
-  
-  /* figure out GMST: */
-  XLALGPSSetREAL8(&GPSlal, GPSdouble);
-  gmst=XLALGreenwichMeanSiderealTime(&GPSlal);
-  
-  intrinsicParams = LALInferenceGetInstrinsicParams(currentParams);
-  
-  chisquared = 0.0;
-  /* loop over data (different interferometers): */
-  dataPtr = data;
-  
-  while (dataPtr != NULL) {
-    /* The parameters the Likelihood function can handle by itself   */
-    /* (and which shouldn't affect the template function) are        */
-    /* sky location (ra, dec), polarisation and signal arrival time. */
-    /* Note that the template function shifts the waveform to so that*/
-    /* t_c corresponds to the "time" parameter in                    */
-    /* IFOdata->modelParams (set, e.g., from the trigger value).     */
-    
-    /* Reset log-likelihood */
-    dataPtr->loglikelihood = 0.0;
-    
-    /* Compare parameter values with parameter values corresponding  */
-    /* to currently stored template; ignore "time" variable:         */
-    if (LALInferenceCheckVariable(dataPtr->modelParams, "time")) {
-      timeTmp = *(REAL8 *) LALInferenceGetVariable(dataPtr->modelParams, "time");
-      LALInferenceRemoveVariable(dataPtr->modelParams, "time");
-    }
-    else timeTmp = GPSdouble;
-    
-    /* "different" now may also mean that "dataPtr->modelParams" */
-    /* wasn't allocated yet (as in the very 1st iteration).      */
-    different = LALInferenceCompareVariables(dataPtr->modelParams, &intrinsicParams);
-    
-    if (different) { /* template needs to be re-computed: */
-      LALInferenceCopyVariables(&intrinsicParams, dataPtr->modelParams);
-      LALInferenceAddVariable(dataPtr->modelParams, "time", &timeTmp, LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_LINEAR);
-      templt(dataPtr);
-      LALInferenceTemplateROQ_amp_squared(dataPtr);
-      if(XLALGetBaseErrno()==XLAL_FAILURE) /* Template generation failed in a known way, set -Inf likelihood */
-        return(-DBL_MAX);
-      
-      if (dataPtr->modelDomain == LAL_SIM_DOMAIN_TIME) {
-        /* TD --> FD. */
-        LALInferenceExecuteFT(dataPtr);
-      }
-    }
-    else { /* no re-computation necessary. Return back "time" value, do nothing else: */
-      LALInferenceAddVariable(dataPtr->modelParams, "time", &timeTmp, LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_LINEAR);
-    }
-    
-    /* determine beam pattern response (F_plus and F_cross) for given Ifo: */
-    XLALComputeDetAMResponse(&Fplus, &Fcross, (const REAL4(*)[3])dataPtr->detector->response, ra, dec, psi, gmst);
-    
-    /* signal arrival time (relative to geocenter); */
-    timedelay = XLALTimeDelayFromEarthCenter(dataPtr->detector->location, ra, dec, &GPSlal);
-    time_requested =  GPSdouble + timedelay;
-    //printf("time_requested = %f\n", time_requested);
-    /* include distance (overall amplitude) effect in Fplus/Fcross: */
-    FplusScaled  = Fplus  / distMpc;
-    FcrossScaled = Fcross / distMpc;
-    
-    if (LALInferenceCheckVariable(currentParams, "crazyInjectionHLSign") &&
-        *((INT4 *)LALInferenceGetVariable(currentParams, "crazyInjectionHLSign"))) {
-      if (strstr(dataPtr->name, "H") || strstr(dataPtr->name, "L")) {
-        FplusScaled *= -1.0;
-        FcrossScaled *= -1.0;
-      }
-    }
-    
-    dataPtr->fPlus = FplusScaled;
-    dataPtr->fCross = FcrossScaled;
-    dataPtr->timeshift = timeshift;
-    
-    gsl_fplus = gsl_complex_rect(FplusScaled,0.0);
-    gsl_fcross = gsl_complex_rect(FcrossScaled,0.0);
-    
-    //exp_i_pi = gsl_complex_polar (0, M_PI);
-    //cross_factor = gsl_complex_mul_real(exp_i_pi, FcrossScaled);
-    //total_scale_factor = gsl_complex_add_real (cross_factor, FplusScaled); //ONLY VALID FOR non-precessing, dominant mode only templates
-    
-    //gsl_blas_zscal (total_scale_factor, data->roqData->hplus);
- 
-    gsl_vector_complex_set_zero(dataPtr->roqData->hstrain);
-    
-    gsl_blas_zaxpy(gsl_fplus,dataPtr->roqData->hplus,data->roqData->hstrain);
-    gsl_blas_zaxpy(gsl_fcross,dataPtr->roqData->hcross,data->roqData->hstrain);
-    
-    time_step = (float)dataPtr->roqData->time_weights_width / (float)dataPtr->roqData->weights->size2;
-    time_min = dataPtr->roqData->trigtime - 0.5*dataPtr->roqData->time_weights_width;
-    
-    //printf("time_step=%f\n",time_step);
-    //printf("time_min=%f\n",time_min);
-    
-    time_requested -= time_min;
-    
-    time_requested /= time_step;
-    time_requested = floor(time_requested + 0.5);
-    
-    //time_requested *= time_step;
-
-    // then set tc in MCMC to be one of the discrete values
-    weight_index = (unsigned int) (time_requested);
-    
-    //printf("rounded time requested and index: %f %d\n", time_requested, weight_index);
-    gsl_vector_complex_view weights_row = gsl_matrix_complex_column(dataPtr->roqData->weights, weight_index);
- 
-    // compute h_dot_h and d_dot_h
-    gsl_blas_zdotu( &(weights_row.vector), dataPtr->roqData->hstrain, &complex_d_dot_h);
-  
-    h_dot_h = (*(dataPtr->roqData->amp_squared)) * (pow(dataPtr->fPlus*plusCoef, 2.) + pow(dataPtr->fCross*crossCoef, 2.)) * dataPtr->roqData->int_f_7_over_3;
-    
-    dataPtr->loglikelihood = GSL_REAL(complex_d_dot_h);
-    dataPtr->loglikelihood += -0.5*h_dot_h;
-    
-    loglikeli += dataPtr->loglikelihood;
-    
-    //printf("GSL_REAL(complex_d_dot_h)=%e\n",GSL_REAL(complex_d_dot_h));
-    //printf("h_dot_h=%e\n",h_dot_h);
-    //printf("loglikeli=%e\n",loglikeli);
-    
-    dataPtr = dataPtr->next;
-  }
-
-  LALInferenceClearVariables(&intrinsicParams);
-  return(loglikeli);
 }
 
 REAL8 LALInferenceUndecomposedFreqDomainLogLikelihood(LALInferenceVariables *currentParams, LALInferenceIFOData * data, 
