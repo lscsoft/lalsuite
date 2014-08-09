@@ -1,10 +1,12 @@
 EXTRA_DIST =
 include $(top_srcdir)/gnuscripts/lalsuite_test.am
+AM_CPPFLAGS = -I$(top_srcdir)/src @AM_CPPFLAGS@ 
 
 # Add compiled test programs to this variable
 test_programs += EOBNRv2Test
 test_programs += GRFlagsTest
 test_programs += PhenomPTest
+test_programs += PNCoefficients
 test_programs += PrecessWaveformEOBNRTest
 test_programs += PrecessWaveformIMRPhenomBTest
 test_programs += PrecessWaveformTest
