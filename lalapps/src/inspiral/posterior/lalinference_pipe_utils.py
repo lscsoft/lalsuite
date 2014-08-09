@@ -980,7 +980,12 @@ class EngineJob(pipeline.CondorDAGJob,pipeline.AnalysisJob):
       exe=cp.get('condor',self.engine)
       if site is not None and site!='local':
         universe='vanilla'
-      else: universe="standard"
+      else:
+        # Run in the vanilla universe when using resume
+        if cp.has_option('engine','resume'):
+          universe='vanilla'
+        else:
+          universe='standard'
     else:
       print 'LALInferencePipe: Unknown engine node type %s!'%(self.engine)
       sys.exit(1)
