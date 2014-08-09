@@ -753,6 +753,8 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
     pagedir=os.path.join(self.webdir,evstring,myifos)
     mkdirs(pagedir)
     respagenode=self.add_results_page_node(outdir=pagedir)
+    if self.config.has_option('input','injection-file') and event.event_id is not None:
+        respagenode.set_injection(self.config.get('input','injection-file'),event.event_id)
     map(respagenode.add_engine_parent, enginenodes)
     if event.GID is not None:
       if self.config.has_option('analysis','upload-to-gracedb'):
@@ -775,6 +777,9 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
     respagenode=self.add_results_page_node(outdir=pagedir)
     respagenode.set_bayes_coherent_noise(enginenodes[0].get_B_file())
     respagenode.set_header_file(enginenodes[0].get_header_file())
+    if self.config.has_option('input','injection-file') and event.event_id is not None:
+        respagenode.set_injection(self.config.get('input','injection-file'),event.event_id)
+
     map(respagenode.add_engine_parent, enginenodes)
     if event.GID is not None:
       if self.config.has_option('analysis','upload-to-gracedb'):
