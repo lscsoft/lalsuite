@@ -193,11 +193,15 @@ def indicator(n, i):
     return m
 
 
-def angle_distance(theta0, phi0, theta1, phi1):
-    """Angular separation in radians between two points on the unit sphere."""
+def cos_angle_distance(theta0, phi0, theta1, phi1):
+    """Cosine of angular separation in radians between two points on the unit sphere."""
     cos_angle_distance = (np.cos(phi1 - phi0) * np.sin(theta0) * np.sin(theta1)
         + np.cos(theta0) * np.cos(theta1))
-    return np.arccos(np.clip(cos_angle_distance, -1, 1))
+    return np.clip(cos_angle_distance, -1, 1)
+
+def angle_distance(theta0, phi0, theta1, phi1):
+    """Angular separation in radians between two points on the unit sphere."""
+    return np.arccos(cos_angle_distance(theta0, phi0, theta1, phi1))
 
 
 # Class to hold return value of find_injection method
