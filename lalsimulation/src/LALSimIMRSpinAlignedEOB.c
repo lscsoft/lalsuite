@@ -505,7 +505,7 @@ int XLALSimIMRSpinAlignedEOBWaveform(
        }
        break;
      case 2:
-       if ( XLALSimIMRGetEOBCalibratedSpinNQC3D( &nqcCoeffs, 2, 2, eta, a, chiA ) == XLAL_FAILURE )
+       if ( XLALSimIMRGetEOBCalibratedSpinNQC3D( &nqcCoeffs, 2, 2, m1, m2, a, chiA ) == XLAL_FAILURE )
        {
          XLAL_ERROR( XLAL_EFUNC );
        }
@@ -844,7 +844,7 @@ int XLALSimIMRSpinAlignedEOBWaveform(
 
   /* Calculate phase NQC coefficients */
   if ( XLALSimIMRSpinEOBCalculateNQCCoefficients( ampNQC, phaseNQC, &rHi, &prHi, omegaHi,
-          2, 2, timePeak, deltaTHigh/mTScaled, eta, a, chiA, &nqcCoeffs, SpinAlignedEOBversion ) == XLAL_FAILURE )
+          2, 2, timePeak, deltaTHigh/mTScaled, m1, m2, a, chiA, &nqcCoeffs, SpinAlignedEOBversion ) == XLAL_FAILURE )
   {
     XLAL_ERROR( XLAL_EFUNC );
   }
@@ -856,7 +856,7 @@ int XLALSimIMRSpinAlignedEOBWaveform(
      timewavePeak = XLALSimIMREOBGetNRSpinPeakDeltaT(2, 2, eta,  a);
        break;
      case 2:
-     timewavePeak = XLALSimIMREOBGetNRSpinPeakDeltaTv2(2, 2, eta, spin1z, spin2z );
+     timewavePeak = XLALSimIMREOBGetNRSpinPeakDeltaTv2(2, 2, m1, m2, spin1z, spin2z );
        break;
      default:
        XLALPrintError( "XLAL Error - %s: Unknown SEOBNR version!\nAt present only v1 and v2 are available.\n", __func__);
@@ -919,7 +919,7 @@ int XLALSimIMRSpinAlignedEOBWaveform(
   
   /* Attach the ringdown at the time of amplitude peak */
   REAL8 combSize = 7.5; /* Eq. 34 */
-  REAL8 chi = (spin1[2] + spin2[2]) / 2. + (spin1[2] - spin2[2]) / 2. * sqrt(1. - 4. * eta) / (1. - 2. * eta);
+  REAL8 chi = (spin1[2] + spin2[2]) / 2. + ((spin1[2] - spin2[2]) / 2.) * ((m1 - m2)/(m1+m2)) / (1. - 2. * eta);
 
   /* Modify the combsize for SEOBNRv2 */
   /* If chi1=chi2=0, comb = 11. if chi < 0.8, comb = 12. if chi >= 0.8, comb =
@@ -1835,7 +1835,7 @@ printf("times, deltaT = %.16e, mTScaled = %.16e, dt = %.16e\n",deltaT,mTScaled,d
        }
        break;
      case 2:
-       if ( XLALSimIMRGetEOBCalibratedSpinNQC3D( &nqcCoeffs, 2, 2, eta, a, chiA ) == XLAL_FAILURE )
+       if ( XLALSimIMRGetEOBCalibratedSpinNQC3D( &nqcCoeffs, 2, 2, m1, m2, a, chiA ) == XLAL_FAILURE )
        {
          XLAL_ERROR( XLAL_EFUNC );
        }

@@ -487,7 +487,7 @@ static INT4 XLALSimIMREOBHybridAttachRingdown(
           NRPeakOmega22 = GetNRSpinPeakOmegav2( l, m, eta, a ) / mTot;
 
           /* Define chi */
-          chi = (spin1[2] + spin2[2]) / 2. + (spin1[2] - spin2[2]) / 2. * sqrt(1. - 4. * eta) / (1. - 2. * eta);
+          chi = (spin1[2] + spin2[2]) / 2. + (spin1[2] - spin2[2]) / 2. * ((mass1 - mass2)/(mass1+mass2)) / (1. - 2. * eta);
 
           /* For extreme chi (>= 0.8), there are scale factors in both complex
            * pseudo-QNM frequencies. kk, kt1, kt2 describe those factors. */
@@ -567,10 +567,10 @@ printf("w3 = %f, t3 = %f\n",creal(modefreqs->data[4])*mTot, 1./cimag(modefreqs->
 printf("w4 = %f, t4 = %f\n",creal(modefreqs->data[5])*mTot, 1./cimag(modefreqs->data[5])/mTot);
 */
       }
-      for (j = 0; j < nmodes; j++)
+      /*for (j = 0; j < nmodes; j++)
       {
-        //printf("QNM frequencies: %d %d %d %f %f\n",l,m,j,creal(modefreqs->data[j])*mTot,1./cimag(modefreqs->data[j])/mTot);
-      }
+        printf("QNM frequencies: %d %d %d %f %f\n",l,m,j,creal(modefreqs->data[j])*mTot,1./cimag(modefreqs->data[j])/mTot);
+      }*/
 
       /* Ringdown signal length: 10 times the decay time of the n=0 mode */
       Nrdwave = (INT4) (EOB_RD_EFOLDS / cimag(modefreqs->data[0]) / dt);
