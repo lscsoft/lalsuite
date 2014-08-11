@@ -294,7 +294,6 @@ REAL8 LALInferenceROQLogLikelihood(LALInferenceVariables *currentParams, LALInfe
   
   intrinsicParams = LALInferenceGetInstrinsicParams(currentParams);
   
-  chisquared = 0.0;
   /* loop over data (different interferometers): */
   dataPtr = data;
   
