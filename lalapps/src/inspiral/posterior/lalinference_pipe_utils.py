@@ -1065,17 +1065,17 @@ class EngineJob(pipeline.CondorDAGJob,pipeline.AnalysisJob):
     mkdirs(snrpath)
     if ispreengine is True:
       roqpath=os.path.join(basepath,'ROQdata')
-        self.roqpath=roqpath
-        mkdirs(roqpath)
-        self.engine='lalinferencemcmc'
-        exe=cp.get('condor',self.engine)
-        if cp.has_option('engine','site'):
-          if self.site is not None and self.self!='local':
-            universe='vanilla'
-          else:
-            universe="standard"
-        else:
+      self.roqpath=roqpath
+      mkdirs(roqpath)
+      self.engine='lalinferencemcmc'
+      exe=cp.get('condor',self.engine)
+      if cp.has_option('engine','site'):
+        if self.site is not None and self.self!='local':
           universe='vanilla'
+        else:
+          universe="standard"
+      else:
+        universe='vanilla'
     else:
       if self.engine=='lalinferencemcmc':
         exe=cp.get('condor','mpirun')
