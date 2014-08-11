@@ -497,6 +497,11 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
     LALInferenceSetVariable(runState->currentParams, "distance", &d);
   } else {
     nullLikelihood = 0.0;
+    LALInferenceIFOData *headData = runState->data;
+    while (headData != NULL) {
+      headData->nullloglikelihood = 0.0;
+      headData = headData->next;
+    }
   }
 
   //null log likelihood logic doesn't work with noise parameters

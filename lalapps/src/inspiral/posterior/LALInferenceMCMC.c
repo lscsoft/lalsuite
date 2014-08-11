@@ -253,6 +253,18 @@ LALInferenceRunState *initialize(ProcessParamsTable *commandLine)
 {
   LALInferenceRunState *irs=NULL;
   LALInferenceIFOData *ifoPtr, *ifoListStart;
+  unsigned int n_basis, n_samples, time_steps;
+  n_basis = 965;//TODO: have it read from file or from command line.
+  
+  ProcessParamsTable *ppt=NULL;
+  FILE *tempfp;
+  if(LALInferenceGetProcParamVal(commandLine,"--roqtime_steps")){
+    ppt=LALInferenceGetProcParamVal(commandLine,"--roqtime_steps");
+    tempfp = fopen (ppt->value,"r");
+    fscanf (tempfp, "%u", &time_steps);
+    fscanf (tempfp, "%u", &n_basis);
+    fscanf (tempfp, "%u", &n_samples);
+  }  
 
   MPI_Comm_rank(MPI_COMM_WORLD, &MPIrank);
 
@@ -273,6 +285,10 @@ LALInferenceRunState *initialize(ProcessParamsTable *commandLine)
     LALInferenceInjectInspiralSignal(irs->data,commandLine);
     fprintf(stdout, " ==== LALInferenceInjectInspiralSignal(): finished. ====\n");
 
+    fprintf(stdout, " ==== LALInferenceSetupROQ(): started. ====\n");
+    LALInferenceSetupROQ(irs->data,commandLine);
+    fprintf(stdout, " ==== LALInferenceSetupROQ(): finished. ====\n");
+    
     ifoPtr = irs->data;
     ifoListStart = irs->data;
     while (ifoPtr != NULL) {
@@ -288,6 +304,12 @@ LALInferenceRunState *initialize(ProcessParamsTable *commandLine)
           ifoPtr->timeModelhCross=ifoPtrCompare->timeModelhCross;
           ifoPtr->freqModelhCross=ifoPtrCompare->freqModelhCross;
           ifoPtr->modelParams=ifoPtrCompare->modelParams;
+          if (ifoPtr->roqData){
+            ifoPtr->roqData->hplus = ifoPtrCompare->roqData->hplus;
+            ifoPtr->roqData->hcross = ifoPtrCompare->roqData->hcross;
+            ifoPtr->roqData->hstrain = ifoPtrCompare->roqData->hstrain;
+            ifoPtr->roqData->amp_squared = ifoPtrCompare->roqData->amp_squared;
+          }
           foundIFOwithSameSampleRate=1;
           break;
         }
@@ -319,6 +341,12 @@ LALInferenceRunState *initialize(ProcessParamsTable *commandLine)
                                                                      &lalDimensionlessUnit,
                                                                      ifoPtr->freqData->data->length);
         ifoPtr->modelParams = XLALCalloc(1, sizeof(LALInferenceVariables));
+        if (ifoPtr->roqData){
+          ifoPtr->roqData->hplus = gsl_vector_complex_calloc(n_basis);
+          ifoPtr->roqData->hcross = gsl_vector_complex_calloc(n_basis);
+          ifoPtr->roqData->hstrain = gsl_vector_complex_calloc(n_basis);
+          ifoPtr->roqData->amp_squared = XLALCalloc(1, sizeof(REAL8));
+        }
       }
       ifoPtr = ifoPtr->next;
     }
