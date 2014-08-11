@@ -238,7 +238,6 @@ REAL8 LALInferenceROQLogLikelihood(LALInferenceVariables *currentParams, LALInfe
   double ra, dec, psi, distMpc, gmst;
   double GPSdouble;
   LIGOTimeGPS GPSlal;
-  double chisquared;
   double timedelay;  /* time delay b/w iterferometer & geocenter w.r.t. sky location */
   double timeshift=0;  /* time shift (not necessarily same as above)                   */
   double time_requested, time_min, time_step;
