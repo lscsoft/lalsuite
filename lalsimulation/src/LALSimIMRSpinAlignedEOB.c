@@ -62,7 +62,7 @@
 #include "LALSimIMRSpinEOBFactorizedWaveform.c"
 #include "LALSimIMRSpinEOBFactorizedFlux.c"
 
-#define debugOutput 0
+#define debugOutput 0 
 
 int debugPK = 1;
 
@@ -844,7 +844,7 @@ int XLALSimIMRSpinAlignedEOBWaveform(
 
   /* Calculate phase NQC coefficients */
   if ( XLALSimIMRSpinEOBCalculateNQCCoefficients( ampNQC, phaseNQC, &rHi, &prHi, omegaHi,
-          2, 2, timePeak, deltaTHigh/mTScaled, eta, a, chiA, &nqcCoeffs, SpinAlignedEOBversion ) == XLAL_FAILURE )
+          2, 2, timePeak, deltaTHigh/mTScaled, eta, a, chiA, chiS, &nqcCoeffs, SpinAlignedEOBversion ) == XLAL_FAILURE )
   {
     XLAL_ERROR( XLAL_EFUNC );
   }
@@ -865,7 +865,9 @@ int XLALSimIMRSpinAlignedEOBWaveform(
   }
 
   /* Apply to the high sampled part */
-  //out = fopen( "saWavesHi.dat", "w" );
+  #if debugOutput
+  out = fopen( "saWavesHi.dat", "w" );
+  #endif 
   for ( i = 0; i < retLen; i++ )
   {
     values->data[0] = rHi.data[i];
@@ -880,7 +882,9 @@ int XLALSimIMRSpinAlignedEOBWaveform(
 
     hLM = sigReHi->data[i];
     hLM += I * sigImHi->data[i];
-    //fprintf( out, "%.16e %.16e %.16e %.16e %.16e\n", timeHi.data[i], creal(hLM), cimag(hLM), creal(hNQC), cimag(hNQC) );
+    #if debugOutput
+    fprintf( out, "%.16e %.16e %.16e %.16e %.16e\n", timeHi.data[i], creal(hLM), cimag(hLM), creal(hNQC), cimag(hNQC) );
+    #endif
 
     hLM *= hNQC;
     sigReHi->data[i] = (REAL4) creal(hLM);
@@ -893,8 +897,8 @@ int XLALSimIMRSpinAlignedEOBWaveform(
     }
     oldsigAmpSqHi = sigAmpSqHi;
   }
-  //fclose(out);
   #if debugOutput
+  fclose(out);
   printf("NQCs entering hNQC: %f, %f, %f, %f, %f, %f\n", nqcCoeffs.a1, nqcCoeffs.a2,nqcCoeffs.a3, nqcCoeffs.a3S, nqcCoeffs.a4, nqcCoeffs.a5 );
   printf("NQCs entering hNQC: %f, %f, %f, %f\n", nqcCoeffs.b1, nqcCoeffs.b2,nqcCoeffs.b3, nqcCoeffs.b4 );
   #endif
