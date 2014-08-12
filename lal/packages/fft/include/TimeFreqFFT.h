@@ -46,12 +46,6 @@ extern "C" {
  * transforms. Also provides a function to compute mean and median power
  * spectra with user specified windowning.
  *
- * The definition of the Fourier transform is \f$ e^{2 \pi i f t} \f$
- * and the inline equation version of that is
- * \f[
- * \tilde{h}_k = \sum
- * \f]
- *
  * ### Description ###
  *
  * The routines LALTimeFreqRealFFT() and LALTimeFreqComplexFFT()
