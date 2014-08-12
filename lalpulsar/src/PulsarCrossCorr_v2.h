@@ -67,7 +67,7 @@ extern "C" {
 #include <gsl/gsl_sf_trig.h>
 #include <lal/FrequencySeries.h>
 #include <lal/Sequence.h>
-
+#include <lal/CWFastMath.h>
 /* ******************************************************************
  *  Structure, enum, union, etc., typdefs.
  */
@@ -108,7 +108,7 @@ int XLALGetDopplerShiftedFrequencyInfo
    REAL8Vector        *shiftedFreqs,
    UINT4Vector          *lowestBins,
    REAL8Vector         *kappaValues,
-   COMPLEX8Vector   *expSignalPhases,
+   REAL8Vector        *signalPhases,
    REAL8VectorSequence    *sincList,
    UINT4                    numBins,
    PulsarDopplerParams        *dopp,
@@ -150,7 +150,7 @@ int XLALCalculatePulsarCrossCorrStatistic
    REAL8              *ccStat,
    REAL8           *evSquared,
    REAL8Vector     *curlyGAmp,
-   COMPLEX8Vector  *expSignalPhases,
+   REAL8Vector  *SignalPhases,
    UINT4Vector    *lowestBins,
    REAL8Vector   *kappaValues,
    REAL8VectorSequence      *sincList,

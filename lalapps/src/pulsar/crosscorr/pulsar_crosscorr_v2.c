@@ -116,7 +116,7 @@ int main(int argc, char *argv[]){
   REAL8Vector *shiftedFreqs = NULL;
   UINT4Vector *lowestBins = NULL;
   REAL8Vector *kappaValues = NULL;
-  COMPLEX8Vector *expSignalPhases = NULL;
+  REAL8Vector *signalPhases = NULL;
   REAL8VectorSequence *sincValueList = NULL;
 
   PulsarDopplerParams XLAL_INIT_DECL(dopplerpos);
@@ -491,7 +491,7 @@ int main(int argc, char *argv[]){
     LogPrintf ( LOG_CRITICAL, "%s: XLALCreateREAL8Vector() failed with errno=%d\n", __func__, xlalErrno );
     XLAL_ERROR( XLAL_EFUNC );
   }
-  if ((expSignalPhases = XLALCreateCOMPLEX8Vector ( numSFTs ) ) == NULL){
+  if ((signalPhases = XLALCreateREAL8Vector ( numSFTs ) ) == NULL){
     LogPrintf ( LOG_CRITICAL, "%s: XLALCreateREAL8Vector() failed with errno=%d\n", __func__, xlalErrno );
     XLAL_ERROR( XLAL_EFUNC );
   }
@@ -515,12 +515,12 @@ int main(int argc, char *argv[]){
 	  }
 	}
 
-      if ( (XLALGetDopplerShiftedFrequencyInfo( shiftedFreqs, lowestBins, kappaValues, expSignalPhases, sincValueList, uvar.numBins, &dopplerpos, sftIndices, inputSFTs, multiBinaryTimes, Tsft )  != XLAL_SUCCESS ) ) {
+      if ( (XLALGetDopplerShiftedFrequencyInfo( shiftedFreqs, lowestBins, kappaValues, signalPhases, sincValueList, uvar.numBins, &dopplerpos, sftIndices, inputSFTs, multiBinaryTimes, Tsft )  != XLAL_SUCCESS ) ) {
 	LogPrintf ( LOG_CRITICAL, "%s: XLALGetDopplerShiftedFrequencyInfo() failed with errno=%d\n", __func__, xlalErrno );
 	XLAL_ERROR( XLAL_EFUNC );
       }
 
-      if ( (XLALCalculatePulsarCrossCorrStatistic( &ccStat, &evSquared, curlyGUnshifted, expSignalPhases, lowestBins, kappaValues, sincValueList, sftPairs, sftIndices, inputSFTs, multiWeights, uvar.numBins)  != XLAL_SUCCESS ) ) {
+      if ( (XLALCalculatePulsarCrossCorrStatistic( &ccStat, &evSquared, curlyGUnshifted, signalPhases, lowestBins, kappaValues, sincValueList, sftPairs, sftIndices, inputSFTs, multiWeights, uvar.numBins)  != XLAL_SUCCESS ) ) {
 	LogPrintf ( LOG_CRITICAL, "%s: XLALCalculateAveCrossCorrStatistic() failed with errno=%d\n", __func__, xlalErrno );
 	XLAL_ERROR( XLAL_EFUNC );
       }
@@ -548,7 +548,7 @@ int main(int argc, char *argv[]){
   final_write_crossCorrBinary_toplist_to_file( ccToplist, uvar.toplistFilename, &checksum);
 
 
-  XLALDestroyCOMPLEX8Vector ( expSignalPhases );
+  XLALDestroyREAL8Vector ( signalPhases );
   XLALDestroyREAL8Vector ( kappaValues );
   XLALDestroyUINT4Vector ( lowestBins );
   XLALDestroyREAL8Vector ( shiftedFreqs );

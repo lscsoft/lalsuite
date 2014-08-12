@@ -30,7 +30,7 @@ int XLALGetDopplerShiftedFrequencyInfo
    REAL8Vector        *shiftedFreqs, /**< Output list of shifted frequencies */
    UINT4Vector          *lowestBins, /**< Output list of bin indices */
    REAL8Vector         *kappaValues, /**< Output list of bin offsets */
-   COMPLEX8Vector  *expSignalPhases, /**< Output list of signal phases */
+   REAL8Vector        *signalPhases, /**< Output list of signal phases */
    REAL8VectorSequence    *sincList, /**< Output list of sinc factors */
    UINT4                    numBins, /**< Number of frequency bins to use */
    PulsarDopplerParams        *dopp, /**< Doppler parameters for signal */
@@ -45,7 +45,7 @@ int XLALGetDopplerShiftedFrequencyInfo
   REAL8 timeDiff, factor, fhat, phiByTwoPi;
 
   numSFTs = sftIndices->length;
-  if ( expSignalPhases->length !=numSFTs
+  if ( signalPhases->length !=numSFTs
        || shiftedFreqs->length !=numSFTs
        || lowestBins->length !=numSFTs
        || kappaValues->length !=numSFTs
@@ -97,7 +97,7 @@ int XLALGetDopplerShiftedFrequencyInfo
       factor *= timeDiff / (k+1);
       phiByTwoPi += dopp->fkdot[k] * factor;
     }
-    expSignalPhases->data[sftNum] = cexp(I * LAL_TWOPI * fmod ( phiByTwoPi , 1.0 ));
+    signalPhases->data[sftNum] =  fmod ( phiByTwoPi , 1.0 );
     shiftedFreqs->data[sftNum] = fhat * times->Tdot->data[sftInd];
     REAL8 fminusf0 = shiftedFreqs->data[sftNum] - inputSFTs->data[detInd]->data[sftInd].f0;
     lowestBins->data[sftNum]
@@ -284,7 +284,7 @@ int XLALCalculatePulsarCrossCorrStatistic
  REAL8              *ccStat,   /* Output: cross-correlation statistic rho */
  REAL8           *evSquared,   /* Output: (E[rho]/h0^2)^2 */
  REAL8Vector     *curlyGAmp,   /* Input: Amplitude of curly G for each pair */
- COMPLEX8Vector  *expSignalPhases,   /* Input: Phase of signal for each SFT */
+ REAL8Vector  *signalPhases,   /* Input: Phase of signal for each SFT */
  UINT4Vector    *lowestBins,   /* Input: Bin index to start with for each SFT */
  REAL8Vector   *kappaValues,   /* Input: Fractional offset of signal freq from best bin center */
  REAL8VectorSequence  *sincList,   /* Input: input the sinc factors*/
@@ -297,7 +297,7 @@ int XLALCalculatePulsarCrossCorrStatistic
 {
 
   UINT8 numSFTs = sftIndices->length;
-  if ( expSignalPhases->length !=numSFTs
+  if ( signalPhases->length !=numSFTs
        || lowestBins->length !=numSFTs
        || kappaValues->length !=numSFTs
        || sincList->length !=numSFTs ) {
@@ -347,7 +347,12 @@ int XLALCalculatePulsarCrossCorrStatistic
     COMPLEX8 *dataArray2 = inputSFTs->data[detInd2]->data[sftInd2].data->data;
     UINT4 lenDataArray1 = inputSFTs->data[detInd1]->data[sftInd1].data->length;
     UINT4 lenDataArray2 = inputSFTs->data[detInd2]->data[sftInd2].data->length;
-    COMPLEX8 GalphaCC = curlyGAmp->data[alpha] * (expSignalPhases->data[sftNum1]/expSignalPhases->data[sftNum2]);
+    REAL4 cosPhaseDiff,sinPhaseDiff;
+    if(XLALSinCos2PiLUT(&sinPhaseDiff, &cosPhaseDiff, (signalPhases->data[sftNum1] - signalPhases->data[sftNum2]))!= XLAL_SUCCESS){
+      XLAL_ERROR( XLAL_EFUNC );
+    }
+    COMPLEX8 expPhaseDiff = cosPhaseDiff + I * sinPhaseDiff;
+    COMPLEX8 GalphaCC = curlyGAmp->data[alpha] * expPhaseDiff;
     INT4 baseCCSign = 1; /* Alternating sign is (-1)**(k1-k2) */
     if ( ( (lowestBins->data[sftNum1]-lowestBins->data[sftNum2]) % 2) != 0 ) {
       baseCCSign = -1;
