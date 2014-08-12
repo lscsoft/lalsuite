@@ -140,6 +140,8 @@ int XLALSimInspiralTaylorF2(
             pfa3 = pfa.v[3];
         case 2:
             pfa2 = pfa.v[2];
+	case 1:
+	    XLALPrintWarning( "There is no 0.5PN phase coefficient, returning Newtonian-order phase.\n" );
         case 0:
             pfaN = pfa.v[0];
             break;
