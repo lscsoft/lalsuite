@@ -90,6 +90,9 @@ SWIGLAL(
 REAL8 LALInferenceUndecomposedFreqDomainLogLikelihood(LALInferenceVariables *currentParams, LALInferenceIFOData *data, 
                               LALInferenceTemplateFunction templt);
 
+REAL8 LALInferenceROQLogLikelihood(LALInferenceVariables *currentParams, LALInferenceIFOData * data,
+                              LALInferenceTemplateFunction templt);
+
 /**
  * For testing purposes (for instance sampling the prior),
  * likelihood that returns 0.0 = log(1) every
@@ -233,6 +236,9 @@ REAL8 LALInferenceMarginalisedTimeLogLikelihood(LALInferenceVariables *currentPa
  * phase likelihoods
  */
 void LALInferenceInitLikelihood(LALInferenceRunState *runState);
+
+/** Get the intrinsic parameters from currentParams */
+LALInferenceVariables LALInferenceGetInstrinsicParams(LALInferenceVariables *currentParams);
 
 /** Switch for controlling the removal of lines */
 INT4 LALInferenceLineSwitch(INT4 lineFlag, INT4 Nlines, INT4 *lines_array, INT4 *widths_array, INT4 i);

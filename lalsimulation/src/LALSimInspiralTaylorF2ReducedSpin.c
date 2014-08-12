@@ -117,6 +117,7 @@ int XLALSimInspiralTaylorF2ReducedSpin(
     const REAL8 fISCO = vISCO * vISCO * vISCO / piM;
     REAL8 v0 = 1.0; /* v0=c */
     REAL8 logv0 = log(v0);
+    logv0 = log(1.);
     REAL8 shft, amp0, f_max;
     REAL8 psiNewt, psi2, psi3, psi4, psi5, psi6, psi6L, psi7, psi3S, psi4S, psi5S;
     REAL8 alpha2, alpha3, alpha4, alpha5, alpha6, alpha6L, alpha7, alpha3S, alpha4S, alpha5S;

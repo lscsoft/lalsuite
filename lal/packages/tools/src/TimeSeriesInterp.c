@@ -136,6 +136,12 @@ void XLALREAL8SequenceInterpDestroy(LALREAL8SequenceInterp *interp)
  */
 
 
+static int min(int a, int b)
+{
+	return a <= b ? a : b;
+}
+
+
 REAL8 XLALREAL8SequenceInterpEval(LALREAL8SequenceInterp *interp, double x)
 {
 	const REAL8 *data = interp->s->data;
@@ -149,7 +155,7 @@ REAL8 XLALREAL8SequenceInterpEval(LALREAL8SequenceInterp *interp, double x)
 	 * and only recompute the kernel if this quantity differs from the
 	 * one for which the kernel was computed by more than the no-op
 	 * threshold */
-	int start = lround(x);
+	int start = min(lround(x), interp->s->length - 1);
 	double residual = start - x;
 	REAL8 val;
 

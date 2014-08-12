@@ -127,6 +127,11 @@ void LALInferenceTemplateNullTimedomain(LALInferenceIFOData *IFOdata);
  * - \c "phase"      (REAL8, phase \f$ \phi \f$ (at time \f$ \mu \f$), radians)
  * - \c "amplitude"  (REAL8, amplitude \f$ a \f$)
  */
+
+void LALInferenceTemplateROQ(LALInferenceIFOData *IFOdata);
+
+void LALInferenceTemplateROQ_amp_squared(LALInferenceIFOData *IFOdata);
+
 void LALInferenceTemplateSineGaussian(LALInferenceIFOData *IFOdata);
 
 

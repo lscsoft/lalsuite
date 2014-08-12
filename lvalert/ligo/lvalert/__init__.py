@@ -18,4 +18,4 @@ __author__ = "LIGO Scientific Collaboration"
 
 __all__ = ["pubsub", "lvstanzaprocessor", "utils"]
 
-GIT_TAG = 'lvalert-1.0-3'
+GIT_TAG = 'lvalert-1.1-1'

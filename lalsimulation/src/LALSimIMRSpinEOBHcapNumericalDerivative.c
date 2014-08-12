@@ -488,7 +488,7 @@ static double GSLSpinHamiltonianWrapper( double x, void *params )
   spin1.data = tmpVec+6;
   spin2.data = tmpVec+9;
   spin1norm.data = s1normData;
-  spin2norm.data = s1normData;
+  spin2norm.data = s2normData;
   sigmaKerr.data = sKerrData;
   sigmaStar.data = sStarData;
 

@@ -2,7 +2,9 @@ prefix=@prefix@
 exec_prefix=@exec_prefix@
 libdir=@libdir@
 includedir=@includedir@
-no_header_library_mismatch_check=yes
+LALSUPPORT_DATA_PATH=@datadir@/@PACKAGE@
+LALSUPPORT_OCTAVE_PATH=@octexecdir@
+LALSUPPORT_PYTHON_PATH=@pyexecdir@
 
 Name: LALSupport
 Description: LSC Algorithm Support Library (useful but non-conforming routines)

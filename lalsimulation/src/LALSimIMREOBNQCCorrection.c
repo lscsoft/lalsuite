@@ -872,13 +872,16 @@ UNUSED static inline REAL8 GetNRSpinPeakOmegaDot( INT4 UNUSED l, INT4 UNUSED m, 
 UNUSED static inline REAL8 XLALSimIMREOBGetNRSpinPeakDeltaTv2(
                  INT4 UNUSED l,    /**<< Mode l */
                  INT4 UNUSED m,    /**<< Mode m */
-                 REAL8 UNUSED eta, /**<< Symmetric mass ratio */
+                 REAL8 UNUSED m1,  /**<< mass 1 */
+                 REAL8 UNUSED m2,  /**<< mass 22 */
                  REAL8 chi1,       /**<< Dimensionless spin1 */
-                 REAL8 chi2       /**<< Dimensionless spin2 */
+                 REAL8 chi2        /**<< Dimensionless spin2 */
                  )
 {
   REAL8 chi, chichi;
-  chi    = (chi1+chi2)/2. + (chi1-chi2)/2.*sqrt(1-4.*eta)/(1-2.*eta);
+  REAL8 eta = m1*m2 / ((m1+m2)*(m1+m2));
+  chi    = (chi1+chi2)/2. + (chi1-chi2)/2.*((m1-m2)/(m1+m2))/(1-2.*eta);
+    
   chichi = chi*chi;
   if ( chi > 0.8 )
   {
@@ -3337,8 +3340,18 @@ UNUSED static int XLALSimIMRGetEOBCalibratedSpinNQCv2chiAmin( EOBNonQCCoeffs * r
  * the peak amplitude and frequency agree well with the NR-fits predicted values,
  * and to get exact NR-fits predicted values, corrections on these numbers are ~1%.
  */
-UNUSED static int XLALSimIMRGetEOBCalibratedSpinNQC3D( EOBNonQCCoeffs * restrict coeffs,                                                      INT4 UNUSED l,                                                      INT4 UNUSED m,                                                      REAL8 eta,                                                      REAL8 a,                                                      REAL8 chiA )
+UNUSED static int XLALSimIMRGetEOBCalibratedSpinNQC3D(
+                        EOBNonQCCoeffs * restrict coeffs,
+                        INT4 UNUSED l,
+                        INT4 UNUSED m,
+                        REAL8 m1,
+                        REAL8 m2,
+                        REAL8 a,
+                        REAL8 chiAin )
 {
+
+  REAL8 eta = m1*m2/((m1+m2)*(m1+m2));
+
 #if OLDNSNQC
   const unsigned int nsqdim = 101;
 
@@ -3399,7 +3412,12 @@ UNUSED static int XLALSimIMRGetEOBCalibratedSpinNQC3D( EOBNonQCCoeffs * restrict
   coeffs->b1 = - coeffs->b1;
   coeffs->b2 = - coeffs->b2;
 
-  REAL8 dM  = sqrt( 1.0 - 4.0 * eta );
+  REAL8 dM  = abs(m1 - m2)/(m1+m2);
+  REAL8 chiA = chiAin;
+  if ( m2 > m1 )
+  {
+    chiA = -chiA;
+  }
   REAL8 chi = a / ( 1.0 - 2.0 * eta );
   REAL8 chiAmax, chiAmed, chiAmin;
   REAL8 cmax, cmed, cmin;
@@ -3534,7 +3552,8 @@ UNUSED static int XLALSimIMRSpinEOBCalculateNQCCoefficients(
                  INT4                      m,           /**<< Mode index m */
                  REAL8                     timePeak,    /**<< Time of peak orbital frequency */
                  REAL8                     deltaT,      /**<< Sampling interval */
-                 REAL8                     eta,         /**<< Symmetric mass ratio */
+                 REAL8                     m1,          /**<< Component mass 1 */
+                 REAL8                     m2,          /**<< Component mass 2 */
                  REAL8                     a,           /**<< Normalized spin of deformed-Kerr */
                  REAL8                     chiA,        /**<< Assymmetric dimensionless spin combination */
                  REAL8                     chiS,        /**<< Symmetric dimensionless spin combination */
@@ -3561,6 +3580,7 @@ UNUSED static int XLALSimIMRSpinEOBCalculateNQCCoefficients(
   REAL8Vector *q5LM  = NULL; 
   REAL8Vector *qNSLM = NULL;
 
+  REAL8 eta = (m1*m2)/((m1+m2)*(m1+m2));
   REAL8 amp, aDot, aDDot;
   REAL8 omega, omegaDot;
 
@@ -3644,7 +3664,7 @@ UNUSED static int XLALSimIMRSpinEOBCalculateNQCCoefficients(
      break;
    case 2:
      // if ( XLALSimIMRGetEOBCalibratedSpinNQCv2( coeffs, l, m, eta, a ) == XLAL_FAILURE )
-     if ( XLALSimIMRGetEOBCalibratedSpinNQC3D( coeffs, l, m, eta, a, chiA ) == XLAL_FAILURE )
+     if ( XLALSimIMRGetEOBCalibratedSpinNQC3D( coeffs, l, m, m1, m2, a, chiA ) == XLAL_FAILURE )
      {
        XLALDestroyREAL8Vector( timeVec );
        XLALDestroyREAL8Vector( q3 );
@@ -3737,7 +3757,7 @@ UNUSED static int XLALSimIMRSpinEOBCalculateNQCCoefficients(
      nrDeltaT   = XLALSimIMREOBGetNRSpinPeakDeltaT( l, m, eta, a );
      break;
    case 2: 
-     nrDeltaT   = XLALSimIMREOBGetNRSpinPeakDeltaTv2( l, m, eta, chi1, chi2 );
+     nrDeltaT   = XLALSimIMREOBGetNRSpinPeakDeltaTv2( l, m, m1, m2, chi1, chi2 );
      break;
    default:
      XLALPrintError( "XLAL Error - %s: Unknown SEOBNR version!\nAt present only v1 and v2 are available.\n", __func__);

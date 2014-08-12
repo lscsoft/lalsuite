@@ -1,7 +1,7 @@
 #!/usr/bin/python
 #from pywcsgrid2.allsky_axes import make_allsky_axes_from_header, allsky_header
 #import pywcsgrid2.healpix_helper as healpix_helper
-from mpl_toolkits.basemap import Basemap
+#from mpl_toolkits.basemap import Basemap
 import math, os, commands, shutil, sys, re
 import matplotlib as matplotlib
 matplotlib.use('Agg')
@@ -31,6 +31,7 @@ parser.add_argument('--templateSearch',action='store_true', help='Change command
 parser.add_argument('--multiTemplateSearch',type=str, help='use instead of --templateSearch, specify number of bands in output directory')
 parser.add_argument('--closed',action='store_true', help='Can be used, especially with --multiTemplateSearch, for working with closed pulsars')
 parser.add_argument('--J1751',action='store_true',help='Use for a search on J1751 in real data')
+parser.add_argument('--ScoX1S6',action='store_true',help='Use for a search on ScoX1 in S6 real data')
 args = parser.parse_args()
 
 def summarizer(mdcVersion, observatory, pulsar, args):
@@ -80,6 +81,14 @@ def summarizer(mdcVersion, observatory, pulsar, args):
         outJ1751file = 'out_' + mdcVersion + '_J1751_' + observatory + \
         '_.dat'
         os.system('cat ' + outJ1751directory + '/' + outJ1751file + \
+        ' | grep "h0 =" >> '+ verboseSummaryFile)
+    elif args.ScoX1S6:
+        print 'Analyzing ScoX1'
+        outScoX1directory = args.elsewhere + '/output_S6' + \
+        '_ScoX1_' + observatory + '-band-' + str(args.pulsar).zfill(4)
+        outScoX1file = 'out_S6_ScoX1_' + observatory + \
+        '-band-' + str(args.pulsar).zfill(4) + '*.dat'
+        os.system('cat ' + outScoX1directory + '/' + outScoX1file + \
         ' | grep "h0 =" >> '+ verboseSummaryFile)
     else:
         # When already done, one need not repeat this step
@@ -152,14 +161,16 @@ def summarizer(mdcVersion, observatory, pulsar, args):
    
 
     if (args.band or args.noiseTest) or \
-    (args.templateSearch or args.multiTemplateSearch) or args.J1751:
+    (args.templateSearch or args.multiTemplateSearch) or \
+    args.J1751 or args.ScoX1S6:
         print 'Frequency list encompasses this many bins: ' + str(len(fArray))
     else:
         # Adjust f Array to represent frequency offset from injection
         fArray = fArray - fArray[(len(fArray)-1)/2]
     dfArray = np.array(dfList)
     if (args.band or args.noiseTest) or \
-    (args.templateSearch or args.multiTemplateSearch) or args.J1751:
+    (args.templateSearch or args.multiTemplateSearch) or \
+    args.J1751 or args.ScoX1S6:
         print 'Frequency modulation list encompasses this many bins: ' + str(len(dfArray))
     RArray = np.array(RList)
     ProbArray = np.array(ProbList)
@@ -299,7 +310,8 @@ def summarizer(mdcVersion, observatory, pulsar, args):
         # as in figure 4 of the TwoSpect methods paper
         fLen = len(np.unique(fArray))
         dfLen = len(np.unique(dfArray))
-        if (args.templateSearch or args.multiTemplateSearch) or args.J1751:
+        if (args.templateSearch or args.multiTemplateSearch) or \
+        args.J1751 or args.ScoX1S6:
             # This override is necessary when using templateSearch because the
             # df are, for it, all unique. However, this makes it tricky because
             # the graph really is skewed
@@ -310,28 +322,30 @@ def summarizer(mdcVersion, observatory, pulsar, args):
                 dfLenPer = range(0, int(args.multiTemplateSearch))
                 startCount = range(0, int(args.multiTemplateSearch))
                 midCount = range(0, int(args.multiTemplateSearch))
-                fStart = int(fArray[0])
-                fEnd = int(fArray[-1])
+                fStart = float(fArray[0])
+                fEnd = float(fArray[-1])
                 fSpan = (float(fEnd)-float(fStart))/float(args.multiTemplateSearch)
                 print 'fSpan (Hz) of each band is ' + str(fSpan)
                 print 'Starting frequency (Hz) is ' + str(fStart)
+                print 'Ending frequency (Hz) is ' + str(fEnd)
                 for nn in range(0, int(args.multiTemplateSearch)):
                    counterLeft = int( (int(nn) + 1)/float(fSpan))
                    counterRight = int( int(args.multiTemplateSearch)/float(fSpan))
+                   fpTolerance = 2e-13
                    if counterLeft < counterRight:
                        dfLenCml[nn] = len([ff for ff in fArray if (ff < float(fStart)+float(nn+1)*fSpan)])
                        #dfLenPer[nn] = len([ff for ff in fArray if (ff >= fStart + nn) and (ff < fStart+nn+1)])
-                       startCount[nn] = len([ff for ff in fArray if ff == float(fStart) + float(nn)*fSpan])
-                       midCount[nn] = len([ff for ff in fArray if ff == float(fStart) + float(nn+0.5)*fSpan])
+                       startCount[nn] = len([ff for ff in fArray if abs(ff - (float(fStart) + float(nn)*fSpan) ) < fpTolerance])
+                       midCount[nn] = len([ff for ff in fArray if abs(ff - (float(fStart) + float(nn+0.5)*fSpan) ) < fpTolerance])
                    elif counterLeft == counterRight:
                        print 'Ending after this many Hertz ' + str((nn+1)*fSpan)
                        dfLenCml[nn] = len([ff for ff in fArray if (ff <= float(fStart)+float(nn+1)*fSpan)])
                        #dfLenPer[nn] = len([ff for ff in fArray if (ff >= fStart + nn) and (ff <= fStart+nn+1)])
-                       startCount[nn] = len([ff for ff in fArray if ff == float(fStart) + float(nn)*fSpan])
-                       midCount[nn] = len([ff for ff in fArray if ff == float(fStart) + float(nn+0.5)*fSpan])
+                       startCount[nn] = len([ff for ff in fArray if abs(ff - (float(fStart) + float(nn)*fSpan) ) < fpTolerance])
+                       midCount[nn] = len([ff for ff in fArray if abs(ff - (float(fStart) + float(nn+0.5)*fSpan) ) < fpTolerance])
                    else:
                        print 'Malfunction, reached nn of ' + str(nn)
-                print 'Here is a test'
+                print 'startCount, midCount, dfLenCml:'
                 print startCount
                 print midCount
                 print dfLenCml
@@ -346,6 +360,12 @@ def summarizer(mdcVersion, observatory, pulsar, args):
                         fLenSub = fLenOne + 1
                     else:
                         fLenSub = fLenOne
+                    # Special contigency; sometimes we want the same code
+                    # even though multiTemplateSearch is not really needed
+                    if int(args.multiTemplateSearch) == 1:
+                        fLenSub = fLenOne
+                    #print fLenSub
+                    #print midCount[qq]
                     #print str(fArray[startIndex])
                     #print str(fArray[endIndex-1])
                     fSubShaped = np.reshape(fArray[startIndex:endIndex], (fLenSub, midCount[qq])).T
@@ -376,14 +396,19 @@ def summarizer(mdcVersion, observatory, pulsar, args):
                         ProbShaped = np.hstack((ProbShaped, ProbSubShaped))
                         RShaped = np.hstack((RShaped, RSubShaped))
                     #print dfShaped.shape
-            if args.J1751 or args.noiseTest:
+            if args.J1751 or \
+            args.noiseTest:
                 fShaped = np.reshape(fArray, (fLen, dfLen)).T
                 dfShaped = np.reshape(dfArray, (fLen, dfLen)).T
+            elif args.ScoX1S6:
+                print 'Shape of real-data Scorpius X-1 array: '
+                print str(dfShaped.shape)
         else:
             fShaped = np.reshape(fArray, (fLen, dfLen)).T
             dfShaped = np.reshape(dfArray, (fLen, dfLen)).T
         if (args.band or args.noiseTest) or \
-        (args.templateSearch or args.multiTemplateSearch) or args.J1751: 
+        (args.templateSearch or args.multiTemplateSearch) or \
+        args.J1751 or args.ScoX1S6: 
             print 'Number of bins in data arrays: ' + str(fShaped.shape)
         x, y = np.meshgrid(fShaped[0, :], dfShaped[:, 0])
         extensions = [x[0, 0], x[-1, -1], y[0, 0], y[-1, -1]]
@@ -392,7 +417,8 @@ def summarizer(mdcVersion, observatory, pulsar, args):
             RShaped = np.reshape(RArray, (fLen, dfLen)).T
       
         if (args.band or args.noiseTest) or \
-        (args.templateSearch or args.multiTemplateSearch) or args.J1751:
+        (args.templateSearch or args.multiTemplateSearch) or \
+        args.J1751 or args.ScoX1S6:
             ProbCenter = ProbShaped.max()
             RCenter = RShaped.max()
             centerString = 'maximum value: '
@@ -406,7 +432,8 @@ def summarizer(mdcVersion, observatory, pulsar, args):
         centerRSpotDF = str(dfShaped.compress((RShaped == RCenter).flat)[0])
         # Plot probability two-dimensionally for f and df
         if (args.band or args.noiseTest) or \
-        (args.templateSearch or args.multiTemplateSearch) or args.J1751:
+        (args.templateSearch or args.multiTemplateSearch) or \
+        args.J1751 or args.ScoX1S6:
             fig = plt.figure(figsize=(12,12))
         else:
             fig = plt.figure()
@@ -414,22 +441,31 @@ def summarizer(mdcVersion, observatory, pulsar, args):
         paramSpacePixelMap = ax.imshow(ProbShaped, origin='lower', \
         interpolation = 'nearest', extent = extensions, cmap = 'jet')
         paramSpacePixelMap = fig.colorbar(paramSpacePixelMap, shrink = 0.5, extend = 'both')
-        if (args.templateSearch or args.multiTemplateSearch) or args.J1751:
+        if (args.templateSearch or args.multiTemplateSearch) or \
+        args.J1751 or args.ScoX1S6:
             print 'Skipping probability grid'
         else:
             ax.grid('True')
         if (args.band or args.noiseTest) or \
-        (args.templateSearch or args.multiTemplateSearch) or args.J1751:
+        (args.templateSearch or args.multiTemplateSearch) or \
+        args.J1751 or args.ScoX1S6:
             ax.set_aspect('auto')
             ax.set_xlabel('Frequency: f (Hz)')
         else:
             ax.set_xlabel('Frequency offset from injection: f (Hz)')
         ax.set_ylabel('Modulation depth: df (Hz)')
-        ax.set_title('False alarm probability, absolute value of base 10 logarithm: \n \
-        log10p vs parameters for pulsar ' + pulsar + ' at ' + observatory + ' \n \
-        ' + centerString + str(ProbCenter) + ' at (df, f) = (' + centerProbSpotDF +', ' + centerProbSpotF + ') Hz \n \
-        Number of bins in data arrays (df, f): ' + str(fShaped.shape) + ' \n \
-        ')
+        if args.ScoX1S6:
+            ax.set_title('False alarm probability, absolute value of base 10 logarithm: \n \
+            log10p vs parameters for band starting ' + pulsar + ' Hz at ' + observatory + ' \n \
+            ' + centerString + str(ProbCenter) + ' at (df, f) = (' + centerProbSpotDF +', ' + centerProbSpotF + ') Hz \n \
+            Number of bins in data arrays (df, f): ' + str(fShaped.shape) + ' \n \
+            ')
+        else:
+            ax.set_title('False alarm probability, absolute value of base 10 logarithm: \n \
+            log10p vs parameters for pulsar ' + pulsar + ' at ' + observatory + ' \n \
+            ' + centerString + str(ProbCenter) + ' at (df, f) = (' + centerProbSpotDF +', ' + centerProbSpotF + ') Hz \n \
+            Number of bins in data arrays (df, f): ' + str(fShaped.shape) + ' \n \
+            ')
         plt.savefig('DFvsFresultsProb-' + observatory + '_pulsar-' + pulsar + '.png')
         plt.savefig('DFvsFresultsProb-' + observatory + '_pulsar-' + pulsar + '.pdf')
         plt.close()
@@ -437,7 +473,8 @@ def summarizer(mdcVersion, observatory, pulsar, args):
 
         # Plot R statistic two-dimensionally for f and df
         if (args.band or args.noiseTest) or \
-        (args.templateSearch or args.multiTemplateSearch) or args.J1751:
+        (args.templateSearch or args.multiTemplateSearch) or \
+        args.J1751 or args.ScoX1S6:
             fig = plt.figure(figsize=(12,12))
         else:
             fig = plt.figure()
@@ -445,12 +482,14 @@ def summarizer(mdcVersion, observatory, pulsar, args):
         paramSpacePixelMap = ax.imshow(RShaped, origin = 'lower', \
         interpolation = 'nearest', extent = extensions, cmap = 'jet')
         paramSpacePixelMap = fig.colorbar(paramSpacePixelMap, shrink = 0.5, extend = 'both')
-        if (args.templateSearch or args.multiTemplateSearch) or args.J1751:
+        if (args.templateSearch or args.multiTemplateSearch) or \
+        args.J1751 or args.ScoX1S6:
             print 'Skipping R grid'
         else:
             ax.grid('True')
         if (args.band or args.noiseTest) or \
-        (args.templateSearch or args.multiTemplateSearch) or args.J1751:
+        (args.templateSearch or args.multiTemplateSearch) or \
+        args.J1751 or args.ScoX1S6:
             ax.set_aspect('auto')
             ax.set_xlabel('Frequency: f (Hz)')
         else:
@@ -466,7 +505,7 @@ def summarizer(mdcVersion, observatory, pulsar, args):
         plt.close()
         plt.clf()
 
-if args.J1751:
+if args.J1751 or args.ScoX1S6:
   summarizer('S' + args.mdcVersion, args.observatory, str(args.pulsar).zfill(3), args)
 else:
   summarizer('mdcv' + args.mdcVersion, args.observatory, str(args.pulsar).zfill(3), args)

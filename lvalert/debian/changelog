@@ -1,3 +1,12 @@
+ligo-lvalert (1.1-1) unstable; urgency=low
+
+  * added handlers to lvalert_send to avoid 4s sleep
+  * changed LVAlert LIGO-LW table name to lower case
+  * added explicit LIGO-LW content handler to utils
+  * modified get_LVAdata_from_stdin to accept either JSON or LIGO-LW
+
+ -- Branson Stephens <branson.stephens@ligo.org>  Fri, 08 Aug 2014 10:20:00 -0500
+
 ligo-lvalert (1.0-3) unstable; urgency=low
 
   * Fixed version number problems.  Added GIT_TAG info to lib.

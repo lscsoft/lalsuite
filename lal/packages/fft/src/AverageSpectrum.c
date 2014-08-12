@@ -1304,6 +1304,8 @@ int XLALREAL8SpectrumInvertTruncate(
  * the input frequency series' address on success, or NULL on error.  When
  * an error occurs, the contents of the input frequency series are
  * undefined.
+ *
+ * Reviewed: f16747afde9f92ede1c25b0b537d21160b0389a3 on 2014-08-10 by J. Creighton, B. Sathyaprakash, K. Cannon.
  */
 COMPLEX8FrequencySeries *XLALWhitenCOMPLEX8FrequencySeries(COMPLEX8FrequencySeries *fseries, const REAL4FrequencySeries *psd)
 {
@@ -1355,6 +1357,8 @@ COMPLEX8FrequencySeries *XLALWhitenCOMPLEX8FrequencySeries(COMPLEX8FrequencySeri
 
 /**
  * Double-precision version of XLALWhitenCOMPLEX8FrequencySeries().
+ *
+ * Reviewed: f16747afde9f92ede1c25b0b537d21160b0389a3 on 2014-08-10 by J. Creighton, B. Sathyaprakash, K. Cannon.
  */
 COMPLEX16FrequencySeries *XLALWhitenCOMPLEX16FrequencySeries(COMPLEX16FrequencySeries *fseries, const REAL8FrequencySeries *psd)
 {

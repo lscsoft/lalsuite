@@ -5,14 +5,14 @@ import argparse
 
 # Create a Condor DAG submit file to analyze sky locations and parameter space
 # in the Sco X-1 TwoSpect mock data challenge
-# 02013-11-18 (JD 2456614)
+# 02014-07-15 (JD 2456854)
 # g m e a d o r s @ u m i c h .  e d u
 # usage: ./createScoX1dag.py str(observatory) int(fSteps) int(dfSteps)
 
 parser = argparse.ArgumentParser(description='Create a Condor DAG submit file to analyze sky locations')
 parser.add_argument('observatory', type=str, help='Either H1, L1 or V1')
-parser.add_argument('fSteps', type=int, help='Number of frequency steps')
-parser.add_argument('dfSteps', type=int, help='Number of frequency modulation steps')
+parser.add_argument('fSteps', type=int, help='Number of frequency steps; ignore, set=1 if using templateSearch options', default=1)
+parser.add_argument('dfSteps', type=int, help='Number of frequency modulation steps; ignore, set=1 if using templateSearch options', default=1)
 parser.add_argument('--singleBand', type=int, help='Select a single 5 Hz band from the MDCv6 data set')
 parser.add_argument('--skyGrid', type=int, help='Run over a grid of all sky locations')
 parser.add_argument('--onlyOne', type=int, help='Choose only one pulsar from the list')
@@ -20,6 +20,24 @@ parser.add_argument('--noiseTest', type=float, help='Sample all bands for noise 
 parser.add_argument('--templateSearch', type=int, help='Use the templateSearch option for a 5 Hz band. Specify a pulsar number')
 parser.add_argument('--templateSearchOpen', action='store_true', help='templateSearch, run all open pulsar bands, but not closed')
 parser.add_argument('--templateSearchClosed', action='store_true', help='templateSearch, run all closed bands, but not open')
+parser.add_argument('--real', action='store_true', help='Indicates using actual science mode data, defaults below for Scorpius X-1')
+parser.add_argument('--jobspan', type=float, help='Fiducial width of frequency band in Hz, per DAG sub', default=float(5.0))
+parser.add_argument('--wingsize', type=float, help='Total width of frequency band in Hz, including wings, per DAG sub', default=float(7.0))
+parser.add_argument('--ra', type=float, help='Right ascension of directed search', default=float(4.275699238500))
+parser.add_argument('--dec', type=float, help='Declination of directed search', default=float(-0.272973858335))
+parser.add_argument('--fmin', type=float, help='Starting frequency for searching real data, default Sco X-1', default=float(40.0))
+parser.add_argument('--fspan', type=float, help='Frequency span of each TwoSpect job', default=float(0.1))
+parser.add_argument('--fmax', type=float, help='Highest frequency to include in search, [fmin, fmin+fspan]...[fmax-fspan, fpsan]; note, will truncate rounding down if not exact', default=float(360.0))
+parser.add_argument('--t0', type=int, help='Starting time for searching real data, default Sco X-1', default=int(931052760))
+parser.add_argument('--Tobs', type=int, help='Duration of real data, default Sco X-1, H1, 360 s SFTs', default=int(40569120))
+parser.add_argument('--P', type=float, help='Orbital period', default=float(68023.8259))
+parser.add_argument('--Asini', type=float, help='Projected semi-major axis', default=float(1.44))
+parser.add_argument('--AsiniSigma', type=float, help='One sigma uncertainty in asini', default=float(0.18))
+parser.add_argument('--Tcoh', type=int, help='Coherence time of SFTs', default=int(840))
+parser.add_argument('--sftDir', type=str, help='Directory containing SFTs', default='/home/grant.meadors/TwoSpect/ScoX1_S6-SFTs/sfts/')
+parser.add_argument('--outfile', type=str, help='Filestring for output', default='out_')
+parser.add_argument('--outdir', type=str, help='Output directory', default='output_')
+parser.add_argument('--executable', type=str, help='Path to compiled binary executable', default='/home/grant.meadors/TwoSpect/dev1/bin/lalapps_TwoSpect')
 args = parser.parse_args()
 if args.singleBand or args.templateSearch: 
     print 'Looking only in a 5 Hz band from the MDCv6 data set at the following pulsar: ' + str(args.singleBand)
@@ -51,17 +69,40 @@ def sftFileListParts():
     return [sftFileListPart1, sftFileListPart2, \
     sftFileListPart1Closed, sftFileListPart2Closed]
 
+def sftFileBin(finj, fstart, fjobspan, fwingsize, tcoh):
+    print 'Frequency of test start (Hz): ' + str(finj)
+    print 'Frequency of start for all bands (Hz): ' + str(fstart)
+    print 'Frequency of job span (Hz): ' + str(fjobspan)
+    print 'Frequency of job span, including wings (Hz): ' + str(fwingsize)
+    bandCountFreq = np.floor( (finj - fstart)/fjobspan )
+    bandStartFreq = fstart + fjobspan*bandCountFreq
+    bandStartBin = bandStartFreq*tcoh
+    wingsBelowStartBin = (fwingsize - fjobspan)/2 * tcoh 
+    completeStartBin = bandStartBin - wingsBelowStartBin
+    return completeStartBin
+    print 'Frequency start bins for SFTs in real S6 search'
+    
+
 
 def sftNameMaker(observatory, tcoh, binname, args):
-    if args.templateSearchClosed:
+    if args.real:
+        openFlag = ""
+    elif args.templateSearchClosed:
         openFlag = "closed"
     else:
         openFlag = "open"
-    sftFileRoot = "/home/egoetz/TwoSpect/scox1_mdc6/sfts/" + \
-    observatory + "/" 
-    sftFilePart1 = "s_sfts/" + openFlag + "/" + observatory[0] + "-" + observatory[1] + \
-    "_" + observatory + "_"
-    sftFilePart2 = "SFT_SCO_X1_MDCv6_"
+    if args.real:
+        sftFileRoot = args.sftDir + \
+        observatory + "/"
+        sftFilePart1 = "s_sfts/" + observatory[0] + "-" + observatory[1] + \
+        "_" + observatory + "_"
+        sftFilePart2 = "SFT_SCO_X1_S6_" 
+    else:
+        sftFileRoot = "/home/egoetz/TwoSpect/scox1_mdc6/sfts/" + \
+        observatory + "/" 
+        sftFilePart1 = "s_sfts/" + openFlag + "/" + observatory[0] + "-" + observatory[1] + \
+        "_" + observatory + "_"
+        sftFilePart2 = "SFT_SCO_X1_MDCv6_"
     # EXAMPLE: print "/home/egoetz/TwoSpect/scox1_mdc6/sfts/H1/840s_sfts/H-1_H1_840SFT_SCO_X1_MDCv6-313.5Hz_263340"
     return sftFileRoot + str(tcoh) + sftFilePart1 + str(tcoh) + sftFilePart2 + str(binname)
  
@@ -168,7 +209,10 @@ def categorizer(Tcoh, raInj, decInj, fInj, observatory, pulsarNo, sftFile, jobIn
     parentDirectory = os.getcwd()
 
     # Specify which Sco X-1 MDC data set and observatory are to be used
-    mdcVersion = "mdcv" + "6"
+    if args.real:
+        mdcVersion = "S6"
+    else:
+        mdcVersion = "mdcv" + "6"
     headJobName = mdcVersion + '_' + observatory + '_' + pulsarNo
     headJobShort = mdcVersion + '_' + observatory
     if args.templateSearchClosed:
@@ -255,7 +299,7 @@ def categorizer(Tcoh, raInj, decInj, fInj, observatory, pulsarNo, sftFile, jobIn
             fRange = [0.5 + (fFloor/float(Tcoh)) + fInterval*y for y in range(0, fSteps + 1) ]
         elif args.templateSearch or \
         args.templateSearchOpen or args.templateSearchClosed:
-            fRange = [fFloor/float(Tcoh)+ y for y in range(1,6)]
+            fRange = [0.5 + fFloor/float(Tcoh)+ 0.1*y for y in range(0,50)]
         else:
             fRange = [0.5 + (fFloor/float(Tcoh)) + fInterval*y for y in range(0, fSteps - 1) ]
         dfFloor = 2 * np.pi * (fFloor/Tcoh) * float(asini) / float(Period)
@@ -273,6 +317,25 @@ def categorizer(Tcoh, raInj, decInj, fInj, observatory, pulsarNo, sftFile, jobIn
         else:
             dfScope = range(0, dfSteps + 5)
         dfRange = [dfAvg + dfInterval*(-0.5*dfScope[-1] + y) for y in dfScope]
+
+    # Search on real S6 data
+    elif args.real:
+        fFloor = sftFileBin(fInj, args.fmin, args.jobspan, args.wingsize, args.Tcoh)
+        fInterval = 1 / (2 * float(Tcoh))
+        fRange = [(args.wingsize - args.jobspan)/2 + fFloor/float(Tcoh)+ args.fspan*y for y in range(0,int(args.jobspan/args.fspan))]
+        dfInterval = 1 / (4 * float (Tcoh))
+        fBound = 5
+        fSteps = int(fBound / fInterval)
+        dfFloor = 2 * np.pi * (fFloor/Tcoh) * float(asini) / float(Period)
+        dfCeiling = 2 * np.pi * (fRange[-1]) * float(asini) / float(Period)
+        dfBound = dfCeiling - dfFloor
+        dfAvg = (dfCeiling + dfFloor)/2
+        dfSteps = int(dfBound / dfInterval)
+        dfScope = range(0, 1)
+        dfRange = [dfAvg + dfInterval*(-0.5*dfScope[-1] + y) for y in dfScope]
+        sftFile = sftNameMaker(args.observatory, str(Tcoh), str(int(fFloor)), args)
+
+    # Otherwise
     else:
         # Specify the range of frequency to search
         fHypothesis = fInj
@@ -287,8 +350,11 @@ def categorizer(Tcoh, raInj, decInj, fInj, observatory, pulsarNo, sftFile, jobIn
 
     # Choose a TwoSpect version
     # Grant David Meadors's latest development version
-    TwoSpectVersion = \
-    "/home/" + username + "/TwoSpect/dev/bin/lalapps_TwoSpect"
+    if args.real:
+        TwoSpectVersion = args.executable
+    else:
+        TwoSpectVersion = \
+        "/home/" + username + "/TwoSpect/dev/bin/lalapps_TwoSpect"
     # Grant David Meadors's version 1.1.27
     #TwoSpectVersion = \
     #"/home/" + username + "/master/opt/lscsoft/lalapps/bin/lalapps_TwoSpect"
@@ -296,20 +362,42 @@ def categorizer(Tcoh, raInj, decInj, fInj, observatory, pulsarNo, sftFile, jobIn
     #TwoSpectVersion = \
     #"/home/egoetz/opt/lscsoft/bin/lalapps_TwoSpect"
 
+    # Request sufficient memory for executable,
+    # and the proper universe:
+    if args.real:
+        # Assumes dfmax=0.4. Tested on Condor, should provide sufficient
+        # memory. Note that Atlas has beteween 8900 and 9300 nodes with 1536 MB RAM
+        # but only between 5400 and 6300 with 2048 MB RAM
+        # A safe cutoff seems to be at 1200 Hz.
+        # Subtract 2 MB from those numbers to be safe
+        if fInj < 1200.0:
+            requestedMemory = "request_memory = 1534 MB"
+        else:
+            requestedMemory = "request_memory = 2046 MB"
+        requestedUniverse = "standard"
+    else:
+        # For the MDC (note, works with dfmax=0.1, make not be enough
+        # for full dfmax=0.4)
+        requestedMemory = "request_memory = 1.4 GB"
+        requestedUniverse = "vanilla"
+
     # Make a directory for the output logs
-    os.system('mkdir -p output_' + headJobName)
+    if args.real:
+        os.system('mkdir -p ' + args.outdir + headJobName)
+    else:
+        os.system('mkdir -p output_' + headJobName)
 
     # Write a Condor sub file
     condorObject = open(parentDirectory + "/ScoX1_" + \
     headJobName + ".sub", "a")
 
     # Insert the contents of the file
-    h("universe = vanilla")
+    h("universe = " + requestedUniverse)
     h("executable = " + TwoSpectVersion)
     h("output = " + "output_" + headJobName + "/TwoSpect.out.$(tagstring)")
     h("error = output_" + headJobName + "/TwoSpect.err.$(tagstring)")
     h("log = output_" + headJobName + "/TwoSpect.dag.log")
-    h("request_memory = 3 GB")
+    h(requestedMemory)
     h("notification = never")
     h("environment = HOME=/home/" + username)
     h("")
@@ -340,7 +428,12 @@ def dagWriter(g, observatory, headJobName, jobNumber, rightAscension, declinatio
 
     #startTime is conditional on the observatory
    
-    if str(Tcoh) == str(360):
+    if args.real:
+            # For real searches, the startTime string should be
+            # configured with the observation time too
+            startTime = str(args.t0) +\
+            ' --Tobs=' + str(args.Tobs)
+    elif str(Tcoh) == str(360):
         if str(observatory) == 'H1':
             startTime = str(1230338520)
         elif str(observatory) == 'L1':
@@ -363,7 +456,9 @@ def dagWriter(g, observatory, headJobName, jobNumber, rightAscension, declinatio
         
     if args.templateSearch or \
     args.templateSearchOpen or args.templateSearchClosed:
-        fminString = str(1*np.math.floor(f/1))
+        fminString = str(np.math.floor(10*f)/10)
+    elif args.real:
+        fminString = str(np.math.floor(f*np.math.floor(1/args.fspan))/np.math.floor(1/args.fspan))
     else:
         fminString = str(np.math.floor(8*(f-0.125))/8)     
     if args.templateSearch or \
@@ -371,7 +466,13 @@ def dagWriter(g, observatory, headJobName, jobNumber, rightAscension, declinatio
         #templateStringSet = ' --templateSearch' + \
         #' --fspan=' + str(1 - 1/(2*float(Tcoh)))
         templateStringSet = ' --templateSearch' + \
-        ' --fspan=' + str(1)
+        ' --fspan=' + str(0.1)
+    elif args.real:
+        templateStringSet = ' --templateSearch' + \
+        ' --templateSearchAsini=' + str(args.Asini) + \
+        ' --templateSearchAsiniSigma=' + str(args.AsiniSigma) +\
+        ' --templateSearchP=' + str(args.P) +\
+        ' --fspan=' + str(args.fspan)
     else:
         templateStringSet = ' --templateTest' + \
         " --templateTestF=" + str(f) + \
@@ -379,9 +480,13 @@ def dagWriter(g, observatory, headJobName, jobNumber, rightAscension, declinatio
         " --templateTestP=" + str(Period) + \
         ' --fspan=0.125'
 
+    if args.real:
+        configFileName = 'Atlas_config_file.txt'
+    else:
+        configFileName = 'config_file_mdcv6.txt' 
     argumentList = \
     '"' + \
-    ' --config=config_file_mdcv6.txt' + \
+    ' --config=' + configFileName + \
     " --t0=" + str(startTime) + \
     " --fmin=" + fminString + \
     " --skyRegion=(" + str(rightAscension)+ ',' + str(declination) + ")" + \
@@ -397,7 +502,9 @@ def dagWriter(g, observatory, headJobName, jobNumber, rightAscension, declinatio
     tagStringLine = "TwoSpect_" + str(jobNumber)
     g("JOB " + tagStringLine + " ScoX1_" + headJobName + ".sub")
     g("VARS " + tagStringLine + " argList=" + argumentList + " tagString=" + '"' + tagStringLine + '"')
+    # End of dagWriter function
 
+# OUTER LOOP BEGINS HERE
 observatoryChoice = args.observatory
 
 if args.templateSearchClosed:
@@ -420,12 +527,27 @@ asiniList = tableInfo[7]
 fSteps = args.fSteps
 dfSteps = args.dfSteps
 
-if args.templateSearchClosed:
+# A search over real data from S6 for Scorpius X-1
+if args.real:
+    print 'Generating Condor files for search in real data'
+    fStartList = np.arange(args.fmin, args.fmax, args.jobspan)
+    if fStartList[-1] + args.jobspan > args.fmax:
+        fStartList = fStartList[0:-1]
+    print 'Starting frequency of bands to be searched:'
+    print fStartList
+    
+    for m, BandNo in enumerate(fStartList):
+        jobsPerBand = int(args.jobspan/args.fspan) 
+        jobInc = m * jobsPerBand
+        categorizer(args.Tcoh, args.ra, args.dec, fStartList[m], observatoryChoice, "band-" + str(int(BandNo)).zfill(4), args.sftDir, jobInc, args.P, args.Asini, fSteps, dfSteps, args)
+
+# Below are all the generators for the MDC
+elif args.templateSearchClosed:
     print 'Generating Condor files for MDCv6 closed search'
     for m, pulsarNo in enumerate(pulsarNoList):
         shortNo = str(pulsarNo).strip('[').strip(']').strip("'").zfill(3)
         print 'Looking at band, using templateSearchClosed, for pulsar: ' + shortNo
-        jobsPerPulsar = 5
+        jobsPerPulsar = 50
         jobInc = m * jobsPerPulsar
         categorizer(TcohList[m][0], raInjList[m][0], decInjList[m][0], fInjList[m][0], observatoryChoice, "pulsar-" + shortNo, sftFileList[m], jobInc, PList[m], asiniList[m], fSteps, dfSteps, args)
 else:
@@ -468,3 +590,12 @@ else:
                 jobsPerPulsar = int(float(5) / args.noiseTest + 1) * dfSteps
             jobInc = m * jobsPerPulsar
             categorizer(TcohList[m][0], raInjList[m][0], decInjList[m][0], fInjList[m][0], observatoryChoice, "pulsar-" + shortNo, sftFileList[m], jobInc, PList[m], asiniList[m], fSteps, dfSteps, args)
+
+
+# End of program
+# To run a search on real Scorpius X-1 data on Atlas, with access to
+# files from user grant.meadors, run the four commands to generate dags
+# './createScoX1dag.py H1 1 1 --real --Tobs 40569060'
+# './createScoX1dag.py L1 1 1 --real --Tobs 40542600 --t0 931071900'
+# './createScoX1dag.py H1 1 1 --real --fmin 360 --fmax 2040 --Tcoh 360'
+# './createScoX1dag.py L1 1 1 --real --fmin 360 --fmax 2040 --Tcoh 360 --Tobs 40543020 --t0 931071660'

@@ -146,7 +146,6 @@ typedef struct {
   SSBprecision SSBprec;            /**< SSB transform precision */
   FstatMethodType Fmethod;         //!< which Fstat-method/algorithm to use
   BOOLEAN useResamp;               /**< user-input switch whether to use resampling */
-  BOOLEAN useWholeSFTs;            /**< special switch: load all given frequency bins from SFTs */
   REAL8 mismatch1;                 /**< 'mismatch1' user-input needed here internally ... */
   UINT4 nSFTs;                     /**< total number of SFTs */
   LALStringVector *detectorIDs;    /**< vector of detector IDs */
@@ -404,7 +403,6 @@ int MAIN( int argc, char *argv[]) {
 
   CHAR *uvar_outputTiming = NULL;
 
-  BOOLEAN uvar_useWholeSFTs = 0;
   CHAR *uvar_FstatMethod = XLALStringDuplicate("DemodBest");
 
   timingInfo_t XLAL_INIT_DECL(timing);
@@ -504,8 +502,6 @@ int MAIN( int argc, char *argv[]) {
   LAL_CALL( LALRegisterSTRINGUserVar( &status, "outputSingleSegStats", 0,  UVAR_DEVELOPER, "Base filename for single-segment Fstat output (1 file per final toplist candidate!)", &uvar_outputSingleSegStats),  &status);
 
   LAL_CALL( LALRegisterSTRINGUserVar( &status, "outputTiming", 0, UVAR_DEVELOPER, "Append timing information into this file", &uvar_outputTiming), &status);
-
-  LAL_CALL( LALRegisterBOOLUserVar( &status, "useWholeSFTs", 0, UVAR_DEVELOPER, "Read in all SFTs bins (workaround for code searching outside input band)", &uvar_useWholeSFTs), &status);
 
   LAL_CALL ( LALRegisterBOOLUserVar(  &status, "version",     'V', UVAR_SPECIAL,  "Output version information", &uvar_version), &status);
 
@@ -766,7 +762,6 @@ int MAIN( int argc, char *argv[]) {
   LogPrintf (LOG_NORMAL, "FstatMethod used: '%s'\n", XLALGetFstatMethodName( usefulParams.Fmethod ) );
   usefulParams.useResamp = XLALFstatMethodClassIsResamp ( usefulParams.Fmethod );
 
-  usefulParams.useWholeSFTs = uvar_useWholeSFTs;
   usefulParams.mismatch1 = uvar_mismatch1;
 
   /* set reference time for pulsar parameters */
@@ -1194,7 +1189,6 @@ int MAIN( int argc, char *argv[]) {
           binsFstatSearch = (UINT4)(usefulParams.spinRange_midTime.fkdotBand[0]/dFreqStack + 1e-6) + 1;
         }
         binsFstat1 = binsFstatSearch + 2 * semiCohPar.extraBinsFstat;
-
 
       /* ################## loop over coarse-grid F1DOT values ################## */
       ifdot = 0;
@@ -1839,11 +1833,6 @@ void SetUpSFTs( LALStatus *status,			/**< pointer to LALStatus structure */
   SFTCatalogSequence catalogSeq;
   REAL8 midTseg,startTseg,endTseg;
 
-  REAL8 doppWings, freqmin, freqmax;
-  REAL8 startTime_freqLo, startTime_freqHi;
-  REAL8 endTime_freqLo, endTime_freqHi;
-  REAL8 freqLo, freqHi;
-
   INT4 sft_check_result = 0;
 
   INITSTATUS(status);
@@ -1988,27 +1977,15 @@ void SetUpSFTs( LALStatus *status,			/**< pointer to LALStatus structure */
   in->extraBinsFstat = (UINT4)( 0.25*(in->tObs*in->df1dot + in->tObs*in->tObs*in->df2dot)/in->dFreqStack + 1e-6) + 1;
 
   /* set wings of sfts to be read */
-  /* the wings must be enough for the Doppler shift and extra bins
-     for the running median block size and Dterms for Fstat calculation.
-     In addition, it must also include wings for the spindown correcting
-     for the reference time  */
-  /* calculate Doppler wings at the highest frequency */
-  startTime_freqLo = in->spinRange_startTime.fkdot[0]; /* lowest search freq at start time */
-  startTime_freqHi = startTime_freqLo + in->spinRange_startTime.fkdotBand[0]; /* highest search freq. at start time*/
-  endTime_freqLo = in->spinRange_endTime.fkdot[0];
-  endTime_freqHi = endTime_freqLo + in->spinRange_endTime.fkdotBand[0];
+  REAL8 minCoverFreq, maxCoverFreq;
+  REAL8 asiniMax = 0, PeriodMin = 0;
+  // NOTE: *must* use spin-range at *mid-time* (not reftime), which is where the GCT code sets up its
+  // template bank. This is potentially 'wider' than the physically-requested template bank, and
+  // can therefore also require more SFT frequency bins!
+  XLALCWSignalCoveringBand ( &minCoverFreq, &maxCoverFreq, &tStartGPS, &tEndGPS, &(in->spinRange_midTime), asiniMax, PeriodMin );
 
-  freqLo = HSMIN ( startTime_freqLo, endTime_freqLo );
-  freqHi = HSMAX ( startTime_freqHi, endTime_freqHi );
-  doppWings = freqHi * in->dopplerMax;    /* maximum Doppler wing -- probably larger than it has to be */
-
-  if (in->useWholeSFTs) {
-    freqmin = freqmax = -1;
-  }
-  else {
-    freqmin = freqLo - doppWings - in->extraBinsFstat * in->dFreqStack;
-    freqmax = freqHi + doppWings + in->extraBinsFstat * in->dFreqStack;
-  }
+  REAL8 freqmin = minCoverFreq - in->extraBinsFstat * in->dFreqStack;
+  REAL8 freqmax = maxCoverFreq + in->extraBinsFstat * in->dFreqStack;
 
   /* fill detector name vector with all detectors present in any data sements */
   in->detectorIDs = NULL;
@@ -2041,7 +2018,8 @@ void SetUpSFTs( LALStatus *status,			/**< pointer to LALStatus structure */
     /* if single-only flag is given, assume a PSD with sqrt(S) = 1.0 */
     MultiNoiseFloor assumeSqrtSX, *p_assumeSqrtSX;
     if ( in->SignalOnly ) {
-      assumeSqrtSX.length = XLALCountIFOsInCatalog(catalog);
+      const SFTCatalog *catalog_k = &(catalogSeq.data[k]);
+      assumeSqrtSX.length = XLALCountIFOsInCatalog ( catalog_k );
       for (UINT4 X = 0; X < assumeSqrtSX.length; ++X) {
         assumeSqrtSX.sqrtSn[X] = 1.0;
       }
@@ -2101,7 +2079,7 @@ void SetUpSFTs( LALStatus *status,			/**< pointer to LALStatus structure */
     if ( in->segmentList ) {
       /* check the number of SFTs we found in this segment against the nominal value, stored in the segment list field 'id' */
       UINT4 nSFTsExpected = in->segmentList->segs[k].id;
-      if ( nSFTsInSeg != nSFTsExpected ) {
+      if ( (nSFTsExpected > 0) && (nSFTsInSeg != nSFTsExpected) ) {
         XLALPrintError ("%s: Segment list seems inconsistent with data read: segment %d contains %d SFTs, should hold %d SFTs\n", __func__, k, nSFTsInSeg, nSFTsExpected );
         ABORT ( status, HIERARCHICALSEARCH_EBAD, HIERARCHICALSEARCH_MSGEBAD );
       }

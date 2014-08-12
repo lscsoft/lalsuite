@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2011  Leo Singer
+# Copyright (C) 2011-2014  Leo Singer
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -32,6 +32,7 @@ __author__ = "Leo Singer <leo.singer@ligo.org>"
 
 from optparse import Option, OptionParser
 from lalinference.bayestar import command
+import lalinference.cmap
 from matplotlib import cm
 colormap_choices = sorted(cm.cmap_d.keys())
 parser = OptionParser(
@@ -40,7 +41,7 @@ parser = OptionParser(
     option_list = [
         Option("-o", "--output", metavar="FILE.{pdf,png}",
             help="name of output file [default: plot to screen]"),
-        Option("--colormap", default="jet", choices=colormap_choices,
+        Option("--colormap", default="cylon", choices=colormap_choices,
             metavar='|'.join(colormap_choices),
             help="name of matplotlib colormap [default: %default]"),
         Option("--figure-width", metavar="INCHES", type=float, default=8.,
@@ -88,7 +89,7 @@ ax = plt.subplot(111,
 ax.cla()
 ax.grid()
 
-skymap, metadata = fits.read_sky_map(infilename)
+skymap, metadata = fits.read_sky_map(infilename, nest=None)
 nside = hp.npix2nside(len(skymap))
 
 if opts.geo:
@@ -101,12 +102,13 @@ probperdeg2 = skymap / hp.nside2pixarea(nside, degrees=True)
 
 # Plot sky map.
 vmax = probperdeg2.max()
-plot.healpix_heatmap(probperdeg2, dlon=dlon,
+plot.healpix_heatmap(
+    probperdeg2, dlon=dlon, nest=metadata['nest'],
     vmin=0., vmax=vmax, cmap=plt.get_cmap(opts.colormap))
 
 if opts.colorbar:
     # Plot colorbar.
-    cb = plot.colorbar(vmax)
+    cb = plot.colorbar()
 
     # Set colorbar label.
     cb.set_label(r'prob. per deg$^2$')
@@ -116,7 +118,8 @@ if opts.contour:
     indices = np.argsort(-skymap)
     region = np.empty(skymap.shape)
     region[indices] = 100 * np.cumsum(skymap[indices])
-    cs = plot.healpix_contour(region, dlon=dlon,
+    cs = plot.healpix_contour(
+        region, dlon=dlon, nest=metadata['nest'],
         colors='k', linewidths=0.5, levels=opts.contour)
     fmt = r'%g\%%' if rcParams['text.usetex'] else '%g%%'
     plt.clabel(cs, fmt=fmt, fontsize=6, inline=True)
@@ -128,7 +131,7 @@ if opts.geo:
         geojson = json.load(geojson_file)
     for shape in geojson['geometries']:
         verts = np.deg2rad(shape['coordinates'])
-        plt.plot(verts[:, 0], verts[:, 1], color='black', linewidth=1, alpha=0.25)
+        plt.plot(verts[:, 0], verts[:, 1], color='0.5', linewidth=0.5)
 
 # Add markers (e.g., for injections or external triggers).
 for ra, dec in np.deg2rad(opts.radec):

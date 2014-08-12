@@ -168,7 +168,7 @@ for coinc, sngl_inspirals in ligolw_bayestar.coinc_and_sngl_inspirals_for_xmldoc
             fits.write_sky_map('%s.%s.fits.gz' % (int(coinc.coinc_event_id), method),
                 sky_map, objid=str(coinc.coinc_event_id), gps_time=float(epoch),
                 creator=parser.get_prog_name(), runtime=elapsed_time,
-                instruments=instruments)
+                instruments=instruments, nest=True)
 
 
 if count_sky_maps_failed > 0:

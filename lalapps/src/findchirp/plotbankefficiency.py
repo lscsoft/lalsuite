@@ -12,7 +12,7 @@ from matplotlib.ticker import FormatStrFormatter
 from numpy import *
 from pylab import *
 from matplotlib import rc
-from inspiraltools  import *
+from lalapps.inspiraltools import *
 
 #this is for the colorbar labelsize. Do not know why it works but it works!
 rc('ytick',labelsize=15)

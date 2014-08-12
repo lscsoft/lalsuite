@@ -3,9 +3,9 @@ exec_prefix=@exec_prefix@
 libdir=@libdir@
 includedir=@includedir@
 datarootdir=@datarootdir@
-LAL_DATA_PATH=@datadir@/@PACKAGE@:@LAL_DATA_PATH@
-LAL_OCTAVE_PATH=@octexecdir@:@LAL_OCTAVE_PATH@
-LAL_PYTHON_PATH=@pyexecdir@:@LAL_PYTHON_PATH@
+LALSTOCHASTIC_DATA_PATH=@datadir@/@PACKAGE@
+LALSTOCHASTIC_OCTAVE_PATH=@octexecdir@
+LALSTOCHASTIC_PYTHON_PATH=@pyexecdir@
 
 Name: LALStochastic
 Description: LAL Stochastic Library

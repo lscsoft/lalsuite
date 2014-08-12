@@ -157,7 +157,7 @@ bool approximatelyEqualC(COMPLEX16 a, COMPLEX16 b, REAL8 epsilon) {
 
 void print_difference(const char *name, REAL8 u, REAL8 u_expected);
 void print_difference(const char *name, REAL8 u, REAL8 u_expected) {
-  printf("%s:\t%g\t%g\t%g\n", name, u, u_expected, u - u_expected);
+  printf("%-8s: %-20.17g\t%-20.17g\t%-20.17g\n", name, u, u_expected, u - u_expected);
 }
 
 static void Test_alpha_epsilon(void);
@@ -557,7 +557,7 @@ static void Test_PhenomC_PhenomP(void) {
 
   COMPLEX16FrequencySeries *htildePC = NULL;
   ret = XLALSimIMRPhenomCGenerateFD(
-      &htildePC, /**< FD waveform */
+      &htildePC,             /**< FD waveform */
       phic,                  /**< orbital phase at peak (rad) */
       deltaF,                /**< sampling interval (Hz) */
       m1_SI,                 /**< mass of companion 1 (kg) */
