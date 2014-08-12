@@ -2070,6 +2070,15 @@ int XLALSimInspiralChooseFDWaveform(
     if( f_min > 40.000001 )
         XLALPrintWarning("XLAL Warning - %s: Large value of fmin = %e requested...Check for errors, the signal will start in band.\n", __func__, f_min);
 
+    /* The non-precessing waveforms return h(f) for optimal orientation
+     * (i=0, Fp=1, Fc=0; Lhat pointed toward the observer)
+     * To get generic polarizations we multiply by inclination dependence
+     * and note hc(f) \propto -I * hp(f)
+     * Non-precessing waveforms multiply hp by pfac, hc by -I*cfac
+     */
+    cfac = cos(i);
+    pfac = 0.5 * (1. + cfac*cfac);
+
     switch (approximant)
     {
         /* inspiral-only models */
@@ -2090,17 +2099,12 @@ int XLALSimInspiralChooseFDWaveform(
                     XLALSimInspiralGetTidalOrder(waveFlags),
                     phaseO, amplitudeO);
             if (ret == XLAL_FAILURE) XLAL_ERROR(XLAL_EFUNC);
-            /* The above returns h(f) for optimal orientation (i=0, Fp=1, Fc=0)
-             * To get generic polarizations we multiply by incl. dependence
-             * and note hc(f) \propto I * hp(f)
-             */
+            /* Produce both polarizations */
             *hctilde = XLALCreateCOMPLEX16FrequencySeries("FD hcross",
                     &((*hptilde)->epoch), (*hptilde)->f0, (*hptilde)->deltaF,
                     &((*hptilde)->sampleUnits), (*hptilde)->data->length);
-            cfac = cos(i);
-            pfac = 0.5 * (1. + cfac*cfac);
             for(j = 0; j < (*hptilde)->data->length; j++) {
-                (*hctilde)->data->data[j] = I*cfac * (*hptilde)->data->data[j];
+                (*hctilde)->data->data[j] = -I*cfac * (*hptilde)->data->data[j];
                 (*hptilde)->data->data[j] *= pfac;
             }
             break;
@@ -2118,17 +2122,12 @@ int XLALSimInspiralChooseFDWaveform(
             ret = XLALSimIMRPhenomAGenerateFD(hptilde, phiRef, deltaF, m1, m2,
                     f_min, f_max, r);
             if (ret == XLAL_FAILURE) XLAL_ERROR(XLAL_EFUNC);
-            /* The above returns h(f) for optimal orientation (i=0, Fp=1, Fc=0)
-             * To get generic polarizations we multiply by incl. dependence
-             * and note hc(f) \propto I * hp(f)
-             */
+            /* Produce both polarizations */
             *hctilde = XLALCreateCOMPLEX16FrequencySeries("FD hcross",
                     &((*hptilde)->epoch), (*hptilde)->f0, (*hptilde)->deltaF,
                     &((*hptilde)->sampleUnits), (*hptilde)->data->length);
-            cfac = cos(i);
-            pfac = 0.5 * (1. + cfac*cfac);
             for(j = 0; j < (*hptilde)->data->length; j++) {
-                (*hctilde)->data->data[j] = I*cfac * (*hptilde)->data->data[j];
+                (*hctilde)->data->data[j] = -I*cfac * (*hptilde)->data->data[j];
                 (*hptilde)->data->data[j] *= pfac;
             }
             break;
@@ -2185,17 +2184,12 @@ int XLALSimInspiralChooseFDWaveform(
                     m1, m2, XLALSimInspiralTaylorF2ReducedSpinComputeChi(m1, m2, S1z, S2z),
                     f_min, f_max, r, phaseO, amplitudeO);
             if (ret == XLAL_FAILURE) XLAL_ERROR(XLAL_EFUNC);
-            /* The above returns h(f) for optimal orientation (i=0, Fp=1, Fc=0)
-             * To get generic polarizations we multiply by incl. dependence
-             * and note hc(f) \propto I * hp(f)
-             */
+            /* Produce both polarizations */
             *hctilde = XLALCreateCOMPLEX16FrequencySeries("FD hcross",
                     &((*hptilde)->epoch), (*hptilde)->f0, (*hptilde)->deltaF,
                     &((*hptilde)->sampleUnits), (*hptilde)->data->length);
-            cfac = cos(i);
-            pfac = 0.5 * (1. + cfac*cfac);
             for(j = 0; j < (*hptilde)->data->length; j++) {
-                (*hctilde)->data->data[j] = I*cfac * (*hptilde)->data->data[j];
+                (*hctilde)->data->data[j] = -I*cfac * (*hptilde)->data->data[j];
                 (*hptilde)->data->data[j] *= pfac;
             }
             break;
@@ -2211,17 +2205,12 @@ int XLALSimInspiralChooseFDWaveform(
                     m1, m2, XLALSimIMRPhenomBComputeChi(m1, m2, S1z, S2z),
                     lambda1, lambda2, f_min, f_max, r, phaseO, amplitudeO);
             if (ret == XLAL_FAILURE) XLAL_ERROR(XLAL_EFUNC);
-            /* The above returns h(f) for optimal orientation (i=0, Fp=1, Fc=0)
-             * To get generic polarizations we multiply by incl. dependence
-             * and note hc(f) \propto I * hp(f)
-             */
+            /* Produce both polarizations */
             *hctilde = XLALCreateCOMPLEX16FrequencySeries("FD hcross",
                     &((*hptilde)->epoch), (*hptilde)->f0, (*hptilde)->deltaF,
                     &((*hptilde)->sampleUnits), (*hptilde)->data->length);
-            cfac = cos(i);
-            pfac = 0.5 * (1. + cfac*cfac);
             for(j = 0; j < (*hptilde)->data->length; j++) {
-                (*hctilde)->data->data[j] = I*cfac * (*hptilde)->data->data[j];
+                (*hctilde)->data->data[j] = -I*cfac * (*hptilde)->data->data[j];
                 (*hptilde)->data->data[j] *= pfac;
             }
             break;
@@ -2240,17 +2229,12 @@ int XLALSimInspiralChooseFDWaveform(
                     XLALSimIMRPhenomBComputeChi(m1, m2, S1z, S2z),
                     f_min, f_max, r);
             if (ret == XLAL_FAILURE) XLAL_ERROR(XLAL_EFUNC);
-            /* The above returns h(f) for optimal orientation (i=0, Fp=1, Fc=0)
-             * To get generic polarizations we multiply by incl. dependence
-             * and note hc(f) \propto I * hp(f)
-             */
+            /* Produce both polarizations */
             *hctilde = XLALCreateCOMPLEX16FrequencySeries("FD hcross",
                     &((*hptilde)->epoch), (*hptilde)->f0, (*hptilde)->deltaF,
                     &((*hptilde)->sampleUnits), (*hptilde)->data->length);
-            cfac = cos(i);
-            pfac = 0.5 * (1. + cfac*cfac);
             for(j = 0; j < (*hptilde)->data->length; j++) {
-                (*hctilde)->data->data[j] = I*cfac * (*hptilde)->data->data[j];
+                (*hctilde)->data->data[j] = -I*cfac * (*hptilde)->data->data[j];
                 (*hptilde)->data->data[j] *= pfac;
             }
             break;
@@ -2268,17 +2252,12 @@ int XLALSimInspiralChooseFDWaveform(
                     XLALSimIMRPhenomBComputeChi(m1, m2, S1z, S2z),
                     f_min, f_max, r);
             if (ret == XLAL_FAILURE) XLAL_ERROR(XLAL_EFUNC);
-            /* The above returns h(f) for optimal orientation (i=0, Fp=1, Fc=0)
-             * To get generic polarizations we multiply by incl. dependence
-             * and note hc(f) \propto I * hp(f)
-             */
+            /* Produce both polarizations */
             *hctilde = XLALCreateCOMPLEX16FrequencySeries("FD hcross",
                     &((*hptilde)->epoch), (*hptilde)->f0, (*hptilde)->deltaF,
                     &((*hptilde)->sampleUnits), (*hptilde)->data->length);
-            cfac = cos(i);
-            pfac = 0.5 * (1. + cfac*cfac);
             for(j = 0; j < (*hptilde)->data->length; j++) {
-                (*hctilde)->data->data[j] = I*cfac * (*hptilde)->data->data[j];
+                (*hctilde)->data->data[j] = -I*cfac * (*hptilde)->data->data[j];
                 (*hptilde)->data->data[j] *= pfac;
             }
             break;
