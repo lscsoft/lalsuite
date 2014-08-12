@@ -1458,7 +1458,7 @@ class ResultsPageNode(pipeline.CondorDAGNode):
         self.webpath=path
         #self.add_file_opt('outpath',path,file_is_output_file=True)
         self.add_var_opt('outpath',path)
-        self.add_file_opt('archive','results.tar.gz',file_is_output_file=True)
+        #self.add_file_opt('archive','results.tar.gz',file_is_output_file=True)
         mkdirs(path)
         self.posfile=os.path.join(path,'posterior_samples.dat')
     def set_injection(self,injfile,eventnumber):
