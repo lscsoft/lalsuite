@@ -409,6 +409,8 @@ for inj_run in cp.options("injections"):
     inj_node = InspinjNode(inspinjJob, dag, tag=tag,seed = seed, p_node = [])
 
     # reset the config parser option back to default values
+    for opt in cp.options(inj_run):
+        cp.remove_option('inspinj',opt)
     cp.read(options.config_file)
 
     # add sim nodes
