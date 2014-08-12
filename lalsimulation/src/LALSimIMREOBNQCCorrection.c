@@ -3412,7 +3412,7 @@ UNUSED static int XLALSimIMRGetEOBCalibratedSpinNQC3D(
   coeffs->b1 = - coeffs->b1;
   coeffs->b2 = - coeffs->b2;
 
-  REAL8 dM  = abs(m1 - m2)/(m1+m2);
+  REAL8 dM  = fabs(m1 - m2)/(m1+m2);
   REAL8 chiA = chiAin;
   if ( m2 > m1 )
   {
