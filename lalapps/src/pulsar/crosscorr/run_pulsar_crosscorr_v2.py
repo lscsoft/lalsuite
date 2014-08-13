@@ -34,6 +34,7 @@ ap.add_argument("--jobNum", action="store", type=int, required=True,
 args = ap.parse_args()
 
 cp = SafeConfigParser()
+cp.optionxform = str
 cp.read(args.configFile)
 
 fMin = cp.getfloat('param-space','f_min')
