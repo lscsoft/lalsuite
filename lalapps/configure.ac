@@ -88,6 +88,14 @@ LALSUITE_ENABLE_LALPULSAR
 LALSUITE_ENABLE_LALINFERENCE
 LALSUITE_ENABLE_LALSTOCHASTIC
 
+# condor enabled build against lalxml fails on wheezy
+# https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=697382
+AS_IF([test "x$condor" = "xtrue"], [
+  AS_IF([test "x$lalxml" = "xtrue"], [
+    AC_MSG_ERROR([Cannot condor compile with LALXML enabled])
+  ])
+])
+
 # define version/configure info
 LALSUITE_VERSION_CONFIGURE_INFO
 
