@@ -35,6 +35,7 @@
 
 LALInferenceRunState *initialize(ProcessParamsTable *commandLine);
 void initializeMCMC(LALInferenceRunState *runState);
+void sample_prior(LALInferenceRunState *runState);
 
 
 /* Read samples from file as initial state of ensemble */
@@ -181,14 +182,20 @@ void LALInferenceInitEnsemble(LALInferenceRunState *state) {
     /* Initialize starting likelihood and prior */
     state->currentPriors = XLALMalloc(nwalkers_per_thread * sizeof(REAL8));
     state->currentLikelihoods = XLALMalloc(nwalkers_per_thread * sizeof(REAL8));
-    for (walker = 0; walker < nwalkers_per_thread; walker++) {
+    for (walker = 0; walker < nwalkers_per_thread; walker++)
         state->currentPriors[walker] = state->prior(state,
                                                     state->currentParamArray[walker],
                                                     state->modelArray[walker]);
 
+    /* Distribute ensemble according to prior */
+    sample_prior(state);
+
+    /* Set starting likelihood values (prior function hasn't changed) */
+    #pragma omp parallel for
+    for (walker = 0; walker < nwalkers_per_thread; walker++)
         state->currentLikelihoods[walker] = state->likelihood(state->currentParamArray[walker],
-                                                                 state->data, state->modelArray[walker]);
-    }
+                                                                 state->data,
+                                                                 state->modelArray[walker]);
 
     headData = state->data;
     while (headData != NULL) {
@@ -320,7 +327,7 @@ void initializeMCMC(LALInferenceRunState *runState) {
     } else if (LALInferenceGetProcParamVal(commandLine, "--malmquistprior")) {
         printf("Using malmquist prior.\n");
         malmquist = 1;
-        LALInferenceAddVariable(runState->priorArgs, "malmquist", &malmquist, LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_FIXED);
+        LALInferenceAddVariable(runState->priorArgs, "malmquist", &malmquist, LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_OUTPUT);
         runState->prior=&LALInferenceInspiralPrior;
     } else {
         runState->prior=&LALInferenceInspiralPriorNormalised;
@@ -344,11 +351,11 @@ void initializeMCMC(LALInferenceRunState *runState) {
             malmquist_network = atof(ppt->value);
 
         LALInferenceAddVariable(runState->priorArgs, "malmquist_loudest_snr",
-                &malmquist_loudest, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
+                &malmquist_loudest, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_OUTPUT);
         LALInferenceAddVariable(runState->priorArgs, "malmquist_second_loudest_snr",
-                &malmquist_second_loudest, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
+                &malmquist_second_loudest, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_OUTPUT);
         LALInferenceAddVariable(runState->priorArgs, "malmquist_network_snr",
-                &malmquist_network, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
+                &malmquist_network, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_OUTPUT);
     }
 
     /* Print more stuff */
@@ -447,28 +454,28 @@ void initializeMCMC(LALInferenceRunState *runState) {
 
     /* Store flags to keep from checking the command line all the time */
     LALInferenceAddVariable(runState->algorithmParams,"verbose", &verbose,
-                            LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_FIXED);
+                            LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_OUTPUT);
 
     LALInferenceAddVariable(runState->algorithmParams, "nwalkers_per_thread", &nwalkers_per_thread,
-                            LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_FIXED);
+                            LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_OUTPUT);
 
     LALInferenceAddVariable(runState->algorithmParams, "nwalkers", &nwalkers,
-                            LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_FIXED);
+                            LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_OUTPUT);
 
     LALInferenceAddVariable(runState->algorithmParams, "nsteps", &nsteps,
-                            LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_FIXED);
+                            LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_OUTPUT);
 
     LALInferenceAddVariable(runState->algorithmParams, "skip", &skip,
-                            LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_FIXED);
+                            LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_OUTPUT);
 
     LALInferenceAddVariable(runState->algorithmParams, "update_interval", &update_interval,
-                            LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_FIXED);
+                            LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_OUTPUT);
 
     LALInferenceAddVariable(runState->algorithmParams, "benchmark", &benchmark,
-                            LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_FIXED);
+                            LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_OUTPUT);
 
     LALInferenceAddVariable(runState->algorithmParams, "random_seed", &randomseed,
-                            LALINFERENCE_UINT4_t,LALINFERENCE_PARAM_FIXED);
+                            LALINFERENCE_UINT4_t,LALINFERENCE_PARAM_OUTPUT);
 
    /* Now make sure that everyone is running with un-correlated
        jumps!  We re-seed rank i process with the ith output of
@@ -482,6 +489,33 @@ void initializeMCMC(LALInferenceRunState *runState) {
     return;
 }
 
+
+void sample_prior(LALInferenceRunState *runState) {
+    INT4 update_interval, nprior_steps, nsteps;
+    INT4 walker, nwalkers_per_thread;
+    LALInferenceVariables *algorithmParams = runState->algorithmParams;
+
+    /* Ensure ensemble distributed according to prior */
+    nsteps = *(INT4 *) LALInferenceGetVariable(algorithmParams, "nsteps");
+    update_interval = *(INT4 *) LALInferenceGetVariable(algorithmParams, "update_interval");
+    nwalkers_per_thread = *(INT4 *) LALInferenceGetVariable(algorithmParams, "nwalkers_per_thread");
+
+    nprior_steps = 2 * update_interval - 1;
+    LALInferenceSetVariable(algorithmParams, "nsteps", &nprior_steps);
+
+    runState->likelihood = &LALInferenceZeroLogLikelihood;
+
+    printf("Distributing ensemble according to prior.\n");
+    runState->algorithm(runState);
+
+    /* Call MCMC algorithm */
+    LALInferenceSetVariable(algorithmParams, "nsteps", &nsteps);
+
+    /* Reset likelihood function */
+    LALInferenceInitLikelihood(runState);
+
+    printf("Beginning posterior sampling.\n");
+}
 
 int main(int argc, char *argv[]){
     MPI_Init(&argc, &argv);
@@ -524,6 +558,9 @@ int main(int argc, char *argv[]){
         exit(1);
     }
     MPI_Barrier(MPI_COMM_WORLD);
+
+    /* Ensure ensemble distributed according to prior */
+    sample_prior(runState);
 
     /* Call MCMC algorithm */
     runState->algorithm(runState);
