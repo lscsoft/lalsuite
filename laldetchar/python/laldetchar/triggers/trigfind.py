@@ -51,6 +51,8 @@ def find_trigger_urls(channel, etg, gpsstart, gpsend, verbose=False, **kwargs):
         ifo = channel.split(':')[0]
         kwargs.setdefault('check_files', True)
         return find_dmt_cache(gpsstart, gpsend, ifo, **kwargs)
+    elif etg.lower() == 'omicron':
+        etg = '?micron'
 
     # construct search
     span = segments.segment(gpsstart, gpsend)

@@ -34,6 +34,7 @@ ap.add_argument("--jobNum", action="store", type=int, required=True,
 args = ap.parse_args()
 
 cp = SafeConfigParser()
+cp.optionxform = str
 cp.read(args.configFile)
 
 fMin = cp.getfloat('param-space','f_min')
@@ -42,12 +43,17 @@ fFullBand = fMax-fMin
 fBand = fFullBand / args.numJobs
 fStart = fMin + args.jobNum * fBand
 
-argstring = ''
-argstring += '--fStart %f ' % fStart
-argstring += '--fBand %f ' % fBand
+toplistPattern = cp.get('filename-patterns','toplist_name')
+toplistName = toplistPattern % (args.jobNum,args.numJobs)
 
-# Pass along the rest of the arguments from the ini file
-argstring += ' '.join(['--%s %s' % a for a in cp.items('raw-program-arguments')])
+# Pass along the arguments from the ini file
+program_args = ['--%s=%s' % a for a in cp.items('raw-program-arguments')]
+
+# Add calculated frequency band
+program_args += ['--fStart=%f' % fStart]
+program_args += ['--fBand=%f' % fBand]
+program_args += ['--toplistFilename=%s' % toplistName]
 
 program = 'lalapps_pulsar_crosscorr_v2'
-print program, argstring
+check_call(([program]+program_args))
+

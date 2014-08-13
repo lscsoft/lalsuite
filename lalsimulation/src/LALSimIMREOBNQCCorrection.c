@@ -3965,8 +3965,8 @@ UNUSED static int XLALSimIMRSpinEOBCalculateNQCCoefficients(
      coeffs->b4  = gsl_vector_get( bCoeff, 1 );
      break;
    case 2:
-     coeffs->b3  = gsl_vector_get( bCoeff, 0 );
-     coeffs->b4  = gsl_vector_get( bCoeff, 1 );
+     //coeffs->b3  = gsl_vector_get( bCoeff, 0 );
+     //coeffs->b4  = gsl_vector_get( bCoeff, 1 );
      break;
    default:
      XLALPrintError( "XLAL Error - %s: Unknown SEOBNR version!\nAt present only v1 and v2 are available.\n", __func__);

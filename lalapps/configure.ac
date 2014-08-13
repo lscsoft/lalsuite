@@ -146,15 +146,6 @@ if test "x$condor" = "xtrue"; then
     AC_MSG_RESULT([yes])
     LD=/usr/bin/ld
   fi
-
-  # https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=697382
-  AC_CHECK_PROGS([LSB_RELEASE],[lsb_release])
-  AS_IF([test "x$LSB_RELEASE" != "x"],[
-    AC_MSG_CHECKING([Platform])
-    PLATFORM=`$LSB_RELEASE -s -i`
-    AC_MSG_RESULT([$PLATFORM])])
-  AS_CASE(["$PLATFORM"],
-    [Debian],LALSUITE_ADD_FLAGS([C],[],[-llzma]),)
 fi
 CONDOR_ENABLE_VAL="`eval test x$condor = xtrue && echo "ENABLED" || echo "DISABLED"`"
 AM_CONDITIONAL([CONDOR_ENABLED],[test "$CONDOR_ENABLE_VAL" = "ENABLED"])
@@ -265,6 +256,7 @@ LALSUITE_ENABLE_MODULE([METAIO])
 
 # check for libxml2
 if test "$lalxml" = "true"; then
+  AC_SEARCH_LIBS([lzma_code],[lzma])
   PKG_CHECK_MODULES([LIBXML2],[libxml-2.0 >= 2.6],[true],[false])
   lal_pre_libxml2_LIBS="$LIBS"
   LALSUITE_ADD_FLAGS([C],[],[${LIBXML2_LIBS}])
